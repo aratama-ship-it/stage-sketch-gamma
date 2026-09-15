@@ -18,7 +18,7 @@
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="gamma.css?v=2026091503">
+<link rel="stylesheet" href="gamma.css?v=2026091505">
 <script src="gamma-light-model.js?v=2026091502"></script>
 </head>
 <body class="is-standalone">
@@ -61,6 +61,7 @@
                       aria-controls="stage-fpv-overlay">3Dモード</button>
 <button type="button" class="stage-workspace-tab" id="gamma-placement" data-stage-workspace-mode="light-placement" aria-pressed="false" aria-controls="gamma-light-workspace" data-no-i18n>配置モード</button>
 <button type="button" class="stage-workspace-tab" id="gamma-design" data-stage-workspace-mode="light-design" aria-pressed="false" aria-controls="gamma-light-workspace" data-no-i18n>照明デザインモード</button>
+<button type="button" class="stage-workspace-tab" id="gamma-venue" data-stage-workspace-mode="venue-setup" aria-pressed="false" aria-controls="gamma-venue-workspace" data-no-i18n>劇場セットアップ</button>
             </nav>
           </div>
         </div>
@@ -107,6 +108,7 @@
       </header>
 
       <section id="gamma-light-workspace" aria-label="照明の配置とデザイン" hidden><p id="gamma-light-status" role="status" aria-live="polite" data-no-i18n></p><iframe id="gamma-light-frame" title="照明の配置とデザイン" allow="fullscreen" hidden></iframe></section>
+      <section id="gamma-venue-workspace" aria-label="劇場セットアップ" hidden></section>
       <div class="stage-sketch-grid">
         <aside class="stage-toolbox stage-col" data-col="left" id="stage-col-left" aria-label="左の道具列">
           <section class="stage-panel stage-project-section" data-panel="project" data-title="ショー">
@@ -119,16 +121,6 @@
                 <button type="button" class="stage-minor-action" id="stage-project-settings-open"
                         aria-haspopup="dialog" aria-controls="stage-project-settings-modal">詳細設定</button>
               </div>
-            </div>
-          </section>
-          <section class="stage-panel stage-venue-panel" data-panel="venue" data-title="劇場">
-            <div class="stage-panel-body">
-              <div class="stage-venue-summary" data-no-i18n>
-                <strong id="stage-venue-summary-title">プロセニアム</strong>
-                <span id="stage-venue-summary-size">中劇場</span>
-              </div>
-              <button type="button" class="stage-minor-action stage-venue-custom-open" id="stage-venue-custom-open"
-                      aria-haspopup="dialog" aria-controls="stage-venue-editor-modal">劇場セットアップ</button>
             </div>
           </section>
           <section class="stage-panel stage-music-panel" data-panel="music" data-title="音楽">
@@ -2438,8 +2430,8 @@
 </div>
 
 <div class="stage-modal-backdrop" id="stage-venue-editor-backdrop" hidden></div>
-<div class="stage-modal stage-venue-editor-modal" id="stage-venue-editor-modal" role="dialog"
-     aria-modal="true" aria-labelledby="stage-venue-editor-title" hidden>
+<div class="stage-modal stage-venue-editor-modal" id="stage-venue-editor-modal" role="region"
+     aria-labelledby="stage-venue-editor-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-venue-editor-title">劇場セットアップ</h2>
     <button type="button" class="stage-modal-close" id="stage-venue-editor-close" aria-label="閉じる">✕</button>
@@ -2812,12 +2804,12 @@
 <script src="stage-light-motion.js?v=2026091501"></script>
 <script src="manual/manual-content.js?v=2026091501"></script>
 <script src="stage-pwa.js?v=2026091501"></script>
-<script src="stage-sketch.js?v=2026091501"></script>
+<script src="stage-sketch.js?v=2026091502"></script>
 <script src="stage-timeline.js?v=2026091501"></script>
 <script src="stage-session.js?v=2026091501"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
 <script src="stage-venue-editor.js?v=2026091501"></script>
-<script src="gamma-workspace.js?v=2026091503"></script>
+<script src="gamma-workspace.js?v=2026091505"></script>
 </body>
 </html>

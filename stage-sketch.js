@@ -4988,8 +4988,6 @@
   const PANEL_FEATURES = [
     { key: "panelProject", panel: "project", label: "ショー", def: true,
       hint: "ショーを開く・書き出す" },
-    { key: "panelVenue", panel: "venue", label: "劇場", def: true,
-      hint: "劇場形式を選び、カスタムステージを制作する" },
     { key: "panelMusic", panel: "music", label: "音楽", def: false,
       hint: "端末内の楽曲を読み込み、流れているシーンへ割り当てる欄を出す" },
     { key: "panelCast", panel: "cast", label: "出るもの", def: true,

@@ -6,7 +6,36 @@
 #stage-workspace-tabs button { min-height: var(--gamma-hit); white-space: nowrap; }
 body[data-gamma-workspace^="light-"] .stage-sketch-grid { display: none !important; }
 body[data-gamma-workspace^="light-"] #stage-timeline-panel { display: none !important; }
+body[data-gamma-workspace="venue-setup"] .stage-sketch-grid { display: none !important; }
+body[data-gamma-workspace="venue-setup"] #stage-timeline-panel { display: none !important; }
 #gamma-light-workspace { width: 100%; min-height: 0; }
+#gamma-venue-workspace { width: 100%; min-height: 0; }
+#gamma-venue-workspace[hidden] { display: none; }
+/* 劇場セットアップはモード画面として既存エディタの中身だけを表示する。 */
+#gamma-venue-workspace .stage-venue-editor-modal {
+  position: static;
+  left: auto;
+  top: auto;
+  transform: none;
+  display: block;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+#gamma-venue-workspace .stage-venue-editor-modal > .stage-modal-head { display: none; }
+#gamma-venue-workspace .stage-venue-editor-modal > .stage-modal-body {
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+  background: transparent;
+}
+#gamma-venue-workspace .stage-venue-editor-menu { max-height: none; overflow: visible; }
+#gamma-venue-workspace #stage-venue-editor-close { display: none; }
 /* gamma-workspace.js measures the space below this frame after the header has wrapped. */
 #gamma-light-frame { display: block; width: 100%; height: calc(100dvh - 108px); min-height: 480px; border: 0; border-radius: 0; background: #141311; }
 #gamma-light-frame[hidden], #gamma-light-workspace[hidden] { display: none; }

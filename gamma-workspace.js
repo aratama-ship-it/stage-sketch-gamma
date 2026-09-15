@@ -2,14 +2,20 @@
   'use strict';
   const host=window.GAMMA_LIGHT_HOST, panel=document.getElementById('gamma-light-workspace'), frame=document.getElementById('gamma-light-frame');
   if(!host || !panel || !frame) return;
+  const venueWorkspace=document.getElementById('gamma-venue-workspace'), venueModal=document.getElementById('stage-venue-editor-modal'), venueBackdrop=document.getElementById('stage-venue-editor-backdrop');
+  if(!venueWorkspace || !venueModal) return;
+  venueWorkspace.append(venueModal);
+  venueModal.setAttribute('aria-label','劇場セットアップ');
+  if(venueBackdrop) venueBackdrop.hidden=true;
   const normal=document.querySelector('.stage-sketch-grid'), status=document.getElementById('gamma-light-status');
   const hostUndo=document.getElementById('stage-undo'), hostRedo=document.getElementById('stage-redo');
   let mode='normal', loaded=false;
   let hostHistory={undo:hostUndo?.disabled??true,redo:hostRedo?.disabled??true};
   let frameResizeRequest=0;
+  const isLightMode=value=>value==='light-placement'||value==='light-design';
   function syncFrameHeight() {
     frameResizeRequest=0;
-    if(mode==='normal') return;
+    if(!isLightMode(mode)) return;
     const minimum=window.matchMedia('(max-width: 700px)').matches ? 420 : 480;
     const available=Math.floor(window.innerHeight-frame.getBoundingClientRect().top-16);
     frame.style.height=Math.max(minimum,available)+'px';
@@ -63,11 +69,23 @@
     savedButton.onclick=()=>{try{localStorage.setItem(draftKey+':conflict:'+Date.now(),raw);localStorage.removeItem(draftKey);editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(error){failed(error);}};
     status.append(exportButton,savedButton);
   }
+  function showVenue() {
+    if(venueBackdrop) venueBackdrop.hidden=true;
+    window.dispatchEvent(new Event('stage-venue-editor-open'));
+    if(venueBackdrop) venueBackdrop.hidden=true;
+    venueModal.hidden=false;
+  }
+  function hideVenue() {
+    venueModal.hidden=true;
+    if(venueBackdrop) venueBackdrop.hidden=true;
+  }
   function select(next) {
-    if(!['normal','light-placement','light-design'].includes(next)) return;
+    if(!['normal','light-placement','light-design','venue-setup'].includes(next)) return;
     try {
-      if(mode==='normal' && next!=='normal') captureHostHistory();
-      if(next!=='normal') {
+      if(mode==='normal' && isLightMode(next)) captureHostHistory();
+      if(mode!==next && isLightMode(mode) && !isLightMode(next)) editor()?.suspend();
+      if(mode==='venue-setup' && next!=='venue-setup') hideVenue();
+      if(isLightMode(next)) {
         const context=host.context(); latestContext=context;
         const timelinePlay=document.getElementById('stage-timeline-play');
         if(timelinePlay?.getAttribute('aria-pressed')==='true') timelinePlay.click();
@@ -76,10 +94,14 @@
           frame.src='light-design/index.html?embed=gamma'; loaded=true;
           status.textContent='照明デザインを開いています…';
         } else if(editor()) editor().open(context, next);
+      } else if(next==='venue-setup') {
+        const context=host.context(); latestContext=context;
+        if(context.readOnly) throw Error('共有の閲覧中は、通常モードと3Dモードをお使いください');
+        showVenue();
       } else editor()?.suspend();
       mode=next; document.body.dataset.gammaWorkspace=mode;
       document.body.dataset.stageWorkspaceMode=mode;
-      panel.hidden=mode==='normal'; normal.inert=mode!=='normal';
+      panel.hidden=!isLightMode(mode); venueWorkspace.hidden=mode!=='venue-setup'; normal.inert=mode!=='normal';
       document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode]').forEach(button=>{
         const active=button.dataset.stageWorkspaceMode===mode;
         button.classList.toggle('is-active',active); button.setAttribute('aria-pressed',String(active));
@@ -95,7 +117,7 @@
   });
   document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode]').forEach(button=>button.addEventListener('click',()=>select(button.dataset.stageWorkspaceMode)));
   document.getElementById('stage-freecam-open')?.addEventListener('click',()=>editor()?.suspend(),true);
-  window.addEventListener('stage-fpv-visibility',event=>{if(!event.detail?.active && mode!=='normal') editor()?.open(host.context(),mode);});
+  window.addEventListener('stage-fpv-visibility',event=>{if(!event.detail?.active && isLightMode(mode)) editor()?.open(host.context(),mode);});
   window.addEventListener('storage',event=>{
     if(event.key==='gamma:shosai-stage-sketch-v1') editor()?.externalChange();
   });
