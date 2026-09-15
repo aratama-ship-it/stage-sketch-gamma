@@ -26735,6 +26735,7 @@ ${propsPlotHtml}
     const opened = fpv.open({
       initialPieceId,
       initialView,
+      workspace3d,
       read: () => {
         const current = sc();
         const rows = state.project.scenes;

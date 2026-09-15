@@ -851,7 +851,7 @@
     if (document.getElementById && document.getElementById("stage-fpv-style")) return;
     const style = createElement("style", "stage-fpv-style");
     style.textContent = `
-#stage-fpv-overlay[hidden]{display:none!important}#stage-fpv-overlay{position:fixed;inset:0;z-index:70;background:#0d0a08;color:#e8e2d4;font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif;overflow:hidden}
+#stage-fpv-overlay[hidden]{display:none!important}#stage-fpv-overlay{position:fixed;inset:0;z-index:70;background:#0d0a08;color:#e8e2d4;font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif;overflow:hidden}#stage-fpv-overlay.stage-fpv-workspace{top:var(--stage-fpv-workspace-top,0px)}
 #stage-fpv-view{position:absolute;inset:0;width:100%;height:100%;cursor:grab;touch-action:none}#stage-fpv-view.dragging{cursor:grabbing}.stage-fpv-hud{position:absolute;color:#e8e2d4;user-select:none;-webkit-user-select:none}
 #stage-fpv-title{top:18px;left:20px;pointer-events:none}#stage-fpv-title .show{font-size:11px;letter-spacing:.12em;opacity:.55;margin-bottom:6px}#stage-fpv-title .act{font-size:11px;opacity:.6;margin-bottom:2px}#stage-fpv-title .scene{font-size:19px;font-weight:600;letter-spacing:.04em}#stage-fpv-title .approx{font-size:10.5px;opacity:.48;margin-top:5px}
 #stage-fpv-minimap{top:16px;right:70px;background:rgba(var(--stage-ui-float-deep-rgb,16,12,9),.72);border:1px solid rgba(232,226,212,.14);border-radius:4px}
@@ -1499,11 +1499,20 @@
     ].join(separators);
   }
 
+  function syncWorkspaceInset() {
+    if (!elements || !elements.root.classList.contains("stage-fpv-workspace")) return;
+    const header = document.querySelector(".stage-sketch-head");
+    const top = header && typeof header.getBoundingClientRect === "function"
+      ? header.getBoundingClientRect().bottom : 0;
+    elements.root.style.setProperty("--stage-fpv-workspace-top", `${Math.max(0, Math.round(top))}px`);
+  }
+
   function resize() {
     if (!elements) return;
+    syncWorkspaceInset();
     pixelRatio = Math.min(2, window.devicePixelRatio || 1);
-    canvasWidth = window.innerWidth || elements.root.clientWidth || 1024;
-    canvasHeight = window.innerHeight || elements.root.clientHeight || 768;
+    canvasWidth = elements.root.clientWidth || window.innerWidth || 1024;
+    canvasHeight = elements.root.clientHeight || window.innerHeight || 768;
     elements.canvas.width = canvasWidth * pixelRatio;
     elements.canvas.height = canvasHeight * pixelRatio;
     focal = focalFor(canvasWidth, lensById(lensId).fovDeg);
@@ -3035,6 +3044,8 @@
     knobScreen = null;
     hitTargets.length = 0;
     wasTransitioning = Boolean(data.transition);
+    elements.root.classList.toggle("stage-fpv-workspace", Boolean(bridge.workspace3d));
+    if (!bridge.workspace3d) elements.root.style.removeProperty("--stage-fpv-workspace-top");
     elements.root.hidden = false;
     elements.root.setAttribute("aria-hidden", "false");
     resize();
@@ -3072,6 +3083,8 @@
     elements.toast.textContent = "";
     elements.root.hidden = true;
     elements.root.setAttribute("aria-hidden", "true");
+    elements.root.classList.remove("stage-fpv-workspace");
+    elements.root.style.removeProperty("--stage-fpv-workspace-top");
     elements.fade.classList.remove("on");
     window.removeEventListener("keydown", onKeyDown, true);
     window.removeEventListener("keyup", onKeyUp, true);

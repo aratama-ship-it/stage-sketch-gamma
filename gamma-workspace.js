@@ -32,6 +32,11 @@
   syncNote();
   let latestContext=null;
   const editor=()=>frame.contentWindow?.GAMMA_LIGHT_EDITOR;
+  function close3dWorkspace() {
+    const overlay=document.getElementById('stage-fpv-overlay');
+    if(!overlay || overlay.hidden || !overlay.classList.contains('stage-fpv-workspace')) return;
+    window.SHOSAI_STAGE_FPV?.close();
+  }
   function captureHostHistory() {
     hostHistory={undo:hostUndo?.disabled??true,redo:hostRedo?.disabled??true};
   }
@@ -82,6 +87,7 @@
   function select(next) {
     if(!['normal','light-placement','light-design','venue-setup'].includes(next)) return;
     try {
+      close3dWorkspace();
       if(mode==='normal' && isLightMode(next)) captureHostHistory();
       if(mode!==next && isLightMode(mode) && !isLightMode(next)) editor()?.suspend();
       if(mode==='venue-setup' && next!=='venue-setup') hideVenue();
