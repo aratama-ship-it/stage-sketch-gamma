@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">舞台スケッチ</title>
+  <desc id="desc">暗い舞台の額縁、舞台上の人物、平面図の動線を組み合わせた印</desc>
+  <rect width="512" height="512" fill="#191512"/>
+  <path d="M92 111h328v246H92z" fill="#201b16" stroke="#9c823f" stroke-width="18"/>
+  <path d="M130 151h252v156H130z" fill="#2b2620" stroke="#efe7d6" stroke-width="8"/>
+  <path d="M256 167 354 306H158z" fill="#a84b26" opacity=".72"/>
+  <circle cx="256" cy="226" r="24" fill="#efe7d6"/>
+  <path d="M256 252v42m-37-16 37-18 37 18" fill="none" stroke="#efe7d6" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M126 377h260" fill="none" stroke="#9c823f" stroke-width="10" stroke-linecap="round"/>
+  <path d="M169 408c44-38 104-38 174 0" fill="none" stroke="#35d6cf" stroke-width="10" stroke-linecap="round" stroke-dasharray="2 22"/>
+  <path d="m326 390 24 19-28 12" fill="none" stroke="#35d6cf" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,16 @@
+{
+  "kind": "shosai-stage-sketch",
+  "version": 4,
+  "venues": [],
+  "project": {
+    "title": "二つの距離",
+    "venue": "proscenium",
+    "venueSize": "mid",
+    "cast": [{"id":"cast-a","name":"アオ","color":"#315b8a","heightCm":168,"note":"配置検討用"}],
+    "sets": [],
+    "scenes": [
+      {"kind":"scene","depth":0,"id":"scene-1","title":"遠い合図","note":"アオが奥から客席へ向く。観客には距離が保たれる規則が見える。終わりに一歩だけ近づく。","beat":{"role":"導入"},"pieces":[{"id":"piece-a-1","type":"performer","castId":"cast-a","u":0.5,"v":0.2,"color":"#315b8a","facing":0,"pose":"stand","size":100}]},
+      {"kind":"scene","depth":0,"id":"scene-2","title":"近い合図","note":"アオが前方で立ち止まる。観客には距離を自分で選び直した変化が見える。","beat":{"role":"変化"},"pieces":[{"id":"piece-a-2","type":"performer","castId":"cast-a","u":0.5,"v":0.78,"color":"#315b8a","facing":0,"pose":"stand","size":100}]}
+    ]
+  }
+}

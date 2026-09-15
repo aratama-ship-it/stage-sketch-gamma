@@ -1,0 +1,33 @@
+{
+  "id": "./stage.html",
+  "name": "舞台スケッチ ガンマ",
+  "short_name": "舞台ガンマ",
+  "description": "舞台の正面図と平面図を行き来しながら、構図・動線・照明を考えるためのスケッチ道具です。",
+  "lang": "ja",
+  "start_url": "./stage.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#191512",
+  "theme_color": "#191512",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./icons/stage-sketch-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/stage-sketch-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/stage-sketch-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

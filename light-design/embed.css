@@ -1,0 +1,3 @@
+html[data-gamma-embedded] .head .modes { display: none; }
+html[data-gamma-embedded] body { margin: 0; }
+html[data-gamma-embedded] .modal { border-radius: 0; }

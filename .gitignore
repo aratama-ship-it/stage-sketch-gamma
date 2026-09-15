@@ -1,0 +1,165 @@
+.DS_Store
+
+# iCloud Drive の同期が作る複製（"app 2.js" など）。中身は履歴側にあるので追跡しない。
+* 2.*
+
+# iCloudの同期競合コピー(「app 2.js」等)は追跡しない
+* [0-9].*
+
+# 舞台スケッチMCPが作る個人用の下書き・履歴・読み込み用JSON
+.stage-sketch-mcp/
+node_modules/
+
+# MCPの接続設定。端末ごとに絶対パスが違ううえ、このリポジトリは公開なので追跡しない。
+# 雛形と作り方は mcp-server/README.md にある。
+.mcp.json
+.codex/
+.superdesign/tmp/
+
+# 制作の書斎.app のローカルビルド成果物
+mac-app/build/
+
+# 機能実装前のローカル退避コピー（履歴はgit側にあるので追跡しない）
+*_backup_*
+
+# Cloudflare Pages Functionsのローカル秘密情報（本番はダッシュボードのSecretで管理）
+.dev.vars
+
+# wrangler pages dev のローカルキャッシュ
+.wrangler/
+
+# 名簿の合言葉。Cloudflare（Basic認証の内側）へだけ配信し、公開リポジトリには残さない。
+# 雛形は roster-key.example.js。
+roster-key.local.js
+
+# 自分用ショー（ショー一覧へ自動で入れる下書き）。Cloudflare（Basic認証の内側）へだけ
+# 配信し、公開リポジトリには残さない。build_stage_shows_local.py が生成する。
+stage-shows.local.js
+public-dist/
+
+# Gamma independent source distribution; upstream research and owner files remain local.
+/*
+!/formation/
+/formation/*
+!/gamma-dev/
+/gamma-dev/*
+!/icons/
+/icons/*
+!/light-design/
+/light-design/*
+!/manual/
+/manual/*
+!/public/
+/public/*
+!/stage-samples/
+/stage-samples/*
+!/tests/
+/tests/*
+!/tools/
+/tools/*
+!/formation/prototype/
+/formation/prototype/*
+!/manual/img/
+/manual/img/*
+!/public/ai-json/
+/public/ai-json/*
+!/public/ai-json/samples/
+/public/ai-json/samples/*
+!/.gitignore
+!/.nojekyll
+!/AGENTS.md
+!/BETA_UPDATE_SAFETY.md
+!/PUBLISH_RULES.md
+!/README.md
+!/formation/prototype/record-from-video.html
+!/gamma-dev/DESIGN_TOKENS.md
+!/gamma-dev/RELEASE.md
+!/gamma-dev/UPSTREAM.json
+!/gamma-light-model.js
+!/gamma-workspace.js
+!/gamma.css
+!/icons/stage-sketch-180.png
+!/icons/stage-sketch-192.png
+!/icons/stage-sketch-512.png
+!/icons/stage-sketch-icon.svg
+!/icons/stage-sketch-maskable-512.png
+!/index.html
+!/light-design/app.js
+!/light-design/embed.css
+!/light-design/embed.js
+!/light-design/index.html
+!/light-design/laser-effects-ui.js
+!/light-design/laser-effects.js
+!/light-design/light-presets-ui.js
+!/light-design/light-presets.js
+!/light-design/rig-engine.js
+!/light-design/selected-light-presets-engine.js
+!/light-design/selected-light-presets-ui.js
+!/light-design/stage-figure.js
+!/light-design/volume-light.js
+!/manual/GuideBooklet_2026-08-29.pdf
+!/manual/QuickGuide_2026-08-28.pdf
+!/manual/img/cast-poses-props-en.png
+!/manual/img/cast-poses-props.png
+!/manual/img/cover-trapeze-en.png
+!/manual/img/cover-trapeze.png
+!/manual/img/duo-front-en.png
+!/manual/img/duo-front.png
+!/manual/img/duo-plan-en.png
+!/manual/img/duo-plan.png
+!/manual/img/scene-map-en.png
+!/manual/img/scene-map.png
+!/manual/manual-content.js
+!/manual/manual.html
+!/manual/quick-en.html
+!/manual/quick.html
+!/manual/クイックガイド_2026-08-28.pdf
+!/manual/使いかたの冊子_2026-08-29.pdf
+!/package.json
+!/public/ai-json/AI_MANUAL_ja.md
+!/public/ai-json/README.md
+!/public/ai-json/ai-json-check.browser.js
+!/public/ai-json/index.html
+!/public/ai-json/samples/sample-minimal.json
+!/public/ai-json/samples/sample-standard.json
+!/stage-audio-store.js
+!/stage-first-person.js
+!/stage-i18n.js
+!/stage-i18n.zh-Hans.js
+!/stage-i18n.zh-Hant.js
+!/stage-light-motion.js
+!/stage-machinery.js
+!/stage-prompt-i18n.js
+!/stage-pwa.js
+!/stage-rehearsal-export.js
+!/stage-samples/README.md
+!/stage-samples/index.js
+!/stage-session.js
+!/stage-set-builder.js
+!/stage-set-model.js
+!/stage-sketch.js
+!/stage-sketch.webmanifest
+!/stage-study-owner.js
+!/stage-study.css
+!/stage-sw.js
+!/stage-timeline.js
+!/stage-usage.js
+!/stage-venue-editor.js
+!/stage-venue-lines.js
+!/stage-venues.js
+!/stage.html
+!/style.css
+!/tests/gamma-light-model.test.mjs
+!/tools/check-beta-update-safety.py
+!/tools/gamma-browser.cjs
+!/tools/gamma-storage-browser.cjs
+!/tools/pre-publish-check.sh
+
+# Public runtime only; internal development material stays local.
+/AGENTS.md
+/BETA_UPDATE_SAFETY.md
+/PUBLISH_RULES.md
+/package.json
+/gamma-dev/
+/tools/
+/tests/
