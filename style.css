@@ -1906,7 +1906,7 @@ textarea, input[type="text"] {
 }
 
 /* iPadなどのホーム画面版では、上端のキッカーを省いて作図面を優先する。 */
-html.stage-pwa-tablet .stage-sketch-kicker { display: none; }
+html.stage-pwa-tablet .stage-header-app-kicker { display: none; }
 
 .stage-sketch-head > div:first-child > p:last-child {
   color: var(--milk-dim);
@@ -12873,8 +12873,8 @@ html.stage-pwa-tablet .stage-tablet-top-controls .stage-ai-link {
    設定・全画面・書き出しは、iPadのフォントで記号が空欄にならないよう
    本家と同じインラインSVGを使う。 */
 html.stage-pwa-tablet .stage-tablet-top-controls svg { display: none; }
-html.stage-pwa-tablet .stage-tablet-top-controls :is(.stage-gear-btn, #stage-present-btn, .stage-export-icon)::before { content: none; }
-html.stage-pwa-tablet .stage-tablet-top-controls :is(.stage-gear-btn, #stage-present-btn, .stage-export-icon) svg {
+html.stage-pwa-tablet .stage-tablet-top-controls :is(.stage-gear-btn, #stage-present-btn, #stage-share-open, .stage-export-icon)::before { content: none; }
+html.stage-pwa-tablet .stage-tablet-top-controls :is(.stage-gear-btn, #stage-present-btn, #stage-share-open, .stage-export-icon) svg {
   display: block;
   width: 20px;
   height: 20px;
@@ -15678,6 +15678,10 @@ body.is-panel-resizing .stage-sketch-grid { transition: none; }
   --stage-timeline-cue-light: #d3ac59;
   --stage-timeline-cue-music: #b85a32;
   --stage-timeline-cue-dialogue: #a8bf8a;
+  --stage-header-identity-gap: 8px;
+  --stage-header-project-gap: 7px;
+  --stage-header-runtime-gap: 6px;
+  --stage-header-share-icon-size: 20px;
 }
 
 .stage-workspace-tabs {
@@ -15748,40 +15752,103 @@ body.is-panel-resizing .stage-sketch-grid { transition: none; }
 }
 .stage-header-project:hover { border-color: rgba(211, 172, 89, 0.62); background: rgba(211, 172, 89, 0.13); }
 .stage-header-project:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
-.stage-header-project-copy { display: grid; min-width: 0; line-height: 1.3; }
+.stage-header-project-copy {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--stage-header-project-gap);
+  min-width: 0;
+  line-height: 1.3;
+}
 .stage-header-project-copy strong,
 .stage-header-project-copy span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.stage-header-project-copy strong { font-size: 13px; font-weight: 600; letter-spacing: .04em; }
-.stage-header-project-copy span { color: var(--milk-dim); font-size: 10px; letter-spacing: .08em; }
+.stage-header-project-copy strong { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 600; letter-spacing: .04em; }
+.stage-header-project-copy span { flex: 0 0 auto; color: var(--milk-dim); font-size: 10px; letter-spacing: .08em; }
 
 .stage-save-stamps {
   display: grid;
-  gap: 1px;
-  min-width: 104px;
-  padding: 4px 7px;
+  gap: 3px;
+  padding: 10px 12px;
   color: var(--milk-dim);
-  font-size: 10px;
-  line-height: 1.25;
-  letter-spacing: .03em;
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: .04em;
   border: 1px solid var(--line-dark);
   border-radius: 3px;
+  background: rgba(211, 172, 89, 0.055);
   white-space: nowrap;
 }
+.stage-save-stamps-panel { margin: 0 0 10px; }
 .stage-save-stamps time { color: var(--milk); font-variant-numeric: tabular-nums; }
-.stage-header-collaboration { display: flex; align-items: center; gap: 4px; margin-left: auto; }
-.stage-header-app-identity {
+.stage-show-elapsed-group {
   display: inline-flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  gap: var(--stage-header-runtime-gap);
+  min-height: var(--stage-history-action-height);
+  color: var(--milk-dim);
+  font-size: 10px;
+  letter-spacing: .06em;
+  white-space: nowrap;
+}
+.stage-header-collaboration { display: flex; align-items: center; gap: 4px; margin-left: 0; }
+.stage-header-collaboration .stage-share-open,
+.stage-header-collaboration .stage-release-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 var(--stage-history-action-height, 44px);
+  width: var(--stage-history-action-height, 44px);
+  min-width: var(--stage-history-action-height, 44px);
+  height: var(--stage-history-action-height, 44px);
+  min-height: var(--stage-history-action-height, 44px);
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line-dark);
+  background: transparent;
+  color: var(--milk-dim);
+}
+.stage-header-collaboration .stage-share-open:hover,
+.stage-header-collaboration .stage-release-open:hover { border-color: var(--brass); }
+.stage-header-collaboration .stage-share-open:focus-visible,
+.stage-header-collaboration .stage-release-open:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.stage-header-app-identity {
+  display: grid;
+  grid-template-columns: max-content;
+  align-content: center;
+  flex: 0 0 auto;
+  gap: 3px;
   min-width: 0;
-  margin-right: 8px;
+  margin-right: 0;
   color: var(--milk);
   white-space: nowrap;
 }
-.stage-header-app-title { font-family: var(--serif, serif); font-size: 16px; letter-spacing: .08em; }
-.stage-header-app-identity .stage-app-version { margin: 0; color: var(--milk-dim); font-family: var(--sans); font-size: 11px; letter-spacing: .12em; }
+.stage-header-app-kicker {
+  color: var(--rust-ink);
+  font-family: var(--sans);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: .22em;
+  line-height: 1;
+}
+.stage-header-app-copy { display: inline-flex; align-items: baseline; gap: var(--stage-header-identity-gap); }
+.stage-header-app-title { font-family: var(--serif, serif); font-size: 21px; letter-spacing: .08em; line-height: 1.12; }
+.stage-header-app-identity .stage-app-version { margin: 0; color: var(--milk-dim); font-family: var(--sans); font-size: 14px; letter-spacing: .12em; }
 .stage-header-collaboration .stage-share-open,
 .stage-header-collaboration .stage-release-open { flex: 0 0 auto; }
+.stage-header-collaboration .stage-share-open svg {
+  display: block;
+  width: var(--stage-header-share-icon-size);
+  height: var(--stage-header-share-icon-size);
+}
+.stage-header-collaboration .stage-release-open svg { width: 22px; height: 22px; }
+
+/* デスクトップでは書き出し枠と共有枠を同じ操作列として詰める。狭い画面の折り返しは従来どおり。 */
+@media (min-width: 1181px) {
+  .stage-history-actions + .stage-header-collaboration { margin-left: -18px; }
+}
+
+/* 音量までは再生状態、その右は操作群として右端へまとめる。 */
+.stage-history-actions { flex: 1 1 auto; min-width: 0; }
+.stage-history-actions .stage-undo-redo { margin-left: auto; }
 
 /* Gamma追加分: 転換時間はON/OFFの左側に同じ行で置き、説明段落は出さない。 */
 .stage-transition-animation-pref { display:flex; align-items:center; gap:14px; }
@@ -15805,7 +15872,7 @@ body.is-panel-resizing .stage-sketch-grid { transition: none; }
     margin: 4px 0 0;
   }
 
-  .stage-header-app-identity { width: 100%; margin: 0 0 2px; }
+  .stage-header-app-identity { margin: 0 0 2px; }
 }
 
 body.stage-timeline-expanded:not(.stage-fullscreen) {

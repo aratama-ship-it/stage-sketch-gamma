@@ -107,7 +107,11 @@
     els.panel.dataset.title = title;
     els.panel.setAttribute("aria-label", title);
     if (els.shareTitle) els.shareTitle.textContent = title;
-    if (els.shareOpen) els.shareOpen.textContent = title;
+    if (els.shareOpen) {
+      // ヘッダーの共有入口はSVGを保ち、言語切替は読み上げ名とツールチップだけへ反映する。
+      els.shareOpen.setAttribute("aria-label", title);
+      els.shareOpen.title = title;
+    }
     if (els.shareClose) els.shareClose.setAttribute("aria-label", shareText("閉じる", "Close"));
     if (els.sharePanelHint) els.sharePanelHint.textContent = shareText(
       "二つの共有方法があります。会議中に同じ状態を見ながら話すなら「リアルタイム共有」。事前に各自で確認し、必要なメモだけ送ってもらうなら「演者事前学習リンク」です。",

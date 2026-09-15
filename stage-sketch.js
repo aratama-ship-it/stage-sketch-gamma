@@ -4975,7 +4975,7 @@
       hint: "ポールやトラピーズの真下に人が居るとき、平面図に印を出す" },
     { key: "toolTips", label: "アイコンの説明",
       hint: "道具のアイコンにカーソルを合わせると、名前・ショートカット・使い方を出す。覚えたらOFFにできる" },
-    { key: "floatingInspector", label: "選んだものを図に添える", def: false,
+    { key: "floatingInspector", label: "選んだものを図に添える", def: true,
       hint: "ONでは選んだ対象の横に補助表示を出します。既定では左側のパネル列に表示します" },
     { key: "bamiri", label: "バミリ図（印刷）",
       hint: "印刷用ページに、演者の立ち位置の実寸表を足す" },
@@ -5385,7 +5385,8 @@
       },
       order: {
         project: 0, venue: 1, music: 2, cast: 3, machinery: 4, rigs: 5, light: 6, background: 7,
-        study: -1, scenes: 0, inspector: 8, save: 2, session: 3, ask: 4,
+        // 保存状態は右列の最後。既存のショーは保存済みの順序をそのまま使う。
+        study: -1, scenes: 0, inspector: 8, save: 999, session: 3, ask: 4,
       },
       /* 共有は「会議のときだけ開く」もの。畳んだ状態から始める。
          保存の中の畳みだったころと同じ見え方にするため（開いた形で置くと、
@@ -8823,11 +8824,11 @@
           setSaveStatus(sx(`「${state.project.title}」を保存しました。`, `Saved \u201c${state.project.title}\u201d.`));
         }
         updateBackupNote();
-        syncHeaderSaveStamps();
+        syncSaveStamps();
       } catch (_) {
         // 書けなかった試行を「最終保存」とは表示しない。
         state.lastSavedAt = previousSavedAt;
-        syncHeaderSaveStamps();
+        syncSaveStamps();
         /* 「画像を書き出して」と案内していたが、いまは書き出しボタンが
            警告のすぐ隣にある。そちらへ導く（2026-08-24 P1-7対応）。 */
         setSaveStatus(tx("この端末へ保存できませんでした。ファイルへ書き出して残してください。"),
@@ -16638,6 +16639,7 @@
         : `${name}はいま舞台裏です。「舞台裏」を押すと舞台へ出ます。`);
       return;
     }
+    anchorFloatingInspector(visibleInspectorAnchorView());
     selectedId = piece.id;
     selectedNoteId = null;
     // 照明は照明の道具、それ以外は動かす道具でないと掴めない
@@ -18229,7 +18231,7 @@
       els.projectSummaryVersion.textContent = version;
       els.projectSummaryVersion.title = version;
     }
-    syncHeaderSaveStamps();
+    syncSaveStamps();
   }
 
   function headerTimestamp(value) {
@@ -18239,7 +18241,7 @@
   }
 
   // 時刻を進めるのは、保存・書き出しの成功を確認した後だけに限る。
-  function syncHeaderSaveStamps() {
+  function syncSaveStamps() {
     if (els.lastSaveTime) els.lastSaveTime.textContent = headerTimestamp(state && state.lastSavedAt);
     if (els.lastBackupTime) els.lastBackupTime.textContent = headerTimestamp(state && state.lastExportAt);
   }
@@ -22827,7 +22829,7 @@ ${propsPlotHtml}
         return;
       }
       // 既存の「ファイルへ書き出す」が実際に保存先まで完了した時刻だけを表示する。
-      syncHeaderSaveStamps();
+      syncSaveStamps();
       persistSoon();
       updateBackupNote();
       announce(includeVenue || !bundledVenueForProject(state.project)
@@ -24299,6 +24301,14 @@ ${propsPlotHtml}
 
   function anchorFloatingInspector(view) {
     floatingInspectorAnchor = { view: view === "plan" ? "plan" : "front", serial: floatingInspectorAnchor.serial + 1 };
+  }
+
+  // 名簿から選んだ場合はクリック元のcanvasがないため、今見えている図へ添える。
+  // 両方表示時は上側の図を使い、非表示の図を基準に左上へ飛ばさない。
+  function visibleInspectorAnchorView() {
+    if (state.showPlan && !state.showFront) return "plan";
+    if (state.showFront && !state.showPlan) return "front";
+    return state.layout?.centerOrder?.[0] === "plan" ? "plan" : "front";
   }
 
   function syncMultiSelectionControls() {
