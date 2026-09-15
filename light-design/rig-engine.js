@@ -904,18 +904,18 @@
     return Boolean(a && b && source.surface === partner.surface && a.kind === b.kind
       && ["still", "line", "circle", "eight"].includes(a.kind));
   };
-  const mirrorAimPoint = (point) => ({
+  const mirrorAimPoint = (point, axisU = 0.5) => ({
     ...JSON.parse(JSON.stringify(point || newPoint())),
-    u: Number((1 - clamp(finite(point && point.u, 0.5), 0, 1)).toFixed(6)),
+    u: Number(clamp(2 * clamp(finite(axisU, 0.5), 0, 1) - clamp(finite(point && point.u, 0.5), 0, 1), 0, 1).toFixed(6)),
   });
-  const mirrorAimPath = (source, partner) => {
+  const mirrorAimPath = (source, partner, axisU = 0.5) => {
     const next = JSON.parse(JSON.stringify(partner || {}));
     if (!mirrorAimCompatible(source, partner)) return next;
     const path = JSON.parse(JSON.stringify(source.path));
-    if (path.kind === "still") path.a = mirrorAimPoint(path.a);
-    else if (path.kind === "line") { path.a = mirrorAimPoint(path.a); path.b = mirrorAimPoint(path.b); }
+    if (path.kind === "still") path.a = mirrorAimPoint(path.a, axisU);
+    else if (path.kind === "line") { path.a = mirrorAimPoint(path.a, axisU); path.b = mirrorAimPoint(path.b, axisU); }
     else {
-      path.c = mirrorAimPoint(path.c);
+      path.c = mirrorAimPoint(path.c, axisU);
       /* 舞台横から見た縦軌道は左右(x)成分を持たないため、中心だけ写す。
          それ以外は軌道面を鏡映する。円は進行方向を反転し、8の字は半周位相をずらす。 */
       if ((path.plane || "horizontal") !== "sideVertical") {

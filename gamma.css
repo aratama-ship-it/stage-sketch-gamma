@@ -11,7 +11,7 @@ body[data-gamma-workspace="venue-setup"] #stage-timeline-panel { display: none !
 #gamma-light-workspace { width: 100%; min-height: 0; }
 #gamma-venue-workspace { width: 100%; min-height: 0; }
 #gamma-venue-workspace[hidden] { display: none; }
-/* 劇場セットアップはモード画面として既存エディタの中身だけを表示する。 */
+/* 劇場カスタムはモード画面として既存エディタと舞台機構を表示する。 */
 #gamma-venue-workspace .stage-venue-editor-modal {
   position: static;
   left: auto;
@@ -28,6 +28,13 @@ body[data-gamma-workspace="venue-setup"] #stage-timeline-panel { display: none !
   background: transparent;
 }
 #gamma-venue-workspace .stage-venue-editor-modal > .stage-modal-head { display: none; }
+.stage-panel[data-panel="light"] { display: none !important; }
+#gamma-machinery-workspace { display:grid; gap:12px; margin:0 0 18px; }
+.gamma-machinery-head { border-bottom:1px solid var(--line-dark); padding:0 0 8px; }
+.gamma-machinery-head h2 { margin:0; font:600 18px var(--stage-sans, sans-serif); }
+.gamma-machinery-head p { margin:5px 0 0; color:var(--stage-muted, #b6a995); font-size:12px; }
+#gamma-machinery-workspace [data-panel="machinery"] { display:block; }
+#gamma-machinery-controls-host { display:grid; gap:8px; }
 #gamma-venue-workspace .stage-venue-editor-modal > .stage-modal-body {
   max-height: none;
   overflow: visible;
@@ -44,5 +51,3 @@ body[data-gamma-workspace="venue-setup"] #stage-timeline-panel { display: none !
 @media(max-width:700px) { #gamma-light-frame { min-height:420px; } #stage-workspace-tabs { gap:4px; } #stage-workspace-tabs button { font-size:12px; padding:6px 8px; } }
 
 #gamma-light-status button { margin:8px; min-height:36px; padding:6px 12px; }
-
-#gamma-lighting-scope { margin:0 0 12px; color:#b6a995; font-size:12px; }

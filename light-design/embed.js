@@ -10,12 +10,11 @@
     const bar=document.querySelector('.figbar'), save=document.getElementById('save');
     if(!bar) return;
     const actions=document.createElement('span');actions.className='gamma-light-actions';actions.setAttribute('aria-label','照明デザインの操作');
-    const applyButton=document.getElementById('apply'), runtime=document.getElementById('runtime-status'), reset=document.getElementById('runtime-reset');
+    const applyButton=document.getElementById('apply'), runtime=document.getElementById('runtime-status');
     applyButton.textContent='LXキューを適用';
     applyButton.title='配置と照明デザインを現在のショーのLXキューへ適用';
-    runtime.hidden=true;
-    reset.textContent='↻';reset.setAttribute('aria-label','描画をリセット');
-    actions.append(document.getElementById('transport'),reset,document.getElementById('prefs'),document.getElementById('export'),applyButton);
+    runtime.hidden=false;
+    actions.append(runtime,document.getElementById('transport'),document.getElementById('prefs'),applyButton);
     bar.append(actions);
     save.hidden=true;
   }
@@ -27,6 +26,7 @@
   }
   function setMode(mode) {
     state.mode=mode==='light-placement'?'place':'move';
+    document.documentElement.dataset.gammaLightMode=state.mode;
     if(state.mode==='place') {state.aimMirror=null;hooks.stop();}
     hooks.renderAll();
   }
@@ -101,7 +101,7 @@
   window.addEventListener('pagehide',saveDraft);
   window.addEventListener('beforeunload',event=>{saveDraft();if(state.dirty){event.preventDefault();event.returnValue='';}});
   window.GAMMA_LIGHT_EDITOR=Object.freeze({open,suspend,apply,build,undo:hooks.undo,redo:hooks.redo,
-    validateImport(design){model.validate(design,context.scenes.map(row=>row.id));if(JSON.stringify(design.stage)!==JSON.stringify(context.stage))throw Error('劇場寸法が異なる照明デザインです。通常モードで寸法を確認してください');},
+    validateImport(design){model.validate(design,context.scenes.map(row=>row.id));if(JSON.stringify(design.stage)!==JSON.stringify(context.stage))throw Error('劇場寸法が異なる照明デザインです。舞台モードで寸法を確認してください');},
     externalChange(){changedElsewhere=true;hooks.stop();if(state.dirty)message('別のタブでショーが更新されました。編集中の照明は保持しています');},
     status:()=>({showId:context?.showId,dirty:state.dirty,active,changedElsewhere,canUndo:Boolean(state.history.length),canRedo:Boolean(state.future.length)})});
 })();

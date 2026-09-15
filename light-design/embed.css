@@ -18,20 +18,17 @@ html[data-gamma-embedded] .gamma-light-actions {
   gap: 5px;
   min-width: 0;
 }
-html[data-gamma-embedded] .gamma-light-actions #export,
 html[data-gamma-embedded] .gamma-light-actions #apply {
   min-height: 28px;
   padding: 3px 9px;
   font-size: 12.5px;
 }
-html[data-gamma-embedded] .gamma-light-actions #runtime-reset {
-  width: 28px;
-  min-width: 28px;
-  height: 28px;
-  min-height: 28px;
-  padding: 0;
-  font-size: 16px;
+html[data-gamma-embedded] .gamma-light-actions #runtime-status {
+  font-size: 11px;
+  color: var(--milk-dim);
+  white-space: nowrap;
 }
+html[data-gamma-embedded][data-gamma-light-mode="place"] .gamma-light-actions { display:none; }
 html[data-gamma-embedded] .gamma-light-actions .gearbtn {
   width: 28px;
   height: 28px;

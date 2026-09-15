@@ -5,7 +5,7 @@
   const venueWorkspace=document.getElementById('gamma-venue-workspace'), venueModal=document.getElementById('stage-venue-editor-modal'), venueBackdrop=document.getElementById('stage-venue-editor-backdrop');
   if(!venueWorkspace || !venueModal) return;
   venueWorkspace.append(venueModal);
-  venueModal.setAttribute('aria-label','劇場セットアップ');
+  venueModal.setAttribute('aria-label','劇場カスタム');
   if(venueBackdrop) venueBackdrop.hidden=true;
   const normal=document.querySelector('.stage-sketch-grid'), status=document.getElementById('gamma-light-status');
   const hostUndo=document.getElementById('stage-undo'), hostRedo=document.getElementById('stage-redo');
@@ -24,12 +24,23 @@
     if(frameResizeRequest) return;
     frameResizeRequest=requestAnimationFrame(syncFrameHeight);
   }
-  const note=document.createElement('p');note.id='gamma-lighting-scope';note.dataset.noI18n='';
-  note.textContent='新しい照明の見え方は「照明デザインモード」で確認できます。';
-  note.hidden=true;panel.before(note);
-  const syncNote=()=>{note.hidden=mode!=='normal' || !host.context().design;};
-  window.addEventListener('gamma-workspace-change',syncNote);
-  syncNote();
+  const lightPanel=document.querySelector('[data-panel="light"]');
+  if(lightPanel) lightPanel.hidden=true;
+  function mountMachineryWorkspace(){
+    const workspace=document.getElementById('gamma-machinery-workspace');
+    const machineryPanel=document.querySelector('[data-panel="machinery"]');
+    const controls=document.getElementById('gamma-machinery-controls-host');
+    if(!workspace||!machineryPanel||!controls) return;
+    machineryPanel.dataset.gammaWorkspace='venue';
+    machineryPanel.hidden=false;
+    controls.replaceChildren();
+    ['stage-seri-controls','stage-machinery-controls','stage-machinery-scene-diff','stage-machinery-estimated','stage-deck-warning'].forEach((id)=>{
+      const node=document.getElementById(id); if(node) controls.append(node);
+    });
+    workspace.insertBefore(machineryPanel,controls);
+    window.dispatchEvent(new Event('stage-gamma-machinery-mounted'));
+  }
+  mountMachineryWorkspace();
   let latestContext=null;
   const editor=()=>frame.contentWindow?.GAMMA_LIGHT_EDITOR;
   function close3dWorkspace() {
@@ -95,14 +106,14 @@
         const context=host.context(); latestContext=context;
         const timelinePlay=document.getElementById('stage-timeline-play');
         if(timelinePlay?.getAttribute('aria-pressed')==='true') timelinePlay.click();
-        if(context.readOnly) throw Error('共有の閲覧中は、通常モードと3Dモードをお使いください');
+        if(context.readOnly) throw Error('共有の閲覧中は、舞台モードと3Dモードをお使いください');
         if(!loaded) {
           frame.src='light-design/index.html?embed=gamma'; loaded=true;
           status.textContent='照明デザインを開いています…';
         } else if(editor()) editor().open(context, next);
       } else if(next==='venue-setup') {
         const context=host.context(); latestContext=context;
-        if(context.readOnly) throw Error('共有の閲覧中は、通常モードと3Dモードをお使いください');
+        if(context.readOnly) throw Error('共有の閲覧中は、舞台モードと3Dモードをお使いください');
         showVenue();
       } else editor()?.suspend();
       mode=next; document.body.dataset.gammaWorkspace=mode;

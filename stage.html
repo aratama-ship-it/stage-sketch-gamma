@@ -3,11 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>舞台スケッチ ガンマ | Stage Sketch Gamma</title>
+<title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
+<meta name="stage-sketch-gamma-version" content="v0.3.6">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="舞台スケッチ ガンマ">
+<meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
@@ -18,7 +19,7 @@
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="gamma.css?v=2026091505">
+<link rel="stylesheet" href="gamma.css?v=2026091506">
 <script src="gamma-light-model.js?v=2026091502"></script>
 </head>
 <body class="is-standalone">
@@ -47,21 +48,20 @@
     <section class="stage-sketch" aria-labelledby="stage-sketch-title">
       <header class="stage-sketch-head">
         <div class="stage-brand-block">
-          <p class="stage-sketch-kicker">STAGE IMAGE STUDY</p>
+          <p class="stage-sketch-kicker">STAGE SKETCH GAMMA</p>
           <div class="stage-brand-row">
-            <h1 id="stage-sketch-title" data-no-i18n>舞台スケッチ ガンマ<span class="stage-app-version">v0.3.6</span><span class="stage-gamma-label">γ0.1.0</span><button type="button" class="stage-release-open" id="stage-release-open" aria-haspopup="dialog" aria-controls="stage-release-modal" aria-label="アップデート履歴" title="アップデート履歴"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button><span class="stage-session-guest-badge" id="stage-session-guest-badge" role="status" hidden>ゲスト（閲覧＋矢印）</span><span class="stage-session-whoami" id="stage-session-whoami" role="status" hidden></span></h1>
+            <h1 id="stage-sketch-title" data-no-i18n>舞台スケッチ γ<button type="button" class="stage-release-open" id="stage-release-open" aria-haspopup="dialog" aria-controls="stage-release-modal" aria-label="アップデート履歴" title="アップデート履歴"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button><span class="stage-session-guest-badge" id="stage-session-guest-badge" role="status" hidden>ゲスト（閲覧＋矢印）</span><span class="stage-session-whoami" id="stage-session-whoami" role="status" hidden></span></h1>
             <nav class="stage-workspace-tabs" id="stage-workspace-tabs" aria-label="表示">
-              <!-- 通常画面は常時表示する。旧版の端末別パネル配置を読み続けるための内部札で、操作には出さない。 -->
               <button type="button" class="stage-workspace-tab is-active" id="stage-workspace-normal"
                       data-stage-workspace-mode="normal" data-stage-panel-layout-default="split"
-                      aria-pressed="true">通常モード</button>
+                      aria-pressed="true">舞台モード</button>
+              <button type="button" class="stage-workspace-tab" id="gamma-placement" data-stage-workspace-mode="light-placement" aria-pressed="false" aria-controls="gamma-light-workspace" data-no-i18n>配置モード</button>
+              <button type="button" class="stage-workspace-tab" id="gamma-design" data-stage-workspace-mode="light-design" aria-pressed="false" aria-controls="gamma-light-workspace" data-no-i18n>照明デザインモード</button>
               <button type="button" class="stage-workspace-tab" id="stage-freecam-open"
                       data-stage-workspace-launch="3d"
                       aria-pressed="false"
                       aria-controls="stage-fpv-overlay">3Dモード</button>
-<button type="button" class="stage-workspace-tab" id="gamma-placement" data-stage-workspace-mode="light-placement" aria-pressed="false" aria-controls="gamma-light-workspace" data-no-i18n>配置モード</button>
-<button type="button" class="stage-workspace-tab" id="gamma-design" data-stage-workspace-mode="light-design" aria-pressed="false" aria-controls="gamma-light-workspace" data-no-i18n>照明デザインモード</button>
-<button type="button" class="stage-workspace-tab" id="gamma-venue" data-stage-workspace-mode="venue-setup" aria-pressed="false" aria-controls="gamma-venue-workspace" data-no-i18n>劇場セットアップ</button>
+              <button type="button" class="stage-workspace-tab" id="gamma-venue" data-stage-workspace-mode="venue-setup" aria-pressed="false" aria-controls="gamma-venue-workspace" data-no-i18n>劇場カスタム</button>
             </nav>
           </div>
         </div>
@@ -108,7 +108,13 @@
       </header>
 
       <section id="gamma-light-workspace" aria-label="照明の配置とデザイン" hidden><p id="gamma-light-status" role="status" aria-live="polite" data-no-i18n></p><iframe id="gamma-light-frame" title="照明の配置とデザイン" allow="fullscreen" hidden></iframe></section>
-      <section id="gamma-venue-workspace" aria-label="劇場セットアップ" hidden></section>
+      <section id="gamma-venue-workspace" aria-label="劇場カスタム" hidden>
+        <section class="gamma-machinery-workspace" id="gamma-machinery-workspace" aria-labelledby="gamma-machinery-title">
+          <header class="gamma-machinery-head"><h2 id="gamma-machinery-title">舞台機構</h2><p>舞台機構の追加、既製プリセット、場面ごとの状態をここで確認・変更します。</p></header>
+          <div id="gamma-machinery-list" class="stage-cast-list" aria-live="polite"></div>
+          <div id="gamma-machinery-controls-host"></div>
+        </section>
+      </section>
       <div class="stage-sketch-grid">
         <aside class="stage-toolbox stage-col" data-col="left" id="stage-col-left" aria-label="左の道具列">
           <section class="stage-panel stage-project-section" data-panel="project" data-title="ショー">
@@ -1195,9 +1201,6 @@
       <p class="stage-boundary-note">これは構図・色・距離感を考えるための2D習作です。舞台機構、リギング、安全距離、施工寸法を決める図面ではありません。</p>
       <p class="visually-hidden" id="stage-live" aria-live="polite"></p>
     </section>
-    <footer class="stage-app-footer">
-      <button type="button" class="stage-about-link" id="stage-about-open-from-footer">このアプリについて</button>
-    </footer>
   </main>
 
 <div class="stage-modal-backdrop" id="stage-timeline-cue-detail-backdrop" hidden></div>
@@ -2433,7 +2436,7 @@
 <div class="stage-modal stage-venue-editor-modal" id="stage-venue-editor-modal" role="region"
      aria-labelledby="stage-venue-editor-title" hidden>
   <header class="stage-modal-head">
-    <h2 id="stage-venue-editor-title">劇場セットアップ</h2>
+    <h2 id="stage-venue-editor-title">劇場カスタム</h2>
     <button type="button" class="stage-modal-close" id="stage-venue-editor-close" aria-label="閉じる">✕</button>
   </header>
   <div class="stage-modal-body">
@@ -2717,7 +2720,7 @@
      aria-modal="true" aria-labelledby="stage-venue-discard-title"
      aria-describedby="stage-venue-discard-message" hidden>
   <header class="stage-modal-head">
-    <h2 id="stage-venue-discard-title">劇場セットアップを戻しますか？</h2>
+    <h2 id="stage-venue-discard-title">劇場カスタムを戻しますか？</h2>
   </header>
   <div class="stage-modal-body">
     <p id="stage-venue-discard-message">まだ反映していない劇場データは消えます。</p>
@@ -2790,9 +2793,9 @@
 
 <script src="stage-venues.js?v=2026091501"></script>
 <script src="stage-venue-lines.js?v=2026091501"></script>
-<script src="stage-i18n.js?v=2026091501"></script>
-<script src="stage-i18n.zh-Hans.js?v=2026091501"></script>
-<script src="stage-i18n.zh-Hant.js?v=2026091501"></script>
+<script src="stage-i18n.js?v=2026091502"></script>
+<script src="stage-i18n.zh-Hans.js?v=2026091502"></script>
+<script src="stage-i18n.zh-Hant.js?v=2026091502"></script>
 <script src="stage-prompt-i18n.js?v=2026091501"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026091501"></script>
@@ -2804,12 +2807,12 @@
 <script src="stage-light-motion.js?v=2026091501"></script>
 <script src="manual/manual-content.js?v=2026091501"></script>
 <script src="stage-pwa.js?v=2026091501"></script>
-<script src="stage-sketch.js?v=2026091503"></script>
+<script src="stage-sketch.js?v=2026091504"></script>
 <script src="stage-timeline.js?v=2026091501"></script>
 <script src="stage-session.js?v=2026091501"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
 <script src="stage-venue-editor.js?v=2026091501"></script>
-<script src="gamma-workspace.js?v=2026091506"></script>
+<script src="gamma-workspace.js?v=2026091507"></script>
 </body>
 </html>

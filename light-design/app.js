@@ -263,7 +263,6 @@
     lxLink: true,
     lxScene: 0,
     slOpen: { search: false, group: false },
-    exporting: false,
     // 描画負荷の表示専用。照明データ・Undo・保存形式には入れない。
     runtime: { drawMs: 0, averageMs: 0, lastStatusAt: 0 },
   };
@@ -488,7 +487,7 @@
         : E.makeFrontFarProjector(state.dims, secBox(sec.cv, "front")))
     : E.makeSideProjector(state.dims, secBox(sec.cv, sec.kind), sec.kind));
   const canvasPoint = (c, ev) => { const r = c.getBoundingClientRect(); return { X: (ev.clientX - r.left) * c.width / r.width, Y: (ev.clientY - r.top) * c.height / r.height }; };
-  // 図に出すもの（番号・光・動く範囲・1mの線）。図が4つに増えたぶん、間引けるようにする
+  // 表示（番号・光・動く範囲・1mの線）。図が4つに増えたぶん、間引けるようにする
   const showOn = (key) => state.show[key] !== false;
 
   const fixtureWorld = (f) => E.fixtureWorld(f, state.rig, state.dims);
@@ -675,27 +674,36 @@
   };
   const aimMirrorActive = () => {
     if (state.mode !== "move") return null;
-    const fs = selectedAimPair();
-    if (!fs || !Array.isArray(state.aimMirror) || state.aimMirror.length !== 2) return null;
-    return fs.every((f) => state.aimMirror.includes(f.id)) ? fs : null;
+    const fs = selectedAimPair(), active = state.aimMirror;
+    if (!fs || !active || !Array.isArray(active.ids) || active.ids.length !== 2) return null;
+    return fs.every((f) => active.ids.includes(f.id)) ? fs : null;
   };
+  const aimMirrorBasis = () => state.aimMirror && state.aimMirror.basis === "pair" ? "pair" : "stage";
+  const pairAxisU = (pair) => {
+    const worlds = pair.map((fixture) => fixtureWorld(fixture)).filter(Boolean);
+    if (worlds.length !== 2) return 0.5;
+    return E.clamp(((worlds[0].x + worlds[1].x) / 2) / state.dims.W + 0.5, 0, 1);
+  };
+  const aimMirrorAxis = (pair) => aimMirrorBasis() === "pair" ? pairAxisU(pair) : 0.5;
   const syncAimPartner = (source) => {
     const pair = aimMirrorActive();
     if (!pair || !source || !pair.some((f) => f.id === source.id)) return;
     const partner = pair.find((f) => f.id !== source.id);
     const sourceLight = lightOf(source.id), partnerLight = partner && lightOf(partner.id);
-    if (sourceLight && partnerLight) cue().lights[partner.id] = E.mirrorAimPath(sourceLight, partnerLight);
+    if (sourceLight && partnerLight) cue().lights[partner.id] = E.mirrorAimPath(sourceLight, partnerLight, aimMirrorAxis(pair));
   };
-  function toggleAimMirror() {
+  function toggleAimMirror(basis = "stage") {
     const pair = selectedAimPair();
     if (!pair) return;
-    if (aimMirrorActive()) { state.aimMirror = null; toast("照射位置の左右反転をオフにしました"); renderAll(); return; }
+    const active = aimMirrorActive();
+    if (active && aimMirrorBasis() === basis) { state.aimMirror = null; toast("照射位置の左右反転をオフにしました"); renderAll(); return; }
     const [source, partner] = pair;
     const sourceLight = lightOf(source.id), partnerLight = lightOf(partner.id);
     if (!sourceLight || !partnerLight) return;
-    cue().lights[partner.id] = E.mirrorAimPath(sourceLight, partnerLight);
-    state.aimMirror = [source.id, partner.id];
-    commit(`${label(source.id)}と${label(partner.id)}の照射位置を左右対称にしました`);
+    const axisU = basis === "pair" ? pairAxisU(pair) : 0.5;
+    cue().lights[partner.id] = E.mirrorAimPath(sourceLight, partnerLight, axisU);
+    state.aimMirror = { ids: [source.id, partner.id], basis };
+    commit(`${label(source.id)}と${label(partner.id)}の照射位置を${basis === "pair" ? "灯体間" : "舞台"}基準で左右反転しました`);
   }
   function mirrorSelected() {
     if (!canMirror()) return;
@@ -861,10 +869,25 @@
 
   /* ---------- 再生 ---------- */
   function play() { if (state.play.on) return; state.play.on = true; state.play.last = 0; state.play.raf = requestAnimationFrame(tick); renderTransport(); renderRuntimeStatus(); }
-  function stop(reason) { if (!state.play.on) return; state.play.on = false; cancelAnimationFrame(state.play.raf); if (reason) toast(reason); renderTransport(); draw(); }
-  function home() { stop(); state.play.t = 0; renderTransport(); draw(); }
+  function resetPlaybackRuntime() {
+    state.play.t = 0;
+    state.play.last = 0;
+    spatialQuick = false;
+    renderTransport();
+    draw();
+    renderRuntimeStatus(true);
+  }
+  function stop(reason, resetPlayback = false) {
+    if (!state.play.on) return;
+    state.play.on = false;
+    cancelAnimationFrame(state.play.raf);
+    if (reason) toast(reason);
+    if (resetPlayback) resetPlaybackRuntime();
+    else { renderTransport(); draw(); renderRuntimeStatus(true); }
+  }
+  function home() { stop(); resetPlaybackRuntime(); }
   function tick(ts) { if (!state.play.on) return; if (!state.play.last) state.play.last = ts; state.play.t += ts - state.play.last; state.play.last = ts; renderTransport(); draw(); state.play.raf = requestAnimationFrame(tick); }
-  function togglePlay() { state.play.on ? stop() : play(); }
+  function togglePlay() { state.play.on ? stop(null, true) : play(); }
   /* 2026-09-14 本人要望: 操作は再生／停止のトグル1個だけ。秒数と「再生中」の札は出さない。
      文字は押したら何が起きるかを出す（停止中＝再生・再生中＝停止）。状態はボタンの色でも示す。 */
   function renderTransport() {
@@ -885,13 +908,6 @@
     node.textContent = `描画 ${ms}／回 ・ ${state.play.on ? "再生中" : "停止"}`;
     node.title = "このブラウザでの直近の4図描画時間です。CPU・メモリの使用量そのものではありません。";
   }
-  function resetRuntime() {
-    if (state.play.on) { state.play.on = false; cancelAnimationFrame(state.play.raf); }
-    state.play.t = 0; state.play.last = 0; spatialQuick = false;
-    renderTransport(); draw(); renderRuntimeStatus(true);
-    toast("描画をリセットしました（照明・配置はそのままです）");
-  }
-
   /* ---------- 設定のコピー＆ペースト（2026-09-14 本人要望） ----------
      「同じ種類の灯体どうし」だけ通す。種類は kindKey で決める:
        moving（ムービング）／fixed（固定）／cyc（ホリゾント）。
@@ -2000,7 +2016,7 @@
     ctx.restore();
   }
   /* 作業灯の暗幕は光のない背景だけを暗くする。暗幕の上に情報レイヤーを描き直し、
-     「図に出すもの」の機材・番号を、作業灯のON/OFFとは独立して表示する。 */
+     「表示」の機材・番号を、作業灯のON/OFFとは独立して表示する。 */
   function redrawFixtureInfoPlan(ctx, P, B) {
     if (!showOn("fixtures")) return;
     state.rig.fixtures.forEach((f) => {
@@ -2217,29 +2233,19 @@
     fctx.moveTo(bl.X, bl.Y); fctx.lineTo(br.X, br.Y); fctx.lineTo(fr.X, fr.Y); fctx.lineTo(fl.X, fl.Y); fctx.closePath(); fctx.fill();
     // 客席側の暗がり
     fctx.fillStyle = "rgba(156,130,63,0.05)"; fctx.fillRect(0, Math.min(fl.Y, fr.Y), w, h - Math.min(fl.Y, fr.Y));
-    // 1mの枡（床）
-    if (showOn("grid")) {
-      fctx.strokeStyle = "rgba(239,231,214,0.07)"; fctx.lineWidth = 1;
-      for (let m = 1; m < d.W; m++) { const u = m / d.W; const a = at(u, 0, 0), b = at(u, 1, 0); fctx.beginPath(); fctx.moveTo(a.X, a.Y); fctx.lineTo(b.X, b.Y); fctx.stroke(); }
-      for (let m = 1; m < d.D; m++) { const v = m / d.D; const a = at(0, v, 0), b = at(1, v, 0); fctx.beginPath(); fctx.moveTo(a.X, a.Y); fctx.lineTo(b.X, b.Y); fctx.stroke(); }
-    }
+    // 3D表示では寸法・グリッドを重ねず、舞台と照明の見え方だけを残す。
     // 奥の壁
     const tl = at(0, 0, d.H), tr = at(1, 0, d.H);
     fctx.fillStyle = "rgba(255,255,255,0.03)"; fctx.beginPath();
     fctx.moveTo(bl.X, bl.Y); fctx.lineTo(br.X, br.Y); fctx.lineTo(tr.X, tr.Y); fctx.lineTo(tl.X, tl.Y); fctx.closePath(); fctx.fill();
     fctx.strokeStyle = "rgba(239,231,214,0.25)"; fctx.stroke();
-    // 高さの目盛り（奥の壁の左）
-    fctx.fillStyle = "rgba(240,231,214,0.45)"; fctx.font = "16px sans-serif"; fctx.textBaseline = "middle";
-    [2, 4, 6, 8].filter((m) => m <= d.H).forEach((m) => { const q = at(0, 0, m); fctx.fillText(`${m * 1000}mm`, q.X - 66, q.Y); fctx.strokeStyle = "rgba(239,231,214,0.07)"; fctx.beginPath(); fctx.moveTo(q.X, q.Y); fctx.lineTo(at(1, 0, m).X, at(1, 0, m).Y); fctx.stroke(); });
-    fctx.fillText("下手", Math.max(6, bl.X - 42), fl.Y - 18); fctx.fillText("上手", Math.min(w - 40, br.X + 8), fr.Y - 18);
     const litSpots3D = [];   // 作業灯を消す（ブラックアウト）用
     drawCycWashes(fctx, P, d, litSpots3D);   // 壁の色。演者・セットより先に塗る
     drawLasers(fctx, P, "front3d");
     drawPiecesUp(fctx, P, L.pxPerM, { yawDeg: 0, zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v });
-    // バトン（奥行きのある横線）
-    state.rig.trusses.forEach((t) => { const a = at(0, t.v, t.h), b = at(1, t.v, t.h); const sel = state.selTruss === t.id && state.mode === "place";
-      fctx.strokeStyle = sel ? "#d3ac59" : "rgba(156,130,63,0.75)"; fctx.lineWidth = sel ? 5 : 3; fctx.beginPath(); fctx.moveTo(a.X, a.Y); fctx.lineTo(b.X, b.Y); fctx.stroke();
-      fctx.fillStyle = sel ? "#d3ac59" : "rgba(156,130,63,0.7)"; fctx.font = "15px sans-serif"; fctx.fillText(`${t.label || "バトン"} 高さ${mmText(t.h)}`, b.X + 10, b.Y); });
+    // 奥バトンは3Dの照明見え方には不要なので描かず、ほかのバトンも名称・高さは注記しない。
+    state.rig.trusses.filter((t) => t.label !== "奥バトン").forEach((t) => { const a = at(0, t.v, t.h), b = at(1, t.v, t.h); const sel = state.selTruss === t.id && state.mode === "place";
+      fctx.strokeStyle = sel ? "#d3ac59" : "rgba(156,130,63,0.75)"; fctx.lineWidth = sel ? 5 : 3; fctx.beginPath(); fctx.moveTo(a.X, a.Y); fctx.lineTo(b.X, b.Y); fctx.stroke(); });
     // 光（ホリゾントライトの帯は上で先に塗ってある）
     if (state.mode === "move") state.rig.fixtures.forEach((f) => {
       const l = lightOf(f.id); if (!visibleLight(f, l)) return;
@@ -2281,7 +2287,6 @@
     // 灯体
     state.rig.fixtures.forEach((f) => { const S = fixtureWorld(f); if (!S) return; const p = P(S);
       if (showOn("fixtures")) drawFixtureMark(fctx, p.X, isFront(f) ? Math.max(20, p.Y) : p.Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) }); });
-    drawBordersUp(fctx, P, d);
     if (state.mode === "move" && showOn("blackout")) { paintBlackout(fctx, cv, litSpots3D);
       drawPiecesUp(fctx, P, L.pxPerM, { yawDeg: 0, zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v, relight: true }); }
     if (state.mode === "move" && showOn("blackout")) drawLasers(fctx, P, "front3d", 0.35);
@@ -2683,7 +2688,7 @@
   if ($("seat")) $("seat").addEventListener("change", () => { state.seat = $("seat").value; draw(); });
   if ($("snap")) $("snap").addEventListener("change", () => { state.snap = $("snap").checked; draw(); });
 
-  /* ---------- 図に出すもの・探す・舞台の大きさ（4図化で空いた場所へ入れた操作） ---------- */
+  /* ---------- 表示・探す・舞台の大きさ（4図化で空いた場所へ入れた操作） ---------- */
   document.querySelectorAll("#showtoggles button, #lighttoggles button").forEach((b) => {
     /* 作業灯を消すの入り切りでは、消し具合のつまみの出し入れもいるので renderAll で作り直す。
        ほかは図だけ描き直せば足りる。 */
@@ -4264,18 +4269,27 @@
       // 消す操作はパネル右上のオン・オフへ一本化した（2026-09-13 本人要望）。
       return;
     }
-    // 2灯の照射位置を舞台中央線で鏡映する一時モード。配置位置や他の灯体設定は同期しない。
+    // 2灯だけの一時連動。既存の舞台中央線による鏡映を初期値に保ち、灯体の中点も選べる。
     if (ids.length === 2) {
       const pair = selectedAimPair();
       const active = aimMirrorActive();
-      const mirrorButton = btn("照射位置を左右反転", toggleAimMirror, "small quiet");
-      mirrorButton.id = "aim-mirror";
-      mirrorButton.disabled = !pair;
-      mirrorButton.title = pair
-        ? "狙い先と照射軌道を舞台中央線で鏡映します。灯体の設置位置は動きません"
+      const group = el("div", "tsbtns");
+      const stageButton = btn("舞台基準", () => toggleAimMirror("stage"), "small quiet");
+      stageButton.id = "aim-mirror-stage";
+      stageButton.disabled = !pair;
+      stageButton.title = pair
+        ? "狙い先と照射軌道を舞台中央線で左右反転します。灯体の設置位置は動きません"
         : "同じ照射面・同じ軌道種類の2灯を選ぶと使えます";
-      mirrorButton.setAttribute("aria-pressed", String(Boolean(active)));
-      host.append(mirrorButton);
+      stageButton.setAttribute("aria-pressed", String(Boolean(active) && aimMirrorBasis() === "stage"));
+      const pairButton = btn("灯体間基準", () => toggleAimMirror("pair"), "small quiet");
+      pairButton.id = "aim-mirror-pair";
+      pairButton.disabled = !pair;
+      pairButton.title = pair
+        ? "選んだ2灯体の左右の中点を基準に、狙い先と照射軌道を左右反転します"
+        : "同じ照射面・同じ軌道種類の2灯を選ぶと使えます";
+      pairButton.setAttribute("aria-pressed", String(Boolean(active) && aimMirrorBasis() === "pair"));
+      group.append(stageButton, pairButton);
+      host.append(el("p", "kicker", "照射位置を左右反転"), group);
     }
     // 複数（「組の動き」も含めて renderBulk 側の「まとめて変更」枠に集約した。2026-09-13 本人要望）
     host.append(el("p", "kicker", `${ids.length}灯を選択中`));
@@ -4440,7 +4454,6 @@
   $("t-copy").onclick = (ev) => { copySettings(); if (ev.detail > 0) ev.currentTarget.blur(); };
   $("t-paste").onclick = (ev) => { pasteSettings(); if (ev.detail > 0) ev.currentTarget.blur(); };
   $("undo").onclick = undo; $("redo").onclick = redo;
-  $("runtime-reset").onclick = resetRuntime;
   $("mirror-placement").onclick = () => { state.mirrorPlacement = !state.mirrorPlacement; renderAll(); };
   $("mirror").onclick = mirrorSelected;
   document.querySelectorAll("#filters button").forEach((b) => { b.onclick = () => { state.filter = b.dataset.filter; renderAll(); }; });
@@ -4712,36 +4725,6 @@
   $("apply").onclick = () => { state.dirty = false; state.history.length = 0; state.future.length = 0; baseline = snapshot(); renderAll(); $("dirty").textContent = "LXキューを適用しました"; setTimeout(() => renderAll(), 2500); toast("LXキューを適用しました（試作なので画面は残ります）"); };
   $("close").onclick = () => { if (state.dirty) dialog("<p>変更がまだ適用されていません。</p>", [["編集に戻る", null, "quiet"], ["破棄して閉じる", () => toast("破棄しました（試作なので画面は残ります）"), "quiet"], ["適用して閉じる", () => $("apply").onclick(), "primary"]]); else toast("閉じました（試作なので画面は残ります）"); };
 
-  // 書き出し: 平面図を4秒録画（順0で検証した方式）＋3コマPNG＋灯ごとの説明
-  let exportCancel = false;
-  $("band-cancel").onclick = () => { exportCancel = true; };
-  $("export").onclick = async () => {
-    if (state.exporting) return; const lit = state.rig.fixtures.filter((f) => isLit(lightOf(f.id))); if (!lit.length) { toast("オンの灯がありません。「照明デザイン」タブで灯を選び、右上のボタンでオンにしてください。"); return; }
-    state.exporting = true; exportCancel = false; stop(); state.mode = "move"; renderAll();
-    const band = $("band"), bar = $("band-bar"); band.hidden = false; $("band-text").textContent = "動画を書き出しています　この画面を開いたままにしてください。";
-    const base = `light-rig-${scene().name}`;
-    try {
-      const mime = ["video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9", "video/webm"].find((t) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(t));
-      if (mime) {
-        const stream = plan.captureStream(0); const track = stream.getVideoTracks()[0]; const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 5e6 }); const chunks = [];
-        rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); }; const done = new Promise((r) => { rec.onstop = r; rec.onerror = r; });
-        const DUR = 4000; let t = 0; rec.start(250);
-        await new Promise((r) => { const timer = setInterval(() => { if (exportCancel || t > DUR) { clearInterval(timer); rec.stop(); r(); return; } state.play.t = t; draw(); track.requestFrame && track.requestFrame(); bar.style.width = `${Math.min(100, t / DUR * 100)}%`; t += 33; }, 33); });
-        await done;
-        if (!exportCancel && chunks.length) download(new Blob(chunks, { type: mime.split(";")[0] }), `${base}.${mime.startsWith("video/mp4") ? "mp4" : "webm"}`);
-      }
-      if (!exportCancel) {
-        const off = document.createElement("canvas"); off.width = plan.width * 3 / 2; off.height = plan.height / 2 + 40; const oc = off.getContext("2d"); oc.fillStyle = "#0d0e10"; oc.fillRect(0, 0, off.width, off.height);
-        [0, 1000, 2000].forEach((tt, i) => { state.play.t = tt; draw(); oc.drawImage(plan, i * plan.width / 2, 40, plan.width / 2, plan.height / 2); oc.fillStyle = "#efe7d6"; oc.font = "22px sans-serif"; oc.fillText(`${(tt / 1000).toFixed(1)}秒`, i * plan.width / 2 + 12, 28); });
-        oc.fillStyle = "#df6433"; oc.font = "600 22px sans-serif"; oc.fillText(`光の配置と動きの案　シーン「${scene().name}」`, off.width - 520, 28);
-        await new Promise((r) => off.toBlob((b) => { download(b, `${base}.png`); r(); }, "image/png"));
-        const lines = [`灯体の配置と動きの案　シーン「${scene().name}」　${new Date().toISOString().slice(0, 10)}`, ""]; state.rig.fixtures.forEach((f) => lines.push(`${label(f.id)}${f.name ? "（" + f.name + "）" : ""}：${E.describeMount(f, state.rig)}。${E.describeCue(lightOf(f.id), f)}`)); cue().groups.forEach((g, i) => lines.push(`組${i + 1}（${groupName(g)}）：${g.members.map(label).join("・")}`)); lines.push("", "灯体の概略配置と動きの案です。機種・回路・DMX・照度・設置の安全性は未検討です。");
-        download(new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" }), `${base}.txt`);
-        toast("動画・図・説明を書き出しました");
-      } else toast("書き出しを中止しました");
-    } catch (e) { toast("書き出しに失敗しました: " + (e && e.message)); }
-    band.hidden = true; bar.style.width = "0%"; state.exporting = false; state.play.t = 0; renderAll();
-  };
   /* ---------- 照明デザインの保存（名前を付けて残す） ----------
      2026-09-13 本人要望。後で舞台スケッチ本体が取り込めるよう、<b>アプリに依らない形</b>で持つ。
 

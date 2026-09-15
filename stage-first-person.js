@@ -1500,11 +1500,14 @@
   }
 
   function syncWorkspaceInset() {
-    if (!elements || !elements.root.classList.contains("stage-fpv-workspace")) return;
+    const classList = elements && elements.root && elements.root.classList;
+    if (!classList || typeof classList.contains !== "function" || !classList.contains("stage-fpv-workspace")) return;
     const header = document.querySelector(".stage-sketch-head");
     const top = header && typeof header.getBoundingClientRect === "function"
       ? header.getBoundingClientRect().bottom : 0;
-    elements.root.style.setProperty("--stage-fpv-workspace-top", `${Math.max(0, Math.round(top))}px`);
+    const value = `${Math.max(0, Math.round(top))}px`;
+    if (typeof elements.root.style.setProperty === "function") elements.root.style.setProperty("--stage-fpv-workspace-top", value);
+    else elements.root.style["--stage-fpv-workspace-top"] = value;
   }
 
   function resize() {
@@ -3045,7 +3048,10 @@
     hitTargets.length = 0;
     wasTransitioning = Boolean(data.transition);
     elements.root.classList.toggle("stage-fpv-workspace", Boolean(bridge.workspace3d));
-    if (!bridge.workspace3d) elements.root.style.removeProperty("--stage-fpv-workspace-top");
+    if (!bridge.workspace3d) {
+      if (typeof elements.root.style.removeProperty === "function") elements.root.style.removeProperty("--stage-fpv-workspace-top");
+      else elements.root.style["--stage-fpv-workspace-top"] = "";
+    }
     elements.root.hidden = false;
     elements.root.setAttribute("aria-hidden", "false");
     resize();
@@ -3084,7 +3090,8 @@
     elements.root.hidden = true;
     elements.root.setAttribute("aria-hidden", "true");
     elements.root.classList.remove("stage-fpv-workspace");
-    elements.root.style.removeProperty("--stage-fpv-workspace-top");
+    if (typeof elements.root.style.removeProperty === "function") elements.root.style.removeProperty("--stage-fpv-workspace-top");
+    else elements.root.style["--stage-fpv-workspace-top"] = "";
     elements.fade.classList.remove("on");
     window.removeEventListener("keydown", onKeyDown, true);
     window.removeEventListener("keyup", onKeyUp, true);

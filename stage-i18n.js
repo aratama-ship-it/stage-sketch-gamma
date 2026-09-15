@@ -33,6 +33,10 @@
   const TEXT = {
     "タイムライン": "Timeline",
     "舞台スケッチ ガンマ": "Stage Sketch Gamma",
+    "舞台スケッチ γ": "Stage Sketch Gamma",
+    "舞台モード": "Stage mode",
+    "劇場カスタム": "Theatre custom",
+    "舞台機構の追加、既製プリセット、場面ごとの状態をここで確認・変更します。": "Add stage machinery, use presets, and view or change each scene's state here.",
     "配置モード": "Placement mode",
     "照明デザインモード": "Lighting design mode",
     "照明の配置とデザイン": "Lighting placement and design",
@@ -1542,6 +1546,7 @@
     "劇場は含めず書き出します": "Export without the theatre",
     "中止": "Cancel",
     "劇場セットアップを戻しますか？": "Leave theatre setup?",
+    "劇場カスタムを戻しますか？": "Leave theatre custom?",
     "まだ反映していない劇場データは消えます。": "Unapplied theatre changes will be lost.",
     "編集を続ける": "Continue editing",
     "変更を破棄して戻る": "Discard changes and go back",

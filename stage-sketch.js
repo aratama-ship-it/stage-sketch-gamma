@@ -4992,12 +4992,8 @@
       hint: "端末内の楽曲を読み込み、流れているシーンへ割り当てる欄を出す" },
     { key: "panelCast", panel: "cast", label: "出るもの", def: true,
       hint: "この舞台に出る演者と舞台セットを、まとめてここに登録します。 寸法や色はここで決め、シーンごとに舞台の上か裏かを切り替えます。明かりは別の項目です。追加したものはそのシーンの舞台に出ます。" },
-    { key: "panelMachinery", panel: "machinery", label: "舞台機構", def: false,
-      hint: "盆・可動デッキ・幕・せりなど、場面ごとに動く舞台機構を置く欄を出す" },
     { key: "panelRigs", panel: "rigs", label: "セット登録", def: false,
       hint: "いまの舞台装置の並びに名前をつけて残し、別の場面で呼び出す欄を出す" },
-    { key: "panelLight", panel: "light", label: "照明", def: false,
-      hint: "照明を置く・光の意図を書く" },
     { key: "panelBackground", panel: "background", label: "背景", def: false,
       hint: "背景の地の色・塗る色・筆の太さなど、背景を描く欄を出す" },
     { key: "panelScenes", panel: "scenes", label: "シーン", def: true,
@@ -16157,7 +16153,7 @@
         ids.forEach((id) => {
           const el = panelEl(id);
           const host = colEls[panelSingleSide()];
-          if (el && host) host.append(el);
+          if (el && host && el.dataset.gammaWorkspace !== "venue") host.append(el);
         });
       } else ["left", "right"].forEach((col) => {
         const ids = PANELS.filter((id) => L.cols[id] === col).sort((a, b) => L.order[a] - L.order[b]);
@@ -16167,7 +16163,7 @@
              （ゲストの右列は隠してあるため）。 */
           if (id === "session" && document.body.classList.contains("stage-session-guest")) return;
           const el = panelEl(id);
-          if (el && colEls[col]) colEls[col].append(el);
+          if (el && colEls[col] && el.dataset.gammaWorkspace !== "venue") colEls[col].append(el);
         });
       });
       }
@@ -16697,12 +16693,52 @@
     return `${Math.round(d.w * 100)}×${Math.round(d.d * 100)}×${Math.round(d.h * 100)}cm`;
   }
 
+  function renderGammaMachineryList() {
+    const host = document.getElementById("gamma-machinery-list");
+    if (!host) return;
+    host.replaceChildren();
+    const machineryKinds = new Set(["revolve", "deck", "curtain", "pool", "seri"]);
+    const items = (state.project.sets || []).filter((item) => machineryKinds.has(item.kind));
+    if (!items.length) {
+      const empty = document.createElement("p");
+      empty.className = "stage-cast-empty";
+      empty.textContent = "まだ舞台機構を置いていません。下の種類または既製プリセットから追加できます。";
+      host.append(empty);
+      return;
+    }
+    const lead = document.createElement("p");
+    lead.className = "stage-roster-head";
+    lead.textContent = "このシーンの舞台機構";
+    host.append(lead);
+    items.forEach((item) => {
+      const row = document.createElement("div");
+      row.className = "stage-cast-row";
+      const select = document.createElement("button");
+      select.type = "button";
+      select.className = "stage-cast-name";
+      select.textContent = item.name;
+      select.title = "押すと選び、下の場面ごとの状態を変更できます";
+      select.addEventListener("click", () => pickOnStage((piece) => piece.setId === item.id, item.name, false));
+      const onStage = setOnStage(item.id);
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = `stage-cast-status ${onStage ? "is-on" : "is-off"}`;
+      toggle.textContent = onStage ? "舞台上" : "舞台裏";
+      toggle.title = onStage ? "押すとこのシーンでは舞台裏へ下げます" : "押すとこのシーンの舞台へ出します";
+      toggle.addEventListener("click", () => toggleSetOnStage(item.id));
+      row.append(select, toggle);
+      host.append(row);
+    });
+  }
+
   function renderSets() {
     renderSetList(els.setList, (item) => item.kind !== "light" && !ROSTER_PROP_KINDS.has(item.kind),
       tx("まだ何も登録していません。名前と形を選んで追加してください。"));
     renderSetList(els.propList, (item) => ROSTER_PROP_KINDS.has(item.kind), "");
+    renderGammaMachineryList();
     syncRosterGroups();
   }
+  window.addEventListener("stage-gamma-machinery-mounted", renderGammaMachineryList);
 
   /* 照明の一覧は種類ごとに枠を分ける。吊りとSSと前明かりと転がしは、
    * 仕込む場所も役目も別物なので、ひと続きに並べると読み分けられない。 */
