@@ -4709,7 +4709,7 @@
     state.selTruss = t.id; state.sel.clear();
     commit("奥バトン1本（高さ約6000mm）＋ムービング4灯を吊りました");   // toastの「元に戻す」で取り消せる
   };
-  $("apply").onclick = () => { state.dirty = false; state.history.length = 0; state.future.length = 0; baseline = snapshot(); renderAll(); $("dirty").textContent = "ショーへ適用しました"; setTimeout(() => renderAll(), 2500); toast("ショーへ適用しました（試作なので画面は残ります）"); };
+  $("apply").onclick = () => { state.dirty = false; state.history.length = 0; state.future.length = 0; baseline = snapshot(); renderAll(); $("dirty").textContent = "LXキューを適用しました"; setTimeout(() => renderAll(), 2500); toast("LXキューを適用しました（試作なので画面は残ります）"); };
   $("close").onclick = () => { if (state.dirty) dialog("<p>変更がまだ適用されていません。</p>", [["編集に戻る", null, "quiet"], ["破棄して閉じる", () => toast("破棄しました（試作なので画面は残ります）"), "quiet"], ["適用して閉じる", () => $("apply").onclick(), "primary"]]); else toast("閉じました（試作なので画面は残ります）"); };
 
   // 書き出し: 平面図を4秒録画（順0で検証した方式）＋3コマPNG＋灯ごとの説明
@@ -4864,7 +4864,7 @@
       </div>
       <input type="file" id="dspick" accept=".json,application/json" hidden>
       <p class="hint">${stored===null?'保存一覧を読めないため、ブラウザへの上書きを止めています。':''}保存先はこのブラウザです。これまで保存したデザインも同じ一覧から呼び出せます。別の環境へ渡すときはファイルにします。
-      LX cueの設定を保存します。ショー全体へ保存するには「ショーへ適用」を押してください。
+      LX cueの設定を保存します。ショー全体へ適用するには「LXキューを適用」を押してください。
       演者・セットは含めず、読み込み先にある配置を残します。</p>
       <p class="prefname">保存したデザイン</p>
       <div class="dslist">${rows}</div>`, [["閉じる", null, "primary"]]);

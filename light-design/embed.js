@@ -11,8 +11,8 @@
     if(!bar) return;
     const actions=document.createElement('span');actions.className='gamma-light-actions';actions.setAttribute('aria-label','照明デザインの操作');
     const applyButton=document.getElementById('apply'), runtime=document.getElementById('runtime-status'), reset=document.getElementById('runtime-reset');
-    applyButton.textContent='ショーに保存';
-    applyButton.title='配置と照明デザインを現在のショーへ保存';
+    applyButton.textContent='LXキューを適用';
+    applyButton.title='配置と照明デザインを現在のショーのLXキューへ適用';
     runtime.hidden=true;
     reset.textContent='↻';reset.setAttribute('aria-label','描画をリセット');
     actions.append(document.getElementById('transport'),reset,document.getElementById('prefs'),document.getElementById('export'),applyButton);
