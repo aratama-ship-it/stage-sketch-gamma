@@ -4,6 +4,18 @@
   if(!host || !panel || !frame) return;
   const normal=document.querySelector('.stage-sketch-grid'), status=document.getElementById('gamma-light-status');
   let mode='normal', loaded=false;
+  let frameResizeRequest=0;
+  function syncFrameHeight() {
+    frameResizeRequest=0;
+    if(mode==='normal') return;
+    const minimum=window.matchMedia('(max-width: 700px)').matches ? 420 : 480;
+    const available=Math.floor(window.innerHeight-frame.getBoundingClientRect().top-16);
+    frame.style.height=Math.max(minimum,available)+'px';
+  }
+  function scheduleFrameHeight() {
+    if(frameResizeRequest) return;
+    frameResizeRequest=requestAnimationFrame(syncFrameHeight);
+  }
   const note=document.createElement('p');note.id='gamma-lighting-scope';note.dataset.noI18n='';
   note.textContent='新しい照明の見え方は「照明デザインモード」で確認できます。';
   note.hidden=true;panel.before(note);
@@ -44,10 +56,11 @@
         button.classList.toggle('is-active',active); button.setAttribute('aria-pressed',String(active));
       });
       window.dispatchEvent(new Event('gamma-workspace-change'));
+      scheduleFrameHeight();
     } catch(error) { panel.hidden=false; failed(error); }
   }
   frame.addEventListener('load',()=>{
-    try { editor().open(host.context(),mode); frame.hidden=false; status.textContent=''; }
+    try { editor().open(host.context(),mode); frame.hidden=false; status.textContent=''; scheduleFrameHeight(); }
     catch(error) { failed(error); }
   });
   document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode]').forEach(button=>button.addEventListener('click',()=>select(button.dataset.stageWorkspaceMode)));
@@ -56,5 +69,7 @@
   window.addEventListener('storage',event=>{
     if(event.key==='gamma:shosai-stage-sketch-v1') editor()?.externalChange();
   });
+  window.addEventListener('resize',scheduleFrameHeight);
+  window.visualViewport?.addEventListener('resize',scheduleFrameHeight);
   window.GAMMA_WORKSPACE=Object.freeze({normal:()=>select('normal'),select,mode:()=>mode});
 })();

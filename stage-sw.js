@@ -1,8 +1,8 @@
-const CACHE_NAME = "stage-sketch-gamma-pwa-v1";
+const CACHE_NAME = "stage-sketch-gamma-pwa-v2";
 const APP_SHELL = [
-  "./gamma.css?v=2026091501",
-  "./gamma-light-model.js?v=2026091501",
-  "./gamma-workspace.js?v=2026091501",
+  "./gamma.css?v=2026091502",
+  "./gamma-light-model.js?v=2026091502",
+  "./gamma-workspace.js?v=2026091502",
   "./light-design/index.html?embed=gamma",
   "./light-design/embed.css?v=2026091501",
   "./light-design/rig-engine.js?v=20260915-4-front-far",
