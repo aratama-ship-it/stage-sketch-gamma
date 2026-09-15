@@ -4440,6 +4440,8 @@
     seatList: document.getElementById("stage-seat-list"),
     projectSummaryTitle: document.getElementById("stage-project-summary-title"),
     projectSummaryVersion: document.getElementById("stage-project-summary-version"),
+    lastSaveTime: document.getElementById("stage-last-save-time"),
+    lastBackupTime: document.getElementById("stage-last-backup-time"),
     projectSettingsOpen: document.getElementById("stage-project-settings-open"),
     projectSettingsModal: document.getElementById("stage-project-settings-modal"),
     projectSettingsBackdrop: document.getElementById("stage-project-settings-backdrop"),
@@ -4974,8 +4976,8 @@
       hint: "ポールやトラピーズの真下に人が居るとき、平面図に印を出す" },
     { key: "toolTips", label: "アイコンの説明",
       hint: "道具のアイコンにカーソルを合わせると、名前・ショートカット・使い方を出す。覚えたらOFFにできる" },
-    { key: "floatingInspector", label: "選んだものを図に添える", def: true,
-      hint: "ONでは選んだ対象の横にパネルを出します。OFFでは左側のパネル列に表示します" },
+    { key: "floatingInspector", label: "選んだものを図に添える", def: false,
+      hint: "ONでは選んだ対象の横に補助表示を出します。既定では左側のパネル列に表示します" },
     { key: "bamiri", label: "バミリ図（印刷）",
       hint: "印刷用ページに、演者の立ち位置の実寸表を足す" },
     { key: "cuesheet", label: "明かりのキューシート（印刷）",
@@ -5364,6 +5366,8 @@
          「最後にファイルへ残したのはいつか」を正直に見せるための持ち物 */
       lastExportAt: "",
       editsSinceExport: 0,
+      // ブラウザ内保存が実際に完了した時刻。表示専用だが、次回起動にも正直に残す。
+      lastSavedAt: "",
     };
   }
 
@@ -5379,12 +5383,12 @@
       // 場面は絵のすぐ右に置く（順番を見ながら描くため）
       cols: {
         project: "left", venue: "left", music: "left", cast: "left", machinery: "left", rigs: "left", light: "left", background: "left",
-        study: "right", scenes: "right", inspector: "right", save: "right",
+        study: "right", scenes: "right", inspector: "left", save: "right",
         session: "right", ask: "right",
       },
       order: {
         project: 0, venue: 1, music: 2, cast: 3, machinery: 4, rigs: 5, light: 6, background: 7,
-        study: -1, scenes: 0, inspector: 1, save: 2, session: 3, ask: 4,
+        study: -1, scenes: 0, inspector: 8, save: 2, session: 3, ask: 4,
       },
       /* 共有は「会議のときだけ開く」もの。畳んだ状態から始める。
          保存の中の畳みだったころと同じ見え方にするため（開いた形で置くと、
@@ -6313,6 +6317,7 @@
       brushSize: clamp(finite(raw.brushSize, fallback.brushSize), 12, 120),
       lastExportAt: typeof raw.lastExportAt === "string" ? raw.lastExportAt : "",
       editsSinceExport: clamp(finite(raw.editsSinceExport, 0), 0, 99999),
+      lastSavedAt: typeof raw.lastSavedAt === "string" ? raw.lastSavedAt : "",
     });
     normalized.project.scenes.forEach((scene) => normalizeHolds(scene.pieces, normalized.project));
     return normalized;
@@ -8715,7 +8720,10 @@
     clearTimeout(saveTimer);
     setSaveStatus(tx("変更を保存しています…") || "Saving…");
     saveTimer = setTimeout(() => {
+      const previousSavedAt = state.lastSavedAt;
       try {
+        const savedAt = nowIso();
+        state.lastSavedAt = savedAt;
         localStorage.setItem(BETA_STORAGE_KEY, snapshot());
         shelveCurrent();
         /* 現在ショーと棚は別の保存。棚だけ失敗することがあるので分けて伝える */
@@ -8729,7 +8737,11 @@
           setSaveStatus(sx(`「${state.project.title}」を保存しました。`, `Saved \u201c${state.project.title}\u201d.`));
         }
         updateBackupNote();
+        syncHeaderSaveStamps();
       } catch (_) {
+        // 書けなかった試行を「最終保存」とは表示しない。
+        state.lastSavedAt = previousSavedAt;
+        syncHeaderSaveStamps();
         /* 「画像を書き出して」と案内していたが、いまは書き出しボタンが
            警告のすぐ隣にある。そちらへ導く（2026-08-24 P1-7対応）。 */
         setSaveStatus(tx("この端末へ保存できませんでした。ファイルへ書き出して残してください。"),
@@ -14017,10 +14029,9 @@
     syncSingleViewSwitches();
     document.querySelectorAll("[data-toggle-view]").forEach((b) => {
       const open = b.dataset.toggleView === "front" ? state.showFront : state.showPlan;
-      // 開閉であることが記号で分かるように三角にする（✕だと消去に見える）
-      b.textContent = open ? "▾" : "▸";
+      b.textContent = "×";
       b.setAttribute("aria-expanded", String(open));
-      b.setAttribute("aria-label", sx(`${b.dataset.toggleView === "front" ? "正面" : "平面"}の絵を${open ? "閉じる" : "開く"}`, `${open ? "Close" : "Open"} the ${b.dataset.toggleView === "front" ? "front" : "plan"} view`));
+      b.setAttribute("aria-label", sx(`${b.dataset.toggleView === "front" ? "正面図" : "平面図"}を${open ? "閉じる" : "開く"}`, `${open ? "Close" : "Open"} the ${b.dataset.toggleView === "front" ? "front" : "plan"} view`));
     });
 
     if (state.showFront || forceCanvases || presenting) {
@@ -14753,6 +14764,7 @@
   };
 
   // 横幅はショーではなく、この端末の画面設定。通常列と引き出しを別々に覚える。
+  const PANEL_COLUMN_MAX_WIDTH = 480;
   let panelWidthUi = null;
   function syncPanelWidths() {
     const ui = panelWidthUi;
@@ -14764,8 +14776,9 @@
     const single = !tabletUi && !phoneViewerActive && panelLayoutMode() === "single";
     const singleSide = single ? panelSingleSide() : null;
     const space = Math.max(480, gridWidth - 420 - (single || guest ? 18 : 36));
-    let left = singleSide === "right" ? 0 : clamp(wanted("left", 268), 240, 480);
-    let right = singleSide === "left" || guest ? 0 : clamp(wanted("right", 268), 240, 480);
+    // 現行の上限480pxを、新規利用者・配置リセット後の既定にも使う。
+    let left = singleSide === "right" ? 0 : clamp(wanted("left", PANEL_COLUMN_MAX_WIDTH), 240, PANEL_COLUMN_MAX_WIDTH);
+    let right = singleSide === "left" || guest ? 0 : clamp(wanted("right", PANEL_COLUMN_MAX_WIDTH), 240, PANEL_COLUMN_MAX_WIDTH);
     if (!single && left + right > space) {
       const base = guest ? 240 : 480;
       const factor = Math.max(0, (space - base) / (left + right - base));
@@ -14784,8 +14797,8 @@
       fullscreen: Math.round(clamp(wanted(fullscreenKey, tabletUi ? 380 : 320), fullscreenMin, fullscreenMax)),
     };
     ui.limits = {
-      left: singleSide === "right" ? [0, 0] : [240, Math.min(480, space - right)],
-      right: singleSide === "left" || guest ? [0, 0] : [240, Math.max(240, Math.min(480, space - left))],
+      left: singleSide === "right" ? [0, 0] : [240, Math.min(PANEL_COLUMN_MAX_WIDTH, space - right)],
+      right: singleSide === "left" || guest ? [0, 0] : [240, Math.max(240, Math.min(PANEL_COLUMN_MAX_WIDTH, space - left))],
       tablet: [240, tabletMax], fullscreen: [fullscreenMin, fullscreenMax],
     };
     const write = (el, key, value) => {
@@ -18127,6 +18140,19 @@
       els.projectSummaryVersion.textContent = version;
       els.projectSummaryVersion.title = version;
     }
+    syncHeaderSaveStamps();
+  }
+
+  function headerTimestamp(value) {
+    const at = new Date(value);
+    if (Number.isNaN(at.getTime())) return "—";
+    return `${at.getMonth() + 1}/${at.getDate()} ${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}`;
+  }
+
+  // 時刻を進めるのは、保存・書き出しの成功を確認した後だけに限る。
+  function syncHeaderSaveStamps() {
+    if (els.lastSaveTime) els.lastSaveTime.textContent = headerTimestamp(state && state.lastSavedAt);
+    if (els.lastBackupTime) els.lastBackupTime.textContent = headerTimestamp(state && state.lastExportAt);
   }
 
   let projectSettingsReturnFocus = null;
@@ -22714,6 +22740,8 @@ ${propsPlotHtml}
         announce("書き出しをやめました。");
         return;
       }
+      // 既存の「ファイルへ書き出す」が実際に保存先まで完了した時刻だけを表示する。
+      syncHeaderSaveStamps();
       persistSoon();
       updateBackupNote();
       announce(includeVenue || !bundledVenueForProject(state.project)
@@ -29675,10 +29703,16 @@ ${propsPlotHtml}
       const cues = Array.isArray(state.project.cues) ? state.project.cues : [];
       const cue = cues.find((item) => item && item.kind === "timeline" && item.id === id);
       if (!cue) return null;
-      const memo = typeof patch.memo === "string" ? patch.memo.slice(0, 2000) : "";
-      if (cue.memo === memo) return jsonClone(cue);
+      const memo = Object.prototype.hasOwnProperty.call(patch, "memo")
+        ? (typeof patch.memo === "string" ? patch.memo.slice(0, 2000) : "")
+        : String(cue.memo || "");
+      const atSeconds = Object.prototype.hasOwnProperty.call(patch, "atSeconds")
+        ? Math.round(clamp(finite(patch.atSeconds, cue.atSeconds), 0, 86400) * 10) / 10
+        : cue.atSeconds;
+      if (cue.memo === memo && cue.atSeconds === atSeconds) return jsonClone(cue);
       checkpoint();
       cue.memo = memo;
+      cue.atSeconds = atSeconds;
       persistSoon();
       window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
       return jsonClone(cue);
@@ -29702,6 +29736,39 @@ ${propsPlotHtml}
       if (state.project.scenes.length <= before) return null;
       window.dispatchEvent(new CustomEvent("stage-timeline-structure-change"));
       return jsonClone(sc());
+    },
+    splitTimelineScene(sceneId, options = {}) {
+      const index = state.project.scenes.findIndex((row) => row && row.kind === "scene" && row.id === sceneId);
+      if (index < 0) return null;
+      const scene = state.project.scenes[index];
+      const ratio = clamp(finite(options.ratio, 0.5), 0.05, 0.95);
+      if (!scene.rehearsal) scene.rehearsal = normalizeSceneRehearsal(null);
+      const oldHold = Math.max(0.1, finite(scene.rehearsal.holdDurationSeconds, 4));
+      const oldTransition = Math.max(0, finite(scene.rehearsal.transitionToNextSeconds, 0));
+      // 保存形式と同じ0.1秒単位で二分し、合計時間を変えない。
+      const holdTenths = Math.round(oldHold * 10);
+      if (holdTenths < 2) return null;
+      const firstTenths = clamp(Math.round(holdTenths * ratio), 1, holdTenths - 1);
+      const firstHold = firstTenths / 10;
+      const secondHold = (holdTenths - firstTenths) / 10;
+      const copy = jsonClone(scene);
+      copy.id = rid("scene");
+      copy.title = `${scene.title || "シーン"}（後半）`;
+      copy.rehearsal = normalizeSceneRehearsal(copy.rehearsal);
+      checkpoint();
+      // 元の場面→後半は同一状態の継続。従来の転換は後半→次場面へ残す。
+      scene.rehearsal.holdDurationSeconds = firstHold;
+      scene.rehearsal.transitionToNextSeconds = 0;
+      copy.rehearsal.holdDurationSeconds = secondHold;
+      copy.rehearsal.transitionToNextSeconds = oldTransition;
+      state.project.scenes.splice(index + 1, 0, copy);
+      renderScenes();
+      renderSceneGrid();
+      persistSoon();
+      window.dispatchEvent(new CustomEvent("stage-timeline-structure-change", {
+        detail: { sectionId: options.sectionId || null, sceneId: scene.id, splitSceneId: copy.id },
+      }));
+      return jsonClone(copy);
     },
     addTimelineTransition(sceneId, seconds) {
       const scene = state.project.scenes.find((row) => row.kind === "scene" && row.id === sceneId);

@@ -81,6 +81,7 @@
     grid: document.getElementById("stage-timeline-grid"),
     zoomOut: document.getElementById("stage-timeline-zoom-out"),
     zoomIn: document.getElementById("stage-timeline-zoom-in"),
+    split: document.getElementById("stage-timeline-split"),
     resize: document.getElementById("stage-timeline-resize"),
     unitToggle: document.getElementById("stage-timeline-unit-toggle"),
     unitWarningBackdrop: document.getElementById("stage-timeline-unit-warning-backdrop"),
@@ -231,6 +232,8 @@
   let rowReorder = null;
   let anchorDrag = null;
   let suppressAnchorClick = false;
+  let cueDrag = null;
+  let suppressCueClickId = null;
 
   function saveUi() {
     try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (_) { /* 表示設定なしでも編集は続ける */ }
@@ -1712,6 +1715,57 @@
     });
   }
 
+  function cueSecondsAtPointer(event) {
+    const rect = els.surface.getBoundingClientRect();
+    const raw = (event.clientX - rect.left) / Math.max(1, timelineWidth) * timeline.duration;
+    return clamp(snappedSeconds(raw), 0, timeline.duration);
+  }
+
+  function beginCueDrag(event, cue, button) {
+    if (event.button !== 0 || cue.locked || !timeline || typeof bridge.updateTimelineCue !== "function") return;
+    cueDrag = {
+      pointerId: event.pointerId,
+      cue,
+      button,
+      startX: event.clientX,
+      startSeconds: cue.seconds,
+      nextSeconds: cue.seconds,
+      moved: false,
+    };
+    button.setPointerCapture(event.pointerId);
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function continueCueDrag(event) {
+    if (!cueDrag || event.pointerId !== cueDrag.pointerId) return;
+    if (!cueDrag.moved && Math.abs(event.clientX - cueDrag.startX) < 4) return;
+    cueDrag.moved = true;
+    cueDrag.nextSeconds = cueSecondsAtPointer(event);
+    cueDrag.button.classList.add("is-dragging");
+    cueDrag.button.style.left = `${clamp(pxFor(cueDrag.nextSeconds) - 4, 0, Math.max(0, timelineWidth - CUE_WIDTH))}px`;
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function endCueDrag(event) {
+    if (!cueDrag || event.pointerId !== cueDrag.pointerId) return;
+    const drag = cueDrag;
+    cueDrag = null;
+    drag.button.classList.remove("is-dragging");
+    try { if (drag.button.hasPointerCapture(event.pointerId)) drag.button.releasePointerCapture(event.pointerId); } catch (_) { /* pointercancel */ }
+    if (event.type !== "pointercancel" && drag.moved) {
+      suppressCueClickId = drag.cue.id;
+      bridge.updateTimelineCue(drag.cue.id, { atSeconds: drag.nextSeconds });
+      window.setTimeout(() => { suppressCueClickId = null; }, 0);
+      renderTimeline();
+    } else if (drag.moved) {
+      renderTimeline();
+    }
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
   function renderCueBlocks(project) {
     Object.values(els.cueLanes).forEach(clearLane);
     const cues = timelineCuePresentations(project);
@@ -1732,7 +1786,12 @@
       button.append(label);
       button.title = `${labelPosition(cue.seconds)}  ${cue.displayName}（${cue.locked ? tx("キューポイントを固定") : tx("選択してDeleteで削除")}）`;
       button.style.left = `${clamp(pxFor(cue.seconds) - 4, 0, Math.max(0, timelineWidth - CUE_WIDTH))}px`;
-      button.addEventListener("click", () => {
+      button.addEventListener("pointerdown", (event) => beginCueDrag(event, cue, button));
+      button.addEventListener("pointermove", continueCueDrag);
+      button.addEventListener("pointerup", endCueDrag);
+      button.addEventListener("pointercancel", endCueDrag);
+      button.addEventListener("click", (event) => {
+        if (suppressCueClickId === cue.id) { event.preventDefault(); return; }
         selectedCueId = cue.id;
         syncCueSelection();
         button.focus();
@@ -2068,11 +2127,9 @@
     ui.unit = sectionTimelineUnit(section);
     syncSectionDurationControls(project);
     els.section.textContent = timeline.sectionTitle;
-    els.status.textContent = timeline.source === "formation"
-      ? `${timeline.title}・${timeline.segments.length}${tx("シーン")}`
-      : timeline.trackId
-        ? tx("セクション時間で再生")
-        : tx("音源なし・セクション時間で再生");
+    // セクション名の下に再生方式を重ねない。再生・時間設定の機能はそのまま残す。
+    els.status.textContent = "";
+    els.status.hidden = true;
     els.play.disabled = !timeline.segments.some((segment) => segment.sceneId);
     const activeSegment = segmentAt(seekSeconds);
     const activeSegmentIndex = activeSegment
@@ -2080,6 +2137,12 @@
     els.addScene.disabled = typeof bridge.addTimelineSceneAfter !== "function" || !activeSegment;
     els.addTransition.disabled = typeof bridge.addTimelineTransition !== "function"
       || activeSegmentIndex < 0 || activeSegmentIndex >= timeline.segments.length - 1;
+    const activeSceneEnd = activeSegment && (Number.isFinite(activeSegment.sceneEnd)
+      ? activeSegment.sceneEnd : activeSegment.end);
+    const canSplit = Boolean(activeSegment && activeSegment.sceneId && activeSceneEnd > activeSegment.start
+      && seekSeconds > activeSegment.start + (activeSceneEnd - activeSegment.start) * 0.05
+      && seekSeconds < activeSceneEnd - (activeSceneEnd - activeSegment.start) * 0.05);
+    els.split.disabled = typeof bridge.splitTimelineScene !== "function" || !canSplit;
     els.addAudio.disabled = !timelineAudioTargetSceneId()
       || (typeof bridge.openTimelineAudioImportPicker !== "function"
         && typeof bridge.setTimelineSceneAudioTrack !== "function");
@@ -2210,6 +2273,21 @@
     if (!segment || !segment.sceneId || index < 0 || index >= timeline.segments.length - 1) return false;
     const added = bridge.addTimelineTransition(segment.sceneId);
     if (!added) return false;
+    renderTimeline();
+    return true;
+  }
+
+  function splitSceneAtPlayhead() {
+    if (!timeline || !timeline.sectionId || typeof bridge.splitTimelineScene !== "function") return false;
+    const segment = segmentAt(seekSeconds);
+    if (!segment || !segment.sceneId) return false;
+    const sceneEnd = Number.isFinite(segment.sceneEnd) ? segment.sceneEnd : segment.end;
+    const span = sceneEnd - segment.start;
+    const ratio = span > 0 ? (seekSeconds - segment.start) / span : 0;
+    // 端では新しい場面を作らず、既存の追加操作と同じく何もしない。
+    if (ratio <= 0.05 || ratio >= 0.95) return false;
+    const split = bridge.splitTimelineScene(segment.sceneId, { sectionId: timeline.sectionId, ratio });
+    if (!split) return false;
     renderTimeline();
     return true;
   }
@@ -2591,6 +2669,7 @@
   });
   els.addScene.addEventListener("click", addSceneAtPlayhead);
   els.addTransition.addEventListener("click", addTransitionAtPlayhead);
+  els.split.addEventListener("click", splitSceneAtPlayhead);
   els.audioReplace.addEventListener("click", () => {
     const sceneId = timelineAudioTargetSceneId();
     if (!sceneId) return;

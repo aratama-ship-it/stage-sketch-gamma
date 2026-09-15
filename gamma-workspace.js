@@ -37,7 +37,8 @@
     ['stage-seri-controls','stage-machinery-controls','stage-machinery-scene-diff','stage-machinery-estimated','stage-deck-warning'].forEach((id)=>{
       const node=document.getElementById(id); if(node) controls.append(node);
     });
-    workspace.insertBefore(machineryPanel,controls);
+    // 劇場の基本設定を先に読めるよう、既存モーダルの後へ舞台機構を移す。
+    workspace.append(machineryPanel);
     window.dispatchEvent(new Event('stage-gamma-machinery-mounted'));
   }
   mountMachineryWorkspace();
