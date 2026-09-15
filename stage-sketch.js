@@ -4279,7 +4279,6 @@
     routeClear: document.getElementById("stage-route-clear"),
     pieceLock: document.getElementById("stage-piece-lock"),
     facingControls: document.getElementById("stage-facing-controls"),
-    facingLock: document.getElementById("stage-facing-lock"),
     planRoute: document.getElementById("stage-plan-route"),
     planDeriveRoute: document.getElementById("stage-plan-derive-route"),
     planNote: document.getElementById("stage-plan-note"),
@@ -4316,7 +4315,6 @@
     formationClose: document.getElementById("stage-formation-close"),
     formationFrame: document.getElementById("stage-formation-frame"),
     formationStatus: document.getElementById("stage-formation-status"),
-    duplicate: document.getElementById("stage-duplicate"),
     delete: document.getElementById("stage-delete"),
     saveStatus: document.getElementById("stage-save-status"),
     backupNote: document.getElementById("stage-backup-note"),
@@ -4442,6 +4440,7 @@
     projectSummaryVersion: document.getElementById("stage-project-summary-version"),
     lastSaveTime: document.getElementById("stage-last-save-time"),
     lastBackupTime: document.getElementById("stage-last-backup-time"),
+    showElapsed: document.getElementById("stage-show-elapsed"),
     projectSettingsOpen: document.getElementById("stage-project-settings-open"),
     projectSettingsModal: document.getElementById("stage-project-settings-modal"),
     projectSettingsBackdrop: document.getElementById("stage-project-settings-backdrop"),
@@ -4960,7 +4959,7 @@
     { key: "sceneSubtitle", label: "シーンのサブタイトル", def: false,
       hint: "シーン一覧に構成上の役割をサブタイトルとして表示する。OFFでも内容は消えません" },
     { key: "sceneTransitions", label: "転換情報", def: false,
-      hint: "選択中のシーンの上下に、転換の長さ・暗転・メモを表示する。OFFでも内容は消えません" },
+      hint: "選択中のシーンの上下に、次のシーンへの移動時間・暗転・メモを表示する。OFFでも内容は消えません" },
     /* 2026-09-11 本人指示: 光の意図カードは一時的に非表示にする（featureOn側で強制OFF。
        下のFEATURE_DEFAULTSにも載せない＝設定パネルの一覧に出さない）。
        データ・正規化関数（emptyLightingIntent等）は残す＝既存の保存データを壊さない。 */
@@ -5266,7 +5265,6 @@
       timelineDurationSeconds: null,
       // セクションごとに時間式／カウント式のどちらで時間軸を読むか。
       timelineUnit: sceneKind === "section" ? "time" : null,
-      cueSeconds: null,
       // このシーンへ入る転換で行うこと。転換時間・暗転と同じ到着側シーンへ持たせる。
       transitionNote: "",
       // このシーンで流れている曲。再生位置や音源Blobは保存しない。
@@ -5276,7 +5274,6 @@
       formationLink: null,
       lightingIntent: null,
       lightMotion: null,
-      facingLock: false,
     };
   }
 
@@ -5846,12 +5843,6 @@
     };
   }
 
-  function normalizeCueSeconds(value) {
-    if (value === null || value === undefined || value === "") return null;
-    const seconds = Number(value);
-    return Number.isFinite(seconds) ? clamp(seconds, 0.2, 10) : null;
-  }
-
   function jsonClone(value, fallback = null) {
     try { return JSON.parse(JSON.stringify(value)); } catch (_) { return fallback; }
   }
@@ -5922,9 +5913,13 @@
   function normalizeScene(raw, index) {
     const fallbackBg = "#40362d";
     const kind = raw.kind === "section" ? "section" : "scene";
+    // 廃止済みの転換長・向きロックは、旧データを読めても動作へは使わない。
+    // それ以外の未知フィールドは従来どおり保存往復で保つ。
+    const { cueSeconds: _legacyCueSeconds, facingLock: _legacyFacingLock, ...preserved } =
+      projectIoClone(raw && typeof raw === "object" ? raw : {});
     return {
       // scene に追加された将来のフィールドも保存往復で保持する。
-      ...projectIoClone(raw && typeof raw === "object" ? raw : {}),
+      ...preserved,
       id: typeof raw.id === "string" ? raw.id : rid("scene"),
       kind,
       depth: clamp(finite(raw.depth, 0), 0, MAX_DEPTH),
@@ -5949,7 +5944,6 @@
       rehearsal: kind === "scene" ? normalizeSceneRehearsal(raw.rehearsal) : null,
       timelineDurationSeconds: kind === "section" ? timelineSeconds(raw.timelineDurationSeconds) : null,
       timelineUnit: kind === "section" && raw.timelineUnit === "count" ? "count" : "time",
-      cueSeconds: kind === "scene" ? normalizeCueSeconds(raw.cueSeconds) : null,
       transitionNote: kind === "scene" && typeof raw.transitionNote === "string"
         ? raw.transitionNote.slice(0, 1000) : "",
       audioTrackId: normalizeAudioTrackId(kind, raw.audioTrackId),
@@ -5957,8 +5951,6 @@
       formationLink: normalizeFormationLink(kind, raw.formationLink),
       lightingIntent: normalizeLightingIntent(kind, raw.lightingIntent),
       lightMotion: normalizeLightMotion(kind, raw.lightMotion),
-      // 誤ってホイールへ触れても向きが変わらないよう、シーンごとに持つ
-      facingLock: kind === "scene" ? Boolean(raw.facingLock) : false,
       // 暗転で始まるシーン（転換が一度真っ暗になってから明ける）
       blackout: kind === "scene" ? Boolean(raw.blackout) : false,
       /* 舞台から下げたものの置き場所の控え（setId ごとに一つ）。
@@ -6553,7 +6545,12 @@
   let selectedAudioTrackId = (state.project.audioTracks[0] && state.project.audioTracks[0].id) || null;
   let audioPanelSignature = "";
   let audioLoadGeneration = 0;
+  let audioTimeAnimationFrame = 0;
   let continueAudioOnNextSceneSync = false;
+  // タイムライン再生中だけ、シーン個別の曲割当とは別に再生元を持つ。
+  // これはUIの一時状態であり、ショーJSONやUndoには保存しない。
+  let timelineAudioTrackId = null;
+  let timelineAudioSeekSeconds = null;
   const audioPlayback = {
     trackId: null,
     objectUrl: null,
@@ -6574,6 +6571,27 @@
 
   function currentSceneAudioTrack() {
     return audioTrackById(sc().audioTrackId);
+  }
+
+  function activeTimelineAudioTrackId() {
+    return normalizeAudioTrackId("scene", timelineAudioTrackId);
+  }
+
+  function clearTimelineAudioPlayback() {
+    timelineAudioTrackId = null;
+    timelineAudioSeekSeconds = null;
+  }
+
+  function requestedAudioTrackIdForCurrentScene() {
+    return activeTimelineAudioTrackId() || normalizeAudioTrackId("scene", sc().audioTrackId);
+  }
+
+  function timelineAudioIsActive(trackId) {
+    const normalizedTrackId = normalizeAudioTrackId("scene", trackId);
+    return Boolean(normalizedTrackId
+      && activeTimelineAudioTrackId() === normalizedTrackId
+      && audioPlayback.trackId === normalizedTrackId
+      && audioPlayback.ready);
   }
 
   function audioFileTitle(file) {
@@ -6604,6 +6622,7 @@
 
   function clearAudioEngine() {
     audioLoadGeneration += 1;
+    stopAudioTimeAnimation();
     if (els.musicAudio) {
       els.musicAudio.pause();
       els.musicAudio.removeAttribute("src");
@@ -6638,6 +6657,31 @@
       els.musicSeek.setAttribute("aria-valuetext", timeText);
     }
     if (els.musicTime) els.musicTime.textContent = timeText;
+  }
+
+  // media の timeupdate はブラウザ都合で間引かれるため、再生中の表示だけを毎フレーム追従させる。
+  // currentTime や保存データはここで書き換えず、実際の音声再生を基準に読むだけにする。
+  function stopAudioTimeAnimation() {
+    if (!audioTimeAnimationFrame) return;
+    window.cancelAnimationFrame(audioTimeAnimationFrame);
+    audioTimeAnimationFrame = 0;
+  }
+
+  function animateAudioTimeControls() {
+    audioTimeAnimationFrame = 0;
+    const audio = els.musicAudio;
+    if (!audioPlayback.ready || !audio || audio.paused || audio.ended) {
+      updateAudioTimeControls();
+      return;
+    }
+    updateAudioTimeControls();
+    audioTimeAnimationFrame = window.requestAnimationFrame(animateAudioTimeControls);
+  }
+
+  function startAudioTimeAnimation() {
+    if (audioTimeAnimationFrame || !audioPlayback.ready || !els.musicAudio
+        || els.musicAudio.paused || els.musicAudio.ended) return;
+    audioTimeAnimationFrame = window.requestAnimationFrame(animateAudioTimeControls);
   }
 
   function syncAudioControls() {
@@ -6691,7 +6735,8 @@
   }
 
   async function prepareAudioForCurrentScene(options = {}) {
-    const nextId = normalizeAudioTrackId("scene", sc().audioTrackId);
+    const nextId = normalizeAudioTrackId("scene", options.trackId === undefined
+      ? sc().audioTrackId : options.trackId);
     const transition = audioSceneTransition(audioPlayback.trackId, nextId, options.continuePlayback);
 
     if (!options.force && nextId && audioPlayback.trackId === nextId) {
@@ -6762,6 +6807,9 @@
   }
 
   async function toggleAudioPlayback() {
+    // タイムラインの曲はタイムラインの再生ボタンで扱う。ここから通常の
+    // シーン別再生へ戻るときだけ、一時的な再生元を外す。
+    clearTimelineAudioPlayback();
     if (!sc().audioTrackId) {
       setAudioStatus("このシーンには曲が割り当てられていません。",
         "No track is assigned to this scene.");
@@ -6777,6 +6825,32 @@
     }
     audioPlayback.playAfterLoad = true;
     await prepareAudioForCurrentScene({ continuePlayback: true, force: true });
+  }
+
+  function activateTimelineAudio(trackId, options = {}) {
+    const normalizedTrackId = normalizeAudioTrackId("scene", trackId);
+    if (!normalizedTrackId || !audioTrackById(normalizedTrackId)) return false;
+    timelineAudioTrackId = normalizedTrackId;
+    const requestedSeek = Number(options.seekSeconds);
+    timelineAudioSeekSeconds = Number.isFinite(requestedSeek) ? Math.max(0, requestedSeek) : null;
+    const shouldPlay = Boolean(options.play);
+    if (audioPlayback.trackId === normalizedTrackId && audioPlayback.ready && els.musicAudio) {
+      if (timelineAudioSeekSeconds !== null) {
+        const duration = audioDuration();
+        els.musicAudio.currentTime = Math.min(timelineAudioSeekSeconds, duration || timelineAudioSeekSeconds);
+        timelineAudioSeekSeconds = null;
+      }
+      if (shouldPlay) void tryPlayCurrentAudio();
+      syncAudioControls();
+      return true;
+    }
+    audioPlayback.playAfterLoad = shouldPlay;
+    void prepareAudioForCurrentScene({
+      trackId: normalizedTrackId,
+      continuePlayback: shouldPlay,
+      force: audioPlayback.trackId === normalizedTrackId && audioPlayback.missing,
+    });
+    return true;
   }
 
   function validAudioFile(file) {
@@ -7143,7 +7217,11 @@
       const sceneId = els.timelineAudioImportFile.dataset.sceneId || null;
       els.timelineAudioImportFile.value = "";
       delete els.timelineAudioImportFile.dataset.sceneId;
-      if (file) await importAudioFile(file, { sceneId });
+      if (!file) return;
+      const imported = await importAudioFile(file, { sceneId });
+      window.dispatchEvent(new CustomEvent("stage-timeline-audio-import-finished", {
+        detail: { sceneId, imported },
+      }));
     });
     if (els.sceneAudioTrack) els.sceneAudioTrack.addEventListener("change", () => {
       setSceneAudioTrack(sc(), els.sceneAudioTrack.value || null);
@@ -7188,6 +7266,10 @@
       }
       setAudioStatus(track ? `「${track.title}」を再生できます。` : "曲を再生できます。",
         track ? `“${track.title}” is ready to play.` : "The track is ready to play.");
+      if (timelineAudioSeekSeconds !== null && activeTimelineAudioTrackId() === audioPlayback.trackId) {
+        els.musicAudio.currentTime = Math.min(timelineAudioSeekSeconds, duration || timelineAudioSeekSeconds);
+        timelineAudioSeekSeconds = null;
+      }
       syncAudioControls();
       if (audioPlayback.playAfterLoad) {
         audioPlayback.playAfterLoad = false;
@@ -7205,7 +7287,11 @@
       syncAudioControls();
     });
     ["play", "pause", "ended"].forEach((eventName) => {
-      els.musicAudio.addEventListener(eventName, syncAudioControls);
+      els.musicAudio.addEventListener(eventName, () => {
+        if (eventName === "play") startAudioTimeAnimation();
+        else stopAudioTimeAnimation();
+        syncAudioControls();
+      });
     });
     els.musicAudio.addEventListener("timeupdate", updateAudioTimeControls);
     els.musicAudio.addEventListener("durationchange", updateAudioTimeControls);
@@ -14055,12 +14141,13 @@
     syncPropMoves();
     syncPhoneViewer();
     renderAudioPanel();
-    const wantedAudioId = normalizeAudioTrackId("scene", sc().audioTrackId);
+    const wantedAudioId = requestedAudioTrackIdForCurrentScene();
     const missingAudioMetadata = Boolean(wantedAudioId && !audioTrackById(wantedAudioId));
     if (wantedAudioId !== audioPlayback.trackId || (missingAudioMetadata && !audioPlayback.missing)) {
       const shouldContinue = continueAudioOnNextSceneSync;
       continueAudioOnNextSceneSync = false;
       prepareAudioForCurrentScene({
+        trackId: wantedAudioId,
         continuePlayback: shouldContinue,
         force: wantedAudioId === audioPlayback.trackId,
       });
@@ -15971,7 +16058,9 @@
        * 道具の数が多く、説明が常に見えていると、道具そのものが下へ押し出される。
        * 初めて触るときだけ要る文章なので、要るときに引き出せればよい。 */
       // 説明として畳むもの。状態を伝える文（保存の様子など）は畳まない
-      const hints = [...el.querySelectorAll(".stage-cast-hint, .stage-selection-empty")];
+      // 「選んだもの」は選択が無いときの案内をそのまま表示し、右上の ? を置かない。
+      const hints = id === "inspector"
+        ? [] : [...el.querySelectorAll(".stage-cast-hint, .stage-selection-empty")];
       if (hints.length) {
         hints.forEach((hint) => { hint.hidden = true; });
         const help = document.createElement("button");
@@ -18155,6 +18244,23 @@
     if (els.lastBackupTime) els.lastBackupTime.textContent = headerTimestamp(state && state.lastExportAt);
   }
 
+  function showElapsedText(value) {
+    const seconds = Math.max(0, Math.floor(finite(value, 0)));
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const rest = String(seconds % 60).padStart(2, "0");
+    return hours > 0 ? `${hours}:${String(minutes).padStart(2, "0")}:${rest}`
+      : `${String(minutes).padStart(2, "0")}:${rest}`;
+  }
+
+  function syncShowElapsed(seconds) {
+    if (els.showElapsed) els.showElapsed.textContent = showElapsedText(seconds);
+  }
+
+  window.addEventListener("stage-timeline-position-change", (event) => {
+    syncShowElapsed(event && event.detail && event.detail.seconds);
+  });
+
   let projectSettingsReturnFocus = null;
   let backgroundReturnFocus = null;
 
@@ -19516,34 +19622,6 @@
 
         const controls = document.createElement("div");
         controls.className = "stage-scene-transition-controls";
-        const cueLabel = document.createElement("label");
-        cueLabel.className = "stage-scene-transition-duration";
-        cueLabel.title = tx("空欄はデフォルトの転換時間");
-        const cueTitle = document.createElement("span");
-        cueTitle.textContent = tx("転換の長さ");
-        const cueValue = document.createElement("span");
-        const cueInput = document.createElement("input");
-        cueInput.type = "number";
-        cueInput.min = "0.2";
-        cueInput.max = "10";
-        cueInput.step = "0.1";
-        cueInput.inputMode = "decimal";
-        cueInput.placeholder = "—";
-        cueInput.value = toScene.cueSeconds === null ? "" : String(toScene.cueSeconds);
-        cueInput.setAttribute(
-          "aria-label",
-          `${tx("転換の長さ（秒）")}: ${fromScene.title} → ${toScene.title}。${tx("空欄はデフォルトの転換時間")}`,
-        );
-        cueInput.addEventListener("input", () => {
-          toScene.cueSeconds = normalizeCueSeconds(cueInput.value);
-          persistSoon();
-        });
-        cueValue.append(cueInput, document.createTextNode(` ${tx("秒")}`));
-        const sharedHint = document.createElement("span");
-        sharedHint.className = "stage-scene-transition-shared";
-        sharedHint.textContent = `${tx("空欄はデフォルトの転換時間")} ${(state.sceneAnimMs / 1000).toFixed(1)}${tx("秒")}`;
-        cueLabel.append(cueTitle, cueValue, sharedHint);
-        controls.append(cueLabel);
 
         if (featureOn("blackout")) {
           const dark = document.createElement("label");
@@ -19576,8 +19654,6 @@
 
         const noteLabel = document.createElement("label");
         noteLabel.className = "stage-scene-transition-note";
-        const noteTitle = document.createElement("span");
-        noteTitle.textContent = tx("転換メモ");
         const noteInput = document.createElement("textarea");
         noteInput.className = "stage-text-input";
         noteInput.rows = 1;
@@ -19601,7 +19677,7 @@
           growTransitionNote(true);
           persistSoon();
         });
-        noteLabel.append(noteTitle, noteInput);
+        noteLabel.append(noteInput);
         requestAnimationFrame(() => {
           growTransitionNote(false);
           requestAnimationFrame(() => growTransitionNote(false));
@@ -19611,7 +19687,7 @@
         return frame;
       };
 
-      /* 転換の長さが0秒でも、隣り合うシーンの間には必ず境界がある。
+      /* タイムライン上の移動時間が0秒でも、隣り合うシーンの間には必ず境界がある。
        * 一覧では短い札を常設し、必要なときだけ既存の転換詳細を同じ場所へ開く。 */
       const makeSceneTransitionPoint = (fromScene, toScene) => {
         const boundary = document.createElement("div");
@@ -19638,17 +19714,13 @@
         const kicker = document.createElement("span");
         kicker.className = "stage-scene-transition-point-kicker";
         kicker.textContent = tx("転換");
-        const route = document.createElement("span");
-        route.className = "stage-scene-transition-point-route";
-        route.textContent = `${sceneNumbers.get(fromScene.id) || ""} → ${sceneNumbers.get(toScene.id) || ""}`;
         const facts = [];
-        if (toScene.cueSeconds !== null) facts.push(`${toScene.cueSeconds}${tx("秒")}`);
         if (toScene.blackout) facts.push(tx("暗転"));
         if (toScene.transitionNote) facts.push(tx("メモ"));
         const summary = document.createElement("span");
         summary.className = "stage-scene-transition-point-summary";
         summary.textContent = facts.join("・");
-        point.append(axis, kicker, route, summary);
+        point.append(axis, kicker, summary);
         point.addEventListener("click", () => {
           expandedSceneTransitionToId = expandedSceneTransitionToId === toScene.id
             ? null : toScene.id;
@@ -20903,10 +20975,14 @@
     const blackout = featureOn("blackout") && Boolean(sc().blackout);
     if (!pieces.length && !exits.length && !blackout) return false;
     const movers = pieces.concat(exits);
+    // 転換の実時間はタイムラインの「次のシーンへの移動時間」を唯一の正本にする。
+    // タイムライン再生中は、その同じ区間長を明示して渡してもよい。
+    const scheduledSeconds = fromScene && fromScene.rehearsal
+      ? rehearsalSeconds(fromScene.rehearsal.transitionToNextSeconds) : null;
     const span = Number.isFinite(Number(durationMs))
       ? clamp(Number(durationMs), 100, 86400000)
-      : sc().cueSeconds !== null
-        ? sc().cueSeconds * 1000
+      : scheduledSeconds !== null
+        ? clamp(scheduledSeconds * 1000, 100, 86400000)
         : clamp(finite(state.sceneAnimMs, 2000), 200, 3000);
     const start = performance.now();
     const step = (now) => {
@@ -22206,6 +22282,13 @@ ${propsPlotHtml}
         (row) => row.kind === "scene" && row.id === options.transitionFromSceneId,
       ) || null
       : null;
+    if (options.fromTimeline) {
+      const timelineTrackId = normalizeAudioTrackId("scene", options.timelineTrackId);
+      if (timelineTrackId) timelineAudioTrackId = timelineTrackId;
+      else clearTimelineAudioPlayback();
+    } else {
+      clearTimelineAudioPlayback();
+    }
     if (state.project.activeSceneId === id) {
       const liveSpins = transitionFromScene && state.animateScenes ? captureLiveSpins() : null;
       renderScenes();
@@ -22236,6 +22319,9 @@ ${propsPlotHtml}
     // 動きが無い切替だけは、ここで通常描画する。
     if (!beginSceneAnim(transitionFromScene || before, liveSpins, options.transitionDurationMs)) render();
     persistSoon();
+    window.dispatchEvent(new CustomEvent("stage-scene-change", {
+      detail: { sceneId: id, fromTimeline: Boolean(options.fromTimeline) },
+    }));
     announce(`${sc().title}を開きました。`);
   }
 
@@ -24607,11 +24693,6 @@ ${propsPlotHtml}
       els.selectedLightPresetOpen.hidden = !selectedLights;
       els.selectedLightPresetOpen.disabled = !selectedLights;
     }
-    if (els.facingLock) {
-      const locked = Boolean(sc().facingLock);
-      els.facingLock.textContent = locked ? "🔒" : "🔓";
-      els.facingLock.setAttribute("aria-pressed", String(locked));
-    }
     if (els.seriWarning) {
       const involved = piece && seriStraddlers(sc().pieces, venueSize())
         .some((entry) => entry.piece === piece || entry.seri === piece);
@@ -24797,7 +24878,6 @@ ${propsPlotHtml}
             : facingLabel(commonFacing);
       }
     }
-    if (els.duplicate) els.duplicate.hidden = multi;
     if (els.pieceLock) els.pieceLock.hidden = multi;
     if (els.delete) els.delete.hidden = multi;
   }
@@ -25952,7 +26032,6 @@ ${propsPlotHtml}
   let facingWheelLastAt = 0;
   let facingWheelContext = "";
   let facingWheelCheckpointed = false;
-  const facingLockNotices = new Set();
 
   function resetFacingWheelGesture() {
     facingWheelDelta = 0;
@@ -25982,15 +26061,7 @@ ${propsPlotHtml}
     const facingPieces = selectedFacingPieces();
     const piece = facingPieces.find((item) => onFacingWheelTarget(event, item));
     if (!piece) return;
-    // 近くに居ないうちは、向きロックの知らせも出さずに素通しする
     const scene = sc();
-    if (scene.facingLock) {
-      if (!facingLockNotices.has(scene.id)) {
-        facingLockNotices.add(scene.id);
-        announce("向きロック中です");
-      }
-      return;
-    }
 
     const now = performance.now();
     const context = `${scene.id}:${facingPieces.map((item) => item.id).join(",")}`;
@@ -26466,20 +26537,6 @@ ${propsPlotHtml}
       pieces.forEach((piece) => { piece.facing = facing; });
       if (els.facingValue) els.facingValue.textContent = facingLabel(facing);
       render();
-    });
-  }
-  if (els.facingLock) {
-    els.facingLock.addEventListener("click", () => {
-      const scene = sc();
-      if (!scene || scene.kind !== "scene") return;
-      checkpoint();
-      scene.facingLock = !scene.facingLock;
-      resetFacingWheelGesture();
-      updateInspector();
-      persistSoon();
-      announce(scene.facingLock
-        ? "向きをロックしました。スクロールでは回りません。"
-        : "向きロックを外しました。");
     });
   }
   /* 追加する対象を先に三分類し、その対象に必要な名前・種類・姿勢を同じ窓で決める。 */
@@ -27232,9 +27289,6 @@ ${propsPlotHtml}
     els.animMs.addEventListener("input", (e) => {
       state.sceneAnimMs = clamp(finite(e.target.value, 2) * 1000, 200, 3000);
       if (els.animMsValue) els.animMsValue.textContent = `${(state.sceneAnimMs / 1000).toFixed(1)}${languageValue(() => ("s"), () => ("秒"))}`;
-      document.querySelectorAll(".stage-scene-transition-shared").forEach((hint) => {
-        hint.textContent = `${tx("空欄はデフォルトの転換時間")} ${(state.sceneAnimMs / 1000).toFixed(1)}${tx("秒")}`;
-      });
       persistSoon();
     });
   }
@@ -27520,12 +27574,12 @@ ${propsPlotHtml}
       ? state.project.cast.find((c) => c.id === piece.castId) : null;
     const owner = registered || member;
     if (els.dimsFromSet) {
-      els.dimsFromSet.hidden = !owner;
-      if (owner) {
-        els.dimsFromSet.textContent = registered
-          ? (sx(`名前・色・寸法は「${registered.name}」で決めます（${setDimLabel(registered)}）。`, `Name, colour and size come from \u201c${registered.name}\u201d (${setDimLabel(registered)}).`))
-          : (sx(`名前・色・身長は「${member.name}」で決めます（${member.heightCm}cm）。`, `Name, colour and height come from \u201c${member.name}\u201d (${member.heightCm}cm).`));
-      }
+      // 演者の名前・色・身長の由来を繰り返す補足は出さない。セットの寸法由来は維持する。
+      els.dimsFromSet.hidden = !registered;
+      if (registered) els.dimsFromSet.textContent = sx(
+        `名前・色・寸法は「${registered.name}」で決めます（${setDimLabel(registered)}）。`,
+        `Name, colour and size come from \u201c${registered.name}\u201d (${setDimLabel(registered)}).`,
+      );
     }
     if (els.liftControls) {
       const flown = Boolean(piece && isFlown(piece));
@@ -27623,10 +27677,12 @@ ${propsPlotHtml}
       }
     }
     if (els.delete) {
-      // 明かりを舞台から外すのは「消す」こと。道具立てを片づける話ではない
+      // 明かりを舞台裏へ送る操作は「消す」こと。道具立てを片づける話ではない
       const light = Boolean(piece && piece.type === "light");
-      els.delete.textContent = light ? "TURN OFF" : tx("舞台から外す");
-      els.delete.title = light ? tx("このシーンではこの明かりを消します") : "";
+      const deleteLabel = light ? "TURN OFF" : tx("舞台裏へ");
+      els.delete.textContent = deleteLabel;
+      els.delete.title = light ? tx("このシーンではこの明かりを消します") : deleteLabel;
+      els.delete.setAttribute("aria-label", light ? tx("このシーンではこの明かりを消します") : deleteLabel);
     }
     if (els.routeClear) els.routeClear.hidden = !(piece && piece.route);
     /* ★ここにあった beamDia/beamU/beamV/beamFrom/beamTo/beamReset の
@@ -27649,8 +27705,10 @@ ${propsPlotHtml}
     }
     if (els.openSetInfo) {
       els.openSetInfo.hidden = !owner;
-      els.openSetInfo.textContent = registered ? tm("misc", "dims", "寸法") : tm("misc", "profile", "身長");
-      els.openSetInfo.title = languageValue(() => (registered ? `Open the size of \u201c${registered.name}\u201d` : (member ? `Open \u201c${member.name}\u201d\u2019s profile` : "")), () => (registered ? `「${registered.name}」の寸法を開く` : (member ? `「${member.name}」のプロフィールを開く` : "")));
+      els.openSetInfo.textContent = tx("詳細");
+      const detailsLabel = languageValue(() => (registered ? `Open details for \u201c${registered.name}\u201d` : (member ? `Open \u201c${member.name}\u201d\u2019s profile` : "")), () => (registered ? `「${registered.name}」の詳細を開く` : (member ? `「${member.name}」のプロフィールを開く` : "")));
+      els.openSetInfo.title = detailsLabel;
+      els.openSetInfo.setAttribute("aria-label", detailsLabel);
     }
   }
 
@@ -27815,7 +27873,6 @@ ${propsPlotHtml}
     announce("背景の塗りを消しました。");
   });
 
-  els.duplicate.addEventListener("click", duplicateSelected);
   els.delete.addEventListener("click", removeSelected);
   /* 画面に固定で置いてある文言を、まとめて差し替える。
    * 対訳表は日本語そのものを鍵にしているので、元の日本語を各要素へ覚えさせておき、
@@ -29475,6 +29532,12 @@ ${propsPlotHtml}
       return audioStore.get(normalizedTrackId)
         .then((blob) => Boolean(blob instanceof Blob && blob.size > 0), () => false);
     },
+    activateTimelineAudio(trackId, options = {}) {
+      return activateTimelineAudio(trackId, options);
+    },
+    isTimelineAudioActive(trackId) {
+      return timelineAudioIsActive(trackId);
+    },
     getTimelineAudioBlob(trackId) {
       const normalizedTrackId = normalizeAudioTrackId("scene", trackId);
       if (!normalizedTrackId || !audioStore || typeof audioStore.get !== "function") {
@@ -29490,7 +29553,6 @@ ${propsPlotHtml}
       const scene = state.project.scenes.find((row) => row && row.kind === "scene" && row.id === sceneId);
       if (!scene || !els.timelineAudioImportFile) return false;
       els.timelineAudioImportFile.dataset.sceneId = scene.id;
-      els.timelineAudioImportFile.click();
       return true;
     },
     setTimelineSceneAudioTrack(sceneId, trackId) {

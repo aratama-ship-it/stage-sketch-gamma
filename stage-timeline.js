@@ -133,7 +133,6 @@
     audioSourceCopy: document.getElementById("stage-timeline-audio-source-copy"),
     audioSourceActions: document.getElementById("stage-timeline-audio-source-actions"),
     audioSourceLibrary: document.getElementById("stage-timeline-audio-source-library"),
-    audioSourceUpload: document.getElementById("stage-timeline-audio-source-upload"),
     audioSourceLibraryPanel: document.getElementById("stage-timeline-audio-source-library-panel"),
     audioSourceLibraryBack: document.getElementById("stage-timeline-audio-source-library-back"),
     audioSourceLibraryList: document.getElementById("stage-timeline-audio-source-library-list"),
@@ -205,6 +204,7 @@
   let timelineWidth = 960;
   let audioAvailabilityGeneration = 0;
   let seekSeconds = 0;
+  let audioPlayheadFrame = 0;
   let durationEditSectionId = null;
   let pendingUnitChange = null;
   let unitWarningReturnFocus = null;
@@ -1499,9 +1499,9 @@
 
   function openTimelineScene(segment) {
     if (!segment || !segment.sceneId) return;
-    bridge.openSceneById(segment.sceneId);
+    openTimelineSceneById(segment.sceneId);
     seekSeconds = segment.start;
-    if (els.audio && timeline.trackId && audioMatchesTimeline()) els.audio.currentTime = seekSeconds;
+    syncTimelineAudioAt(seekSeconds);
     updatePlayhead();
     renderTimeline();
   }
@@ -1655,6 +1655,10 @@
   function openAudioSourceChooser({ sceneId = null, mode: nextMode = "add", returnFocus = null } = {}) {
     const targetSceneId = sceneId || timelineAudioTargetSceneId();
     if (!targetSceneId || !els.audioSourceModal) return false;
+    // ファイル入力を押すイベントでは何も実行しない。Chrome が OS の選択画面を
+    // 必ず直接開けるよう、対象シーンはモーダルを開く時点で先に設定しておく。
+    if (typeof bridge.openTimelineAudioImportPicker === "function"
+        && !bridge.openTimelineAudioImportPicker(targetSceneId)) return false;
     audioSourceSceneId = targetSceneId;
     audioSourceReturnFocus = returnFocus || null;
     audioSourceMode = nextMode === "replace" ? "replace" : "add";
@@ -1958,10 +1962,30 @@
 
   function audioMatchesTimeline() {
     if (!timeline || !timeline.trackId) return false;
+    if (typeof bridge.isTimelineAudioActive === "function") {
+      return bridge.isTimelineAudioActive(timeline.trackId);
+    }
     const documentValue = projectDocument();
     const project = documentValue && documentValue.project;
     const active = project && (project.scenes || []).find((scene) => scene.id === project.activeSceneId);
     return Boolean(active && active.audioTrackId === timeline.trackId);
+  }
+
+  function timelineSceneOptions(options = {}) {
+    return {
+      ...options,
+      fromTimeline: true,
+      timelineTrackId: timeline && timeline.trackId || null,
+    };
+  }
+
+  function openTimelineSceneById(sceneId, options = {}) {
+    return bridge.openSceneById(sceneId, timelineSceneOptions(options));
+  }
+
+  function syncTimelineAudioAt(seconds, { play = false } = {}) {
+    if (!timeline || !timeline.trackId || typeof bridge.activateTimelineAudio !== "function") return false;
+    return bridge.activateTimelineAudio(timeline.trackId, { seekSeconds: seconds, play });
   }
 
   function pauseSilentPlayback({ update = true } = {}) {
@@ -2013,12 +2037,12 @@
     const crossedTransitionStart = phase && allowTransition && previous !== null
       && previous < phase.transition.start + 1e-6 && seconds >= phase.transition.start - 1e-6;
     if (crossedTransitionStart) {
-      bridge.openSceneById(target.sceneId, {
+      openTimelineSceneById(target.sceneId, {
         transitionDurationMs: (phase.transition.end - phase.transition.start) * 1000,
       });
       return;
     }
-    bridge.openSceneById(target.sceneId);
+    openTimelineSceneById(target.sceneId);
   }
 
   function syncSilentScene(seconds) {
@@ -2058,7 +2082,7 @@
     const target = segmentAt(seekSeconds);
     if (!target) return;
     playbackPosition = seekSeconds;
-    bridge.openSceneById(target.sceneId);
+    openTimelineSceneById(target.sceneId);
     silentPlayback = {
       startedAt: performance.now(),
       startSeconds: seekSeconds,
@@ -2095,12 +2119,41 @@
     seekSeconds = clamp(seekSeconds, 0, timeline.duration);
     els.surface.style.setProperty("--stage-timeline-playhead-x", `${pxFor(seekSeconds)}px`);
     els.position.textContent = labelPosition(seekSeconds);
+    window.dispatchEvent(new CustomEvent("stage-timeline-position-change", {
+      detail: { seconds: seekSeconds },
+    }));
     const playing = Boolean(silentPlayback
       || (playingThisTimeline && els.audio && !els.audio.paused && !els.audio.ended));
     els.play.setAttribute("aria-pressed", String(playing));
     const playLabel = tx(playing ? "タイムラインを一時停止" : "タイムラインを再生");
     els.play.setAttribute("aria-label", playLabel);
     els.play.title = playLabel;
+  }
+
+  // timeupdate は低頻度でも、HTMLAudioElement.currentTime は再生中に読める。
+  // 保存・シーン同期は従来のイベントに任せ、再生線だけを毎フレーム滑らかにする。
+  function stopAudioPlayheadAnimation() {
+    if (!audioPlayheadFrame) return;
+    window.cancelAnimationFrame(audioPlayheadFrame);
+    audioPlayheadFrame = 0;
+  }
+
+  function animateAudioPlayhead() {
+    audioPlayheadFrame = 0;
+    const playingThisTimeline = timeline && els.audio && audioMatchesTimeline()
+      && !els.audio.paused && !els.audio.ended;
+    if (!playingThisTimeline) {
+      updatePlayhead();
+      return;
+    }
+    updatePlayhead();
+    audioPlayheadFrame = window.requestAnimationFrame(animateAudioPlayhead);
+  }
+
+  function startAudioPlayheadAnimation() {
+    if (audioPlayheadFrame || !timeline || !els.audio || els.audio.paused || els.audio.ended
+        || !audioMatchesTimeline()) return;
+    audioPlayheadFrame = window.requestAnimationFrame(animateAudioPlayhead);
   }
 
   function renderLoopRange() {
@@ -2223,8 +2276,13 @@
     const target = timeline.segments.find((segment) => seekSeconds >= segment.start && seekSeconds < segment.end && segment.sceneId)
       || timeline.segments.find((segment) => segment.sceneId);
     if (!target) return;
-    bridge.openSceneById(target.sceneId);
+    openTimelineSceneById(target.sceneId);
     pendingSeek = seekSeconds;
+    if (typeof bridge.activateTimelineAudio === "function") {
+      syncTimelineAudioAt(pendingSeek, { play: true });
+      pendingSeek = null;
+      return;
+    }
     if (els.audio.readyState >= 1 && audioMatchesTimeline()) {
       els.audio.currentTime = clamp(pendingSeek, 0, Number.isFinite(els.audio.duration) ? els.audio.duration : timeline.duration);
       pendingSeek = null;
@@ -2239,8 +2297,8 @@
     const nextIndex = clamp((activeIndex < 0 ? 0 : activeIndex) + direction, 0, timeline.segments.length - 1);
     const target = timeline.segments[nextIndex];
     seekSeconds = target.start;
-    if (target.sceneId) bridge.openSceneById(target.sceneId);
-    if (els.audio && audioMatchesTimeline()) els.audio.currentTime = seekSeconds;
+    if (target.sceneId) openTimelineSceneById(target.sceneId);
+    if (!syncTimelineAudioAt(seekSeconds) && els.audio && audioMatchesTimeline()) els.audio.currentTime = seekSeconds;
     reanchorSilentPlayback();
     updatePlayhead();
     renderTimeline();
@@ -2685,10 +2743,11 @@
     els.audioSourceActions.hidden = false;
     els.audioSourceLibrary.focus({ preventScroll: true });
   });
-  els.audioSourceUpload.addEventListener("click", () => {
-    if (!audioSourceSceneId || typeof bridge.openTimelineAudioImportPicker !== "function") return;
-    if (!bridge.openTimelineAudioImportPicker(audioSourceSceneId)) return;
+  window.addEventListener("stage-timeline-audio-import-finished", (event) => {
+    const detail = event && event.detail;
+    if (!detail || !detail.imported || detail.sceneId !== audioSourceSceneId) return;
     closeAudioSourceChooser({ focus: false });
+    renderTimeline();
   });
   els.volume.addEventListener("input", () => {
     ui.volume = clamp(finite(els.volume.value, 100), 0, 100);
@@ -2871,7 +2930,9 @@
           playbackPosition = Number.isFinite(els.audio.currentTime) ? els.audio.currentTime : null;
           syncTimelinePlaybackScene(playbackPosition || 0);
         }
+        startAudioPlayheadAnimation();
       }
+      if (name === "pause" || name === "ended") stopAudioPlayheadAnimation();
       if (name === "loadedmetadata" && pendingSeek !== null && audioMatchesTimeline()) {
         els.audio.currentTime = clamp(pendingSeek, 0, Number.isFinite(els.audio.duration) ? els.audio.duration : timeline.duration);
         pendingSeek = null;
@@ -2916,6 +2977,18 @@
   });
   window.addEventListener("stage-timeline-unit-change", () => {
     renderTimeline();
+  });
+  // タイムライン外（シーン送り・図上の切替）でも、ヘッダーのショー経過時間を
+  // そのシーンの開始位置へそろえる。タイムライン自身の再生中は現在位置を戻さない。
+  window.addEventListener("stage-scene-change", (event) => {
+    if (!timeline || (event && event.detail && event.detail.fromTimeline)) return;
+    const sceneId = event && event.detail && event.detail.sceneId;
+    const segment = timeline.segments.find((item) => item.sceneId === sceneId);
+    if (!segment) return;
+    seekSeconds = segment.start;
+    if (els.audio && audioMatchesTimeline()) els.audio.currentTime = seekSeconds;
+    reanchorSilentPlayback();
+    updatePlayhead();
   });
   window.addEventListener("stage-fpv-visibility", () => {
     syncTimelineAvailability();

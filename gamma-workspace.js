@@ -5,7 +5,7 @@
   const venueWorkspace=document.getElementById('gamma-venue-workspace'), venueModal=document.getElementById('stage-venue-editor-modal'), venueBackdrop=document.getElementById('stage-venue-editor-backdrop');
   if(!venueWorkspace || !venueModal) return;
   venueWorkspace.append(venueModal);
-  venueModal.setAttribute('aria-label','劇場カスタム');
+  venueModal.setAttribute('aria-label','劇場設定モード');
   if(venueBackdrop) venueBackdrop.hidden=true;
   const normal=document.querySelector('.stage-sketch-grid'), status=document.getElementById('gamma-light-status');
   const hostUndo=document.getElementById('stage-undo'), hostRedo=document.getElementById('stage-redo');
@@ -39,6 +39,7 @@
     });
     // 劇場の基本設定を先に読めるよう、既存モーダルの後へ舞台機構を移す。
     workspace.append(machineryPanel);
+    venueWorkspace.append(workspace);
     window.dispatchEvent(new Event('stage-gamma-machinery-mounted'));
   }
   mountMachineryWorkspace();

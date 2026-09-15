@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.3.6">
+<meta name="stage-sketch-gamma-version" content="v0.1.1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026091619">
+<link rel="stylesheet" href="style.css?v=2026091623">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -55,7 +55,7 @@
               <button type="button" class="stage-workspace-tab is-active" id="stage-workspace-normal"
                       data-stage-workspace-mode="normal" data-stage-panel-layout-default="split"
                       aria-pressed="true">舞台モード</button>
-              <button type="button" class="stage-workspace-tab" id="gamma-venue" data-stage-workspace-mode="venue-setup" aria-pressed="false" aria-controls="gamma-venue-workspace" data-no-i18n>劇場カスタムモード</button>
+              <button type="button" class="stage-workspace-tab" id="gamma-venue" data-stage-workspace-mode="venue-setup" aria-pressed="false" aria-controls="gamma-venue-workspace" data-no-i18n>劇場設定モード</button>
               <button type="button" class="stage-workspace-tab" id="gamma-placement" data-stage-workspace-mode="light-placement" aria-pressed="false" aria-controls="gamma-light-workspace" data-no-i18n>機材配置モード</button>
               <button type="button" class="stage-workspace-tab" id="gamma-design" data-stage-workspace-mode="light-design" aria-pressed="false" aria-controls="gamma-light-workspace" data-no-i18n>照明デザインモード</button>
               <button type="button" class="stage-workspace-tab" id="stage-freecam-open"
@@ -73,6 +73,7 @@
         </div>
         <div class="stage-history-actions">
           <div class="stage-save-stamps" id="stage-save-stamps" aria-live="polite" aria-label="保存状態"><span>保存 <time id="stage-last-save-time">—</time></span><span>控え <time id="stage-last-backup-time">—</time></span></div>
+          <output class="stage-show-elapsed" id="stage-show-elapsed" aria-live="off" aria-label="ショー経過時間">00:00</output>
           <label class="stage-header-volume" for="stage-timeline-volume">
             <span>音量</span>
             <input type="range" id="stage-timeline-volume" min="0" max="100" step="1" value="100" aria-label="音量">
@@ -111,13 +112,17 @@
           </button>
         </div>
         <div class="stage-header-collaboration">
-          <button type="button" class="stage-share-open" id="stage-share-open" data-tablet-icon="共" aria-haspopup="dialog" aria-controls="stage-session-panel">共有</button>
+          <div class="stage-header-app-identity" aria-hidden="true" data-no-i18n>
+            <span class="stage-header-app-title">舞台スケッチ γ</span>
+            <span class="stage-app-version">0.1.1</span>
+          </div>
+          <button type="button" class="stage-share-open stage-header-icon" id="stage-share-open" data-tablet-icon="共" aria-haspopup="dialog" aria-controls="stage-session-panel" aria-label="共有" title="共有"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.6M8.2 13.2l7.6 4.6"/></svg></button>
           <button type="button" class="stage-release-open" id="stage-release-open" aria-haspopup="dialog" aria-controls="stage-release-modal" aria-label="通知・アップデート履歴" title="通知・アップデート履歴"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
         </div>
       </header>
 
       <section id="gamma-light-workspace" aria-label="照明の配置とデザイン" hidden><p id="gamma-light-status" role="status" aria-live="polite" data-no-i18n></p><iframe id="gamma-light-frame" title="照明の配置とデザイン" allow="fullscreen" hidden></iframe></section>
-      <section id="gamma-venue-workspace" aria-label="劇場カスタム" hidden>
+      <section id="gamma-venue-workspace" aria-label="劇場設定モード" hidden>
         <section class="gamma-machinery-workspace" id="gamma-machinery-workspace" aria-labelledby="gamma-machinery-title">
           <header class="gamma-machinery-head"><h2 id="gamma-machinery-title">舞台機構</h2><p>舞台機構の追加、既製プリセット、場面ごとの状態をここで確認・変更します。</p></header>
           <div id="gamma-machinery-list" class="stage-cast-list" aria-live="polite"></div>
@@ -788,7 +793,10 @@
             <div class="stage-panel-body">
             <p class="stage-selection-empty" id="stage-selection-empty">舞台の上で選ぶと、姿勢・向き・重なりを変えられます。名前・色・寸法は「出るもの」の一覧で決めます。</p>
             <div id="stage-selection-controls" hidden>
+            <div class="stage-selected-heading">
               <p class="stage-selected-name" id="stage-selected-name"></p>
+              <button type="button" id="stage-fpv-open" class="stage-selected-view" aria-label="この人の視界を開く" title="この人の視界を開く" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12s3.4-5.5 9.5-5.5S21.5 12 21.5 12 18.1 17.5 12 17.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.8"/></svg></button>
+            </div>
               <p class="stage-selection-scope" id="stage-selection-scope" aria-live="polite" hidden></p>
               <button type="button" class="stage-minor-action stage-selected-light-preset-open"
                       id="stage-selected-light-preset-open" aria-haspopup="dialog"
@@ -797,9 +805,6 @@
               <button type="button" id="stage-piece-pose" class="stage-pose-button">
                 <span id="stage-pose-label">立つ</span><span aria-hidden="true">▸</span>
               </button>
-              <!-- 一人称の「視界」。演者を選んでいるときだけ出る。
-                   stage.html には最初から置いてあったが、こちらへ入れ忘れていた -->
-              <button type="button" id="stage-fpv-open" class="btn-quiet" hidden>この人の視界</button>
               <!-- 演者を選んだときだけ、舞台上・舞台裏の持てる物をここから渡す -->
               <div id="stage-hold-controls" hidden>
                 <label class="stage-control-label">持ち物</label>
@@ -859,15 +864,9 @@
                 <input type="range" id="stage-tissue-h" min="0" max="10" step="0.1" value="4">
               </div>
               <div id="stage-facing-controls">
-                <div class="stage-facing-head">
-                  <label class="stage-control-label stage-range-label" for="stage-piece-facing">
-                    向き <span id="stage-facing-value">客席</span>
-                  </label>
-                  <button type="button" class="stage-facing-lock" id="stage-facing-lock"
-                          aria-pressed="false"
-                          aria-label="このシーンではスクロールでの向き変更をロックします"
-                          title="このシーンではスクロールでの向き変更をロックします">🔓</button>
-                </div>
+                <label class="stage-control-label stage-range-label" for="stage-piece-facing">
+                  向き <span id="stage-facing-value">客席</span>
+                </label>
                 <input type="range" id="stage-piece-facing" min="-180" max="180" step="15" value="0">
                 <p class="stage-range-scale"><span>背中</span><span>客席</span><span>背中</span></p>
               </div>
@@ -956,10 +955,9 @@
               <div class="stage-action-row is-icon-led">
                 <button type="button" class="stage-icon-action stage-lock-action" id="stage-piece-lock"
                         aria-pressed="false" aria-label="動かないようにする">🔓</button>
-                <button type="button" class="stage-icon-action" id="stage-duplicate">複製</button>
-                <button type="button" class="stage-icon-action" id="stage-open-setinfo" hidden>寸法</button>
+                <button type="button" class="stage-icon-action" id="stage-open-setinfo" hidden>詳細</button>
               </div>
-              <button type="button" class="stage-delete" id="stage-delete">舞台から外す</button>
+              <button type="button" class="stage-delete" id="stage-delete" aria-label="舞台裏へ" title="舞台裏へ">舞台裏へ</button>
             </div>
             </div>
           </section>
@@ -1276,7 +1274,9 @@
     <p id="stage-timeline-audio-source-copy">このシーンに割り当てる音源を選びます。</p>
     <div class="stage-timeline-audio-source-actions" id="stage-timeline-audio-source-actions">
       <button type="button" class="btn-quiet" id="stage-timeline-audio-source-library">ライブラリから選ぶ</button>
-      <button type="button" class="stage-minor-action" id="stage-timeline-audio-source-upload">新しく読み込む</button>
+      <input type="file" class="stage-timeline-audio-upload" id="stage-timeline-audio-import-file"
+             accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,.mp3,.m4a,.wav,.aac"
+             aria-label="新しく読み込む">
     </div>
     <section class="stage-timeline-audio-source-library" id="stage-timeline-audio-source-library-panel" hidden>
       <div class="stage-timeline-audio-source-library-head">
@@ -1287,9 +1287,6 @@
     </section>
   </div>
 </div>
-<input type="file" id="stage-timeline-audio-import-file"
-       accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,.mp3,.m4a,.wav,.aac" hidden>
-
 <div class="stage-modal-backdrop" id="stage-timeline-unit-warning-backdrop" hidden></div>
 <div class="stage-modal stage-timeline-unit-warning-modal" id="stage-timeline-unit-warning-modal"
      role="dialog" aria-modal="true" aria-labelledby="stage-timeline-unit-warning-title"
@@ -1345,8 +1342,6 @@
       身長 <span id="stage-profile-height-value">165</span> cm
     </label>
     <input type="range" id="stage-profile-height" min="140" max="200" step="1" value="165">
-    <p class="stage-profile-hint">舞台の上での見え方に効きます。同じ舞台でも、身長が違えば大きさが変わります。</p>
-
     <label class="stage-control-label" for="stage-profile-color">色</label>
     <input type="color" id="stage-profile-color" value="#a84b26">
 
@@ -2426,7 +2421,7 @@
 <div class="stage-modal stage-venue-editor-modal" id="stage-venue-editor-modal" role="region"
      aria-labelledby="stage-venue-editor-title" hidden>
   <header class="stage-modal-head">
-    <h2 id="stage-venue-editor-title">劇場カスタム</h2>
+    <h2 id="stage-venue-editor-title">劇場設定モード</h2>
     <button type="button" class="stage-modal-close" id="stage-venue-editor-close" aria-label="閉じる">✕</button>
   </header>
   <div class="stage-modal-body">
@@ -2710,7 +2705,7 @@
      aria-modal="true" aria-labelledby="stage-venue-discard-title"
      aria-describedby="stage-venue-discard-message" hidden>
   <header class="stage-modal-head">
-    <h2 id="stage-venue-discard-title">劇場カスタムを戻しますか？</h2>
+    <h2 id="stage-venue-discard-title">劇場設定モードを戻しますか？</h2>
   </header>
   <div class="stage-modal-body">
     <p id="stage-venue-discard-message">まだ反映していない劇場データは消えます。</p>
@@ -2783,9 +2778,9 @@
 
 <script src="stage-venues.js?v=2026091501"></script>
 <script src="stage-venue-lines.js?v=2026091501"></script>
-    <script src="stage-i18n.js?v=2026091601"></script>
-    <script src="stage-i18n.zh-Hans.js?v=2026091601"></script>
-    <script src="stage-i18n.zh-Hant.js?v=2026091601"></script>
+    <script src="stage-i18n.js?v=2026091604"></script>
+    <script src="stage-i18n.zh-Hans.js?v=2026091604"></script>
+    <script src="stage-i18n.zh-Hant.js?v=2026091604"></script>
 <script src="stage-prompt-i18n.js?v=2026091501"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026091501"></script>
@@ -2797,12 +2792,12 @@
 <script src="stage-light-motion.js?v=2026091501"></script>
 <script src="manual/manual-content.js?v=2026091501"></script>
 <script src="stage-pwa.js?v=2026091501"></script>
-<script src="stage-sketch.js?v=2026091635"></script>
-<script src="stage-timeline.js?v=2026091614"></script>
+<script src="stage-sketch.js?v=2026091640"></script>
+<script src="stage-timeline.js?v=2026091620"></script>
 <script src="stage-session.js?v=2026091501"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
 <script src="stage-venue-editor.js?v=2026091501"></script>
-<script src="gamma-workspace.js?v=2026091612"></script>
+<script src="gamma-workspace.js?v=2026091614"></script>
 </body>
 </html>

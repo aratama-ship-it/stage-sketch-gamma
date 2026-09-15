@@ -4,7 +4,7 @@
 </head><body><main><header><p class="num">STAGE SKETCH · PROMPT &amp; CHECKER</p><h1>AI showwright<br>for StageSketch</h1><p class="beta-status"><strong class="beta-label">AI showwright β</strong><strong class="beta-label">StageSketch β</strong><span>AI showwright for StageSketchは現在β版です。仕様や対応範囲は今後変更されることがあります。</span></p><p class="lead">AIにショーの下書きを作らせるためのプロンプトと、受け取ったJSONを点検する道具です。新しいショーの配置・照明・姿勢を、AIとの対話からJSONの下書きにできます。配置・照明・姿勢は検討用の図であり、実施可能性・安全承認を表しません。特定AIでの生成成功・秘密保持は保証せず、外部AIへ渡す素材はご自身で判断してください。共有中のホスト変更は同期されるため、私的な検討は共有終了後にしてください。</p></header>
 <aside class="privacy-warning" role="note" aria-labelledby="privacy-warning-title"><p class="num">DATA PRIVACY</p><h2 id="privacy-warning-title">機密情報をAIへ渡す前に</h2><p>このページのJSON点検はブラウザ内で完結しますが、外部のAIサービスやAIエージェントへ素材を貼り付けたり添付したりすると、そのデータは利用先へ送信されます。脚本、出演者名、連絡先、会場情報、未公開の演出案などに、機密情報・個人情報・契約上非公開の情報が含まれる場合は、そのまま送信しないでください。</p><p class="footnote">送信前に、匿名化、必要箇所だけへの削減、利用先のデータ保持・学習利用設定の確認を必ず行ってください。必要な場合は、組織が管理する閉じた環境やローカルLLMなど、データを外部へ送信しない構成を使用してください。ローカルLLMも設定や周辺ツールによって外部通信する場合があるため、実際の通信先と保存先を確認してください。</p></aside>
 <section><h2>手順</h2><div class="steps"><div class="step"><p class="num">01</p>本文を添付またはコピーし、作りたい内容（人数・会場・各場面で起きることなど）を詳しく添えて、ご自身でお使いのAIエージェントに貼る</div><div class="step"><p class="num">02</p>足りない部分はAIから質問が返るので、質問票にまとめて答える</div><div class="step"><p class="num">03</p>できたJSONをここで点検してから舞台スケッチの「読み込む」で開く</div></div><p class="footnote">会場・人数だけでなく、各場面で何が起こるか、何を見せたいかを言葉で詳しく書くほど、AIの下書きは狙いに近づきます。情報が足りない場合はAI側から質問が返るので、質問票にまとめて答えてください。</p></section>
-<section><h2>プロンプトを入手</h2><p class="meta">プロンプト v0.2.5 ／ 対応アプリ版 v0.3.6</p><p class="footnote">添付できるAIには.mdファイルを、貼り付ける場合はコピーを使ってください。内容は同じです。</p><div class="downloads"><a class="download" download href="AI_MANUAL_ja.md">プロンプトをダウンロード（.md）</a><button id="copy-manual">プロンプトをコピー</button></div><p id="manual-status" role="status"></p><textarea readonly id="manual-fallback" class="copy-source hidden" aria-label="手動コピー用のプロンプト"># 舞台スケッチ用：AIに貼るJSON作成指示 v0.2.5
+<section><h2>プロンプトを入手</h2><p class="meta">プロンプト v0.2.5 ／ 対応アプリ版 v0.1.1</p><p class="footnote">添付できるAIには.mdファイルを、貼り付ける場合はコピーを使ってください。内容は同じです。</p><div class="downloads"><a class="download" download href="AI_MANUAL_ja.md">プロンプトをダウンロード（.md）</a><button id="copy-manual">プロンプトをコピー</button></div><p id="manual-status" role="status"></p><textarea readonly id="manual-fallback" class="copy-source hidden" aria-label="手動コピー用のプロンプト"># 舞台スケッチ用：AIに貼るJSON作成指示 v0.2.5
 
 あなたは舞台スケッチへ**新しいショーの下書き**を渡す。完成品、既存ショーの修正・再生成、動線、安全判断、舞台機構の設定値は作らない。配置・照明・姿勢は検討用の図であり、実施可能性や安全承認を表さない。
 
@@ -142,7 +142,7 @@ PCでは「読み込む」でJSONを選び、比較画面を確認してから�
 
 点検ページを飛ばした直接読み込みや、点検後のファイル改変はこのページでは防げない。本体組み込みと共有サービス側の権限・入力防御は別段階である。
 
-「自己点検済み」は読み込み保証ではない。「読み込み成功」は意図どおりの保証ではない。「安全警告なし」は安全の保証ではない。特定AIでの生成成功・秘密保持は保証しない。外部AIへ渡す素材はユーザー自身が判断する。共有セッション中はホストの変更が同期されるため、私的な検討は共有終了後にする。対応アプリ版はv0.3.6、マニュアル改訂はv0.2.5。既知の非対応は既存ショー修正、Mac版AI指示、動線。
+「自己点検済み」は読み込み保証ではない。「読み込み成功」は意図どおりの保証ではない。「安全警告なし」は安全の保証ではない。特定AIでの生成成功・秘密保持は保証しない。外部AIへ渡す素材はユーザー自身が判断する。共有セッション中はホストの変更が同期されるため、私的な検討は共有終了後にする。対応アプリ版はv0.1.1、マニュアル改訂はv0.2.5。既知の非対応は既存ショー修正、Mac版AI指示、動線。
 
 ## 自己点検表（出力前に必ず通す）
 

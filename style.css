@@ -1951,6 +1951,16 @@ html.stage-pwa-tablet .stage-sketch-kicker { display: none; }
 
 .stage-header-volume:hover { border-color: var(--brass); }
 
+.stage-show-elapsed {
+  min-width: 48px;
+  color: var(--milk);
+  font: 600 12px/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  text-align: right;
+  white-space: nowrap;
+}
+
 .stage-history-actions button,
 .stage-history-actions a,
 .stage-tool-grid button,
@@ -2464,7 +2474,7 @@ html.stage-pwa-tablet .stage-sketch-kicker { display: none; }
 
 .stage-scene-transition-point {
   display: grid;
-  grid-template-columns: 18px auto minmax(0, 1fr) auto;
+  grid-template-columns: 18px auto minmax(0, 1fr);
   align-items: center;
   gap: 6px;
   width: 100%;
@@ -3509,6 +3519,26 @@ canvas[data-tool="note"] { cursor: copy; }
   margin-bottom: 4px;
   border-bottom: 1px dashed var(--line-dark);
 }
+
+.stage-selected-heading { display: flex; align-items: center; gap: 8px; }
+.stage-selected-heading .stage-selected-name { flex: 1; min-width: 0; }
+.stage-selected-view {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 32px;
+  height: 30px;
+  margin: 0 0 8px;
+  padding: 4px;
+  border: 1px solid var(--line-dark);
+  border-radius: 3px;
+  background: none;
+  color: var(--milk-dim);
+  cursor: pointer;
+}
+.stage-selected-view svg { width: 18px; height: 18px; }
+.stage-selected-view:hover,
+.stage-selected-view:focus-visible { border-color: var(--brass); color: var(--milk); outline: none; }
 
 .stage-selection-scope {
   margin: 0 0 10px;
@@ -10676,6 +10706,19 @@ body.stage-modal-open .stage-tour { display: none !important; }
 
 .stage-modal-body { padding: 14px 16px 18px; }
 
+/* 演者の詳細は暗い舞台面から切り替わる作業面。入力と文字を読み分けやすくする。 */
+#stage-profile {
+  background: #3a332d;
+  border: 3px solid #b99a63;
+}
+
+#stage-profile .stage-modal-head { border-bottom-color: rgba(239, 231, 214, 0.34); }
+#stage-profile .stage-modal-body { background: #463d35; }
+#stage-profile .stage-control-label,
+#stage-profile .stage-modal-head h2 { color: #fff8ea; }
+#stage-profile .stage-text-input,
+#stage-profile input[type="range"] { border-color: rgba(255, 248, 234, 0.46); }
+
 .stage-timeline-cue-detail-body { display: grid; gap: 16px; }
 
 .stage-timeline-cue-facts {
@@ -10763,7 +10806,42 @@ body.stage-modal-open .stage-tour { display: none !important; }
 .stage-timeline-audio-source-empty { margin: 0; color: var(--milk-dim); line-height: 1.7; }
 
 .stage-timeline-audio-source-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.stage-timeline-audio-source-actions button { min-height: 54px; padding: 10px; font-size: 14px; }
+.stage-timeline-audio-source-actions button {
+  min-height: 54px;
+  padding: 10px;
+  font-size: 14px;
+}
+.stage-timeline-audio-upload {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 54px;
+  margin: 0;
+  padding: 7px;
+  color: var(--milk-dim);
+  border: 1px solid var(--line-dark);
+  background: var(--desk);
+  cursor: pointer;
+}
+.stage-timeline-audio-upload:hover,
+.stage-timeline-audio-upload:focus-visible {
+  color: var(--milk);
+  border-color: var(--brass);
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+.stage-timeline-audio-upload::file-selector-button {
+  min-height: 36px;
+  margin-right: 9px;
+  padding: 5px 9px;
+  color: var(--milk);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: .04em;
+  border: 1px solid var(--brass);
+  border-radius: 2px;
+  background: rgba(211, 172, 89, .12);
+  cursor: pointer;
+}
 
 .stage-timeline-audio-source-library { display: grid; gap: 10px; }
 .stage-timeline-audio-source-library-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--milk); }
@@ -11820,7 +11898,7 @@ body.stage-modal-open .stage-tour { display: none !important; }
 /* 先頭が鍵などの小さな印のときだけ、その列を細くする */
 .stage-action-row.is-icon-led {
   grid-auto-flow: row;
-  grid-template-columns: 38px repeat(2, minmax(0, 1fr));
+  grid-template-columns: 38px minmax(0, 1fr);
 }
 
 .stage-icon-action {
@@ -14032,42 +14110,6 @@ html.stage-phone-viewer .stage-note-editor-bar .btn-quiet { min-height: 44px; mi
 .mondo-log-entry p { margin: 4px 0 0; font-size: 13px; }
 .mondo-log-axis { opacity: 0.65; font-size: 12px; }
 
-/* ---- シーンの向きロックと一覧グリッド ---- */
-.stage-facing-head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.stage-facing-head .stage-control-label {
-  flex: 1;
-  margin: 0;
-}
-
-.stage-facing-lock {
-  flex: 0 0 auto;
-  min-width: 28px;
-  min-height: 26px;
-  padding: 2px 5px;
-  border: 1px solid var(--line-dark);
-  border-radius: 3px;
-  background: none;
-  color: var(--milk-dim);
-  font-size: 13px;
-  line-height: 1;
-}
-
-.stage-panel .stage-facing-lock { min-height: 26px; }
-
-.stage-facing-lock:hover,
-.stage-facing-lock:focus-visible { border-color: var(--brass); }
-
-.stage-facing-lock[aria-pressed="true"] {
-  border-color: var(--rust);
-  background: rgba(168, 75, 38, 0.14);
-  color: var(--milk);
-}
-
 .stage-scene-grid-open { grid-column: auto; }
 
 /* 次のシーンは、空で始めるか、現在の配置から必要なものだけを受け渡す。 */
@@ -15727,6 +15769,17 @@ body.is-panel-resizing .stage-sketch-grid { transition: none; }
 }
 .stage-save-stamps time { color: var(--milk); font-variant-numeric: tabular-nums; }
 .stage-header-collaboration { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.stage-header-app-identity {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  margin-right: 8px;
+  color: var(--milk);
+  white-space: nowrap;
+}
+.stage-header-app-title { font-family: var(--serif, serif); font-size: 16px; letter-spacing: .08em; }
+.stage-header-app-identity .stage-app-version { margin: 0; color: var(--milk-dim); font-family: var(--sans); font-size: 11px; letter-spacing: .12em; }
 .stage-header-collaboration .stage-share-open,
 .stage-header-collaboration .stage-release-open { flex: 0 0 auto; }
 
@@ -15751,6 +15804,8 @@ body.is-panel-resizing .stage-sketch-grid { transition: none; }
     width: 100%;
     margin: 4px 0 0;
   }
+
+  .stage-header-app-identity { width: 100%; margin: 0 0 2px; }
 }
 
 body.stage-timeline-expanded:not(.stage-fullscreen) {
