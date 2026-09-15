@@ -21,7 +21,8 @@
     catch (_) { return ""; }
   })();
   const RELEASE_FEATURES = Object.freeze({
-    lightMotion: RELEASE_SCOPE_ID !== "beta-20260912",
+    // Gamma追加要件: 「光の動き（案）」は保存形式を残したままUIと入口を停止。
+    lightMotion: false,
     formationSync: RELEASE_SCOPE_ID !== "beta-20260912",
     propMask: RELEASE_SCOPE_ID !== "beta-20260912",
   });
@@ -1598,7 +1599,7 @@
   // 既存の iPad ワークスペースをそのまま使い、途中でDOMを戻して壊さないため。
   const bootPrefs = (() => {
     try {
-      const value = JSON.parse(localStorage.getItem("gamma:shosai-stage-prefs-v1") || "{}");
+      const value = JSON.parse(localStorage.getItem("shosai-stage-prefs-v1") || localStorage.getItem("gamma:shosai-stage-prefs-v1") || "{}");
       return value && typeof value === "object" ? value : {};
     } catch (_) { return {}; }
   })();
@@ -1693,6 +1694,7 @@
      ★消すのは舞台スケッチの6つだけ。他の画面のものは触らない。
      ?tour を付けると、消さずに案内だけ出す。 */
   const STAGE_KEYS = [
+    "shosai-stage-sketch-v1", "shosai-stage-shows-v1",
     "gamma:shosai-stage-sketch-v1", "gamma:shosai-stage-shows-v1",
     "gamma:shosai-stage-tour-v1", "gamma:shosai-stage-lang", "gamma:shosai-stage-venues-v1",
     // SHOWS_BROKEN_KEY と同じ値。あちらは後で定義されるのでここは文字列で書く。
@@ -1736,10 +1738,16 @@
     }
   }
 
-  const STORAGE_KEY = "gamma:shosai-stage-sketch-v1";          // いま開いているショー
-  const SHOWS_KEY = "gamma:shosai-stage-shows-v1";              // 端末に置いた全ショー
-  const SHOWS_BROKEN_KEY = "gamma:shosai-stage-shows-broken-v1"; // 壊れた棚の原文の退避先
-  const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
+  // βと同じ保存キーを正本にする。旧Gammaキーは読み込み時に一度だけ移行する。
+  // 旧版の保存キーは読み込み移行用に残す。正本はβと同じキーへ切り替える。
+  const STORAGE_KEY = "gamma:shosai-stage-sketch-v1";
+  const BETA_STORAGE_KEY = "shosai-stage-sketch-v1";
+  const SHOWS_KEY = "shosai-stage-shows-v1";
+  // 壊れた棚の隔離先は旧Gammaキーを維持し、βの棚とは混ぜない。
+  const SHOWS_BROKEN_KEY = "gamma:shosai-stage-shows-broken-v1";
+  const LEGACY_STORAGE_KEY = "gamma:shosai-stage-sketch-v1";
+  const LEGACY_SHOWS_KEY = "gamma:shosai-stage-shows-v1";
+  const PREFS_KEY = "shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
   const RELEASE_HISTORY_CURRENT = "v0.3.6-2026-09-12";
@@ -4128,7 +4136,7 @@
     arrow: "正面図または平面図をなぞると矢印になります。正面図では床の上か空中かを選べます。Alt（option）を押しながらクリックすると、近い矢印を1本消せます。",
     route: "平面図で演者や物、明かりを掴み、離した所が行き先になります。真ん中の丸を引くと動線が曲がります。",
     note: "何もない所を押すとメモを貼れます。貼ったメモは掴んで動かせます。",
-    light: "照明だけを動かします。丸い印が灯体、明るい輪が当たる場所です。",
+    light: "照明の詳細編集は照明デザインモードで行います。",
     deriveRoute: "次のシーンで動いているものに、いまの位置から行き先までの動線を引きます。",
     sceneGrid: "全シーンをカードで並べて見渡します。",
     sceneSection: "シーンをまとめるセクションを追加します。",
@@ -4966,6 +4974,8 @@
       hint: "ポールやトラピーズの真下に人が居るとき、平面図に印を出す" },
     { key: "toolTips", label: "アイコンの説明",
       hint: "道具のアイコンにカーソルを合わせると、名前・ショートカット・使い方を出す。覚えたらOFFにできる" },
+    { key: "floatingInspector", label: "選んだものを図に添える", def: true,
+      hint: "ONでは選んだ対象の横にパネルを出します。OFFでは左側のパネル列に表示します" },
     { key: "bamiri", label: "バミリ図（印刷）",
       hint: "印刷用ページに、演者の立ち位置の実寸表を足す" },
     { key: "cuesheet", label: "明かりのキューシート（印刷）",
@@ -5031,6 +5041,10 @@
     // 保存値（prefs.lightIntent）があっても無視する。カード・比較欄・図の重ねは
     // すべてこの一箇所（lightIntentOverlayOn等）から連鎖してOFFになる。
     if (key === "lightIntent") return false;
+    // Gammaでは、舞台の転換に必要な三項目を常時有効にする。
+    // 定義と保存値は残し、旧ショーの設定を読み込んでもデータは失わない。
+    if (["presentation", "lineup", "pitchExport", "blackout", "sceneTiming", "sceneTransitions"].includes(key)) return true;
+    if (["lightMotion", "cuesheet"].includes(key)) return false;
     return prefs[key] === undefined
       ? (FEATURE_DEFAULTS[key] === undefined ? true : FEATURE_DEFAULTS[key])
       : Boolean(prefs[key]);
@@ -5501,6 +5515,8 @@
     const type = PIECE_TYPES[raw] ? raw : "performer";
     const legacy = piece && piece.u === undefined && piece.x !== undefined ? migratePiece(piece) : null;
     const normalized = {
+      // 未知の拡張フィールドは読み書きの往復で失わない。既知の値は以下で正規化して上書きする。
+      ...projectIoClone(piece && typeof piece === "object" ? piece : {}),
       id: typeof piece.id === "string" ? piece.id : `stage-restored-${index}`,
       type,
       // 袖に置けるので、枠の外も少しだけ許す（実際の枠は fromScreen が締める）
@@ -5903,6 +5919,8 @@
     const fallbackBg = "#40362d";
     const kind = raw.kind === "section" ? "section" : "scene";
     return {
+      // scene に追加された将来のフィールドも保存往復で保持する。
+      ...projectIoClone(raw && typeof raw === "object" ? raw : {}),
       id: typeof raw.id === "string" ? raw.id : rid("scene"),
       kind,
       depth: clamp(finite(raw.depth, 0), 0, MAX_DEPTH),
@@ -6146,9 +6164,13 @@
     const activeId = wanted ? wanted.id : scenes.find((x) => x.kind === "scene").id;
 
     const normalized = adoptSamples({
+      // ルートの未知フィールドも保存往復で保持する。
+      ...projectIoClone(raw),
       version: 3,
       mcpRevision: normalizeMcpRevision(raw.mcpRevision),
       project: {
+        // プロジェクト固有の拡張フィールドを保持し、既知の項目だけ正規化する。
+        ...projectIoClone(rawProject && typeof rawProject === "object" ? rawProject : {}),
         id: typeof rawProject.id === "string" ? rawProject.id : rid("proj"),
         title: typeof rawProject.title === "string" && rawProject.title.trim() ? rawProject.title : untitledShow(),
         versionLabel: typeof rawProject.versionLabel === "string" && rawProject.versionLabel.trim()
@@ -6172,6 +6194,7 @@
         venueDims: normalizeVenueDims(rawProject.venueDims, size),
         cast: Array.isArray(rawProject.cast)
           ? rawProject.cast.map((c, i) => ({
+              ...projectIoClone(c && typeof c === "object" ? c : {}),
               id: typeof c.id === "string" ? c.id : rid("cast"),
               name: typeof c.name === "string" && c.name.trim() ? c.name.slice(0, 24) : `演者 ${i + 1}`,
               color: validColor(c.color, "#a84b26"),
@@ -6185,6 +6208,7 @@
           ? rawProject.sets.map((t, i) => {
               const kind = SET_KINDS[t && t.kind] ? t.kind : (t && t.kind === "ring" ? "sphere" : "block");
               const normalizedSet = {
+                ...projectIoClone(t && typeof t === "object" ? t : {}),
                 id: typeof t.id === "string" ? t.id : rid("set"),
                 kind,
                 name: typeof t.name === "string" && t.name.trim() ? t.name.slice(0, 24) : `セット ${i + 1}`,
@@ -6238,6 +6262,7 @@
           : [],
         rigs: Array.isArray(rawProject.rigs)
           ? rawProject.rigs.map((r, i) => ({
+              ...projectIoClone(r && typeof r === "object" ? r : {}),
               id: typeof r.id === "string" ? r.id : rid("rig"),
               name: typeof r.name === "string" && r.name.trim() ? r.name.slice(0, 24) : `セット登録 ${i + 1}`,
               pieces: Array.isArray(r.pieces)
@@ -6296,7 +6321,13 @@
   function loadState() {
     if (STUDY_READ_ONLY) return { value: baseState(false), restored: false };
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      let saved = localStorage.getItem(BETA_STORAGE_KEY);
+      if (!saved) {
+        saved = localStorage.getItem(LEGACY_STORAGE_KEY);
+        if (saved) {
+          try { localStorage.setItem(BETA_STORAGE_KEY, saved); } catch (_) { /* 容量不足でも原本は残す */ }
+        }
+      }
       if (saved) {
         const parsed = JSON.parse(saved);
         const needsSectionMigration = Boolean(parsed && !parsed.project && Array.isArray(parsed.pieces))
@@ -6346,7 +6377,15 @@
 
   function readShows() {
     let rawText = null;
-    try { rawText = localStorage.getItem(SHOWS_KEY); }
+    try {
+      rawText = localStorage.getItem(SHOWS_KEY);
+      if (rawText === null) {
+        rawText = localStorage.getItem(LEGACY_SHOWS_KEY);
+        if (rawText !== null) {
+          try { localStorage.setItem(SHOWS_KEY, rawText); } catch (_) { /* 原本を保持 */ }
+        }
+      }
+    }
     catch (_) { return {}; }                         // localStorage自体が読めない。壊れ扱いにはしない
     if (rawText === null || rawText === "") return {}; // 初回。正常な空
     let raw;
@@ -6489,6 +6528,8 @@
   let selectedId = null;
   let selectedIds = new Set();
   let selectedNoteId = null;
+  // 浮動の「選んだもの」は、最後に駒をクリックした図（正面／平面）へ貼り付ける。
+  let floatingInspectorAnchor = { view: "front", serial: 0 };
   // いま選んでいるスクリーンの文字（掴んで動かす・つまみで直す対象）
   let selectedTextId = null;
   let pointerAction = null;
@@ -8675,7 +8716,7 @@
     setSaveStatus(tx("変更を保存しています…") || "Saving…");
     saveTimer = setTimeout(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, snapshot());
+        localStorage.setItem(BETA_STORAGE_KEY, snapshot());
         shelveCurrent();
         /* 現在ショーと棚は別の保存。棚だけ失敗することがあるので分けて伝える */
         if (shelfCorrupt) {
@@ -13471,13 +13512,14 @@
     // 演者と物。光は先に（奥に）描く
     const draw = (piece) => drawStagePiece(target, piece, L, leanAt);
     // 照明の出し入れは図ごと。消している図では描かず、掴めもしない
-    const lightsOn = L.plan ? state.showLightsPlan : state.showLightsFront;
+    // Gammaの見本／通常舞台図では照明を表示・操作対象にしない。照明デザインは埋め込み画面で扱う。
+    const lightsOn = false;
     const lightPieces = lightsOn ? sc().pieces.filter((p) => p.type === "light") : [];
     // 平面では、落ちる円は床の印なので駒の下に敷く
     if (L.plan) lightPieces.forEach(draw);
     /* 平面図は「床に何がどう置いてあるか」の図なので、宙に吊ってあるものは
      * 既定では出さない。要るときだけ出せるように入り切りを持つ。 */
-    const shown = sc().pieces.filter((p) => !(L.plan && !state.showFlown && isFlown(p)));
+    const shown = sc().pieces.filter((p) => p.type !== "light" && !(L.plan && !state.showFlown && isFlown(p)));
     /* 正面図では奥から描く（重なりが自然になる）。
      * 平面図は真上から見た図なので、床から高い順に上へ重ねる。
      * ★並べ替えないと、盆や台をあとから足しただけで、その上に立っている人が
@@ -16069,14 +16111,33 @@
     if (!drag) return;
     const { el, hole, id } = drag;
     const from = el.getBoundingClientRect();
+    const gammaFloating = el.classList.contains("gamma-selection-floating");
     hole.parentElement.insertBefore(el, hole);
     hole.remove();
 
     el.classList.remove("is-dragging");
-    ["position", "left", "top", "width", "zIndex", "pointerEvents"].forEach((k) => {
-      el.style[k] = "";
-    });
+    if (gammaFloating) {
+      // 浮動インスペクタは離した位置をそのまま次のクリックまで保持する。
+      const { left, top } = clampGammaFloatingPanelPosition(from.left, from.top, from.width, from.height);
+      el.style.position = "absolute";
+      setGammaFloatingPanelViewportPosition(el, left, top);
+      el.style.width = `${from.width}px`;
+      el.style.zIndex = "30";
+      el.style.pointerEvents = "auto";
+      el.dataset.gammaUserMoved = "true";
+    } else {
+      ["position", "left", "top", "width", "zIndex", "pointerEvents"].forEach((k) => {
+        el.style[k] = "";
+      });
+    }
     document.body.classList.remove("is-panel-dragging");
+
+    if (gammaFloating) {
+      drag = null;
+      justDragged = true;
+      setTimeout(() => { justDragged = false; }, 60);
+      return;
+    }
 
     // 指を離した場所から、収まる場所へ滑らせる
     const to = el.getBoundingClientRect();
@@ -16156,7 +16217,11 @@
           if (el && host && el.dataset.gammaWorkspace !== "venue") host.append(el);
         });
       } else ["left", "right"].forEach((col) => {
-        const ids = PANELS.filter((id) => L.cols[id] === col).sort((a, b) => L.order[a] - L.order[b]);
+        const ids = PANELS.filter((id) => {
+          // 追従型をOFFにした「選んだもの」は、保存済みの列設定を変えず左列へ出す。
+          if (id === "inspector" && !featureOn("floatingInspector")) return col === "left";
+          return L.cols[id] === col;
+        }).sort((a, b) => L.order[a] - L.order[b]);
         ids.forEach((id) => {
           /* ゲスト参加中の共有パネルは stage-session.js が左列の先頭へ移している。
              ここで並べ直すと、ゲストが接続状態も「最新を取り直す」も見失う
@@ -19427,7 +19492,7 @@
         controls.className = "stage-scene-transition-controls";
         const cueLabel = document.createElement("label");
         cueLabel.className = "stage-scene-transition-duration";
-        cueLabel.title = tx("空欄は設定の転換時間");
+        cueLabel.title = tx("空欄はデフォルトの転換時間");
         const cueTitle = document.createElement("span");
         cueTitle.textContent = tx("転換の長さ");
         const cueValue = document.createElement("span");
@@ -19441,7 +19506,7 @@
         cueInput.value = toScene.cueSeconds === null ? "" : String(toScene.cueSeconds);
         cueInput.setAttribute(
           "aria-label",
-          `${tx("転換の長さ（秒）")}: ${fromScene.title} → ${toScene.title}。${tx("空欄は設定の転換時間")}`,
+          `${tx("転換の長さ（秒）")}: ${fromScene.title} → ${toScene.title}。${tx("空欄はデフォルトの転換時間")}`,
         );
         cueInput.addEventListener("input", () => {
           toScene.cueSeconds = normalizeCueSeconds(cueInput.value);
@@ -19450,7 +19515,7 @@
         cueValue.append(cueInput, document.createTextNode(` ${tx("秒")}`));
         const sharedHint = document.createElement("span");
         sharedHint.className = "stage-scene-transition-shared";
-        sharedHint.textContent = `${tx("空欄は設定の転換時間")} ${(state.sceneAnimMs / 1000).toFixed(1)}${tx("秒")}`;
+        sharedHint.textContent = `${tx("空欄はデフォルトの転換時間")} ${(state.sceneAnimMs / 1000).toFixed(1)}${tx("秒")}`;
         cueLabel.append(cueTitle, cueValue, sharedHint);
         controls.append(cueLabel);
 
@@ -21039,6 +21104,10 @@
       savePrefs();
       captionSizeInputs.forEach((radio) => { radio.disabled = !box.checked; });
       applyFeatureFlags();
+      if (f.key === "floatingInspector") {
+        applyLayout();
+        updateInspector();
+      }
       renderScenes();
       render();
       announce(box.checked ? `設定「${f.label}」をONにしました。` : `設定「${f.label}」をOFFにしました。`);
@@ -21121,7 +21190,9 @@
       ? "このiPad PWAでは常に有効です。"
       : "2列表示では左右に分け、1列表示では全パネルを一方の列へ並べます。";
     const section = prefGroup("パネルの表示スタイル", hintText);
-    const definitions = workspaceModeDefinitions();
+    // 配置・照明デザイン・劇場カスタムは専用ワークスペースであり、
+    // 通常の左右パネル列を使わないため、ここでは舞台モードだけを扱う。
+    const definitions = workspaceModeDefinitions().filter((definition) => definition.key === "normal");
     definitions.forEach((definition) => {
       const options = [["split", "2列表示"], ["single-left", "1列・左"], ["single-right", "1列・右"]];
       if (definition.key === "normal") options.push(["ipad", "iPad表示モード"]);
@@ -21171,6 +21242,13 @@
       const select = row.querySelector("select");
       if (select) {
         select.dataset.stageWorkspacePanelLayout = definition.key;
+        if (definition.key === "normal") {
+          // このグループ自体が舞台モードの設定なので、行名を重ねて表示しない。
+          row.querySelector(".stage-pref-name")?.remove();
+          row.querySelector(".stage-pref-help")?.remove();
+          row.querySelector(".stage-pref-hint")?.remove();
+          select.setAttribute("aria-label", tx("パネルの表示スタイル"));
+        }
         if (nativeTablet) select.disabled = true;
       }
       section.grid.append(row);
@@ -21212,7 +21290,11 @@
     host.innerHTML = "";
     if (!phoneViewerActive) host.append(panelLayoutPrefsGroup());
     const features = prefGroup("機能のオン/オフ", "");
-    FEATURES.forEach((f) => { features.grid.append(prefRow(f)); });
+    const hiddenGammaFlags = new Set([
+      "presentation", "lightMotion", "cuesheet", "lineup", "pitchExport",
+      "blackout", "sceneTiming", "sceneTransitions",
+    ]);
+    FEATURES.filter((f) => !hiddenGammaFlags.has(f.key)).forEach((f) => { features.grid.append(prefRow(f)); });
     host.append(features.group);
   }
   function openPrefs() {
@@ -21330,7 +21412,7 @@
      案内を見たかどうか・組んだセットの型・読み込んだ音源（IndexedDB）。
      書き出し済みのファイルは端末の外にあるので消えない。 */
   const RESET_KEYS = [
-    STORAGE_KEY, SHOWS_KEY, SHOWS_BROKEN_KEY, PREFS_KEY, TOUR_KEY,
+    BETA_STORAGE_KEY, SHOWS_KEY, SHOWS_BROKEN_KEY, PREFS_KEY, TOUR_KEY,
     LANG_KEY, STAGE_MODELS_KEY, CAST_HANDOFF_KEY, LAST_USER_KEY,
     STAGE_AI_PERMISSION_KEY, "gamma:shosai-stage-tablet-view",
   ];
@@ -23281,7 +23363,7 @@ ${propsPlotHtml}
     try {
       const currentDocument = {
         kind: "shosai-stage-sketch",
-        version: 3,
+      version: 3,
         project: projectIoClone(state.project),
       };
       const outcome = await STAGE_AI_PANEL_MODEL.requestPlan(
@@ -24101,6 +24183,10 @@ ${propsPlotHtml}
     syncMultiSelectionControls();
   }
 
+  function anchorFloatingInspector(view) {
+    floatingInspectorAnchor = { view: view === "plan" ? "plan" : "front", serial: floatingInspectorAnchor.serial + 1 };
+  }
+
   function syncMultiSelectionControls() {
     const count = normalizeSelectedIds().size;
     const enabled = featureOn("lineup");
@@ -24419,6 +24505,70 @@ ${propsPlotHtml}
     }
   }
 
+  function gammaFloatingPanelBottom() {
+    const timeline = document.getElementById("stage-timeline-panel");
+    if (!timeline || timeline.hidden || getComputedStyle(timeline).display === "none") return window.innerHeight;
+    const top = timeline.getBoundingClientRect().top;
+    return top > 0 ? Math.min(window.innerHeight, top) : window.innerHeight;
+  }
+
+  // パネルはクリック元の図から出さない。正面図では姿勢帯の手前、平面図では図の下端まで。
+  function gammaFloatingPanelBounds() {
+    const canvasEl = floatingInspectorAnchor.view === "plan" ? planCanvas : canvas;
+    const rect = canvasEl?.getBoundingClientRect();
+    if (!rect) return null;
+    const edge = 16;
+    const poseStrip = els.poseStrip?.getBoundingClientRect();
+    const visualBottom = poseStrip && poseStrip.top > rect.top && poseStrip.top < rect.bottom
+      ? poseStrip.top : rect.bottom;
+    const bottom = visualBottom - edge;
+    return {
+      left: rect.left + edge,
+      right: rect.right - edge,
+      top: rect.top + edge,
+      bottom: Math.max(rect.top + edge, bottom),
+    };
+  }
+
+  function clampGammaFloatingPanelPosition(left, top, width, height) {
+    const bounds = gammaFloatingPanelBounds();
+    if (!bounds) return { left, top };
+    return {
+      left: Math.max(bounds.left, Math.min(bounds.right - width, left)),
+      top: Math.max(bounds.top, Math.min(bounds.bottom - height, top)),
+    };
+  }
+
+  // 浮動パネルの座標は画面ではなく、その親列の中で持つ。
+  // これにより #view-stage をスクロールすると、対象物と一緒に流れる。
+  function setGammaFloatingPanelViewportPosition(panel, left, top) {
+    const apply = (nextLeft, nextTop) => {
+      // offsetParent は非表示から復帰した直後に null になるブラウザがあるため、
+      // 実際に配置コンテナになっている親列を明示的に使う。
+      const parentRect = panel.parentElement?.getBoundingClientRect();
+      panel.style.left = `${nextLeft - (parentRect?.left || 0)}px`;
+      panel.style.top = `${nextTop - (parentRect?.top || 0)}px`;
+    };
+    apply(left, top);
+    // 通常列から absolute へ切り替えると親列の高さが変わることがある。
+    // 切替後の実座標でもう一度図内へ合わせる。
+    const placed = panel.getBoundingClientRect();
+    const corrected = clampGammaFloatingPanelPosition(left, top, placed.width, placed.height);
+    if (Math.abs(corrected.left - placed.left) > 0.5 || Math.abs(corrected.top - placed.top) > 0.5) {
+      apply(corrected.left, corrected.top);
+    }
+    requestAnimationFrame(() => {
+      const settled = panel.getBoundingClientRect();
+      const settledPosition = clampGammaFloatingPanelPosition(
+        settled.left, settled.top, settled.width, settled.height,
+      );
+      if (Math.abs(settledPosition.left - settled.left) > 0.5
+          || Math.abs(settledPosition.top - settled.top) > 0.5) {
+        apply(settledPosition.left, settledPosition.top);
+      }
+    });
+  }
+
   function updateInspector() {
     const piece = selectedPiece();
     const pieces = selectedPieces();
@@ -24442,6 +24592,77 @@ ${propsPlotHtml}
     /* 「何も選んでいないときの案内」は説明文なので「?」の側で出し入れする。
      * ここで勝手に出すと、畳んだはずの文が選ぶたびに戻ってくる。 */
     els.selectionControls.hidden = !piece;
+    const inspector = els.selectionControls?.closest('[data-panel="inspector"]');
+    if (inspector) {
+      if (piece && inspector.dataset.gammaObjectDragging === "true") {
+        inspector.hidden = false;
+        delete inspector.dataset.gammaObjectDragging;
+      }
+      const selectionKey = pieces.map((item) => item.id).join(",");
+      const anchorKey = `${floatingInspectorAnchor.view}:${floatingInspectorAnchor.serial}`;
+      if (inspector.dataset.gammaSelectionKey !== selectionKey
+          || inspector.dataset.gammaAnchorKey !== anchorKey) {
+        inspector.dataset.gammaSelectionKey = selectionKey;
+        inspector.dataset.gammaAnchorKey = anchorKey;
+        delete inspector.dataset.gammaUserMoved;
+        delete inspector.dataset.gammaPositionLocked;
+      }
+      const floating = (!document.body.dataset.gammaWorkspace || document.body.dataset.gammaWorkspace === "normal")
+        && featureOn("floatingInspector");
+      inspector.classList.toggle("gamma-selection-floating", Boolean(piece && floating));
+      if (!floating) {
+        // 通常の右列へ戻すときは、浮動時の座標と寸法を残さない。
+        ["position", "left", "top", "width", "maxHeight", "zIndex", "pointerEvents"].forEach((key) => {
+          inspector.style[key] = "";
+        });
+        delete inspector.dataset.gammaPositionLocked;
+        delete inspector.dataset.gammaUserMoved;
+        delete inspector.dataset.gammaPanelSide;
+      }
+      if (piece && floating && inspector.dataset.gammaPositionLocked !== "true") {
+        const canvasEl = floatingInspectorAnchor.view === "plan" ? planCanvas : canvas;
+        const rect = canvasEl?.getBoundingClientRect();
+        const bounds = gammaFloatingPanelBounds();
+        if (rect && bounds) {
+          const edgeGap = 16;
+          const objectGap = 20;
+          const preferredWidth = 240;
+          const panelWidth = Math.min(preferredWidth, Math.max(160, bounds.right - bounds.left));
+          inspector.style.width = `${panelWidth}px`;
+          inspector.style.maxHeight = `${Math.max(160, Math.min(620, bounds.bottom - bounds.top))}px`;
+          const box = selectionBounds(piece, layout(floatingInspectorAnchor.view));
+          // 左側の対象には左、右側の対象には右へ出す。舞台中央側を塞がない。
+          const objectOnLeft = box.x + box.w / 2 < W / 2;
+          const outerEdge = objectOnLeft ? box.x : box.x + box.w;
+          const outerX = rect.left + outerEdge * rect.width / W
+            + (objectOnLeft ? -panelWidth - objectGap : objectGap);
+          const outerFits = outerX >= bounds.left && outerX + panelWidth <= bounds.right;
+          // 端では外側に余地がなく、図の端へ押しつけると対象と重なる。
+          // その場合だけ中央側へ反転し、対象との間隔を残す。
+          const centerEdge = objectOnLeft ? box.x + box.w : box.x;
+          const centerX = rect.left + centerEdge * rect.width / W
+            + (objectOnLeft ? objectGap : -panelWidth - objectGap);
+          const x = outerFits ? outerX : centerX;
+          inspector.dataset.gammaPanelSide = outerFits ? "outer" : "center";
+          const objectTop = rect.top + box.y * rect.height / H;
+          const objectBottom = rect.top + (box.y + box.h) * rect.height / H;
+          const panelHeight = Math.min(inspector.getBoundingClientRect().height, bounds.bottom - bounds.top);
+          // まず対象の上端へ合わせ、図の下端へ届くときだけ対象の下端に合わせて上へ出す。
+          const y = objectTop + panelHeight <= bounds.bottom
+            ? objectTop
+            : objectBottom - panelHeight;
+          const position = clampGammaFloatingPanelPosition(x, y, panelWidth, panelHeight);
+          setGammaFloatingPanelViewportPosition(
+            inspector,
+            position.left,
+            position.top,
+          );
+          // 内容の更新（向きの変更など）では位置を動かさない。
+          // 次の対象クリック、またはパネルのハンドル操作だけが位置を変えられる。
+          inspector.dataset.gammaPositionLocked = "true";
+        }
+      }
+    }
     renderPoseStrip(piece);
     if (els.fpvOpen) els.fpvOpen.hidden = multi || !(piece && piece.type === "performer");
     syncHoldingControls(multi ? null : piece);
@@ -24553,6 +24774,24 @@ ${propsPlotHtml}
     if (els.delete) els.delete.hidden = multi;
   }
 
+  // ブラウザの幅を変えたあとも、対象の図の中に収める。
+  // 自分で動かしたパネルも、選択し直すまでは位置を保つ。
+  window.addEventListener("resize", () => {
+    const inspector = els.selectionControls?.closest('[data-panel="inspector"]');
+    if (!inspector?.classList.contains("gamma-selection-floating")) return;
+    if (inspector.dataset.gammaPositionLocked !== "true") {
+      updateInspector();
+      return;
+    }
+    const rect = inspector.getBoundingClientRect();
+    const position = clampGammaFloatingPanelPosition(rect.left, rect.top, rect.width, rect.height);
+    setGammaFloatingPanelViewportPosition(
+      inspector,
+      position.left,
+      position.top,
+    );
+  });
+
   /* 正面図の下の姿勢帯。毎回39枚を描き直すと重いので、
      同じ演者・同じ色・同じ言語の間は組み直さず、ハイライトだけ動かす。 */
   let poseStripFor = "";
@@ -24570,7 +24809,6 @@ ${propsPlotHtml}
         const on = tile.dataset.pose === commonPose;
         tile.classList.toggle("is-on", on);
         tile.setAttribute("aria-pressed", String(on));
-        if (on && tile.scrollIntoView) tile.scrollIntoView({ inline: "center", block: "nearest" });
       });
       return;
     }
@@ -24595,8 +24833,6 @@ ${propsPlotHtml}
         applyPoseToSelection(pose);
       });
     });
-    const active = els.poseStrip.querySelector(".is-on");
-    if (active && active.scrollIntoView) active.scrollIntoView({ inline: "center", block: "nearest" });
   }
 
   function syncInputs() {
@@ -24626,7 +24862,8 @@ ${propsPlotHtml}
     if (els.animScenes) els.animScenes.checked = state.animateScenes;
     if (els.animMs) {
       if (document.activeElement !== els.animMs) els.animMs.value = String(state.sceneAnimMs / 1000);
-      els.animMs.disabled = !state.animateScenes;
+      // 新しい転換を作るときの初期値なので、再生アニメーションをOFFにしていても設定できる。
+      els.animMs.disabled = false;
       if (els.animMsValue) els.animMsValue.textContent = `${(state.sceneAnimMs / 1000).toFixed(1)}${languageValue(() => ("s"), () => ("秒"))}`;
     }
     syncSeatMapToggle();
@@ -25045,6 +25282,7 @@ ${propsPlotHtml}
       }
       const hit = hitTest(point, L);
       if (!hit) { announce("動かしたい演者・物・明かりを掴んでください。"); return; }
+      anchorFloatingInspector(view);
       selectedId = hit.id;
       checkpoint();
       hit.route = { u: hit.u, v: hit.v, bu: hit.u, bv: hit.v };
@@ -25072,6 +25310,7 @@ ${propsPlotHtml}
         if (ids.has(hit.id)) ids.delete(hit.id); else ids.add(hit.id);
         const ordered = Array.from(ids);
         setSelectedPieces(ordered, ids.has(hit.id) ? hit.id : ordered[ordered.length - 1]);
+        anchorFloatingInspector(view);
         selectedNoteId = null;
         updateInspector();
         render();
@@ -25079,6 +25318,7 @@ ${propsPlotHtml}
         return;
       }
       if (fixture) {
+        anchorFloatingInspector(view);
         selectedId = fixture.id;
         selectedNoteId = null;
         capture(el, event.pointerId);
@@ -25091,6 +25331,7 @@ ${propsPlotHtml}
         render();
         return;
       }
+      if (hit) anchorFloatingInspector(view);
       selectedId = hit ? hit.id : null;
       selectedNoteId = null;
       updateInspector();
@@ -25193,6 +25434,7 @@ ${propsPlotHtml}
         if (ids.has(hit.id)) ids.delete(hit.id); else ids.add(hit.id);
         const ordered = Array.from(ids);
         setSelectedPieces(ordered, ids.has(hit.id) ? hit.id : ordered[ordered.length - 1]);
+        anchorFloatingInspector(view);
         updateInspector();
         render();
         announce(ids.size ? `${ids.size}件を選択しました。` : "複数選択を解除しました。");
@@ -25201,6 +25443,7 @@ ${propsPlotHtml}
       const keepGroup = hit && normalizeSelectedIds().size > 1
         && normalizeSelectedIds().has(hit.id);
       if (hit && !keepGroup) setSelectedPieces([hit.id], hit.id);
+      if (hit) anchorFloatingInspector(view);
       updateInspector();
       render();
       if (!hit) {
@@ -25327,9 +25570,10 @@ ${propsPlotHtml}
     return piece ? { castId: piece.castId || null, piece } : null;
   }
 
-  function openNameDetailTarget(target) {
+  function openNameDetailTarget(target, view = "front") {
     if (!target) return false;
     if (target.piece) {
+      anchorFloatingInspector(view);
       setSelectedPieces([target.piece.id], target.piece.id);
       updateInspector();
       render();
@@ -25349,7 +25593,7 @@ ${propsPlotHtml}
     if (STUDY_READ_ONLY || guestSessionActive() || phoneViewerActive || presenting) return;
     const el = event.currentTarget;
     const target = nameDetailTargetAt(pointFromEvent(event), layout(viewOf(el)), el.getContext("2d"));
-    if (!target || !openNameDetailTarget(target)) return;
+    if (!target || !openNameDetailTarget(target, viewOf(el))) return;
     event.preventDefault();
     event.stopPropagation();
   }
@@ -25569,6 +25813,13 @@ ${propsPlotHtml}
       if (!pointerAction.moved) {
         recordBefore(pointerAction.before);
         pointerAction.moved = true;
+        const inspector = document.querySelector('[data-panel="inspector"].gamma-selection-floating');
+        if (inspector) {
+          // 対象物を動かし始めたら、追従中にパネルが重ならないよう即時に隠す。
+          inspector.classList.remove("gamma-selection-floating");
+          inspector.hidden = true;
+          inspector.dataset.gammaObjectDragging = "true";
+        }
         // 複数移動では選択内の重なり順も隊形の一部として保つ。
         if (!pointerAction.groupStart) bringToTop(piece);
       }
@@ -26756,6 +27007,7 @@ ${propsPlotHtml}
     const workspaceTabs = [...document.querySelectorAll("#stage-workspace-tabs [data-stage-workspace-mode]")];
     els.freecamOpen.classList.toggle("is-active", active);
     els.freecamOpen.setAttribute("aria-pressed", String(active));
+    document.body.classList.toggle("gamma-3d-active", Boolean(active));
     workspaceTabs.forEach((button) => {
       const selected = !active
         && button.dataset.stageWorkspaceMode === (document.body.dataset.stageWorkspaceMode || "normal");
@@ -26953,7 +27205,7 @@ ${propsPlotHtml}
       state.sceneAnimMs = clamp(finite(e.target.value, 2) * 1000, 200, 3000);
       if (els.animMsValue) els.animMsValue.textContent = `${(state.sceneAnimMs / 1000).toFixed(1)}${languageValue(() => ("s"), () => ("秒"))}`;
       document.querySelectorAll(".stage-scene-transition-shared").forEach((hint) => {
-        hint.textContent = `${tx("空欄は設定の転換時間")} ${(state.sceneAnimMs / 1000).toFixed(1)}${tx("秒")}`;
+        hint.textContent = `${tx("空欄はデフォルトの転換時間")} ${(state.sceneAnimMs / 1000).toFixed(1)}${tx("秒")}`;
       });
       persistSoon();
     });
@@ -27700,7 +27952,7 @@ ${propsPlotHtml}
       at: '[data-panel="light"]',
       begin: () => { tourMark.light = lightCount(); },
       done: () => lightCount() > tourMark.light,
-      ja: ["照明を足す", "「照明」に名前を入れて〈追加〉。吊り・SS・前明かり・転がしの4種類から選べます。道具を〈照明を動かす〉に替えると、灯体と当たる場所を別々に掴めます。"],
+      ja: ["照明を足す", "照明の配置と編集は、上部の「照明デザインモード」で行います。"],
       en: ["Add a light", "Enter a name under Lights and press Add. Four types: overhead, side, front, floor. Switch the tool to Move lights to drag the fixture and the pool separately."],
     },
     {
@@ -29036,7 +29288,7 @@ ${propsPlotHtml}
       renderScreenTexts();
       syncScreenTextControls();
       if (loaded.sectionMigrationSource) {
-        const backupKey = `${STORAGE_KEY}-pre-section-hierarchy-v1:${state.project.id}`;
+        const backupKey = `${BETA_STORAGE_KEY}-pre-section-hierarchy-v1:${state.project.id}`;
         try {
           localStorage.setItem(backupKey, loaded.sectionMigrationSource);
           persistSoon();
@@ -29129,7 +29381,7 @@ ${propsPlotHtml}
     hasLocalModels() { return (state.project.sets || []).some(s => s.modelId); },
   });
   let gammaStorageChanged = false;
-  window.addEventListener("storage", event => { if (event.key === STORAGE_KEY) gammaStorageChanged = true; });
+  window.addEventListener("storage", event => { if (event.key === BETA_STORAGE_KEY) gammaStorageChanged = true; });
   function gammaLightingContext() {
     const size = venueSize();
     const stage = { W: size.width, D: size.depth, H: size.height || 8 };
@@ -29161,7 +29413,7 @@ ${propsPlotHtml}
       const next = projectIoClone(state); next.project.lightingDesign = nextDesign;
       // Persist the complete candidate atomically BEFORE accepting it in memory/history.
       // A quota/disabled-storage exception leaves host state and the editor draft untouched.
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      localStorage.setItem(BETA_STORAGE_KEY, JSON.stringify(next));
       clearTimeout(saveTimer); checkpoint(); state = next;
       shelveCurrent(); render(true);
       const complete = !shelfCorrupt && !shelfFailed;
@@ -29451,12 +29703,14 @@ ${propsPlotHtml}
       window.dispatchEvent(new CustomEvent("stage-timeline-structure-change"));
       return jsonClone(sc());
     },
-    addTimelineTransition(sceneId, seconds = 4) {
+    addTimelineTransition(sceneId, seconds) {
       const scene = state.project.scenes.find((row) => row.kind === "scene" && row.id === sceneId);
       if (!scene) return false;
       if (!scene.rehearsal) scene.rehearsal = normalizeSceneRehearsal(null);
       if (finite(scene.rehearsal.transitionToNextSeconds, 0) > 0) return false;
-      const duration = Math.round(clamp(finite(seconds, 4), 0.1, 86400) * 10) / 10;
+      // 個別に指定されていない新規転換だけ、ショー設定の初期値を使う。
+      const defaultSeconds = clamp(finite(state.sceneAnimMs, 2000) / 1000, 0.2, 3);
+      const duration = Math.round(clamp(finite(seconds, defaultSeconds), 0.1, 86400) * 10) / 10;
       checkpoint();
       scene.rehearsal.transitionToNextSeconds = duration;
       renderScenes();

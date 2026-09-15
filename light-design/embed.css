@@ -18,6 +18,8 @@ html[data-gamma-embedded] .gamma-light-actions {
   gap: 5px;
   min-width: 0;
 }
+/* Gammaでは下部の操作説明列を環境設定へ集約する。保存／LXキュー適用は上部に残す。 */
+html[data-gamma-embedded] .foot { display:none !important; }
 html[data-gamma-embedded] .gamma-light-actions #apply {
   min-height: 28px;
   padding: 3px 9px;

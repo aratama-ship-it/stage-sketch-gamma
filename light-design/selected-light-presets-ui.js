@@ -355,6 +355,8 @@
       const info = INFO[preset.id] || [preset.id, preset.family, ""];
       return (ui.family === "all" || preset.family === ui.family) && (!query || `${preset.id} ${info.join(" ")}`.toLowerCase().includes(query));
     }).sort((a, b) => {
+      const availability = Number(!canUse(a)) - Number(!canUse(b));
+      if (availability) return availability;
       if (ui.sort === "name") return (INFO[a.id] || [a.id])[0].localeCompare((INFO[b.id] || [b.id])[0], "ja");
       if (ui.sort === "family") return `${FAMILY_LABEL[a.family]}:${(INFO[a.id] || [a.id])[0]}`.localeCompare(`${FAMILY_LABEL[b.family]}:${(INFO[b.id] || [b.id])[0]}`, "ja");
       return order.get(a.id) - order.get(b.id);

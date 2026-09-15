@@ -16,9 +16,9 @@
   function syncFrameHeight() {
     frameResizeRequest=0;
     if(!isLightMode(mode)) return;
-    const minimum=window.matchMedia('(max-width: 700px)').matches ? 420 : 480;
     const available=Math.floor(window.innerHeight-frame.getBoundingClientRect().top-16);
-    frame.style.height=Math.max(minimum,available)+'px';
+    const floor=window.matchMedia('(max-width: 700px)').matches ? 280 : 360;
+    frame.style.height=Math.max(floor,available)+'px';
   }
   function scheduleFrameHeight() {
     if(frameResizeRequest) return;
@@ -97,6 +97,10 @@
   }
   function select(next) {
     if(!['normal','light-placement','light-design','venue-setup'].includes(next)) return;
+    if(mode!==next && isLightMode(mode) && !isLightMode(next)) {
+      const lightStatus=editor()?.status?.();
+      if(lightStatus?.dirty && !window.confirm('未適用の照明編集があります。現在の照明設定を保持したままモードを切り替えますか？')) return;
+    }
     try {
       close3dWorkspace();
       if(mode==='normal' && isLightMode(next)) captureHostHistory();
@@ -136,9 +140,11 @@
   document.getElementById('stage-freecam-open')?.addEventListener('click',()=>editor()?.suspend(),true);
   window.addEventListener('stage-fpv-visibility',event=>{if(!event.detail?.active && isLightMode(mode)) editor()?.open(host.context(),mode);});
   window.addEventListener('storage',event=>{
-    if(event.key==='gamma:shosai-stage-sketch-v1') editor()?.externalChange();
+    if(event.key==='shosai-stage-sketch-v1' || event.key==='gamma:shosai-stage-sketch-v1') editor()?.externalChange();
   });
   window.addEventListener('resize',scheduleFrameHeight);
   window.visualViewport?.addEventListener('resize',scheduleFrameHeight);
+  // 初回表示でもモード属性を付け、浮動パネルなど舞台モード専用CSSの基準を揃える。
+  select('normal');
   window.GAMMA_WORKSPACE=Object.freeze({normal:()=>select('normal'),select,mode:()=>mode,captureHostHistory,syncHistory});
 })();

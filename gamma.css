@@ -8,6 +8,13 @@ body[data-gamma-workspace^="light-"] .stage-sketch-grid { display: none !importa
 body[data-gamma-workspace^="light-"] #stage-timeline-panel { display: none !important; }
 body[data-gamma-workspace="venue-setup"] .stage-sketch-grid { display: none !important; }
 body[data-gamma-workspace="venue-setup"] #stage-timeline-panel { display: none !important; }
+body[data-gamma-workspace^="light-"].stage-timeline-expanded:not(.stage-fullscreen) #view-stage,
+body[data-gamma-workspace="venue-setup"].stage-timeline-expanded:not(.stage-fullscreen) #view-stage {
+  height: 100dvh;
+  padding-bottom: 16px;
+}
+body[data-gamma-workspace^="light-"] .stage-boundary-note,
+body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
 #gamma-light-workspace { width: 100%; min-height: 0; }
 #gamma-venue-workspace { width: 100%; min-height: 0; }
 #gamma-venue-workspace[hidden] { display: none; }
@@ -44,10 +51,49 @@ body[data-gamma-workspace="venue-setup"] #stage-timeline-panel { display: none !
 #gamma-venue-workspace .stage-venue-editor-menu { max-height: none; overflow: visible; }
 #gamma-venue-workspace #stage-venue-editor-close { display: none; }
 /* gamma-workspace.js measures the space below this frame after the header has wrapped. */
-#gamma-light-frame { display: block; width: 100%; height: calc(100dvh - 108px); min-height: 480px; border: 0; border-radius: 0; background: #141311; }
+#gamma-light-frame { display: block; width: 100%; height: calc(100dvh - 108px); min-height: 0; border: 0; border-radius: 0; background: #141311; }
 #gamma-light-frame[hidden], #gamma-light-workspace[hidden] { display: none; }
+body[data-gamma-workspace="normal"] [data-panel="light"],
+body[data-gamma-workspace="normal"] .stage-light-motion-open,
+body[data-gamma-workspace="normal"] #stage-light-motion-modal,
+body[data-gamma-workspace="normal"] #stage-light-motion-backdrop { display:none !important; }
+/* Gamma では光の動き機能を入口ごと停止する。保存データの項目は残す。 */
+body.is-standalone .stage-light-motion-open,
+body.is-standalone #stage-light-motion-modal,
+body.is-standalone #stage-light-motion-backdrop { display:none !important; }
+body[data-gamma-workspace="normal"] #stage-front-lights,
+body[data-gamma-workspace="normal"] #stage-plan-lights,
+body[data-gamma-workspace="normal"] #stage-show-light-names,
+body[data-gamma-workspace="normal"] #stage-plan-routes-light { display:none !important; }
+body.is-standalone #stage-front-lights,
+body.is-standalone #stage-plan-lights,
+body.is-standalone #stage-show-light-names,
+body.is-standalone #stage-plan-routes-light { display:none !important; }
+body.is-standalone label:has(#stage-front-lights),
+body.is-standalone label:has(#stage-plan-lights),
+body.is-standalone label:has(#stage-show-light-names),
+body.is-standalone label:has(#stage-plan-routes-light) { display:none !important; }
+
+/* 通常／3D実験: 選択インスペクタを対象物の横へ浮かせる。既存のドラッグ管理を使える。 */
+body[data-gamma-workspace="normal"] .stage-panel.gamma-selection-floating,
+body.gamma-3d-active .stage-panel.gamma-selection-floating {
+  /* #view-stage のスクロール内容に属する、対象に貼り付いたパネル。 */
+  position: absolute; z-index: 30; width: min(240px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  max-height: min(70vh, calc(100dvh - 32px), 620px);
+  overflow: auto; margin: 0; padding: 0 12px 12px;
+  border: 1px solid var(--line-dark); border-radius: 2px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.45); background: var(--stage-ui-panel, #1b1714);
+}
+body[data-gamma-workspace="normal"] .stage-panel.gamma-selection-floating .stage-panel-head,
+body.gamma-3d-active .stage-panel.gamma-selection-floating .stage-panel-head { cursor: grab; }
+body[data-gamma-workspace="normal"] .stage-panel.gamma-selection-floating .stage-panel-help,
+body.gamma-3d-active .stage-panel.gamma-selection-floating .stage-panel-help { right: 18px; }
 #gamma-light-status { margin: 0; padding: 0 8px; color: #c6bba6; }
 #gamma-light-status:empty { display: none; }
-@media(max-width:700px) { #gamma-light-frame { min-height:420px; } #stage-workspace-tabs { gap:4px; } #stage-workspace-tabs button { font-size:12px; padding:6px 8px; } }
+@media(max-width:700px) {
+  #stage-workspace-tabs { gap:4px; }
+  #stage-workspace-tabs button { font-size:12px; padding:6px 8px; }
+}
 
 #gamma-light-status button { margin:8px; min-height:36px; padding:6px 12px; }

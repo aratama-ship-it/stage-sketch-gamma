@@ -12315,8 +12315,9 @@ body.stage-modal-open .stage-tour { display: none !important; }
 
 
 /* ---- 環境設定 ---- */
-/* ---------- 設定内「使い方」のアコーディオン ----------
-   案内・検索・冊子・感想の5つ。全部並べると設定の主目的（機能のオン/オフ）が
+/* ---------- 設定内「使い方・アプリについて」のアコーディオン ----------
+   案内・検索・冊子・端末の違い・アプリの説明・感想をまとめる。
+   全部並べると設定の主目的（機能のオン/オフ）が
    下へ押し出されるので、既定は畳んでおく。言語行のすぐ下に置く。
    <details> の素の三角は消し、他の設定行と同じ罫で揃える。 */
 .stage-pref-guide {
@@ -12364,8 +12365,7 @@ body.stage-modal-open .stage-tour { display: none !important; }
   border-bottom: 1px solid rgba(211, 172, 89, 0.14);
 }
 .stage-pref-row input { margin-top: 3px; }
-/* 「端末による違い」と「このアプリについて」は、どちらも窓を開くだけの入口。
-   同じ幅・同じ体裁で1行ずつ並べる（横に2つ置くと、長いほうが折り返して崩れた）。 */
+/* 端末の違いとアプリ説明も、使い方の入口と同じ体裁で並べる。 */
 .stage-pref-reach-row .stage-minor-action,
 .stage-pref-about-row .stage-minor-action { width: 100%; margin: 0; text-align: left; }
 .stage-pref-about-row { border-bottom: 1px solid rgba(211, 172, 89, 0.14); }
@@ -15688,6 +15688,11 @@ body.is-panel-resizing .stage-sketch-grid { transition: none; }
   background: var(--stage-timeline-accent);
 }
 
+/* Gamma追加分: 転換時間はON/OFFの左側に同じ行で置き、説明段落は出さない。 */
+.stage-transition-animation-pref { display:flex; align-items:center; gap:14px; }
+.stage-transition-animation-speed { order:-1; display:flex; align-items:center; gap:8px; }
+.stage-transition-animation-explanation { display:none !important; }
+
 @media (max-width: 1180px) {
   .stage-sketch-head { flex-wrap: wrap; }
   .stage-brand-block { flex: 1 1 520px; }
@@ -15710,6 +15715,18 @@ body.stage-timeline-expanded:not(.stage-fullscreen) {
   overflow: hidden;
 }
 
+/* 単独版は document を動かさず、#view-stage だけを縦スクロールさせる。 */
+html.stage-timeline-viewport-locked {
+  height: 100%;
+  overflow: hidden;
+}
+
+html.stage-timeline-viewport-locked body.is-standalone {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
 body.stage-timeline-expanded:not(.stage-fullscreen) #view-stage {
   height: calc(100dvh - var(--stage-timeline-height));
   min-height: 0;
@@ -15720,6 +15737,9 @@ body.stage-timeline-expanded:not(.stage-fullscreen) #view-stage {
 
 body.stage-timeline-collapsed:not(.stage-fullscreen) #view-stage {
   height: calc(100dvh - var(--stage-timeline-resize-hit));
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 /* 再生は下部タイムラインへ一元化する。タブレット／スマホの既存画面は変えない。 */

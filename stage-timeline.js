@@ -13,6 +13,23 @@
     return;
   }
 
+  // 単独版では舞台画面そのものをスクロール領域にする。ブラウザが前回の
+  // document の位置を復元した後で body を固定すると、画面だけが下へずれたまま
+  // wheel/trackpad が #view-stage に吸われ、ヘッダーへ戻れなくなるため外側を固定する。
+  const standaloneViewport = document.body.classList.contains("is-standalone");
+  function resetOuterDocumentScroll() {
+    if (!standaloneViewport || (window.scrollX === 0 && window.scrollY === 0)) return;
+    window.scrollTo(0, 0);
+  }
+  if (standaloneViewport) {
+    root.classList.add("stage-timeline-viewport-locked");
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+    window.addEventListener("pageshow", resetOuterDocumentScroll);
+    window.addEventListener("scroll", resetOuterDocumentScroll, { passive: true });
+    resetOuterDocumentScroll();
+    requestAnimationFrame(resetOuterDocumentScroll);
+  }
+
   const UI_KEY = "gamma:shosai-stage-timeline-ui-v1";
   const DEFAULT_HEIGHT = 360;
   const MIN_HEIGHT = 260;
@@ -384,6 +401,7 @@
     panel.classList.toggle("is-collapsed", next);
     document.body.classList.toggle("stage-timeline-collapsed", next);
     document.body.classList.toggle("stage-timeline-expanded", !next);
+    resetOuterDocumentScroll();
     els.resize.setAttribute("aria-expanded", String(!next));
     [panel.querySelector(".stage-timeline-toolbar"), els.viewport].filter(Boolean).forEach((element) => {
       element.inert = next;
@@ -2190,7 +2208,7 @@
     const segment = segmentAt(seekSeconds);
     const index = segment ? timeline.segments.findIndex((candidate) => candidate.sceneId === segment.sceneId) : -1;
     if (!segment || !segment.sceneId || index < 0 || index >= timeline.segments.length - 1) return false;
-    const added = bridge.addTimelineTransition(segment.sceneId, 4);
+    const added = bridge.addTimelineTransition(segment.sceneId);
     if (!added) return false;
     renderTimeline();
     return true;

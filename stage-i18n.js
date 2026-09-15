@@ -360,6 +360,9 @@
 
     /* ---- 上部 ---- */
     "使い方": "Guide",
+    "使い方・アプリについて": "How to use and about the app",
+    "案内・検索・冊子・端末の違い・アプリの説明・感想の送り先をまとめています。": "Tours, search, the booklet, device differences, app information, and where to send feedback.",
+    "使い方とアプリについて": "How to use and about the app",
     "使い方をさがす": "Search the Guide",
     "使いかたの冊子": "Guide Booklet",
     "クイックガイド": "Quick Guide",
@@ -840,7 +843,7 @@
     "このシーンへの転換を、一度真っ暗にしてから明ける": "Dip to black before this scene lights up",
     "転換の長さ": "Transition duration",
     "転換の長さ（秒）": "Transition duration (seconds)",
-    "空欄は設定の転換時間": "Blank uses the transition duration in Settings",
+    "空欄はデフォルトの転換時間": "Blank uses the default transition duration",
     "共通": "Shared",
     "この場面へ入る転換の再生時間。空なら設定の共通値":
       "Playback time for the transition into this scene. Leave blank to use the shared setting",
@@ -867,6 +870,8 @@
       "Save the current set layout under a name. You can recall it in another scene, or add it to what is already there. Performers are not included.",
     "照明は、どこから出てどこへ落ちるかを持ちます。 種類ごとに仕込む場所と当てる高さの既定値が入ります。 「照明を動かす」に切り替えると、灯体の丸い印と、当たる輪をそれぞれ掴んで動かせます。動線を引くと、灯体はそのままで当たる先だけが動きます。":
       "A light holds where it comes from and where it lands. Each type starts from its usual rig position and target height. Switch to “Move lights” to drag the fixture dot and the pool ring separately. Draw a route and the fixture stays put while the target travels.",
+    "照明は、どこから出てどこへ落ちるかを持ちます。 種類ごとに仕込む場所と当てる高さの既定値が入ります。 詳細な照明編集は、上部の「照明デザインモード」で行います。":
+      "A light holds where it comes from and where it lands. Each type starts from its usual rig position and target height. Detailed lighting edits are available in the “Lighting design mode” at the top.",
     "セット登録の名前": "Saved set name",
 
     /* ---- 道具バー ---- */
@@ -983,10 +988,10 @@
     "アニメーション": "Animation",
     "アニメ": "Animate",
     "転換アニメーション": "Transition animation",
-    "転換時間": "Transition duration",
+    "デフォルトの転換時間": "Default transition duration",
     "ショーごとの設定": "Show-specific settings",
     "設定には、この端末に保存されるものと、現在のショーに保存されるものがあります。": "Some settings are saved on this device; others are saved with the current show.",
-    "シーンを切り替えるとき、演者を動線に沿って動かして表示します。ON/OFFと転換時間は現在のショーに保存されます。": "When scenes change, show performers moving along their routes. The toggle and duration are saved with the current show.",
+    "シーンを切り替えるとき、演者を動線に沿って動かして表示します。ON/OFFとデフォルトの転換時間は現在のショーに保存されます。": "When scenes change, show performers moving along their routes. The toggle and default duration are saved with the current show.",
     "⊞ 一覧": "⊞ Grid",
     "▸ 畳む": "▸ Fold",
     "▾ 開く": "▾ Unfold",

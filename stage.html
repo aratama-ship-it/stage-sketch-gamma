@@ -12,14 +12,14 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026091501">
+<link rel="stylesheet" href="style.css?v=2026091618">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="gamma.css?v=2026091506">
+<link rel="stylesheet" href="gamma.css?v=2026091615">
 <script src="gamma-light-model.js?v=2026091502"></script>
 </head>
 <body class="is-standalone">
@@ -239,7 +239,7 @@
             <div class="stage-panel-body">
               <p class="stage-cast-hint">照明は、どこから出てどこへ落ちるかを持ちます。
                 種類ごとに仕込む場所と当てる高さの既定値が入ります。
-                「照明を動かす」に切り替えると、灯体の丸い印と、当たる輪をそれぞれ掴んで動かせます。動線を引くと、灯体はそのままで当たる先だけが動きます。</p>
+                詳細な照明編集は、上部の「照明デザインモード」で行います。</p>
               <div class="stage-cast-add stage-roster-add">
                 <input id="stage-light-name" class="stage-text-input" type="text" maxlength="24"
                        autocomplete="off" data-1p-ignore
@@ -254,7 +254,7 @@
               </div>
               <!-- 定番の組み方をまとめて仕込む。個々の明かりはあとから動かせる -->
               <button type="button" id="stage-light-preset-open" class="stage-select stage-kind-button"><span>プリセットから組む</span><span aria-hidden="true">▸</span></button>
-              <button type="button" id="stage-light-motion-open" class="stage-select stage-kind-button stage-light-motion-open">
+              <button type="button" id="stage-light-motion-open" class="stage-select stage-kind-button stage-light-motion-open" hidden>
                 <span>光の動きを組む<br><span class="stage-light-motion-open-summary" id="stage-light-motion-open-summary">動く光の案はまだありません</span></span>
                 <span aria-hidden="true">▸</span>
               </button>
@@ -434,7 +434,6 @@
             <!-- 作図中に繰り返す三つだけを常設する。背景の描画は背景モーダルから始める。 -->
             <div class="stage-tool-grid" role="group" aria-label="操作を選ぶ">
               <button type="button" data-stage-tool="select" data-tablet-icon="↔" data-tool-key="V" class="is-icon" aria-label="ものを動かす" aria-pressed="true"><span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.4v11.2M2.4 8h11.2"/><path d="M6.3 4.1 8 2.4l1.7 1.7M6.3 11.9 8 13.6l1.7-1.7"/><path d="M4.1 6.3 2.4 8l1.7 1.7M11.9 6.3 13.6 8l-1.7 1.7"/></svg></span><span class="stage-tool-label">ものを動かす</span></button>
-              <button type="button" data-stage-tool="light" data-tablet-icon="☀" data-tool-key="L" class="is-icon" aria-label="照明を動かす" aria-pressed="false"><span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.6a4.4 4.4 0 0 1 2.5 8c-.5.36-.8.94-.8 1.56v.3H6.3v-.3c0-.62-.3-1.2-.8-1.56A4.4 4.4 0 0 1 8 1.6Z"/><line x1="6.4" y1="13.5" x2="9.6" y2="13.5"/><line x1="6.8" y1="14.6" x2="9.2" y2="14.6"/></svg></span><span class="stage-tool-label">照明を動かす</span></button>
               <span class="stage-tool-split" aria-hidden="true"></span>
               <button type="button" data-stage-tool="arrow" data-tablet-icon="↗" data-tool-key="A" class="is-icon" aria-label="矢印を描く" aria-pressed="false"><span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 12.6 12.4 3.6"/><path d="M7.6 3.6h4.8v4.8"/></svg></span><span class="stage-tool-label">矢印を描く</span></button>
             </div>
@@ -2141,18 +2140,20 @@
         </button>
       </div>
     </section>
-    <!-- 使い方まわりは5つある。全部並べると設定の主目的（機能のオン/オフ）が
+    <!-- 使い方・アプリについての入口をまとめる。全部並べると設定の主目的（機能のオン/オフ）が
          押し出されるので、畳んでおく。言語のすぐ下＝読める言葉になった直後に置く。 -->
     <details class="stage-pref-guide" id="stage-pref-guide">
       <summary class="stage-pref-guide-summary">
-        <span class="stage-pref-name">使い方</span>
-        <p class="stage-pref-hint">案内・検索・冊子・感想の送り先をまとめています。</p>
+        <span class="stage-pref-name">使い方・アプリについて</span>
+        <p class="stage-pref-hint">案内・検索・冊子・端末の違い・アプリの説明・感想の送り先をまとめています。</p>
       </summary>
-      <div class="stage-prefs-links" aria-label="案内とサポート">
+      <div class="stage-prefs-links" aria-label="使い方とアプリについて">
         <button type="button" class="stage-about-link" id="stage-quick-open" title="90秒で読めるクイックガイドを開く">クイックガイド</button>
         <button type="button" class="stage-about-link" id="stage-tour-start" title="使い方をひととおり見る">はじめての案内</button>
         <button type="button" class="stage-about-link" id="stage-help-open">使い方をさがす</button>
         <button type="button" class="stage-about-link" id="stage-manual-open">使いかたの冊子</button>
+        <button type="button" class="stage-about-link" id="stage-reach-open">端末による違い</button>
+        <button type="button" class="stage-about-link" id="stage-about-open-from-prefs">このアプリについて</button>
         <button type="button" class="stage-about-link" id="stage-feedback" title="使ってみた感想を送る">感想を送る</button>
       </div>
     </details>
@@ -2164,24 +2165,16 @@
             <input type="checkbox" id="stage-anim-scenes" checked>
             <span>転換アニメーション</span>
           </label>
-          <p class="stage-pref-hint">シーンを切り替えるとき、演者を動線に沿って動かして表示します。ON/OFFと転換時間は現在のショーに保存されます。</p>
+          <p class="stage-pref-hint stage-transition-animation-explanation">シーンを切り替えるとき、演者を動線に沿って動かして表示します。ON/OFFとデフォルトの転換時間は現在のショーに保存されます。</p>
         </div>
         <label class="stage-transition-animation-speed">
-          <span>転換時間</span>
-          <input type="range" id="stage-anim-ms" min="0.2" max="3" step="0.05" value="2" aria-label="転換時間">
+          <span>デフォルトの転換時間</span>
+          <input type="range" id="stage-anim-ms" min="0.2" max="3" step="0.05" value="2" aria-label="デフォルトの転換時間">
           <span id="stage-anim-ms-value">2.0秒</span>
         </label>
       </div>
     </section>
     <div id="stage-prefs-list"></div>
-    <!-- 幅が要る機能一覧は環境設定から既存の窓として開く。
-         書斎のブロックは単独配布版では隠す（stage-sketch.js が制御）。 -->
-    <div class="stage-pref-row stage-pref-reach-row">
-      <button type="button" class="stage-minor-action" id="stage-reach-open">端末による違い</button>
-    </div>
-    <div class="stage-pref-row stage-pref-about-row">
-      <button type="button" class="stage-minor-action" id="stage-about-open-from-prefs">このアプリについて</button>
-    </div>
     <div class="stage-pref-row stage-pref-layout-reset-row">
       <span class="stage-pref-lang-body">
         <span class="stage-pref-name">パネル配置を初期状態に戻す</span>
@@ -2807,12 +2800,12 @@
 <script src="stage-light-motion.js?v=2026091501"></script>
 <script src="manual/manual-content.js?v=2026091501"></script>
 <script src="stage-pwa.js?v=2026091501"></script>
-<script src="stage-sketch.js?v=2026091504"></script>
-<script src="stage-timeline.js?v=2026091501"></script>
+<script src="stage-sketch.js?v=2026091634"></script>
+<script src="stage-timeline.js?v=2026091613"></script>
 <script src="stage-session.js?v=2026091501"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
 <script src="stage-venue-editor.js?v=2026091501"></script>
-<script src="gamma-workspace.js?v=2026091507"></script>
+<script src="gamma-workspace.js?v=2026091611"></script>
 </body>
 </html>

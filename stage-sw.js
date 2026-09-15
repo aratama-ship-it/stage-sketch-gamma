@@ -1,8 +1,8 @@
-const CACHE_NAME = "stage-sketch-gamma-pwa-v9";
+const CACHE_NAME = "stage-sketch-gamma-pwa-v10";
 const APP_SHELL = [
-  "./gamma.css?v=2026091506",
+  "./gamma.css?v=2026091615",
   "./gamma-light-model.js?v=2026091502",
-  "./gamma-workspace.js?v=2026091507",
+  "./gamma-workspace.js?v=2026091611",
   "./light-design/index.html?embed=gamma",
   "./light-design/embed.css?v=2026091503",
   "./light-design/rig-engine.js?v=20260915-5-mirror-basis",
@@ -17,7 +17,7 @@ const APP_SHELL = [
   "./light-design/selected-light-presets-ui.js?v=20260915-6-no-inline-type-entry",
   "./light-design/embed.js?v=2026091504",
   "./stage.html",
-  "./style.css?v=2026091501",
+  "./style.css?v=2026091618",
   "./stage-venues.js?v=2026091501",
   "./stage-venue-lines.js?v=2026091501",
   "./stage-i18n.js?v=2026091502",
@@ -37,8 +37,8 @@ const APP_SHELL = [
   "./manual/manual.html",
   "./manual/quick.html",
   "./manual/quick-en.html",
-  "./stage-sketch.js?v=2026091504",
-  "./stage-timeline.js?v=2026091501",
+  "./stage-sketch.js?v=2026091634",
+  "./stage-timeline.js?v=2026091613",
   "./stage-session.js?v=2026091501",
   "./stage-study-owner.js?v=2026091501",
   "./stage-study.css?v=21",
