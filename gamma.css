@@ -8,7 +8,7 @@ body[data-gamma-workspace^="light-"] .stage-sketch-grid { display: none !importa
 body[data-gamma-workspace^="light-"] #stage-timeline-panel { display: none !important; }
 #gamma-light-workspace { width: 100%; min-height: 0; }
 /* gamma-workspace.js measures the space below this frame after the header has wrapped. */
-#gamma-light-frame { display: block; width: 100%; height: calc(100dvh - 108px); min-height: 480px; border: 1px solid #3b342c; border-radius: 8px; background: #141311; }
+#gamma-light-frame { display: block; width: 100%; height: calc(100dvh - 108px); min-height: 480px; border: 0; border-radius: 0; background: #141311; }
 #gamma-light-frame[hidden], #gamma-light-workspace[hidden] { display: none; }
 #gamma-light-status { margin: 0; padding: 0 8px; color: #c6bba6; }
 #gamma-light-status:empty { display: none; }

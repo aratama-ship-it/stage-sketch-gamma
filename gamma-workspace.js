@@ -3,7 +3,9 @@
   const host=window.GAMMA_LIGHT_HOST, panel=document.getElementById('gamma-light-workspace'), frame=document.getElementById('gamma-light-frame');
   if(!host || !panel || !frame) return;
   const normal=document.querySelector('.stage-sketch-grid'), status=document.getElementById('gamma-light-status');
+  const hostUndo=document.getElementById('stage-undo'), hostRedo=document.getElementById('stage-redo');
   let mode='normal', loaded=false;
+  let hostHistory={undo:hostUndo?.disabled??true,redo:hostRedo?.disabled??true};
   let frameResizeRequest=0;
   function syncFrameHeight() {
     frameResizeRequest=0;
@@ -24,6 +26,32 @@
   syncNote();
   let latestContext=null;
   const editor=()=>frame.contentWindow?.GAMMA_LIGHT_EDITOR;
+  function captureHostHistory() {
+    hostHistory={undo:hostUndo?.disabled??true,redo:hostRedo?.disabled??true};
+  }
+  function syncHistory() {
+    if(!hostUndo || !hostRedo) return;
+    if(mode==='normal') {
+      hostUndo.disabled=hostHistory.undo;hostRedo.disabled=hostHistory.redo;
+      return;
+    }
+    const lightStatus=editor()?.status();
+    hostUndo.disabled=!lightStatus?.canUndo;hostRedo.disabled=!lightStatus?.canRedo;
+  }
+  function runLightHistory(event,direction) {
+    if(mode==='normal') return;
+    event.preventDefault();event.stopImmediatePropagation();
+    editor()?.[direction]();syncHistory();
+  }
+  hostUndo?.addEventListener('click',event=>runLightHistory(event,'undo'),true);
+  hostRedo?.addEventListener('click',event=>runLightHistory(event,'redo'),true);
+  document.addEventListener('keydown',event=>{
+    if(mode==='normal' || !['z','Z'].includes(event.key) || !(event.metaKey||event.ctrlKey) || event.altKey) return;
+    const target=event.target, tag=target?.tagName;
+    if(['INPUT','TEXTAREA','SELECT'].includes(tag) || target?.isContentEditable) return;
+    event.preventDefault();event.stopImmediatePropagation();
+    editor()?.[event.shiftKey?'redo':'undo']();syncHistory();
+  },true);
   function failed(error) {
     status.textContent='照明を開けませんでした: '+error.message+' ';
     const ctx=latestContext || host.context(), draftKey='gamma:lighting-draft-v1:'+ctx.showId;
@@ -38,6 +66,7 @@
   function select(next) {
     if(!['normal','light-placement','light-design'].includes(next)) return;
     try {
+      if(mode==='normal' && next!=='normal') captureHostHistory();
       if(next!=='normal') {
         const context=host.context(); latestContext=context;
         const timelinePlay=document.getElementById('stage-timeline-play');
@@ -56,11 +85,12 @@
         button.classList.toggle('is-active',active); button.setAttribute('aria-pressed',String(active));
       });
       window.dispatchEvent(new Event('gamma-workspace-change'));
+      syncHistory();
       scheduleFrameHeight();
     } catch(error) { panel.hidden=false; failed(error); }
   }
   frame.addEventListener('load',()=>{
-    try { editor().open(host.context(),mode); frame.hidden=false; status.textContent=''; scheduleFrameHeight(); }
+    try { editor().open(host.context(),mode); frame.hidden=false; status.textContent=''; syncHistory(); scheduleFrameHeight(); }
     catch(error) { failed(error); }
   });
   document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode]').forEach(button=>button.addEventListener('click',()=>select(button.dataset.stageWorkspaceMode)));
@@ -71,5 +101,5 @@
   });
   window.addEventListener('resize',scheduleFrameHeight);
   window.visualViewport?.addEventListener('resize',scheduleFrameHeight);
-  window.GAMMA_WORKSPACE=Object.freeze({normal:()=>select('normal'),select,mode:()=>mode});
+  window.GAMMA_WORKSPACE=Object.freeze({normal:()=>select('normal'),select,mode:()=>mode,captureHostHistory,syncHistory});
 })();

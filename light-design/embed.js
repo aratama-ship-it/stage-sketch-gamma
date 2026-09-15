@@ -6,6 +6,19 @@
   let draftTimer=0, lastScene='';
   const key=id=>'gamma:lighting-draft-v1:'+id;
   const message=text=>hooks.toast(text);
+  function arrangeEmbeddedToolbar() {
+    const bar=document.querySelector('.figbar'), save=document.getElementById('save');
+    if(!bar) return;
+    const actions=document.createElement('span');actions.className='gamma-light-actions';actions.setAttribute('aria-label','照明デザインの操作');
+    const applyButton=document.getElementById('apply'), runtime=document.getElementById('runtime-status'), reset=document.getElementById('runtime-reset');
+    applyButton.textContent='ショーに保存';
+    applyButton.title='配置と照明デザインを現在のショーへ保存';
+    runtime.hidden=true;
+    reset.textContent='↻';reset.setAttribute('aria-label','描画をリセット');
+    actions.append(document.getElementById('transport'),reset,document.getElementById('prefs'),document.getElementById('export'),applyButton);
+    bar.append(actions);
+    save.hidden=true;
+  }
   function build() { return {...appliedExtras,...hooks.buildDesign(state.designName || context.title)}; }
   function saveDraft() {
     if(!context || loading || !state.dirty) return;
@@ -62,6 +75,7 @@
       hooks.stop();
       const result=parent.GAMMA_LIGHT_HOST.apply(build(),context.basis);
       if(!result.persisted) throw Error('保存を確認できませんでした');
+      parent.GAMMA_WORKSPACE.captureHostHistory();
       context=result.context;state.dirty=false;
       // Remove only our own draft AFTER durable host acceptance.
       try {localStorage.removeItem(key(context.showId));} catch {message('照明は保存しました。編集控えの整理は次回行います');}
@@ -70,13 +84,14 @@
     } catch(error) {state.dirty=true;saveDraft();message('適用できませんでした: '+error.message);}
   }
   document.documentElement.dataset.gammaEmbedded='true';
-  document.getElementById('apply').textContent='ショーへ適用';
+  arrangeEmbeddedToolbar();
   document.getElementById('apply').onclick=apply;
   document.getElementById('close').onclick=()=>{suspend();parent.GAMMA_WORKSPACE.normal();};
   document.getElementById('close').title='編集を保持して通常モードへ戻る';
   document.getElementById('mode-place').onclick=()=>parent.GAMMA_WORKSPACE.select('light-placement');
   document.getElementById('mode-move').onclick=()=>parent.GAMMA_WORKSPACE.select('light-design');
   window.addEventListener('gamma-light-edit',()=>{
+    parent.GAMMA_WORKSPACE.syncHistory();
     if(loading || !context) return;
     clearTimeout(draftTimer); draftTimer=setTimeout(saveDraft,250);
     const scene=state.scenes[state.sceneIndex];
@@ -85,8 +100,8 @@
   document.addEventListener('visibilitychange',()=>{if(document.hidden)suspend();});
   window.addEventListener('pagehide',saveDraft);
   window.addEventListener('beforeunload',event=>{saveDraft();if(state.dirty){event.preventDefault();event.returnValue='';}});
-  window.GAMMA_LIGHT_EDITOR=Object.freeze({open,suspend,apply,build,
+  window.GAMMA_LIGHT_EDITOR=Object.freeze({open,suspend,apply,build,undo:hooks.undo,redo:hooks.redo,
     validateImport(design){model.validate(design,context.scenes.map(row=>row.id));if(JSON.stringify(design.stage)!==JSON.stringify(context.stage))throw Error('劇場寸法が異なる照明デザインです。通常モードで寸法を確認してください');},
     externalChange(){changedElsewhere=true;hooks.stop();if(state.dirty)message('別のタブでショーが更新されました。編集中の照明は保持しています');},
-    status:()=>({showId:context?.showId,dirty:state.dirty,active,changedElsewhere})});
+    status:()=>({showId:context?.showId,dirty:state.dirty,active,changedElsewhere,canUndo:Boolean(state.history.length),canRedo:Boolean(state.future.length)})});
 })();
