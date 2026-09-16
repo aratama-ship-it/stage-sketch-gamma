@@ -7,8 +7,12 @@
     Object.freeze({ id: "wide", name: "広角", fovDeg: 110 }),
     Object.freeze({ id: "normal", name: "標準", fovDeg: 86 }),
   ]);
-  const LENS_STORAGE_KEY = "gamma:shosai-fpv-lens-v1";
-  let lensId = "normal";
+  /* D-1（2026-09-17 本人決定）: 既定を「標準」から「広角」へ。舞台を見るときは
+     視野が広いほうが、客席から見た実際の見え方に近い。
+     ★保存キーを v1→v2 へ上げているのは、既に「標準」を保存してしまっている人にも
+       新しい既定から始めてもらうため。v1 は消さずに置いておく（読まなくなるだけ）。 */
+  const LENS_STORAGE_KEY = "gamma:shosai-fpv-lens-v2";
+  let lensId = "wide";
 
   /* 客席の入り。稽古で見たい状態が2つある——本番の圧（満席）と、
      客入れ前・ゲネプロの空の劇場（座席だけ）。切り替えて見比べる。
@@ -17,11 +21,14 @@
     Object.freeze({ id: "full", name: "満席", occupancy: .92 }),
     Object.freeze({ id: "empty", name: "空席", occupancy: 0 }),
   ]);
-  const HOUSE_MODE_STORAGE_KEY = "gamma:shosai-fpv-house-v1";
-  let houseModeId = "full";
+  /* D-1（2026-09-17 本人決定）: 既定を「満席」から「空席」へ。
+     作っている最中に見たいのは舞台であって、客の頭ではない。
+     保存キーを v2 へ上げる理由はレンズと同じ。 */
+  const HOUSE_MODE_STORAGE_KEY = "gamma:shosai-fpv-house-v2";
+  let houseModeId = "empty";
 
   function normalizeHouseModeId(value) {
-    return HOUSE_MODES.some((mode) => mode.id === value) ? value : "full";
+    return HOUSE_MODES.some((mode) => mode.id === value) ? value : "empty";
   }
 
   function houseModeById(id) {
@@ -57,7 +64,7 @@
   const finite = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
 
   function normalizeLensId(value) {
-    return LENSES.some((lens) => lens.id === value) ? value : "normal";
+    return LENSES.some((lens) => lens.id === value) ? value : "wide";
   }
 
   function lensById(id) {
@@ -933,6 +940,7 @@
 .stage-fpv-pose-tile span{display:block;padding:1px 2px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stage-fpv-pose-tile.on{background:#e8e2d4;color:#14100c;border-color:#e8e2d4}
 #stage-fpv-toast{left:50%;top:70px;transform:translateX(-50%);font-size:12.5px;background:rgba(var(--stage-ui-float-rgb,22,16,11),.86);padding:7px 14px;border-radius:3px;opacity:0;transition:opacity .4s;pointer-events:none;border:1px solid rgba(232,226,212,.2)}#stage-fpv-toast.show{opacity:1}
+#stage-fpv-backdrop[hidden]{display:none!important}#stage-fpv-backdrop{position:fixed;inset:0;z-index:79;background:rgba(8,7,6,.72)}
 #stage-fpv-fade{position:absolute;inset:0;background:#0d0a08;opacity:0;pointer-events:none;transition:opacity .16s}#stage-fpv-fade.on{opacity:1}#stage-fpv-close{position:absolute;top:14px;right:14px;width:44px;height:44px;padding:0;border:1px solid rgba(255,255,255,.32);border-radius:50%;background:rgba(0,0,0,.45);color:#fff;font-size:20px;line-height:42px;text-align:center;z-index:72;cursor:pointer;-webkit-tap-highlight-color:transparent}
  #stage-fpv-overlay.stage-fpv-preview{inset:20vh 25vw;z-index:80;border:1px solid rgba(232,226,212,.38);box-shadow:0 18px 54px rgba(0,0,0,.58)}#stage-fpv-overlay.stage-fpv-preview #stage-fpv-title,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-minimap,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-whose,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-cast,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-presets,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-nav,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-keys,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-hint,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-edit,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-optics,#stage-fpv-overlay.stage-fpv-preview .stage-fpv-panel{display:none!important}#stage-fpv-preview-3d{position:absolute;z-index:73;left:50%;bottom:16px;transform:translateX(-50%);padding:9px 16px;border:1px solid rgba(232,226,212,.45);background:rgba(13,10,8,.82);color:#e8e2d4;font:600 13px/1.2 inherit;cursor:pointer}@media(max-width:800px){#stage-fpv-overlay.stage-fpv-preview{inset:10vh 7vw}}
 `;
@@ -942,6 +950,12 @@
   function ensureDom() {
     if (elements) return elements;
     addStyle();
+    /* 2026-09-17 本人指示: 演者の目玉マークから開く「その人の視界」は画面の一部にしか出ないので、
+       それ以外の場所を暗くする。舞台スケッチの他のモーダル（.stage-modal-backdrop）と
+       同じ濃さ・同じ「押したら閉じる」に揃える。全画面の3Dモードでは要らない（画面全部を覆うため）。 */
+    const backdrop = createElement("div", "stage-fpv-backdrop");
+    backdrop.hidden = true;
+    backdrop.setAttribute("aria-hidden", "true");
     const root = createElement("div", "stage-fpv-overlay");
     root.hidden = true;
     root.setAttribute("aria-hidden", "true");
@@ -1056,12 +1070,14 @@
     root.append(canvas, fade, title, minimap, optics,
       panels.front.panel, panels.plan.panel,
       whose, cast, presets, nav, keyGuide, hint, edit, toast, preview3d, closeButton);
+    document.body.appendChild(backdrop);
     document.body.appendChild(root);
-    elements = { root, canvas, fade, show, act, scene, approx, minimap, whose, cast, presets,
+    elements = { root, backdrop, canvas, fade, show, act, scene, approx, minimap, whose, cast, presets,
       previous, count, next, keyGuide, hint, edit, editDot, editName, editFacing, editHint, editPoses,
       toast, closeButton, preview3d, panelToggles, lens, lensChips, house, houseChips,
       crowd, crowdChips, panels };
     closeButton.addEventListener("click", close);
+    backdrop.addEventListener("click", close);
     preview3d.addEventListener("click", () => state.bridge?.open3d?.());
     previous.addEventListener("click", () => queueScene(-1));
     next.addEventListener("click", () => queueScene(1));
@@ -3347,6 +3363,7 @@
     elements.root.classList.toggle("stage-fpv-workspace", Boolean(bridge.workspace3d));
     elements.root.classList.toggle("stage-fpv-preview", state.previewOnly);
     elements.preview3d.hidden = !state.previewOnly;
+    if (elements.backdrop) elements.backdrop.hidden = !state.previewOnly;
     if (!bridge.workspace3d) {
       if (typeof elements.root.style.removeProperty === "function") elements.root.style.removeProperty("--stage-fpv-workspace-top");
       else elements.root.style["--stage-fpv-workspace-top"] = "";
@@ -3391,6 +3408,7 @@
     elements.root.setAttribute("aria-hidden", "true");
     elements.root.classList.remove("stage-fpv-workspace");
     elements.root.classList.remove("stage-fpv-preview");
+    if (elements.backdrop) elements.backdrop.hidden = true;
     state.previewOnly = false;
     if (typeof elements.root.style.removeProperty === "function") elements.root.style.removeProperty("--stage-fpv-workspace-top");
     else elements.root.style["--stage-fpv-workspace-top"] = "";

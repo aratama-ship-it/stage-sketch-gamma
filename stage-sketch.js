@@ -4205,7 +4205,7 @@
     arrow: "正面図または平面図をなぞると矢印になります。正面図では床の上か空中かを選べます。Alt（option）を押しながらクリックすると、近い矢印を1本消せます。",
     route: "平面図で演者や物、明かりを掴み、離した所が行き先になります。真ん中の丸を引くと動線が曲がります。",
     note: "何もない所を押すとメモを貼れます。貼ったメモは掴んで動かせます。",
-    light: "照明の詳細編集は照明デザインモードで行います。",
+    light: "照明の詳細編集は照明で行います。",
     deriveRoute: "次のシーンで動いているものに、いまの位置から行き先までの動線を引きます。",
     sceneGrid: "全シーンをカードで並べて見渡します。",
     sceneSection: "シーンをまとめるセクションを追加します。",
@@ -4345,6 +4345,8 @@
     openSetInfo: document.getElementById("stage-open-setinfo"),
     routeClear: document.getElementById("stage-route-clear"),
     pieceLock: document.getElementById("stage-piece-lock"),
+    pieceLockIconOpen: document.getElementById("stage-piece-lock-icon-open"),
+    pieceLockIconClosed: document.getElementById("stage-piece-lock-icon-closed"),
     facingControls: document.getElementById("stage-facing-controls"),
     planRoute: document.getElementById("stage-plan-route"),
     planDeriveRoute: document.getElementById("stage-plan-derive-route"),
@@ -5211,9 +5213,97 @@
     primaryMode: raw && raw.primaryMode === "ordered" ? "ordered" : "ordered",
     soundtrack: raw && raw.soundtrack === "bundled-demo" ? "bundled-demo" : null,
   });
+  /* T-2（2026-09-17）: 見せる時間の既定は10秒（本人決定）。
+   * 「数値が入力されていない場合は10秒に補正する」ため、新規作成でも読み込みでもここで埋める。
+   * 移動時間は0秒のまま（従来のタイムラインの既定と同じ。勝手に転換を挟まない）。
+   * これで hold/travel が null になる経路が無くなり、画面の空欄と
+   * タイムライン側の 4秒/0秒 フォールバックの食い違い（指示書 T-2 の表）が消える。 */
+  const DEFAULT_SCENE_HOLD_SECONDS = 10;
+  const DEFAULT_SCENE_TRAVEL_SECONDS = 0;
+  /* 2026-09-17 本人指示「シーンパネルとタイムラインは常に繋がっている状態に。転換も同じ」。
+   *
+   * それまで section.timelineDurationSeconds は、シーンの秒数とは別に持つ
+   * **引き伸ばし率**だった。セクション時間を56.7秒にしても、シーンは10秒のまま
+   * タイムラインで横に伸びて見えるだけで、シーンパネルの数字は動かなかった。
+   * これをやめ、セクション時間は**シーンの秒数の合計そのもの**にする。
+   * セクション時間を変えたら、その比で見せる時間と移動時間を配り直す。 */
+  const SCENE_MIN_SECONDS = 0.1;
+  const toTenths = (seconds) => Math.round(seconds * 10) / 10;
+
+  /* タイムライン側の sceneTimelineSeconds() と同じ定義。ずれると合計が合わなくなる。 */
+  function sceneRowSeconds(scene) {
+    const rehearsal = (scene && scene.rehearsal) || {};
+    const hold = Math.max(0, rehearsalSeconds(rehearsal.holdDurationSeconds) ?? DEFAULT_SCENE_HOLD_SECONDS);
+    const travel = Math.max(0, rehearsalSeconds(rehearsal.transitionToNextSeconds) ?? DEFAULT_SCENE_TRAVEL_SECONDS);
+    return Math.max(SCENE_MIN_SECONDS, hold + travel);
+  }
+
+  const sumSceneSeconds = (scenes) => toTenths(scenes.reduce((sum, row) => sum + sceneRowSeconds(row), 0));
+
+  /* rows の index 番目（セクション）にぶら下がるシーンだけを返す。
+     sceneChildren() は state を見るので、読み込み中の配列にも使えるこちらを分けた。 */
+  function sectionChildScenes(rows, index) {
+    const base = rows[index].depth;
+    const out = [];
+    for (let at = index + 1; at < rows.length && rows[at].depth > base; at += 1) {
+      if (rows[at].kind === "scene") out.push(rows[at]);
+    }
+    return out;
+  }
+
+  /* セクション時間へ合わせて子シーンの秒数を比で配り直す。
+     0.1秒へ丸めた余りは最後のシーンの見せる時間で吸収し、合計を必ず一致させる。 */
+  function redistributeSectionSeconds(scenes, target) {
+    if (!scenes.length || !(target > 0)) return false;
+    const base = sumSceneSeconds(scenes);
+    if (!(base > 0) || Math.abs(base - target) < 1e-9) return false;
+    const factor = target / base;
+    scenes.forEach((scene) => {
+      if (!scene.rehearsal) scene.rehearsal = normalizeSceneRehearsal(null);
+      const hold = Math.max(0, rehearsalSeconds(scene.rehearsal.holdDurationSeconds) ?? DEFAULT_SCENE_HOLD_SECONDS);
+      const travel = Math.max(0, rehearsalSeconds(scene.rehearsal.transitionToNextSeconds) ?? DEFAULT_SCENE_TRAVEL_SECONDS);
+      scene.rehearsal.holdDurationSeconds = toTenths(hold * factor);
+      scene.rehearsal.transitionToNextSeconds = toTenths(travel * factor);
+    });
+    const last = scenes[scenes.length - 1];
+    const gap = toTenths(target - sumSceneSeconds(scenes));
+    if (gap) last.rehearsal.holdDurationSeconds = Math.max(0, toTenths(last.rehearsal.holdDurationSeconds + gap));
+    return true;
+  }
+
+  function refreshSectionDurationCache(project) {
+    const rows = (project && project.scenes) || [];
+    rows.forEach((row, index) => {
+      if (row.kind !== "section") return;
+      const children = sectionChildScenes(rows, index);
+      row.timelineDurationSeconds = children.length ? sumSceneSeconds(children) : null;
+    });
+  }
+
+  /* セクション時間を打ち替えている最中の基準。
+     打つたびに「そのときの合計」から配り直すと、0.1秒への丸めが毎回効いて値が痩せる
+     （「56.7」と打つと 5 → 56 → 56.7 の3回配り直される）。
+     編集を始めた時点の秒数を覚えておき、いつもそこから一度で配る。 */
+  let sectionDurationEdit = null;
+
+  /* 保存済みのセクション時間と、シーンの秒数の合計を突き合わせる。
+     食い違っていたら**セクション時間の側を正**としてシーンへ配り直す
+     （本人が最後に打った数字はそちらなので、それに合わせるほうが意図に近い）。
+     以後はどちらを触っても両方が動くので、二度と食い違わない。 */
+  function reconcileSectionDurations(rows) {
+    rows.forEach((row, index) => {
+      if (row.kind !== "section") return;
+      const children = sectionChildScenes(rows, index);
+      if (!children.length) { row.timelineDurationSeconds = null; return; }
+      const saved = timelineSeconds(row.timelineDurationSeconds);
+      if (saved !== null) redistributeSectionSeconds(children, saved);
+      row.timelineDurationSeconds = sumSceneSeconds(children);
+    });
+  }
+
   const normalizeSceneRehearsal = (raw) => ({
-    holdDurationSeconds: rehearsalSeconds(raw && raw.holdDurationSeconds),
-    transitionToNextSeconds: rehearsalSeconds(raw && raw.transitionToNextSeconds),
+    holdDurationSeconds: rehearsalSeconds(raw && raw.holdDurationSeconds) ?? DEFAULT_SCENE_HOLD_SECONDS,
+    transitionToNextSeconds: rehearsalSeconds(raw && raw.transitionToNextSeconds) ?? DEFAULT_SCENE_TRAVEL_SECONDS,
     timelineLockEdge: raw && (raw.timelineLockEdge === "start" || raw.timelineLockEdge === "end")
       ? raw.timelineLockEdge : null,
     transitionLockEdge: raw && (raw.transitionLockEdge === "start" || raw.transitionLockEdge === "end")
@@ -5390,6 +5480,16 @@
     return [section, scene];
   }
 
+  /* 2026-09-17 本人指示: 新しいショーを作り始めたら、まず劇場設定へ行く。
+   * 劇場が決まるまでは舞台・機材配置・照明・3Dへ進めない。
+   * 判定に venueSetupWasApplied() をそのまま使えないのは、見本や既存の保存ショーも
+   * 「未反映」と出てしまい、見るだけの人まで締め出してしまうから（実測で確認）。
+   * そこで**新しく作ったショーにだけ**この印を付け、劇場を反映した時点で外す。 */
+  function markVenueSetupPending(stateValue) {
+    if (stateValue && stateValue.project) stateValue.project.venueSetupPending = true;
+    return stateValue;
+  }
+
   function baseState(withExample) {
     const [section, scene] = initialSceneRows(withExample);
     return {
@@ -5431,9 +5531,11 @@
       showSetNames: true,
       showLightNames: true,
       // 正面図の隅に「客席のどこから見ているか」の小図を出すか
-    /* ★既定はON。正面図の右上に「どの席から見ているか」の小図を出す（本人指示 2026-09-16: 必須機能）。
-       2026-09-16 朝の公開で false になっていたのを戻した。保存データに値があればそちらを尊重する。 */
-    showSeatMap: true,
+    /* 正面図の右上に「どの席から見ているか」の小図を出すか。
+       機能としては必須（2026-09-16 本人指示。勝手に消さない）だが、
+       **初期状態はOFF**（2026-09-17 本人指示）。要るときに自分で出す。
+       保存データに値があればそちらを尊重する。 */
+    showSeatMap: false,
       // 平面図で吊物（宙に吊ってあるもの）まで出すか
       showFlown: false,
       /* 照明と動線の出し入れ。図ごとに別。
@@ -6236,7 +6338,7 @@
   }
 
   function normalizeState(raw) {
-    if (!raw || typeof raw !== "object") return baseState(true);
+    if (!raw || typeof raw !== "object") return markVenueSetupPending(baseState(true));
     const fallback = baseState(false);
 
     // v2以前は「1枚のスケッチ」だった。1場面のプロジェクトとして引き上げる
@@ -6264,6 +6366,9 @@
     wrapUnsectionedSceneRuns(scenes,
       () => newScene(sectionTitle(++generatedSectionCount), false, "section", 0));
     if (!scenes.some((x) => x.kind === "scene")) scenes = addMissingSceneInsideSection(scenes);
+    /* 2026-09-17: 保存済みの「引き伸ばし率」時代のデータを、ここで一度だけ揃える。
+       以後はセクション時間＝シーンの秒数の合計で固定される。 */
+    reconcileSectionDurations(scenes);
     const wanted = scenes.find((x) => x.id === rawProject.activeSceneId && x.kind === "scene");
     const activeId = wanted ? wanted.id : scenes.find((x) => x.kind === "scene").id;
 
@@ -6383,8 +6488,8 @@
       showNames: raw.showNames === undefined ? true : Boolean(raw.showNames),
       showSetNames: raw.showSetNames === undefined ? true : Boolean(raw.showSetNames),
       showLightNames: raw.showLightNames === undefined ? true : Boolean(raw.showLightNames),
-      // 既存の明示設定はそのまま尊重し、新規状態だけ「見る位置の図」を閉じる。
-      showSeatMap: raw.showSeatMap === undefined ? true : Boolean(raw.showSeatMap),   // 値が無い旧データは従来どおりON
+      // 既存の明示設定はそのまま尊重し、値が無いものは「見る位置の図」を閉じて始める。
+      showSeatMap: raw.showSeatMap === undefined ? false : Boolean(raw.showSeatMap),   // 2026-09-17: 値が無ければOFFで始める
       showFlown: Boolean(raw.showFlown),
       showLightsFront: raw.showLightsFront === undefined ? true : Boolean(raw.showLightsFront),
       showLightsPlan: raw.showLightsPlan === undefined ? true : Boolean(raw.showLightsPlan),
@@ -6447,7 +6552,9 @@
     } catch (_) {
       // 保存領域が使えなくても、舞台スケッチ自体はそのまま利用できる。
     }
-    return { value: baseState(true), restored: false };
+    /* 2026-09-17 本人指示: 新しいショーはまず劇場設定から始める。
+       見本や読み込んだショーには付けない（劇場も中身も揃っているため）。 */
+    return { value: markVenueSetupPending(baseState(true)), restored: false };
   }
 
   // ルート直下に場面があれば、まだ「セクションの中にシーン」を満たしていない旧形式。
@@ -8810,7 +8917,14 @@
     return px / (piece.type === "performer" ? 155 : piece.type === "block" ? 84 : piece.type === "sphere" ? 118 : 170);
   }
 
-  function snapshot() { return JSON.stringify(state); }
+  function snapshot() {
+    /* 2026-09-17: セクション時間はシーンの秒数の合計の控え。
+       シーンパネルの入力欄は scene.rehearsal を直に書くので、
+       書き出す直前にここで揃えておかないとファイルの中だけ食い違う
+       （次に開いたとき、古い控えに合わせてシーンが書き換わってしまう）。 */
+    refreshSectionDurationCache(state.project);
+    return JSON.stringify(state);
+  }
 
   function recordBefore(value) {
     if (!value) return;
@@ -13694,6 +13808,244 @@
     };
   }
 
+  /* ===== L-1（2026-09-17）: ショー自身のライトキューを2Dの図へ反映する =====
+   *
+   * 本人指示「ライトキューを立てた時に、正面図や平面図に反映できるように」。
+   * 上の drawLightingPlanOverlay は**劇場に備え付けの照明プランを比べるための概略**で、
+   * いつも全消灯で描く別物。こちらは**いま開いている場面のキュー**を見る。
+   *
+   * モデルは毎フレーム作らない。灯体は最大1000台あり得るので、
+   * 照明デザインの実体と場面が変わったときだけ組み直す。 */
+  let lightCueOverlayCache = { design: undefined, sceneId: "", model: null };
+  function lightCueOverlayModel() {
+    const api = window.SHOSAI_STAGE_LIGHT_CUE_OVERLAY;
+    const planApi = lightingPlanOverlayApi();
+    const design = state.project && state.project.lightingDesign;
+    const sceneId = (state.project && state.project.activeSceneId) || "";
+    if (!api || !planApi || !design) return null;
+    if (lightCueOverlayCache.design !== design || lightCueOverlayCache.sceneId !== sceneId) {
+      lightCueOverlayCache = { design, sceneId, model: api.build(design, sceneId, planApi) };
+    }
+    return lightCueOverlayCache.model;
+  }
+
+  /* 舞台の寸法が照明デザインを作ったときと違うなら、重ねると嘘になるので描かない。 */
+  function lightCueOverlayForLayout(L) {
+    const model = lightCueOverlayModel();
+    if (!model || presenting || !model.counts.total) return null;
+    if (Math.abs(finite(model.dims.W, -1) - Number(L.size.width)) > 0.01
+      || Math.abs(finite(model.dims.D, -1) - Number(L.size.depth)) > 0.01) return null;
+    return model;
+  }
+
+  /* 明るさは「点いている×レベル」でしか変えない。色は cue の色をそのまま使う。
+     昔の光の描き方（にじみ・グラデーション）へ寄せると、
+     レーザーやカッターを誤って普通の光に見せてしまう。 */
+  function lightCueAlpha(fixture) {
+    if (fixture.state !== "on") return 0.28;
+    return 0.35 + 0.55 * (fixture.level / 100);
+  }
+
+  function drawLightCueOverlayPlan(target, L) {
+    const model = lightCueOverlayForLayout(L);
+    if (!model) return;
+    /* 台数が多いときは狙い先の線を省く。位置と点灯だけでも要るものは分かる。 */
+    const drawAim = model.counts.total <= 200;
+    target.save();
+    target.lineWidth = 1;
+
+    target.globalAlpha = 0.5;
+    target.strokeStyle = stageSurfaceColor("#8c7a55");
+    target.setLineDash([5, 4]);
+    model.trusses.forEach((truss) => {
+      const start = place(truss.u0, truss.v, L);
+      const end = place(truss.u1, truss.v, L);
+      target.beginPath();
+      target.moveTo(start.x, start.y);
+      target.lineTo(end.x, end.y);
+      target.stroke();
+    });
+    target.setLineDash([]);
+
+    model.fixtures.forEach((fixture) => {
+      const at = place(fixture.u, fixture.v, L);
+      target.globalAlpha = lightCueAlpha(fixture);
+
+      // 狙っている場所。止まった絵なので、動く光は「動く範囲」を出す
+      if (drawAim && fixture.aim) {
+        const aim = place(fixture.aim.a.u, fixture.aim.a.v, L);
+        target.strokeStyle = fixture.color;
+        target.globalAlpha = lightCueAlpha(fixture) * 0.45;
+        target.beginPath();
+        target.moveTo(at.x, at.y);
+        target.lineTo(aim.x, aim.y);
+        target.stroke();
+        target.globalAlpha = lightCueAlpha(fixture) * 0.8;
+        if (fixture.aim.kind === "circle" && fixture.aim.radiusM > 0) {
+          target.beginPath();
+          target.arc(aim.x, aim.y, fixture.aim.radiusM * L.pxPerM, 0, Math.PI * 2);
+          target.stroke();
+        } else if (fixture.aim.kind === "line" && fixture.aim.b) {
+          const other = place(fixture.aim.b.u, fixture.aim.b.v, L);
+          target.beginPath();
+          target.moveTo(aim.x, aim.y);
+          target.lineTo(other.x, other.y);
+          target.stroke();
+        } else {
+          target.beginPath();
+          target.arc(aim.x, aim.y, 3, 0, Math.PI * 2);
+          target.stroke();
+        }
+      }
+
+      // 灯体そのもの
+      target.globalAlpha = lightCueAlpha(fixture);
+      target.strokeStyle = stageSurfaceColor("#19130f");
+      target.fillStyle = fixture.state === "on" ? fixture.color : stageSurfaceColor("#6a604e");
+      target.lineWidth = 1.1;
+      target.beginPath();
+      if (fixture.kind === "laser") {
+        // レーザーは別物として別の形。普通の光の丸と混ぜない
+        const r = 4.4;
+        target.moveTo(at.x - r, at.y - r); target.lineTo(at.x + r, at.y + r);
+        target.moveTo(at.x + r, at.y - r); target.lineTo(at.x - r, at.y + r);
+        target.strokeStyle = fixture.state === "on" ? fixture.color : stageSurfaceColor("#6a604e");
+        target.lineWidth = 1.6;
+        target.stroke();
+      } else if (fixture.kind === "moving") {
+        const r = 4.2;
+        target.moveTo(at.x, at.y - r); target.lineTo(at.x + r, at.y);
+        target.lineTo(at.x, at.y + r); target.lineTo(at.x - r, at.y);
+        target.closePath();
+        target.fill();
+        target.stroke();
+      } else {
+        target.arc(at.x, at.y, 3.4, 0, Math.PI * 2);
+        target.fill();
+        target.stroke();
+      }
+    });
+    drawLightCueOverlayCaption(target, L, model);
+    target.restore();
+  }
+
+  /* L-1c: 正面図の「当たり」。
+   * ★README の警告どおり、昔の光の描き方（にじみ・グラデーション）へは変換しない。
+   *   ここで描くのは「灯体の位置」と「そこから狙い先へ引いた線」だけ＝図であって、
+   *   光った絵ではない。レーザーとカッターを普通の光に見せてしまうのが一番まずい。 */
+  function drawLightCueOverlayFront(target, L) {
+    const model = lightCueOverlayForLayout(L);
+    if (!model) return;
+    const drawAim = model.counts.total <= 200;
+    const raise = (u, v, metres) => {
+      const pos = place(u, v, L);
+      const rawY = pos.rawY - Math.max(0, metres) * perMetre(pos, L).y;
+      return { x: pos.x, y: L.tilt(rawY) };
+    };
+    target.save();
+    target.lineWidth = 1;
+
+    // バトンは客席から見ると横一本の線になる
+    target.globalAlpha = 0.45;
+    target.strokeStyle = stageSurfaceColor("#8c7a55");
+    target.setLineDash([5, 4]);
+    model.trusses.forEach((truss) => {
+      const start = raise(truss.u0, truss.v, truss.h);
+      const end = raise(truss.u1, truss.v, truss.h);
+      target.beginPath();
+      target.moveTo(start.x, start.y);
+      target.lineTo(end.x, end.y);
+      target.stroke();
+    });
+    target.setLineDash([]);
+
+    model.fixtures.forEach((fixture) => {
+      const at = raise(fixture.u, fixture.v, fixture.h);
+      if (drawAim && fixture.aim) {
+        const aim = raise(fixture.aim.a.u, fixture.aim.a.v, fixture.aim.a.hM);
+        target.strokeStyle = fixture.color;
+        target.globalAlpha = lightCueAlpha(fixture) * 0.4;
+        target.beginPath();
+        target.moveTo(at.x, at.y);
+        target.lineTo(aim.x, aim.y);
+        target.stroke();
+        target.globalAlpha = lightCueAlpha(fixture) * 0.75;
+        target.beginPath();
+        if (fixture.aim.kind === "line" && fixture.aim.b) {
+          const other = raise(fixture.aim.b.u, fixture.aim.b.v, fixture.aim.b.hM);
+          target.moveTo(aim.x, aim.y);
+          target.lineTo(other.x, other.y);
+        } else {
+          target.arc(aim.x, aim.y, 3, 0, Math.PI * 2);
+        }
+        target.stroke();
+      }
+      target.globalAlpha = lightCueAlpha(fixture);
+      target.strokeStyle = stageSurfaceColor("#19130f");
+      target.fillStyle = fixture.state === "on" ? fixture.color : stageSurfaceColor("#6a604e");
+      target.lineWidth = 1.1;
+      target.beginPath();
+      if (fixture.kind === "laser") {
+        const r = 4.4;
+        target.moveTo(at.x - r, at.y - r); target.lineTo(at.x + r, at.y + r);
+        target.moveTo(at.x + r, at.y - r); target.lineTo(at.x - r, at.y + r);
+        target.strokeStyle = fixture.state === "on" ? fixture.color : stageSurfaceColor("#6a604e");
+        target.lineWidth = 1.6;
+        target.stroke();
+      } else if (fixture.kind === "moving") {
+        const r = 4.2;
+        target.moveTo(at.x, at.y - r); target.lineTo(at.x + r, at.y);
+        target.lineTo(at.x, at.y + r); target.lineTo(at.x - r, at.y);
+        target.closePath();
+        target.fill();
+        target.stroke();
+      } else {
+        target.arc(at.x, at.y, 3.4, 0, Math.PI * 2);
+        target.fill();
+        target.stroke();
+      }
+    });
+
+    const text = lightCueOverlayCaptionText(model);
+    target.globalAlpha = 0.92;
+    target.font = "600 10px system-ui, sans-serif";
+    const width = Math.max(96, target.measureText(text).width + 12);
+    const left = L.centerX - L.frontW / 2 + 6;
+    target.fillStyle = stageSurfaceColor("#201b16");
+    target.fillRect(left, L.floorY - 25, width, 19);
+    target.fillStyle = stageSurfaceColor("#e0c989");
+    target.fillText(text, left + 6, L.floorY - 12);
+    target.restore();
+  }
+
+  /* 図にしていないものを必ず書く。README の「誤変換しない」を守るかわりに、
+     何が出ていないのかを隠さない。 */
+  function lightCueOverlayCaptionText(model) {
+    const head = languageValue(
+      () => `Lighting outline · ${model.counts.lit}/${model.counts.total} on`,
+      () => `照明 概略・${model.counts.total}台中${model.counts.lit}台点灯`);
+    const notes = model.notes.map((note) => {
+      if (note.key === "laser") {
+        return languageValue(() => `${note.count} lasers: position only`,
+          () => `レーザー${note.count}台は位置だけ`);
+      }
+      return languageValue(() => `${note.count} LX cues not shown`,
+        () => `LX cue ${note.count}件はこの図では表現していません`);
+    });
+    return notes.length ? `${head} / ${notes.join(" / ")}` : head;
+  }
+
+  function drawLightCueOverlayCaption(target, L, model) {
+    const text = lightCueOverlayCaptionText(model);
+    target.globalAlpha = 0.92;
+    target.font = "600 10px system-ui, sans-serif";
+    const width = Math.max(96, target.measureText(text).width + 12);
+    target.fillStyle = stageSurfaceColor("#201b16");
+    target.fillRect(L.stage.x + 6, L.stage.y + L.stage.h - 25, width, 19);
+    target.fillStyle = stageSurfaceColor("#e0c989");
+    target.fillText(text, L.stage.x + 12, L.stage.y + L.stage.h - 12);
+  }
+
   function drawLightingPlanOverlay(target, L) {
     const overlay = lightingPlanOverlayModel();
     if (!overlay || !L.plan || presenting || !overlay.dims
@@ -13779,6 +14131,8 @@
     if (L.plan) drawPlanVenue(target, L);
     else drawFrontVenue(target, L);
     if (showSelection && L.plan && target === planCtx) drawLightingPlanOverlay(target, L);
+    if (showSelection && L.plan && target === planCtx) drawLightCueOverlayPlan(target, L);
+    if (showSelection && !L.plan && target === ctx) drawLightCueOverlayFront(target, L);
 
     // 煽りの席では、垂直だったはずの線が画面の上へ向かって集まる（三点透視）。
     // 見上げていることが絵として伝わるのは、人を大きく描くからではなく、この傾きによる。
@@ -14264,6 +14618,11 @@
   }
 
   function render(forceCanvases = false) {
+    /* V-1（2026-09-17）: 劇場設定モードを開いているあいだは、舞台機構の変化を
+     * 間口プレビュー側へ伝える。他のモードでは何もしない（常時イベントを流さない）。 */
+    if (document.body.dataset.gammaWorkspace === "venue-setup") {
+      window.dispatchEvent(new Event("stage-show-machinery-changed"));
+    }
     syncMultiSelectionControls();
     if (STUDY_READ_ONLY) {
       canvas.setAttribute("aria-label", `${sc().title}: ${tx("正面図")}`);
@@ -15034,11 +15393,12 @@
 
   // 横幅はショーではなく、この端末の画面設定。通常列と引き出しを別々に覚える。
   const PANEL_COLUMN_MAX_WIDTH = 480;
-  /* 2026-09-16 本人決定（第3の道）: 新規利用者・配置リセット後の既定は268px（ドラッグの上限は
-     従来どおり480pxのまま残す）。出演者一覧の2列表示のために既定を480pxへ広げていたが、
-     列数をパネル幅で自動切替する方式（style.css の .stage-cast-list）にしたので、
-     既定を広げておく理由が無くなった。268pxなら正面図の描画欄が大きく保てる。 */
-  const PANEL_COLUMN_DEFAULT_WIDTH = 268;
+  /* 新規利用者・配置リセット後の既定幅（ドラッグの上限は従来どおり480pxのまま）。
+     2026-09-16 は268pxだった（列数をパネル幅で自動切替する方式にしたので、
+     出演者一覧のために広げておく理由が無くなったため）。
+     2026-09-17 本人指示で、下限240pxと上限480pxのちょうど中間の360pxへ広げた
+     ——268pxでは名前や操作が窮屈だった。正面図の描画欄はそのぶん狭くなる。 */
+  const PANEL_COLUMN_DEFAULT_WIDTH = 360;
   let panelWidthUi = null;
   function syncPanelWidths() {
     const ui = panelWidthUi;
@@ -18515,7 +18875,7 @@
 
   async function newShow() {
     if (!window.confirm("新しいショーを作ります。いま開いているショーは一覧に残ります。")) return;
-    const fresh = baseState(false);
+    const fresh = markVenueSetupPending(baseState(false));
     fresh.project.title = untitledShow();
     fresh.layout = state.layout;                 // 道具の並びは持ち越す
     if (!await applyLoadedState(normalizeState(fresh), "新しいショーを作りました。")) return;
@@ -19033,9 +19393,21 @@
   const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     { group: "手に持つもの", kind: "diabolo" },
   ]);
+  /* R-1（2026-09-17 本人決定）: 盆・可動デッキ・幕・せり・水面は「大道具」ではなく舞台機構で、
+   * 劇場に組み込まれているもの。だから足す場所も劇場設定モードの舞台機構パネル
+   * （`[data-panel="machinery"]`）ひとつに寄せる。
+   * R-2（同）: 「組んだセット」(model) も、ここから新規に足せないようにする。
+   *   本人が求めているのは「組んだ配置に名前をつけて登録し、あとで呼び出す」仕組みで、
+   *   それは別パネル（`[data-panel="rigs"]`＝セット登録）に既にある。
+   *   一覧に「組んだセット」という種類が並んでいるのが紛らわしい、というのが元の指摘。
+   * ★どちらも **kind の定義自体は消さない**。消すと既存ショーの駒が未知の型として
+   *   演者に落ちる（`PIECE_TYPES` 付近の警告コメント参照）。閉じるのは追加の入口だけ。 */
+  const ROSTER_MACHINERY_KINDS = new Set(["seri", "revolve", "deck", "curtain", "pool"]);
+  const ROSTER_CLOSED_KINDS = new Set(["model"]);
   const ROSTER_KIND_LAYERS = Object.freeze({
     performer: Object.freeze(["performer"]),
-    set: Object.freeze(SET_KIND_ORDER.filter((kind) => !ROSTER_PROP_KINDS.has(kind))),
+    set: Object.freeze(SET_KIND_ORDER.filter((kind) => !ROSTER_PROP_KINDS.has(kind)
+      && !ROSTER_MACHINERY_KINDS.has(kind) && !ROSTER_CLOSED_KINDS.has(kind))),
     prop: Object.freeze(["prop", "diabolo"]),
   });
   let rosterKind = "performer";
@@ -19976,7 +20348,10 @@
 
       const makeRehearsalTimeInput = (ownerScene, labelJa, key) => {
         const label = document.createElement("label");
+        /* T-1（2026-09-17）: ラベルの文字は画面に出さない（本人指示）。
+         * 読み上げ用には input の aria-label が残るので、意味は失わない。 */
         const title = document.createElement("span");
+        title.className = "visually-hidden";
         title.textContent = tx(labelJa);
         const value = document.createElement("span");
         const input = document.createElement("input");
@@ -19988,6 +20363,8 @@
         input.value = ownerScene.rehearsal && ownerScene.rehearsal[key] !== null
           ? String(ownerScene.rehearsal[key]) : "";
         input.setAttribute("aria-label", tx(`${labelJa}（秒）`));
+        /* T-1: ラベルを消したぶん、ポインタを乗せれば何の秒数かわかるようにしておく。 */
+        input.title = tx(labelJa);
         input.addEventListener("input", () => {
           if (!ownerScene.rehearsal) ownerScene.rehearsal = normalizeSceneRehearsal(null);
           ownerScene.rehearsal[key] = rehearsalSeconds(input.value);
@@ -19997,8 +20374,19 @@
           }
         });
         input.addEventListener("change", () => {
+          /* T-2: 空のまま確定したら既定値へ戻す（入力中の一時的な空欄は邪魔しない）。 */
+          if (ownerScene.rehearsal && ownerScene.rehearsal[key] === null) {
+            ownerScene.rehearsal[key] = key === "holdDurationSeconds"
+              ? DEFAULT_SCENE_HOLD_SECONDS
+              : DEFAULT_SCENE_TRAVEL_SECONDS;
+            input.value = String(ownerScene.rehearsal[key]);
+            persistSoon();
+          }
           renderScenes();
           renderSceneGrid();
+          /* T-3（2026-09-17）: シーンパネルで秒数を変えたら、タイムラインの長さもその場で合わせる。
+           * 同じ scene.rehearsal を見ているのに、再描画だけが呼ばれていなかった。 */
+          window.dispatchEvent(new CustomEvent("stage-timeline-structure-change"));
         });
         value.append(input, document.createTextNode(` ${tx("秒")}`));
         label.append(title, value);
@@ -20219,17 +20607,9 @@
           name.textContent = scene.title;
         }
 
-        const count = document.createElement("span");
-        count.className = "stage-scene-count";
-        if (scene.kind === "section") {
-          const totals = sectionTotals(i);
-          count.textContent = sectionSummary(totals, "list");
-          count.title = sectionSummary(totals, "title");
-        } else {
-          count.textContent = `${scene.pieces.length}`;
-        }
-
-        button.append(num, name, count);
+        /* T-4（2026-09-17）: セクションのシーン数・シーンの物の数の表示を削除
+         * （docs/ui-audit-2026-09-16/UI_REWORK_SPEC.md T-4。本人確認済み・情報自体を残す必要なし）。 */
+        button.append(num, name);
         /* 名前はダブルクリックでも直せる。階層操作は常設せず補助メニューへまとめる。 */
         button.title = tx(scene.kind === "section" ? "押すと開閉します" : "押すと開きます");
         button.addEventListener("dblclick", (e) => {
@@ -24719,6 +25099,7 @@ ${propsPlotHtml}
       project.venueSize = VENUES.sizeById(VENUES.byId(saved.id), venueApplySizeId(saved)).id;
       project.venueDims = null;
       project.venueSetupAppliedAt = nowIso();
+      delete project.venueSetupPending;   // 劇場が決まったので、もう誘導しない
       project.branchReason = versioned
         ? `劇場を「${saved.label}」へ変更し、照明機材を選び直すため`
         : project.branchReason;
@@ -24741,8 +25122,12 @@ ${propsPlotHtml}
       const complete = detail.complete;
       closeVenueApplyModal();
       if (typeof complete === "function") complete();
-      if (choice === "none") window.GAMMA_WORKSPACE?.normal();
-      else window.GAMMA_WORKSPACE?.select("light-placement");
+      /* 2026-09-17 本人指示で「自分で配置する」と「導入しない」を1つにまとめた。
+         行き先は舞台にそろえる——照明を置きたい人は機材配置を自分で開けばよく、
+         置きたくない人を機材配置へ連れて行かずに済む。プリセットのときだけ、
+         組んだ機材をそのまま見せるために機材配置を開く。 */
+      if (choice === "preset") window.GAMMA_WORKSPACE?.select("light-placement");
+      else window.GAMMA_WORKSPACE?.normal();
     } catch (error) {
       if (els.venueApplyStatus) els.venueApplyStatus.textContent = error.message;
       setVenueApplyChoice(venueApplyChoice);
@@ -25478,7 +25863,14 @@ ${propsPlotHtml}
     renderPoseStrip(piece);
     if (els.fpvOpen) els.fpvOpen.hidden = multi || !(piece && piece.type === "performer");
     syncHoldingControls(multi ? null : piece);
-    if (!piece) return;
+    if (!piece) {
+      /* S-3（2026-09-17）: コンテナを隠すだけで中の文字を消していなかったため、
+       * 単一（浮動）レイアウトで選択解除後もパネルの文字が残るゴーストが出ていた
+       * （docs/ui-audit-2026-09-16/UI_REWORK_SPEC.md S-3）。表示テキストを空にしてから隠す。 */
+      if (els.selectedName) els.selectedName.textContent = "";
+      if (els.selectionScope) { els.selectionScope.hidden = true; els.selectionScope.textContent = ""; }
+      return;
+    }
     if (multi) {
       els.selectedName.textContent = performers.length === pieces.length
         ? sx(`${pieces.length}人の演者`, `${pieces.length} performers`)
@@ -28431,9 +28823,12 @@ ${propsPlotHtml}
   if (els.pieceLock) {
       const locked = isLocked(piece);
       /* 錠は鍵の絵だけ。並ぶボタンが全部同じ長さの文字だと、目が滑って読めない。
-       * 何ができるかは、押す前に触れたとき（title）と読み上げで伝える。 */
+       * 何ができるかは、押す前に触れたとき（title）と読み上げで伝える。
+       * S-2: 絵文字はOS・フォントで大きさが揃わないため、SVG2枚のhidden切替にした
+       * （textContentでは書き換えられない）。 */
       els.pieceLock.setAttribute("aria-pressed", String(locked));
-      els.pieceLock.textContent = locked ? "🔒" : "🔓";
+      if (els.pieceLockIconOpen) els.pieceLockIconOpen.hidden = locked;
+      if (els.pieceLockIconClosed) els.pieceLockIconClosed.hidden = !locked;
       const lockWord = locked ? tx("錠を外す") : tx("動かないようにする");
       els.pieceLock.setAttribute("aria-label", lockWord);
       els.pieceLock.title = languageValue(() => (owner
@@ -28775,7 +29170,7 @@ ${propsPlotHtml}
       at: '[data-panel="light"]',
       begin: () => { tourMark.light = lightCount(); },
       done: () => lightCount() > tourMark.light,
-      ja: ["照明を足す", "照明の配置と編集は、上部の「照明デザインモード」で行います。"],
+      ja: ["照明を足す", "照明の配置と編集は、上部の「照明」で行います。"],
       en: ["Add a light", "Enter a name under Lights and press Add. Four types: overhead, side, front, floor. Switch the tool to Move lights to drag the fixture and the pool separately."],
     },
     {
@@ -30221,7 +30616,13 @@ ${propsPlotHtml}
     return { showId: state.project.id, title: state.project.title, stage, scenes,
       activeSceneId: state.project.activeSceneId, design: state.project.lightingDesign ? projectIoClone(state.project.lightingDesign) : null,
       basis: JSON.stringify({ id: state.project.id, scenes: scenes.map(row => row.id).sort(), stage, design: state.project.lightingDesign || null }),
-      readOnly: STUDY_READ_ONLY || document.body.classList.contains("stage-session-guest") };
+      readOnly: STUDY_READ_ONLY || document.body.classList.contains("stage-session-guest"),
+      // V-7（2026-09-17）: 劇場が一度も反映されていないショーで機材配置/照明を開いたら誘導する
+      // （docs/ui-audit-2026-09-16/UI_REWORK_SPEC.md V-7）。既存の venueSetupWasApplied() をそのまま使う。
+      venueApplied: venueSetupWasApplied(state.project),
+      // 新しいショーで「まず劇場設定から」を促している間だけ true
+      venueSetupPending: Boolean(state.project && state.project.venueSetupPending)
+        && !venueSetupWasApplied(state.project) };
   }
   window.GAMMA_LIGHT_HOST = Object.freeze({
     context: gammaLightingContext,
@@ -30245,6 +30646,38 @@ ${propsPlotHtml}
       return { persisted: true, shelfPersisted: true, context: gammaLightingContext() };
     },
     openScene(id) { const row=state.project.scenes.find(row=>row.kind==="scene" && row.id===id); if (!row) return false; openScene(id); return true; },
+  });
+  /* V-1（2026-09-17）: 劇場設定モードの間口プレビュー（平面図）へ、いま置いてある舞台機構を重ねる。
+   * 読み取り専用。劇場エディタはショーの内部を知らないので、こちらが
+   * 「舞台に対する割合（u,v）＋実寸（m）」という劇場側でも使える形にして渡す。
+   * docs/ui-audit-2026-09-16/UI_REWORK_SPEC.md V-1。 */
+  const MACHINERY_OVERLAY_KINDS = new Set(["seri", "revolve", "deck", "curtain", "pool"]);
+  window.SHOSAI_STAGE_MACHINERY_OVERLAY = Object.freeze({
+    list() {
+      const scene = sc();
+      if (!scene || !Array.isArray(scene.pieces)) return [];
+      return scene.pieces
+        .filter((piece) => piece && MACHINERY_OVERLAY_KINDS.has(piece.type))
+        .map((piece) => {
+          const visual = effectivelyPlacedPiece(piece, scene);
+          const dims = pieceDims(visual) || {};
+          const dia = Number(dims.dia);
+          const round = Number.isFinite(dia) && dia > 0;
+          return {
+            id: piece.id,
+            kind: visual.type,
+            name: pieceLabel(visual),
+            u: Number(visual.u),
+            v: Number(visual.v),
+            round,
+            widthM: round ? dia : Number(dims.w) || 0,
+            depthM: round ? dia : Number(dims.d) || (visual.type === "curtain" ? 0.12 : 0),
+            facingDeg: Number(visual.facing) || 0,
+          };
+        })
+        .filter((item) => Number.isFinite(item.u) && Number.isFinite(item.v)
+          && item.widthM > 0 && item.depthM > 0);
+    },
   });
   window.SHOSAI_STAGE_SESSION_BRIDGE = Object.freeze({
     exportDocumentString() {
@@ -30370,10 +30803,36 @@ ${propsPlotHtml}
       }
       if (current !== seconds) {
         if (options.checkpoint) checkpoint();
-        section.timelineDurationSeconds = seconds;
+        /* 2026-09-17 本人指示: セクション時間はシーンの秒数の合計そのもの。
+           変えたぶんを、見せる時間と移動時間へ比で配り直す（転換も一緒に動く）。 */
+        const children = sceneChildren(state.project.scenes.indexOf(section))
+          .filter((row) => row.kind === "scene");
+        if (!sectionDurationEdit || sectionDurationEdit.sectionId !== section.id || options.checkpoint) {
+          sectionDurationEdit = {
+            sectionId: section.id,
+            baseline: children.map((row) => ({
+              id: row.id,
+              hold: rehearsalSeconds(row.rehearsal && row.rehearsal.holdDurationSeconds) ?? DEFAULT_SCENE_HOLD_SECONDS,
+              travel: rehearsalSeconds(row.rehearsal && row.rehearsal.transitionToNextSeconds) ?? DEFAULT_SCENE_TRAVEL_SECONDS,
+            })),
+          };
+        }
+        // いつも編集開始時点の秒数へ戻してから、目標へ一度だけ配る
+        const start = new Map(sectionDurationEdit.baseline.map((row) => [row.id, row]));
+        children.forEach((row) => {
+          const base = start.get(row.id);
+          if (!base) return;
+          if (!row.rehearsal) row.rehearsal = normalizeSceneRehearsal(null);
+          row.rehearsal.holdDurationSeconds = base.hold;
+          row.rehearsal.transitionToNextSeconds = base.travel;
+        });
+        redistributeSectionSeconds(children, seconds);
+        section.timelineDurationSeconds = children.length ? sumSceneSeconds(children) : seconds;
         persistSoon();
+        window.dispatchEvent(new CustomEvent("stage-timeline-structure-change"));
       }
       if (options.finalize) {
+        sectionDurationEdit = null;
         renderScenes();
         renderSceneGrid();
       }
@@ -30389,9 +30848,10 @@ ${propsPlotHtml}
       if (!scene || duration === null || sectionDuration === null) return false;
       if (!scene.rehearsal) scene.rehearsal = normalizeSceneRehearsal(null);
       const key = part === "transition" ? "transitionToNextSeconds" : "holdDurationSeconds";
+      const fallbackSeconds = part === "transition"
+        ? DEFAULT_SCENE_TRAVEL_SECONDS : DEFAULT_SCENE_HOLD_SECONDS;
       const current = scene.rehearsal[key] == null
-        ? (part === "transition" ? 0 : 4)
-        : finite(scene.rehearsal[key], part === "transition" ? 0 : 4);
+        ? fallbackSeconds : finite(scene.rehearsal[key], fallbackSeconds);
       const currentSectionDuration = section.timelineDurationSeconds;
       const timingChanged = Math.abs(current - duration) > 1e-9
         || currentSectionDuration === null || currentSectionDuration === undefined
@@ -30408,7 +30868,9 @@ ${propsPlotHtml}
       if (!timingChanged && !cuesToShift.length) return true;
       if (options.checkpoint) checkpoint();
       scene.rehearsal[key] = duration;
-      section.timelineDurationSeconds = sectionDuration;
+      /* 呼び出し側の見かけの長さではなく、実際の合計を持つ（両者を食い違わせない）。 */
+      section.timelineDurationSeconds = sumSceneSeconds(
+        sceneChildren(sectionIndex).filter((row) => row.kind === "scene"));
       cuesToShift.forEach((cue) => {
         cue.atSeconds = Math.max(0, Math.round((finite(cue.atSeconds, 0) + rippleSeconds) * 10) / 10);
       });
@@ -30517,6 +30979,43 @@ ${propsPlotHtml}
       window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
       return jsonClone(cue);
     },
+    /* T-5（2026-09-17）: タイムラインで範囲選択したキューをまとめて動かす。
+     * 1件ずつ updateTimelineCue を呼ぶと checkpoint が件数ぶん積まれ、
+     * 「まとめて動かしたのに取り消しは1件ずつ」になってしまう。ここは1回にする。
+     * 固定されたキューは動かさない（画面側でも選ばせていないが、念のため二重に守る）。 */
+    updateTimelineCues(patches) {
+      const cues = Array.isArray(state.project.cues) ? state.project.cues : [];
+      const changes = [];
+      (Array.isArray(patches) ? patches : []).forEach((patch) => {
+        if (!patch || !patch.id) return;
+        const cue = cues.find((item) => item && item.kind === "timeline" && item.id === patch.id);
+        if (!cue || cue.locked) return;
+        const atSeconds = Math.round(clamp(finite(patch.atSeconds, cue.atSeconds), 0, 86400) * 10) / 10;
+        if (cue.atSeconds !== atSeconds) changes.push([cue, atSeconds]);
+      });
+      if (!changes.length) return 0;
+      checkpoint();
+      changes.forEach(([cue, atSeconds]) => { cue.atSeconds = atSeconds; });
+      persistSoon();
+      window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
+      return changes.length;
+    },
+    /* T-5: 範囲選択した複数のキューをまとめて消す。理由は updateTimelineCues と同じで、
+     * 「まとめて消したのに取り消しは1件ずつ」にしないため。 */
+    removeTimelineCues(ids) {
+      const cues = Array.isArray(state.project.cues) ? state.project.cues : [];
+      const wanted = new Set(Array.isArray(ids) ? ids : []);
+      const doomed = cues.filter((cue) => cue && cue.kind === "timeline" && wanted.has(cue.id) && !cue.locked);
+      if (!doomed.length) return 0;
+      checkpoint();
+      doomed.forEach((cue) => {
+        const at = cues.indexOf(cue);
+        if (at >= 0) cues.splice(at, 1);
+      });
+      persistSoon();
+      window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
+      return doomed.length;
+    },
     removeTimelineCue(id) {
       const cues = Array.isArray(state.project.cues) ? state.project.cues : [];
       const at = cues.findIndex((cue) => cue && cue.kind === "timeline" && cue.id === id);
@@ -30543,7 +31042,7 @@ ${propsPlotHtml}
       const scene = state.project.scenes[index];
       const ratio = clamp(finite(options.ratio, 0.5), 0.05, 0.95);
       if (!scene.rehearsal) scene.rehearsal = normalizeSceneRehearsal(null);
-      const oldHold = Math.max(0.1, finite(scene.rehearsal.holdDurationSeconds, 4));
+      const oldHold = Math.max(0.1, finite(scene.rehearsal.holdDurationSeconds, DEFAULT_SCENE_HOLD_SECONDS));
       const oldTransition = Math.max(0, finite(scene.rehearsal.transitionToNextSeconds, 0));
       // 保存形式と同じ0.1秒単位で二分し、合計時間を変えない。
       const holdTenths = Math.round(oldHold * 10);

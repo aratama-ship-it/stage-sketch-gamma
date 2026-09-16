@@ -69,6 +69,8 @@
     objectRemove: $("stage-venue-editor-object-remove"),
     accessType: $("stage-venue-editor-access-type"),
     ceilingHeight: $("stage-venue-editor-ceiling-height"),
+    ceilingDetails: $("stage-venue-editor-ceiling-details"),
+    ceilingOutdoorNote: $("stage-venue-editor-ceiling-outdoor-note"),
     name: $("stage-venue-editor-name"),
     source: $("stage-venue-editor-source"),
     confidence: $("stage-venue-editor-confidence"),
@@ -148,7 +150,8 @@
     wings: [],
     fixtures: [],
     access: [],
-    ceiling: { heightM: 6, rigging: "none" },
+    /* V-4（2026-09-17）: 天井あり/なし・屋内/屋外。既存データに無い場合は「屋内・天井あり」＝従来の挙動。 */
+    ceiling: { heightM: 6, rigging: "none", hasCeiling: true, indoor: true },
     stageFormat: "theatre",
     templateKey: null,
     mode: "select",
@@ -313,8 +316,8 @@
     const worldW = baseWorldW / state.view.zoom;
     const worldH = baseWorldH / state.view.zoom;
     const scale = Math.min(
-      (els.canvas.width - (CANVAS_PADDING * 2)) / worldW,
-      (els.canvas.height - (CANVAS_PADDING * 2)) / worldH,
+      (canvasCssWidth() - (CANVAS_PADDING * 2)) / worldW,
+      (canvasCssHeight() - (CANVAS_PADDING * 2)) / worldH,
     );
     const drawnW = worldW * scale;
     const drawnH = worldH * scale;
@@ -322,8 +325,8 @@
     const minY = state.view.center[1] - (worldH / 2);
     return {
       scale,
-      offsetX: (els.canvas.width - drawnW) / 2,
-      offsetY: (els.canvas.height - drawnH) / 2,
+      offsetX: (canvasCssWidth() - drawnW) / 2,
+      offsetY: (canvasCssHeight() - drawnH) / 2,
       minX,
       maxX: minX + worldW,
       minY,
@@ -342,8 +345,8 @@
   function fromEvent(event) {
     const rect = els.canvas.getBoundingClientRect();
     const layout = view();
-    const canvasX = (event.clientX - rect.left) * (els.canvas.width / rect.width);
-    const canvasY = (event.clientY - rect.top) * (els.canvas.height / rect.height);
+    const canvasX = (event.clientX - rect.left) * (canvasCssWidth() / rect.width);
+    const canvasY = (event.clientY - rect.top) * (canvasCssHeight() / rect.height);
     return [
       layout.minX + ((canvasX - layout.offsetX) / layout.scale),
       layout.minY + ((canvasY - layout.offsetY) / layout.scale),
@@ -1047,7 +1050,7 @@
     const lastRow = Math.floor(layout.maxY / gridStepM);
     ctx.save();
     ctx.fillStyle = cssColor("--desk", "#191512");
-    ctx.fillRect(0, 0, els.canvas.width, els.canvas.height);
+    ctx.fillRect(0, 0, canvasCssWidth(), canvasCssHeight());
     for (let column = firstColumn; column <= lastColumn; column += 1) {
       const x = column * gridStepM;
       const from = toCanvas([x, layout.minY]);
@@ -1407,6 +1410,62 @@
     ctx.restore();
   }
 
+  /* V-1（2026-09-17）: いまショーに置いてある舞台機構を、間口プレビューへ読み取り専用で重ねる。
+   * 劇場エディタはショーの中身を知らないので、stage-sketch.js 側が
+   * 「舞台に対する割合(u,v)＋実寸(m)」に直した一覧だけを渡してくる。
+   * ここでは描くだけで、劇場データにも機構にも書き戻さない。 */
+  function showMachineryOverlay() {
+    const api = typeof window !== "undefined" && window.SHOSAI_STAGE_MACHINERY_OVERLAY;
+    if (!api || typeof api.list !== "function") return [];
+    try { return api.list() || []; } catch (_) { return []; }
+  }
+
+  function drawShowMachinery() {
+    const items = showMachineryOverlay();
+    if (!items.length) return;
+    const points = allStagePoints();
+    if (points.length < 3) return;
+    const xs = points.map((point) => point[0]);
+    const ys = points.map((point) => point[1]);
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+    const width = Math.max(...xs) - minX;
+    const depth = Math.max(...ys) - minY;
+    if (!(width > 0) || !(depth > 0)) return;
+    const scale = view().scale;
+    items.forEach((item) => {
+      const at = toCanvas([minX + (item.u * width), minY + (item.v * depth)]);
+      ctx.save();
+      ctx.translate(at[0], at[1]);
+      if (item.facingDeg) ctx.rotate(item.facingDeg * Math.PI / 180);
+      ctx.beginPath();
+      if (item.round) {
+        ctx.arc(0, 0, (item.widthM / 2) * scale, 0, Math.PI * 2);
+      } else {
+        const w = item.widthM * scale;
+        const d = Math.max(2, item.depthM * scale);
+        ctx.rect(-w / 2, -d / 2, w, d);
+      }
+      ctx.fillStyle = "rgba(119,134,95,0.20)";
+      ctx.fill();
+      ctx.setLineDash([6, 4]);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = cssColor("--moss", "#77865f");
+      ctx.stroke();
+      ctx.restore();
+
+      /* 名前は図形の上端へ置く。中央だと、同じ場所に置いた機構どうしで重なって読めない。 */
+      const halfDepthPx = (item.round ? item.widthM / 2 : item.depthM / 2) * scale;
+      ctx.save();
+      ctx.fillStyle = cssColor("--milk-dim", "#bdb3a4");
+      ctx.font = "11px 'Hiragino Kaku Gothic ProN', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.fillText(item.name, at[0], at[1] - halfDepthPx - 3);
+      ctx.restore();
+    });
+  }
+
   function drawFixtures() {
     state.fixtures.forEach((item) => {
       const selected = state.selectedElement && state.selectedElement.kind === "fixture" &&
@@ -1518,7 +1577,9 @@
       button.setAttribute("aria-pressed", String(button.dataset.venueEditorMode === state.mode));
     });
     const dims = dimensions();
-    els.dims.textContent = translatedStatus(`間口 だいたい${approxM(dims.width)}m ・ 奥行 だいたい${approxM(dims.depth)}m`);
+    /* 2026-09-17 本人指示: この図は平面図なので、そう名乗る（他の図と呼び方をそろえる）。
+       寸法は判断に要るので残す。 */
+    els.dims.textContent = translatedStatus(`平面図 ・ 間口 だいたい${approxM(dims.width)}m ・ 奥行 だいたい${approxM(dims.depth)}m`);
     if (els.audienceFull) {
       const fullBands = state.audience.filter((area) => Number.isInteger(area.edgeIndex)).length;
       els.audienceFull.hidden = state.stageFormat !== "in-the-round";
@@ -1570,6 +1631,19 @@
     document.querySelectorAll("[data-venue-editor-rigging]").forEach((button) => {
       button.setAttribute("aria-pressed", String(button.dataset.venueEditorRigging === state.ceiling.rigging));
     });
+    /* V-4: 高さ・吊りは「屋内 かつ 天井あり」でだけ意味がある。隠すだけで値は保持する。 */
+    const hasCeiling = state.ceiling.hasCeiling !== false;
+    const indoor = state.ceiling.indoor !== false;
+    document.querySelectorAll("[data-venue-editor-ceiling-presence]").forEach((button) => {
+      const on = (button.dataset.venueEditorCeilingPresence === "yes") === hasCeiling;
+      button.setAttribute("aria-pressed", String(on));
+    });
+    document.querySelectorAll("[data-venue-editor-ceiling-place]").forEach((button) => {
+      const on = (button.dataset.venueEditorCeilingPlace === "indoor") === indoor;
+      button.setAttribute("aria-pressed", String(on));
+    });
+    if (els.ceilingDetails) els.ceilingDetails.hidden = !(hasCeiling && indoor);
+    if (els.ceilingOutdoorNote) els.ceilingOutdoorNote.hidden = hasCeiling && indoor;
     document.querySelectorAll("[data-venue-editor-line-toggle]").forEach((input) => {
       input.checked = state.lines.visible[input.dataset.venueEditorLineToggle] !== false;
     });
@@ -1581,7 +1655,37 @@
     syncHistoryButtons();
   }
 
+  /* 2026-09-17 本人指示: この図だけ粗かった。
+   * 中身は960×640のまま、画面では1000px超へ引き伸ばされていたため。
+   * 中身を「画面の実寸×画面の密度」まで増やし、描くときに密度ぶんだけ拡大する。
+   * ★座標の計算は画面の画素（CSS px）のままにする。ここを中身の画素にすると、
+   *   1mあたりの画素が倍になって目盛りの刻みまで変わってしまう（実際に1枡が1m→0.5mになった）。 */
+  let canvasScale = 1;
+  const canvasCssWidth = () => els.canvas.width / canvasScale;
+  const canvasCssHeight = () => els.canvas.height / canvasScale;
+
+  function syncCanvasResolution() {
+    const rect = els.canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const ratio = Math.min(3, Math.max(1, window.devicePixelRatio || 1));
+    const width = Math.round(rect.width * ratio);
+    const height = Math.round(rect.height * ratio);
+    canvasScale = ratio;
+    if (els.canvas.width !== width || els.canvas.height !== height) {
+      els.canvas.width = width;
+      els.canvas.height = height;
+    }
+    // 中身を作り直すと変換は消えるので、毎回かけ直す
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  }
+
+  const venueModalHidden = () => {
+    const modal = document.getElementById("stage-venue-editor-modal");
+    return !modal || modal.hidden;
+  };
+
   function render() {
+    syncCanvasResolution();
     const linesResult = currentLines();
     drawGrid();
     drawStageWings();
@@ -1594,6 +1698,7 @@
     drawStageExtensions();
     drawFixtures();
     drawAccess();
+    drawShowMachinery();
     drawPlacementPreview();
     renderControls(linesResult);
   }
@@ -1849,6 +1954,9 @@
     state.fixtures = customVenue && Array.isArray(variant.fixtures) ? clone(variant.fixtures) : [];
     state.access = customVenue && Array.isArray(variant.access) ? clone(variant.access) : [];
     state.ceiling = clone(variant.ceiling || venue.ceiling || { heightM: 6, rigging: "none" });
+    // V-4: 旧データ（hasCeiling/indoorを持たない）は「屋内・天井あり」として読む＝従来と同じ挙動。
+    state.ceiling.hasCeiling = state.ceiling.hasCeiling !== false;
+    state.ceiling.indoor = state.ceiling.indoor !== false;
     state.stageFormat = inferTemplateStageFormat(venue, variant);
     state.templateKey = key;
     state.templateSignature = null;      // 下の captureDraft 完了後に入れる
@@ -2860,6 +2968,9 @@
       ceiling: {
         heightM: state.ceiling.heightM,
         rigging: state.ceiling.rigging,
+        /* V-4: 天井あり/なし・屋内/屋外。古い劇場データには無いので、読むときは既定 true。 */
+        hasCeiling: state.ceiling.hasCeiling !== false,
+        indoor: state.ceiling.indoor !== false,
         note: "数値入力の目安。実劇場では要確認。",
       },
       audience: audienceOutput(),
@@ -3039,8 +3150,8 @@
     pending.venues.forEach((venue) => {
       const dimensions = importedVenueDimensions(venue);
       const row = document.createElement("tr");
-      [venue.label, `${dimensions.width}m`, `${dimensions.depth}m`, `${dimensions.height}m`,
-        tx(venue.provenance && venue.provenance.source ? venue.provenance.source : "不明")]
+      /* V-3/V-11（2026-09-17）: 出所列を削除。venue.provenance自体は読み書きし続ける（データは消さない）。 */
+      [venue.label, `${dimensions.width}m`, `${dimensions.depth}m`, `${dimensions.height}m`]
         .forEach((value) => {
           const cell = document.createElement("td");
           cell.textContent = value;
@@ -3171,8 +3282,25 @@
   function setRigging(rigging) {
     if (!["none", "limited", "full"].includes(rigging)) return;
     state.ceiling.rigging = rigging;
-    const labels = { none: "吊れない", limited: "一部可", full: "吊れる" };
+    const labels = { none: "不可", limited: "一部可", full: "可" };
     setStatus(`吊り条件を「${labels[rigging]}」にしました。天井高とは独立して保存します。`);
+    render();
+  }
+
+  /* V-4（2026-09-17）: 天井あり/なし・屋内/屋外。高さと吊りの入力はこの2つで出し入れする。 */
+  function setCeilingPresence(hasCeiling) {
+    state.ceiling.hasCeiling = hasCeiling;
+    setStatus(hasCeiling
+      ? "天井ありにしました。高さと吊りを設定できます。"
+      : "天井なしにしました。高さと吊りは使いません（入力した値は残します）。");
+    render();
+  }
+
+  function setCeilingPlace(indoor) {
+    state.ceiling.indoor = indoor;
+    setStatus(indoor
+      ? "屋内にしました。天井ありなら高さと吊りを設定できます。"
+      : "屋外にしました。高さと吊りは使いません（入力した値は残します）。");
     render();
   }
 
@@ -3282,6 +3410,16 @@
       () => setRigging(button.dataset.venueEditorRigging),
     ));
   });
+  document.querySelectorAll("[data-venue-editor-ceiling-presence]").forEach((button) => {
+    button.addEventListener("click", () => withHistory(
+      () => setCeilingPresence(button.dataset.venueEditorCeilingPresence === "yes"),
+    ));
+  });
+  document.querySelectorAll("[data-venue-editor-ceiling-place]").forEach((button) => {
+    button.addEventListener("click", () => withHistory(
+      () => setCeilingPlace(button.dataset.venueEditorCeilingPlace === "indoor"),
+    ));
+  });
   document.querySelectorAll("[data-venue-editor-line-toggle]").forEach((input) => {
     input.addEventListener("change", () => {
       const name = input.dataset.venueEditorLineToggle;
@@ -3295,10 +3433,29 @@
     withHistory(() => loadVenueTemplate(event.detail));
   });
   window.addEventListener("stage-venue-editor-open", openEditor);
+  /* 図の実寸が変わったら描き直す（開いた直後・窓の大きさ・列の幅の変更、どれも同じ経路）。
+     中身の大きさを変えても CSS の箱は変わらないので、ここが繰り返し呼ばれることはない。 */
+  if (typeof ResizeObserver === "function" && els.canvas) {
+    let pending = 0;
+    new ResizeObserver(() => {
+      if (pending || venueModalHidden()) return;
+      pending = window.requestAnimationFrame(() => { pending = 0; if (!venueModalHidden()) render(); });
+    }).observe(els.canvas);
+  }
   els.close.addEventListener("click", requestCloseEditor);
   els.backdrop.addEventListener("click", requestCloseEditor);
   els.save.addEventListener("click", openSaveName);
   if (els.apply) els.apply.addEventListener("click", applyDraft);
+  /* V-1（2026-09-17）: 舞台機構を足す・動かすと間口プレビューの重ねも変わる。
+   * 連続操作で何度も描き直さないよう、次の描画枠まで1回にまとめる。 */
+  let machineryOverlayFrame = 0;
+  window.addEventListener("stage-show-machinery-changed", () => {
+    if (machineryOverlayFrame) return;
+    machineryOverlayFrame = requestAnimationFrame(() => {
+      machineryOverlayFrame = 0;
+      if (els.modal && !els.modal.hidden) render();
+    });
+  });
   if (els.discardCancel) els.discardCancel.addEventListener("click", () => hideDiscardDialog());
   if (els.discardConfirm) els.discardConfirm.addEventListener("click", discardAndCloseEditor);
   if (els.discardBackdrop) els.discardBackdrop.addEventListener("click", () => hideDiscardDialog());

@@ -155,6 +155,15 @@
 
   const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  /* T-2（2026-09-17）: シーンの秒数の既定値はここ1か所。
+   * 以前はタイムライン側だけ「未入力なら4秒」で、シーンパネルの空欄表示と食い違っていた。
+   * finite() をそのまま使えないのは Number(null) === 0 が有限値だから（nullが0秒に化ける）。 */
+  const DEFAULT_SCENE_HOLD_SECONDS = 10;
+  const DEFAULT_SCENE_TRAVEL_SECONDS = 0;
+  const sceneSeconds = (value, fallback) => (
+    value === null || value === undefined || value === "" ? fallback : finite(value, fallback)
+  );
+
   const tx = (japanese) => {
     const model = window.SHOSAI_STAGE_I18N_MODEL;
     return model && typeof model.text === "function" ? model.text(root.lang || "ja", japanese) : japanese;
@@ -214,6 +223,12 @@
   let pendingUnitChange = null;
   let unitWarningReturnFocus = null;
   let selectedCueId = null;
+  /* T-5（2026-09-17）: 範囲選択で選んだキュー。selectedCueId は「最後に触った1件」として
+   * 残す（詳細を開く・Deleteで消す等が1件前提で書かれているため）。
+   * 固定されたキューはここに入れない ＝ 選べるのは「まとめて動かせるもの」だけ、にする。 */
+  let selectedCueIds = new Set();
+  let cueMarquee = null;
+  let cueGroupDrag = null;
   let pendingSceneOpenTimer = 0;
   let cueDetailId = null;
   let cueDetailReturnFocus = null;
@@ -432,8 +447,8 @@
 
   function sceneTimelineSeconds(scene) {
     const rehearsal = scene && scene.rehearsal || {};
-    const hold = rehearsal.holdDurationSeconds == null ? 4 : Math.max(0, finite(rehearsal.holdDurationSeconds, 4));
-    const travel = rehearsal.transitionToNextSeconds == null ? 0 : Math.max(0, finite(rehearsal.transitionToNextSeconds, 0));
+    const hold = Math.max(0, sceneSeconds(rehearsal.holdDurationSeconds, DEFAULT_SCENE_HOLD_SECONDS));
+    const travel = Math.max(0, sceneSeconds(rehearsal.transitionToNextSeconds, DEFAULT_SCENE_TRAVEL_SECONDS));
     return Math.max(0.1, hold + travel);
   }
 
@@ -441,11 +456,14 @@
     return Math.max(0.1, childScenes(project, section).reduce((sum, scene) => sum + sceneTimelineSeconds(scene), 0));
   }
 
+  /* 2026-09-17 本人指示「シーンパネルとタイムラインは常に繋がっている状態に」。
+     セクション時間は**シーンの秒数の合計そのもの**。保存してある
+     timelineDurationSeconds は控えにすぎないので、ここでは見ない——
+     シーンを足した・消したときに控えが古いままでもずれないようにするため。
+     セクション時間を打ち替えたときは、stage-sketch.js 側がその比で
+     各シーンの見せる時間・移動時間を配り直す（＝合計が変わる）。 */
   function sectionDurationSeconds(project, section) {
-    const saved = section && section.timelineDurationSeconds;
-    return saved === null || saved === undefined
-      ? derivedSectionDuration(project, section)
-      : Math.max(0.1, finite(saved, derivedSectionDuration(project, section)));
+    return derivedSectionDuration(project, section);
   }
 
   function syncSectionDurationControls(project) {
@@ -456,6 +474,11 @@
     els.sectionDurationNumber.disabled = disabled;
     els.sectionDurationNumber.title = hasFixedTime ? tx("固定された時刻に影響するため調整できません") : "";
     if (!section || typeof bridge.setSectionTimelineDurationSeconds !== "function") return;
+    /* 2026-09-17 修正: 打っている最中は文字を書き戻さない。
+       書き戻すと "56." の "." が落ちてカーソルが先頭へ飛び、
+       次の "7" が頭に入って "756" になっていた（小数が打てない状態だった）。
+       ドラッグ中の表示は continueDurationScrub が自分で入れる。 */
+    if (document.activeElement === els.sectionDurationNumber) return;
     const seconds = Math.round(sectionDurationSeconds(project, section) * 10) / 10;
     els.sectionDurationNumber.value = String(seconds);
   }
@@ -480,7 +503,13 @@
     const applied = bridge.setSectionTimelineDurationSeconds(section.id, seconds, { checkpoint, finalize });
     if (!applied) return false;
     if (changed) durationEditSectionId = section.id;
-    els.sectionDurationNumber.value = String(seconds);
+    /* 2026-09-17 修正: 打っている最中は文字を書き戻さない。
+       "56." を打つと normalizedSectionDuration が 56 に丸めて書き戻し、
+       "." が消えてカーソルが先頭へ飛ぶため、次の "7" が頭に入って "756" になっていた。
+       ドラッグ中の表示は continueDurationScrub が自分で入れる。 */
+    if (document.activeElement !== els.sectionDurationNumber) {
+      els.sectionDurationNumber.value = String(seconds);
+    }
     if (render) renderTimeline();
     return true;
   }
@@ -830,8 +859,8 @@
     const transitions = [];
     const segments = scenes.map((scene, index) => {
       const rehearsal = scene.rehearsal || {};
-      const hold = rehearsal.holdDurationSeconds == null ? 4 : Math.max(0, finite(rehearsal.holdDurationSeconds, 4));
-      const travel = rehearsal.transitionToNextSeconds == null ? 0 : Math.max(0, finite(rehearsal.transitionToNextSeconds, 0));
+      const hold = Math.max(0, sceneSeconds(rehearsal.holdDurationSeconds, DEFAULT_SCENE_HOLD_SECONDS));
+      const travel = Math.max(0, sceneSeconds(rehearsal.transitionToNextSeconds, DEFAULT_SCENE_TRAVEL_SECONDS));
       const duration = sceneTimelineSeconds(scene) * scale;
       const item = {
         id: scene.id, sceneId: scene.id, title: scene.title || `${tx("シーン")}${index + 1}`,
@@ -1261,8 +1290,8 @@
   function rehearsalPartSeconds(scene, part) {
     const rehearsal = scene && scene.rehearsal || {};
     const raw = part === "transition"
-      ? rehearsal.transitionToNextSeconds == null ? 0 : finite(rehearsal.transitionToNextSeconds, 0)
-      : rehearsal.holdDurationSeconds == null ? 4 : finite(rehearsal.holdDurationSeconds, 4);
+      ? sceneSeconds(rehearsal.transitionToNextSeconds, DEFAULT_SCENE_TRAVEL_SECONDS)
+      : sceneSeconds(rehearsal.holdDurationSeconds, DEFAULT_SCENE_HOLD_SECONDS);
     return Math.max(0.1, raw);
   }
 
@@ -1488,12 +1517,27 @@
     return lockedTimelinePositions.some((seconds) => seconds >= boundary - 1e-6);
   }
 
+  function cueIsSelected(id) {
+    return id === selectedCueId || selectedCueIds.has(id);
+  }
+
   function syncCueSelection() {
     Object.values(els.cueLanes).forEach((lane) => {
       [...lane.querySelectorAll(".stage-timeline-cue")].forEach((button) => {
-        button.setAttribute("aria-pressed", String(button.dataset.cueId === selectedCueId));
+        button.setAttribute("aria-pressed", String(cueIsSelected(button.dataset.cueId)));
       });
     });
+  }
+
+  function clearCueMultiSelection() {
+    if (!selectedCueIds.size) return;
+    selectedCueIds = new Set();
+    syncCueSelection();
+  }
+
+  function selectedCueButtons() {
+    return [...selectedCueIds].map((id) => els.surface.querySelector(`.stage-timeline-cue[data-cue-id="${id}"]`))
+      .filter(Boolean);
   }
 
   function cancelPendingSceneOpen() {
@@ -1724,14 +1768,172 @@
     });
   }
 
-  function cueSecondsAtPointer(event) {
-    const rect = els.surface.getBoundingClientRect();
-    const raw = (event.clientX - rect.left) / Math.max(1, timelineWidth) * timeline.duration;
+  /* 横に何px動いたかを秒へ直す。時間の帯の左端がどこかに依存しないので、
+     行ラベル列（既定156px）のぶんずれる心配がない。 */
+  function secondsPerPixel() {
+    return (timeline ? timeline.duration : 0) / Math.max(1, timelineWidth);
+  }
+
+  /* 掴んだ位置から動いたぶんだけ動かす（2026-09-17 修正）。
+     以前はポインタの絶対位置から時刻を出していたため、
+     ①掴んだ場所に関係なくキューがポインタへ飛ぶ ②基準を surface の左端にしていたので
+     行ラベル列の幅ぶん（この画角で約2秒）ずれる、という2つの問題があった。
+     T-5（範囲選択してまとめて動かす）でも同じ計算を使う。 */
+  function cueSecondsAfterDrag(event, startSeconds, startX) {
+    const raw = startSeconds + (event.clientX - startX) * secondsPerPixel();
     return clamp(snappedSeconds(raw), 0, timeline.duration);
+  }
+
+  /* ===== T-5: 範囲選択（マーキー） ===== */
+
+  /* 空いているところからのドラッグだけを範囲選択にする。
+     キューそのもの・ブロック・行のつまみの上から始まったら何もしない
+     （それぞれ既存のドラッグを持っているので、奪うとその操作ができなくなる）。 */
+  function marqueeCanStart(event) {
+    if (event.button !== 0 || !timeline) return false;
+    const target = event.target;
+    if (!(target instanceof Element)) return false;
+    if (target.closest(".stage-timeline-cue, button, [role=\"separator\"], .stage-timeline-resize-handle")) return false;
+    if (target === els.surface) return true;
+    const lane = target.closest(".stage-timeline-row-content");
+    return Boolean(lane) && Object.values(els.cueLanes).includes(lane);
+  }
+
+  function beginCueMarquee(event) {
+    if (cueGroupDrag || !marqueeCanStart(event)) return;
+    const box = document.createElement("div");
+    box.className = "stage-timeline-marquee";
+    box.setAttribute("aria-hidden", "true");
+    box.hidden = true;
+    els.surface.append(box);
+    const rect = els.surface.getBoundingClientRect();
+    cueMarquee = {
+      pointerId: event.pointerId,
+      box,
+      startX: event.clientX - rect.left,
+      startY: event.clientY - rect.top,
+      moved: false,
+    };
+  }
+
+  function continueCueMarquee(event) {
+    if (!cueMarquee || event.pointerId !== cueMarquee.pointerId) return;
+    const rect = els.surface.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    if (!cueMarquee.moved) {
+      if (Math.abs(x - cueMarquee.startX) < 4 && Math.abs(y - cueMarquee.startY) < 4) return;
+      cueMarquee.moved = true;
+      cueMarquee.box.hidden = false;
+      document.body.classList.add("is-timeline-marquee");
+      try { els.surface.setPointerCapture(event.pointerId); } catch (_) { /* 捕捉できなくても終端は拾う */ }
+    }
+    const left = Math.min(x, cueMarquee.startX);
+    const top = Math.min(y, cueMarquee.startY);
+    cueMarquee.box.style.left = `${left}px`;
+    cueMarquee.box.style.top = `${top}px`;
+    cueMarquee.box.style.width = `${Math.abs(x - cueMarquee.startX)}px`;
+    cueMarquee.box.style.height = `${Math.abs(y - cueMarquee.startY)}px`;
+    event.preventDefault();
+  }
+
+  function endCueMarquee(event) {
+    if (!cueMarquee || (event && event.pointerId !== cueMarquee.pointerId)) return;
+    const marquee = cueMarquee;
+    cueMarquee = null;
+    document.body.classList.remove("is-timeline-marquee");
+    const area = marquee.moved ? marquee.box.getBoundingClientRect() : null;
+    marquee.box.remove();
+    if (!area || event.type === "pointercancel") return;
+    /* 判定は画面上の重なりで見る。時刻へ直す計算を挟むより、
+       「囲んだものが選ばれる」という見たままに一致する。 */
+    const picked = new Set();
+    Object.values(els.cueLanes).forEach((lane) => {
+      [...lane.querySelectorAll(".stage-timeline-cue")].forEach((button) => {
+        if (button.dataset.cueLocked === "true") return; // 固定は動かせないので選ばない
+        const r = button.getBoundingClientRect();
+        const overlaps = r.right > area.left && r.left < area.right
+          && r.bottom > area.top && r.top < area.bottom;
+        if (overlaps) picked.add(button.dataset.cueId);
+      });
+    });
+    selectedCueIds = picked;
+    if (picked.size) { if (!picked.has(selectedCueId)) selectedCueId = [...picked][0]; }
+    else selectedCueId = null;
+    syncCueSelection();
+    event.preventDefault();
+  }
+
+  /* ===== T-5: 選んだキューをまとめて動かす ===== */
+
+  function beginCueGroupDrag(event, cue, button) {
+    const buttons = selectedCueButtons();
+    if (buttons.length < 2) return false;
+    const cues = timelineCuePresentations(projectDocument() && projectDocument().project)
+      .filter((row) => selectedCueIds.has(row.id));
+    if (cues.length < 2) return false;
+    cueGroupDrag = {
+      pointerId: event.pointerId,
+      anchorId: cue.id,
+      anchorStart: cue.seconds,
+      startX: event.clientX,
+      items: cues.map((row) => ({
+        id: row.id,
+        startSeconds: row.seconds,
+        button: els.surface.querySelector(`.stage-timeline-cue[data-cue-id="${row.id}"]`),
+      })).filter((item) => item.button),
+      delta: 0,
+      moved: false,
+    };
+    button.setPointerCapture(event.pointerId);
+    event.preventDefault();
+    event.stopPropagation();
+    return true;
+  }
+
+  function continueCueGroupDrag(event) {
+    if (!cueGroupDrag || event.pointerId !== cueGroupDrag.pointerId) return;
+    if (!cueGroupDrag.moved && Math.abs(event.clientX - cueGroupDrag.startX) < 4) return;
+    cueGroupDrag.moved = true;
+    /* 掴んだキューの新しい時刻を基準にして、残りは同じぶんだけずらす。
+       こうすると相対の間隔が変わらないまま、スナップも掴んだものに効く。 */
+    const anchorNext = cueSecondsAfterDrag(event, cueGroupDrag.anchorStart, cueGroupDrag.startX);
+    let delta = anchorNext - cueGroupDrag.anchorStart;
+    const lowest = Math.min(...cueGroupDrag.items.map((item) => item.startSeconds));
+    const highest = Math.max(...cueGroupDrag.items.map((item) => item.startSeconds));
+    delta = Math.max(-lowest, Math.min(timeline.duration - highest, delta));
+    cueGroupDrag.delta = delta;
+    cueGroupDrag.items.forEach((item) => {
+      item.button.classList.add("is-dragging");
+      item.button.style.left = `${clamp(pxFor(item.startSeconds + delta) - 4, 0, Math.max(0, timelineWidth - CUE_WIDTH))}px`;
+    });
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function endCueGroupDrag(event) {
+    if (!cueGroupDrag || event.pointerId !== cueGroupDrag.pointerId) return;
+    const drag = cueGroupDrag;
+    cueGroupDrag = null;
+    drag.items.forEach((item) => item.button.classList.remove("is-dragging"));
+    if (event.type !== "pointercancel" && drag.moved && Math.abs(drag.delta) > 1e-9
+      && typeof bridge.updateTimelineCues === "function") {
+      suppressCueClickId = drag.anchorId;
+      bridge.updateTimelineCues(drag.items.map((item) => ({
+        id: item.id, atSeconds: item.startSeconds + drag.delta,
+      })));
+      window.setTimeout(() => { suppressCueClickId = null; }, 0);
+    }
+    renderTimeline();
+    event.preventDefault();
+    event.stopPropagation();
   }
 
   function beginCueDrag(event, cue, button) {
     if (event.button !== 0 || cue.locked || !timeline || typeof bridge.updateTimelineCue !== "function") return;
+    // まとめて選ばれているうちの1つを掴んだら、選択ぜんぶを同じだけ動かす
+    if (selectedCueIds.has(cue.id) && beginCueGroupDrag(event, cue, button)) return;
+    clearCueMultiSelection();
     cueDrag = {
       pointerId: event.pointerId,
       cue,
@@ -1747,10 +1949,11 @@
   }
 
   function continueCueDrag(event) {
+    if (cueGroupDrag) { continueCueGroupDrag(event); return; }
     if (!cueDrag || event.pointerId !== cueDrag.pointerId) return;
     if (!cueDrag.moved && Math.abs(event.clientX - cueDrag.startX) < 4) return;
     cueDrag.moved = true;
-    cueDrag.nextSeconds = cueSecondsAtPointer(event);
+    cueDrag.nextSeconds = cueSecondsAfterDrag(event, cueDrag.startSeconds, cueDrag.startX);
     cueDrag.button.classList.add("is-dragging");
     cueDrag.button.style.left = `${clamp(pxFor(cueDrag.nextSeconds) - 4, 0, Math.max(0, timelineWidth - CUE_WIDTH))}px`;
     event.preventDefault();
@@ -1758,6 +1961,7 @@
   }
 
   function endCueDrag(event) {
+    if (cueGroupDrag) { endCueGroupDrag(event); return; }
     if (!cueDrag || event.pointerId !== cueDrag.pointerId) return;
     const drag = cueDrag;
     cueDrag = null;
@@ -1779,6 +1983,11 @@
     Object.values(els.cueLanes).forEach(clearLane);
     const cues = timelineCuePresentations(project);
     if (selectedCueId && !cues.some((cue) => cue.id === selectedCueId)) selectedCueId = null;
+    // 消えたキューが選択に残らないようにする（取り消し・削除のあと）
+    if (selectedCueIds.size) {
+      const alive = new Set(cues.map((cue) => cue.id));
+      selectedCueIds = new Set([...selectedCueIds].filter((id) => alive.has(id)));
+    }
     cues.forEach((cue) => {
       const lane = els.cueLanes[cue.cueType];
       if (!lane) return;
@@ -1787,7 +1996,8 @@
       button.className = "stage-timeline-cue";
       button.dataset.cueId = cue.id;
       button.dataset.cueType = cue.cueType;
-      button.setAttribute("aria-pressed", String(cue.id === selectedCueId));
+      button.dataset.cueLocked = String(Boolean(cue.locked)); // T-5: 範囲選択から外す目印
+      button.setAttribute("aria-pressed", String(cueIsSelected(cue.id)));
       if (cue.locked) button.append(lockIndicator(null, true));
       const label = document.createElement("span");
       label.className = "stage-timeline-cue-label";
@@ -1801,6 +2011,8 @@
       button.addEventListener("pointercancel", endCueDrag);
       button.addEventListener("click", (event) => {
         if (suppressCueClickId === cue.id) { event.preventDefault(); return; }
+        // まとめて選んだうちの1つを押したときは、その選択を保つ
+        if (!selectedCueIds.has(cue.id)) selectedCueIds = new Set();
         selectedCueId = cue.id;
         syncCueSelection();
         button.focus();
@@ -2374,6 +2586,17 @@
   }
 
   function removeSelectedCue() {
+    /* T-5: まとめて選んでいるなら、まとめて消す。1件だけ消えると
+       「3つ選んだのに1つしか消えない」という分かりにくい結果になる。 */
+    if (selectedCueIds.size > 1 && typeof bridge.removeTimelineCues === "function") {
+      const removed = bridge.removeTimelineCues([...selectedCueIds]);
+      if (!removed) return false;
+      if (cueDetailId && selectedCueIds.has(cueDetailId)) closeCueDetails({ focus: false });
+      selectedCueIds = new Set();
+      selectedCueId = null;
+      renderTimeline();
+      return true;
+    }
     if (!selectedCueId || typeof bridge.removeTimelineCue !== "function") return false;
     const removed = bridge.removeTimelineCue(selectedCueId);
     if (!removed) return false;
@@ -2456,6 +2679,8 @@
     els.sectionDurationNumber.classList.add("is-scrubbing");
     const step = event.shiftKey ? 10 : 1;
     const seconds = Math.max(0.1, durationScrub.startValue + Math.trunc(pixels / 3) * step);
+    // 掴んでいる間は欄にフォーカスがあるので、表示はここで入れる（上の書き戻し停止の対）
+    els.sectionDurationNumber.value = String(seconds);
     writeCurrentSectionDuration(seconds, { render: true });
     event.preventDefault();
   }
@@ -2696,6 +2921,12 @@
   els.sectionDurationNumber.addEventListener("pointermove", continueDurationScrub);
   els.sectionDurationNumber.addEventListener("pointerup", endDurationScrub);
   els.sectionDurationNumber.addEventListener("pointercancel", endDurationScrub);
+  /* T-5: 空きからのドラッグで範囲選択。pointerdown は表面で拾い、
+     移動と終端は viewport で拾う（表面の外へ出ても終われるように）。 */
+  els.surface.addEventListener("pointerdown", beginCueMarquee);
+  els.viewport.addEventListener("pointermove", continueCueMarquee);
+  els.viewport.addEventListener("pointerup", endCueMarquee);
+  els.viewport.addEventListener("pointercancel", endCueMarquee);
   els.viewport.addEventListener("pointermove", continueBlockResize);
   els.viewport.addEventListener("pointerup", endBlockResize);
   els.viewport.addEventListener("pointercancel", endBlockResize);
@@ -2923,9 +3154,14 @@
       return;
     }
     if (!event.metaKey && !event.ctrlKey && !event.altKey
-        && (event.key === "Delete" || event.key === "Backspace") && selectedCueId) {
+        && (event.key === "Delete" || event.key === "Backspace") && (selectedCueId || selectedCueIds.size)) {
       event.preventDefault();
       removeSelectedCue();
+      return;
+    }
+    if (event.key === "Escape" && selectedCueIds.size) {
+      event.preventDefault();
+      clearCueMultiSelection();
       return;
     }
     if (event.metaKey || event.ctrlKey || event.altKey) return;

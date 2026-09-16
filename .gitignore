@@ -70,6 +70,9 @@ public-dist/
 !/gamma-dev/RELEASE.md
 !/gamma-dev/UPSTREAM.json
 !/gamma-light-model.js
+!/gamma-light-cue-overlay.js
+!/gamma-number-scrub.js
+!/gamma-range-fields.js
 !/gamma-workspace.js
 !/gamma.css
 !/icons/stage-sketch-180.png

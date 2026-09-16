@@ -1,5 +1,37 @@
 /* Gamma uses the existing Stage Sketch type, spacing and surface palette. */
-:root { --gamma-gap: 8px; --gamma-hit: 36px; }
+/* ---- デザイントークン（2026-09-17 UI再設計 第1段） ----
+ * 根拠: docs/ui-audit-2026-09-16/UI_REWORK_SPEC.md §2 A-1/A-2（実測: font-size 786宣言・約30種、
+ * ボタン高22種）。ここでは階段だけを定義する。既存の786件を今回すべて置き換えるのではなく、
+ * 新規・変更箇所からこの階段へ寄せていく（design-policy: 新規装飾体系は追加しない＝色は既存のまま）。 */
+:root {
+  --gamma-gap: 8px;
+  --gamma-hit: 36px;
+
+  /* 文字サイズの階段。0.5px刻みはここでは使わない。 */
+  --fs-1: 9px;   /* 最小の補助文字・キャプション */
+  --fs-2: 10px;  /* パネル見出し・小さいラベル */
+  --fs-3: 11px;  /* 本文の基準（既存で最頻出） */
+  --fs-4: 12px;  /* やや強調した本文・ボタン */
+  --fs-5: 13px;  /* タブ・見出し級 */
+  --fs-6: 14px;  /* 強調ラベル・主要ボタン */
+  --fs-7: 16px;  /* 小見出し */
+  --fs-8: 18px;  /* 見出し */
+  --fs-9: 22px;  /* 大見出し */
+
+  /* 操作の高さ3段。既存の44px（アイコン操作）・34px（.btn基準）・28px（小型）を正式な階段にする。 */
+  --ctrl-sm: 28px;
+  --ctrl-md: 34px;
+  --ctrl-lg: 44px;
+
+  /* 角丸2段＋円 */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-full: 50%;
+
+  /* アイコンボタンの正方形2段 */
+  --icon-sm: 32px;
+  --icon-lg: 44px;
+}
 .stage-brand-row { flex-wrap: wrap; gap: var(--gamma-gap); }
 .stage-gamma-label { font-size: 11px; font-weight: 500; color: #b6a995; margin-left: 8px; white-space: nowrap; }
 #stage-workspace-tabs { flex-wrap: wrap; }
@@ -16,7 +48,8 @@ body[data-gamma-workspace="venue-setup"].stage-timeline-expanded:not(.stage-full
 body[data-gamma-workspace^="light-"] .stage-boundary-note,
 body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
 #gamma-light-workspace { width: 100%; min-height: 0; }
-#gamma-venue-workspace { width: 100%; min-height: 0; }
+/* V-2（2026-09-17）: 劇場設定は1画面に収める。高さは gamma-workspace.js が実測して入れる。 */
+#gamma-venue-workspace { width: 100%; min-height: 0; display: flex; }
 #gamma-venue-workspace[hidden] { display: none; }
 /* 劇場カスタムはモード画面として既存エディタと舞台機構を表示する。 */
 #gamma-venue-workspace .stage-venue-editor-modal {
@@ -24,11 +57,14 @@ body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
   left: auto;
   top: auto;
   transform: none;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
   max-width: none;
   max-height: none;
-  overflow: visible;
+  overflow: hidden;
   border: 0;
   border-radius: 0;
   box-shadow: none;
@@ -43,12 +79,162 @@ body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
 #gamma-machinery-workspace [data-panel="machinery"] { display:block; }
 #gamma-machinery-controls-host { display:grid; gap:8px; }
 #gamma-venue-workspace .stage-venue-editor-modal > .stage-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
   max-height: none;
-  overflow: visible;
+  overflow: hidden;
   padding: 0;
   background: transparent;
 }
-#gamma-venue-workspace .stage-venue-editor-menu { max-height: none; overflow: visible; }
+/* 2カラム（手順の列｜平面図と操作）を枠いっぱいに伸ばし、縦に流れるのは各列の中だけにする。 */
+#gamma-venue-workspace .stage-venue-editor-workspace {
+  align-items: stretch;
+  min-height: 0;
+  height: 100%;
+}
+#gamma-venue-workspace .stage-venue-editor-menu {
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+}
+/* 右列は平面図だけを流し、「この劇場を反映する」等の操作は下へ固定して常に見えるようにする
+ * （V-2実測: 反映ボタンが枠の150px下に隠れていた）。 */
+#gamma-venue-workspace .stage-venue-editor-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+#gamma-venue-workspace .stage-venue-editor-panel > .stage-venue-editor-audience-step {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+/* 平面図は枠に収まる大きさまで縮める（縦に切れてスクロールしないように）。
+ * 3:2の比は枠側で持たせる。拡大縮小ボタンは枠の隅に貼り付いているので、
+ * 枠そのものを図と同じ大きさにしないとボタンだけ離れてしまう。 */
+#gamma-venue-workspace .stage-venue-editor-canvas-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  aspect-ratio: 3 / 2;
+  width: auto;
+  max-width: 100%;
+  margin-inline: auto;
+}
+#gamma-venue-workspace #stage-venue-editor-canvas {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+}
+#gamma-venue-workspace .stage-venue-editor-panel > .stage-venue-editor-actions {
+  flex: 0 0 auto;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-dark);
+}
+
+/* 手順1〜7のアコーディオン。開いている1つ以外は見出しの行だけ残す。 */
+#gamma-venue-workspace .gamma-venue-step:not(.is-open) > :not(.gamma-venue-step-head) { display: none; }
+/* 手順1〜3は見出しが div でくるまれている。畳んだときは説明文だけ隠し、
+ * 見出し（＝押せるボタン）は必ず残す。 */
+#gamma-venue-workspace .gamma-venue-step:not(.is-open) .gamma-venue-step-head
+  > :not(h2):not(h3):not(h4):not(.gamma-venue-step-toggle) { display: none; }
+#gamma-venue-workspace .gamma-venue-step-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--ctrl-md);
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+#gamma-venue-workspace .gamma-venue-step-toggle::before {
+  content: "▸";
+  flex: 0 0 auto;
+  color: var(--brass);
+  font-size: var(--fs-3);
+  line-height: 1;
+}
+#gamma-venue-workspace .gamma-venue-step.is-open .gamma-venue-step-toggle::before { content: "▾"; }
+#gamma-venue-workspace .gamma-venue-step-toggle:hover { color: var(--milk); }
+#gamma-venue-workspace .gamma-venue-step-toggle:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+/* 2026-09-17: 「この劇場をショーへ反映」の確定ボタンが、取り消し側より弱かった
+ * （実測: 取り消し 159×54/14px/文字0.85 に対し、確定 115×44/11px/文字0.55）。
+ * 主操作のほうを大きく・明るくして、取り消しは静かな方へ戻す。 */
+#stage-venue-apply-modal .stage-venue-apply-actions #stage-venue-apply-confirm {
+  min-height: var(--ctrl-lg);
+  padding: 8px 22px;
+  border-color: var(--rust);
+  background: rgba(168, 75, 38, 0.22);
+  color: var(--milk);
+  font-size: var(--fs-6);
+  font-weight: 600;
+}
+#stage-venue-apply-modal .stage-venue-apply-actions #stage-venue-apply-confirm:hover,
+#stage-venue-apply-modal .stage-venue-apply-actions #stage-venue-apply-confirm:focus-visible {
+  border-color: var(--rust);
+  background: var(--rust);
+  color: var(--paper);
+}
+#stage-venue-apply-modal .stage-venue-apply-actions #stage-venue-apply-cancel {
+  min-height: var(--ctrl-lg);
+  color: var(--milk-dim);
+  font-size: var(--fs-6);
+}
+/* 2つの高さも揃える（取り消しだけ行送りで54pxになっていた）。 */
+#stage-venue-apply-modal .stage-venue-apply-actions #stage-venue-apply-cancel,
+#stage-venue-apply-modal .stage-venue-apply-actions #stage-venue-apply-confirm {
+  height: var(--ctrl-lg);
+  padding: 0 22px;
+  line-height: 1.2;
+}
+
+/* X-1（2026-09-17）: 手順7の見出しだけブラウザ既定の h3（17.55px/700）のまま残っていた。
+ * style.css の見出し指定（11px/500）が .stage-venue-editor-machinery h3 を列挙し漏れていたため。
+ * 他の手順と同じ見た目に揃える。 */
+#gamma-venue-workspace .stage-venue-editor-machinery > h3 {
+  margin: 0;
+  font-size: var(--fs-3);
+  font-weight: 500;
+}
+
+/* 2026-09-17 本人指示: 手順7だけ枠に入っていなかった。X-1の見出しと同じ漏れで、
+   style.css の枠の指定が手順1〜6しか列挙していない。1〜6と同じ枠・余白に揃える。 */
+#gamma-venue-workspace .stage-venue-editor-machinery {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line-dark);
+  background: rgba(var(--stage-ui-desk-rgb, 25, 21, 18), 0.45);
+}
+/* 中に入っている舞台機構パネルは、枠の中の中身として扱う（枠の二重を避ける）。 */
+#gamma-venue-workspace .stage-venue-editor-machinery .stage-panel {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+/* V-5（2026-09-17）: 全幅の白い3px枠をやめ、手順の列の中の1枚として他のカードと同じ枠にする。 */
+#gamma-venue-workspace .stage-venue-editor-presets {
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--line-dark);
+  border-radius: var(--radius-sm);
+}
+#gamma-venue-workspace .stage-venue-editor-presets .stage-venue-choice-row {
+  grid-template-columns: minmax(0, 1fr);
+}
 #gamma-venue-workspace #stage-venue-editor-close { display: none; }
 /* gamma-workspace.js measures the space below this frame after the header has wrapped. */
 #gamma-light-frame { display: block; width: 100%; height: calc(100dvh - 108px); min-height: 0; border: 0; border-radius: 0; background: #141311; }
@@ -97,3 +283,214 @@ body.gamma-3d-active .stage-panel.gamma-selection-floating .stage-panel-help { r
 }
 
 #gamma-light-status button { margin:8px; min-height:36px; padding:6px 12px; }
+
+/* ---- ヘッダー再設計（2026-09-17 第2段） ----
+ * 根拠: docs/ui-audit-2026-09-16/UI_REWORK_SPEC.md §3-3。
+ * H-3（音量の枠線なし・右揃え）は既存のスタイルで既に満たされていたため変更不要（実測確認済み）。 */
+/* H-2: 「総経過時間」ラベルと数字をそれぞれ中央寄せにする。 */
+.stage-show-elapsed-group { text-align: center; }
+.stage-show-elapsed-group > span { display: block; text-align: center; }
+.stage-show-elapsed { text-align: center; }
+
+/* H-1: ショー名・バージョンをタブの並びから外し、左上のアプリ名の下へ縦に積む。
+ * .stage-header-app-identity は aria-hidden なので、実体のあるボタン（#stage-project-settings-open）は
+ * その中に入れず兄弟にする（読み上げ順・フォーカス順を保つ）。 */
+.stage-header-topleft {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.stage-header-topleft .stage-header-project { margin: 0; align-self: flex-start; }
+.stage-header-topleft .stage-session-guest-badge,
+.stage-header-topleft .stage-session-whoami { margin: 0; }
+
+/* ---- 選んだものパネル（2026-09-17 第3段） ----
+ * 根拠: docs/ui-audit-2026-09-16/UI_REWORK_SPEC.md §3-2。 */
+/* S-1: 「詳細」と「舞台裏へ」を横並び・同じ高さにする。色は変えない（既存の.stage-icon-action/.stage-deleteのまま）。 */
+.stage-detail-backstage-row {
+  margin-top: 10px;
+}
+.stage-detail-backstage-row .stage-icon-action,
+.stage-detail-backstage-row .stage-delete {
+  width: auto;
+  min-height: var(--ctrl-md);
+  margin: 0;
+  text-align: center;
+}
+
+/* S-2: 鍵と目玉を同じ大きさの正方形に（実測: 鍵28.5×38・目32×44 → 32×32へ統一）。 */
+.stage-selected-heading #stage-piece-lock,
+.stage-selected-heading #stage-fpv-open {
+  display: inline-grid;
+  place-items: center;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+.stage-selected-heading #stage-piece-lock svg,
+.stage-selected-heading #stage-fpv-open svg { width: 18px; height: 18px; }
+
+/* F-1: 正面図・平面図の「×」を正方形にする。
+ * 実測: 分割レイアウトの中央列（stage-board-frameの実効幅420px）は既に
+ * @container stage-board (max-width:520px) の「側パネルを広げたときの二列」条件に入っており、
+ * .stage-canvas-tools .stage-canvas-close が width:100% で兄弟ボタン（.stage-canvas-tool等）と
+ * 同じ「全幅の帯」になっていた。兄弟は意図どおり全幅のままにし、×だけを正方形にする。 */
+@container stage-board (max-width: 520px) {
+  .stage-canvas-tools .stage-canvas-close {
+    width: var(--icon-sm);
+    min-width: var(--icon-sm);
+    min-height: var(--icon-sm);
+    flex: 0 0 auto;
+    justify-self: start;
+  }
+}
+.stage-canvas-close {
+  width: var(--icon-sm);
+  min-width: var(--icon-sm);
+  height: var(--icon-sm);
+  min-height: var(--icon-sm);
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+}
+
+/* ===== N-1: 数値欄の左右ドラッグ編集（gamma-number-scrub.js） ===== */
+/* ドラッグ中だけ見た目を変える。待機中の欄にカーソルを出すと、
+ * 文字を編集したいときに入力欄に見えなくなるのでやらない。 */
+input[type="number"].is-scrubbing {
+  border-color: var(--brass);
+  cursor: ew-resize;
+}
+body.is-number-scrubbing {
+  cursor: ew-resize;
+  user-select: none;
+}
+
+/* ===== N-1後半: スライダーの値表示を編集できる数値欄にする（gamma-range-fields.js） ===== */
+/* 見た目は今までの「右端の小さな値表示」のまま。触れるものだと分かるのは
+   ホバー・フォーカスのときだけにして、ラベル行がうるさくならないようにする。 */
+.stage-range-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  flex: none;
+}
+.stage-range-value .stage-range-value-input {
+  /* 親のラベル行は flex なので、指定しないと押し潰されて数字が読めなくなる。 */
+  flex: none;
+  width: 4.5em;
+  padding: 0 2px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: right;
+  -moz-appearance: textfield;
+}
+.stage-range-value .stage-range-value-input::-webkit-outer-spin-button,
+.stage-range-value .stage-range-value-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.stage-range-value .stage-range-value-input:hover {
+  border-color: rgba(240, 231, 214, 0.22);
+}
+.stage-range-value .stage-range-value-input:focus {
+  border-color: var(--brass);
+  background: rgba(0, 0, 0, 0.25);
+  outline: none;
+}
+.stage-range-value .stage-range-unit { flex: none; white-space: nowrap; }
+
+/* ===== T-5: タイムラインの範囲選択 ===== */
+/* 平面図・正面図の矩形選択と同じ見え方にして、操作が別物に見えないようにする。 */
+.stage-timeline-marquee {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+  border: 1px solid var(--stage-timeline-accent, var(--brass));
+  background: rgba(211, 172, 89, 0.12);
+  border-radius: var(--radius-sm);
+}
+body.is-timeline-marquee { user-select: none; }
+/* まとめて選んだキューは、1件だけ選んだときより強く縁取る。
+   どれが一緒に動くのかが、掴む前に分かるようにする。 */
+.stage-timeline-cue[aria-pressed="true"] { box-shadow: 0 0 0 1px var(--stage-timeline-accent, var(--brass)); }
+
+/* ===== ショーのパネル（2026-09-17 本人指示） ===== */
+/* ショー名とバージョンを、出るもの・選んだもの・保存状態と同じパネルにした。
+   ヘッダーの中にいたときの寸法（幅220px上限・左に8pxの余白）は、
+   タブの横に置くための値だったので、パネルの中では幅いっぱいに戻す。 */
+.stage-project-panel .stage-header-project {
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+  padding: 6px 8px;
+}
+.stage-project-panel .stage-header-project-copy { width: 100%; }
+
+/* ===== H-2/H-3 の続き（2026-09-17 本人指示）: 総経過時間と音量を右側へまとめる ===== */
+/* 2つは「いま何分か」「どのくらいの音量か」という同じ種類の目盛りなので、
+   離して置かず1組にする。操作アイコンの列の最後＝共有・通知の手前に置く。 */
+.stage-header-meters {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+/* ===== モーダルの操作ボタンの寸法・文字をそろえる（2026-09-17 本人指示） ===== */
+/* 「変更しない」と「追加する」のように、同じ行に並ぶボタンの大きさと文字が
+   ばらばらだった。原因は別系統の指定が混ざっていること:
+     .btn-quiet          … 文字は継承（14px）・字間0.15em・上下8px 左右22px
+     .stage-minor-action … 文字11px・字間0.08em・高さ34px・左右6px
+   色の差（目立つ／控えめ）は意味があるのでそのまま残し、寸法と文字だけをそろえる。
+   ★ #stage-venue-editor-apply（この劇場を反映する）は意図的に一番大きい主役なので外す。 */
+/* 行の高さは一番高いボタンに引き伸ばされる（flexの既定が stretch）。
+   片方だけ伸びて見えるので、中央ぞろえにして各ボタンを自分の高さのままにする。 */
+.stage-modal footer {
+  align-items: center;
+}
+.stage-modal footer button:not(#stage-venue-editor-apply),
+.stage-modal footer a:not(#stage-venue-editor-apply) {
+  min-height: var(--ctrl-lg);
+  padding: 8px 18px;
+  font-size: var(--fs-6);
+  letter-spacing: 0.15em;
+  line-height: 1.2;
+}
+
+/* ===== ショーのパネル（2026-09-17 本人指示でポップアップを畳んだ後） ===== */
+/* 名前・バージョン・操作を縦一列に積む。パネルの幅（既定360px）で読めるよう、
+   ボタンは幅いっぱいの1列にして、文字の途中で折り返さない。 */
+.stage-project-panel .stage-panel-body > .stage-text-input { width: 100%; }
+.stage-project-panel .stage-version-note { margin: 2px 0 0; }
+.stage-project-panel-actions {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+.stage-project-panel-actions > .stage-minor-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--ctrl-md);
+  margin: 0;
+  font-size: var(--fs-4);
+  cursor: pointer;
+}
+
+/* ===== 新しいショーは、まず劇場設定（2026-09-17 本人指示） ===== */
+/* 劇場が決まるまで他のタブは押せない。押せないことが見て分かるようにする。 */
+body.gamma-venue-setup-required .stage-workspace-tab[disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+}

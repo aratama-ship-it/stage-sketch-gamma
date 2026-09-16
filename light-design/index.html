@@ -803,11 +803,13 @@
         </div>
         <div class="empty" id="empty" hidden>
           <div class="in">
-            <p>まだ照明がありません。<br>最初のトラスと灯体を置きます。</p>
-            <button type="button" class="btn primary" id="empty-presets">プリセット</button>
-            <button type="button" class="btn" id="empty-preset">奥バトン1本＋ムービング4灯</button>
-            <button type="button" class="btn quiet" id="empty-truss">バトンから自分で組む</button>
-            <p class="note">どれもあとから位置と灯数を変えられます。</p>
+            <!-- 2026-09-17 本人指示: ここに「プリセット／奥バトン1本＋ムービング4灯／自分で組む」の
+                 3択を置くと、劇場設定の「この劇場を反映する」で「照明機材をどうしますか」を答えた
+                 直後に、同じことをもう一度聞くことになる。案内だけにして、操作は常設の
+                 「機材設置」へ一本化した。消えた「奥バトン1本＋ムービング4灯」は、
+                 プリセットの「最小の仕込み」として残してある。 -->
+            <p>まだ照明がありません。</p>
+            <p class="note">灯体一覧の上にある「機材設置」から、<b>プリセット</b>を選ぶか、<br>バトンを置いて組みます。どちらもあとから位置と灯数を変えられます。</p>
           </div>
         </div>
       </div>
@@ -831,13 +833,13 @@
 <script src="volume-light.js?v=20260915-2"></script>
 <script src="laser-effects.js?v=20260915-5-color-presets"></script>
 <script src="laser-effects-ui.js?v=20260915-3-supported-shapes"></script>
-<script src="app.js?v=2026091660"></script>
+<script src="app.js?v=2026091850"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20260915-3-vertical-cards"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->
 <script src="selected-light-presets-engine.js?v=1789412300"></script>
 <script src="selected-light-presets-ui.js?v=20260915-6-no-inline-type-entry"></script>
 <script src="../gamma-light-model.js?v=2026091501"></script>
-<script src="embed.js?v=2026091650"></script>
+<script src="embed.js?v=2026091700"></script>
 </body>
 </html>

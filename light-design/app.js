@@ -4497,8 +4497,6 @@
   $("presets").onclick = openPresets;
   $("prefs").onclick = openPrefs;        // 環境設定（歯車）
   $("save").onclick = openDesigns;       // 照明デザインを名前を付けて保存
-  $("empty-presets").onclick = openPresets;
-  $("empty-truss").onclick = () => { state.tool = "truss"; $("empty").hidden = true; renderAll(); $("empty").hidden = true; };
   /* ---------- よくある仕込み（プリセット） ----------
      現実にあり得る構成であること、が本人の条件。位置の名前と構成は日本のホールの実設備に合わせた。
      根拠（2026-09-11 閲覧）:
@@ -4516,6 +4514,18 @@
      灯数は「常設の総数」ではなく「1演目で実際に使う目安」。バトンは客席に近い順にバトン1・バトン2・バトン3。 */
   const spreadU = (n, from = 0.12, to = 0.88) => (n <= 1 ? [0.5] : Array.from({ length: n }, (_, i) => from + (to - from) * i / (n - 1)));
   const RIG_PRESETS = [
+    {
+      /* 2026-09-17: 空状態にあった「奥バトン1本＋ムービング4灯」の1クリックを、
+         3択を畳んだぶんここへ移した。中身は当時と同じ（奥0.15・高さ6m・ムービング4灯）。 */
+      key: "minimal", name: "最小の仕込み", count: 4,
+      lead: "まず1本だけ吊って、動く灯を4灯置く形。",
+      detail: "奥バトン1本（高さ6000mm）にムービング4灯。",
+      why: "劇場の形がまだ決まっていないとき、自分で組む前の下敷きに。ここから足す・動かすのが一番早い。",
+      build: () => {
+        const t = addTrussAt(0.15, 6, "奥バトン");
+        [0.2, 0.4, 0.6, 0.8].forEach((u) => putHang(t, u, "moving"));
+      },
+    },
     {
       key: "small", name: "小劇場の基本仕込み", count: 21,
       lead: "客席100〜200席くらいの小屋で、芝居を普通に見せる形。",
@@ -4750,13 +4760,6 @@
   }
 
   // 一撃で置く。確認ダイアログは出さない（取り消せる操作に確認を挟まない。2026-09-11 本人要望）
-  $("empty-preset").onclick = () => {
-    const t = E.newTruss(uid("t"), 0.15, 6, "奥バトン");
-    state.rig.trusses.push(t);
-    [0.2, 0.4, 0.6, 0.8].forEach((u) => state.rig.fixtures.push(E.newFixture(uid("f"), state.nextNo++, { type: "truss", trussId: t.id, u }, "")));
-    state.selTruss = t.id; state.sel.clear();
-    commit("奥バトン1本（高さ約6000mm）＋ムービング4灯を吊りました");   // toastの「元に戻す」で取り消せる
-  };
   $("apply").onclick = () => { state.dirty = false; state.history.length = 0; state.future.length = 0; baseline = snapshot(); renderAll(); $("dirty").textContent = "LXキューを適用しました"; setTimeout(() => renderAll(), 2500); toast("LXキューを適用しました（試作なので画面は残ります）"); };
   $("close").onclick = () => { if (state.dirty) dialog("<p>変更がまだ適用されていません。</p>", [["編集に戻る", null, "quiet"], ["破棄して閉じる", () => toast("破棄しました（試作なので画面は残ります）"), "quiet"], ["適用して閉じる", () => $("apply").onclick(), "primary"]]); else toast("閉じました（試作なので画面は残ります）"); };
 
