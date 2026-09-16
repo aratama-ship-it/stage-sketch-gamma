@@ -41,8 +41,6 @@ public-dist/
 /*
 !/formation/
 /formation/*
-!/gamma-dev/
-/gamma-dev/*
 !/icons/
 /icons/*
 !/light-design/
@@ -53,10 +51,6 @@ public-dist/
 /public/*
 !/stage-samples/
 /stage-samples/*
-!/tests/
-/tests/*
-!/tools/
-/tools/*
 !/formation/prototype/
 /formation/prototype/*
 !/manual/img/
@@ -159,11 +153,6 @@ public-dist/
 !/stage-venues.js
 !/stage.html
 !/style.css
-!/tests/gamma-light-model.test.mjs
-!/tools/check-beta-update-safety.py
-!/tools/gamma-browser.cjs
-!/tools/gamma-storage-browser.cjs
-!/tools/pre-publish-check.sh
 
 # Public runtime only; internal development material stays local.
 /AGENTS.md
