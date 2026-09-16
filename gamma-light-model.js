@@ -41,6 +41,11 @@
   }
   function reconcile(design, context) {
     if (!design) return empty(context);
+    // A comparison-plan collection has no editable rig. Start an empty editor
+    // candidate while retaining the entire opaque collection and reference.
+    if (!design.format && design.version === 1 && Array.isArray(design.plans) && object(design.activePlanRef)) {
+      return { ...clone(design), ...empty(context) };
+    }
     const next=validate(design), byId=new Map(next.scenes.map(row=>[row.id,row]));
     // Deleted scene cues remain recoverable in the saved domain; only live IDs enter the editor.
     const archived = new Map((next.archivedScenes || []).map(row=>[row.id,row]));

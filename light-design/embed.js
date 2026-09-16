@@ -73,7 +73,7 @@
     try {
       if(changedElsewhere) throw Error('別のタブでショーが変更されました。照明をファイルへ控えてから読み直してください');
       hooks.stop();
-      const result=parent.GAMMA_LIGHT_HOST.apply(build(),context.basis);
+      const result=await parent.GAMMA_LIGHT_HOST.apply(build(),context.basis);
       if(!result.persisted) throw Error('保存を確認できませんでした');
       parent.GAMMA_WORKSPACE.captureHostHistory();
       context=result.context;state.dirty=false;

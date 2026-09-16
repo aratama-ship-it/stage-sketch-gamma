@@ -10518,6 +10518,77 @@ body.is-roster-list-resizing { cursor: ns-resize; user-select: none; -webkit-use
    380pxの窓に3列だと1枚100px弱しかなく、灯体の数も色の違いも潰れる。 */
 .stage-modal#stage-light-preset-modal { width: min(820px, calc(100vw - 40px)); }
 .stage-modal.stage-selected-light-preset-modal { width: min(760px, calc(100vw - 40px)); }
+.stage-modal.stage-lighting-plan-modal { width: min(680px, calc(100vw - 32px)); }
+.stage-lighting-plan-modal .stage-modal-body { display: grid; gap: 14px; }
+.stage-lighting-plan-summary,
+.stage-lighting-plan-candidate p,
+.stage-lighting-plan-replace-confirm p { margin: 0; color: var(--milk-dim); font-size: 12px; line-height: 1.55; }
+.stage-lighting-plan-candidate,
+.stage-lighting-plan-existing,
+.stage-lighting-plan-replace-confirm { padding: 12px; border: 1px solid var(--line-dark); background: var(--desk-1); }
+.stage-lighting-plan-candidate { border-left: 3px solid var(--brass); }
+.stage-lighting-plan-kicker { margin: 0 0 4px; color: var(--brass); font-size: 10px; font-weight: 700; letter-spacing: .09em; }
+.stage-lighting-plan-candidate h3 { margin: 0 0 5px; color: var(--milk); font-size: 16px; }
+.stage-lighting-plan-existing { display: grid; gap: 8px; }
+.stage-lighting-plan-existing:empty { display: none; }
+.stage-lighting-plan-existing h3 { margin: 0; color: var(--milk-dim); font-size: 12px; }
+.stage-lighting-plan-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(229, 214, 187, .16); }
+.stage-lighting-plan-row strong,
+.stage-lighting-plan-row small { display: block; }
+.stage-lighting-plan-row strong { color: var(--milk); font-size: 12px; }
+.stage-lighting-plan-row small { margin-top: 2px; color: var(--milk-dim); font-size: 10px; }
+.stage-lighting-plan-row > div { flex: 1 1 auto; min-width: 0; }
+.stage-lighting-plan-row .stage-minor-action { width: auto; flex: 0 0 auto; white-space: nowrap; min-height: 30px; padding: 5px 8px; font-size: 11px; }
+.stage-lighting-plan-overlay-status { margin: 3px 0 0; color: var(--brass); font-size: 10px; line-height: 1.45; }
+.stage-lighting-plan-overlay-clear { width: 100%; margin: 2px 0 4px; text-align: left; }
+.stage-lighting-plan-choice { display: grid; gap: 8px; }
+.stage-lighting-plan-choice > button { min-height: 64px; padding: 10px 12px; border: 1px solid var(--line-dark); background: var(--desk-1); color: var(--milk); cursor: pointer; font: inherit; text-align: left; }
+.stage-lighting-plan-choice > button:hover,
+.stage-lighting-plan-choice > button:focus-visible { border-color: var(--brass); }
+.stage-lighting-plan-choice > button.is-selected { border-color: var(--brass); background: rgba(211, 172, 89, .08); }
+.stage-lighting-plan-choice > button.is-replace.is-selected { border-color: var(--rust); background: rgba(210, 100, 51, .08); }
+.stage-lighting-plan-choice strong { display: block; font-size: 13px; }
+.stage-lighting-plan-choice strong span { margin-left: 6px; color: var(--brass); font-size: 10px; letter-spacing: .06em; }
+.stage-lighting-plan-choice small { display: block; margin-top: 4px; color: var(--milk-dim); font-size: 11px; line-height: 1.45; }
+.stage-lighting-plan-replace-confirm { display: grid; gap: 8px; border-left: 3px solid var(--rust); }
+.stage-lighting-plan-replace-confirm label { color: var(--milk); font-size: 12px; }
+.stage-lighting-plan-replace-confirm input { width: min(160px, 100%); }
+.stage-lighting-plan-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.stage-lighting-plan-actions > button { width: auto; flex: 0 0 auto; white-space: nowrap; }
+.stage-lighting-plan-actions .stage-minor-action:disabled { opacity: .5; cursor: not-allowed; }
+@media (max-width: 520px) { .stage-lighting-plan-actions { flex-direction: column-reverse; } .stage-lighting-plan-actions button { width: 100%; } }
+
+.stage-modal-backdrop.stage-venue-apply-backdrop { z-index: 74; }
+.stage-modal.stage-venue-apply-modal { width: min(680px, calc(100vw - 32px)); z-index: 75; }
+.stage-venue-apply-modal .stage-modal-body { display: grid; gap: 14px; }
+.stage-venue-apply-summary,
+.stage-venue-apply-version p,
+.stage-venue-apply-status { margin: 0; color: var(--milk-dim); font-size: 12px; line-height: 1.55; }
+.stage-venue-apply-version { padding: 12px; border: 1px solid var(--line-dark); border-left: 3px solid var(--rust); background: var(--desk-1); }
+.stage-venue-apply-version strong { display: block; margin-bottom: 4px; color: var(--milk); font-size: 13px; }
+.stage-venue-apply-choices { display: grid; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.stage-venue-apply-choices legend { margin-bottom: 2px; color: var(--brass); font-size: 11px; font-weight: 700; letter-spacing: .06em; }
+.stage-venue-apply-choice { min-height: 64px; padding: 12px; border: 1px solid var(--line-dark); background: var(--desk-1); color: var(--milk); cursor: pointer; font: inherit; text-align: left; }
+.stage-venue-apply-choice:hover,
+.stage-venue-apply-choice:focus-visible { border-color: var(--brass); }
+.stage-venue-apply-choice.is-selected { border-color: var(--brass); background: rgba(211, 172, 89, .08); }
+.stage-venue-apply-choice:disabled { opacity: .5; cursor: not-allowed; }
+.stage-venue-apply-choice strong,
+.stage-venue-apply-choice small { display: block; }
+.stage-venue-apply-choice strong { font-size: 13px; }
+.stage-venue-apply-choice small { margin-top: 4px; color: var(--milk-dim); font-size: 11px; line-height: 1.5; }
+.stage-venue-apply-preset-select { display: grid; grid-template-columns: minmax(130px, auto) minmax(0, 1fr); align-items: center; gap: 6px 10px; padding: 10px 12px; border: 1px solid var(--line-dark); background: var(--desk-1); color: var(--milk); font-size: 11px; }
+.stage-venue-apply-preset-select select { min-width: 0; width: 100%; }
+.stage-venue-apply-preset-select small { grid-column: 1 / -1; color: var(--milk-dim); line-height: 1.5; }
+.stage-venue-apply-status:not(:empty) { padding: 10px 12px; border-left: 3px solid var(--rust); background: var(--desk-1); color: var(--milk); }
+.stage-venue-apply-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.stage-venue-apply-actions > button { width: auto; min-height: 44px; flex: 0 0 auto; white-space: nowrap; }
+@media (max-width: 520px) {
+  .stage-venue-apply-preset-select { grid-template-columns: minmax(0, 1fr); }
+  .stage-venue-apply-preset-select small { grid-column: 1; }
+  .stage-venue-apply-actions { flex-direction: column-reverse; }
+  .stage-venue-apply-actions > button { width: 100%; }
+}
 .stage-selected-light-preset-open { width: 100%; margin: 2px 0 6px; text-align: left; }
 .stage-selected-light-preset-summary,
 .stage-selected-light-preset-note { margin: 0; color: var(--milk-dim); line-height: 1.6; }

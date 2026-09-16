@@ -2806,6 +2806,11 @@
   }
 
   function buildVenue(id, label, provenance) {
+    const [templateVenueId, templateSizeId = ""] = String(state.templateKey || "").split(":");
+    const templateVenue = templateVenueId ? library.venueV2ById(templateVenueId) : null;
+    const lightingPresetBasis = templateVenue?.lightingPresetBasis
+      || (templateVenueId && library.isPreset(templateVenueId)
+        ? { venueId: templateVenueId, sizeId: templateSizeId } : null);
     return {
       format: "venue-v2",
       id,
@@ -2833,6 +2838,7 @@
       stageWings: stageWingOutput(),
       fixtures: fixtureOutput(),
       access: accessOutput(),
+      ...(lightingPresetBasis ? { lightingPresetBasis: clone(lightingPresetBasis) } : {}),
       provenance,
     };
   }
@@ -2896,9 +2902,17 @@
       ? clone(lastSavedVenue)
       : saveDraft((els.name && els.name.value.trim()) || defaultAppliedVenueLabel());
     if (!saved) return null;
-    openingDraft = captureDraft();
-    window.dispatchEvent(new CustomEvent("stage-venue-saved", { detail: { venue: clone(saved) } }));
-    finishCloseEditor();
+    const templateKey = state.templateKey;
+    window.dispatchEvent(new CustomEvent("stage-venue-apply-requested", {
+      detail: {
+        venue: clone(saved),
+        templateKey,
+        complete() {
+          openingDraft = captureDraft();
+          finishCloseEditor();
+        },
+      },
+    }));
     return saved;
   }
 

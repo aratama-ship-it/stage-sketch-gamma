@@ -128,6 +128,16 @@ public-dist/
 !/stage-i18n.zh-Hans.js
 !/stage-i18n.zh-Hant.js
 !/stage-light-motion.js
+!/stage-lighting-plans.js
+!/stage-lighting-plan-overlay.js
+!/docs/
+/docs/*
+!/docs/proscenium-lighting-presets-2026-09-15/
+/docs/proscenium-lighting-presets-2026-09-15/*
+!/docs/proscenium-lighting-presets-2026-09-15/proscenium-lighting-presets-v1.json
+!/docs/proscenium-lighting-presets-2026-09-15/proscenium-small.shosai-light-design.json
+!/docs/proscenium-lighting-presets-2026-09-15/proscenium-mid.shosai-light-design.json
+!/docs/proscenium-lighting-presets-2026-09-15/proscenium-large.shosai-light-design.json
 !/stage-machinery.js
 !/stage-prompt-i18n.js
 !/stage-pwa.js

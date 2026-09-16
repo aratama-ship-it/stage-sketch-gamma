@@ -12,7 +12,7 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026091630">
+<link rel="stylesheet" href="style.css?v=2026091652">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -20,7 +20,7 @@
   .spine { display: none; }
 </style>
 <link rel="stylesheet" href="gamma.css?v=2026091615">
-<script src="gamma-light-model.js?v=2026091502"></script>
+<script src="gamma-light-model.js?v=2026091650"></script>
 </head>
 <body class="is-standalone">
 
@@ -62,7 +62,7 @@
                       data-stage-workspace-mode="normal" data-stage-panel-layout-default="split"
                       aria-pressed="true">舞台モード</button>
               <button type="button" class="stage-workspace-tab" id="gamma-venue" data-stage-workspace-mode="venue-setup" aria-pressed="false" aria-controls="gamma-venue-workspace" data-no-i18n>劇場設定モード</button>
-              <button type="button" class="stage-workspace-tab" id="gamma-placement" data-stage-workspace-mode="light-placement" aria-pressed="false" aria-controls="gamma-light-workspace" data-no-i18n>機材配置モード</button>
+              <button type="button" class="stage-workspace-tab" id="gamma-placement" data-stage-workspace-mode="light-placement" aria-pressed="false" aria-controls="gamma-light-workspace">照明機材配置モード</button>
               <button type="button" class="stage-workspace-tab" id="gamma-design" data-stage-workspace-mode="light-design" aria-pressed="false" aria-controls="gamma-light-workspace" data-no-i18n>照明デザインモード</button>
               <button type="button" class="stage-workspace-tab" id="stage-freecam-open"
                       data-stage-workspace-launch="3d"
@@ -1372,6 +1372,43 @@
   </div>
 </div>
 
+<div class="stage-modal-backdrop" id="stage-lighting-plan-backdrop" hidden></div>
+<div class="stage-modal stage-lighting-plan-modal" id="stage-lighting-plan-modal" role="dialog" aria-modal="true"
+     aria-labelledby="stage-lighting-plan-title" hidden>
+  <header class="stage-modal-head">
+    <h2 id="stage-lighting-plan-title">劇場の照明プラン</h2>
+    <button type="button" class="stage-modal-close" id="stage-lighting-plan-close" aria-label="閉じる">✕</button>
+  </header>
+  <div class="stage-modal-body">
+    <p class="stage-lighting-plan-summary" id="stage-lighting-plan-summary">劇場に合う照明プランを確認しています…</p>
+    <section class="stage-lighting-plan-candidate" id="stage-lighting-plan-candidate" hidden>
+      <p class="stage-lighting-plan-kicker">選択した劇場プリセット</p>
+      <h3 id="stage-lighting-plan-candidate-title"></h3>
+      <p id="stage-lighting-plan-candidate-detail"></p>
+    </section>
+    <section class="stage-lighting-plan-existing" id="stage-lighting-plan-existing" aria-label="保存済みの照明プラン"></section>
+    <section class="stage-lighting-plan-choice" id="stage-lighting-plan-choice" hidden aria-label="適用方法">
+      <p class="stage-lighting-plan-kicker">どう残しますか</p>
+      <button type="button" class="stage-lighting-plan-choice is-selected" id="stage-lighting-plan-add-choice" aria-pressed="true">
+        <strong>新しい照明プランとして追加 <span>推奨</span></strong>
+        <small>今の照明・キューは変えず、全消灯の劇場プランを別に残します。</small>
+      </button>
+      <button type="button" class="stage-lighting-plan-choice is-replace" id="stage-lighting-plan-replace-choice" aria-pressed="false">
+        <strong>参照するプランを置換</strong>
+        <small>既存の照明・キューは変えず、参照するプランだけを切り替えます。次に確認があります。</small>
+      </button>
+      <section class="stage-lighting-plan-replace-confirm" id="stage-lighting-plan-replace-confirm" hidden>
+        <label for="stage-lighting-plan-replace-phrase">理解したうえで <b>置換</b> と入力してください</label>
+        <input id="stage-lighting-plan-replace-phrase" class="stage-text-input" autocomplete="off" data-1p-ignore placeholder="置換">
+        <p>既存の照明やキューは残ります。ここでは実在会場の設備・吊荷重・電源・DMX・レーザー運用を承認しません。</p>
+      </section>
+    </section>
+    <footer class="stage-lighting-plan-actions">
+      <button type="button" class="btn-quiet" id="stage-lighting-plan-cancel">変更しない</button>
+      <button type="button" class="stage-minor-action" id="stage-lighting-plan-apply" disabled>追加する</button>
+    </footer>
+  </div>
+</div>
 <div class="stage-modal-backdrop" id="stage-selected-light-preset-backdrop" hidden></div>
 <div class="stage-modal stage-selected-light-preset-modal" id="stage-selected-light-preset-modal" role="dialog" aria-modal="true"
      aria-labelledby="stage-selected-light-preset-title" hidden>
@@ -2446,6 +2483,10 @@
       <p class="stage-venue-note" id="stage-venue-note" data-no-i18n hidden></p>
       <p class="stage-venue-scale" id="stage-venue-scale"></p>
       <p class="stage-profile-hint" id="stage-venue-missing" hidden></p>
+      <button type="button" id="stage-lighting-plan-open" class="stage-minor-action">劇場の照明プランを追加…</button>
+      <p class="stage-profile-hint" id="stage-lighting-plan-open-summary">今の照明は変えずに残します</p>
+      <p class="stage-lighting-plan-overlay-status" id="stage-lighting-plan-overlay-status" hidden>平面図に劇場プランを概略表示中</p>
+      <button type="button" class="btn-quiet" id="stage-lighting-plan-overlay-clear" hidden>劇場プランの重ねを外す</button>
     </section>
     <div class="stage-venue-editor-workspace">
       <div class="stage-venue-editor-menu">
@@ -2644,6 +2685,47 @@
   </div>
 </div>
 
+<div class="stage-modal-backdrop stage-venue-apply-backdrop" id="stage-venue-apply-backdrop" hidden></div>
+<div class="stage-modal stage-venue-apply-modal" id="stage-venue-apply-modal" role="dialog" aria-modal="true"
+     aria-labelledby="stage-venue-apply-title" aria-describedby="stage-venue-apply-summary" hidden>
+  <header class="stage-modal-head">
+    <h2 id="stage-venue-apply-title">この劇場をショーへ反映</h2>
+    <button type="button" class="stage-modal-close" id="stage-venue-apply-close" aria-label="閉じる">✕</button>
+  </header>
+  <div class="stage-modal-body">
+    <p class="stage-venue-apply-summary" id="stage-venue-apply-summary"></p>
+    <section class="stage-venue-apply-version" id="stage-venue-apply-version" hidden>
+      <strong id="stage-venue-apply-version-title">新しいショーの版を作ります</strong>
+      <p id="stage-venue-apply-version-detail"></p>
+    </section>
+    <fieldset class="stage-venue-apply-choices" id="stage-venue-apply-choices">
+      <legend>照明機材をどうしますか</legend>
+      <button type="button" class="stage-venue-apply-choice is-selected" id="stage-venue-apply-preset" aria-pressed="true">
+        <strong>照明機材も導入する</strong>
+        <small>選んだ型の照明機材を、全消灯の状態で配置します。</small>
+      </button>
+      <label class="stage-venue-apply-preset-select" for="stage-venue-apply-preset-select">
+        <span>照明機材プリセット</span>
+        <select id="stage-venue-apply-preset-select" autocomplete="off"></select>
+        <small id="stage-venue-apply-preset-note">この劇場形式に合う型を確認しています…</small>
+      </label>
+      <button type="button" class="stage-venue-apply-choice" id="stage-venue-apply-manual" aria-pressed="false">
+        <strong>照明機材を自分で配置する</strong>
+        <small>劇場を反映した後、照明機材配置モードを開きます。</small>
+      </button>
+      <button type="button" class="stage-venue-apply-choice" id="stage-venue-apply-none" aria-pressed="false">
+        <strong>照明機材を導入しない</strong>
+        <small>劇場だけを反映し、舞台モードへ進みます。</small>
+      </button>
+    </fieldset>
+    <p class="stage-venue-apply-status" id="stage-venue-apply-status" role="status" aria-live="polite"></p>
+    <footer class="stage-venue-apply-actions">
+      <button type="button" class="btn-quiet" id="stage-venue-apply-cancel">劇場設定へ戻る</button>
+      <button type="button" class="stage-minor-action" id="stage-venue-apply-confirm">この内容で反映する</button>
+    </footer>
+  </div>
+</div>
+
 <div class="stage-modal-backdrop stage-venue-conflict-backdrop" id="stage-venue-conflict-backdrop" hidden></div>
 <div class="stage-modal stage-venue-conflict-modal" id="stage-venue-conflict-modal" role="alertdialog"
      aria-modal="true" aria-labelledby="stage-venue-conflict-title"
@@ -2785,9 +2867,9 @@
 
 <script src="stage-venues.js?v=2026091501"></script>
 <script src="stage-venue-lines.js?v=2026091501"></script>
-    <script src="stage-i18n.js?v=2026091606"></script>
-    <script src="stage-i18n.zh-Hans.js?v=2026091606"></script>
-    <script src="stage-i18n.zh-Hant.js?v=2026091606"></script>
+    <script src="stage-i18n.js?v=2026091652"></script>
+    <script src="stage-i18n.zh-Hans.js?v=2026091652"></script>
+    <script src="stage-i18n.zh-Hant.js?v=2026091652"></script>
 <script src="stage-prompt-i18n.js?v=2026091501"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026091501"></script>
@@ -2799,12 +2881,14 @@
 <script src="stage-light-motion.js?v=2026091501"></script>
 <script src="manual/manual-content.js?v=2026091501"></script>
 <script src="stage-pwa.js?v=2026091501"></script>
-<script src="stage-sketch.js?v=2026091643"></script>
+<script src="stage-lighting-plans.js?v=2026091650"></script>
+<script src="stage-lighting-plan-overlay.js?v=2026091650"></script>
+<script src="stage-sketch.js?v=2026091653"></script>
 <script src="stage-timeline.js?v=2026091620"></script>
-<script src="stage-session.js?v=2026091602"></script>
+<script src="stage-session.js?v=2026091650"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
-<script src="stage-venue-editor.js?v=2026091501"></script>
+<script src="stage-venue-editor.js?v=2026091652"></script>
 <script src="gamma-workspace.js?v=2026091614"></script>
 </body>
 </html>

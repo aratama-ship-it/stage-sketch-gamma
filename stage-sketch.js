@@ -13,6 +13,73 @@
 (function () {
   "use strict";
 
+  /* W05: opaque snapshots, two verified copies, no format migration.
+     localStorage is synchronous: the transaction finishes before the Promise
+     resolves, without yielding between the two writes or rollback. */
+  function createProjectStore({ storage, currentKey, shelfKey, onCorrupt = () => {}, now = () => new Date().toISOString() }) {
+    let halted = false;
+    const fail = (code, details = {}) => ({ ok: false, error: { code, ...details } });
+    const record = value => value !== null && typeof value === "object" && !Array.isArray(value);
+    const classify = error => error?.name === "QuotaExceededError" || error?.name === "NS_ERROR_DOM_QUOTA_REACHED"
+      ? "QUOTA_EXCEEDED" : error?.name === "AbortError" ? "CANCELLED" : "WRITE_FAILED";
+    return Object.freeze({
+      async commit({ projectId, serializedState, expectedRevision = null, intent } = {}) {
+        if (halted) return fail("PARTIAL_WRITE", { halted: true });
+        if (expectedRevision !== null) return fail("REVISION_UNSUPPORTED");
+        let candidate;
+        try {
+          candidate = JSON.parse(serializedState);
+          if (typeof serializedState !== "string" || !record(candidate) || !record(candidate.project)
+              || typeof projectId !== "string" || !projectId || candidate.project.id !== projectId) return fail("INVALID_SNAPSHOT");
+        } catch (_) { return fail("INVALID_SNAPSHOT"); }
+        let beforeCurrent, beforeShelf;
+        try {
+          beforeCurrent = storage.getItem(currentKey);
+          beforeShelf = storage.getItem(shelfKey);
+        } catch (_) { return fail("READ_FAILED"); }
+        let shelf;
+        try {
+          shelf = beforeShelf === null ? {} : JSON.parse(beforeShelf);
+          if (!record(shelf)) throw new Error("Invalid collection");
+        } catch (_) {
+          try { onCorrupt(beforeShelf); } catch (_) { /* Original collection remains untouched. */ }
+          return fail("CORRUPT_COLLECTION");
+        }
+        const savedAt = now();
+        // Own data property also preserves valid opaque IDs such as __proto__.
+        Object.defineProperty(shelf, projectId, { value: { savedAt, state: candidate }, enumerable: true, configurable: true, writable: true });
+        const serializedShelf = JSON.stringify(shelf);
+        let failure;
+        try {
+          storage.setItem(currentKey, serializedState);
+          storage.setItem(shelfKey, serializedShelf);
+        } catch (error) { failure = classify(error); }
+        if (!failure) {
+          try {
+            if (storage.getItem(currentKey) !== serializedState || storage.getItem(shelfKey) !== serializedShelf) failure = "PARTIAL_WRITE";
+          } catch (_) { failure = "PARTIAL_WRITE"; }
+        }
+        if (failure) {
+          // Restore each key independently; a failed first restore must not skip the second.
+          for (const [key, previous] of [[currentKey, beforeCurrent], [shelfKey, beforeShelf]]) {
+            try {
+              if (storage.getItem(key) !== previous) {
+                if (previous === null) storage.removeItem(key);
+                else storage.setItem(key, previous);
+              }
+            } catch (_) { /* Verify both original strings below. */ }
+          }
+          let restored = false;
+          try { restored = storage.getItem(currentKey) === beforeCurrent && storage.getItem(shelfKey) === beforeShelf; } catch (_) {}
+          halted = failure === "PARTIAL_WRITE" || !restored;
+          return fail(restored ? failure : "PARTIAL_WRITE", { cause: failure, restored, halted });
+        }
+        return { ok: true, value: { projectId, savedAt, intent, revision: null, verified: true } };
+      },
+    });
+  }
+  window.SHOSAI_PROJECT_STORE_MODEL = Object.freeze({ create: createProjectStore });
+
   /* 配信便ごとの入口制御。未公開機能の保存データと描画互換は残したまま、
      β 2026-09-12 では本人が選んだ5項目＋Viewer以外を新規作成させない。 */
   const RELEASE_SCOPE_ID = (() => {
@@ -1415,8 +1482,8 @@
       };
     },
     normalizePlan: normalizeStageAIPlan,
-    commitAppliedExport(options) {
-      if (options.shelveCurrent() === false) return null;
+    async commitAppliedExport(options) {
+      if (await options.shelveCurrent() === false) return null;
       const prepared = options.prepareImportDocument(options.exported);
       const next = options.normalizeState({
         ...options.currentState,
@@ -1425,7 +1492,7 @@
       });
       next.project.id = options.makeProjectId();
       next.layout = options.currentState.layout;
-      if (options.applyLoadedState(next, "新しいショーとして保存しました。") === false) return null;
+      if (await options.applyLoadedState(next, "新しいショーとして保存しました。") === false) return null;
       options.resetDraft({ clearInput: true });
       return next;
     },
@@ -1743,6 +1810,8 @@
   const STORAGE_KEY = "gamma:shosai-stage-sketch-v1";
   const BETA_STORAGE_KEY = "shosai-stage-sketch-v1";
   const SHOWS_KEY = "shosai-stage-shows-v1";
+  const ProjectStore = createProjectStore({ storage: localStorage, currentKey: BETA_STORAGE_KEY, shelfKey: SHOWS_KEY,
+    onCorrupt: raw => markShelfCorrupt(raw) });
   // 壊れた棚の隔離先は旧Gammaキーを維持し、βの棚とは混ぜない。
   const SHOWS_BROKEN_KEY = "gamma:shosai-stage-shows-broken-v1";
   const LEGACY_STORAGE_KEY = "gamma:shosai-stage-sketch-v1";
@@ -4445,6 +4514,40 @@
     projectSettingsModal: document.getElementById("stage-project-settings-modal"),
     projectSettingsBackdrop: document.getElementById("stage-project-settings-backdrop"),
     projectSettingsClose: document.getElementById("stage-project-settings-close"),
+    lightingPlanOpen: document.getElementById("stage-lighting-plan-open"),
+    lightingPlanOpenSummary: document.getElementById("stage-lighting-plan-open-summary"),
+    lightingPlanModal: document.getElementById("stage-lighting-plan-modal"),
+    lightingPlanBackdrop: document.getElementById("stage-lighting-plan-backdrop"),
+    lightingPlanClose: document.getElementById("stage-lighting-plan-close"),
+    lightingPlanCancel: document.getElementById("stage-lighting-plan-cancel"),
+    lightingPlanSummary: document.getElementById("stage-lighting-plan-summary"),
+    lightingPlanCandidate: document.getElementById("stage-lighting-plan-candidate"),
+    lightingPlanCandidateTitle: document.getElementById("stage-lighting-plan-candidate-title"),
+    lightingPlanCandidateDetail: document.getElementById("stage-lighting-plan-candidate-detail"),
+    lightingPlanExisting: document.getElementById("stage-lighting-plan-existing"),
+    lightingPlanChoice: document.getElementById("stage-lighting-plan-choice"),
+    lightingPlanAddChoice: document.getElementById("stage-lighting-plan-add-choice"),
+    lightingPlanReplaceChoice: document.getElementById("stage-lighting-plan-replace-choice"),
+    lightingPlanReplaceConfirm: document.getElementById("stage-lighting-plan-replace-confirm"),
+    lightingPlanReplacePhrase: document.getElementById("stage-lighting-plan-replace-phrase"),
+    lightingPlanApply: document.getElementById("stage-lighting-plan-apply"),
+    lightingPlanOverlayStatus: document.getElementById("stage-lighting-plan-overlay-status"),
+    lightingPlanOverlayClear: document.getElementById("stage-lighting-plan-overlay-clear"),
+    venueApplyModal: document.getElementById("stage-venue-apply-modal"),
+    venueApplyBackdrop: document.getElementById("stage-venue-apply-backdrop"),
+    venueApplyClose: document.getElementById("stage-venue-apply-close"),
+    venueApplyCancel: document.getElementById("stage-venue-apply-cancel"),
+    venueApplySummary: document.getElementById("stage-venue-apply-summary"),
+    venueApplyVersion: document.getElementById("stage-venue-apply-version"),
+    venueApplyVersionTitle: document.getElementById("stage-venue-apply-version-title"),
+    venueApplyVersionDetail: document.getElementById("stage-venue-apply-version-detail"),
+    venueApplyPreset: document.getElementById("stage-venue-apply-preset"),
+    venueApplyPresetSelect: document.getElementById("stage-venue-apply-preset-select"),
+    venueApplyPresetNote: document.getElementById("stage-venue-apply-preset-note"),
+    venueApplyManual: document.getElementById("stage-venue-apply-manual"),
+    venueApplyNone: document.getElementById("stage-venue-apply-none"),
+    venueApplyStatus: document.getElementById("stage-venue-apply-status"),
+    venueApplyConfirm: document.getElementById("stage-venue-apply-confirm"),
     projectTitle: document.getElementById("stage-project-title"),
     versionLabel: document.getElementById("stage-version-label"),
     versionCopy: document.getElementById("stage-version-copy"),
@@ -6385,7 +6488,7 @@
       }
     }
     catch (_) { return {}; }                         // localStorage自体が読めない。壊れ扱いにはしない
-    if (rawText === null || rawText === "") return {}; // 初回。正常な空
+    if (rawText === null) return {}; // 初回だけが正常な空。空文字も壊れた原文として残す。
     let raw;
     try { raw = JSON.parse(rawText); }
     catch (_) { markShelfCorrupt(rawText); return {}; }
@@ -6471,13 +6574,12 @@
   // いまのショーを棚へ書き戻す。保存のたびに呼ぶので、一覧は常に最新になる。
   // ★戻り値は「棚へ確かに書けたか」。容量超過では false が返る（例外は飛ばない）。
   //   セッション参加前の退避判定がこれを見ている（stage-session.js）。捨てないこと。
-  function shelveState(value) {
-    const shows = readShows();
-    shows[value.project.id] = {
-      savedAt: nowIso(),
-      state: JSON.parse(JSON.stringify(value)),
-    };
-    return writeShows(shows);
+  async function shelveState(value) {
+    const result = await ProjectStore.commit({ projectId: value.project.id,
+      serializedState: JSON.stringify(value), expectedRevision: null, intent: "preserve-show" });
+    shelfFailed = !result.ok;
+    if (!result.ok) reportProjectStoreFailure(result);
+    return result.ok;
   }
 
   function shelveCurrent() {
@@ -8802,39 +8904,49 @@
     syncPhoneSaveNotice(text, level);
   }
 
+  function reportProjectStoreFailure(result) {
+    const code = result.error.code;
+    const detail = code === "CORRUPT_COLLECTION"
+      ? "ショー一覧が壊れているため、保存を止めました。ファイルへ書き出してから、ショー一覧で作り直してください。"
+      : code === "PARTIAL_WRITE"
+        ? "保存の整合性を確認できません。自動保存を停止しました。ファイルへ書き出して残してください。"
+        : "この端末へ保存できませんでした。ファイルへ書き出して残してください。";
+    setSaveStatus(`${tx(detail)} (${code})`, "warn");
+  }
+
   function persistSoon() {
     if (STUDY_READ_ONLY) return;
     clearTimeout(saveTimer);
     setSaveStatus(tx("変更を保存しています…") || "Saving…");
-    saveTimer = setTimeout(() => {
-      const previousSavedAt = state.lastSavedAt;
+    saveTimer = setTimeout(async () => {
+      const savingState = state;
+      const previousSavedAt = savingState.lastSavedAt;
       try {
         const savedAt = nowIso();
-        state.lastSavedAt = savedAt;
-        localStorage.setItem(BETA_STORAGE_KEY, snapshot());
-        shelveCurrent();
-        /* 現在ショーと棚は別の保存。棚だけ失敗することがあるので分けて伝える */
-        if (shelfCorrupt) {
-          setSaveStatus(sx(`「${state.project.title}」は保存しました。ただしショー一覧の控えが壊れているため、一覧の更新を止めています（残っている他のショーを消さないためです）。ファイルへ書き出してから、ショー一覧で作り直してください。`, `Saved \u201c${state.project.title}\u201d. The show shelf is damaged, so shelf updates are paused to avoid deleting your other shows. Export to a file, then rebuild the shelf from the show list.`),
-            "warn");
-        } else if (shelfFailed) {
-          setSaveStatus(sx(`「${state.project.title}」を保存しましたが、ショー一覧の控えは容量不足で更新できていません。ファイルへ書き出してください。`, `Saved \u201c${state.project.title}\u201d, but the show shelf is out of space \u2014 export to a file to keep a copy.`),
-            "warn");
-        } else {
-          setSaveStatus(sx(`「${state.project.title}」を保存しました。`, `Saved \u201c${state.project.title}\u201d.`));
+        savingState.lastSavedAt = savedAt;
+        const result = await ProjectStore.commit({ projectId: savingState.project.id,
+          serializedState: snapshot(), expectedRevision: null, intent: "autosave" });
+        shelfFailed = !result.ok;
+        if (!result.ok) {
+          savingState.lastSavedAt = previousSavedAt;
+          syncSaveStamps();
+          reportProjectStoreFailure(result);
+          return;
         }
+        if (state !== savingState) return;
+        setSaveStatus(sx(`「${state.project.title}」を保存しました。`, `Saved \u201c${state.project.title}\u201d.`));
         updateBackupNote();
         syncSaveStamps();
+        try { window.SHOSAI_STAGE_SESSION_HOOKS?.onLocalChange?.(); } catch (_) {}
       } catch (_) {
         // 書けなかった試行を「最終保存」とは表示しない。
-        state.lastSavedAt = previousSavedAt;
+        savingState.lastSavedAt = previousSavedAt;
         syncSaveStamps();
         /* 「画像を書き出して」と案内していたが、いまは書き出しボタンが
            警告のすぐ隣にある。そちらへ導く（2026-08-24 P1-7対応）。 */
         setSaveStatus(tx("この端末へ保存できませんでした。ファイルへ書き出して残してください。"),
           "warn");
       }
-      try { if (window.SHOSAI_STAGE_SESSION_HOOKS?.onLocalChange) window.SHOSAI_STAGE_SESSION_HOOKS.onLocalChange(); } catch (_) { /* セッション未使用なら何もしない */ }
     }, 180);
   }
 
@@ -13577,6 +13689,69 @@
     };
   }
 
+  function drawLightingPlanOverlay(target, L) {
+    const overlay = lightingPlanOverlayModel();
+    if (!overlay || !L.plan || presenting || !overlay.dims
+      || Math.abs(Number(overlay.dims.W) - Number(L.size.width)) > 0.01
+      || Math.abs(Number(overlay.dims.D) - Number(L.size.depth)) > 0.01) return;
+
+    const colorFor = (kind) => {
+      if (kind === "laser") return "#cb5c8d";
+      if (kind === "moving") return "#81b8cc";
+      return "#c8a963";
+    };
+    target.save();
+    target.globalAlpha = 0.76;
+    target.lineWidth = 1;
+    target.strokeStyle = stageSurfaceColor("#c8a963");
+    target.setLineDash([4, 3]);
+    overlay.trusses.forEach((truss) => {
+      const start = place(truss.u0, truss.v, L);
+      const end = place(truss.u1, truss.v, L);
+      target.beginPath();
+      target.moveTo(start.x, start.y);
+      target.lineTo(end.x, end.y);
+      target.stroke();
+    });
+    target.setLineDash([]);
+    overlay.markers.forEach((marker) => {
+      const point = place(marker.u, marker.v, L);
+      const radius = marker.kind === "fixed" ? 3.2 : 4.2;
+      target.fillStyle = colorFor(marker.kind);
+      target.strokeStyle = stageSurfaceColor("#19130f");
+      target.lineWidth = 1.1;
+      target.beginPath();
+      if (marker.kind === "fixed") {
+        target.arc(point.x, point.y, radius, 0, Math.PI * 2);
+      } else {
+        target.moveTo(point.x, point.y - radius);
+        target.lineTo(point.x + radius, point.y);
+        target.lineTo(point.x, point.y + radius);
+        target.lineTo(point.x - radius, point.y);
+        target.closePath();
+      }
+      target.fill();
+      target.stroke();
+      if (marker.kind === "laser") {
+        target.beginPath();
+        target.moveTo(point.x - 2, point.y);
+        target.lineTo(point.x + 2, point.y);
+        target.moveTo(point.x, point.y - 2);
+        target.lineTo(point.x, point.y + 2);
+        target.stroke();
+      }
+    });
+    const status = languageValue(() => "Outline · all off", () => "概略・全消灯");
+    const count = languageValue(() => `${overlay.counts.total} fixtures`, () => `${overlay.counts.total}台`);
+    target.globalAlpha = 0.92;
+    target.font = "600 10px system-ui, sans-serif";
+    const width = Math.max(96, target.measureText(`${status} / ${count}`).width + 12);
+    target.fillStyle = stageSurfaceColor("#201b16");
+    target.fillRect(L.stage.x + 6, L.stage.y + 6, width, 19);
+    target.fillStyle = stageSurfaceColor("#e0c989");
+    target.fillText(`${status} / ${count}`, L.stage.x + 12, L.stage.y + 19);
+    target.restore();
+  }
   /* opts.noZoom: 二本指の拡大を無視して等倍で描く。
      「照明を組む」画面が正面図を借りるときに使う（モーダルの中で拡大は要らない）。
      既定（未指定）はこれまでどおり zoomOf(view) を掛ける。 */
@@ -13598,6 +13773,7 @@
 
     if (L.plan) drawPlanVenue(target, L);
     else drawFrontVenue(target, L);
+    if (showSelection && L.plan && target === planCtx) drawLightingPlanOverlay(target, L);
 
     // 煽りの席では、垂直だったはずの線が画面の上へ向かって集まる（三点透視）。
     // 見上げていることが絵として伝わるのは、人を大きく描くからではなく、この傾きによる。
@@ -17894,6 +18070,295 @@
     announce(`${preset.label}を組みました（明かり${specs.length}個）。個々の明かりはあとから自由に動かせます。`);
   }
 
+  const LIGHTING_CATALOG_URL = "docs/proscenium-lighting-presets-2026-09-15/proscenium-lighting-presets-v1.json";
+  const LIGHTING_PREVIEW_URL = (sizeId) => `docs/proscenium-lighting-presets-2026-09-15/proscenium-${sizeId}.shosai-light-design.json`;
+  let lightingCatalogPromise = null;
+  let pendingLightingPlan = null;
+  let lightingPlanRequest = 0;
+  // The theatre editor selectors preview a template, not a change to the show.
+  // Saving its independent plan must never apply that template to existing lights.
+  function lightingPlanProject() {
+    const project = { ...state.project };
+    const venueId = els.venueSelect?.value || project.venue;
+    const sizeId = els.sizeSelect?.value || project.venueSize;
+    if (venueId !== project.venue || sizeId !== project.venueSize) project.venueDims = null;
+    return { ...project, venue: venueId, venueSize: sizeId };
+  }
+  const lightingPlanBasis = () => JSON.stringify([state.project.id, lightingPlanProject().venue,
+    lightingPlanProject().venueSize, lightingPlanProject().venueDims]);
+  let lightingPlanMode = "add";
+  // 表示選択は作業中だけの比較状態。project / localStorage には保存しない。
+  let lightingPlanOverlayId = "";
+
+  const lightingPlanApi = () => window.SHOSAI_STAGE_LIGHTING_PLANS || null;
+  const lightingPlanOverlayApi = () => window.SHOSAI_STAGE_LIGHTING_PLAN_OVERLAY || null;
+  const lightingPlanStore = () => state.project && state.project.lightingDesign;
+  const lightingPlanLabel = (plan) => plan && plan.label ? plan.label : "名称のない照明プラン";
+
+  function lightingPlanOverlayModel() {
+    const api = lightingPlanOverlayApi();
+    if (!api || !lightingPlanOverlayId) return null;
+    const plan = api.selectedPlan(lightingPlanStore(), lightingPlanOverlayId);
+    return api.matchesProject(plan, state.project, venueSize()) ? api.overlayForPlan(plan) : null;
+  }
+
+  function syncLightingPlanOverlayUi() {
+    const overlay = lightingPlanOverlayModel();
+    if (!overlay && lightingPlanOverlayId) lightingPlanOverlayId = "";
+    if (els.lightingPlanOverlayStatus) {
+      els.lightingPlanOverlayStatus.hidden = !overlay;
+      els.lightingPlanOverlayStatus.textContent = tx("平面図に劇場プランを概略表示中");
+    }
+    if (els.lightingPlanOverlayClear) els.lightingPlanOverlayClear.hidden = !overlay;
+    return overlay;
+  }
+
+  function setLightingPlanOverlay(planId) {
+    if (!planId) {
+      lightingPlanOverlayId = "";
+    } else {
+      const api = lightingPlanOverlayApi();
+      const overlay = api && api.overlayForPlan(api.selectedPlan(lightingPlanStore(), planId));
+      if (!overlay || !api.matchesProject(api.selectedPlan(lightingPlanStore(), planId), state.project, venueSize())) return false;
+      lightingPlanOverlayId = planId;
+    }
+    syncLightingPlanOverlayUi();
+    const api = lightingPlanApi();
+    renderLightingPlanExisting(api && api.validateStore(lightingPlanStore()));
+    render();
+    return true;
+  }
+
+  async function loadLightingJson(url) {
+    const response = await fetch(url, { credentials: "same-origin" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async function loadLightingCatalog() {
+    if (!lightingCatalogPromise) lightingCatalogPromise = loadLightingJson(LIGHTING_CATALOG_URL);
+    try { return await lightingCatalogPromise; }
+    catch (error) { lightingCatalogPromise = null; throw error; }
+  }
+
+  async function lightingSnapshotHash(value) {
+    if (!window.crypto || !window.crypto.subtle || typeof TextEncoder === "undefined") return null;
+    const bytes = new TextEncoder().encode(JSON.stringify(value));
+    const digest = await window.crypto.subtle.digest("SHA-256", bytes);
+    return `sha256:${Array.from(new Uint8Array(digest)).map((item) => item.toString(16).padStart(2, "0")).join("")}`;
+  }
+
+  function closeLightingPlanModal() {
+    lightingPlanRequest += 1;
+    pendingLightingPlan = null;
+    if (els.lightingPlanModal) els.lightingPlanModal.hidden = true;
+    if (els.lightingPlanBackdrop) els.lightingPlanBackdrop.hidden = true;
+  }
+
+  function setLightingPlanMode(mode) {
+    lightingPlanMode = mode === "replace" ? "replace" : "add";
+    const replacing = lightingPlanMode === "replace";
+    const replacePhrase = languageValue(() => "REPLACE", () => "置換");
+    if (els.lightingPlanAddChoice) {
+      els.lightingPlanAddChoice.classList.toggle("is-selected", !replacing);
+      els.lightingPlanAddChoice.setAttribute("aria-pressed", String(!replacing));
+    }
+    if (els.lightingPlanReplaceChoice) {
+      els.lightingPlanReplaceChoice.classList.toggle("is-selected", replacing);
+      els.lightingPlanReplaceChoice.setAttribute("aria-pressed", String(replacing));
+    }
+    if (els.lightingPlanReplaceConfirm) els.lightingPlanReplaceConfirm.hidden = !replacing;
+    if (els.lightingPlanApply) {
+      els.lightingPlanApply.textContent = replacing ? tx("置換する") : tx("追加する");
+      els.lightingPlanApply.disabled = !pendingLightingPlan
+        || (replacing && (!els.lightingPlanReplacePhrase || els.lightingPlanReplacePhrase.value.trim() !== replacePhrase));
+    }
+  }
+
+  function renderLightingPlanExisting(storeResult) {
+    if (!els.lightingPlanExisting) return;
+    els.lightingPlanExisting.replaceChildren();
+    if (!storeResult || !storeResult.ok || !storeResult.store) return;
+    const heading = document.createElement("h3");
+    heading.textContent = "保存済みの照明プラン";
+    els.lightingPlanExisting.append(heading);
+    const native = document.createElement("div");
+    native.className = "stage-lighting-plan-row";
+    native.innerHTML = `<div><strong>現在のStage Sketch照明</strong><small>既存の照明・キューは常に変更しません</small></div>`;
+    els.lightingPlanExisting.append(native);
+    storeResult.store.plans.forEach((plan) => {
+      const row = document.createElement("div");
+      row.className = "stage-lighting-plan-row";
+      const active = storeResult.store.activePlanRef.kind === "lighting-plan"
+        && storeResult.store.activePlanRef.planId === plan.id;
+      const detail = plan.design && plan.design.rig && Array.isArray(plan.design.rig.fixtures)
+        ? `${plan.design.rig.fixtures.length}要素${active ? " / 参照中" : " / 保存済み"}`
+        : active ? "参照中" : "保存済み";
+      const title = document.createElement("strong");
+      title.textContent = lightingPlanLabel(plan);
+      const note = document.createElement("small");
+      note.textContent = detail;
+      const wrap = document.createElement("div");
+      wrap.append(title, note);
+      const overlay = lightingPlanOverlayId === plan.id;
+      const view = document.createElement("button");
+      view.type = "button";
+      view.className = "stage-minor-action";
+      view.textContent = overlay ? tx("重ねを外す") : tx("図に重ねる");
+      view.setAttribute("aria-pressed", String(overlay));
+      const compatible = lightingPlanOverlayApi()?.matchesProject(plan, state.project, venueSize());
+      view.disabled = !compatible;
+      if (!compatible) note.textContent += " / 劇場寸法が異なるため重ね表示できません";
+      view.addEventListener("click", () => {
+        if (setLightingPlanOverlay(overlay ? "" : plan.id)) {
+          closeLightingPlanModal();
+          window.GAMMA_WORKSPACE?.normal();
+        }
+      });
+      row.append(wrap, view);
+      els.lightingPlanExisting.append(row);
+    });
+  }
+
+  function updateLightingPlanOpenSummary() {
+    syncLightingPlanOverlayUi();
+    if (!els.lightingPlanOpenSummary) return;
+    const api = lightingPlanApi();
+    const checked = api && api.validateStore(lightingPlanStore());
+    if (!checked || !checked.ok) {
+      els.lightingPlanOpenSummary.textContent = "保存済みの照明プランを確認してください";
+      return;
+    }
+    const count = checked.store ? checked.store.plans.length : 0;
+    els.lightingPlanOpenSummary.textContent = count ? `保存済み ${count}プラン / 既存照明は残ります` : "今の照明は変えずに残します";
+  }
+
+  async function commitLightingPlanStore(nextStore) {
+    if (STUDY_READ_ONLY || document.body.classList.contains("stage-session-guest")) return false;
+    const api = lightingPlanApi();
+    const checked = api && api.validateStore(nextStore);
+    if (!checked || !checked.ok) {
+      setSaveStatus((checked && checked.reason) || "照明プランを保存できません。", "warn");
+      return false;
+    }
+    const next = api.clone(state);
+    next.project.lightingDesign = checked.store;
+    const result = await ProjectStore.commit({ projectId: next.project.id,
+      serializedState: JSON.stringify(next), expectedRevision: null, intent: "theatre-lighting-plan" });
+    if (!result.ok) { reportProjectStoreFailure(result); return false; }
+    clearTimeout(saveTimer);
+    checkpoint();
+    state = next;
+    shelfFailed = false;
+    renderScenes();
+    updateInspector();
+    render();
+    updateLightingPlanOpenSummary();
+    updateBackupNote();
+    setSaveStatus(`「${state.project.title}」へ照明プランを保存しました。`);
+    try { if (window.SHOSAI_STAGE_SESSION_HOOKS?.onLocalChange) window.SHOSAI_STAGE_SESSION_HOOKS.onLocalChange(); } catch (_) { /* セッション未使用 */ }
+    return true;
+  }
+
+  async function openLightingPlanModal() {
+    const request = ++lightingPlanRequest;
+    const basis = lightingPlanBasis();
+    const api = lightingPlanApi();
+    if (!api || !els.lightingPlanModal) {
+      announce("劇場照明プランを読み込む準備ができていません。");
+      return;
+    }
+    els.lightingPlanModal.hidden = false;
+    if (els.lightingPlanBackdrop) els.lightingPlanBackdrop.hidden = false;
+    pendingLightingPlan = null;
+    if (els.lightingPlanCandidate) els.lightingPlanCandidate.hidden = true;
+    if (els.lightingPlanChoice) els.lightingPlanChoice.hidden = true;
+    if (els.lightingPlanApply) els.lightingPlanApply.disabled = true;
+    if (els.lightingPlanSummary) els.lightingPlanSummary.textContent = "劇場に合う照明プランを確認しています…";
+    const existing = api.validateStore(lightingPlanStore());
+    renderLightingPlanExisting(existing);
+    if (!existing.ok) {
+      if (els.lightingPlanSummary) els.lightingPlanSummary.textContent = existing.reason;
+      return;
+    }
+    try {
+      const catalog = await loadLightingCatalog();
+      if (request !== lightingPlanRequest || basis !== lightingPlanBasis()) return;
+      const candidate = api.presetForProject(catalog, lightingPlanProject());
+      if (!candidate.ok) {
+        if (els.lightingPlanSummary) els.lightingPlanSummary.textContent = candidate.reason;
+        return;
+      }
+      const rawDesign = await loadLightingJson(LIGHTING_PREVIEW_URL(candidate.preset.sizeId));
+      if (request !== lightingPlanRequest || basis !== lightingPlanBasis()) return;
+      const design = api.validateDesign(rawDesign);
+      if (!design.ok) {
+        if (els.lightingPlanSummary) els.lightingPlanSummary.textContent = design.reason;
+        return;
+      }
+      pendingLightingPlan = { catalog, preset: candidate.preset, design: design.design, basis };
+      const fixtures = candidate.preset.rig.fixtures || [];
+      const lasers = fixtures.filter((fixture) => fixture && fixture.kind === "laser").length;
+      if (els.lightingPlanSummary) els.lightingPlanSummary.textContent = "既存の照明を変えずに、新しい全消灯プランを保存できます。";
+      if (els.lightingPlanCandidateTitle) els.lightingPlanCandidateTitle.textContent = `プロセニアム・${candidate.preset.label}`;
+      if (els.lightingPlanCandidateDetail) {
+        els.lightingPlanCandidateDetail.textContent = `${candidate.preset.stage.W}m × ${candidate.preset.stage.D}m × ${candidate.preset.stage.H}m / ${fixtures.length}要素${lasers ? ` / レーザー${lasers}要素（全消灯・観客走査なし）` : ""}`;
+      }
+      if (els.lightingPlanCandidate) els.lightingPlanCandidate.hidden = false;
+      if (els.lightingPlanChoice) els.lightingPlanChoice.hidden = false;
+      if (els.lightingPlanReplacePhrase) els.lightingPlanReplacePhrase.value = "";
+      setLightingPlanMode("add");
+    } catch (_) {
+      if (request !== lightingPlanRequest || basis !== lightingPlanBasis()) return;
+      if (els.lightingPlanSummary) els.lightingPlanSummary.textContent = "劇場照明カタログを読み込めませんでした。保存は変更していません。";
+    }
+  }
+
+  async function applyLightingPlanCandidate() {
+    const api = lightingPlanApi();
+    if (!api || !pendingLightingPlan) return;
+    const pending = pendingLightingPlan;
+    const mode = lightingPlanMode;
+    const replacePhrase = languageValue(() => "REPLACE", () => "置換");
+    if (lightingPlanMode === "replace" && (!els.lightingPlanReplacePhrase || els.lightingPlanReplacePhrase.value.trim() !== replacePhrase)) return;
+    if (els.lightingPlanApply) els.lightingPlanApply.disabled = true;
+    const hash = await lightingSnapshotHash(pending.design);
+    if (pending !== pendingLightingPlan || pending.basis !== lightingPlanBasis()) return;
+    if (!hash) {
+      if (els.lightingPlanSummary) els.lightingPlanSummary.textContent = "取込内容の照合値を作れないため、保存を止めました。";
+      setLightingPlanMode(lightingPlanMode);
+      return;
+    }
+    const made = api.makePlan({
+      project: lightingPlanProject(),
+      preset: pending.preset,
+      design: pending.design,
+      importedSnapshotHash: hash,
+      createdAt: nowIso(),
+      nonce: rid("lxplan"),
+    });
+    if (!made.ok) {
+      if (els.lightingPlanSummary) els.lightingPlanSummary.textContent = made.reason;
+      setLightingPlanMode(lightingPlanMode);
+      return;
+    }
+    const appended = api.appendPlan(lightingPlanStore(), made.plan, { activate: mode === "replace" });
+    if (!appended.ok) {
+      if (els.lightingPlanSummary) els.lightingPlanSummary.textContent = appended.reason;
+      setLightingPlanMode(lightingPlanMode);
+      return;
+    }
+    if (!await commitLightingPlanStore(appended.store)) {
+      setLightingPlanMode(lightingPlanMode);
+      return;
+    }
+    closeLightingPlanModal();
+    if (mode === "replace") {
+      announce(`「${made.plan.label}」を保存し、有効な照明プランを切り替えました。既存の照明とキューは残しています。`);
+    } else {
+      announce(`「${made.plan.label}」を新しい照明プランとして保存しました。既存の照明は変えていません。`);
+    }
+  }
   /* ---------- 照明プリセットの組 ----------
      組（lightGroup）を持つ明かりは一体で扱う: 一つを掴めば全部が同じだけ動き、
      選べば組として選ばれる。調整できるのは直径（倍率）と光の強さだけ。
@@ -18037,20 +18502,21 @@
   /* 状態を書き換える前に、いまのショーと次のショーを両方とも棚へ確保する。
      localStorage の書き込みは一件ごとにatomicなので、次のショーが入らなくても
      いまのショーを開いたまま止めれば、唯一の現行コピーを失わない。 */
-  function prepareLoadedState(next) {
-    if (!shelveCurrent()) {
+  async function prepareLoadedState(next) {
+    clearTimeout(saveTimer);
+    if (!await shelveCurrent()) {
       showSwitchFailure("current");
       return false;
     }
-    if (!shelveState(next)) {
+    if (!await shelveState(next)) {
       showSwitchFailure("next");
       return false;
     }
     return true;
   }
 
-  function applyLoadedState(next, message) {
-    if (!prepareLoadedState(next)) return false;
+  async function applyLoadedState(next, message) {
+    if (!await prepareLoadedState(next)) return false;
     // 場面IDが別ショーで偶然重なっても、前のショーの下書きを出さない。
     resetStageAskDraft({ clearInput: true, invalidate: true });
     clearAudioEngine();
@@ -18078,24 +18544,24 @@
     return true;
   }
 
-  function newShow() {
+  async function newShow() {
     if (!window.confirm("新しいショーを作ります。いま開いているショーは一覧に残ります。")) return;
     const fresh = baseState(false);
     fresh.project.title = untitledShow();
     fresh.layout = state.layout;                 // 道具の並びは持ち越す
-    if (!applyLoadedState(normalizeState(fresh), "新しいショーを作りました。")) return;
+    if (!await applyLoadedState(normalizeState(fresh), "新しいショーを作りました。")) return;
     closeShows();
     renderShows();
   }
 
-  function openShow(id) {
+  async function openShow(id) {
     const shows = readShows();
     const entry = shows[id];
     if (!entry) return;
     if (id === state.project.id) { closeShows(); return; }
     const next = normalizeState(entry.state);
     next.layout = state.layout;
-    if (!applyLoadedState(next, `${next.project.title}を開きました。`)) return;
+    if (!await applyLoadedState(next, `${next.project.title}を開きました。`)) return;
     closeShows();
   }
 
@@ -18153,7 +18619,7 @@
     try { localStorage.removeItem(SHOWS_KEY); } catch (_) { /* 消せなくても続ける */ }
     try { localStorage.removeItem(SHOWS_BROKEN_KEY); } catch (_) { /* 同上 */ }
     shelfCorrupt = false;
-    shelveCurrent();      // いま開いているショーを起点に作り直す
+    if (!await shelveCurrent()) return;
     renderShows();
     announce("ショー一覧を作り直しました。");
   }
@@ -18161,9 +18627,10 @@
   function renderShows() {
     if (!els.showList) return;
     const shows = readShows();
-    shelveCurrent();                              // いまのショーも必ず一覧へ出す
-    const rows = Object.keys(readShows())
-      .map((id) => showSummary(readShows()[id]))
+    // Rendering the shelf must not write either durable copy.
+    if (!shelfCorrupt) shows[state.project.id] = { savedAt: state.lastSavedAt || "", state };
+    const rows = Object.keys(shows)
+      .map((id) => showSummary(shows[id]))
       .filter(Boolean)
       .sort((a, b) => (b.savedAt || "").localeCompare(a.savedAt || ""));
     els.showList.innerHTML = "";
@@ -18319,7 +18786,7 @@
   /* ---------- 段階0: ビート骨格テンプレート ----------
      適用先は常に別の新規ショー。いまのショーを棚へ残したうえで切り替えるので、
      既存シーンへの上書き・追記という危険な分岐を持たない。 */
-  function createShowFromBeatTemplate(templateId) {
+  async function createShowFromBeatTemplate(templateId) {
     const template = BEAT_TEMPLATES.find((item) => item.id === templateId);
     const rows = beatTemplateRows(templateId);
     if (!template || template.available === false || !rows.length) return;
@@ -18333,7 +18800,7 @@
     });
     fresh.project.activeSceneId = fresh.project.scenes[0].id;
     fresh.layout = state.layout;
-    if (!applyLoadedState(normalizeState(fresh), sx(`「${template.name}」から新しいショーを作りました。前のショーは一覧に残っています。`, `Created a new show from “${tx(template.name)}”. The previous show is still in All shows.`))) return;
+    if (!await applyLoadedState(normalizeState(fresh), sx(`「${template.name}」から新しいショーを作りました。前のショーは一覧に残っています。`, `Created a new show from “${tx(template.name)}”. The previous show is still in All shows.`))) return;
     closeBeatTemplates();
     renderShows();
   }
@@ -23077,7 +23544,7 @@ ${propsPlotHtml}
       console.error("stage import: ファイルを読めませんでした", reader.error);
       importFailureNotice("ファイルを読めませんでした。iCloudの場合は一度ダウンロードしてから選んでください。");
     };
-    reader.onload = () => {
+    reader.onload = async () => {
       const text = String(reader.result);
       let parsed = null;
       try {
@@ -23121,7 +23588,7 @@ ${propsPlotHtml}
         if (next.mcpRevision === null) reserveImportedShowId(next);
         const previousSingleView = phoneUi ? phoneUi.singleView : null;
         if (phoneUi) phoneUi.singleView = "front";
-        if (!applyLoadedState(next, `「${next.project.title}」を読み込み、ショー一覧へ保存しました。`)) {
+        if (!await applyLoadedState(next, `「${next.project.title}」を読み込み、ショー一覧へ保存しました。`)) {
           if (phoneUi) phoneUi.singleView = previousSingleView;
           return;
         }
@@ -23241,7 +23708,7 @@ ${propsPlotHtml}
     if (els.importBackdrop) els.importBackdrop.hidden = true;
   }
 
-  function confirmImport(asNew) {
+  async function confirmImport(asNew) {
     const next = pendingImport;
     if (!next) return;
     if (asNew) {
@@ -23249,7 +23716,7 @@ ${propsPlotHtml}
       const candidate = JSON.parse(JSON.stringify(next));
       candidate.project.id = rid("show");
       candidate.mcpRevision = null;
-      if (!applyLoadedState(candidate, `「${candidate.project.title}」を別のショーとして開き、ショー一覧へ保存しました。`)) return;
+      if (!await applyLoadedState(candidate, `「${candidate.project.title}」を別のショーとして開き、ショー一覧へ保存しました。`)) return;
       closeImportPreview();
       return;
     }
@@ -23257,7 +23724,7 @@ ${propsPlotHtml}
     // 取り込み元と同じIDでも、内容が違えば新しいIDを割り当てて共存させる。
     // MCP編集結果だけは同じ正本IDを保ち、appliedRevisionと対応させる。
     if (next.mcpRevision === null) reserveImportedShowId(next);
-    if (!prepareLoadedState(next)) return;
+    if (!await prepareLoadedState(next)) return;
     closeImportPreview();
     checkpoint();
     resetStageAskDraft({ clearInput: true, invalidate: true });
@@ -23643,13 +24110,13 @@ ${propsPlotHtml}
         castCount: Array.isArray(exported.project.cast) ? exported.project.cast.length : null,
         sceneCount: exported.project.scenes.length,
       });
-      const next = STAGE_AI_PANEL_MODEL.commitAppliedExport({
+      const next = await STAGE_AI_PANEL_MODEL.commitAppliedExport({
         currentState: state,
         exported,
         prepareImportDocument: prepareProjectImportDocument,
         normalizeState,
-        shelveCurrent: () => {
-          const didShelve = shelveCurrent();
+        shelveCurrent: async () => {
+          const didShelve = await shelveCurrent();
           diagnoseStageAskAdopt("original-shelved", { projectId: state.project.id, didShelve });
           return didShelve;
         },
@@ -23728,6 +24195,7 @@ ${propsPlotHtml}
   }
 
   function renderVenueControls() {
+    updateLightingPlanOpenSummary();
     // 形式によっては貼る壁が無い。写真の欄の出入りもここで合わせる
     syncPhotoControls();
     const current = venue();
@@ -23905,7 +24373,8 @@ ${propsPlotHtml}
     const lightIds = new Set((p.sets || []).filter((item) => item && item.kind === "light")
       .map((item) => item.id));
     const scenes = Array.isArray(p.scenes) ? p.scenes : [];
-    const counts = { registrations: lightIds.size, placements: 0, intents: 0, motions: 0, stashes: 0, cues: 0 };
+    const counts = { registrations: lightIds.size, placements: 0, intents: 0, motions: 0, stashes: 0, cues: 0,
+      designFixtures: 0, designCues: 0, savedPlans: 0 };
     scenes.forEach((scene) => {
       (scene.pieces || []).forEach((piece) => {
         if (piece && (piece.type === "light" || lightIds.has(piece.setId))) counts.placements += 1;
@@ -23915,11 +24384,21 @@ ${propsPlotHtml}
       Object.keys(scene.stashed || {}).forEach((id) => { if (lightIds.has(id)) counts.stashes += 1; });
     });
     counts.cues = (p.cues || []).filter((cue) => cue && cue.kind === "timeline" && cue.cueType === "light").length;
+    const design = p.lightingDesign && typeof p.lightingDesign === "object" ? p.lightingDesign : null;
+    counts.designFixtures = Array.isArray(design?.rig?.fixtures) ? design.rig.fixtures.length : 0;
+    counts.designCues = Array.isArray(design?.scenes)
+      ? design.scenes.reduce((sum, scene) => sum + (scene?.cue ? 1 : 0) + (Array.isArray(scene?.lxq) ? scene.lxq.length : 0), 0) : 0;
+    counts.savedPlans = Array.isArray(design?.plans) ? design.plans.length : 0;
     return counts;
   }
 
   function hasVenueDependentLighting(project) {
     return Object.values(lightingDataCounts(project)).some((count) => count > 0);
+  }
+
+  function venueSetupWasApplied(project) {
+    return Boolean(project?.venueSetupAppliedAt)
+      || Boolean(project?.venue && !VENUES.library.isPreset(project.venue));
   }
 
   function clearVenueDependentLighting(project) {
@@ -23937,6 +24416,7 @@ ${propsPlotHtml}
       scene.lightingIntent = null;
       scene.lightMotion = null;
     });
+    p.lightingDesign = null;
   }
 
   let lightingVenueWarningProjectId = null;
@@ -23952,7 +24432,7 @@ ${propsPlotHtml}
     return true;
   }
 
-  function branchForVenueLightingChange(id) {
+  async function branchForVenueLightingChange(id) {
     const p = state.project;
     const nextVenue = VENUES.byId(id);
     const counts = lightingDataCounts(p);
@@ -23976,7 +24456,7 @@ ${propsPlotHtml}
     copy.venueDims = null;
     clearVenueDependentLighting(copy);
     const next = normalizeState({ ...state, project: copy });
-    if (!applyLoadedState(next, sx(`${nextVersion}を作り、劇場を${venueName(nextVenue)}へ変えました。照明はこの劇場用に組み直してください。元の版はショー一覧に残っています。`, `Created ${nextVersion} for ${venueName(nextVenue)}. Rebuild the lighting for this venue; the original version remains in All shows.`))) return false;
+    if (!await applyLoadedState(next, sx(`${nextVersion}を作り、劇場を${venueName(nextVenue)}へ変えました。照明はこの劇場用に組み直してください。元の版はショー一覧に残っています。`, `Created ${nextVersion} for ${venueName(nextVenue)}. Rebuild the lighting for this venue; the original version remains in All shows.`))) return false;
     lightingVenueWarningProjectId = null;
     if (venue().audience === "round" && tool !== "select") setTool("select");
     syncSeatMapToggle();
@@ -23985,7 +24465,7 @@ ${propsPlotHtml}
 
   function setVenue(id) {
     if (state.project.venue === id) return;
-    if (hasVenueDependentLighting(state.project)) {
+    if (venueSetupWasApplied(state.project) || hasVenueDependentLighting(state.project)) {
       branchForVenueLightingChange(id);
       return;
     }
@@ -24058,6 +24538,201 @@ ${propsPlotHtml}
     window.dispatchEvent(new CustomEvent("stage-venue-editor-template", {
       detail: { venueId: selectedVenue.id, sizeId: selectedSize.id },
     }));
+  }
+
+  /* 「この劇場を反映する」の確定境界。劇場の確定と照明機材の始め方を一度に選ぶ。
+   * 初回だけ同じv1へ反映し、いったん確定済みの劇場を変える場合は、照明の有無に
+   * かかわらず必ず新しいショー版を作る。元版は applyLoadedState が棚へ残す。 */
+  let pendingVenueApply = null;
+  let venueApplyChoice = "preset";
+  let venueApplyRequest = 0;
+
+  function venueApplyBasis(detail) {
+    const saved = detail?.venue;
+    const source = saved?.lightingPresetBasis;
+    if (source && typeof source.venueId === "string") return source;
+    const [venueId, sizeId = ""] = String(detail?.templateKey || "").split(":");
+    return venueId ? { venueId, sizeId } : null;
+  }
+
+  function venueApplyNeedsVersion(saved) {
+    return Boolean(saved && saved.id !== state.project.venue
+      && (venueSetupWasApplied(state.project) || hasVenueDependentLighting(state.project)));
+  }
+
+  function venueApplyCompatiblePreset(saved, preset) {
+    if (!saved || !preset || preset.venueType !== venueApplyBasis({ venue: saved })?.venueId) return false;
+    const savedVenue = VENUES.byId(saved.id);
+    const savedSize = VENUES.sizeById(savedVenue, "custom");
+    const expected = [preset.stage?.W, preset.stage?.D, preset.stage?.H].map(Number);
+    const actual = [savedSize?.width, savedSize?.depth, savedSize?.height].map(Number);
+    return expected.every((value, index) => Number.isFinite(value)
+      && Number.isFinite(actual[index]) && Math.abs(value - actual[index]) < 0.05);
+  }
+
+  function setVenueApplyChoice(choice) {
+    venueApplyChoice = ["preset", "manual", "none"].includes(choice) ? choice : "none";
+    [[els.venueApplyPreset, "preset"], [els.venueApplyManual, "manual"], [els.venueApplyNone, "none"]]
+      .forEach(([button, value]) => {
+        if (!button) return;
+        const selected = venueApplyChoice === value;
+        button.classList.toggle("is-selected", selected);
+        button.setAttribute("aria-pressed", String(selected));
+      });
+    if (els.venueApplyPresetSelect) els.venueApplyPresetSelect.disabled = venueApplyChoice !== "preset"
+      || !els.venueApplyPresetSelect.options.length;
+    if (els.venueApplyConfirm) els.venueApplyConfirm.disabled = venueApplyChoice === "preset"
+      && (!els.venueApplyPresetSelect || !els.venueApplyPresetSelect.options.length);
+  }
+
+  function closeVenueApplyModal() {
+    venueApplyRequest += 1;
+    pendingVenueApply = null;
+    if (els.venueApplyModal) els.venueApplyModal.hidden = true;
+    if (els.venueApplyBackdrop) els.venueApplyBackdrop.hidden = true;
+  }
+
+  async function openVenueApplyModal(detail) {
+    const saved = detail?.venue;
+    if (!saved || typeof saved.id !== "string" || !els.venueApplyModal) return;
+    const request = ++venueApplyRequest;
+    pendingVenueApply = detail;
+    els.venueApplyModal.hidden = false;
+    if (els.venueApplyBackdrop) els.venueApplyBackdrop.hidden = false;
+    if (els.venueApplySummary) {
+      els.venueApplySummary.textContent = `「${saved.label || "この劇場"}」をショーへ反映します。照明機材の始め方を選んでください。`;
+    }
+    const versioned = venueApplyNeedsVersion(saved);
+    if (els.venueApplyVersion) els.venueApplyVersion.hidden = false;
+    if (els.venueApplyVersionTitle) {
+      els.venueApplyVersionTitle.textContent = versioned ? "新しいショーの版を作ります" : "最初の劇場を確定します";
+    }
+    if (els.venueApplyVersionDetail) {
+      const nextVersion = nextVersionLabel(state.project.versionLabel);
+      els.venueApplyVersionDetail.textContent = versioned
+        ? `${nextVersion}を新しく作り、元の${state.project.versionLabel || "v1"}はショー一覧に残します。新しい版の照明機材とライトキューは、下の選択内容から始めます。`
+        : "このショーのバージョンは変えません。次に劇場を変更するときは、新しい版を作って元の版を残します。";
+    }
+    if (els.venueApplyStatus) els.venueApplyStatus.textContent = "";
+    if (els.venueApplyPresetSelect) els.venueApplyPresetSelect.replaceChildren();
+    if (els.venueApplyPresetNote) els.venueApplyPresetNote.textContent = "この劇場形式に合う型を確認しています…";
+    if (els.venueApplyPreset) els.venueApplyPreset.disabled = true;
+    setVenueApplyChoice("manual");
+    try {
+      const catalog = await loadLightingCatalog();
+      if (request !== venueApplyRequest || pendingVenueApply !== detail) return;
+      const basis = venueApplyBasis(detail);
+      const presets = catalog.presets.filter((preset) => preset.venueType === basis?.venueId
+        && venueApplyCompatiblePreset(saved, preset));
+      presets.forEach((preset) => {
+        const option = document.createElement("option");
+        option.value = preset.id;
+        option.textContent = `${preset.label} — 照明機材${(preset.rig.fixtures || []).length}台 / ${preset.stage.W}×${preset.stage.D}×${preset.stage.H}m`;
+        els.venueApplyPresetSelect?.append(option);
+      });
+      if (els.venueApplyPresetSelect && presets.some((preset) => preset.sizeId === basis?.sizeId)) {
+        els.venueApplyPresetSelect.value = presets.find((preset) => preset.sizeId === basis.sizeId).id;
+      }
+      if (els.venueApplyPreset) els.venueApplyPreset.disabled = presets.length === 0;
+      if (els.venueApplyPresetNote) {
+        els.venueApplyPresetNote.textContent = presets.length
+          ? "劇場の幅・奥行・高さが一致する、全消灯の編集用配置だけを表示しています。実在会場の設備・電源・DMX・吊荷重・レーザー安全は決定しません。"
+          : "この劇場の幅・奥行・高さに一致する照明機材プリセットはありません。自分で配置するか、劇場だけを反映してください。";
+      }
+      setVenueApplyChoice(presets.length ? "preset" : "manual");
+    } catch (_) {
+      if (request !== venueApplyRequest || pendingVenueApply !== detail) return;
+      if (els.venueApplyPresetNote) els.venueApplyPresetNote.textContent = "照明機材プリセットを読み込めません。劇場の反映は続けられます。";
+      setVenueApplyChoice("manual");
+    }
+    window.requestAnimationFrame(() => els.venueApplyPreset?.focus());
+  }
+
+  function editableLightingDesignFromPreset(rawDesign, project, preset) {
+    const api = lightingPlanApi();
+    const checked = api?.validateDesign(rawDesign);
+    const model = window.GAMMA_LIGHT_MODEL;
+    if (!checked?.ok || !model) throw new Error((checked && checked.reason) || "照明機材プリセットを準備できません。");
+    const selectedVenue = VENUES.byId(project.venue);
+    const selectedSize = VENUES.sizeById(selectedVenue, project.venueSize);
+    const context = {
+      title: project.title,
+      stage: { W: selectedSize.width, D: selectedSize.depth, H: selectedSize.height || 8 },
+      scenes: project.scenes.filter((scene) => scene.kind === "scene").map((scene) => ({ id: scene.id, name: scene.title })),
+    };
+    const template = projectIoClone(checked.design);
+    const initial = model.empty(context);
+    const sourceScene = template.scenes[0];
+    const next = {
+      ...template,
+      name: `${project.title} — ${preset.label} 照明機材プリセット`,
+      stage: context.stage,
+      rig: projectIoClone(template.rig),
+      scenes: initial.scenes.map((scene) => ({
+        ...scene,
+        cue: sourceScene?.cue ? projectIoClone(sourceScene.cue) : scene.cue,
+        lxq: [],
+        lxEditing: null,
+      })),
+      appliedPreset: {
+        kind: "theatre-lighting-equipment",
+        presetId: preset.id,
+        sourceStage: projectIoClone(preset.stage),
+        allOff: true,
+      },
+    };
+    return model.validate(next, context.scenes.map((scene) => scene.id));
+  }
+
+  async function applyVenueSetupChoice() {
+    const detail = pendingVenueApply;
+    const saved = detail?.venue;
+    const choice = venueApplyChoice;
+    if (!saved || !els.venueApplyConfirm) return;
+    els.venueApplyConfirm.disabled = true;
+    if (els.venueApplyStatus) els.venueApplyStatus.textContent = "劇場と照明機材の選択を保存しています…";
+    try {
+      const current = state.project;
+      const versioned = venueApplyNeedsVersion(saved);
+      const project = projectIoClone(current);
+      if (versioned) {
+        project.id = rid("proj");
+        project.parentVersionId = current.id;
+        project.versionLabel = nextVersionLabel(current.versionLabel);
+        project.createdAt = nowIso();
+      }
+      project.venue = saved.id;
+      project.venueSize = VENUES.sizeById(VENUES.byId(saved.id), "custom").id;
+      project.venueDims = null;
+      project.venueSetupAppliedAt = nowIso();
+      project.branchReason = versioned
+        ? `劇場を「${saved.label}」へ変更し、照明機材を選び直すため`
+        : project.branchReason;
+      clearVenueDependentLighting(project);
+      if (choice === "preset") {
+        const catalog = await loadLightingCatalog();
+        if (detail !== pendingVenueApply) return;
+        const preset = catalog.presets.find((item) => item.id === els.venueApplyPresetSelect?.value
+          && venueApplyCompatiblePreset(saved, item));
+        if (!preset) throw new Error("選んだ照明機材プリセットが見つかりません。");
+        const rawDesign = await loadLightingJson(LIGHTING_PREVIEW_URL(preset.sizeId));
+        if (detail !== pendingVenueApply) return;
+        project.lightingDesign = editableLightingDesignFromPreset(rawDesign, project, preset);
+      }
+      const next = normalizeState({ ...state, project });
+      const resultMessage = versioned
+        ? `${project.versionLabel}を作り、劇場を「${saved.label}」へ変更しました。元の${current.versionLabel || "v1"}はショー一覧に残っています。`
+        : `劇場を「${saved.label}」に決めました。`;
+      if (!await applyLoadedState(next, resultMessage)) throw new Error("劇場を安全に保存できなかったため、反映を止めました。");
+      const complete = detail.complete;
+      closeVenueApplyModal();
+      if (typeof complete === "function") complete();
+      if (choice === "none") window.GAMMA_WORKSPACE?.normal();
+      else window.GAMMA_WORKSPACE?.select("light-placement");
+    } catch (error) {
+      if (els.venueApplyStatus) els.venueApplyStatus.textContent = error.message;
+      setVenueApplyChoice(venueApplyChoice);
+    }
   }
 
 
@@ -26298,6 +26973,16 @@ ${propsPlotHtml}
     });
   }
   window.addEventListener("stage-venue-library-changed", renderVenueControls);
+  window.addEventListener("stage-venue-editor-open", syncVenueEditorTemplate);
+  window.addEventListener("stage-venue-apply-requested", (event) => {
+    openVenueApplyModal(event.detail);
+  });
+  if (els.venueApplyPreset) els.venueApplyPreset.addEventListener("click", () => setVenueApplyChoice("preset"));
+  if (els.venueApplyManual) els.venueApplyManual.addEventListener("click", () => setVenueApplyChoice("manual"));
+  if (els.venueApplyNone) els.venueApplyNone.addEventListener("click", () => setVenueApplyChoice("none"));
+  [els.venueApplyClose, els.venueApplyCancel, els.venueApplyBackdrop].filter(Boolean)
+    .forEach((element) => element.addEventListener("click", closeVenueApplyModal));
+  if (els.venueApplyConfirm) els.venueApplyConfirm.addEventListener("click", applyVenueSetupChoice);
   window.addEventListener("stage-venue-saved", (event) => {
     const saved = event.detail && event.detail.venue;
     if (saved && typeof saved.id === "string") setVenue(saved.id);
@@ -27368,6 +28053,14 @@ ${propsPlotHtml}
       if (e.key === "Enter") { e.preventDefault(); saveRig(); }
     });
   }
+  if (els.lightingPlanOpen) els.lightingPlanOpen.addEventListener("click", openLightingPlanModal);
+  [els.lightingPlanClose, els.lightingPlanCancel, els.lightingPlanBackdrop].filter(Boolean)
+    .forEach((element) => element.addEventListener("click", closeLightingPlanModal));
+  if (els.lightingPlanAddChoice) els.lightingPlanAddChoice.addEventListener("click", () => setLightingPlanMode("add"));
+  if (els.lightingPlanReplaceChoice) els.lightingPlanReplaceChoice.addEventListener("click", () => setLightingPlanMode("replace"));
+  if (els.lightingPlanReplacePhrase) els.lightingPlanReplacePhrase.addEventListener("input", () => setLightingPlanMode(lightingPlanMode));
+  if (els.lightingPlanApply) els.lightingPlanApply.addEventListener("click", () => { applyLightingPlanCandidate(); });
+  if (els.lightingPlanOverlayClear) els.lightingPlanOverlayClear.addEventListener("click", () => setLightingPlanOverlay(""));
   if (els.projectTitle) {
     els.projectTitle.addEventListener("input", (e) => {
       state.project.title = e.target.value.slice(0, 60);
@@ -29498,7 +30191,7 @@ ${propsPlotHtml}
   }
   window.GAMMA_LIGHT_HOST = Object.freeze({
     context: gammaLightingContext,
-    apply(design, basis) {
+    async apply(design, basis) {
       const current = gammaLightingContext();
       if (gammaStorageChanged) throw new Error("別のタブでショーが更新されました。編集中の照明を控えてから読み直してください");
       if (current.readOnly) throw new Error("閲覧中は照明を変更できません");
@@ -29506,15 +30199,16 @@ ${propsPlotHtml}
       const nextDesign = window.GAMMA_LIGHT_MODEL.validate(design, current.scenes.map(row => row.id));
       if (JSON.stringify(nextDesign.stage) !== JSON.stringify(current.stage)) throw new Error("舞台寸法が一致しません。劇場の寸法は通常モードで設定してください");
       const next = projectIoClone(state); next.project.lightingDesign = nextDesign;
-      // Persist the complete candidate atomically BEFORE accepting it in memory/history.
+      // Persist and verify both copies BEFORE accepting the candidate in memory/history.
       // A quota/disabled-storage exception leaves host state and the editor draft untouched.
-      localStorage.setItem(BETA_STORAGE_KEY, JSON.stringify(next));
+      const result = await ProjectStore.commit({ projectId: next.project.id,
+        serializedState: JSON.stringify(next), expectedRevision: null, intent: "gamma-lighting" });
+      if (!result.ok) { reportProjectStoreFailure(result); throw new Error(result.error.code); }
       clearTimeout(saveTimer); checkpoint(); state = next;
-      shelveCurrent(); render(true);
-      const complete = !shelfCorrupt && !shelfFailed;
-      setSaveStatus(complete ? "照明デザインをショーへ保存しました。" : "照明は保存しましたがショー一覧の控えを更新できません。ショーをファイルへ書き出してください。", complete ? "info" : "warn");
+      render(true);
+      setSaveStatus("照明デザインをショーへ保存しました。");
       window.SHOSAI_STAGE_SESSION_HOOKS?.onLocalChange?.();
-      return { persisted: true, shelfPersisted: complete, context: gammaLightingContext() };
+      return { persisted: true, shelfPersisted: true, context: gammaLightingContext() };
     },
     openScene(id) { const row=state.project.scenes.find(row=>row.kind==="scene" && row.id===id); if (!row) return false; openScene(id); return true; },
   });

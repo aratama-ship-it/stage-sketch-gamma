@@ -1058,11 +1058,11 @@
     };
     $("stage-session-name-close").addEventListener("click", cancel);
     backdrop.addEventListener("click", cancel);
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const name = normalizeName(input.value, "ゲスト");
       let shelved = false;
-      try { shelved = bridge.shelveNow() !== false; }
+      try { shelved = await bridge.shelveNow() !== false; }
       catch (_) { shelved = false; }
       if (!shelved) {
         setStatus("現在の作業を退避できなかったため、参加を止めました。ショーを書き出すか、使っていないショーを整理してから、もう一度お試しください。", true);

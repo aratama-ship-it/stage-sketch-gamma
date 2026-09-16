@@ -1,0 +1,2021 @@
+{
+  "format": "shosai.light-design",
+  "version": 1,
+  "name": "プロセニアム 小劇場 — 混成標準仕込み v2（全消灯）",
+  "savedAt": "2026-09-15T00:00:00.000Z",
+  "app": "照明デザインモード（試作・プリセット確認用）",
+  "variant": "option-b",
+  "stage": {
+    "W": 8,
+    "D": 7,
+    "H": 6
+  },
+  "coords": {
+    "u": "左右 0=下手 〜 1=上手",
+    "v": "奥行き 0=最奥 〜 1=最前（客席側）",
+    "hM": "床からの高さ（m）",
+    "level": "強さ 0〜100（0は消灯と同じ）",
+    "beamDeg": "光の広がり（度）",
+    "safety": "このファイルは作図用。実吊込・荷重・電源・DMX・レーザー安全を保証しない"
+  },
+  "rig": {
+    "family": "theatre-house-v2-mixed",
+    "version": 2,
+    "trusses": [
+      {
+        "id": "small-t-01",
+        "v": 0.65,
+        "h": 5,
+        "label": "照明バトン1"
+      },
+      {
+        "id": "small-t-02",
+        "v": 0.22,
+        "h": 5,
+        "label": "照明バトン2"
+      }
+    ],
+    "fixtures": [
+      {
+        "id": "small-f-001",
+        "no": 1,
+        "name": "プロファイル（ズーム） 01",
+        "mount": {
+          "type": "front",
+          "u": 0.38,
+          "ahead": 2.5,
+          "h": 5.5571
+        },
+        "kind": "fixed",
+        "beamDeg": 16,
+        "fixtureType": "profile-zoom",
+        "family": "profile",
+        "role": "中央前明かり",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-002",
+        "no": 2,
+        "name": "プロファイル（ズーム） 02",
+        "mount": {
+          "type": "front",
+          "u": 0.62,
+          "ahead": 2.5,
+          "h": 5.5571
+        },
+        "kind": "fixed",
+        "beamDeg": 16,
+        "fixtureType": "profile-zoom",
+        "family": "profile",
+        "role": "中央前明かり",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-003",
+        "no": 3,
+        "name": "プロファイル（ズーム） 03",
+        "mount": {
+          "type": "front",
+          "u": 0.08,
+          "ahead": 1.5,
+          "h": 6.9803
+        },
+        "kind": "fixed",
+        "beamDeg": 28,
+        "fixtureType": "profile-zoom",
+        "family": "profile",
+        "role": "エリア前明かり",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-004",
+        "no": 4,
+        "name": "プロファイル（ズーム） 04",
+        "mount": {
+          "type": "front",
+          "u": 0.32,
+          "ahead": 1.5,
+          "h": 6.9803
+        },
+        "kind": "fixed",
+        "beamDeg": 28,
+        "fixtureType": "profile-zoom",
+        "family": "profile",
+        "role": "エリア前明かり",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-005",
+        "no": 5,
+        "name": "プロファイル（ズーム） 05",
+        "mount": {
+          "type": "front",
+          "u": 0.38,
+          "ahead": 1.5,
+          "h": 6.9803
+        },
+        "kind": "fixed",
+        "beamDeg": 28,
+        "fixtureType": "profile-zoom",
+        "family": "profile",
+        "role": "エリア前明かり",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-006",
+        "no": 6,
+        "name": "プロファイル（ズーム） 06",
+        "mount": {
+          "type": "front",
+          "u": 0.62,
+          "ahead": 1.5,
+          "h": 6.9803
+        },
+        "kind": "fixed",
+        "beamDeg": 28,
+        "fixtureType": "profile-zoom",
+        "family": "profile",
+        "role": "エリア前明かり",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-007",
+        "no": 7,
+        "name": "プロファイル（ズーム） 07",
+        "mount": {
+          "type": "front",
+          "u": 0.68,
+          "ahead": 1.5,
+          "h": 6.9803
+        },
+        "kind": "fixed",
+        "beamDeg": 28,
+        "fixtureType": "profile-zoom",
+        "family": "profile",
+        "role": "エリア前明かり",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-008",
+        "no": 8,
+        "name": "プロファイル（ズーム） 08",
+        "mount": {
+          "type": "front",
+          "u": 0.92,
+          "ahead": 1.5,
+          "h": 6.9803
+        },
+        "kind": "fixed",
+        "beamDeg": 28,
+        "fixtureType": "profile-zoom",
+        "family": "profile",
+        "role": "エリア前明かり",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-009",
+        "no": 9,
+        "name": "プロファイル（ズーム） 09",
+        "mount": {
+          "type": "front",
+          "u": 0.04,
+          "ahead": 2,
+          "h": 5
+        },
+        "kind": "fixed",
+        "beamDeg": 24,
+        "fixtureType": "profile-zoom",
+        "family": "profile",
+        "role": "フロントサイド・クロス",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-010",
+        "no": 10,
+        "name": "プロファイル（ズーム） 10",
+        "mount": {
+          "type": "front",
+          "u": 0.96,
+          "ahead": 2,
+          "h": 5
+        },
+        "kind": "fixed",
+        "beamDeg": 24,
+        "fixtureType": "profile-zoom",
+        "family": "profile",
+        "role": "フロントサイド・クロス",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-011",
+        "no": 11,
+        "name": "LED PAR 11",
+        "mount": {
+          "type": "truss",
+          "trussId": "small-t-01",
+          "u": 0.1
+        },
+        "kind": "fixed",
+        "beamDeg": 28,
+        "fixtureType": "led-par",
+        "family": "wash",
+        "role": "手前地明かり／スペシャル",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-012",
+        "no": 12,
+        "name": "フレネル 12",
+        "mount": {
+          "type": "truss",
+          "trussId": "small-t-01",
+          "u": 0.26
+        },
+        "kind": "fixed",
+        "beamDeg": 40,
+        "fixtureType": "fresnel",
+        "family": "wash",
+        "role": "手前地明かり／スペシャル",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-013",
+        "no": 13,
+        "name": "ムービング・プロファイル 13",
+        "mount": {
+          "type": "truss",
+          "trussId": "small-t-01",
+          "u": 0.42
+        },
+        "kind": "moving",
+        "beamDeg": 18,
+        "fixtureType": "moving-profile",
+        "family": "moving",
+        "role": "手前地明かり／スペシャル",
+        "origin": "house-flex",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-014",
+        "no": 14,
+        "name": "ムービング・プロファイル 14",
+        "mount": {
+          "type": "truss",
+          "trussId": "small-t-01",
+          "u": 0.58
+        },
+        "kind": "moving",
+        "beamDeg": 18,
+        "fixtureType": "moving-profile",
+        "family": "moving",
+        "role": "手前地明かり／スペシャル",
+        "origin": "house-flex",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-015",
+        "no": 15,
+        "name": "フレネル 15",
+        "mount": {
+          "type": "truss",
+          "trussId": "small-t-01",
+          "u": 0.74
+        },
+        "kind": "fixed",
+        "beamDeg": 40,
+        "fixtureType": "fresnel",
+        "family": "wash",
+        "role": "手前地明かり／スペシャル",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-016",
+        "no": 16,
+        "name": "LED PAR 16",
+        "mount": {
+          "type": "truss",
+          "trussId": "small-t-01",
+          "u": 0.9
+        },
+        "kind": "fixed",
+        "beamDeg": 28,
+        "fixtureType": "led-par",
+        "family": "wash",
+        "role": "手前地明かり／スペシャル",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-017",
+        "no": 17,
+        "name": "LED PAR 17",
+        "mount": {
+          "type": "truss",
+          "trussId": "small-t-02",
+          "u": 0.1
+        },
+        "kind": "fixed",
+        "beamDeg": 28,
+        "fixtureType": "led-par",
+        "family": "wash",
+        "role": "中段ウォッシュ／効果",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-018",
+        "no": 18,
+        "name": "フレネル 18",
+        "mount": {
+          "type": "truss",
+          "trussId": "small-t-02",
+          "u": 0.26
+        },
+        "kind": "fixed",
+        "beamDeg": 40,
+        "fixtureType": "fresnel",
+        "family": "wash",
+        "role": "中段ウォッシュ／効果",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-019",
+        "no": 19,
+        "name": "プロファイル（ズーム） 19",
+        "mount": {
+          "type": "truss",
+          "trussId": "small-t-02",
+          "u": 0.42
+        },
+        "kind": "fixed",
+        "beamDeg": 26,
+        "fixtureType": "profile-zoom",
+        "family": "profile",
+        "role": "中段ウォッシュ／効果",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-020",
+        "no": 20,
+        "name": "プロファイル（ズーム） 20",
+        "mount": {
+          "type": "truss",
+          "trussId": "small-t-02",
+          "u": 0.58
+        },
+        "kind": "fixed",
+        "beamDeg": 26,
+        "fixtureType": "profile-zoom",
+        "family": "profile",
+        "role": "中段ウォッシュ／効果",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-021",
+        "no": 21,
+        "name": "フレネル 21",
+        "mount": {
+          "type": "truss",
+          "trussId": "small-t-02",
+          "u": 0.74
+        },
+        "kind": "fixed",
+        "beamDeg": 40,
+        "fixtureType": "fresnel",
+        "family": "wash",
+        "role": "中段ウォッシュ／効果",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-022",
+        "no": 22,
+        "name": "LED PAR 22",
+        "mount": {
+          "type": "truss",
+          "trussId": "small-t-02",
+          "u": 0.9
+        },
+        "kind": "fixed",
+        "beamDeg": 28,
+        "fixtureType": "led-par",
+        "family": "wash",
+        "role": "中段ウォッシュ／効果",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-023",
+        "no": 23,
+        "name": "LED PAR 23",
+        "mount": {
+          "type": "side",
+          "side": "shimote",
+          "v": 0.32,
+          "h": 0.55
+        },
+        "kind": "fixed",
+        "beamDeg": 14,
+        "fixtureType": "led-par",
+        "family": "wash",
+        "role": "サイド低段",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-024",
+        "no": 24,
+        "name": "プロファイル（ズーム） 24",
+        "mount": {
+          "type": "side",
+          "side": "shimote",
+          "v": 0.32,
+          "h": 2.4
+        },
+        "kind": "fixed",
+        "beamDeg": 32,
+        "fixtureType": "profile-zoom",
+        "family": "profile",
+        "role": "サイド高段",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-025",
+        "no": 25,
+        "name": "LED PAR 25",
+        "mount": {
+          "type": "side",
+          "side": "kamite",
+          "v": 0.32,
+          "h": 0.55
+        },
+        "kind": "fixed",
+        "beamDeg": 14,
+        "fixtureType": "led-par",
+        "family": "wash",
+        "role": "サイド低段",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-026",
+        "no": 26,
+        "name": "プロファイル（ズーム） 26",
+        "mount": {
+          "type": "side",
+          "side": "kamite",
+          "v": 0.32,
+          "h": 2.4
+        },
+        "kind": "fixed",
+        "beamDeg": 32,
+        "fixtureType": "profile-zoom",
+        "family": "profile",
+        "role": "サイド高段",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-027",
+        "no": 27,
+        "name": "LED PAR 27",
+        "mount": {
+          "type": "side",
+          "side": "shimote",
+          "v": 0.68,
+          "h": 0.55
+        },
+        "kind": "fixed",
+        "beamDeg": 14,
+        "fixtureType": "led-par",
+        "family": "wash",
+        "role": "サイド低段",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-028",
+        "no": 28,
+        "name": "プロファイル（ズーム） 28",
+        "mount": {
+          "type": "side",
+          "side": "shimote",
+          "v": 0.68,
+          "h": 2.4
+        },
+        "kind": "fixed",
+        "beamDeg": 32,
+        "fixtureType": "profile-zoom",
+        "family": "profile",
+        "role": "サイド高段",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-029",
+        "no": 29,
+        "name": "LED PAR 29",
+        "mount": {
+          "type": "side",
+          "side": "kamite",
+          "v": 0.68,
+          "h": 0.55
+        },
+        "kind": "fixed",
+        "beamDeg": 14,
+        "fixtureType": "led-par",
+        "family": "wash",
+        "role": "サイド低段",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-030",
+        "no": 30,
+        "name": "プロファイル（ズーム） 30",
+        "mount": {
+          "type": "side",
+          "side": "kamite",
+          "v": 0.68,
+          "h": 2.4
+        },
+        "kind": "fixed",
+        "beamDeg": 32,
+        "fixtureType": "profile-zoom",
+        "family": "profile",
+        "role": "サイド高段",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-031",
+        "no": 31,
+        "name": "LED PAR 31",
+        "mount": {
+          "type": "floor",
+          "u": 0.0625,
+          "v": 0.1143
+        },
+        "kind": "fixed",
+        "beamDeg": 28,
+        "fixtureType": "led-par",
+        "family": "wash",
+        "role": "袖転がし",
+        "origin": "house-flex",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-032",
+        "no": 32,
+        "name": "LED PAR 32",
+        "mount": {
+          "type": "floor",
+          "u": 0.9375,
+          "v": 0.1143
+        },
+        "kind": "fixed",
+        "beamDeg": 28,
+        "fixtureType": "led-par",
+        "family": "wash",
+        "role": "袖転がし",
+        "origin": "house-flex",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-033",
+        "no": 33,
+        "name": "LEDホリゾント列 33",
+        "mount": {
+          "type": "cyc",
+          "len": 0.9,
+          "rung": "floor",
+          "reachM": 3.6
+        },
+        "kind": "fixed",
+        "beamDeg": 50,
+        "fixtureType": "led-cyc",
+        "family": "cyc",
+        "role": "ロアーホリゾント列",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      },
+      {
+        "id": "small-f-034",
+        "no": 34,
+        "name": "LEDホリゾント列 34",
+        "mount": {
+          "type": "cyc",
+          "len": 0.9,
+          "rung": "top",
+          "reachM": 3.6
+        },
+        "kind": "fixed",
+        "beamDeg": 50,
+        "fixtureType": "led-cyc",
+        "family": "cyc",
+        "role": "アッパーホリゾント列",
+        "origin": "common-house",
+        "safetyStatus": "concept-only"
+      }
+    ],
+    "bindings": {
+      "rigFamily": "theatre-house-v2-mixed",
+      "sizeId": "small",
+      "version": 2,
+      "groups": {
+        "CL.center": [
+          "small-f-001",
+          "small-f-002"
+        ],
+        "CL.area": [
+          "small-f-003",
+          "small-f-004",
+          "small-f-005",
+          "small-f-006",
+          "small-f-007",
+          "small-f-008"
+        ],
+        "FR": [
+          "small-f-009",
+          "small-f-010"
+        ],
+        "B1": [
+          "small-f-011",
+          "small-f-012",
+          "small-f-013",
+          "small-f-014",
+          "small-f-015",
+          "small-f-016"
+        ],
+        "B2": [
+          "small-f-017",
+          "small-f-018",
+          "small-f-019",
+          "small-f-020",
+          "small-f-021",
+          "small-f-022"
+        ],
+        "SL": [
+          "small-f-023",
+          "small-f-025",
+          "small-f-027",
+          "small-f-029"
+        ],
+        "SH": [
+          "small-f-024",
+          "small-f-026",
+          "small-f-028",
+          "small-f-030"
+        ],
+        "FL.edge.l": [
+          "small-f-031"
+        ],
+        "FL.edge.r": [
+          "small-f-032"
+        ],
+        "CY.lower": [
+          "small-f-033"
+        ],
+        "CY.upper": [
+          "small-f-034"
+        ],
+        "CL": [
+          "small-f-001",
+          "small-f-002",
+          "small-f-003",
+          "small-f-004",
+          "small-f-005",
+          "small-f-006",
+          "small-f-007",
+          "small-f-008"
+        ],
+        "CY": [
+          "small-f-033",
+          "small-f-034"
+        ],
+        "FL": [
+          "small-f-031",
+          "small-f-032"
+        ],
+        "WASH": [
+          "small-f-011",
+          "small-f-012",
+          "small-f-013",
+          "small-f-014",
+          "small-f-015",
+          "small-f-016",
+          "small-f-017",
+          "small-f-018",
+          "small-f-021",
+          "small-f-022"
+        ],
+        "SPECIAL": [
+          "small-f-013",
+          "small-f-014",
+          "small-f-019",
+          "small-f-020"
+        ],
+        "BACK": [
+          "small-f-017",
+          "small-f-018",
+          "small-f-019",
+          "small-f-020",
+          "small-f-021",
+          "small-f-022"
+        ],
+        "EFFECT": [],
+        "LASER": []
+      },
+      "defaultAim": {
+        "small-f-001": {
+          "surface": "air",
+          "a": {
+            "u": 0.5,
+            "v": 0.75,
+            "hM": 1.2
+          }
+        },
+        "small-f-002": {
+          "surface": "air",
+          "a": {
+            "u": 0.5,
+            "v": 0.75,
+            "hM": 1.2
+          }
+        },
+        "small-f-003": {
+          "surface": "air",
+          "a": {
+            "u": 0.2,
+            "v": 0.4,
+            "hM": 1.2
+          }
+        },
+        "small-f-004": {
+          "surface": "air",
+          "a": {
+            "u": 0.2,
+            "v": 0.4,
+            "hM": 1.2
+          }
+        },
+        "small-f-005": {
+          "surface": "air",
+          "a": {
+            "u": 0.5,
+            "v": 0.4,
+            "hM": 1.2
+          }
+        },
+        "small-f-006": {
+          "surface": "air",
+          "a": {
+            "u": 0.5,
+            "v": 0.4,
+            "hM": 1.2
+          }
+        },
+        "small-f-007": {
+          "surface": "air",
+          "a": {
+            "u": 0.8,
+            "v": 0.4,
+            "hM": 1.2
+          }
+        },
+        "small-f-008": {
+          "surface": "air",
+          "a": {
+            "u": 0.8,
+            "v": 0.4,
+            "hM": 1.2
+          }
+        },
+        "small-f-009": {
+          "surface": "air",
+          "a": {
+            "u": 0.65,
+            "v": 0.55,
+            "hM": 1.2
+          }
+        },
+        "small-f-010": {
+          "surface": "air",
+          "a": {
+            "u": 0.35,
+            "v": 0.55,
+            "hM": 1.2
+          }
+        },
+        "small-f-011": {
+          "surface": "floor",
+          "a": {
+            "u": 0.1,
+            "v": 0.59,
+            "hM": 0
+          }
+        },
+        "small-f-012": {
+          "surface": "floor",
+          "a": {
+            "u": 0.26,
+            "v": 0.59,
+            "hM": 0
+          }
+        },
+        "small-f-013": {
+          "surface": "floor",
+          "a": {
+            "u": 0.42,
+            "v": 0.59,
+            "hM": 0
+          }
+        },
+        "small-f-014": {
+          "surface": "floor",
+          "a": {
+            "u": 0.58,
+            "v": 0.59,
+            "hM": 0
+          }
+        },
+        "small-f-015": {
+          "surface": "floor",
+          "a": {
+            "u": 0.74,
+            "v": 0.59,
+            "hM": 0
+          }
+        },
+        "small-f-016": {
+          "surface": "floor",
+          "a": {
+            "u": 0.9,
+            "v": 0.59,
+            "hM": 0
+          }
+        },
+        "small-f-017": {
+          "surface": "floor",
+          "a": {
+            "u": 0.1,
+            "v": 0.16,
+            "hM": 0
+          }
+        },
+        "small-f-018": {
+          "surface": "floor",
+          "a": {
+            "u": 0.26,
+            "v": 0.16,
+            "hM": 0
+          }
+        },
+        "small-f-019": {
+          "surface": "floor",
+          "a": {
+            "u": 0.42,
+            "v": 0.16,
+            "hM": 0
+          }
+        },
+        "small-f-020": {
+          "surface": "floor",
+          "a": {
+            "u": 0.58,
+            "v": 0.16,
+            "hM": 0
+          }
+        },
+        "small-f-021": {
+          "surface": "floor",
+          "a": {
+            "u": 0.74,
+            "v": 0.16,
+            "hM": 0
+          }
+        },
+        "small-f-022": {
+          "surface": "floor",
+          "a": {
+            "u": 0.9,
+            "v": 0.16,
+            "hM": 0
+          }
+        },
+        "small-f-023": {
+          "surface": "air",
+          "a": {
+            "u": 0.5,
+            "v": 0.32,
+            "hM": 0.55
+          }
+        },
+        "small-f-024": {
+          "surface": "air",
+          "a": {
+            "u": 0.5,
+            "v": 0.32,
+            "hM": 1.2
+          }
+        },
+        "small-f-025": {
+          "surface": "air",
+          "a": {
+            "u": 0.5,
+            "v": 0.32,
+            "hM": 0.55
+          }
+        },
+        "small-f-026": {
+          "surface": "air",
+          "a": {
+            "u": 0.5,
+            "v": 0.32,
+            "hM": 1.2
+          }
+        },
+        "small-f-027": {
+          "surface": "air",
+          "a": {
+            "u": 0.5,
+            "v": 0.68,
+            "hM": 0.55
+          }
+        },
+        "small-f-028": {
+          "surface": "air",
+          "a": {
+            "u": 0.5,
+            "v": 0.68,
+            "hM": 1.2
+          }
+        },
+        "small-f-029": {
+          "surface": "air",
+          "a": {
+            "u": 0.5,
+            "v": 0.68,
+            "hM": 0.55
+          }
+        },
+        "small-f-030": {
+          "surface": "air",
+          "a": {
+            "u": 0.5,
+            "v": 0.68,
+            "hM": 1.2
+          }
+        },
+        "small-f-031": {
+          "surface": "air",
+          "a": {
+            "u": 0.0625,
+            "v": 0.65,
+            "hM": 1.2
+          }
+        },
+        "small-f-032": {
+          "surface": "air",
+          "a": {
+            "u": 0.9375,
+            "v": 0.65,
+            "hM": 1.2
+          }
+        },
+        "small-f-033": {
+          "surface": "back",
+          "a": {
+            "u": 0.5,
+            "v": 0,
+            "hM": 3.3
+          }
+        },
+        "small-f-034": {
+          "surface": "back",
+          "a": {
+            "u": 0.5,
+            "v": 0,
+            "hM": 3.3
+          }
+        }
+      },
+      "washDeg": 50
+    }
+  },
+  "scenes": [
+    {
+      "id": "proscenium/small-setup-check",
+      "name": "仕込み確認（全消灯）",
+      "lx": {
+        "section": 1,
+        "no": 1
+      },
+      "lxq": [],
+      "lxEditing": null,
+      "cue": {
+        "lights": {
+          "small-f-001": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.5,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-002": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.5,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-003": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.2,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-004": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.2,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-005": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.5,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-006": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.5,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-007": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.8,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-008": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.8,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-009": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.65,
+                "v": 0.55,
+                "hM": 1.2
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-010": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.35,
+                "v": 0.55,
+                "hM": 1.2
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-011": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.1,
+                "v": 0.59,
+                "hM": 0
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-012": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.26,
+                "v": 0.59,
+                "hM": 0
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-013": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.42,
+                "v": 0.59,
+                "hM": 0
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-014": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.58,
+                "v": 0.59,
+                "hM": 0
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-015": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.74,
+                "v": 0.59,
+                "hM": 0
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-016": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.9,
+                "v": 0.59,
+                "hM": 0
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-017": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.1,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-018": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.26,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-019": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.42,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-020": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.58,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-021": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.74,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-022": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.9,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-023": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.5,
+                "v": 0.32,
+                "hM": 0.55
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-024": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.5,
+                "v": 0.32,
+                "hM": 1.2
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-025": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.5,
+                "v": 0.32,
+                "hM": 0.55
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-026": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.5,
+                "v": 0.32,
+                "hM": 1.2
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-027": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.5,
+                "v": 0.68,
+                "hM": 0.55
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-028": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.5,
+                "v": 0.68,
+                "hM": 1.2
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-029": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.5,
+                "v": 0.68,
+                "hM": 0.55
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-030": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.5,
+                "v": 0.68,
+                "hM": 1.2
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-031": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.0625,
+                "v": 0.65,
+                "hM": 1.2
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-032": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "air",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.9375,
+                "v": 0.65,
+                "hM": 1.2
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-033": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "back",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.5,
+                "v": 0,
+                "hM": 3.3
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          },
+          "small-f-034": {
+            "on": false,
+            "level": 0,
+            "color": "#f2ead6",
+            "surface": "back",
+            "path": {
+              "kind": "still",
+              "a": {
+                "u": 0.5,
+                "v": 0,
+                "hM": 3.3
+              }
+            },
+            "speed": "normal",
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSoft": 6,
+            "goboSpin": 0,
+            "goboAngle": 0,
+            "strobe": null,
+            "shutter": null,
+            "glare": 1,
+            "groupId": null
+          }
+        },
+        "groups": []
+      }
+    }
+  ],
+  "palette": [
+    "#f2ead6",
+    "#7ab8ff",
+    "#ffd27a",
+    "#d9483b",
+    "#9b6fd0",
+    "#68d391"
+  ],
+  "levelCurve": [
+    0,
+    0.25,
+    0.5,
+    0.75,
+    1
+  ],
+  "curtains": {
+    "borderDrop": 1.4,
+    "borderAhead": 0.04,
+    "pros": true,
+    "prosH": 6,
+    "legU": 0.08,
+    "perBorder": {}
+  },
+  "presetMeta": {
+    "sourceCatalog": "proscenium-lighting-presets-v1.json",
+    "sourcePresetId": "proscenium/small",
+    "mergePolicy": "standalone-preview-replaces-scenes-do-not-merge-into-live-project",
+    "lasers": "all-off-approval-required-no-audience-scanning"
+  }
+}
