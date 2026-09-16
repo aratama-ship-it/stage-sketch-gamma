@@ -491,15 +491,17 @@
   #placebox .place-mirror .sw{width:24px;height:13px}
   #placebox .place-mirror .sw::after{width:9px;height:9px}
   #placebox .place-mirror[aria-pressed="true"] .sw::after{left:13px}
-  #placebox #presets,#placebox #lpEntry{grid-column:span 2;width:auto !important;margin:0 !important;min-height:28px;padding:3px 5px;font-size:11.5px;line-height:1.2;white-space:normal}
+  #placebox #presets,#placebox #lpEntry{grid-column:span 2;width:auto !important;margin:0 !important;min-height:34px;padding:3px 5px;font-size:11.5px;line-height:1.2;white-space:normal}
   #placebox #presets{border:2px solid rgba(240,231,214,.55);color:var(--milk);background:rgba(240,231,214,.06)}
   #placebox #presets:hover{border-color:var(--milk)}
   /* プリセットと個別の設置操作を区切る。線は4列ぶんの幅で引く。 */
   #placebox #place-tools{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;border-top:1px solid var(--line-dark);padding-top:4px}
-  #placebox #place-tools button{min-height:28px;margin:0 !important;padding:3px 4px;text-align:center !important;font-size:11px;line-height:1.2;white-space:normal}
+  #placebox #place-tools button{min-height:34px;margin:0 !important;padding:3px 4px;text-align:center !important;font-size:11px;line-height:1.2;white-space:normal}
+  /* X-4（2026-09-17）: 同じ列なのに高さが28pxと34pxの2種類あった（「ホリゾント床 なし」だけ
+     2行に折り返すため）。いちばん高いものに合わせ、折返しの有無で高さが動かないようにした。 */
   /* ホリゾント床／上も、他の設置項目と同じ1枠ぶんの幅に揃える。 */
   #placebox #cyc-tools{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
-  #placebox #cyc-tools button{width:100%;min-height:28px;margin:0 !important;padding:3px 4px;text-align:center;font-size:11px;line-height:1.2;white-space:normal}
+  #placebox #cyc-tools button{width:100%;min-height:34px;margin:0 !important;padding:3px 4px;text-align:center;font-size:11px;line-height:1.2;white-space:normal}
   #placebox #place-note{grid-column:1/-1;margin:0;font-size:10.5px;line-height:1.35}
   /* 畳んだときは見出しだけ残す（中身は隠して一覧に高さを渡す） */
   .panel .sub.folded>*:not(.ptitle){display:none}

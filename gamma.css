@@ -494,3 +494,11 @@ body.gamma-venue-setup-required .stage-workspace-tab[disabled] {
   opacity: 0.38;
   cursor: not-allowed;
 }
+
+/* ===== X-13（2026-09-17）: 劇場設定のラベルだけ 9.5px で、他の文字より一段小さかった ===== */
+/* 劇場形式プリセット・規模・劇場名などの見出し文字。階段の11pxへ寄せる。
+   範囲は劇場設定モードの中だけにして、他の画面の文字は動かさない。 */
+#gamma-venue-workspace .stage-field-label,
+#gamma-venue-workspace .stage-control-label {
+  font-size: var(--fs-3);
+}

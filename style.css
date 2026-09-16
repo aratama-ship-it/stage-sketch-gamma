@@ -1966,14 +1966,14 @@ html.stage-pwa-tablet .stage-header-app-kicker { display: none; }
 .stage-tool-grid button,
 .stage-piece-buttons button,
 .stage-layer-actions button,
+/* X-5（2026-09-17）: 箱の寸法（min-height・padding・font-size・letter-spacing）は
+   下の方（.stage-piece-buttons button ほかと共通の指定）が後勝ちしていて、
+   ここに書いてあった値は効いていなかった。効いている側へ一本化し、
+   ここには他で指定していない色・線・字揃えだけを残す。 */
 .stage-minor-action,
 .stage-delete {
-  min-height: var(--stage-history-action-height, 38px);
   border: 1px solid var(--line-dark);
   color: var(--milk-dim);
-  padding: 6px 11px;
-  font-size: 11px;
-  letter-spacing: 0.08em;
   text-align: center;
   text-decoration: none;
 }
@@ -2406,7 +2406,7 @@ html.stage-pwa-tablet .stage-header-app-kicker { display: none; }
   height: var(--stage-scene-next-row-action-height);
   min-height: var(--stage-scene-next-row-action-height);
   margin: 0;
-  font-size: 0.76rem;
+  font-size: var(--fs-4);   /* X-3: 0.76rem=12.16px の端数を階段の12pxへ */
 }
 
 .stage-panel .stage-scene-next-row .stage-scene-row-delete {
@@ -2414,7 +2414,7 @@ html.stage-pwa-tablet .stage-header-app-kicker { display: none; }
   min-height: var(--stage-scene-next-row-action-height);
   align-self: center;
   margin: 0;
-  font-size: 0.76rem;
+  font-size: var(--fs-4);   /* X-3: 0.76rem=12.16px の端数を階段の12pxへ */
 }
 
 .stage-scene-apply { width: 100%; }
@@ -2911,7 +2911,7 @@ canvas[data-tool="note"] { cursor: copy; }
 
 .stage-note-editor-bar .btn-quiet {
   padding: 3px 9px;
-  font-size: 0.74rem;
+  font-size: var(--fs-4);   /* X-3: 0.74rem=11.84px の端数を階段の12pxへ */
   color: var(--milk-dim);
   border-color: var(--line-dark);
 }
@@ -9764,9 +9764,11 @@ html[data-release-scope="beta-20260912"] .stage-light-motion-open { display: non
 
 .stage-canvas-toggle:hover { color: var(--milk); }
 
+/* X-2（2026-09-17）: チェックボックスの大きさが12pxと15pxの2種類あった。
+   .stage-toggle 側（演者名・装置名）の15pxへ揃える。 */
 .stage-canvas-toggle input {
-  width: 12px;
-  height: 12px;
+  width: 15px;
+  height: 15px;
   margin: 0;
   accent-color: var(--rust);
 }
