@@ -8552,7 +8552,8 @@
   function frontSeatById(id) {
     const v = venue();
     const approx = approxFrontSeatsForVenue(v);
-    if (approx) return approx.find((seat) => seat.id === id) || approx[0] || VENUES.seatById("center");
+    // 近似できなかった会場（空配列）は既存5席で扱う。席の札の作り方と揃える
+    if (approx && approx.length) return approx.find((seat) => seat.id === id) || approx[0] || VENUES.seatById("center");
     return VENUES.seatById(id);
   }
   /* 実効の寸法。旧ショーに手入力寸法が残っている場合だけ読み込み互換として重ねる。
@@ -24286,8 +24287,11 @@ ${propsPlotHtml}
     });
 
     // 席は正面図を出しているときだけ意味を持つ
+    /* ★近似席が1つも作れない会場（客席の領域を置かずに保存した劇場）では、
+       空の配列をそのまま使うと席の札が1つも出ず、見る位置を選べなくなる（2026-09-16 実機で再現）。
+       空配列は「近似できなかった」であって「席が無い」ではないので、既存5席へ落とす。 */
     const approxSeats = approxFrontSeatsForVenue(current);
-    const seats = approxSeats || VENUES.seats;
+    const seats = approxSeats && approxSeats.length ? approxSeats : VENUES.seats;
     const seat = frontSeatById(state.seat);
     if (els.seatList) els.seatList.hidden = !state.showFront;
     if (els.frontApprox) {
