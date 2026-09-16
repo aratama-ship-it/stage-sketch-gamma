@@ -5426,7 +5426,9 @@
       showSetNames: true,
       showLightNames: true,
       // 正面図の隅に「客席のどこから見ているか」の小図を出すか
-    showSeatMap: false,
+    /* ★既定はON。正面図の右上に「どの席から見ているか」の小図を出す（本人指示 2026-09-16: 必須機能）。
+       2026-09-16 朝の公開で false になっていたのを戻した。保存データに値があればそちらを尊重する。 */
+    showSeatMap: true,
       // 平面図で吊物（宙に吊ってあるもの）まで出すか
       showFlown: false,
       /* 照明と動線の出し入れ。図ごとに別。
@@ -6377,7 +6379,7 @@
       showSetNames: raw.showSetNames === undefined ? true : Boolean(raw.showSetNames),
       showLightNames: raw.showLightNames === undefined ? true : Boolean(raw.showLightNames),
       // 既存の明示設定はそのまま尊重し、新規状態だけ「見る位置の図」を閉じる。
-      showSeatMap: raw.showSeatMap === undefined ? false : Boolean(raw.showSeatMap),
+      showSeatMap: raw.showSeatMap === undefined ? true : Boolean(raw.showSeatMap),   // 値が無い旧データは従来どおりON
       showFlown: Boolean(raw.showFlown),
       showLightsFront: raw.showLightsFront === undefined ? true : Boolean(raw.showLightsFront),
       showLightsPlan: raw.showLightsPlan === undefined ? true : Boolean(raw.showLightsPlan),
@@ -19943,10 +19945,18 @@
     });
   }
 
-  function renderScenes() {
+  /* シーン一覧を組む。
+     引数なし＝従来どおり全部作り直す（69箇所の呼び出し元はこのまま）。
+     ★`{ activeChange: { fromId, toId, cursorFromId } }` を渡すと、変わった行と隣接する転換の境界だけ
+       「中身」を差し替える（要素そのものは入れ替えない）。
+       ・一覧の直下の要素を入れ替えないので、タイムラインの MutationObserver（直下の childList を監視）が
+         発火せず、全プロジェクトの複製を伴う renderTimeline（400シーンで61ms・2026-09-16 実測）が走らない。
+       ・行を作り直さないので、他の行の入力中の文字・フォーカス・スクロールが残る。
+       ・行の並びが変わる操作（追加・削除・並べ替え・折り畳み）では、並びの照合で不一致になり従来の全再構築へ落ちる。 */
+  function renderScenes(options) {
     const p = state.project;
+    const activeChange = options && options.activeChange ? options.activeChange : null;
     if (els.sceneList) {
-      els.sceneList.innerHTML = "";
       if (wrapPickStartId && !p.scenes.some((row) => row.id === wrapPickStartId)) wrapPickStartId = null;
       els.sceneList.classList.toggle("is-wrap-picking", Boolean(wrapPickStartId));
       /* 番号は入れ子に沿って振る。セクションの中の場面は「4-1」のようになる。
@@ -20075,8 +20085,9 @@
 
       /* タイムライン上の移動時間が0秒でも、隣り合うシーンの間には必ず境界がある。
        * 一覧では短い札を常設し、必要なときだけ既存の転換詳細を同じ場所へ開く。 */
-      const makeSceneTransitionPoint = (fromScene, toScene) => {
-        const boundary = document.createElement("div");
+      /* 転換の境界の中身を、渡された要素へ詰める。全再構築でも部分更新でも同じ手順を通す */
+      const fillTransitionBoundary = (boundary, fromScene, toScene) => {
+        boundary.replaceChildren();
         boundary.className = "stage-scene-transition-boundary";
         boundary.dataset.transitionFrom = fromScene.id;
         boundary.dataset.transitionTo = toScene.id;
@@ -20129,19 +20140,30 @@
         if (expanded) boundary.append(makeSceneTransitionFrame(fromScene, toScene, "between"));
         return boundary;
       };
+      const makeSceneTransitionPoint = (fromScene, toScene) => fillTransitionBoundary(document.createElement("div"), fromScene, toScene);
 
-      p.scenes.forEach((scene, i) => {
-        const numberText = sceneNumbers.get(scene.id) || String(i + 1);
-        sectionStack.length = scene.depth;
-        const ancestors = sectionStack.slice();
-        sectionStack[scene.depth] = scene.kind === "section" ? scene : null;
-        sectionStack.length = scene.depth + 1;
-        if (sceneHidden(i)) return;
+      /* i 番目の行の「上位セクション」。全再構築のループが積む sectionStack を、その行まで巻き戻して再現する */
+      const rowAncestors = (index) => {
+        const stack = [];
+        let ancestors = [];
+        for (let k = 0; k <= index; k += 1) {
+          const item = p.scenes[k];
+          stack.length = item.depth;
+          ancestors = stack.slice();
+          stack[item.depth] = item.kind === "section" ? item : null;
+          stack.length = item.depth + 1;
+        }
+        return ancestors;
+      };
+
+      /* 行の中身を、渡された要素へ詰める。行そのものの生成と一覧への追加は呼び出し側 */
+      const fillSceneRow = (row, scene, i, ancestors, numberText) => {
+        row.replaceChildren();
         const isCursor = scene.id === (state.cursorRowId || p.activeSceneId);
         const isOpen = scene.kind === "scene" && scene.id === p.activeSceneId;
 
-        const row = document.createElement("div");
         row.className = `stage-scene-row${isOpen ? " is-open" : ""}${scene.id === wrapPickStartId ? " is-wrap-start" : ""}`;
+
         row.classList.toggle("is-cursor", isCursor);
         row.dataset.sceneId = scene.id;
         row.dataset.depth = String(scene.depth);
@@ -20373,12 +20395,57 @@
             requestAnimationFrame(() => growNote(false));
           });
         }
-        els.sceneList.append(row);
-        if (scene.kind === "scene") {
-          const next = nextSceneOf(scene);
-          if (next) els.sceneList.append(makeSceneTransitionPoint(scene, next));
+      };
+
+      /* ---- 部分更新：シーン切替で変わる行と、その前後の転換の境界だけ ---- */
+      let updatedInPlace = false;
+      if (activeChange && !wrapPickStartId) {
+        const visibleIds = [];
+        p.scenes.forEach((scene, i) => { if (!sceneHidden(i)) visibleIds.push(scene.id); });
+        const renderedIds = [...els.sceneList.children]
+          .filter((node) => node.dataset && node.dataset.sceneId)
+          .map((node) => node.dataset.sceneId);
+        const sameOrder = visibleIds.length === renderedIds.length
+          && visibleIds.every((id, k) => id === renderedIds[k]);
+        if (sameOrder) {
+          const targets = new Set([activeChange.fromId, activeChange.toId, activeChange.cursorFromId].filter(Boolean));
+          p.scenes.forEach((scene, i) => {
+            if (!targets.has(scene.id) || sceneHidden(i)) return;
+            const row = els.sceneList.querySelector(`:scope > [data-scene-id="${CSS.escape(scene.id)}"]`);
+            if (row) fillSceneRow(row, scene, i, rowAncestors(i), sceneNumbers.get(scene.id) || String(i + 1));
+          });
+          [...els.sceneList.children].forEach((node) => {
+            if (!node.classList.contains("stage-scene-transition-boundary")) return;
+            const fromId = node.dataset.transitionFrom;
+            const toId = node.dataset.transitionTo;
+            if (!targets.has(fromId) && !targets.has(toId)) return;
+            const fromScene = p.scenes.find((item) => item.id === fromId);
+            const toScene = p.scenes.find((item) => item.id === toId);
+            if (fromScene && toScene) fillTransitionBoundary(node, fromScene, toScene);
+          });
+          updatedInPlace = true;
         }
-      });
+      }
+
+      /* ---- 全再構築（従来どおり） ---- */
+      if (!updatedInPlace) {
+        els.sceneList.innerHTML = "";
+        p.scenes.forEach((scene, i) => {
+          const numberText = sceneNumbers.get(scene.id) || String(i + 1);
+          sectionStack.length = scene.depth;
+          const ancestors = sectionStack.slice();
+          sectionStack[scene.depth] = scene.kind === "section" ? scene : null;
+          sectionStack.length = scene.depth + 1;
+          if (sceneHidden(i)) return;
+          const row = document.createElement("div");
+          fillSceneRow(row, scene, i, ancestors, numberText);
+          els.sceneList.append(row);
+          if (scene.kind === "scene") {
+            const next = nextSceneOf(scene);
+            if (next) els.sceneList.append(makeSceneTransitionPoint(scene, next));
+          }
+        });
+      }
       linkSceneBars();
     }
     if (els.planDeriveRoute) {
@@ -22662,6 +22729,7 @@ ${propsPlotHtml}
     }
     closeNoteEditor();
     selectedNoteId = null;
+    const cursorFromId = state.cursorRowId;    // 直前にカーソルがあった行（セクションの場合もある）も描き直す対象
     state.cursorRowId = id;
     const transitionFromScene = options.transitionFromSceneId
       ? state.project.scenes.find(
@@ -22691,7 +22759,7 @@ ${propsPlotHtml}
     const liveSpins = captureLiveSpins();
     state.project.activeSceneId = id;
     selectedId = null;
-    renderScenes();
+    renderScenes({ activeChange: { fromId: before ? before.id : null, toId: id, cursorFromId } });
     renderCast();
     renderSets();
     renderLights();

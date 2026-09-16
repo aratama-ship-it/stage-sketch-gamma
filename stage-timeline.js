@@ -2997,8 +2997,19 @@
   // タイムライン外（シーン送り・図上の切替）でも、ヘッダーのショー経過時間を
   // そのシーンの開始位置へそろえる。タイムライン自身の再生中は現在位置を戻さない。
   window.addEventListener("stage-scene-change", (event) => {
-    if (!timeline || (event && event.detail && event.detail.fromTimeline)) return;
     const sceneId = event && event.detail && event.detail.sceneId;
+    /* ★シーン切替では本体の一覧が直下の要素を入れ替えなくなった（2026-09-16）ので、
+       上の MutationObserver は発火しない。「いまのシーン」の強調はここで軽く付け替える。
+       切替先がいまのタイムライン（＝セクション）に無いときだけ、従来どおり全体を組み直す。 */
+    if (!timeline || !timeline.segments.some((item) => item.sceneId === sceneId)) {
+      renderTimeline();
+      return;
+    }
+    root.querySelectorAll(".stage-timeline-scene.is-current").forEach((node) => node.classList.remove("is-current"));
+    root.querySelectorAll(".stage-timeline-scene").forEach((node) => {
+      if (node.dataset.sceneId === sceneId) node.classList.add("is-current");
+    });
+    if (event && event.detail && event.detail.fromTimeline) return;
     const segment = timeline.segments.find((item) => item.sceneId === sceneId);
     if (!segment) return;
     seekSeconds = segment.start;
