@@ -24549,10 +24549,21 @@ ${propsPlotHtml}
       && (venueSetupWasApplied(state.project) || hasVenueDependentLighting(state.project)));
   }
 
+  /* 反映する会場の「実際に使う規模」。自分で描いた会場は custom の1つだけ、
+     プリセットは選んだ規模（下敷きの sizeId）を使う。
+     ★ここを常に "custom" で引くと、プリセットをそのまま反映したときに
+       先頭の規模へ落ちて寸法が変わってしまう（2026-09-16）。 */
+  function venueApplySizeId(saved) {
+    const target = VENUES.byId(saved.id);
+    if (target && target.custom) return "custom";
+    const basis = venueApplyBasis({ venue: saved });
+    return (basis && basis.sizeId) || state.project.venueSize;
+  }
+
   function venueApplyCompatiblePreset(saved, preset) {
     if (!saved || !preset || preset.venueType !== venueApplyBasis({ venue: saved })?.venueId) return false;
     const savedVenue = VENUES.byId(saved.id);
-    const savedSize = VENUES.sizeById(savedVenue, "custom");
+    const savedSize = VENUES.sizeById(savedVenue, venueApplySizeId(saved));
     const expected = [preset.stage?.W, preset.stage?.D, preset.stage?.H].map(Number);
     const actual = [savedSize?.width, savedSize?.depth, savedSize?.height].map(Number);
     return expected.every((value, index) => Number.isFinite(value)
@@ -24598,9 +24609,12 @@ ${propsPlotHtml}
     }
     if (els.venueApplyVersionDetail) {
       const nextVersion = nextVersionLabel(state.project.versionLabel);
+      const sameVenue = saved.id === state.project.venue;
       els.venueApplyVersionDetail.textContent = versioned
         ? `${nextVersion}を新しく作り、元の${state.project.versionLabel || "v1"}はショー一覧に残します。新しい版の照明機材とライトキューは、下の選択内容から始めます。`
-        : "このショーのバージョンは変えません。次に劇場を変更するときは、新しい版を作って元の版を残します。";
+        : sameVenue
+          ? "いまと同じ劇場なので、ショーのバージョンは増やしません。"
+          : "このショーのバージョンは変えません。次に劇場を変更するときは、新しい版を作って元の版を残します。";
     }
     if (els.venueApplyStatus) els.venueApplyStatus.textContent = "";
     if (els.venueApplyPresetSelect) els.venueApplyPresetSelect.replaceChildren();
@@ -24691,7 +24705,7 @@ ${propsPlotHtml}
         project.createdAt = nowIso();
       }
       project.venue = saved.id;
-      project.venueSize = VENUES.sizeById(VENUES.byId(saved.id), "custom").id;
+      project.venueSize = VENUES.sizeById(VENUES.byId(saved.id), venueApplySizeId(saved)).id;
       project.venueDims = null;
       project.venueSetupAppliedAt = nowIso();
       project.branchReason = versioned

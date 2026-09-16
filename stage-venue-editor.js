@@ -1851,6 +1851,11 @@
     state.ceiling = clone(variant.ceiling || venue.ceiling || { heightM: 6, rigging: "none" });
     state.stageFormat = inferTemplateStageFormat(venue, variant);
     state.templateKey = key;
+    state.templateSignature = null;      // 下の captureDraft 完了後に入れる
+    /* ★下敷きを読み込んだ直後の姿を控える。反映するとき、ここから形が変わっていなければ
+       新しい会場を作らず、下敷きの会場IDをそのまま使う（2026-09-16 本人決定）。
+       これで「プリセットを選び直して反映＝プリセットへ戻る」が成り立ち、
+       同じ内容の反映でショーの版と劇場ライブラリが増え続けるのも止まる。 */
     state.mode = "select";
     state.areaMode = null;
     state.stageExtensionMode = null;
@@ -1884,10 +1889,33 @@
       }
     }
     els.saveStatus.textContent = "";
+    // ここまでで下敷きの姿が揃う。以後この署名と突き合わせて「変えていない」を判定する
+    state.templateSignature = draftSignature();
     const label = variant && variant.label ? `${venue.label}（${variant.label}）` : venue.label;
     setStatus(`${label}をカスタム編集の初期形に読み込みました。`);
     render();
     return true;
+  }
+
+  /* 下敷きから形も記載も変えていなければ、その下敷きの会場を返す（変えていれば null）。
+     ★戻すのは「新しく保存しなくてよい」という判断そのもの。呼び出し側はこれを使って
+       ライブラリへの保存を飛ばし、下敷きの会場IDをそのままショーへ渡す。 */
+  function unchangedTemplateVenue() {
+    if (!state.templateKey || !state.templateSignature) return null;
+    if (draftSignature() !== state.templateSignature) return null;
+    const [templateVenueId, templateSizeId = ""] = String(state.templateKey).split(":");
+    const venue = templateVenueId ? library.venueV2ById(templateVenueId) : null;
+    if (!venue) return null;
+    const variant = templateVariant(venue, templateSizeId);
+    /* 規模つきのプリセットは、選んだ規模を照明機材プリセットの照合に使う。
+       会場そのもののIDは変えない（プリセットならプリセットのまま、
+       ライブラリ会場ならそのライブラリ会場のまま）。 */
+    return {
+      ...clone(venue),
+      lightingPresetBasis: venue.lightingPresetBasis
+        ? clone(venue.lightingPresetBasis)
+        : { venueId: templateVenueId, sizeId: variant && variant.id ? variant.id : templateSizeId },
+    };
   }
 
   function undoHistory() {
@@ -2897,10 +2925,16 @@
       els.saveStatus.textContent = "線が交差しているため反映できません。";
       return null;
     }
+    /* 反映する劇場の決め方は3段。上から順に当てはめる。
+       1. 本人が「保存」を押していて、その後も変えていない → その保存した劇場を使う（本人の意思を優先）
+       2. ★下敷きのまま（形も記載も変えていない）→ 下敷きの劇場をそのまま使い、新しく作らない。
+          プリセットを選び直して反映すればプリセットへ戻り、同じ内容の反映で
+          ショーの版も劇場ライブラリも増えない（2026-09-16 本人決定）
+       3. 形を変えている → 従来どおり新しい劇場としてライブラリへ保存する */
     const signature = draftSignature();
-    const saved = lastSavedVenue && lastSavedSignature === signature
-      ? clone(lastSavedVenue)
-      : saveDraft((els.name && els.name.value.trim()) || defaultAppliedVenueLabel());
+    const saved = (lastSavedVenue && lastSavedSignature === signature ? clone(lastSavedVenue) : null)
+      || unchangedTemplateVenue()
+      || saveDraft((els.name && els.name.value.trim()) || defaultAppliedVenueLabel());
     if (!saved) return null;
     const templateKey = state.templateKey;
     window.dispatchEvent(new CustomEvent("stage-venue-apply-requested", {
