@@ -118,9 +118,11 @@ textarea, input[type="text"] {
   font-size: 15px;
 }
 
+/* 読み上げ専用。clip は非推奨プロパティなので、同じ意味の clip-path も併記して
+   将来 clip が外れても隠れたままにする（2026-09-17 追加）。 */
 .visually-hidden {
   position: absolute; width: 1px; height: 1px;
-  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
 }
 
 /* ============ 背表紙 ============ */
@@ -12867,15 +12869,12 @@ html.stage-pwa-tablet .stage-sketch-head {
   border-bottom-color: rgba(156,130,63,0.45);
 }
 
-html.stage-pwa-tablet .stage-sketch-head h1 {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  font-size: 16px;
-  line-height: 1;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-}
+/* 2026-09-17: iPad用の h1 装飾を削除した。
+   #stage-sketch-title は見出し再設計（a3b73dc）以降 .visually-hidden の
+   読み上げ専用見出しで、目に見える題は .stage-header-app-title が担っている。
+   隠し要素に display / font-size を当て続けても効果はなく、ヘッダーの崩れを
+   この規則のせいだと読み違える原因になる（2026-09-16の監査で実際に誤診が出た）。
+   iPadの題の大きさを変えたいときは .stage-header-app-title 側を指定する。 */
 
 html.stage-pwa-tablet .stage-app-version {
   font-size: 9px;
