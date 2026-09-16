@@ -811,6 +811,8 @@
     "同時に動く演者の動線がぶつかりそうな所に、平面図で印を出す": "Marks spots in the plan where moving performers nearly collide",
     "高所の下の注意": "Under-rigging caution",
     "ポールやトラピーズの真下に人が居るとき、平面図に印を出す": "Marks the plan when someone stands right under a pole or trapeze",
+    "引いた絵を軽くする": "Simplify the wide view",
+    "アリーナ・ドームなど大きい会場の3Dカメラで、遠くの客席を簡単に描いて動きを軽くする。近くの見え方は変わりません": "In large venues such as arenas or domes, draw the distant audience more simply so the 3D camera stays smooth. Nearby seats look the same.",
     "バミリ図（印刷）": "Spike sheet (print)",
     "印刷用ページに、演者の立ち位置の実寸表を足す": "Adds a real-measure position table to the print sheet",
     "明かりのキューシート（印刷）": "Light cue sheet (print)",

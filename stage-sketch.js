@@ -5073,6 +5073,11 @@
       hint: "同時に動く演者の動線がぶつかりそうな所に、平面図で印を出す" },
     { key: "highwarn", label: "高所の下の注意", def: false,
       hint: "ポールやトラピーズの真下に人が居るとき、平面図に印を出す" },
+    /* 2026-09-16 A5第2段: 3Dカメラの「引いた絵」の描き方。既定OFF＝これまでと同じ見え方。
+       ★本人承認済みの文言。言い換えない（英語は Simplified。Light は照明と読み違える）。
+       ★FPV画面のチップ（引いた絵：くっきり／軽く）と同じ状態を指す。片方を変えるともう片方も変わる。 */
+    { key: "wideVenueLite", label: "引いた絵を軽くする", def: false,
+      hint: "アリーナ・ドームなど大きい会場の3Dカメラで、遠くの客席を簡単に描いて動きを軽くする。近くの見え方は変わりません" },
     { key: "toolTips", label: "アイコンの説明",
       hint: "道具のアイコンにカーソルを合わせると、名前・ショートカット・使い方を出す。覚えたらOFFにできる" },
     { key: "floatingInspector", label: "選んだものを図に添える", def: true,
@@ -21664,6 +21669,8 @@
         applyLayout();
         updateInspector();
       }
+      // 開いている3Dカメラのチップも同じ状態にする（設定と入口が二つあるため）
+      if (f.key === "wideVenueLite") pushFpvCrowdMode();
       renderScenes();
       render();
       announce(box.checked ? `設定「${f.label}」をONにしました。` : `設定「${f.label}」をOFFにしました。`);
@@ -27804,6 +27811,14 @@ ${propsPlotHtml}
     window.dispatchEvent(new CustomEvent("stage-fpv-visibility", { detail: { active: Boolean(active) } }));
   }
 
+  /* 環境設定の「引いた絵を軽くする」と、3Dカメラのチップ（くっきり／軽く）は同じ状態を指す。
+     設定側で切り替えたときは、開いている3Dカメラへその場で伝える（開いていなければ次に開いた時に効く）。 */
+  function pushFpvCrowdMode() {
+    const fpv = window.SHOSAI_STAGE_FPV;
+    if (!fpv || typeof fpv.setCrowdMode !== "function") return;
+    fpv.setCrowdMode(featureOn("wideVenueLite") ? "lite" : "full");
+  }
+
   function openFpv(initialPieceId, initialView, returnFocus, workspace3d = false, previewOnly = false) {
     const fpv = window.SHOSAI_STAGE_FPV;
     if (!fpv) return false;
@@ -27945,6 +27960,17 @@ ${propsPlotHtml}
         render();
         persistSoon();
         return true;
+      },
+      /* 引いた絵の描き方。正本は環境設定（prefs.wideVenueLite）で、FPVは開くときにこれを読む。
+         FPV側のチップで変えたときは setLite で設定へ書き戻す＝二つの入口が食い違わない。 */
+      lite: () => featureOn("wideVenueLite"),
+      setLite: (on) => {
+        const next = Boolean(on);
+        if (Boolean(prefs.wideVenueLite) === next) return;
+        prefs.wideVenueLite = next;
+        savePrefs();
+        // 設定モーダルを開いたまま切り替えた場合に、チェックの見た目を合わせる
+        if (els.prefsModal && !els.prefsModal.hidden) renderPrefs();
       },
       listPoses: () => POSES.map((p) => ({ id: p.id, label: poseName(p) })),
       drawPosePreview: (canvas, poseId, color) => drawPosePreview(canvas, poseId, color),

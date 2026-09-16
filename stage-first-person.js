@@ -1265,14 +1265,25 @@
     });
   }
 
-  function setCrowdMode(id) {
+  /* notify=false は「設定側から言われて合わせるだけ」。書き戻すと往復して無限に鳴る。 */
+  function setCrowdMode(id, notify = true) {
     crowdModeId = normalizeCrowdModeId(id);
     try { window.localStorage.setItem(CROWD_STORAGE_KEY, crowdModeId); } catch (_) { /* unavailable */ }
+    const bridge = state.bridge;
+    if (notify && bridge && typeof bridge.setLite === "function") bridge.setLite(crowdModeId === "lite");
     syncCrowdChips();
     wakeFrames();                       // 切り替えた結果をその場で見せる
   }
 
+  /* 正本は本体の環境設定（「引いた絵を軽くする」）。bridge が答えられるならそれに従い、
+     答えられないとき（旧い本体・単体での検証）だけ自分の localStorage を使う。 */
   function loadCrowdMode() {
+    const bridge = state.bridge;
+    if (bridge && typeof bridge.lite === "function") {
+      crowdModeId = bridge.lite() ? "lite" : "full";
+      try { window.localStorage.setItem(CROWD_STORAGE_KEY, crowdModeId); } catch (_) { /* unavailable */ }
+      return;
+    }
     let stored = null;
     try { stored = window.localStorage.getItem(CROWD_STORAGE_KEY); } catch (_) { /* unavailable */ }
     crowdModeId = normalizeCrowdModeId(stored);
@@ -3398,6 +3409,9 @@
   window.SHOSAI_STAGE_FPV = Object.freeze({
     open,
     close,
+    /* 環境設定から呼ぶ。設定が正本なので bridge へは書き戻さない（往復させない）。
+       3Dカメラを開いていなければチップも描画も無く、次に開いたときに反映される。 */
+    setCrowdMode: (id) => setCrowdMode(id, false),
     _geom: Object.freeze({ toWorld, yawForward, rightOf, clipPolyNear, eyeHeight,
       pieceUOf, pieceVOf, pieceBaseOf, pieceGlowOf,
       moveFree, clampFree, freePresets, bowlGeometry, bowlAudience, bowlOrientations,
