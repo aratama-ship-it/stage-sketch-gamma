@@ -12885,7 +12885,12 @@ html.stage-pwa-tablet .stage-release-open {
   margin-left: 4px;
 }
 
-html.stage-pwa-tablet .stage-beta { font-size: 9px; }
+/* 2026-09-17: iPad用の .stage-beta 装飾を削除した。.stage-beta 要素は
+   a3b73dc の見出し再設計以降 stage.html に存在せず（0箇所）、この規則は
+   効いていなかった。stage-sketch.js 側は今も .stage-beta を
+   document.querySelector で探しており（起動時バックアップ警告の表示判定・
+   スマホ版タイトルの複製元）、そちらは要素が無い影響が残っている可能性がある。
+   別途確認が要る（今回はCSSの死にコード除去のみ）。 */
 html.stage-pwa-tablet .stage-boundary-note { display: none; }
 
 html.stage-pwa-tablet .stage-sketch-head > div:first-child {
