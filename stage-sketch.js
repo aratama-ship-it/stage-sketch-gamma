@@ -20369,6 +20369,10 @@
           if (!ownerScene.rehearsal) ownerScene.rehearsal = normalizeSceneRehearsal(null);
           ownerScene.rehearsal[key] = rehearsalSeconds(input.value);
           persistSoon();
+          /* 2026-09-17: 打っている間もタイムラインを動かす。確定まで動かないと
+             「効いていない」ように見えるため。受け手はフレームに1回へまとめている。
+             シーン一覧の作り直しは重いので、確定（change）のときだけにする。 */
+          window.dispatchEvent(new CustomEvent("stage-timeline-structure-change"));
           if (els.rehearsalExportModal && !els.rehearsalExportModal.hidden) {
             refreshRehearsalExport();
           }

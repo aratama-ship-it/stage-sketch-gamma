@@ -2909,10 +2909,23 @@
   els.unitToggle.addEventListener("click", () => {
     openUnitWarning();
   });
+  /* 2026-09-17: 打っている間もタイムラインを動かす。
+   * それまでは値だけ書いて描き直さなかったので、確定（他をクリック・Tab・Enter）まで
+   * 画面が動かず「効いていない」ように見えていた。
+   * ただし1文字ごとに描き直すと重い。実測（シーン8/60/400件）:
+   *   タイムラインだけ 2.9 / 10.5 / 64.6ms、シーン一覧も含めると 6.7 / 20.0 / 118.5ms。
+   * そこで **①フレームに1回へまとめる ②打っている間はタイムラインだけ描く**。
+   * シーン一覧の作り直しは確定のときだけでよい（一覧の秒数は確定後に見れば足りる）。 */
+  let livePreviewFrame = 0;
+  function scheduleLiveTimelineRedraw() {
+    if (livePreviewFrame) return;
+    livePreviewFrame = window.requestAnimationFrame(() => { livePreviewFrame = 0; renderTimeline(); });
+  }
   els.sectionDurationNumber.addEventListener("input", () => {
     const seconds = normalizedSectionDuration(els.sectionDurationNumber.value);
     if (seconds === null) return;
     writeCurrentSectionDuration(seconds);
+    scheduleLiveTimelineRedraw();
   });
   els.sectionDurationNumber.addEventListener("change", () => {
     finishSectionDurationEdit(els.sectionDurationNumber.value);
@@ -3221,9 +3234,10 @@
     renderTimeline();
     applyAudioLevels();
   });
-  window.addEventListener("stage-timeline-structure-change", () => {
-    renderTimeline();
-  });
+  /* 2026-09-17: シーンの秒数は1文字打つたびにこの合図が飛ぶ。
+     そのたびに描き直すと、シーンが多いショーで重くなる（400件で1回64.6ms 実測）ので、
+     フレームに1回へまとめる。描くのが1フレーム遅れるだけで、見え方は変わらない。 */
+  window.addEventListener("stage-timeline-structure-change", scheduleLiveTimelineRedraw);
   window.addEventListener("stage-timeline-count-sync-change", () => {
     renderTimeline();
   });
