@@ -993,6 +993,9 @@
     "3Dカメラ": "3D镜头",
     "3Dモード": "3D模式",
     "レンズ": "镜头",
+    "引いた絵": "远景",
+    "くっきり": "清晰",
+    "軽く": "简化",
     "超広角": "超广角",
     "広角": "广角",
     "標準": "标准",
@@ -1981,6 +1984,7 @@
 
   /* ネイティブ確認までピッチ・公開に使い切らない鍵 */
   const NEEDS_REVIEW = [
+    "text.引いた絵", "text.くっきり", "text.軽く",   // 3Dカメラの引いた絵の切り替え（2026-09-16 追加・ネイティブ確認前）
     "text.フロア前方", "text.フロア後方", "text.下段中央", "text.上段中央", "text.最上段",
     "maps.venue.arena-concert", "maps.venue.dome-concert", "maps.venue.festival-field",
     "maps.venueShort.arena-concert", "maps.venueShort.dome-concert", "maps.venueShort.festival-field",

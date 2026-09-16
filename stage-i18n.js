@@ -1235,6 +1235,10 @@
     "3Dモード": "3D mode",
     "レンズ": "Lens",
     "客席の入り": "House",
+    "引いた絵": "Wide view",
+    "くっきり": "Detailed",
+    /* ★"Light" にしない。このアプリでは light が照明を指すため読み違える（2026-09-16 本人承認の文言） */
+    "軽く": "Simplified",
     "満席": "Full house",
     "空席": "Empty house",
     "超広角": "Ultra-wide",

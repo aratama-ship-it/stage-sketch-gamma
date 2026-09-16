@@ -27,6 +27,28 @@
   function houseModeById(id) {
     return HOUSE_MODES.find((mode) => mode.id === normalizeHouseModeId(id));
   }
+  /* 引いた絵（アリーナ・ドームなど器のある会場）の描き方。
+     ★既定は「くっきり」＝これまでと同じ見え方。本人が選んだときだけ簡単に描く
+       （本人決定 2026-09-16: 選択肢として残す。勝手に軽くしない）。
+     ★文言は本人承認済み。言い換えない。英語は Detailed / Simplified
+       （「軽く」を Light と訳すと照明 light と読み違えるため）。 */
+  const CROWD_MODES = Object.freeze([
+    Object.freeze({ id: "full", name: "くっきり" }),
+    Object.freeze({ id: "lite", name: "軽く" }),
+  ]);
+  const CROWD_STORAGE_KEY = "gamma:shosai-fpv-crowd-v1";
+  let crowdModeId = "full";
+
+  function normalizeCrowdModeId(value) {
+    return CROWD_MODES.some((mode) => mode.id === value) ? value : "full";
+  }
+
+  function crowdModeById(id) {
+    return CROWD_MODES.find((mode) => mode.id === normalizeCrowdModeId(id));
+  }
+
+  const crowdLite = () => crowdModeId === "lite";
+
   const DEFAULT_HEIGHT_CM = 170;
   const PANEL_STORAGE_KEY = "gamma:shosai-fpv-panels-v1";
   const PANEL_TITLE_HEIGHT = 26;
@@ -475,13 +497,48 @@
     return Math.max(.001, finite(tier.toM, 0) - finite(tier.fromM, 0));
   }
 
-  /* 器の客席を描画から切り離した計画。段の距離・床・目線は bowlTiers の値を
-     そのまま持ち、左右は正面列の90度回転、rear は z 反転だけで作る。 */
+  /* 器の客席は「カメラに依存しない世界座標」なので、会場・寸法・入りが同じなら作り直す必要がない。
+     アリーナで 11,633ユニット・1フレームあたり約2ms を毎フレーム払っていた（2026-09-16 実測）。
+     ★ここは速さのためだけの層。作り直したときと中身も並び順も1要素も変えない。
+     ★会場の定義が書き換わったら必ず外れるよう、器(bowl)の中身そのものを鍵に混ぜる。
+       会場カタログが同じidで別の器に差し替わっても、鍵が変わるので古い客席は返らない。 */
+  const BOWL_UNITS_CACHE_MAX = 4;
+  const bowlUnitsCache = new Map();
+
+  function bowlHouseUnitsKey(rawVenue, width, depth, filled) {
+    const id = rawVenue && rawVenue.id;
+    if (typeof id !== "string" || !rawVenue.bowl) return null;   // 特定できないものは覚えない
+    let shape = "";
+    try { shape = JSON.stringify(rawVenue.bowl); } catch (_) { return null; }
+    return `${id}|${width}|${depth}|${filled}|${shape}`;
+  }
+
   function bowlHouseUnits(rawVenue, width, depth, occupancy) {
+    const filled = Number.isFinite(occupancy) ? occupancy : houseModeById(houseModeId).occupancy;
+    const key = bowlHouseUnitsKey(rawVenue, width, depth, filled);
+    if (key !== null && bowlUnitsCache.has(key)) {
+      const kept = bowlUnitsCache.get(key);
+      bowlUnitsCache.delete(key);        // 使ったものを新しい側へ回す（古いものから捨てるため）
+      bowlUnitsCache.set(key, kept);
+      return kept;
+    }
+    const built = buildBowlHouseUnits(rawVenue, width, depth, filled);
+    if (key !== null && built) {
+      bowlUnitsCache.set(key, built);
+      while (bowlUnitsCache.size > BOWL_UNITS_CACHE_MAX) {
+        bowlUnitsCache.delete(bowlUnitsCache.keys().next().value);
+      }
+    }
+    return built;
+  }
+
+  /* 器の客席を描画から切り離した計画。段の距離・床・目線は bowlTiers の値を
+     そのまま持ち、左右は正面列の90度回転、rear は z 反転だけで作る。
+     ★filled は呼び出し側（bowlHouseUnits）で確定させてから渡す。キャッシュの鍵と一致させるため。 */
+  function buildBowlHouseUnits(rawVenue, width, depth, filled) {
     const geometry = bowlGeometry(rawVenue, width, depth);
     if (!geometry) return null;
     const orientations = bowlOrientations(rawVenue);
-    const filled = Number.isFinite(occupancy) ? occupancy : houseModeById(houseModeId).occupancy;
     const rowWidthM = geometry.halfWidthM * 2;
     const seatsPerRow = Math.max(1, Math.floor(rowWidthM / .55));
     const rowCount = geometry.tiers.reduce((sum, tier) => sum + tier.rows.length, 0);
@@ -860,7 +917,7 @@
 #stage-fpv-cast{left:20px;bottom:58px;right:220px;display:flex;flex-wrap:wrap;gap:6px}.stage-fpv-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 8px;border-radius:3px;background:rgba(var(--stage-ui-float-rgb,22,16,11),.86);border:1px solid rgba(232,226,212,.16);color:#e8e2d4;font-size:12px;cursor:pointer;font-family:inherit}.stage-fpv-chip:hover{border-color:rgba(232,226,212,.45)}.stage-fpv-chip.on{background:#e8e2d4;color:#14100c;border-color:#e8e2d4}.stage-fpv-chip .dot{width:8px;height:8px;border-radius:50%;flex:none}
 #stage-fpv-presets{left:20px;bottom:18px;right:220px;display:flex;flex-wrap:wrap;gap:5px}.stage-fpv-preset{padding:4px 8px;font-size:11px;background:rgba(var(--stage-ui-float-rgb,22,16,11),.72)}
 #stage-fpv-panel-toggles{display:flex;flex-direction:column;align-items:stretch;gap:5px}.stage-fpv-panel-toggle{justify-content:center;padding:4px 9px;font-size:11px}
-#stage-fpv-optics{top:174px;right:70px;display:flex;flex-direction:column;align-items:stretch;gap:14px;z-index:71}#stage-fpv-lens,#stage-fpv-house{display:flex;flex-direction:column;align-items:stretch;gap:5px}.stage-fpv-lens-chip,.stage-fpv-house-chip{justify-content:center;padding:4px 9px;font-size:11px}
+#stage-fpv-optics{top:174px;right:70px;display:flex;flex-direction:column;align-items:stretch;gap:14px;z-index:71}#stage-fpv-lens,#stage-fpv-house,#stage-fpv-crowd{display:flex;flex-direction:column;align-items:stretch;gap:5px}.stage-fpv-lens-chip,.stage-fpv-house-chip,.stage-fpv-crowd-chip{justify-content:center;padding:4px 9px;font-size:11px}
 .stage-fpv-panel{position:absolute;z-index:71;box-sizing:border-box;overflow:hidden;border:1px solid rgba(232,226,212,.16);border-radius:3px;background:var(--chip,rgba(var(--stage-ui-float-rgb,22,16,11),.94));box-shadow:0 8px 24px rgba(0,0,0,.28);color:#e8e2d4;touch-action:none;user-select:none;-webkit-user-select:none}.stage-fpv-panel[hidden]{display:none!important}.stage-fpv-panel-bar{height:26px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;padding:0 5px 0 9px;font-size:11px;letter-spacing:.04em;cursor:grab}.stage-fpv-panel-bar:active{cursor:grabbing}.stage-fpv-panel-hide{width:24px;height:22px;padding:0;border:0;background:transparent;color:#e8e2d4;font:16px/20px inherit;cursor:pointer}.stage-fpv-panel canvas{display:block;width:100%;background:#16100b;pointer-events:auto}.stage-fpv-panel-resize{position:absolute;right:0;bottom:0;width:14px;height:14px;cursor:nwse-resize;background:linear-gradient(135deg,transparent 0 45%,rgba(232,226,212,.55) 46% 55%,transparent 56% 65%,rgba(232,226,212,.55) 66% 75%,transparent 76%);touch-action:none}
 #stage-fpv-nav{right:16px;bottom:18px;display:flex;align-items:center;gap:8px}#stage-fpv-nav button{background:rgba(var(--stage-ui-float-rgb,22,16,11),.86);color:#e8e2d4;border:1px solid rgba(232,226,212,.2);border-radius:3px;font-size:13px;padding:7px 12px;cursor:pointer;font-family:inherit}#stage-fpv-nav button:hover{border-color:rgba(232,226,212,.5)}#stage-fpv-count{font-size:11.5px;opacity:.6;min-width:52px;text-align:center}
 #stage-fpv-hint{left:50%;bottom:88px;transform:translateX(-50%);font-size:12.5px;background:rgba(var(--stage-ui-float-rgb,22,16,11),.86);padding:7px 14px;border-radius:3px;opacity:.9;transition:opacity .8s;pointer-events:none;border:1px solid rgba(232,226,212,.14)}#stage-fpv-hint.gone{opacity:0}
@@ -941,6 +998,14 @@
       house.appendChild(chip);
       return chip;
     });
+    const crowd = createElement("div", "stage-fpv-crowd");
+    const crowdChips = CROWD_MODES.map((mode) => {
+      const chip = createElement("button", "", "stage-fpv-chip stage-fpv-crowd-chip");
+      chip.type = "button";
+      chip.addEventListener("click", () => setCrowdMode(mode.id));
+      crowd.appendChild(chip);
+      return chip;
+    });
     const panels = {};
     PANEL_KEYS.forEach((key) => {
       const panel = createElement("section", `stage-fpv-panel-${key}`, "stage-fpv-panel");
@@ -987,14 +1052,15 @@
     const closeButton = createElement("button", "stage-fpv-close");
     closeButton.type = "button";
     closeButton.textContent = "✕";
-    optics.append(panelToggles, lens, house);
+    optics.append(panelToggles, lens, house, crowd);
     root.append(canvas, fade, title, minimap, optics,
       panels.front.panel, panels.plan.panel,
       whose, cast, presets, nav, keyGuide, hint, edit, toast, preview3d, closeButton);
     document.body.appendChild(root);
     elements = { root, canvas, fade, show, act, scene, approx, minimap, whose, cast, presets,
       previous, count, next, keyGuide, hint, edit, editDot, editName, editFacing, editHint, editPoses,
-      toast, closeButton, preview3d, panelToggles, lens, lensChips, house, houseChips, panels };
+      toast, closeButton, preview3d, panelToggles, lens, lensChips, house, houseChips,
+      crowd, crowdChips, panels };
     closeButton.addEventListener("click", close);
     preview3d.addEventListener("click", () => state.bridge?.open3d?.());
     previous.addEventListener("click", () => queueScene(-1));
@@ -1005,6 +1071,11 @@
     canvas.addEventListener("pointercancel", endPointer);
     canvas.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("resize", resize);
+    /* 静止中は描画を止めているので、3D画面の中で何か起きたら連続描画へ戻す。
+       個々のハンドラへ書き足すと足し忘れが出るため、画面全体の捕捉段で一度に拾う。
+       （連続描画へ戻しても、動きが無ければ次のフレームで見回りへ落ちるだけなので安い） */
+    ["pointerdown", "pointermove", "pointerup", "wheel", "click", "keydown", "focusin"]
+      .forEach((type) => elements.root.addEventListener(type, wakeFrames, true));
     return elements;
   }
 
@@ -1180,6 +1251,31 @@
     let stored = null;
     try { stored = window.localStorage.getItem(HOUSE_MODE_STORAGE_KEY); } catch (_) { /* unavailable */ }
     houseModeId = normalizeHouseModeId(stored);
+  }
+
+  function syncCrowdChips() {
+    if (!elements || !elements.crowd) return;
+    elements.crowd.setAttribute("aria-label", text("引いた絵"));
+    elements.crowdChips.forEach((chip, index) => {
+      const mode = CROWD_MODES[index];
+      const active = mode.id === crowdModeId;
+      chip.textContent = text(mode.name);
+      chip.classList.toggle("on", active);
+      chip.setAttribute("aria-pressed", String(active));
+    });
+  }
+
+  function setCrowdMode(id) {
+    crowdModeId = normalizeCrowdModeId(id);
+    try { window.localStorage.setItem(CROWD_STORAGE_KEY, crowdModeId); } catch (_) { /* unavailable */ }
+    syncCrowdChips();
+    wakeFrames();                       // 切り替えた結果をその場で見せる
+  }
+
+  function loadCrowdMode() {
+    let stored = null;
+    try { stored = window.localStorage.getItem(CROWD_STORAGE_KEY); } catch (_) { /* unavailable */ }
+    crowdModeId = normalizeCrowdModeId(stored);
   }
 
   function applyPanelLayout(key) {
@@ -1387,6 +1483,8 @@
   }
 
   function renderHud() {
+    // 引いた絵の切り替えは、器のある会場（アリーナ・ドーム等）でしか意味がない
+    if (elements && elements.crowd) elements.crowd.hidden = !bowlGeometry(currentVenueModel(), W, D);
     if (!elements || !data) return;
     elements.show.textContent = data.showTitle || "";
     elements.act.textContent = data.actTitle || "";
@@ -1488,6 +1586,7 @@
     updateEditPanel();
     syncLensChips();
     syncHouseChips();
+    syncCrowdChips();
   }
 
   function formatSigned(value) {
@@ -2135,10 +2234,11 @@
 
   /* 席ひとつを描く。人がいれば肩＋頭、空席なら背もたれ。
      プロセニアムの客席とリング客席の両方から使う。 */
-  function drawHousePerson(ctx, person) {
+  function drawHousePerson(ctx, person, fade = 1) {
     const eye = toCamera({ x: person.x, y: person.headY, z: person.z });
     if (eye.z <= NEAR || (!person.bowl && eye.z > 40)) return;
-    const alpha = clamp(.5 - eye.z * .012, .1, .5);
+    if (fade <= 0) return;
+    const alpha = clamp(.5 - eye.z * .012, .1, .5) * fade;
 
     if (!person.occupied) {
       /* 空いた椅子。背もたれだけが見える（人がいる席の椅子は体で隠れる）。
@@ -2148,7 +2248,7 @@
       if (!person.bowl && eye.z > (emptyHouse ? 40 : 26)) return;
       /* 暗がりの椅子は面より輪郭で読める。塗りを抑えて縁を入れると、
          隣どうしが溶けて壁のように潰れるのを防げる。 */
-      const seatAlpha = clamp(.34 - eye.z * .008, .07, .34);
+      const seatAlpha = clamp(.34 - eye.z * .008, .07, .34) * fade;
       drawFacingPanel(ctx, person,
         person.floorY + HOUSE_SEAT.backBottomYM, person.floorY + HOUSE_SEAT.backTopYM,
         HOUSE_SEAT.widthM,
@@ -2230,18 +2330,123 @@
     ], fill, stroke, 1);
   }
 
+  /* 画面に入らない客席は、奥行きで並べ替える前に落とす。
+     ★描く内容は変えない。落とすのは「どう描いても画面に出ないもの」だけ。
+     アリーナでは1フレームあたり11,633ユニットを全部並べて全部描いていた（2026-09-16 実測）。
+     ★近平面より手前に掛かるものは落とさない。投影の式が使えず、判定を誤るため。 */
+  function bowlVisibleUnits(units) {
+    const visible = [];
+    for (let index = 0; index < units.length; index += 1) {
+      const unit = units[index];
+      if (unit.type === "person") {
+        const person = unit.person;
+        const eye = toCamera({ x: person.x, y: person.headY, z: person.z });
+        if (eye.z <= NEAR) continue;
+        const screen = toScreen(eye);
+        // 肩幅・椅子の背・頭の丸が画面の縁に掛かる場合があるので、その分だけ外へ余裕を取る
+        const pad = (Math.max(HOUSE_PERSON.shoulderWidthM, HOUSE_SEAT.widthM) * focal) / eye.z + 16;
+        if (screen.x < -pad || screen.x > canvasWidth + pad
+          || screen.y < -pad || screen.y > canvasHeight + pad) continue;
+        visible.push({ unit, depth: eye.z, sx: screen.x, sy: screen.y });
+        continue;
+      }
+      const corners = unit.riser ? unit.corners.concat(unit.riser) : unit.corners;
+      let behind = 0;
+      let minX = Infinity;
+      let maxX = -Infinity;
+      let minY = Infinity;
+      let maxY = -Infinity;
+      for (let at = 0; at < corners.length; at += 1) {
+        const eye = toCamera(corners[at]);
+        if (eye.z <= NEAR) { behind += 1; continue; }
+        const screen = toScreen(eye);
+        if (screen.x < minX) minX = screen.x;
+        if (screen.x > maxX) maxX = screen.x;
+        if (screen.y < minY) minY = screen.y;
+        if (screen.y > maxY) maxY = screen.y;
+      }
+      if (behind === corners.length) continue;                       // 全部が背後
+      if (behind === 0 && (maxX < 0 || minX > canvasWidth || maxY < 0 || minY > canvasHeight)) continue;
+      visible.push({ unit, depth: toCamera(unit.center).z });
+    }
+    return visible;
+  }
+
+  /* 「軽く」を選んだときだけ効く、遠い客席のまとめ描き（本人決定 2026-09-16・既定はOFF）。
+     ★人を減らすのではなく、遠くて1〜2画素になった人影を、その列の帯として置き換える。
+       客の密度・段の切れ目・左右の回り込みは残す。BOWL_CROWD_MAX や stride は触らない。
+     ★近づくにつれて帯と人影を溶かし合わせる（LITE_BAND_PX〜LITE_PERSON_PX）。
+       境目で切り替えると、旋回のたびに客が湧いたり消えたりして見える。 */
+  /* 2026-09-16 実測（アリーナ・旋回中の1フレーム／画面つき）:
+       くっきり 4.2ms(fill 5,347) ／ 帯3.5-7px 3.7ms(2,393) ／ 帯4.5-9px 3.3ms(1,707) ／ 帯7-14px 2.8ms(1,073)
+     見え方の変化と釣り合う中間として 4.5〜9px を採った。強めたいときはこの2つだけ動かす。 */
+  const LITE_BAND_PX = 4.5;      // これより小さく写る人影は帯にする
+  const LITE_PERSON_PX = 9;    // これより大きく写る人影は今までどおり1体ずつ描く
+
+  function crowdBandsFrom(visible) {
+    const bands = new Map();
+    const kept = [];
+    for (let index = 0; index < visible.length; index += 1) {
+      const entry = visible[index];
+      const unit = entry.unit;
+      if (unit.type !== "person") { kept.push(entry); continue; }
+      const person = unit.person;
+      const spanPx = HOUSE_PERSON.shoulderWidthM * focal / entry.depth;
+      if (spanPx >= LITE_PERSON_PX) { kept.push(entry); continue; }
+      // 帯へ入れる割合。1なら完全に帯、0なら完全に人影
+      const share = clamp((LITE_PERSON_PX - spanPx) / (LITE_PERSON_PX - LITE_BAND_PX), 0, 1);
+      // ★画面座標は可視判定で出した値をそのまま使う。ここで投影し直すと、
+      //   遠くの客の数だけ計算が二重になって「軽く」のほうが重くなる（2026-09-16 実測）。
+      if (share < 1) { entry.fade = 1 - share; kept.push(entry); }
+      const key = `${unit.tier}|${unit.orientation}|${unit.row}`;
+      const band = bands.get(key);
+      if (!band) {
+        bands.set(key, { minX: entry.sx, maxX: entry.sx, sumY: entry.sy, sumDepth: entry.depth,
+          count: 1, occupied: person.occupied ? 1 : 0, share });
+      } else {
+        band.minX = Math.min(band.minX, entry.sx);
+        band.maxX = Math.max(band.maxX, entry.sx);
+        band.sumY += entry.sy;
+        band.sumDepth += entry.depth;
+        band.count += 1;
+        if (person.occupied) band.occupied += 1;
+        band.share = Math.max(band.share, share);
+      }
+    }
+    bands.forEach((band) => {
+      const depth = band.sumDepth / band.count;
+      kept.push({ type: "crowdBand", depth, band: { ...band, y: band.sumY / band.count, depth } });
+    });
+    return kept;
+  }
+
+  function drawCrowdBand(ctx, band) {
+    const width = band.maxX - band.minX;
+    if (!(width > 0) || band.count < 2) return;
+    const filled = band.occupied / band.count;                 // その列が埋まっている割合
+    const alpha = clamp(.5 - band.depth * .012, .1, .5) * band.share;
+    const shoulderPx = Math.max(.8, HOUSE_PERSON.shoulderHeightM * focal / band.depth);
+    const headPx = Math.max(.6, HOUSE_PERSON.headDiameterM * focal / band.depth);
+    // 肩の帯。埋まっている割合をそのまま濃さにすると、満席と空席の差が残る
+    ctx.fillStyle = `rgba(46,37,30,${alpha * (.35 + .65 * filled)})`;
+    ctx.fillRect(band.minX, band.y - shoulderPx / 2, width, shoulderPx);
+    // 頭の列。肩より明るい帯を細く重ねると、点の連なりとして読める
+    if (filled > 0) {
+      ctx.fillStyle = `rgba(88,71,55,${alpha * filled})`;
+      ctx.fillRect(band.minX, band.y - shoulderPx / 2 - headPx * .7, width, headPx * .8);
+    }
+  }
+
   function drawHouse(ctx) {
     const bowl = bowlHouseUnits(currentVenueModel(), W, D);
     if (bowl) {
-      const at = (point) => toCamera(point).z;
-      bowl.units.map((unit) => ({
-        ...unit,
-        depth: unit.type === "person"
-          ? at({ x: unit.person.x, y: unit.person.headY, z: unit.person.z })
-          : at(unit.center),
-      })).sort((a, b) => b.depth - a.depth).forEach((unit) => {
+      const visible = bowlVisibleUnits(bowl.units);
+      const rows = crowdLite() ? crowdBandsFrom(visible) : visible;
+      rows.sort((a, b) => b.depth - a.depth).forEach((entry) => {
+        if (entry.type === "crowdBand") { drawCrowdBand(ctx, entry.band); return; }
+        const unit = entry.unit;
         if (unit.type === "person") {
-          drawHousePerson(ctx, unit.person);
+          drawHousePerson(ctx, unit.person, entry.fade === undefined ? 1 : entry.fade);
           return;
         }
         if (unit.riser) fillPoly(ctx, unit.riser, unit.fill, BOWL_TIER_STROKE, 1);
@@ -2681,6 +2886,12 @@
     if (!ctx) return;
     state.yaw += (state.targetYaw - state.yaw) * .24;
     state.pitch += (state.targetPitch - state.pitch) * .24;
+    /* 目標にほぼ着いたら、そこで目標そのものへ揃える。
+       ★静止で描画を止める仕組み（下の needsContinuousFrames）と対にする決まり。
+         わずかに手前で止めると停止位置が毎回変わり、輪郭の滑らかさが揺れて絵が一致しない
+         （2026-09-16 実測: 最大6/256・0.6%の画素が変動した）。揃えれば毎回同じ絵になる。 */
+    if (Math.abs(state.targetYaw - state.yaw) <= SETTLE_EPSILON) state.yaw = state.targetYaw;
+    if (Math.abs(state.targetPitch - state.pitch) <= SETTLE_EPSILON) state.pitch = state.targetPitch;
     readCurrent();
     hitTargets.length = 0;
     ringScreenPts = [];
@@ -2751,13 +2962,66 @@
     drawPanelCopies();
   }
 
+  /* ★止まっている間は描き続けない（2026-09-16 実測: 静止していてもアリーナで1フレーム4.2msを
+     毎フレーム払い続けていた）。動きが収まったら rAF を止め、250msごとの見回りへ落とす。
+     ★完全に止めないのは、舞台の側が「変わった」と知らせる仕組みを持たず、こちらが毎フレーム
+       読み直して気づく作りだから。止め切ると本体で駒やシーンを動かしても3D画面が古いまま残る。
+       見回りの間隔で必ず追いつく（本人決定 2026-09-16・A案）。
+     ★操作があれば即座に連続描画へ戻す（wakeFrames）。動かしている間の手触りは変えない。 */
+  const IDLE_POLL_MS = 250;
+  const SETTLE_EPSILON = 1e-4;
+  let idleTimer = 0;
+
+  function needsContinuousFrames() {
+    if (!state.opened) return false;
+    // カメラの向きは目標へ少しずつ近づく。近づき切るまでは連続で描く
+    if (Math.abs(state.targetYaw - state.yaw) > SETTLE_EPSILON) return true;
+    if (Math.abs(state.targetPitch - state.pitch) > SETTLE_EPSILON) return true;
+    if (pressed.size) return true;                                   // 歩いている
+    if (drag || facingDrag || moveDrag || panelDrag) return true;    // 掴んでいる
+    if (data && data.transition) return true;                        // 転換の最中
+    if (sceneTimer || pendingScene !== null) return true;            // シーン送りの途中
+    return false;
+  }
+
+  function stopFrames() {
+    if (rafId) window.cancelAnimationFrame(rafId);
+    rafId = 0;
+    if (idleTimer) window.clearInterval(idleTimer);
+    idleTimer = 0;
+    lastFrameTime = null;
+  }
+
+  function idlePoll() {
+    if (!state.opened) { stopFrames(); return; }
+    renderFrame(0);                       // 外の変化をここで拾う
+    if (needsContinuousFrames()) wakeFrames();
+  }
+
+  /* 操作・寸法変更・シーン送りなど、動きが起きたら連続描画へ戻す。
+     どこから何度呼ばれても二重に予約しない。 */
+  function wakeFrames() {
+    if (!state.opened) return;
+    if (idleTimer) { window.clearInterval(idleTimer); idleTimer = 0; }
+    if (rafId) return;
+    lastFrameTime = null;
+    rafId = window.requestAnimationFrame(frame);
+  }
+
   function frame(timestamp) {
     if (!state.opened) return;
     const now = finite(timestamp, 0);
     const dtSeconds = frameDelta(lastFrameTime, now);
     lastFrameTime = now;
     renderFrame(dtSeconds);
-    rafId = window.requestAnimationFrame(frame);
+    if (needsContinuousFrames()) {
+      rafId = window.requestAnimationFrame(frame);
+      return;
+    }
+    // 収まった。最後の1枚は描き終えているので、ここからは見回りだけにする
+    rafId = 0;
+    lastFrameTime = null;
+    if (!idleTimer) idleTimer = window.setInterval(idlePoll, IDLE_POLL_MS);
   }
 
   function runPendingScene() {
@@ -2782,6 +3046,7 @@
 
   function queueScene(direction) {
     if (!state.opened) return;
+    wakeFrames();
     const current = readCurrent();
     const count = finite(current.sceneCount, 0);
     if (!count) return;
@@ -3040,6 +3305,7 @@
     loadPanelLayouts();
     loadLens();
     loadHouseMode();
+    loadCrowdMode();
     const initial = data.pieces.find((piece) => piece.id === bridge.initialPieceId && piece.type === "performer");
     state.free = null;
     if (bridge.initialView === "free") {
@@ -3083,15 +3349,16 @@
     window.addEventListener("keydown", onKeyDown, true);
     window.addEventListener("keyup", onKeyUp, true);
     window.addEventListener("blur", onBlur);
-    rafId = window.requestAnimationFrame(frame);
+    window.addEventListener("resize", wakeFrames);
+    if (window.document) window.document.addEventListener("visibilitychange", wakeFrames);
+    wakeFrames();
     return true;
   }
 
   function close(notify = true) {
     if (!elements || !state.opened) return;
     state.opened = false;
-    if (rafId) window.cancelAnimationFrame(rafId);
-    rafId = 0;
+    stopFrames();                 // rAF と見回りタイマーの両方を解除する
     clearTimeout(sceneTimer);
     clearTimeout(toastTimer);
     sceneTimer = 0;
@@ -3120,6 +3387,8 @@
     window.removeEventListener("keydown", onKeyDown, true);
     window.removeEventListener("keyup", onKeyUp, true);
     window.removeEventListener("blur", onBlur);
+    window.removeEventListener("resize", wakeFrames);
+    if (window.document) window.document.removeEventListener("visibilitychange", wakeFrames);
     const onClose = state.bridge && state.bridge.onClose;
     state.bridge = null;
     state.free = null;
@@ -3133,6 +3402,9 @@
       pieceUOf, pieceVOf, pieceBaseOf, pieceGlowOf,
       moveFree, clampFree, freePresets, bowlGeometry, bowlAudience, bowlOrientations,
       bowlHouseUnits, bowlRoofRibs, bowlFloorGrid,
+      buildBowlHouseUnits, bowlUnitsCacheClear: () => bowlUnitsCache.clear(), bowlVisibleUnits,
+      crowdModes: CROWD_MODES, normalizeCrowdModeId, crowdModeById,
+      bowlUnitsCacheSize: () => bowlUnitsCache.size,
       frameDelta, wingWidthFor, wingLegX, wingLegPairs,
       wingLegZs, houseSeatsPerRow, houseRiserRows, facingFromGround, uvFromGround, pickFrom,
       seatNoise, houseSeats, houseBalconyRows, houseRingRows, seatSpanEnds,

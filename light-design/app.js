@@ -886,7 +886,7 @@
     else { renderTransport(); draw(); renderRuntimeStatus(true); }
   }
   function home() { stop(); resetPlaybackRuntime(); }
-  function tick(ts) { if (!state.play.on) return; if (!state.play.last) state.play.last = ts; state.play.t += ts - state.play.last; state.play.last = ts; renderTransport(); draw(); state.play.raf = requestAnimationFrame(tick); }
+  function tick(ts) { if (!state.play.on) return; if (!state.play.last) state.play.last = ts; state.play.t += ts - state.play.last; state.play.last = ts; renderTransport(); cancelPendingDraw(); draw(); state.play.raf = requestAnimationFrame(tick); }
   function togglePlay() { state.play.on ? stop(null, true) : play(); }
   /* 2026-09-14 本人要望: 操作は再生／停止のトグル1個だけ。秒数と「再生中」の札は出さない。
      文字は押したら何が起きるかを出す（停止中＝再生・再生中＝停止）。状態はボタンの色でも示す。 */
@@ -2306,6 +2306,40 @@
     renderRuntimeStatus();
   }
 
+  /* 掴んで動かしている間、入力が届くたびに全部の図を描き直していた。
+     表示が更新されるのは毎秒60回だが、ポインタの知らせはそれより細かく届くことがあり、
+     同じ1フレームの中で2回以上描くことになる（2026-09-16 実測: 70灯・全点灯で draw() 1回 5.8〜12.4ms）。
+     ★状態の更新は今までどおりその場で行い、「描くこと」だけを次の表示の機会へ1回にまとめる。
+     ★掴んでいる指を離したときは待たせない（flushDraw）。最後の1枚が古いままにならないようにする。 */
+  let pendingDrawRaf = 0;
+  let pendingInspector = false;
+
+  function requestDraw(options) {
+    if (options && options.inspector) pendingInspector = true;
+    if (pendingDrawRaf) return;
+    pendingDrawRaf = requestAnimationFrame(() => {
+      pendingDrawRaf = 0;
+      const inspector = pendingInspector;
+      pendingInspector = false;
+      draw();
+      if (inspector) renderInspector();
+    });
+  }
+
+  function flushDraw() {
+    if (pendingDrawRaf) { cancelAnimationFrame(pendingDrawRaf); pendingDrawRaf = 0; }
+    const inspector = pendingInspector;
+    pendingInspector = false;
+    draw();
+    if (inspector) renderInspector();
+  }
+
+  /* 予約だけ取り消す。このあと別の道（renderAll など）で必ず描く場合に使う */
+  function cancelPendingDraw() {
+    if (pendingDrawRaf) { cancelAnimationFrame(pendingDrawRaf); pendingDrawRaf = 0; }
+    pendingInspector = false;
+  }
+
   /* ---------- 当たり判定 ---------- */
   const pointSegmentDistance = (p, a, b) => {
     const dx = b.X - a.X, dy = b.Y - a.Y, den = dx * dx + dy * dy || 1;
@@ -2480,10 +2514,11 @@
         state.sel = new Set([...dg.base, ...inside.map((f) => f.id)]);
       }
     }
-    if (dg) { draw(); if (dg.kind !== "handle") renderInspector(); } else draw();
+    if (dg) requestDraw({ inspector: dg.kind !== "handle" }); else requestDraw();
   });
   const endDrag = () => {
     const dg = state.drag; if (!dg) return; state.drag = null;
+    cancelPendingDraw();                 // このあと renderAll が最新の姿で描き直す
     if (dg.kind === "marquee") { renderAll(); return; }   // 範囲選択は元に戻す対象にしない（選択はundo外）
     if (dg.moved) { state.history.push(dg.before); state.future.length = 0; state.dirty = true; baseline = snapshot(); } renderAll();
   };
@@ -2642,7 +2677,7 @@
     cv.addEventListener("pointermove", (ev) => {
       const side = sec.kind;
       const pt = canvasPoint(cv, ev); const B = secBox(cv, side); state.hover = { canvas: sec.kind, ...pt }; const dg = state.drag;
-      if (!dg) { if (state.tool === "side" && side !== "front") draw(); return; }
+      if (!dg) { if (state.tool === "side" && side !== "front") requestDraw(); return; }
       if (dg.sec && dg.sec !== sec) return; // 掴んだ図の上だけで動かす
       if (dg.kind === "marquee") {
         dg.x1 = pt.X; dg.y1 = pt.Y;
@@ -2653,9 +2688,9 @@
           state.sel = new Set([...dg.base, ...inside.map((f) => f.id)]);
         }
         if (dg.moved) state.aimMirror = null;
-        draw(); renderInspector(); return;
+        requestDraw({ inspector: true }); return;
       }
-      if (dg.kind === "sideVH") { const f = fixtureById(dg.fid); if (f) { const vh = E.sideToVH(state.dims, B, side, pt.X, pt.Y); f.mount.v = snapV(vh.v); f.mount.h = E.clamp(snapH(vh.h), 0.3, state.dims.H); dg.moved = true; } draw(); renderInspector(); return; }
+      if (dg.kind === "sideVH") { const f = fixtureById(dg.fid); if (f) { const vh = E.sideToVH(state.dims, B, side, pt.X, pt.Y); f.mount.v = snapV(vh.v); f.mount.h = E.clamp(snapH(vh.h), 0.3, state.dims.H); dg.moved = true; } requestDraw({ inspector: true }); return; }
       if (dg.kind === "trussVH") { const t = E.trussById(state.rig, dg.tid); if (t) { const vh = E.sideToVH(state.dims, B, side, pt.X, pt.Y); t.v = snapV(vh.v); t.h = E.clamp(snapH(vh.h), 2, state.dims.H); t.tentative = false; dg.moved = true; } }
       else if (dg.kind === "trussH") { const t = E.trussById(state.rig, dg.tid); if (t) { const uh = state.front3d ? E.frontPerspToUH(state.dims, B, state.seat, pt.X, pt.Y, t.v) : E.frontFarToUH(state.dims, B, pt.X, pt.Y, t.v); t.h = E.clamp(snapH(uh.h), 2, state.dims.H); t.tentative = false; dg.moved = true; } }
       else if (dg.kind === "sideH") { const f = fixtureById(dg.fid); if (f) { f.mount.h = E.clamp(snapH((B.y + B.h - pt.Y) / B.h * state.dims.H), 0.3, state.dims.H); dg.moved = true; } }
@@ -2669,11 +2704,11 @@
         applyHandleDrag(dg, { u: snapU(uh.u), hM: snapH(uh.h) }, "uh");
       }
       else if (dg.kind === "handle" && dg.axis === "vh") { dg.lock = ev.shiftKey; const vh = E.sideToVH(state.dims, B, side, pt.X, pt.Y); applyHandleDrag(dg, { v: snapV(vh.v), hM: snapH(vh.h), aheadM:distanceMetric?((side==="shimote"?1-(pt.X-B.x)/B.w:(pt.X-B.x)/B.w)-1)*state.dims.D:undefined }, "vh"); }
-      draw(); if (dg.kind !== "handle") renderInspector();
+      requestDraw({ inspector: dg.kind !== "handle" });
     });
     cv.addEventListener("dblclick", (ev) => { ev.preventDefault(); toggleLightOf(hitFixtureSec(sec, canvasPoint(cv, ev))); });
     cv.addEventListener("pointerup", endDrag); cv.addEventListener("pointercancel", endDrag);
-    cv.addEventListener("pointerleave", () => { state.hover = null; draw(); });
+    cv.addEventListener("pointerleave", () => { state.hover = null; requestDraw(); });
   }
   SECS.forEach(bindSection);
   // 側面図をどちら側にするか。選び直しても図の見方は変わらない（向きだけ入れ替わる）
