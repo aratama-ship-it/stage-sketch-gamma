@@ -148,6 +148,11 @@
     rowVisibilityInputs: [...panel.querySelectorAll("[data-stage-timeline-row-visibility]")],
   };
 
+  // 表示設定は音源行の端ではなく、再生操作のある2段目の先頭へ置く。
+  const settingsHost = els.settingsTrigger && els.settingsTrigger.closest(".stage-timeline-settings");
+  const transportStrip = panel.querySelector(".stage-timeline-menu-strip.is-transport");
+  if (settingsHost && transportStrip) transportStrip.prepend(settingsHost);
+
   const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const tx = (japanese) => {
@@ -2863,8 +2868,19 @@
     if (event.repeat) return;
     if (timelineInteractionIsBlocked()
         || document.querySelector(".stage-modal:not([hidden])")) return;
+    const opening = ui.collapsed;
     setTimelineCollapsed(!ui.collapsed, { save: true });
-    if (!ui.collapsed) renderTimeline();
+    if (!ui.collapsed) {
+      renderTimeline();
+      if (opening) requestAnimationFrame(() => {
+        const toolbar = panel.querySelector(".stage-timeline-toolbar");
+        const needed = (toolbar?.scrollHeight || 0) + (els.viewport?.scrollHeight || 0)
+          + timelineResizeHandleHeight();
+        // Eでだけ、入る範囲まで全レーンを見せ、残りは既存の内部スクロールへ任せる。
+        applyTimelineHeight(Math.min(maxTimelineHeight(), Math.max(DEFAULT_HEIGHT, needed)), { save: true });
+        renderTimeline();
+      });
+    }
   }, true);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && timelineLockMenu) {

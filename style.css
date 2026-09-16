@@ -17081,3 +17081,22 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
 #stage-canvas-stack.is-single-view > .stage-board-frame.is-closed {
   display: none;
 }
+
+/* Gamma 0.1.2: 選択の行と、横に余裕のある名簿をコンパクトに保つ。 */
+.stage-selected-heading .stage-icon-action { flex: 0 0 auto; margin: 0 0 8px; }
+.stage-inline-control { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px; margin: 8px 0; }
+.stage-inline-control .stage-control-label { margin: 0; white-space: nowrap; }
+.stage-inline-control .stage-pose-button,
+.stage-inline-control .stage-select { min-width: 0; margin: 0; }
+.stage-header-project { align-self: center; }
+.stage-show-elapsed-group { display: inline-grid; align-content: center; gap: 2px; }
+.stage-show-elapsed { display: block; color: var(--milk); font-size: 13px; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.stage-header-volume { margin-left: auto; border: 0; background: transparent; text-align: right; }
+.stage-header-volume span { display: block; text-align: right; }
+.stage-header-volume input { display: block; margin-left: auto; }
+.stage-timeline-settings { position: relative; top: auto; right: auto; }
+.stage-timeline-settings-panel { left: 0; right: auto; }
+@media (min-width: 1180px) {
+  .stage-roster-group > .stage-cast-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 8px; }
+  .stage-roster-group > .stage-roster-list-resize { grid-column: 1 / -1; }
+}

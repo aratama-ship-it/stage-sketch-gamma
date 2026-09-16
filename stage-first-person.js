@@ -797,6 +797,7 @@
     targetYaw: 180,
     targetPitch: -2,
     sel: null,
+    previewOnly: false,
   };
   let elements = null;
   let rafId = 0;
@@ -876,6 +877,7 @@
 .stage-fpv-pose-tile.on{background:#e8e2d4;color:#14100c;border-color:#e8e2d4}
 #stage-fpv-toast{left:50%;top:70px;transform:translateX(-50%);font-size:12.5px;background:rgba(var(--stage-ui-float-rgb,22,16,11),.86);padding:7px 14px;border-radius:3px;opacity:0;transition:opacity .4s;pointer-events:none;border:1px solid rgba(232,226,212,.2)}#stage-fpv-toast.show{opacity:1}
 #stage-fpv-fade{position:absolute;inset:0;background:#0d0a08;opacity:0;pointer-events:none;transition:opacity .16s}#stage-fpv-fade.on{opacity:1}#stage-fpv-close{position:absolute;top:14px;right:14px;width:44px;height:44px;padding:0;border:1px solid rgba(255,255,255,.32);border-radius:50%;background:rgba(0,0,0,.45);color:#fff;font-size:20px;line-height:42px;text-align:center;z-index:72;cursor:pointer;-webkit-tap-highlight-color:transparent}
+ #stage-fpv-overlay.stage-fpv-preview{inset:20vh 25vw;z-index:80;border:1px solid rgba(232,226,212,.38);box-shadow:0 18px 54px rgba(0,0,0,.58)}#stage-fpv-overlay.stage-fpv-preview #stage-fpv-title,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-minimap,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-whose,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-cast,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-presets,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-nav,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-keys,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-hint,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-edit,#stage-fpv-overlay.stage-fpv-preview #stage-fpv-optics,#stage-fpv-overlay.stage-fpv-preview .stage-fpv-panel{display:none!important}#stage-fpv-preview-3d{position:absolute;z-index:73;left:50%;bottom:16px;transform:translateX(-50%);padding:9px 16px;border:1px solid rgba(232,226,212,.45);background:rgba(13,10,8,.82);color:#e8e2d4;font:600 13px/1.2 inherit;cursor:pointer}@media(max-width:800px){#stage-fpv-overlay.stage-fpv-preview{inset:10vh 7vw}}
 `;
     (document.head || document.documentElement || document.body).appendChild(style);
   }
@@ -979,18 +981,22 @@
       panel.addEventListener("pointerup", endPanelDrag);
       panel.addEventListener("pointercancel", endPanelDrag);
     });
+    const preview3d = createElement("button", "stage-fpv-preview-3d");
+    preview3d.type = "button";
+    preview3d.textContent = "3Dモードで見る";
     const closeButton = createElement("button", "stage-fpv-close");
     closeButton.type = "button";
     closeButton.textContent = "✕";
     optics.append(panelToggles, lens, house);
     root.append(canvas, fade, title, minimap, optics,
       panels.front.panel, panels.plan.panel,
-      whose, cast, presets, nav, keyGuide, hint, edit, toast, closeButton);
+      whose, cast, presets, nav, keyGuide, hint, edit, toast, preview3d, closeButton);
     document.body.appendChild(root);
     elements = { root, canvas, fade, show, act, scene, approx, minimap, whose, cast, presets,
       previous, count, next, keyGuide, hint, edit, editDot, editName, editFacing, editHint, editPoses,
-      toast, closeButton, panelToggles, lens, lensChips, house, houseChips, panels };
+      toast, closeButton, preview3d, panelToggles, lens, lensChips, house, houseChips, panels };
     closeButton.addEventListener("click", close);
+    preview3d.addEventListener("click", () => state.bridge?.open3d?.());
     previous.addEventListener("click", () => queueScene(-1));
     next.addEventListener("click", () => queueScene(1));
     canvas.addEventListener("pointerdown", onPointerDown);
@@ -2806,7 +2812,7 @@
   /* スクロールで選択中の演者を回す。ノッチ1つ(±100)で15度、書き込みは5度刻み。
      一呼吸(800ms)続いたスクロールは1ジェスチャ＝undo1回にまとめる。 */
   function onWheel(event) {
-    if (!state.opened || !state.sel || !data || data.transition) return;
+    if (!state.opened || state.previewOnly || !state.sel || !data || data.transition) return;
     const piece = data.pieces.find((candidate) => (
       candidate.id === state.sel && candidate.type === "performer" && !candidate.exitWalker
     ));
@@ -2828,6 +2834,14 @@
   }
 
   function onPointerDown(event) {
+    /* 演者視点プレビューでは舞台データを一切操作しない。ドラッグは視線だけ。 */
+    if (state.previewOnly) {
+      downAt = { x: event.clientX, y: event.clientY, moved: true };
+      drag = { x: event.clientX, y: event.clientY };
+      elements.canvas.classList.add("dragging");
+      if (elements.canvas.setPointerCapture) elements.canvas.setPointerCapture(event.pointerId);
+      return;
+    }
     downAt = { x: event.clientX, y: event.clientY, moved: false };
     const point = canvasPoint(event);
     if (state.sel && data && !data.transition && hitsFacingControl(point)) {
@@ -2966,6 +2980,11 @@
   function onKeyDown(event) {
     if (!state.opened || event.isComposing) return;
     const code = event.code || event.key;
+    if (state.previewOnly) {
+      consumeKey(event);
+      if (code === "Escape") close();
+      return;
+    }
     if (code === "Escape") {
       consumeKey(event);
       if (state.sel) {
@@ -3016,6 +3035,7 @@
     ensureDom();
     if (state.opened) close(false);
     state.bridge = bridge;
+    state.previewOnly = Boolean(bridge.previewOnly);
     readCurrent();
     loadPanelLayouts();
     loadLens();
@@ -3048,6 +3068,8 @@
     hitTargets.length = 0;
     wasTransitioning = Boolean(data.transition);
     elements.root.classList.toggle("stage-fpv-workspace", Boolean(bridge.workspace3d));
+    elements.root.classList.toggle("stage-fpv-preview", state.previewOnly);
+    elements.preview3d.hidden = !state.previewOnly;
     if (!bridge.workspace3d) {
       if (typeof elements.root.style.removeProperty === "function") elements.root.style.removeProperty("--stage-fpv-workspace-top");
       else elements.root.style["--stage-fpv-workspace-top"] = "";
@@ -3090,6 +3112,8 @@
     elements.root.hidden = true;
     elements.root.setAttribute("aria-hidden", "true");
     elements.root.classList.remove("stage-fpv-workspace");
+    elements.root.classList.remove("stage-fpv-preview");
+    state.previewOnly = false;
     if (typeof elements.root.style.removeProperty === "function") elements.root.style.removeProperty("--stage-fpv-workspace-top");
     else elements.root.style["--stage-fpv-workspace-top"] = "";
     elements.fade.classList.remove("on");

@@ -4313,7 +4313,6 @@
     photoBrightValue: document.getElementById("stage-photo-bright-value"),
     photoClear: document.getElementById("stage-photo-clear"),
     photoNote: document.getElementById("stage-photo-note"),
-    selectionEmpty: document.getElementById("stage-selection-empty"),
     selectionControls: document.getElementById("stage-selection-controls"),
     selectedName: document.getElementById("stage-selected-name"),
     selectionScope: document.getElementById("stage-selection-scope"),
@@ -4343,7 +4342,6 @@
     selectedLightCustomIntro: document.getElementById("stage-selected-light-custom-intro"),
     fpvOpen: document.getElementById("stage-fpv-open"),
     freecamOpen: document.getElementById("stage-freecam-open"),
-    dimsFromSet: document.getElementById("stage-dims-from-set"),
     openSetInfo: document.getElementById("stage-open-setinfo"),
     routeClear: document.getElementById("stage-route-clear"),
     pieceLock: document.getElementById("stage-piece-lock"),
@@ -4755,7 +4753,6 @@
     rigName: document.getElementById("stage-rig-name"),
     rigSave: document.getElementById("stage-rig-save"),
     machineryCurtainKind: document.getElementById("stage-machinery-curtain-kind"),
-    machineryPresets: document.getElementById("stage-machinery-presets"),
     sceneSection: document.getElementById("stage-scene-section"),
     setInfo: document.getElementById("stage-setinfo"),
     setInfoBackdrop: document.getElementById("stage-setinfo-backdrop"),
@@ -5429,7 +5426,7 @@
       showSetNames: true,
       showLightNames: true,
       // 正面図の隅に「客席のどこから見ているか」の小図を出すか
-      showSeatMap: true,
+    showSeatMap: false,
       // 平面図で吊物（宙に吊ってあるもの）まで出すか
       showFlown: false,
       /* 照明と動線の出し入れ。図ごとに別。
@@ -6379,7 +6376,8 @@
       showNames: raw.showNames === undefined ? true : Boolean(raw.showNames),
       showSetNames: raw.showSetNames === undefined ? true : Boolean(raw.showSetNames),
       showLightNames: raw.showLightNames === undefined ? true : Boolean(raw.showLightNames),
-      showSeatMap: raw.showSeatMap === undefined ? true : Boolean(raw.showSeatMap),
+      // 既存の明示設定はそのまま尊重し、新規状態だけ「見る位置の図」を閉じる。
+      showSeatMap: raw.showSeatMap === undefined ? false : Boolean(raw.showSeatMap),
       showFlown: Boolean(raw.showFlown),
       showLightsFront: raw.showLightsFront === undefined ? true : Boolean(raw.showLightsFront),
       showLightsPlan: raw.showLightsPlan === undefined ? true : Boolean(raw.showLightsPlan),
@@ -8838,7 +8836,6 @@
       const item = currentSetItem();
       renderPropShapeSelect(els.setInfoPropShape, item && item.propShape);
     }
-    renderMachineryPresets();
     renderVenueControls();
     updateInspector();
     render();
@@ -17038,52 +17035,12 @@
     return `${Math.round(d.w * 100)}×${Math.round(d.d * 100)}×${Math.round(d.h * 100)}cm`;
   }
 
-  function renderGammaMachineryList() {
-    const host = document.getElementById("gamma-machinery-list");
-    if (!host) return;
-    host.replaceChildren();
-    const machineryKinds = new Set(["revolve", "deck", "curtain", "pool", "seri"]);
-    const items = (state.project.sets || []).filter((item) => machineryKinds.has(item.kind));
-    if (!items.length) {
-      const empty = document.createElement("p");
-      empty.className = "stage-cast-empty";
-      empty.textContent = "まだ舞台機構を置いていません。下の種類または既製プリセットから追加できます。";
-      host.append(empty);
-      return;
-    }
-    const lead = document.createElement("p");
-    lead.className = "stage-roster-head";
-    lead.textContent = "このシーンの舞台機構";
-    host.append(lead);
-    items.forEach((item) => {
-      const row = document.createElement("div");
-      row.className = "stage-cast-row";
-      const select = document.createElement("button");
-      select.type = "button";
-      select.className = "stage-cast-name";
-      select.textContent = item.name;
-      select.title = "押すと選び、下の場面ごとの状態を変更できます";
-      select.addEventListener("click", () => pickOnStage((piece) => piece.setId === item.id, item.name, false));
-      const onStage = setOnStage(item.id);
-      const toggle = document.createElement("button");
-      toggle.type = "button";
-      toggle.className = `stage-cast-status ${onStage ? "is-on" : "is-off"}`;
-      toggle.textContent = onStage ? "舞台上" : "舞台裏";
-      toggle.title = onStage ? "押すとこのシーンでは舞台裏へ下げます" : "押すとこのシーンの舞台へ出します";
-      toggle.addEventListener("click", () => toggleSetOnStage(item.id));
-      row.append(select, toggle);
-      host.append(row);
-    });
-  }
-
   function renderSets() {
     renderSetList(els.setList, (item) => item.kind !== "light" && !ROSTER_PROP_KINDS.has(item.kind),
       tx("まだ何も登録していません。名前と形を選んで追加してください。"));
     renderSetList(els.propList, (item) => ROSTER_PROP_KINDS.has(item.kind), "");
-    renderGammaMachineryList();
     syncRosterGroups();
   }
-  window.addEventListener("stage-gamma-machinery-mounted", renderGammaMachineryList);
 
   /* 照明の一覧は種類ごとに枠を分ける。吊りとSSと前明かりと転がしは、
    * 仕込む場所も役目も別物なので、ひと続きに並べると読み分けられない。 */
@@ -19432,46 +19389,6 @@
     selectedId = piece.id;
     renderSets(); renderScenes(); updateInspector(); render(); persistSoon();
     announce(`${name}を舞台へ置きました。`);
-  }
-
-  function applyMachineryPreset(preset) {
-    const machinery = window.SHOSAI_STAGE_MACHINERY;
-    if (!machinery || !preset) return;
-    const itemCount = Array.isArray(preset.items) ? preset.items.length : 0;
-    if (!itemCount || !canAddSets(itemCount) || !canAddScenePieces(sc(), itemCount)) return;
-    checkpoint();
-    const created = machinery.expandPreset(state.project, sc(), preset, {
-      makeId: (prefix) => prefix === "piece" ? nextId() : rid(prefix),
-      normalizeDims,
-      normalizePiece,
-      isEn: languageValue(() => true, () => false),
-    });
-    selectedId = created.length ? created[created.length - 1].piece.id : null;
-    renderSets(); renderScenes(); updateInspector(); render(); persistSoon();
-    announce(`${languageValue(() => (preset.nameEn), () => (preset.nameJa))}を舞台へ置きました。`);
-  }
-
-  function renderMachineryPresets() {
-    const host = els.machineryPresets;
-    const machinery = window.SHOSAI_STAGE_MACHINERY;
-    if (!host || !machinery) return;
-    host.innerHTML = "";
-    const library = machinery.loadPresetLibrary(localStorage, venueSize());
-    library.presets.forEach((preset) => {
-      const row = document.createElement("div");
-      row.className = "stage-machinery-preset-row";
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "btn-quiet";
-      button.textContent = languageValue(() => (preset.nameEn || preset.nameJa), () => (preset.nameJa));
-      button.title = preset.sourceNote || "";
-      button.addEventListener("click", () => applyMachineryPreset(preset));
-      const badge = document.createElement("span");
-      badge.className = "stage-machinery-estimated";
-      badge.textContent = tx("推定値・要確認");
-      row.append(button, badge);
-      host.append(row);
-    });
   }
 
   document.querySelectorAll("[data-machinery-kind]").forEach((button) => {
@@ -25403,8 +25320,9 @@ ${propsPlotHtml}
       }
       const floating = (!document.body.dataset.gammaWorkspace || document.body.dataset.gammaWorkspace === "normal")
         && featureOn("floatingInspector");
-      inspector.classList.toggle("gamma-selection-floating", Boolean(piece && floating));
-      if (!floating) {
+      const shouldFloat = Boolean(piece && floating);
+      inspector.classList.toggle("gamma-selection-floating", shouldFloat);
+      if (!shouldFloat) {
         // 通常の右列へ戻すときは、浮動時の座標と寸法を残さない。
         ["position", "left", "top", "width", "maxHeight", "zIndex", "pointerEvents"].forEach((key) => {
           inspector.style[key] = "";
@@ -25412,6 +25330,9 @@ ${propsPlotHtml}
         delete inspector.dataset.gammaPositionLocked;
         delete inspector.dataset.gammaUserMoved;
         delete inspector.dataset.gammaPanelSide;
+        delete inspector.dataset.gammaAnchorKey;
+        delete inspector.dataset.gammaSelectionKey;
+        delete inspector.dataset.gammaObjectDragging;
       }
       if (piece && floating && inspector.dataset.gammaPositionLocked !== "true") {
         const canvasEl = floatingInspectorAnchor.view === "plan" ? planCanvas : canvas;
@@ -27797,13 +27718,14 @@ ${propsPlotHtml}
     window.dispatchEvent(new CustomEvent("stage-fpv-visibility", { detail: { active: Boolean(active) } }));
   }
 
-  function openFpv(initialPieceId, initialView, returnFocus, workspace3d = false) {
+  function openFpv(initialPieceId, initialView, returnFocus, workspace3d = false, previewOnly = false) {
     const fpv = window.SHOSAI_STAGE_FPV;
     if (!fpv) return false;
     const opened = fpv.open({
       initialPieceId,
       initialView,
       workspace3d,
+      previewOnly,
       read: () => {
         const current = sc();
         const rows = state.project.scenes;
@@ -27941,6 +27863,12 @@ ${propsPlotHtml}
       listPoses: () => POSES.map((p) => ({ id: p.id, label: poseName(p) })),
       drawPosePreview: (canvas, poseId, color) => drawPosePreview(canvas, poseId, color),
       facingLabel,
+      open3d: () => {
+        if (!previewOnly) return;
+        fpv.close(false);
+        setFreecamWorkspaceActive(true);
+        openFpv(initialPieceId, initialView, returnFocus, true, false);
+      },
       onClose: () => {
         window.dispatchEvent(new CustomEvent("stage-fpv-visibility", { detail: { active: false } }));
         if (workspace3d) setFreecamWorkspaceActive(false);
@@ -27957,7 +27885,7 @@ ${propsPlotHtml}
     els.fpvOpen.addEventListener("click", () => {
       const piece = selectedPiece();
       if (!piece || piece.type !== "performer") return;
-      openFpv(piece.id, undefined, els.fpvOpen);
+      openFpv(piece.id, undefined, els.fpvOpen, false, true);
     });
   }
   if (els.freecamOpen) {
@@ -28276,14 +28204,6 @@ ${propsPlotHtml}
     const member = piece && piece.castId
       ? state.project.cast.find((c) => c.id === piece.castId) : null;
     const owner = registered || member;
-    if (els.dimsFromSet) {
-      // 演者の名前・色・身長の由来を繰り返す補足は出さない。セットの寸法由来は維持する。
-      els.dimsFromSet.hidden = !registered;
-      if (registered) els.dimsFromSet.textContent = sx(
-        `名前・色・寸法は「${registered.name}」で決めます（${setDimLabel(registered)}）。`,
-        `Name, colour and size come from \u201c${registered.name}\u201d (${setDimLabel(registered)}).`,
-      );
-    }
     if (els.liftControls) {
       const flown = Boolean(piece && isFlown(piece));
       els.liftControls.hidden = !flown;
@@ -28652,7 +28572,6 @@ ${propsPlotHtml}
     if (els.sceneGridModal && !els.sceneGridModal.hidden) renderSceneGrid();
     if (els.prefsModal && !els.prefsModal.hidden) { renderPrefs(); renderPrefKeys(); }
     if (els.helpModal && !els.helpModal.hidden) renderManualHelp();
-    renderMachineryPresets();
     renderModelPicker();
     if (els.animMsValue) els.animMsValue.textContent = `${(state.sceneAnimMs / 1000).toFixed(1)}${languageValue(() => ("s"), () => ("秒"))}`;
     // 共有セッションのパネルは data-no-i18n（自前管理）。フックで引き直してもらう
@@ -30052,7 +29971,6 @@ ${propsPlotHtml}
       renderSets();
       renderLights();
       renderRigs();
-      renderMachineryPresets();
       renderVenueControls();
       setTool("select");
       updateInspector();

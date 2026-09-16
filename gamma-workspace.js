@@ -27,19 +27,13 @@
   const lightPanel=document.querySelector('[data-panel="light"]');
   if(lightPanel) lightPanel.hidden=true;
   function mountMachineryWorkspace(){
-    const workspace=document.getElementById('gamma-machinery-workspace');
     const machineryPanel=document.querySelector('[data-panel="machinery"]');
-    const controls=document.getElementById('gamma-machinery-controls-host');
-    if(!workspace||!machineryPanel||!controls) return;
+    const host=document.getElementById('stage-venue-editor-machinery-host');
+    if(!machineryPanel||!host) return;
     machineryPanel.dataset.gammaWorkspace='venue';
     machineryPanel.hidden=false;
-    controls.replaceChildren();
-    ['stage-seri-controls','stage-machinery-controls','stage-machinery-scene-diff','stage-machinery-estimated','stage-deck-warning'].forEach((id)=>{
-      const node=document.getElementById(id); if(node) controls.append(node);
-    });
-    // 劇場の基本設定を先に読めるよう、既存モーダルの後へ舞台機構を移す。
-    workspace.append(machineryPanel);
-    venueWorkspace.append(workspace);
+    // 独立ワークスペースではなく、劇場設定カスタムの7番目にまとめる。
+    host.replaceChildren(machineryPanel);
     window.dispatchEvent(new Event('stage-gamma-machinery-mounted'));
   }
   mountMachineryWorkspace();
