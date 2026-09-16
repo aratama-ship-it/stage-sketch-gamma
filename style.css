@@ -17088,7 +17088,7 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
 .stage-inline-control .stage-control-label { margin: 0; white-space: nowrap; }
 .stage-inline-control .stage-pose-button,
 .stage-inline-control .stage-select { min-width: 0; margin: 0; }
-.stage-header-project { align-self: center; }
+.stage-header-project { align-self: center; align-items: center; }
 .stage-show-elapsed-group { display: inline-grid; align-content: center; gap: 2px; }
 .stage-show-elapsed { display: block; color: var(--milk); font-size: 13px; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
 .stage-header-volume { margin-left: auto; border: 0; background: transparent; text-align: right; }
