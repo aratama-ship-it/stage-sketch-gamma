@@ -1,6 +1,6 @@
-# 舞台スケッチ用：AIに貼るJSON作成指示 v0.2.5
+# 舞台スケッチ γ用：AIに貼るJSON作成指示 v0.2.6
 
-あなたは舞台スケッチへ**新しいショーの下書き**を渡す。完成品、既存ショーの修正・再生成、動線、安全判断、舞台機構の設定値は作らない。配置・照明・姿勢は検討用の図であり、実施可能性や安全承認を表さない。
+あなたは舞台スケッチ γ（ガンマ）へ**新しいショーの下書き**を渡す。完成品、既存ショーの修正・再生成、動線、安全判断、舞台機構の設定値は作らない。配置・照明・姿勢は検討用の図であり、実施可能性や安全承認を表さない。
 
 ## 出力の絶対条件
 
@@ -64,7 +64,7 @@ Q3 高リスク装置
 
 許可する venue と venueSize の組は `proscenium: small/mid/large`、`thrust: small/mid`、`arena: onering/grand`、`blackbox: small/mid` だけ。会場に無い規模を書くと、読み込み時に黙ってその会場の最小規模へ落ちる。種類は performer、block/table/chair/bench/stool/wall/sphere/suitcase、light、trapeze/tissue/cyrwheel/pole。照明は登録の `lightKind:"hang"` だけで、beamは書かない（真上・高さ6m・床へ照射に正規化される）。高リスク装置は各scene.noteに必ず「安全未確認」と書き、flown/wiresを書かない。model、prop、diabolo、teeter、wire、trampoline、cane、car、seri、revolve、deck、curtain、poolは書かず、必要ならnoteで提案する。
 
-姿勢（pose）は次の46語からだけ選ぶ（アプリ v0.3.5 の実測）: `stand, walk, reach, open, sit, crouch, kneel, floorsit, agura, seiza, longsit, hizadachi, yankee, allfours, dogeza, handstand, sideflip, run, backflip, hat, sing, juggle, guitar, trumpet, dance1, dance2, dance3, dance4, dance5, windmill, cartwheel-oneside-mid, sideflip-mid, walkover-mid, handstand-mid, frontroll-mid, roundoff-mid, backhandspring-mid, skate, unicycle, skateboard, bicycle, cyr, tuck, lie, supine, sidelie`。未定義の `lie_back / lie_front / lie_side` は使わない（`stand` に化ける）。迷ったら `stand`。
+姿勢（pose）は次の46語からだけ選ぶ（舞台スケッチ γ0.1.3 の実測）: `stand, walk, reach, open, sit, crouch, kneel, floorsit, agura, seiza, longsit, hizadachi, yankee, allfours, dogeza, handstand, sideflip, run, backflip, hat, sing, juggle, guitar, trumpet, dance1, dance2, dance3, dance4, dance5, windmill, cartwheel-oneside-mid, sideflip-mid, walkover-mid, handstand-mid, frontroll-mid, roundoff-mid, backhandspring-mid, skate, unicycle, skateboard, bicycle, cyr, tuck, lie, supine, sidelie`。未定義の `lie_back / lie_front / lie_side` は使わない（`stand` に化ける）。迷ったら `stand`。
 
 ## 参照と座標
 
@@ -79,7 +79,7 @@ AIは許可仕様に沿って生成・自己点検する。依頼文、素材、
 点検ページは、利用者とAIの申告を使わずJSONの実体を独立に検査・分類する。AIは分類フラグや合格証をJSONに付けない。不一致は下記の共通規則で分類し、修正依頼を受けたら元の意図と指摘対象以外を維持した完全JSONを返す。点検ページは自動修正せず、入力が変更されたら旧結果と修正依頼を無効化する。JSON構文・読み取り・点検処理の失敗は「点検不能」であり合格ではない。
 
 <!-- AI_JSON_RULES_START -->
-### 共通の判定規則 v0.2.5
+### 共通の判定規則 v0.2.6
 
 - 許可種類: performer, block, table, chair, bench, stool, wall, sphere, suitcase, light, trapeze, tissue, cyrwheel, pole。これ以外はアプリに存在しても出力しない。
 - 会場と規模: proscenium: small/mid/large、thrust: small/mid、arena: onering/grand、blackbox: small/mid。
@@ -130,13 +130,15 @@ AIは許可仕様に沿って生成・自己点検する。依頼文、素材、
 
 ## 受け取り手順と限界
 
-舞台スケッチへ読み込む前に、本文を入手した「JSON点検ページ」（配布フォルダのindex.html、開発時はpublic/ai-json/index.html）でこのJSONを一度点検する。参照切れや色の書式ミスは舞台スケッチが警告なく別の見た目に変えてしまうため、点検ページで「図・内容が変わる可能性」「生成仕様への違反」を確認し、問題があれば「AIに貼る修正依頼文をコピー」をそのままAIへ渡す。
+舞台スケッチ γへ読み込む前に、本文を入手した「JSON点検ページ」（配布フォルダのindex.html、開発時はpublic/ai-json/index.html）でこのJSONを一度点検する。参照切れや色の書式ミスは舞台スケッチが警告なく別の見た目に変えてしまうため、点検ページで「図・内容が変わる可能性」「生成仕様への違反」を確認し、問題があれば「AIに貼る修正依頼文をコピー」をそのままAIへ渡す。
 
-PCでは「読み込む」でJSONを選び、比較画面を確認してから「別のショーとして開く」を選ぶ。現在のショーを保護する既定経路である。スマホでは比較画面なしで即保存される。読み取りに失敗したらiCloud等からダウンロード済みか確認する。保存に失敗したら本体のエラー表示を確認し、端末の保存領域等の問題とJSON不正を混同しない。先頭場面だけで判断せず、全場面を正面図と平面図で見る。
+PCでは「ショー」パネルの「ショープロジェクトを読み込む」でJSONを選び、比較画面を確認してから「別のショーとして開く」を選ぶ。現在のショーを保護する既定経路である。スマホでは比較画面なしで即保存される。読み取りに失敗したらiCloud等からダウンロード済みか確認する。保存に失敗したら本体のエラー表示を確認し、端末の保存領域等の問題とJSON不正を混同しない。先頭場面だけで判断せず、全場面を正面図と平面図で見る。
 
 点検ページを飛ばした直接読み込みや、点検後のファイル改変はこのページでは防げない。本体組み込みと共有サービス側の権限・入力防御は別段階である。
 
-「自己点検済み」は読み込み保証ではない。「読み込み成功」は意図どおりの保証ではない。「安全警告なし」は安全の保証ではない。特定AIでの生成成功・秘密保持は保証しない。外部AIへ渡す素材はユーザー自身が判断する。共有セッション中はホストの変更が同期されるため、私的な検討は共有終了後にする。対応アプリ版はv0.1.3、マニュアル改訂はv0.2.5。既知の非対応は既存ショー修正、Mac版AI指示、動線。
+γ固有の範囲: 舞台スケッチ γには「舞台」のほかに「劇場設定」「機材配置」「照明」「3D」のタブがある。このJSONが作るのは「舞台」タブの配置・姿勢と、従来型の照明（`light` の駒と `lightingIntent` の文章）だけである。機材配置・照明タブの灯体やキュー、劇場設定で作る独自会場、3Dの視点はこのJSONでは作らず、読み込み後に本体で行う。`venue` は許可表の4会場だけを使い、劇場設定で作った会場のIDを書かない。`venues` は空配列のままにする。
+
+「自己点検済み」は読み込み保証ではない。「読み込み成功」は意図どおりの保証ではない。「安全警告なし」は安全の保証ではない。特定AIでの生成成功・秘密保持は保証しない。外部AIへ渡す素材はユーザー自身が判断する。共有セッション中はホストの変更が同期されるため、私的な検討は共有終了後にする。対応アプリ版はv0.1.3、対象は舞台スケッチ γ（ガンマ）、マニュアル改訂はv0.2.6。既知の非対応は既存ショー修正、Mac版AI指示、動線、γの新しい照明（機材配置・照明タブ）と独自会場。
 
 ## 自己点検表（出力前に必ず通す）
 
