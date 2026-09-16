@@ -17096,7 +17096,11 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
 .stage-header-volume input { display: block; margin-left: auto; }
 .stage-timeline-settings { position: relative; top: auto; right: auto; }
 .stage-timeline-settings-panel { left: 0; right: auto; }
-@media (min-width: 1180px) {
-  .stage-roster-group > .stage-cast-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 8px; }
-  .stage-roster-group > .stage-roster-list-resize { grid-column: 1 / -1; }
-}
+/* 2026-09-16 本人決定（第3の道）: 列数は画面幅ではなく、このパネル自身の実際の幅で決める。
+   以前は @media (min-width: 1180px) で画面幅だけを見ていたため、パネルを狭くしても2列のままで
+   名前が読めなくなっていた（270px前後だと「演者A」の描画幅が実質12px＝ほぼ消える）。
+   auto-fit + minmax(200px, 1fr) にすると、パネルが2列分（約408px）に満たなければブラウザが
+   自動で1列へ畳む。200pxは実測（440px前後で1列あたり212〜216pxあれば名前・鍵・…・×まで
+   はみ出さない）に余裕を見た値。 */
+.stage-roster-group > .stage-cast-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); column-gap: 8px; }
+.stage-roster-group > .stage-roster-list-resize { grid-column: 1 / -1; }

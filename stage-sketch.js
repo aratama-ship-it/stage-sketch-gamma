@@ -15034,6 +15034,11 @@
 
   // 横幅はショーではなく、この端末の画面設定。通常列と引き出しを別々に覚える。
   const PANEL_COLUMN_MAX_WIDTH = 480;
+  /* 2026-09-16 本人決定（第3の道）: 新規利用者・配置リセット後の既定は268px（ドラッグの上限は
+     従来どおり480pxのまま残す）。出演者一覧の2列表示のために既定を480pxへ広げていたが、
+     列数をパネル幅で自動切替する方式（style.css の .stage-cast-list）にしたので、
+     既定を広げておく理由が無くなった。268pxなら正面図の描画欄が大きく保てる。 */
+  const PANEL_COLUMN_DEFAULT_WIDTH = 268;
   let panelWidthUi = null;
   function syncPanelWidths() {
     const ui = panelWidthUi;
@@ -15045,9 +15050,8 @@
     const single = !tabletUi && !phoneViewerActive && panelLayoutMode() === "single";
     const singleSide = single ? panelSingleSide() : null;
     const space = Math.max(480, gridWidth - 420 - (single || guest ? 18 : 36));
-    // 現行の上限480pxを、新規利用者・配置リセット後の既定にも使う。
-    let left = singleSide === "right" ? 0 : clamp(wanted("left", PANEL_COLUMN_MAX_WIDTH), 240, PANEL_COLUMN_MAX_WIDTH);
-    let right = singleSide === "left" || guest ? 0 : clamp(wanted("right", PANEL_COLUMN_MAX_WIDTH), 240, PANEL_COLUMN_MAX_WIDTH);
+    let left = singleSide === "right" ? 0 : clamp(wanted("left", PANEL_COLUMN_DEFAULT_WIDTH), 240, PANEL_COLUMN_MAX_WIDTH);
+    let right = singleSide === "left" || guest ? 0 : clamp(wanted("right", PANEL_COLUMN_DEFAULT_WIDTH), 240, PANEL_COLUMN_MAX_WIDTH);
     if (!single && left + right > space) {
       const base = guest ? 240 : 480;
       const factor = Math.max(0, (space - base) / (left + right - base));
