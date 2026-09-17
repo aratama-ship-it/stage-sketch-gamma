@@ -1,4 +1,4 @@
-const CACHE_NAME = "stage-sketch-gamma-pwa-v66";
+const CACHE_NAME = "stage-sketch-gamma-pwa-v67";
 const APP_SHELL = [
   "./stage-lighting-plans.js?v=2026091650",
   "./stage-lighting-plan-overlay.js?v=2026091650",
@@ -9,7 +9,7 @@ const APP_SHELL = [
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-large.shosai-light-design.json",
   "./gamma.css?v=2026091900",
   "./gamma-light-model.js?v=2026091650",
-  "./gamma-workspace.js?v=2026091891",
+  "./gamma-workspace.js?v=2026091892",
   "./light-design/index.html?embed=gamma",
   "./light-design/embed.css?v=2026091503",
   "./light-design/rig-engine.js?v=20260917-2-waveforms",

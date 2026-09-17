@@ -125,13 +125,35 @@
     const list=document.createElement('p');
     list.textContent='内訳: '+rows.slice(0,4).map(row=>`${row.key}（${sizeText(row.bytes)}）`).join('　/　');
     status.append(note,list);
-    const spare=rows.filter(row=>row.key.includes(':conflict:'));
+    /* 控えは、いま開いているショーのぶんとは限らない（別のショーの控えや、
+       「控えを保管」で脇へ寄せたぶんが残っていることがある）。消す前に全部まとめて書き出せるようにする。
+       ★保管ぶんは、書き出していなければ本人の編集内容そのもの。先に書き出してから消す2手にする。 */
+    const lightRows=rows.filter(row=>row.key.startsWith('gamma:lighting-draft-v1:'));
+    const spare=lightRows.filter(row=>row.key.includes(':conflict:'));
+    if(lightRows.length) {
+      const bytes=lightRows.reduce((sum,row)=>sum+row.bytes,0);
+      const dump=document.createElement('button');dump.type='button';
+      dump.textContent=`照明の控えをすべて書き出す（${lightRows.length}件・約${sizeText(bytes)}）`;
+      dump.title='いま開いているショーのぶんに限らず、この端末に残っている照明の控えを1つのファイルへまとめます';
+      dump.onclick=()=>{
+        const payload={kind:'gamma-lighting-storage-recovery',version:1,exportedAt:new Date().toISOString(),
+          items:lightRows.map(row=>({key:row.key,value:localStorage.getItem(row.key)}))};
+        const url=URL.createObjectURL(new Blob([JSON.stringify(payload)],{type:'application/json'}));
+        const a=document.createElement('a');a.href=url;a.download='gamma-lighting-storage-recovery.json';a.click();
+        setTimeout(()=>URL.revokeObjectURL(url),1000);
+      };
+      status.append(dump);
+    }
     if(spare.length) {
       const bytes=spare.reduce((sum,row)=>sum+row.bytes,0);
       const purge=document.createElement('button');purge.type='button';
-      purge.textContent=`前に保管した控え ${spare.length}件（約${sizeText(bytes)}）を消す`;
-      purge.title='「控えを保管して保存済みの照明を開く」を押したときに残った複製です。書き出し済みなら消して構いません';
-      purge.onclick=()=>{spare.forEach(row=>localStorage.removeItem(row.key));try{editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(again){failed(again);}};
+      purge.textContent=`書き出した保管ぶんを消して空ける（${spare.length}件・約${sizeText(bytes)}）`;
+      purge.title='「控えを保管して保存済みの照明を開く」で脇へ寄せた複製です。上のボタンで書き出してから押してください';
+      purge.onclick=()=>{
+        if(!window.confirm(`保管ぶん ${spare.length}件を消します。先に「照明の控えをすべて書き出す」でファイルへ控えましたか？`)) return;
+        spare.forEach(row=>localStorage.removeItem(row.key));
+        try{editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(again){failed(again);}
+      };
       status.append(purge);
     }
   }
