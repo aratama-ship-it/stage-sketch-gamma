@@ -86,8 +86,13 @@
   const movingCount = () => selectedIds().filter((id) => H.fixtureById(id).kind === "moving").length;
   const currentPreset = () => X.presetById(ui.selectedId) || X.PRESETS[0];
   const stageRegions = () => ({ stage: { kind: "rect", u0: 0, v0: 0, u1: 1, v1: 1 } });
-  const choices = () => ({ seed: ui.seed, order: ui.order, alignIntensity: ui.alignIntensity, irregularity: ui.irregularity, loopSec: ui.loopSec, rateHz: ui.rateHz, phaseOffset: ui.phaseOffset,
-    sequence: ui.sequence, blocks: ui.blocks, direction: ui.direction, width: ["half", "build"].includes(ui.width) ? ui.width : Number(ui.width), flashes: ui.flashes, duty: ui.duty, soft: ui.soft === true || ui.soft === "true", depth: ui.depth, floor: ui.floor, loops: ui.loops, after: ui.after, region: ui.custom.shape === "circle" ? { kind: "circle", u: ui.custom.u, v: ui.custom.v, r: ui.custom.r } : { kind: "rect", u0: ui.custom.u0, v0: ui.custom.v0, u1: ui.custom.u1, v1: ui.custom.v1 } });
+  /* 点滅・順送りでは「灯の並び順」を出さず、並べ方の中の「選んだ順のまま」で同じことを決める
+     （順番を決めるつまみが2つあると、どちらが効くのか読めないため。2026-09-17 削り込み）。
+     全体のずらしも外した——ずっと再生していると見分けがつかない（実測: 時刻をずらすと同じ形）。 */
+  const isSeq = () => currentPreset().id === "flash.sequence";
+  const effectiveOrder = () => (isSeq() ? (ui.sequence === "selection" ? "selection" : "physical") : ui.order);
+  const choices = () => ({ seed: ui.seed, order: effectiveOrder(), alignIntensity: ui.alignIntensity, irregularity: ui.irregularity, loopSec: ui.loopSec, rateHz: ui.rateHz, phaseOffset: isSeq() ? 0 : ui.phaseOffset,
+    sequence: ui.sequence === "selection" ? "lr" : ui.sequence, blocks: ui.blocks, direction: ui.direction, width: ["half", "build"].includes(ui.width) ? ui.width : Number(ui.width), flashes: ui.flashes, duty: ui.duty, soft: ui.soft === true || ui.soft === "true", depth: ui.depth, floor: ui.floor, loops: ui.loops, after: ui.after, region: ui.custom.shape === "circle" ? { kind: "circle", u: ui.custom.u, v: ui.custom.v, r: ui.custom.r } : { kind: "rect", u0: ui.custom.u0, v0: ui.custom.v0, u1: ui.custom.u1, v1: ui.custom.v1 } });
   const canUse = (preset) => {
     if (!preset) return false;
     if (preset.id === "motion.wander.stageAudience") return false; // 客席マスク未接続。P2で会場データへ明示接続する。
@@ -320,7 +325,9 @@
       const suffix = preset.id === "motion.wander.stageAudience" ? "客席マスク待ち" : (preset.movingOnly ? `ムービング ${movingCount()}灯` : text[1]);
       return `<button type="button" class="slp-card ${preset.id === selected.id ? "sel" : ""}" data-slp-preset="${preset.id}" ${disabled ? "disabled" : ""}>${diagram(preset)}<b>${esc(text[0])}</b><small>${esc(scopeText(preset).changes)} ／ ${esc(suffix)}</small></button>`;
     }).join("") || `<p class="slp-list-empty">該当する型はありません。</p>`;
-    const flashNotice = selected.family === "flash" ? `<p class="slp-note slp-warn">点滅はまだ始まりません。ここで速度・位相を決めてから「この型を適用」を押します。画面上の適用値は最大3Hzです。</p>` : "";
+    const flashNotice = selected.family !== "flash" ? "" : selected.id === "flash.sequence"
+      ? `<p class="slp-note slp-warn">点滅はまだ始まりません。ここで決めてから「この型を適用」を押します。速さは画面上いまのところ最大3（1秒に3灯）です。</p>`
+      : `<p class="slp-note slp-warn">点滅はまだ始まりません。ここで速度・位相を決めてから「この型を適用」を押します。画面上の適用値は最大3Hzです。</p>`;
     typePane.innerHTML = `<section class="slp-selected" aria-label="選んだ型の情報">${diagram(selected, "slp-diagram")}<div class="slp-selected-info"><p>${esc(info[1])}</p><h3>${esc(info[0])}</h3></div><div class="slp-selected-wide">${detail}<p class="slp-scope"><b>変えるもの:</b> ${esc(scope.changes)}<br><b>保つもの:</b> ${esc(scope.keeps)}</p><p class="slp-meta">対象: ${esc(skipped)}　／　点灯状態は保ちます</p><div class="slp-controls">${controlsFor(selected, { concise: true })}</div>${flashNotice}${unavailable ? `<p class="slp-note slp-warn">客席側は会場ごとのマスクを指定してから使います。この試作では適用できません。</p>` : ""}${noMoving ? `<p class="slp-note slp-warn">ムービングを1灯以上選ぶと使えます。</p>` : ""}<div class="slp-actions"><button type="button" class="btn primary" data-slp-action="apply" ${(!canUse(selected) || !count) ? "disabled" : ""}>この型を適用</button></div></div></section><div class="slp-list-tools"><input data-slp="query" type="search" placeholder="型を検索" value="${esc(ui.query)}" aria-label="型を検索"><select data-slp="sort" aria-label="型の並び替え"><option value="recommended" ${ui.sort === "recommended" ? "selected" : ""}>おすすめ順</option><option value="name" ${ui.sort === "name" ? "selected" : ""}>名前順</option><option value="family" ${ui.sort === "family" ? "selected" : ""}>種類順</option></select></div><div class="slp-families inline">${FAMILIES.map((family) => `<button type="button" data-slp-family="${family}" aria-pressed="${String(ui.family === family)}">${FAMILY_LABEL[family]}</button>`).join("")}</div><p class="ptitle">型の一覧（${cards.length}）</p><div class="slp-list">${list}</div>`;
     typePane.querySelectorAll("[data-slp-preset]").forEach((button) => { button.onclick = () => { ui.selectedId = button.dataset.slpPreset; ui.appliedDetail = null; renderTypePane(); }; });
     typePane.querySelectorAll("[data-slp-family]").forEach((button) => { button.onclick = () => { ui.family = button.dataset.slpFamily; renderTypePane(); }; });
@@ -363,7 +370,8 @@
     });
   }
   function controlsFor(preset, { concise = false } = {}) {
-    let html = `<div class="slp-control"><span>灯の並び順</span><select data-slp="order"><option value="physical" ${ui.order === "physical" ? "selected" : ""}>仕込み順（推奨）</option><option value="selection" ${ui.order === "selection" ? "selected" : ""}>選んだ順</option></select></div>`;
+    let html = preset.id === "flash.sequence" ? ""
+      : `<div class="slp-control"><span>灯の並び順</span><select data-slp="order"><option value="physical" ${ui.order === "physical" ? "selected" : ""}>仕込み順（推奨）</option><option value="selection" ${ui.order === "selection" ? "selected" : ""}>選んだ順</option></select></div>`;
     if (preset.family === "area") html += `<label class="slp-control"><span>強さもそろえる</span><input data-slp="alignIntensity" type="checkbox" ${ui.alignIntensity === false ? "" : "checked"}></label>`;
     if (preset.id === "area.custom") {
       html += `<label class="slp-control"><span>範囲の形</span><select data-slp="custom.shape" aria-label="指定範囲の形"><option value="rect" ${ui.custom.shape === "rect" ? "selected" : ""}>四角</option><option value="circle" ${ui.custom.shape === "circle" ? "selected" : ""}>丸</option></select></label>`;
@@ -380,7 +388,9 @@
       /* 数値は指で押せる −／＋ を付ける（2026-09-17 本人要望）。欄へ直接打ち込むこともできる。 */
       const num = (key, label, min, max, step) => `<label class="slp-control slp-num"><span>${label}</span><span class="slp-stepper"><button type="button" class="slp-step" data-slp-step="${key}" data-slp-delta="${-step}" aria-label="${label}を減らす" tabindex="-1">−</button><input data-slp="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${ui[key]}"><button type="button" class="slp-step" data-slp-step="${key}" data-slp-delta="${step}" aria-label="${label}を増やす" tabindex="-1">＋</button></span></label>`;
       /* 2026-09-17 第1弾は「全部出してから要らないものを消す」方針（本人決定）。並びは上段＝結果を最も変える3つ。 */
-      html += sel("sequence", "並べ方", [["lr", "並び順のまま（下手→上手）"], ["rl", "逆（上手→下手）"], ["centerOut", "中央から外"], ["outsideIn", "外から中央"], ["oddEven", "奇数・偶数"], ["frontBack", "手前→奥"], ["backFront", "奥→手前"], ["random", "ランダム"]]);
+      /* 「逆（上手→下手）」「外から中央」「奥→手前」は出さない。向き＝逆向きで完全に同じ結果になる
+         （実測: 1周期を0.1秒刻みで点灯集合を比べて一致。engine には残してあるので必要なら戻せる）。 */
+      html += sel("sequence", "並べ方", [["lr", "並び順のまま（下手→上手）"], ["selection", "選んだ順のまま"], ["centerOut", "中央から外"], ["oddEven", "奇数・偶数"], ["frontBack", "手前→奥"], ["random", "ランダム"]]);
       html += sel("direction", "向き", [["fwd", "一方向"], ["rev", "逆向き"], ["bounce", "往復（端で折り返す）"], ["random", "ランダム（周ごとに順番が変わる）"]]);
       html += num("rateHz", "速さ（1秒に進む灯数）", 0.25, 3, 0.25);
       html += sel("width", "同時に光る数", [["1", "1灯"], ["2", "2灯（尾を引く）"], ["3", "3灯"], ["half", "半分"], ["build", "積み上げ（消さずに増える）"]]);
@@ -390,8 +400,8 @@
       html += ui.soft === true || ui.soft === "true" ? num("depth", "沈む深さ（%）", 0, 100, 10) : num("duty", "点いている割合（%）", 5, 95, 5);
       html += num("floor", "消えている間の強さ（%）", 0, 90, 5);
       html += num("loops", "繰り返し（0＝ずっと）", 0, 99, 1);
-      html += sel("after", "終わったら", [["off", "消す"], ["hold", "最後の状態で残す"]]);
-      html += `<label class="slp-control"><span>全体のずらし</span><input data-slp="phaseOffset" type="range" min="0" max="1" step="0.05" value="${ui.phaseOffset}"></label>`;
+      // 「終わったら」は止まらない設定のとき効果がない（実測で完全一致）ので、周数を決めたときだけ出す
+      if (Number(ui.loops) >= 1) html += sel("after", "終わったら", [["off", "消す"], ["hold", "最後の状態で残す"]]);
       if (!concise) html += `<p class="slp-note">再生を始めた時刻から数えます。「繰り返し」を決めると、その周数で止まります。</p>`;
     } else if (preset.family === "flash") html += `<label class="slp-control"><span>点滅（Hz）</span><input data-slp="rateHz" type="number" min="0.5" max="3" step="0.25" value="${ui.rateHz}"></label><label class="slp-control"><span>全体の位相</span><input data-slp="phaseOffset" type="range" min="0" max="1" step="0.05" value="${ui.phaseOffset}"></label>`;
     return html;
@@ -399,7 +409,7 @@
   /* つまみの配線。−／＋ と直接入力を同じ場所で受ける（2026-09-17）。
      表示される操作そのものが変わるつまみ（光り方＝割合/深さの入れ替え、並べ方・向き＝seedの出し入れ）
      だけ描き直す。−／＋ は欄の値を書き換えるだけ＝連打しても描き直さない（送り先が飛ばない）。 */
-  const RERENDER_KEYS = ["custom.shape", "query", "sort", "soft", "sequence", "direction"];
+  const RERENDER_KEYS = ["custom.shape", "query", "sort", "soft", "sequence", "direction", "loops"];
   function bindControls(scope, rerender) {
     scope.querySelectorAll("[data-slp]").forEach((input) => {
       input.oninput = () => {
@@ -420,6 +430,8 @@
         const next = Number(Math.min(Number(input.max), Math.max(Number(input.min), raw)).toFixed(dec));
         input.value = next;
         ui[key] = next;
+        // 「繰り返し」だけは0と1以上で「終わったら」の出る・出ないが変わるので描き直す
+        if (RERENDER_KEYS.includes(key)) rerender();
       };
     });
   }
@@ -437,7 +449,9 @@
     const noMoving = selected.movingOnly && !movingCount();
     const scope = scopeText(selected);
     const skipped = selected.movingOnly && selectedIds().length > movingCount() ? `ムービング ${movingCount()}灯に適用・固定${selectedIds().length - movingCount()}灯はそのまま` : `${selectedIds().length}灯に適用`;
-    const flashNotice = selected.family === "flash" ? `<p class="slp-note slp-warn">点滅はまだ始まりません。ここで速度・位相を決めてから「この型を適用」を押します。画面上の適用値は最大3Hzです。</p>` : "";
+    const flashNotice = selected.family !== "flash" ? "" : selected.id === "flash.sequence"
+      ? `<p class="slp-note slp-warn">点滅はまだ始まりません。ここで決めてから「この型を適用」を押します。速さは画面上いまのところ最大3（1秒に3灯）です。</p>`
+      : `<p class="slp-note slp-warn">点滅はまだ始まりません。ここで速度・位相を決めてから「この型を適用」を押します。画面上の適用値は最大3Hzです。</p>`;
     const detail = ui.appliedDetail && ui.appliedDetail.id === selected.id ? adjustmentDetail(ui.appliedDetail) : "";
     root.innerHTML = `<div class="slp-top"><p class="slp-title">型から選ぶ（${X.PRESETS.length}）<small>${selectedIds().length}灯が対象です。適用後も値を「調整」で変えられます。</small></p><input class="slp-search" data-slp="query" type="search" placeholder="型を検索" value="${esc(ui.query)}"></div>
       <div class="slp-families">${FAMILIES.map((family) => `<button type="button" data-slp-family="${family}" aria-pressed="${String(ui.family === family)}">${FAMILY_LABEL[family]}</button>`).join("")}</div>
@@ -454,7 +468,7 @@
   }
   function applyPreset() {
     const preset = currentPreset(), ids = selectedIds();
-    const result = X.applySelectedLightPreset({ presetId: preset.id, cue: H.cue(), fixtures: state.rig.fixtures, selection: ids, choices: choices(), regions: stageRegions(), order: ui.order });
+    const result = X.applySelectedLightPreset({ presetId: preset.id, cue: H.cue(), fixtures: state.rig.fixtures, selection: ids, choices: choices(), regions: stageRegions(), order: effectiveOrder() });
     if (result.status !== "applied") { H.toast(result.reason === "no-compatible-fixtures" ? "この型に使える灯が選ばれていません" : "型を適用できませんでした"); return; }
     /* ここだけが状態を書き換える箇所。commit は正確に一度だけなので、Undoも一手だけ。 */
     const c = H.cue();
