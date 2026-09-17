@@ -58,6 +58,15 @@
     ["flash.sparkle", "きらめき（ばらばら）"],
   ];
   const STROBE_IDS = STROBE_METHODS.map(([id]) => id);
+  /* 強さの形（rig-engine の strobeWave）。「沈む深さ」の既定は形ごとに要る値が違うので一緒に持つ
+     ——稲妻は間が真っ暗でないと閃光に見えず、炎は浅く揺れないと不自然になる。 */
+  const STROBE_KINDS = [
+    ["sharp", "くっきり"], ["soft", "やわらかい"],
+    ["rampUp", "だんだん明るく"], ["rampDown", "だんだん暗く"],
+    ["flicker", "ちらつき（炎）"], ["lightning", "稲妻"], ["heartbeat", "鼓動"],
+  ];
+  const KIND_DEPTH = { soft: 60, rampUp: 100, rampDown: 100, flicker: 45, lightning: 100, heartbeat: 85 };
+  const KIND_NEEDS_SEED = (kind) => kind === "flicker" || kind === "lightning";
   const isStrobe = (preset) => preset && preset.family === "flash";
   const strobeMethodId = () => (STROBE_IDS.includes(ui.selectedId) ? ui.selectedId : STROBE_IDS[0]);
   const methodName = (id) => (STROBE_METHODS.find(([m]) => m === id) || [id, id])[1];
@@ -68,7 +77,7 @@
   const FAMILIES = ["all", "aim", "area", "motion", "value", "show", "flash"];
   const FAMILY_LABEL = { all: "すべて", aim: "狙い", area: "範囲", motion: "動き", value: "配り方", show: "演出", flash: "点滅" };
   const ui = { family: "all", query: "", sort: "recommended", selectedId: "aim.converge", panel: "adjust", seed: 173204, order: "physical", alignIntensity: true, custom: { shape: "rect", u0: 0.2, v0: 0.2, u1: 0.8, v1: 0.8, u: 0.5, v: 0.5, r: 0.3 }, irregularity: 0.65, loopSec: 11, rateHz: 2, phaseOffset: 0, appliedDetail: null,
-    sequence: "lr", blocks: 1, direction: "fwd", width: "1", flashes: 1, duty: 50, soft: false, depth: 60, floor: 0, loops: 0, after: "off",
+    sequence: "lr", blocks: 1, direction: "fwd", width: "1", flashes: 1, duty: 50, kind: "sharp", depth: 60, floor: 0, loops: 0, after: "off",
     setBeam: false, beamDeg: 24, setLevel: false, level: 80,
     /* 手で並べた発生順。[{ id, link }] の並び順がそのまま順番で、link=true は「上と同時に光る」。
        段番号は link から数える（1・1・2・3 のように、まとまりが左の数字で見える）。 */
@@ -159,7 +168,7 @@
   };
   const choices = () => ({ seed: ui.seed, order: effectiveOrder(), alignIntensity: ui.alignIntensity, irregularity: ui.irregularity, loopSec: ui.loopSec, rateHz: ui.rateHz, phaseOffset: isStrobe(currentPreset()) ? 0 : ui.phaseOffset,
     setBeam: ui.setBeam === true, beamDeg: ui.beamDeg, setLevel: ui.setLevel === true, level: ui.level,
-    sequence: ui.sequence === "selection" ? "lr" : ui.sequence, customRanks: customRanks(), blocks: ui.blocks, direction: ui.direction, width: ["half", "build"].includes(ui.width) ? ui.width : Number(ui.width), flashes: ui.flashes, duty: ui.duty, soft: ui.soft === true || ui.soft === "true", depth: ui.depth, floor: ui.floor, loops: ui.loops, after: ui.after, region: ui.custom.shape === "circle" ? { kind: "circle", u: ui.custom.u, v: ui.custom.v, r: ui.custom.r } : { kind: "rect", u0: ui.custom.u0, v0: ui.custom.v0, u1: ui.custom.u1, v1: ui.custom.v1 } });
+    sequence: ui.sequence === "selection" ? "lr" : ui.sequence, customRanks: customRanks(), blocks: ui.blocks, direction: ui.direction, width: ["half", "build"].includes(ui.width) ? ui.width : Number(ui.width), flashes: ui.flashes, duty: ui.duty, kind: ui.kind, depth: ui.depth, floor: ui.floor, loops: ui.loops, after: ui.after, region: ui.custom.shape === "circle" ? { kind: "circle", u: ui.custom.u, v: ui.custom.v, r: ui.custom.r } : { kind: "rect", u0: ui.custom.u0, v0: ui.custom.v0, u1: ui.custom.u1, v1: ui.custom.v1 } });
   const canUse = (preset) => {
     if (!preset) return false;
     if (preset.id === "motion.wander.stageAudience") return false; // 客席マスク未接続。P2で会場データへ明示接続する。
@@ -488,6 +497,10 @@
   }
 
   function controlsFor(preset, { concise = false } = {}) {
+    /* この関数の中で使い回すつまみ。2026-09-17 第2弾で「光り方」を点滅の全方式へ広げたとき、
+       順送りの中だけに置いていたせいで参照できず落ちたので、先頭へ出した。 */
+    const sel = (key, label, options) => `<label class="slp-control"><span>${label}</span><select data-slp="${key}">${options.map(([v, t]) => `<option value="${v}" ${String(ui[key]) === String(v) ? "selected" : ""}>${t}</option>`).join("")}</select></label>`;
+    const num = (key, label, min, max, step) => `<label class="slp-control slp-num"><span>${label}</span><span class="slp-stepper"><button type="button" class="slp-step" data-slp-step="${key}" data-slp-delta="${-step}" aria-label="${label}を減らす" tabindex="-1">−</button><input data-slp="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${ui[key]}"><button type="button" class="slp-step" data-slp-step="${key}" data-slp-delta="${step}" aria-label="${label}を増やす" tabindex="-1">＋</button></span></label>`;
     let html = isStrobe(preset) ? ""
       : `<div class="slp-control"><span>灯の並び順</span><select data-slp="order"><option value="physical" ${ui.order === "physical" ? "selected" : ""}>仕込み順（推奨）</option><option value="selection" ${ui.order === "selection" ? "selected" : ""}>選んだ順</option></select></div>`;
     if (preset.family === "area") html += `<label class="slp-control"><span>強さもそろえる</span><input data-slp="alignIntensity" type="checkbox" ${ui.alignIntensity === false ? "" : "checked"}></label>`;
@@ -503,12 +516,10 @@
       html += `<label class="slp-control"><span>点滅のさせ方</span><select data-slp="strobeMethod">${STROBE_METHODS.map(([id, name]) => `<option value="${id}" ${preset.id === id ? "selected" : ""}>${esc(name)}</option>`).join("")}</select></label>`;
     }
     const seqRandom = preset.id === "flash.sequence" && (ui.sequence === "random" || ui.direction === "random");
-    if (preset.id === "motion.wander.stage" || preset.id === "flash.sparkle" || seqRandom) html += `<label class="slp-control"><span>seed（再現用）</span><input data-slp="seed" type="number" min="0" step="1" value="${ui.seed}"></label><button type="button" class="btn small" data-slp-action="reroll">別の動きにする</button>`;
+    if (preset.id === "motion.wander.stage" || preset.id === "flash.sparkle" || seqRandom || (isStrobe(preset) && KIND_NEEDS_SEED(ui.kind))) html += `<label class="slp-control"><span>seed（再現用）</span><input data-slp="seed" type="number" min="0" step="1" value="${ui.seed}"></label><button type="button" class="btn small" data-slp-action="reroll">別の動きにする</button>`;
     if (preset.id === "motion.wander.stage") html += `<label class="slp-control"><span>不規則さ</span><input data-slp="irregularity" type="range" min="0.2" max="1" step="0.05" value="${ui.irregularity}"></label><label class="slp-control"><span>1周の秒数</span><input data-slp="loopSec" type="number" min="4" max="30" step="1" value="${ui.loopSec}"></label>${concise ? "" : `<p class="slp-note">舞台の範囲だけを巡ります。同じseedなら、同じ動きを再現します。</p>`}`;
     if (preset.id === "flash.sequence") {
-      const sel = (key, label, options) => `<label class="slp-control"><span>${label}</span><select data-slp="${key}">${options.map(([v, t]) => `<option value="${v}" ${String(ui[key]) === String(v) ? "selected" : ""}>${t}</option>`).join("")}</select></label>`;
       /* 数値は指で押せる −／＋ を付ける（2026-09-17 本人要望）。欄へ直接打ち込むこともできる。 */
-      const num = (key, label, min, max, step) => `<label class="slp-control slp-num"><span>${label}</span><span class="slp-stepper"><button type="button" class="slp-step" data-slp-step="${key}" data-slp-delta="${-step}" aria-label="${label}を減らす" tabindex="-1">−</button><input data-slp="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${ui[key]}"><button type="button" class="slp-step" data-slp-step="${key}" data-slp-delta="${step}" aria-label="${label}を増やす" tabindex="-1">＋</button></span></label>`;
       /* 2026-09-17 第1弾は「全部出してから要らないものを消す」方針（本人決定）。並びは上段＝結果を最も変える3つ。 */
       /* 「逆（上手→下手）」「外から中央」「奥→手前」は出さない。向き＝逆向きで完全に同じ結果になる
          （実測: 1周期を0.1秒刻みで点灯集合を比べて一致。engine には残してあるので必要なら戻せる）。 */
@@ -520,8 +531,6 @@
       // 手で並べているときは、段は本人が決めているので「まとめる灯数」は出さない
       if (ui.sequence !== "custom") html += sel("blocks", "まとめる灯数", [["1", "1灯ずつ"], ["2", "2灯ずつ"], ["3", "3灯ずつ"], ["4", "4灯ずつ"]]);
       html += num("flashes", "1灯ごとの点滅回数", 1, 8, 1);
-      html += sel("soft", "光り方", [["false", "くっきり"], ["true", "やわらかい"]]);
-      html += ui.soft === true || ui.soft === "true" ? num("depth", "沈む深さ（%）", 0, 100, 10) : num("duty", "点いている割合（%）", 5, 95, 5);
       html += num("floor", "消えている間の強さ（%）", 0, 90, 5);
       html += num("loops", "繰り返し（0＝ずっと）", 0, 99, 1);
       // 「終わったら」は止まらない設定のとき効果がない（実測で完全一致）ので、周数を決めたときだけ出す
@@ -529,6 +538,12 @@
       if (!concise) html += `<p class="slp-note">再生を始めた時刻から数えます。「繰り返し」を決めると、その周数で止まります。</p>`;
     } else if (isStrobe(preset)) {
       html += `<label class="slp-control slp-num"><span>速さ（Hz）</span><span class="slp-stepper"><button type="button" class="slp-step" data-slp-step="rateHz" data-slp-delta="-0.25" aria-label="速さを減らす" tabindex="-1">−</button><input data-slp="rateHz" type="number" min="0.5" max="3" step="0.25" value="${ui.rateHz}"><button type="button" class="slp-step" data-slp-step="rateHz" data-slp-delta="0.25" aria-label="速さを増やす" tabindex="-1">＋</button></span></label>`;
+    }
+    /* 光り方（強さの形）はどの方式でも使う。ちらつき・稲妻は「全灯そろって」と組むのが自然なので、
+       順送り専用にしない。相方のつまみは くっきり＝点いている割合、それ以外＝沈む深さ。 */
+    if (isStrobe(preset)) {
+      html += sel("kind", "光り方", STROBE_KINDS);
+      html += ui.kind === "sharp" ? num("duty", "点いている割合（%）", 5, 95, 5) : num("depth", "沈む深さ（%）", 0, 100, 5);
     }
     /* どの方式でも、点滅と一緒に太さ・強さを決められる（2026-09-17 本人要望）。
        既定は「変えない」＝いまの値のまま。点滅を当てただけで明るさが変わると驚くため。 */
@@ -546,8 +561,8 @@
   /* つまみの配線。−／＋ と直接入力を同じ場所で受ける（2026-09-17）。
      表示される操作そのものが変わるつまみ（光り方＝割合/深さの入れ替え、並べ方・向き＝seedの出し入れ）
      だけ描き直す。−／＋ は欄の値を書き換えるだけ＝連打しても描き直さない（送り先が飛ばない）。 */
-  const RERENDER_KEYS = ["custom.shape", "query", "sort", "soft", "sequence", "direction", "loops", "setBeam", "setLevel"];
-  const BOOL_KEYS = ["soft", "setBeam", "setLevel"];
+  const RERENDER_KEYS = ["custom.shape", "query", "sort", "kind", "sequence", "direction", "loops", "setBeam", "setLevel"];
+  const BOOL_KEYS = ["setBeam", "setLevel"];
   function bindControls(scope, rerender) {
     scope.querySelectorAll("[data-slp]").forEach((input) => {
       input.oninput = () => {
@@ -556,6 +571,8 @@
         // ストロボの方式は「どの型を当てるか」そのものなので、選んだ型を差し替える
         if (key === "strobeMethod") { ui.selectedId = String(value); ui.appliedDetail = null; rerender(); return; }
         if (key.startsWith("custom.")) ui.custom[key.slice(7)] = value; else ui[key] = BOOL_KEYS.includes(key) ? (value === true || value === "true") : value;
+        // 光り方を変えたら「沈む深さ」もその形に合う値へ置き直す（稲妻は真っ暗、炎は浅く、が既定）
+        if (key === "kind" && KIND_DEPTH[value] != null) ui.depth = KIND_DEPTH[value];
         if (RERENDER_KEYS.includes(key)) rerender();
       };
       input.onchange = input.oninput;

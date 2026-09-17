@@ -3493,7 +3493,11 @@
         const setStrobeAll = (patch) => bulkEach(lvMovers, (f, l) => { l.strobe = { ...l.strobe, on: true, ...patch }; });
         const kinds = new Set(lvMovers.map((fid) => ((lightOf(fid) || {}).strobe || {}).kind || "soft"));
         const sameKind = kinds.size <= 1, curKind = sameKind ? [...kinds][0] : "soft";
-        b.append(field(sameKind ? "種類" : "種類（バラバラ）", seg([["sharp", "ストロボ"], ["soft", "やわらかい"]], curKind, (v) => { setStrobeAll({ kind: v }); commit(`${lvMovers.length}灯の明滅の種類を変えました`); }), true));
+        /* 「型」パネルで足した形（ちらつき・稲妻など）を選んだ灯は、この2択のどちらでもない。
+           押されていない帯だけだと何が起きているか読めないので、いまの形を見出しに出す。 */
+        const KIND_NAME = { sharp: "ストロボ", soft: "やわらかい", rampUp: "だんだん明るく", rampDown: "だんだん暗く", flicker: "ちらつき", lightning: "稲妻", heartbeat: "鼓動" };
+        const kindLabel = !sameKind ? "種類（バラバラ）" : (curKind === "sharp" || curKind === "soft") ? "種類" : `種類（${KIND_NAME[curKind] || curKind}）`;
+        b.append(field(kindLabel, seg([["sharp", "ストロボ"], ["soft", "やわらかい"]], curKind, (v) => { setStrobeAll({ kind: v }); commit(`${lvMovers.length}灯の明滅の種類を変えました`); }), true));
         const hzs = new Set(lvMovers.map((fid) => Math.round(E.clamp(E.finite(((lightOf(fid) || {}).strobe || {}).hz, 6), 0.5, 20) * 2)));
         const sameHz = hzs.size <= 1, curHz = sameHz ? [...hzs][0] / 2 : 6;
         b.append(field(sameHz ? "速さ" : "速さ（バラバラ）", range(0.5, 20, 0.5, curHz, (v) => `1秒に${v % 1 === 0 ? v : v.toFixed(1)}回`, (v) => setStrobeAll({ hz: v }), () => commit(`${lvMovers.length}灯の明滅の速さを変えました`)), true));

@@ -365,7 +365,9 @@
         const current = lights[fixture.id] || {};
         const body = flashBody(current, choices);
         const seq = { count, rank: ranks[index], width, direction, loops: Math.max(0, Math.round(finite(choices.loops, 0))), after: choices.after === "hold" ? "hold" : "off", flashes: clamp(Math.round(finite(choices.flashes, 1)), 1, 8), floor: clamp(finite(choices.floor, 0), 0, 100), ...extra };
-        const strobe = { on: true, kind: choices.soft ? "soft" : "sharp", hz: rateHz, duty: clamp(finite(choices.duty, 50), 5, 95), depth: clamp(finite(choices.depth, 60), 0, 100), phaseNorm: clamp(choices.phaseOffset, 0, 1), seq };
+        const kind = choices.kind || "sharp";
+        const strobe = { on: true, kind, hz: rateHz, duty: clamp(finite(choices.duty, 50), 5, 95), depth: clamp(finite(choices.depth, 60), 0, 100), phaseNorm: clamp(choices.phaseOffset, 0, 1), seq };
+        if (kind === "flicker" || kind === "lightning") strobe.seed = uint32(choices.seed);
         lights[fixture.id] = withMeta({ ...body, strobe }, "flash", preset, extra);
       });
       return;
@@ -380,7 +382,12 @@
       if (preset.id === "flash.sparkle") phaseNorm = mulberry32(hashSeed(uint32(choices.seed), index))();
       phaseNorm = (phaseNorm + clamp(choices.phaseOffset, 0, 1)) % 1;
       /* 灯の相対位相は保ち、全体だけをずらせる。既存試作の strobe 形式へ明示変換する。 */
-      lights[fixture.id] = withMeta({ ...flashBody(current, choices), strobe: { on: true, kind: "sharp", hz: rateHz, duty: 50, phaseNorm, ...extra } }, "flash", preset, extra);
+      /* 光り方（くっきり・やわらかい・ちらつき・稲妻…）は順送り以外の方式でも効かせる。
+         ちらつき・稲妻は乱数なので、同じ見えを再現できるよう seed を持たせる。 */
+      const kind = choices.kind || "sharp";
+      const wave = { kind, duty: clamp(finite(choices.duty, 50), 5, 95), depth: clamp(finite(choices.depth, 60), 0, 100) };
+      if (kind === "flicker" || kind === "lightning") wave.seed = uint32(choices.seed);
+      lights[fixture.id] = withMeta({ ...flashBody(current, choices), strobe: { on: true, hz: rateHz, ...wave, phaseNorm, ...extra } }, "flash", preset, extra);
     });
   }
 
@@ -390,7 +397,7 @@
       periodSec: 8, radius: 0.12, irregularity: 0.55, seed: 2841,
       colorA: "#f2ead6", colorB: "#7ab8ff", levelCenter: 80, levelOuter: 40,
       rateHz: 2, phaseOffset: 0,
-      sequence: "lr", blocks: 1, direction: "fwd", width: 1, flashes: 1, duty: 50, depth: 60, soft: false, floor: 0, loops: 0, after: "off",
+      sequence: "lr", blocks: 1, direction: "fwd", width: 1, flashes: 1, duty: 50, depth: 60, kind: "sharp", floor: 0, loops: 0, after: "off",
       /* 点滅と一緒に太さ・強さも決められる（2026-09-17 本人要望）。
          既定は false ＝ いまの値のまま。点滅を当てるだけで明るさが変わると驚くため。 */
       setBeam: false, beamDeg: 24, setLevel: false, level: 80, ...raw,

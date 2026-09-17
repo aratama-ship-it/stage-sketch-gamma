@@ -421,6 +421,51 @@
     for (let i = count - 1; i > 0; i -= 1) { const j = Math.floor(rng() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
     return arr;
   };
+  const rand01 = (seed, index) => seqHash(finite(seed, 1) >>> 0, index) / 4294967296;
+  /* 強さの形（2026-09-17 本人要望で くっきり／やわらかい に5つ追加）。
+     phase は 0〜1。順送りでは「その灯の持ち時間」の中の位置になる。
+     ちらつき・稲妻だけは phase ではなく<b>絶対時刻</b>から作る——周期にきっちり乗せると
+     同じ揺れが繰り返して作り物に見えるため。seed が同じなら同じ揺れを再現する。
+       くっきり sharp     … 矩形。duty% のあいだ全開（従来）
+       やわらかい soft     … 1−cos のなめらかな明滅（従来）
+       だんだん明るく rampUp / だんだん暗く rampDown … のこぎり。1周期で一方向
+       ちらつき flicker    … 炎・ろうそく。なめらかな乱数で浅く揺れる
+       稲妻 lightning      … ふだん暗く、たまに短く強い閃光（1周期に1〜2回）
+       鼓動 heartbeat      … ドッ・ドッ…（間）の二連
+     知らない名前は くっきり として扱う（古いデータ・未知の値でも壊れない）。 */
+  const strobeWave = (strobe, phase, t, hz) => {
+    const kind = strobe && strobe.kind;
+    const depth = clamp(finite(strobe && strobe.depth, 60), 0, 100) / 100;
+    const seed = strobe && strobe.seed;
+    if (kind === "soft") return 1 - depth * (1 - Math.cos(phase * 2 * Math.PI)) / 2;
+    if (kind === "rampUp") return 1 - depth * (1 - phase);
+    if (kind === "rampDown") return 1 - depth * phase;
+    if (kind === "flicker") {
+      const sliceMs = Math.max(20, 1000 / Math.max(0.1, hz * 4));
+      const index = Math.floor(t / sliceMs), fr = t / sliceMs - index;
+      const a = rand01(seed, index), b = rand01(seed, index + 1);
+      const ease = fr * fr * (3 - 2 * fr);
+      return 1 - depth * (1 - (a + (b - a) * ease));
+    }
+    if (kind === "lightning") {
+      const period = 1000 / Math.max(0.1, hz);
+      const cycle = Math.floor(t / period), p = ((t % period) + period) % period / period;
+      const start = rand01(seed, cycle * 3) * 0.7;
+      const len = 0.03 + rand01(seed, cycle * 3 + 1) * 0.05;
+      let on = p >= start && p < start + len;
+      if (!on && rand01(seed, cycle * 3 + 2) > 0.45) {
+        const second = start + len + 0.05;
+        on = p >= second && p < second + len * 0.6;
+      }
+      return on ? 1 : 1 - depth;
+    }
+    if (kind === "heartbeat") {
+      const peak = (center, width) => Math.max(0, 1 - Math.abs(phase - center) / width);
+      return 1 - depth * (1 - Math.max(peak(0.07, 0.07), peak(0.26, 0.06) * 0.85));
+    }
+    const duty = clamp(finite(strobe && strobe.duty, 50), 5, 95) / 100;
+    return phase < duty ? 1 : 0;
+  };
   const seqMul = (strobe, t) => {
     const seq = strobe.seq;
     const hz = clamp(finite(strobe.hz, 2), 0.1, 20);
@@ -458,12 +503,7 @@
     const flashes = clamp(Math.round(finite(seq.flashes, 1)), 1, 8);
     const sub = (inCycle - step * stepMs) / stepMs;
     const fr = ((sub * flashes) % 1 + 1) % 1;
-    if (strobe.kind === "soft") {
-      const depth = clamp(finite(strobe.depth, 60), 0, 100) / 100;
-      return Math.max(floor, 1 - depth * (1 - Math.cos(fr * 2 * Math.PI)) / 2);
-    }
-    const duty = clamp(finite(strobe.duty, 50), 5, 95) / 100;
-    return fr < duty ? 1 : floor;
+    return Math.max(floor, strobeWave(strobe, fr, t, hz));
   };
   const strobeMul = (strobe, tMs) => {
     if (!strobe || !strobe.on) return 1;
@@ -472,13 +512,7 @@
     const period = 1000 / hz;
     const t = finite(tMs, 0);
     const phase = ((((t % period) + period) % period) / period + clamp(finite(strobe.phaseNorm, 0), 0, 1)) % 1;
-    if (strobe.kind === "soft") {
-      const depth = clamp(finite(strobe.depth, 60), 0, 100) / 100;
-      const wave = (1 - Math.cos(phase * 2 * Math.PI)) / 2;      // 0（明）→1（暗）→0（明）と滑らかに1往復
-      return 1 - depth * wave;
-    }
-    const duty = clamp(finite(strobe.duty, 50), 5, 95) / 100;
-    return phase < duty ? 1 : 0;
+    return strobeWave(strobe, phase, t, hz);
   };
 
   /* 時刻 tMs における光の当たる先（世界座標）。未設定・消灯は null。 */
