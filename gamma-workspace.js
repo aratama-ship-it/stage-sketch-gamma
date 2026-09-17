@@ -9,6 +9,7 @@
   if(venueBackdrop) venueBackdrop.hidden=true;
   const normal=document.querySelector('.stage-sketch-grid'), status=document.getElementById('gamma-light-status');
   const hostUndo=document.getElementById('stage-undo'), hostRedo=document.getElementById('stage-redo');
+  const venueUndo=document.getElementById('stage-venue-editor-undo'), venueRedo=document.getElementById('stage-venue-editor-redo');
   let mode='normal', loaded=false;
   let hostHistory={undo:hostUndo?.disabled??true,redo:hostRedo?.disabled??true};
   let frameResizeRequest=0;
@@ -69,22 +70,31 @@
       hostUndo.disabled=hostHistory.undo;hostRedo.disabled=hostHistory.redo;
       return;
     }
+    if(mode==='venue-setup') {
+      hostUndo.disabled=venueUndo?.disabled??true;hostRedo.disabled=venueRedo?.disabled??true;
+      return;
+    }
     const lightStatus=editor()?.status();
     hostUndo.disabled=!lightStatus?.canUndo;hostRedo.disabled=!lightStatus?.canRedo;
   }
   function runLightHistory(event,direction) {
     if(mode==='normal') return;
     event.preventDefault();event.stopImmediatePropagation();
-    editor()?.[direction]();syncHistory();
+    if(mode==='venue-setup') (direction==='undo'?venueUndo:venueRedo)?.click();
+    else editor()?.[direction]();
+    syncHistory();
   }
+  // 劇場の履歴が変わったとき、共通の取り消しボタンも同じ状態を示す。
+  const venueHistoryObserver=new MutationObserver(()=>{if(mode==='venue-setup') syncHistory();});
+  [venueUndo,venueRedo].filter(Boolean).forEach(button=>venueHistoryObserver.observe(button,{attributes:true,attributeFilter:['disabled']}));
   hostUndo?.addEventListener('click',event=>runLightHistory(event,'undo'),true);
   hostRedo?.addEventListener('click',event=>runLightHistory(event,'redo'),true);
   document.addEventListener('keydown',event=>{
     if(mode==='normal' || !['z','Z'].includes(event.key) || !(event.metaKey||event.ctrlKey) || event.altKey) return;
     const target=event.target, tag=target?.tagName;
     if(['INPUT','TEXTAREA','SELECT'].includes(tag) || target?.isContentEditable) return;
-    event.preventDefault();event.stopImmediatePropagation();
-    editor()?.[event.shiftKey?'redo':'undo']();syncHistory();
+    if(mode==='venue-setup' && [...document.querySelectorAll('.stage-modal')].some(dialog=>dialog!==venueModal && !dialog.hidden)) return;
+    runLightHistory(event,event.shiftKey?'redo':'undo');
   },true);
   /* このブラウザの保存領域の使用量。文字はUTF-16で2バイト見当＝正確な実測ではなく、
      どれを消すか決めるための目安。2026-09-17 実機で領域がいっぱいになり照明を開けなくなった。 */
@@ -337,7 +347,7 @@
     }
     try {
       close3dWorkspace();
-      if(mode==='normal' && isLightMode(next)) captureHostHistory();
+      if(mode==='normal' && next!=='normal') captureHostHistory();
       if(mode!==next && isLightMode(mode) && !isLightMode(next)) editor()?.suspend();
       if(mode==='venue-setup' && next!=='venue-setup') hideVenue();
       if(isLightMode(next)) {

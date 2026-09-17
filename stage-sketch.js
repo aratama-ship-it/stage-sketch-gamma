@@ -25196,7 +25196,8 @@ ${propsPlotHtml}
     if (els.venueApplyPresetSelect) els.venueApplyPresetSelect.replaceChildren();
     if (els.venueApplyPresetNote) els.venueApplyPresetNote.textContent = "この劇場形式に合う型を確認しています…";
     if (els.venueApplyPreset) els.venueApplyPreset.disabled = true;
-    setVenueApplyChoice("manual");
+    // 劇場設定で選んだ方法を引き継ぐ。候補の読み込みで本人の選択を変えない。
+    setVenueApplyChoice(lightingSource === "preset" ? "preset" : "manual");
     try {
       const catalog = await loadLightingCatalog();
       if (request !== venueApplyRequest || pendingVenueApply !== detail) return;
@@ -25218,13 +25219,16 @@ ${propsPlotHtml}
           ? "劇場の幅・奥行・高さが一致する、全消灯の編集用配置だけを表示しています。実在会場の設備・電源・DMX・吊荷重・レーザー安全は決定しません。"
           : "この劇場の幅・奥行・高さに一致する照明機材プリセットはありません。自分で配置するか、劇場だけを反映してください。";
       }
-      setVenueApplyChoice(presets.length ? "preset" : "manual");
+      setVenueApplyChoice(venueApplyChoice === "preset" && !presets.length ? "manual" : venueApplyChoice);
     } catch (_) {
       if (request !== venueApplyRequest || pendingVenueApply !== detail) return;
       if (els.venueApplyPresetNote) els.venueApplyPresetNote.textContent = "照明機材プリセットを読み込めません。劇場の反映は続けられます。";
       setVenueApplyChoice("manual");
     }
-    window.requestAnimationFrame(() => els.venueApplyPreset?.focus());
+    window.requestAnimationFrame(() => {
+      if (request !== venueApplyRequest || pendingVenueApply !== detail) return;
+      (venueApplyChoice === "preset" ? els.venueApplyPreset : els.venueApplyManual)?.focus();
+    });
   }
 
   function editableLightingDesignFromPreset(rawDesign, project, preset) {
@@ -29511,6 +29515,7 @@ ${propsPlotHtml}
 
   function showTour(index) {
     if (!els.tour) return;
+    if (!stageTourContextActive()) { tourRequested = true; return; }
     els.tourCard.classList.remove("is-done");
     tourAt = clamp(index, 0, TOUR.length - 1);
     const step = TOUR[tourAt];
@@ -30649,6 +30654,8 @@ ${propsPlotHtml}
   let tourLaunchTimer = null;
   function stageTourContextActive() {
     if (phoneViewerActive) return false;
+    const workspace = document.body.dataset.gammaWorkspace;
+    if (workspace && workspace !== "normal") return false;
     const stageView = document.getElementById("view-stage");
     return document.body.classList.contains("is-standalone")
       || (location.hash === "#stage" && stageView && !stageView.hidden);
@@ -30671,6 +30678,7 @@ ${propsPlotHtml}
   }
   // app.js の画面切替が同じ hashchange で終わった後に、表示中の画面を判定する。
   window.addEventListener("hashchange", () => setTimeout(syncStageTourContext, 0));
+  window.addEventListener("gamma-workspace-change", syncStageTourContext);
 
   function finishInitialStageSetup(identity) {
     if (STUDY_READ_ONLY) return;
