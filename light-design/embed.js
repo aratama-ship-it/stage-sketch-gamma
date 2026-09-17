@@ -21,7 +21,9 @@
   function build() { return {...appliedExtras,...hooks.buildDesign(state.designName || context.title)}; }
   function saveDraft() {
     if(!context || loading || !state.dirty) return;
-    try { localStorage.setItem(key(context.showId),JSON.stringify({version:1,showId:context.showId,basis:context.basis,design:build()})); }
+    /* stripPassthrough: 劇場プリセットの照明プラン集は編集対象ではないので控えに複製しない
+       （2026-09-17。理由は gamma-light-model.js のコメントを参照）。 */
+    try { localStorage.setItem(key(context.showId),JSON.stringify({version:1,showId:context.showId,basis:context.basis,design:model.stripPassthrough(build())})); }
     catch(error) { message('編集内容の控えを保存できません。照明をファイルへ書き出してください'); }
   }
   function setMode(mode) {
@@ -54,7 +56,9 @@
         const draft=JSON.parse(raw);
         if(draft.version!==1 || draft.showId!==next.showId) throw Error('照明の編集控えを確認できません。控えは上書きしていません');
         if(draft.basis!==next.basis) throw Error('別の更新より前の編集控えが残っています。照明の控えを復旧してから開いてください');
-        design=model.validate(draft.design,next.scenes.map(row=>row.id));dirty=true;
+        /* restoreDraft: 控えには無い素通りフィールド（劇場プリセットの照明プラン集）を、
+           basisが一致している＝内容が同じと保証されたホストの現在値から補う。 */
+        design=model.restoreDraft(draft.design,next);dirty=true;
       }
       // Strict ID matching: host pieces never come from a demo or imported design.
       state.scenes=next.scenes.map(row=>({id:row.id,name:row.name,pieces:model.clone(row.pieces),cue:{lights:{},groups:[]}}));

@@ -30603,6 +30603,16 @@ ${propsPlotHtml}
   });
   let gammaStorageChanged = false;
   window.addEventListener("storage", event => { if (event.key === BETA_STORAGE_KEY) gammaStorageChanged = true; });
+  /* basis は「ホストの照明編集元データが変わったか」だけを検出できればよい印。
+     以前は中身（design＝劇場プリセットの照明プラン集を含みうる）をJSON文字列で丸ごと
+     埋め込んでおり、それがそのままlocalStorageの控えにも書かれて容量を圧迫していた
+     （2026-09-17 実測: 劇場プリセット1枚で控えが270KB→3KBまで縮んだ）。
+     暗号学的な強度は不要——変更検出のための決定的ハッシュ（FNV-1a相当）で足りる。 */
+  function gammaBasisFingerprint(text) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < text.length; i += 1) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    return "v2:" + text.length.toString(36) + ":" + (h >>> 0).toString(16);
+  }
   function gammaLightingContext() {
     const size = venueSize();
     const stage = { W: size.width, D: size.depth, H: size.height || 8 };
@@ -30619,7 +30629,7 @@ ${propsPlotHtml}
     }));
     return { showId: state.project.id, title: state.project.title, stage, scenes,
       activeSceneId: state.project.activeSceneId, design: state.project.lightingDesign ? projectIoClone(state.project.lightingDesign) : null,
-      basis: JSON.stringify({ id: state.project.id, scenes: scenes.map(row => row.id).sort(), stage, design: state.project.lightingDesign || null }),
+      basis: gammaBasisFingerprint(JSON.stringify({ id: state.project.id, scenes: scenes.map(row => row.id).sort(), stage, design: state.project.lightingDesign || null })),
       readOnly: STUDY_READ_ONLY || document.body.classList.contains("stage-session-guest"),
       // V-7（2026-09-17）: 劇場が一度も反映されていないショーで機材配置/照明を開いたら誘導する
       // （docs/ui-audit-2026-09-16/UI_REWORK_SPEC.md V-7）。既存の venueSetupWasApplied() をそのまま使う。

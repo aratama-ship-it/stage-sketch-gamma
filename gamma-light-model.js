@@ -56,5 +56,24 @@
     next.stage=clone(context.stage);
     return next;
   }
-  root.GAMMA_LIGHT_MODEL=Object.freeze({clone,validate,empty,reconcile});
+  /* 控え（localStorage）に持たせない、ホスト由来の素通りフィールド。
+     劇場プリセットの照明プラン集（plans/activePlanRef）はこのエディタでは編集せず、
+     まるごとの器を通しているだけなので、毎回の自動保存で複製すると際限なく膨らむ
+     （2026-09-17 実測: 劇場プリセット1枚で控えが270KB→3KBまで縮んだ。それが積もって
+     localStorageの上限に達し、照明を開けなくなる不具合が実際に起きた）。
+     復元は、控えを作った時点と中身が一致しているホストの現在値（basisが同じ＝保証済み）
+     から取り直す。編集対象そのもの（rig・scenes・palette・curtains等）は控えに残す。 */
+  const PASSTHROUGH_KEYS = Object.freeze(['plans', 'activePlanRef']);
+  function stripPassthrough(design) {
+    const next = clone(design);
+    PASSTHROUGH_KEYS.forEach(key => { delete next[key]; });
+    return next;
+  }
+  function restoreDraft(draftDesign, context) {
+    const design = validate(draftDesign, context.scenes.map(row => row.id));
+    const passthrough = reconcile(context.design, context);
+    PASSTHROUGH_KEYS.forEach(key => { if (passthrough[key] !== undefined) design[key] = clone(passthrough[key]); });
+    return design;
+  }
+  root.GAMMA_LIGHT_MODEL=Object.freeze({clone,validate,empty,reconcile,stripPassthrough,restoreDraft});
 })(typeof window==='undefined'?globalThis:window);
