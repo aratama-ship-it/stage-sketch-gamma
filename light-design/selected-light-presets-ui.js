@@ -47,10 +47,29 @@
     "flash.sparkle": ["きらめき", "点滅", "再現可能な位相差で、きらめくように見せます。"],
     "flash.sequence": ["点滅・順送り", "点滅", "1灯ずつ順に光らせます。並べ方・向き・同時に光る数・回数を選べます。"],
   };
+  /* 点滅は6つの方式を1枚のカード「ストロボ」にまとめ、方式は詳細パネルのプルダウンで選ぶ
+     （2026-09-17 本人要望）。engine 側は方式ごとの型のまま＝どの方式を当てたかは記録に残る。 */
+  const STROBE_METHODS = [
+    ["flash.sequence", "順送り（1灯ずつ順に）"],
+    ["flash.all", "全灯そろって"],
+    ["flash.alternate", "1つ飛ばしで交互"],
+    ["flash.leftRight", "下手から上手へ"],
+    ["flash.centerOut", "中央から外へ"],
+    ["flash.sparkle", "きらめき（ばらばら）"],
+  ];
+  const STROBE_IDS = STROBE_METHODS.map(([id]) => id);
+  const isStrobe = (preset) => preset && preset.family === "flash";
+  const strobeMethodId = () => (STROBE_IDS.includes(ui.selectedId) ? ui.selectedId : STROBE_IDS[0]);
+  const methodName = (id) => (STROBE_METHODS.find(([m]) => m === id) || [id, id])[1];
+  /* 一覧・詳細に出す見出し。点滅はどの方式でも「ストロボ」1枚として見せる。 */
+  const cardText = (preset) => (isStrobe(preset)
+    ? ["ストロボ", "点滅", `点滅のさせ方をプルダウンで選びます。いまは「${methodName(preset.id)}」。`]
+    : (INFO[preset.id] || [preset.id, preset.family, ""]));
   const FAMILIES = ["all", "aim", "area", "motion", "value", "show", "flash"];
   const FAMILY_LABEL = { all: "すべて", aim: "狙い", area: "範囲", motion: "動き", value: "配り方", show: "演出", flash: "点滅" };
   const ui = { family: "all", query: "", sort: "recommended", selectedId: "aim.converge", panel: "adjust", seed: 173204, order: "physical", alignIntensity: true, custom: { shape: "rect", u0: 0.2, v0: 0.2, u1: 0.8, v1: 0.8, u: 0.5, v: 0.5, r: 0.3 }, irregularity: 0.65, loopSec: 11, rateHz: 2, phaseOffset: 0, appliedDetail: null,
-    sequence: "lr", blocks: 1, direction: "fwd", width: "1", flashes: 1, duty: 50, soft: false, depth: 60, floor: 0, loops: 0, after: "off" };
+    sequence: "lr", blocks: 1, direction: "fwd", width: "1", flashes: 1, duty: 50, soft: false, depth: 60, floor: 0, loops: 0, after: "off",
+    setBeam: false, beamDeg: 24, setLevel: false, level: 80 };
 
   const style = document.createElement("style");
   style.textContent = `
@@ -90,8 +109,14 @@
      （順番を決めるつまみが2つあると、どちらが効くのか読めないため。2026-09-17 削り込み）。
      全体のずらしも外した——ずっと再生していると見分けがつかない（実測: 時刻をずらすと同じ形）。 */
   const isSeq = () => currentPreset().id === "flash.sequence";
-  const effectiveOrder = () => (isSeq() ? (ui.sequence === "selection" ? "selection" : "physical") : ui.order);
-  const choices = () => ({ seed: ui.seed, order: effectiveOrder(), alignIntensity: ui.alignIntensity, irregularity: ui.irregularity, loopSec: ui.loopSec, rateHz: ui.rateHz, phaseOffset: isSeq() ? 0 : ui.phaseOffset,
+  /* ストロボでは「灯の並び順」を出さない。順送りは並べ方の中の「選んだ順のまま」で決め、
+     他の方式（下手から上手へ、中央から外へ等）は方式の名前どおり仕込み順で並べる。 */
+  const effectiveOrder = () => {
+    if (!isStrobe(currentPreset())) return ui.order;
+    return isSeq() && ui.sequence === "selection" ? "selection" : "physical";
+  };
+  const choices = () => ({ seed: ui.seed, order: effectiveOrder(), alignIntensity: ui.alignIntensity, irregularity: ui.irregularity, loopSec: ui.loopSec, rateHz: ui.rateHz, phaseOffset: isStrobe(currentPreset()) ? 0 : ui.phaseOffset,
+    setBeam: ui.setBeam === true, beamDeg: ui.beamDeg, setLevel: ui.setLevel === true, level: ui.level,
     sequence: ui.sequence === "selection" ? "lr" : ui.sequence, blocks: ui.blocks, direction: ui.direction, width: ["half", "build"].includes(ui.width) ? ui.width : Number(ui.width), flashes: ui.flashes, duty: ui.duty, soft: ui.soft === true || ui.soft === "true", depth: ui.depth, floor: ui.floor, loops: ui.loops, after: ui.after, region: ui.custom.shape === "circle" ? { kind: "circle", u: ui.custom.u, v: ui.custom.v, r: ui.custom.r } : { kind: "rect", u0: ui.custom.u0, v0: ui.custom.v0, u1: ui.custom.u1, v1: ui.custom.v1 } });
   const canUse = (preset) => {
     if (!preset) return false;
@@ -105,7 +130,7 @@
       motion: ["軌道・速さ・ずらし", "色・強さ・広がり・ゴボ・点滅"],
       value: ["色 または 強さ", "狙い・動き・広がり・ゴボ"],
       show: ["カードごとの狙い／動き／強さ", "それ以外の灯の設定"],
-      flash: ["点滅の速さ・ずらし", "狙い・色・動き・広がり・ゴボ"],
+      flash: ["点滅。選べば太さ・強さも", "狙い・色・動き・ゴボ"],
     };
     const pair = map[preset.family] || ["この型の属性", "それ以外"];
     return { changes: pair[0], keeps: pair[1] };
@@ -311,7 +336,7 @@
 
   function renderTypePane() {
     const ids = selectedIds(), count = ids.length, selected = currentPreset();
-    const info = INFO[selected.id] || [selected.id, selected.family, ""];
+    const info = cardText(selected);
     const scope = scopeText(selected);
     const applied = sharedAppliedPresets().find((item) => item.id === selected.id);
     const detail = applied && applied.adjusted ? adjustmentDetail(applied) : "";
@@ -320,9 +345,9 @@
     const skipped = selected.movingOnly && count > movingCount() ? `ムービング ${movingCount()}灯に適用・固定${count - movingCount()}灯はそのまま` : `${count}灯に適用`;
     const cards = cardList();
     const list = cards.map((preset) => {
-      const text = INFO[preset.id] || [preset.id, preset.family, ""];
+      const text = cardText(preset);
       const disabled = !canUse(preset);
-      const suffix = preset.id === "motion.wander.stageAudience" ? "客席マスク待ち" : (preset.movingOnly ? `ムービング ${movingCount()}灯` : text[1]);
+      const suffix = preset.id === "motion.wander.stageAudience" ? "客席マスク待ち" : isStrobe(preset) ? methodName(preset.id) : (preset.movingOnly ? `ムービング ${movingCount()}灯` : text[1]);
       return `<button type="button" class="slp-card ${preset.id === selected.id ? "sel" : ""}" data-slp-preset="${preset.id}" ${disabled ? "disabled" : ""}>${diagram(preset)}<b>${esc(text[0])}</b><small>${esc(scopeText(preset).changes)} ／ ${esc(suffix)}</small></button>`;
     }).join("") || `<p class="slp-list-empty">該当する型はありません。</p>`;
     const flashNotice = selected.family !== "flash" ? "" : selected.id === "flash.sequence"
@@ -355,12 +380,17 @@
     return tab;
   }
 
+  /* 一覧に出す型。点滅は6方式まとめて「ストロボ」1枚にする（中身は、いま選んでいる方式）。
+     検索は方式名でも当たるようにして、「きらめき」で探せなくならないようにする。 */
+  const strobeSearchText = () => STROBE_METHODS.map(([id, name]) => `${id} ${name} ${(INFO[id] || []).join(" ")}`).join(" ");
   function cardList() {
     const query = ui.query.trim().toLowerCase();
     const order = new Map(X.PRESETS.map((preset, index) => [preset.id, index]));
     return X.PRESETS.filter((preset) => {
+      if (isStrobe(preset) && preset.id !== strobeMethodId()) return false;
       const info = INFO[preset.id] || [preset.id, preset.family, ""];
-      return (ui.family === "all" || preset.family === ui.family) && (!query || `${preset.id} ${info.join(" ")}`.toLowerCase().includes(query));
+      const text = isStrobe(preset) ? `ストロボ 点滅 ${strobeSearchText()}` : `${preset.id} ${info.join(" ")}`;
+      return (ui.family === "all" || preset.family === ui.family) && (!query || text.toLowerCase().includes(query));
     }).sort((a, b) => {
       const availability = Number(!canUse(a)) - Number(!canUse(b));
       if (availability) return availability;
@@ -370,7 +400,7 @@
     });
   }
   function controlsFor(preset, { concise = false } = {}) {
-    let html = preset.id === "flash.sequence" ? ""
+    let html = isStrobe(preset) ? ""
       : `<div class="slp-control"><span>灯の並び順</span><select data-slp="order"><option value="physical" ${ui.order === "physical" ? "selected" : ""}>仕込み順（推奨）</option><option value="selection" ${ui.order === "selection" ? "selected" : ""}>選んだ順</option></select></div>`;
     if (preset.family === "area") html += `<label class="slp-control"><span>強さもそろえる</span><input data-slp="alignIntensity" type="checkbox" ${ui.alignIntensity === false ? "" : "checked"}></label>`;
     if (preset.id === "area.custom") {
@@ -379,6 +409,9 @@
         ? [["u", "中心X"], ["v", "中心Y"], ["r", "半径"]].map(([key, label]) => `<label class="slp-control"><span>${label}（0〜1）</span><input data-slp="custom.${key}" type="number" min="0" max="1" step="0.05" value="${ui.custom[key]}"></label>`).join("")
         : [["u0", "左端X"], ["v0", "奥端Y"], ["u1", "右端X"], ["v1", "手前端Y"]].map(([key, label]) => `<label class="slp-control"><span>${label}（0〜1）</span><input data-slp="custom.${key}" type="number" min="0" max="1" step="0.05" value="${ui.custom[key]}"></label>`).join("");
       html += `<button type="button" class="btn" data-slp-action="draw-range">平面図で${ui.custom.shape === "circle" ? "丸" : "四角"}を描く</button>${concise ? "" : `<p class="slp-note">${ui.custom.shape === "circle" ? "中心から外周まで" : "対角どうし"}をドラッグします。描いたあとも数値で微調整でき、適用するまでキューは変わりません。</p>`}`;
+    }
+    if (isStrobe(preset)) {
+      html += `<label class="slp-control"><span>点滅のさせ方</span><select data-slp="strobeMethod">${STROBE_METHODS.map(([id, name]) => `<option value="${id}" ${preset.id === id ? "selected" : ""}>${esc(name)}</option>`).join("")}</select></label>`;
     }
     const seqRandom = preset.id === "flash.sequence" && (ui.sequence === "random" || ui.direction === "random");
     if (preset.id === "motion.wander.stage" || preset.id === "flash.sparkle" || seqRandom) html += `<label class="slp-control"><span>seed（再現用）</span><input data-slp="seed" type="number" min="0" step="1" value="${ui.seed}"></label><button type="button" class="btn small" data-slp-action="reroll">別の動きにする</button>`;
@@ -403,19 +436,35 @@
       // 「終わったら」は止まらない設定のとき効果がない（実測で完全一致）ので、周数を決めたときだけ出す
       if (Number(ui.loops) >= 1) html += sel("after", "終わったら", [["off", "消す"], ["hold", "最後の状態で残す"]]);
       if (!concise) html += `<p class="slp-note">再生を始めた時刻から数えます。「繰り返し」を決めると、その周数で止まります。</p>`;
-    } else if (preset.family === "flash") html += `<label class="slp-control"><span>点滅（Hz）</span><input data-slp="rateHz" type="number" min="0.5" max="3" step="0.25" value="${ui.rateHz}"></label><label class="slp-control"><span>全体の位相</span><input data-slp="phaseOffset" type="range" min="0" max="1" step="0.05" value="${ui.phaseOffset}"></label>`;
+    } else if (isStrobe(preset)) {
+      html += `<label class="slp-control slp-num"><span>速さ（Hz）</span><span class="slp-stepper"><button type="button" class="slp-step" data-slp-step="rateHz" data-slp-delta="-0.25" aria-label="速さを減らす" tabindex="-1">−</button><input data-slp="rateHz" type="number" min="0.5" max="3" step="0.25" value="${ui.rateHz}"><button type="button" class="slp-step" data-slp-step="rateHz" data-slp-delta="0.25" aria-label="速さを増やす" tabindex="-1">＋</button></span></label>`;
+    }
+    /* どの方式でも、点滅と一緒に太さ・強さを決められる（2026-09-17 本人要望）。
+       既定は「変えない」＝いまの値のまま。点滅を当てただけで明るさが変わると驚くため。 */
+    if (isStrobe(preset)) {
+      const pair = (onKey, valKey, label, unit, min, max, step, title) => {
+        let out = `<label class="slp-control"><span>${label}</span><select data-slp="${onKey}"><option value="false" ${ui[onKey] ? "" : "selected"}>変えない</option><option value="true" ${ui[onKey] ? "selected" : ""}>まとめて変える</option></select></label>`;
+        if (ui[onKey]) out += `<label class="slp-control slp-num"><span>${unit}</span><span class="slp-stepper"><button type="button" class="slp-step" data-slp-step="${valKey}" data-slp-delta="${-step}" aria-label="${unit}を減らす" tabindex="-1">−</button><input data-slp="${valKey}" type="number" min="${min}" max="${max}" step="${step}" value="${ui[valKey]}" title="${title}"><button type="button" class="slp-step" data-slp-step="${valKey}" data-slp-delta="${step}" aria-label="${unit}を増やす" tabindex="-1">＋</button></span></label>`;
+        return out;
+      };
+      html += pair("setBeam", "beamDeg", "光の太さ", "太さ（度）", 4, 70, 1, "光の広がり（度）。「調整」パネルの光の広がりと同じ値です");
+      html += pair("setLevel", "level", "光の強さ", "強さ（%）", 0, 100, 5, "調光。0で消灯と同じ扱いです");
+    }
     return html;
   }
   /* つまみの配線。−／＋ と直接入力を同じ場所で受ける（2026-09-17）。
      表示される操作そのものが変わるつまみ（光り方＝割合/深さの入れ替え、並べ方・向き＝seedの出し入れ）
      だけ描き直す。−／＋ は欄の値を書き換えるだけ＝連打しても描き直さない（送り先が飛ばない）。 */
-  const RERENDER_KEYS = ["custom.shape", "query", "sort", "soft", "sequence", "direction", "loops"];
+  const RERENDER_KEYS = ["custom.shape", "query", "sort", "soft", "sequence", "direction", "loops", "setBeam", "setLevel"];
+  const BOOL_KEYS = ["soft", "setBeam", "setLevel"];
   function bindControls(scope, rerender) {
     scope.querySelectorAll("[data-slp]").forEach((input) => {
       input.oninput = () => {
         const key = input.dataset.slp;
         const value = input.type === "checkbox" ? input.checked : (input.type === "number" || input.type === "range" ? Number(input.value) : input.value);
-        if (key.startsWith("custom.")) ui.custom[key.slice(7)] = value; else ui[key] = value;
+        // ストロボの方式は「どの型を当てるか」そのものなので、選んだ型を差し替える
+        if (key === "strobeMethod") { ui.selectedId = String(value); ui.appliedDetail = null; rerender(); return; }
+        if (key.startsWith("custom.")) ui.custom[key.slice(7)] = value; else ui[key] = BOOL_KEYS.includes(key) ? (value === true || value === "true") : value;
         if (RERENDER_KEYS.includes(key)) rerender();
       };
       input.onchange = input.oninput;
@@ -438,11 +487,11 @@
 
   function renderModal() {
     const root = document.querySelector("#dialog .slp"); if (!root) return;
-    const selected = currentPreset(), info = INFO[selected.id] || [selected.id, selected.family, ""];
+    const selected = currentPreset(), info = cardText(selected);
     const cards = cardList().map((preset) => {
-      const text = INFO[preset.id] || [preset.id, preset.family, ""];
+      const text = cardText(preset);
       const disabled = !canUse(preset);
-      const suffix = preset.id === "motion.wander.stageAudience" ? "客席マスク待ち" : (preset.movingOnly ? `ムービング ${movingCount()}灯` : text[1]);
+      const suffix = preset.id === "motion.wander.stageAudience" ? "客席マスク待ち" : isStrobe(preset) ? methodName(preset.id) : (preset.movingOnly ? `ムービング ${movingCount()}灯` : text[1]);
       return `<button type="button" class="slp-card ${preset.id === selected.id ? "sel" : ""}" data-slp-preset="${preset.id}" ${disabled ? "disabled" : ""}>${diagram(preset)}<b>${esc(text[0])}</b><small>${esc(scopeText(preset).changes)} ／ ${esc(suffix)}</small></button>`;
     }).join("") || `<p class="hint">該当する型はありません。</p>`;
     const unavailable = selected.id === "motion.wander.stageAudience";
@@ -467,15 +516,22 @@
     if (apply) apply.onclick = applyPreset;
   }
   function applyPreset() {
-    const preset = currentPreset(), ids = selectedIds();
-    const result = X.applySelectedLightPreset({ presetId: preset.id, cue: H.cue(), fixtures: state.rig.fixtures, selection: ids, choices: choices(), regions: stageRegions(), order: effectiveOrder() });
+    const preset = currentPreset(), ids = selectedIds(), picked = choices();
+    const result = X.applySelectedLightPreset({ presetId: preset.id, cue: H.cue(), fixtures: state.rig.fixtures, selection: ids, choices: picked, regions: stageRegions(), order: effectiveOrder() });
     if (result.status !== "applied") { H.toast(result.reason === "no-compatible-fixtures" ? "この型に使える灯が選ばれていません" : "型を適用できませんでした"); return; }
     /* ここだけが状態を書き換える箇所。commit は正確に一度だけなので、Undoも一手だけ。 */
     const c = H.cue();
     c.lights = result.nextCue.lights;
     c.groups = result.nextCue.groups || c.groups;
+    /* 固定灯の太さは仕込みの値（fixture.beamDeg）で決まり、シーンごとの light.beamDeg では動かない。
+       engine は cue しか返さないので、ここで仕込み側へも書く（commit は下で1回だけ）。 */
+    if (picked.setBeam) {
+      const deg = Math.min(70, Math.max(4, Number(picked.beamDeg) || 24));
+      result.targets.forEach((fid) => { const f = H.fixtureById(fid); if (f && !R.E.isMoving(f)) f.beamDeg = deg; });
+    }
     const skipped = result.skipped.length ? `・${result.skipped.length}灯はそのまま` : "";
-    H.commit(`「${(INFO[preset.id] || [preset.id])[0]}」を${result.targets.length}灯に適用しました${skipped}。一つ戻すで戻せます`);
+    const name = isStrobe(preset) ? `ストロボ・${methodName(preset.id).replace(/（.*）/, "")}` : (INFO[preset.id] || [preset.id])[0];
+    H.commit(`「${name}」を${result.targets.length}灯に適用しました${skipped}。一つ戻すで戻せます`);
     refresh();
   }
   function openModal() {
