@@ -12,14 +12,14 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026091960">
+<link rel="stylesheet" href="style.css?v=2026091961">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="gamma.css?v=2026091944">
+<link rel="stylesheet" href="gamma.css?v=2026091963">
 <link rel="stylesheet" href="gamma-mobile.css?v=2026091950">
 <script src="gamma-light-model.js?v=2026091944"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=formation1">
@@ -2756,14 +2756,18 @@
             <span id="stage-venue-editor-save-status" aria-live="polite"></span>
             <span id="stage-venue-library-status" aria-live="polite"></span>
           </div>
+          <!-- S-05（2026-09-18 本人要望）: 4つを同じ大きさで1列に並べる。
+               以前は3つの行＋その下に「この劇場を反映する」の全幅ボタン（合計108px）だった。
+               1行（44px）にすると縦が64px空き、平面図（3:2で高さから幅を逆算する）がそのぶん大きくなる。
+               色は変えない＝反映ボタンは赤地＋白の太枠のまま。主役／脇役は色で示し、大きさでは示さない。 -->
           <div class="stage-io-row stage-venue-library-actions">
             <button type="button" class="stage-minor-action" id="stage-venue-editor-save">ライブラリに保存</button>
             <button type="button" class="btn-quiet" id="stage-venue-library-export">劇場を書き出す</button>
             <label class="btn-quiet stage-import-label">
               劇場を読み込む<input type="file" id="stage-venue-library-import" accept="application/json" hidden>
             </label>
+            <button type="button" class="stage-venue-apply-button" id="stage-venue-editor-apply">この劇場を反映する</button>
           </div>
-          <button type="button" class="stage-venue-apply-button" id="stage-venue-editor-apply">この劇場を反映する</button>
         </footer>
       </div>
     </div>

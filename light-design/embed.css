@@ -1,9 +1,22 @@
+/* S-07（2026-09-18 本人要望）: 埋め込みのときの地色を、γ本体の全体背景（--desk = #191512）へ揃える。
+ * 直す前は4つの色がずれていた（実測）:
+ *   γ本体の body      #191512  ← これが正
+ *   iframe要素         #141311（gamma.css の #gamma-light-frame）
+ *   iframe内 html/body #0d0b09（index.html の <style>）
+ *   .modal            #201b16（index.html の var(--desk-2)）← 画面に見えている地
+ * 本人の言葉:「メインのボディ部分の背景が全体背景とずれている。多少全体背景の方が暗いです」
+ * ★単体で開いたとき（判断用の試作ページ）の見た目は変えない。ここは data-gamma-embedded 限定。 */
+html[data-gamma-embedded],
+html[data-gamma-embedded] body { background: var(--desk); }
 html[data-gamma-embedded] body { display: block; min-height: 100vh; margin: 0; padding: 0; }
 html[data-gamma-embedded] .proto-note,
 html[data-gamma-embedded] .head { display: none; }
 html[data-gamma-embedded] .modal {
   width: 100%;
   height: 100vh;
+  /* S-07: .modal の var(--desk-2)（#201b16）は単体ページで「暗い地の上に浮く窓」に見せるための色。
+   * 埋め込みでは外側と同じ地にする。 */
+  background: var(--desk);
   /* R-17（2026-09-17 本人要望）: 埋め込みのときは枠を消して横幅を使い切る。
    * .modal は単体ページ（判断用の試作）で「画面いっぱいの窓」に見せるための枠で、
    * γの中では外側にヘッダーがあるので要らない。box-shadow と border-radius は

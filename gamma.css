@@ -106,6 +106,12 @@ body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 6px;
+  /* S-06（2026-09-18）: 手順の列は grid。既定の align-content は stretch なので、
+   * 中身が枠より短いと行が引き伸ばされ、畳んだ手順の箱だけが縦に伸びて
+   * 見出しが箱の上に貼り付く（実測: 縦1600pxの窓で 21.3px → 115.6px、下に95.3pxの空白）。
+   * S-06 で手順を詰めた結果この余りが生まれ、この症状が出るようになった。
+   * 行は中身の高さのままにする。 */
+  align-content: start;
 }
 /* 右列は平面図だけを流し、「この劇場を反映する」等の操作は下へ固定して常に見えるようにする
  * （V-2実測: 反映ボタンが枠の150px下に隠れていた）。 */
@@ -222,11 +228,36 @@ body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
 #gamma-venue-workspace .gamma-venue-step.is-open .gamma-venue-step-toggle::before { content: "▾"; }
 /* R-05（2026-09-17 本人要望）: 畳んでいる手順だけ高さを半分にして、一覧を縦に詰める。
  * 開いている手順（情報の大きなパネル）の見出しは今までのまま変えない。
- * var(--ctrl-md) は 36px。その半分の 18px では押す的が小さすぎるので、
- * 「見出し1行ぶんが読める最小」まで詰める形で 18px + 行の高さぶんを確保する。 */
+ * ★S-06（2026-09-18）の実測で分かったこと: この min-height は実際には効いていない。
+ *   見出しの line-height が 19.25px で、calc(36px/2)=18px より高いため。
+ *   R-05 はここだけ直して「半分にした」つもりになっていたが、見た目はほとんど変わっていなかった。
+ *   実際に効くのは下の padding（手順の枠が持つ 10px + 10px）。指定自体は無害なので残す。 */
 #gamma-venue-workspace .gamma-venue-step:not(.is-open) .gamma-venue-step-toggle {
   min-height: calc(var(--ctrl-md) / 2);
   padding: 0;
+}
+
+/* S-06（2026-09-18 本人要望）: 畳んでいる手順をもっと詰める。本人の言葉は
+ * 「もうちょっと狭く。さらに半分ぐらいの高さでいいと思います」。
+ * 実測（1920×1000）: 畳んだ1手順は 41.3px で、内訳は 枠線1px + padding-top 10px +
+ * 見出し19.3px + padding-bottom 10px。上下の余白を落とすと 20.3px ＝ ほぼ半分になる。
+ * 6手順ぶんで約126px空く。左列は高さ775pxに対し中身864px（89pxスクロールして手順5〜7が画面外）
+ * だったので、これでスクロールが消えて1〜7が全部見える。
+ * ★枠線と背景は残す（手順の区切りが分からなくなるため）。開いている手順の余白は変えない。
+ * ★余白の指定は style.css（手順1〜6）と gamma.css（手順7 .stage-venue-editor-machinery）の
+ *   2か所に分かれているが、この規則は詳細度（id + 2クラス）でどちらにも勝つので1つで足りる。
+ * ★対象はブラウザ（デスクトップ）。本人指定によりタッチ端末の的の大きさは考慮しない。 */
+#gamma-venue-workspace .gamma-venue-step:not(.is-open) {
+  /* 本人指示（2026-09-18・3回目の調整）:
+   *  1回目「もうちょっと狭く。さらに半分ぐらいの高さで」→ padding-block:0 で 41.3px → 21.3px
+   *  2回目「上に詰めるのではなく箱の高さを詰める。文字は箱の縦中央へ」→ 親の align-content:start で解決
+   *  3回目「ちょっと狭くなりすぎた。上下にもう少し余裕が欲しい。箱の高さ自体は倍に」→ ここ
+   * 21.3px の倍＝約42px。内訳は 枠線2px + 見出し19.3px + この余白×2。
+   * ★結果としてS-06前の高さ（41.3px）とほぼ同じになる。ただしS-06前と違い、
+   *   親の align-content:start で「窓が縦に長いと箱だけ伸びる」不具合は直っている。 */
+  padding-block: 10px;
+  /* 万一この箱が引き伸ばされる場面があっても見出しが上に貼り付かないよう、中身は中央に置く。 */
+  align-content: center;
 }
 #gamma-venue-workspace .gamma-venue-step-toggle:hover { color: var(--milk); }
 #gamma-venue-workspace .gamma-venue-step-toggle:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
@@ -299,7 +330,9 @@ body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
 }
 #gamma-venue-workspace #stage-venue-editor-close { display: none; }
 /* gamma-workspace.js measures the space below this frame after the header has wrapped. */
-#gamma-light-frame { display: block; width: 100%; height: calc(100dvh - 108px); min-height: 0; border: 0; border-radius: 0; background: #141311; }
+/* S-07（2026-09-18 本人要望）: iframe要素の地色も全体背景（--desk = #191512）へ揃える。
+ * 以前は #141311 で、読み込み中の一瞬だけ外側と違う色が見えていた。 */
+#gamma-light-frame { display: block; width: 100%; height: calc(100dvh - 108px); min-height: 0; border: 0; border-radius: 0; background: var(--desk); }
 #gamma-light-frame[hidden], #gamma-light-workspace[hidden] { display: none; }
 body[data-gamma-workspace="normal"] [data-panel="light"],
 body[data-gamma-workspace="normal"] .stage-light-motion-open,

@@ -1,4 +1,4 @@
-const CACHE_NAME = "stage-sketch-gamma-pwa-v77";
+const CACHE_NAME = "stage-sketch-gamma-pwa-v80";
 const APP_SHELL = [
   "./gamma-formation-presets.js?v=formation1",
   "./gamma-formation-model.js?v=formation1",
@@ -15,11 +15,11 @@ const APP_SHELL = [
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-small.shosai-light-design.json",
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-mid.shosai-light-design.json",
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-large.shosai-light-design.json",
-  "./gamma.css?v=2026091944",
+  "./gamma.css?v=2026091963",
   "./gamma-light-model.js?v=2026091944",
   "./gamma-workspace.js?v=2026091940",
   "./light-design/index.html?embed=gamma",
-  "./light-design/embed.css?v=2026091940",
+  "./light-design/embed.css?v=2026091961",
   "./light-design/rig-engine.js?v=20260917-2-waveforms",
   "./light-design/stage-figure.js?v=20260915-1",
   "./light-design/volume-light.js?v=20260915-2",
@@ -29,10 +29,10 @@ const APP_SHELL = [
   "./light-design/light-presets.js?v=1789357787",
   "./light-design/light-presets-ui.js?v=20260915-3-vertical-cards",
   "./light-design/selected-light-presets-engine.js?v=1789616000",
-  "./light-design/selected-light-presets-ui.js?v=2026091942-13-waveforms",
+  "./light-design/selected-light-presets-ui.js?v=2026091961-13-waveforms",
   "./light-design/embed.js?v=2026091701",
   "./stage.html",
-  "./style.css?v=2026091960",
+  "./style.css?v=2026091961",
   "./stage-venues.js?v=2026091501",
   "./stage-venue-lines.js?v=2026091501",
   "./stage-i18n.js?v=2026091960",

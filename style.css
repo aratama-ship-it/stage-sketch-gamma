@@ -8065,9 +8065,13 @@ html.stage-phone-viewer .stage-single-view-switch { display: none; }
   gap: 6px;
 }
 
+/* S-05（2026-09-18 本人要望）: 「ライブラリに保存／劇場を書き出す／劇場を読み込む／この劇場を反映する」を
+ * 同じ大きさで1列に並べる。以前は3列＋下に全幅の反映ボタンで、footer だけで108pxを使っていた。
+ * 幅は「1つが今の『ライブラリに保存』（実測209.3px）と同じか少し広く」という本人指定に合わせ、
+ * 880px の4列＝1つ215.5px にする。枠いっぱいには広げない（右寄せのまま）。 */
 .stage-venue-library-actions {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  width: min(100%, 640px);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: min(100%, 880px);
   margin-left: auto;
 }
 
@@ -8099,15 +8103,21 @@ html.stage-phone-viewer .stage-single-view-switch { display: none; }
   flex-direction: column;
 }
 
+/* S-05（2026-09-18 本人要望）: 他の3つと同じ高さ（44px）にする。
+ * 色（赤地＋白の3px枠）と太字は残す＝主役／脇役は色で示し、大きさでは示さない、が本人決定。
+ * 文字の大きさ・字間は .stage-venue-library-actions > button（14px / 0.15em）に揃う。 */
 .stage-venue-apply-button {
   width: 100%;
-  min-height: 52px;
+  min-height: 44px;
   margin: 0;
+  padding: 0 6px;
   border: 3px solid var(--paper);
   background: var(--rust);
   color: var(--milk);
   font: 700 15px var(--sans);
   letter-spacing: 0.12em;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .stage-venue-apply-button:hover,
@@ -10469,10 +10479,15 @@ body.is-roster-list-resizing { cursor: ns-resize; user-select: none; -webkit-use
 /* 舞台上か舞台裏かは、この場面での状態 */
 /* R-16（2026-09-17 本人要望）: 表示は英字の ON / OFF。
  * ON(2文字) と OFF(3文字) は幅が違うので、押すたびに箱が動かないよう min-width で固定する。
- * 実測: 9.5px・字間.06em で OFF は約18px。左右の余白 8px×2 と合わせて 34px あれば収まる。
  * 以前の「舞台上／舞台裏」は全角3文字で約44px だったので、1行あたり約10px 横が空く。 */
+/* S-02（2026-09-18 本人要望）: R-16 の 34px は前提が間違っていた。
+ * 下の font-size:9.5px は .stage-panel button { font-size: 11px }（style.css の
+ * 「舞台スケッチ: 文字を詰める」節）に詳細度で負けており、実際に描かれる文字は 11px。
+ * 11px での実測は ON=36.14px / OFF=41.31px で、ON だけ 34px の下限に張り付いて幅が違っていた。
+ * OFF の実測を切り上げた 42px を下限にして、ON/OFF どちらも同じ幅にする。
+ * font-size を 9.5px へ戻す直し方は取らない（11px はパネル内ボタンの統一規則）。 */
 .stage-cast-status {
-  min-width: 34px;
+  min-width: 42px;
   min-height: 24px;
   padding: 2px 8px;
   border: 1px solid var(--line-dark);
@@ -12195,6 +12210,10 @@ body.stage-modal-open .stage-tour { display: none !important; }
   justify-content: center;
   width: 24px;
   height: 24px;
+  /* S-01（2026-09-18 本人要望）: 全体規則の button { min-height: 44px } が height:24px に勝ち、
+   * この印が 24×44 の縦長になっていた（実測）。min-height を打ち消して正方形へ戻す。
+   * 全体規則のほうは触らない（外すとアプリ中のボタンが一斉に小さくなる）。 */
+  min-height: 24px;
   padding: 0;
   border: 1px solid var(--line-dark);
   background: rgba(240, 231, 214, 0.05);
@@ -15952,6 +15971,15 @@ body.is-panel-resizing .stage-sketch-grid { transition: none; }
   margin-right: 0;
   color: var(--milk);
   white-space: nowrap;
+  /* S-03（2026-09-18 本人要望）: ロゴの下端を、タブの下の黄色い帯の下端に揃える。
+   * 画像の箱の下端はもともと帯の下端と同じ（実測 107.2 = 107.2）。ずれて見えるのは
+   * SVGの下に余白があるため（viewBox 122 のうち絵は y=14〜98＝下に23単位の余白）。
+   * 下げ幅は「ロゴ幅 × 23/625 = 0.0368」。幅は画面幅で段階的に変わる（下の @media 群）ので
+   * 固定pxでは特定の幅でしか揃わない。--stage-header-logo-width から比で出す。
+   * position:relative なのでレイアウトの高さは変わらない（ヘッダー下の余白18pxに収まる）。
+   * 本人決定: 赤いキッカー＋版番号の行も一緒に下げる＝このかたまりごとずらす。 */
+  position: relative;
+  top: calc(var(--stage-header-logo-width, 320px) * 0.0368);
 }
 /* 赤いキッカーは置き換えずそのまま残す（2026-09-17 本人要望）。 */
 .stage-header-app-kicker {
@@ -16017,7 +16045,13 @@ body.is-panel-resizing .stage-sketch-grid { transition: none; }
 
 /* 音量までは再生状態、その右は操作群として右端へまとめる。 */
 .stage-history-actions { flex: 1 1 auto; min-width: 0; }
-.stage-history-actions .stage-undo-redo { margin-left: auto; }
+/* S-04（2026-09-18 本人要望）: 総経過時間・音量を「戻る（↶）」の左へ引っ付け、
+ * 右のアイコン群と一つの塊にする。
+ * 以前はここに `.stage-undo-redo { margin-left: auto; }` があり、「戻る」から右を右端へ
+ * 押しやっていたため、メーターだけが左に取り残されていた（実測で 317.7px の空白）。
+ * 上のコメントの「音量までは再生状態／その右は操作群」という区分けは、この指示で置き換える。
+ * .stage-history-actions は justify-content: flex-end なので、auto マージンを外せば
+ * 総経過時間 → 音量 → ↶ ↷ → … が隙間なく右端へ並ぶ。 */
 
 /* Gamma追加分: 転換時間はON/OFFの左側に同じ行で置き、説明段落は出さない。 */
 .stage-transition-animation-pref { display:flex; align-items:center; gap:14px; }
