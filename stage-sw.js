@@ -1,4 +1,4 @@
-const CACHE_NAME = "stage-sketch-gamma-pwa-v76";
+const CACHE_NAME = "stage-sketch-gamma-pwa-v77";
 const APP_SHELL = [
   "./gamma-formation-presets.js?v=formation1",
   "./gamma-formation-model.js?v=formation1",
@@ -32,12 +32,12 @@ const APP_SHELL = [
   "./light-design/selected-light-presets-ui.js?v=2026091942-13-waveforms",
   "./light-design/embed.js?v=2026091701",
   "./stage.html",
-  "./style.css?v=2026091944",
+  "./style.css?v=2026091960",
   "./stage-venues.js?v=2026091501",
   "./stage-venue-lines.js?v=2026091501",
-  "./stage-i18n.js?v=2026091945",
-  "./stage-i18n.zh-Hans.js?v=2026091944",
-  "./stage-i18n.zh-Hant.js?v=2026091944",
+  "./stage-i18n.js?v=2026091960",
+  "./stage-i18n.zh-Hans.js?v=2026091960",
+  "./stage-i18n.zh-Hant.js?v=2026091960",
   "./stage-prompt-i18n.js?v=2026091501",
   "./stage-rehearsal-export.js?v=2026091501",
   "./stage-samples/index.js?v=2026091501",

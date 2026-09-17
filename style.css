@@ -15962,6 +15962,10 @@ body.is-panel-resizing .stage-sketch-grid { transition: none; }
   letter-spacing: .22em;
   line-height: 1;
 }
+/* 2026-09-17 本人要望: 版番号は英語表記（キッカー）の横へ。大きさ・色はそのまま。
+ * キッカーは 9.5px・字間.22em、版番号は --fs-1(9px)・--milk-dim。背の低い1行にまとめる。 */
+.stage-header-app-kicker-row { display: inline-flex; align-items: baseline; gap: 7px; }
+
 /* ロゴと版番号の行。ロゴは画像なので baseline ではなく中心で揃える
  * （画像の baseline は下端＝SVGの下の余白ぶん版番号が下がってしまう）。 */
 .stage-header-app-copy { display: inline-flex; align-items: center; gap: var(--stage-header-identity-gap); }

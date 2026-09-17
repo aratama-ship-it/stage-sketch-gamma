@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.1.3">
+<meta name="stage-sketch-gamma-version" content="v0.2.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026091944">
+<link rel="stylesheet" href="style.css?v=2026091960">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -58,12 +58,15 @@
                版番号はロゴへ焼き込まず、これまでどおり別表示で右に残す。
                読み上げ用の見出しは #stage-sketch-title（visually-hidden の h1）が担う。 -->
           <div class="stage-header-app-identity" aria-hidden="true" data-no-i18n>
-            <!-- 赤いキッカー（STAGE SKETCH GAMMA）は本人要望で残す。置き換えたのは題の側だけ。 -->
-            <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
+            <!-- 赤いキッカー（STAGE SKETCH GAMMA）は本人要望で残す。置き換えたのは題の側だけ。
+                 2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
+            <span class="stage-header-app-kicker-row">
+              <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
+              <span class="stage-app-version">0.2.0</span>
+            </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
                    width="625" height="122" alt="舞台スケッチ GAMMA" decoding="async">
-              <span class="stage-app-version">0.1.3</span>
             </span>
           </div>
           <span class="stage-session-guest-badge" id="stage-session-guest-badge" role="status" hidden>ゲスト（閲覧＋矢印）</span><span class="stage-session-whoami" id="stage-session-whoami" role="status" hidden></span>
@@ -2271,6 +2274,24 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v020-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v020-title">v0.2.0</h3>
+        <time datetime="2026-09-17">2026-09-17</time>
+      </header>
+      <ul>
+        <li>選んだ演者を並べ替える「フォーメーション」を追加しました。2〜20人を選ぶと190種の型から選べます。</li>
+        <li>照明デザインで、灯体をまとめる自分のグループを作れるようにしました。</li>
+        <li>照明デザインの図を1枚だけ大きく出せるようにしました（正面図はF、平面図はp、側面図はO）。</li>
+        <li>照明デザインから他のモードへ移るとき、LXキューを適用するか尋ねるようにしました。</li>
+        <li>物を持ったときだけ、それに合う姿勢（一輪車に乗る・ギターを弾くなど）を選べるようにしました。</li>
+        <li>シーンの詳細に、出ている演者・舞台裏の演者・大道具・小道具・持ち物を出すようにしました。</li>
+        <li>「出るもの」を「演者・舞台セット」に改め、舞台上・舞台裏の表示を ON／OFF にしました。</li>
+        <li>一覧の名前は、二度押しでなく一度押すだけで詳しい窓が開くようになりました。舞台の上で選ぶときは左の印を押します。</li>
+        <li>ショーのバージョンは v1・v2… の形に統一し、「保存して ＋1」で上がるようにしました。</li>
+        <li>ヘッダーのロゴを新しくしました。そのほか表示の細かな調整を多数行いました。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v036-title">
       <header class="stage-release-entry-head">
         <h3 id="stage-release-v036-title">v0.3.6</h3>
@@ -2936,9 +2957,9 @@
 
 <script src="stage-venues.js?v=2026091501"></script>
 <script src="stage-venue-lines.js?v=2026091501"></script>
-    <script src="stage-i18n.js?v=2026091945"></script>
-    <script src="stage-i18n.zh-Hans.js?v=2026091944"></script>
-    <script src="stage-i18n.zh-Hant.js?v=2026091944"></script>
+    <script src="stage-i18n.js?v=2026091960"></script>
+    <script src="stage-i18n.zh-Hans.js?v=2026091960"></script>
+    <script src="stage-i18n.zh-Hant.js?v=2026091960"></script>
 <script src="stage-prompt-i18n.js?v=2026091501"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026091501"></script>
