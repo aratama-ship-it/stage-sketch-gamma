@@ -74,6 +74,8 @@
      中国語は英語へ落とす。★NEEDS_REVIEW（zh）: 下の語はネイティブ確認前。 */
   const OWN = {
     "シーンの目次": { en: "Scene index" },
+    "このシーンへ": { en: "Go to this scene" },
+    "セクションの最初のシーンへ": { en: "Go to the first scene in this section" },
     "引き出しを固定する": { en: "Pin the drawer" },
     "固定を外す": { en: "Unpin" },
     "PCで行うもの": { en: "Done on a PC" },
@@ -175,11 +177,17 @@
       } else scroller.scrollLeft = Math.max(0, target);
     }
 
+    function chipLabel(item) {
+      const action = item.section ? tx("セクションの最初のシーンへ")
+        : item.open ? tx("シーン一覧を開く") : tx("このシーンへ");
+      return `${item.num} ${item.name} ${action}`.trim();
+    }
+
     function rebuild() {
       scroller.replaceChildren();
-      model.forEach((item, index) => {
+      model.forEach((item) => {
         const chip = button(`gm-chip${item.section ? " is-section" : ""}${item.open ? " is-current" : ""}`,
-          item.section ? `${item.num} ${item.name}` : tx("シーン一覧を開く"),
+          chipLabel(item),
           { "data-scene-id": item.id, "aria-pressed": String(item.open) });
         chip.style.setProperty("--gm-depth", String(item.depth));
         if (item.section && item.color) chip.style.setProperty("--gm-section-color", item.color);
@@ -189,8 +197,12 @@
         name.textContent = item.name;
         chip.append(num, name);
         chip.addEventListener("click", () => {
-          if (item.open && opts && typeof opts.onCurrentTap === "function") { opts.onCurrentTap(); return; }
-          jump(index);
+          // 見た目を更新した後も、クリック時点の選択と並びを参照する。
+          const currentIndex = model.findIndex((row) => row.id === item.id);
+          const currentItem = model[currentIndex];
+          if (!currentItem) return;
+          if (currentItem.open && opts && typeof opts.onCurrentTap === "function") { opts.onCurrentTap(); return; }
+          jump(currentIndex);
         });
         scroller.append(chip);
       });
@@ -213,6 +225,8 @@
           const on = chip.dataset.sceneId === openId;
           chip.classList.toggle("is-current", on);
           chip.setAttribute("aria-pressed", String(on));
+          const item = model.find((row) => row.id === chip.dataset.sceneId);
+          if (item) chip.setAttribute("aria-label", chipLabel(item));
         });
       }
       if (opts && typeof opts.onRefresh === "function") opts.onRefresh(model);

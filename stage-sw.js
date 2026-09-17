@@ -1,4 +1,5 @@
-const CACHE_NAME = "stage-sketch-gamma-pwa-v81";
+// v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
+const CACHE_NAME = "stage-sketch-gamma-shell-v82";
 const APP_SHELL = [
   "./gamma-formation-presets.js?v=formation1",
   "./gamma-formation-model.js?v=formation1",
@@ -17,7 +18,7 @@ const APP_SHELL = [
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-large.shosai-light-design.json",
   "./gamma.css?v=2026091963",
   "./gamma-light-model.js?v=2026091944",
-  "./gamma-workspace.js?v=2026091941",
+  "./gamma-workspace.js?v=2026091942",
   "./light-design/index.html?embed=gamma",
   "./light-design/embed.css?v=2026091961",
   "./light-design/rig-engine.js?v=20260917-2-waveforms",
@@ -54,7 +55,7 @@ const APP_SHELL = [
   "./manual/quick-en.html",
   "./gamma-range-fields.js?v=2026091780",
   "./gamma-number-scrub.js?v=2026091780",
-  "./gamma-mobile.js?v=2026091950",
+  "./gamma-mobile.js?v=2026091951",
   "./gamma-mobile.css?v=2026091950",
   "./stage-sketch.js?v=2026091945",
   "./stage-timeline.js?v=2026091910",
@@ -81,6 +82,7 @@ const STAGE_PATHS = new Set([
   new URL("./stage", self.location.href).pathname,
 ]);
 const FORMATION_EDITOR_PATH = new URL("./formation/presets/editor.html", self.location.href).pathname;
+const LIGHT_EDITOR_PATH = new URL("./light-design/index.html", self.location.href).pathname;
 const APP_SHELL_PATHS = new Set(APP_SHELL.map((path) => new URL(path, self.location.href).pathname));
 
 /* 保存するときは「リダイレクトを経ていない素の応答」に写し直す。
@@ -138,7 +140,13 @@ async function removePreviousCachesWhenReady() {
   const keys = await caches.keys();
   await Promise.all(
     keys
-      .filter((key) => key.startsWith("stage-sketch-gamma-pwa-") && key !== CACHE_NAME)
+      // 旧タブからの整理要求で、インストール中の次版を消さない。
+      // 世代を比較できない名前は、安全側へ残す。
+      .filter((key) => {
+        const previous = /^stage-sketch-gamma-(?:pwa|shell)-v(\d+)$/.exec(key);
+        const current = /^stage-sketch-gamma-(?:pwa|shell)-v(\d+)$/.exec(CACHE_NAME);
+        return previous && current && Number(previous[1]) < Number(current[1]);
+      })
       .map((key) => caches.delete(key))
   );
   return true;
@@ -147,7 +155,7 @@ async function removePreviousCachesWhenReady() {
 async function cachedAppShellResponse(request, { stageDocument = false } = {}) {
   const keys = await caches.keys();
   for (const key of keys) {
-    if (!key.startsWith("stage-sketch-gamma-pwa-")) continue;
+    if (!/^stage-sketch-gamma-(?:pwa|shell)-/.test(key)) continue;
     const cache = await caches.open(key);
     const exact = await cache.match(request);
     if (exact) return exact;
@@ -195,8 +203,9 @@ self.addEventListener("fetch", (event) => {
       || url.pathname === "/study.html" || url.pathname.startsWith("/study-frame")) return;
 
   // 画面本体はオンライン時に最新版を優先し、通信できない時だけ保存版へ戻る。
-  // The versioned, same-origin formation iframe is also part of the cached app shell.
-  if (request.mode === "navigate" && url.pathname !== FORMATION_EDITOR_PATH) {
+  // The same-origin formation and embedded lighting iframes are cached app assets.
+  const embeddedLightEditor = url.pathname === LIGHT_EDITOR_PATH && url.searchParams.get("embed") === "gamma";
+  if (request.mode === "navigate" && url.pathname !== FORMATION_EDITOR_PATH && !embeddedLightEditor) {
     // 同じ場所にある資料棚などはこのPWAの対象にしない。
     if (!STAGE_PATHS.has(url.pathname)) return;
 

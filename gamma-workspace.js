@@ -268,7 +268,11 @@
   }
   /* 2026-09-17 本人指示: 新しいショーはまず劇場設定から。決まるまで他のモードへは行かせない。
    * 見る専用（共有の閲覧）は止めない——劇場を決めるのは持ち主の仕事なので。 */
+  function phoneViewerWorkspace() {
+    return document.documentElement.classList.contains('stage-phone-viewer');
+  }
   function venueSetupPending() {
+    if(phoneViewerWorkspace()) return false;
     try { const context=host.context(); return Boolean(context.venueSetupPending) && !context.readOnly; }
     catch(_) { return false; }
   }
@@ -325,6 +329,8 @@
 
   async function select(next) {
     if(!['normal','light-placement','light-design','venue-setup'].includes(next)) return;
+    // スマホ確認機では劇場・照明編集へ移らず、ショーの読込と閲覧を使う。
+    if(phoneViewerWorkspace() && next!=='normal') return;
     if(next!=='venue-setup' && venueSetupPending()) {
       // 勝手に別の場所へ行かず、やることが1つだけ残っている状態にする
       gatedToVenue=true;
