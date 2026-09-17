@@ -1,4 +1,4 @@
-const CACHE_NAME = "stage-sketch-gamma-pwa-v58";
+const CACHE_NAME = "stage-sketch-gamma-pwa-v59";
 const APP_SHELL = [
   "./stage-lighting-plans.js?v=2026091650",
   "./stage-lighting-plan-overlay.js?v=2026091650",
@@ -12,7 +12,7 @@ const APP_SHELL = [
   "./gamma-workspace.js?v=2026091890",
   "./light-design/index.html?embed=gamma",
   "./light-design/embed.css?v=2026091503",
-  "./light-design/rig-engine.js?v=20260915-5-mirror-basis",
+  "./light-design/rig-engine.js?v=20260917-1-flash-sequence",
   "./light-design/stage-figure.js?v=20260915-1",
   "./light-design/volume-light.js?v=20260915-2",
   "./light-design/laser-effects.js?v=20260915-5-color-presets",
@@ -20,8 +20,8 @@ const APP_SHELL = [
   "./light-design/app.js?v=2026091701",
   "./light-design/light-presets.js?v=1789357787",
   "./light-design/light-presets-ui.js?v=20260915-3-vertical-cards",
-  "./light-design/selected-light-presets-engine.js?v=1789412300",
-  "./light-design/selected-light-presets-ui.js?v=20260915-6-no-inline-type-entry",
+  "./light-design/selected-light-presets-engine.js?v=1789607130",
+  "./light-design/selected-light-presets-ui.js?v=20260917-1-flash-sequence",
   "./light-design/embed.js?v=2026091650",
   "./stage.html",
   "./style.css?v=2026091921",

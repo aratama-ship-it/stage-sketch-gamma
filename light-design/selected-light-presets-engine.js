@@ -50,7 +50,10 @@
     { id: "flash.leftRight", family: "flash", scope: "flash", movingOnly: false },
     { id: "flash.centerOut", family: "flash", scope: "flash", movingOnly: false },
     { id: "flash.sparkle", family: "flash", scope: "flash", movingOnly: false },
+    { id: "flash.sequence", family: "flash", scope: "flash", movingOnly: false },
   ]);
+  const SEQUENCE_VALUES = Object.freeze(["lr", "rl", "centerOut", "outsideIn", "oddEven", "frontBack", "backFront", "random"]);
+  const DIRECTION_VALUES = Object.freeze(["fwd", "rev", "bounce", "random"]);
   const presetById = (id) => PRESETS.find((preset) => preset.id === id) || null;
 
   const STAGE_RECTS = Object.freeze({
@@ -295,8 +298,59 @@
     return {};
   }
 
+  /* 順送りの「並べ方」。targets の順（仕込み順/選んだ順）を土台に、各灯の段 rank と段数 count を決める。
+     centerOut は対になる左右の灯が同じ段（奇数灯なら中央が単独で段0）。blocks は隣り合う b 灯を同じ段にまとめる。 */
+  function sequenceRanks(targets, choices) {
+    const n = targets.length;
+    const sequence = SEQUENCE_VALUES.includes(choices.sequence) ? choices.sequence : "lr";
+    const blocks = clamp(Math.round(finite(choices.blocks, 1)), 1, Math.max(1, n));
+    const u = (f) => finite(f.mount && f.mount.u, 0.5);
+    const v = (f) => finite(f.mount && f.mount.v, 0.5);
+    let ranks = targets.map((_, i) => i);
+    let count = n;
+    const byKey = (key, reverse) => {
+      const order = targets.map((f, i) => ({ i, k: key(f) })).sort((a, b) => a.k - b.k || a.i - b.i).map((x) => x.i);
+      if (reverse) order.reverse();
+      order.forEach((i, pos) => { ranks[i] = pos; });
+    };
+    if (sequence === "rl") ranks = targets.map((_, i) => n - 1 - i);
+    if (sequence === "frontBack") byKey(v, false);
+    if (sequence === "backFront") byKey(v, true);
+    if (sequence === "centerOut" || sequence === "outsideIn") {
+      const order = targets.map((f, i) => ({ i, k: Math.abs(u(f) - 0.5) })).sort((a, b) => a.k - b.k || a.i - b.i).map((x) => x.i);
+      const odd = n % 2 === 1;
+      order.forEach((i, pos) => { ranks[i] = odd ? Math.ceil(pos / 2) : Math.floor(pos / 2); });
+      count = odd ? (n + 1) / 2 : Math.ceil(n / 2);
+      if (sequence === "outsideIn") ranks = ranks.map((r) => count - 1 - r);
+    }
+    if (sequence === "oddEven") { ranks = targets.map((_, i) => i % 2); count = Math.min(2, n); }
+    if (sequence === "random") {
+      const rng = mulberry32(uint32(choices.seed));
+      const perm = targets.map((_, i) => i);
+      for (let i = n - 1; i > 0; i -= 1) { const j = Math.floor(rng() * (i + 1)); [perm[i], perm[j]] = [perm[j], perm[i]]; }
+      ranks = perm;
+    }
+    if (blocks > 1 && sequence !== "oddEven") { ranks = ranks.map((r) => Math.floor(r / blocks)); count = Math.ceil(count / blocks); }
+    return { count: Math.max(1, count), ranks };
+  }
+
   function applyFlash(preset, lights, targets, choices) {
     const rateHz = clamp(choices.rateHz, 0.1, 3); // UIプレビューの上限。現場安全の上限ではない。
+    if (preset.id === "flash.sequence") {
+      const { count, ranks } = sequenceRanks(targets, choices);
+      const direction = DIRECTION_VALUES.includes(choices.direction) ? choices.direction : "fwd";
+      const width = choices.width === "build" ? "build" : choices.width === "half" ? Math.max(1, Math.ceil(count / 2)) : clamp(Math.round(finite(choices.width, 1)), 1, count);
+      const usesSeed = choices.sequence === "random" || direction === "random";
+      const extra = usesSeed ? { seed: uint32(choices.seed) } : {};
+      targets.forEach((fixture, index) => {
+        const current = lights[fixture.id] || {};
+        const level = clamp(current.level, 0, 100);
+        const seq = { count, rank: ranks[index], width, direction, loops: Math.max(0, Math.round(finite(choices.loops, 0))), after: choices.after === "hold" ? "hold" : "off", flashes: clamp(Math.round(finite(choices.flashes, 1)), 1, 8), floor: clamp(finite(choices.floor, 0), 0, 100), ...extra };
+        const strobe = { on: true, kind: choices.soft ? "soft" : "sharp", hz: rateHz, duty: clamp(finite(choices.duty, 50), 5, 95), depth: clamp(finite(choices.depth, 60), 0, 100), phaseNorm: clamp(choices.phaseOffset, 0, 1), seq };
+        lights[fixture.id] = withMeta({ ...current, level, levelTo: level, strobe }, "flash", preset, extra);
+      });
+      return;
+    }
     targets.forEach((fixture, index) => {
       const current = lights[fixture.id] || {}, n = Math.max(1, targets.length - 1);
       let phaseNorm = 0;
@@ -317,7 +371,8 @@
       u: 0.5, v: 0.6, beamDeg: 24, level: 65, alignIntensity: true,
       periodSec: 8, radius: 0.12, irregularity: 0.55, seed: 2841,
       colorA: "#f2ead6", colorB: "#7ab8ff", levelCenter: 80, levelOuter: 40,
-      rateHz: 2, phaseOffset: 0, ...raw,
+      rateHz: 2, phaseOffset: 0,
+      sequence: "lr", blocks: 1, direction: "fwd", width: 1, flashes: 1, duty: 50, depth: 60, soft: false, floor: 0, loops: 0, after: "off", ...raw,
     };
   }
 
@@ -345,7 +400,7 @@
     return { status: "applied", nextCue, targets: targets.map((fixture) => fixture.id), skipped, changes, preset, choices };
   }
 
-  const api = { VERSION, PATH_VERSION, PRESETS, presetById, normalizeRect, normalizeCircle, normalizeArea, gridPoints, circlePoints, wanderPoint, insideRect, deriveRerollSeed, appliedValueChanges, isAppliedValueChanged, adjustmentLabels, applySelectedLightPreset };
+  const api = { VERSION, PATH_VERSION, PRESETS, presetById, normalizeRect, normalizeCircle, normalizeArea, gridPoints, circlePoints, wanderPoint, insideRect, deriveRerollSeed, appliedValueChanges, isAppliedValueChanged, adjustmentLabels, applySelectedLightPreset, sequenceRanks, SEQUENCE_VALUES, DIRECTION_VALUES };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.SELECTED_LIGHT_PRESETS_ENGINE = api;
 })(typeof window !== "undefined" ? window : globalThis);

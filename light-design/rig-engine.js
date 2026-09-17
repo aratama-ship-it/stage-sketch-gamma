@@ -404,9 +404,70 @@
      kind="sharp"（くっきり）＝矩形波。1周期のうち duty% だけ全開、残りは真っ暗——「パパパッ」。
      kind="soft"（やわらかい）＝なめらかな明滅（1−cos）。0では全開のまま、100で完全に沈む
      ところまで——「ちょっとフェード寄り」。
-     tMs は絶対時刻でよい（周期で割った余りしか使わない＝どこから再生しても同じ位相になる）。 */
+     tMs は絶対時刻でよい（周期で割った余りしか使わない＝どこから再生しても同じ位相になる）。
+
+     順送り（2026-09-17）: strobe.seq があれば「複数灯を順に光らせる」評価に切り替える。
+     4層モデル（属性×波形×時間×並び）の「強さ×矩形」の1インスタンスで、第2弾で fx 配列へ持ち上げる前提。
+       strobe.seq = { count(段数), rank(この灯の段 0..count-1), width(同時に光る段数 | "build"),
+                      direction:"fwd"|"rev"|"bounce"|"random", loops(0=ずっと), after:"off"|"hold",
+                      flashes(1段あたりの点滅回数), floor(消えている間の強さ %), seed }
+     hz は「1秒に進む段数」。1段＝1000/hz ms。1周＝count 段（bounce は 2*count-2 段）。
+     loops>0 なら再生開始（tMs=0）から loops 周で止まる。seq が無い旧データは従来どおり。 */
+  const seqHash = (seed, salt) => (Math.imul((seed >>> 0) ^ 0x9e3779b9, 2654435761) + Math.imul(salt + 1, 2246822519)) >>> 0;
+  const seqRand = (seed) => { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
+  const seqPermutation = (count, seed, cycleIndex) => {
+    const rng = seqRand(seqHash(seed, cycleIndex));
+    const arr = Array.from({ length: count }, (_, i) => i);
+    for (let i = count - 1; i > 0; i -= 1) { const j = Math.floor(rng() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+    return arr;
+  };
+  const seqMul = (strobe, t) => {
+    const seq = strobe.seq;
+    const hz = clamp(finite(strobe.hz, 2), 0.1, 20);
+    const stepMs = 1000 / hz;
+    const count = Math.max(1, Math.round(finite(seq.count, 1)));
+    const rank = clamp(Math.round(finite(seq.rank, 0)), 0, count - 1);
+    const floor = clamp(finite(seq.floor, 0), 0, 100) / 100;
+    const direction = ["fwd", "rev", "bounce", "random"].includes(seq.direction) ? seq.direction : "fwd";
+    const steps = direction === "bounce" ? Math.max(1, 2 * count - 2) : count;
+    const cycleMs = steps * stepMs;
+    const shifted = Math.max(0, t) + clamp(finite(strobe.phaseNorm, 0), 0, 1) * cycleMs;
+    const cycleIndex = Math.floor(shifted / cycleMs);
+    const loops = Math.max(0, Math.round(finite(seq.loops, 0)));
+    const ended = loops > 0 && cycleIndex >= loops;
+    const evalCycle = ended ? loops - 1 : cycleIndex;
+    const inCycle = ended ? cycleMs - 1e-6 : ((shifted % cycleMs) + cycleMs) % cycleMs;
+    const step = Math.min(steps - 1, Math.floor(inCycle / stepMs));
+    const perm = direction === "random" ? seqPermutation(count, finite(seq.seed, 1), evalCycle) : null;
+    const activeRank = (s) => {
+      if (direction === "rev") return count - 1 - s;
+      if (direction === "bounce") return s < count ? s : 2 * count - 2 - s;
+      if (direction === "random") return perm[s];
+      return s;
+    };
+    const build = seq.width === "build";
+    const lookback = build ? step : clamp(Math.round(finite(seq.width, 1)), 1, steps) - 1;
+    let active = false;
+    for (let k = 0; k <= lookback && !active; k += 1) {
+      let s = step - k;
+      if (s < 0) { if (build) break; s += steps; }
+      if (activeRank(s) === rank) active = true;
+    }
+    if (!active) return floor;
+    if (ended) return seq.after === "hold" ? 1 : floor;
+    const flashes = clamp(Math.round(finite(seq.flashes, 1)), 1, 8);
+    const sub = (inCycle - step * stepMs) / stepMs;
+    const fr = ((sub * flashes) % 1 + 1) % 1;
+    if (strobe.kind === "soft") {
+      const depth = clamp(finite(strobe.depth, 60), 0, 100) / 100;
+      return Math.max(floor, 1 - depth * (1 - Math.cos(fr * 2 * Math.PI)) / 2);
+    }
+    const duty = clamp(finite(strobe.duty, 50), 5, 95) / 100;
+    return fr < duty ? 1 : floor;
+  };
   const strobeMul = (strobe, tMs) => {
     if (!strobe || !strobe.on) return 1;
+    if (strobe.seq && typeof strobe.seq === "object") return seqMul(strobe, finite(tMs, 0));
     const hz = clamp(finite(strobe.hz, 6), 0.5, 20);
     const period = 1000 / hz;
     const t = finite(tMs, 0);

@@ -45,10 +45,12 @@
     "flash.leftRight": ["左右ストロボ", "点滅", "左右を交互に点滅させます。"],
     "flash.centerOut": ["中央から点滅", "点滅", "中央から外へ点滅を広げます。"],
     "flash.sparkle": ["きらめき", "点滅", "再現可能な位相差で、きらめくように見せます。"],
+    "flash.sequence": ["点滅・順送り", "点滅", "1灯ずつ順に光らせます。並べ方・向き・同時に光る数・回数を選べます。"],
   };
   const FAMILIES = ["all", "aim", "area", "motion", "value", "show", "flash"];
   const FAMILY_LABEL = { all: "すべて", aim: "狙い", area: "範囲", motion: "動き", value: "配り方", show: "演出", flash: "点滅" };
-  const ui = { family: "all", query: "", sort: "recommended", selectedId: "aim.converge", panel: "adjust", seed: 173204, order: "physical", alignIntensity: true, custom: { shape: "rect", u0: 0.2, v0: 0.2, u1: 0.8, v1: 0.8, u: 0.5, v: 0.5, r: 0.3 }, irregularity: 0.65, loopSec: 11, rateHz: 2, phaseOffset: 0, appliedDetail: null };
+  const ui = { family: "all", query: "", sort: "recommended", selectedId: "aim.converge", panel: "adjust", seed: 173204, order: "physical", alignIntensity: true, custom: { shape: "rect", u0: 0.2, v0: 0.2, u1: 0.8, v1: 0.8, u: 0.5, v: 0.5, r: 0.3 }, irregularity: 0.65, loopSec: 11, rateHz: 2, phaseOffset: 0, appliedDetail: null,
+    sequence: "lr", blocks: 1, direction: "fwd", width: "1", flashes: 1, duty: 50, soft: false, depth: 60, floor: 0, loops: 0, after: "off" };
 
   const style = document.createElement("style");
   style.textContent = `
@@ -79,7 +81,8 @@
   const movingCount = () => selectedIds().filter((id) => H.fixtureById(id).kind === "moving").length;
   const currentPreset = () => X.presetById(ui.selectedId) || X.PRESETS[0];
   const stageRegions = () => ({ stage: { kind: "rect", u0: 0, v0: 0, u1: 1, v1: 1 } });
-  const choices = () => ({ seed: ui.seed, order: ui.order, alignIntensity: ui.alignIntensity, irregularity: ui.irregularity, loopSec: ui.loopSec, rateHz: ui.rateHz, phaseOffset: ui.phaseOffset, region: ui.custom.shape === "circle" ? { kind: "circle", u: ui.custom.u, v: ui.custom.v, r: ui.custom.r } : { kind: "rect", u0: ui.custom.u0, v0: ui.custom.v0, u1: ui.custom.u1, v1: ui.custom.v1 } });
+  const choices = () => ({ seed: ui.seed, order: ui.order, alignIntensity: ui.alignIntensity, irregularity: ui.irregularity, loopSec: ui.loopSec, rateHz: ui.rateHz, phaseOffset: ui.phaseOffset,
+    sequence: ui.sequence, blocks: ui.blocks, direction: ui.direction, width: ["half", "build"].includes(ui.width) ? ui.width : Number(ui.width), flashes: ui.flashes, duty: ui.duty, soft: ui.soft === true || ui.soft === "true", depth: ui.depth, floor: ui.floor, loops: ui.loops, after: ui.after, region: ui.custom.shape === "circle" ? { kind: "circle", u: ui.custom.u, v: ui.custom.v, r: ui.custom.r } : { kind: "rect", u0: ui.custom.u0, v0: ui.custom.v0, u1: ui.custom.u1, v1: ui.custom.v1 } });
   const canUse = (preset) => {
     if (!preset) return false;
     if (preset.id === "motion.wander.stageAudience") return false; // 客席マスク未接続。P2で会場データへ明示接続する。
@@ -372,9 +375,27 @@
         : [["u0", "左端X"], ["v0", "奥端Y"], ["u1", "右端X"], ["v1", "手前端Y"]].map(([key, label]) => `<label class="slp-control"><span>${label}（0〜1）</span><input data-slp="custom.${key}" type="number" min="0" max="1" step="0.05" value="${ui.custom[key]}"></label>`).join("");
       html += `<button type="button" class="btn" data-slp-action="draw-range">平面図で${ui.custom.shape === "circle" ? "丸" : "四角"}を描く</button>${concise ? "" : `<p class="slp-note">${ui.custom.shape === "circle" ? "中心から外周まで" : "対角どうし"}をドラッグします。描いたあとも数値で微調整でき、適用するまでキューは変わりません。</p>`}`;
     }
-    if (preset.id === "motion.wander.stage" || preset.id === "flash.sparkle") html += `<label class="slp-control"><span>seed（再現用）</span><input data-slp="seed" type="number" min="0" step="1" value="${ui.seed}"></label><button type="button" class="btn small" data-slp-action="reroll">別の動きにする</button>`;
+    const seqRandom = preset.id === "flash.sequence" && (ui.sequence === "random" || ui.direction === "random");
+    if (preset.id === "motion.wander.stage" || preset.id === "flash.sparkle" || seqRandom) html += `<label class="slp-control"><span>seed（再現用）</span><input data-slp="seed" type="number" min="0" step="1" value="${ui.seed}"></label><button type="button" class="btn small" data-slp-action="reroll">別の動きにする</button>`;
     if (preset.id === "motion.wander.stage") html += `<label class="slp-control"><span>不規則さ</span><input data-slp="irregularity" type="range" min="0.2" max="1" step="0.05" value="${ui.irregularity}"></label><label class="slp-control"><span>1周の秒数</span><input data-slp="loopSec" type="number" min="4" max="30" step="1" value="${ui.loopSec}"></label>${concise ? "" : `<p class="slp-note">舞台の範囲だけを巡ります。同じseedなら、同じ動きを再現します。</p>`}`;
-    if (preset.family === "flash") html += `<label class="slp-control"><span>点滅（Hz）</span><input data-slp="rateHz" type="number" min="0.5" max="3" step="0.25" value="${ui.rateHz}"></label><label class="slp-control"><span>全体の位相</span><input data-slp="phaseOffset" type="range" min="0" max="1" step="0.05" value="${ui.phaseOffset}"></label>`;
+    if (preset.id === "flash.sequence") {
+      const sel = (key, label, options) => `<label class="slp-control"><span>${label}</span><select data-slp="${key}">${options.map(([v, t]) => `<option value="${v}" ${String(ui[key]) === String(v) ? "selected" : ""}>${t}</option>`).join("")}</select></label>`;
+      const num = (key, label, min, max, step) => `<label class="slp-control"><span>${label}</span><input data-slp="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${ui[key]}"></label>`;
+      /* 2026-09-17 第1弾は「全部出してから要らないものを消す」方針（本人決定）。並びは上段＝結果を最も変える3つ。 */
+      html += sel("sequence", "並べ方", [["lr", "並び順のまま（下手→上手）"], ["rl", "逆（上手→下手）"], ["centerOut", "中央から外"], ["outsideIn", "外から中央"], ["oddEven", "奇数・偶数"], ["frontBack", "手前→奥"], ["backFront", "奥→手前"], ["random", "ランダム"]]);
+      html += sel("direction", "向き", [["fwd", "一方向"], ["rev", "逆向き"], ["bounce", "往復（端で折り返す）"], ["random", "ランダム（周ごとに順番が変わる）"]]);
+      html += num("rateHz", "速さ（1秒に進む灯数）", 0.25, 3, 0.25);
+      html += sel("width", "同時に光る数", [["1", "1灯"], ["2", "2灯（尾を引く）"], ["3", "3灯"], ["half", "半分"], ["build", "積み上げ（消さずに増える）"]]);
+      html += sel("blocks", "まとめる灯数", [["1", "1灯ずつ"], ["2", "2灯ずつ"], ["3", "3灯ずつ"], ["4", "4灯ずつ"]]);
+      html += num("flashes", "1灯ごとの点滅回数", 1, 8, 1);
+      html += sel("soft", "光り方", [["false", "くっきり"], ["true", "やわらかい"]]);
+      html += ui.soft === true || ui.soft === "true" ? num("depth", "沈む深さ（%）", 0, 100, 10) : num("duty", "点いている割合（%）", 5, 95, 5);
+      html += num("floor", "消えている間の強さ（%）", 0, 90, 5);
+      html += num("loops", "繰り返し（0＝ずっと）", 0, 99, 1);
+      html += sel("after", "終わったら", [["off", "消す"], ["hold", "最後の状態で残す"]]);
+      html += `<label class="slp-control"><span>全体のずらし</span><input data-slp="phaseOffset" type="range" min="0" max="1" step="0.05" value="${ui.phaseOffset}"></label>`;
+      if (!concise) html += `<p class="slp-note">再生を始めた時刻から数えます。「繰り返し」を決めると、その周数で止まります。</p>`;
+    } else if (preset.family === "flash") html += `<label class="slp-control"><span>点滅（Hz）</span><input data-slp="rateHz" type="number" min="0.5" max="3" step="0.25" value="${ui.rateHz}"></label><label class="slp-control"><span>全体の位相</span><input data-slp="phaseOffset" type="range" min="0" max="1" step="0.05" value="${ui.phaseOffset}"></label>`;
     return html;
   }
   function renderModal() {
@@ -392,7 +413,7 @@
     const skipped = selected.movingOnly && selectedIds().length > movingCount() ? `ムービング ${movingCount()}灯に適用・固定${selectedIds().length - movingCount()}灯はそのまま` : `${selectedIds().length}灯に適用`;
     const flashNotice = selected.family === "flash" ? `<p class="slp-note slp-warn">点滅はまだ始まりません。ここで速度・位相を決めてから「この型を適用」を押します。画面上の適用値は最大3Hzです。</p>` : "";
     const detail = ui.appliedDetail && ui.appliedDetail.id === selected.id ? adjustmentDetail(ui.appliedDetail) : "";
-    root.innerHTML = `<div class="slp-top"><p class="slp-title">型から選ぶ（32）<small>${selectedIds().length}灯が対象です。適用後も値を「調整」で変えられます。</small></p><input class="slp-search" data-slp="query" type="search" placeholder="型を検索" value="${esc(ui.query)}"></div>
+    root.innerHTML = `<div class="slp-top"><p class="slp-title">型から選ぶ（${X.PRESETS.length}）<small>${selectedIds().length}灯が対象です。適用後も値を「調整」で変えられます。</small></p><input class="slp-search" data-slp="query" type="search" placeholder="型を検索" value="${esc(ui.query)}"></div>
       <div class="slp-families">${FAMILIES.map((family) => `<button type="button" data-slp-family="${family}" aria-pressed="${String(ui.family === family)}">${FAMILY_LABEL[family]}</button>`).join("")}</div>
       <div class="slp-body"><div class="slp-grid">${cards}</div><aside class="slp-detail"><h3>${esc(info[0])}</h3>${diagram(selected, "slp-diagram")}<p>${esc(info[2])}</p>${detail}<p class="slp-scope"><b>変えるもの:</b> ${esc(scope.changes)}<br><b>保つもの:</b> ${esc(scope.keeps)}</p><p class="slp-meta">対象: ${esc(skipped)}　／　点灯状態は保ちます</p><div class="slp-controls">${controlsFor(selected)}</div>${flashNotice}${unavailable ? `<p class="slp-note slp-warn">客席側は会場ごとのマスクを指定してから使います。この試作では安全のため適用できません。</p>` : ""}${noMoving ? `<p class="slp-note slp-warn">ムービングを1灯以上選ぶと使えます。</p>` : ""}<div class="slp-actions"><button type="button" class="btn primary" data-slp-action="apply" ${(!canUse(selected) || !selectedIds().length) ? "disabled" : ""}>この型を適用</button><p class="hint">適用は現在のLX cueへ1回の「元に戻す」として記録します。</p></div></aside></div>`;
     root.querySelectorAll("[data-slp-preset]").forEach((button) => { button.onclick = () => { ui.selectedId = button.dataset.slpPreset; ui.appliedDetail = null; renderModal(); }; });
