@@ -39,6 +39,10 @@ public-dist/
 
 # Gamma independent source distribution; upstream research and owner files remain local.
 /*
+!/assets/
+/assets/*
+!/assets/brand/
+/assets/brand/*
 !/formation/
 /formation/*
 !/icons/
@@ -65,12 +69,25 @@ public-dist/
 !/BETA_UPDATE_SAFETY.md
 !/PUBLISH_RULES.md
 !/README.md
+# 2026-09-17: ヘッダーのブランド表示に使う確定ロゴ一式。
+# 画面が読むのは logo-jp-gamma-inline-white.svg の1枚だが、
+# 明るい背景用・単色版・下添え版も素材としてまとめて置いておく。
+!/assets/brand/SOURCE.txt
+!/assets/brand/provenance.json
+!/assets/brand/logo-jp-gamma-compact-black.svg
+!/assets/brand/logo-jp-gamma-compact-gold.svg
+!/assets/brand/logo-jp-gamma-compact-white.svg
+!/assets/brand/logo-jp-gamma-inline-black.svg
+!/assets/brand/logo-jp-gamma-inline-gold.svg
+!/assets/brand/logo-jp-gamma-inline-white.svg
 !/formation/prototype/record-from-video.html
 !/gamma-dev/DESIGN_TOKENS.md
 !/gamma-dev/RELEASE.md
 !/gamma-dev/UPSTREAM.json
 !/gamma-light-model.js
 !/gamma-light-cue-overlay.js
+!/gamma-mobile.js
+!/gamma-mobile.css
 !/gamma-number-scrub.js
 !/gamma-range-fields.js
 !/gamma-workspace.js
@@ -165,3 +182,14 @@ public-dist/
 /gamma-dev/
 /tools/
 /tests/
+
+# Formation preset editor runtime (local preparation; not published).
+!/gamma-formation-presets.js
+!/gamma-formation-model.js
+!/gamma-formation.js
+!/gamma-formation.css
+!/formation/presets/
+/formation/presets/*
+!/formation/presets/editor.html
+!/formation/presets/editor.js
+!/formation/presets/editor.css

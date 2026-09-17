@@ -1,0 +1,771 @@
+/* 舞台スケッチγ — iPad PWA／iPhone 確認機の外殻（2026-09-17）
+ * 数値の正本: design/TOKEN_SHEET_mobile-shell_2026-09-17.md
+ * 設計: docs/mobile-ui-2026-09-17/index.html
+ *
+ * 分岐は gamma-mobile.js が足す html.gm-tablet / html.gm-phone。
+ * 旧外殻（style.css の html.stage-pwa-tablet … / html.stage-phone-viewer …）より
+ * 詳細度を一段上げて上書きする（html.stage-pwa-tablet.gm-tablet …）。
+ * 色・書体は既存変数のみ。新しい装飾体系は足さない。 */
+
+:root {
+  --gm-top-h: 56px;
+  --gm-rail-w: 72px;
+  --gm-drawer-w: 360px;
+  --gm-strip-h: 48px;
+  --gm-bar-h: 44px;
+  --gm-hit: 44px;
+  --gm-gap: 6px;
+  --gm-ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --gm-current-bg: rgba(168, 75, 38, 0.28);
+}
+
+/* ---------- 共通部品 ---------- */
+
+/* 指で払ったときに図やチップが「文字選択」で青く塗られないようにする（WebKit実測: マウス相当の
+   ドラッグで canvas 全面に選択色が乗った）。入力欄は除く。 */
+html.gm-tablet .stage-canvas-stack,
+html.gm-phone .stage-canvas-stack,
+html.gm-tablet .gm-rail,
+html.gm-tablet .gm-top,
+html.gm-phone .gm-phone-nav,
+html.gm-phone .gm-phone-bar,
+html.gm-phone .gm-phone-rail,
+.gm-strip {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.gm-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: var(--gm-hit);
+  min-width: var(--gm-hit);
+  height: var(--gm-hit);
+  min-height: var(--gm-hit);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 2px);
+  background: transparent;
+  color: var(--milk-dim);
+  font-size: 0;
+}
+.gm-icon-btn svg { width: 20px; height: 20px; display: block; }
+.gm-icon-btn[aria-pressed="true"] { border-color: var(--rust); background: var(--gm-current-bg); color: var(--milk); }
+.gm-icon-btn:disabled { opacity: 0.24; }
+
+/* シーン帯（目次） */
+.gm-strip { min-width: 0; min-height: 0; display: flex; align-items: stretch; }
+.gm-strip-scroll {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 0 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.gm-strip-scroll::-webkit-scrollbar { display: none; }
+.gm-chip {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  gap: 5px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  max-width: 220px;
+  padding: 0 10px 0 9px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 2px);
+  background: transparent;
+  color: var(--milk-dim);
+  font-family: var(--sans);
+  font-size: var(--fs-4, 12px);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.gm-chip-num { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+.gm-chip-name { overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+.gm-chip.is-section {
+  color: var(--brass);
+  padding-left: 11px;
+  border-left: 3px solid var(--gm-section-color, var(--brass));
+  border-radius: 0;
+}
+.gm-chip.is-section .gm-chip-name { max-width: 120px; }
+.gm-chip.is-current {
+  background: var(--gm-current-bg);
+  border-color: var(--rust);
+  color: var(--paper);
+  font-size: var(--fs-5, 13px);
+  font-weight: 600;
+}
+.gm-chip.is-current::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--rust);
+}
+
+/* シーンの説明（旧 .stage-scene-bar から移した .stage-scene-desc を1行で） */
+.gm-desc { min-width: 0; }
+.gm-desc .stage-scene-desc {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 12px;
+}
+.gm-desc .stage-scene-desc-label {
+  color: var(--brass);
+  font-family: var(--sans);
+  font-size: var(--fs-2, 10px);
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+}
+.gm-desc .stage-scene-desc-text {
+  width: 100%;
+  min-height: 36px;
+  max-height: 96px;
+  padding: 6px 8px;
+  border: 1px solid var(--line-dark);
+  background: var(--stage-ui-raised, #1a1612);
+  color: var(--milk);
+  font-family: var(--sans);
+  font-size: 16px; /* iOSの自動拡大を防ぐ。変更不可 */
+  line-height: 1.4;
+  resize: none;
+}
+.gm-desc .stage-prop-moves { grid-column: 1 / -1; margin: 0; font-size: var(--fs-3, 11px); color: var(--milk-dim); }
+
+/* ========================================================================
+   iPad PWA
+   ======================================================================== */
+
+html.stage-pwa-tablet.gm-tablet .stage-sketch {
+  grid-template-rows: var(--gm-top-h) minmax(0, 1fr);
+}
+
+/* 上部バー: 旧ヘッダーの中身は消し、gm-top だけを出す */
+html.stage-pwa-tablet.gm-tablet .stage-sketch-head {
+  display: block;
+  min-height: var(--gm-top-h);
+  height: var(--gm-top-h);
+  padding: 0;
+  overflow: visible;
+}
+html.stage-pwa-tablet.gm-tablet .stage-sketch-head > :not(.gm-top) { display: none !important; }
+html.stage-pwa-tablet.gm-tablet .gm-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--gm-gap);
+  height: var(--gm-top-h);
+  padding: 0 8px 0 10px;
+  border-bottom: 1px solid var(--line-dark);
+  background: var(--stage-ui-rail, #14110e);
+}
+html.stage-pwa-tablet.gm-tablet .gm-top-left,
+html.stage-pwa-tablet.gm-tablet .gm-top-right,
+html.stage-pwa-tablet.gm-tablet .gm-top-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--gm-gap);
+  min-width: 0;
+}
+html.stage-pwa-tablet.gm-tablet .gm-top-right { justify-content: flex-end; }
+html.stage-pwa-tablet.gm-tablet .gm-top .stage-header-app-identity { --stage-header-logo-width: 132px; flex: 0 0 auto; display: flex; align-items: center; gap: 6px; }
+html.stage-pwa-tablet.gm-tablet .gm-top .stage-header-app-kicker { display: none; }
+html.stage-pwa-tablet.gm-tablet .gm-top .stage-app-version { font-size: var(--fs-1, 9px); }
+html.stage-pwa-tablet.gm-tablet .gm-show-name {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 260px;
+  min-height: var(--gm-hit);
+  padding: 0 10px;
+  border: 1px solid var(--line-dark);
+  border-radius: var(--radius-sm, 2px);
+  background: transparent;
+  color: var(--milk);
+  font-family: var(--sans);
+  font-size: var(--fs-5, 13px);
+}
+html.stage-pwa-tablet.gm-tablet .gm-show-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.stage-pwa-tablet.gm-tablet .gm-top .stage-session-guest-badge,
+html.stage-pwa-tablet.gm-tablet .gm-top .stage-session-whoami { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-1, 9px); }
+
+/* 中央: ‹ シーン名 › */
+html.stage-pwa-tablet.gm-tablet .gm-scene-current {
+  min-width: 180px;
+  max-width: min(420px, 34vw);
+  min-height: var(--gm-hit);
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  color: var(--milk);
+  font-family: var(--serif);
+  font-size: var(--fs-6, 14px);
+  letter-spacing: 0.05em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html.stage-pwa-tablet.gm-tablet .gm-top-nav .gm-icon-btn { color: var(--milk); }
+
+/* 右: 戻す／やり直す・表示の切替・全画面・設定 */
+html.stage-pwa-tablet.gm-tablet .gm-top .stage-undo-redo { display: flex; gap: 2px; }
+html.stage-pwa-tablet.gm-tablet .gm-top .stage-undo-redo button,
+html.stage-pwa-tablet.gm-tablet .gm-top #stage-present-btn,
+html.stage-pwa-tablet.gm-tablet .gm-top #stage-prefs-btn {
+  display: inline-grid;
+  place-items: center;
+  width: var(--gm-hit);
+  min-width: var(--gm-hit);
+  height: var(--gm-hit);
+  min-height: var(--gm-hit);
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--milk-dim);
+  font-size: 0;
+}
+html.stage-pwa-tablet.gm-tablet .gm-top .stage-undo-redo button::before,
+html.stage-pwa-tablet.gm-tablet .gm-top #stage-present-btn::before,
+html.stage-pwa-tablet.gm-tablet .gm-top #stage-prefs-btn::before { content: none; }
+html.stage-pwa-tablet.gm-tablet .gm-top .stage-undo-redo svg,
+html.stage-pwa-tablet.gm-tablet .gm-top #stage-present-btn svg,
+html.stage-pwa-tablet.gm-tablet .gm-top #stage-prefs-btn svg { display: block; width: 20px; height: 20px; }
+html.stage-pwa-tablet.gm-tablet .gm-top #stage-present-btn > span,
+html.stage-pwa-tablet.gm-tablet .gm-top #stage-prefs-btn > span { display: inline-flex; }
+html.stage-pwa-tablet.gm-tablet .gm-top #stage-present-btn .stage-control-label { display: none; }
+html.stage-pwa-tablet.gm-tablet .gm-top .stage-undo-redo button:disabled { opacity: 0.24; }
+
+html.stage-pwa-tablet.gm-tablet .gm-segment {
+  flex: 0 0 auto;
+  display: inline-flex;
+  border: 1px solid var(--line-dark);
+  border-radius: var(--radius-sm, 2px);
+  overflow: hidden;
+}
+html.stage-pwa-tablet.gm-tablet .gm-seg {
+  min-width: 52px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-right: 1px solid var(--line-dark);
+  background: transparent;
+  color: var(--milk-dim);
+  font-family: var(--sans);
+  font-size: var(--fs-4, 12px);
+}
+html.stage-pwa-tablet.gm-tablet .gm-seg:last-child { border-right: 0; }
+html.stage-pwa-tablet.gm-tablet .gm-seg[aria-pressed="true"] { background: var(--gm-current-bg); color: var(--paper); }
+
+/* 盤面全体: レール ｜ 引き出し（固定時だけ幅を持つ） ｜ 図 */
+html.stage-pwa-tablet.gm-tablet .stage-sketch-grid,
+html.stage-pwa-tablet.gm-tablet .stage-sketch-grid.is-tablet-drawer-open {
+  position: relative;
+  grid-template-columns: var(--gm-rail-w) auto minmax(0, 1fr);
+  transition: none;
+}
+html.stage-pwa-tablet.gm-tablet .stage-tablet-rail,
+html.stage-pwa-tablet.gm-tablet .stage-tablet-drawer,
+html.stage-pwa-tablet.gm-tablet .stage-tablet-scene-bar,
+html.stage-pwa-tablet.gm-tablet .stage-single-view-switch,
+html.stage-pwa-tablet.gm-tablet .stage-tablet-top-controls { display: none !important; }
+
+html.stage-pwa-tablet.gm-tablet .gm-rail {
+  grid-column: 1;
+  grid-row: 1;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 6px 4px max(6px, env(safe-area-inset-bottom));
+  border-right: 1px solid var(--line-dark);
+  background: var(--stage-ui-rail, #14110e);
+  overflow: hidden auto;
+}
+html.stage-pwa-tablet.gm-tablet .gm-rail-btn {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  width: 64px;
+  min-width: 64px;
+  min-height: 56px;
+  padding: 4px 2px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 2px);
+  background: transparent;
+  color: var(--milk-dim);
+  font-family: var(--sans);
+  line-height: 1;
+}
+html.stage-pwa-tablet.gm-tablet .gm-rail-btn[aria-pressed="true"] { border-color: var(--rust); background: var(--gm-current-bg); color: var(--milk); }
+html.stage-pwa-tablet.gm-tablet .gm-rail-icon svg { width: 22px; height: 22px; display: block; }
+html.stage-pwa-tablet.gm-tablet .gm-rail-label {
+  max-width: 62px;
+  overflow: hidden;
+  font-size: var(--fs-3, 11px);
+  letter-spacing: 0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html.stage-pwa-tablet.gm-tablet .gm-rail-split { height: 1px; margin: 6px 6px; background: var(--line-dark); }
+/* 道具（動かす／矢印）はレールの下段。上部の旧配置（font-size:0＋::before）を戻す */
+html.stage-pwa-tablet.gm-tablet .gm-rail-tools { display: flex; flex-direction: column; gap: 2px; }
+html.stage-pwa-tablet.gm-tablet .gm-rail-tools .stage-tool-split { display: none; }
+html.stage-pwa-tablet.gm-tablet .gm-rail-tools button {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  width: 64px;
+  min-width: 64px;
+  min-height: 56px;
+  padding: 4px 2px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 2px);
+  background: transparent;
+  color: var(--milk-dim);
+  font-family: var(--sans);
+  font-size: var(--fs-3, 11px);
+  line-height: 1;
+}
+html.stage-pwa-tablet.gm-tablet .gm-rail-tools button::before { content: none; }
+html.stage-pwa-tablet.gm-tablet .gm-rail-tools button[aria-pressed="true"] { border-color: var(--rust); background: var(--gm-current-bg); color: var(--milk); }
+html.stage-pwa-tablet.gm-tablet .gm-rail-tools .stage-tool-icon { display: block; }
+html.stage-pwa-tablet.gm-tablet .gm-rail-tools .stage-tool-icon svg { display: block; width: 22px; height: 22px; }
+html.stage-pwa-tablet.gm-tablet .gm-rail-tools .stage-tool-label { display: block; max-width: 64px; font-size: var(--fs-2, 10px); letter-spacing: 0; line-height: 1.15; white-space: normal; text-align: center; }
+
+/* 引き出し: 既定は図の上に重ねる（図の寸法を変えない）。固定すると列になって図を押す */
+html.stage-pwa-tablet.gm-tablet .gm-drawer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--gm-rail-w);
+  z-index: 11;
+  display: grid;
+  grid-template-rows: 48px minmax(0, 1fr);
+  width: var(--gm-drawer-w);
+  max-width: calc(100% - var(--gm-rail-w));
+  min-height: 0;
+  border-right: 1px solid var(--line-dark);
+  background: var(--stage-ui-desk, #191512);
+  box-shadow: 8px 0 24px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  transform: translateX(0);
+  transition: transform 180ms var(--gm-ease);
+}
+html.stage-pwa-tablet.gm-tablet .gm-drawer[hidden] { display: none; }
+html.stage-pwa-tablet.gm-tablet .stage-sketch-grid.is-gm-drawer-pinned .gm-drawer {
+  position: static;
+  grid-column: 2;
+  grid-row: 1;
+  box-shadow: none;
+  height: 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.stage-pwa-tablet.gm-tablet .gm-drawer { transition: none; }
+}
+html.stage-pwa-tablet.gm-tablet .gm-drawer-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--gm-hit) var(--gm-hit);
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px 0 14px;
+  border-bottom: 1px solid var(--line-dark);
+}
+html.stage-pwa-tablet.gm-tablet .gm-drawer-title {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--brass);
+  font-family: var(--serif);
+  font-size: var(--fs-6, 14px);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html.stage-pwa-tablet.gm-tablet .gm-drawer-body {
+  min-width: 0;
+  min-height: 0;
+  padding: 10px 14px max(14px, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+html.stage-pwa-tablet.gm-tablet .gm-page-title {
+  margin: 14px 0 6px;
+  color: var(--brass);
+  font-family: var(--sans);
+  font-size: var(--fs-2, 10px);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+html.stage-pwa-tablet.gm-tablet .gm-page-title[hidden] { display: none; }
+html.stage-pwa-tablet.gm-tablet .stage-tablet-panel-page:first-child > .gm-page-title { margin-top: 2px; }
+/* 引き出しの中は指の大きさに */
+html.stage-pwa-tablet.gm-tablet .gm-drawer button:not(.stage-swatches button),
+html.stage-pwa-tablet.gm-tablet .gm-drawer select,
+html.stage-pwa-tablet.gm-tablet .gm-drawer input[type="text"],
+html.stage-pwa-tablet.gm-tablet .gm-drawer input[type="number"],
+html.stage-pwa-tablet.gm-tablet .gm-drawer label.btn-quiet,
+html.stage-pwa-tablet.gm-tablet .gm-drawer .stage-toggle { min-height: var(--gm-hit); }
+html.stage-pwa-tablet.gm-tablet .gm-drawer input[type="text"],
+html.stage-pwa-tablet.gm-tablet .gm-drawer input[type="number"],
+html.stage-pwa-tablet.gm-tablet .gm-drawer textarea { font-size: 16px; }
+html.stage-pwa-tablet.gm-tablet .gm-drawer .stage-tablet-drawer-panel > .stage-panel-head,
+html.stage-pwa-tablet.gm-tablet .gm-drawer .stage-tablet-drawer-panel > .stage-panel-help { display: none; }
+html.stage-pwa-tablet.gm-tablet .gm-drawer .stage-tablet-panel-page[hidden] { display: none; }
+/* 旧引き出しは1ページずつ見せる作りで、各ページに min-height:100% が付いている。
+   こちらは全ページを縦に並べるので、高さは中身なり（残すと各ページが空白で1画面ぶん伸びる）。 */
+html.stage-pwa-tablet.gm-tablet .gm-drawer .stage-tablet-drawer-panel,
+html.stage-pwa-tablet.gm-tablet .gm-drawer .stage-tablet-drawer-panel > .stage-panel-body,
+html.stage-pwa-tablet.gm-tablet .gm-drawer .stage-tablet-panel-page { height: auto; min-height: 0; }
+/* シーンの引き出し: 一覧は全部見せる（旧: 開いている行だけ）。高さの取っ手は要らない */
+html.stage-pwa-tablet.gm-tablet .gm-drawer .stage-scene-move { display: flex; gap: 6px; margin: 0 0 8px; }
+html.stage-pwa-tablet.gm-tablet .gm-drawer .stage-scene-move button { min-width: var(--gm-hit); }
+html.stage-pwa-tablet.gm-tablet .gm-drawer .stage-scene-resize { display: none; }
+html.stage-pwa-tablet.gm-tablet .gm-drawer .stage-scene-list {
+  display: block;
+  width: 100%;
+  height: auto !important;
+  min-height: 0;
+  max-height: none;
+  padding: 0;
+  overflow: visible;
+  resize: none;
+}
+html.stage-pwa-tablet.gm-tablet .gm-drawer .stage-scene-row .stage-scene-chip { min-height: var(--gm-hit); }
+/* 名簿: PCの「列数をパネル幅で自動切替」は引き出しでは1列に固定し、一覧の高さは中身に合わせる */
+html.stage-pwa-tablet.gm-tablet .gm-drawer .stage-roster-group > .stage-cast-list {
+  grid-template-columns: minmax(0, 1fr);
+  height: auto !important;
+  max-height: none;
+  overflow: visible;
+}
+html.stage-pwa-tablet.gm-tablet .gm-drawer .stage-roster-list-resize { display: none; }
+/* 設定グループ */
+html.stage-pwa-tablet.gm-tablet .gm-settings { display: grid; gap: 14px; }
+html.stage-pwa-tablet.gm-tablet .gm-settings-list { display: grid; gap: 4px; }
+html.stage-pwa-tablet.gm-tablet .gm-settings-item {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--gm-hit);
+  padding: 0 12px;
+  border: 1px solid var(--line-dark);
+  border-radius: var(--radius-sm, 2px);
+  background: transparent;
+  color: var(--milk);
+  font-family: var(--sans);
+  font-size: var(--fs-5, 13px);
+  text-align: left;
+  text-decoration: none;
+}
+html.stage-pwa-tablet.gm-tablet .gm-settings-item svg { width: 18px; height: 18px; flex: 0 0 auto; display: block; }
+html.stage-pwa-tablet.gm-tablet .gm-settings-item::before { content: none; }
+/* アイコンだけの既存ボタンには、aria-label（＝訳語も同期される）を文字として添える */
+html.stage-pwa-tablet.gm-tablet .gm-settings-label { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-5, 13px); }
+html.stage-pwa-tablet.gm-tablet .gm-settings-item#stage-release-open { position: relative; }
+html.stage-pwa-tablet.gm-tablet .gm-settings .stage-tablet-special-display { display: grid; gap: 6px; }
+html.stage-pwa-tablet.gm-tablet .gm-settings .stage-tablet-display-menu { display: grid; gap: 6px; }
+html.stage-pwa-tablet.gm-tablet .gm-pc-note {
+  padding: 10px 12px;
+  border-left: 3px solid var(--brass);
+  background: var(--stage-ui-raised, #1a1612);
+  color: var(--milk-dim);
+  font-size: var(--fs-3, 11px);
+  line-height: 1.6;
+}
+html.stage-pwa-tablet.gm-tablet .gm-pc-note strong { display: block; margin-bottom: 4px; color: var(--brass); font-size: var(--fs-2, 10px); letter-spacing: 0.14em; }
+html.stage-pwa-tablet.gm-tablet .gm-pc-note p { margin: 0; }
+
+/* 図の列: 説明 ｜ 図 ｜ シーン帯 */
+html.stage-pwa-tablet.gm-tablet .stage-board-column {
+  grid-column: 3;
+  grid-row: 1;
+  grid-template-rows: auto minmax(0, 1fr) var(--gm-strip-h);
+}
+html.stage-pwa-tablet.gm-tablet .gm-desc { border-bottom: 1px solid var(--line-dark); }
+html.stage-pwa-tablet.gm-tablet .gm-desc .stage-scene-desc { padding: 4px 10px; }
+html.stage-pwa-tablet.gm-tablet .gm-desc .stage-scene-desc-text { min-height: 44px; max-height: 64px; }
+html.stage-pwa-tablet.gm-tablet .gm-strip {
+  border-top: 1px solid var(--line-dark);
+  background: var(--stage-ui-rail, #14110e);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 図の上の操作列: 見る位置・メモ・照明 */
+html.stage-pwa-tablet.gm-tablet .stage-canvas-bar { flex-basis: 48px; min-height: 48px; padding: 0 6px; gap: 6px; }
+html.stage-pwa-tablet.gm-tablet .stage-canvas-bar .stage-canvas-caption { font-size: var(--fs-3, 11px); }
+html.stage-pwa-tablet.gm-tablet .stage-canvas-bar .stage-seat-list { display: flex; gap: 4px; margin: 0; }
+html.stage-pwa-tablet.gm-tablet .stage-canvas-bar .stage-seat { flex: 0 0 auto; min-width: 52px; min-height: 44px; padding: 0 10px; font-size: var(--fs-3, 11px); }
+html.stage-pwa-tablet.gm-tablet .stage-canvas-bar .stage-canvas-tools { overflow-x: auto; scrollbar-width: none; }
+html.stage-pwa-tablet.gm-tablet .stage-canvas-bar .stage-canvas-tool,
+html.stage-pwa-tablet.gm-tablet .stage-canvas-bar .stage-canvas-toggle,
+html.stage-pwa-tablet.gm-tablet .stage-canvas-bar .stage-multi-select-status { min-height: 44px; padding: 0 8px; font-size: var(--fs-3, 11px); }
+
+/* 図の寸法: 上部56＋説明44＋操作列44＋帯48＋余白 ≈ 210 */
+html.stage-pwa-tablet.gm-tablet .stage-canvas-stack { padding: 6px; gap: 6px; }
+html.stage-pwa-tablet.gm-tablet .stage-board-frame { width: min(100%, calc((100dvh - 210px) * 16 / 9)); }
+/* 横向きで「両方」を選んだら左右に並べる */
+@media (orientation: landscape) {
+  html.stage-pwa-tablet.gm-tablet .stage-canvas-stack:not(.is-single-view) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    place-items: start stretch;
+  }
+  html.stage-pwa-tablet.gm-tablet .stage-canvas-stack:not(.is-single-view) .stage-board-frame { width: 100%; }
+}
+@media (orientation: portrait) {
+  html.stage-pwa-tablet.gm-tablet .gm-drawer { width: min(var(--gm-drawer-w), 44vw); }
+  html.stage-pwa-tablet.gm-tablet .gm-scene-current { min-width: 120px; }
+  html.stage-pwa-tablet.gm-tablet .gm-show-name { max-width: 160px; }
+  html.stage-pwa-tablet.gm-tablet .stage-canvas-stack { grid-template-rows: auto auto; place-items: stretch; align-content: start; }
+  html.stage-pwa-tablet.gm-tablet .stage-board-frame { width: 100%; max-height: none; }
+}
+/* 幅が足りないiPad（mini 横 1024）では上部の札を詰める */
+@media (max-width: 1100px) {
+  html.stage-pwa-tablet.gm-tablet .gm-show-name { max-width: 150px; }
+  html.stage-pwa-tablet.gm-tablet .gm-scene-current { min-width: 140px; max-width: 26vw; }
+  html.stage-pwa-tablet.gm-tablet .gm-seg { min-width: 44px; padding: 0 8px; }
+}
+
+/* ========================================================================
+   iPhone（確認機）
+   ======================================================================== */
+
+/* 段: 題44 ｜ めくる56 ｜ 説明 ｜ 情報 ｜ ショー ｜ 設定 ｜ 図 */
+html.stage-phone-viewer.gm-phone .stage-board-column {
+  grid-template-rows: 44px 56px auto auto auto auto minmax(0, 1fr);
+}
+html.stage-phone-viewer.gm-phone .stage-phone-title { grid-row: 1; padding: 0; align-items: stretch; }
+html.stage-phone-viewer.gm-phone .gm-phone-nav { grid-row: 2; }
+html.stage-phone-viewer.gm-phone .gm-desc { grid-row: 3; }
+html.stage-phone-viewer.gm-phone .stage-phone-info { grid-row: 4; }
+html.stage-phone-viewer.gm-phone .stage-phone-source { grid-row: 5; }
+html.stage-phone-viewer.gm-phone .stage-phone-settings { grid-row: 6; }
+html.stage-phone-viewer.gm-phone .stage-canvas-stack { grid-row: 7; }
+html.stage-phone-viewer.gm-phone .stage-phone-toolbar { display: none !important; }
+html.stage-phone-viewer.gm-phone .gm-phone-rail { display: none; }
+html.stage-phone-viewer.gm-phone .gm-scene-tag { display: none; }
+html.stage-phone-viewer.gm-phone .gm-hidden-live {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+  padding: 0;
+  margin: -1px;
+}
+
+html.stage-phone-viewer.gm-phone .gm-phone-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  height: 44px;
+  padding: 0 4px 0 10px;
+  background: var(--stage-ui-phone, #15120f);
+}
+/* 版の文字は --ink-soft だと #15120F 上で 3.02:1（design-lint実測）なので --milk-dim（6.9:1）にする */
+html.stage-phone-viewer.gm-phone .gm-phone-bar .stage-phone-title-version { flex: 0 0 auto; color: var(--milk-dim); font-size: var(--fs-1, 9px); letter-spacing: 0.04em; }
+html.stage-phone-viewer.gm-phone .gm-show-name {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--milk);
+  font-family: var(--serif);
+  font-size: var(--fs-5, 13px);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-align: left;
+}
+html.stage-phone-viewer.gm-phone .gm-show-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.stage-phone-viewer.gm-phone .gm-phone-bar .stage-session-guest-badge,
+html.stage-phone-viewer.gm-phone .gm-phone-bar .stage-session-whoami { flex: 0 1 auto; min-width: 0; max-width: 30vw; margin: 0; padding: 0 4px; font-size: var(--fs-1, 9px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.stage-phone-viewer.gm-phone .gm-phone-bar .stage-phone-title-settings { margin: 0; border: 0; }
+html.stage-phone-viewer.gm-phone .gm-phone-bar .gm-phone-info { width: auto; padding: 0 8px; gap: 2px; grid-auto-flow: column; }
+html.stage-phone-viewer.gm-phone .gm-phone-info svg { width: 16px; height: 16px; }
+html.stage-phone-viewer.gm-phone .gm-phone-btn-label { font-size: var(--fs-3, 11px); letter-spacing: 0.04em; }
+html.stage-phone-viewer.gm-phone .gm-phone-bar .gm-icon-btn svg { width: 18px; height: 18px; }
+html.stage-phone-viewer.gm-phone .gm-phone-bar .stage-phone-title-settings svg { width: 18px; height: 18px; }
+
+html.stage-phone-viewer.gm-phone .gm-phone-nav {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 48px;
+  align-items: stretch;
+  min-width: 0;
+  height: 56px;
+  border-bottom: 1px solid var(--line-dark);
+  background: var(--stage-ui-phone, #15120f);
+}
+html.stage-phone-viewer.gm-phone .gm-phone-nav .gm-icon-btn { width: 48px; height: 56px; min-height: 56px; color: var(--milk); }
+html.stage-phone-viewer.gm-phone .gm-phone-nav .gm-strip { min-height: 56px; }
+html.stage-phone-viewer.gm-phone .gm-chip { height: 44px; min-height: 44px; padding: 0 8px; }
+
+html.stage-phone-viewer.gm-phone .gm-desc { border-bottom: 1px solid var(--line-dark); background: var(--stage-ui-phone, #15120f); }
+html.stage-phone-viewer.gm-phone .gm-desc .stage-scene-desc { padding: 6px 10px; }
+/* 1行に畳んでおき、触ったときだけ広がる（縦の取り分を図へ渡す） */
+html.stage-phone-viewer.gm-phone .gm-desc .stage-scene-desc-text { min-height: 44px; height: 44px !important; max-height: 44px; padding-top: 10px; overflow: hidden; }
+html.stage-phone-viewer.gm-phone .gm-desc .stage-scene-desc-text:focus { height: 96px !important; max-height: 96px; overflow: auto; }
+
+/* 見る位置チップ: 正面図の上端に半透明の帯で重ねる（正面図の固有操作） */
+html.stage-phone-viewer.gm-phone #stage-front-cell { position: relative; }
+html.stage-phone-viewer.gm-phone .gm-seats {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  right: 0;
+  left: 0;
+  padding: 4px 6px;
+  background: linear-gradient(rgba(var(--stage-ui-recess-rgb, 13, 12, 11), 0.86), rgba(var(--stage-ui-recess-rgb, 13, 12, 11), 0));
+  pointer-events: none;
+}
+html.stage-phone-viewer.gm-phone .gm-seats .stage-seat-list {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding-left: 44px; /* 左上の「正面」札を避ける */
+  overflow-x: auto;
+  scrollbar-width: none;
+  pointer-events: auto;
+}
+html.stage-phone-viewer.gm-phone .gm-seats .stage-seat-list::-webkit-scrollbar { display: none; }
+html.stage-phone-viewer.gm-phone .gm-seats .stage-seat-list[hidden] { display: none; }
+html.stage-phone-viewer.gm-phone .gm-seats .stage-seat {
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 8px;
+  background: rgba(25, 21, 18, 0.62);
+  font-size: var(--fs-2, 10px);
+  white-space: nowrap;
+}
+html.stage-phone-viewer.gm-phone .stage-canvas-bar { pointer-events: none; }
+
+/* 縦向き: 両方の図が必ず入る幅（Safariの短い縦でも） */
+@media (orientation: portrait) {
+  html.stage-phone-viewer.gm-phone .stage-canvas-stack { gap: 4px; padding: 4px; }
+  html.stage-phone-viewer.gm-phone .stage-board-frame {
+    width: min(100%, var(--gm-frame-w, calc((100dvh - 232px) / 2 * 4 / 3)));
+    margin: 0 auto;
+  }
+  /* メモ欄は図と同じ幅で下へ */
+  html.stage-phone-viewer.gm-phone .stage-phone-memo { grid-row: 3; }
+}
+
+/* 横向き: 図が縦いっぱい、右に64pxのレール。題・めくる列・説明は消す */
+@media (orientation: landscape) {
+  html.stage-phone-viewer.gm-phone .stage-board-column {
+    grid-template-columns: minmax(0, 1fr) 64px;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  html.stage-phone-viewer.gm-phone .stage-phone-title,
+  html.stage-phone-viewer.gm-phone .gm-phone-nav,
+  html.stage-phone-viewer.gm-phone .gm-desc { display: none !important; }
+  html.stage-phone-viewer.gm-phone .stage-canvas-stack { grid-row: 1; grid-column: 1; place-items: center; justify-items: center; }
+  /* 図の枠: 高さ100%から幅を逆算する（WebKitで width:auto+max-height だと枠が潰れて真っ黒になる＝作り直し前からの症状） */
+  html.stage-phone-viewer.gm-phone .stage-board-frame {
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    aspect-ratio: 16 / 9;
+    justify-self: center;
+  }
+  html.stage-phone-viewer.gm-phone .stage-board-frame .stage-canvas-inner { flex: 1 1 auto; min-height: 0; }
+  html.stage-phone-viewer.gm-phone .stage-board-frame .stage-canvas-wrap { height: 100%; width: 100%; aspect-ratio: auto; }
+  html.stage-phone-viewer.gm-phone #stage-canvas,
+  html.stage-phone-viewer.gm-phone #stage-plan-canvas { width: 100%; height: 100%; aspect-ratio: auto; }
+  html.stage-phone-viewer.gm-phone .gm-phone-rail {
+    grid-column: 2;
+    grid-row: 1;
+    z-index: 12;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    min-height: 0;
+    padding: 4px 2px max(4px, env(safe-area-inset-bottom));
+    border-left: 1px solid var(--line-dark);
+    background: var(--stage-ui-phone, #15120f);
+    overflow: hidden auto;
+  }
+  html.stage-phone-viewer.gm-phone .gm-phone-rail > * {
+    display: grid !important;
+    place-items: center;
+    align-content: center;
+    gap: 2px;
+    width: 100%;
+    min-height: 52px;
+    margin: 0;
+    padding: 2px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm, 2px);
+    background: transparent;
+    color: var(--milk-dim);
+    font-family: var(--sans);
+    font-size: var(--fs-3, 11px);
+    line-height: 1.1;
+    text-align: center;
+  }
+  html.stage-phone-viewer.gm-phone .gm-phone-rail > .gm-scene-prev,
+  html.stage-phone-viewer.gm-phone .gm-phone-rail > .gm-scene-next { margin-top: auto; }
+  html.stage-phone-viewer.gm-phone .gm-phone-rail > .gm-scene-next { margin-top: 0; }
+  html.stage-phone-viewer.gm-phone .gm-phone-rail > [aria-pressed="true"] { border-color: var(--rust); background: var(--gm-current-bg); color: var(--milk); }
+  html.stage-phone-viewer.gm-phone .gm-phone-rail svg { width: 18px; height: 18px; }
+  html.stage-phone-viewer.gm-phone .gm-phone-rail .stage-phone-view-toggle[hidden] { display: none !important; }
+  /* 図の左上にシーン名 */
+  html.stage-phone-viewer.gm-phone .gm-scene-tag {
+    display: block;
+    position: absolute;
+    z-index: 5;
+    top: auto;
+    bottom: 8px;
+    left: 8px;
+    max-width: 50vw;
+    padding: 4px 8px;
+    background: rgba(var(--stage-ui-recess-rgb, 13, 12, 11), 0.78);
+    color: var(--milk);
+    font-family: var(--sans);
+    font-size: var(--fs-4, 12px);
+    letter-spacing: 0.04em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  html.stage-phone-viewer.gm-phone .stage-canvas-stack { position: relative; }
+  html.stage-phone-viewer.gm-phone .gm-seats .stage-seat-list { padding-left: 0; justify-content: flex-end; }
+  html.stage-phone-viewer.gm-phone .stage-phone-info,
+  html.stage-phone-viewer.gm-phone .stage-phone-source,
+  html.stage-phone-viewer.gm-phone .stage-phone-settings { right: calc(64px + max(8px, env(safe-area-inset-right))); }
+}

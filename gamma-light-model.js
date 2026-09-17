@@ -28,6 +28,19 @@
       }
       for (const group of cue.groups) if (!object(group) || !Array.isArray(group.members) || group.members.some(id=>!fixtures.has(id))) throw Error('照明の組が参照する灯体がありません');
     };
+    /* R-11（2026-09-17 本人要望）: 灯体をまとめるカスタムのグループ。
+       本人決定で「そのショーに残る」ため、デザイン本体に持つ（cueごとではない）。
+       ★古いデータには存在しない。無ければ空として扱い、絶対に落とさないこと。
+       cue.groups（動きの組）とは別物。あちらは cue ごとで、灯を点けて動きを書き換える。 */
+    if (design.fixtureGroups !== undefined) {
+      if (!Array.isArray(design.fixtureGroups) || design.fixtureGroups.length > 200) throw Error('灯体グループの構造を確認してください');
+      for (const group of design.fixtureGroups) {
+        if (!object(group) || typeof group.id !== 'string' || !group.id) throw Error('灯体グループにidがありません');
+        if (typeof group.name !== 'string' || group.name.length > 24) throw Error('灯体グループの名前を確認してください');
+        if (!Array.isArray(group.members) || group.members.length > 1000) throw Error('灯体グループの中身を確認してください');
+        for (const id of group.members) if (!fixtures.has(id)) throw Error('灯体グループが参照する灯体がありません');
+      }
+    }
     for (const scene of design.scenes) {
       checkCue(scene.cue);
       if (scene.lxq!==undefined && !Array.isArray(scene.lxq)) throw Error('LX cue一覧を確認してください');
@@ -37,7 +50,8 @@
   }
   function empty(context) {
     return {format:'shosai.light-design',version:1,name:context.title,stage:clone(context.stage),rig:{trusses:[],fixtures:[]},
-      scenes:context.scenes.map((scene,i)=>({id:scene.id,name:scene.name,lx:{section:1,no:i+1},lxq:[],lxEditing:null,cue:{lights:{},groups:[],environment:{haze:35}}})),palette:[],curtains:{}};
+      scenes:context.scenes.map((scene,i)=>({id:scene.id,name:scene.name,lx:{section:1,no:i+1},lxq:[],lxEditing:null,cue:{lights:{},groups:[],environment:{haze:35}}})),palette:[],curtains:{},
+      fixtureGroups:[]};   // R-11: 灯体をまとめるカスタムのグループ（ショーに1組）
   }
   function reconcile(design, context) {
     if (!design) return empty(context);

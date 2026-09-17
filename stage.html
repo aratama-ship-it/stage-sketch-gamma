@@ -12,15 +12,17 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026091921">
+<link rel="stylesheet" href="style.css?v=2026091944">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="gamma.css?v=2026091900">
-<script src="gamma-light-model.js?v=2026091700"></script>
+<link rel="stylesheet" href="gamma.css?v=2026091944">
+<link rel="stylesheet" href="gamma-mobile.css?v=2026091950">
+<script src="gamma-light-model.js?v=2026091944"></script>
+<link rel="stylesheet" href="gamma-formation.css?v=formation1">
 </head>
 <body class="is-standalone">
 
@@ -48,10 +50,19 @@
     <section class="stage-sketch" aria-labelledby="stage-sketch-title">
       <header class="stage-sketch-head">
         <div class="stage-header-topleft">
+          <!-- 2026-09-17 本人指示: 文字組みのブランド表示（STAGE SKETCH GAMMA ／ 舞台スケッチ γ）を
+               確定ロゴへ置き換える。SVGはそのまま貼る＝字間・Γの形と位置は再調整しない
+               （制作元と経緯は assets/brand/SOURCE.txt）。
+               狭い画面でも横組み（inline）を使い、幅だけを小さくする。下添え（compact）版も
+               assets/brand/ に揃えてあるが使っていない。理由は style.css の同じ日のコメントに書いた。
+               版番号はロゴへ焼き込まず、これまでどおり別表示で右に残す。
+               読み上げ用の見出しは #stage-sketch-title（visually-hidden の h1）が担う。 -->
           <div class="stage-header-app-identity" aria-hidden="true" data-no-i18n>
+            <!-- 赤いキッカー（STAGE SKETCH GAMMA）は本人要望で残す。置き換えたのは題の側だけ。 -->
             <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
             <span class="stage-header-app-copy">
-              <span class="stage-header-app-title">舞台スケッチ γ</span>
+              <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
+                   width="625" height="122" alt="舞台スケッチ GAMMA" decoding="async">
               <span class="stage-app-version">0.1.3</span>
             </span>
           </div>
@@ -75,6 +86,18 @@
           </div>
         </div>
         <div class="stage-history-actions">
+          <!-- R-08（2026-09-17 本人要望）: 総経過時間と音量は「一つ戻す」の左へ引っ付ける。
+               同じ日に一度「右側へまとめる」としたが、本人の指示で更に手前へ移した（方針の更新）。 -->
+          <div class="stage-header-meters">
+            <div class="stage-show-elapsed-group">
+              <span>総経過時間</span>
+              <output class="stage-show-elapsed" id="stage-show-elapsed" aria-live="off" aria-label="ショー経過時間">00:00</output>
+            </div>
+            <label class="stage-header-volume" for="stage-timeline-volume">
+              <span>音量</span>
+              <input type="range" id="stage-timeline-volume" min="0" max="100" step="1" value="100" aria-label="音量">
+            </label>
+          </div>
           <div class="stage-undo-redo">
             <button type="button" class="stage-history-icon" id="stage-undo" data-tablet-icon="↶"
                     aria-label="一つ戻す" title="⌘Z（WindowsはCtrl+Z）" disabled>
@@ -107,19 +130,6 @@
                   aria-label="画像・印刷" title="画像・印刷" aria-haspopup="dialog" aria-controls="stage-export-modal">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z"/><path d="M14 3v5h5M8 12h8M8 16h8"/></svg>
           </button>
-          <!-- 2026-09-17 本人指示: 総経過時間と音量は右側へまとめる。
-               直前まではこの並びの先頭にいたため、タブのすぐ右＝ヘッダーの真ん中に見えていた。
-               共有・通知は右上の隅に据え置き、その手前へ2つ並べる。 -->
-          <div class="stage-header-meters">
-            <div class="stage-show-elapsed-group">
-              <span>総経過時間</span>
-              <output class="stage-show-elapsed" id="stage-show-elapsed" aria-live="off" aria-label="ショー経過時間">00:00</output>
-            </div>
-            <label class="stage-header-volume" for="stage-timeline-volume">
-              <span>音量</span>
-              <input type="range" id="stage-timeline-volume" min="0" max="100" step="1" value="100" aria-label="音量">
-            </label>
-          </div>
         </div>
         <div class="stage-header-collaboration">
           <button type="button" class="stage-share-open stage-header-icon" id="stage-share-open" aria-haspopup="dialog" aria-controls="stage-session-panel" aria-label="共有" title="共有"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.6M8.2 13.2l7.6 4.6"/></svg></button>
@@ -131,7 +141,7 @@
       <section id="gamma-venue-workspace" aria-label="劇場設定" hidden></section>
       <div class="stage-sketch-grid">
         <aside class="stage-toolbox stage-col" data-col="left" id="stage-col-left" aria-label="左の道具列">
-          <!-- 2026-09-17 本人指示: ショー名とバージョンは、出るもの・選んだもの・保存状態と
+          <!-- 2026-09-17 本人指示: ショー名とバージョンは、演者・舞台セット・選んだもの・保存状態と
                同じ「パネル」にする。既定の置き場は左列の一番上
                （stage-sketch.js の defaultLayout: project は col=left / order=0）。
                ヘッダーからは出るので、他のモード（劇場設定・照明・3D等）では見えない。 -->
@@ -143,13 +153,16 @@
               <input id="stage-project-title" class="stage-text-input" type="text"
                      maxlength="60" autocomplete="off" data-1p-ignore
                      placeholder="無題のショー" aria-label="ショーの名前">
-              <label class="stage-control-label" for="stage-version-label">バージョン名</label>
+              <!-- R-18（2026-09-17 本人要望）: 版名は「v」＋数字だけ。v は自動で付き、
+                   「保存してバージョンを更新」を押すと1つ上がる。自由入力はやめた。
+                   要素は残す（JSが els.versionLabel として読み書きしている）。 -->
+              <label class="stage-control-label" for="stage-version-label">バージョン</label>
               <input id="stage-version-label" class="stage-text-input stage-version-input" type="text"
-                     maxlength="16" autocomplete="off" data-1p-ignore
-                     placeholder="v1" aria-label="バージョン名">
+                     maxlength="16" autocomplete="off" data-1p-ignore readonly
+                     placeholder="v1" aria-label="バージョン">
               <p class="stage-version-note" id="stage-version-note"></p>
               <div class="stage-project-panel-actions">
-                <button type="button" id="stage-version-copy" class="stage-minor-action">保存してバージョンを更新</button>
+                <button type="button" id="stage-version-copy" class="stage-minor-action" title="いまの内容を保存し、版を1つ上げます（v1 → v2）">保存して ＋1</button>
                 <button type="button" id="stage-show-new" class="stage-minor-action">新規ショーを作る</button>
                 <button type="button" id="stage-shows-open" class="stage-minor-action">ショー一覧</button>
                 <button type="button" id="stage-export-json" class="stage-minor-action"
@@ -189,10 +202,10 @@
               <p class="stage-music-local-note">音源ファイルはこの端末内だけに保存され、JSON、端末データの書き出し、共有セッションには含まれません。別端末では元ファイルを選び直してください。</p>
             </div>
           </section>
-          <section class="stage-panel" data-panel="cast" data-title="出るもの">
+          <section class="stage-panel" data-panel="cast" data-title="演者・舞台セット">
             <div class="stage-panel-body">
             <p class="stage-cast-hint">この舞台に出る演者、大道具、小道具を、まとめてここに登録します。寸法や色はここで決め、シーンごとに舞台の上か裏かを切り替えます。追加したものはそのシーンの舞台に出ます。</p>
-              <div class="stage-roster-kind-openers" role="group" aria-label="出るもの">
+              <div class="stage-roster-kind-openers" role="group" aria-label="演者・舞台セット">
                 <button type="button" class="stage-roster-kind-open" data-roster-kind-layer="performer"
                         aria-haspopup="dialog" aria-controls="stage-kind">演者</button>
                 <button type="button" class="stage-roster-kind-open" data-roster-kind-layer="set"
@@ -1394,40 +1407,6 @@
   </div>
 </div>
 
-<div class="stage-modal-backdrop" id="stage-lighting-plan-backdrop" hidden></div>
-<div class="stage-modal stage-lighting-plan-modal" id="stage-lighting-plan-modal" role="dialog" aria-modal="true"
-     aria-labelledby="stage-lighting-plan-title" hidden>
-  <header class="stage-modal-head">
-    <h2 id="stage-lighting-plan-title">劇場の照明プラン</h2>
-    <button type="button" class="stage-modal-close" id="stage-lighting-plan-close" aria-label="閉じる">✕</button>
-  </header>
-  <div class="stage-modal-body">
-    <p class="stage-lighting-plan-summary" id="stage-lighting-plan-summary">劇場に合う照明プランを確認しています…</p>
-    <section class="stage-lighting-plan-candidate" id="stage-lighting-plan-candidate" hidden>
-      <p class="stage-lighting-plan-kicker">選択した劇場プリセット</p>
-      <h3 id="stage-lighting-plan-candidate-title"></h3>
-      <p id="stage-lighting-plan-candidate-detail"></p>
-    </section>
-    <section class="stage-lighting-plan-existing" id="stage-lighting-plan-existing" aria-label="保存済みの照明プラン"></section>
-    <section class="stage-lighting-plan-choice" id="stage-lighting-plan-choice" hidden aria-label="適用方法">
-      <p class="stage-lighting-plan-kicker">どう残しますか</p>
-      <button type="button" class="stage-lighting-plan-choice is-selected" id="stage-lighting-plan-add-choice" aria-pressed="true">
-        <strong>新しい照明プランとして追加 <span>推奨</span></strong>
-        <small>今の照明・キューは変えず、全消灯の劇場プランを別に残します。</small>
-      </button>
-      <button type="button" class="stage-lighting-plan-choice is-replace" id="stage-lighting-plan-replace-choice" aria-pressed="false">
-        <strong>参照するプランを置換</strong>
-        <small>既存の照明・キューは変えず、参照するプランだけを切り替えます。次に確認があります。</small>
-      </button>
-      <section class="stage-lighting-plan-replace-confirm" id="stage-lighting-plan-replace-confirm" hidden>
-        <label for="stage-lighting-plan-replace-phrase">理解したうえで <b>置換</b> と入力してください</label>
-        <input id="stage-lighting-plan-replace-phrase" class="stage-text-input" autocomplete="off" data-1p-ignore placeholder="置換">
-        <p>既存の照明やキューは残ります。ここでは実在会場の設備・吊荷重・電源・DMX・レーザー運用を承認しません。</p>
-      </section>
-    </section>
-    <footer class="stage-lighting-plan-actions">
-      <button type="button" class="btn-quiet" id="stage-lighting-plan-cancel">変更しない</button>
-      <button type="button" class="stage-minor-action" id="stage-lighting-plan-apply" disabled>追加する</button>
     </footer>
   </div>
 </div>
@@ -1750,6 +1729,18 @@
         <div><dt>開始位置</dt><dd id="stage-rename-scene-position">—</dd></div>
         <div><dt>見せる時間</dt><dd id="stage-rename-scene-hold">—</dd></div>
         <div><dt>転換にかける時間</dt><dd id="stage-rename-scene-transition">—</dd></div>
+      </dl>
+      <!-- R-25（2026-09-17 本人要望）: そのシーンの顔ぶれ。
+           本人の意図は「後にキューシートにつなげるため、キューシートの一部という形のイメージ」。
+           そのため読める文章にせず、上の事実の並びと同じ <dl> の形で持つ。
+           中身は sceneCastFacts() が作る（ショー全体ぶんを並べ直せるよう関数に切り出してある）。
+           ここは読むだけ。出演者の出し入れはこの窓からはしない。 -->
+      <dl class="stage-timeline-cue-facts stage-rename-scene-cast" id="stage-rename-scene-cast">
+        <div><dt>出ている演者</dt><dd id="stage-rename-scene-onstage">—</dd></div>
+        <div><dt>舞台裏の演者</dt><dd id="stage-rename-scene-backstage">—</dd></div>
+        <div><dt>大道具</dt><dd id="stage-rename-scene-sets">—</dd></div>
+        <div><dt>小道具</dt><dd id="stage-rename-scene-props">—</dd></div>
+        <div><dt>持ち物</dt><dd id="stage-rename-scene-held">—</dd></div>
       </dl>
       <label class="stage-control-label" for="stage-rename-subtitle">サブタイトル</label>
       <input id="stage-rename-subtitle" class="stage-text-input" type="text" maxlength="160"
@@ -2474,8 +2465,62 @@
         <p class="stage-venue-note" id="stage-venue-note" data-no-i18n hidden></p>
         <p class="stage-venue-scale" id="stage-venue-scale"></p>
         <p class="stage-profile-hint" id="stage-venue-missing" hidden></p>
-        <button type="button" id="stage-lighting-plan-open" class="stage-minor-action">劇場の照明プランを追加…</button>
-        <p class="stage-profile-hint" id="stage-lighting-plan-open-summary">今の照明は変えずに残します</p>
+        <!-- R-07（2026-09-17 本人要望）: 「劇場の照明プランを追加…」のモーダルをやめ、
+             中身を劇場形式プリセットのボックスの中へ出した。ここで本人に見せたいのは
+             「照明をどこから持ってくるか」の3択（本人の言葉）:
+               1 自分で照明を組む ／ 2 劇場のプリセットを利用する ／ 3 保存してある自分のプランを適用する
+             いま選ばれているものは黄色（--brass）で分かるようにする（本人指定）。
+             「置換」の歯止め（置換と入力させる確認）は、モーダルをやめた後もそのまま残す（本人指定）。 -->
+        <section class="stage-lighting-source" aria-labelledby="stage-lighting-source-label">
+          <p class="stage-field-label" id="stage-lighting-source-label">照明をどこから持ってくるか</p>
+          <div class="stage-lighting-source-choices" role="group" aria-labelledby="stage-lighting-source-label">
+            <button type="button" data-lighting-source="self" aria-pressed="true">
+              <strong>自分で照明を組む</strong>
+              <small>今の照明は変えずに残します。あとから機材配置・照明で組みます。</small>
+            </button>
+            <button type="button" data-lighting-source="preset" aria-pressed="false">
+              <strong>劇場のプリセットを利用する</strong>
+              <small>選んでいる劇場に合う照明プランを、全消灯の状態で持ってきます。</small>
+            </button>
+            <button type="button" data-lighting-source="saved" aria-pressed="false">
+              <strong>保存してある照明プランを適用する</strong>
+              <small>前に組んで保存したプランから選びます。</small>
+            </button>
+          </div>
+          <!-- 保存済みプランの件数など。R-07でモーダルをやめた後も、
+               JS（els.lightingPlanOpenSummary）が書き込む先として要素は残す。
+               build_public.py も必須要素として見ている。 -->
+          <p class="stage-profile-hint" id="stage-lighting-plan-open-summary">今の照明は変えずに残します</p>
+          <div class="stage-lighting-plan-body" id="stage-lighting-plan-body" hidden>
+              <p class="stage-lighting-plan-summary" id="stage-lighting-plan-summary">劇場に合う照明プランを確認しています…</p>
+              <section class="stage-lighting-plan-candidate" id="stage-lighting-plan-candidate" hidden>
+                <p class="stage-lighting-plan-kicker">選択した劇場プリセット</p>
+                <h3 id="stage-lighting-plan-candidate-title"></h3>
+                <p id="stage-lighting-plan-candidate-detail"></p>
+              </section>
+              <section class="stage-lighting-plan-existing" id="stage-lighting-plan-existing" aria-label="保存済みの照明プラン"></section>
+              <section class="stage-lighting-plan-choice" id="stage-lighting-plan-choice" hidden aria-label="適用方法">
+                <p class="stage-lighting-plan-kicker">どう残しますか</p>
+                <button type="button" class="stage-lighting-plan-choice is-selected" id="stage-lighting-plan-add-choice" aria-pressed="true">
+                  <strong>新しい照明プランとして追加 <span>推奨</span></strong>
+                  <small>今の照明・キューは変えず、全消灯の劇場プランを別に残します。</small>
+                </button>
+                <button type="button" class="stage-lighting-plan-choice is-replace" id="stage-lighting-plan-replace-choice" aria-pressed="false">
+                  <strong>参照するプランを置換</strong>
+                  <small>既存の照明・キューは変えず、参照するプランだけを切り替えます。次に確認があります。</small>
+                </button>
+                <section class="stage-lighting-plan-replace-confirm" id="stage-lighting-plan-replace-confirm" hidden>
+                  <label for="stage-lighting-plan-replace-phrase">理解したうえで <b>置換</b> と入力してください</label>
+                  <input id="stage-lighting-plan-replace-phrase" class="stage-text-input" autocomplete="off" data-1p-ignore placeholder="置換">
+                  <p>既存の照明やキューは残ります。ここでは実在会場の設備・吊荷重・電源・DMX・レーザー運用を承認しません。</p>
+                </section>
+              </section>
+              <footer class="stage-lighting-plan-actions">
+                <button type="button" class="btn-quiet" id="stage-lighting-plan-cancel">やめる</button>
+                <button type="button" class="stage-minor-action" id="stage-lighting-plan-apply" disabled>追加する</button>
+              </footer>
+          </div>
+        </section>
         <p class="stage-lighting-plan-overlay-status" id="stage-lighting-plan-overlay-status" hidden>平面図に劇場プランを概略表示中</p>
         <button type="button" class="btn-quiet" id="stage-lighting-plan-overlay-clear" hidden>劇場プランの重ねを外す</button>
       </section>
@@ -2891,9 +2936,9 @@
 
 <script src="stage-venues.js?v=2026091501"></script>
 <script src="stage-venue-lines.js?v=2026091501"></script>
-    <script src="stage-i18n.js?v=2026091890"></script>
-    <script src="stage-i18n.zh-Hans.js?v=2026091890"></script>
-    <script src="stage-i18n.zh-Hant.js?v=2026091890"></script>
+    <script src="stage-i18n.js?v=2026091945"></script>
+    <script src="stage-i18n.zh-Hans.js?v=2026091944"></script>
+    <script src="stage-i18n.zh-Hant.js?v=2026091944"></script>
 <script src="stage-prompt-i18n.js?v=2026091501"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026091501"></script>
@@ -2910,12 +2955,16 @@
 <script src="gamma-light-cue-overlay.js?v=2026091810"></script>
 <script src="gamma-range-fields.js?v=2026091780"></script>
 <script src="gamma-number-scrub.js?v=2026091780"></script>
-<script src="stage-sketch.js?v=2026091920"></script>
+<script src="gamma-formation-presets.js?v=formation1"></script>
+<script src="gamma-formation-model.js?v=formation1"></script>
+<script src="stage-sketch.js?v=2026091944-formation1"></script>
+<script src="gamma-formation.js?v=formation1"></script>
 <script src="stage-timeline.js?v=2026091910"></script>
 <script src="stage-session.js?v=2026091650"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
-<script src="stage-venue-editor.js?v=2026091890"></script>
-<script src="gamma-workspace.js?v=2026091894"></script>
+<script src="stage-venue-editor.js?v=2026091943"></script>
+<script src="gamma-workspace.js?v=2026091940"></script>
+<script src="gamma-mobile.js?v=2026091950"></script>
 </body>
 </html>

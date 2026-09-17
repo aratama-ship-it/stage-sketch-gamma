@@ -1,5 +1,13 @@
-const CACHE_NAME = "stage-sketch-gamma-pwa-v70";
+const CACHE_NAME = "stage-sketch-gamma-pwa-v76";
 const APP_SHELL = [
+  "./gamma-formation-presets.js?v=formation1",
+  "./gamma-formation-model.js?v=formation1",
+  "./gamma-formation.js?v=formation1",
+  "./gamma-formation.css?v=formation1",
+  "./formation/presets/editor.html?v=formation1",
+  "./formation/presets/editor.js?v=formation1",
+  "./formation/presets/editor.css?v=formation1",
+
   "./stage-lighting-plans.js?v=2026091650",
   "./stage-lighting-plan-overlay.js?v=2026091650",
   "./gamma-light-cue-overlay.js?v=2026091810",
@@ -7,29 +15,29 @@ const APP_SHELL = [
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-small.shosai-light-design.json",
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-mid.shosai-light-design.json",
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-large.shosai-light-design.json",
-  "./gamma.css?v=2026091900",
-  "./gamma-light-model.js?v=2026091700",
-  "./gamma-workspace.js?v=2026091894",
+  "./gamma.css?v=2026091944",
+  "./gamma-light-model.js?v=2026091944",
+  "./gamma-workspace.js?v=2026091940",
   "./light-design/index.html?embed=gamma",
-  "./light-design/embed.css?v=2026091503",
+  "./light-design/embed.css?v=2026091940",
   "./light-design/rig-engine.js?v=20260917-2-waveforms",
   "./light-design/stage-figure.js?v=20260915-1",
   "./light-design/volume-light.js?v=20260915-2",
   "./light-design/laser-effects.js?v=20260915-5-color-presets",
   "./light-design/laser-effects-ui.js?v=20260915-3-supported-shapes",
-  "./light-design/app.js?v=2026091704",
+  "./light-design/app.js?v=2026091944",
   "./light-design/light-presets.js?v=1789357787",
   "./light-design/light-presets-ui.js?v=20260915-3-vertical-cards",
   "./light-design/selected-light-presets-engine.js?v=1789616000",
-  "./light-design/selected-light-presets-ui.js?v=20260917-13-waveforms",
+  "./light-design/selected-light-presets-ui.js?v=2026091942-13-waveforms",
   "./light-design/embed.js?v=2026091701",
   "./stage.html",
-  "./style.css?v=2026091921",
+  "./style.css?v=2026091944",
   "./stage-venues.js?v=2026091501",
   "./stage-venue-lines.js?v=2026091501",
-  "./stage-i18n.js?v=2026091890",
-  "./stage-i18n.zh-Hans.js?v=2026091890",
-  "./stage-i18n.zh-Hant.js?v=2026091890",
+  "./stage-i18n.js?v=2026091945",
+  "./stage-i18n.zh-Hans.js?v=2026091944",
+  "./stage-i18n.zh-Hant.js?v=2026091944",
   "./stage-prompt-i18n.js?v=2026091501",
   "./stage-rehearsal-export.js?v=2026091501",
   "./stage-samples/index.js?v=2026091501",
@@ -46,19 +54,25 @@ const APP_SHELL = [
   "./manual/quick-en.html",
   "./gamma-range-fields.js?v=2026091780",
   "./gamma-number-scrub.js?v=2026091780",
-  "./stage-sketch.js?v=2026091920",
+  "./gamma-mobile.js?v=2026091950",
+  "./gamma-mobile.css?v=2026091950",
+  "./stage-sketch.js?v=2026091944-formation1",
   "./stage-timeline.js?v=2026091910",
   "./stage-session.js?v=2026091650",
   "./stage-study-owner.js?v=2026091501",
   "./stage-study.css?v=21",
   "./stage-usage.js?v=2026091501",
-  "./stage-venue-editor.js?v=2026091890",
+  "./stage-venue-editor.js?v=2026091943",
   "./stage-pwa.js?v=2026091501",
   "./stage-sketch.webmanifest",
   "./icons/stage-sketch-180.png",
   "./icons/stage-sketch-192.png",
   "./icons/stage-sketch-512.png",
-  "./icons/stage-sketch-maskable-512.png"
+  "./icons/stage-sketch-maskable-512.png",
+  /* 2026-09-17: ヘッダーのブランド表示をロゴ画像にしたので、オフラインでも出るよう先読みに入れる。
+     本体が使うのは横組みの白1枚だけ。下添え版・色違い（gold/black）は素材として
+     assets/brand/ に置いてあるが画面では使っていないので先読みしない。 */
+  "./assets/brand/logo-jp-gamma-inline-white.svg"
 ];
 /* 配信層（Cloudflareの静的アセット）は /stage.html を /stage へ307で送る。
    PWAの入口は /stage.html だが、リダイレクト後の姿 /stage も同じ画面として扱う。 */
@@ -66,6 +80,7 @@ const STAGE_PATHS = new Set([
   new URL("./stage.html", self.location.href).pathname,
   new URL("./stage", self.location.href).pathname,
 ]);
+const FORMATION_EDITOR_PATH = new URL("./formation/presets/editor.html", self.location.href).pathname;
 const APP_SHELL_PATHS = new Set(APP_SHELL.map((path) => new URL(path, self.location.href).pathname));
 
 /* 保存するときは「リダイレクトを経ていない素の応答」に写し直す。
@@ -180,7 +195,8 @@ self.addEventListener("fetch", (event) => {
       || url.pathname === "/study.html" || url.pathname.startsWith("/study-frame")) return;
 
   // 画面本体はオンライン時に最新版を優先し、通信できない時だけ保存版へ戻る。
-  if (request.mode === "navigate") {
+  // The versioned, same-origin formation iframe is also part of the cached app shell.
+  if (request.mode === "navigate" && url.pathname !== FORMATION_EDITOR_PATH) {
     // 同じ場所にある資料棚などはこのPWAの対象にしない。
     if (!STAGE_PATHS.has(url.pathname)) return;
 

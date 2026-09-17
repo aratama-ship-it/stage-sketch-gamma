@@ -277,7 +277,43 @@
       button.title=locked ? '先に劇場設定を済ませてください' : (button.dataset.gammaTitle || '');
     });
   }
-  function select(next) {
+  /* ---- R-30（2026-09-17 本人要望）: 照明から別のモードへ移るとき「適用しますか？」を出す ----
+   * これまでは window.confirm の2択（OK＝そのまま切り替える／キャンセル）で、
+   * 文面も「保持したまま切り替えますか？」＝適用を勧めていなかった。
+   * 本人の要望は「この画面でやったことを残せるように」なので、その場で適用できる3択にする。
+   * 見た目はγの他の窓（.stage-modal）に合わせる。OSの素の窓が急に出る違和感をなくすため。
+   * ★適用は非同期で、失敗することもある（別タブでショーが変わった／保存できない等）。
+   *   失敗したらモードを切り替えない。切り替えると「適用したつもりで移動したのに入っていない」が起きる。 */
+  function askApplyBeforeLeaving() {
+    return new Promise((resolve) => {
+      const backdrop=document.createElement('div');
+      backdrop.className='stage-modal-backdrop';
+      const box=document.createElement('div');
+      box.className='stage-modal gamma-light-leave-modal';
+      box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
+      box.innerHTML='<header class="stage-modal-head"><h2>照明をショーへ適用しますか？</h2></header>'
+        +'<div class="stage-modal-body"><p>まだ適用していない照明の編集があります。'
+        +'適用すると、いまの照明がこのショーへ保存されます。'
+        +'<br>適用しないで移っても編集内容は端末に控えられ、次に照明を開いたときに戻ります。'
+        +'ただしショー本体にはまだ入りません。</p></div>';
+      const acts=document.createElement('footer');
+      acts.className='gamma-light-leave-actions';
+      const mk=(label,value,cls)=>{const b=document.createElement('button');b.type='button';b.className=cls;b.textContent=label;
+        b.onclick=()=>{cleanup();resolve(value);};return b;};
+      acts.append(mk('やめる','cancel','btn-quiet'),
+                  mk('適用しないで移る','skip','btn-quiet'),
+                  mk('適用して移る','apply','stage-minor-action'));
+      box.append(acts);
+      const onKey=(e)=>{if(e.key==='Escape'){e.preventDefault();cleanup();resolve('cancel');}};
+      function cleanup(){document.removeEventListener('keydown',onKey,true);backdrop.remove();box.remove();}
+      backdrop.onclick=()=>{cleanup();resolve('cancel');};
+      document.addEventListener('keydown',onKey,true);
+      document.body.append(backdrop,box);
+      acts.lastElementChild.focus();
+    });
+  }
+
+  async function select(next) {
     if(!['normal','light-placement','light-design','venue-setup'].includes(next)) return;
     if(next!=='venue-setup' && venueSetupPending()) {
       // 勝手に別の場所へ行かず、やることが1つだけ残っている状態にする
@@ -288,7 +324,16 @@
     }
     if(mode!==next && isLightMode(mode) && !isLightMode(next)) {
       const lightStatus=editor()?.status?.();
-      if(lightStatus?.dirty && !window.confirm('未適用の照明編集があります。現在の照明設定を保持したままモードを切り替えますか？')) return;
+      if(lightStatus?.dirty) {
+        const answer=await askApplyBeforeLeaving();
+        if(answer==='cancel') return;
+        if(answer==='apply') {
+          try { await editor()?.apply?.(); }
+          catch(error) { window.alert('適用できませんでした: '+(error&&error.message||error)+'\nモードは切り替えていません。'); return; }
+          // 適用が通らなかった（dirtyのまま）なら移らない。中身が入っていないのに移るのを防ぐ。
+          if(editor()?.status?.()?.dirty) { window.alert('照明を適用できませんでした。モードは切り替えていません。'); return; }
+        }
+      }
     }
     try {
       close3dWorkspace();

@@ -1678,6 +1678,10 @@ textarea, input[type="text"] {
   margin-bottom: 4px;
 }
 
+
+/* R-18（2026-09-17）: 版名は読むだけの欄になったので、打ち込める見た目をやめる。 */
+.stage-version-input[readonly] { background: var(--recess); color: var(--milk-dim); cursor: default; }
+
 .stage-app-version {
   margin-left: 0.55em;
   color: var(--ink-soft-sm);
@@ -1907,8 +1911,10 @@ textarea, input[type="text"] {
   .stage-launch-backup-actions button { width: 100%; }
 }
 
-/* iPadなどのホーム画面版では、上端のキッカーを省いて作図面を優先する。 */
+/* iPadなどのホーム画面版では、上端のキッカーを省いて作図面を優先する（従来どおり）。
+ * 2026-09-17: 題がロゴ画像になったので、キッカーを隠すのに加えてロゴも小さくする。 */
 html.stage-pwa-tablet .stage-header-app-kicker { display: none; }
+html.stage-pwa-tablet .stage-header-app-identity { --stage-header-logo-width: 224px; }
 
 .stage-sketch-head > div:first-child > p:last-child {
   color: var(--milk-dim);
@@ -2399,7 +2405,10 @@ html.stage-pwa-tablet .stage-header-app-kicker { display: none; }
 .stage-scene-next-row {
   --stage-scene-next-row-action-height: 31px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px;
+  /* R-22（2026-09-17 本人要望）: 削除の✕は正方形にする。
+   * 高さは隣の「次のシーンをつくる」と揃える必要があるので動かせない（31px）。
+   * よって幅を 44px → 31px に詰めて正方形にする。詰めたぶん「つくる」側が13px広くなる。 */
+  grid-template-columns: minmax(0, 1fr) var(--stage-scene-next-row-action-height);
   gap: 6px;
   margin-top: 6px;
 }
@@ -2422,7 +2431,7 @@ html.stage-pwa-tablet .stage-header-app-kicker { display: none; }
 .stage-scene-apply { width: 100%; }
 
 .stage-panel .stage-scene-next-row .stage-scene-row-delete {
-  width: 44px;
+  width: var(--stage-scene-next-row-action-height);   /* R-22: 高さと同じ＝正方形 */
   padding: 0;
   border-color: var(--danger);
   color: var(--danger);
@@ -2666,7 +2675,12 @@ html.stage-pwa-tablet .stage-header-app-kicker { display: none; }
   white-space: normal;
 }
 
-.stage-scene-transition-movement { grid-column: 1 / -1; }
+/* R-24（2026-09-17 本人要望）: 暗転（左）と秒数（右）を横並びにして縦を詰める。
+ * これまでは秒数が grid-column: 1 / -1 で全列をぶち抜き、自分だけで1行を取っていた。
+ * 入れ物の .stage-scene-transition-controls は元から2列なので、指定を外せば横に並ぶ。
+ * 暗転は featureOn("blackout")、秒数は position と featureOn("sceneTiming") で
+ * それぞれ出ないことがある。片方だけのときも崩れないよう、列は内容の幅に任せる。 */
+.stage-scene-transition-movement { justify-self: end; }
 
 .stage-scene-transition-note {
   display: grid;
@@ -10018,6 +10032,24 @@ html[data-release-scope="beta-20260912"] .stage-light-motion-open { display: non
   background: rgba(211, 172, 89, 0.08);
 }
 
+/* R-27（2026-09-17 本人要望）: パネルON/OFFのメニューの下に棒線で区切って「列の並べ方」を置く。
+ * 選択中は他のトグルと同じ真鍮色で示す。 */
+.stage-panel-visibility-rule { margin: 8px 0 6px; border-top: 1px solid var(--line-dark); }
+.stage-panel-visibility-subhead { margin: 0 0 5px; color: var(--milk-dim); font-size: 10px; letter-spacing: .1em; }
+.stage-panel-visibility-layout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.stage-panel-visibility-layout button {
+  min-height: 28px;
+  padding: 3px 4px;
+  border: 1px solid var(--line-dark);
+  background: var(--recess);
+  color: var(--milk-dim);
+  font-size: 11px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.stage-panel-visibility-layout button:hover { border-color: var(--brass); color: var(--milk); }
+.stage-panel-visibility-layout button[aria-pressed="true"] { border-color: var(--brass); color: #c9a961; background: rgba(156,130,63,.18); }
+
 .stage-panel-visibility-menu {
   position: absolute;
   z-index: 24;
@@ -10435,13 +10467,19 @@ body.is-roster-list-resizing { cursor: ns-resize; user-select: none; -webkit-use
 .stage-cast-name-input:focus { border-color: var(--brass); background: var(--desk-2); }
 
 /* 舞台上か舞台裏かは、この場面での状態 */
+/* R-16（2026-09-17 本人要望）: 表示は英字の ON / OFF。
+ * ON(2文字) と OFF(3文字) は幅が違うので、押すたびに箱が動かないよう min-width で固定する。
+ * 実測: 9.5px・字間.06em で OFF は約18px。左右の余白 8px×2 と合わせて 34px あれば収まる。
+ * 以前の「舞台上／舞台裏」は全角3文字で約44px だったので、1行あたり約10px 横が空く。 */
 .stage-cast-status {
+  min-width: 34px;
   min-height: 24px;
   padding: 2px 8px;
   border: 1px solid var(--line-dark);
   background: none;
   font-size: 9.5px;
   letter-spacing: 0.06em;
+  text-align: center;
   white-space: nowrap;
 }
 
@@ -12148,6 +12186,8 @@ body.stage-modal-open .stage-tour { display: none !important; }
 }
 
 /* 種類の絵と色を一つにまとめた見本。押すと色を選べる */
+/* R-26（2026-09-17）: label（色の入力を隠し持つ）から button（舞台の上で選ぶ）へ変えた。
+ * ボタンの既定の余白と文字色を打ち消し、見た目は以前と同じにする。 */
 .stage-kind-swatch {
   position: relative;
   display: inline-flex;
@@ -12155,10 +12195,13 @@ body.stage-modal-open .stage-tour { display: none !important; }
   justify-content: center;
   width: 24px;
   height: 24px;
+  padding: 0;
   border: 1px solid var(--line-dark);
   background: rgba(240, 231, 214, 0.05);
+  font: inherit;
   cursor: pointer;
 }
+.stage-kind-swatch:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 
 .stage-kind-swatch:hover { border-color: var(--brass); }
 
@@ -12184,9 +12227,14 @@ body.stage-modal-open .stage-tour { display: none !important; }
 }
 
 /* 錠。掛けているあいだは舞台の上で掴んでも動かない */
+/* R-20a（2026-09-17）: 中身が絵文字からSVGになったので、文字サイズではなく図の寸法で決める。 */
 .stage-cast-lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 22px;
   min-height: 22px;
+  padding: 0;
   border: 1px solid var(--line-dark);
   background: none;
   color: rgba(240, 231, 214, 0.4);
@@ -12196,6 +12244,9 @@ body.stage-modal-open .stage-tour { display: none !important; }
 }
 
 .stage-cast-lock:hover { color: var(--milk); border-color: var(--brass); }
+/* R-20a: 錠のSVGは line-icon の作法（viewBox 24x24・stroke は currentColor）。
+ * 22px の枠に対して 13px。以前の絵文字とだいたい同じ大きさに見える。 */
+.stage-cast-lock svg { display: block; width: 13px; height: 13px; }
 
 .stage-cast-lock[aria-pressed="true"] {
   color: var(--paper);
@@ -12871,10 +12922,10 @@ html.stage-pwa-tablet .stage-sketch-head {
 
 /* 2026-09-17: iPad用の h1 装飾を削除した。
    #stage-sketch-title は見出し再設計（a3b73dc）以降 .visually-hidden の
-   読み上げ専用見出しで、目に見える題は .stage-header-app-title が担っている。
+   読み上げ専用見出しで、目に見える題は .stage-header-logo（2026-09-17以降はロゴ画像）が担っている。
    隠し要素に display / font-size を当て続けても効果はなく、ヘッダーの崩れを
    この規則のせいだと読み違える原因になる（2026-09-16の監査で実際に誤診が出た）。
-   iPadの題の大きさを変えたいときは .stage-header-app-title 側を指定する。 */
+   iPadの題の大きさを変えたいときは --stage-header-logo-width を指定する。 */
 
 html.stage-pwa-tablet .stage-app-version {
   font-size: 9px;
@@ -15887,6 +15938,10 @@ body.is-panel-resizing .stage-sketch-grid { transition: none; }
 .stage-header-collaboration .stage-release-open:hover { border-color: var(--brass); }
 .stage-header-collaboration .stage-share-open:focus-visible,
 .stage-header-collaboration .stage-release-open:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+/* 2026-09-17 本人指示: ブランド表示は文字組み（キッカー＋題）をやめ、確定ロゴのSVGにする。
+ * ロゴは縦横比を保ったまま幅だけを指定し、版番号はロゴへ焼き込まず右に別表示で残す。
+ * ロゴのSVGは上下に余白を含む（viewBox 625×122 に対して実際の絵は 82.8 高）。
+ * そのため箱の高さは見た目より2割ほど大きい。ヘッダーの高さ（1440幅で113px）には収まる。 */
 .stage-header-app-identity {
   display: grid;
   grid-template-columns: max-content;
@@ -15898,6 +15953,7 @@ body.is-panel-resizing .stage-sketch-grid { transition: none; }
   color: var(--milk);
   white-space: nowrap;
 }
+/* 赤いキッカーは置き換えずそのまま残す（2026-09-17 本人要望）。 */
 .stage-header-app-kicker {
   color: var(--rust-ink);
   font-family: var(--sans);
@@ -15906,9 +15962,41 @@ body.is-panel-resizing .stage-sketch-grid { transition: none; }
   letter-spacing: .22em;
   line-height: 1;
 }
-.stage-header-app-copy { display: inline-flex; align-items: baseline; gap: var(--stage-header-identity-gap); }
-.stage-header-app-title { font-family: var(--serif, serif); font-size: 21px; letter-spacing: .08em; line-height: 1.12; }
-.stage-header-app-identity .stage-app-version { margin: 0; color: var(--milk-dim); font-family: var(--sans); font-size: 14px; letter-spacing: .12em; }
+/* ロゴと版番号の行。ロゴは画像なので baseline ではなく中心で揃える
+ * （画像の baseline は下端＝SVGの下の余白ぶん版番号が下がってしまう）。 */
+.stage-header-app-copy { display: inline-flex; align-items: center; gap: var(--stage-header-identity-gap); }
+/* 幅の基準値。狭い画面では下の @media で小さくする。
+ * 下添え（compact）版を使わない理由（2026-09-17 実測）:
+ * この画面は560px以下でヘッダーが縦に畳まれ、ロゴが1行を丸ごと使う＝横幅は余る。
+ * 一方このとき効いてくるのは縦の余白で、下添え版は同じ幅なら横組みより背が高い。
+ * 390px幅で見比べたところ、下添え150pxではΓがほとんど読めず、横組み208pxなら
+ * Γまではっきり読めた。よって全幅で横組みを使い、幅だけを段階的に小さくする。 */
+.stage-header-logo {
+  display: block;
+  flex: 0 1 auto;
+  min-width: 0;
+  width: var(--stage-header-logo-width, 320px);
+  height: auto;   /* 縦横比は維持する。高さは指定しない */
+  /* 2026-09-17 本人要望「色味も昔のものに合わせて」。
+   * SVGの塗りは #efe7d6 の不透明。置き換える前の題は --milk＝rgba(240,231,214,.85) だったので、
+   * SVGには手を入れず、画像側の不透明度で同じ出方に揃える（SVGはそのまま使う、という指示を守る）。
+   * これで背景 #191512 に対するコントラストは 14.75:1 → 10.93:1。AA(4.5:1)は十分に超える。 */
+  opacity: .85;
+}
+/* R-12（2026-09-17 本人要望）: 版番号は「このアプリ内で最小の文字サイズ」にする。
+ * gamma.css の文字サイズの階段の下限が --fs-1: 9px（最小の補助文字・キャプション）。
+ * 9px では .12em の字間が詰まって見えるので、少しだけ広げて読めるようにした。 */
+.stage-header-app-identity .stage-app-version { margin: 0; color: var(--milk-dim); font-family: var(--sans); font-size: var(--fs-1); letter-spacing: .14em; }
+
+/* ヘッダーの他の操作（モードのタブ・戻る進む・共有）と押し合わないところまで段階的に縮める。
+ * 区切りの幅は、この後に既にある @media（1180 / 720）と揃える。 */
+@media (max-width: 1180px) { .stage-header-app-identity { --stage-header-logo-width: 256px; } }
+@media (max-width: 900px)  { .stage-header-app-identity { --stage-header-logo-width: 224px; } }
+@media (max-width: 720px)  { .stage-header-app-identity { --stage-header-logo-width: 208px; } }
+/* 560px以下はヘッダーが縦に畳まれ、ロゴが1行を丸ごと使う。
+ * 320px幅の端末でも ロゴ224 + 間10 + 版番号43 = 277px < 288px（左右の余白16ずつを引いた幅）で収まる。 */
+@media (max-width: 560px)  { .stage-header-app-identity { --stage-header-logo-width: 240px; } }
+@media (max-width: 400px)  { .stage-header-app-identity { --stage-header-logo-width: 224px; } }
 .stage-header-collaboration .stage-share-open,
 .stage-header-collaboration .stage-release-open { flex: 0 0 auto; }
 .stage-header-collaboration .stage-share-open svg {

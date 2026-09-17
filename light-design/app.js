@@ -75,7 +75,9 @@
 
   function borderPieces() {
     const d = state.dims, c = state.curtains;
-    const legs = legPieces();                 // 袖幕は舞台の造りなので、一文字のトグルに関わらず出す
+    /* 2026-09-17 R-29: 袖幕は一文字幕とは別のトグル（legs）で出し入れする。
+       以前は「舞台の造りなので一文字のトグルに関わらず出す」としていたが、本人要望で消せるようにした。 */
+    const legs = showOn("legs") ? legPieces() : [];
     if (!showOn("border")) return legs;
     const ahead = E.clamp(E.finite(c.borderAhead, 0.04), 0, 0.3);
     const list = legs.concat(state.rig.trusses.map((t, i) => {
@@ -224,9 +226,21 @@
        配置と同じくショー共通の持ち物なので、rig と一緒に保存・Undoの対象にする。 */
     palette: [],
     hover: null, drag: null,
+    soloFigure: null,                     // R-14: 1枚だけ広げているときの図（"plan" / "front" / "side"）
+    fixtureGroups: [],                    // R-11: 灯体をまとめるカスタムのグループ（ショーに1組・保存される）
     collapsed: new Set(), filter: "all",   // 一覧: 取り付け場所ごとの折り畳みと絞り込み（20灯以上向け）
     snap: false,                           // 1mのグリッドに合わせて置く・動かす（本人要望 2026-09-11）
-    show: { no: true, fixtures: true, beam: true, path: true, grid: true, pieces: true, names: true, border: false, blackout: false },
+    /* legs: 袖幕（2026-09-17 本人要望 R-29）。以前は一文字幕のトグルに関わらず常に出していたが、
+       消せるようにした。いままで常に出ていたので既定はオン。 */
+    /* R-09（2026-09-17 本人要望）: 「演者・セット」を 演者／セット／幕 の3つに割った。
+       駒のデータは元から kind が performer / set / curtain の3種類なので、そのまま1対1で対応する。
+       ここでいう「幕」はショー側で置いた幕（前幕・ホリゾント幕）。劇場の造りとして自動で出る
+       一文字幕（border）・袖幕（legs）とは別経路なので、混ぜないこと。
+       legs: 袖幕（2026-09-17 本人要望 R-29）。以前は一文字幕のトグルに関わらず常に出していたが、
+       消せるようにした。いままで常に出ていたので既定はオン。 */
+    show: { no: true, fixtures: true, beam: true, path: true, grid: true,
+            performers: true, setpieces: true, showcurtains: true,
+            names: true, border: false, legs: true, blackout: false },
     /* 作業灯をどれだけ消すか（0〜100%）。100で真っ暗、0で消さないのと同じ
        （2026-09-13 本人要望「押したら全部消えてしまうので、どれくらい消すか決めたい」）。
        図の見え方の設定なので show と同じくUndoの対象にはしない。 */
@@ -313,7 +327,8 @@
   const uid = (p) => `${p}${state.seq++}`;
 
   /* ---------- 履歴（モーダル内Undo） ---------- */
-  const snapshot = () => JSON.stringify({ dims: state.dims, rig: state.rig, scenes: state.scenes, palette: state.palette, levelCurve: state.levelCurve, curtains: state.curtains });
+  /* R-11（2026-09-17）: 灯体グループも履歴に含める。含めないと「戻る」でグループだけ取り残される。 */
+  const snapshot = () => JSON.stringify({ dims: state.dims, rig: state.rig, scenes: state.scenes, palette: state.palette, levelCurve: state.levelCurve, curtains: state.curtains, fixtureGroups: state.fixtureGroups });
   /* いま画面に出ている状態（＝最後に commit した時点）の控え。
      履歴へ積みたいのは「変更<b>前</b>」の状態だが、commit は変更が済んだ後に呼ばれるので、
      その時点から変更前を作り直せない。そこで直前の状態をここに1つ持っておく。
@@ -336,6 +351,7 @@
     // 強さの効き方。目盛りの数が合うものだけ受け取る（古い記録には無い＝そのときはリニアのまま）
     if (Array.isArray(o.levelCurve) && o.levelCurve.length === LEVEL_CURVE_POINTS) state.levelCurve = o.levelCurve.slice();
     if (o.curtains) state.curtains = { ...state.curtains, ...o.curtains };
+    if (Array.isArray(o.fixtureGroups)) state.fixtureGroups = o.fixtureGroups;   // R-11
     state.sel = new Set([...state.sel].filter(fixtureById));
     state.selEquipment = null;
     if (state.selTruss && !E.trussById(state.rig, state.selTruss)) state.selTruss = null;
@@ -347,14 +363,24 @@
   function undo() { if (!state.history.length) return; state.future.push(baseline); const json = state.history.pop(); baseline = json; restore(json); }
   function redo() { if (!state.future.length) return; state.history.push(baseline); const json = state.future.pop(); baseline = json; restore(json); }
 
-  /* ---------- toast / dialog ---------- */
-  let toastTimer = 0;
-  function toast(text, actionLabel, action) {
-    const el = $("toast"); el.innerHTML = ""; el.hidden = false;
-    el.append(Object.assign(document.createElement("span"), { textContent: text }));
-    if (actionLabel) { const b = document.createElement("button"); b.textContent = actionLabel; b.onclick = () => { el.hidden = true; action(); }; el.append(b); }
-    clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 5000);
+  /* ---------- 常設の表示欄 / dialog ---------- */
+  /* R-01（2026-09-17 本人要望）: 画面下に浮くポップアップをやめ、
+     「灯体情報」パネルの一番下にある常設の欄（#insp-log）へ最新の1件だけを書く。
+     ・上からせり出す動きは付けない（最初から場所が空けてある）
+     ・自動では消さない。次の操作で書き換わる
+     ・「元に戻す」ボタンは置かない。取り消しはヘッダーの戻る（⌘Z）を使う
+       → 呼び出し側の第2・第3引数（ボタンの文字と処理）は受け取るが使わない。
+         古い呼び出しをそのまま動かすために引数は残してある。 */
+  const LOG_EMPTY = "ここに操作の結果や注意が出ます";
+  function toast(text, _actionLabel, _action) {
+    const el = $("insp-log");
+    if (!el) return;                       // 埋め込み以外の画面では欄が無いこともある
+    const body = String(text == null ? "" : text);
+    el.textContent = body || LOG_EMPTY;
+    el.dataset.empty = body ? "false" : "true";
+    el.title = body;                       // 2行を超えたぶんは重ねて読めるようにする
   }
+  function clearLog() { const el = $("insp-log"); if (el) { el.textContent = LOG_EMPTY; el.dataset.empty = "true"; el.title = ""; } }
   function dialog(html, buttons) {
     const d = $("dialog"); d.innerHTML = ""; d.hidden = false;
     const box = document.createElement("div"); box.className = "in"; box.innerHTML = html;
@@ -454,6 +480,22 @@
     const g = document.querySelector(".figgrid"); if (!g) return;
     const r = g.getBoundingClientRect(); if (!r.width || !r.height) return;
     const d = state.dims;
+    /* R-14（2026-09-17 本人要望）: 1枚だけ広げているときは、4図をそろえる尺ではなく
+       その1枚が枠いっぱいになる尺で決める。4図の縮尺をそろえる意味が無い状態なので、
+       ここだけ別計算にする（そろえたままだと広げても大きくならない）。 */
+    if (state.soloFigure) {
+      const k = state.soloFigure;
+      const wNeed = k === "plan" ? d.W : k === "front" ? d.W : d.D;
+      const hNeed = k === "plan" ? d.D : d.H;
+      const padX = k === "plan" ? PAD.planX * 2 : PAD.secX * 2;
+      const padY = k === "plan" ? PAD.headPlan + PAD.planT + PAD.planB : PAD.headSec + PAD.secT + PAD.secB;
+      const s2 = Math.max(6, Math.min((r.width - padX) / wNeed, (r.height - padY) / hNeed));
+      const box = k === "plan" ? plan : k === "front" ? secF : secL;
+      const setPx = (elm, prop, v) => { const now = parseFloat(elm.style[prop]) || 0; if (Math.abs(now - v) > 1) elm.style[prop] = v + "px"; };
+      setPx(box.parentElement, "width", Math.round(wNeed * s2) + padX);
+      setPx(box, "height", Math.round(hNeed * s2) + (k === "plan" ? PAD.planT + PAD.planB : PAD.secT + PAD.secB));
+      return;
+    }
     const chromeW = PAD.planX * 2 + PAD.secX * 4 + PAD.gap * 2;
     const chromeH = PAD.headPlan + PAD.planT + PAD.planB + PAD.gap + PAD.headSec + PAD.secT + PAD.secB;
     const s = Math.max(6, Math.min((r.width - chromeW) / (d.W + d.D * 2), (r.height - chromeH) / (d.D + d.H)));
@@ -489,6 +531,9 @@
   const canvasPoint = (c, ev) => { const r = c.getBoundingClientRect(); return { X: (ev.clientX - r.left) * c.width / r.width, Y: (ev.clientY - r.top) * c.height / r.height }; };
   // 表示（番号・光・動く範囲・1mの線）。図が4つに増えたぶん、間引けるようにする
   const showOn = (key) => state.show[key] !== false;
+  /* R-09: 駒は種類ごとに出し入れする。performer / set / curtain の3種類しかない。 */
+  const showPiece = (pc) => showOn(pc && pc.kind === "performer" ? "performers"
+    : pc && pc.kind === "curtain" ? "showcurtains" : "setpieces");
 
   const fixtureWorld = (f) => E.fixtureWorld(f, state.rig, state.dims);
   /* 固定灯は時間で動かない。向きは仕込みで決まるので、往復や円が付いていても止めた位置で描く
@@ -771,6 +816,57 @@
      以前は `on !== true` ならいつでも既定を流し込んでいたため、図でダブルクリックして
      消す→点け直すたびに、狙い先・色・軌道・模様などが既定へ戻っていた（2026-09-13 本人指摘の不具合）。
      既定を入れるのは「まだ一度も点けていない灯（設定が無い or on が未設定）」だけにする。 */
+  /* ---------- R-03（2026-09-17 本人要望）: この cue の灯体情報をまとめて戻す ----------
+   * 2種類 × 2つの範囲。本人指定:
+   *   「消す」        … オフにするだけ。色・向き・広がりは残す
+   *   「はじめに戻す」 … オフにしたうえで、色・向き・広がりも無かったことにする
+   *   範囲は「選んでいる灯」か「この cue の全灯」。単体か複数かは選択状態で自然に決まる。
+   * 確認ダイアログは出さない。取り消しはヘッダーの「戻る」（⌘Z）でできる（本人指定）。
+   * 触るのは編集中の cue だけ。仕込み（灯体の配置）や他の cue には手を出さない。 */
+  function resetCueLights(ids, mode) {
+    const list = [...new Set(ids || [])].filter(fixtureById);
+    if (!list.length) return;
+    const c = cue();
+    if (mode === "default") {
+      /* 「はじめに戻す」＝ cue からその灯の記録ごと消す。
+         そうすると lightOf() が null に戻り、次に点けたときは新しい灯と同じ既定値から始まる。
+         中途半端に値を書き込むより、この方が本当の初期状態になる。 */
+      list.forEach((fid) => { delete c.lights[fid]; });
+    } else {
+      list.forEach((fid) => setLight(fid, { on: false }));
+    }
+    /* 「組」（動きの組）は2灯以上で成り立つ。記録を消した灯は組から外し、1灯になった組は解散する。
+       ここは既存の removeFixtures と同じ後始末（app.js の他の箇所と揃えてある）。 */
+    if (mode === "default") {
+      c.groups = c.groups.map((g) => ({ ...g, members: g.members.filter((m) => !list.includes(m)) }))
+        .filter((g) => g.members.length >= 2);
+    }
+    const what = mode === "default" ? "はじめに戻しました" : "消しました";
+    commit(`${list.length}灯を${what}`);
+  }
+
+  /* 上の4通りを選ばせる小さな窓。図の上の帯は狭いので、ボタンは1つにして中で選ぶ。 */
+  function openCueResetDialog() {
+    const sel = [...state.sel].filter(fixtureById);
+    const all = state.rig.fixtures.map((f) => f.id);
+    const lit = all.filter((fid) => lightOf(fid));
+    const run = (ids, mode) => resetCueLights(ids, mode);
+    const rows = [
+      [`選んだ${sel.length}灯を消す`, () => run(sel, "off"), sel.length ? "" : "disabled"],
+      [`選んだ${sel.length}灯をはじめに戻す`, () => run(sel, "default"), sel.length ? "" : "disabled"],
+      [`この cue の全${lit.length}灯を消す`, () => run(lit, "off"), lit.length ? "" : "disabled"],
+      [`この cue の全${lit.length}灯をはじめに戻す`, () => run(lit, "default"), lit.length ? "primary" : "disabled"],
+    ].filter(([, , cls]) => cls !== "disabled");
+    if (!rows.length) { toast("戻せる灯がありません"); return; }
+    dialog(
+      `<p class="ptitle">この cue の灯体情報を戻す</p>`
+      + `<p class="hint">いま編集している cue だけが変わります。仕込み（灯体の置き場所）と、ほかの cue はそのままです。`
+      + `<br>「消す」は色や向きを残したままオフにします。「はじめに戻す」は色・向き・広がりも無かったことにします。`
+      + `<br>間違えたらヘッダーの「戻る」で元に戻せます。</p>`,
+      rows.concat([["やめる", null, "quiet"]]),
+    );
+  }
+
   function ensureOn(fid) {
     const l = lightOf(fid);
     const fresh = !l || l.on === null || l.on === undefined;
@@ -1250,9 +1346,9 @@
   function drawBordersUp(ctx, P, d) { borderPieces().forEach((pc) => drawCurtainUp(ctx, P, pc, d)); }
 
   function drawPiecesPlan(ctx, P, B) {
-    if (!showOn("pieces")) return;
     const d = state.dims, pxM = B.w / d.W;
     piecesOf().forEach((pc) => {
+      if (!showPiece(pc)) return;            // R-09: 種類ごとに出し入れする
       if (pc.kind === "curtain") { drawCurtainPlan(ctx, P, pc, d); return; }
       const q = P({ x: (pc.u - 0.5) * d.W, y: pc.v * d.D, z: 0 });
       const rw = Math.max(4, (pc.kind === "set" ? 0.9 : 0.45) * pxM), rd = Math.max(3, (pc.kind === "set" ? 0.9 : 0.3) * pxM);
@@ -1332,7 +1428,7 @@
       return b ? [b] : [];
     });
     const yawDeg = kind === "shimote" ? -90 : kind === "kamite" ? 90 : 0;
-    const people = kind === "plan" || !showOn("pieces") ? [] : piecesOf().filter(p=>p.kind==="performer");
+    const people = kind === "plan" || !showOn("performers") ? [] : piecesOf().filter(p=>p.kind==="performer");
     V.render(ctx,P,state.dims,kind,beams,people,p=>drawPiecesUp(ctx,P,k,{...options,yawDeg,only:p.id,relight:showOn("blackout"),beams:all}),V.haze(cue()),Boolean(state.drag||state.play.on||spatialQuick),VISUAL_GAIN);
     for (const b of beams) {
       // 客席向きの光・まぶしさ・ハンドルは、もやから独立した各図の専用分岐で描画済み。
@@ -1371,11 +1467,11 @@
     });
   }
   function drawPiecesUp(ctx, P, pxPerM, opts) {
-    if (!showOn("pieces")) return;
     const o = opts || {}, d = state.dims, F = window.STAGE_FIGURE;
     /* 暗幕の後に、不透明な人物を受光色で塗り直す。逆光と前明かりが共存しても黒で上書きしない。 */
     const relight = o.relight, beams = relight ? (o.beams || performerBeams()) : null;
     piecesOf().forEach((pc) => {
+      if (!showPiece(pc)) return;            // R-09: 種類ごとに出し入れする
       if (o.only && pc.id !== o.only) return;
       if (relight && pc.kind !== "performer") return;
       if (pc.kind === "curtain") { drawCurtainUp(ctx, P, pc, d); return; }
@@ -2800,10 +2896,23 @@
   document.addEventListener("keydown", (ev) => {
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName);
     if (ev.key === "Escape" && !$("dialog").hidden) { $("dialog").hidden = true; return; }
+    if (ev.key === "Escape" && state.soloFigure) { ev.preventDefault(); setSoloFigure(state.soloFigure); return; }   // R-14: 広げた図を戻す
     if (ev.key === "Escape") { if (state.drag) { const dg = state.drag; state.drag = null; restore(dg.before); state.dirty = true; } else if (state.tool) { state.tool = null; renderAll(); } else if (state.sel.size || state.selEquipment) { state.sel.clear(); state.selEquipment = null; renderAll(); } return; }
     if (typing) return;
     if ((ev.key === "g" || ev.key === "G") && !ev.metaKey && !ev.ctrlKey && !ev.altKey && state.mode === "move") { ev.preventDefault(); $("lighttoggles").querySelector('[data-show="blackout"]').click(); return; }
     if ((ev.key === "s" || ev.key === "S") && !ev.metaKey && !ev.ctrlKey && !ev.altKey && state.mode === "move") { ev.preventDefault(); toggleSolo(); return; }
+    /* R-14: 図を1枚だけ広げる。F=正面図（本体の全画面と同じキー）／p=平面図／O=側面図。
+       もう一度押すと戻る。広げている間も Space（再生）と ←→（場面送り）は下で効く。 */
+    if (!ev.metaKey && !ev.ctrlKey && !ev.altKey && "fFpPoO".includes(ev.key) && ev.key.length === 1) {
+      const kind = (ev.key === "f" || ev.key === "F") ? "front" : (ev.key === "p" || ev.key === "P") ? "plan" : "side";
+      ev.preventDefault(); setSoloFigure(kind); return;
+    }
+    /* R-14: 広げている間は左右の矢印で場面を送る（本人指定）。
+       広げていないときは、矢印は既存の動き（入力欄の中の移動など）に任せる。 */
+    if (state.soloFigure && (ev.key === "ArrowLeft" || ev.key === "ArrowRight")) {
+      const tag = ev.target && ev.target.tagName;
+      if (!["INPUT", "TEXTAREA", "SELECT"].includes(tag)) { ev.preventDefault(); lxStepScene(ev.key === "ArrowRight" ? 1 : -1); return; }
+    }
     /* Space = 再生／停止。再生ボタン自身にフォーカスがあるときは何もしない——
        ボタンの既定の動作（click）が同じトグルを呼ぶので、ここで拾うと2回走る。 */
     if (ev.key === " ") { if (document.activeElement !== $("t-play")) { ev.preventDefault(); togglePlay(); } }
@@ -2823,6 +2932,68 @@
   // 取り付け場所ごとのまとまり（20灯以上でも追えるように。LuminaPlotのpositions階層に相当）
   /* 取り付け場所ごとの区分。配置でも灯体情報でも同じ見出しを使う（2026-09-11 本人要望。
      前明かりなのか吊りなのか、バトン1なのかバトン2なのかが、どちらのページでも分かるように）。 */
+  /* ---- R-11（2026-09-17 本人要望）: 任意の灯体をまとめるカスタムのグループ ----
+   * 本人の言葉:「任意の灯体をグループとして登録して、同時に操作をしやすくする。
+   *   今でいうバトン1・バトン2のようにグループされているものを、カスタムで作れる状態に」
+   * 本人決定:
+   *   ・そのショーに残る（保存される。cueごとではない）
+   *   ・1つの灯が複数のグループに入ってよい
+   *   ・グループは**選択を助けるだけ**。灯を縛らない。値が揃うのは操作した瞬間だけで、
+   *     そのあとは1灯ずつ自由に変えられる
+   *   ・ばらばらの値を揃える操作のときは「一度初期化が入る」警告を出す
+   * ★既存の cue.groups（画面の「組1・組2」）とは別物。あちらは動きの組で、
+   *   作ると灯が点き path が書き換わる。こちらは触らない。 */
+  const fixtureGroups = () => (state.fixtureGroups = Array.isArray(state.fixtureGroups) ? state.fixtureGroups : []);
+  const groupMembers = (g) => (g.members || []).filter(fixtureById);
+
+  function makeFixtureGroup(ids, name) {
+    const list = [...new Set(ids)].filter(fixtureById);
+    if (!list.length) { toast("グループに入れる灯体を選んでください"); return; }
+    const g = { id: uid("fg"), name: String(name || "").slice(0, 24) || `グループ${fixtureGroups().length + 1}`, members: list };
+    fixtureGroups().push(g);
+    commit(`${list.length}灯を「${g.name}」にまとめました`);
+  }
+  function dissolveFixtureGroup(gid) {
+    const before = fixtureGroups().length;
+    state.fixtureGroups = fixtureGroups().filter((g) => g.id !== gid);
+    if (state.fixtureGroups.length !== before) commit("グループを解除しました");
+  }
+  function renameFixtureGroup(gid, name) {
+    const g = fixtureGroups().find((x) => x.id === gid); if (!g) return;
+    g.name = String(name || "").slice(0, 24) || g.name;
+    commit();
+  }
+  function selectFixtureGroup(gid, additive) {
+    const g = fixtureGroups().find((x) => x.id === gid); if (!g) return;
+    const members = groupMembers(g);
+    if (!additive) state.sel.clear();
+    members.forEach((id) => state.sel.add(id));
+    renderAll();
+    /* R-11（2026-09-17 本人指定）: ばらばらの値を持つ灯がある状態でまとめて操作すると、
+       その値は全部同じになる。何が揃うのかを名指しで先に知らせる。
+       「初期化されます」だけだと、何が消えるのか分からないため。
+       ここで値は変えない。実際に揃うのは、このあと本人が操作した瞬間だけ。 */
+    const uneven = describeUneven(members);
+    toast(uneven.length
+      ? `「${g.name}」の${members.length}灯を選びました。いま ${uneven.join("・")} がばらばらです。まとめて変えると全部同じ値になります（戻るで取り消せます）`
+      : `「${g.name}」の${members.length}灯を選びました`);
+  }
+  /* ばらばらの値を持つ灯をまとめて動かす前の警告（本人指定）。
+     「何が揃うのか」を具体的に出す。「初期化されます」だけだと何が消えるか分からない。 */
+  const UNIFY_KEYS = [["level", "強さ"], ["color", "色"], ["beamDeg", "光の広がり"], ["surface", "当てる場所"]];
+  function describeUneven(ids) {
+    const list = [...new Set(ids)].filter(fixtureById);
+    const out = [];
+    UNIFY_KEYS.forEach(([key, word]) => {
+      const values = new Set(list.map((fid) => {
+        const l = lightOf(fid); if (!l) return "—";
+        return key === "beamDeg" ? String(beamOf(fixtureById(fid))) : String(l[key]);
+      }));
+      if (values.size > 1) out.push(word);
+    });
+    return out;
+  }
+
   function mountSections(from) {
     const list = from || state.rig.fixtures;
     const secs = [];
@@ -2927,6 +3098,7 @@
       if (!state.rig.fixtures.length && !extras.length) host.innerHTML = '<p class="hint" style="padding:6px">機材はまだありません。</p>';
       else if (!host.children.length) host.innerHTML = `<p class="hint" style="padding:6px">「${state.search}」に当てはまる灯体はありません。</p>`;
       $("sel-count").textContent = state.sel.size > 1 ? `${state.sel.size}灯を選択中` : "";
+      { const mb = $("make-fixture-group"); if (mb) mb.hidden = true; }   // R-11: 配置モードでは出さない
       const cycOnly = state.sel.size > 0 && [...state.sel].every((id) => { const ff = fixtureById(id); return ff && ff.mount.type === "cyc"; });
       // ホリゾントライトは床・上それぞれ1本。複製・削除は配置パネルの「あり／なし」に任せる
       $("del").disabled = !state.sel.size || cycOnly; $("spread").disabled = !canSpread();
@@ -2935,6 +3107,34 @@
       $("mirror").title = canMirror() ? "下手⇄上手へ配置だけを写します" : "SS（袖）の灯を選ぶと使えます";
       return;
     }
+    /* R-11: 照明デザイン中は、選んだ灯をグループにできる。2灯以上でないと意味がないので、
+       1灯以下のときは押せない状態で出しておく（なぜ押せないかを title で伝える）。 */
+    { const mb = $("make-fixture-group");
+      if (mb) { mb.hidden = state.mode !== "move";
+        mb.disabled = state.sel.size < 2;
+        mb.textContent = state.sel.size >= 2 ? `選んだ${state.sel.size}灯をグループにする` : "選んだ灯をグループにする";
+        mb.title = state.sel.size >= 2 ? "まとめて選べるようにします。灯体の設定は変わりません"
+          : "灯体を2つ以上選ぶと使えます"; } }
+
+    /* ---- R-11（2026-09-17 本人要望）: カスタムのグループ ----
+     * 取り付け場所の見出し（バトン1・バトン2…）と同じ見え方で並べ、見出しを押すとまとめて選べる。
+     * 「組」（動きの組）とは別物なので、見出しの言葉も分ける。 */
+    if (state.mode === "move") fixtureGroups().forEach((g) => {
+      const members = groupMembers(g);
+      if (!members.length) return;
+      const h = document.createElement("div"); h.className = "grp fixture-group";
+      h.innerHTML = `<span>◆ ${g.name}</span><small>${members.length}灯　まとめて選ぶ</small>`;
+      h.querySelector("small").title = "このグループの灯をまとめて選びます";
+      h.onclick = (ev) => selectFixtureGroup(g.id, ev.shiftKey);
+      const off = document.createElement("button");
+      off.type = "button"; off.className = "x fixture-group-off";
+      off.textContent = "✕"; off.title = `「${g.name}」を解除する（灯体はそのまま残ります）`;
+      off.setAttribute("aria-label", off.title);
+      off.onclick = (ev) => { ev.stopPropagation(); dissolveFixtureGroup(g.id); };
+      h.append(off);
+      host.append(h);
+      members.forEach((m) => { const f = fixtureById(m); if (f) host.append(row(f)); });
+    });
     if (state.mode === "move") c.groups.forEach((g, gi) => { const h = document.createElement("div"); h.className = "grp"; h.innerHTML = `<span>組${gi + 1}　${groupName(g)}</span><small>${g.members.length}灯</small>`; h.onclick = () => { state.sel = new Set(g.members); renderAll(); }; host.append(h); g.members.forEach((m, i) => { const f = fixtureById(m); if (f) host.append(row(f, g.relation === "sequential" ? i : undefined)); }); });
     /* 組に入っていない灯は、取り付け場所ごとに見出しを付けて並べる（2026-09-11 本人要望）。
        ここでも畳めるので、20灯以上でも「どこに何灯あるか」を先に見渡せる。 */
@@ -4523,6 +4723,8 @@
     if (!inMove || !state.sel.size) state.solo = false;
     const solo = $("solo");
     if (solo) { solo.hidden = !inMove; solo.disabled = !state.sel.size; solo.setAttribute("aria-pressed", String(Boolean(state.solo))); solo.title = state.solo ? "ソロを解除（S）" : "選択中の灯体をソロ表示（S）"; }
+    /* R-03: 戻すボタンは照明デザイン中だけ。全灯まとめて戻せるので、選択が無くても押せる。 */
+    { const rb = $("reset-cue"); if (rb) rb.hidden = !inMove; }
     const listTitle = $("fixture-list-title"); if (listTitle) listTitle.textContent = inMove ? "灯体一覧" : "機材一覧";
     const selectedTitle = $("selacts-title"); if (selectedTitle) selectedTitle.textContent = inMove ? "選んだ灯体" : "選んだ機材";
     const search = $("search"); if (search) {
@@ -4671,7 +4873,39 @@
   $("mirror").onclick = mirrorSelected;
   document.querySelectorAll("#filters button").forEach((b) => { b.onclick = () => { state.filter = b.dataset.filter; renderAll(); }; });
   $("del").onclick = removeSelected; $("spread").onclick = spreadSelected;
+  /* ---- R-14（2026-09-17 本人要望）: 図を1枚だけウィンドウいっぱいに広げる ----
+   * 目的は「正面図の映像を大きい画面で見ること」。編集用ではないので、
+   * 左右のパネルは隠して構わない（本人指定。灯の選択もできなくてよい）。 */
+  function setSoloFigure(kind) {
+    const next = state.soloFigure === kind ? null : kind;
+    state.soloFigure = next;
+    const g = document.querySelector(".figgrid");
+    if (g) { if (next) g.dataset.solo = next; else delete g.dataset.solo; }
+    document.querySelectorAll("[data-solo-figure]").forEach((b) => {
+      b.setAttribute("aria-pressed", String(b.dataset.soloFigure === next));
+    });
+    /* 広げた直後は枠の大きさが変わっているので、内部解像度から取り直す。 */
+    syncCanvasSize(); draw();
+    toast(next
+      ? `${next === "plan" ? "平面図" : next === "front" ? "正面図" : "側面図"}だけを大きく出しています。Escか同じキーで戻ります（再生=Space／場面送り=←→）`
+      : "図の並びを元に戻しました");
+  }
+  document.querySelectorAll("[data-solo-figure]").forEach((b) => {
+    b.setAttribute("aria-pressed", "false");
+    b.onclick = (ev) => { setSoloFigure(b.dataset.soloFigure); if (ev.detail > 0) ev.currentTarget.blur(); };
+  });
   $("solo").onclick = (ev) => { toggleSolo(); if (ev.detail > 0) ev.currentTarget.blur(); };
+  /* R-03: この cue の灯体情報を戻す。照明デザイン中だけ使える（配置モードでは cue を触らない）。 */
+  { const rb = $("reset-cue"); if (rb) rb.onclick = (ev) => { openCueResetDialog(); if (ev.detail > 0) ev.currentTarget.blur(); }; }
+  /* R-11: 選んだ灯をグループにする。名前はその場で聞く（付けなければ連番）。 */
+  { const mb = $("make-fixture-group");
+    if (mb) mb.onclick = () => {
+      const ids = [...state.sel].filter(fixtureById);
+      if (ids.length < 2) { toast("灯体を2つ以上選ぶとグループにできます"); return; }
+      const name = window.prompt(`${ids.length}灯をまとめます。グループの名前を入れてください（空ならおまかせ）`, "");
+      if (name === null) return;   // 取り消し
+      makeFixtureGroup(ids, name);
+    }; }
   $("presets").onclick = openPresets;
   $("prefs").onclick = openPrefs;        // 環境設定（歯車）
   $("save").onclick = openDesigns;       // 照明デザインを名前を付けて保存
@@ -4988,6 +5222,9 @@
       palette: [...state.palette],
       levelCurve: [...state.levelCurve],
       curtains: { ...state.curtains },
+      /* R-11（2026-09-17 本人要望）: 灯体をまとめるカスタムのグループ。
+         本人決定で「そのショーに残る」ので、ここへ入れて保存する。 */
+      fixtureGroups: JSON.parse(JSON.stringify(state.fixtureGroups || [])),
     };
   }
   /* 取り込み。場面の演者・セットは<b>いまのもの</b>を残し、灯の設定だけ差し替える
@@ -5024,6 +5261,17 @@
     if (Array.isArray(o.palette)) state.palette = [...o.palette];
     if (Array.isArray(o.levelCurve) && o.levelCurve.length === LEVEL_CURVE_POINTS) state.levelCurve = [...o.levelCurve];
     if (o.curtains) state.curtains = { ...state.curtains, ...o.curtains };
+    /* R-11（2026-09-17 本人要望）: 灯体をまとめるカスタムのグループ。
+       古いデータには fixtureGroups が無いので、無ければ空として読む（壊さない）。
+       いなくなった灯体は取り除き、中身が空になったグループは捨てる。 */
+    {
+      const alive = new Set((o.rig.fixtures || []).map((f) => f && f.id));
+      state.fixtureGroups = (Array.isArray(o.fixtureGroups) ? o.fixtureGroups : [])
+        .filter((g) => g && typeof g.id === "string")
+        .map((g) => ({ id: g.id, name: String(g.name || "").slice(0, 24),
+          members: (Array.isArray(g.members) ? g.members : []).filter((id) => alive.has(id)) }))
+        .filter((g) => g.members.length >= 1);
+    }
     // 番号の続きをそろえる（読み込んだ灯と番号がぶつからないように）
     state.nextNo = state.rig.fixtures.reduce((mx, f) => Math.max(mx, E.finite(f.no, 0)), 0) + 1;
     state.sceneIndex = Math.min(state.sceneIndex, state.scenes.length - 1);
@@ -5152,5 +5400,6 @@
   document.addEventListener('pointerup',()=>{if(spatialQuick){spatialQuick=false;draw();}});
   document.addEventListener('pointercancel',()=>{if(spatialQuick){spatialQuick=false;draw();}});
   window.addEventListener('blur',()=>{if(spatialQuick){spatialQuick=false;draw();}});
+  clearLog();                      // R-01: 常設欄に案内を出しておく（空の枠だけが浮かないように）
   renderAll();
 })();

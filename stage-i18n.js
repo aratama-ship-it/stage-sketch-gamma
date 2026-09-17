@@ -213,7 +213,7 @@
     "勝手に他のショーを消さないため、壊れた一覧には書き込みません。「ショー一覧を作り直す」を押すと、壊れた元データをファイルへ書き出してから消します。先に、開いているショーもファイルへ書き出しておくと安全です。": "To avoid deleting your other shows, nothing is written to the damaged shelf. “Rebuild show shelf” exports the damaged data to a file before removing it. Exporting the show you have open is a good idea first.",
     "ショー一覧を作り直す": "Rebuild show shelf",
     "先にセットを組んでください": "Build a set first",
-    "まだ残していません。並べ終えたら名前をつけて残してください。小道具や家具を一つずつ登録するのは「出るもの」からです。": "Nothing saved yet. Lay out the set, then save it under a name. To add a single prop or furniture piece, use \"Cast & set\".",
+    "まだ残していません。並べ終えたら名前をつけて残してください。小道具や家具を一つずつ登録するのは「演者・舞台セット」からです。": "Nothing saved yet. Lay out the set, then save it under a name. To add a single prop or furniture piece, use \"Cast & set\".",
     "音源の再接続が必要": "Audio file needs reconnecting",
     "このショーの最初の版です。": "The first version of this show.",
     "稽古用JSONの変換器を読み込めませんでした。": "The rehearsal JSON converter could not be loaded.",
@@ -315,7 +315,7 @@
     "劇場": "Venue",
     "劇場形式を選び、カスタムステージを制作する": "Choose a venue type and build a custom stage",
     "劇場形式プリセット": "Venue type presets",
-    "出るもの": "Cast & set",
+    "演者・舞台セット": "Cast & set",
     "セットを組む": "Build a set",
     "組んだセットを選ぶ": "Choose a built set",
     "セット登録": "Saved sets",
@@ -588,7 +588,7 @@
     "高さ": "Height",
     "規模のとおりに戻す": "Reset to preset",
 
-    /* ---- 出るもの・光 ---- */
+    /* ---- 演者・舞台セット・光 ---- */
     "名前を入れて追加": "Name, then add",
     "名前を入れて残す": "Name, then save",
     "追加": "Add",
@@ -722,7 +722,7 @@
     "ルーム情報がありません": "No room information",
     "会議用セッションのログインを確認できませんでした。": "Your sign-in for the meeting session could not be confirmed.",
     "不明なエラー": "Unknown error",
-    /* ---- 小道具の形（出るもの→小道具の選択肢） ---- */
+    /* ---- 小道具の形（演者・舞台セット→小道具の選択肢） ---- */
     "箱": "Box",
     "傘": "Umbrella",
     "クラブ": "Club",
@@ -1138,6 +1138,21 @@
     "光の意図を消す": "Remove lighting intention",
     /* ---- 劇場照明プラン。既存の照明を消さず、全消灯の劇場案を別保存する ---- */
     "劇場の照明プランを追加…": "Add a theatre lighting plan…",
+    /* R-18（2026-09-17）: 版名は v＋数字。 */
+    "バージョン": "Version",
+    "保存して ＋1": "Save and +1",
+    "いまの内容を保存し、版を1つ上げます（v1 → v2）": "Saves the current state and moves the version up by one (v1 → v2)",
+    /* R-25（2026-09-17）: シーンの詳細に出す顔ぶれ（キューシートの一部）。 */
+    "出ている演者": "Performers on stage",
+    "舞台裏の演者": "Performers off stage",
+    /* R-07（2026-09-17）: 照明をどこから持ってくるかの3択。 */
+    "照明をどこから持ってくるか": "Where the lighting comes from",
+    "自分で照明を組む": "Build the lighting yourself",
+    "今の照明は変えずに残します。あとから機材配置・照明で組みます。": "Keeps the current lighting unchanged. Build it later in Rig and Lighting.",
+    "劇場のプリセットを利用する": "Use the theatre preset",
+    "選んでいる劇場に合う照明プランを、全消灯の状態で持ってきます。": "Brings in a lighting plan that fits the selected theatre, with every light off.",
+    "保存してある照明プランを適用する": "Apply a saved lighting plan",
+    "前に組んで保存したプランから選びます。": "Choose from plans you built and saved earlier.",
     "今の照明は変えずに残します": "Keeps the current lighting unchanged",
     "劇場の照明プラン": "Theatre lighting plans",
     "劇場に合う照明プランを確認しています…": "Checking the lighting plan for this theatre…",
@@ -1331,7 +1346,7 @@
     "真上から落とす": "Reset to straight down",
     "動かないようにする": "Lock in place",
     "舞台から外す": "Remove from stage",
-    "舞台の上で選ぶと、姿勢・向き・重なりを変えられます。名前・色・寸法は「出るもの」の一覧で決めます。":
+    "舞台の上で選ぶと、姿勢・向き・重なりを変えられます。名前・色・寸法は「演者・舞台セット」の一覧で決めます。":
       "Select something on stage to change its pose, facing and stacking. Name, colour and size are set in the Cast & set list.",
     "立つ": "Stand",
 
@@ -2254,6 +2269,10 @@
     [/^複数の姿勢$/, "Mixed poses"],
     [/^複数の向き$/, "Mixed directions"],
     [/^(\d+)人の姿勢を「(.+)」にしました。$/, 'Changed the pose of $1 performers to “$2”.'],
+    /* 2026-09-17: 別セッションが足したフォーメーション機能の読み上げ文。
+       stage-sketch.js:30860 の announce が SAY 未登録で公開前チェックが止まっていたので登録した。
+       英語は呼び出し側の sx() に既にある文面をそのまま使う。 */
+    [/^(\d+)人のフォーメーションを反映しました。$/, "Applied a formation to $1 performers."],
     [/^複数選択を解除しました。$/, "Multi-selection cleared."],
     [/^囲いの中に選択できるものがありません。$/, "There are no selectable items inside the box."],
     [/^整列するものを2つ以上選択してください。$/, "Select two or more items to line up."],

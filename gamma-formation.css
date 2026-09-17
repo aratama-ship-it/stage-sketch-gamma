@@ -1,0 +1,7 @@
+#gamma-formation-dialog{box-sizing:border-box;width:min(1360px,96vw);height:92dvh;max-height:96dvh;max-width:96vw;margin:auto;padding:0;border:1px solid #3b342c;border-radius:8px;background:#191512;color:#f5f3ee;overflow:hidden}
+#gamma-formation-dialog::backdrop{background:rgba(0,0,0,.65)}
+#gamma-formation-dialog .gamma-formation-head{height:52px;display:flex;align-items:center;justify-content:space-between;padding:4px 12px;gap:8px}
+#gamma-formation-dialog .gamma-formation-close{min-width:44px;min-height:44px;border:1px solid #b6a995;background:transparent;color:#f5f3ee;border-radius:4px;cursor:pointer;font:inherit}
+#gamma-formation-dialog iframe{display:block;width:100%;height:calc(100% - 52px);border:0;background:#f5f3ee}
+#gamma-formation-dialog .gamma-formation-close:focus-visible{outline:3px solid #f5f3ee;outline-offset:1px}
+.gamma-formation-trigger[hidden]{display:none!important}

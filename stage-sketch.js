@@ -2258,6 +2258,38 @@
         { shape: "cylinder", axis: "z", y: 0.50, z: 0.35, w: 1, d: 0.04, h: 1, tint: 1.2 },
       ] },
   };
+  /* ---- R-19（2026-09-17 本人要望）: 物を伴う姿勢に対応する小道具 ----
+   * 「これらは全て小道具として登録してください」。ジャグリングは既存のクラブ／ボール／リングで足りる
+   * （本人決定）ので、新しく足すのは8種。実寸は市販品の代表値に寄せた概略。
+   * ★grip は「手で握る位置」。乗り物（一輪車・自転車・スケートボード・シルホイール・
+   *   ローラースケート）は握るものではないので、grip は「体が乗る高さ」を指す点に注意。
+   *   姿勢側（bicycle / unicycle など）が体の形を決めるので、ここは置き場所の基準にする。
+   * ★ギター・トランペット・一輪車・自転車・ジャーマンホイールは**既にPROP_SHAPESにある**。
+   *   新しく足すのは mic / skateboard / rollerskate / cyrwheel の4種だけ。 */
+  PROP_SHAPES.mic = { ja: "マイク", en: "Microphone", dims: { w: 0.05, d: 0.05, h: 0.18 },
+    grip: { x: 0, y: 0.06 }, parts: [
+      { shape: "cylinder", y: 0, dia: 0.032, h: 0.13, tint: 0.65 },
+      { shape: "sphere", y: 0.13, dia: 0.05, tint: 1.05 },
+    ] };
+  PROP_SHAPES.skateboard = { ja: "スケートボード", en: "Skateboard", dims: { w: 0.22, d: 0.80, h: 0.11 },
+    grip: { x: 0, y: 0.11 }, parts: [
+      { shape: "panel", y: 0.08, w: 0.22, d: 0.80, h: 0.02, tint: 0.85 },
+      ...[-0.26, 0.26].flatMap((z) => [
+        { shape: "box", y: 0.05, z, w: 0.10, d: 0.06, h: 0.03, tint: 0.6 },
+        { shape: "cylinder", axis: "x", x: -0.10, y: 0.035, z, dia: 0.07, h: 0.04, tint: 0.7 },
+        { shape: "cylinder", axis: "x", x: 0.10, y: 0.035, z, dia: 0.07, h: 0.04, tint: 0.7 },
+      ]),
+    ] };
+  PROP_SHAPES.rollerskate = { ja: "ローラースケート", en: "Roller skates", dims: { w: 0.26, d: 0.30, h: 0.22 },
+    grip: { x: 0, y: 0.22 }, parts: [
+      ...[-0.11, 0.11].flatMap((x) => [
+        { shape: "box", x, y: 0.07, w: 0.10, d: 0.28, h: 0.15, tint: 0.9 },
+        ...[-0.09, 0.09].map((z) => ({ shape: "cylinder", axis: "x", x, y: 0.035, z, dia: 0.07, h: 0.03, tint: 0.7 })),
+      ]),
+    ] };
+  PROP_SHAPES.cyrwheel = { ja: "シルホイール", en: "Cyr wheel", dims: { w: 1.80, d: 0.06, h: 1.80 },
+    grip: { x: 0, y: 0.90 }, parts: ringTube(128, 0.86, 0.045, 1) };
+
   PROP_SHAPES.mask = { ja: "マスク（仮面）", en: "Mask", dims: { w: 0.18, d: 0.08, h: 0.24 },
     grip: { x: 0, y: 0.035 }, parts: [
       // 顎（狭い）→頬→目の高さ（広い）→額（やや狭い）の4段で輪郭を近似
@@ -3176,14 +3208,17 @@
     { ja: "手に持つもの", ids: ["box", "umbrella", "club", "ball", "ring", "staff", "sword", "book", "tophat", "lantern", "flag", "mask",
       "broom", "bucket", "rope", "bouquet", "glassbottle", "tray", "telephone", "newspaper", "clock", "fan", "scarf",
       "torch", "candle", "treasurechest", "cane", "handbag", "wagasa", "guitar", "violin", "trumpet", "accordion",
-      "cigarbox", "devilstick", "poi", "hoop", "bassguitar"] },
+      "cigarbox", "devilstick", "poi", "hoop", "bassguitar",
+      "mic"] },   /* R-19（2026-09-17）: マイクは手に持つもの */
     { ja: "楽器", ids: ["drumset", "taiko", "grandpiano", "grandpianoopen", "uprightpiano", "micstand", "musicstand", "speaker", "keyboardstand", "djbooth", "cello", "doublebass"] },
     { ja: "登る・上がる", ids: ["ladder", "stepladder", "stairs", "stairs6", "slope", "spiralstairs"] },
     { ja: "建て込み", ids: ["door", "window", "column", "railing", "bridge", "platform", "truss", "cage", "torii", "screen", "frameportal", "framepicture", "framehang", "framecube"] },
     { ja: "家具", ids: ["sofa", "bed", "bookshelf", "dresser", "mirror", "desk", "counter", "fireplace", "phonebooth", "clothesrack"] },
     { ja: "屋外・情景", ids: ["tree", "rock", "streetlamp", "signboard", "barrel", "planter", "well", "tent", "cart", "bicycle"] },
     { ja: "サーカス器具", ids: ["rolabola", "germanwheel", "minitramp", "rollingglobe", "russianbar", "crashmat", "crashmatround",
-      "russianswing", "slackline", "walljump", "unicycle", "stilts", "aerialhoop", "aerialstraps", "aerialhammock", "spanishweb", "swingpole"] },
+      "russianswing", "slackline", "walljump", "unicycle", "stilts", "aerialhoop", "aerialstraps", "aerialhammock", "spanishweb", "swingpole",
+      /* R-19（2026-09-17 本人要望）: 物を伴う姿勢に対応する乗り物。本人決定で小道具の扱い。 */
+      "cyrwheel", "skateboard", "rollerskate"] },
   ];
   /* 寸法つまみの仕様。項目は種類ごとに違うので、画面はここから組み立てる。
    * HTMLへ固定で並べると、種類を足すたびに二箇所直すことになる。 */
@@ -3570,7 +3605,7 @@
     /* ---------- 芸と音楽の姿勢 ----------
      * 道具を持つものは、姿勢が小道具を一緒に持つ（人だけでは何をしているか読めない）。
      * 道具の位置は手や足の関節に合わせてあるので、向きを変えても手から離れない。 */
-    makePose("sing", "歌う（マイク）", {
+    makePose("sing", "マイクで歌う", {
       // 片手をマイクへ、もう片方は開く
       elR: [0.16, 0.62, 0.08], wrR: [0.10, 0.79, 0.12],
       elL: [-0.19, 0.60, -0.02], wrL: [-0.24, 0.44, 0.02],
@@ -3579,7 +3614,7 @@
       { kind: "line", a: [0.10, 0.79, 0.12], b: [0.055, 0.90, 0.10], w: 0.022, tone: "gear" },
       { kind: "dot", c: [0.05, 0.915, 0.10], r: 0.028, tone: "dark" },
     ] }),
-    makePose("juggle", "ジャグリング", {
+    makePose("juggle", "ジャグリングをする", {
       // 両手を胸の前へ開き、玉が弧を描いて上がっている
       elL: [-0.20, 0.60, 0.10], elR: [0.20, 0.60, 0.10],
       wrL: [-0.20, 0.72, 0.20], wrR: [0.20, 0.72, 0.20],
@@ -3755,7 +3790,7 @@
       anL: [-0.1572, 1.1123, -0.1015], anR: [-0.1611, 1.1111, -0.1014],
       toL: [-0.1687, 1.1682, -0.0054], toR: [-0.1800, 1.1647, -0.0052],
     }, { wide: [0.9520, 0.3051, -0.0229], face: [-0.1627, 0.3451, -0.9243] }),
-    makePose("skate", "ローラースケート", {
+    makePose("skate", "ローラースケートで滑る", {
       // 滑る姿勢。膝を軽く曲げ、体をやや前へ倒す
       hipL: [-0.055, 0.50, 0.02], hipR: [0.055, 0.50, 0.02],
       knL: [-0.07, 0.28, 0.10], anL: [-0.075, 0.075, 0.12],
@@ -3768,7 +3803,7 @@
       { kind: "line", a: [-0.075, 0.035, 0.05], b: [-0.075, 0.035, 0.19], w: 0.035, tone: "dark" },
       { kind: "line", a: [0.075, 0.035, -0.07], b: [0.075, 0.035, 0.07], w: 0.035, tone: "dark" },
     ] }),
-    makePose("unicycle", "一輪車", {
+    makePose("unicycle", "一輪車に乗る", {
       // サドルに座り、脚はペダルへ。腕は左右へ開いて釣り合いを取る
       hipL: [-0.055, 0.66, 0], hipR: [0.055, 0.66, 0],
       knL: [-0.10, 0.50, 0.22], anL: [-0.10, 0.34, 0.10], toL: [-0.10, 0.31, 0.18],
@@ -3782,7 +3817,7 @@
       { kind: "ring", c: [0, 0.30, 0], r: 0.30, w: 0.035, tone: "dark" },
       { kind: "dot", c: [0, 0.30, 0], r: 0.03, tone: "gear" },
     ] }),
-    makePose("skateboard", "スケートボード", {
+    makePose("skateboard", "スケートボードに乗る", {
       // 板の上に横向きで乗る。膝を曲げ、腕で釣り合いを取る
       hipL: [-0.055, 0.50, -0.06], hipR: [0.055, 0.50, 0.06],
       knL: [-0.09, 0.28, -0.14], anL: [-0.09, 0.10, -0.20], toL: [-0.09, 0.07, -0.27],
@@ -3795,7 +3830,7 @@
       { kind: "dot", c: [0, 0.025, -0.24], r: 0.028, tone: "gear" },
       { kind: "dot", c: [0, 0.025, 0.24], r: 0.028, tone: "gear" },
     ] }),
-    makePose("bicycle", "自転車", {
+    makePose("bicycle", "自転車に乗る", {
       // 前傾してハンドルを握る。脚はペダルの上下へ
       hipL: [-0.055, 0.62, -0.10], hipR: [0.055, 0.62, -0.10],
       knL: [-0.09, 0.44, 0.14], anL: [-0.09, 0.26, 0.06], toL: [-0.09, 0.23, 0.14],
@@ -3818,7 +3853,7 @@
      * 輪の直径は演者の身長＋十数cm（身長165cmで1.85m前後）が実物の目安。
      * ここでは身長の1.12倍とし、輪は床に接する（中心が半径の高さに来る）。
      * 手足はきっちり輪の上に置く（四点とも中心から半径ぴったりの位置）。 */
-    makePose("cyr", "シルホイール", {
+    makePose("cyr", "シルホイールに乗る", {
       head: [0, 0.945, 0], neck: [0, 0.86, 0],
       shL: [-0.1075, 0.82, 0], shR: [0.1075, 0.82, 0],
       elL: [-0.29, 0.83, 0], elR: [0.29, 0.83, 0],
@@ -3896,6 +3931,51 @@
       toL: [0.022, 0.05, -0.48], toR: [-0.004, 0.04, -0.47],
     }, { wide: [0, 1, 0], face: [0, 0.25, 1] }),
   ];
+  /* ---- R-19（2026-09-17 本人要望）: 物を伴う姿勢は「持っているときだけ」選べるようにする ----
+   * 本人の言葉:「小道具や大道具を持つという動きをしたときに、取れる姿勢としてください」。
+   * 対象は10個（本人が挙げた9個＋あとで足した「帽子をかぶる」）。
+   * ★POSES からは消さないこと。消すと normalize（stage-sketch.js の
+   *   `POSES.some(...) ? piece.pose : "stand"`）が働いて、
+   *   既にその姿勢を使っている保存済みの駒が問答無用で「立つ」に戻る。
+   *   ここでは「一覧に出すかどうか」だけを絞る。 */
+  const POSE_PROPS = {
+    sing: ["mic"],
+    juggle: ["club", "ball", "ring"],
+    guitar: ["guitar"],
+    trumpet: ["trumpet"],
+    hat: ["tophat"],
+    skate: ["rollerskate"],
+    unicycle: ["unicycle"],
+    skateboard: ["skateboard"],
+    bicycle: ["bicycle"],
+    cyr: ["cyrwheel"],
+  };
+  /* その演者が持っている（＝この駒を heldBy で指している）小道具の形を集める。 */
+  function heldPropShapes(piece) {
+    if (!piece) return new Set();
+    const scene = sc();
+    const list = (scene && Array.isArray(scene.pieces) ? scene.pieces : [])
+      .filter((item) => item && item.heldBy === piece.id);
+    return new Set(list.map((item) => {
+      const registered = pieceSet(item);
+      return (registered && registered.propShape) || item.propShape || null;
+    }).filter(Boolean));
+  }
+  /* 一覧に出す姿勢。物を伴う姿勢は、その物を持っているときだけ出す。
+     ただし**いま既にその姿勢になっている**ものは必ず出す（選び直せなくなるのを防ぐ）。 */
+  function selectablePoses(pieces) {
+    const list = Array.isArray(pieces) ? pieces.filter(Boolean) : (pieces ? [pieces] : []);
+    const held = new Set();
+    list.forEach((piece) => heldPropShapes(piece).forEach((shape) => held.add(shape)));
+    const inUse = new Set(list.map((piece) => piece && piece.pose).filter(Boolean));
+    return POSES.filter((pose) => {
+      const needs = POSE_PROPS[pose.id];
+      if (!needs) return true;
+      if (inUse.has(pose.id)) return true;
+      return needs.some((shape) => held.has(shape));
+    });
+  }
+
   const poseById = (id) => POSES.find((p) => p.id === id)
     || HIDDEN_POSES.find((p) => p.id === id) || POSES[0];
 
@@ -4367,6 +4447,13 @@
     renameScenePosition: document.getElementById("stage-rename-scene-position"),
     renameSceneHold: document.getElementById("stage-rename-scene-hold"),
     renameSceneTransition: document.getElementById("stage-rename-scene-transition"),
+    // R-25（2026-09-17）: そのシーンの顔ぶれ（キューシートの一部として使う）
+    renameSceneCast: document.getElementById("stage-rename-scene-cast"),
+    renameSceneOnStage: document.getElementById("stage-rename-scene-onstage"),
+    renameSceneBackstage: document.getElementById("stage-rename-scene-backstage"),
+    renameSceneSets: document.getElementById("stage-rename-scene-sets"),
+    renameSceneProps: document.getElementById("stage-rename-scene-props"),
+    renameSceneHeld: document.getElementById("stage-rename-scene-held"),
     renameSubtitle: document.getElementById("stage-rename-subtitle"),
     renameSceneNote: document.getElementById("stage-rename-scene-note"),
     renameOk: document.getElementById("stage-rename-ok"),
@@ -4514,12 +4601,12 @@
     projectSettingsModal: document.getElementById("stage-project-settings-modal"),
     projectSettingsBackdrop: document.getElementById("stage-project-settings-backdrop"),
     projectSettingsClose: document.getElementById("stage-project-settings-close"),
-    lightingPlanOpen: document.getElementById("stage-lighting-plan-open"),
+    /* R-07（2026-09-17）: 照明プランはモーダルをやめ、劇場設定の中へ常に出す形にした。
+       モーダルの枠（開く・閉じる・背景・変更しない）は無くなり、代わりに3択と中身の枠を持つ。 */
     lightingPlanOpenSummary: document.getElementById("stage-lighting-plan-open-summary"),
-    lightingPlanModal: document.getElementById("stage-lighting-plan-modal"),
-    lightingPlanBackdrop: document.getElementById("stage-lighting-plan-backdrop"),
-    lightingPlanClose: document.getElementById("stage-lighting-plan-close"),
+    lightingPlanBody: document.getElementById("stage-lighting-plan-body"),
     lightingPlanCancel: document.getElementById("stage-lighting-plan-cancel"),
+    lightingSourceChoices: document.querySelectorAll("[data-lighting-source]"),
     lightingPlanSummary: document.getElementById("stage-lighting-plan-summary"),
     lightingPlanCandidate: document.getElementById("stage-lighting-plan-candidate"),
     lightingPlanCandidateTitle: document.getElementById("stage-lighting-plan-candidate-title"),
@@ -5108,7 +5195,7 @@
       hint: "ショーを開く・書き出す" },
     { key: "panelMusic", panel: "music", label: "音楽", def: false,
       hint: "端末内の楽曲を読み込み、流れているシーンへ割り当てる欄を出す" },
-    { key: "panelCast", panel: "cast", label: "出るもの", def: true,
+    { key: "panelCast", panel: "cast", label: "演者・舞台セット", def: true,
       hint: "この舞台に出る演者と舞台セットを、まとめてここに登録します。 寸法や色はここで決め、シーンごとに舞台の上か裏かを切り替えます。明かりは別の項目です。追加したものはそのシーンの舞台に出ます。" },
     { key: "panelRigs", panel: "rigs", label: "セット登録", def: false,
       hint: "いまの舞台装置の並びに名前をつけて残し、別の場面で呼び出す欄を出す" },
@@ -5117,7 +5204,7 @@
     { key: "panelScenes", panel: "scenes", label: "シーン", def: true,
       hint: "シーンを足す・並べ替える" },
     { key: "panelInspector", panel: "inspector", label: "選んだもの", def: true,
-      hint: "舞台の上で選ぶと、姿勢・向き・重なりを変えられます。名前・色・寸法は「出るもの」の一覧で決めます。" },
+      hint: "舞台の上で選ぶと、姿勢・向き・重なりを変えられます。名前・色・寸法は「演者・舞台セット」の一覧で決めます。" },
     { key: "panelAsk", panel: "ask", label: "AI指示", def: true,
       hint: "AI指示" },
   ];
@@ -5382,7 +5469,7 @@
     return SECTION_COLORS[hash % SECTION_COLORS.length];
   }
 
-  /* 最初から置いてある見本。★駒だけでなく「出るもの」にも登録する。
+  /* 最初から置いてある見本。★駒だけでなく「演者・舞台セット」にも登録する。
      一覧に無いものが舞台に出ていると、「追加したものが一覧に載る」という
      この画面の約束と食い違い、案内の2段目（人を足す）で話が通らなくなる。 */
   const FALLBACK_STARTER = {
@@ -5580,7 +5667,7 @@
   /* ---------- パネルの配置 ----------
      どの道具をどちら側へ置くかは人によって違う。列を移せるようにし、
      使わないものは畳めるようにする。中央は絵だけで、上下の入れ替えのみ。 */
-  /* 演者・舞台セット・光は「出るもの」一枚にまとめた（cast）。
+  /* 演者・舞台セット・光は「演者・舞台セット」一枚にまとめた（cast）。
    * 登録・出し入れ・寸法の仕組みが同じものを三つに割ると、目が三度行き来する。 */
   const PANELS = ["project", "venue", "music", "cast", "machinery", "rigs", "light", "background", "study", "scenes", "inspector", "save", "session", "ask"];
 
@@ -6382,8 +6469,9 @@
         ...projectIoClone(rawProject && typeof rawProject === "object" ? rawProject : {}),
         id: typeof rawProject.id === "string" ? rawProject.id : rid("proj"),
         title: typeof rawProject.title === "string" && rawProject.title.trim() ? rawProject.title : untitledShow(),
-        versionLabel: typeof rawProject.versionLabel === "string" && rawProject.versionLabel.trim()
-          ? rawProject.versionLabel : "v1",
+        /* R-18（2026-09-17）: 読み込んだ時点で「v」＋数字へ揃える。
+           旧データの自由な版名は、末尾の数字を引き継ぐ（本人決定）。 */
+        versionLabel: normalizeVersionLabel(rawProject.versionLabel),
         parentVersionId: typeof rawProject.parentVersionId === "string" ? rawProject.parentVersionId : null,
         // 区切り型セクションの引き上げ済みの印。付いていれば以後は組んだ形をそのままにする
         sectionsNested: true,
@@ -8264,7 +8352,7 @@
     };
 
     fresh.project.title = "時をほどく研究室：未来サンプル";
-    fresh.project.versionLabel = "Study A";
+    fresh.project.versionLabel = "v1";   // R-18: 版名は v＋数字だけ
     fresh.project.sceneStudyId = study.id;
     fresh.project.sceneStudySourceVersion = study.schemaVersion;
     fresh.project.cast = [
@@ -16338,6 +16426,8 @@
       state.showPlan = true;
       return;
     }
+    /* gamma-mobile.js（iPad外殻）が「両方」を選んだときだけ、横向きでも二面を許す（2026-09-17）。 */
+    if (window.GAMMA_MOBILE_VIEW === "both") { state.showFront = true; state.showPlan = true; return; }
     let which = preferred;
     if (which !== "front" && which !== "plan") {
       if (state.showFront !== state.showPlan) which = state.showFront ? "front" : "plan";
@@ -16962,6 +17052,34 @@
       item.append(box, name);
       els.panelsMenu.append(item);
     });
+    /* R-27（2026-09-17 本人要望）: 下に棒線で区切って「列の並べ方」を足す。
+       効くのは舞台モードだけ（配置・照明・劇場設定は専用の画面を使うため）なので、
+       ほかのモードでは丸ごと出さない。押せない選択肢を並べて迷わせない。
+       「iPad表示モード」はここには出さない — 選ぶとページが再読み込みされ、
+       小さなメニューから不意に押せると驚きが大きいため（環境設定には残してある）。 */
+    if (currentWorkspaceMode() !== "normal") return;
+    const rule = document.createElement("div");
+    rule.className = "stage-panel-visibility-rule";
+    const head = document.createElement("p");
+    head.className = "stage-panel-visibility-subhead";
+    head.textContent = tx("パネルの表示スタイル");
+    const group = document.createElement("div");
+    group.className = "stage-panel-visibility-layout";
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", tx("パネルの表示スタイル"));
+    const now = panelLayoutChoiceValue("normal");
+    PANEL_LAYOUT_OPTIONS.forEach(([value, label]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = tx(label);
+      button.setAttribute("aria-pressed", String(now === value));
+      button.addEventListener("click", () => {
+        applyPanelLayoutChoice("normal", value);
+        announce(`パネルの表示スタイルを「${tx(label)}」にしました。`);
+      });
+      group.append(button);
+    });
+    els.panelsMenu.append(rule, head, group);
   }
 
   function closePanelVisibilityMenu(returnFocus = false) {
@@ -17079,37 +17197,24 @@
       const row = document.createElement("div");
       row.className = "stage-cast-row";
 
-      const swatch = kindSwatch(member, "performer", member.name, (value) => {
-        member.color = value;
-        // 舞台に出ている分にも色を反映する
-        state.project.scenes.forEach((scene) => {
-          scene.pieces.forEach((piece) => {
-            if (piece.castId === member.id) piece.color = member.color;
-          });
-        });
-        render();
-        persistSoon();
-      });
+      const swatch = kindSwatch(member, "performer", member.name,
+        () => pickOnStage((piece) => piece.castId === member.id, member.name));
 
-      const name = nameButton(member.name,
-        () => pickOnStage((piece) => piece.castId === member.id, member.name),
-        () => openProfile(member.id));
+      const name = nameButton(member.name, () => openProfile(member.id));
 
       const onStage = castOnStage(member.id);
       const status = document.createElement("button");
       status.type = "button";
       status.className = `stage-cast-status ${onStage ? "is-on" : "is-off"}`;
-      status.textContent = onStage ? tm("misc", "onStage", "舞台上") : tm("misc", "offStage", "舞台裏");
+      /* R-16（2026-09-17 本人要望）: 「舞台上／舞台裏」をやめ、英字の ON / OFF にする。
+       * オンステージ／オフステージの意味。言語によらず固定の英字にする（本人指定）ので、
+       * misc の on/off（中国語では 开／關）は使わない。何が起きるかは title で補う。
+       * 幅は CSS の min-width で固定してあり、押しても箱の大きさは変わらない。 */
+      status.textContent = onStage ? "ON" : "OFF";
       status.title = tx(onStage ? "押すと舞台から引っ込めます" : "押すとこのシーンの舞台へ出します");
       status.addEventListener("click", () => toggleCastOnStage(member.id));
 
-      const profile = document.createElement("button");
-      profile.type = "button";
-      profile.className = "stage-cast-profile";
-      profile.textContent = "…";
-      profile.title = sx(`${member.name}のプロフィール（身長など）`, `${member.name} — profile (height and notes)`);
-      profile.setAttribute("aria-label", sx(`${member.name}のプロフィールを開く`, `Open ${member.name}\u2019s profile`));
-      profile.addEventListener("click", () => openProfile(member.id));
+      /* R-26: 詳細を開く「…」は廃止。名前を押せば同じ窓が開く。 */
 
       const remove = document.createElement("button");
       remove.type = "button";
@@ -17118,7 +17223,7 @@
       remove.setAttribute("aria-label", sx(`${member.name}を名簿から外す`, `Remove ${member.name} from the cast`));
       remove.addEventListener("click", () => removeCastMember(member.id));
 
-      row.append(swatch, name, status, lockButton(member, member.name), profile, remove);
+      row.append(swatch, name, status, lockButton(member, member.name), remove);
       els.castList.append(row);
     });
   }
@@ -17140,38 +17245,42 @@
       + '<path d="M1.7 6 7.4 9v5.4L1.7 11.4zM14.3 6v5.4L8.6 14.4V9z"/></svg>',
   };
 
-  function kindSwatch(item, kind, label, onPick) {
-    const wrap = document.createElement("label");
-    wrap.className = "stage-kind-swatch";
-    wrap.title = sx(`${label}の色を変える`, `Change the colour of ${label}`);
-    wrap.style.color = item.color;
+  /* R-26（2026-09-17 本人要望）: 行の先頭の印は「色を変える」から
+   * 「舞台の上のそれを選ぶ」へ役目を変えた。
+   * 名前を1回押すと詳しい窓が開くようになり、選ぶ入口がそこから無くなったため。
+   * 色は演者なら「プロフィール」、セットなら「寸法」の窓で変えられる（どちらも
+   * 全シーンの駒へ色を配る処理を持っている: profileColor / setInfoColor）ので、
+   * ここから色の入力を外しても色を変えられなくなることはない。 */
+  function kindSwatch(item, kind, label, onSelect) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "stage-kind-swatch";
+    button.title = sx(`${label}を舞台の上で選ぶ`, `Select ${label} on stage`);
+    button.setAttribute("aria-label", button.title);
+    button.style.color = item.color;
     const glyph = document.createElement("span");
     glyph.className = "stage-kind-glyph";
     glyph.innerHTML = KIND_ICONS[kind] || KIND_ICONS.object;
-    const input = document.createElement("input");
-    input.type = "color";
-    input.className = "stage-kind-input";
-    input.value = item.color;
-    input.setAttribute("aria-label", sx(`${label}の色`, `Colour of ${label}`));
-    input.addEventListener("input", () => {
-      wrap.style.color = input.value;
-      onPick(input.value);
-    });
-    wrap.append(glyph, input);
-    return wrap;
+    button.append(glyph);
+    button.addEventListener("click", onSelect);
+    return button;
   }
 
   /* 一覧の名前。押すと舞台の上のそれを選び、二度押しで詳しい窓を開く。
    * 以前は名前が入力欄で、選ぶつもりで押すと文字を打つ構えになっていた。
    * 名前を直すのは詳しい窓（プロフィール／寸法）の中でできる。 */
-  function nameButton(label, onPick, onOpen) {
+  /* R-26（2026-09-17 本人要望）: 名前は「1回押すと詳しい窓」にした。
+   * 以前は 1回押す＝舞台の上で選ぶ／二度押し＝詳しい窓 だったが、
+   * 二度押しはキーボードだけで操作する人には使えない（Enterは1回押し扱い）ため、
+   * 「…」ボタンを消すのと合わせて、詳しい窓への道を1回押しへ移した。
+   * 舞台の上で選ぶのは、行の先頭の印（kindSwatch）が受け持つ。 */
+  function nameButton(label, onOpen) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "stage-cast-name";
     button.textContent = label;
-    button.title = tx("押すと舞台の上で選びます。二度押しで詳しい窓が開きます");
-    button.addEventListener("click", onPick);
-    button.addEventListener("dblclick", (e) => { e.preventDefault(); onOpen(); });
+    button.title = tx("押すと詳しい窓が開きます。舞台の上で選ぶときは左の印を押します");
+    button.addEventListener("click", onOpen);
     return button;
   }
 
@@ -17199,7 +17308,12 @@
     const button = document.createElement("button");
     button.type = "button";
     button.className = "stage-cast-lock";
-    button.textContent = item.locked ? "🔒" : "🔓";
+    /* R-20a（2026-09-17 本人要望）: 絵文字 🔒/🔓 はOS・フォントで大きさが揃わないので、
+     * 選んだものパネルの #stage-piece-lock と同じ line-icon（viewBox 24x24・stroke 1.8）へ置き換える。
+     * 開錠／施錠は同じ枠の中で掛け金の形だけを変える。 */
+    button.innerHTML = item.locked
+      ? '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="1.6"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'
+      : '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="1.6"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>';
     button.setAttribute("aria-pressed", String(Boolean(item.locked)));
     button.title = languageValue(() => (item.locked ? `Unlock ${label} (it can move again)` : `Lock ${label} (it stops moving)`), () => (item.locked ? `${label}の錠を外す（動かせるようになります）` : `${label}に錠を掛ける（動かなくなります）`));
     button.setAttribute("aria-label", button.title);
@@ -17562,21 +17676,11 @@
     const row = document.createElement("div");
     row.className = "stage-cast-row";
 
-    const swatch = kindSwatch(item, item.kind === "light" ? "light" : "object", item.name, (value) => {
-      item.color = value;
-      state.project.scenes.forEach((scene) => {
-        scene.pieces.forEach((piece) => {
-          if (piece.setId === item.id) piece.color = item.color;
-        });
-      });
-      render();
-      persistSoon();
-    });
-
     const light = item.kind === "light";
-    const name = nameButton(item.name,
-      () => pickOnStage((piece) => piece.setId === item.id, item.name, light),
-      () => openSetInfo(item.id));
+    const swatch = kindSwatch(item, light ? "light" : "object", item.name,
+      () => pickOnStage((piece) => piece.setId === item.id, item.name, light));
+
+    const name = nameButton(item.name, () => openSetInfo(item.id));
 
     /* 寸法は行に出さず、行の title と「…」の窓へ回す。
      * 狭い列で名前と寸法を並べると、どちらも数文字で切れて読めなくなる。 */
@@ -17594,14 +17698,7 @@
       : (onStage ? "押すと舞台から下げます" : "押すとこのシーンの舞台へ出します"));
     status.addEventListener("click", () => toggleSetOnStage(item.id));
 
-    const detail = document.createElement("button");
-    detail.type = "button";
-    detail.className = "stage-cast-profile";
-    detail.textContent = "…";
-    const what = light ? tx("直径") : tx("寸法");
-    detail.title = sx(`${item.name}の${what}を変える（いまは ${setDimLabel(item)}）`, `Change the ${light ? "pool diameter" : "size"} of ${item.name} (now ${setDimLabel(item)})`);
-    detail.setAttribute("aria-label", sx(`${item.name}の${what}を開く`, `Open the size of ${item.name}`));
-    detail.addEventListener("click", () => openSetInfo(item.id));
+    /* R-26: 詳細を開く「…」は廃止。名前を押せば同じ窓が開く。 */
 
     const remove = document.createElement("button");
     remove.type = "button";
@@ -17613,7 +17710,7 @@
     /* 一段にまとめる。名前の右へ寸法を小さく置き、名前が長ければそちらを詰める。
      * 段を分けると、十数個並べたときに一覧が縦に伸びて見渡せなくなる。 */
     row.title = summary;
-    row.append(swatch, name, status, lockButton(item, item.name), detail, remove);
+    row.append(swatch, name, status, lockButton(item, item.name), remove);
     return row;
   }
 
@@ -18418,6 +18515,7 @@
   let lightingPlanMode = "add";
   // 表示選択は作業中だけの比較状態。project / localStorage には保存しない。
   let lightingPlanOverlayId = "";
+  let lightingSource = "self";   // R-07: 照明をどこから持ってくるか（self / preset / saved）
 
   const lightingPlanApi = () => window.SHOSAI_STAGE_LIGHTING_PLANS || null;
   const lightingPlanOverlayApi = () => window.SHOSAI_STAGE_LIGHTING_PLAN_OVERLAY || null;
@@ -18480,8 +18578,8 @@
   function closeLightingPlanModal() {
     lightingPlanRequest += 1;
     pendingLightingPlan = null;
-    if (els.lightingPlanModal) els.lightingPlanModal.hidden = true;
-    if (els.lightingPlanBackdrop) els.lightingPlanBackdrop.hidden = true;
+    /* R-07: 枠ごと閉じるのではなく、中身を畳んで下書きを捨てるだけにする。 */
+    if (els.lightingPlanBody) els.lightingPlanBody.hidden = true;
   }
 
   function setLightingPlanMode(mode) {
@@ -18593,12 +18691,11 @@
     const request = ++lightingPlanRequest;
     const basis = lightingPlanBasis();
     const api = lightingPlanApi();
-    if (!api || !els.lightingPlanModal) {
+    if (!api || !els.lightingPlanBody) {
       announce("劇場照明プランを読み込む準備ができていません。");
       return;
     }
-    els.lightingPlanModal.hidden = false;
-    if (els.lightingPlanBackdrop) els.lightingPlanBackdrop.hidden = false;
+    els.lightingPlanBody.hidden = false;
     pendingLightingPlan = null;
     if (els.lightingPlanCandidate) els.lightingPlanCandidate.hidden = true;
     if (els.lightingPlanChoice) els.lightingPlanChoice.hidden = true;
@@ -18731,10 +18828,11 @@
     return sx(`${label}（${items.length}灯）`, `${tx(label)} (${items.length} lights)`);
   };
 
-  // 明かりは「舞台の上か裏か」ではなく、点いているか消えているかで言う
-  const onStageWord = (item, on) => (item && item.kind === "light"
-    ? (on ? "ON" : "OFF")
-    : (on ? tm("misc", "onStage", "舞台上") : tm("misc", "offStage", "舞台裏")));
+  /* R-16（2026-09-17 本人要望）: 「舞台上／舞台裏」は英字の ON / OFF にそろえた。
+     オンステージ／オフステージの意味。明かりは以前から ON / OFF だったので、
+     これで演者・大道具・小道具・明かりが同じ言い方になる。
+     言語によらず固定の英字にする（本人指定）ので misc の on/off（中国語は 开／關）は使わない。 */
+  const onStageWord = (item, on) => (on ? "ON" : "OFF");
 
   /* 舞台から下げた駒の置き場所を、そのシーンに控える／控えから戻す。
      控えはシーンごとに持つ（同じ装置でも、シーンによって居場所が違うため）。 */
@@ -19388,7 +19486,7 @@
   }
 
   // ディアボロは専用の向き・持たせる操作を保つため type は変えない。
-  // 出るものでは、小道具と同じ入口・一覧へ分類する。
+  // 演者・舞台セットでは、小道具と同じ入口・一覧へ分類する。
   const ROSTER_PROP_KINDS = new Set(["prop", "diabolo"]);
   const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     { group: "手に持つもの", kind: "diabolo" },
@@ -19592,7 +19690,8 @@
     const grid = els.rosterPoseGrid;
     if (!grid) return;
     grid.innerHTML = "";
-    POSES.forEach((pose) => {
+    /* R-19: 名簿から足すときはまだ何も持っていないので、物を伴う姿勢は出さない。 */
+    selectablePoses([]).forEach((pose) => {
       const tile = document.createElement("button");
       tile.type = "button";
       tile.className = `stage-pose-tile${pose.id === rosterPose ? " is-on" : ""}`;
@@ -19705,7 +19804,8 @@
     if (!piece || !performers.length || performers.some((item) => mountKindOf(item)) || !els.poseModal) return;
     const grid = els.poseGrid;
     grid.innerHTML = "";
-    POSES.forEach((pose) => {
+    /* R-19: 選んでいる演者が持っている物に合う姿勢だけを出す。 */
+    selectablePoses(performers).forEach((pose) => {
       const shared = performers.every((item) => item.pose === pose.id);
       const tile = document.createElement("button");
       tile.type = "button";
@@ -19804,9 +19904,9 @@
       const empty = document.createElement("p");
       empty.className = "stage-cast-empty";
       /* 小道具を登録しに来て、この欄で迷った実例がある（2026-08-20）。
-         ここは「組んだ立体」を残す欄で、一つずつの登録は「出るもの」の仕事。
+         ここは「組んだ立体」を残す欄で、一つずつの登録は「演者・舞台セット」の仕事。
          その分かれ道を、空のときだけ一行で示す。 */
-      empty.textContent = tx("まだ残していません。並べ終えたら名前をつけて残してください。小道具や家具を一つずつ登録するのは「出るもの」からです。");
+      empty.textContent = tx("まだ残していません。並べ終えたら名前をつけて残してください。小道具や家具を一つずつ登録するのは「演者・舞台セット」からです。");
       els.rigList.append(empty);
       return;
     }
@@ -20407,16 +20507,10 @@
         frame.setAttribute("role", "group");
         frame.setAttribute("aria-label", `${tx("転換")}: ${fromScene.title} → ${toScene.title}`);
 
-        const head = document.createElement("div");
-        head.className = "stage-scene-transition-head";
-        const kicker = document.createElement("span");
-        kicker.className = "stage-scene-transition-kicker";
-        kicker.textContent = tx("転換");
-        const route = document.createElement("span");
-        route.className = "stage-scene-transition-route";
-        route.textContent = `${fromScene.title} → ${toScene.title}`;
-        route.title = route.textContent;
-        head.append(kicker, route);
+        /* R-23（2026-09-17 本人要望）: 「転換　◯◯ → △△」の行は消した。
+         * すぐ上の見出し行に既に「転換」と出ていて重複していたため。
+         * 同じ内容は読み上げ用に frame の aria-label（下）と転換メモの aria-label に残るので、
+         * スクリーンリーダーからは失われない。 */
 
         const controls = document.createElement("div");
         controls.className = "stage-scene-transition-controls";
@@ -20481,7 +20575,7 @@
           requestAnimationFrame(() => growTransitionNote(false));
         });
 
-        frame.append(head, controls, noteLabel);
+        frame.append(controls, noteLabel);
         return frame;
       };
 
@@ -21223,6 +21317,53 @@
     }
   }
 
+  /* ---- R-25（2026-09-17 本人要望）: そのシーンの顔ぶれを1件ぶん組み立てる ----
+   * 本人の意図: 「後にキューシートにつなげるため、キューシートの一部という形のイメージ」。
+   * そのため読める文章ではなく**項目と値**で返し、モーダルの中に直接書かない。
+   * こうしておけば、後でショー全体ぶんを並べたり書き出したりするときに同じものを使える。
+   *
+   * ★ここは引数の scene を見る。sc()（いま開いているシーン）ではない。
+   *   詳細の窓は別のシーンを指しても開けるので、sc() を使うと
+   *   どのシーンを開いても現在のシーンの顔ぶれが出てしまう。
+   *
+   * 舞台裏の定義は本人決定（2026-09-17）:「名簿に居るが、このシーンに出ていない人」。
+   * 駒が舞台の枠の外にあるかどうか（onStageArea）は見ない。 */
+  function sceneCastFacts(scene) {
+    const pieces = (scene && Array.isArray(scene.pieces) ? scene.pieces : [])
+      .filter((piece) => piece && piece.type !== "light");
+    const onStage = [];
+    const sets = [];
+    const props = [];
+    const held = [];
+    const byId = new Map(pieces.map((piece) => [piece.id, piece]));
+    pieces.forEach((piece) => {
+      const name = pieceLabel(piece);
+      if (piece.type === "performer") { onStage.push(name); return; }
+      const registered = pieceSet(piece);
+      if (registered && registered.kind === "prop") props.push(name);
+      else sets.push(name);
+    });
+    // 「誰が何を持っているか」。持たれる側（小道具など）が heldBy で演者の駒を指している。
+    pieces.forEach((piece) => {
+      if (!piece.heldBy) return;
+      const owner = byId.get(piece.heldBy);
+      if (!owner) return;
+      held.push(`${pieceLabel(owner)}: ${pieceLabel(piece)}`);
+    });
+    const castOut = (state.project.cast || [])
+      .filter((member) => !pieces.some((piece) => piece.castId === member.id))
+      .map((member) => member.name);
+    const sortJa = (list) => [...list].sort((a, b) => String(a).localeCompare(String(b), "ja"));
+    return { onStage: sortJa(onStage), backstage: sortJa(castOut), sets: sortJa(sets), props: sortJa(props), held };
+  }
+
+  /* 上の事実を「3件（名前, 名前, 名前）」の形の1行にする。多いときは件数だけ先に出す。 */
+  function castFactLine(list) {
+    if (!list.length) return "—";
+    const head = list.slice(0, 8).join("、");
+    return list.length > 8 ? `${list.length}件: ${head} ほか` : `${list.length}件: ${head}`;
+  }
+
   function openRename(scene) {
     if (!scene || !els.rename) return;
     renameTarget = scene;
@@ -21241,6 +21382,16 @@
     if (els.renameScenePosition) els.renameScenePosition.textContent = timelineFacts && timelineFacts.position || "—";
     if (els.renameSceneHold) els.renameSceneHold.textContent = timelineFacts && timelineFacts.hold || "—";
     if (els.renameSceneTransition) els.renameSceneTransition.textContent = timelineFacts && timelineFacts.transition || "—";
+    /* R-25: そのシーンの顔ぶれ。セクションでは出さない（本人決定で対象外）。 */
+    if (els.renameSceneCast) els.renameSceneCast.hidden = scene.kind !== "scene";
+    if (scene.kind === "scene") {
+      const facts = sceneCastFacts(scene);
+      if (els.renameSceneOnStage) els.renameSceneOnStage.textContent = castFactLine(facts.onStage);
+      if (els.renameSceneBackstage) els.renameSceneBackstage.textContent = castFactLine(facts.backstage);
+      if (els.renameSceneSets) els.renameSceneSets.textContent = castFactLine(facts.sets);
+      if (els.renameSceneProps) els.renameSceneProps.textContent = castFactLine(facts.props);
+      if (els.renameSceneHeld) els.renameSceneHeld.textContent = facts.held.length ? facts.held.join(" / ") : "—";
+    }
     if (els.renameSubtitle) els.renameSubtitle.value = scene.kind === "scene"
       ? normalizeBeat(scene.beat).role : "";
     if (els.renameSceneNote) els.renameSceneNote.value = scene.kind === "scene"
@@ -22135,6 +22286,55 @@
     return row;
   }
 
+  /* R-27（2026-09-17 本人要望）: パネルの並べ方を、環境設定とヘッダーのメニューの両方から変える。
+   * 「項目と保存値は共用し、二重の設定にはしない」という renderPanelVisibilityMenu の方針に合わせ、
+   * 実際に prefs を書いて反映する処理はこの1か所にまとめ、両方から呼ぶ。
+   * 片方だけ直すと、ヘッダーと環境設定で値がずれる。 */
+  const PANEL_LAYOUT_OPTIONS = [["split", "2列表示"], ["single-left", "1列・左"], ["single-right", "1列・右"]];
+  function panelLayoutChoiceValue(key) {
+    if (key === "normal" && tabletUi) return "ipad";
+    return panelLayoutMode(key) === "single" ? `single-${panelSingleSide(key)}` : "split";
+  }
+  function applyPanelLayoutChoice(key, next, options = {}) {
+    if (options.nativeTablet) return;
+    if (key === "normal" && next === "ipad") {
+      prefs.tabletMode = true;
+      savePrefs();
+      window.setTimeout(() => window.location.reload(), 80);
+      return;
+    }
+    const nextLayout = next === "single-left" || next === "single-right" ? "single" : "split";
+    const nextSide = next === "single-right" ? "right" : "left";
+    if (key === "normal") {
+      prefs.tabletMode = false;
+      prefs.panelLayoutMode = nextLayout;
+      if (nextLayout === "single") prefs.panelSingleSide = nextSide;
+    }
+    prefs.panelLayoutByWorkspace = {
+      ...(prefs.panelLayoutByWorkspace && typeof prefs.panelLayoutByWorkspace === "object"
+        ? prefs.panelLayoutByWorkspace : {}),
+      [key]: nextLayout,
+    };
+    if (nextLayout === "single") {
+      prefs.panelSingleSideByWorkspace = {
+        ...(prefs.panelSingleSideByWorkspace && typeof prefs.panelSingleSideByWorkspace === "object"
+          ? prefs.panelSingleSideByWorkspace : {}),
+        [key]: nextSide,
+      };
+    }
+    savePrefs();
+    if (tabletUi && key === "normal") {
+      window.setTimeout(() => window.location.reload(), 80);
+      return;
+    }
+    if (key === currentWorkspaceMode()) {
+      applyLayout();
+      syncPanelWidths();
+    }
+    renderPrefs();
+    renderPanelVisibilityMenu();   // ヘッダー側の選択状態も合わせる
+  }
+
   function panelLayoutPrefsGroup() {
     const nativeTablet = window.SHOSAI_TABLET_PWA === true;
     const hintText = nativeTablet
@@ -22152,44 +22352,8 @@
         : (panelLayoutMode(definition.key) === "single"
           ? `single-${panelSingleSide(definition.key)}`
           : "split");
-      const row = prefSelectRow(definition.label, value, options, hintText, (next) => {
-        if (nativeTablet) return;
-        if (definition.key === "normal" && next === "ipad") {
-          prefs.tabletMode = true;
-          savePrefs();
-          window.setTimeout(() => window.location.reload(), 80);
-          return;
-        }
-        const nextLayout = next === "single-left" || next === "single-right" ? "single" : "split";
-        const nextSide = next === "single-right" ? "right" : "left";
-        if (definition.key === "normal") {
-          prefs.tabletMode = false;
-          prefs.panelLayoutMode = nextLayout;
-          if (nextLayout === "single") prefs.panelSingleSide = nextSide;
-        }
-        prefs.panelLayoutByWorkspace = {
-          ...(prefs.panelLayoutByWorkspace && typeof prefs.panelLayoutByWorkspace === "object"
-            ? prefs.panelLayoutByWorkspace : {}),
-          [definition.key]: nextLayout,
-        };
-        if (nextLayout === "single") {
-          prefs.panelSingleSideByWorkspace = {
-            ...(prefs.panelSingleSideByWorkspace && typeof prefs.panelSingleSideByWorkspace === "object"
-              ? prefs.panelSingleSideByWorkspace : {}),
-            [definition.key]: nextSide,
-          };
-        }
-        savePrefs();
-        if (tabletUi && definition.key === "normal") {
-          window.setTimeout(() => window.location.reload(), 80);
-          return;
-        }
-        if (definition.key === currentWorkspaceMode()) {
-          applyLayout();
-          syncPanelWidths();
-        }
-        renderPrefs();
-      });
+      const row = prefSelectRow(definition.label, value, options, hintText,
+        (next) => applyPanelLayoutChoice(definition.key, next, { nativeTablet }));
       const select = row.querySelector("select");
       if (select) {
         select.dataset.stageWorkspacePanelLayout = definition.key;
@@ -23581,10 +23745,27 @@ ${propsPlotHtml}
   }
 
   // v1 → v2 のように末尾の数を繰り上げる。数が無ければ「 の改訂」を足す
+  /* ---- R-18（2026-09-17 本人要望）: ショーの版名は「v」＋数字だけにする ----
+   * 本人の言葉:「規則性を持たせて、必ず v1 などの形に変換する。v は小文字。
+   *   v は自動でつけて、プラス1のボタンだけにする。
+   *   規則外の場合は、末尾に数字があればそれを引き継ぐ」
+   * ★既存のショーには自由入力の版名（"Study A" や、以前の nextVersionLabel が作った
+   *   "v1 の改訂" など）が入っている可能性がある。読み込んだときにここで形を揃える。
+   *   末尾の数字を拾うので "第2稿" は v2、数字が無ければ v1 になる。 */
+  function normalizeVersionLabel(value) {
+    const text = String(value == null ? "" : value).trim();
+    /* 「末尾に数字があればそれを引き継ぐ」（本人決定）。
+       ただし末尾ぴったりに限ると「第2稿」のように後ろへ文字が付く書き方を拾えないので、
+       **最後に出てくる数字**を使う。実測: v3→v3 ／ 第2稿→v2 ／ Study A→v1 ／ v1 の改訂→v1。 */
+    const all = text.match(/\d+/g);
+    const n = all && all.length ? Math.max(1, Math.min(9999, Number(all[all.length - 1]))) : 1;
+    return `v${n}`;
+  }
   function nextVersionLabel(label) {
-    const m = String(label || "").match(/^(.*?)(\d+)$/);
-    if (m) return `${m[1]}${Number(m[2]) + 1}`;
-    return `${label || "v1"} の改訂`;
+    /* R-18: 形が v＋数字に揃っているので、数字を1つ上げるだけでよい。
+       以前あった「数字が無ければ『〜 の改訂』を足す」分岐は要らなくなった。 */
+    const m = normalizeVersionLabel(label).match(/^v(\d+)$/);
+    return `v${Math.min(9999, Number(m[1]) + 1)}`;
   }
 
   let pendingProjectExportFilename = "";
@@ -25197,7 +25378,7 @@ ${propsPlotHtml}
     const anyKind = tool === "route";
     /* ★錠が掛かっているものは、当たり判定ごと消す（本人の指定）。
        固定した台や壁の上で、演者だけを掴みたいときのため。
-       掴めないので、錠を外す口は「出るもの」の一覧にある。
+       掴めないので、錠を外す口は「演者・舞台セット」の一覧にある。
        ★重なっているときは、囲いの面積が小さいものを優先して掴む。
        広い台の上の演者が、台に負けて掴めないことがないように。
        同じ面積なら、上に描かれている方（並びの後ろ）を取る。 */
@@ -25390,6 +25571,7 @@ ${propsPlotHtml}
   }
 
   function syncMultiSelectionControls() {
+    window.GAMMA_FORMATION_UI?.refresh?.();
     const count = normalizeSelectedIds().size;
     const enabled = featureOn("lineup");
     if (els.multiSelectStatus) {
@@ -26010,7 +26192,10 @@ ${propsPlotHtml}
     if (!show) { poseStripFor = ""; return; }
     const commonPose = performers.every((item) => item.pose === performers[0].pose)
       ? performers[0].pose : null;
-    const buildKey = `${performers.map((item) => `${item.id}:${item.color}`).join("|")}|${lang}`;
+    /* R-19（2026-09-17）: 持ち物で出る姿勢が変わるので、キャッシュの鍵に「何を持っているか」を入れる。
+       入れないと、物を持たせても帯が組み直されず、増えたはずの姿勢が出てこない（実際に踏んだ）。 */
+    const heldKey = performers.map((item) => [...heldPropShapes(item)].sort().join(",")).join("|");
+    const buildKey = `${performers.map((item) => `${item.id}:${item.color}:${item.pose}`).join("|")}|${heldKey}|${lang}`;
     if (poseStripFor === buildKey) {
       els.poseStrip.querySelectorAll(".stage-pose-strip-tile").forEach((tile) => {
         const on = tile.dataset.pose === commonPose;
@@ -26021,7 +26206,8 @@ ${propsPlotHtml}
     }
     poseStripFor = buildKey;
     els.poseStrip.innerHTML = "";
-    POSES.forEach((pose) => {
+    /* R-19: 図の下の帯も同じ絞り込みにする（窓と帯で並びが違うと混乱するため）。 */
+    selectablePoses(selectedPerformerPieces()).forEach((pose) => {
       const tile = document.createElement("button");
       tile.type = "button";
       tile.className = `stage-pose-strip-tile${pose.id === commonPose ? " is-on" : ""}`;
@@ -26699,7 +26885,7 @@ ${propsPlotHtml}
       // 持ち物は選べるが、手元から直接は動かさない。手放してから置き場所を決める。
       if (hit.heldBy) return;
       /* 錠が掛かっているものは hitTest がもう返さない（当たり判定ごと素通し、
-         本人の指定）。外す口は「出るもの」の一覧にある。 */
+         本人の指定）。外す口は「演者・舞台セット」の一覧にある。 */
       const pos = placePiece(hit, L);
       capture(el, event.pointerId);
       el.dataset.dragging = "true";
@@ -28493,8 +28679,40 @@ ${propsPlotHtml}
       if (e.key === "Enter") { e.preventDefault(); saveRig(); }
     });
   }
-  if (els.lightingPlanOpen) els.lightingPlanOpen.addEventListener("click", openLightingPlanModal);
-  [els.lightingPlanClose, els.lightingPlanCancel, els.lightingPlanBackdrop].filter(Boolean)
+  /* R-07（2026-09-17 本人要望）: 「照明をどこから持ってくるか」の3択。
+     いま選ばれているものは aria-pressed で示し、CSS が黄色（--brass）で塗る。
+     1 自分で組む … 何もしない（今の照明を変えずに残す）
+     2 劇場のプリセット … 劇場に合うプランを読み、追加／置換を選ばせる（歯止めはそのまま）
+     3 保存してある自分のプラン … 保存済みの一覧から選ぶ */
+  function setLightingSource(kind) {
+    lightingSource = kind;
+    els.lightingSourceChoices.forEach((button) => {
+      button.setAttribute("aria-pressed", String(button.dataset.lightingSource === kind));
+    });
+    if (kind === "self") { closeLightingPlanModal(); return; }
+    if (kind === "saved") {
+      // 保存済みの一覧だけを見せる。劇場プリセットの候補は出さない。
+      if (els.lightingPlanBody) els.lightingPlanBody.hidden = false;
+      pendingLightingPlan = null;
+      if (els.lightingPlanCandidate) els.lightingPlanCandidate.hidden = true;
+      if (els.lightingPlanChoice) els.lightingPlanChoice.hidden = true;
+      if (els.lightingPlanApply) els.lightingPlanApply.disabled = true;
+      const api = lightingPlanApi();
+      const existing = api && api.validateStore(lightingPlanStore());
+      renderLightingPlanExisting(existing);
+      if (els.lightingPlanSummary) {
+        els.lightingPlanSummary.textContent = existing && existing.ok
+          ? "保存してあるプランから選びます。選ぶと平面図に概略が重なります。"
+          : (existing && existing.reason) || "保存済みの照明プランを確認できません。";
+      }
+      return;
+    }
+    openLightingPlanModal();
+  }
+  els.lightingSourceChoices.forEach((button) => {
+    button.addEventListener("click", () => setLightingSource(button.dataset.lightingSource));
+  });
+  [els.lightingPlanCancel].filter(Boolean)
     .forEach((element) => element.addEventListener("click", closeLightingPlanModal));
   if (els.lightingPlanAddChoice) els.lightingPlanAddChoice.addEventListener("click", () => setLightingPlanMode("add"));
   if (els.lightingPlanReplaceChoice) els.lightingPlanReplaceChoice.addEventListener("click", () => setLightingPlanMode("replace"));
@@ -28508,12 +28726,13 @@ ${propsPlotHtml}
       persistSoon();
     });
   }
+  /* R-18（2026-09-17 本人要望）: 版名は自由入力をやめ、「＋1」で上がるだけにした。
+     欄は読み取り専用の表示にするので、打ち込みを受け取る配線は外す。
+     要素自体は残す（els.versionLabel を各所が読み書きしている）。 */
   if (els.versionLabel) {
-    els.versionLabel.addEventListener("input", (e) => {
-      state.project.versionLabel = e.target.value.slice(0, 16);
-      syncProjectSummary();
-      persistSoon();
-    });
+    els.versionLabel.readOnly = true;
+    els.versionLabel.tabIndex = -1;
+    els.versionLabel.setAttribute("aria-readonly", "true");
   }
   if (els.versionCopy) els.versionCopy.addEventListener("click", duplicateVersion);
   if (els.exportJson) els.exportJson.addEventListener("click", exportProject);
@@ -29138,7 +29357,7 @@ ${propsPlotHtml}
       at: '[data-panel="cast"]',
       begin: () => { tourMark.cast = (state.project.cast || []).length; },
       done: () => (state.project.cast || []).length > tourMark.cast,
-      ja: ["人を足す", "「出るもの」に名前を入れて〈追加〉を押してください。登録するとそのまま舞台に出ます。"],
+      ja: ["人を足す", "「演者・舞台セット」に名前を入れて〈追加〉を押してください。登録するとそのまま舞台に出ます。"],
       en: ["Add a person", "Type a name in Cast & set and press Add. Registering puts them on stage right away."],
     },
     {
@@ -30588,6 +30807,66 @@ ${propsPlotHtml}
     });
     return;
   }
+  /* Formation drafts own only an assignment. Host validates and writes existing piece positions. */
+  function gammaFormationAvailability() {
+    const pieces = selectedPieces();
+    const visible = featureOn("lineup") && pieces.length >= 2 && pieces.length <= 20
+      && pieces.every((piece) => piece.type === "performer");
+    let reason = "";
+    if (!visible) reason = "人物だけを2〜20人選択してください。";
+    else if (STUDY_READ_ONLY || guestSessionActive() || phoneViewerActive || presenting) reason = "閲覧中はフォーメーションを変更できません。";
+    else if (sceneAnim || spinRun) reason = "再生・転換が終わってから開いてください。";
+    else if (pieces.some((piece) => isLocked(piece))) reason = "選択した人物のロックを解除してください。";
+    else if (pieces.some((piece) => piece.heldBy || mountKindOf(piece) || isFlown(piece))) reason = "器具に乗っていない人物を選択してください。";
+    else if (pieces.some((piece) => !onStageArea(piece.u, piece.v))) reason = "舞台上の人物を選択してください。";
+    return { visible, enabled: visible && !reason, reason, count: pieces.length };
+  }
+
+  function gammaFormationContext() {
+    const availability = gammaFormationAvailability();
+    if (!availability.enabled) throw new Error(availability.reason);
+    const pieces = selectedPieces();
+    const size = venueSize();
+    const stage = { width: size.width, depth: size.depth };
+    return {
+      showId: state.project.id, sceneId: sc().id, sceneName: sc().title || "場面", stage,
+      members: pieces.map((piece) => ({ id: piece.id, name: pieceLabel(piece), u: piece.u, v: piece.v })),
+      // Exact comparison, not a hash: concurrent edits cannot overwrite a newer draft basis.
+      basis: JSON.stringify({ showId: state.project.id, sceneId: sc().id, stage,
+        venue: state.project.venue, pieces, owners: pieces.map((piece) => lockOwner(piece)) }),
+    };
+  }
+
+  function applyGammaFormation(payload) {
+    const current = gammaFormationContext();
+    if (!payload || payload.basis !== current.basis) throw new Error("選択した人物・場面・舞台が変わりました。閉じて選び直してください。");
+    const result = window.GAMMA_FORMATION_MODEL.plan(payload.presetId, current.members, payload.assignment, current.stage, payload.scalePct);
+    const pieces = selectedPieces();
+    const byId = new Map(pieces.map((piece) => [piece.id, piece]));
+    const changed = result.positions.filter((position) => {
+      const piece = byId.get(position.id);
+      return piece.u !== position.u || piece.v !== position.v;
+    });
+    if (!changed.length) return { ok: true, changed: 0 };
+    checkpoint();
+    changed.forEach((position) => {
+      const piece = byId.get(position.id);
+      piece.u = position.u;
+      piece.v = position.v;
+    });
+    updateInspector();
+    render();
+    persistSoon();
+    announce(sx(`${pieces.length}人のフォーメーションを反映しました。`, `Applied a formation to ${pieces.length} performers.`));
+    return { ok: true, changed: changed.length };
+  }
+
+  window.GAMMA_FORMATION_HOST = Object.freeze({
+    availability: gammaFormationAvailability,
+    context: gammaFormationContext,
+    apply: applyGammaFormation,
+  });
+
   window.SHOSAI_STAGE_STUDY_OWNER = Object.freeze({
     snapshot() {
       const doc = makeProjectExportDocument(state.project, true);

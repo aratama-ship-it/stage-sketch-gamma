@@ -92,6 +92,14 @@ body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
   min-height: 0;
   height: 100%;
 }
+/* R-06（2026-09-17 本人要望「1のボックスの上に謎のスペースが空いている」）の正体。
+ * 手順1の上にある .stage-venue-editor-metadata は、中の項目（劇場名・出所・確度・共有）が
+ * すべて hidden なので高さ0だが、**要素としては残っているため grid の gap を前後で2回消費**する。
+ * 実測（1440幅）: 手順どうしの間は10pxなのに、プリセットと手順1の間だけ20pxあった。
+ * 要素は消せない（JSが els.name などで読み書きしている）ので、
+ * 「中身がすべて hidden のときだけ」畳む。:has() が効かない環境では従来どおり20pxのまま。 */
+#gamma-venue-workspace .stage-venue-editor-metadata:not(:has(> *:not([hidden]))) { display: none; }
+
 #gamma-venue-workspace .stage-venue-editor-menu {
   min-height: 0;
   max-height: none;
@@ -138,6 +146,52 @@ body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
   border-top: 1px solid var(--line-dark);
 }
 
+/* R-07（2026-09-17 本人要望）: 「照明をどこから持ってくるか」の3択。
+ * モーダルをやめて劇場形式プリセットの箱の中へ出したので、常に見えている。
+ * いま選ばれているものは黄色（--brass）で示す（本人指定）。
+ * 色だけに頼らず、枠の色と左の縦線でも示す（色が分かりにくい環境でも読めるように）。 */
+#gamma-venue-workspace .stage-lighting-source { display: grid; gap: 6px; margin-top: 10px; }
+#gamma-venue-workspace .stage-lighting-source-choices { display: grid; gap: 4px; }
+#gamma-venue-workspace .stage-lighting-source-choices button {
+  display: grid;
+  gap: 2px;
+  padding: 7px 9px;
+  border: 1px solid var(--line-dark);
+  border-left: 3px solid transparent;
+  background: var(--recess);
+  color: var(--milk-dim);
+  text-align: left;
+  cursor: pointer;
+}
+#gamma-venue-workspace .stage-lighting-source-choices button strong { font-size: var(--fs-3); font-weight: 600; color: var(--milk); }
+#gamma-venue-workspace .stage-lighting-source-choices button small { font-size: var(--fs-1); line-height: 1.5; color: var(--milk-dim); }
+#gamma-venue-workspace .stage-lighting-source-choices button:hover { border-color: var(--brass); }
+#gamma-venue-workspace .stage-lighting-source-choices button[aria-pressed="true"] {
+  border-color: var(--brass);
+  border-left-color: var(--brass);
+  background: rgba(156, 130, 63, 0.18);
+}
+/* 選択中の見出しの色。--brass（#9c823f）をそのまま使うと、選択中の地（rgba(156,130,63,.18) を
+ * recess に重ねた rgb(45,38,24)）に対して 4.05:1 で AA（4.5:1）に届かなかった（2026-09-17 実測）。
+ * 同じ真鍮の系統で明度だけ上げた #c9a961 にすると 6.66:1。枠と左線は従来の --brass のまま
+ * （線は文字ではないので 3:1 でよく、recess に対して 5.05:1 ある）。 */
+#gamma-venue-workspace .stage-lighting-source-choices button[aria-pressed="true"] strong { color: #c9a961; }
+#gamma-venue-workspace .stage-lighting-plan-body { display: grid; gap: 7px; margin-top: 4px; padding: 8px; border: 1px solid var(--line-dark); background: rgba(25,21,18,.45); }
+#gamma-venue-workspace .stage-lighting-plan-body .stage-lighting-plan-actions { display: flex; justify-content: flex-end; gap: 6px; }
+
+/* R-30（2026-09-17 本人要望）: 照明から別のモードへ移るときの「適用しますか？」の窓。
+ * 既存の .stage-modal をそのまま使い、幅と操作列だけここで足す。
+ * 操作列は .stage-lighting-plan-actions と同じ作法（右寄せ・狭い画面では縦積み）。 */
+.stage-modal.gamma-light-leave-modal { width: min(460px, calc(100vw - 32px)); z-index: 79; }
+.gamma-light-leave-modal .stage-modal-body { padding: 14px 16px; }
+.gamma-light-leave-modal .stage-modal-body p { margin: 0; font-size: var(--fs-3); line-height: 1.7; color: var(--milk); }
+.gamma-light-leave-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 0 16px 14px; }
+.gamma-light-leave-actions > button { width: auto; flex: 0 0 auto; white-space: nowrap; }
+@media (max-width: 520px) {
+  .gamma-light-leave-actions { flex-direction: column-reverse; }
+  .gamma-light-leave-actions button { width: 100%; }
+}
+
 /* 手順1〜7のアコーディオン。開いている1つ以外は見出しの行だけ残す。 */
 #gamma-venue-workspace .gamma-venue-step:not(.is-open) > :not(.gamma-venue-step-head) { display: none; }
 /* 手順1〜3は見出しが div でくるまれている。畳んだときは説明文だけ隠し、
@@ -166,6 +220,14 @@ body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
   line-height: 1;
 }
 #gamma-venue-workspace .gamma-venue-step.is-open .gamma-venue-step-toggle::before { content: "▾"; }
+/* R-05（2026-09-17 本人要望）: 畳んでいる手順だけ高さを半分にして、一覧を縦に詰める。
+ * 開いている手順（情報の大きなパネル）の見出しは今までのまま変えない。
+ * var(--ctrl-md) は 36px。その半分の 18px では押す的が小さすぎるので、
+ * 「見出し1行ぶんが読める最小」まで詰める形で 18px + 行の高さぶんを確保する。 */
+#gamma-venue-workspace .gamma-venue-step:not(.is-open) .gamma-venue-step-toggle {
+  min-height: calc(var(--ctrl-md) / 2);
+  padding: 0;
+}
 #gamma-venue-workspace .gamma-venue-step-toggle:hover { color: var(--milk); }
 #gamma-venue-workspace .gamma-venue-step-toggle:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 
@@ -424,7 +486,7 @@ body.is-timeline-marquee { user-select: none; }
 .stage-timeline-cue[aria-pressed="true"] { box-shadow: 0 0 0 1px var(--stage-timeline-accent, var(--brass)); }
 
 /* ===== ショーのパネル（2026-09-17 本人指示） ===== */
-/* ショー名とバージョンを、出るもの・選んだもの・保存状態と同じパネルにした。
+/* ショー名とバージョンを、演者・舞台セット・選んだもの・保存状態と同じパネルにした。
    ヘッダーの中にいたときの寸法（幅220px上限・左に8pxの余白）は、
    タブの横に置くための値だったので、パネルの中では幅いっぱいに戻す。 */
 .stage-project-panel .stage-header-project {

@@ -112,9 +112,9 @@
   const style = document.createElement("style");
   style.textContent = `
     .lpTabs{grid-template-columns:repeat(2,1fr)!important;height:34px!important}.lpTabs button{min-height:34px!important}.lpTabs .slp-tab:disabled{opacity:.42;cursor:default}
-    .slp-pane{display:flex;flex-direction:column;gap:7px;min-height:0;overflow:auto;padding-bottom:6px}.slp-pane .ptitle{margin:0}.slp-pane .hint{margin:0}
+    /* R-02: 型の一覧の列数を「窓の幅」ではなく「このパネル自身の幅」で決めるため、 ここを @container の基準にする。パネルは左右の幅が変わるので、窓幅で判断すると外れる。 */.slp-pane{display:flex;flex-direction:column;gap:7px;min-height:0;overflow:auto;padding-bottom:6px;container-type:inline-size}.slp-pane .ptitle{margin:0}.slp-pane .hint{margin:0}
     .slp-selected{display:grid;grid-template-columns:88px minmax(0,1fr);gap:8px;padding:8px;border:1px solid var(--brass);background:rgba(156,130,63,.08)}.slp-selected .slp-diagram{width:88px;height:58px;border:1px solid var(--line-dark);background:#0d0e10}.slp-selected-info{min-width:0}.slp-selected-info h3{margin:0;color:var(--brass);font-size:15px}.slp-selected-info p{margin:3px 0 0;color:var(--milk-dim);font-size:11px;line-height:1.45}.slp-selected-wide{grid-column:1/-1;display:grid;gap:7px}.slp-selected-wide .slp-scope{margin:0;font-size:11px}.slp-selected-wide .slp-actions{margin:0}.slp-selected-wide .slp-actions .btn{min-height:38px}
-    .slp-list-tools{display:grid;grid-template-columns:minmax(0,1fr) 108px;gap:6px}.slp-list-tools input,.slp-list-tools select{min-height:32px;width:100%;border:1px solid var(--line-dark);background:var(--desk-2);color:var(--milk);padding:4px 7px;font:12px var(--sans)}.slp-families.inline{gap:3px}.slp-families.inline button{min-height:26px;padding:3px 6px;font-size:11px}.slp-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-content:start}.slp-list .slp-card{min-height:96px;padding:0 6px 6px}.slp-list .slp-card svg{width:calc(100% + 12px);height:36px;margin:0 -6px 5px}.slp-list .slp-card b{font-size:12px}.slp-list .slp-card small{font-size:10px;margin-top:3px}.slp-list-empty{grid-column:1/-1;margin:0;color:var(--milk-dim);font-size:12px}
+    .slp-list-tools{display:grid;grid-template-columns:minmax(0,1fr) 108px;gap:6px}.slp-list-tools input,.slp-list-tools select{min-height:32px;width:100%;border:1px solid var(--line-dark);background:var(--desk-2);color:var(--milk);padding:4px 7px;font:12px var(--sans)}.slp-families.inline{gap:3px}.slp-families.inline button{min-height:26px;padding:3px 6px;font-size:11px}/* R-02（2026-09-17 本人要望）: 型のカードは横幅を半分にして4列に詰める。 実測（パネル幅262px）: 4列だと1枚58pxになり、説明の1行（「変えるもの ／ 対象」）が読めない大きさだった。 説明は選んだ後の「型の情報」に必ず出るので、一覧からは外して図と名前だけにする（中身はtitleに残す）。 図は幅が半分になるぶん潰れるので、高さを 36px -> 40px へ上げて見分けが付くようにした。 極端に狭いときだけ2列へ落とす（58pxより狭いと名前も読めないため）。 */.slp-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;align-content:start}.slp-list .slp-card{min-height:88px;padding:0 4px 5px}.slp-list .slp-card svg{width:calc(100% + 8px);height:40px;margin:0 -4px 4px}.slp-list .slp-card b{font-size:11.5px;line-height:1.2}.slp-list .slp-card small{display:none}@container (max-width: 200px){.slp-list{grid-template-columns:repeat(2,minmax(0,1fr))}}.slp-list-empty{grid-column:1/-1;margin:0;color:var(--milk-dim);font-size:12px}
     .slp-summary{min-height:44px;display:grid;align-content:center;border-bottom:1px solid var(--line-dark);font-size:12px;color:var(--milk-dim)}.slp-summary b{color:var(--milk);font-size:14px;font-weight:500}
     .slp-current{border:1px solid var(--brass);background:rgba(156,130,63,.08)}.slp-current-head{display:flex;justify-content:space-between;gap:8px;padding:7px 8px 5px;color:var(--milk-dim);font-size:11px}.slp-current-head b{color:var(--brass);font-size:12px;font-weight:600}.slp-current-list{display:grid;gap:1px}.slp-current-item{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:44px;padding:6px 8px;border:0;border-top:1px solid var(--line-dark);background:transparent;color:var(--milk);font:inherit;text-align:left;cursor:pointer}.slp-current-item:hover,.slp-current-item:focus-visible{background:rgba(156,130,63,.18);outline:none}.slp-current-item small{display:block;color:var(--milk-dim);font-size:10.5px}.slp-current-item b{display:block;font-size:12.5px;font-weight:500}.slp-current-item em{color:var(--rust-ink);font-size:10.5px;font-style:normal}.slp-current-action{flex:0 0 auto;display:grid;justify-items:end;gap:1px;color:var(--brass);font-size:11px;line-height:1.25}.slp-current-adjusted{color:var(--rust-ink);font-style:normal}
     .slp-recent{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.slp-quick{min-height:104px;padding:6px;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk);text-align:left;cursor:pointer;font-family:inherit}.slp-quick:hover,.slp-quick:focus-visible{border-color:var(--brass)}.slp-quick:disabled{opacity:.42;cursor:not-allowed}.slp-quick svg{display:block;width:100%;height:46px;background:#0d0e10;border-bottom:1px solid var(--line-dark);margin-bottom:5px}.slp-quick b{display:block;font-size:12.5px;line-height:1.25}.slp-quick small{display:block;color:var(--milk-dim);font-size:10.5px;margin-top:3px}
@@ -155,6 +155,16 @@
   });
   const movingCount = () => selectedIds().filter((id) => H.fixtureById(id).kind === "moving").length;
   const currentPreset = () => X.presetById(ui.selectedId) || X.PRESETS[0];
+
+  /* R-04: 「選んだ型の情報」を見える位置へ。巻いているのがパネルの内側かページ全体かは
+     環境で変わるので、その要素を内包するスクロール領域を自分で探して動かす。
+     behavior は既定（auto）＝一瞬で飛ぶ。本人指定で滑らかな動きは付けない。 */
+  function scrollTypeInfoIntoView() {
+    const info = typePane && typePane.querySelector(".slp-selected");
+    if (!info) return;
+    try { info.scrollIntoView({ block: "start", inline: "nearest" }); }
+    catch (_) { info.scrollIntoView(); }
+  }
   const stageRegions = () => ({ stage: { kind: "rect", u0: 0, v0: 0, u1: 1, v1: 1 } });
   /* 点滅・順送りでは「灯の並び順」を出さず、並べ方の中の「選んだ順のまま」で同じことを決める
      （順番を決めるつまみが2つあると、どちらが効くのか読めないため。2026-09-17 削り込み）。
@@ -399,13 +409,20 @@
       const text = cardText(preset);
       const disabled = !canUse(preset);
       const suffix = preset.id === "motion.wander.stageAudience" ? "客席マスク待ち" : isStrobe(preset) ? methodName(preset.id) : (preset.movingOnly ? `ムービング ${movingCount()}灯` : text[1]);
-      return `<button type="button" class="slp-card ${preset.id === selected.id ? "sel" : ""}" data-slp-preset="${preset.id}" ${disabled ? "disabled" : ""}>${diagram(preset)}<b>${esc(text[0])}</b><small>${esc(scopeText(preset).changes)} ／ ${esc(suffix)}</small></button>`;
+      // R-02: 一覧では説明（small）をCSSで隠すので、中身を title に入れて読めるようにしておく。
+      return `<button type="button" class="slp-card ${preset.id === selected.id ? "sel" : ""}" data-slp-preset="${preset.id}" title="${esc(text[0])}／${esc(scopeText(preset).changes)} ／ ${esc(suffix)}" ${disabled ? "disabled" : ""}>${diagram(preset)}<b>${esc(text[0])}</b><small>${esc(scopeText(preset).changes)} ／ ${esc(suffix)}</small></button>`;
     }).join("") || `<p class="slp-list-empty">該当する型はありません。</p>`;
     const flashNotice = selected.family !== "flash" ? "" : selected.id === "flash.sequence"
       ? `<p class="slp-note slp-warn">点滅はまだ始まりません。ここで決めてから「この型を適用」を押します。速さは画面上いまのところ最大3（1秒に3灯）です。</p>`
       : `<p class="slp-note slp-warn">点滅はまだ始まりません。ここで速度・位相を決めてから「この型を適用」を押します。画面上の適用値は最大3Hzです。</p>`;
     typePane.innerHTML = `<section class="slp-selected" aria-label="選んだ型の情報">${diagram(selected, "slp-diagram")}<div class="slp-selected-info"><p>${esc(info[1])}</p><h3>${esc(info[0])}</h3></div><div class="slp-selected-wide">${detail}<p class="slp-scope"><b>変えるもの:</b> ${esc(scope.changes)}<br><b>保つもの:</b> ${esc(scope.keeps)}</p><p class="slp-meta">対象: ${esc(skipped)}　／　点灯状態は保ちます</p><div class="slp-controls">${controlsFor(selected, { concise: true })}</div>${flashNotice}${unavailable ? `<p class="slp-note slp-warn">客席側は会場ごとのマスクを指定してから使います。この試作では適用できません。</p>` : ""}${noMoving ? `<p class="slp-note slp-warn">ムービングを1灯以上選ぶと使えます。</p>` : ""}<div class="slp-actions"><button type="button" class="btn primary" data-slp-action="apply" ${(!canUse(selected) || !count) ? "disabled" : ""}>この型を適用</button></div></div></section><div class="slp-list-tools"><input data-slp="query" type="search" placeholder="型を検索" value="${esc(ui.query)}" aria-label="型を検索"><select data-slp="sort" aria-label="型の並び替え"><option value="recommended" ${ui.sort === "recommended" ? "selected" : ""}>おすすめ順</option><option value="name" ${ui.sort === "name" ? "selected" : ""}>名前順</option><option value="family" ${ui.sort === "family" ? "selected" : ""}>種類順</option></select></div><div class="slp-families inline">${FAMILIES.map((family) => `<button type="button" data-slp-family="${family}" aria-pressed="${String(ui.family === family)}">${FAMILY_LABEL[family]}</button>`).join("")}</div><p class="ptitle">型の一覧（${cards.length}）</p><div class="slp-list">${list}</div>`;
-    typePane.querySelectorAll("[data-slp-preset]").forEach((button) => { button.onclick = () => { ui.selectedId = button.dataset.slpPreset; ui.appliedDetail = null; renderTypePane(); }; });
+    typePane.querySelectorAll("[data-slp-preset]").forEach((button) => { button.onclick = () => {
+      ui.selectedId = button.dataset.slpPreset; ui.appliedDetail = null; renderTypePane();
+      /* R-04（2026-09-17 本人要望）: 型を選んだら、上の「選んだ型の情報」まで自動で戻す。
+         一覧は下にあるので、押しても結果が画面の外にいて見えなかった。
+         動きは付けない（本人指定: 一瞬で飛ぶ）。 */
+      scrollTypeInfoIntoView();
+    }; });
     typePane.querySelectorAll("[data-slp-family]").forEach((button) => { button.onclick = () => { ui.family = button.dataset.slpFamily; renderTypePane(); }; });
     bindControls(typePane, renderTypePane);
     const reroll = typePane.querySelector('[data-slp-action="reroll"]');

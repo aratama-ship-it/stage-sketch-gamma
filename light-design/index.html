@@ -130,7 +130,8 @@
   .list.cols2 button.st{min-width:34px;padding:1px 4px}
   /* 図の上の中央。照明デザインではLX cue、配置では現在のシーンを出す。 */
   .scenebox{grid-column:2;justify-self:center;gap:12px}
-  .place-scene{min-height:30px;max-width:360px;padding:3px 12px;font:600 16px/1.2 var(--sans);color:var(--milk);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* R-21（2026-09-17 本人要望）: 「ボールドがすごい」ので細くする。大きさは変えない。 */
+  .place-scene{min-height:30px;max-width:360px;padding:3px 12px;font:400 16px/1.2 var(--sans);color:var(--milk);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .scenebar{display:flex;align-items:center;gap:4px;min-width:0}
   .scenebar .name{font-family:var(--serif);font-size:13px;color:var(--milk);flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
   /* 場面の2段（LX cueパネルの上）。セクション／シーンを同じ形の1行で切り替える。 */
@@ -158,7 +159,10 @@
   .allq.editing{background:var(--rust);color:var(--milk)}
   .allnone{font-size:11px;color:var(--milk-dim)}
   /* 図の上の中央＝いま画面に出ているデザインがどのキューか。いちばん大きく出す。 */
-  .qnow{font:600 20px/1.2 var(--sans);color:var(--brass);letter-spacing:.04em;white-space:nowrap;display:flex;align-items:baseline;gap:9px}
+  /* R-21: 照明デザイン側（LX cue の表示）も同じく細く。大きさ（20px）は変えない。
+   * 下の .qnow.draft は「未登録の下書き」を表す。太さでの差は無くなるが、
+   * 色（--milk-dim）と大きさ（15px）で区別が付く。 */
+  .qnow{font:400 20px/1.2 var(--sans);color:var(--brass);letter-spacing:.04em;white-space:nowrap;display:flex;align-items:baseline;gap:9px}
   .qnow em{font-style:normal;font-weight:400;font-size:14px;color:var(--milk);font-family:var(--serif);letter-spacing:.06em}
   .qnow.draft{color:var(--milk-dim);font-weight:400;font-size:15px}
   /* 前後の LX cue へ。中央の表示の左右に置く（2026-09-13 本人要望）。 */
@@ -181,6 +185,13 @@
   /* ペースト直後の合図。色だけに頼らず、文字も「入れました」に一瞬変える（JS側） */
   .transport .btn.small.xfer.done{color:var(--milk);border-color:var(--brass)}
   .transport .btn.solo{min-width:28px;width:28px;padding:0;font-weight:700}
+  /* R-03: 戻すボタンはソロと同じ大きさの正方形。押すと選ぶ窓が出る。 */
+  .transport .btn.resetcue{min-width:28px;width:28px;padding:0;font-size:14px;line-height:1}
+  /* R-11: カスタムのグループ。取り付け場所の見出しと同じ形にし、◆ と解除の✕で見分ける。 */
+  #make-fixture-group{width:100%;margin-bottom:4px;font-size:11px;min-height:26px}
+  .grp.fixture-group{display:flex;align-items:center;gap:6px}
+  .grp.fixture-group>span{color:var(--brass)}
+  .grp.fixture-group .fixture-group-off{margin-left:auto;flex:0 0 auto}
   .transport .btn.solo[aria-pressed="true"]{color:#1a1409;background:var(--brass);border-color:var(--brass)}
   .canvases{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;gap:5px}
   canvas{display:block;width:100%;background:#0d0e10;border:1px solid var(--line-dark);cursor:crosshair;touch-action:none}
@@ -197,6 +208,23 @@
   .sec.side.l{grid-column:1} .sec.front{grid-column:2} .sec.side.r{grid-column:3;display:none}
   /* 配置は下手・正面・上手を同時に読む展開図。照明デザインへ戻れば従来どおり左下の切替1面だけに戻す。 */
   .figgrid.placement-unfolded .sec.side.r{display:flex}
+  /* ---- R-14（2026-09-17 本人要望）: 図を1枚だけウィンドウいっぱいに広げる ----
+   * 目的は「正面図の映像を大きい画面で見ること」。編集のための表示ではないので、
+   * 左右のパネル（灯体の一覧・灯体情報・LX cue）は隠して画面を全部使う。
+   * キーは F=正面図 / p=平面図 / O=側面図、Esc かもう一度同じキーで戻る。
+   * 広げている間も Space（再生）と ←→（場面送り）は効く（本人指定）。 */
+  .figgrid[data-solo]{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);justify-items:stretch}
+  .figgrid[data-solo]>*{display:none}
+  .figgrid[data-solo="plan"] .planwrap,
+  .figgrid[data-solo="front"] .sec.front,
+  .figgrid[data-solo="side"] .sec.side.l{display:flex;grid-column:1;grid-row:1;align-self:stretch;justify-self:stretch;width:100%}
+  .figgrid[data-solo] canvas{width:100%}
+  /* 広げている間は、上の帯のうち「どの図を見るか」に関わらないものを畳んで縦を稼ぐ */
+  .figgrid[data-solo] .viewhead,.figgrid[data-solo] .sechead{gap:8px}
+  .solo-btn{flex:0 0 auto;min-width:22px;min-height:20px;padding:0 5px;border:1px solid var(--line-dark);
+            background:var(--recess);color:var(--milk-dim);font-size:11px;line-height:1;cursor:pointer}
+  .solo-btn:hover,.solo-btn:focus-visible{color:var(--milk);border-color:var(--brass)}
+  .figgrid[data-solo] .solo-btn{color:var(--milk);border-color:var(--brass);background:rgba(156,130,63,.2)}
   .figgrid.placement-unfolded .panel.insp{grid-column:3;grid-row:1}
   .placement-side-title{display:none;font-size:11px;letter-spacing:.08em;color:var(--milk-dim)}
   .figgrid.placement-unfolded .placement-side-title{display:inline}
@@ -304,6 +332,14 @@
   .empty p{margin:0;color:var(--milk-dim)}
   /* 右: 設定欄 */
   .panel.insp{gap:0;position:relative}
+  /* R-01（2026-09-17 本人要望）: 灯体情報パネルの一番下の常設の表示欄。
+     いつも同じ場所にあって高さも変わらないので、出入りで下の図が動かない。
+     出すのは最新の1件だけ。取り消しはヘッダーの「戻る」を使う（本人指定）。 */
+  .insp-log{flex:0 0 auto;margin:6px 0 0;padding:5px 7px;min-height:32px;
+            border-top:1px solid var(--line-dark);
+            color:var(--milk);font-size:11px;line-height:1.35;
+            overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+  .insp-log[data-empty="true"]{color:var(--milk-dim)}
   /* 照明デザインの見出し行。左＝パネル名、右＝シーン送り・再生とオン・オフ。
      絶対配置ではなく普通のflex行にした（2026-09-13: パネル幅が狭いと padding-right の
      絶対配置トリックでは見出しの文字が縦に折り返ってしまったため、素直な横並びに直した）。
@@ -600,7 +636,7 @@
   .kbd b{color:var(--milk);font-weight:500;border:1px solid var(--line-dark);padding:0 4px;margin:0 2px}
 </style>
 <style>.option-b-controls button{min-height:44px}.option-b-controls :focus-visible{outline:2px solid #d3ac59;outline-offset:2px}</style>
-<link rel="stylesheet" href="embed.css?v=2026091503">
+<link rel="stylesheet" href="embed.css?v=2026091940">
 </head>
 <body>
 <div class="proto-note">舞台スケッチ γ — 照明の配置・デザイン</div>
@@ -642,9 +678,16 @@
               <button type="button" data-show="no" aria-pressed="true">番号</button>
               <button type="button" data-show="path" aria-pressed="true">動く範囲</button>
               <button type="button" data-show="grid" aria-pressed="true" title="1000mmごとの目盛りを図に出す">グリッド</button>
-              <button type="button" data-show="pieces" aria-pressed="true" title="舞台スケッチ側で置いてある演者・セットを下敷きに出す">演者・セット</button>
+              <!-- R-09（2026-09-17 本人要望）: 「演者・セット」を3つに割る。
+                   駒の kind（performer / set / curtain）とそのまま1対1で対応する。
+                   ここの「舞台の幕」はショー側で置いた幕（前幕・ホリゾント幕など）。
+                   右にある一文字幕・袖幕は劇場の造りとして自動で作られる別のもの。 -->
+              <button type="button" data-show="performers" aria-pressed="true" title="舞台スケッチ側で置いてある演者を下敷きに出す">演者</button>
+              <button type="button" data-show="setpieces" aria-pressed="true" title="舞台スケッチ側で置いてある大道具・小道具を下敷きに出す">セット</button>
+              <button type="button" data-show="showcurtains" aria-pressed="true" title="舞台スケッチ側で置いてある幕（前幕・ホリゾント幕など）を出す。一文字幕・袖幕は右の別のボタンです">舞台の幕</button>
               <button type="button" data-show="names" aria-pressed="true" title="演者・セットの名前を図に出す（影絵は残す）">名前</button>
               <button type="button" data-show="border" aria-pressed="false" title="バトンの手前に吊って灯体を客席から隠す短い幕。出すと、客席から灯体が見えていないかを確かめられます">一文字幕</button>
+              <button type="button" data-show="legs" aria-pressed="true" title="舞台の左右に吊って袖（そで）を客席から隠す幕。切ると、袖の奥まで見えるようになります">袖幕</button>
             </span>
             <!-- 「光」と「作業灯を消す」は照明デザインタブだけのもの。近い働きなので、
                  ほかの「表示」から離して右端に2つ並べる（2026-09-13 本人要望）。
@@ -701,6 +744,10 @@
               <button type="button" data-filter="move" aria-pressed="false">動き</button>
             </div>
             <p class="hint" id="sel-count"></p>
+            <!-- R-11（2026-09-17 本人要望）: 選んだ灯体をカスタムのグループにまとめる。
+                 グループは「まとめて選ぶ」ためのもので、灯体を縛らない（値が揃うのは操作した瞬間だけ）。
+                 既存の「組」（動きの組）とは別物。 -->
+            <button type="button" class="btn small" id="make-fixture-group" hidden>選んだ灯をグループにする</button>
             <div class="list" id="list"></div>
           </section>
           <section class="panel" id="panel-lxq">
@@ -731,6 +778,7 @@
           <div class="planwrap">
             <div class="viewhead">
               <span class="viewtitle">平面図（真上から）</span>
+              <button type="button" class="solo-btn" data-solo-figure="plan" title="平面図だけを大きく見る（p）。Escかもう一度押すと戻ります">⛶</button>
               <label class="snap" title="1000mmのグリッドに合わせて置く・動かす"><input type="checkbox" id="snap"><span>1000mmでそろえる</span></label>
             </div>
             <span class="statebadge" id="statebadge">選択</span>
@@ -751,6 +799,9 @@
                 <!-- 2026-09-14 本人要望: 再生の左隣にコピー／ペースト。
                      同じ種類の灯体どうし（ムービング↔ムービング／固定↔固定／cyc↔cyc）だけ通す。 -->
                 <span class="transport">
+                  <!-- R-03（2026-09-17 本人要望）: この cue の灯体情報を戻す。本人指定でソロの左。
+                       帯が狭いのでボタンは1つにして、押すと4通りを選ぶ小さな窓を出す。 -->
+                  <button type="button" class="btn small resetcue" id="reset-cue" aria-label="この cue の灯体情報を戻す" title="この cue の灯体情報を戻す（消す／はじめに戻す）">⟲</button>
                   <button type="button" class="btn small solo" id="solo" aria-pressed="false" aria-label="ソロ" title="ソロ（S）">S</button>
                   <button type="button" class="btn small xfer" id="t-copy" disabled>コピー</button>
                   <button type="button" class="btn small xfer" id="t-paste" disabled>ペースト</button>
@@ -769,6 +820,10 @@
             <div class="inspbody" id="insp"></div>
             <!-- 固定灯のシーン間の食い違い。決まるまで消えないので、設定欄とは別の固定枠に出す -->
             <div id="conflicts"></div>
+            <!-- R-01（2026-09-17 本人要望）: 操作の結果や注意は、画面下に浮くポップアップをやめて
+                 ここへ常設で出す。上からせり出す動きは付けず、最初から場所を取っておく。
+                 出すのは最新の1件だけ（書き換え方式）。取り消しはヘッダーの「戻る」を使う。 -->
+            <p class="insp-log" id="insp-log" role="status" aria-live="polite" data-empty="true"></p>
           </section>
           <!-- 側面図は1枚。下手と上手を同時に見る必要はないので切り替え式にし、
                空いた右下を照明デザインパネルが使う（2026-09-13 本人要望）。 -->
@@ -781,12 +836,14 @@
               </span>
               <span class="side-sep" aria-hidden="true"></span>
               <button type="button" class="btn small quiet sidedistance" id="distance-mode" aria-pressed="false">距離：固定帯</button>
+              <button type="button" class="solo-btn" data-solo-figure="side" title="側面図だけを大きく見る（O）。Escかもう一度押すと戻ります">⛶</button>
             </div>
             <canvas id="secL" width="520" height="520"></canvas>
           </div>
           <div class="sec front">
             <div class="sechead">
               <span class="viewtitle">正面図</span>
+              <button type="button" class="solo-btn" data-solo-figure="front" title="正面図だけを大きく見る（F）。Escかもう一度押すと戻ります">⛶</button>
               <span class="fmode">
                 <span class="showtoggles" id="frontmode" role="group" aria-label="正面図の描き方">
                   <button type="button" data-front="flat" aria-pressed="true">平面</button>
@@ -832,20 +889,22 @@
   </div>
   <div class="dialog" id="dialog" hidden></div>
 </div>
-<div class="toast" id="toast" hidden></div>
+<!-- R-01（2026-09-17 本人要望）: 画面下に浮くポップアップは廃止。
+     結果や注意は「灯体情報」パネル最下部の #insp-log へ常設で出す。
+     要素は残さない（.toast のCSSも使われなくなる）。 -->
 
 <script src="rig-engine.js?v=20260917-2-waveforms"></script>
 <script src="stage-figure.js?v=20260915-1"></script>
 <script src="volume-light.js?v=20260915-2"></script>
 <script src="laser-effects.js?v=20260915-5-color-presets"></script>
 <script src="laser-effects-ui.js?v=20260915-3-supported-shapes"></script>
-<script src="app.js?v=2026091704"></script>
+<script src="app.js?v=2026091944"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20260915-3-vertical-cards"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->
 <script src="selected-light-presets-engine.js?v=1789616000"></script>
-<script src="selected-light-presets-ui.js?v=20260917-13-waveforms"></script>
-<script src="../gamma-light-model.js?v=2026091700"></script>
+<script src="selected-light-presets-ui.js?v=2026091942-13-waveforms"></script>
+<script src="../gamma-light-model.js?v=2026091944"></script>
 <script src="embed.js?v=2026091701"></script>
 </body>
 </html>
