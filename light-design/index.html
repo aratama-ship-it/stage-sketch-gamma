@@ -223,6 +223,10 @@
   .lxtop{flex:0 0 auto;min-width:0;display:flex;flex-direction:column;gap:5px}
   .lxlist{flex:1;min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden}
   .lxnums{display:flex;align-items:center;gap:4px;flex-wrap:wrap;color:var(--milk-dim);font-size:11px}
+  /* 「−／数値／＋／そろえる」を1行に収める。.btn は幅100%なので、ここだけ内容幅へ戻す */
+  .poolrow{display:grid;grid-template-columns:32px minmax(0,1fr) 32px auto;gap:4px;align-items:center}
+  .poolrow .numin{width:100%;text-align:center}
+  .poolrow .btn{width:auto;min-width:0;min-height:30px;padding:3px 7px;font-size:12.5px}
   .lxnums .numin{width:46px;min-height:25px;border:1px solid var(--line-dark);background:var(--desk-2);color:var(--milk);font:12.5px var(--sans);padding:2px 4px;text-align:right;font-variant-numeric:tabular-nums}
   /* 照明デザインのパネルは上下2段を貫通させて高く使う（2026-09-13 本人要望）。
      右下にあった「上手を見る」は側面図のタブに畳んだので、この列は丸ごと空いている。 */
@@ -835,12 +839,12 @@
 <script src="volume-light.js?v=20260915-2"></script>
 <script src="laser-effects.js?v=20260915-5-color-presets"></script>
 <script src="laser-effects-ui.js?v=20260915-3-supported-shapes"></script>
-<script src="app.js?v=2026091701"></script>
+<script src="app.js?v=2026091702"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20260915-3-vertical-cards"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->
 <script src="selected-light-presets-engine.js?v=1789607130"></script>
-<script src="selected-light-presets-ui.js?v=20260917-1-flash-sequence"></script>
+<script src="selected-light-presets-ui.js?v=20260917-3-steppers"></script>
 <script src="../gamma-light-model.js?v=2026091501"></script>
 <script src="embed.js?v=2026091700"></script>
 </body>

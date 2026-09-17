@@ -68,6 +68,11 @@
     .slp-families{display:flex;gap:4px;flex-wrap:wrap}.slp-families button{min-height:40px;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk-dim);padding:5px 10px;cursor:pointer}.slp-families button[aria-pressed="true"]{border-color:var(--brass);background:rgba(156,130,63,.2);color:var(--milk)}
     .slp-body{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(250px,.75fr);gap:12px;min-height:0}.slp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:7px;max-height:52vh;overflow:auto;padding:2px}.slp-card{min-height:112px;text-align:left;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk);padding:0 8px 8px;cursor:pointer}.slp-card:hover,.slp-card:focus-visible,.slp-card.sel{border-color:var(--brass);background:rgba(156,130,63,.16)}.slp-card:disabled{opacity:.38;cursor:not-allowed}.slp-card svg{display:block;width:calc(100% + 16px);height:42px;margin:0 -8px 7px;background:#0d0e10;border-bottom:1px solid var(--line-dark)}.slp-card b{display:block;font-size:14px;line-height:1.25}.slp-card small{display:block;color:var(--milk-dim);font-size:11px;margin-top:5px}
     .slp-detail{border:1px solid var(--line-dark);padding:12px;display:grid;align-content:start;gap:9px;background:rgba(13,12,11,.18)}.slp-detail h3{margin:0;color:var(--brass);font-size:15px}.slp-detail p{margin:0;color:var(--milk-dim);font-size:12px;line-height:1.6}.slp-detail .slp-diagram{height:96px;width:100%;border:1px solid var(--line-dark);background:#0d0e10}.slp-meta{font-size:11px;color:var(--milk-dim)}.slp-scope{border-left:2px solid var(--brass);padding-left:8px}.slp-adjustment{display:flex;flex-wrap:wrap;gap:4px;border-left:2px solid var(--rust-ink);padding-left:8px;color:var(--rust-ink)!important}.slp-adjustment b{color:var(--rust-ink);font-weight:600}.slp-adjustment span{color:var(--milk-dim)}.slp-controls{display:grid;gap:7px}.slp-control{display:grid;grid-template-columns:1fr minmax(90px,1fr);gap:8px;align-items:center;font-size:12px;color:var(--milk-dim)}.slp-control input,.slp-control select{min-height:38px;width:100%;border:1px solid var(--line-dark);background:var(--desk-2);color:var(--milk);padding:5px}.slp-actions{display:grid;gap:6px;margin-top:3px}.slp-actions .btn{min-height:44px}.slp-note{border-left:2px solid var(--brass);padding-left:8px}.slp-warn{border-left-color:var(--rust-ink);color:var(--rust-ink)!important;background:rgba(223,100,51,.1);padding:8px}
+    .slp-control.slp-num{grid-template-columns:1fr minmax(128px,1fr)}
+    .slp-stepper{display:grid;grid-template-columns:38px minmax(0,1fr) 38px;gap:4px;align-items:center}
+    .slp-stepper input{text-align:center;padding:5px 2px;font-variant-numeric:tabular-nums}
+    .slp-step{min-height:38px;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk);font:15px/1 var(--sans);cursor:pointer;padding:0}
+    .slp-step:hover,.slp-step:focus-visible{border-color:var(--brass);outline:none}
     .slp-range-hud{position:fixed;z-index:90;display:flex;align-items:center;gap:8px;max-width:calc(100vw - 24px);min-height:38px;padding:7px 9px;border:1px solid var(--brass);background:rgba(13,12,11,.92);box-shadow:none;color:var(--milk);font:12px/1.35 var(--sans);pointer-events:none}.slp-range-hud b{color:var(--brass);font-weight:600}
     .slp-applied-range-edit{position:fixed;z-index:90;min-height:38px;padding:7px 9px;border:1px solid var(--brass);background:rgba(13,12,11,.92);color:var(--milk);font:12px/1.35 var(--sans);cursor:pointer}.slp-applied-range-edit:hover,.slp-applied-range-edit:focus-visible{background:rgba(156,130,63,.26);outline:none}.slp-applied-range-edit b{color:var(--brass);font-weight:600}
     @media (max-width:700px){.slp-body{grid-template-columns:1fr}.slp-grid{max-height:34vh}.slp-search{min-width:0;width:100%}}
@@ -319,15 +324,7 @@
     typePane.innerHTML = `<section class="slp-selected" aria-label="選んだ型の情報">${diagram(selected, "slp-diagram")}<div class="slp-selected-info"><p>${esc(info[1])}</p><h3>${esc(info[0])}</h3></div><div class="slp-selected-wide">${detail}<p class="slp-scope"><b>変えるもの:</b> ${esc(scope.changes)}<br><b>保つもの:</b> ${esc(scope.keeps)}</p><p class="slp-meta">対象: ${esc(skipped)}　／　点灯状態は保ちます</p><div class="slp-controls">${controlsFor(selected, { concise: true })}</div>${flashNotice}${unavailable ? `<p class="slp-note slp-warn">客席側は会場ごとのマスクを指定してから使います。この試作では適用できません。</p>` : ""}${noMoving ? `<p class="slp-note slp-warn">ムービングを1灯以上選ぶと使えます。</p>` : ""}<div class="slp-actions"><button type="button" class="btn primary" data-slp-action="apply" ${(!canUse(selected) || !count) ? "disabled" : ""}>この型を適用</button></div></div></section><div class="slp-list-tools"><input data-slp="query" type="search" placeholder="型を検索" value="${esc(ui.query)}" aria-label="型を検索"><select data-slp="sort" aria-label="型の並び替え"><option value="recommended" ${ui.sort === "recommended" ? "selected" : ""}>おすすめ順</option><option value="name" ${ui.sort === "name" ? "selected" : ""}>名前順</option><option value="family" ${ui.sort === "family" ? "selected" : ""}>種類順</option></select></div><div class="slp-families inline">${FAMILIES.map((family) => `<button type="button" data-slp-family="${family}" aria-pressed="${String(ui.family === family)}">${FAMILY_LABEL[family]}</button>`).join("")}</div><p class="ptitle">型の一覧（${cards.length}）</p><div class="slp-list">${list}</div>`;
     typePane.querySelectorAll("[data-slp-preset]").forEach((button) => { button.onclick = () => { ui.selectedId = button.dataset.slpPreset; ui.appliedDetail = null; renderTypePane(); }; });
     typePane.querySelectorAll("[data-slp-family]").forEach((button) => { button.onclick = () => { ui.family = button.dataset.slpFamily; renderTypePane(); }; });
-    typePane.querySelectorAll("[data-slp]").forEach((input) => {
-      input.oninput = () => {
-        const key = input.dataset.slp, value = input.type === "checkbox" ? input.checked : (input.type === "number" || input.type === "range" ? Number(input.value) : input.value);
-        if (key === "custom.shape") { ui.custom.shape = value; renderTypePane(); return; }
-        if (key === "query" || key === "sort") { ui[key] = value; renderTypePane(); return; }
-        if (key.startsWith("custom.")) ui.custom[key.slice(7)] = value; else ui[key] = value;
-      };
-      input.onchange = input.oninput;
-    });
+    bindControls(typePane, renderTypePane);
     const reroll = typePane.querySelector('[data-slp-action="reroll"]');
     if (reroll) reroll.onclick = () => { ui.seed = X.deriveRerollSeed(ui.seed); renderTypePane(); };
     const drawRange = typePane.querySelector('[data-slp-action="draw-range"]');
@@ -380,7 +377,8 @@
     if (preset.id === "motion.wander.stage") html += `<label class="slp-control"><span>不規則さ</span><input data-slp="irregularity" type="range" min="0.2" max="1" step="0.05" value="${ui.irregularity}"></label><label class="slp-control"><span>1周の秒数</span><input data-slp="loopSec" type="number" min="4" max="30" step="1" value="${ui.loopSec}"></label>${concise ? "" : `<p class="slp-note">舞台の範囲だけを巡ります。同じseedなら、同じ動きを再現します。</p>`}`;
     if (preset.id === "flash.sequence") {
       const sel = (key, label, options) => `<label class="slp-control"><span>${label}</span><select data-slp="${key}">${options.map(([v, t]) => `<option value="${v}" ${String(ui[key]) === String(v) ? "selected" : ""}>${t}</option>`).join("")}</select></label>`;
-      const num = (key, label, min, max, step) => `<label class="slp-control"><span>${label}</span><input data-slp="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${ui[key]}"></label>`;
+      /* 数値は指で押せる −／＋ を付ける（2026-09-17 本人要望）。欄へ直接打ち込むこともできる。 */
+      const num = (key, label, min, max, step) => `<label class="slp-control slp-num"><span>${label}</span><span class="slp-stepper"><button type="button" class="slp-step" data-slp-step="${key}" data-slp-delta="${-step}" aria-label="${label}を減らす" tabindex="-1">−</button><input data-slp="${key}" type="number" min="${min}" max="${max}" step="${step}" value="${ui[key]}"><button type="button" class="slp-step" data-slp-step="${key}" data-slp-delta="${step}" aria-label="${label}を増やす" tabindex="-1">＋</button></span></label>`;
       /* 2026-09-17 第1弾は「全部出してから要らないものを消す」方針（本人決定）。並びは上段＝結果を最も変える3つ。 */
       html += sel("sequence", "並べ方", [["lr", "並び順のまま（下手→上手）"], ["rl", "逆（上手→下手）"], ["centerOut", "中央から外"], ["outsideIn", "外から中央"], ["oddEven", "奇数・偶数"], ["frontBack", "手前→奥"], ["backFront", "奥→手前"], ["random", "ランダム"]]);
       html += sel("direction", "向き", [["fwd", "一方向"], ["rev", "逆向き"], ["bounce", "往復（端で折り返す）"], ["random", "ランダム（周ごとに順番が変わる）"]]);
@@ -398,6 +396,34 @@
     } else if (preset.family === "flash") html += `<label class="slp-control"><span>点滅（Hz）</span><input data-slp="rateHz" type="number" min="0.5" max="3" step="0.25" value="${ui.rateHz}"></label><label class="slp-control"><span>全体の位相</span><input data-slp="phaseOffset" type="range" min="0" max="1" step="0.05" value="${ui.phaseOffset}"></label>`;
     return html;
   }
+  /* つまみの配線。−／＋ と直接入力を同じ場所で受ける（2026-09-17）。
+     表示される操作そのものが変わるつまみ（光り方＝割合/深さの入れ替え、並べ方・向き＝seedの出し入れ）
+     だけ描き直す。−／＋ は欄の値を書き換えるだけ＝連打しても描き直さない（送り先が飛ばない）。 */
+  const RERENDER_KEYS = ["custom.shape", "query", "sort", "soft", "sequence", "direction"];
+  function bindControls(scope, rerender) {
+    scope.querySelectorAll("[data-slp]").forEach((input) => {
+      input.oninput = () => {
+        const key = input.dataset.slp;
+        const value = input.type === "checkbox" ? input.checked : (input.type === "number" || input.type === "range" ? Number(input.value) : input.value);
+        if (key.startsWith("custom.")) ui.custom[key.slice(7)] = value; else ui[key] = value;
+        if (RERENDER_KEYS.includes(key)) rerender();
+      };
+      input.onchange = input.oninput;
+    });
+    scope.querySelectorAll("[data-slp-step]").forEach((button) => {
+      button.onclick = () => {
+        const key = button.dataset.slpStep;
+        const input = scope.querySelector(`input[data-slp="${key}"]`);
+        if (!input) return;
+        const dec = (String(input.step).split(".")[1] || "").length;
+        const raw = Number(input.value) + Number(button.dataset.slpDelta);
+        const next = Number(Math.min(Number(input.max), Math.max(Number(input.min), raw)).toFixed(dec));
+        input.value = next;
+        ui[key] = next;
+      };
+    });
+  }
+
   function renderModal() {
     const root = document.querySelector("#dialog .slp"); if (!root) return;
     const selected = currentPreset(), info = INFO[selected.id] || [selected.id, selected.family, ""];
@@ -418,14 +444,7 @@
       <div class="slp-body"><div class="slp-grid">${cards}</div><aside class="slp-detail"><h3>${esc(info[0])}</h3>${diagram(selected, "slp-diagram")}<p>${esc(info[2])}</p>${detail}<p class="slp-scope"><b>変えるもの:</b> ${esc(scope.changes)}<br><b>保つもの:</b> ${esc(scope.keeps)}</p><p class="slp-meta">対象: ${esc(skipped)}　／　点灯状態は保ちます</p><div class="slp-controls">${controlsFor(selected)}</div>${flashNotice}${unavailable ? `<p class="slp-note slp-warn">客席側は会場ごとのマスクを指定してから使います。この試作では安全のため適用できません。</p>` : ""}${noMoving ? `<p class="slp-note slp-warn">ムービングを1灯以上選ぶと使えます。</p>` : ""}<div class="slp-actions"><button type="button" class="btn primary" data-slp-action="apply" ${(!canUse(selected) || !selectedIds().length) ? "disabled" : ""}>この型を適用</button><p class="hint">適用は現在のLX cueへ1回の「元に戻す」として記録します。</p></div></aside></div>`;
     root.querySelectorAll("[data-slp-preset]").forEach((button) => { button.onclick = () => { ui.selectedId = button.dataset.slpPreset; ui.appliedDetail = null; renderModal(); }; });
     root.querySelectorAll("[data-slp-family]").forEach((button) => { button.onclick = () => { ui.family = button.dataset.slpFamily; renderModal(); }; });
-    root.querySelectorAll("[data-slp]").forEach((input) => {
-      input.oninput = () => {
-        const key = input.dataset.slp, value = input.type === "checkbox" ? input.checked : (input.type === "number" || input.type === "range" ? Number(input.value) : input.value);
-        if (key === "query") { ui.query = String(value); renderModal(); return; }
-        if (key === "custom.shape") { ui.custom.shape = value; renderModal(); return; }
-        if (key.startsWith("custom.")) ui.custom[key.slice(7)] = value; else ui[key] = value;
-      };
-    });
+    bindControls(root, renderModal);
     const reroll = root.querySelector('[data-slp-action="reroll"]');
     if (reroll) reroll.onclick = () => { ui.seed = X.deriveRerollSeed(ui.seed); renderModal(); };
     const drawRange = root.querySelector('[data-slp-action="draw-range"]');

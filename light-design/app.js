@@ -253,7 +253,7 @@
        ここに持つのは「次に当てる値」で、当てた結果は各灯の light に入る（2026-09-12 本人要望）。 */
     /* 狙う高さ hM は未指定なら取り付け方から決める（吊り・前明かり・SS＝床／転がし＝天井際）。
        vv は狙う奥行き（0=最奥・1=最前）。どちらも当てたあとに直せる＝それが軌道の変え方になる。 */
-    sl: { form: "sweep", span: 0.8, hM: null, vv: 0.4, periodSec: 6, beamDeg: 16, stepSec: 0.5, easing: "linear" },
+    sl: { form: "sweep", span: 0.8, hM: null, vv: 0.4, periodSec: 6, beamDeg: 16, stepSec: 0.5, easing: "linear", poolM: 2 },
     slLive: "",         // 直近にサーチライトを当てた灯の並び（同じ顔ぶれの間はつまみが即反映される）
     slGrad: { from: "#7ab8ff", to: "#ff7a5c" },   // 1灯ずつ色をずらす（グラデーション）の2色（2026-09-12 本人要望）
     /* 「動きの型」欄はアコーディオンで畳んでおく（2026-09-13 本人要望）。
@@ -3527,6 +3527,56 @@
         range(0, 10, 1, edgeNow, (v) => `${Math.round(v)}/10（${v < 3 ? "くっきり" : v < 7 ? "普通" : "やわらかい"}）`,
           (v) => { bulkEach(ids, (f, l) => { l.beamEdgeSoftness = v; }); draw(); },
           () => commit(`${ids.length}灯の光の輪郭を変えました`)), true));
+
+      /* 光だまりの大きさをそろえる（2026-09-17 本人要望「灯によって広がり方が違う。そろえて操れるようにしたい」）。
+         広がり（角度）が同じでも、狙い先が遠い灯ほど光だまりは大きくなる（半径＝距離×tan(広がり/2)）。
+         実測: 仕込み全灯16°でも床の光だまりは半径0.55m〜1.23mまで開いていた。
+         そこで角度ではなく<b>直径</b>を決め、灯ごとに必要な角度 2·atan(半径/距離) を割り出して当てる。
+         斜めから射す灯は床で楕円に伸びる。そろうのは光の太さ（軸に直角の直径）で、楕円の伸びは残る。 */
+      {
+        const round1 = (v) => Math.round(v * 10) / 10;
+        const throwOf = (fid) => {
+          const f = fixtureById(fid), l = lightOf(fid);
+          if (!f || !l || l.on !== true) return null;
+          const S = fixtureWorld(f), T = targetAt(fid, state.play.t);
+          if (!S || !T) return null;
+          const d = Math.hypot(T.x - S.x, T.y - S.y, T.z - S.z);
+          return d > 0.05 ? { f, l, d, dia: 2 * E.spotRadiusM(S, T, E.beamDegOf(f, l)) } : null;
+        };
+        const lit = ids.map(throwOf).filter(Boolean);
+        if (lit.length) {
+          const dias = lit.map((t) => round1(t.dia));
+          const poolSame = allSame(dias);
+          if (poolSame) sp.poolM = E.clamp(dias[0], 0.3, 12);
+          const input = document.createElement("input");
+          input.type = "number"; input.className = "numin"; input.min = 0.3; input.max = 12; input.step = 0.1;
+          input.value = E.clamp(E.finite(sp.poolM, 2), 0.3, 12).toFixed(1);
+          input.title = "そろえたい光だまりの直径（m）";
+          const readVal = () => E.clamp(round1(E.finite(input.value, 2)), 0.3, 12);
+          const put = (v) => { sp.poolM = v; input.value = v.toFixed(1); };
+          input.onchange = () => put(readVal());
+          const apply = () => {
+            const want = readVal(); put(want);
+            let over = 0;
+            lit.forEach((t) => {
+              const want2 = (2 * Math.atan((want / 2) / t.d) * 180) / Math.PI;
+              const v = E.clamp(round1(want2), 4, 70);
+              if (Math.abs(v - want2) > 0.05) over += 1;
+              if (E.isMoving(t.f)) t.l.beamDeg = v; else t.f.beamDeg = v;
+            });
+            const off = ids.length - lit.length;
+            commit(`${lit.length}灯の光だまりを直径${want.toFixed(1)}mにそろえました`
+              + (over ? `（${over}灯はズームの限界まで動かしても届きません）` : "")
+              + (off ? `／消灯中の${off}灯はそのまま` : ""));
+          };
+          const row = el("div", "poolrow");
+          row.append(btn("−", () => put(E.clamp(round1(readVal() - 0.1), 0.3, 12)), "small", "小さく"), input,
+            btn("＋", () => put(E.clamp(round1(readVal() + 0.1), 0.3, 12)), "small", "大きく"),
+            btn("そろえる", apply, "", "選んだ灯それぞれの狙い先までの距離から広がりを割り出し、光だまりの大きさをそろえます"));
+          b.append(field("光だまりの直径", row, true));
+          b.append(el("p", "hint", `${poolSame ? `いま ${dias[0].toFixed(1)}m` : `いま ${Math.min(...dias).toFixed(1)}〜${Math.max(...dias).toFixed(1)}m（バラバラ）`}。狙い先までの距離が灯ごとに違うので、同じ広がりでも大きさは変わります。いまの狙い先で計算します。`));
+        }
+      }
     }
 
     // ⑤ 模様（ゴボ）。選んだ灯すべてへ同じ模様を入れる
