@@ -262,7 +262,7 @@
        切ると見ているシーンを固定できる（2026-09-13 本人要望）。 */
     lxLink: true,
     lxScene: 0,
-    slOpen: { search: false, group: false },
+    slOpen: { search: false, group: false, laserSearch: false },
     // 描画負荷の表示専用。照明データ・Undo・保存形式には入れない。
     runtime: { drawMs: 0, averageMs: 0, lastStatusAt: 0 },
   };
@@ -492,7 +492,12 @@
 
   const fixtureWorld = (f) => E.fixtureWorld(f, state.rig, state.dims);
   /* 固定灯は時間で動かない。向きは仕込みで決まるので、往復や円が付いていても止めた位置で描く
-     （2026-09-11 本人判断で「動き」は固定灯では設定できない。古いデータの保険も兼ねる）。 */
+     （2026-09-11 本人判断で「動き」は固定灯では設定できない。古いデータの保険も兼ねる）。
+     レーザーは2026-09-15の設計時点で「狙い＝既存パス（往復・円・鏡・組）がそのまま効く」想定だったが、
+     isMoving の判定から外れていたため時計が常に0に固定され、狙いが動かなかった
+     （2026-09-17 本人依頼で接続。既存データは path.kind が "still" しか持てなかったので、
+     t を渡すようにしても見え方は変わらない＝互換）。 */
+  const animatesAim = (fixture) => E.isMoving(fixture) || Boolean(E.isLaser && E.isLaser(fixture));
   const targetAt = (fid, t) => {
     const light = lightOf(fid), fixture = fixtureById(fid);
     /* P1の再現可能なランダム移動。P0 engine がある試作ページだけで解釈し、
@@ -504,7 +509,7 @@
       });
       if (point) return E.pointWorld(point, state.dims);
     }
-    return E.targetAt(light, cueWithPeriods(), fid, E.isMoving(fixture) ? t : 0, state.dims);
+    return E.targetAt(light, cueWithPeriods(), fid, animatesAim(fixture) ? t : 0, state.dims);
   };
   // rig-engine の周期表は固定なので、本試作の秒数（4/2/1）へ合わせるため speed を経由せず delay を秒数基準に
   function cueWithPeriods() { return cue(); }
@@ -811,7 +816,9 @@
      ホールのサーチライト（フォロースポットではなく、空を舐めるほう）は等速で振るので、既定は「リニア」。 */
   const SL_FORMS = [["sweep", "そろえて振る"], ["fan", "扇に開く"], ["cross", "交差する"], ["cone", "まわす"]];
   const SL_NAME = Object.fromEntries(SL_FORMS);
-  const slMovers = (ids) => ids.filter((id) => E.isMoving(fixtureById(id)));
+  /* サーチライト・組の動きの対象は「位置が動かせる灯」＝ムービングとレーザー
+     （2026-09-17 本人依頼でレーザーを追加。固定灯は対象外のまま）。 */
+  const slMovers = (ids) => ids.filter((id) => animatesAim(fixtureById(id)));
   /* 狙う高さの既定は「その灯がどこに付いているか」で決まる。
      バトン吊り・前明かり・SSは灯体が高い位置にあり、ヨークは下へしか振れない＝床を舐める。
      転がしだけは床から上を向くので、天井際を狙わせる（2026-09-12 本人指摘で修正）。 */
@@ -1021,6 +1028,25 @@
       else if (l.surface === "house") rays.forEach((ray) => { ray.end = LE.houseFarPoint(S, ray.dir, state.dims, reach * 6); });
       const level = litFactorOf(f, l);
       LE.drawProjected(ctx, P, rays, laserColorsOf(l), level, 100, { alphaScale, fill: Boolean(LE.EFFECTS[effect].fill), surface: Boolean(LE.EFFECTS[effect].surface) });
+      /* 狙いの動きの下書き線（2026-09-17 追加）。ムービング用のガイド（平面図・正面図・側面図・
+         正面3D）と同じ見た目・条件をレーザーにも開くだけ。平面図の客席帯への引き込み（PH）は
+         drawLasers が持たないため簡略化し、常に P をそのまま使う（house狙いは稀なので実用上の影響は小さい）。 */
+      if (alphaScale === 1 && showOn("path")) {
+        const g = E.pathGuide(l, state.dims);
+        if (g) {
+          const sel = isSel(f.id);
+          ctx.save();
+          ctx.setLineDash(view === "plan" ? [10, 8] : [8, 6]);
+          ctx.strokeStyle = view === "plan" ? (sel ? "rgba(223,100,51,0.9)" : "rgba(223,100,51,0.35)") : "rgba(223,100,51,0.7)";
+          ctx.lineWidth = 2;
+          if (g.kind === "line") { const a = P(g.a), b = P(g.b); ctx.beginPath(); ctx.moveTo(a.X, a.Y); ctx.lineTo(b.X, b.Y); ctx.stroke(); }
+          else if (g.kind === "loop") {
+            const wantPlane = view === "plan" ? "horizontal" : view === "front" || view === "front3d" ? "frontVertical" : "sideVertical";
+            if (g.plane === wantPlane) strokeLoop(ctx, P, g);
+          }
+          ctx.restore();
+        }
+      }
       if (alphaScale === 1 && isSel(f.id) && l.surface !== "house") drawHandles(ctx, P, l, f.id);
     });
   }
@@ -3752,6 +3778,85 @@
     strength.append(field(level == null ? "バラバラ" : null, range(0, 100, 1, level == null ? 100 : level,
       (v) => `${Math.round(v)}%`, (v) => { active.forEach((id) => { const l = lightOf(id); l.level = v; }); draw(); }, () => commit()), true));
     host.append(strength);
+
+    /* ---- 狙いの動き（位置オートメーション・サーチライト・組の動き） ----
+       2026-09-15設計の時点で「中心方向・動き・時計は既存のものを流用」する想定だったが、
+       レーザーが isMoving の判定から外れていたため接続されていなかった
+       （狙いは常に時刻0で固定＝動かない。2026-09-17 本人依頼で接続）。
+       ここはムービング用（renderBulk の「動きの型・組の動き」）と同じ仕組みをそのまま開くだけで、
+       レーザー専用の新しい概念は作らない（既存パス往復・円・8の字／組＝一緒に動く・鏡・順番・扇・交差）。 */
+    {
+      const sp = state.sl, d = state.dims;
+      const b = el("div", "pbox");
+      const addP = (n) => b.append(n);
+      addP(el("p", "kicker", "狙いの動き"));
+      const posActive = active.filter((id) => ((lightOf(id) || {}).path || {}).kind !== "still");
+      const allPos = active.length > 0 && posActive.length === active.length;
+      const head = el("div", "pboxhead"); head.append(el("p", "kicker sub2", "位置"));
+      head.append(switchBtn(allPos,
+        allPos ? "狙いが動いています。押すと全灯を止めます（いまの位置で止まります）"
+          : posActive.length ? "一部だけ動いています。押すと全灯そろって動かします"
+          : "押すと全灯の狙いに始点と終点を置きます",
+        () => {
+          if (allPos) {
+            active.forEach((id) => { const l = lightOf(id); const pt = currentPoint(l); l.path = { kind: "still", a: { ...pt } }; });
+            commit(`${active.length}台のレーザーの狙いの動きを止めました（いまの位置で止まっています）`);
+          } else {
+            active.forEach((id) => { if (((lightOf(id) || {}).path || {}).kind === "still") setKind(id, "line"); });
+            commit(`${active.length}台のレーザーの狙いに始点と終点を置きました`);
+          }
+        }));
+      addP(head);
+      if (posActive.length) {
+        const kinds = new Set(posActive.map((id) => ((lightOf(id) || {}).path || {}).kind || "still"));
+        addP(field(kinds.size > 1 ? "軌道（バラバラ）" : "軌道",
+          seg([["line", "往復"], ["circle", "円"], ["eight", "8の字"]], kinds.size === 1 ? [...kinds][0] : null, (v) => {
+            posActive.forEach((id) => setKind(id, v));
+            commit(`${posActive.length}台のレーザーの軌道を変えました`);
+          }), true));
+        addP(el("p", "kicker sub2", "動きの時間（位置・広がりで共通）"));
+        addP(field("秒で決める", range(1, 30, 0.5, sp.periodSec, (v) => `${v.toFixed(1)}秒`,
+          (v) => { sp.periodSec = v; active.forEach((id) => { lightOf(id).periodSec = v; }); draw(); }, () => commit())));
+        addP(field("ずらす刻み", range(0, 3, 0.1, sp.stepSec, (v) => (v < 0.05 ? "ずらさない（全灯そろう）" : `${v.toFixed(1)}秒ずつ`), (v) => {
+          sp.stepSec = v; let i = 0; active.forEach((id) => { const l = lightOf(id); l.offsetSec = Math.round(i * v * 10) / 10; i += 1; }); draw();
+        }, () => commit())));
+      }
+      if (active.length >= 2) {
+        const live = () => state.slLive === active.join(",");
+        const touch = () => { if (live()) applySearchlight(active, true); };
+        const settle = () => { if (live()) commit(); };
+        const hNow = slHeight(active);
+        const gs = [...new Set(active.map((id) => groupOf(id)).filter(Boolean))];
+        const sameGroup = gs.length === 1 && gs[0].members.length === active.length && active.every((id) => gs[0].members.includes(id));
+        const open = state.slOpen.laserSearch;
+        const h = el("p", "kicker sub2 accordion");
+        h.innerHTML = `<span class="accicon">${open ? "▾" : "▸"}</span>動きの型・組の動き（レーザー${active.length}台）${live() ? "　当たっています" : sameGroup ? "　組を編集中" : ""}`;
+        h.onclick = () => { state.slOpen.laserSearch = !state.slOpen.laserSearch; renderInspector(); };
+        addP(h);
+        if (open) {
+          addP(field("連携", seg(SL_FORMS, sp.form, (v) => { sp.form = v; if (live()) applySearchlight(active); else renderAll(); }), true));
+          addP(field(sp.form === "cone" ? "散らす幅" : "振り幅", range(0.2, 1, 0.05, sp.span, (v) => `舞台幅の${Math.round(v * 100)}%（約${mmText(v * d.W)}）`, (v) => { sp.span = v; touch(); }, settle)));
+          addP(field("高さ", range(0, d.H, 0.1, hNow, (v) => (v <= 0.05 ? "0mm" : `${mmText(v)}（空中）`), (v) => { sp.hM = v; touch(); }, settle, numMm(0, d.H, 0.1, "高さ(mm)"))));
+          addP(field("奥行き", range(0, 1, 0.05, slDepth(), (v) => `${mmText(v * d.D)}（${v < 0.3 ? "奥" : v > 0.7 ? "前" : "中ほど"}）`, (v) => { sp.vv = v; touch(); }, settle, numDepth())));
+          if (sp.form !== "cone") addP(field("切り返し", seg([["linear", "リニア"], ["ease", "イーズ"]], sp.easing, (v) => { sp.easing = v; if (live()) applySearchlight(active); else renderAll(); })));
+          addP(btn(live() ? `${active.length}台に当て直す` : `${active.length}台にこの型を当てる`, () => applySearchlight(active), "primary"));
+          addP(el("p", "kicker sub2", "組の動き（軌道はそのままに、灯どうしの関係だけ足す）"));
+          const REL = [["together", "一緒に動く"], ["mirror", "鏡のように動く"], ["sequential", "順番に動く"], ["fan", "扇に開く・閉じる"], ["cross", "交差して入れ替わる"]];
+          if (sameGroup) {
+            const g = gs[0];
+            addP(field("動き方", seg(REL, g.compose || g.relation, (v) => makeGroup(g.members, v)), true));
+            if (g.relation === "sequential") addP(field("ずらす時間", range(100, 1500, 50, g.delayMs, (v) => `${(v / 1000).toFixed(2)}秒ずつ`, (v) => { g.delayMs = v; draw(); }, () => commit())));
+            const ol = el("div", "seg col grouplist");
+            g.members.forEach((m, i) => { const gb = document.createElement("button"); gb.type = "button"; gb.textContent = `${i + 1}. ${label(m)} ${fixtureById(m).name || ""}${i > 0 ? "　▲ 前へ" : ""}`; gb.onclick = () => { if (i > 0) { [g.members[i - 1], g.members[i]] = [g.members[i], g.members[i - 1]]; commit(); } }; ol.append(gb); });
+            addP(field("この組の灯体", ol, true));
+            addP(btn("組を解散する", () => { cue().groups = cue().groups.filter((x) => x !== g); g.members.forEach((m) => setLight(m, { groupId: null })); commit("組を解散しました"); }, "small quiet"));
+          } else {
+            addP(field("動き方", seg(REL, null, (v) => makeGroup(active, v)), true));
+          }
+        }
+      }
+      host.append(b);
+    }
   }
 
   /* パネル右上のオン・オフ。1灯を選んでいるときだけ出す。
