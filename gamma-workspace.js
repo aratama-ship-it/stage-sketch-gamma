@@ -86,16 +86,54 @@
     event.preventDefault();event.stopImmediatePropagation();
     editor()?.[event.shiftKey?'redo':'undo']();syncHistory();
   },true);
+  /* このブラウザの保存領域の使用量。文字はUTF-16で2バイト見当＝正確な実測ではなく、
+     どれを消すか決めるための目安。2026-09-17 実機で領域がいっぱいになり照明を開けなくなった。 */
+  function storageRows() {
+    const rows=[];
+    for(let i=0;i<localStorage.length;i+=1) {
+      const k=localStorage.key(i); if(k===null) continue;
+      rows.push({key:k,bytes:(k.length+(localStorage.getItem(k)||'').length)*2});
+    }
+    return rows.sort((a,b)=>b.bytes-a.bytes);
+  }
+  const sizeText=bytes=>bytes>=1048576?`${(bytes/1048576).toFixed(1)}MB`:`${Math.round(bytes/1024)}KB`;
+  const isQuotaError=error=>error?.name==='QuotaExceededError' || /quota/i.test(error?.message||'');
+  /* 「控えを保管」は押すたびに控えのまるごと複製を1件増やす。これが積もって領域を食うので、
+     書く前に古い保管ぶんを1件だけ残して片付ける（＝保管後は 前回ぶん＋今回ぶん の2件まで）。 */
+  function trimConflicts(draftKey, keep) {
+    const olds=storageRows().map(r=>r.key).filter(k=>k.startsWith(draftKey+':conflict:')).sort();
+    olds.slice(0,Math.max(0,olds.length-keep)).forEach(k=>localStorage.removeItem(k));
+  }
   function failed(error) {
     status.textContent='照明を開けませんでした: '+error.message+' ';
     const ctx=latestContext || host.context(), draftKey='gamma:lighting-draft-v1:'+ctx.showId;
     const raw=localStorage.getItem(draftKey);
-    if(!raw) return;
-    const exportButton=document.createElement('button');exportButton.type='button';exportButton.textContent='編集控えを書き出す';
-    exportButton.onclick=()=>{const url=URL.createObjectURL(new Blob([raw],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='gamma-lighting-recovery.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
-    const savedButton=document.createElement('button');savedButton.type='button';savedButton.textContent='控えを保管して保存済みの照明を開く';
-    savedButton.onclick=()=>{try{localStorage.setItem(draftKey+':conflict:'+Date.now(),raw);localStorage.removeItem(draftKey);editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(error){failed(error);}};
-    status.append(exportButton,savedButton);
+    if(raw) {
+      const exportButton=document.createElement('button');exportButton.type='button';exportButton.textContent='編集控えを書き出す';
+      exportButton.onclick=()=>{const url=URL.createObjectURL(new Blob([raw],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='gamma-lighting-recovery.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+      const savedButton=document.createElement('button');savedButton.type='button';savedButton.textContent='控えを保管して保存済みの照明を開く';
+      savedButton.onclick=()=>{try{trimConflicts(draftKey,1);localStorage.setItem(draftKey+':conflict:'+Date.now(),raw);localStorage.removeItem(draftKey);editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(error){failed(error);}};
+      status.append(exportButton,savedButton);
+    }
+    if(!isQuotaError(error)) return;
+    /* 領域がいっぱいのときは、消していいものを自分で選べるようにする。
+       勝手に消さない——中身は本人の編集内容そのものなので、先に書き出してもらう。 */
+    const rows=storageRows(), total=rows.reduce((sum,row)=>sum+row.bytes,0);
+    const note=document.createElement('p');
+    note.textContent=`このブラウザに保存できる量を使い切っています（いま約${sizeText(total)}）。`
+      +(raw?'まず「編集控えを書き出す」でファイルへ控えてから、下で空けてください。':'下のどれかを消すと開けるようになります。');
+    const list=document.createElement('p');
+    list.textContent='内訳: '+rows.slice(0,4).map(row=>`${row.key}（${sizeText(row.bytes)}）`).join('　/　');
+    status.append(note,list);
+    const spare=rows.filter(row=>row.key.includes(':conflict:'));
+    if(spare.length) {
+      const bytes=spare.reduce((sum,row)=>sum+row.bytes,0);
+      const purge=document.createElement('button');purge.type='button';
+      purge.textContent=`前に保管した控え ${spare.length}件（約${sizeText(bytes)}）を消す`;
+      purge.title='「控えを保管して保存済みの照明を開く」を押したときに残った複製です。書き出し済みなら消して構いません';
+      purge.onclick=()=>{spare.forEach(row=>localStorage.removeItem(row.key));try{editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(again){failed(again);}};
+      status.append(purge);
+    }
   }
   /* ---- V-2（2026-09-17）: 手順の列をアコーディオンにする ----
    * 1〜7を全部開いたままだと左列だけで1183px必要で、1画面に収まらない。開くのは1つだけにする。
