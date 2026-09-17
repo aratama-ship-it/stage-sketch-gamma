@@ -52,7 +52,7 @@
     { id: "flash.sparkle", family: "flash", scope: "flash", movingOnly: false },
     { id: "flash.sequence", family: "flash", scope: "flash", movingOnly: false },
   ]);
-  const SEQUENCE_VALUES = Object.freeze(["lr", "rl", "centerOut", "outsideIn", "oddEven", "frontBack", "backFront", "random"]);
+  const SEQUENCE_VALUES = Object.freeze(["lr", "rl", "centerOut", "outsideIn", "oddEven", "frontBack", "backFront", "random", "custom"]);
   const DIRECTION_VALUES = Object.freeze(["fwd", "rev", "bounce", "random"]);
   const presetById = (id) => PRESETS.find((preset) => preset.id === id) || null;
 
@@ -308,6 +308,16 @@
     const v = (f) => finite(f.mount && f.mount.v, 0.5);
     let ranks = targets.map((_, i) => i);
     let count = n;
+    /* 手で並べた順（2026-09-17 本人要望）。choices.customRanks は 灯のid → 段番号。
+       同じ段番号の灯は一緒に光る。まとめる灯数はここでは当てない——段は本人が決めているため。 */
+    if (sequence === "custom") {
+      const map = choices.customRanks && typeof choices.customRanks === "object" ? choices.customRanks : {};
+      const raw = targets.map((f) => Math.max(0, Math.round(finite(map[f.id], 0))));
+      // 段番号に飛びがあっても詰める（間の灯を選び直しても 1・2・4 のような空きを作らない）
+      const used = [...new Set(raw)].sort((a, b) => a - b);
+      const packed = new Map(used.map((value, index) => [value, index]));
+      return { count: Math.max(1, used.length), ranks: raw.map((value) => packed.get(value)) };
+    }
     const byKey = (key, reverse) => {
       const order = targets.map((f, i) => ({ i, k: key(f) })).sort((a, b) => a.k - b.k || a.i - b.i).map((x) => x.i);
       if (reverse) order.reverse();

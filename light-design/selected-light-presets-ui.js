@@ -69,7 +69,36 @@
   const FAMILY_LABEL = { all: "すべて", aim: "狙い", area: "範囲", motion: "動き", value: "配り方", show: "演出", flash: "点滅" };
   const ui = { family: "all", query: "", sort: "recommended", selectedId: "aim.converge", panel: "adjust", seed: 173204, order: "physical", alignIntensity: true, custom: { shape: "rect", u0: 0.2, v0: 0.2, u1: 0.8, v1: 0.8, u: 0.5, v: 0.5, r: 0.3 }, irregularity: 0.65, loopSec: 11, rateHz: 2, phaseOffset: 0, appliedDetail: null,
     sequence: "lr", blocks: 1, direction: "fwd", width: "1", flashes: 1, duty: 50, soft: false, depth: 60, floor: 0, loops: 0, after: "off",
-    setBeam: false, beamDeg: 24, setLevel: false, level: 80 };
+    setBeam: false, beamDeg: 24, setLevel: false, level: 80,
+    /* 手で並べた発生順。[{ id, link }] の並び順がそのまま順番で、link=true は「上と同時に光る」。
+       段番号は link から数える（1・1・2・3 のように、まとまりが左の数字で見える）。 */
+    strobeOrder: [] };
+
+  /* いま選ばれている灯に合わせて並びを作り直す。並べ替えと「同時」は覚えたまま、
+     選び直しで増えた灯は末尾へ、外れた灯は取り除く。初回は仕込み順（下手→上手）で並べる。 */
+  function syncStrobeOrder(ids) {
+    const alive = new Set(ids);
+    const kept = ui.strobeOrder.filter((entry) => alive.has(entry.id));
+    const have = new Set(kept.map((entry) => entry.id));
+    const added = ids.filter((id) => !have.has(id))
+      .sort((a, b) => {
+        const fa = H.fixtureById(a), fb = H.fixtureById(b);
+        return ((fa && fa.mount ? fa.mount.u : 0.5) - (fb && fb.mount ? fb.mount.u : 0.5)) || String(a).localeCompare(String(b));
+      });
+    const next = kept.concat(added.map((id) => ({ id, link: false })));
+    if (next[0]) next[0].link = false;          // 先頭は必ず新しい段
+    ui.strobeOrder = next;
+    return next;
+  }
+  // 段番号（0始まり）。link=true の灯は上と同じ段。
+  const strobeSteps = () => {
+    let step = -1;
+    return ui.strobeOrder.map((entry, index) => {
+      if (index === 0 || !entry.link) step += 1;
+      return { ...entry, step };
+    });
+  };
+  const customRanks = () => Object.fromEntries(strobeSteps().map((entry) => [entry.id, entry.step]));
 
   const style = document.createElement("style");
   style.textContent = `
@@ -87,6 +116,19 @@
     .slp-families{display:flex;gap:4px;flex-wrap:wrap}.slp-families button{min-height:40px;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk-dim);padding:5px 10px;cursor:pointer}.slp-families button[aria-pressed="true"]{border-color:var(--brass);background:rgba(156,130,63,.2);color:var(--milk)}
     .slp-body{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(250px,.75fr);gap:12px;min-height:0}.slp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:7px;max-height:52vh;overflow:auto;padding:2px}.slp-card{min-height:112px;text-align:left;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk);padding:0 8px 8px;cursor:pointer}.slp-card:hover,.slp-card:focus-visible,.slp-card.sel{border-color:var(--brass);background:rgba(156,130,63,.16)}.slp-card:disabled{opacity:.38;cursor:not-allowed}.slp-card svg{display:block;width:calc(100% + 16px);height:42px;margin:0 -8px 7px;background:#0d0e10;border-bottom:1px solid var(--line-dark)}.slp-card b{display:block;font-size:14px;line-height:1.25}.slp-card small{display:block;color:var(--milk-dim);font-size:11px;margin-top:5px}
     .slp-detail{border:1px solid var(--line-dark);padding:12px;display:grid;align-content:start;gap:9px;background:rgba(13,12,11,.18)}.slp-detail h3{margin:0;color:var(--brass);font-size:15px}.slp-detail p{margin:0;color:var(--milk-dim);font-size:12px;line-height:1.6}.slp-detail .slp-diagram{height:96px;width:100%;border:1px solid var(--line-dark);background:#0d0e10}.slp-meta{font-size:11px;color:var(--milk-dim)}.slp-scope{border-left:2px solid var(--brass);padding-left:8px}.slp-adjustment{display:flex;flex-wrap:wrap;gap:4px;border-left:2px solid var(--rust-ink);padding-left:8px;color:var(--rust-ink)!important}.slp-adjustment b{color:var(--rust-ink);font-weight:600}.slp-adjustment span{color:var(--milk-dim)}.slp-controls{display:grid;gap:7px}.slp-control{display:grid;grid-template-columns:1fr minmax(90px,1fr);gap:8px;align-items:center;font-size:12px;color:var(--milk-dim)}.slp-control input,.slp-control select{min-height:38px;width:100%;border:1px solid var(--line-dark);background:var(--desk-2);color:var(--milk);padding:5px}.slp-actions{display:grid;gap:6px;margin-top:3px}.slp-actions .btn{min-height:44px}.slp-note{border-left:2px solid var(--brass);padding-left:8px}.slp-warn{border-left-color:var(--rust-ink);color:var(--rust-ink)!important;background:rgba(223,100,51,.1);padding:8px}
+    .slp-ord-wrap{display:grid;gap:5px}
+    .slp-ord-list{list-style:none;margin:0;padding:0;display:grid;gap:3px}
+    .slp-ord{display:grid;grid-template-columns:24px 16px minmax(0,1fr) auto;gap:6px;align-items:center;min-height:38px;padding:3px 6px;border:1px solid var(--line-dark);background:var(--desk-2);color:var(--milk);font-size:12.5px;cursor:grab}
+    .slp-ord b{font-weight:500;font-variant-numeric:tabular-nums}
+    .slp-ord-no{justify-self:center;color:var(--brass);font-weight:700;font-variant-numeric:tabular-nums}
+    .slp-ord-grip{color:var(--ink-soft-sm,var(--milk-dim));cursor:grab}
+    .slp-ord.dragging{opacity:.45;cursor:grabbing}
+    .slp-ord.over{border-color:var(--brass)}
+    .slp-ord.linked{border-top-style:dashed}
+    .slp-ord-pad{width:46px}
+    .slp-ord-link{min-height:30px;min-width:46px;padding:2px 6px;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk-dim);font:11.5px var(--sans);cursor:pointer}
+    .slp-ord-link[aria-pressed="true"]{border-color:var(--brass);background:rgba(156,130,63,.2);color:var(--milk)}
+    .slp-ord-link:hover,.slp-ord-link:focus-visible{border-color:var(--brass);outline:none}
     .slp-control.slp-num{grid-template-columns:1fr minmax(128px,1fr)}
     .slp-stepper{display:grid;grid-template-columns:38px minmax(0,1fr) 38px;gap:4px;align-items:center}
     .slp-stepper input{text-align:center;padding:5px 2px;font-variant-numeric:tabular-nums}
@@ -117,7 +159,7 @@
   };
   const choices = () => ({ seed: ui.seed, order: effectiveOrder(), alignIntensity: ui.alignIntensity, irregularity: ui.irregularity, loopSec: ui.loopSec, rateHz: ui.rateHz, phaseOffset: isStrobe(currentPreset()) ? 0 : ui.phaseOffset,
     setBeam: ui.setBeam === true, beamDeg: ui.beamDeg, setLevel: ui.setLevel === true, level: ui.level,
-    sequence: ui.sequence === "selection" ? "lr" : ui.sequence, blocks: ui.blocks, direction: ui.direction, width: ["half", "build"].includes(ui.width) ? ui.width : Number(ui.width), flashes: ui.flashes, duty: ui.duty, soft: ui.soft === true || ui.soft === "true", depth: ui.depth, floor: ui.floor, loops: ui.loops, after: ui.after, region: ui.custom.shape === "circle" ? { kind: "circle", u: ui.custom.u, v: ui.custom.v, r: ui.custom.r } : { kind: "rect", u0: ui.custom.u0, v0: ui.custom.v0, u1: ui.custom.u1, v1: ui.custom.v1 } });
+    sequence: ui.sequence === "selection" ? "lr" : ui.sequence, customRanks: customRanks(), blocks: ui.blocks, direction: ui.direction, width: ["half", "build"].includes(ui.width) ? ui.width : Number(ui.width), flashes: ui.flashes, duty: ui.duty, soft: ui.soft === true || ui.soft === "true", depth: ui.depth, floor: ui.floor, loops: ui.loops, after: ui.after, region: ui.custom.shape === "circle" ? { kind: "circle", u: ui.custom.u, v: ui.custom.v, r: ui.custom.r } : { kind: "rect", u0: ui.custom.u0, v0: ui.custom.v0, u1: ui.custom.u1, v1: ui.custom.v1 } });
   const canUse = (preset) => {
     if (!preset) return false;
     if (preset.id === "motion.wander.stageAudience") return false; // 客席マスク未接続。P2で会場データへ明示接続する。
@@ -399,6 +441,27 @@
       return order.get(a.id) - order.get(b.id);
     });
   }
+  /* 発生順を手で並べる縦並びのリスト（2026-09-17 本人要望）。
+     行をつかんで上下へ入れ替え、「上と同時」を押すと上の灯と同じ段になる。
+     左の数字が段＝この順に光る。同じ数字が並んでいれば、その灯は一緒に光る。 */
+  function strobeOrderList() {
+    const rows = strobeSteps();
+    if (!rows.length) return `<p class="slp-note">灯を選ぶと、ここに並びが出ます。</p>`;
+    const items = rows.map((entry, index) => {
+      const linked = index > 0 && entry.link;
+      const label = H.label(entry.id) || entry.id;
+      const button = index === 0 ? `<span class="slp-ord-pad"></span>`
+        : `<button type="button" class="slp-ord-link" data-slp-link="${entry.id}" aria-pressed="${String(linked)}" title="${linked ? "上の灯と同時に光っています。押すと次の段へ分けます" : "押すと上の灯と同時に光らせます"}">${linked ? "同時" : "分ける"}</button>`;
+      return `<li class="slp-ord${linked ? " linked" : ""}" draggable="true" data-slp-ord="${entry.id}">
+        <span class="slp-ord-no">${entry.step + 1}</span>
+        <span class="slp-ord-grip" aria-hidden="true">⠿</span>
+        <b>${esc(label)}</b>${button}</li>`;
+    }).join("");
+    const last = rows.length ? rows[rows.length - 1].step + 1 : 0;
+    return `<div class="slp-ord-wrap"><ol class="slp-ord-list">${items}</ol>
+      <p class="slp-note">つかんで上下へ動かすと順番が変わります。「同時」にすると、上の灯と同じ番号＝一緒に光ります。全${rows.length}灯が${last}段で光ります。</p></div>`;
+  }
+
   function controlsFor(preset, { concise = false } = {}) {
     let html = isStrobe(preset) ? ""
       : `<div class="slp-control"><span>灯の並び順</span><select data-slp="order"><option value="physical" ${ui.order === "physical" ? "selected" : ""}>仕込み順（推奨）</option><option value="selection" ${ui.order === "selection" ? "selected" : ""}>選んだ順</option></select></div>`;
@@ -411,6 +474,7 @@
       html += `<button type="button" class="btn" data-slp-action="draw-range">平面図で${ui.custom.shape === "circle" ? "丸" : "四角"}を描く</button>${concise ? "" : `<p class="slp-note">${ui.custom.shape === "circle" ? "中心から外周まで" : "対角どうし"}をドラッグします。描いたあとも数値で微調整でき、適用するまでキューは変わりません。</p>`}`;
     }
     if (isStrobe(preset)) {
+      syncStrobeOrder(selectedIds());
       html += `<label class="slp-control"><span>点滅のさせ方</span><select data-slp="strobeMethod">${STROBE_METHODS.map(([id, name]) => `<option value="${id}" ${preset.id === id ? "selected" : ""}>${esc(name)}</option>`).join("")}</select></label>`;
     }
     const seqRandom = preset.id === "flash.sequence" && (ui.sequence === "random" || ui.direction === "random");
@@ -423,11 +487,13 @@
       /* 2026-09-17 第1弾は「全部出してから要らないものを消す」方針（本人決定）。並びは上段＝結果を最も変える3つ。 */
       /* 「逆（上手→下手）」「外から中央」「奥→手前」は出さない。向き＝逆向きで完全に同じ結果になる
          （実測: 1周期を0.1秒刻みで点灯集合を比べて一致。engine には残してあるので必要なら戻せる）。 */
-      html += sel("sequence", "並べ方", [["lr", "並び順のまま（下手→上手）"], ["selection", "選んだ順のまま"], ["centerOut", "中央から外"], ["oddEven", "奇数・偶数"], ["frontBack", "手前→奥"], ["random", "ランダム"]]);
+      html += sel("sequence", "並べ方", [["lr", "並び順のまま（下手→上手）"], ["selection", "選んだ順のまま"], ["centerOut", "中央から外"], ["oddEven", "奇数・偶数"], ["frontBack", "手前→奥"], ["random", "ランダム"], ["custom", "手で並べる"]]);
+      if (ui.sequence === "custom") html += strobeOrderList();
       html += sel("direction", "向き", [["fwd", "一方向"], ["rev", "逆向き"], ["bounce", "往復（端で折り返す）"], ["random", "ランダム（周ごとに順番が変わる）"]]);
       html += num("rateHz", "速さ（1秒に進む灯数）", 0.25, 3, 0.25);
       html += sel("width", "同時に光る数", [["1", "1灯"], ["2", "2灯（尾を引く）"], ["3", "3灯"], ["half", "半分"], ["build", "積み上げ（消さずに増える）"]]);
-      html += sel("blocks", "まとめる灯数", [["1", "1灯ずつ"], ["2", "2灯ずつ"], ["3", "3灯ずつ"], ["4", "4灯ずつ"]]);
+      // 手で並べているときは、段は本人が決めているので「まとめる灯数」は出さない
+      if (ui.sequence !== "custom") html += sel("blocks", "まとめる灯数", [["1", "1灯ずつ"], ["2", "2灯ずつ"], ["3", "3灯ずつ"], ["4", "4灯ずつ"]]);
       html += num("flashes", "1灯ごとの点滅回数", 1, 8, 1);
       html += sel("soft", "光り方", [["false", "くっきり"], ["true", "やわらかい"]]);
       html += ui.soft === true || ui.soft === "true" ? num("depth", "沈む深さ（%）", 0, 100, 10) : num("duty", "点いている割合（%）", 5, 95, 5);
@@ -468,6 +534,36 @@
         if (RERENDER_KEYS.includes(key)) rerender();
       };
       input.onchange = input.oninput;
+    });
+    /* 発生順の並べ替え。行をつかんで、落とした行の位置へ差し込む。 */
+    let dragging = null;
+    scope.querySelectorAll("[data-slp-ord]").forEach((row) => {
+      row.ondragstart = (ev) => {
+        dragging = row.dataset.slpOrd;
+        row.classList.add("dragging");
+        if (ev.dataTransfer) { ev.dataTransfer.effectAllowed = "move"; try { ev.dataTransfer.setData("text/plain", dragging); } catch (_) { /* Safari対策・値は使わない */ } }
+      };
+      row.ondragend = () => { dragging = null; row.classList.remove("dragging"); scope.querySelectorAll(".slp-ord.over").forEach((r) => r.classList.remove("over")); };
+      row.ondragover = (ev) => { ev.preventDefault(); if (ev.dataTransfer) ev.dataTransfer.dropEffect = "move"; row.classList.add("over"); };
+      row.ondragleave = () => row.classList.remove("over");
+      row.ondrop = (ev) => {
+        ev.preventDefault(); row.classList.remove("over");
+        const from = ui.strobeOrder.findIndex((entry) => entry.id === dragging);
+        const to = ui.strobeOrder.findIndex((entry) => entry.id === row.dataset.slpOrd);
+        if (from < 0 || to < 0 || from === to) return;
+        const moved = ui.strobeOrder.splice(from, 1)[0];
+        ui.strobeOrder.splice(to, 0, moved);
+        if (ui.strobeOrder[0]) ui.strobeOrder[0].link = false;
+        rerender();
+      };
+    });
+    scope.querySelectorAll("[data-slp-link]").forEach((button) => {
+      button.onclick = () => {
+        const entry = ui.strobeOrder.find((item) => item.id === button.dataset.slpLink);
+        if (!entry) return;
+        entry.link = !entry.link;
+        rerender();
+      };
     });
     scope.querySelectorAll("[data-slp-step]").forEach((button) => {
       button.onclick = () => {
