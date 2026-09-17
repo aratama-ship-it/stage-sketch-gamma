@@ -136,6 +136,31 @@
       const savedButton=document.createElement('button');savedButton.type='button';savedButton.textContent='控えを保管して保存済みの照明を開く';
       savedButton.onclick=()=>{try{trimConflicts(draftKey,1);localStorage.setItem(draftKey+':conflict:'+Date.now(),raw);localStorage.removeItem(draftKey);editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(error){failed(error);}};
       status.append(exportButton,savedButton);
+      /* 控えの中身（design）は、照明エディタの「保存 → 読み込む」でそのまま戻せる形。
+         まるごとの控え（上のボタン）は復旧用の原本、こちらは戻して使うためのファイル。
+         2026-09-17: 控えが残ったまま開けない状態から抜ける道が「保管」しかなく、
+         保管は複製が1件増えて容量を余計に使うので、書き出して捨てる道も用意した。 */
+      let design=null;
+      try { design=JSON.parse(raw).design || null; } catch (_) { design=null; }
+      if(design) {
+        const useButton=document.createElement('button');useButton.type='button';
+        useButton.textContent='読み込める形で書き出す（.lightdesign.json）';
+        useButton.title='開いたあと、照明エディタの「保存 → 読み込む」からこのファイルを選ぶと、編集内容を戻せます';
+        useButton.onclick=()=>{
+          const url=URL.createObjectURL(new Blob([JSON.stringify(design,null,2)],{type:'application/json'}));
+          const a=document.createElement('a');a.href=url;a.download=(design.name?String(design.name).replace(/[\\/:*?"<>|]/g,'_'):'照明デザイン')+'.lightdesign.json';a.click();
+          setTimeout(()=>URL.revokeObjectURL(url),1000);
+        };
+        const dropButton=document.createElement('button');dropButton.type='button';
+        dropButton.textContent='書き出したので編集控えを捨てて開く';
+        dropButton.title='控えを消してから、保存済みの照明を開きます。容量も空きます';
+        dropButton.onclick=()=>{
+          if(!window.confirm('編集控えを消して、保存済みの照明を開きます。\n消すと、この控えの中身はこの端末から無くなります。\n先に「読み込める形で書き出す」でファイルへ控えましたか？')) return;
+          localStorage.removeItem(draftKey);
+          try{editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(again){failed(again);}
+        };
+        status.append(useButton,dropButton);
+      }
     }
     if(!isQuotaError(error)) return;
     /* 領域がいっぱいのときは、消していいものを自分で選べるようにする。
