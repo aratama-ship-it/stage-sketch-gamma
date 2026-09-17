@@ -104,6 +104,28 @@
     const olds=storageRows().map(r=>r.key).filter(k=>k.startsWith(draftKey+':conflict:')).sort();
     olds.slice(0,Math.max(0,olds.length-keep)).forEach(k=>localStorage.removeItem(k));
   }
+  /* 領域が足りないときに消してよいのは、アプリが自動で作った控えだけ。
+     ショー本体（shosai-stage-shows-v1）と、いま開いている企画（shosai-stage-sketch-v1）、
+     編集中の照明の控えは対象にしない——消すと本人の作りかけが戻らない。 */
+  const BACKUP_KINDS=[
+    {name:'作り替え前のショーの控え',test:k=>k.includes('-pre-section-hierarchy-v1')},
+    {name:'読めなかったデータの退避',test:k=>k==='gamma:shosai-stage-shows-broken-v1'},
+    {name:'照明デザイン集の作り替え前の控え',test:k=>k==='gamma:shosai.lightDesigns.beforeOptionB.v1'},
+    {name:'脇へ寄せた照明の控え',test:k=>k.includes(':conflict:')},
+  ];
+  function dumpButton(targetRows, label, filename, title) {
+    const button=document.createElement('button');button.type='button';
+    button.textContent=`${label}（${targetRows.length}件・約${sizeText(targetRows.reduce((sum,row)=>sum+row.bytes,0))}）`;
+    if(title) button.title=title;
+    button.onclick=()=>{
+      const payload={kind:'gamma-storage-recovery',version:1,exportedAt:new Date().toISOString(),
+        items:targetRows.map(row=>({key:row.key,value:localStorage.getItem(row.key)}))};
+      const url=URL.createObjectURL(new Blob([JSON.stringify(payload)],{type:'application/json'}));
+      const a=document.createElement('a');a.href=url;a.download=filename;a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+    };
+    return button;
+  }
   function failed(error) {
     status.textContent='照明を開けませんでした: '+error.message+' ';
     const ctx=latestContext || host.context(), draftKey='gamma:lighting-draft-v1:'+ctx.showId;
@@ -125,37 +147,34 @@
     const list=document.createElement('p');
     list.textContent='内訳: '+rows.slice(0,4).map(row=>`${row.key}（${sizeText(row.bytes)}）`).join('　/　');
     status.append(note,list);
-    /* 控えは、いま開いているショーのぶんとは限らない（別のショーの控えや、
-       「控えを保管」で脇へ寄せたぶんが残っていることがある）。消す前に全部まとめて書き出せるようにする。
-       ★保管ぶんは、書き出していなければ本人の編集内容そのもの。先に書き出してから消す2手にする。 */
+    /* 控えは、いま開いているショーのぶんとは限らない（別のショーの控えが残っていることがある）。
+       消す前に全部まとめて書き出せるようにする。 */
     const lightRows=rows.filter(row=>row.key.startsWith('gamma:lighting-draft-v1:'));
-    const spare=lightRows.filter(row=>row.key.includes(':conflict:'));
-    if(lightRows.length) {
-      const bytes=lightRows.reduce((sum,row)=>sum+row.bytes,0);
-      const dump=document.createElement('button');dump.type='button';
-      dump.textContent=`照明の控えをすべて書き出す（${lightRows.length}件・約${sizeText(bytes)}）`;
-      dump.title='いま開いているショーのぶんに限らず、この端末に残っている照明の控えを1つのファイルへまとめます';
-      dump.onclick=()=>{
-        const payload={kind:'gamma-lighting-storage-recovery',version:1,exportedAt:new Date().toISOString(),
-          items:lightRows.map(row=>({key:row.key,value:localStorage.getItem(row.key)}))};
-        const url=URL.createObjectURL(new Blob([JSON.stringify(payload)],{type:'application/json'}));
-        const a=document.createElement('a');a.href=url;a.download='gamma-lighting-storage-recovery.json';a.click();
-        setTimeout(()=>URL.revokeObjectURL(url),1000);
-      };
-      status.append(dump);
+    if(lightRows.length) status.append(dumpButton(lightRows,'照明の控えをすべて書き出す','gamma-lighting-storage-recovery.json',
+      'いま開いているショーのぶんに限らず、この端末に残っている照明の控えを1つのファイルへまとめます'));
+    /* 空けられるのは「アプリが自動で作った控え」だけ。ショー本体と編集中の控えには触れない。
+       2026-09-17 実機の内訳: ショー本体1.4MB・編集中の控え1.0MB・作り替え前の控え744KB で上限に達していた。 */
+    const backupRows=rows.filter(row=>BACKUP_KINDS.some(kind=>kind.test(row.key)));
+    if(!backupRows.length) {
+      const none=document.createElement('p');
+      none.textContent='自動で作られた控えは残っていません。照明を「LXキューを適用」で確定するか、使わないショーを減らすと空きます。';
+      status.append(none);
+      return;
     }
-    if(spare.length) {
-      const bytes=spare.reduce((sum,row)=>sum+row.bytes,0);
-      const purge=document.createElement('button');purge.type='button';
-      purge.textContent=`書き出した保管ぶんを消して空ける（${spare.length}件・約${sizeText(bytes)}）`;
-      purge.title='「控えを保管して保存済みの照明を開く」で脇へ寄せた複製です。上のボタンで書き出してから押してください';
-      purge.onclick=()=>{
-        if(!window.confirm(`保管ぶん ${spare.length}件を消します。先に「照明の控えをすべて書き出す」でファイルへ控えましたか？`)) return;
-        spare.forEach(row=>localStorage.removeItem(row.key));
-        try{editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(again){failed(again);}
-      };
-      status.append(purge);
-    }
+    const bytes=backupRows.reduce((sum,row)=>sum+row.bytes,0);
+    const what=document.createElement('p');
+    what.textContent='空けられるもの（アプリが自動で作った控え・ショー本体や編集中の控えは消しません）: '
+      +BACKUP_KINDS.map(kind=>{const hit=backupRows.filter(row=>kind.test(row.key));return hit.length?`${kind.name} ${hit.length}件（約${sizeText(hit.reduce((sum,row)=>sum+row.bytes,0))}）`:null;}).filter(Boolean).join('　/　');
+    status.append(what);
+    status.append(dumpButton(backupRows,'自動の控えを書き出す','gamma-storage-backup.json','消す前の控えです。念のため取っておいてください'));
+    const purge=document.createElement('button');purge.type='button';
+    purge.textContent=`書き出した自動の控えを消して空ける（${backupRows.length}件・約${sizeText(bytes)}）`;
+    purge.onclick=()=>{
+      if(!window.confirm(`自動の控え ${backupRows.length}件（約${sizeText(bytes)}）を消します。先に「自動の控えを書き出す」でファイルへ控えましたか？`)) return;
+      backupRows.forEach(row=>localStorage.removeItem(row.key));
+      try{editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(again){failed(again);}
+    };
+    status.append(purge);
   }
   /* ---- V-2（2026-09-17）: 手順の列をアコーディオンにする ----
    * 1〜7を全部開いたままだと左列だけで1183px必要で、1画面に収まらない。開くのは1つだけにする。
