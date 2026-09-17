@@ -24,7 +24,7 @@ const APP_SHELL = [
   "./light-design/selected-light-presets-ui.js?v=20260917-8-strobe",
   "./light-design/embed.js?v=2026091650",
   "./stage.html",
-  "./style.css?v=2026091922",
+  "./style.css?v=2026091921",
   "./stage-venues.js?v=2026091501",
   "./stage-venue-lines.js?v=2026091501",
   "./stage-i18n.js?v=2026091890",
@@ -58,11 +58,7 @@ const APP_SHELL = [
   "./icons/stage-sketch-180.png",
   "./icons/stage-sketch-192.png",
   "./icons/stage-sketch-512.png",
-  "./icons/stage-sketch-maskable-512.png",
-  /* 2026-09-17: ヘッダーのブランド表示をロゴ画像にしたので、オフラインでも出るよう先読みに入れる。
-     本体が使うのは横組みの白1枚だけ。下添え版・色違い（gold/black）は素材として
-     assets/brand/ に置いてあるが画面では使っていないので先読みしない。 */
-  "./assets/brand/logo-jp-gamma-inline-white.svg"
+  "./icons/stage-sketch-maskable-512.png"
 ];
 /* 配信層（Cloudflareの静的アセット）は /stage.html を /stage へ307で送る。
    PWAの入口は /stage.html だが、リダイレクト後の姿 /stage も同じ画面として扱う。 */
