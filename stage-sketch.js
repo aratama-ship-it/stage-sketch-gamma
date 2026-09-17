@@ -3202,6 +3202,22 @@
       { shape: "sphere", y: 1.63, dia: 0.11, tint: 0.6 },
     ] };
   const PROP_SHAPE_ORDER = Object.keys(PROP_SHAPES);
+  /* T-32（2026-09-18 本人要望）: 「家具」「建て込み」「登る・上がる」「屋外・情景」は
+   * 小道具ではなく大道具として扱う。
+   * ★kind は "prop" のまま変えない。変えると既存ショーの駒が未知の型になる
+   *   （PIECE_TYPES 付近の警告参照）。振り分けだけを形（propShape）で決める。
+   * ★「楽器」は本人が挙げていないので小道具のまま（2026-09-18 本人決定）。
+   * ★「サーカス器具」は R-19（2026-09-17）で本人が小道具と決めている。 */
+  const ROSTER_SET_PROP_SHAPES = new Set([
+    "ladder", "stepladder", "stairs", "stairs6", "slope", "spiralstairs",
+    "door", "window", "column", "railing", "bridge", "platform", "truss", "cage", "torii",
+    "screen", "frameportal", "framepicture", "framehang", "framecube",
+    "sofa", "bed", "bookshelf", "dresser", "mirror", "desk", "counter", "fireplace",
+    "phonebooth", "clothesrack",
+    "tree", "rock", "streetlamp", "signboard", "barrel", "planter", "well", "tent", "cart", "bicycle",
+  ]);
+  /* 登録した項目が「大道具の一覧」へ行くか。kind が prop でも、上の形なら大道具側。 */
+  const rosterCountsAsSet = (item) => Boolean(item) && ROSTER_SET_PROP_SHAPES.has(item.propShape);
   /* プルダウンの分類見出し（2026-09-11 本人選択の案A）。ja は tx() で訳す。
      新しい形を足したらどこかの分類へ入れる。入れ忘れは「その他の形」へ落ちるだけで選べなくはならない。 */
   const PROP_SHAPE_GROUPS = [
@@ -4683,6 +4699,7 @@
     scenePrev: document.getElementById("stage-scene-prev"),
     sceneNext: document.getElementById("stage-scene-next"),
     sceneNow: document.getElementById("stage-scene-now"),
+    sceneNowOpen: document.getElementById("stage-scene-now-open"),
     animScenes: document.getElementById("stage-anim-scenes"),
     animMs: document.getElementById("stage-anim-ms"),
     animMsValue: document.getElementById("stage-anim-ms-value"),
@@ -4751,9 +4768,6 @@
     presentNext: document.getElementById("stage-present-next"),
     presentSwap: document.getElementById("stage-present-swap"),
     presentClose: document.getElementById("stage-present-close"),
-    arrangeMenu: document.getElementById("stage-arrange-menu"),
-    arrangeSelect: document.getElementById("stage-arrange-select"),
-    arrangeOptions: document.getElementById("stage-arrange-options"),
     multiSelectStatus: document.getElementById("stage-multi-select-status"),
     trapSit: document.getElementById("stage-trap-sit"),
     trapHang: document.getElementById("stage-trap-hang"),
@@ -4806,6 +4820,7 @@
     groupCast: document.getElementById("stage-group-cast"),
     groupSets: document.getElementById("stage-group-sets"),
     groupProps: document.getElementById("stage-group-props"),
+    groupMachinery: document.getElementById("stage-group-machinery"),
     lightName: document.getElementById("stage-light-name"),
     lightAdd: document.getElementById("stage-light-add"),
     lightKind: document.getElementById("stage-light-kind"),
@@ -4837,6 +4852,7 @@
     beamReset: document.getElementById("stage-beam-reset"),
     setList: document.getElementById("stage-set-list"),
     propList: document.getElementById("stage-prop-list"),
+    machineryList: document.getElementById("stage-machinery-list"),
     lightList: document.getElementById("stage-light-list"),
     rigList: document.getElementById("stage-rig-list"),
     rigName: document.getElementById("stage-rig-name"),
@@ -4862,6 +4878,8 @@
     setInfoWires: document.getElementById("stage-setinfo-wires"),
     setInfoFramed: document.getElementById("stage-setinfo-framed"),
     setInfoFramedRow: document.getElementById("stage-setinfo-framed-row"),
+    setInfoFrameWidthRow: document.getElementById("stage-setinfo-frame-width-row"),
+    setInfoFrameWidth: document.getElementById("stage-setinfo-frame-width"),
     setInfoWiresRow: document.getElementById("stage-setinfo-wires-row"),
     liftControls: document.getElementById("stage-lift-controls"),
     pieceLift: document.getElementById("stage-piece-lift"),
@@ -5154,8 +5172,10 @@
        データ・正規化関数（emptyLightingIntent等）は残す＝既存の保存データを壊さない。 */
     { key: "lightMotion", label: "光の動き（案）", def: false,
       hint: "照明パネルに「光の動きを組む」を出す。動く光の型（左右に往復・扇・交差・円・順に）を選んで再生し、動画・図・一文を書き出せる" },
-    { key: "lineup", label: "複数選択と整列",
-      hint: "平面図でドラッグまたはShiftクリックして選び、選択したものだけを並べ直す" },
+    /* T-04（2026-09-18 本人要望）: 「整列」は削除した（フォーメーションで代替）。
+     * キーは変えない（保存済みの設定と、フォーメーションの表示条件に使っている）。 */
+    { key: "lineup", label: "複数選択とフォーメーション",
+      hint: "平面図でドラッグまたはShiftクリックして選び、選んだ演者をフォーメーションの型で並べ直す" },
     { key: "busyness", label: "転換の忙しさ診断", def: false,
       hint: "ショー地図に、転換ごとの移動量・動く人数・出入りの数を出す" },
     { key: "crossing", label: "動線の交差警告", def: false,
@@ -6531,6 +6551,8 @@
                 wires: t && Number(t.wires) === 1 ? 1 : 2,
                 // 壁を枠にする（穴の空いた壁＝フレーム）
                 framed: Boolean(t.framed),
+                // T-30: 枠の幅。無ければ未設定のまま（描画側が自動計算へ落ちる）
+                frameWidth: Number.isFinite(Number(t.frameWidth)) ? clamp(Number(t.frameWidth), 0.04, 1.5) : undefined,
                 curtainKind: kind === "curtain" && ["front", "traveler", "drop", "leg", "cyc"].includes(t.curtainKind)
                   ? t.curtainKind : undefined,
                 confidence: t.confidence === "unverified" ? "unverified" : undefined,
@@ -10396,6 +10418,19 @@
     return { minX, maxX, minY, maxY };
   }
 
+  /* T-30（2026-09-18 本人要望）: フレームの枠の幅。
+   * 既定はこれまでの自動計算（短い辺の16%・0.08〜0.5m）。本人が値を入れたらそれを使う。
+   * ★既定を変えないので、いままでのショーの見た目は変わらない。
+   * ★中を人がくぐれる大きさを残すため、上限は短い辺の半分までにする。 */
+  function wallFrameWidthAuto(d) {
+    return clamp(Math.min(d.w, d.h) * 0.16, 0.08, 0.5);
+  }
+  function wallFrameWidth(owner, d) {
+    const limit = Math.max(0.04, Math.min(d.w, d.h) / 2 - 0.05);
+    const wanted = owner && Number.isFinite(Number(owner.frameWidth)) ? Number(owner.frameWidth) : null;
+    return clamp(wanted === null ? wallFrameWidthAuto(d) : wanted, 0.04, limit);
+  }
+
   function pieceParts(piece) {
     const d = pieceDims(piece);
     if (!d) return null;
@@ -10437,7 +10472,7 @@
       /* フレーム＝穴の空いた壁。上下と左右の4本の枠で作る。
        * 中を人がくぐれる大きさにしたいので、枠は幅・高さの2割ほどに収める。 */
       if (owner && owner.framed) {
-        const b = clamp(Math.min(d.w, d.h) * 0.16, 0.08, 0.5);
+        const b = wallFrameWidth(owner, d);
         const inner = Math.max(0.1, d.h - b * 2);
         return [
           { ox: 0, oz: 0, w: d.w, d: d.d, h: b, lift: 0, tint: 0.9 },
@@ -10470,7 +10505,12 @@
       /* 二本の布。吊り点（駒の位置＝床からの高さ）から下へ垂れる。
        * 上は一点に集まってすぼまり、裾は床の手前でわずかに流れる。
        * まっすぐな平行線二本だと布ではなく棒に見える。 */
-      const drop = d.h;
+      /* T-31（2026-09-18 本人要望）: 吊り点より布が長いと、裾が床より下へ出て
+       * 「舞台前面から床抜け」して見えていた（実測: 地上高 515cm に対して布のほうが長い）。
+       * 本人決定は (A)「床で切る」。床（＝吊り点から lift ぶん下）より下は描かない。
+       * ★布の長さ（d.h）の値そのものは変えない。描く長さだけを床で止める。
+       * ★0にすると布が消えるので、最低限は残す。 */
+      const drop = Math.max(0.3, Math.min(d.h, flownLift(piece) || d.h));
       const parts = [];
       [-1, 1].forEach((s) => {
         const x = (s * d.w) / 2;
@@ -17193,9 +17233,11 @@
       els.castList.append(empty);
       return;
     }
+    enableRosterReorder(els.castList);   // T-24: 名前を掴んで並べ替え
     cast.forEach((member) => {
       const row = document.createElement("div");
       row.className = "stage-cast-row";
+      row.dataset.rosterId = member.id;   // T-24: 並べ替えの書き戻しに使う
 
       const swatch = kindSwatch(member, "performer", member.name,
         () => pickOnStage((piece) => piece.castId === member.id, member.name));
@@ -17282,6 +17324,96 @@
     button.title = tx("押すと詳しい窓が開きます。舞台の上で選ぶときは左の印を押します");
     button.addEventListener("click", onOpen);
     return button;
+  }
+
+  /* ---------- T-24（2026-09-18 本人要望）: 一覧の並べ替え ----------
+   * 本人決定は (C)「名前の部分を掴んで動かす」。行に列を増やさない（S-01 で詰めた行を広げない）。
+   * ★名前は R-26（2026-09-17）で「1回押すと詳しい窓が開く」役目を持っている。
+   *   両立の条件:
+   *     - pointerdown では何もしない
+   *     - 4px 動いたら並べ替えを始め、click は出さない（＝窓は開かない）
+   *     - 動かさずに離せば、これまでどおり窓が開く
+   *     - 長押し（時間）では判定しない。対象はブラウザ（マウス）なので押してから動かすで足りる
+   *   しきい値の4pxは、平面図の囲い選択の判定（stage-sketch.js の marquee）と同じ値。
+   * ★組をまたいだ移動はしない（本人決定）。掴んだ一覧の中だけで動かす。
+   * ★大道具・小道具・舞台機構は同じ state.project.sets に同居している。
+   *   見た目の順を配列へ写すときは「その組が使っている位置だけ」を入れ替える。
+   *   全体を並べ直すと他の組の順序が壊れる。 */
+  let rosterDrag = null;
+
+  function rosterBackingList(listEl) {
+    return listEl === els.castList ? (state.project.cast || []) : (state.project.sets || []);
+  }
+
+  function commitRosterOrder(listEl) {
+    const backing = rosterBackingList(listEl);
+    const ids = Array.from(listEl.querySelectorAll("[data-roster-id]"))
+      .map((row) => row.dataset.rosterId);
+    // その組の項目が、いま配列のどの位置に居るか
+    const slots = [];
+    backing.forEach((entry, index) => { if (ids.includes(entry.id)) slots.push(index); });
+    if (slots.length !== ids.length) return false;
+    const byId = new Map(backing.map((entry) => [entry.id, entry]));
+    const before = slots.map((index) => backing[index].id).join(",");
+    if (before === ids.join(",")) return false;
+    checkpoint();
+    slots.forEach((index, k) => { backing[index] = byId.get(ids[k]); });
+    return true;
+  }
+
+  function enableRosterReorder(listEl) {
+    if (!listEl || listEl.dataset.rosterReorder === "on") return;
+    listEl.dataset.rosterReorder = "on";
+    listEl.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0 || STUDY_READ_ONLY || guestSessionActive()) return;
+      const handle = event.target.closest(".stage-cast-name");
+      if (!handle || !listEl.contains(handle)) return;
+      const row = handle.closest("[data-roster-id]");
+      if (!row) return;
+      rosterDrag = { listEl, row, handle, startY: event.clientY, pointerId: event.pointerId, moved: false };
+      handle.setPointerCapture(event.pointerId);
+    });
+    listEl.addEventListener("pointermove", (event) => {
+      if (!rosterDrag || rosterDrag.pointerId !== event.pointerId) return;
+      if (!rosterDrag.moved) {
+        if (Math.abs(event.clientY - rosterDrag.startY) < 4) return;
+        rosterDrag.moved = true;
+        rosterDrag.row.classList.add("is-roster-dragging");
+        document.body.classList.add("is-roster-reordering");
+      }
+      event.preventDefault();
+      const rows = Array.from(listEl.querySelectorAll("[data-roster-id]"));
+      const target = rows.find((other) => {
+        if (other === rosterDrag.row) return false;
+        const box = other.getBoundingClientRect();
+        return event.clientY >= box.top && event.clientY <= box.bottom;
+      });
+      if (!target) return;
+      const box = target.getBoundingClientRect();
+      const after = event.clientY > box.top + box.height / 2;
+      target.parentNode.insertBefore(rosterDrag.row, after ? target.nextSibling : target);
+    });
+    const finish = (event) => {
+      if (!rosterDrag || rosterDrag.pointerId !== event.pointerId) return;
+      const drag = rosterDrag;
+      rosterDrag = null;
+      drag.row.classList.remove("is-roster-dragging");
+      document.body.classList.remove("is-roster-reordering");
+      try { drag.handle.releasePointerCapture(event.pointerId); } catch (_) { /* 既に外れている */ }
+      if (!drag.moved) return;   // 動かしていなければ click（＝詳しい窓）へ任せる
+      // 動かしたので、このあとの click は出さない
+      const swallow = (click) => { click.preventDefault(); click.stopPropagation(); };
+      drag.handle.addEventListener("click", swallow, { capture: true, once: true });
+      setTimeout(() => drag.handle.removeEventListener("click", swallow, true), 0);
+      if (commitRosterOrder(drag.listEl)) {
+        renderCast();
+        renderSets();
+        persistSoon();
+        announce(tx("並び順を変えました。"));
+      }
+    };
+    listEl.addEventListener("pointerup", finish);
+    listEl.addEventListener("pointercancel", finish);
   }
 
   /* 一覧から舞台の上のものを選ぶ。舞台裏なら選べないので、その旨だけ伝える。 */
@@ -17521,10 +17653,19 @@
     return `${Math.round(d.w * 100)}×${Math.round(d.d * 100)}×${Math.round(d.h * 100)}cm`;
   }
 
+  /* T-21（2026-09-18 本人要望）: 舞台機構（盆・可動デッキ・幕・せり・水面）は
+   * 演者／大道具／小道具と同じように、4つ目の組として分ける。
+   * T-32（同）: 小道具のうち「家具・建て込み・登る上がる・屋外情景」は大道具の側へ回す。 */
+  const rosterIsMachinery = (item) => ROSTER_MACHINERY_KINDS.has(item.kind);
+  const rosterIsProp = (item) => ROSTER_PROP_KINDS.has(item.kind) && !rosterCountsAsSet(item);
+  const rosterIsSet = (item) => item.kind !== "light"
+    && !rosterIsMachinery(item) && !rosterIsProp(item);
+
   function renderSets() {
-    renderSetList(els.setList, (item) => item.kind !== "light" && !ROSTER_PROP_KINDS.has(item.kind),
+    renderSetList(els.setList, rosterIsSet,
       tx("まだ何も登録していません。名前と形を選んで追加してください。"));
-    renderSetList(els.propList, (item) => ROSTER_PROP_KINDS.has(item.kind), "");
+    renderSetList(els.propList, rosterIsProp, "");
+    renderSetList(els.machineryList, rosterIsMachinery, "");
     syncRosterGroups();
   }
 
@@ -17661,20 +17802,27 @@
    * 中身のある組だけ出し、全部空のときだけ一行の案内を出す。 */
   function syncRosterGroups() {
     const sets = state.project.sets || [];
+    /* T-21 / T-32（2026-09-18）: 一覧と同じ振り分けで数える。
+     * 別々の条件で数えると「見出しは出ているのに中身が無い」がいつか起きる。 */
     const counts = {
       cast: (state.project.cast || []).length,
-      sets: sets.filter((item) => item.kind !== "light" && item.kind !== "prop").length,
-      props: sets.filter((item) => item.kind === "prop").length,
+      sets: sets.filter(rosterIsSet).length,
+      props: sets.filter(rosterIsProp).length,
+      machinery: sets.filter(rosterIsMachinery).length,
     };
     if (els.groupCast) els.groupCast.hidden = counts.cast === 0;
     if (els.groupSets) els.groupSets.hidden = counts.sets === 0;
     if (els.groupProps) els.groupProps.hidden = counts.props === 0;
-    if (els.rosterEmpty) els.rosterEmpty.hidden = counts.cast + counts.sets + counts.props > 0;
+    if (els.groupMachinery) els.groupMachinery.hidden = counts.machinery === 0;
+    if (els.rosterEmpty) {
+      els.rosterEmpty.hidden = counts.cast + counts.sets + counts.props + counts.machinery > 0;
+    }
   }
 
   function setListRow(item) {
     const row = document.createElement("div");
     row.className = "stage-cast-row";
+    row.dataset.rosterId = item.id;   // T-24: 並べ替えの書き戻しに使う
 
     const light = item.kind === "light";
     const swatch = kindSwatch(item, light ? "light" : "object", item.name,
@@ -17725,6 +17873,7 @@
       host.append(empty);
       return;
     }
+    enableRosterReorder(host);   // T-24: 名前を掴んで並べ替え
     sets.forEach((item) => {
       host.append(setListRow(item));
     });
@@ -20082,6 +20231,14 @@
       if (els.setInfoFramedRow) {
         els.setInfoFramedRow.hidden = item.kind !== "wall";
         if (els.setInfoFramed) els.setInfoFramed.checked = Boolean(item.framed);
+      }
+      /* T-30: 枠の幅はフレームにしているときだけ出す（値は隠しても保持する）。 */
+      if (els.setInfoFrameWidthRow) {
+        const showFrameWidth = item.kind === "wall" && Boolean(item.framed);
+        els.setInfoFrameWidthRow.hidden = !showFrameWidth;
+        if (showFrameWidth && els.setInfoFrameWidth) {
+          els.setInfoFrameWidth.value = wallFrameWidth(item, pieceDims({ type: "wall", setId: item.id, dims: item.dims }) || item.dims || { w: 2, h: 2 }).toFixed(2);
+        }
       }
       if (els.setInfoWiresRow) els.setInfoWiresRow.hidden = !canFly || !item.flown;
       if (els.setInfoWires) els.setInfoWires.value = String(Number(item.wires) === 1 ? 1 : 2);
@@ -22676,7 +22833,6 @@
   function applyFeatureFlags() {
     applyPanelVisibility();
     if (els.presentBtn) els.presentBtn.hidden = !featureOn("presentation");
-    if (els.arrangeMenu) els.arrangeMenu.hidden = !featureOn("lineup");
     syncMultiSelectionControls();
     // 光の意図: カード・重ねのトグル・照らし合わせをまとめて出し入れする
     if (els.frontLightIntent) {
@@ -22955,75 +23111,9 @@
      ★いまの位置関係をなるべく保つ（本人指定）。誰がどこへ行くかが
        席替えのように入れ替わると、並べた瞬間に配置の意味が壊れるため。
        横・斜め・V字は左右の順、縦は奥行きの順、円は重心から見た角度の順を使う。 */
-  function lineupPerformers(shape) {
-    if (!["row", "column", "diagonal-up", "diagonal-down", "circle", "vee", "inverted-vee"].includes(shape)) return;
-    const items = selectedPieces().filter((piece) =>
-      piece.type !== "light" && !piece.heldBy && !isLocked(piece)
-      && (state.showFlown || !isFlown(piece)) && onStageArea(piece.u, piece.v));
-    if (items.length < 2) { announce("整列するものを2つ以上選択してください。"); return; }
-    checkpoint();
-    const n = items.length;
-    if (shape === "row") {
-      // 左右の順を保ち、奥行きはいまの平均へ
-      const ordered = items.slice().sort((a, b) => a.u - b.u);
-      const v = ordered.reduce((t, piece) => t + piece.v, 0) / n;
-      ordered.forEach((piece, i) => {
-        piece.u = n === 1 ? 0.5 : 0.15 + (0.7 * i) / (n - 1);
-        piece.v = clamp(v, 0.1, 0.95);
-      });
-      announce("選択したものを等間隔の横1列に並べました。");
-    } else if (shape === "column") {
-      // 奥から手前の順を保ち、左右位置はいまの平均へ
-      const ordered = items.slice().sort((a, b) => a.v - b.v);
-      const u = ordered.reduce((t, piece) => t + piece.u, 0) / n;
-      ordered.forEach((piece, i) => {
-        piece.u = clamp(u, 0.1, 0.95);
-        piece.v = 0.15 + (0.7 * i) / (n - 1);
-      });
-      announce("選択したものを等間隔の縦1列に並べました。");
-    } else if (shape === "diagonal-up" || shape === "diagonal-down") {
-      // 平面図はvが大きいほど下（手前）。左右の順を保って2方向へ並べる
-      const ordered = items.slice().sort((a, b) => a.u - b.u);
-      ordered.forEach((piece, i) => {
-        const t = i / (n - 1);
-        piece.u = 0.15 + 0.7 * t;
-        piece.v = shape === "diagonal-up" ? 0.85 - 0.7 * t : 0.15 + 0.7 * t;
-      });
-      announce(shape === "diagonal-up"
-        ? "選択したものを斜め1列（／）に並べました。"
-        : "選択したものを斜め1列（＼）に並べました。");
-    } else if (shape === "circle") {
-      /* いまの重心から見た角度の順で、等間隔の円に置き直す。
-         始まりの角度も一人目のいまの角度に合わせるので、全員が「近くの席」へ入る */
-      const cu = items.reduce((t, piece) => t + piece.u, 0) / n;
-      const cv2 = items.reduce((t, piece) => t + piece.v, 0) / n;
-      const ordered = items.slice().sort((a, b) =>
-        Math.atan2(a.v - cv2, a.u - cu) - Math.atan2(b.v - cv2, b.u - cu));
-      const startA = Math.atan2(ordered[0].v - cv2, ordered[0].u - cu);
-      const r = Math.min(0.3, 0.1 + n * 0.03);
-      ordered.forEach((piece, i) => {
-        const a = startA + (Math.PI * 2 * i) / n;
-        piece.u = clamp(0.5 + Math.cos(a) * r, 0.05, 0.95);
-        piece.v = clamp(0.5 + Math.sin(a) * r * 0.8, 0.08, 0.95);
-      });
-      announce("選択したものを円に並べました。");
-    } else {
-      // 左右の順を保つ。逆V字は既存のV字を前後に反転する
-      const ordered = items.slice().sort((a, b) => a.u - b.u);
-      const mid = (n - 1) / 2;
-      ordered.forEach((piece, i) => {
-        const off = i - mid;
-        piece.u = clamp(0.5 + off * 0.09, 0.05, 0.95);
-        const v = clamp(0.35 + Math.abs(off) * 0.1, 0.08, 0.95);
-        piece.v = shape === "inverted-vee" ? 1 - v : v;
-      });
-      announce(shape === "inverted-vee"
-        ? "選択したものを逆V字に並べました。"
-        : "選択したものをV字に並べました。");
-    }
-    render();
-    persistSoon();
-  }
+  /* T-04（2026-09-18 本人要望）: 「整列」は削除した。
+   * 実処理の lineupPerformers() も呼び出しが無くなったので一緒に外した。
+   * 代替はフォーメーション（GAMMA_FORMATION_*）。 */
 
   /* ---------- 転換の忙しさ ---------- */
   function transitionStats(prev, row) {
@@ -23712,10 +23802,66 @@ ${propsPlotHtml}
 
   // バージョン複製: いまのプロジェクトを丸ごと写し、別の版として続ける。
   // 設計計画書6.5節の派生（親ID＋一行の理由）に合わせ、完全な版管理は作らない。
-  function duplicateVersion() {
-    const reason = window.prompt(
-      "別バージョンとして複製します。何を変えるための版か、一行で残してください。",
-      "");
+  /* T-20（2026-09-18 本人要望）: OSの素の入力窓（window.prompt）をやめ、アプリの窓に寄せる。
+   * 方針の根拠は gamma-workspace.js の「OSの素の窓が急に出る違和感をなくすため」。
+   * 一行の入力＋〔やめる〕〔複製する〕。Enterで確定、Escapeで取り消し、開いたら入力欄へ合わせる。
+   * 取り消し（null）は window.prompt と同じ意味にする＝呼ぶ側の分岐を変えない。 */
+  function askBranchReason() {
+    return new Promise((resolve) => {
+      const backdrop = document.createElement("div");
+      backdrop.className = "stage-modal-backdrop";
+      const box = document.createElement("div");
+      box.className = "stage-modal stage-branch-reason-modal";
+      box.setAttribute("role", "dialog");
+      box.setAttribute("aria-modal", "true");
+      const head = document.createElement("header");
+      head.className = "stage-modal-head";
+      const title = document.createElement("h2");
+      title.textContent = tx("別バージョンとして複製");
+      head.append(title);
+      const body = document.createElement("div");
+      body.className = "stage-modal-body";
+      const lead = document.createElement("p");
+      lead.className = "stage-profile-hint";
+      lead.textContent = tx("いまのショーを複製して、次の版を作ります。もとのショーはそのまま残ります。何を変えるための版か、一行で残してください（空でも構いません）。");
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "stage-text-input";
+      input.maxLength = 120;
+      input.autocomplete = "off";
+      input.setAttribute("data-1p-ignore", "");
+      input.setAttribute("aria-label", tx("何を変えるための版か"));
+      body.append(lead, input);
+      const acts = document.createElement("footer");
+      acts.className = "stage-branch-reason-actions";
+      const mk = (label, value, cls) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = cls;
+        button.textContent = tx(label);
+        button.addEventListener("click", () => { done(value === null ? null : input.value); });
+        return button;
+      };
+      const onKey = (event) => {
+        if (event.key === "Escape") { event.preventDefault(); done(null); }
+        if (event.key === "Enter" && event.target === input) { event.preventDefault(); done(input.value); }
+      };
+      function done(value) {
+        document.removeEventListener("keydown", onKey, true);
+        backdrop.remove(); box.remove();
+        resolve(value);
+      }
+      acts.append(mk("やめる", null, "btn-quiet"), mk("複製する", "ok", "stage-minor-action"));
+      box.append(head, body, acts);
+      backdrop.addEventListener("click", () => done(null));
+      document.addEventListener("keydown", onKey, true);
+      document.body.append(backdrop, box);
+      input.focus();
+    });
+  }
+
+  async function duplicateVersion() {
+    const reason = await askBranchReason();
     if (reason === null) return;
     checkpoint();
     const p = state.project;
@@ -25509,6 +25655,23 @@ ${propsPlotHtml}
     return pieces.length && pieces.every((piece) => piece.type === "performer") ? pieces : [];
   }
 
+  /* T-05（2026-09-18 本人要望）: 物が混ざった選択でも、演者だけを対象に扱いたい。
+   * selectedPerformerPieces() は「全部が演者のときだけ返す」作りで、姿勢・向きの一括変更が
+   * それに依存しているので意味を変えない。混ざっていても演者だけ返す入口を別に用意する。 */
+  function selectedPerformersOnly() {
+    return selectedPieces().filter((piece) => piece.type === "performer");
+  }
+
+  /* T-05: 選択の内訳。「4件の演者と1件の道具」のような表示と、
+   * フォーメーションのボタンの人数を同じ数から作るために1か所へまとめる。
+   * ★照明（type === "light"）は範囲選択に入らない（planPiecesInsideMarquee が除外）ので、
+   *   区分は「演者」と「道具」の2つでよい（2026-09-18 本人決定）。 */
+  function selectionBreakdown() {
+    const pieces = selectedPieces();
+    const performers = pieces.filter((piece) => piece.type === "performer").length;
+    return { total: pieces.length, performers, others: pieces.length - performers };
+  }
+
   function selectedFacingPieces() {
     const pieces = selectedPieces();
     if (pieces.length > 1) return selectedPerformerPieces();
@@ -25586,27 +25749,6 @@ ${propsPlotHtml}
       els.multiSelectStatus.classList.toggle("is-active", count > 1);
       els.multiSelectStatus.title = tx("ドラッグで囲うか、Shiftを押しながら選択");
     }
-    if (els.arrangeSelect) {
-      els.arrangeSelect.disabled = !enabled || count < 2;
-      els.arrangeSelect.title = count < 2
-        ? tx("整列するものを2つ以上選択してください")
-        : tx("選択したものだけ整列");
-      if (els.arrangeSelect.disabled) closeArrangeMenu();
-    }
-  }
-
-  function closeArrangeMenu() {
-    if (!els.arrangeOptions || els.arrangeOptions.hidden) return;
-    els.arrangeOptions.hidden = true;
-    if (els.arrangeSelect) els.arrangeSelect.setAttribute("aria-expanded", "false");
-  }
-
-  function toggleArrangeMenu() {
-    if (!els.arrangeSelect || !els.arrangeOptions || els.arrangeSelect.disabled) return;
-    const open = els.arrangeOptions.hidden;
-    els.arrangeOptions.hidden = !open;
-    els.arrangeSelect.setAttribute("aria-expanded", String(open));
-    if (open) els.arrangeOptions.querySelector("[data-arrange-shape]")?.focus();
   }
 
   function planPiecesInsideMarquee(marquee, L) {
@@ -26062,21 +26204,24 @@ ${propsPlotHtml}
       return;
     }
     if (multi) {
-      els.selectedName.textContent = performers.length === pieces.length
-        ? sx(`${pieces.length}人の演者`, `${pieces.length} performers`)
-        : sx(`${pieces.length}件を選択`, `${pieces.length} items selected`);
+      /* T-05（2026-09-18 本人要望）: 物が混ざったときは「5件を選択」ではなく
+       * 「4件の演者と1件の道具」のように内訳を出す（本人の文例）。
+       * ★フォーメーションのボタンに出す人数と同じ数を使う（selectionBreakdown の1か所から取る）。 */
+      const mix = selectionBreakdown();
+      els.selectedName.textContent = mix.others === 0
+        ? sx(`${mix.performers}人の演者`, `${mix.performers} performers`)
+        : mix.performers === 0
+          ? sx(`${mix.others}件の道具`, `${mix.others} items`)
+          : sx(`${mix.performers}件の演者と${mix.others}件の道具`,
+            `${mix.performers} performers and ${mix.others} items`);
     } else {
       els.selectedName.textContent = selectedPieceTitle(piece);
     }
+    /* T-03（2026-09-18 本人要望）: 複数選択時の説明文は2つとも出さない。
+     * 要素は残す（aria-live の読み上げ経路と、他からの参照を壊さないため）。 */
     if (els.selectionScope) {
-      els.selectionScope.hidden = !multi;
-      if (multi) {
-        els.selectionScope.textContent = performers.length === pieces.length
-          ? sx("ドラッグで全員の位置を動かせます。姿勢と向きの変更は、選んだ全員に反映します。",
-            "Drag to move everyone. Pose and facing changes apply to every selected performer.")
-          : sx("ドラッグで、選んだものの位置をまとめて動かせます。",
-            "Drag to move the selected items together.");
-      }
+      els.selectionScope.hidden = true;
+      els.selectionScope.textContent = "";
     }
     syncDimControls(multi ? null : piece);
     const mount = multi ? null : mountKindOf(piece);
@@ -26397,6 +26542,12 @@ ${propsPlotHtml}
         const primary = action.additive && ids.has(action.primaryId)
           ? action.primaryId
           : ordered[ordered.length - 1];
+        /* T-01（2026-09-18 本人要望）: 範囲選択でも、選んだ図の側に「選んだもの」を出す。
+         * ここだけ anchorFloatingInspector を呼んでおらず、直前の値（初期値は "front"）が
+         * 残るため、平面図で囲っても正面図側にパネルが出ていた。
+         * マーキーは平面図でしか始まらないが、将来ずれないよう action.view を使う。
+         * ★何も選べなかったときはアンカーを動かさない（次にクリックで選ぶ位置が変わるため）。 */
+        if (ids.size) anchorFloatingInspector(action.view);
         setSelectedPieces(ordered, primary);
         announce(ids.size ? `${ids.size}件を選択しました。` : "囲いの中に選択できるものがありません。");
       } else if (!action.additive) {
@@ -28228,6 +28379,28 @@ ${propsPlotHtml}
       announce(`${item.name}を${item.framed ? "フレーム（穴の空いた壁）" : "壁"}にしました。`);
     });
   }
+  /* T-30（2026-09-18 本人要望）: 枠の幅。数値入力に −／＋ を添える
+   * （dev-preferences 2026-09-17「数値入力は欄への打ち込みだけにせず、指で押せる −／＋ を付ける」）。 */
+  if (els.setInfoFrameWidth) {
+    const applyFrameWidth = (value) => {
+      const item = currentSetItem();
+      if (!item || item.kind !== "wall") return;
+      const next = clamp(Number(value), 0.04, 1.5);
+      if (!Number.isFinite(next)) return;
+      checkpoint();
+      item.frameWidth = Math.round(next * 100) / 100;
+      els.setInfoFrameWidth.value = item.frameWidth.toFixed(2);
+      render();
+      persistSoon();
+    };
+    els.setInfoFrameWidth.addEventListener("change", (e) => applyFrameWidth(e.target.value));
+    document.querySelectorAll("[data-frame-width-step]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const step = Number(button.dataset.frameWidthStep) || 0;
+        applyFrameWidth(Number(els.setInfoFrameWidth.value || 0) + step);
+      });
+    });
+  }
   if (els.setInfoWires) {
     els.setInfoWires.addEventListener("change", (e) => {
       const item = currentSetItem();
@@ -28737,6 +28910,16 @@ ${propsPlotHtml}
     els.versionLabel.readOnly = true;
     els.versionLabel.tabIndex = -1;
     els.versionLabel.setAttribute("aria-readonly", "true");
+  }
+  /* T-23（2026-09-18 本人要望）: シーン送りの帯にある名前からも「シーンの詳細」を開く。
+   * openRename() は名前を変える窓として作られたが、いまは詳細も出す同じ窓。
+   * 閲覧専用・共有のゲストでは開かない（他の編集入口と同じ扱い）。 */
+  if (els.sceneNowOpen) {
+    els.sceneNowOpen.addEventListener("click", () => {
+      if (STUDY_READ_ONLY || guestSessionActive() || phoneViewerActive) return;
+      const scene = sc();
+      if (scene) openRename(scene);
+    });
   }
   if (els.versionCopy) els.versionCopy.addEventListener("click", duplicateVersion);
   if (els.exportJson) els.exportJson.addEventListener("click", exportProject);
@@ -30580,24 +30763,13 @@ ${propsPlotHtml}
   if (els.aboutClose) els.aboutClose.addEventListener("click", closeAbout);
   if (els.aboutBackdrop) els.aboutBackdrop.addEventListener("click", closeAbout);
   if (els.presentBtn) els.presentBtn.addEventListener("click", toggleStageFullscreen);
-  if (els.arrangeSelect) els.arrangeSelect.addEventListener("click", toggleArrangeMenu);
-  if (els.arrangeOptions) {
-    els.arrangeOptions.addEventListener("click", (event) => {
-      const item = event.target.closest("[data-arrange-shape]");
-      if (!item) return;
-      closeArrangeMenu();
-      lineupPerformers(item.dataset.arrangeShape);
-    });
-  }
   document.addEventListener("pointerdown", (event) => {
-    if (els.arrangeMenu && !els.arrangeMenu.contains(event.target)) closeArrangeMenu();
     if (els.panelsMenu && !els.panelsMenu.hidden
       && !els.panelsMenu.contains(event.target) && !els.panelsToggle?.contains(event.target)) {
       closePanelVisibilityMenu();
     }
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && els.arrangeOptions && !els.arrangeOptions.hidden) closeArrangeMenu();
     if (event.key === "Escape" && els.panelsMenu && !els.panelsMenu.hidden) {
       event.preventDefault();
       closePanelVisibilityMenu(true);
@@ -30816,12 +30988,15 @@ ${propsPlotHtml}
     return;
   }
   /* Formation drafts own only an assignment. Host validates and writes existing piece positions. */
+  /* T-05（2026-09-18 本人要望）: 物が混ざっていても、選択の中の演者だけを対象に使えるようにする。
+   * 例: 5件（演者4＋箱1）を選んだら「4人でフォーメーションを組む」。
+   * ★判定はすべて「選択の中の演者」に対して行う。箱がロックされているだけで
+   *   使えなくなっていたのを直す。 */
   function gammaFormationAvailability() {
-    const pieces = selectedPieces();
-    const visible = featureOn("lineup") && pieces.length >= 2 && pieces.length <= 20
-      && pieces.every((piece) => piece.type === "performer");
+    const pieces = selectedPerformersOnly();
+    const visible = featureOn("lineup") && pieces.length >= 2 && pieces.length <= 20;
     let reason = "";
-    if (!visible) reason = "人物だけを2〜20人選択してください。";
+    if (!visible) reason = "人物を2〜20人選択してください。";
     else if (STUDY_READ_ONLY || guestSessionActive() || phoneViewerActive || presenting) reason = "閲覧中はフォーメーションを変更できません。";
     else if (sceneAnim || spinRun) reason = "再生・転換が終わってから開いてください。";
     else if (pieces.some((piece) => isLocked(piece))) reason = "選択した人物のロックを解除してください。";
@@ -30833,7 +31008,10 @@ ${propsPlotHtml}
   function gammaFormationContext() {
     const availability = gammaFormationAvailability();
     if (!availability.enabled) throw new Error(availability.reason);
-    const pieces = selectedPieces();
+    /* T-05: members と basis は必ず「選択の中の演者だけ」で作る。
+     * ★片方だけ絞ると、applyGammaFormation の basis の完全一致比較が食い違い、
+     *   物を動かしただけで「選択が変わりました」と弾かれる。2か所セットで揃える。 */
+    const pieces = selectedPerformersOnly();
     const size = venueSize();
     const stage = { width: size.width, depth: size.depth };
     return {
@@ -30849,7 +31027,7 @@ ${propsPlotHtml}
     const current = gammaFormationContext();
     if (!payload || payload.basis !== current.basis) throw new Error("選択した人物・場面・舞台が変わりました。閉じて選び直してください。");
     const result = window.GAMMA_FORMATION_MODEL.plan(payload.presetId, current.members, payload.assignment, current.stage, payload.scalePct);
-    const pieces = selectedPieces();
+    const pieces = selectedPerformersOnly();   // T-05: 書き戻す先も演者だけ
     const byId = new Map(pieces.map((piece) => [piece.id, piece]));
     const changed = result.positions.filter((position) => {
       const piece = byId.get(position.id);
@@ -30900,6 +31078,37 @@ ${propsPlotHtml}
     for (let i = 0; i < text.length; i += 1) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193); }
     return "v2:" + text.length.toString(36) + ":" + (h >>> 0).toString(16);
   }
+  /* R-13 ①②（2026-09-18）: 大道具の「形」を照明側へ渡す。照明は共有部品 stage-set-render.js で
+     本体とまったく同じ箱を塗るので、ここで形を渡さないと台・階段・登録セット・小道具が
+     外接の箱のままになる（以前は幅0.9m×2の決め打ちだった）。
+     ★向き(facing)と位置は塗るときに掛ける。ここで渡すのは駒の中心から見た部品の並びだけ。
+     ★演者は骨格モデル、幕は専用の描き方があるので渡さない。
+     ★部品が極端に多い形（長い坂など）は、受け渡しが膨らむので外接の箱1個に畳む。
+       図の下敷きとしては外接の箱で足り、実寸が合っていればサイズ感の食い違いは起きない。 */
+  const LIGHTING_CONTEXT_BOX_LIMIT = 200;
+  function lightingContextBoxes(visual, dims) {
+    if (!visual || visual.type === "performer" || visual.type === "curtain") return null;
+    let parts = null;
+    try { parts = pieceParts(visual); } catch (_) { parts = null; }
+    /* 箱でない部品（球・輪・吊り綱は円と線で描く）は渡さない。
+       そういう駒と、部品が多すぎる駒は、下の「外接の箱1個」へ畳む。 */
+    const boxes = (Array.isArray(parts) ? parts : []).filter((part) => part && !part.kind
+      && Number.isFinite(Number(part.w)) && Number.isFinite(Number(part.d)) && Number.isFinite(Number(part.h)));
+    if (!boxes.length || boxes.length > LIGHTING_CONTEXT_BOX_LIMIT) {
+      const w = finite(dims && dims.w, finite(dims && dims.dia, 0));
+      const d = finite(dims && dims.d, finite(dims && dims.dia, 0));
+      const h = finite(dims && dims.h, finite(dims && dims.dia, 0));
+      if (!(w > 0) || !(d > 0) || !(h > 0)) return null;
+      return [{ ox: 0, oz: 0, w, d, h, lift: Math.max(0, finite(dims && dims.lift, 0)), tint: 1, rotY: 0 }];
+    }
+    return boxes.map((part) => ({
+      ox: finite(part.ox, 0), oz: finite(part.oz, 0),
+      w: finite(part.w, 0), d: finite(part.d, 0), h: finite(part.h, 0),
+      lift: finite(part.lift, 0), tint: part.tint === undefined ? 1 : finite(part.tint, 1),
+      rotY: finite(part.rotY, 0),
+    }));
+  }
+
   function gammaLightingContext() {
     const size = venueSize();
     const stage = { W: size.width, D: size.depth, H: size.height || 8 };
@@ -30911,6 +31120,9 @@ ${propsPlotHtml}
         return { id: piece.id, kind: visual.type === "performer" ? "performer" : (visual.type === "curtain" ? "curtain" : "set"),
           u: visual.u, v: visual.v, hM: pieceHeightM(visual), name: pieceLabel(visual), color: visual.color,
           pose: visual.pose, facing: visual.facing, dims: projectIoClone(dims),
+          // 台の上に乗っている駒は、その高さから立ち上げる（本体の floorPoint と同じ）
+          base: Math.max(0, finite(visual.base, 0)),
+          boxes: lightingContextBoxes(visual, dims),
           w: dims.w ? dims.w / stage.W : 0.1, curtainKind: visual.curtainKind, open: visual.open };
       }),
     }));

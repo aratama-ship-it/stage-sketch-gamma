@@ -298,25 +298,32 @@
    * 見た目はγの他の窓（.stage-modal）に合わせる。OSの素の窓が急に出る違和感をなくすため。
    * ★適用は非同期で、失敗することもある（別タブでショーが変わった／保存できない等）。
    *   失敗したらモードを切り替えない。切り替えると「適用したつもりで移動したのに入っていない」が起きる。 */
-  function askApplyBeforeLeaving() {
+  /* T-14（2026-09-18 本人要望）: 劇場設定でも同じ形の窓を出すので、題と本文と
+   * ボタンの文言を受け取れるようにした（R-30 の照明版をそのまま一般化）。 */
+  function askApplyBeforeLeaving(copy) {
+    const text = copy || {
+      title: '照明をショーへ適用しますか？',
+      body: 'まだ適用していない照明の編集があります。適用すると、いまの照明がこのショーへ保存されます。'
+        + '<br>適用しないで移っても編集内容は端末に控えられ、次に照明を開いたときに戻ります。'
+        + 'ただしショー本体にはまだ入りません。',
+      skip: '適用しないで移る',
+      apply: '適用して移る',
+    };
     return new Promise((resolve) => {
       const backdrop=document.createElement('div');
       backdrop.className='stage-modal-backdrop';
       const box=document.createElement('div');
       box.className='stage-modal gamma-light-leave-modal';
       box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
-      box.innerHTML='<header class="stage-modal-head"><h2>照明をショーへ適用しますか？</h2></header>'
-        +'<div class="stage-modal-body"><p>まだ適用していない照明の編集があります。'
-        +'適用すると、いまの照明がこのショーへ保存されます。'
-        +'<br>適用しないで移っても編集内容は端末に控えられ、次に照明を開いたときに戻ります。'
-        +'ただしショー本体にはまだ入りません。</p></div>';
+      box.innerHTML='<header class="stage-modal-head"><h2>'+text.title+'</h2></header>'
+        +'<div class="stage-modal-body"><p>'+text.body+'</p></div>';
       const acts=document.createElement('footer');
       acts.className='gamma-light-leave-actions';
       const mk=(label,value,cls)=>{const b=document.createElement('button');b.type='button';b.className=cls;b.textContent=label;
         b.onclick=()=>{cleanup();resolve(value);};return b;};
       acts.append(mk('やめる','cancel','btn-quiet'),
-                  mk('適用しないで移る','skip','btn-quiet'),
-                  mk('適用して移る','apply','stage-minor-action'));
+                  mk(text.skip,'skip','btn-quiet'),
+                  mk(text.apply,'apply','stage-minor-action'));
       box.append(acts);
       const onKey=(e)=>{if(e.key==='Escape'){e.preventDefault();cleanup();resolve('cancel');}};
       function cleanup(){document.removeEventListener('keydown',onKey,true);backdrop.remove();box.remove();}
@@ -337,6 +344,29 @@
       if(mode!=='venue-setup') select('venue-setup');
       else syncVenueGate();
       return;
+    }
+    /* T-14（2026-09-18 本人要望）: 劇場設定に未反映の変更があるまま別タブへ行こうとしたら
+     * 「この劇場を反映しますか」を出す。照明側（R-30）と同じ3択・同じ見た目にする。
+     * ★「この劇場を反映する」はショー全体へ効く操作で、照明機材をどうするかを聞く
+     *   既存の確認モーダルを持っている。ここではその窓を飛ばさず、apply() を呼んで
+     *   通常どおり確認を出す（タブを押しただけで反映が確定しないようにする）。 */
+    if(mode==='venue-setup' && next!=='venue-setup'
+       && window.SHOSAI_VENUE_EDITOR?.hasUnappliedChanges?.()) {
+      const answer=await askApplyBeforeLeaving({
+        title:'この劇場をショーへ反映しますか？',
+        body:'まだ反映していない劇場設定の変更があります。反映すると、いまの劇場がこのショーへ入ります。'
+          +'<br>反映しないで移っても編集内容は残り、次に劇場設定を開いたときに戻ります。'
+          +'ただしショー本体にはまだ入りません。',
+        skip:'反映しないで移る',
+        apply:'この劇場を反映する',
+      });
+      if(answer==='cancel') return;
+      if(answer==='apply') {
+        try { window.SHOSAI_VENUE_EDITOR?.apply?.(); }
+        catch(error) { window.alert('反映できませんでした: '+(error&&error.message||error)+'\nモードは切り替えていません。'); return; }
+        // 反映は確認モーダルを経て確定する。ここではモードを切り替えず、本人の操作へ委ねる。
+        return;
+      }
     }
     if(mode!==next && isLightMode(mode) && !isLightMode(next)) {
       const lightStatus=editor()?.status?.();

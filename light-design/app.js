@@ -284,6 +284,21 @@
   E.SPEED_PERIOD_MS && Object.assign(E.SPEED_PERIOD_MS, {}); // 参照のみ
   const periodMs = (light) => (SPEED_SEC[light && light.speed] || 2) * 1000;
   const COLORS = ["#f2ead6", "#ffd27a", "#ff7a5c", "#7ab8ff", "#8be08b", "#d98cf0"];
+  /* T-15（2026-09-18 本人要望）: 既定の6色と同じ色が「作った色」にも並んでいた。
+   * 足すときの重複判定は前からあるが、判定が入る前に作られた保存データには残っていた。
+   * 読み込むたびに落とす。落とすのは既定の6色と完全に同じ色と、作った色どうしの重複だけ。 */
+  function cleanPalette(list) {
+    if (!Array.isArray(list)) return [];
+    const preset = new Set(COLORS.map((c) => String(c).toLowerCase()));
+    const seen = new Set();
+    const out = [];
+    for (const raw of list) {
+      const c = String(raw || "").toLowerCase();
+      if (!/^#[0-9a-f]{6}$/.test(c) || preset.has(c) || seen.has(c)) continue;
+      seen.add(c); out.push(raw);
+    }
+    return out;
+  }
   /* レーザーの色は通常灯の共通パレットから分離する。複色は静止した色分けとして描き、
      ここでは時間変化を持ち込まない（色以外の設定を変えないため）。 */
   const LASER_COLOR_PRESETS = Object.freeze([
@@ -347,7 +362,7 @@
   }
   function restore(json) {
     const o = JSON.parse(json);
-    if (o.dims) state.dims = o.dims; state.rig = o.rig; state.scenes = o.scenes; if (o.palette) state.palette = o.palette;
+    if (o.dims) state.dims = o.dims; state.rig = o.rig; state.scenes = o.scenes; if (o.palette) state.palette = cleanPalette(o.palette);
     // 強さの効き方。目盛りの数が合うものだけ受け取る（古い記録には無い＝そのときはリニアのまま）
     if (Array.isArray(o.levelCurve) && o.levelCurve.length === LEVEL_CURVE_POINTS) state.levelCurve = o.levelCurve.slice();
     if (o.curtains) state.curtains = { ...state.curtains, ...o.curtains };
@@ -3097,7 +3112,7 @@
       }
       if (!state.rig.fixtures.length && !extras.length) host.innerHTML = '<p class="hint" style="padding:6px">機材はまだありません。</p>';
       else if (!host.children.length) host.innerHTML = `<p class="hint" style="padding:6px">「${state.search}」に当てはまる灯体はありません。</p>`;
-      $("sel-count").textContent = state.sel.size > 1 ? `${state.sel.size}灯を選択中` : "";
+      /* T-17（2026-09-18 本人要望）: 左の一覧の「N灯を選択中」は消した（右パネル最下部へ集約）。 */
       { const mb = $("make-fixture-group"); if (mb) mb.hidden = true; }   // R-11: 配置モードでは出さない
       const cycOnly = state.sel.size > 0 && [...state.sel].every((id) => { const ff = fixtureById(id); return ff && ff.mount.type === "cyc"; });
       // ホリゾントライトは床・上それぞれ1本。複製・削除は配置パネルの「あり／なし」に任せる
@@ -3150,7 +3165,7 @@
     });
     if (!rest.length && state.rig.fixtures.length) host.append(el("p", "hint", "この絞り込みに当てはまる灯体はありません。"));
     if (!state.rig.fixtures.length) host.innerHTML = '<p class="hint" style="padding:6px">灯体はまだありません。</p>';
-    $("sel-count").textContent = state.sel.size > 1 ? `${state.sel.size}灯を選択中` : "";
+    /* T-17（2026-09-18 本人要望）: 左の一覧の「N灯を選択中」は消した（右パネル最下部へ集約）。 */
     $("del").disabled = true; $("spread").disabled = true; $("mirror").disabled = true;
   }
 
@@ -4705,8 +4720,9 @@
       host.append(el("p", "kicker", "照射位置を左右反転"), group);
     }
     // 複数（「組の動き」も含めて renderBulk 側の「まとめて変更」枠に集約した。2026-09-13 本人要望）
-    host.append(el("p", "kicker", `${ids.length}灯を選択中`));
+    /* T-17（2026-09-18 本人要望）: 「N灯を選択中」はパネルの最下部へ移す。 */
     renderBulk(host, ids);
+    host.append(el("p", "kicker", `${ids.length}灯を選択中`));
   }
 
 
@@ -5258,7 +5274,7 @@
         cue: ds.cue || { lights: {}, groups: [] } };
     });
     state.rig = o.rig;
-    if (Array.isArray(o.palette)) state.palette = [...o.palette];
+    if (Array.isArray(o.palette)) state.palette = cleanPalette(o.palette);
     if (Array.isArray(o.levelCurve) && o.levelCurve.length === LEVEL_CURVE_POINTS) state.levelCurve = [...o.levelCurve];
     if (o.curtains) state.curtains = { ...state.curtains, ...o.curtains };
     /* R-11（2026-09-17 本人要望）: 灯体をまとめるカスタムのグループ。

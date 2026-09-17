@@ -2,6 +2,12 @@
 #gamma-formation-dialog::backdrop{background:rgba(0,0,0,.65)}
 #gamma-formation-dialog .gamma-formation-head{height:52px;display:flex;align-items:center;justify-content:space-between;padding:4px 12px;gap:8px}
 #gamma-formation-dialog .gamma-formation-close{min-width:44px;min-height:44px;border:1px solid #b6a995;background:transparent;color:#f5f3ee;border-radius:4px;cursor:pointer;font:inherit}
-#gamma-formation-dialog iframe{display:block;width:100%;height:calc(100% - 52px);border:0;background:#f5f3ee}
+/* T-09（2026-09-18 本人要望）: 中身を暗くしたので、iframe の地も外側と同じにする。 */
+#gamma-formation-dialog iframe{display:block;width:100%;height:calc(100% - 52px);border:0;background:#191512}
 #gamma-formation-dialog .gamma-formation-close:focus-visible{outline:3px solid #f5f3ee;outline-offset:1px}
 .gamma-formation-trigger[hidden]{display:none!important}
+
+/* T-02（2026-09-18 本人要望）: フォーメーションの入口は「選んだもの」パネルの最下部。
+ * .stage-minor-action は縦積み用（幅100%・上に10pxの間隔）なので、そのまま使う。
+ * 箱は中身が無いとき高さを持たない（ボタンが hidden のときに余白だけ残らないように）。 */
+.stage-formation-entry { display: contents; }

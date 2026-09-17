@@ -184,9 +184,10 @@
   .transport .btn.small.xfer[disabled]:hover{border-color:var(--line-dark)}
   /* ペースト直後の合図。色だけに頼らず、文字も「入れました」に一瞬変える（JS側） */
   .transport .btn.small.xfer.done{color:var(--milk);border-color:var(--brass)}
-  .transport .btn.solo{min-width:28px;width:28px;padding:0;font-weight:700}
-  /* R-03: 戻すボタンはソロと同じ大きさの正方形。押すと選ぶ窓が出る。 */
-  .transport .btn.resetcue{min-width:28px;width:28px;padding:0;font-size:14px;line-height:1}
+  /* T-16（2026-09-18 本人要望）: 記号から文字（ソロ／リセット）へ変えたので、
+     28px角の固定をやめる。帯が狭いので左右の余白は詰め、文字も小さめにする。 */
+  .transport .btn.solo{min-width:0;width:auto;padding:0 7px;font-weight:700;font-size:11px;white-space:nowrap}
+  .transport .btn.resetcue{min-width:0;width:auto;padding:0 7px;font-size:11px;white-space:nowrap}
   /* R-11: カスタムのグループ。取り付け場所の見出しと同じ形にし、◆ と解除の✕で見分ける。 */
   #make-fixture-group{width:100%;margin-bottom:4px;font-size:11px;min-height:26px}
   .grp.fixture-group{display:flex;align-items:center;gap:6px}
@@ -221,7 +222,8 @@
   .figgrid[data-solo] canvas{width:100%}
   /* 広げている間は、上の帯のうち「どの図を見るか」に関わらないものを畳んで縦を稼ぐ */
   .figgrid[data-solo] .viewhead,.figgrid[data-solo] .sechead{gap:8px}
-  .solo-btn{flex:0 0 auto;min-width:22px;min-height:20px;padding:0 5px;border:1px solid var(--line-dark);
+  /* T-18（2026-09-18 本人要望）: 帯の中の操作の枠の高さを24pxへそろえる。 */
+  .solo-btn{flex:0 0 auto;min-width:24px;min-height:24px;height:24px;padding:0 5px;border:1px solid var(--line-dark);
             background:var(--recess);color:var(--milk-dim);font-size:11px;line-height:1;cursor:pointer}
   .solo-btn:hover,.solo-btn:focus-visible{color:var(--milk);border-color:var(--brass)}
   .figgrid[data-solo] .solo-btn{color:var(--milk);border-color:var(--brass);background:rgba(156,130,63,.2)}
@@ -269,15 +271,15 @@
   .fmode{display:flex;align-items:center;gap:5px;justify-self:center;flex-wrap:nowrap;min-width:0}
   #frontmode{display:inline-flex;flex:0 0 auto;flex-wrap:nowrap;width:max-content}
   #frontmode button{flex:0 0 auto}
-  .seatsel{width:132px;min-width:132px;flex:0 0 132px}
+  .seatsel{width:132px;min-width:132px;flex:0 0 132px;height:24px;min-height:24px;padding:0 4px;line-height:1.1}
   .seatsel:disabled{opacity:.42;color:var(--milk-dim);cursor:not-allowed}
   .sechead .viewtitle{font-size:11px;letter-spacing:.08em}
   /* 側面図の向きは言葉の幅だけを使う。親の余り幅をボタンが取らず、下手／上手が
      横へ伸びることもない（2026-09-14 本人指摘）。 */
   .sidemode{display:inline-flex;flex:0 0 auto;flex-wrap:nowrap;width:max-content}
-  .sidemode.showtoggles button{flex:0 0 auto;width:auto;font-size:10px;letter-spacing:0;padding:2px 6px;min-height:20px}
-  .side-sep{width:1px;height:20px;flex:0 0 auto;background:var(--line-dark);margin:0 6px}
-  .sidedistance{flex:0 0 auto;min-height:20px;padding:2px 6px;font-size:10px;white-space:nowrap}
+  .sidemode.showtoggles button{flex:0 0 auto;width:auto;font-size:10px;letter-spacing:0;padding:0 6px;min-height:24px;height:24px}
+  .side-sep{width:1px;height:24px;flex:0 0 auto;background:var(--line-dark);margin:0 6px}
+  .sidedistance{flex:0 0 auto;min-height:24px;height:24px;padding:0 6px;font-size:10px;white-space:nowrap}
   .sechead .viewnote{font-size:8.5px}
   /* 図の上の横並びバー: 左＝表示、中央＝シーン送り。
      シーン送りは帯の中身に対してではなく<b>窓の幅そのもの</b>の中央に置く（2026-09-13 本人要望）。
@@ -636,7 +638,7 @@
   .kbd b{color:var(--milk);font-weight:500;border:1px solid var(--line-dark);padding:0 4px;margin:0 2px}
 </style>
 <style>.option-b-controls button{min-height:44px}.option-b-controls :focus-visible{outline:2px solid #d3ac59;outline-offset:2px}</style>
-<link rel="stylesheet" href="embed.css?v=2026091961">
+<link rel="stylesheet" href="embed.css?v=2026091970">
 </head>
 <body>
 <div class="proto-note">舞台スケッチ γ — 照明の配置・デザイン</div>
@@ -743,7 +745,7 @@
               <button type="button" data-filter="on" aria-pressed="false">オン</button>
               <button type="button" data-filter="move" aria-pressed="false">動き</button>
             </div>
-            <p class="hint" id="sel-count"></p>
+            <!-- T-17（2026-09-18 本人要望）: 「N灯を選択中」は右パネルの最下部へまとめた。 -->
             <!-- R-11（2026-09-17 本人要望）: 選んだ灯体をカスタムのグループにまとめる。
                  グループは「まとめて選ぶ」ためのもので、灯体を縛らない（値が揃うのは操作した瞬間だけ）。
                  既存の「組」（動きの組）とは別物。 -->
@@ -777,8 +779,9 @@
           </div>
           <div class="planwrap">
             <div class="viewhead">
-              <span class="viewtitle">平面図（真上から）</span>
+              <!-- T-18: 全画面マークは左端。 -->
               <button type="button" class="solo-btn" data-solo-figure="plan" title="平面図だけを大きく見る（p）。Escかもう一度押すと戻ります">⛶</button>
+              <span class="viewtitle">平面図（真上から）</span>
               <label class="snap" title="1000mmのグリッドに合わせて置く・動かす"><input type="checkbox" id="snap"><span>1000mmでそろえる</span></label>
             </div>
             <span class="statebadge" id="statebadge">選択</span>
@@ -801,8 +804,10 @@
                 <span class="transport">
                   <!-- R-03（2026-09-17 本人要望）: この cue の灯体情報を戻す。本人指定でソロの左。
                        帯が狭いのでボタンは1つにして、押すと4通りを選ぶ小さな窓を出す。 -->
-                  <button type="button" class="btn small resetcue" id="reset-cue" aria-label="この cue の灯体情報を戻す" title="この cue の灯体情報を戻す（消す／はじめに戻す）">⟲</button>
-                  <button type="button" class="btn small solo" id="solo" aria-pressed="false" aria-label="ソロ" title="ソロ（S）">S</button>
+                  <!-- T-16（2026-09-18 本人要望）: 記号は分かりにくいので文字にする。
+                       ⟲ は「元に戻す（undo）」ではなく「この cue の灯体情報を消す／はじめに戻す」。 -->
+                  <button type="button" class="btn small resetcue" id="reset-cue" aria-label="この cue の灯体情報を戻す" title="この cue の灯体情報を戻す（消す／はじめに戻す）">リセット</button>
+                  <button type="button" class="btn small solo" id="solo" aria-pressed="false" aria-label="ソロ" title="ソロ（S）">ソロ</button>
                   <button type="button" class="btn small xfer" id="t-copy" disabled>コピー</button>
                   <button type="button" class="btn small xfer" id="t-paste" disabled>ペースト</button>
                 </span>
@@ -829,6 +834,8 @@
                空いた右下を照明デザインパネルが使う（2026-09-13 本人要望）。 -->
           <div class="sec side l">
             <div class="sechead">
+              <!-- T-18（2026-09-18 本人要望）: 全画面マークは3つの図とも左端にそろえる。 -->
+              <button type="button" class="solo-btn" data-solo-figure="side" title="側面図だけを大きく見る（O）。Escかもう一度押すと戻ります">⛶</button>
               <span class="placement-side-title">下手側</span>
               <span class="showtoggles sidemode" id="sidemode" role="group" aria-label="どちら側を見るか">
                 <button type="button" data-side="shimote" aria-pressed="true">下手を見る</button>
@@ -836,14 +843,14 @@
               </span>
               <span class="side-sep" aria-hidden="true"></span>
               <button type="button" class="btn small quiet sidedistance" id="distance-mode" aria-pressed="false">距離：固定帯</button>
-              <button type="button" class="solo-btn" data-solo-figure="side" title="側面図だけを大きく見る（O）。Escかもう一度押すと戻ります">⛶</button>
             </div>
             <canvas id="secL" width="520" height="520"></canvas>
           </div>
           <div class="sec front">
             <div class="sechead">
-              <span class="viewtitle">正面図</span>
+              <!-- T-18: 全画面マークは左端。 -->
               <button type="button" class="solo-btn" data-solo-figure="front" title="正面図だけを大きく見る（F）。Escかもう一度押すと戻ります">⛶</button>
+              <span class="viewtitle">正面図</span>
               <span class="fmode">
                 <span class="showtoggles" id="frontmode" role="group" aria-label="正面図の描き方">
                   <button type="button" data-front="flat" aria-pressed="true">平面</button>
@@ -898,7 +905,7 @@
 <script src="volume-light.js?v=20260915-2"></script>
 <script src="laser-effects.js?v=20260915-5-color-presets"></script>
 <script src="laser-effects-ui.js?v=20260915-3-supported-shapes"></script>
-<script src="app.js?v=2026091944"></script>
+<script src="app.js?v=2026091970"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20260915-3-vertical-cards"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->

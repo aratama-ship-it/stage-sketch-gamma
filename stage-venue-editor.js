@@ -1631,19 +1631,16 @@
     document.querySelectorAll("[data-venue-editor-rigging]").forEach((button) => {
       button.setAttribute("aria-pressed", String(button.dataset.venueEditorRigging === state.ceiling.rigging));
     });
-    /* V-4: 高さ・吊りは「屋内 かつ 天井あり」でだけ意味がある。隠すだけで値は保持する。 */
+    /* V-4: 高さ・吊りは天井ありのときだけ意味がある。隠すだけで値は保持する。 */
     const hasCeiling = state.ceiling.hasCeiling !== false;
-    const indoor = state.ceiling.indoor !== false;
     document.querySelectorAll("[data-venue-editor-ceiling-presence]").forEach((button) => {
       const on = (button.dataset.venueEditorCeilingPresence === "yes") === hasCeiling;
       button.setAttribute("aria-pressed", String(on));
     });
-    document.querySelectorAll("[data-venue-editor-ceiling-place]").forEach((button) => {
-      const on = (button.dataset.venueEditorCeilingPlace === "indoor") === indoor;
-      button.setAttribute("aria-pressed", String(on));
-    });
-    if (els.ceilingDetails) els.ceilingDetails.hidden = !(hasCeiling && indoor);
-    if (els.ceilingOutdoorNote) els.ceilingOutdoorNote.hidden = hasCeiling && indoor;
+    /* T-10（2026-09-18 本人要望）: 屋内／屋外の選択をやめた。
+     * 高さと吊りは「天井あり」のときだけ出す。indoor は保存データの互換のため常に true で書き出す。 */
+    if (els.ceilingDetails) els.ceilingDetails.hidden = !hasCeiling;
+    if (els.ceilingOutdoorNote) els.ceilingOutdoorNote.hidden = hasCeiling;
     document.querySelectorAll("[data-venue-editor-line-toggle]").forEach((input) => {
       input.checked = state.lines.visible[input.dataset.venueEditorLineToggle] !== false;
     });
@@ -1686,6 +1683,22 @@
 
   function render() {
     syncCanvasResolution();
+    /* T-12（2026-09-18 本人要望）:「操作しているとステージが右下へずれる」への対策。
+     * 表示の中心（state.view.center）は、これまで
+     *   ①読み込み時（fitViewToTemplate） ②＋／−を押したとき（adjustZoom）
+     * の2か所でしか採り直していなかった。劇場の形（追加ステージ・客席・舞台袖）を変えると
+     * 図形の中心だけが動き、見ている中心は古いまま残るのでズレて見えていた。
+     * ＋／−で直ったのは adjustZoom が中心を採り直していたから。
+     * ここで毎回、図形の外接矩形の中心へ合わせ直す。
+     * ★手で図をずらす操作は無い（center を書くのは上記2か所だけ）ので、
+     *   採り直しても本人の見ている位置を奪わない。 */
+    /* ★掴んでいるあいだは動かさない。描き直すたびに中心を変えると、
+     * 画面→世界の対応がドラッグ中にずれて、掴んだ場所が指から逃げる
+     * （実測: 舞台を広げるドラッグで間口が 24m のはずが 30m になった）。 */
+    if (!activePointer) {
+      const centered = outlineCenter();
+      if (Number.isFinite(centered[0]) && Number.isFinite(centered[1])) state.view.center = centered;
+    }
     const linesResult = currentLines();
     drawGrid();
     drawStageWings();
@@ -1954,7 +1967,9 @@
     state.fixtures = customVenue && Array.isArray(variant.fixtures) ? clone(variant.fixtures) : [];
     state.access = customVenue && Array.isArray(variant.access) ? clone(variant.access) : [];
     state.ceiling = clone(variant.ceiling || venue.ceiling || { heightM: 6, rigging: "none" });
-    // V-4: 旧データ（hasCeiling/indoorを持たない）は「屋内・天井あり」として読む＝従来と同じ挙動。
+    /* V-4: 旧データ（hasCeiling/indoorを持たない）は「天井あり」として読む＝従来と同じ挙動。
+     * T-10（2026-09-18）: 屋内／屋外の選択はやめたが、indoor の値は読み書きだけ残す。
+     * 本人が屋外で保存した劇場の値を、こちらから書き換えないため（保存データを壊さない）。 */
     state.ceiling.hasCeiling = state.ceiling.hasCeiling !== false;
     state.ceiling.indoor = state.ceiling.indoor !== false;
     state.stageFormat = inferTemplateStageFormat(venue, variant);
@@ -3296,13 +3311,6 @@
     render();
   }
 
-  function setCeilingPlace(indoor) {
-    state.ceiling.indoor = indoor;
-    setStatus(indoor
-      ? "屋内にしました。天井ありなら高さと吊りを設定できます。"
-      : "屋外にしました。高さと吊りは使いません（入力した値は残します）。");
-    render();
-  }
 
   function openEditor() {
     if (els.saveNameModal && !els.saveNameModal.hidden) closeSaveName(false);
@@ -3413,11 +3421,6 @@
   document.querySelectorAll("[data-venue-editor-ceiling-presence]").forEach((button) => {
     button.addEventListener("click", () => withHistory(
       () => setCeilingPresence(button.dataset.venueEditorCeilingPresence === "yes"),
-    ));
-  });
-  document.querySelectorAll("[data-venue-editor-ceiling-place]").forEach((button) => {
-    button.addEventListener("click", () => withHistory(
-      () => setCeilingPlace(button.dataset.venueEditorCeilingPlace === "indoor"),
     ));
   });
   document.querySelectorAll("[data-venue-editor-line-toggle]").forEach((input) => {
@@ -3583,6 +3586,10 @@
 
   window.SHOSAI_VENUE_EDITOR = Object.freeze({
     storageKey: library.storageKey,
+    /* T-14（2026-09-18 本人要望）: 劇場設定を変更したまま別タブへ移ろうとしたら
+     * 「この劇場を反映しますか」を出すため、未反映かどうかを外から見えるようにする。
+     * 照明側の editor().status().dirty に相当する。 */
+    hasUnappliedChanges: () => hasUnappliedChanges(),
     open: openEditor,
     close: requestCloseEditor,
     save: saveDraft,

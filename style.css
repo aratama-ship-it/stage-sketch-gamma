@@ -2480,7 +2480,8 @@ html.stage-pwa-tablet .stage-header-app-identity { --stage-header-logo-width: 22
 .stage-scene-transition-boundary {
   display: grid;
   gap: 0;
-  margin: -2px 3px 4px;
+  /* T-28: 行を詰めたぶん、下の余白も少し詰める。 */
+  margin: -2px 3px 3px;
 }
 
 .stage-scene-transition-point {
@@ -2490,8 +2491,10 @@ html.stage-pwa-tablet .stage-header-app-identity { --stage-header-logo-width: 22
   gap: 6px;
   width: 100%;
   min-width: 0;
-  min-height: 30px;
-  padding: 3px 7px;
+  /* T-28（2026-09-18 本人要望）: 転換の行の高さを約70%に詰める。
+   * 30px → 21px。中の縦線（-point-axis）の 22px も下げないと効かない。 */
+  min-height: 21px;
+  padding: 1px 7px;
   border: 1px solid rgba(211, 172, 89, 0.32);
   background: rgba(211, 172, 89, 0.065);
   color: var(--milk-dim);
@@ -2511,7 +2514,8 @@ html.stage-pwa-tablet .stage-header-app-identity { --stage-header-logo-width: 22
 .stage-scene-transition-point-axis {
   position: relative;
   align-self: stretch;
-  min-height: 22px;
+  /* T-28: 行を21pxへ詰めたので、ここが下限にならないよう合わせて下げる。 */
+  min-height: 17px;
 }
 
 .stage-scene-transition-point-axis::before {
@@ -8591,6 +8595,14 @@ html.stage-phone-viewer .stage-single-view-switch { display: none; }
 .stage-view-select select {
   width: 88px;
   min-height: 30px;
+  /* T-27（2026-09-18 本人要望）: 「両方1」の文字が枠に対して上に寄って見える（Safari）。
+   * 原因は2つ重なっていた:
+   *   ①丸囲み数字（①②）は他の文字と縦の重心が違い、フォントに無ければ別フォントへ落ちる
+   *   ②<select> に line-height の指定が無く、縦位置がブラウザ既定に任されていた
+   * ①は表記を半角の 1 / 2 に変えて解消した。これが主因。
+   * ②はここで明示するが、★実測すると Chromium は <select> 自身の line-height を無視する
+   *   （算出値が normal のまま）。効くのは engine 次第なので、保険として残すだけ。 */
+  line-height: 1.2;
   border: 1px solid var(--line-dark);
   background: var(--desk-2);
   color: var(--milk);
@@ -10842,6 +10854,9 @@ body.stage-modal-open .stage-tour { display: none !important; }
 
 #stage-profile .stage-modal-head { border-bottom-color: rgba(239, 231, 214, 0.34); }
 #stage-profile .stage-modal-body { background: #463d35; }
+/* T-22（2026-09-18 本人要望）: シーンの詳細も、演者プロフィールと同じ明るい地にする
+ * （本人の言う「他にそういう物があった」＝#stage-profile のこれ）。 */
+#stage-rename .stage-modal-body { background: #463d35; }
 #stage-profile .stage-control-label,
 #stage-profile .stage-modal-head h2 { color: #fff8ea; }
 #stage-profile .stage-text-input,
@@ -10876,6 +10891,23 @@ body.stage-modal-open .stage-tour { display: none !important; }
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* T-22（2026-09-18 本人要望）: シーンの詳細で「出ている演者」が多いと
+ * 1行で切られて読めなかった（6人で既に「…」になっていた）。
+ * この窓だけ、演者の2項目を全幅（1列ぶち抜き）にして折り返す。
+ * ★タイムラインのキューの窓は同じクラスを使っているので、#stage-rename で絞る。 */
+#stage-rename .stage-rename-scene-cast > div:nth-child(1),
+#stage-rename .stage-rename-scene-cast > div:nth-child(2) {
+  grid-column: 1 / -1;
+}
+
+#stage-rename .stage-rename-scene-cast > div:nth-child(1) dd,
+#stage-rename .stage-rename-scene-cast > div:nth-child(2) dd {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  line-height: 1.55;
 }
 
 .stage-timeline-cue-note { display: grid; gap: 7px; color: var(--milk-dim); font-size: 11px; }
@@ -17236,3 +17268,126 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
    はみ出さない）に余裕を見た値。 */
 .stage-roster-group > .stage-cast-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); column-gap: 8px; }
 .stage-roster-group > .stage-roster-list-resize { grid-column: 1 / -1; }
+
+/* T-23（2026-09-18 本人要望）: シーン名を押すと「シーンの詳細」が開く。
+ * 見た目は今までの文字のまま（枠も地も足さない）。押せることは下線ではなく
+ * ホバーの色で示す（帯が狭く、下線を足すと前後のボタンと競る）。 */
+.stage-scene-now-open {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+.stage-scene-now-open:hover .stage-scene-now,
+.stage-scene-now-open:focus-visible .stage-scene-now { color: var(--brass); }
+.stage-scene-now-open:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+/* T-20（2026-09-18 本人要望）: 「別バージョンとして複製」の入力窓。
+ * OSの素の window.prompt をやめ、アプリの窓（.stage-modal）に寄せた。
+ * 操作列は照明の「適用しますか？」（.gamma-light-leave-actions）と同じ作法。 */
+.stage-branch-reason-modal { width: min(460px, calc(100vw - 32px)); }
+.stage-branch-reason-modal .stage-modal-body { display: grid; gap: 10px; padding: 14px 16px; }
+.stage-branch-reason-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 16px 14px;
+}
+.stage-branch-reason-actions > button { width: auto; margin-top: 0; text-align: center; white-space: nowrap; }
+.stage-branch-reason-actions > .stage-minor-action { border-color: var(--rust); color: var(--milk); }
+.stage-branch-reason-actions > .stage-minor-action:hover,
+.stage-branch-reason-actions > .stage-minor-action:focus-visible {
+  border-color: var(--brass);
+  background: rgba(168, 75, 38, 0.22);
+}
+@media (max-width: 520px) {
+  .stage-branch-reason-actions { flex-direction: column-reverse; }
+  .stage-branch-reason-actions > button { width: 100%; }
+}
+
+/* T-08（2026-09-18 本人要望）: タイムラインを開くための取っ手。画面の左下に置く。
+ * ★パネルの中ではなく画面へ直接貼る（position: fixed）。
+ *   .stage-timeline-panel.is-collapsed は transform でパネルごと下へ逃がすので、
+ *   中に置くと畳んだとき一緒に隠れて「開くための取っ手」にならない。
+ * 大きさは28px角。畳んだとき下に残る帯（12px）より大きくないと掴み所にならない。
+ * 中の3本線で「引ける」ことを示す（ただの四角だと押せるのか引けるのか読めない）。 */
+.stage-timeline-resize-handle {
+  position: fixed;
+  z-index: 47;
+  left: 10px;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  display: grid;
+  place-items: center;
+  gap: 3px;
+  width: 28px;
+  height: 28px;
+  /* ★全体規則の button { min-height: 44px } が height に勝つ（S-01 と同じ罠）。
+   * 実測で 44px になっていたので、ここで打ち消す。 */
+  min-height: 28px;
+  padding: 0;
+  border: 1px solid var(--line-dark);
+  border-radius: 3px;
+  background: var(--stage-timeline-panel, var(--desk-2));
+  color: var(--milk-dim);
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.stage-timeline-resize-handle::before,
+.stage-timeline-resize-handle::after {
+  content: "";
+  width: 14px;
+  height: 1px;
+  background: currentColor;
+}
+
+.stage-timeline-resize-handle::before { box-shadow: 0 4px 0 currentColor; }
+
+.stage-timeline-resize-handle:hover,
+.stage-timeline-resize-handle:focus-visible { color: var(--milk); border-color: var(--brass); }
+.stage-timeline-resize-handle:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+/* 全画面・発表中・照明や劇場設定のモードでは出さない（タイムライン自体が出ていない）。 */
+body.stage-fullscreen .stage-timeline-resize-handle,
+body[data-gamma-workspace^="light-"] .stage-timeline-resize-handle,
+body[data-gamma-workspace="venue-setup"] .stage-timeline-resize-handle { display: none; }
+
+/* T-24（2026-09-18 本人要望）: 一覧の並べ替え。名前を掴んで上下に動かす。
+ * ★名前は「押すと詳しい窓」も兼ねるので、掴めることは cursor で示す。
+ *   4px 動かすまでは何も起きない（押しただけなら窓が開く）。 */
+.stage-cast-name { cursor: grab; }
+body.is-roster-reordering { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+body.is-roster-reordering .stage-cast-name { cursor: grabbing; }
+.stage-cast-row.is-roster-dragging {
+  opacity: 0.55;
+  outline: 1px dashed var(--brass);
+  outline-offset: -1px;
+}
+
+/* T-30（2026-09-18 本人要望）: フレームの枠の幅。数値の左右に −／＋ を添える
+ * （dev-preferences 2026-09-17 の方針）。 */
+#stage-setinfo-frame-width-row { margin-top: 8px; }
+.stage-setinfo-frame-width {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stage-setinfo-frame-width .stage-text-input { width: 90px; min-width: 0; margin: 0; text-align: right; }
+.stage-setinfo-frame-width .stage-step-button {
+  flex: 0 0 auto;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 1px solid var(--line-dark);
+  background: var(--recess);
+  color: var(--milk-dim);
+  font: inherit;
+  cursor: pointer;
+}
+.stage-setinfo-frame-width .stage-step-button:hover,
+.stage-setinfo-frame-width .stage-step-button:focus-visible { color: var(--milk); border-color: var(--brass); }

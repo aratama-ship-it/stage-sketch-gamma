@@ -12,17 +12,17 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026091961">
+<link rel="stylesheet" href="style.css?v=2026091970">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="gamma.css?v=2026091963">
+<link rel="stylesheet" href="gamma.css?v=2026091970">
 <link rel="stylesheet" href="gamma-mobile.css?v=2026091950">
 <script src="gamma-light-model.js?v=2026091944"></script>
-<link rel="stylesheet" href="gamma-formation.css?v=formation1">
+<link rel="stylesheet" href="gamma-formation.css?v=2026091970">
 </head>
 <body class="is-standalone">
 
@@ -80,7 +80,7 @@
                       aria-pressed="true">舞台</button>
               <button type="button" class="stage-workspace-tab" id="gamma-venue" data-stage-workspace-mode="venue-setup" aria-pressed="false" aria-controls="gamma-venue-workspace">劇場設定</button>
               <button type="button" class="stage-workspace-tab" id="gamma-placement" data-stage-workspace-mode="light-placement" aria-pressed="false" aria-controls="gamma-light-workspace">機材配置</button>
-              <button type="button" class="stage-workspace-tab" id="gamma-design" data-stage-workspace-mode="light-design" aria-pressed="false" aria-controls="gamma-light-workspace">照明</button>
+              <button type="button" class="stage-workspace-tab" id="gamma-design" data-stage-workspace-mode="light-design" aria-pressed="false" aria-controls="gamma-light-workspace">照明デザイン</button>
               <button type="button" class="stage-workspace-tab" id="stage-freecam-open"
                       data-stage-workspace-launch="3d"
                       aria-pressed="false"
@@ -165,7 +165,10 @@
                      placeholder="v1" aria-label="バージョン">
               <p class="stage-version-note" id="stage-version-note"></p>
               <div class="stage-project-panel-actions">
-                <button type="button" id="stage-version-copy" class="stage-minor-action" title="いまの内容を保存し、版を1つ上げます（v1 → v2）">保存して ＋1</button>
+                <!-- T-20（2026-09-18 本人要望）: 名前が動作と合っていなかった。
+                     実際は「いまのショーを複製して次の版を作り、複製のほうへ移る」（枝分かれ）。
+                     もとのショーはそのまま残るので「保存」ではない。 -->
+                <button type="button" id="stage-version-copy" class="stage-minor-action" title="いまのショーを複製して次の版（v1 → v2）を作り、複製のほうへ移ります。もとのショーはそのまま残ります">別バージョンとして複製</button>
                 <button type="button" id="stage-show-new" class="stage-minor-action">新規ショーを作る</button>
                 <button type="button" id="stage-shows-open" class="stage-minor-action">ショー一覧</button>
                 <button type="button" id="stage-export-json" class="stage-minor-action"
@@ -239,6 +242,16 @@
                 <div class="stage-roster-list-resize" data-roster-list-resize="prop" role="separator"
                      tabindex="0" aria-orientation="horizontal" aria-controls="stage-prop-list"
                      aria-label="小道具の一覧の高さ"></div>
+              </div>
+              <!-- T-21（2026-09-18 本人要望）: 盆・可動デッキ・幕・せり・水面は、
+                   演者／大道具／小道具と同じように別の項目として最下部に出す。
+                   見出しは既存の呼び名「舞台機構」に合わせる（本人決定＝「舞台装置」は使わない）。 -->
+              <div class="stage-roster-group" id="stage-group-machinery" data-tablet-break-before>
+                <p class="stage-roster-head">舞台機構</p>
+                <div class="stage-cast-list" id="stage-machinery-list"></div>
+                <div class="stage-roster-list-resize" data-roster-list-resize="machinery" role="separator"
+                     tabindex="0" aria-orientation="horizontal" aria-controls="stage-machinery-list"
+                     aria-label="舞台機構の一覧の高さ"></div>
               </div>
             </div>
           </section>
@@ -448,7 +461,14 @@
           <div class="stage-scene-bar" id="stage-scene-bar">
             <div class="stage-scene-step" role="group" aria-label="シーンを送る">
               <button type="button" id="stage-scene-prev" class="btn-quiet stage-scene-step-btn is-prev" title="前のシーンへ（↑ または ←）"><span class="stage-scene-step-arrow" aria-hidden="true">◀</span>前のシーン</button>
-              <span class="stage-scene-now" id="stage-scene-now" aria-live="polite"></span>
+              <!-- T-23（2026-09-18 本人要望）: 名前を押しても「シーンの詳細」を開けるようにする。
+                   押せるものはボタンにする（.stage-cast-name と同じ考え方）。
+                   読み上げの aria-live は内側の span に残し、外側をボタンにする
+                   （「押せるもの」と「読み上げ領域」を1つの要素で兼ねない）。 -->
+              <button type="button" class="stage-scene-now-open" id="stage-scene-now-open"
+                      title="押すとシーンの詳細が開きます">
+                <span class="stage-scene-now" id="stage-scene-now" aria-live="polite"></span>
+              </button>
               <button type="button" id="stage-scene-next" class="btn-quiet stage-scene-step-btn is-next" title="次のシーンへ（↓ または →）">次のシーン<span class="stage-scene-step-arrow" aria-hidden="true">▶</span></button>
               <button type="button" id="stage-scene-bar-grid" class="btn-quiet stage-scene-bar-grid"
                       title="シーン一覧を開く" aria-label="シーン一覧を開く">⊞</button>
@@ -483,13 +503,13 @@
             <p class="stage-tool-hint" id="stage-tool-hint" hidden>演者や物を選び、舞台の上で動かします。</p>
             <label class="stage-view-select stage-bar-right">
               <select id="stage-view-select"
-                      aria-label="表示する図。Tで切替。両方①は正面が上、両方②は平面が上"
+                      aria-label="表示する図。Tで切替。両方1は正面が上、両方2は平面が上"
                       aria-keyshortcuts="T"
-                      title="表示する図。Tで切替。両方①は正面が上、両方②は平面が上">
+                      title="表示する図。Tで切替。両方1は正面が上、両方2は平面が上">
                 <option value="front">正面</option>
                 <option value="plan">平面</option>
-                <option value="both-front">両方①</option>
-                <option value="both-plan">両方②</option>
+                <option value="both-front">両方1</option>
+                <option value="both-plan">両方2</option>
               </select>
             </label>
             <label class="stage-toggle stage-name-toggle">
@@ -755,23 +775,11 @@
                   </button>
                   <span class="stage-multi-select-status" id="stage-multi-select-status"
                         title="ドラッグで囲うか、Shiftを押しながら選択" aria-live="polite" hidden></span>
-                  <div class="stage-arrange-menu" id="stage-arrange-menu">
-                    <button type="button" class="stage-canvas-tool stage-arrange-trigger" id="stage-arrange-select"
-                            title="平面図で選択したものだけ整列" aria-label="選択したものだけ整列"
-                            aria-haspopup="menu" aria-expanded="false" disabled>
-                      <span>選択だけ整列</span>
-                      <svg class="stage-arrange-chevron" viewBox="0 0 12 8" aria-hidden="true" focusable="false"><path d="m1 1.5 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </button>
-                    <div class="stage-arrange-options" id="stage-arrange-options" role="menu" aria-label="整列の形" hidden>
-                      <button type="button" role="menuitem" data-arrange-shape="row">横1列</button>
-                      <button type="button" role="menuitem" data-arrange-shape="column">縦1列</button>
-                      <button type="button" role="menuitem" data-arrange-shape="diagonal-up">斜め1列（／）</button>
-                      <button type="button" role="menuitem" data-arrange-shape="diagonal-down">斜め1列（＼）</button>
-                      <button type="button" role="menuitem" data-arrange-shape="circle">円</button>
-                      <button type="button" role="menuitem" data-arrange-shape="vee">V字</button>
-                      <button type="button" role="menuitem" data-arrange-shape="inverted-vee">逆V字</button>
-                    </div>
-                  </div>
+                  <!-- T-04（2026-09-18 本人要望）: 「選択だけ整列」を削除した。
+                       フォーメーション（190種）で代替できるため。失う機能は
+                       「大道具・小道具をまとめて並べる」「21人以上を並べる」で、
+                       本人が不要と明言している。
+                       ★機能キー featureOn("lineup") はフォーメーションの表示条件でもあるので残す。 -->
                   <button type="button" class="stage-canvas-tool stage-zoom-reset" id="stage-plan-zoom"
                           title="等倍に戻す" hidden>1.0× ⟲</button>
                   <button type="button" class="stage-canvas-tool" id="stage-plan-note"
@@ -1000,6 +1008,11 @@
                 <button type="button" class="stage-icon-action" id="stage-open-setinfo" hidden>詳細</button>
                 <button type="button" class="stage-delete" id="stage-delete" aria-label="舞台裏へ" title="舞台裏へ">舞台裏へ</button>
               </div>
+              <!-- T-02（2026-09-18 本人要望）: フォーメーションの入口はこのパネルの最下部に置く。
+                   図のバーにあった2つ（gamma-formation-plan / gamma-formation-front）は廃止した。
+                   ボタンそのものは gamma-formation.js が実行時にこの箱へ入れる
+                   （出す・押せるの判定を1か所（GAMMA_FORMATION_HOST.availability）に保つため）。 -->
+              <div id="stage-formation-entry" class="stage-formation-entry"></div>
             </div>
             </div>
           </section>
@@ -1051,6 +1064,15 @@
 
       <!-- 再生要素は一つだけを使い回す。複数作るとiOSの再生許可と位置が分裂する。 -->
       <audio id="stage-music-audio" class="stage-music-engine" preload="metadata"></audio>
+
+      <!-- T-08（2026-09-18 本人要望）: タイムラインを開くための、目に見える取っ手。
+           いまは E キーを知っているか、畳んだとき下に残る12pxの細い帯を掴むしかなかった。
+           ★パネルの中に置くと、畳んだとき transform で一緒に下へ逃げて見えなくなる。
+             だから画面へ直接貼る（position: fixed）。開閉にかかわらず左下に居続ける。 -->
+      <button type="button" class="stage-timeline-resize-handle" id="stage-timeline-grip"
+              aria-label="タイムラインを開く・高さを変える"
+              title="上へ引くとタイムラインが開きます。押すと開閉、上下キーで高さを変えられます（E）"
+              aria-keyshortcuts="E"></button>
 
       <section class="stage-timeline-panel" id="stage-timeline-panel" aria-label="タイムライン" hidden>
         <div class="stage-timeline-resize" id="stage-timeline-resize" role="separator"
@@ -1608,9 +1630,6 @@
     <button type="button" class="stage-modal-close" id="stage-share-close" aria-label="閉じる">✕</button>
   </header>
   <div class="stage-modal-body">
-    <p class="stage-share-panel-hint" id="stage-share-panel-hint">
-      二つの共有方法があります。会議中に同じ状態を見ながら話すなら「リアルタイム共有」。事前に各自で確認し、必要なメモだけ送ってもらうなら「演者事前学習リンク」です。
-    </p>
     <!-- 中身の文言は stage-session.js が言語ごと自前で引き直す。
          全体ウォーカーと二重管理にならないよう、ここから下は対象外にする -->
     <section class="stage-share-channel stage-share-live" aria-labelledby="stage-share-realtime-title" data-no-i18n>
@@ -2439,6 +2458,19 @@
       <input type="checkbox" id="stage-setinfo-framed">
       <span>フレームにする（穴の空いた壁）</span>
     </label>
+    <!-- T-30（2026-09-18 本人要望）: フレームの枠の幅を決められるようにする。
+         これまでは「短い辺の16%（0.08〜0.5m）」の自動計算で、本人は触れなかった。 -->
+    <div id="stage-setinfo-frame-width-row" hidden>
+      <label class="stage-control-label" for="stage-setinfo-frame-width">枠の幅</label>
+      <div class="stage-setinfo-frame-width">
+        <button type="button" class="stage-step-button" data-frame-width-step="-0.02" aria-label="枠の幅を細くする">−</button>
+        <input type="number" class="stage-text-input" id="stage-setinfo-frame-width"
+               min="0.04" max="1.5" step="0.02" inputmode="decimal">
+        <span aria-hidden="true">m</span>
+        <button type="button" class="stage-step-button" data-frame-width-step="0.02" aria-label="枠の幅を太くする">＋</button>
+      </div>
+      <p class="stage-profile-hint">0.04〜1.5m。壁の短い辺の半分までに収まります。</p>
+    </div>
     <div id="stage-setinfo-wires-row" hidden>
       <label class="stage-control-label" for="stage-setinfo-wires">ワイヤーの本数</label>
       <select id="stage-setinfo-wires" class="stage-select">
@@ -2643,13 +2675,6 @@
           <button type="button" data-venue-editor-ceiling-presence="no" aria-pressed="false">天井なし</button>
         </div>
       </div>
-      <div class="stage-venue-editor-setting">
-        <span>場所</span>
-        <div class="stage-tool-grid stage-venue-editor-ceiling-place" role="group" aria-label="屋内か屋外か">
-          <button type="button" data-venue-editor-ceiling-place="indoor" aria-pressed="true">屋内</button>
-          <button type="button" data-venue-editor-ceiling-place="outdoor" aria-pressed="false">屋外</button>
-        </div>
-      </div>
       <div id="stage-venue-editor-ceiling-details">
         <div class="stage-venue-editor-setting">
           <label for="stage-venue-editor-ceiling-height">高さ</label>
@@ -2669,7 +2694,7 @@
           </div>
         </div>
       </div>
-      <p class="stage-profile-hint" id="stage-venue-editor-ceiling-outdoor-note" hidden>屋外・天井なしでは高さと吊りを使いません。入力した値は残します。</p>
+      <p class="stage-profile-hint" id="stage-venue-editor-ceiling-outdoor-note" hidden>天井なしでは高さと吊りを使いません。入力した値は残します。</p>
         </section>
         <section class="stage-venue-editor-audience-guide" aria-labelledby="stage-venue-editor-audience-title">
       <h3 id="stage-venue-editor-audience-title">5. 客席を配置してください</h3>
@@ -2722,14 +2747,9 @@
           <canvas id="stage-venue-editor-canvas" width="960" height="640" tabindex="0"
                   aria-label="カスタム劇場の平面。追加ステージ、客席、舞台袖を描きます"></canvas>
           <div class="stage-venue-editor-zoom" role="group" aria-label="平面図の表示倍率">
-            <button type="button" id="stage-venue-editor-undo" aria-label="一つ戻す"
-                    title="⌘Z（WindowsはCtrl+Z）" aria-keyshortcuts="Meta+Z Control+Z" disabled>
-              <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4.2H2.7V.9"/><path d="M2.9 4.1A5.4 5.4 0 1 1 2.8 11"/></svg>
-            </button>
-            <button type="button" id="stage-venue-editor-redo" aria-label="やり直す"
-                    title="⇧⌘Z（WindowsはCtrl+Shift+Z）" aria-keyshortcuts="Meta+Shift+Z Control+Shift+Z" disabled>
-              <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4.2h3.3V.9"/><path d="M13.1 4.1A5.4 5.4 0 1 0 13.2 11"/></svg>
-            </button>
+            <!-- T-13（2026-09-18 本人要望）: 「戻る／進む」はここから消した。
+                 ヘッダーの ↶ ↷ はショー側の履歴で、劇場設定の取り消しとは別物。
+                 劇場設定の取り消しは ⌘Z（stage-venue-editor.js が窓を開いているあいだ横取りする）。 -->
             <button type="button" id="stage-venue-editor-zoom-out" aria-label="平面図を縮小"
                     title="平面図を縮小" aria-controls="stage-venue-editor-canvas">−</button>
             <button type="button" id="stage-venue-editor-zoom-in" aria-label="平面図を拡大"
@@ -2961,9 +2981,9 @@
 
 <script src="stage-venues.js?v=2026091501"></script>
 <script src="stage-venue-lines.js?v=2026091501"></script>
-    <script src="stage-i18n.js?v=2026091960"></script>
-    <script src="stage-i18n.zh-Hans.js?v=2026091960"></script>
-    <script src="stage-i18n.zh-Hant.js?v=2026091960"></script>
+    <script src="stage-i18n.js?v=2026091970"></script>
+    <script src="stage-i18n.zh-Hans.js?v=2026091970"></script>
+    <script src="stage-i18n.zh-Hant.js?v=2026091970"></script>
 <script src="stage-prompt-i18n.js?v=2026091501"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026091501"></script>
@@ -2982,14 +3002,14 @@
 <script src="gamma-number-scrub.js?v=2026091780"></script>
 <script src="gamma-formation-presets.js?v=formation1"></script>
 <script src="gamma-formation-model.js?v=formation1"></script>
-<script src="stage-sketch.js?v=2026091945"></script>
-<script src="gamma-formation.js?v=formation1"></script>
-<script src="stage-timeline.js?v=2026091910"></script>
-<script src="stage-session.js?v=2026091650"></script>
+<script src="stage-sketch.js?v=2026091970"></script>
+<script src="gamma-formation.js?v=2026091970"></script>
+<script src="stage-timeline.js?v=2026091970"></script>
+<script src="stage-session.js?v=2026091970"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
-<script src="stage-venue-editor.js?v=2026091943"></script>
-<script src="gamma-workspace.js?v=2026091942"></script>
+<script src="stage-venue-editor.js?v=2026091970"></script>
+<script src="gamma-workspace.js?v=2026091970"></script>
 <script src="gamma-mobile.js?v=2026091951"></script>
 </body>
 </html>

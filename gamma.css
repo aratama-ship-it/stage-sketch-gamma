@@ -193,6 +193,25 @@ body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
 .gamma-light-leave-modal .stage-modal-body p { margin: 0; font-size: var(--fs-3); line-height: 1.7; color: var(--milk); }
 .gamma-light-leave-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 0 16px 14px; }
 .gamma-light-leave-actions > button { width: auto; flex: 0 0 auto; white-space: nowrap; }
+/* T-19（2026-09-18 本人要望）: 3つ目（適用して移る）だけデザインが崩れていた。
+ * 原因は .stage-minor-action がパネルの縦積み用のクラスで、
+ *   style.css:3466 の margin-top:10px … 3つ目だけ10px下へずれる
+ *   style.css:1981 の color:var(--milk-dim) … 文字が他の2つより暗い
+ * が、窓のボタンをそろえる規則（.stage-modal footer button）に含まれていないため残っていた。
+ * ★この窓の中だけで打ち消す。.stage-minor-action 自体は触らない（縦積みの間隔として要る）。
+ * 主操作であることは大きさではなく色で示す（S-05 と同じ考え方）。 */
+.gamma-light-leave-actions > button { margin-top: 0; text-align: center; }
+.gamma-light-leave-actions > .stage-minor-action {
+  /* 主役。錆色の枠と明るい文字で、他の2つ（控えめ）と区別する。
+   * 地は塗らない（塗ると「適用しないで移る」との差が大きすぎ、押し間違いを誘う）。 */
+  border-color: var(--rust);
+  color: var(--milk);
+}
+.gamma-light-leave-actions > .stage-minor-action:hover,
+.gamma-light-leave-actions > .stage-minor-action:focus-visible {
+  border-color: var(--brass);
+  background: rgba(168, 75, 38, 0.22);
+}
 @media (max-width: 520px) {
   .gamma-light-leave-actions { flex-direction: column-reverse; }
   .gamma-light-leave-actions button { width: 100%; }

@@ -12,7 +12,6 @@
     shareBackdrop: $("stage-share-backdrop"),
     shareTitle: $("stage-share-title"),
     summary: $("stage-session-summary"),
-    sharePanelHint: $("stage-share-panel-hint"),
     realtimeTitle: $("stage-share-realtime-title"),
     realtimeHint: $("stage-share-realtime-hint"),
     hostControls: $("stage-session-host-controls"),
@@ -113,10 +112,6 @@
       els.shareOpen.title = title;
     }
     if (els.shareClose) els.shareClose.setAttribute("aria-label", shareText("閉じる", "Close"));
-    if (els.sharePanelHint) els.sharePanelHint.textContent = shareText(
-      "二つの共有方法があります。会議中に同じ状態を見ながら話すなら「リアルタイム共有」。事前に各自で確認し、必要なメモだけ送ってもらうなら「演者事前学習リンク」です。",
-      "Choose live sharing to discuss the same show together during a meeting. Choose a performer rehearsal link for people to review a fixed snapshot beforehand and send only the notes they choose."
-    );
     if (els.realtimeTitle) els.realtimeTitle.textContent = shareText("リアルタイム共有（会議用）", "Live sharing (for meetings)");
     if (els.realtimeHint) els.realtimeHint.textContent = shareText(
       "同じショーを開いたまま、会議中に配置や注釈を一緒に確認します。",

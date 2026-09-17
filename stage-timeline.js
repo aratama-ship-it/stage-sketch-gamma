@@ -83,6 +83,7 @@
     zoomIn: document.getElementById("stage-timeline-zoom-in"),
     split: document.getElementById("stage-timeline-split"),
     resize: document.getElementById("stage-timeline-resize"),
+    grip: document.getElementById("stage-timeline-grip"),
     unitToggle: document.getElementById("stage-timeline-unit-toggle"),
     unitWarningBackdrop: document.getElementById("stage-timeline-unit-warning-backdrop"),
     unitWarningModal: document.getElementById("stage-timeline-unit-warning-modal"),
@@ -2016,6 +2017,13 @@
         selectedCueId = cue.id;
         syncCueSelection();
         button.focus();
+        /* T-26（2026-09-18 本人要望）: シーンの帯と同じように、キューも押したら
+         * その瞬間へ再生位置を移す（LX・音楽・セリフの3種とも）。
+         * ★「選ぶ」は残す。Delete での削除と範囲選択のまとめ移動に要る（T-5・2026-09-17）。
+         * ★snappedSeconds() は掛けない。目盛りへ吸着させると、押したキューと位置がずれる。
+         * ★ドラッグで動かした直後は suppressCueClickId で弾かれるので、ここへは来ない。
+         * ★二度押しはキューの詳細。1回目で飛んでから窓が開くのは自然なのでそのままにする。 */
+        if (Number.isFinite(cue.seconds)) seekToSeconds(cue.seconds);
       });
       button.addEventListener("dblclick", () => openCueDetails(cue, button));
       button.addEventListener("contextmenu", (event) => openTimelineLockMenu(
@@ -2128,15 +2136,29 @@
       block.className = "stage-timeline-transition-block";
       const isPoint = Boolean(transition.isPoint || Math.abs(transition.end - transition.start) < 1e-6);
       if (isPoint) block.classList.add("is-point");
+      /* T-25（2026-09-18 本人要望）: 転換の名前は転換のレーンに出す。
+       * これまで中身のある文字（転換 → 次のシーン名）はシーンのレーン側に出ていて、
+       * 転換のレーンには連番（転換 1）しか無かった。逆だった、というのが本人の指摘。 */
+      const nextScene = timeline.segments.find((segment) => (
+        segment.sceneId && segment.start >= transition.end - 1e-6
+      ));
+      const isPointBlock = isPoint;
+      const transitionLabel = isPointBlock || !nextScene
+        ? transition.title
+        : `${tx("転換")} → ${nextScene.title}`;
       const label = document.createElement("span");
       label.className = "stage-timeline-block-label";
-      label.textContent = transition.title;
+      label.textContent = transitionLabel;
+      /* 狭い転換では文字が溢れる。シーン側の帯と同じ 64px を境にする。 */
+      if (!isPointBlock && pxFor(transition.end) - pxFor(transition.start) < 64) {
+        block.classList.add("is-compact");
+      }
       if (transition.timelineLockEdge === "start") block.append(lockIndicator("start"));
       block.append(label);
       if (transition.timelineLockEdge === "end") block.append(lockIndicator("end"));
       block.title = isPoint
         ? `${labelPosition(transition.end)} ${tx("転換ポイント")}`
-        : `${labelPosition(transition.start)}–${labelPosition(transition.end)} ${transition.title}${timelineContentCanResize() ? `（${tx("左右端をドラッグで長さを調整")}）` : ""}`;
+        : `${labelPosition(transition.start)}–${labelPosition(transition.end)} ${transitionLabel}${timelineContentCanResize() ? `（${tx("左右端をドラッグで長さを調整")}）` : ""}`;
       block.setAttribute("role", "img");
       block.setAttribute("aria-label", block.title);
       placeBlock(block, transition.start, transition.end);
@@ -2159,17 +2181,14 @@
           boundarySeconds: transition.end,
         });
       }
-      const target = timeline.segments.find((segment) => (
-        segment.sceneId && segment.start >= transition.end - 1e-6
-      ));
+      /* T-25（2026-09-18 本人要望）: シーンのレーンの斜線の帯は「どこが転換か」を示す図として残し、
+       * 文字は出さない（名前は転換のレーンへ移した）。 */
       const marker = document.createElement("div");
       marker.className = "stage-timeline-scene-transition-marker";
       if (isPoint) marker.classList.add("is-point");
       else if (pxFor(transition.end) - pxFor(transition.start) < 64) marker.classList.add("is-compact");
       marker.setAttribute("aria-hidden", "true");
-      marker.textContent = target
-        ? `${tx("転換")} → ${target.title}`
-        : tx("転換");
+      marker.textContent = "";
       marker.title = `${labelPosition(transition.start)} ${tx("転換開始")} → ${labelPosition(transition.end)} ${tx("次のシーンへ")}`;
       placeBlock(marker, transition.start, transition.end);
       els.scenesLane.append(marker);
@@ -2464,14 +2483,21 @@
     saveUi();
   }
 
+  /* T-26（2026-09-18）: 「その秒へ飛ぶ」を1か所にまとめる。
+   * 目盛りへの吸着は掛けない（呼ぶ側が既に正確な秒を持っている場合に使う）。 */
+  function seekToSeconds(seconds) {
+    if (!timeline) return;
+    seekSeconds = clamp(seconds, 0, timeline.duration);
+    if (els.audio && audioMatchesTimeline()) els.audio.currentTime = seekSeconds;
+    syncSceneForSeek();
+    updatePlayhead();
+  }
+
   function seekFromPointer(event) {
     if (!timeline) return;
     const rect = els.ruler.getBoundingClientRect();
     const rawSeconds = (event.clientX - rect.left) / Math.max(1, rect.width) * timeline.duration;
-    seekSeconds = clamp(snappedSeconds(rawSeconds), 0, timeline.duration);
-    if (els.audio && audioMatchesTimeline()) els.audio.currentTime = seekSeconds;
-    syncSceneForSeek();
-    updatePlayhead();
+    seekToSeconds(snappedSeconds(rawSeconds));
   }
 
   async function toggleTimelinePlayback() {
@@ -3087,6 +3113,54 @@
   els.resize.addEventListener("pointermove", continueTimelineResize);
   els.resize.addEventListener("pointerup", endTimelineResize);
   els.resize.addEventListener("pointercancel", endTimelineResize);
+  /* T-08（2026-09-18 本人要望）: 画面左下の取っ手。上の帯と同じ処理へつなぐ。
+   * ★掴む対象が違うだけなので、ポインタの取り込み先だけ差し替える。
+   * ★動かさずに離したときは開閉のトグル（Eキーと同じ）。 */
+  if (els.grip) {
+    let gripPulled = 0;
+    els.grip.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      gripPulled = 0;
+      timelineResize = {
+        pointerId: event.pointerId,
+        startY: event.clientY,
+        startHeight: ui.height,
+        collapsed: ui.collapsed,
+        el: els.grip,
+      };
+      els.grip.setPointerCapture(event.pointerId);
+      document.body.classList.add("is-timeline-resizing");
+      event.preventDefault();
+    });
+    els.grip.addEventListener("pointermove", (event) => {
+      if (timelineResize && event.pointerId === timelineResize.pointerId) {
+        gripPulled = Math.max(gripPulled, Math.abs(timelineResize.startY - event.clientY));
+      }
+      continueTimelineResize(event);
+    });
+    const finish = (event) => {
+      const wasCollapsed = timelineResize && timelineResize.collapsed;
+      endTimelineResize(event);
+      // 引かずに押しただけなら開閉する（取っ手をボタンとしても使えるように）
+      if (event.type === "pointerup" && gripPulled < 3) {
+        setTimelineCollapsed(!ui.collapsed, { save: true });
+        if (!ui.collapsed) renderTimeline();
+      } else if (wasCollapsed) {
+        renderTimeline();
+      }
+      gripPulled = 0;
+    };
+    els.grip.addEventListener("pointerup", finish);
+    els.grip.addEventListener("pointercancel", finish);
+    els.grip.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+        event.preventDefault();
+        if (ui.collapsed) { setTimelineCollapsed(false, { save: true }); renderTimeline(); return; }
+        applyTimelineHeight(ui.height + (event.key === "ArrowUp" ? 24 : -24), { save: true });
+        renderTimeline();
+      }
+    });
+  }
   els.resize.addEventListener("dblclick", () => {
     if (ui.collapsed) {
       setTimelineCollapsed(false, { save: true });
