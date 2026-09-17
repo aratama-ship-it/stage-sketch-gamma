@@ -1,4 +1,4 @@
-const CACHE_NAME = "stage-sketch-gamma-pwa-v63";
+const CACHE_NAME = "stage-sketch-gamma-pwa-v64";
 const APP_SHELL = [
   "./stage-lighting-plans.js?v=2026091650",
   "./stage-lighting-plan-overlay.js?v=2026091650",
@@ -17,11 +17,11 @@ const APP_SHELL = [
   "./light-design/volume-light.js?v=20260915-2",
   "./light-design/laser-effects.js?v=20260915-5-color-presets",
   "./light-design/laser-effects-ui.js?v=20260915-3-supported-shapes",
-  "./light-design/app.js?v=2026091702",
+  "./light-design/app.js?v=2026091703",
   "./light-design/light-presets.js?v=1789357787",
   "./light-design/light-presets-ui.js?v=20260915-3-vertical-cards",
   "./light-design/selected-light-presets-engine.js?v=1789614000",
-  "./light-design/selected-light-presets-ui.js?v=20260917-9-order",
+  "./light-design/selected-light-presets-ui.js?v=20260917-11-plansteps",
   "./light-design/embed.js?v=2026091650",
   "./stage.html",
   "./style.css?v=2026091921",

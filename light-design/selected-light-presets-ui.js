@@ -417,7 +417,8 @@
     /* 見本／調整は既存UIが内部で直ちに再描画するため、親要素のbubbleではなく各ボタンのcaptureで先に型表示を外す。 */
     [...tabs.querySelectorAll("button")].filter((button) => button !== tab && !button.dataset.slpReset).forEach((button) => {
       button.dataset.slpReset = "1";
-      button.addEventListener("click", () => { ui.panel = "adjust"; typePane.hidden = true; tab.setAttribute("aria-pressed", "false"); }, true);
+      // 型パネルを離れたら、当てていない並びの下書きは図からも消す（残すと当てた後と見分けがつかない）
+      button.addEventListener("click", () => { ui.panel = "adjust"; typePane.hidden = true; tab.setAttribute("aria-pressed", "false"); updateStepPreview(null); }, true);
     });
     return tab;
   }
@@ -460,6 +461,30 @@
     const last = rows.length ? rows[rows.length - 1].step + 1 : 0;
     return `<div class="slp-ord-wrap"><ol class="slp-ord-list">${items}</ol>
       <p class="slp-note">つかんで上下へ動かすと順番が変わります。「同時」にすると、上の灯と同じ番号＝一緒に光ります。全${rows.length}灯が${last}段で光ります。</p></div>`;
+  }
+
+  /* 並べている最中の段を平面図へ渡す（2026-09-17 本人要望「段の番号を灯体の丸に出す」）。
+     engine をそのまま通して出すので、画面の並びと当てたあとの光り方がずれない。
+     当てる前の下書きなのでキューは触らず、state.slpStepPreview（描画だけが読む）へ置く。 */
+  function updateStepPreview(preset) {
+    const ids = selectedIds();
+    const live = ui.panel === "type" && preset && preset.id === "flash.sequence" && ids.length > 0;
+    let next = null;
+    if (live) {
+      const probe = X.applySelectedLightPreset({ presetId: preset.id, cue: H.cue(), fixtures: state.rig.fixtures, selection: ids, choices: choices(), regions: stageRegions(), order: effectiveOrder() });
+      if (probe.status === "applied") {
+        next = {};
+        probe.targets.forEach((fid) => {
+          const seq = (probe.nextCue.lights[fid] || {}).strobe;
+          if (seq && seq.seq && Number.isFinite(Number(seq.seq.rank))) next[fid] = Math.round(Number(seq.seq.rank));
+        });
+      }
+    }
+    const before = state.slpStepPreview ? JSON.stringify(state.slpStepPreview) : "";
+    const after = next ? JSON.stringify(next) : "";
+    if (before === after) return;
+    if (next) state.slpStepPreview = next; else delete state.slpStepPreview;
+    H.draw();
   }
 
   function controlsFor(preset, { concise = false } = {}) {
@@ -579,6 +604,8 @@
         if (RERENDER_KEYS.includes(key)) rerender();
       };
     });
+    // 並べ替え・同時・方式を変えたあとの段を、そのつど平面図へ映す
+    updateStepPreview(currentPreset());
   }
 
   function renderModal() {
@@ -650,9 +677,11 @@
       document.querySelectorAll(".lpTabs button").forEach((button) => { if (button !== tab) button.setAttribute("aria-pressed", "false"); });
       renderTypePane();
       drawRangeOverlay();
+      updateStepPreview(currentPreset());
       return;
     }
     drawRangeOverlay();
+    updateStepPreview(null);
   }
   window.SELECTED_LIGHT_PRESETS_UI = { refresh, openModal };
   refresh();

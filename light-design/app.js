@@ -560,6 +560,14 @@
   /* ストロボは往復（levelAt）とは別に、いまの瞬間だけ削る掛け算として上乗せする（2026-09-13 本人要望）。
      ムービングだけが持てる（配置パネルで種類を切り替えても、固定灯では箱ごと出さない）。 */
   const litFactorOf = (f, l) => (isLit(l) ? curveAt(E.levelAt(l, phaseOf(f, l)) / 100) * E.strobeMul(l && l.strobe, state.play.t) : 0);
+  /* ストロボの発生順（段・1始まり）。型パネルで並べている最中は、まだ当てていない並び（下書き）を
+     見せる。それ以外は、いま当たっているキューの strobe.seq を見る。無ければ null＝出さない。 */
+  const strobeStepOf = (fid) => {
+    const draft = state.slpStepPreview;
+    if (draft && Object.prototype.hasOwnProperty.call(draft, fid)) return draft[fid] + 1;
+    const l = lightOf(fid), seq = l && l.on === true && l.strobe && l.strobe.on ? l.strobe.seq : null;
+    return seq && Number.isFinite(Number(seq.rank)) ? Math.round(Number(seq.rank)) + 1 : null;
+  };
   // 点ける。強さが0のまま点けても光らないので、そのときは全開に戻す
   function turnOn(fid) { ensureOn(fid); const l = lightOf(fid); if (l && levelOf(l) <= 0) setLight(fid, { level: 100 }); }
   const LEVEL_WORD = (v) => (v <= 0 ? "消灯" : v < 25 ? "かすか" : v < 55 ? "暗め" : v < 85 ? "普通" : "全開");
@@ -1161,7 +1169,7 @@
       const X = f.mount.type === "side" ? (f.mount.side === "shimote" ? B.x - SIDE_DX : B.x + B.w + SIDE_DX) : p.X;
       const Y = isFront(f) ? B.y + B.h + FRONT_DY : p.Y;     // 前明かりは客席帯に並べる（実距離は数値で）
       if (showOn("fixtures")) {
-        const o = { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) };
+        const o = { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f), step: strobeStepOf(f.id) };
         if (f.mount.type === "cyc") o.bar = cycFixtureBar(P, f);
         drawFixtureMark(pctx, X, Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), o);
       }
@@ -2039,6 +2047,17 @@
     if (o.moving && !o.ghost) { ctx.strokeStyle = o.sel ? "#d3ac59" : "rgba(240,231,214,0.55)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X, Y, s * 1.55, 0, Math.PI * 2); ctx.stroke(); }
     if (o.st === "off") { ctx.strokeStyle = "rgba(240,231,214,0.5)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(markX - markSize, markY + markSize); ctx.lineTo(markX + markSize, markY - markSize); ctx.stroke(); }
     if (o.no) { ctx.fillStyle = o.sel ? "#1a1409" : "rgba(240,231,214,0.95)"; if (o.sel) { ctx.fillStyle = "#d3ac59"; ctx.fillRect(markX - 22, markY + markSize + 4, 44, 22); ctx.fillStyle = "#1a1409"; } ctx.font = "600 16px sans-serif"; ctx.textBaseline = "top"; ctx.textAlign = "center"; ctx.fillText(o.no, markX, markY + markSize + 6); ctx.textAlign = "left"; }
+    /* ストロボの発生順（段）。番号は印の下なので、こちらは右上に丸で出す。
+       同じ数字が付いた灯は一緒に光る（2026-09-17 本人要望）。 */
+    if (o.step != null) {
+      const bx = markX + markSize + 11, by = markY - markSize - 7;
+      ctx.beginPath(); ctx.arc(bx, by, 12, 0, Math.PI * 2);
+      ctx.fillStyle = "#d3ac59"; ctx.fill();
+      ctx.strokeStyle = "rgba(13,14,16,0.85)"; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = "#1a1409"; ctx.font = "700 16px sans-serif"; ctx.textBaseline = "middle"; ctx.textAlign = "center";
+      ctx.fillText(String(o.step), bx, by + 1);
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    }
     ctx.restore();
   }
   /* 作業灯の暗幕は光のない背景だけを暗くする。暗幕の上に情報レイヤーを描き直し、
