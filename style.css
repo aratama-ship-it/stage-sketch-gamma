@@ -2956,7 +2956,17 @@ canvas[data-tool="note"] { cursor: copy; }
 .stage-export-modal { width: min(520px, calc(100vw - 40px)); }
 
 .stage-modal.stage-cue-sheet-modal { width: min(520px, calc(100vw - 40px)); }
-.stage-modal.stage-cue-sheet-modal.is-viewing-sheet { width: min(1200px, calc(100vw - 40px)); }
+/* 表を見ているときは窓いっぱいに広げる（本人指示・2026-09-18）。
+   1200pxでは11列が入りきらず、横スクロールに頼る形になっていた。 */
+/* ★100vw は縦スクロールバーの幅を含むので、窓いっぱいに広げると左右の余白がずれる。
+   左右を直に留め、幅は成り行きにする（横方向の translate を外す）。 */
+.stage-modal.stage-cue-sheet-modal.is-viewing-sheet {
+  left: 12px;
+  right: 12px;
+  width: auto;
+  max-width: none;
+  transform: translateY(-50%);
+}
 .stage-cue-sheet-body { max-height: min(72vh, 680px); overflow-y: auto; }
 .stage-cue-sheet-group + .stage-cue-sheet-group { margin-top: 18px; }
 .stage-cue-sheet-group h3 { margin: 0 0 6px; color: var(--milk); font: 500 13px/1.4 var(--serif); }
@@ -2974,7 +2984,13 @@ canvas[data-tool="note"] { cursor: copy; }
 .stage-cue-sheet-row.is-disabled > span { grid-column: 1 / 4; min-height: 44px; display: flex; align-items: center; }
 #stage-cue-sheet-back { width: auto; min-height: 44px; margin: 0 0 10px; }
 .stage-cue-sheet-scroll { overflow-x: auto; background: var(--paper); color: var(--ink); }
+/* 既定は語を折らない幅（印刷と同じ見え方）。画面で見るときだけ窓の幅に収め、
+   セルの中で折り返して11列すべてを一度に見えるようにする。 */
 .cue-sheet-paper { min-width: max-content; padding: 14px; background: var(--paper); color: var(--ink); }
+.is-viewing-sheet .cue-sheet-paper { min-width: 0; }
+.is-viewing-sheet .cue-sheet-table { table-layout: fixed; width: 100%; }
+.is-viewing-sheet .cue-sheet-table th,
+.is-viewing-sheet .cue-sheet-table td { overflow-wrap: anywhere; }
 .cue-sheet-paper-head { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 10px; }
 .cue-sheet-paper-head h1 { margin: 0; color: var(--ink); font: 600 16px/1.35 var(--serif); letter-spacing: 0; }
 .cue-sheet-paper-head p { margin: 2px 0 0; }
