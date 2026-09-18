@@ -354,7 +354,13 @@
       bottomY: bottomY * (BOWL_DEFAULTS.baseHeight / height),
       backW,
       frontW,
-      shift: clamp(-offsetM / distanceM, -1, 1),
+      /* ★横ずれの向きは「席と同じ側」。中央より上手（+x）に座ると、舞台の奥は
+       * 手前より右へ寄って見える（遠いものほど視線のずれが小さいため）。
+       * 既定の席もその約束で作ってある（"side" は plan.x 0.16＝下手側で shift −0.28）。
+       * 2026-09-18 本人報告「カスタム視点が左右反転している」。符号が逆だった。
+       * 実測（明るい所の重心・0が左端）: 既定の左右席 0.319 ／ 直す前の「右へ4m」0.273
+       * ＝右の席なのに左の席と同じ寄り方をしていた。 */
+      shift: clamp(offsetM / distanceM, -1, 1),
       rise: lookRatio,
       apron: pxPerM * heightM * (BOWL_DEFAULTS.baseHeight / height),
       derived: true,
