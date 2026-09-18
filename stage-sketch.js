@@ -4888,6 +4888,8 @@
     setInfoTitle: document.getElementById("stage-setinfo-title"),
     setInfoName: document.getElementById("stage-setinfo-name"),
     setInfoDims: document.getElementById("stage-setinfo-dims"),
+    setInfoPreview: document.getElementById("stage-setinfo-preview"),
+    setInfoPreviewHint: document.getElementById("stage-setinfo-preview-hint"),
     setInfoColor: document.getElementById("stage-setinfo-color"),
     setInfoNote: document.getElementById("stage-setinfo-note"),
     setInfoKind: document.getElementById("stage-setinfo-kind"),
@@ -20266,6 +20268,289 @@
     return setInfoId ? (state.project.sets || []).find((t) => t.id === setInfoId) : null;
   }
 
+  /* ---------- L-04 設定窓の回転台プレビュー（2026-09-18 本人要望） ----------
+   * 「自動で回転台に乗っているようにぐるぐる回って360度みれるように。
+   *   もしドラッグされたらそのオブジェクトを3Dでみることができるように」。
+   * ★形は pieceParts()（本体の正本）から取る。ここが持つのは塗りと見る向きだけ。
+   *   共有部品 stage-set-render.js は別セッションの作業中で本体へは読み込まれていないため、
+   *   当てにしない。読み込まれたら、この塗りをそちらへ寄せられる。
+   * ★大きさの見当がつくように、身長1.7mの人の影を横に置く（回さない）。
+   * ★prefers-reduced-motion では自動で回さない（ドラッグでは回せる）。 */
+  const SETINFO_PREVIEW = Object.freeze({
+    height: 150,
+    turnSeconds: 14,          // 1周にかける秒数
+    tiltDeg: 18,              // 見下ろす角度の既定
+    tiltMinDeg: -5,
+    tiltMaxDeg: 60,
+    figureM: 1.7,             // 横に置く人の背丈
+    marginPx: 14,
+  });
+  let setInfoPreview = null;
+
+  function setInfoPreviewItem() {
+    return setInfoId ? (state.project.sets || []).find((t) => t.id === setInfoId) : null;
+  }
+
+  /* その登録物を「1つ置いた駒」として見たときの形。本体と同じ関数から取る。 */
+  function setInfoPreviewShape(item) {
+    const piece = {
+      id: `preview:${item.id}`, type: item.kind, setId: item.id,
+      dims: item.dims, color: item.color, u: 0.5, v: 0.5, facing: 0, size: 100,
+    };
+    const dims = pieceDims(piece) || item.dims || { w: 1, d: 1, h: 1 };
+    let parts = [];
+    try { parts = pieceParts(piece) || []; } catch (_) { parts = []; }
+    if (!parts.length) {
+      const w = finite(dims.w, finite(dims.dia, 1));
+      const d = finite(dims.d, finite(dims.dia, w));
+      const h = finite(dims.h, finite(dims.dia, 1));
+      parts = [{ ox: 0, oz: 0, w, d, h, lift: finite(dims.lift, 0), tint: 1 }];
+    }
+    return { parts, dims };
+  }
+
+  /* 箱を8つの角へ。ox/oz は道具の中心からのずれ、lift は床からの高さ。 */
+  function setInfoPreviewCorners(part) {
+    const w = Math.max(0.01, finite(part.w, 0.5)) / 2;
+    const d = Math.max(0.01, finite(part.d, 0.5)) / 2;
+    const h = Math.max(0.01, finite(part.h, 0.5));
+    const ox = finite(part.ox, 0);
+    const oz = finite(part.oz, 0);
+    const lift = finite(part.lift, 0);
+    const out = [];
+    [-1, 1].forEach((sz) => [-1, 1].forEach((sx) => {
+      out.push({ x: ox + sx * w, y: oz + sz * d, z: lift });
+    }));
+    [-1, 1].forEach((sz) => [-1, 1].forEach((sx) => {
+      out.push({ x: ox + sx * w, y: oz + sz * d, z: lift + h });
+    }));
+    return out;
+  }
+
+  function drawSetInfoPreview() {
+    const canvas = els.setInfoPreview;
+    const item = setInfoPreviewItem();
+    if (!canvas || !item || !setInfoPreview) return;
+    const ratio = Math.min(2, window.devicePixelRatio || 1);
+    const cssWidth = canvas.clientWidth || 320;
+    const cssHeight = SETINFO_PREVIEW.height;
+    if (canvas.width !== Math.round(cssWidth * ratio) || canvas.height !== Math.round(cssHeight * ratio)) {
+      canvas.width = Math.round(cssWidth * ratio);
+      canvas.height = Math.round(cssHeight * ratio);
+    }
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+    const { parts, dims } = setInfoPreviewShape(item);
+    const yaw = (setInfoPreview.yaw * Math.PI) / 180;
+    const tilt = Math.sin((setInfoPreview.tilt * Math.PI) / 180);
+    const cos = Math.cos(yaw);
+    const sin = Math.sin(yaw);
+    // 回転台に乗せた点 → 画面（1mあたり k 画素は後で決める）
+    const flat = (point) => ({
+      fx: point.x * cos + point.y * sin,
+      fy: -point.x * sin + point.y * cos,
+      z: point.z,
+    });
+    const boxes = parts.filter((part) => part && !part.kind).map(setInfoPreviewCorners);
+    const lines = parts.filter((part) => part && part.kind === "line" && part.a && part.b);
+    /* ★丸いものを箱で出さない。球は丸く、円盤（盆・丸い座面）は楕円で描く。
+       pieceParts は球に外接の箱を返すので、ここで見分けて描き替える。 */
+    const discs = parts.filter((part) => part && part.kind === "disc" && Array.isArray(part.c));
+    const ball = item.kind === "sphere"
+      ? { r: Math.max(0.05, finite(dims.dia, finite(dims.w, 0.6)) / 2), lift: finite(dims.lift, 0) }
+      : null;
+    const all = boxes.flat().concat(lines.flatMap((part) => [
+      { x: finite(part.a[0], 0), y: finite(part.a[2], 0), z: finite(part.a[1], 0) },
+      { x: finite(part.b[0], 0), y: finite(part.b[2], 0), z: finite(part.b[1], 0) },
+    ]));
+    const figureH = SETINFO_PREVIEW.figureM;
+    const flatAll = all.map(flat);
+    const spanX = Math.max(0.4, Math.max(...flatAll.map((q) => Math.abs(q.fx))) * 2);
+    const topZ = Math.max(figureH, ...flatAll.map((q) => q.z));
+    /* 左に人の影の場所を取り、残りの真ん中へ道具を置く。
+       尺は「人と道具の両方が枠に収まる」いちばん大きい値。 */
+    const figureSpanM = 0.55;
+    const gapM = 0.3;
+    const margin = SETINFO_PREVIEW.marginPx;
+    const labelRoom = 13;
+    const k = Math.min(
+      (cssWidth - margin * 2) / (spanX + figureSpanM + gapM),
+      (cssHeight - margin - labelRoom) / Math.max(0.6, topZ * (1 + tilt * 0.3)),
+    );
+    const baseY = cssHeight - margin - labelRoom + 6;
+    const figX = margin + (figureSpanM / 2) * k;
+    const leftEdge = margin + (figureSpanM + gapM) * k;
+    const centerX = leftEdge + (cssWidth - margin - leftEdge) / 2;
+    const project = (point) => {
+      const q = flat(point);
+      return { X: centerX + q.fx * k, Y: baseY - q.z * k + q.fy * k * tilt, depth: q.fy };
+    };
+
+    // 床（回転台の面）
+    ctx.save();
+    ctx.strokeStyle = "rgba(239,231,214,0.10)";
+    ctx.lineWidth = 1;
+    const plateR = Math.max(0.45, spanX / 2 + 0.2);
+    ctx.beginPath();
+    for (let i = 0; i <= 48; i += 1) {
+      const a = (i / 48) * Math.PI * 2;
+      const at = project({ x: Math.cos(a) * plateR, y: Math.sin(a) * plateR, z: 0 });
+      if (i) ctx.lineTo(at.X, at.Y); else ctx.moveTo(at.X, at.Y);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    /* 大きさの見当をつける人の影（回さない。いつも左に立つ）。
+       ★頭と体は1つながりに描く。離して描くと点が浮いて見える。 */
+    ctx.save();
+    const figTop = baseY - figureH * k;
+    const headR = 0.093 * figureH * k;
+    const shoulderY = figTop + headR * 2.05;
+    const hipW = 0.155 * figureH * k;
+    const shoulderW = 0.2 * figureH * k;
+    ctx.fillStyle = "rgba(239,231,214,0.17)";
+    ctx.beginPath();
+    ctx.moveTo(figX - hipW, baseY);
+    ctx.lineTo(figX - shoulderW, shoulderY + headR * 0.5);
+    ctx.quadraticCurveTo(figX - shoulderW * 0.8, shoulderY - headR * 0.25, figX - headR * 0.62, shoulderY - headR * 0.35);
+    ctx.arc(figX, shoulderY - headR * 0.72, headR, Math.PI * 0.86, Math.PI * 0.14, false);
+    ctx.quadraticCurveTo(figX + shoulderW * 0.8, shoulderY - headR * 0.25, figX + shoulderW, shoulderY + headR * 0.5);
+    ctx.lineTo(figX + hipW, baseY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // 道具。奥の面から順に塗る
+    const tone = validColor(item.color, "#8b98a1");
+    const faces = [[0, 1, 3, 2], [4, 5, 7, 6], [0, 1, 5, 4], [2, 3, 7, 6], [0, 2, 6, 4], [1, 3, 7, 5]];
+    const drawn = [];
+    (ball ? [] : boxes).forEach((corners) => {
+      const at = corners.map(project);
+      faces.forEach((face) => {
+        const pts = face.map((index) => at[index]);
+        const depth = pts.reduce((sum, q) => sum + q.depth, 0) / pts.length;
+        drawn.push({ pts, depth, up: face === faces[1] });
+      });
+    });
+    drawn.sort((a, b) => a.depth - b.depth).forEach((face) => {
+      ctx.beginPath();
+      face.pts.forEach((q, index) => { if (index) ctx.lineTo(q.X, q.Y); else ctx.moveTo(q.X, q.Y); });
+      ctx.closePath();
+      ctx.fillStyle = mixToneForPreview(tone, face.up ? 0.22 : -0.12);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.35)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+    // 円盤（盆・丸い座面）。回転台の面と同じ向きの楕円で置く
+    const setInfoPreviewDisc = (part) => {
+      const cx = finite(part.c[0], 0);
+      const cz = finite(part.c[2], 0);
+      const cy = finite(part.c[1], 0);
+      const r = Math.max(0.02, finite(part.r, 0.2));
+      const top = cy + Math.max(0, finite(part.h, 0));
+      ctx.beginPath();
+      for (let i = 0; i <= 40; i += 1) {
+        const a = (i / 40) * Math.PI * 2;
+        const at = project({ x: cx + Math.cos(a) * r, y: cz + Math.sin(a) * r, z: top });
+        if (i) ctx.lineTo(at.X, at.Y); else ctx.moveTo(at.X, at.Y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = mixToneForPreview(tone, 0.16);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.35)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    };
+    discs.forEach(setInfoPreviewDisc);
+
+    // 球。回しても見え方は変わらないので、丸と陰影だけで出す
+    if (ball) {
+      const at = project({ x: 0, y: 0, z: ball.lift + ball.r });
+      const px = ball.r * k;
+      const shade = ctx.createRadialGradient(at.X - px * 0.35, at.Y - px * 0.4, px * 0.1, at.X, at.Y, px);
+      shade.addColorStop(0, mixToneForPreview(tone, 0.3));
+      shade.addColorStop(1, mixToneForPreview(tone, -0.22));
+      ctx.beginPath();
+      ctx.ellipse(at.X, at.Y, px, px, 0, 0, Math.PI * 2);
+      ctx.fillStyle = shade;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.3)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // 綱・棒のたぐい
+    ctx.strokeStyle = mixToneForPreview(tone, 0.1);
+    ctx.lineCap = "round";
+    lines.forEach((part) => {
+      const a = project({ x: finite(part.a[0], 0), y: finite(part.a[2], 0), z: finite(part.a[1], 0) });
+      const b = project({ x: finite(part.b[0], 0), y: finite(part.b[2], 0), z: finite(part.b[1], 0) });
+      ctx.lineWidth = Math.max(1.5, finite(part.w, 0.05) * k);
+      ctx.beginPath();
+      ctx.moveTo(a.X, a.Y);
+      ctx.lineTo(b.X, b.Y);
+      ctx.stroke();
+    });
+
+    // 寸法の目安（人の影の足元に）
+    ctx.fillStyle = "rgba(239,231,214,0.45)";
+    ctx.font = "11px 'Hiragino Kaku Gothic ProN', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`${SETINFO_PREVIEW.figureM.toFixed(1)}m`, figX, baseY + 11);
+  }
+
+  /* 色を明るく／暗くする。面ごとの陰影だけに使う小さな道具。 */
+  function mixToneForPreview(hex, amount) {
+    const text = /^#[0-9a-f]{6}$/i.test(String(hex)) ? String(hex) : "#8b98a1";
+    const value = parseInt(text.slice(1), 16);
+    const mix = (channel) => {
+      const next = amount >= 0
+        ? channel + (255 - channel) * amount
+        : channel * (1 + amount);
+      return Math.max(0, Math.min(255, Math.round(next)));
+    };
+    return `rgb(${mix((value >> 16) & 255)},${mix((value >> 8) & 255)},${mix(value & 255)})`;
+  }
+
+  function setInfoPreviewFrame(now) {
+    if (!setInfoPreview) return;
+    const last = setInfoPreview.last || now;
+    setInfoPreview.last = now;
+    if (setInfoPreview.spin && !document.hidden) {
+      setInfoPreview.yaw = (setInfoPreview.yaw + ((now - last) / 1000) * (360 / SETINFO_PREVIEW.turnSeconds)) % 360;
+    }
+    const item = setInfoPreviewItem();
+    const stamp = item ? JSON.stringify([item.kind, item.dims, item.color, item.framed,
+      item.frameWidth, item.propShape, item.modelId, item.flown]) : "";
+    if (setInfoPreview.spin || stamp !== setInfoPreview.stamp || setInfoPreview.dirty) {
+      setInfoPreview.stamp = stamp;
+      setInfoPreview.dirty = false;
+      drawSetInfoPreview();
+    }
+    setInfoPreview.raf = window.requestAnimationFrame(setInfoPreviewFrame);
+  }
+
+  function startSetInfoPreview() {
+    const canvas = els.setInfoPreview;
+    if (!canvas) return;
+    stopSetInfoPreview();
+    const still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setInfoPreview = { yaw: 24, tilt: SETINFO_PREVIEW.tiltDeg, spin: !still, stamp: "", dirty: true, raf: 0, last: 0 };
+    if (els.setInfoPreviewHint) {
+      els.setInfoPreviewHint.textContent = tx(still ? "ドラッグで回せます" : "自動で回ります。ドラッグでも回せます");
+    }
+    setInfoPreview.raf = window.requestAnimationFrame(setInfoPreviewFrame);
+  }
+
+  function stopSetInfoPreview() {
+    if (setInfoPreview && setInfoPreview.raf) window.cancelAnimationFrame(setInfoPreview.raf);
+    setInfoPreview = null;
+    document.body.classList.remove("is-setinfo-preview-dragging");
+  }
+
   function openSetInfo(setId) {
     const item = (state.project.sets || []).find((t) => t.id === setId);
     if (!item || !els.setInfo) return;
@@ -20325,12 +20610,14 @@
       persistSoon();
     }, Boolean(item.flown));
     els.setInfo.hidden = false;
+    startSetInfoPreview();          // L-04: 回転台のプレビューを回し始める
     els.setInfoBackdrop.hidden = false;
     els.setInfoName.focus();
     els.setInfoName.select();
   }
 
   function closeSetInfo() {
+    stopSetInfoPreview();           // L-04: 閉じたら回すのをやめる
     setInfoId = null;
     if (els.setInfo) els.setInfo.hidden = true;
     if (els.setInfoBackdrop) els.setInfoBackdrop.hidden = true;
@@ -28522,6 +28809,38 @@ ${propsPlotHtml}
     });
   }
   if (els.setInfoClose) els.setInfoClose.addEventListener("click", closeSetInfo);
+  /* L-04（2026-09-18 本人要望）: 掴んで回せるようにする。横＝回す、縦＝見下ろす角度。
+   * ★掴んだら自動で回るのを止める（見たい向きで止められないと調べられない）。
+   *   次に窓を開いたときはまた回り出す。
+   * ★登録は1回だけ。回している最中かどうかは setInfoPreview の有無で見る。 */
+  if (els.setInfoPreview) {
+    let setInfoPreviewDrag = null;
+    els.setInfoPreview.addEventListener("pointerdown", (event) => {
+      if (!setInfoPreview || event.button !== 0) return;
+      setInfoPreviewDrag = { id: event.pointerId, x: event.clientX, y: event.clientY,
+        yaw: setInfoPreview.yaw, tilt: setInfoPreview.tilt };
+      setInfoPreview.spin = false;
+      els.setInfoPreview.setPointerCapture(event.pointerId);
+      document.body.classList.add("is-setinfo-preview-dragging");
+      if (els.setInfoPreviewHint) els.setInfoPreviewHint.textContent = tx("ドラッグで回せます");
+      event.preventDefault();
+    });
+    els.setInfoPreview.addEventListener("pointermove", (event) => {
+      if (!setInfoPreviewDrag || !setInfoPreview || event.pointerId !== setInfoPreviewDrag.id) return;
+      setInfoPreview.yaw = (setInfoPreviewDrag.yaw + (event.clientX - setInfoPreviewDrag.x) * 0.6) % 360;
+      setInfoPreview.tilt = clamp(setInfoPreviewDrag.tilt + (event.clientY - setInfoPreviewDrag.y) * 0.35,
+        SETINFO_PREVIEW.tiltMinDeg, SETINFO_PREVIEW.tiltMaxDeg);
+      setInfoPreview.dirty = true;
+      event.preventDefault();
+    });
+    const endSetInfoPreviewDrag = (event) => {
+      if (!setInfoPreviewDrag || event.pointerId !== setInfoPreviewDrag.id) return;
+      setInfoPreviewDrag = null;
+      document.body.classList.remove("is-setinfo-preview-dragging");
+    };
+    els.setInfoPreview.addEventListener("pointerup", endSetInfoPreviewDrag);
+    els.setInfoPreview.addEventListener("pointercancel", endSetInfoPreviewDrag);
+  }
   if (els.setInfoBackdrop) els.setInfoBackdrop.addEventListener("click", closeSetInfo);
   if (els.setInfoName) {
     els.setInfoName.addEventListener("input", (e) => {
@@ -31214,7 +31533,12 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       if (tourAt >= 0) hideTour();
       return;
     }
-    if (tourAt >= 0 || (seenTour && !tourRequested)) return;
+    /* 2026-09-18 本人指示「チュートリアルはしばらくいらないので自動起動はしないように」:
+     * ★案内は**頼まれたときだけ**出す。自動では出さない。
+     *   頼み方は2つ——環境設定の「はじめての案内」ボタン（#stage-tour-start）と、URLの ?tour。
+     *   以前は「まだ見ていない人」に自動で出していた（seenTour が false のとき）。
+     *   戻すときは `|| (seenTour && !tourRequested)` の形へ返す。 */
+    if (tourAt >= 0 || !tourRequested) return;
     tourLaunchTimer = setTimeout(() => {
       tourLaunchTimer = null;
       if (!stageTourContextActive() || tourAt >= 0) return;

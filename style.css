@@ -17502,6 +17502,37 @@ body.is-roster-reordering .stage-cast-name { cursor: grabbing; }
 /* T-30（2026-09-18 本人要望）: フレームの枠の幅。数値の左右に −／＋ を添える
  * （dev-preferences 2026-09-17 の方針）。 */
 #stage-setinfo-frame-width-row { margin-top: 8px; }
+
+/* L-04（2026-09-18）: 設定窓の回転台プレビュー。
+ * 中身は canvas なので、地の色と枠だけをここで決める。高さは固定（窓が伸び縮みしない）。 */
+.stage-setinfo-preview {
+  position: relative;
+  margin-bottom: 12px;
+  border: 1px solid var(--line-dark);
+  border-radius: 4px;
+  background: #14110e;
+  overflow: hidden;
+}
+
+.stage-setinfo-preview canvas {
+  display: block;
+  width: 100%;
+  height: 150px;
+  cursor: grab;
+  touch-action: none;
+}
+
+body.is-setinfo-preview-dragging .stage-setinfo-preview canvas { cursor: grabbing; }
+
+.stage-setinfo-preview-hint {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  margin: 0;
+  font-size: 11px;
+  color: var(--milk-dim);
+  pointer-events: none;
+}
 .stage-setinfo-frame-width {
   display: flex;
   align-items: center;
