@@ -12,7 +12,7 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026091987">
+<link rel="stylesheet" href="style.css?v=2026091989">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -1069,23 +1069,25 @@
            いまは E キーを知っているか、畳んだとき下に残る12pxの細い帯を掴むしかなかった。
            ★パネルの中に置くと、畳んだとき transform で一緒に下へ逃げて見えなくなる。
              だから画面へ直接貼る（position: fixed）。開閉にかかわらず左下に居続ける。 -->
-      <!-- T-08 二度目（2026-09-18 本人要望）: 「取っ手感がない・触ってみたくなる形に・
-           スーツケースの取っ手のような形・SVGでがっつり・色は黄色・大きめに」。
+      <!-- T-08 三度目（2026-09-18 本人選択・4案から）: スーツケースの取っ手は
+           「大きい・重い」「形が合わない」。取っ手をやめ、**引くと何が出てくるか**を形で言う。
+           ＝タイムラインの端（時間の目盛り）が下から覗いている箱。上辺だけ太くして掴む場所を示す。
+           寸法・色・却下した案は design/TOKEN_SHEET_timeline_grip_2026-09-18.md が正本。
            ★上へ引いたとき、取っ手もタイムラインにくっついて上がる（--stage-timeline-grip-bottom）。 -->
       <button type="button" class="stage-timeline-resize-handle" id="stage-timeline-grip"
               aria-label="タイムラインを開く・高さを変える"
               title="上へ引くとタイムラインが開きます。押すと開閉、上下キーで高さを変えられます（E）"
               aria-keyshortcuts="E">
-        <svg viewBox="0 0 72 34" aria-hidden="true" focusable="false">
-          <!-- 台座。ケースに留め金で付いている部分 -->
-          <rect x="3" y="25" width="19" height="9" rx="4.5"></rect>
-          <rect x="50" y="25" width="19" height="9" rx="4.5"></rect>
-          <!-- 取っ手の芯。左右の柱から立ち上がって上でつながる -->
-          <path d="M12.5 29 V19 C12.5 10.5 21 5.5 36 5.5 C51 5.5 59.5 10.5 59.5 19 V29"
-                fill="none" stroke-width="8" stroke-linecap="round"></path>
-          <!-- 握りの滑り止め -->
-          <path d="M28 8.5 H44 M27 12.5 H45" fill="none" stroke-width="2"
-                stroke-linecap="round" opacity=".55"></path>
+        <svg viewBox="0 0 40 22" aria-hidden="true" focusable="false">
+          <!-- 箱。地は不透明。下のパネルの文字と重なって読めなくなるのを防ぐ -->
+          <path d="M3.6 22 V6 a3 3 0 0 1 3 -3 H33.4 a3 3 0 0 1 3 3 V22 Z"
+                fill="#241d18" stroke="currentColor" stroke-width="1.1"></path>
+          <!-- つまむ縁。ここだけ太い＝掴む場所 -->
+          <path d="M5 5.2 H35" fill="none" stroke="currentColor" stroke-width="2.6"
+                stroke-linecap="round"></path>
+          <!-- 時間の目盛り。中央だけ長い（等間隔の模様に見せない） -->
+          <path d="M11 10.5 V16 M20 10.5 V19 M29 10.5 V16" fill="none" stroke="currentColor"
+                stroke-width="1.5" stroke-linecap="round" opacity=".8"></path>
         </svg>
       </button>
 
@@ -3048,7 +3050,7 @@
 <script src="gamma-formation-model.js?v=formation1"></script>
 <script src="stage-sketch.js?v=2026091988"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
-<script src="stage-timeline.js?v=2026091987"></script>
+<script src="stage-timeline.js?v=2026091989"></script>
 <script src="stage-session.js?v=2026091987"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>

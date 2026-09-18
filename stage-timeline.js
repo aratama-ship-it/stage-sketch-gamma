@@ -33,6 +33,10 @@
   const UI_KEY = "gamma:shosai-stage-timeline-ui-v1";
   const DEFAULT_HEIGHT = 360;
   const MIN_HEIGHT = 260;
+  /* 2026-09-18 本人指摘「取っ手を一番下まで持っていってもタイムラインが収納できない」:
+     下限（MIN_HEIGHT）に着いてから、さらにこれだけ引き下げて離すと畳む。
+     引き上げ直して下限より上へ戻れば、ふつうの高さ変更に戻る（離すまで確定しない）。 */
+  const COLLAPSE_PULL = 40;
   const ZOOM_MIN = 0.05;
   const ZOOM_MAX = 12;
   const ZOOM_FACTOR = 1.3;
@@ -2668,7 +2672,13 @@
       event.preventDefault();
       return;
     }
-    applyTimelineHeight(timelineResize.startHeight + timelineResize.startY - event.clientY);
+    const wanted = timelineResize.startHeight + timelineResize.startY - event.clientY;
+    applyTimelineHeight(wanted);
+    /* 下限より下へ引いた量を覚える。離した時点で COLLAPSE_PULL を超えていれば畳む。
+       途中で引き上げ直せば 0 に戻る＝畳まない。 */
+    timelineResize.overPull = Math.max(0, MIN_HEIGHT - wanted);
+    document.body.classList.toggle("is-timeline-will-collapse",
+      timelineResize.overPull >= COLLAPSE_PULL);
   }
 
   function endTimelineResize(event) {
@@ -2697,6 +2707,13 @@
       return;
     }
     document.body.classList.remove("is-timeline-resizing");
+    document.body.classList.remove("is-timeline-will-collapse");
+    // 下限に着いたあと、さらに引き下げて離した＝しまう合図
+    if (event.type === "pointerup" && (resizing.overPull || 0) >= COLLAPSE_PULL) {
+      applyTimelineHeight(resizing.startHeight, { save: true });   // 次に開くときの高さは保つ
+      setTimelineCollapsed(true, { save: true });
+      return;
+    }
     applyTimelineHeight(ui.height, { save: true });
     renderTimeline();
   }
@@ -3168,7 +3185,17 @@
     els.grip.addEventListener("keydown", (event) => {
       if (event.key === "ArrowUp" || event.key === "ArrowDown") {
         event.preventDefault();
-        if (ui.collapsed) { setTimelineCollapsed(false, { save: true }); renderTimeline(); return; }
+        /* しまっているときは↑だけが開く。↓は何もしない
+           （両方が開閉のトグルだと、押し続けたとき開いたり閉じたりする）。 */
+        if (ui.collapsed) {
+          if (event.key !== "ArrowUp") return;
+          setTimelineCollapsed(false, { save: true }); renderTimeline(); return;
+        }
+        // 下限に着いているところで↓をもう一度＝しまう
+        if (event.key === "ArrowDown" && ui.height <= MIN_HEIGHT) {
+          setTimelineCollapsed(true, { save: true });
+          return;
+        }
         applyTimelineHeight(ui.height + (event.key === "ArrowUp" ? 24 : -24), { save: true });
         renderTimeline();
       }
@@ -3186,6 +3213,11 @@
   els.resize.addEventListener("keydown", (event) => {
     if (event.key !== "ArrowUp" && event.key !== "ArrowDown" && event.key !== "Home") return;
     event.preventDefault();
+    // 下限に着いているところで↓をもう一度＝しまう（引き切って離すのと同じ）
+    if (event.key === "ArrowDown" && ui.height <= MIN_HEIGHT) {
+      setTimelineCollapsed(true, { save: true });
+      return;
+    }
     const next = event.key === "Home" ? DEFAULT_HEIGHT : ui.height + (event.key === "ArrowUp" ? 24 : -24);
     applyTimelineHeight(next, { save: true });
     renderTimeline();

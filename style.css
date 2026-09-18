@@ -17366,7 +17366,9 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
  *   中に置くと畳んだとき一緒に隠れて「開くための取っ手」にならない。
  * 大きさは28px角。畳んだとき下に残る帯（12px）より大きくないと掴み所にならない。
  * 中の3本線で「引ける」ことを示す（ただの四角だと押せるのか引けるのか読めない）。 */
-/* T-08 二度目（2026-09-18 本人要望）: スーツケースの取っ手の形にする。黄色・大きめ・SVG。
+/* T-08 三度目（2026-09-18 本人選択）: 取っ手ではなく「時間の目盛りが覗く箱」にする。
+ * 40×22（2代目72×34の面積36%）。地は不透明＝下のパネルの文字と重なって読めなくなるのを防ぐ。
+ * 数値・コントラストの実測値・却下した案は design/TOKEN_SHEET_timeline_grip_2026-09-18.md が正本。
  * ★上へ引くとタイムラインが上がるので、取っ手もそれに合わせて上がる。
  *   位置は stage-timeline.js が --stage-timeline-grip-bottom へ入れる
  *   （開いているときはタイムラインの高さ、畳んでいるときは残した帯の高さ）。 */
@@ -17377,10 +17379,10 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
   bottom: calc(var(--stage-timeline-grip-bottom, 0px) + env(safe-area-inset-bottom, 0px));
   display: grid;
   place-items: end center;
-  width: 72px;
-  height: 34px;
+  width: 40px;
+  height: 22px;
   /* ★全体規則の button { min-height: 44px } が height に勝つ（S-01 と同じ罠）。 */
-  min-height: 34px;
+  min-height: 22px;
   padding: 0;
   border: 0;
   background: none;
@@ -17392,17 +17394,23 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
 
 .stage-timeline-resize-handle svg {
   display: block;
-  width: 72px;
-  height: 34px;
-  fill: currentColor;
+  width: 40px;
+  height: 22px;
+  /* ★塗りは箱の地だけ（SVG 側で指定）。ここで fill: currentColor を掛けると全部真鍮で潰れる。 */
+  fill: none;
   stroke: currentColor;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.75));
 }
 
 .stage-timeline-resize-handle:hover,
 .stage-timeline-resize-handle:focus-visible { color: var(--paper); transform: translateY(-2px); }
 .stage-timeline-resize-handle:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; border-radius: 4px; }
 body.is-timeline-resizing .stage-timeline-resize-handle { cursor: grabbing; transition: none; }
+
+/* 2026-09-18: 下限より下へ引いている間だけ「離せばしまいます」と見せる。
+ * 取っ手の線を明るくするだけ（パネルを動かすと掴んだ場所が逃げる）。 */
+body.is-timeline-will-collapse .stage-timeline-resize-handle { color: var(--paper); }
+body.is-timeline-will-collapse .stage-timeline-resize { background: rgba(239, 231, 214, 0.22); }
 
 .stage-timeline-resize-handle:hover,
 .stage-timeline-resize-handle:focus-visible { color: var(--milk); border-color: var(--brass); }
