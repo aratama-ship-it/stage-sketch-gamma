@@ -3294,17 +3294,16 @@
    *   例: 「1階 中央（中間）」。英語・中国語も、どちらも既存の対訳から組み立てる。 */
   const seatBaseOf = (seat) => (seat && seat.approx && seat.base
     ? VENUES.seats.find((candidate) => candidate.id === seat.base) : null);
+  /* 近似席は基準の席の数値をそのまま写したものなので、名前も基準の席で呼ぶ。
+   * 距離（近い／中間／遠い）は足さない。基準が同じ席は1つに絞ってあるので、
+   * 足しても区別にならず、「同じ絵が2つ並ぶ」原因になっていた。 */
   const seatName = (seat) => {
     const base = seatBaseOf(seat);
-    return base
-      ? `${tm("seat", base.id, base.label)}（${tm("seat", seat.id, seat.label)}）`
-      : tm("seat", seat.id, seat.label);
+    return base ? tm("seat", base.id, base.label) : tm("seat", seat.id, seat.label);
   };
   const seatShortName = (seat) => {
     const base = seatBaseOf(seat);
-    return base
-      ? `${tm("seatShort", base.id, base.short)}${tm("seatShort", seat.id, seat.short)}`
-      : tm("seatShort", seat.id, seat.short);
+    return base ? tm("seatShort", base.id, base.short) : tm("seatShort", seat.id, seat.short);
   };
   const seatNoteText = (seat) => tm("seatNote", seat.id, seat.note);
   // 椅子は大きさ一つで決まる。幅と奥行きはそこから割り出す

@@ -286,7 +286,17 @@
       }
       return seat;
     }).filter(Boolean);
-    if (!derived.length) return [];
+    /* ★2026-09-18 本人指摘「1階 最前列（近い）と（中間）が全く同じものを表示している」:
+     * 近似席は基準にした席の数値をそっくり写すので（approxSeatFromBase）、
+     * 基準が同じなら絵も完全に同じになる。名前だけ違う同じ席が並んでいた。
+     * 基準ごとに1つだけ残す。残った席の名前は基準の席そのもの（1階 最前列 など）。 */
+    const seen = new Set();
+    const unique = derived.filter((seat) => {
+      if (!seat || seen.has(seat.base)) return false;
+      seen.add(seat.base);
+      return true;
+    });
+    if (!unique.length) return [];
     /* ★2026-09-18 本人決定: 2階席（見下ろす絵）は、カスタム会場でも必ず選べるようにする。
      * 近似席の基準は nearestSeatByEye が 2階席と左右席を外すので、
      * このままだと「1階からの見え方」しか選べなかった。
@@ -294,7 +304,7 @@
      * 「1階から見るか、2階から見るか」を選べること自体が要る、という判断。
      * 出すのは手調整ずみの既定の2階席そのもの（近似ではない）。 */
     const balconySeat = seats.find((seat) => seat && seat.id === "balcony");
-    return balconySeat ? derived.concat([balconySeat]) : derived;
+    return balconySeat ? unique.concat([balconySeat]) : unique;
   }
 
   /* 正面図の「引いた席」だけを、距離・目の高さ・画角から導く。
