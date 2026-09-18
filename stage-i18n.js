@@ -1578,7 +1578,7 @@
     "重なりを解消します": "Resolve the overlap",
     "異なる領域が重なっています。優先する方を選んでください。": "Different areas overlap. Choose which one takes priority.",
     "選ばなかった方は、重なった部分だけを切り取ります。": "Only the overlapping part will be cut from the area you do not choose.",
-    "やめると、重なりのもとになった直前の操作を取り消します。": "Cancelling undoes the change that caused the overlap.",
+    "キャンセルすると、重なりのもとになった直前の操作を取り消します。": "Cancelling undoes the change that caused the overlap.",
     "もとの版はそのまま残ります。": "The version you are on stays as it is.",
     "メモ（省略可）": "Note (optional)",
     "バージョンを切り替える": "Switch version",

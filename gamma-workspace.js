@@ -324,18 +324,20 @@
       acts.className='gamma-light-leave-actions';
       const mk=(label,value,cls)=>{const b=document.createElement('button');b.type='button';b.className=cls;b.textContent=label;
         b.onclick=()=>{cleanup();resolve(value);};return b;};
-      /* T-14 二度目（2026-09-18 本人指定）: 並びを逆にする。
-       * 主操作（反映して移る）を左端、やめるを右端へ。 */
-      acts.append(mk(text.apply,'apply','stage-minor-action'),
-                  mk(text.skip,'skip','btn-quiet'),
-                  mk('やめる','cancel','btn-quiet'));
+      /* L-03（2026-09-18 本人決定「全部Macにそろえる」）: Macの作法の並びにする。
+       * Apple HIG: 主操作は行の右端、キャンセルはそのすぐ左、3つ目の閉じるボタンはさらに左。
+       * macOSの「保存しない／キャンセル／保存」と同じ形。
+       * ★T-14 で一度「主操作を左」にしたが、Macに合わせる方針で戻した（蒸し返さない）。 */
+      acts.append(mk(text.skip,'skip','btn-quiet'),
+                  mk('キャンセル','cancel','btn-quiet'),
+                  mk(text.apply,'apply','stage-minor-action'));
       box.append(acts);
       const onKey=(e)=>{if(e.key==='Escape'){e.preventDefault();cleanup();resolve('cancel');}};
       function cleanup(){document.removeEventListener('keydown',onKey,true);backdrop.remove();box.remove();}
       backdrop.onclick=()=>{cleanup();resolve('cancel');};
       document.addEventListener('keydown',onKey,true);
       document.body.append(backdrop,box);
-      acts.firstElementChild.focus();   // 並びを逆にしたので、主操作は先頭。
+      acts.lastElementChild.focus();    // 主操作は右端＝最後の要素。
     });
   }
 

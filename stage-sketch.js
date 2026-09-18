@@ -4568,7 +4568,6 @@
     planCell: document.getElementById("stage-plan-cell"),
     canvasStack: document.getElementById("stage-canvas-stack"),
     frontCaption: document.getElementById("stage-front-caption"),
-    frontApprox: document.getElementById("stage-front-approx"),
     sceneDesc: document.getElementById("stage-scene-desc"),
     sceneDescLabel: document.getElementById("stage-scene-desc-label"),
     sceneDescText: document.getElementById("stage-scene-desc-text"),
@@ -8786,8 +8785,61 @@
     }
     return approxFrontSeatCache.seats;
   }
+  /* L-02（2026-09-18 本人決定）: 3Dカメラで選んだ位置を劇場ごとに覚えた「カスタム視点」を、
+   * 正面図の席として出す。並びは既存の席のうしろ（右端）。
+   * ★覚えてあるのは測った値だけ。席が持つ9つの値はここで deriveSeat に導かせる。
+   * ★frontSeatById は毎フレーム呼ばれるので、localStorage を毎回読まないよう控える。
+   *   控えは会場ライブラリの変更（stage-venue-library-changed）で捨てる。 */
+  let viewpointSeatCache = { key: "", seats: [] };
+  let viewpointCacheAge = 0;
+  function customViewpointSeats(v) {
+    const store = VENUES.viewpoints;
+    const lines = window.SHOSAI_VENUE_LINES;
+    if (!v || !v.id || !store || !lines || typeof lines.deriveSeat !== "function") return [];
+    const size = venueSize();
+    const key = `${v.id}|${size.width}|${size.depth}|${viewpointCacheAge}`;
+    if (viewpointSeatCache.key === key) return viewpointSeatCache.seats;
+    const seats = store.list(v.id).map((point) => {
+      const seat = lines.deriveSeat({
+        id: `viewpoint:${point.id}`,
+        label: point.label,
+        short: point.label,
+        distanceM: point.distanceM,
+        eyeM: point.eyeM,
+        offsetM: point.offsetM,
+        depthM: size.depth,
+        heightM: 1,            // 舞台の立ち上がり。3Dでも客席の床は舞台より1m低い
+        stageWidthM: size.width,
+        fovDeg: point.fovDeg,
+      });
+      /* ★「見る位置の図」は plan.x / plan.y を 0〜1 で読む（deriveSeat の plan.y は実寸のm）。
+         既定5席の値（最前列0.06・中央0.3・後方0.74）に合う目盛りへ写し替える。 */
+      return Object.assign({}, seat, {
+        viewpoint: true,
+        plan: Object.assign({}, seat.plan, {
+          x: clamp(seat.plan.x, 0.02, 0.98),
+          y: clamp((point.distanceM - 2) / 17.5, 0, 1),
+          tier: "stalls",
+        }),
+      });
+    });
+    viewpointSeatCache = { key, seats };
+    return seats;
+  }
+
+  /* 正面図で選べる席の全部。既存（または近似）の席＋カスタム視点。 */
+  function frontSeatList() {
+    const v = venue();
+    const approx = approxFrontSeatsForVenue(v);
+    const base = approx && approx.length ? approx : VENUES.seats;
+    return base.concat(customViewpointSeats(v));
+  }
+
   function frontSeatById(id) {
     const v = venue();
+    const viewpoints = customViewpointSeats(v);
+    const viewpoint = viewpoints.find((seat) => seat.id === id);
+    if (viewpoint) return viewpoint;
     const approx = approxFrontSeatsForVenue(v);
     // 近似できなかった会場（空配列）は既存5席で扱う。席の札の作り方と揃える
     if (approx && approx.length) return approx.find((seat) => seat.id === id) || approx[0] || VENUES.seatById("center");
@@ -14727,7 +14779,7 @@
     // 選べる席（会場によって中身が変わる）
     seats() {
       const v = venue();
-      const list = approxFrontSeatsForVenue(v) || VENUES.seats;
+      const list = frontSeatList();
       // 照明デザインの席の選択も、どのあたりの席かが分かる名前で渡す。
       return list.map((seat) => ({ id: seat.id, label: seatName(seat), short: seatShortName(seat) }));
     },
@@ -23815,7 +23867,7 @@ ${propsPlotHtml}
   // 設計計画書6.5節の派生（親ID＋一行の理由）に合わせ、完全な版管理は作らない。
   /* T-20（2026-09-18 本人要望）: OSの素の入力窓（window.prompt）をやめ、アプリの窓に寄せる。
    * 方針の根拠は gamma-workspace.js の「OSの素の窓が急に出る違和感をなくすため」。
-   * 一行の入力＋〔やめる〕〔複製する〕。Enterで確定、Escapeで取り消し、開いたら入力欄へ合わせる。
+   * 一行の入力＋〔キャンセル〕〔複製する〕。Enterで確定、Escapeで取り消し、開いたら入力欄へ合わせる。
    * 取り消し（null）は window.prompt と同じ意味にする＝呼ぶ側の分岐を変えない。 */
   function askBranchReason() {
     return new Promise((resolve) => {
@@ -23874,7 +23926,7 @@ ${propsPlotHtml}
         backdrop.remove(); box.remove();
         resolve(value);
       }
-      acts.append(mk("やめる", null, "btn-quiet"), mk("複製する", "ok", "stage-minor-action"));
+      acts.append(mk("キャンセル", null, "btn-quiet"), mk("複製する", "ok", "stage-minor-action"));
       box.append(head, body, acts);
       backdrop.addEventListener("click", () => done(null));
       document.addEventListener("keydown", onKey, true);
@@ -25136,17 +25188,19 @@ ${propsPlotHtml}
        空の配列をそのまま使うと席の札が1つも出ず、見る位置を選べなくなる（2026-09-16 実機で再現）。
        空配列は「近似できなかった」であって「席が無い」ではないので、既存5席へ落とす。 */
     const approxSeats = approxFrontSeatsForVenue(current);
-    const seats = approxSeats && approxSeats.length ? approxSeats : VENUES.seats;
+    // L-02: カスタム視点は並びの右端へ足す
+    const seats = (approxSeats && approxSeats.length ? approxSeats : VENUES.seats)
+      .concat(customViewpointSeats(current));
     /* ★選んでいた席が今の一覧に無いときは、先頭の席へ寄せて状態も直す。
      * そのままだと aria-pressed がどれにも付かず、どこから見ているのか分からなくなる。 */
     let seat = frontSeatById(state.seat) || seats[0];
     if (seat && !seats.some((candidate) => candidate.id === seat.id)) seat = seats[0];
     if (seat && state.seat !== seat.id) state.seat = seat.id;
     if (els.seatList) els.seatList.hidden = !state.showFront;
-    if (els.frontApprox) {
-      els.frontApprox.hidden = !(current.custom && state.showFront);
-      els.frontApprox.textContent = current.custom && state.showFront ? tx("客席からの見え方は近似です") : "";
-    }
+    /* 2026-09-18 本人決定: 「客席からの見え方は近似です」の断りはやめた。
+     * このアプリ全体が絵を描く道具なので、一箇所だけ断ると「他の席は正確」と読めてしまう。
+     * 既定の5席も手で調整した見え方で実測ではなく、3Dから登録した視点のほうが
+     * むしろ根拠がはっきりしている。★訳語は i18n に残してある（戻すときに使う）。 */
     if (els.seatList) {
       els.seatList.innerHTML = "";
       seats.forEach((s2) => {
@@ -27854,7 +27908,11 @@ ${propsPlotHtml}
       window.dispatchEvent(new Event("stage-venue-editor-open"));
     });
   }
-  window.addEventListener("stage-venue-library-changed", renderVenueControls);
+  window.addEventListener("stage-venue-library-changed", () => {
+    viewpointCacheAge += 1;    // L-02: カスタム視点の控えを捨ててから描き直す
+    renderVenueControls();
+    render();
+  });
   window.addEventListener("stage-venue-editor-open", syncVenueEditorTemplate);
   window.addEventListener("stage-venue-apply-requested", (event) => {
     openVenueApplyModal(event.detail);

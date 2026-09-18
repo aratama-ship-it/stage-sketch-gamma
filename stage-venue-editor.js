@@ -1504,18 +1504,86 @@
         ctx.stroke();
       }
 
-      const hiddenInsideMergedStage = mergedPolygons.slice(1)
-        .some((polygon) => pointStrictlyInPolygon(midpoint(point, next), polygon));
-      if ((state.points.length <= 8 || active) && !hiddenInsideMergedStage) {
-        const normal = outwardNormal(index);
-        const middle = midpoint(point, next);
-        const labelPoint = toCanvas([middle[0] - (normal[0] * 0.38), middle[1] - (normal[1] * 0.38)]);
-        ctx.fillStyle = cssColor("--milk", "#f0e7d6");
-        ctx.font = "12px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(`約${approxM(distance(point, next))}m`, labelPoint[0], labelPoint[1]);
-      }
+    });
+
+    /* 2026-09-18 本人要望「各辺に何メートルなのかという数値を出してほしい」:
+     * ★寸法は「見えている縁に寸法」を出す。これまでは主の形の辺だけに出しており、
+     *   ①切り取ってできた帯（追加ステージ）には出ない ②舞台どうしが接している内側の継ぎ目にも
+     *   出てしまう（例: 6mの辺のうち3mが内側で、残り3mしか見えていないのに「約6m」と出る）
+     *   の2つが起きていた。
+     * 縁の割り出しは共有部品 stage-front-shape.js（平面図・正面図・3Dカメラと同じもの）。
+     * 合成済みの舞台は一体として扱い、別置きの台はそれぞれの形で見る。 */
+    const shapeLib = window.SHOSAI_FRONT_SHAPE;
+    const edgeGroups = [mergedPolygons].concat(state.stageExtensions
+      .filter((item) => !item.merged && Array.isArray(item.polygon) && item.polygon.length >= 3)
+      .map((item) => [item.polygon]));
+    /* ★同じ直線上でつながっている縁は1本に戻してから測る。
+       共有部品は「他の形の角」で縁を割るので、そのままだと12mの辺が
+       「約4m」「約8m」の2つに割れて出る（切り取りの継ぎ目がそこにあるため）。 */
+    const joinCollinear = (segments) => {
+      const lines = new Map();
+      segments.forEach((edge) => {
+        const dx = edge.b[0] - edge.a[0];
+        const dy = edge.b[1] - edge.a[1];
+        const length = Math.hypot(dx, dy);
+        if (length < 1e-9) return;
+        let unit = [dx / length, dy / length];
+        // 逆向きの同じ線を同じ入れ物へ入れる
+        if (unit[0] < -1e-9 || (Math.abs(unit[0]) <= 1e-9 && unit[1] < 0)) unit = [-unit[0], -unit[1]];
+        const offset = (edge.a[0] * unit[1]) - (edge.a[1] * unit[0]);
+        const key = [unit[0].toFixed(4), unit[1].toFixed(4), offset.toFixed(4),
+          edge.outward[0].toFixed(3), edge.outward[1].toFixed(3)].join("|");
+        const item = lines.get(key) || { unit, offset, outward: edge.outward, spans: [] };
+        const t0 = (edge.a[0] * unit[0]) + (edge.a[1] * unit[1]);
+        const t1 = (edge.b[0] * unit[0]) + (edge.b[1] * unit[1]);
+        item.spans.push([Math.min(t0, t1), Math.max(t0, t1)]);
+        lines.set(key, item);
+      });
+      const joined = [];
+      const pointAt = (item, t) => [
+        (t * item.unit[0]) + (item.offset * item.unit[1]),
+        (t * item.unit[1]) - (item.offset * item.unit[0]),
+      ];
+      lines.forEach((item) => {
+        item.spans.sort((first, second) => first[0] - second[0]);
+        let current = null;
+        item.spans.forEach((span) => {
+          if (current && span[0] <= current[1] + 1e-6) {
+            current[1] = Math.max(current[1], span[1]);
+            return;
+          }
+          if (current) joined.push({ a: pointAt(item, current[0]), b: pointAt(item, current[1]), outward: item.outward });
+          current = span.slice();
+        });
+        if (current) joined.push({ a: pointAt(item, current[0]), b: pointAt(item, current[1]), outward: item.outward });
+      });
+      return joined;
+    };
+    const edgeSegments = shapeLib
+      ? joinCollinear(edgeGroups.flatMap((group) => {
+        const shape = shapeLib.build(group);
+        return shape ? shapeLib.boundary(shape) : [];
+      }))
+      : state.points.map((point, index) => ({
+        a: point, b: state.points[(index + 1) % state.points.length],
+        outward: outwardNormal(index),
+      }));
+    /* 数字で図が埋まらないように、縁が多い形では出さない。
+       ただし、いま触っている辺の上にある縁だけは出す（従来の「選んだ辺は出る」を保つ）。 */
+    const hoverEdgeIndex = state.hoverEdge >= 0 ? state.hoverEdge
+      : (activePointer && activePointer.kind === "edge" ? activePointer.index : -1);
+    const hoverA = hoverEdgeIndex >= 0 ? state.points[hoverEdgeIndex] : null;
+    const hoverB = hoverEdgeIndex >= 0 ? state.points[(hoverEdgeIndex + 1) % state.points.length] : null;
+    ctx.fillStyle = cssColor("--milk", "#f0e7d6");
+    ctx.font = "12px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    edgeSegments.forEach((edge) => {
+      const middle = midpoint(edge.a, edge.b);
+      const onHovered = hoverA && hoverB && distanceToSegment(middle, hoverA, hoverB) < 0.02;
+      if (edgeSegments.length > 12 && !onHovered) return;
+      const labelPoint = toCanvas([middle[0] - (edge.outward[0] * 0.38), middle[1] - (edge.outward[1] * 0.38)]);
+      ctx.fillText(`約${approxM(distance(edge.a, edge.b))}m`, labelPoint[0], labelPoint[1]);
     });
 
     state.points.forEach((point, index) => {
@@ -1970,7 +2038,7 @@
       : `${firstLabel}と${secondLabel}が重なっています。どちらを優先しますか？`;
     els.conflictFirst.textContent = isEnglish() ? `Prioritize ${firstLabel}` : `${firstLabel}を優先`;
     els.conflictSecond.textContent = isEnglish() ? `Prioritize ${secondLabel}` : `${secondLabel}を優先`;
-    if (els.conflictCancel) els.conflictCancel.textContent = tx("やめる");
+    if (els.conflictCancel) els.conflictCancel.textContent = tx("キャンセル");
     els.conflictBackdrop.hidden = false;
     els.conflictModal.hidden = false;
     window.requestAnimationFrame(() => els.conflictFirst.focus());
@@ -1995,7 +2063,7 @@
    * 直し方は2つ重ねる:
    *   (1) 同じ組み合わせの重なりは、一度の答えでまとめて解消する（下のループ）。
    *   (2) それでも消えないときに閉じ込めないよう、必ず取り消して閉じる。
-   *       加えて〈やめる〉・Escape・背景クリックの逃げ道を置く（cancelConflict）。
+   *       加えて〈キャンセル〉・Escape・背景クリックの逃げ道を置く（cancelConflict）。
    * ★上限を置くのは、切っても重なりが残る形が万一あったときに無限に回さないため。 */
   const CONFLICT_RESOLVE_LIMIT = 64;
 

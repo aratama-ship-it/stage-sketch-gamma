@@ -1509,6 +1509,138 @@
     return chip;
   }
 
+  /* L-02（2026-09-18 本人決定）: いま見ている位置を「カスタム視点」として劇場ごとに覚える。
+   * 覚えた視点は正面図の席の並びの右端に出る。
+   * ★席として意味を持つのは客席側に居るときだけ。舞台の上や真横では登録できない
+   *   （距離が0以下だと、正面図の遠近の式が成り立たない）。
+   * ★覚えるのは測った値だけ（前端からの距離・目の高さ・中央からの横ずれ・画角）。
+   *   正面図の席が持つ9つの値は読むときに導く。stage-venues.js / stage-venue-lines.js 参照。 */
+  const viewpointStore = () => (window.SHOSAI_VENUES && window.SHOSAI_VENUES.viewpoints) || null;
+  const viewpointVenueId = () => ((data && data.venue && typeof data.venue.type === "string")
+    ? data.venue.type : "");
+  function viewpointMeasure() {
+    /* ★`camera` は描画のたびに state から作り直される＝HUDを組む時点では1コマ古い。
+       プリセットを押した直後に「舞台の上」と判定されて登録ボタンが消えた（実測）。
+       自由カメラのときは state.free が正本なので、そちらから測る。 */
+    const eye = (state.view.type === "free" && state.free) ? state.free : camera;
+    return {
+      distanceM: eye.z - (D / 2),
+      eyeM: eye.y,
+      offsetM: eye.x,
+      fovDeg: lensById(lensId).fovDeg,
+    };
+  }
+  function canRegisterViewpoint() {
+    return Boolean(viewpointStore() && viewpointVenueId()
+      && state.view.type === "free" && viewpointMeasure().distanceM >= .5);
+  }
+
+  function openViewpointDialog() {
+    const store = viewpointStore();
+    const venueId = viewpointVenueId();
+    if (!store || !venueId) return;
+    const measure = viewpointMeasure();
+    const overlay = createElement("div", "", "stage-fpv-viewpoint-backdrop");
+    overlay.style.cssText = "position:fixed;inset:0;z-index:120;background:rgba(6,5,4,.62)";
+    const box = createElement("div", "", "stage-fpv-viewpoint-modal");
+    box.setAttribute("role", "dialog");
+    box.setAttribute("aria-modal", "true");
+    box.style.cssText = "position:fixed;z-index:121;left:50%;top:50%;transform:translate(-50%,-50%);"
+      + "width:min(420px,92vw);padding:20px;background:#1f1a16;border:1px solid #3a322a;border-radius:8px;"
+      + "color:#efe7d6;font:14px/1.7 inherit;box-shadow:0 18px 54px rgba(0,0,0,.58)";
+    const title = createElement("h2");
+    title.style.cssText = "margin:0 0 6px;font-size:16px;font-weight:600";
+    title.textContent = text("この視点を登録");
+    const note = createElement("p");
+    note.style.cssText = "margin:0 0 14px;font-size:13px;color:#bdb3a4";
+    note.textContent = `${text("舞台の前から")} ${measure.distanceM.toFixed(1)}m ・ `
+      + `${text("目の高さ")} ${measure.eyeM.toFixed(1)}m`
+      + (Math.abs(measure.offsetM) >= .3
+        ? ` ・ ${measure.offsetM < 0 ? text("下手へ") : text("上手へ")} ${Math.abs(measure.offsetM).toFixed(1)}m` : "");
+    const field = createElement("input");
+    field.type = "text";
+    field.maxLength = 40;
+    field.placeholder = text("例: 音響卓のあたり");
+    field.setAttribute("aria-label", text("視点の名前"));
+    field.style.cssText = "width:100%;padding:9px 10px;background:#0d0b09;border:1px solid #3a322a;"
+      + "border-radius:4px;color:#efe7d6;font:14px/1.5 inherit;margin-bottom:14px";
+    const list = createElement("div");
+    list.style.cssText = "margin-bottom:14px";
+    const actions = createElement("footer");
+    actions.style.cssText = "display:flex;gap:10px;justify-content:flex-end";
+    const status = createElement("p");
+    status.style.cssText = "margin:0 0 10px;font-size:12px;color:#9c823f;min-height:1.2em";
+
+    const close = () => {
+      document.removeEventListener("keydown", onKey, true);
+      overlay.remove(); box.remove();
+    };
+    const onKey = (event) => {
+      if (event.key === "Escape") { event.preventDefault(); close(); }
+      if (event.key === "Enter" && document.activeElement === field) { event.preventDefault(); save(); }
+    };
+    const mk = (label, primary, onClick) => {
+      const button = createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.style.cssText = "padding:8px 16px;border-radius:4px;font:13px/1.2 inherit;cursor:pointer;"
+        + (primary ? "border:1px solid #9c823f;background:#241d18;color:#9c823f"
+          : "border:1px solid #3a322a;background:transparent;color:#bdb3a4");
+      button.addEventListener("click", onClick);
+      return button;
+    };
+    /* 登録ずみの一覧。ここから消せるようにする（正面図側に消す場所を作らないため）。 */
+    const renderList = () => {
+      list.textContent = "";
+      const saved = store.list(venueId);
+      if (!saved.length) return;
+      const heading = createElement("p");
+      heading.style.cssText = "margin:0 0 6px;font-size:12px;color:#bdb3a4";
+      heading.textContent = `${text("登録ずみ")}（${saved.length}/${store.max}）`;
+      list.append(heading);
+      saved.forEach((point) => {
+        const row = createElement("div");
+        row.style.cssText = "display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px";
+        const name = createElement("span");
+        name.style.cssText = "flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
+        name.textContent = `${point.label}（${point.distanceM.toFixed(1)}m・${point.eyeM.toFixed(1)}m）`;
+        const remove = createElement("button");
+        remove.type = "button";
+        remove.textContent = "✕";
+        remove.setAttribute("aria-label", `${point.label} ${text("を消す")}`);
+        remove.style.cssText = "flex:0 0 auto;width:28px;height:28px;border:1px solid #3a322a;"
+          + "border-radius:4px;background:transparent;color:#a84b26;cursor:pointer";
+        remove.addEventListener("click", () => {
+          store.remove(venueId, point.id);
+          renderList();
+          status.textContent = text("消しました。");
+        });
+        row.append(name, remove);
+        list.append(row);
+      });
+    };
+    const save = () => {
+      const result = store.add(venueId, Object.assign({ label: field.value }, measure));
+      if (!result || !result.ok) {
+        status.textContent = result && result.reason === "full"
+          ? `${text("登録できるのは")} ${store.max} ${text("つまでです。")}`
+          : text("登録できませんでした。");
+        renderList();
+        return;
+      }
+      close();
+      showToast(`${result.viewpoint.label} ${text("を登録しました。正面図の席に出ます")}`);
+    };
+
+    actions.append(mk(text("キャンセル"), false, close), mk(text("登録する"), true, save));
+    box.append(title, note, field, list, status, actions);
+    overlay.addEventListener("click", close);
+    document.addEventListener("keydown", onKey, true);
+    document.body.append(overlay, box);
+    renderList();
+    field.focus();
+  }
+
   function renderHud() {
     // 引いた絵の切り替えは、器のある会場（アリーナ・ドーム等）でしか意味がない
     if (elements && elements.crowd) elements.crowd.hidden = !bowlGeometry(currentVenueModel(), W, D);
@@ -1610,6 +1742,15 @@
       button.addEventListener("click", () => applyFreePreset(preset.id));
       elements.presets.appendChild(button);
     });
+    /* L-02: いま見ている位置を席として登録する。客席側に居るときだけ出す
+       （舞台の上からは席にならない）。 */
+    if (canRegisterViewpoint()) {
+      const register = createElement("button", "", "stage-fpv-chip stage-fpv-preset");
+      register.type = "button";
+      register.textContent = `＋ ${text("この視点を登録")}`;
+      register.addEventListener("click", openViewpointDialog);
+      elements.presets.appendChild(register);
+    }
     updateEditPanel();
     syncLensChips();
     syncHouseChips();
@@ -3552,6 +3693,7 @@
       bowlUnitsCacheSize: () => bowlUnitsCache.size,
       frameDelta, wingWidthFor, wingLegX, wingLegPairs,
       customStageShape, customGridSpans,
+      viewpointMeasure, canRegisterViewpoint,
       wingLegZs, houseSeatsPerRow, houseRiserRows, facingFromGround, uvFromGround, pickFrom,
       seatNoise, houseSeats, houseBalconyRows, houseRingRows, seatSpanEnds,
       housePerson: () => HOUSE_PERSON, houseSeat: () => HOUSE_SEAT,

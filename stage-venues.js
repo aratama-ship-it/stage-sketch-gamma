@@ -1009,6 +1009,109 @@
     window.dispatchEvent(new window.CustomEvent("stage-venue-library-changed"));
   };
 
+  /* L-02（2026-09-18 本人決定）: 3Dカメラで選んだ位置を「カスタム視点」として劇場ごとに覚える。
+   * ★劇場データは2種類ある。会場ライブラリの劇場は書き換えられるのでその劇場データへ書き
+   *   （書き出して人に渡すと視点も付いていく）、アプリ埋め込みのプリセットは書き換えられないので
+   *   この端末の控えへ書く。使う側からはどちらも同じ一覧に見える。
+   * ★覚えるのは「測った値」だけ（舞台の前端からの距離・目の高さ・中央からの横ずれ・画角）。
+   *   正面図の席が持つ9つの値は、読むときに stage-venue-lines.js の deriveSeat が導く。
+   *   こうしておくと、導き方を直したときに古い視点も一緒に直る。 */
+  const VIEWPOINT_KEY = "gamma:shosai-stage-viewpoints-v1";
+  const MAX_VIEWPOINTS = 12;
+
+  const normalizeViewpoint = (raw, index) => {
+    if (!raw || typeof raw !== "object") return null;
+    const num = (value) => (Number.isFinite(Number(value)) ? Number(value) : null);
+    const distanceM = num(raw.distanceM);
+    const eyeM = num(raw.eyeM);
+    // 舞台の上や真横は「席」にならない。前へ少しでも離れていることを要る条件にする
+    if (distanceM === null || distanceM < 0.5 || eyeM === null) return null;
+    const label = typeof raw.label === "string" && raw.label.trim()
+      ? raw.label.trim().slice(0, 40) : `カスタム${index + 1}`;
+    const id = typeof raw.id === "string" && raw.id.trim()
+      ? raw.id.trim().slice(0, 60) : `viewpoint-${index + 1}`;
+    const fovDeg = num(raw.fovDeg);
+    return {
+      id,
+      label,
+      distanceM: roundM(Math.min(distanceM, 400)),
+      eyeM: roundM(Math.max(-10, Math.min(eyeM, 60))),
+      offsetM: roundM(Math.max(-200, Math.min(num(raw.offsetM) || 0, 200))),
+      fovDeg: fovDeg === null ? 60 : Math.max(10, Math.min(fovDeg, 170)),
+      ...(typeof raw.savedAt === "string" ? { savedAt: raw.savedAt.slice(0, 40) } : {}),
+    };
+  };
+
+  const readViewpointStore = () => {
+    try {
+      const raw = window.localStorage.getItem(VIEWPOINT_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  };
+
+  const writeViewpointStore = (map) => {
+    try {
+      window.localStorage.setItem(VIEWPOINT_KEY, JSON.stringify(map));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
+
+  const listViewpoints = (venueId) => {
+    if (typeof venueId !== "string" || !venueId) return [];
+    const saved = readLibrary().find((venue) => venue.id === venueId);
+    const raw = saved ? saved.viewpoints : readViewpointStore()[venueId];
+    return (Array.isArray(raw) ? raw : [])
+      .map(normalizeViewpoint).filter(Boolean).slice(0, MAX_VIEWPOINTS);
+  };
+
+  const saveViewpoints = (venueId, list) => {
+    const current = readLibrary();
+    const index = current.findIndex((venue) => venue.id === venueId);
+    if (index >= 0) {
+      current[index] = Object.assign({}, current[index], { viewpoints: clone(list) });
+      if (!writeLibrary(current)) return false;
+    } else {
+      const map = readViewpointStore();
+      if (list.length) map[venueId] = clone(list);
+      else delete map[venueId];
+      if (!writeViewpointStore(map)) return false;
+    }
+    notifyLibraryChanged();
+    return true;
+  };
+
+  const addViewpoint = (venueId, raw) => {
+    const list = listViewpoints(venueId);
+    if (list.length >= MAX_VIEWPOINTS) return { ok: false, reason: "full", max: MAX_VIEWPOINTS };
+    const serial = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    const point = normalizeViewpoint(Object.assign({}, raw, {
+      id: `vp-${serial}`, savedAt: new Date().toISOString(),
+    }), list.length);
+    if (!point) return { ok: false, reason: "invalid" };
+    // 同じ名前は上書きせず、数字を足して区別する（消えたと思われないように）
+    const names = new Set(list.map((item) => item.label));
+    if (names.has(point.label)) {
+      let serialName = 2;
+      while (names.has(`${point.label} ${serialName}`)) serialName += 1;
+      point.label = `${point.label} ${serialName}`;
+    }
+    const next = list.concat([point]);
+    if (!saveViewpoints(venueId, next)) return { ok: false, reason: "write-failed" };
+    return { ok: true, viewpoint: clone(point), count: next.length };
+  };
+
+  const removeViewpoint = (venueId, id) => {
+    const list = listViewpoints(venueId);
+    const next = list.filter((item) => item.id !== id);
+    if (next.length === list.length) return false;
+    return saveViewpoints(venueId, next);
+  };
+
   const importVenues = (incoming) => {
     const current = readLibrary();
     const occupied = new Set(VENUES_V2.map((venue) => venue.id));
@@ -1191,6 +1294,16 @@
     seatById: (id) => SEATS.find((s) => s.id === id) || SEATS.find((s) => s.id === "center") || SEATS[0],
     sightLimits: SIGHT_LIMITS,
     outdoorMarks: OUTDOOR_MARKS,
+    /* L-02: 劇場ごとに覚える「カスタム視点」。正面図の席の並びの右端に出る。 */
+    viewpoints: {
+      max: MAX_VIEWPOINTS,
+      storageKey: VIEWPOINT_KEY,
+      list: (venueId) => clone(listViewpoints(venueId)),
+      add: addViewpoint,
+      remove: removeViewpoint,
+      // その劇場の視点がどこに書かれるか（自作劇場＝劇場データ／プリセット＝この端末の控え）
+      storedIn: (venueId) => (readLibrary().some((venue) => venue.id === venueId) ? "venue" : "device"),
+    },
     v2: {
       get list() {
         return VENUES_V2.filter((venue) => !venue.realVenue).concat(readLibrary());
