@@ -2629,6 +2629,9 @@
       { x: halfWidth, y: CEIL, z: halfDepth }, { x: halfWidth, y: CEIL, z: -halfDepth }], "#211912");
     fillPoly(ctx, [{ x: -halfWidth, y: CEIL, z: -halfDepth }, { x: halfWidth, y: CEIL, z: -halfDepth },
       { x: halfWidth, y: CEIL, z: halfDepth }, { x: -halfWidth, y: CEIL, z: halfDepth }], "#15100c");
+    /* ★カスタム会場は輪郭どおりに床を敷く（2026-09-18）。
+       プリセットと実在会場はこれまでどおり長方形のまま。 */
+    if (!drawCustomStageFloor(ctx, halfWidth, halfDepth)) {
     fillPoly(ctx, [{ x: -halfWidth, y: 0, z: -halfDepth }, { x: halfWidth, y: 0, z: -halfDepth },
       { x: halfWidth, y: 0, z: halfDepth }, { x: -halfWidth, y: 0, z: halfDepth }], "#262019");
     [[.62, .05], [.4, .05]].forEach(([factor, alpha]) => {
@@ -2643,15 +2646,125 @@
     line3(ctx, { x: -halfWidth, y: 0, z: halfDepth }, { x: halfWidth, y: 0, z: halfDepth }, "rgba(232,226,212,.28)", 2);
     fillPoly(ctx, [{ x: -halfWidth, y: HOUSE_FLOOR_Y, z: halfDepth }, { x: halfWidth, y: HOUSE_FLOOR_Y, z: halfDepth },
       { x: halfWidth, y: 0, z: halfDepth }, { x: -halfWidth, y: 0, z: halfDepth }], "#241c15");
+    }
     const legHalfWidth = .8;
     const legHeight = Math.min(CEIL - .5, CEIL * .75);
     const legX = wingLegX(W);
+    /* 袖幕の裾は床に着いて見えること。カスタム会場では舞台の外が1m低いので、そこまで下ろす
+       （下ろさないと、幕が宙に浮いて見える）。 */
+    const legFloor = customStageShape() ? HOUSE_FLOOR_Y : 0;
     wingLegZs(D, wingLegPairs(D)).forEach((z) => {
       [-legX, legX].forEach((x) => {
-        fillPoly(ctx, [{ x: x - legHalfWidth, y: 0, z }, { x: x + legHalfWidth, y: 0, z },
+        fillPoly(ctx, [{ x: x - legHalfWidth, y: legFloor, z }, { x: x + legHalfWidth, y: legFloor, z },
           { x: x + legHalfWidth, y: legHeight, z }, { x: x - legHalfWidth, y: legHeight, z }], "#0e0b08");
       });
     });
+  }
+
+  /* ★カスタム会場の床（2026-09-18）。平面図・正面図と同じ輪郭を3Dでも敷く。
+     形の幾何は共有部品 stage-front-shape.js が持つ（同じ形を2つ計算しない）。
+     ここがやるのは投影と塗りだけ。
+     ★平面の座標→3Dの世界: u = (x-minX)/幅, v = (y-minY)/奥行き を toWorld へ通す。
+       カスタム会場の width/depth は輪郭の外接寸法（stage-venues.js customLegacyVenue）なので、
+       平面図・正面図とまったく同じ枡に乗る。 */
+  let customFloorCache = { key: "", shape: null };
+  function customStageShape() {
+    const lib = window.SHOSAI_FRONT_SHAPE;
+    const venue = currentVenueModel();
+    if (!lib || !venue || !venue.custom || !Array.isArray(venue.outline)) return null;
+    const key = `${venue.id}|${JSON.stringify(venue.outline)}|${JSON.stringify(venue.stageExtensions || [])}`;
+    if (customFloorCache.key !== key) {
+      customFloorCache = { key, shape: lib.build([venue.outline].concat(
+        (venue.stageExtensions || []).map((item) => (item && Array.isArray(item.polygon)) ? item.polygon : null))) };
+    }
+    return customFloorCache.shape;
+  }
+
+  /* 床の中だけに切った1m格子。線が舞台の外へはみ出さないようにする。
+     axis="x" は平面のxが一定の線（3Dでは奥行き方向に走る）。 */
+  function customGridSpans(shape, axis, value) {
+    const cuts = [axis === "x" ? shape.minY : shape.minX, axis === "x" ? shape.maxY : shape.maxX];
+    shape.polygons.forEach((poly) => {
+      for (let i = 0; i < poly.length; i += 1) {
+        const a = poly[i];
+        const b = poly[(i + 1) % poly.length];
+        const a0 = axis === "x" ? a[0] : a[1];
+        const b0 = axis === "x" ? b[0] : b[1];
+        if ((a0 <= value) === (b0 <= value)) continue;
+        const ratio = (value - a0) / (b0 - a0);
+        const a1 = axis === "x" ? a[1] : a[0];
+        const b1 = axis === "x" ? b[1] : b[0];
+        cuts.push(a1 + (b1 - a1) * ratio);
+      }
+    });
+    cuts.sort((p, q) => p - q);
+    const spans = [];
+    for (let i = 0; i + 1 < cuts.length; i += 1) {
+      if (cuts[i + 1] - cuts[i] < 0.01) continue;
+      const mid = (cuts[i] + cuts[i + 1]) / 2;
+      /* 格子が輪郭の辺にちょうど重なることがある（例: 間口12mの会場で x=8 の辺）。
+         真上の1点だけで見ると内外の判定が揺れるので、両隣も見る。 */
+      const inside = axis === "x"
+        ? (shape.inside(value, mid) || shape.inside(value + 0.01, mid) || shape.inside(value - 0.01, mid))
+        : (shape.inside(mid, value) || shape.inside(mid, value + 0.01) || shape.inside(mid, value - 0.01));
+      if (inside) spans.push([cuts[i], cuts[i + 1]]);
+    }
+    return spans;
+  }
+
+  function drawCustomStageFloor(ctx, halfWidth, halfDepth) {
+    const shape = customStageShape();
+    if (!shape) return false;
+    const lib = window.SHOSAI_FRONT_SHAPE;
+    const at = (point, y) => toWorld(shape.uOf(point[0]), shape.vOf(point[1]), W, D, y);
+
+    /* 舞台の外は舞台より低い床。高さは前縁の羽目板と同じ（HOUSE_FLOOR_Y）。
+       壁もそこまで下ろす（下ろさないと壁の裾と床の間に隙間が開く）。 */
+    fillPoly(ctx, [{ x: -halfWidth, y: HOUSE_FLOOR_Y, z: -halfDepth }, { x: halfWidth, y: HOUSE_FLOOR_Y, z: -halfDepth },
+      { x: halfWidth, y: HOUSE_FLOOR_Y, z: halfDepth }, { x: -halfWidth, y: HOUSE_FLOOR_Y, z: halfDepth }], "#1d1712");
+    fillPoly(ctx, [{ x: -halfWidth, y: HOUSE_FLOOR_Y, z: -halfDepth }, { x: halfWidth, y: HOUSE_FLOOR_Y, z: -halfDepth },
+      { x: halfWidth, y: 0, z: -halfDepth }, { x: -halfWidth, y: 0, z: -halfDepth }], "#2b2118");
+    [-halfWidth, halfWidth].forEach((x) => {
+      fillPoly(ctx, [{ x, y: HOUSE_FLOOR_Y, z: -halfDepth }, { x, y: HOUSE_FLOOR_Y, z: halfDepth },
+        { x, y: 0, z: halfDepth }, { x, y: 0, z: -halfDepth }], "#211912");
+    });
+
+    // 舞台の甲板
+    shape.polygons.forEach((poly) => fillPoly(ctx, poly.map((point) => at(point, 0)), "#262019"));
+
+    /* 縁の土手。★見る向きが自由なので、カメラに背を向けた面は描かない
+       （描くと、舞台の向こう側の壁が床の上に浮いて見える）。奥から順に塗る。 */
+    lib.boundary(shape).map((edge) => {
+      const a = at(edge.a, 0);
+      const b = at(edge.b, 0);
+      const mid = { x: (a.x + b.x) / 2, y: HOUSE_FLOOR_Y / 2, z: (a.z + b.z) / 2 };
+      // 床の外へ向く法線（平面のx,yは3Dのx,zと同じ向き・同じ尺）
+      const facing = edge.outward[0] * (camera.x - mid.x) + edge.outward[1] * (camera.z - mid.z);
+      return { a, b, mid, facing, kind: edge.kind, depth: toCamera(mid).z };
+    }).filter((face) => face.facing > 0)
+      .sort((p, q) => q.depth - p.depth)
+      .forEach((face) => {
+        fillPoly(ctx, [face.a, face.b, { ...face.b, y: HOUSE_FLOOR_Y }, { ...face.a, y: HOUSE_FLOOR_Y }],
+          face.kind === "front" ? "#1a120d" : "#160f0b");
+      });
+
+    // 1m格子。舞台の中だけ
+    const gridColor = "rgba(232,226,212,.09)";
+    for (let x = Math.ceil(shape.minX); x <= shape.maxX; x += 1) {
+      customGridSpans(shape, "x", x).forEach(([from, to]) => {
+        line3(ctx, at([x, from], 0), at([x, to], 0), gridColor, 1);
+      });
+    }
+    for (let y = Math.ceil(shape.minY); y <= shape.maxY; y += 1) {
+      customGridSpans(shape, "y", y).forEach(([from, to]) => {
+        line3(ctx, at([from, y], 0), at([to, y], 0), gridColor, 1);
+      });
+    }
+    // 床の縁。舞台と、その外の低い所の境目を読めるようにする
+    lib.boundary(shape).forEach((edge) => {
+      line3(ctx, at(edge.a, 0), at(edge.b, 0), "rgba(232,226,212,.28)", 2);
+    });
+    return true;
   }
 
   function drawBowlFloorGrid(ctx, venue) {
@@ -3438,6 +3551,7 @@
       crowdModes: CROWD_MODES, normalizeCrowdModeId, crowdModeById,
       bowlUnitsCacheSize: () => bowlUnitsCache.size,
       frameDelta, wingWidthFor, wingLegX, wingLegPairs,
+      customStageShape, customGridSpans,
       wingLegZs, houseSeatsPerRow, houseRiserRows, facingFromGround, uvFromGround, pickFrom,
       seatNoise, houseSeats, houseBalconyRows, houseRingRows, seatSpanEnds,
       housePerson: () => HOUSE_PERSON, houseSeat: () => HOUSE_SEAT,

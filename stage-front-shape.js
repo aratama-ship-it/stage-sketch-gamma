@@ -140,10 +140,45 @@
     };
   }
 
-  /* 見える立ち上がりの辺。奥から手前の順（order 昇順）で返す。
-     返す1件: { a:[x,y], b:[x,y], kind:"front"|"side", order }
-       front … 客席の方を向いた面（辺が横に走る／斜めでも横成分が主）
-       side  … 奥行き方向に走る面 */
+  /* 床の縁（立ち上がりになりうる辺）を全部返す。奥から手前の順（order 昇順）。
+     返す1件: { a:[x,y], b:[x,y], kind:"front"|"side", order, outward:[nx,ny] }
+       kind    … front＝客席/奥の方を向いた面、side＝奥行き方向に走る面
+       outward … 床の外へ向く単位法線（3Dカメラ側で表裏を判断するのに使う）
+     ★3Dカメラは見る向きが自由なので、正面図のような「客席を向いた面だけ」では足りない。
+       絞り込みは faces() が行う。 */
+  function boundary(shape) {
+    if (!shape) return [];
+    const out = [];
+    shape.polygons.forEach((poly, polyIndex) => {
+      const others = shape.polygons.filter((_, index) => index !== polyIndex);
+      for (let i = 0; i < poly.length; i += 1) {
+        splitEdge(poly[i], poly[(i + 1) % poly.length], others).forEach(([a, b]) => {
+          const dx = b[0] - a[0];
+          const dy = b[1] - a[1];
+          const len = Math.hypot(dx, dy);
+          if (len < 1e-6) return;
+          const mx = (a[0] + b[0]) / 2;
+          const my = (a[1] + b[1]) / 2;
+          const nx = dy / len;
+          const ny = -dx / len;
+          const plus = shape.inside(mx + nx * EPS, my + ny * EPS);
+          const minus = shape.inside(mx - nx * EPS, my - ny * EPS);
+          if (plus === minus) return;            // 内部の継ぎ目、または床の外
+          const ox = plus ? -nx : nx;             // 床の外へ向く法線
+          const oy = plus ? -ny : ny;
+          const kind = Math.abs(oy) >= Math.abs(ox) ? "front" : "side";
+          const left = a[0] <= b[0] ? a : b;
+          const right = a[0] <= b[0] ? b : a;
+          out.push({ a: [left[0], left[1]], b: [right[0], right[1]], kind, order: my,
+            outward: [ox, oy] });
+        });
+      }
+    });
+    return out.sort((p, q) => p.order - q.order);
+  }
+
+  /* 正面図で見える立ち上がりの辺。boundary() から、
+     ①外周（左右の端・最奥）を外し ②見る人の方を向いた面だけにする。 */
   function faces(shape, mode) {
     if (!shape) return [];
     const out = [];
@@ -182,46 +217,21 @@
          見る人は舞台の手前・中央（cx, maxY より十分手前）に置く。
          左右の外周（x=minX／maxX）と最奥（y=minY）は描かない（従来の長方形でも描いていない）。 */
       const viewer = [cx, shape.maxY + 2 * Math.max(1, shape.maxY - shape.minY)];
-      shape.polygons.forEach((poly, polyIndex) => {
-        const others = shape.polygons.filter((_, index) => index !== polyIndex);
-        for (let i = 0; i < poly.length; i += 1) {
-          const wholeA = poly[i];
-          const wholeB = poly[(i + 1) % poly.length];
-          /* ★辺は他の形の頂点・辺と交わる所で割ってから判定する。
-             切り取りでできた帯は主の形と辺を一部だけ共有する（例: 主の [12,6]→[0,6] と帯の [0,6]→[8,6]）。
-             辺の真ん中1点で見ると「両側とも床」で内部の継ぎ目に見えてしまい、
-             露出している残り（x 8→12）の立ち上がりが落ちる。 */
-          splitEdge(wholeA, wholeB, others).forEach(([a, b]) => {
-          const dx = b[0] - a[0];
-          const dy = b[1] - a[1];
-          const len = Math.hypot(dx, dy);
-          if (len < 1e-6) return;
-          const onLeft = a[0] <= shape.minX + 1e-6 && b[0] <= shape.minX + 1e-6;
-          const onRight = a[0] >= shape.maxX - 1e-6 && b[0] >= shape.maxX - 1e-6;
-          const onBack = a[1] <= shape.minY + 1e-6 && b[1] <= shape.minY + 1e-6;
-          if (onLeft || onRight || onBack) return;
-          const mx = (a[0] + b[0]) / 2;
-          const my = (a[1] + b[1]) / 2;
-          const nx = dy / len;
-          const ny = -dx / len;
-          const plus = shape.inside(mx + nx * EPS, my + ny * EPS);
-          const minus = shape.inside(mx - nx * EPS, my - ny * EPS);
-          if (plus === minus) return;            // 内部の継ぎ目、または床の外
-          const ox = plus ? -nx : nx;             // 床の外へ向く法線
-          const oy = plus ? -ny : ny;
-          const dot = ox * (viewer[0] - mx) + oy * (viewer[1] - my);
-          if (dot <= 1e-9) return;                // 向こう側を向いた面は床に隠れる
-          const kind = Math.abs(oy) >= Math.abs(ox) ? "front" : "side";
-          // 手前から見て左→右の順にそろえる（塗るときの上端の向きが揃う）
-          const left = a[0] <= b[0] ? a : b;
-          const right = a[0] <= b[0] ? b : a;
-          out.push({ a: [left[0], left[1]], b: [right[0], right[1]], kind, order: my });
-          });
-        }
+      boundary(shape).forEach((edge) => {
+        const [a, b] = [edge.a, edge.b];
+        const onLeft = a[0] <= shape.minX + 1e-6 && b[0] <= shape.minX + 1e-6;
+        const onRight = a[0] >= shape.maxX - 1e-6 && b[0] >= shape.maxX - 1e-6;
+        const onBack = a[1] <= shape.minY + 1e-6 && b[1] <= shape.minY + 1e-6;
+        if (onLeft || onRight || onBack) return;
+        const mx = (a[0] + b[0]) / 2;
+        const my = (a[1] + b[1]) / 2;
+        const dot = edge.outward[0] * (viewer[0] - mx) + edge.outward[1] * (viewer[1] - my);
+        if (dot <= 1e-9) return;                // 向こう側を向いた面は床に隠れる
+        out.push({ a: a.slice(), b: b.slice(), kind: edge.kind, order: edge.order });
       });
     }
     return out.sort((p, q) => p.order - q.order);
   }
 
-  root.SHOSAI_FRONT_SHAPE = Object.freeze({ build, faces, EPS });
+  root.SHOSAI_FRONT_SHAPE = Object.freeze({ build, faces, boundary, EPS });
 })(typeof window !== "undefined" ? window : globalThis);
