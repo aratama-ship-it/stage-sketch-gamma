@@ -4327,6 +4327,15 @@
     undo: document.getElementById("stage-undo"),
     redo: document.getElementById("stage-redo"),
     export: document.getElementById("stage-export"),
+    cueSheetOpen: document.getElementById("stage-cue-sheet-open"),
+    cueSheetModal: document.getElementById("stage-cue-sheet-modal"),
+    cueSheetBackdrop: document.getElementById("stage-cue-sheet-backdrop"),
+    cueSheetClose: document.getElementById("stage-cue-sheet-close"),
+    cueSheetTitle: document.getElementById("stage-cue-sheet-title"),
+    cueSheetList: document.getElementById("stage-cue-sheet-list"),
+    cueSheetView: document.getElementById("stage-cue-sheet-view"),
+    cueSheetBack: document.getElementById("stage-cue-sheet-back"),
+    cueSheetContent: document.getElementById("stage-cue-sheet-content"),
     launchBackupWarning: document.getElementById("stage-launch-backup-warning"),
     launchBackupBackdrop: document.getElementById("stage-launch-backup-backdrop"),
     launchBackupClose: document.getElementById("stage-launch-backup-close"),
@@ -23200,6 +23209,37 @@
     return { dist, movers, inout };
   }
 
+  /* バミリ図とキューシートが同じ実寸変換を使う。表示先ごとに式を写さない。 */
+  function bamiriPosition(piece, en = languageValue(() => true, () => false)) {
+    const size = venueSize();
+    const off = (finite(piece && piece.u, 0.5) - 0.5) * (size.width || 12);
+    const across = Math.abs(off) < 0.15
+      ? (en ? "centre" : "中央")
+      : (en
+        ? `${Math.abs(off).toFixed(1)}m ${off > 0 ? "SL" : "SR"}`
+        : `${off > 0 ? "上手" : "下手"}${Math.abs(off).toFixed(1)}m`);
+    const front = ((1 - finite(piece && piece.v, 0.5)) * (size.depth || 9)).toFixed(1);
+    return { across, front: `${front}m`, text: `${across} / ${front}m` };
+  }
+
+  /* 既存の明かりのキューシートと新しい部署シートで、点灯差分の正本を共有する。 */
+  function lightCueChanges(previousScene, scene) {
+    const previous = previousScene || { pieces: [] };
+    const cur = (scene && scene.pieces || []).filter((piece) => piece.type === "light");
+    const before = (previous.pieces || []).filter((piece) => piece.type === "light");
+    const on = cur.filter((piece) => !twinOf(piece, before)).map((piece) => pieceLabel(piece));
+    const off = before.filter((piece) => !twinOf(piece, cur)).map((piece) => pieceLabel(piece));
+    const changed = cur.map((piece) => {
+      const twin = twinOf(piece, before);
+      if (!twin) return null;
+      const a = finite(twin.glow, 1);
+      const b = finite(piece.glow, 1);
+      if (Math.abs(a - b) < 0.01) return null;
+      return `${pieceLabel(piece)} ${Math.round(a * 100)}→${Math.round(b * 100)}%`;
+    }).filter(Boolean);
+    return { on, off, changed };
+  }
+
   /* ---------- 印刷用ページ ----------
      全シーンの正面と平面を一枚ずつ並べた、印刷のためのページを別タブに開く。
      ブラウザの「印刷」からPDFにして、稽古場へ紙で持っていける。
@@ -23260,18 +23300,11 @@
     /* バミリ図: 立ち位置の実寸表。床にテープを貼る作業へそのまま持っていける */
     function bamiriTable(row) {
       if (!featureOn("bamiri")) return "";
-      const size = venueSize();
       const people = (row.pieces || []).filter((q) => q.type === "performer" && onStageArea(q.u, q.v));
       if (!people.length) return "";
       const cells = people.map((q) => {
-        const off = (q.u - 0.5) * (size.width || 12);
-        const side = Math.abs(off) < 0.15
-          ? (en ? "centre" : "中央")
-          : (en
-            ? `${Math.abs(off).toFixed(1)}m ${off > 0 ? "SL" : "SR"}`
-            : `${off > 0 ? "上手" : "下手"}${Math.abs(off).toFixed(1)}m`);
-        const front = ((1 - q.v) * (size.depth || 9)).toFixed(1);
-        return `<tr><td>${escapeHtml(pieceLabel(q) || "?")}</td><td>${escapeHtml(side)}</td><td>${front}m</td></tr>`;
+        const position = bamiriPosition(q, en);
+        return `<tr><td>${escapeHtml(pieceLabel(q) || "?")}</td><td>${escapeHtml(position.across)}</td><td>${position.front}</td></tr>`;
       }).join("");
       return `<table class="bamiri"><thead><tr><th>${en ? "Who" : "誰"}</th><th>${en ? "Across" : "左右"}</th><th>${en ? "From DS edge" : "ツラから"}</th></tr></thead><tbody>${cells}</tbody></table>`;
     }
@@ -23284,18 +23317,7 @@
       const lines = [];
       printSceneRows.forEach((row, i2) => {
         const prev = i2 > 0 ? printSceneRows[i2 - 1] : { pieces: [] };
-        const cur = (row.pieces || []).filter((q) => q.type === "light");
-        const before = (prev.pieces || []).filter((q) => q.type === "light");
-        const on = cur.filter((q) => !twinOf(q, before)).map((q) => pieceLabel(q));
-        const off = before.filter((q) => !twinOf(q, cur)).map((q) => pieceLabel(q));
-        const changed = cur.map((q) => {
-          const twin = twinOf(q, before);
-          if (!twin) return null;
-          const a = finite(twin.glow, 1);
-          const b2 = finite(q.glow, 1);
-          if (Math.abs(a - b2) < 0.01) return null;
-          return `${pieceLabel(q)} ${Math.round(a * 100)}→${Math.round(b2 * 100)}%`;
-        }).filter(Boolean);
+        const { on, off, changed } = lightCueChanges(prev, row);
         if (!on.length && !off.length && !changed.length) return;
         lines.push(`<tr><td>${i2 + 1} ${escapeHtml(row.title || "")}</td><td>${escapeHtml(on.join(" / "))}</td><td>${escapeHtml(off.join(" / "))}</td><td>${escapeHtml(changed.join(" / "))}</td></tr>`);
       });
@@ -28161,6 +28183,11 @@ ${propsPlotHtml}
     });
   }
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && els.cueSheetModal && !els.cueSheetModal.hidden) {
+      event.preventDefault();
+      closeCueSheet();
+      return;
+    }
     if (event.key === "Escape" && els.feedbackModal && !els.feedbackModal.hidden) closeFeedback();
     if (event.key === "Escape" && els.releaseModal && !els.releaseModal.hidden) closeReleaseHistory();
     if (event.key === "Escape" && els.sceneGridModal && !els.sceneGridModal.hidden) closeSceneGrid();
@@ -30745,6 +30772,151 @@ ${propsPlotHtml}
     else runDraftExport();
   }
 
+  let cueSheetReturnFocus = null;
+
+  function cueSheetHelpers() {
+    return {
+      tx,
+      stageWidth: venueSize().width || 12,
+      normalizeRoute,
+      poseLabel: (poseId) => poseName(poseById(poseId)),
+      facingLabel,
+      mountKind: (piece, scene) => mountKindFrom(piece, scene && scene.pieces),
+      pieceLabel,
+      formatPosition: (piece) => bamiriPosition(piece).text,
+      formatRoute: (route) => `${tx("→ 行き先")} ${bamiriPosition(route).text}`,
+      propSceneSummary,
+      propMovesBetweenScenes,
+      lightChanges: lightCueChanges,
+      cuePresentations: (project) => window.SHOSAI_CUE_SHEET.cuePresentations(project),
+    };
+  }
+
+  function selectedCueSheet(kind, key) {
+    const api = window.SHOSAI_CUE_SHEET;
+    if (!api) return null;
+    return kind === "performer"
+      ? api.buildPerformerSheet(state.project, key, cueSheetHelpers())
+      : api.buildDepartmentSheet(state.project, key, cueSheetHelpers());
+  }
+
+  function showCueSheetList() {
+    if (els.cueSheetModal) els.cueSheetModal.classList.remove("is-viewing-sheet");
+    if (els.cueSheetList) els.cueSheetList.hidden = false;
+    if (els.cueSheetView) els.cueSheetView.hidden = true;
+    if (els.cueSheetContent) els.cueSheetContent.replaceChildren();
+    if (els.cueSheetTitle) els.cueSheetTitle.textContent = tx("キューシート");
+  }
+
+  function renderCueSheetList() {
+    if (!els.cueSheetList || !window.SHOSAI_CUE_SHEET) return;
+    const sheets = window.SHOSAI_CUE_SHEET.listSheets(state.project);
+    const performerSheets = sheets.filter((sheet) => sheet.kind === "performer");
+    const departmentSheets = sheets.filter((sheet) => sheet.kind === "department");
+    els.cueSheetList.replaceChildren();
+    const whole = document.createElement("div");
+    whole.className = "stage-cue-sheet-row is-disabled";
+    const wholeLabel = document.createElement("span");
+    /* 括弧は言語で変える。英語で全角括弧が出ると翻訳漏れに見える（2026-09-18 検証で発見）。
+       ★languageValue は中国語も英語側へ落とすが、中国語の組版は全角が自然なので lang を直接見る。 */
+    const wholeBrackets = lang === "en" ? [" (", ")"] : ["（", "）"];
+    wholeLabel.textContent = `${tx("全体表")}${wholeBrackets[0]}${tx("段階2で入ります")}${wholeBrackets[1]}`;
+    whole.append(wholeLabel);
+    els.cueSheetList.append(whole);
+    const addGroup = (title, entries) => {
+      const group = document.createElement("section");
+      group.className = "stage-cue-sheet-group";
+      const heading = document.createElement("h3");
+      heading.textContent = tx(title);
+      group.append(heading);
+      entries.forEach((entry) => {
+        const row = document.createElement("div");
+        row.className = "stage-cue-sheet-row";
+        const label = document.createElement("span");
+        label.textContent = entry.kind === "department" ? tx(entry.label) : entry.label;
+        const view = document.createElement("button");
+        view.type = "button";
+        view.className = "stage-minor-action";
+        view.textContent = tx("見る");
+        view.addEventListener("click", () => openCueSheetView(entry.kind, entry.key));
+        const print = document.createElement("button");
+        print.type = "button";
+        print.className = "stage-minor-action";
+        print.textContent = tx("印刷");
+        print.addEventListener("click", () => openCueSheetPrint(entry.kind, entry.key));
+        row.append(label, view, print);
+        group.append(row);
+      });
+      els.cueSheetList.append(group);
+    };
+    addGroup("演者ごと", performerSheets);
+    addGroup("部署", departmentSheets);
+  }
+
+  function openCueSheetView(kind, key) {
+    const sheet = selectedCueSheet(kind, key);
+    if (!sheet || !els.cueSheetContent) return;
+    els.cueSheetContent.innerHTML = window.SHOSAI_CUE_SHEET.renderSheetHtml(sheet, lang);
+    if (els.cueSheetModal) els.cueSheetModal.classList.add("is-viewing-sheet");
+    if (els.cueSheetList) els.cueSheetList.hidden = true;
+    if (els.cueSheetView) els.cueSheetView.hidden = false;
+    if (els.cueSheetTitle) els.cueSheetTitle.textContent = sheet.title;
+    if (els.cueSheetBack) els.cueSheetBack.focus();
+  }
+
+  function cueSheetPrintDocument(sheet) {
+    const content = window.SHOSAI_CUE_SHEET.renderSheetHtml(sheet, lang);
+    return `<!DOCTYPE html><html lang="${escapeHtml(lang)}"><head><meta charset="utf-8"><title>${escapeHtml(sheet.title)}</title>
+<style>
+@page { size: A4 landscape; margin: 10mm; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-family: 'Hiragino Kaku Gothic ProN', sans-serif; }
+.cue-sheet-paper { min-height: 185mm; display: flex; flex-direction: column; }
+.cue-sheet-paper-head { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 8px; }
+.cue-sheet-paper-head h1 { margin: 0; font-size: 16px; }
+.cue-sheet-paper-head p { margin: 2px 0 0; }
+.cue-sheet-stamp { color: #666; font-size: 11px; white-space: nowrap; }
+.cue-sheet-table { width: 100%; border-collapse: collapse; table-layout: auto; font-size: 11px; }
+.cue-sheet-table caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.cue-sheet-table th, .cue-sheet-table td { border: 1px solid #bbb; padding: 3px 6px; text-align: left; vertical-align: top; }
+.cue-sheet-table thead th { background: #eee; font-size: 13px; }
+.cue-sheet-table .cue-sheet-notes { min-width: 56mm; }
+.cue-sheet-footnote { margin: 7px 0 0; font-size: 11px; }
+.cue-sheet-legend { margin-top: auto; padding-top: 6px; border-top: 1px solid #bbb; font-size: 11px; }
+</style></head><body>${content}</body></html>`;
+  }
+
+  function openCueSheetPrint(kind, key) {
+    const sheet = selectedCueSheet(kind, key);
+    if (!sheet) return;
+    const url = URL.createObjectURL(new Blob([cueSheetPrintDocument(sheet)], { type: "text/html" }));
+    const printWindow = window.open(url, "_blank");
+    if (!printWindow) {
+      announce(tx("キューシートを開けませんでした。ポップアップの許可を確認してください。"));
+      URL.revokeObjectURL(url);
+      return;
+    }
+    announce(tx("キューシートを印刷用の窓で開きました。"));
+  }
+
+  function openCueSheet() {
+    if (!els.cueSheetModal || !window.SHOSAI_CUE_SHEET) return;
+    cueSheetReturnFocus = document.activeElement;
+    renderCueSheetList();
+    showCueSheetList();
+    els.cueSheetModal.hidden = false;
+    if (els.cueSheetBackdrop) els.cueSheetBackdrop.hidden = false;
+    if (els.cueSheetClose) els.cueSheetClose.focus();
+  }
+
+  function closeCueSheet() {
+    if (els.cueSheetModal) els.cueSheetModal.hidden = true;
+    if (els.cueSheetBackdrop) els.cueSheetBackdrop.hidden = true;
+    showCueSheetList();
+    if (cueSheetReturnFocus && typeof cueSheetReturnFocus.focus === "function") cueSheetReturnFocus.focus();
+    cueSheetReturnFocus = null;
+  }
+
   function openExport() {
     if (!els.exportModal) return;
     if (!state.showFront && exportView !== "plan") exportView = "plan";
@@ -30761,6 +30933,10 @@ ${propsPlotHtml}
   }
 
   els.export.addEventListener("click", openExport);
+  if (els.cueSheetOpen) els.cueSheetOpen.addEventListener("click", openCueSheet);
+  if (els.cueSheetClose) els.cueSheetClose.addEventListener("click", closeCueSheet);
+  if (els.cueSheetBackdrop) els.cueSheetBackdrop.addEventListener("click", closeCueSheet);
+  if (els.cueSheetBack) els.cueSheetBack.addEventListener("click", showCueSheetList);
   if (els.exportClose) els.exportClose.addEventListener("click", closeExport);
   if (els.exportBackdrop) els.exportBackdrop.addEventListener("click", closeExport);
   if (els.exportRun) els.exportRun.addEventListener("click", runExport);

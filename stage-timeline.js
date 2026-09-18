@@ -1340,9 +1340,8 @@
   }
 
   function cuePrefix(type) {
-    if (type === "light") return "LXcue";
-    if (type === "music") return "Mcue";
-    return "VOXcue";
+    // LXcue / Mcue / VOXcue の対応表は stage-cue-sheet.js の一か所だけを正本にする。
+    return window.SHOSAI_CUE_SHEET.cuePrefix(type);
   }
 
   // 本体のシーン一覧と同じ階層番号を使う。番号自体は保存せず、並び替え後も
@@ -1446,7 +1445,7 @@
         sceneId,
         sceneNumber,
         sceneTitle: segment && segment.title || tx("シーン"),
-        displayName: `${cuePrefix(cue.cueType)} ${sceneNumber}-${ordinal}`,
+        displayName: window.SHOSAI_CUE_SHEET.formatCueDisplayName(cue.cueType, sceneNumber, ordinal),
       };
     });
   }

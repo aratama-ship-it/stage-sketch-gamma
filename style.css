@@ -2037,6 +2037,21 @@ html.stage-pwa-tablet .stage-header-app-identity { --stage-header-logo-width: 22
   height: var(--stage-export-icon-size);
 }
 
+/* キューシートは紙にする入口の左隣。既存の44px操作と色をそのまま共有する。 */
+.stage-history-actions .stage-cue-sheet-icon {
+  --stage-cue-sheet-hit-size: var(--stage-history-action-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 var(--stage-cue-sheet-hit-size);
+  width: var(--stage-cue-sheet-hit-size);
+  min-width: var(--stage-cue-sheet-hit-size);
+  height: var(--stage-cue-sheet-hit-size);
+  min-height: var(--stage-cue-sheet-hit-size);
+  padding: 0;
+}
+.stage-cue-sheet-icon svg { display: block; width: 20px; height: 20px; }
+
 /* 全画面は定番の記号だけにして、隣のアイコン操作と当たり判定を揃える。 */
 .stage-history-actions .stage-present-icon {
   --stage-present-hit-size: var(--stage-history-action-height);
@@ -2939,6 +2954,41 @@ canvas[data-tool="note"] { cursor: copy; }
 
 /* 書き出しの選び方 */
 .stage-export-modal { width: min(520px, calc(100vw - 40px)); }
+
+.stage-modal.stage-cue-sheet-modal { width: min(520px, calc(100vw - 40px)); }
+.stage-modal.stage-cue-sheet-modal.is-viewing-sheet { width: min(1200px, calc(100vw - 40px)); }
+.stage-cue-sheet-body { max-height: min(72vh, 680px); overflow-y: auto; }
+.stage-cue-sheet-group + .stage-cue-sheet-group { margin-top: 18px; }
+.stage-cue-sheet-group h3 { margin: 0 0 6px; color: var(--milk); font: 500 13px/1.4 var(--serif); }
+.stage-cue-sheet-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 6px;
+  align-items: stretch;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line-dark);
+}
+.stage-cue-sheet-row > span { align-self: center; min-width: 0; color: var(--milk-dim); overflow-wrap: anywhere; }
+.stage-cue-sheet-row > .stage-minor-action { width: auto; min-height: 44px; margin: 0; }
+.stage-cue-sheet-row.is-disabled { opacity: 0.55; }
+.stage-cue-sheet-row.is-disabled > span { grid-column: 1 / 4; min-height: 44px; display: flex; align-items: center; }
+#stage-cue-sheet-back { width: auto; min-height: 44px; margin: 0 0 10px; }
+.stage-cue-sheet-scroll { overflow-x: auto; background: var(--paper); color: var(--ink); }
+.cue-sheet-paper { min-width: max-content; padding: 14px; background: var(--paper); color: var(--ink); }
+.cue-sheet-paper-head { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 10px; }
+.cue-sheet-paper-head h1 { margin: 0; color: var(--ink); font: 600 16px/1.35 var(--serif); letter-spacing: 0; }
+.cue-sheet-paper-head p { margin: 2px 0 0; }
+.cue-sheet-stamp { color: var(--ink-dim); font-size: 11px; white-space: nowrap; }
+.cue-sheet-table { border-collapse: collapse; font-size: 11px; }
+.cue-sheet-table caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.cue-sheet-table th,
+.cue-sheet-table td { min-width: 96px; height: 32px; padding: 4px 7px; border: 1px solid var(--line-dark); text-align: left; vertical-align: top; white-space: pre-wrap; }
+.cue-sheet-table thead th { height: 36px; background: var(--desk); color: var(--milk); }
+.cue-sheet-table th:first-child { position: sticky; left: 0; z-index: 1; min-width: 160px; background: var(--paper); }
+.cue-sheet-table thead th:first-child { z-index: 2; background: var(--desk); }
+.cue-sheet-table .cue-sheet-notes { min-width: 56mm; }
+.cue-sheet-footnote { margin: 8px 0 0; font-size: 11px; }
+.cue-sheet-legend { margin-top: 10px; padding-top: 6px; border-top: 1px solid var(--line-dark); font-size: 11px; }
 
 #stage-export-purpose-block { margin-bottom: 8px; }
 
@@ -13102,8 +13152,8 @@ html.stage-pwa-tablet .stage-tablet-top-controls .stage-ai-link {
    設定・全画面・書き出しは、iPadのフォントで記号が空欄にならないよう
    本家と同じインラインSVGを使う。 */
 html.stage-pwa-tablet .stage-tablet-top-controls svg { display: none; }
-html.stage-pwa-tablet .stage-tablet-top-controls :is(.stage-gear-btn, #stage-present-btn, #stage-share-open, .stage-export-icon)::before { content: none; }
-html.stage-pwa-tablet .stage-tablet-top-controls :is(.stage-gear-btn, #stage-present-btn, #stage-share-open, .stage-export-icon) svg {
+html.stage-pwa-tablet .stage-tablet-top-controls :is(.stage-gear-btn, #stage-present-btn, #stage-share-open, .stage-cue-sheet-icon, .stage-export-icon)::before { content: none; }
+html.stage-pwa-tablet .stage-tablet-top-controls :is(.stage-gear-btn, #stage-present-btn, #stage-share-open, .stage-cue-sheet-icon, .stage-export-icon) svg {
   display: block;
   width: 20px;
   height: 20px;
