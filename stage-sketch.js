@@ -25703,12 +25703,47 @@ ${propsPlotHtml}
     if (els.venueSelect) {
       els.venueSelect.innerHTML = "";
       const choices = VENUES.list;
-      choices.forEach((v) => {
+      const optionFor = (v) => {
         const opt = document.createElement("option");
         opt.value = v.id;
-        opt.textContent = sx(`${venueName(v)}（${venueShortName(v)}）`, `${venueName(v)} (${venueShortName(v)})`);
-        els.venueSelect.append(opt);
+        opt.textContent = sx(`${venueName(v)}（${venueShortName(v)}）`,
+          `${venueName(v)} (${venueShortName(v)})`);
+        return opt;
+      };
+      /* 選択欄を6つの群に分ける（VENUE_PRESETS_STAGE5_2026_09_19・本人決定 D2）。
+         会場が20件になり、ひと続きの並びでは目当ての劇場を探せなくなった。
+         ★並べ替えるのは見た目だけ。VENUES.list の並びは変えない
+           （先頭5件のハッシュの錠と、IDで参照している保存データのため）。
+         ★ここに載っていない会場（取り込んだもの・あとで足すもの）は
+           最後の「そのほか」へ自動で落ちる。群へ足し忘れても消えない。 */
+      const VENUE_GROUPS = [
+        { label: "劇場（額縁）", ids: ["proscenium", "hall-fan", "hall-shoebox", "circus-theatre"] },
+        { label: "劇場（オープン）", ids: ["thrust", "end-stage", "blackbox", "in-the-round", "traverse"] },
+        { label: "日本の劇場と現場", ids: ["noh-stage", "gym-stage", "banquet-hall"] },
+        { label: "大会場の公演", ids: ["arena-show", "dome-show", "arena-concert", "dome-concert"] },
+        { label: "サーカス・テント", ids: ["arena", "chapiteau"] },
+        { label: "屋外", ids: ["outdoor", "festival-field"] },
+      ];
+      const byId = new Map(choices.map((v) => [v.id, v]));
+      const grouped = new Set();
+      VENUE_GROUPS.forEach((group) => {
+        const members = group.ids.map((id) => byId.get(id)).filter(Boolean);
+        if (!members.length) return;
+        const optgroup = document.createElement("optgroup");
+        optgroup.label = tx(group.label);
+        members.forEach((v) => {
+          grouped.add(v.id);
+          optgroup.append(optionFor(v));
+        });
+        els.venueSelect.append(optgroup);
       });
+      const rest = choices.filter((v) => !grouped.has(v.id));
+      if (rest.length) {
+        const optgroup = document.createElement("optgroup");
+        optgroup.label = tx("そのほか");
+        rest.forEach((v) => optgroup.append(optionFor(v)));
+        els.venueSelect.append(optgroup);
+      }
       // 初期一覧にない会場でも、開いたショーで使用中なら名前を表示する。
       if (!choices.some((v) => v.id === current.id)) {
         const opt = document.createElement("option");
