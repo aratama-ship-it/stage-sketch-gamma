@@ -311,7 +311,19 @@
     { ratio: 0.58, label: "音響卓", note: "ステージから観客エリアの1/2〜2/3の位置" },
   ];
 
-  const audiencePolygons = (audience, width, depth, house) => {
+  /* 会場が客席の多角形を直接書いたとき（VENUE_PRESETS_STAGE3_2026_09_19）はそれをそのまま使う。
+   * アリーナ公演の「花道で左右に割れた仮設席＋三方のスタンド」のように、
+   * 式で作るより書いたほうが正確な形があるため。 */
+  const literalAudience = (areas) => areas.map((area, index) => ({
+    id: typeof area.id === "string" ? area.id : `audience-${index + 1}`,
+    polygon: area.polygon.map((point) => [roundM(point[0]), roundM(point[1])]),
+    mode: area.mode === "standing" ? "standing" : "seated",
+    eyeM: Number.isFinite(Number(area.eyeM)) ? Number(area.eyeM) : 1.2,
+    side: area.side,
+  }));
+
+  const audiencePolygons = (audience, width, depth, house, areas) => {
+    if (Array.isArray(areas) && areas.length) return literalAudience(areas);
     // house を持つ会場だけ帯を割る経路へ回す（既存プリセットは従来の式のまま）
     if (audience === "front") return house ? frontAudienceBands(width, depth, house) : frontAudience(width, depth);
     if (audience === "three") return threeSideAudience(width, depth);
@@ -353,7 +365,10 @@
   /* 規模ごとの床の形（VENUE_PRESETS_STAGE2_2026_09_19）。
    * 既存の判定（arena は円）を先頭に置いたまま、円の会場と弧の会場を足せるようにする。 */
   const floorOutlineFor = (venue, size, arc) => {
-    if (venue.id === "arena" || venue.floorShape === "circle") return circleOutline(size.width);
+    // 規模（構成）の側で円を指定できる。センターステージだけ丸い舞台になる会場のため
+    if (venue.id === "arena" || venue.floorShape === "circle" || size.circle === true) {
+      return circleOutline(size.width);
+    }
     if (arc > 0) return arcFrontOutline(size.width, size.depth, arc);
     return rectangleOutline(size.width, size.depth);
   };
@@ -367,6 +382,18 @@
       outline: floorOutlineFor(venue, size, arc),
       levels: [],
     };
+    /* 花道・サブステージ（VENUE_PRESETS_STAGE3_2026_09_19）。作成会場が既に持っている
+       「追加ステージ」(floor.extensions) と同じ形で持つ＝新しい型を足さない。
+       merged: true は主の床と1つに溶かす（境目の線を引かない）。 */
+    if (Array.isArray(size.extensions) && size.extensions.length) {
+      floor.extensions = size.extensions.map((item, index) => ({
+        id: typeof item.id === "string" ? item.id : `stage-extension-${index + 1}`,
+        shape: item.shape === "circle" ? "circle" : "rectangle",
+        polygon: item.polygon.map((point) => [roundM(point[0]), roundM(point[1])]),
+        merged: item.merged !== false,
+        ...(typeof item.label === "string" ? { label: item.label } : {}),
+      }));
+    }
     const ceiling = {
       heightM: size.height,
       rigging: venue.rigging,
@@ -377,7 +404,7 @@
       label: size.label,
       floor,
       ceiling,
-      audience: audiencePolygons(venue.audience, size.width, size.depth, house),
+      audience: audiencePolygons(venue.audience, size.width, size.depth, house, size.audienceAreas),
       fixtures: fixturesForSize(venue.id, size.width, size.depth, size.height),
       access: accessForSize(venue.id, size.width, size.depth),
       capacity: {},
@@ -1109,6 +1136,108 @@
     }),
   );
 
+  /* ── 一般形プリセットの追加 第3弾（VENUE_PRESETS_STAGE3_2026_09_19）──────────────
+   * 本人の「ドームでライブを開くときの形」への答え。
+   * 舞台の大きさ・花道の本数・センターステージ・機材席は公演ごとの仮設で毎回変わるので、
+   * ここに置くのは「よくある1例」であって標準ではない。note にもそう書く。
+   *
+   * 器（遠景のスタンドの形）は既存の「アリーナ（仮の寸法）」「ドーム（仮の寸法）」が持つ。
+   * こちらは演技面と仮設席の形を持つ。両者は別物として並べる。
+   *
+   * 座標は舞台の左下が原点。y が大きいほど客席側。 */
+
+  // 花道。主の床と溶かして1つの床にする
+  const runway = (fromX, toX, fromY, toY, label) => ({
+    id: "runway", shape: "rectangle", merged: true, label,
+    polygon: [[fromX, fromY], [toX, fromY], [toX, toY], [fromX, toY]],
+  });
+
+  const band = (id, x1, y1, x2, y2, side, mode) => ({
+    id, side, mode: mode || "seated", eyeM: 1.2,
+    polygon: [[x1, y1], [x2, y1], [x2, y2], [x1, y2]],
+  });
+
+  VENUES_V2.push(
+    createVenueV2({
+      id: "arena-show",
+      label: "アリーナ公演",
+      short: "エンド＋花道",
+      audience: "three",
+      rigging: "full",
+      shapedVenue: true,
+      provenance: {
+        source: "代表値",
+        confidence: "low",
+        sharing: "ok",
+        note: "アリーナ席は公演ごとの仮設で、舞台の大きさ・花道の本数・機材席の位置で毎回変わる。公的な標準値は見当たらず、ここに置いたのは座席解説などの二次情報から組んだ「よくある1例」。",
+      },
+      sizes: [
+        {
+          id: "arena-end", label: "エンドステージ", width: 20, depth: 12, height: 14, seats: 8000,
+          audienceAreas: [
+            band("audience-arena", -8, 13, 28, 36, "front"),
+            band("audience-stand-front", -14, 37, 34, 49, "front"),
+            band("audience-stand-left", -22, -4, -15, 49, "left"),
+            band("audience-stand-right", 35, -4, 42, 49, "right"),
+          ],
+        },
+        {
+          id: "arena-runway", label: "エンドステージ＋花道", width: 20, depth: 12, height: 14, seats: 7200,
+          extensions: [runway(8, 12, 12, 34, "花道")],
+          audienceAreas: [
+            band("audience-arena-left", -8, 13, 7.5, 36, "front"),
+            band("audience-arena-right", 12.5, 13, 28, 36, "front"),
+            band("audience-stand-front", -14, 37, 34, 49, "front"),
+            band("audience-stand-left", -22, -4, -15, 49, "left"),
+            band("audience-stand-right", 35, -4, 42, 49, "right"),
+          ],
+        },
+      ],
+      note: "アリーナでの公演。舞台は片側に組み、客席は三方のスタンドと、床に並べた仮設のアリーナ席でできている。花道を出すとアリーナ席が左右に割れ、演者は客席の真ん中まで出られるかわりに、両側から見られることになる。アリーナ席は公演ごとの仮設で毎回変わるので、ここにあるのは「よくある1例」。寸法は暫定値。",
+      source: "構成は座席解説などの二次情報から。寸法は暫定値で、公的な標準値ではない",
+    }),
+    createVenueV2({
+      id: "dome-show",
+      label: "ドーム公演",
+      short: "花道・センターステージ",
+      audience: "round",
+      rigging: "full",
+      shapedVenue: true,
+      provenance: {
+        source: "代表値",
+        confidence: "low",
+        sharing: "ok",
+        note: "ドームのアリーナ席も公演ごとの仮設で、ステージ構成によって席数もブロックの割り方も変わる。公的な標準値は見当たらない。センターステージの径・花道の長さは二次情報から組んだ暫定値。",
+      },
+      sizes: [
+        {
+          id: "dome-runway", label: "エンドステージ＋花道", width: 24, depth: 12, height: 16, seats: 40000,
+          extensions: [runway(10, 14, 12, 42, "花道")],
+          audienceAreas: [
+            band("audience-arena-left", -10, 13, 9.5, 44, "front"),
+            band("audience-arena-right", 14.5, 13, 34, 44, "front"),
+            band("audience-stand-front", -18, 45, 42, 60, "front"),
+            band("audience-stand-left", -28, -6, -19, 60, "left"),
+            band("audience-stand-right", 43, -6, 52, 60, "right"),
+            band("audience-stand-back", -18, -16, 42, -7, "round"),
+          ],
+        },
+        {
+          id: "dome-centre", label: "センターステージ", width: 14, depth: 14, height: 16, seats: 45000,
+          circle: true,
+          audienceAreas: [
+            band("audience-arena-front", -12, 15, 26, 34, "front"),
+            band("audience-arena-back", -12, -20, 26, -1, "round"),
+            band("audience-arena-left", -32, -1, -13, 15, "left"),
+            band("audience-arena-right", 27, -1, 46, 15, "right"),
+          ],
+        },
+      ],
+      note: "ドームでの公演。器が丸いので客席は全周にあり、舞台の後ろ側も売ることがある。エンド＋花道は片側に舞台を組んで花道を客席の中へ伸ばす形、センターステージは中央に丸い舞台を組んで全周から見せる形。どちらもアリーナ席は公演ごとの仮設で、ステージ構成によって席数も割り方も変わる。ここにあるのは「よくある1例」。寸法は暫定値。",
+      source: "構成は座席解説などの二次情報から。寸法は暫定値で、公的な標準値ではない",
+    }),
+  );
+
   const outlineDimensions = (outline) => {
     const xs = outline.map((point) => point[0]);
     const ys = outline.map((point) => point[1]);
@@ -1140,6 +1269,8 @@
     if (shaped) {
       result.outline = clone(size.floor.outline);
       result.audienceAreas = clone(size.audience);
+      // 花道・サブステージも規模ごと（構成ごと）に変わる
+      result.stageExtensions = clone(size.floor.extensions || []);
       const blocks = frontHouseBlocks(size.audience, dimensions.width);
       if (blocks) result.houseBlocks = blocks;
     }

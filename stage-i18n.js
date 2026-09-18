@@ -1999,6 +1999,7 @@
       "end-stage": "End stage", "gym-stage": "School gymnasium stage",
       "banquet-hall": "Hotel banquet room", "hall-shoebox": "Rectangular hall",
       "hall-fan": "Fan-shaped hall", "in-the-round": "Theatre in the round",
+      "arena-show": "Arena show", "dome-show": "Dome show",
     },
     venueShort: {
       proscenium: "framed stage", thrust: "three sides", arena: "in the round", outdoor: "temporary", blackbox: "flexible",
@@ -2009,6 +2010,7 @@
       "end-stage": "no frame, one side", "gym-stage": "flat floor, shallow stage",
       "banquet-hall": "temporary, flat floor", "hall-shoebox": "side aisles, three blocks",
       "hall-fan": "curved front, side aisles", "in-the-round": "all round, single tier",
+      "arena-show": "end stage and runway", "dome-show": "runway, centre stage",
     },
     venueNote: {
       /* ★形式プリセット（プロセニアム／スラスト／アリーナ／野外／ブラックボックス）の
@@ -2027,6 +2029,8 @@
       "hall-shoebox": "A rectangular house with two aisles running either side of the centre block — the division you meet most often in Japanese civic halls. From the side blocks the stage reads at an angle. The aisles hold no seats, so nobody watches from there. Dimensions and the division are provisional.",
       "hall-fan": "The stage edge curves out towards the audience and the house fans open — the shape you meet most often in Japanese civic halls. Two aisles run either side of the centre block, and the side blocks reach wider than the stage. The curve brings a performer at centre closer to the house; from the side blocks the stage reads at an angle. Depth includes the crown of the curve. Dimensions and the division are provisional.",
       "in-the-round": "A house that surrounds the playing circle completely. Unlike a circus big top the seating is a single tier and the circle is smaller. There is no front, so position and facing have to hold from every angle. The four gaps between blocks are the ways in, which means an entrance walks through the house. Dimensions are provisional.",
+      "arena-show": "A show in an arena. The stage goes at one end; the house is the three sides of permanent stand plus temporary seating laid on the floor. Add a runway and the floor seating splits either side of it: the performer can walk out into the middle of the house, but is then watched from both sides. Floor seating is built fresh for every show, so this is one common layout rather than a standard. Dimensions are provisional.",
+      "dome-show": "A show in a dome. The bowl is round, so the house runs the whole way around and seats behind the stage are sometimes sold. The runway layout puts the stage at one end and reaches into the house; the centre-stage layout builds a round stage in the middle and plays to every side. Either way the floor seating is built fresh for every show. This is one common layout rather than a standard. Dimensions are provisional.",
     },
     size: {
       small: "Small", mid: "Medium", large: "Large",
@@ -2044,6 +2048,8 @@
       "gym-standard": "Standard (15 m wide, stage 1.1 m high)",
       "banquet-standard": "Banquet room (temporary stage 8×4 m)",
       ring9: "Small (9 m circle)", ring11: "Medium (11 m circle)",
+      "arena-end": "End stage", "arena-runway": "End stage with runway",
+      "dome-runway": "End stage with runway", "dome-centre": "Centre stage",
     },
     seat: {
       front: "Front row", center: "Stalls centre", rear: "Stalls rear",

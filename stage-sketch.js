@@ -12556,6 +12556,9 @@
     (size && Array.isArray(size.audienceAreas)) ? size.audienceAreas : venue.audienceAreas);
   const venueHouseBlocksOf = (venue, size) => (
     (size && Array.isArray(size.houseBlocks)) ? size.houseBlocks : venue.houseBlocks);
+  // 花道・サブステージも構成ごとに変わる（VENUE_PRESETS_STAGE3_2026_09_19）
+  const venueStageExtensionsOf = (venue, size) => (
+    (size && Array.isArray(size.stageExtensions)) ? size.stageExtensions : venue.stageExtensions);
 
   function drawFrontVenue(target, L) {
     const v = L.venue;
@@ -12575,7 +12578,7 @@
       const outline = venueOutlineOf(v, L.size);
       // 形を持つ一般形プリセットは作成会場と同じ step モード（床の外は舞台より低い所）
       if ((v.custom || v.shapedVenue) && Array.isArray(outline)) {
-        return frontShapeLib.build([outline].concat((v.stageExtensions || [])
+        return frontShapeLib.build([outline].concat((venueStageExtensionsOf(v, L.size) || [])
           .map((item) => (item && Array.isArray(item.polygon)) ? item.polygon : null)));
       }
       if (v.realVenue && Array.isArray(outline)) return frontShapeLib.build([outline], { minPoints: 4 });
@@ -13098,7 +13101,7 @@
     const v = L.venue;
     const s = L.stage;
     const outline = venueOutlineOf(v, L.size);
-    const stageExtensions = (v.stageExtensions || [])
+    const stageExtensions = (venueStageExtensionsOf(v, L.size) || [])
       .filter((item) => item && Array.isArray(item.polygon) && item.polygon.length >= 3);
     const stagePolygons = [outline].concat(stageExtensions.map((item) => item.polygon));
     const mergedPolygons = [outline].concat(stageExtensions
