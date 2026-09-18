@@ -11,3 +11,8 @@
  * .stage-minor-action は縦積み用（幅100%・上に10pxの間隔）なので、そのまま使う。
  * 箱は中身が無いとき高さを持たない（ボタンが hidden のときに余白だけ残らないように）。 */
 .stage-formation-entry { display: contents; }
+
+/* 2026-09-18: 押せないときの理由。ボタンのすぐ下に小さく出す。
+   .stage-formation-entry が display:contents なので、[hidden] を効かせるには !important が要る。 */
+.gamma-formation-reason { margin: 4px 0 0; font-size: 11px; line-height: 1.5; color: var(--milk-dim, rgba(240,231,214,.58)); }
+.gamma-formation-reason[hidden] { display: none !important; }

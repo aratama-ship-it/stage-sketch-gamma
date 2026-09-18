@@ -287,9 +287,25 @@
   /* T-15（2026-09-18 本人要望）: 既定の6色と同じ色が「作った色」にも並んでいた。
    * 足すときの重複判定は前からあるが、判定が入る前に作られた保存データには残っていた。
    * 読み込むたびに落とす。落とすのは既定の6色と完全に同じ色と、作った色どうしの重複だけ。 */
+  /* T-15 二度目（2026-09-18 本人指摘「少し減りましたが、まだ複数同じ色が残っています」）:
+   * ★一度目は「既定の6色」しか掃除対象にしていなかった。
+   *   実際にはレーザーのカラープリセット（鮮やかな赤・緑・青・シアン・マゼンタ・黄・白）も
+   *   「作った色」に混ざりうる。見た目が既定の色とよく似ているので、
+   *   同じ色が並んでいるように見えていた。
+   * ★用意されている色は、どれも「作った色」には要らない。 */
+  function knownPresetColors() {
+    const set = new Set(COLORS.map((c) => String(c).toLowerCase()));
+    if (typeof LASER_COLOR_PRESETS !== "undefined") {
+      LASER_COLOR_PRESETS.forEach((preset) => {
+        (preset.colors || []).forEach((c) => set.add(String(c).toLowerCase()));
+      });
+    }
+    return set;
+  }
+  const isKnownPresetColor = (value) => knownPresetColors().has(String(value || "").toLowerCase());
   function cleanPalette(list) {
     if (!Array.isArray(list)) return [];
-    const preset = new Set(COLORS.map((c) => String(c).toLowerCase()));
+    const preset = knownPresetColors();
     const seen = new Set();
     const out = [];
     for (const raw of list) {
@@ -3642,7 +3658,7 @@
       pick.oninput = () => put(pick.value, true);
       pick.onchange = () => {
         const c = pick.value.toLowerCase();
-        if (!COLORS.some((x) => x.toLowerCase() === c) && !state.palette.some((x) => x.toLowerCase() === c)) {
+        if (!isKnownPresetColor(c) && !state.palette.some((x) => x.toLowerCase() === c)) {
           state.palette.push(c); if (state.palette.length > 12) state.palette.shift();
         }
         put(c);
@@ -4462,7 +4478,7 @@
         pick.oninput = () => setSolidColor(pick.value, true);
         pick.onchange = () => {
           const c = pick.value.toLowerCase();
-          if (!COLORS.some((x) => x.toLowerCase() === c) && !state.palette.some((x) => x.toLowerCase() === c)) {
+          if (!isKnownPresetColor(c) && !state.palette.some((x) => x.toLowerCase() === c)) {
             state.palette.push(c); if (state.palette.length > 12) state.palette.shift();
           }
           setLight(fid, isCyc ? { color: c, cycGradient: null } : { color: c }); commit(`色 ${c} を作りました（ほかの灯からも選べます）`);

@@ -26,6 +26,7 @@
    * 以前は図のバー（平面図＝#stage-arrange-menu の後／正面図＝#stage-front-note の後）に
    * 2つ置いていたが、本人決定で廃止。見た目はパネル内のボタンの作法（.stage-minor-action）に
    * そろえる（近くの「選んだ灯に型を適用…」と同じ性質のボタンなので）。 */
+  let reasonNote = null;
   const host2 = document.getElementById('stage-formation-entry');
   if (host2) {
     const button = document.createElement('button');
@@ -35,6 +36,14 @@
     button.setAttribute('aria-haspopup', 'dialog');
     button.addEventListener('click', () => open(button));
     host2.append(button); buttons.push(button);
+    /* 2026-09-18 本人報告「ボタンを押してもパネルが出ない」:
+     * ★実際は「押せない状態」だった。2〜20人は選べていても、舞台の外に居る・器具に乗っている・
+     *   ロックされている等で止まる。その理由は title にしか無く、画面には出ていなかった。
+     *   押しても何も起きないのに理由が読めない＝壊れているようにしか見えない。ここへ出す。 */
+    reasonNote = document.createElement('p');
+    reasonNote.className = 'gamma-formation-reason';
+    reasonNote.hidden = true;
+    host2.append(reasonNote);
   }
   function refresh() {
     const status = host.availability();
@@ -42,6 +51,12 @@
      * 「何人で組むのか」がボタンから読めるようにする（本人決定 (b)＝title 頼みにしない）。 */
     const label = status.enabled && status.count ? `フォーメーション（${status.count}人）` : 'フォーメーション';
     for (const button of buttons) { button.hidden = !status.visible;button.disabled = !status.enabled;button.textContent = label;button.title = status.reason || '選んだ人物のフォーメーション'; }
+    // 押せないときだけ、その理由をボタンの下に出す。
+    if (reasonNote) {
+      const show = Boolean(status.visible && !status.enabled && status.reason);
+      reasonNote.hidden = !show;
+      reasonNote.textContent = show ? status.reason : '';
+    }
   }
   window.GAMMA_FORMATION_UI = Object.freeze({ refresh, close });
   refresh();
