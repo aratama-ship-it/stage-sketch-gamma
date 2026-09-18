@@ -2825,11 +2825,23 @@
   function customStageShape() {
     const lib = window.SHOSAI_FRONT_SHAPE;
     const venue = currentVenueModel();
-    if (!lib || !venue || !venue.custom || !Array.isArray(venue.outline)) return null;
-    const key = `${venue.id}|${JSON.stringify(venue.outline)}|${JSON.stringify(venue.stageExtensions || [])}`;
+    /* 形を持つ会場（作成会場と一般形プリセット・VENUE_PRESETS_STAGE6_2026_09_19）の床を、
+       平面図・正面図と同じ輪郭で3Dにも敷く。
+       ★輪郭は本体から渡されたものを先に見る。規模ごとに弧の出が違う会場があり、
+         会場データだけを見ると先頭の規模の形になる。 */
+    const passed = data && data.venue;
+    const outline = (passed && Array.isArray(passed.outline) && passed.outline.length >= 3)
+      ? passed.outline
+      : ((venue && Array.isArray(venue.outline)) ? venue.outline : null);
+    const extensions = (passed && Array.isArray(passed.stageExtensions))
+      ? passed.stageExtensions
+      : ((venue && venue.stageExtensions) || []);
+    const shaped = !!venue && (venue.custom === true || venue.shapedVenue === true);
+    if (!lib || !shaped || !outline) return null;
+    const key = `${venue.id}|${JSON.stringify(outline)}|${JSON.stringify(extensions)}`;
     if (customFloorCache.key !== key) {
-      customFloorCache = { key, shape: lib.build([venue.outline].concat(
-        (venue.stageExtensions || []).map((item) => (item && Array.isArray(item.polygon)) ? item.polygon : null))) };
+      customFloorCache = { key, shape: lib.build([outline].concat(
+        extensions.map((item) => (item && Array.isArray(item.polygon)) ? item.polygon : null))) };
     }
     return customFloorCache.shape;
   }

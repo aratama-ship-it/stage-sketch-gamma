@@ -29522,7 +29522,12 @@ ${propsPlotHtml}
           sceneCount: scenes.length,
           venue: { width: size.width, depth: size.depth, height: size.height, type: state.project.venue,
             // 客席の囲み方。全周（ビッグトップ・TOHU等）なら3Dカメラの客席もリングになる
-            audience: venue().audience },
+            audience: venue().audience,
+            /* 床の輪郭と追加ステージ（VENUE_PRESETS_STAGE6_2026_09_19）。
+               ★ここで渡さないと3Dは会場データの先頭の規模の形しか見られない。
+                 扇形ホールは規模ごとに弧の出が違うので、中を選んでも小の形が出ていた。 */
+            outline: venueOutlineOf(venue(), size) || null,
+            stageExtensions: venueStageExtensionsOf(venue(), size) || [] },
           lang,
         };
       },
