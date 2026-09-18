@@ -10453,6 +10453,28 @@
             ? [rings[0][i], rings[0][j], rings[1][j], rings[1][i]]
             : [rings[0][i], rings[1][i], rings[1][j], rings[0][j]], tint);
         }
+      } else if (part.shape === "sphere") {
+        /* 球。緯度・経度の網で覆う。★高さ h を持たない部品なので、
+           箱の枝へ落とすと h=0 の平らな板になる（実際にそうなっていた）。 */
+        const ry = (part.h || part.dia) / 2;
+        const cy = y + ry;
+        const LAT = 12, LON = 24;
+        const at = (i, j) => {
+          const phi = (i / LAT) * Math.PI;          // 0 が上
+          const th = (j / LON) * Math.PI * 2;
+          const ring = Math.sin(phi);
+          return [x + Math.cos(th) * ring * w / 2, cy + Math.cos(phi) * ry,
+            z + Math.sin(th) * ring * d / 2];
+        };
+        for (let i = 0; i < LAT; i += 1) {
+          for (let j = 0; j < LON; j += 1) {
+            // ★極では2点が重なる。三角にしないと法線が出ず、明るさが崩れる
+            const a = at(i, j), b = at(i, j + 1), c = at(i + 1, j + 1), e = at(i + 1, j);
+            if (i === 0) add([a, c, e], tint);
+            else if (i === LAT - 1) add([a, b, c], tint);
+            else add([a, b, c, e], tint);
+          }
+        }
       } else {
         const v = [[-1, 0, -1], [1, 0, -1], [1, 0, 1], [-1, 0, 1],
           [-1, 1, -1], [1, 1, -1], [1, 1, 1], [-1, 1, 1]]
@@ -11038,11 +11060,13 @@
 
   /* ディアボロ。軸に沿って実寸の断面円を並べ、その外形を一枚の曲面として塗る。
    * 輪だけではなく、くびれからカップの縁へ広がる量感を見せる。 */
-  function drawDiabolo(target, piece, L) {
-    const d = pieceDims(piece);
-    if (!d) return;
-    const R = d.dia / 2;
-    const len = d.w;
+  /* ディアボロの形（軸に沿った半径の並び）。
+   * ★式はここだけに置く。正面図・平面図（drawDiabolo）と、設定窓のプレビュー（回転体）が
+   *   同じ式を使う。2か所に持つと、片方を直したときにもう片方がずれる。 */
+  function diaboloProfile(dims) {
+    if (!dims) return null;
+    const R = finite(dims.dia, 0.12) / 2;
+    const len = finite(dims.w, 0.16);
     const AX = Math.max(0.006, R * 0.13);
     const WAIST = 0.14;
     const HALF_SAMPLES = 16;
@@ -11060,6 +11084,14 @@
       const t = i / HALF_SAMPLES;
       sections.push({ t, r: radiusAt(t) });
     }
+    return { sections, R, len, AX, WAIST };
+  }
+
+  function drawDiabolo(target, piece, L) {
+    const d = pieceDims(piece);
+    if (!d) return;
+    const profile = diaboloProfile(d);
+    const { sections, R, len, AX, WAIST } = profile;
     const traceClosed = (first, second) => {
       target.beginPath();
       first.forEach((p, i) => (i ? target.lineTo(p.x, p.y) : target.moveTo(p.x, p.y)));
@@ -20283,6 +20315,7 @@
     tiltMinDeg: -5,
     tiltMaxDeg: 60,
     figureM: 1.7,             // 横に置く人の背丈
+    figureMinM: 0.6,          // これより小さい道具は人でなく物差しで見せる
     marginPx: 14,
   });
   let setInfoPreview = null;
@@ -20300,13 +20333,25 @@
     const dims = pieceDims(piece) || item.dims || { w: 1, d: 1, h: 1 };
     let parts = [];
     try { parts = pieceParts(piece) || []; } catch (_) { parts = []; }
-    if (!parts.length) {
+    /* ★なめらかな小道具は、箱ではなく本体と同じ曲面で描く。
+       pieceParts は当たり判定のために外接の箱を返すので、形の正本は別に取る
+       （本体の drawSmoothStageProp と同じ scaledPropShape）。 */
+    let smooth = null;
+    /* ★仮面だけは曲面の部品ではなく、本体と同じ paintMask で描く（顔が積み木に見えるため）。 */
+    const mask = item.kind === "prop" && isMask(piece);
+    if (item.kind === "prop" && !mask) {
+      try { smooth = scaledPropShape(piece, dims).parts || null; } catch (_) { smooth = null; }
+    }
+    /* ディアボロは箱でも部品の集まりでもなく、軸のまわりに回した曲面。
+       形の式は drawDiabolo と共有（diaboloProfile）。 */
+    const lathe = item.kind === "diabolo" ? diaboloProfile(dims) : null;
+    if (!parts.length && !smooth && !lathe) {
       const w = finite(dims.w, finite(dims.dia, 1));
       const d = finite(dims.d, finite(dims.dia, w));
       const h = finite(dims.h, finite(dims.dia, 1));
       parts = [{ ox: 0, oz: 0, w, d, h, lift: finite(dims.lift, 0), tint: 1 }];
     }
-    return { parts, dims };
+    return { parts, dims, smooth, lathe, mask };
   }
 
   /* 箱を8つの角へ。ox/oz は道具の中心からのずれ、lift は床からの高さ。 */
@@ -20342,7 +20387,7 @@
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.clearRect(0, 0, cssWidth, cssHeight);
 
-    const { parts, dims } = setInfoPreviewShape(item);
+    const { parts, dims, smooth, lathe, mask } = setInfoPreviewShape(item);
     const yaw = (setInfoPreview.yaw * Math.PI) / 180;
     const tilt = Math.sin((setInfoPreview.tilt * Math.PI) / 180);
     const cos = Math.cos(yaw);
@@ -20361,20 +20406,49 @@
     const ball = item.kind === "sphere"
       ? { r: Math.max(0.05, finite(dims.dia, finite(dims.w, 0.6)) / 2), lift: finite(dims.lift, 0) }
       : null;
-    const all = boxes.flat().concat(lines.flatMap((part) => [
+    const setInfoPreviewSmoothPoints = (list) => (list || []).flatMap((part) => {
+      const hw = Math.max(finite(part.w, 0), finite(part.d, 0)) / 2;
+      const x = finite(part.x, 0);
+      const y = finite(part.y, 0);
+      const z = finite(part.z, 0);
+      return [
+        { x: x - hw, y: z - hw, z: y },
+        { x: x + hw, y: z + hw, z: y + Math.max(0, finite(part.h, 0)) },
+      ];
+    });
+    /* ろくろの形の点（軸に沿った輪の上下左右）。枠へ収める尺を決めるのに使う。 */
+    const setInfoPreviewLathePoints = (shape) => {
+      if (!shape) return [];
+      const out = [];
+      shape.sections.forEach(({ t, r }) => {
+        const along = (t * shape.len) / 2;
+        [[r, 0], [-r, 0], [0, r], [0, -r]].forEach(([dz, dy]) => {
+          out.push({ x: along, y: dy, z: shape.R + dz });
+        });
+      });
+      return out;
+    };
+    const all = setInfoPreviewLathePoints(lathe).concat(setInfoPreviewSmoothPoints(smooth))
+      .concat(boxes.flat()).concat(lines.flatMap((part) => [
       { x: finite(part.a[0], 0), y: finite(part.a[2], 0), z: finite(part.a[1], 0) },
       { x: finite(part.b[0], 0), y: finite(part.b[2], 0), z: finite(part.b[1], 0) },
     ]));
-    const figureH = SETINFO_PREVIEW.figureM;
     const flatAll = all.map(flat);
-    const spanX = Math.max(0.4, Math.max(...flatAll.map((q) => Math.abs(q.fx))) * 2);
-    const topZ = Math.max(figureH, ...flatAll.map((q) => q.z));
+    const rawSpan = Math.max(...flatAll.map((q) => Math.abs(q.fx))) * 2;
+    const rawTop = Math.max(...flatAll.map((q) => q.z));
+    /* ★小さい道具は人の影と並べない。12cmのディアボロを1.7mの人と並べると、
+       道具が数画素になって形が読めない。見当をつける相手を物差しへ替える。 */
+    const bigEnoughForFigure = Math.max(rawSpan, rawTop) >= SETINFO_PREVIEW.figureMinM;
+    const figureH = bigEnoughForFigure ? SETINFO_PREVIEW.figureM : 0;
+    const spanX = Math.max(0.1, rawSpan);
+    const topZ = Math.max(figureH, rawTop, 0.05);
     /* 左に人の影の場所を取り、残りの真ん中へ道具を置く。
        尺は「人と道具の両方が枠に収まる」いちばん大きい値。 */
-    const figureSpanM = 0.55;
-    const gapM = 0.3;
+    const figureSpanM = bigEnoughForFigure ? 0.55 : 0;
+    const gapM = bigEnoughForFigure ? 0.3 : 0;
     const margin = SETINFO_PREVIEW.marginPx;
-    const labelRoom = 13;
+    // 物差しのときは数字が下に付くので、そのぶん余白を取る（取らないと数字が切れる）
+    const labelRoom = bigEnoughForFigure ? 13 : 24;
     const k = Math.min(
       (cssWidth - margin * 2) / (spanX + figureSpanM + gapM),
       (cssHeight - margin - labelRoom) / Math.max(0.6, topZ * (1 + tilt * 0.3)),
@@ -20404,6 +20478,34 @@
 
     /* 大きさの見当をつける人の影（回さない。いつも左に立つ）。
        ★頭と体は1つながりに描く。離して描くと点が浮いて見える。 */
+    if (!bigEnoughForFigure) {
+      /* 物差し。道具の幅に合う切りのよい長さ（1・2・5・10…cm）を選んで、足元に引く。 */
+      const setInfoPreviewRuler = () => {
+        /* ★物差しの長さは幅ではなく「いちばん長いところ」から決める。
+           幅だけで決めると、細長いクラブ（幅10cm・丈50cm）で2cmの棒になって読めない。 */
+        const want = Math.max(0.01, Math.max(spanX, topZ) * 0.6);
+        const power = Math.pow(10, Math.floor(Math.log10(want)));
+        const step = [1, 2, 5, 10].map((unit) => unit * power).find((value) => value >= want) || want;
+        const half = (step / 2) * k;
+        const y = baseY + 6;
+        ctx.save();
+        ctx.strokeStyle = "rgba(239,231,214,0.42)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(centerX - half, y);
+        ctx.lineTo(centerX + half, y);
+        ctx.moveTo(centerX - half, y - 4); ctx.lineTo(centerX - half, y + 4);
+        ctx.moveTo(centerX + half, y - 4); ctx.lineTo(centerX + half, y + 4);
+        ctx.stroke();
+        ctx.fillStyle = "rgba(239,231,214,0.5)";
+        ctx.font = "11px 'Hiragino Kaku Gothic ProN', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(step >= 1 ? `${Math.round(step * 10) / 10}m` : `${Math.round(step * 100)}cm`,
+          centerX, y + 15);
+        ctx.restore();
+      };
+      setInfoPreviewRuler();
+    }
     ctx.save();
     const figTop = baseY - figureH * k;
     const headR = 0.093 * figureH * k;
@@ -20411,6 +20513,7 @@
     const hipW = 0.155 * figureH * k;
     const shoulderW = 0.2 * figureH * k;
     ctx.fillStyle = "rgba(239,231,214,0.17)";
+    if (!bigEnoughForFigure) { ctx.restore(); } else {
     ctx.beginPath();
     ctx.moveTo(figX - hipW, baseY);
     ctx.lineTo(figX - shoulderW, shoulderY + headR * 0.5);
@@ -20421,12 +20524,13 @@
     ctx.closePath();
     ctx.fill();
     ctx.restore();
+    }
 
     // 道具。奥の面から順に塗る
     const tone = validColor(item.color, "#8b98a1");
     const faces = [[0, 1, 3, 2], [4, 5, 7, 6], [0, 1, 5, 4], [2, 3, 7, 6], [0, 2, 6, 4], [1, 3, 7, 5]];
     const drawn = [];
-    (ball ? [] : boxes).forEach((corners) => {
+    (ball || smooth || lathe || mask ? [] : boxes).forEach((corners) => {
       const at = corners.map(project);
       faces.forEach((face) => {
         const pts = face.map((index) => at[index]);
@@ -20444,6 +20548,66 @@
       ctx.lineWidth = 1;
       ctx.stroke();
     });
+    /* ディアボロ。軸のまわりに輪を並べ、帯（四角）でつないで塗る。
+       ★奥の帯から順に塗る。明るさは輪のどこを向いているかで決める（左上から光が当たる感じ）。 */
+    const setInfoPreviewLathe = (shape) => {
+      const around = 24;
+      const faces = [];
+      for (let i = 0; i + 1 < shape.sections.length; i += 1) {
+        const a = shape.sections[i];
+        const bSec = shape.sections[i + 1];
+        const ax = (a.t * shape.len) / 2;
+        const bx = (bSec.t * shape.len) / 2;
+        for (let j = 0; j < around; j += 1) {
+          const t0 = (j / around) * Math.PI * 2;
+          const t1 = ((j + 1) / around) * Math.PI * 2;
+          const corner = (x, r, angle) => project({
+            x, y: Math.sin(angle) * r, z: shape.R + Math.cos(angle) * r,
+          });
+          const pts = [corner(ax, a.r, t0), corner(bx, bSec.r, t0),
+            corner(bx, bSec.r, t1), corner(ax, a.r, t1)];
+          const mid = (t0 + t1) / 2;
+          faces.push({
+            pts,
+            depth: pts.reduce((sum, q) => sum + q.depth, 0) / pts.length,
+            shade: 0.26 * Math.cos(mid - Math.PI * 0.25) - 0.06,
+          });
+        }
+      }
+      faces.sort((x, y) => x.depth - y.depth).forEach((face) => {
+        ctx.beginPath();
+        face.pts.forEach((q, index) => { if (index) ctx.lineTo(q.X, q.Y); else ctx.moveTo(q.X, q.Y); });
+        ctx.closePath();
+        ctx.fillStyle = mixToneForPreview(tone, face.shade);
+        ctx.fill();
+        // 帯の継ぎ目を消す。線を引かないと、帯の境に地の色が透ける
+        ctx.strokeStyle = ctx.fillStyle;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+    };
+    if (lathe) setInfoPreviewLathe(lathe);
+
+    /* なめらかな小道具。本体と同じ paintSmoothProp に、回転台の投影を渡す。
+       受け渡しの約束: (左右, 高さ, 奥行き) → 画面。z は奥から順に塗るための遠さ。 */
+    const setInfoPreviewSmooth = window.SHOSAI_STAGE_BODY;
+    if (smooth && setInfoPreviewSmooth) {
+      setInfoPreviewSmooth.paintSmoothProp(ctx, smooth, (px, py, pz) => {
+        const at = project({ x: px, y: pz, z: py });
+        return { x: at.X, y: at.Y, z: at.depth };
+      }, tone);
+    }
+
+    /* 仮面。本体と同じ paintMask へ回転台の投影を渡す。
+       ★paintMask の高さは面の中心からの差。床からの高さへ直すのはこちら側の仕事。 */
+    const setInfoPreviewMask = window.SHOSAI_STAGE_BODY;
+    if (mask && setInfoPreviewMask) {
+      setInfoPreviewMask.paintMask(ctx, (mx, my, mz) => {
+        const at = project({ x: mx, y: mz, z: finite(dims.h, 0.3) / 2 + my });
+        return { x: at.X, y: at.Y, z: at.depth };
+      }, dims, tone);
+    }
+
     // 円盤（盆・丸い座面）。回転台の面と同じ向きの楕円で置く
     const setInfoPreviewDisc = (part) => {
       const cx = finite(part.c[0], 0);
@@ -20496,10 +20660,12 @@
     });
 
     // 寸法の目安（人の影の足元に）
-    ctx.fillStyle = "rgba(239,231,214,0.45)";
-    ctx.font = "11px 'Hiragino Kaku Gothic ProN', sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(`${SETINFO_PREVIEW.figureM.toFixed(1)}m`, figX, baseY + 11);
+    if (bigEnoughForFigure) {
+      ctx.fillStyle = "rgba(239,231,214,0.45)";
+      ctx.font = "11px 'Hiragino Kaku Gothic ProN', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(`${SETINFO_PREVIEW.figureM.toFixed(1)}m`, figX, baseY + 11);
+    }
   }
 
   /* 色を明るく／暗くする。面ごとの陰影だけに使う小さな道具。 */
