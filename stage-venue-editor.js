@@ -1226,6 +1226,29 @@
     ctx.restore();
   }
 
+  /* T-34 二度目（2026-09-18 本人要望）: 選んでいる区画の四隅につまみを出す。
+   * 舞台の角つまみと同じ見た目にして、「掴んで大きさを変えられる」と分かるようにする。 */
+  function drawAreaResizeHandles() {
+    const selected = selectedPolygonArea();
+    if (!selected) return;
+    const resizing = activePointer && activePointer.kind === "area-resize" &&
+      activePointer.id === selected.item.id;
+    const polygon = resizing ? activePointer.preview : selected.item.polygon;
+    ctx.save();
+    areaResizeHandles(polygon).forEach((corner, index) => {
+      const at = toCanvas(corner);
+      const active = resizing && activePointer.index === index;
+      ctx.beginPath();
+      ctx.arc(at[0], at[1], active ? 7 : 5, 0, Math.PI * 2);
+      ctx.fillStyle = cssColor("--brass", "#d3ac59");
+      ctx.fill();
+      ctx.strokeStyle = cssColor("--desk", "#191512");
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
   function drawStageExtensions() {
     state.stageExtensions.forEach((item) => {
       if (item.merged || (activePointer && activePointer.kind === "stage-extension-move" &&
@@ -1244,8 +1267,8 @@
   /* T-34（2026-09-18 本人報告）: 客席・舞台袖を掴んで動かせるようにした。
    * 動かしているあいだ、元の位置の図形は描かない（追加ステージと同じ扱い）。 */
   function areaBeingMoved(kind) {
-    return activePointer && activePointer.kind === "area-move" && activePointer.areaKind === kind
-      ? activePointer.id : null;
+    return activePointer && ["area-move", "area-resize"].includes(activePointer.kind) &&
+      activePointer.areaKind === kind ? activePointer.id : null;
   }
 
   function drawStageWings() {
@@ -1639,7 +1662,7 @@
   }
 
   function drawPlacementPreview() {
-    if (!activePointer || !["furniture-new", "area-new", "stage-extension-new", "stage-extension-move", "area-move"].includes(activePointer.kind) || !activePointer.preview) return;
+    if (!activePointer || !["furniture-new", "area-new", "stage-extension-new", "stage-extension-move", "area-move", "area-resize"].includes(activePointer.kind) || !activePointer.preview) return;
     const isStageExtension = ["stage-extension-new", "stage-extension-move"].includes(activePointer.kind);
     const isWing = activePointer.areaKind === "wing";
     ctx.save();
@@ -1812,6 +1835,7 @@
     drawAudience();
     drawRoom();
     drawStageExtensions();
+    drawAreaResizeHandles();
     drawFixtures();
     drawAccess();
     drawShowMachinery();
@@ -2487,6 +2511,96 @@
     return true;
   }
 
+  /* T-34 二度目（2026-09-18 本人要望「大きさも変えられるように」）:
+   * 選んでいる区画の四隅につまみを出し、反対側の角を留めたまま伸び縮みさせる。
+   * 四角でも丸でも切り取られた形でも同じように効くよう、
+   * 「元の外接矩形を、新しい外接矩形へ写す」やり方にしてある。 */
+  function polygonBounds(polygon) {
+    const xs = polygon.map((point) => point[0]);
+    const ys = polygon.map((point) => point[1]);
+    return { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+  }
+
+  function areaResizeHandles(polygon) {
+    const box = polygonBounds(polygon);
+    return [
+      [box.minX, box.minY], [box.maxX, box.minY],
+      [box.maxX, box.maxY], [box.minX, box.maxY],
+    ];
+  }
+
+  function selectedPolygonArea() {
+    if (!state.selectedArea) return null;
+    const items = state.selectedArea.kind === "audience" ? state.audience : state.wings;
+    const item = items.find((candidate) => candidate.id === state.selectedArea.id);
+    return item && Array.isArray(item.polygon) ? { kind: state.selectedArea.kind, item } : null;
+  }
+
+  function hitAreaResizeHandle(point) {
+    const selected = selectedPolygonArea();
+    if (!selected) return null;
+    const threshold = HANDLE_HIT_PX / view().scale;
+    let hit = -1;
+    let nearest = threshold;
+    areaResizeHandles(selected.item.polygon).forEach((corner, index) => {
+      const value = distance(point, corner);
+      if (value <= nearest) { hit = index; nearest = value; }
+    });
+    if (hit < 0) return null;
+    return { kind: selected.kind, item: selected.item, index: hit };
+  }
+
+  function beginAreaResizePointer(pointerId, point, hit) {
+    const box = polygonBounds(hit.item.polygon);
+    // 掴んだ角の反対側を留める。
+    const anchor = [
+      hit.index === 0 || hit.index === 3 ? box.maxX : box.minX,
+      hit.index === 0 || hit.index === 1 ? box.maxY : box.minY,
+    ];
+    /* 伸びる向きは「掴んだ角」で決める。ポインタの位置で決めると、
+       反対側の角を越えたときに区画が裏返って向こう側へ飛ぶ（実測で確認した）。 */
+    const towardRight = hit.index === 1 || hit.index === 2;
+    const towardBottom = hit.index === 2 || hit.index === 3;
+    return {
+      pointerId,
+      kind: "area-resize",
+      areaKind: hit.kind,
+      id: hit.item.id,
+      index: hit.index,
+      start: point,        // ★movePointer の「動き始めたか」の判定に要る
+
+      anchor,
+      box,
+      towardRight,
+      towardBottom,
+      original: clone(hit.item.polygon),
+      preview: clone(hit.item.polygon),
+      valid: true,
+      moved: false,
+    };
+  }
+
+  function moveAreaResizeItem(pointer, point) {
+    const target = snappedPoint(point);
+    const box = pointer.box;
+    const oldWidth = Math.max(box.maxX - box.minX, GEOMETRY_EPSILON);
+    const oldDepth = Math.max(box.maxY - box.minY, GEOMETRY_EPSILON);
+    /* 反対側の角を越えて裏返さない。0.4m より小さくもしない（描くときと同じ下限）。 */
+    const reachX = pointer.towardRight ? target[0] - pointer.anchor[0] : pointer.anchor[0] - target[0];
+    const reachY = pointer.towardBottom ? target[1] - pointer.anchor[1] : pointer.anchor[1] - target[1];
+    const width = Math.max(AREA_MIN_SIDE_M, reachX);
+    const depth = Math.max(AREA_MIN_SIDE_M, reachY);
+    const minX = pointer.towardRight ? pointer.anchor[0] : pointer.anchor[0] - width;
+    const minY = pointer.towardBottom ? pointer.anchor[1] : pointer.anchor[1] - depth;
+    pointer.preview = pointer.original.map((corner) => [
+      roundM(minX + (((corner[0] - box.minX) / oldWidth) * width)),
+      roundM(minY + (((corner[1] - box.minY) / oldDepth) * depth)),
+    ]);
+    pointer.valid = true;
+    const dims = dimensions(pointer.preview);
+    setStatus(`${pointer.areaKind === "audience" ? "客席" : "舞台袖"} ${dims.width}m × ${dims.depth}m にしています。`);
+  }
+
   /* T-34（2026-09-18 本人報告「プリセットの客席がドラッグドロップで動かせない」）:
    * ★実測すると、プリセットに限らず客席も舞台袖も一切動かせなかった。
    *   掴んでも「選択しました」で終わり、動かす処理そのものが無かった
@@ -2525,6 +2639,15 @@
 
   function beginArea(pointerId, point) {
     const areaKind = state.areaMode;
+    /* T-34 二度目: 描く前に、選んでいる区画の角つまみを見る（大きさを変える操作を優先）。 */
+    const resizeHit = hitAreaResizeHandle(point);
+    if (resizeHit) {
+      state.selectedElement = null;
+      activePointer = beginAreaResizePointer(pointerId, point, resizeHit);
+      setStatus(`${resizeHit.kind === "audience" ? "客席" : "舞台袖"}の角をドラッグして大きさを変えます。`);
+      render();
+      return true;
+    }
     const existing = areaKind === "audience" ? hitAudienceArea(point) : hitWingArea(point);
     state.selectedElement = null;
     if (existing) {
@@ -2637,10 +2760,14 @@
     if (event.button !== undefined && event.button !== 0) return;
     event.preventDefault();
     const point = fromEvent(event);
-    const audienceHandleHit = hitAudienceHandle(point);
-    const corner = audienceHandleHit ? -1 : hitCorner(point);
-    const edge = audienceHandleHit || corner >= 0 ? -1 : hitEdge(point);
-    const audienceAreaHit = audienceHandleHit || (corner < 0 && edge < 0 ? hitAudienceArea(point) : null);
+    /* T-34 二度目: 選んでいる区画の角つまみは、舞台の角・辺より先に見る
+     * （区画は舞台の縁に接することが多く、後回しにすると掴めないため）。 */
+    const areaResizeHit = hitAreaResizeHandle(point);
+    const audienceHandleHit = areaResizeHit ? null : hitAudienceHandle(point);
+    const corner = areaResizeHit || audienceHandleHit ? -1 : hitCorner(point);
+    const edge = areaResizeHit || audienceHandleHit || corner >= 0 ? -1 : hitEdge(point);
+    const audienceAreaHit = audienceHandleHit || (!areaResizeHit && corner < 0 && edge < 0
+      ? hitAudienceArea(point) : null);
     els.canvas.setPointerCapture(event.pointerId);
 
     if (state.stageExtensionMode) {
@@ -2684,6 +2811,14 @@
         start: point,
         moved: false,
       };
+      render();
+      return;
+    }
+
+    if (areaResizeHit) {
+      state.selectedElement = null;
+      activePointer = beginAreaResizePointer(event.pointerId, point, areaResizeHit);
+      setStatus(`${areaResizeHit.kind === "audience" ? "客席" : "舞台袖"}の角をドラッグして大きさを変えます。`);
       render();
       return;
     }
@@ -2969,6 +3104,7 @@
     if (activePointer.kind === "stage-extension-new") moveStageExtension(activePointer, point);
     if (activePointer.kind === "stage-extension-move") moveStageExtensionItem(activePointer, point);
     else if (activePointer.kind === "area-move") moveAreaItem(activePointer, point);
+    else if (activePointer.kind === "area-resize") moveAreaResizeItem(activePointer, point);
     render();
   }
 
@@ -2992,6 +3128,7 @@
         if (finished.kind === "stage-extension-new") moveStageExtension(finished, releasePoint);
         if (finished.kind === "stage-extension-move") moveStageExtensionItem(finished, releasePoint);
         else if (finished.kind === "area-move") moveAreaItem(finished, releasePoint);
+        else if (finished.kind === "area-resize") moveAreaResizeItem(finished, releasePoint);
       }
     }
     activePointer = null;
@@ -3020,6 +3157,15 @@
       setStatus(`${finished.shape === "circle" ? "丸" : "四角"}の追加ステージを動かしました。`);
     } else if (!cancelled && finished.kind === "stage-extension-move" && finished.moved) {
       setStatus("舞台面のつながりが切れるため、追加ステージの位置は変えていません。");
+    } else if (!cancelled && finished.kind === "area-resize" && finished.moved) {
+      const items = finished.areaKind === "audience" ? state.audience : state.wings;
+      const item = items.find((candidate) => candidate.id === finished.id);
+      if (item) {
+        item.polygon = clone(finished.preview);
+        item.shape = "custom";      // 伸び縮みさせた形は、四角・丸のままとは限らない
+      }
+      const dims = dimensions(finished.preview);
+      setStatus(`${finished.areaKind === "audience" ? "客席" : "舞台袖"}を ${dims.width}m × ${dims.depth}m にしました。`);
     } else if (!cancelled && finished.kind === "area-move" && finished.moved) {
       const items = finished.areaKind === "audience" ? state.audience : state.wings;
       const item = items.find((candidate) => candidate.id === finished.id);
