@@ -10428,8 +10428,15 @@
   }
 
   // 打楽器用の連続した面。箱を積み重ねず、鼓面は1枚、側面は円周でつなぐ。
+  /* 球の網目にかける面数の目安。1個なら細かく、たくさんあれば粗く割り当てる。
+     ★リングは球128個。全部を細かく覆うと3万面を超えてプレビューが15コマ/秒まで落ちる。 */
+  const SPHERE_FACE_BUDGET = 2400;
   function smoothPropFaces(parts) {
     const faces = [];
+    const sphereCount = Math.max(1, (parts || []).filter((part) => part && part.shape === "sphere").length);
+    const perSphere = clamp(Math.round(SPHERE_FACE_BUDGET / sphereCount), 8, 288);
+    const sphereLat = clamp(Math.round(Math.sqrt(perSphere / 2)), 2, 12);
+    const sphereLon = clamp(sphereLat * 2, 4, 24);
     const add = (points, tint) => {
       const a = points[0], b = points[1], c = points[2];
       const normal = norm3(cross3(b.map((v, i) => v - a[i]), c.map((v, i) => v - b[i])));
@@ -10461,7 +10468,7 @@
            箱の枝へ落とすと h=0 の平らな板になる（実際にそうなっていた）。 */
         const ry = (part.h || part.dia) / 2;
         const cy = y + ry;
-        const LAT = 12, LON = 24;
+        const LAT = sphereLat, LON = sphereLon;
         const at = (i, j) => {
           const phi = (i / LAT) * Math.PI;          // 0 が上
           const th = (j / LON) * Math.PI * 2;
