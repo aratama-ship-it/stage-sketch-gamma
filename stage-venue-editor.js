@@ -740,6 +740,93 @@
     return outside;
   }
 
+  /* 2026-09-18 本人指摘「合成後に変な対角線みたいな線が残る」:
+   * ★polygonDifference は相手を三角形に分けてから引くので、結果が三角形の集まりで返る。
+   *   実測: 舞台から客席ぶんを切ると、1枚の舞台が10個の破片になり、
+   *   その継ぎ目（三角形を切った斜めの線）が図に残っていた。
+   *   さらに、いちばん大きい破片が「メインの形」になるので、
+   *   角の丸と寸法が継ぎ目の斜辺に付き、「約15m」のような読めない寸法が出ていた。
+   * → 辺を共有する破片どうしをくっつけ直して、継ぎ目を消す。
+   *   実測では 10個 → 4枚のきれいな帯になった（面積は変わらない）。
+   * ★穴のあく形（客席が舞台の内側にある等）は1枚にはできない。
+   *   その場合はくっつけられる所までにして、穴は破片の並びで表すのは今までどおり。 */
+  function directedEdgeKey(from, to) {
+    return `${from[0]},${from[1]}>${to[0]},${to[1]}`;
+  }
+
+  /* 辺を1つ以上共有する2つの多角形を1つにする。
+     穴ができる・形が2つに分かれるなど、単純な輪にならないときは null を返す（くっつけない）。 */
+  function mergeTwoPolygons(first, second) {
+    const edges = [];
+    [first, second].forEach((polygon) => {
+      polygon.forEach((point, index) => {
+        edges.push([point, polygon[(index + 1) % polygon.length]]);
+      });
+    });
+    const remaining = new Map();
+    edges.forEach((edge) => {
+      const key = directedEdgeKey(edge[0], edge[1]);
+      remaining.set(key, (remaining.get(key) || 0) + 1);
+    });
+    let cancelled = 0;
+    edges.forEach((edge) => {
+      const key = directedEdgeKey(edge[0], edge[1]);
+      const reverse = directedEdgeKey(edge[1], edge[0]);
+      if (!remaining.get(key) || !remaining.get(reverse)) return;
+      remaining.set(key, remaining.get(key) - 1);
+      remaining.set(reverse, remaining.get(reverse) - 1);
+      cancelled += 1;
+    });
+    if (!cancelled) return null;                       // 辺を共有していない
+    const left = edges.filter((edge) => {
+      const key = directedEdgeKey(edge[0], edge[1]);
+      if (!remaining.get(key)) return false;
+      remaining.set(key, remaining.get(key) - 1);
+      return true;
+    });
+    if (left.length < 3) return null;
+    const outgoing = new Map();
+    left.forEach((edge) => {
+      const key = `${edge[0][0]},${edge[0][1]}`;
+      if (outgoing.has(key)) return;                   // 1点から2本出ていたら諦める（つまむ形）
+      outgoing.set(key, edge);
+    });
+    if (outgoing.size !== left.length) return null;
+    const start = left[0];
+    const ring = [start[0]];
+    let current = start;
+    for (let step = 0; step < left.length; step += 1) {
+      const next = outgoing.get(`${current[1][0]},${current[1][1]}`);
+      if (!next) return null;
+      if (next === start) {
+        if (ring.length !== left.length) return null;  // 全部の辺を使い切れていない＝輪が2つ
+        const ready = cleanPolygon(ring);
+        return ready.length >= 3 ? ready : null;
+      }
+      ring.push(next[0]);
+      current = next;
+    }
+    return null;
+  }
+
+  function mergeAdjacentPieces(pieces) {
+    let current = pieces;
+    for (let pass = 0; pass < 64; pass += 1) {
+      let joined = null;
+      for (let i = 0; i < current.length && !joined; i += 1) {
+        for (let j = i + 1; j < current.length && !joined; j += 1) {
+          const union = mergeTwoPolygons(current[i], current[j]);
+          if (union) joined = { i, j, union };
+        }
+      }
+      if (!joined) break;
+      current = current
+        .filter((_, index) => index !== joined.i && index !== joined.j)
+        .concat([joined.union]);
+    }
+    return current;
+  }
+
   function polygonDifference(subject, clip) {
     if (!polygonsOverlapArea(subject, clip)) return [cleanPolygon(subject)];
     const subjectTriangles = triangulatePolygon(subject);
@@ -749,9 +836,9 @@
     clipTriangles.forEach((clipTriangle) => {
       pieces = pieces.flatMap((piece) => subtractConvexPolygon(piece, clipTriangle));
     });
-    return pieces
+    return mergeAdjacentPieces(pieces
       .map(cleanPolygon)
-      .filter((piece) => piece.length >= 3 && Math.abs(polygonArea(piece)) > GEOMETRY_EPSILON);
+      .filter((piece) => piece.length >= 3 && Math.abs(polygonArea(piece)) > GEOMETRY_EPSILON));
   }
 
   function regionLabel(kind) {
