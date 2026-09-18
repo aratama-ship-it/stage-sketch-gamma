@@ -9,7 +9,6 @@
   if(venueBackdrop) venueBackdrop.hidden=true;
   const normal=document.querySelector('.stage-sketch-grid'), status=document.getElementById('gamma-light-status');
   const hostUndo=document.getElementById('stage-undo'), hostRedo=document.getElementById('stage-redo');
-  const venueUndo=document.getElementById('stage-venue-editor-undo'), venueRedo=document.getElementById('stage-venue-editor-redo');
   let mode='normal', loaded=false;
   let hostHistory={undo:hostUndo?.disabled??true,redo:hostRedo?.disabled??true};
   let frameResizeRequest=0;
@@ -71,7 +70,8 @@
       return;
     }
     if(mode==='venue-setup') {
-      hostUndo.disabled=venueUndo?.disabled??true;hostRedo.disabled=venueRedo?.disabled??true;
+      const venueStatus=window.SHOSAI_VENUE_EDITOR?.history?.();
+      hostUndo.disabled=!venueStatus?.canUndo;hostRedo.disabled=!venueStatus?.canRedo;
       return;
     }
     const lightStatus=editor()?.status();
@@ -80,13 +80,14 @@
   function runLightHistory(event,direction) {
     if(mode==='normal') return;
     event.preventDefault();event.stopImmediatePropagation();
-    if(mode==='venue-setup') (direction==='undo'?venueUndo:venueRedo)?.click();
+    if(mode==='venue-setup') window.SHOSAI_VENUE_EDITOR?.[direction]?.();
     else editor()?.[direction]();
     syncHistory();
   }
-  // 劇場の履歴が変わったとき、共通の取り消しボタンも同じ状態を示す。
-  const venueHistoryObserver=new MutationObserver(()=>{if(mode==='venue-setup') syncHistory();});
-  [venueUndo,venueRedo].filter(Boolean).forEach(button=>venueHistoryObserver.observe(button,{attributes:true,attributeFilter:['disabled']}));
+  /* 劇場の履歴が変わったとき、共通の取り消しボタンも同じ状態を示す。
+     T-13（2026-09-18）: 平面図の ↺ ↻ を消したので、ボタンの disabled を監視する方法から
+     劇場設定側が出す stage-venue-history へ切り替えた。 */
+  window.addEventListener('stage-venue-history',()=>{if(mode==='venue-setup') syncHistory();});
   hostUndo?.addEventListener('click',event=>runLightHistory(event,'undo'),true);
   hostRedo?.addEventListener('click',event=>runLightHistory(event,'redo'),true);
   document.addEventListener('keydown',event=>{

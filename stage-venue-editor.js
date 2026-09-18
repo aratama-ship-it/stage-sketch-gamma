@@ -1780,6 +1780,12 @@
   function syncHistoryButtons() {
     if (els.undo) els.undo.disabled = undoStack.length === 0;
     if (els.redo) els.redo.disabled = redoStack.length === 0;
+    /* T-13（2026-09-18）: 平面図の ↺ ↻ を消したので、共通の取り消しボタンは
+     * 「このボタンの disabled を見る」方法が使えなくなった。状態を外へ知らせる。
+     * els.undo が無い環境（γ）でも必ず出す。 */
+    window.dispatchEvent(new CustomEvent("stage-venue-history", {
+      detail: { canUndo: undoStack.length > 0, canRedo: redoStack.length > 0 },
+    }));
   }
 
   function applyDocumentSnapshot(snapshot) {
@@ -3592,6 +3598,11 @@
     hasUnappliedChanges: () => hasUnappliedChanges(),
     open: openEditor,
     close: requestCloseEditor,
+    /* T-13（2026-09-18）: 劇場設定中の ⌘Z とヘッダーの ↶ ↷ をここへ繋ぐ。
+     * 以前は平面図の ↺ ↻ ボタンを click() していたが、そのボタンを消したため。 */
+    undo: undoHistory,
+    redo: redoHistory,
+    history: () => ({ canUndo: undoStack.length > 0, canRedo: redoStack.length > 0 }),
     save: saveDraft,
     apply: applyDraft,
     setStageFormat,

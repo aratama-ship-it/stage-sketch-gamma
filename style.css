@@ -8590,26 +8590,49 @@ html.stage-phone-viewer .stage-single-view-switch { display: none; }
 .stage-view-select {
   display: inline-flex;
   flex: 0 0 auto;
+  position: relative;
+}
+
+/* T-27 二度目（2026-09-18）: 下向きの印。ブラウザ内蔵のものを使わなくなったので自分で描く。
+   欄の上に重ねるだけなので、クリックは下の select が受ける。 */
+.stage-view-select::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  width: 0;
+  height: 0;
+  margin-top: -1.5px;
+  border-left: 3.5px solid transparent;
+  border-right: 3.5px solid transparent;
+  border-top: 4px solid var(--milk);
+  opacity: 0.75;
+  pointer-events: none;
 }
 
 .stage-view-select select {
   width: 88px;
-  min-height: 30px;
-  /* T-27（2026-09-18 本人要望）: 「両方1」の文字が枠に対して上に寄って見える（Safari）。
-   * 原因は2つ重なっていた:
-   *   ①丸囲み数字（①②）は他の文字と縦の重心が違い、フォントに無ければ別フォントへ落ちる
-   *   ②<select> に line-height の指定が無く、縦位置がブラウザ既定に任されていた
-   * ①は表記を半角の 1 / 2 に変えて解消した。これが主因。
-   * ②はここで明示するが、★実測すると Chromium は <select> 自身の line-height を無視する
-   *   （算出値が normal のまま）。効くのは engine 次第なので、保険として残すだけ。 */
-  line-height: 1.2;
+  /* T-27 二度目（2026-09-18 本人指摘「まだ直っていない」）:
+   * 一度目は ①② を半角の 1 2 にした（文字ごとの重心の違いを消した）。
+   * それでも枠に対して上に寄って見えるのは、残っていたもう一つの原因のほう。
+   * ★<select> の中身の縦位置は、appearance: auto のあいだ「ブラウザ内蔵の作り」が決める。
+   *   line-height を書いても Chromium は算出値を normal のまま無視する（実測）。
+   *   つまり CSS からは動かせず、Safari と Chrome で違って当たり前だった。
+   * → appearance: none にして内蔵の作りを使わないことにする。これで縦位置は
+   *   「高さ・border・padding・行の高さ」だけで決まり、どのブラウザでも同じになる。
+   * 高さ 27px ＝ border 1+1 ＋ 行 25px。上下の padding を 0 にして端数を作らない。 */
+  height: 27px;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+  line-height: 25px;
+  padding: 0 20px 0 7px;
   border: 1px solid var(--line-dark);
   background: var(--desk-2);
   color: var(--milk);
   font-family: var(--sans);
   font-size: 10.5px;
   letter-spacing: 0.06em;
-  padding: 4px 7px;
   cursor: pointer;
 }
 
@@ -9918,7 +9941,7 @@ html[data-release-scope="beta-20260912"] .stage-light-motion-open { display: non
 }
 
 .stage-center-bar button { min-height: 30px; font-size: 10.5px; padding: 4px 12px; }
-.stage-center-bar .stage-view-select select { min-height: 27px; }
+/* T-27 二度目: 高さは .stage-view-select select 側の height: 27px で一本化した。 */
 .stage-center-bar .stage-tool-grid button { padding: 4px 10px; letter-spacing: 0.04em; }
 
 /* 道具のうち「ものを動かす・照明を動かす・矢印を描く」は記号だけにする。
