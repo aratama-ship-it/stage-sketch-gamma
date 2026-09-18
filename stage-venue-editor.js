@@ -3692,6 +3692,10 @@
     if (!detail) return false;
     hidePresetDialog(false);
     withHistory(() => loadVenueTemplate(detail, { force: true }));
+    /* ★適用の直後に ⌘Z で戻せることを窓で約束している。焦点が入力欄や選択欄に
+     * 残っていると ⌘Z がそちらへ吸われるので、必ず外してから図へ移す。 */
+    const active = typeof document !== "undefined" ? document.activeElement : null;
+    if (active && active !== els.canvas && typeof active.blur === "function") active.blur();
     if (els.canvas) els.canvas.focus();
     return true;
   }
@@ -3960,8 +3964,12 @@
       return;
     }
     const target = event.target;
+    /* 2026-09-18 本人報告「プリセット適用のあと ⌘Z が効かない」:
+     * ★実測すると、焦点が <select> にあるあいだ ⌘Z が劇場の履歴へ届いていなかった。
+     *   選択欄は文字を打つ所ではないので、⌘Z を譲る理由が無い。対象から外す。
+     *   文字入力（INPUT / TEXTAREA / 編集可能な要素）はこれまでどおり譲る。 */
     const editable = target && (
-      ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.isContentEditable
+      ["INPUT", "TEXTAREA"].includes(target.tagName) || target.isContentEditable
     );
     const historyShortcut = (event.metaKey || event.ctrlKey) &&
       String(event.key || "").toLowerCase() === "z";

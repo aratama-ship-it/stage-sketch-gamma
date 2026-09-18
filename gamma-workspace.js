@@ -93,7 +93,9 @@
   document.addEventListener('keydown',event=>{
     if(mode==='normal' || !['z','Z'].includes(event.key) || !(event.metaKey||event.ctrlKey) || event.altKey) return;
     const target=event.target, tag=target?.tagName;
-    if(['INPUT','TEXTAREA','SELECT'].includes(tag) || target?.isContentEditable) return;
+    /* 2026-09-18: 選択欄（<select>）は文字を打つ所ではないので ⌘Z を譲らない。
+       焦点が選択欄にあるあいだ取り消しが効かない、という報告があった（実測で再現）。 */
+    if(['INPUT','TEXTAREA'].includes(tag) || target?.isContentEditable) return;
     if(mode==='venue-setup' && [...document.querySelectorAll('.stage-modal')].some(dialog=>dialog!==venueModal && !dialog.hidden)) return;
     runLightHistory(event,event.shiftKey?'redo':'undo');
   },true);
