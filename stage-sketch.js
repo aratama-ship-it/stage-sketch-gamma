@@ -8791,7 +8791,14 @@
     const approx = approxFrontSeatsForVenue(v);
     // 近似できなかった会場（空配列）は既存5席で扱う。席の札の作り方と揃える
     if (approx && approx.length) return approx.find((seat) => seat.id === id) || approx[0] || VENUES.seatById("center");
-    return VENUES.seatById(id);
+    /* ★2026-09-18 本人報告「1階・2階の表示が出ていない」:
+     * ここが undefined を返すと renderVenueControls が seat.id で止まり、
+     * 席の札が1つも出なくなる（その後の描画もまとめて落ちる）。
+     * 近似席を選んだまま会場が近似でなくなると起きる
+     *   （例: approx-near を選んだあとプリセットの劇場へ戻す。
+     *    近似席の重複を1つに絞ったので、消えたidが残る経路も増えた）。
+     * ★席は必ず1つ返す。選べない状態を作らない。 */
+    return VENUES.seatById(id) || VENUES.seatById("center") || VENUES.seats[0] || null;
   }
   /* 実効の寸法。旧ショーに手入力寸法が残っている場合だけ読み込み互換として重ねる。
    * 新しい会場は会場エディタで作り、ここでは寸法を直接編集しない。 */
@@ -25142,7 +25149,11 @@ ${propsPlotHtml}
        空配列は「近似できなかった」であって「席が無い」ではないので、既存5席へ落とす。 */
     const approxSeats = approxFrontSeatsForVenue(current);
     const seats = approxSeats && approxSeats.length ? approxSeats : VENUES.seats;
-    const seat = frontSeatById(state.seat);
+    /* ★選んでいた席が今の一覧に無いときは、先頭の席へ寄せて状態も直す。
+     * そのままだと aria-pressed がどれにも付かず、どこから見ているのか分からなくなる。 */
+    let seat = frontSeatById(state.seat) || seats[0];
+    if (seat && !seats.some((candidate) => candidate.id === seat.id)) seat = seats[0];
+    if (seat && state.seat !== seat.id) state.seat = seat.id;
     if (els.seatList) els.seatList.hidden = !state.showFront;
     if (els.frontApprox) {
       els.frontApprox.hidden = !(current.custom && state.showFront);
