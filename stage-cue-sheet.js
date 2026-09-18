@@ -112,7 +112,8 @@
 
   function listSheets(project, helpers = {}) {
     return [{ kind: "master", key: "master", label: translate(helpers, "全体表") }].concat(performerGroups(project).map((entry) => ({
-      kind: "performer", key: entry.key, label: entry.registered ? entry.name : `${entry.name}（名簿未登録）`,
+      kind: "performer", key: entry.key, registered: entry.registered,
+      label: entry.registered ? entry.name : `${entry.name}（名簿未登録）`,
     })), DEPARTMENTS.map((entry) => ({ kind: "department", key: entry.key, label: entry.label })));
   }
 

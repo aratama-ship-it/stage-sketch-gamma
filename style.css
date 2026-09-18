@@ -2955,7 +2955,7 @@ canvas[data-tool="note"] { cursor: copy; }
 /* 書き出しの選び方 */
 .stage-export-modal { width: min(520px, calc(100vw - 40px)); }
 
-.stage-modal.stage-cue-sheet-modal { width: min(880px, calc(100vw - 40px)); }
+.stage-modal.stage-cue-sheet-modal { width: min(1100px, calc(100vw - 40px)); }
 /* 表を見ているときは窓いっぱいに広げる（本人指示・2026-09-18）。
    1200pxでは11列が入りきらず、横スクロールに頼る形になっていた。 */
 /* ★100vw は縦スクロールバーの幅を含むので、窓いっぱいに広げると左右の余白がずれる。

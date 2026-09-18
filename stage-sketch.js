@@ -31349,8 +31349,11 @@ ${propsPlotHtml}
       els.cueSheetList.append(group);
     };
     addGroup("まとめ", masterSheets);
-    addGroup("演者ごと", performerSheets);
+    /* 名簿に載っている人を先に出す。名簿にない駒（名前だけの一回きりの人）は
+       数が多くなりがちで、混ぜると本物の顔ぶれが埋もれる（2026-09-19）。 */
+    addGroup("演者ごと", performerSheets.filter((entry) => entry.registered));
     addGroup("部署", departmentSheets);
+    addGroup("名簿にない人", performerSheets.filter((entry) => !entry.registered));
   }
 
   let viewingCueSheet = null;

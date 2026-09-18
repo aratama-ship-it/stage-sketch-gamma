@@ -35,6 +35,7 @@
     "一覧へ戻る": "Back to list",
     "全体表": "Master sheet",
     "まとめ": "Summary",
+    "名簿にない人": "Not in the roster",
     "演者ごと": "By performer",
     "部署": "Departments",
     "見る": "View",
