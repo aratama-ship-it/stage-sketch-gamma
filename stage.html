@@ -12,17 +12,17 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026091985">
+<link rel="stylesheet" href="style.css?v=2026091986">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="gamma.css?v=2026091985">
+<link rel="stylesheet" href="gamma.css?v=2026091986">
 <link rel="stylesheet" href="gamma-mobile.css?v=2026091950">
 <script src="gamma-light-model.js?v=2026091944"></script>
-<link rel="stylesheet" href="gamma-formation.css?v=2026091985">
+<link rel="stylesheet" href="gamma-formation.css?v=2026091986">
 </head>
 <body class="is-standalone">
 
@@ -1069,10 +1069,25 @@
            いまは E キーを知っているか、畳んだとき下に残る12pxの細い帯を掴むしかなかった。
            ★パネルの中に置くと、畳んだとき transform で一緒に下へ逃げて見えなくなる。
              だから画面へ直接貼る（position: fixed）。開閉にかかわらず左下に居続ける。 -->
+      <!-- T-08 二度目（2026-09-18 本人要望）: 「取っ手感がない・触ってみたくなる形に・
+           スーツケースの取っ手のような形・SVGでがっつり・色は黄色・大きめに」。
+           ★上へ引いたとき、取っ手もタイムラインにくっついて上がる（--stage-timeline-grip-bottom）。 -->
       <button type="button" class="stage-timeline-resize-handle" id="stage-timeline-grip"
               aria-label="タイムラインを開く・高さを変える"
               title="上へ引くとタイムラインが開きます。押すと開閉、上下キーで高さを変えられます（E）"
-              aria-keyshortcuts="E"></button>
+              aria-keyshortcuts="E">
+        <svg viewBox="0 0 72 34" aria-hidden="true" focusable="false">
+          <!-- 台座。ケースに留め金で付いている部分 -->
+          <rect x="3" y="25" width="19" height="9" rx="4.5"></rect>
+          <rect x="50" y="25" width="19" height="9" rx="4.5"></rect>
+          <!-- 取っ手の芯。左右の柱から立ち上がって上でつながる -->
+          <path d="M12.5 29 V19 C12.5 10.5 21 5.5 36 5.5 C51 5.5 59.5 10.5 59.5 19 V29"
+                fill="none" stroke-width="8" stroke-linecap="round"></path>
+          <!-- 握りの滑り止め -->
+          <path d="M28 8.5 H44 M27 12.5 H45" fill="none" stroke-width="2"
+                stroke-linecap="round" opacity=".55"></path>
+        </svg>
+      </button>
 
       <section class="stage-timeline-panel" id="stage-timeline-panel" aria-label="タイムライン" hidden>
         <div class="stage-timeline-resize" id="stage-timeline-resize" role="separator"
@@ -3007,10 +3022,10 @@
 </div>
 
 <script src="stage-venues.js?v=2026091501"></script>
-<script src="stage-venue-lines.js?v=2026091985"></script>
-    <script src="stage-i18n.js?v=2026091985"></script>
-    <script src="stage-i18n.zh-Hans.js?v=2026091985"></script>
-    <script src="stage-i18n.zh-Hant.js?v=2026091985"></script>
+<script src="stage-venue-lines.js?v=2026091986"></script>
+    <script src="stage-i18n.js?v=2026091986"></script>
+    <script src="stage-i18n.zh-Hans.js?v=2026091986"></script>
+    <script src="stage-i18n.zh-Hant.js?v=2026091986"></script>
 <script src="stage-prompt-i18n.js?v=2026091501"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026091501"></script>
@@ -3029,14 +3044,14 @@
 <script src="gamma-number-scrub.js?v=2026091780"></script>
 <script src="gamma-formation-presets.js?v=formation1"></script>
 <script src="gamma-formation-model.js?v=formation1"></script>
-<script src="stage-sketch.js?v=2026091985"></script>
-<script src="gamma-formation.js?v=2026091985"></script>
-<script src="stage-timeline.js?v=2026091985"></script>
-<script src="stage-session.js?v=2026091985"></script>
+<script src="stage-sketch.js?v=2026091986"></script>
+<script src="gamma-formation.js?v=2026091986"></script>
+<script src="stage-timeline.js?v=2026091986"></script>
+<script src="stage-session.js?v=2026091986"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
-<script src="stage-venue-editor.js?v=2026091985"></script>
-<script src="gamma-workspace.js?v=2026091985"></script>
+<script src="stage-venue-editor.js?v=2026091986"></script>
+<script src="gamma-workspace.js?v=2026091986"></script>
 <script src="gamma-mobile.js?v=2026091951"></script>
 </body>
 </html>

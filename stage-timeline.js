@@ -397,7 +397,19 @@
       els.resize.setAttribute("aria-valuemax", String(maxTimelineHeight()));
       els.resize.setAttribute("aria-valuenow", String(ui.height));
     }
+    syncGripBottom();
     if (save) saveUi();
+  }
+
+  /* T-08 二度目（2026-09-18 本人要望）: 取っ手がタイムラインにくっついて上がるようにする。
+   * 取っ手は画面へ直接貼ってある（パネルの中だと畳んだとき一緒に下へ逃げる）ので、
+   * 位置はここから知らせる。開いているときはタイムラインの高さ、
+   * 畳んでいるときは下に残している帯の高さ。 */
+  function syncGripBottom() {
+    if (!panel) return;
+    const collapsed = panel.classList.contains("is-collapsed");
+    const offset = collapsed ? timelineResizeHandleHeight() : ui.height;
+    root.style.setProperty("--stage-timeline-grip-bottom", `${Math.max(0, Math.round(offset))}px`);
   }
 
   function timelineResizeHandleHeight() {
@@ -426,6 +438,7 @@
     document.body.classList.toggle("stage-timeline-collapsed", next);
     document.body.classList.toggle("stage-timeline-expanded", !next);
     resetOuterDocumentScroll();
+    syncGripBottom();
     els.resize.setAttribute("aria-expanded", String(!next));
     [panel.querySelector(".stage-timeline-toolbar"), els.viewport].filter(Boolean).forEach((element) => {
       element.inert = next;

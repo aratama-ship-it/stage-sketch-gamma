@@ -17366,37 +17366,43 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
  *   中に置くと畳んだとき一緒に隠れて「開くための取っ手」にならない。
  * 大きさは28px角。畳んだとき下に残る帯（12px）より大きくないと掴み所にならない。
  * 中の3本線で「引ける」ことを示す（ただの四角だと押せるのか引けるのか読めない）。 */
+/* T-08 二度目（2026-09-18 本人要望）: スーツケースの取っ手の形にする。黄色・大きめ・SVG。
+ * ★上へ引くとタイムラインが上がるので、取っ手もそれに合わせて上がる。
+ *   位置は stage-timeline.js が --stage-timeline-grip-bottom へ入れる
+ *   （開いているときはタイムラインの高さ、畳んでいるときは残した帯の高さ）。 */
 .stage-timeline-resize-handle {
   position: fixed;
   z-index: 47;
-  left: 10px;
-  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  left: 14px;
+  bottom: calc(var(--stage-timeline-grip-bottom, 0px) + env(safe-area-inset-bottom, 0px));
   display: grid;
-  place-items: center;
-  gap: 3px;
-  width: 28px;
-  height: 28px;
-  /* ★全体規則の button { min-height: 44px } が height に勝つ（S-01 と同じ罠）。
-   * 実測で 44px になっていたので、ここで打ち消す。 */
-  min-height: 28px;
+  place-items: end center;
+  width: 72px;
+  height: 34px;
+  /* ★全体規則の button { min-height: 44px } が height に勝つ（S-01 と同じ罠）。 */
+  min-height: 34px;
   padding: 0;
-  border: 1px solid var(--line-dark);
-  border-radius: 3px;
-  background: var(--stage-timeline-panel, var(--desk-2));
-  color: var(--milk-dim);
-  cursor: ns-resize;
+  border: 0;
+  background: none;
+  color: var(--brass);
+  cursor: grab;
   touch-action: none;
+  transition: transform 120ms ease, color 120ms ease;
 }
 
-.stage-timeline-resize-handle::before,
-.stage-timeline-resize-handle::after {
-  content: "";
-  width: 14px;
-  height: 1px;
-  background: currentColor;
+.stage-timeline-resize-handle svg {
+  display: block;
+  width: 72px;
+  height: 34px;
+  fill: currentColor;
+  stroke: currentColor;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
 }
 
-.stage-timeline-resize-handle::before { box-shadow: 0 4px 0 currentColor; }
+.stage-timeline-resize-handle:hover,
+.stage-timeline-resize-handle:focus-visible { color: var(--paper); transform: translateY(-2px); }
+.stage-timeline-resize-handle:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; border-radius: 4px; }
+body.is-timeline-resizing .stage-timeline-resize-handle { cursor: grabbing; transition: none; }
 
 .stage-timeline-resize-handle:hover,
 .stage-timeline-resize-handle:focus-visible { color: var(--milk); border-color: var(--brass); }
