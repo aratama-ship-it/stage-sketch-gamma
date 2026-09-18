@@ -154,6 +154,7 @@
     stageExtensions: [],
     audience: [],
     wings: [],
+    walls: [],          // ★劇場に据え付ける壁（2026-09-19 本人決定）
     fixtures: [],
     access: [],
     /* V-4（2026-09-17）: 天井あり/なし・屋内/屋外。既存データに無い場合は「屋内・天井あり」＝従来の挙動。 */
@@ -842,7 +843,15 @@
   }
 
   function regionLabel(kind) {
-    return tx({ stage: "ステージ", audience: "客席", wing: "舞台袖" }[kind] || kind);
+    return tx({ stage: "ステージ", audience: "客席", wing: "舞台袖", wall: "壁" }[kind] || kind);
+  }
+
+  /* 面で置くものの入れ物。★客席・舞台袖・壁は置き方も動かし方も同じなので、
+   * ここ1か所で配列を選び、あとの処理は種類を意識しない（2026-09-19 に壁を足したときの決まり）。 */
+  function areaStore(kind) {
+    if (kind === "audience") return state.audience;
+    if (kind === "wall") return state.walls;
+    return state.wings;
   }
 
   function geometryEntries(kind) {
@@ -852,7 +861,7 @@
           kind, source: "extension", id: item.id, polygon: item.polygon,
         })));
     }
-    const items = kind === "audience" ? state.audience : state.wings;
+    const items = areaStore(kind);
     return items.map((item) => ({
       kind,
       source: "area",
@@ -890,7 +899,7 @@
   }
 
   function replaceAreaWithPieces(entry, pieces) {
-    const items = entry.kind === "audience" ? state.audience : state.wings;
+    const items = areaStore(entry.kind);
     const index = items.findIndex((item) => item.id === entry.id);
     if (index < 0) return true;
     const original = items[index];
@@ -961,7 +970,7 @@
   }
 
   function areaItems(kind) {
-    return (kind === "audience" ? state.audience : state.wings)
+    return areaStore(kind)
       .filter((item) => Array.isArray(item.polygon));
   }
 
@@ -1097,6 +1106,10 @@
 
   function hitWingArea(point) {
     return [...state.wings].reverse().find((area) => pointInPolygon(point, area.polygon)) || null;
+  }
+
+  function hitWallArea(point) {
+    return [...state.walls].reverse().find((area) => pointInPolygon(point, area.polygon)) || null;
   }
 
   function lineVenue() {
@@ -1269,6 +1282,26 @@
   function areaBeingMoved(kind) {
     return activePointer && ["area-move", "area-resize"].includes(activePointer.kind) &&
       activePointer.areaKind === kind ? activePointer.id : null;
+  }
+
+  /* ★劇場に据え付けた壁（2026-09-19 本人決定）。舞台袖と同じ置き方だが、
+   * 見た目は「面」ではなく「厚みのある板」なので、塗りつぶして縁を締める。 */
+  function drawVenueWalls() {
+    const moving = areaBeingMoved("wall");
+    state.walls.filter((area) => Array.isArray(area.polygon) && area.id !== moving).forEach((area) => {
+      const selected = state.selectedArea && state.selectedArea.kind === "wall" &&
+        state.selectedArea.id === area.id;
+      ctx.save();
+      ctx.beginPath();
+      pathPolygon(area.polygon);
+      ctx.fillStyle = "rgba(240,231,214,0.42)";
+      ctx.fill();
+      ctx.strokeStyle = selected ? cssColor("--brass", "#d3ac59") : "rgba(240,231,214,0.72)";
+      ctx.lineWidth = selected ? 3 : 1.5;
+      ctx.setLineDash([]);
+      ctx.stroke();
+      ctx.restore();
+    });
   }
 
   function drawStageWings() {
@@ -1787,11 +1820,11 @@
     if (selectedArea) {
       const areaDims = dimensions(audiencePolygon(selectedArea));
       els.audienceSelection.textContent = translatedStatus(
-        `${state.selectedArea.kind === "audience" ? "客席" : "舞台袖"} ${areaDims.width}m × ${areaDims.depth}m を選択中`,
+        `${regionLabel(state.selectedArea.kind)} ${areaDims.width}m × ${areaDims.depth}m を選択中`,
       );
     } else if (state.areaMode) {
       els.audienceSelection.textContent = translatedStatus(
-        `${state.areaMode === "audience" ? "客席" : "舞台袖"}を配置中 ・ 客席${state.audience.length}個／舞台袖${state.wings.length}個`,
+        `${regionLabel(state.areaMode)}を配置中 ・ 客席${state.audience.length}個／舞台袖${state.wings.length}個`,
       );
     } else {
       els.audienceSelection.textContent = tx("5番または6番を選択してください");
@@ -1903,6 +1936,7 @@
     drawAudience();
     drawRoom();
     drawStageExtensions();
+    drawVenueWalls();
     drawAreaResizeHandles();
     drawFixtures();
     drawAccess();
@@ -2211,7 +2245,19 @@
       ? variant.stageWings : (Array.isArray(venue.stageWings) ? venue.stageWings : []));
     // 旧会場の柱・什器・扉は保存データでは保持するが、形式プリセットの編集開始時には復活させない。
     const customVenue = !library.isPreset(venue.id);
-    state.fixtures = customVenue && Array.isArray(variant.fixtures) ? clone(variant.fixtures) : [];
+    const rawFixtures = customVenue && Array.isArray(variant.fixtures) ? clone(variant.fixtures) : [];
+    /* ★壁は「置くもの」として別に持つ（2026-09-19）。柱・什器とは操作が違うので分ける。
+     * 間口の額縁（frame）はプリセットが持つ印で、編集の対象にしない＝そのまま fixtures へ残す。 */
+    state.walls = rawFixtures
+      .filter((item) => item && item.type === "wall" && !item.frame && Array.isArray(item.polygon))
+      .map((item, index) => ({
+        id: typeof item.id === "string" ? item.id : `wall-area-${index + 1}`,
+        shape: ["rectangle", "circle", "custom"].includes(item.shape) ? item.shape : "custom",
+        label: regionLabel("wall"),
+        polygon: clone(item.polygon),
+        heightM: Number.isFinite(Number(item.heightM)) ? Number(item.heightM) : null,
+      }));
+    state.fixtures = rawFixtures.filter((item) => !(item && item.type === "wall" && !item.frame));
     state.access = customVenue && Array.isArray(variant.access) ? clone(variant.access) : [];
     state.ceiling = clone(variant.ceiling || venue.ceiling || { heightM: 6, rigging: "none" });
     /* V-4: 旧データ（hasCeiling/indoorを持たない）は「天井あり」として読む＝従来と同じ挙動。
@@ -2325,7 +2371,7 @@
   }
 
   function setAreaMode(kind, shape = "rectangle") {
-    if (!["audience", "wing"].includes(kind) || !["rectangle", "circle"].includes(shape)) return;
+    if (!["audience", "wing", "wall"].includes(kind) || !["rectangle", "circle"].includes(shape)) return;
     state.areaMode = kind;
     state.areaShape = shape;
     state.stageExtensionMode = null;
@@ -2334,7 +2380,7 @@
     state.selectedArea = null;
     state.selectedStageExtensionId = null;
     els.saveStatus.textContent = "";
-    setStatus(`${kind === "audience" ? "客席" : "舞台袖"}の${shape === "circle" ? "丸" : "四角"}を右の平面図でドラッグしてください。`);
+    setStatus(`${regionLabel(kind)}の${shape === "circle" ? "丸" : "四角"}を右の平面図でドラッグしてください。`);
     render();
   }
 
@@ -2394,7 +2440,7 @@
 
   function mergeOverlappingAreas(kind) {
     const mergeable = mergeableAreas(kind);
-    const label = kind === "audience" ? "客席" : "舞台袖";
+    const label = regionLabel(kind);
     if (!mergeable.length) {
       setStatus(`重なっている${label}がありません。`);
       render();
@@ -2436,10 +2482,12 @@
     if (kind === "audience") {
       state.audience = state.audience.filter((item) => item.id !== state.selectedArea.id);
     } else {
-      state.wings = state.wings.filter((item) => item.id !== state.selectedArea.id);
+      const store = areaStore(state.selectedArea.kind);
+      const at = store.findIndex((item) => item.id === state.selectedArea.id);
+      if (at >= 0) store.splice(at, 1);
     }
     state.selectedArea = null;
-    setStatus(`選択した${kind === "audience" ? "客席" : "舞台袖"}の形を削除しました。`);
+    setStatus(`選択した${regionLabel(kind)}の形を削除しました。`);
     render();
   }
 
@@ -2599,7 +2647,7 @@
 
   function selectedPolygonArea() {
     if (!state.selectedArea) return null;
-    const items = state.selectedArea.kind === "audience" ? state.audience : state.wings;
+    const items = areaStore(state.selectedArea.kind);
     const item = items.find((candidate) => candidate.id === state.selectedArea.id);
     return item && Array.isArray(item.polygon) ? { kind: state.selectedArea.kind, item } : null;
   }
@@ -2666,7 +2714,7 @@
     ]);
     pointer.valid = true;
     const dims = dimensions(pointer.preview);
-    setStatus(`${pointer.areaKind === "audience" ? "客席" : "舞台袖"} ${dims.width}m × ${dims.depth}m にしています。`);
+    setStatus(`${regionLabel(pointer.areaKind)} ${dims.width}m × ${dims.depth}m にしています。`);
   }
 
   /* T-34（2026-09-18 本人報告「プリセットの客席がドラッグドロップで動かせない」）:
@@ -2702,7 +2750,7 @@
     ]);
     pointer.valid = true;
     const dims = dimensions(pointer.preview);
-    setStatus(`${pointer.areaKind === "audience" ? "客席" : "舞台袖"} ${dims.width}m × ${dims.depth}m を動かしています。`);
+    setStatus(`${regionLabel(pointer.areaKind)} ${dims.width}m × ${dims.depth}m を動かしています。`);
   }
 
   function beginArea(pointerId, point) {
@@ -2712,18 +2760,19 @@
     if (resizeHit) {
       state.selectedElement = null;
       activePointer = beginAreaResizePointer(pointerId, point, resizeHit);
-      setStatus(`${resizeHit.kind === "audience" ? "客席" : "舞台袖"}の角をドラッグして大きさを変えます。`);
+      setStatus(`${regionLabel(resizeHit.kind)}の角をドラッグして大きさを変えます。`);
       render();
       return true;
     }
-    const existing = areaKind === "audience" ? hitAudienceArea(point) : hitWingArea(point);
+    const existing = areaKind === "audience" ? hitAudienceArea(point)
+      : (areaKind === "wall" ? hitWallArea(point) : hitWingArea(point));
     state.selectedElement = null;
     if (existing) {
       state.selectedArea = { kind: areaKind, id: existing.id };
       activePointer = beginAreaMovePointer(pointerId, point, areaKind, existing);
       setStatus(Array.isArray(existing.polygon)
-        ? `${areaKind === "audience" ? "客席" : "舞台袖"}を選択しました。ドラッグで動かせます。`
-        : `${areaKind === "audience" ? "客席" : "舞台袖"}を選択しました。`);
+        ? `${regionLabel(areaKind)}を選択しました。ドラッグで動かせます。`
+        : `${regionLabel(areaKind)}を選択しました。`);
       render();
       return true;
     }
@@ -2741,7 +2790,7 @@
       valid: false,
       moved: false,
     };
-    setStatus(`${areaKind === "audience" ? "客席" : "舞台袖"}の${state.areaShape === "circle" ? "丸" : "四角"}をドラッグして描きます。`);
+    setStatus(`${regionLabel(areaKind)}の${state.areaShape === "circle" ? "丸" : "四角"}をドラッグして描きます。`);
     render();
     return true;
   }
@@ -2886,7 +2935,7 @@
     if (areaResizeHit) {
       state.selectedElement = null;
       activePointer = beginAreaResizePointer(event.pointerId, point, areaResizeHit);
-      setStatus(`${areaResizeHit.kind === "audience" ? "客席" : "舞台袖"}の角をドラッグして大きさを変えます。`);
+      setStatus(`${regionLabel(areaResizeHit.kind)}の角をドラッグして大きさを変えます。`);
       render();
       return;
     }
@@ -3068,7 +3117,7 @@
       : rectangleFromPoints(pointer.start, target);
     const dims = dimensions(pointer.preview);
     pointer.valid = dims.width >= AREA_MIN_SIDE_M && dims.depth >= AREA_MIN_SIDE_M;
-    const label = pointer.areaKind === "audience" ? "客席" : "舞台袖";
+    const label = regionLabel(pointer.areaKind);
     setStatus(pointer.valid
       ? `${label} ${dims.width}m × ${dims.depth}m を描いています。`
       : `${label}は幅・奥行とも0.4m以上で描いてください。`);
@@ -3226,19 +3275,19 @@
     } else if (!cancelled && finished.kind === "stage-extension-move" && finished.moved) {
       setStatus("舞台面のつながりが切れるため、追加ステージの位置は変えていません。");
     } else if (!cancelled && finished.kind === "area-resize" && finished.moved) {
-      const items = finished.areaKind === "audience" ? state.audience : state.wings;
+      const items = areaStore(finished.areaKind);
       const item = items.find((candidate) => candidate.id === finished.id);
       if (item) {
         item.polygon = clone(finished.preview);
         item.shape = "custom";      // 伸び縮みさせた形は、四角・丸のままとは限らない
       }
       const dims = dimensions(finished.preview);
-      setStatus(`${finished.areaKind === "audience" ? "客席" : "舞台袖"}を ${dims.width}m × ${dims.depth}m にしました。`);
+      setStatus(`${regionLabel(finished.areaKind)}を ${dims.width}m × ${dims.depth}m にしました。`);
     } else if (!cancelled && finished.kind === "area-move" && finished.moved) {
-      const items = finished.areaKind === "audience" ? state.audience : state.wings;
+      const items = areaStore(finished.areaKind);
       const item = items.find((candidate) => candidate.id === finished.id);
       if (item) item.polygon = clone(finished.preview);
-      setStatus(`${finished.areaKind === "audience" ? "客席" : "舞台袖"}を動かしました。`);
+      setStatus(`${regionLabel(finished.areaKind)}を動かしました。`);
     } else if (!cancelled && finished.kind === "stage-extension-new") {
       setStatus("既存の舞台につながるように、0.4m以上の大きさで描いてください。今回は追加していません。");
     } else if (!cancelled && finished.kind === "area-new" && finished.moved && finished.valid) {
@@ -3246,11 +3295,10 @@
         id: `${finished.areaKind}-area-${state.regionSerial}`,
         shape: finished.shape,
         polygon: clone(finished.preview),
-        label: finished.areaKind === "audience" ? "客席" : "舞台袖",
+        label: regionLabel(finished.areaKind),
       };
       state.regionSerial += 1;
-      if (finished.areaKind === "audience") state.audience.push(item);
-      else state.wings.push(item);
+      areaStore(finished.areaKind).push(item);
       state.selectedArea = { kind: finished.areaKind, id: item.id };
       setStatus(`${item.label}の${item.shape === "circle" ? "丸" : "四角"}を配置しました。続けてドラッグすると追加できます。`);
     } else if (!cancelled && finished.kind === "area-new") {
@@ -3337,7 +3385,21 @@
   }
 
   function fixtureOutput() {
-    return state.fixtures.map((item) => {
+    /* ★壁を先に出す。2026-09-19 まで、読み込んだ `type:"wall"` は下の二分岐で
+     * `furniture` に化け、`frame` も `label` も落ちていた（保存し直すたびに壊れていた）。 */
+    const walls = state.walls
+      .filter((area) => Array.isArray(area.polygon) && area.polygon.length >= 3)
+      .map((area) => ({
+        type: "wall",
+        polygon: area.polygon.map((point) => point.map(roundM)),
+        heightM: Number.isFinite(Number(area.heightM)) ? Number(area.heightM) : state.ceiling.heightM,
+        label: "壁",
+        movable: false,
+        ...(area.shape ? { shape: area.shape } : {}),
+      }));
+    return walls.concat(state.fixtures.map((item) => {
+      // 間口の額縁など、編集の対象でない壁はそのまま通す（化けさせない）
+      if (item.type === "wall") return clone(item);
       if (item.type === "column") {
         return {
           type: "column",
@@ -3355,7 +3417,7 @@
         label: "什器",
         movable: Boolean(item.movable),
       };
-    });
+    }));
   }
 
   function accessOutput() {

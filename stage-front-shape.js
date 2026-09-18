@@ -233,5 +233,47 @@
     return out.sort((p, q) => p.order - q.order);
   }
 
-  root.SHOSAI_FRONT_SHAPE = Object.freeze({ build, faces, boundary, EPS });
+  /* ある形（舞台袖など）の辺のうち、**舞台と接している**ものを返す。
+     カーテン（袖幕）を貼る場所を決めるのに使う。本人「舞台袖のところには平行方向に貼る」
+     ＝袖と舞台の境目に沿って貼る、と読んだ（2026-09-19）。
+
+     見分け方: 辺の上の何点かで、辺の両側へ少し離れた点を取り、
+     **片方が舞台の中・反対側が外**になっていれば、そこは境目。
+     過半数の点でそうなっている辺だけを返す（角だけかすっている辺を拾わないため）。
+
+     polygon … 調べる形の頂点列 [[x,y],…]
+     polygons … 舞台の形の一覧（build() へ渡すのと同じもの）
+     返す1件: [ [x,y], [x,y] ] */
+  function touchingEdges(polygon, polygons, reach) {
+    const list = (polygons || []).filter((poly) => Array.isArray(poly) && poly.length >= 3);
+    const points = (polygon || []).filter((point) => Array.isArray(point) && point.length >= 2);
+    if (!list.length || points.length < 3) return [];
+    const REACH = Number.isFinite(reach) && reach > 0 ? reach : 0.25;
+    const inAny = (x, y) => list.some((poly) => insidePolygon(x, y, poly));
+    const edges = [];
+    for (let index = 0; index < points.length; index += 1) {
+      const from = points[index];
+      const to = points[(index + 1) % points.length];
+      const dx = to[0] - from[0];
+      const dy = to[1] - from[1];
+      const length = Math.hypot(dx, dy);
+      if (length < 0.3) continue;            // 丸い形の細かい辺は1本ずつ見ない
+      const nx = -dy / length;
+      const ny = dx / length;
+      let touching = 0;
+      let looked = 0;
+      for (let t = 0.15; t <= 0.85; t += 0.1) {
+        const px = from[0] + dx * t;
+        const py = from[1] + dy * t;
+        looked += 1;
+        if (inAny(px + nx * REACH, py + ny * REACH) !== inAny(px - nx * REACH, py - ny * REACH)) {
+          touching += 1;
+        }
+      }
+      if (looked && touching / looked >= 0.6) edges.push([from.slice(), to.slice()]);
+    }
+    return edges;
+  }
+
+  root.SHOSAI_FRONT_SHAPE = Object.freeze({ build, faces, boundary, touchingEdges, EPS });
 })(typeof window !== "undefined" ? window : globalThis);

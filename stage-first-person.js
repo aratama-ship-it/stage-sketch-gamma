@@ -174,6 +174,16 @@
      ことが多い、という一般則として全形式に適用する。
      プロセニアムの舞台前縁の羽目板（drawShell の apron 面）も同じ高さで揃える。 */
   const HOUSE_FLOOR_Y = -1;
+  /* 客席の床の高さ。★会場が「舞台の高さ」を持っていればそこから決める（本人 2026-09-19）。
+   * サーカスのピステは客席の最前列より低いことがあるので、舞台の高さはマイナスにもなる。
+   * 舞台の床が y=0 なので、客席の床は「−（舞台の高さ）」。
+   * ★持っていない会場は HOUSE_FLOOR_Y（=−1）のまま＝いままでの絵と1画素も変わらない。 */
+  let houseFloorY = HOUSE_FLOOR_Y;
+  function syncHouseFloor() {
+    const venue = currentVenueModel();
+    const height = venue && Number(venue.stageHeightM);
+    houseFloorY = Number.isFinite(height) ? -height : HOUSE_FLOOR_Y;
+  }
 
   /* 客席の人影。舞台から見て「客がいる」気配を出すためのもので、座席そのものは描かない
      （2Dキャンバスなので、数を増やすより1体の見えを正しくする）。
@@ -235,7 +245,7 @@
     const innerR = finite(width, 12) / 2 + 1.6;  // 舞台の際から通路ひとつ分あけて始まる
     return Array.from({ length: HOUSE_RING.rows }, (_, index) => ({
       r: innerR + HOUSE_ROW_DEPTH * index,
-      height: HOUSE_FLOOR_Y + HOUSE_ROW_RISE * (index + 1),
+      height: houseFloorY + HOUSE_ROW_RISE * (index + 1),
     }));
   }
 
@@ -372,7 +382,7 @@
     const startZ = finite(depth, 9) / 2 + 1.6;
     return Array.from({ length: HOUSE_ROWS }, (_, index) => ({
       z: startZ + HOUSE_ROW_DEPTH * index,
-      height: HOUSE_FLOOR_Y + HOUSE_ROW_RISE * (index + 1),
+      height: houseFloorY + HOUSE_ROW_RISE * (index + 1),
     }));
   }
 
@@ -380,7 +390,7 @@
      最前列より手前（通路）は素の地面、最後列より奥は最後列の高さで頭打ち。 */
   function houseFloorAt(z, width, depth) {
     const rows = houseRiserRows(width, depth);
-    let floor = HOUSE_FLOOR_Y;
+    let floor = houseFloorY;
     rows.forEach((row) => {
       if (finite(z, 0) >= row.z - HOUSE_ROW_DEPTH / 2) floor = row.height;
     });
@@ -2446,7 +2456,7 @@
     const at = (x, y, z) => toCamera({ x, y, z }).z;
 
     rows.forEach(({ r, height }, row) => {
-      const previousTop = row ? rows[row - 1].height : HOUSE_FLOOR_Y;  // row0の土台は真の地面
+      const previousTop = row ? rows[row - 1].height : houseFloorY;  // row0の土台は真の地面
       const outer = r + HOUSE_ROW_DEPTH;
       const segments = Math.max(16, Math.ceil((Math.PI * 2 * r) / 2.4));
       for (let index = 0; index < segments; index += 1) {
@@ -2653,13 +2663,13 @@
     const walkwayFrontZ = D / 2;
     const walkwayBackZ = stalls[0].z - HOUSE_ROW_DEPTH / 2;
     units.push({
-      depth: at(HOUSE_FLOOR_Y, (walkwayFrontZ + walkwayBackZ) / 2),
+      depth: at(houseFloorY, (walkwayFrontZ + walkwayBackZ) / 2),
       draw: () => {
         fillPoly(ctx, [
-          { x: -rowWidth / 2, y: HOUSE_FLOOR_Y, z: walkwayFrontZ },
-          { x: rowWidth / 2, y: HOUSE_FLOOR_Y, z: walkwayFrontZ },
-          { x: rowWidth / 2, y: HOUSE_FLOOR_Y, z: walkwayBackZ },
-          { x: -rowWidth / 2, y: HOUSE_FLOOR_Y, z: walkwayBackZ },
+          { x: -rowWidth / 2, y: houseFloorY, z: walkwayFrontZ },
+          { x: rowWidth / 2, y: houseFloorY, z: walkwayFrontZ },
+          { x: rowWidth / 2, y: houseFloorY, z: walkwayBackZ },
+          { x: -rowWidth / 2, y: houseFloorY, z: walkwayBackZ },
         ], "#221a14");
       },
     });
@@ -2667,7 +2677,7 @@
     stalls.forEach((riser, row) => units.push({
       depth: at(riser.height, riser.z),
       draw: () => {
-        drawBox(ctx, 0, riser.z, HOUSE_FLOOR_Y, riser.height, rowWidth, HOUSE_ROW_DEPTH, "#3a2620");
+        drawBox(ctx, 0, riser.z, houseFloorY, riser.height, rowWidth, HOUSE_ROW_DEPTH, "#3a2620");
         drawSeats(`stalls:${row}`);
       },
     }));
@@ -2727,27 +2737,27 @@
       return;
     }
     if (data && data.venue && data.venue.audience === "round") {
-      /* 全周会場に箱の壁は無い（奥も客席）。地面はHOUSE_FLOOR_Y、舞台の円だけが
+      /* 全周会場に箱の壁は無い（奥も客席）。地面は houseFloorY、舞台の円だけが
          Y=0で高い盆のように立つ。両者の間は縁の壁（舞台の土手）でつなぐ——
          プロセニアムの前縁の羽目板と同じ考えを、全周ぶん巡らせたもの。 */
       const rows = houseRingRows(W);
       const groundR = rows[rows.length - 1].r + HOUSE_ROW_DEPTH + 1.5;
       const stageR = W / 2;
-      fillPoly(ctx, circlePoints(0, HOUSE_FLOOR_Y - .002, 0, groundR, 44), "#1d1712");
+      fillPoly(ctx, circlePoints(0, houseFloorY - .002, 0, groundR, 44), "#1d1712");
 
       const skirtSegments = 36;
       Array.from({ length: skirtSegments }, (_, index) => {
         const a0 = (index / skirtSegments) * Math.PI * 2;
         const a1 = ((index + 1) / skirtSegments) * Math.PI * 2;
         return { a0, a1, depth: toCamera({
-          x: Math.cos((a0 + a1) / 2) * stageR, y: HOUSE_FLOOR_Y / 2, z: Math.sin((a0 + a1) / 2) * stageR,
+          x: Math.cos((a0 + a1) / 2) * stageR, y: houseFloorY / 2, z: Math.sin((a0 + a1) / 2) * stageR,
         }).z };
       }).sort((a, b) => b.depth - a.depth).forEach(({ a0, a1 }) => {
         const cos0 = Math.cos(a0); const sin0 = Math.sin(a0);
         const cos1 = Math.cos(a1); const sin1 = Math.sin(a1);
         fillPoly(ctx, [
-          { x: cos0 * stageR, y: HOUSE_FLOOR_Y, z: sin0 * stageR },
-          { x: cos1 * stageR, y: HOUSE_FLOOR_Y, z: sin1 * stageR },
+          { x: cos0 * stageR, y: houseFloorY, z: sin0 * stageR },
+          { x: cos1 * stageR, y: houseFloorY, z: sin1 * stageR },
           { x: cos1 * stageR, y: 0, z: sin1 * stageR },
           { x: cos0 * stageR, y: 0, z: sin0 * stageR },
         ], "#1a120d");
@@ -2785,7 +2795,7 @@
       line3(ctx, { x: -halfWidth, y: 0, z }, { x: halfWidth, y: 0, z }, "rgba(232,226,212,.09)", 1);
     }
     line3(ctx, { x: -halfWidth, y: 0, z: halfDepth }, { x: halfWidth, y: 0, z: halfDepth }, "rgba(232,226,212,.28)", 2);
-    fillPoly(ctx, [{ x: -halfWidth, y: HOUSE_FLOOR_Y, z: halfDepth }, { x: halfWidth, y: HOUSE_FLOOR_Y, z: halfDepth },
+    fillPoly(ctx, [{ x: -halfWidth, y: houseFloorY, z: halfDepth }, { x: halfWidth, y: houseFloorY, z: halfDepth },
       { x: halfWidth, y: 0, z: halfDepth }, { x: -halfWidth, y: 0, z: halfDepth }], "#241c15");
     }
     const legHalfWidth = .8;
@@ -2793,7 +2803,7 @@
     const legX = wingLegX(W);
     /* 袖幕の裾は床に着いて見えること。カスタム会場では舞台の外が1m低いので、そこまで下ろす
        （下ろさないと、幕が宙に浮いて見える）。 */
-    const legFloor = customStageShape() ? HOUSE_FLOOR_Y : 0;
+    const legFloor = customStageShape() ? houseFloorY : 0;
     wingLegZs(D, wingLegPairs(D)).forEach((z) => {
       [-legX, legX].forEach((x) => {
         fillPoly(ctx, [{ x: x - legHalfWidth, y: legFloor, z }, { x: x + legHalfWidth, y: legFloor, z },
@@ -2819,6 +2829,49 @@
         (venue.stageExtensions || []).map((item) => (item && Array.isArray(item.polygon)) ? item.polygon : null))) };
     }
     return customFloorCache.shape;
+  }
+
+  /* 舞台袖の形（平面の座標のまま）。置いていなければ空。 */
+  function venueWingPolygons() {
+    const venue = currentVenueModel();
+    return (venue && Array.isArray(venue.stageWings) ? venue.stageWings : [])
+      .map((area) => (area && Array.isArray(area.polygon) && area.polygon.length >= 3 ? area.polygon : null))
+      .filter(Boolean);
+  }
+
+  /* 劇場に据え付けた壁。間口の額縁は正面図が別に描くので外す。 */
+  function venueWallList() {
+    const venue = currentVenueModel();
+    return (venue && Array.isArray(venue.venueWalls) ? venue.venueWalls : [])
+      .filter((wall) => wall && !wall.frame && Array.isArray(wall.polygon) && wall.polygon.length >= 3)
+      .map((wall) => ({
+        polygon: wall.polygon,
+        heightM: Number.isFinite(Number(wall.heightM)) ? Number(wall.heightM) : 3,
+      }));
+  }
+
+  /* 袖の縁の土手。★カメラに背を向けた面は描かない（描くと向こう側の面が床に浮く）。 */
+  function wingSideFaces(poly) {
+    const shape = customStageShape();
+    if (!shape) return [];
+    const at = (point, y) => toWorld(shape.uOf(point[0]), shape.vOf(point[1]), W, D, y);
+    const faces = [];
+    for (let index = 0; index < poly.length; index += 1) {
+      const from = poly[index];
+      const to = poly[(index + 1) % poly.length];
+      const a = at(from, 0);
+      const b = at(to, 0);
+      const mid = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
+      const dx = b.x - a.x;
+      const dz = b.z - a.z;
+      const length = Math.hypot(dx, dz);
+      if (length < 0.01) continue;
+      const nx = dz / length;
+      const nz = -dx / length;
+      if (nx * (camera.x - mid.x) + nz * (camera.z - mid.z) <= 0) continue;
+      faces.push([a, b, { ...b, y: houseFloorY }, { ...a, y: houseFloorY }]);
+    }
+    return faces;
   }
 
   /* 床の中だけに切った1m格子。線が舞台の外へはみ出さないようにする。
@@ -2859,15 +2912,25 @@
     const lib = window.SHOSAI_FRONT_SHAPE;
     const at = (point, y) => toWorld(shape.uOf(point[0]), shape.vOf(point[1]), W, D, y);
 
-    /* 舞台の外は舞台より低い床。高さは前縁の羽目板と同じ（HOUSE_FLOOR_Y）。
+    /* 舞台の外は舞台より低い床。高さは前縁の羽目板と同じ（houseFloorY）。
        壁もそこまで下ろす（下ろさないと壁の裾と床の間に隙間が開く）。 */
-    fillPoly(ctx, [{ x: -halfWidth, y: HOUSE_FLOOR_Y, z: -halfDepth }, { x: halfWidth, y: HOUSE_FLOOR_Y, z: -halfDepth },
-      { x: halfWidth, y: HOUSE_FLOOR_Y, z: halfDepth }, { x: -halfWidth, y: HOUSE_FLOOR_Y, z: halfDepth }], "#1d1712");
-    fillPoly(ctx, [{ x: -halfWidth, y: HOUSE_FLOOR_Y, z: -halfDepth }, { x: halfWidth, y: HOUSE_FLOOR_Y, z: -halfDepth },
+    fillPoly(ctx, [{ x: -halfWidth, y: houseFloorY, z: -halfDepth }, { x: halfWidth, y: houseFloorY, z: -halfDepth },
+      { x: halfWidth, y: houseFloorY, z: halfDepth }, { x: -halfWidth, y: houseFloorY, z: halfDepth }], "#1d1712");
+    fillPoly(ctx, [{ x: -halfWidth, y: houseFloorY, z: -halfDepth }, { x: halfWidth, y: houseFloorY, z: -halfDepth },
       { x: halfWidth, y: 0, z: -halfDepth }, { x: -halfWidth, y: 0, z: -halfDepth }], "#2b2118");
     [-halfWidth, halfWidth].forEach((x) => {
-      fillPoly(ctx, [{ x, y: HOUSE_FLOOR_Y, z: -halfDepth }, { x, y: HOUSE_FLOOR_Y, z: halfDepth },
+      fillPoly(ctx, [{ x, y: houseFloorY, z: -halfDepth }, { x, y: houseFloorY, z: halfDepth },
         { x, y: 0, z: halfDepth }, { x, y: 0, z: -halfDepth }], "#211912");
+    });
+
+    /* ★舞台袖の床（2026-09-19 本人決定）。**舞台と同じ高さ**。
+       舞台の外は低い床なので、袖の分だけ舞台と同じ高さへ持ち上げる。
+       置いていない会場では1枚も描かない＝いままでの絵と変わらない。 */
+    const wings = venueWingPolygons();
+    wings.forEach((poly) => {
+      // 袖の縁の土手（低い床から舞台の高さまで）。裏を向いた面は描かない
+      wingSideFaces(poly).forEach((face) => fillPoly(ctx, face, "#171009"));
+      fillPoly(ctx, poly.map((point) => at(point, 0)), "#221c16");
     });
 
     // 舞台の甲板
@@ -2878,14 +2941,14 @@
     lib.boundary(shape).map((edge) => {
       const a = at(edge.a, 0);
       const b = at(edge.b, 0);
-      const mid = { x: (a.x + b.x) / 2, y: HOUSE_FLOOR_Y / 2, z: (a.z + b.z) / 2 };
+      const mid = { x: (a.x + b.x) / 2, y: houseFloorY / 2, z: (a.z + b.z) / 2 };
       // 床の外へ向く法線（平面のx,yは3Dのx,zと同じ向き・同じ尺）
       const facing = edge.outward[0] * (camera.x - mid.x) + edge.outward[1] * (camera.z - mid.z);
       return { a, b, mid, facing, kind: edge.kind, depth: toCamera(mid).z };
     }).filter((face) => face.facing > 0)
       .sort((p, q) => q.depth - p.depth)
       .forEach((face) => {
-        fillPoly(ctx, [face.a, face.b, { ...face.b, y: HOUSE_FLOOR_Y }, { ...face.a, y: HOUSE_FLOOR_Y }],
+        fillPoly(ctx, [face.a, face.b, { ...face.b, y: houseFloorY }, { ...face.a, y: houseFloorY }],
           face.kind === "front" ? "#1a120d" : "#160f0b");
       });
 
@@ -2901,6 +2964,31 @@
         line3(ctx, at([from, y], 0), at([to, y], 0), gridColor, 1);
       });
     }
+    /* ★舞台袖のカーテン（袖幕）。袖が舞台と接している縁に沿って立てる。
+       縁の選び方は共有部品 touchingEdges（平面図と同じ式）。 */
+    const curtainTop = Math.min(CEIL - .5, CEIL * .75);
+    wings.forEach((poly) => {
+      (lib.touchingEdges ? lib.touchingEdges(poly, shape.polygons) : []).forEach(([from, to]) => {
+        const a = at(from, 0);
+        const b = at(to, 0);
+        fillPoly(ctx, [a, b, { ...b, y: curtainTop }, { ...a, y: curtainTop }], "#0e0b08");
+      });
+    });
+
+    /* ★劇場に据え付けた壁（2026-09-19 本人決定）。低い床から heightM まで立てる。
+       間口の額縁（frame）は正面図が昔から別に描くので、ここでは立てない。 */
+    venueWallList().forEach((wall) => {
+      const poly = wall.polygon;
+      for (let index = 0; index < poly.length; index += 1) {
+        const from = poly[index];
+        const to = poly[(index + 1) % poly.length];
+        const a = at(from, houseFloorY);
+        const b = at(to, houseFloorY);
+        fillPoly(ctx, [a, b, { ...b, y: wall.heightM }, { ...a, y: wall.heightM }], "#2a2219");
+      }
+      fillPoly(ctx, poly.map((point) => at(point, wall.heightM)), "#332a1f");
+    });
+
     // 床の縁。舞台と、その外の低い所の境目を読めるようにする
     lib.boundary(shape).forEach((edge) => {
       line3(ctx, at(edge.a, 0), at(edge.b, 0), "rgba(232,226,212,.28)", 2);
@@ -3165,6 +3253,7 @@
   function renderFrame(dtSeconds = 0) {
     const ctx = elements.canvas.getContext("2d");
     if (!ctx) return;
+    syncHouseFloor();
     state.yaw += (state.targetYaw - state.yaw) * .24;
     state.pitch += (state.targetPitch - state.pitch) * .24;
     /* 目標にほぼ着いたら、そこで目標そのものへ揃える。
@@ -3712,7 +3801,7 @@
       seatNoise, houseSeats, houseBalconyRows, houseRingRows, seatSpanEnds,
       housePerson: () => HOUSE_PERSON, houseSeat: () => HOUSE_SEAT,
       houseBalcony: () => HOUSE_BALCONY, houseRing: () => HOUSE_RING,
-      houseFloorY: () => HOUSE_FLOOR_Y, houseFloorAt,
+      houseFloorY: () => houseFloorY, houseFloorAt,
       houseModes: () => HOUSE_MODES, normalizeHouseModeId, houseModeById,
       lensPresets: () => LENSES, normalizeLensId, lensById, focalFor }),
     /* 検証用の覗き窓。描画状態には触らない */

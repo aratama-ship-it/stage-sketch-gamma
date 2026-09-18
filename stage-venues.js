@@ -1146,6 +1146,18 @@
     return result;
   };
 
+  /* 会場に据え付けた壁。fixtures のうち多角形を持つ「壁」だけを取り出す。
+   * ★`frame: true` の壁は間口（プロセニアムの額縁）の印で、正面図が昔から特別扱いしている。
+   *   ここでは分け隔てなく返し、描く側が必要なら frame を見る。 */
+  const venueWallList = (venue) => (Array.isArray(venue.fixtures) ? venue.fixtures : [])
+    .filter((fixture) => fixture && fixture.type === "wall" &&
+      Array.isArray(fixture.polygon) && fixture.polygon.length >= 3)
+    .map((fixture) => ({
+      polygon: fixture.polygon.map((point) => point.slice()),
+      heightM: Number.isFinite(Number(fixture.heightM)) ? Number(fixture.heightM) : 3,
+      label: typeof fixture.label === "string" ? fixture.label : "壁",
+      ...(fixture.frame === true ? { frame: true } : {}),
+    }));
   /* 正面客席が通路で割れているとき、平面図が塗り分けられるように「間口に対する割合」で渡す
    * （VENUE_PRESETS_STAGE1_2026_09_19）。描画側は px でしか考えないので、ここで正規化しておく。
    * 1枚しか無い会場では null を返し、従来どおり1枚の帯として塗られる。 */
@@ -1168,6 +1180,10 @@
     note: venue.note,
     audience: legacyAudience(venue.audience),
     frame: venue.fixtures.some((fixture) => fixture.type === "wall" && fixture.frame === true),
+    /* ★プリセットには舞台袖も、間口の額縁以外の壁も無い。だからここへは足さない。
+     * 足すと tests/stage-venue-library.test.mjs の「プリセットを1バイトも変えない」錠に当たる。
+     * 錠は正しい: 袖や壁は作成会場（customLegacyVenue）から来るもので、
+     * プリセットを下敷きにして置いた場合も作成会場として保存されるので、これで漏れない。 */
     sizes: venue.sizes.map((size) => legacySize(size, venue.shapedVenue === true)),
     source: venue.reference,
     ...(venue.wideVenue ? { wideVenue: true } : {}),
@@ -1238,6 +1254,15 @@
       delete venue.floor.extensions;
     }
     venue.floor.levels = Array.isArray(venue.floor.levels) ? venue.floor.levels : [];
+    /* 舞台の高さ（客席の床を0とした舞台の床のm）。★任意。
+     * 無い会場は今までどおりの描き方をする＝既存のショーの絵を1画素も変えない。
+     * マイナスにできるのは、サーカスのピステが客席の最前列より低いことがあるため（本人 2026-09-19）。 */
+    const stageHeight = Number(venue.floor.stageHeightM);
+    if (Number.isFinite(stageHeight)) {
+      venue.floor.stageHeightM = Math.round(Math.min(3, Math.max(-3, stageHeight)) * 100) / 100;
+    } else {
+      delete venue.floor.stageHeightM;
+    }
     venue.ceiling = venue.ceiling && typeof venue.ceiling === "object"
       ? venue.ceiling : { heightM: 6, rigging: "none", note: "高さ・吊り条件は要確認。" };
     venue.audience = Array.isArray(venue.audience)
@@ -1491,6 +1516,13 @@
       outline: clone(venue.floor.outline),
       stageExtensions: clone(stageExtensions),
       audienceAreas: clone(venue.audience),
+      /* ★舞台袖・壁・舞台の高さを本体（正面図・平面図・3D）へ渡す。
+       * ここを通さないと、劇場エディタで置いても図に出ない（2026-09-18 まで実際に出ていなかった）。
+       * 壁は fixtures のうち「動かせない壁」だけ。什器・柱は別のもの。 */
+      stageWings: clone(Array.isArray(venue.stageWings) ? venue.stageWings : []),
+      venueWalls: clone(venueWallList(venue)),
+      ...(Number.isFinite(Number(venue.floor.stageHeightM))
+        ? { stageHeightM: Number(venue.floor.stageHeightM) } : {}),
       venueV2: clone(venue),
     };
   };

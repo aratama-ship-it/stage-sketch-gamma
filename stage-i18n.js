@@ -980,7 +980,9 @@
     "この舞台に出る演者、大道具、小道具を、まとめてここに登録します。 寸法や色はここで決め、シーンごとに舞台の上か裏かを切り替えます。明かりは別の項目です。追加したものはそのシーンの舞台に出ます。":
       "Register the performers, set pieces, and props for this show here. Sizes and colours are decided here; each scene decides what is on stage. Lights have their own panel. Anything you add goes on stage in the current scene.",
     "この舞台に出る演者、大道具、小道具を、まとめてここに登録します。寸法や色はここで決め、シーンごとに舞台の上か裏かを切り替えます。追加したものはそのシーンの舞台に出ます。": "Register performers, set pieces, and props here. Set their sizes and colours here, then switch each scene between on stage and backstage. New items enter the current scene.",
-    "7. 舞台機構を設定してください": "7. Set stage machinery",
+    "8. 舞台機構を設定してください": "8. Set stage machinery",
+    "7. 壁を設置してください": "7. Place walls",
+    "四角または丸を選び、右の平面図でドラッグしてください。高さは天井と同じです。通れない場所として扱います。": "Pick a rectangle or a circle and drag on the plan at right. Walls are as tall as the ceiling and block movement.",
     "舞台機構を追加し、場面ごとの状態をここで確認・変更します。安全計算や実際の動作は行いません。": "Add stage machinery and review or change each scene's state here. This does not calculate safety or control real machinery.",
     "いまの舞台装置の並びに名前をつけて残します。別のシーンで呼び出したり、いまの並びへ足したりできます。演者は含みません。":
       "Save the current set layout under a name. You can recall it in another scene, or add it to what is already there. Performers are not included.",

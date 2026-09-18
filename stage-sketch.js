@@ -8966,6 +8966,18 @@
       };
     }
 
+    /* ★舞台の高さ（2026-09-19 本人決定。サーカスのピステは客席の最前列より低いこともある）。
+     * 席の apron は 720px の絵に合わせて手で決めた数字で、実寸ではない。
+     * だから「いまの絵 ＝ 舞台の高さ 1.0m」とみなして、そこからの比で伸び縮みさせる。
+     * ★会場が高さを持っていなければ 1 を返す＝いままでと1画素も変わらない。
+     * ★マイナス（客席より低い舞台）では立ち上がりを描かない（0を返す）。
+     *   見下ろす絵は疑似パースの作り直しが要るので、そこは段階を分ける。 */
+    function stageHeightFactor() {
+      const height = Number(venue().stageHeightM);
+      if (!Number.isFinite(height)) return 1;
+      return height > 0 ? height : 0;
+    }
+
     // 正面図: 奥のラインと手前のラインの間で擬似パースを作る。
     // 客席の位置（席）によって、床の厚み・幅の開き・消失点の左右が変わる。
     const seat = frontSeatById(state.seat);
@@ -8976,7 +8988,7 @@
     const k = H / BASE_H;
     const floorY = seat.floorY * k;
     const bottomY = seat.bottomY * k;
-    const apron = (seat.apron || 0) * k;
+    const apron = (seat.apron || 0) * k * stageHeightFactor();
 
     /* 尺は縦と横で同じにする。
      * 床の1m枡、演者の身長、セットの実寸が同じものさしで測られていないと、
@@ -9039,6 +9051,9 @@
       floorY: tilt(floorY),
       bottomY: tilt(bottomY),
       apronBottom: tilt(bottomY + apron),
+      /* 立ち上がりの高さ（画素・尺をかけ、舞台の高さの比もかけた後）。
+         ★描く側はここを見る。席の生の apron を直接読むと、舞台の高さが効かない。 */
+      apron,
       // 傾ける前の位置。駒はここから実寸で積み上げてから傾ける
       rawFloorY: floorY,
       rawBottomY: bottomY,
@@ -12786,7 +12801,7 @@
         /* 立ち上がりの高さは席ごとの apron（手前の線より下に見える舞台の立ち上がり）に合わせ、
            奥へ行くほど遠近の倍率で縮める。手前の縁（v=1）では従来の全幅の帯と同じ高さになる。
            apron を持たない席（見下ろす席など）では立ち上がりは見えない＝従来と同じ。 */
-        const apronRaw = ((L.seat && L.seat.apron) || 0) * (H / BASE_H);
+        const apronRaw = finite(L.apron, 0);
         if (apronRaw > 0) {
           target.save();
           // 手前の線より下は奈落。立ち上がりの面はこの上に描く（全幅の帯は敷かない）
@@ -12829,7 +12844,7 @@
     // 目線が床と同じ高さの席では、床が線に潰れるぶん、視界の下半分を
     // 舞台の立ち上がり（エプロンの前面）とその下の暗がりが占める。
     // ここを描かないと「床の上に人が並んだ絵」になり、見上げている感じが出ない。
-    const apron = (L.seat && L.seat.apron) || 0;
+    const apron = finite(L.apron, 0);
     if (apron > 0 && !roundHouse && !stepShape) {
       const faceBottom = Math.min(H, L.apronBottom);
       const face = target.createLinearGradient(0, L.bottomY, 0, faceBottom);
@@ -13136,6 +13151,12 @@
       }
       return inside;
     };
+    /* カーテン（袖幕）を貼る縁。★式は共有部品 stage-front-shape.js に1つだけ置く
+       （平面図・3Dが同じ線を引くため。2か所に持つと片方を直したときにずれる）。 */
+    const wingCurtainEdges = (wing, polygons) => {
+      const lib = window.SHOSAI_FRONT_SHAPE;
+      return lib && typeof lib.touchingEdges === "function" ? lib.touchingEdges(wing, polygons) : [];
+    };
     const strokeExposedEdges = (polygons) => {
       polygons.forEach((polygon, polygonIndex) => {
         const others = polygons.filter((_, index) => index !== polygonIndex);
@@ -13190,6 +13211,63 @@
       }
     });
     target.restore();
+
+    /* ★舞台袖（2026-09-19 本人決定）。劇場エディタで置いたものを平面図にも出す。
+       袖の床は舞台と同じ高さ。舞台より少し暗く塗り、境目にカーテン（袖幕）の線を引く。
+       ★置いていない会場では1本も描かない＝いままでの絵と変わらない。 */
+    const wingAreas = (v.stageWings || []).filter((area) =>
+      area && Array.isArray(area.polygon) && area.polygon.length >= 3);
+    if (wingAreas.length) {
+      target.save();
+      wingAreas.forEach((area) => {
+        polygonPath(area.polygon);
+        target.fillStyle = stageSurfaceColor("#1d1813");
+        target.fill();
+        target.strokeStyle = "rgba(156,130,63,0.32)";
+        target.lineWidth = 1;
+        target.setLineDash([5, 4]);
+        target.stroke();
+        target.setLineDash([]);
+        const center = area.polygon.reduce((sum, point) => [sum[0] + point[0], sum[1] + point[1]], [0, 0])
+          .map((value) => value / area.polygon.length);
+        const at = pointAt(center);
+        label(target, "舞台袖", at.x, at.y);
+      });
+      /* カーテン（袖幕）。★袖が舞台と接している縁に沿って貼る（本人「平行方向に貼る」）。
+         接している縁＝袖の辺のうち、舞台の中とほとんど重なっている部分。 */
+      target.strokeStyle = "rgba(200,145,63,0.85)";
+      target.lineWidth = 4;
+      target.lineCap = "round";
+      wingAreas.forEach((area) => {
+        wingCurtainEdges(area.polygon, stagePolygons).forEach(([from, to]) => {
+          const a = pointAt(from);
+          const b = pointAt(to);
+          target.beginPath();
+          target.moveTo(a.x, a.y);
+          target.lineTo(b.x, b.y);
+          target.stroke();
+        });
+      });
+      target.restore();
+    }
+
+    /* ★劇場に据え付けた壁（2026-09-19 本人決定）。
+       ★間口の額縁（frame）は昔から正面図が別に描いているので、ここでは描かない
+       ＝既存の会場の平面図は1画素も変わらない。 */
+    const venueWalls = (v.venueWalls || []).filter((wall) =>
+      wall && !wall.frame && Array.isArray(wall.polygon) && wall.polygon.length >= 3);
+    if (venueWalls.length) {
+      target.save();
+      venueWalls.forEach((wall) => {
+        polygonPath(wall.polygon);
+        target.fillStyle = "rgba(239,231,214,0.42)";
+        target.fill();
+        target.strokeStyle = "rgba(239,231,214,0.62)";
+        target.lineWidth = 1;
+        target.stroke();
+      });
+      target.restore();
+    }
 
     target.save();
     target.beginPath();
