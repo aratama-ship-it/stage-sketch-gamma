@@ -267,6 +267,11 @@
   .sechead{display:flex;gap:6px;align-items:center;min-height:24px;overflow:hidden}
   /* 正面図のパネルだけ、見出しの中央に「平面／3D」の切り替えを置く（2026-09-11 本人要望） */
   .sec.front .sechead{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+  /* 2026-09-18 本人指摘「帯の全画面表示のアイコンに、なぜか横幅がでかいものがある。正面図のもの」:
+     ★この帯だけ display:grid なので、.solo-btn の flex:0 0 auto が効かず、
+       1列目（1fr）いっぱいに広がっていた（平面図・側面図の帯は flex なので効いている）。
+       左端へ寄せて、3つの図の⛶を同じ大きさにする。 */
+  .sec.front .sechead .solo-btn{justify-self:start}
   .sec.front .sechead .viewnote{text-align:right}
   .fmode{display:flex;align-items:center;gap:5px;justify-self:center;flex-wrap:nowrap;min-width:0}
   #frontmode{display:inline-flex;flex:0 0 auto;flex-wrap:nowrap;width:max-content}
@@ -638,7 +643,7 @@
   .kbd b{color:var(--milk);font-weight:500;border:1px solid var(--line-dark);padding:0 4px;margin:0 2px}
 </style>
 <style>.option-b-controls button{min-height:44px}.option-b-controls :focus-visible{outline:2px solid #d3ac59;outline-offset:2px}</style>
-<link rel="stylesheet" href="embed.css?v=2026091983">
+<link rel="stylesheet" href="embed.css?v=2026091984">
 </head>
 <body>
 <div class="proto-note">舞台スケッチ γ — 照明の配置・デザイン</div>
@@ -905,7 +910,7 @@
 <script src="volume-light.js?v=20260915-2"></script>
 <script src="laser-effects.js?v=20260915-5-color-presets"></script>
 <script src="laser-effects-ui.js?v=20260915-3-supported-shapes"></script>
-<script src="app.js?v=2026091983"></script>
+<script src="app.js?v=2026091984"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20260915-3-vertical-cards"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->
