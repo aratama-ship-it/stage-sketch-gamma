@@ -1149,8 +1149,15 @@
     });
   }
 
+  /* T-34（2026-09-18 本人報告）: 客席・舞台袖を掴んで動かせるようにした。
+   * 動かしているあいだ、元の位置の図形は描かない（追加ステージと同じ扱い）。 */
+  function areaBeingMoved(kind) {
+    return activePointer && activePointer.kind === "area-move" && activePointer.areaKind === kind
+      ? activePointer.id : null;
+  }
+
   function drawStageWings() {
-    const areas = stageWingAreas();
+    const areas = stageWingAreas().filter((area) => area.id !== areaBeingMoved("wing"));
     const mergedAreas = areas.filter((area) => area.merged);
     areas.filter((area) => !area.merged).forEach((area) => {
       const selected = state.selectedArea && state.selectedArea.kind === "wing" &&
@@ -1314,7 +1321,8 @@
       ctx.restore();
     });
 
-    const customAreas = state.audience.filter((area) => Array.isArray(area.polygon));
+    const customAreas = state.audience.filter((area) => Array.isArray(area.polygon) &&
+      area.id !== areaBeingMoved("audience"));
     customAreas.filter((area) => !area.merged).forEach((area) => {
       const isSelected = Boolean(selectedArea && selectedArea.id === area.id);
       ctx.save();
@@ -1539,7 +1547,7 @@
   }
 
   function drawPlacementPreview() {
-    if (!activePointer || !["furniture-new", "area-new", "stage-extension-new", "stage-extension-move"].includes(activePointer.kind) || !activePointer.preview) return;
+    if (!activePointer || !["furniture-new", "area-new", "stage-extension-new", "stage-extension-move", "area-move"].includes(activePointer.kind) || !activePointer.preview) return;
     const isStageExtension = ["stage-extension-new", "stage-extension-move"].includes(activePointer.kind);
     const isWing = activePointer.areaKind === "wing";
     ctx.save();
@@ -2382,21 +2390,52 @@
     return true;
   }
 
+  /* T-34（2026-09-18 本人報告「プリセットの客席がドラッグドロップで動かせない」）:
+   * ★実測すると、プリセットに限らず客席も舞台袖も一切動かせなかった。
+   *   掴んでも「選択しました」で終わり、動かす処理そのものが無かった
+   *   （動くのは追加ステージだけ。辺に沿った客席の丸は「深さ」を変えるもので、移動ではない）。
+   * 多角形を持つ区画（プリセット・手描きとも）は、追加ステージと同じ形で動かせるようにする。
+   * 辺に沿った客席（edgeIndex と depthM で表す帯）は、形の決まり方が違うので
+   * これまでどおり選択だけにする。動かすと辺との関係が壊れるため。 */
+  function beginAreaMovePointer(pointerId, point, areaKind, item) {
+    if (!Array.isArray(item.polygon)) {
+      return { pointerId, kind: "area-select", areaKind, id: item.id, start: point, moved: false };
+    }
+    return {
+      pointerId,
+      kind: "area-move",
+      areaKind,
+      id: item.id,
+      start: snappedPoint(point),
+      original: clone(item.polygon),
+      preview: clone(item.polygon),
+      valid: true,
+      moved: false,
+    };
+  }
+
+  function moveAreaItem(pointer, point) {
+    const target = snappedPoint(point);
+    const delta = [target[0] - pointer.start[0], target[1] - pointer.start[1]];
+    pointer.preview = pointer.original.map((corner) => [
+      roundM(corner[0] + delta[0]),
+      roundM(corner[1] + delta[1]),
+    ]);
+    pointer.valid = true;
+    const dims = dimensions(pointer.preview);
+    setStatus(`${pointer.areaKind === "audience" ? "客席" : "舞台袖"} ${dims.width}m × ${dims.depth}m を動かしています。`);
+  }
+
   function beginArea(pointerId, point) {
     const areaKind = state.areaMode;
     const existing = areaKind === "audience" ? hitAudienceArea(point) : hitWingArea(point);
     state.selectedElement = null;
     if (existing) {
       state.selectedArea = { kind: areaKind, id: existing.id };
-      activePointer = {
-        pointerId,
-        kind: "area-select",
-        areaKind,
-        id: existing.id,
-        start: point,
-        moved: false,
-      };
-      setStatus(`${areaKind === "audience" ? "客席" : "舞台袖"}を選択しました。`);
+      activePointer = beginAreaMovePointer(pointerId, point, areaKind, existing);
+      setStatus(Array.isArray(existing.polygon)
+        ? `${areaKind === "audience" ? "客席" : "舞台袖"}を選択しました。ドラッグで動かせます。`
+        : `${areaKind === "audience" ? "客席" : "舞台袖"}を選択しました。`);
       render();
       return true;
     }
@@ -2571,14 +2610,18 @@
     if (audienceAreaHit) {
       state.selectedElement = null;
       state.selectedArea = { kind: "audience", id: audienceAreaHit.id };
-      activePointer = {
-        pointerId: event.pointerId,
-        kind: "audience-select",
-        id: audienceAreaHit.id,
-        start: point,
-        moved: false,
-      };
-      setStatus("この客席範囲を選択しました。辺のタップで範囲を追加・解除できます。");
+      activePointer = Array.isArray(audienceAreaHit.polygon)
+        ? beginAreaMovePointer(event.pointerId, point, "audience", audienceAreaHit)
+        : {
+          pointerId: event.pointerId,
+          kind: "audience-select",
+          id: audienceAreaHit.id,
+          start: point,
+          moved: false,
+        };
+      setStatus(Array.isArray(audienceAreaHit.polygon)
+        ? "この客席範囲を選択しました。ドラッグで動かせます。"
+        : "この客席範囲を選択しました。辺のタップで範囲を追加・解除できます。");
       render();
       return;
     }
@@ -2828,6 +2871,7 @@
     if (activePointer.kind === "area-new") moveArea(activePointer, point);
     if (activePointer.kind === "stage-extension-new") moveStageExtension(activePointer, point);
     if (activePointer.kind === "stage-extension-move") moveStageExtensionItem(activePointer, point);
+    else if (activePointer.kind === "area-move") moveAreaItem(activePointer, point);
     render();
   }
 
@@ -2850,6 +2894,7 @@
         if (finished.kind === "area-new") moveArea(finished, releasePoint);
         if (finished.kind === "stage-extension-new") moveStageExtension(finished, releasePoint);
         if (finished.kind === "stage-extension-move") moveStageExtensionItem(finished, releasePoint);
+        else if (finished.kind === "area-move") moveAreaItem(finished, releasePoint);
       }
     }
     activePointer = null;
@@ -2878,6 +2923,11 @@
       setStatus(`${finished.shape === "circle" ? "丸" : "四角"}の追加ステージを動かしました。`);
     } else if (!cancelled && finished.kind === "stage-extension-move" && finished.moved) {
       setStatus("舞台面のつながりが切れるため、追加ステージの位置は変えていません。");
+    } else if (!cancelled && finished.kind === "area-move" && finished.moved) {
+      const items = finished.areaKind === "audience" ? state.audience : state.wings;
+      const item = items.find((candidate) => candidate.id === finished.id);
+      if (item) item.polygon = clone(finished.preview);
+      setStatus(`${finished.areaKind === "audience" ? "客席" : "舞台袖"}を動かしました。`);
     } else if (!cancelled && finished.kind === "stage-extension-new") {
       setStatus("既存の舞台につながるように、0.4m以上の大きさで描いてください。今回は追加していません。");
     } else if (!cancelled && finished.kind === "area-new" && finished.moved && finished.valid) {
