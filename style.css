@@ -11315,6 +11315,10 @@ body.stage-modal-open .stage-tour { display: none !important; }
   margin-top: 4px;
 }
 
+/* T-35（2026-09-18）: 逃げ道の〈やめる〉は2つの選択肢の下に横いっぱいで置く。
+ * 3列に詰めると文字が切れる（T-14で踏んだのと同じ罠）。 */
+#stage-venue-conflict-cancel { grid-column: 1 / -1; }
+
 .stage-venue-conflict-actions > button {
   width: 100%;
   min-width: 0;

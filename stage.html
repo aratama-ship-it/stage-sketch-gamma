@@ -12,17 +12,17 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026091972">
+<link rel="stylesheet" href="style.css?v=2026091973">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="gamma.css?v=2026091972">
+<link rel="stylesheet" href="gamma.css?v=2026091973">
 <link rel="stylesheet" href="gamma-mobile.css?v=2026091950">
 <script src="gamma-light-model.js?v=2026091944"></script>
-<link rel="stylesheet" href="gamma-formation.css?v=2026091972">
+<link rel="stylesheet" href="gamma-formation.css?v=2026091973">
 </head>
 <body class="is-standalone">
 
@@ -2849,9 +2849,13 @@
   <div class="stage-modal-body">
     <p id="stage-venue-conflict-message">異なる領域が重なっています。優先する方を選んでください。</p>
     <p class="stage-profile-hint">選ばなかった方は、重なった部分だけを切り取ります。</p>
+    <!-- T-35（2026-09-18 本人報告の不具合）: この窓から戻れなくなることがあった。
+         逃げ道を必ず一つ置く。Escapeと背景クリックも同じ扱いにしてある。 -->
+    <p class="stage-profile-hint">やめると、重なりのもとになった直前の操作を取り消します。</p>
     <footer class="stage-venue-conflict-actions" aria-label="優先する領域">
       <button type="button" class="stage-minor-action" id="stage-venue-conflict-first">ステージを優先</button>
       <button type="button" class="btn-quiet" id="stage-venue-conflict-second">客席を優先</button>
+      <button type="button" class="btn-quiet" id="stage-venue-conflict-cancel">やめる</button>
     </footer>
   </div>
 </div>
@@ -2981,9 +2985,9 @@
 
 <script src="stage-venues.js?v=2026091501"></script>
 <script src="stage-venue-lines.js?v=2026091501"></script>
-    <script src="stage-i18n.js?v=2026091972"></script>
-    <script src="stage-i18n.zh-Hans.js?v=2026091972"></script>
-    <script src="stage-i18n.zh-Hant.js?v=2026091972"></script>
+    <script src="stage-i18n.js?v=2026091973"></script>
+    <script src="stage-i18n.zh-Hans.js?v=2026091973"></script>
+    <script src="stage-i18n.zh-Hant.js?v=2026091973"></script>
 <script src="stage-prompt-i18n.js?v=2026091501"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026091501"></script>
@@ -3002,14 +3006,14 @@
 <script src="gamma-number-scrub.js?v=2026091780"></script>
 <script src="gamma-formation-presets.js?v=formation1"></script>
 <script src="gamma-formation-model.js?v=formation1"></script>
-<script src="stage-sketch.js?v=2026091972"></script>
-<script src="gamma-formation.js?v=2026091972"></script>
-<script src="stage-timeline.js?v=2026091972"></script>
-<script src="stage-session.js?v=2026091972"></script>
+<script src="stage-sketch.js?v=2026091973"></script>
+<script src="gamma-formation.js?v=2026091973"></script>
+<script src="stage-timeline.js?v=2026091973"></script>
+<script src="stage-session.js?v=2026091973"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
-<script src="stage-venue-editor.js?v=2026091972"></script>
-<script src="gamma-workspace.js?v=2026091972"></script>
+<script src="stage-venue-editor.js?v=2026091973"></script>
+<script src="gamma-workspace.js?v=2026091973"></script>
 <script src="gamma-mobile.js?v=2026091951"></script>
 </body>
 </html>

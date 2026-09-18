@@ -1578,6 +1578,7 @@
     "重なりを解消します": "Resolve the overlap",
     "異なる領域が重なっています。優先する方を選んでください。": "Different areas overlap. Choose which one takes priority.",
     "選ばなかった方は、重なった部分だけを切り取ります。": "Only the overlapping part will be cut from the area you do not choose.",
+    "やめると、重なりのもとになった直前の操作を取り消します。": "Cancelling undoes the change that caused the overlap.",
     "優先する領域": "Area to prioritize",
     "ステージを優先": "Prioritize stage",
     "客席を優先": "Prioritize audience",

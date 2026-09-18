@@ -83,6 +83,7 @@
     conflictMessage: $("stage-venue-conflict-message"),
     conflictFirst: $("stage-venue-conflict-first"),
     conflictSecond: $("stage-venue-conflict-second"),
+    conflictCancel: $("stage-venue-conflict-cancel"),
     saveNameBackdrop: $("stage-venue-save-name-backdrop"),
     saveNameModal: $("stage-venue-save-name-modal"),
     saveNameForm: $("stage-venue-save-name-form"),
@@ -1843,6 +1844,7 @@
       : `${firstLabel}と${secondLabel}が重なっています。どちらを優先しますか？`;
     els.conflictFirst.textContent = isEnglish() ? `Prioritize ${firstLabel}` : `${firstLabel}を優先`;
     els.conflictSecond.textContent = isEnglish() ? `Prioritize ${secondLabel}` : `${secondLabel}を優先`;
+    if (els.conflictCancel) els.conflictCancel.textContent = tx("やめる");
     els.conflictBackdrop.hidden = false;
     els.conflictModal.hidden = false;
     window.requestAnimationFrame(() => els.conflictFirst.focus());
@@ -1856,33 +1858,75 @@
     return showConflictDialog(conflict);
   }
 
+  /* T-35（2026-09-18 本人報告の不具合）:
+   *   「ステージを優先／客席を優先、どちらを選んでもモーダルから戻れない」
+   * ★実測でわかった仕組み（推測ではない）:
+   *   polygonDifference は相手を三角形に分けてから引くので、切り取った結果が
+   *   1枚の多角形ではなく三角形の集まりで返る。実測で客席1枚が7〜9枚に砕けた。
+   *   さらにステージは「本体＋追加ステージ」の複数図形なので、1回切っても
+   *   別のステージ図形と重なったままの破片が残る。
+   *   → 同じ問いが破片の数だけ出続け、本人には「戻れない」ように見えていた。
+   * 直し方は2つ重ねる:
+   *   (1) 同じ組み合わせの重なりは、一度の答えでまとめて解消する（下のループ）。
+   *   (2) それでも消えないときに閉じ込めないよう、必ず取り消して閉じる。
+   *       加えて〈やめる〉・Escape・背景クリックの逃げ道を置く（cancelConflict）。
+   * ★上限を置くのは、切っても重なりが残る形が万一あったときに無限に回さないため。 */
+  const CONFLICT_RESOLVE_LIMIT = 64;
+
+  function conflictPairKey(conflict) {
+    return [conflict.first.kind, conflict.second.kind].sort().join("|");
+  }
+
+  function abortConflict(message) {
+    const before = pendingConflictHistory;
+    pendingConflictHistory = null;
+    if (before) applyDocumentSnapshot(before);
+    hideConflictDialog();
+    setStatus(message);
+    render();
+    if (els.canvas) els.canvas.focus();
+    return false;
+  }
+
+  function cancelConflict() {
+    if (!pendingConflictHistory) {
+      hideConflictDialog();
+      return false;
+    }
+    return abortConflict("重なりのもとになった直前の操作を取り消しました。");
+  }
+
   function resolveConflict(priorityKind) {
     if (!pendingConflict || !pendingConflictHistory) return false;
     const before = pendingConflictHistory;
     const priorityLabel = regionLabel(priorityKind);
-    if (!cutConflictLoser(pendingConflict, priorityKind)) {
-      applyDocumentSnapshot(before);
-      pendingConflictHistory = null;
-      hideConflictDialog();
-      setStatus("ステージ全体がなくなる配置になるため、直前の操作を取り消しました。");
-      render();
-      if (els.canvas) els.canvas.focus();
-      return false;
+    const pairKey = conflictPairKey(pendingConflict);
+    let conflict = pendingConflict;
+    for (let step = 0; step < CONFLICT_RESOLVE_LIMIT; step += 1) {
+      if (!cutConflictLoser(conflict, priorityKind)) {
+        return abortConflict("ステージ全体がなくなる配置になるため、直前の操作を取り消しました。");
+      }
+      linesCache = { venueSignature: "", result: null };
+      const nextConflict = firstOverlapConflict();
+      if (!nextConflict) {
+        pendingConflictHistory = null;
+        hideConflictDialog();
+        commitHistory(before);
+        setStatus(`${priorityLabel}を優先し、もう一方の重なった部分だけを切り取りました。`);
+        render();
+        if (els.canvas) els.canvas.focus();
+        return true;
+      }
+      /* 別の組み合わせ（例: 客席と舞台袖）の重なりは、本人がまだ答えていない
+       * 別の問いなので、勝手に決めずにもう一度たずねる。 */
+      if (conflictPairKey(nextConflict) !== pairKey) {
+        showConflictDialog(nextConflict);
+        render();
+        return true;
+      }
+      conflict = nextConflict;
     }
-    linesCache = { venueSignature: "", result: null };
-    const nextConflict = firstOverlapConflict();
-    if (nextConflict) {
-      showConflictDialog(nextConflict);
-      render();
-      return true;
-    }
-    pendingConflictHistory = null;
-    hideConflictDialog();
-    commitHistory(before);
-    setStatus(`${priorityLabel}を優先し、もう一方の重なった部分だけを切り取りました。`);
-    render();
-    if (els.canvas) els.canvas.focus();
-    return true;
+    return abortConflict("重なりを解消できなかったため、直前の操作を取り消しました。");
   }
 
   function venueTemplateKey(detail) {
@@ -3498,6 +3542,9 @@
       if (pendingConflict) resolveConflict(pendingConflict.second.kind);
     });
   }
+  // T-35: 逃げ道は3つとも同じ扱い（ボタン・Escape・背景クリック）。
+  if (els.conflictCancel) els.conflictCancel.addEventListener("click", cancelConflict);
+  if (els.conflictBackdrop) els.conflictBackdrop.addEventListener("click", cancelConflict);
   if (els.audienceFull) {
     els.audienceFull.addEventListener("click", () => withHistory(() => placeFullAudience()));
   }
@@ -3546,7 +3593,11 @@
       return;
     }
     if (els.conflictModal && !els.conflictModal.hidden) {
-      if (event.key === "Escape") event.preventDefault();
+      // T-35: Escape を握りつぶすだけだと逃げ道が無くなる。取り消して閉じる。
+      if (event.key === "Escape") {
+        event.preventDefault();
+        cancelConflict();
+      }
       return;
     }
     if (els.saveNameModal && !els.saveNameModal.hidden) {
