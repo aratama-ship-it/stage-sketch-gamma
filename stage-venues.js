@@ -40,6 +40,44 @@
     return Array.from({ length: segments }, (_, index) => circlePoint(radius, radius, index, segments));
   };
 
+  /* 舞台前端の弧（VENUE_PRESETS_STAGE2_2026_09_19）。
+   * 日本の多目的ホールでよく見る「舞台の前側が客席へ弧を描く」形。
+   * 引数の depth は**弧の頂点までを含む全体の奥行き**。直線部分は depth - sagitta になる。
+   *   sagitta … 弧の出（一番ふくらんだ所の張り出し。m）
+   * ★sagitta が 0 のときは rectangleOutline と完全に同じ配列を返す（既存プリセットを動かさないため）。
+   * ★弧は16本の折れ線にする。SHOSAI_FRONT_SHAPE の step モードは斜めの辺・円の縁を扱えるので、
+   *   正面図・平面図の描画は作り直さずに通る。 */
+  const arcRadius = (width, sagitta) => (((width * width) / 4) + (sagitta * sagitta)) / (2 * sagitta);
+
+  const arcFrontY = (width, depth, sagitta, x) => {
+    if (!(sagitta > 0) || x < 0 || x > width) return depth - Math.max(0, sagitta);
+    const radius = arcRadius(width, sagitta);
+    const dx = x - (width / 2);
+    const remain = (radius * radius) - (dx * dx);
+    const base = depth - sagitta;
+    return remain <= 0 ? base : (depth - radius) + Math.sqrt(remain);
+  };
+
+  const arcFrontOutline = (width, depth, sagittaM, segments = 16) => {
+    const sagitta = Math.max(0, Math.min(Number(sagittaM) || 0, depth / 2));
+    if (!(sagitta > 0)) return rectangleOutline(width, depth);
+    const radius = arcRadius(width, sagitta);
+    const centreX = width / 2;
+    const centreY = depth - radius;
+    const base = depth - sagitta;
+    const from = Math.atan2(base - centreY, width - centreX);
+    const to = Math.atan2(base - centreY, 0 - centreX);
+    const points = [[0, 0], [roundM(width), 0]];
+    for (let index = 0; index <= segments; index += 1) {
+      const angle = from + ((to - from) * (index / segments));
+      points.push([
+        roundM(centreX + (Math.cos(angle) * radius)),
+        roundM(centreY + (Math.sin(angle) * radius)),
+      ]);
+    }
+    return points;
+  };
+
   const frontAudience = (width, depth) => {
     const audienceDepth = Math.max(2, roundM(depth * 0.4));
     return [{
@@ -63,26 +101,64 @@
     const audienceDepth = Math.max(2, roundM(
       typeof house.depthM === "number" ? house.depthM : depth * 0.4));
     const back = roundM(depth + audienceDepth);
-    const band = (id, fromX, toX) => ({
-      id,
-      polygon: [
-        [roundM(fromX), depth], [roundM(toX), depth],
-        [roundM(toX), back], [roundM(fromX), back],
-      ],
-      mode: "seated",
-      eyeM: 1.2,
-      side: "front",
-    });
+    /* 舞台の前端が弧のときは、客席の前縁も同じ弧に沿わせる（VENUE_PRESETS_STAGE2_2026_09_19）。
+       直線のままだと弧のふくらみと客席が重なる。 */
+    const arc = typeof house.arcM === "number" ? house.arcM : 0;
+    const steps = arc > 0 ? 8 : 1;
+    const band = (id, fromX, toX) => {
+      const front = [];
+      for (let index = 0; index <= steps; index += 1) {
+        const x = fromX + ((toX - fromX) * (index / steps));
+        front.push([roundM(x), roundM(arc > 0 ? arcFrontY(width, depth, arc, x) : depth)]);
+      }
+      return {
+        id,
+        polygon: front.concat([[roundM(toX), back], [roundM(fromX), back]]),
+        mode: "seated",
+        eyeM: 1.2,
+        side: "front",
+      };
+    };
     if (house.aisles !== 2) return [band("audience-front", 0, width)];
     const aisle = typeof house.aisleWidthM === "number" ? house.aisleWidthM : 1.2;
     const sideWidth = roundM(width * (typeof house.sideRatio === "number" ? house.sideRatio : 0.22));
+    // 扇形のホールは客席が舞台より外へ広がる。0 なら舞台の幅に収まる
+    const spread = roundM(width * (typeof house.spreadRatio === "number" ? house.spreadRatio : 0));
     // 中央が2m未満しか残らない間口では割らない（通路だけの客席にしない）
     if ((width - ((sideWidth + aisle) * 2)) < 2) return [band("audience-front", 0, width)];
+    // ★spread が 0 のとき -spread は -0 になる。JSONでは 0 に見えるのに比較では別物なので、
+    //   広がりが無い会場では素の 0 と width を渡す（段階1の角形ホールが -0 を持っていた）
     return [
-      band("audience-front-left", 0, sideWidth),
+      band("audience-front-left", spread > 0 ? -spread : 0, sideWidth),
       band("audience-front-center", sideWidth + aisle, width - sideWidth - aisle),
-      band("audience-front-right", width - sideWidth, width),
+      band("audience-front-right", width - sideWidth, spread > 0 ? width + spread : width),
     ];
+  };
+
+  /* 全周客席をブロックに割る（VENUE_PRESETS_STAGE2_2026_09_19）。ブロックの間は出入りの通路。
+   * シャピトーとTOHUが同じ考え方を各自で持っているが、値が固定されているので触らない。 */
+  const ringAudienceBlocks = (diameter, house) => {
+    const blocks = Math.max(2, Math.round(house.blocks));
+    const span = typeof house.span === "number" ? house.span : 0.84;
+    const centre = diameter / 2;
+    const outerR = centre + Math.max(2, roundM(
+      typeof house.depthM === "number" ? house.depthM : diameter * 0.35));
+    return Array.from({ length: blocks }, (_, index) => {
+      const from = index + ((1 - span) / 2);
+      const to = index + 1 - ((1 - span) / 2);
+      return {
+        id: `audience-block-${index + 1}`,
+        polygon: [
+          circlePoint(centre, centre, from, blocks),
+          circlePoint(centre, centre, to, blocks),
+          circlePoint(centre, outerR, to, blocks),
+          circlePoint(centre, outerR, from, blocks),
+        ],
+        mode: "seated",
+        eyeM: 1.2,
+        side: "round",
+      };
+    });
   };
 
   const threeSideAudience = (width, depth) => {
@@ -239,7 +315,7 @@
     // house を持つ会場だけ帯を割る経路へ回す（既存プリセットは従来の式のまま）
     if (audience === "front") return house ? frontAudienceBands(width, depth, house) : frontAudience(width, depth);
     if (audience === "three") return threeSideAudience(width, depth);
-    if (audience === "round") return roundAudience(width);
+    if (audience === "round") return (house && house.blocks) ? ringAudienceBlocks(width, house) : roundAudience(width);
     return [];
   };
 
@@ -274,9 +350,21 @@
     }];
   };
 
+  /* 規模ごとの床の形（VENUE_PRESETS_STAGE2_2026_09_19）。
+   * 既存の判定（arena は円）を先頭に置いたまま、円の会場と弧の会場を足せるようにする。 */
+  const floorOutlineFor = (venue, size, arc) => {
+    if (venue.id === "arena" || venue.floorShape === "circle") return circleOutline(size.width);
+    if (arc > 0) return arcFrontOutline(size.width, size.depth, arc);
+    return rectangleOutline(size.width, size.depth);
+  };
+
   const createSizeV2 = (venue, size) => {
+    const arc = typeof size.arcM === "number" ? size.arcM : venue.arcM;
+    const rawHouse = size.house || venue.house;
+    // 弧の出は客席の前縁にも要る。会場の側で二重に書かせない
+    const house = (rawHouse && arc > 0) ? Object.assign({}, rawHouse, { arcM: arc }) : rawHouse;
     const floor = {
-      outline: venue.id === "arena" ? circleOutline(size.width) : rectangleOutline(size.width, size.depth),
+      outline: floorOutlineFor(venue, size, arc),
       levels: [],
     };
     const ceiling = {
@@ -289,7 +377,7 @@
       label: size.label,
       floor,
       ceiling,
-      audience: audiencePolygons(venue.audience, size.width, size.depth, size.house || venue.house),
+      audience: audiencePolygons(venue.audience, size.width, size.depth, house),
       fixtures: fixturesForSize(venue.id, size.width, size.depth, size.height),
       access: accessForSize(venue.id, size.width, size.depth),
       capacity: {},
@@ -319,6 +407,7 @@
       short: venue.short,
       note: venue.note,
       reference: venue.source,
+      ...(venue.shapedVenue ? { shapedVenue: true } : {}),
       sizes,
     };
   };
@@ -961,6 +1050,65 @@
     }),
   );
 
+  /* ── 一般形プリセットの追加 第2弾（VENUE_PRESETS_STAGE2_2026_09_19）──────────────
+   * 本人の「シアターの前側が弧を描いているもの」への答えが 扇形ホール。
+   * 舞台の前端が客席へ弧を描き、客席は中央と両袖の3ブロックで、間に通路が2本通る。
+   * ★寸法は段階1と同じく暫定値。採取の手順は docs/venue-presets-2026-09-19/index.html の6章。 */
+  VENUES_V2.push(
+    createVenueV2({
+      id: "hall-fan",
+      label: "扇形ホール",
+      short: "弧の前端・側通路",
+      audience: "front",
+      rigging: "full",
+      shapedVenue: true,
+      provenance: {
+        source: "代表値",
+        confidence: "low",
+        sharing: "ok",
+        note: "「扇形（スリーサイド）」の呼び方と客席の考え方は国内の劇場解説による。弧の出・袖の割合（間口の20%）・通路1.2m・客席の広がり（間口の14%）はいずれも代表的な平面からの暫定値で、複数館の採取後に差し替える。開き角の公表値は見つからなかった。",
+      },
+      sizes: [
+        {
+          id: "small", label: "小ホール", width: 12, depth: 9, height: 8, seats: 400, arcM: 1,
+          house: { depthM: 10, aisles: 2, aisleWidthM: 1.2, sideRatio: 0.2, spreadRatio: 0.14 },
+        },
+        {
+          id: "mid", label: "中ホール", width: 14, depth: 11, height: 9, seats: 700, arcM: 1.2,
+          house: { depthM: 13, aisles: 2, aisleWidthM: 1.2, sideRatio: 0.2, spreadRatio: 0.14 },
+        },
+        {
+          id: "large", label: "大ホール", width: 18, depth: 14, height: 12, seats: 1200, arcM: 1.5,
+          house: { depthM: 16, aisles: 2, aisleWidthM: 1.2, sideRatio: 0.2, spreadRatio: 0.14 },
+        },
+      ],
+      note: "舞台の前端が客席側へ弧を描き、客席が扇に開くホール。日本の公共ホールでいちばんよく見る形で、客席は中央ブロックの左右に通路が2本通り、袖のブロックは舞台より外まで広がる。弧のぶん中央の演者は客席に近く、袖の席からは舞台が斜めに見える。奥行きは弧の頂点までを含んだ値。寸法と割り方は暫定値。",
+      source: "「扇形」の分類は国内の劇場解説による。寸法と割り方は公表値からの暫定値",
+    }),
+    createVenueV2({
+      id: "in-the-round",
+      label: "円形劇場",
+      short: "全周・単床",
+      audience: "round",
+      rigging: "limited",
+      floorShape: "circle",
+      shapedVenue: true,
+      house: { blocks: 4, span: 0.84, depthM: 4.5 },
+      provenance: {
+        source: "代表値",
+        confidence: "low",
+        sharing: "ok",
+        note: "演劇の全周客席の劇場。国内の代表例は青山円形劇場。演技円の径・客席4ブロック・ブロック間の通路はいずれも暫定値で、実在館の図面からの値ではない。",
+      },
+      sizes: [
+        { id: "ring9", label: "小（演技円 9m）", width: 9, depth: 9, height: 6, seats: 300 },
+        { id: "ring11", label: "中（演技円 11m）", width: 11, depth: 11, height: 7, seats: 450 },
+      ],
+      note: "客席が演技空間を全周から囲む劇場。サーカスのビッグトップと違って客席は単床で、演技円も小さい。正面が無いので、どの角度からも成立する立ち位置と向きを決めることになる。ブロックの間の4か所が出入りの通路で、そこから登場すると全周の客席の間を通ることになる。寸法は暫定値。",
+      source: "形式の分類は The Theatres Trust。国内の代表例は青山円形劇場。寸法は暫定値",
+    }),
+  );
+
   const outlineDimensions = (outline) => {
     const xs = outline.map((point) => point[0]);
     const ys = outline.map((point) => point[1]);
@@ -978,7 +1126,7 @@
     return "front";
   };
 
-  const legacySize = (size) => {
+  const legacySize = (size, shaped) => {
     const dimensions = outlineDimensions(size.floor.outline);
     const result = { id: size.id, label: size.label };
     if (typeof size.ringM === "number") result.ring = size.ringM;
@@ -987,6 +1135,14 @@
     result.height = size.ceiling.heightM;
     if (typeof size.capacity.seats === "number") result.seats = size.capacity.seats;
     if (typeof size.capacity.crowd === "number") result.crowd = size.capacity.crowd;
+    /* 形を持つ会場は、規模ごとに輪郭も客席も変わる（VENUE_PRESETS_STAGE2_2026_09_19）。
+       実在会場はどれも規模が1つなので、この穴はこれまで表に出ていなかった。 */
+    if (shaped) {
+      result.outline = clone(size.floor.outline);
+      result.audienceAreas = clone(size.audience);
+      const blocks = frontHouseBlocks(size.audience, dimensions.width);
+      if (blocks) result.houseBlocks = blocks;
+    }
     return result;
   };
 
@@ -1012,7 +1168,7 @@
     note: venue.note,
     audience: legacyAudience(venue.audience),
     frame: venue.fixtures.some((fixture) => fixture.type === "wall" && fixture.frame === true),
-    sizes: venue.sizes.map(legacySize),
+    sizes: venue.sizes.map((size) => legacySize(size, venue.shapedVenue === true)),
     source: venue.reference,
     ...(venue.wideVenue ? { wideVenue: true } : {}),
     // 側通路つきの客席だけが持つ。持たない会場には項目を足さない（既存の値を変えないため）
@@ -1024,6 +1180,16 @@
       bowl: clone(venue.bowl),
       confidence: venue.confidence,
       provenance: clone(venue.provenance),
+    } : {}),
+    /* 形を持つ一般形プリセット（VENUE_PRESETS_STAGE2_2026_09_19）。
+       ★realVenue を使ってはいけない。SHOSAI_VENUES.list が realVenue を除外するので、
+         作っても選択欄に出てこない（実在3館が隠れているのはその仕組み）。 */
+    ...(venue.shapedVenue ? {
+      shapedVenue: true,
+      outline: clone(venue.floor.outline),
+      audienceAreas: clone(venue.audience),
+      gridM: venue.ceiling.gridM,
+      stageExtensions: clone(venue.floor.extensions || []),
     } : {}),
     // 実在会場は平面図で長方形ではなく実際の輪郭を描く（custom は使わない。
     // custom にすると正面図が近似席の描画へ落ちるため、輪郭だけを渡す）

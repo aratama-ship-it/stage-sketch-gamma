@@ -1996,6 +1996,7 @@
       "festival-field": "Outdoor festival (provisional dimensions)",
       "end-stage": "End stage", "gym-stage": "School gymnasium stage",
       "banquet-hall": "Hotel banquet room", "hall-shoebox": "Rectangular hall",
+      "hall-fan": "Fan-shaped hall", "in-the-round": "Theatre in the round",
     },
     venueShort: {
       proscenium: "framed stage", thrust: "three sides", arena: "in the round", outdoor: "temporary", blackbox: "flexible",
@@ -2005,6 +2006,7 @@
       "arena-concert": "Arena", "dome-concert": "Dome", "festival-field": "Outdoor festival",
       "end-stage": "no frame, one side", "gym-stage": "flat floor, shallow stage",
       "banquet-hall": "temporary, flat floor", "hall-shoebox": "side aisles, three blocks",
+      "hall-fan": "curved front, side aisles", "in-the-round": "all round, single tier",
     },
     venueNote: {
       /* ★形式プリセット（プロセニアム／スラスト／アリーナ／野外／ブラックボックス）の
@@ -2021,6 +2023,8 @@
       "gym-stage": "The shallow stage at the end of a school gym. Wide across but only about 6 m deep, with no rigging. The house is a flat floor, so those at the back cannot see feet. The stage sits about 1.1 m high and usually has no wings. Dimensions are provisional; no unified standard was found.",
       "banquet-hall": "A temporary stage built in a banquet room. About 8 by 4 m, under a ceiling of roughly 4 m, so there is no rigging and the ceiling decides what can be thrown. The audience sits at round tables or stands; there is no house as an enclosure. Columns, doors and the space under the chandelier shape the composition. Dimensions are provisional.",
       "hall-shoebox": "A rectangular house with two aisles running either side of the centre block — the division you meet most often in Japanese civic halls. From the side blocks the stage reads at an angle. The aisles hold no seats, so nobody watches from there. Dimensions and the division are provisional.",
+      "hall-fan": "The stage edge curves out towards the audience and the house fans open — the shape you meet most often in Japanese civic halls. Two aisles run either side of the centre block, and the side blocks reach wider than the stage. The curve brings a performer at centre closer to the house; from the side blocks the stage reads at an angle. Depth includes the crown of the curve. Dimensions and the division are provisional.",
+      "in-the-round": "A house that surrounds the playing circle completely. Unlike a circus big top the seating is a single tier and the circle is smaller. There is no front, so position and facing have to hold from every angle. The four gaps between blocks are the ways in, which means an entrance walks through the house. Dimensions are provisional.",
     },
     size: {
       small: "Small", mid: "Medium", large: "Large",
@@ -2037,6 +2041,7 @@
       "festival-field-provisional": "Provisional dimensions (not checked against plans)",
       "gym-standard": "Standard (15 m wide, stage 1.1 m high)",
       "banquet-standard": "Banquet room (temporary stage 8×4 m)",
+      ring9: "Small (9 m circle)", ring11: "Medium (11 m circle)",
     },
     seat: {
       front: "Front row", center: "Stalls centre", rear: "Stalls rear",

@@ -12532,6 +12532,16 @@
     return String(color).toLowerCase() === "#40362d" ? stageSurfaceColor("#40362d") : color;
   }
 
+  /* 会場の輪郭・客席・客席の割り方は、規模ごとに変わることがある（VENUE_PRESETS_STAGE2_2026_09_19）。
+     弧の出が規模で違うため、規模の側に値があればそちらを使う。
+     実在会場はどれも規模が1つなので、この穴はこれまで表に出ていなかった。 */
+  const venueOutlineOf = (venue, size) => (
+    (size && Array.isArray(size.outline) && size.outline.length >= 3) ? size.outline : venue.outline);
+  const venueAudienceAreasOf = (venue, size) => (
+    (size && Array.isArray(size.audienceAreas)) ? size.audienceAreas : venue.audienceAreas);
+  const venueHouseBlocksOf = (venue, size) => (
+    (size && Array.isArray(size.houseBlocks)) ? size.houseBlocks : venue.houseBlocks);
+
   function drawFrontVenue(target, L) {
     const v = L.venue;
     const back = backAreaRect(L);
@@ -12547,11 +12557,13 @@
     const frontShapeLib = window.SHOSAI_FRONT_SHAPE || null;
     const shape = (() => {
       if (!frontShapeLib || roundHouse) return null;
-      if (v.custom && Array.isArray(v.outline)) {
-        return frontShapeLib.build([v.outline].concat((v.stageExtensions || [])
+      const outline = venueOutlineOf(v, L.size);
+      // 形を持つ一般形プリセットは作成会場と同じ step モード（床の外は舞台より低い所）
+      if ((v.custom || v.shapedVenue) && Array.isArray(outline)) {
+        return frontShapeLib.build([outline].concat((v.stageExtensions || [])
           .map((item) => (item && Array.isArray(item.polygon)) ? item.polygon : null)));
       }
-      if (v.realVenue && Array.isArray(v.outline)) return frontShapeLib.build([v.outline], { minPoints: 4 });
+      if (v.realVenue && Array.isArray(outline)) return frontShapeLib.build([outline], { minPoints: 4 });
       return null;
     })();
     // 実在会場だけの造作（黒扉・スノコ・バトン）はこちらを見る
@@ -13070,7 +13082,7 @@
   function drawCustomPlanVenue(target, L) {
     const v = L.venue;
     const s = L.stage;
-    const outline = v.outline;
+    const outline = venueOutlineOf(v, L.size);
     const stageExtensions = (v.stageExtensions || [])
       .filter((item) => item && Array.isArray(item.polygon) && item.polygon.length >= 3);
     const stagePolygons = [outline].concat(stageExtensions.map((item) => item.polygon));
@@ -13162,7 +13174,7 @@
     target.save();
     target.fillStyle = rgba(stageSurfaceColor("#201b16"), 0.9);
     let genericAudienceLabelDrawn = false;
-    (v.audienceAreas || []).forEach((area) => {
+    (venueAudienceAreasOf(v, L.size) || []).forEach((area) => {
       if (!area || !Array.isArray(area.polygon) || area.polygon.length < 3) return;
       polygonPath(area.polygon);
       target.fill();
@@ -13228,8 +13240,10 @@
     target.fillStyle = stageSurfaceColor("#141210");
     target.fillRect(0, 0, W, H);
 
-    // 輪郭を持つのは作成会場と実在会場プリセット。どちらも実際の形で描く
-    if ((v.custom || v.realVenue) && Array.isArray(v.outline) && v.outline.length >= 3) {
+    // 輪郭を持つのは作成会場・実在会場・形を持つ一般形プリセット。どれも実際の形で描く
+    const planOutline = venueOutlineOf(v, L.size);
+    if ((v.custom || v.realVenue || v.shapedVenue) &&
+        Array.isArray(planOutline) && planOutline.length >= 3) {
       drawCustomPlanVenue(target, L);
       return;
     }
@@ -13271,8 +13285,9 @@
          区画ごとに分けて塗る。houseBlocks を持たない会場は従来どおり1枚の帯。 */
       const houseY = s.y + s.h + 14;
       const houseH = H - (s.y + s.h) - 30;
-      const houseBlocks = (Array.isArray(v.houseBlocks) && v.houseBlocks.length > 1)
-        ? v.houseBlocks : null;
+      const blocksForSize = venueHouseBlocksOf(v, L.size);
+      const houseBlocks = (Array.isArray(blocksForSize) && blocksForSize.length > 1)
+        ? blocksForSize : null;
       if (houseBlocks) {
         houseBlocks.forEach((block) => {
           const from = s.x + (block[0] * s.w);
