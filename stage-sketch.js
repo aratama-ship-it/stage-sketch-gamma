@@ -4336,6 +4336,9 @@
     cueSheetView: document.getElementById("stage-cue-sheet-view"),
     cueSheetBack: document.getElementById("stage-cue-sheet-back"),
     cueSheetContent: document.getElementById("stage-cue-sheet-content"),
+    cueSheetViewTitle: document.getElementById("stage-cue-sheet-view-title"),
+    cueSheetViewPrint: document.getElementById("stage-cue-sheet-view-print"),
+    cueSheetViewCsv: document.getElementById("stage-cue-sheet-view-csv"),
     launchBackupWarning: document.getElementById("stage-launch-backup-warning"),
     launchBackupBackdrop: document.getElementById("stage-launch-backup-backdrop"),
     launchBackupClose: document.getElementById("stage-launch-backup-close"),
@@ -31313,18 +31316,17 @@ ${propsPlotHtml}
         view.addEventListener("click", () => openCueSheetView(entry.kind, entry.key));
         const print = document.createElement("button");
         print.type = "button";
-        print.className = "stage-minor-action";
+        print.className = "stage-minor-action stage-cue-sheet-sub";
         print.textContent = tx("印刷");
         print.addEventListener("click", () => openCueSheetPrint(entry.kind, entry.key));
         const csv = document.createElement("button");
         csv.type = "button";
-        csv.className = "stage-minor-action";
+        csv.className = "stage-minor-action stage-cue-sheet-sub";
         csv.textContent = tx("CSV");
         csv.addEventListener("click", () => downloadCueSheetCsv(entry.kind, entry.key));
         row.append(label, view, print, csv);
         container.append(row);
     };
-    masterSheets.forEach((entry) => appendEntry(els.cueSheetList, entry));
     const addGroup = (title, entries) => {
       const group = document.createElement("section");
       group.className = "stage-cue-sheet-group";
@@ -31336,9 +31338,12 @@ ${propsPlotHtml}
       });
       els.cueSheetList.append(group);
     };
+    addGroup("まとめ", masterSheets);
     addGroup("演者ごと", performerSheets);
     addGroup("部署", departmentSheets);
   }
+
+  let viewingCueSheet = null;
 
   function openCueSheetView(kind, key) {
     const sheet = selectedCueSheet(kind, key);
@@ -31348,6 +31353,9 @@ ${propsPlotHtml}
     if (els.cueSheetList) els.cueSheetList.hidden = true;
     if (els.cueSheetView) els.cueSheetView.hidden = false;
     if (els.cueSheetTitle) els.cueSheetTitle.textContent = sheet.title;
+    /* 見ている表から、そのまま紙とCSVへ出せるようにする（一覧へ戻らせない）。 */
+    viewingCueSheet = { kind, key };
+    if (els.cueSheetViewTitle) els.cueSheetViewTitle.textContent = sheet.title;
     if (els.cueSheetBack) els.cueSheetBack.focus();
   }
 
@@ -31446,6 +31454,13 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   if (els.cueSheetClose) els.cueSheetClose.addEventListener("click", closeCueSheet);
   if (els.cueSheetBackdrop) els.cueSheetBackdrop.addEventListener("click", closeCueSheet);
   if (els.cueSheetBack) els.cueSheetBack.addEventListener("click", showCueSheetList);
+  /* 表を見ている帯の操作。いま見ている表をそのまま紙・CSVへ出す。 */
+  if (els.cueSheetViewPrint) els.cueSheetViewPrint.addEventListener("click", () => {
+    if (viewingCueSheet) openCueSheetPrint(viewingCueSheet.kind, viewingCueSheet.key);
+  });
+  if (els.cueSheetViewCsv) els.cueSheetViewCsv.addEventListener("click", () => {
+    if (viewingCueSheet) downloadCueSheetCsv(viewingCueSheet.kind, viewingCueSheet.key);
+  });
   if (els.exportClose) els.exportClose.addEventListener("click", closeExport);
   if (els.exportBackdrop) els.exportBackdrop.addEventListener("click", closeExport);
   if (els.exportRun) els.exportRun.addEventListener("click", runExport);

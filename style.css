@@ -2968,21 +2968,64 @@ canvas[data-tool="note"] { cursor: copy; }
   transform: translateY(-50%);
 }
 .stage-cue-sheet-body { max-height: min(72vh, 680px); overflow-y: auto; }
-.stage-cue-sheet-group + .stage-cue-sheet-group { margin-top: 18px; }
-.stage-cue-sheet-group h3 { margin: 0 0 6px; color: var(--milk); font: 500 13px/1.4 var(--serif); }
+/* 一覧は「誰の分を出すか」を26行から選ぶ画面。名前が主役なので不透明の紙色で置き、
+   操作は主（見る）と従（印刷・CSV）で強さを分ける。同じ強さの箱を3つ並べると
+   26行×3で78個の箱になり、何を押せばよいか分からなくなる（2026-09-19 本人指摘）。 */
+.stage-cue-sheet-group + .stage-cue-sheet-group { margin-top: 20px; }
+.stage-cue-sheet-group h3 {
+  margin: 0 0 4px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--line-dark);
+  color: var(--brass);
+  font: 600 12px/1.4 var(--sans);
+  letter-spacing: 0.08em;
+}
 .stage-cue-sheet-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto auto;
-  gap: 6px;
-  align-items: stretch;
-  padding: 6px 0;
+  gap: 4px;
+  align-items: center;
+  padding: 3px 0;
   border-bottom: 1px solid var(--line-dark);
 }
-.stage-cue-sheet-row > span { align-self: center; min-width: 0; color: var(--milk-dim); overflow-wrap: anywhere; }
-.stage-cue-sheet-row > .stage-minor-action { width: auto; min-height: 44px; margin: 0; }
+.stage-cue-sheet-row:last-child { border-bottom: 0; }
+.stage-cue-sheet-row > span {
+  align-self: center;
+  min-width: 0;
+  padding-left: 2px;
+  color: var(--paper);
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.stage-cue-sheet-row > .stage-minor-action { width: auto; min-height: 40px; margin: 0; padding: 0 12px; }
+/* 従の操作は枠を持たせない。触れたときだけ手前に出す。 */
+.stage-cue-sheet-row > .stage-cue-sheet-sub {
+  border-color: transparent;
+  background: none;
+  color: var(--milk-dim);
+  padding: 0 9px;
+}
+.stage-cue-sheet-row > .stage-cue-sheet-sub:hover,
+.stage-cue-sheet-row > .stage-cue-sheet-sub:focus-visible {
+  border-color: var(--line-dark);
+  background: var(--desk-3);
+  color: var(--milk);
+}
 .stage-cue-sheet-row.is-disabled { opacity: 0.55; }
-.stage-cue-sheet-row.is-disabled > span { grid-column: 1 / 5; min-height: 44px; display: flex; align-items: center; }
-#stage-cue-sheet-back { width: auto; min-height: 44px; margin: 0 0 10px; }
+.stage-cue-sheet-row.is-disabled > span { grid-column: 1 / 5; min-height: 40px; display: flex; align-items: center; }
+/* 表を見ている画面でも、そこから紙とCSVへ出せる。一覧へ戻らせない。 */
+.stage-cue-sheet-view-bar { display: flex; gap: 6px; align-items: center; margin: 0 0 10px; }
+.stage-cue-sheet-view-bar .stage-minor-action { width: auto; min-height: 40px; margin: 0; padding: 0 12px; }
+.stage-cue-sheet-view-bar .stage-cue-sheet-view-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--paper);
+  font: 600 14px/1.4 var(--sans);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#stage-cue-sheet-back { width: auto; min-height: 40px; margin: 0; }
 .stage-cue-sheet-scroll { overflow-x: auto; background: var(--paper); color: var(--ink); }
 /* 既定は語を折らない幅（印刷と同じ見え方）。画面で見るときだけ窓の幅に収め、
    セルの中で折り返して11列すべてを一度に見えるようにする。 */
