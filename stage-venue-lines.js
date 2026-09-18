@@ -262,10 +262,16 @@
     if (!samples.length) return [];
 
     const indexes = Array.from(new Set([0, Math.floor(samples.length / 2), samples.length - 1]));
+    /* 2026-09-18 本人指摘「どこから見えているか、1階の客席なのか2階の客席なのかが重要」:
+     * ★以前は「近い（近似）」のように距離だけを名前にしていたので、
+     *   どのあたりの席なのかが名前から分からなかった。
+     *   近似席は必ず「基準にした席」を持っている（下の base）ので、
+     *   表示するときに『1階 中央（中間）』のように組み立てる（stage-sketch.js の seatName）。
+     *   ここでは距離の部分だけを持つ。「（近似）」は図の下に別で出している。 */
     const labels = [
-      { id: "approx-near", label: "近い（近似）" },
-      { id: "approx-mid", label: "中間（近似）" },
-      { id: "approx-far", label: "遠い（近似）" },
+      { id: "approx-near", label: "近い" },
+      { id: "approx-mid", label: "中間" },
+      { id: "approx-far", label: "遠い" },
     ];
     return indexes.map((index, order) => {
       const sample = samples[index];

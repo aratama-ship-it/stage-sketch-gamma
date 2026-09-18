@@ -1965,11 +1965,11 @@
     seat: {
       front: "Front row", center: "Stalls centre", rear: "Stalls rear",
       side: "Stalls side", balcony: "Balcony",
-      "approx-near": "Near (approx.)", "approx-mid": "Middle (approx.)", "approx-far": "Far (approx.)",
+      "approx-near": "near", "approx-mid": "middle", "approx-far": "far",
     },
     seatShort: {
       front: "front", center: "centre", rear: "rear", side: "side", balcony: "balcony",
-      "approx-near": "Near (approx.)", "approx-mid": "Middle (approx.)", "approx-far": "Far (approx.)",
+      "approx-near": "near", "approx-mid": "middle", "approx-far": "far",
     },
     seatNote: {
       front: "Eye level is almost the stage floor. A strong look up, with near and far wildly different (an ultra-wide view).",

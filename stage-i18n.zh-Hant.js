@@ -1695,11 +1695,11 @@
     seat: {
       front: "第一排", center: "一樓中央", rear: "一樓後排",
       side: "一樓側面", balcony: "二樓",
-      "approx-near": "近（近似）", "approx-mid": "中（近似）", "approx-far": "遠（近似）",
+      "approx-near": "近", "approx-mid": "中", "approx-far": "遠",
     },
     seatShort: {
       front: "第一排", center: "中央", rear: "後排", side: "側面", balcony: "二樓",
-      "approx-near": "近（近似）", "approx-mid": "中（近似）", "approx-far": "遠（近似）",
+      "approx-near": "近", "approx-mid": "中", "approx-far": "遠",
     },
     seatNote: {
       front: "視線幾乎與台面齊平。強烈仰視，遠近懸殊（超廣角般的視野）。",

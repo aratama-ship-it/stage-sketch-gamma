@@ -3288,8 +3288,24 @@
   const venueShortName = (v) => tm("venueShort", v.id, v.short);
   const venueNoteText = (v) => (v.note ? tm("venueNote", v.id, v.note) : "");
   const sizeName = (z) => tm("size", z.id, z.label);
-  const seatName = (seat) => tm("seat", seat.id, seat.label);
-  const seatShortName = (seat) => tm("seatShort", seat.id, seat.short);
+  /* 2026-09-18 本人指摘「1階の客席なのか2階の客席なのかという方が重要なので、必ず表示して」:
+   * ★カスタム会場では席が近似になり、名前が「近い／中間／遠い」だけになっていた。
+   *   近似席は必ず基準にした席（base）を持っているので、その名前を先に出す。
+   *   例: 「1階 中央（中間）」。英語・中国語も、どちらも既存の対訳から組み立てる。 */
+  const seatBaseOf = (seat) => (seat && seat.approx && seat.base
+    ? VENUES.seats.find((candidate) => candidate.id === seat.base) : null);
+  const seatName = (seat) => {
+    const base = seatBaseOf(seat);
+    return base
+      ? `${tm("seat", base.id, base.label)}（${tm("seat", seat.id, seat.label)}）`
+      : tm("seat", seat.id, seat.label);
+  };
+  const seatShortName = (seat) => {
+    const base = seatBaseOf(seat);
+    return base
+      ? `${tm("seatShort", base.id, base.short)}${tm("seatShort", seat.id, seat.short)}`
+      : tm("seatShort", seat.id, seat.short);
+  };
   const seatNoteText = (seat) => tm("seatNote", seat.id, seat.note);
   // 椅子は大きさ一つで決まる。幅と奥行きはそこから割り出す
   /* 舞台セットに登録できる形。光もここに含める。登録・出し入れ・寸法の
@@ -14718,7 +14734,8 @@
     seats() {
       const v = venue();
       const list = approxFrontSeatsForVenue(v) || VENUES.seats;
-      return list.map((seat) => ({ id: seat.id, label: seat.label, short: seat.short }));
+      // 照明デザインの席の選択も、どのあたりの席かが分かる名前で渡す。
+      return list.map((seat) => ({ id: seat.id, label: seatName(seat), short: seatShortName(seat) }));
     },
     currentSeat: () => state.seat,
     // いまのシーンの駒（照明を組む画面が下敷きに使う。読むだけ）
