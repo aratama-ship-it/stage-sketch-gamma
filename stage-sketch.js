@@ -23837,17 +23837,29 @@ ${propsPlotHtml}
       head.append(title);
       const body = document.createElement("div");
       body.className = "stage-modal-body";
+      /* T-20（2026-09-18 本人指摘）: この窓は「名前を登録する」ように見えていた。
+       * ★いちばん知りたい「次が v いくつになるか」が、窓のどこにも出ていなかった。
+       *   本人決定: 数字を大きく出し、入力欄は「メモ（省略可）」と明記して残す
+       *   （メモは版の欄の下に「〜（元の版から派生）」として後で出るので、意味はある）。 */
+      const current = state.project.versionLabel || "v1";
+      const step = document.createElement("p");
+      step.className = "stage-branch-version-step";
+      step.textContent = `${current} → ${nextVersionLabel(current)}`;
       const lead = document.createElement("p");
       lead.className = "stage-profile-hint";
-      lead.textContent = tx("いまのショーを複製して、次の版を作ります。もとのショーはそのまま残ります。何を変えるための版か、一行で残してください（空でも構いません）。");
+      lead.textContent = tx("もとの版はそのまま残ります。");
+      const memoLabel = document.createElement("p");
+      memoLabel.className = "stage-field-label";
+      memoLabel.textContent = tx("メモ（省略可）");
       const input = document.createElement("input");
       input.type = "text";
       input.className = "stage-text-input";
       input.maxLength = 120;
       input.autocomplete = "off";
       input.setAttribute("data-1p-ignore", "");
+      input.placeholder = tx("何を変えるための版か");
       input.setAttribute("aria-label", tx("何を変えるための版か"));
-      body.append(lead, input);
+      body.append(step, lead, memoLabel, input);
       const acts = document.createElement("footer");
       acts.className = "stage-branch-reason-actions";
       const mk = (label, value, cls) => {
@@ -23874,6 +23886,106 @@ ${propsPlotHtml}
       document.body.append(backdrop, box);
       input.focus();
     });
+  }
+
+  /* 2026-09-18 本人要望: 「バージョンの数字をクリックすることで、過去のバージョンに戻れるように」。
+   * 版は別々のショーとして棚（readShows）に入っていて、parentVersionId で親子が繋がっている。
+   * いま開いている版から根までさかのぼり、その根に繋がる版をすべて集めて並べる。 */
+  function versionFamilyRows() {
+    const shows = readShows();
+    const byId = new Map();
+    Object.keys(shows).forEach((id) => {
+      const project = shows[id] && shows[id].state && shows[id].state.project;
+      if (!project) return;
+      byId.set(id, {
+        id, title: String(project.title || "").trim() || tx("無題のショー"),
+        version: String(project.versionLabel || "").trim() || "v1",
+        parent: typeof project.parentVersionId === "string" ? project.parentVersionId : null,
+        savedAt: shows[id].savedAt || "", reason: String(project.branchReason || "").trim(),
+      });
+    });
+    // 開いているショーは、まだ棚へ書かれていないことがあるので必ず足す。
+    const open = state.project;
+    byId.set(open.id, {
+      id: open.id, title: String(open.title || "").trim() || tx("無題のショー"),
+      version: String(open.versionLabel || "").trim() || "v1",
+      parent: typeof open.parentVersionId === "string" ? open.parentVersionId : null,
+      savedAt: state.lastSavedAt || "", reason: String(open.branchReason || "").trim(),
+    });
+    const rootOf = (row) => {
+      let current = row; const seen = new Set();
+      while (current && current.parent && byId.has(current.parent) && !seen.has(current.id)) {
+        seen.add(current.id); current = byId.get(current.parent);
+      }
+      return current;
+    };
+    const root = rootOf(byId.get(open.id));
+    const family = [];
+    byId.forEach((row) => { if (root && rootOf(row) && rootOf(row).id === root.id) family.push(row); });
+    return family.sort((a, b) => String(a.version).localeCompare(String(b.version), undefined, { numeric: true }));
+  }
+
+  function openVersionPicker() {
+    const rows = versionFamilyRows();
+    const backdrop = document.createElement("div");
+    backdrop.className = "stage-modal-backdrop";
+    const box = document.createElement("div");
+    box.className = "stage-modal stage-version-picker";
+    box.setAttribute("role", "dialog");
+    box.setAttribute("aria-modal", "true");
+    const head = document.createElement("header");
+    head.className = "stage-modal-head";
+    const title = document.createElement("h2");
+    title.textContent = tx("バージョンを切り替える");
+    head.append(title);
+    const body = document.createElement("div");
+    body.className = "stage-modal-body";
+    const close = () => { document.removeEventListener("keydown", onKey, true); backdrop.remove(); box.remove(); };
+    const onKey = (event) => { if (event.key === "Escape") { event.preventDefault(); close(); } };
+    if (rows.length <= 1) {
+      const empty = document.createElement("p");
+      empty.className = "stage-profile-hint";
+      empty.textContent = tx("ほかの版はまだありません。");
+      body.append(empty);
+    } else {
+      const hint = document.createElement("p");
+      hint.className = "stage-profile-hint";
+      hint.textContent = tx("選ぶとその版を開きます。いま開いている版には印が付いています。");
+      const list = document.createElement("div");
+      list.className = "stage-version-list";
+      rows.forEach((row) => {
+        const isCurrent = row.id === state.project.id;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `stage-version-row${isCurrent ? " is-current" : ""}`;
+        const label = document.createElement("span");
+        label.className = "stage-version-row-label";
+        label.textContent = row.version;
+        const meta = document.createElement("span");
+        meta.className = "stage-version-row-meta";
+        const when = row.savedAt ? row.savedAt.slice(0, 10).replace(/-/g, "/") : "";
+        meta.textContent = [row.title, row.reason, when].filter(Boolean).join("・")
+          + (isCurrent ? `・${tx("開いています")}` : "");
+        button.append(label, meta);
+        button.disabled = isCurrent;
+        button.addEventListener("click", () => { close(); openShow(row.id); });
+        list.append(button);
+      });
+      body.append(hint, list);
+    }
+    const acts = document.createElement("footer");
+    acts.className = "stage-branch-reason-actions";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "btn-quiet";
+    cancel.textContent = tx("閉じる");
+    cancel.addEventListener("click", close);
+    acts.append(cancel);
+    box.append(head, body, acts);
+    backdrop.addEventListener("click", close);
+    document.addEventListener("keydown", onKey, true);
+    document.body.append(backdrop, box);
+    (box.querySelector(".stage-version-row:not(.is-current)") || cancel).focus();
   }
 
   async function duplicateVersion() {
@@ -27877,6 +27989,19 @@ ${propsPlotHtml}
     });
     els.bgModal.querySelectorAll("[data-stage-tool]").forEach((button) => {
       button.addEventListener("click", closeBackgroundModal);
+    });
+  }
+  /* 2026-09-18 本人要望: バージョンの数字を押すと版を切り替えられる。
+   * 欄は readonly（R-18で自由入力をやめた）なので、押しても編集にはならない。 */
+  if (els.versionLabel) {
+    els.versionLabel.classList.add("is-version-switch");
+    els.versionLabel.setAttribute("aria-haspopup", "dialog");
+    els.versionLabel.title = "押すと、ほかのバージョンへ切り替えられます";
+    els.versionLabel.addEventListener("click", openVersionPicker);
+    els.versionLabel.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      openVersionPicker();
     });
   }
   if (els.projectSettingsOpen) els.projectSettingsOpen.addEventListener("click", openProjectSettings);

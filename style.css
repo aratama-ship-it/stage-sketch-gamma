@@ -17441,3 +17441,40 @@ body.is-roster-reordering .stage-cast-name { cursor: grabbing; }
 }
 .stage-setinfo-frame-width .stage-step-button:hover,
 .stage-setinfo-frame-width .stage-step-button:focus-visible { color: var(--milk); border-color: var(--brass); }
+
+/* T-20（2026-09-18 本人決定）: 複製の窓で、次が v いくつになるかを主役にする。 */
+.stage-branch-version-step {
+  margin: 0 0 6px;
+  font: 600 20px var(--sans);
+  letter-spacing: 0.08em;
+  color: var(--brass);
+}
+
+/* 2026-09-18 本人要望: バージョンの数字を押すと版を切り替えられる。
+   readonly の欄なので、押せることが分かるよう見た目を変える。 */
+.stage-version-input.is-version-switch { cursor: pointer; }
+.stage-version-input.is-version-switch:hover,
+.stage-version-input.is-version-switch:focus-visible { border-color: var(--brass); color: var(--paper); }
+
+.stage-modal.stage-version-picker { width: min(460px, calc(100vw - 32px)); }
+.stage-version-list { display: grid; gap: 6px; margin-top: 8px; }
+.stage-version-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--line-dark);
+  background: var(--desk-2);
+  color: var(--milk);
+  text-align: left;
+  cursor: pointer;
+}
+.stage-version-row:hover:not(:disabled),
+.stage-version-row:focus-visible { border-color: var(--brass); }
+.stage-version-row.is-current { border-color: var(--brass); background: rgba(201, 169, 97, 0.1); cursor: default; }
+.stage-version-row-label { font: 600 15px var(--sans); letter-spacing: 0.06em; color: var(--brass); }
+.stage-version-row-meta { font-size: 11px; line-height: 1.5; color: var(--milk-dim); }
