@@ -12430,55 +12430,25 @@
     const ring = ringEllipse(L);
     const roundHouse = v.audience === "round";
 
-    /* 実在会場（realVenue）は平面の輪郭を正面図にも反映する。
-       立ち入れない領域の床を消し、絞りの壁を「客席と平行な面」と
-       「奥行き方向に走る側面」の両方で起こす。輪郭は直交ポリゴン前提。
+    /* 床の形。平面図と同じ輪郭を正面図にも反映する（stage-front-shape.js）。
+       実在会場（realVenue）: 立ち入れない領域の床を消し、絞りの壁を天井まで起こす。輪郭は直交ポリゴン前提。
+       作成会場（custom・2026-09-18）: 主の形＋追加ステージ＋切り取りの帯を1つの床として描き、
+       床の縁を舞台の立ち上がりとして見せる（床の外は客席や奈落＝舞台より低い所）。
        奥壁の造作（黒扉）にも使うので、奥の描画より前に作る。 */
-    const realShape = (v.realVenue && Array.isArray(v.outline) && v.outline.length >= 4 && !roundHouse)
-      ? (() => {
-          const xsAll = v.outline.map((point) => point[0]);
-          const ysAll = v.outline.map((point) => point[1]);
-          const minX = Math.min(...xsAll);
-          const maxX = Math.max(...xsAll);
-          const minY = Math.min(...ysAll);
-          const maxY = Math.max(...ysAll);
-          // 水平線 y で輪郭を切ったときの内法
-          const spanAt = (y) => {
-            let lo = Infinity;
-            let hi = -Infinity;
-            for (let i = 0; i < v.outline.length; i += 1) {
-              const a = v.outline[i];
-              const b = v.outline[(i + 1) % v.outline.length];
-              if ((a[1] <= y && b[1] > y) || (b[1] <= y && a[1] > y)) {
-                const t = (y - a[1]) / (b[1] - a[1]);
-                const x = a[0] + t * (b[0] - a[0]);
-                lo = Math.min(lo, x);
-                hi = Math.max(hi, x);
-              }
-            }
-            return hi >= lo ? { lo, hi } : null;
-          };
-          const inside = (x, y) => {
-            let hit = false;
-            for (let i = 0, j = v.outline.length - 1; i < v.outline.length; j = i, i += 1) {
-              const a = v.outline[i];
-              const b = v.outline[j];
-              if ((a[1] > y) !== (b[1] > y) &&
-                  x < ((b[0] - a[0]) * (y - a[1])) / (b[1] - a[1]) + a[0]) hit = !hit;
-            }
-            return hit;
-          };
-          return {
-            outline: v.outline,
-            minX, maxX, minY, maxY,
-            uOf: (x) => (x - minX) / Math.max(0.001, maxX - minX),
-            vOf: (y) => (y - minY) / Math.max(0.001, maxY - minY),
-            spanAt,
-            inside,
-            farSpan: spanAt(minY + 0.02),
-          };
-        })()
-      : null;
+    const frontShapeLib = window.SHOSAI_FRONT_SHAPE || null;
+    const shape = (() => {
+      if (!frontShapeLib || roundHouse) return null;
+      if (v.custom && Array.isArray(v.outline)) {
+        return frontShapeLib.build([v.outline].concat((v.stageExtensions || [])
+          .map((item) => (item && Array.isArray(item.polygon)) ? item.polygon : null)));
+      }
+      if (v.realVenue && Array.isArray(v.outline)) return frontShapeLib.build([v.outline], { minPoints: 4 });
+      return null;
+    })();
+    // 実在会場だけの造作（黒扉・スノコ・バトン）はこちらを見る
+    const realShape = v.realVenue ? shape : null;
+    // 作成会場の床（立ち上がりは天井までの壁ではなく、舞台の高さぶんの段）
+    const stepShape = shape && !realShape ? shape : null;
 
     // ---- 奥 ----
     if (wall) {
@@ -12588,22 +12558,25 @@
       }
     };
     const floorPath = (fresh = true) => {
-      if (!realShape) {
+      if (!shape) {
         trapezoidFloorPath(fresh);
         return;
       }
-      // 実在会場の床は輪郭そのもの。立ち入れない領域には床を敷かない
+      // 輪郭を持つ会場の床は輪郭そのもの。床の無い所には床を敷かない
+      // （多角形は向きをそろえてあるので、複数でも nonzero 塗りで和になる）
       if (fresh) target.beginPath();
-      realShape.outline.forEach((point, index) => {
-        const at = place(realShape.uOf(point[0]), realShape.vOf(point[1]), L);
-        if (index) target.lineTo(at.x, at.y);
-        else target.moveTo(at.x, at.y);
+      shape.polygons.forEach((poly) => {
+        poly.forEach((point, index) => {
+          const at = place(shape.uOf(point[0]), shape.vOf(point[1]), L);
+          if (index) target.lineTo(at.x, at.y);
+          else target.moveTo(at.x, at.y);
+        });
+        target.closePath();
       });
-      target.closePath();
     };
 
     target.save();
-    if (realShape) {
+    if (shape) {
       // 立ち入れない領域は床を敷かず、奈落のような暗がりとして残す
       trapezoidFloorPath();
       target.fillStyle = stageSurfaceColor("#0c0a09");
@@ -12643,18 +12616,16 @@
     }
     target.restore();
 
-    // ---- 実在会場の絞り（凸形の壁） ----
-    // 輪郭の縁から壁の面を起こす。二種類ある:
-    //   客席と平行な壁 … 手前側が室内・奥側が塞がりの縁だけ見える
-    //   奥行きに走る側面 … 絞りの内側の面（中心を向いた面）だけ見える
-    // 外周そのものの壁は従来どおり描かない（袖・闇として残す）。
-    if (realShape) {
-      const heightM = L.size.height;
-      const EPS = 0.02;
+    // ---- 床の縁から立ち上がる面 ----
+    // 実在会場（wall）: 輪郭の外は入れない塊。客席と平行な壁は手前側が室内・奥側が塞がりの縁だけ、
+    //   奥行きに走る側面は絞りの内側の面だけが見える。外周そのものの壁は描かない（袖・闇として残す）。
+    // 作成会場（step）: 床の外は舞台より低い所。床の縁が舞台の立ち上がりとして見える。
+    // どの辺が見えるかは stage-front-shape.js が平面図と同じ形から決める。
+    if (shape) {
       // 最奥の間口の外に見えていた奥壁は闇に落とす
-      if (wall && realShape.farSpan) {
-        const leftEdge = place(realShape.uOf(realShape.farSpan.lo), 0, L).x;
-        const rightEdge = place(realShape.uOf(realShape.farSpan.hi), 0, L).x;
+      if (wall && shape.farSpan) {
+        const leftEdge = place(shape.uOf(shape.farSpan.lo), 0, L).x;
+        const rightEdge = place(shape.uOf(shape.farSpan.hi), 0, L).x;
         target.fillStyle = stageSurfaceColor("#0f0d0c");
         if (leftEdge > wall.x) target.fillRect(wall.x, wall.y, leftEdge - wall.x, wall.h);
         if (rightEdge < wall.x + wall.w) {
@@ -12662,58 +12633,75 @@
         }
       }
 
-      const quads = [];
-      const pts = realShape.outline;
-      for (let i = 0; i < pts.length; i += 1) {
-        const a = pts[i];
-        const b = pts[(i + 1) % pts.length];
-        if (Math.abs(a[1] - b[1]) < 1e-6) {
-          // 客席と平行な壁
-          const y = a[1];
-          if (y <= realShape.minY + 1e-6 || y >= realShape.maxY - 1e-6) continue;
-          const x1 = Math.min(a[0], b[0]);
-          const x2 = Math.max(a[0], b[0]);
-          const mx = (x1 + x2) / 2;
-          if (realShape.inside(mx, y + EPS) && !realShape.inside(mx, y - EPS)) {
-            // 客席を向く壁は照明を受けて明るい（実会場写真ではブロック壁）
-            quads.push({ order: y, u1: realShape.uOf(x1), v1: realShape.vOf(y),
-              u2: realShape.uOf(x2), v2: realShape.vOf(y), tone: stageSurfaceColor("#3a322a") });
-          }
-        } else if (Math.abs(a[0] - b[0]) < 1e-6) {
-          // 奥行き方向に走る壁（絞りの側面）
-          const x = a[0];
-          if (x <= realShape.minX + 1e-6 || x >= realShape.maxX - 1e-6) continue;
-          const y1 = Math.min(a[1], b[1]);
-          const y2 = Math.max(a[1], b[1]);
-          const toCentre = x < (realShape.minX + realShape.maxX) / 2 ? EPS : -EPS;
-          if (realShape.inside(x + toCentre, (y1 + y2) / 2) &&
-              !realShape.inside(x - toCentre, (y1 + y2) / 2)) {
-            // 奥行きに走る側面は影に入るぶん一段沈む
-            quads.push({ order: y2 - 0.001, u1: realShape.uOf(x), v1: realShape.vOf(y1),
-              u2: realShape.uOf(x), v2: realShape.vOf(y2), tone: stageSurfaceColor("#28211b") });
-          }
+      const faces = frontShapeLib.faces(shape, stepShape ? "step" : "wall");
+      if (!stepShape) {
+        const heightM = L.size.height;
+        // 奥にあるものから描く（手前の壁が奥の壁を正しく隠す）
+        target.save();
+        target.strokeStyle = "rgba(239,231,214,0.12)";
+        target.lineWidth = 1.5;
+        faces.forEach((q) => {
+          const u1 = shape.uOf(q.a[0]);
+          const v1 = shape.vOf(q.a[1]);
+          const u2 = shape.uOf(q.b[0]);
+          const v2 = shape.vOf(q.b[1]);
+          const b1 = place(u1, v1, L);
+          const b2 = place(u2, v2, L);
+          const t1 = stagePoint(u1, v1, heightM, L);
+          const t2 = stagePoint(u2, v2, heightM, L);
+          // 客席を向く壁は照明を受けて明るい（実会場写真ではブロック壁）。奥行きに走る側面は影に入るぶん一段沈む
+          target.fillStyle = stageSurfaceColor(q.kind === "front" ? "#3a322a" : "#28211b");
+          target.beginPath();
+          target.moveTo(b1.x, b1.y);
+          target.lineTo(b2.x, b2.y);
+          target.lineTo(t2.x, t2.y);
+          target.lineTo(t1.x, t1.y);
+          target.closePath();
+          target.fill();
+          target.stroke();
+        });
+        target.restore();
+      } else {
+        /* 立ち上がりの高さは席ごとの apron（手前の線より下に見える舞台の立ち上がり）に合わせ、
+           奥へ行くほど遠近の倍率で縮める。手前の縁（v=1）では従来の全幅の帯と同じ高さになる。
+           apron を持たない席（見下ろす席など）では立ち上がりは見えない＝従来と同じ。 */
+        const apronRaw = ((L.seat && L.seat.apron) || 0) * (H / BASE_H);
+        if (apronRaw > 0) {
+          target.save();
+          // 手前の線より下は奈落。立ち上がりの面はこの上に描く（全幅の帯は敷かない）
+          target.fillStyle = stageSurfaceColor("#0c0a09");
+          target.fillRect(0, L.bottomY, W, Math.max(0, H - L.bottomY));
+          faces.forEach((q) => {
+            const p1 = place(shape.uOf(q.a[0]), shape.vOf(q.a[1]), L);
+            const p2 = place(shape.uOf(q.b[0]), shape.vOf(q.b[1]), L);
+            const d1 = L.tilt(p1.rawY + apronRaw * p1.scale);
+            const d2 = L.tilt(p2.rawY + apronRaw * p2.scale);
+            const top = Math.min(p1.y, p2.y);
+            const bottom = Math.max(d1, d2);
+            if (!(bottom > top)) return;
+            const front = q.kind === "front";
+            const face = target.createLinearGradient(0, top, 0, bottom);
+            face.addColorStop(0, stageSurfaceColor(front ? "#1b1512" : "#14110e"));
+            face.addColorStop(1, stageSurfaceColor(front ? "#0c0908" : "#0a0908"));
+            target.fillStyle = face;
+            target.beginPath();
+            target.moveTo(p1.x, p1.y);
+            target.lineTo(p2.x, p2.y);
+            target.lineTo(p2.x, d2);
+            target.lineTo(p1.x, d1);
+            target.closePath();
+            target.fill();
+            // 縁。舞台の明かりを拾って、床と段の境が読める
+            target.strokeStyle = front ? "rgba(239,231,214,0.18)" : "rgba(239,231,214,0.10)";
+            target.lineWidth = 2;
+            target.beginPath();
+            target.moveTo(p1.x, p1.y);
+            target.lineTo(p2.x, p2.y);
+            target.stroke();
+          });
+          target.restore();
         }
       }
-      // 奥にあるものから描く（手前の壁が奥の壁を正しく隠す）
-      target.save();
-      target.strokeStyle = "rgba(239,231,214,0.12)";
-      target.lineWidth = 1.5;
-      quads.sort((qa, qb) => qa.order - qb.order).forEach((q) => {
-        const b1 = place(q.u1, q.v1, L);
-        const b2 = place(q.u2, q.v2, L);
-        const t1 = stagePoint(q.u1, q.v1, heightM, L);
-        const t2 = stagePoint(q.u2, q.v2, heightM, L);
-        target.fillStyle = q.tone;
-        target.beginPath();
-        target.moveTo(b1.x, b1.y);
-        target.lineTo(b2.x, b2.y);
-        target.lineTo(t2.x, t2.y);
-        target.lineTo(t1.x, t1.y);
-        target.closePath();
-        target.fill();
-        target.stroke();
-      });
-      target.restore();
     }
 
     // ---- 舞台の立ち上がりとピット ----
@@ -12721,7 +12709,7 @@
     // 舞台の立ち上がり（エプロンの前面）とその下の暗がりが占める。
     // ここを描かないと「床の上に人が並んだ絵」になり、見上げている感じが出ない。
     const apron = (L.seat && L.seat.apron) || 0;
-    if (apron > 0 && !roundHouse) {
+    if (apron > 0 && !roundHouse && !stepShape) {
       const faceBottom = Math.min(H, L.apronBottom);
       const face = target.createLinearGradient(0, L.bottomY, 0, faceBottom);
       face.addColorStop(0, stageSurfaceColor("#1b1512"));
@@ -12777,10 +12765,10 @@
     } else if (!roundHouse) {
       target.strokeStyle = "rgba(156,130,63,0.2)";
       target.lineWidth = 1;
-      if (realShape && realShape.farSpan) {
-        // 実在会場は最奥の間口だけを縁取る（外側は闇に落としてある）
-        const lx = place(realShape.uOf(realShape.farSpan.lo), 0, L).x;
-        const rx = place(realShape.uOf(realShape.farSpan.hi), 0, L).x;
+      if (shape && shape.farSpan) {
+        // 輪郭を持つ会場は最奥の間口だけを縁取る（外側は闇に落としてある）
+        const lx = place(shape.uOf(shape.farSpan.lo), 0, L).x;
+        const rx = place(shape.uOf(shape.farSpan.hi), 0, L).x;
         target.strokeRect(lx, back.y, rx - lx, L.floorY - back.y);
       } else {
         target.strokeRect(back.x, back.y, back.w, L.floorY - back.y);
