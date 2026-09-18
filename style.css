@@ -2955,7 +2955,7 @@ canvas[data-tool="note"] { cursor: copy; }
 /* 書き出しの選び方 */
 .stage-export-modal { width: min(520px, calc(100vw - 40px)); }
 
-.stage-modal.stage-cue-sheet-modal { width: min(520px, calc(100vw - 40px)); }
+.stage-modal.stage-cue-sheet-modal { width: min(880px, calc(100vw - 40px)); }
 /* 表を見ているときは窓いっぱいに広げる（本人指示・2026-09-18）。
    1200pxでは11列が入りきらず、横スクロールに頼る形になっていた。 */
 /* ★100vw は縦スクロールバーの幅を含むので、窓いっぱいに広げると左右の余白がずれる。
@@ -2980,6 +2980,15 @@ canvas[data-tool="note"] { cursor: copy; }
   font: 600 12px/1.4 var(--sans);
   letter-spacing: 0.08em;
 }
+/* 20人を縦一列にすると窓の外まで伸びる。入る幅があれば横にも並べ、
+   足りなければ1列へ落ちる（2026-09-19 本人指示）。 */
+.stage-cue-sheet-rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  column-gap: 24px;
+}
+/* 「まとめ」は1件だけなので横に割らない。 */
+.stage-cue-sheet-group.is-single .stage-cue-sheet-rows { grid-template-columns: minmax(0, 1fr); }
 .stage-cue-sheet-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto auto;

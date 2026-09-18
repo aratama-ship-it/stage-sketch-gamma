@@ -31329,12 +31329,15 @@ ${propsPlotHtml}
     };
     const addGroup = (title, entries) => {
       const group = document.createElement("section");
-      group.className = "stage-cue-sheet-group";
+      group.className = entries.length <= 1 ? "stage-cue-sheet-group is-single" : "stage-cue-sheet-group";
       const heading = document.createElement("h3");
       heading.textContent = tx(title);
-      group.append(heading);
+      /* 行は横にも並べる。20人を縦一列にすると窓の外まで伸びて探しにくい（2026-09-19 本人指示）。 */
+      const rows = document.createElement("div");
+      rows.className = "stage-cue-sheet-rows";
+      group.append(heading, rows);
       entries.forEach((entry) => {
-        appendEntry(group, entry);
+        appendEntry(rows, entry);
       });
       els.cueSheetList.append(group);
     };
