@@ -101,6 +101,11 @@
     importConfirm: $("stage-venue-import-confirm"),
     importCancel: $("stage-venue-import-cancel"),
     discardBackdrop: $("stage-venue-discard-backdrop"),
+    presetReapply: $("stage-venue-preset-reapply"),
+    presetBackdrop: $("stage-venue-preset-backdrop"),
+    presetModal: $("stage-venue-preset-modal"),
+    presetCancel: $("stage-venue-preset-cancel"),
+    presetConfirm: $("stage-venue-preset-confirm"),
     discardModal: $("stage-venue-discard-modal"),
     discardCancel: $("stage-venue-discard-cancel"),
     discardConfirm: $("stage-venue-discard-confirm"),
@@ -1567,6 +1572,8 @@
   }
 
   function renderControls(linesResult) {
+    /* T-33: プリセットから作った劇場のときだけ押せる（ライブラリの劇場には戻す先が無い）。 */
+    if (els.presetReapply) els.presetReapply.disabled = !selectedTemplateDetail();
     document.querySelectorAll("[data-venue-editor-stage-format]").forEach((button) => {
       button.setAttribute("aria-pressed", String(button.dataset.venueEditorStageFormat === state.stageFormat));
     });
@@ -2005,9 +2012,12 @@
       VIEW_ZOOM_MIN, VIEW_ZOOM_MAX);
   }
 
-  function loadVenueTemplate(detail) {
+  /* T-33（2026-09-18 本人要望）: 同じプリセットをもう一度当て直せるようにする。
+   * 通常は「いまと同じ下敷きなら読み込まない」で正しい（プルダウンを触るたびに
+   * カスタムが消えては困る）。戻したいと本人が明示したときだけ force で通す。 */
+  function loadVenueTemplate(detail, { force = false } = {}) {
     const key = venueTemplateKey(detail);
-    if (!key || key === state.templateKey) return false;
+    if (!key || (!force && key === state.templateKey)) return false;
     const venue = library.venueV2ById(detail.venueId);
     if (!venue) return false;
     const variant = templateVariant(venue, detail.sizeId);
@@ -3425,6 +3435,52 @@
     window.requestAnimationFrame(() => els.canvas.focus());
   }
 
+  /* T-33（2026-09-18 本人要望）: 選んでいるプリセットを一撃で当て直す。
+   * 「戻す術が、プリセットを2回選択しないといけない」を解消するためのもの。 */
+  function selectedTemplateDetail() {
+    if (!state.templateKey) return null;
+    const [venueId, sizeId = ""] = String(state.templateKey).split(":");
+    return venueId ? { venueId, sizeId } : null;
+  }
+
+  function templateUntouched() {
+    return Boolean(state.templateSignature) && draftSignature() === state.templateSignature;
+  }
+
+  function hidePresetDialog(restoreFocus = true) {
+    if (!els.presetModal || !els.presetBackdrop) return;
+    els.presetBackdrop.hidden = true;
+    els.presetModal.hidden = true;
+    if (restoreFocus && els.presetReapply) els.presetReapply.focus();
+  }
+
+  function applySelectedPreset() {
+    const detail = selectedTemplateDetail();
+    if (!detail) return false;
+    hidePresetDialog(false);
+    withHistory(() => loadVenueTemplate(detail, { force: true }));
+    if (els.canvas) els.canvas.focus();
+    return true;
+  }
+
+  function requestPresetReapply() {
+    const detail = selectedTemplateDetail();
+    if (!detail) {
+      setStatus("いまの劇場は、プリセットから作ったものではありません。");
+      return false;
+    }
+    /* 何も変えていなければ、当て直しても同じ形。確認を出す意味がないので黙って伝える。 */
+    if (templateUntouched()) {
+      setStatus("いまの劇場は、選んでいるプリセットのままです。");
+      return false;
+    }
+    if (!els.presetModal || !els.presetBackdrop) return applySelectedPreset();
+    els.presetBackdrop.hidden = false;
+    els.presetModal.hidden = false;
+    window.requestAnimationFrame(() => els.presetCancel && els.presetCancel.focus());
+    return true;
+  }
+
   function hideDiscardDialog(restoreFocus = true) {
     if (!els.discardModal || !els.discardBackdrop) return;
     els.discardBackdrop.hidden = true;
@@ -3532,8 +3588,10 @@
     });
   });
   window.addEventListener("stage-venue-editor-template", (event) => {
-    if (!event.detail || venueTemplateKey(event.detail) === state.templateKey) return;
-    withHistory(() => loadVenueTemplate(event.detail));
+    if (!event.detail) return;
+    const force = Boolean(event.detail.force);
+    if (!force && venueTemplateKey(event.detail) === state.templateKey) return;
+    withHistory(() => loadVenueTemplate(event.detail, { force }));
   });
   window.addEventListener("stage-venue-editor-open", openEditor);
   /* 図の実寸が変わったら描き直す（開いた直後・窓の大きさ・列の幅の変更、どれも同じ経路）。
@@ -3559,6 +3617,10 @@
       if (els.modal && !els.modal.hidden) render();
     });
   });
+  if (els.presetReapply) els.presetReapply.addEventListener("click", requestPresetReapply);
+  if (els.presetCancel) els.presetCancel.addEventListener("click", () => hidePresetDialog());
+  if (els.presetBackdrop) els.presetBackdrop.addEventListener("click", () => hidePresetDialog());
+  if (els.presetConfirm) els.presetConfirm.addEventListener("click", applySelectedPreset);
   if (els.discardCancel) els.discardCancel.addEventListener("click", () => hideDiscardDialog());
   if (els.discardConfirm) els.discardConfirm.addEventListener("click", discardAndCloseEditor);
   if (els.discardBackdrop) els.discardBackdrop.addEventListener("click", () => hideDiscardDialog());
@@ -3635,6 +3697,13 @@
   });
   els.canvas.addEventListener("contextmenu", (event) => event.preventDefault());
   document.addEventListener("keydown", (event) => {
+    if (els.presetModal && !els.presetModal.hidden) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        hidePresetDialog();
+      }
+      return;
+    }
     if (els.discardModal && !els.discardModal.hidden) {
       if (event.key === "Escape") {
         event.preventDefault();

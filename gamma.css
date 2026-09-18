@@ -362,6 +362,21 @@ body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
   grid-template-columns: minmax(0, 1fr);
 }
 #gamma-venue-workspace #stage-venue-editor-close { display: none; }
+
+/* T-33（2026-09-18 実測）: 「プリセットを適用しますか？」の窓で、
+ * 〈プリセットを適用する〉（10文字）が2行に折り返し、高さが 44px→52px とずれていた
+ * （T-14 で本人が指摘したのと同じ症状）。
+ * ★字間を決めているのは style.css ではなく、この下の
+ *   .stage-modal footer button の 0.15em（gamma.css が後に読まれるので後勝ち）。
+ *   実測: 10文字 ×（14px + 2.1px）= 161px ＝ 枠の中身の幅とちょうど同じで溢れていた。
+ * この窓だけ字間を詰め、折り返しても高さがそろうようにする。 */
+#stage-venue-preset-modal .stage-venue-discard-actions { align-items: stretch; }
+/* ★相手は `.stage-modal footer button:not(#stage-venue-editor-apply)`。
+ *   :not(#id) はIDぶんの強さを持つので、クラス1つでは勝てない（実測で負けた）。
+ *   .stage-modal-body を挟んでクラスを2つにして勝たせる。 */
+#stage-venue-preset-modal .stage-modal-body .stage-venue-discard-actions > button {
+  letter-spacing: 0.04em;
+}
 /* gamma-workspace.js measures the space below this frame after the header has wrapped. */
 /* S-07（2026-09-18 本人要望）: iframe要素の地色も全体背景（--desk = #191512）へ揃える。
  * 以前は #141311 で、読み込み中の一瞬だけ外側と違う色が見えていた。 */

@@ -11181,6 +11181,22 @@ body.stage-modal-open .stage-tour { display: none !important; }
 
 .stage-venue-editor-presets .stage-field-row { margin: 0; }
 
+/* T-33（2026-09-18 本人要望）: 選んでいるプリセットへ一撃で戻す。
+ * 親が grid なので幅は自動で1列ぶん。文字が切れないよう字間は詰めておく
+ * （T-14・T-06 で踏んだのと同じ罠を避ける）。 */
+.stage-venue-preset-reapply {
+  width: 100%;
+  min-height: 32px;
+  margin: 0;
+  padding: 6px 8px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.stage-venue-preset-reapply:disabled { opacity: 0.42; cursor: not-allowed; }
+
 .stage-venue-editor-workspace {
   display: grid;
   grid-template-columns: minmax(320px, 0.78fr) minmax(0, 1.45fr);
