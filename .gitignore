@@ -158,6 +158,7 @@ public-dist/
 !/stage-rehearsal-export.js
 !/stage-samples/README.md
 !/stage-samples/index.js
+!/stage-samples/feature-test-show.js
 !/stage-session.js
 !/stage-set-builder.js
 !/stage-set-model.js
