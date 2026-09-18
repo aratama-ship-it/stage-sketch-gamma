@@ -3070,6 +3070,18 @@ canvas[data-tool="note"] { cursor: copy; }
 }
 .cue-sheet-table .cue-sheet-section-row th { position: static; background: var(--paper-2); color: var(--ink); font-weight: 700; }
 .cue-sheet-table .cue-sheet-notes { min-width: 56mm; }
+.cue-sheet-table .stage-text-input {
+  min-width: 0;
+  min-height: 32px;
+  margin: 0;
+  border-color: var(--line-dark);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 11px;
+}
+.cue-sheet-inferred { display: block; margin-top: 3px; color: var(--ink-dim); }
+.cue-sheet-inferred[hidden] { display: none; }
+.cue-sheet-inferred-mark { color: var(--ink-dim); white-space: nowrap; }
 .cue-sheet-footnote { margin: 8px 0 0; font-size: 11px; }
 .cue-sheet-legend { margin-top: 10px; padding-top: 6px; border-top: 1px solid var(--line-dark); font-size: 11px; }
 

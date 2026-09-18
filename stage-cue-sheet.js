@@ -10,6 +10,7 @@
   ];
   const MACHINERY_TYPES = new Set(["seri", "revolve", "deck", "curtain", "pool"]);
   const MACHINERY_STATE_KEYS = ["seriH", "spin", "spinRate", "tilt", "deckH", "curtainKind", "open", "water", "poolH"];
+  const CUE_SHEET_WINGS = new Set(["in-sl", "in-sr", "out-sl", "out-sr", "none"]);
 
   const list = (value) => (Array.isArray(value) ? value : []);
   const text = (value) => (value === null || value === undefined ? "" : String(value));
@@ -142,6 +143,43 @@
     return action === "enter" ? `${side}${t("から入")}` : `${side}${t("へハケ")}`;
   }
 
+  function normalizeCueSheet(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    const normalized = {};
+    if (CUE_SHEET_WINGS.has(value.wing)) normalized.wing = value.wing;
+    if (typeof value.note === "string" && value.note.length) normalized.note = value.note.slice(0, 120);
+    return normalized;
+  }
+
+  function setPieceCueSheet(piece, value) {
+    if (!piece || typeof piece !== "object") return null;
+    const normalized = normalizeCueSheet(value);
+    if (!normalized.wing && !normalized.note) {
+      delete piece.cueSheet;
+      return null;
+    }
+    piece.cueSheet = normalized;
+    return normalized;
+  }
+
+  function wingLabel(wing, helpers) {
+    const t = (key) => translate(helpers, key);
+    if (wing === "in-sl") return `${t("上手")}${t("から入")}`;
+    if (wing === "in-sr") return `${t("下手")}${t("から入")}`;
+    if (wing === "out-sl") return `${t("上手")}${t("へハケ")}`;
+    if (wing === "out-sr") return `${t("下手")}${t("へハケ")}`;
+    return wing === "none" ? t("出入りなし") : "";
+  }
+
+  function wingOptions(helpers = {}) {
+    return [
+      { value: "", label: translate(helpers, "自動（推定）") },
+      ...["in-sl", "in-sr", "out-sl", "out-sr", "none"].map((value) => ({
+        value, label: wingLabel(value, helpers),
+      })),
+    ];
+  }
+
   function poseAndFacing(piece, scene, helpers) {
     if (!piece) return "";
     const parts = [];
@@ -174,14 +212,16 @@
     const columns = [
       ["scene", "場面"], ["title", "題"], ["present", "いる／いない"], ["position", "立ち位置"],
       ["route", "動線"], ["pose", "ポーズ・向き"], ["props", "持ち物"], ["handoffs", "受け渡し"],
-      ["entranceExit", "出ハケ ※推定"], ["cues", "自分に関わるキュー"], ["notes", "コツ・注意"],
+      ["entranceExit", "出ハケ"], ["cues", "自分に関わるキュー"], ["notes", "コツ・注意"],
     ].map(([key, label]) => ({ key, label: t(label), className: key === "notes" ? "cue-sheet-notes" : "" }));
     const dataRows = rows.map((scene, index) => {
       const current = performerPiece(scene, performer);
       const previous = index > 0 ? performerPiece(rows[index - 1], performer) : null;
-      let entranceExit = "";
-      if (current && !previous) entranceExit = inferredWing(current, project, helpers, "enter");
-      else if (!current && previous) entranceExit = inferredWing(previous, project, helpers, "exit");
+      let inferredEntranceExit = "";
+      if (current && !previous) inferredEntranceExit = inferredWing(current, project, helpers, "enter");
+      else if (!current && previous) inferredEntranceExit = inferredWing(previous, project, helpers, "exit");
+      const stored = normalizeCueSheet(current && current.cueSheet);
+      const entranceExit = stored.wing ? wingLabel(stored.wing, helpers) : inferredEntranceExit;
       const route = current && helpers.normalizeRoute ? helpers.normalizeRoute(current.route) : (current && current.route);
       const props = helpers.propSceneSummary ? helpers.propSceneSummary(scene) : [];
       const moves = helpers.propMovesBetweenScenes ? helpers.propMovesBetweenScenes(index > 0 ? rows[index - 1] : null, scene) : [];
@@ -190,7 +230,9 @@
         position: current && helpers.formatPosition ? helpers.formatPosition(current) : "",
         route: route && helpers.formatRoute ? helpers.formatRoute(route) : (route ? "→" : ""),
         pose: poseAndFacing(current, scene, helpers), props: matchingText(props, performer), handoffs: matchingText(moves, performer),
-        entranceExit, cues: list(cuesByScene.get(scene.id)).join(" ／ "), notes: "",
+        entranceExit, inferredEntranceExit, entranceExitInferred: !stored.wing && Boolean(inferredEntranceExit),
+        cueSheetWing: stored.wing || "", cues: list(cuesByScene.get(scene.id)).join(" ／ "), notes: stored.note || "",
+        sceneId: scene.id, pieceId: current && current.id || "", cueSheetEditable: Boolean(current),
       };
     });
     const footnotes = [];
@@ -199,6 +241,7 @@
       kind: "performer", key: performer.key, title: `${performer.name} — ${t("演者キューシート")}`,
       showTitle: project && project.title || "", versionLabel: project && project.versionLabel || "v1",
       columns, rows: dataRows, footnotes, symbolWords: symbolWords(helpers),
+      wingOptions: wingOptions(helpers), inferredLabel: t("※推定"),
       legend: t("● 舞台上　→ 動線あり　◆ 持ち物の変化　☀ 明かり　♪ 音　⚙ 機構"),
     };
   }
@@ -399,17 +442,29 @@
     return `${safe(sheet && sheet.showTitle, "show")}_${safe(sheet && sheet.title, "sheet")}_${safe(sheet && sheet.versionLabel, "v1")}.csv`;
   }
 
-  function renderSheetHtml(sheet, lang = "ja") {
+  function renderSheetHtml(sheet, lang = "ja", options = {}) {
     const columns = list(sheet && sheet.columns);
+    const editable = options && options.editable === true && sheet && sheet.kind === "performer";
+    const wingChoices = list(sheet && sheet.wingOptions);
     const head = columns.map((column) => `<th scope="col" class="${escapeHtml(column.className || "")}">${escapeHtml(column.label)}</th>`).join("");
     const body = list(sheet && sheet.rows).map((row) => {
       if (row && row.isSection) return `<tr class="cue-sheet-section-row"><th scope="row" colspan="${columns.length}">${escapeHtml(row.scene)}</th></tr>`;
-      return `<tr>${columns.map((column, index) => {
+      return `<tr data-cue-sheet-scene-id="${escapeHtml(row && row.sceneId)}" data-cue-sheet-piece-id="${escapeHtml(row && row.pieceId)}">${columns.map((column, index) => {
       const value = text(row && row[column.key]);
       const tag = index === 0 ? "th" : "td";
       const scope = index === 0 ? ' scope="row"' : "";
       const symbolTitle = value === "●" ? ` title="${escapeHtml(lang === "ja" ? "舞台上" : "On stage")}"` : "";
-      return `<${tag}${scope}${symbolTitle} class="${escapeHtml(column.className || "")}">${escapeHtml(value)}</${tag}>`;
+      let content = escapeHtml(value);
+      if (editable && row && row.cueSheetEditable && column.key === "entranceExit") {
+        const choices = wingChoices.map((choice) => `<option value="${escapeHtml(choice.value)}"${choice.value === row.cueSheetWing ? " selected" : ""}>${escapeHtml(choice.label)}</option>`).join("");
+        content = `<select class="stage-text-input cue-sheet-wing-input" data-cue-sheet-field="wing" aria-label="${escapeHtml(column.label)}">${choices}</select>`
+          + `<span class="cue-sheet-inferred" data-cue-sheet-inferred${row.cueSheetWing ? " hidden" : ""}>${escapeHtml(row.inferredEntranceExit)}${row.inferredEntranceExit ? ` <span class="cue-sheet-inferred-mark">${escapeHtml(sheet.inferredLabel || "※推定")}</span>` : ""}</span>`;
+      } else if (editable && row && row.cueSheetEditable && column.key === "notes") {
+        content = `<input class="stage-text-input cue-sheet-note-input" data-cue-sheet-field="note" type="text" maxlength="120" value="${escapeHtml(value)}" aria-label="${escapeHtml(column.label)}">`;
+      } else if (column.key === "entranceExit" && row && row.entranceExitInferred && value) {
+        content += ` <span class="cue-sheet-inferred-mark">${escapeHtml(sheet.inferredLabel || "※推定")}</span>`;
+      }
+      return `<${tag}${scope}${symbolTitle} class="${escapeHtml(column.className || "")}">${content}</${tag}>`;
       }).join("")}</tr>`;
     }).join("");
     const footnotes = list(sheet && sheet.footnotes).map((note) => `<p class="cue-sheet-footnote">${escapeHtml(note)}</p>`).join("");
@@ -433,5 +488,8 @@
     formatCueDisplayName,
     cuePresentations,
     sceneNumberMap,
+    normalizeCueSheet,
+    setPieceCueSheet,
+    wingOptions,
   });
 }(typeof window !== "undefined" ? window : globalThis));

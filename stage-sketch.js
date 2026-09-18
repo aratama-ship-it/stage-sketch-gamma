@@ -5939,6 +5939,9 @@
       // 未指定の旧ショーに空のキーを書き戻さない。
       if (lightBehavior) normalized.lightBehavior = lightBehavior;
     }
+    if (type === "performer" && window.SHOSAI_CUE_SHEET) {
+      window.SHOSAI_CUE_SHEET.setPieceCueSheet(normalized, piece && piece.cueSheet);
+    }
     return normalized;
   }
 
@@ -9159,6 +9162,7 @@
     renderVenueControls();
     updateInspector();
     render();
+    refreshOpenCueSheetView();
     persistSoon();
   }
 
@@ -31358,10 +31362,53 @@ ${propsPlotHtml}
 
   let viewingCueSheet = null;
 
+  function cueSheetEditingAllowed() {
+    return !STUDY_READ_ONLY && !guestSessionActive() && !phoneViewerActive && !presenting;
+  }
+
+  function cueSheetPieceFromControl(control) {
+    const row = control && control.closest("tr[data-cue-sheet-scene-id]");
+    if (!row) return null;
+    const scene = state.project.scenes.find((entry) => entry && entry.id === row.dataset.cueSheetSceneId);
+    return scene && Array.isArray(scene.pieces)
+      ? scene.pieces.find((piece) => piece && piece.id === row.dataset.cueSheetPieceId) || null
+      : null;
+  }
+
+  function writeCueSheetControl(control, checkpointOnce) {
+    if (!cueSheetEditingAllowed() || !control || !window.SHOSAI_CUE_SHEET) return;
+    const piece = cueSheetPieceFromControl(control);
+    if (!piece || piece.type !== "performer") return;
+    if (!checkpointOnce || control.dataset.cueSheetCheckpointed !== "true") {
+      checkpoint();
+      if (checkpointOnce) control.dataset.cueSheetCheckpointed = "true";
+    }
+    const current = window.SHOSAI_CUE_SHEET.normalizeCueSheet(piece.cueSheet);
+    const next = { wing: current.wing || "", note: current.note || "" };
+    if (control.dataset.cueSheetField === "wing") next.wing = control.value;
+    if (control.dataset.cueSheetField === "note") {
+      next.note = control.value.slice(0, 120);
+      if (control.value !== next.note) control.value = next.note;
+    }
+    window.SHOSAI_CUE_SHEET.setPieceCueSheet(piece, next);
+    if (control.dataset.cueSheetField === "wing") {
+      const inferred = control.closest("td")?.querySelector("[data-cue-sheet-inferred]");
+      if (inferred) inferred.hidden = Boolean(next.wing);
+    }
+    persistSoon();
+  }
+
+  function refreshOpenCueSheetView() {
+    if (!viewingCueSheet || !els.cueSheetModal || els.cueSheetModal.hidden) return;
+    openCueSheetView(viewingCueSheet.kind, viewingCueSheet.key);
+  }
+
   function openCueSheetView(kind, key) {
     const sheet = selectedCueSheet(kind, key);
     if (!sheet || !els.cueSheetContent) return;
-    els.cueSheetContent.innerHTML = window.SHOSAI_CUE_SHEET.renderSheetHtml(sheet, lang);
+    els.cueSheetContent.innerHTML = window.SHOSAI_CUE_SHEET.renderSheetHtml(sheet, lang, {
+      editable: kind === "performer" && cueSheetEditingAllowed(),
+    });
     if (els.cueSheetModal) els.cueSheetModal.classList.add("is-viewing-sheet");
     if (els.cueSheetList) els.cueSheetList.hidden = true;
     if (els.cueSheetView) els.cueSheetView.hidden = false;
@@ -31474,6 +31521,20 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   if (els.cueSheetViewCsv) els.cueSheetViewCsv.addEventListener("click", () => {
     if (viewingCueSheet) downloadCueSheetCsv(viewingCueSheet.kind, viewingCueSheet.key);
   });
+  if (els.cueSheetContent) {
+    els.cueSheetContent.addEventListener("change", (event) => {
+      const control = event.target.closest('[data-cue-sheet-field="wing"]');
+      if (control) writeCueSheetControl(control, false);
+    });
+    els.cueSheetContent.addEventListener("input", (event) => {
+      const control = event.target.closest('[data-cue-sheet-field="note"]');
+      if (control) writeCueSheetControl(control, true);
+    });
+    els.cueSheetContent.addEventListener("focusout", (event) => {
+      const control = event.target.closest('[data-cue-sheet-field="note"]');
+      if (control) delete control.dataset.cueSheetCheckpointed;
+    });
+  }
   if (els.exportClose) els.exportClose.addEventListener("click", closeExport);
   if (els.exportBackdrop) els.exportBackdrop.addEventListener("click", closeExport);
   if (els.exportRun) els.exportRun.addEventListener("click", runExport);
