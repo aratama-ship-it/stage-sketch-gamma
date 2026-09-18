@@ -1412,6 +1412,7 @@
     "向き": "Facing",
     "このシーンではスクロールでの向き変更をロックします": "Lock scroll-to-rotate for this scene",
     "客席": "House",
+    "通路": "Aisle",
     "背中": "Back",
     "地上高": "Trim height",
     "せり上がり（床からの高さ）": "Rise height (from stage floor)",
@@ -1993,6 +1994,8 @@
       "arena-concert": "Arena (provisional dimensions)",
       "dome-concert": "Dome (provisional dimensions)",
       "festival-field": "Outdoor festival (provisional dimensions)",
+      "end-stage": "End stage", "gym-stage": "School gymnasium stage",
+      "banquet-hall": "Hotel banquet room", "hall-shoebox": "Rectangular hall",
     },
     venueShort: {
       proscenium: "framed stage", thrust: "three sides", arena: "in the round", outdoor: "temporary", blackbox: "flexible",
@@ -2000,6 +2003,8 @@
       chapiteau: "tent, in the round", "circus-theatre": "framed, with rigging",
       "cirque-dhiver": "real venue",
       "arena-concert": "Arena", "dome-concert": "Dome", "festival-field": "Outdoor festival",
+      "end-stage": "no frame, one side", "gym-stage": "flat floor, shallow stage",
+      "banquet-hall": "temporary, flat floor", "hall-shoebox": "side aisles, three blocks",
     },
     venueNote: {
       /* ★形式プリセット（プロセニアム／スラスト／アリーナ／野外／ブラックボックス）の
@@ -2012,6 +2017,10 @@
       "arena-concert": "Provisional dimensions (not checked against plans). This is not a named venue.",
       "dome-concert": "Provisional dimensions (not checked against plans). This is not a named venue.",
       "festival-field": "Provisional dimensions (not checked against plans). This is not a named venue.",
+      "end-stage": "No frame: stage and house share one box, with the audience on one side and a raked floor for height. Without wings or a frame to hide the machinery, you decide early where the things you would rather not show will live. Dimensions are provisional.",
+      "gym-stage": "The shallow stage at the end of a school gym. Wide across but only about 6 m deep, with no rigging. The house is a flat floor, so those at the back cannot see feet. The stage sits about 1.1 m high and usually has no wings. Dimensions are provisional; no unified standard was found.",
+      "banquet-hall": "A temporary stage built in a banquet room. About 8 by 4 m, under a ceiling of roughly 4 m, so there is no rigging and the ceiling decides what can be thrown. The audience sits at round tables or stands; there is no house as an enclosure. Columns, doors and the space under the chandelier shape the composition. Dimensions are provisional.",
+      "hall-shoebox": "A rectangular house with two aisles running either side of the centre block — the division you meet most often in Japanese civic halls. From the side blocks the stage reads at an angle. The aisles hold no seats, so nobody watches from there. Dimensions and the division are provisional.",
     },
     size: {
       small: "Small", mid: "Medium", large: "Large",
@@ -2026,6 +2035,8 @@
       "arena-concert-provisional": "Provisional dimensions (not checked against plans)",
       "dome-concert-provisional": "Provisional dimensions (not checked against plans)",
       "festival-field-provisional": "Provisional dimensions (not checked against plans)",
+      "gym-standard": "Standard (15 m wide, stage 1.1 m high)",
+      "banquet-standard": "Banquet room (temporary stage 8×4 m)",
     },
     seat: {
       front: "Front row", center: "Stalls centre", rear: "Stalls rear",

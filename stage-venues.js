@@ -51,6 +51,40 @@
     }];
   };
 
+  /* 側通路つきの正面客席（VENUE_PRESETS_STAGE1_2026_09_19）。
+   * 日本の公共ホールでよく見る「袖ブロック｜通路｜中央ブロック｜通路｜袖ブロック」の割り方を書けるようにする。
+   * 通路は新しい型を足さず、**客席ポリゴンを置かないこと**で表す。
+   * house を渡さない会場は frontAudience() の1枚のままで、既存プリセットの値は1バイトも変わらない。
+   *   depthM       客席の奥行き(m)。既定は舞台奥行きの40%（＝従来の式）
+   *   aisles       通路の本数。2 のときだけ3ブロックに割る
+   *   aisleWidthM  通路の幅(m)
+   *   sideRatio    袖ブロックの幅が間口に占める割合 */
+  const frontAudienceBands = (width, depth, house) => {
+    const audienceDepth = Math.max(2, roundM(
+      typeof house.depthM === "number" ? house.depthM : depth * 0.4));
+    const back = roundM(depth + audienceDepth);
+    const band = (id, fromX, toX) => ({
+      id,
+      polygon: [
+        [roundM(fromX), depth], [roundM(toX), depth],
+        [roundM(toX), back], [roundM(fromX), back],
+      ],
+      mode: "seated",
+      eyeM: 1.2,
+      side: "front",
+    });
+    if (house.aisles !== 2) return [band("audience-front", 0, width)];
+    const aisle = typeof house.aisleWidthM === "number" ? house.aisleWidthM : 1.2;
+    const sideWidth = roundM(width * (typeof house.sideRatio === "number" ? house.sideRatio : 0.22));
+    // 中央が2m未満しか残らない間口では割らない（通路だけの客席にしない）
+    if ((width - ((sideWidth + aisle) * 2)) < 2) return [band("audience-front", 0, width)];
+    return [
+      band("audience-front-left", 0, sideWidth),
+      band("audience-front-center", sideWidth + aisle, width - sideWidth - aisle),
+      band("audience-front-right", width - sideWidth, width),
+    ];
+  };
+
   const threeSideAudience = (width, depth) => {
     const sideWidth = Math.max(2, roundM(width * 0.25));
     const front = frontAudience(width, depth)[0];
@@ -201,8 +235,9 @@
     { ratio: 0.58, label: "音響卓", note: "ステージから観客エリアの1/2〜2/3の位置" },
   ];
 
-  const audiencePolygons = (audience, width, depth) => {
-    if (audience === "front") return frontAudience(width, depth);
+  const audiencePolygons = (audience, width, depth, house) => {
+    // house を持つ会場だけ帯を割る経路へ回す（既存プリセットは従来の式のまま）
+    if (audience === "front") return house ? frontAudienceBands(width, depth, house) : frontAudience(width, depth);
     if (audience === "three") return threeSideAudience(width, depth);
     if (audience === "round") return roundAudience(width);
     return [];
@@ -254,7 +289,7 @@
       label: size.label,
       floor,
       ceiling,
-      audience: audiencePolygons(venue.audience, size.width, size.depth),
+      audience: audiencePolygons(venue.audience, size.width, size.depth, size.house || venue.house),
       fixtures: fixturesForSize(venue.id, size.width, size.depth, size.height),
       access: accessForSize(venue.id, size.width, size.depth),
       capacity: {},
@@ -280,7 +315,7 @@
       audience: primary.audience,
       fixtures: primary.fixtures,
       access: primary.access,
-      provenance: { source: "preset", confidence: "high", sharing: "ok" },
+      provenance: venue.provenance || { source: "preset", confidence: "high", sharing: "ok" },
       short: venue.short,
       note: venue.note,
       reference: venue.source,
@@ -833,6 +868,99 @@
   })();
   VENUES_V2.push(cirqueDHiverV2);
 
+  /* ── 一般形プリセットの追加 第1弾（VENUE_PRESETS_STAGE1_2026_09_19）──────────────
+   * 本人の「経験上多い形を増やしたい」に対する10種のうち、床が長方形で足せる4件。
+   * 弧を描く舞台前端（扇形ホール）と花道・センターステージは段階2以降。
+   *
+   * ★寸法は「暫定値」。少数の公表値から桁と比を合わせた土台で、複数館の中央値ではない。
+   *   採取の手順と採用ルールは docs/venue-presets-2026-09-19/index.html の6章。
+   *   駒の位置は正規化座標（u,v）で保存されるので、あとで寸法を差し替えても
+   *   保存済みのショーの構図は崩れない（見える寸法の表示だけが変わる）。
+   * ★分類の根拠: 形式は The Theatres Trust の分類、国内の呼び方は一般財団法人 地域創造の解説。 */
+  VENUES_V2.push(
+    createVenueV2({
+      id: "end-stage",
+      label: "エンドステージ",
+      short: "額縁なし・一方向",
+      audience: "front",
+      rigging: "limited",
+      provenance: {
+        source: "代表値",
+        confidence: "low",
+        sharing: "ok",
+        note: "形式の分類は The Theatres Trust。寸法は少数の公表値から桁と比を合わせた暫定値で、複数館の中央値へ差し替える前の土台。",
+      },
+      sizes: [
+        { id: "small", label: "小", width: 12, depth: 9, height: 6, seats: 200, house: { depthM: 8 } },
+        { id: "large", label: "大", width: 15, depth: 11, height: 7, seats: 400, house: { depthM: 10 } },
+      ],
+      note: "額縁が無く、舞台と客席が同じ箱に入る形。客席は一方向で、段床で高さを稼ぐ。袖や額縁で機構を隠せないぶん、見せたくないものの置き場を先に決めることになる。寸法は暫定値。",
+      source: "形式の分類は The Theatres Trust による。寸法は公表値からの暫定値",
+    }),
+    createVenueV2({
+      id: "gym-stage",
+      label: "学校体育館のステージ",
+      short: "平土間・浅い舞台",
+      audience: "front",
+      rigging: "none",
+      provenance: {
+        source: "代表値",
+        confidence: "low",
+        sharing: "ok",
+        note: "統一された寸法規格は見つからなかった。ステージ高さ約1.1mは複数の施工業者が挙げる値で、公的規格の裏は取れていない。平土間はバスケットボールのコート（28×15m）を基準に置いた暫定値。",
+      },
+      sizes: [
+        { id: "gym-standard", label: "標準（間口15m・ステージ高1.1m）", width: 15, depth: 6, height: 7, house: { depthM: 16 } },
+      ],
+      note: "体育館の端に付いた浅いステージ。間口は広いが奥行きは6mほどで、吊りは取れない。客席は平土間なので段差が無く、後ろの人からは足元が見えない。ステージの高さは約1.1mで、袖も無いことが多い。寸法は暫定値で、統一規格は確認できていない。",
+      source: "ステージ高さ約1.1mは複数の施工業者の記載。寸法は暫定値（統一規格は確認できず）",
+    }),
+    createVenueV2({
+      id: "banquet-hall",
+      label: "ホテルの宴会場",
+      short: "仮設・平土間",
+      audience: "front",
+      rigging: "none",
+      provenance: {
+        source: "代表値",
+        confidence: "low",
+        sharing: "ok",
+        note: "館ごとに差が大きく、公表値も部屋の面積と天井高までが多い。仮設ステージ8×4m・天井4.0mは代表的な値からの暫定値。",
+      },
+      sizes: [
+        { id: "banquet-standard", label: "宴会場（仮設ステージ8×4m）", width: 8, depth: 4, height: 4, house: { depthM: 14 } },
+      ],
+      note: "宴会場に仮設ステージを組む形。舞台は8×4mほど、天井は4m前後しか無いので吊りは取れず、投げ上げる演目は天井で決まる。客席は円卓や立ち見で、囲いとしての客席が無い。柱と入口の位置、シャンデリアの下を空けることが構図を決める。寸法は暫定値。",
+      source: "寸法は代表的な公表値からの暫定値",
+    }),
+    createVenueV2({
+      id: "hall-shoebox",
+      // 選択欄は「名前（短い説明）」で出るので、名前の側に括弧を入れない
+      label: "角形ホール",
+      short: "側通路つき・客席3ブロック",
+      audience: "front",
+      rigging: "full",
+      provenance: {
+        source: "代表値",
+        confidence: "low",
+        sharing: "ok",
+        note: "客席を中央ブロックと両袖ブロックに割り、間に通路を2本入れた形。割り方（袖が間口の22%・通路1.2m）は代表的な平面からの暫定値で、複数館の採取後に差し替える。",
+      },
+      sizes: [
+        {
+          id: "small", label: "小ホール", width: 10, depth: 8, height: 7, seats: 300,
+          house: { depthM: 10, aisles: 2, aisleWidthM: 1.2, sideRatio: 0.22 },
+        },
+        {
+          id: "mid", label: "中ホール", width: 14, depth: 11, height: 9, seats: 600,
+          house: { depthM: 14, aisles: 2, aisleWidthM: 1.2, sideRatio: 0.22 },
+        },
+      ],
+      note: "客席が長方形に並び、中央ブロックの左右に通路が2本通る形。日本の公共ホールでよく見る割り方で、袖のブロックからは舞台が斜めに見える。通路には席が無いので、そこから見る人はいない。寸法と割り方は暫定値。",
+      source: "形式の分類は The Theatres Trust。寸法と割り方は公表値からの暫定値",
+    }),
+  );
+
   const outlineDimensions = (outline) => {
     const xs = outline.map((point) => point[0]);
     const ys = outline.map((point) => point[1]);
@@ -862,6 +990,21 @@
     return result;
   };
 
+  /* 正面客席が通路で割れているとき、平面図が塗り分けられるように「間口に対する割合」で渡す
+   * （VENUE_PRESETS_STAGE1_2026_09_19）。描画側は px でしか考えないので、ここで正規化しておく。
+   * 1枚しか無い会場では null を返し、従来どおり1枚の帯として塗られる。 */
+  const frontHouseBlocks = (audience, width) => {
+    const fronts = audience.filter((area) => area && area.side === "front" &&
+      Array.isArray(area.polygon) && area.polygon.length >= 3);
+    if (fronts.length < 2 || !(width > 0)) return null;
+    return fronts
+      .map((area) => {
+        const xs = area.polygon.map((point) => point[0]);
+        return [roundM(Math.min(...xs) / width), roundM(Math.max(...xs) / width)];
+      })
+      .sort((a, b) => a[0] - b[0]);
+  };
+
   const VENUES = VENUES_V2.map((venue) => ({
     id: venue.id,
     label: venue.label,
@@ -872,6 +1015,11 @@
     sizes: venue.sizes.map(legacySize),
     source: venue.reference,
     ...(venue.wideVenue ? { wideVenue: true } : {}),
+    // 側通路つきの客席だけが持つ。持たない会場には項目を足さない（既存の値を変えないため）
+    ...((() => {
+      const blocks = frontHouseBlocks(venue.audience, outlineDimensions(venue.floor.outline).width);
+      return blocks ? { houseBlocks: blocks } : {};
+    })()),
     ...(venue.bowl ? {
       bowl: clone(venue.bowl),
       confidence: venue.confidence,

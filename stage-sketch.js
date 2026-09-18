@@ -13267,7 +13267,27 @@
     target.save();
     target.fillStyle = rgba(stageSurfaceColor("#201b16"), 0.9);
     if (v.audience === "front") {
-      target.fillRect(s.x - 40, s.y + s.h + 14, s.w + 80, H - (s.y + s.h) - 30);
+      /* 側通路つきの客席（VENUE_PRESETS_STAGE1_2026_09_19）。通路は塗らないことで表すので、
+         区画ごとに分けて塗る。houseBlocks を持たない会場は従来どおり1枚の帯。 */
+      const houseY = s.y + s.h + 14;
+      const houseH = H - (s.y + s.h) - 30;
+      const houseBlocks = (Array.isArray(v.houseBlocks) && v.houseBlocks.length > 1)
+        ? v.houseBlocks : null;
+      if (houseBlocks) {
+        houseBlocks.forEach((block) => {
+          const from = s.x + (block[0] * s.w);
+          const to = s.x + (block[1] * s.w);
+          target.fillRect(from, houseY, Math.max(1, to - from), houseH);
+        });
+        for (let index = 1; index < houseBlocks.length; index += 1) {
+          const gapFrom = s.x + (houseBlocks[index - 1][1] * s.w);
+          const gapTo = s.x + (houseBlocks[index][0] * s.w);
+          // 字が読める幅の通路にだけ札を出す
+          if ((gapTo - gapFrom) >= 22) label(target, "通路", (gapFrom + gapTo) / 2, houseY + 26);
+        }
+      } else {
+        target.fillRect(s.x - 40, houseY, s.w + 80, houseH);
+      }
       label(target, "客席", W / 2, s.y + s.h + 58);
     } else if (v.audience === "three") {
       target.fillRect(s.x - 96, s.y + s.h * 0.25, 78, s.h * 0.75 + 60);
