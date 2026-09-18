@@ -1238,6 +1238,92 @@
     }),
   );
 
+  /* ── 一般形プリセットの追加 第4弾（VENUE_PRESETS_STAGE4_2026_09_19）──────────────
+   * 能舞台とトラバース。これで本人依頼の10種がそろう。
+   *
+   * 能舞台の寸法は日本固有なので一次寄りの資料から採った:
+   *   ・本舞台は京間3間（19.5尺）四方＝約5.9m四方（the能ドットコム／文化デジタルライブラリー）
+   *   ・橋掛りの幅と長さに決まりは無いが、6間（約11m）〜7間（約13m）が標準
+   *   ・形の本質は「舞台が正方形」「橋掛りがある」「客席の中に舞台が突き出している」の3点
+   * 京間の1間＝6.5尺＝約1.97m。後座・地謡座はこの1間を単位に置いた。
+   * ★屋根・鏡板の松・切戸口は作らない。形の本質3点に絞る。 */
+  const KYOMA = 1.97;          // 京間の1間（6.5尺）
+  const NOH_SIDE = 5.91;       // 三間四方（19.5尺）
+
+  VENUES_V2.push(
+    createVenueV2({
+      id: "noh-stage",
+      label: "能舞台",
+      short: "三間四方・橋掛り",
+      audience: "front",
+      rigging: "none",
+      shapedVenue: true,
+      provenance: {
+        source: "一次寄り",
+        confidence: "medium",
+        sharing: "ok",
+        note: "本舞台の京間三間四方（19.5尺＝約5.9m）と橋掛りの標準6〜7間は、日本芸術文化振興会の解説と能楽の専門サイトによる。後座・地謡座の寸法は京間1間（約1.97m）を単位に置いた目安で、公表値ではない。橋掛りは実際には斜めに掛かるが、ここでは直角に扱っている。",
+      },
+      sizes: [
+        {
+          id: "noh-standard", label: "京間三間四方（約5.9m）",
+          width: NOH_SIDE, depth: NOH_SIDE, height: 6,
+          extensions: [
+            // 後座（囃子方が座る奥の帯）
+            { id: "atoza", label: "後座", shape: "rectangle", merged: true,
+              polygon: [[0, -KYOMA], [NOH_SIDE, -KYOMA], [NOH_SIDE, 0], [0, 0]] },
+            // 地謡座（上手の帯）
+            { id: "jiutaiza", label: "地謡座", shape: "rectangle", merged: true,
+              polygon: [[NOH_SIDE, 0], [NOH_SIDE + KYOMA, 0], [NOH_SIDE + KYOMA, NOH_SIDE], [NOH_SIDE, NOH_SIDE]] },
+            // 橋掛り（後座の下手側から奥へ12m）
+            { id: "hashigakari", label: "橋掛り", shape: "rectangle", merged: true,
+              polygon: [[-12, -KYOMA], [0, -KYOMA], [0, KYOMA * 0.22], [-12, KYOMA * 0.22]] },
+          ],
+          /* ★客席は舞台の際から始める。能楽堂では舞台と客席の間に空きが無く、
+             図でも舞台のすぐ下・すぐ横に出したほうが位置関係が読める
+             （離して置くと平面図の尺が舞台に合うぶん、正面席が図の外へ出た）。 */
+          audienceAreas: [
+            { id: "audience-shomen", side: "front", mode: "seated", eyeM: 1.2,
+              polygon: [[-1.5, NOH_SIDE], [NOH_SIDE + KYOMA, NOH_SIDE],
+                [NOH_SIDE + KYOMA, NOH_SIDE + 6.6], [-1.5, NOH_SIDE + 6.6]] },
+            { id: "audience-wakishomen", side: "right", mode: "seated", eyeM: 1.2,
+              polygon: [[NOH_SIDE + KYOMA, -KYOMA], [NOH_SIDE + KYOMA + 7.6, -KYOMA],
+                [NOH_SIDE + KYOMA + 7.6, NOH_SIDE], [NOH_SIDE + KYOMA, NOH_SIDE]] },
+          ],
+        },
+      ],
+      note: "能楽堂の舞台。本舞台は京間三間四方（約5.9m四方）のほぼ真四角で、奥に囃子方の後座、上手に地謡座が付く。奥の下手側から橋掛りが伸び、演者はそこを通って登場する（標準で6〜7間＝11〜13m）。舞台が客席の中へ突き出しているので、正面席と脇正面席では見え方がまるで違う。屋根・鏡板の松・切戸口はこのプリセットでは作っていない。橋掛りは実際には斜めに掛かるが、ここでは直角に扱っている。",
+      source: "本舞台三間四方と橋掛り6〜7間は日本芸術文化振興会の解説ほか。後座・地謡座は京間1間を単位にした目安",
+    }),
+    createVenueV2({
+      id: "traverse",
+      label: "トラバース",
+      short: "両側客席・通路型",
+      audience: "front",
+      rigging: "limited",
+      shapedVenue: true,
+      provenance: {
+        source: "代表値",
+        confidence: "low",
+        sharing: "ok",
+        note: "形式の分類は The Theatres Trust（alley／corridor とも呼ぶ）。演技帯の幅・長さは代表的な寸法からの暫定値。",
+      },
+      sizes: [
+        {
+          id: "traverse-standard", label: "演技帯 6×14m", width: 6, depth: 14, height: 5, seats: 200,
+          audienceAreas: [
+            { id: "audience-left", side: "left", mode: "seated", eyeM: 1.2,
+              polygon: [[-7, 0], [-0.6, 0], [-0.6, 14], [-7, 14]] },
+            { id: "audience-right", side: "right", mode: "seated", eyeM: 1.2,
+              polygon: [[6.6, 0], [13, 0], [13, 14], [6.6, 14]] },
+          ],
+        },
+      ],
+      note: "細長い演技帯を両側から客席が挟む形。正面が無く、片側を向けばもう片側には背中を見せることになるので、向きと移動で見せ方を作る。両端は出入口になることが多い。客席は2ブロックだけで、通路も正面も無い。寸法は暫定値。",
+      source: "形式の分類は The Theatres Trust による。寸法は暫定値",
+    }),
+  );
+
   const outlineDimensions = (outline) => {
     const xs = outline.map((point) => point[0]);
     const ys = outline.map((point) => point[1]);
@@ -1252,6 +1338,10 @@
     const sides = new Set(audience.map((area) => area.side));
     if (sides.has("round")) return "round";
     if (sides.has("front") && sides.has("left") && sides.has("right")) return "three";
+    /* 両側だけ（トラバース・VENUE_PRESETS_STAGE4_2026_09_19）。正面が無いので front とは別に扱う。
+       ★正面図には奥の壁が立つ。トラバースの両端は出入口や壁であることが多いので、
+       いまはそのままにしている（全周だけが「奥も客席」として壁を消す）。 */
+    if (!sides.has("front") && sides.has("left") && sides.has("right")) return "traverse";
     return "front";
   };
 

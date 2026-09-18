@@ -487,7 +487,8 @@
 
   function bowlAudience(rawVenue) {
     const audience = rawVenue && rawVenue.audience;
-    if (["front", "three", "round"].includes(audience)) return audience;
+    // トラバース（両側客席・VENUE_PRESETS_STAGE4_2026_09_19）も左右の視点を出す
+    if (["front", "three", "round", "traverse"].includes(audience)) return audience;
     const wrap = rawVenue && rawVenue.bowl && rawVenue.bowl.wrap;
     return ["front", "three", "round"].includes(wrap) ? wrap : "front";
   }
@@ -495,7 +496,9 @@
   function bowlOrientations(rawVenue) {
     const audience = bowlAudience(rawVenue);
     const orientations = ["front"];
-    if (audience === "three" || audience === "round") orientations.push("left", "right");
+    if (audience === "three" || audience === "round" || audience === "traverse") {
+      orientations.push("left", "right");
+    }
     if (audience === "round") orientations.push("rear");
     return orientations;
   }
