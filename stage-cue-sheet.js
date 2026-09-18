@@ -110,10 +110,18 @@
     return registered.concat([...names].map((name) => ({ key: `name:${name}`, name, registered: false })));
   }
 
-  function listSheets(project) {
-    return performerGroups(project).map((entry) => ({
+  function listSheets(project, helpers = {}) {
+    return [{ kind: "master", key: "master", label: translate(helpers, "全体表") }].concat(performerGroups(project).map((entry) => ({
       kind: "performer", key: entry.key, label: entry.registered ? entry.name : `${entry.name}（名簿未登録）`,
-    })).concat(DEPARTMENTS.map((entry) => ({ kind: "department", key: entry.key, label: entry.label })));
+    })), DEPARTMENTS.map((entry) => ({ kind: "department", key: entry.key, label: entry.label })));
+  }
+
+  function symbolWords(helpers) {
+    return {
+      "●": translate(helpers, "舞台上"),
+      "→": translate(helpers, "動線あり"),
+      "◆": translate(helpers, "持ち物の変化"),
+    };
   }
 
   function performerPiece(scene, performer) {
@@ -189,7 +197,8 @@
     return {
       kind: "performer", key: performer.key, title: `${performer.name} — ${t("演者キューシート")}`,
       showTitle: project && project.title || "", versionLabel: project && project.versionLabel || "v1",
-      columns, rows: dataRows, footnotes, legend: t("● 舞台上　→ 動線あり　◆ 持ち物の変化　☀ 明かり　♪ 音　⚙ 機構"),
+      columns, rows: dataRows, footnotes, symbolWords: symbolWords(helpers),
+      legend: t("● 舞台上　→ 動線あり　◆ 持ち物の変化　☀ 明かり　♪ 音　⚙ 機構"),
     };
   }
 
@@ -238,6 +247,7 @@
       kind: "department", key, title: `${t(meta ? meta.label : key)} — ${t("部署キューシート")}`,
       showTitle: project && project.title || "", versionLabel: project && project.versionLabel || "v1",
       columns: columns.map(([columnKey, label]) => ({ key: columnKey, label: t(label) })), rows, footnotes: [],
+      symbolWords: symbolWords(helpers),
       legend: t("● 舞台上　→ 動線あり　◆ 持ち物の変化　☀ 明かり　♪ 音　⚙ 機構"),
     };
   }
@@ -288,19 +298,122 @@
     return baseDepartmentSheet(project, dept, helpers, [["scene", "場面"], ["marks", "立ち位置"]], rows);
   }
 
+  function buildMasterSheet(project, helpers = {}) {
+    const t = (value) => translate(helpers, value);
+    const cast = list(project && project.cast);
+    const performerSheets = cast.map((member) => buildPerformerSheet(project, member.id, helpers));
+    const departmentSheets = {
+      light: buildDepartmentSheet(project, "light", helpers),
+      sound: buildDepartmentSheet(project, "sound", helpers),
+      stage: buildDepartmentSheet(project, "stage", helpers),
+      props: buildDepartmentSheet(project, "props", helpers),
+    };
+    const columns = [{ key: "scene", label: t("場面"), role: "scene" }]
+      .concat(cast.map((member, index) => ({
+        key: `performer:${member.id}`, label: member.name || member.id || `#${index + 1}`, role: "performer",
+      })), [
+        { key: "department:light", label: t("照明"), role: "department" },
+        { key: "department:sound", label: t("音響"), role: "department" },
+        { key: "department:stage", label: t("転換・機構"), role: "department" },
+        { key: "department:props", label: t("小道具"), role: "department" },
+      ]);
+    const numbers = sceneNumberMap(project && project.scenes);
+    let sceneIndex = 0;
+    const rows = list(project && project.scenes).map((sourceRow) => {
+      if (!sourceRow || sourceRow.kind !== "scene") {
+        return { isSection: true, scene: sourceRow && sourceRow.title || "" };
+      }
+      const row = { scene: `${numbers.get(sourceRow.id) || sceneIndex + 1} ${sourceRow.title || ""}`.trim() };
+      performerSheets.forEach((sheet, performerIndex) => {
+        const current = sheet.rows[sceneIndex] || {};
+        const previous = sceneIndex > 0 ? sheet.rows[sceneIndex - 1] || {} : null;
+        let marks = current.present === "●" ? "●" : "";
+        if (current.route) marks += "→";
+        if (previous && current.props !== previous.props) marks += "◆";
+        row[columns[performerIndex + 1].key] = marks;
+      });
+      const light = departmentSheets.light.rows[sceneIndex] || {};
+      const sound = departmentSheets.sound.rows[sceneIndex] || {};
+      const stage = departmentSheets.stage.rows[sceneIndex] || {};
+      const props = departmentSheets.props.rows[sceneIndex] || {};
+      row["department:light"] = light.cues || "";
+      row["department:sound"] = sound.cues || "";
+      row["department:stage"] = [stage.machinery, text(stage.note).split(/\r?\n/, 1)[0]].filter(Boolean).join(" / ");
+      row["department:props"] = props.handoffs || "";
+      sceneIndex += 1;
+      return row;
+    });
+    return {
+      kind: "master", key: "master", title: t("全体表"), showTitle: project && project.title || "",
+      versionLabel: project && project.versionLabel || "v1", columns, rows, footnotes: [],
+      performerLabel: t("演者"), symbolWords: symbolWords(helpers),
+      legend: t("● 舞台上　→ 動線あり　◆ 持ち物の変化　☀ 明かり　♪ 音　⚙ 機構"),
+    };
+  }
+
+  function paginateMasterSheet(sheet, pageSize = 12) {
+    if (!sheet || sheet.kind !== "master") return [sheet];
+    const performers = list(sheet.columns).filter((column) => column.role === "performer");
+    const fixedStart = list(sheet.columns).filter((column) => column.role === "scene");
+    const fixedEnd = list(sheet.columns).filter((column) => column.role === "department");
+    if (!performers.length) return [{ ...sheet, columns: fixedStart.concat(fixedEnd) }];
+    const size = Math.max(1, Math.floor(finite(pageSize, 12)));
+    const pages = [];
+    for (let start = 0; start < performers.length; start += size) {
+      const end = Math.min(start + size, performers.length);
+      pages.push({
+        ...sheet,
+        columns: fixedStart.concat(performers.slice(start, end), fixedEnd),
+        pageLabel: `${sheet.performerLabel || "演者"} ${start + 1}〜${end} / ${performers.length}`,
+      });
+    }
+    return pages;
+  }
+
+  function csvCell(value, words) {
+    let expanded = text(value);
+    if (/^[●→◆]+$/.test(expanded)) {
+      expanded = [...expanded].map((symbol) => words[symbol] || symbol).join(" / ");
+    } else {
+      expanded = expanded.replace(/^[●→◆](?=\s|$)/, (symbol) => words[symbol] || symbol);
+    }
+    return /[",\r\n]/.test(expanded) ? `"${expanded.replace(/"/g, '""')}"` : expanded;
+  }
+
+  function sheetToCsv(sheet) {
+    const columns = list(sheet && sheet.columns);
+    const words = sheet && sheet.symbolWords || { "●": "舞台上", "→": "動線あり", "◆": "持ち物の変化" };
+    const lines = [columns.map((column) => csvCell(column.label, words)).join(",")];
+    list(sheet && sheet.rows).forEach((row) => {
+      lines.push(columns.map((column) => csvCell(row && row[column.key], words)).join(","));
+    });
+    return `\uFEFF${lines.join("\r\n")}`;
+  }
+
+  function csvFileName(sheet) {
+    const safe = (value, fallback) => {
+      const cleaned = text(value).replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_").replace(/[. ]+$/g, "_").trim();
+      return (cleaned || fallback).slice(0, 80);
+    };
+    return `${safe(sheet && sheet.showTitle, "show")}_${safe(sheet && sheet.title, "sheet")}_${safe(sheet && sheet.versionLabel, "v1")}.csv`;
+  }
+
   function renderSheetHtml(sheet, lang = "ja") {
     const columns = list(sheet && sheet.columns);
     const head = columns.map((column) => `<th scope="col" class="${escapeHtml(column.className || "")}">${escapeHtml(column.label)}</th>`).join("");
-    const body = list(sheet && sheet.rows).map((row) => `<tr>${columns.map((column, index) => {
+    const body = list(sheet && sheet.rows).map((row) => {
+      if (row && row.isSection) return `<tr class="cue-sheet-section-row"><th scope="row" colspan="${columns.length}">${escapeHtml(row.scene)}</th></tr>`;
+      return `<tr>${columns.map((column, index) => {
       const value = text(row && row[column.key]);
       const tag = index === 0 ? "th" : "td";
       const scope = index === 0 ? ' scope="row"' : "";
       const symbolTitle = value === "●" ? ` title="${escapeHtml(lang === "ja" ? "舞台上" : "On stage")}"` : "";
       return `<${tag}${scope}${symbolTitle} class="${escapeHtml(column.className || "")}">${escapeHtml(value)}</${tag}>`;
-    }).join("")}</tr>`).join("");
+      }).join("")}</tr>`;
+    }).join("");
     const footnotes = list(sheet && sheet.footnotes).map((note) => `<p class="cue-sheet-footnote">${escapeHtml(note)}</p>`).join("");
     return `<article class="cue-sheet-paper" data-cue-sheet-kind="${escapeHtml(sheet && sheet.kind)}">
-  <header class="cue-sheet-paper-head"><div><h1>${escapeHtml(sheet && sheet.title)}</h1><p>${escapeHtml(sheet && sheet.showTitle)}</p></div><p class="cue-sheet-stamp">${escapeHtml(sheet && sheet.versionLabel || "v1")} · ${escapeHtml(new Date().toLocaleDateString(lang === "en" ? "en-US" : lang))}</p></header>
+  <header class="cue-sheet-paper-head"><div><h1>${escapeHtml(sheet && sheet.title)}</h1><p>${escapeHtml(sheet && sheet.showTitle)}</p>${sheet && sheet.pageLabel ? `<p class="cue-sheet-page-label">${escapeHtml(sheet.pageLabel)}</p>` : ""}</div><p class="cue-sheet-stamp">${escapeHtml(sheet && sheet.versionLabel || "v1")} · ${escapeHtml(new Date().toLocaleDateString(lang === "en" ? "en-US" : lang))}</p></header>
   <table class="cue-sheet-table"><caption>${escapeHtml(sheet && sheet.title)}</caption><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
   ${footnotes}<footer class="cue-sheet-legend">${escapeHtml(sheet && sheet.legend || "")}</footer>
 </article>`;
@@ -309,8 +422,12 @@
   root.SHOSAI_CUE_SHEET = Object.freeze({
     buildPerformerSheet,
     buildDepartmentSheet,
+    buildMasterSheet,
     listSheets,
+    paginateMasterSheet,
     renderSheetHtml,
+    sheetToCsv,
+    csvFileName,
     cuePrefix,
     formatCueDisplayName,
     cuePresentations,

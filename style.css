@@ -2972,7 +2972,7 @@ canvas[data-tool="note"] { cursor: copy; }
 .stage-cue-sheet-group h3 { margin: 0 0 6px; color: var(--milk); font: 500 13px/1.4 var(--serif); }
 .stage-cue-sheet-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   gap: 6px;
   align-items: stretch;
   padding: 6px 0;
@@ -2981,7 +2981,7 @@ canvas[data-tool="note"] { cursor: copy; }
 .stage-cue-sheet-row > span { align-self: center; min-width: 0; color: var(--milk-dim); overflow-wrap: anywhere; }
 .stage-cue-sheet-row > .stage-minor-action { width: auto; min-height: 44px; margin: 0; }
 .stage-cue-sheet-row.is-disabled { opacity: 0.55; }
-.stage-cue-sheet-row.is-disabled > span { grid-column: 1 / 4; min-height: 44px; display: flex; align-items: center; }
+.stage-cue-sheet-row.is-disabled > span { grid-column: 1 / 5; min-height: 44px; display: flex; align-items: center; }
 #stage-cue-sheet-back { width: auto; min-height: 44px; margin: 0 0 10px; }
 .stage-cue-sheet-scroll { overflow-x: auto; background: var(--paper); color: var(--ink); }
 /* 既定は語を折らない幅（印刷と同じ見え方）。画面で見るときだけ窓の幅に収め、
@@ -2991,9 +2991,14 @@ canvas[data-tool="note"] { cursor: copy; }
 .is-viewing-sheet .cue-sheet-table { table-layout: fixed; width: 100%; }
 .is-viewing-sheet .cue-sheet-table th,
 .is-viewing-sheet .cue-sheet-table td { overflow-wrap: anywhere; }
+.is-viewing-sheet .cue-sheet-paper[data-cue-sheet-kind="master"] { min-width: max-content; }
+.is-viewing-sheet .cue-sheet-paper[data-cue-sheet-kind="master"] .cue-sheet-table { table-layout: auto; width: auto; }
+.is-viewing-sheet .cue-sheet-paper[data-cue-sheet-kind="master"] .cue-sheet-table th,
+.is-viewing-sheet .cue-sheet-paper[data-cue-sheet-kind="master"] .cue-sheet-table td { overflow-wrap: normal; }
 .cue-sheet-paper-head { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 10px; }
 .cue-sheet-paper-head h1 { margin: 0; color: var(--ink); font: 600 16px/1.35 var(--serif); letter-spacing: 0; }
 .cue-sheet-paper-head p { margin: 2px 0 0; }
+.cue-sheet-page-label { font-weight: 600; }
 .cue-sheet-stamp { color: var(--ink-dim); font-size: 11px; white-space: nowrap; }
 .cue-sheet-table { border-collapse: collapse; font-size: 11px; }
 .cue-sheet-table caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -3002,6 +3007,16 @@ canvas[data-tool="note"] { cursor: copy; }
 .cue-sheet-table thead th { height: 36px; background: var(--desk); color: var(--milk); }
 .cue-sheet-table th:first-child { position: sticky; left: 0; z-index: 1; min-width: 160px; background: var(--paper); }
 .cue-sheet-table thead th:first-child { z-index: 2; background: var(--desk); }
+/* 全体表は25列あって横に長い。場面の列だけ左に貼り付け、どこまで送っても
+   「どの場面の行か」が分かるようにする。区切りの行は行全体に渡るので貼り付けない。 */
+.is-viewing-sheet .cue-sheet-paper[data-cue-sheet-kind="master"] .cue-sheet-table th[scope="row"] {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--paper);
+  box-shadow: 1px 0 0 #bbb;
+}
+.cue-sheet-table .cue-sheet-section-row th { position: static; background: var(--paper-2); color: var(--ink); font-weight: 700; }
 .cue-sheet-table .cue-sheet-notes { min-width: 56mm; }
 .cue-sheet-footnote { margin: 8px 0 0; font-size: 11px; }
 .cue-sheet-legend { margin-top: 10px; padding-top: 6px; border-top: 1px solid var(--line-dark); font-size: 11px; }

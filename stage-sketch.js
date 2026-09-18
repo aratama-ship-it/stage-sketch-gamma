@@ -31096,6 +31096,7 @@ ${propsPlotHtml}
   function cueSheetHelpers() {
     return {
       tx,
+      lang,
       stageWidth: venueSize().width || 12,
       normalizeRoute,
       poseLabel: (poseId) => poseName(poseById(poseId)),
@@ -31114,9 +31115,9 @@ ${propsPlotHtml}
   function selectedCueSheet(kind, key) {
     const api = window.SHOSAI_CUE_SHEET;
     if (!api) return null;
-    return kind === "performer"
-      ? api.buildPerformerSheet(state.project, key, cueSheetHelpers())
-      : api.buildDepartmentSheet(state.project, key, cueSheetHelpers());
+    if (kind === "master") return api.buildMasterSheet(state.project, cueSheetHelpers());
+    if (kind === "performer") return api.buildPerformerSheet(state.project, key, cueSheetHelpers());
+    return api.buildDepartmentSheet(state.project, key, cueSheetHelpers());
   }
 
   function showCueSheetList() {
@@ -31129,26 +31130,12 @@ ${propsPlotHtml}
 
   function renderCueSheetList() {
     if (!els.cueSheetList || !window.SHOSAI_CUE_SHEET) return;
-    const sheets = window.SHOSAI_CUE_SHEET.listSheets(state.project);
+    const sheets = window.SHOSAI_CUE_SHEET.listSheets(state.project, { tx });
+    const masterSheets = sheets.filter((sheet) => sheet.kind === "master");
     const performerSheets = sheets.filter((sheet) => sheet.kind === "performer");
     const departmentSheets = sheets.filter((sheet) => sheet.kind === "department");
     els.cueSheetList.replaceChildren();
-    const whole = document.createElement("div");
-    whole.className = "stage-cue-sheet-row is-disabled";
-    const wholeLabel = document.createElement("span");
-    /* 括弧は言語で変える。英語で全角括弧が出ると翻訳漏れに見える（2026-09-18 検証で発見）。
-       ★languageValue は中国語も英語側へ落とすが、中国語の組版は全角が自然なので lang を直接見る。 */
-    const wholeBrackets = lang === "en" ? [" (", ")"] : ["（", "）"];
-    wholeLabel.textContent = `${tx("全体表")}${wholeBrackets[0]}${tx("段階2で入ります")}${wholeBrackets[1]}`;
-    whole.append(wholeLabel);
-    els.cueSheetList.append(whole);
-    const addGroup = (title, entries) => {
-      const group = document.createElement("section");
-      group.className = "stage-cue-sheet-group";
-      const heading = document.createElement("h3");
-      heading.textContent = tx(title);
-      group.append(heading);
-      entries.forEach((entry) => {
+    const appendEntry = (container, entry) => {
         const row = document.createElement("div");
         row.className = "stage-cue-sheet-row";
         const label = document.createElement("span");
@@ -31163,8 +31150,23 @@ ${propsPlotHtml}
         print.className = "stage-minor-action";
         print.textContent = tx("印刷");
         print.addEventListener("click", () => openCueSheetPrint(entry.kind, entry.key));
-        row.append(label, view, print);
-        group.append(row);
+        const csv = document.createElement("button");
+        csv.type = "button";
+        csv.className = "stage-minor-action";
+        csv.textContent = tx("CSV");
+        csv.addEventListener("click", () => downloadCueSheetCsv(entry.kind, entry.key));
+        row.append(label, view, print, csv);
+        container.append(row);
+    };
+    masterSheets.forEach((entry) => appendEntry(els.cueSheetList, entry));
+    const addGroup = (title, entries) => {
+      const group = document.createElement("section");
+      group.className = "stage-cue-sheet-group";
+      const heading = document.createElement("h3");
+      heading.textContent = tx(title);
+      group.append(heading);
+      entries.forEach((entry) => {
+        appendEntry(group, entry);
       });
       els.cueSheetList.append(group);
     };
@@ -31184,21 +31186,25 @@ ${propsPlotHtml}
   }
 
   function cueSheetPrintDocument(sheet) {
-    const content = window.SHOSAI_CUE_SHEET.renderSheetHtml(sheet, lang);
+    const sheets = window.SHOSAI_CUE_SHEET.paginateMasterSheet(sheet, 12);
+    const content = sheets.map((page) => window.SHOSAI_CUE_SHEET.renderSheetHtml(page, lang)).join("");
     return `<!DOCTYPE html><html lang="${escapeHtml(lang)}"><head><meta charset="utf-8"><title>${escapeHtml(sheet.title)}</title>
 <style>
 @page { size: A4 landscape; margin: 10mm; }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-family: 'Hiragino Kaku Gothic ProN', sans-serif; }
 .cue-sheet-paper { min-height: 185mm; display: flex; flex-direction: column; }
+.cue-sheet-paper + .cue-sheet-paper { break-before: page; page-break-before: always; }
 .cue-sheet-paper-head { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 8px; }
 .cue-sheet-paper-head h1 { margin: 0; font-size: 16px; }
 .cue-sheet-paper-head p { margin: 2px 0 0; }
+.cue-sheet-page-label { font-weight: 600; }
 .cue-sheet-stamp { color: #666; font-size: 11px; white-space: nowrap; }
 .cue-sheet-table { width: 100%; border-collapse: collapse; table-layout: auto; font-size: 11px; }
 .cue-sheet-table caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .cue-sheet-table th, .cue-sheet-table td { border: 1px solid #bbb; padding: 3px 6px; text-align: left; vertical-align: top; }
 .cue-sheet-table thead th { background: #eee; font-size: 13px; }
+.cue-sheet-section-row th { background: #ddd; font-weight: 700; }
 .cue-sheet-table .cue-sheet-notes { min-width: 56mm; }
 .cue-sheet-footnote { margin: 7px 0 0; font-size: 11px; }
 .cue-sheet-legend { margin-top: auto; padding-top: 6px; border-top: 1px solid #bbb; font-size: 11px; }
@@ -31216,6 +31222,24 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       return;
     }
     announce(tx("キューシートを印刷用の窓で開きました。"));
+  }
+
+  async function downloadCueSheetCsv(kind, key) {
+    const sheet = selectedCueSheet(kind, key);
+    if (!sheet) return;
+    try {
+      const csv = window.SHOSAI_CUE_SHEET.sheetToCsv(sheet);
+      const filename = window.SHOSAI_CUE_SHEET.csvFileName(sheet);
+      const didChooseDestination = await downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), filename);
+      if (!didChooseDestination) {
+        announce(tx("書き出しをやめました。"));
+        return;
+      }
+      announce(tx("CSVを書き出しました。"));
+    } catch (error) {
+      console.error(error);
+      announce(tx("CSVを書き出せませんでした。"));
+    }
   }
 
   function openCueSheet() {
