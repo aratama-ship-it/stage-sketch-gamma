@@ -273,7 +273,7 @@
       { id: "approx-mid", label: "中間" },
       { id: "approx-far", label: "遠い" },
     ];
-    return indexes.map((index, order) => {
+    const derived = indexes.map((index, order) => {
       const sample = samples[index];
       const sideOffset = width > EPSILON ? sample.areaCenter[0] - centerX : 0;
       let base = nearestSeatByEye(sample.distanceM, seats);
@@ -286,6 +286,15 @@
       }
       return seat;
     }).filter(Boolean);
+    if (!derived.length) return [];
+    /* ★2026-09-18 本人決定: 2階席（見下ろす絵）は、カスタム会場でも必ず選べるようにする。
+     * 近似席の基準は nearestSeatByEye が 2階席と左右席を外すので、
+     * このままだと「1階からの見え方」しか選べなかった。
+     * 会場に2階があるかは客席の形からは分からないが、
+     * 「1階から見るか、2階から見るか」を選べること自体が要る、という判断。
+     * 出すのは手調整ずみの既定の2階席そのもの（近似ではない）。 */
+    const balconySeat = seats.find((seat) => seat && seat.id === "balcony");
+    return balconySeat ? derived.concat([balconySeat]) : derived;
   }
 
   /* 正面図の「引いた席」だけを、距離・目の高さ・画角から導く。
