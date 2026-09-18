@@ -188,10 +188,17 @@ body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
 /* R-30（2026-09-17 本人要望）: 照明から別のモードへ移るときの「適用しますか？」の窓。
  * 既存の .stage-modal をそのまま使い、幅と操作列だけここで足す。
  * 操作列は .stage-lighting-plan-actions と同じ作法（右寄せ・狭い画面では縦積み）。 */
-.stage-modal.gamma-light-leave-modal { width: min(460px, calc(100vw - 32px)); z-index: 79; }
+/* T-14 二度目（2026-09-18 本人指摘）: 劇場版は文言が長く（やめる／反映しないで移る／
+ * この劇場を反映する ＝ 86+166+183px ＋ 隙間16px ＝ 451px）、
+ * 460px の窓の内側（426px）に収まらず、flex-end のせいで
+ * 左端の「やめる」が窓の外へはみ出して切れていた（実測）。窓を広げる。 */
+.stage-modal.gamma-light-leave-modal { width: min(560px, calc(100vw - 32px)); z-index: 79; }
 .gamma-light-leave-modal .stage-modal-body { padding: 14px 16px; }
 .gamma-light-leave-modal .stage-modal-body p { margin: 0; font-size: var(--fs-3); line-height: 1.7; color: var(--milk); }
-.gamma-light-leave-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 0 16px 14px; }
+.gamma-light-leave-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 0 16px 14px;
+  /* ★英語・中国語で文言が伸びても切れないよう、収まらなければ折り返す。
+   * 切れるより折り返すほうがましという判断（切れると押せなくなる）。 */
+  flex-wrap: wrap; }
 .gamma-light-leave-actions > button { width: auto; flex: 0 0 auto; white-space: nowrap; }
 /* T-19（2026-09-18 本人要望）: 3つ目（適用して移る）だけデザインが崩れていた。
  * 原因は .stage-minor-action がパネルの縦積み用のクラスで、
@@ -213,7 +220,8 @@ body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
   background: rgba(168, 75, 38, 0.22);
 }
 @media (max-width: 520px) {
-  .gamma-light-leave-actions { flex-direction: column-reverse; }
+  /* 並びを逆にしたので縦積みも column。主操作が上に来る（column-reverse だと下へ回る）。 */
+  .gamma-light-leave-actions { flex-direction: column; }
   .gamma-light-leave-actions button { width: 100%; }
 }
 
@@ -310,6 +318,12 @@ body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
   height: var(--ctrl-lg);
   padding: 0 22px;
   line-height: 1.2;
+  /* T-14 二度目（2026-09-18 本人指摘「高さがずれている」）:
+   * 高さは両方44pxだったが、上下の位置が5pxずれていた。
+   * 原因は .stage-minor-action の margin-top:10px（style.css:3466。パネルの縦積み用）。
+   * 親が align-items:center なので、余白の分だけ〈この内容で反映する〉が下がっていた。
+   * T-19 で照明版の窓には同じ打ち消しを入れてあるが、この窓には入っていなかった。 */
+  margin-top: 0;
 }
 
 /* X-1（2026-09-17）: 手順7の見出しだけブラウザ既定の h3（17.55px/700）のまま残っていた。

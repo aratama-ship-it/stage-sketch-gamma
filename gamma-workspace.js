@@ -322,16 +322,18 @@
       acts.className='gamma-light-leave-actions';
       const mk=(label,value,cls)=>{const b=document.createElement('button');b.type='button';b.className=cls;b.textContent=label;
         b.onclick=()=>{cleanup();resolve(value);};return b;};
-      acts.append(mk('やめる','cancel','btn-quiet'),
+      /* T-14 二度目（2026-09-18 本人指定）: 並びを逆にする。
+       * 主操作（反映して移る）を左端、やめるを右端へ。 */
+      acts.append(mk(text.apply,'apply','stage-minor-action'),
                   mk(text.skip,'skip','btn-quiet'),
-                  mk(text.apply,'apply','stage-minor-action'));
+                  mk('やめる','cancel','btn-quiet'));
       box.append(acts);
       const onKey=(e)=>{if(e.key==='Escape'){e.preventDefault();cleanup();resolve('cancel');}};
       function cleanup(){document.removeEventListener('keydown',onKey,true);backdrop.remove();box.remove();}
       backdrop.onclick=()=>{cleanup();resolve('cancel');};
       document.addEventListener('keydown',onKey,true);
       document.body.append(backdrop,box);
-      acts.lastElementChild.focus();
+      acts.firstElementChild.focus();   // 並びを逆にしたので、主操作は先頭。
     });
   }
 

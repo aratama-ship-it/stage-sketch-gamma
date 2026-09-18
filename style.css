@@ -8079,19 +8079,24 @@ html.stage-phone-viewer .stage-single-view-switch { display: none; }
   margin-left: auto;
 }
 
+/* T-06 追補（2026-09-18 実測）: 4つを同じ幅にした結果、いちばん長い
+ * 「この劇場を反映する」（9文字）が枠から17pxはみ出して「る」が切れていた
+ * （scrollWidth 151 / clientWidth 134）。1枡は約140px しかなく、
+ * 14px×9文字＝126px に 0.15em の字間（9×2.1＝19px）を足すと入らない。
+ * ★大きさ・色は本人了承済みなので変えない。字間だけ詰めて収める。 */
 .stage-venue-library-actions > button,
 .stage-venue-library-actions > .stage-import-label {
   color: var(--milk);
   font-family: var(--sans);
   font-size: 14px;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.02em;
 }
 
 .stage-venue-library-actions .stage-minor-action {
   width: auto;
   min-height: 44px;
   margin-top: 0;
-  padding: 7px 6px;
+  padding: 7px 3px;
   border-color: var(--rust);
   text-align: center;
   white-space: nowrap;
@@ -8109,12 +8114,14 @@ html.stage-phone-viewer .stage-single-view-switch { display: none; }
 
 /* S-05（2026-09-18 本人要望）: 他の3つと同じ高さ（44px）にする。
  * 色（赤地＋白の3px枠）と太字は残す＝主役／脇役は色で示し、大きさでは示さない、が本人決定。
- * 文字の大きさ・字間は .stage-venue-library-actions > button（14px / 0.15em）に揃う。 */
+ * 文字の大きさ・字間は .stage-venue-library-actions > button（14px / 0.02em）に揃う。
+ * ★このボタンだけ枠が3px（他は1px）で、中身に使える幅が4px少ない。
+ *   字間を詰めてもまだ1px溢れたので、左右の余白も詰める（文字は中央寄せなので見た目は変わらない）。 */
 .stage-venue-apply-button {
   width: 100%;
   min-height: 44px;
   margin: 0;
-  padding: 0 6px;
+  padding: 0 2px;
   border: 3px solid var(--paper);
   background: var(--rust);
   color: var(--milk);
