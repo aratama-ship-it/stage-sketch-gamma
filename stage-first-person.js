@@ -3523,8 +3523,21 @@
     if (elements) elements.hint.classList.add("gone");
   }
 
+  /* 2026-09-18 本人報告「視点の名前を入れるときに R を押すと初期位置へ戻る」:
+   * 3Dのキー操作は window の capture で拾う＝入力欄より先に走るので、
+   * 文字を打っている間も R（初期位置へ戻す）や WASD（移動）へ流れていた。
+   * ★文字を入れている所では、3Dの操作は何もしない。Escape も入力欄側（窓を閉じる）へ渡す。 */
+  function typingInField(target) {
+    const element = target && target.nodeType === 1 ? target : null;
+    if (!element) return false;
+    if (element.isContentEditable === true) return true;
+    const tag = element.tagName;
+    return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+  }
+
   function onKeyDown(event) {
     if (!state.opened || event.isComposing) return;
+    if (typingInField(event.target)) return;
     const code = event.code || event.key;
     if (state.previewOnly) {
       consumeKey(event);
@@ -3565,6 +3578,7 @@
   }
 
   function onKeyUp(event) {
+    if (typingInField(event.target)) return;
     const code = event.code || event.key;
     if (!pressed.has(code)) return;
     pressed.delete(code);
