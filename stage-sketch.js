@@ -26464,12 +26464,20 @@ ${propsPlotHtml}
     const minY = Math.min(...ys);
     const spanX = Math.max(0.001, Math.max(...xs) - minX);
     const spanY = Math.max(0.001, Math.max(...ys) - minY);
+    /* 器（遠景のスタンド）だけを持つ会場（アリーナ・ドームの仮の寸法、野外フェス）は
+       客席の多角形が無いので、そのままだと舞台の四角しか出ず互いに見分けがつかない
+       （VENUE_THUMB_READABLE_2026_09_19）。器の形を破線で描き、舞台はその中へ小さく置く。
+       ★器と舞台は 100m 対 18m で、同じ尺で描くと舞台が点になる。
+         器の輪郭は枠に合わせて描く＝この2つだけ尺が揃っていない。概要なので割り切る。 */
+    const bowl = (v2.bowl && typeof v2.bowl.kind === "string") ? v2.bowl.kind : null;
     const pad = 5;
-    const scale = Math.min((width - (pad * 2)) / spanX, (height - (pad * 2)) / spanY);
+    const room = bowl ? 0.42 : 1;
+    const scale = Math.min(((width - (pad * 2)) * room) / spanX,
+      ((height - (pad * 2)) * room) / spanY);
     const drawnW = spanX * scale;
     const drawnH = spanY * scale;
     const offsetX = (width - drawnW) / 2;
-    const offsetY = (height - drawnH) / 2;
+    const offsetY = bowl ? ((height - drawnH) * 0.3) : ((height - drawnH) / 2);
     const at = (point) => [
       offsetX + ((point[0] - minX) * scale),
       offsetY + ((point[1] - minY) * scale),
@@ -26488,11 +26496,55 @@ ${propsPlotHtml}
       ctx.fill();
     };
 
+    /* 舞台の床の輪郭。★塗りの境目だけだと弧が読めず、扇形ホールと角形ホールが
+       同じに見えた（VENUE_THUMB_READABLE_2026_09_19）。線にすると曲がりが分かる。 */
+    const strokeOutline = (polygon, color, lineWidth) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+      ctx.beginPath();
+      polygon.forEach((point, index) => {
+        const [x, y] = at(point);
+        if (index) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+      });
+      ctx.closePath();
+      ctx.stroke();
+    };
+
+    /* 器の形。ドームは楕円、アリーナは角丸、野外フェスは客席側が開いた囲い。 */
+    const drawBowl = (kind) => {
+      const inset = 7;
+      const x = inset;
+      const y = inset;
+      const w = width - (inset * 2);
+      const h = height - (inset * 2);
+      ctx.save();
+      ctx.strokeStyle = cssColor("--ink-soft", "#6a604e");
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      if (kind === "dome") {
+        ctx.ellipse(x + (w / 2), y + (h / 2), w / 2, h / 2, 0, 0, Math.PI * 2);
+      } else if (kind === "field") {
+        // 野外は囲いが無い。左右と奥の3辺だけ引いて、客席側は開けておく
+        ctx.moveTo(x, y + h);
+        ctx.lineTo(x, y);
+        ctx.lineTo(x + w, y);
+        ctx.lineTo(x + w, y + h);
+      } else {
+        const r = Math.min(w, h) * 0.3;
+        ctx.roundRect(x, y, w, h, r);
+      }
+      ctx.stroke();
+      ctx.restore();
+    };
+
     ctx.fillStyle = cssColor("--desk", "#191512");
     ctx.fillRect(0, 0, width, height);
+    if (bowl) drawBowl(bowl);
     fill(house, cssColor("--ink-soft", "#6a604e"));
     fill([v2.floor.outline], cssColor("--paper-2", "#e7dcc5"));
     fill(stage.slice(1), cssColor("--brass", "#9c823f"));
+    strokeOutline(v2.floor.outline, cssColor("--paper", "#efe7d6"), bowl ? 0.9 : 1);
   }
 
   /* 絵の一覧を組む（VENUE_PICKER_MODAL_2026_09_19）。群の見出しを挟んで並べる。
