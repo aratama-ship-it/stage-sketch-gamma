@@ -9049,6 +9049,26 @@
   }
   /* @planFit:end */
 
+  /* 平面図の枠を外から引ける窓口（2026-09-20）。
+     ★体験版（stage-public.js）はタップ位置を u,v へ直すのに同じ枠が要る。以前は planFit の式を
+       手で複製していたが、本体に「客席の奥行き」と「舞台の外の形」が入った 2026-09-19 に複製が
+       取り残され、新しい会場では指した所と違う場所へ駒が行く状態になっていた（テストが検出）。
+       複製をやめてここを呼ぶ形にする。式は1つだけにする。 */
+  window.SHOSAI_STAGE_PLAN_FIT = Object.freeze({
+    rect(input) {
+      const { W, H, venue, size, wingM, houseM } = input || {};
+      if (!venue || !size || !(W > 0) || !(H > 0)) return null;
+      const outside = planOutsideRatios(venue, size);
+      const fit = planFit({
+        W, H, audience: venue.audience, width: size.width, depth: size.depth,
+        wingM: Number.isFinite(wingM) ? wingM : WING_M,
+        ...(Number.isFinite(houseM) && houseM > 0 ? { houseM } : {}),
+        ...(outside ? { outside } : {}),
+      });
+      return fit && fit.stage ? { ...fit.stage, pxPerM: fit.pxPerM } : null;
+    },
+  });
+
   function layout(view) {
     const v = venue();
     const size = venueSize();
