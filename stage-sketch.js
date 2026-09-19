@@ -26470,8 +26470,12 @@ ${propsPlotHtml}
        ★器と舞台は 100m 対 18m で、同じ尺で描くと舞台が点になる。
          器の輪郭は枠に合わせて描く＝この2つだけ尺が揃っていない。概要なので割り切る。 */
     const bowl = (v2.bowl && typeof v2.bowl.kind === "string") ? v2.bowl.kind : null;
+    /* 天幕（テント）の会場は、いちばん外へ天幕の線を引く（VENUE_THUMB_TENT_2026_09_19）。
+       ★これが無いと、円形劇場とシャピトーがほぼ同じ絵になる（実測して気づいた）。
+       線を引く余白のぶん、中身を少し小さくする。 */
+    const tent = v2.tent === true;
     const pad = 5;
-    const room = bowl ? 0.42 : 1;
+    const room = bowl ? 0.42 : (tent ? 0.88 : 1);
     const scale = Math.min(((width - (pad * 2)) * room) / spanX,
       ((height - (pad * 2)) * room) / spanY);
     const drawnW = spanX * scale;
@@ -26538,9 +26542,23 @@ ${propsPlotHtml}
       ctx.restore();
     };
 
+    /* 天幕の輪郭。中身の外接を一回り大きくした楕円で描く。 */
+    const drawTent = () => {
+      ctx.save();
+      ctx.strokeStyle = cssColor("--ink-soft", "#6a604e");
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.ellipse(offsetX + (drawnW / 2), offsetY + (drawnH / 2),
+        (drawnW / 2) + 3, (drawnH / 2) + 3, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    };
+
     ctx.fillStyle = cssColor("--desk", "#191512");
     ctx.fillRect(0, 0, width, height);
     if (bowl) drawBowl(bowl);
+    if (tent) drawTent();
     fill(house, cssColor("--ink-soft", "#6a604e"));
     fill([v2.floor.outline], cssColor("--paper-2", "#e7dcc5"));
     fill(stage.slice(1), cssColor("--brass", "#9c823f"));

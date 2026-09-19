@@ -435,6 +435,10 @@
       note: venue.note,
       reference: venue.source,
       ...(venue.shapedVenue ? { shapedVenue: true } : {}),
+      /* 屋根が天幕（テント）かどうか。空間の事実であって描き方の指示ではないが、
+         いまのところ使っているのは劇場を選ぶ一覧の絵だけ（VENUE_THUMB_TENT_2026_09_19）。
+         ★legacy（VENUES.list）へは写さない＝先頭5プリセットのハッシュの錠に当たらない。 */
+      ...(venue.tent ? { tent: true } : {}),
       sizes,
     };
   };
@@ -476,6 +480,7 @@
       short: "円形・全周",
       audience: "round",
       rigging: "full",
+      tent: true,
       sizes: [
         // リング直径13m（42フィート）は1768年 Philip Astley 以来の国際標準
         { id: "onering", label: "ワンリング", ring: 13, width: 13, depth: 13, height: 12, seats: 800 },
@@ -706,6 +711,7 @@
         note: "小型は実在の巡演テント1張の技術仕様書（La P'tite Fabrique de Cirque・13m）の数値。大型はピスト13m（Astley以来の国際標準）に、Cirque Arlette Gruss 公式の現行テント（65×40m・コーポル下16m・1730席・内部マスト無し）の規模を合わせた。客席の外径18.5mはテント幅と座席数の二つの見積りが一致した値で、公表値ではない。",
       },
       short: "テント・全周",
+      tent: true,
       note: "巡演テント。小型はピスト（リング）が直径7mで客席4区画・最大240席、頂点5.5m。マストが外側に立つのでテントの中に支柱が無く、演技空間を塞がない。ただし吊り点の高さに余裕は無い。大型は伝統の13mリング（1768年 Philip Astley 以来の国際標準。馬が一定の歩度を保てる径）が入る規模で、コーポル下16m・1730席。この規模も内部にマストが無く、全周360度どこからも見通せる。テントは実際には楕円だが、演技空間まわりは円として扱っている。設営には小型で平坦な35×35mが要る。",
       reference: "小型: La P'tite Fabrique de Cirque 技術仕様書（13mシャピトー）／大型: Cirque Arlette Gruss 公式 https://www.cirque-gruss.com/le-cirque ／空中演目の最低高さは Katie Hardwick 技術要件",
       sizes: [touring, grand],
