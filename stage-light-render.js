@@ -31,13 +31,15 @@
      ★数値は照明モード（light-design/app.js の drawBeam）から持ってきたもの。勝手に変えない。 */
   const VISUAL_GAIN = 1.8;      // 図として見えるように持ち上げる倍率（照明モードと同じ）
   const BEAM_SOFT = 1.26;       // 縁の半影のぶん、楕円を少し広げる
-  const ALPHA_CORE = 0.34;      // 中心の濃さ
-  const ALPHA_MID = 0.18;       // 芯の外
-  const ALPHA_EDGE = 0.05;      // 縁の手前
+  const ALPHA_CORE = 0.50;      // 中心の濃さ（2026-09-19 本人決定「全体+50%」で 0.34→0.50）
+  const ALPHA_MID = 0.27;       // 芯の外（同上 0.18→0.27）
+  const ALPHA_EDGE = 0.075;     // 縁の手前（同上 0.05→0.075）
   const SOFT_DEFAULT = 2;       // 縁の柔らかさの既定（0〜10）
   const MIN_AREA_PX = 4;        // これ未満は潰れている＝その図では線にしか見えない
   const MAX_TEMP_PX = 1024;     // 濃淡用の一時キャンバスの上限
-  const BAND_ALPHA = 0.16;      // 光の帯（空気の中の筋）の濃さ。光だまりより薄い
+  const BAND_ALPHA = 0.24;      // 光の帯（空気の中の筋）の濃さ。光だまりより薄い（同上 0.16→0.24）
+  /* ★2026-09-19 本人決定: 筋と光だまりを**同じ比率**で上げる。片方だけ上げると、R-1 で滑らかに
+     なった「筋の先と光だまりのつながり」が段差へ戻る（本人が良いと評価した点なので崩さない）。 */
   const BAND_MIN_PX = 8;        // 出どころと着地がこれより近いと、帯は点になるので描かない
   const LINE_ALPHA = 0.55;      // 真上から見る図で引く破線の濃さ
   const LINE_MIN_PX = 6;        // 破線もこれより近ければ引かない
@@ -45,12 +47,40 @@
   const HOLE_BAND = 0.85;       // 真上から見る図で、破線の通り道を抜く強さ（照明モードと同じ）
   const HOLE_LINE_PX = 5;       // 真上から見る図の破線の穴の太さ（片側）
 
+  /* R-1「灯体から遠いほど筋を弱める」（2026-09-19・本人決定 D1＝既定の見え方として置き換える）。
+     設計: docs/beam-haze-2026-09-19/DESIGN.md
+     ★視線が円錐を横切る弦長 ∝ r、密度 ∝ 1/r² なので積分した輝度は ∝ 1/r。
+       ただし生の 1/r は灯体の位置で発散し、視線が光軸に近いと弦長近似そのものが崩れる。
+       **物理の再現ではなく「一様な三角形が板に見える」のを直す知覚補正**として扱う。
+     ★光だまりの spotFalloff（面の 1/r² × ランバート余弦）とは別物。混ぜない。 */
+  const BEAM_FALL_R0 = 0.55;    // 効き始め（灯体→着地を1とした比）
+  const BEAM_FALL_P = 0.85;     // 減衰の鋭さ（1.0で 1/r 相当）
+  const BEAM_FALL_LO = 0.45;    // 下限。着地側が消えすぎないように
+  const BEAM_FALL_HI = 1.35;    // 上限。灯体側が飽和しないように
+  const BEAM_FALL_STOPS = 9;    // 長さ方向の色止めの数（spotFalloff の9点に合わせる）
+  const BEAM_FALL_NORM_T = 0.5; // ここを1.0に正規化する＝筋の中ほどは今までと同じ濃さ
+  /* R-2「空気のむら（世界に固定された霧）」用。**本人決定 D2＝既定は無し**なので R-1 では 0。
+     0 のときヘイズの計算経路には一切入らない（重くしない）。 */
+  const HAZE_AMOUNT = 0;
+
   let temp = null;
   function tempCanvas(size) {
     if (typeof document === "undefined") return null;
     if (!temp) temp = document.createElement("canvas");
     if (temp.width !== size || temp.height !== size) { temp.width = size; temp.height = size; }
     return temp;
+  }
+
+  /* ★筋の一時キャンバスは光だまり（temp）と**別に持つ**。
+     共用すると、同じフレームの中で光だまりと筋が取り合って中身が混ざる。 */
+  let beamSheet = null;
+  function beamCanvas(width, height) {
+    if (typeof document === "undefined") return null;
+    if (!beamSheet) beamSheet = document.createElement("canvas");
+    if (beamSheet.width !== width || beamSheet.height !== height) {
+      beamSheet.width = width; beamSheet.height = height;
+    }
+    return beamSheet;
   }
 
   let mask = null;
@@ -239,6 +269,87 @@
        どの図でも帯の幅と光だまりの幅が自然につながる（照明モードの corners と同じ位置）。
      ★真上から見る図では三角に開かない（2026-09-11 本人指定）。開き具合は床の光だまりの
        大きさとして既に出ているので、出どころと着地を結ぶ破線だけにする。 */
+  /* 灯体からの距離で弱める生の形。t は 0＝灯体、1＝着地。 */
+  const rawFall = (t) => 1 / Math.pow(1 + Math.max(0, t) / BEAM_FALL_R0, BEAM_FALL_P);
+
+  /* 空気のむら（R-2）。**世界座標だけの関数**にすること。
+     画面座標・カメラ・時刻を混ぜると、正面図・平面図・3Dカメラで模様が食い違う。
+     R-1 では HAZE_AMOUNT = 0 なので常に 1 を返す（計算に入らない）。 */
+  function hazeAt(_world) {
+    if (!(HAZE_AMOUNT > 0)) return 1;
+    return 1; // R-2 で値ノイズへ差し替える
+  }
+
+  /* 筋の長さ方向の濃淡を「色止めの一覧」として返す。塗りとは分けてあるので、
+     ブラウザが無い環境（node のテスト）でもここだけ検査できる。
+     返り値: [{ t, at, v }]  t＝世界での位置(0〜1)、at＝画面の軸上の位置(0〜1)、v＝濃さの倍率。
+     ★ at は **世界座標の点を投影してから** 画面の軸へ射影して決める。
+       こうすると3Dカメラの遠近で「奥ほど色止めが詰まる」のが正しく出る。
+       世界で等間隔の t は投影後は等間隔ではないので、画面上で等分してはいけない。 */
+  function beamFalloff(pool, P, steps) {
+    if (!pool || !pool.from || !pool.c || typeof P !== "function") return null;
+    const head = P(pool.from), tail = P(pool.c);
+    if (!head || !tail) return null;
+    const axX = tail.X - head.X, axY = tail.Y - head.Y;
+    const len2 = axX * axX + axY * axY;
+    if (!(len2 > 1e-6)) return null;
+    const count = Math.max(2, Math.round(finite(steps, BEAM_FALL_STOPS)));
+    const base = rawFall(BEAM_FALL_NORM_T);
+    const out = [];
+    for (let k = 0; k < count; k += 1) {
+      const t = k / (count - 1);
+      const world = {
+        x: pool.from.x + (pool.c.x - pool.from.x) * t,
+        y: pool.from.y + (pool.c.y - pool.from.y) * t,
+        z: pool.from.z + (pool.c.z - pool.from.z) * t,
+      };
+      const at = P(world);
+      if (!at) continue;                       // カメラの後ろへ回った点は飛ばす
+      const along = ((at.X - head.X) * axX + (at.Y - head.Y) * axY) / len2;
+      const fall = clamp(rawFall(t) / base, BEAM_FALL_LO, BEAM_FALL_HI);
+      out.push({ t, at: clamp(along, 0, 1), v: clamp(fall * hazeAt(world), 0, BEAM_FALL_HI) });
+    }
+    if (out.length < 2) return null;
+    out.sort((a, b) => a.at - b.at);
+    return out;
+  }
+
+  /* 筋を横切る濃淡（扇形グラデーション）。塗る先の文脈を受け取るので、
+     画面へ直に描くときも一時キャンバスへ描くときも同じ式が使える。 */
+  function beamGradient(target, from, cornerP, cornerM, colour, alpha, softness, gain) {
+    const soft = clamp(finite(softness, SOFT_DEFAULT), 0, 10);
+    const feather = 0.06 + soft * 0.035;
+    const profile = [[0, 0], [feather * 0.45, 0.3], [feather, 1],
+      [1 - feather, 1], [1 - feather * 0.45, 0.3], [1, 0]];
+    const lift = Math.max(0, finite(gain, 1));
+    /* 筋は灯体（点）から放射状に伸びる。扇形のグラデーションなら等値線が灯体から出る半直線になる。
+       扇形が無い環境では平行のグラデーションへ戻す（見え方は近い）。 */
+    if (typeof target.createConicGradient === "function") {
+      const TAU = Math.PI * 2;
+      const wrap = (value) => ((value % TAU) + TAU) % TAU;
+      const angleAt = (t) => Math.atan2(
+        cornerM.Y + (cornerP.Y - cornerM.Y) * t - from.Y,
+        cornerM.X + (cornerP.X - cornerM.X) * t - from.X);
+      const left = angleAt(0), right = angleAt(1);
+      const clockwise = wrap(right - left) <= Math.PI;
+      const start = clockwise ? left : right;
+      const sweep = clockwise ? wrap(right - left) : wrap(left - right);
+      if (sweep > 1e-4) {
+        const gradient = target.createConicGradient(start, from.X, from.Y);
+        profile
+          .map(([t, weight]) => [clamp(wrap(angleAt(t) - start) / TAU, 0, 1), weight])
+          .sort((a, b) => a[0] - b[0])
+          .forEach(([at, weight]) => gradient.addColorStop(
+            at, rgba(colour, clamp(BAND_ALPHA * weight * alpha * lift, 0, 1))));
+        return gradient;
+      }
+    }
+    const gradient = target.createLinearGradient(cornerM.X, cornerM.Y, cornerP.X, cornerP.Y);
+    profile.forEach(([at, weight]) => gradient.addColorStop(
+      at, rgba(colour, clamp(BAND_ALPHA * weight * alpha * lift, 0, 1))));
+    return gradient;
+  }
+
   function paintBeam(ctx, pool, P, opts) {
     if (!pool || !pool.c || !pool.eb || !pool.from) return false;
     const level = clamp(finite(pool.level, 0), 0, 100) / 100;
@@ -271,49 +382,111 @@
     const bx = (alongB.X - centre.X) * BEAM_SOFT, by = (alongB.Y - centre.Y) * BEAM_SOFT;
     if (!Number.isFinite(bx + by) || Math.hypot(bx, by) < 1) return false;
 
-    /* 帯を横切る濃淡。芯が濃く両縁で消える。柔らかさで縁の落ち方が変わる（照明モードと同じ式）。 */
-    const soft = clamp(finite(pool.softness, SOFT_DEFAULT), 0, 10);
-    const feather = 0.06 + soft * 0.035;
-    const profile = [[0, 0], [feather * 0.45, 0.3], [feather, 1],
-      [1 - feather, 1], [1 - feather * 0.45, 0.3], [1, 0]];
     const cornerP = { X: centre.X + bx, Y: centre.Y + by };
     const cornerM = { X: centre.X - bx, Y: centre.Y - by };
 
+    /* 長さ方向の濃淡（灯体に近いほど明るい）。
+       ★掛け算なので、光だまりと同じく**別のキャンバスで「横断 × 長さ」を作ってから1枚で載せる**。
+         destination-in はαを減らすことしかできないので、三角形の側を BEAM_FALL_HI 倍だけ濃く塗り、
+         色止めを HI で割って 0〜1 に収める。掛け合わせると元の濃さ × 倍率に戻る。 */
+    const stops = beamFalloff(pool, P, BEAM_FALL_STOPS);
+    const sheet = stops ? beamSheetFor(ctx, from, cornerP, cornerM) : null;
+
+    if (!sheet) {
+      /* ブラウザが無い／画面の外／一時キャンバスを作れないときは、長さ方向を掛けずにそのまま塗る
+         （2026-09-18 までの見え方と同じ）。黙って落ちるより、薄くても筋が出るほうがよい。 */
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      ctx.fillStyle = beamGradient(ctx, from, cornerP, cornerM, pool.color, alpha, pool.softness, 1);
+      ctx.beginPath();
+      ctx.moveTo(from.X, from.Y);      // 灯体は点。点から広がる三角なら捻れない
+      ctx.lineTo(cornerP.X, cornerP.Y);
+      ctx.lineTo(cornerM.X, cornerM.Y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      return true;
+    }
+
+    const { canvas, ctx: sheetCtx, x0, y0, w, h, pw, ph, sx, sy } = sheet;
+    sheetCtx.setTransform(1, 0, 0, 1, 0, 0);
+    sheetCtx.clearRect(0, 0, pw, ph);
+    sheetCtx.setTransform(sx, 0, 0, sy, -x0 * sx, -y0 * sy);   // 以降は本体と同じ座標系のまま書ける
+    sheetCtx.fillStyle = beamGradient(
+      sheetCtx, from, cornerP, cornerM, pool.color, alpha, pool.softness, BEAM_FALL_HI);
+    sheetCtx.beginPath();
+    sheetCtx.moveTo(from.X, from.Y);
+    sheetCtx.lineTo(cornerP.X, cornerP.Y);
+    sheetCtx.lineTo(cornerM.X, cornerM.Y);
+    sheetCtx.closePath();
+    sheetCtx.fill();
+
+    const shade = sheetCtx.createLinearGradient(from.X, from.Y, centre.X, centre.Y);
+    let last = -1;
+    stops.forEach((step) => {
+      const at = step.at <= last ? Math.min(1, last + 1e-4) : step.at;  // 同じ位置は重ねられない
+      last = at;
+      shade.addColorStop(clamp(at, 0, 1), `rgba(255,255,255,${clamp(step.v / BEAM_FALL_HI, 0, 1).toFixed(4)})`);
+    });
+    sheetCtx.globalCompositeOperation = "destination-in";
+    sheetCtx.fillStyle = shade;
+    sheetCtx.fillRect(x0, y0, w, h);
+    sheetCtx.globalCompositeOperation = "source-over";
+    sheetCtx.setTransform(1, 0, 0, 1, 0, 0);
+
     ctx.save();
     ctx.globalCompositeOperation = "screen";
-    /* 筋は灯体（点）から放射状に伸びる。扇形のグラデーションなら等値線が灯体から出る半直線になる。
-       扇形が無い環境では平行のグラデーションへ戻す（見え方は近い）。 */
-    let gradient = null;
-    if (typeof ctx.createConicGradient === "function") {
-      const TAU = Math.PI * 2;
-      const wrap = (value) => ((value % TAU) + TAU) % TAU;
-      const angleAt = (t) => Math.atan2(
-        centre.Y + (2 * t - 1) * by - from.Y, centre.X + (2 * t - 1) * bx - from.X);
-      const left = angleAt(0), right = angleAt(1);
-      const clockwise = wrap(right - left) <= Math.PI;
-      const start = clockwise ? left : right;
-      const sweep = clockwise ? wrap(right - left) : wrap(left - right);
-      if (sweep > 1e-4) {
-        gradient = ctx.createConicGradient(start, from.X, from.Y);
-        profile
-          .map(([t, weight]) => [clamp(wrap(angleAt(t) - start) / TAU, 0, 1), weight])
-          .sort((a, b) => a[0] - b[0])
-          .forEach(([at, weight]) => gradient.addColorStop(at, rgba(pool.color, BAND_ALPHA * weight * alpha)));
-      }
-    }
-    if (!gradient) {
-      gradient = ctx.createLinearGradient(cornerM.X, cornerM.Y, cornerP.X, cornerP.Y);
-      profile.forEach(([at, weight]) => gradient.addColorStop(at, rgba(pool.color, BAND_ALPHA * weight * alpha)));
-    }
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.moveTo(from.X, from.Y);      // 灯体は点。点から広がる三角なら捻れない
-    ctx.lineTo(cornerP.X, cornerP.Y);
-    ctx.lineTo(cornerM.X, cornerM.Y);
-    ctx.closePath();
-    ctx.fill();
+    ctx.drawImage(canvas, 0, 0, pw, ph, x0, y0, w, h);
     ctx.restore();
     return true;
+  }
+
+  /* 筋を描くぶんだけの一時キャンバスを用意する。画面の外は切り落とす（塗る面積＝重さなので）。 */
+  /* ★画面の枠は「裏の画素数」ではなく「いまの座標系」で測る（2026-09-19・試験場 F-1 の実画面で発見）。
+       本体は論理座標 W×H のまま setTransform(倍率) で裏の画素数に合わせている（BACKING_MIN_SCALE=0.5 なら
+       裏は論理の半分）。裏の画素数で切ると、論理座標で右半分・下半分にある筋が丸ごと消えた。
+       一時キャンバスの画素も裏の密度で持つ（縮小表示で無駄に細かくならず、拡大表示でぼやけない）。 */
+  function canvasBoxInUserSpace(ctx, cw, ch) {
+    let m = null;
+    try { m = typeof ctx.getTransform === "function" ? ctx.getTransform() : null; } catch (_) { m = null; }
+    const identity = !m || (m.a === 1 && m.b === 0 && m.c === 0 && m.d === 1 && m.e === 0 && m.f === 0);
+    if (identity) return { x0: 0, y0: 0, x1: cw, y1: ch, sx: 1, sy: 1 };
+    const inv = typeof m.inverse === "function" ? m.inverse() : null;
+    if (!inv) return { x0: 0, y0: 0, x1: cw, y1: ch, sx: 1, sy: 1 };
+    const corners = [[0, 0], [cw, 0], [0, ch], [cw, ch]]
+      .map(([x, y]) => ({ X: inv.a * x + inv.c * y + inv.e, Y: inv.b * x + inv.d * y + inv.f }));
+    const xs = corners.map((c) => c.X), ys = corners.map((c) => c.Y);
+    if (!xs.every(Number.isFinite) || !ys.every(Number.isFinite)) return { x0: 0, y0: 0, x1: cw, y1: ch, sx: 1, sy: 1 };
+    return {
+      x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys),
+      sx: Math.max(1e-3, Math.hypot(m.a, m.b)), sy: Math.max(1e-3, Math.hypot(m.c, m.d)),
+    };
+  }
+
+  function beamSheetFor(ctx, from, cornerP, cornerM) {
+    const target = ctx && ctx.canvas;
+    const cw = target ? finite(target.width, 0) : 0;
+    const ch = target ? finite(target.height, 0) : 0;
+    if (!(cw > 0 && ch > 0)) return null;
+    const xs = [from.X, cornerP.X, cornerM.X], ys = [from.Y, cornerP.Y, cornerM.Y];
+    if (!xs.every(Number.isFinite) || !ys.every(Number.isFinite)) return null;
+    const box = canvasBoxInUserSpace(ctx, cw, ch);
+    const x0 = Math.max(Math.floor(box.x0), Math.floor(Math.min(...xs)) - 2);
+    const y0 = Math.max(Math.floor(box.y0), Math.floor(Math.min(...ys)) - 2);
+    const x1 = Math.min(Math.ceil(box.x1), Math.ceil(Math.max(...xs)) + 2);
+    const y1 = Math.min(Math.ceil(box.y1), Math.ceil(Math.max(...ys)) + 2);
+    const w = x1 - x0, h = y1 - y0;
+    if (!(w > 1 && h > 1)) return null;          // 画面の外＝描くものが無い
+    /* 一時キャンバスの画素数は光だまりの temp と同じ上限（MAX_TEMP_PX）に収める。裏が3倍（BACKING_MAX_SCALE）で
+       画面いっぱいの筋だと 3840px 幅の塗りになり、灯数ぶん重なる。筋は縁が柔らかいので少し粗くても見え方は変わらない。 */
+    const shrink = Math.min(1, MAX_TEMP_PX / Math.max(1, w * box.sx, h * box.sy));
+    const sx = box.sx * shrink, sy = box.sy * shrink;
+    const pw = Math.max(1, Math.ceil(w * sx)), ph = Math.max(1, Math.ceil(h * sy));
+    const canvas = beamCanvas(pw, ph);
+    if (!canvas) return null;
+    const sheetCtx = canvas.getContext ? canvas.getContext("2d") : null;
+    if (!sheetCtx) return null;
+    return { canvas, ctx: sheetCtx, x0, y0, w, h, pw, ph, sx, sy };
   }
 
   function paintBeams(ctx, pools, P, opts) {
@@ -478,9 +651,11 @@
   }
 
   const api = Object.freeze({
-    paintPool, paintPools, paintBeam, paintBeams, paintWorkLight, litLevelAt, paintLaser, paintLasers,
+    paintPool, paintPools, paintBeam, paintBeams, paintWorkLight, litLevelAt, paintLaser, paintLasers, beamFalloff, beamSheetFor,
     TOKENS: Object.freeze({ VISUAL_GAIN, BEAM_SOFT, ALPHA_CORE, ALPHA_MID, ALPHA_EDGE, SOFT_DEFAULT,
-      MIN_AREA_PX, BAND_ALPHA, BAND_MIN_PX, LINE_ALPHA, LINE_MIN_PX, HOLE_BAND, HOLE_LINE_PX }),
+      MIN_AREA_PX, BAND_ALPHA, BAND_MIN_PX, LINE_ALPHA, LINE_MIN_PX, HOLE_BAND, HOLE_LINE_PX,
+      BEAM_FALL_R0, BEAM_FALL_P, BEAM_FALL_LO, BEAM_FALL_HI, BEAM_FALL_STOPS, BEAM_FALL_NORM_T,
+      HAZE_AMOUNT }),
   });
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.SHOSAI_LIGHT_RENDER = api;

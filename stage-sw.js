@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v151";
+const CACHE_NAME = "stage-sketch-gamma-shell-v152";
 const APP_SHELL = [
   "./gamma-formation-presets.js?v=formation1",
   "./gamma-formation-model.js?v=formation1",
@@ -11,7 +11,7 @@ const APP_SHELL = [
 
   "./stage-lighting-plans.js?v=2026091650",
   "./stage-lighting-plan-overlay.js?v=2026091650",
-  "./stage-light-render.js?v=2026092031",
+  "./stage-light-render.js?v=2026092036",
   "./gamma-light-cue-overlay.js?v=2026092031",
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-lighting-presets-v1.json",
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-small.shosai-light-design.json",
@@ -27,7 +27,7 @@ const APP_SHELL = [
   "./light-design/volume-light.js?v=20260915-2",
   "./light-design/laser-effects.js?v=20260915-5-color-presets",
   "./light-design/laser-effects-ui.js?v=20260915-3-supported-shapes",
-  "./light-design/app.js?v=2026092026",
+  "./light-design/app.js?v=2026092036",
   "./light-design/light-presets.js?v=1789357787",
   "./light-design/light-presets-ui.js?v=20260915-3-vertical-cards",
   "./light-design/selected-light-presets-engine.js?v=1789616000",

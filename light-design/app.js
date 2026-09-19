@@ -1738,9 +1738,9 @@
          模様あり: 縁の柔らかさ×断面の明るさ。塞がっている所も
          もやの分だけ薄く残す（0.12）。完全に消すと筋が宙に浮いて見える。 */
       const band = [];
-      if (!prof) beamEdge.forEach(([at, w]) => band.push([at, hexA(color, 0.16 * w * a)]));
+      if (!prof) beamEdge.forEach(([at, w]) => band.push([at, hexA(color, 0.24 * w * a)]));
       else for (let i = 0; i < prof.length; i++) { const t = (i + 0.5) / prof.length;
-        band.push([t, hexA(color, 0.16 * edge(t) * a * (0.12 + 0.88 * prof[i]))]); }
+        band.push([t, hexA(color, 0.24 * edge(t) * a * (0.12 + 0.88 * prof[i]))]); }
       /* 帯の中の筋は、灯体（点）から放射状に伸びなければならない。
          createLinearGradient は等値線が平行なので、筋が先端へ収束せず
          幅がどこでも同じになる（2026-09-13 本人指摘「点からの放射状でなく完全な平行」）。
@@ -1792,9 +1792,9 @@
     const stops = (g, rad) => {
       const soft = beamEdgeSoftnessOf(gobo);
       const core = 0.55 - soft * 0.018, edge = 0.94 - soft * 0.035;
-      g.addColorStop(0, hexA(color, 0.34 * a));
-      g.addColorStop(core, hexA(color, 0.18 * a));
-      g.addColorStop(edge, hexA(color, 0.05 * a));
+      g.addColorStop(0, hexA(color, 0.50 * a));
+      g.addColorStop(core, hexA(color, 0.27 * a));
+      g.addColorStop(edge, hexA(color, 0.075 * a));
       g.addColorStop(1, hexA(color, 0));
       return g;
     };
