@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v138";
+const CACHE_NAME = "stage-sketch-gamma-shell-v139";
 const APP_SHELL = [
   "./gamma-formation-presets.js?v=formation1",
   "./gamma-formation-model.js?v=formation1",
@@ -35,7 +35,7 @@ const APP_SHELL = [
   "./light-design/embed.js?v=2026091701",
   "./stage.html",
   "./style.css?v=2026092009",
-  "./stage-venues.js?v=2026092017",
+  "./stage-venues.js?v=2026092023",
   "./stage-venue-lines.js?v=2026091992",
   "./stage-front-shape.js?v=2026092012",
   "./stage-i18n.js?v=2026092021",
@@ -61,13 +61,13 @@ const APP_SHELL = [
   "./gamma-mobile.js?v=2026091951",
   "./gamma-mobile.css?v=2026091950",
   "./stage-cue-sheet.js?v=2026091803",
-  "./stage-sketch.js?v=2026092022",
+  "./stage-sketch.js?v=2026092023",
   "./stage-timeline.js?v=2026091991",
   "./stage-session.js?v=2026091987",
   "./stage-study-owner.js?v=2026091501",
   "./stage-study.css?v=21",
   "./stage-usage.js?v=2026091501",
-  "./stage-venue-editor.js?v=2026092018",
+  "./stage-venue-editor.js?v=2026092023",
   "./stage-pwa.js?v=2026091501",
   "./stage-sketch.webmanifest",
   "./icons/stage-sketch-180.png",

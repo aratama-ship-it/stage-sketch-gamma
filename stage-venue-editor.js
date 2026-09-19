@@ -3385,6 +3385,10 @@
         polygon: audiencePolygon(band),
         mode: "audience",
         eyeM: 1.2,
+        /* ★客席の向き（全周／三方／両側／正面）を引き継ぐ（2026-09-19 本人承認）。
+           捨てると、ビッグトップを下敷きにした劇場が「正面」に落ち、
+           向こう側の客席・リング・低い舞台が出なくなる。手で描いた帯には無いので従来どおり。 */
+        ...(band.side ? { side: band.side } : {}),
         ...(band.shape ? { shape: band.shape } : {}),
         ...(band.merged ? { merged: true } : {}),
       }));

@@ -12593,13 +12593,18 @@
        奥壁の造作（黒扉）にも使うので、奥の描画より前に作る。 */
     const frontShapeLib = window.SHOSAI_FRONT_SHAPE || null;
     const shape = (() => {
-      if (!frontShapeLib || roundHouse) return null;
+      if (!frontShapeLib) return null;
       const outline = venueOutlineOf(v, L.size);
-      // 形を持つ一般形プリセットは作成会場と同じ step モード（床の外は舞台より低い所）
+      /* 形を持つ一般形プリセットは作成会場と同じ step モード（床の外は舞台より低い所）。
+         ★2026-09-19: 全周会場でも、形を持つ会場はここを通す。外していたため円形劇場の正面図だけが
+           四角い床になっていた（平面図・3Dは前から円）。全周の低い舞台＝サーカスのピステもここから出る。 */
       if ((v.custom || v.shapedVenue) && Array.isArray(outline)) {
         return frontShapeLib.build([outline].concat((venueStageExtensionsOf(v, L.size) || [])
           .map((item) => (item && Array.isArray(item.polygon)) ? item.polygon : null)));
       }
+      /* ★実在会場（TOHU等）の全周は、これまでどおり全周の描き方へ落とす。
+         円の輪郭を壁・立ち上がりに使うと破綻するため（2026-09-18 の決まり）。 */
+      if (roundHouse) return null;
       if (v.realVenue && Array.isArray(outline)) return frontShapeLib.build([outline], { minPoints: 4 });
       return null;
     })();
@@ -12891,7 +12896,7 @@
      * の3つで作る。角度そのものは作り直していない（正しい角度が要るなら案C）。
      * ★ sink は高さがマイナスのときだけ 0 より大きいので、ほかの会場はこの中へ入らない。 */
     const sink = finite(L.sink, 0);
-    if (sink > 0 && !roundHouse) {
+    if (sink > 0) {
       /* ★床の形を持つ会場（作成会場・一般形プリセット）では、舞台の縁は画面いっぱいの直線ではない。
          輪郭があるときは、客席の床を舞台の形で型抜きし、縁の線と落ち込みの影も輪郭に沿わせる
          （2026-09-19・限界①の直し）。形を持たない会場はこれまでどおり横一直線。 */
@@ -12904,25 +12909,22 @@
           b: place(shape.uOf(face.b[0]), shape.vOf(face.b[1]), L),
         }))
         : [{ a: { x: 0, y: L.bottomY }, b: { x: W, y: L.bottomY } }];
+      /* ★全周会場（ビッグトップ・円形劇場）の舞台はリング。縁は手前側の弧になる。
+         直線の辺を持たないので、下の「辺ごとに引く」処理ではなく弧として引く（2026-09-19）。 */
+      const sinkRing = roundHouse && ring ? ring : null;
       // 縁のいちばん奥（画面で上）から手前を客席の床にする
-      const edgeTop = Math.min(...sinkEdges.map((edge) => Math.min(edge.a.y, edge.b.y)), L.bottomY);
+      const edgeTop = sinkRing
+        ? sinkRing.y - sinkRing.ry
+        : Math.min(...sinkEdges.map((edge) => Math.min(edge.a.y, edge.b.y)), L.bottomY);
       const near = Math.min(H, L.bottomY + sink);
 
       target.save();
-      if (sinkFaces.length) {
-        /* 舞台の床を型抜きしてから塗る（even-odd）。欠き取りや弧の内側も客席の床になる。 */
-        target.beginPath();
-        target.rect(0, 0, W, H);
-        shape.polygons.forEach((poly) => {
-          poly.forEach((point, index) => {
-            const at = place(shape.uOf(point[0]), shape.vOf(point[1]), L);
-            if (index === 0) target.moveTo(at.x, at.y);
-            else target.lineTo(at.x, at.y);
-          });
-          target.closePath();
-        });
-        target.clip("evenodd");
-      }
+      /* 舞台の床を型抜きしてから塗る（even-odd）。欠き取り・弧の内側・全周のリングの外も客席の床になる。
+         ★型は床を敷くのと同じ floorPath()。ここで別の式を書くと、床と客席の床の境目がずれる。 */
+      target.beginPath();
+      target.rect(0, 0, W, H);
+      floorPath(false);
+      target.clip("evenodd");
       // 手前＝客席の床。奥（縁側）ほど暗く、手前ほど明るい
       const houseFloor = target.createLinearGradient(0, edgeTop, 0, H);
       houseFloor.addColorStop(0, stageSurfaceColor("#15110e"));
@@ -12934,7 +12936,25 @@
       /* 縁の向こう（舞台側）の落ち込み。床が切れていることを、影の帯で読ませる。
          辺ごとに、その辺から舞台の内側（画面で上）へ帯を伸ばす。 */
       const dropPx = sink * 0.45;
-      sinkEdges.forEach((edge) => {
+      if (sinkRing) {
+        /* リングの手前側の弧。落ち込みの影は床の内側だけに置く（外へはみ出すと輪が太って見える）。 */
+        target.save();
+        target.beginPath();
+        floorPath(false);
+        target.clip();
+        target.strokeStyle = "rgba(0,0,0,0.45)";
+        target.lineWidth = Math.max(2, dropPx * 2);
+        target.beginPath();
+        target.ellipse(sinkRing.x, sinkRing.y, sinkRing.rx, sinkRing.ry, 0, 0, Math.PI);
+        target.stroke();
+        target.restore();
+        target.strokeStyle = "rgba(239,231,214,0.26)";
+        target.lineWidth = 2;
+        target.beginPath();
+        target.ellipse(sinkRing.x, sinkRing.y, sinkRing.rx, sinkRing.ry, 0, 0, Math.PI);
+        target.stroke();
+      }
+      if (!sinkRing) sinkEdges.forEach((edge) => {
         const low = Math.max(edge.a.y, edge.b.y);
         const top = Math.max(0, Math.min(edge.a.y, edge.b.y) - dropPx);
         if (!(low > top)) return;
@@ -12954,7 +12974,7 @@
       // 縁の線。客席の明かりを拾う手前側だけ明るい
       target.strokeStyle = "rgba(239,231,214,0.26)";
       target.lineWidth = 2;
-      sinkEdges.forEach((edge) => {
+      if (!sinkRing) sinkEdges.forEach((edge) => {
         target.beginPath();
         target.moveTo(edge.a.x, edge.a.y);
         target.lineTo(edge.b.x, edge.b.y);

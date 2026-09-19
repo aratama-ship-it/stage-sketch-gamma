@@ -1731,7 +1731,11 @@
       label: venue.label,
       short: "作成会場",
       note: typeof venue.note === "string" ? venue.note : "会場ライブラリに保存した形です。正面図は近似です。",
-      audience: venue.audience.length ? "front" : "none",
+      /* ★客席の向きは、プリセットと同じ式で決める（2026-09-19 本人承認）。
+         ここを "front" 決め打ちにしていたため、ビッグトップを下敷きにした劇場が
+         「正面」に落ち、向こう側の客席・リング・低い舞台が出なかった。
+         ★古い作成会場は帯に side を持たないので、これまでどおり "front" になる。 */
+      audience: legacyAudience(venue.audience),
       frame: false,
       sizes: [{
         id: "custom",
