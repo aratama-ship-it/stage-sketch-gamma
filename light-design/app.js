@@ -1384,12 +1384,39 @@
       const q = P({ x: (pc.u - 0.5) * d.W, y: pc.v * d.D, z: 0 });
       const rw = Math.max(4, (pc.kind === "set" ? 0.9 : 0.45) * pxM), rd = Math.max(3, (pc.kind === "set" ? 0.9 : 0.3) * pxM);
       ctx.save();
-      ctx.fillStyle = "rgba(240,231,214,0.16)"; ctx.strokeStyle = "rgba(240,231,214,0.4)"; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.ellipse(q.X, q.Y, rw, rd, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      /* R-13 ①（2026-09-18）: 大道具は実寸・向きどおりの足あと（平面図の投影は z を無視するので、
+         共有部品の「天面」がそのまま上から見た形になる＝本体の平面図と同じ）。演者は従来の楕円。 */
+      const painted = pc.kind !== "performer" ? paintSetBoxes(ctx, pc, d, P, 0) : null;
+      let labelY = q.Y + rd + 4;
+      if (painted) {
+        labelY = painted.maxY + 4;
+      } else {
+        ctx.fillStyle = "rgba(240,231,214,0.16)"; ctx.strokeStyle = "rgba(240,231,214,0.4)"; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.ellipse(q.X, q.Y, rw, rd, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      }
       ctx.fillStyle = "rgba(240,231,214,0.5)"; ctx.font = "15px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "top";
-      if (showOn("names")) ctx.fillText(pc.name, q.X, q.Y + rd + 4); ctx.textAlign = "left";
+      if (showOn("names")) ctx.fillText(pc.name, q.X, labelY); ctx.textAlign = "left";
       ctx.restore();
     });
+  }
+  /* R-13 ①②（2026-09-18）: 大道具は舞台スケッチ本体と同じ共有部品（stage-set-render.js）で塗る。
+     以前は幅 0.9m×2 固定の長方形で、サイズ感が本体と食い違っていた。
+     ★形（parts）が受け渡しに乗っていればそれを、無ければ寸法だけの箱1個にする。
+     ★球は round で丸く塗る（箱で代用すると球の中に立方体が重なって見える）。
+     ★共有部品が読めない環境では null を返し、呼び出し側が従来の描き方へ落ちる。 */
+  const setPartsOf = (pc) => {
+    if (Array.isArray(pc.parts) && pc.parts.length) return pc.parts;
+    // 球は round で丸く塗る。ここで箱を代用すると、球の中に立方体が重なって出る
+    if (pc.round) return [];
+    return window.SHOSAI_SET_RENDER ? window.SHOSAI_SET_RENDER.fallbackBoxes(pc.dims, pc.hM) : [];
+  };
+  /* 奥の面から先に塗るための「遠さ」。側面図では奥行きの軸が左右（x）へ入れ替わる。 */
+  const setDepthFor = (yawDeg) => (yawDeg === -90 ? (p) => p.x : yawDeg === 90 ? (p) => -p.x : (p) => -p.y);
+  function paintSetBoxes(ctx, pc, d, P, yawDeg) {
+    const R = window.SHOSAI_SET_RENDER; if (!R) return null;
+    const parts = setPartsOf(pc);
+    if (!parts.length && !pc.round) return null;
+    return R.paintParts(ctx, parts, pc, d, P, { depthOf: setDepthFor(yawDeg), round: pc.round });
   }
   /* 立面（正面・側面・3D）。P は世界座標→画面。pxPerM はその図の1mあたりの画素。
      3Dでは奥行きで縮むので、投影が返す scale を掛ける。 */
@@ -1511,10 +1538,16 @@
       const k = pxPerM * sc;
       ctx.save();
       if (pc.kind !== "performer" || !F) {
-        const top = P({ x: (pc.u - 0.5) * d.W, y: pc.v * d.D, z: pc.hM });
-        const h = Math.abs(foot.Y - top.Y), w = 0.9 * k;
-        ctx.fillStyle = "rgba(240,231,214,0.15)"; ctx.strokeStyle = "rgba(240,231,214,0.4)"; ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.rect(foot.X - w, foot.Y - h, w * 2, h); ctx.fill(); ctx.stroke();
+        /* R-13 ①②（2026-09-18）: 大道具は実寸の箱を、本体と同じ共有部品（stage-set-render.js）で
+           立体に塗る。以前は幅 0.9m×2 固定の長方形で、サイズ感が本体と食い違っていた。
+           見る向きが side のときは奥行きの軸が x になるので、yawDeg から depthOf を選ぶ。 */
+        const painted = paintSetBoxes(ctx, pc, d, P, o.yawDeg || 0);
+        if (!painted) {
+          const top = P({ x: (pc.u - 0.5) * d.W, y: pc.v * d.D, z: pc.hM });
+          const h = Math.abs(foot.Y - top.Y), w = 0.9 * k;
+          ctx.fillStyle = "rgba(240,231,214,0.15)"; ctx.strokeStyle = "rgba(240,231,214,0.4)"; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.rect(foot.X - w, foot.Y - h, w * 2, h); ctx.fill(); ctx.stroke();
+        }
       } else {
         const H = pc.hM || F.DEFAULT_HEIGHT_CM / 100;
         const yaw = (((pc.facing || 0) + (o.yawDeg || 0)) * Math.PI) / 180;

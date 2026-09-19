@@ -33073,30 +33073,61 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
      外接の箱のままになる（以前は幅0.9m×2の決め打ちだった）。
      ★向き(facing)と位置は塗るときに掛ける。ここで渡すのは駒の中心から見た部品の並びだけ。
      ★演者は骨格モデル、幕は専用の描き方があるので渡さない。
-     ★部品が極端に多い形（長い坂など）は、受け渡しが膨らむので外接の箱1個に畳む。
-       図の下敷きとしては外接の箱で足り、実寸が合っていればサイズ感の食い違いは起きない。 */
+     ★箱・円盤・輪・吊り綱をそのまま渡し、球だけは別に round として渡す（本体は専用の塗りで丸く見せる）。 */
   const LIGHTING_CONTEXT_BOX_LIMIT = 200;
-  function lightingContextBoxes(visual, dims) {
+  const lightingPoint = (raw) => (Array.isArray(raw)
+    ? [finite(raw[0], 0), finite(raw[1], 0), finite(raw[2], 0)] : [0, 0, 0]);
+
+  function lightingContextParts(visual, dims) {
     if (!visual || visual.type === "performer" || visual.type === "curtain") return null;
+    // 球は round で丸く塗る。ここで外接の箱も返すと、球の中に立方体が重なって出る
+    if (visual.type === "sphere") return null;
     let parts = null;
     try { parts = pieceParts(visual); } catch (_) { parts = null; }
-    /* 箱でない部品（球・輪・吊り綱は円と線で描く）は渡さない。
-       そういう駒と、部品が多すぎる駒は、下の「外接の箱1個」へ畳む。 */
-    const boxes = (Array.isArray(parts) ? parts : []).filter((part) => part && !part.kind
-      && Number.isFinite(Number(part.w)) && Number.isFinite(Number(part.d)) && Number.isFinite(Number(part.h)));
-    if (!boxes.length || boxes.length > LIGHTING_CONTEXT_BOX_LIMIT) {
-      const w = finite(dims && dims.w, finite(dims && dims.dia, 0));
-      const d = finite(dims && dims.d, finite(dims && dims.dia, 0));
-      const h = finite(dims && dims.h, finite(dims && dims.dia, 0));
-      if (!(w > 0) || !(d > 0) || !(h > 0)) return null;
-      return [{ ox: 0, oz: 0, w, d, h, lift: Math.max(0, finite(dims && dims.lift, 0)), tint: 1, rotY: 0 }];
-    }
-    return boxes.map((part) => ({
-      ox: finite(part.ox, 0), oz: finite(part.oz, 0),
-      w: finite(part.w, 0), d: finite(part.d, 0), h: finite(part.h, 0),
-      lift: finite(part.lift, 0), tint: part.tint === undefined ? 1 : finite(part.tint, 1),
-      rotY: finite(part.rotY, 0),
-    }));
+    const list = Array.isArray(parts) ? parts : [];
+    const out = [];
+    let boxes = 0;
+    list.forEach((part) => {
+      if (!part || typeof part !== "object") return;
+      if (part.kind === "disc") {
+        out.push({ kind: "disc", c: lightingPoint(part.c), r: finite(part.r, 0), h: finite(part.h, 0),
+          tint: part.tint === undefined ? 1 : finite(part.tint, 1) });
+      } else if (part.kind === "ring") {
+        out.push({ kind: "ring", c: lightingPoint(part.c), r: finite(part.r, 0),
+          plane: part.plane, w: finite(part.w, 0.04), tone: part.tone });
+      } else if (part.kind === "line") {
+        out.push({ kind: "line", a: lightingPoint(part.a), b: lightingPoint(part.b),
+          w: finite(part.w, 0.04), tone: part.tone });
+      } else if (Number.isFinite(Number(part.w)) && Number.isFinite(Number(part.d)) && Number.isFinite(Number(part.h))) {
+        boxes += 1;
+        out.push({ ox: finite(part.ox, 0), oz: finite(part.oz, 0),
+          w: finite(part.w, 0), d: finite(part.d, 0), h: finite(part.h, 0),
+          lift: finite(part.lift, 0), tint: part.tint === undefined ? 1 : finite(part.tint, 1),
+          rotY: finite(part.rotY, 0) });
+      }
+    });
+    /* 部品が極端に多い形（長い坂など）は、受け渡しが膨らむので外接の箱1個へ畳む。
+       図の下敷きとしては外接の箱で足り、実寸が合っていればサイズ感の食い違いは起きない。 */
+    if (boxes > LIGHTING_CONTEXT_BOX_LIMIT) return lightingContextFallback(dims);
+    if (out.length) return out;
+    return lightingContextFallback(dims);
+  }
+
+  function lightingContextFallback(dims) {
+    const w = finite(dims && dims.w, finite(dims && dims.dia, 0));
+    const d = finite(dims && dims.d, finite(dims && dims.dia, 0));
+    const h = finite(dims && dims.h, finite(dims && dims.dia, 0));
+    if (!(w > 0) || !(d > 0) || !(h > 0)) return null;
+    return [{ ox: 0, oz: 0, w, d, h, lift: Math.max(0, finite(dims && dims.lift, 0)), tint: 1, rotY: 0 }];
+  }
+
+  /* 球は本体だけが持つ専用の塗り（drawSphere）で丸く見せる。部品には現れないので別に渡す。
+     ★本人指示 2026-09-18「丸く見せます」。箱で代用すると球が立方体に見える。 */
+  function lightingContextRound(visual, dims) {
+    if (!visual || visual.type !== "sphere") return null;
+    const dia = finite(dims && dims.dia, 0);
+    if (!(dia > 0)) return null;
+    return { dia, lift: Math.max(0, finite(dims && dims.lift, 0)) };
   }
 
   function gammaLightingContext() {
@@ -33112,7 +33143,8 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
           pose: visual.pose, facing: visual.facing, dims: projectIoClone(dims),
           // 台の上に乗っている駒は、その高さから立ち上げる（本体の floorPoint と同じ）
           base: Math.max(0, finite(visual.base, 0)),
-          boxes: lightingContextBoxes(visual, dims),
+          parts: lightingContextParts(visual, dims),
+          round: lightingContextRound(visual, dims),
           w: dims.w ? dims.w / stage.W : 0.1, curtainKind: visual.curtainKind, open: visual.open };
       }),
     }));
