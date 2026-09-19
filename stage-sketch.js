@@ -13449,6 +13449,26 @@
     }
     target.restore();
 
+    /* ★舞台の高さを平面図にも出す（2026-09-19）。真上から見た図なので高さは形に出ない。
+       数字の札で伝え、マイナス（客席より低い舞台＝サーカスのピステ）は縁を点線にして
+       「床が落ちている」ことも見せる。
+       ★高さを持たない会場では1本も描かない＝いままでの絵と1画素も変わらない。 */
+    const planStageHeightM = Number(v.stageHeightM);
+    if (Number.isFinite(planStageHeightM) && planStageHeightM !== 0) {
+      if (planStageHeightM < 0) {
+        target.save();
+        target.strokeStyle = "rgba(239,231,214,0.30)";
+        target.lineWidth = 1.5;
+        target.setLineDash([6, 4]);
+        stagePolygons.forEach((polygon) => { polygonPath(polygon); target.stroke(); });
+        target.setLineDash([]);
+        target.restore();
+      }
+      /* ★札は舞台の手前寄り（下）へ置く。上には道具の帯（動線を描く・メモ…）が重なっていて隠れる。 */
+      const tagAt = pointAt([(bounds.minX + bounds.maxX) / 2, bounds.maxY]);
+      const sign = planStageHeightM > 0 ? "+" : "\u2212";   // マイナスは全角の−ではなく数学記号
+      label(target, `舞台 ${sign}${Math.abs(planStageHeightM)}m`, tagAt.x, tagAt.y - 14);
+    }
     label(target, `${tx("間口")} ${L.size.width}m`, s.x + s.w / 2, Math.max(PLAN_WIDTH_LABEL_MIN_Y, s.y - 22));
     label(target, `${tx("奥行")} ${L.size.depth}m`, s.x - 46, s.y + s.h / 2);
   }
