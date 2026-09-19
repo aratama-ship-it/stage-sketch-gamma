@@ -12892,26 +12892,74 @@
      * ★ sink は高さがマイナスのときだけ 0 より大きいので、ほかの会場はこの中へ入らない。 */
     const sink = finite(L.sink, 0);
     if (sink > 0 && !roundHouse) {
+      /* ★床の形を持つ会場（作成会場・一般形プリセット）では、舞台の縁は画面いっぱいの直線ではない。
+         輪郭があるときは、客席の床を舞台の形で型抜きし、縁の線と落ち込みの影も輪郭に沿わせる
+         （2026-09-19・限界①の直し）。形を持たない会場はこれまでどおり横一直線。 */
+      const sinkFaces = (shape && frontShapeLib)
+        ? frontShapeLib.faces(shape, stepShape ? "step" : "wall").filter((face) => face.kind === "front")
+        : [];
+      const sinkEdges = sinkFaces.length
+        ? sinkFaces.map((face) => ({
+          a: place(shape.uOf(face.a[0]), shape.vOf(face.a[1]), L),
+          b: place(shape.uOf(face.b[0]), shape.vOf(face.b[1]), L),
+        }))
+        : [{ a: { x: 0, y: L.bottomY }, b: { x: W, y: L.bottomY } }];
+      // 縁のいちばん奥（画面で上）から手前を客席の床にする
+      const edgeTop = Math.min(...sinkEdges.map((edge) => Math.min(edge.a.y, edge.b.y)), L.bottomY);
       const near = Math.min(H, L.bottomY + sink);
+
+      target.save();
+      if (sinkFaces.length) {
+        /* 舞台の床を型抜きしてから塗る（even-odd）。欠き取りや弧の内側も客席の床になる。 */
+        target.beginPath();
+        target.rect(0, 0, W, H);
+        shape.polygons.forEach((poly) => {
+          poly.forEach((point, index) => {
+            const at = place(shape.uOf(point[0]), shape.vOf(point[1]), L);
+            if (index === 0) target.moveTo(at.x, at.y);
+            else target.lineTo(at.x, at.y);
+          });
+          target.closePath();
+        });
+        target.clip("evenodd");
+      }
       // 手前＝客席の床。奥（縁側）ほど暗く、手前ほど明るい
-      const houseFloor = target.createLinearGradient(0, L.bottomY, 0, H);
+      const houseFloor = target.createLinearGradient(0, edgeTop, 0, H);
       houseFloor.addColorStop(0, stageSurfaceColor("#15110e"));
       houseFloor.addColorStop(1, stageSurfaceColor("#241d18"));
       target.fillStyle = houseFloor;
-      target.fillRect(0, L.bottomY, W, Math.max(0, H - L.bottomY));
-      // 縁の向こう（舞台側）の落ち込み。床が切れていることを、影の帯で読ませる
-      const drop = target.createLinearGradient(0, Math.max(0, L.bottomY - sink * 0.45), 0, L.bottomY);
-      drop.addColorStop(0, "rgba(0,0,0,0)");
-      drop.addColorStop(1, "rgba(0,0,0,0.45)");
-      target.fillStyle = drop;
-      target.fillRect(0, Math.max(0, L.bottomY - sink * 0.45), W, Math.min(sink * 0.45, L.bottomY));
+      target.fillRect(0, edgeTop, W, Math.max(0, H - edgeTop));
+      target.restore();
+
+      /* 縁の向こう（舞台側）の落ち込み。床が切れていることを、影の帯で読ませる。
+         辺ごとに、その辺から舞台の内側（画面で上）へ帯を伸ばす。 */
+      const dropPx = sink * 0.45;
+      sinkEdges.forEach((edge) => {
+        const low = Math.max(edge.a.y, edge.b.y);
+        const top = Math.max(0, Math.min(edge.a.y, edge.b.y) - dropPx);
+        if (!(low > top)) return;
+        const drop = target.createLinearGradient(0, top, 0, low);
+        drop.addColorStop(0, "rgba(0,0,0,0)");
+        drop.addColorStop(1, "rgba(0,0,0,0.45)");
+        target.fillStyle = drop;
+        target.beginPath();
+        target.moveTo(edge.a.x, edge.a.y);
+        target.lineTo(edge.b.x, edge.b.y);
+        target.lineTo(edge.b.x, Math.max(0, edge.b.y - dropPx));
+        target.lineTo(edge.a.x, Math.max(0, edge.a.y - dropPx));
+        target.closePath();
+        target.fill();
+      });
+
       // 縁の線。客席の明かりを拾う手前側だけ明るい
       target.strokeStyle = "rgba(239,231,214,0.26)";
       target.lineWidth = 2;
-      target.beginPath();
-      target.moveTo(0, L.bottomY);
-      target.lineTo(W, L.bottomY);
-      target.stroke();
+      sinkEdges.forEach((edge) => {
+        target.beginPath();
+        target.moveTo(edge.a.x, edge.a.y);
+        target.lineTo(edge.b.x, edge.b.y);
+        target.stroke();
+      });
       if (near < H - 2) {
         // 客席の床の、さらに手前。暗くして枠の下端を締める
         target.fillStyle = stageSurfaceColor("#100d0b");
