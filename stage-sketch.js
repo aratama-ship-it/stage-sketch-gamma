@@ -8906,6 +8906,79 @@
      プロセニアム＝左右、スラスト＝奥（左右は客席なので置けない）、
      それ以外＝当面は左右。正面図には描かない（額縁の外は見えない）。 */
   const WING_M = 2.5;   // 袖の奥行き（m）
+
+  /* 花道・橋掛りなど、舞台と同じ高さの追加ステージ（VENUE_PIECE_EXTENSION_2026_09_20）。
+   * 平面の座標（m）を、駒と同じ u,v（**輪郭**の外接を 0〜1 とする目盛り）へ直して矩形で返す。
+   * ★枠が輪郭だけなのは平面図・正面図・3Dと同じ数え方にするため
+   *   （VENUE_PLAN_STAGE_FRAME_2026_09_19 / VENUE_SHAPE_FRAME_2026_09_20）。
+   * ★矩形で持つのは、置ける場所を「矩形の和」で決めるから。外接ひとつにすると
+   *   歌舞伎で客席いっぱいに置けてしまう。
+   * ★追加ステージを持たない会場では空の配列＝いままでと何も変わらない。
+   * ★会場の切り替えごとに作り直す。毎フレーム駒の数だけ呼ばれるので、
+   *   同じ会場・同じ規模のあいだは作り直さない（同一性で見る）。 */
+  let stageExtensionRectCache = { venue: null, size: null, count: -1, rects: [] };
+  function stageExtensionRects() {
+    const v = venue();
+    const size = venueSize();
+    const list = (venueStageExtensionsOf(v, size) || [])
+      .filter((item) => item && Array.isArray(item.polygon) && item.polygon.length >= 3);
+    if (stageExtensionRectCache.venue === v && stageExtensionRectCache.size === size
+      && stageExtensionRectCache.count === list.length) return stageExtensionRectCache.rects;
+    const outline = venueOutlineOf(v, size);
+    let rects = [];
+    if (list.length && Array.isArray(outline) && outline.length >= 3) {
+      const xs = outline.map((point) => point[0]);
+      const ys = outline.map((point) => point[1]);
+      const minX = Math.min(...xs);
+      const minY = Math.min(...ys);
+      const width = Math.max(0.001, Math.max(...xs) - minX);
+      const depth = Math.max(0.001, Math.max(...ys) - minY);
+      rects = list.map((item) => {
+        const us = item.polygon.map((point) => (point[0] - minX) / width);
+        const vs = item.polygon.map((point) => (point[1] - minY) / depth);
+        return { uMin: Math.min(...us), uMax: Math.max(...us),
+          vMin: Math.min(...vs), vMax: Math.max(...vs) };
+      });
+    }
+    stageExtensionRectCache = { venue: v, size, count: list.length, rects };
+    return rects;
+  }
+
+  /* 駒を置ける場所（VENUE_PIECE_EXTENSION_2026_09_20）。
+   * 「舞台の枠＋袖」＋「追加ステージごとの矩形」。返すのは矩形の配列で、和が置ける場所。 */
+  function pieceAreaRects() {
+    const b = planBounds();
+    return [{ uMin: b.uMin, uMax: b.uMax, vMin: b.vMin, vMax: b.vMax }]
+      .concat(stageExtensionRects());
+  }
+
+  /* 置ける場所へ寄せる。どの矩形にも入っていなければ、いちばん近い矩形の縁へ。
+   * ★矩形が1つ（＝追加ステージを持たない会場）のときは、従来の軸ごとの clamp と同じ式。 */
+  function clampToPieceArea(u, v) {
+    const rects = pieceAreaRects();
+    let best = null;
+    for (let i = 0; i < rects.length; i += 1) {
+      const r = rects[i];
+      const cu = clamp(u, r.uMin, r.uMax);
+      const cv = clamp(v, r.vMin, r.vMax);
+      const away = ((cu - u) * (cu - u)) + ((cv - v) * (cv - v));
+      if (!best || away < best.away) best = { away, u: cu, v: cv };
+      if (best.away === 0) break;
+    }
+    return best ? { u: best.u, v: best.v } : { u, v };
+  }
+
+  /* 置ける場所ぜんぶの外接。組をまとめて動かすときだけ使う（組の形を崩さないため）。 */
+  function pieceAreaBounds() {
+    const rects = pieceAreaRects();
+    return {
+      uMin: Math.min(...rects.map((r) => r.uMin)),
+      uMax: Math.max(...rects.map((r) => r.uMax)),
+      vMin: Math.min(...rects.map((r) => r.vMin)),
+      vMax: Math.max(...rects.map((r) => r.vMax)),
+    };
+  }
+
   function planBounds() {
     const v = venue();
     const size = venueSize();
@@ -8915,8 +8988,19 @@
     return { uMin: -du, uMax: 1 + du, vMin: 0, vMax: 1 };
   }
 
-  // 駒が舞台の枠の中に居るか。正面図はこの枠の中だけを描く
-  const onStageArea = (u, v) => u >= -0.02 && u <= 1.02 && v >= -0.02 && v <= 1.02;
+  /* 駒が舞台の上に居るか。正面図はこの枠の中だけを描く。
+     ★花道・橋掛りの上も舞台の上と見なす（VENUE_PIECE_EXTENSION_2026_09_20）。
+       客席から見えている場所なので、正面図・3Dに出て、小道具の持ち主も「舞台に居る」になる。
+     ★1つの式のまま書く。この規則は tools/scan-prop-render.mjs が
+       下の宣言から次の `;` までを切り出して単独で評価している。
+       複数の文にするとそこで構文が壊れる。
+       ★この注釈にその宣言の字面を書いてもいけない（先に見つかって注釈を切り出す）。
+     ★`typeof` で包むのも同じ理由。切り出した先に stageExtensionRects は無いので、
+       舞台の外の駒を渡されたときに ReferenceError にならないようにする
+       （追加ステージを持たない会場の判定は、どちらにせよ最初の行で決まる）。 */
+  const onStageArea = (u, v) => (u >= -0.02 && u <= 1.02 && v >= -0.02 && v <= 1.02)
+    || (typeof stageExtensionRects === "function" && stageExtensionRects().some((r) =>
+      u >= r.uMin - 0.02 && u <= r.uMax + 0.02 && v >= r.vMin - 0.02 && v <= r.vMax + 0.02));
 
   /* ---------- レイアウト ----------
      舞台は常に画面いっぱいに描く。実寸の違いは「人の小ささ」として出る。 */
@@ -9249,12 +9333,9 @@
   function fromScreen(x, y, L) {
     if (L.plan) {
       /* 平面図では袖まで掴める（SSの灯体や当たる先も舞台の外に置ける）。
-         正面図は舞台の枠までのまま。 */
-      const b = planBounds();
-      return {
-        u: clamp((x - L.stage.x) / L.stage.w, b.uMin, b.uMax),
-        v: clamp((y - L.stage.y) / L.stage.h, b.vMin, b.vMax),
-      };
+         正面図は舞台の枠までのまま。
+         ★花道・橋掛りの上にも置ける（VENUE_PIECE_EXTENSION_2026_09_20）。 */
+      return clampToPieceArea((x - L.stage.x) / L.stage.w, (y - L.stage.y) / L.stage.h);
     }
     const raw = L.untilt(y);
     const v = clamp((raw - L.rawFloorY) / (L.rawBottomY - L.rawFloorY), 0, 1);
@@ -29044,7 +29125,9 @@ ${propsPlotHtml}
       }
       const next = fromScreen(px, py, L);
       if (pointerAction.groupStart && pointerAction.groupStart.length > 1) {
-        const bounds = L.plan ? planBounds() : { uMin: 0, uMax: 1, vMin: 0, vMax: 1 };
+        /* ★組をまとめて動かすときは外接ひとつで渡す（VENUE_PIECE_EXTENSION_2026_09_20）。
+           矩形ごとに寄せると組の形が崩れるため、ここだけは花道まで含む外接を使う。 */
+        const bounds = L.plan ? pieceAreaBounds() : { uMin: 0, uMax: 1, vMin: 0, vMax: 1 };
         const moved = groupedDragPositions(
           pointerAction.groupStart, pointerAction.id, next.u, next.v, bounds,
         );
@@ -29117,12 +29200,16 @@ ${propsPlotHtml}
     checkpoint();
     const amount = event.shiftKey ? 0.05 : 0.016;
     bringToTop(piece);   // 動かしたものが、重なった相手の上に乗る
-    const kb = planBounds();
     const wasU = piece.u;
     const wasV = piece.v;
-    piece.u = clamp(piece.u + moves[event.key][0] * amount, kb.uMin, kb.uMax);
-    // 上キーで画面の上＝奥へ。正面図でも平面図でも同じ向きになる
-    piece.v = clamp(piece.v + moves[event.key][1] * amount, kb.vMin, kb.vMax);
+    /* 上キーで画面の上＝奥へ。正面図でも平面図でも同じ向きになる。
+       ★花道・橋掛りの上にも置ける（VENUE_PIECE_EXTENSION_2026_09_20）。 */
+    const moved = clampToPieceArea(
+      piece.u + moves[event.key][0] * amount,
+      piece.v + moves[event.key][1] * amount,
+    );
+    piece.u = moved.u;
+    piece.v = moved.v;
     syncRouteFromPrev(piece, wasU, wasV);
     render();
     persistSoon();
