@@ -59,9 +59,20 @@
   const BEAM_FALL_HI = 1.35;    // 上限。灯体側が飽和しないように
   const BEAM_FALL_STOPS = 9;    // 長さ方向の色止めの数（spotFalloff の9点に合わせる）
   const BEAM_FALL_NORM_T = 0.5; // ここを1.0に正規化する＝筋の中ほどは今までと同じ濃さ
-  /* R-2「空気のむら（世界に固定された霧）」用。**本人決定 D2＝既定は無し**なので R-1 では 0。
-     0 のときヘイズの計算経路には一切入らない（重くしない）。 */
+  /* R-2「空気のむら（世界に固定された霧）」（2026-09-19・本人決定「R-2 を『もや』にする。段階5③は棚上げ」）。
+     ★つまみは1つ＝照明デザインの場面ごとの `environment.haze`（0〜100・照明を組む画面の値・既定35）。
+       hazeAmount(haze) で振れ幅へ写す: 100 → HAZE_MAX、35 → 0.15、70 → 0.30（設計 §4-4 の「確認用 0.30」）。
+     ★値が無いとき（HAZE_AMOUNT）は 0＝むら無し（本人決定 D2）。0 なら計算経路に入らない。
+     ★むらは**世界座標だけ**の値ノイズ。画面座標・カメラ・時刻を混ぜない（正面図・平面図・3Dで同じ霧）。
+       既定は静止（時間で動かさない＝検証の再現性）。 */
   const HAZE_AMOUNT = 0;
+  const HAZE_MAX = 0.43;        // environment.haze=100 のときの振れ幅（±）
+  const HAZE_SCALE_M = 2.0;     // むら1つの大きさ(m)
+  function hazeAmount(haze) {
+    const v = finite(haze, NaN);
+    if (!Number.isFinite(v)) return HAZE_AMOUNT;
+    return clamp(v, 0, 100) / 100 * HAZE_MAX;
+  }
 
   let temp = null;
   function tempCanvas(size) {
@@ -274,10 +285,30 @@
 
   /* 空気のむら（R-2）。**世界座標だけの関数**にすること。
      画面座標・カメラ・時刻を混ぜると、正面図・平面図・3Dカメラで模様が食い違う。
-     R-1 では HAZE_AMOUNT = 0 なので常に 1 を返す（計算に入らない）。 */
-  function hazeAt(_world) {
-    if (!(HAZE_AMOUNT > 0)) return 1;
-    return 1; // R-2 で値ノイズへ差し替える
+     値ノイズ（ハッシュ＋三線形補間＋smoothstep）。テーブルを持たない。 */
+  function hash3(ix, iy, iz) {
+    let n = (ix * 374761393 + iy * 1103515245 + iz * 668265263) | 0;
+    n = Math.imul(n ^ (n >>> 13), 1274126177);
+    n = n ^ (n >>> 16);
+    return (n >>> 0) / 4294967296;             // 0〜1
+  }
+  const smooth = (t) => t * t * (3 - 2 * t);
+  function noise3(x, y, z) {
+    const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z);
+    const fx = smooth(x - ix), fy = smooth(y - iy), fz = smooth(z - iz);
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const c00 = lerp(hash3(ix, iy, iz), hash3(ix + 1, iy, iz), fx);
+    const c10 = lerp(hash3(ix, iy + 1, iz), hash3(ix + 1, iy + 1, iz), fx);
+    const c01 = lerp(hash3(ix, iy, iz + 1), hash3(ix + 1, iy, iz + 1), fx);
+    const c11 = lerp(hash3(ix, iy + 1, iz + 1), hash3(ix + 1, iy + 1, iz + 1), fx);
+    return lerp(lerp(c00, c10, fy), lerp(c01, c11, fy), fz);
+  }
+  /* 倍率 1±amount。平均は 1＝筋の全体の明るさは変えず、むらだけ乗せる（中ほどの濃さを据え置く R-1 の作法と同じ）。 */
+  function hazeAt(world, amount) {
+    const amt = clamp(finite(amount, HAZE_AMOUNT), 0, 1);
+    if (!(amt > 0) || !world) return 1;
+    const n = noise3(finite(world.x, 0) / HAZE_SCALE_M, finite(world.y, 0) / HAZE_SCALE_M, finite(world.z, 0) / HAZE_SCALE_M);
+    return 1 + amt * (2 * n - 1);
   }
 
   /* 筋の長さ方向の濃淡を「色止めの一覧」として返す。塗りとは分けてあるので、
@@ -286,7 +317,7 @@
      ★ at は **世界座標の点を投影してから** 画面の軸へ射影して決める。
        こうすると3Dカメラの遠近で「奥ほど色止めが詰まる」のが正しく出る。
        世界で等間隔の t は投影後は等間隔ではないので、画面上で等分してはいけない。 */
-  function beamFalloff(pool, P, steps) {
+  function beamFalloff(pool, P, steps, haze) {
     if (!pool || !pool.from || !pool.c || typeof P !== "function") return null;
     const head = P(pool.from), tail = P(pool.c);
     if (!head || !tail) return null;
@@ -307,7 +338,7 @@
       if (!at) continue;                       // カメラの後ろへ回った点は飛ばす
       const along = ((at.X - head.X) * axX + (at.Y - head.Y) * axY) / len2;
       const fall = clamp(rawFall(t) / base, BEAM_FALL_LO, BEAM_FALL_HI);
-      out.push({ t, at: clamp(along, 0, 1), v: clamp(fall * hazeAt(world), 0, BEAM_FALL_HI) });
+      out.push({ t, at: clamp(along, 0, 1), v: clamp(fall * hazeAt(world, haze), 0, BEAM_FALL_HI) });
     }
     if (out.length < 2) return null;
     out.sort((a, b) => a.at - b.at);
@@ -389,7 +420,7 @@
        ★掛け算なので、光だまりと同じく**別のキャンバスで「横断 × 長さ」を作ってから1枚で載せる**。
          destination-in はαを減らすことしかできないので、三角形の側を BEAM_FALL_HI 倍だけ濃く塗り、
          色止めを HI で割って 0〜1 に収める。掛け合わせると元の濃さ × 倍率に戻る。 */
-    const stops = beamFalloff(pool, P, BEAM_FALL_STOPS);
+    const stops = beamFalloff(pool, P, BEAM_FALL_STOPS, opts && opts.haze);   // opts.haze＝むらの振れ幅（hazeAmount で写した値）
     const sheet = stops ? beamSheetFor(ctx, from, cornerP, cornerM) : null;
 
     if (!sheet) {
@@ -700,11 +731,11 @@
 
   const api = Object.freeze({
     paintPool, paintPools, paintBeam, paintBeams, paintWorkLight, litLevelAt, paintLaser, paintLasers,
-    beamFalloff, beamSheetFor, litColorAt, tintColor,
+    beamFalloff, beamSheetFor, litColorAt, tintColor, hazeAmount, hazeAt, noise3,
     TOKENS: Object.freeze({ VISUAL_GAIN, BEAM_SOFT, ALPHA_CORE, ALPHA_MID, ALPHA_EDGE, SOFT_DEFAULT,
       MIN_AREA_PX, BAND_ALPHA, BAND_MIN_PX, LINE_ALPHA, LINE_MIN_PX, HOLE_BAND, HOLE_LINE_PX,
       BEAM_FALL_R0, BEAM_FALL_P, BEAM_FALL_LO, BEAM_FALL_HI, BEAM_FALL_STOPS, BEAM_FALL_NORM_T,
-      HAZE_AMOUNT, COSTUME_AMBIENT }),
+      HAZE_AMOUNT, HAZE_MAX, HAZE_SCALE_M, COSTUME_AMBIENT }),
   });
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.SHOSAI_LIGHT_RENDER = api;

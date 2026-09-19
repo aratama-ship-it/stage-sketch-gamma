@@ -3319,7 +3319,9 @@
     if (!data || !data.lightBeam || !data.lightPool) return;
     const render = window.SHOSAI_LIGHT_RENDER;
     if (!render || !cueLightModel() || !cueLightCache.pools) return;
-    render.paintBeams(ctx, cueLightCache.pools, cueLightProjector(), { topDown: false });
+    const model = cueLightCache.model;
+    const haze = render.hazeAmount ? render.hazeAmount(model && model.environment ? model.environment.haze : undefined) : 0;   // R-2 場面のもや（舞台モードと同じ式）
+    render.paintBeams(ctx, cueLightCache.pools, cueLightProjector(), { topDown: false, haze });
   }
 
   /* G-D 衣装の色×明かりの色（2026-09-19）。舞台モードと同じ式（共有部品 tintColor）・同じ足元1点で判定する。 */

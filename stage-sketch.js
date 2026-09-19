@@ -14458,7 +14458,9 @@
     const pools = lightCuePoolList(L);
     if (!pools) return 0;
     const started = typeof performance !== "undefined" ? performance.now() : Date.now();
-    const drawn = api.paintBeams(target, pools, worldProjector(L), { topDown: Boolean(L.plan) });
+    const model = lightCueOverlayForLayout(L);
+    const haze = api.hazeAmount ? api.hazeAmount(model && model.environment ? model.environment.haze : undefined) : 0;   // R-2 場面のもや
+    const drawn = api.paintBeams(target, pools, worldProjector(L), { topDown: Boolean(L.plan), haze });
     const spent = (typeof performance !== "undefined" ? performance.now() : Date.now()) - started;
     lightPoolMs = lightPoolMs ? lightPoolMs * 0.8 + spent * 0.2 : spent;
     return drawn;
