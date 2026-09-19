@@ -13645,6 +13645,34 @@
     }
     target.restore();
 
+    /* ★迫り（すっぽん等）の印（VENUE_TRAP_MARK_2026_09_20）。継ぎ目の線だけでは「区切り」にしか
+       見えないので、破線の丸（仕掛けの蓋）と名札を重ねて「上下する仕掛け」だと伝える。
+       ★世界座標の大きさに合わせない（固定ピクセル）。すっぽんは1.5m四方しかなく、
+         実寸で描くと尺の大きい会場ではほぼ見えない点になる。
+       ★trap を持つ追加ステージが無い会場では1本も描かない＝いままでと1画素も変わらない。 */
+    const trapExtensions = stageExtensions.filter((item) => item.trap === true);
+    if (trapExtensions.length) {
+      target.save();
+      trapExtensions.forEach((item) => {
+        const center = item.polygon.reduce((sum, point) => [sum[0] + point[0], sum[1] + point[1]], [0, 0])
+          .map((value) => value / item.polygon.length);
+        const at = pointAt(center);
+        target.beginPath();
+        target.setLineDash([3, 2]);
+        target.strokeStyle = "rgba(224,181,95,0.9)";
+        target.lineWidth = 1.5;
+        target.arc(at.x, at.y, 6.5, 0, Math.PI * 2);
+        target.stroke();
+        target.setLineDash([]);
+        target.fillStyle = "rgba(224,181,95,0.9)";
+        target.beginPath();
+        target.arc(at.x, at.y, 1.5, 0, Math.PI * 2);
+        target.fill();
+        label(target, item.label || "", at.x + 14, at.y, "left");
+      });
+      target.restore();
+    }
+
     /* ★舞台の高さを平面図にも出す（2026-09-19）。真上から見た図なので高さは形に出ない。
        数字の札で伝え、マイナス（客席より低い舞台＝サーカスのピステ）は縁を点線にして
        「床が落ちている」ことも見せる。

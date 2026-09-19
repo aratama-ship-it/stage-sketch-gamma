@@ -392,6 +392,10 @@
         polygon: item.polygon.map((point) => [roundM(point[0]), roundM(point[1])]),
         merged: item.merged !== false,
         ...(typeof item.label === "string" ? { label: item.label } : {}),
+        /* 迫り（人力・機械で上下する小さな仕掛け）かどうか（VENUE_TRAP_MARK_2026_09_20）。
+           見た目の指示ではなく空間の事実。平面図はこれを見て、他の継ぎ目と違う
+           目立つ印（破線の丸＋名札）を重ねる。いまは歌舞伎のすっぽんだけが持つ。 */
+        ...(item.trap === true ? { trap: true } : {}),
       }));
     }
     const ceiling = {
@@ -1404,7 +1408,7 @@
               ] },
             /* すっぽん（切り穴）。七三に開く迫りで、ここから人が現れる。
                花道の中にある穴なので溶かさない（merged: false）＝境目の線を引いて位置を示す。 */
-            { id: "suppon", label: "すっぽん（七三）", shape: "rectangle", merged: false,
+            { id: "suppon", label: "すっぽん（七三）", shape: "rectangle", merged: false, trap: true,
               polygon: centeredSquare(KABUKI_HANAMICHI_X, KABUKI_SHICHISAN_Y, KABUKI_HANAMICHI_W) },
           ],
           /* 客席は花道で2つに割れる。下手側の帯は花道を間近で見る代わりに舞台が遠い。 */

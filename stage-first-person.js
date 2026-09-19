@@ -2830,7 +2830,7 @@
      ★平面の座標→3Dの世界: u = (x-minX)/幅, v = (y-minY)/奥行き を toWorld へ通す。
        カスタム会場の width/depth は輪郭の外接寸法（stage-venues.js customLegacyVenue）なので、
        平面図・正面図とまったく同じ枡に乗る。 */
-  let customFloorCache = { key: "", shape: null };
+  let customFloorCache = { key: "", shape: null, extensions: [] };
   function customStageShape() {
     const lib = window.SHOSAI_FRONT_SHAPE;
     const venue = currentVenueModel();
@@ -2850,9 +2850,32 @@
     const key = `${venue.id}|${JSON.stringify(outline)}|${JSON.stringify(extensions)}`;
     if (customFloorCache.key !== key) {
       customFloorCache = { key, shape: lib.build([outline].concat(
-        extensions.map((item) => (item && Array.isArray(item.polygon)) ? item.polygon : null))) };
+        extensions.map((item) => (item && Array.isArray(item.polygon)) ? item.polygon : null))), extensions };
     }
     return customFloorCache.shape;
+  }
+
+  /* 継ぎ目の線を引く追加ステージ（merged:false）だけを平面の座標のまま返す（VENUE_3D_SEAM_2026_09_20）。
+     回り舞台・すっぽんはここに入る。★customStageShape() を先に呼んでキャッシュを
+     最新にする（会場を切り替えた直後の1呼び目でも古い会場の縁が出ないように）。 */
+  function customFloorSeamPolygons() {
+    if (!customStageShape()) return [];
+    return (customFloorCache.extensions || [])
+      .filter((item) => item && item.merged === false
+        && Array.isArray(item.polygon) && item.polygon.length >= 3)
+      .map((item) => item.polygon);
+  }
+
+  /* merged:false の追加ステージの縁を3Dへ投影して線で結ぶ（VENUE_3D_SEAM_2026_09_20）。
+     ★色は平面図の継ぎ目と同じ金にそろえる。対象が無ければ1本も引かない。 */
+  function drawFloorSeams(ctx, at) {
+    const seams = customFloorSeamPolygons();
+    if (!seams.length) return;
+    seams.forEach((poly) => {
+      for (let i = 0; i < poly.length; i += 1) {
+        line3(ctx, at(poly[i], 0), at(poly[(i + 1) % poly.length], 0), "rgba(200,145,63,0.55)", 1);
+      }
+    });
   }
 
   /* 舞台袖の形（平面の座標のまま）。置いていなければ空。 */
@@ -2955,6 +2978,7 @@
     if (!lib) return;
     const at = (point, y) => toWorld(shape.uOf(point[0]), shape.vOf(point[1]), W, D, y);
     shape.polygons.forEach((poly) => fillPoly(ctx, poly.map((point) => at(point, 0)), "#262019"));
+    drawFloorSeams(ctx, at);
     /* 縁の土手。見る向きが自由なので、カメラに背を向けた面は描かない（奥から順に塗る）。 */
     lib.boundary(shape).map((edge) => {
       const a = at(edge.a, 0);
@@ -3005,6 +3029,7 @@
 
     // 舞台の甲板
     shape.polygons.forEach((poly) => fillPoly(ctx, poly.map((point) => at(point, 0)), "#262019"));
+    drawFloorSeams(ctx, at);
 
     /* 縁の土手。★見る向きが自由なので、カメラに背を向けた面は描かない
        （描くと、舞台の向こう側の壁が床の上に浮いて見える）。奥から順に塗る。 */

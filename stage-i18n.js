@@ -1426,6 +1426,7 @@
     "向き": "Facing",
     "このシーンではスクロールでの向き変更をロックします": "Lock scroll-to-rotate for this scene",
     "客席": "House",
+    "すっぽん（七三）": "Suppon (trap lift)",
     "通路": "Aisle",
     "劇場を選ぶ": "Choose a theatre",
     "劇場（額縁）": "Theatres (framed stage)",
