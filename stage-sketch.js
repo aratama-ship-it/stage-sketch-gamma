@@ -14426,6 +14426,25 @@
      ★作業灯を消していないときは駒より先（奥）に描く＝物の後ろを通る筋は物に隠れる。
        消しているときは暗幕の**上から**足す。暗幕に穴を開けて出すと、画面の上で物を
        横切っただけの所まで明るく抜けてしまう（2026-09-18・3Dカメラで実際に出た）。 */
+  /* レーザー（段階5①）。★「＋光の筋」と同じ設定で出す（空気の中を進む光という点で同じ仲間）。
+     作業灯を消していれば暗幕の上から足す＝帯と全く同じ順番（呼び出し側を参照）。 */
+  function lightCueLaserList(L) {
+    const model = lightCueOverlayForLayout(L);
+    if (!model) return null;
+    const lasers = model.fixtures
+      .filter((fixture) => fixture.laser && fixture.state === "on")
+      .map((fixture) => ({ ...fixture.laser, color: fixture.color, level: fixture.level }));
+    return lasers.length ? lasers : null;
+  }
+
+  function drawLightCueLasers(target, L) {
+    if (!featureOn("lightPool") || !featureOn("lightBeam")) return 0;
+    const api = window.SHOSAI_LIGHT_RENDER;
+    const lasers = lightCueLaserList(L);
+    if (!api || !lasers) return 0;
+    return api.paintLasers(target, lasers, worldProjector(L));
+  }
+
   function drawLightCueBeams(target, L) {
     if (!featureOn("lightPool") || !featureOn("lightBeam")) return 0;
     const api = window.SHOSAI_LIGHT_RENDER;
@@ -14668,14 +14687,20 @@
     const head = languageValue(
       () => `Lighting outline · ${model.counts.lit}/${model.counts.total} on`,
       () => `照明 概略・${model.counts.total}台中${model.counts.lit}台点灯`);
-    const notes = model.notes.map((note) => {
-      if (note.key === "laser") {
-        return languageValue(() => `${note.count} lasers: position only`,
-          () => `レーザー${note.count}台は位置だけ`);
-      }
-      return languageValue(() => `${note.count} LX cues not shown`,
-        () => `LX cue ${note.count}件はこの図では表現していません`);
-    });
+    /* ★2026-09-19（段階5①）: 「＋光の筋」を出しているときは、レーザーも狙い・広がりまで描く
+       （lightCueLaserList／drawLightCueLasers）。その状態でも「位置だけ」と言い続けると
+       図と帯が食い違うので、その2つが揃っているときは注記から外す。 */
+    const laserDrawn = featureOn("lightPool") && featureOn("lightBeam");
+    const notes = model.notes
+      .filter((note) => note.key !== "laser" || !laserDrawn)
+      .map((note) => {
+        if (note.key === "laser") {
+          return languageValue(() => `${note.count} lasers: position only`,
+            () => `レーザー${note.count}台は位置だけ`);
+        }
+        return languageValue(() => `${note.count} LX cues not shown`,
+          () => `LX cue ${note.count}件はこの図では表現していません`);
+      });
     const line = notes.length ? `${head} / ${notes.join(" / ")}` : head;
     // 段階1を出しているときだけ、直近の描画時間を添える（負荷の判断材料）
     return featureOn("lightPool") && lightPoolMs ? `${line} / ${lightPoolMs.toFixed(1)}ms` : line;
@@ -14789,7 +14814,7 @@
     if (showSelection && L.plan && target === planCtx) drawLightingPlanOverlay(target, L);
     if (showSelection && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) {
       drawLightCuePools(target, L);
-      if (!featureOn("workLightOff")) drawLightCueBeams(target, L);
+      if (!featureOn("workLightOff")) { drawLightCueBeams(target, L); drawLightCueLasers(target, L); }
     }
     if (showSelection && L.plan && target === planCtx) drawLightCueOverlayPlan(target, L);
     if (showSelection && !L.plan && target === ctx) drawLightCueOverlayFront(target, L);
@@ -14855,6 +14880,7 @@
         if (!L.plan) redrawLitPieces(target, L, solid.filter((piece) => piece.heldBy),
           (piece) => drawHeldFrontPiece(target, piece, L));
         drawLightCueBeams(target, L);
+        drawLightCueLasers(target, L);
       }
       drawLightCueCaption(target, L);
     }

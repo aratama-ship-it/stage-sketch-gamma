@@ -3300,6 +3300,20 @@
 
   /* 空気の中を進む光。作業灯を消していないときは駒より先（奥）に、
      消しているときは暗幕の上から足す（舞台モードと同じ約束）。 */
+  /* レーザー（段階5①）。★「＋光の筋」と同じ設定で出す（帯と同じ順番で呼ぶ）。 */
+  function drawCueLasers(ctx) {
+    if (!data || !data.lightBeam || !data.lightPool) return;
+    const render = window.SHOSAI_LIGHT_RENDER;
+    const model = cueLightModel();
+    if (!render || !model || !model.counts.total) return;
+    if (Math.abs((model.dims && model.dims.W) - W) > 0.01
+      || Math.abs((model.dims && model.dims.D) - D) > 0.01) return;
+    const lasers = (model.fixtures || [])
+      .filter((fixture) => fixture.laser && fixture.state === "on")
+      .map((fixture) => ({ ...fixture.laser, color: fixture.color, level: fixture.level }));
+    if (lasers.length) render.paintLasers(ctx, lasers, cueLightProjector());
+  }
+
   function drawCueBeams(ctx) {
     if (!data || !data.lightBeam || !data.lightPool) return;
     const render = window.SHOSAI_LIGHT_RENDER;
@@ -3484,7 +3498,7 @@
     }
     drawLightPools(ctx, data.pieces);
     drawCueLight(ctx);        // 床に落ちた光。駒より先＝光の上に人が立つ
-    if (!(data && data.workLightOff)) drawCueBeams(ctx);   // 作業灯が点いているなら、筋は駒の奥
+    if (!(data && data.workLightOff)) { drawCueBeams(ctx); drawCueLasers(ctx); }   // 作業灯が点いているなら、筋は駒の奥
     data.pieces.filter((piece) => piece.type === "performer" && piece.route)
       .forEach((piece) => drawRoute(ctx, piece, camera.me === piece));
     data.pieces.filter((piece) => piece.type !== "light")
@@ -3502,6 +3516,7 @@
     if (drawCueWorkLight(ctx)) {      // 作業灯を消す。名前より先＝名前は読めるまま残す
       redrawLitPieces(ctx, drawOnePiece);   // 光の中にいる駒を明るく戻す
       drawCueBeams(ctx);                    // 空気の筋は暗幕の上から足す
+      drawCueLasers(ctx);                    // レーザーも同じ順番
     }
     drawLabels(ctx);
     const vignette = ctx.createRadialGradient(canvasWidth / 2, canvasHeight / 2, Math.min(canvasWidth, canvasHeight) * .42,

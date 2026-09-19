@@ -457,8 +457,28 @@
     return best;
   }
 
+  /* ---------- レーザー（2026-09-19・段階5①） ----------
+     幾何（世界座標の光線）は overlay 側（gamma-light-cue-overlay.js）が組む。
+     ここでは照明モードと同じ LASER_EFFECTS.drawProjected を呼ぶだけ（形の正本を2か所に持たない）。 */
+  function paintLaser(ctx, laser, P) {
+    const engine = root.LASER_EFFECTS || null;
+    if (!engine || !laser || !Array.isArray(laser.rays) || !laser.rays.length) return false;
+    const level = clamp(finite(laser.level, 0), 0, 100) / 100;
+    if (!(level > 0)) return false;
+    const spec = engine.EFFECTS[laser.effect] || engine.EFFECTS.fan;
+    engine.drawProjected(ctx, P, laser.rays, laser.color, level, 100,
+      { fill: Boolean(spec.fill), surface: Boolean(spec.surface) });
+    return true;
+  }
+  function paintLasers(ctx, lasers, P) {
+    if (!Array.isArray(lasers) || !lasers.length) return 0;
+    let drawn = 0;
+    lasers.forEach((laser) => { if (paintLaser(ctx, laser, P)) drawn += 1; });
+    return drawn;
+  }
+
   const api = Object.freeze({
-    paintPool, paintPools, paintBeam, paintBeams, paintWorkLight, litLevelAt,
+    paintPool, paintPools, paintBeam, paintBeams, paintWorkLight, litLevelAt, paintLaser, paintLasers,
     TOKENS: Object.freeze({ VISUAL_GAIN, BEAM_SOFT, ALPHA_CORE, ALPHA_MID, ALPHA_EDGE, SOFT_DEFAULT,
       MIN_AREA_PX, BAND_ALPHA, BAND_MIN_PX, LINE_ALPHA, LINE_MIN_PX, HOLE_BAND, HOLE_LINE_PX }),
   });

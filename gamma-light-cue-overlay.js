@@ -133,6 +133,41 @@
     };
   }
 
+  /* 段階5①（2026-09-19 本人決定「レーザーを舞台モードへ」）。
+     これまでは位置(marker)だけで、狙い・広がり・種類を描いていなかった（notesの「位置だけ」）。
+     形の正本は照明モードと同じ LASER_EFFECTS。ここで世界座標のまま光線を組み、
+     画面へ落とす（drawProjected）のは共有部品（stage-light-render.js）に任せる。
+     ★狙い先は光だまりと同じ約束（動く光でも path.a を止まった代表点として使う。時刻では動かさない）。
+     ★複数色プリセット（laserColorPreset）は単色に簡略化する（light.color はプリセットの先頭色と同じ値）。 */
+  function laserOf(light, marker, dims, laserEngine) {
+    if (!light || !marker || marker.kind !== "laser" || !laserEngine) return null;
+    const source = worldOf(marker, dims);
+    const path = record(light.path) ? light.path : null;
+    const aimPoint = path && record(path.a) ? path.a : null;
+    const target = worldOf(aimPoint, dims);
+    if (!source || !target) return null;
+    const laser = record(light.laser) ? light.laser : {};
+    /* 旧 beam はファンの広がり0として読む（照明モードと同じ約束。保存済みデータは書き換えない）。 */
+    const effect = laser.effect === "beam" ? "fan" : (typeof laser.effect === "string" ? laser.effect : "fan");
+    const spec = laserEngine.EFFECTS[effect] || laserEngine.EFFECTS.fan;
+    const spanMin = effect === "tunnel" ? 6 : 0;
+    const spanMax = laserEngine.finite(spec.max, effect === "tunnel" ? 60 : 120);
+    const spanDeg = laserEngine.clamp(
+      laserEngine.finite(laser.spanDeg, laser.effect === "beam" ? 0 : spec.span), spanMin, spanMax);
+    const axis = laserEngine.axisBetween(source, target);
+    const reach = Math.max(18, finite(dims.W, 0) + finite(dims.D, 0) + finite(dims.H, 0));
+    const rays = laserEngine.compile(effect, source, axis, spanDeg, 0, dims, reach, finite(laser.rollDeg, 0));
+    const surface = typeof light.surface === "string" ? light.surface : "";
+    /* 空中・客席狙いは、狙い点で切らずに図の外まで抜けさせる（照明モードと同じ）。
+       床・ホリゾントだけは実際の面（laserLanding）で止める。 */
+    if (surface === "air") {
+      rays.forEach((ray) => { ray.end = laserEngine.extendedRayPoint(source, ray.dir, reach * 6); });
+    } else if (surface === "house") {
+      rays.forEach((ray) => { ray.end = laserEngine.houseFarPoint(source, ray.dir, dims, reach * 6) || ray.end; });
+    }
+    return { rays, effect, surface };
+  }
+
   function build(design, sceneId, overlayApi) {
     const shim = planShim(design);
     if (!shim || !overlayApi || typeof overlayApi.overlayForPlan !== "function") return null;
@@ -145,6 +180,7 @@
     let lit = 0;
     let unset = 0;
     const engine = root.RIG_ENGINE || null;
+    const laserEngine = root.LASER_EFFECTS || null;
     const rigFixtures = list(design && design.rig && design.rig.fixtures);
     const fixtureById = new Map(rigFixtures.filter(record).map((row) => [row.id, row]));
     const fixtures = base.markers.map((marker) => {
@@ -167,6 +203,7 @@
         surface: light && typeof light.surface === "string" ? light.surface : "",
         aim: state === "on" && marker.kind !== "laser" ? aimOf(light, dims) : null,
         pool: state === "on" ? poolOf(fixtureById.get(marker.id), light, marker, dims, engine) : null,
+        laser: state === "on" ? laserOf(light, marker, dims, laserEngine) : null,
       };
     });
 
