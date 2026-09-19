@@ -4571,6 +4571,7 @@
     rehearsalOmittedList: document.getElementById("stage-rehearsal-omitted-list"),
     live: document.getElementById("stage-live"),
     venueSelect: document.getElementById("stage-venue-select"),
+    venueGallery: document.getElementById("stage-venue-gallery"),
     venueCustomOpen: document.getElementById("stage-venue-custom-open"),
     sizeSelect: document.getElementById("stage-size-select"),
     showFront: document.getElementById("stage-show-front"),
@@ -26068,20 +26069,7 @@ ${propsPlotHtml}
           `${venueName(v)} (${venueShortName(v)})`);
         return opt;
       };
-      /* 選択欄を6つの群に分ける（VENUE_PRESETS_STAGE5_2026_09_19・本人決定 D2）。
-         会場が20件になり、ひと続きの並びでは目当ての劇場を探せなくなった。
-         ★並べ替えるのは見た目だけ。VENUES.list の並びは変えない
-           （先頭5件のハッシュの錠と、IDで参照している保存データのため）。
-         ★ここに載っていない会場（取り込んだもの・あとで足すもの）は
-           最後の「そのほか」へ自動で落ちる。群へ足し忘れても消えない。 */
-      const VENUE_GROUPS = [
-        { label: "劇場（額縁）", ids: ["proscenium", "hall-fan", "hall-shoebox", "circus-theatre"] },
-        { label: "劇場（オープン）", ids: ["thrust", "end-stage", "blackbox", "in-the-round", "traverse"] },
-        { label: "日本の劇場と現場", ids: ["noh-stage", "gym-stage", "banquet-hall"] },
-        { label: "大会場の公演", ids: ["arena-show", "dome-show", "arena-concert", "dome-concert"] },
-        { label: "サーカス・テント", ids: ["arena", "chapiteau"] },
-        { label: "屋外", ids: ["outdoor", "festival-field"] },
-      ];
+      // 群の表は「形から選ぶ」一覧と共有する（外へ出した）
       const byId = new Map(choices.map((v) => [v.id, v]));
       const grouped = new Set();
       VENUE_GROUPS.forEach((group) => {
@@ -26118,6 +26106,7 @@ ${propsPlotHtml}
       els.venueSelect.append(custom);
     }
     if (els.venueSelect) els.venueSelect.value = current.id;
+    renderVenueGallery(choicesForGallery(), current.id);
 
     if (els.venueMissing) {
       els.venueMissing.hidden = !current.missing;
@@ -26381,6 +26370,133 @@ ${propsPlotHtml}
     render();
     persistSoon();
     announce(`規模を${sizeName(venueSize())}にしました。`);
+  }
+
+  /* 選択欄と「形から選ぶ」一覧で共有する群の表（VENUE_GALLERY_2026_09_19で選択欄の中から出した）。
+   * もとは段階5で選択欄の組み立ての中に置いていたが、一覧も同じ並びで出したいので、
+   * 2か所で同じ表を書かないようにここへ移した。
+   * ★並べ替えるのは見た目だけ。VENUES.list の並びは変えない
+   *   （先頭5件のハッシュの錠と、IDで参照している保存データのため）。
+   * ★ここに載っていない会場は、選択欄では「そのほか」へ、一覧では末尾へ自動で落ちる。 */
+  const VENUE_GROUPS = [
+    { label: "劇場（額縁）", ids: ["proscenium", "hall-fan", "hall-shoebox", "circus-theatre"] },
+    { label: "劇場（オープン）", ids: ["thrust", "end-stage", "blackbox", "in-the-round", "traverse"] },
+    { label: "日本の劇場と現場", ids: ["noh-stage", "gym-stage", "banquet-hall"] },
+    { label: "大会場の公演", ids: ["arena-show", "dome-show", "arena-concert", "dome-concert"] },
+    { label: "サーカス・テント", ids: ["arena", "chapiteau"] },
+    { label: "屋外", ids: ["outdoor", "festival-field"] },
+  ];
+
+  /* 形から選ぶ一覧（VENUE_GALLERY_2026_09_19）。
+   * ★絵はその場で描く。画像ファイルを持たないので、プリセットを足せば自動で増える。
+   * ★描くのは3つだけ（舞台の床・追加ステージ・客席）。概要なのでこれで足りる。
+   * ★色は CSS 変数から読む＝肌（skin）を変えても一覧の絵が浮かない。 */
+  function choicesForGallery() {
+    const list = VENUES.list;
+    const byId = new Map(list.map((v) => [v.id, v]));
+    const sorted = [];
+    const seen = new Set();
+    VENUE_GROUPS.forEach((group) => group.ids.forEach((id) => {
+      const venue = byId.get(id);
+      if (venue && !seen.has(id)) { seen.add(id); sorted.push(venue); }
+    }));
+    list.forEach((venue) => { if (!seen.has(venue.id)) sorted.push(venue); });
+    return sorted;
+  }
+
+  const cssColor = (name, fallback) => {
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || fallback;
+  };
+
+  /* プリセットの平面の概要を1枚描く。使うのは v2 の代表の規模（先頭）だけ。 */
+  function drawVenueThumb(canvas, venueId) {
+    const v2 = VENUES.library.venueV2ById(venueId);
+    if (!v2 || !v2.floor || !Array.isArray(v2.floor.outline)) return;
+    const ratio = Math.min(3, Math.max(1, window.devicePixelRatio || 1));
+    const width = 104;
+    const height = 66;
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+    const stage = [v2.floor.outline].concat((v2.floor.extensions || [])
+      .filter((item) => item && Array.isArray(item.polygon)).map((item) => item.polygon));
+    const house = (v2.audience || [])
+      .filter((area) => area && Array.isArray(area.polygon)).map((area) => area.polygon);
+    const points = stage.concat(house).flat();
+    if (!points.length) return;
+    const xs = points.map((point) => point[0]);
+    const ys = points.map((point) => point[1]);
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+    const spanX = Math.max(0.001, Math.max(...xs) - minX);
+    const spanY = Math.max(0.001, Math.max(...ys) - minY);
+    const pad = 5;
+    const scale = Math.min((width - (pad * 2)) / spanX, (height - (pad * 2)) / spanY);
+    const drawnW = spanX * scale;
+    const drawnH = spanY * scale;
+    const offsetX = (width - drawnW) / 2;
+    const offsetY = (height - drawnH) / 2;
+    const at = (point) => [
+      offsetX + ((point[0] - minX) * scale),
+      offsetY + ((point[1] - minY) * scale),
+    ];
+    const fill = (polygons, color) => {
+      if (!polygons.length) return;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      polygons.forEach((polygon) => {
+        polygon.forEach((point, index) => {
+          const [x, y] = at(point);
+          if (index) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+        });
+        ctx.closePath();
+      });
+      ctx.fill();
+    };
+
+    ctx.fillStyle = cssColor("--desk", "#191512");
+    ctx.fillRect(0, 0, width, height);
+    fill(house, cssColor("--ink-soft", "#6a604e"));
+    fill([v2.floor.outline], cssColor("--paper-2", "#e7dcc5"));
+    fill(stage.slice(1), cssColor("--brass", "#9c823f"));
+  }
+
+  function renderVenueGallery(choices, currentId) {
+    const host = els.venueGallery;
+    if (!host) return;
+    host.innerHTML = "";
+    choices.forEach((venue) => {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "stage-venue-gallery-item";
+      item.dataset.venueId = venue.id;
+      item.setAttribute("aria-pressed", String(venue.id === currentId));
+      const canvas = document.createElement("canvas");
+      canvas.setAttribute("aria-hidden", "true");
+      const name = document.createElement("span");
+      name.className = "stage-venue-gallery-name";
+      name.textContent = venueName(venue);
+      item.title = sx(`${venueName(venue)}（${venueShortName(venue)}）`,
+        `${venueName(venue)} (${venueShortName(venue)})`);
+      item.append(canvas, name);
+      host.append(item);
+      drawVenueThumb(canvas, venue.id);
+    });
+    syncVenueGallerySelection();
+  }
+
+  /* どのタイルを光らせるかは**プルダウンの値**から採る。
+     ★劇場設定モードでは「反映する」まで project.venue は変わらないので、
+       current.id を見ると押したタイルが光らない（実測して気づいた）。 */
+  function syncVenueGallerySelection() {
+    if (!els.venueGallery || !els.venueSelect) return;
+    const id = els.venueSelect.value;
+    els.venueGallery.querySelectorAll(".stage-venue-gallery-item").forEach((item) => {
+      item.setAttribute("aria-pressed", String(item.dataset.venueId === id));
+    });
   }
 
   /* 劇場形式プリセットとカスタム制作を別々の選択状態にしない。
@@ -28889,6 +29005,24 @@ ${propsPlotHtml}
   if (els.showPlan) {
     els.showPlan.addEventListener("change", (e) => setViewShown("plan", e.target.checked));
   }
+  /* 形から選ぶ一覧（VENUE_GALLERY_2026_09_19）。
+     ★押したらプルダウンへ値を入れて change を出す。反映の道筋を2本にしない。 */
+  if (els.venueGallery) {
+    els.venueGallery.addEventListener("click", (event) => {
+      const item = event.target.closest(".stage-venue-gallery-item");
+      if (!item || !els.venueSelect) return;
+      const id = item.dataset.venueId;
+      if (!id || els.venueSelect.value === id) return;
+      els.venueSelect.value = id;
+      els.venueSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      syncVenueGallerySelection();
+    });
+    // プルダウンで選んだときも一覧の印を合わせる（入口は2つでも見た目は1つ）
+    if (els.venueSelect) {
+      els.venueSelect.addEventListener("change", syncVenueGallerySelection);
+    }
+  }
+
   if (els.venueSelect) {
     els.venueSelect.addEventListener("change", (e) => {
       if (e.target.value === "__create_custom_venue__") {

@@ -7991,6 +7991,79 @@ canvas[data-tool="note"] { cursor: copy; }
   letter-spacing: 0.16em;
 }
 
+/* 劇場プリセットを形から選ぶ（VENUE_GALLERY_2026_09_19）。
+   絵はその場で canvas へ描く＝画像ファイルを持たないので、プリセットを足せば自動で増える。 */
+.stage-venue-gallery-label {
+  margin-top: 10px;
+}
+
+.stage-venue-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+  /* ★行を内容の高さにする。高さが決まったグリッドの既定（align-content: stretch）だと
+     行が枠いっぱいに引き伸ばされ、タイルが絵より低くなって名前が消える（実測して気づいた）。 */
+  align-content: start;
+  grid-auto-rows: max-content;
+  /* 手順の列を押し下げないよう、増えたら中で縦に送る */
+  max-height: 232px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.stage-venue-gallery-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 4px 6px;
+  background: var(--desk-2);
+  border: 1px solid var(--line-dark);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--milk);
+  text-align: left;
+}
+
+.stage-venue-gallery-item:hover,
+.stage-venue-gallery-item:focus-visible {
+  border-color: rgba(239, 231, 214, 0.34);
+}
+
+.stage-venue-gallery-item[aria-pressed="true"] {
+  border: 2px solid var(--rust);
+  padding: 3px 3px 5px;
+  background: rgba(168, 75, 38, 0.14);
+}
+
+.stage-venue-gallery-item canvas {
+  display: block;
+  width: 100%;
+  /* ★高さは決め打ちにする。height:auto ＋ aspect-ratio だと、グリッドの行の高さを
+     決める段では 44px に丸まってタイルが絵より低くなった（実測して気づいた）。
+     タイルの幅は 104〜110px で動くので、絵はごくわずかに伸び縮みする（見て分からない量）。 */
+  height: 62px;
+  flex: none;
+  border-radius: 5px;
+}
+
+.stage-venue-gallery-name {
+  font-size: 11px;
+  line-height: 1.3;
+  /* 長い名前は2行まで。3行になると絵より字が大きくなって一覧が読みにくい。
+     ★-webkit-line-clamp は使わない。縦に並ぶ箱（flex）の中では display が
+       flow-root へ潰され、行が0になって名前が消える（実測して気づいた）。 */
+  max-height: 2.6em;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stage-venue-gallery-item {
+    transition: border-color .12s ease, background-color .12s ease;
+  }
+}
+
 .stage-venue-choice-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

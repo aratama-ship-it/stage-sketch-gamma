@@ -1427,6 +1427,7 @@
     "このシーンではスクロールでの向き変更をロックします": "Lock scroll-to-rotate for this scene",
     "客席": "House",
     "通路": "Aisle",
+    "形から選ぶ": "Choose by shape",
     "劇場（額縁）": "Theatres (framed stage)",
     "劇場（オープン）": "Theatres (open stage)",
     "日本の劇場と現場": "Japan: theatres and everyday venues",
