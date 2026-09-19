@@ -26474,6 +26474,9 @@ ${propsPlotHtml}
        ★これが無いと、円形劇場とシャピトーがほぼ同じ絵になる（実測して気づいた）。
        線を引く余白のぶん、中身を少し小さくする。 */
     const tent = v2.tent === true;
+    /* 客席の位置が決まっていない会場（ブラックボックス）は、塗らずに破線で出す
+       （VENUE_THUMB_FRAME_2026_09_19）。塗ってしまうとエンドステージと同じ絵になる。 */
+    const flexibleHouse = v2.flexibleHouse === true;
     const pad = 5;
     const room = bowl ? 0.42 : (tent ? 0.88 : 1);
     const scale = Math.min(((width - (pad * 2)) * room) / spanX,
@@ -26555,14 +26558,55 @@ ${propsPlotHtml}
       ctx.restore();
     };
 
+    /* 額縁（プロセニアム枠）。fixtures に frame: true の壁として入っている
+       （VENUE_THUMB_FRAME_2026_09_19）。★元の壁は 0.25m 角で、そのまま描くと点になるので
+       最小4pxの印にする。プロセニアムには出て、劇場のサーカス公演には出ない。 */
+    const drawFrames = () => {
+      const frames = (v2.fixtures || [])
+        .filter((item) => item && item.frame === true && Array.isArray(item.polygon));
+      if (!frames.length) return;
+      ctx.fillStyle = cssColor("--paper", "#efe7d6");
+      frames.forEach((item) => {
+        const spots = item.polygon.map(at);
+        const fx = spots.map((spot) => spot[0]);
+        const fy = spots.map((spot) => spot[1]);
+        const minFx = Math.min(...fx);
+        const minFy = Math.min(...fy);
+        const w = Math.max(4, Math.max(...fx) - minFx);
+        const h = Math.max(4, Math.max(...fy) - minFy);
+        const cx = minFx + ((Math.max(...fx) - minFx) / 2);
+        const cy = minFy + ((Math.max(...fy) - minFy) / 2);
+        ctx.fillRect(cx - (w / 2), cy - (h / 2), w, h);
+      });
+    };
+
+    const outlineHouse = () => {
+      ctx.save();
+      ctx.strokeStyle = cssColor("--ink-soft", "#6a604e");
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+      house.forEach((polygon) => {
+        ctx.beginPath();
+        polygon.forEach((point, index) => {
+          const [x, y] = at(point);
+          if (index) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+        });
+        ctx.closePath();
+        ctx.stroke();
+      });
+      ctx.restore();
+    };
+
     ctx.fillStyle = cssColor("--desk", "#191512");
     ctx.fillRect(0, 0, width, height);
     if (bowl) drawBowl(bowl);
     if (tent) drawTent();
-    fill(house, cssColor("--ink-soft", "#6a604e"));
+    if (flexibleHouse) outlineHouse();
+    else fill(house, cssColor("--ink-soft", "#6a604e"));
     fill([v2.floor.outline], cssColor("--paper-2", "#e7dcc5"));
     fill(stage.slice(1), cssColor("--brass", "#9c823f"));
     strokeOutline(v2.floor.outline, cssColor("--paper", "#efe7d6"), bowl ? 0.9 : 1);
+    drawFrames();
   }
 
   /* 絵の一覧を組む（VENUE_PICKER_MODAL_2026_09_19）。群の見出しを挟んで並べる。

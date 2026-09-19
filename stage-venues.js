@@ -439,6 +439,10 @@
          いまのところ使っているのは劇場を選ぶ一覧の絵だけ（VENUE_THUMB_TENT_2026_09_19）。
          ★legacy（VENUES.list）へは写さない＝先頭5プリセットのハッシュの錠に当たらない。 */
       ...(venue.tent ? { tent: true } : {}),
+      /* 客席の位置を毎回決める箱かどうか（VENUE_THUMB_FRAME_2026_09_19）。
+         ブラックボックスがそれで、ここに入っている客席は「一例」にすぎない。
+         これも空間の事実で、legacy へは写さない。 */
+      ...(venue.flexibleHouse ? { flexibleHouse: true } : {}),
       sizes,
     };
   };
@@ -507,6 +511,7 @@
       short: "可変",
       audience: "front",
       rigging: "limited",
+      flexibleHouse: true,
       sizes: [
         { id: "small", label: "小", width: 9, depth: 9, height: 5 },
         { id: "mid", label: "中", width: 13, depth: 13, height: 7 },
