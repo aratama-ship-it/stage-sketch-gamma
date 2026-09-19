@@ -4571,7 +4571,12 @@
     rehearsalOmittedList: document.getElementById("stage-rehearsal-omitted-list"),
     live: document.getElementById("stage-live"),
     venueSelect: document.getElementById("stage-venue-select"),
-    venueGallery: document.getElementById("stage-venue-gallery"),
+    venuePick: document.getElementById("stage-venue-pick"),
+    venuePickName: document.getElementById("stage-venue-pick-name"),
+    venuePickModal: document.getElementById("stage-venue-pick-modal"),
+    venuePickBackdrop: document.getElementById("stage-venue-pick-backdrop"),
+    venuePickClose: document.getElementById("stage-venue-pick-close"),
+    venueGallery: document.getElementById("stage-venue-pick-grid"),
     venueCustomOpen: document.getElementById("stage-venue-custom-open"),
     sizeSelect: document.getElementById("stage-size-select"),
     showFront: document.getElementById("stage-show-front"),
@@ -26414,8 +26419,8 @@ ${propsPlotHtml}
     const v2 = VENUES.library.venueV2ById(venueId);
     if (!v2 || !v2.floor || !Array.isArray(v2.floor.outline)) return;
     const ratio = Math.min(3, Math.max(1, window.devicePixelRatio || 1));
-    const width = 104;
-    const height = 66;
+    const width = 132;
+    const height = 82;
     canvas.width = Math.round(width * ratio);
     canvas.height = Math.round(height * ratio);
     const ctx = canvas.getContext("2d");
@@ -26464,11 +26469,15 @@ ${propsPlotHtml}
     fill(stage.slice(1), cssColor("--brass", "#9c823f"));
   }
 
+  /* 絵の一覧を組む（VENUE_PICKER_MODAL_2026_09_19）。群の見出しを挟んで並べる。
+     ★群に載っていない会場（取り込んだもの・あとで足すもの）は最後の「そのほか」へ落ちる。 */
   function renderVenueGallery(choices, currentId) {
     const host = els.venueGallery;
     if (!host) return;
     host.innerHTML = "";
-    choices.forEach((venue) => {
+    const byId = new Map(choices.map((venue) => [venue.id, venue]));
+    const used = new Set();
+    const tile = (venue) => {
       const item = document.createElement("button");
       item.type = "button";
       item.className = "stage-venue-gallery-item";
@@ -26484,8 +26493,53 @@ ${propsPlotHtml}
       item.append(canvas, name);
       host.append(item);
       drawVenueThumb(canvas, venue.id);
+    };
+    const heading = (label) => {
+      const title = document.createElement("p");
+      title.className = "stage-venue-pick-group";
+      title.textContent = tx(label);
+      host.append(title);
+    };
+    VENUE_GROUPS.forEach((group) => {
+      const members = group.ids.map((id) => byId.get(id)).filter(Boolean);
+      if (!members.length) return;
+      heading(group.label);
+      members.forEach((venue) => { used.add(venue.id); tile(venue); });
     });
+    const rest = choices.filter((venue) => !used.has(venue.id));
+    if (rest.length) {
+      heading("そのほか");
+      rest.forEach(tile);
+    }
     syncVenueGallerySelection();
+  }
+
+  /* 選ぶボタンに、いま選んでいる劇場の名前を出す。 */
+  function syncVenuePickLabel() {
+    if (!els.venuePickName || !els.venueSelect) return;
+    const venue = VENUES.byId(els.venueSelect.value);
+    els.venuePickName.textContent = venue && !venue.missing
+      ? sx(`${venueName(venue)}（${venueShortName(venue)}）`,
+        `${venueName(venue)} (${venueShortName(venue)})`)
+      : els.venueSelect.value;
+  }
+
+  function openVenuePicker() {
+    if (!els.venuePickModal) return;
+    els.venuePickModal.hidden = false;
+    if (els.venuePickBackdrop) els.venuePickBackdrop.hidden = false;
+    syncVenueGallerySelection();
+    const selected = els.venueGallery
+      && els.venueGallery.querySelector('.stage-venue-gallery-item[aria-pressed="true"]');
+    (selected || els.venuePickClose || els.venuePickModal).focus?.();
+    selected?.scrollIntoView?.({ block: "nearest" });
+  }
+
+  function closeVenuePicker({ restoreFocus = true } = {}) {
+    if (!els.venuePickModal || els.venuePickModal.hidden) return;
+    els.venuePickModal.hidden = true;
+    if (els.venuePickBackdrop) els.venuePickBackdrop.hidden = true;
+    if (restoreFocus) els.venuePick?.focus?.();
   }
 
   /* どのタイルを光らせるかは**プルダウンの値**から採る。
@@ -26497,6 +26551,7 @@ ${propsPlotHtml}
     els.venueGallery.querySelectorAll(".stage-venue-gallery-item").forEach((item) => {
       item.setAttribute("aria-pressed", String(item.dataset.venueId === id));
     });
+    syncVenuePickLabel();
   }
 
   /* 劇場形式プリセットとカスタム制作を別々の選択状態にしない。
@@ -29016,12 +29071,23 @@ ${propsPlotHtml}
       els.venueSelect.value = id;
       els.venueSelect.dispatchEvent(new Event("change", { bubbles: true }));
       syncVenueGallerySelection();
+      closeVenuePicker();
     });
     // プルダウンで選んだときも一覧の印を合わせる（入口は2つでも見た目は1つ）
     if (els.venueSelect) {
       els.venueSelect.addEventListener("change", syncVenueGallerySelection);
     }
   }
+
+  if (els.venuePick) els.venuePick.addEventListener("click", openVenuePicker);
+  [els.venuePickClose, els.venuePickBackdrop].filter(Boolean)
+    .forEach((el) => el.addEventListener("click", () => closeVenuePicker()));
+  // Esc で閉じる。ほかのモーダルと同じ振る舞いにする
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !els.venuePickModal || els.venuePickModal.hidden) return;
+    event.stopPropagation();
+    closeVenuePicker();
+  }, true);
 
   if (els.venueSelect) {
     els.venueSelect.addEventListener("change", (e) => {
