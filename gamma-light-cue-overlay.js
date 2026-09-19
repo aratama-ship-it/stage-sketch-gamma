@@ -71,6 +71,54 @@
     return a ? { kind: "still", a } : null;
   }
 
+  /* 段階1「光だまり」（2026-09-18）。光が面に落ちた楕円を**世界座標(m)**で返す。
+     ★楕円は照明モードが実際に使っている RIG_ENGINE.spotEllipse をそのまま呼ぶ。別実装を書かない。
+     ★RIG_ENGINE が読めない環境では null を返す＝光だまりは黙って出ない（段階0のまま）。
+     ★面のある光（床・奥の壁）だけ。宙・客席は落ちる面が無いので光だまりを作らない。
+     ★レーザーは対象外。普通の光に見せないため（gamma-light-cue-overlay 冒頭の警告）。 */
+  const POOL_SURFACES = { floor: true, back: true };
+  function worldOf(point, dims) {
+    if (!point) return null;
+    return {
+      x: (finite(point.u, 0.5) - 0.5) * finite(dims.W, 0),
+      y: finite(point.v, 0.5) * finite(dims.D, 0),
+      z: Math.max(0, finite(point.hM === undefined ? point.h : point.hM, 0)),
+    };
+  }
+
+  function poolOf(fixture, light, marker, dims, engine) {
+    if (!engine || typeof engine.spotEllipse !== "function") return null;
+    if (!light || !marker || marker.kind === "laser") return null;
+    const surface = typeof light.surface === "string" ? light.surface : "";
+    if (!POOL_SURFACES[surface]) return null;
+    const source = worldOf(marker, dims);
+    const path = record(light.path) ? light.path : null;
+    const aimPoint = path && record(path.a) ? path.a : null;
+    const target = worldOf(aimPoint, dims);
+    if (!source || !target) return null;
+    /* 狙い先を面の上へ落とす。軸が面に当たる点が楕円の元なので、
+       面から浮いた点をそのまま渡すと楕円の大きさが狂う。 */
+    if (surface === "floor") target.z = 0;
+    else target.y = 0;
+    const deg = typeof engine.beamDegOf === "function" ? engine.beamDegOf(fixture, light) : 18;
+    const ellipse = engine.spotEllipse(source, target, deg, surface);
+    if (!ellipse || !ellipse.c || !ellipse.ea || !ellipse.eb) return null;
+    /* 長軸に沿った濃淡（灯体に近い側が明るい）。斜めに当たるほど光だまりが長く伸びるので、
+       これが無いと長い楕円が一様に明るい板に見える（照明モードは常にこれを掛けている）。 */
+    const fall = typeof engine.spotFalloff === "function"
+      ? engine.spotFalloff(source, ellipse, surface, 8) : null;
+    /* 段階2「帯」に要るもの: 出どころ・着地点・着地での光の輪の半径(m)。
+       ★輪の半径は光だまりの楕円とは別物。楕円は面を斜めに切った形、輪は光の円錐の断面。
+         照明モードも帯の幅にはこちらを使っている（drawBeam の rM）。 */
+    const radiusM = typeof engine.spotRadiusM === "function"
+      ? engine.spotRadiusM(source, target, deg) : null;
+    return {
+      c: ellipse.c, ea: ellipse.ea, eb: ellipse.eb, surface, fall,
+      softness: finite(light.beamEdgeSoftness, 2),
+      from: source, to: target, radiusM,
+    };
+  }
+
   function build(design, sceneId, overlayApi) {
     const shim = planShim(design);
     if (!shim || !overlayApi || typeof overlayApi.overlayForPlan !== "function") return null;
@@ -82,6 +130,9 @@
 
     let lit = 0;
     let unset = 0;
+    const engine = root.RIG_ENGINE || null;
+    const rigFixtures = list(design && design.rig && design.rig.fixtures);
+    const fixtureById = new Map(rigFixtures.filter(record).map((row) => [row.id, row]));
     const fixtures = base.markers.map((marker) => {
       const light = record(lights[marker.id]) ? lights[marker.id] : null;
       /* on は true / false / null（未設定）の3値。未設定を消灯と言い切らない。 */
@@ -101,6 +152,7 @@
         color: light && /^#[0-9a-f]{6}$/i.test(String(light.color)) ? light.color : "#f2ead6",
         surface: light && typeof light.surface === "string" ? light.surface : "",
         aim: state === "on" && marker.kind !== "laser" ? aimOf(light, dims) : null,
+        pool: state === "on" ? poolOf(fixtureById.get(marker.id), light, marker, dims, engine) : null,
       };
     });
 
@@ -118,12 +170,13 @@
       dims,
       trusses: base.trusses,
       fixtures,
-      counts: { total: fixtures.length, lit, unset, laser: base.counts.laser },
+      counts: { total: fixtures.length, lit, unset, laser: base.counts.laser,
+        pools: fixtures.filter((row) => row.pool).length },
       notes,
     };
   }
 
-  const api = Object.freeze({ build, aimOf, planShim });
+  const api = Object.freeze({ build, aimOf, planShim, poolOf });
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.SHOSAI_STAGE_LIGHT_CUE_OVERLAY = api;
 })(typeof window !== "undefined" ? window : globalThis);

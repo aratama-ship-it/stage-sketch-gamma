@@ -3187,6 +3187,110 @@
     });
   }
 
+  /* 場面のキューの光を3Dカメラでも出す（2026-09-18・段階1「光だまり」／段階2「光の筋」）。
+   * 設計 docs/light-pool-2026-09-18/DESIGN.md。舞台モードとまったく同じ模型・同じ塗りを使う。
+   *
+   * ★読むだけ。ショーも照明デザインも書き換えない。
+   * ★既定は切。本体の環境設定（照明の光だまり／照明の光の筋）に従う。
+   * ★模型は毎フレーム組み直さない。照明デザインの実体と場面が変わったときだけ。
+   * ★舞台の寸法が照明デザインを作ったときと違うなら、重ねると嘘になるので描かない（舞台モードと同じ判定）。
+   */
+  const cueLightCache = { design: undefined, sceneId: "", model: null, pools: null };
+  function cueLightModel() {
+    const api = window.SHOSAI_STAGE_LIGHT_CUE_OVERLAY;
+    const planApi = window.SHOSAI_STAGE_LIGHTING_PLAN_OVERLAY;
+    const design = data && data.lightingDesign;
+    const sceneId = (data && data.activeSceneId) || "";
+    if (!api || !planApi || !design) return null;
+    if (cueLightCache.design !== design || cueLightCache.sceneId !== sceneId) {
+      cueLightCache.design = design;
+      cueLightCache.sceneId = sceneId;
+      cueLightCache.model = api.build(design, sceneId, planApi);
+      /* 塗りへ渡す一覧も、ここで一度だけ作る。3Dは毎フレーム描くので、
+         毎回 filter/map で配列を作り直すとごみが積もる。 */
+      const model = cueLightCache.model;
+      cueLightCache.pools = model ? model.fixtures
+        .filter((fixture) => fixture.pool && fixture.state === "on")
+        .map((fixture) => ({ ...fixture.pool, color: fixture.color, level: fixture.level })) : null;
+    }
+    return cueLightCache.model;
+  }
+
+  /* 舞台スケッチの世界座標（x=幅方向・中央0／y=奥行き・奥が0／z=高さ）を、
+     3Dカメラの世界（x=幅方向／y=高さ／z=奥行き・舞台中央が0）へ写してから画面へ落とす。
+     カメラの後ろへ回った点は null を返す。共有部品はそれを見て「描かない」と決める。 */
+  function cueLightProjector() {
+    return (point) => {
+      const camPoint = toCamera({ x: point.x, y: Math.max(0, point.z || 0), z: (point.y || 0) - D / 2 });
+      if (!(camPoint.z > NEAR)) return null;
+      const at = toScreen(camPoint);
+      return { X: at.x, Y: at.y };
+    };
+  }
+
+  function drawCueLight(ctx) {
+    if (!data || (!data.lightPool && !data.lightBeam)) return;
+    const render = window.SHOSAI_LIGHT_RENDER;
+    const model = cueLightModel();
+    if (!render || !model || !model.counts.total) return;
+    if (Math.abs((model.dims && model.dims.W) - W) > 0.01
+      || Math.abs((model.dims && model.dims.D) - D) > 0.01) return;
+    const pools = cueLightCache.pools;
+    if (!pools || !pools.length) return;
+    const project = cueLightProjector();
+    if (data.lightPool) render.paintPools(ctx, pools, project);
+  }
+
+  /* 空気の中を進む光。作業灯を消していないときは駒より先（奥）に、
+     消しているときは暗幕の上から足す（舞台モードと同じ約束）。 */
+  function drawCueBeams(ctx) {
+    if (!data || !data.lightBeam || !data.lightPool) return;
+    const render = window.SHOSAI_LIGHT_RENDER;
+    if (!render || !cueLightModel() || !cueLightCache.pools) return;
+    render.paintBeams(ctx, cueLightCache.pools, cueLightProjector(), { topDown: false });
+  }
+
+  /* 暗幕の後に、光の中にいる駒だけ描き直す。足元が床の光の輪に入っていれば光の中。 */
+  function redrawLitPieces(ctx, drawOne) {
+    const render = window.SHOSAI_LIGHT_RENDER;
+    const pools = cueLightCache.pools;
+    if (!render || !pools || typeof render.litLevelAt !== "function") return;
+    data.pieces.filter((piece) => piece.type !== "light" && piece !== camera.me)
+      .map((piece) => ({ piece, depth: toCamera(toWorld(pieceUOf(piece), pieceVOf(piece), W, D, 1)).z }))
+      .sort((a, b) => b.depth - a.depth)
+      .forEach(({ piece }) => {
+        const dims = piece.dims || {};
+        const half = Math.max(finite(dims.w, 0), finite(dims.d, 0), finite(dims.dia, 0)) / 2;
+        /* 舞台スケッチの世界（y=奥行き・奥が0）で測る。3Dの z とは向きが違うので u,v から作り直す。 */
+        const point = { x: (pieceUOf(piece) - 0.5) * W, y: pieceVOf(piece) * D };
+        if (render.litLevelAt(pools, point, half) > 0) drawOne(piece);
+      });
+  }
+
+  /* 作業灯を消す（段階2b）。駒を描いた後・名前を描く前に呼ぶ。
+     点いている光がひとつも無ければ舞台は全部暗くなる。それが「作業灯を消す」の意味。
+     ★穴を開けるのは床の光だまり（面）だけ。空中の光（帯）では開けない。
+       帯で開けると、画面の上で大道具を横切っただけの所まで明るく抜け、箱に切れ込みが入って見えた
+       （2026-09-18 の最初の実装。証拠 docs/light-pool-2026-09-18/evidence/fpv-work-artifact.png）。
+       いまは①床の光だまりだけ穴にする ②光の中にいる駒を描き直す ③帯は暗幕の上から足す、の3段でそろえた。 */
+  function drawCueWorkLight(ctx) {
+    if (!data || !data.lightPool || !data.workLightOff) return false;
+    const render = window.SHOSAI_LIGHT_RENDER;
+    const model = cueLightModel();
+    if (!render || !model || !model.counts.total) return false;
+    if (Math.abs((model.dims && model.dims.W) - W) > 0.01
+      || Math.abs((model.dims && model.dims.D) - D) > 0.01) return false;
+    return render.paintWorkLight(ctx, cueLightCache.pools || [], cueLightProjector(), { topDown: false });
+  }
+
+  function drawOnePiece(piece) {
+    const ctx = elements.canvas.getContext("2d");
+    if (piece.type === "performer") {
+      const top = drawPerformer(ctx, piece);
+      if (top) queueLabel({ x: top.x, y: top.y + .28, z: top.z }, labelOf(piece), true);
+    } else drawPiece(ctx, piece);
+  }
+
   function drawMinimap() {
     const canvas = elements.minimap;
     const ctx = canvas.getContext("2d");
@@ -3321,6 +3425,8 @@
       drawShell(ctx);
     }
     drawLightPools(ctx, data.pieces);
+    drawCueLight(ctx);        // 床に落ちた光。駒より先＝光の上に人が立つ
+    if (!(data && data.workLightOff)) drawCueBeams(ctx);   // 作業灯が点いているなら、筋は駒の奥
     data.pieces.filter((piece) => piece.type === "performer" && piece.route)
       .forEach((piece) => drawRoute(ctx, piece, camera.me === piece));
     data.pieces.filter((piece) => piece.type !== "light")
@@ -3328,16 +3434,17 @@
       .sort((a, b) => b.depth - a.depth)
       .forEach(({ piece }) => {
         if (piece === camera.me) return;
-        if (piece.type === "performer") {
-          const top = drawPerformer(ctx, piece);
-          if (top) queueLabel({ x: top.x, y: top.y + .28, z: top.z }, labelOf(piece), true);
-        } else drawPiece(ctx, piece);
+        drawOnePiece(piece);
       });
     if (!bowlHouse && inHouse) drawProscenium(ctx);
     const selected = !data.transition && state.sel && data.pieces.find((piece) => (
       piece.id === state.sel && piece.type === "performer" && !piece.exitWalker
     ));
     if (selected) drawFacingRing(ctx, selected);
+    if (drawCueWorkLight(ctx)) {      // 作業灯を消す。名前より先＝名前は読めるまま残す
+      redrawLitPieces(ctx, drawOnePiece);   // 光の中にいる駒を明るく戻す
+      drawCueBeams(ctx);                    // 空気の筋は暗幕の上から足す
+    }
     drawLabels(ctx);
     const vignette = ctx.createRadialGradient(canvasWidth / 2, canvasHeight / 2, Math.min(canvasWidth, canvasHeight) * .42,
       canvasWidth / 2, canvasHeight / 2, Math.max(canvasWidth, canvasHeight) * .72);

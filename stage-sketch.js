@@ -5225,6 +5225,12 @@
       hint: "印刷用ページに、シーンごとの明かりの点き消え表を足す" },
     { key: "propsplot", label: "小道具の香盤表（印刷）", def: true,
       hint: "印刷用ページに、シーンごとの持ち手と受け渡しの表を足す" },
+    { key: "lightPool", label: "照明の光だまり", def: false,
+      hint: "場面のキューで点いている灯体の、光が落ちる場所を正面図・平面図に出す。図が重くなります" },
+    { key: "lightBeam", label: "照明の光の筋", def: false,
+      hint: "「照明の光だまり」を出しているとき、灯体から落ちる場所まで伸びる光の帯も出す。さらに重くなります" },
+    { key: "workLightOff", label: "作業灯を消す", def: false,
+      hint: "「照明の光だまり」を出しているとき、光の当たっていない所を暗くする。正面図・平面図・3Dカメラのすべてに効きます" },
     { key: "pitchExport", label: "ピッチ書き出し", def: true,
       hint: "書き出しモーダルに「ピッチとして」が出る。作図の線を落とし、光と空気を効かせた一枚絵と、生成AI用の条件文を出す" },
   ];
@@ -8978,6 +8984,16 @@
       return height > 0 ? height : 0;
     }
 
+    /* ★案A（2026-09-19）: 客席より低い舞台を「見下ろしている」ように描くための沈み量。
+     * 高さがマイナスのときだけ 0 より大きくなる。無い会場・0以上の会場では 0＝いままでどおり。
+     * 単位は apron と同じ「1.0m ＝ 席の apron 1つぶん」。席の apron は実寸ではなく
+     * 720pxの絵に合わせた手作りの数字なので、ここも比で扱う。 */
+    function stageSinkFactor() {
+      const height = Number(venue().stageHeightM);
+      if (!Number.isFinite(height) || height >= 0) return 0;
+      return Math.min(3, -height);
+    }
+
     // 正面図: 奥のラインと手前のラインの間で擬似パースを作る。
     // 客席の位置（席）によって、床の厚み・幅の開き・消失点の左右が変わる。
     const seat = frontSeatById(state.seat);
@@ -8989,6 +9005,7 @@
     const floorY = seat.floorY * k;
     const bottomY = seat.bottomY * k;
     const apron = (seat.apron || 0) * k * stageHeightFactor();
+    const sink = (seat.apron || 0) * k * stageSinkFactor();
 
     /* 尺は縦と横で同じにする。
      * 床の1m枡、演者の身長、セットの実寸が同じものさしで測られていないと、
@@ -9054,6 +9071,8 @@
       /* 立ち上がりの高さ（画素・尺をかけ、舞台の高さの比もかけた後）。
          ★描く側はここを見る。席の生の apron を直接読むと、舞台の高さが効かない。 */
       apron,
+      /* ★沈み量（画素）。客席より低い舞台のときだけ 0 より大きい。 */
+      sink,
       // 傾ける前の位置。駒はここから実寸で積み上げてから傾ける
       rawFloorY: floorY,
       rawBottomY: bottomY,
@@ -12867,6 +12886,39 @@
       }
     }
 
+    /* ★案A（2026-09-19）: 客席より低い舞台。手前に「客席の床」が広がり、その先の縁で床が落ちる。
+     * 見下ろしているという読みは、①手前に明るい床がある ②縁に線がある ③縁の向こうが一段暗い
+     * の3つで作る。角度そのものは作り直していない（正しい角度が要るなら案C）。
+     * ★ sink は高さがマイナスのときだけ 0 より大きいので、ほかの会場はこの中へ入らない。 */
+    const sink = finite(L.sink, 0);
+    if (sink > 0 && !roundHouse) {
+      const near = Math.min(H, L.bottomY + sink);
+      // 手前＝客席の床。奥（縁側）ほど暗く、手前ほど明るい
+      const houseFloor = target.createLinearGradient(0, L.bottomY, 0, H);
+      houseFloor.addColorStop(0, stageSurfaceColor("#15110e"));
+      houseFloor.addColorStop(1, stageSurfaceColor("#241d18"));
+      target.fillStyle = houseFloor;
+      target.fillRect(0, L.bottomY, W, Math.max(0, H - L.bottomY));
+      // 縁の向こう（舞台側）の落ち込み。床が切れていることを、影の帯で読ませる
+      const drop = target.createLinearGradient(0, Math.max(0, L.bottomY - sink * 0.45), 0, L.bottomY);
+      drop.addColorStop(0, "rgba(0,0,0,0)");
+      drop.addColorStop(1, "rgba(0,0,0,0.45)");
+      target.fillStyle = drop;
+      target.fillRect(0, Math.max(0, L.bottomY - sink * 0.45), W, Math.min(sink * 0.45, L.bottomY));
+      // 縁の線。客席の明かりを拾う手前側だけ明るい
+      target.strokeStyle = "rgba(239,231,214,0.26)";
+      target.lineWidth = 2;
+      target.beginPath();
+      target.moveTo(0, L.bottomY);
+      target.lineTo(W, L.bottomY);
+      target.stroke();
+      if (near < H - 2) {
+        // 客席の床の、さらに手前。暗くして枠の下端を締める
+        target.fillStyle = stageSurfaceColor("#100d0b");
+        target.fillRect(0, near, W, H - near);
+      }
+    }
+
     // リングの縁
     if (ring) {
       target.save();
@@ -14192,6 +14244,105 @@
     return lightCueOverlayCache.model;
   }
 
+  /* 世界座標（x=幅方向・中央0／y=奥行き・奥が0／z=高さm）を、その図の画面座標へ。
+     共有部品（stage-light-render.js・stage-set-render.js）へ渡すための1本。
+     図ごとの違いをここへ閉じ込めるので、共有部品は投影の中身を知らなくてよい。 */
+  function worldProjector(L) {
+    const width = Number(L.size.width) || 1;
+    const depth = Number(L.size.depth) || 1;
+    if (L.plan) {
+      return (point) => {
+        const at = place(finite(point.x, 0) / width + 0.5, finite(point.y, 0) / depth, L);
+        return { X: at.x, Y: at.y };
+      };
+    }
+    return (point) => {
+      const at = place(finite(point.x, 0) / width + 0.5, finite(point.y, 0) / depth, L);
+      const per = perMetre(at, L);
+      const raw = at.rawY === undefined ? at.y : at.rawY;
+      return { X: at.x, Y: L.tilt(raw - Math.max(0, finite(point.z, 0)) * per.y) };
+    };
+  }
+
+  /* 段階1「光だまり」（2026-09-18）。設計 docs/light-pool-2026-09-18/DESIGN.md。
+     ★既定は切。環境設定の「照明の光だまり」を入れたときだけ描く。
+     ★読むだけ。project.lightingDesign も駒も書き換えない。
+     ★演者より先に描く（床に落ちた光の上に人が立つ）。 */
+  let lightPoolMs = 0;
+  /* 光だまりの一覧。塗りにも、作業灯を消すときの穴にも、同じものを使う。
+     別々に作ると、光の形と穴の形がずれて、光の外側に薄い形が残る。 */
+  function lightCuePoolList(L) {
+    const model = lightCueOverlayForLayout(L);
+    if (!model) return null;
+    const pools = model.fixtures
+      .filter((fixture) => fixture.pool && fixture.state === "on")
+      .map((fixture) => ({ ...fixture.pool, color: fixture.color, level: fixture.level }));
+    return pools.length ? pools : null;
+  }
+
+  /* 作業灯を消す（段階2b）。演者・大道具を描いた後、名前や注記を描く前に呼ぶ。
+     ★点いている光がひとつも無ければ、舞台は全部暗くなる。それが「作業灯を消す」の意味。 */
+  function drawLightCueWorkLight(target, L) {
+    if (!featureOn("lightPool") || !featureOn("workLightOff")) return false;
+    const api = window.SHOSAI_LIGHT_RENDER;
+    if (!api || !lightCueOverlayForLayout(L)) return false;
+    return api.paintWorkLight(target, lightCuePoolList(L) || [], worldProjector(L), {
+      beams: featureOn("lightBeam"), topDown: Boolean(L.plan),
+    });
+  }
+
+  /* 段階2「光の筋」。空気の中を進む光。
+     ★作業灯を消していないときは駒より先（奥）に描く＝物の後ろを通る筋は物に隠れる。
+       消しているときは暗幕の**上から**足す。暗幕に穴を開けて出すと、画面の上で物を
+       横切っただけの所まで明るく抜けてしまう（2026-09-18・3Dカメラで実際に出た）。 */
+  function drawLightCueBeams(target, L) {
+    if (!featureOn("lightPool") || !featureOn("lightBeam")) return 0;
+    const api = window.SHOSAI_LIGHT_RENDER;
+    if (!api) return 0;
+    const pools = lightCuePoolList(L);
+    if (!pools) return 0;
+    const started = typeof performance !== "undefined" ? performance.now() : Date.now();
+    const drawn = api.paintBeams(target, pools, worldProjector(L), { topDown: Boolean(L.plan) });
+    const spent = (typeof performance !== "undefined" ? performance.now() : Date.now()) - started;
+    lightPoolMs = lightPoolMs ? lightPoolMs * 0.8 + spent * 0.2 : spent;
+    return drawn;
+  }
+
+  /* 暗幕の後に、光の中にいる駒だけ描き直す。物は面なので、光が当たっていれば明るく見える。
+     ★足元が床の光の輪に入っているかで決める（高さは見ない。舞台の光は上から来る）。
+     ★照明モードも同じ考え方で、暗幕の後に演者を描き直している。 */
+  function redrawLitPieces(target, L, pieces, draw) {
+    const api = window.SHOSAI_LIGHT_RENDER;
+    const pools = lightCuePoolList(L);
+    if (!api || !pools || typeof api.litLevelAt !== "function" || !Array.isArray(pieces)) return;
+    const width = Number(L.size.width) || 1;
+    const depth = Number(L.size.depth) || 1;
+    /* 持っている物は、持ち主の足元で判定する。手の位置ではなく、誰の光に入っているかで決まる。 */
+    const standsAt = (piece) => (piece.heldBy
+      ? (sc().pieces.find((row) => row.id === piece.heldBy) || piece) : piece);
+    pieces.forEach((piece) => {
+      const visual = effectivelyPlacedPiece(standsAt(piece));
+      const dims = pieceDims(visual) || {};
+      const half = Math.max(finite(dims.w, 0), finite(dims.d, 0), finite(dims.dia, 0)) / 2;
+      const point = { x: (finite(visual.u, 0.5) - 0.5) * width, y: finite(visual.v, 0.5) * depth };
+      if (api.litLevelAt(pools, point, half) > 0) draw(piece);
+    });
+  }
+
+  function drawLightCuePools(target, L) {
+    if (!featureOn("lightPool")) return 0;
+    const api = window.SHOSAI_LIGHT_RENDER;
+    if (!api) return 0;
+    const pools = lightCuePoolList(L);
+    if (!pools) return 0;
+    const started = typeof performance !== "undefined" ? performance.now() : Date.now();
+    const project = worldProjector(L);
+    const drawn = api.paintPools(target, pools, project);
+    const spent = (typeof performance !== "undefined" ? performance.now() : Date.now()) - started;
+    lightPoolMs = lightPoolMs ? lightPoolMs * 0.8 + spent * 0.2 : spent;
+    return drawn;
+  }
+
   /* 舞台の寸法が照明デザインを作ったときと違うなら、重ねると嘘になるので描かない。 */
   function lightCueOverlayForLayout(L) {
     const model = lightCueOverlayModel();
@@ -14288,7 +14439,6 @@
         target.stroke();
       }
     });
-    drawLightCueOverlayCaption(target, L, model);
     target.restore();
   }
 
@@ -14395,18 +14545,30 @@
       return languageValue(() => `${note.count} LX cues not shown`,
         () => `LX cue ${note.count}件はこの図では表現していません`);
     });
-    return notes.length ? `${head} / ${notes.join(" / ")}` : head;
+    const line = notes.length ? `${head} / ${notes.join(" / ")}` : head;
+    // 段階1を出しているときだけ、直近の描画時間を添える（負荷の判断材料）
+    return featureOn("lightPool") && lightPoolMs ? `${line} / ${lightPoolMs.toFixed(1)}ms` : line;
   }
 
-  function drawLightCueOverlayCaption(target, L, model) {
+  /* 照明の帯（何台中何台点いているか・出していないもの・描画時間）。
+     ★駒と暗幕を描いた**後**に呼ぶ。前に描くと、下手前に立つ演者に隠れたり、
+       作業灯を消したときに一緒に暗くなって読めなくなる（2026-09-18 両方とも実際に起きた）。 */
+  function drawLightCueCaption(target, L) {
+    const model = lightCueOverlayForLayout(L);
+    if (!model) return;
     const text = lightCueOverlayCaptionText(model);
+    target.save();
     target.globalAlpha = 0.92;
     target.font = "600 10px system-ui, sans-serif";
     const width = Math.max(96, target.measureText(text).width + 12);
+    const left = L.plan ? L.stage.x + 6 : L.centerX - L.frontW / 2 + 6;
+    const top = L.plan ? L.stage.y + L.stage.h - 25 : L.floorY - 25;
     target.fillStyle = stageSurfaceColor("#201b16");
-    target.fillRect(L.stage.x + 6, L.stage.y + L.stage.h - 25, width, 19);
+    target.fillRect(left, top, width, 19);
     target.fillStyle = stageSurfaceColor("#e0c989");
-    target.fillText(text, L.stage.x + 12, L.stage.y + L.stage.h - 12);
+    target.textBaseline = "alphabetic";
+    target.fillText(text, left + 6, top + 13);
+    target.restore();
   }
 
   function drawLightingPlanOverlay(target, L) {
@@ -14494,6 +14656,10 @@
     if (L.plan) drawPlanVenue(target, L);
     else drawFrontVenue(target, L);
     if (showSelection && L.plan && target === planCtx) drawLightingPlanOverlay(target, L);
+    if (showSelection && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) {
+      drawLightCuePools(target, L);
+      if (!featureOn("workLightOff")) drawLightCueBeams(target, L);
+    }
     if (showSelection && L.plan && target === planCtx) drawLightCueOverlayPlan(target, L);
     if (showSelection && !L.plan && target === ctx) drawLightCueOverlayFront(target, L);
 
@@ -14527,10 +14693,12 @@
      * 誰がどこに立っているかという平面図の一番の用が果たせなくなる。 */
     const planLayer = (p) => (p.type === "performer" ? 1 : 0);
     const topH = (p) => finite(p.base, 0) + pieceTopLocal(p);
-    (L.plan
+    /* 作業灯を消したとき、この並びのまま「光の中にいる駒」だけ描き直す（下の redrawLitPieces）。 */
+    const orderedPieces = L.plan
       ? solid.slice().sort((a, b) => (planLayer(a) - planLayer(b)) || (topH(a) - topH(b)))
       : solid.filter((piece) => !piece.heldBy)
-        .sort((a, b) => effectivelyPlacedPiece(a).v - effectivelyPlacedPiece(b).v)).forEach(draw);
+        .sort((a, b) => effectivelyPlacedPiece(a).v - effectivelyPlacedPiece(b).v);
+    orderedPieces.forEach(draw);
     // 正面だけは演者を描き終えてから、保持中の物を手首へ重ねて手前に出す。
     if (!L.plan) solid.filter((piece) => piece.heldBy)
       .forEach((piece) => drawHeldFrontPiece(target, piece, L));
@@ -14549,6 +14717,17 @@
     }
 
     // 名前。頭上（平面では点の脇）に小さく置く。演者・装置・照明は別々に出し入れする
+    if (showSelection && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) {
+      if (drawLightCueWorkLight(target, L)) {
+        redrawLitPieces(target, L, orderedPieces, draw);
+        // 手に持っている物も、持ち主が光の中にいれば明るく戻す（正面だけの描き方）
+        if (!L.plan) redrawLitPieces(target, L, solid.filter((piece) => piece.heldBy),
+          (piece) => drawHeldFrontPiece(target, piece, L));
+        drawLightCueBeams(target, L);
+      }
+      drawLightCueCaption(target, L);
+    }
+
     if (!pitchStyle && (state.showNames || state.showSetNames || state.showLightNames)) {
       shown.forEach((piece) => {
         const tag = pieceNameTag(target, piece, L, shown);
@@ -29528,6 +29707,14 @@ ${propsPlotHtml}
                  扇形ホールは規模ごとに弧の出が違うので、中を選んでも小の形が出ていた。 */
             outline: venueOutlineOf(venue(), size) || null,
             stageExtensions: venueStageExtensionsOf(venue(), size) || [] },
+          /* 段階1・2の光を3Dカメラでも出すための材料（2026-09-18）。読むだけ。
+             ★複製しない。毎フレーム読み直される経路なので、同じ参照を渡して
+               3D側が「変わっていない」と判定できるようにする（変わった時だけ組み直す）。 */
+          lightingDesign: (state.project && state.project.lightingDesign) || null,
+          activeSceneId: (state.project && state.project.activeSceneId) || "",
+          lightPool: featureOn("lightPool"),
+          lightBeam: featureOn("lightBeam"),
+          workLightOff: featureOn("workLightOff"),
           lang,
         };
       },

@@ -144,6 +144,7 @@ public-dist/
 !/stage-i18n.zh-Hans.js
 !/stage-i18n.zh-Hant.js
 !/stage-light-motion.js
+!/stage-light-render.js
 !/stage-lighting-plans.js
 !/stage-lighting-plan-overlay.js
 !/docs/

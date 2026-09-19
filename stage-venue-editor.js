@@ -33,6 +33,10 @@
   const ACCESS_DEFAULT_WIDTH_M = 1.2;
   const CEILING_MIN_HEIGHT_M = 0.1;
   const CEILING_MAX_HEIGHT_M = 100;
+  /* 舞台の高さ（客席の床を0とした舞台の床のm）。★未入力＝会場データに書かない＝今までどおりの絵。
+   * マイナスにできるのは、サーカスのピステが客席の最前列より低いことがあるため（本人 2026-09-19）。 */
+  const STAGE_MIN_HEIGHT_M = -3;
+  const STAGE_MAX_HEIGHT_M = 3;
   const MAX_LIBRARY_FILE_BYTES = 2 * 1024 * 1024;
   const MAX_LIBRARY_IMPORT_VENUES = 200;
   const FURNITURE_HEIGHTS = Object.freeze({
@@ -68,6 +72,7 @@
     objectMovable: $("stage-venue-editor-object-movable"),
     objectRemove: $("stage-venue-editor-object-remove"),
     accessType: $("stage-venue-editor-access-type"),
+    stageHeight: $("stage-venue-editor-stage-height"),
     ceilingHeight: $("stage-venue-editor-ceiling-height"),
     ceilingDetails: $("stage-venue-editor-ceiling-details"),
     ceilingOutdoorNote: $("stage-venue-editor-ceiling-outdoor-note"),
@@ -159,6 +164,8 @@
     access: [],
     /* V-4（2026-09-17）: 天井あり/なし・屋内/屋外。既存データに無い場合は「屋内・天井あり」＝従来の挙動。 */
     ceiling: { heightM: 6, rigging: "none", hasCeiling: true, indoor: true },
+    /* 舞台の高さ。null＝未入力。書き出さないので、持たない会場の絵は1画素も変わらない。 */
+    stageHeightM: null,
     stageFormat: "theatre",
     templateKey: null,
     mode: "select",
@@ -1855,6 +1862,9 @@
       els.accessType.value = access ? access.type : state.nextAccessType;
     }
     if (els.ceilingHeight) els.ceilingHeight.value = String(state.ceiling.heightM);
+    if (els.stageHeight) {
+      els.stageHeight.value = Number.isFinite(state.stageHeightM) ? String(state.stageHeightM) : "";
+    }
     document.querySelectorAll("[data-venue-editor-rigging]").forEach((button) => {
       button.setAttribute("aria-pressed", String(button.dataset.venueEditorRigging === state.ceiling.rigging));
     });
@@ -1956,9 +1966,12 @@
       stageExtensions: state.stageExtensions,
       audience: state.audience,
       wings: state.wings,
+      /* ★壁も控える。入れ忘れると「壁を置いて取り消しても消えない」（2026-09-19 実測）。 */
+      walls: state.walls,
       fixtures: state.fixtures,
       access: state.access,
       ceiling: state.ceiling,
+      stageHeightM: state.stageHeightM,
       stageFormat: state.stageFormat,
       templateKey: state.templateKey,
       nextFurnitureHeight: state.nextFurnitureHeight,
@@ -2019,7 +2032,8 @@
 
   function applyDocumentSnapshot(snapshot) {
     [
-      "shape", "points", "stageExtensions", "audience", "wings", "fixtures", "access", "ceiling",
+      "shape", "points", "stageExtensions", "audience", "wings", "walls", "fixtures", "access", "ceiling",
+      "stageHeightM",
       "stageFormat", "templateKey", "nextFurnitureHeight", "nextAccessType", "bandSerial",
       "regionSerial", "extensionSerial", "elementSerial",
     ].forEach((key) => { state[key] = clone(snapshot[key]); });
@@ -2240,6 +2254,9 @@
     state.shape = inferTemplateShape(floor.outline);
     state.points = clone(floor.outline);
     state.stageExtensions = clone(Array.isArray(floor.extensions) ? floor.extensions : []);
+    /* ★下敷きが舞台の高さを持っていれば引き継ぐ。持っていなければ未入力へ戻す
+     * （持たない会場を読んで保存し直しても鍵が増えない＝絵が変わらない）。 */
+    state.stageHeightM = normalizeStageHeight(floor.stageHeightM);
     state.audience = clone(Array.isArray(variant.audience) ? variant.audience : []);
     state.wings = clone(Array.isArray(variant.stageWings)
       ? variant.stageWings : (Array.isArray(venue.stageWings) ? venue.stageWings : []));
@@ -3452,6 +3469,8 @@
           ...(item.cutout ? { cutout: true } : {}),
         })),
         levels: [],
+        /* 舞台の高さ。未入力のときは鍵ごと書かない（持たない会場は今までどおりに描かれる）。 */
+        ...(Number.isFinite(state.stageHeightM) ? { stageHeightM: state.stageHeightM } : {}),
       },
       ceiling: {
         heightM: state.ceiling.heightM,
@@ -3767,6 +3786,36 @@
     return true;
   }
 
+  /* 舞台の高さ。空欄は「未入力」に戻す＝会場データへ書かない（本人 2026-09-19）。
+   * 数値は −3〜+3m、0.05きざみ。保存時は stage-venues.js が同じ範囲へ丸め直す。 */
+  function normalizeStageHeight(value) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return null;
+    const clamped = Math.min(STAGE_MAX_HEIGHT_M, Math.max(STAGE_MIN_HEIGHT_M, parsed));
+    const rounded = Math.round(clamped * 100) / 100;
+    return rounded === 0 ? 0 : rounded;   /* ★-0 を作らない（JSONでは0に見えるのに厳密比較で落ちる） */
+  }
+
+  function setStageHeight(heightM) {
+    const raw = typeof heightM === "string" ? heightM.trim() : heightM;
+    if (raw === "" || raw === null || raw === undefined) {
+      if (state.stageHeightM === null) return true;
+      state.stageHeightM = null;
+      setStatus("舞台の高さを未入力に戻しました。いままでどおりの見え方になります。");
+      render();
+      return true;
+    }
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed < STAGE_MIN_HEIGHT_M || parsed > STAGE_MAX_HEIGHT_M) return false;
+    const value = normalizeStageHeight(parsed);
+    state.stageHeightM = value;
+    if (value > 0) setStatus(`舞台の高さを${value}mにしました。`);
+    else if (value === 0) setStatus("舞台の高さを0mにしました。客席の床と同じ高さです。");
+    else setStatus(`舞台の高さを${value}mにしました。客席の床より低い舞台です。`);
+    render();
+    return true;
+  }
+
   function setRigging(rigging) {
     if (!["none", "limited", "full"].includes(rigging)) return;
     state.ceiling.rigging = rigging;
@@ -3935,6 +3984,17 @@
     };
     els.ceilingHeight.addEventListener("change", commitCeilingHeight);
     els.ceilingHeight.addEventListener("blur", commitCeilingHeight);
+  }
+  if (els.stageHeight) {
+    const commitStageHeight = () => {
+      const accepted = withHistory(() => setStageHeight(els.stageHeight.value));
+      if (!accepted) {
+        els.stageHeight.value = Number.isFinite(state.stageHeightM) ? String(state.stageHeightM) : "";
+        setStatus(`舞台の高さは${STAGE_MIN_HEIGHT_M}〜${STAGE_MAX_HEIGHT_M}mで入力してください。`);
+      }
+    };
+    els.stageHeight.addEventListener("change", commitStageHeight);
+    els.stageHeight.addEventListener("blur", commitStageHeight);
   }
   document.querySelectorAll("[data-venue-editor-rigging]").forEach((button) => {
     button.addEventListener("click", () => withHistory(
@@ -4149,6 +4209,7 @@
     setStageFormat,
     setMode,
     setCeilingHeight,
+    setStageHeight,
     setRigging,
     loadVenueTemplate,
     getVenue: () => clone(buildVenue("custom-room-preview", "作成中の劇場", {
