@@ -23390,6 +23390,40 @@
   /* 項目が増えて一列では縦に長くなりすぎたので、二群・二列に分ける。
      ★列にするのは項目一覧だけ。言語・ショートカット・案内のリンクは
        読む順に意味があるので一列のまま（index.html 側にそのまま置いてある）。 */
+  /* ★照明の見え方（2026-09-19 本人決定「見え方で呼ぶ」）。
+     3つのチェック（光だまり／光の筋／作業灯を消す）を、積み上げ式の1つの選択欄にまとめる。
+     ★保存は今までの3つの鍵のまま。ここはその3つをまとめて見せる窓で、鍵を増やさない。
+     ★上の段は下の段を含む。段に当てはまらない組み合わせ（例: 光だまり＋作業灯を消す）は
+       いちばん近い下の段として見せ、選び直した時点で段どおりに揃う。 */
+  const LIGHT_LOOK_STEPS = [
+    { value: "off", label: "切（いまの概略）", pool: false, beam: false, work: false },
+    { value: "pool", label: "光だまり", pool: true, beam: false, work: false },
+    { value: "beam", label: "＋光の筋", pool: true, beam: true, work: false },
+    { value: "dark", label: "本番の暗さ", pool: true, beam: true, work: true },
+  ];
+  const LIGHT_LOOK_HINT = "場面のキューで点いている灯体の見え方。下の段ほど図が重くなります。"
+    + "「本番の暗さ」は作業灯を消して、光の当たる所だけを見せます";
+
+  function currentLightLookStep() {
+    if (!featureOn("lightPool")) return "off";
+    if (!featureOn("lightBeam")) return "pool";
+    return featureOn("workLightOff") ? "dark" : "beam";
+  }
+
+  function lightLookRow() {
+    return prefSelectRow("照明の見え方", currentLightLookStep(),
+      LIGHT_LOOK_STEPS.map((step) => [step.value, step.label]), LIGHT_LOOK_HINT, (next) => {
+        const step = LIGHT_LOOK_STEPS.find((item) => item.value === next) || LIGHT_LOOK_STEPS[0];
+        prefs.lightPool = step.pool;
+        prefs.lightBeam = step.beam;
+        prefs.workLightOff = step.work;
+        savePrefs();
+        applyFeatureFlags();
+        render();
+        announce(`照明の見え方を「${tx(step.label)}」にしました。`);
+      });
+  }
+
   function renderPrefs() {
     const host = els.prefsList;
     if (!host) return;
@@ -23399,8 +23433,11 @@
     const hiddenGammaFlags = new Set([
       "presentation", "lightMotion", "cuesheet", "lineup", "pitchExport",
       "blackout", "sceneTiming", "sceneTransitions",
+      /* ★照明の3つは「照明の見え方」の選択欄へまとめた（2026-09-19）。保存値はそのまま。 */
+      "lightPool", "lightBeam", "workLightOff",
     ]);
     FEATURES.filter((f) => !hiddenGammaFlags.has(f.key)).forEach((f) => { features.grid.append(prefRow(f)); });
+    features.grid.append(lightLookRow());
     host.append(features.group);
   }
   function openPrefs() {
