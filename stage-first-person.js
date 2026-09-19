@@ -3250,6 +3250,9 @@
    * ★舞台の寸法が照明デザインを作ったときと違うなら、重ねると嘘になるので描かない（舞台モードと同じ判定）。
    */
   const cueLightCache = { design: undefined, sceneId: "", model: null, pools: null };
+  /* ★2026-09-19（段階5②）: 模様の回転の時計。RAFのタイムスタンプをそのまま使う
+     （goboAngleAt は絶対時刻の差分だけを見るので、0始まりに揃える必要がない）。 */
+  let cueLightClockMs = 0;
   function cueLightModel() {
     const api = window.SHOSAI_STAGE_LIGHT_CUE_OVERLAY;
     const planApi = window.SHOSAI_STAGE_LIGHTING_PLAN_OVERLAY;
@@ -3292,7 +3295,7 @@
     const pools = cueLightCache.pools;
     if (!pools || !pools.length) return;
     const project = cueLightProjector();
-    if (data.lightPool) render.paintPools(ctx, pools, project);
+    if (data.lightPool) render.paintPools(ctx, pools, project, { tMs: cueLightClockMs });
   }
 
   /* 空気の中を進む光。作業灯を消していないときは駒より先（奥）に、
@@ -3334,7 +3337,8 @@
     if (!render || !model || !model.counts.total) return false;
     if (Math.abs((model.dims && model.dims.W) - W) > 0.01
       || Math.abs((model.dims && model.dims.D) - D) > 0.01) return false;
-    return render.paintWorkLight(ctx, cueLightCache.pools || [], cueLightProjector(), { topDown: false });
+    return render.paintWorkLight(ctx, cueLightCache.pools || [], cueLightProjector(),
+      { topDown: false, tMs: cueLightClockMs });
   }
 
   function drawOnePiece(piece) {
@@ -3527,7 +3531,17 @@
     if (drag || facingDrag || moveDrag || panelDrag) return true;    // 掴んでいる
     if (data && data.transition) return true;                        // 転換の最中
     if (sceneTimer || pendingScene !== null) return true;            // シーン送りの途中
+    /* ★2026-09-19（段階5②）: 模様（ゴボ）が回っている灯があれば、盆と同じ理由で描き続ける。 */
+    if (data && data.lightPool && spinningCueGobos()) return true;
     return false;
+  }
+
+  /* 点いていて模様(gobo)を持ち、回転(goboSpin)がある灯が1つでもあるか。cueLightModel() を
+     先に呼んで pools キャッシュを最新にしてから見る（design/sceneId が変わっていなければ軽い）。 */
+  function spinningCueGobos() {
+    if (!cueLightModel()) return false;
+    return Boolean(cueLightCache.pools && cueLightCache.pools.some((pool) =>
+      pool.gobo && Math.abs(finite(pool.goboSpin, 0)) > 0.01));
   }
 
   function stopFrames() {
@@ -3559,6 +3573,7 @@
     const now = finite(timestamp, 0);
     const dtSeconds = frameDelta(lastFrameTime, now);
     lastFrameTime = now;
+    cueLightClockMs = now;
     renderFrame(dtSeconds);
     if (needsContinuousFrames()) {
       rafId = window.requestAnimationFrame(frame);

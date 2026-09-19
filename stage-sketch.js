@@ -14412,7 +14412,7 @@
     const api = window.SHOSAI_LIGHT_RENDER;
     if (!api || !lightCueOverlayForLayout(L)) return false;
     return api.paintWorkLight(target, lightCuePoolList(L) || [], worldProjector(L), {
-      beams: featureOn("lightBeam"), topDown: Boolean(L.plan),
+      beams: featureOn("lightBeam"), topDown: Boolean(L.plan), tMs: lightMotionClockMs(),
     });
   }
 
@@ -14462,7 +14462,7 @@
     if (!pools) return 0;
     const started = typeof performance !== "undefined" ? performance.now() : Date.now();
     const project = worldProjector(L);
-    const drawn = api.paintPools(target, pools, project);
+    const drawn = api.paintPools(target, pools, project, { tMs: lightMotionClockMs() });
     const spent = (typeof performance !== "undefined" ? performance.now() : Date.now()) - started;
     lightPoolMs = lightPoolMs ? lightPoolMs * 0.8 + spent * 0.2 : spent;
     return drawn;
@@ -22793,6 +22793,22 @@
       && Math.abs(finite(piece.spinRate, 0)) > 0.01);
   }
 
+  /* ★2026-09-19（段階5②）: 模様（ゴボ）の回転も、盆と同じ時計（spinRun）で動かす。
+     「光だまり」を出していて、点いている灯に模様と回転（goboSpin）があるときだけ対象。 */
+  function spinningGobos() {
+    if (!featureOn("lightPool")) return [];
+    const model = lightCueOverlayModel();
+    if (!model) return [];
+    return (model.fixtures || []).filter((fixture) => fixture.state === "on" && fixture.pool
+      && fixture.pool.gobo && Math.abs(finite(fixture.pool.goboSpin, 0)) > 0.01);
+  }
+
+  /* いま動いている時計（ms）。spinRun が動いていなければ0＝模様は goboAngle の値で止まる
+     （盆も模様も回っていない場面はこれまでと同じ、余計な再描画をしない）。 */
+  function lightMotionClockMs() {
+    return spinRun ? spinRun.elapsedMs : 0;
+  }
+
   function sceneAnimOwnsPiece(piece) {
     if (!sceneAnim) return false;
     return [...(sceneAnim.pieces || []), ...(sceneAnim.exits || [])]
@@ -22851,7 +22867,8 @@
   }
 
   function spinRunAllowed() {
-    return state.animateScenes && !document.hidden && spinningRevolves().length > 0;
+    return state.animateScenes && !document.hidden
+      && (spinningRevolves().length > 0 || spinningGobos().length > 0);
   }
 
   function startSpinRun() {
