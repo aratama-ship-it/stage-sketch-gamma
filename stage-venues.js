@@ -1873,6 +1873,40 @@
     seatById: (id) => SEATS.find((s) => s.id === id) || SEATS.find((s) => s.id === "center") || SEATS[0],
     sightLimits: SIGHT_LIMITS,
     outdoorMarks: OUTDOOR_MARKS,
+    /* 客席の奥行き(m)。平面図に実寸の客席を描くための値（2026-09-19）。
+       ★legacy の会場オブジェクトへは足さない。先頭5プリセットのJSONを固定している錠に当たる。
+       ★値は客席の帯の座標から導く（house.depthM は v2 を組むときに帯へ畳まれていて残らない）。
+       返すのは「舞台の前端から客席のいちばん後ろまで」のm。無ければ null。 */
+    houseDepthM: (venueId, sizeId) => {
+      const venue = VENUES_V2.find((item) => item.id === venueId)
+        || readLibrary().find((item) => item.id === venueId) || null;
+      if (!venue) return null;
+      const size = Array.isArray(venue.sizes)
+        ? (venue.sizes.find((item) => item.id === sizeId) || venue.sizes[0]) : null;
+      const areas = (size && Array.isArray(size.audience)) ? size.audience
+        : (Array.isArray(venue.audience) ? venue.audience : []);
+      const front = areas.filter((area) => area && area.side === "front"
+        && Array.isArray(area.polygon) && area.polygon.length >= 3);
+      if (!front.length) return null;
+      const outline = (size && size.floor && Array.isArray(size.floor.outline))
+        ? size.floor.outline
+        : ((venue.floor && Array.isArray(venue.floor.outline)) ? venue.floor.outline : null);
+      if (!outline || !outline.length) return null;
+      const stageFront = Math.max(...outline.map((point) => point[1]));
+      let houseBack = -Infinity;
+      front.forEach((area) => area.polygon.forEach((point) => {
+        if (point[1] > houseBack) houseBack = point[1];
+      }));
+      const depth = Math.round((houseBack - stageFront) * 100) / 100;
+      if (!(depth > 0.05)) return null;
+      /* ★会場データが客席の奥行きを持たないとき、帯は「舞台奥行きの40%」という既定の式で作られる。
+         それは実寸ではないので、図に「客席 ○m」とは書かない（推測を数字で見せない）。
+         公表値を持つ会場（劇場・体育館・宴会場など）だけがここを通る。 */
+      const stageBack = Math.min(...outline.map((point) => point[1]));
+      const fallback = Math.round((stageFront - stageBack) * 0.4 * 100) / 100;
+      if (Math.abs(depth - fallback) < 0.02) return null;
+      return depth;
+    },
     /* L-02: 劇場ごとに覚える「カスタム視点」。正面図の席の並びの右端に出る。 */
     viewpoints: {
       max: MAX_VIEWPOINTS,

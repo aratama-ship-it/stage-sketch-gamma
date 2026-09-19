@@ -5210,6 +5210,10 @@
       hint: "同時に動く演者の動線がぶつかりそうな所に、平面図で印を出す" },
     { key: "highwarn", label: "高所の下の注意", def: false,
       hint: "ポールやトラピーズの真下に人が居るとき、平面図に印を出す" },
+    /* ★客席の奥行き（2026-09-19）。既定は切＝いままでどおり図の下端まで塗る。
+       入れると、会場データの客席の奥行きで帯を止め、奥の縁に線と札を出す。 */
+    { key: "houseDepth", label: "客席の奥行きを実寸で出す", def: false,
+      hint: "平面図の客席を、会場の実際の奥行きで止める。奥の縁に線と「客席 ○m」の札を出します" },
     /* 2026-09-16 A5第2段: 3Dカメラの「引いた絵」の描き方。既定OFF＝これまでと同じ見え方。
        ★本人承認済みの文言。言い換えない（英語は Simplified。Light は照明と読み違える）。
        ★FPV画面のチップ（引いた絵：くっきり／軽く）と同じ状態を指す。片方を変えるともう片方も変わる。 */
@@ -8912,9 +8916,10 @@
      会場の寸法と無関係なので、余ったり詰まったりした。外部を一切参照しない純粋関数に
      してあるのは、テストから取り出して数値で確かめるため。触るときは同じ性質を保つこと。 */
   function planFit(input) {
-    // input: { W, H, audience, width, depth, wingM }
+    // input: { W, H, audience, width, depth, wingM, houseM }
     // 返り値: { stage: { x, y, w, h }, pxPerM }
-    const { W, H, audience, width, depth, wingM } = input;
+    /* ★houseM（客席の奥行き・m）は任意。渡さなければ今までと1画素も変わらない（2026-09-19）。 */
+    const { W, H, audience, width, depth, wingM, houseM } = input;
     const M = 24;
     const ratio = depth / width;
     const wingRatio = wingM / width;
@@ -8937,8 +8942,15 @@
     } else {
       const byWidth = (W - 2 * M) / (1 + 2 * wingRatio);
       bottom = audience === "none" ? M : 96 + M;
-      const byHeight = (H - M - bottom) / ratio;
+      /* ★客席の奥行きを実寸で出すときは、客席のぶんも入れて尺を決める（2026-09-19）。
+         渡されなければ客席は 96px の決め打ちのまま＝これまでどおり。 */
+      const houseRatio = (audience !== "none" && Number.isFinite(houseM) && houseM > 0)
+        ? houseM / width : 0;
+      const byHeight = houseRatio
+        ? (H - 2 * M) / (ratio + houseRatio)
+        : (H - M - bottom) / ratio;
       sw = Math.min(byWidth, byHeight);
+      if (houseRatio) bottom = sw * houseRatio + M;
       top = M;
     }
 
@@ -8962,13 +8974,20 @@
 
     if (plan) {
       // 平面図: 上が奥、下が客席側。舞台の縦横比を保って収める。
+      /* ★客席の奥行きを実寸で出す（2026-09-19・環境設定。既定は切）。
+         公表値を持つ会場だけ数字が返る。持たない会場は null＝これまでどおり。 */
+      const houseM = featureOn("houseDepth") && window.SHOSAI_VENUES
+        && typeof window.SHOSAI_VENUES.houseDepthM === "function"
+        ? window.SHOSAI_VENUES.houseDepthM(v.id, size.id) : null;
       const fit = planFit({
         W, H, audience: v.audience, width: size.width, depth: size.depth, wingM: WING_M,
+        ...(Number.isFinite(houseM) ? { houseM } : {}),
       });
       return {
         plan: true, venue: v, size,
         stage: fit.stage,
         pxPerM: fit.pxPerM,
+        ...(Number.isFinite(houseM) ? { houseM } : {}),
       };
     }
 
@@ -13485,7 +13504,12 @@
       /* 側通路つきの客席（VENUE_PRESETS_STAGE1_2026_09_19）。通路は塗らないことで表すので、
          区画ごとに分けて塗る。houseBlocks を持たない会場は従来どおり1枚の帯。 */
       const houseY = s.y + s.h + 14;
-      const houseH = H - (s.y + s.h) - 30;
+      /* ★客席の奥行きを実寸で出す（2026-09-19・環境設定。既定は切）。
+         切のときは今までどおり図の下端まで塗る＝1画素も変わらない。 */
+      const houseDepthM = Number.isFinite(L.houseM) ? L.houseM : null;
+      const houseFull = H - (s.y + s.h) - 30;
+      const houseH = Number.isFinite(houseDepthM)
+        ? Math.max(18, Math.min(houseFull, houseDepthM * L.pxPerM)) : houseFull;
       const blocksForSize = venueHouseBlocksOf(v, L.size);
       const houseBlocks = (Array.isArray(blocksForSize) && blocksForSize.length > 1)
         ? blocksForSize : null;
@@ -13505,6 +13529,19 @@
         target.fillRect(s.x - 40, houseY, s.w + 80, houseH);
       }
       label(target, "客席", W / 2, s.y + s.h + 58);
+      if (Number.isFinite(houseDepthM)) {
+        // 奥の縁。ここまでが客席という線と、実寸の札
+        target.save();
+        target.strokeStyle = "rgba(239,231,214,0.32)";
+        target.lineWidth = 1;
+        target.setLineDash([6, 4]);
+        target.beginPath();
+        target.moveTo(s.x - 40, houseY + houseH);
+        target.lineTo(s.x + s.w + 40, houseY + houseH);
+        target.stroke();
+        target.restore();
+        label(target, `客席 ${houseDepthM}m`, W / 2, houseY + houseH - 12);
+      }
     } else if (v.audience === "three") {
       target.fillRect(s.x - 96, s.y + s.h * 0.25, 78, s.h * 0.75 + 60);
       target.fillRect(s.x + s.w + 18, s.y + s.h * 0.25, 78, s.h * 0.75 + 60);

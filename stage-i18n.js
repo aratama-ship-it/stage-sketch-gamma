@@ -1642,6 +1642,8 @@
     "1. ステージの形式を選択してください": "1. Choose the stage format",
     "2. メインの形を選択してください": "2. Choose the main shape",
     "舞台の高さ": "Stage height",
+    "客席の奥行きを実寸で出す": "Show the true house depth",
+    "平面図の客席を、会場の実際の奥行きで止める。奥の縁に線と「客席 ○m」の札を出します": "Stop the house band in the plan view at the real depth of the venue, with a dashed line and a “House ○m” tag at the back",
     "客席の床を0とした高さです。−3〜3mまで、0.05mきざみ。マイナスは客席より低い舞台（サーカスのピステなど）。空欄のままなら、いままでどおりの見え方になります。": "Measured from the house floor (0). −3 to 3 m in 0.05 m steps. A negative value puts the stage below the house floor, like a circus piste. Leave it blank to keep the current look.",
     "3. 追加のステージを選択してください": "3. Choose an additional stage shape",
     "4. 天井を設定してください": "4. Set up the ceiling",
