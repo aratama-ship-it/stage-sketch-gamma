@@ -1027,11 +1027,37 @@
     return next;
   };
 
+  /* ゴボ（模様）の形。単位の形空間（−0.5〜0.5）の Path2D を1度だけ組んで使い回す
+     （木漏れ日は多角形が数百。灯ごと・図ごと・毎コマ組み直すと重い）。
+     ★2026-09-19: 舞台モードの共有部品（stage-light-render.js）も同じ形を使うので、app.js からここへ移した。
+       形の正本はここ1か所。 */
+  const goboPathCache = new Map();
+  const goboPath = (g) => {
+    if (!g || typeof Path2D === "undefined") return null;
+    const hit = goboPathCache.get(g.id); if (hit) return hit;
+    const p = new Path2D();
+    const X = (u) => u - 0.5, Y = (v) => v - 0.5;
+    (g.shapes || []).forEach((sp) => {
+      const k = sp[0];
+      if (k === "poly") { sp[1].forEach(([u, v], i) => { const x = X(u), y = Y(v); i ? p.lineTo(x, y) : p.moveTo(x, y); }); p.closePath(); }
+      else if (k === "circle") { p.moveTo(X(sp[1]) + sp[3], Y(sp[2])); p.arc(X(sp[1]), Y(sp[2]), sp[3], 0, Math.PI * 2); }
+      else if (k === "rect") { const x = X(sp[1]), y = Y(sp[2]), w = sp[3], h = sp[4]; p.moveTo(x, y); p.lineTo(x + w, y); p.lineTo(x + w, y + h); p.lineTo(x, y + h); p.closePath(); }
+      else if (k === "ellipse") { p.moveTo(X(sp[1]) + sp[3], Y(sp[2])); p.ellipse(X(sp[1]), Y(sp[2]), sp[3], sp[4], (finite(sp[5], 0) * Math.PI) / 180, 0, Math.PI * 2); }
+      else if (k === "ring") { const rr = sp[1], w = sp[2]; p.moveTo(rr + w, 0); p.arc(0, 0, rr + w, 0, Math.PI * 2); p.moveTo(rr, 0); p.arc(0, 0, rr, 0, Math.PI * 2, true); }
+      else if (k === "spoke") { const cnt = sp[1], hw = sp[2], len = sp[3];
+        for (let i = 0; i < cnt; i++) { const a = (i / cnt) * Math.PI * 2;
+          const dx = Math.cos(a), dy = Math.sin(a), nx = -dy * hw, ny = dx * hw;
+          p.moveTo(nx, ny); p.lineTo(dx * len + nx, dy * len + ny); p.lineTo(dx * len - nx, dy * len - ny); p.lineTo(-nx, -ny); p.closePath(); } }
+    });
+    goboPathCache.set(g.id, p);
+    return p;
+  };
+
   root.RIG_ENGINE = Object.freeze({
     DEFAULT_DIMS, FLOOR_FIXTURE_Z, SIDE_OFFSET_M, CYC_MOUNT_V, CYC_REACH_MAX, HOUSE_AHEAD_MAX, cycBarSpan, SPEED_PERIOD_MS, PLANE_VALUES, PLANE_LABEL,
     clamp, finite,
     newTruss, newFixture, isMoving, isLaser, beamDegOf, spotRadiusM, spotEllipse, spotFalloff, beamLanding, trussById, trussRow, fixtureWorld,
-    newPoint, newLightCue, levelOf, isLit, levelAt, beamDegAt, strobeMul, paramPhase, mountSpot, GOBOS, goboById, goboAngleAt, constrainPointToSurface, periodMs, groupEffect,
+    newPoint, newLightCue, levelOf, isLit, levelAt, beamDegAt, strobeMul, paramPhase, mountSpot, GOBOS, goboById, goboAngleAt, goboPath, constrainPointToSurface, periodMs, groupEffect,
     pointWorld, planeVec, circleOffset, eightOffset, targetAt, pathGuide, mirrorMount, mirrorAimCompatible, mirrorAimPoint, mirrorAimPath,
     FRONT_SEATS, frontPerspSetup, makeFrontPerspProjector, frontPerspToUH,
     FRONT_FAR_CAMERA_M, frontFarSetup, makeFrontFarProjector, frontFarToUH,

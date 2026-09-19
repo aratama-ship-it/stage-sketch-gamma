@@ -1968,26 +1968,8 @@
      shadowBlur はどの環境にもあるので、ぼかしはこちらで作る。 */
   /* 描く形は灯ごと・図ごと・毎コマ組み直すと重い（木漏れ日は多角形が数百）。
      単位の形空間（−0.5〜0.5）で1度だけ組んで使い回す。あとは拡大して塗るだけ。 */
-  const goboPathCache = new Map();
-  function goboPath(g) {
-    const hit = goboPathCache.get(g.id); if (hit) return hit;
-    const p = new Path2D();
-    const X = (u) => u - 0.5, Y = (v) => v - 0.5;
-    g.shapes.forEach((sp) => {
-      const k = sp[0];
-      if (k === "poly") { sp[1].forEach(([u, v], i) => { const x = X(u), y = Y(v); i ? p.lineTo(x, y) : p.moveTo(x, y); }); p.closePath(); }
-      else if (k === "circle") { p.moveTo(X(sp[1]) + sp[3], Y(sp[2])); p.arc(X(sp[1]), Y(sp[2]), sp[3], 0, Math.PI * 2); }
-      else if (k === "rect") { const x = X(sp[1]), y = Y(sp[2]), w = sp[3], h = sp[4]; p.moveTo(x, y); p.lineTo(x + w, y); p.lineTo(x + w, y + h); p.lineTo(x, y + h); p.closePath(); }
-      else if (k === "ellipse") { p.moveTo(X(sp[1]) + sp[3], Y(sp[2])); p.ellipse(X(sp[1]), Y(sp[2]), sp[3], sp[4], (E.finite(sp[5], 0) * Math.PI) / 180, 0, Math.PI * 2); }
-      else if (k === "ring") { const rr = sp[1], w = sp[2]; p.moveTo(rr + w, 0); p.arc(0, 0, rr + w, 0, Math.PI * 2); p.moveTo(rr, 0); p.arc(0, 0, rr, 0, Math.PI * 2, true); }
-      else if (k === "spoke") { const cnt = sp[1], hw = sp[2], len = sp[3];
-        for (let i = 0; i < cnt; i++) { const a = (i / cnt) * Math.PI * 2;
-          const dx = Math.cos(a), dy = Math.sin(a), nx = -dy * hw, ny = dx * hw;
-          p.moveTo(nx, ny); p.lineTo(dx * len + nx, dy * len + ny); p.lineTo(dx * len - nx, dy * len - ny); p.lineTo(-nx, -ny); p.closePath(); } }
-    });
-    goboPathCache.set(g.id, p);
-    return p;
-  }
+  /* 形の正本は rig-engine.js の goboPath（2026-09-19 に移した）。舞台モードの共有部品と同じ形を使う。 */
+  function goboPath(g) { return E.goboPath(g); }
 
   /* ゴボを入れた光の帯は、三角にべったり広がらない。模様の抜けごとに細い筋が出て、
      塞がっている所は暗い（2026-09-13 本人指摘）。

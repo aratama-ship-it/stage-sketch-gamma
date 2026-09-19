@@ -63,10 +63,88 @@
 
   const add = (point, vector) => ({ x: point.x + vector.x, y: point.y + vector.y, z: point.z + vector.z });
 
+  /* ---------- 模様（ゴボ）とカッター（2026-09-19・段階5） ----------
+     形の正本は照明モードと同じ RIG_ENGINE（GOBOS／goboPath／goboAngleAt／doorCutInEllipse）。
+     ここで持つのは「一時キャンバスへ白で形を塗って、光だまりに掛ける」ことだけ。 */
+  const GOBO_SOFT_DEFAULT = 6;      // 照明モードの既定（goboSoft 0〜100）
+  const GOBO_BLUR_RATIO = 0.35;     // ぼけ幅＝光だまりの半径×(soft/100)×これ（照明モードと同じ）
+  let goboSheet = null;
+  let goboBlur = null;
+  function goboOf(pool) {
+    const engine = root.RIG_ENGINE || null;
+    if (!pool || !pool.gobo || !engine || typeof engine.goboById !== "function"
+      || typeof engine.goboPath !== "function") return null;
+    const g = engine.goboById(pool.gobo);
+    return g && Array.isArray(g.shapes) && g.shapes.length ? g : null;
+  }
+  function goboAngleOf(pool, tMs) {
+    const engine = root.RIG_ENGINE || null;
+    if (!engine || typeof engine.goboAngleAt !== "function") return finite(pool.goboAngle, 0);
+    return engine.goboAngleAt({ goboSpin: finite(pool.goboSpin, 0), goboAngle: finite(pool.goboAngle, 0) }, finite(tMs, 0));
+  }
+  /* 白で塗った形（大きさ size の正方形・中心が光だまりの中心・半径 radius＝単位1）。
+     ぼかしは shadowBlur（Safari は ctx.filter を黙って無視する）。 */
+  function goboMaskSheet(g, size, radius, angleDeg, soft) {
+    if (typeof document === "undefined") return null;
+    const path = root.RIG_ENGINE.goboPath(g);
+    if (!path) return null;
+    if (!goboSheet) goboSheet = document.createElement("canvas");
+    if (goboSheet.width !== size || goboSheet.height !== size) { goboSheet.width = size; goboSheet.height = size; }
+    const m = goboSheet.getContext("2d");
+    m.setTransform(1, 0, 0, 1, 0, 0);
+    m.clearRect(0, 0, size, size);
+    m.translate(size / 2, size / 2);
+    m.rotate((angleDeg * Math.PI) / 180);
+    m.fillStyle = "#fff";
+    m.scale(radius * 2, radius * 2);
+    m.fill(path);                       // nonzero（照明モードと同じ。evenodd だと重なりが穴になる）
+    const blur = (clamp(finite(soft, GOBO_SOFT_DEFAULT), 0, 100) / 100) * radius * GOBO_BLUR_RATIO;
+    if (blur <= 0.12) return goboSheet;
+    if (!goboBlur) goboBlur = document.createElement("canvas");
+    if (goboBlur.width !== size || goboBlur.height !== size) { goboBlur.width = size; goboBlur.height = size; }
+    const b = goboBlur.getContext("2d");
+    b.setTransform(1, 0, 0, 1, 0, 0);
+    b.clearRect(0, 0, size, size);
+    b.shadowColor = "#ffffff";
+    b.shadowBlur = blur * 2;            // 仕様上「ぼかし半径の2倍」
+    b.shadowOffsetX = size;
+    b.drawImage(goboSheet, -size, 0);
+    return goboBlur;
+  }
+  /* 中心が (0,0)・半径 half＝単位1 の一時キャンバスに、模様と切る線を掛ける。
+     ★楕円は BEAM_SOFT ぶん広げてあるので、切る線の距離と縁の幅もそのぶん縮める（照明モードと同じ）。 */
+  function applyShapeToSheet(sheetCtx, size, half, pool, tMs) {
+    const g = goboOf(pool);
+    if (g) {
+      const maskSheet = goboMaskSheet(g, size, half, goboAngleOf(pool, tMs), pool.goboSoft);
+      if (maskSheet) {
+        sheetCtx.globalCompositeOperation = "destination-in";
+        sheetCtx.drawImage(maskSheet, -half, -half);
+        sheetCtx.globalCompositeOperation = "source-over";
+      }
+    }
+    const cuts = Array.isArray(pool.cuts) ? pool.cuts : [];
+    cuts.forEach((cut) => {
+      if (!cut || !Number.isFinite(cut.mx + cut.my + cut.d)) return;
+      sheetCtx.save();
+      sheetCtx.globalCompositeOperation = "destination-out";
+      sheetCtx.rotate(Math.atan2(cut.my, cut.mx));
+      const x0 = (cut.d / BEAM_SOFT) * half;
+      const sw = Math.max(0.5, (finite(cut.soft, 0.04) / BEAM_SOFT) * half);
+      const gradient = sheetCtx.createLinearGradient(x0 - sw, 0, x0 + sw, 0);
+      gradient.addColorStop(0, "rgba(0,0,0,0)");
+      gradient.addColorStop(1, "rgba(0,0,0,1)");
+      sheetCtx.fillStyle = gradient;
+      sheetCtx.fillRect(x0 - sw, -size, size * 2 + sw, size * 2);
+      sheetCtx.restore();
+    });
+  }
+  const hasShape = (pool) => Boolean(goboOf(pool) || (Array.isArray(pool.cuts) && pool.cuts.length));
+
   /* 光だまり1つ。返り値は描いたかどうか。
      ★楕円は「単位円をここへ写す行列」として扱う（照明モードと同じ）。
        中心と2本の半径ベクトルを投影するだけなので、遠近のある図でも1回の塗りで済む。 */
-  function paintPool(ctx, pool, P) {
+  function paintPool(ctx, pool, P, opts) {
     if (!pool || !pool.c || !pool.ea || !pool.eb) return false;
     const level = clamp(finite(pool.level, 0), 0, 100) / 100;
     if (!(level > 0)) return false;
@@ -90,12 +168,16 @@
       return gradient;
     };
     const fall = Array.isArray(pool.fall) && pool.fall.length > 2 ? pool.fall : null;
+    /* 段階5: 模様（ゴボ）やカッターがある灯は、必ず一時キャンバスの道を通す（掛け算で形を作るため）。
+       どちらも無い灯はこれまでどおり＝画素一致。 */
+    const shaped = hasShape(pool);
+    const tMs = opts && Number.isFinite(opts.tMs) ? opts.tMs : 0;
 
     ctx.save();
     // 暗い舞台の上で光が加算に見えるようにする（照明モードと同じ）
     ctx.globalCompositeOperation = "screen";
     ctx.transform(ax, ay, bx, by, centre.X, centre.Y);
-    if (!fall) {
+    if (!fall && !shaped) {
       ctx.fillStyle = paint(ctx.createRadialGradient(0, 0, 0, 0, 0, 1), pool.color);
       ctx.beginPath();
       ctx.arc(0, 0, 1, 0, Math.PI * 2);
@@ -126,13 +208,16 @@
     sheetCtx.beginPath();
     sheetCtx.arc(0, 0, half, 0, Math.PI * 2);
     sheetCtx.fill();
-    const shade = sheetCtx.createLinearGradient(-half, 0, half, 0);
-    fall.forEach((step) => shade.addColorStop(
-      clamp((finite(step.t, 0) + 1) / 2, 0, 1), `rgba(255,255,255,${clamp(finite(step.v, 0), 0, 1).toFixed(4)})`));
-    sheetCtx.globalCompositeOperation = "destination-in";
-    sheetCtx.fillStyle = shade;
-    sheetCtx.fillRect(-half, -half, size, size);
-    sheetCtx.globalCompositeOperation = "source-over";
+    if (fall) {
+      const shade = sheetCtx.createLinearGradient(-half, 0, half, 0);
+      fall.forEach((step) => shade.addColorStop(
+        clamp((finite(step.t, 0) + 1) / 2, 0, 1), `rgba(255,255,255,${clamp(finite(step.v, 0), 0, 1).toFixed(4)})`));
+      sheetCtx.globalCompositeOperation = "destination-in";
+      sheetCtx.fillStyle = shade;
+      sheetCtx.fillRect(-half, -half, size, size);
+      sheetCtx.globalCompositeOperation = "source-over";
+    }
+    if (shaped) applyShapeToSheet(sheetCtx, size, half, pool, tMs);
     sheetCtx.restore();
     // 一時キャンバスの半径 half が単位1にあたる
     ctx.drawImage(sheet, -1, -1, 2, 2);
@@ -142,10 +227,10 @@
 
   /* まとめて塗る。返り値は実際に描けた数（帯の表示と計測に使う）。
      ★消えている灯・面の無い光（宙・客席）・レーザーは、呼ぶ側で除いてから渡す。 */
-  function paintPools(ctx, pools, P) {
+  function paintPools(ctx, pools, P, opts) {
     if (!Array.isArray(pools) || !pools.length) return 0;
     let drawn = 0;
-    pools.forEach((pool) => { if (paintPool(ctx, pool, P)) drawn += 1; });
+    pools.forEach((pool) => { if (paintPool(ctx, pool, P, opts)) drawn += 1; });
     return drawn;
   }
 
@@ -276,6 +361,34 @@
     if (Math.abs(ax * by - ay * bx) < MIN_AREA_PX) return;
     maskCtx.save();
     maskCtx.transform(ax, ay, bx, by, centre.X, centre.Y);
+    /* 段階5: 模様・カッターのある灯は、穴も同じ形にする（丸い穴だと暗幕の中で模様が消える）。
+       穴を一時キャンバスで作って（丸×模様×切る線）、それを暗幕から抜く。 */
+    if (hasShape(pool)) {
+      const radius = Math.max(Math.hypot(ax, ay), Math.hypot(bx, by));
+      const size = Math.min(MAX_TEMP_PX, Math.max(8, Math.ceil(radius * 2)));
+      const sheet = tempCanvas(size);
+      if (sheet) {
+        const half = size / 2;
+        const sheetCtx = sheet.getContext("2d");
+        sheetCtx.setTransform(1, 0, 0, 1, 0, 0);
+        sheetCtx.clearRect(0, 0, size, size);
+        sheetCtx.save();
+        sheetCtx.translate(half, half);
+        const holeShape = sheetCtx.createRadialGradient(0, 0, 0, 0, 0, half);
+        holeShape.addColorStop(0, `rgba(255,255,255,${level})`);
+        holeShape.addColorStop(0.75, `rgba(255,255,255,${0.9 * level})`);
+        holeShape.addColorStop(1, "rgba(255,255,255,0)");
+        sheetCtx.fillStyle = holeShape;
+        sheetCtx.beginPath();
+        sheetCtx.arc(0, 0, half, 0, Math.PI * 2);
+        sheetCtx.fill();
+        applyShapeToSheet(sheetCtx, size, half, pool, opts && Number.isFinite(opts.tMs) ? opts.tMs : 0);
+        sheetCtx.restore();
+        maskCtx.drawImage(sheet, -1, -1, 2, 2);
+        maskCtx.restore();
+        return;
+      }
+    }
     const hole = maskCtx.createRadialGradient(0, 0, 0, 0, 0, 1);
     hole.addColorStop(0, `rgba(255,255,255,${level})`);
     hole.addColorStop(0.75, `rgba(255,255,255,${0.9 * level})`);

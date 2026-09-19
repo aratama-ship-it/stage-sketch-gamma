@@ -112,10 +112,24 @@
          照明モードも帯の幅にはこちらを使っている（drawBeam の rM）。 */
     const radiusM = typeof engine.spotRadiusM === "function"
       ? engine.spotRadiusM(source, target, deg) : null;
+    /* 段階5（2026-09-19 本人決定「光だまりに含める」）: 模様（ゴボ）とカッター。
+       光だまりの形そのものなので同じ pool に載せる。角度は描く側で goboAngleAt(…, tMs) に掛ける
+       （回転は時計を渡したときだけ動く）。切る線は照明モードと同じ式（frameDoors → doorCutInEllipse）。
+       ★どちらも無い灯には鍵を足さない＝これまでの pool と同じ。 */
+    const gobo = typeof light.gobo === "string" && light.gobo !== "none" ? light.gobo : null;
+    const vert = surface === "back" ? "z" : "y";
+    const cuts = (typeof engine.frameDoors === "function" && typeof engine.doorCutInEllipse === "function")
+      ? engine.frameDoors(fixture, light, vert)
+        .map((door) => engine.doorCutInEllipse(door, ellipse.ea, ellipse.eb))
+        .filter(Boolean)
+      : [];
     return {
       c: ellipse.c, ea: ellipse.ea, eb: ellipse.eb, surface, fall,
       softness: finite(light.beamEdgeSoftness, 2),
       from: source, to: target, radiusM,
+      ...(gobo ? { gobo, goboAngle: finite(light.goboAngle, 0), goboSpin: finite(light.goboSpin, 0),
+        goboSoft: finite(light.goboSoft, 6) } : {}),
+      ...(cuts.length ? { cuts } : {}),
     };
   }
 
