@@ -289,6 +289,17 @@
     return stagePolygons().flat();
   }
 
+  /* 図を画面のどこへ置くかを決めるための「全体」の点（VENUE_EDITOR_FIT_WHOLE_2026_09_19）。
+   * ★舞台だけでなく客席も含める。ホテルの宴会場のように舞台が浅くて客席が深い劇場では、
+   *   舞台の中心に合わせると客席が図の下へはみ出す（本人指摘 2026-09-19）。
+   * ★読み込み時の尺合わせ（fitViewToTemplate）と、毎回の中心合わせ（outlineCenter）が
+   *   違う集合を見ていたのが原因なので、ここへまとめて両方から使う。 */
+  function allContentPoints() {
+    return allStagePoints()
+      .concat(state.audience.flatMap((item) => audiencePolygon(item)))
+      .concat(state.wings.flatMap((item) => item.polygon || []));
+  }
+
   function dimensions(points = allStagePoints()) {
     const xs = points.map((point) => point[0]);
     const ys = points.map((point) => point[1]);
@@ -368,7 +379,9 @@
   }
 
   function outlineCenter() {
-    const points = allStagePoints();
+    // ★舞台だけでなく客席も含めた全体の中心（VENUE_EDITOR_FIT_WHOLE_2026_09_19）
+    const points = allContentPoints();
+    if (!points.length) return [NaN, NaN];
     const xs = points.map((point) => point[0]);
     const ys = points.map((point) => point[1]);
     return [
@@ -2220,10 +2233,8 @@
   }
 
   function fitViewToTemplate() {
-    const points = state.points
-      .concat(state.stageExtensions.flatMap((item) => item.polygon || []))
-      .concat(state.audience.flatMap((item) => audiencePolygon(item)))
-      .concat(state.wings.flatMap((item) => item.polygon || []));
+    // 中心を採る集合と同じものを使う（VENUE_EDITOR_FIT_WHOLE_2026_09_19）
+    const points = allContentPoints();
     if (!points.length) return;
     const xs = points.map((point) => point[0]);
     const ys = points.map((point) => point[1]);
@@ -4210,6 +4221,9 @@
     history: () => ({ canUndo: undoStack.length > 0, canRedo: redoStack.length > 0 }),
     save: saveDraft,
     apply: applyDraft,
+    /* 読むだけ（VENUE_EDITOR_FIT_WHOLE_2026_09_19）。世界↔画面の対応をテストや検証スクリプトが
+       直書きしないで済むように出す。書き換えはできない。 */
+    viewLayout: () => Object.assign({}, view()),
     setStageFormat,
     setMode,
     setCeilingHeight,
