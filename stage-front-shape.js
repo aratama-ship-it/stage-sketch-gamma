@@ -109,6 +109,20 @@
     const maxX = Math.max(...xs);
     const minY = Math.min(...ys);
     const maxY = Math.max(...ys);
+    /* ★u,v は「主の形（輪郭）」の外接だけで数える（VENUE_SHAPE_FRAME_2026_09_20）。
+       u,v は舞台の枠（間口×奥行）へ 0〜1 として乗るので、花道・橋掛りまで入れて数えると、
+       それを持つ会場だけ舞台まるごとが枠の中へ押し込まれて縮み、花道が舞台の上に乗って見えた。
+       主の形の外へ出るぶんは 0〜1 の外へ出る。正面図の place() も 3D の toWorld() も
+       u,v に対して一次なので、そのまま外挿されて舞台の手前・奥・横へ素直に伸びる。
+       ★追加ステージが輪郭の中に収まる会場では、枠＝全体の外接＝いままでと同じ値。
+       ★minX/maxX/minY/maxY は「外周かどうか」の判定に使うので全体の外接のまま。
+         ここを変えると、どの辺を立ち上がりとして描くかが変わる。 */
+    const frameXs = list[0].map((point) => point[0]);
+    const frameYs = list[0].map((point) => point[1]);
+    const frameMinX = Math.min(...frameXs);
+    const frameMaxX = Math.max(...frameXs);
+    const frameMinY = Math.min(...frameYs);
+    const frameMaxY = Math.max(...frameYs);
     const inside = (x, y) => list.some((poly) => insidePolygon(x, y, poly));
     // 水平線 y で床を切ったときの内法（複数の形は外側同士を取る）
     const spanAt = (y) => {
@@ -132,8 +146,9 @@
       polygons: list,
       outline: list[0],
       minX, maxX, minY, maxY,
-      uOf: (x) => (x - minX) / Math.max(0.001, maxX - minX),
-      vOf: (y) => (y - minY) / Math.max(0.001, maxY - minY),
+      frameMinX, frameMaxX, frameMinY, frameMaxY,
+      uOf: (x) => (x - frameMinX) / Math.max(0.001, frameMaxX - frameMinX),
+      vOf: (y) => (y - frameMinY) / Math.max(0.001, frameMaxY - frameMinY),
       inside,
       spanAt,
       farSpan: spanAt(minY + EPS),
