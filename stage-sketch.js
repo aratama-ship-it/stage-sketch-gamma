@@ -5241,6 +5241,11 @@
       hint: "「照明の光だまり」を出しているとき、灯体から落ちる場所まで伸びる光の帯も出す。さらに重くなります" },
     { key: "workLightOff", label: "作業灯を消す", def: false,
       hint: "「照明の光だまり」を出しているとき、光の当たっていない所を暗くする。正面図・平面図・3Dカメラのすべてに効きます" },
+    /* G-D 衣装の色×明かりの色（2026-09-19・本人決定＝図の人物を染める・既定は切）。
+       足元の光だまりの色を駒の色に掛けて描く。「照明の見え方」が切なら効かない（光だまりが無いので）。
+       ★look（上衣の色など）は描画に使われていない＝画面に出ている色は piece.color。染めるのはそれ。 */
+    { key: "costumeLight", label: "衣装を明かりの色で染める", def: false,
+      hint: "光だまりに入っている演者を、その明かりの色を掛けた色で描く。赤い明かりの下で青い衣装が沈む場面に気づけます（「照明の見え方」が切のときは効きません）" },
     { key: "pitchExport", label: "ピッチ書き出し", def: true,
       hint: "書き出しモーダルに「ピッチとして」が出る。作図の線を落とし、光と空気を効かせた一枚絵と、生成AI用の条件文を出す" },
   ];
@@ -10285,13 +10290,14 @@
     if (mask) rig.mask = { dims: pieceDims(mask), color: mask.color };
     const P = rig.P;
     const look = resolveLook(piece, state.project.cast);
+    const bodyColor = costumeLitColor(piece, L) || piece.color;   // G-D: 光だまりの色で染める（既定は切）
     target.save();
 
     // ポールやトラピーズで宙に浮いている間は、影を落とさない（床に居ないため）
     // 転換アニメで床を歩いている間（animBaseあり）は普通に影を落とす
     const mountHere = mountKindOf(piece);
     if ((mountHere === "pole" || mountHere === "trapeze") && piece.animBase === undefined) {
-      paintBody(target, rig, piece.color, look);
+      paintBody(target, rig, bodyColor, look);
       target.restore();
       return;
     }
@@ -10311,7 +10317,7 @@
       Math.max(3, (maxX - minX) / 2 + 0.03 * rig.ux), Math.max(1.2, 0.022 * rig.uy), 0, 0, Math.PI * 2);
     target.fill();
 
-    paintBody(target, rig, piece.color, look);
+    paintBody(target, rig, bodyColor, look);
     target.restore();
   }
 
@@ -14461,6 +14467,30 @@
   /* 暗幕の後に、光の中にいる駒だけ描き直す。物は面なので、光が当たっていれば明るく見える。
      ★足元が床の光の輪に入っているかで決める（高さは見ない。舞台の光は上から来る）。
      ★照明モードも同じ考え方で、暗幕の後に演者を描き直している。 */
+  /* G-D 衣装の色×明かりの色（2026-09-19）。足元の光だまりの色を駒の色に掛ける。既定は切（環境設定）。
+     ★判定点は redrawLitPieces と同じ足元1点。式は共有部品 tintColor（3Dも同じものを読む）。
+     ★lightCuePoolList は毎回配列を組むので、同じ模型の間は使い回す（演者の数だけ呼ばれる）。 */
+  const costumePoolCache = { model: null, pools: null };
+  function costumeLitColor(piece, L) {
+    if (!piece || !featureOn("costumeLight") || !featureOn("lightPool")) return null;
+    const api = window.SHOSAI_LIGHT_RENDER;
+    if (!api || typeof api.litColorAt !== "function" || typeof api.tintColor !== "function") return null;
+    const model = lightCueOverlayForLayout(L);
+    if (!model) return null;
+    if (costumePoolCache.model !== model) {
+      costumePoolCache.model = model;
+      costumePoolCache.pools = lightCuePoolList(L);
+    }
+    const pools = costumePoolCache.pools;
+    if (!pools) return null;
+    const visual = effectivelyPlacedPiece(piece);
+    const dims = pieceDims(visual) || {};
+    const half = Math.max(finite(dims.w, 0), finite(dims.d, 0), finite(dims.dia, 0)) / 2;
+    const point = { x: (finite(visual.u, 0.5) - 0.5) * (Number(L.size.width) || 1), y: finite(visual.v, 0.5) * (Number(L.size.depth) || 1) };
+    const lit = api.litColorAt(pools, point, half);
+    return lit ? api.tintColor(piece.color, lit) : null;
+  }
+
   function redrawLitPieces(target, L, pieces, draw) {
     const api = window.SHOSAI_LIGHT_RENDER;
     const pools = lightCuePoolList(L);
@@ -30269,6 +30299,7 @@ ${propsPlotHtml}
           lightPool: featureOn("lightPool"),
           lightBeam: featureOn("lightBeam"),
           workLightOff: featureOn("workLightOff"),
+          costumeLight: featureOn("costumeLight"),   // G-D 衣装の色×明かりの色（3Dも同じ式で染める）
           lang,
         };
       },

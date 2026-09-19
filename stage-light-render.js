@@ -611,23 +611,71 @@
      ★これで「暗幕の後に描き直す駒」を選ぶ。物の足元が光の輪に入っていれば、その物は光の中にいる。
      ★楕円の座標へ写してから長さを測る。marginM は物の大きさ（半径）のぶんの見逃しを防ぐ。
      ★高さは見ない。舞台の光は上から来るので、床で当たっていれば立っている物にも当たる。 */
+  /* その点（足元）が光だまりの中なら強さ 0〜1、外なら 0。litLevelAt と litColorAt が共に使う */
+  function poolLevelAt(pool, point, marginM) {
+    if (!pool || !pool.c || !pool.ea || !pool.eb) return 0;
+    const level = clamp(finite(pool.level, 0), 0, 100) / 100;
+    if (!(level > 0)) return 0;
+    const dx = finite(point.x, 0) - pool.c.x;
+    const dy = finite(point.y, 0) - pool.c.y;
+    const aLen = Math.hypot(pool.ea.x, pool.ea.y) || 1e-6;
+    const bLen = Math.hypot(pool.eb.x, pool.eb.y) || 1e-6;
+    const margin = Math.max(0, finite(marginM, 0));
+    const along = (dx * pool.ea.x + dy * pool.ea.y) / (aLen * (aLen + margin));
+    const across = (dx * pool.eb.x + dy * pool.eb.y) / (bLen * (bLen + margin));
+    return along * along + across * across <= 1 ? level : 0;
+  }
   function litLevelAt(pools, point, marginM) {
     if (!Array.isArray(pools) || !point) return 0;
     let best = 0;
-    pools.forEach((pool) => {
-      if (!pool || !pool.c || !pool.ea || !pool.eb) return;
-      const level = clamp(finite(pool.level, 0), 0, 100) / 100;
-      if (!(level > best)) return;
-      const dx = finite(point.x, 0) - pool.c.x;
-      const dy = finite(point.y, 0) - pool.c.y;
-      const aLen = Math.hypot(pool.ea.x, pool.ea.y) || 1e-6;
-      const bLen = Math.hypot(pool.eb.x, pool.eb.y) || 1e-6;
-      const margin = Math.max(0, finite(marginM, 0));
-      const along = (dx * pool.ea.x + dy * pool.ea.y) / (aLen * (aLen + margin));
-      const across = (dx * pool.eb.x + dy * pool.eb.y) / (bLen * (bLen + margin));
-      if (along * along + across * across <= 1) best = level;
-    });
+    pools.forEach((pool) => { best = Math.max(best, poolLevelAt(pool, point, marginM)); });
     return best;
+  }
+
+  /* ---------- 衣装の色 × 明かりの色（G-D・2026-09-19・本人決定「人物を染める」） ----------
+     設計: docs/costume-light-color-2026-09-19/index.html
+     ★判定は足元1点（作業灯と同じ考え方＝光は上から来るので、足元に当たっていれば体にも当たる）。
+     ★重なった光だまりの混ぜ方は**仮置き**: 強さで重みづけした色の平均（足し算にすると白く飛ぶ）。
+       明るさはいちばん強い1つ。実物を見て決める（本人判断待ち）。
+     ★見える色＝衣装の色 × 明かりの色。明るさは「作業灯を消す」の暗幕が既に表しているので、ここでは
+       色だけを掛ける（強さは「どれだけ染まるか」に使う）。白い明かりなら色は変わらない。
+     ★掛けきらない。回り込みの光ぶん COSTUME_AMBIENT を残す。掛けきると真っ黒になって図として読めない。 */
+  const COSTUME_AMBIENT = 0.18;
+  function hexToRgb(hex) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "").trim());
+    if (!m) return null;
+    const n = parseInt(m[1], 16);
+    return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+  }
+  function rgbToHex(rgb) {
+    return "#" + rgb.map((v) => Math.round(clamp(v, 0, 1) * 255).toString(16).padStart(2, "0")).join("");
+  }
+  function litColorAt(pools, point, marginM) {
+    if (!Array.isArray(pools) || !point) return null;
+    let best = 0, weight = 0;
+    const mix = [0, 0, 0];
+    pools.forEach((pool) => {
+      const level = poolLevelAt(pool, point, marginM);
+      if (!(level > 0)) return;
+      const rgb = hexToRgb(pool.color) || [1, 1, 1];
+      mix[0] += rgb[0] * level; mix[1] += rgb[1] * level; mix[2] += rgb[2] * level;
+      weight += level;
+      best = Math.max(best, level);
+    });
+    if (!(best > 0) || !(weight > 0)) return null;
+    const rgb = mix.map((v) => clamp(v / weight, 0, 1));
+    return { level: best, rgb, color: rgbToHex(rgb) };
+  }
+  function tintColor(base, lit, opts) {
+    const rgb = hexToRgb(base);
+    if (!rgb || !lit || !Array.isArray(lit.rgb)) return base;
+    const level = clamp(finite(lit.level, 0), 0, 1);
+    if (!(level > 0)) return base;
+    const ambient = clamp(finite(opts && opts.ambient, COSTUME_AMBIENT), 0, 1);
+    return rgbToHex(rgb.map((v, i) => {
+      const full = ambient + (1 - ambient) * clamp(finite(lit.rgb[i], 1), 0, 1);   // 全力で染まったときの倍率
+      return v * (1 - level * (1 - full));                                          // 強さぶんだけ染める
+    }));
   }
 
   /* ---------- レーザー（2026-09-19・段階5①） ----------
@@ -651,11 +699,12 @@
   }
 
   const api = Object.freeze({
-    paintPool, paintPools, paintBeam, paintBeams, paintWorkLight, litLevelAt, paintLaser, paintLasers, beamFalloff, beamSheetFor,
+    paintPool, paintPools, paintBeam, paintBeams, paintWorkLight, litLevelAt, paintLaser, paintLasers,
+    beamFalloff, beamSheetFor, litColorAt, tintColor,
     TOKENS: Object.freeze({ VISUAL_GAIN, BEAM_SOFT, ALPHA_CORE, ALPHA_MID, ALPHA_EDGE, SOFT_DEFAULT,
       MIN_AREA_PX, BAND_ALPHA, BAND_MIN_PX, LINE_ALPHA, LINE_MIN_PX, HOLE_BAND, HOLE_LINE_PX,
       BEAM_FALL_R0, BEAM_FALL_P, BEAM_FALL_LO, BEAM_FALL_HI, BEAM_FALL_STOPS, BEAM_FALL_NORM_T,
-      HAZE_AMOUNT }),
+      HAZE_AMOUNT, COSTUME_AMBIENT }),
   });
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.SHOSAI_LIGHT_RENDER = api;

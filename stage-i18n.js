@@ -1645,6 +1645,8 @@
     "舞台の高さ": "Stage height",
     "客席の奥行きを実寸で出す": "Show the true house depth",
     "平面図の客席を、会場の実際の奥行きで止める。奥の縁に線と「客席 ○m」の札を出します": "Stop the house band in the plan view at the real depth of the venue, with a dashed line and a “House ○m” tag at the back",
+    "衣装を明かりの色で染める": "Tint costumes with the light colour",
+    "光だまりに入っている演者を、その明かりの色を掛けた色で描く。赤い明かりの下で青い衣装が沈む場面に気づけます（「照明の見え方」が切のときは効きません）": "Draw performers standing in a light pool in their colour multiplied by that light, so you notice when a blue costume sinks under red light (no effect while “How the light looks” is off)",
     "客席の床を0とした高さです。−3〜3mまで、0.05mきざみ。マイナスは客席より低い舞台（サーカスのピステなど）。空欄のままなら、いままでどおりの見え方になります。": "Measured from the house floor (0). −3 to 3 m in 0.05 m steps. A negative value puts the stage below the house floor, like a circus piste. Leave it blank to keep the current look.",
     "3. 追加のステージを選択してください": "3. Choose an additional stage shape",
     "4. 天井を設定してください": "4. Set up the ceiling",

@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v152";
+const CACHE_NAME = "stage-sketch-gamma-shell-v153";
 const APP_SHELL = [
   "./gamma-formation-presets.js?v=formation1",
   "./gamma-formation-model.js?v=formation1",
@@ -11,7 +11,7 @@ const APP_SHELL = [
 
   "./stage-lighting-plans.js?v=2026091650",
   "./stage-lighting-plan-overlay.js?v=2026091650",
-  "./stage-light-render.js?v=2026092036",
+  "./stage-light-render.js?v=2026092037",
   "./gamma-light-cue-overlay.js?v=2026092031",
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-lighting-presets-v1.json",
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-small.shosai-light-design.json",
@@ -38,17 +38,17 @@ const APP_SHELL = [
   "./stage-venues.js?v=2026092035",
   "./stage-venue-lines.js?v=2026091992",
   "./stage-front-shape.js?v=2026092012",
-  "./stage-i18n.js?v=2026092035",
-  "./stage-i18n.zh-Hans.js?v=2026092035",
-  "./stage-i18n.zh-Hant.js?v=2026092035",
+  "./stage-i18n.js?v=2026092037",
+  "./stage-i18n.zh-Hans.js?v=2026092037",
+  "./stage-i18n.zh-Hant.js?v=2026092037",
   "./stage-prompt-i18n.js?v=2026091501",
   "./stage-rehearsal-export.js?v=2026091501",
   "./stage-samples/index.js?v=2026091501",
-  "./stage-samples/feature-test-show.js?v=2026092026",
+  "./stage-samples/feature-test-show.js?v=2026092037",
   "./stage-set-model.js?v=2026091501",
   "./stage-set-builder.js?v=2026091501",
   "./stage-machinery.js?v=2026091501",
-  "./stage-first-person.js?v=2026092035",
+  "./stage-first-person.js?v=2026092037",
   "./stage-audio-store.js?v=2026091501",
   "./stage-light-motion.js?v=2026091501",
   "./manual/manual-content.js?v=2026091501",
@@ -61,7 +61,7 @@ const APP_SHELL = [
   "./gamma-mobile.js?v=2026091951",
   "./gamma-mobile.css?v=2026091950",
   "./stage-cue-sheet.js?v=2026091803",
-  "./stage-sketch.js?v=2026092035",
+  "./stage-sketch.js?v=2026092037",
   "./stage-timeline.js?v=2026091991",
   "./stage-session.js?v=2026091987",
   "./stage-study-owner.js?v=2026091501",

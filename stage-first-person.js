@@ -2216,7 +2216,8 @@
     }
 
     const look = body.resolveLook ? body.resolveLook(piece, data.cast) : null;
-    paintBody3d(ctx, body, P, rings, wheel, props, eyes, piece.color || "#c9c2b4", look, { mask, project, pose, H });
+    const bodyColor = costumeLitColor3d(piece) || piece.color || "#c9c2b4";   // G-D: 光だまりの色で染める（既定は切）
+    paintBody3d(ctx, body, P, rings, wheel, props, eyes, bodyColor, look, { mask, project, pose, H });
     data.pieces.filter((p) => p.heldBy === piece.id && p.holdMode !== "face" && p.propShape === "mask")
       .forEach((item) => {
         const wrist = joints[item.holdSide === "L" ? "wrL" : "wrR"];
@@ -3319,6 +3320,19 @@
     const render = window.SHOSAI_LIGHT_RENDER;
     if (!render || !cueLightModel() || !cueLightCache.pools) return;
     render.paintBeams(ctx, cueLightCache.pools, cueLightProjector(), { topDown: false });
+  }
+
+  /* G-D 衣装の色×明かりの色（2026-09-19）。舞台モードと同じ式（共有部品 tintColor）・同じ足元1点で判定する。 */
+  function costumeLitColor3d(piece) {
+    if (!data || !data.costumeLight || !data.lightPool) return null;
+    const render = window.SHOSAI_LIGHT_RENDER;
+    const pools = cueLightCache.pools;
+    if (!render || !pools || typeof render.litColorAt !== "function" || typeof render.tintColor !== "function") return null;
+    const dims = piece.dims || {};
+    const half = Math.max(finite(dims.w, 0), finite(dims.d, 0), finite(dims.dia, 0)) / 2;
+    const point = { x: (pieceUOf(piece) - 0.5) * W, y: pieceVOf(piece) * D };
+    const lit = render.litColorAt(pools, point, half);
+    return lit ? render.tintColor(piece.color || "#c9c2b4", lit) : null;
   }
 
   /* 暗幕の後に、光の中にいる駒だけ描き直す。足元が床の光の輪に入っていれば光の中。 */
