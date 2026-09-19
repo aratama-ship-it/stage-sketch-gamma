@@ -2911,6 +2911,16 @@
       <strong id="stage-venue-apply-version-title">新しいショーの版を作ります</strong>
       <p id="stage-venue-apply-version-detail"></p>
     </section>
+    <!-- G-A（2026-09-20）: 会場替えの「壊れる場面」レポート。既定は非表示（壊れる場面が無ければ何も出さない）。
+         反映は止めない（本人決定＝知らせるだけ）。行を押すとその場面へ移り、この窓は閉じる。 -->
+    <section class="stage-venue-apply-report" id="stage-venue-apply-report" hidden>
+      <p class="stage-venue-apply-report-summary" id="stage-venue-apply-report-summary"></p>
+      <ul class="stage-venue-apply-report-list" id="stage-venue-apply-report-list"></ul>
+      <div class="stage-venue-apply-report-tools">
+        <button type="button" class="btn-quiet" id="stage-venue-apply-report-print">印刷</button>
+        <button type="button" class="btn-quiet" id="stage-venue-apply-report-csv">CSV</button>
+      </div>
+    </section>
     <fieldset class="stage-venue-apply-choices" id="stage-venue-apply-choices">
       <legend>照明機材をどうしますか</legend>
       <!-- 2026-09-17 本人指示: 3択（導入する／自分で配置／導入しない）を2択にする。
