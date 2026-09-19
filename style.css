@@ -8087,6 +8087,18 @@ canvas[data-tool="note"] { cursor: copy; }
   border-radius: 5px;
 }
 
+/* 規模（VENUE_THUMB_SIZE_2026_09_19）。名前の下に小さく添える。
+   ★どれも目安の寸法なので、弱い色で「参考」に見えるようにする。 */
+.stage-venue-gallery-size {
+  margin-top: 2px;
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--milk-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .stage-venue-gallery-name {
   font-size: 12px;
   line-height: 1.35;

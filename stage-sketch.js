@@ -26435,6 +26435,30 @@ ${propsPlotHtml}
     return sorted;
   }
 
+  /* タイルに出す規模の一文（VENUE_THUMB_SIZE_2026_09_19）。
+   * 規模が1つなら `15×6m`、複数なら幅も奥行も範囲で `12〜18×6.5〜15.5m`。
+   * 全周の会場は間口ではなく直径として読むので `直径11m`（英語は `⌀11m`）。
+   * 寸法を持たない会場では空文字を返し、行ごと出さない。 */
+  function venueSizeSummary(venue) {
+    const sizes = (venue.sizes || []).filter((size) =>
+      Number.isFinite(size.width) && Number.isFinite(size.depth));
+    if (!sizes.length) return "";
+    const trim = (value) => String(Math.round(value * 100) / 100);
+    const span = (values) => {
+      const low = Math.min(...values);
+      const high = Math.max(...values);
+      return low === high ? trim(low) : `${trim(low)}〜${trim(high)}`;
+    };
+    const widths = span(sizes.map((size) => size.width));
+    /* ★「全周の客席」だけで直径と読んではいけない。ドーム公演は客席が全周でも
+       エンドステージ＋花道の構成が 24×12m の長方形で、直径14〜24mと出て嘘になった
+       （実測して気づいた）。どの規模も正方形＝床が円のときだけ直径として出す。 */
+    const round = venue.audience === "round"
+      && sizes.every((size) => Math.abs(size.width - size.depth) < 0.05);
+    if (round) return sx(`直径${widths}m`, `⌀${widths}m`);
+    return `${widths}×${span(sizes.map((size) => size.depth))}m`;
+  }
+
   const cssColor = (name, fallback) => {
     const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     return value || fallback;
@@ -26631,6 +26655,17 @@ ${propsPlotHtml}
       item.title = sx(`${venueName(venue)}（${venueShortName(venue)}）`,
         `${venueName(venue)} (${venueShortName(venue)})`);
       item.append(canvas, name);
+      /* 規模（VENUE_THUMB_SIZE_2026_09_19）。名前と絵だけでは
+         「中ホールくらいの箱がほしい」という探し方に答えられない。
+         ★どれも目安の寸法。小さい字・弱い色で名前の下へ添えるだけにして、
+           正確な数字のように見せない。 */
+      const scale = venueSizeSummary(venue);
+      if (scale) {
+        const size = document.createElement("span");
+        size.className = "stage-venue-gallery-size";
+        size.textContent = scale;
+        item.append(size);
+      }
       host.append(item);
       drawVenueThumb(canvas, venue.id);
     };
