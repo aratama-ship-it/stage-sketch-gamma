@@ -276,6 +276,10 @@
   }
   function venueSetupPending() {
     if(phoneViewerWorkspace()) return false;
+    /* ★劇場設定の編集器が読み込まれていない配布物（体験版はこれを積まない・錠の掛かる機能なので）では、
+       劇場設定へ誘導しない。誘導すると中身の無い枠だけが開き、ヘッダーの下に大きな空きが出る
+       （2026-09-20 に体験版の初回起動で実際に出た）。舞台モードから始めれば図はそのまま使える。 */
+    if(typeof window!=='undefined' && !window.SHOSAI_VENUE_EDITOR) return false;
     try { const context=host.context(); return Boolean(context.venueSetupPending) && !context.readOnly; }
     catch(_) { return false; }
   }
