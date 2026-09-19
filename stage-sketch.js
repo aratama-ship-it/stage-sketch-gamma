@@ -8921,19 +8921,90 @@
   /* ---------- レイアウト ----------
      舞台は常に画面いっぱいに描く。実寸の違いは「人の小ささ」として出る。 */
 
+  /* 平面図で、舞台の枠の外へどれだけ形が出るか（VENUE_PLAN_FIT_OUTSIDE_2026_09_19）。
+   * 返すのは「枠の幅・高さの何倍ぶん外へ出るか」の比。planFit の outside に渡す。
+   * ★平面図は舞台（輪郭＋花道などの追加ステージ）の外接を枠へ合わせて描く
+   *   （drawCustomPlanVenue）。だから比で渡せば、駒の位置は枠の同じところに残る。
+   * ★形を実際に描かない会場では null を返す。
+   *   先頭5プリセットはここに入らない＝いままでと1画素も変わらない。
+   * ★外へ出るものが無ければ null（比が全部0でも枝を通さない）。 */
+  function planOutsideRatios(venue, size) {
+    if (!venue || !(venue.custom || venue.realVenue || venue.shapedVenue)) return null;
+    const outline = venueOutlineOf(venue, size);
+    if (!Array.isArray(outline) || outline.length < 3) return null;
+    const polygonsOf = (list) => (Array.isArray(list) ? list : [])
+      .filter((item) => item && Array.isArray(item.polygon) && item.polygon.length >= 3)
+      .map((item) => item.polygon);
+    /* ★枠は輪郭だけ（VENUE_PLAN_STAGE_FRAME_2026_09_19）。平面図の枠と同じものを見る。
+       花道などの追加ステージは客席と並んで「枠の外に描くもの」として数える。 */
+    const framePoints = outline;
+    const outsidePoints = polygonsOf(venueStageExtensionsOf(venue, size))
+      .concat(polygonsOf(venueAudienceAreasOf(venue, size)))
+      .concat(polygonsOf(venue.stageWings)).flat();
+    if (!outsidePoints.length) return null;
+    const span = (points, index) => ({
+      min: Math.min(...points.map((point) => point[index])),
+      max: Math.max(...points.map((point) => point[index])),
+    });
+    const sx = span(framePoints, 0);
+    const sy = span(framePoints, 1);
+    const ox = span(outsidePoints, 0);
+    const oy = span(outsidePoints, 1);
+    const w = Math.max(0.001, sx.max - sx.min);
+    const d = Math.max(0.001, sy.max - sy.min);
+    const over = (value) => (value > 0.001 ? value : 0);
+    const ratios = {
+      top: over(sy.min - oy.min) / d,
+      right: over(ox.max - sx.max) / w,
+      bottom: over(oy.max - sy.max) / d,
+      left: over(sx.min - ox.min) / w,
+    };
+    if (!(ratios.top || ratios.right || ratios.bottom || ratios.left)) return null;
+    return ratios;
+  }
+
   /* @planFit:start */
   /* 平面図の既定の大きさ。舞台の枠だけでなく、その外に描かれるもの（袖の帯・客席・
      全周の円）と、袖へ置かれる駒まで画面へ収める。固定の余白（旧 pad=104/176）だと
      会場の寸法と無関係なので、余ったり詰まったりした。外部を一切参照しない純粋関数に
      してあるのは、テストから取り出して数値で確かめるため。触るときは同じ性質を保つこと。 */
   function planFit(input) {
-    // input: { W, H, audience, width, depth, wingM, houseM }
+    // input: { W, H, audience, width, depth, wingM, houseM, outside }
     // 返り値: { stage: { x, y, w, h }, pxPerM }
     /* ★houseM（客席の奥行き・m）は任意。渡さなければ今までと1画素も変わらない（2026-09-19）。 */
-    const { W, H, audience, width, depth, wingM, houseM } = input;
+    const { W, H, audience, width, depth, wingM, houseM, outside } = input;
     const M = 24;
     const ratio = depth / width;
     const wingRatio = wingM / width;
+    /* ★会場が舞台の枠の外にも形を持つとき（客席の多角形・舞台袖）は、その外まで入れて尺を決める
+       （VENUE_PLAN_FIT_OUTSIDE_2026_09_19）。outside は「枠の何倍ぶん外へ出るか」の比で、
+       上下は枠の高さ、左右は枠の幅に対して数える。
+       ★比で受けるのが肝。平面図の駒は「枠に対する u,v」で置かれ、当たり判定も同じ枠を使うので、
+         枠の中身を縮めると駒が舞台からずれる。枠そのものを小さくして外に余地を空ければ、
+         駒は枠の同じところに残る＝図が小さくなるだけで、保存済みのショーの意味は変わらない。
+       ★渡さなければこの枝を通らない＝いままでと1画素も変わらない。 */
+    if (outside) {
+      const room = (value) => (Number.isFinite(value) && value > 0 ? value : 0);
+      const oTop = room(outside.top);
+      const oRight = room(outside.right);
+      const oBottom = room(outside.bottom);
+      const oLeft = room(outside.left);
+      if (oTop || oRight || oBottom || oLeft) {
+        const fullW = 1 + oLeft + oRight;
+        const fullD = 1 + oTop + oBottom;
+        const swOut = Math.min((W - 2 * M) / fullW, (H - 2 * M) / (ratio * fullD));
+        const shOut = swOut * ratio;
+        return {
+          stage: {
+            x: ((W - (swOut * fullW)) / 2) + (swOut * oLeft),
+            y: ((H - (shOut * fullD)) / 2) + (shOut * oTop),
+            w: swOut,
+            h: shOut,
+          },
+          pxPerM: swOut / width,
+        };
+      }
+    }
     let sw;
     let top;
     let bottom;
@@ -8990,9 +9061,16 @@
       const houseM = featureOn("houseDepth") && window.SHOSAI_VENUES
         && typeof window.SHOSAI_VENUES.houseDepthM === "function"
         ? window.SHOSAI_VENUES.houseDepthM(v.id, size.id) : null;
+      /* ★形を実際に描く会場（作成会場・実在会場・形を持つ一般形プリセット）は、
+         客席や舞台袖まで入れて尺を決める（VENUE_PLAN_FIT_OUTSIDE_2026_09_19）。
+         いままでは舞台の外接だけで尺を決めていたので、客席が図の下や横へ出て切れていた
+         （扇形ホール大で下へ16m、能舞台で右へ7.6m、ドーム公演で四方へ28m）。
+         劇場設定（カスタム編集）の平面図は「全体の中心を真ん中に」直したので、そこへ揃える。 */
+      const outside = planOutsideRatios(v, size);
       const fit = planFit({
         W, H, audience: v.audience, width: size.width, depth: size.depth, wingM: WING_M,
         ...(Number.isFinite(houseM) ? { houseM } : {}),
+        ...(outside ? { outside } : {}),
       });
       return {
         plan: true, venue: v, size,
@@ -13261,9 +13339,14 @@
     const unmergedPolygons = stageExtensions
       .filter((item) => !item.merged)
       .map((item) => item.polygon);
-    const stagePoints = stagePolygons.flat();
-    const xs = stagePoints.map((point) => point[0]);
-    const ys = stagePoints.map((point) => point[1]);
+    /* ★枠に合わせるのは**輪郭だけ**（VENUE_PLAN_STAGE_FRAME_2026_09_19）。
+       花道などの追加ステージを入れてはいけない。駒の u,v・正面図・3Dはどれも
+       「本舞台の 間口×奥行」を 0〜1 として扱うので、ここだけ花道まで入れると
+       同じ v でも平面図だけ駒が客席側へずれ、絵も縦に潰れる（歌舞伎の舞台で表に出た）。
+       枠の外へ出るぶんは planOutsideRatios が数えて尺に織り込む。 */
+    const framePoints = outline;
+    const xs = framePoints.map((point) => point[0]);
+    const ys = framePoints.map((point) => point[1]);
     const bounds = {
       minX: Math.min(...xs), maxX: Math.max(...xs),
       minY: Math.min(...ys), maxY: Math.max(...ys),
@@ -26444,7 +26527,7 @@ ${propsPlotHtml}
   const VENUE_GROUPS = [
     { label: "劇場（額縁）", ids: ["proscenium", "hall-fan", "hall-shoebox", "circus-theatre"] },
     { label: "劇場（オープン）", ids: ["thrust", "end-stage", "blackbox", "in-the-round", "traverse"] },
-    { label: "日本の劇場と現場", ids: ["noh-stage", "gym-stage", "banquet-hall"] },
+    { label: "日本の劇場と現場", ids: ["kabuki-stage", "noh-stage", "gym-stage", "banquet-hall"] },
     { label: "大会場の公演", ids: ["arena-show", "dome-show", "arena-concert", "dome-concert"] },
     { label: "サーカス・テント", ids: ["arena", "chapiteau"] },
     { label: "屋外", ids: ["outdoor", "festival-field"] },

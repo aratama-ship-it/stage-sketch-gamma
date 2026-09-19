@@ -1343,6 +1343,94 @@
     }),
   );
 
+  /* 歌舞伎の舞台（VENUE_PRESETS_KABUKI_2026_09_19）。
+   * 形の本質は3点。①客席を貫いて伸びる花道 ②舞台の中央の回り舞台 ③花道の七三のすっぽん。
+   * どれも既にある部品（追加ステージ・客席の多角形）で表せるので、新しい型は足さない。
+   * 尺貫法は 1尺＝10/33 m で直した。歌舞伎座の公表値は尺で出ているのでそのまま持つ。
+   * ★x が小さいほうが下手（客席から見て左）。花道は下手に付く。
+   * ★上手の仮花道は常設ではないので作らない。セリ・二重舞台・定式幕も作らない。 */
+  const SHAKU_M = 10 / 33;
+  const KABUKI_WIDTH = roundM(91 * SHAKU_M);        // 間口 91尺＝27.576m（15間・約27.5m）
+  const KABUKI_DEPTH = 20;                          // 奥行 20m（★目安。公表値ではない）
+  const KABUKI_HEIGHT = roundM(21 * SHAKU_M);       // 高さ 21尺＝6.364m
+  const KABUKI_REVOLVE = roundM(60 * SHAKU_M);      // 回り舞台 直径 60尺＝18.182m
+  const KABUKI_HANAMICHI = roundM(60 * SHAKU_M);    // 花道 長さ 60尺＝18.182m
+  const KABUKI_HANAMICHI_W = 1.5;                   // 花道の幅 約1.5m（解説による）
+  // 花道の中心。下手の端から間口の19%（★目安。公表値ではない）
+  const KABUKI_HANAMICHI_X = roundM(KABUKI_WIDTH * 0.19);
+  // 七三＝舞台から三分・揚幕から七分。すっぽんはここに開く
+  const KABUKI_SHICHISAN_Y = roundM(KABUKI_DEPTH + (KABUKI_HANAMICHI * 0.3));
+  const KABUKI_HOUSE_DEPTH = 20;                    // 客席の奥行き（★目安。花道より少し深い）
+  const KABUKI_HOUSE_MARGIN = 1.5;                  // 客席は間口より少し広い（★目安）
+
+  /* 中心を指定できる円。circleOutline は左上を原点に置くので、舞台の中へ置く回り舞台には使えない。 */
+  const circleAtPoints = (cx, cy, diameter, segments = 32) => {
+    const radius = diameter / 2;
+    return Array.from({ length: segments }, (_, index) => {
+      const angle = (Math.PI * 2 * index) / segments;
+      return [roundM(cx + (Math.cos(angle) * radius)), roundM(cy + (Math.sin(angle) * radius))];
+    });
+  };
+
+  VENUES_V2.push(
+    createVenueV2({
+      id: "kabuki-stage",
+      label: "歌舞伎の舞台",
+      short: "花道・回り舞台",
+      audience: "front",
+      rigging: "full",
+      shapedVenue: true,
+      provenance: {
+        source: "一次寄り",
+        confidence: "medium",
+        sharing: "ok",
+        note: "間口91尺・高さ21尺・回り舞台の直径60尺・花道の長さ60尺・1,808席は歌舞伎座の公表値（2026-09-19確認）。花道の幅約1.5mと七三（舞台から三分・揚幕から七分）は歌舞伎の解説による。奥行20m・花道の下手からの位置・客席の奥行き20mは目安で、公表値ではない。上手の仮花道は常設ではないので入れていない。",
+      },
+      sizes: [
+        {
+          id: "kabuki-standard", label: "歌舞伎座なみ（間口27.6m・花道18.2m）",
+          width: KABUKI_WIDTH, depth: KABUKI_DEPTH, height: KABUKI_HEIGHT, seats: 1808,
+          extensions: [
+            /* 回り舞台。舞台と同じ床なので溶かさず（merged: false）、輪として見せる。 */
+            { id: "mawari-butai", label: "回り舞台", shape: "circle", merged: false,
+              polygon: circleAtPoints(KABUKI_WIDTH / 2, KABUKI_DEPTH / 2 + 0.5, KABUKI_REVOLVE) },
+            /* 花道。舞台と同じ高さなので溶かす（merged: true）。客席を貫いて揚幕まで伸びる。 */
+            { id: "hanamichi", label: "花道", shape: "rectangle", merged: true,
+              polygon: [
+                [KABUKI_HANAMICHI_X - (KABUKI_HANAMICHI_W / 2), KABUKI_DEPTH],
+                [KABUKI_HANAMICHI_X + (KABUKI_HANAMICHI_W / 2), KABUKI_DEPTH],
+                [KABUKI_HANAMICHI_X + (KABUKI_HANAMICHI_W / 2), KABUKI_DEPTH + KABUKI_HANAMICHI],
+                [KABUKI_HANAMICHI_X - (KABUKI_HANAMICHI_W / 2), KABUKI_DEPTH + KABUKI_HANAMICHI],
+              ] },
+            /* すっぽん（切り穴）。七三に開く迫りで、ここから人が現れる。
+               花道の中にある穴なので溶かさない（merged: false）＝境目の線を引いて位置を示す。 */
+            { id: "suppon", label: "すっぽん（七三）", shape: "rectangle", merged: false,
+              polygon: centeredSquare(KABUKI_HANAMICHI_X, KABUKI_SHICHISAN_Y, KABUKI_HANAMICHI_W) },
+          ],
+          /* 客席は花道で2つに割れる。下手側の帯は花道を間近で見る代わりに舞台が遠い。 */
+          audienceAreas: [
+            { id: "audience-shimote", side: "front", mode: "seated", eyeM: 1.2,
+              polygon: [
+                [-KABUKI_HOUSE_MARGIN, KABUKI_DEPTH],
+                [KABUKI_HANAMICHI_X - (KABUKI_HANAMICHI_W / 2), KABUKI_DEPTH],
+                [KABUKI_HANAMICHI_X - (KABUKI_HANAMICHI_W / 2), KABUKI_DEPTH + KABUKI_HOUSE_DEPTH],
+                [-KABUKI_HOUSE_MARGIN, KABUKI_DEPTH + KABUKI_HOUSE_DEPTH],
+              ] },
+            { id: "audience-main", side: "front", mode: "seated", eyeM: 1.2,
+              polygon: [
+                [KABUKI_HANAMICHI_X + (KABUKI_HANAMICHI_W / 2), KABUKI_DEPTH],
+                [KABUKI_WIDTH + KABUKI_HOUSE_MARGIN, KABUKI_DEPTH],
+                [KABUKI_WIDTH + KABUKI_HOUSE_MARGIN, KABUKI_DEPTH + KABUKI_HOUSE_DEPTH],
+                [KABUKI_HANAMICHI_X + (KABUKI_HANAMICHI_W / 2), KABUKI_DEPTH + KABUKI_HOUSE_DEPTH],
+              ] },
+          ],
+        },
+      ],
+      note: "歌舞伎の舞台。歌舞伎座の公表値で間口91尺（約27.6m）・高さ21尺（約6.4m）、舞台の中央に直径60尺（約18.2m）の回り舞台が入る。下手から客席を貫いて花道が伸び（長さ60尺＝約18.2m・幅約1.5m）、舞台と同じ高さなので演者はそのまま歩いて出入りする。花道の七三（舞台から三分・揚幕から七分）にはすっぽんという迫りがあり、そこから人が現れる。花道が客席を二つに割るので、下手側の席は花道を間近で見る代わりに舞台が遠い。上手へ仮花道を足すことがあるが常設ではないので入れていない。奥行20mと花道の位置と客席の奥行きは目安。セリ・二重舞台・定式幕・舞台の高さはこのプリセットでは作っていない。",
+      source: "間口91尺・高さ21尺・回り舞台60尺・花道60尺・1,808席は歌舞伎座の公表値。花道の幅と七三は歌舞伎の解説による。奥行・花道の位置・客席の奥行きは目安",
+    }),
+  );
+
   const outlineDimensions = (outline) => {
     const xs = outline.map((point) => point[0]);
     const ys = outline.map((point) => point[1]);

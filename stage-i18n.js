@@ -2027,6 +2027,7 @@
       "hall-fan": "Fan-shaped hall", "in-the-round": "Theatre in the round",
       "arena-show": "Arena show", "dome-show": "Dome show",
       "noh-stage": "Noh stage", traverse: "Traverse",
+      "kabuki-stage": "Kabuki stage",
     },
     venueShort: {
       proscenium: "framed stage", thrust: "three sides", arena: "in the round", outdoor: "temporary", blackbox: "flexible",
@@ -2039,6 +2040,7 @@
       "hall-fan": "curved front, side aisles", "in-the-round": "all round, single tier",
       "arena-show": "end stage and runway", "dome-show": "runway, centre stage",
       "noh-stage": "three ken square, bridgeway", traverse: "audience on two sides",
+      "kabuki-stage": "hanamichi, revolving stage",
     },
     venueNote: {
       /* ★形式プリセット（プロセニアム／スラスト／アリーナ／野外／ブラックボックス）の
@@ -2060,6 +2062,7 @@
       "arena-show": "A show in an arena. The stage goes at one end; the house is the three sides of permanent stand plus temporary seating laid on the floor. Add a runway and the floor seating splits either side of it: the performer can walk out into the middle of the house, but is then watched from both sides. Floor seating is built fresh for every show, so this is one common layout rather than a standard. Dimensions are provisional.",
       "dome-show": "A show in a dome. The bowl is round, so the house runs the whole way around and seats behind the stage are sometimes sold. The runway layout puts the stage at one end and reaches into the house; the centre-stage layout builds a round stage in the middle and plays to every side. Either way the floor seating is built fresh for every show. This is one common layout rather than a standard. Dimensions are provisional.",
       "noh-stage": "The stage of a noh theatre. The main stage is very nearly a square of three ken in Kyoto measure (about 5.9 m), with the atoza behind it for the musicians and the jiutaiza along one side for the chorus. The hashigakari bridgeway runs off the far corner — the performer enters along it (six to seven ken, 11 to 13 m, is standard). The stage juts into the house, so the front seats and the side seats see quite different things. This preset does not build the roof, the pine painted on the back wall, or the small side door. The bridgeway really runs at an angle; here it is treated as square.",
+      "kabuki-stage": "A kabuki stage. The Kabukiza gives its opening as 91 shaku (about 27.6 m) and its height as 21 shaku (about 6.4 m), with a revolving stage 60 shaku (about 18.2 m) across set into the middle of it. The hanamichi runs out from stage left, straight through the house — 60 shaku (about 18.2 m) long and roughly 1.5 m wide, at the same height as the stage, so the performer simply walks on and off along it. At the shichisan (three parts from the stage, seven from the curtain at the far end) sits the suppon, a small lift that brings a figure up out of the floor. The hanamichi splits the house in two: the seats on its far side are close to it but a long way from the stage. A second, temporary hanamichi is sometimes laid on the other side; it is not permanent and is not built here. The depth of 20 m, the position of the hanamichi and the depth of the house are approximate. Traps, built-up stage levels, the striped curtain and the height of the stage are not built in this preset.",
       traverse: "A long strip of playing space with the audience down both sides. There is no front: turn to one side and your back is to the other, so direction and travel carry the staging. The two ends are usually the ways in. Just two blocks of seating, no aisles and no front. Dimensions are provisional.",
     },
     size: {
@@ -2081,6 +2084,7 @@
       "arena-end": "End stage", "arena-runway": "End stage with runway",
       "dome-runway": "End stage with runway", "dome-centre": "Centre stage",
       "noh-standard": "Three ken square (about 5.9 m)", "traverse-standard": "Playing strip 6×14 m",
+      "kabuki-standard": "Kabukiza scale (27.6 m opening, 18.2 m hanamichi)",
     },
     seat: {
       front: "Front row", center: "Stalls centre", rear: "Stalls rear",
