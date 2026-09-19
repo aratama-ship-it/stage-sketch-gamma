@@ -1289,6 +1289,13 @@
     "劇場だけを反映し、舞台へ進みます。": "Applies only the theatre, then continues on Stage.",
     "劇場設定へ戻る": "Return to Theatre Setup",
     "この内容で反映する": "Apply these choices",
+    "印刷用の窓を開けませんでした。ポップアップの許可を確認してください。": "Could not open the print window. Check the pop-up permission.",
+    "壊れる場面のレポートを印刷用の窓で開きました。": "Opened the report of affected scenes in a print window.",
+    "この劇場へ替えると、次の場面が影響を受けます（反映は止めません。目安としてご覧ください）。": "Switching to this venue will affect the following scenes (this does not block applying — use it as a guide).",
+    "舞台の外へ出る": "Goes off the stage",
+    "高さが足りない": "Not enough height",
+    "客席に埋もれる": "Sits inside the audience area",
+    "袖からの出入りが成り立たないおそれ": "The wing entrance/exit may not work",
     /* ---- 光の動き（案）。機材は持たない動く光のスケッチ（2026-09-11） ---- */
     "光の動きを組む": "Build a light motion",
     "光の動き": "Light motion",
@@ -2149,6 +2156,8 @@
   const SAY = [
     [/^キューシートを開けませんでした。ポップアップの許可を確認してください。$/, "Could not open the cue sheet. Check the pop-up permission."],
     [/^キューシートを印刷用の窓で開きました。$/, "Opened the cue sheet in a print window."],
+    [/^印刷用の窓を開けませんでした。ポップアップの許可を確認してください。$/, "Could not open the print window. Check the pop-up permission."],
+    [/^壊れる場面のレポートを印刷用の窓で開きました。$/, "Opened the report of affected scenes in a print window."],
     [/^並び順を変えました。$/, "Reordered the list."],
     [/^選んだ灯へ型を適用できませんでした。$/, "Could not apply the preset to the selected lights."],
     [/^選んだ(\d+)灯に「([\s\S]*?)」を適用しました。$/, "Applied “$2” to $1 selected light(s)."],

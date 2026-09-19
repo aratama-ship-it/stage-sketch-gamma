@@ -175,6 +175,7 @@ public-dist/
 !/stage-usage.js
 !/stage-venue-editor.js
 !/stage-venue-lines.js
+!/stage-venue-report.js
 !/stage-venues.js
 !/stage.html
 !/style.css

@@ -4676,6 +4676,11 @@
     venueApplyVersion: document.getElementById("stage-venue-apply-version"),
     venueApplyVersionTitle: document.getElementById("stage-venue-apply-version-title"),
     venueApplyVersionDetail: document.getElementById("stage-venue-apply-version-detail"),
+    venueApplyReport: document.getElementById("stage-venue-apply-report"),
+    venueApplyReportSummary: document.getElementById("stage-venue-apply-report-summary"),
+    venueApplyReportList: document.getElementById("stage-venue-apply-report-list"),
+    venueApplyReportPrint: document.getElementById("stage-venue-apply-report-print"),
+    venueApplyReportCsv: document.getElementById("stage-venue-apply-report-csv"),
     venueApplyPreset: document.getElementById("stage-venue-apply-preset"),
     venueApplyPresetSelect: document.getElementById("stage-venue-apply-preset-select"),
     venueApplyPresetNote: document.getElementById("stage-venue-apply-preset-note"),
@@ -27083,6 +27088,190 @@ ${propsPlotHtml}
     if (els.venueApplyBackdrop) els.venueApplyBackdrop.hidden = true;
   }
 
+  /* G-A（2026-09-20）: 会場替えの「壊れる場面」レポート。
+   * 設計 docs/venue-switch-report-2026-09-20/index.html。判定は共有部品 stage-venue-report.js
+   * （幾何とデータの突き合わせだけ）。ここでは駒ごとの値を解決して渡すだけにする
+   * （pieceDims・isFlown 等の式をここと向こうの2箇所に持たない）。
+   * ★自動では直さない。反映は止めない（本人決定＝知らせるだけ）。 */
+  function venueSwitchReportScenes() {
+    const project = state.project;
+    const scenes = [];
+    (project.scenes || []).forEach((row) => {
+      if (row.kind !== "scene") return;
+      const entries = [];
+      (row.pieces || []).forEach((piece) => {
+        if (!piece || piece.type === "light" || piece.type === "curtain") return;
+        const isPerformer = piece.type === "performer";
+        const dims = isPerformer ? null : (pieceDims(piece) || {});
+        const halfW = isPerformer ? 0 : Math.max(0, finite(dims.w, finite(dims.dia, 0)) / 2);
+        const halfD = isPerformer ? 0 : Math.max(0, finite(dims.d, finite(dims.dia, 0)) / 2);
+        let requiredHeightM = null;
+        if (!isPerformer) {
+          if (isFlown(piece)) requiredHeightM = flownLift(piece) || null;
+          else if (piece.type === "pole") requiredHeightM = finite(dims.h, 6);
+        }
+        const wing = isPerformer && piece.cueSheet && typeof piece.cueSheet.wing === "string"
+          && piece.cueSheet.wing ? piece.cueSheet.wing : null;
+        entries.push({
+          id: piece.id,
+          label: pieceLabel(piece) || "",
+          u: finite(piece.u, 0.5),
+          v: finite(piece.v, 0.5),
+          halfW, halfD, requiredHeightM, wing,
+          audienceCheck: !isPerformer,
+        });
+      });
+      if (entries.length) scenes.push({ id: row.id, title: row.title || "", entries });
+    });
+    return scenes;
+  }
+
+  /* 反映モーダルの候補会場（saved・まだ反映していない）を、レポートの入力形へ直す。
+   * VENUES.byId(saved.id) が取れない（作成会場が消えた等）ときは null＝レポートを作らない。 */
+  function venueSwitchReportCandidate(saved) {
+    const target = VENUES.byId(saved && saved.id);
+    if (!target) return null;
+    const sizeId = venueApplySizeId(saved);
+    const size = VENUES.sizeById(target, sizeId);
+    if (!size) return null;
+    return {
+      audience: target.audience,
+      width: size.width, depth: size.depth, height: finite(size.height, 8),
+      outline: venueOutlineOf(target, size) || null,
+      audienceAreas: venueAudienceAreasOf(target, size) || null,
+    };
+  }
+
+  let lastVenueSwitchReport = null;
+
+  function renderVenueSwitchReport(saved) {
+    if (!els.venueApplyReport) return;
+    lastVenueSwitchReport = null;
+    // いまと同じ会場・同じ規模へ「反映」するときは何も変わらないので出さない。
+    const sameVenue = saved && saved.id === state.project.venue;
+    const sameSize = sameVenue && venueApplySizeId(saved) === state.project.venueSize;
+    if (sameVenue && sameSize) { els.venueApplyReport.hidden = true; return; }
+    const candidate = venueSwitchReportCandidate(saved);
+    const api = window.SHOSAI_VENUE_REPORT;
+    if (!candidate || !api) { els.venueApplyReport.hidden = true; return; }
+    const scenes = venueSwitchReportScenes();
+    const report = api.buildReport(candidate, scenes);
+    if (!report.rows.length) { els.venueApplyReport.hidden = true; return; }
+    lastVenueSwitchReport = { report, venueLabel: saved.label || venueSwitchLabel(saved) };
+    els.venueApplyReport.hidden = false;
+    if (els.venueApplyReportSummary) {
+      els.venueApplyReportSummary.textContent = tx("この劇場へ替えると、次の場面が影響を受けます（反映は止めません。目安としてご覧ください）。");
+    }
+    if (els.venueApplyReportList) {
+      els.venueApplyReportList.replaceChildren();
+      report.rows.forEach((row) => {
+        const li = document.createElement("li");
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "stage-venue-apply-report-row";
+        button.dataset.venueReportSceneId = row.id;
+        button.innerHTML = `<span class="scene-no">${escapeHtml(sceneDisplayNumber(row.id) || "")}</span>${escapeHtml(venueSwitchIssueSummary(row.issues))}`;
+        li.append(button);
+        els.venueApplyReportList.append(li);
+      });
+    }
+  }
+
+  function venueSwitchLabel(saved) {
+    const target = VENUES.byId(saved && saved.id);
+    return (target && target.label) || "この劇場";
+  }
+
+  /* 場面番号（表示用）。ショー地図・キューシートと同じ「セクションを除いた通し番号」で数える。 */
+  function sceneDisplayNumber(sceneId) {
+    let n = 0;
+    for (const row of state.project.scenes || []) {
+      if (row.kind === "section") continue;
+      n += 1;
+      if (row.id === sceneId) return String(n);
+    }
+    return "";
+  }
+
+  function venueSwitchIssueSummary(issues) {
+    const parts = [];
+    const names = (list) => list.map((item) => item.label || "").filter(Boolean).join("・");
+    if (issues.outOfBounds.length) {
+      parts.push(tx("舞台の外へ出る") + " " + names(issues.outOfBounds) + `（${issues.outOfBounds.length}件）`);
+    }
+    if (issues.tooTall.length) {
+      parts.push(tx("高さが足りない") + " " + names(issues.tooTall) + `（${issues.tooTall.length}件）`);
+    }
+    if (issues.inAudience.length) {
+      parts.push(tx("客席に埋もれる") + " " + names(issues.inAudience) + `（${issues.inAudience.length}件）`);
+    }
+    if (issues.wingRisk.length) {
+      parts.push(tx("袖からの出入りが成り立たないおそれ") + `（${issues.wingRisk.length}件）`);
+    }
+    return parts.join(" ／ ");
+  }
+
+  if (els.venueApplyReportList) {
+    els.venueApplyReportList.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-venue-report-scene-id]");
+      if (!button) return;
+      const id = button.dataset.venueReportSceneId;
+      closeVenueApplyModal();
+      if (id) openScene(id);
+    });
+  }
+
+  function venueSwitchReportPrintDocument(payload) {
+    const rows = payload.report.rows.map((row) => `<tr><td>${escapeHtml(sceneDisplayNumber(row.id) || "")}</td><td>${escapeHtml(row.title)}</td><td>${escapeHtml(venueSwitchIssueSummary(row.issues))}</td></tr>`).join("");
+    return `<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>${escapeHtml(payload.venueLabel)} — 壊れる場面</title>
+<style>body{font:14px/1.6 "Hiragino Kaku Gothic ProN",sans-serif;margin:24px;color:#222}
+h1{font-size:18px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:6px 8px;text-align:left;vertical-align:top;font-size:13px}
+th{background:#eee}@media print{body{margin:8mm}}</style></head>
+<body><h1>${escapeHtml(payload.venueLabel)} へ替えると壊れる場面</h1>
+<table><thead><tr><th>場面</th><th>題</th><th>影響</th></tr></thead><tbody>${rows}</tbody></table>
+<p>反映は止まりません。目安としてご覧ください。自動では直しません。</p>
+</body></html>`;
+  }
+
+  function openVenueSwitchReportPrint() {
+    if (!lastVenueSwitchReport) return;
+    const url = URL.createObjectURL(new Blob([venueSwitchReportPrintDocument(lastVenueSwitchReport)], { type: "text/html" }));
+    const printWindow = window.open(url, "_blank");
+    if (!printWindow) {
+      announce(tx("印刷用の窓を開けませんでした。ポップアップの許可を確認してください。"));
+      URL.revokeObjectURL(url);
+      return;
+    }
+    announce(tx("壊れる場面のレポートを印刷用の窓で開きました。"));
+  }
+
+  function venueSwitchReportCsv(payload) {
+    const lines = [["場面", "題", "影響"].join(",")];
+    payload.report.rows.forEach((row) => {
+      const cells = [sceneDisplayNumber(row.id) || "", row.title, venueSwitchIssueSummary(row.issues)]
+        .map((v) => `"${String(v).replace(/"/g, '""')}"`);
+      lines.push(cells.join(","));
+    });
+    return "\ufeff" + lines.join("\r\n") + "\r\n";
+  }
+
+  async function downloadVenueSwitchReportCsv() {
+    if (!lastVenueSwitchReport) return;
+    try {
+      const csv = venueSwitchReportCsv(lastVenueSwitchReport);
+      const filename = `${lastVenueSwitchReport.venueLabel}_壊れる場面.csv`;
+      const didChooseDestination = await downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), filename);
+      if (!didChooseDestination) { announce(tx("書き出しをやめました。")); return; }
+      announce(tx("CSVを書き出しました。"));
+    } catch (error) {
+      console.error(error);
+      announce(tx("CSVを書き出せませんでした。"));
+    }
+  }
+
+  if (els.venueApplyReportPrint) els.venueApplyReportPrint.addEventListener("click", openVenueSwitchReportPrint);
+  if (els.venueApplyReportCsv) els.venueApplyReportCsv.addEventListener("click", downloadVenueSwitchReportCsv);
+
   async function openVenueApplyModal(detail) {
     const saved = detail?.venue;
     if (!saved || typeof saved.id !== "string" || !els.venueApplyModal) return;
@@ -27093,6 +27282,7 @@ ${propsPlotHtml}
     if (els.venueApplySummary) {
       els.venueApplySummary.textContent = `「${saved.label || "この劇場"}」をショーへ反映します。照明機材の始め方を選んでください。`;
     }
+    renderVenueSwitchReport(saved);   // G-A: 壊れる場面を先に見せる（反映は止めない）
     const versioned = venueApplyNeedsVersion(saved);
     if (els.venueApplyVersion) els.venueApplyVersion.hidden = false;
     if (els.venueApplyVersionTitle) {
