@@ -2748,6 +2748,14 @@
       const stageR = W / 2;
       fillPoly(ctx, circlePoints(0, houseFloorY - .002, 0, groundR, 44), "#1d1712");
 
+      /* ★形を持つ全周会場（ドーム公演の花道など）は輪郭どおりに敷く（2026-09-19）。
+         真円の会場はここを通らず、下の円の描き方のまま。 */
+      const shapedRound = roundShapedStage();
+      if (shapedRound) {
+        drawRoundShapedStage(ctx, shapedRound);
+        return;
+      }
+
       const skirtSegments = 36;
       Array.from({ length: skirtSegments }, (_, index) => {
         const a0 = (index / skirtSegments) * Math.PI * 2;
@@ -2919,6 +2927,52 @@
       if (inside) spans.push([cuts[i], cuts[i + 1]]);
     }
     return spans;
+  }
+
+  /* ★全周会場の床の形（2026-09-19）。輪郭が真円に近ければ null を返し、
+     これまでどおり半径決め打ちの円で描かせる（既存の会場の絵を1画素も変えないため）。
+     判定は「中心からの距離が全頂点でほぼ同じ」。ドーム公演の長方形＋花道はここで外れる。 */
+  function roundShapedStage() {
+    const shape = customStageShape();
+    if (!shape || !Array.isArray(shape.polygons) || !shape.polygons.length) return null;
+    const points = [];
+    shape.polygons.forEach((poly) => { if (Array.isArray(poly)) poly.forEach((p) => points.push(p)); });
+    if (points.length < 12) return shape;            // 頂点が少ない＝多角形。円ではない
+    const cx = points.reduce((sum, p) => sum + p[0], 0) / points.length;
+    const cy = points.reduce((sum, p) => sum + p[1], 0) / points.length;
+    const radii = points.map((p) => Math.hypot(p[0] - cx, p[1] - cy));
+    const far = Math.max(...radii);
+    const near = Math.min(...radii);
+    if (!(far > 0)) return null;
+    return (far - near) / far < .06 ? null : shape;  // ほぼ真円＝これまでどおり
+  }
+
+  /* 全周会場の甲板・縁の土手・1m格子を、輪郭どおりに敷く。
+     ★額縁の会場（drawCustomStageFloor）と違い、壁も袖も無い。舞台の外は一面の地面。 */
+  function drawRoundShapedStage(ctx, shape) {
+    const lib = window.SHOSAI_FRONT_SHAPE;
+    if (!lib) return;
+    const at = (point, y) => toWorld(shape.uOf(point[0]), shape.vOf(point[1]), W, D, y);
+    shape.polygons.forEach((poly) => fillPoly(ctx, poly.map((point) => at(point, 0)), "#262019"));
+    /* 縁の土手。見る向きが自由なので、カメラに背を向けた面は描かない（奥から順に塗る）。 */
+    lib.boundary(shape).map((edge) => {
+      const a = at(edge.a, 0);
+      const b = at(edge.b, 0);
+      const mid = { x: (a.x + b.x) / 2, y: houseFloorY / 2, z: (a.z + b.z) / 2 };
+      const facing = edge.outward[0] * (camera.x - mid.x) + edge.outward[1] * (camera.z - mid.z);
+      return { a, b, facing, depth: toCamera(mid).z };
+    }).filter((face) => face.facing > 0)
+      .sort((p, q) => q.depth - p.depth)
+      .forEach((face) => {
+        fillPoly(ctx, [face.a, face.b, { ...face.b, y: houseFloorY }, { ...face.a, y: houseFloorY }], "#1a120d");
+      });
+    const gridColor = "rgba(232,226,212,.09)";
+    for (let x = Math.ceil(shape.minX); x <= shape.maxX; x += 1) {
+      customGridSpans(shape, "x", x).forEach(([from, to]) => line3(ctx, at([x, from], 0), at([x, to], 0), gridColor, 1));
+    }
+    for (let y = Math.ceil(shape.minY); y <= shape.maxY; y += 1) {
+      customGridSpans(shape, "y", y).forEach(([from, to]) => line3(ctx, at([from, y], 0), at([to, y], 0), gridColor, 1));
+    }
   }
 
   function drawCustomStageFloor(ctx, halfWidth, halfDepth) {
