@@ -4980,10 +4980,11 @@
     scrimControls: document.getElementById("stage-scrim-controls"),
     pieceSheer: document.getElementById("stage-piece-sheer"),
     pieceSheerValue: document.getElementById("stage-piece-sheer-value"),
-    scrimImageFile: document.getElementById("stage-scrim-image-file"),
-    scrimImageOn: document.getElementById("stage-scrim-image-on"),
-    scrimImageClear: document.getElementById("stage-scrim-image-clear"),
-    scrimImageNote: document.getElementById("stage-scrim-image-note"),
+    surfaceImageControls: document.getElementById("stage-surface-image-controls"),
+    surfaceImageFile: document.getElementById("stage-surface-image-file"),
+    surfaceImageOn: document.getElementById("stage-surface-image-on"),
+    surfaceImageClear: document.getElementById("stage-surface-image-clear"),
+    surfaceImageNote: document.getElementById("stage-surface-image-note"),
     pieceWater: document.getElementById("stage-piece-water"),
     pieceWaterValue: document.getElementById("stage-piece-water-value"),
     piecePoolH: document.getElementById("stage-piece-pool-h"),
@@ -6007,15 +6008,24 @@
       normalized.curtainKind = ["front", "traveler", "drop", "leg", "cyc", "scrim"].includes(piece.curtainKind)
         ? piece.curtainKind : "front";
       normalized.open = clamp(finite(piece.open, 0), 0, 100);
-      /* 紗幕だけが透けと映す絵を持つ。他の幕に付けると、効かない値が保存へ増える。
+      /* 透けは紗幕だけが持つ。他の幕に付けると、効かない値が保存へ増える。
          ★値が無いときは器を作らない（既存ショーのバイト数を変えないため）。 */
       if (normalized.curtainKind === "scrim") {
         if (piece.sheer !== undefined) normalized.sheer = clamp(finite(piece.sheer, 0), 0, 100);
-        if (typeof piece.imageId === "string" && piece.imageId) normalized.imageId = piece.imageId;
       } else {
         delete normalized.sheer;
-        delete normalized.imageId;
       }
+    }
+    /* 映す絵（2026-09-20 段階2）を持てるのは紗幕と壁だけ。それ以外の駒からは必ず落とす。
+       ★normalized は未知の項目を残すために元の駒の複製から始まる。ここで落とさないと、
+         関係のない駒に付いた imageId を sweepPhotos が「使用中」と数え続け、
+         その絵が置き場から永久に消えなくなる。 */
+    const canHoldImage = type === "wall"
+      || (type === "curtain" && normalized.curtainKind === "scrim");
+    if (canHoldImage && typeof piece.imageId === "string" && piece.imageId) {
+      normalized.imageId = piece.imageId;
+    } else {
+      delete normalized.imageId;
     }
     if (type === "pool") {
       normalized.water = clamp(finite(piece.water, 0.9), 0, 3);
@@ -11371,7 +11381,7 @@
       const owner = pieceSet(piece);
       const kind = piece.curtainKind || (owner && owner.curtainKind) || "front";
       if (kind === "scrim") {
-        const quad = curtainFaceQuad(piece, L, parts);
+        const quad = boxFaceQuad(piece, L, parts);
         if (quad) {
           const machinery = window.SHOSAI_STAGE_MACHINERY;
           const sheer = clamp(machinery ? machinery.mechVal(piece, "sheer", 0) : finite(piece.sheer, 0), 0, 100);
@@ -11379,7 +11389,7 @@
           window.SHOSAI_SCRIM.paintFront(target, quad, sheer, {
             // 映す絵。読み込み中は null が返り、読み終わると render() が呼ばれて描き直る
             image: piece.imageId && store ? photoImage(store[piece.imageId]) : null,
-            black: isDarkScrim(piece),
+            black: isDarkSurface(piece),
             // 織り目を内部px基準に保つ。pos.scale は奥行きによる遠近の縮尺そのもの
             scale: finite(pos && pos.scale, 1),
           });
@@ -11394,13 +11404,32 @@
       else if (part.kind === "line" || part.kind === "ring") paintRigging(target, piece, L, part);
       else paintBox(target, piece, L, part);
     });
+
+    /* 壁へ映す絵（プロジェクション・2026-09-20 段階2）。★箱を塗った「後」に重ねる。
+       紗幕は膜そのものを塗り替えるが、壁は塗った面の上に光が乗るだけなので順序が逆。
+       映し方（切らずに中央へ収める）は紗幕と同じ部品を使う。 */
+    if (!L.plan && piece.type === "wall" && piece.imageId && window.SHOSAI_SCRIM && canProjectOn(piece)) {
+      const store = state.project.photos;
+      const image = store ? photoImage(store[piece.imageId]) : null;
+      if (image) {
+        const quad = boxFaceQuad(piece, L, parts);
+        if (quad) {
+          window.SHOSAI_SCRIM.paintProjection(target, quad, image,
+            WALL_PROJECTION_ALPHA * (isDarkSurface(piece) ? window.SHOSAI_SCRIM.BLACK_IMG_FACTOR : 1));
+        }
+      }
+    }
     target.restore();
   }
 
-  /* 紗幕の面（客席を向いた側）の四隅を、幕の箱の前面から取る。
+  /* 壁に当てた投影の濃さ。1.0にすると壁の陰影が完全に消えて板に貼った絵に見える。
+     わずかに透かすことで「壁に光が当たっている」ほうに読める。 */
+  const WALL_PROJECTION_ALPHA = 0.92;
+
+  /* 駒の面（客席を向いた側）の四隅を、箱の前面から取る。紗幕と壁が同じものを使う。
      箱と同じ投影を使うので、向き・傾き・奥行きの扱いが他の駒とずれない。
      返りは 左下・右下・右上・左上 の順（画面座標）。 */
-  function curtainFaceQuad(piece, L, parts) {
+  function boxFaceQuad(piece, L, parts) {
     const part = (parts || []).find((item) => item && !item.kind);
     if (!part) return null;
     const rad = ((piece.facing || 0) * Math.PI) / 180;
@@ -11430,8 +11459,8 @@
     ];
   }
 
-  /* 黒紗か白紗か。駒の色が暗ければ黒紗として扱う（種類を増やさない）。 */
-  function isDarkScrim(piece) {
+  /* 暗い面かどうか。黒紗や黒い壁は投影を弱くしか返さない（種類を増やさず色で見る）。 */
+  function isDarkSurface(piece) {
     const hex = String((piece && piece.color) || "").replace("#", "");
     if (hex.length !== 6) return false;
     const r = parseInt(hex.slice(0, 2), 16);
@@ -31433,8 +31462,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       const owner = piece ? pieceSet(piece) : null;
       const kind = piece && (piece.curtainKind || (owner && owner.curtainKind) || "front");
       els.scrimControls.hidden = !(machineryType === "curtain" && kind === "scrim");
-      if (!els.scrimControls.hidden) syncScrimImage();
     }
+    /* 映す絵は機構ではない（壁にも付く）ので、機構の種類とは別に見る。
+       複数選んでいるときは piece が null ＝ 欄を出さない。 */
+    syncSurfaceImage(piece);
     syncMachineControl(els.pieceSheer, els.pieceSheerValue, "sheer", 0, 0, 100, "sheer");
     syncMachineControl(els.pieceWater, els.pieceWaterValue, "water", .9, 0, 3, "m");
     syncMachineControl(els.piecePoolH, els.piecePoolHValue, "poolH", -3, -4, 0, "m");
@@ -31618,40 +31649,55 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     });
   }
 
-  /* 紗幕へ映す絵。駒が置き場のidを指すだけで、絵そのものは持たない。 */
-  function loadScrimImageFile(file) {
+  /* 絵を映せる面かどうか。★ここが「どの駒に映す絵を持たせるか」の唯一の判断。
+     紗幕＝透ける膜に映す。壁＝プロジェクションを当てる。
+     枠付きの壁（穴の空いた門）は除く。穴の向こうに絵が浮いて見えてしまうため。 */
+  function canProjectOn(piece) {
+    if (!piece) return false;
+    const owner = pieceSet(piece);
+    if (piece.type === "curtain") {
+      return (piece.curtainKind || (owner && owner.curtainKind) || "front") === "scrim";
+    }
+    if (piece.type === "wall") return !(owner && owner.framed);
+    return false;
+  }
+
+  /* 面へ映す絵。駒が置き場のidを指すだけで、絵そのものは持たない。 */
+  function loadSurfaceImageFile(file) {
     const piece = selectedPiece();
-    if (!piece) return;
+    if (!canProjectOn(piece)) return;
     importSurfaceImage(file, {
       maxW: PROJECTION_MAX_W, quality: 0.7, label: "映す絵",
       keep: piece.imageId,
     }, (id) => {
       piece.imageId = id;
-      syncScrimImage();
-      announce("紗幕に映す絵を選びました。");
+      syncSurfaceImage();
+      announce("映す絵を選びました。");
     });
   }
 
-  function clearScrimImage() {
+  function clearSurfaceImage() {
     const piece = selectedPiece();
     if (!piece || !piece.imageId) return;
     checkpoint();
     delete piece.imageId;
     sweepPhotos(state.project);
-    syncScrimImage();
+    syncSurfaceImage();
     render();
     persistSoon();
     announce("映す絵を外しました。");
   }
 
   /* 映す絵の操作欄を、いま選んでいる駒の状態に合わせる。 */
-  function syncScrimImage() {
-    const piece = selectedPiece();
-    const src = piece && piece.imageId ? (state.project.photos || {})[piece.imageId] : "";
-    if (els.scrimImageOn) els.scrimImageOn.hidden = !src;
-    if (src && els.scrimImageNote) {
+  function syncSurfaceImage(target) {
+    const piece = target === undefined ? selectedPiece() : target;
+    const on = canProjectOn(piece);
+    if (els.surfaceImageControls) els.surfaceImageControls.hidden = !on;
+    const src = on && piece.imageId ? (state.project.photos || {})[piece.imageId] : "";
+    if (els.surfaceImageOn) els.surfaceImageOn.hidden = !src;
+    if (src && els.surfaceImageNote) {
       const kb = Math.round(src.length / 1024);
-      els.scrimImageNote.textContent = sx(`およそ${kb}KB。ショーと一緒にこの端末へ保存されます。`, `About ${kb} KB, kept in this browser with the show.`);
+      els.surfaceImageNote.textContent = sx(`およそ${kb}KB。ショーと一緒にこの端末へ保存されます。`, `About ${kb} KB, kept in this browser with the show.`);
     }
   }
 
@@ -31717,13 +31763,13 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       event.target.value = "";
     });
   }
-  if (els.scrimImageFile) {
-    els.scrimImageFile.addEventListener("change", (event) => {
-      loadScrimImageFile(event.target.files && event.target.files[0]);
+  if (els.surfaceImageFile) {
+    els.surfaceImageFile.addEventListener("change", (event) => {
+      loadSurfaceImageFile(event.target.files && event.target.files[0]);
       event.target.value = "";
     });
   }
-  if (els.scrimImageClear) els.scrimImageClear.addEventListener("click", clearScrimImage);
+  if (els.surfaceImageClear) els.surfaceImageClear.addEventListener("click", clearSurfaceImage);
   if (els.photoBright) {
     els.photoBright.addEventListener("input", (event) => {
       const photo = sc().photo;

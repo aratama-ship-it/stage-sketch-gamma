@@ -8,6 +8,10 @@
  * ★本体（stage-sketch.js）には持たせない。あちらは1.2MBあり複数の作業がぶつかる。
  *   ここは画面の状態も駒の構造も知らない。四隅と sheer を渡されて塗るだけ。
  *
+ * ★2026-09-20 段階2以降: ここは紗幕だけの部品ではなく「面へ絵を映す」共通の置き場でもある。
+ *   壁（プロジェクション）も paintProjection を呼ぶ。映し方（切らずに収める＝レターボックス）は
+ *   面の種類によらず同じで、違うのは面そのものの塗り方だけ。
+ *
  * 数値の正本: design/TOKEN_SHEET_scrim_2026-09-11.md
  * 設計の判断: _reviews/2026-09-11_stagesketch-scrim/index.html
  *             _reviews/2026-09-20_stagesketch-scrim-projection/index.html（段階1＝ここ）
@@ -151,7 +155,8 @@
   }
 
   root.SHOSAI_SCRIM = Object.freeze({
-    stateOf, opacities, paintFront,
+    // paintProjection は紗幕と壁の共通入口。面の四隅と絵を渡すと、切らずに中央へ収める
+    stateOf, opacities, paintFront, paintProjection: paintImage,
     WEAVE_STEP, RIG_BAND, BLACK_IMG_FACTOR,
     BASE_WHITE, BASE_BLACK,
   });

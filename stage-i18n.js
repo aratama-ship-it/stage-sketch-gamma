@@ -2469,7 +2469,7 @@
     [/^背景の塗りを消しました。$/, "Painted strokes erased."],
     [/^背景に写真を貼りました。$/, "Photo set as the backdrop."],
     [/^背景の写真を外しました。$/, "Backdrop photo removed."],
-    [/^紗幕に映す絵を選びました。$/, "Image set to project on the scrim."],
+    [/^映す絵を選びました。$/, "Image set to project on this surface."],
     [/^映す絵を外しました。$/, "Projected image removed."],
     [/^この画像は大きすぎます。もう少し小さいものを選んでください。$/, "That image is too large. Please choose a smaller one."],
     [/^この画像は読み込めませんでした。$/, "That image could not be read."],
