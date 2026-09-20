@@ -1903,6 +1903,7 @@
       run: "Run", backflip: "Back handspring", hat: "Wearing a hat",
       sideflip: "Side somersault",
       sing: "Sing (mic)", juggle: "Juggling", guitar: "Guitar", trumpet: "Trumpet",
+      violin: "Violin", bassguitar: "Bass guitar", accordion: "Accordion",
       dance1: "Dance · arms up", dance2: "Dance · lunge", dance3: "Dance · low and open",
       dance4: "Dance · jump", dance5: "Dance · twist",
       windmill: "Windmill", skate: "Roller skates", unicycle: "Unicycle",

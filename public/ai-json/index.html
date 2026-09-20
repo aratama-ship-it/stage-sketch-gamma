@@ -70,7 +70,7 @@ Q3 高リスク装置
 
 許可する venue と venueSize の組は `proscenium: small/mid/large`、`thrust: small/mid`、`arena: onering/grand`、`blackbox: small/mid` だけ。会場に無い規模を書くと、読み込み時に黙ってその会場の最小規模へ落ちる。種類は performer、block/table/chair/bench/stool/wall/sphere/suitcase、light、trapeze/tissue/cyrwheel/pole。照明は登録の `lightKind:&quot;hang&quot;` だけで、beamは書かない（真上・高さ6m・床へ照射に正規化される）。高リスク装置は各scene.noteに必ず「安全未確認」と書き、flown/wiresを書かない。model、prop、diabolo、teeter、wire、trampoline、cane、car、seri、revolve、deck、curtain、poolは書かず、必要ならnoteで提案する。
 
-姿勢（pose）は次の46語からだけ選ぶ（舞台スケッチ γ0.1.3 の実測）: `stand, walk, reach, open, sit, crouch, kneel, floorsit, agura, seiza, longsit, hizadachi, yankee, allfours, dogeza, handstand, sideflip, run, backflip, hat, sing, juggle, guitar, trumpet, dance1, dance2, dance3, dance4, dance5, windmill, cartwheel-oneside-mid, sideflip-mid, walkover-mid, handstand-mid, frontroll-mid, roundoff-mid, backhandspring-mid, skate, unicycle, skateboard, bicycle, cyr, tuck, lie, supine, sidelie`。未定義の `lie_back / lie_front / lie_side` は使わない（`stand` に化ける）。迷ったら `stand`。
+姿勢（pose）は次の49語からだけ選ぶ（舞台スケッチ γ0.2.0 の実測）: `stand, walk, reach, open, sit, crouch, kneel, floorsit, agura, seiza, longsit, hizadachi, yankee, allfours, dogeza, handstand, sideflip, run, backflip, hat, sing, juggle, guitar, trumpet, violin, bassguitar, accordion, dance1, dance2, dance3, dance4, dance5, windmill, cartwheel-oneside-mid, sideflip-mid, walkover-mid, handstand-mid, frontroll-mid, roundoff-mid, backhandspring-mid, skate, unicycle, skateboard, bicycle, cyr, tuck, lie, supine, sidelie`。未定義の `lie_back / lie_front / lie_side` は使わない（`stand` に化ける）。迷ったら `stand`。
 
 ## 参照と座標
 

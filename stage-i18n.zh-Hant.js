@@ -1634,6 +1634,7 @@
       run: "奔跑", backflip: "後手翻", hat: "戴帽子",
       sideflip: "側空翻",
       sing: "唱歌（持麥）", juggle: "雜耍", guitar: "彈吉他", trumpet: "吹小號",
+      violin: "拉小提琴", bassguitar: "彈貝斯", accordion: "拉手風琴",
       dance1: "舞蹈・舉臂", dance2: "舞蹈・弓步", dance3: "舞蹈・低身舒展",
       dance4: "舞蹈・跳躍", dance5: "舞蹈・扭轉",
       windmill: "風車（windmill）", skate: "輪式溜冰鞋", unicycle: "獨輪車",
