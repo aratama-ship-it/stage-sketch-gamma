@@ -3214,6 +3214,7 @@
           window.SHOSAI_SCRIM.paintFront(ctx, face.quad, finite(piece.sheer, 0), {
             black: isDarkSurface3d(color),
             image: piece.projection || null,
+            words: piece.words || null,
             scale: weaveScale3d(face.quad, finite(box.w, 1)),
           });
         }
@@ -3264,6 +3265,15 @@
           facing, "front");
         if (face && face.frontIsNear) {
           window.SHOSAI_SCRIM.paintProjection(ctx, face.quad, piece.projection,
+            0.92 * (isDarkSurface3d(color) ? window.SHOSAI_SCRIM.BLACK_IMG_FACTOR : 1));
+        }
+      }
+      /* 壁へ映す言葉。絵が無くても映せる。表の面にしか出ないのは絵と同じ。 */
+      if (piece.type === "wall" && piece.words && piece.words.length && window.SHOSAI_SCRIM) {
+        const face = boxFace3d(x, z, y0, y0 + (dims.h || 1), dims.w || 1, dims.d || .4,
+          facing, "front");
+        if (face && face.frontIsNear) {
+          window.SHOSAI_SCRIM.paintWords(ctx, face.quad, piece.words,
             0.92 * (isDarkSurface3d(color) ? window.SHOSAI_SCRIM.BLACK_IMG_FACTOR : 1));
         }
       }

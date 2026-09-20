@@ -111,6 +111,55 @@
     ctx.restore();
   }
 
+  /* 映す言葉（段階3・2026-09-20）。面のどこに・どれだけの大きさで乗るかを、
+     面の四隅から割り出す（u は左0〜右1、v は上0〜下1。背景スクリーンの文字と同じ向き）。
+     ★面は遠近で台形になりうるので、四隅の間を線形に補間して位置を出す。
+       外接矩形で済ませると、傾いた面で文字が面から浮く。
+     ★書体の指定（weight/family）は呼ぶ側が決めて渡す。ここは画面の都合を知らないままにする。 */
+  function paintWords(ctx, quad, words, alpha) {
+    if (!ctx || !Array.isArray(quad) || quad.length !== 4) return;
+    if (!Array.isArray(words) || !words.length) return;
+    const [bl, br, tr, tl] = quad;
+    if (![bl, br, tr, tl].every((p) => p && Number.isFinite(p.x) && Number.isFinite(p.y))) return;
+    const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+    const at = (u, v) => lerp(lerp(tl, tr, u), lerp(bl, br, u), v);
+    // 面の高さ（px）。文字の大きさは面の高さに対する割合で持つ
+    const height = (Math.hypot(tl.x - bl.x, tl.y - bl.y) + Math.hypot(tr.x - br.x, tr.y - br.y)) / 2;
+    if (!(height > 1)) return;
+    const base = clamp01(num(alpha, 1));
+    if (base <= 0.004) return;
+    ctx.save();
+    quadPath(ctx, quad);
+    ctx.clip();
+    words.forEach((word) => {
+      const text = String((word && word.text) || "");
+      if (!text) return;
+      const px = Math.max(8, clamp01(num(word.size, 0.18)) * height);
+      const point = at(clamp01(num(word.u, 0.5)), clamp01(num(word.v, 0.4)));
+      ctx.save();
+      ctx.globalAlpha = base * clamp01(num(word.opacity, 1));
+      ctx.fillStyle = word.color || "#efe7d6";
+      ctx.font = `${word.weight || "700"} ${Math.round(px)}px ${word.family || "serif"}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const angle = num(word.angle, 0);
+      if (angle) {
+        ctx.translate(point.x, point.y);
+        ctx.rotate((angle * Math.PI) / 180);
+        ctx.translate(-point.x, -point.y);
+      }
+      if (word.vertical) {
+        const chars = [...text];
+        const top = point.y - (chars.length - 1) * px * 0.51;
+        chars.forEach((ch, index) => ctx.fillText(ch, point.x, top + index * px * 1.02));
+      } else {
+        ctx.fillText(text, point.x, point.y);
+      }
+      ctx.restore();
+    });
+    ctx.restore();
+  }
+
   /* 正面から見た紗幕1枚。quad は面の四隅（左下・右下・右上・左上の順・画面座標）。
      opts.black=黒紗 / opts.scale=拡大率（織り目の間隔を内部pxで保つため） */
   function paintFront(ctx, quad, sheer, opts) {
@@ -134,7 +183,10 @@
     if (o.image && a.image > 0.004) {
       paintImage(ctx, quad, o.image, a.image * (o.black ? BLACK_IMG_FACTOR : 1));
     }
-    // 3. 映す言葉は段階3。ここでは何も描かない（器だけ空けてある）
+    // 3. 映す言葉。絵と同じ速さで薄れる（前明かりを落とすと絵も字も先に飛ぶ）
+    if (o.words && a.image > 0.004) {
+      paintWords(ctx, quad, o.words, a.image * (o.black ? BLACK_IMG_FACTOR : 1));
+    }
 
     // 4. 織り目
     paintWeave(ctx, quad, a.weave, WEAVE_STEP * scale);
@@ -156,7 +208,7 @@
 
   root.SHOSAI_SCRIM = Object.freeze({
     // paintProjection は紗幕と壁の共通入口。面の四隅と絵を渡すと、切らずに中央へ収める
-    stateOf, opacities, paintFront, paintProjection: paintImage,
+    stateOf, opacities, paintFront, paintProjection: paintImage, paintWords,
     WEAVE_STEP, RIG_BAND, BLACK_IMG_FACTOR,
     BASE_WHITE, BASE_BLACK,
   });

@@ -394,6 +394,12 @@
               </div>
               <div class="stage-cast-list" id="stage-screentext-list"></div>
               <div id="stage-screentext-edit" hidden>
+                <!-- 映す先（2026-09-20・段階3）。既定は背景の壁で、今までのショーは何も変わらない。
+                     紗幕や壁の駒を選ぶと、その面へ言葉が乗る。 -->
+                <label class="stage-control-label" for="stage-screentext-surface">映す先</label>
+                <select id="stage-screentext-surface" class="stage-select">
+                  <option value="">背景の壁</option>
+                </select>
                 <label class="stage-control-label stage-range-label" for="stage-screentext-size">
                   大きさ <span id="stage-screentext-size-value">18%</span>
                 </label>
@@ -3164,18 +3170,18 @@
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=2026092057"></script>
-    <script src="stage-i18n.zh-Hans.js?v=2026092057"></script>
-    <script src="stage-i18n.zh-Hant.js?v=2026092057"></script>
+    <script src="stage-i18n.js?v=2026092059"></script>
+    <script src="stage-i18n.zh-Hans.js?v=2026092059"></script>
+    <script src="stage-i18n.zh-Hant.js?v=2026092059"></script>
 <script src="stage-prompt-i18n.js?v=2026092050"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026091501"></script>
-<script src="stage-samples/feature-test-show.js?v=2026092057"></script>
+<script src="stage-samples/feature-test-show.js?v=2026092059"></script>
 <script src="stage-set-model.js?v=2026091501"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
 <script src="stage-machinery.js?v=2026092055"></script>
-<script src="stage-scrim.js?v=2026092057"></script>
-<script src="stage-first-person.js?v=2026092058"></script>
+<script src="stage-scrim.js?v=2026092059"></script>
+<script src="stage-first-person.js?v=2026092059"></script>
 <script src="stage-audio-store.js?v=2026091501"></script>
 <script src="stage-light-motion.js?v=2026091501"></script>
 <script src="manual/manual-content.js?v=2026091501"></script>
@@ -3191,7 +3197,7 @@
 <script src="gamma-formation-presets.js?v=formation1"></script>
 <script src="gamma-formation-model.js?v=formation1"></script>
 <script src="stage-cue-sheet.js?v=2026091803"></script>
-<script src="stage-sketch.js?v=2026092058"></script>
+<script src="stage-sketch.js?v=2026092059"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-timeline.js?v=2026091991"></script>
 <script src="stage-session.js?v=2026091987"></script>

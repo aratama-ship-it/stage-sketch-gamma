@@ -4462,6 +4462,7 @@
     screenTextFont: document.getElementById("stage-screentext-font"),
     screenTextColor: document.getElementById("stage-screentext-color"),
     screenTextVertical: document.getElementById("stage-screentext-vertical"),
+    screenTextSurface: document.getElementById("stage-screentext-surface"),
     screenTextBlock: document.getElementById("stage-screentext-block"),
     photoFile: document.getElementById("stage-photo-file"),
     photoOn: document.getElementById("stage-photo-on"),
@@ -6228,8 +6229,11 @@
     return {
       id: typeof raw.id === "string" ? raw.id : rid("sctext"),
       text,
-      u: clamp(finite(raw.u, 0.5), 0, 1),          // 壁の中の割合
+      u: clamp(finite(raw.u, 0.5), 0, 1),          // 面の中の割合
       v: clamp(finite(raw.v, 0.4), 0, 1),
+      /* 映す先の駒（紗幕・壁）。空なら今までどおり背景の壁へ映す。
+         ★無いときは器を作らない。既存のショーの保存を太らせないため。 */
+      ...(typeof raw.surfaceId === "string" && raw.surfaceId ? { surfaceId: raw.surfaceId } : {}),
       size: clamp(finite(raw.size, 0.18), 0.03, 0.9),   // 壁の高さに対する割合
       color: validColor(raw.color, "#efe7d6"),
       font: SCREEN_FONTS[raw.font] ? raw.font : "brush",
@@ -9687,54 +9691,72 @@
     return { x: rect.x + t.u * rect.w - w / 2, y: rect.y + t.v * rect.h - h / 2, w, h, px, chars };
   }
 
-  function drawScreenTexts(target, rect) {
-    const list = sc().screenTexts || [];
-    if (!list.length) return;
-    list.forEach((t) => {
-      const box = screenTextBox(t, rect);
-      const spec = SCREEN_FONTS[t.font] || SCREEN_FONTS.brush;
-      target.save();
-      target.beginPath();
-      target.rect(rect.x, rect.y, rect.w, rect.h);
-      target.clip();
-      target.globalAlpha = t.opacity;
-      target.fillStyle = t.color;
-      target.font = `${spec.weight} ${Math.round(box.px)}px ${spec.css}`;
-      target.textAlign = "center";
-      target.textBaseline = "middle";
-      const cx = rect.x + t.u * rect.w;
-      const cy = rect.y + t.v * rect.h;
-      if (t.angle) {
-        target.translate(cx, cy);
-        target.rotate((t.angle * Math.PI) / 180);
-        target.translate(-cx, -cy);
-      }
-      if (t.vertical) {
-        const top = cy - (box.chars.length - 1) * box.px * 0.51;
-        box.chars.forEach((ch, i) => target.fillText(ch, cx, top + i * box.px * 1.02));
-      } else {
-        target.fillText(t.text, cx, cy);
-      }
-      target.restore();
-      // 選んでいる文字は枠を出す（掴んで動かせることを示す）
-      if (t.id === selectedTextId) {
-        target.save();
-        target.strokeStyle = "#d3ac59";
-        target.setLineDash([6, 5]);
-        target.lineWidth = 1.5;
-        target.strokeRect(box.x - 6, box.y - 6, box.w + 12, box.h + 12);
-        target.restore();
-      }
-    });
+  /* 書体の指定は画面側が持ち、stage-scrim.js へは「何をどう書くか」だけ渡す。
+     あちらは画面の都合（どの書体が入っているか）を知らないままにしておく。 */
+  function wordSpec(t) {
+    const spec = SCREEN_FONTS[t.font] || SCREEN_FONTS.brush;
+    return {
+      text: t.text, u: t.u, v: t.v, size: t.size, color: t.color,
+      opacity: t.opacity, angle: t.angle, vertical: t.vertical,
+      weight: spec.weight, family: spec.css,
+    };
   }
 
-  // 背景スクリーンの文字の当たり判定（正面図のみ）
+  /* その面へ映す言葉。surfaceId が空のものは背景の壁のぶん。 */
+  function wordsOn(surfaceId) {
+    const want = surfaceId || null;
+    return (sc().screenTexts || [])
+      .filter((t) => (t.surfaceId || null) === want)
+      .map(wordSpec);
+  }
+
+  const rectAsQuad = (rect) => [
+    { x: rect.x, y: rect.y + rect.h }, { x: rect.x + rect.w, y: rect.y + rect.h },
+    { x: rect.x + rect.w, y: rect.y }, { x: rect.x, y: rect.y },
+  ];
+
+  /* 選んでいる文字の枠（掴んで動かせることを示す）。文字そのものは共通の部品が描く。 */
+  function drawScreenTextOutline(target, t, rect) {
+    if (!t || t.id !== selectedTextId || !rect) return;
+    const box = screenTextBox(t, rect);
+    target.save();
+    target.strokeStyle = "#d3ac59";
+    target.setLineDash([6, 5]);
+    target.lineWidth = 1.5;
+    target.strokeRect(box.x - 6, box.y - 6, box.w + 12, box.h + 12);
+    target.restore();
+  }
+
+  /* 背景の壁へ映す言葉。★紗幕や駒の壁へ映すぶんは、その駒と一緒に描く（drawSolid）。
+     前後の重なりを駒の奥行きに任せるため、ここでまとめて描いてはいけない。 */
+  function drawScreenTexts(target, rect) {
+    const list = (sc().screenTexts || []).filter((t) => !t.surfaceId);
+    if (!list.length || !window.SHOSAI_SCRIM) return;
+    window.SHOSAI_SCRIM.paintWords(target, rectAsQuad(rect), list.map(wordSpec), 1);
+    list.forEach((t) => drawScreenTextOutline(target, t, rect));
+  }
+
+  /* その文字が乗っている面の矩形。★映す先ごとに違うので、文字ごとに引く。
+     掴んで動かすときの u/v もこの矩形で数える。 */
+  function screenTextRect(t, L) {
+    if (!t || !t.surfaceId) return backdropRect(L);
+    const piece = (sc().pieces || []).find((p) => p && p.id === t.surfaceId);
+    if (!piece || !canProjectOn(piece)) return null;
+    const quad = boxFaceQuad(piece, L, pieceParts(piece));
+    if (!quad) return null;
+    const xs = quad.map((point) => point.x);
+    const ys = quad.map((point) => point.y);
+    const x = Math.min(...xs); const y = Math.min(...ys);
+    return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
+  }
+
+  // スクリーンの文字の当たり判定（正面図のみ）
   function screenTextAt(point, L) {
     if (L.plan) return null;
-    const rect = backdropRect(L);
-    if (!rect) return null;
     const list = sc().screenTexts || [];
     for (let i = list.length - 1; i >= 0; i -= 1) {
+      const rect = screenTextRect(list[i], L);
+      if (!rect) continue;
       const box = screenTextBox(list[i], rect);
       if (point.x >= box.x - 6 && point.x <= box.x + box.w + 6
         && point.y >= box.y - 6 && point.y <= box.y + box.h + 6) return list[i];
@@ -9820,6 +9842,35 @@
     if (els.screenTextFont) els.screenTextFont.value = t.font;
     if (els.screenTextColor) els.screenTextColor.value = t.color;
     if (els.screenTextVertical) els.screenTextVertical.checked = t.vertical;
+    syncScreenTextSurface(t);
+  }
+
+  /* 映す先の選択肢。★いまの場面に在る紗幕と壁だけを並べる。
+     指していた駒がその場面に居なければ、選択肢として残して気づけるようにする
+     （黙って背景の壁へ戻すと、言葉が別の場所へ飛んだように見える）。 */
+  function syncScreenTextSurface(t) {
+    const select = els.screenTextSurface;
+    if (!select) return;
+    const options = [{ value: "", label: sx("背景の壁", "Backdrop wall") }];
+    (sc().pieces || []).forEach((piece) => {
+      if (canProjectOn(piece)) options.push({ value: piece.id, label: selectedPieceTitle(piece) });
+    });
+    const current = t.surfaceId || "";
+    if (current && !options.some((o) => o.value === current)) {
+      options.push({ value: current, label: sx("この場面にはいない面", "Surface not in this scene") });
+    }
+    const signature = options.map((o) => `${o.value}:${o.label}`).join("|");
+    if (select.dataset.signature !== signature) {
+      select.dataset.signature = signature;
+      select.innerHTML = "";
+      options.forEach((o) => {
+        const node = document.createElement("option");
+        node.value = o.value;
+        node.textContent = o.label;
+        select.appendChild(node);
+      });
+    }
+    select.value = current;
   }
 
   function addScreenText() {
@@ -11389,9 +11440,14 @@
           window.SHOSAI_SCRIM.paintFront(target, quad, sheer, {
             // 映す絵。読み込み中は null が返り、読み終わると render() が呼ばれて描き直る
             image: piece.imageId && store ? photoImage(store[piece.imageId]) : null,
+            words: wordsOn(piece.id),
             black: isDarkSurface(piece),
             // 織り目を内部px基準に保つ。pos.scale は奥行きによる遠近の縮尺そのもの
             scale: finite(pos && pos.scale, 1),
+          });
+          // 選んでいる文字の枠は面の外接矩形で出す（掴める場所と一致させる）
+          (sc().screenTexts || []).forEach((t) => {
+            if (t.surfaceId === piece.id) drawScreenTextOutline(target, t, screenTextRect(t, L));
           });
           target.restore();
           return;
@@ -11416,6 +11472,20 @@
         if (quad) {
           window.SHOSAI_SCRIM.paintProjection(target, quad, image,
             WALL_PROJECTION_ALPHA * (isDarkSurface(piece) ? window.SHOSAI_SCRIM.BLACK_IMG_FACTOR : 1));
+        }
+      }
+    }
+    /* 壁へ映す言葉。絵が無くても映せる（言葉だけを壁へ出す使い方がある）。 */
+    if (!L.plan && piece.type === "wall" && window.SHOSAI_SCRIM && canProjectOn(piece)) {
+      const words = wordsOn(piece.id);
+      if (words.length) {
+        const quad = boxFaceQuad(piece, L, parts);
+        if (quad) {
+          window.SHOSAI_SCRIM.paintWords(target, quad, words,
+            WALL_PROJECTION_ALPHA * (isDarkSurface(piece) ? window.SHOSAI_SCRIM.BLACK_IMG_FACTOR : 1));
+          (sc().screenTexts || []).forEach((t) => {
+            if (t.surfaceId === piece.id) drawScreenTextOutline(target, t, screenTextRect(t, L));
+          });
         }
       }
     }
@@ -29093,7 +29163,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       if (stext) {
         selectedTextId = stext.id;
         selectedNoteId = null;
-        const rect = backdropRect(L);
+        const rect = screenTextRect(stext, L);
         capture(el, event.pointerId);
         el.dataset.dragging = "true";
         pointerAction = {
@@ -31675,6 +31745,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const machinery = window.SHOSAI_STAGE_MACHINERY;
     const out = {
       projection: visual.imageId && store ? photoImage(store[visual.imageId]) : null,
+      words: wordsOn(visual.id),
     };
     if (visual.type === "curtain") {
       out.sheer = clamp(machinery ? machinery.mechVal(visual, "sheer", 0) : finite(visual.sheer, 0), 0, 100);
@@ -31754,6 +31825,26 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       t.font = SCREEN_FONTS[e.target.value] ? e.target.value : "brush";
       render();
       persistSoon();
+    });
+  }
+  if (els.screenTextSurface) {
+    els.screenTextSurface.addEventListener("change", (e) => {
+      const t = selectedScreenText();
+      if (!t) return;
+      const id = String(e.target.value || "");
+      const piece = id ? (sc().pieces || []).find((p) => p && p.id === id) : null;
+      if (id && !canProjectOn(piece)) { syncScreenTextSurface(t); return; }
+      checkpoint();
+      /* ★面を移ると位置の基準が変わる。端に寄っていた言葉が新しい面からはみ出すので、
+         移した先では真ん中へ戻す（掴んで動かせば済む）。 */
+      if ((t.surfaceId || "") !== id) { t.u = 0.5; t.v = 0.4; }
+      if (id) t.surfaceId = id; else delete t.surfaceId;
+      renderScreenTexts();
+      syncScreenTextControls();
+      render();
+      persistSoon();
+      announce(id ? `${selectedPieceTitle(piece)}へ映すようにしました。`
+        : "背景の壁へ映すようにしました。");
     });
   }
   if (els.screenTextColor) {
