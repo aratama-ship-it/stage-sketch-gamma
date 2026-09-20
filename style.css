@@ -8353,6 +8353,16 @@ html.stage-phone-viewer .stage-single-view-switch { display: none; }
 
 .stage-version-input { margin-bottom: 0; }
 
+/* 2026-09-20 本人指示: ショーの名前とバージョンを1行に並べる（縦を詰める）。
+   バージョンは「v1」程度しか入らないので右に細く置く。
+   ラベルの高さが同じなので、入力欄の上端は自然にそろう。 */
+.stage-project-id-row {
+  display: grid;
+  grid-template-columns: 1fr 5.5em;
+  gap: 8px;
+}
+.stage-project-id-row .stage-text-input { margin-bottom: 7px; }
+
 .stage-version-note {
   color: rgba(240, 231, 214, 0.53);
   font-size: 9.5px;
@@ -9242,7 +9252,7 @@ body.is-panel-dragging {
   flex: 0 1 auto;
   min-width: 0;
   font-size: clamp(13px, 1.1vw, 16px);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.06em;
   color: var(--paper);
   font-variant-numeric: tabular-nums;

@@ -12,7 +12,7 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092051">
+<link rel="stylesheet" href="style.css?v=2026092052">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -157,17 +157,25 @@
             <div class="stage-panel-body">
               <!-- 2026-09-17 本人指示: 「ショーの詳細設定」ポップアップを廃止し、中身をこのパネルへ出した。
                    名前を押して窓を開く→また選ぶ、という二段を無くして、ここから直接選べるようにする。 -->
-              <label class="stage-control-label" for="stage-project-title">ショーの名前</label>
-              <input id="stage-project-title" class="stage-text-input" type="text"
-                     maxlength="60" autocomplete="off" data-1p-ignore
-                     placeholder="無題のショー" aria-label="ショーの名前">
-              <!-- R-18（2026-09-17 本人要望）: 版名は「v」＋数字だけ。v は自動で付き、
-                   「保存してバージョンを更新」を押すと1つ上がる。自由入力はやめた。
-                   要素は残す（JSが els.versionLabel として読み書きしている）。 -->
-              <label class="stage-control-label" for="stage-version-label">バージョン</label>
-              <input id="stage-version-label" class="stage-text-input stage-version-input" type="text"
-                     maxlength="16" autocomplete="off" data-1p-ignore readonly
-                     placeholder="v1" aria-label="バージョン">
+              <!-- 2026-09-20 本人指示: 名前とバージョンは1行に並べて縦を詰める。
+                   バージョンは「v1」程度しか入らないので右に細く置く。 -->
+              <div class="stage-project-id-row">
+                <div class="stage-project-id-field">
+                  <label class="stage-control-label" for="stage-project-title">ショーの名前</label>
+                  <input id="stage-project-title" class="stage-text-input" type="text"
+                         maxlength="60" autocomplete="off" data-1p-ignore
+                         placeholder="無題のショー" aria-label="ショーの名前">
+                </div>
+                <!-- R-18（2026-09-17 本人要望）: 版名は「v」＋数字だけ。v は自動で付き、
+                     「保存してバージョンを更新」を押すと1つ上がる。自由入力はやめた。
+                     要素は残す（JSが els.versionLabel として読み書きしている）。 -->
+                <div class="stage-project-id-field">
+                  <label class="stage-control-label" for="stage-version-label">バージョン</label>
+                  <input id="stage-version-label" class="stage-text-input stage-version-input" type="text"
+                         maxlength="16" autocomplete="off" data-1p-ignore readonly
+                         placeholder="v1" aria-label="バージョン">
+                </div>
+              </div>
               <p class="stage-version-note" id="stage-version-note"></p>
               <div class="stage-project-panel-actions">
                 <!-- T-20（2026-09-18 本人要望）: 名前が動作と合っていなかった。
