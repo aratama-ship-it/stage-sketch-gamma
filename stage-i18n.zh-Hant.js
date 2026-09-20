@@ -1739,11 +1739,11 @@
     },
     curtainKind: {
       front: "大幕（對開）", traveler: "二道幕",
-      drop: "升降幕", leg: "翼幕", cyc: "天幕",
+      drop: "升降幕", leg: "翼幕", cyc: "天幕", scrim: "紗幕",
     },
     machineryState: {
       seriH: "高度 ", spin: "旋轉 ", spinRate: "轉速 ", tilt: "傾斜 ", deckH: "高度 ",
-      open: "開合 ", water: "水位 ", poolH: "台面高度 ",
+      open: "開合 ", water: "水位 ", poolH: "台面高度 ", sheer: "透光度 ",
     },
     tool: {
       select: "選取演員或物件，在舞台上移動。",

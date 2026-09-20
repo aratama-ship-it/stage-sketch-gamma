@@ -128,6 +128,15 @@
           curtain("ホリゾント幕", "Cyclorama", "cyc", .5, .04),
         ],
       },
+      /* 紗幕（2026-09-20・段階1）。舞台の一番客席側へ1枚吊る最小の組。
+         透け（sheer）は 0=映す／100=透かす。場面ごとに値を持ち、場面送りで滑らかに変わる。
+         白紗・黒紗は駒の色で見分ける（種類は増やさない）。 */
+      {
+        id: "scrim-front", nameJa: "紗幕（一番前）", nameEn: "Scrim (downstage)",
+        items: [
+          Object.assign(curtain("紗幕", "Scrim", "scrim", .5, .94, { w: 18, h: 9 }), { sheer: 0 }),
+        ],
+      },
       {
         id: "double-revolve", nameJa: "回り舞台（二重盆）", nameEn: "Double revolve",
         items: [
@@ -201,7 +210,7 @@
         id: makeId("piece"), type: item.kind, setId: set.id,
         u: finite(item.u, .5), v: finite(item.v, .5), facing: finite(item.facing, 0),
         size: 100, color: set.color, curtainKind: item.curtainKind,
-        spin: item.spin, tilt: item.tilt, deckH: item.deckH, open: item.open,
+        spin: item.spin, tilt: item.tilt, deckH: item.deckH, open: item.open, sheer: item.sheer,
         water: item.water, poolH: item.poolH, seriH: item.seriH,
       }, index);
       scene.pieces.push(piece);

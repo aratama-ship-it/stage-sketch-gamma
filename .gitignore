@@ -157,6 +157,7 @@ public-dist/
 !/docs/proscenium-lighting-presets-2026-09-15/proscenium-mid.shosai-light-design.json
 !/docs/proscenium-lighting-presets-2026-09-15/proscenium-large.shosai-light-design.json
 !/stage-machinery.js
+!/stage-scrim.js
 !/stage-prompt-i18n.js
 !/stage-pwa.js
 !/stage-rehearsal-export.js

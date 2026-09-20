@@ -1656,6 +1656,9 @@
     "衣装を明かりの色で染める": "Tint costumes with the light colour",
     "光だまりに入っている演者を、その明かりの色を掛けた色で描く。赤い明かりの下で青い衣装が沈む場面に気づけます（「照明の見え方」が切のときは効きません）": "Draw performers standing in a light pool in their colour multiplied by that light, so you notice when a blue costume sinks under red light (no effect while “How the light looks” is off)",
     "二席目": "Second seat",
+    "透け": "Sheer",
+    "紗幕": "Scrim",
+    "0%・映す": "0% · Project",
     "別の客席から見た小さな絵をもう一つ出す。図が重くなります。照明の見え方はこの小さな絵には出ません": "Show a small extra front view from another seat. This makes the drawing heavier. Lighting is not shown in this small view",
     "比べる客席の位置": "Comparison seat",
     "別の客席から見た正面図（比較用・照明なし）": "Front view from another seat (comparison, no lighting)",
@@ -2008,11 +2011,11 @@
     },
     curtainKind: {
       front: "Front curtain / traveller", traveler: "Mid-stage traveller",
-      drop: "Drop / flying curtain", leg: "Leg", cyc: "Cyclorama",
+      drop: "Drop / flying curtain", leg: "Leg", cyc: "Cyclorama", scrim: "Scrim",
     },
     machineryState: {
       seriH: "Height ", spin: "Rotation ", spinRate: "Spin speed ", tilt: "Tilt ", deckH: "Height ",
-      open: "Opening ", water: "Water level ", poolH: "Floor height ",
+      open: "Opening ", water: "Water level ", poolH: "Floor height ", sheer: "Sheer ",
     },
     tool: {
       select: "Select a performer or object and move it on stage.",

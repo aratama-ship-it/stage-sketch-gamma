@@ -283,6 +283,7 @@
                     <option value="drop">振り落とし・上下する幕</option>
                     <option value="leg">袖幕</option>
                     <option value="cyc">ホリゾント幕</option>
+                    <option value="scrim">紗幕</option>
                   </select>
                 </div>
                 <button type="button" class="btn-quiet" data-machinery-kind="pool">水面・可動プール床</button>
@@ -977,6 +978,12 @@
                 <div id="stage-curtain-controls" hidden>
                   <label class="stage-control-label stage-range-label" for="stage-piece-open">開き <span id="stage-piece-open-value">0%開</span></label>
                   <input type="range" id="stage-piece-open" min="0" max="100" step="1" value="0">
+                  <!-- 紗幕の透け（2026-09-20・段階1）。0=映す／100=透かす。
+                       幕の種類が「紗幕」のときだけ出す（他の幕には透けが無いため）。 -->
+                  <div id="stage-scrim-controls" hidden>
+                    <label class="stage-control-label stage-range-label" for="stage-piece-sheer">透け <span id="stage-piece-sheer-value">0%・映す</span></label>
+                    <input type="range" id="stage-piece-sheer" min="0" max="100" step="1" value="0">
+                  </div>
                 </div>
                 <div id="stage-pool-controls" hidden>
                   <label class="stage-control-label stage-range-label" for="stage-piece-water">水位 <span id="stage-piece-water-value">0.90m</span></label>
@@ -3144,16 +3151,17 @@
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=2026092051"></script>
-    <script src="stage-i18n.zh-Hans.js?v=2026092054"></script>
-    <script src="stage-i18n.zh-Hant.js?v=2026092050"></script>
+    <script src="stage-i18n.js?v=2026092055"></script>
+    <script src="stage-i18n.zh-Hans.js?v=2026092055"></script>
+    <script src="stage-i18n.zh-Hant.js?v=2026092055"></script>
 <script src="stage-prompt-i18n.js?v=2026092050"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026091501"></script>
-<script src="stage-samples/feature-test-show.js?v=2026092050"></script>
+<script src="stage-samples/feature-test-show.js?v=2026092055"></script>
 <script src="stage-set-model.js?v=2026091501"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
-<script src="stage-machinery.js?v=2026091501"></script>
+<script src="stage-machinery.js?v=2026092055"></script>
+<script src="stage-scrim.js?v=2026092055"></script>
 <script src="stage-first-person.js?v=2026092046"></script>
 <script src="stage-audio-store.js?v=2026091501"></script>
 <script src="stage-light-motion.js?v=2026091501"></script>
@@ -3170,7 +3178,7 @@
 <script src="gamma-formation-presets.js?v=formation1"></script>
 <script src="gamma-formation-model.js?v=formation1"></script>
 <script src="stage-cue-sheet.js?v=2026091803"></script>
-<script src="stage-sketch.js?v=2026092051"></script>
+<script src="stage-sketch.js?v=2026092055"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-timeline.js?v=2026091991"></script>
 <script src="stage-session.js?v=2026091987"></script>

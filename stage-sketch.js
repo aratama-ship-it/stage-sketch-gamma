@@ -4977,6 +4977,9 @@
     pieceDeckHValue: document.getElementById("stage-piece-deck-h-value"),
     pieceOpen: document.getElementById("stage-piece-open"),
     pieceOpenValue: document.getElementById("stage-piece-open-value"),
+    scrimControls: document.getElementById("stage-scrim-controls"),
+    pieceSheer: document.getElementById("stage-piece-sheer"),
+    pieceSheerValue: document.getElementById("stage-piece-sheer-value"),
     pieceWater: document.getElementById("stage-piece-water"),
     pieceWaterValue: document.getElementById("stage-piece-water-value"),
     piecePoolH: document.getElementById("stage-piece-pool-h"),
@@ -5997,7 +6000,7 @@
       normalized.deckH = clamp(finite(piece.deckH, 0), -4, 8);
     }
     if (type === "curtain") {
-      normalized.curtainKind = ["front", "traveler", "drop", "leg", "cyc"].includes(piece.curtainKind)
+      normalized.curtainKind = ["front", "traveler", "drop", "leg", "cyc", "scrim"].includes(piece.curtainKind)
         ? piece.curtainKind : "front";
       normalized.open = clamp(finite(piece.open, 0), 0, 100);
     }
@@ -6408,7 +6411,7 @@
    * 丸ごと控えると、シーンの数だけ同じ値の写しが保存に溜まる。 */
   const STASH_KEYS = ["type", "u", "v", "size", "facing", "pose", "lookMode", "look",
     "poleSide", "poleH", "tissueH", "trapMode", "diaboloMode", "seriH", "spin", "spinRate", "tilt", "deckH",
-    "curtainKind", "open", "water", "poolH", "glow", "beam", "route", "locked", "name"];
+    "curtainKind", "open", "sheer", "water", "poolH", "glow", "beam", "route", "locked", "name"];
 
   function normalizeStash(raw) {
     const out = {};
@@ -6655,7 +6658,7 @@
                 framed: Boolean(t.framed),
                 // T-30: 枠の幅。無ければ未設定のまま（描画側が自動計算へ落ちる）
                 frameWidth: Number.isFinite(Number(t.frameWidth)) ? clamp(Number(t.frameWidth), 0.04, 1.5) : undefined,
-                curtainKind: kind === "curtain" && ["front", "traveler", "drop", "leg", "cyc"].includes(t.curtainKind)
+                curtainKind: kind === "curtain" && ["front", "traveler", "drop", "leg", "cyc", "scrim"].includes(t.curtainKind)
                   ? t.curtainKind : undefined,
                 confidence: t.confidence === "unverified" ? "unverified" : undefined,
                 sourceNote: typeof t.sourceNote === "string" ? t.sourceNote.slice(0, 200) : "",
@@ -11338,12 +11341,80 @@
       return;
     }
 
+    /* ★紗幕（2026-09-20・段階1）: 遮る布ではなく透ける膜なので、箱として塗らない。
+       面の四隅と透け具合だけを stage-scrim.js へ渡す（本体に描き方を持たせない）。
+       ★描く順: 紗幕は光の筋より「手前」。実物でも紗の奥の光は紗を通して沈んで見えるため、
+         後から重ねるとそのとおりになる（本人承認 2026-09-20）。
+         駒の並べ替えは既存どおり奥行き v だけが決める＝層を管理する画面は作らない。 */
+    if (!L.plan && piece.type === "curtain" && window.SHOSAI_SCRIM) {
+      const owner = pieceSet(piece);
+      const kind = piece.curtainKind || (owner && owner.curtainKind) || "front";
+      if (kind === "scrim") {
+        const quad = curtainFaceQuad(piece, L, parts);
+        if (quad) {
+          const machinery = window.SHOSAI_STAGE_MACHINERY;
+          const sheer = clamp(machinery ? machinery.mechVal(piece, "sheer", 0) : finite(piece.sheer, 0), 0, 100);
+          window.SHOSAI_SCRIM.paintFront(target, quad, sheer, {
+            black: isDarkScrim(piece),
+            // 織り目を内部px基準に保つ。pos.scale は奥行きによる遠近の縮尺そのもの
+            scale: finite(pos && pos.scale, 1),
+          });
+          target.restore();
+          return;
+        }
+      }
+    }
+
     parts.forEach((part) => {
       if (part.kind === "disc") paintDisc(target, piece, L, part);
       else if (part.kind === "line" || part.kind === "ring") paintRigging(target, piece, L, part);
       else paintBox(target, piece, L, part);
     });
     target.restore();
+  }
+
+  /* 紗幕の面（客席を向いた側）の四隅を、幕の箱の前面から取る。
+     箱と同じ投影を使うので、向き・傾き・奥行きの扱いが他の駒とずれない。
+     返りは 左下・右下・右上・左上 の順（画面座標）。 */
+  function curtainFaceQuad(piece, L, parts) {
+    const part = (parts || []).find((item) => item && !item.kind);
+    if (!part) return null;
+    const rad = ((piece.facing || 0) * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const at = (ux, uy) => {
+      const lx = part.ox + ux;
+      const ly = part.oz + uy;
+      const p = floorPoint(piece, lx * cos - ly * sin, lx * sin + ly * cos, L);
+      const per = perMetre(p, L);
+      const bend = L.tilt;
+      const raw = p.rawY === undefined ? p.y : p.rawY;
+      return {
+        x: p.x,
+        y: bend(raw - part.lift * per.y),
+        top: bend(raw - (part.lift + part.h) * per.y),
+      };
+    };
+    const hw = part.w / 2;
+    const hd = part.d / 2;
+    const bl = at(-hw, -hd);
+    const br = at(hw, -hd);
+    if (![bl.x, bl.y, br.x, br.y].every(Number.isFinite)) return null;
+    return [
+      { x: bl.x, y: bl.y }, { x: br.x, y: br.y },
+      { x: br.x, y: br.top }, { x: bl.x, y: bl.top },
+    ];
+  }
+
+  /* 黒紗か白紗か。駒の色が暗ければ黒紗として扱う（種類を増やさない）。 */
+  function isDarkScrim(piece) {
+    const hex = String((piece && piece.color) || "").replace("#", "");
+    if (hex.length !== 6) return false;
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    if (![r, g, b].every(Number.isFinite)) return false;
+    return (0.299 * r + 0.587 * g + 0.114 * b) < 96;
   }
 
   /* 吊りのロープが道具のどこへ取り付き、上でどれだけ寄るか。
@@ -20858,13 +20929,16 @@
 
   const curtainKindName = (kind) => tm("curtainKind", kind, ({
     front: "前幕・引き割り", traveler: "中割り幕", drop: "振り落とし・上下する幕",
-    leg: "袖幕", cyc: "ホリゾント幕",
+    leg: "袖幕", cyc: "ホリゾント幕", scrim: "紗幕",
   })[kind] || kind);
 
   function machineryDefaults(kind, curtainKind) {
     if (kind === "revolve") return { spin: 0 };
     if (kind === "deck") return { tilt: 0, deckH: 0 };
-    if (kind === "curtain") return { curtainKind, open: 0 };
+    /* ★透けは紗幕だけが持つ。他の幕にも付けると、効かない値が全ショーの保存データへ増える。 */
+    if (kind === "curtain") return curtainKind === "scrim"
+      ? { curtainKind, open: 0, sheer: 0 }
+      : { curtainKind, open: 0 };
     if (kind === "pool") return { water: .9, poolH: -3 };
     if (kind === "seri") return { seriH: 0 };
     return {};
@@ -23276,7 +23350,7 @@
     seri: { seriH: 0 },
     revolve: { spin: 0, spinRate: 0 },
     deck: { tilt: 0, deckH: 0 },
-    curtain: { open: 0 },
+    curtain: { open: 0, sheer: 0 },
     pool: { water: 0.9, poolH: -3 },
   };
 
@@ -30613,6 +30687,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   bindMachineryControl(els.pieceTilt, "deck", "tilt", 0, -60, 60);
   bindMachineryControl(els.pieceDeckH, "deck", "deckH", 0, -4, 8);
   bindMachineryControl(els.pieceOpen, "curtain", "open", 0, 0, 100);
+  bindMachineryControl(els.pieceSheer, "curtain", "sheer", 0, 0, 100);
   bindMachineryControl(els.pieceWater, "pool", "water", .9, 0, 3);
   bindMachineryControl(els.piecePoolH, "pool", "poolH", -3, -4, 0);
   if (els.showFlown) {
@@ -31219,7 +31294,12 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       { key: "tilt", label: "傾斜角", min: -60, max: 60, fallback: 0, format: "deg" },
       { key: "deckH", label: "高さ", min: -4, max: 8, fallback: 0, format: "m" },
     ],
-    curtain: [{ key: "open", label: "開き", min: 0, max: 100, fallback: 0, format: "open" }],
+    /* ★紗幕の透け（2026-09-20）: 0=映す／100=透かす。ここに1行足すだけで、
+       つまみ・保存・場面送りのアニメーションが既存の仕組みに乗る。 */
+    curtain: [
+      { key: "open", label: "開き", min: 0, max: 100, fallback: 0, format: "open" },
+      { key: "sheer", label: "透け", min: 0, max: 100, fallback: 0, format: "sheer" },
+    ],
     pool: [
       { key: "water", label: "水位", min: 0, max: 3, fallback: .9, format: "m" },
       { key: "poolH", label: "床の高さ", min: -4, max: 0, fallback: -3, format: "m" },
@@ -31234,6 +31314,13 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (format === "deg") return sx(`${value}度`, `${value}°`);
     if (format === "degPerSec") return sx(`${value} 度/秒`, `${value} °/s`);
     if (format === "open") return sx(`${Math.round(value)}%開`, `${Math.round(value)}% open`);
+    if (format === "sheer") {
+      const scrim = window.SHOSAI_SCRIM;
+      const name = scrim ? scrim.stateOf(value) : "between";
+      const ja = { project: "映す", between: "渡り", through: "透かす" }[name];
+      const en = { project: "Project", between: "Between", through: "See through" }[name];
+      return sx(`${Math.round(value)}%・${ja}`, `${Math.round(value)}% · ${en}`);
+    }
     return `${value.toFixed(2)}m`;
   }
 
@@ -31317,6 +31404,13 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     syncMachineControl(els.pieceTilt, els.pieceTiltValue, "tilt", 0, -60, 60, "deg");
     syncMachineControl(els.pieceDeckH, els.pieceDeckHValue, "deckH", 0, -4, 8, "m");
     syncMachineControl(els.pieceOpen, els.pieceOpenValue, "open", 0, 0, 100, "open");
+    /* 透けは紗幕にしか無い。他の幕でつまみを出すと、効かないものを触らせることになる。 */
+    if (els.scrimControls) {
+      const owner = piece ? pieceSet(piece) : null;
+      const kind = piece && (piece.curtainKind || (owner && owner.curtainKind) || "front");
+      els.scrimControls.hidden = !(machineryType === "curtain" && kind === "scrim");
+    }
+    syncMachineControl(els.pieceSheer, els.pieceSheerValue, "sheer", 0, 0, 100, "sheer");
     syncMachineControl(els.pieceWater, els.pieceWaterValue, "water", .9, 0, 3, "m");
     syncMachineControl(els.piecePoolH, els.piecePoolHValue, "poolH", -3, -4, 0, "m");
     if (els.machinerySceneDiff) {
