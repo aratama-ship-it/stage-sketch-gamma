@@ -4980,6 +4980,10 @@
     scrimControls: document.getElementById("stage-scrim-controls"),
     pieceSheer: document.getElementById("stage-piece-sheer"),
     pieceSheerValue: document.getElementById("stage-piece-sheer-value"),
+    scrimImageFile: document.getElementById("stage-scrim-image-file"),
+    scrimImageOn: document.getElementById("stage-scrim-image-on"),
+    scrimImageClear: document.getElementById("stage-scrim-image-clear"),
+    scrimImageNote: document.getElementById("stage-scrim-image-note"),
     pieceWater: document.getElementById("stage-piece-water"),
     pieceWaterValue: document.getElementById("stage-piece-water-value"),
     piecePoolH: document.getElementById("stage-piece-pool-h"),
@@ -6003,6 +6007,15 @@
       normalized.curtainKind = ["front", "traveler", "drop", "leg", "cyc", "scrim"].includes(piece.curtainKind)
         ? piece.curtainKind : "front";
       normalized.open = clamp(finite(piece.open, 0), 0, 100);
+      /* 紗幕だけが透けと映す絵を持つ。他の幕に付けると、効かない値が保存へ増える。
+         ★値が無いときは器を作らない（既存ショーのバイト数を変えないため）。 */
+      if (normalized.curtainKind === "scrim") {
+        if (piece.sheer !== undefined) normalized.sheer = clamp(finite(piece.sheer, 0), 0, 100);
+        if (typeof piece.imageId === "string" && piece.imageId) normalized.imageId = piece.imageId;
+      } else {
+        delete normalized.sheer;
+        delete normalized.imageId;
+      }
     }
     if (type === "pool") {
       normalized.water = clamp(finite(piece.water, 0.9), 0, 3);
@@ -6411,7 +6424,7 @@
    * 丸ごと控えると、シーンの数だけ同じ値の写しが保存に溜まる。 */
   const STASH_KEYS = ["type", "u", "v", "size", "facing", "pose", "lookMode", "look",
     "poleSide", "poleH", "tissueH", "trapMode", "diaboloMode", "seriH", "spin", "spinRate", "tilt", "deckH",
-    "curtainKind", "open", "sheer", "water", "poolH", "glow", "beam", "route", "locked", "name"];
+    "curtainKind", "open", "sheer", "imageId", "water", "poolH", "glow", "beam", "route", "locked", "name"];
 
   function normalizeStash(raw) {
     const out = {};
@@ -6478,12 +6491,20 @@
     const used = new Set();
     (project.scenes || []).forEach((scene) => {
       if (scene.photo && scene.photo.id) used.add(scene.photo.id);
+      /* ★駒が映している絵も「使用中」に数える（2026-09-20・紗幕 段階2）。
+         数え忘れると、保存した直後に紗幕の絵だけが消える。 */
+      (scene.pieces || []).forEach((piece) => {
+        if (piece && typeof piece.imageId === "string" && piece.imageId) used.add(piece.imageId);
+      });
     });
     Object.keys(project.photos).forEach((id) => {
       if (!used.has(id)) delete project.photos[id];
     });
     (project.scenes || []).forEach((scene) => {
       if (scene.photo && !project.photos[scene.photo.id]) scene.photo = null;
+      (scene.pieces || []).forEach((piece) => {
+        if (piece && piece.imageId && !project.photos[piece.imageId]) delete piece.imageId;
+      });
     });
   }
 
@@ -11354,7 +11375,10 @@
         if (quad) {
           const machinery = window.SHOSAI_STAGE_MACHINERY;
           const sheer = clamp(machinery ? machinery.mechVal(piece, "sheer", 0) : finite(piece.sheer, 0), 0, 100);
+          const store = state.project.photos;
           window.SHOSAI_SCRIM.paintFront(target, quad, sheer, {
+            // 映す絵。読み込み中は null が返り、読み終わると render() が呼ばれて描き直る
+            image: piece.imageId && store ? photoImage(store[piece.imageId]) : null,
             black: isDarkScrim(piece),
             // 織り目を内部px基準に保つ。pos.scale は奥行きによる遠近の縮尺そのもの
             scale: finite(pos && pos.scale, 1),
@@ -31409,6 +31433,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       const owner = piece ? pieceSet(piece) : null;
       const kind = piece && (piece.curtainKind || (owner && owner.curtainKind) || "front");
       els.scrimControls.hidden = !(machineryType === "curtain" && kind === "scrim");
+      if (!els.scrimControls.hidden) syncScrimImage();
     }
     syncMachineControl(els.pieceSheer, els.pieceSheerValue, "sheer", 0, 0, 100, "sheer");
     syncMachineControl(els.pieceWater, els.pieceWaterValue, "water", .9, 0, 3, "m");
@@ -31531,22 +31556,32 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     }
   }
 
-  /* 取り込んだ画像は、そのまま持たずに壁の大きさへ縮めて焼き直す。
-     ★写真1枚が数MBあると、端末の保存枠（5MB前後）をこれだけで使い切る。 */
-  const PHOTO_MAX_W = 1400;
-  function loadPhotoFile(file) {
+  /* 取り込んだ画像は、そのまま持たずに貼る面の大きさへ縮めて焼き直す。
+     ★写真1枚が数MBあると、端末の保存枠（5MB前後）をこれだけで使い切る。
+     面ごとに要る細かさが違うので上限幅は呼ぶ側が決める。置き場（project.photos）は共通。 */
+  const PHOTO_MAX_W = 1400;        // 壁の背景写真。画面いっぱいに広がるので粗さが出る
+  const PROJECTION_MAX_W = 640;    // 紗幕へ映す絵。面が小さく紗の地に沈むため細部は要らない
+
+  /* 面へ貼る絵を1枚、置き場へ取り込む共通の道。
+     壁の背景写真も紗幕の映す絵もここを通る（縮小・重複の使い回し・枠の確認は同じ）。
+     keep=いま使っている画像のid（入れ替えるので枠の数から除く）。
+     done(id) が呼ばれた時点で checkpoint は済んでいる。 */
+  function importSurfaceImage(file, opts, done) {
     if (!file) return;
+    const o = opts || {};
+    const maxW = Math.max(1, finite(o.maxW, PHOTO_MAX_W));
+    const quality = clamp(finite(o.quality, 0.82), 0.3, 1);
     const reader = new FileReader();
     reader.onload = () => {
       const img = new Image();
       img.onload = () => {
-        const scale = Math.min(1, PHOTO_MAX_W / img.naturalWidth);
+        const scale = Math.min(1, maxW / img.naturalWidth);
         const w = Math.max(1, Math.round(img.naturalWidth * scale));
         const h = Math.max(1, Math.round(img.naturalHeight * scale));
         const off = document.createElement("canvas");
         off.width = w; off.height = h;
         off.getContext("2d").drawImage(img, 0, 0, w, h);
-        const src = off.toDataURL("image/jpeg", 0.82);
+        const src = off.toDataURL("image/jpeg", quality);
         if (src.length > PHOTO_MAX_BYTES) {
           announce("この画像は大きすぎます。もう少し小さいものを選んでください。");
           return;
@@ -31554,24 +31589,70 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         const store = state.project.photos || {};
         // 同じ画をもう一度選んだときは、置き場のものを使い回す
         const already = Object.keys(store).find((key) => store[key] === src);
-        const retained = Object.keys(store).filter((id) => id !== (sc().photo && sc().photo.id));
-        if (!already && !hasCapacity(retained, "photos", 1, "背景写真")) return;
+        const retained = Object.keys(store).filter((id) => id !== o.keep);
+        if (!already && !hasCapacity(retained, "photos", 1, o.label || "背景写真")) return;
         checkpoint();
         if (!state.project.photos) state.project.photos = store;
         const id = already || rid("photo");
         store[id] = src;
-        sc().photo = { id, bright: sc().photo ? sc().photo.bright : 100 };
+        done(id);
         sweepPhotos(state.project);
-        syncPhotoControls();
         render();
         persistSoon();
-        announce("背景に写真を貼りました。");
       };
       img.onerror = () => announce("この画像は読み込めませんでした。");
       img.src = String(reader.result || "");
     };
     reader.onerror = () => announce("この画像は読み込めませんでした。");
     reader.readAsDataURL(file);
+  }
+
+  function loadPhotoFile(file) {
+    importSurfaceImage(file, {
+      maxW: PHOTO_MAX_W, quality: 0.82, label: "背景写真",
+      keep: sc().photo && sc().photo.id,
+    }, (id) => {
+      sc().photo = { id, bright: sc().photo ? sc().photo.bright : 100 };
+      syncPhotoControls();
+      announce("背景に写真を貼りました。");
+    });
+  }
+
+  /* 紗幕へ映す絵。駒が置き場のidを指すだけで、絵そのものは持たない。 */
+  function loadScrimImageFile(file) {
+    const piece = selectedPiece();
+    if (!piece) return;
+    importSurfaceImage(file, {
+      maxW: PROJECTION_MAX_W, quality: 0.7, label: "映す絵",
+      keep: piece.imageId,
+    }, (id) => {
+      piece.imageId = id;
+      syncScrimImage();
+      announce("紗幕に映す絵を選びました。");
+    });
+  }
+
+  function clearScrimImage() {
+    const piece = selectedPiece();
+    if (!piece || !piece.imageId) return;
+    checkpoint();
+    delete piece.imageId;
+    sweepPhotos(state.project);
+    syncScrimImage();
+    render();
+    persistSoon();
+    announce("映す絵を外しました。");
+  }
+
+  /* 映す絵の操作欄を、いま選んでいる駒の状態に合わせる。 */
+  function syncScrimImage() {
+    const piece = selectedPiece();
+    const src = piece && piece.imageId ? (state.project.photos || {})[piece.imageId] : "";
+    if (els.scrimImageOn) els.scrimImageOn.hidden = !src;
+    if (src && els.scrimImageNote) {
+      const kb = Math.round(src.length / 1024);
+      els.scrimImageNote.textContent = sx(`およそ${kb}KB。ショーと一緒にこの端末へ保存されます。`, `About ${kb} KB, kept in this browser with the show.`);
+    }
   }
 
   if (els.screenTextAdd) els.screenTextAdd.addEventListener("click", addScreenText);
@@ -31636,6 +31717,13 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       event.target.value = "";
     });
   }
+  if (els.scrimImageFile) {
+    els.scrimImageFile.addEventListener("change", (event) => {
+      loadScrimImageFile(event.target.files && event.target.files[0]);
+      event.target.value = "";
+    });
+  }
+  if (els.scrimImageClear) els.scrimImageClear.addEventListener("click", clearScrimImage);
   if (els.photoBright) {
     els.photoBright.addEventListener("input", (event) => {
       const photo = sc().photo;

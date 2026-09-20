@@ -87,6 +87,26 @@
     ctx.restore();
   }
 
+  /* 映す絵。面の中央へ、縦横比を保って収める（レターボックス）。
+     面は遠近で台形になりうるが、絵は矩形として中央に置く（紗幕は面が小さく、
+     台形に歪ませて貼ると絵の内容より歪みのほうが目立つため）。 */
+  function paintImage(ctx, quad, image, alpha) {
+    if (!image || !image.naturalWidth || !image.naturalHeight) return;
+    const b = boundsOf(quad);
+    const boxW = b.x1 - b.x0;
+    const boxH = b.y1 - b.y0;
+    if (boxW <= 1 || boxH <= 1) return;
+    const scale = Math.min(boxW / image.naturalWidth, boxH / image.naturalHeight);
+    const w = image.naturalWidth * scale;
+    const h = image.naturalHeight * scale;
+    ctx.save();
+    quadPath(ctx, quad);
+    ctx.clip();
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(image, b.x0 + (boxW - w) / 2, b.y0 + (boxH - h) / 2, w, h);
+    ctx.restore();
+  }
+
   /* 正面から見た紗幕1枚。quad は面の四隅（左下・右下・右上・左上の順・画面座標）。
      opts.black=黒紗 / opts.scale=拡大率（織り目の間隔を内部pxで保つため） */
   function paintFront(ctx, quad, sheer, opts) {
@@ -104,7 +124,13 @@
     quadPath(ctx, quad);
     ctx.fill();
 
-    // 2・3. 映す絵／映す言葉は段階2以降。ここでは何も描かない（器だけ空けてある）
+    /* 2. 映す絵。★レターボックス＝縦横比を保って面へ収める（引き伸ばさない・切らない）。
+          プロジェクターは絵を切らずに余白を作るので、背景写真の「覆って切る」とは逆にする。
+          余白は紗の地のまま残す（そこが光らないことが「投影されている」ことを言う）。 */
+    if (o.image && a.image > 0.004) {
+      paintImage(ctx, quad, o.image, a.image * (o.black ? BLACK_IMG_FACTOR : 1));
+    }
+    // 3. 映す言葉は段階3。ここでは何も描かない（器だけ空けてある）
 
     // 4. 織り目
     paintWeave(ctx, quad, a.weave, WEAVE_STEP * scale);
