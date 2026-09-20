@@ -9252,7 +9252,10 @@ body.is-panel-dragging {
   flex: 0 1 auto;
   min-width: 0;
   font-size: clamp(13px, 1.1vw, 16px);
-  font-weight: 600;
+  /* ★日本語フォント（ヒラギノ角ゴ等）は太さの実体が2種類しかない。
+     400と500は同じ細さ、600と700は同じ太さで描かれるので、600へ下げても見た目は変わらない。
+     細くしたいときは500以下まで下げること（2026-09-20 本人指摘・実測で確認）。 */
+  font-weight: 500;
   letter-spacing: 0.06em;
   color: var(--paper);
   font-variant-numeric: tabular-nums;
