@@ -12,7 +12,7 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092049">
+<link rel="stylesheet" href="style.css?v=2026092051">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -117,7 +117,7 @@
              href="https://aratama-ship-it.github.io/stage-sketch-gamma/public/ai-json/"
              target="_blank" rel="noopener noreferrer"
              aria-label="AI showwright for StageSketch"
-             title="AI showwright for StageSketch">AI</a>
+             title="AI showwright for StageSketch"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/><path d="M18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.456-2.456L14.25 6l1.035-.259a3.375 3.375 0 0 0 2.456-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg></a>
           <button type="button" class="stage-lang stage-gear-btn" id="stage-prefs-btn" data-tablet-icon="⚙" aria-label="設定" title="設定（機能のオン/オフ・言語）"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.2" stroke-width="1.3"/><circle cx="8" cy="8" r="1.4" stroke-width="1.3"/><path stroke-width="2.3" d="M8 3.10V1.90M11.94 5.55l1.04-.60M11.94 10.45l1.04.60M8 12.90v1.20M4.06 10.45l-1.04.60M4.06 5.55l-1.04-.60"/></svg></span></button>
           <div class="stage-panel-visibility-control">
             <button type="button" class="stage-lang stage-panel-visibility-btn" id="stage-panels-toggle"
@@ -752,13 +752,6 @@
                         role="img" aria-label="演者と物を配置し、背景を塗れる正面から見た舞台"></canvas>
                 <!-- 選んだ演者の姿勢を選ぶ帯。舞台下端へ半透明で重ねる。 -->
                 <div class="stage-pose-strip" id="stage-pose-strip" hidden></div>
-                <!-- G-J: 二席で見比べる。読むだけの小さな絵（照明は出ない）。
-                     設定「二席で見比べる」を入れたときだけ出す -->
-                <div class="stage-front2-pip" id="stage-front2-pip" hidden>
-                  <select id="stage-front2-seat" aria-label="比べる客席の位置"></select>
-                  <canvas id="stage-canvas-2" width="480" height="270"
-                          role="img" aria-label="別の客席から見た正面図（比較用・照明なし）"></canvas>
-                </div>
               </div>
               </div>
               <div class="stage-single-view-switch" data-single-view-switch="front"
@@ -849,6 +842,20 @@
         </section>
 
         <aside class="stage-inspector stage-col" data-col="right" id="stage-col-right" aria-label="右の道具列">
+          <!-- G-J（2026-09-20）: 別の客席から見た正面図を、シーンパネルと同じ「パネル」として持つ。
+               既定は非表示（設定パネル・パネルON/OFFメニューの「二席目」から出す）。 -->
+          <section class="stage-panel" data-panel="seat2" data-title="二席目">
+            <div class="stage-panel-body">
+              <div class="stage-field-row">
+                <label class="stage-field-label" for="stage-front2-seat">比べる客席の位置</label>
+                <select id="stage-front2-seat" class="stage-select"></select>
+              </div>
+              <div class="stage-front2-canvas-wrap">
+                <canvas id="stage-canvas-2" width="480" height="270"
+                        role="img" aria-label="別の客席から見た正面図（比較用・照明なし）"></canvas>
+              </div>
+            </div>
+          </section>
           <section class="stage-panel" data-panel="inspector" data-title="選んだもの">
             <div class="stage-panel-body">
             <div id="stage-selection-controls" hidden>
@@ -3129,7 +3136,7 @@
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=2026092050"></script>
+    <script src="stage-i18n.js?v=2026092051"></script>
     <script src="stage-i18n.zh-Hans.js?v=2026092050"></script>
     <script src="stage-i18n.zh-Hant.js?v=2026092050"></script>
 <script src="stage-prompt-i18n.js?v=2026092050"></script>
@@ -3155,7 +3162,7 @@
 <script src="gamma-formation-presets.js?v=formation1"></script>
 <script src="gamma-formation-model.js?v=formation1"></script>
 <script src="stage-cue-sheet.js?v=2026091803"></script>
-<script src="stage-sketch.js?v=2026092050"></script>
+<script src="stage-sketch.js?v=2026092051"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-timeline.js?v=2026091991"></script>
 <script src="stage-session.js?v=2026091987"></script>

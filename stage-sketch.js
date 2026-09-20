@@ -4673,7 +4673,6 @@
     venueSummarySize: document.getElementById("stage-venue-summary-size"),
     bgSection: document.getElementById("stage-bg-section"),
     seatList: document.getElementById("stage-seat-list"),
-    front2Pip: document.getElementById("stage-front2-pip"),
     front2Seat: document.getElementById("stage-front2-seat"),
     canvas2: document.getElementById("stage-canvas-2"),
     projectSummaryTitle: document.getElementById("stage-project-summary-title"),
@@ -5287,13 +5286,6 @@
        ★look（上衣の色など）は描画に使われていない＝画面に出ている色は piece.color。染めるのはそれ。 */
     { key: "costumeLight", label: "衣装を明かりの色で染める", def: false,
       hint: "光だまりに入っている演者を、その明かりの色を掛けた色で描く。赤い明かりの下で青い衣装が沈む場面に気づけます（「照明の見え方」が切のときは効きません）" },
-    /* G-J 二席同時ビュー（2026-09-20・本人決定＝v1は照明なし）。
-       正面図の隅に、別の客席から見た小さな絵をもう一つ描く。読むだけで操作はできない。
-       照明（光だまり・光の筋・レーザー）は今回は出さない — drawStageの光キュー描画は
-       target===ctx（メインの正面キャンバス）だけを見て決まっており、そこを緩めると
-       いま並行で手を入れている照明描画と衝突するため、次の段階の課題として送る。 */
-    { key: "twoSeatView", label: "二席で見比べる", def: false,
-      hint: "正面図の隅に、別の客席から見た小さな絵をもう一つ出す。図が重くなります。照明の見え方はこの小さな絵には出ません" },
     { key: "pitchExport", label: "ピッチ書き出し", def: true,
       hint: "書き出しモーダルに「ピッチとして」が出る。作図の線を落とし、光と空気を効かせた一枚絵と、生成AI用の条件文を出す" },
   ];
@@ -5320,6 +5312,12 @@
       hint: "背景の地の色・塗る色・筆の太さなど、背景を描く欄を出す" },
     { key: "panelScenes", panel: "scenes", label: "シーン", def: true,
       hint: "シーンを足す・並べ替える" },
+    /* G-J（2026-09-20・本人指示でパネル化）: 別の客席から見た小さな絵。読むだけで操作はできない。
+       照明（光だまり・光の筋・レーザー）は出さない — drawStageの光キュー描画は
+       target===ctx（メインの正面キャンバス）だけを見て決まっており、そこを緩めると
+       並行で手を入れている照明描画と衝突するため、次の段階の課題として送る。 */
+    { key: "panelSeat2", panel: "seat2", label: "二席目", def: false,
+      hint: "別の客席から見た小さな絵をもう一つ出す。図が重くなります。照明の見え方はこの小さな絵には出ません" },
     { key: "panelInspector", panel: "inspector", label: "選んだもの", def: true,
       hint: "舞台の上で選ぶと、姿勢・向き・重なりを変えられます。名前・色・寸法は「演者・舞台セット」の一覧で決めます。" },
     { key: "panelAsk", panel: "ask", label: "AI指示", def: true,
@@ -5790,20 +5788,20 @@
      使わないものは畳めるようにする。中央は絵だけで、上下の入れ替えのみ。 */
   /* 演者・舞台セット・光は「演者・舞台セット」一枚にまとめた（cast）。
    * 登録・出し入れ・寸法の仕組みが同じものを三つに割ると、目が三度行き来する。 */
-  const PANELS = ["project", "venue", "music", "cast", "machinery", "rigs", "light", "background", "study", "scenes", "inspector", "save", "session", "ask"];
+  const PANELS = ["project", "venue", "music", "cast", "machinery", "rigs", "light", "background", "study", "scenes", "seat2", "inspector", "save", "session", "ask"];
 
   function defaultLayout() {
     return {
       // 場面は絵のすぐ右に置く（順番を見ながら描くため）
       cols: {
         project: "left", venue: "left", music: "left", cast: "left", machinery: "left", rigs: "left", light: "left", background: "left",
-        study: "right", scenes: "right", inspector: "left", save: "right",
+        study: "right", scenes: "right", seat2: "right", inspector: "left", save: "right",
         session: "right", ask: "right",
       },
       order: {
         project: 0, venue: 1, music: 2, cast: 3, machinery: 4, rigs: 5, light: 6, background: 7,
         // 保存状態は右列の最後。既存のショーは保存済みの順序をそのまま使う。
-        study: -1, scenes: 0, inspector: 8, save: 999, session: 3, ask: 4,
+        study: -1, scenes: 0, seat2: 1, inspector: 8, save: 999, session: 3, ask: 4,
       },
       /* 共有は「会議のときだけ開く」もの。畳んだ状態から始める。
          保存の中の畳みだったころと同じ見え方にするため（開いた形で置くと、
@@ -17838,6 +17836,8 @@
   function togglePanel(id) {
     state.layout.collapsed[id] = !state.layout.collapsed[id];
     applyLayout();
+    // G-J: 畳んでいるあいだは描かないので、開いた直後に一度描き直す
+    if (id === "seat2") renderSecondSeatView();
     persistSoon();
   }
 
@@ -23675,8 +23675,6 @@
       }
       // 開いている3Dカメラのチップも同じ状態にする（設定と入口が二つあるため）
       if (f.key === "wideVenueLite") pushFpvCrowdMode();
-      // G-J: 隅の小さな絵の表示・非表示はrenderVenueControlsが決めるので、ここで呼び直す
-      if (f.key === "twoSeatView") renderVenueControls();
       renderScenes();
       render();
       announce(box.checked ? `設定「${f.label}」をONにしました。` : `設定「${f.label}」をOFFにしました。`);
@@ -26536,9 +26534,7 @@ ${propsPlotHtml}
       });
     }
 
-    // G-J: 二席で見比べる（機能を入れていて、正面図を出しているときだけ）。
-    // 配布用の閲覧スマホ（画面が小さく、見せる相手が触らない前提）では出さない。
-    if (els.front2Pip) els.front2Pip.hidden = !featureOn("twoSeatView") || !state.showFront || phoneViewerActive;
+    // G-J: 二席目パネルの席の一覧（パネル自体の表示・非表示は他のパネルと同じ仕組みに任せる）
     if (els.front2Seat) {
       /* まだ選んでいない・今の会場に無い席なら、メインと違う席へ寄せる
          （同じ席を二つ並べても比べる意味がない）。一度選んだ後はそのまま尊重する。 */
@@ -26575,11 +26571,12 @@ ${propsPlotHtml}
     persistSoon();
   }
 
-  /* G-J: 正面図の隅の小さな絵を、選んだ席で描き直す。読むだけで操作はできない。
+  /* G-J: 二席目パネルの絵を、選んだ席で描き直す。読むだけで操作はできない。
      window.SHOSAI_STAGE_VIEW.renderFront は照明キューを既定で隠すので、
      ここでは何もしなくても「照明なし」の見え方になる（本人決定＝v1は照明なし）。 */
   function renderSecondSeatView() {
-    if (!ctx2 || !canvas2 || !els.front2Pip || els.front2Pip.hidden) return;
+    const panel = panelEl("seat2");
+    if (!ctx2 || !canvas2 || !panel || panel.hidden || state.layout.collapsed.seat2) return;
     if (!window.SHOSAI_STAGE_VIEW) return;
     const seat2 = frontSeatById(state.seat2) || VENUES.seatById(state.seat);
     window.SHOSAI_STAGE_VIEW.renderFront(ctx2, seat2 ? { seat: seat2.id } : {});

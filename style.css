@@ -2001,10 +2001,25 @@ html.stage-pwa-tablet .stage-header-app-identity { --stage-header-logo-width: 22
   cursor: default;
 }
 
+/* AIリンクは他の右上アイコンと同じ44px正方形にそろえる（本人指示・文字「AI」からSVGアイコンへ）。 */
 .stage-history-actions .stage-ai-link {
+  --stage-ai-link-hit-size: var(--stage-history-action-height);
+  --stage-ai-link-icon-size: 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 var(--stage-ai-link-hit-size);
+  width: var(--stage-ai-link-hit-size);
+  min-width: var(--stage-ai-link-hit-size);
+  height: var(--stage-ai-link-hit-size);
+  min-height: var(--stage-ai-link-hit-size);
+  padding: 0;
+}
+.stage-ai-link svg { display: block; width: var(--stage-ai-link-icon-size); height: var(--stage-ai-link-icon-size); }
+
+/* 感想を送るはテキストのボタンのまま、高さだけ他の右上アイコンにそろえる（本人指示）。 */
+.stage-history-actions #stage-feedback-open {
+  min-height: var(--stage-history-action-height);
 }
 
 .stage-history-actions .stage-export {
@@ -3502,37 +3517,16 @@ canvas[data-tool="note"] { cursor: copy; }
   background: rgba(168, 75, 38, 0.16);
   color: var(--paper);
 }
-/* G-J: 二席で見比べる。読むだけの小さな絵を正面図の隅へ重ねる（下端はポーズ帯があるため上へ置く） */
-.stage-front2-pip {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 4;
-  width: min(34%, 260px);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  background: rgba(12, 9, 8, 0.86);
-  border: 1px solid rgba(239, 231, 214, 0.22);
-  border-radius: 6px;
-  padding: 6px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+/* G-J: 二席目パネル。他のパネルと同じ列に置く読むだけの絵（照明は出ない）。 */
+.stage-front2-canvas-wrap {
+  margin-top: 10px;
 }
-.stage-front2-pip select {
-  width: 100%;
-  font-size: 11px;
-  background: rgba(239, 231, 214, 0.08);
-  color: var(--milk);
-  border: 1px solid rgba(239, 231, 214, 0.2);
-  border-radius: 4px;
-  padding: 2px 4px;
-}
-.stage-front2-pip canvas {
+.stage-front2-canvas-wrap canvas {
   width: 100%;
   height: auto;
   aspect-ratio: 1280 / 720;
   display: block;
-  border-radius: 3px;
+  border: 1px solid var(--line-dark);
   background: #000;
 }
 
