@@ -1,7 +1,7 @@
 /* 選択灯「型」P0 — DOM・描画・保存を持たない純関数。
  *
  * このファイルは docs/.../selected-light-presets-2026-09-14/ の隔離試作であり、
- * 舞台スケッチ本体の scene.lightMotion、LIGHT_PRESETS、lightGroup は読まず書かない。
+ * 舞台スケッチ本体の旧式の場面全体アニメーション、LIGHT_PRESETS、lightGroup は読まず書かない。
  * UIや履歴へつなぐ側は、applySelectedLightPreset の結果が applied のときだけ
  * 1回 checkpoint して nextCue を保存する。入力 cue / fixtures / selection は変更しない。
  */
@@ -10,6 +10,9 @@
 
   const VERSION = 1;
   const PATH_VERSION = 1;
+  /* v1 の舞台内ワンダーの見え方は保存済みキューと同じままにする。
+   * 客席マスクは会場座標(m)の多角形を参照するため、別の経路版として追加する。 */
+  const AUDIENCE_PATH_VERSION = 2;
   const clamp = (value, lo, hi) => Math.min(hi, Math.max(lo, Number.isFinite(Number(value)) ? Number(value) : lo));
   const finite = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
   const clone = (value) => JSON.parse(JSON.stringify(value || {}));
@@ -85,6 +88,109 @@
   }
   const normalizeArea = (raw) => normalizeRect(raw) || normalizeCircle(raw);
 
+  const polygonCross = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+  const polygonArea = (points) => points.reduce((sum, point, index) => {
+    const next = points[(index + 1) % points.length];
+    return sum + point[0] * next[1] - next[0] * point[1];
+  }, 0) / 2;
+  const pointOnSegment = (point, a, b) => Math.abs(polygonCross(a, b, point)) < 1e-8
+    && point[0] >= Math.min(a[0], b[0]) - 1e-8 && point[0] <= Math.max(a[0], b[0]) + 1e-8
+    && point[1] >= Math.min(a[1], b[1]) - 1e-8 && point[1] <= Math.max(a[1], b[1]) + 1e-8;
+  function segmentsIntersect(a, b, c, d) {
+    const abC = polygonCross(a, b, c), abD = polygonCross(a, b, d);
+    const cdA = polygonCross(c, d, a), cdB = polygonCross(c, d, b);
+    if (((abC > 0 && abD < 0) || (abC < 0 && abD > 0))
+        && ((cdA > 0 && cdB < 0) || (cdA < 0 && cdB > 0))) return true;
+    return (Math.abs(abC) < 1e-8 && pointOnSegment(c, a, b))
+      || (Math.abs(abD) < 1e-8 && pointOnSegment(d, a, b))
+      || (Math.abs(cdA) < 1e-8 && pointOnSegment(a, c, d))
+      || (Math.abs(cdB) < 1e-8 && pointOnSegment(b, c, d));
+  }
+  function normalizePolygon(raw) {
+    if (!raw || raw.kind !== "polygon" || raw.coordinateSpace !== "venue-m" || !Array.isArray(raw.points)) return null;
+    const points = raw.points.map((entry) => Array.isArray(entry) && entry.length >= 2
+      ? [Number(entry[0]), Number(entry[1])] : null).filter(Boolean);
+    if (points.length > 3 && points[0][0] === points.at(-1)[0] && points[0][1] === points.at(-1)[1]) points.pop();
+    if (points.length < 3 || points.length > 96 || points.some((entry) => !entry.every(Number.isFinite))) return null;
+    if (points.some((entry, index) => {
+      const next = points[(index + 1) % points.length];
+      return Math.hypot(next[0] - entry[0], next[1] - entry[1]) < 0.02;
+    })) return null;
+    for (let i = 0; i < points.length; i += 1) {
+      const a = points[i], b = points[(i + 1) % points.length];
+      for (let j = i + 1; j < points.length; j += 1) {
+        if (j === i || j === (i + 1) % points.length || (j + 1) % points.length === i) continue;
+        if (segmentsIntersect(a, b, points[j], points[(j + 1) % points.length])) return null;
+      }
+    }
+    if (Math.abs(polygonArea(points)) < 0.04) return null;
+    return { kind: "polygon", coordinateSpace: "venue-m", points,
+      hM: Math.max(0, finite(raw.hM, 1.2)), sourceId: typeof raw.sourceId === "string" ? raw.sourceId : undefined };
+  }
+  const normalizeWanderRegion = (raw) => normalizeRect(raw) || normalizePolygon(raw);
+  function insidePolygon(target, raw) {
+    const polygon = normalizePolygon(raw);
+    const x = Number(target && (target.xM == null ? target.x : target.xM));
+    const y = Number(target && (target.yM == null ? target.y : target.yM));
+    if (!polygon || !Number.isFinite(x) || !Number.isFinite(y)) return false;
+    let inside = false;
+    for (let i = 0, j = polygon.points.length - 1; i < polygon.points.length; j = i++) {
+      const a = polygon.points[i], b = polygon.points[j];
+      if (pointOnSegment([x, y], a, b)) return true;
+      if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside;
+    }
+    return inside;
+  }
+  function triangulatePolygon(raw) {
+    const polygon = normalizePolygon(raw);
+    if (!polygon) return [];
+    const points = polygon.points, orientation = polygonArea(points) > 0 ? 1 : -1;
+    const remaining = points.map((_, index) => index), triangles = [];
+    const inTriangle = (p, a, b, c) => {
+      const c1 = polygonCross(a, b, p) * orientation;
+      const c2 = polygonCross(b, c, p) * orientation;
+      const c3 = polygonCross(c, a, p) * orientation;
+      return c1 >= -1e-8 && c2 >= -1e-8 && c3 >= -1e-8;
+    };
+    let guard = points.length * points.length;
+    while (remaining.length > 3 && guard-- > 0) {
+      let clipped = false;
+      for (let i = 0; i < remaining.length; i += 1) {
+        const ai = remaining[(i + remaining.length - 1) % remaining.length];
+        const bi = remaining[i];
+        const ci = remaining[(i + 1) % remaining.length];
+        const a = points[ai], b = points[bi], c = points[ci];
+        if (polygonCross(a, b, c) * orientation <= 1e-8) continue;
+        if (remaining.some((index) => index !== ai && index !== bi && index !== ci
+          && inTriangle(points[index], a, b, c))) continue;
+        triangles.push([a, b, c]);
+        remaining.splice(i, 1); clipped = true; break;
+      }
+      if (!clipped) return [];
+    }
+    if (remaining.length === 3) triangles.push(remaining.map((index) => points[index]));
+    return triangles;
+  }
+  function buildVenueRegions(stage, audienceAreas) {
+    const regions = { stage: { kind: "rect", u0: 0, v0: 0, u1: 1, v1: 1 } };
+    const W = Number(stage && stage.W), D = Number(stage && stage.D);
+    if (!(W > 0) || !(D > 0) || !Array.isArray(audienceAreas)) return regions;
+    audienceAreas.forEach((area, index) => {
+      if (!area || !Array.isArray(area.polygon)) return;
+      const rawId = typeof area.id === "string" && area.id.trim() ? area.id.trim() : `area-${index + 1}`;
+      const encodedId = rawId.replace(/[^A-Za-z0-9_.:-]/gu,
+        (character) => `_${character.codePointAt(0).toString(16)}_`).slice(0, 180) || `area-${index + 1}`;
+      const id = regions[`audience:${encodedId}`] ? `audience:${encodedId}:${index + 1}` : `audience:${encodedId}`;
+      const polygon = normalizePolygon({ kind: "polygon", coordinateSpace: "venue-m", points: area.polygon,
+        hM: Number.isFinite(Number(area.targetHeightM)) ? Number(area.targetHeightM)
+          : (Number.isFinite(Number(area.eyeM)) ? Number(area.eyeM) : 1.2), sourceId: rawId });
+      if (polygon && triangulatePolygon(polygon).length) regions[id] = polygon;
+    });
+    return regions;
+  }
+  const audienceRegionIds = (regions) => Object.keys(regions || {}).filter((id) => id.startsWith("audience:")
+    && normalizePolygon(regions[id]));
+
   function fixtureOrder(fixtures, selection, order) {
     const fixtureMap = new Map((fixtures || []).filter((fixture) => fixture && typeof fixture.id === "string").map((fixture) => [fixture.id, fixture]));
     const requested = Array.from(selection || []).filter((id, index, list) => typeof id === "string" && list.indexOf(id) === index);
@@ -127,16 +233,48 @@
   }
   function hashSeed(seed, rank) { return uint32(Math.imul(uint32(seed), 2654435761) + Math.imul(rank + 1, 2246822519)); }
   function selectedRegion(regionIds, rank, regions, seed) {
-    const candidates = (regionIds || []).map((id) => ({ id, rect: normalizeRect((regions || {})[id]) })).filter((entry) => entry.rect);
+    const candidates = (regionIds || []).map((id) => ({ id, area: normalizeWanderRegion((regions || {})[id]) })).filter((entry) => entry.area);
     if (!candidates.length) return null;
     return candidates[Math.floor(mulberry32(hashSeed(seed, rank))() * candidates.length)];
   }
-  function wanderPoint(path, timeMs, regions) {
-    if (!path || path.kind !== "wander" || path.pathVersion !== PATH_VERSION) return null;
-    const selected = selectedRegion(path.regionIds, path.fixtureRank, regions, path.seed);
-    if (!selected) return null;
+  function polygonWanderPoint(area, path, timeMs) {
+    const triangles = triangulatePolygon(area);
+    if (!triangles.length) return null;
     const rng = mulberry32(hashSeed(path.seed, path.fixtureRank));
-    const rect = selected.rect;
+    const weights = triangles.map((triangle) => Math.abs(polygonArea(triangle)));
+    const total = weights.reduce((sum, value) => sum + value, 0);
+    let pick = rng() * total, triangle = triangles[0];
+    for (let index = 0; index < triangles.length; index += 1) {
+      pick -= weights[index];
+      if (pick <= 0) { triangle = triangles[index]; break; }
+    }
+    const [a, b, c] = triangle;
+    const sideA = Math.hypot(b[0] - c[0], b[1] - c[1]);
+    const sideB = Math.hypot(a[0] - c[0], a[1] - c[1]);
+    const sideC = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    const perimeter = sideA + sideB + sideC;
+    if (!(perimeter > 0)) return null;
+    const cx = (sideA * a[0] + sideB * b[0] + sideC * c[0]) / perimeter;
+    const cy = (sideA * a[1] + sideB * b[1] + sideC * c[1]) / perimeter;
+    const inradius = (2 * Math.abs(polygonArea(triangle))) / perimeter;
+    const radius = inradius * (0.25 + rng() * 0.55) * (0.5 + path.irregularity / 2);
+    const squash = 0.55 + rng() * 0.4;
+    const phase = (path.phaseNorm + (timeMs / 1000) / path.loopSec) % 1;
+    const angle = phase * Math.PI * 2;
+    const target = { xM: cx + Math.cos(angle) * radius, yM: cy + Math.sin(angle) * radius * squash,
+      hM: area.hM, coordinateSpace: "venue-m", regionId: path.regionId };
+    return insidePolygon(target, area) ? target : { xM: cx, yM: cy, hM: area.hM,
+      coordinateSpace: "venue-m", regionId: path.regionId };
+  }
+  function wanderPoint(path, timeMs, regions) {
+    if (!path || path.kind !== "wander" || ![PATH_VERSION, AUDIENCE_PATH_VERSION].includes(path.pathVersion)) return null;
+    const selected = path.pathVersion === AUDIENCE_PATH_VERSION && typeof path.regionId === "string"
+      ? { id: path.regionId, area: normalizeWanderRegion((regions || {})[path.regionId]) }
+      : selectedRegion(path.regionIds, path.fixtureRank, regions, path.seed);
+    if (selected && selected.area && selected.area.kind === "polygon") return polygonWanderPoint(selected.area, path, timeMs);
+    if (!selected || !selected.area) return null;
+    const rng = mulberry32(hashSeed(path.seed, path.fixtureRank));
+    const rect = selected.area;
     const cx = (rect.u0 + rect.u1) / 2, cy = (rect.v0 + rect.v1) / 2;
     const halfW = (rect.u1 - rect.u0) / 2, halfD = (rect.v1 - rect.v0) / 2;
     const width = halfW * (0.25 + rng() * 0.55) * (0.5 + path.irregularity / 2);
@@ -152,7 +290,7 @@
   function trackedKeys(scope, presetId, applied) {
     if (scope === "aim") return ["path"];
     if (scope === "area") return ["path", "beamDeg"].concat(applied && applied.alignIntensity ? ["level"] : []);
-    if (scope === "motion") return ["path", "periodSec", "offsetSec"];
+    if (scope === "motion") return ["path", "periodSec", "offsetSec"].concat(presetId === "motion.wander.stageAudience" ? ["surface"] : []);
     if (scope === "value") return presetId === "value.alternate" || presetId === "value.gradient" ? ["color"] : ["level"];
     if (scope === "flash") return ["level", "levelTo", "strobe", "beamDeg"];
     if (scope === "show") {
@@ -185,7 +323,7 @@
     const byFamily = {
       aim: { path: "狙い" },
       area: { path: "狙い", beamDeg: "広がり", level: "強さ" },
-      motion: { path: "軌道", periodSec: "速さ", offsetSec: "ずらし" },
+      motion: { path: "軌道", periodSec: "速さ", offsetSec: "ずらし", surface: "当てる場所" },
       value: { color: "色", level: "強さ" },
       show: { path: "軌道", periodSec: "速さ", offsetSec: "ずらし", beamDeg: "広がり", level: "強さ", levelTo: "強さ", strobe: "点滅" },
       flash: { level: "強さ", levelTo: "強さ", strobe: "点滅", beamDeg: "太さ" },
@@ -236,10 +374,21 @@
     if (preset.id === "motion.circle") return { path: { kind: "circle", c: point(0.5, 0.6), r: clamp(choices.radius, 0.02, 0.45), dir: index % 2 ? "ccw" : "cw" }, periodSec, offsetSec: phase * periodSec };
     if (preset.id === "motion.wander.stage" || preset.id === "motion.wander.stageAudience") {
       const needsAudience = preset.id.endsWith("stageAudience");
-      if (needsAudience && !choices.audienceRegionId) return { error: "audience-region-required" };
-      const regionIds = needsAudience ? ["stage", choices.audienceRegionId] : ["stage"];
-      if (!regionIds.every((id) => normalizeRect((regions || {})[id]))) return { error: preset.id.endsWith("stageAudience") ? "audience-region-required" : "stage-region-required" };
-      return { path: { kind: "wander", seed: uint32(choices.seed), pathVersion: PATH_VERSION, regionIds, loopSec: periodSec, irregularity: clamp(choices.irregularity, 0, 1), phaseNorm: phase, fixtureRank: index }, periodSec, offsetSec: 0 };
+      if (!needsAudience) {
+        if (!normalizeRect((regions || {}).stage)) return { error: "stage-region-required" };
+        return { path: { kind: "wander", seed: uint32(choices.seed), pathVersion: PATH_VERSION, regionIds: ["stage"], loopSec: periodSec, irregularity: clamp(choices.irregularity, 0, 1), phaseNorm: phase, fixtureRank: index }, periodSec, offsetSec: 0 };
+      }
+      const requested = Array.isArray(choices.audienceRegionIds) ? choices.audienceRegionIds
+        : (choices.audienceRegionId ? [choices.audienceRegionId] : []);
+      const audienceIds = [...new Set(requested)].filter((id) => typeof id === "string"
+        && normalizePolygon((regions || {})[id]));
+      if (!audienceIds.length || !normalizeRect((regions || {}).stage)) return { error: "audience-region-required" };
+      const regionIds = ["stage", ...audienceIds];
+      const chosen = selectedRegion(regionIds, index, regions, choices.seed);
+      if (!chosen || !chosen.area) return { error: "audience-region-required" };
+      return { path: { kind: "wander", seed: uint32(choices.seed), pathVersion: AUDIENCE_PATH_VERSION,
+        regionIds, regionId: chosen.id, loopSec: periodSec, irregularity: clamp(choices.irregularity, 0, 1), phaseNorm: phase, fixtureRank: index },
+      periodSec, offsetSec: 0, surface: chosen.id === "stage" ? "floor" : "house" };
     }
     const left = point(0.2, finite(choices.v, 0.6));
     const right = point(0.8, finite(choices.v, 0.6));
@@ -254,7 +403,8 @@
       const generated = motionPath(preset, index, targets.length, choices, regions);
       if (generated.error) return generated;
       const fixture = targets[index], current = lights[fixture.id] || {};
-      lights[fixture.id] = withMeta({ ...current, ...generated }, "motion", preset, generated.path.kind === "wander" ? { seed: generated.path.seed, pathVersion: PATH_VERSION } : {});
+      lights[fixture.id] = withMeta({ ...current, ...generated }, "motion", preset,
+        generated.path.kind === "wander" ? { seed: generated.path.seed, pathVersion: generated.path.pathVersion } : {});
     }
     return {};
   }
@@ -428,7 +578,9 @@
     return { status: "applied", nextCue, targets: targets.map((fixture) => fixture.id), skipped, changes, preset, choices };
   }
 
-  const api = { VERSION, PATH_VERSION, PRESETS, presetById, normalizeRect, normalizeCircle, normalizeArea, gridPoints, circlePoints, wanderPoint, insideRect, deriveRerollSeed, appliedValueChanges, isAppliedValueChanged, adjustmentLabels, applySelectedLightPreset, sequenceRanks, SEQUENCE_VALUES, DIRECTION_VALUES };
+  const api = { VERSION, PATH_VERSION, AUDIENCE_PATH_VERSION, PRESETS, presetById, normalizeRect, normalizeCircle, normalizeArea,
+    normalizePolygon, buildVenueRegions, audienceRegionIds, gridPoints, circlePoints, wanderPoint, insideRect, insidePolygon,
+    deriveRerollSeed, appliedValueChanges, isAppliedValueChanged, adjustmentLabels, applySelectedLightPreset, sequenceRanks, SEQUENCE_VALUES, DIRECTION_VALUES };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.SELECTED_LIGHT_PRESETS_ENGINE = api;
 })(typeof window !== "undefined" ? window : globalThis);

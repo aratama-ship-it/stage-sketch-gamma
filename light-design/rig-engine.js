@@ -242,6 +242,13 @@
       if (!t) return null;
       return { x: (clamp(finite(m.u, 0.5), 0, 1) - 0.5) * dims.W, y: t.v * dims.D, z: t.h };
     }
+    /* 旧ベータの照明パネルは、仕込み種別ではなく任意の u/v/h を持っていた。
+       コピー変換した v2 だけがこの型を使う。舞台外の前明かり・袖明かりも
+       原値のまま見比べるため、ここでは 0..1 や舞台高へ丸めない。 */
+    if (m.type === "legacy-panel") {
+      if (![m.u, m.v, m.h].every(Number.isFinite)) return null;
+      return { x: (m.u - 0.5) * dims.W, y: m.v * dims.D, z: m.h };
+    }
     if (m.type === "floor") {
       return { x: (clamp(finite(m.u, 0.5), 0, 1) - 0.5) * dims.W, y: clamp(finite(m.v, 0.5), 0, 1) * dims.D, z: FLOOR_FIXTURE_Z };
     }
@@ -331,12 +338,17 @@
   };
 
   // Point3 → 世界座標（この一本だけで床・奥壁・空中すべてを扱う。2026-09-11 第3ラウンドで統一）
-  const pointWorld = (p, dims) => ({
-    x: (clamp(finite(p && p.u, 0.5), 0, 1) - 0.5) * dims.W,
-    // aheadM を持つ点（客席へ向けた狙い点）だけ舞台の外(y > D)へ出る。持たない点は従来どおり舞台の中
-    y: clamp(finite(p && p.v, 0.5), 0, 1) * dims.D + clamp(finite(p && p.aheadM, 0), 0, HOUSE_AHEAD_MAX),
-    z: clamp(finite(p && p.hM, 0), 0, dims.H),
-  });
+  const pointWorld = (p, dims) => {
+    if (p && p.coordinateMode === "legacy-panel") {
+      return { x: (finite(p.u, 0.5) - 0.5) * dims.W, y: finite(p.v, 0.5) * dims.D, z: finite(p.hM, 0) };
+    }
+    return {
+      x: (clamp(finite(p && p.u, 0.5), 0, 1) - 0.5) * dims.W,
+      // aheadM を持つ点（客席へ向けた狙い点）だけ舞台の外(y > D)へ出る。持たない点は従来どおり舞台の中
+      y: clamp(finite(p && p.v, 0.5), 0, 1) * dims.D + clamp(finite(p && p.aheadM, 0), 0, HOUSE_AHEAD_MAX),
+      z: clamp(finite(p && p.hM, 0), 0, dims.H),
+    };
+  };
 
   // 軌道面ごとの円周上オフセット（世界座標のdx,dy,dz）
   /* 円・8の字は「その面の中の2軸」で作る。r＝1軸目、r2＝2軸目（省くと真円）、tilt＝面の中での傾き（度）。
@@ -708,6 +720,10 @@
     if (m.type === "front") return `前明かり・${lr(m.u)}・舞台前から約${mm(finite(m.ahead, 5))}・高さ約${mm(finite(m.h, 7))}`;
     if (m.type === "side") return `SS・${m.side === "shimote" ? "下手" : "上手"}の袖（高さ約${mm(m.h)}）・${m.v < 0.4 ? "奥寄り" : m.v > 0.6 ? "手前寄り" : "中ほど"}`;
     if (m.type === "cyc") return `ホリゾントライト（${m.rung === "top" ? "上" : "床"}）・舞台幅100%`;
+    if (m.type === "legacy-panel") {
+      if (![m.u, m.v, m.h].every(Number.isFinite)) return "旧ベータの照明位置（未設定）";
+      return `旧ベータの照明位置・${lr(m.u)}・${m.v < 0.4 ? "奥" : m.v > 0.6 ? "手前" : "中ほど"}・高さ約${mm(m.h)}`;
+    }
     return "取り付け未設定";
   };
 
@@ -721,6 +737,7 @@
     if (m.type === "truss" || m.type === "front") return lr(m.u);
     if (m.type === "floor") return `${lr(m.u)}・${fb(m.v)}`;
     if (m.type === "side") return m.v < 0.4 ? "奥寄り" : m.v > 0.6 ? "手前寄り" : "中ほど";
+    if (m.type === "legacy-panel") return Number.isFinite(m.u) && Number.isFinite(m.v) ? `${lr(m.u)}・${fb(m.v)}` : "位置未設定";
     return "";
   };
 

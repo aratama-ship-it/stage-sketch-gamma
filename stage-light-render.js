@@ -626,9 +626,19 @@
       const matrix = ctx.getTransform();
       maskCtx.setTransform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
     }
+    /* 光だまりは床の面の情報。正面図や側面図では、その投影が奥の背景と重なることがある。
+       呼び側が床の輪郭を渡した場合だけ、穴をその面の中へ閉じ込める。
+       暗幕そのものは画面全体へ敷くので、背景・壁・天井は暗く残る。 */
+    let floorClipped = false;
+    if (typeof options.floorClip === "function") {
+      maskCtx.save();
+      floorClipped = options.floorClip(maskCtx) !== false;
+      if (!floorClipped) maskCtx.restore();
+    }
     maskCtx.globalCompositeOperation = "destination-out";
     (Array.isArray(pools) ? pools : []).forEach((pool) => punchHole(maskCtx, pool, P, options));
     maskCtx.globalCompositeOperation = "source-over";
+    if (floorClipped) maskCtx.restore();
 
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);

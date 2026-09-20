@@ -143,13 +143,16 @@ public-dist/
 !/stage-i18n.js
 !/stage-i18n.zh-Hans.js
 !/stage-i18n.zh-Hant.js
-!/stage-light-motion.js
 !/stage-light-render.js
+!/stage-light-panel-import.js
 !/stage-set-render.js
 !/stage-lighting-plans.js
 !/stage-lighting-plan-overlay.js
 !/docs/
 /docs/*
+!/docs/light-panel-migration-2026-09-13/
+/docs/light-panel-migration-2026-09-13/*
+!/docs/light-panel-migration-2026-09-13/light-panel-migration.js
 !/docs/proscenium-lighting-presets-2026-09-15/
 /docs/proscenium-lighting-presets-2026-09-15/*
 !/docs/proscenium-lighting-presets-2026-09-15/proscenium-lighting-presets-v1.json
@@ -189,6 +192,11 @@ public-dist/
 /gamma-dev/
 /tools/
 /tests/
+!/tests/
+/tests/*
+!/tests/light-selected-audience-mask.test.mjs
+!/tests/stage-lighting-all-venues.test.mjs
+!/tests/stage-light-panel-import.test.mjs
 
 # Formation preset editor runtime (local preparation; not published).
 !/gamma-formation-presets.js

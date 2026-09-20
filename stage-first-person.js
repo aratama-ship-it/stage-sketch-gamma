@@ -1168,12 +1168,14 @@
     updateFacingText(piece.facing);
     elements.editPoses.textContent = "";
     const holder = supportOf(piece, data.pieces);
-    if (holder && ["pole", "trapeze", "tissue", "chair"].includes(holder.type)) {
+    if (holder && ["pole", "trapeze", "tissue"].includes(holder.type)) {
       elements.editHint.textContent = text("移動と姿勢は乗り物側で決まっています");
       return;
     }
-    elements.editHint.textContent = text("体をドラッグで移動・リングかスクロールで向き");
-    const poses = state.bridge && state.bridge.listPoses ? state.bridge.listPoses() : [];
+    elements.editHint.textContent = holder && holder.type === "chair"
+      ? text("姿勢を選ぶ")
+      : text("体をドラッグで移動・リングかスクロールで向き");
+    const poses = state.bridge && state.bridge.listPoses ? state.bridge.listPoses(piece.id) : [];
     let activeTile = null;
     poses.forEach((pose) => {
       const tile = createElement("button", "", `stage-fpv-pose-tile${piece.pose === pose.id ? " on" : ""}`);
@@ -2267,7 +2269,14 @@
       fillPoly(ctx, circlePoints(foot.x, .01, foot.z, .26), "rgba(0,0,0,.28)");
     }
 
-    const look = body.resolveLook ? body.resolveLook(piece, data.cast) : null;
+    const rawLook = body.normalizeLook && body.resolveLook
+      ? body.normalizeLook(body.resolveLook(piece, data.cast)) : null;
+    const look = rawLook ? {
+      ...rawLook,
+      skin: costumeLitColor3dFor(piece, rawLook.skin) || rawLook.skin,
+      top: { ...rawLook.top, color: costumeLitColor3dFor(piece, rawLook.top.color) || rawLook.top.color },
+      bottom: { ...rawLook.bottom, color: costumeLitColor3dFor(piece, rawLook.bottom.color) || rawLook.bottom.color },
+    } : null;
     const bodyColor = costumeLitColor3d(piece) || piece.color || "#c9c2b4";   // G-D: 光だまりの色で染める（既定は切）
     paintBody3d(ctx, body, P, rings, wheel, props, eyes, bodyColor, look, { mask, project, pose, H });
     data.pieces.filter((p) => p.heldBy === piece.id && p.holdMode !== "face" && p.propShape === "mask")
@@ -2284,6 +2293,7 @@
    * （遠近で手前の腕が太く、奥の腕が細くなる）。 */
   function paintBody3d(ctx, body, P, rings, wheel, props, eyes, color, look, { mask, project, pose, H } = {}) {
     ctx.save();
+    const clothes = body.lookSpec ? body.lookSpec(look) : null;
     if (wheel) paintWheel3d(ctx, wheel, P, "far");
     const parts = body.LIMBS.map((limb) => ({
       kind: "limb", limb,
@@ -2298,10 +2308,22 @@
         /* 奥の手足を沈ませる判定は、本編の絶対値ではなく胴との相対で取る
            （こちらの z はカメラ距離由来で原点が体に無いため） */
         const far = part.z < torsoZ - 0.02;
-        ctx.fillStyle = far ? body.mixToward(color, 0.26) : color;
+        const skinColor = clothes ? clothes.skin : color;
+        ctx.fillStyle = far ? body.mixToward(skinColor, 0.26) : skinColor;
         const taper = body.LIMB_TAPER[part.limb.kind];
         const nodes = body.limbNodes(part.limb.pts.map((k) => P[k]), part.limb.kind);
-        body.taperedChain(ctx, nodes, taper.map((r, i) => Math.max(0.8, r * (nodes[i].s || nodes[0].s))));
+        const radii = taper.map((r, i) => Math.max(0.8, r * (nodes[i].s || nodes[0].s)));
+        body.taperedChain(ctx, nodes, radii);
+        if (clothes && body.chainPrefix) {
+          const amount = part.limb.kind === "arm" ? clothes.sleeve : clothes.length;
+          const garment = body.chainPrefix(nodes, radii, amount);
+          if (garment.points.length > 1) {
+            const garmentColor = part.limb.kind === "arm" ? clothes.topColor : clothes.bottomColor;
+            ctx.fillStyle = far ? body.mixToward(garmentColor, 0.26) : garmentColor;
+            body.taperedChain(ctx, garment.points, garment.radii);
+          }
+          ctx.fillStyle = far ? body.mixToward(skinColor, 0.26) : skinColor;
+        }
         const from = P[part.limb.tip[0]];
         const to = P[part.limb.tip[1]];
         const dx = to.x - from.x;
@@ -2319,16 +2341,23 @@
         return;
       }
       if (part.kind === "torso") {
-        ctx.fillStyle = color;
+        ctx.fillStyle = clothes ? clothes.skin : color;
         body.smoothClosedPath(ctx, body.torsoOutline(rings));
         ctx.fill();
+        if (clothes) {
+          const reversedNeck = body.NECK_RINGS.slice().reverse();
+          const collarIndex = Math.max(0, reversedNeck.findIndex((ring) => ring.s <= clothes.collar));
+          ctx.fillStyle = clothes.topColor;
+          body.smoothClosedPath(ctx, body.torsoOutline(rings.slice(collarIndex)));
+          ctx.fill();
+        }
         return;
       }
       const nx = P.head.x - P.neck.x;
       const ny = P.head.y - P.neck.y;
       const len = Math.hypot(nx, ny);
       const angle = len > 0.4 ? Math.atan2(ny, nx) : -Math.PI / 2;
-      ctx.fillStyle = color;
+      ctx.fillStyle = clothes ? clothes.skin : color;
       ctx.beginPath();
       if (mask) body.paintFaceMask(ctx, project, pose, H, mask, false);
       ctx.beginPath();
@@ -3410,6 +3439,27 @@
     };
   }
 
+  /* 3Dでも光だまりは床の面だけ。画面へ投影された楕円が奥壁と重なっても、
+     暗幕の穴を床の四辺形に切っておけば背景が勝手に明るく戻らない。
+     near面で切ってから画面へ出すため、下手・上手から見ても安全に使える。 */
+  function clipCueLightFloor(maskCtx) {
+    if (!maskCtx || !(W > 0) || !(D > 0)) return false;
+    const floor = [
+      { x: -W / 2, y: 0, z: -D / 2 }, { x: W / 2, y: 0, z: -D / 2 },
+      { x: W / 2, y: 0, z: D / 2 }, { x: -W / 2, y: 0, z: D / 2 },
+    ];
+    const clipped = clipPolyNear(floor.map(toCamera));
+    if (clipped.length < 3) return false;
+    maskCtx.beginPath();
+    clipped.forEach((point, index) => {
+      const at = toScreen(point);
+      if (index) maskCtx.lineTo(at.x, at.y); else maskCtx.moveTo(at.x, at.y);
+    });
+    maskCtx.closePath();
+    maskCtx.clip();
+    return true;
+  }
+
   function drawCueLight(ctx) {
     if (!data || (!data.lightPool && !data.lightBeam)) return;
     const render = window.SHOSAI_LIGHT_RENDER;
@@ -3461,6 +3511,18 @@
     return lit ? render.tintColor(piece.color || "#c9c2b4", lit) : null;
   }
 
+  function costumeLitColor3dFor(piece, baseColor) {
+    if (!data || !data.costumeLight || !data.lightPool) return null;
+    const render = window.SHOSAI_LIGHT_RENDER;
+    const pools = cueLightCache.pools;
+    if (!render || !pools || typeof render.litColorAt !== "function" || typeof render.tintColor !== "function") return null;
+    const dims = piece.dims || {};
+    const half = Math.max(finite(dims.w, 0), finite(dims.d, 0), finite(dims.dia, 0)) / 2;
+    const point = { x: (pieceUOf(piece) - 0.5) * W, y: pieceVOf(piece) * D };
+    const lit = render.litColorAt(pools, point, half);
+    return lit ? render.tintColor(baseColor || "#c9c2b4", lit) : null;
+  }
+
   /* 暗幕の後に、光の中にいる駒だけ描き直す。足元が床の光の輪に入っていれば光の中。 */
   function redrawLitPieces(ctx, drawOne) {
     const render = window.SHOSAI_LIGHT_RENDER;
@@ -3492,7 +3554,7 @@
     if (Math.abs((model.dims && model.dims.W) - W) > 0.01
       || Math.abs((model.dims && model.dims.D) - D) > 0.01) return false;
     return render.paintWorkLight(ctx, cueLightCache.pools || [], cueLightProjector(),
-      { topDown: false, tMs: cueLightClockMs });
+      { topDown: false, tMs: cueLightClockMs, floorClip: clipCueLightFloor });
   }
 
   function drawOnePiece(piece) {

@@ -716,6 +716,34 @@
     return out;
   }
 
+  /* 袖と裾は、姿勢で折れた手足の線に沿って付け根から必要な長さだけ塗る。 */
+  function chainPrefix(points, radii, fraction) {
+    const amount = clamp(finite(fraction, 0), 0, 1);
+    if (!Array.isArray(points) || points.length < 2 || amount <= 0) return { points: [], radii: [] };
+    const lengths = [];
+    let total = 0;
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const length = Math.hypot(points[i + 1].x - points[i].x, points[i + 1].y - points[i].y);
+      lengths.push(length); total += length;
+    }
+    if (!(total > 0) || amount >= 1) return { points: points.slice(), radii: radii.slice() };
+    const wanted = total * amount;
+    const outPoints = [points[0]];
+    const outRadii = [radii[0]];
+    let walked = 0;
+    for (let i = 0; i < lengths.length; i += 1) {
+      const next = walked + lengths[i];
+      if (next <= wanted) {
+        outPoints.push(points[i + 1]); outRadii.push(radii[i + 1]); walked = next; continue;
+      }
+      const t = lengths[i] ? (wanted - walked) / lengths[i] : 0;
+      outPoints.push(lerpPt(points[i], points[i + 1], t));
+      outRadii.push(radii[i] + (radii[i + 1] - radii[i]) * t);
+      break;
+    }
+    return { points: outPoints, radii: outRadii };
+  }
+
   // 色を地の暗さへ寄せる。奥の手足を沈ませるのに使う（重ね塗りで濃くならないよう、
   // 半透明ではなく色そのものを混ぜる）
   function mixToward(hex, t) {
@@ -792,6 +820,25 @@
   const HAND_R = 0.019;
   const FOOT_R = 0.021;        // 足の甲の厚み
   const HEEL_BACK = 0.030;     // 踵がくるぶしより後ろへ出る量
+
+  /* ホストで正規化された衣装を、舞台モードと同じ丈へ変換する。 */
+  function lookSpec(look) {
+    if (!look || typeof look !== "object") return null;
+    const top = look.top && typeof look.top === "object" ? look.top : {};
+    const bottom = look.bottom && typeof look.bottom === "object" ? look.bottom : {};
+    const sleeves = { none: 0, short: 0.38, threequarter: 0.72, long: 1 };
+    const lengths = { mini: 0.30, knee: 0.50, midi: 0.72, ankle: 1, floor: 1.08 };
+    const defaultSleeve = top.kind === "longtee" ? "long" : top.kind === "tank" ? "none" : "short";
+    const defaultLength = bottom.kind === "shorts" ? "mini" : "ankle";
+    return {
+      skin: look.skin || "#d9b38c",
+      topColor: top.color || "#a84b26",
+      bottomColor: bottom.color || "#3a3f4a",
+      sleeve: sleeves[top.sleeve || defaultSleeve] ?? sleeves[defaultSleeve],
+      length: lengths[bottom.length || defaultLength] ?? lengths[defaultLength],
+      collar: top.kind === "tank" ? 0.20 : 0.28,
+    };
+  }
 
   /* ===== rgba（本体 7321-7324） ===== */
   function rgba(hex, alpha) {
@@ -918,6 +965,10 @@
     const P = rig.P;
     const ux = rig.ux;
     const uy = rig.uy;
+    const clothes = lookSpec(look);
+    const partPaint = (part, baseColor, far) => (shade
+      ? shade(part, baseColor)
+      : far ? mixToward(baseColor, 0.26) : baseColor);
 
     /* 道具の輪は体より先に、輪の向こう側だけ塗る。手前側は体のあとに塗る。
      * 一本の線で一度に塗ると、人が輪の手前にいるのか奥にいるのか読めない。 */
@@ -934,10 +985,22 @@
     parts.forEach((part) => {
       if (part.kind === "limb") {
         const far = part.z < -0.02;
-        target.fillStyle = shade ? shade(part) : far ? mixToward(color, 0.26) : color;
+        const skinColor = clothes ? clothes.skin : color;
+        target.fillStyle = partPaint(part, skinColor, far);
         const taper = LIMB_TAPER[part.limb.kind];
         const nodes = limbNodes(part.limb.pts.map((k) => P[k]), part.limb.kind);
-        taperedChain(target, nodes, taper.map((r) => Math.max(0.8, r * ux)));
+        const radii = taper.map((r) => Math.max(0.8, r * ux));
+        taperedChain(target, nodes, radii);
+        if (clothes) {
+          const amount = part.limb.kind === "arm" ? clothes.sleeve : clothes.length;
+          const garment = chainPrefix(nodes, radii, amount);
+          if (garment.points.length > 1) {
+            const garmentColor = part.limb.kind === "arm" ? clothes.topColor : clothes.bottomColor;
+            target.fillStyle = partPaint(part, garmentColor, far);
+            taperedChain(target, garment.points, garment.radii);
+          }
+          target.fillStyle = partPaint(part, skinColor, far);
+        }
         // 手首から先／足首から先
         const from = P[part.limb.tip[0]];
         const to = P[part.limb.tip[1]];
@@ -963,11 +1026,18 @@
         return;
       }
       if (part.kind === "torso") {
-        /* 胴。首から股まで断面を積んだ外周をそのままなぞる。
+        /* 胴。首から股まで肌をつなぎ、衣装があれば襟から下へ上衣を重ねる。
            ★凸包で取ってはいけない（くびれが埋まって樽になる）。 */
-        target.fillStyle = shade ? shade(part) : color;
+        target.fillStyle = partPaint(part, clothes ? clothes.skin : color, false);
         smoothClosedPath(target, torsoOutline(rig.rings));
         target.fill();
+        if (clothes) {
+          const reversedNeck = NECK_RINGS.slice().reverse();
+          const collarIndex = Math.max(0, reversedNeck.findIndex((ring) => ring.s <= clothes.collar));
+          target.fillStyle = partPaint(part, clothes.topColor, false);
+          smoothClosedPath(target, torsoOutline(rig.rings.slice(collarIndex)));
+          target.fill();
+        }
         return;
       }
       /* 頭は首から頭への向きに沿った楕円。立っているときだけ縦長にしていたので、
@@ -982,7 +1052,7 @@
          見た目の均整にいちばん効くため（2026-08-16 本人「もう少しスタイルを良く」）。
          縦半径だけ意図して小さくしてある。リアル側へ戻すときは縦を 0.068 に戻せばよい。
          首は胴の一部として描いてあるので、ここに輪郭線は引かない。 */
-      target.fillStyle = shade ? shade(part) : color;
+      target.fillStyle = partPaint(part, clothes ? clothes.skin : color, false);
       target.beginPath();
       if (rig.mask) paintFaceMask(target, rig.project, rig.pose, rig.H, rig.mask, false);
       target.beginPath();
@@ -1057,7 +1127,7 @@
     const H = pc.hM || DEFAULT_HEIGHT_CM / 100, a = (pc.facing || 0) * Math.PI / 180;
     const v = viewYaw * Math.PI / 180, view = { x: -Math.sin(v), y: Math.cos(v), z: 0 };
     const right = { x: Math.cos(v), y: Math.sin(v), z: 0 };
-    return (part) => {
+    return (part, baseColor) => {
       const keys = part.kind === 'head' ? ['head'] : part.kind === 'torso' ? ['shL', 'shR', 'hipL', 'hipR'] : part.limb.pts;
       const j = keys.reduce((sum, k) => sum.map((n, i) => n + rig.pose.joints[k][i] / keys.length), [0, 0, 0]);
       const center = { x: (pc.u - 0.5) * dims.W + H * (j[0] * Math.cos(a) + j[2] * Math.sin(a)),
@@ -1071,7 +1141,7 @@
         const side = s * 0.92, front = Math.sqrt(1 - side * side);
         const normal = unitLight({ x: right.x * side + view.x * front, y: right.y * side + view.y * front, z: 0.18 });
         const point = { x: center.x + right.x * half * s, y: center.y + right.y * half * s, z: center.z };
-        const rgb = bodyLightSample(point, normal, beams, pc.color || '#d8cdb6');
+        const rgb = bodyLightSample(point, normal, beams, baseColor || pc.color || '#d8cdb6');
         gradient.addColorStop((s + 1) / 2, `rgb(${rgb.join(',')})`);
       }
       return gradient;

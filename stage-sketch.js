@@ -88,8 +88,6 @@
     catch (_) { return ""; }
   })();
   const RELEASE_FEATURES = Object.freeze({
-    // Gamma追加要件: 「光の動き（案）」は保存形式を残したままUIと入口を停止。
-    lightMotion: false,
     formationSync: RELEASE_SCOPE_ID !== "beta-20260912",
     propMask: RELEASE_SCOPE_ID !== "beta-20260912",
   });
@@ -514,19 +512,6 @@
       || next.referenceNote || next.implementationNote || next.sourceRefs.length);
     return layerContent || transitionContent || textContent ? next : null;
   };
-  /* 動く光（案）は光の意図カードの子ではなく、シーン直下の独立した項目にする
-     （2026-09-11 本人指示: 光の意図カードに頼らず、独立したモーダルで組めるように）。
-     正規化・時間計算・描画・書き出しは stage-light-motion.js
-     （window.SHOSAI_STAGE_LIGHT_MOTION）が持つ。中身のない案は保存しない（null）。 */
-  const emptyLightMotion = () => {
-    const motionModel = window.SHOSAI_STAGE_LIGHT_MOTION;
-    return motionModel ? motionModel.empty() : null;
-  };
-  const normalizeLightMotion = (kind, raw) => {
-    if (kind !== "scene") return null;
-    const motionModel = window.SHOSAI_STAGE_LIGHT_MOTION;
-    return motionModel ? motionModel.normalize(raw) : null;
-  };
   /* 複数選択プリセットの準備データ。lightKind（吊り位置・光源の種類）とは混ぜず、
      動かせる灯体かを登録側へ任意で記録する。未指定は旧ショーの保存形を変えない。
      画面・動作・点滅をここで有効化しない。 */
@@ -664,7 +649,7 @@
   });
   /* P2d: 動く灯だけに適用する、舞台内の再現可能なワンダー。
      経路を座標列として保存せず、seedから再生時に導くので、再読込や書出しで
-     見え方が変わらない。scene.lightMotion（場面全体の動き案）とは別物。 */
+     見え方が変わらない。 */
   const SELECTED_LIGHT_MOTION_PRESETS = Object.freeze([
     { id: "motion.wander.stage", family: "動き", label: "舞台内をランダムに巡る", scope: "motion" },
   ]);
@@ -1093,6 +1078,13 @@
 
   const venueLibrary = window.SHOSAI_VENUES && window.SHOSAI_VENUES.library;
   const projectIoClone = (value) => JSON.parse(JSON.stringify(value));
+  const stripRemovedSceneFields = (project) => {
+    const removedMotionKey = "light" + "Motion";
+    (project && Array.isArray(project.scenes) ? project.scenes : []).forEach((scene) => {
+      if (scene && typeof scene === "object") delete scene[removedMotionKey];
+    });
+    return project;
+  };
   const normalizeMcpRevision = (value) => Number.isInteger(value) && value >= 1 ? value : null;
   const bundledVenueForProject = (project) => {
     if (!venueLibrary || !project || venueLibrary.isPreset(project.venue)) return null;
@@ -1103,12 +1095,12 @@
     return {
       kind: "shosai-stage-sketch",
       version: 4,
-      project: projectIoClone(project),
+      project: stripRemovedSceneFields(projectIoClone(project)),
       venues: venueData ? [venueData] : [],
     };
   };
   const prepareProjectImportDocument = (document) => {
-    const project = projectIoClone(document.project);
+    const project = stripRemovedSceneFields(projectIoClone(document.project));
     let venueImport = { venues: [], idMap: {}, imported: 0, skipped: 0 };
     if (document.version === 4 && Array.isArray(document.venues) && venueLibrary) {
       venueImport = venueLibrary.importVenues(document.venues);
@@ -4026,13 +4018,17 @@
     }).filter(Boolean));
   }
   /* 一覧に出す姿勢。物を伴う姿勢は、その物を持っているときだけ出す。
-     ただし**いま既にその姿勢になっている**ものは必ず出す（選び直せなくなるのを防ぐ）。 */
+     「座る」は椅子に載せた演者だけへ出し、「バク転」と「ウォークオーバー」は一覧から外す。
+     姿勢データ自体は旧ショーとの互換のため残す。 */
   function selectablePoses(pieces) {
     const list = Array.isArray(pieces) ? pieces.filter(Boolean) : (pieces ? [pieces] : []);
     const held = new Set();
     list.forEach((piece) => heldPropShapes(piece).forEach((shape) => held.add(shape)));
     const inUse = new Set(list.map((piece) => piece && piece.pose).filter(Boolean));
+    const allOnChairs = list.length > 0 && list.every((piece) => mountKindOf(piece) === "chair");
     return POSES.filter((pose) => {
+      if (["backflip", "walkover-mid"].includes(pose.id)) return false;
+      if (pose.id === "sit") return allOnChairs;
       const needs = POSE_PROPS[pose.id];
       if (!needs) return true;
       if (inUse.has(pose.id)) return true;
@@ -4217,6 +4213,59 @@
       out.push(pts[i + 1]);
     }
     return out;
+  }
+
+  /* 手足の付け根から指定割合までを取り出す。袖と裾を、姿勢が変わっても
+   * 関節の折れ方に沿わせるために使う。3Dの透視倍率 s も補間して残す。 */
+  function chainPrefix(points, radii, fraction) {
+    const amount = clamp(finite(fraction, 0), 0, 1);
+    if (!Array.isArray(points) || points.length < 2 || amount <= 0) return { points: [], radii: [] };
+    const lengths = [];
+    let total = 0;
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const length = Math.hypot(points[i + 1].x - points[i].x, points[i + 1].y - points[i].y);
+      lengths.push(length);
+      total += length;
+    }
+    if (!(total > 0) || amount >= 1) return { points: points.slice(), radii: radii.slice() };
+    const wanted = total * amount;
+    const outPoints = [points[0]];
+    const outRadii = [radii[0]];
+    let walked = 0;
+    for (let i = 0; i < lengths.length; i += 1) {
+      const next = walked + lengths[i];
+      if (next <= wanted) {
+        outPoints.push(points[i + 1]);
+        outRadii.push(radii[i + 1]);
+        walked = next;
+        continue;
+      }
+      const t = lengths[i] ? (wanted - walked) / lengths[i] : 0;
+      const point = lerpPt(points[i], points[i + 1], t);
+      if (Number.isFinite(points[i].s) || Number.isFinite(points[i + 1].s)) {
+        point.s = finite(points[i].s, points[i + 1].s) +
+          (finite(points[i + 1].s, points[i].s) - finite(points[i].s, points[i + 1].s)) * t;
+      }
+      outPoints.push(point);
+      outRadii.push(radii[i] + (radii[i + 1] - radii[i]) * t);
+      break;
+    }
+    return { points: outPoints, radii: outRadii };
+  }
+
+  function lookSpec(look) {
+    const normalized = normalizeLook(look);
+    if (!normalized) return null;
+    const top = topKindById(normalized.top.kind);
+    const bottom = bottomKindById(normalized.bottom.kind);
+    return {
+      skin: normalized.skin,
+      topColor: normalized.top.color,
+      bottomColor: normalized.bottom.color,
+      sleeve: sleeveById(normalized.top.sleeve || top.sleeve).t,
+      length: lengthById(normalized.bottom.length || bottom.length).t,
+      collar: top.collar,
+    };
   }
 
   // 色を地の暗さへ寄せる。奥の手足を沈ませるのに使う（重ね塗りで濃くならないよう、
@@ -4620,6 +4669,7 @@
     planCell: document.getElementById("stage-plan-cell"),
     canvasStack: document.getElementById("stage-canvas-stack"),
     frontCaption: document.getElementById("stage-front-caption"),
+    sceneBar: document.getElementById("stage-scene-bar"),
     sceneDesc: document.getElementById("stage-scene-desc"),
     sceneDescLabel: document.getElementById("stage-scene-desc-label"),
     sceneDescText: document.getElementById("stage-scene-desc-text"),
@@ -4646,27 +4696,6 @@
     lightReferenceNote: document.getElementById("stage-light-reference-note"),
     lightImplementationNote: document.getElementById("stage-light-implementation-note"),
     lightIntentClear: document.getElementById("stage-light-intent-clear"),
-    lightMotionOpen: document.getElementById("stage-light-motion-open"),
-    lightMotionOpenSummary: document.getElementById("stage-light-motion-open-summary"),
-    lightMotionModal: document.getElementById("stage-light-motion-modal"),
-    lightMotionBackdrop: document.getElementById("stage-light-motion-backdrop"),
-    lightMotionClose: document.getElementById("stage-light-motion-close"),
-    lightMotionSummary: document.getElementById("stage-light-motion-summary-text"),
-    lightMotionPresets: document.getElementById("stage-light-motion-presets"),
-    lightMotionAdjust: document.getElementById("stage-light-motion-adjust"),
-    lightMotionCount: document.getElementById("stage-light-motion-count"),
-    lightMotionRange: document.getElementById("stage-light-motion-range"),
-    lightMotionSpeed: document.getElementById("stage-light-motion-speed"),
-    lightMotionRelationRow: document.getElementById("stage-light-motion-relation-row"),
-    lightMotionRelation: document.getElementById("stage-light-motion-relation"),
-    lightMotionStage: document.getElementById("stage-light-motion-stage"),
-    lightMotionCanvas: document.getElementById("stage-light-motion-canvas"),
-    lightMotionPlay: document.getElementById("stage-light-motion-play"),
-    lightMotionStop: document.getElementById("stage-light-motion-stop"),
-    lightMotionRestart: document.getElementById("stage-light-motion-restart"),
-    lightMotionExport: document.getElementById("stage-light-motion-export"),
-    lightMotionExportStatus: document.getElementById("stage-light-motion-export-status"),
-    lightMotionClear: document.getElementById("stage-light-motion-clear"),
     venueScale: document.getElementById("stage-venue-scale"),
     venueNote: document.getElementById("stage-venue-note"),
     venueMissing: document.getElementById("stage-venue-missing"),
@@ -4783,6 +4812,13 @@
     poleControls: document.getElementById("stage-pole-controls"),
     poleLeft: document.getElementById("stage-pole-left"),
     poleRight: document.getElementById("stage-pole-right"),
+    costumeControls: document.getElementById("stage-costume-controls"),
+    costumeFields: document.getElementById("stage-costume-fields"),
+    costumeToggle: document.getElementById("stage-costume-toggle"),
+    costumeTop: document.getElementById("stage-costume-top"),
+    costumeTopColor: document.getElementById("stage-costume-top-color"),
+    costumeBottom: document.getElementById("stage-costume-bottom"),
+    costumeBottomColor: document.getElementById("stage-costume-bottom-color"),
     holdControls: document.getElementById("stage-hold-controls"),
     heldList: document.getElementById("stage-held-list"),
     holdSelect: document.getElementById("stage-hold-select"),
@@ -4791,7 +4827,6 @@
     holderLeft: document.getElementById("stage-holder-left"),
     holderRight: document.getElementById("stage-holder-right"),
     holderFace: document.getElementById("stage-holder-face"),
-    wearSelect: document.getElementById("stage-wear-select"),
     poleH: document.getElementById("stage-pole-h"),
     poleHValue: document.getElementById("stage-pole-h-value"),
     trapControls: document.getElementById("stage-trap-controls"),
@@ -4874,7 +4909,6 @@
     rosterName: document.getElementById("stage-roster-name"),
     rosterColor: document.getElementById("stage-roster-color"),
     rosterSearch: document.getElementById("stage-roster-search"),
-    rosterKindOpeners: Array.from(document.querySelectorAll("[data-roster-kind-layer]")),
     rosterPropGrid: document.getElementById("stage-roster-prop-grid"),
     modelPicker: document.getElementById("stage-model-picker"),
     modelOpen: document.getElementById("stage-model-open"),
@@ -5234,6 +5268,62 @@
     return (member && member.look) || null;
   }
 
+  function performerCostumeKey(piece) {
+    if (!piece || piece.type !== "performer") return null;
+    if (piece.castId) return `cast:${piece.castId}`;
+    if (piece.originId) return `origin:${piece.originId}`;
+    return piece.id ? `piece:${piece.id}` : null;
+  }
+
+  function normalizeSectionCostumes(kind, raw) {
+    const out = {};
+    if (kind !== "section" || !raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+    Object.entries(raw).slice(0, 200).forEach(([key, entry]) => {
+      if (typeof key !== "string" || !key || key.length > 160
+        || !entry || typeof entry !== "object" || Array.isArray(entry)) return;
+      if (entry.mode === "plain") {
+        out[key] = { mode: "plain" };
+        return;
+      }
+      const look = entry.mode === "custom" ? normalizeLook(entry.look) : null;
+      if (look) out[key] = { mode: "custom", look };
+    });
+    return out;
+  }
+
+  function normalizeSectionCostume(kind, raw) {
+    if (kind !== "section" || !raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+    if (raw.mode === "plain") return { mode: "plain" };
+    const look = raw.mode === "custom" ? normalizeLook(raw.look) : null;
+    return look ? { mode: "custom", look } : null;
+  }
+
+  function sectionForScene(scene, rows) {
+    const list = Array.isArray(rows) ? rows : [];
+    const index = list.indexOf(scene);
+    if (!scene || scene.kind !== "scene" || index < 0) return null;
+    for (let at = index - 1; at >= 0; at -= 1) {
+      const row = list[at];
+      if (row && row.kind === "section" && row.depth < scene.depth) return row;
+    }
+    return null;
+  }
+
+  function resolveLookForSection(piece, castList, section) {
+    const shared = normalizeSectionCostume("section", section && section.costume);
+    if (shared && shared.mode === "plain") return null;
+    if (shared && shared.mode === "custom") return shared.look;
+    const key = performerCostumeKey(piece);
+    const entry = key && section && section.costumes ? section.costumes[key] : null;
+    if (entry && entry.mode === "plain") return null;
+    if (entry && entry.mode === "custom") return entry.look || null;
+    return resolveLook(piece, castList);
+  }
+
+  function resolveLookForScene(piece, scene, castList, rows) {
+    return resolveLookForSection(piece, castList, sectionForScene(scene, rows));
+  }
+
   /* ---------- 環境設定（機能のオン/オフ） ----------
      端末ごとの設定。ショーのデータには入れない（共有・書き出しに混ざらない）。
      新しい機能は原則ここに並べ、切れるようにしておく（本人の方針）。 */
@@ -5253,8 +5343,6 @@
     /* 2026-09-11 本人指示: 光の意図カードは一時的に非表示にする（featureOn側で強制OFF。
        下のFEATURE_DEFAULTSにも載せない＝設定パネルの一覧に出さない）。
        データ・正規化関数（emptyLightingIntent等）は残す＝既存の保存データを壊さない。 */
-    { key: "lightMotion", label: "光の動き（案）", def: false,
-      hint: "照明パネルに「光の動きを組む」を出す。動く光の型（左右に往復・扇・交差・円・順に）を選んで再生し、動画・図・一文を書き出せる" },
     /* T-04（2026-09-18 本人要望）: 「整列」は削除した（フォーメーションで代替）。
      * キーは変えない（保存済みの設定と、フォーメーションの表示条件に使っている）。 */
     { key: "lineup", label: "複数選択とフォーメーション",
@@ -5363,7 +5451,7 @@
     // Gammaでは、舞台の転換に必要な三項目を常時有効にする。
     // 定義と保存値は残し、旧ショーの設定を読み込んでもデータは失わない。
     if (["presentation", "lineup", "pitchExport", "blackout", "sceneTiming", "sceneTransitions"].includes(key)) return true;
-    if (["lightMotion", "cuesheet"].includes(key)) return false;
+    if (key === "cuesheet") return false;
     return prefs[key] === undefined
       ? (FEATURE_DEFAULTS[key] === undefined ? true : FEATURE_DEFAULTS[key])
       : Boolean(prefs[key]);
@@ -5671,6 +5759,10 @@
       timelineDurationSeconds: null,
       // セクションごとに時間式／カウント式のどちらで時間軸を読むか。
       timelineUnit: sceneKind === "section" ? "time" : null,
+      // 演者ごとの衣装は、そのセクションに属する全シーンで共有する。
+      costumes: sceneKind === "section" ? {} : null,
+      // 現在の衣装はセクション中の全演者へ一括適用する。costumes は旧データ互換用。
+      costume: null,
       // このシーンへ入る転換で行うこと。転換時間・暗転と同じ到着側シーンへ持たせる。
       transitionNote: "",
       // このシーンで流れている曲。再生位置や音源Blobは保存しない。
@@ -5679,7 +5771,6 @@
       formation: null,
       formationLink: null,
       lightingIntent: null,
-      lightMotion: null,
     };
   }
 
@@ -6393,13 +6484,14 @@
       rehearsal: kind === "scene" ? normalizeSceneRehearsal(raw.rehearsal) : null,
       timelineDurationSeconds: kind === "section" ? timelineSeconds(raw.timelineDurationSeconds) : null,
       timelineUnit: kind === "section" && raw.timelineUnit === "count" ? "count" : "time",
+      costumes: kind === "section" ? normalizeSectionCostumes(kind, raw.costumes) : null,
+      costume: kind === "section" ? normalizeSectionCostume(kind, raw.costume) : null,
       transitionNote: kind === "scene" && typeof raw.transitionNote === "string"
         ? raw.transitionNote.slice(0, 1000) : "",
       audioTrackId: normalizeAudioTrackId(kind, raw.audioTrackId),
       formation: normalizeSectionFormation(kind, raw.formation),
       formationLink: normalizeFormationLink(kind, raw.formationLink),
       lightingIntent: normalizeLightingIntent(kind, raw.lightingIntent),
-      lightMotion: normalizeLightMotion(kind, raw.lightMotion),
       // 暗転で始まるシーン（転換が一度真っ暗になってから明ける）
       blackout: kind === "scene" ? Boolean(raw.blackout) : false,
       /* 舞台から下げたものの置き場所の控え（setId ごとに一つ）。
@@ -10081,6 +10173,7 @@
   function refreshBases(size, pieces = sc().pieces) {
     normalizeHolds(pieces, state.project);
     pieces.forEach((piece, i) => {
+      const previousMount = piece.type === "performer" ? mountKindFrom(piece, pieces) : null;
       if (piece.heldBy) { piece.supportId = null; return; }
       if (piece.type === "light") { piece.base = 0; piece.supportId = null; return; }
       /* ポールは常に床から立てる。人の近くへ置くと、人の描画範囲（旗の姿勢は
@@ -10102,6 +10195,12 @@
       piece.base = found.top;
       piece.supportId = found.holder;
       if (piece.type !== "performer") return;
+      const foundHolder = found.holder ? pieces.find((other) => other.id === found.holder) : null;
+      /* この版で椅子へ座らせた演者を椅子から下ろしたら、見えない椅子へ座り続けず立つ。
+         読み込み時から床で sit の旧データは previousMount が無いので、そのまま保つ。 */
+      if (previousMount === "chair" && (!foundHolder || foundHolder.type !== "chair") && piece.pose === "sit") {
+        piece.pose = "stand";
+      }
 
       /* ポール。上に立つのではなく、手で付いて浮く（人間旗）。
          近く（0.55m以内）へ置いた演者は、握りの高さ poleH でポールへ付く。 */
@@ -10146,15 +10245,11 @@
         return;
       }
 
-      /* 椅子。座面の上に「立つ」と背もたれへ足が乗った絵になるので、
-         腰が座面へ来る高さまで下げる（座る姿勢は refreshBases では変えず、
-         描くときに performerRig が差し替える）。 */
-      if (found.holder) {
-        const holder = pieces.find((other) => other.id === found.holder);
-        if (holder && holder.type === "chair") {
+      /* 椅子では姿勢を強制しない。「座る」なら腰を座面へ合わせ、
+         それ以外なら通常の支持物と同じく足を座面へ載せる。 */
+      if (foundHolder && foundHolder.type === "chair" && piece.pose === "sit") {
           const sitHip = 0.285 * pieceHeightM(piece) * (piece.size / 100);
           piece.base = Math.max(0, found.top - sitHip);
-        }
       }
     });
     /* 持ち物は支えの計算が終わってから手元へ寄せる。持ち手が台に乗っていても、
@@ -10341,17 +10436,22 @@
     return { P, rings, ux, uy, faceAt, eyes, facing: f, wheel, props, project, pose };
   }
 
-  /* 何に乗っているか。"pole"＝ポールに付く／"chair"＝椅子に座る／null＝普通 */
+  /* 何に乗っているか。"chair" は姿勢を固定せず、「座る」を一覧へ足す条件にだけ使う。 */
   function mountKindOf(piece) {
     return mountKindFrom(piece, sc().pieces);
+  }
+
+  function poseLockedByMount(piece) {
+    const mount = mountKindOf(piece);
+    return Boolean(mount && mount !== "chair");
   }
 
   function performerRig(piece, pos, L) {
     const H = pieceHeightM(piece) * (piece.size / 100);
     const per = perMetre(pos, L);
     const zDrop = L.plan ? 0 : ((L.bottomY - L.floorY) / (L.size.depth || 9)) * H;
-    /* ポールに付いている・椅子に座っているあいだは、姿勢は選べない。
-       体の使い方が乗り物側で決まっているため（写真の実技と同じ形にする）。 */
+    /* ポール・トラピーズ・ティシューは器具側の姿勢を使う。
+       椅子は演者が選んだ「座る」「立つ」などをそのまま使う。 */
     const mount = mountKindOf(piece);
     // 転換アニメの床の区間は歩く姿勢。乗り物の強制姿勢より優先する
     const poseId = piece.animPose ? piece.animPose
@@ -10361,7 +10461,7 @@
           ? (piece.trapMode === "hang" ? "trapeze_hang" : "trapeze_sit")
           : mount === "tissue"
             ? "trapeze_hang"
-          : (mount === "chair" ? "sit" : piece.pose);
+          : piece.pose;
     const rig = buildRig(poseId, pos.x, pos.rawY === undefined ? pos.y : pos.rawY,
       H * per.x, H * per.y, ((piece.animFacing !== undefined ? piece.animFacing : piece.facing || 0) * Math.PI) / 180, zDrop, L.plan ? null : L.tilt);
     rig.per = per;
@@ -10411,6 +10511,7 @@
     const P = rig.P;
     const ux = rig.ux;
     const uy = rig.uy;
+    const clothes = lookSpec(look);
 
     /* 道具の輪は体より先に、輪の向こう側だけ塗る。手前側は体のあとに塗る。
      * 一本の線で一度に塗ると、人が輪の手前にいるのか奥にいるのか読めない。 */
@@ -10427,10 +10528,22 @@
     parts.forEach((part) => {
       if (part.kind === "limb") {
         const far = part.z < -0.02;
-        target.fillStyle = far ? mixToward(color, 0.26) : color;
+        const skinColor = clothes ? clothes.skin : color;
+        target.fillStyle = far ? mixToward(skinColor, 0.26) : skinColor;
         const taper = LIMB_TAPER[part.limb.kind];
         const nodes = limbNodes(part.limb.pts.map((k) => P[k]), part.limb.kind);
-        taperedChain(target, nodes, taper.map((r) => Math.max(0.8, r * ux)));
+        const radii = taper.map((r) => Math.max(0.8, r * ux));
+        taperedChain(target, nodes, radii);
+        if (clothes) {
+          const amount = part.limb.kind === "arm" ? clothes.sleeve : clothes.length;
+          const garment = chainPrefix(nodes, radii, amount);
+          if (garment.points.length > 1) {
+            const garmentColor = part.limb.kind === "arm" ? clothes.topColor : clothes.bottomColor;
+            target.fillStyle = far ? mixToward(garmentColor, 0.26) : garmentColor;
+            taperedChain(target, garment.points, garment.radii);
+          }
+          target.fillStyle = far ? mixToward(skinColor, 0.26) : skinColor;
+        }
         // 手首から先／足首から先
         const from = P[part.limb.tip[0]];
         const to = P[part.limb.tip[1]];
@@ -10456,11 +10569,19 @@
         return;
       }
       if (part.kind === "torso") {
-        /* 胴。首から股まで断面を積んだ外周をそのままなぞる。
+        /* 胴。衣装がある場合は、まず肌で首から股までをつなぎ、襟から下だけ上衣を重ねる。
            ★凸包で取ってはいけない（くびれが埋まって樽になる）。 */
-        target.fillStyle = color;
+        target.fillStyle = clothes ? clothes.skin : color;
         smoothClosedPath(target, torsoOutline(rig.rings));
         target.fill();
+        if (clothes) {
+          const reversedNeck = NECK_RINGS.slice().reverse();
+          const collarIndex = Math.max(0, reversedNeck.findIndex((ring) => ring.s <= clothes.collar));
+          const garmentRings = rig.rings.slice(collarIndex);
+          target.fillStyle = clothes.topColor;
+          smoothClosedPath(target, torsoOutline(garmentRings));
+          target.fill();
+        }
         return;
       }
       /* 頭は首から頭への向きに沿った楕円。立っているときだけ縦長にしていたので、
@@ -10475,7 +10596,7 @@
          見た目の均整にいちばん効くため（2026-08-16 本人「もう少しスタイルを良く」）。
          縦半径だけ意図して小さくしてある。リアル側へ戻すときは縦を 0.068 に戻せばよい。
          首は胴の一部として描いてあるので、ここに輪郭線は引かない。 */
-      target.fillStyle = color;
+      target.fillStyle = clothes ? clothes.skin : color;
       target.beginPath();
       if (rig.mask) paintFaceMask(target, rig.project, rig.pose, rig.H, rig.mask, false);
       target.beginPath();
@@ -10583,20 +10704,21 @@
       : mount === "pole" ? (piece.poleSide === "L" ? "poleflag_l" : "poleflag_r")
         : mount === "trapeze" ? (piece.trapMode === "hang" ? "trapeze_hang" : "trapeze_sit")
           : mount === "tissue" ? "trapeze_hang"
-            : mount === "chair" ? "sit"
-              : (piece.pose || "stand");
+            : (piece.pose || "stand");
   }
 
   /* 3Dカメラ（stage-first-person.js）へ体モデルを貸し出す窓口。
    * FPVは読み込み順で先に評価されるため、FPV側は描画時に遅延参照する。 */
   window.SHOSAI_STAGE_BODY = Object.freeze({
     poseById, resolvePoseId, maskFacePoint, paintMask, paintFaceMask, paintSmoothProp,
-    normalizeLook, resolveLook,
+    normalizeLook, resolveLook, normalizeSectionCostumes, normalizeSectionCostume, performerCostumeKey,
+    sectionForScene, resolveLookForSection, resolveLookForScene,
     topKindById, bottomKindById, hairStyleById, lengthById, sleeveById,
     LENGTHS, SLEEVES, TOP_KINDS, BOTTOM_KINDS, HAIR_STYLES,
     TORSO_RINGS, NECK_RINGS, LIMB_TAPER, LIMB_MIDS, LIMBS,
     HAND_LEN, HAND_R, FOOT_R, HEEL_BACK, PROP_TONES,
     norm3, cross3, limbNodes, lerpPt,
+    chainPrefix, lookSpec,
     taperedChain, smoothClosedPath, torsoOutline, mixToward,
   });
 
@@ -10606,7 +10728,13 @@
     const mask = sc().pieces.find((p) => p.heldBy === piece.id && p.holdMode === "face" && isMask(p));
     if (mask) rig.mask = { dims: pieceDims(mask), color: mask.color };
     const P = rig.P;
-    const look = resolveLook(piece, state.project.cast);
+    const rawLook = normalizeLook(resolveLookForScene(piece, sc(), state.project.cast, state.project.scenes));
+    const look = rawLook ? {
+      ...rawLook,
+      skin: costumeLitColorFor(piece, L, rawLook.skin) || rawLook.skin,
+      top: { ...rawLook.top, color: costumeLitColorFor(piece, L, rawLook.top.color) || rawLook.top.color },
+      bottom: { ...rawLook.bottom, color: costumeLitColorFor(piece, L, rawLook.bottom.color) || rawLook.bottom.color },
+    } : null;
     const bodyColor = costumeLitColor(piece, L) || piece.color;   // G-D: 光だまりの色で染める（既定は切）
     target.save();
 
@@ -11845,7 +11973,7 @@
   }
 
   // 選択灯ワンダーは保存したseedから描画時に狙い点を導く。駒の通常座標は書き換えず、
-  // scene.lightMotion（場面全体の動き案）にも依存しない。
+  // 旧式の場面全体アニメーションには依存しない。
   function selectedLightMotionTarget(piece, timeMs = (typeof performance !== "undefined" ? performance.now() : Date.now())) {
     const behavior = piece && piece.lightBehavior;
     const model = window.SHOSAI_STAGE_SELECTED_LIGHT_MOTION_PRESETS;
@@ -12072,7 +12200,10 @@
        * 平面図の三角は左を指す。 */
       target.rotate(-rad);
       target.translate(ext.cx * H * L.pxPerM, ext.cz * H * L.pxPerM);
-      target.fillStyle = piece.color;
+      const look = normalizeLook(resolveLookForScene(piece, sc(), state.project.cast, state.project.scenes));
+      target.fillStyle = look
+        ? (costumeLitColorFor(piece, L, look.top.color) || look.top.color)
+        : piece.color;
       target.strokeStyle = "rgba(0,0,0,0.4)";
       target.lineWidth = 1.4;
       target.beginPath();
@@ -14860,6 +14991,29 @@
     };
   }
 
+  /* 作業灯を消したとき、床の光だまりが画面上で背景の壁まで抜いてしまわないための型。
+     光だまりの面は床だけなので、正面図の暗幕の穴も床の台形だけに限る。
+     形を持つ会場もまず舞台全体の外接面へ閉じ込めれば、背景へ光が漏れない。 */
+  function clipCueLightFloor(maskCtx, L) {
+    if (!maskCtx || !L || L.plan) return false;
+    const width = Number(L.size && L.size.width) || 0;
+    const depth = Number(L.size && L.size.depth) || 0;
+    if (!(width > 0) || !(depth > 0)) return false;
+    const project = worldProjector(L);
+    const points = [
+      { x: -width / 2, y: 0, z: 0 }, { x: width / 2, y: 0, z: 0 },
+      { x: width / 2, y: depth, z: 0 }, { x: -width / 2, y: depth, z: 0 },
+    ].map(project);
+    if (points.some((point) => !point || !Number.isFinite(point.X + point.Y))) return false;
+    maskCtx.beginPath();
+    points.forEach((point, index) => {
+      if (index) maskCtx.lineTo(point.X, point.Y); else maskCtx.moveTo(point.X, point.Y);
+    });
+    maskCtx.closePath();
+    maskCtx.clip();
+    return true;
+  }
+
   /* 段階1「光だまり」（2026-09-18）。設計 docs/light-pool-2026-09-18/DESIGN.md。
      ★既定は切。環境設定の「照明の光だまり」を入れたときだけ描く。
      ★読むだけ。project.lightingDesign も駒も書き換えない。
@@ -14883,7 +15037,8 @@
     const api = window.SHOSAI_LIGHT_RENDER;
     if (!api || !lightCueOverlayForLayout(L)) return false;
     return api.paintWorkLight(target, lightCuePoolList(L) || [], worldProjector(L), {
-      beams: featureOn("lightBeam"), topDown: Boolean(L.plan), tMs: lightMotionClockMs(),
+      beams: featureOn("lightBeam"), topDown: Boolean(L.plan), tMs: lightEffectClockMs(),
+      floorClip: (maskCtx) => clipCueLightFloor(maskCtx, L),
     });
   }
 
@@ -14933,6 +15088,9 @@
      ★lightCuePoolList は毎回配列を組むので、同じ模型の間は使い回す（演者の数だけ呼ばれる）。 */
   const costumePoolCache = { model: null, pools: null };
   function costumeLitColor(piece, L) {
+    return costumeLitColorFor(piece, L, piece && piece.color);
+  }
+  function costumeLitColorFor(piece, L, baseColor) {
     if (!piece || !featureOn("costumeLight") || !featureOn("lightPool")) return null;
     const api = window.SHOSAI_LIGHT_RENDER;
     if (!api || typeof api.litColorAt !== "function" || typeof api.tintColor !== "function") return null;
@@ -14949,7 +15107,7 @@
     const half = Math.max(finite(dims.w, 0), finite(dims.d, 0), finite(dims.dia, 0)) / 2;
     const point = { x: (finite(visual.u, 0.5) - 0.5) * (Number(L.size.width) || 1), y: finite(visual.v, 0.5) * (Number(L.size.depth) || 1) };
     const lit = api.litColorAt(pools, point, half);
-    return lit ? api.tintColor(piece.color, lit) : null;
+    return lit ? api.tintColor(baseColor, lit) : null;
   }
 
   function redrawLitPieces(target, L, pieces, draw) {
@@ -14978,7 +15136,7 @@
     if (!pools) return 0;
     const started = typeof performance !== "undefined" ? performance.now() : Date.now();
     const project = worldProjector(L);
-    const drawn = api.paintPools(target, pools, project, { tMs: lightMotionClockMs() });
+    const drawn = api.paintPools(target, pools, project, { tMs: lightEffectClockMs() });
     const spent = (typeof performance !== "undefined" ? performance.now() : Date.now()) - started;
     lightPoolMs = lightPoolMs ? lightPoolMs * 0.8 + spent * 0.2 : spent;
     return drawn;
@@ -15828,8 +15986,6 @@
     syncLightIntentCard();
     syncLightIntentDock();
     syncLightIntentCompare();
-    if (els.lightMotionModal && !els.lightMotionModal.hidden) syncLightMotionModal();
-    updateLightMotionTriggerSummary();
     const v = venue();
     const size = venueSize();
     const counts = Object.keys(PIECE_TYPES)
@@ -15920,10 +16076,11 @@
       // セクション（章の見出し）には場面の中身が無いので、書く欄も出さない
       const editable = !scene || scene.kind !== "section";
       els.sceneDesc.hidden = !editable;
-      if (!editable) return;
+      if (!editable) { scheduleSceneBarLayout(); return; }
       if (document.activeElement !== box && box.value !== text) box.value = text;
       syncSceneDescPreferredWidth();
       growSceneDesc();
+      scheduleSceneBarLayout();
     }
   }
 
@@ -15959,6 +16116,25 @@
     desc.style.setProperty("--scene-desc-preferred-width", `${sceneDescPreferredWidth(source)}px`);
   }
 
+  /* 説明欄が実際に次の行へ送られたときだけ、上段のシーン送りを中央へ置く。
+     画面幅だけでは、シーン名・説明の長さによる折り返しを判定できない。測る前に
+     クラスを外すことで、広くなったときは一段の左寄せへ自然に戻せる。 */
+  let sceneBarLayoutFrame = 0;
+  function scheduleSceneBarLayout() {
+    if (!els.sceneBar || sceneBarLayoutFrame) return;
+    sceneBarLayoutFrame = requestAnimationFrame(() => {
+      sceneBarLayoutFrame = 0;
+      const step = els.sceneBar.querySelector(".stage-scene-step");
+      const desc = els.sceneDesc;
+      els.sceneBar.classList.remove("is-two-row");
+      if (!step || !desc || desc.hidden) return;
+      const stepRect = step.getBoundingClientRect();
+      const descRect = desc.getBoundingClientRect();
+      const isTwoRow = descRect.top >= stepRect.bottom - 1;
+      els.sceneBar.classList.toggle("is-two-row", isTwoRow);
+    });
+  }
+
   function growSceneDesc() {
     const box = els.sceneDescText;
     if (!box) return;
@@ -15981,7 +16157,7 @@
       const width = Math.round(entries[0].contentRect.width);
       if (width === lastWidth) return;
       lastWidth = width;
-      requestAnimationFrame(growSceneDesc);
+      requestAnimationFrame(() => { growSceneDesc(); scheduleSceneBarLayout(); });
     }).observe(els.sceneDesc);
   }
 
@@ -15992,6 +16168,7 @@
       scene.note = els.sceneDescText.value.slice(0, 200);
       syncSceneDescPreferredWidth();
       growSceneDesc();
+      scheduleSceneBarLayout();
       /* シーン一覧側の同じ欄も合わせる（二つの欄が食い違って見えないように）。
          一覧ごと組み直すと打つたびに作り直しになるので、その欄だけ書き換える。 */
       const twin = document.getElementById("stage-scene-note-input");
@@ -16187,392 +16364,6 @@
   }
 
 
-  /* ---------- 光の動き（案） ----------
-     機材（灯体・DMX・パン/チルト）を持たない、動く光のスケッチ。
-     シーン直下の独立した項目 scene.lightMotion に保存する（光の意図カードの子ではない。
-     2026-09-11 本人指示: 光の意図カードに頼らず、独立したモーダルで組めるようにする）。
-     正規化は stage-light-motion.js の window.SHOSAI_STAGE_LIGHT_MOTION が持つ。
-     経緯: docs/light-ui-brainstorm-2026-09-11/spec.html（本人承認 2026-09-11、
-     配置は実装時に本人指示でモーダルへ変更）。
-
-     プレビュー再生は requestAnimationFrame（見た目優先）。
-     書き出しは別経路（captureStream(0)+固定ステップ、順0で実機検証済み）を使う。
-     どちらも同じ drawFrame() を呼ぶので、画面と書き出しが食い違わない。 */
-  /* 要約文の動詞句は、本数を表す主語（光1本が／光2本が）を前に足す前提で作る。
-     ボタンの表示名（stage-i18n.js側）とは別の辞書にする。「2本が交差する」を
-     ボタンの表示名にそのまま使うと、要約文で「光2本が2本が交差する」のように
-     本数が二重に出てしまうため（実機確認で発見・2026-09-11修正）。 */
-  const LIGHT_MOTION_PHRASE_LABELS = Object.freeze({
-    ja: {
-      sweep: "左右に往復する", fan: "扇のように開閉する", cross: "交差する",
-      circle: "円を描く", chase: "順に動く",
-    },
-    // 英語は本数（単数/複数）で動詞が変わらないよう、動名詞で揃える
-    en: {
-      sweep: "sweeping side to side", fan: "fanning open and closed",
-      cross: "crossing", circle: "circling", chase: "chasing in sequence",
-    },
-  });
-  const LIGHT_MOTION_SPEED_LABELS = Object.freeze({
-    ja: { slow: "ゆっくり", normal: "普通の速さ", fast: "速く" },
-    en: { slow: "slowly", normal: "at a normal pace", fast: "quickly" },
-  });
-
-  function lightMotionCurrentMotion() {
-    const scene = sc();
-    if (!scene || scene.kind !== "scene") return null;
-    return normalizeLightMotion("scene", scene.lightMotion);
-  }
-
-  // 光の意図カードと同じ考え方: 変更前と変更後を比べ、実質的な変化がなければ
-  // チェックポイントを積まない・保存しない（連打しても「一つ戻す」が汚れない）。
-  function mutateLightMotion(mutator, message) {
-    const scene = sc();
-    if (!scene || scene.kind !== "scene") return;
-    const model = window.SHOSAI_STAGE_LIGHT_MOTION;
-    const before = normalizeLightMotion("scene", scene.lightMotion);
-    const draft = before ? { ...before } : (model ? model.empty() : null);
-    mutator(draft);
-    const next = normalizeLightMotion("scene", draft);
-    if (JSON.stringify(before) === JSON.stringify(next)) return;
-    checkpoint();
-    scene.lightMotion = next;
-    renderScenes();
-    syncLightMotionModal();
-    updateLightMotionTriggerSummary();
-    persistSoon();
-    announce(message);
-  }
-
-  function lightMotionSummaryText(motion, en) {
-    const langKey = en ? "en" : "ja";
-    const phrase = LIGHT_MOTION_PHRASE_LABELS[langKey][motion.presetId] || motion.presetId;
-    const speed = LIGHT_MOTION_SPEED_LABELS[langKey][motion.speed] || motion.speed;
-    if (en) {
-      const count = motion.count === 2 ? "Two lights" : "One light";
-      return `${count}, ${phrase}, ${speed}.`;
-    }
-    const count = motion.count === 2 ? "光2本が" : "光1本が";
-    return `${count}${phrase}（${speed}）。`;
-  }
-
-  function lightMotionDrawOpts(motion) {
-    const en = languageValue(() => true, () => false);
-    return {
-      label: en ? "Light motion — concept" : "光の動き・案",
-      footNote: en
-        ? "A motion concept. Fixture positions, DMX and safety are not shown."
-        : "光の動きの案です。灯体位置・DMX・安全性は示しません。",
-      fontFamily: '"Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif',
-      bg: "#0d0e10",
-    };
-  }
-
-  let lightMotionPlaying = false;
-  let lightMotionRaf = 0;
-  let lightMotionLastTick = 0;
-  let lightMotionElapsedMs = 0;
-  let lightMotionSyncedSceneId = null;
-
-  function lightMotionStopPlayback() {
-    lightMotionPlaying = false;
-    if (lightMotionRaf) cancelAnimationFrame(lightMotionRaf);
-    lightMotionRaf = 0;
-    lightMotionLastTick = 0;
-  }
-
-  function lightMotionDrawCurrent() {
-    const canvas = els.lightMotionCanvas;
-    const motion = lightMotionCurrentMotion();
-    const model = window.SHOSAI_STAGE_LIGHT_MOTION;
-    if (!canvas || !motion || !model) return;
-    const ctx = canvas.getContext && canvas.getContext("2d");
-    if (!ctx) return;
-    model.drawFrame(ctx, canvas.width, canvas.height, motion, lightMotionElapsedMs, lightMotionDrawOpts(motion));
-  }
-
-  function lightMotionTick(ts) {
-    if (!lightMotionPlaying) return;
-    if (!lightMotionLastTick) lightMotionLastTick = ts;
-    lightMotionElapsedMs += ts - lightMotionLastTick;
-    lightMotionLastTick = ts;
-    lightMotionDrawCurrent();
-    lightMotionRaf = requestAnimationFrame(lightMotionTick);
-  }
-
-  function lightMotionPlay() {
-    if (!lightMotionCurrentMotion() || lightMotionPlaying) return;
-    lightMotionPlaying = true;
-    lightMotionLastTick = 0;
-    lightMotionRaf = requestAnimationFrame(lightMotionTick);
-  }
-
-  function lightMotionRestartPlayback() {
-    lightMotionStopPlayback();
-    lightMotionElapsedMs = 0;
-    lightMotionDrawCurrent();
-  }
-
-  // パラメータを変える操作は、必ず頭（フレーム0）へ戻してから適用する。
-  // 動きの途中で型や範囲が変わると、いま何を見ているのか分からなくなるため。
-  function lightMotionApplyChange(mutator, message) {
-    lightMotionStopPlayback();
-    lightMotionElapsedMs = 0;
-    mutateLightMotion(mutator, message);
-  }
-
-  // 照明パネルの「光の動きを組む」ボタン自体の表示（現在の案を短く示す）。
-  // モーダルを開いていなくても、シーン切替や書き換えのたびに更新する。
-  function updateLightMotionTriggerSummary() {
-    if (!els.lightMotionOpenSummary) return;
-    const motion = lightMotionCurrentMotion();
-    const en = languageValue(() => true, () => false);
-    els.lightMotionOpenSummary.textContent = motion
-      ? lightMotionSummaryText(motion, en)
-      : tx("動く光の案はまだありません");
-  }
-
-  function syncLightMotionModal() {
-    if (!els.lightMotionModal || els.lightMotionModal.hidden) return;
-
-    if (lightMotionModalSceneId !== (sc() && sc().id)) {
-      lightMotionModalSceneId = sc() && sc().id;
-      lightMotionStopPlayback();
-      lightMotionElapsedMs = 0;
-    }
-
-    const motion = lightMotionCurrentMotion();
-    const model = window.SHOSAI_STAGE_LIGHT_MOTION;
-
-    if (els.lightMotionSummary) {
-      els.lightMotionSummary.textContent = motion
-        ? lightMotionSummaryText(motion, languageValue(() => true, () => false))
-        : tx("動く光の案はまだありません");
-    }
-    if (els.lightMotionPresets) {
-      Array.from(els.lightMotionPresets.querySelectorAll("[data-light-motion-preset]")).forEach((btn) => {
-        btn.setAttribute("aria-pressed", String(Boolean(motion) && motion.presetId === btn.dataset.lightMotionPreset));
-      });
-    }
-
-    const hasMotion = Boolean(motion);
-    if (els.lightMotionAdjust) els.lightMotionAdjust.hidden = !hasMotion;
-    if (els.lightMotionStage) els.lightMotionStage.hidden = !hasMotion;
-    if (els.lightMotionClear) els.lightMotionClear.disabled = !hasMotion;
-
-    if (!hasMotion) return;
-
-    const forcedCount = model ? model.FIXED_COUNT_PRESETS[motion.presetId] : null;
-    if (els.lightMotionCount) {
-      Array.from(els.lightMotionCount.querySelectorAll("button")).forEach((btn) => {
-        const value = Number(btn.dataset.lightMotionCount);
-        btn.setAttribute("aria-pressed", String(motion.count === value));
-        btn.disabled = Boolean(forcedCount);
-      });
-    }
-    if (els.lightMotionRange && document.activeElement !== els.lightMotionRange) {
-      els.lightMotionRange.value = String(motion.range);
-    }
-    if (els.lightMotionSpeed) {
-      Array.from(els.lightMotionSpeed.querySelectorAll("button")).forEach((btn) => {
-        btn.setAttribute("aria-pressed", String(motion.speed === btn.dataset.lightMotionSpeed));
-      });
-    }
-    if (els.lightMotionRelationRow) els.lightMotionRelationRow.hidden = motion.count !== 2;
-    if (els.lightMotionRelation) {
-      Array.from(els.lightMotionRelation.querySelectorAll("button")).forEach((btn) => {
-        btn.setAttribute("aria-pressed", String(motion.relation === btn.dataset.lightMotionRelation));
-      });
-    }
-    lightMotionDrawCurrent();
-  }
-
-  let lightMotionModalSceneId = null;
-
-  function openLightMotionModal() {
-    if (!RELEASE_FEATURES.lightMotion || !els.lightMotionModal) return;
-    const scene = sc();
-    if (!scene || scene.kind !== "scene") return;
-    els.lightMotionModal.hidden = false;
-    if (els.lightMotionBackdrop) els.lightMotionBackdrop.hidden = false;
-    lightMotionModalSceneId = null; // 開くたび必ず頭から（前回の再生位置を持ち越さない）
-    syncLightMotionModal();
-  }
-
-  function closeLightMotionModal() {
-    if (!els.lightMotionModal) return;
-    lightMotionStopPlayback();
-    els.lightMotionModal.hidden = true;
-    if (els.lightMotionBackdrop) els.lightMotionBackdrop.hidden = true;
-  }
-
-  if (els.lightMotionOpen) {
-    els.lightMotionOpen.hidden = !RELEASE_FEATURES.lightMotion;
-    if (RELEASE_FEATURES.lightMotion) els.lightMotionOpen.addEventListener("click", openLightMotionModal);
-  }
-  if (els.lightMotionClose) els.lightMotionClose.addEventListener("click", closeLightMotionModal);
-  if (els.lightMotionBackdrop) els.lightMotionBackdrop.addEventListener("click", closeLightMotionModal);
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && els.lightMotionModal && !els.lightMotionModal.hidden) {
-      closeLightMotionModal();
-    }
-  });
-
-  if (els.lightMotionPresets) {
-    els.lightMotionPresets.addEventListener("click", (event) => {
-      const btn = event.target.closest("[data-light-motion-preset]");
-      if (!btn) return;
-      const model = window.SHOSAI_STAGE_LIGHT_MOTION;
-      if (!model) return;
-      const presetId = btn.dataset.lightMotionPreset;
-      lightMotionApplyChange((draft) => {
-        const defaults = model.defaultsForPreset(presetId);
-        draft.presetId = presetId;
-        draft.count = defaults.count || draft.count || 1;
-        draft.relation = defaults.relation || draft.relation || "together";
-      }, "光の動きを選びました。");
-    });
-  }
-
-  function lightMotionBindSeg(container, dataAttr, applyFn) {
-    if (!container) return;
-    container.addEventListener("click", (event) => {
-      const btn = event.target.closest(`[${dataAttr}]`);
-      if (!btn || btn.disabled) return;
-      applyFn(btn);
-    });
-  }
-
-  lightMotionBindSeg(els.lightMotionCount, "data-light-motion-count", (btn) => {
-    const value = Number(btn.dataset.lightMotionCount);
-    lightMotionApplyChange((draft) => {
-      if (!draft.presetId) return;
-      draft.count = value;
-    }, "光の動きの本数を変えました。");
-  });
-  lightMotionBindSeg(els.lightMotionSpeed, "data-light-motion-speed", (btn) => {
-    const value = btn.dataset.lightMotionSpeed;
-    lightMotionApplyChange((draft) => {
-      if (!draft.presetId) return;
-      draft.speed = value;
-    }, "光の動きの速さを変えました。");
-  });
-  lightMotionBindSeg(els.lightMotionRelation, "data-light-motion-relation", (btn) => {
-    const value = btn.dataset.lightMotionRelation;
-    lightMotionApplyChange((draft) => {
-      if (!draft.presetId) return;
-      draft.relation = value;
-    }, "光の動きの関係を変えました。");
-  });
-
-  if (els.lightMotionRange) {
-    // ドラッグ中はプレビューだけ更新し、離した時に一度だけ保存する
-    // （光の意図の文章欄と同じ考え方。ドラッグのたびに一つ戻すを積まない）。
-    els.lightMotionRange.addEventListener("input", () => {
-      const motion = lightMotionCurrentMotion();
-      const model = window.SHOSAI_STAGE_LIGHT_MOTION;
-      const canvas = els.lightMotionCanvas;
-      if (!motion || !model || !canvas) return;
-      const preview = { ...motion, range: clamp(Number(els.lightMotionRange.value), 0.2, 1) };
-      const ctx = canvas.getContext("2d");
-      model.drawFrame(ctx, canvas.width, canvas.height, preview, lightMotionElapsedMs, lightMotionDrawOpts(preview));
-    });
-    els.lightMotionRange.addEventListener("change", () => {
-      const value = clamp(Number(els.lightMotionRange.value), 0.2, 1);
-      lightMotionApplyChange((draft) => {
-        if (!draft.presetId) return;
-        draft.range = value;
-      }, "光の動きの範囲を変えました。");
-    });
-  }
-
-  if (els.lightMotionPlay) els.lightMotionPlay.addEventListener("click", lightMotionPlay);
-  if (els.lightMotionStop) els.lightMotionStop.addEventListener("click", lightMotionStopPlayback);
-  if (els.lightMotionRestart) els.lightMotionRestart.addEventListener("click", lightMotionRestartPlayback);
-
-  function triggerLightMotionDownload(blob, filename) {
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
-  }
-
-  function lightMotionExportText(motion, scene, en) {
-    const summary = lightMotionSummaryText(motion, en);
-    const title = (scene && scene.title) || (en ? "Untitled scene" : "無題のシーン");
-    const dateStr = new Date().toISOString().slice(0, 10);
-    const lines = en ? [
-      "Light motion — concept", "",
-      `Scene: ${title}`, `Date: ${dateStr}`, "",
-      summary, "",
-      "This is a motion concept, not fixture positions, DMX or safety.",
-    ] : [
-      "光の動き・案", "",
-      `シーン: ${title}`, `出力日: ${dateStr}`, "",
-      summary, "",
-      "光の動きの案です。灯体位置・DMX・安全性は示しません。",
-    ];
-    return lines.join("\n");
-  }
-
-  if (els.lightMotionExport) {
-    els.lightMotionExport.addEventListener("click", async () => {
-      const motion = lightMotionCurrentMotion();
-      const model = window.SHOSAI_STAGE_LIGHT_MOTION;
-      const canvas = els.lightMotionCanvas;
-      if (!motion || !model || !canvas) return;
-      const scene = sc();
-      const en = languageValue(() => true, () => false);
-      const status = els.lightMotionExportStatus;
-      const setStatus = (text) => { if (status) status.textContent = text; };
-      els.lightMotionExport.disabled = true;
-      lightMotionStopPlayback();
-      setStatus(tx("書き出し中…"));
-      try {
-        const ctx = canvas.getContext("2d");
-        const opts = lightMotionDrawOpts(motion);
-        const videoResult = await model.exportVideo(canvas, ctx, motion, { ...opts, durationMs: 4000 });
-        lightMotionDrawCurrent();
-        const baseName = `light-motion-${(scene && scene.id) || "scene"}`;
-        if (videoResult.ok) {
-          const ext = videoResult.mime.startsWith("video/mp4") ? "mp4" : "webm";
-          triggerLightMotionDownload(videoResult.blob, `${baseName}.${ext}`);
-        }
-        const snapshotBlob = await model.exportSnapshotBlob(motion, {
-          ...opts,
-          panelWidth: 320,
-          panelHeight: 180,
-          frameLabels: en ? ["start", "turn", "return"] : ["始め", "折り返し", "戻り"],
-        });
-        triggerLightMotionDownload(snapshotBlob, `${baseName}.png`);
-        const textBlob = new Blob([lightMotionExportText(motion, scene, en)], { type: "text/plain;charset=utf-8" });
-        triggerLightMotionDownload(textBlob, `${baseName}.txt`);
-        setStatus("");
-        announce(videoResult.ok
-          ? "光の動きを書き出しました。"
-          : "動画の書き出しに対応していない環境です。図と一文だけ書き出します。");
-      } catch (err) {
-        setStatus("");
-        announce("書き出しに失敗しました。");
-      } finally {
-        els.lightMotionExport.disabled = false;
-      }
-    });
-  }
-
-  if (els.lightMotionClear) {
-    els.lightMotionClear.addEventListener("click", () => {
-      // presetIdを外すと正規化がnullを返す＝保存側で「消した」ことになる
-      // （プリセット未選択は中身なしという既存の原則と同じ経路）。
-      lightMotionApplyChange((draft) => { draft.presetId = null; },
-        "光の動きを消しました。一つ戻すで復元できます。");
-    });
-  }
-
   /* ---------- 劇場のUI ---------- */
 
   /* ---------- パネルの組み立てと並べ替え ---------- */
@@ -16740,6 +16531,36 @@
 
   // 演者・舞台セット・小道具の一覧高は、この端末だけの見え方として別々に覚える。
   // 一覧の全高まで広げられるので、内側のスクロールを使わず外側のパネルで読める。
+  function initRosterAccordions() {
+    if (phoneViewerActive || STUDY_READ_ONLY) return;
+    const buttons = Array.from(document.querySelectorAll("[data-roster-accordion]"));
+    if (!buttons.length) return;
+    const readPrefs = () => ({ ...(prefs.rosterAccordionClosed || {}) });
+    const apply = (button, closed) => {
+      const body = document.getElementById(button.getAttribute("aria-controls"));
+      const group = button.closest(".stage-roster-group");
+      const label = (button.textContent || "項目").trim();
+      button.setAttribute("aria-expanded", String(!closed));
+      button.setAttribute("aria-label", `${label}を${closed ? "開く" : "閉じる"}`);
+      if (body) body.hidden = closed;
+      if (group) group.classList.toggle("is-collapsed", closed);
+    };
+    const saved = readPrefs();
+    buttons.forEach((button) => {
+      const key = button.dataset.rosterAccordion;
+      apply(button, saved[key] === true);
+      button.addEventListener("click", () => {
+        const next = readPrefs();
+        const closed = button.getAttribute("aria-expanded") === "true";
+        if (closed) next[key] = true;
+        else delete next[key];
+        prefs.rosterAccordionClosed = next;
+        savePrefs();
+        apply(button, closed);
+      });
+    });
+  }
+
   let rosterListHeightUi = null;
   function initRosterListHeights() {
     if (rosterListHeightUi || phoneViewerActive || STUDY_READ_ONLY) return;
@@ -18292,11 +18113,8 @@
     if (!els.castList) return;
     const cast = state.project.cast;
     els.castList.innerHTML = "";
+    els.castList.append(rosterAddButton("performer"));
     if (!cast.length) {
-      const empty = document.createElement("p");
-      empty.className = "stage-cast-empty";
-      empty.textContent = tx("まだ誰も登録していません。名前を入れて追加してください。");
-      els.castList.append(empty);
       return;
     }
     enableRosterReorder(els.castList);   // T-24: 名前を掴んで並べ替え
@@ -18728,9 +18546,8 @@
     && !rosterIsMachinery(item) && !rosterIsProp(item);
 
   function renderSets() {
-    renderSetList(els.setList, rosterIsSet,
-      tx("まだ何も登録していません。名前と形を選んで追加してください。"));
-    renderSetList(els.propList, rosterIsProp, "");
+    renderSetList(els.setList, rosterIsSet, "", "set");
+    renderSetList(els.propList, rosterIsProp, "", "prop");
     renderSetList(els.machineryList, rosterIsMachinery, "");
     syncRosterGroups();
   }
@@ -18864,8 +18681,8 @@
     persistSoon();
   }
 
-  /* 一枚にまとめた以上、空の見出しが三つ並ぶのは邪魔になる。
-   * 中身のある組だけ出し、全部空のときだけ一行の案内を出す。 */
+  /* 追加操作を各一覧の先頭へ置いたので、演者・大道具・小道具の見出しは
+   * 空でも残す。どの種類を足す入口か、一覧を見るだけで分かるようにする。 */
   function syncRosterGroups() {
     const sets = state.project.sets || [];
     /* T-21 / T-32（2026-09-18）: 一覧と同じ振り分けで数える。
@@ -18876,13 +18693,29 @@
       props: sets.filter(rosterIsProp).length,
       machinery: sets.filter(rosterIsMachinery).length,
     };
-    if (els.groupCast) els.groupCast.hidden = counts.cast === 0;
-    if (els.groupSets) els.groupSets.hidden = counts.sets === 0;
-    if (els.groupProps) els.groupProps.hidden = counts.props === 0;
+    if (els.groupCast) els.groupCast.hidden = false;
+    if (els.groupSets) els.groupSets.hidden = false;
+    if (els.groupProps) els.groupProps.hidden = false;
     if (els.groupMachinery) els.groupMachinery.hidden = counts.machinery === 0;
-    if (els.rosterEmpty) {
-      els.rosterEmpty.hidden = counts.cast + counts.sets + counts.props + counts.machinery > 0;
-    }
+    if (els.rosterEmpty) els.rosterEmpty.hidden = true;
+  }
+
+  const ROSTER_ADD_LABELS = Object.freeze({
+    performer: "演者を追加",
+    set: "大道具を追加",
+    prop: "小道具を追加",
+  });
+
+  function rosterAddButton(layer) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "stage-roster-add-row";
+    button.dataset.rosterKindLayer = layer;
+    button.setAttribute("aria-haspopup", "dialog");
+    button.setAttribute("aria-controls", "stage-kind");
+    button.textContent = `＋ ${tx(ROSTER_ADD_LABELS[layer])}`;
+    button.addEventListener("click", () => openKindModal(layer));
+    return button;
   }
 
   function setListRow(item) {
@@ -18928,15 +18761,18 @@
     return row;
   }
 
-  function renderSetList(host, keep, emptyText) {
+  function renderSetList(host, keep, emptyText, addLayer = null) {
     if (!host) return;
     const sets = (state.project.sets || []).filter(keep);
     host.innerHTML = "";
+    if (addLayer) host.append(rosterAddButton(addLayer));
     if (!sets.length) {
-      const empty = document.createElement("p");
-      empty.className = "stage-cast-empty";
-      empty.textContent = emptyText;
-      host.append(empty);
+      if (emptyText) {
+        const empty = document.createElement("p");
+        empty.className = "stage-cast-empty";
+        empty.textContent = emptyText;
+        host.append(empty);
+      }
       return;
     }
     enableRosterReorder(host);   // T-24: 名前を掴んで並べ替え
@@ -19712,7 +19548,6 @@
   }
 
   const LIGHTING_CATALOG_URL = "docs/proscenium-lighting-presets-2026-09-15/proscenium-lighting-presets-v1.json";
-  const LIGHTING_PREVIEW_URL = (sizeId) => `docs/proscenium-lighting-presets-2026-09-15/proscenium-${sizeId}.shosai-light-design.json`;
   let lightingCatalogPromise = null;
   let pendingLightingPlan = null;
   let lightingPlanRequest = 0;
@@ -19779,8 +19614,22 @@
 
   async function loadLightingCatalog() {
     if (!lightingCatalogPromise) lightingCatalogPromise = loadLightingJson(LIGHTING_CATALOG_URL);
-    try { return await lightingCatalogPromise; }
+    try {
+      const raw = await lightingCatalogPromise;
+      const api = lightingPlanApi();
+      const builtIns = (VENUES.v2?.list || []).filter((venue) => VENUES.library?.isPreset(venue.id));
+      const expanded = api && api.expandCatalog(raw, builtIns);
+      if (!expanded || !expanded.ok) throw new Error((expanded && expanded.reason) || "劇場照明カタログを拡張できません。");
+      return expanded.catalog;
+    }
     catch (error) { lightingCatalogPromise = null; throw error; }
+  }
+
+  async function loadLightingDesignForPreset(preset) {
+    if (preset && preset.designUrl) return loadLightingJson(preset.designUrl);
+    const design = lightingPlanApi()?.designForPreset(preset);
+    if (!design) throw new Error("照明機材プリセットを準備できません。");
+    return design;
   }
 
   async function lightingSnapshotHash(value) {
@@ -19930,7 +19779,7 @@
         if (els.lightingPlanSummary) els.lightingPlanSummary.textContent = candidate.reason;
         return;
       }
-      const rawDesign = await loadLightingJson(LIGHTING_PREVIEW_URL(candidate.preset.sizeId));
+      const rawDesign = await loadLightingDesignForPreset(candidate.preset);
       if (request !== lightingPlanRequest || basis !== lightingPlanBasis()) return;
       const design = api.validateDesign(rawDesign);
       if (!design.ok) {
@@ -19941,7 +19790,9 @@
       const fixtures = candidate.preset.rig.fixtures || [];
       const lasers = fixtures.filter((fixture) => fixture && fixture.kind === "laser").length;
       if (els.lightingPlanSummary) els.lightingPlanSummary.textContent = "既存の照明を変えずに、新しい全消灯プランを保存できます。";
-      if (els.lightingPlanCandidateTitle) els.lightingPlanCandidateTitle.textContent = `プロセニアム・${candidate.preset.label}`;
+      if (els.lightingPlanCandidateTitle) {
+        els.lightingPlanCandidateTitle.textContent = `${candidate.preset.venueLabel || candidate.preset.venueType}・${candidate.preset.label}`;
+      }
       if (els.lightingPlanCandidateDetail) {
         els.lightingPlanCandidateDetail.textContent = `${candidate.preset.stage.W}m × ${candidate.preset.stage.D}m × ${candidate.preset.stage.H}m / ${fixtures.length}要素${lasers ? ` / レーザー${lasers}要素（全消灯・観客走査なし）` : ""}`;
       }
@@ -21016,7 +20867,7 @@
   function openPoseModal() {
     const performers = selectedPerformerPieces();
     const piece = selectedPiece();
-    if (!piece || !performers.length || performers.some((item) => mountKindOf(item)) || !els.poseModal) return;
+    if (!piece || !performers.length || performers.some((item) => poseLockedByMount(item)) || !els.poseModal) return;
     const grid = els.poseGrid;
     grid.innerHTML = "";
     /* R-19: 選んでいる演者が持っている物に合う姿勢だけを出す。 */
@@ -22326,6 +22177,7 @@
         const button = document.createElement("button");
         button.type = "button";
         button.className = `stage-scene-chip${scene.kind === "section" ? " is-section" : ""}${isOpen ? " is-open" : ""}`;
+        if (scene.kind === "section") button.style.setProperty("--section-color", sectionColor(scene));
         button.setAttribute("aria-pressed", String(isCursor));
 
         const num = document.createElement("span");
@@ -23334,7 +23186,7 @@
 
   /* いま動いている時計（ms）。spinRun が動いていなければ0＝模様は goboAngle の値で止まる
      （盆も模様も回っていない場面はこれまでと同じ、余計な再描画をしない）。 */
-  function lightMotionClockMs() {
+  function lightEffectClockMs() {
     return spinRun ? spinRun.elapsedMs : 0;
   }
 
@@ -24102,7 +23954,7 @@
     if (!phoneViewerActive) host.append(panelLayoutPrefsGroup());
     const features = prefGroup("機能のオン/オフ", "");
     const hiddenGammaFlags = new Set([
-      "presentation", "lightMotion", "cuesheet", "lineup", "pitchExport",
+      "presentation", "cuesheet", "lineup", "pitchExport",
       "blackout", "sceneTiming", "sceneTransitions",
       /* ★照明の3つは「照明の見え方」の選択欄へまとめた（2026-09-19）。保存値はそのまま。 */
       "lightPool", "lightBeam", "workLightOff",
@@ -24287,7 +24139,7 @@
     const message = tx("パネル配置を初期状態に戻しますか？ショーの内容、スキン、機能設定は変わりません。");
     if (!window.confirm(message)) return;
     state.layout = defaultLayout();
-    ["panelLayoutMode", "panelLayoutByWorkspace", "panelSingleSide", "panelSingleSideByWorkspace", "panelSingleOrder", "panelWidths", "rosterListHeights", "tabletMode"].forEach((key) => {
+    ["panelLayoutMode", "panelLayoutByWorkspace", "panelSingleSide", "panelSingleSideByWorkspace", "panelSingleOrder", "panelWidths", "rosterListHeights", "rosterAccordionClosed", "tabletMode"].forEach((key) => {
       delete prefs[key];
     });
     savePrefs();
@@ -25938,6 +25790,39 @@ ${propsPlotHtml}
         }
         return;
       }
+      let lightingMigration = null;
+      try {
+        const migrationApi = window.STAGE_LIGHT_PANEL_IMPORT;
+        const sourceProject = parsed && parsed.project
+          ? parsed.project
+          : (parsed && Array.isArray(parsed.scenes) ? parsed : null);
+        const appearsToHaveLegacyLighting = Boolean(sourceProject && (
+          (Array.isArray(sourceProject.sets)
+            && sourceProject.sets.some((item) => item && item.kind === "light"))
+          || (Array.isArray(sourceProject.scenes)
+            && sourceProject.scenes.some((scene) => Array.isArray(scene && scene.pieces)
+              && scene.pieces.some((piece) => piece && piece.type === "light")))
+        ));
+        if (!migrationApi || typeof migrationApi.prepare !== "function") {
+          if (appearsToHaveLegacyLighting) {
+            throw new Error("旧照明を変換する部品を読み込めません。画面を再読み込みしてから、もう一度選んでください");
+          }
+        } else {
+          const preparedLighting = migrationApi.prepare(parsed, { sourceText: text });
+          parsed = preparedLighting.document;
+          if (preparedLighting.migrated) {
+            lightingMigration = {
+              counts: preparedLighting.counts,
+              report: preparedLighting.report,
+            };
+          }
+        }
+      } catch (error) {
+        console.error("stage import: 旧ベータ照明を変換できませんでした", error);
+        const detail = error && typeof error.message === "string" ? ` ${error.message}` : "";
+        importFailureNotice(`旧ベータの照明を変換できませんでした。選んだファイルと現在のショーは変更していません。${detail}`);
+        return;
+      }
       const incoming = parsed && parsed.project ? parsed : { project: parsed };
       if (!incoming.project || !Array.isArray(incoming.project.scenes)) {
         console.error("stage import: project.scenes がありません", parsed && Object.keys(parsed));
@@ -25961,17 +25846,24 @@ ${propsPlotHtml}
       });
       // スマホは読み込んだデータを閲覧するだけなので、編集用の比較モーダルを挟まない。
       if (phoneViewerActive) {
-        if (next.mcpRevision === null) reserveImportedShowId(next);
+        if (lightingMigration) {
+          next.project.id = rid("show");
+          next.mcpRevision = null;
+        } else if (next.mcpRevision === null) reserveImportedShowId(next);
         const previousSingleView = phoneUi ? phoneUi.singleView : null;
         if (phoneUi) phoneUi.singleView = "front";
-        if (!await applyLoadedState(next, `「${next.project.title}」を読み込み、ショー一覧へ保存しました。`)) {
+        const message = lightingMigration
+          ? `「${next.project.title}」の旧照明を変換したコピーを開き、ショー一覧へ保存しました。`
+          : `「${next.project.title}」を読み込み、ショー一覧へ保存しました。`;
+        if (!await applyLoadedState(next, message)) {
           if (phoneUi) phoneUi.singleView = previousSingleView;
           return;
         }
         return;
       }
       pendingImport = next;
-      renderImportSummary(next, editSummary);
+      pendingImportLightingMigration = lightingMigration;
+      renderImportSummary(next, editSummary, lightingMigration);
       if (els.importModal) els.importModal.hidden = false;
       if (els.importBackdrop) els.importBackdrop.hidden = false;
     };
@@ -25980,6 +25872,7 @@ ${propsPlotHtml}
 
   /* 読み込み候補。窓を閉じたら捨てる */
   let pendingImport = null;
+  let pendingImportLightingMigration = null;
 
   function importCounts(st) {
     const scenes = (st.project.scenes || []).filter((r) => r.kind === "scene");
@@ -25992,7 +25885,7 @@ ${propsPlotHtml}
     };
   }
 
-  function renderImportSummary(next, editSummary = null) {
+  function renderImportSummary(next, editSummary = null, lightingMigration = null) {
     const host = els.importSummary;
     if (!host) return;
     host.innerHTML = "";
@@ -26006,6 +25899,58 @@ ${propsPlotHtml}
     table.className = "stage-profile-hint";
     table.textContent = sx(`シーン ${a.scenes}→${b.scenes} ／ 演者 ${a.cast}→${b.cast} ／ セット ${a.sets}→${b.sets} ／ 照明 ${a.lights}→${b.lights}`, `Scenes ${a.scenes}→${b.scenes} · Cast ${a.cast}→${b.cast} · Sets ${a.sets}→${b.sets} · Lights ${a.lights}→${b.lights}`);
     host.append(table);
+    if (lightingMigration) {
+      const section = document.createElement("section");
+      section.setAttribute("aria-label", sx("旧ベータ照明の変換", "Legacy beta lighting conversion"));
+      const heading = document.createElement("h3");
+      heading.textContent = sx("旧ベータの照明を、γ照明デザインへ変換します", "Convert legacy beta lighting to Gamma lighting design");
+      section.append(heading);
+      const report = lightingMigration.report || {};
+      const counts = lightingMigration.counts || {};
+      const summary = document.createElement("p");
+      summary.className = "stage-profile-hint";
+      summary.textContent = sx(
+        `旧登録 ${counts.registrations || 0}件・点灯配置 ${counts.placements || 0}件・消灯控え ${counts.stashed || 0}件 → γ灯体 ${report.fixtures || 0}灯`,
+        `Legacy registrations ${counts.registrations || 0}, lit placements ${counts.placements || 0}, stashed ${counts.stashed || 0} → ${report.fixtures || 0} Gamma fixtures`,
+      );
+      section.append(summary);
+      const safety = document.createElement("p");
+      safety.className = "stage-profile-hint";
+      safety.setAttribute("role", "alert");
+      safety.textContent = sx(
+        "選んだファイルと現在のショーは変更しません。変換結果は新しいショーとして開き、復元用の旧データもそのコピー内に保持します。",
+        "The selected file and current show stay unchanged. The result opens as a new show and keeps the legacy source data for recovery.",
+      );
+      section.append(safety);
+      if ((counts.motions || 0) > 0) {
+        const motion = document.createElement("p");
+        motion.className = "stage-profile-hint";
+        motion.textContent = sx(
+          `旧「光の動き（案）」がある場面 ${counts.motions}件は自動変換せず、復元用の原本にだけ保持します。`,
+          `${counts.motions} scene(s) use the legacy motion draft. It is not converted and remains only in the recovery source.`,
+        );
+        section.append(motion);
+      }
+      const warnings = Array.isArray(report.warnings) ? report.warnings : [];
+      const reviewWarnings = [];
+      const seenWarnings = new Set();
+      warnings.forEach((warning) => {
+        if (!warning || warning.code === "legacy-default" || typeof warning.message !== "string") return;
+        if (seenWarnings.has(warning.message)) return;
+        seenWarnings.add(warning.message);
+        reviewWarnings.push(warning.message);
+      });
+      if (reviewWarnings.length) {
+        const list = document.createElement("ul");
+        reviewWarnings.slice(0, 6).forEach((message) => {
+          const item = document.createElement("li");
+          item.textContent = message;
+          list.append(item);
+        });
+        section.append(list);
+      }
+      host.append(section);
+    }
     // シーン名の見比べ: ファイルに新しく入っている名前と、置き換えると消える名前
     const mine = new Set(a.titles);
     const theirs = new Set(b.titles);
@@ -26076,10 +26021,27 @@ ${propsPlotHtml}
       }
       host.append(section);
     }
+    if (els.importReplace) {
+      els.importReplace.hidden = Boolean(lightingMigration);
+      els.importReplace.disabled = Boolean(lightingMigration);
+    }
+    if (els.importAsNew) {
+      els.importAsNew.textContent = lightingMigration
+        ? sx("変換したコピーを開く", "Open converted copy")
+        : sx("別のショーとして開く", "Open as another show");
+    }
   }
 
   function closeImportPreview() {
     pendingImport = null;
+    pendingImportLightingMigration = null;
+    if (els.importReplace) {
+      els.importReplace.hidden = false;
+      els.importReplace.disabled = false;
+    }
+    if (els.importAsNew) {
+      els.importAsNew.textContent = sx("別のショーとして開く", "Open as another show");
+    }
     if (els.importModal) els.importModal.hidden = true;
     if (els.importBackdrop) els.importBackdrop.hidden = true;
   }
@@ -26087,6 +26049,10 @@ ${propsPlotHtml}
   async function confirmImport(asNew) {
     const next = pendingImport;
     if (!next) return;
+    if (pendingImportLightingMigration && !asNew) {
+      announce("旧ベータ照明の変換結果は、新しいショーとしてだけ開けます。");
+      return;
+    }
     if (asNew) {
       // いまのショーは棚に残したまま、別のショーとして開く（idを新しくする）
       const candidate = JSON.parse(JSON.stringify(next));
@@ -26816,21 +26782,20 @@ ${propsPlotHtml}
   }
 
   /* 照明は劇場の間口・奥行・高さ・客席方向に合わせた設計であるため、劇場を
-     変えた版へ持ち込まない。現行の照明登録、場面内の照明駒、意図、動きを
+     変えた版へ持ち込まない。現行の照明登録、場面内の照明駒、意図を
      まとめて数え、分岐前の警告と消去範囲を同じ定義で扱う。 */
   function lightingDataCounts(project) {
     const p = project && typeof project === "object" ? project : {};
     const lightIds = new Set((p.sets || []).filter((item) => item && item.kind === "light")
       .map((item) => item.id));
     const scenes = Array.isArray(p.scenes) ? p.scenes : [];
-    const counts = { registrations: lightIds.size, placements: 0, intents: 0, motions: 0, stashes: 0, cues: 0,
+    const counts = { registrations: lightIds.size, placements: 0, intents: 0, stashes: 0, cues: 0,
       designFixtures: 0, designCues: 0, savedPlans: 0 };
     scenes.forEach((scene) => {
       (scene.pieces || []).forEach((piece) => {
         if (piece && (piece.type === "light" || lightIds.has(piece.setId))) counts.placements += 1;
       });
       if (scene.lightingIntent) counts.intents += 1;
-      if (scene.lightMotion) counts.motions += 1;
       Object.keys(scene.stashed || {}).forEach((id) => { if (lightIds.has(id)) counts.stashes += 1; });
     });
     counts.cues = (p.cues || []).filter((cue) => cue && cue.kind === "timeline" && cue.cueType === "light").length;
@@ -26848,7 +26813,11 @@ ${propsPlotHtml}
 
   function venueSetupWasApplied(project) {
     return Boolean(project?.venueSetupAppliedAt)
-      || Boolean(project?.venue && !VENUES.library.isPreset(project.venue));
+      || Boolean(project?.venue && !VENUES.library.isPreset(project.venue))
+      /* 旧ベータ照明のコピー変換は、劇場と規模から舞台寸法を確定できた場合だけ成功する。
+         その変換済みコピーを未設定扱いすると、変換した照明を照明デザイン画面で確認できない。
+         移行器自身の印まで一致するデータだけを、既に劇場を確定した旧ショーとして扱う。 */
+      || project?.lightingDesign?.migration?.migrator === "stage-light-panel-v1";
   }
 
   function clearVenueDependentLighting(project) {
@@ -26864,7 +26833,6 @@ ${propsPlotHtml}
         lightIds.forEach((id) => { delete scene.stashed[id]; });
       }
       scene.lightingIntent = null;
-      scene.lightMotion = null;
     });
     p.lightingDesign = null;
   }
@@ -26874,8 +26842,8 @@ ${propsPlotHtml}
     if (lightingVenueWarningProjectId === state.project.id) return true;
     const currentVenue = venueName(venue());
     const message = sx(
-      `照明は「${currentVenue}」の形・寸法・客席方向に合わせて組みます。\n\n劇場を変えると、新しいバージョンを作成し、照明の登録・配置・意図・動きはすべて消えます。元のショーはショー一覧に残ります。\n\nこの劇場で照明を組みますか？`,
-      `Lighting is designed for the shape, dimensions, and audience direction of “${currentVenue}”.\n\nChanging the venue creates a new version and clears all light registrations, placements, intentions, and motion. The original show remains in All shows.\n\nBuild lighting for this venue?`,
+      `照明は「${currentVenue}」の形・寸法・客席方向に合わせて組みます。\n\n劇場を変えると、新しいバージョンを作成し、照明の登録・配置・意図はすべて消えます。元のショーはショー一覧に残ります。\n\nこの劇場で照明を組みますか？`,
+      `Lighting is designed for the shape, dimensions, and audience direction of “${currentVenue}”.\n\nChanging the venue creates a new version and clears all light registrations, placements, and intentions. The original show remains in All shows.\n\nBuild lighting for this venue?`,
     );
     if (!window.confirm(message)) return false;
     lightingVenueWarningProjectId = state.project.id;
@@ -26888,8 +26856,8 @@ ${propsPlotHtml}
     const counts = lightingDataCounts(p);
     const nextVersion = nextVersionLabel(p.versionLabel);
     const warning = sx(
-      `劇場を「${venueName(venue())}」から「${venueName(nextVenue)}」へ変えます。\n\n${nextVersion}を新しく作り、照明の登録 ${counts.registrations}件・配置 ${counts.placements}件・照明意図 ${counts.intents}件・光の動き ${counts.motions}件・ライトキュー ${counts.cues}件を消去します。演者・大道具・小道具・シーン・音源は引き継ぎ、元の${p.versionLabel || "v1"}はショー一覧に残ります。\n\n劇場を変えて新しい版を作りますか？`,
-      `Change the venue from “${venueName(venue())}” to “${venueName(nextVenue)}”?\n\nA new ${nextVersion} will be created. It clears ${counts.registrations} light registrations, ${counts.placements} placements, ${counts.intents} lighting intentions, ${counts.motions} light-motion plans, and ${counts.cues} light cues. Cast, scenery, props, scenes, and audio carry forward; the original ${p.versionLabel || "v1"} remains in All shows.\n\nCreate the new version with this venue?`,
+      `劇場を「${venueName(venue())}」から「${venueName(nextVenue)}」へ変えます。\n\n${nextVersion}を新しく作り、照明の登録 ${counts.registrations}件・配置 ${counts.placements}件・照明意図 ${counts.intents}件・ライトキュー ${counts.cues}件を消去します。演者・大道具・小道具・シーン・音源は引き継ぎ、元の${p.versionLabel || "v1"}はショー一覧に残ります。\n\n劇場を変えて新しい版を作りますか？`,
+      `Change the venue from “${venueName(venue())}” to “${venueName(nextVenue)}”?\n\nA new ${nextVersion} will be created. It clears ${counts.registrations} light registrations, ${counts.placements} placements, ${counts.intents} lighting intentions, and ${counts.cues} light cues. Cast, scenery, props, scenes, and audio carry forward; the original ${p.versionLabel || "v1"} remains in All shows.\n\nCreate the new version with this venue?`,
     );
     if (!window.confirm(warning)) {
       renderVenueControls();
@@ -27314,6 +27282,9 @@ ${propsPlotHtml}
     window.dispatchEvent(new CustomEvent("stage-venue-editor-template", {
       detail: { venueId: selectedVenue.id, sizeId: selectedSize.id },
     }));
+    // 劇場のプリセットを選択中なら、形式・規模を替えた直後に対応する照明候補も読み直す。
+    // ここが無いと、直前の劇場の候補や「寸法が違う」という表示が残り続ける。
+    if (lightingSource === "preset") openLightingPlanModal();
   }
 
   /* 「この劇場を反映する」の確定境界。劇場の確定と照明機材の始め方を一度に選ぶ。
@@ -27695,7 +27666,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         const preset = catalog.presets.find((item) => item.id === els.venueApplyPresetSelect?.value
           && venueApplyCompatiblePreset(saved, item));
         if (!preset) throw new Error("選んだ照明機材プリセットが見つかりません。");
-        const rawDesign = await loadLightingJson(LIGHTING_PREVIEW_URL(preset.sizeId));
+        const rawDesign = await loadLightingDesignForPreset(preset);
         if (detail !== pendingVenueApply) return;
         project.lightingDesign = editableLightingDesignFromPreset(rawDesign, project, preset);
       }
@@ -27950,7 +27921,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
 
   function applyPoseToSelection(pose) {
     const performers = selectedPerformerPieces();
-    if (!pose || !performers.length || performers.some((piece) => mountKindOf(piece))) return 0;
+    if (!pose || !performers.length || performers.some((piece) => poseLockedByMount(piece))) return 0;
+    if (pose.id === "sit" && !performers.every((piece) => mountKindOf(piece) === "chair")) return 0;
     const changed = performers.filter((piece) => piece.pose !== pose.id);
     if (!changed.length) return 0;
     checkpoint();
@@ -28142,7 +28114,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (message) announce(message);
   }
 
-  function holdPieceBy(piece, holder, preferredSide) {
+  function holdPieceBy(piece, holder, preferredSide, poseId = null) {
     const side = holder && freeHoldSide(holder.id, piece && piece.id, preferredSide);
     if (!piece || !holder || !side) {
       announce("両手がふさがっています。");
@@ -28152,7 +28124,13 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     piece.holdSide = side;
     piece.holdMode = "hand";
     piece.route = null;
-    finishHoldingChange(`${heldItemName(piece)}を${performerName(holder)}に持たせました。`);
+    const usePose = poseId && POSE_PROPS[poseId]?.includes(propShapeOf(piece))
+      ? poseById(poseId) : null;
+    if (usePose) holder.pose = usePose.id;
+    finishHoldingChange(usePose
+      ? sx(`${heldItemName(piece)}を使い、「${poseName(usePose)}」にしました。`,
+        `Using ${heldItemName(piece)}: ${poseName(usePose)}.`)
+      : `${heldItemName(piece)}を${performerName(holder)}に持たせました。`);
     return true;
   }
 
@@ -28180,6 +28158,71 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     piece.heldBy = null;
     piece.holdMode = "hand";
     finishHoldingChange(worn ? tx("仮面を外しました。") : `${name}を手放しました。`);
+  }
+
+  /* 「選んだもの」では、物を渡す操作と、その物を使う姿勢を同じ小道具欄から選ぶ。
+   * 保存は従来どおり heldBy / holdMode / pose の組み合わせなので、既存ショーとの互換性は変えない。 */
+  function propUsePoses(piece) {
+    const shape = propShapeOf(piece);
+    return POSES.filter((pose) => POSE_PROPS[pose.id]?.includes(shape));
+  }
+
+  function appendPropUseOption(group, value, text, disabled = false) {
+    if (!group) return;
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = text;
+    option.disabled = disabled;
+    group.append(option);
+  }
+
+  function editableLook(piece) {
+    if (!piece || piece.type !== "performer") return null;
+    const section = sectionForScene(sc(), state.project.scenes);
+    if (!section) {
+      const source = resolveLook(piece, state.project.cast) || piece.look || {};
+      piece.lookMode = "custom";
+      piece.look = normalizeLook(source) || normalizeLook({});
+      return piece.look;
+    }
+    if (!section.costumes || typeof section.costumes !== "object" || Array.isArray(section.costumes)) {
+      section.costumes = {};
+    }
+    if (section.costume && section.costume.mode === "custom") return section.costume.look;
+    const source = resolveLookForSection(piece, state.project.cast, section)
+      || resolveLook(piece, state.project.cast) || piece.look || {};
+    section.costume = { mode: "custom", look: normalizeLook(source) || normalizeLook({}) };
+    return section.costume.look;
+  }
+
+  function syncCostumeControls(piece) {
+    const performer = Boolean(piece && piece.type === "performer");
+    const section = sectionForScene(sc(), state.project.scenes);
+    const shared = normalizeSectionCostume("section", section && section.costume);
+    if (els.costumeToggle) {
+      els.costumeToggle.disabled = !section;
+      els.costumeToggle.setAttribute("aria-pressed", String(Boolean(shared && shared.mode === "custom")));
+    }
+    if (!performer) {
+      if (els.costumeControls) els.costumeControls.hidden = true;
+      return;
+    }
+    const look = normalizeLook(resolveLookForSection(piece, state.project.cast, section));
+    const dressed = Boolean(look);
+    if (els.costumeControls) els.costumeControls.hidden = !dressed;
+    if (els.costumeFields) els.costumeFields.hidden = !dressed;
+    if (!look) return;
+    if (els.costumeTop) els.costumeTop.value = topKindById(look.top.kind).id;
+    if (els.costumeTopColor) els.costumeTopColor.value = validColor(look.top.color, DEFAULT_TOP_COLOR);
+    if (els.costumeBottom) els.costumeBottom.value = bottomKindById(look.bottom.kind).id;
+    if (els.costumeBottomColor) els.costumeBottomColor.value = validColor(look.bottom.color, DEFAULT_BOTTOM_COLOR);
+  }
+
+  function finishCostumeChange(message) {
+    updateInspector();
+    render();
+    persistSoon();
+    if (message) announce(tx(message));
   }
 
   function syncHoldingControls(piece) {
@@ -28225,41 +28268,38 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       els.holdSelect.innerHTML = "";
       const placeholder = document.createElement("option");
       placeholder.value = "";
-      placeholder.textContent = tx("持たせる…");
+      placeholder.textContent = tx("小道具を選ぶ…");
       els.holdSelect.append(placeholder);
+      const holdGroup = document.createElement("optgroup");
+      holdGroup.label = tx("手に持つ");
+      const useGroup = document.createElement("optgroup");
+      useGroup.label = tx("身につける・使う");
+      const handUnavailable = !freeHoldSide(piece.id, null, "R");
+      const faceUnavailable = sc().pieces.some((item) => item.heldBy === piece.id && item.holdMode === "face");
+      const choices = [];
       sc().pieces.filter((item) => item !== piece && !item.heldBy && isHoldable(item)
         && onStageArea(item.u, item.v)).forEach((item) => {
-        const option = document.createElement("option");
-        option.value = `piece:${item.id}`;
-        option.textContent = heldItemName(item);
-        els.holdSelect.append(option);
+        choices.push({ source: "piece", id: item.id, name: heldItemName(item), candidate: item });
       });
       (state.project.sets || []).filter((item) => isHoldable({ type: item.kind, setId: item.id }, state.project)
         && !sc().pieces.some((candidate) => candidate.setId === item.id)).forEach((item) => {
-        const option = document.createElement("option");
-        option.value = `set:${item.id}`;
-        option.textContent = `${tx("舞台裏：")}${item.name}`;
-        els.holdSelect.append(option);
+        choices.push({ source: "set", id: item.id, name: `${tx("舞台裏：")}${item.name}`,
+          candidate: { type: item.kind, setId: item.id } });
       });
-      els.holdSelect.value = "";
-      if (els.wearSelect) {
-        els.wearSelect.innerHTML = "";
-        const placeholder = document.createElement("option");
-        placeholder.value = "";
-        placeholder.textContent = tx("顔につける…");
-        els.wearSelect.append(placeholder);
-        const options = sc().pieces.filter((item) => isMask(item) && isHoldable(item)
-          && (!item.heldBy || item.heldBy === piece.id) && item.holdMode !== "face" && onStageArea(item.u, item.v))
-          .map((item) => ({ value: `piece:${item.id}`, name: heldItemName(item) }));
-        (state.project.sets || []).filter((item) => item.kind === "prop" && item.propShape === "mask" && !item.flown
-          && !sc().pieces.some((p) => p.setId === item.id)).forEach((item) => options.push({ value: `set:${item.id}`, name: item.name }));
-        options.forEach((item) => {
-          const option = document.createElement("option");
-          option.value = item.value; option.textContent = item.name; els.wearSelect.append(option);
+      choices.forEach((item) => {
+        appendPropUseOption(holdGroup, `hold:${item.source}:${item.id}`, item.name, handUnavailable);
+        if (isMask(item.candidate)) {
+          appendPropUseOption(useGroup, `wear:${item.source}:${item.id}`,
+            `${tx("顔につける")}：${item.name}`, faceUnavailable);
+        }
+        propUsePoses(item.candidate).forEach((pose) => {
+          appendPropUseOption(useGroup, `pose:${pose.id}:${item.source}:${item.id}`,
+            `${poseName(pose)}：${item.name}`, handUnavailable);
         });
-        els.wearSelect.hidden = !options.length;
-        els.wearSelect.disabled = sc().pieces.some((item) => item.heldBy === piece.id && item.holdMode === "face");
-      }
+      });
+      if (holdGroup.children.length) els.holdSelect.append(holdGroup);
+      if (useGroup.children.length) els.holdSelect.append(useGroup);
+      els.holdSelect.value = "";
     }
 
     const held = Boolean(piece && isHoldable(piece) && piece.heldBy);
@@ -28444,6 +28484,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     }
     renderPoseStrip(piece);
     if (els.fpvOpen) els.fpvOpen.hidden = multi || !(piece && piece.type === "performer");
+    syncCostumeControls(multi ? null : piece);
     syncHoldingControls(multi ? null : piece);
     if (!piece) {
       /* S-3（2026-09-17）: コンテナを隠すだけで中の文字を消していなかったため、
@@ -28477,21 +28518,19 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const mount = multi ? null : mountKindOf(piece);
     if (els.piecePose) {
       const isPerformer = multi ? performers.length === pieces.length : piece.type === "performer";
-      const mounted = isPerformer && performers.some((item) => mountKindOf(item));
+      const mounted = isPerformer && performers.some((item) => poseLockedByMount(item));
       const commonPose = isPerformer && performers.every((item) => item.pose === performers[0].pose)
         ? performers[0].pose : null;
-      /* 乗り物の上では姿勢を選べない。何で決まっているかが読めるよう、
-         札には乗り方をそのまま出す。 */
+      /* 器具側で姿勢が決まるときだけ操作を止める。椅子上では通常の姿勢名を出す。 */
       if (els.poseLabel) {
         els.poseLabel.textContent = mount === "pole" ? tx("ポールに付く")
-          : mount === "chair" ? tx("椅子に座る")
           : mount === "trapeze"
             ? poseName(poseById(piece.trapMode === "hang" ? "trapeze_hang" : "trapeze_sit"))
             : mount === "tissue" ? tx("布に掴まる")
           : multi && !commonPose ? sx("複数の姿勢", "Mixed poses")
             : poseName(poseById(commonPose || piece.pose));
       }
-      els.piecePose.disabled = !isPerformer || Boolean(mount) || Boolean(mounted);
+      els.piecePose.disabled = !isPerformer || Boolean(mounted);
       els.piecePose.hidden = !isPerformer;
       const row = els.piecePose.previousElementSibling;
       if (row) row.hidden = !isPerformer;
@@ -28586,7 +28625,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   function renderPoseStrip(piece) {
     if (!els.poseStrip) return;
     const performers = selectedPerformerPieces();
-    const show = Boolean(piece && performers.length && !performers.some((item) => mountKindOf(item)));
+    const show = Boolean(piece && performers.length && !performers.some((item) => poseLockedByMount(item)));
     els.poseStrip.hidden = !show;
     if (!show) { poseStripFor = ""; return; }
     const commonPose = performers.every((item) => item.pose === performers[0].pose)
@@ -28594,7 +28633,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     /* R-19（2026-09-17）: 持ち物で出る姿勢が変わるので、キャッシュの鍵に「何を持っているか」を入れる。
        入れないと、物を持たせても帯が組み直されず、増えたはずの姿勢が出てこない（実際に踏んだ）。 */
     const heldKey = performers.map((item) => [...heldPropShapes(item)].sort().join(",")).join("|");
-    const buildKey = `${performers.map((item) => `${item.id}:${item.color}:${item.pose}`).join("|")}|${heldKey}|${lang}`;
+    const mountKey = performers.map((item) => mountKindOf(item) || "floor").join("|");
+    const buildKey = `${performers.map((item) => `${item.id}:${item.color}:${item.pose}`).join("|")}|${heldKey}|${mountKey}|${lang}`;
     if (poseStripFor === buildKey) {
       els.poseStrip.querySelectorAll(".stage-pose-strip-tile").forEach((tile) => {
         const on = tile.dataset.pose === commonPose;
@@ -30332,15 +30372,12 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     updateInspector();
     render();
   });
-  els.rosterKindOpeners.forEach((button) => {
-    button.addEventListener("click", () => openKindModal(button.dataset.rosterKindLayer));
-  });
   if (els.kindClose) els.kindClose.addEventListener("click", closeKindModal);
   if (els.kindBackdrop) els.kindBackdrop.addEventListener("click", closeKindModal);
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape" || !els.kindModal || els.kindModal.hidden) return;
     closeKindModal();
-    const opener = els.rosterKindOpeners.find((button) => button.dataset.rosterKindLayer === rosterKindLayer);
+    const opener = document.querySelector(`[data-roster-kind-layer="${rosterKindLayer}"]`);
     if (opener) opener.focus();
   });
   if (els.lightPresetOpen) els.lightPresetOpen.addEventListener("click", () => openLightPresetModal(false));
@@ -30952,6 +30989,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
           } : null,
           pieces: current.pieces.map((candidate) => {
             const visual = effectivelyPlacedPiece(candidate, current);
+            const costumeLook = visual.type === "performer"
+              ? normalizeLook(resolveLookForScene(visual, current, state.project.cast, rows)) : null;
             const owner = pieceSet(visual);
             const visualRoute = candidate.route ? (() => {
               const end = effectivePlacement({ ...candidate, u: candidate.route.u, v: candidate.route.v,
@@ -30964,6 +31003,9 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
             const propShape = visual.type === "prop" ? scaledPropShape(visual, dims) : null;
             return {
               ...visual,
+              lookMode: visual.type === "performer"
+                ? (costumeLook ? "custom" : "plain") : visual.lookMode,
+              look: costumeLook ? projectIoClone(costumeLook) : null,
               route: visualRoute,
               dims,
               propShape: propShape ? propShape.id : visual.propShape,
@@ -31035,6 +31077,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       setPiecePose: (pieceId, poseId) => {
         const piece = sc().pieces.find((p) => p.id === pieceId && p.type === "performer");
         if (!piece || !POSES.some((p) => p.id === poseId)) return false;
+        if (poseLockedByMount(piece)) return false;
+        if (poseId === "sit" && mountKindOf(piece) !== "chair") return false;
         if (piece.pose === poseId) return true;
         checkpoint();
         piece.pose = poseId;
@@ -31093,7 +31137,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         // 設定モーダルを開いたまま切り替えた場合に、チェックの見た目を合わせる
         if (els.prefsModal && !els.prefsModal.hidden) renderPrefs();
       },
-      listPoses: () => POSES.map((p) => ({ id: p.id, label: poseName(p) })),
+      listPoses: (pieceId) => {
+        const piece = sc().pieces.find((candidate) => candidate.id === pieceId && candidate.type === "performer");
+        return selectablePoses(piece ? [piece] : []).map((p) => ({ id: p.id, label: poseName(p) }));
+      },
       drawPosePreview: (canvas, poseId, color) => drawPosePreview(canvas, poseId, color),
       facingLabel,
       open3d: () => {
@@ -33351,40 +33398,79 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   /* 初めて開いた人には、こちらから声をかける。
    * 一度でも見た（または閉じた）ら、次からは上の「使い方」からだけ。 */
   let seenTour = true;
+  const setSectionCostumeForAll = (dressed) => {
+    const section = sectionForScene(sc(), state.project.scenes);
+    if (!section) return;
+    checkpoint();
+    if (dressed) {
+      const piece = selectedPiece();
+      const source = piece && piece.type === "performer"
+        ? (resolveLookForSection(piece, state.project.cast, section)
+          || resolveLook(piece, state.project.cast) || piece.look)
+        : null;
+      section.costume = { mode: "custom", look: normalizeLook(source) || normalizeLook({}) };
+      finishCostumeChange("このセクションの全員に衣装を着せました。");
+    } else {
+      section.costume = { mode: "plain" };
+      finishCostumeChange("このセクションの全員の衣装を外しました。");
+    }
+  };
+  if (els.costumeToggle) {
+    els.costumeToggle.addEventListener("click", () => {
+      const section = sectionForScene(sc(), state.project.scenes);
+      const shared = normalizeSectionCostume("section", section && section.costume);
+      setSectionCostumeForAll(!(shared && shared.mode === "custom"));
+    });
+  }
+  const changeCostume = (part, value, color = false) => {
+    const piece = selectedPiece();
+    if (!piece || piece.type !== "performer") return;
+    checkpoint();
+    const look = editableLook(piece);
+    if (color) {
+      look[part].color = validColor(value,
+        part === "top" ? DEFAULT_TOP_COLOR : DEFAULT_BOTTOM_COLOR);
+    } else if (part === "top") {
+      const kind = topKindById(value);
+      look.top.kind = kind.id;
+      look.top.sleeve = kind.sleeve;
+    } else {
+      const kind = bottomKindById(value);
+      look.bottom.kind = kind.id;
+      look.bottom.length = kind.length;
+    }
+    finishCostumeChange("");
+  };
+  if (els.costumeTop) els.costumeTop.addEventListener("change", () => changeCostume("top", els.costumeTop.value));
+  if (els.costumeBottom) els.costumeBottom.addEventListener("change", () => changeCostume("bottom", els.costumeBottom.value));
+  if (els.costumeTopColor) els.costumeTopColor.addEventListener("change", () => changeCostume("top", els.costumeTopColor.value, true));
+  if (els.costumeBottomColor) els.costumeBottomColor.addEventListener("change", () => changeCostume("bottom", els.costumeBottomColor.value, true));
   if (els.holdSelect) {
     els.holdSelect.addEventListener("change", () => {
       const holder = selectedPiece();
       const value = els.holdSelect.value;
       if (!holder || holder.type !== "performer" || !value) return;
-      const side = freeHoldSide(holder.id, null, "R");
-      if (!side) {
+      const parts = value.split(":");
+      const action = parts[0];
+      const poseId = action === "pose" ? parts[1] : null;
+      const source = parts[action === "pose" ? 2 : 1];
+      const id = parts[action === "pose" ? 3 : 2];
+      let piece = source === "piece" ? sc().pieces.find((candidate) => candidate.id === id) : null;
+      const item = source === "set" ? (state.project.sets || []).find((candidate) => candidate.id === id) : null;
+      if (!piece && !item) { els.holdSelect.value = ""; return; }
+      const candidate = piece || { type: item.kind, setId: item.id };
+      if (action === "wear" && !canWearMask(candidate, holder)) { updateInspector(); return; }
+      const side = action === "wear" ? null : freeHoldSide(holder.id, null, "R");
+      if (action !== "wear" && !side) {
         els.holdSelect.value = "";
         announce("両手がふさがっています。");
         return;
       }
-      const [source, id] = value.split(":");
-      let piece = source === "piece" ? sc().pieces.find((candidate) => candidate.id === id) : null;
-      const item = source === "set" ? (state.project.sets || []).find((candidate) => candidate.id === id) : null;
-      if (!piece && !item) { els.holdSelect.value = ""; return; }
       checkpoint();
       if (!piece) piece = placeSetPiece(item);
       selectedId = holder.id;
-      if (!holdPieceBy(piece, holder, side)) updateInspector();
-    });
-  }
-  if (els.wearSelect) {
-    els.wearSelect.addEventListener("change", () => {
-      const holder = selectedPiece();
-      const [source, id] = els.wearSelect.value.split(":");
-      if (!holder || holder.type !== "performer" || !id) return;
-      let piece = source === "piece" ? sc().pieces.find((p) => p.id === id) : null;
-      const item = source === "set" ? state.project.sets.find((p) => p.id === id) : null;
-      const candidate = piece || (item && { type: item.kind, setId: item.id });
-      if (!canWearMask(candidate, holder)) { updateInspector(); return; }
-      checkpoint();
-      if (!piece) piece = placeSetPiece(item);
-      selectedId = holder.id;
-      wearMaskBy(piece, holder);
+      if (action === "wear") wearMaskBy(piece, holder);
+      else if (!holdPieceBy(piece, holder, side, poseId)) updateInspector();
     });
   }
   if (els.holderFace) {
@@ -33490,6 +33576,13 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     applyLayout();
     syncPanelWidths();
     if (els.prefsModal && !els.prefsModal.hidden) renderPrefs();
+  });
+  /* ショーを切り替えたあとに劇場設定を開くと、選択欄は新しいショーへ同期する一方、
+     すでに表示していた照明候補だけが前のショーのまま残り得る。劇場設定へ入るたびに
+     現在の劇場・規模を正本として候補を読み直し、表示と適用対象を一致させる。 */
+  window.addEventListener("gamma-workspace-change", () => {
+    if (document.body.dataset.stageWorkspaceMode !== "venue-setup") return;
+    if (lightingSource === "preset") openLightingPlanModal();
   });
   if (els.helpOpen) els.helpOpen.addEventListener("click", openManualHelpFromPrefs);
   if (els.manualOpen) els.manualOpen.addEventListener("click", openManualBook);
@@ -33629,6 +33722,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       initTabletPwaWorkspace();
       initPhoneViewerWorkspace();
       initPanelWidths();
+      initRosterAccordions();
       initRosterListHeights();
       syncPanelWidths();
       syncInputs();
@@ -33895,6 +33989,23 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   function gammaLightingContext() {
     const size = venueSize();
     const stage = { W: size.width, D: size.depth, H: size.height || 8 };
+    const currentVenue = venue();
+    const venueV2 = venueLibrary && typeof venueLibrary.venueV2ById === "function"
+      ? venueLibrary.venueV2ById(currentVenue.id) : null;
+    const venueSizeV2 = venueV2 && Array.isArray(venueV2.sizes)
+      ? venueV2.sizes.find((candidate) => candidate.id === state.project.venueSize) : null;
+    const audienceAreas = venueAudienceAreasOf(currentVenue, size)
+      || (venueSizeV2 && venueSizeV2.audience)
+      || (venueV2 && venueV2.audience)
+      || [];
+    /* 客席を通るムービングの狙いは、いま選んでいる劇場・規模に登録された
+       客席領域だけへ限定する。照明デザイン本体へは保存せず、ホストの会場情報として渡す。 */
+    const venueMask = {
+      venueId: state.project.venue,
+      sizeId: state.project.venueSize,
+      coordinateSpace: "venue-m",
+      audienceAreas: projectIoClone(audienceAreas),
+    };
     const scenes = state.project.scenes.filter(row => row.kind === "scene").map(row => ({
       id: row.id, name: row.title || "場面",
       pieces: row.pieces.filter(piece => piece.type !== "light").map(piece => {
@@ -33902,7 +34013,12 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
         const dims = pieceDims(visual) || {};
         return { id: piece.id, kind: visual.type === "performer" ? "performer" : (visual.type === "curtain" ? "curtain" : "set"),
           u: visual.u, v: visual.v, hM: pieceHeightM(visual), name: pieceLabel(visual), color: visual.color,
-          pose: visual.pose, facing: visual.facing, dims: projectIoClone(dims),
+          pose: visual.pose, facing: visual.facing,
+          // 照明デザインの正面図でも、舞台モードと同じ衣装を同じ色で描く。
+          look: visual.type === "performer"
+            ? projectIoClone(normalizeLook(resolveLookForScene(
+              visual, row, state.project.cast, state.project.scenes))) : null,
+          dims: projectIoClone(dims),
           // 台の上に乗っている駒は、その高さから立ち上げる（本体の floorPoint と同じ）
           base: Math.max(0, finite(visual.base, 0)),
           parts: lightingContextParts(visual, dims),
@@ -33910,9 +34026,10 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
           w: dims.w ? dims.w / stage.W : 0.1, curtainKind: visual.curtainKind, open: visual.open };
       }),
     }));
-    return { showId: state.project.id, title: state.project.title, stage, scenes,
+    return { showId: state.project.id, title: state.project.title, stage, scenes, venueMask,
       activeSceneId: state.project.activeSceneId, design: state.project.lightingDesign ? projectIoClone(state.project.lightingDesign) : null,
-      basis: gammaBasisFingerprint(JSON.stringify({ id: state.project.id, scenes: scenes.map(row => row.id).sort(), stage, design: state.project.lightingDesign || null })),
+      basis: gammaBasisFingerprint(JSON.stringify({ id: state.project.id, scenes: scenes.map(row => row.id).sort(), stage,
+        venueMask, design: state.project.lightingDesign || null })),
       readOnly: STUDY_READ_ONLY || document.body.classList.contains("stage-session-guest"),
       // V-7（2026-09-17）: 劇場が一度も反映されていないショーで機材配置/照明を開いたら誘導する
       // （docs/ui-audit-2026-09-16/UI_REWORK_SPEC.md V-7）。既存の venueSetupWasApplied() をそのまま使う。
@@ -34149,8 +34266,17 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
         ? DEFAULT_SCENE_TRAVEL_SECONDS : DEFAULT_SCENE_HOLD_SECONDS;
       const current = scene.rehearsal[key] == null
         ? fallbackSeconds : finite(scene.rehearsal[key], fallbackSeconds);
+      /* 0秒の転換を左へ広げるときは、次シーンの到着時刻を動かさず、
+       * 前シーンの見せる時間を同じぶん短くして転換へ渡す。 */
+      const preserveTransitionEnd = part === "transition" && Boolean(options.preserveTransitionEnd);
+      const currentHold = Math.max(0.1, finite(scene.rehearsal.holdDurationSeconds, DEFAULT_SCENE_HOLD_SECONDS));
+      const nextHold = preserveTransitionEnd
+        ? Math.max(0.1, Math.round((currentHold - (duration - current)) * 10) / 10)
+        : currentHold;
+      if (preserveTransitionEnd && Math.abs((currentHold - nextHold) - (duration - current)) > 1e-9) return false;
       const currentSectionDuration = section.timelineDurationSeconds;
       const timingChanged = Math.abs(current - duration) > 1e-9
+        || Math.abs(currentHold - nextHold) > 1e-9
         || currentSectionDuration === null || currentSectionDuration === undefined
         || Math.abs(finite(currentSectionDuration, -1) - sectionDuration) > 1e-9;
       const rippleFrom = Number(options.rippleFromSeconds);
@@ -34165,6 +34291,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       if (!timingChanged && !cuesToShift.length) return true;
       if (options.checkpoint) checkpoint();
       scene.rehearsal[key] = duration;
+      if (preserveTransitionEnd) scene.rehearsal.holdDurationSeconds = nextHold;
       /* 呼び出し側の見かけの長さではなく、実際の合計を持つ（両者を食い違わせない）。 */
       section.timelineDurationSeconds = sumSceneSeconds(
         sceneChildren(sectionIndex).filter((row) => row.kind === "scene"));

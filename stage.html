@@ -12,7 +12,7 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092053">
+<link rel="stylesheet" href="style.css?v=2026092109">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -21,7 +21,7 @@
 </style>
 <link rel="stylesheet" href="gamma.css?v=2026091987">
 <link rel="stylesheet" href="gamma-mobile.css?v=2026091950">
-<script src="gamma-light-model.js?v=2026091944"></script>
+<script src="gamma-light-model.js?v=2026092113"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=2026091987">
 </head>
 <body class="is-standalone">
@@ -169,21 +169,24 @@
                 <!-- R-18（2026-09-17 本人要望）: 版名は「v」＋数字だけ。v は自動で付き、
                      「保存してバージョンを更新」を押すと1つ上がる。自由入力はやめた。
                      要素は残す（JSが els.versionLabel として読み書きしている）。 -->
-                <div class="stage-project-id-field">
+                <div class="stage-project-id-field stage-project-version-field">
                   <label class="stage-control-label" for="stage-version-label">バージョン</label>
-                  <input id="stage-version-label" class="stage-text-input stage-version-input" type="text"
-                         maxlength="16" autocomplete="off" data-1p-ignore readonly
-                         placeholder="v1" aria-label="バージョン">
+                  <div class="stage-version-control">
+                    <input id="stage-version-label" class="stage-text-input stage-version-input" type="text"
+                           maxlength="16" autocomplete="off" data-1p-ignore readonly
+                           placeholder="v1" aria-label="バージョン">
+                    <!-- v1の横で次の版を作る。＋は版の欄の中の右端に置く。 -->
+                    <button type="button" id="stage-version-copy" class="stage-minor-action stage-panel-version-copy"
+                            aria-label="別バージョンとして複製" title="いまのショーを複製して次の版（v1 → v2）を作り、複製のほうへ移ります。もとのショーはそのまま残ります">＋</button>
+                  </div>
                 </div>
               </div>
               <p class="stage-version-note" id="stage-version-note"></p>
               <div class="stage-project-panel-actions">
-                <!-- T-20（2026-09-18 本人要望）: 名前が動作と合っていなかった。
-                     実際は「いまのショーを複製して次の版を作り、複製のほうへ移る」（枝分かれ）。
-                     もとのショーはそのまま残るので「保存」ではない。 -->
-                <button type="button" id="stage-version-copy" class="stage-minor-action" title="いまのショーを複製して次の版（v1 → v2）を作り、複製のほうへ移ります。もとのショーはそのまま残ります">別バージョンとして複製</button>
-                <button type="button" id="stage-show-new" class="stage-minor-action">新規ショーを作る</button>
-                <button type="button" id="stage-shows-open" class="stage-minor-action">ショー一覧</button>
+                <div class="stage-project-show-actions">
+                  <button type="button" id="stage-shows-open" class="stage-minor-action">ショー一覧</button>
+                  <button type="button" id="stage-show-new" class="stage-minor-action">新規ショーを作る</button>
+                </div>
                 <button type="button" id="stage-export-json" class="stage-minor-action"
                         aria-keyshortcuts="Meta+S Control+S">ショープロジェクトを書き出す</button>
                 <label class="stage-minor-action stage-import-label">ショープロジェクトを読み込む<input type="file" id="stage-import-json" accept="application/json" hidden></label>
@@ -224,47 +227,58 @@
           <section class="stage-panel" data-panel="cast" data-title="演者・舞台セット">
             <div class="stage-panel-body">
             <p class="stage-cast-hint">この舞台に出る演者、大道具、小道具を、まとめてここに登録します。寸法や色はここで決め、シーンごとに舞台の上か裏かを切り替えます。追加したものはそのシーンの舞台に出ます。</p>
-              <div class="stage-roster-kind-openers" role="group" aria-label="演者・舞台セット">
-                <button type="button" class="stage-roster-kind-open" data-roster-kind-layer="performer"
-                        aria-haspopup="dialog" aria-controls="stage-kind">演者</button>
-                <button type="button" class="stage-roster-kind-open" data-roster-kind-layer="set"
-                        aria-haspopup="dialog" aria-controls="stage-kind">大道具</button>
-                <button type="button" class="stage-roster-kind-open" data-roster-kind-layer="prop"
-                        aria-haspopup="dialog" aria-controls="stage-kind">小道具</button>
-              </div>
-              <p class="stage-cast-empty" id="stage-roster-empty">まだ何も登録していません。名前と種類を選んで追加してください。</p>
+              <p class="stage-cast-empty" id="stage-roster-empty" hidden>まだ何も登録していません。名前と種類を選んで追加してください。</p>
               <div class="stage-roster-group" id="stage-group-cast" data-tablet-break-before>
-                <p class="stage-roster-head">演者</p>
-                <div class="stage-cast-list" id="stage-cast-list"></div>
-                <div class="stage-roster-list-resize" data-roster-list-resize="cast" role="separator"
-                     tabindex="0" aria-orientation="horizontal" aria-controls="stage-cast-list"
-                     aria-label="演者の一覧の高さ"></div>
+                <div class="stage-roster-head">
+                  <button type="button" class="stage-roster-accordion-toggle" data-roster-accordion="cast"
+                          aria-expanded="true" aria-controls="stage-roster-cast-body"><span>演者</span></button>
+                </div>
+                <div class="stage-roster-accordion-body" id="stage-roster-cast-body">
+                  <div class="stage-cast-list" id="stage-cast-list"></div>
+                  <div class="stage-roster-list-resize" data-roster-list-resize="cast" role="separator"
+                       tabindex="0" aria-orientation="horizontal" aria-controls="stage-cast-list"
+                       aria-label="演者の一覧の高さ"></div>
+                </div>
               </div>
               <div class="stage-roster-group" id="stage-group-sets" data-tablet-break-before>
-                <p class="stage-roster-head stage-roster-head-actions"><span>大道具</span>
+                <div class="stage-roster-head stage-roster-head-actions">
+                  <button type="button" class="stage-roster-accordion-toggle" data-roster-accordion="sets"
+                          aria-expanded="true" aria-controls="stage-roster-sets-body"><span>大道具</span></button>
                   <button type="button" id="stage-model-open" class="btn-quiet" hidden>セットを組む</button>
-                </p>
-                <div class="stage-cast-list" id="stage-set-list"></div>
-                <div class="stage-roster-list-resize" data-roster-list-resize="set" role="separator"
-                     tabindex="0" aria-orientation="horizontal" aria-controls="stage-set-list"
-                     aria-label="大道具の一覧の高さ"></div>
+                </div>
+                <div class="stage-roster-accordion-body" id="stage-roster-sets-body">
+                  <div class="stage-cast-list" id="stage-set-list"></div>
+                  <div class="stage-roster-list-resize" data-roster-list-resize="set" role="separator"
+                       tabindex="0" aria-orientation="horizontal" aria-controls="stage-set-list"
+                       aria-label="大道具の一覧の高さ"></div>
+                </div>
               </div>
               <div class="stage-roster-group" id="stage-group-props" data-tablet-break-before>
-                <p class="stage-roster-head">小道具</p>
-                <div class="stage-cast-list" id="stage-prop-list"></div>
-                <div class="stage-roster-list-resize" data-roster-list-resize="prop" role="separator"
-                     tabindex="0" aria-orientation="horizontal" aria-controls="stage-prop-list"
-                     aria-label="小道具の一覧の高さ"></div>
+                <div class="stage-roster-head">
+                  <button type="button" class="stage-roster-accordion-toggle" data-roster-accordion="props"
+                          aria-expanded="true" aria-controls="stage-roster-props-body"><span>小道具</span></button>
+                </div>
+                <div class="stage-roster-accordion-body" id="stage-roster-props-body">
+                  <div class="stage-cast-list" id="stage-prop-list"></div>
+                  <div class="stage-roster-list-resize" data-roster-list-resize="prop" role="separator"
+                       tabindex="0" aria-orientation="horizontal" aria-controls="stage-prop-list"
+                       aria-label="小道具の一覧の高さ"></div>
+                </div>
               </div>
               <!-- T-21（2026-09-18 本人要望）: 盆・可動デッキ・幕・せり・水面は、
                    演者／大道具／小道具と同じように別の項目として最下部に出す。
                    見出しは既存の呼び名「舞台機構」に合わせる（本人決定＝「舞台装置」は使わない）。 -->
               <div class="stage-roster-group" id="stage-group-machinery" data-tablet-break-before>
-                <p class="stage-roster-head">舞台機構</p>
-                <div class="stage-cast-list" id="stage-machinery-list"></div>
-                <div class="stage-roster-list-resize" data-roster-list-resize="machinery" role="separator"
-                     tabindex="0" aria-orientation="horizontal" aria-controls="stage-machinery-list"
-                     aria-label="舞台機構の一覧の高さ"></div>
+                <div class="stage-roster-head">
+                  <button type="button" class="stage-roster-accordion-toggle" data-roster-accordion="machinery"
+                          aria-expanded="true" aria-controls="stage-roster-machinery-body"><span>舞台機構</span></button>
+                </div>
+                <div class="stage-roster-accordion-body" id="stage-roster-machinery-body">
+                  <div class="stage-cast-list" id="stage-machinery-list"></div>
+                  <div class="stage-roster-list-resize" data-roster-list-resize="machinery" role="separator"
+                       tabindex="0" aria-orientation="horizontal" aria-controls="stage-machinery-list"
+                       aria-label="舞台機構の一覧の高さ"></div>
+                </div>
               </div>
             </div>
           </section>
@@ -324,10 +338,6 @@
               </div>
               <!-- 定番の組み方をまとめて仕込む。個々の明かりはあとから動かせる -->
               <button type="button" id="stage-light-preset-open" class="stage-select stage-kind-button"><span>プリセットから組む</span><span aria-hidden="true">▸</span></button>
-              <button type="button" id="stage-light-motion-open" class="stage-select stage-kind-button stage-light-motion-open" hidden>
-                <span>光の動きを組む<br><span class="stage-light-motion-open-summary" id="stage-light-motion-open-summary">動く光の案はまだありません</span></span>
-                <span aria-hidden="true">▸</span>
-              </button>
               <div class="stage-cast-list" id="stage-light-list" data-tablet-break-before></div>
             </div>
           </section>
@@ -753,6 +763,9 @@
                     <input type="checkbox" id="stage-front-light-intent">
                     <span>光の意図</span>
                   </label>
+                  <!-- セクション中の全演者へ一括で衣装を着脱する。演者を選んでいなくても常に操作できる。 -->
+                  <button type="button" class="stage-canvas-tool stage-front-costume-choice" id="stage-costume-toggle"
+                          aria-pressed="false">衣装</button>
                   <label class="stage-canvas-toggle" id="stage-seatmap-toggle">
                     <input type="checkbox" id="stage-show-seatmap">
                     <span>見る位置の図</span>
@@ -892,13 +905,35 @@
                       id="stage-selected-light-preset-open" aria-haspopup="dialog"
                       aria-controls="stage-selected-light-preset-modal" hidden>選んだ灯に型を適用…</button>
               <div class="stage-inline-control" id="stage-pose-inline"><label class="stage-control-label" for="stage-piece-pose">姿勢</label><button type="button" id="stage-piece-pose" class="stage-pose-button"><span id="stage-pose-label">立つ</span><span aria-hidden="true">▸</span></button></div>
+              <!-- セクションごとの衣装。既存の単色表示は「衣装を着せる」までそのまま残す -->
+              <div class="stage-costume-controls" id="stage-costume-controls" hidden>
+                <div class="stage-costume-heading">
+                  <span class="stage-control-label">このセクションの衣装</span>
+                </div>
+                <div class="stage-costume-fields" id="stage-costume-fields" hidden>
+                  <div class="stage-costume-row">
+                    <label class="stage-control-label" for="stage-costume-top">上衣</label>
+                    <select id="stage-costume-top" class="stage-select">
+                      <option value="tshirt">Tシャツ</option>
+                      <option value="longtee">長袖シャツ</option>
+                      <option value="tank">タンクトップ</option>
+                    </select>
+                    <input type="color" id="stage-costume-top-color" value="#a84b26" aria-label="上衣の色">
+                  </div>
+                  <div class="stage-costume-row">
+                    <label class="stage-control-label" for="stage-costume-bottom">下衣</label>
+                    <select id="stage-costume-bottom" class="stage-select">
+                      <option value="pants">長ズボン</option>
+                      <option value="shorts">半ズボン</option>
+                    </select>
+                    <input type="color" id="stage-costume-bottom-color" value="#3a3f4a" aria-label="下衣の色">
+                  </div>
+                </div>
+              </div>
               <!-- 演者を選んだときだけ、舞台上・舞台裏の持てる物をここから渡す -->
               <div id="stage-hold-controls" hidden>
                 <div id="stage-held-list" class="stage-cast-list"></div>
-                <div class="stage-inline-control"><label class="stage-control-label" for="stage-hold-select">持ち物</label><select id="stage-hold-select" class="stage-select" aria-label="持たせる物"><option value="">持たせる…</option></select></div>
-                <select id="stage-wear-select" class="stage-select" aria-label="顔につける仮面" hidden>
-                  <option value="">顔につける…</option>
-                </select>
+                <div class="stage-inline-control"><label class="stage-control-label" for="stage-hold-select">小道具</label><select id="stage-hold-select" class="stage-select" aria-label="小道具と使い方を選ぶ"><option value="">小道具を選ぶ…</option></select></div>
               </div>
               <!-- 持たれている駒を選んだときだけ、持ち手と左右を変えられる -->
               <div id="stage-holder-controls" hidden>
@@ -1551,75 +1586,7 @@
         <button type="button" class="stage-primary-action" id="stage-selected-light-custom-apply">この範囲に適用</button>
       </div>
     </section>
-    <p class="stage-selected-light-preset-note">型を当てた後も、狙い・明るさ・色は各灯で調整できます。時間変化は同じ型をもう一度押すと止められます。客席向けの型は準備中です。</p>
-  </div>
-</div>
-
-<div class="stage-modal-backdrop" id="stage-light-motion-backdrop" hidden></div>
-<div class="stage-modal stage-light-motion-modal" id="stage-light-motion-modal" role="dialog" aria-modal="true"
-     aria-labelledby="stage-light-motion-title" hidden>
-  <header class="stage-modal-head">
-    <h2 id="stage-light-motion-title">光の動きを組む</h2>
-    <button type="button" class="stage-modal-close" id="stage-light-motion-close" aria-label="閉じる">✕</button>
-  </header>
-  <div class="stage-modal-body">
-    <p class="stage-light-motion-intro">見せたい光の動きを選び、再生して確かめます。灯体・DMX・安全性は示しません。</p>
-    <p class="stage-light-motion-current" id="stage-light-motion-summary-text">動く光の案はまだありません</p>
-    <div class="stage-light-motion-presets" id="stage-light-motion-presets" role="group" aria-label="動きの型">
-      <button type="button" class="stage-light-motion-preset" data-light-motion-preset="sweep" aria-pressed="false">左右に往復</button>
-      <button type="button" class="stage-light-motion-preset" data-light-motion-preset="fan" aria-pressed="false">扇に開く・閉じる</button>
-      <button type="button" class="stage-light-motion-preset" data-light-motion-preset="cross" aria-pressed="false">2本が交差する</button>
-      <button type="button" class="stage-light-motion-preset" data-light-motion-preset="circle" aria-pressed="false">円を描く</button>
-      <button type="button" class="stage-light-motion-preset" data-light-motion-preset="chase" aria-pressed="false">順に動く</button>
-    </div>
-
-    <div class="stage-light-motion-adjust" id="stage-light-motion-adjust" hidden>
-      <label class="stage-light-motion-row">
-        <span>本数</span>
-        <span class="stage-light-motion-seg" id="stage-light-motion-count" role="group" aria-label="本数">
-          <button type="button" data-light-motion-count="1" aria-pressed="true">1</button>
-          <button type="button" data-light-motion-count="2" aria-pressed="false">2</button>
-        </span>
-      </label>
-      <label class="stage-light-motion-row stage-range-label" for="stage-light-motion-range">
-        <span>範囲</span>
-        <input type="range" id="stage-light-motion-range" min="0.2" max="1" step="0.05" value="0.5">
-      </label>
-      <label class="stage-light-motion-row">
-        <span>速さ</span>
-        <span class="stage-light-motion-seg" id="stage-light-motion-speed" role="group" aria-label="速さ">
-          <button type="button" data-light-motion-speed="slow" aria-pressed="false">ゆっくり</button>
-          <button type="button" data-light-motion-speed="normal" aria-pressed="true">普通</button>
-          <button type="button" data-light-motion-speed="fast" aria-pressed="false">速い</button>
-        </span>
-      </label>
-      <label class="stage-light-motion-row" id="stage-light-motion-relation-row" hidden>
-        <span>光の関係</span>
-        <span class="stage-light-motion-seg" id="stage-light-motion-relation" role="group" aria-label="光の関係">
-          <button type="button" data-light-motion-relation="together" aria-pressed="true">一緒に</button>
-          <button type="button" data-light-motion-relation="opposite" aria-pressed="false">向かい合わせ</button>
-          <button type="button" data-light-motion-relation="sequential" aria-pressed="false">順に</button>
-        </span>
-      </label>
-    </div>
-
-    <div class="stage-light-motion-stage" id="stage-light-motion-stage" hidden>
-      <canvas id="stage-light-motion-canvas" width="960" height="540" role="img" aria-label="光の動きのプレビュー"></canvas>
-      <div class="stage-light-motion-transport" role="group" aria-label="再生">
-        <button type="button" class="btn-quiet" id="stage-light-motion-play">▶ 再生</button>
-        <button type="button" class="btn-quiet" id="stage-light-motion-stop">■ 停止</button>
-        <button type="button" class="btn-quiet" id="stage-light-motion-restart">|◀ 最初から</button>
-      </div>
-      <div class="stage-light-motion-export">
-        <button type="button" class="btn-quiet" id="stage-light-motion-export">動画・図・一文を書き出す</button>
-        <span id="stage-light-motion-export-status" role="status" aria-live="polite"></span>
-      </div>
-    </div>
-
-    <div class="stage-light-intent-foot">
-      <p>光の動きの案です。灯体位置・DMX・安全性は示しません。</p>
-      <button type="button" class="btn-quiet" id="stage-light-motion-clear">光の動きを消す</button>
-    </div>
+    <p class="stage-selected-light-preset-note">型を当てた後も、狙い・明るさ・色は各灯で調整できます。時間変化は同じ型をもう一度押すと止められます。客席向けの型は、劇場設定に有効な客席領域があるときに使えます。</p>
   </div>
 </div>
 
@@ -3170,41 +3137,42 @@
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=2026092059"></script>
-    <script src="stage-i18n.zh-Hans.js?v=2026092059"></script>
-    <script src="stage-i18n.zh-Hant.js?v=2026092059"></script>
+    <script src="stage-i18n.js?v=2026092114"></script>
+    <script src="stage-i18n.zh-Hans.js?v=2026092114"></script>
+    <script src="stage-i18n.zh-Hant.js?v=2026092114"></script>
 <script src="stage-prompt-i18n.js?v=2026092050"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026091501"></script>
-<script src="stage-samples/feature-test-show.js?v=2026092059"></script>
+<script src="stage-samples/feature-test-show.js?v=2026092105"></script>
 <script src="stage-set-model.js?v=2026091501"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
 <script src="stage-machinery.js?v=2026092055"></script>
 <script src="stage-scrim.js?v=2026092059"></script>
-<script src="stage-first-person.js?v=2026092059"></script>
+<script src="stage-first-person.js?v=2026092104"></script>
 <script src="stage-audio-store.js?v=2026091501"></script>
-<script src="stage-light-motion.js?v=2026091501"></script>
 <script src="manual/manual-content.js?v=2026091501"></script>
 <script src="stage-pwa.js?v=2026091501"></script>
-<script src="stage-lighting-plans.js?v=2026091650"></script>
-<script src="stage-lighting-plan-overlay.js?v=2026091650"></script>
-<script src="light-design/rig-engine.js?v=20260919-3-gobo-shared"></script>
+<script src="stage-lighting-plans.js?v=2026092101"></script>
+<script src="stage-lighting-plan-overlay.js?v=2026092113"></script>
+<script src="light-design/rig-engine.js?v=20260921-legacy-panel"></script>
 <script src="light-design/laser-effects.js?v=20260915-5-color-presets"></script>
-<script src="stage-light-render.js?v=2026092038"></script>
-<script src="gamma-light-cue-overlay.js?v=2026092038"></script>
+<script src="stage-light-render.js?v=2026092062"></script>
+<script src="gamma-light-cue-overlay.js?v=2026092113"></script>
 <script src="gamma-range-fields.js?v=2026091780"></script>
 <script src="gamma-number-scrub.js?v=2026091780"></script>
 <script src="gamma-formation-presets.js?v=formation1"></script>
 <script src="gamma-formation-model.js?v=formation1"></script>
 <script src="stage-cue-sheet.js?v=2026091803"></script>
-<script src="stage-sketch.js?v=2026092059"></script>
+<script src="docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113"></script>
+<script src="stage-light-panel-import.js?v=2026092113"></script>
+    <script src="stage-sketch.js?v=2026092118"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
-<script src="stage-timeline.js?v=2026091991"></script>
+<script src="stage-timeline.js?v=2026092122"></script>
 <script src="stage-session.js?v=2026091987"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
 <script src="stage-venue-editor.js?v=2026092046"></script>
-<script src="gamma-workspace.js?v=2026092044"></script>
+<script src="gamma-workspace.js?v=2026092121"></script>
 <script src="gamma-mobile.js?v=2026091951"></script>
 </body>
 </html>

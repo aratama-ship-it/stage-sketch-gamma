@@ -12,6 +12,20 @@
   const VISUAL_GAIN = 1.8;
   const visualAlpha = (value) => E.clamp(E.finite(value, 0) * VISUAL_GAIN, 0, 1);
   const $ = (id) => document.getElementById(id);
+  /* v2の復元用原本は大きいので、UndoのJSONへ操作ごとに複製しない。
+     この編集画面の存続中だけ1件ずつ保管し、履歴には短い参照キーを入れる。 */
+  const migrationRecords = new Map();
+  let migrationRecordSequence = 0;
+  const retainMigration = (migration) => {
+    if (!migration) return null;
+    const key = `migration-${++migrationRecordSequence}`;
+    migrationRecords.set(key, JSON.parse(JSON.stringify(migration)));
+    return key;
+  };
+  const currentMigration = () => {
+    const migration = state.migrationKey ? migrationRecords.get(state.migrationKey) : null;
+    return migration ? JSON.parse(JSON.stringify(migration)) : null;
+  };
 
   /* ---------- 状態 ---------- */
   /* 幕・ホリゾントの見本（2026-09-13 本人要望で移植）。前幕は開いていても（open:100）
@@ -104,6 +118,9 @@
     clip: null,                        // 設定のコピー元。{ kind, from, light, fixture }（2026-09-14）。undo の対象にしない
     mode: "move",                      // "place" | "move"。既定は照明デザイン（2026-09-13 本人指定。こちらを使う頻度が高い）
     dims: { W: 12, D: 8, H: 8 },       // 舞台の幅・奥行き・高さ（m）。右の「舞台の大きさ」で変えられる
+    /* 埋め込み元が渡す会場別の客席領域。照明デザインの保存形式には含めず、
+       会場情報が確認できる間だけ「舞台＋客席を漂う」の許可マスクとして使う。 */
+    venueMask: null,
     rig: { trusses: [], fixtures: [] },
     /* pieces は「舞台スケッチ側ですでに置かれている演者・セット」。
        製品では本体の scene.pieces をそのまま読む（このアプリからは変えない・読むだけ）。
@@ -111,8 +128,8 @@
        持つのは 左右u・奥行きv・高さ(m)・名前・種類・向き・色・姿勢（演者のみ）。
        演者の色 color は本体 paintBody() が元から受け取れる引数で、試作側の drawPiecesUp も
        pc.color を読んでいた（未使用だったのはこの見本データに値が無かっただけ）。
-       衣装・髪は本体側にまだ描画がない（TOP_KINDS/BOTTOM_KINDS/HAIR_STYLES の shells/parts が
-       空＝データの器だけで、paintBody() も look 引数を受け取るが中で使っていない。段階0のまま）。
+       衣装はホスト側で正規化した look を受け取り、正面図と同じ形・色で描画する。
+       髪は引き続きデータの器だけを持ち、この図では描画しない。
        移植できるのは実在する描画だけなので、ここでは持ち込まない（2026-09-13 本人要望への回答）。
        幕・ホリゾントは stage-machinery.js の machineryParts() curtain分岐を移植（rig-engine.js
        curtainParts）。前幕とホリゾント幕の2枚を見本として置く。
@@ -209,6 +226,8 @@
     dirty: false, history: [], future: [],
     nextNo: 1, seq: 1,
     designName: "",                    // いま編集している照明デザインの名前（保存で付ける）
+    designVersion: 1,                  // v2は旧ベータ照明の復元記録を保つコピー変換専用
+    migrationKey: null,                // 大きい原本そのものは migrationRecords に1件だけ置く
     /* 幕の寸法（2026-09-13 本人要望で調整できるようにした）。
        客席から光源（灯体）が見えないかを確かめるための値なので、舞台ごとに変わる＝
        rig と同じショー共通の持ち物として保存・Undoの対象にする。
@@ -359,7 +378,7 @@
 
   /* ---------- 履歴（モーダル内Undo） ---------- */
   /* R-11（2026-09-17）: 灯体グループも履歴に含める。含めないと「戻る」でグループだけ取り残される。 */
-  const snapshot = () => JSON.stringify({ dims: state.dims, rig: state.rig, scenes: state.scenes, palette: state.palette, levelCurve: state.levelCurve, curtains: state.curtains, fixtureGroups: state.fixtureGroups });
+  const snapshot = () => JSON.stringify({ dims: state.dims, rig: state.rig, scenes: state.scenes, palette: state.palette, levelCurve: state.levelCurve, curtains: state.curtains, fixtureGroups: state.fixtureGroups, designVersion: state.designVersion, migrationKey: state.migrationKey });
   /* いま画面に出ている状態（＝最後に commit した時点）の控え。
      履歴へ積みたいのは「変更<b>前</b>」の状態だが、commit は変更が済んだ後に呼ばれるので、
      その時点から変更前を作り直せない。そこで直前の状態をここに1つ持っておく。
@@ -383,6 +402,8 @@
     if (Array.isArray(o.levelCurve) && o.levelCurve.length === LEVEL_CURVE_POINTS) state.levelCurve = o.levelCurve.slice();
     if (o.curtains) state.curtains = { ...state.curtains, ...o.curtains };
     if (Array.isArray(o.fixtureGroups)) state.fixtureGroups = o.fixtureGroups;   // R-11
+    if ([1, 2].includes(o.designVersion)) state.designVersion = o.designVersion;
+    if (o.migrationKey === null || (typeof o.migrationKey === "string" && migrationRecords.has(o.migrationKey))) state.migrationKey = o.migrationKey;
     state.sel = new Set([...state.sel].filter(fixtureById));
     state.selEquipment = null;
     if (state.selTruss && !E.trussById(state.rig, state.selTruss)) state.selTruss = null;
@@ -577,12 +598,17 @@
   const targetAt = (fid, t) => {
     const light = lightOf(fid), fixture = fixtureById(fid);
     /* P1の再現可能なランダム移動。P0 engine がある試作ページだけで解釈し、
-       既存の path / 保存形式 / 本体の lightMotion には一切手を入れない。 */
+       既存の path / 保存形式 / 本体の旧式の場面全体アニメーションには一切手を入れない。 */
     const selectedPresetEngine = window.SELECTED_LIGHT_PRESETS_ENGINE;
     if (E.isMoving(fixture) && light && light.path && light.path.kind === "wander" && selectedPresetEngine) {
-      const point = selectedPresetEngine.wanderPoint(light.path, t, {
-        stage: { kind: "rect", u0: 0, v0: 0, u1: 1, v1: 1 },
-      });
+      const regions = selectedPresetEngine.buildVenueRegions(state.dims,
+        state.venueMask && state.venueMask.audienceAreas);
+      const point = selectedPresetEngine.wanderPoint(light.path, t, regions);
+      if (point && point.coordinateSpace === "venue-m") return {
+        x: E.clamp(E.finite(point.xM, state.dims.W / 2), -300, 300) - state.dims.W / 2,
+        y: E.clamp(E.finite(point.yM, state.dims.D), -300, 300),
+        z: E.clamp(E.finite(point.hM, 1.2), 0, state.dims.H),
+      };
       if (point) return E.pointWorld(point, state.dims);
     }
     return E.targetAt(light, cueWithPeriods(), fid, animatesAim(fixture) ? t : 0, state.dims);
@@ -1555,7 +1581,7 @@
         const zDrop = o.zDropPerM ? o.zDropPerM * H : 0;
         const rig = F.buildRig(pc.pose || "stand", foot.X, foot.Y, H * k, H * k * stretch, yaw, zDrop, null);
         if (!relight) F.paintShadow(ctx, rig);
-        F.paintBody(ctx, rig, pc.color || "#d8cdb6", null,
+        F.paintBody(ctx, rig, pc.color || "#d8cdb6", pc.look || null,
           relight ? F.bodyLightPaint(ctx, rig, pc, d, o.yawDeg || 0, beams) : null);
       }
       if (relight) { ctx.restore(); return; }    // 名前と足元の影は二重に描かない
@@ -2687,7 +2713,7 @@
   plan.addEventListener("pointermove", (ev) => {
     const pt = canvasPoint(plan, ev); const B = planBox(); state.hover = { canvas: "plan", ...pt };
     const dg = state.drag;
-    if (dg && dg.kind === "fixture") { const f = fixtureById(dg.fid); if (f) { const u = snapU(E.clamp((pt.X - B.x) / B.w, 0, 1)), v = snapV(E.clamp((pt.Y - B.y) / B.h, 0, 1)); if (f.mount.type === "cyc") { /* 中央固定。動かさない */ } else if (f.mount.type === "truss") f.mount.u = u; else if (f.mount.type === "floor") { f.mount.u = u; f.mount.v = v; } else f.mount.v = v; dg.moved = true; } }
+    if (dg && dg.kind === "fixture") { const f = fixtureById(dg.fid); if (f) { const u = snapU(E.clamp((pt.X - B.x) / B.w, 0, 1)), v = snapV(E.clamp((pt.Y - B.y) / B.h, 0, 1)); if (f.mount.type === "cyc") { /* 中央固定。動かさない */ } else if (f.mount.type === "truss") f.mount.u = u; else if (f.mount.type === "floor" || f.mount.type === "legacy-panel") { f.mount.u = u; f.mount.v = v; } else f.mount.v = v; dg.moved = true; } }
     else if (dg && dg.kind === "truss") { const t = E.trussById(state.rig, dg.tid); if (t) { t.v = snapV(E.clamp((pt.Y - B.y) / B.h, 0, 1)); dg.moved = true; } }
     else if (dg && dg.kind === "handle") { dg.lock = ev.shiftKey; const uv = E.planToUV(state.dims, B, pt.X, pt.Y); applyHandleDrag(dg, { u: snapU(uv.u), v: snapV(uv.v), aheadM: distanceMetric ? ((pt.Y-B.y)/B.h-1)*state.dims.D : undefined }, dg.axis); }
     else if (dg && dg.kind === "marquee") {
@@ -3049,6 +3075,7 @@
     secs.push({ key: "cyc", name: "ホリゾントライト（奥の壁ぎわ）", items: list.filter((f) => f.mount.type === "cyc") });
     secs.push({ key: "shimote", name: "SS・下手の袖", items: list.filter((f) => f.mount.type === "side" && f.mount.side === "shimote") });
     secs.push({ key: "kamite", name: "SS・上手の袖", items: list.filter((f) => f.mount.type === "side" && f.mount.side === "kamite") });
+    secs.push({ key: "legacy-panel", name: "旧ベータの照明位置（変換済み）", items: list.filter((f) => f.mount.type === "legacy-panel") });
     return secs.map((x) => ({ ...x, items: x.items.filter(passSearch) })).filter((x) => x.items.length);
   }
   const passFilter = (fid) => state.filter === "all" || lightState(fid) === state.filter;
@@ -5243,12 +5270,16 @@
      別の環境や本体へはファイルで渡す。 */
   const DESIGN_FORMAT = "shosai.light-design";
   const DESIGN_VERSION = 1;
+  const SUPPORTED_DESIGN_VERSIONS = Object.freeze([1, 2]);
   const DESIGN_STORE = "gamma:shosai.lightDesigns.v1";
   const DESIGN_BACKUP = "gamma:shosai.lightDesigns.beforeOptionB.v1";
 
   function buildDesign(name) {
+    const version = state.designVersion === 2 ? 2 : DESIGN_VERSION;
+    const migration = version === 2 ? currentMigration() : null;
+    if (version === 2 && !migration) throw new Error("旧照明の復元記録を確認できません。現在のショーは変更していません");
     return {
-      format: DESIGN_FORMAT, version: DESIGN_VERSION,
+      format: DESIGN_FORMAT, version,
       name: String(name || "名前なし").slice(0, 60),
       savedAt: new Date().toISOString(),
       app: "照明デザインモード（試作・逆光分離モデル）", variant: "option-b",
@@ -5272,16 +5303,19 @@
       /* R-11（2026-09-17 本人要望）: 灯体をまとめるカスタムのグループ。
          本人決定で「そのショーに残る」ので、ここへ入れて保存する。 */
       fixtureGroups: JSON.parse(JSON.stringify(state.fixtureGroups || [])),
+      ...(migration ? { migration } : {}),
     };
   }
   /* 取り込み。場面の演者・セットは<b>いまのもの</b>を残し、灯の設定だけ差し替える
      （デザインは灯の話なので、舞台スケッチ側の駒を上書きしない）。 */
   function applyDesign(o, options = {}) {
     if (window.GAMMA_LIGHT_EDITOR && !options.host) window.GAMMA_LIGHT_EDITOR.validateImport(o);
+    if (window.GAMMA_LIGHT_MODEL && typeof window.GAMMA_LIGHT_MODEL.validate === "function") {
+      o = window.GAMMA_LIGHT_MODEL.validate(o);
+    }
     const previousSnapshot = snapshot(); const previousHistory = state.history.slice();
     if (!o || o.format !== DESIGN_FORMAT) throw new Error("この形式は読めません（照明デザインのファイルではありません）");
-    if (Number(o.version) > DESIGN_VERSION) throw new Error("新しい版の形式です。このアプリでは読めません");
-    if (Number(o.version) !== DESIGN_VERSION) throw new Error("対応していない形式の版です");
+    if (!SUPPORTED_DESIGN_VERSIONS.includes(Number(o.version))) throw new Error("対応していない形式の版です");
     if (!o.rig || !Array.isArray(o.scenes)) throw new Error("中身が足りません（仕込みか場面がありません）");
     // Validate the complete incoming structure before touching the current edit.
     if (!Array.isArray(o.rig.fixtures) || !Array.isArray(o.rig.trusses) || !o.scenes.length ||
@@ -5308,6 +5342,8 @@
     if (Array.isArray(o.palette)) state.palette = cleanPalette(o.palette);
     if (Array.isArray(o.levelCurve) && o.levelCurve.length === LEVEL_CURVE_POINTS) state.levelCurve = [...o.levelCurve];
     if (o.curtains) state.curtains = { ...state.curtains, ...o.curtains };
+    state.designVersion = Number(o.version);
+    state.migrationKey = state.designVersion === 2 ? retainMigration(o.migration) : null;
     /* R-11（2026-09-17 本人要望）: 灯体をまとめるカスタムのグループ。
        古いデータには fixtureGroups が無いので、無ければ空として読む（壊さない）。
        いなくなった灯体は取り除き、中身が空になったグループは捨てる。 */

@@ -31,7 +31,7 @@
     "motion.chase": ["追いかけ", "動き", "同じ軌道を順番に追いかけます。ムービングのみ。"],
     "motion.circle": ["円", "動き", "円軌道で動かします。ムービングのみ。"],
     "motion.wander.stage": ["舞台を漂う", "動き", "固定seedで、舞台内を不規則に見せます。ムービングのみ。"],
-    "motion.wander.stageAudience": ["舞台＋客席を漂う", "動き", "会場ごとの客席マスクが必要です。"],
+    "motion.wander.stageAudience": ["舞台＋客席を漂う", "動き", "会場に登録された客席領域と舞台へ、選んだムービングを安全に振り分けます。"],
     "value.alternate": ["交互色", "配り方", "2色を交互に配ります。"],
     "value.gradient": ["色グラデーション", "配り方", "左右へなめらかに色をつなぎます。"],
     "value.center": ["中央を強く", "配り方", "中央ほど明るくします。"],
@@ -165,7 +165,10 @@
     try { info.scrollIntoView({ block: "start", inline: "nearest" }); }
     catch (_) { info.scrollIntoView(); }
   }
-  const stageRegions = () => ({ stage: { kind: "rect", u0: 0, v0: 0, u1: 1, v1: 1 } });
+  const stageRegions = () => X.buildVenueRegions(state.dims, state.venueMask && state.venueMask.audienceAreas);
+  const audienceIds = () => X.audienceRegionIds(stageRegions());
+  const hasAudienceMask = () => audienceIds().length > 0;
+  const audienceSuffix = () => hasAudienceMask() ? `客席領域 ${audienceIds().length}面` : "客席領域なし";
   /* 点滅・順送りでは「灯の並び順」を出さず、並べ方の中の「選んだ順のまま」で同じことを決める
      （順番を決めるつまみが2つあると、どちらが効くのか読めないため。2026-09-17 削り込み）。
      全体のずらしも外した——ずっと再生していると見分けがつかない（実測: 時刻をずらすと同じ形）。 */
@@ -178,10 +181,11 @@
   };
   const choices = () => ({ seed: ui.seed, order: effectiveOrder(), alignIntensity: ui.alignIntensity, irregularity: ui.irregularity, loopSec: ui.loopSec, rateHz: ui.rateHz, phaseOffset: isStrobe(currentPreset()) ? 0 : ui.phaseOffset,
     setBeam: ui.setBeam === true, beamDeg: ui.beamDeg, setLevel: ui.setLevel === true, level: ui.level,
+    audienceRegionIds: audienceIds(),
     sequence: ui.sequence === "selection" ? "lr" : ui.sequence, customRanks: customRanks(), blocks: ui.blocks, direction: ui.direction, width: ["half", "build"].includes(ui.width) ? ui.width : Number(ui.width), flashes: ui.flashes, duty: ui.duty, kind: ui.kind, depth: ui.depth, floor: ui.floor, loops: ui.loops, after: ui.after, region: ui.custom.shape === "circle" ? { kind: "circle", u: ui.custom.u, v: ui.custom.v, r: ui.custom.r } : { kind: "rect", u0: ui.custom.u0, v0: ui.custom.v0, u1: ui.custom.u1, v1: ui.custom.v1 } });
   const canUse = (preset) => {
     if (!preset) return false;
-    if (preset.id === "motion.wander.stageAudience") return false; // 客席マスク未接続。P2で会場データへ明示接続する。
+    if (preset.id === "motion.wander.stageAudience" && !hasAudienceMask()) return false;
     return !(preset.movingOnly && !movingCount());
   };
   const scopeText = (preset) => {
@@ -193,7 +197,9 @@
       show: ["カードごとの狙い／動き／強さ", "それ以外の灯の設定"],
       flash: ["点滅。選べば太さ・強さも", "狙い・色・動き・ゴボ"],
     };
-    const pair = map[preset.family] || ["この型の属性", "それ以外"];
+    const pair = preset.id === "motion.wander.stageAudience"
+      ? ["軌道・速さ・ずらし・当てる場所", "色・強さ・広がり・ゴボ・点滅"]
+      : (map[preset.family] || ["この型の属性", "それ以外"]);
     return { changes: pair[0], keeps: pair[1] };
   };
   function diagram(preset, extraClass = "") {
@@ -401,21 +407,21 @@
     const scope = scopeText(selected);
     const applied = sharedAppliedPresets().find((item) => item.id === selected.id);
     const detail = applied && applied.adjusted ? adjustmentDetail(applied) : "";
-    const unavailable = selected.id === "motion.wander.stageAudience";
+    const unavailable = selected.id === "motion.wander.stageAudience" && !hasAudienceMask();
     const noMoving = selected.movingOnly && !movingCount();
     const skipped = selected.movingOnly && count > movingCount() ? `ムービング ${movingCount()}灯に適用・固定${count - movingCount()}灯はそのまま` : `${count}灯に適用`;
     const cards = cardList();
     const list = cards.map((preset) => {
       const text = cardText(preset);
       const disabled = !canUse(preset);
-      const suffix = preset.id === "motion.wander.stageAudience" ? "客席マスク待ち" : isStrobe(preset) ? methodName(preset.id) : (preset.movingOnly ? `ムービング ${movingCount()}灯` : text[1]);
+      const suffix = preset.id === "motion.wander.stageAudience" ? audienceSuffix() : isStrobe(preset) ? methodName(preset.id) : (preset.movingOnly ? `ムービング ${movingCount()}灯` : text[1]);
       // R-02: 一覧では説明（small）をCSSで隠すので、中身を title に入れて読めるようにしておく。
       return `<button type="button" class="slp-card ${preset.id === selected.id ? "sel" : ""}" data-slp-preset="${preset.id}" title="${esc(text[0])}／${esc(scopeText(preset).changes)} ／ ${esc(suffix)}" ${disabled ? "disabled" : ""}>${diagram(preset)}<b>${esc(text[0])}</b><small>${esc(scopeText(preset).changes)} ／ ${esc(suffix)}</small></button>`;
     }).join("") || `<p class="slp-list-empty">該当する型はありません。</p>`;
     const flashNotice = selected.family !== "flash" ? "" : selected.id === "flash.sequence"
       ? `<p class="slp-note slp-warn">点滅はまだ始まりません。ここで決めてから「この型を適用」を押します。速さは画面上いまのところ最大3（1秒に3灯）です。</p>`
       : `<p class="slp-note slp-warn">点滅はまだ始まりません。ここで速度・位相を決めてから「この型を適用」を押します。画面上の適用値は最大3Hzです。</p>`;
-    typePane.innerHTML = `<section class="slp-selected" aria-label="選んだ型の情報">${diagram(selected, "slp-diagram")}<div class="slp-selected-info"><p>${esc(info[1])}</p><h3>${esc(info[0])}</h3></div><div class="slp-selected-wide">${detail}<p class="slp-scope"><b>変えるもの:</b> ${esc(scope.changes)}<br><b>保つもの:</b> ${esc(scope.keeps)}</p><p class="slp-meta">対象: ${esc(skipped)}　／　点灯状態は保ちます</p><div class="slp-controls">${controlsFor(selected, { concise: true })}</div>${flashNotice}${unavailable ? `<p class="slp-note slp-warn">客席側は会場ごとのマスクを指定してから使います。この試作では適用できません。</p>` : ""}${noMoving ? `<p class="slp-note slp-warn">ムービングを1灯以上選ぶと使えます。</p>` : ""}<div class="slp-actions"><button type="button" class="btn primary" data-slp-action="apply" ${(!canUse(selected) || !count) ? "disabled" : ""}>この型を適用</button></div></div></section><div class="slp-list-tools"><input data-slp="query" type="search" placeholder="型を検索" value="${esc(ui.query)}" aria-label="型を検索"><select data-slp="sort" aria-label="型の並び替え"><option value="recommended" ${ui.sort === "recommended" ? "selected" : ""}>おすすめ順</option><option value="name" ${ui.sort === "name" ? "selected" : ""}>名前順</option><option value="family" ${ui.sort === "family" ? "selected" : ""}>種類順</option></select></div><div class="slp-families inline">${FAMILIES.map((family) => `<button type="button" data-slp-family="${family}" aria-pressed="${String(ui.family === family)}">${FAMILY_LABEL[family]}</button>`).join("")}</div><p class="ptitle">型の一覧（${cards.length}）</p><div class="slp-list">${list}</div>`;
+    typePane.innerHTML = `<section class="slp-selected" aria-label="選んだ型の情報">${diagram(selected, "slp-diagram")}<div class="slp-selected-info"><p>${esc(info[1])}</p><h3>${esc(info[0])}</h3></div><div class="slp-selected-wide">${detail}<p class="slp-scope"><b>変えるもの:</b> ${esc(scope.changes)}<br><b>保つもの:</b> ${esc(scope.keeps)}</p><p class="slp-meta">対象: ${esc(skipped)}　／　点灯状態は保ちます</p><div class="slp-controls">${controlsFor(selected, { concise: true })}</div>${flashNotice}${unavailable ? `<p class="slp-note slp-warn">この会場には有効な客席領域がありません。劇場設定で客席の形を確定すると使えます。</p>` : ""}${noMoving ? `<p class="slp-note slp-warn">ムービングを1灯以上選ぶと使えます。</p>` : ""}<div class="slp-actions"><button type="button" class="btn primary" data-slp-action="apply" ${(!canUse(selected) || !count) ? "disabled" : ""}>この型を適用</button></div></div></section><div class="slp-list-tools"><input data-slp="query" type="search" placeholder="型を検索" value="${esc(ui.query)}" aria-label="型を検索"><select data-slp="sort" aria-label="型の並び替え"><option value="recommended" ${ui.sort === "recommended" ? "selected" : ""}>おすすめ順</option><option value="name" ${ui.sort === "name" ? "selected" : ""}>名前順</option><option value="family" ${ui.sort === "family" ? "selected" : ""}>種類順</option></select></div><div class="slp-families inline">${FAMILIES.map((family) => `<button type="button" data-slp-family="${family}" aria-pressed="${String(ui.family === family)}">${FAMILY_LABEL[family]}</button>`).join("")}</div><p class="ptitle">型の一覧（${cards.length}）</p><div class="slp-list">${list}</div>`;
     typePane.querySelectorAll("[data-slp-preset]").forEach((button) => { button.onclick = () => {
       ui.selectedId = button.dataset.slpPreset; ui.appliedDetail = null; renderTypePane();
       /* R-04（2026-09-17 本人要望）: 型を選んだら、上の「選んだ型の情報」まで自動で戻す。
@@ -533,8 +539,9 @@
       html += `<label class="slp-control"><span>点滅のさせ方</span><select data-slp="strobeMethod">${STROBE_METHODS.map(([id, name]) => `<option value="${id}" ${preset.id === id ? "selected" : ""}>${esc(name)}</option>`).join("")}</select></label>`;
     }
     const seqRandom = preset.id === "flash.sequence" && (ui.sequence === "random" || ui.direction === "random");
-    if (preset.id === "motion.wander.stage" || preset.id === "flash.sparkle" || seqRandom || (isStrobe(preset) && KIND_NEEDS_SEED(ui.kind))) html += `<label class="slp-control"><span>seed（再現用）</span><input data-slp="seed" type="number" min="0" step="1" value="${ui.seed}"></label><button type="button" class="btn small" data-slp-action="reroll">別の動きにする</button>`;
-    if (preset.id === "motion.wander.stage") html += `<label class="slp-control"><span>不規則さ</span><input data-slp="irregularity" type="range" min="0.2" max="1" step="0.05" value="${ui.irregularity}"></label><label class="slp-control"><span>1周の秒数</span><input data-slp="loopSec" type="number" min="4" max="30" step="1" value="${ui.loopSec}"></label>${concise ? "" : `<p class="slp-note">舞台の範囲だけを巡ります。同じseedなら、同じ動きを再現します。</p>`}`;
+    const wander = preset.id === "motion.wander.stage" || preset.id === "motion.wander.stageAudience";
+    if (wander || preset.id === "flash.sparkle" || seqRandom || (isStrobe(preset) && KIND_NEEDS_SEED(ui.kind))) html += `<label class="slp-control"><span>seed（再現用）</span><input data-slp="seed" type="number" min="0" step="1" value="${ui.seed}"></label><button type="button" class="btn small" data-slp-action="reroll">別の動きにする</button>`;
+    if (wander) html += `<label class="slp-control"><span>不規則さ</span><input data-slp="irregularity" type="range" min="0.2" max="1" step="0.05" value="${ui.irregularity}"></label><label class="slp-control"><span>1周の秒数</span><input data-slp="loopSec" type="number" min="4" max="30" step="1" value="${ui.loopSec}"></label>${concise ? "" : `<p class="slp-note">${preset.id === "motion.wander.stageAudience" ? `会場に登録された客席${audienceIds().length}面と舞台へ、選んだ灯を振り分けます。` : "舞台の範囲だけを巡ります。"}同じseedなら、同じ動きを再現します。</p>`}`;
     if (preset.id === "flash.sequence") {
       /* 数値は指で押せる −／＋ を付ける（2026-09-17 本人要望）。欄へ直接打ち込むこともできる。 */
       /* 2026-09-17 第1弾は「全部出してから要らないものを消す」方針（本人決定）。並びは上段＝結果を最も変える3つ。 */
@@ -648,10 +655,10 @@
     const cards = cardList().map((preset) => {
       const text = cardText(preset);
       const disabled = !canUse(preset);
-      const suffix = preset.id === "motion.wander.stageAudience" ? "客席マスク待ち" : isStrobe(preset) ? methodName(preset.id) : (preset.movingOnly ? `ムービング ${movingCount()}灯` : text[1]);
+      const suffix = preset.id === "motion.wander.stageAudience" ? audienceSuffix() : isStrobe(preset) ? methodName(preset.id) : (preset.movingOnly ? `ムービング ${movingCount()}灯` : text[1]);
       return `<button type="button" class="slp-card ${preset.id === selected.id ? "sel" : ""}" data-slp-preset="${preset.id}" ${disabled ? "disabled" : ""}>${diagram(preset)}<b>${esc(text[0])}</b><small>${esc(scopeText(preset).changes)} ／ ${esc(suffix)}</small></button>`;
     }).join("") || `<p class="hint">該当する型はありません。</p>`;
-    const unavailable = selected.id === "motion.wander.stageAudience";
+    const unavailable = selected.id === "motion.wander.stageAudience" && !hasAudienceMask();
     const noMoving = selected.movingOnly && !movingCount();
     const scope = scopeText(selected);
     const skipped = selected.movingOnly && selectedIds().length > movingCount() ? `ムービング ${movingCount()}灯に適用・固定${selectedIds().length - movingCount()}灯はそのまま` : `${selectedIds().length}灯に適用`;
@@ -661,7 +668,7 @@
     const detail = ui.appliedDetail && ui.appliedDetail.id === selected.id ? adjustmentDetail(ui.appliedDetail) : "";
     root.innerHTML = `<div class="slp-top"><p class="slp-title">型から選ぶ（${X.PRESETS.length}）<small>${selectedIds().length}灯が対象です。適用後も値を「調整」で変えられます。</small></p><input class="slp-search" data-slp="query" type="search" placeholder="型を検索" value="${esc(ui.query)}"></div>
       <div class="slp-families">${FAMILIES.map((family) => `<button type="button" data-slp-family="${family}" aria-pressed="${String(ui.family === family)}">${FAMILY_LABEL[family]}</button>`).join("")}</div>
-      <div class="slp-body"><div class="slp-grid">${cards}</div><aside class="slp-detail"><h3>${esc(info[0])}</h3>${diagram(selected, "slp-diagram")}<p>${esc(info[2])}</p>${detail}<p class="slp-scope"><b>変えるもの:</b> ${esc(scope.changes)}<br><b>保つもの:</b> ${esc(scope.keeps)}</p><p class="slp-meta">対象: ${esc(skipped)}　／　点灯状態は保ちます</p><div class="slp-controls">${controlsFor(selected)}</div>${flashNotice}${unavailable ? `<p class="slp-note slp-warn">客席側は会場ごとのマスクを指定してから使います。この試作では安全のため適用できません。</p>` : ""}${noMoving ? `<p class="slp-note slp-warn">ムービングを1灯以上選ぶと使えます。</p>` : ""}<div class="slp-actions"><button type="button" class="btn primary" data-slp-action="apply" ${(!canUse(selected) || !selectedIds().length) ? "disabled" : ""}>この型を適用</button><p class="hint">適用は現在のLX cueへ1回の「元に戻す」として記録します。</p></div></aside></div>`;
+      <div class="slp-body"><div class="slp-grid">${cards}</div><aside class="slp-detail"><h3>${esc(info[0])}</h3>${diagram(selected, "slp-diagram")}<p>${esc(info[2])}</p>${detail}<p class="slp-scope"><b>変えるもの:</b> ${esc(scope.changes)}<br><b>保つもの:</b> ${esc(scope.keeps)}</p><p class="slp-meta">対象: ${esc(skipped)}　／　点灯状態は保ちます</p><div class="slp-controls">${controlsFor(selected)}</div>${flashNotice}${unavailable ? `<p class="slp-note slp-warn">この会場には有効な客席領域がありません。劇場設定で客席の形を確定すると使えます。</p>` : ""}${noMoving ? `<p class="slp-note slp-warn">ムービングを1灯以上選ぶと使えます。</p>` : ""}<div class="slp-actions"><button type="button" class="btn primary" data-slp-action="apply" ${(!canUse(selected) || !selectedIds().length) ? "disabled" : ""}>この型を適用</button><p class="hint">適用は現在のLX cueへ1回の「元に戻す」として記録します。</p></div></aside></div>`;
     root.querySelectorAll("[data-slp-preset]").forEach((button) => { button.onclick = () => { ui.selectedId = button.dataset.slpPreset; ui.appliedDetail = null; renderModal(); }; });
     root.querySelectorAll("[data-slp-family]").forEach((button) => { button.onclick = () => { ui.family = button.dataset.slpFamily; renderModal(); }; });
     bindControls(root, renderModal);

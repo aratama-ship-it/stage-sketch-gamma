@@ -4,27 +4,67 @@
   const clone = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
   const idOK = id => typeof id === 'string' && /^[A-Za-z0-9_.:-]{1,160}$/.test(id) && !['__proto__','prototype','constructor'].includes(id);
+  const canonical = value => Array.isArray(value) ? `[${value.map(canonical).join(',')}]`
+    : object(value) ? `{${Object.keys(value).sort().map(key=>JSON.stringify(key)+':'+canonical(value[key])).join(',')}}`
+    : JSON.stringify(value);
+  const finiteBetween = (value, lower, upper) => typeof value === 'number' && Number.isFinite(value)
+    && value >= lower && value <= upper;
   function ids(rows, label) {
     if (!Array.isArray(rows) || rows.some(row => !object(row) || !idOK(row.id)) || new Set(rows.map(row=>row.id)).size !== rows.length) throw Error(label+'のIDが不正、または重複しています');
     return new Set(rows.map(row=>row.id));
   }
   function validate(design, expectedSceneIds) {
-    if (!object(design) || design.format !== 'shosai.light-design' || design.version !== 1) throw Error('対応していない照明デザイン形式です。原本は変更していません');
+    if (!object(design) || design.format !== 'shosai.light-design' || ![1,2].includes(design.version)) throw Error('対応していない照明デザイン形式です。原本は変更していません');
     if (JSON.stringify(design).length > 4 * 1024 * 1024) throw Error('照明データが大きすぎます');
+    /* version 2 は旧ベータ照明からのコピー変換専用。復元用の原本と記録が
+       欠けた v2 を通常デザインとして受け入れない。 */
+    if (design.version === 2) {
+      const migration = design.migration;
+      if (!object(migration) || migration.migrator !== 'stage-light-panel-v1' || migration.version !== 1
+          || !object(migration.originalDocument) || !object(migration.originalDocument.project)
+          || ![3,4].includes(migration.originalDocument.version)
+          || migration.originalDocument.project.id !== migration.sourceProjectId
+          || !object(migration.report) || !Array.isArray(migration.report.warnings)) {
+        throw Error('旧照明の移行記録が不正です。原本は変更していません');
+      }
+      if (typeof migration.originalText === 'string') {
+        let parsed;
+        try { parsed=JSON.parse(migration.originalText); }
+        catch (_) { throw Error('旧照明の復元用原文を読めません。原本は変更していません'); }
+        if (canonical(parsed)!==canonical(migration.originalDocument)) throw Error('旧照明の復元用原文と元データが一致しません');
+      }
+    } else if (design.migration !== undefined) {
+      throw Error('旧照明の移行記録と形式の版が一致しません');
+    }
     if (!object(design.stage) || ['W','D','H'].some(k=>!Number.isFinite(design.stage[k]) || design.stage[k]<=0 || design.stage[k]>300)) throw Error('舞台寸法を確認してください');
     if (!object(design.rig)) throw Error('仕込みがありません');
     const fixtures=ids(design.rig.fixtures,'灯体'),trusses=ids(design.rig.trusses,'バトン'),scenes=ids(design.scenes,'場面');
     if (!scenes.size || fixtures.size>1000 || trusses.size>200 || scenes.size>2000) throw Error('仕込み・場面の件数を確認してください');
     if (expectedSceneIds && (scenes.size!==expectedSceneIds.length || expectedSceneIds.some(id=>!scenes.has(id)))) throw Error('ショーと照明の場面IDが一致しません。場面の並び順による自動割当は行いません');
     for (const fixture of design.rig.fixtures) {
-      if (!object(fixture.mount) || !['truss','floor','side','front','cyc'].includes(fixture.mount.type)) throw Error('対応していない灯体の取り付け方です');
+      if (!object(fixture.mount) || !['truss','floor','side','front','cyc','legacy-panel'].includes(fixture.mount.type)) throw Error('対応していない灯体の取り付け方です');
       if (fixture.mount.type==='truss' && !trusses.has(fixture.mount.trussId)) throw Error('灯体が参照するバトンがありません');
+      if (fixture.mount.type==='legacy-panel') {
+        if (design.version!==2 || !design.migration) throw Error('旧照明の取り付け位置に移行記録がありません');
+        const mount=fixture.mount;
+        if (![mount.u,mount.v,mount.h].every(value=>value===null || finiteBetween(value,-0.5,18))
+            || (mount.u!==null && !finiteBetween(mount.u,-0.5,1.5))
+            || (mount.v!==null && !finiteBetween(mount.v,-0.5,1.5))
+            || (mount.h!==null && !finiteBetween(mount.h,0,18))) throw Error('旧照明の取り付け位置が不正です');
+      }
     }
     const checkCue = cue => {
       if (!object(cue) || !object(cue.lights) || !Array.isArray(cue.groups)) throw Error('照明キューの構造を確認してください');
       for (const [id,light] of Object.entries(cue.lights)) {
         if (!fixtures.has(id) || !object(light)) throw Error('キューが参照する灯体がありません');
         if (light.color!==undefined && !/^#[0-9a-f]{6}$/i.test(light.color)) throw Error('照明の色を確認してください');
+        for (const point of [light.path?.a,light.path?.b,light.path?.c].filter(Boolean)) {
+          if (point.coordinateMode!=='legacy-panel') continue;
+          if (design.version!==2 || !finiteBetween(point.u,-0.5,1.5)
+              || !finiteBetween(point.v,-0.5,1) || !finiteBetween(point.hM,0,18)) {
+            throw Error('旧照明の当て先が不正です');
+          }
+        }
       }
       for (const group of cue.groups) if (!object(group) || !Array.isArray(group.members) || group.members.some(id=>!fixtures.has(id))) throw Error('照明の組が参照する灯体がありません');
     };

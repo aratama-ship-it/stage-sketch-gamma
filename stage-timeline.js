@@ -412,7 +412,15 @@
   function syncGripBottom() {
     if (!panel) return;
     const collapsed = panel.classList.contains("is-collapsed");
-    const offset = collapsed ? timelineResizeHandleHeight() : ui.height;
+    /* 畳んだ状態から引き上げている最中は、表示中のパネル上端と取っ手を
+       同じ高さへ置く。これで掴み始めた位置から取っ手が逃げず、パネルも
+       ポインタに連続して付いてくる。 */
+    const previewHeight = timelineResize && timelineResize.collapsed
+      ? timelineResize.revealHeight
+      : null;
+    const offset = Number.isFinite(previewHeight)
+      ? previewHeight
+      : (collapsed ? timelineResizeHandleHeight() : ui.height);
     root.style.setProperty("--stage-timeline-grip-bottom", `${Math.max(0, Math.round(offset))}px`);
   }
 
@@ -1333,6 +1341,25 @@
     element.append(handle);
   }
 
+  /* 0秒の転換は点で描くが、点そのものにも左右へ伸ばすための当たり判定を持たせる。
+     右へ引くと次のシーン側へ、左へ引くと前のシーンの終わり側へ転換を広げる。 */
+  function addPointTransitionResizeHandle(element, descriptor) {
+    if (!descriptor || !descriptor.sceneId) return;
+    const handle = document.createElement("span");
+    handle.className = "stage-timeline-point-transition-resize-handle";
+    handle.setAttribute("aria-hidden", "true");
+    handle.title = tx("左右へドラッグして0秒の転換を広げる");
+    handle.addEventListener("pointerdown", (event) => {
+      const bounds = element.getBoundingClientRect();
+      beginBlockResize(event, {
+        ...descriptor,
+        pointAnchor: event.clientX < bounds.left + bounds.width / 2 ? "start" : "end",
+      });
+    });
+    handle.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); });
+    element.append(handle);
+  }
+
   function cueTypeLabel(type) {
     if (type === "light") return tx("ライトキュー");
     if (type === "music") return tx("音楽キュー");
@@ -2185,7 +2212,14 @@
       block.addEventListener("contextmenu", (event) => openTimelineLockMenu(event, {
         target: "transition", sectionId: timeline.sectionId, sceneId: source.sceneId,
       }, transition.timelineLockEdge));
-      if (!isPoint && timelineContentCanResize()) {
+      if (timelineContentCanResize()) {
+        if (isPoint) {
+          addPointTransitionResizeHandle(block, {
+            sceneId: source.sceneId,
+            part: "transition",
+            boundarySeconds: transition.end,
+          });
+        } else {
         addTimelineResizeHandle(block, "start", {
           sceneId: source.sceneId,
           part: "hold",
@@ -2196,6 +2230,7 @@
           part: "transition",
           boundarySeconds: transition.end,
         });
+        }
       }
       /* T-25（2026-09-18 本人要望）: シーンのレーンの斜線の帯は「どこが転換か」を示す図として残し、
        * 文字は出さない（名前は転換のレーンへ移した）。 */
@@ -2655,6 +2690,7 @@
       startY: event.clientY,
       startHeight: ui.height,
       collapsed: ui.collapsed,
+      revealHeight: ui.collapsed ? timelineResizeHandleHeight() : null,
     };
     els.resize.setPointerCapture(event.pointerId);
     document.body.classList.add("is-timeline-resizing");
@@ -2667,7 +2703,9 @@
       const handleHeight = timelineResizeHandleHeight();
       const maximum = Math.min(timelineResize.startHeight, maxTimelineHeight());
       const visibleHeight = clamp(handleHeight + timelineResize.startY - event.clientY, handleHeight, maximum);
+      timelineResize.revealHeight = visibleHeight;
       panel.style.setProperty("--stage-timeline-reveal-height", `${visibleHeight}px`);
+      syncGripBottom();
       event.preventDefault();
       return;
     }
@@ -2703,6 +2741,7 @@
       }
       panel.style.setProperty("--stage-timeline-reveal-height", `${handleHeight}px`);
       document.body.classList.remove("is-timeline-resizing");
+      syncGripBottom();
       return;
     }
     document.body.classList.remove("is-timeline-resizing");
@@ -2760,9 +2799,9 @@
     const baseDuration = derivedSectionDuration(project, section);
     const sectionDuration = sectionDurationSeconds(project, section);
     const scale = sectionDuration / Math.max(0.1, baseDuration);
-    const startRawDuration = rehearsalPartSeconds(scene, descriptor.part);
+    const startRawDuration = descriptor.pointAnchor ? 0 : rehearsalPartSeconds(scene, descriptor.part);
     const startDisplayedDuration = startRawDuration * scale;
-    if (!(scale > 0) || !(startDisplayedDuration > 0)) return;
+    if (!(scale > 0) || (!descriptor.pointAnchor && !(startDisplayedDuration > 0))) return;
     if (silentPlayback) pauseSilentPlayback({ update: false });
     if (els.audio && !els.audio.paused) els.audio.pause();
     const indicator = document.createElement("output");
@@ -2775,6 +2814,7 @@
       descriptor,
       startX: event.clientX,
       startRawDuration,
+      startHoldRawDuration: rehearsalPartSeconds(scene, "hold"),
       startDisplayedDuration,
       startSectionDuration: sectionDuration,
       scale,
@@ -2784,6 +2824,7 @@
       moved: false,
       checkpointed: false,
       deltaSeconds: 0,
+      preserveTransitionEnd: descriptor.pointAnchor === "start",
       indicator,
     };
     try { els.viewport.setPointerCapture(event.pointerId); } catch (_) { /* 捕捉できなくても終端を拾う */ }
@@ -2796,18 +2837,27 @@
     if (!blockResize || !timeline) return 0;
     const pointerDelta = (event.clientX - blockResize.startX) / Math.max(1, timelineWidth) * timeline.duration;
     const snappedBoundary = snappedSeconds(blockResize.descriptor.boundarySeconds + pointerDelta);
-    const requested = Math.round((snappedBoundary - blockResize.descriptor.boundarySeconds) * 10) / 10;
+    const directed = blockResize.descriptor.pointAnchor === "start" ? -pointerDelta : pointerDelta;
+    const snapped = snappedSeconds(blockResize.descriptor.boundarySeconds + directed);
+    const requested = Math.round((snapped - blockResize.descriptor.boundarySeconds) * 10) / 10;
+    if (blockResize.descriptor.pointAnchor) {
+      const maximum = Math.max(0, blockResize.startHoldRawDuration - 0.1) * blockResize.scale;
+      return Math.max(0, Math.min(maximum, requested));
+    }
     const minimum = 0.1 - blockResize.startRawDuration;
     return Math.max(minimum * blockResize.scale, requested);
   }
 
   function blockResizeValues(deltaSeconds) {
-    const raw = Math.max(0.1, Math.round((blockResize.startRawDuration
+    // 0秒は開始時だけ許す。ドラッグで作る転換は保存単位の最小0.1秒からにする。
+    const minimum = 0.1;
+    const raw = Math.max(minimum, Math.round((blockResize.startRawDuration
       + deltaSeconds / blockResize.scale) * 10) / 10);
     const appliedDelta = Math.round((raw - blockResize.startRawDuration) * blockResize.scale * 10) / 10;
     return {
       rawDuration: raw,
-      sectionDuration: Math.max(0.1, Math.round((blockResize.startSectionDuration + appliedDelta) * 10) / 10),
+      sectionDuration: Math.max(0.1, Math.round((blockResize.startSectionDuration
+        + (blockResize.preserveTransitionEnd ? 0 : appliedDelta)) * 10) / 10),
       deltaSeconds: appliedDelta,
     };
   }
@@ -2835,7 +2885,7 @@
       blockResize.descriptor.part,
       next.rawDuration,
       next.sectionDuration,
-      { checkpoint: !blockResize.checkpointed },
+      { checkpoint: !blockResize.checkpointed, preserveTransitionEnd: blockResize.preserveTransitionEnd },
     );
     if (!applied) return;
     blockResize.checkpointed = true;
@@ -2858,11 +2908,13 @@
       resizing.descriptor.part,
       Math.max(0.1, Math.round((resizing.startRawDuration
         + resizing.deltaSeconds / resizing.scale) * 10) / 10),
-      Math.max(0.1, Math.round((resizing.startSectionDuration + resizing.deltaSeconds) * 10) / 10),
+      Math.max(0.1, Math.round((resizing.startSectionDuration
+        + (resizing.preserveTransitionEnd ? 0 : resizing.deltaSeconds)) * 10) / 10),
       {
         finalize: true,
         rippleFromSeconds: resizing.descriptor.boundarySeconds,
-        rippleSeconds: resizing.deltaSeconds,
+        rippleSeconds: resizing.preserveTransitionEnd ? 0 : resizing.deltaSeconds,
+        preserveTransitionEnd: resizing.preserveTransitionEnd,
       },
     );
     const shifted = (seconds) => seconds >= resizing.descriptor.boundarySeconds - 1e-6
@@ -3155,6 +3207,7 @@
         startY: event.clientY,
         startHeight: ui.height,
         collapsed: ui.collapsed,
+        revealHeight: ui.collapsed ? timelineResizeHandleHeight() : null,
         el: els.grip,
       };
       els.grip.setPointerCapture(event.pointerId);

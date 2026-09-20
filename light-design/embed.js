@@ -4,6 +4,12 @@
   const rig=window.__RIG, model=window.GAMMA_LIGHT_MODEL, state=rig.state, hooks=rig.hooks;
   let context=null, loading=false, active=false, changedElsewhere=false, appliedExtras={};
   let draftTimer=0, lastScene='';
+  /* 機材配置は灯体を仕込むための図なので、ショーの演者・大道具・小道具・幕は
+     一時的に下敷きから外す。照明デザインへ戻ると、利用者が選んでいた表示状態へ
+     そのまま戻す。show は保存物に含まれない表示設定だが、モード切替で勝手に
+     上書きしないためここで退避する。 */
+  const placementUnderlayKeys=['performers','setpieces','showcurtains','names'];
+  let placementUnderlaySnapshot=null;
   const key=id=>'gamma:lighting-draft-v1:'+id;
   const message=text=>hooks.toast(text);
   function arrangeEmbeddedToolbar() {
@@ -26,8 +32,18 @@
     try { localStorage.setItem(key(context.showId),JSON.stringify({version:1,showId:context.showId,basis:context.basis,design:model.stripPassthrough(build())})); }
     catch(error) { message('編集内容の控えを保存できません。照明をファイルへ書き出してください'); }
   }
+  function setPlacementUnderlay(hidden) {
+    if(hidden) {
+      if(!placementUnderlaySnapshot) placementUnderlaySnapshot=Object.fromEntries(placementUnderlayKeys.map(name=>[name,state.show[name]]));
+      placementUnderlayKeys.forEach(name=>{state.show[name]=false;});
+    } else if(placementUnderlaySnapshot) {
+      Object.assign(state.show,placementUnderlaySnapshot);placementUnderlaySnapshot=null;
+    }
+    document.documentElement.classList.toggle('placement-underlay-hidden',hidden);
+  }
   function setMode(mode) {
     state.mode=mode==='light-placement'?'place':'move';
+    setPlacementUnderlay(state.mode==='place');
     document.documentElement.dataset.gammaLightMode=state.mode;
     if(state.mode==='place') {state.aimMirror=null;hooks.stop();}
     hooks.renderAll();
@@ -36,16 +52,21 @@
     const rows=new Map(next.scenes.map(row=>[row.id,row]));
     state.scenes.forEach(row=>{const host=rows.get(row.id);if(host){row.name=host.name;row.pieces=model.clone(host.pieces);}});
   }
+  /* 会場の客席多角形はホスト側の正本を参照するだけで、照明デザインの保存物へ複製しない。
+     形が無い会場では null のまま＝客席ワンダーを有効にしない。 */
+  function synchronizeVenueMask(next) {
+    state.venueMask=next&&next.venueMask?model.clone(next.venueMask):null;
+  }
   function open(next, mode) {
     hooks.stop();
     if(context?.showId===next.showId && state.dirty) {
       if(context.basis!==next.basis || changedElsewhere) {
         message('ショーが更新されています。照明の編集中データは保持しています。「保存」からファイルへ控えてください');
-      } else synchronizePieces(next);
+      } else {synchronizePieces(next);synchronizeVenueMask(next);}
       active=true;setMode(mode);return;
     }
     if(context?.showId===next.showId && context.basis===next.basis) {
-      synchronizePieces(next); state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
+      synchronizePieces(next);synchronizeVenueMask(next); state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
       active=true;setMode(mode);return;
     }
     saveDraft();loading=true;
@@ -63,7 +84,7 @@
       // Strict ID matching: host pieces never come from a demo or imported design.
       state.scenes=next.scenes.map(row=>({id:row.id,name:row.name,pieces:model.clone(row.pieces),cue:{lights:{},groups:[]}}));
       hooks.applyDesign(design,{host:true});
-      appliedExtras=model.clone(design);context=next;changedElsewhere=false;
+      appliedExtras=model.clone(design);context=next;synchronizeVenueMask(next);changedElsewhere=false;
       state.dirty=dirty;state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
       lastScene=state.scenes[state.sceneIndex].id;
       state.seq=Date.now(); // avoids collisions with fixture / cue IDs imported from earlier sessions
@@ -80,7 +101,7 @@
       const result=await parent.GAMMA_LIGHT_HOST.apply(build(),context.basis);
       if(!result.persisted) throw Error('保存を確認できませんでした');
       parent.GAMMA_WORKSPACE.captureHostHistory();
-      context=result.context;state.dirty=false;
+      context=result.context;synchronizeVenueMask(context);state.dirty=false;
       // Remove only our own draft AFTER durable host acceptance.
       try {localStorage.removeItem(key(context.showId));} catch {message('照明は保存しました。編集控えの整理は次回行います');}
       hooks.renderAll();

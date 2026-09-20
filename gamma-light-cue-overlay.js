@@ -41,6 +41,12 @@
 
   function point(raw, dims) {
     if (!record(raw)) return null;
+    if (raw.coordinateMode === "legacy-panel") {
+      return {
+        u: finite(raw.u, 0.5), v: finite(raw.v, 0.5), hM: Math.max(0, finite(raw.hM, 0)),
+        aheadM: 0, H: Math.max(0, finite(dims && dims.H, 0)), coordinateMode: "legacy-panel",
+      };
+    }
     return {
       u: clamp(finite(raw.u, 0.5), -0.5, 1.5),
       v: clamp(finite(raw.v, 0.5), -0.5, 1.5),

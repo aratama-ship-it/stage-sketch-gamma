@@ -412,7 +412,7 @@
           goVenue.addEventListener('click',()=>select('venue-setup'));
           status.append(goVenue);
         } else if(!loaded) {
-          frame.src='light-design/index.html?embed=gamma'; loaded=true;
+          frame.src='light-design/index.html?embed=gamma&v=2026092121'; loaded=true;
           status.textContent='照明デザインを開いています…';
         } else if(editor()) editor().open(context, next);
       } else if(next==='venue-setup') {

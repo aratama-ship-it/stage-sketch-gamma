@@ -73,6 +73,15 @@
       marker.v = 0;
       marker.h = mount.rung === "top" ? Math.max(0, finite(dims && dims.H, 0)) : 0;
       marker.mountType = mount.rung === "top" ? "cyc-top" : "cyc-floor";
+    } else if (mount.type === "legacy-panel") {
+      /* 旧ベータからコピー変換した v2 は、仕込み分類へ推測で寄せず
+         当時の任意座標を保持する。null が残る未設定灯は図へ出さない。 */
+      if (![mount.u, mount.v, mount.h].every(Number.isFinite)) return null;
+      marker.u = mount.u;
+      marker.v = mount.v;
+      marker.h = mount.h;
+      marker.outside = mount.u < 0 || mount.u > 1 || mount.v < 0 || mount.v > 1
+        || mount.h > Math.max(0, finite(dims && dims.H, 0));
     } else {
       return null;
     }
