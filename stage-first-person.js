@@ -1979,6 +1979,58 @@
       .forEach((face) => fillPoly(ctx, face.points, face.fill, "rgba(16,12,9,.35)", 1));
   }
 
+  /* 箱の「面」の四隅を画面座標で返す。紗幕と投影のために足した（2026-09-20）。
+     ★3Dと2Dの違いをここだけで吸収する。stage-scrim.js は画面座標の四隅しか知らないので、
+       四隅さえ渡せば正面図とまったく同じ見え方になる（描き方を二重に持たない）。
+     mode="camera" … カメラに近いほうの面（紗幕は裏から見ても膜なのでこちら）
+     mode="front"  … 駒の正面＝客席側に固定（壁の投影は表にしか映らない）
+     四隅のどれかがカメラの後ろに回ったら null。近すぎる面を無理に描くと画が裏返る。 */
+  function boxFace3d(cx, cz, y0, y1, width, depth, rotY, mode) {
+    const rad = finite(rotY, 0) * Math.PI / 180;
+    const cos = Math.cos(rad); const sin = Math.sin(rad);
+    const at = (lx, lz) => ({ x: cx + lx * cos - lz * sin, z: cz + lx * sin + lz * cos });
+    const halfWidth = width / 2; const halfDepth = depth / 2;
+    /* ★客席は z の大きいほう（客席カメラは z=+、yaw180 で舞台を見る）。
+       つまり駒の「表＝客席側」は奥行きの +側。正面図(stage-sketch.js)は深さの符号が逆だが、
+       あちらは薄い壁の表裏で絵がほとんど変わらないため見た目に出ない。3Dは表裏で
+       映る/映らないが決まるので、ここを取り違えると壁の投影が出なくなる（2026-09-20に実際に出た）。 */
+    const front = [at(halfWidth, halfDepth), at(-halfWidth, halfDepth)];
+    const back = [at(-halfWidth, -halfDepth), at(halfWidth, -halfDepth)];
+    const midY = (y0 + y1) / 2;
+    const depthOf = (pair) => toCamera({ x: (pair[0].x + pair[1].x) / 2, y: midY,
+      z: (pair[0].z + pair[1].z) / 2 }).z;
+    const frontIsNear = depthOf(front) <= depthOf(back);
+    const side = mode === "front" || frontIsNear ? front : back;
+    const camera4 = [
+      { x: side[0].x, y: y0, z: side[0].z }, { x: side[1].x, y: y0, z: side[1].z },
+      { x: side[1].x, y: y1, z: side[1].z }, { x: side[0].x, y: y1, z: side[0].z },
+    ].map(toCamera);
+    if (camera4.some((point) => point.z <= NEAR)) return null;
+    return { quad: camera4.map(toScreen), frontIsNear };
+  }
+
+  /* 織り目の細かさ。2Dは pos.scale（遠近の縮尺）を渡す。3Dでは面が画面上で何pxかから
+     同じ密度になるよう逆算する（2Dの正面図はおよそ1mが100px）。
+     ★下限を1より下げない。紗の織り目は5px前後でモアレが出るため内部px基準を8pxに決めてあり、
+       3Dは紗幕が遠ざかるといくらでも小さくなるので、そのまま縮めると縞が踊る。
+       上限も2.5で止める（手前に寄ったとき網戸のように粗くなるのを防ぐ）。 */
+  function weaveScale3d(quad, widthM) {
+    if (!(widthM > 0)) return 1;
+    const px = Math.hypot(quad[1].x - quad[0].x, quad[1].y - quad[0].y);
+    return Math.max(1, Math.min(2.5, px / widthM / 100));
+  }
+
+  /* 暗い面か（黒紗・黒い壁は投影を弱くしか返さない）。2Dの isDarkSurface と同じ判断。 */
+  function isDarkSurface3d(hex) {
+    const raw = String(hex || "").replace("#", "");
+    if (raw.length !== 6) return false;
+    const r = parseInt(raw.slice(0, 2), 16);
+    const g = parseInt(raw.slice(2, 4), 16);
+    const b = parseInt(raw.slice(4, 6), 16);
+    if (![r, g, b].every(Number.isFinite)) return false;
+    return (0.299 * r + 0.587 * g + 0.114 * b) < 96;
+  }
+
   function queueLabel(world, label, strong) {
     const point = toCamera(world);
     if (!label || point.z <= NEAR || point.z > 26) return;
@@ -3144,6 +3196,30 @@
       }, color);
       return;
     }
+    /* 紗幕（2026-09-20）。★箱として塗ると「透ける膜」に見えない。2Dとまったく同じ
+       stage-scrim.js へ面の四隅を渡す。裏から見ても膜なので、カメラに近いほうの面を使う。 */
+    if (piece.type === "curtain" && piece.curtainKind === "scrim"
+        && window.SHOSAI_SCRIM && Array.isArray(piece.parts)) {
+      const box = piece.parts.find((part) => part && !part.kind);
+      if (box) {
+        const facing = finite(piece.facing, 0);
+        const rad = facing * Math.PI / 180;
+        const cos = Math.cos(rad); const sin = Math.sin(rad);
+        const ox = finite(box.ox, 0); const oz = finite(box.oz, 0);
+        const y0 = finite(box.lift, 0);
+        const face = boxFace3d(x + ox * cos - oz * sin, z + ox * sin + oz * cos,
+          y0, y0 + finite(box.h, 1), finite(box.w, 1), finite(box.d, 0.1),
+          facing + finite(box.rotY, 0), "camera");
+        if (face) {
+          window.SHOSAI_SCRIM.paintFront(ctx, face.quad, finite(piece.sheer, 0), {
+            black: isDarkSurface3d(color),
+            image: piece.projection || null,
+            scale: weaveScale3d(face.quad, finite(box.w, 1)),
+          });
+        }
+      }
+      return;
+    }
     if (Array.isArray(piece.parts)) {
       const facing = finite(piece.facing, 0);
       const angle = facing * Math.PI / 180;
@@ -3177,7 +3253,20 @@
       });
     } else if (["wall", "block", "suitcase", "trampoline", "teeter", "prop"].includes(piece.type)) {
       const y0 = finite(dims.lift, 0) + heldLift;
-      drawBox(ctx, x, z, y0, y0 + (dims.h || 1), dims.w || 1, dims.d || .4, color);
+      /* ★向きを渡す。ここだけ rotY を省いていたため、3Dでは回した壁が正面向きのまま
+         立っていた（2026-09-20 に投影を足す過程で判明。正面図・平面図は回っている）。 */
+      const facing = finite(piece.facing, 0);
+      drawBox(ctx, x, z, y0, y0 + (dims.h || 1), dims.w || 1, dims.d || .4, color, facing);
+      /* 壁へ映す絵。箱を塗った「後」に重ねる（紗幕は膜そのものを塗り替えるので順序が逆）。
+         ★表の面にしか映らない。裏へ回ったら見えないのが実物。 */
+      if (piece.type === "wall" && piece.projection && window.SHOSAI_SCRIM) {
+        const face = boxFace3d(x, z, y0, y0 + (dims.h || 1), dims.w || 1, dims.d || .4,
+          facing, "front");
+        if (face && face.frontIsNear) {
+          window.SHOSAI_SCRIM.paintProjection(ctx, face.quad, piece.projection,
+            0.92 * (isDarkSurface3d(color) ? window.SHOSAI_SCRIM.BLACK_IMG_FACTOR : 1));
+        }
+      }
     } else if (piece.type === "table") {
       const height = dims.h || .9; const width = dims.w || 1.6; const depth = dims.d || .8;
       const halfWidth = width / 2 - .06; const halfDepth = depth / 2 - .06;

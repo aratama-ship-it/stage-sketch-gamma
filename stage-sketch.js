@@ -30902,6 +30902,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
               smoothParts: propShape && ["drumset", "taiko"].includes(propShape.id) ? propShape.parts : null,
               grip: propShape ? propShape.grip : null,
               model: visual.type === "model" && owner ? stageModel(owner.modelId) : null,
+              /* 映す面（紗幕・壁）の情報。★3Dでも2Dと同じ値・同じ絵を使うため、
+                 透けは転換の動きを含めてここで解決し、絵は Image のまま渡す
+                 （3D側に読み込みの世話や置き場の知識を持たせない）。 */
+              ...surfaceSnapshot(visual),
             };
           }).concat(
             sceneAnim && sceneAnim.exits ? sceneAnim.exits.map((entry) => ({
@@ -31654,12 +31658,28 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
      枠付きの壁（穴の空いた門）は除く。穴の向こうに絵が浮いて見えてしまうため。 */
   function canProjectOn(piece) {
     if (!piece) return false;
+    /* ★種類を先に見る。pieceSet は登録の一覧を辿るので、3Dでは駒の数だけ毎フレーム
+       呼ばれることになる。当てはまらない駒はここで抜ける。 */
+    if (piece.type !== "curtain" && piece.type !== "wall") return false;
     const owner = pieceSet(piece);
     if (piece.type === "curtain") {
       return (piece.curtainKind || (owner && owner.curtainKind) || "front") === "scrim";
     }
-    if (piece.type === "wall") return !(owner && owner.framed);
-    return false;
+    return !(owner && owner.framed);
+  }
+
+  /* 3Dへ渡す「映す面」の一式。絵を映せない駒には何も足さない（保存にも通信にも無駄を出さない）。 */
+  function surfaceSnapshot(visual) {
+    if (!canProjectOn(visual)) return null;
+    const store = state.project.photos;
+    const machinery = window.SHOSAI_STAGE_MACHINERY;
+    const out = {
+      projection: visual.imageId && store ? photoImage(store[visual.imageId]) : null,
+    };
+    if (visual.type === "curtain") {
+      out.sheer = clamp(machinery ? machinery.mechVal(visual, "sheer", 0) : finite(visual.sheer, 0), 0, 100);
+    }
+    return out;
   }
 
   /* 面へ映す絵。駒が置き場のidを指すだけで、絵そのものは持たない。 */
