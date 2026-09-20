@@ -1715,6 +1715,9 @@
   const planCanvas = document.getElementById("stage-plan-canvas");
   const ctx = canvas.getContext("2d", { alpha: false });
   const planCtx = planCanvas ? planCanvas.getContext("2d", { alpha: false }) : null;
+  // G-J: 二席で見比べる、正面図の隅の小さな絵（既定は隠す・機能を入れたときだけ描く）
+  const canvas2 = document.getElementById("stage-canvas-2");
+  const ctx2 = canvas2 ? canvas2.getContext("2d", { alpha: false }) : null;
   // どちらのキャンバスがどの視点かを引く
   const viewOf = (el) => (el === planCanvas ? "plan" : "front");
   const paintCanvas = document.createElement("canvas");
@@ -4640,6 +4643,9 @@
     venueSummarySize: document.getElementById("stage-venue-summary-size"),
     bgSection: document.getElementById("stage-bg-section"),
     seatList: document.getElementById("stage-seat-list"),
+    front2Pip: document.getElementById("stage-front2-pip"),
+    front2Seat: document.getElementById("stage-front2-seat"),
+    canvas2: document.getElementById("stage-canvas-2"),
     projectSummaryTitle: document.getElementById("stage-project-summary-title"),
     projectSummaryVersion: document.getElementById("stage-project-summary-version"),
     lastSaveTime: document.getElementById("stage-last-save-time"),
@@ -5251,6 +5257,13 @@
        ★look（上衣の色など）は描画に使われていない＝画面に出ている色は piece.color。染めるのはそれ。 */
     { key: "costumeLight", label: "衣装を明かりの色で染める", def: false,
       hint: "光だまりに入っている演者を、その明かりの色を掛けた色で描く。赤い明かりの下で青い衣装が沈む場面に気づけます（「照明の見え方」が切のときは効きません）" },
+    /* G-J 二席同時ビュー（2026-09-20・本人決定＝v1は照明なし）。
+       正面図の隅に、別の客席から見た小さな絵をもう一つ描く。読むだけで操作はできない。
+       照明（光だまり・光の筋・レーザー）は今回は出さない — drawStageの光キュー描画は
+       target===ctx（メインの正面キャンバス）だけを見て決まっており、そこを緩めると
+       いま並行で手を入れている照明描画と衝突するため、次の段階の課題として送る。 */
+    { key: "twoSeatView", label: "二席で見比べる", def: false,
+      hint: "正面図の隅に、別の客席から見た小さな絵をもう一つ出す。図が重くなります。照明の見え方はこの小さな絵には出ません" },
     { key: "pitchExport", label: "ピッチ書き出し", def: true,
       hint: "書き出しモーダルに「ピッチとして」が出る。作図の線を落とし、光と空気を効かせた一枚絵と、生成AI用の条件文を出す" },
   ];
@@ -5723,6 +5736,10 @@
       sceneListHeightMode: "auto",
       sceneListHeight: null,
       seat: "center",
+      // G-J: 二席で見比べるときの、もう一方の席。null=まだ選んでいない
+      // （初回描画時にメインの席と違う席へ自動で寄せる。会場ごとに席の並びが違うため
+      //  固定のidを既定にできない）
+      seat2: null,
       // パネルの置き場所と開閉。中央は絵の順序だけを持つ
       layout: defaultLayout(),
       // 名簿にも舞台セットにも属さない駒を置いたときの色
@@ -6685,6 +6702,9 @@
       seat: (typeof raw.seat === "string" && raw.seat.startsWith("approx-"))
         ? raw.seat
         : VENUES.seatById(typeof raw.seat === "string" ? raw.seat : "").id,
+      // G-J: 会場ごとに席の並びが違うため、ここでは存在検査までしない
+      // （検査・既定寄せは renderVenueControls が今の会場に合わせて毎回行う）
+      seat2: typeof raw.seat2 === "string" && raw.seat2 ? raw.seat2 : null,
       pieceColor: validColor(raw.pieceColor, fallback.pieceColor),
       paintColor: validColor(raw.paintColor, fallback.paintColor),
       brushSize: clamp(finite(raw.brushSize, fallback.brushSize), 12, 120),
@@ -15618,6 +15638,7 @@
       drawStage(planCtx, true, "plan");
       planCanvas.setAttribute("aria-label", sx(`${v.label}（${size.label}）を上から見た平面図。${counts}。`, `Plan view of ${venueName(v)} (${sizeName(size)}) from above. ${counts}.`));
     }
+    renderSecondSeatView();
     if (els.frontCaption) {
       const L = layout("front");
       const pannable = L.panRange > 0 || L.panRangeY > 0;
@@ -23624,6 +23645,8 @@
       }
       // 開いている3Dカメラのチップも同じ状態にする（設定と入口が二つあるため）
       if (f.key === "wideVenueLite") pushFpvCrowdMode();
+      // G-J: 隅の小さな絵の表示・非表示はrenderVenueControlsが決めるので、ここで呼び直す
+      if (f.key === "twoSeatView") renderVenueControls();
       renderScenes();
       render();
       announce(box.checked ? `設定「${f.label}」をONにしました。` : `設定「${f.label}」をOFFにしました。`);
@@ -24305,7 +24328,7 @@
   const BACKING_MIN_SCALE = 0.5;
   function syncCanvasResolution() {
     let changed = false;
-    for (const el of [canvas, planCanvas]) {
+    for (const el of [canvas, planCanvas, canvas2]) {
       if (!el) continue;
       const cssW = el.getBoundingClientRect().width;
       if (!cssW) continue;
@@ -24323,6 +24346,7 @@
   const canvasResObserver = new ResizeObserver(() => { if (!canvasResizeFrame) canvasResizeFrame = requestAnimationFrame(() => { canvasResizeFrame = 0; syncCanvasResolution(); }); });
   canvasResObserver.observe(canvas);
   if (planCanvas) canvasResObserver.observe(planCanvas);
+  if (canvas2) canvasResObserver.observe(canvas2);
   window.addEventListener("resize", syncCanvasResolution);
   /* ResizeObserverの初回通知は環境により来ないことがある（実際に来ない環境を確認済み）。
      読み込み直後の一度は自分で合わせる */
@@ -26481,6 +26505,27 @@ ${propsPlotHtml}
         els.seatList.append(button);
       });
     }
+
+    // G-J: 二席で見比べる（機能を入れていて、正面図を出しているときだけ）。
+    // 配布用の閲覧スマホ（画面が小さく、見せる相手が触らない前提）では出さない。
+    if (els.front2Pip) els.front2Pip.hidden = !featureOn("twoSeatView") || !state.showFront || phoneViewerActive;
+    if (els.front2Seat) {
+      /* まだ選んでいない・今の会場に無い席なら、メインと違う席へ寄せる
+         （同じ席を二つ並べても比べる意味がない）。一度選んだ後はそのまま尊重する。 */
+      let seat2 = frontSeatById(state.seat2);
+      if (!seat2 || !seats.some((candidate) => candidate.id === seat2.id)) {
+        seat2 = seats.find((candidate) => candidate.id !== seat.id) || seats[0];
+        if (seat2) state.seat2 = seat2.id;
+      }
+      els.front2Seat.innerHTML = "";
+      seats.forEach((s2) => {
+        const opt = document.createElement("option");
+        opt.value = s2.id;
+        opt.textContent = seatName(s2);
+        els.front2Seat.append(opt);
+      });
+      if (seat2) els.front2Seat.value = seat2.id;
+    }
   }
 
   function setSeat(id) {
@@ -26490,6 +26535,28 @@ ${propsPlotHtml}
     render();
     persistSoon();
     announce(`${seatName(frontSeatById(id))}から見た絵に切り替えました。配置は変わりません。`);
+  }
+
+  // G-J: 二席で見比べるときの、もう一方の席を切り替える（メインの席・配置は変わらない）
+  function setSeat2(id) {
+    if (state.seat2 === id) return;
+    state.seat2 = id;
+    renderSecondSeatView();
+    persistSoon();
+  }
+
+  /* G-J: 正面図の隅の小さな絵を、選んだ席で描き直す。読むだけで操作はできない。
+     window.SHOSAI_STAGE_VIEW.renderFront は照明キューを既定で隠すので、
+     ここでは何もしなくても「照明なし」の見え方になる（本人決定＝v1は照明なし）。 */
+  function renderSecondSeatView() {
+    if (!ctx2 || !canvas2 || !els.front2Pip || els.front2Pip.hidden) return;
+    if (!window.SHOSAI_STAGE_VIEW) return;
+    const seat2 = frontSeatById(state.seat2) || VENUES.seatById(state.seat);
+    window.SHOSAI_STAGE_VIEW.renderFront(ctx2, seat2 ? { seat: seat2.id } : {});
+    canvas2.setAttribute("aria-label", sx(
+      `${seatName(seat2)}から見た正面図（比較用・照明の見え方は出ません）`,
+      `Front view from ${seatName(seat2)} (comparison, lighting not shown)`,
+    ));
   }
 
   // 正面と平面はそれぞれ独立に開閉する。ただし両方閉じることはできない
@@ -31055,6 +31122,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     els.sizeSelect.addEventListener("change", (e) => {
       previewVenueEditorTemplate(els.venueSelect ? els.venueSelect.value : state.project.venue, e.target.value);
     });
+  }
+  // G-J: 二席で見比べる、もう一方の席
+  if (els.front2Seat) {
+    els.front2Seat.addEventListener("change", (e) => setSeat2(e.target.value));
   }
 
   document.querySelectorAll("[data-stage-bg]").forEach((button) => {

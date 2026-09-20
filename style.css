@@ -3502,6 +3502,39 @@ canvas[data-tool="note"] { cursor: copy; }
   background: rgba(168, 75, 38, 0.16);
   color: var(--paper);
 }
+/* G-J: 二席で見比べる。読むだけの小さな絵を正面図の隅へ重ねる（下端はポーズ帯があるため上へ置く） */
+.stage-front2-pip {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+  width: min(34%, 260px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(12, 9, 8, 0.86);
+  border: 1px solid rgba(239, 231, 214, 0.22);
+  border-radius: 6px;
+  padding: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+.stage-front2-pip select {
+  width: 100%;
+  font-size: 11px;
+  background: rgba(239, 231, 214, 0.08);
+  color: var(--milk);
+  border: 1px solid rgba(239, 231, 214, 0.2);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+.stage-front2-pip canvas {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1280 / 720;
+  display: block;
+  border-radius: 3px;
+  background: #000;
+}
 
 .stage-modal #stage-light-preset-tiles {
   display: grid;
