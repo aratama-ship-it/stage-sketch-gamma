@@ -385,7 +385,10 @@
         const answer=await askApplyBeforeLeaving();
         if(answer==='cancel') return;
         if(answer==='apply') {
-          try { await editor()?.apply?.(); }
+          try {
+            const result=await editor()?.apply?.();
+            if(!result?.persisted) throw Error(result?.error||'保存を確認できませんでした');
+          }
           catch(error) { window.alert('適用できませんでした: '+(error&&error.message||error)+'\nモードは切り替えていません。'); return; }
           // 適用が通らなかった（dirtyのまま）なら移らない。中身が入っていないのに移るのを防ぐ。
           if(editor()?.status?.()?.dirty) { window.alert('照明を適用できませんでした。モードは切り替えていません。'); return; }
@@ -412,7 +415,7 @@
           goVenue.addEventListener('click',()=>select('venue-setup'));
           status.append(goVenue);
         } else if(!loaded) {
-          frame.src='light-design/index.html?embed=gamma&v=2026092121'; loaded=true;
+          frame.src='light-design/index.html?embed=gamma&v=2026092124'; loaded=true;
           status.textContent='照明デザインを開いています…';
         } else if(editor()) editor().open(context, next);
       } else if(next==='venue-setup') {

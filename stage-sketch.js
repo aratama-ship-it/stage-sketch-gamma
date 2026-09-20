@@ -4018,7 +4018,7 @@
     }).filter(Boolean));
   }
   /* 一覧に出す姿勢。物を伴う姿勢は、その物を持っているときだけ出す。
-     「座る」は椅子に載せた演者だけへ出し、「バク転」と「ウォークオーバー」は一覧から外す。
+    「座る」は椅子に載せた演者だけへ出す。実演向けの一部姿勢は一覧から外す。
      姿勢データ自体は旧ショーとの互換のため残す。 */
   function selectablePoses(pieces) {
     const list = Array.isArray(pieces) ? pieces.filter(Boolean) : (pieces ? [pieces] : []);
@@ -4027,7 +4027,10 @@
     const inUse = new Set(list.map((piece) => piece && piece.pose).filter(Boolean));
     const allOnChairs = list.length > 0 && list.every((piece) => mountKindOf(piece) === "chair");
     return POSES.filter((pose) => {
-      if (["backflip", "walkover-mid"].includes(pose.id)) return false;
+      if ([
+        "backflip", "walkover-mid", "frontroll-mid", "roundoff-mid",
+        "backhandspring-mid", "dance3", "handstand-mid",
+      ].includes(pose.id)) return false;
       if (pose.id === "sit") return allOnChairs;
       const needs = POSE_PROPS[pose.id];
       if (!needs) return true;
@@ -9658,7 +9661,9 @@
       : code === "PARTIAL_WRITE"
         ? "保存の整合性を確認できません。自動保存を停止しました。ファイルへ書き出して残してください。"
         : "この端末へ保存できませんでした。ファイルへ書き出して残してください。";
-    setSaveStatus(`${tx(detail)} (${code})`, "warn");
+    const message = `${tx(detail)} (${code})`;
+    setSaveStatus(message, "warn");
+    return message;
   }
 
   function persistSoon() {
@@ -20388,6 +20393,37 @@
       ctx2.restore();
       return;
     }
+    if (kind === "prop" && PROP_SHAPES[propShapeId]) {
+      /* 一覧専用の簡略図ではなく、正面図で実際に使う描画経路をそのまま縮小する。
+       * selectionBounds も本番と共通なので、長い梯子や背の低い家具でも枠内へ収まる。 */
+      const previewPiece = normalizePiece({
+        id: `stage-kind-preview-${propShapeId}`,
+        type: "prop",
+        propShape: propShapeId,
+        u: 0.5,
+        v: 0.62,
+        size: 100,
+        color,
+        dims: PROP_SHAPES[propShapeId].dims,
+      }, 0);
+      const previewLayout = layout("front");
+      refreshBases(previewLayout.size, [previewPiece]);
+      const bounds = selectionBounds(previewPiece, previewLayout);
+      const pad = 10;
+      const scale = Math.min(
+        (w - pad * 2) / Math.max(1, bounds.w),
+        (h - pad * 2) / Math.max(1, bounds.h),
+      );
+      ctx2.save();
+      ctx2.setTransform(
+        scale, 0, 0, scale,
+        pad - bounds.x * scale + (w - pad * 2 - bounds.w * scale) / 2,
+        pad - bounds.y * scale + (h - pad * 2 - bounds.h * scale) / 2,
+      );
+      drawStagePiece(ctx2, previewPiece, previewLayout, () => 0);
+      ctx2.restore();
+      return;
+    }
     if (kind === "diabolo") {
       // 専用描画のディアボロは pieceParts を持たない。小道具一覧でも実物と同じ
       // 二つのカップと軸が読める見本を描く。
@@ -20608,7 +20644,7 @@
       const haystack = rosterSearchKey(tile.dataset.rosterSearch);
       tile.hidden = !words.every((word) => haystack.includes(word));
     });
-    if (rosterKindLayer === "prop") {
+    if (rosterKindLayer === "prop" || rosterKindLayer === "set") {
       host.querySelectorAll(".stage-prop-choice-group").forEach((section) => {
         section.hidden = !section.querySelector("[data-roster-search]:not([hidden])");
       });
@@ -20653,7 +20689,10 @@
     const host = els.rosterPropGrid;
     if (!host) return;
     host.innerHTML = "";
-    propShapeGroups(rosterPropShape).forEach((group) => {
+    propShapeGroups(rosterPropShape).map((group) => ({
+      ...group,
+      ids: group.ids.filter((shapeId) => !ROSTER_SET_PROP_SHAPES.has(shapeId)),
+    })).filter((group) => group.ids.length).forEach((group) => {
       const section = document.createElement("section");
       section.className = "stage-prop-choice-group";
       const heading = document.createElement("p");
@@ -20819,6 +20858,49 @@
       });
       grid.append(tile);
       drawKindPreview(canvas, kind, "#8b98a1");
+    });
+    propShapeGroups(rosterPropShape).map((group) => ({
+      ...group,
+      ids: group.ids.filter((shapeId) => ROSTER_SET_PROP_SHAPES.has(shapeId)),
+    })).filter((group) => group.ids.length).forEach((group) => {
+      const section = document.createElement("section");
+      section.className = "stage-prop-choice-group stage-kind-prop-group";
+      const heading = document.createElement("p");
+      heading.className = "stage-kind-field-title";
+      heading.textContent = tx(group.ja);
+      const choices = document.createElement("div");
+      choices.className = "stage-pose-grid stage-prop-choice-grid";
+      group.ids.forEach((shapeId) => {
+        const tile = document.createElement("button");
+        tile.type = "button";
+        tile.className = `stage-pose-tile${rosterKind === "prop" && shapeId === rosterPropShape ? " is-on" : ""}`;
+        tile.dataset.rosterPropShape = shapeId;
+        tile.setAttribute("aria-pressed", String(rosterKind === "prop" && shapeId === rosterPropShape));
+        const canvas = document.createElement("canvas");
+        canvas.width = 132;
+        canvas.height = 132;
+        const label = document.createElement("span");
+        label.textContent = propShapeName(shapeId);
+        tile.dataset.rosterSearch = `${label.textContent} ${shapeId} ${tx(group.ja)}`;
+        tile.append(canvas, label);
+        const choose = () => {
+          rosterKind = "prop";
+          rosterPropShape = shapeId;
+          syncRosterColorDefault();
+          renderModelPicker();
+          setRosterTileSelection(grid, "[data-roster-kind-choice], [data-roster-prop-shape]", tile);
+        };
+        tile.addEventListener("click", choose);
+        tile.addEventListener("dblclick", (event) => {
+          event.preventDefault();
+          choose();
+          addFromRoster();
+        });
+        choices.append(tile);
+        drawKindPreview(canvas, "prop", "#8b98a1", shapeId);
+      });
+      section.append(heading, choices);
+      grid.append(section);
     });
   }
 
@@ -21916,12 +21998,29 @@
     rows.forEach((row, i) => {
       const next = rows[i + 1];
       const nextDepth = next ? Number(next.dataset.depth) : -1;
+      const linkLength = next
+        ? Math.max(0, next.getBoundingClientRect().top - row.getBoundingClientRect().bottom)
+        : 0;
       row.querySelectorAll(".stage-scene-bar-mark").forEach((mark) => {
         const slot = Number(mark.style.getPropertyValue("--bar-slot"));
-        mark.classList.toggle("is-linked", nextDepth > slot);
+        const linked = nextDepth > slot;
+        mark.classList.toggle("is-linked", linked);
+        if (linked) mark.style.setProperty("--scene-bar-link", `${linkLength}px`);
+        else mark.style.removeProperty("--scene-bar-link");
       });
     });
   }
+  let sceneBarLinkFrame = 0;
+  function scheduleSceneBarLinks() {
+    if (sceneBarLinkFrame) cancelAnimationFrame(sceneBarLinkFrame);
+    sceneBarLinkFrame = requestAnimationFrame(() => {
+      sceneBarLinkFrame = 0;
+      linkSceneBars();
+    });
+  }
+
+  // 2026-09-21 本人指定: 暗転の保存値と再生処理は残し、編集欄だけを一時的に隠す。
+  const SHOW_BLACKOUT_CONTROL = false;
 
   /* シーン一覧を組む。
      引数なし＝従来どおり全部作り直す（69箇所の呼び出し元はこのまま）。
@@ -22011,7 +22110,7 @@
         const controls = document.createElement("div");
         controls.className = "stage-scene-transition-controls";
 
-        if (featureOn("blackout")) {
+        if (SHOW_BLACKOUT_CONTROL && featureOn("blackout")) {
           const dark = document.createElement("label");
           dark.className = "stage-canvas-toggle stage-scene-transition-blackout";
           dark.title = tx("このシーンへの転換を、一度真っ暗にしてから明ける");
@@ -22432,6 +22531,7 @@
         });
       }
       linkSceneBars();
+      scheduleSceneBarLinks();
     }
     if (els.planDeriveRoute) {
       const current = sc();
@@ -34006,26 +34106,31 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       coordinateSpace: "venue-m",
       audienceAreas: projectIoClone(audienceAreas),
     };
-    const scenes = state.project.scenes.filter(row => row.kind === "scene").map(row => ({
-      id: row.id, name: row.title || "場面",
-      pieces: row.pieces.filter(piece => piece.type !== "light").map(piece => {
-        const visual = effectivelyPlacedPiece(piece, row);
-        const dims = pieceDims(visual) || {};
-        return { id: piece.id, kind: visual.type === "performer" ? "performer" : (visual.type === "curtain" ? "curtain" : "set"),
-          u: visual.u, v: visual.v, hM: pieceHeightM(visual), name: pieceLabel(visual), color: visual.color,
-          pose: visual.pose, facing: visual.facing,
-          // 照明デザインの正面図でも、舞台モードと同じ衣装を同じ色で描く。
-          look: visual.type === "performer"
-            ? projectIoClone(normalizeLook(resolveLookForScene(
-              visual, row, state.project.cast, state.project.scenes))) : null,
-          dims: projectIoClone(dims),
-          // 台の上に乗っている駒は、その高さから立ち上げる（本体の floorPoint と同じ）
-          base: Math.max(0, finite(visual.base, 0)),
-          parts: lightingContextParts(visual, dims),
-          round: lightingContextRound(visual, dims),
-          w: dims.w ? dims.w / stage.W : 0.1, curtainKind: visual.curtainKind, open: visual.open };
-      }),
-    }));
+    const scenes = state.project.scenes.filter(row => row.kind === "scene").map(row => {
+      const ownerSection = sectionForScene(row, state.project.scenes);
+      return {
+        id: row.id, name: row.title || "場面",
+        sectionId: ownerSection ? ownerSection.id : null,
+        sectionTitle: ownerSection ? (ownerSection.title || "") : "",
+        pieces: row.pieces.filter(piece => piece.type !== "light").map(piece => {
+          const visual = effectivelyPlacedPiece(piece, row);
+          const dims = pieceDims(visual) || {};
+          return { id: piece.id, kind: visual.type === "performer" ? "performer" : (visual.type === "curtain" ? "curtain" : "set"),
+            u: visual.u, v: visual.v, hM: pieceHeightM(visual), name: pieceLabel(visual), color: visual.color,
+            pose: visual.pose, facing: visual.facing,
+            // 照明デザインの正面図でも、舞台モードと同じ衣装を同じ色で描く。
+            look: visual.type === "performer"
+              ? projectIoClone(normalizeLook(resolveLookForScene(
+                visual, row, state.project.cast, state.project.scenes))) : null,
+            dims: projectIoClone(dims),
+            // 台の上に乗っている駒は、その高さから立ち上げる（本体の floorPoint と同じ）
+            base: Math.max(0, finite(visual.base, 0)),
+            parts: lightingContextParts(visual, dims),
+            round: lightingContextRound(visual, dims),
+            w: dims.w ? dims.w / stage.W : 0.1, curtainKind: visual.curtainKind, open: visual.open };
+        }),
+      };
+    });
     return { showId: state.project.id, title: state.project.title, stage, scenes, venueMask,
       activeSceneId: state.project.activeSceneId, design: state.project.lightingDesign ? projectIoClone(state.project.lightingDesign) : null,
       basis: gammaBasisFingerprint(JSON.stringify({ id: state.project.id, scenes: scenes.map(row => row.id).sort(), stage,
@@ -34052,7 +34157,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       // A quota/disabled-storage exception leaves host state and the editor draft untouched.
       const result = await ProjectStore.commit({ projectId: next.project.id,
         serializedState: JSON.stringify(next), expectedRevision: null, intent: "gamma-lighting" });
-      if (!result.ok) { reportProjectStoreFailure(result); throw new Error(result.error.code); }
+      if (!result.ok) throw new Error(reportProjectStoreFailure(result));
       clearTimeout(saveTimer); checkpoint(); state = next;
       render(true);
       setSaveStatus("照明デザインをショーへ保存しました。");

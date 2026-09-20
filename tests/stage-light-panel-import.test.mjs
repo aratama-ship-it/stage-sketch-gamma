@@ -9,9 +9,12 @@ const PLAN_OVERLAY = require("../stage-lighting-plan-overlay.js");
 const CUE_OVERLAY = require("../gamma-light-cue-overlay.js");
 await import("../gamma-light-model.js");
 const LIGHT_MODEL = globalThis.GAMMA_LIGHT_MODEL;
-const fixtureUrl = new URL("../stage-samples/feature-test-show.json", import.meta.url);
-const fixtureText = await readFile(fixtureUrl, "utf8");
-const fixture = JSON.parse(fixtureText);
+const fixtureUrl = new URL("../stage-samples/feature-test-show.js", import.meta.url);
+const fixtureSource = await readFile(fixtureUrl, "utf8");
+const fixtureStart = fixtureSource.indexOf("var doc = ") + "var doc = ".length;
+const fixtureEnd = fixtureSource.indexOf(";\n  var list", fixtureStart);
+assert.ok(fixtureStart >= "var doc = ".length && fixtureEnd > fixtureStart, "試験場の生成形式を読める");
+const fixture = JSON.parse(fixtureSource.slice(fixtureStart, fixtureEnd));
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const legacyFixture = () => {
   const value = clone(fixture);

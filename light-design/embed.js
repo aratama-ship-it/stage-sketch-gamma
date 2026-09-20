@@ -50,7 +50,7 @@
   }
   function synchronizePieces(next) {
     const rows=new Map(next.scenes.map(row=>[row.id,row]));
-    state.scenes.forEach(row=>{const host=rows.get(row.id);if(host){row.name=host.name;row.pieces=model.clone(host.pieces);}});
+    state.scenes.forEach(row=>{const host=rows.get(row.id);if(host){row.name=host.name;row.sectionId=host.sectionId||null;row.sectionTitle=host.sectionTitle||'';row.pieces=model.clone(host.pieces);}});
   }
   /* 会場の客席多角形はホスト側の正本を参照するだけで、照明デザインの保存物へ複製しない。
      形が無い会場では null のまま＝客席ワンダーを有効にしない。 */
@@ -82,8 +82,9 @@
         design=model.restoreDraft(draft.design,next);dirty=true;
       }
       // Strict ID matching: host pieces never come from a demo or imported design.
-      state.scenes=next.scenes.map(row=>({id:row.id,name:row.name,pieces:model.clone(row.pieces),cue:{lights:{},groups:[]}}));
+      state.scenes=next.scenes.map(row=>({id:row.id,name:row.name,sectionId:row.sectionId||null,sectionTitle:row.sectionTitle||'',pieces:model.clone(row.pieces),cue:{lights:{},groups:[]}}));
       hooks.applyDesign(design,{host:true});
+      synchronizePieces(next);
       appliedExtras=model.clone(design);context=next;synchronizeVenueMask(next);changedElsewhere=false;
       state.dirty=dirty;state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
       lastScene=state.scenes[state.sceneIndex].id;
@@ -106,7 +107,8 @@
       try {localStorage.removeItem(key(context.showId));} catch {message('照明は保存しました。編集控えの整理は次回行います');}
       hooks.renderAll();
       message(result.shelfPersisted?'照明デザインをショーへ保存しました':'照明は保存しました。ショー一覧の控えを更新できないため、ショーを書き出してください');
-    } catch(error) {state.dirty=true;saveDraft();message('適用できませんでした: '+error.message);}
+      return result;
+    } catch(error) {state.dirty=true;saveDraft();message('適用できませんでした: '+error.message);return {persisted:false,error:error.message||String(error)};}
   }
   document.documentElement.dataset.gammaEmbedded='true';
   arrangeEmbeddedToolbar();

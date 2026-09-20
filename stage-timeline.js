@@ -153,10 +153,22 @@
     rowVisibilityInputs: [...panel.querySelectorAll("[data-stage-timeline-row-visibility]")],
   };
 
-  // 表示設定は音源行の端ではなく、再生操作のある2段目の先頭へ置く。
+  // セクション名だけの1段目は表示しない。セクション時間・単位・表示設定は、
+  // 実際に操作する再生列の先頭へ一まとまりに置く（2026-09-21 本人要望）。
   const settingsHost = els.settingsTrigger && els.settingsTrigger.closest(".stage-timeline-settings");
+  const durationHost = els.sectionDurationNumber && els.sectionDurationNumber.closest(".stage-timeline-section-duration");
+  const unitHost = els.unitToggle && els.unitToggle.closest(".stage-timeline-unit");
+  const sourceStrip = panel.querySelector(".stage-timeline-menu-strip.is-source");
   const transportStrip = panel.querySelector(".stage-timeline-menu-strip.is-transport");
-  if (settingsHost && transportStrip) transportStrip.prepend(settingsHost);
+  if (transportStrip) {
+    const timingTools = document.createElement("div");
+    timingTools.className = "stage-timeline-time-tools";
+    if (durationHost) timingTools.append(durationHost);
+    if (unitHost) timingTools.append(unitHost);
+    if (settingsHost) transportStrip.prepend(settingsHost, timingTools);
+    else transportStrip.prepend(timingTools);
+  }
+  if (sourceStrip) sourceStrip.hidden = true;
 
   const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));

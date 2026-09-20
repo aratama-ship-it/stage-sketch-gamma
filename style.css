@@ -3389,6 +3389,8 @@ canvas[data-tool="note"] { cursor: copy; }
   gap: 6px;
 }
 
+#stage-kind-grid > .stage-kind-prop-group { grid-column: 1 / -1; }
+
 .stage-prop-choice-grid { margin-top: 0; }
 
 .stage-kind-submit {
@@ -10127,11 +10129,27 @@ body.is-panel-dragging {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 9px;
-  padding: 7px 9px;
-  border: 1px solid var(--line-dark);
-  background: var(--desk);
+  gap: 14px;
+  margin-bottom: 4px;
+  padding: 0 0 4px;
+  border: 0;
+  background: transparent;
+}
+
+.stage-center-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.stage-center-group.is-display { margin-left: auto; }
+
+.stage-center-group-label {
+  color: var(--brass);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
 }
 
 /* 道具の帯。区切りの余白を挟むので、桁で数えるgridではなく並べるflexにする
@@ -10200,6 +10218,7 @@ body.is-panel-dragging {
 
 /* 右寄せは、上の margin:0 より後に置く（先に書くと打ち消される） */
 .stage-center-bar .stage-bar-right { margin-left: auto; }
+.stage-center-group .stage-bar-right { margin-left: 0; }
 
 @media (max-width: 900px) {
   .stage-center-bar .stage-tool-hint { flex-basis: 100%; order: 9; }
@@ -15186,7 +15205,7 @@ html.stage-phone-viewer .stage-note-editor-bar .btn-quiet { min-height: 44px; mi
 /* 行の隙間（下の余白4px＋並びの隙間7px＋枠線2px＝13px）を跨いで、
    下の行のバーへ繋ぐ。幕の終わりの行には付けないので線は垂れない。 */
 .stage-scene-bar-mark.is-linked {
-  bottom: -13px;
+  bottom: calc(-1 * var(--scene-bar-link, 13px));
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }
@@ -16766,6 +16785,13 @@ body.is-timeline-resizing { cursor: row-resize; user-select: none; -webkit-user-
 .stage-timeline-section-duration input.is-scrubbing { border-color: var(--stage-timeline-accent); cursor: grabbing; }
 
 .stage-timeline-section-duration input:disabled { opacity: 0.4; }
+
+.stage-timeline-time-tools {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
 
 .stage-timeline-tempo {
   display: flex;

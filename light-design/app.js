@@ -1346,9 +1346,6 @@
       pctx.save(); pctx.fillStyle = "rgba(211,172,89,0.12)"; pctx.strokeStyle = "rgba(211,172,89,0.85)"; pctx.lineWidth = 1.5; pctx.setLineDash([7, 5]);
       pctx.fillRect(x, y, mw, mh); pctx.strokeRect(x, y, mw, mh); pctx.restore();
     }
-    // 状態
-    const st = state.tool === "truss" ? "バトンを渡す" : state.tool === "fixture" ? "吊り 配置中" : state.tool === "floor" ? "転がし 配置中" : state.tool === "side" ? "SS 配置中" : state.tool === "border" ? "一文字幕を調整中" : state.tool === "pros" ? "前一文字を調整中" : state.tool === "legs" ? "袖幕を調整中" : state.drag ? "ドラッグ調整中" : state.sel.size > 1 ? `${state.sel.size}灯を選択中` : "選択";
-    $("statebadge").textContent = st;
   }
   const inBox = (p, B) => p.X >= B.x && p.X <= B.x + B.w && p.Y >= B.y && p.Y <= B.y + B.h;
   function hexA(hex, a) { const v = parseInt((hex || "#f2ead6").slice(1), 16); return `rgba(${(v >> 16) & 255},${(v >> 8) & 255},${v & 255},${a})`; }
@@ -4288,6 +4285,14 @@
   const lxSections = () => [...new Set(state.scenes.map((sc) => lxOf(sc).section))].sort((a, b) => a - b);
   const lxCurSection = () => lxOf(scene()).section;
   const lxScenesIn = (sec) => state.scenes.map((sc, i) => ({ sc, i })).filter((x) => lxOf(x.sc).section === sec);
+  const lxSectionTitle = (sec) => {
+    const current = scene();
+    if (lxOf(current).section === sec && String(current.sectionTitle || "").trim()) {
+      return String(current.sectionTitle).trim();
+    }
+    const first = lxScenesIn(sec).find(({ sc }) => String(sc.sectionTitle || "").trim());
+    return first ? String(first.sc.sectionTitle).trim() : "";
+  };
   function lxGotoScene(i) {
     if (i < 0 || i >= state.scenes.length || i === state.sceneIndex) return;
     state.sceneIndex = i; state.sel.clear(); stop(); home(); renderAll();
@@ -4813,8 +4818,9 @@
     /* 場面の2段（LX cueパネルの上）。上＝セクション、下＝そのセクションの中のシーン。 */
     { const secs = lxSections(), cur = lxCurSection(), inSec = lxScenesIn(cur);
       const pos = inSec.findIndex((x) => x.i === state.sceneIndex) + 1;
-      $("sec-name").textContent = `${cur}`;
-      $("sec-name").title = `セクション ${cur}（全${secs.length}）・シーン${inSec.length}件`;
+      const sectionTitle = lxSectionTitle(cur);
+      $("sec-name").textContent = sectionTitle ? `${cur} ${sectionTitle}` : `${cur}`;
+      $("sec-name").title = `セクション ${cur}${sectionTitle ? `「${sectionTitle}」` : ""}（全${secs.length}）・シーン${inSec.length}件`;
       $("sec-prev").disabled = $("sec-next").disabled = secs.length < 2;
       $("scene-name").textContent = `${pos || 1}. ${scene().name}`;
       $("scene-name").title = `シーン ${state.sceneIndex + 1}「${scene().name}」（セクション${cur}の${pos}/${inSec.length}）`;
@@ -4912,7 +4918,8 @@
             <span class="allqs">${chips}</span>
           </div>`;
       }).join("");
-      return `<div class="allsec"><p class="kicker">セクション ${sec}</p>${scenes}</div>`;
+      const sectionTitle = lxSectionTitle(sec);
+      return `<div class="allsec"><p class="kicker">セクション ${sec}${sectionTitle ? `　${esc(sectionTitle)}` : ""}</p>${scenes}</div>`;
     }).join("");
     dialog(`<p class="ptitle">すべての場面と LX cue</p>
       <p class="hint">シーン名を押すとそのシーンへ、番号を押すとその LX cue の編集に入ります。セクション番号は LX cue パネルの〈番号〉で変えられます。</p>
