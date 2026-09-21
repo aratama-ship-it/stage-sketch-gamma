@@ -24145,6 +24145,7 @@
   }
 
   function renderManualHelp() {
+    syncMoveHelp();
     if (!els.helpResults || !els.helpNote || !els.helpFind) return;
     els.helpResults.replaceChildren();
 
@@ -28000,6 +28001,92 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (owner) owner.locked = value; else if (piece) piece.locked = value;
   }
 
+  // 案内は現在の状態を読むだけ。固定解除は対象と権限を再確認してから実行する。
+  let moveHelpScene = null;
+  let moveHelpListKey = "";
+
+  function moveHelpDiagnosis(piece, multiple = false) {
+    const context = { project: state.project, scene: sc(), piece, owner: lockOwner(piece) };
+    const result = (code, message, scope = "") => ({ code, message, scope, context });
+    if (STUDY_READ_ONLY || guestSessionActive() || phoneViewerActive || presenting) {
+      return result("readonly", sx("閲覧中は配置を変更できません。", "Positions cannot be edited in this viewing mode."));
+    }
+    if (sceneAnim || spinRun) return result("playing", sx("再生・転換が終わってから操作してください。", "Wait until playback or the transition finishes."));
+    const workspace = document.body.dataset.gammaWorkspace;
+    if (workspace && workspace !== "normal") {
+      return result("workspace", sx("配置を変えるには「舞台」の画面を開いてください。", "Open the Stage workspace to change positions."));
+    }
+    if (!piece || !sc().pieces.includes(piece)) return result("no-target", sx("動かしたい対象を選んでください。", "Choose the item you want to move."));
+    if (multiple) return result("multiple", sx("固定を確かめる対象を1つ選んでください。", "Select one item to check its lock."));
+    if (piece.heldBy) return result("held", sx("持ち物として人物に付いています。持ち主の設定を確認してください。", "This item is held by a performer. Check its holder settings."));
+    if (sc().formationLink) return result("linked", sx("連携したシーンです。配置を変える前に連携元を確認してください。", "This scene is linked. Check its source before changing positions."));
+    if (piece.type === "light") return result("light", sx("明かりの操作は照明の画面で確認してください。", "Check lighting controls in the Lighting workspace."));
+    if (tool !== "select") return result("tool", sx("位置を変えるには「動かす」道具を選んでください。", "Select the Move tool to change positions."));
+    if (isLocked(piece)) return result("locked",
+      sx(`「${pieceLabel(piece)}」は固定されています。`, `“${pieceLabel(piece)}” is locked.`),
+      context.owner
+        ? sx("この登録の固定は、ほかのシーンにも共通です。解除しても位置は変わりません。", "This registered item's lock applies across scenes. Unlocking does not change its position.")
+        : sx("このシーンの、この駒の固定を解除します。位置は変わりません。", "Only this piece in this scene will be unlocked. Its position will not change."));
+    return result("unknown", sx("固定は設定されていません。動かせない場合は、使い方を検索して確認してください。", "This item is not locked. Search the guide if you still cannot move it."));
+  }
+
+  function unlockFromMoveHelp(context, source) {
+    const piece = context?.piece;
+    const valid = context && context.project === state.project && context.scene === sc()
+      && sc().pieces.includes(piece) && context.owner === lockOwner(piece)
+      && (source !== "inspector" || (selectedPiece() === piece && selectedPieces().length === 1))
+      && (source !== "manual" || document.getElementById("stage-move-help-target")?.value === piece.id);
+    const diagnosis = valid ? moveHelpDiagnosis(piece) : null;
+    if (!diagnosis || diagnosis.code !== "locked") {
+      syncMoveHelp();
+      announce(sx("状態が変わったため、案内を更新しました。", "The state changed. The help has been updated."));
+      return false;
+    }
+    checkpoint();
+    setLocked(piece, false);
+    renderCast(); renderSets(); renderLights(); updateInspector(); render(); persistSoon();
+    announce(sx(`「${pieceLabel(piece)}」の固定を解除しました。`, `Unlocked “${pieceLabel(piece)}”.`));
+    document.getElementById(source === "inspector" ? "stage-piece-lock" : "stage-move-help-target")?.focus();
+    return true;
+  }
+
+  function renderMoveHelp(root, diagnosis, source) {
+    if (!root) return;
+    root.hidden = source === "inspector" && ["unknown", "no-target", "multiple"].includes(diagnosis.code);
+    root.dataset.reason = diagnosis.code;
+    const text = root.querySelector("[data-move-help-text]");
+    const scope = root.querySelector("[data-move-help-scope]");
+    const action = root.querySelector("[data-move-help-action]");
+    if (text.textContent !== diagnosis.message) text.textContent = diagnosis.message;
+    if (scope.textContent !== diagnosis.scope) scope.textContent = diagnosis.scope;
+    scope.hidden = !diagnosis.scope;
+    action.hidden = diagnosis.code !== "locked";
+    action.textContent = sx("固定を解除する", "Unlock this item");
+    action.onclick = () => unlockFromMoveHelp(diagnosis.context, source);
+  }
+
+  function syncMoveHelp() {
+    renderMoveHelp(document.getElementById("stage-move-help-inline"),
+      moveHelpDiagnosis(selectedPiece(), selectedPieces().length > 1), "inspector");
+    const picker = document.getElementById("stage-move-help-target");
+    if (!picker) return;
+    if (moveHelpScene !== sc()) { moveHelpScene = sc(); picker.value = ""; moveHelpListKey = ""; }
+    const pieces = sc().pieces || [];
+    const listKey = JSON.stringify([lang, pieces.map(piece => [piece.id, pieceLabel(piece)])]);
+    if (listKey !== moveHelpListKey) {
+      const previous = picker.value;
+      picker.replaceChildren();
+      const blank = document.createElement("option"); blank.value = "";
+      blank.textContent = sx("対象を選ぶ", "Choose an item"); picker.append(blank);
+      pieces.forEach(piece => { const option = document.createElement("option"); option.value = piece.id;
+        option.textContent = pieceLabel(piece); picker.append(option); });
+      picker.value = pieces.some(piece => piece.id === previous) ? previous : "";
+      moveHelpListKey = listKey;
+    }
+    renderMoveHelp(document.getElementById("stage-move-help-manual"),
+      moveHelpDiagnosis(pieces.find(piece => piece.id === picker.value)), "manual");
+  }
+
   function selectedPiece() {
     return sc().pieces.find((piece) => piece.id === selectedId) || null;
   }
@@ -28543,6 +28630,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   }
 
   function updateInspector() {
+    syncMoveHelp();
     const piece = selectedPiece();
     const pieces = selectedPieces();
     const multi = pieces.length > 1;
@@ -33746,6 +33834,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   if (els.helpClose) els.helpClose.addEventListener("click", closeManualHelp);
   if (els.helpBackdrop) els.helpBackdrop.addEventListener("click", closeManualHelp);
   if (els.helpFind) els.helpFind.addEventListener("input", renderManualHelp);
+  document.getElementById("stage-move-help-target")?.addEventListener("change", syncMoveHelp);
   if (els.aboutOpenFromPrefs) els.aboutOpenFromPrefs.addEventListener("click", openAboutFromPrefs);
   if (els.aboutOpenFromFooter) els.aboutOpenFromFooter.addEventListener("click", openAbout);
   if (els.releaseOpen) els.releaseOpen.addEventListener("click", openReleaseHistory);

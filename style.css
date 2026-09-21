@@ -17890,3 +17890,13 @@ body.is-setinfo-preview-dragging .stage-setinfo-preview canvas { cursor: grabbin
 .stage-version-row.is-current { border-color: var(--brass); background: rgba(201, 169, 97, 0.1); cursor: default; }
 .stage-version-row-label { font: 600 15px var(--sans); letter-spacing: 0.06em; color: var(--brass); }
 .stage-version-row-meta { font-size: 11px; line-height: 1.5; color: var(--milk-dim); }
+
+/* 動かせない理由と固定解除の案内。既存の編集画面の配色を継承する。 */
+.stage-move-help { margin: 8px 0; padding: 12px; border: 1px solid currentColor; border-radius: 4px; }
+.stage-move-help p, .stage-move-help-entry label, .stage-move-help-entry summary { font-size: 14px; line-height: 1.8; }
+.stage-move-help p { margin: 0 0 8px; overflow-wrap: anywhere; }
+.stage-move-help .stage-minor-action, .stage-move-help-entry .stage-select { min-height: 44px; width: 100%; white-space: normal; font-size: 14px; line-height: 1.8; border-color: currentColor; }
+.stage-move-help-entry summary { min-height: 44px; cursor: pointer; padding: 8px 0; }
+.stage-move-help-entry label { display: block; margin: 8px 0; }
+.stage-move-help-entry { margin-bottom: 12px; }
+.stage-move-help button:focus-visible, .stage-move-help-entry select:focus-visible, .stage-move-help-entry summary:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
