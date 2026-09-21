@@ -1711,6 +1711,51 @@
     if (Math.abs(ax * by - ay * bx) < 4) return null;   // 潰れている＝その図では線にしか見えない
     return { cx: c.X, cy: c.Y, ax, ay, bx, by, ea: el.ea, eb: el.eb, fall: E.spotFalloff(world.S, el, surf, 8) };
   }
+  const BEAM_LANDING_FADE_START = 0.72;
+  const beamBlendCanvas = document.createElement("canvas");
+  /* 床の光は光だまりが受け持つ。空中の三角だけを別キャンバスへ描いて、
+     左右の着地点へ向かう最後の区間を透明にする（床や人物を消さない）。 */
+  function beamBlendSheet(ctx, from, corners) {
+    const xs = [from.X, corners.p.X, corners.m.X], ys = [from.Y, corners.p.Y, corners.m.Y];
+    if (!xs.every(Number.isFinite) || !ys.every(Number.isFinite)) return null;
+    const x0 = Math.floor(Math.min(...xs)) - 2, y0 = Math.floor(Math.min(...ys)) - 2;
+    const w = Math.ceil(Math.max(...xs)) + 2 - x0, h = Math.ceil(Math.max(...ys)) + 2 - y0;
+    if (!(w > 1 && h > 1)) return null;
+    const matrix = typeof ctx.getTransform === "function" ? ctx.getTransform() : null;
+    const sx = matrix ? Math.max(0.5, Math.hypot(matrix.a, matrix.b)) : 1;
+    const sy = matrix ? Math.max(0.5, Math.hypot(matrix.c, matrix.d)) : 1;
+    const shrink = Math.min(1, 1024 / Math.max(w * sx, h * sy));
+    const pw = Math.max(1, Math.ceil(w * sx * shrink)), ph = Math.max(1, Math.ceil(h * sy * shrink));
+    if (beamBlendCanvas.width !== pw || beamBlendCanvas.height !== ph) {
+      beamBlendCanvas.width = pw; beamBlendCanvas.height = ph;
+    }
+    const target = beamBlendCanvas.getContext("2d");
+    if (!target) return null;
+    target.setTransform(1, 0, 0, 1, 0, 0);
+    target.globalCompositeOperation = "source-over";
+    target.clearRect(0, 0, pw, ph);
+    target.setTransform(pw / w, 0, 0, ph / h, -x0 * pw / w, -y0 * ph / h);
+    return { target, x0, y0, w, h, pw, ph };
+  }
+  function paintBeamLandingFade(target, from, corners, alpha, composite) {
+    const sideX = (corners.p.X - corners.m.X) / 2, sideY = (corners.p.Y - corners.m.Y) / 2;
+    const axisX = (corners.p.X + corners.m.X) / 2 - from.X;
+    const axisY = (corners.p.Y + corners.m.Y) / 2 - from.Y;
+    if (Math.abs(sideX * axisY - sideY * axisX) < 1e-6) return false;
+    target.save();
+    target.globalCompositeOperation = composite;
+    target.transform(sideX, sideY, axisX, axisY, from.X, from.Y);
+    const gradient = target.createLinearGradient(0, 0, 0, 1);
+    gradient.addColorStop(0, `rgba(255,255,255,${alpha})`);
+    gradient.addColorStop(BEAM_LANDING_FADE_START, `rgba(255,255,255,${alpha})`);
+    gradient.addColorStop(1, "rgba(255,255,255,0)");
+    target.fillStyle = gradient;
+    target.beginPath();
+    target.moveTo(0, 0); target.lineTo(1, 1); target.lineTo(-1, 1);
+    target.closePath(); target.fill();
+    target.restore();
+    return true;
+  }
   function drawBeam(ctx, from, to, world, color, deg, dim, pxPerM, squash, asLine, noPool, lv, gobo, surf, proj, frame, onlyPool = false) {
     const rM = E.spotRadiusM(world.S, world.T, deg), rPx = Math.max(rM * pxPerM, 3);
     const ell = noPool ? null : poolEllipse(world, deg, surf, proj);
@@ -1729,7 +1774,7 @@
     /* 帯の三角の先端（狙い点）は pool の中心とは限らない——斜めに当たるほど pool の中心は
        遠い側へずれる（spotEllipse の性質）。三角の断面は狙い点で、pool（着地の丸み）は
        そこから離れた位置に別で乗る。暗幕の穴をそろえるにはこの両方が要る。 */
-    const ret = () => ({ r: rPx, toX: pool.cx, toY: pool.cy, landX: to.X, landY: to.Y, halfW, ry, lying, asLine, noPool, pool, corners, cuts, onlyPool });
+    const ret = () => ({ r: rPx, toX: pool.cx, toY: pool.cy, landX: to.X, landY: to.Y, halfW, ry, lying, asLine, noPool, pool, corners, cuts, onlyPool, silhouette: Boolean(silhouette) });
     /* 濃さ＝図の視点による見分けやすさ×その灯の強さ。選択状態はここへ入れず、
        灯ごとの数値0〜100%を state.levelCurve で曲げたものだけで決める。 */
     const a = visualAlpha((dim ? 0.32 : 1) * E.clamp(E.finite(lv, 1), 0, 1));
@@ -1777,6 +1822,9 @@
       corners.p = { X: to.X + bnx * (1 - cutP), Y: to.Y + bny * (1 - cutP) };
       corners.m = { X: to.X - bnx * (1 - cutM), Y: to.Y - bny * (1 - cutM) };
     }
+    // 光の帯の裾も、カッター適用後の光だまりの輪郭から決める。
+    const silhouette = !noPool && !asLine && E.beamLandingSilhouette(from, pool, cuts);
+    if (silhouette) { corners.p = silhouette.cornerP; corners.m = silhouette.cornerM; }
     ctx.save();
     ctx.globalCompositeOperation = "screen";
     if (onlyPool) { /* 空気と面は別レイヤー */ } else if (asLine) {
@@ -1785,6 +1833,8 @@
          出どころが狙い先の真上にあるときは線が点になるので引かない（本体と同じ）。 */
       if (blen > 6) { ctx.strokeStyle = hexA(color, (dim ? 0.22 : 0.55) * visualAlpha(E.clamp(E.finite(lv, 1), 0, 1))); ctx.lineWidth = 2; ctx.setLineDash([6, 5]); ctx.beginPath(); ctx.moveTo(from.X, from.Y); ctx.lineTo(to.X, to.Y); ctx.stroke(); ctx.setLineDash([]); }
     } else {
+      const blend = !noPool && (surf === "floor" || surf === "back") ? beamBlendSheet(ctx, from, corners) : null;
+      const bandCtx = blend ? blend.target : ctx;
       const prof = gobo ? goboProfile(gobo) : null;
       /* 縁の柔らかさ（BEAM_EDGE）を t=0〜1 で引けるようにしたもの。 */
       const beamEdge = beamEdgeProfile(gobo);
@@ -1805,37 +1855,42 @@
          各段の角度は帯の端の実座標から出すので、着地側での筋の位置は今までと同じ。
          conic がない環境（古いSafari等）と、帯が線に潰れているときは今までの平行に戻す。 */
       let g = null;
-      if (ctx.createConicGradient && blen > 8) {
+      if (bandCtx.createConicGradient && blen > 8) {
         const TAU = Math.PI * 2, wrapA = (v) => ((v % TAU) + TAU) % TAU;
-        const angAt = (t) => Math.atan2(to.Y + (2 * t - 1) * ny - from.Y, to.X + (2 * t - 1) * nx - from.X);
+        const angAt = (t) => Math.atan2(corners.m.Y + (corners.p.Y - corners.m.Y) * t - from.Y,
+          corners.m.X + (corners.p.X - corners.m.X) * t - from.X);
         const angL = angAt(0), angR = angAt(1);
         const cw = wrapA(angR - angL) <= Math.PI;          // 帯の左端から右端へ回る向き
         const start = cw ? angL : angR, sweep = cw ? wrapA(angR - angL) : wrapA(angL - angR);
         if (sweep > 1e-4) {
-          g = ctx.createConicGradient(start, from.X, from.Y);
+          g = bandCtx.createConicGradient(start, from.X, from.Y);
           band.map(([t, col]) => [E.clamp(wrapA(angAt(t) - start) / TAU, 0, 1), col])
               .sort((p, q) => p[0] - q[0])
               .forEach(([pos, col]) => g.addColorStop(pos, col));
         }
       }
       if (!g) {
-        g = ctx.createLinearGradient(to.X - nx, to.Y - ny, to.X + nx, to.Y + ny);
+        g = bandCtx.createLinearGradient(corners.m.X, corners.m.Y, corners.p.X, corners.p.Y);
         band.forEach(([t, col]) => g.addColorStop(t, col));
       }
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.moveTo(from.X, from.Y);                // 灯体は点。点から広がる三角なら捻れない
-      if (lying) {
+      bandCtx.fillStyle = g;
+      bandCtx.beginPath();
+      bandCtx.moveTo(from.X, from.Y);                // 灯体は点。点から広がる三角なら捻れない
+      if (lying && !silhouette) {
         /* 円の下半分をなぞって左端へ回り込む。角は切る線で内へ寄っていることがある（corners）ので、
            右の角から始めて、両角の中点を中心にした半円で左の角へ戻る。 */
         const L = corners.p.X < corners.m.X ? corners.p : corners.m, Rr = L === corners.p ? corners.m : corners.p;
-        ctx.lineTo(Rr.X, Rr.Y);
-        ctx.ellipse((L.X + Rr.X) / 2, to.Y, Math.max(1, (Rr.X - L.X) / 2), ry, 0, 0, Math.PI);
+        bandCtx.lineTo(Rr.X, Rr.Y);
+        bandCtx.ellipse((L.X + Rr.X) / 2, to.Y, Math.max(1, (Rr.X - L.X) / 2), ry, 0, 0, Math.PI);
       } else {
-        ctx.lineTo(corners.p.X, corners.p.Y);
-        ctx.lineTo(corners.m.X, corners.m.Y);
+        bandCtx.lineTo(corners.p.X, corners.p.Y);
+        bandCtx.lineTo(corners.m.X, corners.m.Y);
       }
-      ctx.closePath(); ctx.fill();
+      bandCtx.closePath(); bandCtx.fill();
+      if (blend) {
+        paintBeamLandingFade(bandCtx, from, corners, 1, "destination-in");
+        ctx.drawImage(beamBlendCanvas, 0, 0, blend.pw, blend.ph, blend.x0, blend.y0, blend.w, blend.h);
+      }
     }
     // 当たったところ。帯の裾と同じ広さまで半影を伸ばす（境目が線で出ないように）
     // 何にも当たらず図の外へ抜ける光は、丸を描かない（丸い当たりを描くと光る玉に見える）
@@ -1938,38 +1993,42 @@
       // 灯の強さぶんだけ暗幕を剥がす。20%の灯なら20%ぶんしか明るくならない（2026-09-13）
       const lv = E.clamp(E.finite(sp.lv, 1), 0, 1); if (lv <= 0) return;
       if (sp.cycQuads) { punchCycHole(mctx, sp.cycQuads, lv); return; }   // ホリゾントライトの帯
-      mctx.beginPath();
-      if (sp.onlyPool) { /* 光条の穴は開けない */ } else if (sp.asLine) {
-        /* 真上から見る図では光を三角に開かない（drawBeamと同じ理由）。実際に見えるのは
-           細い破線だけなので、穴もその太さに合わせた細い帯にする。太い三角を穴にすると
-           そこだけ地が明るく見えてしまう。 */
-        const dx = sp.landX - sp.fromX, dy = sp.landY - sp.fromY, len = Math.hypot(dx, dy) || 1;
-        const nx = (-dy / len) * 5, ny = (dx / len) * 5;
-        mctx.moveTo(sp.fromX + nx, sp.fromY + ny); mctx.lineTo(sp.landX + nx, sp.landY + ny);
-        mctx.lineTo(sp.landX - nx, sp.landY - ny); mctx.lineTo(sp.fromX - nx, sp.fromY - ny);
-      } else if (sp.lying) {
-        mctx.moveTo(sp.fromX, sp.fromY);
-        if (sp.corners) {
-          // バーンドア／カッターで角が内へ寄っているときは drawBeam と同じ角・同じ半円で抜く
-          const cp = sp.corners, L = cp.p.X < cp.m.X ? cp.p : cp.m, Rr = L === cp.p ? cp.m : cp.p;
-          mctx.lineTo(Rr.X, Rr.Y);
-          mctx.ellipse((L.X + Rr.X) / 2, sp.landY, Math.max(1, (Rr.X - L.X) / 2), sp.ry, 0, 0, Math.PI);
+      const fadedHole = sp.silhouette && !sp.onlyPool && !sp.asLine && sp.corners &&
+        paintBeamLandingFade(mctx, { X: sp.fromX, Y: sp.fromY }, sp.corners, 0.85 * lv, "destination-out");
+      if (!fadedHole) {
+        mctx.beginPath();
+        if (sp.onlyPool) { /* 光条の穴は開けない */ } else if (sp.asLine) {
+          /* 真上から見る図では光を三角に開かない（drawBeamと同じ理由）。実際に見えるのは
+             細い破線だけなので、穴もその太さに合わせた細い帯にする。太い三角を穴にすると
+             そこだけ地が明るく見えてしまう。 */
+          const dx = sp.landX - sp.fromX, dy = sp.landY - sp.fromY, len = Math.hypot(dx, dy) || 1;
+          const nx = (-dy / len) * 5, ny = (dx / len) * 5;
+          mctx.moveTo(sp.fromX + nx, sp.fromY + ny); mctx.lineTo(sp.landX + nx, sp.landY + ny);
+          mctx.lineTo(sp.landX - nx, sp.landY - ny); mctx.lineTo(sp.fromX - nx, sp.fromY - ny);
+        } else if (sp.lying && !sp.silhouette) {
+          mctx.moveTo(sp.fromX, sp.fromY);
+          if (sp.corners) {
+            // バーンドア／カッターで角が内へ寄っているときは drawBeam と同じ角・同じ半円で抜く
+            const cp = sp.corners, L = cp.p.X < cp.m.X ? cp.p : cp.m, Rr = L === cp.p ? cp.m : cp.p;
+            mctx.lineTo(Rr.X, Rr.Y);
+            mctx.ellipse((L.X + Rr.X) / 2, sp.landY, Math.max(1, (Rr.X - L.X) / 2), sp.ry, 0, 0, Math.PI);
+          } else {
+            mctx.lineTo(sp.landX + sp.halfW, sp.landY);
+            mctx.ellipse(sp.landX, sp.landY, sp.halfW, sp.ry, 0, 0, Math.PI);
+          }
+        } else if (sp.corners) {
+          mctx.moveTo(sp.fromX, sp.fromY);
+          mctx.lineTo(sp.corners.p.X, sp.corners.p.Y);
+          mctx.lineTo(sp.corners.m.X, sp.corners.m.Y);
         } else {
-          mctx.lineTo(sp.landX + sp.halfW, sp.landY);
-          mctx.ellipse(sp.landX, sp.landY, sp.halfW, sp.ry, 0, 0, Math.PI);
+          const dx = sp.landX - sp.fromX, dy = sp.landY - sp.fromY, len = Math.hypot(dx, dy) || 1;
+          const nx = (-dy / len) * sp.halfW, ny = (dx / len) * sp.halfW;
+          mctx.moveTo(sp.fromX, sp.fromY);
+          mctx.lineTo(sp.landX + nx, sp.landY + ny);
+          mctx.lineTo(sp.landX - nx, sp.landY - ny);
         }
-      } else if (sp.corners) {
-        mctx.moveTo(sp.fromX, sp.fromY);
-        mctx.lineTo(sp.corners.p.X, sp.corners.p.Y);
-        mctx.lineTo(sp.corners.m.X, sp.corners.m.Y);
-      } else {
-        const dx = sp.landX - sp.fromX, dy = sp.landY - sp.fromY, len = Math.hypot(dx, dy) || 1;
-        const nx = (-dy / len) * sp.halfW, ny = (dx / len) * sp.halfW;
-        mctx.moveTo(sp.fromX, sp.fromY);
-        mctx.lineTo(sp.landX + nx, sp.landY + ny);
-        mctx.lineTo(sp.landX - nx, sp.landY - ny);
+        mctx.closePath(); mctx.fillStyle = `rgba(255,255,255,${0.85 * lv})`; mctx.fill();
       }
-      mctx.closePath(); mctx.fillStyle = `rgba(255,255,255,${0.85 * lv})`; mctx.fill();
       // 何にも当たらず抜けていく光は着地の丸みを描かない（光自体にも無い）ので、穴にも足さない
       if (sp.noPool) return;
       // 着地の丸み（pool）も、光と同じ「単位円をここへ写す行列」で抜く

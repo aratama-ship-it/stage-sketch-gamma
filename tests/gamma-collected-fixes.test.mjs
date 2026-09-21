@@ -54,3 +54,59 @@ test("sample A-3 uses registered height at normal visual scale for performers 09
   assert.equal(doc.project.cast.find((row) => row.id === "ft-cast-p09")?.heightCm, 160);
   assert.equal(doc.project.cast.find((row) => row.id === "ft-cast-p16")?.heightCm, 163);
 });
+
+test("E opens a fully visible timeline in stage and lighting-design workspaces", () => {
+  const stage = read("stage.html");
+  const sketch = read("stage-sketch.js");
+  const timeline = read("stage-timeline.js");
+  const gammaCss = read("gamma.css");
+  const style = read("style.css");
+  const workspace = read("gamma-workspace.js");
+  const embed = read("light-design/embed.js");
+
+  assert.match(timeline, /horizontalScrollbar = Math\.max\(0, els\.viewport\.offsetHeight - els\.viewport\.clientHeight\)/);
+  assert.match(timeline, /workspace === "light-placement" \|\| workspace === "venue-setup"/);
+  assert.match(timeline, /stage-timeline-toggle-request/);
+  assert.doesNotMatch(gammaCss, /data-gamma-workspace\^="light-"\] #stage-timeline-panel/);
+  assert.match(gammaCss, /data-gamma-workspace="light-placement"\] #stage-timeline-panel/);
+  assert.doesNotMatch(style, /data-gamma-workspace\^="light-"\] \.stage-timeline-resize-handle/);
+  assert.match(workspace, /event\.data\?\.type==='gamma:timeline-toggle' && mode==='light-design'/);
+  assert.match(workspace, /stage-timeline-layout-change/);
+  assert.match(workspace, /stage-scene-change/);
+  assert.match(workspace, /timelineOpen\?120:\(narrow\?280:360\)/);
+  assert.match(embed, /parent\.postMessage\(\{type:'gamma:timeline-toggle'\},location\.origin\)/);
+  assert.match(embed, /state\.sceneIndex=Math\.max\(0,state\.scenes\.findIndex\(row=>row\.id===next\.activeSceneId\)\)/);
+  assert.match(stage, /class="stage-timeline-shortcut" aria-hidden="true">E<\/span>/);
+  assert.match(style, /\.stage-timeline-shortcut\s*\{/);
+  assert.match(timeline, /function syncTimelineLightCue\(seconds/);
+  assert.match(timeline, /bridge\.applyTimelineLightCue\(cue/);
+  assert.match(sketch, /let timelineLightCue = \{ cueId: "", sceneId: "" \}/);
+  assert.match(sketch, /sceneId = timelineLightCue\.sceneId/);
+  assert.match(sketch, /stage-timeline-light-cue-change/);
+});
+
+test("stage tools can toggle rendered lighting without adding show data", () => {
+  const stage = read("stage.html");
+  const sketch = read("stage-sketch.js");
+  assert.match(stage, /id="stage-light-render-toggle"/);
+  assert.match(stage, /aria-label="照明効果の表示を切り替える"/);
+  assert.match(sketch, /prefs\.lightPool = next/);
+  assert.match(sketch, /if \(next && !featureOn\("lightBeam"\)/);
+  assert.match(sketch, /const drawAim = model\.counts\.total <= 200 && !featureOn\("lightPool"\)/);
+});
+
+test("number keys switch the five workspace tabs without bypassing existing tab behavior", () => {
+  const stage = read("stage.html");
+  const sketch = read("stage-sketch.js");
+  const workspace = read("gamma-workspace.js");
+  const embed = read("light-design/embed.js");
+
+  for (const key of ["1", "2", "3", "4", "5"]) {
+    assert.match(stage, new RegExp(`data-stage-workspace-shortcut="${key}"[^>]*aria-keyshortcuts="${key}"`));
+  }
+  assert.match(sketch, /タブを切り替える（舞台・劇場設定・機材配置・照明デザイン・3D）/);
+  assert.match(workspace, /if\(!activateWorkspaceShortcut\(event\.key\)\) return/);
+  assert.match(workspace, /button\.click\(\)/);
+  assert.match(workspace, /event\.data\?\.type==='gamma:workspace-shortcut'/);
+  assert.match(embed, /parent\.postMessage\(\{type:'gamma:workspace-shortcut',key:event\.key\},location\.origin\)/);
+});

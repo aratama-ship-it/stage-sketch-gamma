@@ -4478,6 +4478,7 @@
     pitchCaption: document.getElementById("stage-pitch-caption"),
     pitchLangs: document.getElementById("stage-pitch-langs"),
     toolHint: document.getElementById("stage-tool-hint"),
+    lightRenderToggle: document.getElementById("stage-light-render-toggle"),
     arrowOptions: document.getElementById("stage-arrow-options"),
     arrowPlaneFloor: document.getElementById("stage-arrow-plane-floor"),
     arrowPlaneAir: document.getElementById("stage-arrow-plane-air"),
@@ -14963,12 +14964,30 @@
    *
    * モデルは毎フレーム作らない。灯体は最大1000台あり得るので、
    * 照明デザインの実体と場面が変わったときだけ組み直す。 */
+  let timelineLightCue = { cueId: "", sceneId: "" };
   let lightCueOverlayCache = { design: undefined, sceneId: "", model: null };
+  function setTimelineLightCue(nextCue, { renderAfter = true } = {}) {
+    const cueId = nextCue && typeof nextCue.cueId === "string" ? nextCue.cueId : "";
+    const requestedSceneId = nextCue && typeof nextCue.sceneId === "string" ? nextCue.sceneId : "";
+    const sceneId = requestedSceneId && state.project.scenes.some(
+      (row) => row.kind === "scene" && row.id === requestedSceneId,
+    ) ? requestedSceneId : "";
+    if (timelineLightCue.cueId === cueId && timelineLightCue.sceneId === sceneId) return true;
+    timelineLightCue = { cueId, sceneId };
+    lightCueOverlayCache = { design: undefined, sceneId: "", model: null };
+    syncSpinRun(false);
+    if (renderAfter) render();
+    window.dispatchEvent(new CustomEvent("stage-timeline-light-cue-change", {
+      detail: { cueId: cueId || null, sceneId: sceneId || null },
+    }));
+    return true;
+  }
   function lightCueOverlayModel() {
     const api = window.SHOSAI_STAGE_LIGHT_CUE_OVERLAY;
     const planApi = lightingPlanOverlayApi();
     const design = state.project && state.project.lightingDesign;
-    const sceneId = (state.project && state.project.activeSceneId) || "";
+    const sceneId = timelineLightCue.sceneId
+      || (state.project && state.project.activeSceneId) || "";
     if (!api || !planApi || !design) return null;
     if (lightCueOverlayCache.design !== design || lightCueOverlayCache.sceneId !== sceneId) {
       lightCueOverlayCache = { design, sceneId, model: api.build(design, sceneId, planApi) };
@@ -15253,7 +15272,9 @@
   function drawLightCueOverlayFront(target, L) {
     const model = lightCueOverlayForLayout(L);
     if (!model) return;
-    const drawAim = model.counts.total <= 200;
+    /* 光だまりを出している間は、その中心へ向かう作図用の直線を重ねない。
+       実際の光の筋と二重になり、白い灯では光だまりの中へ線が刺さって見えていた。 */
+    const drawAim = model.counts.total <= 200 && !featureOn("lightPool");
     const raise = (u, v, metres) => {
       const pos = place(u, v, L);
       const rawY = pos.rawY - Math.max(0, metres) * perMetre(pos, L).y;
@@ -23727,6 +23748,7 @@
      キーを足したときに一覧だけ古くなる（説明の吹き出しも同じ作りにしてある）。
      残りは道具ではない決まったキー。押す場所が要るものは、そう書いておく。 */
   const FIXED_KEYS = [
+    ["タブを切り替える（舞台・劇場設定・機材配置・照明デザイン・3D）", "1 2 3 4 5"],
     ["シーンを送る", "↑ ↓ ← →"],
     ["全画面", "F"],
     ["表示する図を切り替える（両方表示中は上下順を変更）", "T"],
@@ -24033,6 +24055,25 @@
     return featureOn("workLightOff") ? "dark" : "beam";
   }
 
+  function syncLightRenderToggle() {
+    if (!els.lightRenderToggle) return;
+    els.lightRenderToggle.setAttribute("aria-pressed", String(featureOn("lightPool")));
+  }
+
+  /* 舞台タブで光を見比べるための近道。OFF時は lightPool だけを切り、光の筋・本番の暗さの
+     選択値は残すので、もう一度ONにすると直前の見え方へ戻れる。初回ONだけは光だまりと筋を
+     一緒に出す。保存先は既存の端末設定で、ショープロジェクトの形式は増やさない。 */
+  function toggleLightRendering() {
+    const next = !featureOn("lightPool");
+    prefs.lightPool = next;
+    if (next && !featureOn("lightBeam") && !featureOn("workLightOff")) prefs.lightBeam = true;
+    savePrefs();
+    applyFeatureFlags();
+    renderPrefs();
+    render();
+    announce(next ? "照明効果を表示しました。" : "照明効果を隠しました。");
+  }
+
   function lightLookRow() {
     return prefSelectRow("照明の見え方", currentLightLookStep(),
       LIGHT_LOOK_STEPS.map((step) => [step.value, step.label]), LIGHT_LOOK_HINT, (next) => {
@@ -24327,6 +24368,7 @@
   function applyFeatureFlags() {
     applyPanelVisibility();
     if (els.presentBtn) els.presentBtn.hidden = !featureOn("presentation");
+    syncLightRenderToggle();
     syncMultiSelectionControls();
     // 光の意図: カード・重ねのトグル・照らし合わせをまとめて出し入れする
     if (els.frontLightIntent) {
@@ -24885,6 +24927,7 @@ ${propsPlotHtml}
       announce("共有セッション中はホストのシーンに追従します。");
       return;
     }
+    if (!options.fromTimeline) setTimelineLightCue(null);
     closeNoteEditor();
     selectedNoteId = null;
     const cursorFromId = state.cursorRowId;    // 直前にカーソルがあった行（セクションの場合もある）も描き直す対象
@@ -30966,6 +31009,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       announce(state.showLightsFront ? "正面の照明を点けました。" : "正面の照明を消しました。");
     });
   }
+  if (els.lightRenderToggle) els.lightRenderToggle.addEventListener("click", toggleLightRendering);
   if (els.frontLightIntent) {
     els.frontLightIntent.addEventListener("change", (e) => {
       state.showLightIntent = e.target.checked;
@@ -34207,6 +34251,9 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       if (!next) return false;
       openScene(next.id, options);
       return state.project.activeSceneId === next.id;
+    },
+    applyTimelineLightCue(cue) {
+      return setTimelineLightCue(cue);
     },
     openSceneDetailsById(id) {
       const scene = state.project.scenes.find((row) => row.kind === "scene" && row.id === id);

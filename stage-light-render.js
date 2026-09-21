@@ -59,6 +59,7 @@
   const BEAM_FALL_HI = 1.35;    // 上限。灯体側が飽和しないように
   const BEAM_FALL_STOPS = 9;    // 長さ方向の色止めの数（spotFalloff の9点に合わせる）
   const BEAM_FALL_NORM_T = 0.5; // ここを1.0に正規化する＝筋の中ほどは今までと同じ濃さ
+  const BEAM_LANDING_FADE_START = 0.72; // 着地点では光だまりへ溶かし、三角の底辺を見せない
   /* R-2「空気のむら（世界に固定された霧）」（2026-09-19・本人決定「R-2 を『もや』にする。段階5③は棚上げ」）。
      ★つまみは1つ＝照明デザインの場面ごとの `environment.haze`（0〜100・照明を組む画面の値・既定35）。
        hazeAmount(haze) で振れ幅へ写す: 100 → HAZE_MAX、35 → 0.15、70 → 0.30（設計 §4-4 の「確認用 0.30」）。
@@ -381,8 +382,61 @@
     return gradient;
   }
 
+  /* 正面図の光の筋は、投影後の光だまりへ接する2本の線で裾を決める。
+     以前は楕円の短軸だけを裾に使っていたため、斜めから当てる灯では長軸の傾きが
+     無視され、筋と光だまりが別々の場所へ向いて見えた。ここでは実際に paintPool が
+     描く楕円（BEAM_SOFT を含む）へ、灯体の画面位置から引ける接線を解く。 */
+  function beamLandingTangents(pool, P) {
+    if (!pool || !pool.c || !pool.ea || !pool.eb || !pool.from || typeof P !== "function") return null;
+    const from = P(pool.from), centre = P(pool.c);
+    const alongA = P(add(pool.c, pool.ea)), alongB = P(add(pool.c, pool.eb));
+    if (!from || !centre || !alongA || !alongB) return null;
+    const ax = (alongA.X - centre.X) * BEAM_SOFT;
+    const ay = (alongA.Y - centre.Y) * BEAM_SOFT;
+    const bx = (alongB.X - centre.X) * BEAM_SOFT;
+    const by = (alongB.Y - centre.Y) * BEAM_SOFT;
+    if (![from.X, from.Y, centre.X, centre.Y, ax, ay, bx, by].every(Number.isFinite)) return null;
+    const dx = centre.X - from.X, dy = centre.Y - from.Y;
+    const cross = (x1, y1, x2, y2) => x1 * y2 - y1 * x2;
+    const u = cross(dx, dy, bx, by);
+    const v = -cross(dx, dy, ax, ay);
+    const w = cross(ax, ay, bx, by);
+    const radius = Math.hypot(u, v);
+    if (!(radius > 1e-6) || Math.abs(w) >= radius - 1e-6) return null;
+    const base = Math.atan2(v, u);
+    const spread = Math.acos(clamp(-w / radius, -1, 1));
+    const pointAt = (angle) => ({
+      X: centre.X + ax * Math.cos(angle) + bx * Math.sin(angle),
+      Y: centre.Y + ay * Math.cos(angle) + by * Math.sin(angle),
+    });
+    const cornerP = pointAt(base + spread);
+    const cornerM = pointAt(base - spread);
+    if (Math.hypot(cornerP.X - cornerM.X, cornerP.Y - cornerM.Y) < 1) return null;
+    return { from, centre, cornerP, cornerM, ax, ay, bx, by };
+  }
+
+  /* 一時キャンバス上の帯だけを薄くする。斜めの底辺でも灯体→左右の接点を
+     それぞれ0→1に写し、底辺全体のαを0にする。主キャンバスの床は消さない。 */
+  function fadeBeamLanding(target, from, cornerP, cornerM, start = BEAM_LANDING_FADE_START) {
+    const sideX = (cornerP.X - cornerM.X) / 2, sideY = (cornerP.Y - cornerM.Y) / 2;
+    const axisX = (cornerP.X + cornerM.X) / 2 - from.X;
+    const axisY = (cornerP.Y + cornerM.Y) / 2 - from.Y;
+    if (Math.abs(sideX * axisY - sideY * axisX) < 1e-6) return false;
+    target.save();
+    target.globalCompositeOperation = "destination-in";
+    target.transform(sideX, sideY, axisX, axisY, from.X, from.Y);
+    const fade = target.createLinearGradient(0, 0, 0, 1);
+    fade.addColorStop(0, "#fff");
+    fade.addColorStop(start, "#fff");
+    fade.addColorStop(1, "rgba(255,255,255,0)");
+    target.fillStyle = fade;
+    target.fillRect(-1, 0, 2, 1);
+    target.restore();
+    return true;
+  }
+
   function paintBeam(ctx, pool, P, opts) {
-    if (!pool || !pool.c || !pool.eb || !pool.from) return false;
+    if (!pool || !pool.c || !pool.ea || !pool.eb || !pool.from) return false;
     const level = clamp(finite(pool.level, 0), 0, 100) / 100;
     if (!(level > 0)) return false;
     const from = P(pool.from);
@@ -408,13 +462,26 @@
     }
 
     if (!(span > BAND_MIN_PX)) return false;
-    const alongB = P(add(pool.c, pool.eb));
-    if (!alongB) return false;
-    const bx = (alongB.X - centre.X) * BEAM_SOFT, by = (alongB.Y - centre.Y) * BEAM_SOFT;
-    if (!Number.isFinite(bx + by) || Math.hypot(bx, by) < 1) return false;
-
-    const cornerP = { X: centre.X + bx, Y: centre.Y + by };
-    const cornerM = { X: centre.X - bx, Y: centre.Y - by };
+    const landing = beamLandingTangents(pool, P);
+    let cornerP = landing && landing.cornerP;
+    let cornerM = landing && landing.cornerM;
+    if (landing && Array.isArray(pool.cuts) && pool.cuts.length && root.RIG_ENGINE && root.RIG_ENGINE.beamLandingSilhouette) {
+      const cutLanding = root.RIG_ENGINE.beamLandingSilhouette(landing.from,
+        { cx: landing.centre.X, cy: landing.centre.Y, ax: landing.ax, ay: landing.ay, bx: landing.bx, by: landing.by },
+        pool.cuts.map((cut) => ({ mx: cut.mx, my: cut.my, d: cut.d / BEAM_SOFT,
+          soft: finite(cut.soft, 0.04) / BEAM_SOFT })));
+      if (cutLanding) { cornerP = cutLanding.cornerP; cornerM = cutLanding.cornerM; }
+    }
+    /* 極端に広い光で灯体の投影が楕円内へ入ると接線は存在しない。その場合まで筋を
+       消さないよう、従来の短軸端へだけ戻す（通常の灯は上の接線経路を通る）。 */
+    if (!cornerP || !cornerM) {
+      const alongB = P(add(pool.c, pool.eb));
+      if (!alongB) return false;
+      const bx = (alongB.X - centre.X) * BEAM_SOFT, by = (alongB.Y - centre.Y) * BEAM_SOFT;
+      if (!Number.isFinite(bx + by) || Math.hypot(bx, by) < 1) return false;
+      cornerP = { X: centre.X + bx, Y: centre.Y + by };
+      cornerM = { X: centre.X - bx, Y: centre.Y - by };
+    }
 
     /* 長さ方向の濃淡（灯体に近いほど明るい）。
        ★掛け算なので、光だまりと同じく**別のキャンバスで「横断 × 長さ」を作ってから1枚で載せる**。
@@ -463,6 +530,7 @@
     sheetCtx.fillStyle = shade;
     sheetCtx.fillRect(x0, y0, w, h);
     sheetCtx.globalCompositeOperation = "source-over";
+    fadeBeamLanding(sheetCtx, from, cornerP, cornerM);
     sheetCtx.setTransform(1, 0, 0, 1, 0, 0);
 
     ctx.save();
@@ -741,10 +809,10 @@
 
   const api = Object.freeze({
     paintPool, paintPools, paintBeam, paintBeams, paintWorkLight, litLevelAt, paintLaser, paintLasers,
-    beamFalloff, beamSheetFor, litColorAt, tintColor, hazeAmount, hazeAt, noise3,
+    beamFalloff, beamLandingTangents, fadeBeamLanding, beamSheetFor, litColorAt, tintColor, hazeAmount, hazeAt, noise3,
     TOKENS: Object.freeze({ VISUAL_GAIN, BEAM_SOFT, ALPHA_CORE, ALPHA_MID, ALPHA_EDGE, SOFT_DEFAULT,
       MIN_AREA_PX, BAND_ALPHA, BAND_MIN_PX, LINE_ALPHA, LINE_MIN_PX, HOLE_BAND, HOLE_LINE_PX,
-      BEAM_FALL_R0, BEAM_FALL_P, BEAM_FALL_LO, BEAM_FALL_HI, BEAM_FALL_STOPS, BEAM_FALL_NORM_T,
+      BEAM_FALL_R0, BEAM_FALL_P, BEAM_FALL_LO, BEAM_FALL_HI, BEAM_FALL_STOPS, BEAM_FALL_NORM_T, BEAM_LANDING_FADE_START,
       HAZE_AMOUNT, HAZE_MAX, HAZE_SCALE_M, COSTUME_AMBIENT }),
   });
   if (typeof module !== "undefined" && module.exports) module.exports = api;

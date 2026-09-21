@@ -17720,7 +17720,8 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
  * 大きさは28px角。畳んだとき下に残る帯（12px）より大きくないと掴み所にならない。
  * 中の3本線で「引ける」ことを示す（ただの四角だと押せるのか引けるのか読めない）。 */
 /* T-08 三度目（2026-09-18 本人選択）: 取っ手ではなく「時間の目盛りが覗く箱」にする。
- * 40×22（2代目72×34の面積36%）。地は不透明＝下のパネルの文字と重なって読めなくなるのを防ぐ。
+ * 目盛り箱40×22（2代目72×34の面積36%）＋ショートカット表示Eで操作領域52×22。
+ * 地は不透明＝下のパネルの文字と重なって読めなくなるのを防ぐ。
  * 数値・コントラストの実測値・却下した案は design/TOKEN_SHEET_timeline_grip_2026-09-18.md が正本。
  * ★上へ引くとタイムラインが上がるので、取っ手もそれに合わせて上がる。
  *   位置は stage-timeline.js が --stage-timeline-grip-bottom へ入れる
@@ -17730,9 +17731,10 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
   z-index: 47;
   left: 14px;
   bottom: calc(var(--stage-timeline-grip-bottom, 0px) + env(safe-area-inset-bottom, 0px));
-  display: grid;
-  place-items: end center;
-  width: 40px;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  width: 52px;
   height: 22px;
   /* ★全体規則の button { min-height: 44px } が height に勝つ（S-01 と同じ罠）。 */
   min-height: 22px;
@@ -17746,6 +17748,7 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
 }
 
 .stage-timeline-resize-handle svg {
+  flex: 0 0 40px;
   display: block;
   width: 40px;
   height: 22px;
@@ -17753,6 +17756,16 @@ html:not(.stage-phone-viewer) #stage-canvas-stack.is-single-view .stage-board-fr
   fill: none;
   stroke: currentColor;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.75));
+}
+
+.stage-timeline-shortcut {
+  flex: 0 0 auto;
+  margin-bottom: 2px;
+  color: currentColor;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .stage-timeline-resize-handle:hover,
@@ -17769,9 +17782,10 @@ body.is-timeline-will-collapse .stage-timeline-resize { background: rgba(239, 23
 .stage-timeline-resize-handle:focus-visible { color: var(--milk); border-color: var(--brass); }
 .stage-timeline-resize-handle:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 
-/* 全画面・発表中・照明や劇場設定のモードでは出さない（タイムライン自体が出ていない）。 */
+/* 全画面・発表中・機材配置・劇場設定では出さない。
+ * 照明デザインでは舞台と同じタイムラインを使うため取っ手も残す。 */
 body.stage-fullscreen .stage-timeline-resize-handle,
-body[data-gamma-workspace^="light-"] .stage-timeline-resize-handle,
+body[data-gamma-workspace="light-placement"] .stage-timeline-resize-handle,
 body[data-gamma-workspace="venue-setup"] .stage-timeline-resize-handle { display: none; }
 
 /* T-24（2026-09-18 本人要望）: 一覧の並べ替え。名前を掴んで上下に動かす。

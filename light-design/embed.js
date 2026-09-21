@@ -62,7 +62,7 @@
     if(context?.showId===next.showId && state.dirty) {
       if(context.basis!==next.basis || changedElsewhere) {
         message('ショーが更新されています。照明の編集中データは保持しています。「保存」からファイルへ控えてください');
-      } else {synchronizePieces(next);synchronizeVenueMask(next);}
+      } else {synchronizePieces(next);synchronizeVenueMask(next);state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));}
       active=true;setMode(mode);return;
     }
     if(context?.showId===next.showId && context.basis===next.basis) {
@@ -117,6 +117,21 @@
   document.getElementById('close').title='編集を保持して通常モードへ戻る';
   document.getElementById('mode-place').onclick=()=>parent.GAMMA_WORKSPACE.select('light-placement');
   document.getElementById('mode-move').onclick=()=>parent.GAMMA_WORKSPACE.select('light-design');
+  /* iframeにフォーカスがある間も、舞台と同じEで親画面のタイムラインを開閉する。
+     1〜5も親のタブへ渡し、照明図を操作した直後でも同じショートカットで移動できるようにする。 */
+  document.addEventListener('keydown',event=>{
+    const target=event.target,tag=target?.tagName;
+    if(['INPUT','TEXTAREA','SELECT'].includes(tag)||target?.isContentEditable) return;
+    if(event.metaKey||event.ctrlKey||event.altKey||event.shiftKey||event.repeat) return;
+    if(/^[1-5]$/.test(event.key)) {
+      event.preventDefault();event.stopImmediatePropagation();
+      parent.postMessage({type:'gamma:workspace-shortcut',key:event.key},location.origin);
+      return;
+    }
+    if(event.code!=='KeyE') return;
+    event.preventDefault();event.stopImmediatePropagation();
+    parent.postMessage({type:'gamma:timeline-toggle'},location.origin);
+  },true);
   window.addEventListener('gamma-light-edit',()=>{
     parent.GAMMA_WORKSPACE.syncHistory();
     if(loading || !context) return;

@@ -37,10 +37,10 @@
 #stage-workspace-tabs { flex-wrap: wrap; }
 #stage-workspace-tabs button { min-height: var(--gamma-hit); white-space: nowrap; }
 body[data-gamma-workspace^="light-"] .stage-sketch-grid { display: none !important; }
-body[data-gamma-workspace^="light-"] #stage-timeline-panel { display: none !important; }
+body[data-gamma-workspace="light-placement"] #stage-timeline-panel { display: none !important; }
 body[data-gamma-workspace="venue-setup"] .stage-sketch-grid { display: none !important; }
 body[data-gamma-workspace="venue-setup"] #stage-timeline-panel { display: none !important; }
-body[data-gamma-workspace^="light-"].stage-timeline-expanded:not(.stage-fullscreen) #view-stage,
+body[data-gamma-workspace="light-placement"].stage-timeline-expanded:not(.stage-fullscreen) #view-stage,
 body[data-gamma-workspace="venue-setup"].stage-timeline-expanded:not(.stage-fullscreen) #view-stage {
   height: 100dvh;
   padding-bottom: 16px;

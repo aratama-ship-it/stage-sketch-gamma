@@ -225,6 +225,50 @@
     return { mx: A / e, my: B / e, d: 1 - clamp(finite(door.f, 0), 0, 1), soft: finite(door.soft, SHUTTER_SOFT) };
   };
 
+  /* 投影済みの光だまり（単位円をアフィン変換した形）から、灯体に見える左右の輪郭点を返す。
+     カッター／バーンドアを同じ単位円で切ってから接線を探すため、帯だけ元の円の幅に
+     残ることがない。soft は光だまりの半影が完全に消える外縁まで含める。 */
+  const beamLandingSilhouette = (from, pool, cuts = []) => {
+    if (!from || !pool || ![from.X, from.Y, pool.cx, pool.cy, pool.ax, pool.ay, pool.bx, pool.by].every(Number.isFinite)) return null;
+    const count = 192;
+    let polygon = Array.from({ length: count }, (_, i) => {
+      const a = (i / count) * Math.PI * 2;
+      return { x: Math.cos(a), y: Math.sin(a) };
+    });
+    for (const cut of cuts) {
+      if (!cut || ![cut.mx, cut.my, cut.d].every(Number.isFinite)) continue;
+      const edge = cut.d + Math.max(0, finite(cut.soft, 0));
+      const side = (p) => cut.mx * p.x + cut.my * p.y - edge;
+      const next = [];
+      for (let i = 0; i < polygon.length; i++) {
+        const a = polygon[i], b = polygon[(i + 1) % polygon.length];
+        const da = side(a), db = side(b);
+        if (da <= 0) next.push(a);
+        if ((da < 0 && db > 0) || (da > 0 && db < 0)) {
+          const t = da / (da - db);
+          next.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+        }
+      }
+      polygon = next;
+      if (polygon.length < 2) return null;
+    }
+    const points = polygon.map((p) => ({ X: pool.cx + pool.ax * p.x + pool.bx * p.y,
+      Y: pool.cy + pool.ay * p.x + pool.by * p.y }));
+    const middle = points.reduce((a, p) => ({ X: a.X + p.X / points.length, Y: a.Y + p.Y / points.length }), { X: 0, Y: 0 });
+    const dx = middle.X - from.X, dy = middle.Y - from.Y;
+    if (Math.hypot(dx, dy) < 1) return null;
+    let min = null, max = null;
+    for (const p of points) {
+      const vx = p.X - from.X, vy = p.Y - from.Y;
+      const angle = Math.atan2(dx * vy - dy * vx, dx * vx + dy * vy);
+      if (!min || angle < min.angle) min = { angle, point: p };
+      if (!max || angle > max.angle) max = { angle, point: p };
+    }
+    if (!min || !max || max.angle - min.angle >= Math.PI ||
+        Math.hypot(max.point.X - min.point.X, max.point.Y - min.point.Y) < 1) return null;
+    return { cornerP: max.point, cornerM: min.point };
+  };
+
   const trussById = (rig, id) => (rig.trusses || []).find((t) => t.id === id) || null;
 
   // 奥から何段目（1始まり）。表示専用。保存はしない
@@ -1081,6 +1125,6 @@
     makePlanProjector, makeFrontProjector, makeSideProjector, planToUV, frontToUH, sideToVH,
     describeMount, describeCue,
     CURTAIN_KINDS, curtainKindLabel, curtainParts,
-    BARN_KEYS, SHUTTER_MIN, SHUTTER_MAX, SHUTTER_ROT_MAX, newShutter, barnOf, barnActive, shutterActive, frameDoors, doorCutInEllipse,
+    BARN_KEYS, SHUTTER_MIN, SHUTTER_MAX, SHUTTER_ROT_MAX, newShutter, barnOf, barnActive, shutterActive, frameDoors, doorCutInEllipse, beamLandingSilhouette,
   });
 })(typeof window !== "undefined" ? window : globalThis);

@@ -260,6 +260,7 @@
   const audioWaveformCache = new Map();
   const audioWaveformPending = new Set();
   let pendingSeek = null;
+  let appliedLightCueIdentity = null;
   let resizeTimer = 0;
   let timelineResize = null;
   let silentPlayback = null;
@@ -414,6 +415,9 @@
       els.resize.setAttribute("aria-valuenow", String(ui.height));
     }
     syncGripBottom();
+    window.dispatchEvent(new CustomEvent("stage-timeline-layout-change", {
+      detail: { collapsed: ui.collapsed, height: ui.height },
+    }));
     if (save) saveUi();
   }
 
@@ -463,6 +467,9 @@
     document.body.classList.toggle("stage-timeline-expanded", !next);
     resetOuterDocumentScroll();
     syncGripBottom();
+    window.dispatchEvent(new CustomEvent("stage-timeline-layout-change", {
+      detail: { collapsed: next, height: ui.height },
+    }));
     els.resize.setAttribute("aria-expanded", String(!next));
     [panel.querySelector(".stage-timeline-toolbar"), els.viewport].filter(Boolean).forEach((element) => {
       element.inert = next;
@@ -576,7 +583,9 @@
   }
 
   function timelineInteractionIsBlocked() {
-    return document.body.dataset.gammaWorkspace?.startsWith("light-") || document.body.classList.contains("stage-fullscreen") || timelineOverlayIsOpen();
+    const workspace = document.body.dataset.gammaWorkspace;
+    return workspace === "light-placement" || workspace === "venue-setup"
+      || document.body.classList.contains("stage-fullscreen") || timelineOverlayIsOpen();
   }
 
   function syncTimelineAvailability() {
@@ -1489,6 +1498,29 @@
     });
   }
 
+  /* ライトキューは単なる印ではなく、その位置から対応するシーンの照明を呼び出す。
+   * 保存形式は増やさず、キューが置かれているシーンを既存の区間計算から導く。 */
+  function timelineLightCueAt(seconds) {
+    const documentValue = projectDocument();
+    const project = documentValue && documentValue.project;
+    if (!project || !timeline) return null;
+    const cues = timelineCuePresentations(project)
+      .filter((cue) => cue.cueType === "light" && cue.seconds <= seconds + 1e-6);
+    return cues[cues.length - 1] || null;
+  }
+
+  function syncTimelineLightCue(seconds, { force = false } = {}) {
+    if (typeof bridge.applyTimelineLightCue !== "function") return false;
+    const cue = timelineLightCueAt(seconds);
+    const identity = cue ? `${timeline.sectionId || "show"}:${cue.id}:${cue.sceneId}`
+      : `${timeline && timeline.sectionId || "show"}:none`;
+    if (!force && appliedLightCueIdentity === identity) return false;
+    appliedLightCueIdentity = identity;
+    return Boolean(bridge.applyTimelineLightCue(cue
+      ? { cueId: cue.id, sceneId: cue.sceneId }
+      : null));
+  }
+
   function closeTimelineLockMenu() {
     if (timelineLockMenuOutsideHandler) {
       document.removeEventListener("pointerdown", timelineLockMenuOutsideHandler, true);
@@ -2328,6 +2360,7 @@
   // 通常再生では転換の開始に合わせて、本体の移動アニメーションも開始する。
   // これにより、シーン帯の右端（転換終端）で次シーンの配置へ到着する。
   function syncTimelinePlaybackScene(seconds, { allowTransition = false } = {}) {
+    syncTimelineLightCue(seconds);
     const phase = timelineTransitionAt(seconds);
     const target = phase ? phase.target : segmentAt(seconds);
     const previous = playbackPosition;
@@ -2416,6 +2449,7 @@
     const playingThisTimeline = els.audio && audioMatchesTimeline();
     if (!silentPlayback && playingThisTimeline && Number.isFinite(els.audio.currentTime)) seekSeconds = els.audio.currentTime;
     seekSeconds = clamp(seekSeconds, 0, timeline.duration);
+    syncTimelineLightCue(seekSeconds);
     els.surface.style.setProperty("--stage-timeline-playhead-x", `${pxFor(seekSeconds)}px`);
     els.position.textContent = labelPosition(seekSeconds);
     window.dispatchEvent(new CustomEvent("stage-timeline-position-change", {
@@ -3286,29 +3320,40 @@
     applyTimelineHeight(next, { save: true });
     renderTimeline();
   });
-  // Eは舞台画面のタイムラインを開閉する。背景消去のShift+Eより先に処理する。
-  document.addEventListener("keydown", (event) => {
-    if (isTextEntry(event.target)) return;
-    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.code !== "KeyE") return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    if (event.repeat) return;
+  function toggleTimelineFromShortcut() {
     if (timelineInteractionIsBlocked()
-        || document.querySelector(".stage-modal:not([hidden])")) return;
+        || document.querySelector(".stage-modal:not([hidden])")) return false;
     const opening = ui.collapsed;
     setTimelineCollapsed(!ui.collapsed, { save: true });
     if (!ui.collapsed) {
       renderTimeline();
       if (opening) requestAnimationFrame(() => {
         const toolbar = panel.querySelector(".stage-timeline-toolbar");
+        /* 横スクロールバーは viewport.scrollHeight に含まれないが、表示領域を15px前後使う。
+           以前はそのぶんだけ最下段のセリフキューがバーの下へ隠れていた。実寸を足して、
+           OSごとにスクロールバーの太さが違っても全レーンが入る高さにする。 */
+        const horizontalScrollbar = Math.max(0, els.viewport.offsetHeight - els.viewport.clientHeight);
+        const panelChrome = Math.max(0, panel.offsetHeight - panel.clientHeight);
         const needed = (toolbar?.scrollHeight || 0) + (els.viewport?.scrollHeight || 0)
-          + timelineResizeHandleHeight();
+          + timelineResizeHandleHeight() + horizontalScrollbar + panelChrome;
         // Eでだけ、入る範囲まで全レーンを見せ、残りは既存の内部スクロールへ任せる。
         applyTimelineHeight(Math.min(maxTimelineHeight(), Math.max(DEFAULT_HEIGHT, needed)), { save: true });
         renderTimeline();
       });
     }
+    return true;
+  }
+  // Eは舞台画面と照明デザイン画面で同じタイムラインを開閉する。
+  // 背景消去のShift+Eより先に処理する。
+  document.addEventListener("keydown", (event) => {
+    if (isTextEntry(event.target)) return;
+    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.code !== "KeyE") return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (event.repeat) return;
+    toggleTimelineFromShortcut();
   }, true);
+  window.addEventListener("stage-timeline-toggle-request", toggleTimelineFromShortcut);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && timelineLockMenu) {
       event.preventDefault();
@@ -3431,11 +3476,21 @@
   // そのシーンの開始位置へそろえる。タイムライン自身の再生中は現在位置を戻さない。
   window.addEventListener("stage-scene-change", (event) => {
     const sceneId = event && event.detail && event.detail.sceneId;
+    if (!(event && event.detail && event.detail.fromTimeline)) {
+      appliedLightCueIdentity = null;
+      if (typeof bridge.applyTimelineLightCue === "function") bridge.applyTimelineLightCue(null);
+    }
     /* ★シーン切替では本体の一覧が直下の要素を入れ替えなくなった（2026-09-16）ので、
        上の MutationObserver は発火しない。「いまのシーン」の強調はここで軽く付け替える。
        切替先がいまのタイムライン（＝セクション）に無いときだけ、従来どおり全体を組み直す。 */
     if (!timeline || !timeline.segments.some((item) => item.sceneId === sceneId)) {
       renderTimeline();
+      const segment = timeline && timeline.segments.find((item) => item.sceneId === sceneId);
+      if (segment) {
+        seekSeconds = segment.start;
+        if (els.audio && audioMatchesTimeline()) els.audio.currentTime = seekSeconds;
+        updatePlayhead();
+      }
       return;
     }
     root.querySelectorAll(".stage-timeline-scene.is-current").forEach((node) => node.classList.remove("is-current"));

@@ -24,8 +24,13 @@
     const narrow=window.matchMedia('(max-width: 700px)').matches;
     const inset=bottomInset();
     if(isLightMode(mode)) {
-      const available=Math.floor(window.innerHeight-frame.getBoundingClientRect().top-inset-16);
-      frame.style.height=Math.max(narrow?280:360,available)+'px';
+      const view=document.getElementById('view-stage');
+      const viewBottom=view?Math.min(window.innerHeight,view.getBoundingClientRect().bottom):window.innerHeight;
+      const available=Math.floor(viewBottom-frame.getBoundingClientRect().top-inset-16);
+      /* 照明デザインでタイムラインを広げた間だけ、iframeの従来最小高360pxを外す。
+         狭い高さでは照明側を内部スクロールさせ、タイムラインと重ねない。 */
+      const timelineOpen=mode==='light-design' && document.body.classList.contains('stage-timeline-expanded');
+      frame.style.height=Math.max(timelineOpen?120:(narrow?280:360),available)+'px';
       return;
     }
     /* V-2（2026-09-17）: 劇場設定もモード画面として1画面に収める。
@@ -415,7 +420,7 @@
           goVenue.addEventListener('click',()=>select('venue-setup'));
           status.append(goVenue);
         } else if(!loaded) {
-          frame.src='light-design/index.html?embed=gamma&v=2026092124'; loaded=true;
+          frame.src='light-design/index.html?embed=gamma&v=2026092201'; loaded=true;
           status.textContent='照明デザインを開いています…';
         } else if(editor()) editor().open(context, next);
       } else if(next==='venue-setup') {
@@ -440,12 +445,56 @@
     try { editor().open(host.context(),mode); frame.hidden=false; status.textContent=''; syncHistory(); scheduleFrameHeight(); }
     catch(error) { failed(error); }
   });
+  /* ヘッダーの主要タブは左から1〜5。モードの状態を直接書き換えず、必ずタブを押すことで
+   * 劇場未設定のゲート、照明の未適用確認、3Dの開閉を従来と同じ経路へ通す。
+   * 入力欄・修飾キー・モーダル中は文字入力やその窓の操作を優先する。 */
+  function workspaceShortcutButton(key) {
+    return document.querySelector(`#stage-workspace-tabs [data-stage-workspace-shortcut="${key}"]`);
+  }
+  function workspaceShortcutBlocked(event) {
+    const target=event.target?.nodeType===1?event.target:null;
+    if(target && (target.isContentEditable || target.closest('input, textarea, select, [contenteditable="true"]'))) return true;
+    return [...document.querySelectorAll('[role="dialog"][aria-modal="true"]')]
+      .some(dialog=>!dialog.hidden && dialog.getClientRects().length>0);
+  }
+  function activateWorkspaceShortcut(key) {
+    const button=workspaceShortcutButton(key);
+    if(!button || button.disabled || button.getAttribute('aria-disabled')==='true') return false;
+    button.click();
+    return true;
+  }
+  document.addEventListener('keydown',event=>{
+    if(event.defaultPrevented || event.isComposing || event.repeat) return;
+    if(event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+    if(!/^[1-5]$/.test(event.key) || workspaceShortcutBlocked(event)) return;
+    if(!activateWorkspaceShortcut(event.key)) return;
+    event.preventDefault();
+  });
   document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode]').forEach(button=>button.addEventListener('click',()=>select(button.dataset.stageWorkspaceMode)));
   document.getElementById('stage-freecam-open')?.addEventListener('click',event=>{
     if(venueSetupPending()) { event.preventDefault(); event.stopImmediatePropagation(); select('venue-setup'); return; }
     editor()?.suspend();
   },true);
   window.addEventListener('stage-fpv-visibility',event=>{if(!event.detail?.active && isLightMode(mode)) editor()?.open(host.context(),mode);});
+  /* 照明デザイン内でEを押したときも、親画面の同じタイムラインを開閉する。
+     機材配置では従来どおり出さない。 */
+  window.addEventListener('message',event=>{
+    if(event.source!==frame.contentWindow || event.origin!==location.origin) return;
+    if(event.data?.type==='gamma:workspace-shortcut' && /^[1-5]$/.test(event.data.key||'')) {
+      activateWorkspaceShortcut(event.data.key);
+      return;
+    }
+    if(event.data?.type==='gamma:timeline-toggle' && mode==='light-design') {
+      window.dispatchEvent(new Event('stage-timeline-toggle-request'));
+    }
+  });
+  /* タイムラインの展開・高さ変更に合わせ、照明iframeの下端をタイムラインの上へ収める。 */
+  window.addEventListener('stage-timeline-layout-change',scheduleFrameHeight);
+  /* タイムライン再生・シーンレーンから場面が変わったとき、照明側も同じ場面へ追従する。 */
+  window.addEventListener('stage-scene-change',()=>{
+    if(mode!=='light-design' || !editor()) return;
+    const context=host.context();latestContext=context;editor().open(context,mode);scheduleFrameHeight();
+  });
   window.addEventListener('storage',event=>{
     if(event.key==='shosai-stage-sketch-v1' || event.key==='gamma:shosai-stage-sketch-v1') editor()?.externalChange();
   });

@@ -1008,6 +1008,10 @@
     /* ---- 道具バー ---- */
     "操作を選ぶ": "Choose a tool",
     "ものを動かす": "Move objects",
+    "照明効果": "Lighting effects",
+    "照明効果の表示を切り替える": "Toggle lighting effects",
+    "照明効果を表示しました。": "Lighting effects are now visible.",
+    "照明効果を隠しました。": "Lighting effects are now hidden.",
     "背景を塗る": "Paint backdrop",
     "照明を動かす": "Move lights",
     "背景を消す": "Erase backdrop",
