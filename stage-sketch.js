@@ -23762,6 +23762,7 @@
     ["シーンを送る", "↑ ↓ ← →"],
     ["全画面", "F"],
     ["表示する図を切り替える（両方表示中は上下順を変更）", "T"],
+    ["舞台で作業灯を消す・点ける", "G"],
     ["全画面で正面と平面を入れ替える", "X"],
     ["ショーを書き出す", "⌘S"],
     ["一つ戻す", "⌘Z"],
@@ -24082,6 +24083,20 @@
     renderPrefs();
     render();
     announce(next ? "照明効果を表示しました。" : "照明効果を隠しました。");
+  }
+
+  // Gは舞台の「本番の暗さ」を切り替える。消灯時は光だまりと筋も有効にし、
+  // 既存の3設定だけを保存する（ショープロジェクトの形式は変えない）。
+  function toggleWorkLightOff() {
+    const next = !featureOn("lightPool") || !featureOn("workLightOff");
+    prefs.lightPool = true;
+    prefs.lightBeam = true;
+    prefs.workLightOff = next;
+    savePrefs();
+    applyFeatureFlags();
+    renderPrefs();
+    render();
+    announce(next ? "作業灯を消しました。" : "作業灯を点けました。");
   }
 
   function lightLookRow() {
@@ -24645,6 +24660,19 @@
     event.preventDefault();
     els.viewSelect.value = next;
     els.viewSelect.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+
+  // Gは舞台タブだけ。照明デザインのGや入力欄の文字入力は奪わない。
+  document.addEventListener("keydown", (event) => {
+    if (String(event.key || "").toLowerCase() !== "g" || event.defaultPrevented) return;
+    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+    if (event.repeat || event.isComposing || event.keyCode === 229 || isTyping(event.target)) return;
+    if (phoneViewerActive || fullscreenModalOpen()) return;
+    if (document.body.dataset.gammaWorkspace && document.body.dataset.gammaWorkspace !== "normal") return;
+    const view = document.getElementById("view-stage");
+    if (!view || view.hidden) return;
+    event.preventDefault();
+    toggleWorkLightOff();
   });
 
   // 図の交換は全画面中だけ。文字入力や別の操作面へXを通す。
