@@ -28,6 +28,10 @@
   --brass: #9c823f;
   --moss: #77865f;
   --slate: #8b98a1;
+  --stage-control-dock-gap: 10px;
+  --stage-control-dock-pad-block: 9px;
+  --stage-control-dock-pad-inline: 10px;
+  --stage-control-group-gap: 6px;
   --serif: "Hiragino Mincho ProN", "Yu Mincho", YuMincho, "Noto Serif JP", serif;
   --sans: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
 }
@@ -10122,30 +10126,33 @@ body.is-panel-dragging {
   border-color: rgba(156, 130, 63, 0.45);
 }
 
-/* 中央列の一番上に置く一本のバー。
-   操作の切り替えと「名前を出す」は、演者や舞台セットの持ち物ではなく
-   絵そのものの見え方を決めるものなので、絵のすぐ上に集める。 */
+/* ショーの上に常設する操作欄。パネルではないので畳み・並べ替えの対象にしない。 */
 .stage-center-bar {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 4px;
-  padding: 0 0 4px;
-  border: 0;
-  background: transparent;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--stage-control-dock-gap);
+  margin-bottom: var(--stage-control-dock-gap);
+  padding: var(--stage-control-dock-pad-block) var(--stage-control-dock-pad-inline);
+  border: 1px solid var(--line-dark);
+  background: var(--desk);
 }
 
 .stage-center-group {
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--stage-control-group-gap);
   min-width: 0;
 }
 
-.stage-center-group.is-display { margin-left: auto; }
+.stage-center-group.is-display {
+  padding-top: var(--stage-control-dock-pad-block);
+  border-top: 1px solid var(--line-dark);
+}
 
 .stage-center-group-label {
+  flex: 0 0 100%;
   color: var(--brass);
   font-size: 9px;
   letter-spacing: 0.12em;
@@ -10200,12 +10207,7 @@ body.is-panel-dragging {
   outline-offset: 2px;
 }
 
-/* 名前の入り切りから右は、絵の見え方の設定。道具の列とは役目が違うので右へ寄せる
-   （実際の指定は .stage-name-toggle の margin リセットより後ろにある） */
-
 .stage-center-bar .stage-tool-hint {
-  flex: 1 1 140px;
-  order: 9;
   min-width: 0;
   margin: 0;
 }
@@ -10214,14 +10216,6 @@ body.is-panel-dragging {
   flex: 0 0 auto;
   margin: 0;
   min-height: 30px;
-}
-
-/* 右寄せは、上の margin:0 より後に置く（先に書くと打ち消される） */
-.stage-center-bar .stage-bar-right { margin-left: auto; }
-.stage-center-group .stage-bar-right { margin-left: 0; }
-
-@media (max-width: 900px) {
-  .stage-center-bar .stage-tool-hint { flex-basis: 100%; order: 9; }
 }
 
 .stage-center-bar button { min-height: 30px; font-size: 10.5px; padding: 4px 12px; }

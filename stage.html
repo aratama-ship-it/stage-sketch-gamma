@@ -12,7 +12,7 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092204">
+<link rel="stylesheet" href="style.css?v=2026092205">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -151,6 +151,46 @@
       <section id="gamma-venue-workspace" aria-label="劇場設定" hidden></section>
       <div class="stage-sketch-grid">
         <aside class="stage-toolbox stage-col" data-col="left" id="stage-col-left" aria-label="左の道具列">
+          <div class="stage-center-bar" aria-label="ツールと表示するもの">
+            <div class="stage-center-group is-tools" role="group" aria-label="ツール">
+              <span class="stage-center-group-label">ツール</span>
+              <div class="stage-tool-grid" role="group" aria-label="操作を選ぶ">
+                <button type="button" data-stage-tool="select" data-tablet-icon="↔" data-tool-key="V" class="is-icon" aria-label="ものを動かす" aria-pressed="true"><span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.4v11.2M2.4 8h11.2"/><path d="M6.3 4.1 8 2.4l1.7 1.7M6.3 11.9 8 13.6l1.7-1.7"/><path d="M4.1 6.3 2.4 8l1.7 1.7M11.9 6.3 13.6 8l-1.7 1.7"/></svg></span><span class="stage-tool-label">ものを動かす</span></button>
+                <span class="stage-tool-split" aria-hidden="true"></span>
+                <button type="button" data-stage-tool="arrow" data-tablet-icon="↗" data-tool-key="A" class="is-icon" aria-label="矢印を描く" aria-pressed="false"><span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 12.6 12.4 3.6"/><path d="M7.6 3.6h4.8v4.8"/></svg></span><span class="stage-tool-label">矢印を描く</span></button>
+                <span class="stage-tool-split" aria-hidden="true"></span>
+                <button type="button" id="stage-light-render-toggle"
+                        aria-label="照明効果の表示を切り替える" aria-pressed="false">照明効果</button>
+              </div>
+            </div>
+            <p class="stage-tool-hint" id="stage-tool-hint" hidden>演者や物を選び、舞台の上で動かします。</p>
+            <div class="stage-center-group is-display" role="group" aria-label="表示するもの">
+              <span class="stage-center-group-label">表示するもの</span>
+              <label class="stage-view-select">
+                <select id="stage-view-select"
+                        aria-label="表示する図。Tで切替。両方1は正面が上、両方2は平面が上"
+                        aria-keyshortcuts="T"
+                        title="表示する図。Tで切替。両方1は正面が上、両方2は平面が上">
+                  <option value="front">正面</option>
+                  <option value="plan">平面</option>
+                  <option value="both-front">両方1</option>
+                  <option value="both-plan">両方2</option>
+                </select>
+              </label>
+              <label class="stage-toggle stage-name-toggle">
+                <input type="checkbox" id="stage-show-names" checked>
+                <span>演者名</span>
+              </label>
+              <label class="stage-toggle stage-name-toggle">
+                <input type="checkbox" id="stage-show-set-names" checked>
+                <span>装置名</span>
+              </label>
+              <label class="stage-toggle stage-name-toggle">
+                <input type="checkbox" id="stage-show-light-names" checked>
+                <span>照明名</span>
+              </label>
+            </div>
+          </div>
           <!-- 2026-09-17 本人指示: ショー名とバージョンは、演者・舞台セット・選んだもの・保存状態と
                同じ「パネル」にする。既定の置き場は左列の一番上
                （stage-sketch.js の defaultLayout: project は col=left / order=0）。
@@ -525,47 +565,6 @@
             </div>
           </div>
 
-          <div class="stage-center-bar">
-            <div class="stage-center-group is-tools" role="group" aria-label="ツール">
-              <span class="stage-center-group-label">ツール</span>
-              <!-- 作図中に繰り返す操作と、図の照明効果の入切だけを常設する。 -->
-              <div class="stage-tool-grid" role="group" aria-label="操作を選ぶ">
-                <button type="button" data-stage-tool="select" data-tablet-icon="↔" data-tool-key="V" class="is-icon" aria-label="ものを動かす" aria-pressed="true"><span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.4v11.2M2.4 8h11.2"/><path d="M6.3 4.1 8 2.4l1.7 1.7M6.3 11.9 8 13.6l1.7-1.7"/><path d="M4.1 6.3 2.4 8l1.7 1.7M11.9 6.3 13.6 8l-1.7 1.7"/></svg></span><span class="stage-tool-label">ものを動かす</span></button>
-                <span class="stage-tool-split" aria-hidden="true"></span>
-                <button type="button" data-stage-tool="arrow" data-tablet-icon="↗" data-tool-key="A" class="is-icon" aria-label="矢印を描く" aria-pressed="false"><span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 12.6 12.4 3.6"/><path d="M7.6 3.6h4.8v4.8"/></svg></span><span class="stage-tool-label">矢印を描く</span></button>
-                <span class="stage-tool-split" aria-hidden="true"></span>
-                <button type="button" id="stage-light-render-toggle"
-                        aria-label="照明効果の表示を切り替える" aria-pressed="false">照明効果</button>
-              </div>
-            </div>
-            <p class="stage-tool-hint" id="stage-tool-hint" hidden>演者や物を選び、舞台の上で動かします。</p>
-            <div class="stage-center-group is-display stage-bar-right" role="group" aria-label="表示するもの">
-              <span class="stage-center-group-label">表示するもの</span>
-              <label class="stage-view-select">
-                <select id="stage-view-select"
-                        aria-label="表示する図。Tで切替。両方1は正面が上、両方2は平面が上"
-                        aria-keyshortcuts="T"
-                        title="表示する図。Tで切替。両方1は正面が上、両方2は平面が上">
-                  <option value="front">正面</option>
-                  <option value="plan">平面</option>
-                  <option value="both-front">両方1</option>
-                  <option value="both-plan">両方2</option>
-                </select>
-              </label>
-              <label class="stage-toggle stage-name-toggle">
-                <input type="checkbox" id="stage-show-names" checked>
-                <span>演者名</span>
-              </label>
-              <label class="stage-toggle stage-name-toggle">
-                <input type="checkbox" id="stage-show-set-names" checked>
-                <span>装置名</span>
-              </label>
-              <label class="stage-toggle stage-name-toggle">
-                <input type="checkbox" id="stage-show-light-names" checked>
-                <span>照明名</span>
-              </label>
-            </div>
-          </div>
           <div class="stage-work-area" id="stage-work-area">
             <details class="stage-light-intent" id="stage-light-intent">
               <summary class="stage-light-intent-summary">
@@ -3191,7 +3190,7 @@
 <script src="stage-cue-sheet.js?v=2026091803"></script>
 <script src="docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113"></script>
 <script src="stage-light-panel-import.js?v=2026092113"></script>
-    <script src="stage-sketch.js?v=2026092206"></script>
+    <script src="stage-sketch.js?v=2026092207"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-timeline.js?v=2026092127"></script>
 <script src="stage-session.js?v=2026091987"></script>

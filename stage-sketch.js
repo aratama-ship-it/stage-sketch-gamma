@@ -17468,7 +17468,7 @@
     if (!tabletPwaActive || tabletUi) return;
     const grid = document.querySelector(".stage-sketch-grid");
     const board = document.getElementById("stage-col-center");
-    const centerBar = board && board.querySelector(":scope > .stage-center-bar");
+    const centerBar = document.querySelector(".stage-center-bar");
     const header = document.querySelector(".stage-sketch-head");
     const undoRedo = centerBar && centerBar.querySelector(".stage-undo-redo");
     const toolGrid = centerBar && centerBar.querySelector(".stage-tool-grid");
@@ -17882,6 +17882,22 @@
     persistSoon();
   }
 
+  function placeStageControls() {
+    const controlBar = document.querySelector(".stage-center-bar");
+    const narrow = window.matchMedia("(max-width: 1119px)").matches;
+    // 狭い画面では図が先、パネルが後ろの一列になる。操作だけは図の上へ残す。
+    const controlHost = narrow
+      ? document.getElementById("stage-col-center")
+      : colEls[panelLayoutMode() === "single" && panelSingleSide() === "right" ? "right" : "left"];
+    if (controlBar && controlHost && controlHost.firstElementChild !== controlBar) {
+      controlHost.prepend(controlBar);
+    }
+  }
+
+  window.addEventListener("resize", () => {
+    if (!tabletUi && !phoneViewerActive) placeStageControls();
+  });
+
   // 状態に従って、パネルを列へ並べ直す
   function applyLayout() {
     const L = state.layout;
@@ -17895,6 +17911,7 @@
         grid.classList.toggle("stage-panels-single", single);
         grid.classList.toggle("stage-panels-on-right", single && panelSingleSide() === "right");
       }
+      placeStageControls();
       if (single) {
         const oneColumnOrder = panelSingleOrder();
         const ids = [...PANELS].sort((a, b) => {
