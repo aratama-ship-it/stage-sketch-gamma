@@ -20071,6 +20071,9 @@
     if (!await applyLoadedState(normalizeState(fresh), "新しいショーを作りました。")) return;
     closeShows();
     renderShows();
+    // 舞台から作った新規ショーは劇場未設定。舞台を表示したままにせず、
+    // 既存のタブ切替経路で劇場設定の手順へ案内する。
+    if (window.GAMMA_WORKSPACE?.mode?.() === "normal") window.GAMMA_WORKSPACE.select("venue-setup");
   }
 
   async function openShow(id) {
