@@ -24937,8 +24937,49 @@ ${propsPlotHtml}
     announce("印刷用ページを開きました。ブラウザの印刷からPDFにできます。");
   }
 
+  // 矢印キーで場面を送ったとき、ページ全体やフォーカスは動かさずシーン欄だけ追従させる。
+  function followSceneInPanel(sceneId) {
+    const list = els.sceneList;
+    if (!list || !list.getClientRects().length) return;
+    let row = list.querySelector(`:scope > [data-scene-id="${CSS.escape(sceneId)}"]`);
+    if (!row) {
+      // 畳んだセクション内へ進んだ場合だけ、現在の場面に至る親を開く。
+      const scenes = state.project.scenes;
+      const index = scenes.findIndex((scene) => scene.id === sceneId);
+      if (index < 0) return;
+      let depth = scenes[index].depth;
+      let changed = false;
+      for (let i = index - 1; i >= 0 && depth > 0; i -= 1) {
+        const ancestor = scenes[i];
+        if (ancestor.depth >= depth) continue;
+        if (ancestor.kind === "section" && state.closedSections[ancestor.id]) {
+          delete state.closedSections[ancestor.id];
+          changed = true;
+        }
+        depth = ancestor.depth;
+      }
+      if (!changed) return;
+      renderScenes();
+      renderSceneGrid();
+      row = list.querySelector(`:scope > [data-scene-id="${CSS.escape(sceneId)}"]`);
+    }
+    const chip = row && row.querySelector(".stage-scene-chip");
+    if (!chip) return;
+    const scrollToChip = () => {
+      if (state.project.activeSceneId !== sceneId || !list.getClientRects().length) return;
+      const viewport = list.getBoundingClientRect();
+      const target = chip.getBoundingClientRect();
+      const margin = 8;
+      if (target.top < viewport.top + margin) list.scrollTop += target.top - viewport.top - margin;
+      else if (target.bottom > viewport.bottom - margin) list.scrollTop += target.bottom - viewport.bottom + margin;
+    };
+    scrollToChip();
+    // メモ欄の高さは描画後に確定するため、その後も見出しの位置だけ再確認する。
+    requestAnimationFrame(() => requestAnimationFrame(scrollToChip));
+  }
+
   // 場面を前後へ送る。上下キーの割り当て先でもある
-  function stepScene(dir) {
+  function stepScene(dir, followPanel = false) {
     const rows = state.project.scenes.filter((row) => row.kind === "scene");
     if (rows.length < 2) { announce("シーンがひとつしかありません。"); return; }
     const at = rows.findIndex((row) => row.id === state.project.activeSceneId);
@@ -24948,6 +24989,7 @@ ${propsPlotHtml}
       return;
     }
     openScene(next.id);
+    if (followPanel && state.project.activeSceneId === next.id) followSceneInPanel(next.id);
   }
 
   function replaySceneTransition() {
@@ -31497,7 +31539,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (!view || view.hidden) return;
     if (isTyping(event.target)) return;
     event.preventDefault();
-    stepScene(STEPS[event.key]);
+    stepScene(STEPS[event.key], true);
   });
 
   if (els.sceneAdd) els.sceneAdd.addEventListener("click", () => addScene(false));
