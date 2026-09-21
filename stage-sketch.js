@@ -20077,11 +20077,18 @@
     const shows = readShows();
     const entry = shows[id];
     if (!entry) return;
-    if (id === state.project.id) { closeShows(); return; }
+    if (id === state.project.id) {
+      closeShows();
+      // 一覧から「開いています」のショーを選んでも、劇場設定に隠れた舞台へ戻れるようにする。
+      // 未設定の劇場や未反映の編集は、既存のワークスペース切替ガードに委ねる。
+      if (window.GAMMA_WORKSPACE?.mode?.() === "venue-setup") window.GAMMA_WORKSPACE.normal();
+      return;
+    }
     const next = normalizeState(entry.state);
     next.layout = state.layout;
     if (!await applyLoadedState(next, `${next.project.title}を開きました。`)) return;
     closeShows();
+    if (window.GAMMA_WORKSPACE?.mode?.() === "venue-setup") window.GAMMA_WORKSPACE.normal();
   }
 
   function deleteShow(id) {
