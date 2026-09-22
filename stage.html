@@ -12,7 +12,7 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092229">
+<link rel="stylesheet" href="style.css?v=2026092231">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -188,9 +188,11 @@
                 <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.1h7.4v6.3H2z"/><path d="M3.6 2.1h7.3v6.3M11.4 4.2h2.6M11.4 6.6h2.1"/><path class="stage-name-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
                 <span class="visually-hidden">装置名</span>
               </label>
-              <label class="stage-toggle stage-name-toggle">
+              <label class="stage-toggle stage-name-toggle is-icon" title="照明名を出したり隠したりする"
+                     aria-label="照明名を出したり隠したりする">
                 <input type="checkbox" id="stage-show-light-names" checked>
-                <span>照明名</span>
+                <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="m3 7.2 3.1-3.1h4.1l2.8 2.8-3.1 3.1H5.8z"/><path d="M8.1 5.8h3.6M8.1 8h2.2"/><path class="stage-name-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
+                <span class="visually-hidden">照明名</span>
               </label>
               <label class="stage-view-select">
                 <select id="stage-view-select"
@@ -781,24 +783,32 @@
                   <button type="button" class="stage-canvas-tool" id="stage-front-note"
                           data-tool-tip="note" data-tool-key="N"
                           aria-label="メモを貼る" aria-pressed="false">メモ</button>
-                  <label class="stage-canvas-toggle" title="正面の絵の照明を点けたり消したりする">
+                  <label class="stage-canvas-toggle is-icon" data-tool-tip="frontLights"
+                         title="正面の絵の照明を点けたり消したりする" aria-label="正面図の照明を表示・非表示にする">
                     <input type="checkbox" id="stage-front-lights" checked>
-                    <span>照明</span>
+                    <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="m5.2 6.6 2.2-2.2h3.2l1.6 1.6-2.2 2.2H6.8z"/><path d="m6.8 8.2-2.3 4.3M9.3 7.4l2.3 4.3M7.1 12.5h2.7"/><path class="stage-visibility-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
+                    <span class="visually-hidden">照明</span>
                   </label>
-                  <label class="stage-canvas-toggle" title="機材配置で設定した前一文字を、正面図に出したり隠したりする">
+                  <label class="stage-canvas-toggle is-icon" data-tool-tip="frontBorder"
+                         title="機材配置で設定した前一文字を、正面図に出したり隠したりする" aria-label="前一文字を表示・非表示にする">
                     <input type="checkbox" id="stage-show-front-border">
-                    <span>前一文字</span>
+                    <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M2.2 3.4h11.6"/><path d="M3.1 4.4v5.9l1.5-1.1 1.7 1.4 1.7-1.4 1.7 1.4 1.7-1.4 1.5 1.1V4.4"/><path class="stage-visibility-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
+                    <span class="visually-hidden">前一文字</span>
                   </label>
-                  <label class="stage-canvas-toggle" title="光の意図を、図の上に作図の印として重ねる">
+                  <label class="stage-canvas-toggle is-icon" data-tool-tip="frontLightIntent"
+                         title="光の意図を、図の上に作図の印として重ねる" aria-label="光の意図を表示・非表示にする">
                     <input type="checkbox" id="stage-front-light-intent">
-                    <span>光の意図</span>
+                    <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.4v2.1M3.9 4.1l1.5 1.5M12.1 4.1l-1.5 1.5"/><path d="m5.2 7.1 2.8-1.5 2.8 1.5v3.3L8 12 5.2 10.4z"/><path d="M8 7.7v1.9M7.1 8.7h1.8"/><path class="stage-visibility-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
+                    <span class="visually-hidden">光の意図</span>
                   </label>
                   <!-- セクション中の全演者へ一括で衣装を着脱する。演者を選んでいなくても常に操作できる。 -->
                   <button type="button" class="stage-canvas-tool stage-front-costume-choice" id="stage-costume-toggle"
                           aria-pressed="false">衣装</button>
-                  <label class="stage-canvas-toggle" id="stage-seatmap-toggle">
+                  <label class="stage-canvas-toggle is-icon" id="stage-seatmap-toggle" data-tool-tip="seatMap"
+                         title="見る位置の図を出したり隠したりする" aria-label="見る位置の図を表示・非表示にする">
                     <input type="checkbox" id="stage-show-seatmap">
-                    <span>見る位置の図</span>
+                    <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8s2.1-3.3 6-3.3S14 8 14 8s-2.1 3.3-6 3.3S2 8 2 8Z"/><circle cx="8" cy="8" r="1.55"/><path d="M3.1 13.1h9.8M5.1 11.9v1.2M10.9 11.9v1.2"/><path class="stage-visibility-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
+                    <span class="visually-hidden">見る位置の図</span>
                   </label>
                   <button type="button" class="stage-canvas-close" data-toggle-view="front"
                           aria-expanded="true" aria-label="正面図を閉じる">×</button>
@@ -847,25 +857,35 @@
                   <button type="button" class="stage-canvas-tool" id="stage-plan-note"
                           data-tool-tip="note" data-tool-key="N"
                           aria-label="メモを貼る" aria-pressed="false">メモ</button>
-                  <label class="stage-canvas-toggle" title="平面図の照明の円と灯体を出したり隠したりする">
+                  <label class="stage-canvas-toggle is-icon" data-tool-tip="planLights"
+                         title="平面図の照明の円と灯体を出したり隠したりする" aria-label="平面図の照明を表示・非表示にする">
                     <input type="checkbox" id="stage-plan-lights" checked>
-                    <span>照明</span>
+                    <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.7"/><circle cx="8" cy="8" r="1.6"/><path d="M8 1.3v1.1M8 13.6v1.1M1.3 8h1.1M13.6 8h1.1"/><path class="stage-visibility-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
+                    <span class="visually-hidden">照明</span>
                   </label>
-                  <label class="stage-canvas-toggle" title="演者の動線（入り・はけの自動の線も）を出したり隠したりする">
+                  <label class="stage-canvas-toggle is-icon" data-tool-tip="planRoutesCast"
+                         title="演者の動線（入り・はけの自動の線も）を出したり隠したりする" aria-label="演者動線を表示・非表示にする">
                     <input type="checkbox" id="stage-plan-routes-cast" checked>
-                    <span>演者動線</span>
+                    <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="4.5" cy="3.8" r="1.45"/><path d="M4.5 5.4v3.2M2.6 8.1l1.9.5 1.9-.5M3.1 12.5l1.4-3.9 1.8 3.9"/><path d="M8.8 12.5c1.2-.1 2.5-1 3.7-3.1"/><path d="m11.1 8.8 1.5.5-.4 1.5"/><path class="stage-visibility-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
+                    <span class="visually-hidden">演者動線</span>
                   </label>
-                  <label class="stage-canvas-toggle" title="照明の動線を出したり隠したりする">
+                  <label class="stage-canvas-toggle is-icon" data-tool-tip="planRoutesLight"
+                         title="照明の動線を出したり隠したりする" aria-label="照明動線を表示・非表示にする">
                     <input type="checkbox" id="stage-plan-routes-light" checked>
-                    <span>照明動線</span>
+                    <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="m3 5.5 2.2-2.2h3.1l1.5 1.5-2.2 2.2H4.5z"/><path d="m7.2 7.9 3.8 2.5"/><path d="m9.5 10.3 1.9.2.2-1.9"/><path class="stage-visibility-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
+                    <span class="visually-hidden">照明動線</span>
                   </label>
-                  <label class="stage-canvas-toggle" title="舞台装置の動線を出したり隠したりする">
+                  <label class="stage-canvas-toggle is-icon" data-tool-tip="planRoutesSet"
+                         title="舞台装置の動線を出したり隠したりする" aria-label="装置動線を表示・非表示にする">
                     <input type="checkbox" id="stage-plan-routes-set" checked>
-                    <span>装置動線</span>
+                    <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.3" width="5.4" height="5.4"/><path d="M2.5 5.4h5.4M5.2 3.3v5.4M8.7 11.8c1.1-.1 2.2-.8 3.4-2.3"/><path d="m10.5 9.4 1.8.1.1 1.8"/><path class="stage-visibility-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
+                    <span class="visually-hidden">装置動線</span>
                   </label>
-                  <label class="stage-canvas-toggle" title="宙に吊ってあるものも平面に出す">
+                  <label class="stage-canvas-toggle is-icon" data-tool-tip="planFlown"
+                         title="宙に吊ってあるものも平面に出す" aria-label="吊物を表示・非表示にする">
                     <input type="checkbox" id="stage-show-flown">
-                    <span>吊物</span>
+                    <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M2.4 2.8h11.2"/><path d="M5.1 2.8v5.5M10.9 2.8v5.5"/><path d="M4.1 9.1h7.8l-1 3.3H5.1z"/><path class="stage-visibility-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
+                    <span class="visually-hidden">吊物</span>
                   </label>
                   <button type="button" class="stage-canvas-tool" id="stage-route-clear" hidden>動線を消す</button>
                   <button type="button" class="stage-canvas-close" data-toggle-view="plan"
@@ -3236,7 +3256,7 @@
 <script src="stage-light-panel-import.js?v=2026092209"></script>
 <script src="stage-scene-alternatives.js?v=2026092208"></script>
 <script src="stage-shortcuts.js?v=2026092218"></script>
-<script src="stage-sketch.js?v=2026092234"></script>
+<script src="stage-sketch.js?v=2026092235"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092209"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-timeline.js?v=2026092208"></script>

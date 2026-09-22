@@ -36,7 +36,26 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.match(html, />表示するもの</);
   assert.match(html, /id="stage-show-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-set-names" checked>\s*<span class="stage-tool-icon"/);
+  assert.match(html, /id="stage-show-light-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(read("style.css"), /\.stage-name-toggle\.is-icon \.stage-name-toggle-slash/);
+});
+
+test("canvas visibility toggles use the shared icon treatment without changing their checkbox IDs", () => {
+  const html = read("stage.html");
+  const sketch = read("stage-sketch.js");
+  const style = read("style.css");
+  for (const id of [
+    "stage-front-lights", "stage-show-front-border", "stage-front-light-intent", "stage-show-seatmap",
+    "stage-plan-lights", "stage-plan-routes-cast", "stage-plan-routes-light", "stage-plan-routes-set", "stage-show-flown",
+  ]) {
+    assert.match(html, new RegExp(`class="stage-canvas-toggle is-icon"[^>]*>[\\s\\S]*?id="${id}"[\\s\\S]*?<svg`));
+  }
+  assert.match(style, /\.stage-canvas-toggle\.is-icon \{[\s\S]*?width: 34px;[\s\S]*?min-height: 34px;/);
+  assert.match(style, /\.stage-canvas-tools \.stage-canvas-toggle\.is-icon \{\s*min-height: 34px;/);
+  assert.match(style, /\.stage-canvas-toggle\.is-icon svg \{[\s\S]*?width: 21px;[\s\S]*?height: 21px;/);
+  assert.match(style, /\.stage-canvas-toggle\.is-icon:not\(:has\(input:checked\)\) \.stage-visibility-toggle-slash/);
+  assert.match(sketch, /"\.stage-canvas-toggle\.is-icon"/);
+  assert.match(sketch, /frontBorder: "機材配置で設定した前一文字/);
 });
 
 test("lighting section titles and durable apply failures cross the iframe boundary", () => {

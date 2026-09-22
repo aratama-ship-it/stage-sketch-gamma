@@ -4595,6 +4595,15 @@
     sceneAdd: "まっさらな新しいシーンを追加します。",
     lightRender: "場面の照明効果を表示・非表示にします。",
     workLight: "作業灯を点けたり消したりします。消すと、照明が当たる所だけが見えます。",
+    frontLights: "正面図の照明を出したり隠したりします。",
+    frontBorder: "機材配置で設定した前一文字を、正面図に重ねます。",
+    frontLightIntent: "光の意図を作図用の印として重ねます。",
+    seatMap: "正面図をどの客席位置から見ているかの小図を出します。",
+    planLights: "平面図の照明の円と灯体を出したり隠したりします。",
+    planRoutesCast: "演者の動線と、入り・はけの自動の線を出したり隠したりします。",
+    planRoutesLight: "照明の動線を出したり隠したりします。",
+    planRoutesSet: "舞台装置の動線を出したり隠したりします。",
+    planFlown: "宙に吊ってあるものも平面図に出します。",
   };
 
   const els = {
@@ -30897,6 +30906,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   const iconTipTargets = new Set(document.querySelectorAll([
     "[data-stage-tool]", "[data-tool-tip]",
     ".stage-center-bar .stage-name-toggle.is-icon",
+    ".stage-canvas-toggle.is-icon",
     ".stage-history-actions .stage-history-icon",
     ".stage-history-actions .stage-gear-btn",
     ".stage-history-actions .stage-panel-visibility-btn",

@@ -10112,6 +10112,50 @@ body.is-panel-dragging {
 
 .stage-canvas-toggle[hidden] { display: none; }
 
+/* 図の上の「表示するもの」も、左の道具列と同じ 34px のアイコン操作面にする。
+ * input は既存の保存・同期・キーボード操作を変えずに残し、ON/OFF は札の地色と斜線で読ませる。 */
+.stage-canvas-toggle.is-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 3px;
+  border: 1px solid var(--line-dark);
+  color: var(--milk-dim);
+}
+
+.stage-canvas-toggle.is-icon input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+}
+
+.stage-canvas-toggle.is-icon .stage-tool-icon,
+.stage-canvas-toggle.is-icon svg {
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+}
+
+.stage-canvas-toggle.is-icon .stage-visibility-toggle-slash { display: none; }
+.stage-canvas-toggle.is-icon:not(:has(input:checked)) .stage-visibility-toggle-slash { display: block; }
+
+.stage-canvas-toggle.is-icon:has(input:checked) {
+  color: var(--paper);
+  border-color: var(--rust);
+  background: rgba(168, 75, 38, 0.27);
+}
+
+.stage-canvas-toggle.is-icon:hover { color: var(--paper); border-color: var(--brass); }
+.stage-canvas-toggle.is-icon:focus-within { outline: 2px solid var(--brass); outline-offset: 2px; }
+
 /* セクション中の全員へ一括適用する衣装。演者未選択でも常に表示する。 */
 .stage-front-costume-choice {
   min-height: 28px;
@@ -12928,6 +12972,12 @@ body.stage-modal-open .stage-tour { display: none !important; }
     justify-content: center;
     padding: 3px 5px;
     white-space: nowrap;
+  }
+
+  /* 文字札は詰めてもよいが、共通アイコンは道具列と同じ34pxを保つ。 */
+  .stage-canvas-tools .stage-canvas-toggle.is-icon {
+    min-height: 34px;
+    padding: 3px;
   }
 
   .stage-canvas-tools .stage-route-action .stage-canvas-tool-label,
