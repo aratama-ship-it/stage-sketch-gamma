@@ -8,6 +8,7 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   const main = read("stage-sketch.js");
   const timeline = read("stage-timeline.js");
   const html = read("stage.html");
+  const serviceWorker = read("stage-sw.js");
   const lightHtml = read("light-design/index.html");
 
   for (const pose of ["frontroll-mid", "roundoff-mid", "backhandspring-mid", "dance3", "handstand-mid"]) {
@@ -16,13 +17,23 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.match(main, /SHOW_BLACKOUT_CONTROL = false/);
   assert.match(main, /SHOW_BLACKOUT_CONTROL && featureOn\("blackout"\)/);
   assert.match(main, /const ROSTER_UNAVAILABLE_PROP_SHAPES = new Set\(\[/);
+  assert.match(main, /\{ ja: "楽器", ids: \[[\s\S]*?"guitar", "violin", "bassguitar", "mic", "trumpet", "accordion"\]/);
+  assert.match(main, /\{ ja: "サーカス道具", ids: \[[\s\S]*?"cigarbox", "devilstick", "poi", "hoop", "ring", "club"\]/);
+  const handheldStart = main.indexOf('{ ja: "手に持つもの"');
+  const instrumentsStart = main.indexOf('{ ja: "楽器"');
+  const handheldGroup = main.slice(handheldStart, instrumentsStart);
+  assert.doesNotMatch(handheldGroup, /"guitar"|"violin"|"bassguitar"|"mic"|"trumpet"|"accordion"|"cigarbox"|"devilstick"|"poi"|"hoop"|"ring"|"club"/);
+  assert.match(main, /ROSTER_PROP_SPECIAL_KINDS = Object\.freeze\(\[\s*\{ group: "サーカス道具", kind: "diabolo" \}/);
   assert.match(main, /group\.ids\.filter\(\(shapeId\) => rosterShapeIsAvailable\(shapeId\) && !ROSTER_SET_PROP_SHAPES\.has\(shapeId\)\)/);
   assert.match(main, /group\.ids\.filter\(\(shapeId\) => rosterShapeIsAvailable\(shapeId\) && ROSTER_SET_PROP_SHAPES\.has\(shapeId\)\)/);
   assert.match(main, /drawStagePiece\(ctx2, previewPiece, previewLayout, \(\) => 0, \{ showFaceEdges: false \}\)/);
   assert.match(main, /function paintBox\(target, piece, L, part, drawOptions = \{\}\)/);
   assert.match(main, /if \(drawOptions\.showFaceEdges !== false\) target\.stroke\(\);/);
-  assert.match(main, /function bindKindPreviewSpin\(tile, canvas, draw\)/);
-  assert.match(main, /bindKindPreviewSpin\(tile, canvas, \(\) => drawKindPreview\(canvas, "prop", rosterSelectedColor\(\), shapeId\)\)/);
+  assert.match(main, /function bindKindPreviewSpin\(tile, canvas, draw, options = \{\}\)/);
+  assert.match(main, /const turntable = options\.turntable === true;/);
+  assert.match(main, /if \(turntable\) draw\(turntableFacing\);/);
+  assert.match(main, /facing: turntableFacing,/);
+  assert.match(main, /drawKindPreview\(canvas, "prop", rosterSelectedColor\(\), shapeId, facing\), \{ turntable: true \}/);
   assert.match(main, /function refreshRosterPropPreviews\(\)/);
   assert.match(main, /rosterColorTouched = true;\s*refreshRosterPropPreviews\(\);/);
   assert.match(main, /平面図は衣装ではなく、演者を識別するためのマーキングカラーを常に使う/);
@@ -34,6 +45,11 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.doesNotMatch(lightHtml, /id="statebadge"/);
   assert.match(html, />ツール</);
   assert.match(html, />表示するもの</);
+  assert.match(html, /class="stage-app-version">0\.2\.3</);
+  assert.match(html, /id="stage-release-v023-title">v0\.2\.3</);
+  assert.match(html, /stage-sketch\.js\?v=2026092302/);
+  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v267"/);
+  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=2026092302"/);
   assert.match(html, /id="stage-show-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-set-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-light-names" checked>\s*<span class="stage-tool-icon"/);
@@ -88,7 +104,7 @@ test("lighting apply belongs to the LX cue panel and playback uses an accessible
   assert.match(app, /動きを止める（Space）/);
   assert.match(app, /b\.setAttribute\("aria-pressed", String\(state\.play\.on\)\)/);
   assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=2026092240/);
-  assert.match(worker, /stage-sketch-gamma-shell-v266/);
+  assert.match(worker, /stage-sketch-gamma-shell-v267/);
   assert.match(worker, /light-design\/app\.js\?v=2026092240/);
   assert.match(worker, /light-design\/embed\.js\?v=2026092238/);
 });

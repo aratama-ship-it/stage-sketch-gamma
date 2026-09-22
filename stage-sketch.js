@@ -3405,20 +3405,19 @@
   /* プルダウンの分類見出し（2026-09-11 本人選択の案A）。ja は tx() で訳す。
      新しい形を足したらどこかの分類へ入れる。入れ忘れは「その他の形」へ落ちるだけで選べなくはならない。 */
   const PROP_SHAPE_GROUPS = [
-    { ja: "手に持つもの", ids: ["box", "umbrella", "club", "ball", "ring", "staff", "sword", "book", "tophat", "lantern", "flag", "mask",
+    { ja: "手に持つもの", ids: ["box", "umbrella", "ball", "staff", "sword", "book", "tophat", "lantern", "flag", "mask",
       "broom", "bucket", "rope", "bouquet", "glassbottle", "tray", "telephone", "newspaper", "clock", "fan", "scarf",
-      "torch", "candle", "treasurechest", "cane", "handbag", "wagasa", "guitar", "violin", "trumpet", "accordion",
-      "cigarbox", "devilstick", "poi", "hoop", "bassguitar",
-      "mic"] },   /* R-19（2026-09-17）: マイクは手に持つもの */
-    { ja: "楽器", ids: ["drumset", "taiko", "grandpiano", "grandpianoopen", "uprightpiano", "micstand", "musicstand", "speaker", "keyboardstand", "djbooth", "cello", "doublebass"] },
+      "torch", "candle", "treasurechest", "cane", "handbag", "wagasa"] },
+    { ja: "楽器", ids: ["drumset", "taiko", "grandpiano", "grandpianoopen", "uprightpiano", "micstand", "musicstand", "speaker", "keyboardstand", "djbooth", "cello", "doublebass",
+      "guitar", "violin", "bassguitar", "mic", "trumpet", "accordion"] },
     { ja: "登る・上がる", ids: ["ladder", "stepladder", "stairs", "stairs6", "slope", "spiralstairs"] },
     { ja: "建て込み", ids: ["door", "window", "column", "railing", "bridge", "platform", "truss", "cage", "torii", "screen", "frameportal", "framepicture", "framehang", "framecube"] },
     { ja: "家具", ids: ["sofa", "bed", "bookshelf", "dresser", "mirror", "desk", "counter", "fireplace", "phonebooth", "clothesrack"] },
     { ja: "屋外・情景", ids: ["tree", "rock", "streetlamp", "signboard", "barrel", "planter", "well", "tent", "cart", "bicycle"] },
-    { ja: "サーカス器具", ids: ["rolabola", "germanwheel", "minitramp", "rollingglobe", "russianbar", "crashmat", "crashmatround",
+    { ja: "サーカス道具", ids: ["rolabola", "germanwheel", "minitramp", "rollingglobe", "russianbar", "crashmat", "crashmatround",
       "russianswing", "slackline", "walljump", "unicycle", "stilts", "aerialhoop", "aerialstraps", "aerialhammock", "spanishweb", "swingpole",
       /* R-19（2026-09-17 本人要望）: 物を伴う姿勢に対応する乗り物。本人決定で小道具の扱い。 */
-      "cyrwheel", "skateboard", "rollerskate"] },
+      "cyrwheel", "skateboard", "rollerskate", "cigarbox", "devilstick", "poi", "hoop", "ring", "club"] },
   ];
   /* 寸法つまみの仕様。項目は種類ごとに違うので、画面はここから組み立てる。
    * HTMLへ固定で並べると、種類を足すたびに二箇所直すことになる。 */
@@ -20931,7 +20930,7 @@
    * （真横から起こすと、車も綱渡りもティーターボードも細い板に潰れて見分けがつかない）。
    * 舞台の絵と同じ部品（pieceParts）から起こすので、
    * 一覧の絵と実際に置かれる物が食い違わない。 */
-  function drawKindPreview(canvas, kind, color, propShapeId = null) {
+  function drawKindPreview(canvas, kind, color, propShapeId = null, turntableFacing = 0) {
     const ctx2 = canvas.getContext("2d");
     const w = canvas.width;
     const h = canvas.height;
@@ -20958,18 +20957,21 @@
       ctx2.restore();
       return;
     }
-    if (kind === "prop" && PROP_SHAPES[propShapeId]) {
+    if ((kind === "prop" && PROP_SHAPES[propShapeId]) || kind === "diabolo") {
       /* 一覧専用の簡略図ではなく、正面図で実際に使う描画経路をそのまま縮小する。
-       * selectionBounds も本番と共通なので、長い梯子や背の低い家具でも枠内へ収まる。 */
+       * selectionBounds も本番と共通なので、長い梯子や背の低い家具でも枠内へ収まる。
+       * 小道具の回転中は canvas 自体を平面で回さず、駒を上下軸で回す。
+       * これで正面・側面・奥行きが同じ回転台の上で見える。 */
       const previewPiece = normalizePiece({
         id: `stage-kind-preview-${propShapeId}`,
-        type: "prop",
-        propShape: propShapeId,
+        type: kind,
+        propShape: kind === "prop" ? propShapeId : null,
         u: 0.5,
         v: 0.62,
         size: 100,
         color,
-        dims: PROP_SHAPES[propShapeId].dims,
+        facing: turntableFacing,
+        dims: kind === "prop" ? PROP_SHAPES[propShapeId].dims : normalizeDims(kind, {}),
       }, 0);
       const previewLayout = layout("front");
       refreshBases(previewLayout.size, [previewPiece]);
@@ -20988,31 +20990,6 @@
       // 一覧は132pxへ縮めるため、立体の各面の境界線まで描くと横筋として重なる。
       // 本番の舞台図は既定どおり面線を残し、ここだけ輪郭と陰影を塗りで見せる。
       drawStagePiece(ctx2, previewPiece, previewLayout, () => 0, { showFaceEdges: false });
-      ctx2.restore();
-      return;
-    }
-    if (kind === "diabolo") {
-      // 専用描画のディアボロは pieceParts を持たない。小道具一覧でも実物と同じ
-      // 二つのカップと軸が読める見本を描く。
-      const r = Math.min(w, h) * 0.18;
-      const half = Math.min(w * 0.25, r * 1.5);
-      ctx2.save();
-      ctx2.translate(w / 2, h * 0.55);
-      ctx2.strokeStyle = color;
-      ctx2.lineWidth = Math.max(3, r * 0.28);
-      ctx2.beginPath();
-      ctx2.moveTo(-half, 0);
-      ctx2.lineTo(half, 0);
-      ctx2.stroke();
-      ctx2.fillStyle = color;
-      ctx2.strokeStyle = "rgba(0,0,0,0.4)";
-      ctx2.lineWidth = 1.4;
-      [-half, half].forEach((x) => {
-        ctx2.beginPath();
-        ctx2.arc(x, 0, r, 0, Math.PI * 2);
-        ctx2.fill();
-        ctx2.stroke();
-      });
       ctx2.restore();
       return;
     }
@@ -21157,9 +21134,9 @@
   // ディアボロは専用の向き・持たせる操作を保つため type は変えない。
   // 演者・舞台セットでは、小道具と同じ入口・一覧へ分類する。
   const ROSTER_PROP_KINDS = new Set(["prop", "diabolo"]);
-  const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
-    { group: "手に持つもの", kind: "diabolo" },
-  ]);
+const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
+  { group: "サーカス道具", kind: "diabolo" },
+]);
   /* R-1（2026-09-17 本人決定）: 盆・可動デッキ・幕・せり・水面は「大道具」ではなく舞台機構で、
    * 劇場に組み込まれているもの。だから足す場所も劇場設定モードの舞台機構パネル
    * （`[data-panel="machinery"]`）ひとつに寄せる。
@@ -21262,9 +21239,10 @@
 
   /* 道具の正面・側面を一覧で取り違えないためのゆっくりした一周。hover / focus /
    * 選択中だけ動かし、OS の「視差効果を減らす」指定では静止画のままにする。 */
-  function bindKindPreviewSpin(tile, canvas, draw) {
+  function bindKindPreviewSpin(tile, canvas, draw, options = {}) {
     if (!tile || !canvas || typeof draw !== "function") return;
     const turnMs = 9000;
+    const turntable = options.turntable === true;
     let hovered = false;
     let frame = 0;
     let startedAt = 0;
@@ -21277,18 +21255,21 @@
       if (frame) cancelAnimationFrame(frame);
       frame = 0;
       canvas.style.transform = "";
+      if (turntable) draw(0);
     };
     const tick = (now) => {
       if (!tile.isConnected || !shouldSpin()) { reset(); return; }
       if (!startedAt) startedAt = now;
-      canvas.style.transform = `rotate(${((now - startedAt) / turnMs) * 360}deg)`;
+      const turntableFacing = ((now - startedAt) / turnMs) * 360;
+      if (turntable) draw(turntableFacing);
+      else canvas.style.transform = `rotate(${turntableFacing}deg)`;
       frame = requestAnimationFrame(tick);
     };
     const sync = () => {
       if (!shouldSpin()) { startedAt = 0; reset(); return; }
       if (!frame) frame = requestAnimationFrame(tick);
     };
-    draw();
+    draw(0);
     tile.addEventListener("pointerenter", () => { hovered = true; sync(); });
     tile.addEventListener("pointerleave", () => { hovered = false; sync(); });
     tile.addEventListener("focus", sync);
@@ -21342,7 +21323,8 @@
         grid.append(tile);
         /* 選んで追加した直後に正面図へ出る色で見せる。形だけでなく、
            一覧と正面図の見え方を同じものにする。 */
-        bindKindPreviewSpin(tile, canvas, () => drawKindPreview(canvas, "prop", rosterSelectedColor(), shapeId));
+        bindKindPreviewSpin(tile, canvas,
+          (facing) => drawKindPreview(canvas, "prop", rosterSelectedColor(), shapeId, facing), { turntable: true });
       });
       ROSTER_PROP_SPECIAL_KINDS.filter((choice) => choice.group === group.ja).forEach((choice) => {
         const tile = document.createElement("button");
@@ -21369,7 +21351,8 @@
           addFromRoster();
         });
         grid.append(tile);
-        bindKindPreviewSpin(tile, canvas, () => drawKindPreview(canvas, choice.kind, rosterSelectedColor()));
+        bindKindPreviewSpin(tile, canvas,
+          (facing) => drawKindPreview(canvas, choice.kind, rosterSelectedColor(), null, facing), { turntable: true });
       });
       section.append(heading, grid);
       host.append(section);
@@ -21554,7 +21537,8 @@
           addFromRoster();
         });
         choices.append(tile);
-        bindKindPreviewSpin(tile, canvas, () => drawKindPreview(canvas, "prop", "#8b98a1", shapeId));
+        bindKindPreviewSpin(tile, canvas,
+          (facing) => drawKindPreview(canvas, "prop", "#8b98a1", shapeId, facing), { turntable: true });
       });
       section.append(heading, choices);
       grid.append(section);
