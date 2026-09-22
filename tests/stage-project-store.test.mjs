@@ -143,10 +143,10 @@ test("removing the current duplicate makes room before a large imported-show swi
 
 test("the app shell advances with the storage transaction code", () => {
   assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092213/);
-  assert.match(stageHtml, /stage-sketch\.js\?v=2026092225/);
-  assert.match(serviceWorker, /stage-sketch-gamma-shell-v245/);
+  assert.match(stageHtml, /stage-sketch\.js\?v=2026092226/);
+  assert.match(serviceWorker, /stage-sketch-gamma-shell-v246/);
   assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092213/);
-  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092225/);
+  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092226/);
 });
 
 test("indoor standing reception venue keeps its 3D room layout outside show data", () => {
@@ -198,6 +198,22 @@ test("roster groups use separate panels while old cast visibility and layout rem
   assert.match(source, /legacyCol = splitRoster && raw\.cols && raw\.cols\.cast/);
   assert.match(source, /legacyCollapsed = splitRoster && raw\.collapsed && raw\.collapsed\.cast/);
   assert.match(source, /\["cast", "sets", "props", "stage-set", "rigs"\]/);
+});
+
+test("specified large prop shapes use the large-prop panel without changing saved piece types", () => {
+  const start = source.indexOf("const ROSTER_SET_PROP_SHAPES = new Set([");
+  const end = source.indexOf("]);", start);
+  assert.ok(start >= 0 && end > start);
+  const rosterSetShapes = source.slice(start, end);
+  for (const shape of [
+    "treasurechest", "drumset", "taiko", "grandpiano", "grandpianoopen", "uprightpiano", "speaker", "keyboardstand", "djbooth",
+    "germanwheel", "crashmat", "crashmatround", "walljump", "aerialhammock",
+  ]) {
+    assert.match(rosterSetShapes, new RegExp(`"${shape}"`));
+  }
+  assert.match(source, /const rosterCountsAsSet = \(item\) => Boolean\(item\) && ROSTER_SET_PROP_SHAPES\.has\(item\.propShape\)/);
+  assert.match(source, /ids: group\.ids\.filter\(\(shapeId\) => !ROSTER_SET_PROP_SHAPES\.has\(shapeId\)\)/);
+  assert.match(source, /ids: group\.ids\.filter\(\(shapeId\) => ROSTER_SET_PROP_SHAPES\.has\(shapeId\)\)/);
 });
 
 test("unavailable IndexedDB keeps the legacy localStorage duplicate", async () => {

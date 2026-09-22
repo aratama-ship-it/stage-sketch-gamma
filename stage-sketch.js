@@ -3377,8 +3377,8 @@
    * 小道具ではなく大道具として扱う。
    * ★kind は "prop" のまま変えない。変えると既存ショーの駒が未知の型になる
    *   （PIECE_TYPES 付近の警告参照）。振り分けだけを形（propShape）で決める。
-   * ★「楽器」は本人が挙げていないので小道具のまま（2026-09-18 本人決定）。
-   * ★「サーカス器具」は R-19（2026-09-17）で本人が小道具と決めている。 */
+   * ★2026-09-22 本人指定: 舞台へ据える楽器・音響機材と指定のサーカス器具は大道具にする。
+   *   kind は "prop" のまま残すため、既存ショーの保存済み駒を移行せず表示先だけを変えられる。 */
   const ROSTER_SET_PROP_SHAPES = new Set([
     "ladder", "stepladder", "stairs", "stairs6", "slope", "spiralstairs",
     "door", "window", "column", "railing", "bridge", "platform", "truss", "cage", "torii",
@@ -3386,6 +3386,9 @@
     "sofa", "bed", "bookshelf", "dresser", "mirror", "desk", "counter", "fireplace",
     "phonebooth", "clothesrack",
     "tree", "rock", "streetlamp", "signboard", "barrel", "planter", "well", "tent", "cart", "bicycle",
+    "treasurechest",
+    "drumset", "taiko", "grandpiano", "grandpianoopen", "uprightpiano", "speaker", "keyboardstand", "djbooth",
+    "germanwheel", "crashmat", "crashmatround", "walljump", "aerialhammock",
   ]);
   /* 登録した項目が「大道具の一覧」へ行くか。kind が prop でも、上の形なら大道具側。 */
   const rosterCountsAsSet = (item) => Boolean(item) && ROSTER_SET_PROP_SHAPES.has(item.propShape);
