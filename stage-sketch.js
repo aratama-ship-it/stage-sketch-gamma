@@ -27754,7 +27754,7 @@ ${propsPlotHtml}
   const VENUE_GROUPS = [
     { label: "劇場（額縁）", ids: ["proscenium", "hall-fan", "hall-shoebox", "circus-theatre"] },
     { label: "劇場（オープン）", ids: ["thrust", "end-stage", "blackbox", "in-the-round", "traverse"] },
-    { label: "日本の劇場と現場", ids: ["kabuki-stage", "noh-stage", "gym-stage", "banquet-hall"] },
+    { label: "日本の劇場と現場", ids: ["kabuki-stage", "noh-stage", "gym-stage", "banquet-hall", "indoor-event-space"] },
     { label: "大会場の公演", ids: ["arena-show", "dome-show", "arena-concert", "dome-concert"] },
     { label: "サーカス・テント", ids: ["arena", "chapiteau"] },
     { label: "屋外", ids: ["outdoor", "festival-field"] },

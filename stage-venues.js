@@ -1070,6 +1070,26 @@
       source: "寸法は代表的な公表値からの暫定値",
     }),
     createVenueV2({
+      id: "indoor-event-space",
+      label: "屋内イベントスペース",
+      short: "平土間・仮設",
+      audience: "front",
+      rigging: "limited",
+      flexibleHouse: true,
+      provenance: {
+        source: "代表値",
+        confidence: "low",
+        sharing: "ok",
+        note: "展示ホール・多目的スペースなどを想定した仮の構成。固定の舞台・客席・吊り点を前提にせず、会場ごとの図面と運営条件を優先する。寸法は構図を試すための目安。",
+      },
+      sizes: [
+        { id: "small", label: "小規模（仮設 8×5m）", width: 8, depth: 5, height: 4.5, seats: 150, house: { depthM: 10 } },
+        { id: "mid", label: "中規模（仮設 12×8m）", width: 12, depth: 8, height: 6, seats: 350, house: { depthM: 16 } },
+      ],
+      note: "展示ホールや多目的スペースに、仮設の舞台と一方向の客席を組むための出発点。平土間の会場なので、客席の配置・避難経路・天井の使い方は会場ごとに変わる。吊りは一部可能としているが、実際の吊り点・荷重・安全距離はこの図では決めない。",
+      source: "実在会場の図面ではなく、屋内イベントの構図を試すための代表的な仮値",
+    }),
+    createVenueV2({
       id: "hall-shoebox",
       // 選択欄は「名前（短い説明）」で出るので、名前の側に括弧を入れない
       label: "角形ホール",
