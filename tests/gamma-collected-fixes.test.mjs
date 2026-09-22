@@ -117,6 +117,7 @@ test("stage tools can toggle rendered lighting without adding show data", () => 
   assert.match(style, /\.stage-center-bar \.stage-center-group\.is-display \.stage-view-select \{ margin-left: auto; \}/);
   assert.match(sketch, /\.stage-history-actions \.stage-gear-btn/);
   assert.match(sketch, /\.stage-header-collaboration \[aria-label\]/);
+  assert.match(sketch, /nativeTitle !== name \? nativeTitle : ""/);
 });
 
 test("the 2D-study boundary note lives in Settings instead of below the stage", () => {

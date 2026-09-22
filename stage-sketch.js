@@ -30817,7 +30817,9 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       head.append(keyTag);
     }
     tip.append(head);
-    const hintText = TOOL_HINTS[toolName] || button.dataset.tipDescription || "";
+    const nativeTitle = button.getAttribute("title") || "";
+    const hintText = TOOL_HINTS[toolName] || button.dataset.tipDescription
+      || (nativeTitle !== name ? nativeTitle : "");
     if (hintText) {
       const hint = document.createElement("p");
       hint.className = "stage-tip-hint";
