@@ -135,15 +135,16 @@ test("the 2D-study boundary note lives in Settings instead of below the stage", 
   assert.doesNotMatch(stage, /class="stage-boundary-note"/);
 });
 
-test("the front light summary is placed in the front panel instead of over the drawing", () => {
+test("the light summary is placed in the information panel instead of over the drawing", () => {
   const stage = read("stage.html");
   const sketch = read("stage-sketch.js");
   const style = read("style.css");
-  assert.match(stage, /id="stage-front-light-cue-caption" role="status" hidden/);
+  assert.match(stage, /data-panel="save" data-title="情報"[\s\S]*id="stage-front-light-cue-caption" role="status" hidden/);
   assert.match(sketch, /function syncFrontLightCueCaption\(\)/);
-  assert.match(sketch, /if \(!L\.plan && !presenting\) return;/);
-  assert.match(style, /\.stage-canvas-bar \.stage-front-light-cue-caption/);
-  assert.match(style, /\.stage-canvas-bar \{[\s\S]*?flex-wrap: wrap;/);
+  assert.match(sketch, /if \(!presenting\) return;/);
+  assert.match(sketch, /const model = !presenting \? lightCueOverlayForLayout\(layout\("front"\)\) : null;/);
+  assert.match(style, /\.stage-save-note \.stage-front-light-cue-caption/);
+  assert.ok(stage.indexOf('id="stage-front-light-cue-caption"') > stage.indexOf('data-panel="save" data-title="情報"'));
 });
 
 test("front border follows the durable equipment-placement setting and stays hidden by default", () => {

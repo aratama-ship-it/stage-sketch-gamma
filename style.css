@@ -9318,12 +9318,11 @@ body.is-panel-dragging {
 
 .stage-canvas-bar .stage-canvas-caption { margin-bottom: 0; }
 
-/* 正面図に出す照明の注釈は、図の下端ではなくパネルの上部に固定する。
- * 描画上の光源や演者と重ならず、長い注意書きも画面幅で自然に折り返せる。 */
-.stage-canvas-bar .stage-front-light-cue-caption {
-  flex: 1 0 100%;
+/* 照明の概略は、作図に重ねず情報パネルに置く。
+ * 現在の場面で点いている灯体と、図に含めないLXキューを一か所で読める。 */
+.stage-save-note .stage-front-light-cue-caption {
   box-sizing: border-box;
-  margin: 0;
+  margin: 0 0 10px;
   padding: 4px 7px;
   border-left: 2px solid var(--brass);
   background: rgba(32, 27, 22, 0.92);

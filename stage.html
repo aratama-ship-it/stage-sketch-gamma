@@ -12,7 +12,7 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092222">
+<link rel="stylesheet" href="style.css?v=2026092225">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -738,7 +738,6 @@
             <div class="stage-board-frame" id="stage-front-cell">
               <div class="stage-canvas-bar">
                 <p class="stage-canvas-caption" id="stage-front-caption">正面</p>
-                <p class="stage-front-light-cue-caption" id="stage-front-light-cue-caption" role="status" hidden></p>
                 <!-- カスタム会場のとき、擬似パースが近似であることを正直に出す -->
                 <!-- 見る席。絵の名前とメモの間に置く。どこから見た絵かは、
                      絵そのものと同じ行で読めた方が分かりやすい -->
@@ -1144,8 +1143,9 @@
             </div>
           </section>
 
-          <section class="stage-panel stage-save-note" data-panel="save" data-title="保存状態">
+          <section class="stage-panel stage-save-note" data-panel="save" data-title="情報">
             <div class="stage-panel-body">
+            <p class="stage-front-light-cue-caption" id="stage-front-light-cue-caption" role="status" hidden></p>
             <div class="stage-save-stamps stage-save-stamps-panel" id="stage-save-stamps" aria-live="polite" aria-label="保存時刻">
               <span>最終保存 <time id="stage-last-save-time">—</time></span>
               <span>最終バックアップ <time id="stage-last-backup-time">—</time></span>
@@ -3234,7 +3234,7 @@
 <script src="stage-light-panel-import.js?v=2026092209"></script>
 <script src="stage-scene-alternatives.js?v=2026092208"></script>
 <script src="stage-shortcuts.js?v=2026092218"></script>
-<script src="stage-sketch.js?v=2026092223"></script>
+<script src="stage-sketch.js?v=2026092225"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092209"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-timeline.js?v=2026092208"></script>

@@ -6125,7 +6125,7 @@
       },
       order: {
         project: 0, venue: 1, music: 2, cast: 3, sets: 4, props: 5, "stage-set": 6, machinery: 7, rigs: 8, light: 9, background: 10,
-        // 保存状態は右列の最後。既存のショーは保存済みの順序をそのまま使う。
+        // 情報は右列の最後。既存のショーは保存済みの順序をそのまま使う。
         study: -1, scenes: 0, seat2: 1, alternatives: 2, inspector: 8, save: 999, session: 3, ask: 4,
       },
       /* 共有は「会議のときだけ開く」もの。畳んだ状態から始める。
@@ -15710,9 +15710,9 @@
   function drawLightCueCaption(target, L) {
     const model = lightCueOverlayForLayout(L);
     if (!model) return;
-    // 通常表示の正面図は、パネル上部のDOM注釈として読ませる。
-    // 全画面にはこのパネルが無いため、従来どおり図の中へ描く。
-    if (!L.plan && !presenting) return;
+    // 通常表示は情報パネルへまとめる。全画面にはそのパネルが無いため、
+    // そのときだけ図の中へ従来どおり描く。
+    if (!presenting) return;
     const text = lightCueOverlayCaptionText(model);
     target.save();
     target.globalAlpha = 0.92;
@@ -15731,7 +15731,7 @@
   function syncFrontLightCueCaption() {
     const caption = els.frontLightCueCaption;
     if (!caption) return;
-    const model = !presenting && state.showFront ? lightCueOverlayForLayout(layout("front")) : null;
+    const model = !presenting ? lightCueOverlayForLayout(layout("front")) : null;
     caption.hidden = !model;
     caption.textContent = model ? lightCueOverlayCaptionText(model) : "";
   }
