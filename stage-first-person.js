@@ -937,6 +937,7 @@
 #stage-fpv-cast{left:20px;bottom:58px;right:220px;display:flex;flex-wrap:wrap;gap:6px}.stage-fpv-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 8px;border-radius:3px;background:rgba(var(--stage-ui-float-rgb,22,16,11),.86);border:1px solid rgba(232,226,212,.16);color:#e8e2d4;font-size:12px;cursor:pointer;font-family:inherit}.stage-fpv-chip:hover{border-color:rgba(232,226,212,.45)}.stage-fpv-chip.on{background:#e8e2d4;color:#14100c;border-color:#e8e2d4}.stage-fpv-chip .dot{width:8px;height:8px;border-radius:50%;flex:none}
 #stage-fpv-presets{left:20px;bottom:18px;right:220px;display:flex;flex-wrap:wrap;gap:5px}.stage-fpv-preset{padding:4px 8px;font-size:11px;background:rgba(var(--stage-ui-float-rgb,22,16,11),.72)}
 #stage-fpv-panel-toggles{display:flex;flex-direction:column;align-items:stretch;gap:5px}.stage-fpv-panel-toggle{justify-content:center;padding:4px 9px;font-size:11px}
+#stage-fpv-light-controls{display:flex;gap:5px}.stage-fpv-light-toggle{flex:1;justify-content:center;min-height:34px;padding:5px 7px;font-size:11px;white-space:nowrap}.stage-fpv-light-toggle svg{display:block;width:15px;height:15px;flex:none}.stage-fpv-light-toggle[aria-pressed="true"]{background:#e8e2d4;color:#14100c;border-color:#e8e2d4}.stage-fpv-light-toggle .stage-work-light-slash,.stage-fpv-light-toggle[aria-pressed="false"] .stage-work-light-rays{display:none}.stage-fpv-light-toggle[aria-pressed="false"] .stage-work-light-slash{display:block}
 #stage-fpv-optics{top:174px;right:70px;display:flex;flex-direction:column;align-items:stretch;gap:14px;z-index:71}#stage-fpv-lens,#stage-fpv-house,#stage-fpv-crowd{display:flex;flex-direction:column;align-items:stretch;gap:5px}.stage-fpv-lens-chip,.stage-fpv-house-chip,.stage-fpv-crowd-chip{justify-content:center;padding:4px 9px;font-size:11px}
 .stage-fpv-panel{position:absolute;z-index:71;box-sizing:border-box;overflow:hidden;border:1px solid rgba(232,226,212,.16);border-radius:3px;background:var(--chip,rgba(var(--stage-ui-float-rgb,22,16,11),.94));box-shadow:0 8px 24px rgba(0,0,0,.28);color:#e8e2d4;touch-action:none;user-select:none;-webkit-user-select:none}.stage-fpv-panel[hidden]{display:none!important}.stage-fpv-panel-bar{height:26px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;padding:0 5px 0 9px;font-size:11px;letter-spacing:.04em;cursor:grab}.stage-fpv-panel-bar:active{cursor:grabbing}.stage-fpv-panel-hide{width:24px;height:22px;padding:0;border:0;background:transparent;color:#e8e2d4;font:16px/20px inherit;cursor:pointer}.stage-fpv-panel canvas{display:block;width:100%;background:#16100b;pointer-events:auto}.stage-fpv-panel-resize{position:absolute;right:0;bottom:0;width:14px;height:14px;cursor:nwse-resize;background:linear-gradient(135deg,transparent 0 45%,rgba(232,226,212,.55) 46% 55%,transparent 56% 65%,rgba(232,226,212,.55) 66% 75%,transparent 76%);touch-action:none}
 #stage-fpv-nav{right:16px;bottom:18px;display:flex;align-items:center;gap:8px}#stage-fpv-nav button{background:rgba(var(--stage-ui-float-rgb,22,16,11),.86);color:#e8e2d4;border:1px solid rgba(232,226,212,.2);border-radius:3px;font-size:13px;padding:7px 12px;cursor:pointer;font-family:inherit}#stage-fpv-nav button:hover{border-color:rgba(232,226,212,.5)}#stage-fpv-count{font-size:11.5px;opacity:.6;min-width:52px;text-align:center}
@@ -1008,6 +1009,24 @@
     const toast = createElement("div", "stage-fpv-toast", "stage-fpv-hud");
     const panelToggles = createElement("div", "stage-fpv-panel-toggles");
     const optics = createElement("div", "stage-fpv-optics", "stage-fpv-hud");
+    const lightControls = createElement("div", "stage-fpv-light-controls");
+    const makeLightToggle = (id, sourceId, bridgeAction) => {
+      const button = createElement("button", id, "stage-fpv-chip stage-fpv-light-toggle");
+      button.type = "button";
+      const icon = document.getElementById(sourceId)?.querySelector("svg")?.cloneNode(true);
+      if (icon) button.appendChild(icon);
+      const label = createElement("span");
+      button.appendChild(label);
+      button.addEventListener("click", () => {
+        state.bridge?.[bridgeAction]?.();
+        readCurrent();
+        wakeFrames();
+      });
+      lightControls.appendChild(button);
+      return { button, label };
+    };
+    const lightRenderToggle = makeLightToggle("stage-fpv-light-render-toggle", "stage-light-render-toggle", "toggleLightRendering");
+    const workLightToggle = makeLightToggle("stage-fpv-work-light-toggle", "stage-work-light-toggle", "toggleWorkLightOff");
     const lens = createElement("div", "stage-fpv-lens");
     const lensChips = LENSES.map((preset) => {
       const chip = createElement("button", "", "stage-fpv-chip stage-fpv-lens-chip");
@@ -1079,7 +1098,7 @@
     const closeButton = createElement("button", "stage-fpv-close");
     closeButton.type = "button";
     closeButton.textContent = "✕";
-    optics.append(panelToggles, lens, house, crowd);
+    optics.append(lightControls, panelToggles, lens, house, crowd);
     root.append(canvas, fade, title, minimap, optics,
       panels.front.panel, panels.plan.panel,
       whose, cast, presets, nav, keyGuide, hint, edit, toast, preview3d, closeButton);
@@ -1087,7 +1106,8 @@
     document.body.appendChild(root);
     elements = { root, backdrop, canvas, fade, show, act, scene, approx, minimap, whose, cast, presets,
       previous, count, next, keyGuide, hint, edit, editDot, editName, editFacing, editHint, editPoses,
-      toast, closeButton, preview3d, panelToggles, lens, lensChips, house, houseChips,
+      toast, closeButton, preview3d, lightControls, lightRenderToggle, workLightToggle,
+      panelToggles, lens, lensChips, house, houseChips,
       crowd, crowdChips, panels };
     closeButton.addEventListener("click", close);
     backdrop.addEventListener("click", close);
@@ -1128,7 +1148,24 @@
     W = finite(data.venue && data.venue.width, 12);
     D = finite(data.venue && data.venue.depth, 9);
     CEIL = finite(data.venue && data.venue.height, 8);
+    syncLightToggles();
     return data;
+  }
+
+  function syncLightToggles() {
+    if (!elements || !data) return;
+    const values = [
+      [elements.lightRenderToggle, "照明効果", Boolean(data.lightPool)],
+      [elements.workLightToggle, "作業灯", !data.lightPool || !data.workLightOff],
+    ];
+    values.forEach(([control, name, pressed]) => {
+      const label = text(name);
+      if (control.label.textContent !== label) control.label.textContent = label;
+      if (control.button.getAttribute("aria-label") !== label) control.button.setAttribute("aria-label", label);
+      if (control.button.getAttribute("aria-pressed") !== String(pressed)) {
+        control.button.setAttribute("aria-pressed", String(pressed));
+      }
+    });
   }
 
   function heightOf(piece) {

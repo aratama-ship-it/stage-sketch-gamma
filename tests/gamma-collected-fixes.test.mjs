@@ -88,11 +88,22 @@ test("E opens a fully visible timeline in stage and lighting-design workspaces",
 test("stage tools can toggle rendered lighting without adding show data", () => {
   const stage = read("stage.html");
   const sketch = read("stage-sketch.js");
-  assert.match(stage, /id="stage-light-render-toggle"/);
-  assert.match(stage, /aria-label="照明効果の表示を切り替える"/);
+  const style = read("style.css");
+  const firstPerson = read("stage-first-person.js");
+  assert.match(stage, /id="stage-light-render-toggle" class="is-icon"[^>]*aria-label="照明効果"[^>]*><span class="stage-tool-icon"[^>]*><svg/);
+  assert.match(stage, /id="stage-work-light-toggle" class="is-icon"[^>]*aria-label="作業灯" aria-keyshortcuts="G"[^>]*><span class="stage-tool-icon"[^>]*><svg/);
+  assert.doesNotMatch(stage, /id="stage-work-light-toggle"[^>]*data-tool-key="G"/);
+  assert.match(style, /#stage-work-light-toggle\[aria-pressed="false"\] \.stage-work-light-slash/);
   assert.match(sketch, /prefs\.lightPool = next/);
   assert.match(sketch, /if \(next && !featureOn\("lightBeam"\)/);
+  assert.match(sketch, /const workLightOn = !featureOn\("lightPool"\) \|\| !featureOn\("workLightOff"\)/);
+  assert.match(sketch, /els\.workLightToggle\.addEventListener\("click", toggleWorkLightOff\)/);
+  assert.match(sketch, /toggleWorkLightOff\(\);/);
   assert.match(sketch, /const drawAim = model\.counts\.total <= 200 && !featureOn\("lightPool"\)/);
+  assert.match(sketch, /toggleLightRendering,\s*toggleWorkLightOff,/);
+  assert.match(firstPerson, /makeLightToggle\("stage-fpv-light-render-toggle", "stage-light-render-toggle", "toggleLightRendering"\)/);
+  assert.match(firstPerson, /makeLightToggle\("stage-fpv-work-light-toggle", "stage-work-light-toggle", "toggleWorkLightOff"\)/);
+  assert.match(firstPerson, /\[elements\.workLightToggle, "作業灯", !data\.lightPool \|\| !data\.workLightOff\]/);
 });
 
 test("number keys switch the five workspace tabs without bypassing existing tab behavior", () => {

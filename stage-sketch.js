@@ -4581,6 +4581,8 @@
     sceneGrid: "全シーンをカードで並べて見渡します。",
     sceneSection: "シーンをまとめるセクションを追加します。",
     sceneAdd: "まっさらな新しいシーンを追加します。",
+    lightRender: "場面の照明効果を表示・非表示にします。",
+    workLight: "作業灯を点けたり消したりします。消すと、照明が当たる所だけが見えます。",
   };
 
   const els = {
@@ -4654,6 +4656,7 @@
     pitchLangs: document.getElementById("stage-pitch-langs"),
     toolHint: document.getElementById("stage-tool-hint"),
     lightRenderToggle: document.getElementById("stage-light-render-toggle"),
+    workLightToggle: document.getElementById("stage-work-light-toggle"),
     arrowOptions: document.getElementById("stage-arrow-options"),
     arrowPlaneFloor: document.getElementById("stage-arrow-plane-floor"),
     arrowPlaneAir: document.getElementById("stage-arrow-plane-air"),
@@ -24422,9 +24425,11 @@
     return featureOn("workLightOff") ? "dark" : "beam";
   }
 
-  function syncLightRenderToggle() {
-    if (!els.lightRenderToggle) return;
-    els.lightRenderToggle.setAttribute("aria-pressed", String(featureOn("lightPool")));
+  function syncStageLightToggles() {
+    if (els.lightRenderToggle) els.lightRenderToggle.setAttribute("aria-pressed", String(featureOn("lightPool")));
+    // 光の表示を隠している間は、保存値が「消灯」でも実際の舞台は作業灯の明るさになる。
+    const workLightOn = !featureOn("lightPool") || !featureOn("workLightOff");
+    if (els.workLightToggle) els.workLightToggle.setAttribute("aria-pressed", String(workLightOn));
   }
 
   /* 舞台タブで光を見比べるための近道。OFF時は lightPool だけを切り、光の筋・本番の暗さの
@@ -24754,7 +24759,7 @@
   function applyFeatureFlags() {
     applyPanelVisibility();
     if (els.presentBtn) els.presentBtn.hidden = !featureOn("presentation");
-    syncLightRenderToggle();
+    syncStageLightToggles();
     syncMultiSelectionControls();
     // 光の意図: カード・重ねのトグル・照らし合わせをまとめて出し入れする
     if (els.frontLightIntent) {
@@ -30577,7 +30582,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   function showToolTip(button) {
     if (!featureOn("toolTips") || tabletPwaActive || phoneViewerActive) return;
     const name = button.getAttribute("aria-label") || button.textContent.trim();
-    const key = button.dataset.toolKey || "";
+    const key = button.dataset.toolKey || button.dataset.tipKey || "";
     // 道具の列は data-stage-tool、絵の上の「動線を描く」「メモ」は data-tool-tip
     const toolName = button.dataset.stageTool || button.dataset.toolTip;
     const tip = toolTipNode();
@@ -31572,6 +31577,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     });
   }
   if (els.lightRenderToggle) els.lightRenderToggle.addEventListener("click", toggleLightRendering);
+  if (els.workLightToggle) els.workLightToggle.addEventListener("click", toggleWorkLightOff);
   if (els.frontLightIntent) {
     els.frontLightIntent.addEventListener("change", (e) => {
       state.showLightIntent = e.target.checked;
@@ -31762,6 +31768,9 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       getFrontCanvas: () => canvas,
       getPlanCanvas: () => planCanvas,
       requestRedraw: () => render(true),
+      // 3D画面でも舞台タブと同じ端末設定・描画経路を使い、保存形式を増やさない。
+      toggleLightRendering,
+      toggleWorkLightOff,
       stepScene,
       /* FPVから演者の向き・姿勢を直す。変更は必ず本編の undo・保存・再描画を通す */
       setPieceFacing: (pieceId, deg, snapshot) => {

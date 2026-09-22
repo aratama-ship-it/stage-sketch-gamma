@@ -10168,7 +10168,6 @@ body.is-panel-dragging {
 }
 
 .stage-center-bar .stage-tool-split { width: 4px; }
-.stage-center-bar #stage-light-render-toggle { padding-inline: 5px; }
 .stage-center-bar .stage-view-select select { width: 72px; }
 
 /* Undo／Redoは音量バーの隣に置き、ヘッダーの操作寸法に揃える。 */
@@ -10265,6 +10264,11 @@ body.is-panel-dragging {
   display: block;
   color: currentColor;
 }
+
+/* 作業灯の印は、点灯中の放射線と消灯中の斜線を状態に合わせて切り替える。 */
+#stage-work-light-toggle .stage-work-light-slash,
+#stage-work-light-toggle[aria-pressed="false"] .stage-work-light-rays { display: none; }
+#stage-work-light-toggle[aria-pressed="false"] .stage-work-light-slash { display: block; }
 
 /* 選んでいる道具の記号は、字の色より一段はっきり出す */
 .stage-center-bar .stage-tool-grid button.is-icon[aria-pressed="true"] .stage-tool-icon {

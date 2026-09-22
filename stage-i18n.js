@@ -1015,6 +1015,7 @@
     "操作を選ぶ": "Choose a tool",
     "ものを動かす": "Move objects",
     "照明効果": "Lighting effects",
+    "作業灯": "Work lights",
     "照明効果の表示を切り替える": "Toggle lighting effects",
     "照明効果を表示しました。": "Lighting effects are now visible.",
     "照明効果を隠しました。": "Lighting effects are now hidden.",
@@ -2061,6 +2062,8 @@
       sceneGrid: "Lay every scene out as cards for an overview.",
       sceneSection: "Add a section that groups scenes.",
       sceneAdd: "Add a new blank scene.",
+      lightRender: "Show or hide the lighting effects for this scene.",
+      workLight: "Turn the work lights on or off. When off, only areas reached by lighting remain visible.",
     },
     venue: {
       proscenium: "Proscenium", thrust: "Thrust", arena: "Big top", outdoor: "Outdoor stage", blackbox: "Black box",
