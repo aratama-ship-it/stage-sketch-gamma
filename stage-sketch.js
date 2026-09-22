@@ -15688,15 +15688,6 @@
       }
     });
 
-    const text = lightCueOverlayCaptionText(model);
-    target.globalAlpha = 0.92;
-    target.font = "600 10px system-ui, sans-serif";
-    const width = Math.max(96, target.measureText(text).width + 12);
-    const left = L.centerX - L.frontW / 2 + 6;
-    target.fillStyle = stageSurfaceColor("#201b16");
-    target.fillRect(left, L.floorY - 25, width, 19);
-    target.fillStyle = stageSurfaceColor("#e0c989");
-    target.fillText(text, left + 6, L.floorY - 12);
     target.restore();
   }
 

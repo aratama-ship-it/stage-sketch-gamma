@@ -174,6 +174,10 @@ test("the light summary is placed in the information panel instead of over the d
   assert.match(sketch, /function syncFrontLightCueCaption\(\)/);
   assert.match(sketch, /if \(!presenting\) return;/);
   assert.match(sketch, /const model = !presenting \? lightCueOverlayForLayout\(layout\("front"\)\) : null;/);
+  const overlayStart = sketch.indexOf("function drawLightCueOverlayFront");
+  const overlayEnd = sketch.indexOf("function lightCueOverlayCaptionText", overlayStart);
+  assert.ok(overlayStart >= 0 && overlayEnd > overlayStart);
+  assert.doesNotMatch(sketch.slice(overlayStart, overlayEnd), /lightCueOverlayCaptionText/);
   assert.match(style, /\.stage-save-note \.stage-front-light-cue-caption/);
   assert.ok(stage.indexOf('id="stage-front-light-cue-caption"') > stage.indexOf('data-panel="save" data-title="情報"'));
 });
