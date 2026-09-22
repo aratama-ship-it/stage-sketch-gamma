@@ -95,10 +95,12 @@
   button.st:hover{border-color:var(--brass)}
   button.st.on{color:#1a1409;background:var(--brass);border-color:var(--brass)}
   button.st.off{color:#8b98a1}
-  /* 灯体一覧の状態は文字ではなく、灯体＋光芒で読む。ON/OFFを色だけに頼らない。 */
+  /* 灯体一覧の状態は文字ではなく、レンズ＋光輪で読む。ON/OFFを色だけに頼らない。 */
   button.st.fixture-power{width:34px;min-width:34px;min-height:30px;padding:3px;display:inline-grid;place-items:center;line-height:0}
   button.st.fixture-power svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+  button.st.fixture-power .fixture-power-lens{fill:currentColor}
   button.st.fixture-power.off .fixture-power-rays{display:none}
+  button.st.fixture-power.off .fixture-power-lens{fill:none}
   button.st.fixture-power.off .fixture-power-slash{display:block}
   button.st.fixture-power.on .fixture-power-slash{display:none}
   button.st.move{color:var(--rust-ink);border-color:var(--rust-ink)}
@@ -925,7 +927,7 @@
 <script src="volume-light.js?v=20260915-2"></script>
 <script src="laser-effects.js?v=20260915-5-color-presets"></script>
 <script src="laser-effects-ui.js?v=20260915-3-supported-shapes"></script>
-<script src="app.js?v=2026092240"></script>
+<script src="app.js?v=2026092241"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20260915-3-vertical-cards"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->
