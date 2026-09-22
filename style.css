@@ -11307,21 +11307,23 @@ body.stage-modal-open .stage-tour { display: none !important; }
 
 .stage-modal-body { padding: 14px 16px 18px; }
 
-/* 演者の詳細は暗い舞台面から切り替わる作業面。入力と文字を読み分けやすくする。 */
-#stage-profile {
+/* 詳細は暗い舞台面から切り替わる作業面。演者・大道具・小道具・舞台機構で
+ * 同じ枠・見出し・入力の明暗にし、どの種類を開いても読む場所を迷わせない。 */
+.stage-detail-modal {
   background: #3a332d;
   border: 3px solid #b99a63;
 }
 
-#stage-profile .stage-modal-head { border-bottom-color: rgba(239, 231, 214, 0.34); }
-#stage-profile .stage-modal-body { background: #463d35; }
+.stage-detail-modal .stage-modal-head { border-bottom-color: rgba(239, 231, 214, 0.34); }
+.stage-detail-modal .stage-modal-body { background: #463d35; }
 /* T-22（2026-09-18 本人要望）: シーンの詳細も、演者プロフィールと同じ明るい地にする
  * （本人の言う「他にそういう物があった」＝#stage-profile のこれ）。 */
 #stage-rename .stage-modal-body { background: #463d35; }
-#stage-profile .stage-control-label,
-#stage-profile .stage-modal-head h2 { color: #fff8ea; }
-#stage-profile .stage-text-input,
-#stage-profile input[type="range"] { border-color: rgba(255, 248, 234, 0.46); }
+.stage-detail-modal .stage-control-label,
+.stage-detail-modal .stage-modal-head h2 { color: #fff8ea; }
+.stage-detail-modal .stage-text-input,
+.stage-detail-modal .stage-select,
+.stage-detail-modal input[type="range"] { border-color: rgba(255, 248, 234, 0.46); }
 
 .stage-timeline-cue-detail-body { display: grid; gap: 16px; }
 

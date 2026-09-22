@@ -165,6 +165,17 @@ test("double-clicking a selected item name opens its existing detail modal", () 
   assert.match(sketch, /els\.selectedName\.addEventListener\("dblclick", \(event\) => \{[\s\S]*?selectedPieces\(\)\.length !== 1[\s\S]*?openNameDetailTarget\(\{ piece, castId: piece\.castId \|\| null \}, visibleInspectorAnchorView\(\)\)/);
 });
 
+test("registered scenery, props, and machinery use the performer detail modal design", () => {
+  const stage = read("stage.html");
+  const style = read("style.css");
+
+  assert.match(stage, /class="stage-modal stage-detail-modal" id="stage-profile"/);
+  assert.match(stage, /class="stage-modal stage-detail-modal" id="stage-setinfo"/);
+  assert.match(style, /\.stage-detail-modal\s*\{[\s\S]*?border: 3px solid #b99a63;/);
+  assert.match(style, /\.stage-detail-modal \.stage-modal-body\s*\{ background: #463d35; \}/);
+  assert.match(style, /\.stage-detail-modal \.stage-select,/);
+});
+
 test("front border follows the durable equipment-placement setting and stays hidden by default", () => {
   const stage = read("stage.html");
   const sketch = read("stage-sketch.js");
