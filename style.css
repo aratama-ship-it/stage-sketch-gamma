@@ -10129,9 +10129,9 @@ body.is-panel-dragging {
 /* ショーの上に常設する操作欄。パネルではないので畳み・並べ替えの対象にしない。 */
 .stage-center-bar {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--stage-control-dock-gap);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
   margin-bottom: var(--stage-control-dock-gap);
   padding: var(--stage-control-dock-pad-block) var(--stage-control-dock-pad-inline);
   border: 1px solid var(--line-dark);
@@ -10140,23 +10140,23 @@ body.is-panel-dragging {
 
 .stage-center-group {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--stage-control-group-gap);
+  gap: 4px;
   min-width: 0;
 }
 
+.stage-center-group.is-tools { flex: 0 0 auto; }
+
 .stage-center-group.is-display {
-  padding-top: var(--stage-control-dock-pad-block);
-  border-top: 1px solid var(--line-dark);
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  padding-left: 4px;
+  border-left: 1px solid var(--line-dark);
 }
 
 .stage-center-group-label {
-  flex: 0 0 100%;
-  color: var(--brass);
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  white-space: nowrap;
+  /* グループ名は各 role=group の aria-label に残す。 */
+  display: none;
 }
 
 /* 道具の帯。区切りの余白を挟むので、桁で数えるgridではなく並べるflexにする
@@ -10166,6 +10166,10 @@ body.is-panel-dragging {
   display: flex;
   align-items: center;
 }
+
+.stage-center-bar .stage-tool-split { width: 4px; }
+.stage-center-bar #stage-light-render-toggle { padding-inline: 5px; }
+.stage-center-bar .stage-view-select select { width: 72px; }
 
 /* Undo／Redoは音量バーの隣に置き、ヘッダーの操作寸法に揃える。 */
 .stage-history-actions .stage-undo-redo {
@@ -10208,12 +10212,15 @@ body.is-panel-dragging {
 }
 
 .stage-center-bar .stage-tool-hint {
+  order: 3;
+  flex-basis: 100%;
   min-width: 0;
   margin: 0;
 }
 
 .stage-center-bar .stage-name-toggle {
   flex: 0 0 auto;
+  gap: 3px;
   margin: 0;
   min-height: 30px;
 }
@@ -10227,8 +10234,8 @@ body.is-panel-dragging {
    名前は span に残したまま隠すので、読み上げと英語切替はそのまま効く
    （消すと画面読み上げで「ボタン」としか読まれなくなる）。 */
 .stage-center-bar .stage-tool-grid button.is-icon {
-  width: 40px;
-  min-width: 40px;
+  width: 28px;
+  min-width: 28px;
   padding: 4px 0;
   display: inline-flex;
   align-items: center;
@@ -10599,7 +10606,7 @@ body.stage-session-guest .stage-panel-visibility-control { display: none; }
 
 
 .stage-center-bar button { min-height: 27px; padding: 3px 10px; font-size: 10px; }
-.stage-center-bar .stage-name-toggle { min-height: 27px; padding: 3px 8px; font-size: 10px; }
+.stage-center-bar .stage-name-toggle { min-height: 27px; padding: 3px; font-size: 10px; }
 
 /* 転換アニメーションはショーに保存する設定として、環境設定にまとめる。 */
 .stage-pref-row.stage-transition-animation-pref {
