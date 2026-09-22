@@ -95,6 +95,12 @@
   button.st:hover{border-color:var(--brass)}
   button.st.on{color:#1a1409;background:var(--brass);border-color:var(--brass)}
   button.st.off{color:#8b98a1}
+  /* 灯体一覧の状態は文字ではなく、灯体＋光芒で読む。ON/OFFを色だけに頼らない。 */
+  button.st.fixture-power{width:34px;min-width:34px;min-height:30px;padding:3px;display:inline-grid;place-items:center;line-height:0}
+  button.st.fixture-power svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+  button.st.fixture-power.off .fixture-power-rays{display:none}
+  button.st.fixture-power.off .fixture-power-slash{display:block}
+  button.st.fixture-power.on .fixture-power-slash{display:none}
   button.st.move{color:var(--rust-ink);border-color:var(--rust-ink)}
   /* 配置タブの3列目＝取り付け位置（下手寄り／中央など）。状態の色分けとは別の落ち着いた色にする */
   .row .st.spot{color:var(--milk-dim);font-size:11.5px}
@@ -173,7 +179,7 @@
   .scenebar .btn.small{min-height:24px;padding:2px 8px;font-size:12px}
   /* 再生は、ツール群と同じ単色SVGにする。状態は再生（三角）／停止（二本線）で示し、
      説明とショートカットは title / aria-label に残す。 */
-  .transport .btn.small.play-toggle{width:32px;min-width:32px;min-height:28px;padding:0;display:inline-grid;place-items:center}
+  .transport .btn.small.play-toggle{width:34px;min-width:34px;min-height:34px;padding:0;display:inline-grid;place-items:center}
   .transport .play-toggle svg{display:block;width:16px;height:16px;fill:currentColor}
   .transport .btn.small.playing{color:var(--milk);background:rgba(168,75,38,.28);border-color:var(--rust)}
   /* コピー／ペーストは再生より一段控えめ（再生が主操作）。幅は「ペースト」に合わせて固定し、
@@ -372,7 +378,7 @@
   .insphead .ontoggle{order:2}
   .panelhead-actions{display:contents}
   .panelhead-actions .transport{gap:5px}
-  .panelhead-actions .transport .btn.small.play-toggle{min-height:28px;padding:0}
+  .panelhead-actions .transport .btn.small.play-toggle{min-height:34px;padding:0}
   /* オン・オフ。押すたびに切り替わる1つのボタンで、いまの状態をそのまま表示する
      （2026-09-13 本人要望「オンとオフの切り替え式に」「ちょっと大きめに」）。 */
   .ontoggle{display:inline-flex;align-items:center;gap:7px;
@@ -676,7 +682,7 @@
       </span>
       <span class="dirty" id="dirty"></span>
       <span class="runtime" id="runtime-status" aria-live="polite">描画を計測中</span>
-      <button type="button" class="gearbtn" id="prefs" aria-label="環境設定" title="環境設定"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.2" stroke-width="1.3"/><circle cx="8" cy="8" r="1.4" stroke-width="1.3"/><path stroke-width="2.3" d="M8 3.10V1.90M11.94 5.55l1.04-.60M11.94 10.45l1.04.60M8 12.90v1.20M4.06 10.45l-1.04.60M4.06 5.55l-1.04-.60"/></svg></button>
+      <button type="button" class="gearbtn" id="prefs" aria-label="環境設定" title="環境設定" hidden><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.2" stroke-width="1.3"/><circle cx="8" cy="8" r="1.4" stroke-width="1.3"/><path stroke-width="2.3" d="M8 3.10V1.90M11.94 5.55l1.04-.60M11.94 10.45l1.04.60M8 12.90v1.20M4.06 10.45l-1.04.60M4.06 5.55l-1.04-.60"/></svg></button>
       <button type="button" class="btn" id="save" title="この照明デザインに名前を付けて保存（ファイルにも書き出せます）">保存</button>
       <button type="button" class="x" id="close" aria-label="閉じる">✕</button>
     </div>
@@ -919,7 +925,7 @@
 <script src="volume-light.js?v=20260915-2"></script>
 <script src="laser-effects.js?v=20260915-5-color-presets"></script>
 <script src="laser-effects-ui.js?v=20260915-3-supported-shapes"></script>
-<script src="app.js?v=2026092237"></script>
+<script src="app.js?v=2026092240"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20260915-3-vertical-cards"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->

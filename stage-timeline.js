@@ -2590,6 +2590,33 @@
     updatePlayhead();
   }
 
+  /* 左右キーはシーン送りではなく、現在位置に最も近い前後のキューへ移る。
+     ライト・音楽・セリフを時刻順に一列として扱うため、演出上の細かい合図を
+     シーンより先にたどれる。再生状態は変えず、キューを選んで再生位置だけを合わせる。 */
+  function stepNearestTimelineCue(direction) {
+    const documentValue = projectDocument();
+    if (!timeline || !documentValue || !documentValue.project) return false;
+    const all = timelineCuePresentations(documentValue.project);
+    if (!all.length) return false;
+    const epsilon = 1e-6;
+    const next = direction < 0
+      ? [...all].reverse().find((cue) => cue.seconds < seekSeconds - epsilon)
+      : all.find((cue) => cue.seconds > seekSeconds + epsilon);
+    if (!next) return false;
+    selectedCueId = next.id;
+    selectedCueIds = new Set([next.id]);
+    syncCueSelection();
+    seekToSeconds(next.seconds);
+    const button = els.surface.querySelector(`.stage-timeline-cue[data-cue-id="${CSS.escape(next.id)}"]`);
+    if (button) button.focus({ preventScroll: true });
+    return true;
+  }
+
+  window.addEventListener("stage-timeline-cue-step", (event) => {
+    const direction = Number(event && event.detail && event.detail.direction);
+    if (direction && stepNearestTimelineCue(direction)) event.preventDefault();
+  });
+
   function seekFromPointer(event) {
     if (!timeline) return;
     const rect = els.ruler.getBoundingClientRect();

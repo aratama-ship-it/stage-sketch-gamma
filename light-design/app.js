@@ -3165,7 +3165,9 @@
       if (state.mode === "place") { stCell.textContent = E.mountSpot(f); stCell.title = E.describeMount(f, state.rig); }
       if (state.mode === "move") {
         stCell.type = "button";
-        stCell.textContent = st === "off" ? "オフ" : "オン";
+        stCell.classList.add("fixture-power");
+        stCell.setAttribute("aria-label", st === "off" ? "いまオフ。押すとオン" : "いまオン。押すとオフ");
+        stCell.innerHTML = `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="m5.1 6.3 2-2h2.8l1.8 1.8-2 2H6.9z"/><path d="m6.9 8.1-1.8 3.5M9.2 7.4l1.8 3.5M6.1 11.6h4.1"/><path class="fixture-power-rays" d="M8.2 1.5v1.3M12.2 3.1l-.9.9M13.8 7.2h-1.3"/><path class="fixture-power-slash" d="m2.1 13.9 11.8-11.8"/></svg>`;
         stCell.title = st === "off" ? "いまオフ。押すとオン" : "いまオン。押すとオフ";
         stCell.onclick = (ev) => { ev.stopPropagation(); const l = lightOf(f.id); if (isLit(l)) setLight(f.id, { on: false }); else turnOn(f.id); commit(); };
       }

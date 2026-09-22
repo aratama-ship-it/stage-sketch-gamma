@@ -87,9 +87,9 @@ test("lighting apply belongs to the LX cue panel and playback uses an accessible
   assert.match(html, /class="btn small play-toggle" id="t-play"/);
   assert.match(app, /動きを止める（Space）/);
   assert.match(app, /b\.setAttribute\("aria-pressed", String\(state\.play\.on\)\)/);
-  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=2026092237/);
-  assert.match(worker, /stage-sketch-gamma-shell-v261/);
-  assert.match(worker, /light-design\/app\.js\?v=2026092237/);
+  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=2026092240/);
+  assert.match(worker, /stage-sketch-gamma-shell-v265/);
+  assert.match(worker, /light-design\/app\.js\?v=2026092240/);
   assert.match(worker, /light-design\/embed\.js\?v=2026092238/);
 });
 

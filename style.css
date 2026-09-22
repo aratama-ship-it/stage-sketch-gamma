@@ -8455,6 +8455,15 @@ html.stage-phone-viewer .stage-single-view-switch { display: none; }
 /* ショー一覧と新規ショーは横並びのまま、ボタン内の文字を中央へ置く。 */
 .stage-project-show-actions .stage-minor-action { text-align: center; }
 
+/* 入出力も「ショー一覧／新規」と同じ二列にする。長い旧名で縦に積む必要はない。 */
+.stage-project-transfer-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.stage-project-transfer-actions .stage-minor-action { text-align: center; }
+
 .stage-version-note {
   color: rgba(240, 231, 214, 0.53);
   font-size: 9.5px;
@@ -9986,6 +9995,18 @@ body.is-panel-dragging {
 
 .stage-canvas-tool:hover { color: var(--milk); border-color: var(--brass); }
 
+/* 正面・平面の道具も、既存の表示トグルと同じ 34px の線画にそろえる。 */
+.stage-canvas-tool.is-icon {
+  display: inline-grid;
+  width: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 3px;
+  place-items: center;
+}
+
+.stage-canvas-tool.is-icon .stage-canvas-tool-icon { display: block; }
+
 /* 動線の二操作は、幅があるときだけ文字で読み、狭い図では同じ意味の線画へ替える。 */
 .stage-canvas-tool-icon {
   display: none;
@@ -10158,8 +10179,8 @@ body.is-panel-dragging {
 
 /* セクション中の全員へ一括適用する衣装。演者未選択でも常に表示する。 */
 .stage-front-costume-choice {
-  min-height: 28px;
-  padding: 4px 8px;
+  min-height: 34px;
+  padding: 3px;
   white-space: nowrap;
 }
 
@@ -11913,6 +11934,8 @@ body.stage-modal-open .stage-tour { display: none !important; }
 .stage-venue-editor-ceiling,
 .stage-venue-editor-audience-guide,
 .stage-venue-editor-wings-guide,
+.stage-venue-editor-walls-guide,
+.stage-venue-editor-machinery,
 .stage-venue-editor-audience-step,
 .stage-venue-editor-lines {
   display: grid;
@@ -11945,6 +11968,8 @@ body.stage-modal-open .stage-tour { display: none !important; }
 .stage-venue-editor-ceiling h3,
 .stage-venue-editor-audience-guide h3,
 .stage-venue-editor-wings-guide h3,
+.stage-venue-editor-walls-guide h3,
+.stage-venue-editor-machinery h3,
 .stage-venue-editor-audience-step h3,
 .stage-venue-editor-lines h3 {
   margin: 0;
@@ -15370,7 +15395,8 @@ html.stage-phone-viewer .stage-note-editor-bar .btn-quiet { min-height: 44px; mi
 /* 行の隙間（下の余白4px＋並びの隙間7px＋枠線2px＝13px）を跨いで、
    下の行のバーへ繋ぐ。幕の終わりの行には付けないので線は垂れない。 */
 .stage-scene-bar-mark.is-linked {
-  bottom: calc(-1 * var(--scene-bar-link, 13px));
+  /* 実測の行間に2pxだけ重ねる。サブピクセル丸めで線が切れて見えないようにする。 */
+  bottom: calc(-1 * (var(--scene-bar-link, 13px) + 2px));
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }
@@ -16666,18 +16692,21 @@ html.stage-timeline-viewport-locked body.is-standalone {
 }
 
 body.stage-timeline-expanded:not(.stage-fullscreen) #view-stage {
-  height: calc(100dvh - var(--stage-timeline-height));
+  /* タイムラインを開いても舞台の座標系を縮めない。下端はパネルの下へ
+     余白を確保し、必要なときだけこの領域をスクロールする。 */
+  height: 100dvh;
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
-  padding-bottom: 32px;
+  padding-bottom: calc(var(--stage-timeline-height) + 32px);
 }
 
 body.stage-timeline-collapsed:not(.stage-fullscreen) #view-stage {
-  height: calc(100dvh - var(--stage-timeline-resize-hit));
+  height: 100dvh;
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
+  padding-bottom: calc(var(--stage-timeline-resize-hit) + 32px);
 }
 
 /* 再生は下部タイムラインへ一元化する。タブレット／スマホの既存画面は変えない。 */
@@ -16771,7 +16800,8 @@ body.is-timeline-resizing { cursor: row-resize; user-select: none; -webkit-user-
   padding: 0 12px;
   color: var(--stage-timeline-text);
   border: 1px solid var(--stage-timeline-line);
-  border-radius: 4px;
+  /* 舞台スケッチ本体と同じ角張った道具。タイムラインだけ丸くしない。 */
+  border-radius: 0;
   white-space: nowrap;
 }
 

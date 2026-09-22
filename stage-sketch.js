@@ -4598,6 +4598,7 @@
     frontLights: "正面図の照明を出したり隠したりします。",
     frontBorder: "機材配置で設定した前一文字を、正面図に重ねます。",
     frontLightIntent: "光の意図を作図用の印として重ねます。",
+    frontFloorGrid: "正面図の床グリッドを出したり隠したりします。",
     seatMap: "正面図をどの客席位置から見ているかの小図を出します。",
     planLights: "平面図の照明の円と灯体を出したり隠したりします。",
     planRoutesCast: "演者の動線と、入り・はけの自動の線を出したり隠したりします。",
@@ -5238,6 +5239,7 @@
     showFlown: document.getElementById("stage-show-flown"),
     frontLights: document.getElementById("stage-front-lights"),
     frontLightIntent: document.getElementById("stage-front-light-intent"),
+    frontFloorGrid: document.getElementById("stage-front-floor-grid"),
     planLights: document.getElementById("stage-plan-lights"),
     planRoutesCast: document.getElementById("stage-plan-routes-cast"),
     planRoutesLight: document.getElementById("stage-plan-routes-light"),
@@ -6081,8 +6083,10 @@
        **初期状態はOFF**（2026-09-17 本人指示）。要るときに自分で出す。
        保存データに値があればそちらを尊重する。 */
     showSeatMap: false,
-    // 機材配置で仕込んだ前一文字を、正面図だけに重ねるか。既存ショーの見え方は変えない。
-    showFrontBorder: false,
+      // 機材配置で仕込んだ前一文字を、正面図だけに重ねるか。既存ショーの見え方は変えない。
+      showFrontBorder: false,
+      // 正面図の床グリッドは図の読み取り補助。既存ショーは従来どおり表示から始める。
+      showFrontFloorGrid: true,
       // 平面図で吊物（宙に吊ってあるもの）まで出すか
       showFlown: false,
       /* 照明と動線の出し入れ。図ごとに別。
@@ -7088,6 +7092,7 @@
       // 既存の明示設定はそのまま尊重し、値が無いものは「見る位置の図」を閉じて始める。
       showSeatMap: raw.showSeatMap === undefined ? false : Boolean(raw.showSeatMap),   // 2026-09-17: 値が無ければOFFで始める
       showFrontBorder: Boolean(raw.showFrontBorder),
+      showFrontFloorGrid: raw.showFrontFloorGrid === undefined ? true : Boolean(raw.showFrontFloorGrid),
       showFlown: Boolean(raw.showFlown),
       showLightsFront: raw.showLightsFront === undefined ? true : Boolean(raw.showLightsFront),
       showLightsPlan: raw.showLightsPlan === undefined ? true : Boolean(raw.showLightsPlan),
@@ -14155,6 +14160,39 @@
     }
   }
 
+  /* 正面図の床グリッド。舞台座標をそのまま投影するので、席ごとの遠近・
+     拡大操作と常に一致する。図の補助線であって施工寸法ではない。 */
+  function drawFrontFloorGrid(target, L) {
+    if (!state.showFrontFloorGrid || !L || L.plan) return;
+    const width = Number(L.size && L.size.width) || 0;
+    const depth = Number(L.size && L.size.depth) || 0;
+    if (!(width > 0 && depth > 0)) return;
+    const at = (u, v) => place(u, v, L);
+    target.save();
+    target.beginPath();
+    [[0, 0], [1, 0], [1, 1], [0, 1]].forEach(([u, v], index) => {
+      const point = at(u, v);
+      if (index) target.lineTo(point.x, point.y); else target.moveTo(point.x, point.y);
+    });
+    target.closePath();
+    target.clip();
+    target.strokeStyle = "rgba(239,231,214,0.14)";
+    target.lineWidth = 1;
+    const columns = Math.max(1, Math.ceil(width / 0.5));
+    const rows = Math.max(1, Math.ceil(depth / 0.5));
+    for (let i = 1; i < columns; i += 1) {
+      const u = i / columns;
+      const a = at(u, 0), b = at(u, 1);
+      target.beginPath(); target.moveTo(a.x, a.y); target.lineTo(b.x, b.y); target.stroke();
+    }
+    for (let i = 1; i < rows; i += 1) {
+      const v = i / rows;
+      const a = at(0, v), b = at(1, v);
+      target.beginPath(); target.moveTo(a.x, a.y); target.lineTo(b.x, b.y); target.stroke();
+    }
+    target.restore();
+  }
+
   function drawCustomPlanVenue(target, L) {
     const v = L.venue;
     const s = L.stage;
@@ -15867,7 +15905,10 @@
     }
 
     if (L.plan) drawPlanVenue(target, L);
-    else drawFrontVenue(target, L);
+    else {
+      drawFrontVenue(target, L);
+      drawFrontFloorGrid(target, L);
+    }
     if (showSelection && L.plan && target === planCtx) drawLightingPlanOverlay(target, L);
     if (showSelection && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) {
       drawLightCuePools(target, L);
@@ -24246,7 +24287,8 @@
      キーを足したときに一覧だけ古くなる（説明の吹き出しも同じ作りにしてある）。
      残りは道具ではない決まったキー。押す場所が要るものは、そう書いておく。 */
   const FIXED_KEYS = [
-    ["シーンを送る", "↑ ↓ ← →"],
+    ["シーンを送る", "↑ ↓"],
+    ["キューを送る", "← →"],
     ["選んだものを消す", "Delete"],
     ["窓を閉じる・全画面を終了", "Esc"],
   ];
@@ -29648,6 +29690,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (els.showLightNames) els.showLightNames.checked = state.showLightNames;
     if (els.showSeatMap) els.showSeatMap.checked = state.showSeatMap;
     if (els.showFrontBorder) els.showFrontBorder.checked = state.showFrontBorder;
+    if (els.frontFloorGrid) els.frontFloorGrid.checked = state.showFrontFloorGrid;
     if (els.showFlown) els.showFlown.checked = state.showFlown;
     if (els.frontLights) els.frontLights.checked = state.showLightsFront;
     if (els.frontLightIntent) els.frontLightIntent.checked = state.showLightIntent;
@@ -31179,6 +31222,14 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       announce(e.target.checked ? "前一文字を正面図に出しました。" : "前一文字を正面図から隠しました。");
     });
   }
+  if (els.frontFloorGrid) {
+    els.frontFloorGrid.addEventListener("change", (e) => {
+      state.showFrontFloorGrid = e.target.checked;
+      render();
+      persistSoon();
+      announce(state.showFrontFloorGrid ? "正面図の床グリッドを出しました。" : "正面図の床グリッドを隠しました。");
+    });
+  }
   if (els.piecePose) els.piecePose.addEventListener("click", openPoseModal);
   if (els.bgOpen) els.bgOpen.addEventListener("click", openBackgroundModal);
   [els.bgClose, els.bgBackdrop].filter(Boolean)
@@ -32227,17 +32278,27 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   });
 
   document.addEventListener("keydown", (event) => {
-    /* 左右も同じ送りにする。絵の上の送りが「◀ 前のシーン／次のシーン ▶」と
-     * 横に並んでいるので、左右で送れないほうが探しにくい。
-     * 先に走る二つ（駒の微調整・一覧での深さ変え）が preventDefault するので、
-     * そちらに用があるときはここへ来ない。 */
-    const STEPS = { ArrowUp: -1, ArrowLeft: -1, ArrowDown: 1, ArrowRight: 1 };
+    const CUE_STEPS = { ArrowLeft: -1, ArrowRight: 1 };
+    if (CUE_STEPS[event.key]) {
+      const editingText = isTyping(event.target) && event.target.type !== "checkbox";
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || editingText) return;
+      const stageView = document.getElementById("view-stage");
+      if (!stageView || stageView.hidden) return;
+      const cueStep = new CustomEvent("stage-timeline-cue-step", {
+        cancelable: true, detail: { direction: CUE_STEPS[event.key] },
+      });
+      window.dispatchEvent(cueStep);
+      // キューが存在しない場合も、舞台上ではブラウザの横スクロールに渡さない。
+      event.preventDefault();
+      return;
+    }
+    const STEPS = { ArrowUp: -1, ArrowDown: 1 };
     if (!STEPS[event.key]) return;
     if (event.defaultPrevented) return;
     if (event.metaKey || event.ctrlKey || event.altKey) return;
     const view = document.getElementById("view-stage");
     if (!view || view.hidden) return;
-    if (isTyping(event.target)) return;
+    if (isTyping(event.target) && event.target.type !== "checkbox") return;
     event.preventDefault();
     stepScene(STEPS[event.key], true);
   });

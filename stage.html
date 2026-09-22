@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.1">
+<meta name="stage-sketch-gamma-version" content="v0.2.2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092231">
+<link rel="stylesheet" href="style.css?v=2026092240">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -63,7 +63,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.1</span>
+              <span class="stage-app-version">0.2.2</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -245,9 +245,11 @@
                   <button type="button" id="stage-shows-open" class="stage-minor-action">ショー一覧</button>
                   <button type="button" id="stage-show-new" class="stage-minor-action">新規ショーを作る</button>
                 </div>
-                <button type="button" id="stage-export-json" class="stage-minor-action"
-                        aria-keyshortcuts="Meta+S Control+S">ショープロジェクトを書き出す</button>
-                <label class="stage-minor-action stage-import-label">ショープロジェクトを読み込む<input type="file" id="stage-import-json" accept="application/json" hidden></label>
+                <div class="stage-project-transfer-actions">
+                  <button type="button" id="stage-export-json" class="stage-minor-action"
+                          aria-keyshortcuts="Meta+S Control+S">ショーを書き出す</button>
+                  <label class="stage-minor-action stage-import-label">ショーを読み込む<input type="file" id="stage-import-json" accept="application/json" hidden></label>
+                </div>
               </div>
               <!-- 本人指定で入口を一時非表示。テンプレートと作成機能は復帰できるよう残す。 -->
               <button type="button" class="stage-minor-action" id="stage-beat-templates-open" hidden>構成テンプレートから作る</button>
@@ -550,7 +552,7 @@
           <!-- シーン送りと説明を作図道具より上へ置き、いま扱う場面を先に読める順にする。 -->
           <div class="stage-scene-bar" id="stage-scene-bar">
             <div class="stage-scene-step" role="group" aria-label="シーンを送る">
-              <button type="button" id="stage-scene-prev" class="btn-quiet stage-scene-step-btn is-prev" title="前のシーンへ（↑ または ←）"><span class="stage-scene-step-arrow" aria-hidden="true">◀</span>前のシーン</button>
+              <button type="button" id="stage-scene-prev" class="btn-quiet stage-scene-step-btn is-prev" title="前のシーンへ（↑）"><span class="stage-scene-step-arrow" aria-hidden="true">◀</span>前のシーン</button>
               <!-- T-23（2026-09-18 本人要望）: 名前を押しても「シーンの詳細」を開けるようにする。
                    押せるものはボタンにする（.stage-cast-name と同じ考え方）。
                    読み上げの aria-live は内側の span に残し、外側をボタンにする
@@ -559,7 +561,7 @@
                       title="押すとシーンの詳細が開きます">
                 <span class="stage-scene-now" id="stage-scene-now" aria-live="polite"></span>
               </button>
-              <button type="button" id="stage-scene-next" class="btn-quiet stage-scene-step-btn is-next" title="次のシーンへ（↓ または →）">次のシーン<span class="stage-scene-step-arrow" aria-hidden="true">▶</span></button>
+              <button type="button" id="stage-scene-next" class="btn-quiet stage-scene-step-btn is-next" title="次のシーンへ（↓）">次のシーン<span class="stage-scene-step-arrow" aria-hidden="true">▶</span></button>
               <button type="button" id="stage-scene-bar-grid" class="btn-quiet stage-scene-bar-grid"
                       title="シーン一覧を開く" aria-label="シーン一覧を開く">⊞</button>
             </div>
@@ -780,9 +782,9 @@
                   </div>
                   <button type="button" class="stage-canvas-tool stage-zoom-reset" id="stage-front-zoom"
                           title="等倍に戻す" hidden>1.0× ⟲</button>
-                  <button type="button" class="stage-canvas-tool" id="stage-front-note"
+                  <button type="button" class="stage-canvas-tool is-icon" id="stage-front-note"
                           data-tool-tip="note" data-tool-key="N"
-                          aria-label="メモを貼る" aria-pressed="false">メモ</button>
+                          title="メモを貼る（N）" aria-label="メモを貼る" aria-pressed="false"><svg class="stage-canvas-tool-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.1 2.3h7.1l2.7 2.7v8.7H3.1z"/><path d="M10.2 2.3V5h2.7M5.3 8h5.4M5.3 10.5h4.1"/></svg><span class="visually-hidden">メモ</span></button>
                   <label class="stage-canvas-toggle is-icon" data-tool-tip="frontLights"
                          title="正面の絵の照明を点けたり消したりする" aria-label="正面図の照明を表示・非表示にする">
                     <input type="checkbox" id="stage-front-lights" checked>
@@ -801,9 +803,15 @@
                     <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.4v2.1M3.9 4.1l1.5 1.5M12.1 4.1l-1.5 1.5"/><path d="m5.2 7.1 2.8-1.5 2.8 1.5v3.3L8 12 5.2 10.4z"/><path d="M8 7.7v1.9M7.1 8.7h1.8"/><path class="stage-visibility-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
                     <span class="visually-hidden">光の意図</span>
                   </label>
+                  <label class="stage-canvas-toggle is-icon" data-tool-tip="frontFloorGrid"
+                         title="正面図の床グリッドを出したり隠したりする" aria-label="正面図の床グリッドを表示・非表示にする">
+                    <input type="checkbox" id="stage-front-floor-grid" checked>
+                    <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="m2.2 5.1 11.6 0-2 7.2H4.2z"/><path d="M4.8 7.4h6.4M4.2 9.7h7.6M6.1 5.1l-.7 7.2M9.9 5.1l.7 7.2"/><path class="stage-visibility-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
+                    <span class="visually-hidden">床グリッド</span>
+                  </label>
                   <!-- セクション中の全演者へ一括で衣装を着脱する。演者を選んでいなくても常に操作できる。 -->
-                  <button type="button" class="stage-canvas-tool stage-front-costume-choice" id="stage-costume-toggle"
-                          aria-pressed="false">衣装</button>
+                  <button type="button" class="stage-canvas-tool is-icon stage-front-costume-choice" id="stage-costume-toggle"
+                          title="衣装を着る・脱ぐ" aria-label="衣装を着る・脱ぐ" aria-pressed="false"><svg class="stage-canvas-tool-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="m5.6 3.1 2.4 1.6 2.4-1.6 2.5 2.4-1.8 2.2v5.2H5V7.7L3.1 5.5z"/><path d="M6.5 4.1 8 5.7l1.5-1.6M6.2 10.3h3.6"/></svg><span class="visually-hidden">衣装</span></button>
                   <label class="stage-canvas-toggle is-icon" id="stage-seatmap-toggle" data-tool-tip="seatMap"
                          title="見る位置の図を出したり隠したりする" aria-label="見る位置の図を表示・非表示にする">
                     <input type="checkbox" id="stage-show-seatmap">
@@ -834,16 +842,16 @@
               <div class="stage-canvas-bar">
                 <p class="stage-canvas-caption">平面（上から）</p>
                 <div class="stage-canvas-tools">
-                  <button type="button" class="stage-canvas-tool stage-route-action" id="stage-plan-route"
+                  <button type="button" class="stage-canvas-tool is-icon stage-route-action" id="stage-plan-route"
                           data-tool-tip="route" data-tool-key="R"
                           aria-label="動線を描く" aria-pressed="false">
                     <svg class="stage-canvas-tool-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><circle cx="3" cy="12.5" r="1.2"/><path d="M4.3 12.1c2.1-3.2 3.3-5.4 6.3-6.3"/><path d="m9.3 3.6 1.9 2.2-2.8.5"/></svg>
-                    <span class="stage-canvas-tool-label">動線を描く</span>
+                    <span class="visually-hidden">動線を描く</span>
                   </button>
-                  <button type="button" class="stage-canvas-tool stage-derive-route-action" id="stage-plan-derive-route"
+                  <button type="button" class="stage-canvas-tool is-icon stage-derive-route-action" id="stage-plan-derive-route"
                           data-tool-tip="deriveRoute" aria-label="次のシーンから動線を引く">
                     <svg class="stage-canvas-tool-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><circle cx="3" cy="12" r="1.2"/><circle cx="13" cy="4" r="1.2"/><path d="M4.3 11.1c2.4-.4 4.1-2.6 7.4-6"/><path d="m9.9 4.5 1.8.6-.5 1.8"/></svg>
-                    <span class="stage-canvas-tool-label">次から引く</span>
+                    <span class="visually-hidden">次から引く</span>
                   </button>
                   <span class="stage-multi-select-status" id="stage-multi-select-status"
                         title="ドラッグで囲うか、Shiftを押しながら選択" aria-live="polite" hidden></span>
@@ -854,9 +862,9 @@
                        ★機能キー featureOn("lineup") はフォーメーションの表示条件でもあるので残す。 -->
                   <button type="button" class="stage-canvas-tool stage-zoom-reset" id="stage-plan-zoom"
                           title="等倍に戻す" hidden>1.0× ⟲</button>
-                  <button type="button" class="stage-canvas-tool" id="stage-plan-note"
+                  <button type="button" class="stage-canvas-tool is-icon" id="stage-plan-note"
                           data-tool-tip="note" data-tool-key="N"
-                          aria-label="メモを貼る" aria-pressed="false">メモ</button>
+                          title="メモを貼る（N）" aria-label="メモを貼る" aria-pressed="false"><svg class="stage-canvas-tool-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.1 2.3h7.1l2.7 2.7v8.7H3.1z"/><path d="M10.2 2.3V5h2.7M5.3 8h5.4M5.3 10.5h4.1"/></svg><span class="visually-hidden">メモ</span></button>
                   <label class="stage-canvas-toggle is-icon" data-tool-tip="planLights"
                          title="平面図の照明の円と灯体を出したり隠したりする" aria-label="平面図の照明を表示・非表示にする">
                     <input type="checkbox" id="stage-plan-lights" checked>
@@ -2424,6 +2432,19 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v022-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v022-title">v0.2.2</h3>
+        <time datetime="2026-09-23">2026-09-23</time>
+      </header>
+      <ul>
+        <li>正面図・平面図・照明デザインの操作をアイコンでそろえ、説明をホバーで確認できるようにしました。</li>
+        <li>正面図に床グリッドと前一文字の表示切替を追加し、照明の概要は情報パネルへまとめました。</li>
+        <li>演者・大道具・小道具・舞台機構のパネルを分け、一覧と詳細画面の見た目をそろえました。</li>
+        <li>タイムラインを開いても舞台を縮小せず、矢印キーでシーンまたは最寄りのキューを移動できるようにしました。</li>
+        <li>劇場設定、ショーの書き出し・読み込み、照明灯体一覧、シーンの表示を整理しました。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v021-title">
       <header class="stage-release-entry-head">
         <h3 id="stage-release-v021-title">v0.2.1</h3>
@@ -2783,7 +2804,7 @@
         </section>
         <section class="stage-venue-editor-format" aria-labelledby="stage-venue-editor-format-title">
       <div class="stage-venue-editor-shape-step">
-        <h3 id="stage-venue-editor-format-title">1. ステージの形式を選択してください</h3>
+        <h3 id="stage-venue-editor-format-title">1. ステージの形式</h3>
         <p class="stage-profile-hint">形式に応じて、客席を置ける方向を正面・三方向・全周に切り替えます。</p>
       </div>
       <div class="stage-tool-grid stage-venue-editor-formats" role="group" aria-labelledby="stage-venue-editor-format-title">
@@ -2795,7 +2816,7 @@
         </section>
         <section class="stage-venue-editor-shape" aria-labelledby="stage-venue-editor-shape-title">
       <div class="stage-venue-editor-shape-step">
-        <h3 id="stage-venue-editor-shape-title">2. メインの形を選択してください</h3>
+        <h3 id="stage-venue-editor-shape-title">2. メインの形</h3>
         <p class="stage-profile-hint">長方形・L字・円・カスタムから選択してください。</p>
       </div>
       <div class="stage-tool-grid stage-venue-editor-shapes" role="group" aria-labelledby="stage-venue-editor-shape-title">
@@ -2827,7 +2848,7 @@
         </section>
         <section class="stage-venue-editor-extension" aria-labelledby="stage-venue-editor-extension-title">
       <div class="stage-venue-editor-shape-step">
-        <h3 id="stage-venue-editor-extension-title">3. 追加のステージを選択してください</h3>
+        <h3 id="stage-venue-editor-extension-title">3. 追加のステージ</h3>
         <p class="stage-profile-hint">四角または丸を選び、右の平面図でドラッグしてください。</p>
       </div>
       <div class="stage-tool-grid stage-venue-editor-extension-shapes" role="group" aria-labelledby="stage-venue-editor-extension-title">
@@ -2845,7 +2866,7 @@
         <!-- V-4（2026-09-17）: 4番目は「天井」としてまとめる。天井あり/なしと屋内/屋外を先に選び、
              高さと吊りは「屋内 かつ 天井あり」のときだけ出す（値は隠しても保持する）。 -->
         <section class="stage-venue-editor-ceiling" aria-labelledby="stage-venue-editor-ceiling-title">
-      <h3 id="stage-venue-editor-ceiling-title">4. 天井を設定してください</h3>
+      <h3 id="stage-venue-editor-ceiling-title">4. 天井</h3>
       <div class="stage-venue-editor-setting">
         <span>天井</span>
         <div class="stage-tool-grid stage-venue-editor-ceiling-presence" role="group" aria-label="天井の有無">
@@ -2875,7 +2896,7 @@
       <p class="stage-profile-hint" id="stage-venue-editor-ceiling-outdoor-note" hidden>天井なしでは高さと吊りを使いません。入力した値は残します。</p>
         </section>
         <section class="stage-venue-editor-audience-guide" aria-labelledby="stage-venue-editor-audience-title">
-      <h3 id="stage-venue-editor-audience-title">5. 客席を配置してください</h3>
+      <h3 id="stage-venue-editor-audience-title">5. 客席</h3>
       <p class="stage-profile-hint">四角または丸を選び、右の平面図でドラッグしてください。</p>
       <div class="stage-tool-grid stage-venue-editor-area-shapes" role="group" aria-labelledby="stage-venue-editor-audience-title">
         <button type="button" data-venue-editor-area-mode="audience" data-venue-editor-area-shape="rectangle" aria-pressed="false">
@@ -2889,7 +2910,7 @@
       <button type="button" class="btn-quiet stage-venue-editor-audience-full" id="stage-venue-editor-audience-full" hidden disabled>全周に配置</button>
         </section>
         <section class="stage-venue-editor-wings-guide" aria-labelledby="stage-venue-editor-wings-title">
-      <h3 id="stage-venue-editor-wings-title">6. 舞台袖を配置してください</h3>
+      <h3 id="stage-venue-editor-wings-title">6. 舞台袖</h3>
       <p class="stage-profile-hint">四角または丸を選び、右の平面図でドラッグしてください。</p>
       <div class="stage-tool-grid stage-venue-editor-area-shapes" role="group" aria-labelledby="stage-venue-editor-wings-title">
         <button type="button" data-venue-editor-area-mode="wing" data-venue-editor-area-shape="rectangle" aria-pressed="false">
@@ -2905,7 +2926,7 @@
       <!-- ★2026-09-19 本人要望「壁というのを作りましょう。複雑なショーの形の場合、壁が設置されて
            いるパターンと設置されていないパターンがあるので、それは結構大きな差」。
            置き方は客席・舞台袖とまったく同じにする（新しい操作を覚えなくていいように）。 -->
-      <h3 id="stage-venue-editor-walls-title">7. 壁を設置してください</h3>
+      <h3 id="stage-venue-editor-walls-title">7. 壁</h3>
       <p class="stage-profile-hint">四角または丸を選び、右の平面図でドラッグしてください。高さは天井と同じです。通れない場所として扱います。</p>
       <div class="stage-tool-grid stage-venue-editor-area-shapes" role="group" aria-labelledby="stage-venue-editor-walls-title">
         <button type="button" data-venue-editor-area-mode="wall" data-venue-editor-area-shape="rectangle" aria-pressed="false">
@@ -2917,7 +2938,7 @@
       </div>
         </section>
         <section class="stage-venue-editor-machinery" aria-labelledby="stage-venue-editor-machinery-title">
-          <h3 id="stage-venue-editor-machinery-title">8. 舞台機構を設定してください</h3>
+          <h3 id="stage-venue-editor-machinery-title">8. 舞台機構</h3>
           <p class="stage-profile-hint">舞台機構を追加し、場面ごとの状態をここで確認・変更します。安全計算や実際の動作は行いません。</p>
           <div id="stage-venue-editor-machinery-host"></div>
         </section>
@@ -3205,8 +3226,8 @@
     <span class="stage-present-mini-bar"><span id="stage-present-mini-label">平面図</span><span class="stage-present-mini-shortcut" aria-hidden="true">⇄ <kbd class="stage-tip-key" data-stage-shortcut-display-for="view.swap">X</kbd></span></span>
     <span class="stage-present-mini-view" id="stage-present-mini-view" aria-hidden="true" inert></span>
   </button>
-  <button type="button" class="stage-present-zone is-prev" id="stage-present-prev" data-tip-key="↑ / ←" data-tip-description="前のシーンへ進みます" aria-label="前のシーンへ" aria-keyshortcuts="ArrowUp ArrowLeft">‹</button>
-  <button type="button" class="stage-present-zone is-next" id="stage-present-next" data-tip-key="↓ / →" data-tip-description="次のシーンへ進みます" aria-label="次のシーンへ" aria-keyshortcuts="ArrowDown ArrowRight">›</button>
+  <button type="button" class="stage-present-zone is-prev" id="stage-present-prev" data-tip-key="↑" data-tip-description="前のシーンへ進みます" aria-label="前のシーンへ" aria-keyshortcuts="ArrowUp">‹</button>
+  <button type="button" class="stage-present-zone is-next" id="stage-present-next" data-tip-key="↓" data-tip-description="次のシーンへ進みます" aria-label="次のシーンへ" aria-keyshortcuts="ArrowDown">›</button>
   <aside class="stage-present-drawer" id="stage-present-drawer" aria-label="左の道具列" hidden>
     <div class="stage-present-drawer-body" id="stage-present-drawer-body"></div>
   </aside>
@@ -3256,15 +3277,15 @@
 <script src="stage-light-panel-import.js?v=2026092209"></script>
 <script src="stage-scene-alternatives.js?v=2026092208"></script>
 <script src="stage-shortcuts.js?v=2026092218"></script>
-<script src="stage-sketch.js?v=2026092236"></script>
+<script src="stage-sketch.js?v=2026092243"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092209"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
-<script src="stage-timeline.js?v=2026092208"></script>
+    <script src="stage-timeline.js?v=2026092241"></script>
 <script src="stage-session.js?v=2026091987"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
 <script src="stage-venue-editor.js?v=2026092201"></script>
-<script src="gamma-workspace.js?v=2026092216"></script>
+    <script src="gamma-workspace.js?v=2026092240"></script>
 <script src="gamma-mobile.js?v=2026092202"></script>
 </body>
 </html>
