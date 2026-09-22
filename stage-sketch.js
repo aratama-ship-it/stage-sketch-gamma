@@ -5228,6 +5228,7 @@
     showSetNames: document.getElementById("stage-show-set-names"),
     showLightNames: document.getElementById("stage-show-light-names"),
     showSeatMap: document.getElementById("stage-show-seatmap"),
+    showFrontBorder: document.getElementById("stage-show-front-border"),
     seatMapToggle: document.getElementById("stage-seatmap-toggle"),
   };
 
@@ -6059,6 +6060,8 @@
        **初期状態はOFF**（2026-09-17 本人指示）。要るときに自分で出す。
        保存データに値があればそちらを尊重する。 */
     showSeatMap: false,
+    // 機材配置で仕込んだ前一文字を、正面図だけに重ねるか。既存ショーの見え方は変えない。
+    showFrontBorder: false,
       // 平面図で吊物（宙に吊ってあるもの）まで出すか
       showFlown: false,
       /* 照明と動線の出し入れ。図ごとに別。
@@ -7063,6 +7066,7 @@
       showLightNames: raw.showLightNames === undefined ? true : Boolean(raw.showLightNames),
       // 既存の明示設定はそのまま尊重し、値が無いものは「見る位置の図」を閉じて始める。
       showSeatMap: raw.showSeatMap === undefined ? false : Boolean(raw.showSeatMap),   // 2026-09-17: 値が無ければOFFで始める
+      showFrontBorder: Boolean(raw.showFrontBorder),
       showFlown: Boolean(raw.showFlown),
       showLightsFront: raw.showLightsFront === undefined ? true : Boolean(raw.showLightsFront),
       showLightsPlan: raw.showLightsPlan === undefined ? true : Boolean(raw.showLightsPlan),
@@ -15717,6 +15721,42 @@
     target.restore();
   }
 
+  /* 機材配置の「前一文字」を、舞台タブの正面図にも重ねる。
+   * 配置画面と同じく、客席側（v=1）に吊り、開口の高さ prosH より上だけを隠す。
+   * ここで showFrontBorder を持つのは図の見せ方だけで、照明デザイン自体は変えない。 */
+  function drawFrontBorderCurtain(target, L) {
+    if (L.plan || !state.showFrontBorder) return false;
+    const design = state.project && state.project.lightingDesign;
+    if (!design || design.format !== "shosai.light-design") return false;
+    const curtains = design.curtains;
+    if (!curtains || curtains.pros === false) return false;
+    const height = Math.max(1, finite(L.size && L.size.height, 8));
+    const opening = clamp(finite(curtains.prosH, 6.2), 1, height);
+    if (opening >= height - 0.01) return false;
+    const lowerLeft = stagePoint(0, 1, opening, L);
+    const lowerRight = stagePoint(1, 1, opening, L);
+    const upperRight = stagePoint(1, 1, height, L);
+    const upperLeft = stagePoint(0, 1, height, L);
+    target.save();
+    target.fillStyle = stageSurfaceColor("#11100f");
+    target.beginPath();
+    target.moveTo(lowerLeft.x, lowerLeft.y);
+    target.lineTo(lowerRight.x, lowerRight.y);
+    target.lineTo(upperRight.x, upperRight.y);
+    target.lineTo(upperLeft.x, upperLeft.y);
+    target.closePath();
+    target.fill();
+    // 下端だけを薄く縁取り、幕の開口を読めるようにする。
+    target.strokeStyle = "rgba(239,231,214,0.22)";
+    target.lineWidth = 1;
+    target.beginPath();
+    target.moveTo(lowerLeft.x, lowerLeft.y);
+    target.lineTo(lowerRight.x, lowerRight.y);
+    target.stroke();
+    target.restore();
+    return true;
+  }
+
   function drawLightingPlanOverlay(target, L) {
     const overlay = lightingPlanOverlayModel();
     if (!overlay || !L.plan || presenting || !overlay.dims
@@ -15874,6 +15914,9 @@
       }
       drawLightCueCaption(target, L);
     }
+
+    // 光源印と光の始点を幕の奥へ隠す。演者名などの作図用ラベルはこの後で描く。
+    if (!L.plan) drawFrontBorderCurtain(target, L);
 
     if (!pitchStyle && (state.showNames || state.showSetNames || state.showLightNames)) {
       shown.forEach((piece) => {
@@ -29541,6 +29584,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (els.showSetNames) els.showSetNames.checked = state.showSetNames;
     if (els.showLightNames) els.showLightNames.checked = state.showLightNames;
     if (els.showSeatMap) els.showSeatMap.checked = state.showSeatMap;
+    if (els.showFrontBorder) els.showFrontBorder.checked = state.showFrontBorder;
     if (els.showFlown) els.showFlown.checked = state.showFlown;
     if (els.frontLights) els.frontLights.checked = state.showLightsFront;
     if (els.frontLightIntent) els.frontLightIntent.checked = state.showLightIntent;
@@ -31032,6 +31076,14 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       render();
       persistSoon();
       announce(e.target.checked ? "見る位置の図を出しました。" : "見る位置の図を隠しました。");
+    });
+  }
+  if (els.showFrontBorder) {
+    els.showFrontBorder.addEventListener("change", (e) => {
+      state.showFrontBorder = e.target.checked;
+      render();
+      persistSoon();
+      announce(e.target.checked ? "前一文字を正面図に出しました。" : "前一文字を正面図から隠しました。");
     });
   }
   if (els.piecePose) els.piecePose.addEventListener("click", openPoseModal);

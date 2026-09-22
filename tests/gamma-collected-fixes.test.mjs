@@ -106,6 +106,25 @@ test("stage tools can toggle rendered lighting without adding show data", () => 
   assert.match(firstPerson, /\[elements\.workLightToggle, "作業灯", !data\.lightPool \|\| !data\.workLightOff\]/);
 });
 
+test("front border follows the durable equipment-placement setting and stays hidden by default", () => {
+  const stage = read("stage.html");
+  const sketch = read("stage-sketch.js");
+  const lightApp = read("light-design/app.js");
+
+  assert.match(stage, /id="stage-show-front-border"/);
+  assert.match(stage, /機材配置で設定した前一文字/);
+  assert.match(lightApp, /\["pros", "前一文字"\]/);
+  assert.match(lightApp, /curtains: \{ borderDrop: 1\.4, borderAhead: 0\.04, pros: true, prosH: 6\.2/);
+  assert.match(lightApp, /c\.pros = v === "on"/);
+  assert.match(sketch, /showFrontBorder: false/);
+  assert.match(sketch, /showFrontBorder: Boolean\(raw\.showFrontBorder\)/);
+  assert.match(sketch, /function drawFrontBorderCurtain\(target, L\)/);
+  assert.match(sketch, /design\.curtains/);
+  assert.match(sketch, /curtains\.pros === false/);
+  assert.match(sketch, /finite\(curtains\.prosH, 6\.2\)/);
+  assert.match(sketch, /if \(!L\.plan\) drawFrontBorderCurtain\(target, L\)/);
+});
+
 test("workspace shortcuts can be customized without bypassing existing tab behavior", () => {
   const stage = read("stage.html");
   const workspace = read("gamma-workspace.js");
