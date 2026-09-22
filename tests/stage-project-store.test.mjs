@@ -144,11 +144,11 @@ test("removing the current duplicate makes room before a large imported-show swi
 test("the app shell advances with the storage transaction code", () => {
   assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092213/);
   assert.match(stageHtml, /style\.css\?v=2026092301/);
-  assert.match(stageHtml, /stage-sketch\.js\?v=2026092303/);
-  assert.match(serviceWorker, /stage-sketch-gamma-shell-v268/);
+  assert.match(stageHtml, /stage-sketch\.js\?v=2026092304/);
+  assert.match(serviceWorker, /stage-sketch-gamma-shell-v269/);
   assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092213/);
   assert.match(serviceWorker, /\.\/style\.css\?v=2026092301/);
-  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092303/);
+  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092304/);
 });
 
 test("indoor standing reception venue keeps its 3D room layout outside show data", () => {
@@ -227,6 +227,13 @@ test("unavailable large props are hidden from add choices without changing saved
   assert.match(source, /ROSTER_SET_PROP_SHAPES\.has\(item\.propShape\) \|\| ROSTER_UNAVAILABLE_PROP_SHAPES\.has\(item\.propShape\)/);
   assert.match(source, /ids: group\.ids\.filter\(\(shapeId\) => rosterShapeIsAvailable\(shapeId\) && !ROSTER_SET_PROP_SHAPES\.has\(shapeId\)\)/);
   assert.match(source, /ids: group\.ids\.filter\(\(shapeId\) => rosterShapeIsAvailable\(shapeId\) && ROSTER_SET_PROP_SHAPES\.has\(shapeId\)\)/);
+});
+
+test("large-prop add choices merge the aerial circus and circus equipment groups", () => {
+  assert.match(source, /const setGroupSections = new Map\(\)/);
+  assert.match(source, /const displayGroupName = group\.ja === "サーカス道具" \? "空中・サーカス" : group\.ja/);
+  assert.match(source, /setGroupSections\.set\(group\.ja, \{ section, choices \}\)/);
+  assert.match(source, /groupSection\.choices\.append\(tile\)/);
 });
 
 test("unavailable IndexedDB keeps the legacy localStorage duplicate", async () => {

@@ -21473,6 +21473,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       bindKindPreviewSpin(tile, canvas, () => drawKindPreview(canvas, kind, "#8b98a1"));
     };
     const ungroupedKinds = new Set(ROSTER_KIND_LAYERS.set);
+    /* 大道具では「空中・サーカス」と「サーカス道具」を一つの分類として
+       見せる。保存される kind / propShape や、小道具側の分類は変えず、
+       追加パネル内の表示だけをまとめる。 */
+    const setGroupSections = new Map();
     ROSTER_SET_KIND_GROUPS.forEach((group) => {
       const ids = group.ids.filter((kind) => ungroupedKinds.delete(kind));
       if (!ids.length) return;
@@ -21486,6 +21490,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       ids.forEach((kind) => appendKindTile(choices, kind, group.ja));
       section.append(heading, choices);
       grid.append(section);
+      setGroupSections.set(group.ja, { section, choices });
     });
     // 新しい既定 kind を追加して分類を忘れても、選べなくならないよう最後に受ける。
     if (ungroupedKinds.size) {
@@ -21504,13 +21509,21 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       ...group,
       ids: group.ids.filter((shapeId) => rosterShapeIsAvailable(shapeId) && ROSTER_SET_PROP_SHAPES.has(shapeId)),
     })).filter((group) => group.ids.length).forEach((group) => {
-      const section = document.createElement("section");
-      section.className = "stage-prop-choice-group stage-kind-prop-group";
-      const heading = document.createElement("p");
-      heading.className = "stage-kind-field-title";
-      heading.textContent = tx(group.ja);
-      const choices = document.createElement("div");
-      choices.className = "stage-pose-grid stage-prop-choice-grid";
+      const displayGroupName = group.ja === "サーカス道具" ? "空中・サーカス" : group.ja;
+      let groupSection = setGroupSections.get(displayGroupName);
+      if (!groupSection) {
+        const section = document.createElement("section");
+        section.className = "stage-prop-choice-group stage-kind-prop-group";
+        const heading = document.createElement("p");
+        heading.className = "stage-kind-field-title";
+        heading.textContent = tx(displayGroupName);
+        const choices = document.createElement("div");
+        choices.className = "stage-pose-grid stage-prop-choice-grid";
+        section.append(heading, choices);
+        grid.append(section);
+        groupSection = { section, choices };
+        setGroupSections.set(displayGroupName, groupSection);
+      }
       group.ids.forEach((shapeId) => {
         const tile = document.createElement("button");
         tile.type = "button";
@@ -21537,12 +21550,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           choose();
           addFromRoster();
         });
-        choices.append(tile);
+        groupSection.choices.append(tile);
         bindKindPreviewSpin(tile, canvas,
           (facing) => drawKindPreview(canvas, "prop", "#8b98a1", shapeId, facing), { turntable: true });
       });
-      section.append(heading, choices);
-      grid.append(section);
     });
   }
 
