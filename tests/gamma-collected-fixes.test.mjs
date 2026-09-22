@@ -72,6 +72,27 @@ test("lighting section titles and durable apply failures cross the iframe bounda
   assert.match(workspace, /if\(!result\?\.persisted\) throw Error\(result\?\.error/);
 });
 
+test("lighting apply belongs to the LX cue panel and playback uses an accessible SVG toggle", () => {
+  const html = read("light-design/index.html");
+  const app = read("light-design/app.js");
+  const embed = read("light-design/embed.js");
+  const workspace = read("gamma-workspace.js");
+  const worker = read("stage-sw.js");
+  const header = html.slice(html.indexOf('<div class="head-right">'), html.indexOf("</header>"));
+  const lxPanel = html.slice(html.indexOf('<section class="panel" id="panel-lxq">'), html.indexOf("</section>", html.indexOf('<section class="panel" id="panel-lxq">')));
+
+  assert.doesNotMatch(header, /id="apply"/);
+  assert.match(lxPanel, /id="apply"[^>]*>LXキューを適用/);
+  assert.doesNotMatch(embed, /applyButton/);
+  assert.match(html, /class="btn small play-toggle" id="t-play"/);
+  assert.match(app, /動きを止める（Space）/);
+  assert.match(app, /b\.setAttribute\("aria-pressed", String\(state\.play\.on\)\)/);
+  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=2026092237/);
+  assert.match(worker, /stage-sketch-gamma-shell-v261/);
+  assert.match(worker, /light-design\/app\.js\?v=2026092237/);
+  assert.match(worker, /light-design\/embed\.js\?v=2026092238/);
+});
+
 test("sample A-3 uses registered height at normal visual scale for performers 09 and 16", () => {
   const source = read("stage-samples/feature-test-show.js");
   const start = source.indexOf("var doc = ") + "var doc = ".length;

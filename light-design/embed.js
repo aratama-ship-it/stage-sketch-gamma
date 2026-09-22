@@ -16,11 +16,9 @@
     const bar=document.querySelector('.figbar'), save=document.getElementById('save');
     if(!bar) return;
     const actions=document.createElement('span');actions.className='gamma-light-actions';actions.setAttribute('aria-label','照明デザインの操作');
-    const applyButton=document.getElementById('apply'), runtime=document.getElementById('runtime-status');
-    applyButton.textContent='LXキューを適用';
-    applyButton.title='配置と照明デザインを現在のショーのLXキューへ適用';
+    const runtime=document.getElementById('runtime-status');
     runtime.hidden=false;
-    actions.append(runtime,document.getElementById('transport'),document.getElementById('prefs'),applyButton);
+    actions.append(runtime,document.getElementById('transport'),document.getElementById('prefs'));
     bar.append(actions);
     save.hidden=true;
   }

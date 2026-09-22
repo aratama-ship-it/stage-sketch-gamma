@@ -1056,12 +1056,16 @@
   function home() { stop(); resetPlaybackRuntime(); }
   function tick(ts) { if (!state.play.on) return; if (!state.play.last) state.play.last = ts; state.play.t += ts - state.play.last; state.play.last = ts; renderTransport(); cancelPendingDraw(); draw(); state.play.raf = requestAnimationFrame(tick); }
   function togglePlay() { state.play.on ? stop(null, true) : play(); }
-  /* 2026-09-14 本人要望: 操作は再生／停止のトグル1個だけ。秒数と「再生中」の札は出さない。
-     文字は押したら何が起きるかを出す（停止中＝再生・再生中＝停止）。状態はボタンの色でも示す。 */
+  /* 再生／停止は1つのSVGトグル。押すと起きることは title / aria-label、状態は図形と色で示す。 */
   function renderTransport() {
     const b = $("t-play"); if (!b) return;
-    b.textContent = state.play.on ? "停止" : "再生";
-    b.title = state.play.on ? "動きを止める（Space）" : "動きを再生する（Space）";
+    const label = state.play.on ? "動きを止める（Space）" : "動きを再生する（Space）";
+    b.innerHTML = state.play.on
+      ? '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4.2 3.2h2.9v9.6H4.2zM8.9 3.2h2.9v9.6H8.9z"/></svg>'
+      : '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 3.2v9.6L12.8 8 5 3.2Z"/></svg>';
+    b.title = label;
+    b.setAttribute("aria-label", label);
+    b.setAttribute("aria-pressed", String(state.play.on));
     b.classList.toggle("playing", state.play.on);
     renderXfer();
   }

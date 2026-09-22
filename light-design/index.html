@@ -171,10 +171,10 @@
   /* 再生はシーン全体の操作なので図上バー右端。コピー／ペーストだけを灯体情報に残す。 */
   .transport{display:flex;align-items:center;gap:5px}
   .scenebar .btn.small{min-height:24px;padding:2px 8px;font-size:12px}
-  .transport .btn.small{min-height:26px;padding:3px 9px;font-size:14px}
-  /* 再生中はボタン自身が状態を持つ（別に「再生中」の札を出さない・2026-09-14 本人要望）。
-     文字は2文字（再生／停止）で幅が変わらないが、字形差でにじり寄らないよう幅を固定する。 */
-  .transport .btn.small{min-width:4.6em;text-align:center}
+  /* 再生は、ツール群と同じ単色SVGにする。状態は再生（三角）／停止（二本線）で示し、
+     説明とショートカットは title / aria-label に残す。 */
+  .transport .btn.small.play-toggle{width:32px;min-width:32px;min-height:28px;padding:0;display:inline-grid;place-items:center}
+  .transport .play-toggle svg{display:block;width:16px;height:16px;fill:currentColor}
   .transport .btn.small.playing{color:var(--milk);background:rgba(168,75,38,.28);border-color:var(--rust)}
   /* コピー／ペーストは再生より一段控えめ（再生が主操作）。幅は「ペースト」に合わせて固定し、
      使える・使えないで列が動かないようにする（2026-09-14）。 */
@@ -372,7 +372,7 @@
   .insphead .ontoggle{order:2}
   .panelhead-actions{display:contents}
   .panelhead-actions .transport{gap:5px}
-  .panelhead-actions .transport .btn.small{min-height:28px;padding:3px 9px;font-size:14px}
+  .panelhead-actions .transport .btn.small.play-toggle{min-height:28px;padding:0}
   /* オン・オフ。押すたびに切り替わる1つのボタンで、いまの状態をそのまま表示する
      （2026-09-13 本人要望「オンとオフの切り替え式に」「ちょっと大きめに」）。 */
   .ontoggle{display:inline-flex;align-items:center;gap:7px;
@@ -678,7 +678,6 @@
       <span class="runtime" id="runtime-status" aria-live="polite">描画を計測中</span>
       <button type="button" class="gearbtn" id="prefs" aria-label="環境設定" title="環境設定"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.2" stroke-width="1.3"/><circle cx="8" cy="8" r="1.4" stroke-width="1.3"/><path stroke-width="2.3" d="M8 3.10V1.90M11.94 5.55l1.04-.60M11.94 10.45l1.04.60M8 12.90v1.20M4.06 10.45l-1.04.60M4.06 5.55l-1.04-.60"/></svg></button>
       <button type="button" class="btn" id="save" title="この照明デザインに名前を付けて保存（ファイルにも書き出せます）">保存</button>
-      <button type="button" class="btn primary" id="apply">LXキューを適用</button>
       <button type="button" class="x" id="close" aria-label="閉じる">✕</button>
     </div>
   </header>
@@ -726,7 +725,7 @@
             <button type="button" class="btn quiet place-scene" id="place-scene" hidden aria-haspopup="dialog" title="場面の一覧を開く"></button>
           </span>
           <span class="transport sceneplay" id="transport" hidden>
-            <button type="button" class="btn small" id="t-play">再生</button>
+            <button type="button" class="btn small play-toggle" id="t-play" aria-label="動きを再生する（Space）" aria-pressed="false" title="動きを再生する（Space）"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 3.2v9.6L12.8 8 5 3.2Z"/></svg></button>
           </span>
         </div>
         <!-- 凸の形: 上＝平面図（真上から）、下段＝下手｜客席から（正面）｜上手。
@@ -789,6 +788,7 @@
               <button type="button" class="ontoggle" id="lxlink" aria-pressed="true"><span class="sw"></span><b><span class="swlab">シーンと連動</span>オン</b></button>
             </div>
             <div class="lxbody" id="lxqbox"></div>
+            <button type="button" class="btn primary" id="apply" title="配置と照明デザインを現在のショーのLXキューへ適用">LXキューを適用</button>
           </section>
           </div>
           <div class="planwrap">
@@ -919,13 +919,13 @@
 <script src="volume-light.js?v=20260915-2"></script>
 <script src="laser-effects.js?v=20260915-5-color-presets"></script>
 <script src="laser-effects-ui.js?v=20260915-3-supported-shapes"></script>
-<script src="app.js?v=2026092201"></script>
+<script src="app.js?v=2026092237"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20260915-3-vertical-cards"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->
 <script src="selected-light-presets-engine.js?v=2026092114"></script>
 <script src="selected-light-presets-ui.js?v=2026092114"></script>
 <script src="../gamma-light-model.js?v=2026092113"></script>
-<script src="embed.js?v=2026092129"></script>
+<script src="embed.js?v=2026092238"></script>
 </body>
 </html>
