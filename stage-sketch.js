@@ -26195,7 +26195,13 @@ ${propsPlotHtml}
             throw new Error("旧照明を変換する部品を読み込めません。画面を再読み込みしてから、もう一度選んでください");
           }
         } else {
-          const preparedLighting = migrationApi.prepare(parsed, { sourceText: text });
+          // 同梱会場とサイズの ID が一致するときだけ既知の寸法を補い、独自会場は推測しない。
+          const sourceVenue = sourceProject && VENUES.list.find((venue) => venue.id === sourceProject.venue);
+          const sourceSize = sourceVenue && sourceVenue.sizes.find((size) => size.id === sourceProject.venueSize);
+          const venues = sourceSize ? { [sourceVenue.id]: { [sourceSize.id]: {
+            width: sourceSize.width, depth: sourceSize.depth, height: sourceSize.height,
+          } } } : undefined;
+          const preparedLighting = migrationApi.prepare(parsed, { sourceText: text, venues });
           parsed = preparedLighting.document;
           if (preparedLighting.migrated) {
             lightingMigration = {

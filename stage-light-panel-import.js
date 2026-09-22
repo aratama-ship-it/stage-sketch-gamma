@@ -68,7 +68,43 @@
       ...(options.sourceText !== undefined ? { sourceText: options.sourceText } : {}),
     });
     const next = clone(original);
+    let sectionNo = 0;
+    let sceneNo = 0;
+    const lxNumbers = new Map();
+    for (const row of rows(project.scenes)) {
+      if (row && row.kind === "section" && Number(row.depth || 0) === 0) {
+        sectionNo += 1;
+        sceneNo = 0;
+      } else if (row && row.kind !== "section") {
+        sceneNo += 1;
+        lxNumbers.set(row.id, { section: Math.max(1, sectionNo), no: sceneNo });
+      }
+    }
+    for (const [index, scene] of rows(design.scenes).entries()) {
+      if (!record(scene) || !record(scene.cue) || !record(scene.cue.lights)) continue;
+      if (!Object.values(scene.cue.lights).some((light) => record(light) && light.on === true)) continue;
+      scene.lx = lxNumbers.get(scene.id) || { section: 1, no: index + 1 };
+      if (!rows(scene.lxq).length) scene.lxq = [{ id: `legacy-lxq-${scene.id}`, seq: 1,
+        name: String(scene.name || "").slice(0, 24), at: project.createdAt || "1970-01-01T00:00:00.000Z",
+        cue: clone(scene.cue) }];
+    }
     next.project.lightingDesign = design;
+    // 旧照明を含む場面には場面頭のライトキューを補う。既存のキューは変えない。
+    const cues = rows(next.project.cues).map(clone);
+    const cueIds = new Set(cues.map((cue) => cue && cue.id).filter((id) => typeof id === "string"));
+    for (const scene of rows(design.scenes)) {
+      if (!record(scene) || !record(scene.cue) || !record(scene.cue.lights)) continue;
+      if (!Object.values(scene.cue.lights).some((light) => record(light) && light.on === true)) continue;
+      if (cues.some((cue) => cue && cue.kind === "timeline" && cue.cueType === "light"
+        && cue.sceneId === scene.id && Number(cue.offsetSeconds || 0) === 0)) continue;
+      const baseId = `legacy-light-cue-${scene.id}`;
+      let id = baseId;
+      for (let index = 2; cueIds.has(id); index += 1) id = `${baseId}-${index}`;
+      cueIds.add(id);
+      cues.push({ id, kind: "timeline", cueType: "light", sceneId: scene.id,
+        offsetSeconds: 0, memo: `明かり: ${scene.name || scene.id}`, locked: false });
+    }
+    next.project.cues = cues;
     return {
       document: next,
       migrated: true,

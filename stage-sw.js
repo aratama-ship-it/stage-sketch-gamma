@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v221";
+const CACHE_NAME = "stage-sketch-gamma-shell-v222";
 const APP_SHELL = [
   "./stage-scene-alternatives.js?v=2026092208",
   "./stage-scene-alternatives-ui.js?v=2026092208",
@@ -18,7 +18,7 @@ const APP_SHELL = [
   "./stage-set-render.js?v=2026092040",
   "./gamma-light-cue-overlay.js?v=2026092113",
   "./docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113",
-  "./stage-light-panel-import.js?v=2026092113",
+  "./stage-light-panel-import.js?v=2026092209",
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-lighting-presets-v1.json",
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-small.shosai-light-design.json",
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-mid.shosai-light-design.json",
@@ -68,7 +68,7 @@ const APP_SHELL = [
   "./gamma-mobile.js?v=2026091951",
   "./gamma-mobile.css?v=2026091950",
   "./stage-cue-sheet.js?v=2026091803",
-  "./stage-sketch.js?v=2026092208",
+  "./stage-sketch.js?v=2026092209",
   "./stage-timeline.js?v=2026092208",
   "./stage-session.js?v=2026091987",
   "./stage-study-owner.js?v=2026091501",
