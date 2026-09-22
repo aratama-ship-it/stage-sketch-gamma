@@ -12,7 +12,7 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092225">
+<link rel="stylesheet" href="style.css?v=2026092227">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -106,11 +106,13 @@
           </div>
           <div class="stage-undo-redo">
             <button type="button" class="stage-history-icon" id="stage-undo" data-tablet-icon="↶"
-                    aria-label="一つ戻す" title="⌘Z（WindowsはCtrl+Z）" disabled>
+                    data-tip-key="⌘Z" data-tip-description="直前の操作を取り消します" data-stage-shortcut-action="history.undo" data-stage-shortcut-title="一つ戻す（{key}）"
+                    aria-label="一つ戻す" aria-keyshortcuts="Mod+Z" title="⌘Z（WindowsはCtrl+Z）" disabled>
               <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4.2H2.7V.9"/><path d="M2.9 4.1A5.4 5.4 0 1 1 2.8 11"/></svg>
             </button>
             <button type="button" class="stage-history-icon" id="stage-redo" data-tablet-icon="↷"
-                    aria-label="やり直す" title="⇧⌘Z（WindowsはCtrl+Shift+Z）" disabled>
+                    data-tip-key="⇧⌘Z" data-tip-description="取り消した操作をやり直します" data-stage-shortcut-action="history.redo" data-stage-shortcut-title="やり直す（{key}）"
+                    aria-label="やり直す" aria-keyshortcuts="Mod+Shift+Z" title="⇧⌘Z（WindowsはCtrl+Shift+Z）" disabled>
               <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4.2h3.3V.9"/><path d="M13.1 4.1A5.4 5.4 0 1 0 13.2 11"/></svg>
             </button>
           </div>
@@ -131,7 +133,7 @@
             <div class="stage-panel-visibility-menu" id="stage-panels-menu"
                  role="group" aria-label="パネルのオン/オフ" hidden></div>
           </div>
-          <button type="button" class="stage-lang stage-present-icon" id="stage-present-btn" data-tablet-icon="⛶" aria-label="全画面" aria-keyshortcuts="F" aria-pressed="false" title="図を全画面表示（F）。矢印キーでシーン送り、FまたはEscで戻る"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10"/></svg></span></button>
+          <button type="button" class="stage-lang stage-present-icon" id="stage-present-btn" data-tablet-icon="⛶" data-tip-key="F" data-tip-description="図を全画面表示します。矢印キーでシーンを送り、Escで戻ります" data-stage-shortcut-action="view.presentation" data-stage-shortcut-title="図を全画面表示（{key}）。矢印キーでシーン送り、{key}またはEscで戻る" aria-label="全画面" aria-keyshortcuts="F" aria-pressed="false" title="図を全画面表示（F）。矢印キーでシーン送り、FまたはEscで戻る"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10"/></svg></span></button>
           <button type="button" class="stage-lang stage-cue-sheet-icon" id="stage-cue-sheet-open"
                   data-tablet-icon="▤" aria-label="キューシート" title="キューシート"
                   aria-haspopup="dialog" aria-controls="stage-cue-sheet-modal">
@@ -3179,21 +3181,21 @@
 
 <div class="stage-present-overlay" id="stage-present-overlay" aria-hidden="true">
   <div class="stage-present-canvas" id="stage-present-canvas"></div>
-  <button type="button" class="stage-present-mini" id="stage-present-mini" title="正面と平面を入れ替える" aria-label="正面と平面を入れ替える" aria-keyshortcuts="X">
-    <span class="stage-present-mini-bar"><span id="stage-present-mini-label">平面図</span><span aria-hidden="true">⇄ X</span></span>
+  <button type="button" class="stage-present-mini" id="stage-present-mini" data-tip-key="X" data-tip-description="正面図と平面図を入れ替えます" data-stage-shortcut-action="view.swap" data-stage-shortcut-title="正面と平面を入れ替える（{key}）" title="正面と平面を入れ替える（X）" aria-label="正面と平面を入れ替える" aria-keyshortcuts="X">
+    <span class="stage-present-mini-bar"><span id="stage-present-mini-label">平面図</span><span class="stage-present-mini-shortcut" aria-hidden="true">⇄ <kbd class="stage-tip-key" data-stage-shortcut-display-for="view.swap">X</kbd></span></span>
     <span class="stage-present-mini-view" id="stage-present-mini-view" aria-hidden="true" inert></span>
   </button>
-  <button type="button" class="stage-present-zone is-prev" id="stage-present-prev" aria-label="前のシーンへ">‹</button>
-  <button type="button" class="stage-present-zone is-next" id="stage-present-next" aria-label="次のシーンへ">›</button>
+  <button type="button" class="stage-present-zone is-prev" id="stage-present-prev" data-tip-key="↑ / ←" data-tip-description="前のシーンへ進みます" aria-label="前のシーンへ" aria-keyshortcuts="ArrowUp ArrowLeft">‹</button>
+  <button type="button" class="stage-present-zone is-next" id="stage-present-next" data-tip-key="↓ / →" data-tip-description="次のシーンへ進みます" aria-label="次のシーンへ" aria-keyshortcuts="ArrowDown ArrowRight">›</button>
   <aside class="stage-present-drawer" id="stage-present-drawer" aria-label="左の道具列" hidden>
     <div class="stage-present-drawer-body" id="stage-present-drawer-body"></div>
   </aside>
   <button type="button" class="stage-present-drawer-toggle" id="stage-present-drawer-toggle"
           aria-label="パネルを開く" title="パネルを開く" aria-controls="stage-present-drawer" aria-expanded="false"><span aria-hidden="true">▶</span></button>
-  <button type="button" class="stage-present-swap" id="stage-present-swap" aria-label="正面と平面を入れ替える" title="正面と平面を入れ替える" aria-keyshortcuts="X">
+  <button type="button" class="stage-present-swap" id="stage-present-swap" data-tip-key="X" data-tip-description="正面図と平面図を入れ替えます" data-stage-shortcut-action="view.swap" data-stage-shortcut-title="正面と平面を入れ替える（{key}）" aria-label="正面と平面を入れ替える" title="正面と平面を入れ替える（X）" aria-keyshortcuts="X">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M16 3l4 4-4 4M20 17H4M8 13l-4 4 4 4"/></svg>
   </button>
-  <button type="button" class="stage-present-close" id="stage-present-close" aria-label="全画面を終了" title="全画面を終了">
+  <button type="button" class="stage-present-close" id="stage-present-close" data-tip-key="Esc" data-tip-description="全画面を終了します" aria-label="全画面を終了" title="全画面を終了（Esc）" aria-keyshortcuts="Escape">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 9h5V4M9 9 3 3M20 9h-5V4M15 9l6-6M4 15h5v5M9 15l-6 6M20 15h-5v5M15 15l6 6"/></svg>
   </button>
 </div>
@@ -3234,7 +3236,7 @@
 <script src="stage-light-panel-import.js?v=2026092209"></script>
 <script src="stage-scene-alternatives.js?v=2026092208"></script>
 <script src="stage-shortcuts.js?v=2026092218"></script>
-<script src="stage-sketch.js?v=2026092226"></script>
+<script src="stage-sketch.js?v=2026092228"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092209"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-timeline.js?v=2026092208"></script>

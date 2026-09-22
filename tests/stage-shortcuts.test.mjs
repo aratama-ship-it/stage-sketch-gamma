@@ -5,6 +5,7 @@ import vm from "node:vm";
 
 const source = await readFile(new URL("../stage-shortcuts.js", import.meta.url), "utf8");
 const stageSketch = await readFile(new URL("../stage-sketch.js", import.meta.url), "utf8");
+const stage = await readFile(new URL("../stage.html", import.meta.url), "utf8");
 
 function load(saved = {}) {
   const values = new Map(Object.entries(saved));
@@ -62,4 +63,14 @@ test("shortcut settings normalize Space and discard stale invalid or conflicting
 
 test("capturing a new key replaces the visible key label", () => {
   assert.match(stageSketch, /button\.classList\.remove\("is-capturing"\);\s*button\.textContent = shortcuts\.display\(result\.value\);/);
+});
+
+test("fullscreen icons use the same keycap shortcut treatment as the toolbar", () => {
+  for (const id of ["stage-present-btn", "stage-present-mini", "stage-present-swap"]) {
+    assert.match(stage, new RegExp(`id="${id}"[^>]*data-tip-key="[^"]+"[^>]*data-stage-shortcut-action="view\\.(?:presentation|swap)"`));
+  }
+  assert.match(stage, /data-stage-shortcut-display-for="view\.swap"/);
+  assert.match(stage, /id="stage-present-close"[^>]*data-tip-key="Esc"/);
+  assert.match(stageSketch, /document\.querySelectorAll\("\[data-stage-shortcut-display-for\]"\)/);
+  assert.match(stageSketch, /stageShortcutTitle\.replaceAll\("\{key\}", shortcuts\.display\(value\)\)/);
 });

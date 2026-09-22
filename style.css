@@ -13312,6 +13312,12 @@ body.stage-modal-open .stage-tour { display: none !important; }
   font-size: 11px;
   line-height: 1;
 }
+.stage-present-mini-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.stage-present-mini-shortcut .stage-tip-key { color: var(--brass); }
 .stage-present-mini-view { display: block; aspect-ratio: 16 / 9; pointer-events: none; }
 .stage-fullscreen #stage-present-mini #stage-present-mini-view canvas {
   display: block;

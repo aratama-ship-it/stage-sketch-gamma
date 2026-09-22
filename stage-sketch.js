@@ -24252,8 +24252,12 @@
       if (Object.prototype.hasOwnProperty.call(element.dataset, "tipKey")) element.dataset.tipKey = shortcuts.display(value);
       if (Object.prototype.hasOwnProperty.call(element.dataset, "toolKey")) element.dataset.toolKey = value;
       if (element.dataset.stageShortcutTitle) {
-        element.title = element.dataset.stageShortcutTitle.replace("{key}", shortcuts.display(value));
+        element.title = element.dataset.stageShortcutTitle.replaceAll("{key}", shortcuts.display(value));
       }
+    });
+    document.querySelectorAll("[data-stage-shortcut-display-for]").forEach(element => {
+      const value = shortcuts.get(element.dataset.stageShortcutDisplayFor);
+      if (value) element.textContent = shortcuts.display(value);
     });
   }
 
@@ -30859,6 +30863,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     ".stage-history-actions .stage-cue-sheet-icon",
     ".stage-history-actions .stage-export-icon",
     ".stage-header-collaboration [aria-label]",
+    ".stage-present-overlay [aria-label]",
   ].join(", ")));
   iconTipTargets.forEach((button) => {
     button.addEventListener("pointerenter", (event) => {
