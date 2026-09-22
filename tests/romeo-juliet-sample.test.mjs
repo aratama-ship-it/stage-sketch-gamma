@@ -28,17 +28,19 @@ test("Romeo and Juliet is a complete immutable bundled project sample", async ()
   assert.equal(sample.project.lightingDesign.rig.fixtures.length, 6);
   assert.equal(sample.project.lightingDesign.rig.trusses.length, 2);
   assert.equal(sample.project.lightingDesign.scenes.length, 31);
+  assert.equal(sample.project.cast.map((performer) => performer.name).join("|"),
+    "ロミオ担当|ジュリエット担当|ロレンス修道士担当|ベンヴォーリオ担当|ティボルト担当|マーキューシオ担当|乳母担当|キャピュレット担当|モンタギュー担当|ジョン修道士担当");
 });
 
 test("Romeo and Juliet is loaded before the app and included in the versioned PWA shell", async () => {
   const [html, worker, app] = await Promise.all([
     read("stage.html"), read("stage-sw.js"), read("stage-sketch.js"),
   ]);
-  const libraryScript = html.indexOf('stage-samples/romeo-juliet-cued.js?v=2026092214');
+  const libraryScript = html.indexOf('stage-samples/romeo-juliet-cued.js?v=2026092215');
   const appScript = html.indexOf('stage-sketch.js?v=2026092218');
   assert.ok(libraryScript >= 0 && libraryScript < appScript);
   assert.match(worker, /stage-sketch-gamma-shell-v232/);
-  assert.match(worker, /stage-samples\/romeo-juliet-cued\.js\?v=2026092214/);
+  assert.match(worker, /stage-samples\/romeo-juliet-cued\.js\?v=2026092215/);
   assert.match(app, /function shelveRomeoJulietSample\(\)/);
   assert.match(app, /if \(shows\[built\.project\.id\]\) return;/);
   assert.match(app, /openArgs\.has\("romeo-juliet-sample"\)/);
