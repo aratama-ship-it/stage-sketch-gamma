@@ -18,7 +18,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.match(main, /const ROSTER_UNAVAILABLE_PROP_SHAPES = new Set\(\[/);
   assert.match(main, /group\.ids\.filter\(\(shapeId\) => rosterShapeIsAvailable\(shapeId\) && !ROSTER_SET_PROP_SHAPES\.has\(shapeId\)\)/);
   assert.match(main, /group\.ids\.filter\(\(shapeId\) => rosterShapeIsAvailable\(shapeId\) && ROSTER_SET_PROP_SHAPES\.has\(shapeId\)\)/);
-  assert.match(main, /drawStagePiece\(ctx2, previewPiece, previewLayout/);
+  assert.match(main, /drawStagePiece\(ctx2, previewPiece, previewLayout, \(\) => 0, \{ showFaceEdges: false \}\)/);
+  assert.match(main, /function paintBox\(target, piece, L, part, drawOptions = \{\}\)/);
+  assert.match(main, /if \(drawOptions\.showFaceEdges !== false\) target\.stroke\(\);/);
   assert.match(main, /const previewColor = rosterSelectedColor\(\)/);
   assert.match(main, /drawKindPreview\(canvas, "prop", previewColor, shapeId\)/);
   assert.match(main, /function refreshRosterPropPreviews\(\)/);

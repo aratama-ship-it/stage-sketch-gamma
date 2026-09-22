@@ -11123,7 +11123,7 @@
   /* 直方体の部品をひとつ塗る。部品の中心は駒の中心から (ox, oz) メートルずれ、
    * 床から lift メートル浮いた位置に、幅 w・奥行き d・高さ h で立つ。
    * 四隅は place() で床の点として引くので、床の1m枡と遠近が一致する。 */
-  function paintBox(target, piece, L, part) {
+  function paintBox(target, piece, L, part, drawOptions = {}) {
     const rad = ((piece.facing || 0) * Math.PI) / 180;
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
@@ -11179,7 +11179,7 @@
       target.lineTo(top[f.i].x, top[f.i].y);
       target.closePath();
       target.fill();
-      target.stroke();
+      if (drawOptions.showFaceEdges !== false) target.stroke();
     });
 
     // 天面
@@ -11188,7 +11188,7 @@
     top.forEach((c, i) => (i ? target.lineTo(c.x, c.y) : target.moveTo(c.x, c.y)));
     target.closePath();
     target.fill();
-    target.stroke();
+    if (drawOptions.showFaceEdges !== false) target.stroke();
   }
 
   /* 台・テーブル・椅子は、直方体の部品の組み合わせとして持つ。
@@ -11347,7 +11347,7 @@
     return faces;
   }
 
-  function paintSmoothProp(target, parts, project, color) {
+  function paintSmoothProp(target, parts, project, color, drawOptions = {}) {
     const faces = smoothPropFaces(parts).map((face) => {
       const points = face.points.map((p) => project(...p));
       if (points.some((p) => !p || !Number.isFinite(p.x + p.y + p.z))) return null;
@@ -11360,12 +11360,14 @@
       target.fillStyle = target.strokeStyle = mixToward(color, face.shade);
       target.beginPath();
       face.points.forEach((p, i) => i ? target.lineTo(p.x, p.y) : target.moveTo(p.x, p.y));
-      target.closePath(); target.fill(); target.stroke();
+      target.closePath();
+      target.fill();
+      if (drawOptions.showFaceEdges !== false) target.stroke();
     });
     target.restore();
   }
 
-  function drawSmoothStageProp(target, piece, L) {
+  function drawSmoothStageProp(target, piece, L, drawOptions = {}) {
     const parts = scaledPropShape(piece, pieceDims(piece)).parts;
     const yaw = finite(piece.facing, 0) * Math.PI / 180;
     const cos = Math.cos(yaw), sin = Math.sin(yaw);
@@ -11374,7 +11376,7 @@
       const p = floorPoint(piece, dw, dd, L);
       return { x: p.x, y: L.plan ? p.y : L.tilt(p.rawY - y * perMetre(p, L).y),
         z: L.plan ? y : -dd + y * 0.35 };
-    }, piece.color);
+    }, piece.color, drawOptions);
   }
 
   function propPartsBounds(parts) {
@@ -11772,7 +11774,7 @@
   }
 
   // 台・テーブル・椅子。部品を奥から順に塗る
-  function drawSolid(target, piece, pos, scale, L) {
+  function drawSolid(target, piece, pos, scale, L, drawOptions = {}) {
     const diabolo = piece.type === "diabolo";
     const parts = diabolo ? null : pieceParts(piece);
     if (!diabolo && !parts) return;
@@ -11923,7 +11925,7 @@
     parts.forEach((part) => {
       if (part.kind === "disc") paintDisc(target, piece, L, part);
       else if (part.kind === "line" || part.kind === "ring") paintRigging(target, piece, L, part);
-      else paintBox(target, piece, L, part);
+      else paintBox(target, piece, L, part, drawOptions);
     });
 
     /* 壁へ映す絵（プロジェクション・2026-09-20 段階2）。★箱を塗った「後」に重ねる。
@@ -15035,7 +15037,7 @@
 
   /* 通常の駒もAI下書きの駒も、必ずこの一本を通して描く。
      下書き側で座標変換や種類別描画を複製すると、正面と平面でずれる。 */
-  function drawStagePiece(target, piece, L, leanAt) {
+  function drawStagePiece(target, piece, L, leanAt, drawOptions = {}) {
     piece = effectivelyPlacedPiece(piece);
     /* 袖に居るものは正面図に出さない。額縁の外は客席から見えない。
        アニメーション中は動きの途中の値で判定するので、はけていく駒は
@@ -15052,10 +15054,10 @@
     }
     if (piece.type === "light") drawLight(target, piece, pos, scale, L);
     else if (piece.type === "prop" && ["drumset", "taiko"].includes(propShapeOf(piece))) {
-      drawSmoothStageProp(target, piece, L);
+      drawSmoothStageProp(target, piece, L, drawOptions);
     }
     else if (L.plan && ["revolve", "deck", "curtain", "pool", "seri"].includes(piece.type)) {
-      drawSolid(target, piece, pos, scale, L);
+      drawSolid(target, piece, pos, scale, L, drawOptions);
     }
     else if (L.plan) drawPlanPiece(target, piece, pos, scale, L);
     else if (piece.type === "performer") drawPerformer(target, piece, pos, scale, L);
@@ -15069,7 +15071,7 @@
           z: -x * Math.sin(yaw) + z * Math.cos(yaw) };
       }, dims, piece.color);
     }
-    else if (SOLID_TYPES[piece.type]) drawSolid(target, piece, pos, scale, L);
+    else if (SOLID_TYPES[piece.type]) drawSolid(target, piece, pos, scale, L, drawOptions);
     else if (piece.type === "sphere") drawSphere(target, piece, pos, scale, L);
     if (lean) target.restore();
   }
@@ -20918,7 +20920,9 @@
         pad - bounds.x * scale + (w - pad * 2 - bounds.w * scale) / 2,
         pad - bounds.y * scale + (h - pad * 2 - bounds.h * scale) / 2,
       );
-      drawStagePiece(ctx2, previewPiece, previewLayout, () => 0);
+      // 一覧は132pxへ縮めるため、立体の各面の境界線まで描くと横筋として重なる。
+      // 本番の舞台図は既定どおり面線を残し、ここだけ輪郭と陰影を塗りで見せる。
+      drawStagePiece(ctx2, previewPiece, previewLayout, () => 0, { showFaceEdges: false });
       ctx2.restore();
       return;
     }
