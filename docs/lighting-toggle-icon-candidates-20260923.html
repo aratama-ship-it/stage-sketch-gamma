@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>照明デザイン｜灯体オン・オフ SVG 候補</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #191512;
+      --panel: #211b17;
+      --panel-2: #171310;
+      --line: #4a3d31;
+      --text: #d7cbb9;
+      --muted: #9b9184;
+      --on: #c56a3e;
+      --on-bright: #e0b866;
+      --off: #827a72;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Hiragino Sans", "Yu Gothic", sans-serif;
+      line-height: 1.5;
+    }
+    main { width: min(980px, calc(100% - 32px)); margin: 32px auto 56px; }
+    header { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 20px; }
+    h1 { font-size: clamp(1.25rem, 2.5vw, 1.8rem); margin: 0 0 8px; letter-spacing: .04em; }
+    .lead { color: var(--muted); margin: 0; }
+    .candidate {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      margin: 14px 0;
+      padding: 16px;
+    }
+    .candidate-head { display: flex; gap: 14px; align-items: baseline; justify-content: space-between; }
+    h2 { font-size: 1rem; margin: 0; color: var(--on-bright); letter-spacing: .06em; }
+    .candidate-note { margin: 4px 0 14px; color: var(--muted); font-size: .9rem; }
+    .states { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .state {
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      min-height: 128px;
+      display: grid;
+      grid-template-columns: 82px 1fr;
+      align-items: center;
+      gap: 14px;
+      padding: 12px;
+    }
+    .state svg { width: 76px; height: 76px; display: block; }
+    .state-label { font-weight: 700; letter-spacing: .08em; }
+    .state-meta { color: var(--muted); font-size: .82rem; margin-top: 2px; }
+    .on .state-label { color: var(--on-bright); }
+    .off .state-label { color: var(--off); }
+    .icon-on { color: var(--on); }
+    .icon-on-bright { color: var(--on-bright); }
+    .icon-off { color: var(--off); }
+    footer { margin-top: 24px; color: var(--muted); font-size: .84rem; }
+    @media (max-width: 620px) {
+      main { width: min(100% - 20px, 980px); margin-top: 18px; }
+      .states { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>照明デザイン｜灯体オン・オフ SVG 候補</h1>
+    <p class="lead">灯体一覧のトグル用。左が点灯、右が消灯です。色は現在のUIに合わせ、形の違いだけを比較できます。</p>
+  </header>
+
+  <section class="candidate">
+    <div class="candidate-head"><h2>01｜ビームコーン</h2></div>
+    <p class="candidate-note">上向きの灯体と光の広がりを最短で伝える、舞台照明らしい案。</p>
+    <div class="states">
+      <div class="state on"><svg class="icon-on" viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" d="M22 8h20l-4 10v7H26v-7z"/><path fill="currentColor" opacity=".78" d="M25 25h14l15 31H10z"/><path fill="none" stroke="var(--on-bright)" stroke-width="2" d="M32 4v-2M13 11 10 8M51 11l3-3"/></svg><div><div class="state-label">点灯</div><div class="state-meta">光束＋暖色</div></div></div>
+      <div class="state off"><svg class="icon-off" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="3" d="M22 8h20l-4 10v7H26v-7z"/><path fill="none" stroke="currentColor" stroke-width="2" d="M25 25h14M32 4v-2"/><path fill="none" stroke="currentColor" stroke-width="3" d="m15 15 34 34"/></svg><div><div class="state-label">消灯</div><div class="state-meta">輪郭＋斜線</div></div></div>
+    </div>
+  </section>
+
+  <section class="candidate">
+    <div class="candidate-head"><h2>02｜レンズ＋光輪</h2></div>
+    <p class="candidate-note">灯体のレンズ面を主役にして、点灯時だけ周囲の光輪を足す案。</p>
+    <div class="states">
+      <div class="state on"><svg class="icon-on-bright" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="31" r="15" fill="none" stroke="currentColor" stroke-width="6"/><circle cx="32" cy="31" r="7" fill="var(--on)"/><path fill="none" stroke="currentColor" stroke-width="2" d="M32 5v-3M32 62v-3M6 31H3M61 31h-3M14 13l-2-2M52 51l-2-2M50 13l2-2M14 49l-2 2"/></svg><div><div class="state-label">点灯</div><div class="state-meta">レンズ＋光輪</div></div></div>
+      <div class="state off"><svg class="icon-off" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="31" r="15" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="32" cy="31" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="3" d="m14 13 36 36"/></svg><div><div class="state-label">消灯</div><div class="state-meta">レンズ＋斜線</div></div></div>
+    </div>
+  </section>
+
+  <section class="candidate">
+    <div class="candidate-head"><h2>03｜フレネル正面</h2></div>
+    <p class="candidate-note">灯体一覧の小さなサイズでも形が崩れにくい、正面レンズ中心の案。</p>
+    <div class="states">
+      <div class="state on"><svg class="icon-on-bright" viewBox="0 0 64 64" aria-hidden="true"><rect x="15" y="14" width="34" height="35" rx="2" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="32" cy="31" r="11" fill="var(--on)" stroke="currentColor" stroke-width="3"/><path fill="none" stroke="currentColor" stroke-width="2" d="M20 8h24M20 54h24"/></svg><div><div class="state-label">点灯</div><div class="state-meta">塗りレンズ</div></div></div>
+      <div class="state off"><svg class="icon-off" viewBox="0 0 64 64" aria-hidden="true"><rect x="15" y="14" width="34" height="35" rx="2" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="32" cy="31" r="11" fill="none" stroke="currentColor" stroke-width="3"/><path fill="none" stroke="currentColor" stroke-width="3" d="m15 14 34 35"/></svg><div><div class="state-label">消灯</div><div class="state-meta">線画レンズ</div></div></div>
+    </div>
+  </section>
+
+  <section class="candidate">
+    <div class="candidate-head"><h2>04｜舞台スポット</h2></div>
+    <p class="candidate-note">灯体の向きと床に落ちる明かりを一体化した、舞台上の印象が強い案。</p>
+    <div class="states">
+      <div class="state on"><svg class="icon-on" viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" d="M19 9h26l-5 12H24z"/><path fill="currentColor" opacity=".82" d="M25 21h14l11 27H14z"/><ellipse cx="32" cy="54" rx="18" ry="4" fill="var(--on-bright)" opacity=".9"/><path fill="none" stroke="var(--on-bright)" stroke-width="2" d="M19 9h26"/></svg><div><div class="state-label">点灯</div><div class="state-meta">照射面＋床の光</div></div></div>
+      <div class="state off"><svg class="icon-off" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="3" d="M19 9h26l-5 12H24zM25 21h14"/><path fill="none" stroke="currentColor" stroke-width="2" d="M32 23v25M14 54h36"/><path fill="none" stroke="currentColor" stroke-width="3" d="m14 12 36 38"/></svg><div><div class="state-label">消灯</div><div class="state-meta">照射面＋斜線</div></div></div>
+    </div>
+  </section>
+
+  <section class="candidate">
+    <div class="candidate-head"><h2>05｜電源記号＋灯体</h2></div>
+    <p class="candidate-note">一般的なオン・オフの意味を即読できる、電源記号を組み合わせた案。</p>
+    <div class="states">
+      <div class="state on"><svg class="icon-on-bright" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M32 6v20"/><path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M20 13a23 23 0 1 0 24 0"/><circle cx="32" cy="42" r="11" fill="var(--on)" stroke="currentColor" stroke-width="3"/></svg><div><div class="state-label">点灯</div><div class="state-meta">電源オン＋レンズ</div></div></div>
+      <div class="state off"><svg class="icon-off" viewBox="0 0 64 64" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M32 6v20M20 13a23 23 0 1 0 24 0"/><circle cx="32" cy="42" r="11" fill="none" stroke="currentColor" stroke-width="3"/><path fill="none" stroke="currentColor" stroke-width="3" d="m14 13 36 36"/></svg><div><div class="state-label">消灯</div><div class="state-meta">電源記号＋斜線</div></div></div>
+    </div>
+  </section>
+
+  <footer>候補ページは選定用サンプルです。採用する番号が決まったら、灯体一覧の既存トグルへ組み込みます。</footer>
+</main>
+</body>
+</html>
