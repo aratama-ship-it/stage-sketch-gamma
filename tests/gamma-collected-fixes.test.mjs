@@ -111,8 +111,24 @@ test("stage tools can toggle rendered lighting without adding show data", () => 
   assert.match(firstPerson, /makeLightToggle\("stage-fpv-light-render-toggle", "stage-light-render-toggle", "toggleLightRendering"\)/);
   assert.match(firstPerson, /makeLightToggle\("stage-fpv-work-light-toggle", "stage-work-light-toggle", "toggleWorkLightOff"\)/);
   assert.match(firstPerson, /\[elements\.workLightToggle, "作業灯", !data\.lightPool \|\| !data\.workLightOff\]/);
-  assert.match(style, /\.stage-center-bar \.stage-tool-grid button\.is-icon \{\s*width: 40px/);
+  assert.match(style, /\.stage-center-bar \.stage-tool-grid button\.is-icon \{[\s\S]*width: 34px/);
+  assert.match(style, /\.stage-center-bar \.stage-name-toggle\.is-icon \{[\s\S]*width: 34px/);
+  assert.match(style, /\.stage-center-bar \.stage-name-toggle\.is-icon svg \{ width: 21px; height: 21px; \}/);
   assert.match(style, /\.stage-center-bar \.stage-center-group\.is-display \.stage-view-select \{ margin-left: auto; \}/);
+  assert.match(sketch, /\.stage-history-actions \.stage-gear-btn/);
+  assert.match(sketch, /\.stage-header-collaboration \[aria-label\]/);
+});
+
+test("the 2D-study boundary note lives in Settings instead of below the stage", () => {
+  const stage = read("stage.html");
+  const style = read("style.css");
+  const note = "これは構図・色・距離感を考えるための2D習作です。";
+  const noteAt = stage.indexOf(note);
+  const prefsAt = stage.indexOf('id="stage-prefs-modal"');
+  assert.ok(noteAt > prefsAt);
+  assert.match(stage, /class="stage-pref-boundary-note"/);
+  assert.match(style, /\.stage-pref-boundary-note/);
+  assert.doesNotMatch(stage, /class="stage-boundary-note"/);
 });
 
 test("the front light summary is placed in the front panel instead of over the drawing", () => {

@@ -30817,7 +30817,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       head.append(keyTag);
     }
     tip.append(head);
-    const hintText = TOOL_HINTS[toolName];
+    const hintText = TOOL_HINTS[toolName] || button.dataset.tipDescription || "";
     if (hintText) {
       const hint = document.createElement("p");
       hint.className = "stage-tip-hint";
@@ -30839,7 +30839,20 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     toolTipFor = button;
   }
 
-  document.querySelectorAll("[data-stage-tool], [data-tool-tip]").forEach((button) => {
+  // アイコンだけの操作は、左の道具列だけでなく右上の保存・設定・共有にも同じ説明を付ける。
+  // 既存の title は残すので、機能をOFFにした場合や支援技術の名称も失わない。
+  const iconTipTargets = new Set(document.querySelectorAll([
+    "[data-stage-tool]", "[data-tool-tip]",
+    ".stage-center-bar .stage-name-toggle.is-icon",
+    ".stage-history-actions .stage-history-icon",
+    ".stage-history-actions .stage-gear-btn",
+    ".stage-history-actions .stage-panel-visibility-btn",
+    ".stage-history-actions .stage-present-icon",
+    ".stage-history-actions .stage-cue-sheet-icon",
+    ".stage-history-actions .stage-export-icon",
+    ".stage-header-collaboration [aria-label]",
+  ].join(", ")));
+  iconTipTargets.forEach((button) => {
     button.addEventListener("pointerenter", (event) => {
       if (event.pointerType === "touch") return;   // 指では出さない（押した瞬間に道具が変わる）
       showToolTip(button);
