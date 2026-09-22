@@ -4,6 +4,7 @@ import test from "node:test";
 import vm from "node:vm";
 
 const source = await readFile(new URL("../stage-shortcuts.js", import.meta.url), "utf8");
+const stageSketch = await readFile(new URL("../stage-sketch.js", import.meta.url), "utf8");
 
 function load(saved = {}) {
   const values = new Map(Object.entries(saved));
@@ -56,4 +57,8 @@ test("shortcut settings normalize Space and discard stale invalid or conflicting
   assert.equal(shortcuts.get("view.workLight"), "G");
   assert.equal(shortcuts.get("tool.select"), "V");
   assert.equal(shortcuts.matches({ key: " ", metaKey: false, ctrlKey: false, altKey: false, shiftKey: false }, "view.presentation"), true);
+});
+
+test("capturing a new key replaces the visible key label", () => {
+  assert.match(stageSketch, /button\.classList\.remove\("is-capturing"\);\s*button\.textContent = shortcuts\.display\(result\.value\);/);
 });

@@ -24251,6 +24251,7 @@
         return;
       }
       button.classList.remove("is-capturing");
+      button.textContent = shortcuts.display(result.value);
       status.textContent = tx(`${shortcuts.labels[id]}を${shortcuts.display(result.value)}に変更しました。`);
     });
     row.append(name, button);
