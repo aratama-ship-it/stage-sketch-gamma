@@ -18,6 +18,10 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.match(main, /group\.ids\.filter\(\(shapeId\) => !ROSTER_SET_PROP_SHAPES\.has\(shapeId\)\)/);
   assert.match(main, /group\.ids\.filter\(\(shapeId\) => ROSTER_SET_PROP_SHAPES\.has\(shapeId\)\)/);
   assert.match(main, /drawStagePiece\(ctx2, previewPiece, previewLayout/);
+  assert.match(main, /const previewColor = rosterSelectedColor\(\)/);
+  assert.match(main, /drawKindPreview\(canvas, "prop", previewColor, shapeId\)/);
+  assert.match(main, /function refreshRosterPropPreviews\(\)/);
+  assert.match(main, /rosterColorTouched = true;\s*refreshRosterPropPreviews\(\);/);
   assert.match(main, /--scene-bar-link/);
   assert.match(timeline, /stage-timeline-time-tools/);
   assert.match(timeline, /sourceStrip\.hidden = true/);

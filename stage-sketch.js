@@ -21180,6 +21180,7 @@
     const host = els.rosterPropGrid;
     if (!host) return;
     host.innerHTML = "";
+    const previewColor = rosterSelectedColor();
     propShapeGroups(rosterPropShape).map((group) => ({
       ...group,
       ids: group.ids.filter((shapeId) => !ROSTER_SET_PROP_SHAPES.has(shapeId)),
@@ -21219,7 +21220,9 @@
           addFromRoster();
         });
         grid.append(tile);
-        drawKindPreview(canvas, "prop", "#8b98a1", shapeId);
+        /* 選んで追加した直後に正面図へ出る色で見せる。形だけでなく、
+           一覧と正面図の見え方を同じものにする。 */
+        drawKindPreview(canvas, "prop", previewColor, shapeId);
       });
       ROSTER_PROP_SPECIAL_KINDS.filter((choice) => choice.group === group.ja).forEach((choice) => {
         const tile = document.createElement("button");
@@ -21246,10 +21249,24 @@
           addFromRoster();
         });
         grid.append(tile);
-        drawKindPreview(canvas, choice.kind, "#8b98a1");
+        drawKindPreview(canvas, choice.kind, previewColor);
       });
       section.append(heading, grid);
       host.append(section);
+    });
+  }
+
+  function refreshRosterPropPreviews() {
+    const host = els.rosterPropGrid;
+    if (!host || rosterKindLayer !== "prop") return;
+    const color = rosterSelectedColor();
+    host.querySelectorAll("[data-roster-prop-shape]").forEach((tile) => {
+      const canvas = tile.querySelector("canvas");
+      if (canvas) drawKindPreview(canvas, "prop", color, tile.dataset.rosterPropShape);
+    });
+    host.querySelectorAll("[data-roster-prop-kind]").forEach((tile) => {
+      const canvas = tile.querySelector("canvas");
+      if (canvas) drawKindPreview(canvas, tile.dataset.rosterPropKind, color);
     });
   }
 
@@ -31415,7 +31432,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   });
   if (els.rosterAdd) els.rosterAdd.addEventListener("click", addFromRoster);
   if (els.rosterColor) {
-    els.rosterColor.addEventListener("input", () => { rosterColorTouched = true; });
+    els.rosterColor.addEventListener("input", () => {
+      rosterColorTouched = true;
+      refreshRosterPropPreviews();
+    });
   }
   if (els.rosterSearch) els.rosterSearch.addEventListener("input", applyRosterSearch);
   const addLight = () => {
