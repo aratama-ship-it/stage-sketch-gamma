@@ -1,10 +1,10 @@
 (function () {
   'use strict';
   const host = () => window.STAGE_SCENE_ALTERNATIVES_HOST;
-  const anchor = document.getElementById('stage-scene-bar');
+  const anchor = document.getElementById('stage-scene-alternatives-host');
   if (!anchor) return;
   const bar = document.createElement('div'); bar.id = 'stage-scene-alternatives'; bar.className = 'scene-alternatives';
-  anchor.after(bar);
+  anchor.replaceChildren(bar);
   const tabs = document.createElement('div'); tabs.className = 'scene-alternatives-tabs'; tabs.setAttribute('aria-label','シーンの案');
   const info = document.createElement('span'); info.className = 'scene-alternatives-info';
   const actions = document.createElement('div'); actions.className = 'scene-alternatives-actions';

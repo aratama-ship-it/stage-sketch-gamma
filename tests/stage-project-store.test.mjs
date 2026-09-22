@@ -7,6 +7,7 @@ import vm from "node:vm";
 const source = fs.readFileSync(new URL("../stage-sketch.js", import.meta.url), "utf8");
 const stageHtml = fs.readFileSync(new URL("../stage.html", import.meta.url), "utf8");
 const serviceWorker = fs.readFileSync(new URL("../stage-sw.js", import.meta.url), "utf8");
+const alternativesUi = fs.readFileSync(new URL("../stage-scene-alternatives-ui.js", import.meta.url), "utf8");
 const featureShowSource = fs.readFileSync(new URL("../stage-samples/feature-test-show.js", import.meta.url), "utf8");
 const start = source.indexOf("  function createProjectStore(");
 const end = source.indexOf("\n  window.SHOSAI_PROJECT_STORE_MODEL", start);
@@ -146,6 +147,15 @@ test("the app shell advances with the storage transaction code", () => {
   assert.match(serviceWorker, /stage-sketch-gamma-shell-v230/);
   assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092213/);
   assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092215/);
+});
+
+test("scene alternatives are an opt-in right-side panel without changing scene data", () => {
+  assert.match(stageHtml, /data-panel="alternatives" data-title="別案"/);
+  assert.match(stageHtml, /id="stage-scene-alternatives-host"/);
+  assert.match(source, /key: "panelAlternatives", panel: "alternatives", label: "別案", def: false/);
+  assert.match(source, /alternatives: "right"/);
+  assert.match(alternativesUi, /getElementById\('stage-scene-alternatives-host'\)/);
+  assert.doesNotMatch(alternativesUi, /getElementById\('stage-scene-bar'\)/);
 });
 
 test("unavailable IndexedDB keeps the legacy localStorage duplicate", async () => {

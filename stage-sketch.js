@@ -5600,6 +5600,8 @@
        並行で手を入れている照明描画と衝突するため、次の段階の課題として送る。 */
     { key: "panelSeat2", panel: "seat2", label: "二席目", def: false,
       hint: "別の客席から見た小さな絵をもう一つ出す。図が重くなります。照明の見え方はこの小さな絵には出ません" },
+    { key: "panelAlternatives", panel: "alternatives", label: "別案", def: false,
+      hint: "シーンごとのA案・B案を作り、比べて採用する欄を右列に出す" },
     { key: "panelInspector", panel: "inspector", label: "選んだもの", def: true,
       hint: "舞台の上で選ぶと、姿勢・向き・重なりを変えられます。名前・色・寸法は「演者・舞台セット」の一覧で決めます。" },
     { key: "panelAsk", panel: "ask", label: "AI指示", def: true,
@@ -6078,20 +6080,20 @@
      使わないものは畳めるようにする。中央は絵だけで、上下の入れ替えのみ。 */
   /* 演者・舞台セット・光は「演者・舞台セット」一枚にまとめた（cast）。
    * 登録・出し入れ・寸法の仕組みが同じものを三つに割ると、目が三度行き来する。 */
-  const PANELS = ["project", "venue", "music", "cast", "machinery", "rigs", "light", "background", "study", "scenes", "seat2", "inspector", "save", "session", "ask"];
+  const PANELS = ["project", "venue", "music", "cast", "machinery", "rigs", "light", "background", "study", "scenes", "seat2", "alternatives", "inspector", "save", "session", "ask"];
 
   function defaultLayout() {
     return {
       // 場面は絵のすぐ右に置く（順番を見ながら描くため）
       cols: {
         project: "left", venue: "left", music: "left", cast: "left", machinery: "left", rigs: "left", light: "left", background: "left",
-        study: "right", scenes: "right", seat2: "right", inspector: "left", save: "right",
+        study: "right", scenes: "right", seat2: "right", alternatives: "right", inspector: "left", save: "right",
         session: "right", ask: "right",
       },
       order: {
         project: 0, venue: 1, music: 2, cast: 3, machinery: 4, rigs: 5, light: 6, background: 7,
         // 保存状態は右列の最後。既存のショーは保存済みの順序をそのまま使う。
-        study: -1, scenes: 0, seat2: 1, inspector: 8, save: 999, session: 3, ask: 4,
+        study: -1, scenes: 0, seat2: 1, alternatives: 2, inspector: 8, save: 999, session: 3, ask: 4,
       },
       /* 共有は「会議のときだけ開く」もの。畳んだ状態から始める。
          保存の中の畳みだったころと同じ見え方にするため（開いた形で置くと、

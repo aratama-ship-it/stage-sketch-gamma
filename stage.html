@@ -23,7 +23,7 @@
 <link rel="stylesheet" href="gamma-mobile.css?v=2026091950">
 <script src="gamma-light-model.js?v=2026092113"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=2026091987">
-<link rel="stylesheet" href="stage-scene-alternatives.css?v=2026092208">
+<link rel="stylesheet" href="stage-scene-alternatives.css?v=2026092209">
 </head>
 <body class="is-standalone">
 
@@ -902,6 +902,13 @@
                 <canvas id="stage-canvas-2" width="480" height="270"
                         role="img" aria-label="別の客席から見た正面図（比較用・照明なし）"></canvas>
               </div>
+            </div>
+          </section>
+          <!-- 別案は、シーン送りの帯ではなく必要なときだけ右列に開く。
+               パネルのON/OFFは端末ごとの設定であり、既存ショーの案データには触れない。 -->
+          <section class="stage-panel" data-panel="alternatives" data-title="別案">
+            <div class="stage-panel-body">
+              <div id="stage-scene-alternatives-host"></div>
             </div>
           </section>
           <section class="stage-panel" data-panel="inspector" data-title="選んだもの">
@@ -3217,7 +3224,7 @@
 <script src="stage-light-panel-import.js?v=2026092209"></script>
 <script src="stage-scene-alternatives.js?v=2026092208"></script>
 <script src="stage-sketch.js?v=2026092215"></script>
-<script src="stage-scene-alternatives-ui.js?v=2026092208"></script>
+<script src="stage-scene-alternatives-ui.js?v=2026092209"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-timeline.js?v=2026092208"></script>
 <script src="stage-session.js?v=2026091987"></script>

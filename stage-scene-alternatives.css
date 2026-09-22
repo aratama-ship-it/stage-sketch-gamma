@@ -1,6 +1,6 @@
-/* Match the approved scene-plan tokens without changing the surrounding desk. */
+/* 別案は右列の標準パネルへ収める。色と部品サイズは既存の机のトークンを使う。 */
 .scene-alternatives,.scene-alternatives-dialog { --scene-plan-border:#857762; --scene-plan-ink:#efe7d6; --scene-plan-paper-ink:#2b2620; --scene-plan-muted:#d5c9b4; --scene-plan-target:44px; }
-.scene-alternatives { margin:8px 0; padding:8px 0; border-top:1px solid var(--scene-plan-border); border-bottom:1px solid var(--scene-plan-border); font-size:12px; color:var(--scene-plan-ink); }
+.scene-alternatives { margin:0; padding:0; font-size:12px; color:var(--scene-plan-ink); }
 .scene-alternatives-tabs,.scene-alternatives-actions { display:flex; flex-wrap:wrap; gap:8px; }
 .scene-alternatives button { min-height:var(--scene-plan-target); font-size:12px; padding:8px 12px; white-space:nowrap; }
 .scene-alternatives-tabs [aria-pressed="true"] { background:var(--scene-plan-ink); color:var(--scene-plan-paper-ink); border-color:var(--scene-plan-ink); }
