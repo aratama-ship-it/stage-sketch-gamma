@@ -144,11 +144,11 @@ test("removing the current duplicate makes room before a large imported-show swi
 test("the app shell advances with the storage transaction code", () => {
   assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092213/);
   assert.match(stageHtml, /style\.css\?v=2026092301/);
-  assert.match(stageHtml, /stage-sketch\.js\?v=2026092302/);
-  assert.match(serviceWorker, /stage-sketch-gamma-shell-v267/);
+  assert.match(stageHtml, /stage-sketch\.js\?v=2026092303/);
+  assert.match(serviceWorker, /stage-sketch-gamma-shell-v268/);
   assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092213/);
   assert.match(serviceWorker, /\.\/style\.css\?v=2026092301/);
-  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092302/);
+  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092303/);
 });
 
 test("indoor standing reception venue keeps its 3D room layout outside show data", () => {
@@ -217,7 +217,10 @@ test("unavailable large props are hidden from add choices without changing saved
   const unavailableEnd = source.indexOf("]);", unavailableStart);
   assert.ok(unavailableStart >= 0 && unavailableEnd > unavailableStart);
   const unavailableShapes = source.slice(unavailableStart, unavailableEnd);
-  for (const shape of ["treasurechest", "speaker", "framepicture", "walljump", "aerialhammock"]) {
+  for (const shape of [
+    "treasurechest", "speaker", "framepicture", "walljump", "aerialhammock",
+    "cart", "barrel", "planter", "well", "tent",
+  ]) {
     assert.match(unavailableShapes, new RegExp(`"${shape}"`));
   }
   assert.match(source, /const rosterShapeIsAvailable = \(shapeId\) => !ROSTER_UNAVAILABLE_PROP_SHAPES\.has\(shapeId\)/);

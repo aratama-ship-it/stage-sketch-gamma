@@ -3394,6 +3394,7 @@
    * PROP_SHAPES 自体は消さない。既存ショーの駒は描画・保存でき、以前どおり大道具として数える。 */
   const ROSTER_UNAVAILABLE_PROP_SHAPES = new Set([
     "treasurechest", "speaker", "framepicture", "walljump", "aerialhammock",
+    "cart", "barrel", "planter", "well", "tent",
     // 追加候補から外すだけで、既存ショーに置いた駒は表示・保存を続ける。
     "counter", "fireplace", "screen", "bridge",
   ]);
