@@ -140,6 +140,7 @@ test("the front light summary is placed in the front panel instead of over the d
   assert.match(sketch, /function syncFrontLightCueCaption\(\)/);
   assert.match(sketch, /if \(!L\.plan && !presenting\) return;/);
   assert.match(style, /\.stage-canvas-bar \.stage-front-light-cue-caption/);
+  assert.match(style, /\.stage-canvas-bar \{[\s\S]*?flex-wrap: wrap;/);
 });
 
 test("front border follows the durable equipment-placement setting and stays hidden by default", () => {

@@ -9307,6 +9307,9 @@ body.is-panel-dragging {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  /* 正面図の照明注意は幅いっぱいの独立行。ここを折り返さないと、後ろの
+     席・操作アイコンまで同じ行へ押し出され、右端のアイコンが見切れる。 */
+  flex-wrap: wrap;
   gap: 8px;
   padding: 7px 10px 6px;
 }
