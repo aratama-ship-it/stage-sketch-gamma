@@ -30396,6 +30396,19 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     event.stopPropagation();
   }
 
+  /* 選んだものの名前も、図上の名前札と同じ入口にする。
+     複数選択は一覧の詳細先が一意に決まらないため開かない。 */
+  if (els.selectedName) {
+    els.selectedName.addEventListener("dblclick", (event) => {
+      if (STUDY_READ_ONLY || guestSessionActive() || phoneViewerActive || presenting) return;
+      const piece = selectedPiece();
+      if (!piece || selectedPieces().length !== 1) return;
+      if (!openNameDetailTarget({ piece, castId: piece.castId || null }, visibleInspectorAnchorView())) return;
+      event.preventDefault();
+      event.stopPropagation();
+    });
+  }
+
   /* 手の形で「掴める」を伝える。写真の道具と同じ作法。
    * 触っているものを毎回当てて決めるので、駒の上と何もない所で形が変わる。 */
   function cursorFor(el, event) {

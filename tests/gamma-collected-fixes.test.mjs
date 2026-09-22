@@ -155,6 +155,16 @@ test("the light summary is placed in the information panel instead of over the d
   assert.ok(stage.indexOf('id="stage-front-light-cue-caption"') > stage.indexOf('data-panel="save" data-title="情報"'));
 });
 
+test("double-clicking a selected item name opens its existing detail modal", () => {
+  const stage = read("stage.html");
+  const sketch = read("stage-sketch.js");
+  const style = read("style.css");
+
+  assert.match(stage, /id="stage-selected-name" title="ダブルクリックで詳細を開く"/);
+  assert.match(style, /\.stage-selected-name\s*\{[\s\S]*?cursor: pointer;/);
+  assert.match(sketch, /els\.selectedName\.addEventListener\("dblclick", \(event\) => \{[\s\S]*?selectedPieces\(\)\.length !== 1[\s\S]*?openNameDetailTarget\(\{ piece, castId: piece\.castId \|\| null \}, visibleInspectorAnchorView\(\)\)/);
+});
+
 test("front border follows the durable equipment-placement setting and stays hidden by default", () => {
   const stage = read("stage.html");
   const sketch = read("stage-sketch.js");

@@ -3749,6 +3749,7 @@ canvas[data-tool="note"] { cursor: copy; }
   padding-bottom: 8px;
   margin-bottom: 4px;
   border-bottom: 1px dashed var(--line-dark);
+  cursor: pointer;
 }
 
 .stage-selected-heading { display: flex; align-items: center; gap: 8px; }
