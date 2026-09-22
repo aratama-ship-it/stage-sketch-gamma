@@ -33,68 +33,171 @@
   }
 
   /* W05: opaque snapshots, two verified copies, no format migration.
-     localStorage is synchronous: the transaction finishes before the Promise
-     resolves, without yielding between the two writes or rollback. */
-  function createProjectStore({ storage, currentKey, shelfKey, onCorrupt = () => {}, now = () => new Date().toISOString() }) {
+     The current show has a verified IndexedDB recovery copy; localStorage keeps
+     only inactive shows. This avoids storing a large open show twice inside
+     Safari's much smaller localStorage quota. */
+  function createProjectStore({ storage, currentKey, shelfKey, backup = null, onCorrupt = () => {}, now = () => new Date().toISOString() }) {
     let halted = false;
     const fail = (code, details = {}) => ({ ok: false, error: { code, ...details } });
     const record = value => value !== null && typeof value === "object" && !Array.isArray(value);
     const classify = error => error?.name === "QuotaExceededError" || error?.name === "NS_ERROR_DOM_QUOTA_REACHED"
       ? "QUOTA_EXCEEDED" : error?.name === "AbortError" ? "CANCELLED"
         : error?.name === "StorageConflictError" ? "CONCURRENT_EDIT" : "WRITE_FAILED";
+    const snapshot = (projectId, serializedState) => {
+      let candidate;
+      try {
+        candidate = JSON.parse(serializedState);
+        if (typeof serializedState !== "string" || !record(candidate) || !record(candidate.project)
+            || typeof projectId !== "string" || !projectId || candidate.project.id !== projectId) return null;
+      } catch (_) { return null; }
+      return candidate;
+    };
+    const shelfFrom = (raw) => {
+      try {
+        const shelf = raw === null ? {} : JSON.parse(raw);
+        return record(shelf) ? shelf : null;
+      } catch (_) { return null; }
+    };
+    const unchanged = ({ beforeCurrent, beforeShelf }) => {
+      try { return storage.getItem(currentKey) === beforeCurrent && storage.getItem(shelfKey) === beforeShelf; }
+      catch (_) { return false; }
+    };
+    const writePair = ({ beforeCurrent, beforeShelf, serializedCurrent, serializedShelf }) => {
+      let failure;
+      try {
+        // The shelf gets smaller before the current snapshot changes. This is
+        // what makes a full Safari localStorage shelf recoverable without a
+        // delete-and-reload step.
+        storage.setItem(shelfKey, serializedShelf);
+        storage.setItem(currentKey, serializedCurrent);
+      } catch (error) { failure = classify(error); }
+      if (!failure) {
+        try {
+          if (storage.getItem(currentKey) !== serializedCurrent || storage.getItem(shelfKey) !== serializedShelf) failure = "PARTIAL_WRITE";
+        } catch (_) { failure = "PARTIAL_WRITE"; }
+      }
+      if (!failure) return { ok: true };
+      // Restore each key independently; a failed first restore must not skip the second.
+      for (const [key, previous] of [[currentKey, beforeCurrent], [shelfKey, beforeShelf]]) {
+        try {
+          if (storage.getItem(key) !== previous) {
+            if (previous === null) storage.removeItem(key);
+            else storage.setItem(key, previous);
+          }
+        } catch (_) { /* Verify both original strings below. */ }
+      }
+      let restored = false;
+      try { restored = storage.getItem(currentKey) === beforeCurrent && storage.getItem(shelfKey) === beforeShelf; } catch (_) {}
+      halted = failure === "PARTIAL_WRITE" || !restored;
+      return fail(restored ? failure : "PARTIAL_WRITE", { cause: failure, restored, halted });
+    };
+    const before = () => {
+      let beforeCurrent, beforeShelf;
+      try {
+        beforeCurrent = storage.getItem(currentKey);
+        beforeShelf = storage.getItem(shelfKey);
+      } catch (_) { return { error: "READ_FAILED" }; }
+      const shelf = shelfFrom(beforeShelf);
+      if (!shelf) {
+        try { onCorrupt(beforeShelf); } catch (_) { /* Original collection remains untouched. */ }
+        return { error: "CORRUPT_COLLECTION" };
+      }
+      return { beforeCurrent, beforeShelf, shelf };
+    };
+    const preserveBackup = async (previous, projectId, serializedState) => {
+      if (!backup || typeof backup.get !== "function" || typeof backup.putIfCurrent !== "function") {
+        return { available: false };
+      }
+      let beforeBackup;
+      try { beforeBackup = await backup.get(projectId); }
+      catch (_) { return unchanged(previous) ? { available: false } : { conflict: true }; }
+      if (!unchanged(previous)) return { conflict: true };
+      try {
+        const backupRecord = await backup.putIfCurrent(projectId, beforeBackup, serializedState);
+        if (!backupRecord) return { conflict: true };
+        if (unchanged(previous)) return { available: true, backupRecord };
+        // Keep a copy of the source state for the explicit recovery prompt.
+        // A competing tab has already changed localStorage, so rolling this
+        // record back could discard the only readable copy of this state.
+        return { conflict: true };
+      } catch (_) { return unchanged(previous) ? { available: false } : { conflict: true }; }
+    };
+    const removeBackupSoon = (projectId, backupRecord) => {
+      if (!backup) return;
+      if (typeof backup.removeIfCurrent === "function") {
+        Promise.resolve(backup.removeIfCurrent(projectId, backupRecord)).catch(() => {});
+      } else if (typeof backup.remove === "function") Promise.resolve(backup.remove(projectId)).catch(() => {});
+    };
+    const putShelf = (shelf, projectId, candidate, savedAt) => {
+      Object.defineProperty(shelf, projectId,
+        { value: { savedAt, state: candidate }, enumerable: true, configurable: true, writable: true });
+    };
+    const legacyCommit = (previous, projectId, candidate, serializedState, savedAt) => {
+      putShelf(previous.shelf, projectId, candidate, savedAt);
+      return writePair({ ...previous, serializedCurrent: serializedState, serializedShelf: JSON.stringify(previous.shelf) });
+    };
     return Object.freeze({
       async commit({ projectId, serializedState, expectedRevision = null, intent } = {}) {
         if (halted) return fail("PARTIAL_WRITE", { halted: true });
         if (expectedRevision !== null) return fail("REVISION_UNSUPPORTED");
-        let candidate;
-        try {
-          candidate = JSON.parse(serializedState);
-          if (typeof serializedState !== "string" || !record(candidate) || !record(candidate.project)
-              || typeof projectId !== "string" || !projectId || candidate.project.id !== projectId) return fail("INVALID_SNAPSHOT");
-        } catch (_) { return fail("INVALID_SNAPSHOT"); }
-        let beforeCurrent, beforeShelf;
-        try {
-          beforeCurrent = storage.getItem(currentKey);
-          beforeShelf = storage.getItem(shelfKey);
-        } catch (_) { return fail("READ_FAILED"); }
-        let shelf;
-        try {
-          shelf = beforeShelf === null ? {} : JSON.parse(beforeShelf);
-          if (!record(shelf)) throw new Error("Invalid collection");
-        } catch (_) {
-          try { onCorrupt(beforeShelf); } catch (_) { /* Original collection remains untouched. */ }
-          return fail("CORRUPT_COLLECTION");
-        }
+        const candidate = snapshot(projectId, serializedState);
+        if (!candidate) return fail("INVALID_SNAPSHOT");
+        const previous = before();
+        if (previous.error) return fail(previous.error);
         const savedAt = now();
-        // Own data property also preserves valid opaque IDs such as __proto__.
-        Object.defineProperty(shelf, projectId, { value: { savedAt, state: candidate }, enumerable: true, configurable: true, writable: true });
-        const serializedShelf = JSON.stringify(shelf);
-        let failure;
-        try {
-          storage.setItem(currentKey, serializedState);
-          storage.setItem(shelfKey, serializedShelf);
-        } catch (error) { failure = classify(error); }
-        if (!failure) {
-          try {
-            if (storage.getItem(currentKey) !== serializedState || storage.getItem(shelfKey) !== serializedShelf) failure = "PARTIAL_WRITE";
-          } catch (_) { failure = "PARTIAL_WRITE"; }
+        const backupResult = await preserveBackup(previous, projectId, serializedState);
+        if (backupResult.conflict) return fail("CONCURRENT_EDIT");
+        if (!backupResult.available) {
+          const result = legacyCommit(previous, projectId, candidate, serializedState, savedAt);
+          if (!result.ok) return result;
+          return { ok: true, value: { projectId, savedAt, intent, revision: null, verified: true, recovery: "localStorage" } };
         }
-        if (failure) {
-          // Restore each key independently; a failed first restore must not skip the second.
-          for (const [key, previous] of [[currentKey, beforeCurrent], [shelfKey, beforeShelf]]) {
-            try {
-              if (storage.getItem(key) !== previous) {
-                if (previous === null) storage.removeItem(key);
-                else storage.setItem(key, previous);
-              }
-            } catch (_) { /* Verify both original strings below. */ }
-          }
-          let restored = false;
-          try { restored = storage.getItem(currentKey) === beforeCurrent && storage.getItem(shelfKey) === beforeShelf; } catch (_) {}
-          halted = failure === "PARTIAL_WRITE" || !restored;
-          return fail(restored ? failure : "PARTIAL_WRITE", { cause: failure, restored, halted });
-        }
+        // The IndexedDB copy is verified before this shelf duplicate is removed.
+        delete previous.shelf[projectId];
+        const result = writePair({ ...previous, serializedCurrent: serializedState,
+          serializedShelf: JSON.stringify(previous.shelf) });
+        if (!result.ok) return result;
         return { ok: true, value: { projectId, savedAt, intent, revision: null, verified: true } };
+      },
+      async switch({ currentProjectId, currentSerializedState, nextProjectId, nextSerializedState,
+        expectedRevision = null, intent } = {}) {
+        if (halted) return fail("PARTIAL_WRITE", { halted: true });
+        if (expectedRevision !== null) return fail("REVISION_UNSUPPORTED");
+        const current = snapshot(currentProjectId, currentSerializedState);
+        const next = snapshot(nextProjectId, nextSerializedState);
+        if (!current || !next || currentProjectId === nextProjectId) return fail("INVALID_SNAPSHOT");
+        const previous = before();
+        if (previous.error) return fail(previous.error);
+        const savedAt = now();
+        const backupResult = await preserveBackup(previous, nextProjectId, nextSerializedState);
+        if (backupResult.conflict) return fail("CONCURRENT_EDIT");
+        if (!backupResult.available) {
+          putShelf(previous.shelf, currentProjectId, current, savedAt);
+          putShelf(previous.shelf, nextProjectId, next, savedAt);
+          const result = writePair({ ...previous, serializedCurrent: nextSerializedState,
+            serializedShelf: JSON.stringify(previous.shelf) });
+          if (!result.ok) return result;
+          return { ok: true, value: { projectId: nextProjectId, savedAt, intent, revision: null, verified: true, recovery: "localStorage" } };
+        }
+        // Own data property also preserves valid opaque IDs such as __proto__.
+        putShelf(previous.shelf, currentProjectId, current, savedAt);
+        // The next show becomes the sole localStorage current copy; its verified
+        // backup was written before this entry can be removed.
+        delete previous.shelf[nextProjectId];
+        const result = writePair({ ...previous, serializedCurrent: nextSerializedState,
+          serializedShelf: JSON.stringify(previous.shelf) });
+        if (!result.ok) return result;
+        // Current project's backup may belong to another tab; keeping it is
+        // safer than deleting a copy whose generation we did not write here.
+        return { ok: true, value: { projectId: nextProjectId, savedAt, intent, revision: null, verified: true } };
+      },
+      async latestRecovery() {
+        if (!backup || typeof backup.latest !== "function") return null;
+        try {
+          const candidate = await backup.latest();
+          if (!candidate || !snapshot(candidate.projectId, candidate.serializedState)) return null;
+          return candidate;
+        } catch (_) { return null; }
       },
     });
   }
@@ -1876,9 +1979,10 @@
   const BETA_STORAGE_KEY = "shosai-stage-sketch-v1";
   const SHOWS_KEY = "shosai-stage-shows-v1";
   const ProjectStore = createProjectStore({ storage: localStorage, currentKey: BETA_STORAGE_KEY, shelfKey: SHOWS_KEY,
-    onCorrupt: raw => markShelfCorrupt(raw) });
+    backup: window.SHOSAI_STAGE_PROJECT_BACKUP_STORE || null, onCorrupt: raw => markShelfCorrupt(raw) });
   // 壊れた棚の隔離先は旧Gammaキーを維持し、βの棚とは混ぜない。
   const SHOWS_BROKEN_KEY = "gamma:shosai-stage-shows-broken-v1";
+  const PROJECT_BACKUP_RESET_KEY = "gamma:stage-project-backup-reset-v1";
   const LEGACY_STORAGE_KEY = "gamma:shosai-stage-sketch-v1";
   const LEGACY_SHOWS_KEY = "gamma:shosai-stage-shows-v1";
   const PREFS_KEY = "shosai-stage-prefs-v1";
@@ -7033,7 +7137,8 @@
 
   /* ---------- ショーの棚 ----------
      ショーは端末の中に何本でも置ける。いま開いているものは STORAGE_KEY に、
-     全ての控えは SHOWS_KEY に「id → 中身」で持つ。開き直すときは控えから戻す。
+     いま開いていないものは SHOWS_KEY に「id → 中身」で持つ。現在のショーの
+     保護コピーは別の IndexedDB に置くので、Safari の棚を二重使用しない。
      保存は自動。ファイルへ出したいときは従来どおり「書き出す」。 */
 
   /* 棚のJSONが壊れていると分かったら true。以後、棚への書き込みを全部止める。
@@ -7148,8 +7253,8 @@
       : { migrated: 0, safe: false };
   }
 
-  // いまのショーを棚へ書き戻す。保存のたびに呼ぶので、一覧は常に最新になる。
-  // ★戻り値は「棚へ確かに書けたか」。容量超過では false が返る（例外は飛ばない）。
+  // いまのショーを現行キーと保護コピーへ書き戻す。一覧は renderShows が現行を足す。
+  // ★戻り値は「二つの保存先へ確かに書けたか」。容量超過では false が返る（例外は飛ばない）。
   //   セッション参加前の退避判定がこれを見ている（stage-session.js）。捨てないこと。
   async function shelveState(value) {
     const result = await ProjectStore.commit({ projectId: value.project.id,
@@ -7201,6 +7306,7 @@
 
   const loaded = loadState();
   let state = loaded.value;
+  let projectRecoveryNeeded = !loaded.restored;
   let tool = "select";
   let selectedId = null;
   let selectedIds = new Set();
@@ -20158,16 +20264,24 @@
     announce(message);
   }
 
-  /* 状態を書き換える前に、いまのショーと次のショーを両方とも棚へ確保する。
-     localStorage の書き込みは一件ごとにatomicなので、次のショーが入らなくても
-     いまのショーを開いたまま止めれば、唯一の現行コピーを失わない。 */
+  /* 状態を書き換える前に、いまのショーを棚へ移し、次のショーを現行キーへ
+     一度の二鍵トランザクションで入れ替える。次のショーは棚と現行キーへ
+     二重保存しないので、大きなショーでもSafariの容量を無駄にしない。 */
   async function prepareLoadedState(next) {
     clearTimeout(saveTimer);
-    if (!await shelveCurrent()) {
-      showSwitchFailure("current");
-      return false;
+    if (next.project.id === state.project.id) {
+      const result = await ProjectStore.commit({ projectId: next.project.id,
+        serializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "replace-open-show" });
+      shelfFailed = !result.ok;
+      if (!result.ok) reportProjectStoreFailure(result);
+      return result.ok;
     }
-    if (!await shelveState(next)) {
+    const result = await ProjectStore.switch({ currentProjectId: state.project.id,
+      currentSerializedState: JSON.stringify(alternativesState(state)), nextProjectId: next.project.id,
+      nextSerializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "switch-show" });
+    shelfFailed = !result.ok;
+    if (!result.ok) {
+      reportProjectStoreFailure(result);
       showSwitchFailure("next");
       return false;
     }
@@ -20185,7 +20299,7 @@
     selectedId = null;
     history.length = 0;
     future.length = 0;
-    // prepareLoadedState で即時に棚へ置いてある。
+    // prepareLoadedState で即時に現行キーへ保存済み。
     // 180ms後の自動保存を待つ間に画面を閉じても、一覧から開き直せる。
     renderVenueControls();
     renderScenes();
@@ -24385,7 +24499,7 @@
      案内を見たかどうか・組んだセットの型・読み込んだ音源（IndexedDB）。
      書き出し済みのファイルは端末の外にあるので消えない。 */
   const RESET_KEYS = [
-    BETA_STORAGE_KEY, SHOWS_KEY, SHOWS_BROKEN_KEY, PREFS_KEY, TOUR_KEY,
+    BETA_STORAGE_KEY, SHOWS_KEY, SHOWS_BROKEN_KEY, PROJECT_BACKUP_RESET_KEY, PREFS_KEY, TOUR_KEY,
     LANG_KEY, STAGE_MODELS_KEY, CAST_HANDOFF_KEY, LAST_USER_KEY,
     STAGE_AI_PERMISSION_KEY, "gamma:shosai-stage-tablet-view",
   ];
@@ -24427,6 +24541,9 @@
     keys.forEach((key) => {
       try { localStorage.removeItem(key); } catch (_) { /* 消せないものは残る */ }
     });
+    /* IndexedDBの保護コピーは実体を急いで削除せず、ここより前のものを復元候補から
+       外す印を残す。途中でブラウザが閉じても、リセット前のショーを勝手に開かない。 */
+    try { localStorage.setItem(PROJECT_BACKUP_RESET_KEY, nowIso()); } catch (_) { /* 次回も確認付き */ }
     /* 音源は IndexedDB。データベースごと捨てる（開いている接続があると
        消えるのが遅れることがあるので、待たずに再読み込みへ進む） */
     try {
@@ -34184,9 +34301,30 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   window.addEventListener("hashchange", () => setTimeout(syncStageTourContext, 0));
   window.addEventListener("gamma-workspace-change", syncStageTourContext);
 
-  function finishInitialStageSetup(identity) {
+  async function finishInitialStageSetup(identity) {
     if (STUDY_READ_ONLY) return;
     try {
+      if (projectRecoveryNeeded) {
+        const recovery = await ProjectStore.latestRecovery();
+        let resetAt = "";
+        try { resetAt = localStorage.getItem(PROJECT_BACKUP_RESET_KEY) || ""; } catch (_) {}
+        if (recovery && String(recovery.savedAt || "") > resetAt
+            && window.confirm("この端末の前回保存を読み取れませんでした。保護コピーを見つけました。復元して開きますか？")) {
+          try {
+            const recovered = normalizeState(JSON.parse(recovery.serializedState));
+            const result = await ProjectStore.commit({ projectId: recovered.project.id,
+              serializedState: recovery.serializedState, expectedRevision: null, intent: "recover-open-show" });
+            if (result.ok) {
+              state = recovered;
+              loaded.value = recovered;
+              loaded.restored = true;
+              alternativesStorageBlocked = false;
+              projectRecoveryNeeded = false;
+              sceneAlternatives?.restore(recovered.project, { reconcile: false });
+            } else reportProjectStoreFailure(result);
+          } catch (_) { /* Keep the unreadable original untouched and do not autosave over it. */ }
+        }
+      }
       signedInUser = identity && identity.user ? identity.user : "";
       if (identity && identity.switched) {
         /* ショー本体・棚・モデル・言語は触らず、画面の持ち方だけを新しい人向けへ戻す。 */

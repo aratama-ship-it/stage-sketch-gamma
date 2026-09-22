@@ -166,6 +166,7 @@ public-dist/
 !/stage-scrim.js
 !/stage-prompt-i18n.js
 !/stage-pwa.js
+!/stage-project-backup-store.js
 !/stage-rehearsal-export.js
 !/stage-samples/README.md
 !/stage-samples/index.js
@@ -200,6 +201,7 @@ public-dist/
 !/tests/light-selected-audience-mask.test.mjs
 !/tests/stage-lighting-all-venues.test.mjs
 !/tests/stage-light-panel-import.test.mjs
+!/tests/stage-project-store.test.mjs
 
 # Formation preset editor runtime (local preparation; not published).
 !/gamma-formation-presets.js
