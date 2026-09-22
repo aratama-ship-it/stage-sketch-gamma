@@ -258,3 +258,12 @@ test("workspace shortcuts can be customized without bypassing existing tab behav
   assert.match(workspace, /event\.data\?\.type==='gamma:workspace-shortcut'/);
   assert.match(embed, /parent\.postMessage\(\{type:'gamma:workspace-shortcut',key:event\.key\},location\.origin\)/);
 });
+
+test("the stage scene description stops at four lines and scrolls within its field", () => {
+  const sketch = read("stage-sketch.js");
+  const style = read("style.css");
+
+  assert.match(sketch, /const SCENE_DESC_MAX_LINES = 4;/);
+  assert.match(sketch, /Math\.min\(maxHeight, Math\.max\(SCENE_DESC_LINE, box\.scrollHeight\)\)/);
+  assert.match(style, /\.stage-scene-desc-text\s*\{[\s\S]*?--scene-desc-max-lines: 4;[\s\S]*?overflow-y: auto;[\s\S]*?max-height: calc\(var\(--scene-desc-line-height\) \* var\(--scene-desc-max-lines\)\);/);
+});

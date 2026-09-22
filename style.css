@@ -9699,6 +9699,8 @@ body.is-panel-dragging {
 /* 枠を持たない書き込み欄。読んでいるあいだは本文にしか見えず、
    押したときだけ下線が点いて「ここは直せる」と分かる。 */
 .stage-scene-desc-text {
+  --scene-desc-line-height: 19px;
+  --scene-desc-max-lines: 4;
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
@@ -9712,8 +9714,10 @@ body.is-panel-dragging {
   line-height: 1.55;
   color: var(--milk);
   resize: none;
-  overflow: hidden;
-  height: 19px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: var(--scene-desc-line-height);
+  max-height: calc(var(--scene-desc-line-height) * var(--scene-desc-max-lines));
 }
 
 .stage-scene-desc-text::placeholder { color: rgba(240, 231, 214, 0.53); }

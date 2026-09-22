@@ -16559,8 +16559,10 @@
   }
 
   /* 行数に合わせて高さを詰める。既定の2行分を空けておくと、
-     一行しか書いていない場面で絵の上に空白の帯ができる。 */
+     一行しか書いていない場面で絵の上に空白の帯ができる。
+     舞台図より説明欄が高くならないよう、4行を越えた分は欄内で読む。 */
   const SCENE_DESC_LINE = 19;   // 一行ぶんの高さ(px)。空の欄はこれで確定させる
+  const SCENE_DESC_MAX_LINES = 4;
   const SCENE_DESC_MIN_INLINE = 260;
   const SCENE_DESC_MAX_INLINE = 780;
 
@@ -16616,9 +16618,11 @@
        伸び縮みする器（flex の行）の空き高さを拾って、一行も書いていない場面で
        欄だけ厚くなる。実際それで帯が96pxのまま固まっていた。 */
     if (!box.value) { box.style.height = `${SCENE_DESC_LINE}px`; return; }
-    // 書いてあるときは、いったん0まで潰してから中身の高さを測る
+    // 書いてあるときは、いったん0まで潰してから中身の高さを測る。
+    // 高さは4行で止める。残りは textarea 自身の縦スクロールで読める。
     box.style.height = "0px";
-    box.style.height = `${Math.max(SCENE_DESC_LINE, box.scrollHeight)}px`;
+    const maxHeight = SCENE_DESC_LINE * SCENE_DESC_MAX_LINES;
+    box.style.height = `${Math.min(maxHeight, Math.max(SCENE_DESC_LINE, box.scrollHeight))}px`;
   }
 
   /* 幅が決まってから測り直す。
