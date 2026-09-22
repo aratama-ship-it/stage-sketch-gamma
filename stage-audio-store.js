@@ -4,7 +4,10 @@
   /* 音源の実体は大きいので、Stage Sketch のJSON/localStorageへ混ぜない。
    * trackId はプロジェクトを複製しても変わらない不変ID。端末内では同じBlobを
    * 参照でき、シーン・版の複製のたびに音声をコピーせずに済む。 */
-  const DB_NAME = "gamma:shosai-stage-audio";
+  // Older tabs still prune their own store on startup. Keep their database intact;
+  // this generation writes to a separate store and copies a needed Blob on read.
+  const DB_NAME = "gamma:scene-alternatives-audio-v1";
+  const LEGACY_DB_NAME = "gamma:shosai-stage-audio";
   const STORE = "tracks";
   const VERSION = 1;
 
@@ -13,13 +16,13 @@
       && /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,95}$/.test(trackId);
   }
 
-  function openDb() {
+  function openDb(dbName = DB_NAME) {
     return new Promise((resolve, reject) => {
       if (!("indexedDB" in window)) {
         reject(new Error("IndexedDB is not available"));
         return;
       }
-      const request = window.indexedDB.open(DB_NAME, VERSION);
+      const request = window.indexedDB.open(dbName, VERSION);
       request.onupgradeneeded = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
@@ -30,8 +33,8 @@
     });
   }
 
-  function withStore(mode, operation) {
-    return openDb().then((db) => new Promise((resolve, reject) => {
+  function withStore(mode, operation, dbName = DB_NAME) {
+    return openDb(dbName).then((db) => new Promise((resolve, reject) => {
       const tx = db.transaction(STORE, mode);
       const store = tx.objectStore(STORE);
       let result = Promise.resolve();
@@ -84,7 +87,17 @@
 
   function get(trackId) {
     if (!validTrackId(trackId)) return Promise.resolve(null);
-    return withStore("readonly", (store) => requestValue(store.get(trackId), null));
+    return withStore("readonly", (store) => requestValue(store.get(trackId), null))
+      .then((blob) => {
+        if (blob) return blob;
+        return withStore("readonly", (store) => requestValue(store.get(trackId), null), LEGACY_DB_NAME)
+          .then(async (legacyBlob) => {
+            if (!legacyBlob) return null;
+            // A failed copy must not make an existing legacy track unplayable.
+            try { await put(trackId, legacyBlob); } catch (_) { /* The original remains. */ }
+            return legacyBlob;
+          });
+      });
   }
 
   function remove(trackId) {

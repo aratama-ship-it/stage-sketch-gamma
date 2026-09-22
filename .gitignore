@@ -137,6 +137,9 @@ public-dist/
 !/public/ai-json/samples/sample-minimal.json
 !/public/ai-json/samples/sample-standard.json
 !/stage-audio-store.js
+!/stage-scene-alternatives.js
+!/stage-scene-alternatives-ui.js
+!/stage-scene-alternatives.css
 !/stage-cue-sheet.js
 !/stage-first-person.js
 !/stage-front-shape.js

@@ -2597,6 +2597,11 @@
     seekToSeconds(snappedSeconds(rawSeconds));
   }
 
+  window.addEventListener("stage-alternatives-stop", () => {
+    pauseSilentPlayback();
+    if (els.audio) els.audio.pause();
+  });
+
   async function toggleTimelinePlayback() {
     if (!timeline || els.play.disabled) return;
     if (silentPlayback) {

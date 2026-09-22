@@ -13,6 +13,25 @@
 (function () {
   "use strict";
 
+  // A previous Service Worker can serve the new HTML before its new module is
+  // available. Refuse to start the editor: saving that partial document would
+  // overwrite the authoritative plans with stale flat fields.
+  if (typeof document.documentElement?.hasAttribute === "function"
+      && !document.documentElement.hasAttribute("data-study-renderer")
+      && !window.STAGE_SCENE_ALTERNATIVES) {
+    const showIncompleteUpdate = () => {
+      const notice = document.createElement("div");
+      notice.setAttribute("role", "alert");
+      notice.style.cssText = "position:fixed;inset:0;z-index:100000;display:grid;place-items:center;"
+        + "padding:24px;background:#201b16;color:#efe7d6;text-align:center;font:16px/1.7 system-ui,sans-serif";
+      notice.textContent = "更新に必要なファイルを読み込めませんでした。編集内容は変更していません。通信を確認して、この画面を再読み込みしてください。";
+      document.body.appendChild(notice);
+    };
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", showIncompleteUpdate);
+    else showIncompleteUpdate();
+    return;
+  }
+
   /* W05: opaque snapshots, two verified copies, no format migration.
      localStorage is synchronous: the transaction finishes before the Promise
      resolves, without yielding between the two writes or rollback. */
@@ -21,7 +40,8 @@
     const fail = (code, details = {}) => ({ ok: false, error: { code, ...details } });
     const record = value => value !== null && typeof value === "object" && !Array.isArray(value);
     const classify = error => error?.name === "QuotaExceededError" || error?.name === "NS_ERROR_DOM_QUOTA_REACHED"
-      ? "QUOTA_EXCEEDED" : error?.name === "AbortError" ? "CANCELLED" : "WRITE_FAILED";
+      ? "QUOTA_EXCEEDED" : error?.name === "AbortError" ? "CANCELLED"
+        : error?.name === "StorageConflictError" ? "CONCURRENT_EDIT" : "WRITE_FAILED";
     return Object.freeze({
       async commit({ projectId, serializedState, expectedRevision = null, intent } = {}) {
         if (halted) return fail("PARTIAL_WRITE", { halted: true });
@@ -94,9 +114,47 @@
 
   const STUDY_READ_ONLY = document.documentElement?.hasAttribute?.("data-study-renderer") === true;
   // Shadow only this module's storage. The renderer additionally runs in an opaque-origin sandbox.
+  const sceneAlternatives = window.STAGE_SCENE_ALTERNATIVES;
+  let alternativesStorageBlocked = false;
+  const alternativesKeys = ["shosai-stage-sketch-v1", "shosai-stage-shows-v1"];
+  const mappedAlternativesKey = name => alternativesKeys.includes(name)
+    ? "gamma:scene-alternatives-v1:" + name : name;
+  const rawStorage = STUDY_READ_ONLY ? null : (window.localStorage || globalThis.localStorage || {});
+  const storageBaseline = new Map();
+  if (rawStorage) for (const name of alternativesKeys) {
+    const key = mappedAlternativesKey(name);
+    try { storageBaseline.set(key, rawStorage.getItem(key)); }
+    catch (_) { alternativesStorageBlocked = true; }
+  }
+  // New readers write a separate namespace; an old tab cannot erase alternatives.
+  const alternativesStorage = new Proxy(rawStorage || {}, {
+    get(target, key) {
+      const mapped = mappedAlternativesKey;
+      if (key === "getItem") return name => target.getItem(mapped(name)) ?? target.getItem(name);
+      if (key === "setItem") return (name, value) => {
+        if (alternativesStorageBlocked && mapped(name) !== name) throw new Error("保存原本を保護しています");
+        const destination = mapped(name);
+        if (destination !== name && target.getItem(destination) !== storageBaseline.get(destination)) {
+          const error = new Error("別のタブで保存内容が変わりました"); error.name = "StorageConflictError"; throw error;
+        }
+        target.setItem(destination, value);
+        if (destination !== name) storageBaseline.set(destination, String(value));
+      };
+      if (key === "removeItem") return name => {
+        const destination = mapped(name);
+        if (destination !== name && target.getItem(destination) !== storageBaseline.get(destination)) {
+          const error = new Error("別のタブで保存内容が変わりました"); error.name = "StorageConflictError"; throw error;
+        }
+        target.removeItem(destination);
+        if (destination !== name) { storageBaseline.set(destination, null); target.removeItem(name); }
+      };
+      const value = Reflect.get(target, key, target);
+      return typeof value === "function" ? value.bind(target) : value;
+    }
+  });
   const localStorage = STUDY_READ_ONLY
     ? Object.freeze({ getItem: () => null, setItem() {}, removeItem() {}, key: () => null, length: 0 })
-    : (window.localStorage || globalThis.localStorage);
+    : alternativesStorage;
 
   const nativeDownloadDecisionWaiters = [];
   let nativeDownloadDecisionBridge = null;
@@ -1077,7 +1135,17 @@
   });
 
   const venueLibrary = window.SHOSAI_VENUES && window.SHOSAI_VENUES.library;
-  const projectIoClone = (value) => JSON.parse(JSON.stringify(value));
+  const projectIoClone = (value) => {
+    const copy = JSON.parse(JSON.stringify(value));
+    if (value?.project && copy?.project) sceneAlternatives?.transferViews(value.project, copy.project);
+    return copy;
+  };
+  function alternativesState(value) {
+    if (!sceneAlternatives || !value?.project) return value;
+    const project = sceneAlternatives.projectCopy(value.project);
+    refreshSectionDurationCache(project);
+    return { ...value, project };
+  }
   const stripRemovedSceneFields = (project) => {
     const removedMotionKey = "light" + "Motion";
     (project && Array.isArray(project.scenes) ? project.scenes : []).forEach((scene) => {
@@ -1095,12 +1163,13 @@
     return {
       kind: "shosai-stage-sketch",
       version: 4,
-      project: stripRemovedSceneFields(projectIoClone(project)),
+      project: stripRemovedSceneFields(sceneAlternatives ? sceneAlternatives.projectCopy(project) : projectIoClone(project)),
       venues: venueData ? [venueData] : [],
     };
   };
   const prepareProjectImportDocument = (document) => {
     const project = stripRemovedSceneFields(projectIoClone(document.project));
+    sceneAlternatives?.restore(project);
     let venueImport = { venues: [], idMap: {}, imported: 0, skipped: 0 };
     if (document.version === 4 && Array.isArray(document.venues) && venueLibrary) {
       venueImport = venueLibrary.importVenues(document.venues);
@@ -1757,6 +1826,7 @@
      ?tour を付けると、消さずに案内だけ出す。 */
   const STAGE_KEYS = [
     "shosai-stage-sketch-v1", "shosai-stage-shows-v1",
+    "gamma:scene-alternatives-v1:shosai-stage-sketch-v1", "gamma:scene-alternatives-v1:shosai-stage-shows-v1",
     "gamma:shosai-stage-sketch-v1", "gamma:shosai-stage-shows-v1",
     "gamma:shosai-stage-tour-v1", "gamma:shosai-stage-lang", "gamma:shosai-stage-venues-v1",
     // SHOWS_BROKEN_KEY と同じ値。あちらは後で定義されるのでここは文字列で書く。
@@ -5579,7 +5649,12 @@
     rows.forEach((row, index) => {
       if (row.kind !== "section") return;
       const children = sectionChildScenes(rows, index);
-      row.timelineDurationSeconds = children.length ? sumSceneSeconds(children) : null;
+      const adoptedChildren = children.map(scene => {
+        const data = scene.sceneAlternatives;
+        return data && sceneAlternatives?.current(scene)?.id !== data.adoptedId
+          ? { ...scene, ...data.items.find(item => item.id === data.adoptedId).content } : scene;
+      });
+      row.timelineDurationSeconds = children.length ? sumSceneSeconds(adoptedChildren) : null;
     });
   }
 
@@ -6608,7 +6683,8 @@
       });
     });
     Object.keys(project.photos).forEach((id) => {
-      if (!used.has(id)) delete project.photos[id];
+      const heldByAlternative = (project.scenes || []).some(scene => (scene.sceneAlternatives?.items || []).some(item => (item.content.photo?.id === id || item.content.pieces?.some(piece => piece.imageId === id))));
+      if (!used.has(id) && !heldByAlternative) delete project.photos[id];
     });
     (project.scenes || []).forEach((scene) => {
       if (scene.photo && !project.photos[scene.photo.id]) scene.photo = null;
@@ -6681,6 +6757,7 @@
   }
 
   function normalizeState(raw) {
+    if (raw?.project && sceneAlternatives) { raw = projectIoClone(raw); sceneAlternatives.restore(raw.project); }
     if (!raw || typeof raw !== "object") return markVenueSetupPending(baseState(true));
     const fallback = baseState(false);
 
@@ -6874,13 +6951,24 @@
       editsSinceExport: clamp(finite(raw.editsSinceExport, 0), 0, 99999),
       lastSavedAt: typeof raw.lastSavedAt === "string" ? raw.lastSavedAt : "",
     });
-    normalized.project.scenes.forEach((scene) => normalizeHolds(scene.pieces, normalized.project));
+    normalized.project.scenes.forEach((scene, index) => {
+      const data = sceneAlternatives?.validate(scene);
+      if (data) for (const item of data.items) {
+        const row = normalizeScene({ ...scene, ...item.content, sceneAlternatives: undefined }, index);
+        normalizeHolds(row.pieces, normalized.project);
+        item.content = { ...item.content, ...sceneAlternatives.content(row) };
+      }
+      normalizeHolds(scene.pieces, normalized.project);
+    });
+    sceneAlternatives?.restore(normalized.project, { reconcile: false });
     return normalized;
   }
 
   function loadState() {
     if (STUDY_READ_ONLY) return { value: baseState(false), restored: false };
     try {
+      const modernRaw = rawStorage.getItem(mappedAlternativesKey(BETA_STORAGE_KEY));
+      const legacyRaw = rawStorage.getItem(BETA_STORAGE_KEY);
       let saved = localStorage.getItem(BETA_STORAGE_KEY);
       if (!saved) {
         saved = localStorage.getItem(LEGACY_STORAGE_KEY);
@@ -6890,15 +6978,43 @@
       }
       if (saved) {
         const parsed = JSON.parse(saved);
+        let updateLegacyModernBaseline = false;
+        if (sceneAlternatives && parsed?.project && legacyRaw) {
+          const oldState = JSON.parse(legacyRaw);
+          if (!oldState?.project) {
+            // The older flat format is handled by normalizeState below.
+          } else if (!modernRaw) {
+            parsed.alternativesLegacy = sceneAlternatives.legacyBaseline(oldState.project, legacyRaw);
+            updateLegacyModernBaseline = true;
+          } else if (!parsed.alternativesLegacy) {
+            // A local pre-release alternative save has no migration marker yet.
+            parsed.alternativesLegacy = sceneAlternatives.legacyBaseline(oldState.project, legacyRaw);
+            updateLegacyModernBaseline = true;
+          } else {
+            if (!parsed.alternativesLegacy.modern) updateLegacyModernBaseline = true;
+            const oldBaseline = sceneAlternatives.legacyBaseline(oldState.project, legacyRaw);
+            if (oldBaseline.sourceHash !== parsed.alternativesLegacy.sourceHash) {
+              if (!sceneAlternatives.reconcileLegacy(parsed.project, oldState.project, parsed.alternativesLegacy)) {
+                alternativesStorageBlocked = true;
+              } else { parsed.alternativesLegacy = oldBaseline; updateLegacyModernBaseline = true; }
+            }
+          }
+        }
         const needsSectionMigration = Boolean(parsed && !parsed.project && Array.isArray(parsed.pieces))
           || hasUnsectionedSceneRows(parsed);
+        const normalized = normalizeState(parsed);
+        if (updateLegacyModernBaseline && normalized.alternativesLegacy && !alternativesStorageBlocked) {
+          normalized.alternativesLegacy.modern = sceneAlternatives.legacyBaseline(normalized.project, null);
+        }
         return {
-          value: normalizeState(parsed),
+          value: normalized,
           restored: true,
           sectionMigrationSource: needsSectionMigration ? saved : null,
         };
       }
     } catch (_) {
+      alternativesStorageBlocked = true;
+      // Never replace an unreadable alternatives document with an empty autosave.
       // 保存領域が使えなくても、舞台スケッチ自体はそのまま利用できる。
     }
     /* 2026-09-17 本人指示: 新しいショーはまず劇場設定から始める。
@@ -7037,7 +7153,7 @@
   //   セッション参加前の退避判定がこれを見ている（stage-session.js）。捨てないこと。
   async function shelveState(value) {
     const result = await ProjectStore.commit({ projectId: value.project.id,
-      serializedState: JSON.stringify(value), expectedRevision: null, intent: "preserve-show" });
+      serializedState: JSON.stringify(alternativesState(value)), expectedRevision: null, intent: "preserve-show" });
     shelfFailed = !result.ok;
     if (!result.ok) reportProjectStoreFailure(result);
     return result.ok;
@@ -7650,7 +7766,7 @@
     const affectsCurrent = sc().audioTrackId === trackId;
     checkpoint();
     state.project.audioTracks = audioTracks().filter((candidate) => candidate.id !== trackId);
-    state.project.scenes.forEach((scene) => {
+    (sceneAlternatives ? sceneAlternatives.allContents(state.project) : state.project.scenes).forEach((scene) => {
       if (scene.audioTrackId === trackId) scene.audioTrackId = null;
     });
     selectedAudioTrackId = state.project.audioTracks[0]?.id || null;
@@ -8391,6 +8507,7 @@
   }
 
   function startFormationPlayback() {
+    sceneAlternatives?.adopted(state.project);
     if (formationPlaybackRaf || !syncFormationPlaybackAtTime()) return;
     const step = () => {
       formationPlaybackRaf = 0;
@@ -9554,7 +9671,7 @@
        書き出す直前にここで揃えておかないとファイルの中だけ食い違う
        （次に開いたとき、古い控えに合わせてシーンが書き換わってしまう）。 */
     refreshSectionDurationCache(state.project);
-    return JSON.stringify(state);
+    return JSON.stringify(alternativesState(state));
   }
 
   function recordBefore(value) {
@@ -9657,7 +9774,9 @@
 
   function reportProjectStoreFailure(result) {
     const code = result.error.code;
-    const detail = code === "CORRUPT_COLLECTION"
+    const detail = code === "CONCURRENT_EDIT"
+      ? "別のタブでショーが更新されました。このタブの変更は上書きせず、ファイルへ書き出せます。"
+      : code === "CORRUPT_COLLECTION"
       ? "ショー一覧が壊れているため、保存を止めました。ファイルへ書き出してから、ショー一覧で作り直してください。"
       : code === "PARTIAL_WRITE"
         ? "保存の整合性を確認できません。自動保存を停止しました。ファイルへ書き出して残してください。"
@@ -9669,6 +9788,9 @@
 
   function persistSoon() {
     if (STUDY_READ_ONLY) return;
+    if (alternativesStorageBlocked) {
+      setSaveStatus("保存データを読み取れないため自動保存を停止しています。元のデータは保持しています。", "warn"); return;
+    }
     clearTimeout(saveTimer);
     setSaveStatus(tx("変更を保存しています…") || "Saving…");
     saveTimer = setTimeout(async () => {
@@ -15993,6 +16115,7 @@
   }
 
   function render(forceCanvases = false) {
+    window.STAGE_SCENE_ALTERNATIVES_UI?.render();
     /* V-1（2026-09-17）: 劇場設定モードを開いているあいだは、舞台機構の変化を
      * 間口プレビュー側へ伝える。他のモードでは何もしない（常時イベントを流さない）。 */
     if (document.body.dataset.gammaWorkspace === "venue-setup") {
@@ -18530,7 +18653,7 @@
     if (!window.confirm(warning)) return;
     checkpoint();
     state.project.cast = state.project.cast.filter((c) => c.id !== castId);
-    state.project.scenes.forEach((scene) => {
+    (sceneAlternatives ? sceneAlternatives.allContents(state.project) : state.project.scenes).forEach((scene) => {
       scene.pieces.filter((piece) => piece.castId === castId)
         .forEach((piece) => releaseHeldBy(scene, piece.id));
       scene.pieces = scene.pieces.filter((piece) => piece.castId !== castId);
@@ -19778,7 +19901,7 @@
     const next = api.clone(state);
     next.project.lightingDesign = checked.store;
     const result = await ProjectStore.commit({ projectId: next.project.id,
-      serializedState: JSON.stringify(next), expectedRevision: null, intent: "theatre-lighting-plan" });
+      serializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "theatre-lighting-plan" });
     if (!result.ok) { reportProjectStoreFailure(result); return false; }
     clearTimeout(saveTimer);
     checkpoint();
@@ -20007,7 +20130,7 @@
     if (!window.confirm(warning)) return;
     checkpoint();
     state.project.sets = state.project.sets.filter((t) => t.id !== setId);
-    state.project.scenes.forEach((scene) => {
+    (sceneAlternatives ? sceneAlternatives.allContents(state.project) : state.project.scenes).forEach((scene) => {
       scene.pieces = scene.pieces.filter((piece) => piece.setId !== setId);
       // 控えも捨てる。登録の無いものの置き場所が残り続けないように
       if (scene.stashed) delete scene.stashed[setId];
@@ -24310,6 +24433,7 @@
       if (els.musicAudio) { els.musicAudio.pause(); els.musicAudio.removeAttribute("src"); }
       if (window.indexedDB && window.indexedDB.deleteDatabase) {
         window.indexedDB.deleteDatabase("gamma:shosai-stage-audio");
+        window.indexedDB.deleteDatabase("gamma:scene-alternatives-audio-v1");
       }
     } catch (_) { /* 消せなくても続ける */ }
     /* 保存の自動書き戻しが走る前に、この場で読み直す */
@@ -24478,6 +24602,7 @@
   }
 
   function prepareFullscreenView() {
+    sceneAlternatives?.adopted(state.project);
     if (fullscreenHome) return;
     const view = document.getElementById("view-stage");
     fullscreenHome = {
@@ -25027,6 +25152,7 @@ ${propsPlotHtml}
     }
     if (!options.fromTimeline) setTimelineLightCue(null);
     closeNoteEditor();
+    if (sceneAlternatives && (options.fromTimeline || state.project.activeSceneId !== id)) sceneAlternatives.adopted(state.project);
     selectedNoteId = null;
     const cursorFromId = state.cursorRowId;    // 直前にカーソルがあった行（セクションの場合もある）も描き直す対象
     state.cursorRowId = id;
@@ -25156,6 +25282,7 @@ ${propsPlotHtml}
       pieceId: note.pieceId ? (swap.get(note.pieceId) || null) : null,
     }));
     copy.arrows = (copy.arrows || []).map((arrow) => ({ ...arrow, id: rid("arrow") }));
+    sceneAlternatives?.remapScene(copy, row.id, () => rid("alt-copy"));
     return copy;
   }
 
@@ -25341,6 +25468,7 @@ ${propsPlotHtml}
   }
 
   function duplicateScene() {
+    sceneAlternatives?.adopted(state.project);
     const p = state.project;
     const i = cursorIndex();
     if (i < 0) return;
@@ -25351,13 +25479,14 @@ ${propsPlotHtml}
       || copies.some((row) => !hasCapacity(row.pieces, "piecesPerScene", 0, "このシーンの駒"))) return;
     checkpoint();
     copies[0].title = `${cur.title} の複製`;
-    if (p.lightingDesign?.version === 1 && Array.isArray(p.lightingDesign.scenes)) {
+    if ([1, 2].includes(p.lightingDesign?.version) && Array.isArray(p.lightingDesign.scenes)) {
       block.forEach((source, index) => {
         const lighting = p.lightingDesign.scenes.find(row => row.id === source.id);
         if (lighting && copies[index].kind === "scene") p.lightingDesign.scenes.push({ ...projectIoClone(lighting), id: copies[index].id, name: copies[index].title });
       });
     }
     p.scenes.splice(i + block.length, 0, ...copies);
+    sceneAlternatives?.restore(p);
     const firstScene = copies.find((x) => x.kind === "scene");
     if (firstScene) p.activeSceneId = firstScene.id;
     state.cursorRowId = copies[0].id;
@@ -25626,17 +25755,33 @@ ${propsPlotHtml}
     if (reason === null) return;
     checkpoint();
     const p = state.project;
-    const copy = JSON.parse(JSON.stringify(p));
+    const copy = sceneAlternatives ? sceneAlternatives.projectCopy(p) : JSON.parse(JSON.stringify(p));
     copy.id = rid("proj");
     copy.parentVersionId = p.id;
     copy.branchReason = reason.trim();
     copy.createdAt = nowIso();
     copy.versionLabel = nextVersionLabel(p.versionLabel);
-    copy.scenes = copy.scenes.map((scene) => ({
-      ...scene,
-      id: rid("scene"),
-      pieces: scene.pieces.map((piece) => ({ ...piece, id: nextId() })),
-    }));
+    const sceneIds = new Map(copy.scenes.map(scene => [scene.id, rid("scene")]));
+    copy.scenes = copy.scenes.map(scene => {
+      const oldId = scene.id, result = cloneScene(scene);
+      result.id = sceneIds.get(oldId);
+      if (result.sceneAlternatives) {
+        for (const item of result.sceneAlternatives.items) {
+          item.cues.forEach(cue => { cue.sceneId = result.id; });
+          if (item.lighting.native) item.lighting.native.id = result.id;
+        }
+      }
+      return result;
+    });
+    for (const cue of copy.cues || []) {
+      cue.id = rid("cue");
+      if (sceneIds.has(cue.sceneId)) cue.sceneId = sceneIds.get(cue.sceneId);
+      if (sceneIds.has(cue.sectionId)) cue.sectionId = sceneIds.get(cue.sectionId);
+    }
+    for (const row of copy.lightingDesign?.scenes || []) if (sceneIds.has(row.id)) row.id = sceneIds.get(row.id);
+    for (const plan of copy.lightingDesign?.plans || []) for (const binding of plan.sceneBindings || [])
+      if (sceneIds.has(binding.hostSceneId)) binding.hostSceneId = sceneIds.get(binding.hostSceneId);
+    sceneAlternatives?.restore(copy);
     copy.activeSceneId = copy.scenes[0].id;
     clearAudioEngine();
     state.project = copy;
@@ -25951,6 +26096,7 @@ ${propsPlotHtml}
   }
 
   async function exportRehearsalProject() {
+    sceneAlternatives?.adopted(state.project);
     const api = rehearsalExporter();
     const inspection = refreshRehearsalExport();
     if (!api || !inspection || inspection.errors.length || inspection.missingTimingScenes.length) {
@@ -28093,11 +28239,13 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   let moveHelpListKey = "";
 
   function moveHelpDiagnosis(piece, multiple = false) {
-    const context = { project: state.project, scene: sc(), piece, owner: lockOwner(piece) };
+    const context = { project: state.project, scene: sc(), piece, owner: lockOwner(piece),
+      alternativeId: sceneAlternatives?.current(sc())?.id || null };
     const result = (code, message, scope = "") => ({ code, message, scope, context });
     if (STUDY_READ_ONLY || guestSessionActive() || phoneViewerActive || presenting) {
       return result("readonly", sx("閲覧中は配置を変更できません。", "Positions cannot be edited in this viewing mode."));
     }
+    if (alternativesStorageBlocked) return result("protected", sx("保存原本を保護しています。固定の変更は停止しています。", "The original data is protected. Lock changes are paused."));
     if (sceneAnim || spinRun) return result("playing", sx("再生・転換が終わってから操作してください。", "Wait until playback or the transition finishes."));
     const workspace = document.body.dataset.gammaWorkspace;
     if (workspace && workspace !== "normal") {
@@ -28120,6 +28268,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   function unlockFromMoveHelp(context, source) {
     const piece = context?.piece;
     const valid = context && context.project === state.project && context.scene === sc()
+      && context.alternativeId === (sceneAlternatives?.current(sc())?.id || null)
       && sc().pieces.includes(piece) && context.owner === lockOwner(piece)
       && (source !== "inspector" || (selectedPiece() === piece && selectedPieces().length === 1))
       && (source !== "manual" || document.getElementById("stage-move-help-target")?.value === piece.id);
@@ -28144,6 +28293,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const text = root.querySelector("[data-move-help-text]");
     const scope = root.querySelector("[data-move-help-scope]");
     const action = root.querySelector("[data-move-help-action]");
+    if (!text || !scope || !action) return;
     if (text.textContent !== diagnosis.message) text.textContent = diagnosis.message;
     if (scope.textContent !== diagnosis.scope) scope.textContent = diagnosis.scope;
     scope.hidden = !diagnosis.scope;
@@ -32983,6 +33133,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   let selectedPitchLangs = null;
 
   function exportTargets() {
+    sceneAlternatives?.adopted(state.project);
     const p = state.project;
     const i = p.scenes.findIndex((x) => x.id === p.activeSceneId);
     if (exportScope === "all") return p.scenes.filter((x) => x.kind === "scene");
@@ -34101,6 +34252,11 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       if (!loaded.restored) shelveSample();
       shelveSeamGardenSample();
       syncLocalShows();
+      // A direct local verification link always opens the bundled test show.
+      if (openArgs.has("feature-test") && ["localhost", "127.0.0.1", "::1"].includes(location.hostname)) {
+        const testShow = (window.SHOSAI_STAGE_LOCAL_SHOWS || []).find(doc => /^gamma-feature-test-v/.test(doc.project?.id || ""));
+        if (testShow) openShow(testShow.project.id).then(() => window.GAMMA_WORKSPACE?.normal());
+      }
       consumeCastHandoff();
       // ?sample を付けて開くと、見本から始まる（人へ渡すリンク用）
       if (openArgs.has("sample")) openSampleShow();
@@ -34223,6 +34379,76 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     return { ok: true, changed: changed.length };
   }
 
+  function refreshAlternativesView() {
+    selectedId = null; selectedNoteId = null; selectedTextId = null;
+    audioPanelSignature = "";
+    syncInputs(); renderScenes(); renderCast(); renderSets(); renderLights(); renderRigs();
+    updateInspector(); render(true); persistSoon();
+    window.dispatchEvent(new CustomEvent("stage-scene-change", { detail: { sceneId: sc().id } }));
+  }
+  function stopAlternativesPlayback() {
+    window.dispatchEvent(new Event("stage-alternatives-stop"));
+    stopSceneAnim(); stopSpinRun(); clearAudioEngine();
+  }
+  function requireAlternativesEdit() {
+    if (STUDY_READ_ONLY || guestSessionActive() || phoneViewerActive || presenting) throw Error("閲覧中はシーンの案を変更できません。");
+    if (gammaStorageChanged) throw Error("別のタブでショーが更新されました。ファイルに控えてから読み直してください。");
+  }
+  window.STAGE_SCENE_ALTERNATIVES_HOST = Object.freeze({
+    context() {
+      const row = sc();
+      const data = sceneAlternatives?.validate(row);
+      return { sceneId: row.id, title: row.title, data, canPreview: state.animateScenes && state.project.scenes.filter(scene => scene.kind === "scene").findIndex(scene => scene.id === row.id) > 0, currentId: sceneAlternatives?.current(row)?.id,
+        readOnly: STUDY_READ_ONLY || guestSessionActive() || phoneViewerActive || presenting };
+    },
+    add() {
+      requireAlternativesEdit(); stopAlternativesPlayback(); checkpoint();
+      sceneAlternatives.add(state.project, sc(), () => rid("scene-plan")); refreshAlternativesView();
+    },
+    view(id) {
+      requireAlternativesEdit(); stopAlternativesPlayback();
+      sceneAlternatives.view(state.project, sc(), id); refreshAlternativesView();
+    },
+    metadata(description, useWhen) {
+      requireAlternativesEdit(); checkpoint();
+      const item = sceneAlternatives.current(sc());
+      item.description = String(description).slice(0, 240); item.useWhen = String(useWhen).slice(0, 500);
+      persistSoon(); render();
+    },
+    async adopt(id) {
+      requireAlternativesEdit(); stopAlternativesPlayback();
+      const before = snapshot(), next = JSON.parse(before);
+      const row = next.project.scenes.find(row => row.id === sc().id);
+      sceneAlternatives.adopt(next.project, row, id);
+      const candidate = alternativesState(next);
+      const result = await ProjectStore.commit({ projectId: next.project.id, serializedState: JSON.stringify(candidate), expectedRevision: null, intent: "adopt-scene-alternative" });
+      if (!result.ok) { reportProjectStoreFailure(result); throw Error("採用案を保存できなかったため、切り替えていません。"); }
+      clearTimeout(saveTimer); recordBefore(before); state = normalizeState(candidate);
+      refreshAlternativesView(); announce("採用案を切り替えました。元に戻す操作で戻せます。");
+    },
+    remove(id) {
+      requireAlternativesEdit(); stopAlternativesPlayback(); checkpoint();
+      sceneAlternatives.remove(state.project, sc(), id); refreshAlternativesView();
+    },
+    compare(aId, bId, viewKind) {
+      stopAlternativesPlayback(); sceneAlternatives.capture(state.project);
+      const row = sc(), data = row.sceneAlternatives, original = sceneAlternatives.current(row).id;
+      const a = data.items.find(item => item.id === aId), b = data.items.find(item => item.id === bId);
+      const images = [];
+      try {
+        for (const item of [a,b]) {
+          sceneAlternatives.view(state.project, row, item.id);
+          drawStage(viewKind === "plan" ? planCtx : ctx, false, viewKind);
+          images.push((viewKind === "plan" ? planCanvas : canvas).toDataURL("image/png"));
+        }
+      } finally { sceneAlternatives.view(state.project, row, original); render(true); }
+      return { images, differences: sceneAlternatives.diff(a,b), seconds: [sceneAlternatives.seconds(a),sceneAlternatives.seconds(b)],
+        cues: [a.cues.length,b.cues.length], fixedCues: (state.project.cues || []).filter(cue=>cue.sectionId).length };
+    },
+    preview() { requireAlternativesEdit(); stopAlternativesPlayback(); replaySceneTransition(); },
+    useAdopted() { stopAlternativesPlayback(); sceneAlternatives.adopted(state.project); refreshAlternativesView(); },
+  });
+
   window.GAMMA_FORMATION_HOST = Object.freeze({
     availability: gammaFormationAvailability,
     context: gammaFormationContext,
@@ -34232,6 +34458,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   window.SHOSAI_STAGE_STUDY_OWNER = Object.freeze({
     snapshot() {
       const doc = makeProjectExportDocument(state.project, true);
+      if (sceneAlternatives) doc.project = sceneAlternatives.projectCopy(state.project, { presentation: true });
       // Animation overlays are temporary presentation fields, never published as positions.
       for (const scene of doc.project.scenes) for (const piece of scene.pieces || []) {
         for (const key of Object.keys(piece)) if (key.startsWith("anim")) delete piece[key];
@@ -34243,7 +34470,9 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     hasLocalModels() { return (state.project.sets || []).some(s => s.modelId); },
   });
   let gammaStorageChanged = false;
-  window.addEventListener("storage", event => { if (event.key === BETA_STORAGE_KEY) gammaStorageChanged = true; });
+  window.addEventListener("storage", event => {
+    if ([BETA_STORAGE_KEY, SHOWS_KEY].some(key => event.key === "gamma:scene-alternatives-v1:" + key)) gammaStorageChanged = true;
+  });
   /* basis は「ホストの照明編集元データが変わったか」だけを検出できればよい印。
      以前は中身（design＝劇場プリセットの照明プラン集を含みうる）をJSON文字列で丸ごと
      埋め込んでおり、それがそのままlocalStorageの控えにも書かれて容量を圧迫していた
@@ -34381,12 +34610,21 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       if (current.readOnly) throw new Error("閲覧中は照明を変更できません");
       if (basis !== current.basis) throw new Error("ショーが更新されています。編集中の照明をファイルへ控えてから開き直してください");
       const nextDesign = window.GAMMA_LIGHT_MODEL.validate(design, current.scenes.map(row => row.id));
+      // A shared rig change must not strand lights referenced only by another alternative.
+      sceneAlternatives?.capture(state.project);
+      for (const scene of state.project.scenes) for (const item of scene.sceneAlternatives?.items || []) {
+        if (item.id === sceneAlternatives.current(scene)?.id || !item.lighting.native) continue;
+        const candidate = projectIoClone(nextDesign);
+        candidate.scenes = candidate.scenes.map(row => row.id === scene.id ? { ...projectIoClone(item.lighting.native), id: row.id } : row);
+        try { window.GAMMA_LIGHT_MODEL.validate(candidate, current.scenes.map(row => row.id)); }
+        catch (_) { throw Error(`${scene.title}の${item.label}で使用中の灯体があります。別案の照明も調整してから仕込みを変更してください。`); }
+      }
       if (JSON.stringify(nextDesign.stage) !== JSON.stringify(current.stage)) throw new Error("舞台寸法が一致しません。劇場の寸法は通常モードで設定してください");
       const next = projectIoClone(state); next.project.lightingDesign = nextDesign;
       // Persist and verify both copies BEFORE accepting the candidate in memory/history.
       // A quota/disabled-storage exception leaves host state and the editor draft untouched.
       const result = await ProjectStore.commit({ projectId: next.project.id,
-        serializedState: JSON.stringify(next), expectedRevision: null, intent: "gamma-lighting" });
+        serializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "gamma-lighting" });
       if (!result.ok) throw new Error(reportProjectStoreFailure(result));
       clearTimeout(saveTimer); checkpoint(); state = next;
       render(true);
@@ -34430,7 +34668,10 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   });
   window.SHOSAI_STAGE_SESSION_BRIDGE = Object.freeze({
     exportDocumentString() {
-      return JSON.stringify(makeProjectExportDocument(state.project, true));
+      const doc = makeProjectExportDocument(state.project, true);
+      if (sceneAlternatives) doc.project = sceneAlternatives.projectCopy(state.project, { presentation: true });
+      refreshSectionDurationCache(doc.project);
+      return JSON.stringify(doc);
     },
     openSceneById(id, options = {}) {
       const next = state.project.scenes.find((row) => row.kind === "scene" && row.id === id);
@@ -34479,6 +34720,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       return true;
     },
     setTimelineSceneAudioTrack(sceneId, trackId) {
+      sceneAlternatives?.adopted(state.project);
       const scene = state.project.scenes.find((row) => row && row.kind === "scene" && row.id === sceneId);
       const normalizedTrackId = normalizeAudioTrackId("scene", trackId);
       if (!scene || !normalizedTrackId || !audioTrackById(normalizedTrackId)) return false;
@@ -34528,6 +34770,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       return jsonClone(next);
     },
     setSectionTimelineDurationSeconds(id, value, options = {}) {
+      sceneAlternatives?.adopted(state.project);
       const section = state.project.scenes.find((row) => row.kind === "section" && row.id === id);
       const seconds = timelineSeconds(value);
       if (!section || seconds === null) return false;
@@ -34591,6 +34834,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       return true;
     },
     setTimelineScenePartDuration(sectionId, sceneId, part, value, sectionDurationValue, options = {}) {
+      sceneAlternatives?.adopted(state.project);
       const sectionIndex = state.project.scenes.findIndex((row) => row.kind === "section" && row.id === sectionId);
       if (sectionIndex < 0 || (part !== "hold" && part !== "transition")) return false;
       const section = state.project.scenes[sectionIndex];
@@ -34647,6 +34891,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       return true;
     },
     setTimelineLock(identity = {}, value = {}) {
+      sceneAlternatives?.adopted(state.project);
       const locked = Boolean(value.locked);
       if (identity.target === "cue") {
         const cue = (Array.isArray(state.project.cues) ? state.project.cues : [])
@@ -34705,6 +34950,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       return true;
     },
     addTimelineCue(type, sectionId, atSeconds) {
+      sceneAlternatives?.adopted(state.project);
       if (!TIMELINE_CUE_TYPES.has(type)) return null;
       const section = state.project.scenes.find((row) => row.kind === "section" && row.id === sectionId);
       if (!section) return null;
@@ -34724,6 +34970,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       return jsonClone(cue);
     },
     updateTimelineCue(id, patch = {}) {
+      sceneAlternatives?.adopted(state.project);
       const cues = Array.isArray(state.project.cues) ? state.project.cues : [];
       const cue = cues.find((item) => item && item.kind === "timeline" && item.id === id);
       if (!cue) return null;
@@ -34746,6 +34993,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
      * 「まとめて動かしたのに取り消しは1件ずつ」になってしまう。ここは1回にする。
      * 固定されたキューは動かさない（画面側でも選ばせていないが、念のため二重に守る）。 */
     updateTimelineCues(patches) {
+      sceneAlternatives?.adopted(state.project);
       const cues = Array.isArray(state.project.cues) ? state.project.cues : [];
       const changes = [];
       (Array.isArray(patches) ? patches : []).forEach((patch) => {
@@ -34765,6 +35013,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     /* T-5: 範囲選択した複数のキューをまとめて消す。理由は updateTimelineCues と同じで、
      * 「まとめて消したのに取り消しは1件ずつ」にしないため。 */
     removeTimelineCues(ids) {
+      sceneAlternatives?.adopted(state.project);
       const cues = Array.isArray(state.project.cues) ? state.project.cues : [];
       const wanted = new Set(Array.isArray(ids) ? ids : []);
       const doomed = cues.filter((cue) => cue && cue.kind === "timeline" && wanted.has(cue.id) && !cue.locked);
@@ -34779,6 +35028,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       return doomed.length;
     },
     removeTimelineCue(id) {
+      sceneAlternatives?.adopted(state.project);
       const cues = Array.isArray(state.project.cues) ? state.project.cues : [];
       const at = cues.findIndex((cue) => cue && cue.kind === "timeline" && cue.id === id);
       if (at < 0) return false;
@@ -34789,6 +35039,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       return true;
     },
     addTimelineSceneAfter(sceneId) {
+      sceneAlternatives?.adopted(state.project);
       const scene = state.project.scenes.find((row) => row.kind === "scene" && row.id === sceneId);
       if (!scene) return null;
       if (state.project.activeSceneId !== scene.id) openScene(scene.id);
@@ -34799,6 +35050,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       return jsonClone(sc());
     },
     splitTimelineScene(sceneId, options = {}) {
+      sceneAlternatives?.adopted(state.project);
       const index = state.project.scenes.findIndex((row) => row && row.kind === "scene" && row.id === sceneId);
       if (index < 0) return null;
       const scene = state.project.scenes[index];
@@ -34822,6 +35074,22 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       scene.rehearsal.transitionToNextSeconds = 0;
       copy.rehearsal.holdDurationSeconds = secondHold;
       copy.rehearsal.transitionToNextSeconds = oldTransition;
+      if (scene.sceneAlternatives && sceneAlternatives) {
+        sceneAlternatives.capture(state.project);
+        // The original keeps the first portion of every alternative.
+        for (const item of scene.sceneAlternatives.items) {
+          if (item.id === scene.sceneAlternatives.adoptedId) continue;
+          const r = item.content.rehearsal;
+          if (r) { r.holdDurationSeconds = Math.round(r.holdDurationSeconds * ratio * 10) / 10; r.transitionToNextSeconds = 0; }
+        }
+        sceneAlternatives.remapScene(copy, scene.id, () => rid("scene-split"));
+        for (const item of copy.sceneAlternatives.items) {
+          const r = item.content.rehearsal;
+          if (r) r.holdDurationSeconds = Math.round(r.holdDurationSeconds * (1-ratio) * 10) / 10;
+        }
+        const adopted = copy.sceneAlternatives.items.find(item => item.id === copy.sceneAlternatives.adoptedId);
+        Object.assign(copy, sceneAlternatives.clone(adopted.content));
+      }
       state.project.scenes.splice(index + 1, 0, copy);
       renderScenes();
       renderSceneGrid();
@@ -34832,6 +35100,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       return jsonClone(copy);
     },
     addTimelineTransition(sceneId, seconds) {
+      sceneAlternatives?.adopted(state.project);
       const scene = state.project.scenes.find((row) => row.kind === "scene" && row.id === sceneId);
       if (!scene) return false;
       if (!scene.rehearsal) scene.rehearsal = normalizeSceneRehearsal(null);
@@ -34884,6 +35153,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     },
     shelveNow() { return shelveCurrent(); },
     applyGuestOp(op) {
+      sceneAlternatives?.adopted(state.project);
       /* ホスト側でゲストopを状態へ適用。適用したらtrue */
       if (!op || typeof op !== "object") return false;
       const scene = state.project.scenes.find((s) => s.id === op.sceneId);
