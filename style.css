@@ -9315,6 +9315,21 @@ body.is-panel-dragging {
 
 .stage-canvas-bar .stage-canvas-caption { margin-bottom: 0; }
 
+/* 正面図に出す照明の注釈は、図の下端ではなくパネルの上部に固定する。
+ * 描画上の光源や演者と重ならず、長い注意書きも画面幅で自然に折り返せる。 */
+.stage-canvas-bar .stage-front-light-cue-caption {
+  flex: 1 0 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 4px 7px;
+  border-left: 2px solid var(--brass);
+  background: rgba(32, 27, 22, 0.92);
+  color: var(--brass);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
 /* 正面の絵の真上に出す、そのシーンの説明。
    絵より前に出過ぎないよう、見出しは小さく、本文は落ち着いた明度で置く。 */
 /* 絵のすぐ上のシーン帯。操作と短い説明は一行に置き、説明の可読幅を

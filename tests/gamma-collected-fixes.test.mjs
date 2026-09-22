@@ -112,6 +112,16 @@ test("stage tools can toggle rendered lighting without adding show data", () => 
   assert.match(firstPerson, /\[elements\.workLightToggle, "作業灯", !data\.lightPool \|\| !data\.workLightOff\]/);
 });
 
+test("the front light summary is placed in the front panel instead of over the drawing", () => {
+  const stage = read("stage.html");
+  const sketch = read("stage-sketch.js");
+  const style = read("style.css");
+  assert.match(stage, /id="stage-front-light-cue-caption" role="status" hidden/);
+  assert.match(sketch, /function syncFrontLightCueCaption\(\)/);
+  assert.match(sketch, /if \(!L\.plan && !presenting\) return;/);
+  assert.match(style, /\.stage-canvas-bar \.stage-front-light-cue-caption/);
+});
+
 test("front border follows the durable equipment-placement setting and stays hidden by default", () => {
   const stage = read("stage.html");
   const sketch = read("stage-sketch.js");

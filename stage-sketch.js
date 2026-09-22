@@ -4852,6 +4852,7 @@
     planCell: document.getElementById("stage-plan-cell"),
     canvasStack: document.getElementById("stage-canvas-stack"),
     frontCaption: document.getElementById("stage-front-caption"),
+    frontLightCueCaption: document.getElementById("stage-front-light-cue-caption"),
     sceneBar: document.getElementById("stage-scene-bar"),
     sceneDesc: document.getElementById("stage-scene-desc"),
     sceneDescLabel: document.getElementById("stage-scene-desc-label"),
@@ -15706,6 +15707,9 @@
   function drawLightCueCaption(target, L) {
     const model = lightCueOverlayForLayout(L);
     if (!model) return;
+    // 通常表示の正面図は、パネル上部のDOM注釈として読ませる。
+    // 全画面にはこのパネルが無いため、従来どおり図の中へ描く。
+    if (!L.plan && !presenting) return;
     const text = lightCueOverlayCaptionText(model);
     target.save();
     target.globalAlpha = 0.92;
@@ -15719,6 +15723,14 @@
     target.textBaseline = "alphabetic";
     target.fillText(text, left + 6, top + 13);
     target.restore();
+  }
+
+  function syncFrontLightCueCaption() {
+    const caption = els.frontLightCueCaption;
+    if (!caption) return;
+    const model = !presenting && state.showFront ? lightCueOverlayForLayout(layout("front")) : null;
+    caption.hidden = !model;
+    caption.textContent = model ? lightCueOverlayCaptionText(model) : "";
   }
 
   /* 機材配置の「前一文字」を、舞台タブの正面図にも重ねる。
@@ -16410,6 +16422,7 @@
       els.frontCaption.textContent = tx("正面");
       canvas.dataset.pannable = pannable ? "true" : "false";
     }
+    syncFrontLightCueCaption();
     syncSceneBar();
     syncSceneDesc();
     syncPropMoves();
