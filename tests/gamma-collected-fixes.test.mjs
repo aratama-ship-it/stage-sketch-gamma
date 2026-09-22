@@ -91,6 +91,7 @@ test("stage tools can toggle rendered lighting without adding show data", () => 
   const style = read("style.css");
   const firstPerson = read("stage-first-person.js");
   assert.match(stage, /id="stage-light-render-toggle" class="is-icon"[^>]*aria-label="照明効果"[^>]*><span class="stage-tool-icon"[^>]*><svg/);
+  assert.match(stage, /id="stage-light-render-toggle"[^>]*data-stage-shortcut-action="view\.lightRender"[^>]*aria-keyshortcuts="C"/);
   assert.match(stage, /id="stage-work-light-toggle" class="is-icon"[^>]*aria-label="作業灯" aria-keyshortcuts="G"[^>]*><span class="stage-tool-icon"[^>]*><svg/);
   assert.doesNotMatch(stage, /id="stage-work-light-toggle"[^>]*data-tool-key="G"/);
   assert.match(style, /#stage-work-light-toggle\[aria-pressed="false"\] \.stage-work-light-slash/);
@@ -98,6 +99,8 @@ test("stage tools can toggle rendered lighting without adding show data", () => 
   assert.match(sketch, /if \(next && !featureOn\("lightBeam"\)/);
   assert.match(sketch, /const workLightOn = !featureOn\("lightPool"\) \|\| !featureOn\("workLightOff"\)/);
   assert.match(sketch, /els\.workLightToggle\.addEventListener\("click", toggleWorkLightOff\)/);
+  assert.match(sketch, /matches\(event, "view\.lightRender"\)/);
+  assert.match(sketch, /toggleLightRendering\(\);/);
   assert.match(sketch, /toggleWorkLightOff\(\);/);
   assert.match(sketch, /const drawAim = model\.counts\.total <= 200 && !featureOn\("lightPool"\)/);
   assert.match(sketch, /toggleLightRendering,\s*toggleWorkLightOff,/);

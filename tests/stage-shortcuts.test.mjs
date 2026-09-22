@@ -21,6 +21,7 @@ function load(saved = {}) {
 
 test("shortcut settings start with the established Stage Sketch keys", () => {
   const { shortcuts } = load();
+  assert.equal(shortcuts.get("view.lightRender"), "C");
   assert.equal(shortcuts.get("view.workLight"), "G");
   assert.equal(shortcuts.get("tool.erase"), "Shift+E");
   assert.equal(shortcuts.get("project.export"), "Mod+S");

@@ -25222,6 +25222,18 @@
     els.viewSelect.dispatchEvent(new Event("change", { bubbles: true }));
   });
 
+  // Cは舞台タブだけ。照明デザインや入力欄の文字入力は奪わない。
+  document.addEventListener("keydown", (event) => {
+    if (event.defaultPrevented || !window.SHOSAI_STAGE_SHORTCUTS?.matches(event, "view.lightRender")) return;
+    if (event.repeat || event.isComposing || event.keyCode === 229 || isTyping(event.target)) return;
+    if (phoneViewerActive || fullscreenModalOpen()) return;
+    if (document.body.dataset.gammaWorkspace && document.body.dataset.gammaWorkspace !== "normal") return;
+    const view = document.getElementById("view-stage");
+    if (!view || view.hidden) return;
+    event.preventDefault();
+    toggleLightRendering();
+  });
+
   // Gは舞台タブだけ。照明デザインのGや入力欄の文字入力は奪わない。
   document.addEventListener("keydown", (event) => {
     if (event.defaultPrevented || !window.SHOSAI_STAGE_SHORTCUTS?.matches(event, "view.workLight")) return;
