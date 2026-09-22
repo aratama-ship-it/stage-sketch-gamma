@@ -532,6 +532,9 @@
     /* 2026-09-17: ショーのパネルへ移した操作の文言 */
     "保存してバージョンを更新": "Save as a new version",
     "新規ショーを作る": "Create a new show",
+    "前のショーへ戻る": "Return to previous show",
+    "ショー一覧を開く": "Open all shows",
+    "作りかけのショーは一覧に残ります。": "The unfinished show stays in All shows.",
     "ショープロジェクトを書き出す": "Export show project",
     "ショープロジェクトを読み込む": "Import show project",
     /* 2026-09-17: 劇場反映の選択を2択にまとめたときの文言 */

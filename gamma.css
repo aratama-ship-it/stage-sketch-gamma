@@ -49,8 +49,20 @@ body[data-gamma-workspace^="light-"] .stage-boundary-note,
 body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
 #gamma-light-workspace { width: 100%; min-height: 0; }
 /* V-2（2026-09-17）: 劇場設定は1画面に収める。高さは gamma-workspace.js が実測して入れる。 */
-#gamma-venue-workspace { width: 100%; min-height: 0; display: flex; }
+#gamma-venue-workspace { width: 100%; min-height: 0; display: flex; flex-direction: column; }
 #gamma-venue-workspace[hidden] { display: none; }
+.gamma-new-show-return {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--gamma-gap);
+  padding: 0 0 var(--gamma-gap);
+  color: var(--milk-dim);
+  font-size: var(--fs-3);
+}
+.gamma-new-show-return[hidden] { display: none; }
+.gamma-new-show-return button[hidden] { display: none; }
+.gamma-new-show-return .btn-quiet { min-height: var(--ctrl-md); }
 /* 劇場カスタムはモード画面として既存エディタと舞台機構を表示する。 */
 #gamma-venue-workspace .stage-venue-editor-modal {
   position: static;

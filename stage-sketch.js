@@ -1978,6 +1978,7 @@
   const STORAGE_KEY = "gamma:shosai-stage-sketch-v1";
   const BETA_STORAGE_KEY = "shosai-stage-sketch-v1";
   const SHOWS_KEY = "shosai-stage-shows-v1";
+  const NEW_SHOW_RETURN_KEY = "gamma:new-show-return-v1";
   const ProjectStore = createProjectStore({ storage: localStorage, currentKey: BETA_STORAGE_KEY, shelfKey: SHOWS_KEY,
     backup: window.SHOSAI_STAGE_PROJECT_BACKUP_STORE || null, onCorrupt: raw => markShelfCorrupt(raw) });
   // 壊れた棚の隔離先は旧Gammaキーを維持し、βの棚とは混ぜない。
@@ -5066,6 +5067,9 @@
     poseGrid: document.getElementById("stage-pose-grid"),
     showsOpen: document.getElementById("stage-shows-open"),
     showNew: document.getElementById("stage-show-new"),
+    newShowReturnBar: document.getElementById("stage-new-show-return-bar"),
+    newShowReturn: document.getElementById("stage-new-show-return"),
+    newShowReturnList: document.getElementById("stage-new-show-return-list"),
     showsModal: document.getElementById("stage-shows"),
     showsBackdrop: document.getElementById("stage-shows-backdrop"),
     showsClose: document.getElementById("stage-shows-close"),
@@ -7306,6 +7310,11 @@
 
   const loaded = loadState();
   let state = loaded.value;
+  let newShowReturn = null;
+  try {
+    const stored = JSON.parse(sessionStorage.getItem(NEW_SHOW_RETURN_KEY) || "null");
+    if (stored && typeof stored.draftId === "string" && typeof stored.previousId === "string") newShowReturn = stored;
+  } catch (_) { /* セッション保存が使えなくても、その場の戻る操作は維持する。 */ }
   let projectRecoveryNeeded = !loaded.restored;
   let tool = "select";
   let selectedId = null;
@@ -20348,22 +20357,70 @@
     updateInspector();
     updateHistoryButtons();
     render();
+    syncNewShowReturn();
     persistSoon();
     announce(message);
     return true;
   }
 
+  function previousShowForNewShow() {
+    if (!state.project?.venueSetupPending || newShowReturn?.draftId !== state.project.id) return null;
+    const id = newShowReturn.previousId;
+    return id && id !== state.project.id && readShows()[id] ? id : null;
+  }
+
+  function syncNewShowReturn() {
+    if (!els.newShowReturnBar) return;
+    const pending = Boolean(state.project?.venueSetupPending);
+    const previousId = pending ? previousShowForNewShow() : null;
+    els.newShowReturnBar.hidden = !pending;
+    if (els.newShowReturn) els.newShowReturn.hidden = !previousId;
+    if (els.newShowReturnList) els.newShowReturnList.hidden = Boolean(previousId);
+  }
+
+  function rememberNewShowReturn(previousId) {
+    newShowReturn = { draftId: state.project.id, previousId };
+    try { sessionStorage.setItem(NEW_SHOW_RETURN_KEY, JSON.stringify(newShowReturn)); } catch (_) { /* 同じタブでは戻れる。 */ }
+    syncNewShowReturn();
+  }
+
+  function forgetNewShowReturn() {
+    newShowReturn = null;
+    try { sessionStorage.removeItem(NEW_SHOW_RETURN_KEY); } catch (_) { /* 保存不能でも画面は更新する。 */ }
+    syncNewShowReturn();
+  }
+
+  async function returnFromNewShow() {
+    const previousId = previousShowForNewShow();
+    if (!previousId) { openShows(); return; }
+    const editor = window.SHOSAI_VENUE_EDITOR;
+    if (editor?.hasUnappliedChanges?.()
+      && !window.confirm("劇場設定の未反映の編集は破棄されます。作りかけのショーは一覧に残します。前のショーへ戻りますか？")) return;
+    const entry = readShows()[previousId];
+    if (!entry?.state) { syncNewShowReturn(); openShows(); return; }
+    const next = normalizeState(entry.state);
+    next.layout = state.layout;
+    // 保存できなければ劇場編集も現在のショーもそのままにする。
+    if (!await applyLoadedState(next, `${next.project.title}へ戻りました。作りかけのショーは一覧に残っています。`)) return;
+    editor?.abandonDraft?.();
+    forgetNewShowReturn();
+    closeShows();
+    if (window.GAMMA_WORKSPACE?.mode?.() === "venue-setup") window.GAMMA_WORKSPACE.normal();
+  }
+
   async function newShow() {
     if (!window.confirm("新しいショーを作ります。いま開いているショーは一覧に残ります。")) return;
+    const previousId = state.project.id;
     const fresh = markVenueSetupPending(baseState(false));
     fresh.project.title = untitledShow();
     fresh.layout = state.layout;                 // 道具の並びは持ち越す
     if (!await applyLoadedState(normalizeState(fresh), "新しいショーを作りました。")) return;
+    rememberNewShowReturn(previousId);
     closeShows();
     renderShows();
     // 舞台から作った新規ショーは劇場未設定。舞台を表示したままにせず、
     // 既存のタブ切替経路で劇場設定の手順へ案内する。
-    if (window.GAMMA_WORKSPACE?.mode?.() === "normal") window.GAMMA_WORKSPACE.select("venue-setup");
+    window.GAMMA_WORKSPACE?.select("venue-setup");
   }
 
   async function openShow(id) {
@@ -20379,9 +20436,18 @@
     }
     const next = normalizeState(entry.state);
     next.layout = state.layout;
+    const previousId = state.project.id;
+    const leavingPendingVenue = Boolean(state.project?.venueSetupPending)
+      && window.GAMMA_WORKSPACE?.mode?.() === "venue-setup";
+    const editor = window.SHOSAI_VENUE_EDITOR;
+    if (leavingPendingVenue && editor?.hasUnappliedChanges?.()
+      && !window.confirm("劇場設定の未反映の編集は破棄されます。いまのショーは一覧に残します。別のショーを開きますか？")) return;
     if (!await applyLoadedState(next, `${next.project.title}を開きました。`)) return;
+    if (leavingPendingVenue) editor?.abandonDraft?.();
+    if (next.project.venueSetupPending) rememberNewShowReturn(previousId);
     closeShows();
-    if (window.GAMMA_WORKSPACE?.mode?.() === "venue-setup") window.GAMMA_WORKSPACE.normal();
+    if (next.project.venueSetupPending) window.GAMMA_WORKSPACE?.select("venue-setup");
+    else if (window.GAMMA_WORKSPACE?.mode?.() === "venue-setup") window.GAMMA_WORKSPACE.normal();
   }
 
   function deleteShow(id) {
@@ -30922,6 +30988,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   }
   if (els.showsOpen) els.showsOpen.addEventListener("click", openShows);
   if (els.showNew) els.showNew.addEventListener("click", newShow);
+  if (els.newShowReturn) els.newShowReturn.addEventListener("click", returnFromNewShow);
+  if (els.newShowReturnList) els.newShowReturnList.addEventListener("click", openShows);
   if (els.showsClose) els.showsClose.addEventListener("click", closeShows);
   if (els.showsBackdrop) els.showsBackdrop.addEventListener("click", closeShows);
   if (els.sceneGridOpen) els.sceneGridOpen.addEventListener("click", openSceneGrid);
@@ -34433,6 +34501,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       shelveSeamGardenSample();
       shelveRomeoJulietSample();
       syncLocalShows();
+      syncNewShowReturn();
       // A direct local verification link always opens the bundled test show.
       if (openArgs.has("feature-test") && ["localhost", "127.0.0.1", "::1"].includes(location.hostname)) {
         const testShow = (window.SHOSAI_STAGE_LOCAL_SHOWS || []).find(doc => /^gamma-feature-test-v/.test(doc.project?.id || ""));

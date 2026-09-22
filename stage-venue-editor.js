@@ -4214,6 +4214,8 @@
     hasUnappliedChanges: () => hasUnappliedChanges(),
     open: openEditor,
     close: requestCloseEditor,
+    /* 新規ショーから前のショーへ戻る経路では、確認後に未反映の劇場編集を閉じる。 */
+    abandonDraft: discardAndCloseEditor,
     /* T-13（2026-09-18）: 劇場設定中の ⌘Z とヘッダーの ↶ ↷ をここへ繋ぐ。
      * 以前は平面図の ↺ ↻ ボタンを click() していたが、そのボタンを消したため。 */
     undo: undoHistory,
