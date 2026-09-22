@@ -24,6 +24,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.doesNotMatch(lightHtml, /id="statebadge"/);
   assert.match(html, />ツール</);
   assert.match(html, />表示するもの</);
+  assert.match(html, /id="stage-show-names" checked>\s*<span class="stage-tool-icon"/);
+  assert.match(html, /id="stage-show-set-names" checked>\s*<span class="stage-tool-icon"/);
+  assert.match(read("style.css"), /\.stage-name-toggle\.is-icon \.stage-name-toggle-slash/);
 });
 
 test("lighting section titles and durable apply failures cross the iframe boundary", () => {

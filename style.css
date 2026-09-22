@@ -10224,6 +10224,36 @@ body.is-panel-dragging {
   min-height: 30px;
 }
 
+/* 演者名・装置名は、文字札を出す操作だと分かる人物／箱の印にする。
+ * チェックボックスはキーボード操作と既存の状態同期のために残し、見た目だけを印へ置き換える。 */
+.stage-center-bar .stage-name-toggle.is-icon {
+  justify-content: center;
+  width: 30px;
+  min-width: 30px;
+  padding: 4px;
+}
+
+.stage-center-bar .stage-name-toggle.is-icon input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+}
+
+.stage-center-bar .stage-name-toggle.is-icon .stage-tool-icon {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+}
+
+.stage-center-bar .stage-name-toggle.is-icon svg { width: 17px; height: 17px; }
+.stage-center-bar .stage-name-toggle.is-icon .stage-name-toggle-slash { display: none; }
+.stage-center-bar .stage-name-toggle.is-icon:not(:has(input:checked)) .stage-name-toggle-slash { display: block; }
+.stage-center-bar .stage-name-toggle.is-icon:focus-within { outline: 2px solid var(--brass); outline-offset: 2px; }
+
 .stage-center-bar button { min-height: 30px; font-size: 10.5px; padding: 4px 12px; }
 /* T-27 二度目: 高さは .stage-view-select select 側の height: 27px で一本化した。 */
 .stage-center-bar .stage-tool-grid button { padding: 4px 10px; letter-spacing: 0.04em; }

@@ -12,7 +12,7 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092216">
+<link rel="stylesheet" href="style.css?v=2026092217">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -187,13 +187,15 @@
                   <option value="both-plan">両方2</option>
                 </select>
               </label>
-              <label class="stage-toggle stage-name-toggle">
+              <label class="stage-toggle stage-name-toggle is-icon" title="演者名を出したり隠したりする">
                 <input type="checkbox" id="stage-show-names" checked>
-                <span>演者名</span>
+                <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.25" cy="4.2" r="2"/><path d="M1.9 12.8c.35-2.65 1.5-4 3.35-4s3 1.35 3.35 4"/><path d="M10.2 3.7h4M10.2 6.1h3.1"/><path class="stage-name-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
+                <span class="visually-hidden">演者名</span>
               </label>
-              <label class="stage-toggle stage-name-toggle">
+              <label class="stage-toggle stage-name-toggle is-icon" title="装置名を出したり隠したりする">
                 <input type="checkbox" id="stage-show-set-names" checked>
-                <span>装置名</span>
+                <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.1h7.4v6.3H2z"/><path d="M3.6 2.1h7.3v6.3M11.4 4.2h2.6M11.4 6.6h2.1"/><path class="stage-name-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
+                <span class="visually-hidden">装置名</span>
               </label>
               <label class="stage-toggle stage-name-toggle">
                 <input type="checkbox" id="stage-show-light-names" checked>
