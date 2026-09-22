@@ -23,6 +23,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.match(main, /drawKindPreview\(canvas, "prop", previewColor, shapeId\)/);
   assert.match(main, /function refreshRosterPropPreviews\(\)/);
   assert.match(main, /rosterColorTouched = true;\s*refreshRosterPropPreviews\(\);/);
+  assert.match(main, /平面図は衣装ではなく、演者を識別するためのマーキングカラーを常に使う/);
+  assert.match(main, /function drawPlanPiece\([\s\S]*?target\.fillStyle = piece\.color;/);
+  assert.doesNotMatch(main, /function drawPlanPiece\([\s\S]*?costumeLitColorFor\(piece, L, look\.top\.color\)/);
   assert.match(main, /--scene-bar-link/);
   assert.match(timeline, /stage-timeline-time-tools/);
   assert.match(timeline, /sourceStrip\.hidden = true/);

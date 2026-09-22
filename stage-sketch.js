@@ -12537,10 +12537,9 @@
        * 平面図の三角は左を指す。 */
       target.rotate(-rad);
       target.translate(ext.cx * H * L.pxPerM, ext.cz * H * L.pxPerM);
-      const look = normalizeLook(resolveLookForScene(piece, sc(), state.project.cast, state.project.scenes));
-      target.fillStyle = look
-        ? (costumeLitColorFor(piece, L, look.top.color) || look.top.color)
-        : piece.color;
+      /* 平面図は衣装ではなく、演者を識別するためのマーキングカラーを常に使う。
+       * 衣装の着脱・色替えは、観客からの見え方を扱う正面図だけに反映する。 */
+      target.fillStyle = piece.color;
       target.strokeStyle = "rgba(0,0,0,0.4)";
       target.lineWidth = 1.4;
       target.beginPath();
