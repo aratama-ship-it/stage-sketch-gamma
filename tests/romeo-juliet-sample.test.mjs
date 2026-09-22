@@ -35,7 +35,7 @@ test("Romeo and Juliet is loaded before the app and included in the versioned PW
     read("stage.html"), read("stage-sw.js"), read("stage-sketch.js"),
   ]);
   const libraryScript = html.indexOf('stage-samples/romeo-juliet-cued.js?v=2026092214');
-  const appScript = html.indexOf('stage-sketch.js?v=2026092216');
+  const appScript = html.indexOf('stage-sketch.js?v=2026092217');
   assert.ok(libraryScript >= 0 && libraryScript < appScript);
   assert.match(worker, /stage-sketch-gamma-shell-v231/);
   assert.match(worker, /stage-samples\/romeo-juliet-cued\.js\?v=2026092214/);

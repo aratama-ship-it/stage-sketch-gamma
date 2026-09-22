@@ -10487,6 +10487,53 @@ body.stage-session-guest .stage-panel-visibility-control { display: none; }
 
 .stage-pref-keys-body .stage-pref-hint { margin-top: 6px; }
 
+.stage-pref-shortcut-editor {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(211, 172, 89, 0.16);
+}
+
+.stage-pref-shortcut-editor h4 {
+  margin: 0 0 2px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: rgba(211, 172, 89, 0.85);
+}
+
+.stage-pref-shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 30px;
+  font-size: 12px;
+  color: rgba(239, 231, 214, 0.78);
+}
+
+.stage-pref-shortcut-key {
+  min-width: 54px;
+  min-height: 28px;
+  border: 1px solid rgba(211, 172, 89, 0.38);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  cursor: pointer;
+}
+
+.stage-pref-shortcut-key:hover,
+.stage-pref-shortcut-key:focus-visible,
+.stage-pref-shortcut-key.is-capturing {
+  border-color: rgba(211, 172, 89, 0.9);
+  background: rgba(211, 172, 89, 0.14);
+  outline: none;
+}
+
+.stage-pref-shortcut-reset { justify-self: start; margin-top: 4px; }
+
 /* 場面は右列で縦に積む */
 .stage-col .stage-scenes {
   border: 0;

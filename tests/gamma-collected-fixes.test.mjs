@@ -106,17 +106,17 @@ test("stage tools can toggle rendered lighting without adding show data", () => 
   assert.match(firstPerson, /\[elements\.workLightToggle, "作業灯", !data\.lightPool \|\| !data\.workLightOff\]/);
 });
 
-test("number keys switch the five workspace tabs without bypassing existing tab behavior", () => {
+test("workspace shortcuts can be customized without bypassing existing tab behavior", () => {
   const stage = read("stage.html");
-  const sketch = read("stage-sketch.js");
   const workspace = read("gamma-workspace.js");
   const embed = read("light-design/embed.js");
 
   for (const key of ["1", "2", "3", "4", "5"]) {
     assert.match(stage, new RegExp(`data-stage-workspace-shortcut="${key}"[^>]*aria-keyshortcuts="${key}"`));
   }
-  assert.match(sketch, /タブを切り替える（舞台・劇場設定・機材配置・照明デザイン・3D）/);
-  assert.match(workspace, /if\(!activateWorkspaceShortcut\(event\.key\)\) return/);
+  assert.match(workspace, /workspaceShortcutIds/);
+  assert.match(workspace, /workspace\.normal/);
+  assert.match(workspace, /SHOSAI_STAGE_SHORTCUTS/);
   assert.match(workspace, /button\.click\(\)/);
   assert.match(workspace, /event\.data\?\.type==='gamma:workspace-shortcut'/);
   assert.match(embed, /parent\.postMessage\(\{type:'gamma:workspace-shortcut',key:event\.key\},location\.origin\)/);

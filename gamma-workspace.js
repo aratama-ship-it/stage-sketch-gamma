@@ -448,6 +448,22 @@
   /* ヘッダーの主要タブは左から1〜5。モードの状態を直接書き換えず、必ずタブを押すことで
    * 劇場未設定のゲート、照明の未適用確認、3Dの開閉を従来と同じ経路へ通す。
    * 入力欄・修飾キー・モーダル中は文字入力やその窓の操作を優先する。 */
+  const workspaceShortcutIds = Object.freeze({
+    normal: "workspace.normal", venue: "workspace.venue", placement: "workspace.placement",
+    design: "workspace.design", "3d": "workspace.3d",
+  });
+  function syncWorkspaceShortcutLabels() {
+    const shortcuts=window.SHOSAI_STAGE_SHORTCUTS;
+    if(!shortcuts) return;
+    Object.entries(workspaceShortcutIds).forEach(([mode,id])=>{
+      const key={normal:"1",venue:"2",placement:"3",design:"4","3d":"5"}[mode];
+      const button=workspaceShortcutButton(key);
+      if(!button) return;
+      button.setAttribute("aria-keyshortcuts",shortcuts.get(id));
+      const label=String(button.dataset.gammaTitle||button.textContent||"").replace(/（[^）]*）$/,"");
+      button.title=`${label}（${shortcuts.display(shortcuts.get(id))}）`;
+    });
+  }
   function workspaceShortcutButton(key) {
     return document.querySelector(`#stage-workspace-tabs [data-stage-workspace-shortcut="${key}"]`);
   }
@@ -463,11 +479,14 @@
     button.click();
     return true;
   }
+  window.SHOSAI_STAGE_SHORTCUTS?.onChange(syncWorkspaceShortcutLabels);
+  syncWorkspaceShortcutLabels();
   document.addEventListener('keydown',event=>{
     if(event.defaultPrevented || event.isComposing || event.repeat) return;
-    if(event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
-    if(!/^[1-5]$/.test(event.key) || workspaceShortcutBlocked(event)) return;
-    if(!activateWorkspaceShortcut(event.key)) return;
+    if(workspaceShortcutBlocked(event)) return;
+    const shortcuts=window.SHOSAI_STAGE_SHORTCUTS;
+    const entry=Object.entries(workspaceShortcutIds).find(([, id])=>shortcuts?.matches(event,id));
+    if(!entry || !activateWorkspaceShortcut({normal:"1",venue:"2",placement:"3",design:"4","3d":"5"}[entry[0]])) return;
     event.preventDefault();
   });
   document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode]').forEach(button=>button.addEventListener('click',()=>select(button.dataset.stageWorkspaceMode)));

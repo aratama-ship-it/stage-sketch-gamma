@@ -361,6 +361,7 @@
   }
 
   function isProjectExportShortcut(event) {
+    if (window.SHOSAI_STAGE_SHORTCUTS) return window.SHOSAI_STAGE_SHORTCUTS.matches(event, "project.export");
     return String(event && event.key || "").toLowerCase() === "s"
       && Boolean(event && (event.metaKey || event.ctrlKey))
       && !event.altKey
@@ -24155,23 +24156,112 @@
      キーを足したときに一覧だけ古くなる（説明の吹き出しも同じ作りにしてある）。
      残りは道具ではない決まったキー。押す場所が要るものは、そう書いておく。 */
   const FIXED_KEYS = [
-    ["タブを切り替える（舞台・劇場設定・機材配置・照明デザイン・3D）", "1 2 3 4 5"],
     ["シーンを送る", "↑ ↓ ← →"],
-    ["全画面", "F"],
-    ["表示する図を切り替える（両方表示中は上下順を変更）", "T"],
-    ["舞台で作業灯を消す・点ける", "G"],
-    ["全画面で正面と平面を入れ替える", "X"],
-    ["ショーを書き出す", "⌘S"],
-    ["一つ戻す", "⌘Z"],
-    ["やり直す", "⇧⌘Z"],
     ["選んだものを消す", "Delete"],
     ["窓を閉じる・全画面を終了", "Esc"],
   ];
+
+  const SHORTCUT_TOOL_TARGETS = Object.freeze({
+    "tool.select": '[data-stage-tool="select"]',
+    "tool.arrow": '[data-stage-tool="arrow"]',
+    "tool.paint": '[data-stage-tool="paint"]',
+    "tool.erase": '[data-stage-tool="erase"]',
+    "tool.route": '[data-tool-tip="route"]',
+    "tool.note": '[data-tool-tip="note"]',
+  });
+
+  function syncShortcutDom() {
+    const shortcuts = window.SHOSAI_STAGE_SHORTCUTS;
+    if (!shortcuts) return;
+    Object.entries(SHORTCUT_TOOL_TARGETS).forEach(([id, selector]) => {
+      document.querySelectorAll(selector).forEach(button => { button.dataset.toolKey = shortcuts.get(id); });
+    });
+    [["view.presentation", els.presentBtn], ["view.switch", els.viewSelect], ["view.swap", els.presentSwap],
+      ["project.export", els.projectExport], ["history.undo", els.undo], ["history.redo", els.redo]]
+      .forEach(([id, element]) => {
+        if (!element) return;
+        element.setAttribute("aria-keyshortcuts", shortcuts.get(id));
+      });
+    document.querySelectorAll("[data-stage-shortcut-action]").forEach(element => {
+      const id = element.dataset.stageShortcutAction;
+      const value = shortcuts.get(id);
+      if (!value) return;
+      element.setAttribute("aria-keyshortcuts", value);
+      if (Object.prototype.hasOwnProperty.call(element.dataset, "tipKey")) element.dataset.tipKey = shortcuts.display(value);
+      if (Object.prototype.hasOwnProperty.call(element.dataset, "toolKey")) element.dataset.toolKey = value;
+      if (element.dataset.stageShortcutTitle) {
+        element.title = element.dataset.stageShortcutTitle.replace("{key}", shortcuts.display(value));
+      }
+    });
+  }
+
+  function shortcutCaptureValue(event) {
+    if (["Meta", "Control", "Alt", "Shift"].includes(event.key)) return "";
+    const key = event.key === " " ? "Space" : event.key;
+    if (!key || key === "Dead") return "";
+    const modifiers = [];
+    if (event.metaKey || event.ctrlKey) modifiers.push("Mod");
+    if (event.altKey) modifiers.push("Alt");
+    if (event.shiftKey) modifiers.push("Shift");
+    return [...modifiers, key].join("+");
+  }
+
+  function shortcutEditorRow(id, status) {
+    const shortcuts = window.SHOSAI_STAGE_SHORTCUTS;
+    const row = document.createElement("div");
+    row.className = "stage-pref-shortcut-row";
+    const name = document.createElement("span");
+    name.textContent = tx(shortcuts.labels[id]);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "stage-pref-shortcut-key stage-tip-key";
+    button.textContent = shortcuts.display(shortcuts.get(id));
+    button.setAttribute("aria-label", `${tx(shortcuts.labels[id])}のショートカット。押して変更`);
+    button.addEventListener("click", () => {
+      button.classList.add("is-capturing");
+      button.textContent = tx("キーを押す");
+      status.textContent = tx("Escで取り消し。すでに使われているキーは設定できません。");
+      button.focus();
+    });
+    button.addEventListener("keydown", event => {
+      if (!button.classList.contains("is-capturing")) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        button.classList.remove("is-capturing");
+        button.textContent = shortcuts.display(shortcuts.get(id));
+        status.textContent = "";
+        return;
+      }
+      if (event.key === "Tab") return;
+      const value = shortcutCaptureValue(event);
+      if (!value) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const result = shortcuts.set(id, value);
+      if (!result.ok && result.reason === "conflict") {
+        status.textContent = tx(`${shortcuts.display(value)}は「${shortcuts.labels[result.conflict]}」に使われています。`);
+        return;
+      }
+      if (!result.ok && result.reason === "reserved") {
+        status.textContent = tx(`${shortcuts.display(value)}はブラウザまたはOSの操作に使われるため設定できません。`);
+        return;
+      }
+      if (!result.ok && result.reason === "invalid") {
+        status.textContent = tx("このキーはショートカットに使えません。別のキーを押してください。");
+        return;
+      }
+      button.classList.remove("is-capturing");
+      status.textContent = tx(`${shortcuts.labels[id]}を${shortcuts.display(result.value)}に変更しました。`);
+    });
+    row.append(name, button);
+    return row;
+  }
 
   function renderPrefKeys() {
     const host = els.prefKeysBody;
     if (!host) return;
     host.innerHTML = "";
+    syncShortcutDom();
     const rows = [];
     const seen = new Set();
     document.querySelectorAll("[data-tool-key]").forEach((button) => {
@@ -24196,7 +24286,32 @@
     note.className = "stage-pref-hint";
     note.textContent = tx("文字入力中も⌘Sは使えます。ほかの舞台操作は、文字入力を優先します。WindowsとLinuxでは⌘をCtrlに読み替えてください。");
     host.append(note);
+    const shortcuts = window.SHOSAI_STAGE_SHORTCUTS;
+    if (!shortcuts) return;
+    const editor = document.createElement("section");
+    editor.className = "stage-pref-shortcut-editor";
+    const heading = document.createElement("h4");
+    heading.textContent = tx("ショートカットを変更");
+    const status = document.createElement("p");
+    status.className = "stage-pref-hint";
+    status.setAttribute("role", "status");
+    editor.append(heading);
+    Object.keys(shortcuts.defaults).forEach(id => editor.append(shortcutEditorRow(id, status)));
+    const reset = document.createElement("button");
+    reset.type = "button";
+    reset.className = "stage-minor-action stage-pref-shortcut-reset";
+    reset.textContent = tx("既定のキーに戻す");
+    reset.addEventListener("click", () => {
+      shortcuts.reset();
+      renderPrefKeys();
+    });
+    editor.append(status, reset);
+    host.append(editor);
   }
+  window.SHOSAI_STAGE_SHORTCUTS?.onChange(() => {
+    syncShortcutDom();
+  });
+  syncShortcutDom();
 
   /* 環境設定の「？」。通常時は設定名だけを読み、「？」を押した時だけ
      説明を開く。タップ・マウス・キーボードで同じ開閉状態を使い、説明を
@@ -25028,8 +25143,7 @@
 
   // 全画面の入口と同じ可否を守る。入力中やダイアログ操作中のFは奪わない。
   document.addEventListener("keydown", (event) => {
-    if (String(event.key || "").toLowerCase() !== "f" || event.defaultPrevented) return;
-    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+    if (event.defaultPrevented || !window.SHOSAI_STAGE_SHORTCUTS?.matches(event, "view.presentation")) return;
     if (event.repeat || event.isComposing || event.keyCode === 229 || isTyping(event.target)) return;
     if (fullscreenModalOpen()) return;
     const fullscreen = presenting;
@@ -25049,8 +25163,7 @@
 
   // Tは表示図を切り替える。片面表示なら反対の図へ、両面表示なら上下順だけを替える。
   document.addEventListener("keydown", (event) => {
-    if (String(event.key || "").toLowerCase() !== "t" || event.defaultPrevented) return;
-    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+    if (event.defaultPrevented || !window.SHOSAI_STAGE_SHORTCUTS?.matches(event, "view.switch")) return;
     if (event.repeat || event.isComposing || event.keyCode === 229 || isTyping(event.target)) return;
     if (phoneViewerActive || presenting || fullscreenModalOpen()) return;
     const view = document.getElementById("view-stage");
@@ -25067,8 +25180,7 @@
 
   // Gは舞台タブだけ。照明デザインのGや入力欄の文字入力は奪わない。
   document.addEventListener("keydown", (event) => {
-    if (String(event.key || "").toLowerCase() !== "g" || event.defaultPrevented) return;
-    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+    if (event.defaultPrevented || !window.SHOSAI_STAGE_SHORTCUTS?.matches(event, "view.workLight")) return;
     if (event.repeat || event.isComposing || event.keyCode === 229 || isTyping(event.target)) return;
     if (phoneViewerActive || fullscreenModalOpen()) return;
     if (document.body.dataset.gammaWorkspace && document.body.dataset.gammaWorkspace !== "normal") return;
@@ -25080,8 +25192,7 @@
 
   // 図の交換は全画面中だけ。文字入力や別の操作面へXを通す。
   document.addEventListener("keydown", (event) => {
-    if (String(event.key || "").toLowerCase() !== "x" || event.defaultPrevented) return;
-    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+    if (event.defaultPrevented || !window.SHOSAI_STAGE_SHORTCUTS?.matches(event, "view.swap")) return;
     if (event.repeat || event.isComposing || event.keyCode === 229 || isTyping(event.target)) return;
     if (swapFullscreenViews()) event.preventDefault();
   });
@@ -30677,16 +30788,15 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
        作りなので、直に呼ぶとキーでは切れなくなる。
      ★メモの札は正面と平面の両方にあるので、いま出ている方を押す。 */
   document.addEventListener("keydown", (event) => {
-    if (event.metaKey || event.ctrlKey || event.altKey) return;
     if (event.defaultPrevented || phoneViewerActive) return;
     if (isTyping(event.target)) return;
     const view = document.getElementById("view-stage");
     if (view && view.hidden) return;
-    const rawKey = String(event.key || "").toUpperCase();
-    if (rawKey.length !== 1) return;
-    const key = event.shiftKey ? `SHIFT+${rawKey}` : rawKey;
-    const matches = [...document.querySelectorAll("[data-tool-key]")]
-      .filter((b) => (b.dataset.toolKey || "").toUpperCase() === key);
+    const shortcuts = window.SHOSAI_STAGE_SHORTCUTS;
+    const id = Object.keys(SHORTCUT_TOOL_TARGETS)
+      .find(candidate => shortcuts?.matches(event, candidate));
+    if (!id) return;
+    const matches = [...document.querySelectorAll(SHORTCUT_TOOL_TARGETS[id])];
     if (!matches.length) return;
     const button = matches.find((b) => b.offsetParent !== null) || matches[0];
     event.preventDefault();
@@ -33091,13 +33201,13 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key !== "z" && event.key !== "Z") return;
-    if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
+    const shortcuts = window.SHOSAI_STAGE_SHORTCUTS;
+    if (!shortcuts || (!shortcuts.matches(event, "history.undo") && !shortcuts.matches(event, "history.redo"))) return;
     const view = document.getElementById("view-stage");
     if (!view || view.hidden) return;
     if (isTyping(event.target)) return;
     event.preventDefault();
-    if (event.shiftKey) redo(); else undo();
+    if (shortcuts.matches(event, "history.redo")) redo(); else undo();
   });
 
   /* ---------- 画像の書き出し ----------
