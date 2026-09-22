@@ -10184,6 +10184,7 @@ body.is-panel-dragging {
 
 .stage-center-bar .stage-tool-split { width: 4px; }
 .stage-center-bar .stage-view-select select { width: 72px; }
+.stage-center-bar .stage-center-group.is-display .stage-view-select { margin-left: auto; }
 
 /* Undo／Redoは音量バーの隣に置き、ヘッダーの操作寸法に揃える。 */
 .stage-history-actions .stage-undo-redo {
@@ -10278,9 +10279,10 @@ body.is-panel-dragging {
    名前は span に残したまま隠すので、読み上げと英語切替はそのまま効く
    （消すと画面読み上げで「ボタン」としか読まれなくなる）。 */
 .stage-center-bar .stage-tool-grid button.is-icon {
-  width: 28px;
-  min-width: 28px;
-  padding: 4px 0;
+  width: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 5px 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -10303,6 +10305,11 @@ body.is-panel-dragging {
 
 /* 道具の絵はすべてSVGの線画で持つ（字の記号は端末ごとに形も太さも揃わない）。
    色は文字色に追随させ、選んだ道具の強調（[aria-pressed="true"]）もそのまま効く */
+.stage-center-bar .stage-tool-grid .stage-tool-icon svg {
+  width: 21px;
+  height: 21px;
+}
+
 .stage-tool-icon svg {
   width: 15px;
   height: 15px;

@@ -95,6 +95,7 @@ test("stage tools can toggle rendered lighting without adding show data", () => 
   const firstPerson = read("stage-first-person.js");
   assert.match(stage, /id="stage-light-render-toggle" class="is-icon"[^>]*aria-label="照明効果"[^>]*><span class="stage-tool-icon"[^>]*><svg/);
   assert.match(stage, /id="stage-light-render-toggle"[^>]*data-stage-shortcut-action="view\.lightRender"[^>]*aria-keyshortcuts="C"/);
+  assert.match(stage, /id="stage-light-render-toggle"[^>]*><span class="stage-tool-icon"[^>]*><svg viewBox="0 0 24 24"/);
   assert.match(stage, /id="stage-work-light-toggle" class="is-icon"[^>]*aria-label="作業灯" aria-keyshortcuts="G"[^>]*><span class="stage-tool-icon"[^>]*><svg/);
   assert.doesNotMatch(stage, /id="stage-work-light-toggle"[^>]*data-tool-key="G"/);
   assert.match(style, /#stage-work-light-toggle\[aria-pressed="false"\] \.stage-work-light-slash/);
@@ -110,6 +111,8 @@ test("stage tools can toggle rendered lighting without adding show data", () => 
   assert.match(firstPerson, /makeLightToggle\("stage-fpv-light-render-toggle", "stage-light-render-toggle", "toggleLightRendering"\)/);
   assert.match(firstPerson, /makeLightToggle\("stage-fpv-work-light-toggle", "stage-work-light-toggle", "toggleWorkLightOff"\)/);
   assert.match(firstPerson, /\[elements\.workLightToggle, "作業灯", !data\.lightPool \|\| !data\.workLightOff\]/);
+  assert.match(style, /\.stage-center-bar \.stage-tool-grid button\.is-icon \{\s*width: 40px/);
+  assert.match(style, /\.stage-center-bar \.stage-center-group\.is-display \.stage-view-select \{ margin-left: auto; \}/);
 });
 
 test("the front light summary is placed in the front panel instead of over the drawing", () => {
