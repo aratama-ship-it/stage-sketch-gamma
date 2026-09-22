@@ -3390,8 +3390,16 @@
     "drumset", "taiko", "grandpiano", "grandpianoopen", "uprightpiano", "speaker", "keyboardstand", "djbooth",
     "germanwheel", "crashmat", "crashmatround", "walljump", "aerialhammock",
   ]);
-  /* 登録した項目が「大道具の一覧」へ行くか。kind が prop でも、上の形なら大道具側。 */
-  const rosterCountsAsSet = (item) => Boolean(item) && ROSTER_SET_PROP_SHAPES.has(item.propShape);
+  /* 2026-09-22 本人指定: 次の形は当面、追加用の大道具・小道具一覧から外す。
+   * PROP_SHAPES 自体は消さない。既存ショーの駒は描画・保存でき、以前どおり大道具として数える。 */
+  const ROSTER_UNAVAILABLE_PROP_SHAPES = new Set([
+    "treasurechest", "speaker", "framepicture", "walljump", "aerialhammock",
+  ]);
+  const rosterShapeIsAvailable = (shapeId) => !ROSTER_UNAVAILABLE_PROP_SHAPES.has(shapeId);
+  /* 登録した項目が「大道具の一覧」へ行くか。kind が prop でも、上の形なら大道具側。
+   * 一時停止中の形も、既存ショーでの表示先を変えないために大道具として扱い続ける。 */
+  const rosterCountsAsSet = (item) => Boolean(item)
+    && (ROSTER_SET_PROP_SHAPES.has(item.propShape) || ROSTER_UNAVAILABLE_PROP_SHAPES.has(item.propShape));
   /* プルダウンの分類見出し（2026-09-11 本人選択の案A）。ja は tx() で訳す。
      新しい形を足したらどこかの分類へ入れる。入れ忘れは「その他の形」へ落ちるだけで選べなくはならない。 */
   const PROP_SHAPE_GROUPS = [
@@ -21183,7 +21191,7 @@
     const previewColor = rosterSelectedColor();
     propShapeGroups(rosterPropShape).map((group) => ({
       ...group,
-      ids: group.ids.filter((shapeId) => !ROSTER_SET_PROP_SHAPES.has(shapeId)),
+      ids: group.ids.filter((shapeId) => rosterShapeIsAvailable(shapeId) && !ROSTER_SET_PROP_SHAPES.has(shapeId)),
     })).filter((group) => group.ids.length).forEach((group) => {
       const section = document.createElement("section");
       section.className = "stage-prop-choice-group";
@@ -21369,7 +21377,7 @@
     });
     propShapeGroups(rosterPropShape).map((group) => ({
       ...group,
-      ids: group.ids.filter((shapeId) => ROSTER_SET_PROP_SHAPES.has(shapeId)),
+      ids: group.ids.filter((shapeId) => rosterShapeIsAvailable(shapeId) && ROSTER_SET_PROP_SHAPES.has(shapeId)),
     })).filter((group) => group.ids.length).forEach((group) => {
       const section = document.createElement("section");
       section.className = "stage-prop-choice-group stage-kind-prop-group";

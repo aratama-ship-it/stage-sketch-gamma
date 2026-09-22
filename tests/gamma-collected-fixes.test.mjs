@@ -15,8 +15,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   }
   assert.match(main, /SHOW_BLACKOUT_CONTROL = false/);
   assert.match(main, /SHOW_BLACKOUT_CONTROL && featureOn\("blackout"\)/);
-  assert.match(main, /group\.ids\.filter\(\(shapeId\) => !ROSTER_SET_PROP_SHAPES\.has\(shapeId\)\)/);
-  assert.match(main, /group\.ids\.filter\(\(shapeId\) => ROSTER_SET_PROP_SHAPES\.has\(shapeId\)\)/);
+  assert.match(main, /const ROSTER_UNAVAILABLE_PROP_SHAPES = new Set\(\[/);
+  assert.match(main, /group\.ids\.filter\(\(shapeId\) => rosterShapeIsAvailable\(shapeId\) && !ROSTER_SET_PROP_SHAPES\.has\(shapeId\)\)/);
+  assert.match(main, /group\.ids\.filter\(\(shapeId\) => rosterShapeIsAvailable\(shapeId\) && ROSTER_SET_PROP_SHAPES\.has\(shapeId\)\)/);
   assert.match(main, /drawStagePiece\(ctx2, previewPiece, previewLayout/);
   assert.match(main, /const previewColor = rosterSelectedColor\(\)/);
   assert.match(main, /drawKindPreview\(canvas, "prop", previewColor, shapeId\)/);
