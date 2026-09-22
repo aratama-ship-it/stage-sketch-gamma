@@ -13492,6 +13492,9 @@
   // 花道・サブステージも構成ごとに変わる（VENUE_PRESETS_STAGE3_2026_09_19）
   const venueStageExtensionsOf = (venue, size) => (
     (size && Array.isArray(size.stageExtensions)) ? size.stageExtensions : venue.stageExtensions);
+  // 立食会場のハイテーブル・参加者・発表台は、規模ごとの3D会場構成として渡す。
+  const venueEventLayoutOf = (venue, size) => (
+    (size && size.eventLayout) || venue.eventLayout || null);
 
   function drawFrontVenue(target, L) {
     const v = L.venue;
@@ -31990,7 +31993,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
                ★ここで渡さないと3Dは会場データの先頭の規模の形しか見られない。
                  扇形ホールは規模ごとに弧の出が違うので、中を選んでも小の形が出ていた。 */
             outline: venueOutlineOf(venue(), size) || null,
-            stageExtensions: venueStageExtensionsOf(venue(), size) || [] },
+            stageExtensions: venueStageExtensionsOf(venue(), size) || [],
+            eventLayout: venueEventLayoutOf(venue(), size) },
           /* 段階1・2の光を3Dカメラでも出すための材料（2026-09-18）。読むだけ。
              ★複製しない。毎フレーム読み直される経路なので、同じ参照を渡して
                3D側が「変わっていない」と判定できるようにする（変わった時だけ組み直す）。 */

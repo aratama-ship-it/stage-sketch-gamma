@@ -143,10 +143,40 @@ test("removing the current duplicate makes room before a large imported-show swi
 
 test("the app shell advances with the storage transaction code", () => {
   assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092213/);
-  assert.match(stageHtml, /stage-sketch\.js\?v=2026092222/);
-  assert.match(serviceWorker, /stage-sketch-gamma-shell-v241/);
+  assert.match(stageHtml, /stage-sketch\.js\?v=2026092223/);
+  assert.match(serviceWorker, /stage-sketch-gamma-shell-v242/);
   assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092213/);
-  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092222/);
+  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092223/);
+});
+
+test("indoor standing reception venue keeps its 3D room layout outside show data", () => {
+  const venueSource = fs.readFileSync(new URL("../stage-venues.js", import.meta.url), "utf8");
+  const firstPerson = fs.readFileSync(new URL("../stage-first-person.js", import.meta.url), "utf8");
+  const venueContext = {
+    localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+    crypto: { randomUUID: () => "00000000-0000-4000-8000-000000000000" },
+  };
+  venueContext.window = venueContext;
+  vm.runInNewContext(venueSource, venueContext);
+  const reception = JSON.parse(JSON.stringify(venueContext.SHOSAI_VENUES.v2.byId("indoor-event-space")));
+  assert.equal(reception.label, "屋内立食イベント会場");
+  assert.deepEqual(reception.sizes.map((size) => size.id), ["reception", "reception-stage"]);
+  assert.ok(reception.sizes.every((size) => size.eventLayout?.kind === "standing-reception"));
+  assert.equal(reception.sizes[0].eventLayout.stage, undefined);
+  assert.deepEqual(reception.sizes[1].eventLayout.stage,
+    { u: .5, v: .14, widthM: 4, depthM: 1.8, heightM: .4 });
+  assert.match(reception.note, /避難経路/);
+  assert.match(reception.note, /この図では決めない/);
+  assert.match(source, /const venueEventLayoutOf = \(venue, size\)/);
+  assert.match(source, /eventLayout: venueEventLayoutOf\(venue\(\), size\)/);
+  assert.match(firstPerson, /function standingReceptionLayout\(\)/);
+  assert.match(firstPerson, /function drawStandingReceptionHouse\(ctx, layout\)/);
+  assert.match(firstPerson, /function drawStandingGuest\(ctx, guest\)/);
+  assert.match(firstPerson, /if \(reception\) \{\s*drawShell\(ctx\);\s*drawHouse\(ctx\);/);
+  assert.match(stageHtml, /stage-venues\.js\?v=2026092224/);
+  assert.match(stageHtml, /stage-first-person\.js\?v=2026092224/);
+  assert.match(serviceWorker, /stage-venues\.js\?v=2026092224/);
+  assert.match(serviceWorker, /stage-first-person\.js\?v=2026092224/);
 });
 
 test("scene alternatives are an opt-in right-side panel without changing scene data", () => {

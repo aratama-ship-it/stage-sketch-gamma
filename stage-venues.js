@@ -417,6 +417,9 @@
     if (typeof size.ring === "number") variant.ringM = size.ring;
     if (typeof size.seats === "number") variant.capacity.seats = size.seats;
     if (typeof size.crowd === "number") variant.capacity.crowd = size.crowd;
+    /* 立食会場のテーブル・参加者・任意の発表台は、舞台の駒ではなく会場の構成として
+       3Dへ渡す。実際の什器配置を確定する情報ではないため、形式プリセットだけが持つ。 */
+    if (size.eventLayout || venue.eventLayout) variant.eventLayout = clone(size.eventLayout || venue.eventLayout);
     return variant;
   };
 
@@ -1071,22 +1074,35 @@
     }),
     createVenueV2({
       id: "indoor-event-space",
-      label: "屋内イベントスペース",
-      short: "平土間・仮設",
-      audience: "front",
+      label: "屋内立食イベント会場",
+      short: "立食・ハイテーブル",
+      audience: "none",
       rigging: "limited",
       flexibleHouse: true,
       provenance: {
         source: "代表値",
         confidence: "low",
         sharing: "ok",
-        note: "展示ホール・多目的スペースなどを想定した仮の構成。固定の舞台・客席・吊り点を前提にせず、会場ごとの図面と運営条件を優先する。寸法は構図を試すための目安。",
+        note: "展示ホール・多目的スペースでの屋内立食パーティーを想定した仮の構成。固定の舞台・客席・吊り点を前提にせず、会場ごとの図面と運営条件を優先する。寸法と3Dのテーブル・参加者は構図を試すための目安。",
       },
       sizes: [
-        { id: "small", label: "小規模（仮設 8×5m）", width: 8, depth: 5, height: 4.5, seats: 150, house: { depthM: 10 } },
-        { id: "mid", label: "中規模（仮設 12×8m）", width: 12, depth: 8, height: 6, seats: 350, house: { depthM: 16 } },
+        {
+          id: "reception", label: "立食パーティー（8×5m）", width: 8, depth: 5, height: 4.5, crowd: 80,
+          eventLayout: {
+            kind: "standing-reception", guests: 20,
+            tables: [{ u: .22, v: .34 }, { u: .52, v: .26 }, { u: .78, v: .38 }, { u: .5, v: .68 }],
+          },
+        },
+        {
+          id: "reception-stage", label: "立食＋発表（12×8m）", width: 12, depth: 8, height: 6, crowd: 180,
+          eventLayout: {
+            kind: "standing-reception", guests: 32,
+            tables: [{ u: .18, v: .32 }, { u: .42, v: .36 }, { u: .68, v: .3 }, { u: .84, v: .52 }, { u: .26, v: .68 }, { u: .58, v: .7 }],
+            stage: { u: .5, v: .14, widthM: 4, depthM: 1.8, heightM: .4 },
+          },
+        },
       ],
-      note: "展示ホールや多目的スペースに、仮設の舞台と一方向の客席を組むための出発点。平土間の会場なので、客席の配置・避難経路・天井の使い方は会場ごとに変わる。吊りは一部可能としているが、実際の吊り点・荷重・安全距離はこの図では決めない。",
+      note: "展示ホールや多目的スペースでの屋内立食パーティーを試すための3D会場。ハイテーブルと立食客を会場構成として表示する。発表付きの構成には小さな仮設台も置く。客数・テーブル位置・避難経路・天井の使い方は会場ごとに変わる。吊りは一部可能としているが、実際の吊り点・荷重・安全距離はこの図では決めない。",
       source: "実在会場の図面ではなく、屋内イベントの構図を試すための代表的な仮値",
     }),
     createVenueV2({

@@ -708,6 +708,15 @@
     return id && venues && typeof venues.byId === "function" ? venues.byId(id) : null;
   }
 
+  /* 立食会場は、舞台の後ろに客席が続く劇場とは別の「部屋」。会場プリセットから
+     渡された値だけを使うので、既存ショーの駒や客席データには書き込まない。 */
+  function standingReceptionLayout() {
+    const passed = data && data.venue && data.venue.eventLayout;
+    const venue = currentVenueModel();
+    const layout = passed || (venue && venue.eventLayout);
+    return layout && layout.kind === "standing-reception" ? layout : null;
+  }
+
   function clampFree(pos, width, depth, ceiling, rawVenue) {
     const stageWidth = Math.max(0, finite(width, 12));
     const stageDepth = Math.max(0, finite(depth, 9));
@@ -1697,10 +1706,14 @@
     // 引いた絵の切り替えは、器のある会場（アリーナ・ドーム等）でしか意味がない
     if (elements && elements.crowd) elements.crowd.hidden = !bowlGeometry(currentVenueModel(), W, D);
     if (!elements || !data) return;
+    const reception = standingReceptionLayout();
+    elements.house.hidden = Boolean(reception);
     elements.show.textContent = data.showTitle || "";
     elements.act.textContent = data.actTitle || "";
     elements.scene.textContent = data.sceneTitle || "";
-    elements.approx.textContent = data.venue && data.venue.audience === "round"
+    elements.approx.textContent = reception
+      ? text("立食客・ハイテーブルは構図を考えるための目安です")
+      : data.venue && data.venue.audience === "round"
       ? text("客席のリングは全周の目安で描いています")
       : (data.venue && data.venue.type && data.venue.type !== "proscenium"
         ? text("劇場の箱は仮にプロセニアムで描いています") : "");
@@ -2512,9 +2525,9 @@
 
   /* 舞台を向いた横長の面（肩・背もたれ）を1枚描く。
      両端を別々に投影してから結ぶので、端の席は横幅が詰まり、斜めに傾く。 */
-  function drawFacingSpan(ctx, person, y, widthM, heightM, fill) {
+  function drawFacingSpan(ctx, person, y, widthM, heightM, fill, focusOverride) {
     // リングの席は舞台の中心そのものを向く。プロセニアムは中央少し奥（既定）
-    const focus = person.tier === "ring" ? { x: 0, z: 0 } : null;
+    const focus = focusOverride || (person.tier === "ring" ? { x: 0, z: 0 } : null);
     const [left, right] = seatSpanEnds(person.x, person.z, widthM, focus);
     const a = toCamera({ x: left.x, y, z: left.z });
     const b = toCamera({ x: right.x, y, z: right.z });
@@ -2568,6 +2581,75 @@
       clamp(HOUSE_PERSON.headDiameterM / 2 * (focal / eye.z), .5, 12), 0, 7);
     ctx.fillStyle = `rgba(88,71,55,${alpha})`;
     ctx.fill();
+  }
+
+  /* 立食客には椅子を描かず、テーブルへ向く肩と頭だけを描く。座席の描画を流用しつつ、
+     会場が「劇場の客席」に見えてしまうのを避ける。 */
+  function drawStandingGuest(ctx, guest) {
+    const eye = toCamera({ x: guest.x, y: guest.headY, z: guest.z });
+    if (eye.z <= NEAR || eye.z > 40) return;
+    const alpha = clamp(.5 - eye.z * .012, .1, .5);
+    drawFacingSpan(ctx, guest, guest.headY - .22, .46, .2,
+      `rgba(58,47,38,${alpha})`, guest.focus);
+    const headScreen = toScreen(eye);
+    ctx.beginPath();
+    ctx.arc(headScreen.x, headScreen.y, clamp(.13 * (focal / eye.z), .5, 11), 0, 7);
+    ctx.fillStyle = `rgba(116,94,73,${alpha})`;
+    ctx.fill();
+  }
+
+  function standingReceptionTables(layout) {
+    const raw = Array.isArray(layout && layout.tables) ? layout.tables : [];
+    return raw.map((entry, index) => ({
+      id: index,
+      x: clamp((finite(entry && entry.u, .5) - .5) * W, -W / 2 + .55, W / 2 - .55),
+      z: clamp((finite(entry && entry.v, .5) - .5) * D, -D / 2 + .55, D / 2 - .55),
+      rotation: Math.round(seatNoise(701, index, 2) * 360),
+    }));
+  }
+
+  function standingReceptionGuests(layout, tables) {
+    if (!tables.length) return [];
+    const guestCount = clamp(Math.round(finite(layout && layout.guests, 0)), 0, 48);
+    return Array.from({ length: guestCount }, (_, index) => {
+      const table = tables[index % tables.length];
+      const groupIndex = Math.floor(index / tables.length);
+      const angle = (index % tables.length) * 2.399 + groupIndex * Math.PI + seatNoise(702, index, 1) * .7;
+      const radius = .62 + seatNoise(703, index, 2) * .42;
+      return {
+        x: clamp(table.x + Math.cos(angle) * radius, -W / 2 + .28, W / 2 - .28),
+        z: clamp(table.z + Math.sin(angle) * radius, -D / 2 + .28, D / 2 - .28),
+        headY: 1.57 + (seatNoise(704, index, 3) - .5) * .12,
+        focus: { x: table.x, z: table.z },
+      };
+    });
+  }
+
+  function drawStandingReceptionHouse(ctx, layout) {
+    const tables = standingReceptionTables(layout);
+    const units = [];
+    const depthAt = (x, y, z) => toCamera({ x, y, z }).z;
+    const stage = layout && layout.stage;
+    if (stage) {
+      const x = clamp((finite(stage.u, .5) - .5) * W, -W / 2 + .5, W / 2 - .5);
+      const z = clamp((finite(stage.v, .5) - .5) * D, -D / 2 + .5, D / 2 - .5);
+      const width = clamp(finite(stage.widthM, 3), 1, W - .5);
+      const depth = clamp(finite(stage.depthM, 1.5), .8, D - .5);
+      const height = clamp(finite(stage.heightM, .35), .12, 1.2);
+      units.push({ depth: depthAt(x, height / 2, z), draw: () => {
+        drawBox(ctx, x, z, 0, height, width, depth, "#5b4430");
+        line3(ctx, { x: x - width / 2, y: height + .01, z: z + depth / 2 },
+          { x: x + width / 2, y: height + .01, z: z + depth / 2 }, "rgba(236,206,140,.4)", 1);
+      } });
+    }
+    tables.forEach((table) => units.push({ depth: depthAt(table.x, .72, table.z), draw: () => {
+      drawBox(ctx, table.x, table.z, 0, .92, .13, .13, "#4d3829", table.rotation);
+      drawBox(ctx, table.x, table.z, .9, 1.02, .78, .78, "#806249", table.rotation);
+    } }));
+    standingReceptionGuests(layout, tables).forEach((guest) => units.push({
+      depth: depthAt(guest.x, guest.headY, guest.z), draw: () => drawStandingGuest(ctx, guest),
+    }));
+    units.sort((a, b) => b.depth - a.depth).forEach((unit) => unit.draw());
   }
 
   /* 全周会場のリング客席。段床は同心円の階段（内側の蹴込み＋踏み面）を扇形に割り、
@@ -2738,6 +2820,11 @@
   }
 
   function drawHouse(ctx) {
+    const reception = standingReceptionLayout();
+    if (reception) {
+      drawStandingReceptionHouse(ctx, reception);
+      return;
+    }
     const bowl = bowlHouseUnits(currentVenueModel(), W, D);
     if (bowl) {
       const visible = bowlVisibleUnits(bowl.units);
@@ -2842,6 +2929,29 @@
 
   function drawShell(ctx) {
     const venue = currentVenueModel();
+    const reception = standingReceptionLayout();
+    if (reception) {
+      const halfWidth = W / 2;
+      const halfDepth = D / 2;
+      // 立食会場は袖幕と額縁を持たない、天井のある四角い室内として描く。
+      fillPoly(ctx, [{ x: -halfWidth, y: 0, z: -halfDepth }, { x: halfWidth, y: 0, z: -halfDepth },
+        { x: halfWidth, y: CEIL, z: -halfDepth }, { x: -halfWidth, y: CEIL, z: -halfDepth }], "#312820");
+      fillPoly(ctx, [{ x: -halfWidth, y: 0, z: -halfDepth }, { x: -halfWidth, y: 0, z: halfDepth },
+        { x: -halfWidth, y: CEIL, z: halfDepth }, { x: -halfWidth, y: CEIL, z: -halfDepth }], "#241c16");
+      fillPoly(ctx, [{ x: halfWidth, y: 0, z: -halfDepth }, { x: halfWidth, y: 0, z: halfDepth },
+        { x: halfWidth, y: CEIL, z: halfDepth }, { x: halfWidth, y: CEIL, z: -halfDepth }], "#241c16");
+      fillPoly(ctx, [{ x: -halfWidth, y: CEIL, z: -halfDepth }, { x: halfWidth, y: CEIL, z: -halfDepth },
+        { x: halfWidth, y: CEIL, z: halfDepth }, { x: -halfWidth, y: CEIL, z: halfDepth }], "#18120e");
+      fillPoly(ctx, [{ x: -halfWidth, y: 0, z: -halfDepth }, { x: halfWidth, y: 0, z: -halfDepth },
+        { x: halfWidth, y: 0, z: halfDepth }, { x: -halfWidth, y: 0, z: halfDepth }], "#30271f");
+      for (let x = Math.ceil(-halfWidth); x <= halfWidth; x += 1) {
+        line3(ctx, { x, y: .008, z: -halfDepth }, { x, y: .008, z: halfDepth }, "rgba(235,219,185,.10)", 1);
+      }
+      for (let z = Math.ceil(-halfDepth); z <= halfDepth; z += 1) {
+        line3(ctx, { x: -halfWidth, y: .008, z }, { x: halfWidth, y: .008, z }, "rgba(235,219,185,.10)", 1);
+      }
+      return;
+    }
     const geometry = bowlGeometry(venue, W, D);
     if (geometry) {
       fillPoly(ctx, [
@@ -3718,10 +3828,14 @@
     setBasis();
     ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     ctx.fillStyle = "#0d0a08"; ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    const reception = Boolean(standingReceptionLayout());
     const bowlHouse = Boolean(bowlGeometry(currentVenueModel(), W, D));
     const roundHouse = Boolean(data && data.venue && data.venue.audience === "round");
     const inHouse = camera.z > D / 2;
-    if (bowlHouse) {
+    if (reception) {
+      drawShell(ctx);
+      drawHouse(ctx);
+    } else if (bowlHouse) {
       // 器の床・屋根、遠近順の客席、床格子の順。劇場の箱や額縁は描かない。
       drawShell(ctx);
       drawHouse(ctx);
@@ -3747,7 +3861,7 @@
         if (piece === camera.me) return;
         drawOnePiece(piece);
       });
-    if (!bowlHouse && inHouse) drawProscenium(ctx);
+    if (!reception && !bowlHouse && inHouse) drawProscenium(ctx);
     const selected = !data.transition && state.sel && data.pieces.find((piece) => (
       piece.id === state.sel && piece.type === "performer" && !piece.exitWalker
     ));
