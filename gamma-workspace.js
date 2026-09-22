@@ -226,7 +226,7 @@
    * 見出しの意味と読み上げ順を保ったまま、見出し全体を押せるようにする。 */
   const VENUE_STEPS='.stage-venue-editor-format,.stage-venue-editor-shape,.stage-venue-editor-extension,'
     +'.stage-venue-editor-ceiling,.stage-venue-editor-audience-guide,.stage-venue-editor-wings-guide,'
-    +'.stage-venue-editor-machinery';
+    +'.stage-venue-editor-walls-guide,.stage-venue-editor-machinery';
   const venueSteps=()=>[...venueWorkspace.querySelectorAll('.stage-venue-editor-menu '+VENUE_STEPS)];
   function openVenueStep(target) {
     venueSteps().forEach(section=>{

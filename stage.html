@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.2">
+<meta name="stage-sketch-gamma-version" content="v0.2.3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092240">
+<link rel="stylesheet" href="style.css?v=2026092301">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -845,12 +845,12 @@
                   <button type="button" class="stage-canvas-tool is-icon stage-route-action" id="stage-plan-route"
                           data-tool-tip="route" data-tool-key="R"
                           aria-label="動線を描く" aria-pressed="false">
-                    <svg class="stage-canvas-tool-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><circle cx="3" cy="12.5" r="1.2"/><path d="M4.3 12.1c2.1-3.2 3.3-5.4 6.3-6.3"/><path d="m9.3 3.6 1.9 2.2-2.8.5"/></svg>
+                    <svg class="stage-canvas-tool-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M2.3 8h8.1"/><path d="m7.8 3.7 4.5 4.3-4.5 4.3"/><path d="M2.3 5.6v4.8"/></svg>
                     <span class="visually-hidden">動線を描く</span>
                   </button>
                   <button type="button" class="stage-canvas-tool is-icon stage-derive-route-action" id="stage-plan-derive-route"
                           data-tool-tip="deriveRoute" aria-label="次のシーンから動線を引く">
-                    <svg class="stage-canvas-tool-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><circle cx="3" cy="12" r="1.2"/><circle cx="13" cy="4" r="1.2"/><path d="M4.3 11.1c2.4-.4 4.1-2.6 7.4-6"/><path d="m9.9 4.5 1.8.6-.5 1.8"/></svg>
+                    <svg class="stage-canvas-tool-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 2.6v10.8"/><path d="M5.6 8h6.2"/><path d="m9.4 4.2 3.8 3.8-3.8 3.8"/></svg>
                     <span class="visually-hidden">次から引く</span>
                   </button>
                   <span class="stage-multi-select-status" id="stage-multi-select-status"
@@ -2548,8 +2548,7 @@
         <div class="stage-pose-grid" id="stage-roster-pose-grid" role="group" aria-label="姿勢"></div>
       </section>
       <section class="stage-kind-fields" id="stage-kind-set-fields" hidden>
-        <p class="stage-kind-field-title">種類</p>
-        <div class="stage-pose-grid" id="stage-kind-grid" role="group" aria-label="種類"></div>
+        <div class="stage-pose-grid" id="stage-kind-grid" role="group" aria-label="大道具の候補"></div>
         <select id="stage-model-picker" class="stage-select" aria-label="組んだセットを選ぶ" hidden></select>
       </section>
       <section class="stage-kind-fields" id="stage-kind-prop-fields" hidden>
@@ -3251,7 +3250,7 @@
 <script src="stage-prompt-i18n.js?v=2026092050"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026091501"></script>
-<script src="stage-samples/romeo-juliet-cued.js?v=2026092215"></script>
+<script src="stage-samples/romeo-juliet-cued.js?v=2026092301"></script>
 <script src="stage-samples/feature-test-show.js?v=2026092208"></script>
 <script src="stage-set-model.js?v=2026091501"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
@@ -3277,7 +3276,7 @@
 <script src="stage-light-panel-import.js?v=2026092209"></script>
 <script src="stage-scene-alternatives.js?v=2026092208"></script>
 <script src="stage-shortcuts.js?v=2026092218"></script>
-<script src="stage-sketch.js?v=2026092243"></script>
+<script src="stage-sketch.js?v=2026092301"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092209"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
     <script src="stage-timeline.js?v=2026092241"></script>
@@ -3285,7 +3284,7 @@
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
 <script src="stage-venue-editor.js?v=2026092201"></script>
-    <script src="gamma-workspace.js?v=2026092240"></script>
+    <script src="gamma-workspace.js?v=2026092301"></script>
 <script src="gamma-mobile.js?v=2026092202"></script>
 </body>
 </html>

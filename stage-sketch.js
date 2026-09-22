@@ -3394,6 +3394,8 @@
    * PROP_SHAPES 自体は消さない。既存ショーの駒は描画・保存でき、以前どおり大道具として数える。 */
   const ROSTER_UNAVAILABLE_PROP_SHAPES = new Set([
     "treasurechest", "speaker", "framepicture", "walljump", "aerialhammock",
+    // 追加候補から外すだけで、既存ショーに置いた駒は表示・保存を続ける。
+    "counter", "fireplace", "screen", "bridge",
   ]);
   const rosterShapeIsAvailable = (shapeId) => !ROSTER_UNAVAILABLE_PROP_SHAPES.has(shapeId);
   /* 登録した項目が「大道具の一覧」へ行くか。kind が prop でも、上の形なら大道具側。
@@ -9271,7 +9273,24 @@
     const built = buildRomeoJulietSampleShow();
     if (!built) return;
     const shows = readShows();
-    if (shows[built.project.id]) return;
+    const saved = shows[built.project.id];
+    if (saved) {
+      /* 初期版を先に棚へ置いた端末には、照明デザインが無いコピーが残ることがある。
+       * その場合だけ同梱版の機材配置／LX設計を補い、演者・場面・利用者の編集は触らない。 */
+      const savedProject = saved.state && saved.state.project;
+      const savedFixtures = savedProject && savedProject.lightingDesign
+        && savedProject.lightingDesign.rig && savedProject.lightingDesign.rig.fixtures;
+      const bundledDesign = built.project && built.project.lightingDesign;
+      if (!Array.isArray(savedFixtures) || !savedFixtures.length) {
+        if (savedProject && bundledDesign) {
+          savedProject.lightingDesign = projectIoClone(bundledDesign);
+          saved.savedAt = nowIso();
+          shows[built.project.id] = saved;
+          writeShows(shows);
+        }
+      }
+      return;
+    }
     shows[built.project.id] = { savedAt: nowIso(), state: built };
     writeShows(shows);
   }
@@ -14178,8 +14197,9 @@
     target.clip();
     target.strokeStyle = "rgba(239,231,214,0.14)";
     target.lineWidth = 1;
-    const columns = Math.max(1, Math.ceil(width / 0.5));
-    const rows = Math.max(1, Math.ceil(depth / 0.5));
+    // 1mごとの既存の床グリッドを、そのまま表示／非表示する。
+    const columns = Math.max(1, Math.ceil(width / 1));
+    const rows = Math.max(1, Math.ceil(depth / 1));
     for (let i = 1; i < columns; i += 1) {
       const u = i / columns;
       const a = at(u, 0), b = at(u, 1);
@@ -21153,6 +21173,14 @@
       && !ROSTER_MACHINERY_KINDS.has(kind) && !ROSTER_CLOSED_KINDS.has(kind))),
     prop: Object.freeze(["prop", "diabolo"]),
   });
+  /* 「種類」に平積みしていた既定の大道具も、形で足す大道具と同じ見出しへ寄せる。
+   * 既存の kind や保存形式には手を入れず、選ぶ入口だけを整理する。 */
+  const ROSTER_SET_KIND_GROUPS = Object.freeze([
+    { ja: "台・家具", ids: ["block", "table", "chair", "bench", "stool"] },
+    { ja: "建て込み", ids: ["wall"] },
+    { ja: "情景・乗り物", ids: ["sphere", "car"] },
+    { ja: "空中・サーカス", ids: ["trapeze", "cyrwheel", "pole", "teeter", "tissue", "wire", "suitcase", "trampoline", "cane"] },
+  ]);
   let rosterKind = "performer";
   let rosterKindLayer = "performer";
   let rosterPose = "stand";
@@ -21228,11 +21256,47 @@
     select.value = selected;
   }
 
+  /* 道具の正面・側面を一覧で取り違えないためのゆっくりした一周。hover / focus /
+   * 選択中だけ動かし、OS の「視差効果を減らす」指定では静止画のままにする。 */
+  function bindKindPreviewSpin(tile, canvas, draw) {
+    if (!tile || !canvas || typeof draw !== "function") return;
+    const turnMs = 9000;
+    let hovered = false;
+    let frame = 0;
+    let startedAt = 0;
+    const reducedMotion = () => window.matchMedia
+      && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const modalIsVisible = () => !els.kindModal || !els.kindModal.hidden;
+    const shouldSpin = () => modalIsVisible() && !reducedMotion() && (hovered
+      || document.activeElement === tile || tile.classList.contains("is-on"));
+    const reset = () => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+      canvas.style.transform = "";
+    };
+    const tick = (now) => {
+      if (!tile.isConnected || !shouldSpin()) { reset(); return; }
+      if (!startedAt) startedAt = now;
+      canvas.style.transform = `rotate(${((now - startedAt) / turnMs) * 360}deg)`;
+      frame = requestAnimationFrame(tick);
+    };
+    const sync = () => {
+      if (!shouldSpin()) { startedAt = 0; reset(); return; }
+      if (!frame) frame = requestAnimationFrame(tick);
+    };
+    draw();
+    tile.addEventListener("pointerenter", () => { hovered = true; sync(); });
+    tile.addEventListener("pointerleave", () => { hovered = false; sync(); });
+    tile.addEventListener("focus", sync);
+    tile.addEventListener("blur", () => requestAnimationFrame(sync));
+    tile.addEventListener("stage-kind-preview-selection", sync);
+    sync();
+  }
+
   function renderRosterPropChoices() {
     const host = els.rosterPropGrid;
     if (!host) return;
     host.innerHTML = "";
-    const previewColor = rosterSelectedColor();
     propShapeGroups(rosterPropShape).map((group) => ({
       ...group,
       ids: group.ids.filter((shapeId) => rosterShapeIsAvailable(shapeId) && !ROSTER_SET_PROP_SHAPES.has(shapeId)),
@@ -21274,7 +21338,7 @@
         grid.append(tile);
         /* 選んで追加した直後に正面図へ出る色で見せる。形だけでなく、
            一覧と正面図の見え方を同じものにする。 */
-        drawKindPreview(canvas, "prop", previewColor, shapeId);
+        bindKindPreviewSpin(tile, canvas, () => drawKindPreview(canvas, "prop", rosterSelectedColor(), shapeId));
       });
       ROSTER_PROP_SPECIAL_KINDS.filter((choice) => choice.group === group.ja).forEach((choice) => {
         const tile = document.createElement("button");
@@ -21301,7 +21365,7 @@
           addFromRoster();
         });
         grid.append(tile);
-        drawKindPreview(canvas, choice.kind, previewColor);
+        bindKindPreviewSpin(tile, canvas, () => drawKindPreview(canvas, choice.kind, rosterSelectedColor()));
       });
       section.append(heading, grid);
       host.append(section);
@@ -21327,6 +21391,7 @@
       const isSelected = tile === selected;
       tile.classList.toggle("is-on", isSelected);
       tile.setAttribute("aria-pressed", String(isSelected));
+      tile.dispatchEvent(new Event("stage-kind-preview-selection"));
     });
   }
 
@@ -21388,7 +21453,7 @@
     const grid = els.kindGrid;
     if (!grid) return;
     grid.innerHTML = "";
-    ROSTER_KIND_LAYERS.set.forEach((kind) => {
+    const appendKindTile = (host, kind, groupName) => {
       const tile = document.createElement("button");
       tile.type = "button";
       tile.className = `stage-pose-tile${kind === rosterKind ? " is-on" : ""}`;
@@ -21400,7 +21465,7 @@
       const label = document.createElement("span");
       label.textContent = setKindName(kind);
       const modelNames = kind === "model" ? stageModelLibrary().models.map((model) => model.name).join(" ") : "";
-      tile.dataset.rosterSearch = `${label.textContent} ${kind} ${modelNames}`;
+      tile.dataset.rosterSearch = `${label.textContent} ${kind} ${modelNames} ${tx(groupName)}`;
       tile.append(canvas, label);
       tile.addEventListener("click", () => {
         rosterKind = kind;
@@ -21416,9 +21481,37 @@
         setRosterTileSelection(grid, "[data-roster-kind-choice]", tile);
         addFromRoster();
       });
-      grid.append(tile);
-      drawKindPreview(canvas, kind, "#8b98a1");
+      host.append(tile);
+      bindKindPreviewSpin(tile, canvas, () => drawKindPreview(canvas, kind, "#8b98a1"));
+    };
+    const ungroupedKinds = new Set(ROSTER_KIND_LAYERS.set);
+    ROSTER_SET_KIND_GROUPS.forEach((group) => {
+      const ids = group.ids.filter((kind) => ungroupedKinds.delete(kind));
+      if (!ids.length) return;
+      const section = document.createElement("section");
+      section.className = "stage-prop-choice-group stage-kind-prop-group";
+      const heading = document.createElement("p");
+      heading.className = "stage-kind-field-title";
+      heading.textContent = tx(group.ja);
+      const choices = document.createElement("div");
+      choices.className = "stage-pose-grid stage-prop-choice-grid";
+      ids.forEach((kind) => appendKindTile(choices, kind, group.ja));
+      section.append(heading, choices);
+      grid.append(section);
     });
+    // 新しい既定 kind を追加して分類を忘れても、選べなくならないよう最後に受ける。
+    if (ungroupedKinds.size) {
+      const section = document.createElement("section");
+      section.className = "stage-prop-choice-group stage-kind-prop-group";
+      const heading = document.createElement("p");
+      heading.className = "stage-kind-field-title";
+      heading.textContent = tx("その他の大道具");
+      const choices = document.createElement("div");
+      choices.className = "stage-pose-grid stage-prop-choice-grid";
+      [...ungroupedKinds].forEach((kind) => appendKindTile(choices, kind, "その他の大道具"));
+      section.append(heading, choices);
+      grid.append(section);
+    }
     propShapeGroups(rosterPropShape).map((group) => ({
       ...group,
       ids: group.ids.filter((shapeId) => rosterShapeIsAvailable(shapeId) && ROSTER_SET_PROP_SHAPES.has(shapeId)),
@@ -21457,7 +21550,7 @@
           addFromRoster();
         });
         choices.append(tile);
-        drawKindPreview(canvas, "prop", "#8b98a1", shapeId);
+        bindKindPreviewSpin(tile, canvas, () => drawKindPreview(canvas, "prop", "#8b98a1", shapeId));
       });
       section.append(heading, choices);
       grid.append(section);
@@ -21497,6 +21590,8 @@
     renderRosterKindLayer();
     els.kindModal.hidden = false;
     els.kindBackdrop.hidden = false;
+    els.kindModal.querySelectorAll("[data-roster-kind-choice], [data-roster-prop-shape], [data-roster-prop-kind]")
+      .forEach((tile) => tile.dispatchEvent(new Event("stage-kind-preview-selection")));
     if (els.rosterName) els.rosterName.focus();
   }
 

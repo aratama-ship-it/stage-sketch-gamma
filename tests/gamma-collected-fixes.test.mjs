@@ -21,8 +21,8 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.match(main, /drawStagePiece\(ctx2, previewPiece, previewLayout, \(\) => 0, \{ showFaceEdges: false \}\)/);
   assert.match(main, /function paintBox\(target, piece, L, part, drawOptions = \{\}\)/);
   assert.match(main, /if \(drawOptions\.showFaceEdges !== false\) target\.stroke\(\);/);
-  assert.match(main, /const previewColor = rosterSelectedColor\(\)/);
-  assert.match(main, /drawKindPreview\(canvas, "prop", previewColor, shapeId\)/);
+  assert.match(main, /function bindKindPreviewSpin\(tile, canvas, draw\)/);
+  assert.match(main, /bindKindPreviewSpin\(tile, canvas, \(\) => drawKindPreview\(canvas, "prop", rosterSelectedColor\(\), shapeId\)\)/);
   assert.match(main, /function refreshRosterPropPreviews\(\)/);
   assert.match(main, /rosterColorTouched = true;\s*refreshRosterPropPreviews\(\);/);
   assert.match(main, /平面図は衣装ではなく、演者を識別するためのマーキングカラーを常に使う/);
@@ -88,7 +88,7 @@ test("lighting apply belongs to the LX cue panel and playback uses an accessible
   assert.match(app, /動きを止める（Space）/);
   assert.match(app, /b\.setAttribute\("aria-pressed", String\(state\.play\.on\)\)/);
   assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=2026092240/);
-  assert.match(worker, /stage-sketch-gamma-shell-v265/);
+  assert.match(worker, /stage-sketch-gamma-shell-v266/);
   assert.match(worker, /light-design\/app\.js\?v=2026092240/);
   assert.match(worker, /light-design\/embed\.js\?v=2026092238/);
 });
