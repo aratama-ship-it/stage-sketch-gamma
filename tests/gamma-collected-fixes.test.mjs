@@ -96,6 +96,9 @@ test("stage tools can toggle rendered lighting without adding show data", () => 
   assert.match(stage, /id="stage-light-render-toggle" class="is-icon"[^>]*aria-label="照明効果"[^>]*><span class="stage-tool-icon"[^>]*><svg/);
   assert.match(stage, /id="stage-light-render-toggle"[^>]*data-stage-shortcut-action="view\.lightRender"[^>]*aria-keyshortcuts="C"/);
   assert.match(stage, /id="stage-light-render-toggle"[^>]*><span class="stage-tool-icon"[^>]*><svg viewBox="0 0 24 24"/);
+  assert.match(stage, /id="stage-light-render-toggle"[\s\S]*?<path d="M12 3v4M5\.6 5\.6l2\.8 2\.8M18\.4 5\.6l-2\.8 2\.8"\/>/);
+  assert.match(stage, /id="stage-light-render-toggle"[\s\S]*?<path d="m8\.2 9\.3 7\.6 0 3\.5 10\.2h-14\.6z" fill="currentColor" fill-opacity="\.14"\/>/);
+  assert.doesNotMatch(stage, /id="stage-light-render-toggle"[\s\S]*?<path d="M3\.2 6\.3h3v11\.4h-3z"\/>/);
   assert.match(stage, /id="stage-work-light-toggle" class="is-icon"[^>]*aria-label="作業灯" aria-keyshortcuts="G"[^>]*><span class="stage-tool-icon"[^>]*><svg/);
   assert.doesNotMatch(stage, /id="stage-work-light-toggle"[^>]*data-tool-key="G"/);
   assert.match(style, /#stage-work-light-toggle\[aria-pressed="false"\] \.stage-work-light-slash/);
