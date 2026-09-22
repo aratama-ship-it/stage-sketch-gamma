@@ -123,6 +123,8 @@ test("stage tools can toggle rendered lighting without adding show data", () => 
   assert.match(firstPerson, /makeLightToggle\("stage-fpv-work-light-toggle", "stage-work-light-toggle", "toggleWorkLightOff"\)/);
   assert.match(firstPerson, /\[elements\.workLightToggle, "作業灯", !data\.lightPool \|\| !data\.workLightOff\]/);
   assert.match(style, /\.stage-center-bar \.stage-tool-grid button\.is-icon \{[\s\S]*width: 34px/);
+  assert.match(style, /\.stage-panel \.stage-scene-move button\.stage-scene-action-icon \{[\s\S]*?width: 34px;[\s\S]*?min-height: 34px;/);
+  assert.match(style, /\.stage-scene-action-icon svg \{[\s\S]*?width: 21px;[\s\S]*?height: 21px;/);
   assert.match(style, /\.stage-center-bar \.stage-name-toggle\.is-icon \{[\s\S]*width: 34px/);
   assert.match(style, /\.stage-center-bar \.stage-name-toggle\.is-icon svg \{ width: 21px; height: 21px; \}/);
   assert.match(style, /\.stage-center-bar \.stage-center-group\.is-display \.stage-view-select \{ margin-left: auto; \}/);
