@@ -373,6 +373,20 @@
     "劇場形式を選び、カスタムステージを制作する": "Choose a venue type and build a custom stage",
     "劇場形式プリセット": "Venue type presets",
     "演者・舞台セット": "Cast & set",
+    "演者": "Cast",
+    "大道具": "Scenery",
+    "小道具": "Props",
+    "舞台セット": "Stage set",
+    "この舞台に出る演者を登録します。姿勢・寸法・色はここで決め、シーンごとに舞台の上か裏かを切り替えます。追加した演者は、そのシーンの舞台に出ます。":
+      "Register performers for this stage. Set pose, size and colour here, then choose whether they are onstage or backstage in each scene. New performers are placed on the current stage.",
+    "舞台に置く大道具を登録します。寸法や色はここで決め、追加したものはそのシーンの舞台に出ます。":
+      "Register scenery placed on stage. Set its size and colour here; new items are placed in the current scene.",
+    "舞台に置く小道具を登録します。形・寸法・色はここで決め、追加したものはそのシーンの舞台に出ます。":
+      "Register props placed on stage. Set their shape, size and colour here; new items are placed in the current scene.",
+    "劇場に組み込まれた舞台機構を確認します。追加は「劇場設定」で行い、場面ごとの回転角・高さ・開きなどはここから選んで調整できます。":
+      "Review stage machinery built into the venue. Add it in Venue setup, then select it here to adjust each scene's rotation, height or opening.",
+    "舞台セットはまだありません。劇場設定で舞台機構を追加してください。":
+      "There is no stage set yet. Add stage machinery in Venue setup.",
     "セットを組む": "Build a set",
     "組んだセットを選ぶ": "Choose a built set",
     "セット登録": "Saved sets",

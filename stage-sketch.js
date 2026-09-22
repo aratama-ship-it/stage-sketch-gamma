@@ -5113,6 +5113,7 @@
     groupSets: document.getElementById("stage-group-sets"),
     groupProps: document.getElementById("stage-group-props"),
     groupMachinery: document.getElementById("stage-group-machinery"),
+    machineryEmpty: document.getElementById("stage-machinery-empty"),
     lightName: document.getElementById("stage-light-name"),
     lightAdd: document.getElementById("stage-light-add"),
     lightKind: document.getElementById("stage-light-kind"),
@@ -5586,8 +5587,14 @@
       hint: "ショーを開く・書き出す" },
     { key: "panelMusic", panel: "music", label: "音楽", def: false,
       hint: "端末内の楽曲を読み込み、流れているシーンへ割り当てる欄を出す" },
-    { key: "panelCast", panel: "cast", label: "演者・舞台セット", def: true,
-      hint: "この舞台に出る演者と舞台セットを、まとめてここに登録します。 寸法や色はここで決め、シーンごとに舞台の上か裏かを切り替えます。明かりは別の項目です。追加したものはそのシーンの舞台に出ます。" },
+    { key: "panelCast", panel: "cast", label: "演者", def: true,
+      hint: "この舞台に出る演者を登録します。姿勢・寸法・色はここで決め、シーンごとに舞台の上か裏かを切り替えます。" },
+    { key: "panelSets", panel: "sets", label: "大道具", def: true,
+      hint: "舞台に置く大道具を登録します。寸法や色はここで決め、追加したものはそのシーンの舞台に出ます。" },
+    { key: "panelProps", panel: "props", label: "小道具", def: true,
+      hint: "舞台に置く小道具を登録します。形・寸法・色はここで決め、追加したものはそのシーンの舞台に出ます。" },
+    { key: "panelStageSet", panel: "stage-set", label: "舞台セット", def: true,
+      hint: "劇場に組み込まれた舞台機構を確認します。追加は劇場設定で行います。" },
     { key: "panelRigs", panel: "rigs", label: "セット登録", def: false,
       hint: "いまの舞台装置の並びに名前をつけて残し、別の場面で呼び出す欄を出す" },
     { key: "panelBackground", panel: "background", label: "背景", def: false,
@@ -5630,6 +5637,8 @@
   [...FEATURES, ...PANEL_FEATURES].forEach((f) => {
     FEATURE_DEFAULTS[f.key] = f.def === undefined ? true : f.def;
   });
+  const SPLIT_ROSTER_PANEL_FEATURES = new Set(["panelCast", "panelSets", "panelProps", "panelStageSet"]);
+  const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object || {}, key);
   const featureOn = (key) => {
     // 2026-09-11 本人指示: 光の意図カードを非表示にする。以前ONにしていた端末の
     // 保存値（prefs.lightIntent）があっても無視する。カード・比較欄・図の重ねは
@@ -5639,10 +5648,29 @@
     // 定義と保存値は残し、旧ショーの設定を読み込んでもデータは失わない。
     if (["presentation", "lineup", "pitchExport", "blackout", "sceneTiming", "sceneTransitions"].includes(key)) return true;
     if (key === "cuesheet") return false;
+    /* 0.2.1までの panelCast は、演者・大道具・小道具・舞台機構を一枚で出す
+       表示設定だった。分割後も、旧端末で切にしていた人だけ一部が勝手に
+       現れないよう、個別設定をまだ持たない間は旧値を読む。 */
+    if (SPLIT_ROSTER_PANEL_FEATURES.has(key) && key !== "panelCast"
+      && prefs.rosterPanelSplitVersion !== 1 && !hasOwn(prefs, key) && hasOwn(prefs, "panelCast")) {
+      return Boolean(prefs.panelCast);
+    }
     return prefs[key] === undefined
       ? (FEATURE_DEFAULTS[key] === undefined ? true : FEATURE_DEFAULTS[key])
       : Boolean(prefs[key]);
   };
+  function setFeaturePreference(key, value) {
+    /* 個別の初操作で旧一括設定を四枚分の値へ展開する。以後は一枚だけの
+       ON/OFF がほかの三枚を連動させない。ショーJSONには書かない端末設定。 */
+    if (SPLIT_ROSTER_PANEL_FEATURES.has(key) && prefs.rosterPanelSplitVersion !== 1) {
+      SPLIT_ROSTER_PANEL_FEATURES.forEach((panelKey) => {
+        if (!hasOwn(prefs, panelKey)) prefs[panelKey] = featureOn(panelKey);
+      });
+      prefs.rosterPanelSplitVersion = 1;
+    }
+    prefs[key] = Boolean(value);
+    savePrefs();
+  }
   function savePrefs() {
     try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* 保存できなくても動く */ }
   }
@@ -6078,20 +6106,20 @@
   /* ---------- パネルの配置 ----------
      どの道具をどちら側へ置くかは人によって違う。列を移せるようにし、
      使わないものは畳めるようにする。中央は絵だけで、上下の入れ替えのみ。 */
-  /* 演者・舞台セット・光は「演者・舞台セット」一枚にまとめた（cast）。
-   * 登録・出し入れ・寸法の仕組みが同じものを三つに割ると、目が三度行き来する。 */
-  const PANELS = ["project", "venue", "music", "cast", "machinery", "rigs", "light", "background", "study", "scenes", "seat2", "alternatives", "inspector", "save", "session", "ask"];
+  /* 名簿は演者・大道具・小道具・舞台セットに分ける。登録の保存先は従来どおり
+   * project.cast / project.sets のままなので、既存ショーの内容は変えない。 */
+  const PANELS = ["project", "venue", "music", "cast", "sets", "props", "stage-set", "machinery", "rigs", "light", "background", "study", "scenes", "seat2", "alternatives", "inspector", "save", "session", "ask"];
 
   function defaultLayout() {
     return {
       // 場面は絵のすぐ右に置く（順番を見ながら描くため）
       cols: {
-        project: "left", venue: "left", music: "left", cast: "left", machinery: "left", rigs: "left", light: "left", background: "left",
+        project: "left", venue: "left", music: "left", cast: "left", sets: "left", props: "left", "stage-set": "left", machinery: "left", rigs: "left", light: "left", background: "left",
         study: "right", scenes: "right", seat2: "right", alternatives: "right", inspector: "left", save: "right",
         session: "right", ask: "right",
       },
       order: {
-        project: 0, venue: 1, music: 2, cast: 3, machinery: 4, rigs: 5, light: 6, background: 7,
+        project: 0, venue: 1, music: 2, cast: 3, sets: 4, props: 5, "stage-set": 6, machinery: 7, rigs: 8, light: 9, background: 10,
         // 保存状態は右列の最後。既存のショーは保存済みの順序をそのまま使う。
         study: -1, scenes: 0, seat2: 1, alternatives: 2, inspector: 8, save: 999, session: 3, ask: 4,
       },
@@ -6116,14 +6144,22 @@
     const order = {};
     const collapsed = {};
     PANELS.forEach((id) => {
+      const splitRoster = ["sets", "props", "stage-set"].includes(id);
       const c = raw.cols && raw.cols[id];
-      cols[id] = c === "left" || c === "right" ? c : base.cols[id];
+      const legacyCol = splitRoster && raw.cols && raw.cols.cast;
+      cols[id] = c === "left" || c === "right" ? c
+        : legacyCol === "left" || legacyCol === "right" ? legacyCol : base.cols[id];
       const o = raw.order && Number(raw.order[id]);
-      order[id] = Number.isFinite(o) ? o : base.order[id];
+      const legacyOrder = splitRoster && raw.order && Number(raw.order.cast);
+      order[id] = Number.isFinite(o) ? o
+        : Number.isFinite(legacyOrder) ? legacyOrder + (["sets", "props", "stage-set"].indexOf(id) + 1) / 10 : base.order[id];
       /* 保存済みの並びに無いキーは、後から足したパネル。既定の畳みに従う。
          Boolean() だけで受けると、新しいパネルが必ず開いた状態で現れる。 */
       const cl = raw.collapsed && raw.collapsed[id];
-      collapsed[id] = cl === undefined ? Boolean(base.collapsed[id]) : Boolean(cl);
+      const legacyCollapsed = splitRoster && raw.collapsed && raw.collapsed.cast;
+      collapsed[id] = cl === undefined
+        ? legacyCollapsed === undefined ? Boolean(base.collapsed[id]) : Boolean(legacyCollapsed)
+        : Boolean(cl);
     });
     const co = Array.isArray(raw.centerOrder) ? raw.centerOrder.filter((x) => x === "front" || x === "plan") : [];
     const centerOrder = co.length === 2 ? co : base.centerOrder;
@@ -17556,7 +17592,7 @@
     { id: "show", icon: "▣", label: "ショー", panels: ["project", "venue", "study"] },
     /* 音楽はPC専用と決めたので、ここには載せない（2026-08-24 本人判断）。
        ★"music" を足し戻さないこと。足すなら方針の再判断から。 */
-    { id: "cast", icon: "●", label: "出演・装置", panels: ["cast", "rigs"] },
+    { id: "cast", icon: "●", label: "出演・装置", panels: ["cast", "sets", "props", "stage-set", "rigs"] },
     { id: "look", icon: "☀", label: "照明・背景", panels: ["light", "background"] },
     { id: "scenes", icon: "◫", label: "シーン", panels: ["scenes"] },
     { id: "inspect", icon: "◎", label: "選んだもの", panels: ["inspector"] },
@@ -18289,8 +18325,7 @@
       box.type = "checkbox";
       box.checked = featureOn(f.key);
       box.addEventListener("change", () => {
-        prefs[f.key] = box.checked;
-        savePrefs();
+        setFeaturePreference(f.key, box.checked);
         applyFeatureFlags();
         renderScenes();
         render();
@@ -19019,6 +19054,7 @@
     if (els.groupSets) els.groupSets.hidden = false;
     if (els.groupProps) els.groupProps.hidden = false;
     if (els.groupMachinery) els.groupMachinery.hidden = counts.machinery === 0;
+    if (els.machineryEmpty) els.machineryEmpty.hidden = counts.machinery !== 0;
     if (els.rosterEmpty) els.rosterEmpty.hidden = true;
   }
 
@@ -24208,8 +24244,7 @@
     box.checked = featureOn(f.key);
     const captionSizeInputs = [];
     box.addEventListener("change", () => {
-      prefs[f.key] = box.checked;
-      savePrefs();
+      setFeaturePreference(f.key, box.checked);
       captionSizeInputs.forEach((radio) => { radio.disabled = !box.checked; });
       applyFeatureFlags();
       if (f.key === "floatingInspector") {

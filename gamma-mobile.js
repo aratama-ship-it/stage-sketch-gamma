@@ -340,7 +340,7 @@
     const rail = el("nav", "gm-rail", { "aria-label": tx("舞台スケッチの道具"), "data-no-i18n": "" });
     const GROUPS = [
       { id: "show", ja: "ショー", icon: ICON.show, panels: ["project"] },
-      { id: "cast", ja: "出演・装置", icon: ICON.cast, panels: ["cast", "rigs"] },
+      { id: "cast", ja: "出演・装置", icon: ICON.cast, panels: ["cast", "sets", "props", "stage-set", "rigs"] },
       { id: "look", ja: "背景", icon: ICON.look, panels: ["background"] },
       { id: "scenes", ja: "シーン", icon: ICON.scenes, panels: ["scenes"] },
       { id: "inspect", ja: "選んだもの", icon: ICON.inspect, panels: ["inspector"] },

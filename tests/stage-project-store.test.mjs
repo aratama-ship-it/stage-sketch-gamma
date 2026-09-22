@@ -143,10 +143,10 @@ test("removing the current duplicate makes room before a large imported-show swi
 
 test("the app shell advances with the storage transaction code", () => {
   assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092213/);
-  assert.match(stageHtml, /stage-sketch\.js\?v=2026092215/);
-  assert.match(serviceWorker, /stage-sketch-gamma-shell-v230/);
+  assert.match(stageHtml, /stage-sketch\.js\?v=2026092216/);
+  assert.match(serviceWorker, /stage-sketch-gamma-shell-v231/);
   assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092213/);
-  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092215/);
+  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092216/);
 });
 
 test("scene alternatives are an opt-in right-side panel without changing scene data", () => {
@@ -156,6 +156,17 @@ test("scene alternatives are an opt-in right-side panel without changing scene d
   assert.match(source, /alternatives: "right"/);
   assert.match(alternativesUi, /getElementById\('stage-scene-alternatives-host'\)/);
   assert.doesNotMatch(alternativesUi, /getElementById\('stage-scene-bar'\)/);
+});
+
+test("roster groups use separate panels while old cast visibility and layout remain readable", () => {
+  assert.match(stageHtml, /data-panel="cast" data-title="演者"/);
+  assert.match(stageHtml, /data-panel="sets" data-title="大道具"/);
+  assert.match(stageHtml, /data-panel="props" data-title="小道具"/);
+  assert.match(stageHtml, /data-panel="stage-set" data-title="舞台セット"/);
+  assert.match(source, /const SPLIT_ROSTER_PANEL_FEATURES = new Set\(\["panelCast", "panelSets", "panelProps", "panelStageSet"\]\)/);
+  assert.match(source, /legacyCol = splitRoster && raw\.cols && raw\.cols\.cast/);
+  assert.match(source, /legacyCollapsed = splitRoster && raw\.collapsed && raw\.collapsed\.cast/);
+  assert.match(source, /\["cast", "sets", "props", "stage-set", "rigs"\]/);
 });
 
 test("unavailable IndexedDB keeps the legacy localStorage duplicate", async () => {

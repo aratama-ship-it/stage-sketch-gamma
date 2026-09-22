@@ -276,9 +276,9 @@
               <p class="stage-music-local-note">音源ファイルはこの端末内だけに保存され、JSON、端末データの書き出し、共有セッションには含まれません。別端末では元ファイルを選び直してください。</p>
             </div>
           </section>
-          <section class="stage-panel" data-panel="cast" data-title="演者・舞台セット">
+          <section class="stage-panel" data-panel="cast" data-title="演者">
             <div class="stage-panel-body">
-            <p class="stage-cast-hint">この舞台に出る演者、大道具、小道具を、まとめてここに登録します。寸法や色はここで決め、シーンごとに舞台の上か裏かを切り替えます。追加したものはそのシーンの舞台に出ます。</p>
+            <p class="stage-cast-hint">この舞台に出る演者を登録します。姿勢・寸法・色はここで決め、シーンごとに舞台の上か裏かを切り替えます。追加した演者は、そのシーンの舞台に出ます。</p>
               <p class="stage-cast-empty" id="stage-roster-empty" hidden>まだ何も登録していません。名前と種類を選んで追加してください。</p>
               <div class="stage-roster-group" id="stage-group-cast" data-tablet-break-before>
                 <div class="stage-roster-head">
@@ -292,6 +292,12 @@
                        aria-label="演者の一覧の高さ"></div>
                 </div>
               </div>
+            </div>
+          </section>
+
+          <section class="stage-panel" data-panel="sets" data-title="大道具">
+            <div class="stage-panel-body">
+              <p class="stage-cast-hint">舞台に置く大道具を登録します。寸法や色はここで決め、追加したものはそのシーンの舞台に出ます。</p>
               <div class="stage-roster-group" id="stage-group-sets" data-tablet-break-before>
                 <div class="stage-roster-head stage-roster-head-actions">
                   <button type="button" class="stage-roster-accordion-toggle" data-roster-accordion="sets"
@@ -305,6 +311,12 @@
                        aria-label="大道具の一覧の高さ"></div>
                 </div>
               </div>
+            </div>
+          </section>
+
+          <section class="stage-panel" data-panel="props" data-title="小道具">
+            <div class="stage-panel-body">
+              <p class="stage-cast-hint">舞台に置く小道具を登録します。形・寸法・色はここで決め、追加したものはそのシーンの舞台に出ます。</p>
               <div class="stage-roster-group" id="stage-group-props" data-tablet-break-before>
                 <div class="stage-roster-head">
                   <button type="button" class="stage-roster-accordion-toggle" data-roster-accordion="props"
@@ -317,6 +329,13 @@
                        aria-label="小道具の一覧の高さ"></div>
                 </div>
               </div>
+            </div>
+          </section>
+
+          <section class="stage-panel" data-panel="stage-set" data-title="舞台セット">
+            <div class="stage-panel-body">
+              <p class="stage-cast-hint">劇場に組み込まれた舞台機構を確認します。追加は「劇場設定」で行い、場面ごとの回転角・高さ・開きなどはここから選んで調整できます。</p>
+              <p class="stage-cast-empty" id="stage-machinery-empty" hidden>舞台セットはまだありません。劇場設定で舞台機構を追加してください。</p>
               <!-- T-21（2026-09-18 本人要望）: 盆・可動デッキ・幕・せり・水面は、
                    演者／大道具／小道具と同じように別の項目として最下部に出す。
                    見出しは既存の呼び名「舞台機構」に合わせる（本人決定＝「舞台装置」は使わない）。 -->
@@ -3223,7 +3242,7 @@
 <script src="docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113"></script>
 <script src="stage-light-panel-import.js?v=2026092209"></script>
 <script src="stage-scene-alternatives.js?v=2026092208"></script>
-<script src="stage-sketch.js?v=2026092215"></script>
+<script src="stage-sketch.js?v=2026092216"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092209"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-timeline.js?v=2026092208"></script>
@@ -3232,6 +3251,6 @@
 <script src="stage-usage.js?v=2026091501"></script>
 <script src="stage-venue-editor.js?v=2026092201"></script>
 <script src="gamma-workspace.js?v=2026092201"></script>
-<script src="gamma-mobile.js?v=2026091951"></script>
+<script src="gamma-mobile.js?v=2026092202"></script>
 </body>
 </html>
