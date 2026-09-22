@@ -171,6 +171,7 @@ public-dist/
 !/stage-samples/README.md
 !/stage-samples/index.js
 !/stage-samples/feature-test-show.js
+!/stage-samples/romeo-juliet-cued.js
 !/stage-session.js
 !/stage-set-builder.js
 !/stage-set-model.js
@@ -202,6 +203,7 @@ public-dist/
 !/tests/stage-lighting-all-venues.test.mjs
 !/tests/stage-light-panel-import.test.mjs
 !/tests/stage-project-store.test.mjs
+!/tests/romeo-juliet-sample.test.mjs
 
 # Formation preset editor runtime (local preparation; not published).
 !/gamma-formation-presets.js

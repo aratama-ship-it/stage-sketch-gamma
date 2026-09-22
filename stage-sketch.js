@@ -8902,11 +8902,27 @@
       "固定SceneStudyを別ショーとして開きました。8ビートの配置は自由に直せます。");
   }
 
-  /* 同梱ショーは stage-samples/index.js のデータ棚からだけ読む。 */
+  /* 軽量の同梱ショーは stage-samples/index.js のデータ棚から読む。 */
   function bundledSampleById(id) {
     const samples = SHOW_LIBRARY && Array.isArray(SHOW_LIBRARY.samples)
       ? SHOW_LIBRARY.samples : [];
     return samples.find((sample) => sample && sample.id === id) || null;
+  }
+
+  /* 完成済みのプロジェクト形式の同梱見本。重い本文を通常の見本データ棚へ
+     重複展開せず、読み取り専用の別モジュールから受け取る。 */
+  function bundledProjectById(id) {
+    const library = window.SHOSAI_STAGE_BUNDLED_PROJECT_LIBRARY;
+    const samples = library && Array.isArray(library.samples) ? library.samples : [];
+    return samples.find((sample) => sample && sample.project && sample.project.id === id) || null;
+  }
+
+  function buildRomeoJulietSampleShow() {
+    const source = bundledProjectById("romeo-juliet-gamma-cued-2026-09-21");
+    if (!source) return null;
+    const prepared = prepareProjectImportDocument(projectIoClone(source));
+    if (!prepared || !prepared.project) return null;
+    return normalizeState({ project: prepared.project });
   }
 
   function buildSampleShow() {
@@ -9167,6 +9183,26 @@
     if (!built) return;
     applyLoadedState(drawSampleRoutes(built),
       "『継ぎ目の庭』を開きました。元のショーはショー一覧に残っています。");
+  }
+
+  // ロミオとジュリエットも初回だけ棚へ置く。既存の同ID（編集済みを含む）は触らない。
+  function shelveRomeoJulietSample() {
+    const built = buildRomeoJulietSampleShow();
+    if (!built) return;
+    const shows = readShows();
+    if (shows[built.project.id]) return;
+    shows[built.project.id] = { savedAt: nowIso(), state: built };
+    writeShows(shows);
+  }
+
+  function openRomeoJulietSampleShow() {
+    const built = buildRomeoJulietSampleShow();
+    if (!built) {
+      announce("ロミオとジュリエットの同梱見本を読み込めませんでした。ページを再読み込みしてください。");
+      return;
+    }
+    applyLoadedState(built,
+      "『ロミオとジュリエット』の台本とキューの見本を開きました。元のショーはショー一覧に残っています。");
   }
 
   /* 個人用ショーの自動反映（stage-shows.local.js、.gitignore済み・本人専用）。
@@ -34395,6 +34431,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       }
       if (!loaded.restored) shelveSample();
       shelveSeamGardenSample();
+      shelveRomeoJulietSample();
       syncLocalShows();
       // A direct local verification link always opens the bundled test show.
       if (openArgs.has("feature-test") && ["localhost", "127.0.0.1", "::1"].includes(location.hostname)) {
@@ -34406,6 +34443,8 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       if (openArgs.has("sample")) openSampleShow();
       // ?seam-sample は8セクション／32シーンの「継ぎ目の庭」を直接開く。
       if (openArgs.has("seam-sample")) openSeamGardenSampleShow();
+      // ?romeo-juliet-sample は同梱済みの台本・キュー見本を直接開く。
+      if (openArgs.has("romeo-juliet-sample")) openRomeoJulietSampleShow();
 
       const launchWarningShown = openLaunchBackupWarning();
       if (!launchWarningShown) {
