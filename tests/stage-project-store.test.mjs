@@ -144,7 +144,7 @@ test("removing the current duplicate makes room before a large imported-show swi
 test("the app shell advances with the storage transaction code", () => {
   assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092213/);
   assert.match(stageHtml, /stage-sketch\.js\?v=2026092219/);
-  assert.match(serviceWorker, /stage-sketch-gamma-shell-v233/);
+  assert.match(serviceWorker, /stage-sketch-gamma-shell-v234/);
   assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092213/);
   assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092219/);
 });
@@ -162,7 +162,8 @@ test("roster groups use separate panels while old cast visibility and layout rem
   assert.match(stageHtml, /data-panel="cast" data-title="演者"/);
   assert.match(stageHtml, /data-panel="sets" data-title="大道具"/);
   assert.match(stageHtml, /data-panel="props" data-title="小道具"/);
-  assert.match(stageHtml, /data-panel="stage-set" data-title="舞台セット"/);
+  assert.match(stageHtml, /data-panel="stage-set" data-title="舞台機構"/);
+  assert.doesNotMatch(stageHtml, /data-roster-accordion="(?:cast|sets|props|machinery)"/);
   assert.match(source, /const SPLIT_ROSTER_PANEL_FEATURES = new Set\(\["panelCast", "panelSets", "panelProps", "panelStageSet"\]\)/);
   assert.match(source, /legacyCol = splitRoster && raw\.cols && raw\.cols\.cast/);
   assert.match(source, /legacyCollapsed = splitRoster && raw\.collapsed && raw\.collapsed\.cast/);

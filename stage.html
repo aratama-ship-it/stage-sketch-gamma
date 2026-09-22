@@ -281,10 +281,6 @@
             <p class="stage-cast-hint">この舞台に出る演者を登録します。姿勢・寸法・色はここで決め、シーンごとに舞台の上か裏かを切り替えます。追加した演者は、そのシーンの舞台に出ます。</p>
               <p class="stage-cast-empty" id="stage-roster-empty" hidden>まだ何も登録していません。名前と種類を選んで追加してください。</p>
               <div class="stage-roster-group" id="stage-group-cast" data-tablet-break-before>
-                <div class="stage-roster-head">
-                  <button type="button" class="stage-roster-accordion-toggle" data-roster-accordion="cast"
-                          aria-expanded="true" aria-controls="stage-roster-cast-body"><span>演者</span></button>
-                </div>
                 <div class="stage-roster-accordion-body" id="stage-roster-cast-body">
                   <div class="stage-cast-list" id="stage-cast-list"></div>
                   <div class="stage-roster-list-resize" data-roster-list-resize="cast" role="separator"
@@ -299,11 +295,6 @@
             <div class="stage-panel-body">
               <p class="stage-cast-hint">舞台に置く大道具を登録します。寸法や色はここで決め、追加したものはそのシーンの舞台に出ます。</p>
               <div class="stage-roster-group" id="stage-group-sets" data-tablet-break-before>
-                <div class="stage-roster-head stage-roster-head-actions">
-                  <button type="button" class="stage-roster-accordion-toggle" data-roster-accordion="sets"
-                          aria-expanded="true" aria-controls="stage-roster-sets-body"><span>大道具</span></button>
-                  <button type="button" id="stage-model-open" class="btn-quiet" hidden>セットを組む</button>
-                </div>
                 <div class="stage-roster-accordion-body" id="stage-roster-sets-body">
                   <div class="stage-cast-list" id="stage-set-list"></div>
                   <div class="stage-roster-list-resize" data-roster-list-resize="set" role="separator"
@@ -318,10 +309,6 @@
             <div class="stage-panel-body">
               <p class="stage-cast-hint">舞台に置く小道具を登録します。形・寸法・色はここで決め、追加したものはそのシーンの舞台に出ます。</p>
               <div class="stage-roster-group" id="stage-group-props" data-tablet-break-before>
-                <div class="stage-roster-head">
-                  <button type="button" class="stage-roster-accordion-toggle" data-roster-accordion="props"
-                          aria-expanded="true" aria-controls="stage-roster-props-body"><span>小道具</span></button>
-                </div>
                 <div class="stage-roster-accordion-body" id="stage-roster-props-body">
                   <div class="stage-cast-list" id="stage-prop-list"></div>
                   <div class="stage-roster-list-resize" data-roster-list-resize="prop" role="separator"
@@ -332,18 +319,14 @@
             </div>
           </section>
 
-          <section class="stage-panel" data-panel="stage-set" data-title="舞台セット">
+          <section class="stage-panel" data-panel="stage-set" data-title="舞台機構">
             <div class="stage-panel-body">
               <p class="stage-cast-hint">劇場に組み込まれた舞台機構を確認します。追加は「劇場設定」で行い、場面ごとの回転角・高さ・開きなどはここから選んで調整できます。</p>
-              <p class="stage-cast-empty" id="stage-machinery-empty" hidden>舞台セットはまだありません。劇場設定で舞台機構を追加してください。</p>
+              <p class="stage-cast-empty" id="stage-machinery-empty" hidden>舞台機構はまだありません。劇場設定で追加してください。</p>
               <!-- T-21（2026-09-18 本人要望）: 盆・可動デッキ・幕・せり・水面は、
                    演者／大道具／小道具と同じように別の項目として最下部に出す。
                    見出しは既存の呼び名「舞台機構」に合わせる（本人決定＝「舞台装置」は使わない）。 -->
               <div class="stage-roster-group" id="stage-group-machinery" data-tablet-break-before>
-                <div class="stage-roster-head">
-                  <button type="button" class="stage-roster-accordion-toggle" data-roster-accordion="machinery"
-                          aria-expanded="true" aria-controls="stage-roster-machinery-body"><span>舞台機構</span></button>
-                </div>
                 <div class="stage-roster-accordion-body" id="stage-roster-machinery-body">
                   <div class="stage-cast-list" id="stage-machinery-list"></div>
                   <div class="stage-roster-list-resize" data-roster-list-resize="machinery" role="separator"
