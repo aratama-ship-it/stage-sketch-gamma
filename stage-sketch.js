@@ -20959,7 +20959,24 @@
       }, 0);
       const previewLayout = layout("front");
       refreshBases(previewLayout.size, [previewPiece]);
-      const bounds = selectionBounds(previewPiece, previewLayout);
+      /* ★2026-09-23 本人指摘: 回っている間に大きさが変わって見えていた。
+       * 見えている枠(bounds)は向きによって幅が変わるので、その場その場で
+       * 枠いっぱいに合わせて拡大率を計算し直すと、回転中ずっと拡大縮小して見える。
+       * 向き0°・90°の2方向で測った外接枠のうち大きいほうを基準に、
+       * 拡大率は回転中ずっと同じ値に固定する。 */
+      const boundsAt = (facing) => selectionBounds({ ...previewPiece, facing }, previewLayout);
+      const bounds0 = boundsAt(0);
+      const bounds90 = boundsAt(90);
+      // 2つの枠を正しく包む外接矩形（幅・高さを別々にmaxすると中心がずれるので、
+      // 両端の座標をそれぞれmin/maxしてから幅・高さを引き直す）。
+      const boundsX0 = Math.min(bounds0.x, bounds90.x);
+      const boundsY0 = Math.min(bounds0.y, bounds90.y);
+      const bounds = {
+        x: boundsX0,
+        y: boundsY0,
+        w: Math.max(bounds0.x + bounds0.w, bounds90.x + bounds90.w) - boundsX0,
+        h: Math.max(bounds0.y + bounds0.h, bounds90.y + bounds90.h) - boundsY0,
+      };
       const pad = 10;
       const scale = Math.min(
         (w - pad * 2) / Math.max(1, bounds.w),
