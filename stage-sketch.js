@@ -2138,10 +2138,15 @@
      （2026-09-11 本人指摘: 厚みに丸みが無く、ただの円に見える）。
      箱は平らな面しか持てないので、どの角度から見ても丸く見える球を輪の上に隙間なく重ねて
      並べることで、管の丸い断面を表す（数珠つなぎと同じ考え方）。tubeDiaが管そのものの太さ。 */
+  /* ★2026-09-23 本人指摘: リングの下部が平らに見えていた。中心線の円は
+   * 半径ぶんの高さ（=床にちょうど接する高さ）に置いていたが、太さ(tubeDia)の
+   * ぶんだけ実際の管がさらに下へはみ出し、床より下になった部分が描けず
+   * 下側が欠けて（＝弦のように平らに）見えていた。中心線を太さの半分だけ
+   * 持ち上げ、管の外側が床に接するようにする。 */
   const ringTube = (segments, radius, tubeDia, tint) => Array.from({ length: segments }, (_, i) => {
     const a = (i / segments) * Math.PI * 2;
     const cx = Math.cos(a) * radius;
-    const cy = radius + Math.sin(a) * radius;
+    const cy = radius + tubeDia / 2 + Math.sin(a) * radius;
     return { shape: "sphere", x: cx, y: cy - tubeDia / 2, z: 0, dia: tubeDia, tint };
   });
   /* 弦楽器の胴・管楽器のベルなど「音を鳴らす部分」の輪郭を、薄い円柱を積んで近似する
@@ -3199,14 +3204,22 @@
       boxAt(-0.33, 0.14, 0, 0.04, 0.30, 0.04, 0.9),
       boxAt(0.33, 0.14, 0, 0.04, 0.30, 0.04, 0.9),
     ] };
-  PROP_SHAPES.germanwheel = { ja: "ジャーマンホイール（ラート）", en: "German wheel", dims: { w: 2.2, d: 0.5, h: 2.2 }, grip: null,
+  /* ★2026-09-23 本人指摘: 四角い枠になっていたのを、実物の構造どおり作り直す。
+   * 実物（ラート/Rhönrad）は同径の2つの輪を6本のロッドでつなぐ構造。シルホイール
+   * (cyrwheel)の輪を2枚、間口方向へ並べて6本で連結したものに近い。
+   * 出典: Wikipedia "Wheel gymnastics"（"framed together with six spokes.
+   * Two are simple tubes, two are equipped with a handle and two have a footrest."）、
+   * rhoenradbau.de（輪の内側の間隔は標準45cm）。直径は身長+約35cmで130〜245cmの幅を持つため、
+   * 成人の中庸値として220cmを既定に採る（要・実測確認）。 */
+  PROP_SHAPES.germanwheel = { ja: "ジャーマンホイール（ラート）", en: "German wheel", dims: { w: 2.2, d: 0.45, h: 2.2 }, grip: null,
     parts: [
-      ...[-0.25, 0.25].flatMap((z) => [
-        boxAt(0, 2.14, z, 1.6, 0.06, 0.06, 1.0), boxAt(0, 0, z, 1.6, 0.06, 0.06, 1.0),
-        boxAt(-1.03, 0.06, z, 0.06, 0.06, 2.08, 0.95), boxAt(1.03, 0.06, z, 0.06, 0.06, 2.08, 0.95),
-      ]),
-      boxAt(-1.03, 1.1, 0, 0.05, 0.5, 0.05, 0.85), boxAt(1.03, 1.1, 0, 0.05, 0.5, 0.05, 0.85),
-      boxAt(0, 2.14, 0, 0.05, 0.5, 0.05, 0.85), boxAt(0, 0, 0, 0.05, 0.5, 0.05, 0.85),
+      ...[-1, 1].map((side) => ({ shape: "cylinder", ring: true, side, x: 0, y: 1.1, dia: 2.2, w: 0.045, tint: 1.0 })),
+      // 輪をつなぐ6本のロッド（60度ごと）。実物は2本が素の棒、2本に握り、2本に足掛けが付くが、
+      // 舞台図としては簡略化し6本とも同じ棒として描く。
+      ...Array.from({ length: 6 }, (_, i) => {
+        const angle = (i / 6) * Math.PI * 2;
+        return { shape: "line", rod: true, x: Math.cos(angle) * 1.1, y: 1.1 + Math.sin(angle) * 1.1, w: 0.035, tint: 0.9 };
+      }),
     ] };
   PROP_SHAPES.minitramp = { ja: "ミニトランポリン", en: "Mini trampoline", dims: { w: 1.2, d: 1.2, h: 0.5 }, grip: null,
     parts: [
@@ -3227,13 +3240,14 @@
     ] };
   /* 円形のクラッシュマット。空中系（フープ・シルク・チャイニーズポール）の真下へ敷くもので、
      吊り元を中心にどの向きへ落ちても受けられるよう丸い（2026-09-11 本人要望で追加）。
-     ここはcylinderの伸びる向き（Y）と厚みの向きが一致するので、そのまま円柱で作れる。 */
+     ★2026-09-23 本人指摘: cylinder近似（正方形2枚を45度ずらして重ねるだけ）は
+     8方向の星形にしかならず「円」に見えなかった。disc: true を付けて本物の円で描く。 */
   PROP_SHAPES.crashmatround = { ja: "落下用マット（円形）", en: "Crash mat (round)", dims: { w: 2.4, d: 2.4, h: 0.3 }, grip: null,
     parts: [
-      { shape: "cylinder", x: 0, y: 0, z: 0, dia: 2.4, h: 0.26, tint: 0.9 },
-      { shape: "cylinder", x: 0, y: 0.26, z: 0, dia: 2.4, h: 0.035, tint: 1.1 },
+      { shape: "cylinder", disc: true, x: 0, y: 0, z: 0, dia: 2.4, h: 0.26, tint: 0.9 },
+      { shape: "cylinder", disc: true, x: 0, y: 0.26, z: 0, dia: 2.4, h: 0.035, tint: 1.1 },
       // 中心の目印（吊り元の真下）。敷く位置合わせの手がかりになる
-      { shape: "cylinder", x: 0, y: 0.295, z: 0, dia: 0.5, h: 0.005, tint: 1.24 },
+      { shape: "cylinder", disc: true, x: 0, y: 0.295, z: 0, dia: 0.5, h: 0.005, tint: 1.24 },
     ] };
   PROP_SHAPES.russianswing = { ja: "跳び板（ロシアンスイング等の大型器具）", en: "Russian swing", dims: { w: 1.6, d: 4.0, h: 3.0 }, grip: null,
     parts: [
@@ -3398,7 +3412,9 @@
     // 追加候補から外すだけで、既存ショーに置いた駒は表示・保存を続ける。
     "counter", "fireplace", "screen", "bridge",
     // 2026-09-23 本人指定で追加。
-    "wagasa", "rope", "clock", "minitramp", "russianswing",
+    "wagasa", "rope", "clock", "minitramp", "russianswing", "mirror",
+    // 同日追加: トレイ／大玉（サーカス器具）／シルホイール（小道具側。大道具側のkind=cyrwheelと重複）。
+    "tray", "rollingglobe", "cyrwheel",
   ]);
   const rosterShapeIsAvailable = (shapeId) => !ROSTER_UNAVAILABLE_PROP_SHAPES.has(shapeId);
   /* 登録した項目が「大道具の一覧」へ行くか。kind が prop でも、上の形なら大道具側。
@@ -3419,8 +3435,9 @@
     { ja: "家具", ids: ["sofa", "bed", "bookshelf", "dresser", "mirror", "desk", "counter", "fireplace", "phonebooth", "clothesrack"] },
     { ja: "屋外・情景", ids: ["tree", "rock", "streetlamp", "signboard", "barrel", "planter", "well", "tent", "cart"] },
     /* 2026-09-23 本人指示: 自転車は乗り物。見出し名はROSTER_SET_KIND_GROUPSの
-       「情景・乗り物」(球・車)と揃え、大道具一覧では同じ一枠へ合流させる。 */
-    { ja: "情景・乗り物", ids: ["bicycle"] },
+       「乗り物」(車)と揃え、大道具一覧では同じ一枠へ合流させる。
+       ★同日追記: 「乗り物」の中身は乗り物だけにする（球は情景ではないので外す）。 */
+    { ja: "乗り物", ids: ["bicycle"] },
     { ja: "サーカス道具", ids: ["rolabola", "germanwheel", "minitramp", "rollingglobe", "russianbar", "crashmat", "crashmatround",
       "russianswing", "slackline", "walljump", "unicycle", "stilts", "aerialhoop", "aerialstraps", "aerialhammock", "spanishweb", "swingpole",
       /* R-19（2026-09-17 本人要望）: 物を伴う姿勢に対応する乗り物。本人決定で小道具の扱い。 */
@@ -11301,6 +11318,12 @@
     const parts = preset.parts && preset.parts.map((part) => ({
       shape: part.shape,
       axis: part.axis,
+      // ★2026-09-23: 真円の板（disc）・輪（ring）・輪をつなぐ棒（rod）の目印。
+      // 数値ではないので拡大率をかけず、そのまま持ち越す（pieceParts側で使う）。
+      disc: part.disc,
+      ring: part.ring,
+      rod: part.rod,
+      side: part.side,
       x: finite(part.x, 0) * sx,
       y: finite(part.y, 0) * sy,
       z: finite(part.z, 0) * sz,
@@ -11459,9 +11482,29 @@
     if (piece.type === "prop") {
       const shape = scaledPropShape(piece, d);
       if (shape.parts && window.SHOSAI_STAGE_MODELS) {
-        // 曲面の表示とは別に、選択・支持判定へは外接箱を渡す。
-        return shape.parts.flatMap((part) => window.SHOSAI_STAGE_MODELS.partBoxes(
-          part.axis === "z" ? { ...part, shape: "box" } : part));
+        /* ★2026-09-23 本人指摘: 円形のクラッシュマット・ジャーマンホイールの輪など、
+         * 真円が必要な部品は disc/ring の目印を付ける。partBoxes の cylinder 近似は
+         * 正方形2枚を45度ずらして重ねるだけ（8方向の星形）で、円形には粗すぎた。
+         * ここだけ本物の円・輪（paintDisc/paintRigging）を直接返し、model-box化を通さない。
+         * rod は輪と輪をつなぐ棒。奥行き(d.d)いっぱいへ、駒の実寸(scaledPropShape後)で置く。 */
+        return shape.parts.flatMap((part) => {
+          if (part.shape === "cylinder" && part.disc) {
+            return [{ kind: "disc", c: [part.x || 0, part.y || 0, part.z || 0],
+              r: (part.dia || 1) / 2, h: part.h || 0, tint: part.tint }];
+          }
+          if (part.shape === "cylinder" && part.ring) {
+            const halfDepth = d.d / 2;
+            return [{ kind: "ring", c: [part.x || 0, part.y || 0, (part.side || 0) * halfDepth],
+              r: (part.dia || 1) / 2, w: part.w || 0.03, tone: "gear" }];
+          }
+          if (part.shape === "line" && part.rod) {
+            const halfDepth = d.d / 2;
+            return [{ kind: "line", a: [part.x || 0, part.y || 0, -halfDepth],
+              b: [part.x || 0, part.y || 0, halfDepth], w: part.w || 0.03, tone: "gear" }];
+          }
+          // 曲面の表示とは別に、選択・支持判定へは外接箱を渡す。
+          return window.SHOSAI_STAGE_MODELS.partBoxes(part.axis === "z" ? { ...part, shape: "box" } : part);
+        });
       }
       return [{ ox: 0, oz: 0, w: d.w, d: d.d, h: d.h, lift: 0, tint: 1 }];
     }
@@ -21138,11 +21181,12 @@
 
   // ディアボロは専用の向き・持たせる操作を保つため type は変えない。
   // 演者・舞台セットでは、小道具と同じ入口・一覧へ分類する。
-  // 2026-09-23 本人指示: スーツケースは大道具でなく小道具として扱う。
+  /* 2026-09-23 本人指示: スーツケースは大道具でなく小道具として扱う（分類のみ）。
+   * 同日追記: 追加候補としては削除。ROSTER_PROP_KINDSには残し、既存に置いた駒は
+   * 引き続き小道具として数える。新規に選べる入口（ROSTER_PROP_SPECIAL_KINDS）だけ外す。 */
   const ROSTER_PROP_KINDS = new Set(["prop", "diabolo", "suitcase"]);
 const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   { group: "サーカス道具", kind: "diabolo" },
-  { group: "手に持つもの", kind: "suitcase" },
 ]);
   /* R-1（2026-09-17 本人決定）: 盆・可動デッキ・幕・せり・水面は「大道具」ではなく舞台機構で、
    * 劇場に組み込まれているもの。だから足す場所も劇場設定モードの舞台機構パネル
@@ -21169,7 +21213,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   const ROSTER_SET_KIND_GROUPS = Object.freeze([
     { ja: "家具", ids: ["block", "table", "chair", "bench", "stool"] },
     { ja: "建て込み", ids: ["wall"] },
-    { ja: "情景・乗り物", ids: ["sphere", "car"] },
+    /* ★2026-09-23 本人指示: 「乗り物」の中身は乗り物だけ（球は外し、その他の大道具へ）。 */
+    { ja: "乗り物", ids: ["car"] },
     { ja: "空中・サーカス", ids: ["trapeze", "cyrwheel", "pole", "teeter", "tissue", "wire", "trampoline", "cane"] },
   ]);
   let rosterKind = "performer";
