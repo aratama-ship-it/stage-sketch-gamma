@@ -32089,6 +32089,13 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         rosterPropShape, rosterSelectedColor());
     }
     if (added) closeKindModal();
+    /* 大道具・小道具は、舞台へ出した直後にその物の詳細を開く（本人指示 2026-09-24）。
+       名前・寸法・色を置いたその場で決められるように。明かりと演者は今までどおり開かない。 */
+    if (added && rosterKind !== "performer" && rosterKind !== "light") {
+      const sets = state.project.sets || [];
+      const item = sets[sets.length - 1];
+      if (item) openSetInfo(item.id);
+    }
     return added;
   };
   renderModelPicker();
