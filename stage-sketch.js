@@ -21263,6 +21263,8 @@
   const TURNTABLE_START_FACING_OFFSET = {
     stairs: 90, stairs6: 90, slope: 90, bicycle: 90,
     unicycle: 90, slackline: 90, skateboard: 90,
+    // 2026-09-23 本人指定: 真正面だと2足が重なって箱に見える。斜め45度から始める
+    rollerskate: 45,
   };
   // 種類ごとの一覧プレビューの実測フィット（拡大率・位置）。中身が変わることはないので使い回す。
   const KIND_PREVIEW_FIT_CACHE = new Map();
