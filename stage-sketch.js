@@ -9631,6 +9631,17 @@
     });
     return changed;
   }
+  /* 開いたままのショーがロミオとジュリエット見本そのものの場合、キューは棚ではなく作業中データにある。
+   * 棚と同じ条件（旧版と同じ時刻のキューだけ）で作業中データにも新しい時刻を届け、自動保存へ回す。
+   * 起動直後（タイムラインが描かれる前）に呼ぶが、念のため構造変更の合図も出す。 */
+  function backfillOpenRomeoJulietVoxOffsets() {
+    const source = bundledProjectById("romeo-juliet-gamma-cued-2026-09-21");
+    if (!source || !state || !state.project || state.project.id !== source.project.id) return false;
+    if (!backfillRomeoJulietVoxOffsets(state.project, source.project)) return false;
+    persistSoon();
+    try { window.dispatchEvent(new CustomEvent("stage-timeline-structure-change")); } catch (_) {}
+    return true;
+  }
   // ロミオとジュリエットも初回だけ棚へ置く。既存の同ID（編集済みを含む）は触らない。
   function shelveRomeoJulietSample() {
     const built = buildRomeoJulietSampleShow();
@@ -35556,6 +35567,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     if (!loaded.restored) shelveSample();
     shelveSeamGardenSample();
     shelveRomeoJulietSample();
+    backfillOpenRomeoJulietVoxOffsets();
     syncLocalShows();
     try {
       if (projectRecoveryNeeded) {
