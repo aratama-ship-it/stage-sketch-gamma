@@ -18928,7 +18928,14 @@
     /* 3列表示: 右の2列目の並びは端末の設定へ。ショーの保存データには「右の列」として残す
        （2列表示や旧版では右の列の後ろに並ぶ）。左・右1列目へ移したパネルは2列目の登録から外す。 */
     if (panelTripleActive() && colEls.right2) {
+      // 3つの列のどこにも無いパネル（別の場所へ移されているもの等）の登録は残す。
+      const placed = new Set([colEls.left, colEls.right, colEls.right2]
+        .flatMap((host) => [...host.children].map((el) => el.dataset && el.dataset.panel).filter(Boolean)));
+      const previous = panelRight2Order();
       const next = {};
+      Object.keys(previous).forEach((id) => {
+        if (!placed.has(id) && Number.isFinite(previous[id])) next[id] = 1000 + previous[id];
+      });
       const rightCount = [...colEls.right.children].filter((el) => el.dataset && el.dataset.panel).length;
       [...colEls.right2.children]
         .filter((el) => el.dataset && el.dataset.panel)
