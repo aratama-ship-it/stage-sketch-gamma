@@ -9,19 +9,34 @@
   gap: 10px;
 }
 
+/* いまのセリフ（2026-09-24 本人指示: 左のバーだけでは弱いので四辺を枠で囲む）。
+   数値: 枠2px・角丸8px・内側余白12/14px・外側に3pxの淡い光輪。該当なしのときは点線の枠。 */
 .stage-vox-now {
-  border-left: 3px solid var(--stage-vox-line);
-  padding: 8px 10px 10px 12px;
-  background: rgba(var(--stage-ui-recess-rgb, 13, 14, 16), 0.45);
-  border-radius: 0 6px 6px 0;
-  min-height: 72px;
+  border: 2px solid var(--stage-vox-accent);
+  border-radius: 8px;
+  padding: 12px 14px 14px;
+  background: rgba(168, 191, 138, 0.10);
+  box-shadow: 0 0 0 3px rgba(168, 191, 138, 0.14);
+  margin: 3px;                     /* 光輪がパネルの端で切れないように */
+  min-height: 84px;
 }
-.stage-vox-panel.has-current .stage-vox-now { border-left-color: var(--stage-vox-accent); }
+.stage-vox-panel:not(.has-current) .stage-vox-now {
+  border: 1px dashed var(--stage-vox-muted);
+  background: rgba(var(--stage-ui-recess-rgb, 13, 14, 16), 0.45);
+  box-shadow: none;
+  opacity: 0.85;
+}
 .stage-vox-now p { margin: 0; }
 .stage-vox-now-cue {
   font-size: 12px;
   letter-spacing: 0.04em;
+  color: var(--stage-vox-accent);
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(168, 191, 138, 0.35);
+}
+.stage-vox-panel:not(.has-current) .stage-vox-now-cue {
   color: var(--stage-vox-muted);
+  border-bottom-color: var(--stage-vox-line);
 }
 .stage-vox-now-speaker {
   margin-top: 6px !important;
