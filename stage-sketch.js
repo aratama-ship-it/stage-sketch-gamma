@@ -11450,6 +11450,7 @@
       return [cx - r, cx + r];
     }
     if (part.kind === "line") return [finite(part.a && part.a[0], 0), finite(part.b && part.b[0], 0)];
+    if (part.kind === "cylinder") return [finite(part.ox, 0) - finite(part.r, 0), finite(part.ox, 0) + finite(part.r, 0)];
     return [finite(part.ox, 0) - finite(part.w, 0) / 2, finite(part.ox, 0) + finite(part.w, 0) / 2];
   }
   function propPartYExtent(part) {
@@ -11507,12 +11508,16 @@
     if (piece.type === "prop") {
       const shape = scaledPropShape(piece, d);
       if (shape.parts && window.SHOSAI_STAGE_MODELS) {
-        /* ★2026-09-23 本人指摘: 円形のクラッシュマット・ジャーマンホイールの輪など、
-         * 真円が必要な部品は disc/ring の目印を付ける。partBoxes の cylinder 近似は
-         * 正方形2枚を45度ずらして重ねるだけ（8方向の星形）で、円形には粗すぎた。
-         * ここだけ本物の円・輪（paintDisc/paintRigging）を直接返し、model-box化を通さない。
-         * rod は輪と輪をつなぐ棒。奥行き(d.d)いっぱいへ、駒の実寸(scaledPropShape後)で置く。 */
+        /* ★2026-09-23 本人指摘（「小道具がカクカク」全般への対応）: partBoxes の近似は
+         * 球は4段の帯、円柱は正方形2枚を45度ずらすだけ（8方向の星形）で、どちらも
+         * 粗く見えた。shape:"cylinder"／"sphere" は既定で本物の丸（ring/disc/sphere/
+         * cylinder の各paint関数）を直接返し、model-box化を通さない。
+         * disc: 真円の薄い板（クラッシュマット等）。ring: 輪の外形だけ（ジャーマンホイール等）。
+         * rod（line）: 輪と輪をつなぐ棒。それ以外の cylinder は側面まで丸く描く新しい経路
+         * （paintPartCylinder）、sphere は陰影付きの丸（paintPartSphere）。
+         * axis:"z" は「組んだセット」の立体パーツ用の指定で、これだけは従来どおり箱で作る。 */
         return shape.parts.flatMap((part) => {
+          if (part.axis === "z") return window.SHOSAI_STAGE_MODELS.partBoxes({ ...part, shape: "box" });
           if (part.shape === "cylinder" && part.disc) {
             return [{ kind: "disc", c: [part.x || 0, part.y || 0, part.z || 0],
               r: (part.dia || 1) / 2, h: part.h || 0, tint: part.tint }];
@@ -11527,15 +11532,16 @@
             return [{ kind: "line", a: [part.x || 0, part.y || 0, -halfDepth],
               b: [part.x || 0, part.y || 0, halfDepth], w: part.w || 0.03, tone: "gear" }];
           }
-          /* ★2026-09-23 本人指摘: ボール等の真球も、箱を積む近似（partBoxesのsphere分岐）
-           * だと段差が見えてカクカクする。round: true を付けた球は、drawSphereと同じ
-           * 陰影の丸をそのまま描く（paintPartSphere）。part.yは球の底（partBoxesと同じ約束）。 */
-          if (part.shape === "sphere" && part.round) {
+          if (part.shape === "cylinder") {
+            return [{ kind: "cylinder", ox: part.x || 0, oz: part.z || 0,
+              lift: part.y || 0, r: (part.dia || 1) / 2, h: Math.max(0.005, part.h || 0.01), tint: part.tint }];
+          }
+          if (part.shape === "sphere") {
             const r = (part.dia || 1) / 2;
             return [{ kind: "sphere", c: [part.x || 0, (part.y || 0) + r, part.z || 0], r, tint: part.tint }];
           }
-          // 曲面の表示とは別に、選択・支持判定へは外接箱を渡す。
-          return window.SHOSAI_STAGE_MODELS.partBoxes(part.axis === "z" ? { ...part, shape: "box" } : part);
+          // 曲面の表示とは別に、選択・支持判定へは外接箱を渡す（box/panel/step/ramp）。
+          return window.SHOSAI_STAGE_MODELS.partBoxes(part);
         });
       }
       return [{ ox: 0, oz: 0, w: d.w, d: d.d, h: d.h, lift: 0, tint: 1 }];
@@ -12040,6 +12046,7 @@
       if (part.kind === "disc") paintDisc(target, piece, L, part);
       else if (part.kind === "line" || part.kind === "ring") paintRigging(target, piece, L, part);
       else if (part.kind === "sphere") paintPartSphere(target, piece, L, part);
+      else if (part.kind === "cylinder") paintPartCylinder(target, piece, L, part);
       else paintBox(target, piece, L, part, drawOptions);
     });
 
@@ -12372,6 +12379,73 @@
     target.beginPath();
     target.ellipse(centre.x, centre.y, rx, ry, 0, 0, Math.PI * 2);
     target.fill();
+    target.restore();
+  }
+
+  /* ★2026-09-23 本人指摘: シルクハット・楽器・傘の柄など、丸い柱状の道具が
+   * 正方形を2枚重ねただけ（8方向の星形）の近似で描かれていてカクカクしていた。
+   * paintBox と同じ「N角形の側面を1面ずつ、客席側だけ・奥から順に塗る」考え方を
+   * 4角形(N=4)から円周状(N=8)へ広げ、天面も同じ丸で塞ぐ。側面どうしの境目線は
+   * 描かない（縦筋が見えると逆にカクカクして見えるため）。 */
+  function paintPartCylinder(target, piece, L, part) {
+    const rad = ((piece.facing || 0) * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const at = (ux, uy) => {
+      const dw = (part.ox + ux) * cos - (part.oz + uy) * sin;
+      const dd = (part.ox + ux) * sin + (part.oz + uy) * cos;
+      const p = floorPoint(piece, dw, dd, L);
+      const per = perMetre(p, L);
+      const bend = L.plan ? ((y) => y) : L.tilt;
+      const raw = p.rawY === undefined ? p.y : p.rawY;
+      return {
+        x: p.x,
+        y: bend(raw - part.lift * per.y),
+        top: bend(raw - (part.lift + part.h) * per.y),
+        depth: dd,
+      };
+    };
+    const segments = 8;
+    const base = Array.from({ length: segments }, (_, i) => {
+      const t = (i / segments) * Math.PI * 2;
+      return at(Math.cos(t) * part.r, Math.sin(t) * part.r);
+    });
+    const top = base.map((c) => ({ x: c.x, y: c.top }));
+    const tint = part.tint === undefined ? 1 : part.tint;
+
+    const faces = [];
+    for (let i = 0; i < segments; i += 1) {
+      const j = (i + 1) % segments;
+      const ex = base[j].x - base[i].x;
+      const ey = base[j].depth - base[i].depth;
+      const len = Math.hypot(ex, ey) || 1;
+      const lit = ex / len;
+      if (lit <= 0.001) continue;
+      faces.push({ i, j, lit, mid: (base[i].depth + base[j].depth) / 2 });
+    }
+    faces.sort((a, b) => b.mid - a.mid);
+
+    target.save();
+    faces.forEach((f) => {
+      target.fillStyle = rgba(piece.color, (0.46 + f.lit * 0.54) * tint);
+      target.beginPath();
+      target.moveTo(base[f.i].x, base[f.i].y);
+      target.lineTo(base[f.j].x, base[f.j].y);
+      target.lineTo(top[f.j].x, top[f.j].y);
+      target.lineTo(top[f.i].x, top[f.i].y);
+      target.closePath();
+      target.fill();
+    });
+
+    // 天面（縁だけ薄く線を残す。実物の丸い縁のつもり）
+    target.fillStyle = rgba(piece.color, 0.78 * tint);
+    target.strokeStyle = rgba(piece.color, 0.28 * tint);
+    target.lineWidth = 1;
+    target.beginPath();
+    top.forEach((c, i) => (i ? target.lineTo(c.x, c.y) : target.moveTo(c.x, c.y)));
+    target.closePath();
+    target.fill();
+    target.stroke();
     target.restore();
   }
 
