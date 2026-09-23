@@ -9385,12 +9385,13 @@
   }
 
   // 棚へ入れておく。ショー一覧から開ける（開いた瞬間には出さない）
+  // ★壊れて表示できない保存（showSummary が null）は「無い」扱いで置き直す（理由は shelveRomeoJulietSample 参照）。
   function shelveSample() {
     const built = buildSampleShow();
     if (!built) return;
     drawSampleRoutes(built);
     const shows = readShows();
-    if (shows[built.project.id]) return;
+    if (shows[built.project.id] && showSummary(shows[built.project.id])) return;
     shows[built.project.id] = { savedAt: nowIso(), state: built };
     writeShows(shows);
   }
@@ -9407,12 +9408,13 @@
 
   // 新しいサンプルは既存利用者の棚にも一度だけ追加する。同じidを利用者が
   // 編集済みなら上書きしないため、配置変更はそのまま残る。
+  // ★壊れて表示できない保存（showSummary が null）は「無い」扱いで置き直す（理由は shelveRomeoJulietSample 参照）。
   function shelveSeamGardenSample() {
     const built = buildSeamGardenSampleShow();
     if (!built) return;
     drawSampleRoutes(built);
     const shows = readShows();
-    if (shows[built.project.id]) return;
+    if (shows[built.project.id] && showSummary(shows[built.project.id])) return;
     shows[built.project.id] = { savedAt: nowIso(), state: built };
     writeShows(shows);
   }
@@ -9430,7 +9432,15 @@
     if (!built) return;
     const shows = readShows();
     const saved = shows[built.project.id];
-    if (saved) {
+    /* ★2026-09-23 本人指摘: 他の同梱ショーは出るのにロミオとジュリエットだけ
+     * 「ショー一覧」に出ない、という状態が続いていた。renderShows は
+     * showSummary(entry) が null を返す（entry.state.project が無い）行を
+     * 黙って除外する。以前の版が壊れた形（project が抜けている等）のまま
+     * 棚へ残っていると、下の「saved があれば触らない」に引っかかって
+     * 永遠に直らない——壊れていて画面に出せない以上、本人が編集している
+     * はずもないので、表示できない保存は「無い」のと同じ扱いにして
+     * 同梱の最新版で置き直す。 */
+    if (saved && showSummary(saved)) {
       /* 初期版を先に棚へ置いた端末には、照明デザインが無いコピーが残ることがある。
        * その場合だけ同梱版の機材配置／LX設計を補い、演者・場面・利用者の編集は触らない。 */
       const savedProject = saved.state && saved.state.project;
