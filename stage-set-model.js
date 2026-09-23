@@ -62,15 +62,15 @@
     const part = normalizePart(raw);
     if (part.shape === "box" || part.shape === "panel") return [boxOf(part)];
     if (part.shape === "cylinder") {
-      return [
-        boxOf(part, { w: part.dia, d: part.dia }),
-        boxOf(part, { w: part.dia, d: part.dia, rotY: rotation(part.rotY + 45) }),
-      ];
+      /* ★2026-09-23 本人指摘: 正方形2枚を45度ずらすだけ（8方向の星形）だとカクカクして見える。
+       * 4枚（22.5度刻み）にして輪郭を丸く近づける。 */
+      return [0, 22.5, 45, 67.5].map((extra) =>
+        boxOf(part, { w: part.dia, d: part.dia, rotY: rotation(part.rotY + extra) }));
     }
     if (part.shape === "sphere") {
-      const weights = [0.19, 0.35, 0.35, 0.19];
-      const total = weights.reduce((sum, value) => sum + value, 0);
-      const bands = weights.map((value) => value / total);
+      /* ★2026-09-23 本人指摘: 4段（帯）だとカクカクして見える。8段にして丸く近づける。 */
+      const bandCount = 8;
+      const bands = Array.from({ length: bandCount }, () => 1 / bandCount);
       const radius = part.dia / 2;
       let lift = part.y;
       return bands.map((ratio) => {

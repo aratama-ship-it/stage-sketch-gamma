@@ -2350,7 +2350,7 @@
         { shape: "sphere", y: 0.496, dia: 0.034, tint: 0.84 },    // 頂点のドーム（丸く塞ぐ）
       ] },
     ball: { ja: "ボール", en: "Ball", dims: { w: 0.24, d: 0.24, h: 0.24 }, grip: { x: 0, y: 0.12 },
-      parts: [ { shape: "sphere", y: 0, dia: 0.24, tint: 1.05 } ] },
+      parts: [ { shape: "sphere", round: true, y: 0, dia: 0.24, tint: 1.05 } ] },
     ring: { ja: "リング", en: "Ring", dims: { w: 0.40, d: 0.04, h: 0.40 }, grip: { x: 0, y: 0.03 },
       parts: ringTube(128, 0.185, 0.05, 1) },
     /* 棒の握りは手の高さ（立ち姿の手首≒0.75m）と同じにする。これで立って持つと
@@ -11324,6 +11324,7 @@
       ring: part.ring,
       rod: part.rod,
       side: part.side,
+      round: part.round,
       x: finite(part.x, 0) * sx,
       y: finite(part.y, 0) * sy,
       z: finite(part.z, 0) * sz,
@@ -11441,12 +11442,36 @@
     }, piece.color, drawOptions);
   }
 
+  /* ★2026-09-23: disc/ring/sphere（本物の円で描く部品）はox/w/lift/hを持たないため、
+   * 元の式のままだと0扱いになり、握り位置の外接箱がつぶれる。種類ごとに読み方を分ける。 */
+  function propPartXExtent(part) {
+    if (part.kind === "disc" || part.kind === "ring" || part.kind === "sphere") {
+      const cx = finite(part.c && part.c[0], 0); const r = finite(part.r, 0);
+      return [cx - r, cx + r];
+    }
+    if (part.kind === "line") return [finite(part.a && part.a[0], 0), finite(part.b && part.b[0], 0)];
+    return [finite(part.ox, 0) - finite(part.w, 0) / 2, finite(part.ox, 0) + finite(part.w, 0) / 2];
+  }
+  function propPartYExtent(part) {
+    if (part.kind === "disc") {
+      const y = finite(part.c && part.c[1], 0);
+      return [y, y + finite(part.h, 0)];
+    }
+    if (part.kind === "ring" || part.kind === "sphere") {
+      const y = finite(part.c && part.c[1], 0); const r = finite(part.r, 0);
+      return [y - r, y + r];
+    }
+    if (part.kind === "line") return [finite(part.a && part.a[1], 0), finite(part.b && part.b[1], 0)];
+    return [finite(part.lift, 0), finite(part.lift, 0) + finite(part.h, 0)];
+  }
   function propPartsBounds(parts) {
     if (!parts || !parts.length) return null;
-    const minX = Math.min(...parts.map((part) => finite(part.ox, 0) - finite(part.w, 0) / 2));
-    const maxX = Math.max(...parts.map((part) => finite(part.ox, 0) + finite(part.w, 0) / 2));
-    const minY = Math.min(...parts.map((part) => finite(part.lift, 0)));
-    const maxY = Math.max(...parts.map((part) => finite(part.lift, 0) + finite(part.h, 0)));
+    const xs = parts.flatMap(propPartXExtent);
+    const ys = parts.flatMap(propPartYExtent);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
     return { minX, maxX, minY, maxY };
   }
 
@@ -11501,6 +11526,13 @@
             const halfDepth = d.d / 2;
             return [{ kind: "line", a: [part.x || 0, part.y || 0, -halfDepth],
               b: [part.x || 0, part.y || 0, halfDepth], w: part.w || 0.03, tone: "gear" }];
+          }
+          /* ★2026-09-23 本人指摘: ボール等の真球も、箱を積む近似（partBoxesのsphere分岐）
+           * だと段差が見えてカクカクする。round: true を付けた球は、drawSphereと同じ
+           * 陰影の丸をそのまま描く（paintPartSphere）。part.yは球の底（partBoxesと同じ約束）。 */
+          if (part.shape === "sphere" && part.round) {
+            const r = (part.dia || 1) / 2;
+            return [{ kind: "sphere", c: [part.x || 0, (part.y || 0) + r, part.z || 0], r, tint: part.tint }];
           }
           // 曲面の表示とは別に、選択・支持判定へは外接箱を渡す。
           return window.SHOSAI_STAGE_MODELS.partBoxes(part.axis === "z" ? { ...part, shape: "box" } : part);
@@ -12007,6 +12039,7 @@
     parts.forEach((part) => {
       if (part.kind === "disc") paintDisc(target, piece, L, part);
       else if (part.kind === "line" || part.kind === "ring") paintRigging(target, piece, L, part);
+      else if (part.kind === "sphere") paintPartSphere(target, piece, L, part);
       else paintBox(target, piece, L, part, drawOptions);
     });
 
@@ -12316,6 +12349,29 @@
       }
     }
     target.stroke();
+    target.restore();
+  }
+
+  /* ★2026-09-23 本人指摘: ボール等の真球は、箱を積んだ近似（段差が見える）だと
+   * カクカクして見える。drawSphere と同じ陰影の丸(楕円グラデーション)を、
+   * 駒の中の一部品として好きな位置に描けるようにする。c=[x,y,z]は球の中心。 */
+  function paintPartSphere(target, piece, L, part) {
+    const per = perMetre(floorPoint(piece, 0, 0, L), L);
+    const centre = riggingPoint(piece, part.c[0], part.c[1], part.c[2], L);
+    const rx = Math.max(2, part.r * per.x);
+    const ry = Math.max(2, part.r * per.y);
+    const tint = part.tint === undefined ? 1 : part.tint;
+    target.save();
+    const shade = target.createRadialGradient(
+      centre.x - rx * 0.36, centre.y - ry * 0.4, Math.max(1, Math.min(rx, ry) * 0.08),
+      centre.x, centre.y, Math.max(rx, ry));
+    shade.addColorStop(0, rgba(piece.color, Math.min(1, 1.05 * tint)));
+    shade.addColorStop(0.55, rgba(piece.color, Math.min(1, 0.88 * tint)));
+    shade.addColorStop(1, rgba(piece.color, Math.min(1, 0.42 * tint)));
+    target.fillStyle = shade;
+    target.beginPath();
+    target.ellipse(centre.x, centre.y, rx, ry, 0, 0, Math.PI * 2);
+    target.fill();
     target.restore();
   }
 
