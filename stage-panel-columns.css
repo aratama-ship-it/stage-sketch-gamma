@@ -17,6 +17,10 @@
   grid-template-areas: "tools board inspector inspector2";
 }
 
+/* ヘッダーのパネル表示メニュー「パネルの表示スタイル」: 選択肢が4つ（2列表示・3列表示・1列・左・1列・右）
+   になったので、3つ並び＋はみ出し1つではなく2×2に並べる（2026-09-24 本人指示）。 */
+.stage-panel-visibility-layout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
 /* 幅の取っ手は右の列と同じく、列の左端に付ける */
 .stage-panel-width-handle[data-panel-width="right2"] { right: auto; left: calc(-1 * var(--panel-width-hit)); }
 

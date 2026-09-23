@@ -25413,7 +25413,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
    * 「項目と保存値は共用し、二重の設定にはしない」という renderPanelVisibilityMenu の方針に合わせ、
    * 実際に prefs を書いて反映する処理はこの1か所にまとめ、両方から呼ぶ。
    * 片方だけ直すと、ヘッダーと環境設定で値がずれる。 */
-  const PANEL_LAYOUT_OPTIONS = [["split", "2列表示"], ["triple", "3列（右に2列）"], ["single-left", "1列・左"], ["single-right", "1列・右"]];
+  const PANEL_LAYOUT_OPTIONS = [["split", "2列表示"], ["triple", "3列表示"], ["single-left", "1列・左"], ["single-right", "1列・右"]];
   function panelLayoutChoiceValue(key) {
     if (key === "normal" && tabletUi) return "ipad";
     const mode = panelLayoutMode(key);
