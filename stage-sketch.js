@@ -5958,7 +5958,7 @@
   const panelLayoutMode = (workspace = currentWorkspaceMode()) => {
     const saved = prefs.panelLayoutByWorkspace && typeof prefs.panelLayoutByWorkspace === "object"
       ? prefs.panelLayoutByWorkspace[workspace] : null;
-    if (saved === "single" || saved === "split") return saved;
+    if (saved === "single" || saved === "split" || saved === "triple") return saved;
     // 旧版の通常モード設定だけはそのまま引き継ぐ。
     if (workspace === "normal" && (prefs.panelLayoutMode === "single" || prefs.panelLayoutMode === "split")) {
       return prefs.panelLayoutMode;
@@ -5974,8 +5974,26 @@
     return prefs.panelSingleSide === "right" ? "right" : "left";
   };
   const panelColumnsForCurrentMode = () => (
-    panelLayoutMode() === "single" ? [panelSingleSide()] : ["left", "right"]
+    panelLayoutMode() === "single" ? [panelSingleSide()]
+      : panelTripleActive() ? ["left", "right", "right2"] : ["left", "right"]
   );
+  /* 3列表示（2026-09-24 本人指示）: 左1列＋右2列。机の画面だけで使い、iPad・スマホ閲覧・
+   * 共有セッションのゲストでは2列表示と同じに扱う（それぞれ独自の並べ方を持つため）。 */
+  function panelTripleActive() {
+    return panelLayoutMode() === "triple" && !tabletUi && !phoneViewerActive
+      && !document.body.classList.contains("stage-session-guest");
+  }
+  /* 右の2列目に置くパネルと、その中の順番。端末ごとの設定に持つ（ショーの保存データの形は変えない。
+   * 2列表示や旧版では、これらのパネルは state.layout どおり右の列に並ぶ）。
+   * 未設定のうちは、場面の編集中に常に見るわけではないパネルを2列目の既定にする。 */
+  const PANEL_RIGHT2_DEFAULT = ["vox", "alternatives", "seat2", "save", "session", "ask"];
+  function panelRight2Order() {
+    if (prefs.panelRight2Order && typeof prefs.panelRight2Order === "object") return prefs.panelRight2Order;
+    const order = {};
+    PANEL_RIGHT2_DEFAULT.forEach((id, index) => { order[id] = index; });
+    return order;
+  }
+  const inPanelRight2 = (id) => Number.isFinite(panelRight2Order()[id]);
   const panelSingleOrder = () => (
     prefs.panelSingleOrder && typeof prefs.panelSingleOrder === "object" ? prefs.panelSingleOrder : {}
   );
@@ -17345,6 +17363,7 @@
   const colEls = {
     left: document.getElementById("stage-col-left"),
     right: document.getElementById("stage-col-right"),
+    right2: document.getElementById("stage-col-right2"),
     center: document.getElementById("stage-col-center"),
   };
 
@@ -17356,6 +17375,8 @@
      2026-09-17 本人指示で、下限240pxと上限480pxのちょうど中間の360pxへ広げた
      ——268pxでは名前や操作が窮屈だった。正面図の描画欄はそのぶん狭くなる。 */
   const PANEL_COLUMN_DEFAULT_WIDTH = 360;
+  // 3列表示の右2列目の既定幅。3列並べても正面図の欄が狭くなりすぎないよう、下限寄りにする。
+  const PANEL_RIGHT2_DEFAULT_WIDTH = 300;
   let panelWidthUi = null;
   function syncPanelWidths() {
     const ui = panelWidthUi;
@@ -17366,14 +17387,18 @@
     const guest = document.body.classList.contains("stage-session-guest");
     const single = !tabletUi && !phoneViewerActive && panelLayoutMode() === "single";
     const singleSide = single ? panelSingleSide() : null;
-    const space = Math.max(480, gridWidth - 420 - (single || guest ? 18 : 36));
+    // 3列表示では右の2列目のぶん、隙間も1つ増える（18px × 3）
+    const triple = !single && !tabletUi && !phoneViewerActive && panelTripleActive();
+    const space = Math.max(triple ? 720 : 480, gridWidth - 420 - (single || guest ? 18 : triple ? 54 : 36));
     let left = singleSide === "right" ? 0 : clamp(wanted("left", PANEL_COLUMN_DEFAULT_WIDTH), 240, PANEL_COLUMN_MAX_WIDTH);
     let right = singleSide === "left" || guest ? 0 : clamp(wanted("right", PANEL_COLUMN_DEFAULT_WIDTH), 240, PANEL_COLUMN_MAX_WIDTH);
-    if (!single && left + right > space) {
-      const base = guest ? 240 : 480;
-      const factor = Math.max(0, (space - base) / (left + right - base));
+    let right2 = triple ? clamp(wanted("right2", PANEL_RIGHT2_DEFAULT_WIDTH), 240, PANEL_COLUMN_MAX_WIDTH) : 0;
+    if (!single && left + right + right2 > space) {
+      const base = guest ? 240 : triple ? 720 : 480;
+      const factor = Math.max(0, (space - base) / (left + right + right2 - base));
       left = 240 + (left - 240) * factor;
       if (!guest) right = 240 + (right - 240) * factor;
+      if (triple) right2 = 240 + (right2 - 240) * factor;
     }
     const tabletDefault = window.innerHeight > window.innerWidth
       ? Math.min(320, window.innerWidth * 0.42) : clamp(window.innerWidth * 0.32, 280, 360);
@@ -17382,13 +17407,14 @@
     const fullscreenMin = tabletUi ? 338 : 280;
     const fullscreenMax = Math.max(fullscreenMin, Math.min(520, window.innerWidth - 88));
     ui.widths = {
-      left: Math.round(left), right: Math.round(right),
+      left: Math.round(left), right: Math.round(right), right2: Math.round(right2),
       tablet: Math.round(clamp(wanted("tablet", tabletDefault), 240, tabletMax)),
       fullscreen: Math.round(clamp(wanted(fullscreenKey, tabletUi ? 380 : 320), fullscreenMin, fullscreenMax)),
     };
     ui.limits = {
-      left: singleSide === "right" ? [0, 0] : [240, Math.min(PANEL_COLUMN_MAX_WIDTH, space - right)],
-      right: singleSide === "left" || guest ? [0, 0] : [240, Math.max(240, Math.min(PANEL_COLUMN_MAX_WIDTH, space - left))],
+      left: singleSide === "right" ? [0, 0] : [240, Math.min(PANEL_COLUMN_MAX_WIDTH, space - right - right2)],
+      right: singleSide === "left" || guest ? [0, 0] : [240, Math.max(240, Math.min(PANEL_COLUMN_MAX_WIDTH, space - left - right2))],
+      right2: triple ? [240, Math.max(240, Math.min(PANEL_COLUMN_MAX_WIDTH, space - left - right))] : [0, 0],
       tablet: [240, tabletMax], fullscreen: [fullscreenMin, fullscreenMax],
     };
     const write = (el, key, value) => {
@@ -17396,6 +17422,7 @@
     };
     write(ui.grid, "--stage-left-width", `${ui.widths.left}px`);
     write(ui.grid, "--stage-right-width", `${ui.widths.right}px`);
+    write(ui.grid, "--stage-right2-width", `${ui.widths.right2}px`);
     write(ui.grid, "--stage-tablet-drawer-width", `${ui.widths.tablet}px`);
     write(els.presentOverlay, "--fullscreen-drawer", `${ui.widths.fullscreen}px`);
     ui.handles.forEach((handle) => {
@@ -17461,7 +17488,7 @@
         if (!drag || drag.handle !== handle || event.pointerId !== drag.pointerId) return;
         event.preventDefault();
         const [min, max] = ui.limits[key];
-        const direction = key === "right" ? -1 : 1;
+        const direction = key === "right" || key === "right2" ? -1 : 1;
         drag.widths[preferenceKey(key)] = Math.round(clamp(drag.startWidth + direction * (event.clientX - drag.startX), min, max));
         if (!ui.frame) ui.frame = requestAnimationFrame(() => { ui.frame = 0; syncPanelWidths(); });
       });
@@ -17479,7 +17506,7 @@
         if (event.key === "Enter") { reset(key); return; }
         syncPanelWidths();
         const [min, max] = ui.limits[key];
-        const direction = (event.key === "ArrowRight" ? 1 : -1) * (key === "right" ? -1 : 1);
+        const direction = (event.key === "ArrowRight" ? 1 : -1) * (key === "right" || key === "right2" ? -1 : 1);
         const next = event.key === "Home" ? min : event.key === "End" ? max
           : ui.widths[key] + direction * (event.shiftKey ? 30 : 10);
         const widths = readPrefs();
@@ -17494,6 +17521,7 @@
       // 常に二つ作る。1列中は使わない側の列ごと隠れる。
       mount(colEls.left, "left", "左パネルの幅");
       mount(colEls.right, "right", "右パネルの幅");
+      mount(colEls.right2, "right2", "右の2列目の幅");
     }
     mount(els.presentDrawer, "fullscreen", "引き出しの幅");
     ui.observer = new ResizeObserver(() => { if (!ui.frame) ui.frame = requestAnimationFrame(() => { ui.frame = 0; syncPanelWidths(); }); });
@@ -18786,14 +18814,15 @@
     });
     clearFlip(el);
 
-    const col = el.parentElement === colEls.right ? "right" : "left";
+    const col = el.parentElement === colEls.right2 ? "right2"
+      : el.parentElement === colEls.right ? "right" : "left";
     drag = null;
     justDragged = true;
     setTimeout(() => { justDragged = false; }, 60);
     commitLayoutFromDom();
     announce(panelLayoutMode() === "single"
       ? `${el.dataset.title || id}の並び順を変えました。`
-      : `${el.dataset.title || id}を${col === "left" ? "左" : "右"}の列へ移しました。`);
+      : `${el.dataset.title || id}を${col === "left" ? "左" : col === "right2" ? "右の2列目" : "右"}の列へ移しました。`);
   }
 
   // 並びの正本は画面。動かし終えたら、そのまま状態へ書き戻す
@@ -18819,6 +18848,21 @@
           state.layout.order[el.dataset.panel] = i;
         });
     });
+    /* 3列表示: 右の2列目の並びは端末の設定へ。ショーの保存データには「右の列」として残す
+       （2列表示や旧版では右の列の後ろに並ぶ）。左・右1列目へ移したパネルは2列目の登録から外す。 */
+    if (panelTripleActive() && colEls.right2) {
+      const next = {};
+      const rightCount = [...colEls.right.children].filter((el) => el.dataset && el.dataset.panel).length;
+      [...colEls.right2.children]
+        .filter((el) => el.dataset && el.dataset.panel)
+        .forEach((el, i) => {
+          next[el.dataset.panel] = i;
+          state.layout.cols[el.dataset.panel] = "right";
+          state.layout.order[el.dataset.panel] = rightCount + i;
+        });
+      prefs.panelRight2Order = next;
+      savePrefs();
+    }
     persistSoon();
   }
 
@@ -18855,10 +18899,13 @@
       if (!phoneViewerActive) {
       const grid = document.querySelector(".stage-sketch-grid");
       const single = panelLayoutMode() === "single";
+      const triple = !single && panelTripleActive();
       if (grid) {
         grid.classList.toggle("stage-panels-single", single);
         grid.classList.toggle("stage-panels-on-right", single && panelSingleSide() === "right");
+        grid.classList.toggle("stage-panels-triple", triple);
       }
+      if (colEls.right2) colEls.right2.hidden = !triple;
       placeStageControls();
       if (single) {
         const oneColumnOrder = panelSingleOrder();
@@ -18872,12 +18919,15 @@
           const host = colEls[panelSingleSide()];
           if (el && host && el.dataset.gammaWorkspace !== "venue") host.append(el);
         });
-      } else ["left", "right"].forEach((col) => {
+      } else (triple ? ["left", "right", "right2"] : ["left", "right"]).forEach((col) => {
+        const right2Order = panelRight2Order();
         const ids = PANELS.filter((id) => {
           // 追従型をOFFにした「選んだもの」は、保存済みの列設定を変えず左列へ出す。
           if (id === "inspector" && !featureOn("floatingInspector")) return col === "left";
+          // 3列表示では、右の2列目に登録したパネルだけを2列目へ。2列表示では登録を無視して従来どおり。
+          if (triple && inPanelRight2(id)) return col === "right2";
           return L.cols[id] === col;
-        }).sort((a, b) => L.order[a] - L.order[b]);
+        }).sort((a, b) => (col === "right2" ? right2Order[a] - right2Order[b] : L.order[a] - L.order[b]));
         ids.forEach((id) => {
           /* ゲスト参加中の共有パネルは stage-session.js が左列の先頭へ移している。
              ここで並べ直すと、ゲストが接続状態も「最新を取り直す」も見失う
@@ -25268,10 +25318,11 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
    * 「項目と保存値は共用し、二重の設定にはしない」という renderPanelVisibilityMenu の方針に合わせ、
    * 実際に prefs を書いて反映する処理はこの1か所にまとめ、両方から呼ぶ。
    * 片方だけ直すと、ヘッダーと環境設定で値がずれる。 */
-  const PANEL_LAYOUT_OPTIONS = [["split", "2列表示"], ["single-left", "1列・左"], ["single-right", "1列・右"]];
+  const PANEL_LAYOUT_OPTIONS = [["split", "2列表示"], ["triple", "3列（右に2列）"], ["single-left", "1列・左"], ["single-right", "1列・右"]];
   function panelLayoutChoiceValue(key) {
     if (key === "normal" && tabletUi) return "ipad";
-    return panelLayoutMode(key) === "single" ? `single-${panelSingleSide(key)}` : "split";
+    const mode = panelLayoutMode(key);
+    return mode === "single" ? `single-${panelSingleSide(key)}` : mode === "triple" ? "triple" : "split";
   }
   function applyPanelLayoutChoice(key, next, options = {}) {
     if (options.nativeTablet) return;
@@ -25281,11 +25332,13 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       window.setTimeout(() => window.location.reload(), 80);
       return;
     }
-    const nextLayout = next === "single-left" || next === "single-right" ? "single" : "split";
+    const nextLayout = next === "single-left" || next === "single-right" ? "single"
+      : next === "triple" ? "triple" : "split";
     const nextSide = next === "single-right" ? "right" : "left";
     if (key === "normal") {
       prefs.tabletMode = false;
-      prefs.panelLayoutMode = nextLayout;
+      // 旧版は panelLayoutMode しか読まない。3列を知らない版では2列表示として開かせる。
+      prefs.panelLayoutMode = nextLayout === "triple" ? "split" : nextLayout;
       if (nextLayout === "single") prefs.panelSingleSide = nextSide;
     }
     prefs.panelLayoutByWorkspace = {
@@ -25317,19 +25370,15 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const nativeTablet = window.SHOSAI_TABLET_PWA === true;
     const hintText = nativeTablet
       ? "このiPad PWAでは常に有効です。"
-      : "2列表示では左右に分け、1列表示では全パネルを一方の列へ並べます。";
+      : "2列表示では左右に分け、3列表示では右をさらに2列に分け、1列表示では全パネルを一方の列へ並べます。";
     const section = prefGroup("パネルの表示スタイル", hintText);
     // 配置・照明デザイン・劇場カスタムは専用ワークスペースであり、
     // 通常の左右パネル列を使わないため、ここでは舞台モードだけを扱う。
     const definitions = workspaceModeDefinitions().filter((definition) => definition.key === "normal");
     definitions.forEach((definition) => {
-      const options = [["split", "2列表示"], ["single-left", "1列・左"], ["single-right", "1列・右"]];
+      const options = PANEL_LAYOUT_OPTIONS.map((option) => [...option]);
       if (definition.key === "normal") options.push(["ipad", "iPad表示モード"]);
-      const value = definition.key === "normal" && tabletUi
-        ? "ipad"
-        : (panelLayoutMode(definition.key) === "single"
-          ? `single-${panelSingleSide(definition.key)}`
-          : "split");
+      const value = panelLayoutChoiceValue(definition.key);
       const row = prefSelectRow(definition.label, value, options, hintText,
         (next) => applyPanelLayoutChoice(definition.key, next, { nativeTablet }));
       const select = row.querySelector("select");

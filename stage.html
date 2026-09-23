@@ -25,6 +25,7 @@
 <link rel="stylesheet" href="gamma-formation.css?v=2026091987">
 <link rel="stylesheet" href="stage-scene-alternatives.css?v=2026092209">
 <link rel="stylesheet" href="stage-vox-panel.css?v=2026092406">
+<link rel="stylesheet" href="stage-panel-columns.css?v=2026092401">
 </head>
 <body class="is-standalone">
 
@@ -1231,6 +1232,9 @@
             </div>
           </section>
         </aside>
+        <!-- 3列表示（2026-09-24 本人指示）のときだけ使う右の2列目。どのパネルをここへ置くかは
+             端末の設定（prefs.panelRight2Order）に持ち、ショーの保存データ（state.layout）の形は変えない。 -->
+        <aside class="stage-inspector-2 stage-col" data-col="right2" id="stage-col-right2" aria-label="右の道具列（2列目）" hidden></aside>
       </div>
 
       <!-- 再生要素は一つだけを使い回す。複数作るとiOSの再生許可と位置が分裂する。 -->

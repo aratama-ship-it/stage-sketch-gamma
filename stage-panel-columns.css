@@ -1,0 +1,39 @@
+/* 舞台スケッチγ：パネルの3列表示（2026-09-24 本人指示）。
+ * 左1列＋右2列。右の2列目（#stage-col-right2）は3列表示のときだけ出る（それ以外は hidden）。
+ * 数値: 右2列目の既定幅300px（下限240・上限480。stage-sketch.js の PANEL_RIGHT2_DEFAULT_WIDTH）／列の隙間18px。
+ * ★style.css の2列・1列の規則には手を入れず、3列のときの格子だけをここで足す。 */
+#stage-col-right2 {
+  grid-area: inspector2;
+  min-width: 0;
+}
+#stage-col-right2[hidden] { display: none; }
+
+.stage-sketch-grid.stage-panels-triple {
+  grid-template-columns:
+    var(--stage-left-width, 360px)
+    minmax(420px, 1fr)
+    var(--stage-right-width, 360px)
+    var(--stage-right2-width, 300px);
+  grid-template-areas: "tools board inspector inspector2";
+}
+
+/* 幅の取っ手は右の列と同じく、列の左端に付ける */
+.stage-panel-width-handle[data-panel-width="right2"] { right: auto; left: calc(-1 * var(--panel-width-hit)); }
+
+/* 共有セッションのゲスト・iPad・スマホ閲覧では右の列ごと使わない（stage-sketch.js 側でも3列にしない） */
+body.stage-session-guest #stage-col-right2,
+html.stage-pwa-tablet #stage-col-right2,
+html.stage-phone-viewer #stage-col-right2 { display: none; }
+
+/* 狭い画面では、2列表示と同じく全部を縦一列へ流し込む */
+@media (max-width: 1119px) {
+  .stage-sketch-grid.stage-panels-triple {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "board"
+      "tools"
+      "inspector"
+      "inspector2";
+  }
+  .stage-panel-width-handle[data-panel-width="right2"] { display: none; }
+}

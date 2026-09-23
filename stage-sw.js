@@ -5,6 +5,7 @@ const APP_SHELL = [
   "./stage-scene-alternatives-ui.js?v=2026092209",
   "./stage-scene-alternatives.css?v=2026092209",
   "./stage-vox-panel.css?v=2026092406",
+  "./stage-panel-columns.css?v=2026092401",
   "./gamma-formation-presets.js?v=formation1",
   "./gamma-formation-model.js?v=formation1",
   "./gamma-formation.js?v=2026091987",

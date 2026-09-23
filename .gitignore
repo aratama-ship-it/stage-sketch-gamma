@@ -143,6 +143,7 @@ public-dist/
 !/stage-cue-sheet.js
 !/stage-vox-panel.js
 !/stage-vox-panel.css
+!/stage-panel-columns.css
 !/stage-first-person.js
 !/stage-front-shape.js
 !/stage-i18n.js
