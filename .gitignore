@@ -141,6 +141,8 @@ public-dist/
 !/stage-scene-alternatives-ui.js
 !/stage-scene-alternatives.css
 !/stage-cue-sheet.js
+!/stage-vox-panel.js
+!/stage-vox-panel.css
 !/stage-first-person.js
 !/stage-front-shape.js
 !/stage-i18n.js

@@ -2576,9 +2576,66 @@
     renderRuler();
     renderAnchorLane();
     renderBlocks(project);
+    publishVoxCues(project);
     updatePlayhead();
     saveUi();
   }
+
+  /* VOXキューパネル（stage-vox-panel.js・2026-09-24 本人指示）へ、いま出ているセクションの
+   * セリフキューを渡す。台本の行は各場面のメモから引くので、キューのある場面のメモも一緒に渡す。
+   * ★パネルは読むだけ。キューの形・保存データには触れない。 */
+  let lastVoxProject = null;
+  function publishVoxCues(project) {
+    lastVoxProject = project;
+    if (!timeline || !project) return;
+    const cues = timelineCuePresentations(project)
+      .filter((cue) => cue.cueType === "dialogue")
+      .map((cue) => ({
+        id: cue.id,
+        seconds: cue.seconds,
+        displayName: cue.displayName,
+        sceneId: cue.sceneId,
+        sceneTitle: cue.sceneTitle,
+        memo: typeof cue.memo === "string" ? cue.memo : "",
+      }));
+    const wanted = new Set(cues.map((cue) => cue.sceneId));
+    const sceneNotes = {};
+    (Array.isArray(project.scenes) ? project.scenes : []).forEach((row) => {
+      if (row && row.kind === "scene" && wanted.has(row.id)) {
+        sceneNotes[row.id] = typeof row.note === "string" ? row.note : "";
+      }
+    });
+    window.dispatchEvent(new CustomEvent("stage-timeline-vox-cues", {
+      detail: {
+        sectionId: timeline.sectionId || null,
+        sectionTitle: timeline.sectionTitle || "",
+        cues,
+        sceneNotes,
+        seconds: seekSeconds,
+      },
+    }));
+  }
+
+  // パネルが後から開いた・読み込まれたときに、今の一覧をもう一度もらう
+  window.addEventListener("stage-vox-panel-request", () => {
+    if (lastVoxProject) publishVoxCues(lastVoxProject);
+    else renderTimeline();
+  });
+
+  /* パネルの行を押したら、タイムラインのキューを押したときと同じく
+   * そのキューを選んで、その瞬間へ再生位置を移す。別のセクションのキューは動かさない。 */
+  window.addEventListener("stage-vox-panel-seek", (event) => {
+    const detail = event && event.detail || {};
+    if (!timeline || (detail.sectionId || null) !== (timeline.sectionId || null)) return;
+    if (!Number.isFinite(detail.seconds)) return;
+    if (typeof detail.cueId === "string") {
+      selectedCueId = detail.cueId;
+      selectedCueIds = new Set([detail.cueId]);
+      syncCueSelection();
+    }
+    seekToSeconds(detail.seconds);
+    event.preventDefault();
+  });
 
   /* T-26（2026-09-18）: 「その秒へ飛ぶ」を1か所にまとめる。
    * 目盛りへの吸着は掛けない（呼ぶ側が既に正確な秒を持っている場合に使う）。 */

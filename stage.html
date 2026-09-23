@@ -24,6 +24,7 @@
 <script src="gamma-light-model.js?v=2026092113"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=2026091987">
 <link rel="stylesheet" href="stage-scene-alternatives.css?v=2026092209">
+<link rel="stylesheet" href="stage-vox-panel.css?v=2026092401">
 </head>
 <body class="is-standalone">
 
@@ -946,6 +947,20 @@
           <section class="stage-panel" data-panel="alternatives" data-title="別案">
             <div class="stage-panel-body">
               <div id="stage-scene-alternatives-host"></div>
+            </div>
+          </section>
+          <!-- VOXキュー（2026-09-24 本人指示）: タイムラインのセリフキューを一覧にし、押すとその瞬間へ頭出しする。
+               いま行われているセリフを上に大きく出す。文字は各場面のメモの台本行から引く（読むだけ）。 -->
+          <section class="stage-panel" data-panel="vox" data-title="VOXキュー">
+            <div class="stage-panel-body stage-vox-panel" id="stage-vox-panel">
+              <div class="stage-vox-now" data-vox-now aria-live="polite">
+                <p class="stage-vox-now-cue" data-vox-now-cue>いまのセリフ</p>
+                <p class="stage-vox-now-speaker" data-vox-now-speaker></p>
+                <p class="stage-vox-now-line" data-vox-now-line></p>
+              </div>
+              <p class="stage-vox-section" data-vox-section></p>
+              <ol class="stage-vox-list" data-vox-list aria-label="VOXキューの一覧（押すとその瞬間へ移る）" hidden></ol>
+              <p class="stage-vox-empty" data-vox-empty>このセクションにはVOXキューがありません。タイムラインの「セリフ」段にキューを足すと、場面メモの台本の行がここに並びます。</p>
             </div>
           </section>
           <section class="stage-panel" data-panel="inspector" data-title="選んだもの">
@@ -3254,7 +3269,7 @@
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=2026092207"></script>
+    <script src="stage-i18n.js?v=2026092401"></script>
     <script src="stage-i18n.zh-Hans.js?v=2026092203"></script>
     <script src="stage-i18n.zh-Hant.js?v=2026092203"></script>
 <script src="stage-prompt-i18n.js?v=2026092050"></script>
@@ -3286,10 +3301,11 @@
 <script src="stage-light-panel-import.js?v=2026092209"></script>
 <script src="stage-scene-alternatives.js?v=2026092208"></script>
 <script src="stage-shortcuts.js?v=2026092218"></script>
-<script src="stage-sketch.js?v=2026092401"></script>
+<script src="stage-sketch.js?v=2026092402"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092209"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
-    <script src="stage-timeline.js?v=2026092241"></script>
+<script src="stage-vox-panel.js?v=2026092402"></script>
+    <script src="stage-timeline.js?v=2026092401"></script>
 <script src="stage-session.js?v=2026091987"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>

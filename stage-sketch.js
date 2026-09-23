@@ -5872,6 +5872,10 @@
       hint: "別の客席から見た小さな絵をもう一つ出す。図が重くなります。照明の見え方はこの小さな絵には出ません" },
     { key: "panelAlternatives", panel: "alternatives", label: "別案", def: false,
       hint: "シーンごとのA案・B案を作り、比べて採用する欄を右列に出す" },
+    /* VOXキュー（2026-09-24 本人指示）: セリフキューの一覧と、いま行われているセリフ。
+       既定は非表示（既存の右列の見え方を変えない）。読むだけで保存データには触れない。 */
+    { key: "panelVox", panel: "vox", label: "VOXキュー", def: false,
+      hint: "タイムラインのセリフキューを一覧にし、押すとその瞬間へ移ります。いま行われているセリフを台本から大きく出します" },
     { key: "panelInspector", panel: "inspector", label: "選んだもの", def: true,
       hint: "舞台の上で選ぶと、姿勢・向き・重なりを変えられます。名前・色・寸法は「演者・舞台セット」の一覧で決めます。" },
     { key: "panelAsk", panel: "ask", label: "AI指示", def: true,
@@ -6375,20 +6379,20 @@
      使わないものは畳めるようにする。中央は絵だけで、上下の入れ替えのみ。 */
   /* 名簿は演者・大道具・小道具・舞台セットに分ける。登録の保存先は従来どおり
    * project.cast / project.sets のままなので、既存ショーの内容は変えない。 */
-  const PANELS = ["project", "venue", "music", "cast", "sets", "props", "stage-set", "machinery", "rigs", "light", "background", "study", "scenes", "seat2", "alternatives", "inspector", "save", "session", "ask"];
+  const PANELS = ["project", "venue", "music", "cast", "sets", "props", "stage-set", "machinery", "rigs", "light", "background", "study", "scenes", "seat2", "alternatives", "vox", "inspector", "save", "session", "ask"];
 
   function defaultLayout() {
     return {
       // 場面は絵のすぐ右に置く（順番を見ながら描くため）
       cols: {
         project: "left", venue: "left", music: "left", cast: "left", sets: "left", props: "left", "stage-set": "left", machinery: "left", rigs: "left", light: "left", background: "left",
-        study: "right", scenes: "right", seat2: "right", alternatives: "right", inspector: "left", save: "right",
+        study: "right", scenes: "right", seat2: "right", alternatives: "right", vox: "right", inspector: "left", save: "right",
         session: "right", ask: "right",
       },
       order: {
         project: 0, venue: 1, music: 2, cast: 3, sets: 4, props: 5, "stage-set": 6, machinery: 7, rigs: 8, light: 9, background: 10,
         // 情報は右列の最後。既存のショーは保存済みの順序をそのまま使う。
-        study: -1, scenes: 0, seat2: 1, alternatives: 2, inspector: 8, save: 999, session: 3, ask: 4,
+        study: -1, scenes: 0, seat2: 1, alternatives: 2, vox: 2.5, inspector: 8, save: 999, session: 3, ask: 4,
       },
       /* 共有は「会議のときだけ開く」もの。畳んだ状態から始める。
          保存の中の畳みだったころと同じ見え方にするため（開いた形で置くと、
