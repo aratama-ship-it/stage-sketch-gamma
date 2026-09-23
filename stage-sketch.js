@@ -32,6 +32,86 @@
     return;
   }
 
+  /* ★2026-09-23 本人依頼（開発環境専用）: 実機のブラウザで、正規のキー・旧キー・
+   * 「scene alternatives」用の影キーが食い違って保存が消える事故が起きた
+   * （原因は timing のバグとして別途修正済みだが、既に食い違ってしまった端末は
+   * 直らない）。同じ状況を毎回すぐ初期状態へ戻せるよう、URLへ ?dev-reset=1 を
+   * 付けて開くと、確認の上でこのアプリ専用の保存領域（localStorage・IndexedDB・
+   * Service Worker・キャッシュ）だけを全部消してから読み直す仕組みを用意する。
+   * ★このオリジンには他の自作アプリも同居している（fridge-leftovers・torei等）。
+   * それらのキーには一切触れない。判定は「このファイルが実際に使っているキー名」
+   * そのもの（grep で洗い出した一覧）。キーを増やしたら、ここにも追記すること。
+   * ★通常の利用者がこのURLを踏むことはまず無いが、念のため確認ダイアログを必ず挟む。 */
+  const devResetTriggered = (function devResetTrigger() {
+    let params;
+    try { params = new URLSearchParams(window.location.search); } catch (_) { return false; }
+    if (params.get("dev-reset") !== "1") return false;
+    const stripParamAndContinue = () => {
+      params.delete("dev-reset");
+      const rest = params.toString();
+      try {
+        window.history.replaceState(null, "", window.location.pathname + (rest ? "?" + rest : ""));
+      } catch (_) { /* 履歴を書き換えられなくても、続行はする */ }
+    };
+    if (!window.confirm(
+      "【開発用】このブラウザに保存されている舞台スケッチ関連のデータ（自作のショーを含む）を"
+      + "全て消して初期状態に戻します。元に戻せません。よろしいですか？"
+    )) { stripParamAndContinue(); return false; }
+    const EXACT_KEYS = [
+      "gamma:shosai-stage-agent-permission-v1", "gamma:shosai-stage-sketch-v1", "shosai-stage-sketch-v1",
+      "shosai-stage-shows-v1", "gamma:new-show-return-v1", "gamma:shosai-stage-shows-broken-v1",
+      "gamma:stage-project-backup-reset-v1", "gamma:shosai-stage-shows-v1", "shosai-stage-prefs-v1",
+      "gamma:shosai-stage-prefs-v1", "gamma:shosai-stage-tablet-view",
+      "gamma:shosai-stage-tour-v1", "gamma:shosai-stage-release-history-seen-v1", "gamma:shosai-stage-last-user-v1",
+      "gamma:shosai-stage-lang", "gamma:shosai-stage-models-v1", "gamma:shosai-cast-handoff-v1",
+      "gamma:shosai-stage-venues-v1", "gamma:stage-venue-drafts-v1", "gamma:shosai-stage-viewpoints-v1",
+      "gamma:shosai-stage-venues-v1:migrated-stage-venue-drafts-v1",
+      "gamma:shosai-stage-timeline-ui-v1", "gamma:shosai-stage-rigs-v1", "gamma:stage-shortcuts-v1",
+      "gamma:shosai.lightDesigns.v1", "gamma:shosai.lightDesigns.beforeOptionB.v1",
+      "gamma:shosai-fpv-lens-v2", "gamma:shosai-fpv-house-v2", "gamma:shosai-fpv-crowd-v1", "gamma:shosai-fpv-panels-v1",
+      "shosai-stage-shows-v1-pre-section-hierarchy-v1",
+    ];
+    const PREFIXES = [
+      "gamma:scene-alternatives-v1:", "gamma:lighting-draft-v1:",
+      "shosai-stage-sketch-v1-pre-section-hierarchy-v1:",
+    ];
+    const DB_NAMES = ["gamma:stage-project-backups-v1", "gamma:scene-alternatives-audio-v1", "gamma:shosai-stage-audio"];
+    const CACHE_PREFIX = "stage-sketch-gamma-";
+    try {
+      Object.keys(window.localStorage).forEach((k) => {
+        if (EXACT_KEYS.includes(k) || PREFIXES.some((p) => k.indexOf(p) === 0)) window.localStorage.removeItem(k);
+      });
+    } catch (_) { /* 読めない環境ではここで諦める */ }
+    try { window.sessionStorage.removeItem("gamma:new-show-return-v1"); } catch (_) {}
+    const deleteDbs = Promise.all(DB_NAMES.map((name) => new Promise((resolve) => {
+      if (!("indexedDB" in window)) { resolve(); return; }
+      const request = window.indexedDB.deleteDatabase(name);
+      request.onsuccess = () => resolve();
+      request.onerror = () => resolve();
+      request.onblocked = () => resolve();
+    })));
+    const cleanupSwAndCaches = (async () => {
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.filter((r) => r.scope.indexOf("stage-sketch-gamma") !== -1)
+          .map((r) => r.unregister().catch(() => {})));
+      }
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.filter((k) => k.indexOf(CACHE_PREFIX) === 0)
+          .map((k) => caches.delete(k).catch(() => {})));
+      }
+    })();
+    Promise.all([deleteDbs, cleanupSwAndCaches]).finally(() => {
+      params.delete("dev-reset");
+      const rest = params.toString();
+      window.location.replace(window.location.pathname + (rest ? "?" + rest : ""));
+    });
+    return true;
+  })();
+  // 消去→再読み込みの途中で、以下の通常起動処理が古いデータに触れないよう止める。
+  if (devResetTriggered) return;
+
   /* W05: opaque snapshots, two verified copies, no format migration.
      The current show has a verified IndexedDB recovery copy; localStorage keeps
      only inactive shows. This avoids storing a large open show twice inside
