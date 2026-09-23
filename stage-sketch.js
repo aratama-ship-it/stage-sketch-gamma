@@ -7421,6 +7421,15 @@
         const needsSectionMigration = Boolean(parsed && !parsed.project && Array.isArray(parsed.pieces))
           || hasUnsectionedSceneRows(parsed);
         const normalized = normalizeState(parsed);
+        /* ★2026-09-23 本人指摘: ロミオとジュリエット等の同梱見本を一度でも開いたことがある
+         * 端末では、その時点のコピーが「いま開いているショー」として保存され続ける。
+         * 棚側の見本は shelveXXXSample の backfill で直るが、既に開いて現在のショーに
+         * なっている分はここでしか直せない。既知の同梱見本idに限って印が無ければ足す
+         * （利用者の編集は無い前提のidだけを対象にする。足りない印を足すだけで上書きはしない）。 */
+        if (["sample-eight-circus-v1", "sample-seam-garden-v1", "romeo-juliet-gamma-cued-2026-09-21"]
+          .includes(normalized.project?.id)) {
+          backfillVenueSetupAppliedAt(normalized.project);
+        }
         if (updateLegacyModernBaseline && normalized.alternativesLegacy && !alternativesStorageBlocked) {
           normalized.alternativesLegacy.modern = sceneAlternatives.legacyBaseline(normalized.project, null);
         }
@@ -9241,6 +9250,10 @@
     if (!source) return null;
     const prepared = prepareProjectImportDocument(projectIoClone(source));
     if (!prepared || !prepared.project) return null;
+    // ★2026-09-23 本人指摘: 劇場・機材配置・照明デザインまで組み込んだ同梱見本なのに、
+    // 開くと「劇場が設定されていません」と出ていた。この印が無いと
+    // venueSetupWasApplied() が未設定と誤認するため、ここで立てる。
+    if (!prepared.project.venueSetupAppliedAt) prepared.project.venueSetupAppliedAt = nowIso();
     return normalizeState({ project: prepared.project });
   }
 
@@ -9258,6 +9271,9 @@
     p.versionLabel = source.versionLabel;
     p.venue = source.venue;
     p.venueSize = source.venueSize;
+    // ★2026-09-23 本人指摘: 劇場・機材を組み込んだ同梱見本なのに「劇場が設定されていません」
+    // と出ていた。この印が無いと venueSetupWasApplied() が未設定と誤認するため、ここで立てる。
+    p.venueSetupAppliedAt = nowIso();
     p.sampleSource = source.sourceMarkdown || "";
     p.sampleBoundaries = languageValue(
       () => (Array.isArray(source.boundariesEn) ? source.boundariesEn.slice()
@@ -9331,6 +9347,9 @@
     p.versionLabel = source.versionLabel;
     p.venue = source.venue;
     p.venueSize = source.venueSize;
+    // ★2026-09-23 本人指摘: 劇場・機材を組み込んだ同梱見本なのに「劇場が設定されていません」
+    // と出ていた。この印が無いと venueSetupWasApplied() が未設定と誤認するため、ここで立てる。
+    p.venueSetupAppliedAt = nowIso();
     p.rehearsal = normalizeProjectRehearsal(null);
     p.sampleSource = source.sourceMarkdown;
     p.sampleBoundaries = languageValue(
@@ -9464,6 +9483,16 @@
     return next;
   }
 
+  /* ★2026-09-23 本人指摘: 劇場・機材まで組み込んだ同梱見本を開くと「劇場が設定されて
+   * いません」の案内が出ていた。原因は venueSetupWasApplied() が見る印
+   * （venueSetupAppliedAt）を同梱見本のビルド側が立てていなかったこと
+   * （build*SampleShow 側は今回直したが、既に棚へ置かれた古い保存にはこの印が無いまま
+   * 残る）。既存の保存にこの印が無ければ足すだけで、演者・場面・利用者の編集は触らない。 */
+  function backfillVenueSetupAppliedAt(savedProject) {
+    if (!savedProject || savedProject.venueSetupAppliedAt) return false;
+    savedProject.venueSetupAppliedAt = nowIso();
+    return true;
+  }
   // 棚へ入れておく。ショー一覧から開ける（開いた瞬間には出さない）
   // ★壊れて表示できない保存（showSummary が null）は「無い」扱いで置き直す（理由は shelveRomeoJulietSample 参照）。
   function shelveSample() {
@@ -9471,7 +9500,15 @@
     if (!built) return;
     drawSampleRoutes(built);
     const shows = readShows();
-    if (shows[built.project.id] && showSummary(shows[built.project.id])) return;
+    const saved = shows[built.project.id];
+    if (saved && showSummary(saved)) {
+      if (backfillVenueSetupAppliedAt(saved.state && saved.state.project)) {
+        saved.savedAt = nowIso();
+        shows[built.project.id] = saved;
+        writeShows(shows);
+      }
+      return;
+    }
     shows[built.project.id] = { savedAt: nowIso(), state: built };
     writeShows(shows);
   }
@@ -9494,7 +9531,15 @@
     if (!built) return;
     drawSampleRoutes(built);
     const shows = readShows();
-    if (shows[built.project.id] && showSummary(shows[built.project.id])) return;
+    const saved = shows[built.project.id];
+    if (saved && showSummary(saved)) {
+      if (backfillVenueSetupAppliedAt(saved.state && saved.state.project)) {
+        saved.savedAt = nowIso();
+        shows[built.project.id] = saved;
+        writeShows(shows);
+      }
+      return;
+    }
     shows[built.project.id] = { savedAt: nowIso(), state: built };
     writeShows(shows);
   }
@@ -9527,13 +9572,16 @@
       const savedFixtures = savedProject && savedProject.lightingDesign
         && savedProject.lightingDesign.rig && savedProject.lightingDesign.rig.fixtures;
       const bundledDesign = built.project && built.project.lightingDesign;
-      if (!Array.isArray(savedFixtures) || !savedFixtures.length) {
-        if (savedProject && bundledDesign) {
-          savedProject.lightingDesign = projectIoClone(bundledDesign);
-          saved.savedAt = nowIso();
-          shows[built.project.id] = saved;
-          writeShows(shows);
-        }
+      let changed = false;
+      if ((!Array.isArray(savedFixtures) || !savedFixtures.length) && savedProject && bundledDesign) {
+        savedProject.lightingDesign = projectIoClone(bundledDesign);
+        changed = true;
+      }
+      if (backfillVenueSetupAppliedAt(savedProject)) changed = true;
+      if (changed) {
+        saved.savedAt = nowIso();
+        shows[built.project.id] = saved;
+        writeShows(shows);
       }
       return;
     }
