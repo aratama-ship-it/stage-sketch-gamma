@@ -32,7 +32,8 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.match(main, /function bindKindPreviewSpin\(tile, canvas, draw, options = \{\}\)/);
   assert.match(main, /const turntable = options\.turntable === true;/);
   assert.match(main, /if \(turntable\) draw\(turntableFacing\);/);
-  assert.match(main, /facing: turntableFacing,/);
+  assert.match(main, /const startFacing = \(TURNTABLE_START_FACING_OFFSET\[propShapeId\] \|\| 0\) \+ turntableFacing;/);
+  assert.match(main, /facing: startFacing,/);
   assert.match(main, /drawKindPreview\(canvas, "prop", rosterSelectedColor\(\), shapeId, facing\), \{ turntable: true \}/);
   assert.match(main, /function refreshRosterPropPreviews\(\)/);
   assert.match(main, /rosterColorTouched = true;\s*refreshRosterPropPreviews\(\);/);
@@ -47,9 +48,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.match(html, />表示するもの</);
   assert.match(html, /class="stage-app-version">0\.2\.3</);
   assert.match(html, /id="stage-release-v023-title">v0\.2\.3</);
-  assert.match(html, /stage-sketch\.js\?v=2026092351/);
-  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v274"/);
-  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=2026092351"/);
+  assert.match(html, /stage-sketch\.js\?v=2026092352/);
+  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v275"/);
+  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=2026092352"/);
   assert.match(html, /id="stage-show-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-set-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-light-names" checked>\s*<span class="stage-tool-icon"/);
@@ -111,7 +112,7 @@ test("lighting apply belongs to the LX cue panel and playback uses an accessible
   assert.match(html, /\.fixture-power\.off \.fixture-power-slash\{display:block\}/);
   assert.doesNotMatch(html, /\.fixture-power\.on \.fixture-power-slash\{display:none\}/);
   assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=2026092301/);
-  assert.match(worker, /stage-sketch-gamma-shell-v274/);
+  assert.match(worker, /stage-sketch-gamma-shell-v275/);
   assert.match(worker, /light-design\/app\.js\?v=2026092350/);
   assert.match(worker, /light-design\/embed\.js\?v=2026092238/);
 });

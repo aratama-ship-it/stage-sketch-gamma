@@ -20903,6 +20903,9 @@
      実際の形を小さく描いて並べる。舞台の絵と同じ骨格・同じ塗りを通すので、
      見本と本番がずれない。 */
 
+  /* 2026-09-23 本人指示: 階段・スロープ・自転車は、真正面(0°)からだと形が読みにくいので、
+   * ターンテーブルの開始位置を90°回した状態にする。回転そのものは今までどおり続く。 */
+  const TURNTABLE_START_FACING_OFFSET = { stairs: 90, stairs6: 90, slope: 90, bicycle: 90 };
   /* 種類の見本。正面から見た形（左右と高さ）だけを描き、奥行きは捨てる。
    * 舞台の道具は左右に広く奥行きが浅いので、正面図がいちばん特徴的な輪郭を見せる
    * （真横から起こすと、車も綱渡りもティーターボードも細い板に潰れて見分けがつかない）。
@@ -20946,6 +20949,7 @@
        * selectionBounds も本番と共通なので、長い梯子や背の低い家具でも枠内へ収まる。
        * 小道具の回転中は canvas 自体を平面で回さず、駒を上下軸で回す。
        * これで正面・側面・奥行きが同じ回転台の上で見える。 */
+      const startFacing = (TURNTABLE_START_FACING_OFFSET[propShapeId] || 0) + turntableFacing;
       const previewPiece = normalizePiece({
         id: `stage-kind-preview-${propShapeId}`,
         type: kind,
@@ -20954,7 +20958,7 @@
         v: 0.62,
         size: 100,
         color,
-        facing: turntableFacing,
+        facing: startFacing,
         dims: kind === "prop" ? PROP_SHAPES[propShapeId].dims : normalizeDims(kind, {}),
       }, 0);
       const previewLayout = layout("front");
