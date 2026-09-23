@@ -2752,21 +2752,27 @@
    * 腕は rotY 付きの箱で放射方向へ向ける（部品の回転は箱だけができる）。
    * flown:true で登録時から吊物になり、lift 2.6m（頭より上）から始める。
    * 寸法は一般的な6〜12灯の中型（直径1.2m前後・高さ1.4m前後）の目安で、実測値ではない。 */
-  PROP_SHAPES.chandelier = { ja: "シャンデリア", en: "Chandelier", dims: { w: 1.2, d: 1.2, h: 1.55 }, grip: null,
+  /* ★2026-09-23 本人依頼で実物調査（King's Chandelier社等の仕様ページ・複数の
+   * 小売サイジングガイド）。中サイズ（6〜12灯）の実寸は径0.55〜1.1m・高さ0.7〜1.4m
+   * が中心帯で、当初の1.2m/1.55mはやや大きめ寄りだったため、帯の中央寄り
+   * （径1.0m・高さ1.3m、比率0.77は維持）へ縮小。段構成は6+6/8+4/6+3/6+2いずれも
+   * 実例があり優劣不明のため6+6を維持。アームは実物では上→外へ湾曲する
+   * スクロール型が定番だが、直線の棒（既存のbox部品）による簡略化と割り切る。 */
+  PROP_SHAPES.chandelier = { ja: "シャンデリア", en: "Chandelier", dims: { w: 1.0, d: 1.0, h: 1.3 }, grip: null,
     flown: true, lift: 2.6,
     parts: [
       // 下端の飾り（フィニアル）と中心の柱。柱は下が太く上が細い3段
-      { shape: "sphere", y: 0, dia: 0.11, tint: 1.15 },
-      { shape: "cylinder", y: 0.09, dia: 0.07, h: 0.30, tint: 0.85 },
-      { shape: "sphere", y: 0.37, dia: 0.13, tint: 1.1 },
-      { shape: "cylinder", y: 0.48, dia: 0.05, h: 0.42, tint: 0.85 },
-      { shape: "sphere", y: 0.88, dia: 0.10, tint: 1.1 },
-      { shape: "cylinder", y: 0.96, dia: 0.03, h: 0.44, tint: 0.7 },
+      { shape: "sphere", y: 0, dia: 0.09, tint: 1.15 },
+      { shape: "cylinder", y: 0.08, dia: 0.06, h: 0.25, tint: 0.85 },
+      { shape: "sphere", y: 0.31, dia: 0.11, tint: 1.1 },
+      { shape: "cylinder", y: 0.40, dia: 0.04, h: 0.35, tint: 0.85 },
+      { shape: "sphere", y: 0.74, dia: 0.08, tint: 1.1 },
+      { shape: "cylinder", y: 0.80, dia: 0.025, h: 0.37, tint: 0.7 },
       // 天蓋と吊り点（framehang などの吊り器具と同じ表し方）
-      { shape: "cylinder", y: 1.40, dia: 0.16, h: 0.05, tint: 0.8 },
-      { shape: "sphere", y: 1.47, dia: 0.06, tint: 0.5 },
-      // 下段の腕6本（半径0.55・高さ0.40）と上段の腕6本（半径0.34・高さ0.78）
-      ...[[6, 0.55, 0.40, 0], [6, 0.34, 0.78, 30]].flatMap(([count, radius, y, offsetDeg]) =>
+      { shape: "cylinder", y: 1.18, dia: 0.13, h: 0.04, tint: 0.8 },
+      { shape: "sphere", y: 1.24, dia: 0.05, tint: 0.5 },
+      // 下段の腕6本（半径0.46・高さ0.34）と上段の腕6本（半径0.29・高さ0.66）
+      ...[[6, 0.46, 0.34, 0], [6, 0.29, 0.66, 30]].flatMap(([count, radius, y, offsetDeg]) =>
         Array.from({ length: count }, (_, i) => {
           const deg = offsetDeg + (360 / count) * i;
           const rad = (deg * Math.PI) / 180;
