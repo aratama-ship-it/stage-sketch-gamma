@@ -21127,6 +21127,8 @@
   /* 2026-09-23 本人指示: 階段・スロープ・自転車は、真正面(0°)からだと形が読みにくいので、
    * ターンテーブルの開始位置を90°回した状態にする。回転そのものは今までどおり続く。 */
   const TURNTABLE_START_FACING_OFFSET = { stairs: 90, stairs6: 90, slope: 90, bicycle: 90 };
+  // 種類ごとの一覧プレビューの実測フィット（拡大率・位置）。中身が変わることはないので使い回す。
+  const KIND_PREVIEW_FIT_CACHE = new Map();
   /* 種類の見本。正面から見た形（左右と高さ）だけを描き、奥行きは捨てる。
    * 舞台の道具は左右に広く奥行きが浅いので、正面図がいちばん特徴的な輪郭を見せる
    * （真横から起こすと、車も綱渡りもティーターボードも細い板に潰れて見分けがつかない）。
@@ -21196,27 +21198,71 @@
       // 両端の座標をそれぞれmin/maxしてから幅・高さを引き直す）。
       const boundsX0 = Math.min(bounds0.x, bounds90.x);
       const boundsY0 = Math.min(bounds0.y, bounds90.y);
-      const bounds = {
+      const approxBounds = {
         x: boundsX0,
         y: boundsY0,
         w: Math.max(bounds0.x + bounds0.w, bounds90.x + bounds90.w) - boundsX0,
         h: Math.max(bounds0.y + bounds0.h, bounds90.y + bounds90.h) - boundsY0,
       };
       const pad = 10;
-      const scale = Math.min(
-        (w - pad * 2) / Math.max(1, bounds.w),
-        (h - pad * 2) / Math.max(1, bounds.h),
-      );
-      ctx2.save();
-      ctx2.setTransform(
-        scale, 0, 0, scale,
-        pad - bounds.x * scale + (w - pad * 2 - bounds.w * scale) / 2,
-        pad - bounds.y * scale + (h - pad * 2 - bounds.h * scale) / 2,
-      );
-      // 一覧は132pxへ縮めるため、立体の各面の境界線まで描くと横筋として重なる。
-      // 本番の舞台図は既定どおり面線を残し、ここだけ輪郭と陰影を塗りで見せる。
-      drawStagePiece(ctx2, previewPiece, previewLayout, () => 0, { showFaceEdges: false });
-      ctx2.restore();
+      const draw = (fit) => {
+        ctx2.save();
+        ctx2.setTransform(fit.scale, 0, 0, fit.scale, fit.offsetX, fit.offsetY);
+        // 一覧は132pxへ縮めるため、立体の各面の境界線まで描くと横筋として重なる。
+        // 本番の舞台図は既定どおり面線を残し、ここだけ輪郭と陰影を塗りで見せる。
+        drawStagePiece(ctx2, previewPiece, previewLayout, () => 0, { showFaceEdges: false });
+        ctx2.restore();
+      };
+      const fitFrom = (bounds) => {
+        const scale = Math.min(
+          (w - pad * 2) / Math.max(1, bounds.w),
+          (h - pad * 2) / Math.max(1, bounds.h),
+        );
+        return {
+          scale,
+          offsetX: pad - bounds.x * scale + (w - pad * 2 - bounds.w * scale) / 2,
+          offsetY: pad - bounds.y * scale + (h - pad * 2 - bounds.h * scale) / 2,
+        };
+      };
+      /* ★2026-09-23 本人指摘: マイク・グラス・電話・ディアボロ・シガーボックス・マスク等が
+       * 一覧の枠内で中央に来ていなかった。selectionBounds の外接枠は「駒の平らな設置面
+       * (pieceFootprint)の4隅」を正面図の遠近込みで投影して求めるが、実際に描かれる
+       * 円柱・球の丸い断面や、奥行きのある立体の輪郭とは一致せず、特に見本のように
+       * 小さく引いて見るとズレが目立った。ここでは近似の枠でいったん描いてから実際に
+       * 塗られた画素の外接枠を測り直し、その実測値で中央に収め直す（種類ごとに1回だけ
+       * 測ればよいので、同じ kind/propShapeId の間は使い回す）。 */
+      const fitCacheKey = `${kind}:${propShapeId || ""}:${w}x${h}`;
+      let fit = KIND_PREVIEW_FIT_CACHE.get(fitCacheKey);
+      if (!fit) {
+        const trial = fitFrom(approxBounds);
+        ctx2.clearRect(0, 0, w, h);
+        draw(trial);
+        const pixels = ctx2.getImageData(0, 0, w, h).data;
+        let px0 = w; let py0 = h; let px1 = -1; let py1 = -1;
+        for (let y = 0; y < h; y += 1) {
+          for (let x = 0; x < w; x += 1) {
+            if (pixels[(y * w + x) * 4 + 3] > 10) {
+              if (x < px0) px0 = x; if (x > px1) px1 = x;
+              if (y < py0) py0 = y; if (y > py1) py1 = y;
+            }
+          }
+        }
+        if (px1 >= px0 && py1 >= py0) {
+          // 実測した画素の枠（canvas座標）を、trialの変換で逆算して駒の実寸座標へ戻す。
+          const measured = {
+            x: (px0 - trial.offsetX) / trial.scale,
+            y: (py0 - trial.offsetY) / trial.scale,
+            w: (px1 - px0 + 1) / trial.scale,
+            h: (py1 - py0 + 1) / trial.scale,
+          };
+          fit = fitFrom(measured);
+        } else {
+          fit = trial; // 何も描かれなかった場合（未対応の形など）は近似のまま
+        }
+        KIND_PREVIEW_FIT_CACHE.set(fitCacheKey, fit);
+      }
+      ctx2.clearRect(0, 0, w, h);
+      draw(fit);
       return;
     }
     const propShape = kind === "prop" && PROP_SHAPES[propShapeId] ? PROP_SHAPES[propShapeId] : null;
