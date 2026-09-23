@@ -2442,10 +2442,16 @@
    *   姿勢側（bicycle / unicycle など）が体の形を決めるので、ここは置き場所の基準にする。
    * ★ギター・トランペット・一輪車・自転車・ジャーマンホイールは**既にPROP_SHAPESにある**。
    *   新しく足すのは mic / skateboard / rollerskate / cyrwheel の4種だけ。 */
-  PROP_SHAPES.mic = { ja: "マイク", en: "Microphone", dims: { w: 0.05, d: 0.05, h: 0.18 },
-    grip: { x: 0, y: 0.06 }, parts: [
-      { shape: "cylinder", y: 0, dia: 0.032, h: 0.13, tint: 0.65 },
-      { shape: "sphere", y: 0.13, dia: 0.05, tint: 1.05 },
+  /* 2026-09-23 本人指示: SM58的な、握り手より明らかに太いグリル球という
+   * 実物のシルエットを再現する。出典: Shure SM58仕様（全長162mm・最大径51mm）。
+   * 握り手径32mmは従来値のまま（実測未確認だが概ね一般的なハンドヘルドマイクの太さ）。 */
+  PROP_SHAPES.mic = { ja: "マイク", en: "Microphone", dims: { w: 0.051, d: 0.051, h: 0.162 },
+    grip: { x: 0, y: 0.05 }, parts: [
+      { shape: "cylinder", y: 0, dia: 0.032, h: 0.095, tint: 0.6 },
+      // 首の金属リング（グリルとの境目。SM58の見た目の特徴）
+      { shape: "cylinder", y: 0.095, dia: 0.038, h: 0.012, tint: 0.9 },
+      // グリル球。実物は根元が少し絞られた卵形に近いが、ここでは球で近似する
+      { shape: "sphere", y: 0.104, dia: 0.051, tint: 1.05 },
     ] };
   PROP_SHAPES.skateboard = { ja: "スケートボード", en: "Skateboard", dims: { w: 0.22, d: 0.80, h: 0.11 },
     grip: { x: 0, y: 0.11 }, parts: [
@@ -2530,9 +2536,13 @@
       const side = Math.max(wall, ((Math.PI * 2 * r) / segments) * 1.45);
       for (let i = 0; i < segments; i += 1) {
         const a = (i / segments) * Math.PI * 2;
+        /* ★2026-09-23 本人指摘: バケツがカクカクして見えた。真四角の板を軸に沿って
+         * 正面向きのまま並べていたため、周ごとに角の向きが揃わず樽ではなく
+         * 積み木に見えていた。接線方向に向けた薄い板（樽の側板）にする。 */
         parts.push({
           shape: "box", x: Math.cos(a) * r, y: y0 + bandH * b, z: Math.sin(a) * r,
-          w: side, d: side, h: bandH * 1.08, tint: tint * (0.97 + 0.06 * t),
+          w: side, d: wall, h: bandH * 1.08, rotY: (a * 180) / Math.PI + 90,
+          tint: tint * (0.97 + 0.06 * t),
         });
       }
     }
@@ -2955,10 +2965,28 @@
       boxAt(0, 0, 0, 0.10, 0.06, 0.05, 0.7),
       boxAt(0, 0.05, 0, 0.14, 0.05, 0.14, 1.1),
     ] };
+  /* 2026-09-23 本人指示: 板1枚では扇子に見えなかったので、開いた状態の扇として
+   * 作り直す。要（かなめ）から放射状の骨＋先端を結ぶ弧で表す。
+   * 開き角は一般的な末広形の目安で140度（実測未確認）。 */
+  const FAN_PIVOT_Y_RATIO = 0.035 / 0.30; // 要の高さ ÷ 駒の高さ（dims.h）
   PROP_SHAPES.fan = { ja: "扇子", en: "Folding fan", dims: { w: 0.30, d: 0.02, h: 0.30 }, grip: { x: -0.02, y: 0.02 },
     parts: [
-      { shape: "cylinder", y: 0, dia: 0.02, h: 0.05, tint: 0.6 },
-      boxAt(0.10, 0.05, 0, 0.26, 0.01, 0.22, 1.15),
+      { shape: "cylinder", y: 0, dia: 0.02, h: 0.035, tint: 0.6 },       // 持ち手（要より下）
+      { shape: "sphere", y: 0.029, dia: 0.012, tint: 0.5 },              // 要（かなめ）の鋲
+      ...Array.from({ length: 7 }, (_, i) => {
+        const t = i / 6; // 0〜1
+        const angleDeg = 90 - 70 + 140 * t; // 20度〜160度（真上を中心に140度開く）
+        const rad = (angleDeg * Math.PI) / 180;
+        const radius = 0.245;
+        return {
+          shape: "line", fanRib: true,
+          x: Math.cos(rad) * radius, y: 0.035 + Math.sin(rad) * radius,
+          w: 0.006, tint: 0.85,
+        };
+      }),
+      // 骨の先端を結ぶ弧（開いた扇の外縁）
+      { shape: "cylinder", ring: true, x: 0, y: 0.035, z: 0, dia: 0.49,
+        from: 20, to: 160, w: 0.014, tint: 1.05 },
     ] };
   PROP_SHAPES.scarf = { ja: "布・ベール・スカーフ", en: "Cloth / veil", dims: { w: 1.0, d: 0.02, h: 2.0 }, grip: { x: 0, y: 1.9 },
     parts: [ boxAt(0, 0, 0, 1.0, 0.01, 2.0, 1.1) ] };
@@ -11325,6 +11353,10 @@
       rod: part.rod,
       side: part.side,
       round: part.round,
+      fanRib: part.fanRib,
+      // 弧の範囲（度）。角度なので拡大率をかけない。
+      from: part.from,
+      to: part.to,
       x: finite(part.x, 0) * sx,
       y: finite(part.y, 0) * sy,
       z: finite(part.z, 0) * sz,
@@ -11525,12 +11557,21 @@
           if (part.shape === "cylinder" && part.ring) {
             const halfDepth = d.d / 2;
             return [{ kind: "ring", c: [part.x || 0, part.y || 0, (part.side || 0) * halfDepth],
-              r: (part.dia || 1) / 2, w: part.w || 0.03, tone: "gear" }];
+              r: (part.dia || 1) / 2, w: part.w || 0.03, tone: "gear",
+              from: part.from, to: part.to }];
           }
           if (part.shape === "line" && part.rod) {
             const halfDepth = d.d / 2;
             return [{ kind: "line", a: [part.x || 0, part.y || 0, -halfDepth],
               b: [part.x || 0, part.y || 0, halfDepth], w: part.w || 0.03, tone: "gear" }];
+          }
+          /* ★2026-09-23 本人指示: 扇子は板1枚では扇に見えなかった。開いた扇の骨として、
+           * 要（かなめ、駒の中心のやや上）から放射状に伸びる線を作る。要の高さは
+           * 駒の実寸(d.h)からの比率で決め、拡大縮小しても要と骨の付け根がずれない。 */
+          if (part.shape === "line" && part.fanRib) {
+            const pivotY = d.h * FAN_PIVOT_Y_RATIO;
+            return [{ kind: "line", a: [0, pivotY, 0], b: [part.x || 0, part.y || 0, 0],
+              w: part.w || 0.006, tone: "wood" }];
           }
           if (part.shape === "cylinder") {
             return [{ kind: "cylinder", ox: part.x || 0, oz: part.z || 0,
@@ -12343,9 +12384,15 @@
       target.moveTo(a.x, a.y);
       target.lineTo(b.x, b.y);
     } else {
+      /* ★2026-09-23: 扇子の開いた縁のように、輪の一部（弧）だけを描きたい場合は
+       * from/to（度）を指定する。省略時は今までどおり360度の輪。 */
       const steps = 32;
+      const fromDeg = part.from === undefined ? 0 : part.from;
+      const toDeg = part.to === undefined ? 360 : part.to;
+      const fromRad = (fromDeg * Math.PI) / 180;
+      const toRad = (toDeg * Math.PI) / 180;
       for (let i = 0; i <= steps; i += 1) {
-        const t = (i / steps) * Math.PI * 2;
+        const t = fromRad + ((toRad - fromRad) * i) / steps;
         // 既定は正面に立つ輪。xz は床と平行、yz は横向きの輪
         const q = part.plane === "xz"
           ? riggingPoint(piece, part.c[0] + Math.cos(t) * part.r, part.c[1], part.c[2] + Math.sin(t) * part.r, L)
@@ -12405,7 +12452,8 @@
         depth: dd,
       };
     };
-    const segments = 8;
+    // ★2026-09-23 本人指摘: 8分割だとまだ角ばって見える箇所があった。12分割へ増やす。
+    const segments = 12;
     const base = Array.from({ length: segments }, (_, i) => {
       const t = (i / segments) * Math.PI * 2;
       return at(Math.cos(t) * part.r, Math.sin(t) * part.r);
