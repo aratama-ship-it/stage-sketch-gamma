@@ -1449,24 +1449,25 @@
 
   window.SHOSAI_STAGE_TIMELINE_DETAILS = Object.freeze({ sceneFactsById });
 
-  function cueSegment(cue) {
-    if (!timeline) return null;
-    const legacy = cue.sceneId && timeline.segments.find((segment) => segment.sceneId === cue.sceneId);
+  // tl を渡すと、いま出ていないセクションのタイムラインでも同じ計算をする（VOXキューパネル用）
+  function cueSegment(cue, tl = timeline) {
+    if (!tl) return null;
+    const legacy = cue.sceneId && tl.segments.find((segment) => segment.sceneId === cue.sceneId);
     if (legacy) return legacy;
-    return timeline.segments.find((segment) => cue.seconds >= segment.start - 1e-6
+    return tl.segments.find((segment) => cue.seconds >= segment.start - 1e-6
       && cue.seconds < segment.end - 1e-6 && segment.sceneId)
-      || [...timeline.segments].reverse().find((segment) => segment.sceneId && cue.seconds >= segment.start - 1e-6)
-      || timeline.segments.find((segment) => segment.sceneId) || null;
+      || [...tl.segments].reverse().find((segment) => segment.sceneId && cue.seconds >= segment.start - 1e-6)
+      || tl.segments.find((segment) => segment.sceneId) || null;
   }
 
-  function timelineCues(project) {
-    if (!timeline) return [];
-    const segments = new Map(timeline.segments.map((segment) => [segment.sceneId, segment]));
+  function timelineCues(project, tl = timeline) {
+    if (!tl) return [];
+    const segments = new Map(tl.segments.map((segment) => [segment.sceneId, segment]));
     return (Array.isArray(project.cues) ? project.cues : [])
       .filter((cue) => cue && cue.kind === "timeline" && CUE_TYPES.includes(cue.cueType))
       .map((cue) => {
-        if (cue.sectionId === timeline.sectionId) {
-          return { ...cue, seconds: clamp(finite(cue.atSeconds, 0), 0, timeline.duration) };
+        if (cue.sectionId === tl.sectionId) {
+          return { ...cue, seconds: clamp(finite(cue.atSeconds, 0), 0, tl.duration) };
         }
         // 直前の試作で保存したシーン相対キューも、そのシーンがこのセクション内なら表示する。
         const segment = segments.get(cue.sceneId);
@@ -1478,11 +1479,11 @@
       .sort((a, b) => a.seconds - b.seconds);
   }
 
-  function timelineCuePresentations(project) {
+  function timelineCuePresentations(project, tl = timeline) {
     const sceneNumbers = timelineSceneNumberMap(project.scenes);
     const ordinals = new Map();
-    return timelineCues(project).map((cue) => {
-      const segment = cueSegment(cue);
+    return timelineCues(project, tl).map((cue) => {
+      const segment = cueSegment(cue, tl);
       const sceneId = segment && segment.sceneId || "show";
       const sceneNumber = sceneNumbers.get(sceneId) || "1";
       const ordinalKey = `${cue.cueType}:${sceneId}`;
@@ -2581,24 +2582,75 @@
     saveUi();
   }
 
-  /* VOXキューパネル（stage-vox-panel.js・2026-09-24 本人指示）へ、いま出ているセクションの
-   * セリフキューを渡す。台本の行は各場面のメモから引くので、キューのある場面のメモも一緒に渡す。
+  /* VOXキューパネル（stage-vox-panel.js・2026-09-24 本人指示）へ、ショー全体のセリフキューを
+   * セクションごとに渡す。いま出ているセクションは表示中のタイムラインをそのまま使い、
+   * ほかのセクションは同じ組み方（振付の曲があればその1曲目、無ければ場面の長さ）で秒を出す。
+   * 台本の行は各場面のメモから引くので、キューのある場面のメモも一緒に渡す。
    * ★パネルは読むだけ。キューの形・保存データには触れない。 */
   let lastVoxProject = null;
+  let pendingVoxSeek = null;       // 別のセクションへ移ってから頭出しするキュー
+  let voxSeekJustApplied = false;  // 直後のシーン切替で「場面の頭」へ戻されないための印
+
+  function voxSectionTimeline(project, section) {
+    const id = section && section.id || null;
+    if (timeline && (timeline.sectionId || null) === id) return timeline;
+    const choices = formationTimelines(project, section);
+    return choices[0] || fallbackTimeline(project, section);
+  }
+
+  function showVoxSections(project) {
+    const rows = Array.isArray(project.scenes) ? project.scenes : [];
+    const sections = new Map();
+    rows.forEach((row) => {
+      if (!row || row.kind !== "scene") return;
+      const section = sectionForScene(project, row.id);
+      const key = section && section.id || "";
+      if (!sections.has(key)) sections.set(key, section);
+    });
+    const seen = new Set();
+    const out = [];
+    sections.forEach((section) => {
+      const tl = voxSectionTimeline(project, section);
+      if (!tl) return;
+      const cues = timelineCuePresentations(project, tl)
+        .filter((cue) => cue.cueType === "dialogue" && !seen.has(cue.id))
+        .map((cue) => {
+          seen.add(cue.id);
+          return {
+            id: cue.id,
+            seconds: cue.seconds,
+            displayName: cue.displayName,
+            sceneId: cue.sceneId,
+            sceneTitle: cue.sceneTitle,
+            memo: typeof cue.memo === "string" ? cue.memo : "",
+          };
+        });
+      if (cues.length) out.push({ sectionId: tl.sectionId || null, sectionTitle: tl.sectionTitle || "", cues });
+    });
+    return out;
+  }
+
+  function applyPendingVoxSeek(project) {
+    if (!pendingVoxSeek || !timeline) return false;
+    if (Date.now() > pendingVoxSeek.until) { pendingVoxSeek = null; return false; }
+    const cue = timelineCues(project).find((item) => item.id === pendingVoxSeek.cueId);
+    if (!cue) return false;
+    pendingVoxSeek = null;
+    voxSeekJustApplied = true;
+    selectedCueId = cue.id;
+    selectedCueIds = new Set([cue.id]);
+    syncCueSelection();
+    seekToSeconds(cue.seconds);
+    return true;
+  }
+
   function publishVoxCues(project) {
     lastVoxProject = project;
     if (!timeline || !project) return;
-    const cues = timelineCuePresentations(project)
-      .filter((cue) => cue.cueType === "dialogue")
-      .map((cue) => ({
-        id: cue.id,
-        seconds: cue.seconds,
-        displayName: cue.displayName,
-        sceneId: cue.sceneId,
-        sceneTitle: cue.sceneTitle,
-        memo: typeof cue.memo === "string" ? cue.memo : "",
-      }));
-    const wanted = new Set(cues.map((cue) => cue.sceneId));
+    applyPendingVoxSeek(project);
+    const sections = showVoxSections(project);
+    const wanted = new Set();
+    sections.forEach((section) => section.cues.forEach((cue) => wanted.add(cue.sceneId)));
     const sceneNotes = {};
     (Array.isArray(project.scenes) ? project.scenes : []).forEach((row) => {
       if (row && row.kind === "scene" && wanted.has(row.id)) {
@@ -2607,9 +2659,8 @@
     });
     window.dispatchEvent(new CustomEvent("stage-timeline-vox-cues", {
       detail: {
-        sectionId: timeline.sectionId || null,
-        sectionTitle: timeline.sectionTitle || "",
-        cues,
+        currentSectionId: timeline.sectionId || null,
+        sections,
         sceneNotes,
         seconds: seekSeconds,
       },
@@ -2623,17 +2674,28 @@
   });
 
   /* パネルの行を押したら、タイムラインのキューを押したときと同じく
-   * そのキューを選んで、その瞬間へ再生位置を移す。別のセクションのキューは動かさない。 */
+   * そのキューを選んで、その瞬間へ再生位置を移す。
+   * 別のセクションのキューは、先にその場面を開いてタイムラインを切り替え、
+   * 切り替わった一覧から同じキューを探して頭出しする（秒は切り替え後の組み方で取り直す）。 */
   window.addEventListener("stage-vox-panel-seek", (event) => {
     const detail = event && event.detail || {};
-    if (!timeline || (detail.sectionId || null) !== (timeline.sectionId || null)) return;
-    if (!Number.isFinite(detail.seconds)) return;
-    if (typeof detail.cueId === "string") {
+    if (!timeline || typeof detail.cueId !== "string") return;
+    if ((detail.sectionId || null) === (timeline.sectionId || null)) {
+      if (!Number.isFinite(detail.seconds)) return;
       selectedCueId = detail.cueId;
       selectedCueIds = new Set([detail.cueId]);
       syncCueSelection();
+      seekToSeconds(detail.seconds);
+      event.preventDefault();
+      return;
     }
-    seekToSeconds(detail.seconds);
+    if (typeof detail.sceneId !== "string" || !detail.sceneId) return;
+    pendingVoxSeek = { cueId: detail.cueId, until: Date.now() + 3000 };
+    openTimelineSceneById(detail.sceneId);
+    // 開いた時点で描き直しが済んでいれば、ここで頭出しまで終える
+    if (pendingVoxSeek && (detail.sectionId || null) === (timeline.sectionId || null) && lastVoxProject) {
+      applyPendingVoxSeek(lastVoxProject);
+    }
     event.preventDefault();
   });
 
@@ -3573,7 +3635,10 @@
        上の MutationObserver は発火しない。「いまのシーン」の強調はここで軽く付け替える。
        切替先がいまのタイムライン（＝セクション）に無いときだけ、従来どおり全体を組み直す。 */
     if (!timeline || !timeline.segments.some((item) => item.sceneId === sceneId)) {
+      voxSeekJustApplied = false;
       renderTimeline();
+      // VOXキューパネルから別セクションのキューへ飛んだときは、そのキューの位置を保つ
+      if (voxSeekJustApplied) { voxSeekJustApplied = false; return; }
       const segment = timeline && timeline.segments.find((item) => item.sceneId === sceneId);
       if (segment) {
         seekSeconds = segment.start;

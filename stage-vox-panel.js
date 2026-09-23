@@ -7,6 +7,8 @@
  * の行で、その場面の n 番目のVOXキューが n 行目に当たる（同梱のロミオとジュリエット見本
  * 31場面・47キューで全件一致を確認）。台本の行が足りないときはキューのメモの
  * 話者「セリフ」を使い、それも無ければメモをそのまま出す。
+ * 一覧はショー全体（セクションごとの見出しつき）。別のセクションの行を押すと、
+ * タイムラインがそのセクションへ切り替わってから頭出しする。
  * ★読むだけのパネル。キュー・場面・保存データは一切書き換えない。
  * 純粋な関数は window.SHOSAI_VOX_PANEL に出してテストから読む。 */
 (function (root) {
@@ -98,8 +100,40 @@
     return `${minutes}:${String(total % 60).padStart(2, "0")}`;
   }
 
+  /* ショー全体の一覧。セクションごとに台本の行を当ててから、セクションの順に一列へ並べる。 */
+  function flattenSections(sections, sceneNotes) {
+    const out = [];
+    (Array.isArray(sections) ? sections : []).forEach((section, sectionIndex) => {
+      if (!section) return;
+      attachLines(section.cues, sceneNotes).forEach((entry) => out.push({
+        ...entry,
+        sectionId: section.sectionId || null,
+        sectionTitle: section.sectionTitle || "",
+        sectionIndex,
+      }));
+    });
+    return out;
+  }
+
+  /* いま出ているセクションの中で、その時刻までに出た最後のキューの位置（一覧全体の番号）。
+   * 返す past は「もう済んだ」行の数え方の基準＝今のセクションより前のセクションは全部済み。 */
+  function currentInShow(entries, currentSectionId, seconds) {
+    const list = Array.isArray(entries) ? entries : [];
+    const inSection = [];
+    list.forEach((entry, index) => {
+      if ((entry.sectionId || null) === (currentSectionId || null)) inSection.push(index);
+    });
+    const local = currentIndexAt(inSection.map((index) => list[index]), seconds);
+    const sectionEntry = inSection.length ? list[inSection[0]] : null;
+    return {
+      index: local >= 0 ? inSection[local] : -1,
+      sectionIndex: sectionEntry ? sectionEntry.sectionIndex : -1,
+    };
+  }
+
   root.SHOSAI_VOX_PANEL = Object.freeze({
     scriptLinesFromNote, lineFromMemo, attachLines, currentIndexAt, formatSeconds,
+    flattenSections, currentInShow,
   });
 
   /* ---------- 画面 ---------- */
@@ -121,9 +155,9 @@
       ? model.text(document.documentElement.lang || "ja", japanese) : japanese;
   };
 
-  let state = { sectionId: null, sectionTitle: "", entries: [] };
+  let state = { currentSectionId: null, entries: [] };
   let seconds = 0;
-  let currentIndex = -2;          // -2＝まだ一度も描いていない
+  let current = { index: -2, sectionIndex: -1 };   // index -2＝まだ一度も描いていない
   let rows = [];
 
   function lineText(entry) {
@@ -131,13 +165,13 @@
   }
 
   function renderNow() {
-    const entry = state.entries[currentIndex];
+    const entry = state.entries[current.index];
     host.classList.toggle("has-current", Boolean(entry));
     if (!entry) {
       els.nowCue.textContent = tx("いまのセリフ");
       els.nowSpeaker.textContent = "";
-      els.nowLine.textContent = state.entries.length
-        ? tx("この位置より前にVOXキューはありません。")
+      els.nowLine.textContent = current.sectionIndex >= 0
+        ? tx("このセクションのこの位置より前にVOXキューはありません。")
         : "";
       return;
     }
@@ -148,17 +182,27 @@
 
   function markCurrent(scroll) {
     rows.forEach((row, index) => {
-      const on = index === currentIndex;
+      const entry = state.entries[index];
+      const on = index === current.index;
+      const past = current.index >= 0 ? index < current.index
+        : current.sectionIndex >= 0 && entry.sectionIndex < current.sectionIndex;
       row.classList.toggle("is-current", on);
-      row.classList.toggle("is-past", index < currentIndex);
+      row.classList.toggle("is-past", past);
+      row.classList.toggle("is-other-section", current.sectionIndex >= 0
+        && entry.sectionIndex !== current.sectionIndex);
       if (on) row.setAttribute("aria-current", "true");
       else row.removeAttribute("aria-current");
     });
-    const row = rows[currentIndex];
+    // 今の行が無ければ、今のセクションの見出しを見せる
+    const target = rows[current.index]
+      || els.list.querySelector(`.stage-vox-group[data-section-index="${current.sectionIndex}"]`);
     // 一覧の中だけを動かす（scrollIntoView は左右の列ごと動かしてしまう）
-    if (scroll && row && els.list) {
-      const top = row.offsetTop;      // 一覧（position: relative）が基準
-      const bottom = top + row.offsetHeight;
+    if (scroll && target && els.list) {
+      // 一覧（position: relative）が基準。行は上端に貼りついたセクション見出しの下に見せる
+      const heading = target.classList.contains("stage-vox-group") ? null
+        : els.list.querySelector(".stage-vox-group");
+      const top = Math.max(0, target.offsetTop - (heading ? heading.offsetHeight : 0));
+      const bottom = target.offsetTop + target.offsetHeight;
       if (top < els.list.scrollTop) els.list.scrollTop = top;
       else if (bottom > els.list.scrollTop + els.list.clientHeight) {
         els.list.scrollTop = bottom - els.list.clientHeight;
@@ -166,9 +210,30 @@
     }
   }
 
+  function groupHeading(entry, count) {
+    const item = document.createElement("li");
+    item.className = "stage-vox-group";
+    item.dataset.sectionIndex = String(entry.sectionIndex);
+    const title = document.createElement("span");
+    title.className = "stage-vox-group-title";
+    title.textContent = entry.sectionTitle || tx("セクション");
+    const size = document.createElement("span");
+    size.className = "stage-vox-group-count";
+    size.textContent = String(count);
+    item.append(title, size);
+    return item;
+  }
+
   function renderList() {
     els.list.textContent = "";
+    const counts = new Map();
+    state.entries.forEach((entry) => counts.set(entry.sectionIndex, (counts.get(entry.sectionIndex) || 0) + 1));
+    let lastSection = null;
     rows = state.entries.map((entry) => {
+      if (entry.sectionIndex !== lastSection) {
+        lastSection = entry.sectionIndex;
+        els.list.append(groupHeading(entry, counts.get(entry.sectionIndex)));
+      }
       const item = document.createElement("li");
       const button = document.createElement("button");
       button.type = "button";
@@ -194,15 +259,15 @@
       if (!entry.line) line.classList.add("is-missing");
       line.textContent = lineText(entry);
       button.append(meta, line);
-      button.title = `${entry.displayName}（${entry.sceneTitle}）${tx("の瞬間へ移る")}`;
+      button.title = `${entry.displayName}（${entry.sectionTitle} / ${entry.sceneTitle}）${tx("の瞬間へ移る")}`;
       button.addEventListener("click", () => seekTo(entry));
       item.append(button);
       els.list.append(item);
       return button;
     });
     els.section.textContent = state.entries.length
-      ? `${state.sectionTitle || tx("セクション")} · ${tx("VOXキュー")} ${state.entries.length}`
-      : (state.sectionTitle || "");
+      ? `${tx("ショー全体")} · ${tx("VOXキュー")} ${state.entries.length}`
+      : "";
     els.empty.hidden = state.entries.length > 0;
     els.list.hidden = state.entries.length === 0;
   }
@@ -210,36 +275,33 @@
   function seekTo(entry) {
     const event = new CustomEvent("stage-vox-panel-seek", {
       cancelable: true,
-      detail: { sectionId: state.sectionId, cueId: entry.id, seconds: entry.seconds },
+      detail: { sectionId: entry.sectionId, sceneId: entry.sceneId, cueId: entry.id, seconds: entry.seconds },
     });
     root.dispatchEvent(event);
-    // タイムラインが受け取らなかった（畳んだ端末など）ときも、押した行だけは今として見せる
-    if (!event.defaultPrevented) updateSeconds(entry.seconds, true);
   }
 
   function updateSeconds(next, scroll) {
     seconds = Number(next) || 0;
-    const index = currentIndexAt(state.entries, seconds);
-    if (index === currentIndex) return;
-    currentIndex = index;
+    const found = currentInShow(state.entries, state.currentSectionId, seconds);
+    if (found.index === current.index && found.sectionIndex === current.sectionIndex) return;
+    current = found;
     renderNow();
     markCurrent(scroll);
   }
 
   root.addEventListener("stage-timeline-vox-cues", (event) => {
     const detail = event && event.detail || {};
-    const entries = attachLines(detail.cues, detail.sceneNotes);
-    const sameList = state.sectionId === (detail.sectionId || null)
-      && state.entries.length === entries.length
+    const entries = flattenSections(detail.sections, detail.sceneNotes);
+    const sameList = state.entries.length === entries.length
       && state.entries.every((entry, index) => entry.id === entries[index].id
         && entry.seconds === entries[index].seconds && entry.line === entries[index].line
-        && entry.speaker === entries[index].speaker && entry.displayName === entries[index].displayName);
-    state = { sectionId: detail.sectionId || null, sectionTitle: detail.sectionTitle || "", entries };
-    if (!sameList) {
-      renderList();
-      currentIndex = -2;
-    }
-    updateSeconds(Number.isFinite(detail.seconds) ? detail.seconds : seconds, !sameList);
+        && entry.speaker === entries[index].speaker && entry.displayName === entries[index].displayName
+        && entry.sectionIndex === entries[index].sectionIndex && entry.sectionTitle === entries[index].sectionTitle);
+    const sectionChanged = state.currentSectionId !== (detail.currentSectionId || null);
+    state = { currentSectionId: detail.currentSectionId || null, entries };
+    if (!sameList) renderList();
+    if (!sameList || sectionChanged) current = { index: -2, sectionIndex: -2 };
+    updateSeconds(Number.isFinite(detail.seconds) ? detail.seconds : seconds, !sameList || sectionChanged);
   });
 
   root.addEventListener("stage-timeline-position-change", (event) => {
