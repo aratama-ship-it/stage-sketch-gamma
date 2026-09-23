@@ -33,10 +33,12 @@
     return numbers;
   }
 
+  /* 2026-09-23 本人指示: 「cue」の表記をLXcue/LXキューのように混在させず、
+     片仮名の「キュー」へ統一する。 */
   function cuePrefix(type) {
-    if (type === "light") return "LXcue";
-    if (type === "music") return "Mcue";
-    return "VOXcue";
+    if (type === "light") return "LXキュー";
+    if (type === "music") return "Mキュー";
+    return "VOXキュー";
   }
 
   function formatCueDisplayName(cueType, sceneNumber, ordinal) {

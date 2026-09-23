@@ -246,7 +246,6 @@
      下敷きから外し、照明デザインへ戻ると表示操作も戻す（embed.js）。 */
   html.placement-underlay-hidden #showtoggles [data-show="performers"],
   html.placement-underlay-hidden #showtoggles [data-show="setpieces"],
-  html.placement-underlay-hidden #showtoggles [data-show="showcurtains"],
   html.placement-underlay-hidden #showtoggles [data-show="names"]{display:none}
   /* 上段の左右＝灯体パネル／設定パネル。幅は下の側面図とそろえる（app.jsが設定） */
   .panel{grid-row:1;min-width:0;min-height:0;overflow:hidden;border:1px solid var(--line-dark);background:rgba(25,21,18,.45);padding:8px;display:flex;flex-direction:column;gap:7px;align-self:stretch}
@@ -706,11 +705,12 @@
               <button type="button" data-show="grid" aria-pressed="true" title="1000mmごとの目盛りを図に出す">グリッド</button>
               <!-- R-09（2026-09-17 本人要望）: 「演者・セット」を3つに割る。
                    駒の kind（performer / set / curtain）とそのまま1対1で対応する。
-                   ここの「舞台の幕」はショー側で置いた幕（前幕・ホリゾント幕など）。
-                   右にある一文字幕・袖幕は劇場の造りとして自動で作られる別のもの。 -->
+                   右にある一文字幕・袖幕は劇場の造りとして自動で作られる別のもの。
+                   2026-09-23 本人指示: ショー側の幕（前幕・ホリゾント幕など）の
+                   表示切替は不要とのことで削除。以後は常に表示する（showcurtainsの
+                   既定trueのまま・切り替え手段だけを外した）。 -->
               <button type="button" data-show="performers" aria-pressed="true" title="舞台スケッチ側で置いてある演者を下敷きに出す">演者</button>
               <button type="button" data-show="setpieces" aria-pressed="true" title="舞台スケッチ側で置いてある大道具・小道具を下敷きに出す">セット</button>
-              <button type="button" data-show="showcurtains" aria-pressed="true" title="舞台スケッチ側で置いてある幕（前幕・ホリゾント幕など）を出す。一文字幕・袖幕は右の別のボタンです">舞台の幕</button>
               <button type="button" data-show="names" aria-pressed="true" title="演者・セットの名前を図に出す（影絵は残す）">名前</button>
               <button type="button" data-show="border" aria-pressed="false" title="バトンの手前に吊って灯体を客席から隠す短い幕。出すと、客席から灯体が見えていないかを確かめられます">一文字幕</button>
               <button type="button" data-show="legs" aria-pressed="true" title="舞台の左右に吊って袖（そで）を客席から隠す幕。切ると、袖の奥まで見えるようになります">袖幕</button>
@@ -930,7 +930,7 @@
 <script src="volume-light.js?v=20260915-2"></script>
 <script src="laser-effects.js?v=20260915-5-color-presets"></script>
 <script src="laser-effects-ui.js?v=20260915-3-supported-shapes"></script>
-<script src="app.js?v=2026092241"></script>
+<script src="app.js?v=2026092350"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20260915-3-vertical-cards"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->

@@ -3454,16 +3454,32 @@
         }
       }
     } else if (piece.type === "table") {
+      /* ★facingを渡す。ここだけ回転が抜けていたため、盆（回り舞台）や
+         向き変更で回してもテーブルだけ3Dで正面向きのまま止まって見えていた。 */
       const height = dims.h || .9; const width = dims.w || 1.6; const depth = dims.d || .8;
+      const facing = finite(piece.facing, 0);
+      const rad = facing * Math.PI / 180;
+      const cos = Math.cos(rad); const sin = Math.sin(rad);
       const halfWidth = width / 2 - .06; const halfDepth = depth / 2 - .06;
       [[-halfWidth, -halfDepth], [halfWidth, -halfDepth], [halfWidth, halfDepth], [-halfWidth, halfDepth]]
-        .forEach(([offsetX, offsetZ]) => line3(ctx, { x: x + offsetX, y: 0, z: z + offsetZ },
-          { x: x + offsetX, y: height - .05, z: z + offsetZ }, shade(color, .7), 2.5));
-      drawBox(ctx, x, z, height - .06, height, width, depth, color);
+        .forEach(([ox, oz]) => {
+          const offsetX = ox * cos - oz * sin;
+          const offsetZ = ox * sin + oz * cos;
+          line3(ctx, { x: x + offsetX, y: 0, z: z + offsetZ },
+            { x: x + offsetX, y: height - .05, z: z + offsetZ }, shade(color, .7), 2.5);
+        });
+      drawBox(ctx, x, z, height - .06, height, width, depth, color, facing);
     } else if (piece.type === "chair") {
+      /* ★facingを渡す。背もたれの位置もその場で回さないと、椅子だけ回しても
+         背もたれが元の向きに残ったままになる。 */
       const height = dims.h || .9; const width = dims.w || .5; const depth = dims.d || .5;
-      drawBox(ctx, x, z, .42, .48, width, depth, color);
-      drawBox(ctx, x, z - depth / 2 + .04, .48, height, width, .07, shade(color, .85));
+      const facing = finite(piece.facing, 0);
+      const rad = facing * Math.PI / 180;
+      const backOz = -(depth / 2 - .04);
+      const backOffsetX = -backOz * Math.sin(rad);
+      const backOffsetZ = backOz * Math.cos(rad);
+      drawBox(ctx, x, z, .42, .48, width, depth, color, facing);
+      drawBox(ctx, x + backOffsetX, z + backOffsetZ, .48, height, width, .07, shade(color, .85), facing);
     } else if (piece.type === "sphere") {
       const radius = (dims.dia || .3) / 2;
       const cameraPoint = toCamera({ x, y: finite(dims.lift, 0) + heldLift + radius, z });
@@ -3517,8 +3533,11 @@
       line3(ctx, { x: x - .15, y: heldLift, z }, { x: x - .15, y: heldLift + height, z }, shade(color, .9), 2.5);
       line3(ctx, { x: x + .15, y: heldLift, z: z + .05 }, { x: x + .15, y: heldLift + height, z: z + .05 }, shade(color, .9), 2.5);
     } else if (piece.type !== "light" && dims.w && dims.h) {
+      /* ★facingを渡す。ここに落ちる型（車・ベンチ・スツール等）は、
+         2D正面図・平面図では回っているのに3Dだけ正面向きのまま止まって見えていた
+         （table/chair/blockと同じ原因：ここだけ向きを引数に渡していなかった）。 */
       const y0 = finite(dims.lift, 0) + heldLift;
-      drawBox(ctx, x, z, y0, y0 + dims.h, dims.w, dims.d || .4, color);
+      drawBox(ctx, x, z, y0, y0 + dims.h, dims.w, dims.d || .4, color, finite(piece.facing, 0));
     }
     if (piece.type !== "performer" && piece.type !== "light") {
       const top = piece.type === "tissue" || piece.type === "trapeze" ? finite(dims.lift, 5) + .25

@@ -2441,10 +2441,22 @@ html.stage-pwa-tablet .stage-header-app-identity { --stage-header-logo-width: 22
   display: grid;
   /* R-22（2026-09-17 本人要望）: 削除の✕は正方形にする。
    * 高さは隣の「次のシーンをつくる」と揃える必要があるので動かせない（31px）。
-   * よって幅を 44px → 31px に詰めて正方形にする。詰めたぶん「つくる」側が13px広くなる。 */
-  grid-template-columns: minmax(0, 1fr) var(--stage-scene-next-row-action-height);
+   * よって幅を 44px → 31px に詰めて正方形にする。詰めたぶん「つくる」側が13px広くなる。
+   * 2026-09-23 本人指示: 秒数欄をこの行の左へ一列で並べる（先頭列に追加）。
+   * 秒数欄が無いとき（sceneTiming機能OFF）はDOMに無いので自動的に2列扱いになる。 */
+  grid-template-columns: auto minmax(0, 1fr) var(--stage-scene-next-row-action-height);
+  align-items: end;
   gap: 6px;
   margin-top: 6px;
+}
+
+.stage-scene-next-row .stage-scene-rehearsal-times {
+  /* 元は場面メモの上に単独で置く前提の余白・区切り線だったので、
+     ボタンと同じ行へ移した際はここで打ち消す。 */
+  padding-bottom: 0;
+  border-bottom: none;
+  grid-template-columns: minmax(0, auto);
+  width: max-content;
 }
 
 .stage-panel .stage-scene-next-row .stage-scene-apply {
@@ -12144,7 +12156,8 @@ body.stage-modal-open .stage-tour { display: none !important; }
   bottom: 10px;
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(2, 44px);
+  /* 2026-09-23 本人指示: 舞台タブの平面図ズーム（縦並び）と揃える。 */
+  grid-template-columns: 44px;
   gap: 4px;
   padding: 4px;
   border: 1px solid var(--line-dark);

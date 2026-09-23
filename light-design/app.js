@@ -1244,14 +1244,12 @@
     /* トラス。名前は<b>灯体の印より後に</b>まとめて書く（下の planLabels）——
        印は下で描くので、ここで書くと文字の上に印が乗って読めなくなる（2026-09-13 本人指摘）。 */
     const planLabels = [];
+    // ★2026-09-23 本人指示: バトンの文字情報（名前・列目・奥行き・高さ）は
+    //   照明デザインの平面図では不要とのことで表示しない。バトン位置の線自体は残す。
     state.rig.trusses.forEach((t) => {
       const Y = B.y + t.v * B.h; const sel = state.selTruss === t.id && state.mode === "place";
       pctx.strokeStyle = sel ? "#d3ac59" : "rgba(156,130,63,0.75)"; pctx.lineWidth = sel ? 6 : 4;
       pctx.beginPath(); pctx.moveTo(B.x - 24, Y); pctx.lineTo(B.x + B.w + 24, Y); pctx.stroke();
-      /* 印の上端（ムービングの輪で Y-23）より上へ逃がす。舞台の外へはみ出す時だけ内側へ寄せる。
-         袖にいるSSの印（B.x-44）を板で隠さないよう、書き出しは舞台の中から。 */
-      planLabels.push({ text: `${t.label || "バトン"}　奥から${E.trussRow(state.rig, t.id)}列目・奥行き${mmText(t.v * state.dims.D)}・高さ約${mmText(t.h)}${t.tentative ? "（仮の高さ）" : ""}`,
-        x: B.x + 6, y: Math.max(B.y + 2, Y - 52), color: sel ? "#d3ac59" : "rgba(214,182,110,0.95)" });
     });
     // 予告（ゴースト）
     const hv = state.hover;
@@ -2437,7 +2435,9 @@
     fctx.strokeStyle = "rgba(239,231,214,0.07)"; fctx.lineWidth = 1;
     if (showOn("grid")) for (let m = 1; m < d.D; m++) { const X = P({ x: 0, y: m, z: 0 }).X; fctx.beginPath(); fctx.moveTo(X, B.y); fctx.lineTo(X, B.y + B.h); fctx.stroke(); }
     fctx.fillStyle = "rgba(240,231,214,0.45)"; fctx.font = "16px sans-serif"; fctx.textBaseline = "middle";
-    [2, 4, 6, 8].filter((m) => m <= d.H).forEach((m) => { const Y = B.y + B.h - m / d.H * B.h; fctx.fillText(`${m * 1000}mm`, B.x - 64, Y); fctx.strokeStyle = "rgba(239,231,214,0.07)"; fctx.beginPath(); fctx.moveTo(B.x, Y); fctx.lineTo(B.x + B.w, Y); fctx.stroke(); });
+    // ★2026-09-23 本人指示: 下手／上手を見るパネルでは高さを「6000mm」のような数字で
+    //   出さない。目安の横線（案内）だけ残す。
+    [2, 4, 6, 8].filter((m) => m <= d.H).forEach((m) => { const Y = B.y + B.h - m / d.H * B.h; fctx.strokeStyle = "rgba(239,231,214,0.07)"; fctx.beginPath(); fctx.moveTo(B.x, Y); fctx.lineTo(B.x + B.w, Y); fctx.stroke(); });
     fctx.fillText("床", B.x - 40, B.y + B.h);
     fctx.fillText("客席 ▶", side === "shimote" ? 30 : B.x + B.w + 20, B.y + 14); fctx.fillText("奥壁", side === "shimote" ? B.x + B.w + 20 : 30, B.y + 14);
     fctx.fillText(`${side === "shimote" ? "下手" : "上手"}側のスタンド・ブーム（舞台中央から見る）`, B.x + 10, B.y - 18);

@@ -3397,6 +3397,8 @@
     "cart", "barrel", "planter", "well", "tent",
     // 追加候補から外すだけで、既存ショーに置いた駒は表示・保存を続ける。
     "counter", "fireplace", "screen", "bridge",
+    // 2026-09-23 本人指定で追加。
+    "wagasa", "rope", "clock", "minitramp", "russianswing",
   ]);
   const rosterShapeIsAvailable = (shapeId) => !ROSTER_UNAVAILABLE_PROP_SHAPES.has(shapeId);
   /* 登録した項目が「大道具の一覧」へ行くか。kind が prop でも、上の形なら大道具側。
@@ -3411,10 +3413,14 @@
       "torch", "candle", "treasurechest", "cane", "handbag", "wagasa"] },
     { ja: "楽器", ids: ["drumset", "taiko", "grandpiano", "grandpianoopen", "uprightpiano", "micstand", "musicstand", "speaker", "keyboardstand", "djbooth", "cello", "doublebass",
       "guitar", "violin", "bassguitar", "mic", "trumpet", "accordion"] },
-    { ja: "登る・上がる", ids: ["ladder", "stepladder", "stairs", "stairs6", "slope", "spiralstairs"] },
-    { ja: "建て込み", ids: ["door", "window", "column", "railing", "bridge", "platform", "truss", "cage", "torii", "screen", "frameportal", "framepicture", "framehang", "framecube"] },
+    /* 2026-09-23 本人指示: 「登る・上がる」は独立した見出しにせず「建て込み」へ合流。 */
+    { ja: "建て込み", ids: ["ladder", "stepladder", "stairs", "stairs6", "slope", "spiralstairs",
+      "door", "window", "column", "railing", "bridge", "platform", "truss", "cage", "torii", "screen", "frameportal", "framepicture", "framehang", "framecube"] },
     { ja: "家具", ids: ["sofa", "bed", "bookshelf", "dresser", "mirror", "desk", "counter", "fireplace", "phonebooth", "clothesrack"] },
-    { ja: "屋外・情景", ids: ["tree", "rock", "streetlamp", "signboard", "barrel", "planter", "well", "tent", "cart", "bicycle"] },
+    { ja: "屋外・情景", ids: ["tree", "rock", "streetlamp", "signboard", "barrel", "planter", "well", "tent", "cart"] },
+    /* 2026-09-23 本人指示: 自転車は乗り物。見出し名はROSTER_SET_KIND_GROUPSの
+       「情景・乗り物」(球・車)と揃え、大道具一覧では同じ一枠へ合流させる。 */
+    { ja: "情景・乗り物", ids: ["bicycle"] },
     { ja: "サーカス道具", ids: ["rolabola", "germanwheel", "minitramp", "rollingglobe", "russianbar", "crashmat", "crashmatround",
       "russianswing", "slackline", "walljump", "unicycle", "stilts", "aerialhoop", "aerialstraps", "aerialhammock", "spanishweb", "swingpole",
       /* R-19（2026-09-17 本人要望）: 物を伴う姿勢に対応する乗り物。本人決定で小道具の扱い。 */
@@ -13711,9 +13717,12 @@
     floorPath();
     target.fill();
 
-    if (!pitchStyle) {
+    if (!pitchStyle && state.showFrontFloorGrid) {
       // 床の目盛りは実寸1mごと。平面図と同じ刻みにして、二つの図で同じ枡を数えられるようにする。
       // 広い舞台では線が混むので2mごとに間引く（平面図と同じ判断）。
+      // ★2026-09-23 本人指摘の修正: 表示・非表示は「もともとこの床にあるグリッド線」
+      //   自体をここで切り替える。以前は別関数(drawFrontFloorGrid)が同じ1m刻みの線を
+      //   もう一組重ねて描いていたため、ONにすると格子が二重に増えて見えた。
       floorPath();
       target.clip();
       target.strokeStyle = "rgba(239,231,214,0.09)";
@@ -14179,39 +14188,10 @@
     }
   }
 
-  /* 正面図の床グリッド。舞台座標をそのまま投影するので、席ごとの遠近・
-     拡大操作と常に一致する。図の補助線であって施工寸法ではない。 */
-  function drawFrontFloorGrid(target, L) {
-    if (!state.showFrontFloorGrid || !L || L.plan) return;
-    const width = Number(L.size && L.size.width) || 0;
-    const depth = Number(L.size && L.size.depth) || 0;
-    if (!(width > 0 && depth > 0)) return;
-    const at = (u, v) => place(u, v, L);
-    target.save();
-    target.beginPath();
-    [[0, 0], [1, 0], [1, 1], [0, 1]].forEach(([u, v], index) => {
-      const point = at(u, v);
-      if (index) target.lineTo(point.x, point.y); else target.moveTo(point.x, point.y);
-    });
-    target.closePath();
-    target.clip();
-    target.strokeStyle = "rgba(239,231,214,0.14)";
-    target.lineWidth = 1;
-    // 1mごとの既存の床グリッドを、そのまま表示／非表示する。
-    const columns = Math.max(1, Math.ceil(width / 1));
-    const rows = Math.max(1, Math.ceil(depth / 1));
-    for (let i = 1; i < columns; i += 1) {
-      const u = i / columns;
-      const a = at(u, 0), b = at(u, 1);
-      target.beginPath(); target.moveTo(a.x, a.y); target.lineTo(b.x, b.y); target.stroke();
-    }
-    for (let i = 1; i < rows; i += 1) {
-      const v = i / rows;
-      const a = at(0, v), b = at(1, v);
-      target.beginPath(); target.moveTo(a.x, a.y); target.lineTo(b.x, b.y); target.stroke();
-    }
-    target.restore();
-  }
+  /* ★2026-09-23: 専用の重ね描き関数だった drawFrontFloorGrid は削除。
+     もともと drawFrontVenue 側にあった1m刻みの床グリッド（floorPath節）を
+     state.showFrontFloorGrid で直接ON/OFFする形に一本化した（上記参照）。
+     二重に線が増えて見えていた不具合の原因はこの重複描画だった。 */
 
   function drawCustomPlanVenue(target, L) {
     const v = L.venue;
@@ -15925,10 +15905,7 @@
     }
 
     if (L.plan) drawPlanVenue(target, L);
-    else {
-      drawFrontVenue(target, L);
-      drawFrontFloorGrid(target, L);
-    }
+    else drawFrontVenue(target, L);
     if (showSelection && L.plan && target === planCtx) drawLightingPlanOverlay(target, L);
     if (showSelection && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) {
       drawLightCuePools(target, L);
@@ -20958,7 +20935,13 @@
       ctx2.restore();
       return;
     }
-    if ((kind === "prop" && PROP_SHAPES[propShapeId]) || kind === "diabolo") {
+    /* 2026-09-23 本人指摘: 台・箱／車／球など大道具のkindは、この分岐に入らず
+     * bindKindPreviewSpin の既定（canvasをCSSで平面回転＝奥行き軸）へ落ちていた。
+     * 小道具（prop/diabolo）だけ縦軸まわりの本物の回転台になっていて、
+     * 見た目の軸が種類によって違って見えていたのはこれが原因。
+     * seri・model は下の専用の簡略プレビュー（せりの点線枠／組んだセットの見本）を
+     * そのまま使うのでここでは扱わない。それ以外は全部この経路へ寄せて軸を揃える。 */
+    if (!["seri", "model"].includes(kind) && (kind !== "prop" || PROP_SHAPES[propShapeId])) {
       /* 一覧専用の簡略図ではなく、正面図で実際に使う描画経路をそのまま縮小する。
        * selectionBounds も本番と共通なので、長い梯子や背の低い家具でも枠内へ収まる。
        * 小道具の回転中は canvas 自体を平面で回さず、駒を上下軸で回す。
@@ -21134,9 +21117,11 @@
 
   // ディアボロは専用の向き・持たせる操作を保つため type は変えない。
   // 演者・舞台セットでは、小道具と同じ入口・一覧へ分類する。
-  const ROSTER_PROP_KINDS = new Set(["prop", "diabolo"]);
+  // 2026-09-23 本人指示: スーツケースは大道具でなく小道具として扱う。
+  const ROSTER_PROP_KINDS = new Set(["prop", "diabolo", "suitcase"]);
 const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   { group: "サーカス道具", kind: "diabolo" },
+  { group: "手に持つもの", kind: "suitcase" },
 ]);
   /* R-1（2026-09-17 本人決定）: 盆・可動デッキ・幕・せり・水面は「大道具」ではなく舞台機構で、
    * 劇場に組み込まれているもの。だから足す場所も劇場設定モードの舞台機構パネル
@@ -21157,11 +21142,14 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   });
   /* 「種類」に平積みしていた既定の大道具も、形で足す大道具と同じ見出しへ寄せる。
    * 既存の kind や保存形式には手を入れず、選ぶ入口だけを整理する。 */
+  /* 2026-09-23 本人指示: 「台・家具」はPROP_SHAPE_GROUPSの「家具」(ソファ等)と
+     見出し名を揃えて一枠へ合流させる。スーツケースは小道具側（ROSTER_PROP_SPECIAL_KINDS）
+     へ移したのでここからは外す。 */
   const ROSTER_SET_KIND_GROUPS = Object.freeze([
-    { ja: "台・家具", ids: ["block", "table", "chair", "bench", "stool"] },
+    { ja: "家具", ids: ["block", "table", "chair", "bench", "stool"] },
     { ja: "建て込み", ids: ["wall"] },
     { ja: "情景・乗り物", ids: ["sphere", "car"] },
-    { ja: "空中・サーカス", ids: ["trapeze", "cyrwheel", "pole", "teeter", "tissue", "wire", "suitcase", "trampoline", "cane"] },
+    { ja: "空中・サーカス", ids: ["trapeze", "cyrwheel", "pole", "teeter", "tissue", "wire", "trampoline", "cane"] },
   ]);
   let rosterKind = "performer";
   let rosterKindLayer = "performer";
@@ -21470,7 +21458,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         addFromRoster();
       });
       host.append(tile);
-      bindKindPreviewSpin(tile, canvas, () => drawKindPreview(canvas, kind, "#8b98a1"));
+      bindKindPreviewSpin(tile, canvas,
+        (facing) => drawKindPreview(canvas, kind, "#8b98a1", null, facing), { turntable: true });
     };
     const ungroupedKinds = new Set(ROSTER_KIND_LAYERS.set);
     /* 大道具では「空中・サーカス」と「サーカス道具」を一つの分類として
@@ -23123,8 +23112,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           remove.setAttribute("aria-label", tx("このシーンを削除"));
           remove.disabled = state.project.scenes.filter((row) => row.kind === "scene").length <= 1;
           remove.addEventListener("click", () => openSceneDelete(scene, remove));
+          // ★2026-09-23 本人指示: 秒数欄は「次のシーンをつくる」の左に一列で並べる。
+          if (timing.childElementCount) nextRow.append(timing);
           nextRow.append(apply, remove);
-          if (timing.childElementCount) body.append(timing);
           body.append(note, nextRow);
           row.append(body);
           /* 行をDOMへ置き、幅と折り返しが確定した後に全文の高さを測る。
