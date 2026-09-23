@@ -9573,6 +9573,82 @@
       "『継ぎ目の庭』を開きました。元のショーはショー一覧に残っています。");
   }
 
+
+  /* ★2026-09-24 本人指示: 『ロミオとジュリエット』見本のVOXキュー（セリフキュー）の時刻を、
+   * 台本の流れ（場面メモの動作と台詞の長さ）に合わせて打ち直した。以前の時刻は場面の長さを
+   * 機械的に等分した位置（拍の中央＋1.5秒刻み）で、再生中の「いまのセリフ」が舞台の進行と
+   * ずれて見えていた。棚に置き済みの複製にも届くよう、「同梱の旧版と同じ時刻のまま」の
+   * キューだけを新しい時刻へ直す。利用者が動かしたキュー（旧版の時刻と違う、または
+   * セクション絶対秒へ変換済み）と、演者・場面・メモ・照明は一切触らない。 */
+  const ROMEO_JULIET_VOX_OFFSETS_BEFORE_2026_09_24 = Object.freeze({
+    "rj-gamma-dialogue-rj-cond-01-a-full-b04-d01": 157.5,
+    "rj-gamma-dialogue-rj-cond-01-b-full-b01-d01": 1.3,
+    "rj-gamma-dialogue-rj-cond-01-c-full-b02-d01": 56.3,
+    "rj-gamma-dialogue-rj-cond-01-c-full-b03-d01": 93.8,
+    "rj-gamma-dialogue-rj-cond-01-c-full-b04-d01": 131.3,
+    "rj-gamma-dialogue-rj-cond-01-c-full-b04-d02": 132.8,
+    "rj-gamma-dialogue-rj-cond-01-d-full-b01-d01": 7.5,
+    "rj-gamma-dialogue-rj-cond-01-d-full-b01-d02": 9,
+    "rj-gamma-dialogue-rj-cond-02-a-full-b01-d01": 15,
+    "rj-gamma-dialogue-rj-cond-02-a-full-b02-d01": 45,
+    "rj-gamma-dialogue-rj-cond-02-c-full-b01-d01": 12.5,
+    "rj-gamma-dialogue-rj-cond-02-c-full-b01-d02": 14,
+    "rj-gamma-dialogue-rj-cond-02-c-full-b02-d01": 37.5,
+    "rj-gamma-dialogue-rj-cond-03-a-full-b01-d01": 7.5,
+    "rj-gamma-dialogue-rj-cond-03-c-full-b01-d01": 7.5,
+    "rj-gamma-dialogue-rj-cond-03-c-full-b02-d01": 7.5,
+    "rj-gamma-dialogue-rj-cond-03-d-full-b01-d01": 19,
+    "rj-gamma-dialogue-rj-cond-03-d-full-b02-d01": 18.7,
+    "rj-gamma-dialogue-rj-cond-03-d-full-b02-d02": 20.2,
+    "rj-gamma-dialogue-rj-cond-03-d-full-b02-d03": 21.7,
+    "rj-gamma-dialogue-rj-cond-03-d-full-b02-d04": 23.2,
+    "rj-gamma-dialogue-rj-cond-03-d-full-b03-d01": 56,
+    "rj-gamma-dialogue-rj-cond-03-d-full-b03-d02": 57.5,
+    "rj-gamma-dialogue-rj-cond-03-d-full-b03-d03": 59,
+    "rj-gamma-dialogue-rj-cond-03-d-full-b03-d04": 60.5,
+    "rj-gamma-dialogue-rj-cond-03-d-full-b04-d01": 93.3,
+    "rj-gamma-dialogue-rj-cond-04-a-full-b01-d01": 12.5,
+    "rj-gamma-dialogue-rj-cond-04-a-full-b01-d02": 14,
+    "rj-gamma-dialogue-rj-cond-04-a-full-b02-d01": 37.5,
+    "rj-gamma-dialogue-rj-cond-04-a-full-b02-d02": 39,
+    "rj-gamma-dialogue-rj-cond-04-b-full-b01-d01": 13,
+    "rj-gamma-dialogue-rj-cond-04-b-full-b01-d02": 14.5,
+    "rj-gamma-dialogue-rj-cond-04-b-full-b03-d01": 13.3,
+    "rj-gamma-dialogue-rj-cond-04-c-full-b01-d01": 10.5,
+    "rj-gamma-dialogue-rj-cond-04-c-full-b01-d02": 12,
+    "rj-gamma-dialogue-rj-cond-04-c-full-b03-d01": 10.5,
+    "rj-gamma-dialogue-rj-cond-04-d-full-b01-d01": 13.5,
+    "rj-gamma-dialogue-rj-cond-05-a-full-b03-d01": 62.5,
+    "rj-gamma-dialogue-rj-cond-05-a-full-b03-d02": 64,
+    "rj-gamma-dialogue-rj-cond-05-a-full-b04-d01": 87.5,
+    "rj-gamma-dialogue-rj-cond-05-b-full-b03-d01": 65,
+    "rj-gamma-dialogue-rj-cond-05-b-full-b04-d01": 91,
+    "rj-gamma-dialogue-rj-cond-05-b-full-b04-d02": 92.5,
+    "rj-gamma-dialogue-rj-cond-05-d-full-b03-d01": 30,
+    "rj-gamma-dialogue-rj-cond-05-d-full-b04-d01": 50,
+    "rj-gamma-dialogue-rj-cond-05-d-full-b05-d01": 70,
+    "rj-gamma-dialogue-rj-cond-05-d-full-b05-d02": 71.5,
+  });
+  function backfillRomeoJulietVoxOffsets(savedProject, bundledProject) {
+    const cues = savedProject && Array.isArray(savedProject.cues) ? savedProject.cues : null;
+    const bundledCues = bundledProject && Array.isArray(bundledProject.cues) ? bundledProject.cues : null;
+    if (!cues || !bundledCues) return false;
+    const bundled = new Map(bundledCues
+      .filter((cue) => cue && cue.kind === "timeline" && cue.cueType === "dialogue" && typeof cue.id === "string")
+      .map((cue) => [cue.id, cue]));
+    let changed = false;
+    cues.forEach((cue) => {
+      if (!cue || cue.kind !== "timeline" || cue.cueType !== "dialogue" || cue.sectionId) return;
+      const next = bundled.get(cue.id);
+      const before = ROMEO_JULIET_VOX_OFFSETS_BEFORE_2026_09_24[cue.id];
+      if (!next || before === undefined || cue.sceneId !== next.sceneId) return;
+      if (Math.abs(finite(cue.offsetSeconds, NaN) - before) > 1e-6) return;
+      if (Math.abs(next.offsetSeconds - before) <= 1e-6) return;
+      cue.offsetSeconds = next.offsetSeconds;
+      changed = true;
+    });
+    return changed;
+  }
   // ロミオとジュリエットも初回だけ棚へ置く。既存の同ID（編集済みを含む）は触らない。
   function shelveRomeoJulietSample() {
     const built = buildRomeoJulietSampleShow();
@@ -9600,6 +9676,7 @@
         changed = true;
       }
       if (backfillVenueSetupAppliedAt(savedProject)) changed = true;
+      if (backfillRomeoJulietVoxOffsets(savedProject, built.project)) changed = true;
       if (changed) {
         saved.savedAt = nowIso();
         shows[built.project.id] = saved;
