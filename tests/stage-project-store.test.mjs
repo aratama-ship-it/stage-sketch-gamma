@@ -8,7 +8,6 @@ const source = fs.readFileSync(new URL("../stage-sketch.js", import.meta.url), "
 const stageHtml = fs.readFileSync(new URL("../stage.html", import.meta.url), "utf8");
 const serviceWorker = fs.readFileSync(new URL("../stage-sw.js", import.meta.url), "utf8");
 const alternativesUi = fs.readFileSync(new URL("../stage-scene-alternatives-ui.js", import.meta.url), "utf8");
-const featureShowSource = fs.readFileSync(new URL("../stage-samples/feature-test-show.js", import.meta.url), "utf8");
 const start = source.indexOf("  function createProjectStore(");
 const end = source.indexOf("\n  window.SHOSAI_PROJECT_STORE_MODEL", start);
 assert.ok(start >= 0 && end > start, "project-store model must remain separately testable");
@@ -25,8 +24,9 @@ const publishedSource = execFileSync("git", ["show", "82c98817ac30f7206e8763b577
 const publishedFeatureShowSource = execFileSync("git", ["show", "82c98817ac30f7206e8763b57714995ccd1806e6:stage-samples/feature-test-show.js"], {
   cwd: new URL("..", import.meta.url), encoding: "utf8", maxBuffer: 8 * 1024 * 1024,
 });
-assert.equal(featureShowSource, publishedFeatureShowSource,
-  "the feature fixture used for public compatibility is the exact preceding public copy");
+/* 2026-09-23: 試験場ショーは機能を足すたびに生成し直す（正本=生成スクリプト）。
+   互換性の検査は「直前の公開版の複製」で行うので、作業中の複製と一致させる必要はない。
+   固定は git の公開コミットから読む publishedFeatureShowSource が担う。 */
 const publishedStart = publishedSource.indexOf("  function createProjectStore(");
 const publishedEnd = publishedSource.indexOf("\n  window.SHOSAI_PROJECT_STORE_MODEL", publishedStart);
 assert.ok(publishedStart >= 0 && publishedEnd > publishedStart, "public project-store model must remain testable");
@@ -35,7 +35,7 @@ vm.runInNewContext(`${publishedSource.slice(publishedStart, publishedEnd)}; glob
 const createPublished = publishedContext.create;
 
 const featureShowContext = { window: {} };
-vm.runInNewContext(featureShowSource, featureShowContext);
+vm.runInNewContext(publishedFeatureShowSource, featureShowContext);
 const featureShow = JSON.parse(JSON.stringify(featureShowContext.window.SHOSAI_STAGE_LOCAL_SHOWS.at(-1)));
 assert.equal(featureShow?.project?.id, "gamma-feature-test-v2", "bundled feature show must remain available");
 assert.ok(featureShow.project.scenes.some(scene => scene.id === "ft-scene-e1"), "feature show includes E-1");
@@ -145,7 +145,7 @@ test("the app shell advances with the storage transaction code", () => {
   assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092213/);
   assert.match(stageHtml, /style\.css\?v=2026092350/);
   assert.match(stageHtml, /stage-sketch\.js\?v=2026092361/);
-  assert.match(serviceWorker, /stage-sketch-gamma-shell-v284/);
+  assert.match(serviceWorker, /stage-sketch-gamma-shell-v285/);
   assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092213/);
   assert.match(serviceWorker, /\.\/style\.css\?v=2026092350/);
   assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092361/);

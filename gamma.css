@@ -650,3 +650,22 @@ body.gamma-venue-setup-required .stage-workspace-tab[disabled] {
 #gamma-venue-workspace .stage-control-label {
   font-size: var(--fs-3);
 }
+
+/* ===== 案A（2026-09-23 本人決定）: 新しいショーでも舞台タブへ戻れる。入口以外は薄く・触れない ===== */
+/* 帯は舞台の格子（.stage-sketch-grid）の直前に gamma-workspace.js が差し込む。 */
+.gamma-stage-gate-band {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+  margin: 8px 12px 0; padding: 9px 14px;
+  border-left: 4px solid #c98955; border-radius: 8px;
+  background: rgba(201, 137, 85, 0.14); font-size: 13px;
+}
+.gamma-stage-gate-band[hidden] { display: none; }
+.gamma-stage-gate-note { opacity: 0.72; }
+.gamma-stage-gate-band.is-nudge { animation: gamma-stage-gate-nudge 0.9s ease; }
+@keyframes gamma-stage-gate-nudge {
+  0%, 100% { box-shadow: none; }
+  30% { box-shadow: 0 0 0 3px rgba(201, 137, 85, 0.85); }
+}
+/* inert が操作を止める。ここは見た目だけ（薄く・彩度を落とす）。 */
+body.gamma-venue-setup-required .is-venue-gated { opacity: 0.35; filter: saturate(0.6); }
+@media (prefers-reduced-motion: reduce) { .gamma-stage-gate-band.is-nudge { animation: none; outline: 2px solid #c98955; } }

@@ -296,13 +296,66 @@
     /* 共有の閲覧（読み取り専用）かどうかは、セッションが決まるまで分からない。
        あとから分かったときに、閉じ込めたままにしない。 */
     if(!pending && gatedToVenue) { gatedToVenue=false; if(mode==='venue-setup') { select('normal'); return; } }
+    /* ★2026-09-23 本人決定（案A）: 舞台タブは開けるようにする。舞台タブの中は
+       「ショー一覧／新規ショー／読み込む／書き出す」だけ生かし、他は inert＋薄く表示
+       （syncStageGate）。機材配置・照明デザイン・3Dは今までどおり閉じる。 */
     document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode],'
       +'#stage-workspace-tabs [data-stage-workspace-launch]').forEach(button=>{
-      const locked=pending && button.dataset.stageWorkspaceMode!=='venue-setup';
+      const target=button.dataset.stageWorkspaceMode;
+      const locked=pending && target!=='venue-setup' && target!=='normal';
       button.disabled=locked;
       button.title=locked ? '先に劇場設定を済ませてください' : (button.dataset.gammaTitle || '');
     });
+    syncStageGate(pending);
   }
+  /* ---- 案A: 舞台タブの中を「ショーの入口」以外だけ触れなくする ----
+   * 入口（data-gamma-gate-keep を持つ要素）を含む枝は残し、含まない兄弟だけ inert にする。
+   * inert は子孫にも効くので、枝ごとに1箇所付ければよい。解くときは付けた印を辿って外す。
+   * 読み上げ用の visually-hidden と audio は止めない（ゲート中も告知と音の器は要る）。 */
+  const STAGE_GATE_KEEP='[data-gamma-gate-keep]';
+  let stageGateBand=null;
+  function stageGateBandEl() {
+    if(stageGateBand || !normal || !normal.parentNode) return stageGateBand;
+    const band=document.createElement('div');
+    band.id='gamma-stage-gate-band'; band.className='gamma-stage-gate-band'; band.hidden=true;
+    band.setAttribute('role','status');
+    const text=document.createElement('span');
+    text.textContent='まず劇場を決めると、このショーを編集できます。';
+    const go=document.createElement('button');
+    go.type='button'; go.className='btn-quiet'; go.textContent='劇場設定を開く';
+    go.addEventListener('click',()=>select('venue-setup'));
+    const note=document.createElement('span'); note.className='gamma-stage-gate-note';
+    note.textContent='別のショーを開くなら、「ショー」の欄の「ショー一覧」「新規ショーを作る」「ショーを読み込む」が使えます。';
+    band.append(text,go,note);
+    normal.parentNode.insertBefore(band,normal);
+    stageGateBand=band;
+    return band;
+  }
+  function gateSubtree(root) {
+    [...root.children].forEach(child=>{
+      if(child.matches(STAGE_GATE_KEEP)) return;
+      if(child.querySelector(STAGE_GATE_KEEP)) { gateSubtree(child); return; }
+      if(child.tagName==='AUDIO' || child.tagName==='SCRIPT' || child.classList.contains('visually-hidden')) return;
+      child.inert=true; child.classList.add('is-venue-gated');
+    });
+  }
+  function syncStageGate(pending) {
+    if(!normal) return;
+    const band=stageGateBandEl();
+    if(pending) {
+      if(!normal.querySelector('.is-venue-gated')) gateSubtree(normal);
+    } else {
+      normal.querySelectorAll('.is-venue-gated').forEach(el=>{ el.inert=false; el.classList.remove('is-venue-gated'); });
+    }
+    if(band) band.hidden=!pending || mode!=='normal';
+  }
+  /* 薄くした所を押したら、帯を一度光らせて「ここは今は触れない」と伝える。飛ばさない。 */
+  normal?.addEventListener('click',event=>{
+    if(mode!=='normal' || !venueSetupPending()) return;
+    if(event.target.closest && event.target.closest(STAGE_GATE_KEEP)) return;
+    const band=stageGateBandEl(); if(!band) return;
+    band.classList.remove('is-nudge'); void band.offsetWidth; band.classList.add('is-nudge');
+  });
   /* ---- R-30（2026-09-17 本人要望）: 照明から別のモードへ移るとき「適用しますか？」を出す ----
    * これまでは window.confirm の2択（OK＝そのまま切り替える／キャンセル）で、
    * 文面も「保持したまま切り替えますか？」＝適用を勧めていなかった。
@@ -354,7 +407,9 @@
     if(!['normal','light-placement','light-design','venue-setup'].includes(next)) return;
     // スマホ確認機では劇場・照明編集へ移らず、ショーの読込と閲覧を使う。
     if(phoneViewerWorkspace() && next!=='normal') return;
-    if(next!=='venue-setup' && venueSetupPending()) {
+    /* 案A（2026-09-23）: 劇場が決まるまで閉じるのは機材配置・照明デザインだけ。
+       舞台タブへは戻れる（中は入口以外 inert。syncStageGate）。 */
+    if(next!=='venue-setup' && next!=='normal' && venueSetupPending()) {
       // 勝手に別の場所へ行かず、やることが1つだけ残っている状態にする
       gatedToVenue=true;
       if(mode!=='venue-setup') select('venue-setup');
