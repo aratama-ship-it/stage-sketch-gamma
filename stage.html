@@ -24,7 +24,7 @@
 <script src="gamma-light-model.js?v=2026092113"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=2026091987">
 <link rel="stylesheet" href="stage-scene-alternatives.css?v=2026092209">
-<link rel="stylesheet" href="stage-vox-panel.css?v=2026092405">
+<link rel="stylesheet" href="stage-vox-panel.css?v=2026092406">
 </head>
 <body class="is-standalone">
 
@@ -1466,6 +1466,24 @@
       <div><dt>シーン</dt><dd id="stage-timeline-cue-detail-scene">—</dd></div>
       <div><dt>時間</dt><dd id="stage-timeline-cue-detail-position">0:00.0</dd></div>
     </dl>
+    <!-- VOXキューのときだけ出す（2026-09-24 本人指示）: 台本から引いたセリフと、前後のVOXキューへの移動。 -->
+    <section class="stage-cue-line" id="stage-timeline-cue-detail-line" aria-label="セリフ" hidden>
+      <p class="stage-cue-line-head"><span>セリフ</span><span class="stage-cue-line-source" id="stage-timeline-cue-detail-line-source"></span></p>
+      <p class="stage-cue-line-speaker" id="stage-timeline-cue-detail-line-speaker"></p>
+      <p class="stage-cue-line-text" id="stage-timeline-cue-detail-line-text"></p>
+    </section>
+    <nav class="stage-cue-step" id="stage-timeline-cue-detail-step" aria-label="前後のVOXキューへ移る" hidden>
+      <button type="button" class="stage-cue-step-button" id="stage-timeline-cue-detail-prev" data-step="-1">
+        <span class="stage-cue-step-dir">← 前のキュー</span>
+        <span class="stage-cue-step-name"></span>
+        <span class="stage-cue-step-line"></span>
+      </button>
+      <button type="button" class="stage-cue-step-button" id="stage-timeline-cue-detail-next" data-step="1">
+        <span class="stage-cue-step-dir">次のキュー →</span>
+        <span class="stage-cue-step-name"></span>
+        <span class="stage-cue-step-line"></span>
+      </button>
+    </nav>
     <label class="stage-timeline-cue-note" for="stage-timeline-cue-detail-note">
       <span>メモ</span>
       <textarea id="stage-timeline-cue-detail-note" maxlength="2000"
@@ -3269,13 +3287,13 @@
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=2026092402"></script>
+    <script src="stage-i18n.js?v=2026092403"></script>
     <script src="stage-i18n.zh-Hans.js?v=2026092203"></script>
     <script src="stage-i18n.zh-Hant.js?v=2026092203"></script>
 <script src="stage-prompt-i18n.js?v=2026092050"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026091501"></script>
-<script src="stage-samples/romeo-juliet-cued.js?v=2026092302"></script>
+<script src="stage-samples/romeo-juliet-cued.js?v=2026092401"></script>
 <script src="stage-samples/feature-test-show.js?v=2026092401"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
@@ -3305,7 +3323,7 @@
 <script src="stage-scene-alternatives-ui.js?v=2026092209"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-vox-panel.js?v=2026092403"></script>
-    <script src="stage-timeline.js?v=2026092402"></script>
+    <script src="stage-timeline.js?v=2026092403"></script>
 <script src="stage-session.js?v=2026091987"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>

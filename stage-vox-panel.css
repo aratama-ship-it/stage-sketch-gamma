@@ -146,3 +146,74 @@
   line-height: 1.6;
   color: var(--stage-vox-muted);
 }
+
+/* ---------- タイムラインのキュー詳細（VOXキューのとき・2026-09-24 本人指示） ----------
+ * セリフ欄: パネルの「いまのセリフ」と同じ緑の枠（1px・角丸6px）で、窓の中でも同じものだと分かるようにする。
+ * 前後移動: 2列のボタン（最小高さ64px）。上段に向き、中段にキュー名、下段にセリフ1行。 */
+.stage-cue-line {
+  margin: 0;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--stage-timeline-cue-dialogue, #a8bf8a);
+  border-radius: 6px;
+  background: rgba(168, 191, 138, 0.08);
+}
+.stage-cue-line p { margin: 0; }
+.stage-cue-line-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--milk-dim, #cbbba4);
+}
+.stage-cue-line-speaker {
+  margin-top: 6px !important;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--stage-timeline-cue-dialogue, #a8bf8a);
+}
+.stage-cue-line-text {
+  margin-top: 3px !important;
+  font-family: var(--serif, serif);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--milk, #efe7d6);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.stage-cue-line-text.is-missing { font-family: inherit; font-size: 12px; font-style: italic; color: var(--milk-dim, #cbbba4); }
+
+.stage-cue-line[hidden], .stage-cue-step[hidden] { display: none; }
+.stage-cue-step {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.stage-cue-step-button {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-height: 64px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line-dark, #382f25);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--milk, #efe7d6);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.stage-cue-step-button:last-child { text-align: right; }
+.stage-cue-step-button:hover:not(:disabled) { border-color: var(--stage-timeline-cue-dialogue, #a8bf8a); background: rgba(168, 191, 138, 0.08); }
+.stage-cue-step-button:focus-visible { outline: 2px solid var(--stage-timeline-cue-dialogue, #a8bf8a); outline-offset: 1px; }
+.stage-cue-step-button:disabled { cursor: default; opacity: 0.45; }
+.stage-cue-step-dir { font-size: 11px; color: var(--stage-timeline-cue-dialogue, #a8bf8a); }
+.stage-cue-step-name { font-size: 12px; font-variant-numeric: tabular-nums; }
+.stage-cue-step-line {
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--milk-dim, #cbbba4);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

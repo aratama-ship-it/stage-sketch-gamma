@@ -120,6 +120,13 @@
     cueDetailClose: document.getElementById("stage-timeline-cue-detail-close"),
     cueDetailSave: document.getElementById("stage-timeline-cue-detail-save"),
     cueDetailDelete: document.getElementById("stage-timeline-cue-detail-delete"),
+    cueDetailLine: document.getElementById("stage-timeline-cue-detail-line"),
+    cueDetailLineSource: document.getElementById("stage-timeline-cue-detail-line-source"),
+    cueDetailLineSpeaker: document.getElementById("stage-timeline-cue-detail-line-speaker"),
+    cueDetailLineText: document.getElementById("stage-timeline-cue-detail-line-text"),
+    cueDetailStep: document.getElementById("stage-timeline-cue-detail-step"),
+    cueDetailPrev: document.getElementById("stage-timeline-cue-detail-prev"),
+    cueDetailNext: document.getElementById("stage-timeline-cue-detail-next"),
     audioDetailBackdrop: document.getElementById("stage-timeline-audio-detail-backdrop"),
     audioDetailModal: document.getElementById("stage-timeline-audio-detail-modal"),
     audioDetailTitle: document.getElementById("stage-timeline-audio-detail-title"),
@@ -249,6 +256,8 @@
   let pendingSceneOpenTimer = 0;
   let cueDetailId = null;
   let cueDetailReturnFocus = null;
+  let cueDetailOriginalMemo = "";
+  let pendingVoxDetail = null;     // 前後移動で、セクションが切り替わってから開き直すキュー
   let audioDetailTrackId = null;
   let audioDetailReturnFocus = null;
   let audioDetailPreviewGainDb = null;
@@ -1662,7 +1671,7 @@
     if (focus && target && target.isConnected) target.focus({ preventScroll: true });
   }
 
-  function openCueDetails(cue, returnFocus) {
+  function openCueDetails(cue, returnFocus, focusTarget = null) {
     if (!cue || !els.cueDetailModal) return;
     cueDetailId = cue.id;
     cueDetailReturnFocus = returnFocus || null;
@@ -1670,9 +1679,88 @@
     els.cueDetailScene.textContent = `${cue.sceneNumber}  ${cue.sceneTitle}`;
     els.cueDetailPosition.textContent = labelPosition(cue.seconds);
     els.cueDetailNote.value = String(cue.memo || "");
+    cueDetailOriginalMemo = els.cueDetailNote.value;
+    renderCueDetailVox(cue);
     els.cueDetailBackdrop.hidden = false;
     els.cueDetailModal.hidden = false;
-    els.cueDetailNote.focus({ preventScroll: true });
+    if (focusTarget && focusTarget.isConnected && !focusTarget.disabled) focusTarget.focus({ preventScroll: true });
+    else els.cueDetailNote.focus({ preventScroll: true });
+  }
+
+  /* VOXキューの詳細（2026-09-24 本人指示）: 台本から引いたセリフと、前後のVOXキューへの移動。
+   * 並びは VOXキューパネルと同じ「ショー全体・セクション順」。文字の当て方もパネルと同じ関数を使う。 */
+  function voxDetailEntries() {
+    const panelApi = window.SHOSAI_VOX_PANEL;
+    if (!panelApi || !lastVoxSnapshot) return [];
+    return panelApi.flattenSections(lastVoxSnapshot.sections, lastVoxSnapshot.sceneNotes);
+  }
+
+  function voxStepLabel(button, entry) {
+    const name = button.querySelector(".stage-cue-step-name");
+    const line = button.querySelector(".stage-cue-step-line");
+    button.disabled = !entry;
+    button.dataset.cueId = entry ? entry.id : "";
+    name.textContent = entry ? entry.displayName : tx("ありません");
+    line.textContent = entry
+      ? `${entry.speaker ? `${entry.speaker}「` : "「"}${entry.line || tx("（文字なし）")}」` : "";
+    button.title = entry ? `${entry.displayName}（${entry.sectionTitle} / ${entry.sceneTitle}）` : "";
+  }
+
+  function renderCueDetailVox(cue) {
+    if (!els.cueDetailLine || !els.cueDetailStep) return;
+    const isVox = cue && cue.cueType === "dialogue";
+    const entries = isVox ? voxDetailEntries() : [];
+    const at = entries.findIndex((entry) => entry.id === cue.id);
+    const entry = at >= 0 ? entries[at] : null;
+    els.cueDetailLine.hidden = !entry;
+    els.cueDetailStep.hidden = !entry;
+    if (!entry) return;
+    els.cueDetailLineSpeaker.textContent = entry.speaker;
+    els.cueDetailLineSpeaker.hidden = !entry.speaker;
+    els.cueDetailLineText.textContent = entry.line || tx("台本の行が見つかりません。キューのメモも空です。");
+    els.cueDetailLineText.classList.toggle("is-missing", !entry.line);
+    els.cueDetailLineSource.textContent = entry.source === "script" ? tx("場面メモの台本から")
+      : entry.source === "memo" ? tx("キューのメモから") : "";
+    voxStepLabel(els.cueDetailPrev, entries[at - 1] || null);
+    voxStepLabel(els.cueDetailNext, entries[at + 1] || null);
+  }
+
+  function openCueDetailsById(cueId, focusTarget) {
+    if (!lastVoxProject || !timeline) return false;
+    const cue = timelineCuePresentations(lastVoxProject).find((item) => item.id === cueId);
+    if (!cue) return false;
+    const button = els.surface.querySelector(`.stage-timeline-cue[data-cue-id="${CSS.escape(cue.id)}"]`);
+    openCueDetails(cue, button || cueDetailReturnFocus, focusTarget);
+    return true;
+  }
+
+  /* 前後のVOXキューへ移る。窓は開いたまま中身を差し替え、タイムラインもそのキューへ頭出しする
+   * （別のセクションならパネルと同じ経路でセクションを切り替える）。
+   * ★メモを書きかけていたら、失わないように保存してから移る。 */
+  function stepCueDetails(direction, focusTarget) {
+    if (!cueDetailId) return false;
+    const entries = voxDetailEntries();
+    const at = entries.findIndex((entry) => entry.id === cueDetailId);
+    const target = at >= 0 ? entries[at + direction] : null;
+    if (!target) return false;
+    if (els.cueDetailNote.value !== cueDetailOriginalMemo && typeof bridge.updateTimelineCue === "function") {
+      bridge.updateTimelineCue(cueDetailId, { memo: els.cueDetailNote.value });
+      renderTimeline();
+    }
+    pendingVoxDetail = { cueId: target.id, focusTarget, until: Date.now() + 3000 };
+    window.dispatchEvent(new CustomEvent("stage-vox-panel-seek", {
+      cancelable: true,
+      detail: { sectionId: target.sectionId, sceneId: target.sceneId, cueId: target.id, seconds: target.seconds },
+    }));
+    openPendingVoxDetail();
+    return true;
+  }
+
+  function openPendingVoxDetail() {
+    if (!pendingVoxDetail) return;
+    if (Date.now() > pendingVoxDetail.until) { pendingVoxDetail = null; return; }
+    const { cueId, focusTarget } = pendingVoxDetail;
+    if (openCueDetailsById(cueId, focusTarget)) pendingVoxDetail = null;
   }
 
   function formatGainDb(value) {
@@ -2588,6 +2676,7 @@
    * 台本の行は各場面のメモから引くので、キューのある場面のメモも一緒に渡す。
    * ★パネルは読むだけ。キューの形・保存データには触れない。 */
   let lastVoxProject = null;
+  let lastVoxSnapshot = null;      // { sections, sceneNotes }。パネルとキュー詳細で同じものを使う
   let pendingVoxSeek = null;       // 別のセクションへ移ってから頭出しするキュー
   let voxSeekJustApplied = false;  // 直後のシーン切替で「場面の頭」へ戻されないための印
 
@@ -2657,6 +2746,7 @@
         sceneNotes[row.id] = typeof row.note === "string" ? row.note : "";
       }
     });
+    lastVoxSnapshot = { sections, sceneNotes };
     window.dispatchEvent(new CustomEvent("stage-timeline-vox-cues", {
       detail: {
         currentSectionId: timeline.sectionId || null,
@@ -3325,6 +3415,9 @@
   els.cueDetailBackdrop.addEventListener("click", () => closeCueDetails());
   els.cueDetailSave.addEventListener("click", saveCueDetails);
   els.cueDetailDelete.addEventListener("click", deleteCueFromDetails);
+  [els.cueDetailPrev, els.cueDetailNext].forEach((button) => {
+    if (button) button.addEventListener("click", () => stepCueDetails(Number(button.dataset.step), button));
+  });
   els.audioDetailClose.addEventListener("click", () => closeAudioDetails());
   els.audioDetailCancel.addEventListener("click", () => closeAudioDetails());
   els.audioDetailBackdrop.addEventListener("click", () => closeAudioDetails());
