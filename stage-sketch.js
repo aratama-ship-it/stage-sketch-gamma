@@ -35325,6 +35325,22 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
 
   async function finishInitialStageSetup(identity) {
     if (STUDY_READ_ONLY) return;
+    /* ★2026-09-23 本人指摘: 同梱の見本（特にロミオとジュリエット）が棚に一切出ない、
+     * という報告が続いた。原因は置き場所ではなく実行タイミング。この4つの呼び出しは
+     * 以前、この関数の下の方（IndexedDBの保護コピー確認を await した後）にあった。
+     * 実機（Safari＋Service Worker）では、その await の間に何らかの理由でページの
+     * 再読み込みが起き、棚への書き込みが完了する前に中断される→再読み込み後の
+     * 新しい実行が古い（書き込み前の）localStorageを読んでしまい、直前の書き込みが
+     * 無かったことになる、という再現性のある事故が実際に本人環境で起きていた
+     * （診断ログで確認: 一部の同梱見本だけ棚から消えていた）。
+     * この関数はasyncだが、最初のawaitに達するまでは同期実行なので、
+     * ここ（一番最初・await の手前）で先に済ませておけば、途中で割り込まれる余地が無い。
+     * state・RETIRED_LOCAL_SHOW_IDS等モジュール上部のconstを参照するため、
+     * それらの初期化が終わっているこの位置より前には置けない。 */
+    if (!loaded.restored) shelveSample();
+    shelveSeamGardenSample();
+    shelveRomeoJulietSample();
+    syncLocalShows();
     try {
       if (projectRecoveryNeeded) {
         const recovery = await ProjectStore.latestRecovery();
@@ -35415,10 +35431,8 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       } else if (shelfMigration.migrated) {
         announce(`${shelfMigration.migrated}件のショーを、セクションの中にシーンを置く形式へ更新しました。`);
       }
-      if (!loaded.restored) shelveSample();
-      shelveSeamGardenSample();
-      shelveRomeoJulietSample();
-      syncLocalShows();
+      // 同梱の見本を棚へ置く処理はここではなく、この関数の一番最初（最初のawaitより前）で
+      // 済ませてある。理由は関数冒頭の本人指摘コメントを参照。
       syncNewShowReturn();
       // A direct local verification link always opens the bundled test show.
       if (openArgs.has("feature-test") && ["localhost", "127.0.0.1", "::1"].includes(location.hostname)) {
