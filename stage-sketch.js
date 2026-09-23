@@ -2368,10 +2368,14 @@
         { shape: "box",      y: 0.24, w: 0.15,  d: 0.04,  h: 0.03, tint: 0.65 },
         { shape: "box",      y: 0.27, w: 0.045, d: 0.015, h: 0.72, tint: 1.2 },
       ] },
+    /* ★2026-09-23 本人指摘: 表紙とページの2枚だけだと、本・スマホ・新聞・布が
+     * どれも「同じ箱」に見えた。左端に背表紙（綴じ部分）の厚みを足して、
+     * 本だけが持つ輪郭（背が高く盛り上がる）を出す。 */
     book: { ja: "本", en: "Book", dims: { w: 0.20, d: 0.26, h: 0.06 }, grip: { x: 0, y: 0.03 },
       parts: [
         { shape: "box", y: 0,    w: 0.20,  d: 0.26, h: 0.055, tint: 0.7 },
         { shape: "box", y: 0.01, w: 0.185, d: 0.24, h: 0.04,  tint: 1.2 },
+        { shape: "box", x: -0.085, y: 0, w: 0.03, d: 0.26, h: 0.062, tint: 0.5 },
       ] },
     tophat: { ja: "シルクハット", en: "Top hat", dims: { w: 0.32, d: 0.32, h: 0.19 }, grip: { x: 0, y: 0.02 },
       parts: [
@@ -2956,10 +2960,21 @@
       boxAt(0, 0, 0, 0.35, 0.25, 0.02, 0.9),
       boxAt(0, 0.02, 0, 0.35, 0.25, 0.02, 1.1),
     ] };
+  /* ★2026-09-23 本人指摘: 単色の板1枚だと本・新聞・布と見分けがつかなかった。
+   * 本体より一回り小さい暗い板を前面に重ねて「画面」を作る。 */
   PROP_SHAPES.telephone = { ja: "電話（受話器・スマートフォン）", en: "Telephone", dims: { w: 0.07, d: 0.02, h: 0.14 }, grip: { x: 0, y: 0.07 },
-    parts: [ boxAt(0, 0, 0, 0.07, 0.02, 0.14, 1.1) ] };
+    parts: [
+      boxAt(0, 0, 0, 0.07, 0.02, 0.14, 1.05),
+      boxAt(0, 0.008, 0.007, 0.058, 0.006, 0.122, 0.3),
+    ] };
+  /* ★2026-09-23 本人指摘: 単色の板1枚だと見分けがつかなかった。重なった紙の束＋
+   * 一番上のページ＋見出し帯（新聞の題字部分）で、本・手紙とも違う「紙束」の輪郭にする。 */
   PROP_SHAPES.newspaper = { ja: "新聞・手紙", en: "Newspaper / letter", dims: { w: 0.3, d: 0.02, h: 0.4 }, grip: { x: 0, y: 0.2 },
-    parts: [ boxAt(0, 0, 0, 0.3, 0.02, 0.4, 1.05) ] };
+    parts: [
+      boxAt(0, 0, 0, 0.3, 0.02, 0.4, 0.85),
+      boxAt(0.006, 0.006, 0.002, 0.27, 0.012, 0.37, 1.15),
+      boxAt(0, 0.30, 0.0085, 0.2, 0.003, 0.05, 0.45),
+    ] };
   PROP_SHAPES.clock = { ja: "時計（置き時計）", en: "Clock", dims: { w: 0.15, d: 0.06, h: 0.2 }, grip: { x: 0, y: 0.10 },
     parts: [
       boxAt(0, 0, 0, 0.10, 0.06, 0.05, 0.7),
@@ -2979,17 +2994,23 @@
         const rad = (angleDeg * Math.PI) / 180;
         const radius = 0.245;
         return {
-          shape: "line", fanRib: true,
+          shape: "line", fanRib: true, cloth: true,
           x: Math.cos(rad) * radius, y: 0.035 + Math.sin(rad) * radius,
           w: 0.006, tint: 0.85,
         };
       }),
       // 骨の先端を結ぶ弧（開いた扇の外縁）
-      { shape: "cylinder", ring: true, x: 0, y: 0.035, z: 0, dia: 0.49,
+      { shape: "cylinder", ring: true, cloth: true, x: 0, y: 0.035, z: 0, dia: 0.49,
         from: 20, to: 160, w: 0.014, tint: 1.05 },
     ] };
-  PROP_SHAPES.scarf = { ja: "布・ベール・スカーフ", en: "Cloth / veil", dims: { w: 1.0, d: 0.02, h: 2.0 }, grip: { x: 0, y: 1.9 },
-    parts: [ boxAt(0, 0, 0, 1.0, 0.01, 2.0, 1.1) ] };
+  /* ★2026-09-23 本人指摘: 硬い板1枚だと本・新聞と同じ輪郭に見えた。3枚のひだへ分け、
+   * 奥行きと丈をそれぞれ少しずらして、柔らかい布が垂れて波打つ輪郭にする。 */
+  PROP_SHAPES.scarf = { ja: "布・ベール・スカーフ", en: "Cloth / veil", dims: { w: 1.0, d: 0.03, h: 2.0 }, grip: { x: 0, y: 1.9 },
+    parts: [
+      boxAt(-0.33, 0, -0.01, 0.34, 0.012, 1.94, 1.05),
+      boxAt(0, 0, 0.01, 0.34, 0.012, 2.0, 1.15),
+      boxAt(0.33, 0, -0.01, 0.34, 0.012, 1.9, 0.95),
+    ] };
   PROP_SHAPES.torch = { ja: "松明（たいまつ）", en: "Torch", dims: { w: 0.12, d: 0.12, h: 0.8 }, grip: { x: 0, y: 0.35 },
     parts: [
       { shape: "cylinder", y: 0, dia: 0.03, h: 0.65, tint: 0.65 },
@@ -3269,10 +3290,14 @@
   /* 円形のクラッシュマット。空中系（フープ・シルク・チャイニーズポール）の真下へ敷くもので、
      吊り元を中心にどの向きへ落ちても受けられるよう丸い（2026-09-11 本人要望で追加）。
      ★2026-09-23 本人指摘: cylinder近似（正方形2枚を45度ずらして重ねるだけ）は
-     8方向の星形にしかならず「円」に見えなかった。disc: true を付けて本物の円で描く。 */
+     8方向の星形にしかならず「円」に見えなかった。disc: true を付けて本物の円で描く。
+     ★2026-09-23 追加指摘: 厚み26cmの本体をdiscにすると天面と同径の板を重ねるだけで
+     側面（マットの厚みの壁）が抜けて浮いた板に見えた。本体だけ通常のcylinder
+     （paintPartCylinder＝側面まで塗る本物の円柱）にして側面を出す。天面の薄いパッド層と
+     中心の目印は薄いのでdiscのままでよい。 */
   PROP_SHAPES.crashmatround = { ja: "落下用マット（円形）", en: "Crash mat (round)", dims: { w: 2.4, d: 2.4, h: 0.3 }, grip: null,
     parts: [
-      { shape: "cylinder", disc: true, x: 0, y: 0, z: 0, dia: 2.4, h: 0.26, tint: 0.9 },
+      { shape: "cylinder", x: 0, y: 0, z: 0, dia: 2.4, h: 0.26, tint: 0.9 },
       { shape: "cylinder", disc: true, x: 0, y: 0.26, z: 0, dia: 2.4, h: 0.035, tint: 1.1 },
       // 中心の目印（吊り元の真下）。敷く位置合わせの手がかりになる
       { shape: "cylinder", disc: true, x: 0, y: 0.295, z: 0, dia: 0.5, h: 0.005, tint: 1.24 },
@@ -3829,7 +3854,7 @@
     }),
     /* 側方宙返り（サイドフリップ）。体の左右の面で回るので、
      * 脚は前後ではなく左右へ開く。頭が下、腰が上を通る瞬間を採る。 */
-    makePose("sideflip", "側方宙返り", {
+    makePose("sideflip", "アクロ1", {
       head: [-0.34, 0.30, 0], neck: [-0.28, 0.38, 0],
       shL: [-0.22, 0.46, -0.10], shR: [-0.20, 0.44, 0.10],
       elL: [-0.34, 0.30, -0.16], elR: [-0.32, 0.28, 0.16],
@@ -3933,13 +3958,13 @@
     ] }),
     /* 踊り。形の違いが読めることを第一にする（腕の高さ・脚の開き・体の傾きを
      * それぞれ変える）。細かな流派の再現ではなく、絵として見分けがつくこと。 */
-    makePose("dance1", "踊る・両手を斜め上へ", {
+    makePose("dance1", "ダンス1", {
       elL: [-0.24, 0.90, 0.02], wrL: [-0.34, 1.06, 0.04],
       elR: [0.24, 0.90, 0.02], wrR: [0.34, 1.06, 0.04],
       knL: [-0.10, 0.27, 0.05], anL: [-0.13, 0.04, 0.06],
       knR: [0.10, 0.27, 0.05], anR: [0.13, 0.04, 0.06],
     }),
-    makePose("dance2", "踊る・踏み込む", {
+    makePose("dance2", "ダンス2", {
       // 前へ大きく踏み込み、後ろ手を引く
       hipL: [-0.055, 0.50, 0.02], hipR: [0.055, 0.50, 0.02],
       knR: [0.09, 0.30, 0.26], anR: [0.10, 0.05, 0.42], toR: [0.10, 0.02, 0.50],
@@ -3947,7 +3972,7 @@
       elR: [0.20, 0.66, 0.20], wrR: [0.24, 0.80, 0.34],
       elL: [-0.18, 0.60, -0.16], wrL: [-0.22, 0.48, -0.30],
     }),
-    makePose("dance3", "踊る・腰を落として開く", {
+    makePose("dance3", "ダンス3", {
       hipL: [-0.07, 0.44, 0], hipR: [0.07, 0.44, 0],
       knL: [-0.22, 0.25, 0.06], anL: [-0.30, 0.04, 0.04],
       knR: [0.22, 0.25, 0.06], anR: [0.30, 0.04, 0.04],
@@ -3956,7 +3981,7 @@
       elR: [0.26, 0.66, 0.06], wrR: [0.34, 0.56, 0.12],
       neck: [0, 0.79, 0], head: [0, 0.87, 0.01],
     }),
-    makePose("dance4", "踊る・跳ぶ", {
+    makePose("dance4", "ダンス4", {
       // 床から離れ、脚を左右へ開く
       hipL: [-0.055, 0.66, 0], hipR: [0.055, 0.66, 0],
       knL: [-0.24, 0.50, 0.04], anL: [-0.38, 0.36, 0.02], toL: [-0.44, 0.31, 0.04],
@@ -3966,7 +3991,7 @@
       elR: [0.24, 1.06, 0.02], wrR: [0.30, 1.20, 0.04],
       neck: [0, 1.00, 0], head: [0, 1.08, 0.01],
     }),
-    makePose("dance5", "踊る・体をひねる", {
+    makePose("dance5", "ダンス5", {
       // 上半身をひねり、腕を胸の前で交差させる
       shL: [-0.10, 0.82, 0.06], shR: [0.12, 0.81, -0.06],
       elL: [-0.10, 0.66, 0.18], wrL: [0.10, 0.62, 0.14],
@@ -3978,7 +4003,7 @@
     }),
     /* ウィンドミル。背中と肩で床を受け、脚を大きく開いて回る。
      * 体はほぼ水平で、腰が浮いている瞬間を採る。 */
-    makePose("windmill", "ウィンドミル", {
+    makePose("windmill", "アクロ4", {
       head: [-0.16, 0.13, 0.18], neck: [-0.10, 0.16, 0.12],
       shL: [-0.06, 0.20, 0.02], shR: [-0.02, 0.14, -0.10],
       elL: [-0.10, 0.06, 0.16], wrL: [-0.14, 0.03, 0.28],
@@ -3991,7 +4016,7 @@
      * 生成: performer-motion-model/scripts/pose_v2_to_joints.py
      *（2026-08-26 再生成: wide/face 実値・肩と股関節の左右分離。旧2026-08-25版は暫定座標）。
      * 由来: cartwheel oneside（主動作, t=2.42s） captures/cartwheel-oneside_2026-08-18.json */
-    makePose("cartwheel-oneside-mid", "側転（中間・片手接地）", {
+    makePose("cartwheel-oneside-mid", "アクロ2", {
       head: [-0.0517, 0.1745, -0.1167], neck: [-0.0434, 0.2445, -0.0993],
       shL: [-0.1556, 0.3226, -0.1221], shR: [0.0830, 0.2949, -0.1252],
       elL: [-0.0491, 0.1148, -0.0383], elR: [0.0745, 0.1931, -0.2630],
@@ -4006,7 +4031,7 @@
      * 生成: performer-motion-model/scripts/pose_v2_to_joints.py
      *（2026-08-26 再生成: wide/face 実値・肩と股関節の左右分離。旧2026-08-25版は暫定座標）。
      * 由来: sideflip（主動作, t=2.38s） captures/sideflip_2026-08-18.json */
-    makePose("sideflip-mid", "側宙（中間・実演）", {
+    makePose("sideflip-mid", "アクロ3", {
       head: [0.0107, 0.0257, 0.1152], neck: [-0.0003, 0.0903, 0.0839],
       shL: [-0.1289, 0.1360, 0.0207], shR: [0.1112, 0.1295, 0.0219],
       elL: [0.0099, 0.2072, 0.2192], elR: [0.1000, 0.3120, -0.0114],
@@ -11354,6 +11379,7 @@
       side: part.side,
       round: part.round,
       fanRib: part.fanRib,
+      cloth: part.cloth,
       // 弧の範囲（度）。角度なので拡大率をかけない。
       from: part.from,
       to: part.to,
@@ -11557,7 +11583,7 @@
           if (part.shape === "cylinder" && part.ring) {
             const halfDepth = d.d / 2;
             return [{ kind: "ring", c: [part.x || 0, part.y || 0, (part.side || 0) * halfDepth],
-              r: (part.dia || 1) / 2, w: part.w || 0.03, tone: "gear",
+              r: (part.dia || 1) / 2, w: part.w || 0.03, tone: part.cloth ? "cloth" : "gear",
               from: part.from, to: part.to }];
           }
           if (part.shape === "line" && part.rod) {
@@ -11571,7 +11597,7 @@
           if (part.shape === "line" && part.fanRib) {
             const pivotY = d.h * FAN_PIVOT_Y_RATIO;
             return [{ kind: "line", a: [0, pivotY, 0], b: [part.x || 0, part.y || 0, 0],
-              w: part.w || 0.006, tone: "wood" }];
+              w: part.w || 0.006, tone: part.cloth ? "cloth" : "wood" }];
           }
           if (part.shape === "cylinder") {
             return [{ kind: "cylinder", ox: part.x || 0, oz: part.z || 0,
@@ -12259,6 +12285,22 @@
       target.stroke();
     };
 
+    /* ★2026-09-23 本人指摘（「ディアボロをもういい感じに」）: 輪郭は正しい形なのに
+     * 塗りが単色べた塗りで平面的に見えていた。輪郭の両端（左右／上下）を明暗の
+     * グラデーションにして、ゴムの丸みが乗っているように見せる。 */
+    const bodyGradientAlong = (points, axis) => {
+      let a = points[0]; let b = points[0];
+      points.forEach((p) => {
+        if (p[axis] < a[axis]) a = p;
+        if (p[axis] > b[axis]) b = p;
+      });
+      const g = target.createLinearGradient(a.x, a.y, b.x, b.y);
+      g.addColorStop(0, rgba(piece.color, 0.98));
+      g.addColorStop(0.55, rgba(piece.color, 0.82));
+      g.addColorStop(1, rgba(piece.color, 0.5));
+      return g;
+    };
+
     target.save();
     target.lineJoin = "round";
     target.strokeStyle = "rgba(0,0,0,0.35)";
@@ -12269,7 +12311,7 @@
       const right = sections.map(({ t, r }) => riggingPoint(piece, r, ((t + 1) / 2) * len, 0, L));
       const axis = sections.map(({ t }) => riggingPoint(piece, 0, ((t + 1) / 2) * len, 0, L));
 
-      target.fillStyle = rgba(piece.color, 0.82);
+      target.fillStyle = bodyGradientAlong([...left, ...right], "x");
       traceClosed(left, right.slice().reverse());
       target.fill();
       target.stroke();
@@ -12303,7 +12345,7 @@
     const bottom = sections.map(({ t, r }) => riggingPoint(piece, (t * len) / 2, R - r, 0, L));
     const axis = sections.map(({ t }) => riggingPoint(piece, (t * len) / 2, R, 0, L));
 
-    target.fillStyle = rgba(piece.color, 0.82);
+    target.fillStyle = bodyGradientAlong([...top, ...bottom], "y");
     traceClosed(top, bottom.slice().reverse());
     target.fill();
     target.stroke();
