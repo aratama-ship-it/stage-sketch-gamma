@@ -9475,11 +9475,32 @@
     return normalizeState({ project: prepared.project });
   }
 
+  /* ★2026-09-23 本人指摘: 試験場ショーを v2→v3 へ作り直したら、まだ一度も開いていない
+   * 端末には古い v2 が棚に残ったまま（ローダーは v3 しか積まないので、v2 は二度と
+   * 更新されない孤児になる）。ここに挙げた id は、①このローダーが入れたもの
+   * （localHash を持つ＝自作・見本ではない）かつ ②一度も開いていない（savedAt が
+   * 動いていない）場合だけ、次回起動時に自動で棚から消す。本人が実際に開いて
+   * 手を入れた形跡があれば触らない（syncLocalShows と同じ安全条件）。 */
+  const RETIRED_LOCAL_SHOW_IDS = ["gamma-feature-test-v2"];
+  function retireLocalShows() {
+    const shows = readShows();
+    let changed = false;
+    RETIRED_LOCAL_SHOW_IDS.forEach((id) => {
+      const existing = shows[id];
+      if (!existing || !existing.localHash) return; // 無い、または別由来（自作/見本）
+      if (existing.savedAt !== existing.localShelvedAt) return; // 開いた形跡あり。触らない
+      if (state.project.id === id) return; // いま開いているショーは消さない
+      delete shows[id];
+      changed = true;
+    });
+    if (changed) writeShows(shows);
+  }
   /* 棚に無ければ追加。既にあるものは、①このローダーが入れた版のまま
      （＝本人がまだ一度も開いていない）かつ ②元JSONが変わっている場合だけ
      新版へ差し替える。一度でも開くと applyLoadedState が shelveCurrent を呼び
      savedAt が動くため、以後は「本人の手が入った」とみなして触らない。 */
   function syncLocalShows() {
+    retireLocalShows();
     const list = Array.isArray(window.SHOSAI_STAGE_LOCAL_SHOWS)
       ? window.SHOSAI_STAGE_LOCAL_SHOWS : [];
     if (!list.length) return;
