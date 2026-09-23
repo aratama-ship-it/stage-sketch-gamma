@@ -2457,20 +2457,44 @@
       // グリル球。実物は根元が少し絞られた卵形に近いが、ここでは球で近似する
       { shape: "sphere", y: 0.104, dia: 0.051, tint: 1.05 },
     ] };
-  PROP_SHAPES.skateboard = { ja: "スケートボード", en: "Skateboard", dims: { w: 0.22, d: 0.80, h: 0.11 },
+  /* ★2026-09-23 本人指摘: 車輪が付いていない／変な向きに見えた。原因は車輪を
+   * `cylinder, axis:"x"` で書いていたこと。cylinder部品はY方向（立った筒）にしか
+   * 伸びないので、横倒しの車輪は lyingCylinder("x", …)（軸が左右＝前後に転がる）で作る。
+   * 車輪はデッキの外側へ少しはみ出す位置に置き、正面からも横からも丸が見えるようにする。 */
+  PROP_SHAPES.skateboard = { ja: "スケートボード", en: "Skateboard", dims: { w: 0.24, d: 0.80, h: 0.11 },
     grip: { x: 0, y: 0.11 }, parts: [
-      { shape: "panel", y: 0.08, w: 0.22, d: 0.80, h: 0.02, tint: 0.85 },
+      // デッキ（板）。両端はキックの反りを1段だけ上げて表す
+      { shape: "panel", y: 0.085, w: 0.20, d: 0.66, h: 0.015, tint: 0.85 },
+      { shape: "panel", y: 0.095, z: -0.365, w: 0.19, d: 0.07, h: 0.015, tint: 0.9 },
+      { shape: "panel", y: 0.095, z: 0.365, w: 0.19, d: 0.07, h: 0.015, tint: 0.9 },
       ...[-0.26, 0.26].flatMap((z) => [
-        { shape: "box", y: 0.05, z, w: 0.10, d: 0.06, h: 0.03, tint: 0.6 },
-        { shape: "cylinder", axis: "x", x: -0.10, y: 0.035, z, dia: 0.07, h: 0.04, tint: 0.7 },
-        { shape: "cylinder", axis: "x", x: 0.10, y: 0.035, z, dia: 0.07, h: 0.04, tint: 0.7 },
+        // トラック（金具）とアクスル（車軸）
+        { shape: "box", y: 0.055, z, w: 0.09, d: 0.05, h: 0.03, tint: 0.6 },
+        ...lyingCylinder("x", 6, 0.012, 0.22, 0, 0.029, z, 0.55),
+        // 車輪（左右）。直径54mm前後の一般的な値
+        ...lyingCylinder("x", 10, 0.054, 0.032, -0.104, 0.008, z, 0.7),
+        ...lyingCylinder("x", 10, 0.054, 0.032, 0.104, 0.008, z, 0.7),
       ]),
     ] };
+  /* ★2026-09-23 本人指摘: 形がおかしい（箱2つに見えた）。靴らしく、
+   * 底板（プレート）＋足の甲まわり＋くるぶしまで立ち上がる履き口の3段で作り、
+   * 車輪は前後2個ずつ（クワッド型）を lyingCylinder で横倒しに置く。 */
   PROP_SHAPES.rollerskate = { ja: "ローラースケート", en: "Roller skates", dims: { w: 0.26, d: 0.30, h: 0.22 },
     grip: { x: 0, y: 0.22 }, parts: [
-      ...[-0.11, 0.11].flatMap((x) => [
-        { shape: "box", x, y: 0.07, w: 0.10, d: 0.28, h: 0.15, tint: 0.9 },
-        ...[-0.09, 0.09].map((z) => ({ shape: "cylinder", axis: "x", x, y: 0.035, z, dia: 0.07, h: 0.03, tint: 0.7 })),
+      ...[-0.075, 0.075].flatMap((x) => [
+        // プレート（底板）と前後のトラック
+        { shape: "box", x, y: 0.055, z: 0, w: 0.07, d: 0.26, h: 0.012, tint: 0.6 },
+        ...[-0.085, 0.085].flatMap((z) => [
+          { shape: "box", x, y: 0.03, z, w: 0.03, d: 0.03, h: 0.03, tint: 0.55 },
+          // 車輪。プレートの左右へ振り分けて4輪
+          ...lyingCylinder("x", 10, 0.058, 0.026, x - 0.042, 0, z, 0.72),
+          ...lyingCylinder("x", 10, 0.058, 0.026, x + 0.042, 0, z, 0.72),
+        ]),
+        // ブーツ本体（つま先〜甲）と、少し細い履き口（くるぶし〜ふくらはぎ）
+        { shape: "box", x, y: 0.067, z: 0.01, w: 0.09, d: 0.26, h: 0.075, tint: 0.95 },
+        { shape: "box", x, y: 0.14, z: -0.05, w: 0.085, d: 0.14, h: 0.08, tint: 1.05 },
+        // つま先の丸みは天面を一段落として表す
+        { shape: "box", x, y: 0.067, z: 0.12, w: 0.08, d: 0.05, h: 0.05, tint: 1.0 },
       ]),
     ] };
   PROP_SHAPES.cyrwheel = { ja: "シルホイール", en: "Cyr wheel", dims: { w: 1.80, d: 0.06, h: 1.80 },
@@ -2571,7 +2595,8 @@
      axis "z" = 軸が奥行き方向（左右に転がる／ローラボーラ）、
      axis "x" = 軸が左右方向（前後に転がる／一輪車・自転車の車輪）。
      x・y・z は外接箱の基準点で、y は最下点（他の部品と同じ約束）。 */
-  const lyingCylinder = (axis, segments, dia, length, x, y, z, tint) => {
+  // ★function宣言にして巻き上げる。スケートボード等（上で定義）からも使うため。
+  function lyingCylinder(axis, segments, dia, length, x, y, z, tint) {
     const r = dia / 2;
     const step = (dia / segments) * 1.04; // 隣どうしを少し重ねて継ぎ目を消す
     return Array.from({ length: segments }, (_, i) => {
@@ -2721,6 +2746,45 @@
         { shape: "sphere", x, y: 2.74, z: 0, dia: 0.06, tint: 0.5 },
       ]),
     ] };
+  /* ★2026-09-23 本人要望: シャンデリアを吊り物の大道具として追加。
+   * 中心の柱から2段の腕（下段6本・上段6本）が放射状に出て、腕の先に受け皿＋ロウソク＋炎。
+   * 腕の下にはクリスタルの飾り玉。上は天蓋（キャノピー）から吊り棒が伸び、吊り点で終わる。
+   * 腕は rotY 付きの箱で放射方向へ向ける（部品の回転は箱だけができる）。
+   * flown:true で登録時から吊物になり、lift 2.6m（頭より上）から始める。
+   * 寸法は一般的な6〜12灯の中型（直径1.2m前後・高さ1.4m前後）の目安で、実測値ではない。 */
+  PROP_SHAPES.chandelier = { ja: "シャンデリア", en: "Chandelier", dims: { w: 1.2, d: 1.2, h: 1.55 }, grip: null,
+    flown: true, lift: 2.6,
+    parts: [
+      // 下端の飾り（フィニアル）と中心の柱。柱は下が太く上が細い3段
+      { shape: "sphere", y: 0, dia: 0.11, tint: 1.15 },
+      { shape: "cylinder", y: 0.09, dia: 0.07, h: 0.30, tint: 0.85 },
+      { shape: "sphere", y: 0.37, dia: 0.13, tint: 1.1 },
+      { shape: "cylinder", y: 0.48, dia: 0.05, h: 0.42, tint: 0.85 },
+      { shape: "sphere", y: 0.88, dia: 0.10, tint: 1.1 },
+      { shape: "cylinder", y: 0.96, dia: 0.03, h: 0.44, tint: 0.7 },
+      // 天蓋と吊り点（framehang などの吊り器具と同じ表し方）
+      { shape: "cylinder", y: 1.40, dia: 0.16, h: 0.05, tint: 0.8 },
+      { shape: "sphere", y: 1.47, dia: 0.06, tint: 0.5 },
+      // 下段の腕6本（半径0.55・高さ0.40）と上段の腕6本（半径0.34・高さ0.78）
+      ...[[6, 0.55, 0.40, 0], [6, 0.34, 0.78, 30]].flatMap(([count, radius, y, offsetDeg]) =>
+        Array.from({ length: count }, (_, i) => {
+          const deg = offsetDeg + (360 / count) * i;
+          const rad = (deg * Math.PI) / 180;
+          const cx = Math.cos(rad), sz = Math.sin(rad);
+          return [
+            // 腕。柱の面から外へ向く棒（水平）。少し下へ垂れてから受け皿で持ち上がるS字は箱では出せないので直線
+            { shape: "box", x: cx * radius * 0.5, y, z: sz * radius * 0.5,
+              w: radius * 0.92, d: 0.022, h: 0.022, rotY: -deg, tint: 0.8 },
+            // 受け皿（ボビッシュ）・ロウソク・炎
+            { shape: "cylinder", x: cx * radius, y: y + 0.01, z: sz * radius, dia: 0.09, h: 0.02, tint: 1.05 },
+            { shape: "cylinder", x: cx * radius, y: y + 0.03, z: sz * radius, dia: 0.026, h: 0.13, tint: 1.2 },
+            { shape: "sphere", x: cx * radius, y: y + 0.16, z: sz * radius, dia: 0.04, tint: 1.3 },
+            // クリスタルの飾り玉。腕の中ほどから下へ2粒
+            { shape: "sphere", x: cx * radius * 0.7, y: y - 0.07, z: sz * radius * 0.7, dia: 0.03, tint: 1.25 },
+            { shape: "sphere", x: cx * radius * 0.7, y: y - 0.12, z: sz * radius * 0.7, dia: 0.022, tint: 1.25 },
+          ];
+        }).flat()),
+    ] };
   PROP_SHAPES.framecube = { ja: "立方体の枠（キューブ）", en: "Cube frame", dims: { w: 2.0, d: 2.0, h: 2.0 }, grip: null,
     parts: [
       // 12辺。柱4本＋上下の桟8本
@@ -2734,8 +2798,12 @@
         boxAt(x, 1.90, 0, 0.10, 1.80, 0.10, 1.06),
       ]),
     ] };
+  /* ★2026-09-23 本人指摘: 段が見える階段の表現になっていた。slantPanel
+   * （傾いた板を薄いスライスへ分けて1枚に見せる、譜面台と同じ技法）で
+   * 段差の無い1枚の斜面にする。低い端(y=0)が手前側z=+1.25、高い端(y=0.6)が
+   * 奥側z=-1.25。向きはこれまでのstairSteps版と揃えてある。 */
   PROP_SHAPES.slope = { ja: "スロープ", en: "Ramp", dims: { w: 1.0, d: 2.5, h: 0.6 }, grip: null,
-    parts: stairSteps(12, 1.0, 2.5 / 12, 0.05).map((part) => ({ ...part, tint: 1 })) };
+    parts: slantPanel(40, 1.0, 0, 0.6, 1.25, -1.25, 0.08, 1) };
   /* 第2弾後半: 家具10種・屋外情景8種（2026-09-11、段階計画に沿う） */
   PROP_SHAPES.sofa = { ja: "ソファ", en: "Sofa", dims: { w: 1.8, d: 0.9, h: 0.8 }, grip: null,
     parts: [
@@ -3456,6 +3524,10 @@
     "treasurechest",
     "drumset", "taiko", "grandpiano", "grandpianoopen", "uprightpiano", "speaker", "keyboardstand", "djbooth",
     "germanwheel", "crashmat", "crashmatround", "walljump", "aerialhammock",
+    // 2026-09-23 本人指定: 吊り・張りの器具は据える物なので大道具側へ。
+    "aerialstraps", "spanishweb", "slackline", "swingpole", "aerialhoop",
+    // 同日追加: シャンデリア（吊り物の大道具）
+    "chandelier",
   ]);
   /* 2026-09-22 本人指定: 次の形は当面、追加用の大道具・小道具一覧から外す。
    * PROP_SHAPES 自体は消さない。既存ショーの駒は描画・保存でき、以前どおり大道具として数える。 */
@@ -3468,6 +3540,8 @@
     "wagasa", "rope", "clock", "minitramp", "russianswing", "mirror",
     // 同日追加: トレイ／大玉（サーカス器具）／シルホイール（小道具側。大道具側のkind=cyrwheelと重複）。
     "tray", "rollingglobe", "cyrwheel",
+    // 同日追加: デスクは大道具の「テーブル」（脚4本＋天板・寸法可変）と実質同じ形なので外す。
+    "desk",
   ]);
   const rosterShapeIsAvailable = (shapeId) => !ROSTER_UNAVAILABLE_PROP_SHAPES.has(shapeId);
   /* 登録した項目が「大道具の一覧」へ行くか。kind が prop でも、上の形なら大道具側。
@@ -3484,7 +3558,7 @@
       "guitar", "violin", "bassguitar", "mic", "trumpet", "accordion"] },
     /* 2026-09-23 本人指示: 「登る・上がる」は独立した見出しにせず「建て込み」へ合流。 */
     { ja: "建て込み", ids: ["ladder", "stepladder", "stairs", "stairs6", "slope", "spiralstairs",
-      "door", "window", "column", "railing", "bridge", "platform", "truss", "cage", "torii", "screen", "frameportal", "framepicture", "framehang", "framecube"] },
+      "door", "window", "column", "railing", "bridge", "platform", "truss", "cage", "torii", "screen", "frameportal", "framepicture", "framehang", "framecube", "chandelier"] },
     { ja: "家具", ids: ["sofa", "bed", "bookshelf", "dresser", "mirror", "desk", "counter", "fireplace", "phonebooth", "clothesrack"] },
     { ja: "屋外・情景", ids: ["tree", "rock", "streetlamp", "signboard", "barrel", "planter", "well", "tent", "cart"] },
     /* 2026-09-23 本人指示: 自転車は乗り物。見出し名はROSTER_SET_KIND_GROUPSの
@@ -11380,6 +11454,9 @@
       round: part.round,
       fanRib: part.fanRib,
       cloth: part.cloth,
+      // 箱の向き（度）。角度なので拡大率をかけない。★これが無いとバケツの側板や
+      // シャンデリアの腕が全部同じ向きになる（2026-09-23 に判明）。
+      rotY: part.rotY,
       // 弧の範囲（度）。角度なので拡大率をかけない。
       from: part.from,
       to: part.to,
@@ -13062,9 +13139,19 @@
       // 描画と同じ手順で四隅を引き、その外接矩形を枠にする
       const foot = pieceFootprint(piece);
       const boxes = pieceParts(piece) || [];
+      /* ★2026-09-23 本人指摘: シルホイール（大道具）はdims.hを持たず、実体は
+       * 中心c[1]・半径rの"ring"パーツ1枚。ここが箱型のlift/h前提のままだと
+       * 上端がlift(0)+h(0)=0扱いになり、グリッド表示で輪の上側が見切れた。
+       * ring/disc/sphere/line も含めて各パーツの本当の上端を読む。 */
+      const partTopExtent = (part) => {
+        if (part.kind === "ring" || part.kind === "sphere") return (part.c ? part.c[1] : 0) + (part.r || 0);
+        if (part.kind === "disc") return (part.c ? part.c[1] : 0) + (part.h || 0);
+        if (part.kind === "line") return Math.max(part.a ? part.a[1] : 0, part.b ? part.b[1] : 0);
+        return finite(part.lift, 0) + finite(part.h, 0);
+      };
       const height = piece.type === "seri" ? Math.abs(finite(piece.seriH, 0))
         : Number.isFinite(dim.h) ? dim.h
-          : Math.max(.05, ...boxes.map((part) => finite(part.lift, 0) + finite(part.h, 0)));
+          : Math.max(.05, ...boxes.map(partTopExtent));
       const rad = ((piece.facing || 0) * Math.PI) / 180;
       const cos = Math.cos(rad);
       const sin = Math.sin(rad);
@@ -19538,12 +19625,16 @@
     if (kind === "light") dims.dia = LIGHT_KINDS[lk].dia;
     const flownOnly = Boolean(FLOWN_ONLY[kind]);
     if (flownOnly && dims) dims.lift = kind === "tissue" ? 7.4 : 2.6;
+    /* 形の側で flown:true を宣言した小道具（シャンデリア等）は、登録時から吊物にする。
+       床置きへ戻すのは今までどおり詳細の「吊物」チェックで可能。 */
+    const shapeFlown = kind === "prop" && Boolean(PROP_SHAPES[shape].flown);
+    if (shapeFlown && dims && !(dims.lift > 0)) dims.lift = finite(PROP_SHAPES[shape].lift, 2.6);
     const item = {
       id: rid("set"), kind, name: raw.slice(0, 24),
       color: validColor(pieceColor, defaultSetColor(kind, shape)),
       modelId: kind === "model" ? modelId : null,
       propShape: shape,
-      dims, note: "", locked: false, flown: flownOnly, wires: 2, framed: false, lightKind: lk,
+      dims, note: "", locked: false, flown: flownOnly || shapeFlown, wires: 2, framed: false, lightKind: lk,
       curtainKind: kind === "curtain" ? "front" : undefined,
     };
     state.project.sets.push(item);
