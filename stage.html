@@ -19,7 +19,7 @@
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="gamma.css?v=2026092438">
+<link rel="stylesheet" href="gamma.css?v=2026092439">
 <link rel="stylesheet" href="gamma-mobile.css?v=2026091950">
 <script src="gamma-light-model.js?v=2026092113"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=2026091987">
@@ -1818,6 +1818,9 @@
       <div class="stage-cue-sheet-view-bar">
         <button type="button" class="stage-minor-action" id="stage-cue-sheet-back">一覧へ戻る</button>
         <span class="stage-cue-sheet-view-title" id="stage-cue-sheet-view-title"></span>
+        <!-- A4プレビュー（2026-09-24 本人指示）: 印刷したときの見え方に切り替える。縦・横を選べる。 -->
+        <button type="button" class="stage-minor-action" id="stage-cue-sheet-view-a4" aria-pressed="false" title="A4で印刷したときの見え方に切り替える">A4で見る</button>
+        <button type="button" class="stage-minor-action" id="stage-cue-sheet-view-orient" title="用紙の向き" hidden>横</button>
         <button type="button" class="stage-minor-action" id="stage-cue-sheet-view-print">印刷</button>
         <button type="button" class="stage-minor-action" id="stage-cue-sheet-view-csv">CSV</button>
       </div>
@@ -3347,7 +3350,7 @@
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=2026092431"></script>
+    <script src="stage-i18n.js?v=2026092432"></script>
     <script src="stage-i18n.zh-Hans.js?v=2026092401"></script>
     <script src="stage-i18n.zh-Hant.js?v=2026092401"></script>
 <script src="stage-prompt-i18n.js?v=2026092050"></script>
@@ -3374,14 +3377,14 @@
 <script src="gamma-number-scrub.js?v=2026091780"></script>
 <script src="gamma-formation-presets.js?v=formation1"></script>
 <script src="gamma-formation-model.js?v=formation1"></script>
-<script src="stage-cue-sheet.js?v=2026092421"></script>
+<script src="stage-cue-sheet.js?v=2026092422"></script>
 <script src="docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113"></script>
 <script src="stage-light-panel-import.js?v=2026092209"></script>
 <script src="stage-scene-alternatives.js?v=2026092208"></script>
 <script src="stage-shortcuts.js?v=2026092218"></script>
 <!-- U-12（2026-09-24）: 並べ替えの動き（一覧・タイムラインの段・セリフ画面の行で共有） -->
 <script src="stage-reorder-motion.js?v=2026092420"></script>
-<script src="stage-sketch.js?v=2026092443"></script>
+<script src="stage-sketch.js?v=2026092444"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092209"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-vox-panel.js?v=2026092431"></script>

@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v342";
+const CACHE_NAME = "stage-sketch-gamma-shell-v343";
 const APP_SHELL = [
   "./stage-scene-alternatives.js?v=2026092208",
   "./stage-scene-alternatives-ui.js?v=2026092209",
@@ -28,7 +28,7 @@ const APP_SHELL = [
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-small.shosai-light-design.json",
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-mid.shosai-light-design.json",
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-large.shosai-light-design.json",
-  "./gamma.css?v=2026092438",
+  "./gamma.css?v=2026092439",
   "./gamma-light-model.js?v=2026092113",
   "./gamma-workspace.js?v=2026092436",
   "./light-design/index.html?embed=gamma&v=2026092434",
@@ -50,7 +50,7 @@ const APP_SHELL = [
   "./stage-venue-lines.js?v=2026091992",
   "./stage-front-shape.js?v=2026092046",
   "./stage-venue-report.js?v=2026092047",
-  "./stage-i18n.js?v=2026092431",
+  "./stage-i18n.js?v=2026092432",
   "./stage-i18n.zh-Hans.js?v=2026092401",
   "./stage-i18n.zh-Hant.js?v=2026092401",
   "./stage-prompt-i18n.js?v=2026092050",
@@ -74,10 +74,10 @@ const APP_SHELL = [
   "./gamma-number-scrub.js?v=2026091780",
   "./gamma-mobile.js?v=2026092202",
   "./gamma-mobile.css?v=2026091950",
-  "./stage-cue-sheet.js?v=2026092421",
+  "./stage-cue-sheet.js?v=2026092422",
   "./stage-shortcuts.js?v=2026092218",
   "./stage-reorder-motion.js?v=2026092420",
-  "./stage-sketch.js?v=2026092443",
+  "./stage-sketch.js?v=2026092444",
   "./stage-timeline.js?v=2026092422",
   "./stage-session.js?v=20260924-lightimport1",
   "./stage-study-owner.js?v=2026091501",

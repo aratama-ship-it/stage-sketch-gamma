@@ -4890,6 +4890,8 @@
     cueSheetContent: document.getElementById("stage-cue-sheet-content"),
     cueSheetViewTitle: document.getElementById("stage-cue-sheet-view-title"),
     cueSheetViewPrint: document.getElementById("stage-cue-sheet-view-print"),
+    cueSheetViewA4: document.getElementById("stage-cue-sheet-view-a4"),
+    cueSheetViewOrient: document.getElementById("stage-cue-sheet-view-orient"),
     cueSheetViewCsv: document.getElementById("stage-cue-sheet-view-csv"),
     launchBackupWarning: document.getElementById("stage-launch-backup-warning"),
     launchBackupBackdrop: document.getElementById("stage-launch-backup-backdrop"),
@@ -36126,10 +36128,60 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     openCueSheetView(viewingCueSheet.kind, viewingCueSheet.key);
   }
 
+  /* A4プレビュー（2026-09-24 本人指示）: 表を「A4で印刷したときの見え方」に切り替えるワンボタン。縦・横を選べる。
+   * 印刷用の文書（cueSheetPrintDocument）をそのまま iframe に入れ、紙の幅（96dpi換算）で描き、画面の幅に合わせて縮める。
+   * ページの切れ目は、紙の内側の高さごとに点線で示す（印刷の改ページの目安）。印刷ボタンも同じ向きで出す。 */
+  let cueSheetA4 = false;
+  let cueSheetOrientation = "landscape";
+  const A4 = { portrait: { w: 794, h: 1123 }, landscape: { w: 1123, h: 794 } };
+  const A4_MARGIN_PX = 38; // @page margin 10mm
+  function renderCueSheetA4(sheet) {
+    const paper = A4[cueSheetOrientation];
+    const frame = document.createElement("iframe");
+    frame.className = "stage-cue-sheet-a4-frame";
+    frame.setAttribute("title", sheet.title);
+    frame.style.width = `${paper.w}px`;
+    frame.style.height = `${paper.h}px`;
+    frame.srcdoc = cueSheetPrintDocument(sheet, { orientation: cueSheetOrientation, preview: true });
+    const wrap = document.createElement("div");
+    wrap.className = "stage-cue-sheet-a4-wrap";
+    const sheetBox = document.createElement("div");
+    sheetBox.className = "stage-cue-sheet-a4-paper";
+    sheetBox.style.width = `${paper.w}px`;
+    sheetBox.append(frame);
+    wrap.append(sheetBox);
+    const fit = () => {
+      const available = Math.max(200, wrap.clientWidth - 32);
+      const scale = Math.min(1, available / paper.w);
+      sheetBox.style.transform = `scale(${scale})`;
+      const doc = frame.contentDocument;
+      const height = doc && doc.body ? Math.max(paper.h, doc.body.scrollHeight) : paper.h;
+      frame.style.height = `${height}px`;
+      sheetBox.style.height = `${height}px`;
+      wrap.style.height = `${Math.ceil(height * scale) + 32}px`;
+    };
+    frame.addEventListener("load", fit);
+    els.cueSheetContent.replaceChildren(wrap);
+    requestAnimationFrame(fit);
+    cueSheetA4Fit = fit;
+  }
+  let cueSheetA4Fit = null;
+  window.addEventListener("resize", () => { if (cueSheetA4 && cueSheetA4Fit) cueSheetA4Fit(); });
+  function syncCueSheetA4Buttons() {
+    if (els.cueSheetViewA4) els.cueSheetViewA4.setAttribute("aria-pressed", String(cueSheetA4));
+    if (els.cueSheetViewOrient) {
+      els.cueSheetViewOrient.hidden = !cueSheetA4;
+      els.cueSheetViewOrient.textContent = tx(cueSheetOrientation === "portrait" ? "縦" : "横");
+      els.cueSheetViewOrient.setAttribute("aria-label", tx(cueSheetOrientation === "portrait" ? "用紙は縦。押すと横にする" : "用紙は横。押すと縦にする"));
+    }
+    if (els.cueSheetModal) els.cueSheetModal.classList.toggle("is-a4-preview", cueSheetA4);
+  }
   function openCueSheetView(kind, key) {
     const sheet = selectedCueSheet(kind, key);
     if (!sheet || !els.cueSheetContent) return;
-    els.cueSheetContent.innerHTML = window.SHOSAI_CUE_SHEET.renderSheetHtml(sheet, lang, {
+    syncCueSheetA4Buttons();
+    if (cueSheetA4) renderCueSheetA4(sheet);
+    else els.cueSheetContent.innerHTML = window.SHOSAI_CUE_SHEET.renderSheetHtml(sheet, lang, {
       editable: kind === "performer" && cueSheetEditingAllowed(),
     });
     if (els.cueSheetModal) els.cueSheetModal.classList.add("is-viewing-sheet");
@@ -36142,12 +36194,46 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (els.cueSheetBack) els.cueSheetBack.focus();
   }
 
-  function cueSheetPrintDocument(sheet) {
-    const sheets = window.SHOSAI_CUE_SHEET.paginateMasterSheet(sheet, 12);
+  function cueSheetPrintDocument(sheet, options = {}) {
+    const orientation = options.orientation === "portrait" ? "portrait" : "landscape";
+    // 縦は演者の列が少ししか入らないので、全体表は8列ずつ（横は12列ずつ）に分ける
+    const sheets = window.SHOSAI_CUE_SHEET.paginateMasterSheet(sheet, orientation === "portrait" ? 8 : 12);
     const content = sheets.map((page) => window.SHOSAI_CUE_SHEET.renderSheetHtml(page, lang)).join("");
+    const paper = A4[orientation];
+    /* プレビューでは紙の幅・余白を画面の px で再現し、ページの切れ目（紙の内側の高さごと）を点線で示す。
+       表が複数枚（全体表）のときは、次の紙が次のページの頭から始まるように余白を足す。 */
+    const previewCss = options.preview ? `
+html, body { width: ${paper.w}px; }
+body { padding: ${A4_MARGIN_PX}px; position: relative; min-height: ${paper.h}px; }
+.cue-sheet-preview-break { position: absolute; left: 0; right: 0; height: 0; border-top: 2px dashed #b08a4a; pointer-events: none; }
+.cue-sheet-preview-break span { position: absolute; right: 8px; top: -18px; font-size: 11px; color: #b08a4a; background: #fff; padding: 0 4px; }
+` : "";
+    const previewScript = options.preview ? `<script>
+(function () {
+  var pageH = ${paper.h}, margin = ${A4_MARGIN_PX}, inner = pageH - margin * 2;
+  var papers = Array.prototype.slice.call(document.querySelectorAll(".cue-sheet-paper"));
+  // 2枚目以降は次のページの頭へ（印刷の break-before: page と同じ位置）
+  papers.forEach(function (paper, index) {
+    if (index === 0) return;
+    var top = paper.offsetTop - margin;
+    var rest = top % inner;
+    if (rest > 0) paper.style.marginTop = (inner - rest) + "px";
+  });
+  var total = Math.max(1, Math.ceil((document.body.scrollHeight - margin * 2) / inner));
+  for (var page = 1; page < total; page += 1) {
+    var line = document.createElement("div");
+    line.className = "cue-sheet-preview-break";
+    line.style.top = (margin + inner * page) + "px";
+    var label = document.createElement("span");
+    label.textContent = "${escapeHtml(tx("ページ"))} " + (page + 1);
+    line.appendChild(label);
+    document.body.appendChild(line);
+  }
+})();
+<\/script>` : "";
     return `<!DOCTYPE html><html lang="${escapeHtml(lang)}"><head><meta charset="utf-8"><title>${escapeHtml(sheet.title)}</title>
 <style>
-@page { size: A4 landscape; margin: 10mm; }
+@page { size: A4 ${orientation}; margin: 10mm; }${previewCss}
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-family: 'Hiragino Kaku Gothic ProN', sans-serif; }
 .cue-sheet-paper { min-height: 185mm; display: flex; flex-direction: column; }
@@ -36165,13 +36251,13 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
 .cue-sheet-table .cue-sheet-notes { min-width: 56mm; }
 .cue-sheet-footnote { margin: 7px 0 0; font-size: 11px; }
 .cue-sheet-legend { margin-top: auto; padding-top: 6px; border-top: 1px solid #bbb; font-size: 11px; }
-</style></head><body>${content}</body></html>`;
+</style></head><body>${content}${previewScript}</body></html>`;
   }
 
   function openCueSheetPrint(kind, key) {
     const sheet = selectedCueSheet(kind, key);
     if (!sheet) return;
-    const url = URL.createObjectURL(new Blob([cueSheetPrintDocument(sheet)], { type: "text/html" }));
+    const url = URL.createObjectURL(new Blob([cueSheetPrintDocument(sheet, { orientation: cueSheetOrientation })], { type: "text/html" }));
     const printWindow = window.open(url, "_blank");
     if (!printWindow) {
       announce(tx("キューシートを開けませんでした。ポップアップの許可を確認してください。"));
@@ -36258,6 +36344,16 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   if (els.cueSheetBackdrop) els.cueSheetBackdrop.addEventListener("click", closeCueSheet);
   if (els.cueSheetBack) els.cueSheetBack.addEventListener("click", showCueSheetList);
   /* 表を見ている帯の操作。いま見ている表をそのまま紙・CSVへ出す。 */
+  if (els.cueSheetViewA4) els.cueSheetViewA4.addEventListener("click", () => {
+    cueSheetA4 = !cueSheetA4;
+    if (viewingCueSheet) openCueSheetView(viewingCueSheet.kind, viewingCueSheet.key);
+    announce(tx(cueSheetA4 ? "A4で印刷したときの見え方にしました。" : "画面用の表に戻しました。"));
+  });
+  if (els.cueSheetViewOrient) els.cueSheetViewOrient.addEventListener("click", () => {
+    cueSheetOrientation = cueSheetOrientation === "portrait" ? "landscape" : "portrait";
+    if (viewingCueSheet) openCueSheetView(viewingCueSheet.kind, viewingCueSheet.key);
+    announce(tx(cueSheetOrientation === "portrait" ? "用紙を縦にしました。" : "用紙を横にしました。"));
+  });
   if (els.cueSheetViewPrint) els.cueSheetViewPrint.addEventListener("click", () => {
     if (viewingCueSheet) openCueSheetPrint(viewingCueSheet.kind, viewingCueSheet.key);
   });

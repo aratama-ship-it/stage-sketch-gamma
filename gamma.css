@@ -97,6 +97,11 @@ body[data-gamma-workspace="cuesheet"].stage-timeline-expanded:not(.stage-fullscr
 #gamma-cuesheet-workspace .cue-sheet-table .cue-sheet-section-row th { background: var(--desk-2); color: var(--milk); }
 #gamma-cuesheet-workspace .cue-sheet-table .stage-text-input { background: var(--desk); color: var(--milk); border-color: var(--line-dark); }
 #gamma-cuesheet-workspace .cue-sheet-legend { border-top-color: var(--line-dark); }
+/* A4プレビュー（2026-09-24 本人指示）: 白い紙を暗い机に置き、画面の幅に合わせて縮める */
+.stage-cue-sheet-a4-wrap { position: relative; width: 100%; padding: 16px; box-sizing: border-box; background: var(--desk); overflow: hidden; }
+.stage-cue-sheet-a4-paper { position: relative; background: #fff; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55); transform-origin: top left; }
+.stage-cue-sheet-a4-frame { display: block; border: 0; width: 100%; background: #fff; }
+#stage-cue-sheet-view-a4[aria-pressed="true"] { border-color: var(--rust); color: var(--paper); background: rgba(168, 75, 38, 0.27); }
 #gamma-cuesheet-workspace .stage-cue-sheet-body { flex: 1 1 auto; min-height: 0; max-height: none; overflow: auto; display: flex; flex-direction: column; }
 #gamma-cuesheet-workspace #stage-cue-sheet-list { flex: 0 0 auto; }
 #gamma-cuesheet-workspace #stage-cue-sheet-view:not([hidden]) { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
