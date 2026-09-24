@@ -160,9 +160,28 @@
     return direction < 0 ? list[first - 1] || null : list[first];
   }
 
+  /* 一覧の上下の振り分け: いまの行があればそれより前が上・後が下（いまの行は枠に出すので除く）。
+   * まだ無いときは、今のセクションより前のセクションが上、それ以降が下。 */
+  function splitRows(entries, current) {
+    const list = Array.isArray(entries) ? entries : [];
+    const past = [];
+    const future = [];
+    list.forEach((entry, index) => {
+      if (current && current.index >= 0) {
+        if (index < current.index) past.push(index);
+        else if (index > current.index) future.push(index);
+      } else if (current && current.sectionIndex >= 0 && entry.sectionIndex < current.sectionIndex) {
+        past.push(index);
+      } else {
+        future.push(index);
+      }
+    });
+    return { past, future };
+  }
+
   root.SHOSAI_VOX_PANEL = Object.freeze({
     scriptLinesFromNote, lineFromMemo, attachLines, currentIndexAt, formatSeconds,
-    flattenSections, currentInShow, splitDirections, stepTarget,
+    flattenSections, currentInShow, splitDirections, stepTarget, splitRows,
   });
 
   /* ---------- 画面 ---------- */
@@ -181,6 +200,7 @@
     sizeButtons: [...host.querySelectorAll("[data-vox-size]")],
     section: host.querySelector("[data-vox-section]"),
     list: host.querySelector("[data-vox-list]"),
+    past: host.querySelector("[data-vox-past]"),
     empty: host.querySelector("[data-vox-empty]"),
   };
   const tx = (japanese) => {
@@ -195,6 +215,8 @@
   let seconds = 0;
   let current = { index: -2, sectionIndex: -1 };   // index -2＝まだ一度も描いていない
   let rows = [];
+  let rowItems = [];
+  let sectionCounts = new Map();
 
   function lineText(entry) {
     return entry.line || tx("（台本の行が見つかりません。キューのメモも空です）");
@@ -268,34 +290,40 @@
     els.sizeButtons.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.voxSize === value)));
   }
 
-  function markCurrent(scroll) {
-    rows.forEach((row, index) => {
-      const entry = state.entries[index];
-      const on = index === current.index;
-      const past = current.index >= 0 ? index < current.index
-        : current.sectionIndex >= 0 && entry.sectionIndex < current.sectionIndex;
-      row.classList.toggle("is-current", on);
-      row.classList.toggle("is-past", past);
-      row.classList.toggle("is-other-section", current.sectionIndex >= 0
-        && entry.sectionIndex !== current.sectionIndex);
-      if (on) row.setAttribute("aria-current", "true");
-      else row.removeAttribute("aria-current");
-    });
-    // 今の行が無ければ、今のセクションの見出しを見せる
-    const target = rows[current.index]
-      || els.list.querySelector(`.stage-vox-group[data-section-index="${current.sectionIndex}"]`);
-    // 一覧の中だけを動かす（scrollIntoView は左右の列ごと動かしてしまう）
-    if (scroll && target && els.list) {
-      // 一覧（position: relative）が基準。行は上端に貼りついたセクション見出しの下に見せる
-      const heading = target.classList.contains("stage-vox-group") ? null
-        : els.list.querySelector(".stage-vox-group");
-      const top = Math.max(0, target.offsetTop - (heading ? heading.offsetHeight : 0));
-      const bottom = target.offsetTop + target.offsetHeight;
-      if (top < els.list.scrollTop) els.list.scrollTop = top;
-      else if (bottom > els.list.scrollTop + els.list.clientHeight) {
-        els.list.scrollTop = bottom - els.list.clientHeight;
-      }
+  /* 済んだ行は枠の上、これからの行は枠の下（2026-09-24 本人指示）。
+   * いまの行は枠に出すので一覧からは外す。いまの行がまだ無いときは、今のセクションより前が「済んだ」。 */
+  function placeRows(scroll) {
+    const split = splitRows(state.entries, current);
+    const fill = (host, indexes, past) => {
+      host.textContent = "";
+      let lastSection = null;
+      indexes.forEach((index) => {
+        const entry = state.entries[index];
+        if (entry.sectionIndex !== lastSection) {
+          lastSection = entry.sectionIndex;
+          host.append(groupHeading(entry, sectionCounts.get(entry.sectionIndex)));
+        }
+        const item = rowItems[index];
+        const row = rows[index];
+        row.classList.toggle("is-past", past);
+        row.classList.toggle("is-other-section", current.sectionIndex >= 0
+          && entry.sectionIndex !== current.sectionIndex);
+        host.append(item);
+      });
+      host.hidden = indexes.length === 0;
+    };
+    fill(els.past, split.past, true);
+    fill(els.list, split.future, false);
+    // 一覧の中だけを動かす（scrollIntoView は左右の列ごと動かしてしまう）。
+    // 済んだ側は直前のセリフが枠のすぐ上に見えるよう下端へ、これからの側は次のセリフが見えるよう上端へ。
+    if (scroll) {
+      els.past.scrollTop = els.past.scrollHeight;
+      els.list.scrollTop = 0;
     }
+  }
+
+  function markCurrent(scroll) {
+    placeRows(scroll);
   }
 
   function groupHeading(entry, count) {
@@ -312,16 +340,12 @@
     return item;
   }
 
+  // 行は一度だけ作り、いまの位置が変わるたびに上下の一覧へ振り分け直す
   function renderList() {
-    els.list.textContent = "";
-    const counts = new Map();
-    state.entries.forEach((entry) => counts.set(entry.sectionIndex, (counts.get(entry.sectionIndex) || 0) + 1));
-    let lastSection = null;
+    sectionCounts = new Map();
+    state.entries.forEach((entry) => sectionCounts.set(entry.sectionIndex, (sectionCounts.get(entry.sectionIndex) || 0) + 1));
+    rowItems = [];
     rows = state.entries.map((entry) => {
-      if (entry.sectionIndex !== lastSection) {
-        lastSection = entry.sectionIndex;
-        els.list.append(groupHeading(entry, counts.get(entry.sectionIndex)));
-      }
       const item = document.createElement("li");
       const button = document.createElement("button");
       button.type = "button";
@@ -350,14 +374,14 @@
       button.title = `${entry.displayName}（${entry.sectionTitle} / ${entry.sceneTitle}）${tx("の瞬間へ移る")}`;
       button.addEventListener("click", () => seekTo(entry));
       item.append(button);
-      els.list.append(item);
+      rowItems.push(item);
       return button;
     });
     els.section.textContent = state.entries.length
       ? `${tx("ショー全体")} · ${tx("VOXキュー")} ${state.entries.length}`
       : "";
     els.empty.hidden = state.entries.length > 0;
-    els.list.hidden = state.entries.length === 0;
+    if (!state.entries.length) { els.past.hidden = true; els.list.hidden = true; }
   }
 
   function seekTo(entry) {

@@ -24,7 +24,7 @@
 <script src="gamma-light-model.js?v=2026092113"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=2026091987">
 <link rel="stylesheet" href="stage-scene-alternatives.css?v=2026092209">
-<link rel="stylesheet" href="stage-vox-panel.css?v=2026092408">
+<link rel="stylesheet" href="stage-vox-panel.css?v=2026092409">
 <link rel="stylesheet" href="stage-panel-columns.css?v=2026092402">
 </head>
 <body class="is-standalone">
@@ -954,6 +954,9 @@
                いま行われているセリフを上に大きく出す。文字は各場面のメモの台本行から引く（読むだけ）。 -->
           <section class="stage-panel" data-panel="vox" data-title="VOXキュー">
             <div class="stage-panel-body stage-vox-panel" id="stage-vox-panel">
+              <p class="stage-vox-section" data-vox-section></p>
+              <!-- 時間の流れどおり（2026-09-24 本人指示）: 済んだセリフは枠の上、これからのセリフは枠の下。 -->
+              <ol class="stage-vox-list stage-vox-past" data-vox-past aria-label="済んだVOXキュー（押すとその瞬間へ移る）" hidden></ol>
               <div class="stage-vox-now" data-vox-now>
                 <div class="stage-vox-now-head">
                   <p class="stage-vox-now-cue" data-vox-now-cue>いまのセリフ</p>
@@ -978,8 +981,7 @@
                   <button type="button" data-vox-step="1" aria-label="次のVOXキューへ">次 →</button>
                 </div>
               </div>
-              <p class="stage-vox-section" data-vox-section></p>
-              <ol class="stage-vox-list" data-vox-list aria-label="VOXキューの一覧（押すとその瞬間へ移る）" hidden></ol>
+              <ol class="stage-vox-list stage-vox-future" data-vox-list aria-label="これからのVOXキュー（押すとその瞬間へ移る）" hidden></ol>
               <p class="stage-vox-empty" data-vox-empty>このショーにはVOXキューがありません。タイムラインの「セリフ」段にキューを足すと、場面メモの台本の行がここに並びます。</p>
             </div>
           </section>
@@ -3345,7 +3347,7 @@
 <script src="stage-sketch.js?v=2026092410"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092209"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
-<script src="stage-vox-panel.js?v=2026092405"></script>
+<script src="stage-vox-panel.js?v=2026092406"></script>
     <script src="stage-timeline.js?v=2026092405"></script>
 <script src="stage-session.js?v=2026091987"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>

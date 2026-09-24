@@ -1,5 +1,5 @@
 /* VOXキューパネル（2026-09-24）。色はタイムラインのセリフ段と同じ緑、文字は既存の紙色を使う。
- * 数値: 見出し・セクション見出し12px（一覧の上端に貼りつく）／話者13px／いまのセリフ16px・行間1.7／一覧の行は最小44px・2行まで／一覧の高さ上限320px。 */
+ * 数値: 見出し・セクション見出し12px（一覧の上端に貼りつく）／済んだ一覧の高さ上限160px／話者13px／いまのセリフ16px・行間1.7／一覧の行は最小44px・2行まで／一覧の高さ上限320px。 */
 .stage-vox-panel {
   --stage-vox-accent: var(--stage-timeline-cue-dialogue, #a8bf8a);
   --stage-vox-text: var(--stage-timeline-text, #efe7d6);
@@ -167,6 +167,11 @@
   display: grid;
   gap: 2px;
 }
+/* 時間の流れどおり（2026-09-24）: 済んだ一覧は枠の上に低く（最大160px・下端＝直前のセリフを見せる）、
+   これからの一覧は枠の下（最大320px）。 */
+.stage-vox-past { max-height: 160px; }
+.stage-vox-list[hidden] { display: none; }
+
 .stage-vox-row {
   display: grid;
   gap: 3px;
