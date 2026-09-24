@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v334";
+const CACHE_NAME = "stage-sketch-gamma-shell-v335";
 const APP_SHELL = [
   "./stage-scene-alternatives.js?v=2026092208",
   "./stage-scene-alternatives-ui.js?v=2026092209",
@@ -56,7 +56,7 @@ const APP_SHELL = [
   "./stage-prompt-i18n.js?v=2026092050",
   "./stage-rehearsal-export.js?v=2026091501",
   "./stage-samples/index.js?v=2026092401",
-  "./stage-samples/romeo-juliet-cued.js?v=2026092432",
+  "./stage-samples/romeo-juliet-cued.js?v=2026092433",
   "./stage-samples/feature-test-show.js?v=2026092405",
   "./stage-set-model.js?v=2026092354",
   "./stage-set-builder.js?v=2026091501",
@@ -77,7 +77,7 @@ const APP_SHELL = [
   "./stage-cue-sheet.js?v=2026092420",
   "./stage-shortcuts.js?v=2026092218",
   "./stage-reorder-motion.js?v=2026092420",
-  "./stage-sketch.js?v=2026092439",
+  "./stage-sketch.js?v=2026092440",
   "./stage-timeline.js?v=2026092420",
   "./stage-session.js?v=20260924-lightimport1",
   "./stage-study-owner.js?v=2026091501",

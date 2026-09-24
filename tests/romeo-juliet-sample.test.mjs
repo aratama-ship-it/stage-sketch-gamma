@@ -21,10 +21,10 @@ test("Romeo and Juliet is a complete immutable bundled project sample", async ()
   assert.equal(sample.kind, "shosai-stage-sketch");
   assert.equal(sample.version, 4);
   assert.equal(sample.project.id, "romeo-juliet-gamma-cued-2026-09-21");
-  assert.equal(sample.project.scenes.filter((scene) => scene.kind === "scene").length, 31);
+  assert.equal(sample.project.scenes.filter((scene) => scene.kind === "scene").length, 33);
   assert.equal(sample.project.cues.filter((cue) => cue.cueType === "dialogue").length, 47);
   assert.equal(sample.project.cues.filter((cue) => cue.cueType === "music").length, 19);
-  assert.equal(sample.project.cues.filter((cue) => cue.cueType === "light").length, 31);
+  assert.equal(sample.project.cues.filter((cue) => cue.cueType === "light").length, 33);
   // V-05（2026-09-24）: 中ホールの基本仕込みの配置（固定37）＋ムービング4。固定灯は全場面で同じ狙い・色・広がり
   assert.equal(sample.project.lightingDesign.rig.fixtures.length, 41);
   assert.equal(sample.project.lightingDesign.rig.fixtures.filter((f) => f.kind === "moving").length, 4);
@@ -39,7 +39,7 @@ test("Romeo and Juliet is a complete immutable bundled project sample", async ()
     }
     assert.ok(looks.size <= 1, `${fixture.id} が場面によって違う`);
   }
-  assert.equal(sample.project.lightingDesign.scenes.length, 31);
+  assert.equal(sample.project.lightingDesign.scenes.length, 33);
   assert.equal(sample.project.cast.map((performer) => performer.name).join("|"),
     "ロミオ|ジュリエット|ロレンス修道士|ベンヴォーリオ|ティボルト|マーキューシオ|乳母|キャピュレット|モンタギュー|ジョン修道士");
 });
@@ -48,11 +48,11 @@ test("Romeo and Juliet is loaded before the app and included in the versioned PW
   const [html, worker, app] = await Promise.all([
     read("stage.html"), read("stage-sw.js"), read("stage-sketch.js"),
   ]);
-  const libraryScript = html.indexOf('stage-samples/romeo-juliet-cued.js?v=2026092432');
-  const appScript = html.indexOf('stage-sketch.js?v=2026092439');
+  const libraryScript = html.indexOf('stage-samples/romeo-juliet-cued.js?v=2026092433');
+  const appScript = html.indexOf('stage-sketch.js?v=2026092440');
   assert.ok(libraryScript >= 0 && libraryScript < appScript);
-  assert.match(worker, /stage-sketch-gamma-shell-v334/);
-  assert.match(worker, /stage-samples\/romeo-juliet-cued\.js\?v=2026092432/);
+  assert.match(worker, /stage-sketch-gamma-shell-v335/);
+  assert.match(worker, /stage-samples\/romeo-juliet-cued\.js\?v=2026092433/);
   assert.match(app, /function shelveRomeoJulietSample\(\)/);
   assert.match(app, /const saved = shows\[built\.project\.id\]/);
   assert.match(app, /savedProject\.lightingDesign = projectIoClone\(bundledDesign\)/);
