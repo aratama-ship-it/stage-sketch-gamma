@@ -57,11 +57,36 @@ body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
 #gamma-cuesheet-workspace .stage-cue-sheet-modal,
 #gamma-cuesheet-workspace .stage-cue-sheet-modal.is-viewing-sheet {
   position: relative; inset: auto; top: auto; right: auto; bottom: auto; left: auto; transform: none;
-  width: 100%; max-width: none; height: 100%; max-height: none; margin: 0; box-shadow: none; border-radius: 12px;
+  width: 100%; max-width: none; height: 100%; max-height: none; margin: 0;
+  /* 2026-09-24 本人指摘: タブに入ると窓の枠が一つ余分に見えていた。他のモードと同じく枠・影・見出しは出さない */
+  border: 0; border-radius: 0; box-shadow: none; background: transparent;
   display: flex; flex-direction: column; overflow: hidden; z-index: auto;
 }
 #gamma-cuesheet-workspace .stage-cue-sheet-modal[hidden] { display: none; }
-#gamma-cuesheet-workspace .stage-cue-sheet-modal > .stage-modal-head .stage-modal-close { display: none; }
+#gamma-cuesheet-workspace .stage-cue-sheet-modal > .stage-modal-head { display: none; }
+#gamma-cuesheet-workspace .stage-cue-sheet-modal > .stage-modal-body { padding: 0; background: transparent; }
+/* 表は紙色ではなく、全体のデザイン（暗い地に白い文字）に合わせる（2026-09-24 本人指示）。
+   印刷は別の窓（cueSheetPrintDocument）で紙色のまま。ここは画面で見るときだけ。 */
+#gamma-cuesheet-workspace .stage-cue-sheet-scroll,
+#gamma-cuesheet-workspace .cue-sheet-paper { background: transparent; color: var(--milk); }
+#gamma-cuesheet-workspace .stage-cue-sheet-scroll { color-scheme: dark; } /* 横スクロールバーも暗い配色に */
+#gamma-cuesheet-workspace .cue-sheet-paper-head h1 { color: var(--milk); }
+#gamma-cuesheet-workspace .cue-sheet-stamp,
+#gamma-cuesheet-workspace .cue-sheet-inferred,
+#gamma-cuesheet-workspace .cue-sheet-inferred-mark,
+#gamma-cuesheet-workspace .cue-sheet-footnote,
+#gamma-cuesheet-workspace .cue-sheet-legend { color: var(--milk-dim); }
+#gamma-cuesheet-workspace .cue-sheet-table th,
+#gamma-cuesheet-workspace .cue-sheet-table td { border-color: var(--line-dark); color: var(--milk); }
+#gamma-cuesheet-workspace .cue-sheet-table thead th,
+#gamma-cuesheet-workspace .cue-sheet-table thead th:first-child { background: var(--desk-2); color: var(--milk); }
+#gamma-cuesheet-workspace .cue-sheet-table th:first-child,
+#gamma-cuesheet-workspace .cue-sheet-paper[data-cue-sheet-kind="master"] .cue-sheet-table th[scope="row"] {
+  background: var(--desk); color: var(--milk); box-shadow: 1px 0 0 var(--line-dark);
+}
+#gamma-cuesheet-workspace .cue-sheet-table .cue-sheet-section-row th { background: var(--desk-2); color: var(--milk); }
+#gamma-cuesheet-workspace .cue-sheet-table .stage-text-input { background: var(--desk); color: var(--milk); border-color: var(--line-dark); }
+#gamma-cuesheet-workspace .cue-sheet-legend { border-top-color: var(--line-dark); }
 #gamma-cuesheet-workspace .stage-cue-sheet-body { flex: 1 1 auto; min-height: 0; max-height: none; overflow: auto; display: flex; flex-direction: column; }
 #gamma-cuesheet-workspace #stage-cue-sheet-list { flex: 0 0 auto; }
 #gamma-cuesheet-workspace #stage-cue-sheet-view:not([hidden]) { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
