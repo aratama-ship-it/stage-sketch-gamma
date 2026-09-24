@@ -212,9 +212,25 @@
  * 流れの帯を vertical-rl にすると、済んだ一覧 → いまの枠 → これからの一覧 が右から左へ並ぶ（右＝過去・左＝未来）。
  * 帯の高さ（縦書きでは文字の行の長さ）は 340px に決める。決めないと1行が中身の長さまで伸びて折り返さない。
  * 一覧は横に流れて、はみ出した分は横スクロール。行の縦線（いまの印）は上の辺へ移す。 */
+/* V-01（2026-09-24 本人指示）: 帯の高さを利用者が決めたとき（has-stream-height）。横書きは帯の中で上下に分ける。 */
+.stage-vox-panel.has-stream-height:not(.is-vertical) .stage-vox-stream {
+  display: flex;
+  flex-direction: column;
+  height: var(--stage-vox-stream-height);
+  gap: 10px;
+  overflow: hidden;
+}
+.stage-vox-panel.has-stream-height:not(.is-vertical) .stage-vox-past { flex: 0 1 auto; max-height: 35%; min-height: 0; }
+.stage-vox-panel.has-stream-height:not(.is-vertical) .stage-vox-now { flex: 0 0 auto; }
+.stage-vox-panel.has-stream-height:not(.is-vertical) .stage-vox-future { flex: 1 1 0; max-height: none; min-height: 0; }
+/* つまみ（見た目は演者一覧などの .stage-roster-list-resize をそのまま使う）。パネルの下端に置く */
+.stage-vox-resize { margin-top: -4px; }
+/* V-02: 縦書きの注意書き（数値: 11px・行間1.5・弱い色） */
+.stage-vox-vertical-note { margin: 0; font-size: 11px; line-height: 1.5; color: var(--stage-vox-muted); }
+.stage-vox-vertical-note[hidden] { display: none; }
 .stage-vox-panel.is-vertical .stage-vox-stream {
   writing-mode: vertical-rl;
-  height: 340px;
+  height: var(--stage-vox-stream-height, 340px);
   display: flex;
   flex-direction: column;           /* vertical-rl では column＝行の進む向き＝右から左（row は上から下になる） */
   align-items: stretch;
@@ -256,7 +272,15 @@
   border-radius: 0 0 5px 5px;
   text-align: start;
 }
-.stage-vox-panel.is-vertical .stage-vox-row-line { -webkit-line-clamp: 3; }
+/* V-01（2026-09-24 本人指摘）: 縦書きで一覧のセリフが90度横倒しになっていた。2行で省略するための -webkit-box
+   （-webkit-box-orient: vertical）が縦書きと噛み合わないため。縦書きでは箱にせず、3列ぶんの幅で切る。 */
+.stage-vox-panel.is-vertical .stage-vox-row-line {
+  display: block;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: unset;
+  max-width: calc(13px * 1.5 * 3);
+  overflow: hidden;
+}
 /* 縦書きの手送りは帯の下。右が「前」（済んだ側）、左が「次」（これから側） */
 .stage-vox-step.is-reversed { direction: rtl; margin-top: 0; }
 .stage-vox-step.is-reversed button { direction: ltr; }

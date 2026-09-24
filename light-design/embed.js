@@ -109,6 +109,17 @@
     } catch(error) {state.dirty=true;saveDraft();message('適用できませんでした: '+error.message);return {persisted:false,error:error.message||String(error)};}
   }
   document.documentElement.dataset.gammaEmbedded='true';
+  /* V-04（2026-09-24 本人指示）: 本体の「画面の色」（赤みの黒／青みの黒）をこのページにも写す。
+     本体の <html data-stage-skin> を見張り、切り替えたら図も描き直す（embed.css と app.js の surface() が読む）。 */
+  function syncSkin(){
+    let skin='warm-black';
+    try { skin=parent.document.documentElement.dataset.stageSkin==='blue-black'?'blue-black':'warm-black'; } catch(_) {}
+    if(document.documentElement.dataset.stageSkin===skin) return;
+    document.documentElement.dataset.stageSkin=skin;
+    try { hooks.renderAll(); } catch(_) {}
+  }
+  syncSkin();
+  try { new MutationObserver(syncSkin).observe(parent.document.documentElement,{attributes:true,attributeFilter:['data-stage-skin']}); } catch(_) {}
   arrangeEmbeddedToolbar();
   document.getElementById('apply').onclick=apply;
   document.getElementById('close').onclick=()=>{suspend();parent.GAMMA_WORKSPACE.normal();};

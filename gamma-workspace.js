@@ -27,12 +27,15 @@
     const inset=bottomInset();
     if(isLightMode(mode)) {
       const view=document.getElementById('view-stage');
-      const viewBottom=view?Math.min(window.innerHeight,view.getBoundingClientRect().bottom):window.innerHeight;
-      const available=Math.floor(viewBottom-frame.getBoundingClientRect().top-inset-16);
-      /* 照明デザインでタイムラインを広げた間だけ、iframeの従来最小高360pxを外す。
-         狭い高さでは照明側を内部スクロールさせ、タイムラインと重ねない。 */
-      const timelineOpen=mode==='light-design' && document.body.classList.contains('stage-timeline-expanded');
-      frame.style.height=Math.max(timelineOpen?120:(narrow?280:360),available)+'px';
+      /* V-06（2026-09-24 本人指示）: タイムラインを出しても照明デザインの画面を縮めない（舞台タブと同じ）。
+         高さは「タイムラインを閉じているとき」の余白で決め、開いたときは #view-stage の下の余白
+         （タイムラインの高さ＋32px・style.css）をスクロールして下まで見る。
+         ★測るのは見えている位置ではなくスクロールを戻した位置（スクロール中に呼ばれても高さが変わらないように）。 */
+      const bodyStyle=getComputedStyle(document.body);
+      const closedInset=(parseFloat(bodyStyle.getPropertyValue('--stage-timeline-resize-hit'))||0)+32;
+      const frameTop=frame.getBoundingClientRect().top+(view?view.scrollTop:0);
+      const available=Math.floor(window.innerHeight-frameTop-closedInset-16);
+      frame.style.height=Math.max(narrow?280:360,available)+'px';
       return;
     }
     /* V-2（2026-09-17）: 劇場設定もモード画面として1画面に収める。
@@ -486,7 +489,7 @@
           goVenue.addEventListener('click',()=>select('venue-setup'));
           status.append(goVenue);
         } else if(!loaded) {
-          frame.src='light-design/index.html?embed=gamma&v=2026092301'; loaded=true;
+          frame.src='light-design/index.html?embed=gamma&v=2026092430'; loaded=true;
           status.textContent='照明デザインを開いています…';
         } else if(editor()) editor().open(context, next);
       } else if(next==='venue-setup') {

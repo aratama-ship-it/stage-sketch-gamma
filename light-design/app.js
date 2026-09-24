@@ -5,6 +5,10 @@
  * 幾何は rig-engine.js（純関数）。ここは状態・操作・描画だけ。 */
 (function () {
   "use strict";
+  /* V-04（2026-09-24 本人指示）: 図の地・暗い部品の色は、本体の「画面の色」に従う（embed.js が <html data-stage-skin> を写す）。
+     赤みの黒の値を渡すと、青みの黒のときは本体の舞台図（stage-sketch.js の STAGE_COOL_SURFACES）と同じ対応の色を返す。 */
+  const COOL_SURFACES = Object.freeze({ "#0d0c0b": "#0d0e10", "#14110e": "#131518", "#12100e": "#111316", "#2a2520": "#2a2d31", "#201b16": "#1b1e22" });
+  const surface = (warm) => (document.documentElement.dataset.stageSkin === "blue-black" ? (COOL_SURFACES[warm] || warm) : warm);
   const E = window.RIG_ENGINE, V = window.VOLUME_LIGHT, LE = window.LASER_EFFECTS, LUI = window.LASER_EFFECTS_UI;
   let distanceMetric = false, spatialQuick = false;
   /* 光条・光だまり・まぶしさ・人物の受光を、全図で同じ見え方へ固定する。
@@ -1220,7 +1224,7 @@
   const isSel = (fid) => state.sel.has(fid);
   function drawPlan() {
     const w = plan.width, h = plan.height, P = planProj(), B = planBox(), d = state.dims;
-    pctx.clearRect(0, 0, w, h); pctx.fillStyle = "#0d0e10"; pctx.fillRect(0, 0, w, h);
+    pctx.clearRect(0, 0, w, h); pctx.fillStyle = surface("#0d0c0b"); pctx.fillRect(0, 0, w, h);
     // 袖・客席の帯
     pctx.fillStyle = "rgba(255,255,255,0.02)"; pctx.fillRect(0, B.y, B.x, B.h); pctx.fillRect(B.x + B.w, B.y, w - B.x - B.w, B.h);
     pctx.fillStyle = "rgba(156,130,63,0.05)"; pctx.fillRect(B.x, B.y + B.h, B.w, h - B.y - B.h);
@@ -1384,7 +1388,7 @@
     const panels = curtainPanelsWorld(pc, d);
     ctx.save();
     const masking = pc.solid || pc.curtainKind === "border" || pc.curtainKind === "leg";
-    ctx.strokeStyle = masking ? "#111214" : hexA(pc.color || "#000000", 0.9); ctx.lineWidth = 7; ctx.lineCap = "butt";
+    ctx.strokeStyle = masking ? surface("#12100e") : hexA(pc.color || "#000000", 0.9); ctx.lineWidth = 7; ctx.lineCap = "butt";
     panels.forEach((part) => {
       const a = P({ x: part.leftX, y: part.leftY, z: 0 }), b = P({ x: part.rightX, y: part.rightY, z: 0 });
       ctx.beginPath(); ctx.moveTo(a.X, a.Y); ctx.lineTo(b.X, b.Y); ctx.stroke();
@@ -1470,7 +1474,7 @@
          「黒い光」として見えていた（本人指摘）。布が光を遮るのだから、透かさず塗るのが正しい。
          色は背景よりわずかに明るくして、布そのものの形は輪郭と合わせて読めるようにする。 */
       const masking = pc.solid || pc.curtainKind === "border" || pc.curtainKind === "leg";
-      ctx.fillStyle = masking ? "#111214" : hexA(pc.color || "#000000", 0.3);
+      ctx.fillStyle = masking ? surface("#12100e") : hexA(pc.color || "#000000", 0.3);
       ctx.beginPath(); ctx.moveTo(fl.X, fl.Y); ctx.lineTo(fr.X, fr.Y); ctx.lineTo(tr.X, tr.Y); ctx.lineTo(tl.X, tl.Y); ctx.closePath();
       ctx.fill(); ctx.strokeStyle = "rgba(240,231,214,0.22)"; ctx.lineWidth = 1; ctx.stroke();
     });
@@ -2251,7 +2255,7 @@
   }
   function drawFixtureMark(ctx, X, Y, shape, o) {
     const s = 15; ctx.save();
-    const fill = o.ghost ? "rgba(240,231,214,0.35)" : o.st === "unset" ? "rgba(13,14,16,1)" : o.st === "off" ? "#2a2520" : (o.color || "#f2ead6");
+    const fill = o.ghost ? "rgba(240,231,214,0.35)" : o.st === "unset" ? surface("#0d0c0b") : o.st === "off" ? surface("#2a2520") : (o.color || "#f2ead6");
     ctx.fillStyle = fill; ctx.strokeStyle = o.sel ? "#d3ac59" : o.ghost ? "rgba(240,231,214,0.5)" : "rgba(240,231,214,0.7)"; ctx.lineWidth = o.sel ? 5 : 2;
     const bar = shape === "bar" && o.bar && o.bar.a && o.bar.b ? o.bar : null;
     let markX = X, markY = Y, markSize = s;
@@ -2348,13 +2352,13 @@
   }
   function drawHandles(ctx, P, l, fid) {
     const p = l.path || {}; const d = state.dims;
-    const hp = (pt, txt, filled) => { const q = P(E.pointWorld(pt, d)); ctx.beginPath(); ctx.arc(q.X, q.Y, 12, 0, Math.PI * 2); ctx.fillStyle = filled ? "#df6433" : "#201b16"; ctx.strokeStyle = "#df6433"; ctx.lineWidth = 3; ctx.fill(); ctx.stroke(); if (txt) { ctx.fillStyle = "#efe7d6"; ctx.font = "600 16px sans-serif"; ctx.textBaseline = "middle"; ctx.textAlign = "center"; ctx.fillText(txt, q.X, q.Y + 1); ctx.textAlign = "left"; } return q; };
+    const hp = (pt, txt, filled) => { const q = P(E.pointWorld(pt, d)); ctx.beginPath(); ctx.arc(q.X, q.Y, 12, 0, Math.PI * 2); ctx.fillStyle = filled ? "#df6433" : surface("#201b16"); ctx.strokeStyle = "#df6433"; ctx.lineWidth = 3; ctx.fill(); ctx.stroke(); if (txt) { ctx.fillStyle = "#efe7d6"; ctx.font = "600 16px sans-serif"; ctx.textBaseline = "middle"; ctx.textAlign = "center"; ctx.fillText(txt, q.X, q.Y + 1); ctx.textAlign = "left"; } return q; };
     if (p.kind === "line") {
       const a = hp(p.a, "A", p.start !== "b"), b = hp(p.b, "B", p.start === "b");
       const from = p.start === "b" ? b : a, to = p.start === "b" ? a : b; arrow(ctx, from, to);
     } else if (p.kind === "circle" || p.kind === "eight") {
       const c = hp(p.c, "", false); const rq = P(circleRadiusWorld(p.c, p.r, p.plane, d, p.tilt));
-      ctx.beginPath(); ctx.arc(rq.X, rq.Y, 10, 0, Math.PI * 2); ctx.fillStyle = "#201b16"; ctx.strokeStyle = "#df6433"; ctx.lineWidth = 3; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(rq.X, rq.Y, 10, 0, Math.PI * 2); ctx.fillStyle = surface("#201b16"); ctx.strokeStyle = "#df6433"; ctx.lineWidth = 3; ctx.fill(); ctx.stroke();
       ctx.fillStyle = "rgba(240,231,214,0.8)"; ctx.font = "15px sans-serif"; ctx.fillText(`半径 ${mmText(p.r)}`, rq.X + 14, rq.Y - 8);
       ctx.fillText(p.dir === "ccw" ? "反時計回り" : "時計回り", c.X + 14, c.Y - 22);
     } else hp(p.a || { u: 0.5, v: 0.6 }, "", true);
@@ -2366,7 +2370,7 @@
     const fctx = sec.ctx, front = sec.cv;
     const w = front.width, h = front.height, B = secBox(front, sec.kind), P = secProj(sec), d = state.dims;
     const frontView = E.frontFarSetup(d, B);
-    fctx.clearRect(0, 0, w, h); fctx.fillStyle = "#0d0e10"; fctx.fillRect(0, 0, w, h);
+    fctx.clearRect(0, 0, w, h); fctx.fillStyle = surface("#0d0c0b"); fctx.fillRect(0, 0, w, h);
     fctx.fillStyle = "rgba(255,255,255,0.03)"; fctx.fillRect(B.x, B.y, B.w, B.h);           // 奥壁
     fctx.strokeStyle = "rgba(239,231,214,0.25)"; fctx.strokeRect(B.x, B.y, B.w, B.h);
     fctx.fillStyle = "rgba(255,255,255,0.05)"; fctx.fillRect(0, B.y + B.h, w, h - B.y - B.h); // 床
@@ -2426,7 +2430,7 @@
   function drawSide(sec) {
     const fctx = sec.ctx, front = sec.cv, side = sec.kind;
     const w = front.width, h = front.height, B = secBox(front, sec.kind), d = state.dims, P = secProj(sec);
-    fctx.clearRect(0, 0, w, h); fctx.fillStyle = "#0d0e10"; fctx.fillRect(0, 0, w, h);
+    fctx.clearRect(0, 0, w, h); fctx.fillStyle = surface("#0d0c0b"); fctx.fillRect(0, 0, w, h);
     const backX = P({ x: 0, y: 0, z: 0 }).X, frontX = P({ x: 0, y: d.D, z: 0 }).X;
     const left = Math.min(backX, frontX), right = Math.max(backX, frontX);
     fctx.fillStyle = "rgba(255,255,255,0.03)"; fctx.fillRect(left, B.y, right - left, B.h);
@@ -2498,7 +2502,7 @@
     const fctx = sec.ctx, cv = sec.cv, w = cv.width, h = cv.height;
     const B = secBox(cv, "front"), d = state.dims, P = secProj(sec);
     const L = E.frontPerspSetup(d, B, state.seat);
-    fctx.clearRect(0, 0, w, h); fctx.fillStyle = "#0d0e10"; fctx.fillRect(0, 0, w, h);
+    fctx.clearRect(0, 0, w, h); fctx.fillStyle = surface("#0d0c0b"); fctx.fillRect(0, 0, w, h);
     const at = (u, v, hM) => P({ x: (u - 0.5) * d.W, y: v * d.D, z: hM || 0 });
     // 床（奥から手前へ広がる台形）
     const bl = at(0, 0, 0), br = at(1, 0, 0), fl = at(0, 1, 0), fr = at(1, 1, 0);
@@ -5240,7 +5244,7 @@
     const paint = () => {
       const w = cv.width, h = cv.height;
       cx.setTransform(1, 0, 0, 1, 0, 0);
-      cx.fillStyle = "#14110e"; cx.fillRect(0, 0, w, h);
+      cx.fillStyle = surface("#14110e"); cx.fillRect(0, 0, w, h);
       cx.strokeStyle = "rgba(240,231,214,0.12)"; cx.lineWidth = 2;
       for (let i = 1; i < 4; i++) {
         const x = (w * i) / 4, y = (h * i) / 4;
@@ -5262,7 +5266,7 @@
         cx.beginPath(); cx.arc(x, y, fixed ? 7 : (held === i ? 14 : 11), 0, Math.PI * 2);
         cx.fillStyle = fixed ? "rgba(240,231,214,0.25)" : (held === i ? "#efe7d6" : "#9c823f");
         cx.fill();
-        if (!fixed) { cx.strokeStyle = "#14110e"; cx.lineWidth = 3; cx.stroke(); }
+        if (!fixed) { cx.strokeStyle = surface("#14110e"); cx.lineWidth = 3; cx.stroke(); }
       });
       if (read) read.textContent = [25, 50, 75, 100].map((q) => `${q}% → ${Math.round(curveAt(q / 100) * 100)}%`).join("　／　");
     };

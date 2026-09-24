@@ -69,7 +69,7 @@
       "gamma:shosai-stage-timeline-ui-v1", "gamma:shosai-stage-rigs-v1", "gamma:stage-shortcuts-v1",
       "gamma:shosai.lightDesigns.v1", "gamma:shosai.lightDesigns.beforeOptionB.v1",
       "gamma:shosai-fpv-lens-v2", "gamma:shosai-fpv-house-v2", "gamma:shosai-fpv-crowd-v1", "gamma:shosai-fpv-panels-v1",
-      "gamma:vox-panel-size-v1",
+      "gamma:vox-panel-size-v1", "gamma:vox-panel-height-v1", "gamma:script-editor-widths-v1",
       "shosai-stage-shows-v1-pre-section-hierarchy-v1",
     ];
     const PREFIXES = [
@@ -5882,7 +5882,8 @@
       hint: "舞台に置く大道具を登録します。寸法や色はここで決め、追加したものはそのシーンの舞台に出ます。" },
     { key: "panelProps", panel: "props", label: "小道具", def: true,
       hint: "舞台に置く小道具を登録します。形・寸法・色はここで決め、追加したものはそのシーンの舞台に出ます。" },
-    { key: "panelStageSet", panel: "stage-set", label: "舞台セット", def: true,
+    /* V-07（2026-09-24 本人指示）: 一覧の名前をパネルの見出し「舞台機構」にそろえた。キー名 panelStageSet・data-panel="stage-set" は変えない。 */
+    { key: "panelStageSet", panel: "stage-set", label: "舞台機構", def: true,
       hint: "劇場に組み込まれた舞台機構を確認します。追加は劇場設定で行います。" },
     { key: "panelRigs", panel: "rigs", label: "セット登録", def: false,
       hint: "いまの舞台装置の並びに名前をつけて残し、別の場面で呼び出す欄を出す" },
@@ -9826,12 +9827,43 @@
     });
     return changed;
   }
+  /* ★V-05（2026-09-24 本人指示）: 見本の照明を「中ホールの基本仕込み」の配置（固定37）＋ムービング4へ組み直した
+   * （固定灯が場面ごとに違う向き・色・広がりになっていた警告をなくすため。生成 gamma-dev/rj-lighting-v2/build.cjs）。
+   * 棚の複製・開いたままのショーへ届けるのは、照明に手を入れていないものだけ:
+   *   仕込みが旧版の6灯・2バトンのままで、31場面すべての lights が旧版と同じ（下の指紋と一致）もの。
+   * 1場面でも違えば（利用者が照明を直した）何もしない。台詞・キュー・場面・もや（environment）には触れない。 */
+  const ROMEO_JULIET_OLD_LIGHT_HASHES_2026_09_23 = Object.freeze({"rj-frame-rj-cond-01-a-01": "fl9srf", "rj-frame-rj-cond-01-b-02": "oiiytf", "rj-frame-rj-cond-01-b-m6-01": "-ls27uz", "rj-frame-rj-cond-01-b-m6-02": "-v0yo9r", "rj-frame-rj-cond-01-b-m6-03": "dyi24o", "rj-frame-rj-cond-01-c-01": "rcryzi", "rj-frame-rj-cond-01-d-01": "sglco1", "rj-frame-rj-cond-02-a-01": "-k14kir", "rj-frame-rj-cond-02-b-01": "-jjscex", "rj-frame-rj-cond-02-c-01": "-fua8em", "rj-frame-rj-cond-03-a-01": "5vbnrm", "rj-frame-rj-cond-03-a-02": "k4h33w", "rj-frame-rj-cond-03-b-01": "-rzyjj5", "rj-frame-rj-cond-03-c-01": "v0iyoq", "rj-frame-rj-cond-03-c-02": "3c5t5d", "rj-frame-rj-cond-03-c-03": "hu6zo1", "rj-frame-rj-cond-03-d-01": "74tdbc", "rj-frame-rj-cond-03-d-02": "96tuqm", "rj-frame-rj-cond-04-a-01": "-5zaa6y", "rj-frame-rj-cond-04-b-01": "-wezk7r", "rj-frame-rj-cond-04-b-02": "7wemvr", "rj-frame-rj-cond-04-c-01": "-7o0jy6", "rj-frame-rj-cond-04-c-02": "7sgmg5", "rj-frame-rj-cond-04-d-01": "gi0opr", "rj-frame-rj-cond-04-d-02": "-yakc2v", "rj-frame-rj-cond-05-a-01": "98onsz", "rj-frame-rj-cond-05-b-01": "-164nfo", "rj-frame-rj-cond-05-b-02": "-164nfo", "rj-frame-rj-cond-05-c-01": "-jes1nd", "rj-frame-rj-cond-05-d-01": "l78wyx", "rj-frame-rj-cond-05-d-02": "daz9e5"});
+  const ROMEO_JULIET_OLD_FIXTURE_IDS = Object.freeze(["rj-lx-front-l", "rj-lx-front-r", "rj-lx-center", "rj-lx-back", "rj-lx-side-l", "rj-lx-side-r"]);
+  function backfillRomeoJulietLightingRig(savedProject, bundledProject) {
+    const saved = savedProject && savedProject.lightingDesign;
+    const bundled = bundledProject && bundledProject.lightingDesign;
+    if (!saved || !bundled || !saved.rig || !Array.isArray(saved.rig.fixtures) || !Array.isArray(saved.scenes)) return false;
+    const ids = saved.rig.fixtures.map((fixture) => fixture && fixture.id).sort().join(",");
+    if (ids !== ROMEO_JULIET_OLD_FIXTURE_IDS.slice().sort().join(",")) return false;
+    if (saved.scenes.length !== Object.keys(ROMEO_JULIET_OLD_LIGHT_HASHES_2026_09_23).length) return false;
+    const untouched = saved.scenes.every((scene) => scene && scene.cue && scene.cue.lights
+      && ROMEO_JULIET_OLD_LIGHT_HASHES_2026_09_23[scene.id] === simpleHash(JSON.stringify(scene.cue.lights)));
+    if (!untouched) return false;
+    const bundledScenes = new Map((bundled.scenes || []).map((scene) => [scene.id, scene]));
+    if (!saved.scenes.every((scene) => bundledScenes.has(scene.id))) return false;
+    saved.rig = projectIoClone(bundled.rig);
+    saved.fixtureGroups = projectIoClone(bundled.fixtureGroups || []);
+    saved.palette = projectIoClone(bundled.palette || saved.palette || []);
+    saved.scenes.forEach((scene) => {
+      const source = bundledScenes.get(scene.id);
+      scene.cue = { ...scene.cue, lights: projectIoClone(source.cue.lights) };
+      const sourceQs = new Map((source.lxq || []).map((q) => [q.id, q]));
+      (scene.lxq || []).forEach((q) => { const from = sourceQs.get(q.id); if (from && q.cue) q.cue = { ...q.cue, lights: projectIoClone(from.cue.lights) }; });
+    });
+    return true;
+  }
   function backfillRomeoJulietSampleData(savedProject, bundledProject) {
     const a = backfillRomeoJulietVoxOffsets(savedProject, bundledProject);
     const b = backfillRomeoJulietTransitions(savedProject);
     const c = backfillRomeoJulietScript(savedProject, bundledProject);
     const d = backfillRomeoJulietCastNames(savedProject, bundledProject);
-    return a || b || c || d;
+    const e = backfillRomeoJulietLightingRig(savedProject, bundledProject);
+    return a || b || c || d || e;
   }
 
   /* ★2026-09-24 本人指示「転換が0秒のものは全部直す」: 八人のサーカス・継ぎ目の庭の棚の複製と、

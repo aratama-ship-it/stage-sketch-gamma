@@ -204,6 +204,8 @@
     nowLine: host.querySelector("[data-vox-now-line]"),
     stepBar: host.querySelector("[data-vox-step-bar]"),
     stepSlot: host.querySelector("[data-vox-step-slot]"),
+    resize: host.querySelector("[data-vox-resize]"),
+    verticalNote: host.querySelector("[data-vox-vertical-note]"),
     stepButtons: [...host.querySelectorAll("[data-vox-step]")],
     section: host.querySelector("[data-vox-section]"),
     list: host.querySelector("[data-vox-list]"),
@@ -475,7 +477,79 @@
     });
     // 縦書きでは「前」を右・「次」を左に置く
     if (els.stepBar) els.stepBar.classList.toggle("is-reversed", vertical);
+    if (els.verticalNote) els.verticalNote.hidden = !vertical;
+    applyStreamHeight();
     scrollListsToNow();
+  }
+
+  /* ---------- V-01（2026-09-24 本人指示）: 表示できる縦の幅（流れの帯の高さ）を変える ----------
+   * 縦書き・横書きのどちらにも効く。帯の高さを決めると、横書きでは済んだ一覧（上限は帯の35%）・いまの枠・
+   * これからの一覧（残り全部）で分け、縦書きでは1列の長さ（文字の行の長さ）になる。
+   * 決めていないとき: 横書きは今までどおり（済んだ一覧160px・これからの一覧320pxまで）、縦書きは340px。
+   * 端末の設定（gamma:vox-panel-height-v1）。ダブルクリック・Enter で元に戻す。上下キーで20pxずつ。
+   * 数値: 下限180px・上限900px（画面の高さの9割のほうが小さければそちら）。 */
+  const HEIGHT_KEY = "gamma:vox-panel-height-v1";
+  const HEIGHT_MIN = 180;
+  const heightMax = () => Math.max(HEIGHT_MIN, Math.min(900, Math.round((root.innerHeight || 1000) * 0.9)));
+  let streamHeight = null;
+  try { const saved = Number(root.localStorage.getItem(HEIGHT_KEY)); if (Number.isFinite(saved) && saved > 0) streamHeight = saved; } catch (_) { /* 読めなければ既定 */ }
+  function applyStreamHeight() {
+    const value = streamHeight == null ? null : Math.round(Math.min(heightMax(), Math.max(HEIGHT_MIN, streamHeight)));
+    host.classList.toggle("has-stream-height", value != null);
+    if (value == null) host.style.removeProperty("--stage-vox-stream-height");
+    else host.style.setProperty("--stage-vox-stream-height", `${value}px`);
+    if (els.resize) {
+      const current = Math.round(els.stream.getBoundingClientRect().height) || value || 0;
+      els.resize.setAttribute("aria-valuemin", String(HEIGHT_MIN));
+      els.resize.setAttribute("aria-valuemax", String(heightMax()));
+      els.resize.setAttribute("aria-valuenow", String(current));
+      els.resize.setAttribute("aria-valuetext", `${current}px`);
+    }
+  }
+  function saveStreamHeight() {
+    try {
+      if (streamHeight == null) root.localStorage.removeItem(HEIGHT_KEY);
+      else root.localStorage.setItem(HEIGHT_KEY, String(Math.round(streamHeight)));
+    } catch (_) { /* 残せなくても、この画面では効かせる */ }
+  }
+  function setStreamHeight(next, save) {
+    streamHeight = next == null ? null : Math.min(heightMax(), Math.max(HEIGHT_MIN, next));
+    applyStreamHeight();
+    if (save) saveStreamHeight();
+    scrollListsToNow();
+  }
+  if (els.resize) {
+    els.resize.title = tx("ドラッグで高さを変更。上下キーで調整、ダブルクリックまたはEnterで元に戻す");
+    let drag = null;
+    els.resize.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      drag = { pointerId: event.pointerId, startY: event.clientY, start: els.stream.getBoundingClientRect().height };
+      els.resize.setPointerCapture(event.pointerId);
+      document.body.classList.add("is-roster-list-resizing");
+    });
+    els.resize.addEventListener("pointermove", (event) => {
+      if (!drag || event.pointerId !== drag.pointerId) return;
+      setStreamHeight(drag.start + (event.clientY - drag.startY), false);
+    });
+    const end = (event) => {
+      if (!drag || event.pointerId !== drag.pointerId) return;
+      drag = null;
+      document.body.classList.remove("is-roster-list-resizing");
+      try { els.resize.releasePointerCapture(event.pointerId); } catch (_) { /* 既に外れている */ }
+      saveStreamHeight();
+    };
+    els.resize.addEventListener("pointerup", end);
+    els.resize.addEventListener("pointercancel", end);
+    els.resize.addEventListener("dblclick", () => setStreamHeight(null, true));
+    els.resize.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") { event.preventDefault(); setStreamHeight(null, true); return; }
+      if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+      event.preventDefault();
+      event.stopPropagation();   // 舞台側の上下キー（シーン送り）へ渡さない
+      const base = streamHeight == null ? els.stream.getBoundingClientRect().height : streamHeight;
+      setStreamHeight(base + (event.key === "ArrowDown" ? 20 : -20), true);
+    });
   }
 
   root.addEventListener("stage-timeline-vox-cues", (event) => {

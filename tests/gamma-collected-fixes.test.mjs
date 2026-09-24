@@ -54,9 +54,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   // 読み込み時の保険: rehearsal が無い場面へ既定の転換3秒（控えを持つ保存データは触らない）（2026-09-24）
   assert.match(main, /function backfillMissingSceneRehearsal\(project\) \{[\s\S]*?if \(hasSectionMemo\) return project;[\s\S]*?row\.rehearsal = \{ holdDurationSeconds: DEFAULT_SCENE_HOLD_SECONDS, transitionToNextSeconds: NEW_SCENE_TRAVEL_SECONDS \};/);
   assert.match(main, /const project = backfillMissingSceneRehearsal\(stripRemovedSceneFields\(projectIoClone\(document\.project\)\)\);/);
-  assert.match(html, /stage-sketch\.js\?v=2026092422/);
-  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v321"/);
-  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=2026092422"/);
+  assert.match(html, /stage-sketch\.js\?v=2026092430/);
+  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v322"/);
+  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=2026092430"/);
   assert.match(html, /id="stage-show-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-set-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-light-names" checked>\s*<span class="stage-tool-icon"/);
@@ -117,10 +117,10 @@ test("lighting apply belongs to the LX cue panel and playback uses an accessible
   assert.match(html, /\.fixture-power\.off \.fixture-power-lens\{fill:none\}/);
   assert.match(html, /\.fixture-power\.off \.fixture-power-slash\{display:block\}/);
   assert.doesNotMatch(html, /\.fixture-power\.on \.fixture-power-slash\{display:none\}/);
-  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=2026092301/);
-  assert.match(worker, /stage-sketch-gamma-shell-v321/);
-  assert.match(worker, /light-design\/app\.js\?v=2026092350/);
-  assert.match(worker, /light-design\/embed\.js\?v=2026092238/);
+  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=2026092430/);
+  assert.match(worker, /stage-sketch-gamma-shell-v322/);
+  assert.match(worker, /light-design\/app\.js\?v=2026092430/);
+  assert.match(worker, /light-design\/embed\.js\?v=2026092430/);
 });
 
 test("sample A-3 uses registered height at normal visual scale for performers 09 and 16", () => {
@@ -156,7 +156,9 @@ test("E opens a fully visible timeline in stage and lighting-design workspaces",
   assert.match(workspace, /event\.data\?\.type==='gamma:timeline-toggle' && mode==='light-design'/);
   assert.match(workspace, /stage-timeline-layout-change/);
   assert.match(workspace, /stage-scene-change/);
-  assert.match(workspace, /timelineOpen\?120:\(narrow\?280:360\)/);
+  // V-06（2026-09-24 本人指示）: タイムラインを出しても照明デザインの画面は縮めない（閉じたときの高さのまま・スクロールで見る）
+  assert.match(workspace, /frame\.style\.height=Math\.max\(narrow\?280:360,available\)\+'px'/);
+  assert.doesNotMatch(workspace, /timelineOpen\?120/);
   assert.match(embed, /parent\.postMessage\(\{type:'gamma:timeline-toggle'\},location\.origin\)/);
   assert.match(embed, /state\.sceneIndex=Math\.max\(0,state\.scenes\.findIndex\(row=>row\.id===next\.activeSceneId\)\)/);
   assert.match(stage, /class="stage-timeline-shortcut" aria-hidden="true">E<\/span>/);

@@ -90,3 +90,22 @@ html[data-gamma-embedded] .gamma-light-actions .gearbtn {
     grid-row: 3;
   }
 }
+
+/* ---------- V-04（2026-09-24 本人指示）: 環境設定の「画面の色」（赤みの黒／青みの黒）を、照明デザイン・機材配置にも効かせる ----------
+ * 本体の <html data-stage-skin> を embed.js がこのページの <html> へ写す（切り替えたらすぐ追従）。
+ * 青みの黒の値は本体 style.css の :root[data-stage-skin="blue-black"] と同じ。赤みの黒は index.html の既定のまま。
+ * 図（キャンバス）の地も同じく切り替える: 赤み #0d0c0b／青み #0d0e10（本体の舞台図 stageSurfaceColor と同じ対応）。 */
+html[data-gamma-embedded] canvas { background: #0d0c0b; }
+html[data-gamma-embedded][data-stage-skin="blue-black"] {
+  --desk: #141619;
+  --desk-2: #1b1e22;
+  --desk-3: #23272c;
+  --line-dark: #373d44;
+  --recess: rgba(13, 14, 16, 0.3);
+}
+html[data-gamma-embedded][data-stage-skin="blue-black"] canvas { background: #0d0e10; }
+html[data-gamma-embedded][data-stage-skin="blue-black"] .ontoggle .sw,
+html[data-gamma-embedded][data-stage-skin="blue-black"] .gpick-t:not([aria-expanded="true"]),
+html[data-gamma-embedded][data-stage-skin="blue-black"] .gobo { background: #131518; }
+html[data-gamma-embedded][data-stage-skin="blue-black"] .gpick-face { background: #0f1113; }
+html[data-gamma-embedded][data-stage-skin="blue-black"] .gradslot .chip.empty { background: repeating-linear-gradient(45deg, #24272b 0 4px, #191c20 4px 8px); }

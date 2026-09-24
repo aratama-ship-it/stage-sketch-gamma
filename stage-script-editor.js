@@ -176,6 +176,7 @@
     ui.inspector = el("section", "script-ed-box script-ed-inspector");
     ui.inspector.setAttribute("aria-label", tx("選んだセリフ"));
     body.append(scenesBox, linesBox, ui.inspector);
+    mountColumnHandles(body, scenesBox, ui.inspector);
 
     ui.empty = el("div", "script-ed-empty");
     root.append(head, body, ui.empty);
@@ -185,6 +186,96 @@
     host.addEventListener("keydown", (event) => {
       if (event.key.startsWith("Arrow")) event.stopPropagation();
     });
+  }
+
+  /* ---------- V-03（2026-09-24 本人指示）: 3つの列（場面／台本／選んだセリフ）の横幅をドラッグで変える ----------
+   * 見た目と操作は舞台タブのパネル列の取っ手（stage-sketch.js の initPanelWidths・.stage-panel-width-handle）と同じ:
+   * ドラッグで幅を変える／左右キーで10px（Shift で30px）／Home・End で最小・最大／ダブルクリックまたは Enter で元に戻す。
+   * 変えるのは両端の列（場面・選んだセリフ）。真ん中の台本は残りを使う（最小360px）。
+   * 端末の設定（gamma:script-editor-widths-v1）。数値: 既定 場面260px・選んだセリフ320px／場面 180〜480px・選んだセリフ 240〜560px。 */
+  const WIDTH_KEY = "gamma:script-editor-widths-v1";
+  const WIDTH_DEFAULT = { scenes: 260, inspector: 320 };
+  const WIDTH_LIMIT = { scenes: [180, 480], inspector: [240, 560] };
+  const SCRIPT_MIN = 360;
+  let columnWidths = { ...WIDTH_DEFAULT };
+  try { const saved = JSON.parse(localStorage.getItem(WIDTH_KEY) || "null"); if (saved && typeof saved === "object") columnWidths = { ...WIDTH_DEFAULT, ...saved }; } catch (_) { /* 既定のまま */ }
+  function clampWidth(key, value, body) {
+    const [min, maxBase] = WIDTH_LIMIT[key];
+    const other = key === "scenes" ? columnWidths.inspector : columnWidths.scenes;
+    const room = body ? body.clientWidth - other - SCRIPT_MIN - 16 : maxBase;
+    return Math.round(Math.max(min, Math.min(maxBase, room, value)));
+  }
+  function applyColumnWidths(body) {
+    if (!body) return;
+    const scenes = clampWidth("scenes", Number(columnWidths.scenes) || WIDTH_DEFAULT.scenes, body);
+    const inspector = clampWidth("inspector", Number(columnWidths.inspector) || WIDTH_DEFAULT.inspector, body);
+    body.style.setProperty("--script-ed-scenes-width", `${scenes}px`);
+    body.style.setProperty("--script-ed-inspector-width", `${inspector}px`);
+    body.querySelectorAll(".stage-panel-width-handle").forEach((handle) => {
+      const key = handle.dataset.scriptWidth;
+      handle.setAttribute("aria-valuemin", String(WIDTH_LIMIT[key][0]));
+      handle.setAttribute("aria-valuemax", String(WIDTH_LIMIT[key][1]));
+      handle.setAttribute("aria-valuenow", String(key === "scenes" ? scenes : inspector));
+    });
+  }
+  function saveColumnWidths() {
+    try { localStorage.setItem(WIDTH_KEY, JSON.stringify(columnWidths)); } catch (_) { /* 残せなくても、この画面では効かせる */ }
+  }
+  function mountColumnHandles(body, scenesBox, inspectorBox) {
+    [[scenesBox, "scenes", "left", tx("場面の列の幅")], [inspectorBox, "inspector", "right", tx("選んだセリフの列の幅")]].forEach(([box, key, side, name]) => {
+      const handle = el("div", "stage-panel-width-handle");
+      handle.dataset.panelWidth = side;       // 舞台タブと同じ見た目（左の列は右端・右の列は左端に付く）
+      handle.dataset.scriptWidth = key;
+      handle.tabIndex = 0;
+      handle.setAttribute("role", "separator");
+      handle.setAttribute("aria-orientation", "vertical");
+      handle.setAttribute("aria-label", name);
+      handle.title = tx("ドラッグで幅を変更。左右キーで調整、ダブルクリックまたはEnterで元に戻す");
+      const grip = el("span");
+      grip.setAttribute("aria-hidden", "true");
+      handle.append(grip);
+      // 取っ手は列ではなく3列の外枠に付ける（「選んだセリフ」は中身がスクロールするので、列に付けると切り取られる）
+      body.append(handle);
+      const direction = key === "inspector" ? -1 : 1;
+      let drag = null;
+      handle.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0 || event.isPrimary === false) return;
+        event.preventDefault(); event.stopPropagation();
+        drag = { pointerId: event.pointerId, startX: event.clientX, start: box.getBoundingClientRect().width };
+        handle.setPointerCapture(event.pointerId);
+        handle.focus({ preventScroll: true });
+        document.body.classList.add("is-panel-resizing");
+      });
+      handle.addEventListener("pointermove", (event) => {
+        if (!drag || event.pointerId !== drag.pointerId) return;
+        event.preventDefault();
+        columnWidths[key] = clampWidth(key, drag.start + direction * (event.clientX - drag.startX), body);
+        applyColumnWidths(body);
+      });
+      const end = (commit) => {
+        if (!drag) return;
+        drag = null;
+        document.body.classList.remove("is-panel-resizing");
+        if (commit) saveColumnWidths();
+      };
+      handle.addEventListener("pointerup", () => end(true));
+      handle.addEventListener("pointercancel", () => end(true));
+      handle.addEventListener("lostpointercapture", () => end(true));
+      const reset = () => { columnWidths[key] = WIDTH_DEFAULT[key]; applyColumnWidths(body); saveColumnWidths(); };
+      handle.addEventListener("dblclick", (event) => { event.preventDefault(); reset(); });
+      handle.addEventListener("keydown", (event) => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End", "Enter"].includes(event.key)) return;
+        event.preventDefault(); event.stopPropagation();
+        if (event.key === "Enter") { reset(); return; }
+        const [min, max] = WIDTH_LIMIT[key];
+        const step = (event.key === "ArrowRight" ? 1 : -1) * direction * (event.shiftKey ? 30 : 10);
+        const next = event.key === "Home" ? min : event.key === "End" ? max : box.getBoundingClientRect().width + step;
+        columnWidths[key] = clampWidth(key, next, body);
+        applyColumnWidths(body); saveColumnWidths();
+      });
+    });
+    applyColumnWidths(body);
+    if (typeof ResizeObserver === "function") new ResizeObserver(() => applyColumnWidths(body)).observe(body);
   }
 
   /* ---------- 描画 ---------- */

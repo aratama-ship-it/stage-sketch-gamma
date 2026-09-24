@@ -75,10 +75,16 @@ body[data-gamma-workspace="script"].gamma-script-timeline-open:not(.stage-timeli
 
 .script-ed-body {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) 320px;
+  /* V-03: 両端の列の幅は取っ手で変えられる（stage-script-editor.js が変数を入れる。既定 260／320px） */
+  grid-template-columns: var(--script-ed-scenes-width, 260px) minmax(0, 1fr) var(--script-ed-inspector-width, 320px);
   gap: 8px;
   min-height: 0;
 }
+/* V-03: 列の取っ手。見た目は舞台タブの .stage-panel-width-handle そのもの。位置だけ、列の間（8px）の真ん中に線が来るように寄せる */
+.script-ed-body { position: relative; }
+.script-ed-body .stage-panel-width-handle[data-panel-width="left"] { right: auto; left: calc(var(--script-ed-scenes-width, 260px) + 4px - var(--panel-width-hit) / 2); }
+.script-ed-body .stage-panel-width-handle[data-panel-width="right"] { left: auto; right: calc(var(--script-ed-inspector-width, 320px) + 4px - var(--panel-width-hit) / 2); }
+.script-ed-body .stage-panel-width-handle > span { top: 30vh; }
 .script-ed-box {
   display: flex;
   flex-direction: column;
@@ -257,6 +263,7 @@ button.script-ed-cue-chip:hover { background: rgba(168, 191, 138, 0.12); }
 
 @media (max-width: 1119px) {
   .script-ed-body { grid-template-columns: minmax(0, 1fr); overflow-y: auto; }
+  .script-ed-body .stage-panel-width-handle { display: none; }
   .script-ed-scenes { max-height: 220px; }
   .script-ed-lines { max-height: 60vh; }
 }
