@@ -3000,9 +3000,34 @@ canvas[data-tool="note"] { cursor: copy; }
   right: 12px;
   width: auto;
   max-width: none;
-  transform: translateY(-50%);
+  /* 2026-09-24 本人指摘: 表（全体表など）を見るとき、縦がモニターの半分ほどしか使えていなかった
+     （窓は縦中央寄せ・中身は 72vh/680px で頭打ち）。表を見ている間は上下 12px を残して画面いっぱいに伸ばす。
+     窓＝縦の flex にして、見出しと「一覧へ戻る」の帯は上に留め、表だけが残りの高さでスクロールする。 */
+  top: 12px;
+  bottom: 12px;
+  max-height: none;
+  transform: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 .stage-cue-sheet-body { max-height: min(72vh, 680px); overflow-y: auto; }
+.stage-cue-sheet-modal.is-viewing-sheet .stage-cue-sheet-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.stage-cue-sheet-modal.is-viewing-sheet #stage-cue-sheet-view:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.stage-cue-sheet-modal.is-viewing-sheet #stage-cue-sheet-view .stage-cue-sheet-view-bar { flex: 0 0 auto; }
+.stage-cue-sheet-modal.is-viewing-sheet .stage-cue-sheet-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
 /* 一覧は「誰の分を出すか」を26行から選ぶ画面。名前が主役なので不透明の紙色で置き、
    操作は主（見る）と従（印刷・CSV）で強さを分ける。同じ強さの箱を3つ並べると
    26行×3で78個の箱になり、何を押せばよいか分からなくなる（2026-09-19 本人指摘）。 */
