@@ -256,10 +256,12 @@
 /* 一覧の行（縦書きでは1列の束）は縮めない。はみ出した分は一覧の中で横にスクロールする */
 .stage-vox-panel.is-vertical .stage-vox-list > li { flex: 0 0 auto; }
 .stage-vox-panel.is-vertical .stage-vox-past { flex: 0 1 auto; min-width: 0; max-width: 30%; }
-.stage-vox-panel.is-vertical .stage-vox-future { min-width: 64px; }
+.stage-vox-panel.is-vertical .stage-vox-future { min-width: 44px; }
 /* いまの枠は縮めない（セリフが途中で切れないように）。中身の列の数だけ横に広がり、狭いときは左右の一覧の方を縮める。
    上限は帯の幅から「これから」の一覧の最小幅を引いた分。それでも入りきらない長いセリフだけ、枠の中で横にスクロールする。 */
-.stage-vox-panel.is-vertical .stage-vox-now { flex: 0 0 auto; min-height: 0; min-width: 84px; max-width: calc(100% - 74px); overflow: hidden; display: flex; flex-direction: column; }
+/* 2026-09-24 本人指摘: 狭いパネルで、いまのセリフの最後の列が枠の端で切れて見えていた。
+   「これから」の一覧に残す幅を、一覧の1列ぶん（44px）＋間隔10px まで減らす（済んだ一覧は0まで縮む）。 */
+.stage-vox-panel.is-vertical .stage-vox-now { flex: 0 0 auto; min-height: 0; min-width: 84px; max-width: calc(100% - 54px); overflow: hidden; display: flex; flex-direction: column; }
 .stage-vox-panel.is-vertical .stage-vox-now-main { overflow-x: auto; overflow-y: hidden; min-width: 0; flex: 0 1 auto; }
 .stage-vox-panel.is-vertical .stage-vox-now-cue { padding-bottom: 0; padding-left: 6px; border-bottom: 0; border-left: 1px solid rgba(168, 191, 138, 0.35); }
 .stage-vox-panel.is-vertical:not(.has-current) .stage-vox-now-cue { border-left-color: var(--stage-vox-line); }

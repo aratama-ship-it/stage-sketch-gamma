@@ -304,6 +304,23 @@
       button.title = target ? `${target.displayName}${target.speaker ? `・${target.speaker}` : ""}` : "";
     });
     announceCurrent(entry || null);
+    fitNowLine();
+  }
+
+  /* 縦書きで、いまのセリフが枠に入りきらないとき（長いセリフ・狭いパネル）だけ、文字を1pxずつ小さくして収める。
+   * 下限12px。入る場面は環境設定の大きさのまま（2026-09-24 本人指摘: 最後の列が枠の端で切れて見えていた）。
+   * 横書きは縦に伸びて入るので触らない。 */
+  function fitNowLine() {
+    const line = els.nowLine;
+    if (!line) return;
+    line.style.removeProperty("font-size");
+    if (!verticalOn() || !host.classList.contains("has-current") || !host.getClientRects().length) return;
+    const main = els.nowMain;
+    let size = parseFloat(getComputedStyle(line).fontSize) || 16;
+    while (main.scrollWidth - main.clientWidth > 1 && size > 12) {
+      size -= 1;
+      line.style.fontSize = `${size}px`;
+    }
   }
 
   function applySize(size) {
@@ -479,6 +496,7 @@
     if (els.stepBar) els.stepBar.classList.toggle("is-reversed", vertical);
     if (els.verticalNote) els.verticalNote.hidden = !vertical;
     applyStreamHeight();
+    fitNowLine();
     scrollListsToNow();
   }
 
@@ -515,6 +533,7 @@
   function setStreamHeight(next, save) {
     streamHeight = next == null ? null : Math.min(heightMax(), Math.max(HEIGHT_MIN, next));
     applyStreamHeight();
+    fitNowLine();
     if (save) saveStreamHeight();
     scrollListsToNow();
   }
@@ -580,7 +599,7 @@
     const detail = event && event.detail || {};
     prefs = { scroll: detail.scroll !== false, vertical: Boolean(detail.vertical) };
     if (detail.size) applySize(detail.size);
-    applyWritingMode();
+    applyWritingMode();   // 中で fitNowLine も呼ぶ（文字の大きさを変えたら収め直す）
   });
   // 言語を切り替えたら縦書きの可否が変わる
   new MutationObserver(applyWritingMode).observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
@@ -598,6 +617,11 @@
   try { savedSize = root.localStorage.getItem(SIZE_KEY) || "m"; } catch (_) { /* 保存できない環境では標準のまま */ }
   applySize(savedSize);
 
+  // パネルの幅が変わったら（列の幅・画面の大きさ）収め直す
+  if (typeof ResizeObserver === "function") {
+    let fitFrame = 0;
+    new ResizeObserver(() => { if (!fitFrame) fitFrame = root.requestAnimationFrame(() => { fitFrame = 0; fitNowLine(); }); }).observe(host);
+  }
   renderList();
   renderNow();
   applyWritingMode();
