@@ -16650,7 +16650,7 @@ body.is-panel-resizing .stage-sketch-grid { transition: none; }
  * ロゴSVG（viewBox 625×122）の実測: 左の額縁の絵は x=7〜152、文字（logo-japanese-wordmark）は x=182〜、
  * 文字の見える上端は y=36.2。箱の上には y=0〜36 の空白があるので、そこへキッカー行を重ねる。
  * - 行の左端 = ロゴ幅 × 182/625（文字の始まりに揃える）。額縁の絵は x<152 なので横には重ならない。
- * - ロゴの箱を上へ引き上げる幅 = ロゴ幅 × 0.053（320pxで17px）。見えている文字の上端との間は
+ * - ロゴの箱を上へ引き上げる幅 = ロゴ幅 × 0.053（320pxで17px）→ 同日 0.044 へ緩めた（下の追記）。見えている文字の上端との間は
  *   約5pxになる。文字の上の空白（36.2/625=0.058）より小さいので、キッカーと文字は重ならない。
  * どちらもロゴ幅から比で出す（幅は @media で段階的に変わるため。上の S-03 と同じ考え方）。
  * iPad PWA（gamma-mobile.css）はキッカーを隠して横1行に並べるので、そちらには当てない。 */
@@ -16661,8 +16661,12 @@ html:not(.stage-pwa-tablet) .stage-header-app-kicker-row {
   margin-left: calc(var(--stage-header-logo-width, 320px) * 0.2912);
 }
 html:not(.stage-pwa-tablet) .stage-header-app-copy {
-  margin-top: calc(var(--stage-header-logo-width, 320px) * -0.053);
+  margin-top: calc(var(--stage-header-logo-width, 320px) * -0.044);
 }
+/* 2026-09-24 本人指示（2回目）: 赤いキッカーをもう少し小さく（9.5px → 8.5px）、
+ * 文字との間を2〜3px空ける（引き上げ 0.053 → 0.044＝320pxで17px → 14px、+約3px）。
+ * 版番号（--fs-1: 9px）の大きさ・色は変えない。 */
+html:not(.stage-pwa-tablet) .stage-header-app-kicker { font-size: 8.5px; }
 
 /* ヘッダーの他の操作（モードのタブ・戻る進む・共有）と押し合わないところまで段階的に縮める。
  * 区切りの幅は、この後に既にある @media（1180 / 720）と揃える。 */
