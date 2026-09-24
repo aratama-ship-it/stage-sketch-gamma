@@ -17173,8 +17173,15 @@
        その上に奥の壁や吊り物が透けて見えていた。実際の劇場では、前一文字幕の上は額縁の壁で奥は見えない。
        幕の上端から画面の上端まで、同じ暗い色で塗り上げる（拡大していても上端まで届くよう、十分上まで伸ばす）。 */
     const skyY = Math.min(upperLeft.y, upperRight.y, 0) - H * 4;
+    /* ★2026-09-24 本人指摘: 一文字幕が単色の黒で、袖幕（暗→やや明るい茶の布・縦じわ・内側の縁の光）より暗く浮いていた。
+       同じ布に見えるよう、袖幕の paintLeg と同じ色・同じじわの間隔（0.75m）で描く。垂れ幕なので明るさは縦方向に変え、
+       裾（開口の縁）がいちばん舞台の明かりを拾う。裾の縁は袖幕の内側の縁と同じ色で光らせる。 */
+    const hemY = Math.max(lowerLeft.y, lowerRight.y);
+    const cloth = target.createLinearGradient(0, skyY, 0, hemY);
+    cloth.addColorStop(0, stageSurfaceColor("#0b0a09"));
+    cloth.addColorStop(0.72, stageSurfaceColor("#100e0c"));
+    cloth.addColorStop(1, stageSurfaceColor("#1f1a16"));
     target.save();
-    target.fillStyle = stageSurfaceColor("#11100f");
     target.beginPath();
     target.moveTo(lowerLeft.x, lowerLeft.y);
     target.lineTo(lowerRight.x, lowerRight.y);
@@ -17183,10 +17190,30 @@
     target.lineTo(upperLeft.x, skyY);
     target.lineTo(upperLeft.x, upperLeft.y);
     target.closePath();
+    target.fillStyle = cloth;
     target.fill();
-    // 下端だけを薄く縁取り、幕の開口を読めるようにする。
-    target.strokeStyle = "rgba(239,231,214,0.22)";
+    target.clip();
+    // 布の縦じわ。袖幕と同じ 0.75m 刻み（袖幕1枚3.0mを4分割）で、幕の幅いっぱいに。
+    const foldStep = 0.75 / Math.max(1, finite(L.size && L.size.width, 12));
+    target.strokeStyle = "rgba(0,0,0,0.3)";
     target.lineWidth = 1;
+    for (let u = foldStep; u < 1 - foldStep / 2; u += foldStep) {
+      const top = stagePoint(u, 1, height, L);
+      const bottom = stagePoint(u, 1, opening, L);
+      target.beginPath();
+      target.moveTo(top.x, skyY);
+      target.lineTo(top.x, top.y);
+      target.lineTo(bottom.x, bottom.y);
+      target.stroke();
+    }
+    // 裾。袖幕の内側の縁と同じ色で光らせ、その上に接地の影を一本
+    target.strokeStyle = "rgba(0,0,0,0.55)";
+    target.beginPath();
+    target.moveTo(lowerLeft.x, lowerLeft.y - 1.5);
+    target.lineTo(lowerRight.x, lowerRight.y - 1.5);
+    target.stroke();
+    target.strokeStyle = rgba(stageSurfaceColor("#c4ac84"), 0.28);
+    target.lineWidth = 2;
     target.beginPath();
     target.moveTo(lowerLeft.x, lowerLeft.y);
     target.lineTo(lowerRight.x, lowerRight.y);
