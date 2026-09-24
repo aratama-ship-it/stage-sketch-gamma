@@ -53,8 +53,10 @@
 
   /* キュー（時刻順）に台本の行を当てる。返す source は
    * "script"＝場面メモの台本／"memo"＝キューのメモ／"none"＝文字なし。 */
-  function attachLines(cues, sceneNotes) {
+  function attachLines(cues, sceneNotes, scriptByCue) {
     const notes = sceneNotes && typeof sceneNotes === "object" ? sceneNotes : {};
+    // 台本データ（セリフ編集画面）があるショーは、場面メモを読まずキューに結び付いた行を使う
+    const byCue = scriptByCue && typeof scriptByCue === "object" ? scriptByCue : null;
     const scriptBySceneId = new Map();
     const ordinals = new Map();
     return (Array.isArray(cues) ? cues : [])
@@ -66,9 +68,10 @@
         if (!scriptBySceneId.has(sceneId)) scriptBySceneId.set(sceneId, scriptLinesFromNote(notes[sceneId]));
         const ordinal = (ordinals.get(sceneId) || 0) + 1;
         ordinals.set(sceneId, ordinal);
-        const fromScript = scriptBySceneId.get(sceneId)[ordinal - 1];
-        const fromMemo = fromScript ? null : lineFromMemo(cue.memo);
-        const picked = fromScript || fromMemo;
+        const fromData = byCue && byCue[cue.id] ? byCue[cue.id] : null;
+        const fromScript = byCue ? null : scriptBySceneId.get(sceneId)[ordinal - 1];
+        const fromMemo = fromData || fromScript ? null : lineFromMemo(cue.memo);
+        const picked = fromData ? { speaker: tidy(fromData.speaker), line: tidy(fromData.text) } : fromScript || fromMemo;
         return {
           id: cue.id,
           seconds: cue.seconds,
@@ -77,7 +80,8 @@
           sceneTitle: cue.sceneTitle || "",
           speaker: picked ? picked.speaker : "",
           line: picked ? picked.line : "",
-          source: fromScript ? "script" : fromMemo ? "memo" : "none",
+          source: fromData ? "data" : fromScript ? "script" : fromMemo ? "memo" : "none",
+          color: fromData && fromData.color ? fromData.color : null,
         };
       });
   }
@@ -101,11 +105,11 @@
   }
 
   /* ショー全体の一覧。セクションごとに台本の行を当ててから、セクションの順に一列へ並べる。 */
-  function flattenSections(sections, sceneNotes) {
+  function flattenSections(sections, sceneNotes, scriptByCue) {
     const out = [];
     (Array.isArray(sections) ? sections : []).forEach((section, sectionIndex) => {
       if (!section) return;
-      attachLines(section.cues, sceneNotes).forEach((entry) => out.push({
+      attachLines(section.cues, sceneNotes, scriptByCue).forEach((entry) => out.push({
         ...entry,
         sectionId: section.sectionId || null,
         sectionTitle: section.sectionTitle || "",
@@ -223,10 +227,10 @@
   }
 
   // 話者名の前に演者の色の小さな印（演者名と同じ話者だけ）。色は補助で、名前の文字で確定する。
-  function renderSpeaker(el, speaker) {
+  function renderSpeaker(el, speaker, colorOverride) {
     el.textContent = "";
     if (!speaker) return;
-    const color = state.castColors[speaker];
+    const color = colorOverride || state.castColors[speaker];
     if (color) {
       const chip = document.createElement("span");
       chip.className = "stage-vox-chip";
@@ -261,7 +265,7 @@
         : "";
     } else {
       els.nowCue.textContent = `${tx("いまのセリフ")} · ${entry.displayName}`;
-      renderSpeaker(els.nowSpeaker, entry.speaker);
+      renderSpeaker(els.nowSpeaker, entry.speaker, entry.color);
       renderLine(els.nowLine, entry);
     }
     // 次のセリフの予告と、手送りのボタン
@@ -270,7 +274,7 @@
     if (els.next) {
       els.next.hidden = !next;
       if (next) {
-        renderSpeaker(els.nextSpeaker, next.speaker);
+        renderSpeaker(els.nextSpeaker, next.speaker, next.color);
         if (next.line) renderLine(els.nextLine, next);
         else els.nextLine.textContent = tx("（文字なし）");
         els.next.title = `${next.displayName}（${next.sectionTitle} / ${next.sceneTitle}）`;
@@ -363,7 +367,7 @@
       if (entry.speaker) {
         const speaker = document.createElement("span");
         speaker.className = "stage-vox-row-speaker";
-        renderSpeaker(speaker, entry.speaker);
+        renderSpeaker(speaker, entry.speaker, entry.color);
         meta.append(speaker);
       }
       const line = document.createElement("span");
@@ -408,12 +412,13 @@
 
   root.addEventListener("stage-timeline-vox-cues", (event) => {
     const detail = event && event.detail || {};
-    const entries = flattenSections(detail.sections, detail.sceneNotes);
+    const entries = flattenSections(detail.sections, detail.sceneNotes, detail.scriptByCue);
     const sameList = state.entries.length === entries.length
       && state.entries.every((entry, index) => entry.id === entries[index].id
         && entry.seconds === entries[index].seconds && entry.line === entries[index].line
         && entry.speaker === entries[index].speaker && entry.displayName === entries[index].displayName
-        && entry.sectionIndex === entries[index].sectionIndex && entry.sectionTitle === entries[index].sectionTitle);
+        && entry.sectionIndex === entries[index].sectionIndex && entry.sectionTitle === entries[index].sectionTitle
+        && entry.color === entries[index].color);
     const sectionChanged = state.currentSectionId !== (detail.currentSectionId || null);
     const colorsChanged = JSON.stringify(state.castColors) !== JSON.stringify(detail.castColors || {});
     state = { currentSectionId: detail.currentSectionId || null, entries, castColors: detail.castColors || {} };
@@ -430,6 +435,12 @@
 
   els.stepButtons.forEach((button) => {
     button.addEventListener("click", () => stepBy(Number(button.dataset.voxStep)));
+  });
+  // セリフ編集画面へ（タブを押すのと同じ経路＝劇場未設定のゲート等もそのまま効く）
+  const editButton = host.querySelector("[data-vox-edit]");
+  if (editButton) editButton.addEventListener("click", () => {
+    const tab = document.getElementById("gamma-script");
+    if (tab && !tab.disabled) tab.click();
   });
   let savedSize = "m";
   try { savedSize = root.localStorage.getItem(SIZE_KEY) || "m"; } catch (_) { /* 保存できない環境では標準のまま */ }

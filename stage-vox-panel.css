@@ -150,6 +150,24 @@
 .stage-vox-panel.has-current[data-vox-size="xl"] .stage-vox-now-speaker { font-size: 18px; }
 .stage-vox-panel.has-current[data-vox-size="xl"] .stage-vox-now-next { font-size: 15px; }
 
+/* 上の帯: 件数と「セリフを編集」。数値: ボタン高さ28px・文字12px・1px枠（真鍮系） */
+.stage-vox-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.stage-vox-edit {
+  flex: 0 0 auto;
+  min-height: 28px;
+  margin: 0;
+  padding: 3px 10px;
+  border: 1px solid var(--brass, #9c823f);
+  border-radius: 1px;
+  background: rgba(156, 130, 63, 0.14);
+  color: var(--stage-vox-text);
+  font: 12px/1.2 var(--sans, sans-serif);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.stage-vox-edit:hover { background: rgba(156, 130, 63, 0.26); }
+.stage-vox-edit:focus-visible { outline: 2px solid var(--stage-vox-accent); outline-offset: 1px; }
+
 .stage-vox-section {
   margin: 0;
   font-size: 12px;

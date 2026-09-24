@@ -10391,6 +10391,8 @@
     future.push(snapshot());
     restore(history.pop());
     updateHistoryButtons();
+    // 台本（project.script）やキューを戻したとき、タイムライン・VOXキューパネル・セリフ編集画面も描き直す
+    window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
     announce("一つ前の状態へ戻しました。");
   }
 
@@ -10399,6 +10401,7 @@
     history.push(snapshot());
     restore(future.pop());
     updateHistoryButtons();
+    window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
     announce("やり直しました。");
   }
 
@@ -33118,6 +33121,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   });
 
   document.addEventListener("keydown", (event) => {
+    // セリフ編集画面（2026-09-24）では矢印キーを台本の行の移動に使う。舞台のキュー・シーン送りはしない
+    if (document.body.dataset.gammaWorkspace === "script") return;
     const CUE_STEPS = { ArrowLeft: -1, ArrowRight: 1 };
     if (CUE_STEPS[event.key]) {
       const editingText = isTyping(event.target) && event.target.type !== "checkbox";
@@ -36443,6 +36448,64 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       persistSoon();
       window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
       return jsonClone(cue);
+    },
+    /* セリフ編集画面（stage-script-editor.js・2026-09-24 本人指示）。台本は project.script に持つ。
+     * { version: 1, lines: [{ id, sceneId, castId, speaker, text, cueId }] }。行とVOXキューの結び付きは
+     * 行の側（cueId）に持つ（キューの未知の項目は読み込みで落ちるため）。1キュー＝1行（本人決定）。
+     * 取り消し1回で戻せるよう、キューの追加・削除と台本の変更を1つの checkpoint にまとめる。 */
+    getProjectScript() {
+      return state.project.script && typeof state.project.script === "object" ? jsonClone(state.project.script) : null;
+    },
+    applyScriptEdit(edit = {}) {
+      sceneAlternatives?.adopted(state.project);
+      const script = edit.script && typeof edit.script === "object" ? edit.script : null;
+      if (!script || !Array.isArray(script.lines)) return null;
+      const sceneIds = new Set(state.project.scenes.filter((row) => row.kind === "scene").map((row) => row.id));
+      checkpoint();
+      if (!Array.isArray(state.project.cues)) state.project.cues = [];
+      const created = [];
+      (Array.isArray(edit.addCues) ? edit.addCues : []).forEach((request) => {
+        if (!request || !sceneIds.has(request.sceneId)) return;
+        const cue = {
+          id: typeof request.id === "string" && request.id ? request.id : rid("cue"),
+          kind: "timeline",
+          cueType: "dialogue",
+          sceneId: request.sceneId,
+          offsetSeconds: Math.round(clamp(finite(request.offsetSeconds, 0), 0, 86400) * 10) / 10,
+          memo: "",
+          locked: false,
+        };
+        state.project.cues.push(cue);
+        created.push(cue.id);
+      });
+      const removeIds = new Set(Array.isArray(edit.removeCueIds) ? edit.removeCueIds : []);
+      if (removeIds.size) {
+        state.project.cues = state.project.cues.filter((cue) => !(cue && cue.kind === "timeline"
+          && cue.cueType === "dialogue" && removeIds.has(cue.id)));
+      }
+      const cueIds = new Set(state.project.cues.filter((cue) => cue && cue.cueType === "dialogue").map((cue) => cue.id));
+      const seenCue = new Set();
+      state.project.script = {
+        ...jsonClone(script),
+        version: 1,
+        lines: script.lines.filter((line) => line && typeof line === "object").map((line) => {
+          const cueId = typeof line.cueId === "string" && cueIds.has(line.cueId) && !seenCue.has(line.cueId)
+            ? line.cueId : null;
+          if (cueId) seenCue.add(cueId);
+          return {
+            ...jsonClone(line),
+            id: typeof line.id === "string" && line.id ? line.id : rid("line"),
+            sceneId: sceneIds.has(line.sceneId) ? line.sceneId : null,
+            castId: typeof line.castId === "string" && line.castId ? line.castId : null,
+            speaker: typeof line.speaker === "string" ? line.speaker.slice(0, 40) : "",
+            text: typeof line.text === "string" ? line.text.slice(0, 4000) : "",
+            cueId,
+          };
+        }),
+      };
+      persistSoon();
+      window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
+      return { script: jsonClone(state.project.script), createdCueIds: created };
     },
     updateTimelineCue(id, patch = {}) {
       sceneAlternatives?.adopted(state.project);

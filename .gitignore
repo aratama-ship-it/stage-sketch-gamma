@@ -144,6 +144,8 @@ public-dist/
 !/stage-vox-panel.js
 !/stage-vox-panel.css
 !/stage-panel-columns.css
+!/stage-script-editor.js
+!/stage-script-editor.css
 !/stage-first-person.js
 !/stage-front-shape.js
 !/stage-i18n.js

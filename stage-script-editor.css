@@ -1,0 +1,226 @@
+/* 舞台スケッチγ：セリフ編集画面（2026-09-24）。
+ * 見た目は機材配置・照明デザイン（light-design/index.html）の語彙に合わせる:
+ *   箱＝1px var(--line-dark)・地 rgba(25,21,18,.45)・内側10px／見出し＝真鍮 14.5px 600 字間.1em／
+ *   ボタン＝高さ34px・1px枠・主操作は真鍮の枠＋rgba(156,130,63,.18)／選んだ行＝真鍮の枠＋rgba(156,130,63,.16)。
+ * 数値: 3列 260px | 1fr | 320px・間隔8px／行の最小高さ44px／セリフ本文は明朝15px・行間1.6。
+ * 値の一覧: design/TOKEN_SHEET_script-editor_2026-09-24.md */
+#gamma-script-workspace { width: 100%; min-height: 0; display: flex; flex-direction: column; }
+#gamma-script-workspace[hidden] { display: none; }
+body[data-gamma-workspace="script"] .stage-sketch-grid { display: none !important; }
+body[data-gamma-workspace="script"] #stage-timeline-panel { display: none !important; }
+body[data-gamma-workspace="script"].stage-timeline-expanded:not(.stage-fullscreen) #view-stage {
+  height: 100dvh;
+  padding-bottom: 16px;
+}
+body[data-gamma-workspace="script"] .stage-boundary-note { display: none; }
+
+.script-ed {
+  --sed-line: var(--line-dark, #382f25);
+  --sed-box: rgba(25, 21, 18, 0.45);
+  --sed-brass: var(--brass, #9c823f);
+  --sed-brass-ink: #c9a961;
+  --sed-text: var(--paper, #efe7d6);
+  --sed-dim: rgba(240, 231, 214, 0.62);
+  --sed-green: #a8bf8a;
+  --sed-direction: #b8ad98;
+  --sed-warn: #df6433;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+  color: var(--sed-text);
+  font-family: var(--sans, sans-serif);
+  font-size: 14px;
+}
+.script-ed [hidden] { display: none !important; }
+
+.script-ed-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 2px 0;
+}
+.script-ed-summary { margin: 0; font-size: 13px; color: var(--sed-dim); letter-spacing: 0.04em; }
+.script-ed-summary b { color: var(--sed-brass-ink); font-weight: 600; margin-right: 2px; }
+.script-ed-summary .is-warn { color: var(--sed-warn); }
+.script-ed-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.script-ed-btn {
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid var(--sed-line);
+  border-radius: 1px;
+  background: none;
+  color: var(--sed-text);
+  font: inherit;
+  font-size: 13.5px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.script-ed-btn:hover:not(:disabled) { border-color: var(--sed-brass); }
+.script-ed-btn:focus-visible { outline: 2px solid var(--sed-brass-ink); outline-offset: 1px; }
+.script-ed-btn.primary { border-color: var(--sed-brass); background: rgba(156, 130, 63, 0.18); }
+.script-ed-btn.quiet { color: var(--sed-dim); }
+.script-ed-btn.small { min-height: 28px; padding: 3px 9px; font-size: 12.5px; }
+.script-ed-btn.danger:hover:not(:disabled) { border-color: var(--sed-warn); color: var(--sed-warn); }
+.script-ed-btn:disabled { opacity: 0.35; cursor: default; }
+
+.script-ed-body {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 320px;
+  gap: 8px;
+  min-height: 0;
+}
+.script-ed-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  padding: 10px;
+  border: 1px solid var(--sed-line);
+  background: var(--sed-box);
+}
+.script-ed-title {
+  margin: 0;
+  color: var(--sed-brass-ink);
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.35;
+}
+.script-ed-hint { margin: 0; color: var(--sed-dim); font-size: 12px; line-height: 1.6; }
+
+/* 左: 場面の目次 */
+.script-ed-search,
+.script-ed-input {
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 9px;
+  border: 1px solid var(--sed-line);
+  border-radius: 1px;
+  background: rgba(13, 12, 11, 0.45);
+  color: var(--sed-text);
+  font: inherit;
+  font-size: 13.5px;
+}
+.script-ed-search:focus, .script-ed-input:focus { outline: 1px solid var(--sed-brass); border-color: var(--sed-brass); }
+.script-ed-toc { list-style: none; margin: 0; padding: 0; overflow-y: auto; min-height: 0; }
+.script-ed-toc-section {
+  padding: 8px 4px 3px calc(4px + var(--depth, 0) * 10px);
+  color: var(--sed-brass-ink);
+  font-size: 12px;
+  border-bottom: 1px solid var(--sed-line);
+}
+.script-ed-toc-scene { padding-left: calc(var(--depth, 0) * 10px); }
+.script-ed-toc-button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: baseline;
+  width: 100%;
+  min-height: 32px;
+  padding: 5px 6px;
+  border: 0;
+  background: none;
+  color: var(--sed-text);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.script-ed-toc-button:hover { background: rgba(156, 130, 63, 0.1); }
+.script-ed-toc-no { color: var(--sed-dim); font-variant-numeric: tabular-nums; }
+.script-ed-toc-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.script-ed-toc-count { color: var(--sed-green); font-variant-numeric: tabular-nums; }
+.script-ed-toc-count.is-zero { color: var(--sed-dim); opacity: 0.6; }
+
+/* 中央: 台本 */
+.script-ed-script-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.script-ed-lines { position: relative; overflow-y: auto; min-height: 0; display: grid; align-content: start; gap: 14px; padding-right: 4px; }
+.script-ed-lines:focus-visible { outline: 1px solid var(--sed-brass); outline-offset: 2px; }
+.script-ed-group { display: grid; gap: 4px; }
+.script-ed-group-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
+  background: #1c1813;
+  border-bottom: 1px solid var(--sed-line);
+}
+.script-ed-group-no { color: var(--sed-brass-ink); font-variant-numeric: tabular-nums; font-size: 12.5px; }
+.script-ed-group-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--serif, serif); font-size: 14px; }
+.script-ed-group-empty { margin: 2px 4px; color: var(--sed-dim); font-size: 12px; }
+.script-ed-free { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 2px 4px; }
+.script-ed-free-label { color: var(--sed-warn); font-size: 11.5px; letter-spacing: 0.04em; }
+
+.script-ed-row {
+  display: grid;
+  grid-template-columns: 22px 26px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 8px 8px 4px;
+  border: 1px solid transparent;
+  border-radius: 1px;
+  cursor: pointer;
+}
+.script-ed-row:hover { background: rgba(156, 130, 63, 0.07); }
+.script-ed-row.is-selected { border-color: var(--sed-brass); background: rgba(156, 130, 63, 0.16); }
+.script-ed-row.is-dragging { opacity: 0.4; }
+.script-ed-grip { color: var(--sed-dim); font-size: 15px; line-height: 1.4; text-align: center; cursor: grab; touch-action: none; user-select: none; }
+.script-ed-row-no { color: var(--sed-dim); font-size: 12px; line-height: 1.8; text-align: right; font-variant-numeric: tabular-nums; }
+.script-ed-row-main { display: grid; gap: 2px; min-width: 0; }
+.script-ed-row-speaker { color: var(--sed-green); font-size: 12.5px; font-weight: 600; letter-spacing: 0.04em; }
+.script-ed-row-speaker.is-missing { color: var(--sed-dim); font-weight: 400; font-style: italic; }
+.script-ed-chip { display: inline-block; width: 0.66em; height: 0.66em; margin-right: 0.4em; outline: 1px solid var(--sed-text); }
+.script-ed-row-text { font-family: var(--serif, serif); font-size: 15px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.script-ed-row-text.is-missing { color: var(--sed-dim); font-family: inherit; font-size: 12.5px; font-style: italic; }
+.script-ed-direction { font-size: 0.72em; color: var(--sed-direction); }
+.script-ed-cue-chip {
+  align-self: start;
+  padding: 2px 7px;
+  border: 1px solid rgba(168, 191, 138, 0.55);
+  border-radius: 2px;
+  color: var(--sed-green);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  background: none;
+}
+.script-ed-cue-chip.is-none { border-color: var(--sed-line); color: var(--sed-dim); }
+.script-ed-cue-chip.is-out-of-order { border-color: var(--sed-warn); color: var(--sed-warn); }
+button.script-ed-cue-chip { cursor: pointer; font: inherit; font-size: 11.5px; min-height: 26px; }
+button.script-ed-cue-chip:hover { background: rgba(168, 191, 138, 0.12); }
+.script-ed-drop-marker { height: 2px; margin: -1px 0; background: var(--sed-brass-ink); }
+
+/* 右: 選んだセリフ */
+.script-ed-inspector { overflow-y: auto; }
+.script-ed-field { display: grid; gap: 5px; }
+.script-ed-label { color: var(--sed-dim); font-size: 12px; letter-spacing: 0.06em; }
+.script-ed-stack { display: grid; gap: 6px; }
+.script-ed-textarea { min-height: 150px; resize: vertical; font-family: var(--serif, serif); font-size: 15px; line-height: 1.6; }
+.script-ed-row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.script-ed-row-actions .danger { margin-left: auto; }
+
+/* 台本がまだ無いとき */
+.script-ed-empty { display: grid; place-items: center; min-height: 0; }
+.script-ed-empty-box {
+  display: grid;
+  gap: 12px;
+  max-width: 560px;
+  padding: 24px;
+  border: 1px solid var(--sed-line);
+  background: var(--sed-box);
+}
+
+@media (max-width: 1119px) {
+  .script-ed-body { grid-template-columns: minmax(0, 1fr); overflow-y: auto; }
+  .script-ed-scenes { max-height: 220px; }
+  .script-ed-lines { max-height: 60vh; }
+}

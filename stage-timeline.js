@@ -1692,7 +1692,7 @@
   function voxDetailEntries() {
     const panelApi = window.SHOSAI_VOX_PANEL;
     if (!panelApi || !lastVoxSnapshot) return [];
-    return panelApi.flattenSections(lastVoxSnapshot.sections, lastVoxSnapshot.sceneNotes);
+    return panelApi.flattenSections(lastVoxSnapshot.sections, lastVoxSnapshot.sceneNotes, lastVoxSnapshot.scriptByCue);
   }
 
   function voxStepLabel(button, entry) {
@@ -1717,8 +1717,8 @@
     if (!entry) return;
     // 話者の印とト書きの扱いは VOXキューパネルと同じ（2026-09-24）
     els.cueDetailLineSpeaker.textContent = "";
-    const chipColor = entry.speaker && lastVoxSnapshot && lastVoxSnapshot.castColors
-      ? lastVoxSnapshot.castColors[entry.speaker] : null;
+    const chipColor = entry.color || (entry.speaker && lastVoxSnapshot && lastVoxSnapshot.castColors
+      ? lastVoxSnapshot.castColors[entry.speaker] : null);
     if (chipColor) {
       const chip = document.createElement("span");
       chip.className = "stage-vox-chip";
@@ -1741,7 +1741,8 @@
       });
     }
     els.cueDetailLineText.classList.toggle("is-missing", !entry.line);
-    els.cueDetailLineSource.textContent = entry.source === "script" ? tx("場面メモの台本から")
+    els.cueDetailLineSource.textContent = entry.source === "data" ? tx("台本（セリフ編集）から")
+      : entry.source === "script" ? tx("場面メモの台本から")
       : entry.source === "memo" ? tx("キューのメモから") : "";
     voxStepLabel(els.cueDetailPrev, entries[at - 1] || null);
     voxStepLabel(els.cueDetailNext, entries[at + 1] || null);
@@ -2775,13 +2776,31 @@
         castColors[member.name] = member.color;
       }
     });
-    lastVoxSnapshot = { sections, sceneNotes, castColors };
+    /* 台本データ（セリフ編集画面・project.script）があれば、キューの文字はそこから引く。
+     * 無いショーは従来どおり場面メモの台本行から当てる（scriptByCue は null）。 */
+    let scriptByCue = null;
+    if (project.script && typeof project.script === "object" && Array.isArray(project.script.lines)) {
+      const castById = new Map((Array.isArray(project.cast) ? project.cast : []).map((member) => [member.id, member]));
+      scriptByCue = {};
+      project.script.lines.forEach((line) => {
+        if (!line || typeof line.cueId !== "string" || !line.cueId) return;
+        const member = line.castId ? castById.get(line.castId) : null;
+        scriptByCue[line.cueId] = {
+          speaker: member ? member.name : (typeof line.speaker === "string" ? line.speaker : ""),
+          text: typeof line.text === "string" ? line.text : "",
+          color: member && typeof member.color === "string" ? member.color : null,
+          lineId: line.id,
+        };
+      });
+    }
+    lastVoxSnapshot = { sections, sceneNotes, castColors, scriptByCue };
     window.dispatchEvent(new CustomEvent("stage-timeline-vox-cues", {
       detail: {
         currentSectionId: timeline.sectionId || null,
         sections,
         sceneNotes,
         castColors,
+        scriptByCue,
         seconds: seekSeconds,
       },
     }));
