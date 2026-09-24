@@ -5835,6 +5835,11 @@
       hint: "光だまりに入っている演者を、その明かりの色を掛けた色で描く。赤い明かりの下で青い衣装が沈む場面に気づけます（「照明の見え方」が切のときは効きません）" },
     { key: "pitchExport", label: "ピッチ書き出し", def: true,
       hint: "書き出しモーダルに「ピッチとして」が出る。作図の線を落とし、光と空気を効かせた一枚絵と、生成AI用の条件文を出す" },
+    /* 2026-09-24 本人指示: 左右キーで移るキューを「全キュー」か「VOXキューだけ」かで選ぶ。
+       既定は切＝今までどおり明かり・音楽・セリフの全キューを時刻順にたどる。
+       入にすると、VOXキューパネルの手送りと同じ並び（ショー全体・セクションもまたぐ）でVOXキューだけを移る。 */
+    { key: "arrowKeysVoxOnly", label: "左右キーはVOXキューだけ", def: false,
+      hint: "舞台の画面で左右キーを押したとき、VOXキュー（セリフ）だけを移る。切のときは明かり・音楽・セリフの全キューを時刻順にたどります" },
   ];
   const FEATURES_PLANNED = [
     "転換アニメの動画書き出し", "見えない席の検査（遮蔽）", "資料棚からの場面引用",
@@ -33120,7 +33125,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       const stageView = document.getElementById("view-stage");
       if (!stageView || stageView.hidden) return;
       const cueStep = new CustomEvent("stage-timeline-cue-step", {
-        cancelable: true, detail: { direction: CUE_STEPS[event.key] },
+        cancelable: true,
+        detail: { direction: CUE_STEPS[event.key], voxOnly: featureOn("arrowKeysVoxOnly") },
       });
       window.dispatchEvent(cueStep);
       // キューが存在しない場合も、舞台上ではブラウザの横スクロールに渡さない。

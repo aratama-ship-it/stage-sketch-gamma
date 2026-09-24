@@ -2851,9 +2851,62 @@
     return true;
   }
 
+  /* 環境設定「左右キーはVOXキューだけ」（2026-09-24）: VOXキューパネルの手送りと同じ並び
+   * （ショー全体・セクション順）で、いまの再生位置の直前／直後のVOXキューへ移る。
+   * 別のセクションなら、パネルと同じ経路でセクションを切り替えてから頭出しする。 */
+  function stepVoxFromPlayhead(direction) {
+    if (!timeline) return false;
+    const entries = voxDetailEntries();
+    if (!entries.length) return false;
+    const sectionId = timeline.sectionId || null;
+    const epsilon = 1e-3;
+    const inSection = entries.map((entry, index) => ({ entry, index }))
+      .filter((item) => (item.entry.sectionId || null) === sectionId);
+    let target = null;
+    if (inSection.length) {
+      if (direction < 0) {
+        const before = [...inSection].reverse().find((item) => item.entry.seconds < seekSeconds - epsilon);
+        target = before ? before.entry : entries[inSection[0].index - 1] || null;
+      } else {
+        const after = inSection.find((item) => item.entry.seconds > seekSeconds + epsilon);
+        target = after ? after.entry : entries[inSection[inSection.length - 1].index + 1] || null;
+      }
+    } else {
+      // このセクションにVOXキューが無い: セクションの並びで前後の最寄りへ
+      const order = voxSectionOrder();
+      const here = order.indexOf(sectionId);
+      const pick = (list) => list.find((entry) => order.indexOf(entry.sectionId || null) > here);
+      target = direction < 0
+        ? [...entries].reverse().find((entry) => order.indexOf(entry.sectionId || null) < here) || null
+        : pick(entries) || null;
+    }
+    if (!target) return false;
+    window.dispatchEvent(new CustomEvent("stage-vox-panel-seek", {
+      cancelable: true,
+      detail: { sectionId: target.sectionId, sceneId: target.sceneId, cueId: target.id, seconds: target.seconds },
+    }));
+    return true;
+  }
+
+  // セクションの並び（場面一覧の上から）。VOXキューが無いセクションの前後を決めるのに使う
+  function voxSectionOrder() {
+    const rows = lastVoxProject && Array.isArray(lastVoxProject.scenes) ? lastVoxProject.scenes : [];
+    const order = [];
+    rows.forEach((row) => {
+      if (!row || row.kind !== "scene") return;
+      const section = sectionForScene(lastVoxProject, row.id);
+      const id = section && section.id || null;
+      if (!order.includes(id)) order.push(id);
+    });
+    return order;
+  }
+
   window.addEventListener("stage-timeline-cue-step", (event) => {
-    const direction = Number(event && event.detail && event.detail.direction);
-    if (direction && stepNearestTimelineCue(direction)) event.preventDefault();
+    const detail = event && event.detail || {};
+    const direction = Number(detail.direction);
+    if (!direction) return;
+    const moved = detail.voxOnly ? stepVoxFromPlayhead(direction) : stepNearestTimelineCue(direction);
+    if (moved) event.preventDefault();
   });
 
   function seekFromPointer(event) {

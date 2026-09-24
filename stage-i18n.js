@@ -1705,6 +1705,8 @@
     "半ズボン": "Shorts",
     "光だまりに入っている演者を、その明かりの色を掛けた色で描く。赤い明かりの下で青い衣装が沈む場面に気づけます（「照明の見え方」が切のときは効きません）": "Draw performers standing in a light pool in their colour multiplied by that light, so you notice when a blue costume sinks under red light (no effect while “How the light looks” is off)",
     "二席目": "Second seat",
+    "左右キーはVOXキューだけ": "Arrow keys: VOX cues only",
+    "舞台の画面で左右キーを押したとき、VOXキュー（セリフ）だけを移る。切のときは明かり・音楽・セリフの全キューを時刻順にたどります": "On the stage screen, the left/right arrow keys move only between VOX (dialogue) cues. When off, they step through all light, music and dialogue cues in time order",
     "セリフの文字の大きさ": "Line text size",
     "文字の大きさ：標準": "Text size: standard",
     "文字の大きさ：大": "Text size: large",
