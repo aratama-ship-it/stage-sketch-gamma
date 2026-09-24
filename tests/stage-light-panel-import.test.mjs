@@ -34,7 +34,7 @@ test("試験場 E-1/E-2 の旧照明を原本非破壊でγ照明デザインへ
   assert.equal(result.migrated, true);
   assert.equal(JSON.stringify(source), before, "呼び出し元のショーを変更しない");
   assert.notEqual(result.document, source);
-  assert.equal(result.document.project.id, "gamma-feature-test-v3");
+  assert.equal(result.document.project.id, "gamma-feature-test-v4");
   assert.equal(result.document.project.lightingDesign.format, "shosai.light-design");
   assert.equal(result.document.project.lightingDesign.version, 2);
   assert.ok(result.document.project.lightingDesign.rig.fixtures.length >= 7);
