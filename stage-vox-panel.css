@@ -90,8 +90,11 @@
   outline: 1px solid var(--stage-vox-text);
   vertical-align: 0.02em;
 }
-/* 縦書き: 四角を列の中央へ置く（横書き用の vertical-align の分だけ横へずれないように） */
-.stage-vox-panel.is-vertical .stage-vox-chip { vertical-align: middle; }
+/* 縦書き: 四角を文字の列の真ん中へ置く（2026-09-24 本人指摘: 右へ約3pxずれていた）。
+   vertical-align では縦書きの列の中心にそろわないので、話者の行を flex にして交差軸（横）の中央でそろえる。 */
+.stage-vox-panel.is-vertical :is(.stage-vox-now-speaker, .stage-vox-row-speaker) { display: flex; align-items: center; }
+.stage-vox-panel.is-vertical .stage-vox-now-speaker:empty { display: none; }
+.stage-vox-panel.is-vertical .stage-vox-chip { flex: 0 0 auto; vertical-align: baseline; }
 
 /* 手送り: 前・次（押すとタイムライン・舞台の図も一緒に進む）。数値: 2列・間隔8px・高さ36px。 */
 .stage-vox-step {
