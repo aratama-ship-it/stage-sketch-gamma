@@ -17771,6 +17771,8 @@
       const desc = els.sceneDesc;
       els.sceneBar.classList.remove("is-two-row");
       if (!step || !desc || desc.hidden) return;
+      // 2026-09-24: 説明が帯の下の小窓になっているとき（ブラウザ）は、帯は一段のまま
+      if (getComputedStyle(desc).position === "absolute") return;
       const stepRect = step.getBoundingClientRect();
       const descRect = desc.getBoundingClientRect();
       const isTwoRow = descRect.top >= stepRect.bottom - 1;

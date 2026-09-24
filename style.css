@@ -9508,6 +9508,37 @@ body.is-panel-dragging {
 .stage-scene-bar .stage-scene-desc-text { align-self: center; }
 .stage-scene-bar .stage-scene-desc-label { padding-top: 0; }
 
+/* 2026-09-24 本人指示: シーンの説明は常には出さない。シーン情報の枠（タイトル・送りのボタンを含む帯）に
+   カーソルを合わせたとき、または説明を書いている間だけ、帯のすぐ下に小窓として重ねて出す（舞台の図は動かさない）。
+   ★display:none にはしない。書き込み欄の高さを中身から測る処理（growSceneDesc）が測れなくなるため、
+     見えない間も場所だけは持たせて visibility で隠す。
+   ★帯と小窓の間にすき間を作らない（カーソルが移る途中で閉じないように、小窓は帯の下端にぴったり付ける）。
+   数値: 帯の幅いっぱい・上の縁は帯の下端・内側10/12px・枠1px（真鍮）・影 0 10px 24px rgba(0,0,0,.5)・重ね順40・出る速さ120ms。
+   タブレット・スマホの閲覧はいままでどおり（ブラウザ前提の変更）。 */
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-bar { position: relative; }
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-bar .stage-scene-desc:not([hidden]) {
+  position: absolute;
+  z-index: 40;
+  top: 100%;
+  left: -1px;
+  right: -1px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--brass);
+  background: var(--desk-2);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease, visibility 0s linear 120ms;
+}
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-bar:is(:hover, :focus-within) .stage-scene-desc:not([hidden]) {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 120ms ease, visibility 0s;
+}
+
 /* 現在のシーンの曲。歌名と時間はこの帯では省き、再生・先頭・シーク操作を残す。 */
 .stage-scene-music {
   display: flex;
