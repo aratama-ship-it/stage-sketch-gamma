@@ -1,4 +1,4 @@
-# 舞台スケッチ γ用：AIに貼るJSON作成指示 v0.2.8
+# 舞台スケッチ γ用：AIに貼るJSON作成指示 v0.2.9
 
 あなたは舞台スケッチ γ（ガンマ）へ**新しいショーの下書き**を渡す。完成品、既存ショーの修正・再生成、動線、安全判断、舞台機構の設定値は作らない。配置・照明・姿勢は検討用の図であり、実施可能性や安全承認を表さない。
 
@@ -65,7 +65,7 @@ Q3 高リスク装置
 
 許可する venue と venueSize の組は `proscenium: small/mid/large`、`thrust: small/mid`、`arena: onering/grand`、`blackbox: small/mid` だけ。会場に無い規模を書くと、読み込み時に黙ってその会場の最小規模へ落ちる。種類は performer、block/table/chair/bench/stool/wall/sphere/suitcase、light、trapeze/tissue/cyrwheel/pole。照明は登録の `lightKind:"hang"` だけで、beamは書かない（真上・高さ6m・床へ照射に正規化される）。高リスク装置は各scene.noteに必ず「安全未確認」と書き、flown/wiresを書かない。model、prop、diabolo、teeter、wire、trampoline、cane、car、seri、revolve、deck、curtain、poolは書かず、必要ならnoteで提案する。
 
-姿勢（pose）は次の49語からだけ選ぶ（舞台スケッチ γ0.2.0 の実測）: `stand, walk, reach, open, sit, crouch, kneel, floorsit, agura, seiza, longsit, hizadachi, yankee, allfours, dogeza, handstand, sideflip, run, backflip, hat, sing, juggle, guitar, trumpet, violin, bassguitar, accordion, dance1, dance2, dance3, dance4, dance5, windmill, cartwheel-oneside-mid, sideflip-mid, walkover-mid, handstand-mid, frontroll-mid, roundoff-mid, backhandspring-mid, skate, unicycle, skateboard, bicycle, cyr, tuck, lie, supine, sidelie`。未定義の `lie_back / lie_front / lie_side` は使わない（`stand` に化ける）。迷ったら `stand`。
+姿勢（pose）は次の49語からだけ選ぶ（舞台スケッチ γ0.2.3 の実測）: `stand, walk, reach, open, sit, crouch, kneel, floorsit, agura, seiza, longsit, hizadachi, yankee, allfours, dogeza, handstand, sideflip, run, backflip, hat, sing, juggle, guitar, trumpet, violin, bassguitar, accordion, dance1, dance2, dance3, dance4, dance5, windmill, cartwheel-oneside-mid, sideflip-mid, walkover-mid, handstand-mid, frontroll-mid, roundoff-mid, backhandspring-mid, skate, unicycle, skateboard, bicycle, cyr, tuck, lie, supine, sidelie`。未定義の `lie_back / lie_front / lie_side` は使わない（`stand` に化ける）。迷ったら `stand`。
 
 ## 場面の時間
 
@@ -86,7 +86,7 @@ AIは許可仕様に沿って生成・自己点検する。依頼文、素材、
 点検ページは、利用者とAIの申告を使わずJSONの実体を独立に検査・分類する。AIは分類フラグや合格証をJSONに付けない。不一致は下記の共通規則で分類し、修正依頼を受けたら元の意図と指摘対象以外を維持した完全JSONを返す。点検ページは自動修正せず、入力が変更されたら旧結果と修正依頼を無効化する。JSON構文・読み取り・点検処理の失敗は「点検不能」であり合格ではない。
 
 <!-- AI_JSON_RULES_START -->
-### 共通の判定規則 v0.2.8
+### 共通の判定規則 v0.2.9
 
 - 許可種類: performer, block, table, chair, bench, stool, wall, sphere, suitcase, light, trapeze, tissue, cyrwheel, pole。これ以外はアプリに存在しても出力しない。
 - 会場と規模: proscenium: small/mid/large、thrust: small/mid、arena: onering/grand、blackbox: small/mid。
@@ -147,7 +147,7 @@ PCでは「ショー」パネルの「ショープロジェクトを読み込む
 
 γ固有の範囲: 舞台スケッチ γには「舞台」のほかに「劇場設定」「機材配置」「照明」「3D」のタブがある。このJSONが作るのは「舞台」タブの配置・姿勢と、従来型の照明（`light` の駒と `lightingIntent` の文章）だけである。機材配置・照明タブの灯体やキュー、劇場設定で作る独自会場、3Dの視点はこのJSONでは作らず、読み込み後に本体で行う。`venue` は許可表の4会場だけを使い、劇場設定で作った会場のIDを書かない。`venues` は空配列のままにする。
 
-「自己点検済み」は読み込み保証ではない。「読み込み成功」は意図どおりの保証ではない。「安全警告なし」は安全の保証ではない。特定AIでの生成成功・秘密保持は保証しない。外部AIへ渡す素材はユーザー自身が判断する。共有セッション中はホストの変更が同期されるため、私的な検討は共有終了後にする。対応アプリ版はv0.2.0、対象は舞台スケッチ γ（ガンマ）、マニュアル改訂はv0.2.8。既知の非対応は既存ショー修正、Mac版AI指示、動線、γの新しい照明（機材配置・照明タブ）、独自会場、フォーメーション。
+「自己点検済み」は読み込み保証ではない。「読み込み成功」は意図どおりの保証ではない。「安全警告なし」は安全の保証ではない。特定AIでの生成成功・秘密保持は保証しない。外部AIへ渡す素材はユーザー自身が判断する。共有セッション中はホストの変更が同期されるため、私的な検討は共有終了後にする。対応アプリ版はv0.2.3、対象は舞台スケッチ γ（ガンマ）、マニュアル改訂はv0.2.9。既知の非対応は既存ショー修正、Mac版AI指示、動線、γの新しい照明（機材配置・照明タブ）、独自会場、フォーメーション。
 
 ## 自己点検表（出力前に必ず通す）
 

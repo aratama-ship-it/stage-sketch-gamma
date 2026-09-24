@@ -28009,7 +28009,19 @@ ${propsPlotHtml}
           const venues = sourceSize ? { [sourceVenue.id]: { [sourceSize.id]: {
             width: sourceSize.width, depth: sourceSize.depth, height: sourceSize.height,
           } } } : undefined;
-          const preparedLighting = migrationApi.prepare(parsed, { sourceText: text, venues });
+          /* AI showwright の AI 用 JSON は契約で project.id を持たない。移行器は復元用の控えに
+             元ショーの id を必須にするため、light を含む AI 用 JSON は「ショーのIDが不正です」で
+             一切読めなかった（2026-09-24 発見）。id が無いときだけ仮 id を付けた複製を渡し、
+             照合用の原文もその複製から作る。選んだファイルと読み取った parsed は変えない。
+             仮 id は「別のショーとして開く」で新しい id に置き換わる。 */
+          let migrationInput = parsed;
+          let migrationText = text;
+          if (appearsToHaveLegacyLighting && parsed && parsed.project === sourceProject
+              && !(typeof sourceProject.id === "string" && sourceProject.id)) {
+            migrationInput = { ...parsed, project: { ...sourceProject, id: rid("show") } };
+            migrationText = JSON.stringify(migrationInput);
+          }
+          const preparedLighting = migrationApi.prepare(migrationInput, { sourceText: migrationText, venues });
           parsed = preparedLighting.document;
           if (preparedLighting.migrated) {
             lightingMigration = {
