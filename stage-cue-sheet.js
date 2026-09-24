@@ -321,9 +321,14 @@
       const tracks = new Map(list(project && project.audioTracks).map((track) => [track.id, track.title || track.id]));
       const rows = scenes.map((scene, index) => {
         const cues = list(cuesByScene.get(scene.id)).filter((cue) => cue.cueType === "music" || cue.cueType === "dialogue");
-        return { scene: sceneCell(scene, index), track: scene.audioTrackId ? (tracks.get(scene.audioTrackId) || scene.audioTrackId) : "", cues: cues.map((cue) => `${cue.displayName}${cue.memo ? ` ${cue.memo}` : ""}`).join(" / ") };
+        const label = (cue) => `${cue.displayName}${cue.memo ? ` ${cue.memo}` : ""}`;
+        // 2026-09-24 本人指摘: Mキューとセリフキューが一つの欄に混ざっていた。欄を分ける（cues は両方を合わせた従来の形）。
+        return { scene: sceneCell(scene, index), track: scene.audioTrackId ? (tracks.get(scene.audioTrackId) || scene.audioTrackId) : "",
+          music: cues.filter((cue) => cue.cueType === "music").map(label).join(" / "),
+          dialogue: cues.filter((cue) => cue.cueType === "dialogue").map(label).join(" / "),
+          cues: cues.map(label).join(" / ") };
       });
-      return baseDepartmentSheet(project, dept, helpers, [["scene", "場面"], ["track", "音源"], ["cues", "音楽・セリフキュー"]], rows);
+      return baseDepartmentSheet(project, dept, helpers, [["scene", "場面"], ["track", "音源"], ["music", "音楽キュー"], ["dialogue", "セリフキュー"]], rows);
     }
     if (dept === "stage") {
       const rows = scenes.map((scene, index) => {
@@ -359,7 +364,9 @@
         key: `performer:${member.id}`, label: member.name || member.id || `#${index + 1}`, role: "performer",
       })), [
         { key: "department:light", label: t("照明"), role: "department" },
-        { key: "department:sound", label: t("音響"), role: "department" },
+        // 2026-09-24 本人指摘: 全体表の「音響」欄に M とセリフが混ざっていた。音楽とセリフを別の欄にする。
+        { key: "department:music", label: t("音楽"), role: "department" },
+        { key: "department:dialogue", label: t("セリフ"), role: "department" },
         { key: "department:stage", label: t("転換・機構"), role: "department" },
         { key: "department:props", label: t("小道具"), role: "department" },
       ]);
@@ -383,7 +390,8 @@
       const stage = departmentSheets.stage.rows[sceneIndex] || {};
       const props = departmentSheets.props.rows[sceneIndex] || {};
       row["department:light"] = light.cues || "";
-      row["department:sound"] = sound.cues || "";
+      row["department:music"] = sound.music || "";
+      row["department:dialogue"] = sound.dialogue || "";
       row["department:stage"] = [stage.machinery, text(stage.note).split(/\r?\n/, 1)[0]].filter(Boolean).join(" / ");
       row["department:props"] = props.handoffs || "";
       sceneIndex += 1;

@@ -48,11 +48,11 @@ test("Romeo and Juliet is loaded before the app and included in the versioned PW
   const [html, worker, app] = await Promise.all([
     read("stage.html"), read("stage-sw.js"), read("stage-sketch.js"),
   ]);
-  const libraryScript = html.indexOf('stage-samples/romeo-juliet-cued.js?v=2026092433');
-  const appScript = html.indexOf('stage-sketch.js?v=2026092442');
+  const libraryScript = html.indexOf('stage-samples/romeo-juliet-cued.js?v=2026092434');
+  const appScript = html.indexOf('stage-sketch.js?v=2026092443');
   assert.ok(libraryScript >= 0 && libraryScript < appScript);
-  assert.match(worker, /stage-sketch-gamma-shell-v341/);
-  assert.match(worker, /stage-samples\/romeo-juliet-cued\.js\?v=2026092433/);
+  assert.match(worker, /stage-sketch-gamma-shell-v342/);
+  assert.match(worker, /stage-samples\/romeo-juliet-cued\.js\?v=2026092434/);
   assert.match(app, /function shelveRomeoJulietSample\(\)/);
   assert.match(app, /const saved = shows\[built\.project\.id\]/);
   assert.match(app, /savedProject\.lightingDesign = projectIoClone\(bundledDesign\)/);

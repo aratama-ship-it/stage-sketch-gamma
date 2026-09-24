@@ -10076,6 +10076,133 @@
     if (changed) refreshSectionDurationCache(savedProject);
     return changed;
   }
+
+  /* ★2026-09-24 本人指示: 各キューのメモ（LX・M・セリフ）を短く分かりやすく。Qシートの表で横に長すぎた。
+   * 複製へは、メモが「同梱の旧版の文のまま」（指紋一致）のキューだけ新しい短いメモへ置き換える。利用者が書き直したメモは触らない。 */
+  const ROMEO_JULIET_OLD_MEMO_HASHES = Object.freeze({
+    "rj-gamma-light-lx-open": "-unz1yc",
+    "rj-gamma-music-rj-cond-01-a": "knb35u",
+    "rj-gamma-music-rj-cond-01-b": "t7z634",
+    "rj-gamma-music-rj-cond-01-c": "-iyvjer",
+    "rj-gamma-music-rj-cond-01-d": "-pdwdaa",
+    "rj-gamma-music-rj-cond-02-a": "-thu3p8",
+    "rj-gamma-music-rj-cond-02-b": "-9sr02h",
+    "rj-gamma-music-rj-cond-02-c": "q2uig9",
+    "rj-gamma-music-rj-cond-03-a": "9bb9b3",
+    "rj-gamma-music-rj-cond-03-b": "hlyi9y",
+    "rj-gamma-music-rj-cond-03-c": "5jbv72",
+    "rj-gamma-music-rj-cond-03-d": "iq74sg",
+    "rj-gamma-music-rj-cond-04-a": "-8fyi1z",
+    "rj-gamma-music-rj-cond-04-b": "b2x1sw",
+    "rj-gamma-music-rj-cond-04-c": "-99iolg",
+    "rj-gamma-music-rj-cond-04-d": "rgajo3",
+    "rj-gamma-music-rj-cond-05-a": "-57my3m",
+    "rj-gamma-music-rj-cond-05-b": "-q7daye",
+    "rj-gamma-music-rj-cond-05-c": "mlwoh9",
+    "rj-gamma-music-rj-cond-05-d": "z6e4by",
+    "rj-gamma-dialogue-rj-cond-01-a-full-b04-d01": "-s2x2e7",
+    "rj-gamma-dialogue-rj-cond-01-b-full-b01-d01": "-ooxgn",
+    "rj-gamma-dialogue-rj-cond-01-c-full-b02-d01": "-3usz2h",
+    "rj-gamma-dialogue-rj-cond-01-c-full-b03-d01": "-faqwuk",
+    "rj-gamma-dialogue-rj-cond-01-c-full-b04-d01": "eqetpn",
+    "rj-gamma-dialogue-rj-cond-01-c-full-b04-d02": "e3ztse",
+    "rj-gamma-dialogue-rj-cond-01-d-full-b01-d01": "1e25ta",
+    "rj-gamma-dialogue-rj-cond-01-d-full-b01-d02": "r0vhru",
+    "rj-gamma-dialogue-rj-cond-02-a-full-b01-d01": "3f45wn",
+    "rj-gamma-dialogue-rj-cond-02-a-full-b02-d01": "-m3jaqw",
+    "rj-gamma-dialogue-rj-cond-02-c-full-b01-d01": "jmbi8b",
+    "rj-gamma-dialogue-rj-cond-02-c-full-b01-d02": "-3qu20z",
+    "rj-gamma-dialogue-rj-cond-02-c-full-b02-d01": "-ekm0lj",
+    "rj-gamma-dialogue-rj-cond-03-a-full-b01-d01": "7rir7x",
+    "rj-gamma-dialogue-rj-cond-03-c-full-b01-d01": "-v49xm4",
+    "rj-gamma-dialogue-rj-cond-03-c-full-b02-d01": "xs3x0n",
+    "rj-gamma-dialogue-rj-cond-03-d-full-b01-d01": "lhnqu5",
+    "rj-gamma-dialogue-rj-cond-03-d-full-b02-d01": "-59i8ap",
+    "rj-gamma-dialogue-rj-cond-03-d-full-b02-d02": "nglgag",
+    "rj-gamma-dialogue-rj-cond-03-d-full-b02-d03": "1j28rp",
+    "rj-gamma-dialogue-rj-cond-03-d-full-b02-d04": "-b3bztn",
+    "rj-gamma-dialogue-rj-cond-03-d-full-b03-d01": "fhd585",
+    "rj-gamma-dialogue-rj-cond-03-d-full-b03-d02": "591vbb",
+    "rj-gamma-dialogue-rj-cond-03-d-full-b03-d03": "-qpr5t2",
+    "rj-gamma-dialogue-rj-cond-03-d-full-b03-d04": "moy0yp",
+    "rj-gamma-dialogue-rj-cond-03-d-full-b04-d01": "-h2vlzm",
+    "rj-gamma-dialogue-rj-cond-04-a-full-b01-d01": "-2gbpt7",
+    "rj-gamma-dialogue-rj-cond-04-a-full-b01-d02": "-cvz057",
+    "rj-gamma-dialogue-rj-cond-04-a-full-b02-d01": "-pafasm",
+    "rj-gamma-dialogue-rj-cond-04-a-full-b02-d02": "-dj72fx",
+    "rj-gamma-dialogue-rj-cond-04-b-full-b01-d01": "p4e5z6",
+    "rj-gamma-dialogue-rj-cond-04-b-full-b01-d02": "dgapd6",
+    "rj-gamma-dialogue-rj-cond-04-b-full-b03-d01": "-5gb12n",
+    "rj-gamma-dialogue-rj-cond-04-c-full-b01-d01": "u796jh",
+    "rj-gamma-dialogue-rj-cond-04-c-full-b01-d02": "7i0f1d",
+    "rj-gamma-dialogue-rj-cond-04-c-full-b03-d01": "-3aep78",
+    "rj-gamma-dialogue-rj-cond-04-d-full-b01-d01": "m360gu",
+    "rj-gamma-dialogue-rj-cond-05-a-full-b03-d01": "lc9zlp",
+    "rj-gamma-dialogue-rj-cond-05-a-full-b03-d02": "-f202d3",
+    "rj-gamma-dialogue-rj-cond-05-a-full-b04-d01": "-ynt8ez",
+    "rj-gamma-dialogue-rj-cond-05-b-full-b03-d01": "w2f1ys",
+    "rj-gamma-dialogue-rj-cond-05-b-full-b04-d01": "-b7l0nb",
+    "rj-gamma-dialogue-rj-cond-05-b-full-b04-d02": "-xmfsc2",
+    "rj-gamma-dialogue-rj-cond-05-d-full-b03-d01": "-l8hj3w",
+    "rj-gamma-dialogue-rj-cond-05-d-full-b04-d01": "-hok78t",
+    "rj-gamma-dialogue-rj-cond-05-d-full-b05-d01": "-8r1hlv",
+    "rj-gamma-dialogue-rj-cond-05-d-full-b05-d02": "-klbjt8",
+    "rj-gamma-light-lx-1": "mex9dr",
+    "rj-gamma-light-lx-2": "-lz2md",
+    "rj-gamma-light-lx-3": "1e2d8d",
+    "rj-gamma-light-lx-4": "myo1vi",
+    "rj-gamma-light-lx-5": "-qhubgh",
+    "rj-gamma-light-lx-6": "5cf36b",
+    "rj-gamma-light-lx-7": "9xr6bn",
+    "rj-gamma-light-lx-8": "-ktzpam",
+    "rj-gamma-light-lx-9": "qie5cd",
+    "rj-gamma-light-lx-10": "-2ha7kg",
+    "rj-gamma-light-lx-11": "wb2221",
+    "rj-gamma-light-lx-12": "wn5yh4",
+    "rj-gamma-light-lx-13": "3xdc44",
+    "rj-gamma-light-lx-14": "t2tnau",
+    "rj-gamma-light-lx-15": "-vixhop",
+    "rj-gamma-light-lx-16": "-l3kkp4",
+    "rj-gamma-light-lx-17": "-qikscm",
+    "rj-gamma-light-lx-18": "-q6gvxj",
+    "rj-gamma-light-lx-19": "-b8zytd",
+    "rj-gamma-light-lx-20": "mt0uf0",
+    "rj-gamma-light-lx-21": "u1swpn",
+    "rj-gamma-light-lx-22": "ansuys",
+    "rj-gamma-light-lx-23": "-o7v1i5",
+    "rj-gamma-light-lx-24": "-g895uc",
+    "rj-gamma-light-lx-25": "-joiahf",
+    "rj-gamma-light-lx-26": "-t9f9h7",
+    "rj-gamma-light-lx-27": "-q1exw7",
+    "rj-gamma-light-lx-28": "-odc1q0",
+    "rj-gamma-light-lx-29": "-kf6j7n",
+    "rj-gamma-light-lx-30": "-5zdrq4",
+    "rj-gamma-light-lx-31": "dzs3wj",
+    "rj-gamma-light-lx-end": "msla02",
+  });
+  function romeoJulietTextHash(text) {
+    const value = String(text || "");
+    let h = 0;
+    for (let i = 0; i < value.length; i += 1) h = (Math.imul(31, h) + value.charCodeAt(i)) | 0;
+    return h.toString(36);
+  }
+  function backfillRomeoJulietCueMemos(savedProject, bundledProject) {
+    const cues = savedProject && Array.isArray(savedProject.cues) ? savedProject.cues : null;
+    const bundled = bundledProject && Array.isArray(bundledProject.cues) ? bundledProject.cues : null;
+    if (!cues || !bundled) return false;
+    const byId = new Map(bundled.filter((cue) => cue && typeof cue.id === "string").map((cue) => [cue.id, cue]));
+    let changed = false;
+    cues.forEach((cue) => {
+      if (!cue || cue.kind !== "timeline") return;
+      const source = byId.get(cue.id);
+      const oldHash = ROMEO_JULIET_OLD_MEMO_HASHES[cue.id];
+      if (!source || !oldHash || typeof source.memo !== "string") return;
+      if (romeoJulietTextHash(cue.memo) !== oldHash || cue.memo === source.memo) return;
+      cue.memo = source.memo;
+      changed = true;
+    });
+    return changed;
+  }
   function backfillRomeoJulietSampleData(savedProject, bundledProject) {
     const a = backfillRomeoJulietVoxOffsets(savedProject, bundledProject);
     const b = backfillRomeoJulietTransitions(savedProject);
@@ -10086,7 +10213,8 @@
     const e = backfillRomeoJulietLightingRig(savedProject, bundledProject);
     const f = backfillRomeoJulietLightingLooks(savedProject, bundledProject, machineMade);
     const g = backfillRomeoJulietBookendScenes(savedProject, bundledProject);
-    return a || b || c || d || e || f || g;
+    const h = backfillRomeoJulietCueMemos(savedProject, bundledProject);
+    return a || b || c || d || e || f || g || h;
   }
 
   /* ★2026-09-24 本人指示「転換が0秒のものは全部直す」: 八人のサーカス・継ぎ目の庭の棚の複製と、
