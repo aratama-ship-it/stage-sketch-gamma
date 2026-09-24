@@ -1353,7 +1353,7 @@
     };
   };
   const prepareProjectImportDocument = (document) => {
-    const project = stripRemovedSceneFields(projectIoClone(document.project));
+    const project = backfillMissingSceneRehearsal(stripRemovedSceneFields(projectIoClone(document.project)));
     sceneAlternatives?.restore(project);
     let venueImport = { venues: [], idMap: {}, imported: 0, skipped: 0 };
     if (document.version === 4 && Array.isArray(document.venues) && venueLibrary) {
@@ -6049,6 +6049,23 @@
   const DEFAULT_SCENE_HOLD_SECONDS = 10;
   const DEFAULT_SCENE_TRAVEL_SECONDS = 0;
   const NEW_SCENE_TRAVEL_SECONDS = 3;
+  /* 読み込み時の保険（2026-09-24）: AI showwright 等の外部 JSON で rehearsal が無い場面には、新しい場面と同じ
+     転換 NEW_SCENE_TRAVEL_SECONDS を入れる（見せる時間は既定の10秒）。γ が書き出した保存データは全場面に
+     rehearsal を持つので対象にならない。旧「引き伸ばし率」時代のようにセクション時間の控え
+     （timelineDurationSeconds）を持つデータは触らない＝読み込みで秒数が変わると reconcileSectionDurations が
+     控えを正として見せる時間を縮めるため、従来どおり欠けは0秒のまま normalizeSceneRehearsal に任せる。 */
+  function backfillMissingSceneRehearsal(project) {
+    const rows = project && Array.isArray(project.scenes) ? project.scenes : [];
+    const hasSectionMemo = rows.some((row) => row && row.kind === "section"
+      && row.timelineDurationSeconds !== undefined && row.timelineDurationSeconds !== null && row.timelineDurationSeconds !== "");
+    if (hasSectionMemo) return project;
+    rows.forEach((row) => {
+      if (!row || typeof row !== "object" || row.kind === "section") return;
+      if (row.rehearsal !== undefined && row.rehearsal !== null) return;
+      row.rehearsal = { holdDurationSeconds: DEFAULT_SCENE_HOLD_SECONDS, transitionToNextSeconds: NEW_SCENE_TRAVEL_SECONDS };
+    });
+    return project;
+  }
   /* 2026-09-17 本人指示「シーンパネルとタイムラインは常に繋がっている状態に。転換も同じ」。
    *
    * それまで section.timelineDurationSeconds は、シーンの秒数とは別に持つ
