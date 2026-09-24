@@ -3817,6 +3817,8 @@
   function toggleTimelineFromShortcut() {
     if (timelineInteractionIsBlocked()
         || document.querySelector(".stage-modal:not([hidden])")) return false;
+    // Qシートタブ（2026-09-24 本人指示）ではタイムラインを出さない（Eでも開かない）。
+    if (document.body.dataset.gammaWorkspace === "cuesheet") return false;
     /* U-11（2026-09-24 本人指示）: 「セリフ」タブでもEでタイムラインを出し入れできるようにする。
      * セリフタブはふだんタイムラインを隠している（画面いっぱいを台本に使う）。Eを押したときだけ
      * body に印を付けて見せ、もう一度Eで隠す。印はセリフタブを出たら外す（舞台タブの開閉状態には触れない）。 */

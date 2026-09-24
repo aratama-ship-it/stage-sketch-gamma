@@ -47,6 +47,16 @@ body[data-gamma-workspace="venue-setup"].stage-timeline-expanded:not(.stage-full
 }
 body[data-gamma-workspace^="light-"] .stage-boundary-note,
 body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
+/* Qシートタブ（2026-09-24 本人指摘）: 下に舞台タブの中身が残って見えていた。劇場設定と同じく舞台の画面・
+   タイムライン・取っ手・境界の注記を出さず、タブの中身だけにする。タイムラインはこのタブでは出せない。 */
+body[data-gamma-workspace="cuesheet"] .stage-sketch-grid { display: none !important; }
+body[data-gamma-workspace="cuesheet"] #stage-timeline-panel { display: none !important; }
+body[data-gamma-workspace="cuesheet"] .stage-timeline-resize-handle { display: none !important; }
+body[data-gamma-workspace="cuesheet"] .stage-boundary-note { display: none; }
+body[data-gamma-workspace="cuesheet"].stage-timeline-expanded:not(.stage-fullscreen) #view-stage {
+  height: 100dvh;
+  padding-bottom: 16px;
+}
 #gamma-light-workspace { width: 100%; min-height: 0; }
 /* V-2（2026-09-17）: 劇場設定は1画面に収める。高さは gamma-workspace.js が実測して入れる。 */
 #gamma-venue-workspace { width: 100%; min-height: 0; display: flex; flex-direction: column; }
