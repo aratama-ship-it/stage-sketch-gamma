@@ -649,6 +649,28 @@
   /* 胴の外周。断面の中心を上から下へたどり、各断面で体の軸に直交する向きへ
      張り出した点を左右に取る。張り出しは楕円断面としての見かけの半径
      √((幅·n)² + (厚み·n)²) で、向きを変えると自然に細く見える。 */
+  /* 胴の断面から t の範囲だけを取り出す（本体 stage-sketch.js の torsoRingsBetween と同じ）。 */
+  function torsoRingsBetween(torsoRings, fromT, toT) {
+    const ts = TORSO_RINGS.map((ring) => ring.t);
+    if (!Array.isArray(torsoRings) || torsoRings.length !== ts.length) return [];
+    const lerpRing = (a, b, f) => ({
+      o: { x: a.o.x + (b.o.x - a.o.x) * f, y: a.o.y + (b.o.y - a.o.y) * f },
+      wx: a.wx + (b.wx - a.wx) * f, wy: a.wy + (b.wy - a.wy) * f,
+      dx: a.dx + (b.dx - a.dx) * f, dy: a.dy + (b.dy - a.dy) * f,
+    });
+    const ringAtT = (t) => {
+      if (t <= ts[0]) return torsoRings[0];
+      for (let i = 0; i < ts.length - 1; i += 1) {
+        if (t <= ts[i + 1]) return lerpRing(torsoRings[i], torsoRings[i + 1], (t - ts[i]) / (ts[i + 1] - ts[i]));
+      }
+      return torsoRings[ts.length - 1];
+    };
+    const out = [ringAtT(fromT)];
+    ts.forEach((t, i) => { if (t > fromT + 1e-6 && t < toT - 1e-6) out.push(torsoRings[i]); });
+    out.push(ringAtT(toT));
+    return out;
+  }
+
   function torsoOutline(rings) {
     const right = [];
     const left = [];
@@ -837,6 +859,9 @@
       sleeve: sleeves[top.sleeve || defaultSleeve] ?? sleeves[defaultSleeve],
       length: lengths[bottom.length || defaultLength] ?? lengths[defaultLength],
       collar: top.kind === "tank" ? 0.20 : 0.28,
+      // 2026-09-24: 上衣の裾・ズボンのベルトの位置（本体 stage-sketch.js の TOP_KINDS.hem・BOTTOM_KINDS.waist と同じ値）
+      hem: top.kind === "tank" ? 0.78 : top.kind === "longtee" ? 0.82 : 0.80,
+      waist: 0.68,
     };
   }
 
@@ -1032,10 +1057,19 @@
         smoothClosedPath(target, torsoOutline(rig.rings));
         target.fill();
         if (clothes) {
+          /* 2026-09-24: 本体の正面図と同じ塗り方（ズボンの腰回り→上衣は裾まで）。以前は股まで上衣でレオタードの形だった。 */
+          const neckCount = NECK_RINGS.length;
+          const torsoRings = rig.rings.slice(neckCount);
+          const bottomRings = torsoRingsBetween(torsoRings, clothes.waist, TORSO_RINGS[TORSO_RINGS.length - 1].t);
+          if (bottomRings.length > 1) {
+            target.fillStyle = partPaint(part, clothes.bottomColor, false);
+            smoothClosedPath(target, torsoOutline(bottomRings));
+            target.fill();
+          }
           const reversedNeck = NECK_RINGS.slice().reverse();
           const collarIndex = Math.max(0, reversedNeck.findIndex((ring) => ring.s <= clothes.collar));
           target.fillStyle = partPaint(part, clothes.topColor, false);
-          smoothClosedPath(target, torsoOutline(rig.rings.slice(collarIndex)));
+          smoothClosedPath(target, torsoOutline(rig.rings.slice(collarIndex, neckCount).concat(torsoRingsBetween(torsoRings, 0, clothes.hem))));
           target.fill();
         }
         return;

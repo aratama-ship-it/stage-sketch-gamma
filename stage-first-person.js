@@ -2395,10 +2395,25 @@
         body.smoothClosedPath(ctx, body.torsoOutline(rings));
         ctx.fill();
         if (clothes) {
+          /* 2026-09-24: 正面図（stage-sketch.js の paintBody）と同じ塗り方。ズボンの腰回り（waist→股）を先に、
+             上衣は襟から裾（hem）まで。以前は股まで上衣で塗っていてレオタードの形に見えていた。 */
+          const neckCount = body.NECK_RINGS.length;
+          const between = body.torsoRingsBetween;
+          const torsoRings = rings.slice(neckCount);
+          const lastT = body.TORSO_RINGS[body.TORSO_RINGS.length - 1].t;
+          const bottomRings = between && clothes.waist != null ? between(torsoRings, clothes.waist, lastT) : [];
+          if (bottomRings.length > 1) {
+            ctx.fillStyle = clothes.bottomColor;
+            body.smoothClosedPath(ctx, body.torsoOutline(bottomRings));
+            ctx.fill();
+          }
           const reversedNeck = body.NECK_RINGS.slice().reverse();
           const collarIndex = Math.max(0, reversedNeck.findIndex((ring) => ring.s <= clothes.collar));
+          const topRings = between && clothes.hem != null
+            ? rings.slice(collarIndex, neckCount).concat(between(torsoRings, 0, clothes.hem))
+            : rings.slice(collarIndex);
           ctx.fillStyle = clothes.topColor;
-          body.smoothClosedPath(ctx, body.torsoOutline(rings.slice(collarIndex)));
+          body.smoothClosedPath(ctx, body.torsoOutline(topRings));
           ctx.fill();
         }
         return;

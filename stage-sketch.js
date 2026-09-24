@@ -4489,15 +4489,19 @@
     threequarter: { id: "threequarter", label: "七分袖", labelEn: "3/4", t: 0.72 },
     long: { id: "long", label: "長袖", labelEn: "Long", t: 1.00 },
   };
-  /* トップス。collar は胴の上塗りを始める位置（NECK_RINGS の s 値）。 */
+  /* トップス。collar は胴の上塗りを始める位置（NECK_RINGS の s 値）。
+     hem は裾の位置（TORSO_RINGS の t 値。肩=0・くびれ=0.62・腰=0.90・股=1.16）。
+     ★2026-09-24 本人指摘: 以前は股まで上衣で塗っていて、Tシャツがレオタードの形に見えていた。
+     裾はくびれと腰の間で止め、そこから下はズボンの色にする（BOTTOM_KINDS の waist）。 */
   const TOP_KINDS = {
-    tshirt: { id: "tshirt", label: "Tシャツ", labelEn: "T-shirt", collar: 0.28, sleeve: "short", shells: [] },
-    longtee: { id: "longtee", label: "長袖シャツ", labelEn: "Long sleeve", collar: 0.28, sleeve: "long", shells: [] },
-    tank: { id: "tank", label: "タンクトップ", labelEn: "Tank top", collar: 0.20, sleeve: "none", shells: [] },
+    tshirt: { id: "tshirt", label: "Tシャツ", labelEn: "T-shirt", collar: 0.28, hem: 0.80, sleeve: "short", shells: [] },
+    longtee: { id: "longtee", label: "長袖シャツ", labelEn: "Long sleeve", collar: 0.28, hem: 0.82, sleeve: "long", shells: [] },
+    tank: { id: "tank", label: "タンクトップ", labelEn: "Tank top", collar: 0.20, hem: 0.78, sleeve: "none", shells: [] },
   };
+  /* waist はズボンの上端（ベルトの位置・TORSO_RINGS の t 値）。くびれのすぐ下から股までを腰回りとして塗る。 */
   const BOTTOM_KINDS = {
-    pants: { id: "pants", label: "長ズボン", labelEn: "Trousers", length: "ankle", shells: [] },
-    shorts: { id: "shorts", label: "半ズボン", labelEn: "Shorts", length: "mini", shells: [] },
+    pants: { id: "pants", label: "長ズボン", labelEn: "Trousers", length: "ankle", waist: 0.68, shells: [] },
+    shorts: { id: "shorts", label: "半ズボン", labelEn: "Shorts", length: "mini", waist: 0.68, shells: [] },
   };
   const HAIR_STYLES = {
     none: { id: "none", label: "なし", labelEn: "None", parts: [] },
@@ -4577,6 +4581,29 @@
   /* 胴の外周。断面の中心を上から下へたどり、各断面で体の軸に直交する向きへ
      張り出した点を左右に取る。張り出しは楕円断面としての見かけの半径
      √((幅·n)² + (厚み·n)²) で、向きを変えると自然に細く見える。 */
+  /* 胴の断面（rig.rings の胴の部分＝TORSO_RINGS と同じ並び）から、t の範囲だけを取り出す。
+     両端は隣り合う断面を線形に補って作る（裾・ベルトの位置が断面の間に来ても切れ目が合うように）。 */
+  function torsoRingsBetween(torsoRings, fromT, toT) {
+    const ts = TORSO_RINGS.map((ring) => ring.t);
+    if (!Array.isArray(torsoRings) || torsoRings.length !== ts.length) return [];
+    const lerpRing = (a, b, f) => ({
+      o: { x: a.o.x + (b.o.x - a.o.x) * f, y: a.o.y + (b.o.y - a.o.y) * f },
+      wx: a.wx + (b.wx - a.wx) * f, wy: a.wy + (b.wy - a.wy) * f,
+      dx: a.dx + (b.dx - a.dx) * f, dy: a.dy + (b.dy - a.dy) * f,
+    });
+    const ringAtT = (t) => {
+      if (t <= ts[0]) return torsoRings[0];
+      for (let i = 0; i < ts.length - 1; i += 1) {
+        if (t <= ts[i + 1]) return lerpRing(torsoRings[i], torsoRings[i + 1], (t - ts[i]) / (ts[i + 1] - ts[i]));
+      }
+      return torsoRings[ts.length - 1];
+    };
+    const out = [ringAtT(fromT)];
+    ts.forEach((t, i) => { if (t > fromT + 1e-6 && t < toT - 1e-6) out.push(torsoRings[i]); });
+    out.push(ringAtT(toT));
+    return out;
+  }
+
   function torsoOutline(rings) {
     const right = [];
     const left = [];
@@ -4694,6 +4721,8 @@
       sleeve: sleeveById(normalized.top.sleeve || top.sleeve).t,
       length: lengthById(normalized.bottom.length || bottom.length).t,
       collar: top.collar,
+      hem: finite(top.hem, 0.80),
+      waist: finite(bottom.waist, 0.68),
     };
   }
 
@@ -11686,9 +11715,21 @@
         smoothClosedPath(target, torsoOutline(rig.rings));
         target.fill();
         if (clothes) {
+          /* 2026-09-24 本人指摘: Tシャツがレオタードの形・ズボンが脚だけに見えていた。
+             ① ズボンの腰回り: ベルトの位置（waist）から股までをズボンの色で塗る（脚のズボンとつながる）。
+             ② 上衣: 襟から裾（hem）までを上から重ねる。裾がズボンの上端にかぶるので、シャツを出して着た形になる。 */
+          const neckCount = NECK_RINGS.length;
+          const torsoRings = rig.rings.slice(neckCount);
+          const bottomRings = torsoRingsBetween(torsoRings, clothes.waist, TORSO_RINGS[TORSO_RINGS.length - 1].t);
+          if (bottomRings.length > 1) {
+            target.fillStyle = clothes.bottomColor;
+            smoothClosedPath(target, torsoOutline(bottomRings));
+            target.fill();
+          }
           const reversedNeck = NECK_RINGS.slice().reverse();
           const collarIndex = Math.max(0, reversedNeck.findIndex((ring) => ring.s <= clothes.collar));
-          const garmentRings = rig.rings.slice(collarIndex);
+          const garmentRings = rig.rings.slice(collarIndex, neckCount)
+            .concat(torsoRingsBetween(torsoRings, 0, clothes.hem));
           target.fillStyle = clothes.topColor;
           smoothClosedPath(target, torsoOutline(garmentRings));
           target.fill();
@@ -11830,7 +11871,7 @@
     HAND_LEN, HAND_R, FOOT_R, HEEL_BACK, PROP_TONES,
     norm3, cross3, limbNodes, lerpPt,
     chainPrefix, lookSpec,
-    taperedChain, smoothClosedPath, torsoOutline, mixToward,
+    taperedChain, smoothClosedPath, torsoOutline, torsoRingsBetween, mixToward,
   });
 
   // 正面から見た演者
