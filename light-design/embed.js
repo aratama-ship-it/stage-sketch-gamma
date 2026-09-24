@@ -70,7 +70,18 @@
     saveDraft();loading=true;
     try {
       let design=model.reconcile(next.design,next),dirty=false;
-      const raw=localStorage.getItem(key(next.showId));
+      let raw=localStorage.getItem(key(next.showId));
+      /* 2026-09-24: ロミオとジュリエット見本は照明を6灯→41灯へ組み直した（本体 stage-sketch.js の backfillRomeoJulietLightingRig）。
+         古い6灯のままの編集控えが残っていると、開くたびに古い仕込みへ戻る・または控えの食い違いで開けない。
+         控えが旧6灯で、ショー側がもう新しい仕込みなら、その控えだけ片付ける（ほかのショーの控えは触らない）。 */
+      if(raw) {
+        try {
+          const old=['rj-lx-back','rj-lx-center','rj-lx-front-l','rj-lx-front-r','rj-lx-side-l','rj-lx-side-r'].join(',');
+          const draftIds=(JSON.parse(raw)?.design?.rig?.fixtures||[]).map(f=>f&&f.id).sort().join(',');
+          const hostHasNew=(next.design?.rig?.fixtures||[]).some(f=>f&&f.id==='rj-lx2-mv-center');
+          if(draftIds===old && hostHasNew) { localStorage.removeItem(key(next.showId)); raw=null; message('古い照明の仕込みの編集控えを片付けました（見本の照明は新しい仕込みになっています）'); }
+        } catch(_) { /* 読めない控えは今までどおり下で扱う */ }
+      }
       if(raw) {
         const draft=JSON.parse(raw);
         if(draft.version!==1 || draft.showId!==next.showId) throw Error('照明の編集控えを確認できません。控えは上書きしていません');

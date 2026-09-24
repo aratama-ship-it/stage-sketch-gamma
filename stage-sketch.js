@@ -9858,31 +9858,89 @@
   }
   /* ★V-05（2026-09-24 本人指示）: 見本の照明を「中ホールの基本仕込み」の配置（固定37）＋ムービング4へ組み直した
    * （固定灯が場面ごとに違う向き・色・広がりになっていた警告をなくすため。生成 gamma-dev/rj-lighting-v2/build.cjs）。
-   * 棚の複製・開いたままのショーへ届けるのは、照明に手を入れていないものだけ:
-   *   仕込みが旧版の6灯・2バトンのままで、31場面すべての lights が旧版と同じ（下の指紋と一致）もの。
-   * 1場面でも違えば（利用者が照明を直した）何もしない。台詞・キュー・場面・もや（environment）には触れない。 */
-  const ROMEO_JULIET_OLD_LIGHT_HASHES_2026_09_23 = Object.freeze({"rj-frame-rj-cond-01-a-01": "fl9srf", "rj-frame-rj-cond-01-b-02": "oiiytf", "rj-frame-rj-cond-01-b-m6-01": "-ls27uz", "rj-frame-rj-cond-01-b-m6-02": "-v0yo9r", "rj-frame-rj-cond-01-b-m6-03": "dyi24o", "rj-frame-rj-cond-01-c-01": "rcryzi", "rj-frame-rj-cond-01-d-01": "sglco1", "rj-frame-rj-cond-02-a-01": "-k14kir", "rj-frame-rj-cond-02-b-01": "-jjscex", "rj-frame-rj-cond-02-c-01": "-fua8em", "rj-frame-rj-cond-03-a-01": "5vbnrm", "rj-frame-rj-cond-03-a-02": "k4h33w", "rj-frame-rj-cond-03-b-01": "-rzyjj5", "rj-frame-rj-cond-03-c-01": "v0iyoq", "rj-frame-rj-cond-03-c-02": "3c5t5d", "rj-frame-rj-cond-03-c-03": "hu6zo1", "rj-frame-rj-cond-03-d-01": "74tdbc", "rj-frame-rj-cond-03-d-02": "96tuqm", "rj-frame-rj-cond-04-a-01": "-5zaa6y", "rj-frame-rj-cond-04-b-01": "-wezk7r", "rj-frame-rj-cond-04-b-02": "7wemvr", "rj-frame-rj-cond-04-c-01": "-7o0jy6", "rj-frame-rj-cond-04-c-02": "7sgmg5", "rj-frame-rj-cond-04-d-01": "gi0opr", "rj-frame-rj-cond-04-d-02": "-yakc2v", "rj-frame-rj-cond-05-a-01": "98onsz", "rj-frame-rj-cond-05-b-01": "-164nfo", "rj-frame-rj-cond-05-b-02": "-164nfo", "rj-frame-rj-cond-05-c-01": "-jes1nd", "rj-frame-rj-cond-05-d-01": "l78wyx", "rj-frame-rj-cond-05-d-02": "daz9e5"});
+   * ★2026-09-24 本人指摘「直っていない」: 最初の版は「31場面の明かりが旧版と1文字も違わない複製」にしか届けず、
+   *   照明に手を入れた複製や、9/23 より前の照明のまま残っていた複製には届かなかった。
+   *   そこで、仕込みが旧版の6灯のままのロミオとジュリエットなら、その複製の各場面の点け方（明るさ・色・狙い・ゴボ）を
+   *   読み取り、build.cjs と同じ規則で新しい41灯へ移し替える（利用者が直した明るさ・色も引き継ぐ）。
+   *   固定灯の狙い・色・広がりは同梱版の仕込みの値（場面で変えない）。場面ごとに動かしてよいものはムービングへ移す。
+   *   台詞・キュー・場面・もや（environment）・LXキューの id と並びには触れない。 */
   const ROMEO_JULIET_OLD_FIXTURE_IDS = Object.freeze(["rj-lx-front-l", "rj-lx-front-r", "rj-lx-center", "rj-lx-back", "rj-lx-side-l", "rj-lx-side-r"]);
+  function romeoJulietLightTone(hex) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+    const n = m ? parseInt(m[1], 16) : 0xf1dcba;
+    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    if (r - b > 45 && r - g > 30) return "rose";
+    if (r - b > 30) return "warm";
+    if (b - r > 8) return "cool";
+    return "neutral";
+  }
+  /* 同梱版の新しい仕込みから、固定灯ごとの「いつも同じ見え方」（点いている場面の値）を拾う。 */
+  function romeoJulietFixedLooks(bundledDesign) {
+    const looks = new Map();
+    (bundledDesign.scenes || []).forEach((scene) => {
+      Object.entries((scene.cue && scene.cue.lights) || {}).forEach(([id, light]) => {
+        if (!looks.has(id) || (light && light.on === true && looks.get(id).on !== true)) looks.set(id, light);
+      });
+    });
+    return looks;
+  }
+  function convertRomeoJulietLights(oldLights, bundledDesign, looks) {
+    const L = (id) => (oldLights && oldLights[id]) || null;
+    const onLevel = (light) => (light && light.on === true ? Math.max(0, Math.round(finite(light.level, 0))) : 0);
+    const fl = onLevel(L("rj-lx-front-l")), fr = onLevel(L("rj-lx-front-r")), ce = onLevel(L("rj-lx-center"));
+    const bk = onLevel(L("rj-lx-back")), sl = onLevel(L("rj-lx-side-l")), sr = onLevel(L("rj-lx-side-r"));
+    const tone = romeoJulietLightTone(((L("rj-lx-center") || L("rj-lx-front-l")) || {}).color || "#f1dcba");
+    const backTone = romeoJulietLightTone((L("rj-lx-back") || {}).color || ((L("rj-lx-center") || L("rj-lx-front-l")) || {}).color || "#f1dcba");
+    const warmScene = tone !== "cool";
+    const out = {};
+    const fixed = (fixture, level) => {
+      const look = looks.get(fixture.id) || {};
+      out[fixture.id] = level > 0 ? { ...projectIoClone(look), on: true, level } : { ...projectIoClone(look), on: false, level: 0 };
+    };
+    const mover = (fixture, source, beamDeg, needsGobo) => {
+      const look = looks.get(fixture.id) || {};
+      const usable = source && source.on === true && (!needsGobo || (source.gobo && source.gobo !== "none"));
+      if (!usable) { out[fixture.id] = { ...projectIoClone(source || look), groupId: null, on: false, level: 0, gobo: "none" }; return; }
+      out[fixture.id] = { ...projectIoClone(source), groupId: null, beamDeg: source.beamDeg == null ? beamDeg : source.beamDeg };
+    };
+    (bundledDesign.rig.fixtures || []).forEach((fixture) => {
+      const id = fixture.id;
+      const name = String(fixture.name || "");
+      const left = finite(fixture.mount && fixture.mount.u, 0.5) < 0.5;
+      if (id === "rj-lx2-mv-center") mover(fixture, L("rj-lx-center"), 28, false);
+      else if (id === "rj-lx2-mv-gobo") mover(fixture, L("rj-lx-back"), 40, true);
+      else if (id === "rj-lx2-mv-l") mover(fixture, L("rj-lx-side-l"), 28, true);
+      else if (id === "rj-lx2-mv-r") mover(fixture, L("rj-lx-side-r"), 28, true);
+      else if (id.startsWith("rj-lx2-ceil-")) fixed(fixture, left ? fl : fr);
+      else if (id.startsWith("rj-lx2-fs-")) fixed(fixture, tone === "cool" ? Math.round((left ? fl : fr) * 0.8) : 0);
+      else if (id.startsWith("rj-lx2-b1-")) fixed(fixture, ce && (name.includes("（暖）") ? warmScene : !warmScene) ? Math.round(ce * 0.7) : 0);
+      else if (id.startsWith("rj-lx2-b2-")) {
+        const want = name.includes("（琥珀）") ? (backTone === "warm" || backTone === "neutral")
+          : name.includes("（薔薇）") ? backTone === "rose" : backTone === "cool";
+        fixed(fixture, bk && want ? bk : 0);
+      } else if (id.startsWith("rj-lx2-b3-")) fixed(fixture, bk ? Math.round(bk * 0.6) : 0);
+      else if (id.startsWith("rj-lx2-ss-l")) fixed(fixture, sl);
+      else if (id.startsWith("rj-lx2-ss-r")) fixed(fixture, sr);
+      else if (id === "rj-lx2-cyc") fixed(fixture, bk && tone === "cool" ? 30 : 0);
+      else fixed(fixture, 0);
+    });
+    return out;
+  }
   function backfillRomeoJulietLightingRig(savedProject, bundledProject) {
     const saved = savedProject && savedProject.lightingDesign;
     const bundled = bundledProject && bundledProject.lightingDesign;
     if (!saved || !bundled || !saved.rig || !Array.isArray(saved.rig.fixtures) || !Array.isArray(saved.scenes)) return false;
+    if (!bundled.rig || !Array.isArray(bundled.rig.fixtures) || !bundled.rig.fixtures.some((fixture) => fixture && fixture.id === "rj-lx2-mv-center")) return false;
     const ids = saved.rig.fixtures.map((fixture) => fixture && fixture.id).sort().join(",");
     if (ids !== ROMEO_JULIET_OLD_FIXTURE_IDS.slice().sort().join(",")) return false;
-    if (saved.scenes.length !== Object.keys(ROMEO_JULIET_OLD_LIGHT_HASHES_2026_09_23).length) return false;
-    const untouched = saved.scenes.every((scene) => scene && scene.cue && scene.cue.lights
-      && ROMEO_JULIET_OLD_LIGHT_HASHES_2026_09_23[scene.id] === simpleHash(JSON.stringify(scene.cue.lights)));
-    if (!untouched) return false;
-    const bundledScenes = new Map((bundled.scenes || []).map((scene) => [scene.id, scene]));
-    if (!saved.scenes.every((scene) => bundledScenes.has(scene.id))) return false;
+    const looks = romeoJulietFixedLooks(bundled);
     saved.rig = projectIoClone(bundled.rig);
     saved.fixtureGroups = projectIoClone(bundled.fixtureGroups || []);
-    saved.palette = projectIoClone(bundled.palette || saved.palette || []);
+    saved.palette = [...new Set([...(Array.isArray(saved.palette) ? saved.palette : []), ...(bundled.palette || [])])];
     saved.scenes.forEach((scene) => {
-      const source = bundledScenes.get(scene.id);
-      scene.cue = { ...scene.cue, lights: projectIoClone(source.cue.lights) };
-      const sourceQs = new Map((source.lxq || []).map((q) => [q.id, q]));
-      (scene.lxq || []).forEach((q) => { const from = sourceQs.get(q.id); if (from && q.cue) q.cue = { ...q.cue, lights: projectIoClone(from.cue.lights) }; });
+      if (!scene) return;
+      if (scene.cue && scene.cue.lights) scene.cue = { ...scene.cue, lights: convertRomeoJulietLights(scene.cue.lights, bundled, looks) };
+      (scene.lxq || []).forEach((q) => { if (q && q.cue && q.cue.lights) q.cue = { ...q.cue, lights: convertRomeoJulietLights(q.cue.lights, bundled, looks) }; });
     });
     return true;
   }

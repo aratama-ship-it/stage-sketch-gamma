@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v325";
+const CACHE_NAME = "stage-sketch-gamma-shell-v326";
 const APP_SHELL = [
   "./stage-scene-alternatives.js?v=2026092208",
   "./stage-scene-alternatives-ui.js?v=2026092209",
@@ -31,7 +31,7 @@ const APP_SHELL = [
   "./gamma.css?v=2026092302",
   "./gamma-light-model.js?v=2026092113",
   "./gamma-workspace.js?v=2026092430",
-  "./light-design/index.html?embed=gamma&v=2026092433",
+  "./light-design/index.html?embed=gamma&v=2026092434",
   "./light-design/embed.css?v=2026092430",
   "./light-design/rig-engine.js?v=2026092130",
   "./light-design/stage-figure.js?v=2026092433",
@@ -43,7 +43,7 @@ const APP_SHELL = [
   "./light-design/light-presets-ui.js?v=20260915-3-vertical-cards",
   "./light-design/selected-light-presets-engine.js?v=2026092114",
   "./light-design/selected-light-presets-ui.js?v=2026092114",
-  "./light-design/embed.js?v=2026092430",
+  "./light-design/embed.js?v=2026092434",
   "./stage.html",
   "./style.css?v=2026092416",
   "./stage-venues.js?v=2026092224",
@@ -77,7 +77,7 @@ const APP_SHELL = [
   "./stage-cue-sheet.js?v=2026092420",
   "./stage-shortcuts.js?v=2026092218",
   "./stage-reorder-motion.js?v=2026092420",
-  "./stage-sketch.js?v=2026092433",
+  "./stage-sketch.js?v=2026092434",
   "./stage-timeline.js?v=2026092420",
   "./stage-session.js?v=20260924-lightimport1",
   "./stage-study-owner.js?v=2026091501",
