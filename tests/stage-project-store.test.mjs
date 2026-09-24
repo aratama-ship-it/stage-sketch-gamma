@@ -145,7 +145,7 @@ test("the app shell advances with the storage transaction code", () => {
   assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092213/);
   assert.match(stageHtml, /style\.css\?v=2026092416/);
   assert.match(stageHtml, /stage-sketch\.js\?v=2026092430/);
-  assert.match(serviceWorker, /stage-sketch-gamma-shell-v322/);
+  assert.match(serviceWorker, /stage-sketch-gamma-shell-v323/);
   assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092213/);
   assert.match(serviceWorker, /\.\/style\.css\?v=2026092416/);
   assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092430/);

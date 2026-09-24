@@ -84,10 +84,14 @@
   display: inline-block;
   width: 0.62em;
   height: 0.62em;
-  margin-right: 0.4em;
+  /* 名前との間（2026-09-24 本人指摘）: 縦書きでは文字が上から下へ並ぶので、right では効かず四角と名前が重なっていた。
+     書く向きに合わせた inline-end で空ける（横書き＝右・縦書き＝下）。 */
+  margin-inline-end: 0.4em;
   outline: 1px solid var(--stage-vox-text);
   vertical-align: 0.02em;
 }
+/* 縦書き: 四角を列の中央へ置く（横書き用の vertical-align の分だけ横へずれないように） */
+.stage-vox-panel.is-vertical .stage-vox-chip { vertical-align: middle; }
 
 /* 手送り: 前・次（押すとタイムライン・舞台の図も一緒に進む）。数値: 2列・間隔8px・高さ36px。 */
 .stage-vox-step {
