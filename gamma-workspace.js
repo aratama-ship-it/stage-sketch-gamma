@@ -10,6 +10,11 @@
   const normal=document.querySelector('.stage-sketch-grid'), status=document.getElementById('gamma-light-status');
   // セリフ編集画面（2026-09-24 本人指示・stage-script-editor.js）。劇場設定と同じく本体の中の1画面。
   const scriptWorkspace=document.getElementById('gamma-script-workspace');
+  /* Qシート（2026-09-24 本人指示）: 右上の窓ではなく、セリフ・3Dの次の「Qシート」タブで管理する。
+     劇場設定と同じく、既存の窓（#stage-cue-sheet-modal）をタブの画面へ移して使う。開閉は本体の
+     window.SHOSAI_STAGE_CUE_SHEET_HOST（stage-sketch.js）に任せ、ここは画面の出し入れだけを持つ。 */
+  const cuesheetWorkspace=document.getElementById('gamma-cuesheet-workspace'), cuesheetModal=document.getElementById('stage-cue-sheet-modal'), cuesheetBackdrop=document.getElementById('stage-cue-sheet-backdrop');
+  if(cuesheetWorkspace && cuesheetModal) { cuesheetWorkspace.append(cuesheetModal); if(cuesheetBackdrop) cuesheetBackdrop.hidden=true; }
   const hostUndo=document.getElementById('stage-undo'), hostRedo=document.getElementById('stage-redo');
   let mode='normal', loaded=false;
   let hostHistory={undo:hostUndo?.disabled??true,redo:hostRedo?.disabled??true};
@@ -49,6 +54,10 @@
       const available=Math.floor(window.innerHeight-scriptWorkspace.getBoundingClientRect().top-inset-16);
       scriptWorkspace.style.height=Math.max(narrow?360:460,available)+'px';
     }
+    if(mode==='cuesheet' && cuesheetWorkspace) {
+      const available=Math.floor(window.innerHeight-cuesheetWorkspace.getBoundingClientRect().top-inset-16);
+      cuesheetWorkspace.style.height=Math.max(narrow?360:460,available)+'px';
+    }
   }
   function scheduleFrameHeight() {
     if(frameResizeRequest) return;
@@ -80,7 +89,7 @@
   function syncHistory() {
     if(!hostUndo || !hostRedo) return;
     // セリフ編集画面は本体の取り消し履歴をそのまま使う（台本の変更は本体の checkpoint に積まれる）
-    if(mode==='script') return;
+    if(mode==='script' || mode==='cuesheet') return;
     if(mode==='normal') {
       hostUndo.disabled=hostHistory.undo;hostRedo.disabled=hostHistory.redo;
       return;
@@ -94,7 +103,7 @@
     hostUndo.disabled=!lightStatus?.canUndo;hostRedo.disabled=!lightStatus?.canRedo;
   }
   function runLightHistory(event,direction) {
-    if(mode==='normal' || mode==='script') return;
+    if(mode==='normal' || mode==='script' || mode==='cuesheet') return;
     event.preventDefault();event.stopImmediatePropagation();
     if(mode==='venue-setup') window.SHOSAI_VENUE_EDITOR?.[direction]?.();
     else editor()?.[direction]();
@@ -432,7 +441,7 @@
   }
 
   async function select(next) {
-    if(!['normal','light-placement','light-design','venue-setup','script'].includes(next)) return;
+    if(!['normal','light-placement','light-design','venue-setup','script','cuesheet'].includes(next)) return;
     // スマホ確認機では劇場・照明編集へ移らず、ショーの読込と閲覧を使う。
     if(phoneViewerWorkspace() && next!=='normal') return;
     /* 案A（2026-09-23）: 劇場が決まるまで閉じるのは機材配置・照明デザインだけ。
@@ -491,6 +500,7 @@
       if(mode!==next && isLightMode(mode) && !isLightMode(next)) editor()?.suspend();
       if(mode==='venue-setup' && next!=='venue-setup') hideVenue();
       if(mode==='script' && next!=='script') window.SHOSAI_SCRIPT_EDITOR?.close?.();
+      if(mode==='cuesheet' && next!=='cuesheet') window.SHOSAI_STAGE_CUE_SHEET_HOST?.close?.();
       if(isLightMode(next)) {
         const context=host.context(); latestContext=context;
         const timelinePlay=document.getElementById('stage-timeline-play');
@@ -518,11 +528,15 @@
         if(context.readOnly) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
         editor()?.suspend();
         window.SHOSAI_SCRIPT_EDITOR?.open?.();
+      } else if(next==='cuesheet') {
+        editor()?.suspend();
+        window.SHOSAI_STAGE_CUE_SHEET_HOST?.open?.();
       } else editor()?.suspend();
       mode=next; document.body.dataset.gammaWorkspace=mode;
       document.body.dataset.stageWorkspaceMode=mode;
       panel.hidden=!isLightMode(mode); venueWorkspace.hidden=mode!=='venue-setup'; normal.inert=mode!=='normal';
       if(scriptWorkspace) scriptWorkspace.hidden=mode!=='script';
+      if(cuesheetWorkspace) cuesheetWorkspace.hidden=mode!=='cuesheet';
       document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode]').forEach(button=>{
         const active=button.dataset.stageWorkspaceMode===mode;
         button.classList.toggle('is-active',active); button.setAttribute('aria-pressed',String(active));

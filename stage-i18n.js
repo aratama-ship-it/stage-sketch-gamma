@@ -1796,6 +1796,7 @@
     "場面メモの台本から": "From the script in the scene notes",
     "キューのメモから": "From the cue memo",
     "セリフ": "Lines",
+    "Qシート": "Cue sheets",
         "いまのセリフ": "Current line",
     "このセクションのこの位置より前にセリフキューはありません。": "No dialogue cue before this point in this section.",
     "（台本の行が見つかりません。キューのメモも空です）": "(No script line found, and the cue memo is empty)",

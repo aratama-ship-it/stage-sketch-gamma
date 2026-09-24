@@ -50,6 +50,23 @@ body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
 #gamma-light-workspace { width: 100%; min-height: 0; }
 /* V-2（2026-09-17）: 劇場設定は1画面に収める。高さは gamma-workspace.js が実測して入れる。 */
 #gamma-venue-workspace { width: 100%; min-height: 0; display: flex; flex-direction: column; }
+/* Qシートのタブ（2026-09-24 本人指示）。既存の窓（.stage-cue-sheet-modal）をタブの画面に据え置く。
+   窓としての位置決め・影・幅の上限は外し、タブの高さいっぱいに広げて、表だけがスクロールする。 */
+#gamma-cuesheet-workspace { width: 100%; min-height: 0; display: flex; flex-direction: column; }
+#gamma-cuesheet-workspace[hidden] { display: none; }
+#gamma-cuesheet-workspace .stage-cue-sheet-modal,
+#gamma-cuesheet-workspace .stage-cue-sheet-modal.is-viewing-sheet {
+  position: relative; inset: auto; top: auto; right: auto; bottom: auto; left: auto; transform: none;
+  width: 100%; max-width: none; height: 100%; max-height: none; margin: 0; box-shadow: none; border-radius: 12px;
+  display: flex; flex-direction: column; overflow: hidden; z-index: auto;
+}
+#gamma-cuesheet-workspace .stage-cue-sheet-modal[hidden] { display: none; }
+#gamma-cuesheet-workspace .stage-cue-sheet-modal > .stage-modal-head .stage-modal-close { display: none; }
+#gamma-cuesheet-workspace .stage-cue-sheet-body { flex: 1 1 auto; min-height: 0; max-height: none; overflow: auto; display: flex; flex-direction: column; }
+#gamma-cuesheet-workspace #stage-cue-sheet-list { flex: 0 0 auto; }
+#gamma-cuesheet-workspace #stage-cue-sheet-view:not([hidden]) { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+#gamma-cuesheet-workspace .stage-cue-sheet-view-bar { flex: 0 0 auto; }
+#gamma-cuesheet-workspace .stage-cue-sheet-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
 #gamma-venue-workspace[hidden] { display: none; }
 .gamma-new-show-return {
   flex: 0 0 auto;

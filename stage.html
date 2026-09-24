@@ -19,7 +19,7 @@
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="gamma.css?v=2026092435">
+<link rel="stylesheet" href="gamma.css?v=2026092436">
 <link rel="stylesheet" href="gamma-mobile.css?v=2026091950">
 <script src="gamma-light-model.js?v=2026092113"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=2026091987">
@@ -92,6 +92,11 @@
                       data-gamma-title="3D（5）" aria-keyshortcuts="5" title="3D（5）"
                       aria-pressed="false"
                       aria-controls="stage-fpv-overlay">3D</button>
+              <!-- Qシート（2026-09-24 本人指示）: 右上の窓から、セリフ・3Dの次のタブへ。中身は #stage-cue-sheet-modal を
+                   #gamma-cuesheet-workspace へ移して使う（gamma-workspace.js）。 -->
+              <button type="button" class="stage-workspace-tab" id="gamma-cuesheet" data-stage-workspace-mode="cuesheet"
+                      data-gamma-title="Qシート" title="Qシート" aria-pressed="false"
+                      aria-controls="gamma-cuesheet-workspace">Qシート</button>
             </nav>
           </div>
         </div>
@@ -156,6 +161,8 @@
       <section id="gamma-light-workspace" aria-label="照明の配置とデザイン" hidden><p id="gamma-light-status" role="status" aria-live="polite" data-no-i18n></p><iframe id="gamma-light-frame" title="照明の配置とデザイン" allow="fullscreen" hidden></iframe></section>
       <!-- セリフ編集画面（2026-09-24 本人指示）。中身は stage-script-editor.js が組み立てる。 -->
       <section id="gamma-script-workspace" aria-label="セリフ" hidden></section>
+      <!-- Qシート（2026-09-24 本人指示）。中身は既存のキューシートの窓（#stage-cue-sheet-modal）を gamma-workspace.js がここへ移す。 -->
+      <section id="gamma-cuesheet-workspace" aria-label="Qシート" hidden></section>
       <section id="gamma-venue-workspace" aria-label="劇場設定" hidden>
         <div class="gamma-new-show-return" id="stage-new-show-return-bar" hidden>
           <button type="button" class="btn-quiet" id="stage-new-show-return">前のショーへ戻る</button>
@@ -1799,7 +1806,7 @@
 </div>
 
 <div class="stage-modal-backdrop" id="stage-cue-sheet-backdrop" hidden></div>
-<div class="stage-modal stage-cue-sheet-modal" id="stage-cue-sheet-modal" role="dialog" aria-modal="true"
+<div class="stage-modal stage-cue-sheet-modal" id="stage-cue-sheet-modal" role="region" aria-modal="false"
      aria-labelledby="stage-cue-sheet-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-cue-sheet-title">キューシート</h2>
@@ -3340,7 +3347,7 @@
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=2026092430"></script>
+    <script src="stage-i18n.js?v=2026092431"></script>
     <script src="stage-i18n.zh-Hans.js?v=2026092401"></script>
     <script src="stage-i18n.zh-Hant.js?v=2026092401"></script>
 <script src="stage-prompt-i18n.js?v=2026092050"></script>
@@ -3374,7 +3381,7 @@
 <script src="stage-shortcuts.js?v=2026092218"></script>
 <!-- U-12（2026-09-24）: 並べ替えの動き（一覧・タイムラインの段・セリフ画面の行で共有） -->
 <script src="stage-reorder-motion.js?v=2026092420"></script>
-<script src="stage-sketch.js?v=2026092441"></script>
+<script src="stage-sketch.js?v=2026092442"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092209"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-vox-panel.js?v=2026092431"></script>
@@ -3384,7 +3391,7 @@
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
 <script src="stage-venue-editor.js?v=2026092201"></script>
-    <script src="gamma-workspace.js?v=2026092435"></script>
+    <script src="gamma-workspace.js?v=2026092436"></script>
 <script src="gamma-mobile.js?v=2026092202"></script>
 </body>
 </html>

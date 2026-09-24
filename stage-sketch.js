@@ -33047,7 +33047,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     });
   }
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && els.cueSheetModal && !els.cueSheetModal.hidden) {
+    // タブに置いたQシートは Escape で閉じない（他のタブと同じ扱い）。窓として開いているときだけ閉じる。
+    if (event.key === "Escape" && els.cueSheetModal && !els.cueSheetModal.hidden && !cueSheetHosted()) {
       event.preventDefault();
       closeCueSheet();
       return;
@@ -36070,8 +36071,27 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     }
   }
 
+  /* ★2026-09-24 本人指示: Qシートは右上の窓ではなく「Qシート」タブ（セリフ・3Dの次）で管理する。
+   * 窓の中身は gamma-workspace.js が #gamma-cuesheet-workspace へ移す。右上のアイコンと「✕」は
+   * タブの切り替えだけを行い、実際の出し入れ（一覧の描画・表示）は下の HOST を通して gamma-workspace.js が呼ぶ。
+   * タブ画面が無い環境（旧 stage.html）では従来どおり窓として開く。 */
+  const cueSheetHosted = () => Boolean(document.getElementById("gamma-cuesheet-workspace") && window.GAMMA_WORKSPACE);
+  function showCueSheetHost() {
+    if (!els.cueSheetModal || !window.SHOSAI_CUE_SHEET) return;
+    renderCueSheetList();
+    showCueSheetList();
+    els.cueSheetModal.hidden = false;
+    if (els.cueSheetBackdrop) els.cueSheetBackdrop.hidden = true;
+  }
+  function hideCueSheetHost() {
+    if (els.cueSheetModal) els.cueSheetModal.hidden = true;
+    showCueSheetList();
+  }
+  window.SHOSAI_STAGE_CUE_SHEET_HOST = Object.freeze({ open: showCueSheetHost, close: hideCueSheetHost });
+
   function openCueSheet() {
     if (!els.cueSheetModal || !window.SHOSAI_CUE_SHEET) return;
+    if (cueSheetHosted()) { window.GAMMA_WORKSPACE.select("cuesheet"); return; }
     cueSheetReturnFocus = document.activeElement;
     renderCueSheetList();
     showCueSheetList();
@@ -36081,6 +36101,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   }
 
   function closeCueSheet() {
+    if (cueSheetHosted()) { if (window.GAMMA_WORKSPACE.mode() === "cuesheet") window.GAMMA_WORKSPACE.normal(); return; }
     if (els.cueSheetModal) els.cueSheetModal.hidden = true;
     if (els.cueSheetBackdrop) els.cueSheetBackdrop.hidden = true;
     showCueSheetList();
