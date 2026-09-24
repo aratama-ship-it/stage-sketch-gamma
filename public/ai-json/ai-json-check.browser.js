@@ -3,8 +3,8 @@
 /* Pure browser/Node boundary. Never trust an AI/user "checked" claim.
  * No I/O, DOM, mutation, evaluation of input, or implicit value conversion. */
 const RULES = {
-  version: "v0.2.7", maxBytes: 2097152, maxDepth: 16, maxNodes: 200000, maxErrors: 200,
-  maxScenes: 60, maxPieces: 80, maxRegistrations: 4800,
+  version: "v0.2.8", maxBytes: 2097152, maxDepth: 16, maxNodes: 200000, maxErrors: 200,
+  maxScenes: 60, maxPieces: 80, maxRegistrations: 4800, minSeconds: 1, maxSeconds: 86400,
   types: ["performer", "block", "table", "chair", "bench", "stool", "wall", "sphere", "suitcase", "light", "trapeze", "tissue", "cyrwheel", "pole"],
   venueSizes: { proscenium: ["small", "mid", "large"], thrust: ["small", "mid"], arena: ["onering", "grand"], blackbox: ["small", "mid"] },
   fields: {
@@ -13,7 +13,8 @@ const RULES = {
     cast: ["id", "name", "color", "heightCm", "note"],
     set: ["id", "kind", "name", "color", "note", "lightKind"],
     section: ["kind", "depth", "id", "title"],
-    scene: ["kind", "depth", "id", "title", "note", "background", "beat", "lightingIntent", "pieces"],
+    scene: ["kind", "depth", "id", "title", "note", "rehearsal", "background", "beat", "lightingIntent", "pieces"],
+    rehearsal: ["holdDurationSeconds", "transitionToNextSeconds"],
     beat: ["role"], intent: ["objective", "audienceFocus", "mood"],
     piece: ["id", "type", "castId", "setId", "u", "v", "color", "facing", "pose", "size"]
   },
@@ -34,6 +35,7 @@ function contractMarkdown() {
     "- ID: 1〜96文字。先頭は英数字、残りは英数字・ピリオド・ハイフン・アンダースコアのみ。cast内、sets内、scene/section/piece全体でそれぞれ一意。同一場面で同じcastIdまたはsetIdを二度使わない。",
     "- 色: colorとbackgroundは文字列の#rrggbb（英字の大小どちらも可）。前後空白・配列・色名は禁止。",
     "- 数値: u,vは0〜1、facingは0〜359、sizeは55〜180、heightCmは120〜210の整数。数値文字列・nullは禁止。sizeを変えられるのはperformerのみ。他の駒は省略または100（登録寸法が優先されるため）。",
+    "- 場面の時間: 全sceneにrehearsalが必須。holdDurationSeconds（見せる時間）とtransitionToNextSeconds（次の場面への転換）はどちらも" + r.minSeconds + "〜" + r.maxSeconds + "の数値（秒）。転換は1秒以上で、0秒の転換は不合格。timelineLockEdge等の内部項目は書かない。sectionにはrehearsalを置かない。",
     "- 文字数: project/scene/sectionのtitleは1〜" + n.title + "、登録nameは1〜" + n.name + "、cast/setsのnoteは0〜" + n.registrationNote + "、scene.noteは0〜" + n.sceneNote + "、beat.roleは1〜" + n.role + "、lightingIntent.objective/audienceFocusは1〜" + n.objective + "、moodは1〜" + n.mood + "。文字数はJavaScriptのlength（絵文字等は2以上）。",
     "- 空白だけのtitle/name/role/lightingIntentは禁止。roleとlightingIntentは前後空白も禁止。scene/sectionのtitleに自動改名される「場面 1」の形式を使わない。",
     "- scene/sectionは並べた順に使われる。sectionなしは全sceneのdepth:0。sectionありは先頭をsection（depth:0）にし、所属するsceneはdepth:1。入れ子配列は禁止。",
@@ -160,6 +162,11 @@ function validateDocument(doc, enums) {
     if (typeof v !== "number" || !Number.isFinite(v) || v < actualMin || v > actualMax || (actualInteger && !Number.isInteger(v))) add(at, min + "〜" + max + "の数値が必要です。読み込み時に置換・制限されます。", "changes-figure", "number-normalization");
     else if (v < min || v > max || (integer && !Number.isInteger(v))) add(at, min + "〜" + max + (integer ? "の整数" : "の数値") + "で書いてください。", "contract", "number-range");
   };
+  // The app substitutes 10s/0s for missing or unreadable seconds, so those change the timeline; 0〜1s is kept as-is and is a contract violation.
+  const seconds = (v, at, what) => {
+    if (typeof v !== "number" || !Number.isFinite(v) || v < 0 || v > RULES.maxSeconds) add(at, what + "は" + RULES.minSeconds + "〜" + RULES.maxSeconds + "の数値（秒）が必要です。数値文字列・null・負数は読み込み時に置換・制限されます。", "changes-figure", "number-normalization");
+    else if (v < RULES.minSeconds) add(at, what + "は" + RULES.minSeconds + "秒以上にしてください。0秒の転換は存在しません。", "contract", "seconds-minimum");
+  };
   const list = (v, at, max) => {
     if (!Array.isArray(v)) { add(at, "配列が必要です。", "changes-figure", "array"); return []; }
     if (v.length > max) { add(at, "上限" + max + "件を超えています。", "contract", "array-limit"); return []; }
@@ -223,6 +230,11 @@ function validateDocument(doc, enums) {
     sceneCount++;
     if (s.kind !== "scene") add(at + ".kind", "sceneまたはsectionだけを使ってください。");
     string(s.note, at + ".note", 0, n.sceneNote);
+    if (!own(s, "rehearsal")) add(at + ".rehearsal", "場面の時間が必要です。holdDurationSeconds（見せる時間）とtransitionToNextSeconds（次の場面への転換）を秒の数値で書いてください。無いと読み込み時に見せる時間10秒・転換0秒に置き換わります。", "changes-figure", "rehearsal-required");
+    else if (keys(s.rehearsal, "rehearsal", at + ".rehearsal", RULES.fields.rehearsal)) {
+      seconds(s.rehearsal.holdDurationSeconds, at + ".rehearsal.holdDurationSeconds", "見せる時間");
+      seconds(s.rehearsal.transitionToNextSeconds, at + ".rehearsal.transitionToNextSeconds", "次の場面への転換");
+    }
     if (own(s, "background")) color(s.background, at + ".background");
     if (own(s, "beat") && keys(s.beat, "beat", at + ".beat", ["role"])) {
       string(s.beat.role, at + ".beat.role", 1, n.role, 160, true);
@@ -263,5 +275,5 @@ function validateDocument(doc, enums) {
   return result(errors);
 }
 
-window.ShodaiAiJsonCheck = { validate, checkJsonText, buildFixRequest, rules: getAiJsonRules(), enums: {"POSES":["stand","walk","reach","open","sit","crouch","kneel","floorsit","agura","seiza","longsit","hizadachi","yankee","allfours","dogeza","handstand","sideflip","run","backflip","hat","sing","juggle","guitar","trumpet","violin","bassguitar","accordion","dance1","dance2","dance3","dance4","dance5","windmill","cartwheel-oneside-mid","sideflip-mid","walkover-mid","handstand-mid","frontroll-mid","roundoff-mid","backhandspring-mid","skate","unicycle","skateboard","bicycle","cyr","tuck","lie","supine","sidelie"],"PIECE_TYPES":["performer","block","table","chair","bench","stool","wall","trapeze","cyrwheel","diabolo","pole","teeter","tissue","wire","suitcase","trampoline","cane","car","seri","revolve","deck","curtain","pool","sphere","prop","model","light"],"SET_KINDS":["block","table","chair","bench","stool","wall","sphere","prop","trapeze","cyrwheel","diabolo","pole","teeter","tissue","wire","suitcase","trampoline","cane","car","seri","revolve","deck","curtain","pool","model","light"],"LIGHT_KINDS":["hang","ss","front","floor"],"VENUE_SIZES":{"proscenium":["small","mid","large"],"thrust":["small","mid"],"arena":["onering","grand"],"blackbox":["small","mid"]}}, appVersion: "v0.2.0", manualVersion: "v0.2.7" };
+window.ShodaiAiJsonCheck = { validate, checkJsonText, buildFixRequest, rules: getAiJsonRules(), enums: {"POSES":["stand","walk","reach","open","sit","crouch","kneel","floorsit","agura","seiza","longsit","hizadachi","yankee","allfours","dogeza","handstand","sideflip","run","backflip","hat","sing","juggle","guitar","trumpet","violin","bassguitar","accordion","dance1","dance2","dance3","dance4","dance5","windmill","cartwheel-oneside-mid","sideflip-mid","walkover-mid","handstand-mid","frontroll-mid","roundoff-mid","backhandspring-mid","skate","unicycle","skateboard","bicycle","cyr","tuck","lie","supine","sidelie"],"PIECE_TYPES":["performer","block","table","chair","bench","stool","wall","trapeze","cyrwheel","diabolo","pole","teeter","tissue","wire","suitcase","trampoline","cane","car","seri","revolve","deck","curtain","pool","sphere","prop","model","light"],"SET_KINDS":["block","table","chair","bench","stool","wall","sphere","prop","trapeze","cyrwheel","diabolo","pole","teeter","tissue","wire","suitcase","trampoline","cane","car","seri","revolve","deck","curtain","pool","model","light"],"LIGHT_KINDS":["hang","ss","front","floor"],"VENUE_SIZES":{"proscenium":["small","mid","large"],"thrust":["small","mid"],"arena":["onering","grand"],"blackbox":["small","mid"]}}, appVersion: "v0.2.0", manualVersion: "v0.2.8" };
 })();
