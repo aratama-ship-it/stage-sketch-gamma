@@ -2676,6 +2676,27 @@
     const playLabel = tx(playing ? "タイムラインを一時停止" : "タイムラインを再生");
     els.play.setAttribute("aria-label", playLabel);
     els.play.title = playLabel;
+    keepPlayheadInView();
+  }
+
+  /* ★2026-09-24 本人指示: 矢印キーで場面やキューを送るとき、再生位置（シークバー）が表示範囲の外へ出たら
+   * タイムラインを横に送って追従する。以前は再生位置だけが画面外へ出て、帯は動かなかった。
+   * 再生中も同じ（表示範囲の端を越えた時だけ送る＝利用者が手で横に送った直後に引き戻さない）。
+   * つまみ・キュー・帯の伸縮・範囲選択のドラッグ中は追従しない。ラベル列は sticky で左に居座るので、
+   * 見えている帯の幅は viewport の幅からラベル幅を引いたもの。 */
+  function keepPlayheadInView() {
+    if (!timeline || ui.collapsed || cueDrag || cueGroupDrag || blockResize || cueMarquee) return;
+    if (!els.viewport || !(els.viewport.clientWidth > 0)) return;
+    const labelWidth = finite(getComputedStyle(root).getPropertyValue("--stage-timeline-label-width"), 156);
+    const view = els.viewport.clientWidth - labelWidth;
+    if (!(view > 40) || !(timelineWidth > view)) return;
+    const x = pxFor(seekSeconds);
+    const left = els.viewport.scrollLeft;
+    const margin = Math.min(24, view * 0.05);
+    if (x >= left + margin && x <= left + view - margin) return;
+    // 前へ戻るときは右寄り（7割）に、先へ進むときは左寄り（3割）に置き、進行方向の先が見えるようにする
+    const target = x < left + margin ? x - view * 0.7 : x - view * 0.3;
+    els.viewport.scrollLeft = clamp(target, 0, Math.max(0, timelineWidth - view));
   }
 
   // timeupdate は低頻度でも、HTMLAudioElement.currentTime は再生中に読める。
