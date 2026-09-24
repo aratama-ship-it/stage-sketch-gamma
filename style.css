@@ -9386,6 +9386,20 @@ body.is-panel-dragging {
   min-width: 0;
 }
 
+/* 2026-09-24 本人指示: 送りの段は帯の幅いっぱい。前のシーン・一覧⊞は左端、シーン名は帯の中央、次のシーンは右端に付ける。
+   シーン名の列は左右の列の幅に関係なく中央に来るよう、左右を同じ幅（1fr）にして真ん中に名前を置く。 */
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-bar .stage-scene-step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  flex: 1 1 100%;
+  width: 100%;
+}
+.stage-scene-step-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-bar .stage-scene-step > .stage-scene-step-left { justify-self: start; }
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-bar .stage-scene-step > .stage-scene-now-open { justify-self: center; min-width: 0; max-width: 100%; }
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-bar .stage-scene-step > .is-next { justify-self: end; }
+
 /* 説明が次の段へ回ったときは、送りだけの上段を帯の中央に置く。 */
 .stage-scene-bar.is-two-row .stage-scene-step {
   flex: 1 1 100%;

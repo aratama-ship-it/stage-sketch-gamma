@@ -12,7 +12,7 @@
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092436">
+<link rel="stylesheet" href="style.css?v=2026092437">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -556,9 +556,10 @@
           <!-- シーン送りと説明を作図道具より上へ置き、いま扱う場面を先に読める順にする。 -->
           <div class="stage-scene-bar" id="stage-scene-bar">
             <div class="stage-scene-step" role="group" aria-label="シーンを送る">
-              <button type="button" id="stage-scene-prev" class="btn-quiet stage-scene-step-btn is-prev"><span class="stage-scene-step-arrow" aria-hidden="true">◀</span>前のシーン</button>
-              <!-- 2026-09-24 本人指示: 「次のシーン」を「前のシーン」のすぐ右隣へ（前後を行き来して連打しやすく）。シーン名はその右。 -->
-              <button type="button" id="stage-scene-next" class="btn-quiet stage-scene-step-btn is-next">次のシーン<span class="stage-scene-step-arrow" aria-hidden="true">▶</span></button>
+              <div class="stage-scene-step-left">
+                <button type="button" id="stage-scene-prev" class="btn-quiet stage-scene-step-btn is-prev"><span class="stage-scene-step-arrow" aria-hidden="true">◀</span>前のシーン</button>
+                <button type="button" id="stage-scene-bar-grid" class="btn-quiet stage-scene-bar-grid" aria-label="シーン一覧を開く">⊞</button>
+              </div>
               <!-- T-23（2026-09-18 本人要望）: 名前を押しても「シーンの詳細」を開けるようにする。
                    押せるものはボタンにする（.stage-cast-name と同じ考え方）。
                    読み上げの aria-live は内側の span に残し、外側をボタンにする
@@ -566,7 +567,9 @@
               <button type="button" class="stage-scene-now-open" id="stage-scene-now-open">
                 <span class="stage-scene-now" id="stage-scene-now" aria-live="polite"></span>
               </button>
-              <button type="button" id="stage-scene-bar-grid" class="btn-quiet stage-scene-bar-grid" aria-label="シーン一覧を開く">⊞</button>
+              <!-- 2026-09-24 本人指示（2回目）: 「次のシーン」は帯の一番右へ寄せ、シーン名は帯の中央に置く。
+                   並びは 前のシーン・一覧⊞（左）／シーン名（中央）／次のシーン（右）。読み上げ・Tabの順も見た目どおり。 -->
+              <button type="button" id="stage-scene-next" class="btn-quiet stage-scene-step-btn is-next">次のシーン<span class="stage-scene-step-arrow" aria-hidden="true">▶</span></button>
             </div>
             <div class="stage-scene-desc" id="stage-scene-desc">
               <label class="stage-scene-desc-label" id="stage-scene-desc-label"
