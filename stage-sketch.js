@@ -10032,6 +10032,50 @@
     });
     return changed;
   }
+
+  /* ★2026-09-24 本人指示: ショーの最初に「開演前・誰もいない舞台」、最後に「終演・誰もいない舞台」の場面を置く。
+   * 棚の複製・開いたままの作業中データにも届ける。複製に同じ id の場面が無いときだけ、同梱版の行（場面・照明デザインの登録・
+   * 場面頭のライトキュー）をそのまま足す。開演前は第1場面の見出し行の直後、終演は末尾。ほかの場面・キューは触らない。 */
+  const ROMEO_JULIET_OPENING_SCENE_ID = "rj-frame-rj-cond-00-open";
+  const ROMEO_JULIET_CLOSING_SCENE_ID = "rj-frame-rj-cond-06-end";
+  function backfillRomeoJulietBookendScenes(savedProject, bundledProject) {
+    const rows = savedProject && Array.isArray(savedProject.scenes) ? savedProject.scenes : null;
+    const source = bundledProject && Array.isArray(bundledProject.scenes) ? bundledProject.scenes : null;
+    if (!rows || !source) return false;
+    const has = (id) => rows.some((row) => row && row.id === id);
+    if (!has("rj-section-rj-cond-01") || !has("rj-frame-rj-cond-01-a-01")) return false;
+    let changed = false;
+    const savedDesign = savedProject.lightingDesign && Array.isArray(savedProject.lightingDesign.scenes) ? savedProject.lightingDesign : null;
+    const bundledDesign = bundledProject.lightingDesign && Array.isArray(bundledProject.lightingDesign.scenes) ? bundledProject.lightingDesign : null;
+    const sameRig = savedDesign && bundledDesign && savedDesign.rig && bundledDesign.rig
+      && Array.isArray(savedDesign.rig.fixtures) && savedDesign.rig.fixtures.length === bundledDesign.rig.fixtures.length;
+    const addScene = (id, where) => {
+      const row = source.find((item) => item && item.id === id);
+      if (!row || has(id)) return;
+      if (where === "start") {
+        const at = rows.findIndex((item) => item && item.id === "rj-section-rj-cond-01");
+        rows.splice(at + 1, 0, projectIoClone(row));
+      } else rows.push(projectIoClone(row));
+      if (sameRig) {
+        const entry = bundledDesign.scenes.find((item) => item && item.id === id);
+        if (entry && !savedDesign.scenes.some((item) => item && item.id === id)) {
+          if (where === "start") {
+            const at = savedDesign.scenes.findIndex((item) => item && item.id === "rj-frame-rj-cond-01-a-01");
+            savedDesign.scenes.splice(Math.max(0, at), 0, projectIoClone(entry));
+          } else savedDesign.scenes.push(projectIoClone(entry));
+        }
+      }
+      const cues = Array.isArray(savedProject.cues) ? savedProject.cues : (savedProject.cues = []);
+      (bundledProject.cues || []).forEach((cue) => {
+        if (cue && cue.sceneId === id && !cues.some((item) => item && item.id === cue.id)) cues.push(projectIoClone(cue));
+      });
+      changed = true;
+    };
+    addScene(ROMEO_JULIET_OPENING_SCENE_ID, "start");
+    addScene(ROMEO_JULIET_CLOSING_SCENE_ID, "end");
+    if (changed) refreshSectionDurationCache(savedProject);
+    return changed;
+  }
   function backfillRomeoJulietSampleData(savedProject, bundledProject) {
     const a = backfillRomeoJulietVoxOffsets(savedProject, bundledProject);
     const b = backfillRomeoJulietTransitions(savedProject);
@@ -10041,7 +10085,8 @@
     const machineMade = romeoJulietMachineMadeScenes(savedProject);
     const e = backfillRomeoJulietLightingRig(savedProject, bundledProject);
     const f = backfillRomeoJulietLightingLooks(savedProject, bundledProject, machineMade);
-    return a || b || c || d || e || f;
+    const g = backfillRomeoJulietBookendScenes(savedProject, bundledProject);
+    return a || b || c || d || e || f || g;
   }
 
   /* ★2026-09-24 本人指示「転換が0秒のものは全部直す」: 八人のサーカス・継ぎ目の庭の棚の複製と、
