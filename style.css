@@ -1637,7 +1637,9 @@ textarea, input[type="text"] {
 
 #view-stage {
   min-height: calc(100vh - 49px);
-  padding: 26px 24px 64px 68px;
+  /* 2026-09-24 本人指示: ヘッダーの上の隙間が大きいので詰める（26px → 12px）。
+   * 左68pxは道具の縦帯のぶんなので変えない。 */
+  padding: 12px 24px 64px 68px;
 }
 
 .stage-sketch {
@@ -16642,6 +16644,25 @@ body.is-panel-resizing .stage-sketch-grid { transition: none; }
  * gamma.css の文字サイズの階段の下限が --fs-1: 9px（最小の補助文字・キャプション）。
  * 9px では .12em の字間が詰まって見えるので、少しだけ広げて読めるようにした。 */
 .stage-header-app-identity .stage-app-version { margin: 0; color: var(--milk-dim); font-family: var(--sans); font-size: var(--fs-1); letter-spacing: .14em; }
+
+/* 2026-09-24 本人指示: 赤いキッカー（STAGE SKETCH GAMMA）＋版番号の行を右へずらし、
+ * ロゴの「舞台スケッチ Γ」の文字の真上に置いて、行と文字の距離を詰める（かたまりの背を低くする）。
+ * ロゴSVG（viewBox 625×122）の実測: 左の額縁の絵は x=7〜152、文字（logo-japanese-wordmark）は x=182〜、
+ * 文字の見える上端は y=36.2。箱の上には y=0〜36 の空白があるので、そこへキッカー行を重ねる。
+ * - 行の左端 = ロゴ幅 × 182/625（文字の始まりに揃える）。額縁の絵は x<152 なので横には重ならない。
+ * - ロゴの箱を上へ引き上げる幅 = ロゴ幅 × 0.053（320pxで17px）。見えている文字の上端との間は
+ *   約5pxになる。文字の上の空白（36.2/625=0.058）より小さいので、キッカーと文字は重ならない。
+ * どちらもロゴ幅から比で出す（幅は @media で段階的に変わるため。上の S-03 と同じ考え方）。
+ * iPad PWA（gamma-mobile.css）はキッカーを隠して横1行に並べるので、そちらには当てない。 */
+html:not(.stage-pwa-tablet) .stage-header-app-identity { gap: 0; }
+html:not(.stage-pwa-tablet) .stage-header-app-kicker-row {
+  position: relative;
+  z-index: 1;
+  margin-left: calc(var(--stage-header-logo-width, 320px) * 0.2912);
+}
+html:not(.stage-pwa-tablet) .stage-header-app-copy {
+  margin-top: calc(var(--stage-header-logo-width, 320px) * -0.053);
+}
 
 /* ヘッダーの他の操作（モードのタブ・戻る進む・共有）と押し合わないところまで段階的に縮める。
  * 区切りの幅は、この後に既にある @media（1180 / 720）と揃える。 */
