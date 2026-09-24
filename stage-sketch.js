@@ -69,6 +69,7 @@
       "gamma:shosai-stage-timeline-ui-v1", "gamma:shosai-stage-rigs-v1", "gamma:stage-shortcuts-v1",
       "gamma:shosai.lightDesigns.v1", "gamma:shosai.lightDesigns.beforeOptionB.v1",
       "gamma:shosai-fpv-lens-v2", "gamma:shosai-fpv-house-v2", "gamma:shosai-fpv-crowd-v1", "gamma:shosai-fpv-panels-v1",
+      "gamma:vox-panel-size-v1",
       "shosai-stage-shows-v1-pre-section-hierarchy-v1",
     ];
     const PREFIXES = [

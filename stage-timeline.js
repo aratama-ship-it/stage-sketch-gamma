@@ -1715,9 +1715,31 @@
     els.cueDetailLine.hidden = !entry;
     els.cueDetailStep.hidden = !entry;
     if (!entry) return;
-    els.cueDetailLineSpeaker.textContent = entry.speaker;
+    // 話者の印とト書きの扱いは VOXキューパネルと同じ（2026-09-24）
+    els.cueDetailLineSpeaker.textContent = "";
+    const chipColor = entry.speaker && lastVoxSnapshot && lastVoxSnapshot.castColors
+      ? lastVoxSnapshot.castColors[entry.speaker] : null;
+    if (chipColor) {
+      const chip = document.createElement("span");
+      chip.className = "stage-vox-chip";
+      chip.style.background = chipColor;
+      chip.setAttribute("aria-hidden", "true");
+      els.cueDetailLineSpeaker.append(chip);
+    }
+    els.cueDetailLineSpeaker.append(document.createTextNode(entry.speaker || ""));
     els.cueDetailLineSpeaker.hidden = !entry.speaker;
-    els.cueDetailLineText.textContent = entry.line || tx("台本の行が見つかりません。キューのメモも空です。");
+    els.cueDetailLineText.textContent = "";
+    if (!entry.line) {
+      els.cueDetailLineText.textContent = tx("台本の行が見つかりません。キューのメモも空です。");
+    } else {
+      window.SHOSAI_VOX_PANEL.splitDirections(entry.line).forEach((part) => {
+        if (!part.direction) { els.cueDetailLineText.append(document.createTextNode(part.text)); return; }
+        const span = document.createElement("span");
+        span.className = "stage-vox-direction";
+        span.textContent = part.text;
+        els.cueDetailLineText.append(span);
+      });
+    }
     els.cueDetailLineText.classList.toggle("is-missing", !entry.line);
     els.cueDetailLineSource.textContent = entry.source === "script" ? tx("場面メモの台本から")
       : entry.source === "memo" ? tx("キューのメモから") : "";
@@ -2746,12 +2768,20 @@
         sceneNotes[row.id] = typeof row.note === "string" ? row.note : "";
       }
     });
-    lastVoxSnapshot = { sections, sceneNotes };
+    // 話者の印（演者の色）。台本の話者名と演者名が同じときだけ使う。色は補助で、話者は名前の文字で確定する。
+    const castColors = {};
+    (Array.isArray(project.cast) ? project.cast : []).forEach((member) => {
+      if (member && typeof member.name === "string" && member.name && typeof member.color === "string") {
+        castColors[member.name] = member.color;
+      }
+    });
+    lastVoxSnapshot = { sections, sceneNotes, castColors };
     window.dispatchEvent(new CustomEvent("stage-timeline-vox-cues", {
       detail: {
         currentSectionId: timeline.sectionId || null,
         sections,
         sceneNotes,
+        castColors,
         seconds: seekSeconds,
       },
     }));

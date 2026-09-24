@@ -24,7 +24,7 @@
 <script src="gamma-light-model.js?v=2026092113"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=2026091987">
 <link rel="stylesheet" href="stage-scene-alternatives.css?v=2026092209">
-<link rel="stylesheet" href="stage-vox-panel.css?v=2026092406">
+<link rel="stylesheet" href="stage-vox-panel.css?v=2026092408">
 <link rel="stylesheet" href="stage-panel-columns.css?v=2026092402">
 </head>
 <body class="is-standalone">
@@ -954,10 +954,29 @@
                いま行われているセリフを上に大きく出す。文字は各場面のメモの台本行から引く（読むだけ）。 -->
           <section class="stage-panel" data-panel="vox" data-title="VOXキュー">
             <div class="stage-panel-body stage-vox-panel" id="stage-vox-panel">
-              <div class="stage-vox-now" data-vox-now aria-live="polite">
-                <p class="stage-vox-now-cue" data-vox-now-cue>いまのセリフ</p>
-                <p class="stage-vox-now-speaker" data-vox-now-speaker></p>
-                <p class="stage-vox-now-line" data-vox-now-line></p>
+              <div class="stage-vox-now" data-vox-now>
+                <div class="stage-vox-now-head">
+                  <p class="stage-vox-now-cue" data-vox-now-cue>いまのセリフ</p>
+                  <!-- 文字の大きさ（2026-09-24 本人指示）: 標準・大・特大。端末に保存する。 -->
+                  <div class="stage-vox-size" role="group" aria-label="セリフの文字の大きさ">
+                    <button type="button" data-vox-size="m" aria-label="文字の大きさ：標準" title="標準">A</button>
+                    <button type="button" data-vox-size="l" aria-label="文字の大きさ：大" title="大">A</button>
+                    <button type="button" data-vox-size="xl" aria-label="文字の大きさ：特大" title="特大">A</button>
+                  </div>
+                </div>
+                <div class="stage-vox-now-main" aria-live="polite">
+                  <p class="stage-vox-now-speaker" data-vox-now-speaker></p>
+                  <p class="stage-vox-now-line" data-vox-now-line></p>
+                </div>
+                <p class="stage-vox-now-next" data-vox-now-next hidden>
+                  <span class="stage-vox-now-next-label">次</span>
+                  <span class="stage-vox-now-next-speaker" data-vox-now-next-speaker></span>
+                  <span class="stage-vox-now-next-line" data-vox-now-next-line></span>
+                </p>
+                <div class="stage-vox-step">
+                  <button type="button" data-vox-step="-1" aria-label="前のVOXキューへ">← 前</button>
+                  <button type="button" data-vox-step="1" aria-label="次のVOXキューへ">次 →</button>
+                </div>
               </div>
               <p class="stage-vox-section" data-vox-section></p>
               <ol class="stage-vox-list" data-vox-list aria-label="VOXキューの一覧（押すとその瞬間へ移る）" hidden></ol>
@@ -3291,14 +3310,14 @@
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=2026092405"></script>
+    <script src="stage-i18n.js?v=2026092406"></script>
     <script src="stage-i18n.zh-Hans.js?v=2026092203"></script>
     <script src="stage-i18n.zh-Hant.js?v=2026092203"></script>
 <script src="stage-prompt-i18n.js?v=2026092050"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026091501"></script>
 <script src="stage-samples/romeo-juliet-cued.js?v=2026092402"></script>
-<script src="stage-samples/feature-test-show.js?v=2026092401"></script>
+<script src="stage-samples/feature-test-show.js?v=2026092402"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
 <script src="stage-machinery.js?v=2026092055"></script>
@@ -3323,11 +3342,11 @@
 <script src="stage-light-panel-import.js?v=2026092209"></script>
 <script src="stage-scene-alternatives.js?v=2026092208"></script>
 <script src="stage-shortcuts.js?v=2026092218"></script>
-<script src="stage-sketch.js?v=2026092408"></script>
+<script src="stage-sketch.js?v=2026092409"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092209"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
-<script src="stage-vox-panel.js?v=2026092403"></script>
-    <script src="stage-timeline.js?v=2026092403"></script>
+<script src="stage-vox-panel.js?v=2026092405"></script>
+    <script src="stage-timeline.js?v=2026092404"></script>
 <script src="stage-session.js?v=2026091987"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>

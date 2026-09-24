@@ -6,12 +6,15 @@
   --stage-vox-muted: var(--stage-timeline-muted, #cbbba4);
   --stage-vox-line: var(--line-dark, #382f25);
   display: grid;
+  /* 列の最小幅を0にする。折り返さない「次の予告」の長さでパネルが横へはみ出さないように */
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
 }
 
 /* いまのセリフ（2026-09-24 本人指示: 左のバーだけでは弱いので四辺を枠で囲む）。
    数値: 枠2px・角丸8px・内側余白12/14px・外側に3pxの淡い光輪。該当なしのときは点線の枠。 */
 .stage-vox-now {
+  min-width: 0;
   border: 2px solid var(--stage-vox-accent);
   border-radius: 8px;
   padding: 12px 14px 14px;
@@ -27,17 +30,44 @@
   opacity: 0.85;
 }
 .stage-vox-now p { margin: 0; }
-.stage-vox-now-cue {
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  color: var(--stage-vox-accent);
+.stage-vox-now-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding-bottom: 6px;
   border-bottom: 1px solid rgba(168, 191, 138, 0.35);
 }
-.stage-vox-panel:not(.has-current) .stage-vox-now-cue {
-  color: var(--stage-vox-muted);
-  border-bottom-color: var(--stage-vox-line);
+.stage-vox-now-cue {
+  min-width: 0;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--stage-vox-accent);
 }
+.stage-vox-panel:not(.has-current) .stage-vox-now-cue { color: var(--stage-vox-muted); }
+.stage-vox-panel:not(.has-current) .stage-vox-now-head { border-bottom-color: var(--stage-vox-line); }
+
+/* 文字の大きさ（標準・大・特大）。「A」の大きさそのものを段階の印にする（言語に依らない）。
+   数値: ボタン30px四方・間隔2px・「A」11/14/17px。押している段は緑の枠。 */
+.stage-vox-size { display: flex; flex: 0 0 auto; gap: 2px; }
+.stage-vox-size button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--stage-vox-line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--stage-vox-muted);
+  font: 600 11px/1 var(--sans, sans-serif);
+  cursor: pointer;
+}
+.stage-vox-size button[data-vox-size="l"] { font-size: 14px; }
+.stage-vox-size button[data-vox-size="xl"] { font-size: 17px; }
+.stage-vox-size button[aria-pressed="true"] { border-color: var(--stage-vox-accent); color: var(--stage-vox-accent); }
+.stage-vox-size button:focus-visible { outline: 2px solid var(--stage-vox-accent); outline-offset: 1px; }
 .stage-vox-now-speaker {
   margin-top: 6px !important;
   font-size: 13px;
@@ -59,6 +89,66 @@
   font-size: 13px;
   color: var(--stage-vox-muted);
 }
+
+/* ト書き（括弧内）: セリフの中で小さく、弱い色（#b8ad98・対地 8.67:1 実測済み） */
+.stage-vox-direction { font-size: 0.7em; color: var(--stage-vox-direction, #b8ad98); }
+
+/* 話者の印（演者の色）。色だけでは話者を区別できないので名前の文字は必ず残す。紙色の細い縁で暗い色も見える。 */
+.stage-vox-chip {
+  display: inline-block;
+  width: 0.62em;
+  height: 0.62em;
+  margin-right: 0.4em;
+  outline: 1px solid var(--stage-vox-text);
+  vertical-align: 0.02em;
+}
+
+/* 次のセリフの予告（1行・省略記号） */
+.stage-vox-now-next {
+  margin-top: 10px !important;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(168, 191, 138, 0.3);
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--stage-vox-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stage-vox-now-next[hidden] { display: none; }
+.stage-vox-now-next-label { margin-right: 0.6em; color: var(--stage-vox-accent); letter-spacing: 0.08em; }
+.stage-vox-now-next-speaker { margin-right: 0.6em; color: var(--stage-vox-text); font-weight: 600; }
+
+/* 手送り: 前・次（押すとタイムライン・舞台の図も一緒に進む）。数値: 2列・間隔8px・高さ36px。 */
+.stage-vox-step {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.stage-vox-step button {
+  min-height: 36px;
+  margin: 0;
+  border: 1px solid rgba(168, 191, 138, 0.45);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--stage-vox-text);
+  font: 600 13px/1 var(--sans, sans-serif);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.stage-vox-step button:hover:not(:disabled) { background: rgba(168, 191, 138, 0.12); border-color: var(--stage-vox-accent); }
+.stage-vox-step button:focus-visible { outline: 2px solid var(--stage-vox-accent); outline-offset: 1px; }
+.stage-vox-step button:disabled { opacity: 0.4; cursor: default; }
+
+/* 文字の大きさの段階。数値: セリフ 16 / 22 / 30px、話者 13 / 15 / 18px、次の予告 12 / 13 / 15px。
+   特大は右の2列目（3列表示）を広げて使う想定。 */
+.stage-vox-panel.has-current[data-vox-size="l"] .stage-vox-now-line { font-size: 22px; line-height: 1.6; }
+.stage-vox-panel.has-current[data-vox-size="l"] .stage-vox-now-speaker { font-size: 15px; }
+.stage-vox-panel.has-current[data-vox-size="l"] .stage-vox-now-next { font-size: 13px; }
+.stage-vox-panel.has-current[data-vox-size="xl"] .stage-vox-now-line { font-size: 30px; line-height: 1.55; }
+.stage-vox-panel.has-current[data-vox-size="xl"] .stage-vox-now-speaker { font-size: 18px; }
+.stage-vox-panel.has-current[data-vox-size="xl"] .stage-vox-now-next { font-size: 15px; }
 
 .stage-vox-section {
   margin: 0;
@@ -181,6 +271,8 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+.stage-cue-line-text .stage-vox-direction { font-size: 0.7em; color: #b8ad98; }
+.stage-cue-line-speaker .stage-vox-chip { display: inline-block; width: 0.62em; height: 0.62em; margin-right: 0.4em; outline: 1px solid var(--milk, #efe7d6); }
 .stage-cue-line-text.is-missing { font-family: inherit; font-size: 12px; font-style: italic; color: var(--milk-dim, #cbbba4); }
 
 .stage-cue-line[hidden], .stage-cue-step[hidden] { display: none; }

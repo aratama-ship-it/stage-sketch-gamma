@@ -131,9 +131,38 @@
     };
   }
 
+  /* ト書き（括弧の中）を分ける。「（袖から、大声で探す）ジュリエット！」→ ト書き＋セリフ。
+   * 全角・半角の丸括弧だけを対象にする（「」は台本の地のまま残す）。 */
+  function splitDirections(text) {
+    const value = typeof text === "string" ? text : "";
+    const parts = [];
+    const pattern = /[（(][^（）()]*[）)]/g;
+    let last = 0;
+    let match;
+    while ((match = pattern.exec(value))) {
+      if (match.index > last) parts.push({ text: value.slice(last, match.index), direction: false });
+      parts.push({ text: match[0], direction: true });
+      last = match.index + match[0].length;
+    }
+    if (last < value.length) parts.push({ text: value.slice(last), direction: false });
+    return parts.filter((part) => part.text.trim());
+  }
+
+  /* 前後のVOXキュー（手送り）。いまのキューがあればその前後。まだ無い（セクションの頭より前）なら、
+   * 次＝このセクションの最初、前＝その1つ前（前のセクションの最後）。 */
+  function stepTarget(entries, current, direction) {
+    const list = Array.isArray(entries) ? entries : [];
+    if (!list.length || !current) return null;
+    if (current.index >= 0) return list[current.index + (direction < 0 ? -1 : 1)] || null;
+    let first = list.findIndex((entry) => entry.sectionIndex === current.sectionIndex);
+    if (first < 0) first = list.findIndex((entry) => entry.sectionIndex > current.sectionIndex);
+    if (first < 0) return direction < 0 ? list[list.length - 1] : null;
+    return direction < 0 ? list[first - 1] || null : list[first];
+  }
+
   root.SHOSAI_VOX_PANEL = Object.freeze({
     scriptLinesFromNote, lineFromMemo, attachLines, currentIndexAt, formatSeconds,
-    flattenSections, currentInShow,
+    flattenSections, currentInShow, splitDirections, stepTarget,
   });
 
   /* ---------- 画面 ---------- */
@@ -145,6 +174,11 @@
     nowCue: host.querySelector("[data-vox-now-cue]"),
     nowSpeaker: host.querySelector("[data-vox-now-speaker]"),
     nowLine: host.querySelector("[data-vox-now-line]"),
+    next: host.querySelector("[data-vox-now-next]"),
+    nextSpeaker: host.querySelector("[data-vox-now-next-speaker]"),
+    nextLine: host.querySelector("[data-vox-now-next-line]"),
+    stepButtons: [...host.querySelectorAll("[data-vox-step]")],
+    sizeButtons: [...host.querySelectorAll("[data-vox-size]")],
     section: host.querySelector("[data-vox-section]"),
     list: host.querySelector("[data-vox-list]"),
     empty: host.querySelector("[data-vox-empty]"),
@@ -155,13 +189,43 @@
       ? model.text(document.documentElement.lang || "ja", japanese) : japanese;
   };
 
-  let state = { currentSectionId: null, entries: [] };
+  let state = { currentSectionId: null, entries: [], castColors: {} };
+  const SIZE_KEY = "gamma:vox-panel-size-v1";
+  const SIZES = ["m", "l", "xl"];
   let seconds = 0;
   let current = { index: -2, sectionIndex: -1 };   // index -2＝まだ一度も描いていない
   let rows = [];
 
   function lineText(entry) {
     return entry.line || tx("（台本の行が見つかりません。キューのメモも空です）");
+  }
+
+  // 話者名の前に演者の色の小さな印（演者名と同じ話者だけ）。色は補助で、名前の文字で確定する。
+  function renderSpeaker(el, speaker) {
+    el.textContent = "";
+    if (!speaker) return;
+    const color = state.castColors[speaker];
+    if (color) {
+      const chip = document.createElement("span");
+      chip.className = "stage-vox-chip";
+      chip.style.background = color;
+      chip.setAttribute("aria-hidden", "true");
+      el.append(chip);
+    }
+    el.append(document.createTextNode(speaker));
+  }
+
+  // セリフの中のト書き（括弧内）を小さく別の色で
+  function renderLine(el, entry) {
+    el.textContent = "";
+    if (!entry.line) { el.textContent = lineText(entry); return; }
+    splitDirections(entry.line).forEach((part) => {
+      if (!part.direction) { el.append(document.createTextNode(part.text)); return; }
+      const span = document.createElement("span");
+      span.className = "stage-vox-direction";
+      span.textContent = part.text;
+      el.append(span);
+    });
   }
 
   function renderNow() {
@@ -173,11 +237,35 @@
       els.nowLine.textContent = current.sectionIndex >= 0
         ? tx("このセクションのこの位置より前にVOXキューはありません。")
         : "";
-      return;
+    } else {
+      els.nowCue.textContent = `${tx("いまのセリフ")} · ${entry.displayName}`;
+      renderSpeaker(els.nowSpeaker, entry.speaker);
+      renderLine(els.nowLine, entry);
     }
-    els.nowCue.textContent = `${tx("いまのセリフ")} · ${entry.displayName}`;
-    els.nowSpeaker.textContent = entry.speaker;
-    els.nowLine.textContent = lineText(entry);
+    // 次のセリフの予告と、手送りのボタン
+    const prev = stepTarget(state.entries, current, -1);
+    const next = stepTarget(state.entries, current, 1);
+    if (els.next) {
+      els.next.hidden = !next;
+      if (next) {
+        renderSpeaker(els.nextSpeaker, next.speaker);
+        if (next.line) renderLine(els.nextLine, next);
+        else els.nextLine.textContent = tx("（文字なし）");
+        els.next.title = `${next.displayName}（${next.sectionTitle} / ${next.sceneTitle}）`;
+      }
+    }
+    els.stepButtons.forEach((button) => {
+      const target = Number(button.dataset.voxStep) < 0 ? prev : next;
+      button.disabled = !target;
+      button.dataset.cueId = target ? target.id : "";
+      button.title = target ? `${target.displayName}${target.speaker ? `・${target.speaker}` : ""}` : "";
+    });
+  }
+
+  function applySize(size) {
+    const value = SIZES.includes(size) ? size : "m";
+    host.dataset.voxSize = value;
+    els.sizeButtons.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.voxSize === value)));
   }
 
   function markCurrent(scroll) {
@@ -251,7 +339,7 @@
       if (entry.speaker) {
         const speaker = document.createElement("span");
         speaker.className = "stage-vox-row-speaker";
-        speaker.textContent = entry.speaker;
+        renderSpeaker(speaker, entry.speaker);
         meta.append(speaker);
       }
       const line = document.createElement("span");
@@ -280,6 +368,11 @@
     root.dispatchEvent(event);
   }
 
+  function stepBy(direction) {
+    const target = stepTarget(state.entries, current, direction);
+    if (target) seekTo(target);
+  }
+
   function updateSeconds(next, scroll) {
     seconds = Number(next) || 0;
     const found = currentInShow(state.entries, state.currentSectionId, seconds);
@@ -298,7 +391,9 @@
         && entry.speaker === entries[index].speaker && entry.displayName === entries[index].displayName
         && entry.sectionIndex === entries[index].sectionIndex && entry.sectionTitle === entries[index].sectionTitle);
     const sectionChanged = state.currentSectionId !== (detail.currentSectionId || null);
-    state = { currentSectionId: detail.currentSectionId || null, entries };
+    const colorsChanged = JSON.stringify(state.castColors) !== JSON.stringify(detail.castColors || {});
+    state = { currentSectionId: detail.currentSectionId || null, entries, castColors: detail.castColors || {} };
+    if (colorsChanged && sameList) { renderList(); current = { index: -2, sectionIndex: -2 }; }
     if (!sameList) renderList();
     if (!sameList || sectionChanged) current = { index: -2, sectionIndex: -2 };
     updateSeconds(Number.isFinite(detail.seconds) ? detail.seconds : seconds, !sameList || sectionChanged);
@@ -307,6 +402,19 @@
   root.addEventListener("stage-timeline-position-change", (event) => {
     const next = event && event.detail && event.detail.seconds;
     if (Number.isFinite(next)) updateSeconds(next, true);
+  });
+
+  els.stepButtons.forEach((button) => {
+    button.addEventListener("click", () => stepBy(Number(button.dataset.voxStep)));
+  });
+  let savedSize = "m";
+  try { savedSize = root.localStorage.getItem(SIZE_KEY) || "m"; } catch (_) { /* 保存できない環境では標準のまま */ }
+  applySize(savedSize);
+  els.sizeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      applySize(button.dataset.voxSize);
+      try { root.localStorage.setItem(SIZE_KEY, host.dataset.voxSize); } catch (_) { /* 端末に残せなくても表示は変える */ }
+    });
   });
 
   renderList();
