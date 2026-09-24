@@ -9944,13 +9944,104 @@
     });
     return true;
   }
+
+  /* ★2026-09-24 本人指摘「照明を焚きすぎている」: 複製の各場面の点け方が「機械的に作られた状態」のままなら、
+   * 同梱版の場面ごとの点け方（意図に合わせて絞ったもの）へ置き換える。機械的に作られた状態とは、
+   *   ・9/21版の6灯の点け方（全場面ほぼ全灯）／9/23版の6灯の点け方（場面ごとの作り分け）
+   *   ・それらを V-05 の規則で41灯へ写した結果（旧6灯の「全灯」を写すと天井8・SS6・バトンが全部点く＝焚きすぎの正体）
+   *   ・今日の同梱版（fbcdee6・f52e0f0）の41灯の点け方（同梱の点け方を次に変えるときは直前版の指紋をここへ足す）
+   * のいずれか。指紋は点灯・明るさ・色・ゴボ・狙い・広がりだけから作る（正規化で増えるキーの影響を受けない）。
+   * 利用者が明るさや灯体を変えた場面は指紋が合わないので触らない。もや（environment）・LXキューの id と名前は変えない。 */
+  const ROMEO_JULIET_MACHINE_LIGHT_HASHES = Object.freeze({
+    "rj-frame-rj-cond-01-a-01": ["n947xf","39jcn6","-wgbtc2","-wiww6z","-pgy4vr"],
+    "rj-frame-rj-cond-01-b-02": ["etbkzr","-1edz0n","-9otqt1","c8lm7s","fs4yfg"],
+    "rj-frame-rj-cond-01-b-m6-01": ["-totnld","-dywuy6","vcwrwi"],
+    "rj-frame-rj-cond-01-b-m6-02": ["-c9tnow","-48d8ml","-lxr9zz"],
+    "rj-frame-rj-cond-01-b-m6-03": ["z9qmj2","hv47yp","ns9ijn"],
+    "rj-frame-rj-cond-01-c-01": ["5dh4u","414lcj","uqsrim","57qjwb","-vkt4hd"],
+    "rj-frame-rj-cond-01-d-01": ["-5g26ob","-7luz26","-tz6qqg","-4jg337","-4f7ir7"],
+    "rj-frame-rj-cond-02-a-01": ["-o2t9c5","31dog","-sj3jva","-dp8r9u","-jqw0jw"],
+    "rj-frame-rj-cond-02-b-01": ["-f705vw","7mknf9","4sicuz","qjpvbq","-mt1cao"],
+    "rj-frame-rj-cond-02-c-01": ["-xnj7ct","-ww31u6","-3axnax","-esku1q","1jnilu"],
+    "rj-frame-rj-cond-03-a-01": ["-13bxc1","-gegx07","-gk8gbs","-vgr8gv","hy0rdz","k0cvbh"],
+    "rj-frame-rj-cond-03-a-02": ["t0k28l","-fwykod","djnj8u","qwx3nv","-j2y7wj","-h0m3z1"],
+    "rj-frame-rj-cond-03-b-01": ["g6cw6o","-4r0dhs","-mflwga","wf1e80","jvvdnk"],
+    "rj-frame-rj-cond-03-c-01": ["qcbf26","oc5k69","8wdjh1"],
+    "rj-frame-rj-cond-03-c-02": ["-cbgqqm","-ejcn2b","-tz4nrj"],
+    "rj-frame-rj-cond-03-c-03": ["fuykdg","-6u4k1x","wsilh3","-1sczb1","2cdxh"],
+    "rj-frame-rj-cond-03-d-01": ["-2n7qtn","-d9oikc","g8dpsm","gkn5s7","2qhrc0"],
+    "rj-frame-rj-cond-03-d-02": ["-bfyboe","16o1x3","te7vg0","-4t3u5p","-lypozz"],
+    "rj-frame-rj-cond-04-a-01": ["ufquwz","1wdpbq","4c3rfu","pwuhtc","-go8ld7"],
+    "rj-frame-rj-cond-04-b-01": ["r5cfcn","-2pawlt","qir1bj","-hl8u58","yc5553"],
+    "rj-frame-rj-cond-04-b-02": ["-f7i0rn","emrebt","t4yf9x","tie08u","-jcwlwf"],
+    "rj-frame-rj-cond-04-c-01": ["4s71o8","-quyg7d","-nieop0","-fdbfhr"],
+    "rj-frame-rj-cond-04-c-02": ["7x6e8o","2ui2vr","r7ldcs","vo5z1","doy4tn"],
+    "rj-frame-rj-cond-04-d-01": ["qnl8sc","-ucy258","aszfqj","5a8wz6","6m2tia"],
+    "rj-frame-rj-cond-04-d-02": ["xe9pj4","ixq3c0","-yurayh","-v6z1n6","-jaav6q"],
+    "rj-frame-rj-cond-05-a-01": ["exgqyl","ysqah","s35gzd","dxeef1","3jyjh5"],
+    "rj-frame-rj-cond-05-b-01": ["l0wpvd","8vuxgf","f99koz","-azmg99","-mt14pp"],
+    "rj-frame-rj-cond-05-b-02": ["l0wpvd","8vuxgf","f99koz","-azmg99","-mt14pp"],
+    "rj-frame-rj-cond-05-c-01": ["aoe5qb","1ardbw","-5pfl9","rgxk1s"],
+    "rj-frame-rj-cond-05-d-01": ["-27gmwg","-r0z793","j1rrzg","-j24ayb","-jtuofb"],
+    "rj-frame-rj-cond-05-d-02": ["3qifdc","-yz9l87","42f91m","94evmg","-onnv58"],
+  });
+  function romeoJulietLightsHash(lights) {
+    const sig = Object.keys(lights || {}).sort().map((id) => {
+      const light = lights[id] || {};
+      const aim = light.path && light.path.a || {};
+      return [id, light.on === true ? 1 : 0, Math.round(finite(light.level, 0)), String(light.color || ""), String(light.gobo || "none"),
+        Math.round(finite(aim.u, 0) * 1000), Math.round(finite(aim.v, 0) * 1000), Math.round(finite(light.beamDeg, 0))].join(":");
+    }).join("|");
+    let h = 0;
+    for (let i = 0; i < sig.length; i += 1) h = (Math.imul(31, h) + sig.charCodeAt(i)) | 0;
+    return h.toString(36);
+  }
+  function romeoJulietMachineMadeScenes(savedProject) {
+    const out = new Set();
+    const scenes = savedProject && savedProject.lightingDesign && Array.isArray(savedProject.lightingDesign.scenes)
+      ? savedProject.lightingDesign.scenes : [];
+    scenes.forEach((scene) => {
+      const known = scene && ROMEO_JULIET_MACHINE_LIGHT_HASHES[scene.id];
+      if (known && scene.cue && known.includes(romeoJulietLightsHash(scene.cue.lights))) out.add(scene.id);
+    });
+    return out;
+  }
+  function backfillRomeoJulietLightingLooks(savedProject, bundledProject, machineMade) {
+    const saved = savedProject && savedProject.lightingDesign;
+    const bundled = bundledProject && bundledProject.lightingDesign;
+    if (!saved || !bundled || !Array.isArray(saved.scenes) || !Array.isArray(bundled.scenes)) return false;
+    if (!saved.rig || !bundled.rig || !Array.isArray(saved.rig.fixtures) || saved.rig.fixtures.length !== bundled.rig.fixtures.length) return false;
+    const byId = new Map(bundled.scenes.map((scene) => [scene.id, scene]));
+    const untouched = machineMade instanceof Set ? machineMade : romeoJulietMachineMadeScenes(savedProject);
+    let changed = false;
+    saved.scenes.forEach((scene) => {
+      if (!scene || !scene.cue) return;
+      const source = byId.get(scene.id);
+      if (!source || !source.cue || !source.cue.lights) return;
+      if (!untouched.has(scene.id)) return;
+      if (romeoJulietLightsHash(scene.cue.lights) === romeoJulietLightsHash(source.cue.lights)) return;
+      // 点け方ごと置き換える場面は、もや（environment）も同梱版に揃える（9/21版の複製はもやが全場面0のままなので）
+      scene.cue = { ...scene.cue, lights: projectIoClone(source.cue.lights),
+        ...(source.cue.environment ? { environment: projectIoClone(source.cue.environment) } : {}) };
+      (scene.lxq || []).forEach((q, index) => {
+        const sourceQ = (source.lxq || [])[index];
+        if (q && q.cue && sourceQ && sourceQ.cue && sourceQ.cue.lights) q.cue = { ...q.cue, lights: projectIoClone(sourceQ.cue.lights),
+          ...(sourceQ.cue.environment ? { environment: projectIoClone(sourceQ.cue.environment) } : {}) };
+      });
+      changed = true;
+    });
+    return changed;
+  }
   function backfillRomeoJulietSampleData(savedProject, bundledProject) {
     const a = backfillRomeoJulietVoxOffsets(savedProject, bundledProject);
     const b = backfillRomeoJulietTransitions(savedProject);
     const c = backfillRomeoJulietScript(savedProject, bundledProject);
     const d = backfillRomeoJulietCastNames(savedProject, bundledProject);
+    // 41灯へ写す前に「機械的な状態のまま」の場面を控え、写した後に同梱の場面ごとの点け方へ置き換える
+    const machineMade = romeoJulietMachineMadeScenes(savedProject);
     const e = backfillRomeoJulietLightingRig(savedProject, bundledProject);
-    return a || b || c || d || e;
+    const f = backfillRomeoJulietLightingLooks(savedProject, bundledProject, machineMade);
+    return a || b || c || d || e || f;
   }
 
   /* ★2026-09-24 本人指示「転換が0秒のものは全部直す」: 八人のサーカス・継ぎ目の庭の棚の複製と、
