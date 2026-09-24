@@ -26,6 +26,8 @@
     ],
   };
 
+  /* ★見本の場面には holdSeconds（見せる時間）と transitionSeconds（次の場面への転換）を必ず入れる。
+     0秒の転換は現場に存在しない（本人指示・2026-09-24）。tests/bundled-sample-timing.test.mjs が全見本を検査する。 */
   /* 以前からある短い見本。8場面の動線・装置・照明を一つのデータとして保持する。 */
   const eightCircus = {
     schemaVersion: "1.0",
@@ -58,14 +60,14 @@
       { key: "front", kind: "front", name: "前明かり", nameEn: "Front light", dia: 5, h: 8, srcV: 1.02 },
     ],
     scenes: [
-      { title: "1 オープニング", note: "全員が袖と奥から現れ、一列で客席を見る。まだ誰の番でもない。", cast: { mina: [0.50, 0.72, 0, "stand"], riku: [0.36, 0.70, 0, "stand"], kai: [0.64, 0.70, 0, "stand"], sora: [0.24, 0.66, 0, "stand"], noa: [0.76, 0.66, 0, "stand"], jin: [0.14, 0.62, 0, "stand"], yuki: [0.86, 0.62, 0, "stand"], ren: [0.50, 0.58, 0, "reach"] }, sets: { deck: [0.50, 0.24] }, lights: { wash: [0.50, 0.66], front: [0.50, 0.70] } },
-      { title: "2 演目・シルホイール", note: "ミナの輪が上手袖から入り、舞台を横切る。他は袖へ引く。", cast: { mina: [0.16, 0.62, 0, "cyr"], riku: [0.06, 0.34, 0, "stand"], kai: [0.94, 0.34, 0, "stand"] }, sets: { deck: [0.50, 0.24] }, lights: { spot: [0.16, 0.62], sideL: [0.30, 0.60] } },
-      { title: "3 演目・チャイニーズポール", note: "輪が下手へ抜けきる。入れ替わりにポールが立ち、ジンが登る。", cast: { mina: [0.90, 0.64, 20, "cyr"], jin: [0.42, 0.34, 0, "reach"], riku: [0.06, 0.34, 0, "stand"], kai: [0.94, 0.34, 0, "stand"] }, sets: { deck: [0.50, 0.24], pole: [0.42, 0.34] }, lights: { spot: [0.42, 0.30], sideR: [0.42, 0.40] } },
-      { title: "4 トランジション", note: "ポールが残り、四人が交差して通り抜ける。台が奥から客席側へ出てくる。", cast: { sora: [0.10, 0.80, 90, "run"], noa: [0.90, 0.80, 270, "run"], yuki: [0.10, 0.50, 90, "walk"], ren: [0.90, 0.50, 270, "walk"], jin: [0.42, 0.34, 0, "stand"] }, sets: { deck: [0.50, 0.24], pole: [0.42, 0.34] }, lights: { wash: [0.50, 0.60] } },
-      { title: "5 演劇パート", note: "台の上のレンと、床のソラだけが残る。声で場をつなぐ。前明かりを顔へ。", cast: { ren: [0.50, 0.24, 0, "sing"], sora: [0.62, 0.68, 300, "kneel"] }, sets: { deck: [0.50, 0.24], pole: [0.42, 0.34] }, lights: { front: [0.54, 0.40], spot: [0.50, 0.24] } },
-      { title: "6 演目・トラピーズ", note: "ポールが退き、トラピーズが降りる。ユキが乗り、下でソラが見る。", cast: { yuki: [0.58, 0.40, 0, "reach"], sora: [0.30, 0.72, 45, "stand"], ren: [0.06, 0.30, 0, "stand"] }, sets: { trap: [0.58, 0.40] }, lights: { spot: [0.58, 0.36], sideL: [0.44, 0.44] } },
-      { title: "7 演目・群舞", note: "全員が下手側から一斉に入り、舞台いっぱいへ散る。いちばん動く場面。", cast: { mina: [0.30, 0.62, 0, "dance1"], riku: [0.46, 0.70, 0, "dance2"], kai: [0.62, 0.60, 0, "dance4"], sora: [0.20, 0.44, 0, "dance3"], noa: [0.78, 0.46, 0, "dance5"], jin: [0.70, 0.76, 0, "dance1"], yuki: [0.38, 0.42, 0, "dance4"], ren: [0.86, 0.66, 0, "dance2"] }, sets: { deck: [0.50, 0.22] }, lights: { wash: [0.50, 0.58], sideL: [0.26, 0.56], sideR: [0.74, 0.56] } },
-      { title: "8 エンディング・楽器", note: "台の上でジンがトランペット、レンがギター。残りは半円で座る。吊り一本だけ残す。", cast: { jin: [0.44, 0.24, 0, "trumpet"], ren: [0.58, 0.24, 0, "guitar"], mina: [0.28, 0.60, 20, "sit"], riku: [0.42, 0.66, 10, "sit"], kai: [0.58, 0.66, 350, "sit"], sora: [0.72, 0.60, 340, "sit"], noa: [0.20, 0.50, 30, "sit"], yuki: [0.80, 0.50, 330, "sit"] }, sets: { deck: [0.50, 0.24] }, lights: { spot: [0.50, 0.26] } },
+      { title: "1 オープニング", holdSeconds: 40, transitionSeconds: 6, note: "全員が袖と奥から現れ、一列で客席を見る。まだ誰の番でもない。", cast: { mina: [0.50, 0.72, 0, "stand"], riku: [0.36, 0.70, 0, "stand"], kai: [0.64, 0.70, 0, "stand"], sora: [0.24, 0.66, 0, "stand"], noa: [0.76, 0.66, 0, "stand"], jin: [0.14, 0.62, 0, "stand"], yuki: [0.86, 0.62, 0, "stand"], ren: [0.50, 0.58, 0, "reach"] }, sets: { deck: [0.50, 0.24] }, lights: { wash: [0.50, 0.66], front: [0.50, 0.70] } },
+      { title: "2 演目・シルホイール", holdSeconds: 90, transitionSeconds: 8, note: "ミナの輪が上手袖から入り、舞台を横切る。他は袖へ引く。", cast: { mina: [0.16, 0.62, 0, "cyr"], riku: [0.06, 0.34, 0, "stand"], kai: [0.94, 0.34, 0, "stand"] }, sets: { deck: [0.50, 0.24] }, lights: { spot: [0.16, 0.62], sideL: [0.30, 0.60] } },
+      { title: "3 演目・チャイニーズポール", holdSeconds: 90, transitionSeconds: 10, note: "輪が下手へ抜けきる。入れ替わりにポールが立ち、ジンが登る。", cast: { mina: [0.90, 0.64, 20, "cyr"], jin: [0.42, 0.34, 0, "reach"], riku: [0.06, 0.34, 0, "stand"], kai: [0.94, 0.34, 0, "stand"] }, sets: { deck: [0.50, 0.24], pole: [0.42, 0.34] }, lights: { spot: [0.42, 0.30], sideR: [0.42, 0.40] } },
+      { title: "4 トランジション", holdSeconds: 30, transitionSeconds: 6, note: "ポールが残り、四人が交差して通り抜ける。台が奥から客席側へ出てくる。", cast: { sora: [0.10, 0.80, 90, "run"], noa: [0.90, 0.80, 270, "run"], yuki: [0.10, 0.50, 90, "walk"], ren: [0.90, 0.50, 270, "walk"], jin: [0.42, 0.34, 0, "stand"] }, sets: { deck: [0.50, 0.24], pole: [0.42, 0.34] }, lights: { wash: [0.50, 0.60] } },
+      { title: "5 演劇パート", holdSeconds: 120, transitionSeconds: 8, note: "台の上のレンと、床のソラだけが残る。声で場をつなぐ。前明かりを顔へ。", cast: { ren: [0.50, 0.24, 0, "sing"], sora: [0.62, 0.68, 300, "kneel"] }, sets: { deck: [0.50, 0.24], pole: [0.42, 0.34] }, lights: { front: [0.54, 0.40], spot: [0.50, 0.24] } },
+      { title: "6 演目・トラピーズ", holdSeconds: 90, transitionSeconds: 8, note: "ポールが退き、トラピーズが降りる。ユキが乗り、下でソラが見る。", cast: { yuki: [0.58, 0.40, 0, "reach"], sora: [0.30, 0.72, 45, "stand"], ren: [0.06, 0.30, 0, "stand"] }, sets: { trap: [0.58, 0.40] }, lights: { spot: [0.58, 0.36], sideL: [0.44, 0.44] } },
+      { title: "7 演目・群舞", holdSeconds: 120, transitionSeconds: 10, note: "全員が下手側から一斉に入り、舞台いっぱいへ散る。いちばん動く場面。", cast: { mina: [0.30, 0.62, 0, "dance1"], riku: [0.46, 0.70, 0, "dance2"], kai: [0.62, 0.60, 0, "dance4"], sora: [0.20, 0.44, 0, "dance3"], noa: [0.78, 0.46, 0, "dance5"], jin: [0.70, 0.76, 0, "dance1"], yuki: [0.38, 0.42, 0, "dance4"], ren: [0.86, 0.66, 0, "dance2"] }, sets: { deck: [0.50, 0.22] }, lights: { wash: [0.50, 0.58], sideL: [0.26, 0.56], sideR: [0.74, 0.56] } },
+      { title: "8 エンディング・楽器", holdSeconds: 60, transitionSeconds: 8, note: "台の上でジンがトランペット、レンがギター。残りは半円で座る。吊り一本だけ残す。", cast: { jin: [0.44, 0.24, 0, "trumpet"], ren: [0.58, 0.24, 0, "guitar"], mina: [0.28, 0.60, 20, "sit"], riku: [0.42, 0.66, 10, "sit"], kai: [0.58, 0.66, 350, "sit"], sora: [0.72, 0.60, 340, "sit"], noa: [0.20, 0.50, 30, "sit"], yuki: [0.80, 0.50, 330, "sit"] }, sets: { deck: [0.50, 0.24] }, lights: { spot: [0.50, 0.26] } },
     ],
     boundaries: ["配置・照明・動線は編集を始めるための見本であり、舞台機構や安全距離を決める図面ではない。"],
   };
@@ -98,10 +100,51 @@
     { key: "front", kind: "front", name: "客席を含む明かり", nameEn: "Light that includes the house", dia: 6.0, h: 8, srcV: 1.02 },
   ];
 
-  const s = (id, title, durationSeconds, role, _unused, note, castMap, setMap, lightMap) => ({
-    id, title, durationSeconds, role, note,
-    cast: castMap || {}, sets: setMap || {}, lights: lightMap || {},
+  /* 次の場面への転換（移動時間）秒。★0秒の転換は現場に存在しない（本人指示・2026-09-24）。
+     場面を足すときは必ずここへも足す。無いと同梱時に例外で止まり、0秒のまま出ることはない。
+     目安: 同じ配置の続き=4〜6秒、道具の移動や配置替え=8〜12秒、章の変わり目=10〜12秒、終演の暗転=8秒。 */
+  const SEAM_TRANSITION_SECONDS = Object.freeze({
+    "1-1": 4,
+    "1-2": 5,
+    "1-3": 5,
+    "1-4": 10,
+    "2-1": 6,
+    "2-2": 5,
+    "2-3": 5,
+    "2-4": 10,
+    "3-1": 5,
+    "3-2": 5,
+    "3-3": 5,
+    "3-4": 10,
+    "4-1": 5,
+    "4-2": 5,
+    "4-3": 5,
+    "4-4": 12,
+    "5-1": 5,
+    "5-2": 5,
+    "5-3": 5,
+    "5-4": 10,
+    "6-1": 5,
+    "6-2": 8,
+    "6-3": 6,
+    "6-4": 10,
+    "7-1": 5,
+    "7-2": 5,
+    "7-3": 5,
+    "7-4": 10,
+    "8-1": 5,
+    "8-2": 5,
+    "8-3": 8,
+    "8-4": 8,
   });
+  const s = (id, title, durationSeconds, role, _unused, note, castMap, setMap, lightMap) => {
+    const transitionSeconds = SEAM_TRANSITION_SECONDS[id];
+    if (!(transitionSeconds > 0)) throw new Error(`継ぎ目の庭 ${id}: 転換秒（SEAM_TRANSITION_SECONDS）が未定義`);
+    return {
+      id, title, durationSeconds, transitionSeconds, role, note,
+      cast: castMap || {}, sets: setMap || {}, lights: lightMap || {},
+    };
+  };
   const performer = (u, v, facing, pose) => [u, v, facing || 0, pose || "stand"];
   const object = (u, v, facing) => [u, v, facing || 0];
 

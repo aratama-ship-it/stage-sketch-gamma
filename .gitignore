@@ -144,8 +144,6 @@ public-dist/
 !/stage-vox-panel.js
 !/stage-vox-panel.css
 !/stage-panel-columns.css
-!/stage-script-editor.js
-!/stage-script-editor.css
 !/stage-first-person.js
 !/stage-front-shape.js
 !/stage-i18n.js
@@ -204,6 +202,7 @@ public-dist/
 /tests/
 !/tests/
 /tests/*
+!/tests/bundled-sample-timing.test.mjs
 !/tests/light-selected-audience-mask.test.mjs
 !/tests/stage-lighting-all-venues.test.mjs
 !/tests/stage-light-panel-import.test.mjs

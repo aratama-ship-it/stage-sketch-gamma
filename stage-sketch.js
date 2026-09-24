@@ -9329,6 +9329,11 @@
     p.scenes = SAMPLE_SCENES.map((row, i) => {
       const scene = newScene(languageValue(() => row.titleEn || row.title, () => row.title), false);
       scene.note = languageValue(() => row.noteEn || row.note, () => row.note);
+      // ★2026-09-24 本人指示: 見本の転換を0秒にしない。見せる時間と転換は見本データの行から取る。
+      scene.rehearsal = normalizeSceneRehearsal({
+        holdDurationSeconds: row.holdSeconds,
+        transitionToNextSeconds: row.transitionSeconds,
+      });
       const pieces = [];
       Object.keys(row.cast || {}).forEach((key) => {
         const [u, v, facing, pose] = row.cast[key];
@@ -9439,7 +9444,8 @@
         scene.beat = normalizeSceneBeat("scene", { role: row.role });
         scene.rehearsal = normalizeSceneRehearsal({
           holdDurationSeconds: row.durationSeconds,
-          transitionToNextSeconds: 0,
+          // ★2026-09-24 本人指示: 転換0秒にしない。秒数は見本データ（SEAM_TRANSITION_SECONDS）から。
+          transitionToNextSeconds: row.transitionSeconds,
         });
         scene.sampleSectionId = section.id;
         scene.sampleSceneId = row.id;
@@ -9730,6 +9736,84 @@
     const a = backfillRomeoJulietVoxOffsets(savedProject, bundledProject);
     const b = backfillRomeoJulietTransitions(savedProject);
     return a || b;
+  }
+
+  /* ★2026-09-24 本人指示「転換が0秒のものは全部直す」: 八人のサーカス・継ぎ目の庭の棚の複製と、
+   * 開いたままの作業中データへ、同梱版の見せる時間・転換を届ける。直すのは「同梱の旧版の値のまま
+   * （八人=既定の10秒/0秒、継ぎ目=場面の秒数そのまま/0秒）」の場面だけ。利用者が変えた場面は触らない。
+   * 秒数を変えたらセクション時間の控えも合計へ揃える（揃えないと次に開いたとき見せる時間が縮む）。 */
+  function backfillEightCircusTimings(savedProject, bundledProject) {
+    const saved = savedProject && Array.isArray(savedProject.scenes) ? savedProject.scenes.filter((row) => row && row.kind === "scene") : null;
+    const bundled = bundledProject && Array.isArray(bundledProject.scenes) ? bundledProject.scenes.filter((row) => row && row.kind === "scene") : null;
+    if (!saved || !bundled || saved.length !== bundled.length) return false;
+    let changed = false;
+    saved.forEach((scene, index) => {
+      const source = bundled[index];
+      if (!source || scene.title !== source.title) return;
+      const rehearsal = scene.rehearsal && typeof scene.rehearsal === "object" ? scene.rehearsal : null;
+      const target = source.rehearsal || {};
+      if (!rehearsal || !(finite(target.transitionToNextSeconds, 0) > 0)) return;
+      if (Math.abs(finite(rehearsal.holdDurationSeconds, NaN) - DEFAULT_SCENE_HOLD_SECONDS) > 1e-6) return;
+      if (finite(rehearsal.transitionToNextSeconds, 0) > 1e-6) return;
+      rehearsal.holdDurationSeconds = finite(target.holdDurationSeconds, DEFAULT_SCENE_HOLD_SECONDS);
+      rehearsal.transitionToNextSeconds = finite(target.transitionToNextSeconds, 0);
+      changed = true;
+    });
+    if (changed) refreshSectionDurationCache(savedProject);
+    return changed;
+  }
+  function backfillSeamGardenTransitions(savedProject, bundledProject) {
+    const scenes = savedProject && Array.isArray(savedProject.scenes) ? savedProject.scenes : null;
+    const bundled = bundledProject && Array.isArray(bundledProject.scenes) ? bundledProject.scenes : null;
+    if (!scenes || !bundled) return false;
+    const byId = new Map(bundled.filter((row) => row && row.kind === "scene").map((row) => [row.id, row]));
+    let changed = false;
+    scenes.forEach((scene) => {
+      if (!scene || scene.kind !== "scene") return;
+      const source = byId.get(scene.id);
+      const rehearsal = scene.rehearsal && typeof scene.rehearsal === "object" ? scene.rehearsal : null;
+      if (!source || !rehearsal || !source.rehearsal) return;
+      if (!(finite(source.rehearsal.transitionToNextSeconds, 0) > 0)) return;
+      if (Math.abs(finite(rehearsal.holdDurationSeconds, NaN) - finite(source.rehearsal.holdDurationSeconds, NaN)) > 1e-6) return;
+      if (finite(rehearsal.transitionToNextSeconds, 0) > 1e-6) return;
+      rehearsal.transitionToNextSeconds = finite(source.rehearsal.transitionToNextSeconds, 0);
+      changed = true;
+    });
+    if (changed) refreshSectionDurationCache(savedProject);
+    return changed;
+  }
+  const BUNDLED_SAMPLE_BACKFILLS = [
+    { id: "sample-eight-circus-v1", build: () => buildSampleShow(), apply: backfillEightCircusTimings },
+    { id: "sample-seam-garden-v1", build: () => buildSeamGardenSampleShow(), apply: backfillSeamGardenTransitions },
+  ];
+  /* 棚の複製（八人のサーカス・継ぎ目の庭）へ届ける。shelveSample は初回起動でしか呼ばれないので、ここで毎回見る。 */
+  function backfillBundledSampleShelf() {
+    const shows = readShows();
+    let changed = false;
+    BUNDLED_SAMPLE_BACKFILLS.forEach((entry) => {
+      const saved = shows[entry.id];
+      if (!saved || !showSummary(saved)) return;
+      const built = entry.build();
+      if (!built || !built.project) return;
+      if (entry.apply(saved.state && saved.state.project, built.project)) {
+        saved.savedAt = nowIso();
+        shows[entry.id] = saved;
+        changed = true;
+      }
+    });
+    if (changed) writeShows(shows);
+    return changed;
+  }
+  /* 開いたままのショーが八人のサーカス・継ぎ目の庭そのものなら、作業中データにも届ける。 */
+  function backfillOpenBundledSampleTimings() {
+    if (!state || !state.project) return false;
+    const entry = BUNDLED_SAMPLE_BACKFILLS.find((item) => item.id === state.project.id);
+    if (!entry) return false;
+    const built = entry.build();
+    if (!built || !built.project || !entry.apply(state.project, built.project)) return false;
+    persistSoon();
+    try { window.dispatchEvent(new CustomEvent("stage-timeline-structure-change")); } catch (_) {}
+    return true;
   }
   // ロミオとジュリエットも初回だけ棚へ置く。既存の同ID（編集済みを含む）は触らない。
   function shelveRomeoJulietSample() {
@@ -35701,6 +35785,8 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     shelveSeamGardenSample();
     shelveRomeoJulietSample();
     backfillOpenRomeoJulietVoxOffsets();
+    backfillBundledSampleShelf();
+    backfillOpenBundledSampleTimings();
     syncLocalShows();
     try {
       if (projectRecoveryNeeded) {
