@@ -8,6 +8,7 @@
 照合のみ: node tools/build-ai-json-page.mjs --check
 検証: node --test tests/ai-json-check.test.mjs
 画面検証: node tools/ai-json-page-check.mjs（既定はファイル出力なし）
+本体の照合元（stage.html / stage-sketch.js / stage-venues.js）は環境変数 AI_JSON_APP_ROOT で origin/main の作業木などへ差し替えられる。作業ツリーの版が遅れているときはこれで公開版と照合する。
 
 AI showwright for StageSketch自体はβ版であり、仕様や対応範囲は今後変更されることがあります。file://対応。ページ内のJSON点検は外部送信なし。外部AIやAIエージェントへ添付・貼り付けるデータは別途送信されるため、機密情報は匿名化・最小化・保持/学習設定確認を行い、必要なら外部通信しないローカルLLM等を使用するよう注意書きを表示します。プロンプト添付/コピーは同じ内容。入力変更時に結果と修正依頼を無効化します。点検不能は合格ではありません。点検後にJSONを改変した場合は再点検が必要です。
 
