@@ -181,6 +181,18 @@ body[data-gamma-workspace="script"] .stage-boundary-note { display: none; }
 .script-ed-chip { display: inline-block; width: 0.66em; height: 0.66em; margin-right: 0.4em; outline: 1px solid var(--sed-text); }
 .script-ed-row-text { font-family: var(--serif, serif); font-size: 15px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
 .script-ed-row-text.is-missing { color: var(--sed-dim); font-family: inherit; font-size: 12.5px; font-style: italic; }
+/* 元の台本で「新規セリフの提案」とされている行の印（採用済みではない） */
+.script-ed-proposal {
+  margin-left: 8px;
+  padding: 0 6px;
+  border: 1px solid var(--sed-brass);
+  border-radius: 2px;
+  color: var(--sed-brass-ink);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+}
+.script-ed-proposal-note { border-left: 2px solid var(--sed-brass); padding-left: 8px; }
 .script-ed-direction { font-size: 0.72em; color: var(--sed-direction); }
 .script-ed-cue-chip {
   align-self: start;

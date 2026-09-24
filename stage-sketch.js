@@ -9732,10 +9732,40 @@
     return changed;
   }
   /* 見本の複製へ届ける補正をまとめて呼ぶ（VOXキューの時刻・転換の秒数）。 */
+  /* ★2026-09-24 本人指示: 見本に台本（project.script・47行）を同梱した。棚の複製・開いたままの作業中データで
+   * まだ台本データが無いものにだけ足す（取り込んだ・自分で作った台本があれば触らない）。
+   * その複製に無いキュー・場面・演者への結び付きは外す（外しても行は残る）。 */
+  function backfillRomeoJulietScript(savedProject, bundledProject) {
+    if (!savedProject || !bundledProject) return false;
+    if (savedProject.script !== undefined && savedProject.script !== null) return false;
+    const source = bundledProject.script;
+    if (!source || !Array.isArray(source.lines) || !source.lines.length) return false;
+    const cueIds = new Set((Array.isArray(savedProject.cues) ? savedProject.cues : [])
+      .filter((cue) => cue && cue.cueType === "dialogue").map((cue) => cue.id));
+    const sceneIds = new Set((Array.isArray(savedProject.scenes) ? savedProject.scenes : [])
+      .filter((row) => row && row.kind === "scene").map((row) => row.id));
+    const castIds = new Set((Array.isArray(savedProject.cast) ? savedProject.cast : []).map((member) => member && member.id));
+    const bundledCast = new Map((Array.isArray(bundledProject.cast) ? bundledProject.cast : []).map((member) => [member.id, member]));
+    const script = projectIoClone(source);
+    script.lines = script.lines.map((line) => {
+      const castKnown = line.castId && castIds.has(line.castId);
+      const fallbackName = line.castId && bundledCast.get(line.castId) ? bundledCast.get(line.castId).name : "";
+      return {
+        ...line,
+        sceneId: sceneIds.has(line.sceneId) ? line.sceneId : null,
+        cueId: cueIds.has(line.cueId) ? line.cueId : null,
+        castId: castKnown ? line.castId : null,
+        speaker: castKnown ? line.speaker : (line.speaker || fallbackName),
+      };
+    });
+    savedProject.script = script;
+    return true;
+  }
   function backfillRomeoJulietSampleData(savedProject, bundledProject) {
     const a = backfillRomeoJulietVoxOffsets(savedProject, bundledProject);
     const b = backfillRomeoJulietTransitions(savedProject);
-    return a || b;
+    const c = backfillRomeoJulietScript(savedProject, bundledProject);
+    return a || b || c;
   }
 
   /* ★2026-09-24 本人指示「転換が0秒のものは全部直す」: 八人のサーカス・継ぎ目の庭の棚の複製と、

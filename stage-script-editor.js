@@ -357,7 +357,14 @@
           lastSeconds = Math.max(lastSeconds, cue.seconds);
         }
         const main = el("span", "script-ed-row-main");
-        main.append(speakerNode(line), lineTextNode(line.text));
+        const who = speakerNode(line);
+        // 元の台本で「新規セリフの提案」とされている行（本人採用済みという意味ではない）
+        if (line.origin === "new_dialogue_proposal") {
+          const tag = el("span", "script-ed-proposal", tx("提案"));
+          tag.title = tx("元の台本で「新規セリフの提案」とされている行です（採用済みのセリフという意味ではありません）");
+          who.append(tag);
+        }
+        main.append(who, lineTextNode(line.text));
         row.append(grip, no, main, cueChip);
         row.addEventListener("click", () => select(line.id));
         group.append(row);
@@ -426,6 +433,9 @@
     });
     ui.textArea = text;
     box.append(field(tx("セリフ"), text, tx("括弧（ ）で囲んだ部分はト書きとして小さく出ます。⌘＋Enterで下に行を足す。")));
+    if (line.origin === "new_dialogue_proposal") {
+      box.append(el("p", "script-ed-hint script-ed-proposal-note", tx("この行は元の台本で「新規セリフの提案」とされています。採用済みのセリフという意味ではありません。")));
+    }
 
     // 場面
     const scene = el("select", "script-ed-input");
