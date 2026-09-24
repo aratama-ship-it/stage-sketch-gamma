@@ -557,6 +557,8 @@
           <div class="stage-scene-bar" id="stage-scene-bar">
             <div class="stage-scene-step" role="group" aria-label="シーンを送る">
               <button type="button" id="stage-scene-prev" class="btn-quiet stage-scene-step-btn is-prev"><span class="stage-scene-step-arrow" aria-hidden="true">◀</span>前のシーン</button>
+              <!-- 2026-09-24 本人指示: 「次のシーン」を「前のシーン」のすぐ右隣へ（前後を行き来して連打しやすく）。シーン名はその右。 -->
+              <button type="button" id="stage-scene-next" class="btn-quiet stage-scene-step-btn is-next">次のシーン<span class="stage-scene-step-arrow" aria-hidden="true">▶</span></button>
               <!-- T-23（2026-09-18 本人要望）: 名前を押しても「シーンの詳細」を開けるようにする。
                    押せるものはボタンにする（.stage-cast-name と同じ考え方）。
                    読み上げの aria-live は内側の span に残し、外側をボタンにする
@@ -564,7 +566,6 @@
               <button type="button" class="stage-scene-now-open" id="stage-scene-now-open">
                 <span class="stage-scene-now" id="stage-scene-now" aria-live="polite"></span>
               </button>
-              <button type="button" id="stage-scene-next" class="btn-quiet stage-scene-step-btn is-next">次のシーン<span class="stage-scene-step-arrow" aria-hidden="true">▶</span></button>
               <button type="button" id="stage-scene-bar-grid" class="btn-quiet stage-scene-bar-grid" aria-label="シーン一覧を開く">⊞</button>
             </div>
             <div class="stage-scene-desc" id="stage-scene-desc">
