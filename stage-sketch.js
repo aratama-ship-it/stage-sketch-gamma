@@ -16984,12 +16984,18 @@
     const lowerRight = stagePoint(1, 1, opening, L);
     const upperRight = stagePoint(1, 1, height, L);
     const upperLeft = stagePoint(0, 1, height, L);
+    /* 2026-09-24 本人指摘: 2階席のように高い所から見ると、舞台の高さの上端（ここまでが幕）が画面の途中に来て、
+       その上に奥の壁や吊り物が透けて見えていた。実際の劇場では、前一文字幕の上は額縁の壁で奥は見えない。
+       幕の上端から画面の上端まで、同じ暗い色で塗り上げる（拡大していても上端まで届くよう、十分上まで伸ばす）。 */
+    const skyY = Math.min(upperLeft.y, upperRight.y, 0) - H * 4;
     target.save();
     target.fillStyle = stageSurfaceColor("#11100f");
     target.beginPath();
     target.moveTo(lowerLeft.x, lowerLeft.y);
     target.lineTo(lowerRight.x, lowerRight.y);
     target.lineTo(upperRight.x, upperRight.y);
+    target.lineTo(upperRight.x, skyY);
+    target.lineTo(upperLeft.x, skyY);
     target.lineTo(upperLeft.x, upperLeft.y);
     target.closePath();
     target.fill();

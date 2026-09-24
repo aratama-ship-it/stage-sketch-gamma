@@ -431,6 +431,35 @@ body.gamma-3d-active .stage-panel.gamma-selection-floating .stage-panel-help { r
 }
 
 #gamma-light-status button { margin:8px; min-height:36px; padding:6px 12px; }
+/* 2026-09-24 本人指示: 照明を開けなかったときの知らせは、赤い枠の小窓で画面の上の中央に出す。
+   数値: 幅は最大760px・上から140px・枠2px（#df6433）・角丸6px・内側16/18px・影 0 12px 32px rgba(0,0,0,.55)。
+   見出し15px太字（#df6433）・理由14px（行間1.6）・ボタンは今までどおり（高さ36px）。✕は右上32px四方。 */
+#gamma-light-status.is-failure {
+  position: fixed;
+  z-index: 90;
+  top: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100dvh - 180px);
+  overflow-y: auto;
+  padding: 16px 52px 14px 18px;
+  border: 2px solid #df6433;
+  border-radius: 6px;
+  background: rgb(var(--stage-ui-panel-rgb, 27, 30, 34));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  color: var(--milk, #efe7d6);
+  font-size: 14px;
+  line-height: 1.6;
+}
+#gamma-light-status.is-failure .gamma-light-status-title { display: block; margin-bottom: 4px; color: #df6433; font-size: 15px; }
+#gamma-light-status.is-failure .gamma-light-status-why { display: block; margin-bottom: 6px; }
+#gamma-light-status.is-failure button { margin: 6px 8px 0 0; }
+#gamma-light-status.is-failure .gamma-light-status-close {
+  position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; min-height: 32px; margin: 0; padding: 0;
+  border: 1px solid var(--line-dark, #382f25); background: transparent; color: var(--milk, #efe7d6); cursor: pointer;
+}
+#gamma-light-status.is-failure .gamma-light-status-close:hover { border-color: #df6433; }
 
 /* ---- ヘッダー再設計（2026-09-17 第2段） ----
  * 根拠: docs/ui-audit-2026-09-16/UI_REWORK_SPEC.md §3-3。

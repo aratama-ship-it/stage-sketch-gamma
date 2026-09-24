@@ -155,8 +155,19 @@
     };
     return button;
   }
+  /* 2026-09-24 本人指示: 「照明を開けませんでした…」が読み込み中の文字と同じ場所にただの文字で出ていて見えにくかった。
+     開けなかったときだけ、画面の上の中央に赤い枠の小窓（gamma.css の .is-failure）で出す。✕で閉じられる。
+     ほかの文字（読み込み中など）に戻るときは、下の MutationObserver が小窓の形を外す。 */
   function failed(error) {
-    status.textContent='照明を開けませんでした: '+error.message+' ';
+    status.textContent='';
+    status.classList.add('is-failure');
+    status.setAttribute('role','alert');
+    const head=document.createElement('strong');head.className='gamma-light-status-title';head.textContent='照明を開けませんでした';
+    const why=document.createElement('span');why.className='gamma-light-status-why';why.textContent=error.message;
+    const closeButton=document.createElement('button');closeButton.type='button';closeButton.className='gamma-light-status-close';
+    closeButton.textContent='✕';closeButton.setAttribute('aria-label','閉じる');
+    closeButton.onclick=()=>{status.textContent='';};
+    status.append(closeButton,head,why);
     const ctx=latestContext || host.context(), draftKey='gamma:lighting-draft-v1:'+ctx.showId;
     const raw=localStorage.getItem(draftKey);
     if(raw) {
@@ -230,6 +241,12 @@
     };
     status.append(purge);
   }
+  // 小窓（開けなかったとき）以外の文字に変わったら、赤い枠の形を外す
+  new MutationObserver(()=>{
+    if(status.classList.contains('is-failure') && !status.querySelector('.gamma-light-status-title')) {
+      status.classList.remove('is-failure'); status.setAttribute('role','status');
+    }
+  }).observe(status,{childList:true});
   /* ---- V-2（2026-09-17）: 手順の列をアコーディオンにする ----
    * 1〜7を全部開いたままだと左列だけで1183px必要で、1画面に収まらない。開くのは1つだけにする。
    * stage.html は書き換えず実行時に組み立てる（見出しの文字位置を見ているテストを壊さないため）。
