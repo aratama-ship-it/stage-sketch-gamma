@@ -7,12 +7,17 @@
 #gamma-script-workspace { width: 100%; min-height: 0; display: flex; flex-direction: column; }
 #gamma-script-workspace[hidden] { display: none; }
 body[data-gamma-workspace="script"] .stage-sketch-grid { display: none !important; }
-body[data-gamma-workspace="script"] #stage-timeline-panel { display: none !important; }
-body[data-gamma-workspace="script"].stage-timeline-expanded:not(.stage-fullscreen) #view-stage {
+/* U-11（2026-09-24 本人指示）: ふだんはタイムラインを隠す。Eを押したとき（gamma-script-timeline-open）だけ出す。 */
+body[data-gamma-workspace="script"]:not(.gamma-script-timeline-open) #stage-timeline-panel { display: none !important; }
+body[data-gamma-workspace="script"]:not(.gamma-script-timeline-open).stage-timeline-expanded:not(.stage-fullscreen) #view-stage {
   height: 100dvh;
   padding-bottom: 16px;
 }
 body[data-gamma-workspace="script"] .stage-boundary-note { display: none; }
+/* Eでタイムラインを出したときは、台本の欄がタイムラインの下へ潜らないよう高さの上限を下げる（156px＝ヘッダーと上の帯の分） */
+body[data-gamma-workspace="script"].gamma-script-timeline-open:not(.stage-timeline-collapsed) #gamma-script-workspace {
+  max-height: calc(100dvh - var(--stage-timeline-height) - 156px);
+}
 
 .script-ed {
   --sed-line: var(--line-dark, #382f25);
@@ -172,7 +177,26 @@ body[data-gamma-workspace="script"] .stage-boundary-note { display: none; }
 }
 .script-ed-row:hover { background: rgba(156, 130, 63, 0.07); }
 .script-ed-row.is-selected { border-color: var(--sed-brass); background: rgba(156, 130, 63, 0.16); }
-.script-ed-row.is-dragging { opacity: 0.4; }
+/* U-12: 掴んだ行は指に付いて動く（影は stage-reorder-motion.js）。薄くせず、地を少し明るくして持ち上がって見せる。 */
+.script-ed-row.is-dragging { background: rgb(38, 32, 26); border-color: var(--sed-brass); cursor: grabbing; }
+/* U-10: ダブルクリックでその場で直す欄（数値: 明朝15px・行間1.6・1px真鍮の枠・内側6/8px） */
+.script-ed-inline {
+  display: block;
+  width: 100%;
+  min-height: calc(15px * 1.6 * 2 + 14px);
+  margin: 2px 0 0;
+  padding: 6px 8px;
+  border: 1px solid var(--sed-brass);
+  border-radius: 1px;
+  background: rgba(13, 12, 11, 0.6);
+  color: var(--sed-text);
+  font-family: var(--serif, serif);
+  font-size: 15px;
+  line-height: 1.6;
+  resize: none;
+  overflow-y: auto;
+}
+.script-ed-inline:focus { outline: 2px solid var(--sed-brass-ink); outline-offset: 1px; }
 .script-ed-grip { color: var(--sed-dim); font-size: 15px; line-height: 1.4; text-align: center; cursor: grab; touch-action: none; user-select: none; }
 .script-ed-row-no { color: var(--sed-dim); font-size: 12px; line-height: 1.8; text-align: right; font-variant-numeric: tabular-nums; }
 .script-ed-row-main { display: grid; gap: 2px; min-width: 0; }

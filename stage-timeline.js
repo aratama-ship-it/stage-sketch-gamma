@@ -604,6 +604,9 @@
   }
 
   window.addEventListener("gamma-workspace-change", syncTimelineAvailability);
+  window.addEventListener("gamma-workspace-change", () => {
+    if (document.body.dataset.gammaWorkspace !== "script") document.body.classList.remove("gamma-script-timeline-open");
+  });
 
   function childScenes(project, section) {
     const rows = Array.isArray(project.scenes) ? project.scenes : [];
@@ -1458,7 +1461,7 @@
 
   window.SHOSAI_STAGE_TIMELINE_DETAILS = Object.freeze({ sceneFactsById });
 
-  // tl を渡すと、いま出ていないセクションのタイムラインでも同じ計算をする（VOXキューパネル用）
+  // tl を渡すと、いま出ていないセクションのタイムラインでも同じ計算をする（セリフキューパネル用）
   function cueSegment(cue, tl = timeline) {
     if (!tl) return null;
     const legacy = cue.sceneId && tl.segments.find((segment) => segment.sceneId === cue.sceneId);
@@ -1488,6 +1491,18 @@
       .sort((a, b) => a.seconds - b.seconds);
   }
 
+  /* U-07（2026-09-24 本人指示）: 音が鳴らない音楽キューは「Mキュー 1-1-1（無音）」と出す。
+   * 意図して無音にした場合も、付け忘れの場合も同じ表示（どちらかは本人が見て判断する）。
+   * 鳴らない＝このセクションのタイムラインに音源が無い（端末に取り込んだ音源の一覧に無い）、
+   * または音源の長さが分かっていて、キューの時刻がその長さ以降（曲が終わったあと）。 */
+  function musicCueIsSilent(project, tl, seconds) {
+    const trackId = tl && tl.trackId;
+    const track = trackId ? (Array.isArray(project.audioTracks) ? project.audioTracks : []).find((item) => item && item.id === trackId) : null;
+    if (!track) return true;
+    const length = Number(track.durationSeconds);
+    return Number.isFinite(length) && length > 0 && Number.isFinite(seconds) && seconds >= length - 1e-3;
+  }
+
   function timelineCuePresentations(project, tl = timeline) {
     const sceneNumbers = timelineSceneNumberMap(project.scenes);
     const ordinals = new Map();
@@ -1503,7 +1518,9 @@
         sceneId,
         sceneNumber,
         sceneTitle: segment && segment.title || tx("シーン"),
-        displayName: window.SHOSAI_CUE_SHEET.formatCueDisplayName(cue.cueType, sceneNumber, ordinal),
+        displayName: `${window.SHOSAI_CUE_SHEET.formatCueDisplayName(cue.cueType, sceneNumber, ordinal)}${
+          cue.cueType === "music" && musicCueIsSilent(project, tl, cue.seconds) ? tx("（無音）") : ""}`,
+        silent: cue.cueType === "music" && musicCueIsSilent(project, tl, cue.seconds),
       };
     });
   }
@@ -1687,8 +1704,8 @@
     else els.cueDetailNote.focus({ preventScroll: true });
   }
 
-  /* VOXキューの詳細（2026-09-24 本人指示）: 台本から引いたセリフと、前後のVOXキューへの移動。
-   * 並びは VOXキューパネルと同じ「ショー全体・セクション順」。文字の当て方もパネルと同じ関数を使う。 */
+  /* セリフキューの詳細（2026-09-24 本人指示）: 台本から引いたセリフと、前後のセリフキューへの移動。
+   * 並びは セリフキューパネルと同じ「ショー全体・セクション順」。文字の当て方もパネルと同じ関数を使う。 */
   function voxDetailEntries() {
     const panelApi = window.SHOSAI_VOX_PANEL;
     if (!panelApi || !lastVoxSnapshot) return [];
@@ -1715,7 +1732,7 @@
     els.cueDetailLine.hidden = !entry;
     els.cueDetailStep.hidden = !entry;
     if (!entry) return;
-    // 話者の印とト書きの扱いは VOXキューパネルと同じ（2026-09-24）
+    // 話者の印とト書きの扱いは セリフキューパネルと同じ（2026-09-24）
     els.cueDetailLineSpeaker.textContent = "";
     const chipColor = entry.color || (entry.speaker && lastVoxSnapshot && lastVoxSnapshot.castColors
       ? lastVoxSnapshot.castColors[entry.speaker] : null);
@@ -1757,7 +1774,7 @@
     return true;
   }
 
-  /* 前後のVOXキューへ移る。窓は開いたまま中身を差し替え、タイムラインもそのキューへ頭出しする
+  /* 前後のセリフキューへ移る。窓は開いたまま中身を差し替え、タイムラインもそのキューへ頭出しする
    * （別のセクションならパネルと同じ経路でセクションを切り替える）。
    * ★メモを書きかけていたら、失わないように保存してから移る。 */
   function stepCueDetails(direction, focusTarget) {
@@ -2179,7 +2196,83 @@
     event.stopPropagation();
   }
 
+  /* ---------- U-06（2026-09-24 本人指示）: セリフキューの印にカーソルを当てるとセリフを出す ----------
+   * 小窓は印の真上（入らなければ真下）。文字の当て方はセリフキューパネル・キュー詳細と同じ（台本データ→場面メモ→キューのメモ）。
+   * 数値: 幅上限320px・余白8/10px・文字13px（セリフは明朝14px・6行まで）・印との間8px・画面の端から8px。 */
+  let cuePeek = null;
+  function cuePeekEl() {
+    if (cuePeek) return cuePeek;
+    cuePeek = document.createElement("div");
+    cuePeek.className = "stage-timeline-cue-peek";
+    cuePeek.setAttribute("role", "tooltip");
+    cuePeek.id = "stage-timeline-cue-peek";
+    cuePeek.hidden = true;
+    document.body.append(cuePeek);
+    return cuePeek;
+  }
+  function showCuePeek(cue, button) {
+    const entries = voxDetailEntries();
+    const entry = entries.find((item) => item.id === cue.id) || null;
+    const peek = cuePeekEl();
+    peek.textContent = "";
+    const head = document.createElement("p");
+    head.className = "stage-timeline-cue-peek-head";
+    head.textContent = `${cue.displayName}  ${labelPosition(cue.seconds)}`;
+    peek.append(head);
+    if (entry && entry.speaker) {
+      const who = document.createElement("p");
+      who.className = "stage-timeline-cue-peek-speaker";
+      const color = entry.color || (lastVoxSnapshot && lastVoxSnapshot.castColors ? lastVoxSnapshot.castColors[entry.speaker] : null);
+      if (color) {
+        const chip = document.createElement("span");
+        chip.className = "stage-vox-chip";
+        chip.style.background = color;
+        chip.setAttribute("aria-hidden", "true");
+        who.append(chip);
+      }
+      who.append(document.createTextNode(entry.speaker));
+      peek.append(who);
+    }
+    const line = document.createElement("p");
+    line.className = "stage-timeline-cue-peek-line";
+    if (entry && entry.line && window.SHOSAI_VOX_PANEL) {
+      window.SHOSAI_VOX_PANEL.splitDirections(entry.line).forEach((part) => {
+        if (!part.direction) { line.append(document.createTextNode(part.text)); return; }
+        const span = document.createElement("span");
+        span.className = "stage-vox-direction";
+        span.textContent = part.text;
+        line.append(span);
+      });
+    } else {
+      line.classList.add("is-missing");
+      line.textContent = tx("台本の行が見つかりません。キューのメモも空です。");
+    }
+    peek.append(line);
+    if (button.dataset.peekHint) {
+      const hint = document.createElement("p");
+      hint.className = "stage-timeline-cue-peek-hint";
+      hint.textContent = cue.locked ? tx("キューポイントを固定") : tx("選択してDeleteで削除");
+      peek.append(hint);
+    }
+    peek.hidden = false;
+    button.setAttribute("aria-describedby", peek.id);
+    const box = button.getBoundingClientRect();
+    const own = peek.getBoundingClientRect();
+    const margin = 8;
+    let top = box.top - own.height - margin;
+    if (top < margin) top = box.bottom + margin;
+    const left = Math.min(Math.max(margin, box.left + box.width / 2 - own.width / 2), window.innerWidth - own.width - margin);
+    peek.style.left = `${Math.round(left)}px`;
+    peek.style.top = `${Math.round(top)}px`;
+  }
+  function hideCuePeek() {
+    if (cuePeek) cuePeek.hidden = true;
+  }
+  window.addEventListener("scroll", hideCuePeek, true);
+  window.addEventListener("pointerdown", hideCuePeek, true);
+
   function renderCueBlocks(project) {
+    hideCuePeek();
     Object.values(els.cueLanes).forEach(clearLane);
     const cues = timelineCuePresentations(project);
     if (selectedCueId && !cues.some((cue) => cue.id === selectedCueId)) selectedCueId = null;
@@ -2197,6 +2290,7 @@
       button.dataset.cueId = cue.id;
       button.dataset.cueType = cue.cueType;
       button.dataset.cueLocked = String(Boolean(cue.locked)); // T-5: 範囲選択から外す目印
+      if (cue.cueType === "music") button.dataset.cueSilent = String(Boolean(cue.silent));   // U-07: 鳴らない音楽キュー
       button.setAttribute("aria-pressed", String(cueIsSelected(cue.id)));
       if (cue.locked) button.append(lockIndicator(null, true));
       const label = document.createElement("span");
@@ -2204,6 +2298,15 @@
       label.textContent = cue.displayName;
       button.append(label);
       button.title = `${labelPosition(cue.seconds)}  ${cue.displayName}（${cue.locked ? tx("キューポイントを固定") : tx("選択してDeleteで削除")}）`;
+      // U-06: セリフキューは、カーソルを当てると上にセリフを出す（その小窓に同じ説明を入れるので、ブラウザの説明は出さない）
+      if (cue.cueType === "dialogue") {
+        button.dataset.peekHint = button.title;
+        button.removeAttribute("title");
+        button.addEventListener("pointerenter", (event) => { if (!event.buttons && !cueDrag) showCuePeek(cue, button); });
+        button.addEventListener("pointerleave", hideCuePeek);
+        button.addEventListener("focus", () => showCuePeek(cue, button));
+        button.addEventListener("blur", hideCuePeek);
+      }
       button.style.left = `${clamp(pxFor(cue.seconds) - 4, 0, Math.max(0, timelineWidth - CUE_WIDTH))}px`;
       button.addEventListener("pointerdown", (event) => beginCueDrag(event, cue, button));
       button.addEventListener("pointermove", continueCueDrag);
@@ -2693,7 +2796,7 @@
     saveUi();
   }
 
-  /* VOXキューパネル（stage-vox-panel.js・2026-09-24 本人指示）へ、ショー全体のセリフキューを
+  /* セリフキューパネル（stage-vox-panel.js・2026-09-24 本人指示）へ、ショー全体のセリフキューを
    * セクションごとに渡す。いま出ているセクションは表示中のタイムラインをそのまま使い、
    * ほかのセクションは同じ組み方（振付の曲があればその1曲目、無ければ場面の長さ）で秒を出す。
    * 台本の行は各場面のメモから引くので、キューのある場面のメモも一緒に渡す。
@@ -2789,6 +2892,7 @@
           speaker: member ? member.name : (typeof line.speaker === "string" ? line.speaker : ""),
           text: typeof line.text === "string" ? line.text : "",
           color: member && typeof member.color === "string" ? member.color : null,
+          castId: member ? member.id : null,
           lineId: line.id,
         };
       });
@@ -2870,8 +2974,8 @@
     return true;
   }
 
-  /* 環境設定「左右キーはVOXキューだけ」（2026-09-24）: VOXキューパネルの手送りと同じ並び
-   * （ショー全体・セクション順）で、いまの再生位置の直前／直後のVOXキューへ移る。
+  /* 環境設定「左右キーはセリフキューだけ」（2026-09-24）: セリフキューパネルの手送りと同じ並び
+   * （ショー全体・セクション順）で、いまの再生位置の直前／直後のセリフキューへ移る。
    * 別のセクションなら、パネルと同じ経路でセクションを切り替えてから頭出しする。 */
   function stepVoxFromPlayhead(direction) {
     if (!timeline) return false;
@@ -2891,7 +2995,7 @@
         target = after ? after.entry : entries[inSection[inSection.length - 1].index + 1] || null;
       }
     } else {
-      // このセクションにVOXキューが無い: セクションの並びで前後の最寄りへ
+      // このセクションにセリフキューが無い: セクションの並びで前後の最寄りへ
       const order = voxSectionOrder();
       const here = order.indexOf(sectionId);
       const pick = (list) => list.find((entry) => order.indexOf(entry.sectionId || null) > here);
@@ -2907,7 +3011,7 @@
     return true;
   }
 
-  // セクションの並び（場面一覧の上から）。VOXキューが無いセクションの前後を決めるのに使う
+  // セクションの並び（場面一覧の上から）。セリフキューが無いセクションの前後を決めるのに使う
   function voxSectionOrder() {
     const rows = lastVoxProject && Array.isArray(lastVoxProject.scenes) ? lastVoxProject.scenes : [];
     const order = [];
@@ -3364,7 +3468,8 @@
     if (event.button !== 0) return;
     const row = event.currentTarget.closest("[data-stage-timeline-row]");
     if (!row) return;
-    rowReorder = { pointerId: event.pointerId, startY: event.clientY, row, moved: false };
+    rowReorder = { pointerId: event.pointerId, startY: event.clientY, row, moved: false,
+      grabY: event.clientY - row.getBoundingClientRect().top };
     event.currentTarget.setPointerCapture(event.pointerId);
     event.currentTarget.focus({ preventScroll: true });
     event.preventDefault();
@@ -3375,19 +3480,41 @@
     if (!rowReorder.moved && Math.abs(event.clientY - rowReorder.startY) < 4) return;
     rowReorder.moved = true;
     rowReorder.row.classList.add("is-reordering");
-    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-stage-timeline-row]");
-    if (!target || target === rowReorder.row || target.parentElement !== els.surface) return;
-    const after = event.clientY > target.getBoundingClientRect().top + target.getBoundingClientRect().height / 2;
-    const reference = after ? target.nextElementSibling : target;
-    els.surface.insertBefore(rowReorder.row, reference === els.playhead ? els.playhead : reference);
-    ui.rowOrder = [...els.surface.querySelectorAll(":scope > [data-stage-timeline-row]")]
-      .map((row) => row.dataset.stageTimelineRow);
+    /* U-12（2026-09-24 本人指示）: 掴んだ段は指に付いて動き、ほかの段は滑って場所を空ける。
+     * 掴んだ段が指の下に来るので elementFromPoint は使えない。段の収まる位置（transform を外した位置）で判定する。 */
+    const motion = window.SHOSAI_REORDER_MOTION;
+    const rows = [...els.surface.querySelectorAll(":scope > [data-stage-timeline-row]")];
+    const slotOf = (other) => {
+      const box = other.getBoundingClientRect();
+      const matrix = getComputedStyle(other).transform;
+      const dy = matrix && matrix !== "none" && typeof DOMMatrixReadOnly === "function" ? new DOMMatrixReadOnly(matrix).m42 : 0;
+      return { top: box.top - dy, height: box.height };
+    };
+    const target = rows.find((other) => {
+      if (other === rowReorder.row || other.hidden) return false;
+      const box = slotOf(other);
+      return event.clientY >= box.top && event.clientY <= box.top + box.height;
+    });
+    if (target) {
+      const box = slotOf(target);
+      const after = event.clientY > box.top + box.height / 2;
+      let reference = after ? target.nextElementSibling : target;
+      if (reference === els.playhead) reference = els.playhead;
+      if (reference !== rowReorder.row && rowReorder.row.nextElementSibling !== reference) {
+        const move = () => els.surface.insertBefore(rowReorder.row, reference);
+        if (motion) motion.flip(rows, move, rowReorder.row); else move();
+        ui.rowOrder = [...els.surface.querySelectorAll(":scope > [data-stage-timeline-row]")]
+          .map((row) => row.dataset.stageTimelineRow);
+      }
+    }
+    if (motion) motion.follow(rowReorder.row, event.clientY, rowReorder.grabY);
     event.preventDefault();
   }
 
   function endRowReorder(event) {
     if (!rowReorder || event.pointerId !== rowReorder.pointerId) return;
     rowReorder.row.classList.remove("is-reordering");
+    if (window.SHOSAI_REORDER_MOTION) window.SHOSAI_REORDER_MOTION.settle(rowReorder.row);
     const moved = rowReorder.moved;
     rowReorder = null;
     if (moved) saveUi();
@@ -3669,6 +3796,17 @@
   function toggleTimelineFromShortcut() {
     if (timelineInteractionIsBlocked()
         || document.querySelector(".stage-modal:not([hidden])")) return false;
+    /* U-11（2026-09-24 本人指示）: 「セリフ」タブでもEでタイムラインを出し入れできるようにする。
+     * セリフタブはふだんタイムラインを隠している（画面いっぱいを台本に使う）。Eを押したときだけ
+     * body に印を付けて見せ、もう一度Eで隠す。印はセリフタブを出たら外す（舞台タブの開閉状態には触れない）。 */
+    if (document.body.dataset.gammaWorkspace === "script") {
+      const show = !document.body.classList.contains("gamma-script-timeline-open") || ui.collapsed;
+      document.body.classList.toggle("gamma-script-timeline-open", show);
+      if (show && ui.collapsed) setTimelineCollapsed(false, { save: true });
+      if (show) renderTimeline();
+      window.dispatchEvent(new Event("stage-timeline-layout-change"));
+      return true;
+    }
     const opening = ui.collapsed;
     setTimelineCollapsed(!ui.collapsed, { save: true });
     if (!ui.collapsed) {
@@ -3832,7 +3970,7 @@
     if (!timeline || !timeline.segments.some((item) => item.sceneId === sceneId)) {
       voxSeekJustApplied = false;
       renderTimeline();
-      // VOXキューパネルから別セクションのキューへ飛んだときは、そのキューの位置を保つ
+      // セリフキューパネルから別セクションのキューへ飛んだときは、そのキューの位置を保つ
       if (voxSeekJustApplied) { voxSeekJustApplied = false; return; }
       const segment = timeline && timeline.segments.find((item) => item.sceneId === sceneId);
       if (segment) {

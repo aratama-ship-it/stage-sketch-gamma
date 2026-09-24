@@ -38,7 +38,7 @@
   function cuePrefix(type) {
     if (type === "light") return "LXキュー";
     if (type === "music") return "Mキュー";
-    return "VOXキュー";
+    return "セリフキュー";
   }
 
   function formatCueDisplayName(cueType, sceneNumber, ordinal) {

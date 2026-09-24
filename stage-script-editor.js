@@ -1,13 +1,14 @@
 /* 舞台スケッチγ：セリフ編集画面（2026-09-24 本人指示）。
  * 「照明デザイン」の横の「セリフ」タブで、画面1枚を使って台本を編集する。
- *   ・セリフの文字・話者の編集、行の並べ替え・追加・削除、VOXキューへの割り当て
+ *   ・セリフの文字・話者の編集、行の並べ替え・追加・削除、セリフキューへの割り当て
+ *   ・U-10（2026-09-24）: 行をダブルクリックすると、その場でセリフの文字を直せる（右の「選んだセリフ」も残す）
  * 本人決定: 台本は新しい台本データ（project.script）に持つ／1キュー＝1行／話者は演者から選ぶ＋自由入力も可。
  * 保存形式: project.script = { version: 1, lines: [{ id, sceneId, castId, speaker, text, cueId }] }
  *   ・行の並び＝配列の順。画面では場面の順に分けて出す（同じ場面の中は配列の順）。
  *   ・キューとの結び付きは行の側（cueId）に持つ（キューの未知の項目は読み込み時に落ちるため）。
  *   ・場面メモの【台本】は「取り込む」で一度だけ写す。メモ自体は消さない。
  * 本体への書き込みは SHOSAI_STAGE_SESSION_BRIDGE.applyScriptEdit だけ（取り消し1回で戻る単位）。
- * キューの番号・時刻は、タイムラインが出す「stage-timeline-vox-cues」から読む（VOXキューパネルと同じ）。 */
+ * キューの番号・時刻は、タイムラインが出す「stage-timeline-vox-cues」から読む（セリフキューパネルと同じ）。 */
 (function () {
   "use strict";
 
@@ -32,7 +33,7 @@
 
   let project = null;          // 本体から写した最新のショー（読むだけ）
   let script = null;           // 編集中の台本（本体の project.script の写し）
-  let voxCues = [];            // タイムラインのVOXキュー（id・表示名・場面・秒）
+  let voxCues = [];            // タイムラインのセリフキュー（id・表示名・場面・秒）
   let selectedId = null;
   let query = "";
   let isOpen = false;
@@ -77,7 +78,7 @@
   const cueById = (id) => voxCues.find((cue) => cue.id === id) || null;
   const lineForCue = (cueId) => (script ? script.lines.find((line) => line.cueId === cueId) : null) || null;
 
-  /* 場面メモの【台本】から取り込む。場面の n 行目＝その場面の n 番目のVOXキュー（VOXキューパネルと同じ当て方）。
+  /* 場面メモの【台本】から取り込む。場面の n 行目＝その場面の n 番目のセリフキュー（セリフキューパネルと同じ当て方）。
    * 話者が演者名と同じなら演者に結び付ける。 */
   function buildFromNotes() {
     const api = panelApi();
@@ -164,7 +165,7 @@
     linesBox.setAttribute("aria-label", tx("台本"));
     const linesHead = el("div", "script-ed-script-head");
     linesHead.append(el("h2", "script-ed-title", tx("台本")),
-      el("p", "script-ed-hint", tx("行を押して選ぶ。⠿ を持って並べ替え（Alt＋↑↓でも動かせます）。")));
+      el("p", "script-ed-hint", tx("行を押して選ぶ。ダブルクリックでその場で直す。⠿ を持って並べ替え（Alt＋↑↓でも動かせます）。")));
     ui.lines = el("div", "script-ed-lines");
     ui.lines.setAttribute("role", "listbox");
     ui.lines.setAttribute("aria-label", tx("台本の行"));
@@ -214,7 +215,7 @@
     ui.summary.textContent = "";
     ui.summary.append(el("b", null, `${tx("台本")} ${script.lines.length}${tx("行")}`),
       el("span", null, ` · ${tx("キューに割り当て済み")} ${assigned}`),
-      el("span", cueless ? "is-warn" : null, ` · ${tx("行のないVOXキュー")} ${cueless}`));
+      el("span", cueless ? "is-warn" : null, ` · ${tx("行のないセリフキュー")} ${cueless}`));
   }
 
   function renderEmpty() {
@@ -266,7 +267,7 @@
     });
   }
 
-  // ト書き（括弧内）を小さく別の色で（VOXキューパネルと同じ分け方）
+  // ト書き（括弧内）を小さく別の色で（セリフキューパネルと同じ分け方）
   function lineTextNode(text) {
     const span = el("span", "script-ed-row-text");
     const api = panelApi();
@@ -320,7 +321,7 @@
         head.append(add);
       }
       group.append(head);
-      // この場面の、まだ行のないVOXキュー（押すと、その場面の新しい行に割り当てる）
+      // この場面の、まだ行のないセリフキュー（押すと、その場面の新しい行に割り当てる）
       if (scene) {
         const free = voxCues.filter((cue) => cue.sceneId === scene.id && !lineForCue(cue.id));
         if (free.length) {
@@ -366,7 +367,12 @@
         }
         main.append(who, lineTextNode(line.text));
         row.append(grip, no, main, cueChip);
-        row.addEventListener("click", () => select(line.id));
+        row.addEventListener("click", () => { if (!row.classList.contains("is-inline-editing")) select(line.id); });
+        row.addEventListener("dblclick", (event) => {
+          if (event.target.closest(".script-ed-grip")) return;
+          event.preventDefault();
+          startInlineEdit(line.id, row);
+        });
         group.append(row);
       });
       if (!lines.length) group.append(el("p", "script-ed-group-empty", tx("この場面にはまだ行がありません")));
@@ -457,12 +463,12 @@
       cueSelect.append(option);
     });
     cueSelect.addEventListener("change", () => { assignCue(line.id, cueSelect.value || null); });
-    const newCue = el("button", "script-ed-btn small", tx("新しいVOXキューを作って割り当てる"));
+    const newCue = el("button", "script-ed-btn small", tx("新しいセリフキューを作って割り当てる"));
     newCue.type = "button";
     newCue.disabled = !line.sceneId;
     newCue.addEventListener("click", () => createCueFor(line.id));
     const cueWrap = el("div", "script-ed-stack"); cueWrap.append(cueSelect, newCue);
-    box.append(field(tx("キュー"), cueWrap, tx("1つのVOXキューに1行。別の行で使っているキューを選ぶと、その行から外れます。")));
+    box.append(field(tx("キュー"), cueWrap, tx("1つのセリフキューに1行。別の行で使っているキューを選ぶと、その行から外れます。")));
 
     // 並び・削除
     const order = el("div", "script-ed-row-actions");
@@ -474,7 +480,57 @@
     remove.addEventListener("click", () => removeLine(line.id));
     order.append(up, down, remove);
     box.append(order);
-    box.append(el("p", "script-ed-hint", tx("行を削除しても、割り当てていたVOXキューは残ります（キューのメモが表示に使われます）。取り消しは画面上部の「一つ戻す」で。")));
+    box.append(el("p", "script-ed-hint", tx("行を削除しても、割り当てていたセリフキューは残ります（キューのメモが表示に使われます）。取り消しは画面上部の「一つ戻す」で。")));
+  }
+
+  /* ---------- U-10（2026-09-24 本人指示）: ダブルクリックでその場で直す ----------
+   * 行のセリフの文字を、その場の入力欄に替える。Enter で確定・Shift＋Enter で改行・Esc で取り消し・欄の外を押しても確定。
+   * 確定は右の欄と同じ書き込み（commit＝取り消し1回で戻る単位）。右の「選んだセリフ」はそのまま残す（本人指定）。
+   * 数値: 欄は行の本文と同じ明朝15px・行間1.6・1px真鍮の枠・最小2行・中身に合わせて伸びる（最大10行）。 */
+  let inlineEdit = null;
+  function startInlineEdit(lineId, row) {
+    const line = script && script.lines.find((item) => item.id === lineId);
+    if (!line || !row) return;
+    if (inlineEdit) finishInlineEdit(true);
+    if (selectedId !== lineId) select(lineId);
+    const target = ui.lines.querySelector(`.script-ed-row[data-line-id="${CSS.escape(lineId)}"]`) || row;
+    const shown = target.querySelector(".script-ed-row-text");
+    if (!shown) return;
+    const input = el("textarea", "script-ed-inline");
+    input.value = line.text || "";
+    input.rows = 2;
+    input.maxLength = 4000;
+    input.setAttribute("aria-label", tx("セリフ"));
+    const fit = () => { input.style.height = "auto"; input.style.height = `${Math.min(input.scrollHeight, 15 * 1.6 * 10 + 14)}px`; };
+    shown.replaceWith(input);
+    target.classList.add("is-inline-editing");
+    inlineEdit = { lineId, input, before: line.text || "" };
+    input.addEventListener("input", fit);
+    input.addEventListener("keydown", (event) => {
+      event.stopPropagation();   // 一覧の↑↓・舞台側のショートカットへ渡さない
+      if (event.isComposing) return;
+      if (event.key === "Escape") { event.preventDefault(); finishInlineEdit(false); ui.lines.focus({ preventScroll: true }); }
+      else if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); finishInlineEdit(true); ui.lines.focus({ preventScroll: true }); }
+    });
+    input.addEventListener("blur", () => finishInlineEdit(true));
+    input.addEventListener("dblclick", (event) => event.stopPropagation());
+    input.addEventListener("click", (event) => event.stopPropagation());
+    fit();
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+  }
+  function finishInlineEdit(save) {
+    const edit = inlineEdit;
+    if (!edit) return;
+    inlineEdit = null;
+    const line = script && script.lines.find((item) => item.id === edit.lineId);
+    if (line && save && edit.input.value !== edit.before) {
+      line.text = edit.input.value;
+      commit();
+    }
+    renderLines();
+    renderSummary();
+    if (line && selectedId === line.id) renderInspector();
   }
 
   function formatTime(seconds) {
@@ -609,7 +665,7 @@
     render();
   }
 
-  /* その場面に新しいVOXキューを作って割り当てる。置く位置は、その場面の最後のVOXキューの3秒後
+  /* その場面に新しいセリフキューを作って割り当てる。置く位置は、その場面の最後のセリフキューの3秒後
    * （無ければ場面の頭から1秒）。場面＋オフセットの形なので、セクションの時間を変えても場面から外れない。 */
   function createCueFor(lineId) {
     const line = script.lines.find((item) => item.id === lineId);
@@ -659,30 +715,66 @@
     }
   }
 
-  /* ---------- 並べ替え（⠿ を持って動かす。タッチでも動くようポインタで自前に持つ） ---------- */
+  /* ---------- 並べ替え（⠿ を持って動かす。タッチでも動くようポインタで自前に持つ） ----------
+   * U-12（2026-09-24 本人指示）: 掴んだ行は指に付いて動き、ほかの行は滑って場所を空ける（iPhoneのホーム画面と同じ手触り）。
+   * 場面をまたいで動かせる（行の無い場面へは、その場面の欄の空いている所へ落とす）。
+   * 並びの確定は放したとき。画面の行の並びから「前の行／場面」を読み取って、台本データへ写す。 */
+
+  function rowSlot(other) {
+    const box = other.getBoundingClientRect();
+    const matrix = getComputedStyle(other).transform;
+    const dy = matrix && matrix !== "none" && typeof DOMMatrixReadOnly === "function" ? new DOMMatrixReadOnly(matrix).m42 : 0;
+    return { top: box.top - dy, height: box.height };
+  }
 
   function startDrag(event, lineId, row) {
     if (event.button !== undefined && event.button > 0) return;
     event.preventDefault();
     flushTextTimer();
-    const marker = el("div", "script-ed-drop-marker");
-    dragging = { lineId, row, marker, target: null, before: true, sceneId: null };
-    row.classList.add("is-dragging");
+    if (inlineEdit) finishInlineEdit(true);
+    const motion = window.SHOSAI_REORDER_MOTION;
+    dragging = { lineId, row, moved: false, startY: event.clientY, grabY: event.clientY - row.getBoundingClientRect().top };
     const move = (ev) => {
-      const under = document.elementFromPoint(ev.clientX, ev.clientY);
-      const overRow = under && under.closest && under.closest(".script-ed-row");
-      const overGroup = under && under.closest && under.closest(".script-ed-group");
-      marker.remove();
-      dragging.target = null; dragging.sceneId = null;
-      if (overRow && overRow !== row) {
-        const rect = overRow.getBoundingClientRect();
-        dragging.target = overRow.dataset.lineId;
-        dragging.before = ev.clientY < rect.top + rect.height / 2;
-        overRow.parentNode.insertBefore(marker, dragging.before ? overRow : overRow.nextSibling);
-      } else if (overGroup && !overRow && overGroup.dataset.sceneGroup) {
-        dragging.sceneId = overGroup.dataset.sceneGroup;
-        overGroup.append(marker);
+      if (!dragging) return;
+      if (!dragging.moved) {
+        if (Math.abs(ev.clientY - dragging.startY) < 4) return;
+        dragging.moved = true;
+        row.classList.add("is-dragging");
       }
+      const rows = [...ui.lines.querySelectorAll(".script-ed-row")].filter((other) => !other.hidden);
+      const groups = [...ui.lines.querySelectorAll(".script-ed-group")];
+      const moving = [...rows, ...groups.map((group) => group.querySelector(".script-ed-group-empty")).filter(Boolean)];
+      const overRow = rows.find((other) => {
+        if (other === row) return false;
+        const box = rowSlot(other);
+        return ev.clientY >= box.top && ev.clientY <= box.top + box.height;
+      });
+      let place = null;
+      if (overRow) {
+        const box = rowSlot(overRow);
+        const before = ev.clientY < box.top + box.height / 2;
+        const reference = before ? overRow : overRow.nextSibling;
+        if (reference !== row && row.nextSibling !== reference) place = () => overRow.parentNode.insertBefore(row, reference);
+      } else {
+        // 行の上に居ないとき: 指の下の場面の欄（行の無い場面を含む）の末尾へ
+        const group = groups.find((item) => {
+          const box = item.getBoundingClientRect();
+          return item.dataset.sceneGroup && ev.clientY >= box.top && ev.clientY <= box.bottom;
+        });
+        if (group && row.parentNode !== group) {
+          const empty = group.querySelector(".script-ed-group-empty");
+          place = () => { if (empty) empty.hidden = true; group.append(row); };
+        }
+      }
+      if (place) {
+        if (motion) motion.flip(moving, place, row); else place();
+        // 元の場面が空になったら「まだ行がありません」を戻す
+        groups.forEach((item) => {
+          const empty = item.querySelector(".script-ed-group-empty");
+          if (empty) empty.hidden = Boolean(item.querySelector(".script-ed-row"));
+        });
+      }
+      if (motion) motion.follow(row, ev.clientY, dragging.grabY);
       // 端へ近づいたら一覧を送る
       const box = ui.lines.getBoundingClientRect();
       if (ev.clientY < box.top + 30) ui.lines.scrollTop -= 12;
@@ -692,30 +784,35 @@
       document.removeEventListener("pointermove", move);
       document.removeEventListener("pointerup", up);
       document.removeEventListener("pointercancel", up);
-      marker.remove();
       row.classList.remove("is-dragging");
       const drag = dragging;
       dragging = null;
-      if (drag && (drag.target || drag.sceneId)) dropLine(drag);
+      if (motion) motion.settle(row);
+      if (drag && drag.moved) window.setTimeout(() => dropLine(drag), motion ? motion.MS : 0);
     };
     document.addEventListener("pointermove", move);
     document.addEventListener("pointerup", up);
     document.addEventListener("pointercancel", up);
   }
 
+  // 画面に並んだ行の順（場面の欄ごと）を、台本データの並びへ写す。掴んだ行だけが動いている。
   function dropLine(drag) {
     const line = script.lines.find((item) => item.id === drag.lineId);
-    if (!line) return;
+    if (!line || !drag.row.isConnected) { render(); return; }
+    const group = drag.row.closest(".script-ed-group");
+    const sceneId = group && group.dataset.sceneGroup ? group.dataset.sceneGroup : line.sceneId;
+    let previous = drag.row.previousElementSibling;
+    while (previous && !previous.classList.contains("script-ed-row")) previous = previous.previousElementSibling;
+    let following = drag.row.nextElementSibling;
+    while (following && !following.classList.contains("script-ed-row")) following = following.nextElementSibling;
     script.lines.splice(script.lines.indexOf(line), 1);
-    if (drag.target) {
-      const target = script.lines.find((item) => item.id === drag.target);
-      if (!target) { script.lines.push(line); return; }
-      line.sceneId = target.sceneId;
-      const at = script.lines.indexOf(target) + (drag.before ? 0 : 1);
-      script.lines.splice(at, 0, line);
-    } else {
-      line.sceneId = drag.sceneId;
-      const last = [...script.lines].reverse().find((item) => item.sceneId === drag.sceneId);
+    const prevLine = previous ? script.lines.find((item) => item.id === previous.dataset.lineId) : null;
+    const nextLine = following ? script.lines.find((item) => item.id === following.dataset.lineId) : null;
+    line.sceneId = sceneId;
+    if (prevLine) script.lines.splice(script.lines.indexOf(prevLine) + 1, 0, line);
+    else if (nextLine) script.lines.splice(script.lines.indexOf(nextLine), 0, line);
+    else {
+      const last = [...script.lines].reverse().find((item) => item.sceneId === sceneId);
       script.lines.splice(last ? script.lines.indexOf(last) + 1 : script.lines.length, 0, line);
     }
     const cue = line.cueId ? cueById(line.cueId) : null;
@@ -727,7 +824,7 @@
 
   /* ---------- 本体・タイムラインとのつなぎ ---------- */
 
-  // タイムラインが出すVOXキューの一覧（全セクション）。キューの番号・場面・秒はここから読む
+  // タイムラインが出すセリフキューの一覧（全セクション）。キューの番号・場面・秒はここから読む
   window.addEventListener("stage-timeline-vox-cues", (event) => {
     const detail = event && event.detail || {};
     voxCues = [];
@@ -737,6 +834,7 @@
       }));
     });
     if (!isOpen) return;
+    if (inlineEdit) return;      // その場で直している最中は描き直さない（確定したときに描き直す）
     if (selfCommit || commitTimer) {
       // 自分の書き込みの結果: 入力中の欄は作り直さず、一覧と数だけ更新する
       try { project = JSON.parse(bridge.exportDocumentString()).project; } catch (_) { /* そのまま */ }

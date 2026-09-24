@@ -1,10 +1,11 @@
-/* 舞台スケッチγ：VOXキューパネル（2026-09-24 本人指示）。
- * タイムラインのセリフキュー（VOXキュー）を右列に一覧で出し、
+/* 舞台スケッチγ：セリフキューパネル（2026-09-24 本人指示。旧名 セリフキュー・U-05 で表記を「セリフキュー」へ統一）。
+ * ★内部の名前（ファイル名・id・data-vox-*・イベント名・cueType "dialogue"）は変えない。表示の文字だけを変えた。
+ * タイムラインのセリフキューを右列に一覧で出し、
  *   ・行を押すとそのキューの瞬間へ頭出しする
  *   ・再生中・移動中は、いま行われているセリフを上に大きく出す
  * セリフの文字は「台本データ」から引く（本人決定）。台本は各場面のメモの
  *   話者「セリフ」
- * の行で、その場面の n 番目のVOXキューが n 行目に当たる（同梱のロミオとジュリエット見本
+ * の行で、その場面の n 番目のセリフキューが n 行目に当たる（同梱のロミオとジュリエット見本
  * 31場面・47キューで全件一致を確認）。台本の行が足りないときはキューのメモの
  * 話者「セリフ」を使い、それも無ければメモをそのまま出す。
  * 一覧はショー全体（セクションごとの見出しつき）。別のセクションの行を押すと、
@@ -82,6 +83,7 @@
           line: picked ? picked.line : "",
           source: fromData ? "data" : fromScript ? "script" : fromMemo ? "memo" : "none",
           color: fromData && fromData.color ? fromData.color : null,
+          castId: fromData && fromData.castId ? fromData.castId : null,
         };
       });
   }
@@ -152,7 +154,7 @@
     return parts.filter((part) => part.text.trim());
   }
 
-  /* 前後のVOXキュー（手送り）。いまのキューがあればその前後。まだ無い（セクションの頭より前）なら、
+  /* 前後のセリフキュー（手送り）。いまのキューがあればその前後。まだ無い（セクションの頭より前）なら、
    * 次＝このセクションの最初、前＝その1つ前（前のセクションの最後）。 */
   function stepTarget(entries, current, direction) {
     const list = Array.isArray(entries) ? entries : [];
@@ -193,15 +195,16 @@
   const host = document.getElementById("stage-vox-panel");
   if (!host) return;
   const els = {
+    stream: host.querySelector("[data-vox-stream]"),
     now: host.querySelector("[data-vox-now]"),
     nowCue: host.querySelector("[data-vox-now-cue]"),
+    nowMain: host.querySelector("[data-vox-now-main]"),
+    nowBody: host.querySelector("[data-vox-now-body]"),
     nowSpeaker: host.querySelector("[data-vox-now-speaker]"),
     nowLine: host.querySelector("[data-vox-now-line]"),
-    next: host.querySelector("[data-vox-now-next]"),
-    nextSpeaker: host.querySelector("[data-vox-now-next-speaker]"),
-    nextLine: host.querySelector("[data-vox-now-next-line]"),
+    stepBar: host.querySelector("[data-vox-step-bar]"),
+    stepSlot: host.querySelector("[data-vox-step-slot]"),
     stepButtons: [...host.querySelectorAll("[data-vox-step]")],
-    sizeButtons: [...host.querySelectorAll("[data-vox-size]")],
     section: host.querySelector("[data-vox-section]"),
     list: host.querySelector("[data-vox-list]"),
     past: host.querySelector("[data-vox-past]"),
@@ -214,13 +217,21 @@
   };
 
   let state = { currentSectionId: null, entries: [], castColors: {} };
+  /* 文字の大きさ（標準・大・特大）。U-09（2026-09-24 本人指示）で切り替えは環境設定へ移し、既定は一番小さい「標準」。
+   * 保存先の鍵は前と同じ（開発用の全初期化 ?dev-reset=1 の対象にも入っている）。 */
   const SIZE_KEY = "gamma:vox-panel-size-v1";
   const SIZES = ["m", "l", "xl"];
+  /* 環境設定から受け取る表示の切り替え（stage-sketch.js の applyFeatureFlags が stage-vox-prefs で送る）。
+   * scroll＝前後の移り変わりを滑らせる（U-02・既定 入）／vertical＝縦書き（U-04・日本語のときだけ効く・既定 切）。 */
+  let prefs = { scroll: true, vertical: false };
   let seconds = 0;
   let current = { index: -2, sectionIndex: -1 };   // index -2＝まだ一度も描いていない
   let rows = [];
   let rowItems = [];
-  let sectionCounts = new Map();
+
+  const isJapanese = () => /^ja\b/i.test(document.documentElement.lang || "ja");
+  const verticalOn = () => Boolean(prefs.vertical) && isJapanese();
+  const reducedMotion = () => Boolean(root.matchMedia && root.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
   function lineText(entry) {
     return entry.line || tx("（台本の行が見つかりません。キューのメモも空です）");
@@ -254,6 +265,19 @@
     });
   }
 
+  /* いまのセリフを正面図の吹き出し（U-03）へ渡す。吹き出しを出すかどうかは受け取る側（環境設定）が決める。 */
+  let lastAnnounced = "";
+  function announceCurrent(entry) {
+    const detail = entry ? {
+      cueId: entry.id, sceneId: entry.sceneId, sectionId: entry.sectionId || null,
+      castId: entry.castId || null, speaker: entry.speaker || "", line: entry.line || "",
+    } : null;
+    const key = JSON.stringify(detail);
+    if (key === lastAnnounced) return;
+    lastAnnounced = key;
+    root.dispatchEvent(new CustomEvent("stage-vox-current", { detail }));
+  }
+
   function renderNow() {
     const entry = state.entries[current.index];
     host.classList.toggle("has-current", Boolean(entry));
@@ -261,93 +285,120 @@
       els.nowCue.textContent = tx("いまのセリフ");
       els.nowSpeaker.textContent = "";
       els.nowLine.textContent = current.sectionIndex >= 0
-        ? tx("このセクションのこの位置より前にVOXキューはありません。")
+        ? tx("このセクションのこの位置より前にセリフキューはありません。")
         : "";
     } else {
       els.nowCue.textContent = `${tx("いまのセリフ")} · ${entry.displayName}`;
       renderSpeaker(els.nowSpeaker, entry.speaker, entry.color);
       renderLine(els.nowLine, entry);
     }
-    // 次のセリフの予告と、手送りのボタン
+    // 手送りのボタン（U-15: 「次」の予告行は下の一覧と重なるので出さない）
     const prev = stepTarget(state.entries, current, -1);
     const next = stepTarget(state.entries, current, 1);
-    if (els.next) {
-      els.next.hidden = !next;
-      if (next) {
-        renderSpeaker(els.nextSpeaker, next.speaker, next.color);
-        if (next.line) renderLine(els.nextLine, next);
-        else els.nextLine.textContent = tx("（文字なし）");
-        els.next.title = `${next.displayName}（${next.sectionTitle} / ${next.sceneTitle}）`;
-      }
-    }
     els.stepButtons.forEach((button) => {
       const target = Number(button.dataset.voxStep) < 0 ? prev : next;
       button.disabled = !target;
       button.dataset.cueId = target ? target.id : "";
       button.title = target ? `${target.displayName}${target.speaker ? `・${target.speaker}` : ""}` : "";
     });
+    announceCurrent(entry || null);
   }
 
   function applySize(size) {
-    const value = SIZES.includes(size) ? size : "m";
-    host.dataset.voxSize = value;
-    els.sizeButtons.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.voxSize === value)));
+    host.dataset.voxSize = SIZES.includes(size) ? size : "m";
   }
 
-  /* 済んだ行は枠の上、これからの行は枠の下（2026-09-24 本人指示）。
-   * いまの行は枠に出すので一覧からは外す。いまの行がまだ無いときは、今のセクションより前が「済んだ」。 */
+  /* 済んだ行は枠の上、これからの行は枠の下（2026-09-24 本人指示）。縦書きでは右が済んだ・左がこれから。
+   * いまの行は枠に出すので一覧からは外す。いまの行がまだ無いときは、今のセクションより前が「済んだ」。
+   * U-15（2026-09-24 本人指示）: セクション名の見出しは出さない（行だけを並べる）。 */
   function placeRows(scroll) {
     const split = splitRows(state.entries, current);
-    const fill = (host, indexes, past) => {
-      host.textContent = "";
-      let lastSection = null;
+    const fill = (list, indexes, past) => {
+      list.textContent = "";
       indexes.forEach((index) => {
         const entry = state.entries[index];
-        if (entry.sectionIndex !== lastSection) {
-          lastSection = entry.sectionIndex;
-          host.append(groupHeading(entry, sectionCounts.get(entry.sectionIndex)));
-        }
-        const item = rowItems[index];
         const row = rows[index];
         row.classList.toggle("is-past", past);
         row.classList.toggle("is-other-section", current.sectionIndex >= 0
           && entry.sectionIndex !== current.sectionIndex);
-        host.append(item);
+        list.append(rowItems[index]);
       });
-      host.hidden = indexes.length === 0;
+      list.hidden = indexes.length === 0;
     };
     fill(els.past, split.past, true);
     fill(els.list, split.future, false);
-    // 一覧の中だけを動かす（scrollIntoView は左右の列ごと動かしてしまう）。
-    // 済んだ側は直前のセリフが枠のすぐ上に見えるよう下端へ、これからの側は次のセリフが見えるよう上端へ。
-    if (scroll) {
+    if (scroll) scrollListsToNow();
+  }
+
+  /* 一覧の中だけを動かす（scrollIntoView は左右の列ごと動かしてしまう）。
+   * 済んだ側は直前のセリフが枠のすぐ隣に見える端へ、これからの側は次のセリフが見える端へ。
+   * 縦書き（vertical-rl）では横に流れる: 済んだ側（右）は左端＝枠の隣、これからの側（左）は右端＝枠の隣。 */
+  function scrollListsToNow() {
+    if (verticalOn()) {
+      // vertical-rl の scrollLeft は右端が0で、左へ行くほど負になる（Chrome・Safari・Firefox 共通）
+      els.past.scrollLeft = -els.past.scrollWidth;
+      els.list.scrollLeft = 0;
+    } else {
       els.past.scrollTop = els.past.scrollHeight;
       els.list.scrollTop = 0;
     }
   }
 
-  function markCurrent(scroll) {
-    placeRows(scroll);
+  /* ---------- U-02: 前後へ移るときの「送り」の動き ----------
+   * パッと差し替えるのではなく、行が一段ぶん流れて次のセリフが枠へ入ってくるように見せる（FLIP）。
+   * 並べ替える前の位置を控え、並べ替えた後に「元の位置へ戻す transform」を当ててから外す。
+   *   ・一覧の行: 前にあった位置から新しい位置へ滑る（一覧の外へ出た分は一覧の縁で切れる＝流れて見える）
+   *   ・前の「いまの行」: 枠の位置から、済んだ一覧の中の位置へ滑る
+   *   ・新しい「いまの行」の文字: それまで一覧で居た位置から枠の中へ滑り込む（枠の縁で切る）
+   * 縦書きでも同じ計算で、動きは自然に横向きになる。3つより遠くへ飛ぶとき・動きを減らす設定の端末では動かさない。 */
+  const MOTION_MS = 260;
+  const MOTION_EASE = "cubic-bezier(0.22, 0.61, 0.36, 1)";
+  function snapshotRows() {
+    const map = new Map();
+    rowItems.forEach((item, index) => { if (item.isConnected) map.set(index, item.getBoundingClientRect()); });
+    return map;
+  }
+  function slide(el, dx, dy) {
+    if (!el || (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5)) return;
+    el.style.transition = "none";
+    el.style.transform = `translate(${dx}px, ${dy}px)`;
+    // 1フレーム置いてから戻す（同じフレームでは transition が効かない）
+    root.requestAnimationFrame(() => {
+      el.style.transition = `transform ${MOTION_MS}ms ${MOTION_EASE}`;
+      el.style.transform = "";
+      const done = () => { el.style.transition = ""; el.removeEventListener("transitionend", done); };
+      el.addEventListener("transitionend", done);
+      root.setTimeout(done, MOTION_MS + 120);
+    });
+  }
+  function animateStep(before, nowRect, previousIndex) {
+    rowItems.forEach((item, index) => {
+      if (!item.isConnected) return;
+      const after = item.getBoundingClientRect();
+      const from = index === previousIndex ? nowRect : before.get(index);
+      if (!from) return;
+      slide(item, from.left - after.left, from.top - after.top);
+    });
+    const entered = before.get(current.index);
+    if (entered && els.nowBody) {
+      const target = els.nowMain.getBoundingClientRect();
+      slide(els.nowBody, entered.left - target.left, entered.top - target.top);
+    }
   }
 
-  function groupHeading(entry, count) {
-    const item = document.createElement("li");
-    item.className = "stage-vox-group";
-    item.dataset.sectionIndex = String(entry.sectionIndex);
-    const title = document.createElement("span");
-    title.className = "stage-vox-group-title";
-    title.textContent = entry.sectionTitle || tx("セクション");
-    const size = document.createElement("span");
-    size.className = "stage-vox-group-count";
-    size.textContent = String(count);
-    item.append(title, size);
-    return item;
+  function markCurrent(scroll, previous) {
+    const step = previous && previous.index >= -1 && current.index >= 0
+      ? current.index - previous.index : 0;
+    const animate = prefs.scroll && scroll && !reducedMotion() && step !== 0 && Math.abs(step) <= 3
+      && host.getClientRects().length > 0;
+    const before = animate ? snapshotRows() : null;
+    const nowRect = animate ? els.nowMain.getBoundingClientRect() : null;
+    placeRows(scroll);
+    if (animate) animateStep(before, nowRect, previous.index);
   }
 
   // 行は一度だけ作り、いまの位置が変わるたびに上下の一覧へ振り分け直す
   function renderList() {
-    sectionCounts = new Map();
-    state.entries.forEach((entry) => sectionCounts.set(entry.sectionIndex, (sectionCounts.get(entry.sectionIndex) || 0) + 1));
     rowItems = [];
     rows = state.entries.map((entry) => {
       const item = document.createElement("li");
@@ -382,7 +433,7 @@
       return button;
     });
     els.section.textContent = state.entries.length
-      ? `${tx("ショー全体")} · ${tx("VOXキュー")} ${state.entries.length}`
+      ? `${tx("ショー全体")} · ${tx("セリフキュー")} ${state.entries.length}`
       : "";
     els.empty.hidden = state.entries.length > 0;
     if (!state.entries.length) { els.past.hidden = true; els.list.hidden = true; }
@@ -405,9 +456,26 @@
     seconds = Number(next) || 0;
     const found = currentInShow(state.entries, state.currentSectionId, seconds);
     if (found.index === current.index && found.sectionIndex === current.sectionIndex) return;
+    const previous = current;
     current = found;
     renderNow();
-    markCurrent(scroll);
+    markCurrent(scroll, previous);
+  }
+
+  /* 縦書き（U-04）: 日本語のときだけ。手送りの帯は枠の外（下）へ出し、向きを「次 ←／前 →」にする
+   * （縦書きの本と同じく、左がこれから・右が済んだ）。 */
+  function applyWritingMode() {
+    const vertical = verticalOn();
+    host.classList.toggle("is-vertical", vertical);
+    const home = vertical ? els.stepSlot : els.now;
+    if (els.stepBar && home && els.stepBar.parentNode !== home) home.append(els.stepBar);
+    els.stepButtons.forEach((button) => {
+      const back = Number(button.dataset.voxStep) < 0;
+      button.textContent = vertical ? (back ? `${tx("前")} →` : `← ${tx("次")}`) : (back ? `← ${tx("前")}` : `${tx("次")} →`);
+    });
+    // 縦書きでは「前」を右・「次」を左に置く
+    if (els.stepBar) els.stepBar.classList.toggle("is-reversed", vertical);
+    scrollListsToNow();
   }
 
   root.addEventListener("stage-timeline-vox-cues", (event) => {
@@ -418,7 +486,7 @@
         && entry.seconds === entries[index].seconds && entry.line === entries[index].line
         && entry.speaker === entries[index].speaker && entry.displayName === entries[index].displayName
         && entry.sectionIndex === entries[index].sectionIndex && entry.sectionTitle === entries[index].sectionTitle
-        && entry.color === entries[index].color);
+        && entry.color === entries[index].color && entry.castId === entries[index].castId);
     const sectionChanged = state.currentSectionId !== (detail.currentSectionId || null);
     const colorsChanged = JSON.stringify(state.castColors) !== JSON.stringify(detail.castColors || {});
     state = { currentSectionId: detail.currentSectionId || null, entries, castColors: detail.castColors || {} };
@@ -433,6 +501,16 @@
     if (Number.isFinite(next)) updateSeconds(next, true);
   });
 
+  // 環境設定（stage-sketch.js）から: 送りの動き・縦書き・文字の大きさ
+  root.addEventListener("stage-vox-prefs", (event) => {
+    const detail = event && event.detail || {};
+    prefs = { scroll: detail.scroll !== false, vertical: Boolean(detail.vertical) };
+    if (detail.size) applySize(detail.size);
+    applyWritingMode();
+  });
+  // 言語を切り替えたら縦書きの可否が変わる
+  new MutationObserver(applyWritingMode).observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
+
   els.stepButtons.forEach((button) => {
     button.addEventListener("click", () => stepBy(Number(button.dataset.voxStep)));
   });
@@ -445,14 +523,10 @@
   let savedSize = "m";
   try { savedSize = root.localStorage.getItem(SIZE_KEY) || "m"; } catch (_) { /* 保存できない環境では標準のまま */ }
   applySize(savedSize);
-  els.sizeButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      applySize(button.dataset.voxSize);
-      try { root.localStorage.setItem(SIZE_KEY, host.dataset.voxSize); } catch (_) { /* 端末に残せなくても表示は変える */ }
-    });
-  });
 
   renderList();
   renderNow();
+  applyWritingMode();
+  root.dispatchEvent(new CustomEvent("stage-vox-prefs-request"));
   root.dispatchEvent(new CustomEvent("stage-vox-panel-request"));
 }(typeof window !== "undefined" ? window : globalThis));

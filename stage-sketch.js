@@ -5838,12 +5838,29 @@
       hint: "光だまりに入っている演者を、その明かりの色を掛けた色で描く。赤い明かりの下で青い衣装が沈む場面に気づけます（「照明の見え方」が切のときは効きません）" },
     { key: "pitchExport", label: "ピッチ書き出し", def: true,
       hint: "書き出しモーダルに「ピッチとして」が出る。作図の線を落とし、光と空気を効かせた一枚絵と、生成AI用の条件文を出す" },
-    /* 2026-09-24 本人指示: 左右キーで移るキューを「全キュー」か「VOXキューだけ」かで選ぶ。
+    /* 2026-09-24 本人指示: 左右キーで移るキューを「全キュー」か「セリフキューだけ」かで選ぶ。
        既定は切＝今までどおり明かり・音楽・セリフの全キューを時刻順にたどる。
-       入にすると、VOXキューパネルの手送りと同じ並び（ショー全体・セクションもまたぐ）でVOXキューだけを移る。 */
-    { key: "arrowKeysVoxOnly", label: "左右キーはVOXキューだけ", def: false,
-      hint: "舞台の画面で左右キーを押したとき、VOXキュー（セリフ）だけを移る。切のときは明かり・音楽・セリフの全キューを時刻順にたどります" },
+       入にすると、セリフキューパネルの手送りと同じ並び（ショー全体・セクションもまたぐ）でセリフキューだけを移る。 */
+    /* ★U-05（2026-09-24 本人指示）: 表示の「セリフキュー」は「セリフキュー」へ統一した。キー名は変えない（保存済みの設定が読む）。 */
+    { key: "arrowKeysVoxOnly", label: "左右キーはセリフキューだけ", def: false,
+      hint: "舞台の画面で左右キーを押したとき、セリフキューだけを移る。切のときは明かり・音楽・セリフの全キューを時刻順にたどります" },
+    /* U-02（2026-09-24 本人指示）: セリフキューパネルで前後へ移るとき、パッと差し替えずに流れるように送る。既定は入。 */
+    { key: "voxScroll", label: "セリフキューを滑らかに送る", def: true,
+      hint: "セリフキューパネルで前後のセリフへ移るとき、一覧が流れるように動いて次のセリフが枠へ入ってきます。切にするとすぐに切り替わります" },
+    /* U-03（2026-09-24 本人指示）: いまのセリフを、話している演者の頭の上に吹き出しで出す。既定は切。
+       演者は台本データの話者（演者の登録）で決める。演者の名前と話者名が同じなら、それでも当てる。 */
+    { key: "voxBubble", label: "正面図にセリフの吹き出し", def: false,
+      hint: "いまのセリフキューのセリフを、正面図で話している演者の頭の上に吹き出しで出します。その場面の舞台に話者が居ないときは出ません" },
+    /* U-04（2026-09-24 本人指示）: 日本語のときだけ、セリフキューパネルと吹き出しを縦書きにする。既定は切。
+       右が済んだセリフ・左がこれからのセリフ（縦書きの本と同じ流れ）。 */
+    { key: "voxVertical", label: "セリフを縦書きにする（日本語）", def: false,
+      hint: "セリフキューパネルと正面図の吹き出しを縦書きにします。右が済んだセリフ、左がこれからのセリフです。日本語表示のときだけ効きます" },
   ];
+  /* U-03 吹き出しの状態と縦書きの字の扱い。描画（drawVoxBubble）より前に宣言しておく（起動直後の描画で未初期化にならないように）。 */
+  let voxBubbleLine = null;
+  const VERTICAL_ROTATE = new Set([..."ー―─…‥〜～-—()（）「」『』［］[]【】〈〉《》｛｝{}<>＜＞=＝"]);
+  const VERTICAL_SHIFT = new Set([..."、。，．,."]);
+  const VERTICAL_SMALL = new Set([..."ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ"]);
   const FEATURES_PLANNED = [
     "転換アニメの動画書き出し", "見えない席の検査（遮蔽）", "資料棚からの場面引用",
   ];
@@ -5881,9 +5898,9 @@
       hint: "別の客席から見た小さな絵をもう一つ出す。図が重くなります。照明の見え方はこの小さな絵には出ません" },
     { key: "panelAlternatives", panel: "alternatives", label: "別案", def: false,
       hint: "シーンごとのA案・B案を作り、比べて採用する欄を右列に出す" },
-    /* VOXキュー（2026-09-24 本人指示）: セリフキューの一覧と、いま行われているセリフ。
+    /* セリフキュー（2026-09-24 本人指示）: セリフキューの一覧と、いま行われているセリフ。
        既定は非表示（既存の右列の見え方を変えない）。読むだけで保存データには触れない。 */
-    { key: "panelVox", panel: "vox", label: "VOXキュー", def: false,
+    { key: "panelVox", panel: "vox", label: "セリフキュー", def: false,
       hint: "ショー全体のセリフキューをセクションごとに一覧にし、押すとその瞬間へ移ります（別のセクションならタイムラインも切り替わります）。いま行われているセリフを台本から大きく出します" },
     { key: "panelInspector", panel: "inspector", label: "選んだもの", def: true,
       hint: "舞台の上で選ぶと、姿勢・向き・重なりを変えられます。名前・色・寸法は「演者・舞台セット」の一覧で決めます。" },
@@ -9595,7 +9612,7 @@
   }
 
 
-  /* ★2026-09-24 本人指示: 『ロミオとジュリエット』見本のVOXキュー（セリフキュー）の時刻を、
+  /* ★2026-09-24 本人指示: 『ロミオとジュリエット』見本のセリフキューの時刻を、
    * 台本の流れ（場面メモの動作と台詞の長さ）に合わせて打ち直した。以前の時刻は場面の長さを
    * 機械的に等分した位置（拍の中央＋1.5秒刻み）で、再生中の「いまのセリフ」が舞台の進行と
    * ずれて見えていた。棚に置き済みの複製にも届くよう、「同梱の旧版と同じ時刻のまま」の
@@ -9740,7 +9757,7 @@
     if (changed) refreshSectionDurationCache(savedProject);
     return changed;
   }
-  /* 見本の複製へ届ける補正をまとめて呼ぶ（VOXキューの時刻・転換の秒数）。 */
+  /* 見本の複製へ届ける補正をまとめて呼ぶ（セリフキューの時刻・転換の秒数）。 */
   /* ★2026-09-24 本人指示: 見本に台本（project.script・47行）を同梱した。棚の複製・開いたままの作業中データで
    * まだ台本データが無いものにだけ足す（取り込んだ・自分で作った台本があれば触らない）。
    * その複製に無いキュー・場面・演者への結び付きは外す（外しても行は残る）。 */
@@ -9770,11 +9787,34 @@
     savedProject.script = script;
     return true;
   }
+  /* ★U-08（2026-09-24 本人指示）: 演者名をセリフキューの話者名（「ロミオ」）とそろえる。同梱見本は読み込むときに
+   * 末尾の「担当」を外しているが、それより前に棚へ置いた複製・開いたままの作業中データには「ロミオ担当」が残っていた。
+   * 直すのは「同梱版と同じ演者ID」で、名前が「（番号＋空白）＋同梱版の名前＋担当」のままのものだけ。
+   * 利用者が付け直した名前（形が違うもの）は触らない。台本の話者は演者IDで引くので、直すと話者の表記も一致する。 */
+  function backfillRomeoJulietCastNames(savedProject, bundledProject) {
+    const cast = savedProject && Array.isArray(savedProject.cast) ? savedProject.cast : null;
+    const bundledCast = bundledProject && Array.isArray(bundledProject.cast) ? bundledProject.cast : null;
+    if (!cast || !bundledCast) return false;
+    const bundledById = new Map(bundledCast.filter((member) => member && typeof member.id === "string")
+      .map((member) => [member.id, String(member.name || "")]));
+    let changed = false;
+    cast.forEach((member) => {
+      if (!member || typeof member.name !== "string") return;
+      const target = bundledById.get(member.id);
+      if (!target || member.name === target) return;
+      const old = member.name.match(/^(?:\d{1,2}\s+)?(.+?)担当$/);
+      if (!old || old[1] !== target) return;
+      member.name = target;
+      changed = true;
+    });
+    return changed;
+  }
   function backfillRomeoJulietSampleData(savedProject, bundledProject) {
     const a = backfillRomeoJulietVoxOffsets(savedProject, bundledProject);
     const b = backfillRomeoJulietTransitions(savedProject);
     const c = backfillRomeoJulietScript(savedProject, bundledProject);
-    return a || b || c;
+    const d = backfillRomeoJulietCastNames(savedProject, bundledProject);
+    return a || b || c || d;
   }
 
   /* ★2026-09-24 本人指示「転換が0秒のものは全部直す」: 八人のサーカス・継ぎ目の庭の棚の複製と、
@@ -9891,6 +9931,36 @@
     }
     shows[built.project.id] = { savedAt: nowIso(), state: built };
     writeShows(shows);
+  }
+
+  /* ★U-14（2026-09-24 本人指示）: 初めて開いたとき・全部を消した（?dev-reset=1 等）あとの最初の画面は、
+   * 劇場未設定の空のショー（→劇場設定へ誘導）ではなく、「舞台」タブで『ロミオとジュリエット』の最初の場面を開いた状態にする。
+   * ★劇場設定ゲートは残す（本人決定）。見本は劇場を決めてある（venueSetupAppliedAt）のでゲートに掛からない。
+   * 対象は「保存が無くて空のショーを作った」ときだけ。前回のショーを開けた（restored）とき、
+   * 保存を読めなかった（alternativesStorageBlocked＝上書きしないため）ときは何もしない。
+   * 棚にこの端末の複製があればそれを開く（利用者の編集を捨てない）。無ければ同梱版を組み立てる。 */
+  function openRomeoJulietOnFirstRun() {
+    if (loaded.restored || alternativesStorageBlocked || STUDY_READ_ONLY) return false;
+    if (!state.project || !state.project.venueSetupPending) return false;
+    const source = bundledProjectById("romeo-juliet-gamma-cued-2026-09-21");
+    if (!source) return false;
+    const entry = readShows()[source.project.id];
+    let next = null;
+    try { next = entry && entry.state ? normalizeState(entry.state) : buildRomeoJulietSampleShow(); } catch (_) { next = null; }
+    if (!next || !next.project) return false;
+    backfillVenueSetupAppliedAt(next.project);
+    const first = (next.project.scenes || []).find((row) => row && row.kind === "scene");
+    if (first) { next.project.activeSceneId = first.id; next.cursorRowId = first.id; }
+    next.layout = state.layout;
+    state = next;
+    loaded.value = next;
+    selectedAudioTrackId = (state.project.audioTracks[0] && state.project.audioTracks[0].id) || null;
+    selectedId = null;
+    persistSoon();
+    // 劇場設定へ寄せていたゲートを外して舞台タブへ（gamma-workspace.js は先に読み込まれている）
+    window.GAMMA_WORKSPACE?.syncGate?.();
+    if (window.GAMMA_WORKSPACE?.mode?.() === "venue-setup") window.GAMMA_WORKSPACE.normal();
+    return true;
   }
 
   function openRomeoJulietSampleShow() {
@@ -10579,7 +10649,7 @@
     future.push(snapshot());
     restore(history.pop());
     updateHistoryButtons();
-    // 台本（project.script）やキューを戻したとき、タイムライン・VOXキューパネル・セリフ編集画面も描き直す
+    // 台本（project.script）やキューを戻したとき、タイムライン・セリフキューパネル・セリフ編集画面も描き直す
     window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
     announce("一つ前の状態へ戻しました。");
   }
@@ -16099,6 +16169,161 @@
 
   /* 図の上に描く名前札。描画と当たり判定で同じ寸法を使い、
    * 「名前の部分をダブルクリック」が見た目どおりの範囲で働くようにする。 */
+  /* ---------- U-03（2026-09-24 本人指示）: 正面図のセリフの吹き出し ----------
+   * セリフキューパネルが「いまのセリフ」を stage-vox-current で知らせる。ここでは覚えて描くだけ（保存データには触れない）。
+   * 話者の駒: 台本データの演者（castId）→ 無ければ演者名と話者名が同じ駒。その場面の舞台に居ないときは描かない。
+   * 数値: 文字14px・行間21px・横書きの幅上限240px・4行まで（超えたら…）・余白10/12px・角丸8px・しっぽ10px。
+   *       縦書き（日本語で「縦書き」が入のとき）: 1列10字・5列まで・列の間隔22px。
+   * 色: 紙色の地 #efe7d6（96%）＋墨色の文字 #1b1712（対比 14.9:1）。ト書きの括弧も同じ色で出す。 */
+  window.addEventListener("stage-vox-current", (event) => {
+    const next = event && event.detail ? event.detail : null;
+    const before = JSON.stringify(voxBubbleLine);
+    voxBubbleLine = next && next.line ? next : null;
+    if (JSON.stringify(voxBubbleLine) !== before && featureOn("voxBubble")) render();
+  });
+  // パネルが後から読み込まれたときに、今の環境設定をもう一度渡す
+  window.addEventListener("stage-vox-prefs-request", () => syncVoxPrefs());
+
+  function voxBubbleSpeakerPiece(shown) {
+    const line = voxBubbleLine;
+    if (!line) return null;
+    if (line.sceneId && state.project.activeSceneId && line.sceneId !== state.project.activeSceneId) return null;
+    const performers = shown.filter((piece) => piece.type === "performer" && !piece.heldBy);
+    if (line.castId) {
+      const byCast = performers.find((piece) => piece.castId === line.castId);
+      if (byCast) return byCast;
+    }
+    const name = String(line.speaker || "").trim();
+    if (!name) return null;
+    return performers.find((piece) => String(pieceLabel(piece) || "").trim() === name) || null;
+  }
+
+  // 横書き: 幅に入るだけ1字ずつ詰めて折り返す（日本語は語の切れ目が無いので字で折る）。改行はそのまま。
+  function wrapBubbleText(target, text, maxWidth, maxLines) {
+    const lines = [];
+    String(text).split(/\n/).forEach((para) => {
+      let lineText = "";
+      [...para].forEach((ch) => {
+        if (lineText && target.measureText(lineText + ch).width > maxWidth) { lines.push(lineText); lineText = ch.trim() ? ch : ""; }
+        else lineText += ch;
+      });
+      lines.push(lineText);
+    });
+    const kept = lines.filter((value, index) => value || index < lines.length - 1).slice(0, maxLines);
+    if (lines.length > maxLines && kept.length) {
+      let last = kept[kept.length - 1];
+      while (last && target.measureText(`${last}…`).width > maxWidth) last = last.slice(0, -1);
+      kept[kept.length - 1] = `${last}…`;
+    }
+    return kept;
+  }
+
+  // 縦書き: 1列 perColumn 字で右から左へ。改行で列を改める。
+  function columnBubbleText(text, perColumn, maxColumns) {
+    const columns = [];
+    String(text).split(/\n/).forEach((para) => {
+      const chars = [...para.replace(/[\s　]+/g, "　")];
+      if (!chars.length) return;
+      for (let at = 0; at < chars.length; at += perColumn) columns.push(chars.slice(at, at + perColumn));
+    });
+    if (columns.length > maxColumns) {
+      const kept = columns.slice(0, maxColumns);
+      const last = kept[kept.length - 1];
+      last.splice(Math.max(0, perColumn - 1), last.length, "…");
+      return kept;
+    }
+    return columns;
+  }
+
+  function drawVoxBubble(target, L, shown) {
+    const piece = voxBubbleSpeakerPiece(shown);
+    if (!piece) return;
+    const visualPiece = effectivelyPlacedPiece(piece);
+    const pos = placePiece(visualPiece, L);
+    const bounds = selectionBounds(visualPiece, L);
+    const text = String(voxBubbleLine.line || "").trim();
+    if (!text) return;
+    const vertical = featureOn("voxVertical") && lang === "ja";
+    const font = "14px 'Hiragino Mincho ProN', 'Yu Mincho', serif";
+    const padX = 12;
+    const padY = 10;
+    const lineStep = 21;
+    const tail = 10;
+    target.save();
+    target.font = font;
+    let boxW;
+    let boxH;
+    let lines = null;
+    let columns = null;
+    if (vertical) {
+      columns = columnBubbleText(text, 10, 5);
+      const longest = Math.max(1, ...columns.map((column) => column.length));
+      boxW = columns.length * 22 + padX * 2 - 8;
+      boxH = longest * 16 + padY * 2;
+    } else {
+      lines = wrapBubbleText(target, text, 240, 4);
+      const widest = Math.max(24, ...lines.map((value) => target.measureText(value).width));
+      boxW = Math.ceil(widest) + padX * 2;
+      boxH = lines.length * lineStep + padY * 2 - 4;
+    }
+    // 名札を出しているときはその上へ。図の枠からはみ出さないように寄せる。
+    const anchorY = bounds.y - (state.showNames ? 30 : 10);
+    const left = clamp(pos.x - boxW / 2, 6, Math.max(6, W - boxW - 6));
+    const top = Math.max(6, anchorY - tail - boxH);
+    const tipX = clamp(pos.x, left + 14, left + boxW - 14);
+    target.shadowColor = "rgba(0,0,0,0.45)";
+    target.shadowBlur = 8;
+    target.shadowOffsetY = 2;
+    target.fillStyle = "rgba(239,231,214,0.96)";
+    target.beginPath();
+    const r = 8;
+    target.moveTo(left + r, top);
+    target.lineTo(left + boxW - r, top);
+    target.quadraticCurveTo(left + boxW, top, left + boxW, top + r);
+    target.lineTo(left + boxW, top + boxH - r);
+    target.quadraticCurveTo(left + boxW, top + boxH, left + boxW - r, top + boxH);
+    // しっぽ（話者の頭へ向ける）
+    target.lineTo(tipX + 7, top + boxH);
+    target.lineTo(tipX, Math.min(anchorY, top + boxH + tail));
+    target.lineTo(tipX - 7, top + boxH);
+    target.lineTo(left + r, top + boxH);
+    target.quadraticCurveTo(left, top + boxH, left, top + boxH - r);
+    target.lineTo(left, top + r);
+    target.quadraticCurveTo(left, top, left + r, top);
+    target.closePath();
+    target.fill();
+    target.shadowColor = "transparent";
+    target.fillStyle = "#1b1712";
+    if (vertical) {
+      target.textAlign = "center";
+      target.textBaseline = "middle";
+      columns.forEach((column, index) => {
+        const x = left + boxW - padX - 7 - index * 22;
+        column.forEach((ch, row) => {
+          const y = top + padY + 8 + row * 16;
+          if (VERTICAL_ROTATE.has(ch)) {
+            target.save();
+            target.translate(x, y);
+            target.rotate(Math.PI / 2);
+            target.fillText(ch, 0, 0);
+            target.restore();
+          } else if (VERTICAL_SHIFT.has(ch)) {
+            target.fillText(ch, x + 6, y - 6);
+          } else if (VERTICAL_SMALL.has(ch)) {
+            target.fillText(ch, x + 1.5, y - 1.5);
+          } else {
+            target.fillText(ch, x, y);
+          }
+        });
+      });
+    } else {
+      target.textAlign = "left";
+      target.textBaseline = "top";
+      lines.forEach((value, index) => target.fillText(value, left + padX, top + padY + index * lineStep));
+    }
+    target.restore();
+  }
+
   function pieceNameTag(target, piece, L, shown) {
     const wanted = piece.type === "performer" ? state.showNames
       : piece.type === "light" ? state.showLightNames
@@ -16807,6 +17032,8 @@
         target.restore();
       });
     }
+    // U-03: いまのセリフの吹き出し（正面図だけ・環境設定で入のときだけ）
+    if (!pitchStyle && !L.plan && target === ctx && featureOn("voxBubble")) drawVoxBubble(target, L, shown);
 
     /* 動線は平面図だけ。上から見た床の上の道筋なので、正面図には出しようがない。
        ★転換アニメの最中は出さない（本人指定）。動いている駒の足元に
@@ -19573,7 +19800,8 @@
       if (!handle || !listEl.contains(handle)) return;
       const row = handle.closest("[data-roster-id]");
       if (!row) return;
-      rosterDrag = { listEl, row, handle, startY: event.clientY, pointerId: event.pointerId, moved: false };
+      rosterDrag = { listEl, row, handle, startY: event.clientY, pointerId: event.pointerId, moved: false,
+        grabY: event.clientY - row.getBoundingClientRect().top };
       handle.setPointerCapture(event.pointerId);
     });
     listEl.addEventListener("pointermove", (event) => {
@@ -19585,22 +19813,38 @@
         document.body.classList.add("is-roster-reordering");
       }
       event.preventDefault();
+      /* U-12（2026-09-24 本人指示）: 掴んだ行は指に付いて動き、ほかの行は滑って場所を空ける（iPhoneのホーム画面と同じ手触り）。
+       * 行の当たり判定は、滑っている途中の見た目ではなく収まる位置（transform を外した位置）で行う。 */
+      const motion = window.SHOSAI_REORDER_MOTION;
       const rows = Array.from(listEl.querySelectorAll("[data-roster-id]"));
+      const slotOf = (other) => {
+        const box = other.getBoundingClientRect();
+        const matrix = getComputedStyle(other).transform;
+        const dy = matrix && matrix !== "none" && typeof DOMMatrixReadOnly === "function" ? new DOMMatrixReadOnly(matrix).m42 : 0;
+        return { top: box.top - dy, bottom: box.bottom - dy, height: box.height };
+      };
       const target = rows.find((other) => {
         if (other === rosterDrag.row) return false;
-        const box = other.getBoundingClientRect();
+        const box = slotOf(other);
         return event.clientY >= box.top && event.clientY <= box.bottom;
       });
-      if (!target) return;
-      const box = target.getBoundingClientRect();
-      const after = event.clientY > box.top + box.height / 2;
-      target.parentNode.insertBefore(rosterDrag.row, after ? target.nextSibling : target);
+      if (target) {
+        const box = slotOf(target);
+        const after = event.clientY > box.top + box.height / 2;
+        const reference = after ? target.nextSibling : target;
+        if (reference !== rosterDrag.row && rosterDrag.row.nextSibling !== reference) {
+          const move = () => target.parentNode.insertBefore(rosterDrag.row, reference);
+          if (motion) motion.flip(rows, move, rosterDrag.row); else move();
+        }
+      }
+      if (motion) motion.follow(rosterDrag.row, event.clientY, rosterDrag.grabY);
     });
     const finish = (event) => {
       if (!rosterDrag || rosterDrag.pointerId !== event.pointerId) return;
       const drag = rosterDrag;
       rosterDrag = null;
       drag.row.classList.remove("is-roster-dragging");
+      if (window.SHOSAI_REORDER_MOTION) window.SHOSAI_REORDER_MOTION.settle(drag.row);
       document.body.classList.remove("is-roster-reordering");
       try { drag.handle.releasePointerCapture(event.pointerId); } catch (_) { /* 既に外れている */ }
       if (!drag.moved) return;   // 動かしていなければ click（＝詳しい窓）へ任せる
@@ -21365,6 +21609,10 @@
     updateHistoryButtons();
     render();
     syncNewShowReturn();
+    /* ★U-13（2026-09-24 本人指摘）: 劇場設定ゲート（案A）の帯と薄い表示は、タブを切り替えたときにしか見直されていなかった。
+     * 劇場未設定の新規ショーを舞台タブで開いたまま、ショー一覧から劇場の決まったショーを開くと、
+     * 「まず劇場を決めると、このショーを編集できます。」と操作できない状態が残った。開いたショーで見直す。 */
+    window.GAMMA_WORKSPACE?.syncGate?.();
     persistSoon();
     announce(message);
     return true;
@@ -25788,7 +26036,34 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     ]);
     FEATURES.filter((f) => !hiddenGammaFlags.has(f.key)).forEach((f) => { features.grid.append(prefRow(f)); });
     features.grid.append(lightLookRow());
+    features.grid.append(voxSizeRow());
     host.append(features.group);
+  }
+
+  /* U-09（2026-09-24 本人指示）: セリフキューの文字の大きさは、パネルの中ではなく環境設定で選ぶ。既定は一番小さい「標準」。
+   * 保存先はパネルが前から使っている端末の鍵（gamma:vox-panel-size-v1）のまま＝以前選んだ大きさは引き継ぐ。 */
+  const VOX_SIZE_KEY = "gamma:vox-panel-size-v1";
+  const VOX_SIZES = [["m", "標準"], ["l", "大"], ["xl", "特大"]];
+  function voxPanelSize() {
+    let value = "m";
+    try { value = localStorage.getItem(VOX_SIZE_KEY) || "m"; } catch (_) { /* 読めなければ標準 */ }
+    return VOX_SIZES.some(([key]) => key === value) ? value : "m";
+  }
+  function voxSizeRow() {
+    return prefSelectRow("セリフキューの文字の大きさ", voxPanelSize(), VOX_SIZES,
+      "セリフキューパネルの「いまのセリフ」の文字の大きさ。標準16px・大22px・特大30px", (next) => {
+        try { localStorage.setItem(VOX_SIZE_KEY, next); } catch (_) { /* 残せなくても表示は変える */ }
+        syncVoxPrefs(next);
+        announce(`セリフキューの文字の大きさを「${tx((VOX_SIZES.find(([key]) => key === next) || VOX_SIZES[0])[1])}」にしました。`);
+      });
+  }
+  /* セリフキューパネル（stage-vox-panel.js）へ、送りの動き・縦書き・文字の大きさを渡す。 */
+  function syncVoxPrefs(size) {
+    try {
+      window.dispatchEvent(new CustomEvent("stage-vox-prefs", { detail: {
+        scroll: featureOn("voxScroll"), vertical: featureOn("voxVertical"), size: size || voxPanelSize(),
+      } }));
+    } catch (_) { /* 古い環境では何もしない */ }
   }
   function openPrefs() {
     closePanelVisibilityMenu();
@@ -26075,6 +26350,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     syncLightIntentDock();
     syncLightIntentCompare();
     if (els.exportPurposeBlock) updateExportPurposeUi();
+    syncVoxPrefs();
   }
 
   /* ---------- 全画面表示 ----------
@@ -35831,6 +36107,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     if (!loaded.restored) shelveSample();
     shelveSeamGardenSample();
     shelveRomeoJulietSample();
+    openRomeoJulietOnFirstRun();
     backfillOpenRomeoJulietVoxOffsets();
     backfillBundledSampleShelf();
     backfillOpenBundledSampleTimings();
@@ -36648,7 +36925,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       return jsonClone(cue);
     },
     /* セリフ編集画面（stage-script-editor.js・2026-09-24 本人指示）。台本は project.script に持つ。
-     * { version: 1, lines: [{ id, sceneId, castId, speaker, text, cueId }] }。行とVOXキューの結び付きは
+     * { version: 1, lines: [{ id, sceneId, castId, speaker, text, cueId }] }。行とセリフキューの結び付きは
      * 行の側（cueId）に持つ（キューの未知の項目は読み込みで落ちるため）。1キュー＝1行（本人決定）。
      * 取り消し1回で戻せるよう、キューの追加・削除と台本の変更を1つの checkpoint にまとめる。 */
     getProjectScript() {

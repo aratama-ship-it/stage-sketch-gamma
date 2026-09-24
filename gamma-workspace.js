@@ -599,5 +599,7 @@
   /* 劇場を反映したら鍵は外れる（反映後に select() が呼ばれ、その中で見直す）。
      ショーを切り替えたときのために、エディタを閉じた合図でも見直しておく。 */
   window.addEventListener('stage-venue-editor-closed',syncVenueGate);
-  window.GAMMA_WORKSPACE=Object.freeze({normal:()=>select('normal'),select,mode:()=>mode,captureHostHistory,syncHistory});
+  /* U-13（2026-09-24）: ショーを開き直したら本体（applyLoadedState）がこれを呼び、ゲートの帯・薄い表示を見直す。
+     劇場が決まったショーへ移ったのに、前の新規ショーの「まず劇場を決めると…」が残っていた。 */
+  window.GAMMA_WORKSPACE=Object.freeze({normal:()=>select('normal'),select,mode:()=>mode,captureHostHistory,syncHistory,syncGate:()=>syncVenueGate()});
 })();
