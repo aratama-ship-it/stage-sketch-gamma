@@ -6023,11 +6023,15 @@
   });
   /* T-2（2026-09-17）: 見せる時間の既定は10秒（本人決定）。
    * 「数値が入力されていない場合は10秒に補正する」ため、新規作成でも読み込みでもここで埋める。
-   * 移動時間は0秒のまま（従来のタイムラインの既定と同じ。勝手に転換を挟まない）。
+   * 移動時間の「欠けている値の補い」は0秒のまま（保存済みデータの秒数を読み込みで変えないため）。
    * これで hold/travel が null になる経路が無くなり、画面の空欄と
-   * タイムライン側の 4秒/0秒 フォールバックの食い違い（指示書 T-2 の表）が消える。 */
+   * タイムライン側の 4秒/0秒 フォールバックの食い違い（指示書 T-2 の表）が消える。
+   * ★2026-09-24 本人決定「0秒の転換は存在しない」: **新しく作る場面**の転換は NEW_SCENE_TRAVEL_SECONDS（3秒）にする。
+   * 既存の保存データで欠けている値を補うときは従来どおり0秒（読み込みで秒数が変わるとセクション時間の控えと
+   * 食い違い、reconcileSectionDurations が見せる時間を縮めるため）。二分割で生まれる後半の前は同一状態の続きなので0のまま。 */
   const DEFAULT_SCENE_HOLD_SECONDS = 10;
   const DEFAULT_SCENE_TRAVEL_SECONDS = 0;
+  const NEW_SCENE_TRAVEL_SECONDS = 3;
   /* 2026-09-17 本人指示「シーンパネルとタイムラインは常に繋がっている状態に。転換も同じ」。
    *
    * それまで section.timelineDurationSeconds は、シーンの秒数とは別に持つ
@@ -6268,7 +6272,9 @@
       strokes: [],
       arrows: [],
       beat: normalizeSceneBeat(sceneKind, null),
-      rehearsal: sceneKind === "scene" ? normalizeSceneRehearsal(null) : null,
+      // 新しい場面の転換は3秒（2026-09-24 本人決定）。見せる時間は既定の10秒。
+      rehearsal: sceneKind === "scene"
+        ? normalizeSceneRehearsal({ transitionToNextSeconds: NEW_SCENE_TRAVEL_SECONDS }) : null,
       // 音源を使わないタイムラインで、このセクション全体を何秒として扱うか。
       timelineDurationSeconds: null,
       // セクションごとに時間式／カウント式のどちらで時間軸を読むか。
