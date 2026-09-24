@@ -15569,6 +15569,26 @@ html.stage-phone-viewer .stage-note-editor-bar .btn-quiet { min-height: 44px; mi
 
 .stage-arrow-choice button + button { margin-left: -6px; }
 
+/* 図ごとの「矢印を消す」（2026-09-24）。右上の道具列に置く文字ボタン。
+   矢印道具のあいだ、その図に矢印があるときだけ出る（JSが hidden を切り替える）。
+   消す操作なので、地の道具より少しだけ目立たせる（錆色の縁）。 */
+.stage-arrow-clear-view {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  border-color: var(--rust);
+  color: var(--milk);
+}
+.stage-arrow-clear-view:hover { border-color: var(--brass); }
+.stage-arrow-clear-view[hidden] { display: none; }
+
+/* 矢印中は右上の道具列が図の幅を超えやすい（設定の一列＋アイコン＋「矢印を消す」＋×）。
+   列そのものは図の幅に収め（min-width: 0）、はみ出す分は設定の一列だけが横スクロールで
+   逃がす。設定の中身は縮めない（縮めると文字が折れて列の高さが変わり、図が下へずれる）。
+   2026-09-24 実測: 1440px幅・側パネル込みで × が図の外（右の一覧の上）へ出ていた。 */
+.stage-canvas-bar:has(.stage-arrow-options:not([hidden])) .stage-canvas-tools { min-width: 0; }
+.stage-canvas-bar:has(.stage-arrow-options:not([hidden])) .stage-canvas-tools > :not(.stage-arrow-options) { flex-shrink: 0; }
+.stage-arrow-options > * { flex: 0 0 auto; }
+
 .stage-arrow-choice button:hover,
 .stage-arrow-clear:hover { color: var(--milk); border-color: var(--brass); }
 
@@ -15640,7 +15660,7 @@ html.stage-phone-viewer .stage-note-editor-bar .btn-quiet { min-height: 44px; mi
    設定を横へ繰れる一列にする。 */
 html.stage-pwa-tablet #stage-front-cell:has(.stage-arrow-options:not([hidden])) .stage-seat-list,
 html.stage-pwa-tablet #stage-front-cell:has(.stage-arrow-options:not([hidden]))
-  .stage-canvas-tools > :not(.stage-arrow-options):not(.stage-canvas-close) { display: none; }
+  .stage-canvas-tools > :not(.stage-arrow-options):not(.stage-canvas-close):not(.stage-arrow-clear-view) { display: none; }
 
 html.stage-pwa-tablet .stage-arrow-options {
   flex-wrap: nowrap;

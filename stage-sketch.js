@@ -4824,7 +4824,7 @@
     select: "演者や物を選び、舞台の上で動かします。",
     paint: "奥の背景面を指やマウスで塗ります。",
     erase: "背景に描いた線だけを消します。",
-    arrow: "正面図または平面図をなぞると矢印になります。正面図では床の上か空中かを選べます。Alt（option）を押しながらクリックすると、近い矢印を1本消せます。",
+    arrow: "正面図または平面図をなぞると矢印になります。正面図では床の上か空中かを選べます。図の右上の「矢印を消す」で、その図の矢印をまとめて消せます。",
     route: "平面図で演者や物、明かりを掴み、離した所が行き先になります。真ん中の丸を引くと動線が曲がります。",
     note: "何もない所を押すとメモを貼れます。貼ったメモは掴んで動かせます。",
     light: "照明の詳細編集は照明で行います。",
@@ -4931,6 +4931,9 @@
     arrowWidthBold: document.getElementById("stage-arrow-width-bold"),
     arrowColor: document.getElementById("stage-arrow-color"),
     arrowClear: document.getElementById("stage-arrow-clear"),
+    /* 図ごとの「矢印を消す」（2026-09-24）。矢印道具のあいだ、その図に矢印があるときだけ右上に出す。 */
+    arrowClearFront: document.getElementById("stage-front-arrow-clear"),
+    arrowClearPlan: document.getElementById("stage-plan-arrow-clear"),
     background: document.getElementById("stage-bg-color"),
     paintColor: document.getElementById("stage-paint-color"),
     brushSize: document.getElementById("stage-brush-size"),
@@ -13827,21 +13830,8 @@
     return Math.hypot(point.x - (a.x + dx * t), point.y - (a.y + dy * t));
   }
 
-  function arrowAt(point, L, view) {
-    const arrows = sc().arrows || [];
-    const limit = 12 / zoomOf(view).z;
-    let best = -1;
-    let bestDistance = limit;
-    for (let index = arrows.length - 1; index >= 0; index -= 1) {
-      if (arrows[index].view !== view) continue;
-      const points = arrowScreenPoints(arrows[index], L);
-      for (let i = 1; i < points.length; i += 1) {
-        const distance = pointToSegmentDistance(point, points[i - 1], points[i]);
-        if (distance < bestDistance) { best = index; bestDistance = distance; }
-      }
-    }
-    return best;
-  }
+  /* 2026-09-24 本人指示: Alt（option）＋クリックで近い矢印を1本消す機能（arrowAt）は廃止。
+     矢印は図の右上の「矢印を消す」でその図ごとにまとめて消す（clearArrowsInView）。 */
 
   function drawRoutes(target, L, showSelection) {
     sc().pieces.forEach((piece) => {
@@ -30009,6 +29999,36 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         if (button) button.setAttribute("aria-pressed", String(widthKey === key));
       });
     if (els.arrowClear) els.arrowClear.disabled = !(sc().arrows || []).length;
+    syncArrowClearViewButtons();
+  }
+
+  /* 図ごとの「矢印を消す」（2026-09-24 本人要望）。
+     矢印道具を選んでいるあいだ、その図に矢印があるときだけ図の右上に出す。
+     押すとその図（正面図または平面図）の矢印だけがまとめて消える。もう一方の図の矢印は残す。 */
+  function arrowCountInView(view) {
+    return (sc().arrows || []).filter((arrow) => arrow.view === view).length;
+  }
+
+  function syncArrowClearViewButtons() {
+    [[els.arrowClearFront, "front"], [els.arrowClearPlan, "plan"]].forEach(([button, view]) => {
+      if (!button) return;
+      const count = tool === "arrow" && !phoneViewerActive && !STUDY_READ_ONLY ? arrowCountInView(view) : 0;
+      button.hidden = count === 0;
+      if (count > 0) {
+        button.title = tx(view === "plan" ? "平面図の矢印をまとめて消す" : "正面図の矢印をまとめて消す");
+      }
+    });
+  }
+
+  function clearArrowsInView(view) {
+    const arrows = sc().arrows || [];
+    if (!arrows.some((arrow) => arrow.view === view)) return;
+    checkpoint();
+    sc().arrows = arrows.filter((arrow) => arrow.view !== view);
+    if (arrowDraft && arrowDraft.view === view) { arrowDraft = null; pointerAction = null; }
+    render();
+    persistSoon();
+    announce(view === "plan" ? "平面図の矢印を消しました。" : "正面図の矢印を消しました。");
   }
 
   function setTool(nextTool) {
@@ -31051,19 +31071,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (guestSessionActive() && tool !== "arrow") return;
 
     /* 自由矢印は操作した図に属する。平面図では高さを持たない床の矢印にする。
-     * Alt（option）クリックは線を増やさず、その図の近い一本だけ消す。 */
+     * （Alt＋クリックで1本消す分岐は 2026-09-24 に廃止。消すのは図の右上の「矢印を消す」） */
     if (tool === "arrow") {
-      if (event.altKey) {
-        const index = arrowAt(point, L, view);
-        if (index >= 0) {
-          checkpoint();
-          sc().arrows.splice(index, 1);
-          render();
-          persistSoon();
-          announce("矢印を1本消しました。");
-        }
-        return;
-      }
       arrowDraft = {
         view,
         plane: view === "plan" ? "floor" : arrowPlanePref(),
@@ -31453,9 +31462,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const point = pointFromEvent(event);
     if (!presenting && (tool === "select" || tool === "light")
       && nameDetailTargetAt(point, L, el.getContext("2d"))) return "pointer";
-    if (tool === "arrow") {
-      return event.altKey && arrowAt(point, L, view) >= 0 ? "not-allowed" : "crosshair";
-    }
+    if (tool === "arrow") return "crosshair";
     if (tool === "note") return noteAt(point, L, view) ? "grab" : "copy";
     if (tool === "route") return hitTest(point, L) ? "crosshair" : "default";
     if (tool === "light") {
@@ -32020,6 +32027,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       announce("矢印を消しました。");
     });
   }
+  [els.arrowClearFront, els.arrowClearPlan].forEach((button) => {
+    if (!button) return;
+    button.addEventListener("click", () => clearArrowsInView(button.dataset.arrowView === "plan" ? "plan" : "front"));
+  });
   // 演者・台・光はすべて、それぞれの一覧から舞台へ出し入れする
   if (els.showFront) {
     els.showFront.addEventListener("change", (e) => setViewShown("front", e.target.checked));
