@@ -34,7 +34,7 @@ test("試験場 E-1/E-2 の旧照明を原本非破壊でγ照明デザインへ
   assert.equal(result.migrated, true);
   assert.equal(JSON.stringify(source), before, "呼び出し元のショーを変更しない");
   assert.notEqual(result.document, source);
-  assert.equal(result.document.project.id, "gamma-feature-test-v4");
+  assert.equal(result.document.project.id, "gamma-feature-test-v5");
   assert.equal(result.document.project.lightingDesign.format, "shosai.light-design");
   assert.equal(result.document.project.lightingDesign.version, 2);
   assert.ok(result.document.project.lightingDesign.rig.fixtures.length >= 7);
@@ -58,7 +58,7 @@ test("照明デザイン済みのショーは再変換せず、灯体を増殖�
   assert.deepEqual(second.document, first.document);
 });
 
-test("E-1/E-2 の点灯場面に LX キューと場面頭ライトキューを補い、原本と既存キューは保持する", () => {
+test("E-1/E-2 の点灯シーンに LX キューとシーン頭ライトキューを補い、原本と既存キューは保持する", () => {
   const source = legacyFixture();
   source.project.cues = [{ id: "keep-dialogue", kind: "timeline", cueType: "dialogue",
     sceneId: "ft-scene-e1", offsetSeconds: 2, memo: "台詞", locked: true },
@@ -100,7 +100,7 @@ test("寸法を欠く旧ショーは確定した同梱会場の寸法だけで�
   assert.equal(JSON.stringify(source), before);
 });
 
-test("既存の場面頭ライトキューは重ねず、既存の照明デザインは一切再変換しない", () => {
+test("既存のシーン頭ライトキューは重ねず、既存の照明デザインは一切再変換しない", () => {
   const source = legacyFixture();
   source.project.cues = [{ id: "keep-light", kind: "timeline", cueType: "light",
     sceneId: "ft-scene-e1", offsetSeconds: 0, memo: "既存", locked: true }];

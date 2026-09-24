@@ -1759,7 +1759,7 @@
     }
     els.cueDetailLineText.classList.toggle("is-missing", !entry.line);
     els.cueDetailLineSource.textContent = entry.source === "data" ? tx("台本（セリフ編集）から")
-      : entry.source === "script" ? tx("場面メモの台本から")
+      : entry.source === "script" ? tx("シーンメモの台本から")
       : entry.source === "memo" ? tx("キューのメモから") : "";
     voxStepLabel(els.cueDetailPrev, entries[at - 1] || null);
     voxStepLabel(els.cueDetailNext, entries[at + 1] || null);
@@ -2197,7 +2197,7 @@
   }
 
   /* ---------- U-06（2026-09-24 本人指示）: セリフキューの印にカーソルを当てるとセリフを出す ----------
-   * 小窓は印の真上（入らなければ真下）。文字の当て方はセリフキューパネル・キュー詳細と同じ（台本データ→場面メモ→キューのメモ）。
+   * 小窓は印の真上（入らなければ真下）。文字の当て方はセリフキューパネル・キュー詳細と同じ（台本データ→シーンメモ→キューのメモ）。
    * 数値: 幅上限320px・余白8/10px・文字13px（セリフは明朝14px・6行まで）・印との間8px・画面の端から8px。 */
   let cuePeek = null;
   function cuePeekEl() {
@@ -2679,7 +2679,7 @@
     keepPlayheadInView();
   }
 
-  /* ★2026-09-24 本人指示: 矢印キーで場面やキューを送るとき、再生位置（シークバー）が表示範囲の外へ出たら
+  /* ★2026-09-24 本人指示: 矢印キーでシーンやキューを送るとき、再生位置（シークバー）が表示範囲の外へ出たら
    * タイムラインを横に送って追従する。以前は再生位置だけが画面外へ出て、帯は動かなかった。
    * 再生中も同じ（表示範囲の端を越えた時だけ送る＝利用者が手で横に送った直後に引き戻さない）。
    * つまみ・キュー・帯の伸縮・範囲選択のドラッグ中は追従しない。ラベル列は sticky で左に居座るので、
@@ -2819,13 +2819,13 @@
 
   /* セリフキューパネル（stage-vox-panel.js・2026-09-24 本人指示）へ、ショー全体のセリフキューを
    * セクションごとに渡す。いま出ているセクションは表示中のタイムラインをそのまま使い、
-   * ほかのセクションは同じ組み方（振付の曲があればその1曲目、無ければ場面の長さ）で秒を出す。
-   * 台本の行は各場面のメモから引くので、キューのある場面のメモも一緒に渡す。
+   * ほかのセクションは同じ組み方（振付の曲があればその1曲目、無ければシーンの長さ）で秒を出す。
+   * 台本の行は各シーンのメモから引くので、キューのあるシーンのメモも一緒に渡す。
    * ★パネルは読むだけ。キューの形・保存データには触れない。 */
   let lastVoxProject = null;
   let lastVoxSnapshot = null;      // { sections, sceneNotes }。パネルとキュー詳細で同じものを使う
   let pendingVoxSeek = null;       // 別のセクションへ移ってから頭出しするキュー
-  let voxSeekJustApplied = false;  // 直後のシーン切替で「場面の頭」へ戻されないための印
+  let voxSeekJustApplied = false;  // 直後のシーン切替で「シーンの頭」へ戻されないための印
 
   function voxSectionTimeline(project, section) {
     const id = section && section.id || null;
@@ -2901,7 +2901,7 @@
       }
     });
     /* 台本データ（セリフ編集画面・project.script）があれば、キューの文字はそこから引く。
-     * 無いショーは従来どおり場面メモの台本行から当てる（scriptByCue は null）。 */
+     * 無いショーは従来どおりシーンメモの台本行から当てる（scriptByCue は null）。 */
     let scriptByCue = null;
     if (project.script && typeof project.script === "object" && Array.isArray(project.script.lines)) {
       const castById = new Map((Array.isArray(project.cast) ? project.cast : []).map((member) => [member.id, member]));
@@ -2939,7 +2939,7 @@
 
   /* パネルの行を押したら、タイムラインのキューを押したときと同じく
    * そのキューを選んで、その瞬間へ再生位置を移す。
-   * 別のセクションのキューは、先にその場面を開いてタイムラインを切り替え、
+   * 別のセクションのキューは、先にそのシーンを開いてタイムラインを切り替え、
    * 切り替わった一覧から同じキューを探して頭出しする（秒は切り替え後の組み方で取り直す）。 */
   window.addEventListener("stage-vox-panel-seek", (event) => {
     const detail = event && event.detail || {};
@@ -3032,7 +3032,7 @@
     return true;
   }
 
-  // セクションの並び（場面一覧の上から）。セリフキューが無いセクションの前後を決めるのに使う
+  // セクションの並び（シーン一覧の上から）。セリフキューが無いセクションの前後を決めるのに使う
   function voxSectionOrder() {
     const rows = lastVoxProject && Array.isArray(lastVoxProject.scenes) ? lastVoxProject.scenes : [];
     const order = [];
@@ -3150,7 +3150,7 @@
     const sceneEnd = Number.isFinite(segment.sceneEnd) ? segment.sceneEnd : segment.end;
     const span = sceneEnd - segment.start;
     const ratio = span > 0 ? (seekSeconds - segment.start) / span : 0;
-    // 端では新しい場面を作らず、既存の追加操作と同じく何もしない。
+    // 端では新しいシーンを作らず、既存の追加操作と同じく何もしない。
     if (ratio <= 0.05 || ratio >= 0.95) return false;
     const split = bridge.splitTimelineScene(segment.sceneId, { sectionId: timeline.sectionId, ratio });
     if (!split) return false;

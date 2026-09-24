@@ -145,7 +145,7 @@
   .place-scene{min-height:30px;max-width:360px;padding:3px 12px;font:400 16px/1.2 var(--sans);color:var(--milk);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .scenebar{display:flex;align-items:center;gap:4px;min-width:0}
   .scenebar .name{font-family:var(--serif);font-size:13px;color:var(--milk);flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
-  /* 場面の2段（LX cueパネルの上）。セクション／シーンを同じ形の1行で切り替える。 */
+  /* シーンの2段（LX cueパネルの上）。セクション／シーンを同じ形の1行で切り替える。 */
   .lxscene{display:flex;flex-direction:column;gap:3px;padding-bottom:5px;border-bottom:1px solid var(--line-dark)}
   .lxpick{display:flex;align-items:center;gap:3px;min-width:0;font-size:10px;color:var(--milk-dim);letter-spacing:.02em}
   .lxpick>span{flex:0 0 auto;white-space:nowrap}
@@ -154,7 +154,7 @@
   /* 半分幅のパネルなので、中のボタンは折り返しを許す（.btn は既定で nowrap）。 */
   #panel-lxq .btn{white-space:normal;line-height:1.3}
   #allscenes{width:100%;min-height:26px}
-  /* すべての場面の一覧（モーダル）。セクション→シーン→LX cue の3段で並べる。 */
+  /* すべてのシーンの一覧（モーダル）。セクション→シーン→LX cue の3段で並べる。 */
   .dialog .in:has(.alllist){max-width:620px}
   .alllist{display:grid;gap:8px;max-height:52vh;overflow-y:auto}
   .allsec{display:grid;gap:4px}
@@ -224,7 +224,7 @@
    * 目的は「正面図の映像を大きい画面で見ること」。編集のための表示ではないので、
    * 左右のパネル（灯体の一覧・灯体情報・LX cue）は隠して画面を全部使う。
    * キーは F=正面図 / p=平面図 / O=側面図、Esc かもう一度同じキーで戻る。
-   * 広げている間も Space（再生）と ←→（場面送り）は効く（本人指定）。 */
+   * 広げている間も Space（再生）と ←→（シーン送り）は効く（本人指定）。 */
   .figgrid[data-solo]{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);justify-items:stretch}
   .figgrid[data-solo]>*{display:none}
   .figgrid[data-solo="plan"] .planwrap,
@@ -728,12 +728,12 @@
             </span>
           </span>
           <!-- 中央は、照明デザインでは編集中のLX cue、配置では現在のシーン名。
-               配置のシーン名を押すと場面一覧を開く。 -->
+               配置のシーン名を押すとシーン一覧を開く。 -->
           <span class="fb scenebox" id="scenerow">
             <button type="button" class="btn small quiet qnav" id="q-prev">〈</button>
             <span class="qnow" id="qnow"></span>
             <button type="button" class="btn small quiet qnav" id="q-next">〉</button>
-            <button type="button" class="btn quiet place-scene" id="place-scene" hidden aria-haspopup="dialog" title="場面の一覧を開く"></button>
+            <button type="button" class="btn quiet place-scene" id="place-scene" hidden aria-haspopup="dialog" title="シーンの一覧を開く"></button>
           </span>
           <span class="transport sceneplay" id="transport" hidden>
             <button type="button" class="btn small play-toggle" id="t-play" aria-label="動きを再生する（Space）" aria-pressed="false" title="動きを再生する（Space）"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 3.2v9.6L12.8 8 5 3.2Z"/></svg></button>
@@ -777,7 +777,7 @@
             <div class="list" id="list"></div>
           </section>
           <section class="panel" id="panel-lxq">
-            <!-- 場面の2段（2026-09-13 本人要望）。上の層＝セクション、下の層＝セットのシーン。
+            <!-- シーンの2段（2026-09-13 本人要望）。上の層＝セクション、下の層＝セットのシーン。
                  シーン送りは「いまのセクションの中」を回る。全部まとめて見たいときは下のボタンで一覧を開く。 -->
             <div class="lxscene">
               <div class="lxpick">
@@ -792,7 +792,7 @@
                 <b id="scene-name"></b>
                 <button type="button" class="btn small quiet" id="scene-next" title="次のシーンへ">〉</button>
               </div>
-              <button type="button" class="btn small" id="allscenes" title="セクションとシーンを全部並べて見ます">場面の一覧</button>
+              <button type="button" class="btn small" id="allscenes" title="セクションとシーンを全部並べて見ます">シーンの一覧</button>
             </div>
             <div class="lxhead">
               <p class="ptitle">LX cue</p>
@@ -822,7 +822,7 @@
               <div class="panelhead-actions" id="panelhead-actions">
                 <!-- 2026-09-14 本人要望: 最初へ／停止／秒数／再生中の表示をやめ、再生と停止の
                      トグル1個だけにした。文字は「押すと何が起きるか」を出す（停止中＝再生、
-                     再生中＝停止）。時刻の頭出しは場面を選び直したときに内部で行う（home()）。 -->
+                     再生中＝停止）。時刻の頭出しはシーンを選び直したときに内部で行う（home()）。 -->
                 <!-- 2026-09-14 本人要望: 再生の左隣にコピー／ペースト。
                      同じ種類の灯体どうし（ムービング↔ムービング／固定↔固定／cyc↔cyc）だけ通す。 -->
                 <span class="transport">
@@ -930,7 +930,7 @@
 <script src="volume-light.js?v=20260915-2"></script>
 <script src="laser-effects.js?v=20260915-5-color-presets"></script>
 <script src="laser-effects-ui.js?v=20260915-3-supported-shapes"></script>
-<script src="app.js?v=2026092430"></script>
+<script src="app.js?v=2026092431"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20260915-3-vertical-cards"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->

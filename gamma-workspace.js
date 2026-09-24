@@ -516,7 +516,7 @@
           goVenue.addEventListener('click',()=>select('venue-setup'));
           status.append(goVenue);
         } else if(!loaded) {
-          frame.src='light-design/index.html?embed=gamma&v=2026092434'; loaded=true;
+          frame.src='light-design/index.html?embed=gamma&v=2026092435'; loaded=true;
           status.textContent='照明デザインを開いています…';
         } else if(editor()) editor().open(context, next);
       } else if(next==='venue-setup') {
@@ -615,7 +615,7 @@
   });
   /* タイムラインの展開・高さ変更に合わせ、照明iframeの下端をタイムラインの上へ収める。 */
   window.addEventListener('stage-timeline-layout-change',scheduleFrameHeight);
-  /* タイムライン再生・シーンレーンから場面が変わったとき、照明側も同じ場面へ追従する。 */
+  /* タイムライン再生・シーンレーンからシーンが変わったとき、照明側も同じシーンへ追従する。 */
   window.addEventListener('stage-scene-change',()=>{
     if(mode!=='light-design' || !editor()) return;
     const context=host.context();latestContext=context;editor().open(context,mode);scheduleFrameHeight();

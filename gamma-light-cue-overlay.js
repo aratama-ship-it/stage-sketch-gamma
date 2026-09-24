@@ -221,7 +221,7 @@
       sum + (record(scene) && Array.isArray(scene.lxq) ? scene.lxq.length : 0), 0);
     if (lxq) notes.push({ key: "lxq", count: lxq });
 
-    /* 場面のもや（R-2・2026-09-19）。照明を組む画面の値（0〜100・未設定は35）をそのまま持つ。振れ幅への写しは共有部品 hazeAmount。 */
+    /* シーンのもや（R-2・2026-09-19）。照明を組む画面の値（0〜100・未設定は35）をそのまま持つ。振れ幅への写しは共有部品 hazeAmount。 */
     const environment = cue && record(cue.environment) ? cue.environment : null;
     return {
       sceneId: typeof sceneId === "string" ? sceneId : "",

@@ -140,7 +140,7 @@
        演者・配置・姿勢は舞台スケッチ本体に同梱の見本ショー「見本: 八人のサーカス」
        （stage-samples/index.js の eightCircus, id: sample-eight-circus-v1）をそのまま移植した
        （2026-09-13 本人指摘。当初は自作の仮データを使っていたが、実在する見本があった）。
-       8場面・8人（ミナ/リク/カイ/ソラ/ノア/ジン/ユキ/レン）・台/チャイニーズポール/トラピーズを
+       8シーン・8人（ミナ/リク/カイ/ソラ/ノア/ジン/ユキ/レン）・台/チャイニーズポール/トラピーズを
        そのシーンで使うぶんだけ入れてある。姿勢・色・身長(cm→m)・向きは出典の値そのまま。 */
     scenes: [
       { id: "s1", name: "1 オープニング", cue: { lights: {}, groups: [] }, pieces: [
@@ -271,7 +271,7 @@
     /* 強さ（調光）の効き方。灯ごとの数値（0〜100%）は目盛りどおりのリニアで、
        その数値が「見える明るさ」へどう効くかだけをこのカーブで決める
        （音楽のベロシティカーブと同じ考え方。2026-09-13 本人要望）。
-       アプリ全体で1本だけ持つ共通の設定なので、灯ごとにも場面ごとにも変わらない。
+       アプリ全体で1本だけ持つ共通の設定なので、灯ごとにもシーンごとにも変わらない。
        値は入力0〜1を等間隔に切った LEVEL_CURVE_STEPS+1 個の出力（0〜1）。既定はリニア。
        作った色（palette）と同じく<b>ショー共通の持ち物</b>として扱うので、rig・scenes と一緒に
        保存・Undoの対象にする（2026-09-13 本人決定）。 */
@@ -602,7 +602,7 @@
   const targetAt = (fid, t) => {
     const light = lightOf(fid), fixture = fixtureById(fid);
     /* P1の再現可能なランダム移動。P0 engine がある試作ページだけで解釈し、
-       既存の path / 保存形式 / 本体の旧式の場面全体アニメーションには一切手を入れない。 */
+       既存の path / 保存形式 / 本体の旧式のシーン全体アニメーションには一切手を入れない。 */
     const selectedPresetEngine = window.SELECTED_LIGHT_PRESETS_ENGINE;
     if (E.isMoving(fixture) && light && light.path && light.path.kind === "wander" && selectedPresetEngine) {
       const regions = selectedPresetEngine.buildVenueRegions(state.dims,
@@ -782,7 +782,7 @@
   // 反対側へコピーするのは配置（取り付け位置）だけ。動きはコピーしない
   // （2026-09-11 本人回答: 初回は配置だけでよい。毎回コピーだと片側だけ直したい時の解除が増えるため）。
   /* 反対側へコピーは「SS（袖）」の灯だけ。下手と上手は同じ位置に立てるのが普通なので
-     この操作に意味がある。吊り・転がしは平面図の中で左右対称に写しても使う場面がないうえ、
+     この操作に意味がある。吊り・転がしは平面図の中で左右対称に写しても使うシーンがないうえ、
      選んだだけで有効に見えると事故のもとになる（2026-09-11 本人指摘）。 */
   const canMirror = () => { const fs = [...state.sel].map(fixtureById).filter(Boolean); return fs.length > 0 && fs.every((f) => f.mount.type === "side"); };
   const selectedAimPair = () => {
@@ -3038,12 +3038,12 @@
     if ((ev.key === "g" || ev.key === "G") && !ev.metaKey && !ev.ctrlKey && !ev.altKey && state.mode === "move") { ev.preventDefault(); $("lighttoggles").querySelector('[data-show="blackout"]').click(); return; }
     if ((ev.key === "s" || ev.key === "S") && !ev.metaKey && !ev.ctrlKey && !ev.altKey && state.mode === "move") { ev.preventDefault(); toggleSolo(); return; }
     /* R-14: 図を1枚だけ広げる。F=正面図（本体の全画面と同じキー）／p=平面図／O=側面図。
-       もう一度押すと戻る。広げている間も Space（再生）と ←→（場面送り）は下で効く。 */
+       もう一度押すと戻る。広げている間も Space（再生）と ←→（シーン送り）は下で効く。 */
     if (!ev.metaKey && !ev.ctrlKey && !ev.altKey && "fFpPoO".includes(ev.key) && ev.key.length === 1) {
       const kind = (ev.key === "f" || ev.key === "F") ? "front" : (ev.key === "p" || ev.key === "P") ? "plan" : "side";
       ev.preventDefault(); setSoloFigure(kind); return;
     }
-    /* R-14: 広げている間は左右の矢印で場面を送る（本人指定）。
+    /* R-14: 広げている間は左右の矢印でシーンを送る（本人指定）。
        広げていないときは、矢印は既存の動き（入力欄の中の移動など）に任せる。 */
     if (state.soloFigure && (ev.key === "ArrowLeft" || ev.key === "ArrowRight")) {
       const tag = ev.target && ev.target.tagName;
@@ -4884,7 +4884,7 @@
     $("lighttoggles").hidden = !inMove;
     $("dimwrap").hidden = !(inMove && showOn("blackout"));
     { const d = E.clamp(E.finite(state.dim, 100), 0, 100); $("dim").value = d; $("dimnum").value = d; }
-    /* 場面の2段（LX cueパネルの上）。上＝セクション、下＝そのセクションの中のシーン。 */
+    /* シーンの2段（LX cueパネルの上）。上＝セクション、下＝そのセクションの中のシーン。 */
     { const secs = lxSections(), cur = lxCurSection(), inSec = lxScenesIn(cur);
       const pos = inSec.findIndex((x) => x.i === state.sceneIndex) + 1;
       const sectionTitle = lxSectionTitle(cur);
@@ -4970,7 +4970,7 @@
   $("sec-next").onclick = () => lxStepSection(1);
   $("allscenes").onclick = () => openAllScenes();
   $("place-scene").onclick = () => openAllScenes();
-  /* すべての場面の一覧。セクション→シーン→そのシーンの LX cue を並べ、押せばそこへ移る。
+  /* すべてのシーンの一覧。セクション→シーン→そのシーンの LX cue を並べ、押せばそこへ移る。
      セクションやシーンが増えても全体を一度に見渡せるように（2026-09-13 本人要望）。 */
   function openAllScenes() {
     const esc = (t) => String(t).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
@@ -4990,7 +4990,7 @@
       const sectionTitle = lxSectionTitle(sec);
       return `<div class="allsec"><p class="kicker">セクション ${sec}${sectionTitle ? `　${esc(sectionTitle)}` : ""}</p>${scenes}</div>`;
     }).join("");
-    dialog(`<p class="ptitle">すべての場面と LX cue</p>
+    dialog(`<p class="ptitle">すべてのシーンと LX cue</p>
       <p class="hint">シーン名を押すとそのシーンへ、番号を押すとその LX cue の編集に入ります。セクション番号は LX cue パネルの〈番号〉で変えられます。</p>
       <div class="alllist">${body}</div>`, [["閉じる", null]]);
     const d = $("dialog");
@@ -5007,7 +5007,7 @@
   $("q-prev").onclick = () => { const q = lxNeighbors().prev; if (q) lxEnterCue(state.sceneIndex, q.id); };
   $("q-next").onclick = () => { const q = lxNeighbors().next; if (q) lxEnterCue(state.sceneIndex, q.id); };
   /* シーン送りは<b>いまのセクションの中だけ</b>を回る（2026-09-13 本人要望でセクションを層にした）。
-     セクションをまたぐときは上のセクション送り、全体から選ぶときは〈すべての場面を見る〉。 */
+     セクションをまたぐときは上のセクション送り、全体から選ぶときは〈すべてのシーンを見る〉。 */
   $("scene-prev").onclick = () => lxStepScene(-1);
   $("scene-next").onclick = () => lxStepScene(1);
   /* マウスで押した後はフォーカスを外す（ボタンが押されたまま残ると、次のSpaceで
@@ -5037,7 +5037,7 @@
     /* 広げた直後は枠の大きさが変わっているので、内部解像度から取り直す。 */
     syncCanvasSize(); draw();
     toast(next
-      ? `${next === "plan" ? "平面図" : next === "front" ? "正面図" : "側面図"}だけを大きく出しています。Escか同じキーで戻ります（再生=Space／場面送り=←→）`
+      ? `${next === "plan" ? "平面図" : next === "front" ? "正面図" : "側面図"}だけを大きく出しています。Escか同じキーで戻ります（再生=Space／シーン送り=←→）`
       : "図の並びを元に戻しました");
   }
   document.querySelectorAll("[data-solo-figure]").forEach((b) => {
@@ -5141,7 +5141,7 @@
       key: "play", name: "演劇・素舞台", count: 27,
       lead: "装置の少ない芝居。人の顔と立ち位置がはっきり見えることを優先。",
       detail: "前明かり8／バトン1に8／バトン2に6／SS 下手2・上手2（すべて固定）／ホリゾントライト1（床・幅85%）。",
-      why: "素舞台は「明かりで場所を分ける」ので、前明かりとバトンの灯を細かく並べてエリアを作る。動く光は使わない。装置がないぶん奥の壁がそのまま見えるので、時間帯や場面の色を1枚のホリゾントで作る。",
+      why: "素舞台は「明かりで場所を分ける」ので、前明かりとバトンの灯を細かく並べてエリアを作る。動く光は使わない。装置がないぶん奥の壁がそのまま見えるので、時間帯やシーンの色を1枚のホリゾントで作る。",
       build: () => {
         const b1 = addTrussAt(0.56, 6, "バトン1"), b2 = addTrussAt(0.32, 6, "バトン2");
         spreadU(8, 0.12, 0.88).forEach((u) => putFront(u, 6, 7));
@@ -5155,7 +5155,7 @@
       key: "dance", name: "ダンス", count: 29,
       lead: "体の線を見せたい。横からの光を厚く、前明かりは控えめ。",
       detail: "前明かり4／バトン1に6／バトン2に6／SS 下手3・上手3（固定）／床置き ムービング6／ホリゾントライト1（床・幅85%）。",
-      why: "ダンスは前から当てすぎると体が平らに見えるので、SS（横）と後ろからの抜きを厚くするのが定石。ホリゾントは場面の色気分を1色で変える定番の道具なので、床から1本を既定で含める。",
+      why: "ダンスは前から当てすぎると体が平らに見えるので、SS（横）と後ろからの抜きを厚くするのが定石。ホリゾントはシーンの色気分を1色で変える定番の道具なので、床から1本を既定で含める。",
       build: () => {
         const b1 = addTrussAt(0.55, 6.5, "バトン1"), b2 = addTrussAt(0.25, 6.5, "バトン2");
         spreadU(4, 0.25, 0.75).forEach((u) => putFront(u, 6, 7, 18));
@@ -5232,7 +5232,7 @@
   function mountLevelCurve(host) {
     if (!host) return;
     host.innerHTML = `<p class="hint">灯ごとの「強さ」は目盛りどおりの数値です。その数値が<b>図に出る明るさ</b>へどう効くかを、ここで決めます（音楽のベロシティカーブと同じ考え方）。
-      この1本をアプリ全体で使います——灯ごと・場面ごとには変わりません。</p>
+      この1本をアプリ全体で使います——灯ごと・シーンごとには変わりません。</p>
       <canvas id="lvcurve" class="curvecv" width="640" height="360" aria-label="強さの効き方のカーブ"></canvas>
       <p class="hint"><b>横</b>＝つまみの数値　<b>縦</b>＝図に出る明るさ。点線がリニア（そのままの目盛り）。</p>
       <p class="hint live" id="lvread"></p>
@@ -5335,9 +5335,9 @@
        savedAt  保存した時刻（ISO8601）
        stage    舞台の大きさ {W,D,H}（m）。u/v を実寸に戻すのに要る
        rig      仕込み（バトンと灯体）。ショー共通
-       scenes   場面ごとの灯の設定。{id,name,cue:{lights,groups}} だけを持ち、
+       scenes   シーンごとの灯の設定。{id,name,cue:{lights,groups}} だけを持ち、
                 演者・セット（pieces）は<b>持たない</b>——あれは舞台スケッチ側の持ち物なので、
-                取り込むときは向こうの場面へ cue だけを載せる
+                取り込むときは向こうのシーンへ cue だけを載せる
        palette  作った色（ショー共通）
        levelCurve 強さの効き方（全灯共通のカーブ）
        coords   座標と単位の約束。取り込む側が推測しなくて済むように文字で書いておく
@@ -5382,7 +5382,7 @@
       ...(migration ? { migration } : {}),
     };
   }
-  /* 取り込み。場面の演者・セットは<b>いまのもの</b>を残し、灯の設定だけ差し替える
+  /* 取り込み。シーンの演者・セットは<b>いまのもの</b>を残し、灯の設定だけ差し替える
      （デザインは灯の話なので、舞台スケッチ側の駒を上書きしない）。 */
   function applyDesign(o, options = {}) {
     if (window.GAMMA_LIGHT_EDITOR && !options.host) window.GAMMA_LIGHT_EDITOR.validateImport(o);
@@ -5392,13 +5392,13 @@
     const previousSnapshot = snapshot(); const previousHistory = state.history.slice();
     if (!o || o.format !== DESIGN_FORMAT) throw new Error("この形式は読めません（照明デザインのファイルではありません）");
     if (!SUPPORTED_DESIGN_VERSIONS.includes(Number(o.version))) throw new Error("対応していない形式の版です");
-    if (!o.rig || !Array.isArray(o.scenes)) throw new Error("中身が足りません（仕込みか場面がありません）");
+    if (!o.rig || !Array.isArray(o.scenes)) throw new Error("中身が足りません（仕込みかシーンがありません）");
     // Validate the complete incoming structure before touching the current edit.
     if (!Array.isArray(o.rig.fixtures) || !Array.isArray(o.rig.trusses) || !o.scenes.length ||
         o.rig.fixtures.some(f => !f || typeof f.id !== 'string' || !f.mount || typeof f.mount.type !== 'string') ||
         o.rig.trusses.some(t => !t || typeof t.id !== 'string') ||
         o.scenes.some(s => !s || typeof s.id !== 'string' || !s.cue || typeof s.cue.lights !== 'object' || !s.cue.lights || Array.isArray(s.cue.lights))) {
-      throw new Error("仕込み・場面の構造が不正です。現在の編集内容は変更していません");
+      throw new Error("仕込み・シーンの構造が不正です。現在の編集内容は変更していません");
     }
     if(o.stage && ['W','D','H'].some(k=>!Number.isFinite(o.stage[k]) || o.stage[k]<=0))throw new Error("舞台寸法が不正です");
     o=JSON.parse(JSON.stringify(o));
@@ -5408,7 +5408,7 @@
     const byId = new Map(state.scenes.map((sc) => [sc.id, sc]));
     state.scenes = o.scenes.map((ds, i) => {
       const cur = byId.get(ds.id);
-      return { id: ds.id, name: ds.name || `場面${i + 1}`, pieces: cur ? cur.pieces : [],
+      return { id: ds.id, name: ds.name || `シーン${i + 1}`, pieces: cur ? cur.pieces : [],
         lx: ds.lx || (cur && cur.lx) || { section: 1, no: i + 1 },
         lxq: Array.isArray(ds.lxq) ? ds.lxq : [],
         lxEditing: ds.lxEditing || null,
@@ -5454,7 +5454,7 @@
     const stored = readStore(), list = stored || [];
     const rows = list.length
       ? list.map((d, i) => `<div class="dsrow" data-i="${i}">
-          <span class="dsname">${(d.name || "名前なし").replace(/</g, "&lt;")}<small>${(d.savedAt || "").slice(0, 16).replace("T", " ")}　灯${(d.rig && d.rig.fixtures ? d.rig.fixtures.length : 0)}・場面${(d.scenes || []).length}</small></span>
+          <span class="dsname">${(d.name || "名前なし").replace(/</g, "&lt;")}<small>${(d.savedAt || "").slice(0, 16).replace("T", " ")}　灯${(d.rig && d.rig.fixtures ? d.rig.fixtures.length : 0)}・シーン${(d.scenes || []).length}</small></span>
           <span class="dsacts">
             <button type="button" class="btn small" data-act="load" data-i="${i}">呼び出す</button>
             <button type="button" class="btn small quiet" data-act="file" data-i="${i}">ファイルへ</button>

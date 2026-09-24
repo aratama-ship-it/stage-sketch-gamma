@@ -4,9 +4,9 @@
  *   ・U-10（2026-09-24）: 行をダブルクリックすると、その場でセリフの文字を直せる（右の「選んだセリフ」も残す）
  * 本人決定: 台本は新しい台本データ（project.script）に持つ／1キュー＝1行／話者は演者から選ぶ＋自由入力も可。
  * 保存形式: project.script = { version: 1, lines: [{ id, sceneId, castId, speaker, text, cueId }] }
- *   ・行の並び＝配列の順。画面では場面の順に分けて出す（同じ場面の中は配列の順）。
+ *   ・行の並び＝配列の順。画面ではシーンの順に分けて出す（同じシーンの中は配列の順）。
  *   ・キューとの結び付きは行の側（cueId）に持つ（キューの未知の項目は読み込み時に落ちるため）。
- *   ・場面メモの【台本】は「取り込む」で一度だけ写す。メモ自体は消さない。
+ *   ・シーンメモの【台本】は「取り込む」で一度だけ写す。メモ自体は消さない。
  * 本体への書き込みは SHOSAI_STAGE_SESSION_BRIDGE.applyScriptEdit だけ（取り消し1回で戻る単位）。
  * キューの番号・時刻は、タイムラインが出す「stage-timeline-vox-cues」から読む（セリフキューパネルと同じ）。 */
 (function () {
@@ -33,7 +33,7 @@
 
   let project = null;          // 本体から写した最新のショー（読むだけ）
   let script = null;           // 編集中の台本（本体の project.script の写し）
-  let voxCues = [];            // タイムラインのセリフキュー（id・表示名・場面・秒）
+  let voxCues = [];            // タイムラインのセリフキュー（id・表示名・シーン・秒）
   let selectedId = null;
   let query = "";
   let isOpen = false;
@@ -57,7 +57,7 @@
   const cast = () => (project && Array.isArray(project.cast) ? project.cast : []);
   const castById = (id) => cast().find((member) => member.id === id) || null;
 
-  // 場面の番号（本体のシーン一覧と同じ「1-6」の形）
+  // シーンの番号（本体のシーン一覧と同じ「1-6」の形）
   function sceneNumbers() {
     const counters = [];
     const numbers = new Map();
@@ -78,7 +78,7 @@
   const cueById = (id) => voxCues.find((cue) => cue.id === id) || null;
   const lineForCue = (cueId) => (script ? script.lines.find((line) => line.cueId === cueId) : null) || null;
 
-  /* 場面メモの【台本】から取り込む。場面の n 行目＝その場面の n 番目のセリフキュー（セリフキューパネルと同じ当て方）。
+  /* シーンメモの【台本】から取り込む。シーンの n 行目＝そのシーンの n 番目のセリフキュー（セリフキューパネルと同じ当て方）。
    * 話者が演者名と同じなら演者に結び付ける。 */
   function buildFromNotes() {
     const api = panelApi();
@@ -130,6 +130,61 @@
     pendingText = null;
   }
 
+  /* ---------- 台本の書き出し（A4・印刷／PDF） ---------- */
+  const escapeHtml = (value) => String(value === null || value === undefined ? "" : value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  function scriptPrintDocument() {
+    const numbers = new Map();
+    const counters = [];
+    scenes().forEach((row) => {
+      const depth = Math.max(0, Math.floor(Number(row && row.depth) || 0));
+      counters[depth] = (counters[depth] || 0) + 1; counters.length = depth + 1;
+      if (row && row.id) numbers.set(row.id, counters.join("-"));
+    });
+    const cueName = new Map((voxCues || []).map((cue) => [cue.id, cue.displayName || ""]));
+    const lines = script && Array.isArray(script.lines) ? script.lines : [];
+    const linesByScene = new Map();
+    lines.forEach((line) => { if (!linesByScene.has(line.sceneId)) linesByScene.set(line.sceneId, []); linesByScene.get(line.sceneId).push(line); });
+    const speakerOf = (line) => { const member = castById(line.castId); return (member && member.name) || line.speaker || ""; };
+    const body = scenes().map((row) => {
+      if (!row) return "";
+      const number = numbers.get(row.id) || "";
+      if (row.kind === "section") return `<h2 class="script-print-section">${escapeHtml(number)} ${escapeHtml(row.title || "")}</h2>`;
+      const items = linesByScene.get(row.id) || [];
+      const rows = items.map((line) => `<div class="script-print-line"><div class="script-print-speaker">${escapeHtml(speakerOf(line))}</div><div class="script-print-text">${escapeHtml(line.text || "").replace(/\n/g, "<br>")}</div><div class="script-print-cue">${escapeHtml(cueName.get(line.cueId) || "")}</div></div>`).join("");
+      return `<section class="script-print-scene"><h3>${escapeHtml(number)} ${escapeHtml(row.title || "")}</h3>${rows || `<p class="script-print-empty">${escapeHtml(tx("（セリフなし）"))}</p>`}</section>`;
+    }).join("");
+    const title = (project && project.title) || tx("台本");
+    const stamp = new Date().toLocaleDateString(document.documentElement.lang === "en" ? "en-US" : "ja-JP");
+    return `<!DOCTYPE html><html lang="${escapeHtml(document.documentElement.lang || "ja")}"><head><meta charset="utf-8"><title>${escapeHtml(title)} — ${escapeHtml(tx("台本"))}</title>
+<style>
+@page { size: A4 portrait; margin: 16mm 14mm; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-family: 'Hiragino Mincho ProN', 'Hiragino Kaku Gothic ProN', serif; font-size: 11.5pt; line-height: 1.7; }
+body { padding: 16mm 14mm; }
+@media print { body { padding: 0; } }
+.script-print-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1.5px solid #1c1a17; padding-bottom: 6px; margin-bottom: 14px; }
+.script-print-head h1 { margin: 0; font-size: 16pt; }
+.script-print-head p { margin: 0; font-size: 9.5pt; color: #555; }
+.script-print-section { margin: 18px 0 6px; padding: 4px 8px; background: #eee; font-size: 12.5pt; break-after: avoid; }
+.script-print-scene { margin: 0 0 10px; break-inside: avoid; }
+.script-print-scene h3 { margin: 10px 0 4px; font-size: 11.5pt; border-left: 3px solid #b08a4a; padding-left: 8px; break-after: avoid; }
+.script-print-line { display: grid; grid-template-columns: 7.2em 1fr 8em; gap: 0 10px; padding: 3px 0; border-bottom: 1px dotted #ccc; break-inside: avoid; }
+.script-print-speaker { font-weight: 700; }
+.script-print-cue { color: #777; font-size: 9pt; text-align: right; }
+.script-print-empty { margin: 0; color: #888; font-size: 10pt; }
+</style></head><body>
+<header class="script-print-head"><h1>${escapeHtml(title)}</h1><p>${escapeHtml(tx("台本"))} · ${escapeHtml(stamp)}</p></header>
+${body}
+</body></html>`;
+  }
+  function exportScript() {
+    readProject();
+    if (!project) return;
+    const url = URL.createObjectURL(new Blob([scriptPrintDocument()], { type: "text/html" }));
+    const win = window.open(url, "_blank");
+    if (!win) { window.alert(tx("台本を開けませんでした。ポップアップの許可を確認してください。")); URL.revokeObjectURL(url); return; }
+  }
+
   /* ---------- 画面の骨組み ---------- */
 
   const ui = {};
@@ -139,20 +194,25 @@
     const head = el("header", "script-ed-head");
     ui.summary = el("p", "script-ed-summary");
     const actions = el("div", "script-ed-actions");
-    ui.reimport = el("button", "script-ed-btn quiet", tx("場面メモから取り込み直す"));
+    // 台本の書き出し（2026-09-24 本人指示）: 「シーンメモから取り込み直す」の左。A4縦の印刷用の窓を開き、印刷かPDF保存へ。
+    ui.exportScript = el("button", "script-ed-btn quiet", tx("台本を書き出す"));
+    ui.exportScript.type = "button";
+    ui.exportScript.title = tx("A4の印刷用の窓で開きます（印刷・PDF保存）");
+    ui.exportScript.addEventListener("click", exportScript);
+    ui.reimport = el("button", "script-ed-btn quiet", tx("シーンメモから取り込み直す"));
     ui.reimport.type = "button";
     ui.reimport.addEventListener("click", reimport);
     ui.addLine = el("button", "script-ed-btn primary", tx("＋ 行を足す"));
     ui.addLine.type = "button";
     ui.addLine.addEventListener("click", () => addLineAfter(selectedId));
-    actions.append(ui.reimport, ui.addLine);
+    actions.append(ui.exportScript, ui.reimport, ui.addLine);
     head.append(ui.summary, actions);
 
     const body = el("div", "script-ed-body");
-    // 左: 場面の目次
+    // 左: シーンの目次
     const scenesBox = el("section", "script-ed-box script-ed-scenes");
-    scenesBox.setAttribute("aria-label", tx("場面"));
-    scenesBox.append(el("h2", "script-ed-title", tx("場面")));
+    scenesBox.setAttribute("aria-label", tx("シーン"));
+    scenesBox.append(el("h2", "script-ed-title", tx("シーン")));
     ui.search = el("input", "script-ed-search");
     ui.search.type = "search";
     ui.search.placeholder = tx("セリフ・話者で探す");
@@ -188,11 +248,11 @@
     });
   }
 
-  /* ---------- V-03（2026-09-24 本人指示）: 3つの列（場面／台本／選んだセリフ）の横幅をドラッグで変える ----------
+  /* ---------- V-03（2026-09-24 本人指示）: 3つの列（シーン／台本／選んだセリフ）の横幅をドラッグで変える ----------
    * 見た目と操作は舞台タブのパネル列の取っ手（stage-sketch.js の initPanelWidths・.stage-panel-width-handle）と同じ:
    * ドラッグで幅を変える／左右キーで10px（Shift で30px）／Home・End で最小・最大／ダブルクリックまたは Enter で元に戻す。
-   * 変えるのは両端の列（場面・選んだセリフ）。真ん中の台本は残りを使う（最小360px）。
-   * 端末の設定（gamma:script-editor-widths-v1）。数値: 既定 場面260px・選んだセリフ320px／場面 180〜480px・選んだセリフ 240〜560px。 */
+   * 変えるのは両端の列（シーン・選んだセリフ）。真ん中の台本は残りを使う（最小360px）。
+   * 端末の設定（gamma:script-editor-widths-v1）。数値: 既定 シーン260px・選んだセリフ320px／シーン 180〜480px・選んだセリフ 240〜560px。 */
   const WIDTH_KEY = "gamma:script-editor-widths-v1";
   const WIDTH_DEFAULT = { scenes: 260, inspector: 320 };
   const WIDTH_LIMIT = { scenes: [180, 480], inspector: [240, 560] };
@@ -222,7 +282,7 @@
     try { localStorage.setItem(WIDTH_KEY, JSON.stringify(columnWidths)); } catch (_) { /* 残せなくても、この画面では効かせる */ }
   }
   function mountColumnHandles(body, scenesBox, inspectorBox) {
-    [[scenesBox, "scenes", "left", tx("場面の列の幅")], [inspectorBox, "inspector", "right", tx("選んだセリフの列の幅")]].forEach(([box, key, side, name]) => {
+    [[scenesBox, "scenes", "left", tx("シーンの列の幅")], [inspectorBox, "inspector", "right", tx("選んだセリフの列の幅")]].forEach(([box, key, side, name]) => {
       const handle = el("div", "stage-panel-width-handle");
       handle.dataset.panelWidth = side;       // 舞台タブと同じ見た目（左の列は右端・右の列は左端に付く）
       handle.dataset.scriptWidth = key;
@@ -315,11 +375,11 @@
     const count = countNoteLines();
     box.append(el("h2", "script-ed-title", tx("このショーの台本はまだありません")),
       el("p", "script-ed-hint", count
-        ? tx("場面メモの【台本】に書かれたセリフを取り込めます。場面メモは消さずに残ります。")
-        : tx("場面メモに【台本】の行が見つかりません。空の台本から始めて、行を足していけます。")));
+        ? tx("シーンメモの【台本】に書かれたセリフを取り込めます。シーンメモは消さずに残ります。")
+        : tx("シーンメモに【台本】の行が見つかりません。空の台本から始めて、行を足していけます。")));
     const acts = el("div", "script-ed-actions");
     if (count) {
-      const take = el("button", "script-ed-btn primary", `${tx("場面メモから取り込む")}（${count}${tx("行")}）`);
+      const take = el("button", "script-ed-btn primary", `${tx("シーンメモから取り込む")}（${count}${tx("行")}）`);
       take.type = "button";
       take.addEventListener("click", () => { script = buildFromNotes(); commit(); render(); });
       acts.append(take);
@@ -404,15 +464,15 @@
       group.dataset.sceneGroup = scene ? scene.id : "";
       const head = el("div", "script-ed-group-head");
       head.append(el("span", "script-ed-group-no", scene ? numbers.get(scene.id) || "" : "—"),
-        el("span", "script-ed-group-title", scene ? scene.title || tx("シーン") : tx("場面なし（場面が消えた行）")));
+        el("span", "script-ed-group-title", scene ? scene.title || tx("シーン") : tx("シーンなし（シーンが消えた行）")));
       if (scene) {
-        const add = el("button", "script-ed-btn small", tx("＋ この場面に行を足す"));
+        const add = el("button", "script-ed-btn small", tx("＋ このシーンに行を足す"));
         add.type = "button";
         add.addEventListener("click", () => addLineToScene(scene.id));
         head.append(add);
       }
       group.append(head);
-      // この場面の、まだ行のないセリフキュー（押すと、その場面の新しい行に割り当てる）
+      // このシーンの、まだ行のないセリフキュー（押すと、そのシーンの新しい行に割り当てる）
       if (scene) {
         const free = voxCues.filter((cue) => cue.sceneId === scene.id && !lineForCue(cue.id));
         if (free.length) {
@@ -443,7 +503,7 @@
         const cue = line.cueId ? cueById(line.cueId) : null;
         const cueChip = el("span", cue ? "script-ed-cue-chip" : "script-ed-cue-chip is-none",
           cue ? cue.displayName : tx("キューなし"));
-        // 同じ場面で、キューの時刻の順と行の順が逆になっていたら知らせる
+        // 同じシーンで、キューの時刻の順と行の順が逆になっていたら知らせる
         if (cue) {
           if (cue.seconds < lastSeconds) { cueChip.classList.add("is-out-of-order"); cueChip.title = tx("キューの時刻の順と、行の順が逆になっています"); }
           lastSeconds = Math.max(lastSeconds, cue.seconds);
@@ -466,7 +526,7 @@
         });
         group.append(row);
       });
-      if (!lines.length) group.append(el("p", "script-ed-group-empty", tx("この場面にはまだ行がありません")));
+      if (!lines.length) group.append(el("p", "script-ed-group-empty", tx("このシーンにはまだ行がありません")));
       ui.lines.append(group);
     });
     ui.lines.scrollTop = keepScroll;
@@ -495,7 +555,7 @@
     box.append(el("h2", "script-ed-title", tx("選んだセリフ")));
     const line = script && script.lines.find((item) => item.id === selectedId);
     if (!line) {
-      box.append(el("p", "script-ed-hint", tx("中央の台本から行を選ぶと、ここで話者・セリフ・場面・キューを直せます。")));
+      box.append(el("p", "script-ed-hint", tx("中央の台本から行を選ぶと、ここで話者・セリフ・シーン・キューを直せます。")));
       return;
     }
     // 話者: 演者から選ぶ＋自由入力（本人決定）
@@ -534,14 +594,14 @@
       box.append(el("p", "script-ed-hint script-ed-proposal-note", tx("この行は元の台本で「新規セリフの提案」とされています。採用済みのセリフという意味ではありません。")));
     }
 
-    // 場面
+    // シーン
     const scene = el("select", "script-ed-input");
     sceneOptions(scene, line.sceneId);
     scene.addEventListener("change", () => {
       const moved = moveLineToScene(line.id, scene.value);
       if (moved) { commit(); render(); }
     });
-    box.append(field(tx("場面"), scene));
+    box.append(field(tx("シーン"), scene));
 
     // キュー（1キュー＝1行）
     const cueSelect = el("select", "script-ed-input");
@@ -654,7 +714,7 @@
     commitTimer = setTimeout(() => { commitTimer = 0; pendingText = null; commit(); renderLines(); renderSummary(); }, 450);
   }
 
-  // 表示の順（場面の順→同じ場面は配列の順）に並べた行
+  // 表示の順（シーンの順→同じシーンは配列の順）に並べた行
   function displayOrder() {
     const order = [];
     sceneRows().forEach((scene) => script.lines.forEach((line) => { if (line.sceneId === scene.id) order.push(line); }));
@@ -708,7 +768,7 @@
     render();
   }
 
-  // 別の場面へ移すと、その場面にないキューからは外す
+  // 別のシーンへ移すと、そのシーンにないキューからは外す
   function moveLineToScene(lineId, sceneId) {
     const line = script.lines.find((item) => item.id === lineId);
     if (!line || line.sceneId === sceneId) return false;
@@ -722,7 +782,7 @@
     return true;
   }
 
-  // 表示の順で1つ上／下へ。場面の端では隣の場面へ移る
+  // 表示の順で1つ上／下へ。シーンの端では隣のシーンへ移る
   function nudge(lineId, direction) {
     const order = displayOrder();
     const index = order.findIndex((line) => line.id === lineId);
@@ -730,7 +790,7 @@
     if (index < 0 || !target) return;
     const line = order[index];
     if (target.sceneId !== line.sceneId) {
-      // 隣の場面の端へ
+      // 隣のシーンの端へ
       script.lines.splice(script.lines.indexOf(line), 1);
       line.sceneId = target.sceneId;
       const cue = line.cueId ? cueById(line.cueId) : null;
@@ -756,8 +816,8 @@
     render();
   }
 
-  /* その場面に新しいセリフキューを作って割り当てる。置く位置は、その場面の最後のセリフキューの3秒後
-   * （無ければ場面の頭から1秒）。場面＋オフセットの形なので、セクションの時間を変えても場面から外れない。 */
+  /* そのシーンに新しいセリフキューを作って割り当てる。置く位置は、そのシーンの最後のセリフキューの3秒後
+   * （無ければシーンの頭から1秒）。シーン＋オフセットの形なので、セクションの時間を変えてもシーンから外れない。 */
   function createCueFor(lineId) {
     const line = script.lines.find((item) => item.id === lineId);
     if (!line || !line.sceneId) return;
@@ -775,7 +835,7 @@
 
   function reimport() {
     const count = countNoteLines();
-    const message = tx("いまの台本を消して、場面メモの【台本】から取り込み直します。台本で直した文字・並び・割り当ては失われます（「一つ戻す」で戻せます）。")
+    const message = tx("いまの台本を消して、シーンメモの【台本】から取り込み直します。台本で直した文字・並び・割り当ては失われます（「一つ戻す」で戻せます）。")
       + `\n${tx("取り込む行数")}: ${count}`;
     if (!window.confirm(message)) return;
     script = buildFromNotes();
@@ -808,8 +868,8 @@
 
   /* ---------- 並べ替え（⠿ を持って動かす。タッチでも動くようポインタで自前に持つ） ----------
    * U-12（2026-09-24 本人指示）: 掴んだ行は指に付いて動き、ほかの行は滑って場所を空ける（iPhoneのホーム画面と同じ手触り）。
-   * 場面をまたいで動かせる（行の無い場面へは、その場面の欄の空いている所へ落とす）。
-   * 並びの確定は放したとき。画面の行の並びから「前の行／場面」を読み取って、台本データへ写す。 */
+   * シーンをまたいで動かせる（行の無いシーンへは、そのシーンの欄の空いている所へ落とす）。
+   * 並びの確定は放したとき。画面の行の並びから「前の行／シーン」を読み取って、台本データへ写す。 */
 
   function rowSlot(other) {
     const box = other.getBoundingClientRect();
@@ -847,7 +907,7 @@
         const reference = before ? overRow : overRow.nextSibling;
         if (reference !== row && row.nextSibling !== reference) place = () => overRow.parentNode.insertBefore(row, reference);
       } else {
-        // 行の上に居ないとき: 指の下の場面の欄（行の無い場面を含む）の末尾へ
+        // 行の上に居ないとき: 指の下のシーンの欄（行の無いシーンを含む）の末尾へ
         const group = groups.find((item) => {
           const box = item.getBoundingClientRect();
           return item.dataset.sceneGroup && ev.clientY >= box.top && ev.clientY <= box.bottom;
@@ -859,7 +919,7 @@
       }
       if (place) {
         if (motion) motion.flip(moving, place, row); else place();
-        // 元の場面が空になったら「まだ行がありません」を戻す
+        // 元のシーンが空になったら「まだ行がありません」を戻す
         groups.forEach((item) => {
           const empty = item.querySelector(".script-ed-group-empty");
           if (empty) empty.hidden = Boolean(item.querySelector(".script-ed-row"));
@@ -886,7 +946,7 @@
     document.addEventListener("pointercancel", up);
   }
 
-  // 画面に並んだ行の順（場面の欄ごと）を、台本データの並びへ写す。掴んだ行だけが動いている。
+  // 画面に並んだ行の順（シーンの欄ごと）を、台本データの並びへ写す。掴んだ行だけが動いている。
   function dropLine(drag) {
     const line = script.lines.find((item) => item.id === drag.lineId);
     if (!line || !drag.row.isConnected) { render(); return; }
@@ -915,7 +975,7 @@
 
   /* ---------- 本体・タイムラインとのつなぎ ---------- */
 
-  // タイムラインが出すセリフキューの一覧（全セクション）。キューの番号・場面・秒はここから読む
+  // タイムラインが出すセリフキューの一覧（全セクション）。キューの番号・シーン・秒はここから読む
   window.addEventListener("stage-timeline-vox-cues", (event) => {
     const detail = event && event.detail || {};
     voxCues = [];

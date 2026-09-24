@@ -58,7 +58,7 @@ window.MANUAL_CONTENT = {
           id: "what", title: "なにを描く道具か", titleEn: "What it draws",
           keywords: ["概要", "できること", "紹介", "何", "どんなアプリ"],
           keywordsEn: ["overview", "features", "introduction", "what is this", "app"],
-          html: "<p>舞台の一場面を、客席から見た〈正面〉と、真上から見た〈平面〉の二枚で描く道具です。演者を置き、照明を当て、動線の矢印を引き、シーンを並べていくと、ショーの流れがひとつのスケッチ帳にまとまります。</p><p>これは構図・色・距離感を考えるための2Dの習作帳です。舞台機構やリギング、安全距離、施工寸法を決める図面ではありません（アプリの画面にも同じ断り書きがあります）。</p>",
+          html: "<p>舞台の一シーンを、客席から見た〈正面〉と、真上から見た〈平面〉の二枚で描く道具です。演者を置き、照明を当て、動線の矢印を引き、シーンを並べていくと、ショーの流れがひとつのスケッチ帳にまとまります。</p><p>これは構図・色・距離感を考えるための2Dの習作帳です。舞台機構やリギング、安全距離、施工寸法を決める図面ではありません（アプリの画面にも同じ断り書きがあります）。</p>",
           htmlEn: "<p>A tool that draws one stage scene two ways at once — 〈Front〉 as the house sees it, and 〈Plan〉 from directly above. Place performers, aim the lights, draw route arrows, line up scenes, and the flow of a show gathers into one sketchbook.</p><p>It is a 2D study book for composition, colour and distance. It is not a drawing that decides stage machinery, rigging, safety distances or construction dimensions (the same disclaimer appears in the app itself).</p>"
         }
       ]
@@ -105,14 +105,14 @@ window.MANUAL_CONTENT = {
           id: "tour", title: "内蔵の案内が最初の先生です", titleEn: "The built-in tour teaches first",
           keywords: ["チュートリアル", "ツアー", "案内", "はじめて", "最初", "使い方"],
           keywordsEn: ["tutorial", "tour", "walkthrough", "first time", "getting started"],
-          html: "<p>はじめて開くと、9段の短い案内がはじまります。読むだけの説明ではなく、実際に演者を動かし、人を足し、姿勢を選び、動線を引き、次のシーンを作り、転換を見て、照明を足し、メモを貼り、画像に書き出す——手を動かし終えると、そのまま一場面できあがっています。</p><p>途中で閉じてもかまいません。〈設定〉→〈はじめての案内〉でいつでも最初から呼び戻せます。</p>",
+          html: "<p>はじめて開くと、9段の短い案内がはじまります。読むだけの説明ではなく、実際に演者を動かし、人を足し、姿勢を選び、動線を引き、次のシーンを作り、転換を見て、照明を足し、メモを貼り、画像に書き出す——手を動かし終えると、そのまま一シーンできあがっています。</p><p>途中で閉じてもかまいません。〈設定〉→〈はじめての案内〉でいつでも最初から呼び戻せます。</p>",
           htmlEn: "<p>The first time you open the app, a short nine-step tour begins. It is not reading — you actually move a performer, add a person, pick a pose, draw a route, make the next scene, watch the transition, add a light, pin a note, and export an image. By the time your hands stop, a scene exists.</p><p>Closing it partway is fine. 〈Settings〉 → 〈First-time tour〉 brings it back from the start at any time.</p>"
         },
         {
           id: "after-tour", title: "案内のあとに試す三つ", titleEn: "Three things to try after the tour",
           keywords: ["次に", "続き", "劇場", "セット", "転換"],
           keywordsEn: ["next", "what now", "venue", "set", "transition"],
-          html: "<ul><li>〈劇場サイズ〉で形式と規模を選び直す。額縁舞台から巡演テント、全周の円形舞台まであり、実在の劇場（シアタートラム・TOHU・シルク・ディヴェール）も入っています。</li><li>〈出るもの〉→〈セットを組む〉で、台や道具を自分の形に組んでみる。</li><li>シーンを開き、上下に出る転換枠で〈転換の長さ〉と〈暗転〉を決めて、場面の流れを通しで見る。</li></ul>",
+          html: "<ul><li>〈劇場サイズ〉で形式と規模を選び直す。額縁舞台から巡演テント、全周の円形舞台まであり、実在の劇場（シアタートラム・TOHU・シルク・ディヴェール）も入っています。</li><li>〈出るもの〉→〈セットを組む〉で、台や道具を自分の形に組んでみる。</li><li>シーンを開き、上下に出る転換枠で〈転換の長さ〉と〈暗転〉を決めて、シーンの流れを通しで見る。</li></ul>",
           htmlEn: "<ul><li>Re-choose the form and size under 〈Venue size〉 — from a proscenium frame to a touring tent to a full circle, including three real venues (Theatre Tram, TOHU, Cirque d'Hiver).</li><li>Use 〈Cast &amp; set〉 → 〈Build a set〉 to shape a platform or a prop of your own.</li><li>Open a scene, then use the transition frames above and below it to set 〈Transition duration〉 and 〈Blackout〉 before watching the show flow end to end.</li></ul>"
         }
       ]
@@ -144,9 +144,9 @@ window.MANUAL_CONTENT = {
         },
         {
           id: "scenebar", title: "シーンの欄", titleEn: "The scene strip",
-          keywords: ["シーン", "場面", "送り", "転換", "再生", "アニメーション"],
+          keywords: ["シーン", "シーン", "送り", "転換", "再生", "アニメーション"],
           keywordsEn: ["scene", "step", "transition", "playback", "animation"],
-          html: "<p>右側がシーンの欄です。〈◀ 前のシーン〉〈次のシーン ▶〉で場面を送ります（↑↓キーでも動きます）。進むときは動線に沿って動いて見え、〈⟲ 転換〉でその転換をもう一度見られます。シーンごとに説明のメモも書けます。</p>",
+          html: "<p>右側がシーンの欄です。〈◀ 前のシーン〉〈次のシーン ▶〉でシーンを送ります（↑↓キーでも動きます）。進むときは動線に沿って動いて見え、〈⟲ 転換〉でその転換をもう一度見られます。シーンごとに説明のメモも書けます。</p>",
           htmlEn: "<p>The scene strip is on the right. 〈◀ Previous〉 and 〈Next ▶〉 step through the scenes (the ↑↓ keys work too). Stepping forward plays the movement along the routes, and 〈⟲ Transition〉 replays it. Each scene can carry its own note.</p>"
         }
       ]
@@ -215,9 +215,9 @@ window.MANUAL_CONTENT = {
         },
         {
           id: "p-scenes", title: "シーン", titleEn: "Scenes",
-          keywords: ["場面", "追加", "削除", "並べ替え", "セクション", "一覧", "暗転", "動線"],
+          keywords: ["シーン", "追加", "削除", "並べ替え", "セクション", "一覧", "暗転", "動線"],
           keywordsEn: ["scene", "add", "delete", "reorder", "section", "grid", "blackout", "route"],
-          html: "<p>上部の〈新規セクション〉のフォルダー＋アイコンと〈新規シーン〉の用紙＋アイコンから、幕・章のまとまりや新しい場面を追加できます。一覧アイコンでは全シーンを並べて見渡せます。各アイコンにカーソルを合わせると名前と説明が出ます。</p><p>シーンを開くと説明を全文表示し、選択中シーンの上下に転換枠が出ます。上は前のシーンから現在へ、下は現在から次への転換です。ここで〈転換の長さ〉と〈暗転〉を設定できます。〈次のシーンをつくる〉では、まっさらな場面にするか、現在の演者・舞台セット・小道具・照明を選んで引き継ぐかを決められます。隣の赤い〈✕〉では確認の窓が開き、チェックしてから削除します。</p><p>平面図の〈動線を描く〉と〈次から引く〉は、図の幅が狭くなると線画アイコンへ切り替わり、操作全体は2列で表示されます。</p><p>シーンをダブルクリックすると、名前・サブタイトル・説明を編集できます。サブタイトルを一覧に出すかどうかは〈設定〉→〈シーンのサブタイトル〉で切り替えます。初期状態はOFFですが、隠しても書いた内容は消えません。</p>",
+          html: "<p>上部の〈新規セクション〉のフォルダー＋アイコンと〈新規シーン〉の用紙＋アイコンから、幕・章のまとまりや新しいシーンを追加できます。一覧アイコンでは全シーンを並べて見渡せます。各アイコンにカーソルを合わせると名前と説明が出ます。</p><p>シーンを開くと説明を全文表示し、選択中シーンの上下に転換枠が出ます。上は前のシーンから現在へ、下は現在から次への転換です。ここで〈転換の長さ〉と〈暗転〉を設定できます。〈次のシーンをつくる〉では、まっさらなシーンにするか、現在の演者・舞台セット・小道具・照明を選んで引き継ぐかを決められます。隣の赤い〈✕〉では確認の窓が開き、チェックしてから削除します。</p><p>平面図の〈動線を描く〉と〈次から引く〉は、図の幅が狭くなると線画アイコンへ切り替わり、操作全体は2列で表示されます。</p><p>シーンをダブルクリックすると、名前・サブタイトル・説明を編集できます。サブタイトルを一覧に出すかどうかは〈設定〉→〈シーンのサブタイトル〉で切り替えます。初期状態はOFFですが、隠しても書いた内容は消えません。</p>",
           htmlEn: "<p>Use the folder-plus 〈New section〉 icon and the page-plus 〈New scene〉 icon at the top to add an act or chapter section, or a new scene. The grid icon lays every scene out at a glance. Point to an icon to see its name and explanation.</p><p>Open a scene to see its full description and transition frames above and below the selected scene. The upper frame is the transition from the previous scene; the lower one leads to the next scene. Set 〈Transition duration〉 and 〈Blackout〉 in those frames. 〈Create next scene〉 lets you start blank or choose which performers, stage sets, props, and lights to carry forward. The red 〈✕〉 opens a confirmation window; tick its checkbox before deletion.</p><p>In the plan view, 〈Draw route〉 and 〈Draw from next〉 switch to line icons when the board becomes narrow, while the complete control strip rearranges into two columns.</p>"
         },
         {
@@ -259,7 +259,7 @@ window.MANUAL_CONTENT = {
           id: "in-session", title: "セッションの中でできること", titleEn: "What you can do in a session",
           keywords: ["レーザーポインタ", "指す", "矢印", "ゲスト", "操作中", "動かせない"],
           keywordsEn: ["laser pointer", "point", "arrow", "guest", "editing", "cannot move"],
-          html: "<p>ゲストができるのは、レーザーポインタで指すことと、矢印を描くことです。演者や道具は動かせず、シーンは常にホストの表示に追従します——会議で全員が同じ場面を見るための決まりです。</p><p>誰かが操作すると、画面上部に「いま操作中: ◯◯」と名前が出ます。譲り合いの目印にしてください。</p>",
+          html: "<p>ゲストができるのは、レーザーポインタで指すことと、矢印を描くことです。演者や道具は動かせず、シーンは常にホストの表示に追従します——会議で全員が同じシーンを見るための決まりです。</p><p>誰かが操作すると、画面上部に「いま操作中: ◯◯」と名前が出ます。譲り合いの目印にしてください。</p>",
           htmlEn: "<p>As a guest you can point with the laser pointer and draw arrows. Performers and props cannot be moved, and the scene always follows the host — so that everyone in the meeting is looking at the same moment.</p><p>When someone acts, their name appears at the top of the screen (\"Now editing: …\"). Use it as the cue to take turns.</p>"
         },
         {

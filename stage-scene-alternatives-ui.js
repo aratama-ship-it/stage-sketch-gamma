@@ -76,7 +76,7 @@
       [left,right].forEach((select,index)=>{const item=data.items.find(item=>item.id===select.value),figure=element('figure');const image=element('img');image.src=result.images[index];image.alt=`${item.label}の${view.value==='plan'?'平面図':'正面図'}`;figure.append(image,element('figcaption',item.label+(item.id===data.adoptedId?' · 採用中':'')+(item.description?' — '+item.description:'')));if(item.useWhen)figure.append(element('p','使う条件: '+item.useWhen));panels.append(figure);});
       differences.textContent=result.differences.length?'違い: '+result.differences.join(' / '):'内容は同じです。';
       const delta=Math.round((result.seconds[1]-result.seconds[0])*10)/10;
-      timing.textContent=`時間（転換を含む）: ${result.seconds[0]}秒 → ${result.seconds[1]}秒（${delta>0?'+':''}${delta}秒） · 場面キュー ${result.cues[0]}件 → ${result.cues[1]}件`;
+      timing.textContent=`時間（転換を含む）: ${result.seconds[0]}秒 → ${result.seconds[1]}秒（${delta>0?'+':''}${delta}秒） · シーンキュー ${result.cues[0]}件 → ${result.cues[1]}件`;
       fixed.textContent='採用すると通し再生・共有・書き出しに反映します。前後の転換は採用後に確認してください。セクションの固定時刻キューは共通です。';
       accept.textContent=`${data.items.find(item=>item.id===right.value).label}を採用`;accept.disabled=right.value===data.adoptedId;
     };

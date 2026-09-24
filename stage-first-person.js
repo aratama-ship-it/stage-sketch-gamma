@@ -1551,7 +1551,7 @@
   function validateView(reset) {
     const me = currentPerformer(data.pieces);
     if (state.view.type === "performer" && !me) {
-      if (state.view.name) showToast(`${state.view.name}${text("はこの場面にいません — 客席から見ています")}`);
+      if (state.view.name) showToast(`${state.view.name}${text("はこのシーンにいません — 客席から見ています")}`);
       state.view = { type: "audience", key: null, name: "" };
     }
     if (reset) resetAngles();
@@ -1718,8 +1718,8 @@
       : (data.venue && data.venue.type && data.venue.type !== "proscenium"
         ? text("劇場の箱は仮にプロセニアムで描いています") : "");
     elements.count.textContent = `${finite(data.sceneIndex, 0) + 1} / ${finite(data.sceneCount, 0)}`;
-    elements.previous.textContent = `◀ ${text("前の場面")}`;
-    elements.next.textContent = `${text("次の場面")} ▶`;
+    elements.previous.textContent = `◀ ${text("前のシーン")}`;
+    elements.next.textContent = `${text("次のシーン")} ▶`;
     /* 自由カメラでは左下に常設のキー一覧があるので、中央の消えるヒントは出さない */
     elements.hint.textContent = text("ドラッグで見回す");
     elements.hint.classList.toggle("gone", hintDismissed || state.view.type === "free");
@@ -1732,11 +1732,11 @@
         [["Shift"], text("押しながらで速く")],
         [["R"], text("最初の位置に戻す")],
         [[text("ドラッグ")], text("見回す")],
-        [["←", "→"], text("場面を切り替え")],
+        [["←", "→"], text("シーンを切り替え")],
         [["esc"], text("閉じる")],
       ] : [
         [[text("ドラッグ")], text("見回す")],
-        [["←", "→"], text("場面を切り替え")],
+        [["←", "→"], text("シーンを切り替え")],
         [["esc"], text("閉じる")],
       ]),
     ];
@@ -3576,12 +3576,12 @@
     });
   }
 
-  /* 場面のキューの光を3Dカメラでも出す（2026-09-18・段階1「光だまり」／段階2「光の筋」）。
+  /* シーンのキューの光を3Dカメラでも出す（2026-09-18・段階1「光だまり」／段階2「光の筋」）。
    * 設計 docs/light-pool-2026-09-18/DESIGN.md。舞台モードとまったく同じ模型・同じ塗りを使う。
    *
    * ★読むだけ。ショーも照明デザインも書き換えない。
    * ★既定は切。本体の環境設定（照明の光だまり／照明の光の筋）に従う。
-   * ★模型は毎フレーム組み直さない。照明デザインの実体と場面が変わったときだけ。
+   * ★模型は毎フレーム組み直さない。照明デザインの実体とシーンが変わったときだけ。
    * ★舞台の寸法が照明デザインを作ったときと違うなら、重ねると嘘になるので描かない（舞台モードと同じ判定）。
    */
   const cueLightCache = { design: undefined, sceneId: "", model: null, pools: null };
@@ -3675,7 +3675,7 @@
     const render = window.SHOSAI_LIGHT_RENDER;
     if (!render || !cueLightModel() || !cueLightCache.pools) return;
     const model = cueLightCache.model;
-    const haze = render.hazeAmount ? render.hazeAmount(model && model.environment ? model.environment.haze : undefined) : 0;   // R-2 場面のもや（舞台モードと同じ式）
+    const haze = render.hazeAmount ? render.hazeAmount(model && model.environment ? model.environment.haze : undefined) : 0;   // R-2 シーンのもや（舞台モードと同じ式）
     render.paintBeams(ctx, cueLightCache.pools, cueLightProjector(), { topDown: false, haze });
   }
 

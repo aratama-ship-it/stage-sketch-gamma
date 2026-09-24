@@ -674,7 +674,7 @@
   });
 
   /* 光の意図は「どの灯体を置くか」ではなく、観客へどう見えてほしいかを
-     場面ごとに残す。照明駒やプリセットとは別の層に置き、安全承認も持たせない。 */
+     シーンごとに残す。照明駒やプリセットとは別の層に置き、安全承認も持たせない。 */
   const LIGHT_INTENT_LAYER_VALUES = Object.freeze([
     "unspecified", "reveal", "soften", "conceal", "silhouette", "separate", "transform",
   ]);
@@ -1385,7 +1385,7 @@
         ? item.lines.map(text).filter(Boolean).slice(0, 20) : [];
       if (!lines.length) return null;
       return {
-        sceneTitle: text(item.sceneTitle) || (en ? `Scene ${index + 1}` : `場面 ${index + 1}`),
+        sceneTitle: text(item.sceneTitle) || (en ? `Scene ${index + 1}` : `シーン ${index + 1}`),
         lines,
       };
     }).filter(Boolean) : [];
@@ -1532,7 +1532,7 @@
       if (!sceneId || (!lines.length && !pieces.length)) return null;
       return {
         sceneId,
-        sceneTitle: stageAIText(item.sceneTitle) || `場面 ${index + 1}`,
+        sceneTitle: stageAIText(item.sceneTitle) || `シーン ${index + 1}`,
         lines,
         pieces,
       };
@@ -4861,7 +4861,7 @@
     sceneGrid: "",
     sceneSection: "シーンをまとめるセクションを追加します。",
     sceneAdd: "まっさらな新しいシーンを追加します。",
-    lightRender: "場面の照明効果を表示・非表示にします。",
+    lightRender: "シーンの照明効果を表示・非表示にします。",
     workLight: "作業灯を点けたり消したりします。消すと、照明が当たる所だけが見えます。",
     frontLights: "正面図の照明を出したり隠したりします。",
     frontBorder: "機材配置で設定した前一文字を、正面図に重ねます。",
@@ -5691,21 +5691,21 @@
   }
 
   /* ★開く言語はここで決める。loadState() より前であること——
-   * 初めて開いた人へ出す見本の駒と場面の名前を、その言語で作るため。
+   * 初めて開いた人へ出す見本の駒とシーンの名前を、その言語で作るため。
    * あとから決めると「Performer A」であるべき駒が「演者A」で焼き付く。 */
   lang = resolveInitialStageLanguage(openLang, localStorage, navigator);
   if (openLang) {
     try { localStorage.setItem(LANG_KEY, lang); } catch (_) { /* 覚えられなくても動く */ }
   }
-  // 見本と場面の名前。作った時点の言語で決まり、そのまま持ち物として残る
+  // 見本とシーンの名前。作った時点の言語で決まり、そのまま持ち物として残る
   const sceneTitle = (n) => {
     const template = packValue("generated", (generated) => generated.sceneTitle);
     return template ? template.replace("{n}", String(n)) : `シーン ${n}`;
   };
   const sectionTitle = (n) => sx(`セクション ${n}`, `Section ${n}`);
-  /* 表記を「場面」から「シーン」へ揃えたので、前に自動で付いた名前も直す。
-     手で付けた名前は「場面 3」のような形をしていないので巻き込まない。 */
-  const renameAuto = (title) => String(title).replace(/^場面 (\d+)$/, "シーン $1");
+  /* 表記を「シーン」から「シーン」へ揃えたので、前に自動で付いた名前も直す。
+     手で付けた名前は「シーン 3」のような形をしていないので巻き込まない。 */
+  const renameAuto = (title) => String(title).replace(/^シーン (\d+)$/, "シーン $1");
   const untitledShow = () => packValue("generated", (generated) => generated.untitledShow) || "無題のショー";
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -5857,7 +5857,7 @@
     { key: "propsplot", label: "小道具の香盤表（印刷）", def: true,
       hint: "印刷用ページに、シーンごとの持ち手と受け渡しの表を足す" },
     { key: "lightPool", label: "照明の光だまり", def: false,
-      hint: "場面のキューで点いている灯体の、光が落ちる場所を正面図・平面図に出す。図が重くなります" },
+      hint: "シーンのキューで点いている灯体の、光が落ちる場所を正面図・平面図に出す。図が重くなります" },
     { key: "lightBeam", label: "照明の光の筋", def: false,
       hint: "「照明の光だまり」を出しているとき、灯体から落ちる場所まで伸びる光の帯も出す。さらに重くなります" },
     { key: "workLightOff", label: "作業灯を消す", def: false,
@@ -5866,7 +5866,7 @@
        足元の光だまりの色を駒の色に掛けて描く。「照明の見え方」が切なら効かない（光だまりが無いので）。
        ★look（上衣の色など）は描画に使われていない＝画面に出ている色は piece.color。染めるのはそれ。 */
     { key: "costumeLight", label: "衣装を明かりの色で染める", def: false,
-      hint: "光だまりに入っている演者を、その明かりの色を掛けた色で描く。赤い明かりの下で青い衣装が沈む場面に気づけます（「照明の見え方」が切のときは効きません）" },
+      hint: "光だまりに入っている演者を、その明かりの色を掛けた色で描く。赤い明かりの下で青い衣装が沈むシーンに気づけます（「照明の見え方」が切のときは効きません）" },
     { key: "pitchExport", label: "ピッチ書き出し", def: true,
       hint: "書き出しモーダルに「ピッチとして」が出る。作図の線を落とし、光と空気を効かせた一枚絵と、生成AI用の条件文を出す" },
     /* 2026-09-24 本人指示: 左右キーで移るキューを「全キュー」か「セリフキューだけ」かで選ぶ。
@@ -5881,7 +5881,7 @@
     /* U-03（2026-09-24 本人指示）: いまのセリフを、話している演者の頭の上に吹き出しで出す。既定は切。
        演者は台本データの話者（演者の登録）で決める。演者の名前と話者名が同じなら、それでも当てる。 */
     { key: "voxBubble", label: "正面図にセリフの吹き出し", def: false,
-      hint: "いまのセリフキューのセリフを、正面図で話している演者の頭の上に吹き出しで出します。その場面の舞台に話者が居ないときは出ません" },
+      hint: "いまのセリフキューのセリフを、正面図で話している演者の頭の上に吹き出しで出します。そのシーンの舞台に話者が居ないときは出ません" },
     /* U-04（2026-09-24 本人指示）: 日本語のときだけ、セリフキューパネルと吹き出しを縦書きにする。既定は切。
        右が済んだセリフ・左がこれからのセリフ（縦書きの本と同じ流れ）。 */
     { key: "voxVertical", label: "セリフを縦書きにする（日本語）", def: false,
@@ -5893,7 +5893,7 @@
   const VERTICAL_SHIFT = new Set([..."、。，．,."]);
   const VERTICAL_SMALL = new Set([..."ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ"]);
   const FEATURES_PLANNED = [
-    "転換アニメの動画書き出し", "見えない席の検査（遮蔽）", "資料棚からの場面引用",
+    "転換アニメの動画書き出し", "見えない席の検査（遮蔽）", "資料棚からのシーン引用",
   ];
   /* ---------- パネルのオン/オフ（PC版だけ） ----------
      初めて開いた人の机に、道具を全部並べない。音楽・舞台機構・セット登録・照明・背景は
@@ -5917,7 +5917,7 @@
     { key: "panelStageSet", panel: "stage-set", label: "舞台機構", def: true,
       hint: "劇場に組み込まれた舞台機構を確認します。追加は劇場設定で行います。" },
     { key: "panelRigs", panel: "rigs", label: "セット登録", def: false,
-      hint: "いまの舞台装置の並びに名前をつけて残し、別の場面で呼び出す欄を出す" },
+      hint: "いまの舞台装置の並びに名前をつけて残し、別のシーンで呼び出す欄を出す" },
     { key: "panelBackground", panel: "background", label: "背景", def: false,
       hint: "背景の地の色・塗る色・筆の太さなど、背景を描く欄を出す" },
     { key: "panelScenes", panel: "scenes", label: "シーン", def: true,
@@ -6043,7 +6043,7 @@
   }
   /* 右の2列目に置くパネルと、その中の順番。端末ごとの設定に持つ（ショーの保存データの形は変えない。
    * 2列表示や旧版では、これらのパネルは state.layout どおり右の列に並ぶ）。
-   * 未設定のうちは、場面の編集中に常に見るわけではないパネルを2列目の既定にする。 */
+   * 未設定のうちは、シーンの編集中に常に見るわけではないパネルを2列目の既定にする。 */
   const PANEL_RIGHT2_DEFAULT = ["vox", "alternatives", "seat2", "save", "session", "ask"];
   function panelRight2Order() {
     if (prefs.panelRight2Order && typeof prefs.panelRight2Order === "object") return prefs.panelRight2Order;
@@ -6075,14 +6075,14 @@
    * 移動時間の「欠けている値の補い」は0秒のまま（保存済みデータの秒数を読み込みで変えないため）。
    * これで hold/travel が null になる経路が無くなり、画面の空欄と
    * タイムライン側の 4秒/0秒 フォールバックの食い違い（指示書 T-2 の表）が消える。
-   * ★2026-09-24 本人決定「0秒の転換は存在しない」: **新しく作る場面**の転換は NEW_SCENE_TRAVEL_SECONDS（3秒）にする。
+   * ★2026-09-24 本人決定「0秒の転換は存在しない」: **新しく作るシーン**の転換は NEW_SCENE_TRAVEL_SECONDS（3秒）にする。
    * 既存の保存データで欠けている値を補うときは従来どおり0秒（読み込みで秒数が変わるとセクション時間の控えと
    * 食い違い、reconcileSectionDurations が見せる時間を縮めるため）。二分割で生まれる後半の前は同一状態の続きなので0のまま。 */
   const DEFAULT_SCENE_HOLD_SECONDS = 10;
   const DEFAULT_SCENE_TRAVEL_SECONDS = 0;
   const NEW_SCENE_TRAVEL_SECONDS = 3;
-  /* 読み込み時の保険（2026-09-24）: AI showwright 等の外部 JSON で rehearsal が無い場面には、新しい場面と同じ
-     転換 NEW_SCENE_TRAVEL_SECONDS を入れる（見せる時間は既定の10秒）。γ が書き出した保存データは全場面に
+  /* 読み込み時の保険（2026-09-24）: AI showwright 等の外部 JSON で rehearsal が無いシーンには、新しいシーンと同じ
+     転換 NEW_SCENE_TRAVEL_SECONDS を入れる（見せる時間は既定の10秒）。γ が書き出した保存データは全シーンに
      rehearsal を持つので対象にならない。旧「引き伸ばし率」時代のようにセクション時間の控え
      （timelineDurationSeconds）を持つデータは触らない＝読み込みで秒数が変わると reconcileSectionDurations が
      控えを正として見せる時間を縮めるため、従来どおり欠けは0秒のまま normalizeSceneRehearsal に任せる。 */
@@ -6202,7 +6202,7 @@
   const nowIso = () => new Date().toISOString();
   const rid = (prefix) => `${prefix}-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
 
-  /* 場面の並びは「順番＋字下げ」で持つ。親のidを持たせるより、前後の入れ替えと
+  /* シーンの並びは「順番＋字下げ」で持つ。親のidを持たせるより、前後の入れ替えと
    * 入れ子の付け外しが素直に書ける（箇条書きと同じ考え方）。
    * 親は「自分より前にある、自分より浅い最初の行」。
    * kind:"section" は入れ物だけで、絵は持たない。 */
@@ -6338,7 +6338,7 @@
       strokes: [],
       arrows: [],
       beat: normalizeSceneBeat(sceneKind, null),
-      // 新しい場面の転換は3秒（2026-09-24 本人決定）。見せる時間は既定の10秒。
+      // 新しいシーンの転換は3秒（2026-09-24 本人決定）。見せる時間は既定の10秒。
       rehearsal: sceneKind === "scene"
         ? normalizeSceneRehearsal({ transitionToNextSeconds: NEW_SCENE_TRAVEL_SECONDS }) : null,
       // 音源を使わないタイムラインで、このセクション全体を何秒として扱うか。
@@ -6399,11 +6399,11 @@
         audioTracks: [],
         // タイムライン上のキュー。位置はシーンIDとシーン内秒数で持つ。
         cues: [],
-        // このショーに出る人。場面ごとの在／不在は pieces 側で決まる
+        // このショーに出る人。シーンごとの在／不在は pieces 側で決まる
         cast: withExample ? sampleCast() : [],
         // このショーで使う台や道具。寸法はここが正本で、置いた分はこれを参照する
         sets: withExample ? sampleSets() : [],
-        // 舞台装置の並びを、名前をつけて残したもの。場面をまたいで使い回す
+        // 舞台装置の並びを、名前をつけて残したもの。シーンをまたいで使い回す
         rigs: [],
         // 背景に貼った写真の置き場（id → データURL）。シーンは id で指す
         photos: {},
@@ -6440,17 +6440,17 @@
       showRoutesCast: true,
       showRoutesLight: true,
       showRoutesSet: true,
-      // 場面が変わるとき、動線に沿って動かして見せるか。秒数も持つ
+      // シーンが変わるとき、動線に沿って動かして見せるか。秒数も持つ
       animateScenes: true,
       sceneAnimMs: 2000,
       // 舞台が一度に入らない席での見回し（-1〜1）。左右と上下
       frontPan: 0,
       frontPanY: 0,
-      // 畳んだセクション（idごと）。場面の入れ子を折りたたむのに使う
+      // 畳んだセクション（idごと）。シーンの入れ子を折りたたむのに使う
       closedSections: {},
       // 並べ替えや追加の起点になる行。セクションも起点になれる
       cursorRowId: null,
-      // 場面の欄は内容に合わせる。引いて変えた場合だけ固定高を覚えておく。
+      // シーンの欄は内容に合わせる。引いて変えた場合だけ固定高を覚えておく。
       sceneListHeightMode: "auto",
       sceneListHeight: null,
       seat: "center",
@@ -6482,7 +6482,7 @@
 
   function defaultLayout() {
     return {
-      // 場面は絵のすぐ右に置く（順番を見ながら描くため）
+      // シーンは絵のすぐ右に置く（順番を見ながら描くため）
       cols: {
         project: "left", venue: "left", music: "left", cast: "left", sets: "left", props: "left", "stage-set": "left", machinery: "left", rigs: "left", light: "left", background: "left",
         study: "right", scenes: "right", seat2: "right", alternatives: "right", vox: "right", inspector: "left", save: "right",
@@ -6575,7 +6575,7 @@
     return piece.name || "";
   }
 
-  // いま開いている場面
+  // いま開いているシーン
   function sc() {
     const p = state.project;
     return p.scenes.find((x) => x.id === p.activeSceneId) || p.scenes[0];
@@ -6644,9 +6644,9 @@
       lookMode: ["cast", "plain", "custom"].includes(piece.lookMode) ? piece.lookMode : "cast",
       look: normalizeLook(piece && piece.look),
       setId: typeof piece.setId === "string" ? piece.setId : null,
-      /* 写したもとの駒の札。場面を写すと札は配り直されるので、
+      /* 写したもとの駒の札。シーンを写すと札は配り直されるので、
        * 登録の無い駒（最初から置いてある例など）は、これが無いと
-       * 前の場面の自分と結び付けられない（転換で動かせない）。 */
+       * 前のシーンの自分と結び付けられない（転換で動かせない）。 */
       originId: typeof piece.originId === "string" ? piece.originId : null,
       // 体の向き（度）。0=客席を向く、90=上手を向く、180=背中
       facing: clamp(finite(piece.facing, 0), 0, 359),
@@ -6668,7 +6668,7 @@
       diaboloMode: piece.diaboloMode === "stand" ? "stand" : "lay",
       // 姿勢。用意したものの中から選ぶ（形そのものは編集させない）
       pose: POSES.some((p) => p.id === piece.pose) ? piece.pose : "stand",
-      /* 動線。この場面のあいだに、その駒がどこへ動くか。
+      /* 動線。このシーンのあいだに、その駒がどこへ動くか。
        * 始点は駒そのものなので持たない（駒を動かせば矢印もついてくる）。
        * u,v が行き先、bu,bv が曲がり具合の control 点。真ん中に置けば直線になる。 */
       route: normalizeRoute(piece && piece.route),
@@ -6679,7 +6679,7 @@
        * 落ちる場所は駒そのもの（u,v）。ここには灯体の側だけを持つ。
        * 真上から落とす明かりが既定だが、斜めも、下から上へも同じ形で書ける。 */
       beam: normalizeBeam(piece && piece.beam, piece),
-      /* 光の強さ（1=標準）。シーンごとの駒に持つので、場面で明暗を変えられる */
+      /* 光の強さ（1=標準）。シーンごとの駒に持つので、シーンで明暗を変えられる */
       glow: clamp(finite(piece.glow, 1), 0.1, 1.5),
       /* 錠。掛けているあいだは掴んでも動かない。
        * 登録のあるもの（演者・セット・光）は登録側で持つので、ここは
@@ -6798,7 +6798,7 @@
   }
 
   // 寸法の正本。舞台セットに登録したものは、そちらを引く。
-  // 登録側を直せば、置いてある全ての場面の見え方が同時に変わる。
+  // 登録側を直せば、置いてある全てのシーンの見え方が同時に変わる。
   /* 寸法つまみを組み立てる。項目は種類ごとに違うので、HTMLへ固定で並べず
    * ここから作る。dims オブジェクトへ直に書き込むので、
    * 「駒そのもの」でも「舞台セットの正本」でも同じ関数で使える。 */
@@ -7098,8 +7098,8 @@
     };
   }
 
-  /* 持ち手は同じ場面の演者だけ。同じ手を二つが指す保存は、並びの先を残して直す。
-     読み込みだけでなく駒を外した直後にも通せるよう、場面の駒だけを受け取る。 */
+  /* 持ち手は同じシーンの演者だけ。同じ手を二つが指す保存は、並びの先を残して直す。
+     読み込みだけでなく駒を外した直後にも通せるよう、シーンの駒だけを受け取る。 */
   function normalizeHolds(pieces, project) {
     const list = Array.isArray(pieces) ? pieces : [];
     const byId = new Map(list.map((piece) => [piece.id, piece]));
@@ -7214,9 +7214,9 @@
   }
 
   /* 区切りとして置かれたセクションを、一度だけ入れ物へ引き上げる。
-   * 以前は「セクション行の下に、同じ深さの場面を並べる」ことで幕を表せた。
+   * 以前は「セクション行の下に、同じ深さのシーンを並べる」ことで幕を表せた。
    * だが畳む・色バー・合計時間はどれも「中身を持っている」ことが前提なので、
-   * 中身が空のまま下に同じ深さの場面が続くセクションは、その並びを抱える形へ直す。
+   * 中身が空のまま下に同じ深さのシーンが続くセクションは、その並びを抱える形へ直す。
    * ★すでに中身のあるセクションには触らない。直したら印（sectionsNested）を残し、
    *   以後は本人が組んだ形をそのままにする（毎回の読み込みで作り替えない）。 */
   function nestLooseSections(scenes) {
@@ -7280,7 +7280,7 @@
     if (!raw || typeof raw !== "object") return markVenueSetupPending(baseState(true));
     const fallback = baseState(false);
 
-    // v2以前は「1枚のスケッチ」だった。1場面のプロジェクトとして引き上げる
+    // v2以前は「1枚のスケッチ」だった。1シーンのプロジェクトとして引き上げる
     const legacyFlat = !raw.project && (Array.isArray(raw.pieces) || raw.version === 2 || raw.version === 1);
     const rawProject = legacyFlat
       ? {
@@ -7552,7 +7552,7 @@
     return { value: markVenueSetupPending(baseState(true)), restored: false };
   }
 
-  // ルート直下に場面があれば、まだ「セクションの中にシーン」を満たしていない旧形式。
+  // ルート直下にシーンがあれば、まだ「セクションの中にシーン」を満たしていない旧形式。
   // 読み込む入口とショー棚の一括移行で、同じ判定を使う。
   function hasUnsectionedSceneRows(value) {
     const project = value && value.project && typeof value.project === "object"
@@ -7904,7 +7904,7 @@
   function syncAudioControls() {
     /* 楽曲を1曲も読み込んでいないうちは、シーン欄の再生バーごと隠す。
        押せないボタンと「音なし 0:00 / 0:00」だけが並んでいても意味がなく、
-       場面の情報を1段ぶん押し下げるだけだった（2026-08-28 本人指摘）。 */
+       シーンの情報を1段ぶん押し下げるだけだった（2026-08-28 本人指摘）。 */
     if (els.sceneMusic) els.sceneMusic.hidden = audioTracks().length === 0;
     const assignedId = normalizeAudioTrackId("scene", sc().audioTrackId);
     const track = audioTrackById(assignedId);
@@ -9107,7 +9107,7 @@
 
   /* ---------- 固定 SceneStudy ----------
    * 知識ベース全体とは接続しない。同梱した固定データだけを読み、
-   * 8ビートを通常の「場面」へ変換する。配置は初期仮説で、以後は
+   * 8ビートを通常の「シーン」へ変換する。配置は初期仮説で、以後は
    * 他のショーと同じく端末内で編集・保存される。 */
 
   const studyById = (id) => SCENE_STUDIES.find((item) => item.id === id) || null;
@@ -9442,7 +9442,7 @@
     return normalizeState(fresh);
   }
 
-  /* 「継ぎ目の庭」は8個の入れ物＋32場面を持つ60分の第二サンプル。
+  /* 「継ぎ目の庭」は8個の入れ物＋32シーンを持つ60分の第二サンプル。
      データ本体は stage-samples/index.js に集約し、ここでは通常の
      Project > Scene > Piece へ変換する。セクション行には絵も時間も持たせない。 */
   function buildSeamGardenSampleShow() {
@@ -9596,7 +9596,7 @@
    * いません」の案内が出ていた。原因は venueSetupWasApplied() が見る印
    * （venueSetupAppliedAt）を同梱見本のビルド側が立てていなかったこと
    * （build*SampleShow 側は今回直したが、既に棚へ置かれた古い保存にはこの印が無いまま
-   * 残る）。既存の保存にこの印が無ければ足すだけで、演者・場面・利用者の編集は触らない。 */
+   * 残る）。既存の保存にこの印が無ければ足すだけで、演者・シーン・利用者の編集は触らない。 */
   function backfillVenueSetupAppliedAt(savedProject) {
     if (!savedProject || savedProject.venueSetupAppliedAt) return false;
     savedProject.venueSetupAppliedAt = nowIso();
@@ -9662,11 +9662,11 @@
 
 
   /* ★2026-09-24 本人指示: 『ロミオとジュリエット』見本のセリフキューの時刻を、
-   * 台本の流れ（場面メモの動作と台詞の長さ）に合わせて打ち直した。以前の時刻は場面の長さを
+   * 台本の流れ（シーンメモの動作と台詞の長さ）に合わせて打ち直した。以前の時刻はシーンの長さを
    * 機械的に等分した位置（拍の中央＋1.5秒刻み）で、再生中の「いまのセリフ」が舞台の進行と
    * ずれて見えていた。棚に置き済みの複製にも届くよう、「同梱の旧版と同じ時刻のまま」の
    * キューだけを新しい時刻へ直す。利用者が動かしたキュー（旧版の時刻と違う、または
-   * セクション絶対秒へ変換済み）と、演者・場面・メモ・照明は一切触らない。 */
+   * セクション絶対秒へ変換済み）と、演者・シーン・メモ・照明は一切触らない。 */
   const ROMEO_JULIET_VOX_OFFSETS_BEFORE_2026_09_24 = Object.freeze({
     "rj-gamma-dialogue-rj-cond-01-a-full-b04-d01": 157.5,
     "rj-gamma-dialogue-rj-cond-01-b-full-b01-d01": 1.3,
@@ -9736,7 +9736,7 @@
     });
     return changed;
   }
-  /* 開いたままのショーがロミオとジュリエット見本そのものの場合、キューや場面は棚ではなく作業中データにある。
+  /* 開いたままのショーがロミオとジュリエット見本そのものの場合、キューやシーンは棚ではなく作業中データにある。
    * 棚と同じ条件（旧版と同じ値のものだけ）で作業中データにも新しい時刻・転換秒を届け、自動保存へ回す。
    * 起動直後（タイムラインが描かれる前）に呼ぶが、念のため構造変更の合図も出す。 */
   function backfillOpenRomeoJulietVoxOffsets() {
@@ -9748,10 +9748,10 @@
     return true;
   }
 
-  /* ★2026-09-24 本人指摘: 見本の全31場面で「次のシーンへの移動時間」（転換）が0秒だった。0秒の転換は
-   * 存在しないはずなので、場面メモの転換の記述から場面ごとに秒数を置いた。棚の複製・開いたままの
-   * 作業中データにも届くよう、「転換が0秒（または未設定）のまま、かつ見せる時間が同梱版と同じ」場面だけ
-   * 同梱版の転換秒へ直す。見せる時間を変えた場面、転換を自分で入れた場面は触らない。 */
+  /* ★2026-09-24 本人指摘: 見本の全31シーンで「次のシーンへの移動時間」（転換）が0秒だった。0秒の転換は
+   * 存在しないはずなので、シーンメモの転換の記述からシーンごとに秒数を置いた。棚の複製・開いたままの
+   * 作業中データにも届くよう、「転換が0秒（または未設定）のまま、かつ見せる時間が同梱版と同じ」シーンだけ
+   * 同梱版の転換秒へ直す。見せる時間を変えたシーン、転換を自分で入れたシーンは触らない。 */
   const ROMEO_JULIET_TRANSITIONS_2026_09_24 = Object.freeze({
     "rj-frame-rj-cond-01-a-01": { hold: 180, travel: 3 },
     "rj-frame-rj-cond-01-b-02": { hold: 8, travel: 2 },
@@ -9809,7 +9809,7 @@
   /* 見本の複製へ届ける補正をまとめて呼ぶ（セリフキューの時刻・転換の秒数）。 */
   /* ★2026-09-24 本人指示: 見本に台本（project.script・47行）を同梱した。棚の複製・開いたままの作業中データで
    * まだ台本データが無いものにだけ足す（取り込んだ・自分で作った台本があれば触らない）。
-   * その複製に無いキュー・場面・演者への結び付きは外す（外しても行は残る）。 */
+   * その複製に無いキュー・シーン・演者への結び付きは外す（外しても行は残る）。 */
   function backfillRomeoJulietScript(savedProject, bundledProject) {
     if (!savedProject || !bundledProject) return false;
     if (savedProject.script !== undefined && savedProject.script !== null) return false;
@@ -9859,13 +9859,13 @@
     return changed;
   }
   /* ★V-05（2026-09-24 本人指示）: 見本の照明を「中ホールの基本仕込み」の配置（固定37）＋ムービング4へ組み直した
-   * （固定灯が場面ごとに違う向き・色・広がりになっていた警告をなくすため。生成 gamma-dev/rj-lighting-v2/build.cjs）。
-   * ★2026-09-24 本人指摘「直っていない」: 最初の版は「31場面の明かりが旧版と1文字も違わない複製」にしか届けず、
+   * （固定灯がシーンごとに違う向き・色・広がりになっていた警告をなくすため。生成 gamma-dev/rj-lighting-v2/build.cjs）。
+   * ★2026-09-24 本人指摘「直っていない」: 最初の版は「31シーンの明かりが旧版と1文字も違わない複製」にしか届けず、
    *   照明に手を入れた複製や、9/23 より前の照明のまま残っていた複製には届かなかった。
-   *   そこで、仕込みが旧版の6灯のままのロミオとジュリエットなら、その複製の各場面の点け方（明るさ・色・狙い・ゴボ）を
+   *   そこで、仕込みが旧版の6灯のままのロミオとジュリエットなら、その複製の各シーンの点け方（明るさ・色・狙い・ゴボ）を
    *   読み取り、build.cjs と同じ規則で新しい41灯へ移し替える（利用者が直した明るさ・色も引き継ぐ）。
-   *   固定灯の狙い・色・広がりは同梱版の仕込みの値（場面で変えない）。場面ごとに動かしてよいものはムービングへ移す。
-   *   台詞・キュー・場面・もや（environment）・LXキューの id と並びには触れない。 */
+   *   固定灯の狙い・色・広がりは同梱版の仕込みの値（シーンで変えない）。シーンごとに動かしてよいものはムービングへ移す。
+   *   台詞・キュー・シーン・もや（environment）・LXキューの id と並びには触れない。 */
   const ROMEO_JULIET_OLD_FIXTURE_IDS = Object.freeze(["rj-lx-front-l", "rj-lx-front-r", "rj-lx-center", "rj-lx-back", "rj-lx-side-l", "rj-lx-side-r"]);
   function romeoJulietLightTone(hex) {
     const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
@@ -9876,7 +9876,7 @@
     if (b - r > 8) return "cool";
     return "neutral";
   }
-  /* 同梱版の新しい仕込みから、固定灯ごとの「いつも同じ見え方」（点いている場面の値）を拾う。 */
+  /* 同梱版の新しい仕込みから、固定灯ごとの「いつも同じ見え方」（点いているシーンの値）を拾う。 */
   function romeoJulietFixedLooks(bundledDesign) {
     const looks = new Map();
     (bundledDesign.scenes || []).forEach((scene) => {
@@ -9947,13 +9947,13 @@
     return true;
   }
 
-  /* ★2026-09-24 本人指摘「照明を焚きすぎている」: 複製の各場面の点け方が「機械的に作られた状態」のままなら、
-   * 同梱版の場面ごとの点け方（意図に合わせて絞ったもの）へ置き換える。機械的に作られた状態とは、
-   *   ・9/21版の6灯の点け方（全場面ほぼ全灯）／9/23版の6灯の点け方（場面ごとの作り分け）
+  /* ★2026-09-24 本人指摘「照明を焚きすぎている」: 複製の各シーンの点け方が「機械的に作られた状態」のままなら、
+   * 同梱版のシーンごとの点け方（意図に合わせて絞ったもの）へ置き換える。機械的に作られた状態とは、
+   *   ・9/21版の6灯の点け方（全シーンほぼ全灯）／9/23版の6灯の点け方（シーンごとの作り分け）
    *   ・それらを V-05 の規則で41灯へ写した結果（旧6灯の「全灯」を写すと天井8・SS6・バトンが全部点く＝焚きすぎの正体）
    *   ・今日の同梱版（fbcdee6・f52e0f0）の41灯の点け方（同梱の点け方を次に変えるときは直前版の指紋をここへ足す）
    * のいずれか。指紋は点灯・明るさ・色・ゴボ・狙い・広がりだけから作る（正規化で増えるキーの影響を受けない）。
-   * 利用者が明るさや灯体を変えた場面は指紋が合わないので触らない。もや（environment）・LXキューの id と名前は変えない。 */
+   * 利用者が明るさや灯体を変えたシーンは指紋が合わないので触らない。もや（environment）・LXキューの id と名前は変えない。 */
   const ROMEO_JULIET_MACHINE_LIGHT_HASHES = Object.freeze({
     "rj-frame-rj-cond-01-a-01": ["n947xf","39jcn6","-wgbtc2","-wiww6z","-pgy4vr"],
     "rj-frame-rj-cond-01-b-02": ["etbkzr","-1edz0n","-9otqt1","c8lm7s","fs4yfg"],
@@ -10022,7 +10022,7 @@
       if (!source || !source.cue || !source.cue.lights) return;
       if (!untouched.has(scene.id)) return;
       if (romeoJulietLightsHash(scene.cue.lights) === romeoJulietLightsHash(source.cue.lights)) return;
-      // 点け方ごと置き換える場面は、もや（environment）も同梱版に揃える（9/21版の複製はもやが全場面0のままなので）
+      // 点け方ごと置き換えるシーンは、もや（environment）も同梱版に揃える（9/21版の複製はもやが全シーン0のままなので）
       scene.cue = { ...scene.cue, lights: projectIoClone(source.cue.lights),
         ...(source.cue.environment ? { environment: projectIoClone(source.cue.environment) } : {}) };
       (scene.lxq || []).forEach((q, index) => {
@@ -10035,9 +10035,9 @@
     return changed;
   }
 
-  /* ★2026-09-24 本人指示: ショーの最初に「開演前・誰もいない舞台」、最後に「終演・誰もいない舞台」の場面を置く。
-   * 棚の複製・開いたままの作業中データにも届ける。複製に同じ id の場面が無いときだけ、同梱版の行（場面・照明デザインの登録・
-   * 場面頭のライトキュー）をそのまま足す。開演前は第1場面の見出し行の直後、終演は末尾。ほかの場面・キューは触らない。 */
+  /* ★2026-09-24 本人指示: ショーの最初に「開演前・誰もいない舞台」、最後に「終演・誰もいない舞台」のシーンを置く。
+   * 棚の複製・開いたままの作業中データにも届ける。複製に同じ id のシーンが無いときだけ、同梱版の行（シーン・照明デザインの登録・
+   * シーン頭のライトキュー）をそのまま足す。開演前は第1シーンの見出し行の直後、終演は末尾。ほかのシーン・キューは触らない。 */
   const ROMEO_JULIET_OPENING_SCENE_ID = "rj-frame-rj-cond-00-open";
   const ROMEO_JULIET_CLOSING_SCENE_ID = "rj-frame-rj-cond-06-end";
   function backfillRomeoJulietBookendScenes(savedProject, bundledProject) {
@@ -10205,23 +10205,155 @@
     });
     return changed;
   }
+
+  /* ★2026-09-24 本人指示「場面という言い回しは一切使わず、全部シーンで統一（アプリ内全て）」: 同梱見本のシーン名・メモ・
+   * 照明の意図・拍・照明登録名・キューのメモから「場面」を外した（台詞の中は原文のまま）。複製へは、値が同梱の旧版のまま
+   * （見出しは同一、文は指紋一致）の項目だけ新しい文へ置き換える。利用者が書き換えた項目は触らない。 */
+  const ROMEO_JULIET_OLD_WORDING = Object.freeze({
+    titles: {
+    "rj-section-rj-cond-01": "第1場面｜対立の街、仮面の出会い",
+    "rj-section-rj-cond-02": "第2場面｜二人の約束から、届かない手紙へ",
+    "rj-section-rj-cond-05": "第3場面｜墓所、二人の死、残された和解",
+  },
+    notes: {
+    "rj-frame-rj-cond-01-c-01": "-7lsq74",
+    "rj-frame-rj-cond-03-c-03": "-amzz9u",
+    "rj-frame-rj-cond-04-a-01": "-7afx2m",
+  },
+    intents: {
+    "rj-frame-rj-cond-01-d-01": "4s55yq",
+    "rj-frame-rj-cond-03-c-03": "-iqa3zt",
+    "rj-frame-rj-cond-04-a-01": "-pm396k",
+    "rj-frame-rj-cond-04-d-01": "f0ioeh",
+    "rj-frame-rj-cond-04-d-02": "s33oj2",
+  },
+    beats: {
+
+  },
+    ld: {
+    "rj-frame-rj-cond-00-open": "Q00｜開演前｜誰もいない舞台｜場面明かり",
+    "rj-frame-rj-cond-01-a-01": "Q01｜四隅の乱戦／中央の制止｜場面明かり",
+    "rj-frame-rj-cond-01-b-02": "Q02｜中央の制止と挑発｜場面明かり",
+    "rj-frame-rj-cond-01-c-01": "Q03｜仮面舞踏会と二人の出会い｜場面明かり",
+    "rj-frame-rj-cond-01-d-01": "Q04｜相手の家名を知る｜場面明かり",
+    "rj-frame-rj-cond-02-a-01": "Q05｜窓辺の二人／大道具さんの声｜場面明かり",
+    "rj-frame-rj-cond-02-b-01": "Q06｜見ない背中と中央のロレンス｜場面明かり",
+    "rj-frame-rj-cond-02-c-01": "Q07｜別々の斜めから、ロレンスの前へ｜場面明かり",
+    "rj-frame-rj-cond-03-a-01": "Q08.1｜ロミオを呼び止め、追う｜場面明かり",
+    "rj-frame-rj-cond-03-a-02": "Q08.2｜ロミオを見失う｜場面明かり",
+    "rj-frame-rj-cond-03-b-01": "Q09｜マーキューシオとティボルト｜場面明かり",
+    "rj-frame-rj-cond-03-c-01": "Q10.1｜ロミオが止めに入る｜場面明かり",
+    "rj-frame-rj-cond-03-c-02": "Q10.2｜傷を見て、即座に報復｜場面明かり",
+    "rj-frame-rj-cond-03-c-03": "Q10.3｜二人が倒れる｜場面明かり",
+    "rj-frame-rj-cond-03-d-01": "Q11.1｜追放の知らせ｜場面明かり",
+    "rj-frame-rj-cond-03-d-02": "Q11.2｜一夜を過ごした二人の別れ｜場面明かり",
+    "rj-frame-rj-cond-04-a-01": "Q12｜父と娘だけの対立｜場面明かり",
+    "rj-frame-rj-cond-04-b-01": "Q13.1｜仮死の薬を受け取る｜場面明かり",
+    "rj-frame-rj-cond-04-b-02": "Q13.2｜計画の手紙をジョンへ｜場面明かり",
+    "rj-frame-rj-cond-04-c-01": "Q14.1｜一人で薬を飲む｜場面明かり",
+    "rj-frame-rj-cond-04-c-02": "Q14.2｜葬送を見かける｜場面明かり",
+    "rj-frame-rj-cond-04-d-01": "Q15.1｜誤った死の知らせが届く｜場面明かり",
+    "rj-frame-rj-cond-04-d-02": "Q15.2｜手紙とロミオの入れ違い｜場面明かり",
+    "rj-frame-rj-cond-05-a-01": "Q16｜墓所とロレンス側／中央は人の川｜場面明かり",
+    "rj-frame-rj-cond-05-b-01": "Q17.1｜ロミオの死、ジュリエットの目覚め｜場面明かり",
+    "rj-frame-rj-cond-05-b-02": "Q17.2｜二人の死｜場面明かり",
+    "rj-frame-rj-cond-05-c-01": "Q18｜人の川がほどける｜場面明かり",
+    "rj-frame-rj-cond-05-d-01": "Q19.1｜最初の一人が中央へ｜場面明かり",
+    "rj-frame-rj-cond-05-d-02": "Q19.2｜集まった人々／和解へ｜場面明かり",
+    "rj-frame-rj-cond-06-end": "Q20｜終演｜誰もいない舞台｜場面明かり",
+  },
+    lxq: {
+    "rj-lxq-0": "Q00｜開演前｜誰もいない舞台｜場面明かり",
+    "rj-lxq-1": "Q01｜四隅の乱戦／中央の制止｜場面明かり",
+    "rj-lxq-2": "Q02｜中央の制止と挑発｜場面明かり",
+    "rj-lxq-6": "Q03｜仮面舞踏会と二人の出会い｜場面明かり",
+    "rj-lxq-7": "Q04｜相手の家名を知る｜場面明かり",
+    "rj-lxq-8": "Q05｜窓辺の二人／大道具さんの声｜場面明かり",
+    "rj-lxq-9": "Q06｜見ない背中と中央のロレンス｜場面明かり",
+    "rj-lxq-10": "Q07｜別々の斜めから、ロレンスの前へ｜場面明かり",
+    "rj-lxq-11": "Q08.1｜ロミオを呼び止め、追う｜場面明かり",
+    "rj-lxq-12": "Q08.2｜ロミオを見失う｜場面明かり",
+    "rj-lxq-13": "Q09｜マーキューシオとティボルト｜場面明かり",
+    "rj-lxq-14": "Q10.1｜ロミオが止めに入る｜場面明かり",
+    "rj-lxq-15": "Q10.2｜傷を見て、即座に報復｜場面明かり",
+    "rj-lxq-16": "Q10.3｜二人が倒れる｜場面明かり",
+    "rj-lxq-17": "Q11.1｜追放の知らせ｜場面明かり",
+    "rj-lxq-18": "Q11.2｜一夜を過ごした二人の別れ｜場面明かり",
+    "rj-lxq-19": "Q12｜父と娘だけの対立｜場面明かり",
+    "rj-lxq-20": "Q13.1｜仮死の薬を受け取る｜場面明かり",
+    "rj-lxq-21": "Q13.2｜計画の手紙をジョンへ｜場面明かり",
+    "rj-lxq-22": "Q14.1｜一人で薬を飲む｜場面明かり",
+    "rj-lxq-23": "Q14.2｜葬送を見かける｜場面明かり",
+    "rj-lxq-24": "Q15.1｜誤った死の知らせが届く｜場面明かり",
+    "rj-lxq-25": "Q15.2｜手紙とロミオの入れ違い｜場面明かり",
+    "rj-lxq-26": "Q16｜墓所とロレンス側／中央は人の川｜場面明かり",
+    "rj-lxq-27": "Q17.1｜ロミオの死、ジュリエットの目覚め｜場面明かり",
+    "rj-lxq-28": "Q17.2｜二人の死｜場面明かり",
+    "rj-lxq-29": "Q18｜人の川がほどける｜場面明かり",
+    "rj-lxq-30": "Q19.1｜最初の一人が中央へ｜場面明かり",
+    "rj-lxq-31": "Q19.2｜集まった人々／和解へ｜場面明かり",
+    "rj-lxq-32": "Q20｜終演｜誰もいない舞台｜場面明かり",
+  },
+    memos: {
+    "rj-gamma-light-lx-7": "-q4plg8",
+    "rj-gamma-light-lx-19": "sf8605",
+  },
+  });
+  function backfillRomeoJulietWording(savedProject, bundledProject) {
+    if (!savedProject || !bundledProject) return false;
+    const W = ROMEO_JULIET_OLD_WORDING;
+    let changed = false;
+    const bundledScenes = new Map((bundledProject.scenes || []).map((row) => [row && row.id, row]));
+    (savedProject.scenes || []).forEach((row) => {
+      const source = row && bundledScenes.get(row.id);
+      if (!source) return;
+      if (W.titles[row.id] !== undefined && row.title === W.titles[row.id] && row.title !== source.title) { row.title = source.title; changed = true; }
+      if (W.notes[row.id] && romeoJulietTextHash(row.note) === W.notes[row.id] && row.note !== source.note) { row.note = source.note; changed = true; }
+      if (W.intents[row.id] && row.lightingIntent && romeoJulietTextHash(JSON.stringify(row.lightingIntent)) === W.intents[row.id]) { row.lightingIntent = projectIoClone(source.lightingIntent); changed = true; }
+      if (W.beats[row.id] && row.beat && romeoJulietTextHash(row.beat.role) === W.beats[row.id] && source.beat) { row.beat = { ...row.beat, role: source.beat.role }; changed = true; }
+    });
+    const savedDesign = savedProject.lightingDesign, bundledDesign = bundledProject.lightingDesign;
+    if (savedDesign && bundledDesign && Array.isArray(savedDesign.scenes) && Array.isArray(bundledDesign.scenes)) {
+      const byId = new Map(bundledDesign.scenes.map((entry) => [entry && entry.id, entry]));
+      savedDesign.scenes.forEach((entry) => {
+        const source = entry && byId.get(entry.id);
+        if (!source) return;
+        if (W.ld[entry.id] !== undefined && entry.name === W.ld[entry.id] && entry.name !== source.name) { entry.name = source.name; changed = true; }
+        (entry.lxq || []).forEach((q) => {
+          const sourceQ = (source.lxq || []).find((item) => item && item.id === q.id);
+          if (q && sourceQ && W.lxq[q.id] !== undefined && q.name === W.lxq[q.id] && q.name !== sourceQ.name) { q.name = sourceQ.name; changed = true; }
+        });
+      });
+      (bundledDesign.rig && bundledDesign.rig.fixtures || []).forEach((fixture) => {
+        const mine = (savedDesign.rig && savedDesign.rig.fixtures || []).find((item) => item && item.id === fixture.id);
+        if (mine && typeof mine.role === "string" && mine.role.includes("場面") && mine.role.replace(/場面/g, "シーン") === fixture.role) { mine.role = fixture.role; changed = true; }
+      });
+    }
+    const bundledCues = new Map((bundledProject.cues || []).map((cue) => [cue && cue.id, cue]));
+    (savedProject.cues || []).forEach((cue) => {
+      const source = cue && bundledCues.get(cue.id);
+      if (source && W.memos[cue.id] && romeoJulietTextHash(cue.memo) === W.memos[cue.id] && cue.memo !== source.memo) { cue.memo = source.memo; changed = true; }
+    });
+    return changed;
+  }
   function backfillRomeoJulietSampleData(savedProject, bundledProject) {
     const a = backfillRomeoJulietVoxOffsets(savedProject, bundledProject);
     const b = backfillRomeoJulietTransitions(savedProject);
     const c = backfillRomeoJulietScript(savedProject, bundledProject);
     const d = backfillRomeoJulietCastNames(savedProject, bundledProject);
-    // 41灯へ写す前に「機械的な状態のまま」の場面を控え、写した後に同梱の場面ごとの点け方へ置き換える
+    // 41灯へ写す前に「機械的な状態のまま」のシーンを控え、写した後に同梱のシーンごとの点け方へ置き換える
     const machineMade = romeoJulietMachineMadeScenes(savedProject);
     const e = backfillRomeoJulietLightingRig(savedProject, bundledProject);
     const f = backfillRomeoJulietLightingLooks(savedProject, bundledProject, machineMade);
     const g = backfillRomeoJulietBookendScenes(savedProject, bundledProject);
     const h = backfillRomeoJulietCueMemos(savedProject, bundledProject);
-    return a || b || c || d || e || f || g || h;
+    const i = backfillRomeoJulietWording(savedProject, bundledProject);
+    return a || b || c || d || e || f || g || h || i;
   }
 
   /* ★2026-09-24 本人指示「転換が0秒のものは全部直す」: 八人のサーカス・継ぎ目の庭の棚の複製と、
    * 開いたままの作業中データへ、同梱版の見せる時間・転換を届ける。直すのは「同梱の旧版の値のまま
-   * （八人=既定の10秒/0秒、継ぎ目=場面の秒数そのまま/0秒）」の場面だけ。利用者が変えた場面は触らない。
+   * （八人=既定の10秒/0秒、継ぎ目=シーンの秒数そのまま/0秒）」のシーンだけ。利用者が変えたシーンは触らない。
    * 秒数を変えたらセクション時間の控えも合計へ揃える（揃えないと次に開いたとき見せる時間が縮む）。 */
   function backfillEightCircusTimings(savedProject, bundledProject) {
     const saved = savedProject && Array.isArray(savedProject.scenes) ? savedProject.scenes.filter((row) => row && row.kind === "scene") : null;
@@ -10312,7 +10444,7 @@
      * 同梱の最新版で置き直す。 */
     if (saved && showSummary(saved)) {
       /* 初期版を先に棚へ置いた端末には、照明デザインが無いコピーが残ることがある。
-       * その場合だけ同梱版の機材配置／LX設計を補い、演者・場面・利用者の編集は触らない。 */
+       * その場合だけ同梱版の機材配置／LX設計を補い、演者・シーン・利用者の編集は触らない。 */
       const savedProject = saved.state && saved.state.project;
       const savedFixtures = savedProject && savedProject.lightingDesign
         && savedProject.lightingDesign.rig && savedProject.lightingDesign.rig.fixtures;
@@ -10336,7 +10468,7 @@
   }
 
   /* ★U-14（2026-09-24 本人指示）: 初めて開いたとき・全部を消した（?dev-reset=1 等）あとの最初の画面は、
-   * 劇場未設定の空のショー（→劇場設定へ誘導）ではなく、「舞台」タブで『ロミオとジュリエット』の最初の場面を開いた状態にする。
+   * 劇場未設定の空のショー（→劇場設定へ誘導）ではなく、「舞台」タブで『ロミオとジュリエット』の最初のシーンを開いた状態にする。
    * ★劇場設定ゲートは残す（本人決定）。見本は劇場を決めてある（venueSetupAppliedAt）のでゲートに掛からない。
    * 対象は「保存が無くて空のショーを作った」ときだけ。前回のショーを開けた（restored）とき、
    * 保存を読めなかった（alternativesStorageBlocked＝上書きしないため）ときは何もしない。
@@ -11401,8 +11533,8 @@
     syncScreenTextSurface(t);
   }
 
-  /* 映す先の選択肢。★いまの場面に在る紗幕と壁だけを並べる。
-     指していた駒がその場面に居なければ、選択肢として残して気づけるようにする
+  /* 映す先の選択肢。★いまのシーンに在る紗幕と壁だけを並べる。
+     指していた駒がそのシーンに居なければ、選択肢として残して気づけるようにする
      （黙って背景の壁へ戻すと、言葉が別の場所へ飛んだように見える）。 */
   function syncScreenTextSurface(t) {
     const select = els.screenTextSurface;
@@ -11413,7 +11545,7 @@
     });
     const current = t.surfaceId || "";
     if (current && !options.some((o) => o.value === current)) {
-      options.push({ value: current, label: sx("この場面にはいない面", "Surface not in this scene") });
+      options.push({ value: current, label: sx("このシーンにはいない面", "Surface not in this scene") });
     }
     const signature = options.map((o) => `${o.value}:${o.label}`).join("|");
     if (select.dataset.signature !== signature) {
@@ -13656,7 +13788,7 @@
   }
 
   // 選択灯ワンダーは保存したseedから描画時に狙い点を導く。駒の通常座標は書き換えず、
-  // 旧式の場面全体アニメーションには依存しない。
+  // 旧式のシーン全体アニメーションには依存しない。
   function selectedLightMotionTarget(piece, timeMs = (typeof performance !== "undefined" ? performance.now() : Date.now())) {
     const behavior = piece && piece.lightBehavior;
     const model = window.SHOSAI_STAGE_SELECTED_LIGHT_MOTION_PRESETS;
@@ -16634,7 +16766,7 @@
    * 「名前の部分をダブルクリック」が見た目どおりの範囲で働くようにする。 */
   /* ---------- U-03（2026-09-24 本人指示）: 正面図のセリフの吹き出し ----------
    * セリフキューパネルが「いまのセリフ」を stage-vox-current で知らせる。ここでは覚えて描くだけ（保存データには触れない）。
-   * 話者の駒: 台本データの演者（castId）→ 無ければ演者名と話者名が同じ駒。その場面の舞台に居ないときは描かない。
+   * 話者の駒: 台本データの演者（castId）→ 無ければ演者名と話者名が同じ駒。そのシーンの舞台に居ないときは描かない。
    * 数値: 文字14px・行間21px・横書きの幅上限240px・4行まで（超えたら…）・余白10/12px・角丸8px・しっぽ10px。
    *       縦書き（日本語で「縦書き」が入のとき）: 1列10字・5列まで・列の間隔22px。
    * 色: 紙色の地 #efe7d6（96%）＋墨色の文字 #1b1712（対比 14.9:1）。ト書きの括弧も同じ色で出す。 */
@@ -16839,10 +16971,10 @@
    *
    * 本人指示「ライトキューを立てた時に、正面図や平面図に反映できるように」。
    * 上の drawLightingPlanOverlay は**劇場に備え付けの照明プランを比べるための概略**で、
-   * いつも全消灯で描く別物。こちらは**いま開いている場面のキュー**を見る。
+   * いつも全消灯で描く別物。こちらは**いま開いているシーンのキュー**を見る。
    *
    * モデルは毎フレーム作らない。灯体は最大1000台あり得るので、
-   * 照明デザインの実体と場面が変わったときだけ組み直す。 */
+   * 照明デザインの実体とシーンが変わったときだけ組み直す。 */
   let timelineLightCue = { cueId: "", sceneId: "" };
   let lightCueOverlayCache = { design: undefined, sceneId: "", model: null };
   function setTimelineLightCue(nextCue, { renderAfter = true } = {}) {
@@ -16976,7 +17108,7 @@
     if (!pools) return 0;
     const started = typeof performance !== "undefined" ? performance.now() : Date.now();
     const model = lightCueOverlayForLayout(L);
-    const haze = api.hazeAmount ? api.hazeAmount(model && model.environment ? model.environment.haze : undefined) : 0;   // R-2 場面のもや
+    const haze = api.hazeAmount ? api.hazeAmount(model && model.environment ? model.environment.haze : undefined) : 0;   // R-2 シーンのもや
     const drawn = api.paintBeams(target, pools, worldProjector(L), { topDown: Boolean(L.plan), haze });
     const spent = (typeof performance !== "undefined" ? performance.now() : Date.now()) - started;
     lightPoolMs = lightPoolMs ? lightPoolMs * 0.8 + spent * 0.2 : spent;
@@ -17594,7 +17726,7 @@
       target.fillStyle = edgeShade;
       target.fillRect(0, 0, W, H);
       /* 見る位置の小図。客席が正面だけの劇場でしか意味を持たない。
-         全画面中は出さない（見せる相手に必要なのは場面であって、
+         全画面中は出さない（見せる相手に必要なのはシーンであって、
          いまどの席から描いているかという作り手側の道具ではない）。 */
       if (!pitchStyle && state.showSeatMap && L.venue.audience === "front" && !(presenting && target === ctx) && !L.venue.custom) drawSeatMap(target, L);
     }
@@ -17669,7 +17801,7 @@
     if (!text) return;
     /* 見出しはシーン名にする。〈シーンの説明〉という札は画面の道具の名前で、
        人に見せている絵の中では意味を持たない。見ている側が知りたいのは
-       「いまどの場面か」なので、そこをシーン名で埋める。 */
+       「いまどのシーンか」なので、そこをシーン名で埋める。 */
     const title = (scene.title || "").trim();
     const pad = 34;
     const captionSizes = { small: 15, medium: 19, large: 25 };
@@ -17695,7 +17827,7 @@
     target.textAlign = "left";
     target.textBaseline = "alphabetic";
     const ink = (line, x, y) => {
-      // 影を先に置く。明るい背景の場面でも字が沈まない
+      // 影を先に置く。明るい背景のシーンでも字が沈まない
       target.fillStyle = "rgba(0,0,0,0.55)";
       target.fillText(line, x + 1, y + 1);
       target.fillStyle = "rgba(244,238,226,0.96)";
@@ -18030,10 +18162,10 @@
     scheduleSelectedLightMotionRender();
   }
 
-  /* 絵の上の送り。いま何場面目かを添えて、端では押せなくする。
+  /* 絵の上の送り。いま何シーン目かを添えて、端では押せなくする。
      一覧を畳んでいても、ここだけで前後へ行けるようにするための行。 */
   function syncSceneBar() {
-    // 章の見出し（section）は場面ではないので、送りの数には入れない
+    // 章の見出し（section）はシーンではないので、送りの数には入れない
     const scenes = (state.project.scenes || []).filter((row) => row.kind === "scene");
     const index = Math.max(0, scenes.findIndex((row) => row.id === state.project.activeSceneId));
     if (els.scenePrev) els.scenePrev.disabled = index <= 0;
@@ -18054,9 +18186,9 @@
     if (els.sceneDescLabel) els.sceneDescLabel.textContent = tx("シーンの説明");
     const box = els.sceneDescText;
     if (box) {
-      box.placeholder = tm("misc", "sceneNoteHint", "この場面で何が起きるか");
+      box.placeholder = tm("misc", "sceneNoteHint", "このシーンで何が起きるか");
       box.setAttribute("aria-label", tx("シーンの説明"));
-      // セクション（章の見出し）には場面の中身が無いので、書く欄も出さない
+      // セクション（章の見出し）にはシーンの中身が無いので、書く欄も出さない
       const editable = !scene || scene.kind !== "section";
       els.sceneDesc.hidden = !editable;
       if (!editable) { scheduleSceneBarLayout(); return; }
@@ -18068,7 +18200,7 @@
   }
 
   /* 行数に合わせて高さを詰める。既定の2行分を空けておくと、
-     一行しか書いていない場面で絵の上に空白の帯ができる。
+     一行しか書いていないシーンで絵の上に空白の帯ができる。
      舞台図より説明欄が高くならないよう、4行を越えた分は欄内で読む。 */
   const SCENE_DESC_LINE = 19;   // 一行ぶんの高さ(px)。空の欄はこれで確定させる
   const SCENE_DESC_MAX_LINES = 4;
@@ -18126,7 +18258,7 @@
     const box = els.sceneDescText;
     if (!box) return;
     /* 空のときは測らない。字も組み方も決まっていない読み込み途中に測ると、
-       伸び縮みする器（flex の行）の空き高さを拾って、一行も書いていない場面で
+       伸び縮みする器（flex の行）の空き高さを拾って、一行も書いていないシーンで
        欄だけ厚くなる。実際それで帯が96pxのまま固まっていた。 */
     if (!box.value) { box.style.height = `${SCENE_DESC_LINE}px`; return; }
     // 書いてあるときは、いったん0まで潰してから中身の高さを測る。
@@ -18138,7 +18270,7 @@
 
   /* 幅が決まってから測り直す。
      読み込みの途中は欄の幅がまだ決まっておらず、そこで測った高さのまま
-     固まると、一行しか書いていない場面でも帯が厚いままになる。
+     固まると、一行しか書いていないシーンでも帯が厚いままになる。
      幅が変わったときだけ測り直す（高さを変えた分で呼び返さないため）。 */
   if (typeof ResizeObserver === "function" && els.sceneDesc) {
     let lastWidth = -1;
@@ -18683,7 +18815,7 @@
   }
 
   /* ---------- スマホ専用の閲覧ワークスペース ----------
-     編集用の三列UIは見せず、JSON読込・場面送り・情報・付箋だけを残す。
+     編集用の三列UIは見せず、JSON読込・シーン送り・情報・付箋だけを残す。
      縦は二面、横は一面なので、端末を回しても最後に見ていた向きを覚えておく。 */
   function makePhoneButton(text, label, className = "") {
     const button = document.createElement("button");
@@ -20074,8 +20206,8 @@
   }
 
   /* ---------- 登場人物 ----------
-     ショーに出る演者を名簿で持ち、場面ごとに舞台の上か裏かが決まる。
-     名簿で名前を直すと、その人が出ている全場面の表示が変わる。 */
+     ショーに出る演者を名簿で持ち、シーンごとに舞台の上か裏かが決まる。
+     名簿で名前を直すと、その人が出ている全シーンの表示が変わる。 */
 
   function castOnStage(castId) {
     return sc().pieces.some((piece) => piece.castId === castId);
@@ -20466,14 +20598,14 @@
       heightCm: DEFAULT_HEIGHT_CM, note: "", locked: false,
     };
     state.project.cast.push(member);
-    // 登録したものは、そのままこの場面の舞台へ出す（出すのが普通で、裏に置くのが例外）
+    // 登録したものは、そのままこのシーンの舞台へ出す（出すのが普通で、裏に置くのが例外）
     placeCastPiece(member, poseId);
     if (input) input.value = "";
     renderCast();
     renderSets();
     renderLights();
     renderRigs();
-    /* ★絵と場面の欄も描き直す。ここを忘れると、データには入っているのに
+    /* ★絵とシーンの欄も描き直す。ここを忘れると、データには入っているのに
      * 舞台に出てこない（札は「舞台上」なのに姿がない、という食い違いになる）。 */
     renderScenes();
     updateInspector();
@@ -20483,7 +20615,7 @@
     return true;
   }
 
-  // 演者をこの場面の舞台へ置く。登録した直後にも、あとから出すときにも通す
+  // 演者をこのシーンの舞台へ置く。登録した直後にも、あとから出すときにも通す
   function placeCastPiece(member, poseId = "stand") {
     const scene = sc();
     if (!canAddScenePieces(scene)) return null;
@@ -20893,7 +21025,7 @@
     return true;
   }
 
-  // 舞台セット・明かりをこの場面へ置く。登録した直後にも、あとから出すときにも通す
+  // 舞台セット・明かりをこのシーンへ置く。登録した直後にも、あとから出すときにも通す
   function placeSetPiece(item) {
     const scene = sc();
     if (!canAddScenePieces(scene)) return null;
@@ -21052,7 +21184,7 @@
     silhouette: {
       label: "シルエット（逆光だけ）",
       /* 前明かりを一切置かず、奥のホリを染めて後ろからだけ当てる。
-         顔を消して形だけを見せる組み方。人数や隊形を読ませたい場面に効く。 */
+         顔を消して形だけを見せる組み方。人数や隊形を読ませたいシーンに効く。 */
       build: (size) => {
         const H = size.height || 8;
         const out = [];
@@ -22084,7 +22216,7 @@
 
   async function applyLoadedState(next, message) {
     if (!await prepareLoadedState(next)) return false;
-    // 場面IDが別ショーで偶然重なっても、前のショーの下書きを出さない。
+    // シーンIDが別ショーで偶然重なっても、前のショーの下書きを出さない。
     resetStageAskDraft({ clearInput: true, invalidate: true });
     clearAudioEngine();
     state = next;
@@ -23349,12 +23481,12 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
 
   /* ---------- セット登録（画面の名前。コード上は rig） ----------
      舞台装置の並びに名前をつけて残し、別のシーンで呼び出す。
-     残すのは演者以外。演者は場面ごとに出入りするものなので、装置と一緒に
-     持ち回すと「前の場面の人がそのまま立っている」ことになる。 */
+     残すのは演者以外。演者はシーンごとに出入りするものなので、装置と一緒に
+     持ち回すと「前のシーンの人がそのまま立っている」ことになる。 */
 
   const isRigPiece = (piece) => piece.type !== "performer";
 
-  // 型に入れる／型から出すときの写し。id は必ず作り直す（同じ場面に二重で置けるように）
+  // 型に入れる／型から出すときの写し。id は必ず作り直す（同じシーンに二重で置けるように）
   function copyPiece(piece) {
     const clone = JSON.parse(JSON.stringify(piece));
     clone.id = nextId();
@@ -24031,7 +24163,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     return profileId ? state.project.cast.find((c) => c.id === profileId) : null;
   }
 
-  // 身長が変わると、その演者が出ている場面すべてで見え方が変わる
+  // 身長が変わると、その演者が出ているシーンすべてで見え方が変わる
   function applyProfileChange(fn) {
     const member = profileMember();
     if (!member) return;
@@ -24076,7 +24208,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (e.key === "Escape" && profileId) closeProfile();
   });
 
-  /* ---------- 場面とプロジェクト ---------- */
+  /* ---------- シーンとプロジェクト ---------- */
 
   /* 並べ替え・追加・削除の起点になる行。セクションを押したときは、
    * 絵を持たないので「開く」ことはできないが、操作の起点にはなる。 */
@@ -24131,8 +24263,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const list = state.project.scenes;
     if (step < 0) {
       /* 外へ出すときは、元の親に残る後ろの兄弟の手前から抜けてはいけない。
-       * その場で浅くすると、後ろに続く場面がこの行の中身に化けてしまう
-       * （幕の途中の場面を出すと、それ以降が幕から丸ごと抜けていた）。
+       * その場で浅くすると、後ろに続くシーンがこの行の中身に化けてしまう
+       * （幕の途中のシーンを出すと、それ以降が幕から丸ごと抜けていた）。
        * 元の親の終わりまで送ってから浅くする。 */
       const parentDepth = scene.depth - 1;
       let end = index + moving.length;
@@ -24160,7 +24292,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (chip) chip.focus();
   }
 
-  // セクション内は直下だけでなく、さらに入れ子になった場面も同じまとまりとして数える。
+  // セクション内は直下だけでなく、さらに入れ子になったシーンも同じまとまりとして数える。
   function sectionTotals(index) {
     const scenes = sceneChildren(index).filter((row) => row.kind === "scene");
     const seconds = scenes.reduce((sum, scene) => {
@@ -24185,10 +24317,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       if (!showTime) return scenes;
       return place === "title" ? `${scenes} · total ${duration}` : `${scenes} · ${duration}`;
     }, () => {
-      if (!showTime) return `${totals.scenes}場面`;
+      if (!showTime) return `${totals.scenes}シーン`;
       return place === "title"
-        ? `${totals.scenes}場面・合計 ${duration}`
-        : `${totals.scenes}場面・${duration}`;
+        ? `${totals.scenes}シーン・合計 ${duration}`
+        : `${totals.scenes}シーン・${duration}`;
     });
   }
 
@@ -24353,7 +24485,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (els.sceneList) {
       if (wrapPickStartId && !p.scenes.some((row) => row.id === wrapPickStartId)) wrapPickStartId = null;
       els.sceneList.classList.toggle("is-wrap-picking", Boolean(wrapPickStartId));
-      /* 番号は入れ子に沿って振る。セクションの中の場面は「4-1」のようになる。
+      /* 番号は入れ子に沿って振る。セクションの中のシーンは「4-1」のようになる。
        * 深さごとの数え札を持ち、浅い所へ戻ったら深い側は捨てる。 */
       const sceneNumbers = sceneNumberMap(p.scenes);
       const sectionStack = [];
@@ -24722,7 +24854,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           row.append(musicSummary);
         }
 
-        /* 開いている場面だけ、名前とメモをその場で開く。
+        /* 開いているシーンだけ、名前とメモをその場で開く。
          * 閉じている行は名前だけ。並びを見渡すときに邪魔にならない。 */
         if (isOpen && scene.kind === "scene") {
           const body = document.createElement("div");
@@ -24749,7 +24881,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           note.value = scene.note || "";
           note.placeholder = tm("misc", "sceneNoteHint", "このシーンのメモ（何が起きるか）");
           note.setAttribute("aria-label", tx("シーンのメモ"));
-          /* 開いているのがいまの場面なら、絵の上の欄と対になる。
+          /* 開いているのがいまのシーンなら、絵の上の欄と対になる。
              片方を打ったときに、もう片方だけを書き換えるための目印。 */
           if (scene.id === state.project.activeSceneId) note.id = "stage-scene-note-input";
           const growNote = (preserveCurrent = false) => {
@@ -24881,7 +25013,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     sceneGridFrame = 0;
   }
 
-  /* 一枚を撮るあいだだけ場面と拡大を差し替える。途中で画像化に失敗しても、
+  /* 一枚を撮るあいだだけシーンと拡大を差し替える。途中で画像化に失敗しても、
    * いま編集している絵へ必ず戻す。 */
   function sceneGridThumbnail(scene, view) {
     const keepScene = state.project.activeSceneId;
@@ -25218,7 +25350,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   /* 行の名前をその場で書き換える。
    * 入力欄はボタンの外へ出す。ボタンの中へ入れると、押した先がボタンに
    * 吸われて文字を打てない（実際それで動かなかった）。 */
-  /* 名前を変える小窓。場面にもセクションにも同じものを使う。 */
+  /* 名前を変える小窓。シーンにもセクションにも同じものを使う。 */
   let renameTarget = null;
 
   function updateRenameColorSummary(scene) {
@@ -25435,7 +25567,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     });
   }
 
-  /* ---------- 場面を掴んで並べ替える ----------
+  /* ---------- シーンを掴んで並べ替える ----------
      写真の道具でレイヤーを入れ替えるのと同じ手つき。掴んだ行は指について動き、
      残りは滑って隙間を空ける。落とす場所は「どの行の間か」と「どの深さか」の
      二つで決まる。横へ引くと深さが変わり、セクションの中へ入る。 */
@@ -25575,9 +25707,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     return false;
   }
 
-  /* ---------- 場面転換の動き ----------
-     前の場面で同じものが居た場所から、次の場面の場所へ動かして見せる。
-     前の場面で動線を引いてあれば、その曲線に沿って動く（引いた線のとおりに動く）。
+  /* ---------- シーン転換の動き ----------
+     前のシーンで同じものが居た場所から、次のシーンの場所へ動かして見せる。
+     前のシーンで動線を引いてあれば、その曲線に沿って動く（引いた線のとおりに動く）。
      保存されるのは行き先の値だけ。途中の位置は animU/animV に持ち、
      終わったら消す（途中で保存されても、絵の途中の位置は残らない）。 */
   let sceneAnim = null;
@@ -25603,7 +25735,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   /* いま動いている時計（ms）。spinRun が動いていなければ0＝模様は goboAngle の値で止まる
-     （盆も模様も回っていない場面はこれまでと同じ、余計な再描画をしない）。 */
+     （盆も模様も回っていないシーンはこれまでと同じ、余計な再描画をしない）。 */
   function lightEffectClockMs() {
     return spinRun ? spinRun.elapsedMs : 0;
   }
@@ -25731,7 +25863,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
 
   const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
-  // 前の場面の同じもの。登録があればその札で、無ければ駒の札で照合する
+  // 前のシーンの同じもの。登録があればその札で、無ければ駒の札で照合する
   function twinOf(piece, pieces) {
     if (piece.castId) return pieces.find((p) => p.castId === piece.castId) || null;
     if (piece.setId) return pieces.find((p) => p.setId === piece.setId) || null;
@@ -25765,7 +25897,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     resetSpinRunClock();
   }
 
-  /* 動かすのは「次へ進むとき」だけ。前の場面へ戻るのは、作っている途中に
+  /* 動かすのは「次へ進むとき」だけ。前のシーンへ戻るのは、作っている途中に
    * 見比べる動きなので、そのたびに動かれると邪魔になる（本人の指定）。 */
   /* 回り続けている盆の「いま見えている角度」の控え。転換の始点をここから取らないと、
      切替の瞬間に盆と上の駒が保存値の角度へスナップする（3Dカメラで「一瞬カクつく」と
@@ -25817,7 +25949,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       });
       if (sameSpot && sameBeam && sameGlow && sameMech) return;
       /* 動線があれば、その二次曲線をたどる。行き先が動線の終点と違っていても、
-       * 曲がり方だけ借りて向かう（曲線の形は残しつつ、着地は次の場面の場所）。 */
+       * 曲がり方だけ借りて向かう（曲線の形は残しつつ、着地は次のシーンの場所）。 */
       const route = twin.route;
       pieces.push({
         piece,
@@ -26462,7 +26594,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     { value: "beam", label: "＋光の筋", pool: true, beam: true, work: false },
     { value: "dark", label: "本番の暗さ", pool: true, beam: true, work: true },
   ];
-  const LIGHT_LOOK_HINT = "場面のキューで点いている灯体の見え方。下の段ほど図が重くなります。"
+  const LIGHT_LOOK_HINT = "シーンのキューで点いている灯体の見え方。下の段ほど図が重くなります。"
     + "「本番の暗さ」は作業灯を消して、光の当たる所だけを見せます";
 
   function currentLightLookStep() {
@@ -27195,7 +27327,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   /* ---------- 印刷用ページ ----------
      全シーンの正面と平面を一枚ずつ並べた、印刷のためのページを別タブに開く。
      ブラウザの「印刷」からPDFにして、稽古場へ紙で持っていける。
-     絵は本物の描画（drawStage）を場面ごとに退避・切替して撮る。 */
+     絵は本物の描画（drawStage）をシーンごとに退避・切替して撮る。 */
   function openPrintPage() {
     const rows = state.project.scenes.filter((row) => row.kind === "scene");
     if (!rows.length) { announce("印刷するシーンがありません。"); return; }
@@ -27328,7 +27460,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   body.two-up .pics .front { width: 44%; }
   body.two-up .pics .plan { width: 30%; }
   .meta { margin-top: 6px; }
-  /* シーンの説明は絵の前に置く。何が起きる場面かを読んでから図を見る順番になる */
+  /* シーンの説明は絵の前に置く。何が起きるシーンかを読んでから図を見る順番になる */
   .desc { font-size: 13px; line-height: 1.6; margin: 0 0 8px; white-space: pre-wrap; }
   .desc-label { display: inline-block; font-size: 10px; letter-spacing: 0.08em; color: #666;
                 border: 1px solid #bbb; border-radius: 2px; padding: 1px 5px; margin-right: 8px;
@@ -27385,13 +27517,13 @@ ${propsPlotHtml}
     announce("印刷用ページを開きました。ブラウザの印刷からPDFにできます。");
   }
 
-  // 矢印キーで場面を送ったとき、ページ全体やフォーカスは動かさずシーン欄だけ追従させる。
+  // 矢印キーでシーンを送ったとき、ページ全体やフォーカスは動かさずシーン欄だけ追従させる。
   function followSceneInPanel(sceneId) {
     const list = els.sceneList;
     if (!list || !list.getClientRects().length) return;
     let row = list.querySelector(`:scope > [data-scene-id="${CSS.escape(sceneId)}"]`);
     if (!row) {
-      // 畳んだセクション内へ進んだ場合だけ、現在の場面に至る親を開く。
+      // 畳んだセクション内へ進んだ場合だけ、現在のシーンに至る親を開く。
       const scenes = state.project.scenes;
       const index = scenes.findIndex((scene) => scene.id === sceneId);
       if (index < 0) return;
@@ -27426,7 +27558,7 @@ ${propsPlotHtml}
     requestAnimationFrame(() => requestAnimationFrame(scrollToChip));
   }
 
-  // 場面を前後へ送る。上下キーの割り当て先でもある
+  // シーンを前後へ送る。上下キーの割り当て先でもある
   function stepScene(dir, followPanel = false) {
     const rows = state.project.scenes.filter((row) => row.kind === "scene");
     if (rows.length < 2) { announce("シーンがひとつしかありません。"); return; }
@@ -27568,7 +27700,7 @@ ${propsPlotHtml}
   }
 
   // セクションを起点にしたときは、中身ごと複製する
-  /* 場面をまるごと写す。駒には新しい札を配り、
+  /* シーンをまるごと写す。駒には新しい札を配り、
    * 付箋が指している駒の札も新しい方へ付け替える（付け替えないと写した瞬間に紐が切れる）。 */
   function cloneScene(row) {
     const copy = JSON.parse(JSON.stringify(row));
@@ -27732,7 +27864,7 @@ ${propsPlotHtml}
       "scene",
       source.depth,
     );
-    // 地の色だけは同じ舞台の基準として残す。描画・写真・注釈は場面固有なので持ち越さない。
+    // 地の色だけは同じ舞台の基準として残す。描画・写真・注釈はシーン固有なので持ち越さない。
     next.background = source.background || next.background;
     if (mode === "inherit") {
       next.pieces = inheritedScenePieces(source.pieces, selectedIds, nextId, moveToRouteEnd);
@@ -27857,7 +27989,7 @@ ${propsPlotHtml}
     if (restoreFocus && target && target.isConnected && typeof target.focus === "function") target.focus();
   }
 
-  // セクションを消すときは、中に入れた場面ごと消える。確認は専用モーダルで済ませてから呼ぶ。
+  // セクションを消すときは、中に入れたシーンごと消える。確認は専用モーダルで済ませてから呼ぶ。
   function deleteScene(targetScene = null) {
     const details = sceneDeleteDetails(targetScene);
     if (!details) return false;
@@ -28637,7 +28769,7 @@ ${propsPlotHtml}
         const motion = document.createElement("p");
         motion.className = "stage-profile-hint";
         motion.textContent = sx(
-          `旧「光の動き（案）」がある場面 ${counts.motions}件は自動変換せず、復元用の原本にだけ保持します。`,
+          `旧「光の動き（案）」があるシーン ${counts.motions}件は自動変換せず、復元用の原本にだけ保持します。`,
           `${counts.motions} scene(s) use the legacy motion draft. It is not converted and remains only in the recovery source.`,
         );
         section.append(motion);
@@ -29493,7 +29625,7 @@ ${propsPlotHtml}
   }
 
   /* 照明は劇場の間口・奥行・高さ・客席方向に合わせた設計であるため、劇場を
-     変えた版へ持ち込まない。現行の照明登録、場面内の照明駒、意図を
+     変えた版へ持ち込まない。現行の照明登録、シーン内の照明駒、意図を
      まとめて数え、分岐前の警告と消去範囲を同じ定義で扱う。 */
   function lightingDataCounts(project) {
     const p = project && typeof project === "object" ? project : {};
@@ -30061,7 +30193,7 @@ ${propsPlotHtml}
     if (els.venueApplyBackdrop) els.venueApplyBackdrop.hidden = true;
   }
 
-  /* G-A（2026-09-20）: 会場替えの「壊れる場面」レポート。
+  /* G-A（2026-09-20）: 会場替えの「壊れるシーン」レポート。
    * 設計 docs/venue-switch-report-2026-09-20/index.html。判定は共有部品 stage-venue-report.js
    * （幾何とデータの突き合わせだけ）。ここでは駒ごとの値を解決して渡すだけにする
    * （pieceDims・isFlown 等の式をここと向こうの2箇所に持たない）。
@@ -30133,7 +30265,7 @@ ${propsPlotHtml}
     lastVenueSwitchReport = { report, venueLabel: saved.label || venueSwitchLabel(saved) };
     els.venueApplyReport.hidden = false;
     if (els.venueApplyReportSummary) {
-      els.venueApplyReportSummary.textContent = tx("この劇場へ替えると、次の場面が影響を受けます（反映は止めません。目安としてご覧ください）。");
+      els.venueApplyReportSummary.textContent = tx("この劇場へ替えると、次のシーンが影響を受けます（反映は止めません。目安としてご覧ください）。");
     }
     if (els.venueApplyReportList) {
       els.venueApplyReportList.replaceChildren();
@@ -30155,7 +30287,7 @@ ${propsPlotHtml}
     return (target && target.label) || "この劇場";
   }
 
-  /* 場面番号（表示用）。ショー地図・キューシートと同じ「セクションを除いた通し番号」で数える。 */
+  /* シーン番号（表示用）。ショー地図・キューシートと同じ「セクションを除いた通し番号」で数える。 */
   function sceneDisplayNumber(sceneId) {
     let n = 0;
     for (const row of state.project.scenes || []) {
@@ -30196,12 +30328,12 @@ ${propsPlotHtml}
 
   function venueSwitchReportPrintDocument(payload) {
     const rows = payload.report.rows.map((row) => `<tr><td>${escapeHtml(sceneDisplayNumber(row.id) || "")}</td><td>${escapeHtml(row.title)}</td><td>${escapeHtml(venueSwitchIssueSummary(row.issues))}</td></tr>`).join("");
-    return `<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>${escapeHtml(payload.venueLabel)} — 壊れる場面</title>
+    return `<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>${escapeHtml(payload.venueLabel)} — 壊れるシーン</title>
 <style>body{font:14px/1.6 "Hiragino Kaku Gothic ProN",sans-serif;margin:24px;color:#222}
 h1{font-size:18px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:6px 8px;text-align:left;vertical-align:top;font-size:13px}
 th{background:#eee}@media print{body{margin:8mm}}</style></head>
-<body><h1>${escapeHtml(payload.venueLabel)} へ替えると壊れる場面</h1>
-<table><thead><tr><th>場面</th><th>題</th><th>影響</th></tr></thead><tbody>${rows}</tbody></table>
+<body><h1>${escapeHtml(payload.venueLabel)} へ替えると壊れるシーン</h1>
+<table><thead><tr><th>シーン</th><th>題</th><th>影響</th></tr></thead><tbody>${rows}</tbody></table>
 <p>反映は止まりません。目安としてご覧ください。自動では直しません。</p>
 </body></html>`;
   }
@@ -30215,11 +30347,11 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       URL.revokeObjectURL(url);
       return;
     }
-    announce(tx("壊れる場面のレポートを印刷用の窓で開きました。"));
+    announce(tx("壊れるシーンのレポートを印刷用の窓で開きました。"));
   }
 
   function venueSwitchReportCsv(payload) {
-    const lines = [["場面", "題", "影響"].join(",")];
+    const lines = [["シーン", "題", "影響"].join(",")];
     payload.report.rows.forEach((row) => {
       const cells = [sceneDisplayNumber(row.id) || "", row.title, venueSwitchIssueSummary(row.issues)]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`);
@@ -30232,7 +30364,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (!lastVenueSwitchReport) return;
     try {
       const csv = venueSwitchReportCsv(lastVenueSwitchReport);
-      const filename = `${lastVenueSwitchReport.venueLabel}_壊れる場面.csv`;
+      const filename = `${lastVenueSwitchReport.venueLabel}_壊れるシーン.csv`;
       const didChooseDestination = await downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), filename);
       if (!didChooseDestination) { announce(tx("書き出しをやめました。")); return; }
       announce(tx("CSVを書き出しました。"));
@@ -30255,7 +30387,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (els.venueApplySummary) {
       els.venueApplySummary.textContent = `「${saved.label || "この劇場"}」をショーへ反映します。照明機材の始め方を選んでください。`;
     }
-    renderVenueSwitchReport(saved);   // G-A: 壊れる場面を先に見せる（反映は止めない）
+    renderVenueSwitchReport(saved);   // G-A: 壊れるシーンを先に見せる（反映は止めない）
     const versioned = venueApplyNeedsVersion(saved);
     if (els.venueApplyVersion) els.venueApplyVersion.hidden = false;
     if (els.venueApplyVersionTitle) {
@@ -30492,7 +30624,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   /* 紐づけていた駒が消えたメモは、消さずにその場へ置き直す。
    * 覚え書きを勝手に捨てない。ただし持ち主が居ないので、絵の内側へ寄せておく */
   function detachOrphanNotes() {
-    // 場面は state.project.scenes にある。ここを取り違えると restore() が
+    // シーンは state.project.scenes にある。ここを取り違えると restore() が
     // 途中で落ち、「戻す」が黙って効かなくなる（実際にそうなっていた）
     (state.project.scenes || []).forEach((scene) => {
       (scene.notes || []).forEach((note) => {
@@ -33366,7 +33498,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   [els.planNote, els.frontNote].forEach((button) => {
     if (button) button.addEventListener("click", () => setTool(tool === "note" ? "select" : "note"));
   });
-  /* 照明の直径。登録した明かりそのものの寸法なので、置いてある全ての場面に効く
+  /* 照明の直径。登録した明かりそのものの寸法なので、置いてある全てのシーンに効く
    * （「…」の窓と同じ値を、選んだ場所からも触れるようにしたもの）。 */
   if (els.beamDia) {
     els.beamDia.addEventListener("input", (e) => {
@@ -33382,7 +33514,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     });
     els.beamDia.addEventListener("pointerdown", checkpoint);
   }
-  /* 光の強さ。シーンごとの駒に持つので、場面で明暗を変えられる */
+  /* 光の強さ。シーンごとの駒に持つので、シーンで明暗を変えられる */
   if (els.beamGlow) {
     els.beamGlow.addEventListener("input", (e) => {
       const piece = selectedPiece();
@@ -33670,7 +33802,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       persistSoon();
     });
   }
-  /* 地上高は「選んだもの」からも触れる。吊り位置は場面の中で動くものなので、
+  /* 地上高は「選んだもの」からも触れる。吊り位置はシーンの中で動くものなので、
    * 一覧の窓を開き直さずに合わせられた方がよい（値は登録側に効く）。 */
   if (els.pieceLift) {
     els.pieceLift.addEventListener("input", (e) => {
@@ -34085,7 +34217,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     });
   }
 
-  /* 上下キーで場面を送る。ただし
+  /* 上下キーでシーンを送る。ただし
    *  ・文字を打っている最中は触らない
    *  ・絵の上で駒を選んでいるときは、駒の微調整が先（そちらが既に受け取っている）
    * の二つは守る。 */
@@ -34133,7 +34265,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   });
 
   if (els.sceneAdd) els.sceneAdd.addEventListener("click", () => addScene(false));
-  /* 場面の欄の高さ。下の取っ手を引いて変える。
+  /* シーンの欄の高さ。下の取っ手を引いて変える。
      ブラウザ既定の掴み手は地の色に沈んで見えないので、自前で持つ。 */
   if (els.sceneResize && els.sceneList) {
     els.sceneResize.addEventListener("pointerdown", (e) => {
@@ -34371,7 +34503,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       { key: "deckH", label: "高さ", min: -4, max: 8, fallback: 0, format: "m" },
     ],
     /* ★紗幕の透け（2026-09-20）: 0=映す／100=透かす。ここに1行足すだけで、
-       つまみ・保存・場面送りのアニメーションが既存の仕組みに乗る。 */
+       つまみ・保存・シーン送りのアニメーションが既存の仕組みに乗る。 */
     curtain: [
       { key: "open", label: "開き", min: 0, max: 100, fallback: 0, format: "open" },
       { key: "sheer", label: "透け", min: 0, max: 100, fallback: 0, format: "sheer" },
@@ -34422,7 +34554,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (!specs || !previous || !priorPiece) return "";
     const before = specs.map((spec) => `${tm("machineryState", spec.key, spec.label)}${machineryStateText(machineryStateValue(priorPiece, spec), spec.format)}`).join("・");
     const after = specs.map((spec) => `${tm("machineryState", spec.key, spec.label)}${machineryStateText(machineryStateValue(piece, spec), spec.format)}`).join("・");
-    return sx(`前の場面: ${before} → この場面: ${after}`, `Previous scene: ${before} → this scene: ${after}`);
+    return sx(`前のシーン: ${before} → このシーン: ${after}`, `Previous scene: ${before} → this scene: ${after}`);
   }
 
   function deckHasFloorPiece(piece) {
@@ -34971,7 +35103,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
    * 空のあいだは、押しても開かず、その旨だけ伝える（黙って何も起きないより良い）。 */
   const FEEDBACK_URL = "https://docs.google.com/forms/d/e/1FAIpQLSc-ibjOBVL5HbPC9xpjmcD-TTK3VoCmVJiGA6ouCZvGR9rW4Q/viewform";
 
-  /* 手を動かしてもらう案内。読ませるより、実際に一場面を作ってもらう。
+  /* 手を動かしてもらう案内。読ませるより、実際に一シーンを作ってもらう。
    * 各段は「やること」を一つだけ持ち、できたら自分で次へ進む。
    * できたかどうかは done() で見る（押した瞬間を捕まえるのではなく、
    * 結果を見に行く。どの入口から操作しても拾えるようにするため）。
@@ -35251,15 +35383,15 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   });
 
   /* ---------- 画像の書き出し ----------
-     正面と平面のどちらを、どの範囲の場面ぶん出すかを選んでから書き出す。
+     正面と平面のどちらを、どの範囲のシーンぶん出すかを選んでから書き出す。
      複数になるときは1枚ずつ続けて落とす（束ねる形式を持たない代わりに、
-     名前へ場面の番号と絵の種類を入れて並び順が分かるようにする）。 */
+     名前へシーンの番号と絵の種類を入れて並び順が分かるようにする）。 */
 
   const PITCH_SIZE_SCALE = Object.freeze({ "1": 1, "2": 1.5, "3": 3 });
   const PITCH_STYLE_NOTES = Object.freeze({
     theatre: "客席から見た暗い箱。演者は輪郭と縁の光だけ、床に光の帯と反射、空中に埃。",
     paper: "紙の地に墨で落とした一枚。まだ決まっていない絵として見せる。",
-    poster: "場面名と一行を大きく組み、絵はその下地にする。デッキの扉ページ向き。",
+    poster: "シーン名と一行を大きく組み、絵はその下地にする。デッキの扉ページ向き。",
     render: "アプリからは参照画像と生成条件を出す。仕上げは外部の生成AIで行う。",
   });
 
@@ -35561,7 +35693,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const i = p.scenes.findIndex((x) => x.id === p.activeSceneId);
     if (exportScope === "all") return p.scenes.filter((x) => x.kind === "scene");
     if (exportScope === "section") {
-      // いまの場面が入っているいちばん内側のセクションと、その中身
+      // いまのシーンが入っているいちばん内側のセクションと、その中身
       for (let k = i - 1; k >= 0; k -= 1) {
         if (p.scenes[k].depth < p.scenes[i].depth) {
           if (p.scenes[k].kind === "section") {
@@ -35797,7 +35929,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     selectedId = null;
     try {
       jobs.forEach((job) => {
-        // 場面を切り替えて描く。描き終えたら元の場面へ戻す
+        // シーンを切り替えて描く。描き終えたら元のシーンへ戻す
         state.project.activeSceneId = job.scene.id;
         const output = document.createElement("canvas");
         output.width = W;
@@ -35814,7 +35946,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
           entries.push({
             // 単体で落とすときは、Downloadsに紛れないよう作品名と日時まで入れた長い名前
             name: `${safeName(state.project.title)}-${sceneDir}-${viewLabel}-${stamp}.png`,
-            // ZIPの中は作品名も日時も要らない。正面と平面が揃うときだけ場面ごとの階層にする
+            // ZIPの中は作品名も日時も要らない。正面と平面が揃うときだけシーンごとの階層にする
             zipName: views.length > 1
               ? `${sceneDir}/${viewLabel}.png`
               : `${sceneDir}-${viewLabel}.png`,
@@ -36927,7 +37059,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     const size = venueSize();
     const stage = { width: size.width, depth: size.depth };
     return {
-      showId: state.project.id, sceneId: sc().id, sceneName: sc().title || "場面", stage,
+      showId: state.project.id, sceneId: sc().id, sceneName: sc().title || "シーン", stage,
       members: pieces.map((piece) => ({ id: piece.id, name: pieceLabel(piece), u: piece.u, v: piece.v })),
       // Exact comparison, not a hash: concurrent edits cannot overwrite a newer draft basis.
       basis: JSON.stringify({ showId: state.project.id, sceneId: sc().id, stage,
@@ -36937,7 +37069,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
 
   function applyGammaFormation(payload) {
     const current = gammaFormationContext();
-    if (!payload || payload.basis !== current.basis) throw new Error("選択した人物・場面・舞台が変わりました。閉じて選び直してください。");
+    if (!payload || payload.basis !== current.basis) throw new Error("選択した人物・シーン・舞台が変わりました。閉じて選び直してください。");
     const result = window.GAMMA_FORMATION_MODEL.plan(payload.presetId, current.members, payload.assignment, current.stage, payload.scalePct);
     const pieces = selectedPerformersOnly();   // T-05: 書き戻す先も演者だけ
     const byId = new Map(pieces.map((piece) => [piece.id, piece]));
@@ -37148,7 +37280,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     const scenes = state.project.scenes.filter(row => row.kind === "scene").map(row => {
       const ownerSection = sectionForScene(row, state.project.scenes);
       return {
-        id: row.id, name: row.title || "場面",
+        id: row.id, name: row.title || "シーン",
         sectionId: ownerSection ? ownerSection.id : null,
         sectionTitle: ownerSection ? (ownerSection.title || "") : "",
         pieces: row.pieces.filter(piece => piece.type !== "light").map(piece => {
@@ -37707,7 +37839,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       copy.title = `${scene.title || "シーン"}（後半）`;
       copy.rehearsal = normalizeSceneRehearsal(copy.rehearsal);
       checkpoint();
-      // 元の場面→後半は同一状態の継続。従来の転換は後半→次場面へ残す。
+      // 元のシーン→後半は同一状態の継続。従来の転換は後半→次シーンへ残す。
       scene.rehearsal.holdDurationSeconds = firstHold;
       scene.rehearsal.transitionToNextSeconds = 0;
       copy.rehearsal.holdDurationSeconds = secondHold;
