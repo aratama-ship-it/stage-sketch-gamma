@@ -121,16 +121,15 @@
             </button>
           </div>
           <!-- 感想・改善点を送る窓。β利用者が画面を離れずに書けるよう、上部に置く（2026-09-03 本人指示） -->
-          <button type="button" class="stage-lang" id="stage-feedback-open" data-tablet-icon="✎" title="使ってみた感想を送る">感想を送る</button>
+          <button type="button" class="stage-lang" id="stage-feedback-open" data-tablet-icon="✎">感想を送る</button>
           <a class="stage-lang stage-ai-link" id="stage-ai-showwright-link"
              href="https://aratama-ship-it.github.io/stage-sketch-gamma/public/ai-json/"
              target="_blank" rel="noopener noreferrer"
-             aria-label="AI showwright for StageSketch"
-             title="AI showwright for StageSketch"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/><path d="M18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.456-2.456L14.25 6l1.035-.259a3.375 3.375 0 0 0 2.456-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg></a>
-          <button type="button" class="stage-lang stage-gear-btn" id="stage-prefs-btn" data-tablet-icon="⚙" aria-label="設定" title="設定（機能のオン/オフ・言語）"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.2" stroke-width="1.3"/><circle cx="8" cy="8" r="1.4" stroke-width="1.3"/><path stroke-width="2.3" d="M8 3.10V1.90M11.94 5.55l1.04-.60M11.94 10.45l1.04.60M8 12.90v1.20M4.06 10.45l-1.04.60M4.06 5.55l-1.04-.60"/></svg></span></button>
+             aria-label="AI showwright for StageSketch"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/><path d="M18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.456-2.456L14.25 6l1.035-.259a3.375 3.375 0 0 0 2.456-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg></a>
+          <button type="button" class="stage-lang stage-gear-btn" id="stage-prefs-btn" data-tablet-icon="⚙" aria-label="設定"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.2" stroke-width="1.3"/><circle cx="8" cy="8" r="1.4" stroke-width="1.3"/><path stroke-width="2.3" d="M8 3.10V1.90M11.94 5.55l1.04-.60M11.94 10.45l1.04.60M8 12.90v1.20M4.06 10.45l-1.04.60M4.06 5.55l-1.04-.60"/></svg></span></button>
           <div class="stage-panel-visibility-control">
             <button type="button" class="stage-lang stage-panel-visibility-btn" id="stage-panels-toggle"
-                    aria-label="パネルのオン/オフ" title="パネルのオン/オフ"
+                    aria-label="パネルのオン/オフ"
                     aria-haspopup="true" aria-expanded="false" aria-controls="stage-panels-menu">
               <span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="1.75" y="2.25" width="12.5" height="11.5" rx="0.75"/><path d="M5.25 2.25v11.5M10.75 2.25v11.5"/><path d="M3.15 5.2h.7M3.15 7.7h.7M12.15 5.2h.7M12.15 7.7h.7"/></svg></span>
             </button>
@@ -139,18 +138,18 @@
           </div>
           <button type="button" class="stage-lang stage-present-icon" id="stage-present-btn" data-tablet-icon="⛶" data-tip-key="F" data-tip-description="図を全画面表示します。矢印キーでシーンを送り、Escで戻ります" data-stage-shortcut-action="view.presentation" data-stage-shortcut-title="図を全画面表示（{key}）。矢印キーでシーン送り、{key}またはEscで戻る" aria-label="全画面" aria-keyshortcuts="F" aria-pressed="false" title="図を全画面表示（F）。矢印キーでシーン送り、FまたはEscで戻る"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10"/></svg></span></button>
           <button type="button" class="stage-lang stage-cue-sheet-icon" id="stage-cue-sheet-open"
-                  data-tablet-icon="▤" aria-label="キューシート" title="キューシート"
+                  data-tablet-icon="▤" aria-label="キューシート"
                   aria-haspopup="dialog" aria-controls="stage-cue-sheet-modal">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 9h16M4 14h16M9 4v16"/></svg>
           </button>
           <button type="button" class="stage-export stage-export-icon" id="stage-export"
-                  aria-label="画像・印刷" title="画像・印刷" aria-haspopup="dialog" aria-controls="stage-export-modal">
+                  aria-label="画像・印刷" aria-haspopup="dialog" aria-controls="stage-export-modal">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z"/><path d="M14 3v5h5M8 12h8M8 16h8"/></svg>
           </button>
         </div>
         <div class="stage-header-collaboration">
-          <button type="button" class="stage-share-open stage-header-icon" id="stage-share-open" aria-haspopup="dialog" aria-controls="stage-session-panel" aria-label="共有" title="共有"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.6M8.2 13.2l7.6 4.6"/></svg></button>
-          <button type="button" class="stage-release-open" id="stage-release-open" aria-haspopup="dialog" aria-controls="stage-release-modal" aria-label="通知・アップデート履歴" title="通知・アップデート履歴"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
+          <button type="button" class="stage-share-open stage-header-icon" id="stage-share-open" aria-haspopup="dialog" aria-controls="stage-session-panel" aria-label="共有"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.6M8.2 13.2l7.6 4.6"/></svg></button>
+          <button type="button" class="stage-release-open" id="stage-release-open" aria-haspopup="dialog" aria-controls="stage-release-modal" aria-label="通知・アップデート履歴"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
         </div>
       </header>
 
@@ -203,8 +202,7 @@
               <label class="stage-view-select">
                 <select id="stage-view-select"
                         aria-label="表示する図。Tで切替。両方1は正面が上、両方2は平面が上"
-                        aria-keyshortcuts="T"
-                        title="表示する図。Tで切替。両方1は正面が上、両方2は平面が上">
+                        aria-keyshortcuts="T">
                   <option value="front">正面</option>
                   <option value="plan">平面</option>
                   <option value="both-front">両方1</option>
@@ -535,15 +533,15 @@
               <div class="stage-scene-move">
                 <button type="button" class="btn-quiet stage-scene-action-icon stage-scene-grid-open"
                         id="stage-scene-grid-open" data-tool-tip="sceneGrid"
-                        aria-label="シーン一覧を開く" title="シーン一覧を開く">
+                        aria-label="シーン一覧を開く">
                   <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="5" height="5"/><rect x="12" y="3" width="5" height="5"/><rect x="3" y="12" width="5" height="5"/><rect x="12" y="12" width="5" height="5"/></svg>
                 </button>
                 <button type="button" class="btn-quiet stage-scene-action-icon" id="stage-scene-section"
-                        data-tool-tip="sceneSection" aria-label="新規セクション" title="新規セクション">
+                        data-tool-tip="sceneSection" aria-label="新規セクション">
                   <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5.5h5l1.8 2h8.2v8H2.5z"/><path d="M10 11.5h4M12 9.5v4"/></svg>
                 </button>
                 <button type="button" id="stage-scene-add" class="btn-quiet stage-scene-action-icon"
-                        data-tool-tip="sceneAdd" aria-label="新規シーン" title="新規シーン">
+                        data-tool-tip="sceneAdd" aria-label="新規シーン">
                   <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h7l4 4v11H4z"/><path d="M11 2.5v4h4"/><path d="M10.5 13.5h6M13.5 10.5v6"/></svg>
                 </button>
               </div>
@@ -558,18 +556,16 @@
           <!-- シーン送りと説明を作図道具より上へ置き、いま扱う場面を先に読める順にする。 -->
           <div class="stage-scene-bar" id="stage-scene-bar">
             <div class="stage-scene-step" role="group" aria-label="シーンを送る">
-              <button type="button" id="stage-scene-prev" class="btn-quiet stage-scene-step-btn is-prev" title="前のシーンへ（↑）"><span class="stage-scene-step-arrow" aria-hidden="true">◀</span>前のシーン</button>
+              <button type="button" id="stage-scene-prev" class="btn-quiet stage-scene-step-btn is-prev"><span class="stage-scene-step-arrow" aria-hidden="true">◀</span>前のシーン</button>
               <!-- T-23（2026-09-18 本人要望）: 名前を押しても「シーンの詳細」を開けるようにする。
                    押せるものはボタンにする（.stage-cast-name と同じ考え方）。
                    読み上げの aria-live は内側の span に残し、外側をボタンにする
                    （「押せるもの」と「読み上げ領域」を1つの要素で兼ねない）。 -->
-              <button type="button" class="stage-scene-now-open" id="stage-scene-now-open"
-                      title="押すとシーンの詳細が開きます">
+              <button type="button" class="stage-scene-now-open" id="stage-scene-now-open">
                 <span class="stage-scene-now" id="stage-scene-now" aria-live="polite"></span>
               </button>
-              <button type="button" id="stage-scene-next" class="btn-quiet stage-scene-step-btn is-next" title="次のシーンへ（↓）">次のシーン<span class="stage-scene-step-arrow" aria-hidden="true">▶</span></button>
-              <button type="button" id="stage-scene-bar-grid" class="btn-quiet stage-scene-bar-grid"
-                      title="シーン一覧を開く" aria-label="シーン一覧を開く">⊞</button>
+              <button type="button" id="stage-scene-next" class="btn-quiet stage-scene-step-btn is-next">次のシーン<span class="stage-scene-step-arrow" aria-hidden="true">▶</span></button>
+              <button type="button" id="stage-scene-bar-grid" class="btn-quiet stage-scene-bar-grid" aria-label="シーン一覧を開く">⊞</button>
             </div>
             <div class="stage-scene-desc" id="stage-scene-desc">
               <label class="stage-scene-desc-label" id="stage-scene-desc-label"
@@ -582,7 +578,7 @@
               <button type="button" class="btn-quiet stage-music-toggle" id="stage-music-toggle"
                       aria-label="現在のシーンの曲を再生" aria-pressed="false">▶</button>
               <button type="button" class="btn-quiet stage-music-restart" id="stage-music-restart"
-                      aria-label="曲の先頭へ戻す" title="曲の先頭へ戻す">↺</button>
+                      aria-label="曲の先頭へ戻す">↺</button>
               <span class="stage-music-current" id="stage-music-current" hidden>音なし</span>
               <input type="range" class="stage-music-seek" id="stage-music-seek"
                      min="0" max="0" step="0.1" value="0" aria-label="曲の再生位置" disabled>
@@ -779,19 +775,18 @@
                       <button type="button" id="stage-arrow-width-mid" aria-pressed="true">中</button>
                       <button type="button" id="stage-arrow-width-bold" aria-pressed="false">太</button>
                     </div>
-                    <label class="stage-arrow-color" title="矢印">
+                    <label class="stage-arrow-color">
                       <span>矢印</span>
                       <input type="color" id="stage-arrow-color" value="#d3ac59" aria-label="矢印">
                     </label>
                     <button type="button" class="stage-arrow-clear" id="stage-arrow-clear">この場面の矢印を消す</button>
                   </div>
-                  <button type="button" class="stage-canvas-tool stage-zoom-reset" id="stage-front-zoom"
-                          title="等倍に戻す" hidden>1.0× ⟲</button>
+                  <button type="button" class="stage-canvas-tool stage-zoom-reset" id="stage-front-zoom" hidden>1.0× ⟲</button>
                   <button type="button" class="stage-canvas-tool is-icon" id="stage-front-note"
                           data-tool-tip="note" data-tool-key="N"
                           title="メモを貼る（N）" aria-label="メモを貼る" aria-pressed="false"><svg class="stage-canvas-tool-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.1 2.3h7.1l2.7 2.7v8.7H3.1z"/><path d="M10.2 2.3V5h2.7M5.3 8h5.4M5.3 10.5h4.1"/></svg><span class="visually-hidden">メモ</span></button>
                   <label class="stage-canvas-toggle is-icon" data-tool-tip="frontLights"
-                         title="正面の絵の照明を点けたり消したりする" aria-label="正面図の照明を表示・非表示にする">
+                         aria-label="正面図の照明を表示・非表示にする">
                     <input type="checkbox" id="stage-front-lights" checked>
                     <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="m5.2 6.6 2.2-2.2h3.2l1.6 1.6-2.2 2.2H6.8z"/><path d="m6.8 8.2-2.3 4.3M9.3 7.4l2.3 4.3M7.1 12.5h2.7"/><path class="stage-visibility-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
                     <span class="visually-hidden">照明</span>
@@ -862,20 +857,18 @@
                     <svg class="stage-canvas-tool-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 2.6v10.8"/><path d="M5.6 8h6.2"/><path d="m9.4 4.2 3.8 3.8-3.8 3.8"/></svg>
                     <span class="visually-hidden">次から引く</span>
                   </button>
-                  <span class="stage-multi-select-status" id="stage-multi-select-status"
-                        title="ドラッグで囲うか、Shiftを押しながら選択" aria-live="polite" hidden></span>
+                  <span class="stage-multi-select-status" id="stage-multi-select-status" aria-live="polite" hidden></span>
                   <!-- T-04（2026-09-18 本人要望）: 「選択だけ整列」を削除した。
                        フォーメーション（190種）で代替できるため。失う機能は
                        「大道具・小道具をまとめて並べる」「21人以上を並べる」で、
                        本人が不要と明言している。
                        ★機能キー featureOn("lineup") はフォーメーションの表示条件でもあるので残す。 -->
-                  <button type="button" class="stage-canvas-tool stage-zoom-reset" id="stage-plan-zoom"
-                          title="等倍に戻す" hidden>1.0× ⟲</button>
+                  <button type="button" class="stage-canvas-tool stage-zoom-reset" id="stage-plan-zoom" hidden>1.0× ⟲</button>
                   <button type="button" class="stage-canvas-tool is-icon" id="stage-plan-note"
                           data-tool-tip="note" data-tool-key="N"
                           title="メモを貼る（N）" aria-label="メモを貼る" aria-pressed="false"><svg class="stage-canvas-tool-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.1 2.3h7.1l2.7 2.7v8.7H3.1z"/><path d="M10.2 2.3V5h2.7M5.3 8h5.4M5.3 10.5h4.1"/></svg><span class="visually-hidden">メモ</span></button>
                   <label class="stage-canvas-toggle is-icon" data-tool-tip="planLights"
-                         title="平面図の照明の円と灯体を出したり隠したりする" aria-label="平面図の照明を表示・非表示にする">
+                         aria-label="平面図の照明を表示・非表示にする">
                     <input type="checkbox" id="stage-plan-lights" checked>
                     <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.7"/><circle cx="8" cy="8" r="1.6"/><path d="M8 1.3v1.1M8 13.6v1.1M1.3 8h1.1M13.6 8h1.1"/><path class="stage-visibility-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
                     <span class="visually-hidden">照明</span>
@@ -3359,13 +3352,13 @@
 <script src="stage-light-panel-import.js?v=2026092209"></script>
 <script src="stage-scene-alternatives.js?v=2026092208"></script>
 <script src="stage-shortcuts.js?v=2026092218"></script>
-<script src="stage-sketch.js?v=2026092416"></script>
+<script src="stage-sketch.js?v=20260924-tooltipcopy1"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092209"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-vox-panel.js?v=2026092408"></script>
 <script src="stage-script-editor.js?v=2026092403"></script>
     <script src="stage-timeline.js?v=2026092406"></script>
-<script src="stage-session.js?v=2026091987"></script>
+<script src="stage-session.js?v=20260924-tooltipcopy1"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
 <script src="stage-venue-editor.js?v=2026092201"></script>

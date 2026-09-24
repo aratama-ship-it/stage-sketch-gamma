@@ -4822,14 +4822,14 @@
   const HEEL_BACK = 0.030;     // 踵がくるぶしより後ろへ出る量
   const TOOL_HINTS = {
     select: "演者や物を選び、舞台の上で動かします。",
-    paint: "奥の背景面を指やマウスで塗ります。",
-    erase: "背景に描いた線だけを消します。",
-    arrow: "正面図または平面図をなぞると矢印になります。正面図では床の上か空中かを選べます。図の右上の「矢印を消す」で、その図の矢印をまとめて消せます。",
-    route: "平面図で演者や物、明かりを掴み、離した所が行き先になります。真ん中の丸を引くと動線が曲がります。",
+    paint: "",
+    erase: "",
+    arrow: "正面図または平面図で使える説明用の矢印。正面図では床の上か空中かを選べます。図の右上の「矢印を消す」で、その図の矢印をまとめて消せます。",
+    route: "次のシーンに向けての動線を描けます",
     note: "何もない所を押すとメモを貼れます。貼ったメモは掴んで動かせます。",
     light: "照明の詳細編集は照明で行います。",
-    deriveRoute: "次のシーンで動いているものに、いまの位置から行き先までの動線を引きます。",
-    sceneGrid: "全シーンをカードで並べて見渡します。",
+    deriveRoute: "次のシーンの位置へ動線を引きます。",
+    sceneGrid: "",
     sceneSection: "シーンをまとめるセクションを追加します。",
     sceneAdd: "まっさらな新しいシーンを追加します。",
     lightRender: "場面の照明効果を表示・非表示にします。",
@@ -26010,7 +26010,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const label = tx(unread ? "アップデート履歴（新着あり）" : "アップデート履歴");
     els.releaseOpen.classList.toggle("has-unread", unread);
     els.releaseOpen.setAttribute("aria-label", label);
-    els.releaseOpen.title = label;
+    els.releaseOpen.removeAttribute("title");
   }
 
   function markReleaseHistorySeen() {
@@ -29984,7 +29984,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         ? sx(`${count}件選択中`, `${count} selected`)
         : "";
       els.multiSelectStatus.classList.toggle("is-active", count > 1);
-      els.multiSelectStatus.title = tx("ドラッグで囲うか、Shiftを押しながら選択");
+      els.multiSelectStatus.removeAttribute("title");
     }
   }
 
@@ -31964,7 +31964,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   }
 
   // アイコンだけの操作は、左の道具列だけでなく右上の保存・設定・共有にも同じ説明を付ける。
-  // 既存の title は残すので、機能をOFFにした場合や支援技術の名称も失わない。
+  // 説明を省く項目でも、表示名と支援技術向けの名称は維持する。
   const iconTipTargets = new Set(document.querySelectorAll([
     "[data-stage-tool]", "[data-tool-tip]",
     ".stage-center-bar .stage-name-toggle.is-icon",

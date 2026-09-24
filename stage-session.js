@@ -107,9 +107,9 @@
     els.panel.setAttribute("aria-label", title);
     if (els.shareTitle) els.shareTitle.textContent = title;
     if (els.shareOpen) {
-      // ヘッダーの共有入口はSVGを保ち、言語切替は読み上げ名とツールチップだけへ反映する。
+      // ヘッダーの共有入口はSVGを保ち、言語切替は読み上げ名へ反映する。
       els.shareOpen.setAttribute("aria-label", title);
-      els.shareOpen.title = title;
+      els.shareOpen.removeAttribute("title");
     }
     if (els.shareClose) els.shareClose.setAttribute("aria-label", shareText("閉じる", "Close"));
     if (els.realtimeTitle) els.realtimeTitle.textContent = shareText("リアルタイム共有（会議用）", "Live sharing (for meetings)");
