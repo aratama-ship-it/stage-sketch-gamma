@@ -9655,16 +9655,81 @@
     });
     return changed;
   }
-  /* 開いたままのショーがロミオとジュリエット見本そのものの場合、キューは棚ではなく作業中データにある。
-   * 棚と同じ条件（旧版と同じ時刻のキューだけ）で作業中データにも新しい時刻を届け、自動保存へ回す。
+  /* 開いたままのショーがロミオとジュリエット見本そのものの場合、キューや場面は棚ではなく作業中データにある。
+   * 棚と同じ条件（旧版と同じ値のものだけ）で作業中データにも新しい時刻・転換秒を届け、自動保存へ回す。
    * 起動直後（タイムラインが描かれる前）に呼ぶが、念のため構造変更の合図も出す。 */
   function backfillOpenRomeoJulietVoxOffsets() {
     const source = bundledProjectById("romeo-juliet-gamma-cued-2026-09-21");
     if (!source || !state || !state.project || state.project.id !== source.project.id) return false;
-    if (!backfillRomeoJulietVoxOffsets(state.project, source.project)) return false;
+    if (!backfillRomeoJulietSampleData(state.project, source.project)) return false;
     persistSoon();
     try { window.dispatchEvent(new CustomEvent("stage-timeline-structure-change")); } catch (_) {}
     return true;
+  }
+
+  /* ★2026-09-24 本人指摘: 見本の全31場面で「次のシーンへの移動時間」（転換）が0秒だった。0秒の転換は
+   * 存在しないはずなので、場面メモの転換の記述から場面ごとに秒数を置いた。棚の複製・開いたままの
+   * 作業中データにも届くよう、「転換が0秒（または未設定）のまま、かつ見せる時間が同梱版と同じ」場面だけ
+   * 同梱版の転換秒へ直す。見せる時間を変えた場面、転換を自分で入れた場面は触らない。 */
+  const ROMEO_JULIET_TRANSITIONS_2026_09_24 = Object.freeze({
+    "rj-frame-rj-cond-01-a-01": { hold: 180, travel: 3 },
+    "rj-frame-rj-cond-01-b-02": { hold: 8, travel: 2 },
+    "rj-frame-rj-cond-01-b-m6-01": { hold: 10, travel: 3 },
+    "rj-frame-rj-cond-01-b-m6-02": { hold: 15, travel: 3 },
+    "rj-frame-rj-cond-01-b-m6-03": { hold: 10, travel: 5 },
+    "rj-frame-rj-cond-01-c-01": { hold: 150, travel: 3 },
+    "rj-frame-rj-cond-01-d-01": { hold: 45, travel: 15 },
+    "rj-frame-rj-cond-02-a-01": { hold: 90, travel: 8 },
+    "rj-frame-rj-cond-02-b-01": { hold: 30, travel: 6 },
+    "rj-frame-rj-cond-02-c-01": { hold: 100, travel: 12 },
+    "rj-frame-rj-cond-03-a-01": { hold: 30, travel: 3 },
+    "rj-frame-rj-cond-03-a-02": { hold: 15, travel: 6 },
+    "rj-frame-rj-cond-03-b-01": { hold: 60, travel: 3 },
+    "rj-frame-rj-cond-03-c-01": { hold: 15, travel: 2 },
+    "rj-frame-rj-cond-03-c-02": { hold: 15, travel: 3 },
+    "rj-frame-rj-cond-03-c-03": { hold: 30, travel: 10 },
+    "rj-frame-rj-cond-03-d-01": { hold: 38, travel: 8 },
+    "rj-frame-rj-cond-03-d-02": { hold: 112, travel: 8 },
+    "rj-frame-rj-cond-04-a-01": { hold: 75, travel: 8 },
+    "rj-frame-rj-cond-04-b-01": { hold: 52, travel: 6 },
+    "rj-frame-rj-cond-04-b-02": { hold: 53, travel: 8 },
+    "rj-frame-rj-cond-04-c-01": { hold: 42, travel: 8 },
+    "rj-frame-rj-cond-04-c-02": { hold: 63, travel: 10 },
+    "rj-frame-rj-cond-04-d-01": { hold: 27, travel: 5 },
+    "rj-frame-rj-cond-04-d-02": { hold: 108, travel: 15 },
+    "rj-frame-rj-cond-05-a-01": { hold: 100, travel: 4 },
+    "rj-frame-rj-cond-05-b-01": { hold: 104, travel: 3 },
+    "rj-frame-rj-cond-05-b-02": { hold: 26, travel: 5 },
+    "rj-frame-rj-cond-05-c-01": { hold: 45, travel: 4 },
+    "rj-frame-rj-cond-05-d-01": { hold: 20, travel: 4 },
+    "rj-frame-rj-cond-05-d-02": { hold: 100, travel: 8 },
+  });
+  function backfillRomeoJulietTransitions(savedProject) {
+    const scenes = savedProject && Array.isArray(savedProject.scenes) ? savedProject.scenes : null;
+    if (!scenes) return false;
+    let changed = false;
+    scenes.forEach((scene) => {
+      if (!scene || scene.kind !== "scene") return;
+      const expected = ROMEO_JULIET_TRANSITIONS_2026_09_24[scene.id];
+      if (!expected) return;
+      const rehearsal = scene.rehearsal && typeof scene.rehearsal === "object" ? scene.rehearsal : null;
+      if (!rehearsal) return;
+      if (Math.abs(finite(rehearsal.holdDurationSeconds, NaN) - expected.hold) > 1e-6) return;
+      if (finite(rehearsal.transitionToNextSeconds, 0) > 1e-6) return;
+      rehearsal.transitionToNextSeconds = expected.travel;
+      changed = true;
+    });
+    /* セクション時間の控え（timelineDurationSeconds）は「シーンの秒数の合計」。転換を足して合計が変わったのに
+     * 控えが古いままだと、次に開いたとき reconcileSectionDurations が古い控えを正としてシーンの秒数を
+     * 縮めてしまう（ローカル検証で実際に起きた）。ここで控えを合計へ揃える。 */
+    if (changed) refreshSectionDurationCache(savedProject);
+    return changed;
+  }
+  /* 見本の複製へ届ける補正をまとめて呼ぶ（VOXキューの時刻・転換の秒数）。 */
+  function backfillRomeoJulietSampleData(savedProject, bundledProject) {
+    const a = backfillRomeoJulietVoxOffsets(savedProject, bundledProject);
+    const b = backfillRomeoJulietTransitions(savedProject);
+    return a || b;
   }
   // ロミオとジュリエットも初回だけ棚へ置く。既存の同ID（編集済みを含む）は触らない。
   function shelveRomeoJulietSample() {
@@ -9693,7 +9758,7 @@
         changed = true;
       }
       if (backfillVenueSetupAppliedAt(savedProject)) changed = true;
-      if (backfillRomeoJulietVoxOffsets(savedProject, built.project)) changed = true;
+      if (backfillRomeoJulietSampleData(savedProject, built.project)) changed = true;
       if (changed) {
         saved.savedAt = nowIso();
         shows[built.project.id] = saved;
