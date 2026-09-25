@@ -24882,6 +24882,24 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
             return;
           }
           if (scene.kind === "section") {
+            const sectionIndex = p.scenes.indexOf(scene);
+            const children = sceneChildren(sectionIndex);
+            const firstScene = children.find((row) => row.kind === "scene");
+            if (firstScene && !children.some((row) => row.id === p.activeSceneId)
+                && !document.body.classList.contains("stage-session-guest")) {
+              // 別の章を選んだら、その先頭シーンを表示し、畳まれた親も開く。
+              let depth = firstScene.depth;
+              for (let i = p.scenes.indexOf(firstScene) - 1; i >= sectionIndex && depth > scene.depth; i -= 1) {
+                const ancestor = p.scenes[i];
+                if (ancestor.depth >= depth) continue;
+                if (ancestor.kind === "section") delete state.closedSections[ancestor.id];
+                depth = ancestor.depth;
+              }
+              openScene(firstScene.id, { cursorRowId: scene.id });
+              renderSceneGrid();
+              focusSceneChip(scene.id);
+              return;
+            }
             if (state.cursorRowId === scene.id) {
               state.closedSections[scene.id] = !state.closedSections[scene.id];
             }
@@ -24896,7 +24914,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           focusSceneChip(scene.id);
         });
         head.append(grip, button);
-        // セクションは開閉とダブルクリック編集だけに絞り、補助メニューを出さない。
+        // セクションは移動・開閉とダブルクリック編集だけに絞り、補助メニューを出さない。
         if (isCursor && !wrapPickStartId && scene.kind === "scene") {
           const more = document.createElement("details");
           more.className = "stage-scene-more";
@@ -25059,7 +25077,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         const sameOrder = visibleIds.length === renderedIds.length
           && visibleIds.every((id, k) => id === renderedIds[k]);
         if (sameOrder) {
-          const targets = new Set([activeChange.fromId, activeChange.toId, activeChange.cursorFromId].filter(Boolean));
+          const targets = new Set([
+            activeChange.fromId, activeChange.toId, activeChange.cursorFromId, activeChange.cursorToId,
+          ].filter(Boolean));
           p.scenes.forEach((scene, i) => {
             if (!targets.has(scene.id) || sceneHidden(i)) return;
             const row = els.sceneList.querySelector(`:scope > [data-scene-id="${CSS.escape(scene.id)}"]`);
@@ -27832,7 +27852,7 @@ ${propsPlotHtml}
     if (sceneAlternatives && (options.fromTimeline || state.project.activeSceneId !== id)) sceneAlternatives.adopted(state.project);
     selectedNoteId = null;
     const cursorFromId = state.cursorRowId;    // 直前にカーソルがあった行（セクションの場合もある）も描き直す対象
-    state.cursorRowId = id;
+    state.cursorRowId = options.cursorRowId || id;
     const transitionFromScene = options.transitionFromSceneId
       ? state.project.scenes.find(
         (row) => row.kind === "scene" && row.id === options.transitionFromSceneId,
@@ -27861,7 +27881,9 @@ ${propsPlotHtml}
     const liveSpins = captureLiveSpins();
     state.project.activeSceneId = id;
     selectedId = null;
-    renderScenes({ activeChange: { fromId: before ? before.id : null, toId: id, cursorFromId } });
+    renderScenes({ activeChange: {
+      fromId: before ? before.id : null, toId: id, cursorFromId, cursorToId: state.cursorRowId,
+    } });
     renderCast();
     renderSets();
     renderLights();

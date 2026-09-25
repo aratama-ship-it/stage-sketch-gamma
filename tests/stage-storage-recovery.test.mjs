@@ -14,6 +14,7 @@ assert.match(show.project.id, /^gamma-feature-test-v/);
 const raw = JSON.stringify(show);
 const current = "gamma:scene-alternatives-v1:shosai-stage-sketch-v1";
 const shelf = "gamma:scene-alternatives-v1:shosai-stage-shows-v1";
+const oldShelf = "shosai-stage-shows-v1";
 const copy = "shosai-stage-sketch-v1-pre-section-hierarchy-v1:" + show.project.id;
 const draft = "gamma:lighting-draft-v1:" + show.project.id;
 class Storage {
@@ -52,7 +53,61 @@ test("diagnostics do not write and only exact Gamma automatic-copy keys qualify"
   assert.equal(model.scan().filter(row => row.kind).length, 1);
   assert.deepEqual([...storage.values], before);
   for (const key of [current, shelf, draft, "other-app:conflict:123", "gamma:lighting-draft-v1:active", "gamma:some-pre-section-hierarchy-v1", "shosai-stage-sketch-v1", "gamma:shosai-stage-sketch-v1"]) assert.equal(api.backupKind(key), null);
+  assert.ok(api.backupKind(oldShelf));
   assert.ok(api.backupKind(draft + ":conflict:123"));
+});
+test("an old show shelf can move only while the current shelf remains readable", async () => {
+  const entry = { [show.project.id]: { savedAt: "2026-09-25T00:00:00Z", state: show } };
+  const previous = JSON.stringify(entry);
+  const storage = new Storage({ [current]: raw, [shelf]: previous, [oldShelf]: previous });
+  const vault = new Vault();
+  const model = api.create({ storage, vault, hash });
+  assert.equal(model.scan().find(row => row.key === oldShelf)?.kind, "旧形式のショー一覧の控え");
+  const result = await model.archive();
+  assert.equal(result.moved.length, 1);
+  assert.equal(storage.getItem(oldShelf), null);
+  assert.equal(storage.getItem(shelf), previous, "the current shelf is untouched");
+  assert.equal(storage.getItem(current), raw, "the open show is untouched");
+  assert.equal((await model.list())[0].value, previous);
+  await model.restore(result.moved[0].id);
+  assert.equal(storage.getItem(oldShelf), previous, "the old shelf can be restored byte for byte");
+});
+test("missing or corrupt current shelves keep the old shelf in place", async () => {
+  const previous = JSON.stringify({ [show.project.id]: { savedAt: "x", state: show } });
+  for (const modern of [null, "{", "[]"]) {
+    const storage = new Storage({ [oldShelf]: previous, ...(modern === null ? {} : { [shelf]: modern }) });
+    const model = api.create({ storage, vault: new Vault(), hash });
+    assert.equal(model.scan().find(row => row.key === oldShelf)?.kind, null);
+    assert.equal((await model.archive()).moved.length, 0);
+    assert.equal(storage.getItem(oldShelf), previous);
+  }
+});
+test("a show absent from both the current shelf and open show is never hidden in the archive", async () => {
+  const old = JSON.stringify({ [show.project.id]: { savedAt: "x", state: show } });
+  const storage = new Storage({ [oldShelf]: old, [shelf]: "{}" });
+  const model = api.create({ storage, vault: new Vault(), hash });
+  assert.equal(model.scan().find(row => row.key === oldShelf)?.kind, null);
+  assert.equal((await model.archive()).moved.length, 0);
+  assert.equal(storage.getItem(oldShelf), old);
+});
+test("an old duplicate of the open show is covered by the current show", async () => {
+  const old = JSON.stringify({ [show.project.id]: { savedAt: "x", state: show } });
+  const storage = new Storage({ [oldShelf]: old, [shelf]: "{}", [current]: raw });
+  const model = api.create({ storage, vault: new Vault(), hash });
+  assert.equal(model.scan().find(row => row.key === oldShelf)?.kind, "旧形式のショー一覧の控え");
+  assert.equal((await model.archive()).moved.length, 1);
+  assert.equal(storage.getItem(current), raw);
+});
+test("a changed modern shelf during archival prevents removal of the old shelf", async () => {
+  const previous = JSON.stringify({ [show.project.id]: { savedAt: "x", state: show } });
+  const storage = new Storage({ [shelf]: previous, [oldShelf]: previous });
+  const vault = new Vault();
+  const put = vault.putIfAbsent.bind(vault);
+  vault.putIfAbsent = async record => { const saved = await put(record); storage.removeItem(shelf); return saved; };
+  const model = api.create({ storage, vault, hash });
+  assert.equal((await model.archive()).skipped.length, 1);
+  assert.equal(storage.getItem(oldShelf), previous);
+  assert.equal((await model.list())[0].value, previous);
 });
 test("feature-show copies roundtrip byte-for-byte while current, shelf, drafts and other apps stay unchanged", async () => {
   const { storage, model, vault } = setup(); const before = new Map(storage.values);

@@ -1,9 +1,34 @@
 (function () {
   "use strict";
 
-  // These are immutable recovery copies created by Gamma, never live projects,
-  // active lighting drafts, preferences, or data belonging to another app.
+  // Recovery copies are never the active show or the current show shelf.
+  // The old shelf key is eligible only while a readable new-namespace shelf
+  // exists: the current Gamma app reads that new key first.
+  const LEGACY_SHOWS_KEY = "shosai-stage-shows-v1";
+  const CURRENT_SHOWS_KEY = "gamma:scene-alternatives-v1:shosai-stage-shows-v1";
+  const object = value => value && typeof value === "object" && !Array.isArray(value);
+  const shelfObject = text => {
+    if (typeof text !== "string") return null;
+    try { const value = JSON.parse(text); return object(value) ? value : null; }
+    catch (_) { return null; }
+  };
+  const oldShelfCanBeArchived = storage => {
+    // Never remove the only readable copy of any show. Every old show must be
+    // present in the new shelf or be the currently open show.
+    const oldShelf = shelfObject(storage.getItem(LEGACY_SHOWS_KEY));
+    const currentShelf = shelfObject(storage.getItem(CURRENT_SHOWS_KEY));
+    if (!oldShelf || !currentShelf) return false;
+    const current = (() => {
+      try { return JSON.parse(storage.getItem("gamma:scene-alternatives-v1:shosai-stage-sketch-v1")); }
+      catch (_) { return null; }
+    })();
+    return Object.keys(oldShelf).every(id => {
+      const onShelf = currentShelf[id]?.state?.project?.id === id;
+      return onShelf || current?.project?.id === id;
+    });
+  };
   function backupKind(key) {
+    if (key === LEGACY_SHOWS_KEY) return "旧形式のショー一覧の控え";
     if (/^(?:gamma:)?shosai-stage-sketch-v1-pre-section-hierarchy-v1:.+$/.test(key)
         || /^(?:gamma:)?shosai-stage-shows-v1-pre-section-hierarchy-v1$/.test(key)) return "作り替え前のショーの控え";
     if (key === "gamma:shosai-stage-shows-broken-v1") return "読めなかったショーの退避";
@@ -64,13 +89,17 @@
         const key = storage.key(i);
         if (key === null) continue;
         const value = storage.getItem(key);
-        if (value !== null) rows.push({ key, bytes: bytes(key, value), kind: backupKind(key) });
+        if (value !== null) rows.push({ key, bytes: bytes(key, value),
+          kind: key === LEGACY_SHOWS_KEY && !oldShelfCanBeArchived(storage) ? null : backupKind(key) });
       }
       return rows.sort((a, b) => b.bytes - a.bytes);
     }
     async function archive() {
       const result = { moved: [], skipped: [], failed: [] };
       for (const row of scan().filter(row => row.kind)) {
+        if (row.key === LEGACY_SHOWS_KEY && !oldShelfCanBeArchived(storage)) {
+          result.skipped.push(row.key); continue;
+        }
         const value = storage.getItem(row.key);
         if (value === null) { result.skipped.push(row.key); continue; }
         try {
@@ -80,6 +109,11 @@
           // A completed write transaction and independent read must both pass.
           const saved = await vault.get(id);
           if (!valid(saved) || saved.id !== id || saved.key !== row.key || saved.value !== value) throw new Error("ARCHIVE_NOT_VERIFIED");
+          // Recheck the source and the new-namespace shelf after the async vault write.
+          // A concurrent tab can remove or corrupt the latter while we are saving.
+          if (row.key === LEGACY_SHOWS_KEY && !oldShelfCanBeArchived(storage)) {
+            result.skipped.push(row.key); continue;
+          }
           if (storage.getItem(row.key) !== value) { result.skipped.push(row.key); continue; }
           storage.removeItem(row.key);
           if (storage.getItem(row.key) !== null) { result.skipped.push(row.key); continue; }
