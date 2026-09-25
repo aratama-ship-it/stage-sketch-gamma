@@ -1,0 +1,6 @@
+# Worker assets come from the repository root. Never upload local credentials or Wrangler state.
+/.wrangler/**
+/tools/**
+/.dev.vars*
+/.env*
+/node_modules/**
