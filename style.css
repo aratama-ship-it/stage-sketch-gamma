@@ -12128,6 +12128,24 @@ body.stage-modal-open .stage-tour { display: none !important; }
   font-size: 11px;
 }
 
+#stage-venue-editor-front-border-details[hidden] { display: none; }
+#stage-venue-editor-audience-elevation[hidden] { display: none; }
+.stage-venue-editor-audience-elevation {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--line-dark);
+  padding-top: 8px;
+}
+.stage-venue-editor-audience-elevation > p { margin: 0; }
+.stage-venue-editor-audience-elevation .stage-venue-editor-setting { grid-template-columns: 92px minmax(0, 1fr); }
+.stage-venue-editor-audience-elevation > button { justify-self: start; }
+
+@media (min-width: 901px) {
+  #gamma-venue-workspace .stage-venue-editor-ceiling .stage-venue-editor-setting {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+}
+
 .stage-venue-editor-access-setting {
   display: grid;
   grid-column: 1 / -1;
@@ -12163,6 +12181,7 @@ body.stage-modal-open .stage-tour { display: none !important; }
 }
 
 .stage-venue-editor-rigging { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.stage-venue-editor-ceiling-presence { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 .stage-venue-editor-lines-head {
   display: flex;

@@ -4,7 +4,7 @@
  * 客席と舞台袖は、該当する手順を選んで平面上へ四角または丸で描く。
  * 360度ステージの客席だけは、全周配置から必要な範囲を選べる。
  * venue から導く可動範囲・死角・見える限界を同じ平面へ重ねる。
- * 斜め壁・自由ポリゴン・3D・正面図への反映は、この版には入れない。
+ * 劇場の構造と幕を同じドラフトから平面図・立体プレビューへ反映する。
  */
 (function () {
   "use strict";
@@ -37,6 +37,8 @@
    * マイナスにできるのは、サーカスのピステが客席の最前列より低いことがあるため（本人 2026-09-19）。 */
   const STAGE_MIN_HEIGHT_M = -3;
   const STAGE_MAX_HEIGHT_M = 3;
+  const AUDIENCE_MIN_HEIGHT_M = -10;
+  const AUDIENCE_MAX_HEIGHT_M = 60;
   const MAX_LIBRARY_FILE_BYTES = 2 * 1024 * 1024;
   const MAX_LIBRARY_IMPORT_VENUES = 200;
   const FURNITURE_HEIGHTS = Object.freeze({
@@ -68,6 +70,10 @@
     audienceSelection: $("stage-venue-editor-audience-selection"),
     audienceFull: $("stage-venue-editor-audience-full"),
     audienceRemove: $("stage-venue-editor-audience-remove"),
+    audienceElevation: $("stage-venue-editor-audience-elevation"),
+    audienceFrontHeight: $("stage-venue-editor-audience-front-height"),
+    audienceRearHeight: $("stage-venue-editor-audience-rear-height"),
+    audienceHeightReset: $("stage-venue-editor-audience-height-reset"),
     objectSelection: $("stage-venue-editor-object-selection"),
     objectMovable: $("stage-venue-editor-object-movable"),
     objectRemove: $("stage-venue-editor-object-remove"),
@@ -81,6 +87,8 @@
     ceilingHeight: $("stage-venue-editor-ceiling-height"),
     ceilingDetails: $("stage-venue-editor-ceiling-details"),
     ceilingOutdoorNote: $("stage-venue-editor-ceiling-outdoor-note"),
+    frontBorderOpening: $("stage-venue-editor-front-border-opening"),
+    frontBorderDetails: $("stage-venue-editor-front-border-details"),
     name: $("stage-venue-editor-name"),
     source: $("stage-venue-editor-source"),
     confidence: $("stage-venue-editor-confidence"),
@@ -174,7 +182,8 @@
     fixtures: [],
     access: [],
     /* V-4（2026-09-17）: 天井あり/なし・屋内/屋外。既存データに無い場合は「屋内・天井あり」＝従来の挙動。 */
-    ceiling: { heightM: 6, rigging: "none", hasCeiling: true, indoor: true },
+    ceiling: { heightM: 6, rigging: "none", hasCeiling: true, indoor: true,
+      frontBorder: { enabled: false, openingHeightM: 4.5 } },
     /* 舞台の高さ。null＝未入力。書き出さないので、持たない会場の絵は1画素も変わらない。 */
     stageHeightM: null,
     stageFormat: "theatre",
@@ -371,6 +380,40 @@
     ctx.fillStyle = cssColor("--milk-dim", "#bdb3a4");
     ctx.font = "12px sans-serif"; ctx.textAlign = "left";
     ctx.fillText(`会場 ${roundM(box.maxX - box.minX)} × ${roundM(box.maxY - box.minY)}m`, p[0] + 6, p[1] - 8);
+    ctx.restore();
+  }
+
+  function drawCeilingAndFrontBorder() {
+    const ceiling = state.ceiling;
+    if (ceiling.hasCeiling !== false) {
+      const outline = state.room?.outline || state.points;
+      ctx.save();
+      ctx.beginPath(); pathPolygon(outline);
+      ctx.setLineDash([3, 6]);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "rgba(189,179,164,0.56)";
+      ctx.stroke();
+      const box = polygonBounds(outline);
+      const label = toCanvas([box.minX, box.minY]);
+      ctx.fillStyle = cssColor("--milk-dim", "#bdb3a4");
+      ctx.font = "11px sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(`天井 ${roundM(Number(ceiling.heightM))}m`, label[0] + 5, label[1] + 14);
+      ctx.restore();
+    }
+    const border = window.GAMMA_VENUE_CURTAINS.frontBorderForVenue({
+      stageFormat: state.stageFormat, floor: { outline: state.points }, ceiling,
+    });
+    if (!border) return;
+    const a = toCanvas(border.from), b = toCanvas(border.to);
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = cssColor("--brass", "#d3ac59");
+    ctx.stroke();
+    ctx.fillStyle = cssColor("--milk", "#f0e7d6");
+    ctx.font = "11px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("前一文字", (a[0] + b[0]) / 2, a[1] - 6);
     ctx.restore();
   }
 
@@ -1587,6 +1630,26 @@
       strokeExposedStageEdges(mergedAreas.map((area) => area.polygon), cssColor("--rust", "#a84b26"), 2);
     }
 
+    state.audience.filter((area) => area.elevation).forEach((area) => {
+      const polygon = audiencePolygon(area);
+      if (!polygon.length) return;
+      const center = polygon.reduce((sum, point) =>
+        [sum[0] + point[0] / polygon.length, sum[1] + point[1] / polygon.length], [0, 0]);
+      const [x, y] = toCanvas(center), level = area.elevation;
+      const heightLabel = level.frontM === level.rearM
+        ? `${level.frontM}m` : `${level.frontM}→${level.rearM}m`;
+      ctx.save();
+      ctx.font = "bold 11px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = cssColor("--desk-2", "#241e19");
+      ctx.strokeText(heightLabel, x, y);
+      ctx.fillStyle = cssColor("--milk", "#f0e7d6");
+      ctx.fillText(heightLabel, x, y);
+      ctx.restore();
+    });
+
     if (!selected) return;
     const handle = toCanvas(audienceHandle(selected));
     ctx.save();
@@ -1920,6 +1983,18 @@
       : (state.selectedArea && state.selectedArea.kind === "wing"
         ? state.wings.find((area) => area.id === state.selectedArea.id) : null);
     els.audienceRemove.disabled = !selectedArea;
+    const selectedAudience = selectedAudienceArea();
+    if (els.audienceElevation) els.audienceElevation.hidden = !selectedAudience;
+    if (selectedAudience) {
+      const legacyFloor = -(Number(state.stageHeightM) || 0);
+      if (document.activeElement !== els.audienceFrontHeight) {
+        els.audienceFrontHeight.value = String(selectedAudience.elevation?.frontM ?? legacyFloor);
+      }
+      if (document.activeElement !== els.audienceRearHeight) {
+        els.audienceRearHeight.value = String(selectedAudience.elevation?.rearM ?? legacyFloor);
+      }
+      els.audienceHeightReset.disabled = !selectedAudience.elevation;
+    }
     if (selectedArea) {
       const areaDims = dimensions(audiencePolygon(selectedArea));
       els.audienceSelection.textContent = translatedStatus(
@@ -1958,6 +2033,21 @@
       els.accessType.value = access ? access.type : state.nextAccessType;
     }
     if (els.ceilingHeight) els.ceilingHeight.value = String(state.ceiling.heightM);
+    const frontBorder = state.ceiling.frontBorder || { enabled: false, openingHeightM: 4.5 };
+    if (els.frontBorderOpening) {
+      els.frontBorderOpening.value = String(frontBorder.openingHeightM);
+      els.frontBorderOpening.max = String(Math.max(0.1, roundM(Number(state.ceiling.heightM) - 0.1)));
+    }
+    const frontBorderAvailable = state.ceiling.hasCeiling !== false &&
+      state.stageFormat === "theatre" && Number(state.ceiling.heightM) > 0.1;
+    document.querySelectorAll("[data-venue-editor-front-border]").forEach((button) => {
+      button.disabled = !frontBorderAvailable;
+      button.setAttribute("aria-pressed", String(
+        (button.dataset.venueEditorFrontBorder === "yes") === (frontBorder.enabled === true),
+      ));
+    });
+    if (els.frontBorderDetails) els.frontBorderDetails.hidden =
+      !frontBorderAvailable || frontBorder.enabled !== true;
     if (els.stageHeight) {
       els.stageHeight.value = Number.isFinite(state.stageHeightM) ? String(state.stageHeightM) : "";
     }
@@ -2050,6 +2140,7 @@
     drawShowMachinery();
     drawPlacementPreview();
     drawPreviewCurtains();
+    drawCeilingAndFrontBorder();
     renderControls(linesResult);
     window.dispatchEvent(new Event("stage-venue-draft-render"));
   }
@@ -2394,6 +2485,14 @@
      * 本人が屋外で保存した劇場の値を、こちらから書き換えないため（保存データを壊さない）。 */
     state.ceiling.hasCeiling = state.ceiling.hasCeiling !== false;
     state.ceiling.indoor = state.ceiling.indoor !== false;
+    const savedBorder = state.ceiling.frontBorder;
+    const defaultOpening = Math.max(0.1, roundM(Math.min(4.5, Number(state.ceiling.heightM) - 0.1)));
+    state.ceiling.frontBorder = {
+      enabled: savedBorder?.enabled === true,
+      openingHeightM: typeof savedBorder?.openingHeightM === "number" &&
+        Number.isFinite(savedBorder.openingHeightM)
+        ? savedBorder.openingHeightM : defaultOpening,
+    };
     state.stageFormat = inferTemplateStageFormat(venue, variant);
     state.templateKey = key;
     state.templateSignature = null;      // 下の captureDraft 完了後に入れる
@@ -3522,6 +3621,7 @@
         polygon: audiencePolygon(band),
         mode: "audience",
         eyeM: 1.2,
+        ...(band.elevation ? { elevation: { ...band.elevation } } : {}),
         /* ★客席の向き（全周／三方／両側／正面）を引き継ぐ（2026-09-19 本人承認）。
            捨てると、ビッグトップを下敷きにした劇場が「正面」に落ち、
            向こう側の客席・リング・低い舞台が出なくなる。手で描いた帯には無いので従来どおり。 */
@@ -3619,6 +3719,7 @@
       ceiling: {
         heightM: state.ceiling.heightM,
         rigging: state.ceiling.rigging,
+        frontBorder: clone(state.ceiling.frontBorder),
         /* V-4: 天井あり/なし・屋内/屋外。古い劇場データには無いので、読むときは既定 true。 */
         hasCeiling: state.ceiling.hasCeiling !== false,
         indoor: state.ceiling.indoor !== false,
@@ -3925,6 +4026,10 @@
     if (!Number.isFinite(parsed) || parsed < CEILING_MIN_HEIGHT_M || parsed > CEILING_MAX_HEIGHT_M) return false;
     const value = Math.round(parsed * 10) / 10;
     state.ceiling.heightM = value;
+    if (state.ceiling.frontBorder?.openingHeightM >= value) {
+      state.ceiling.frontBorder.openingHeightM = Math.max(0.1, roundM(value - 0.1));
+    }
+    if (value <= 0.1 && state.ceiling.frontBorder) state.ceiling.frontBorder.enabled = false;
     setStatus(`天井高を${value}mにしました。`);
     render();
     return true;
@@ -3960,6 +4065,28 @@
     return true;
   }
 
+  function setAudienceHeight(end, input) {
+    const area = selectedAudienceArea(), value = Number(input);
+    if (!area || typeof input === "string" && !input.trim() || !Number.isFinite(value) ||
+        value < AUDIENCE_MIN_HEIGHT_M || value > AUDIENCE_MAX_HEIGHT_M) return false;
+    const legacyFloor = -(Number(state.stageHeightM) || 0);
+    const elevation = area.elevation || { frontM: legacyFloor, rearM: legacyFloor };
+    elevation[end] = Math.round(value * 100) / 100;
+    area.elevation = elevation;
+    setStatus(`客席の${end === "frontM" ? "舞台側" : "後方"}を舞台床から${elevation[end]}mにしました。`);
+    render();
+    return true;
+  }
+
+  function resetAudienceHeight() {
+    const area = selectedAudienceArea();
+    if (!area || !area.elevation) return false;
+    delete area.elevation;
+    setStatus("客席の床高を従来の高さへ戻しました。");
+    render();
+    return true;
+  }
+
   function setRigging(rigging) {
     if (!["none", "limited", "full"].includes(rigging)) return;
     state.ceiling.rigging = rigging;
@@ -3972,9 +4099,29 @@
   function setCeilingPresence(hasCeiling) {
     state.ceiling.hasCeiling = hasCeiling;
     setStatus(hasCeiling
-      ? "天井ありにしました。高さと吊りを設定できます。"
-      : "天井なしにしました。高さと吊りは使いません（入力した値は残します）。");
+      ? "天井ありにしました。高さ・吊り・前一文字を設定できます。"
+      : "天井なしにしました。高さ・吊り・前一文字は使いません（入力した値は残します）。");
     render();
+  }
+
+  function setFrontBorderPresence(enabled) {
+    if (enabled && (state.ceiling.hasCeiling === false || state.stageFormat !== "theatre" ||
+        Number(state.ceiling.heightM) <= 0.1)) return false;
+    state.ceiling.frontBorder.enabled = enabled;
+    setStatus(enabled ? "前一文字を劇場に設置しました。" : "前一文字を劇場から外しました。");
+    render();
+    return true;
+  }
+
+  function setFrontBorderOpening(value) {
+    const parsed = Number(value);
+    const ceiling = Number(state.ceiling.heightM);
+    const rounded = roundM(parsed);
+    if (!Number.isFinite(parsed) || rounded < 0.1 || rounded >= ceiling) return false;
+    state.ceiling.frontBorder.openingHeightM = rounded;
+    setStatus(`前一文字の開口高さを${rounded}mにしました。`);
+    render();
+    return true;
   }
 
 
@@ -4149,6 +4296,29 @@
     els.stageHeight.addEventListener("change", commitStageHeight);
     els.stageHeight.addEventListener("blur", commitStageHeight);
   }
+  for (const [input, end] of [[els.audienceFrontHeight, "frontM"], [els.audienceRearHeight, "rearM"]]) {
+    if (!input) continue;
+    const commit = () => {
+      if (setAudienceHeight(end, input.value)) {
+        // Render first, then record the selected area's changed geometry.
+        return;
+      }
+      const area = selectedAudienceArea();
+      input.value = area ? String(area.elevation?.[end] ?? -(Number(state.stageHeightM) || 0)) : "";
+      setStatus(`客席の床高は${AUDIENCE_MIN_HEIGHT_M}〜${AUDIENCE_MAX_HEIGHT_M}mで入力してください。`);
+    };
+    input.addEventListener("change", () => {
+      withHistory(() => {
+        commit();
+        return true;
+      });
+      const area = selectedAudienceArea();
+      if (area) input.value = String(area.elevation?.[end] ?? -(Number(state.stageHeightM) || 0));
+    });
+  }
+  if (els.audienceHeightReset) {
+    els.audienceHeightReset.addEventListener("click", () => withHistory(resetAudienceHeight));
+  }
   document.querySelectorAll("[data-venue-editor-rigging]").forEach((button) => {
     button.addEventListener("click", () => withHistory(
       () => setRigging(button.dataset.venueEditorRigging),
@@ -4159,6 +4329,22 @@
       () => setCeilingPresence(button.dataset.venueEditorCeilingPresence === "yes"),
     ));
   });
+  document.querySelectorAll("[data-venue-editor-front-border]").forEach((button) => {
+    button.addEventListener("click", () => withHistory(
+      () => setFrontBorderPresence(button.dataset.venueEditorFrontBorder === "yes"),
+    ));
+  });
+  if (els.frontBorderOpening) {
+    const commitFrontBorderOpening = () => {
+      const accepted = withHistory(() => setFrontBorderOpening(els.frontBorderOpening.value));
+      if (!accepted) {
+        els.frontBorderOpening.value = String(state.ceiling.frontBorder.openingHeightM);
+        setStatus("開口高さは0.1m以上、天井高より低く設定してください。");
+      }
+    };
+    els.frontBorderOpening.addEventListener("change", commitFrontBorderOpening);
+    els.frontBorderOpening.addEventListener("blur", commitFrontBorderOpening);
+  }
   document.querySelectorAll("[data-venue-editor-line-toggle]").forEach((input) => {
     input.addEventListener("change", () => {
       const name = input.dataset.venueEditorLineToggle;
@@ -4391,7 +4577,13 @@
       canReset: JSON.stringify(state.viewPositions) !== JSON.stringify(initialViewPositions()),
       points: viewpointRows().map(row => {
         const world = viewpointWorld(row.point), xy = toCanvas(world);
-        return { ...row, world, x: xy[0] / canvasCssWidth(), y: xy[1] / canvasCssHeight() };
+        const seat = window.SHOSAI_VENUES.audienceHeight.containing(
+          audienceOutput(), state.points, world, state.stageHeightM);
+        const floorDelta = seat && seat.area.elevation
+          ? seat.floorM + (Number(state.stageHeightM) || 0) : 0;
+        const point = { ...row.point, eyeM: roundM(row.point.eyeM + floorDelta) };
+        return { ...row, point, world, floorM: seat?.floorM ?? null,
+          x: xy[0] / canvasCssWidth(), y: xy[1] / canvasCssHeight() };
       }), target: toCanvas([(polygonBounds(state.points).minX + polygonBounds(state.points).maxX) / 2,
         (polygonBounds(state.points).minY + polygonBounds(state.points).maxY) / 2])
         .map((n, i) => n / (i ? canvasCssHeight() : canvasCssWidth())) };
@@ -4434,6 +4626,22 @@
       const point = points.find(p => p.id === key);
       if (!point || point.label === label) return false;
       point.label = label; return true;
+    });
+  }
+  function setViewpointEyeHeight(key, value) {
+    if (typeof value === "string" && !value.trim()) return false;
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric < -10 || numeric > 60) return false;
+    const world = viewpointWorld(viewpointRows().find(row => row.key === key)?.point ||
+      { offsetM: 0, distanceM: 0 });
+    const seat = window.SHOSAI_VENUES.audienceHeight.containing(
+      audienceOutput(), state.points, world, state.stageHeightM);
+    const floorDelta = seat?.area.elevation ? seat.floorM + (Number(state.stageHeightM) || 0) : 0;
+    const eyeM = roundM(numeric - floorDelta);
+    return editViewpoints(points => {
+      const point = points.find(p => p.id === key);
+      if (!point || point.eyeM === eyeM) return false;
+      point.eyeM = eyeM; return true;
     });
   }
   function removeViewpoint(key) {
@@ -4526,7 +4734,8 @@
 
   window.SHOSAI_VENUE_EDITOR = Object.freeze({
     previewSnapshot, beginPreviewMove, movePreviewArea, finishPreviewMove,
-    viewpointPlot, setViewpointMode, addViewpointAt, renameViewpoint, removeViewpoint, resetViewpoints,
+    viewpointPlot, setViewpointMode, addViewpointAt, renameViewpoint, setViewpointEyeHeight,
+    removeViewpoint, resetViewpoints,
     beginViewpointMove, moveViewpointAt, finishViewpointMove,
     storageKey: library.storageKey,
     /* T-14（2026-09-18 本人要望）: 劇場設定を変更したまま別タブへ移ろうとしたら

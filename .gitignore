@@ -238,6 +238,9 @@ public-dist/
 !/tests/performer-body.test.mjs
 !/tests/performer-motion.test.mjs
 !/tests/feature-test-show.test.mjs
+!/tests/stage-venue-front-border.test.mjs
+!/tests/stage-venue-viewpoint-height.test.mjs
+!/tests/stage-venue-audience-elevation.test.mjs
 
 # Reversible storage-capacity repair (keeps live show and lighting data intact).
 !/stage-storage-recovery.js

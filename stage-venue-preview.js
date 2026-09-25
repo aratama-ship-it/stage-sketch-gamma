@@ -72,7 +72,19 @@
     };
     if (room) prism(room, Math.min(-.14, stageY - .14), Math.min(-.14, stageY - .14), '#29251f', null, 2);
     floor.forEach(p => prism(p, Math.min(-.12, stageY - .12), stageY, '#806247', null, true));
-    (venue.audience || []).forEach(p => prism(p.polygon, -.03, 0, '#705349', null, true));
+    (venue.audience || []).forEach(area => {
+      if (!area.elevation) { prism(area.polygon, -.03, 0, '#705349', null, true); return; }
+      if (!polygonOK(area.polygon)) return;
+      const tops = area.polygon.map(p => stageY + window.SHOSAI_VENUES.audienceHeight.at(
+        area, venue.floor.outline, p, stageY));
+      const bottom = Math.min(-.03, ...tops) - .03;
+      face(area.polygon.map((p, i) => point(p, tops[i])), '#705349', null, false, true);
+      area.polygon.forEach((a, i) => {
+        const next = (i + 1) % area.polygon.length, b = area.polygon[next];
+        face([point(a, bottom), point(b, bottom), point(b, tops[next]), point(a, tops[i])],
+          '#705349', null, false, true);
+      });
+    });
     (venue.stageWings || []).forEach(wing => {
       const target = wing.id !== 'drawing-preview' ? { kind: 'wing', id: wing.id } : null;
       prism(wing.polygon, Math.min(-.12, stageY - .12), stageY, '#4a443c', target, true);
@@ -81,6 +93,11 @@
       const target = wingId !== 'drawing-preview' ? { kind: 'wing', id: wingId } : null;
       sheet(from, to, stageY, stageY + ceiling * .75, target);
     });
+    const frontBorder = window.GAMMA_VENUE_CURTAINS.frontBorderForVenue(venue);
+    if (state.curtains && frontBorder) {
+      sheet(frontBorder.from, frontBorder.to,
+        stageY + frontBorder.openingHeightM, stageY + frontBorder.topHeightM, null);
+    }
     walls.forEach(wall => prism(wall.polygon, stageY, stageY + (Number(wall.heightM) || ceiling),
       '#8e887f', wall.id !== 'drawing-preview' ? { kind: 'wall', id: wall.id } : null));
     (venue.fixtures || []).filter(f => f.type !== 'wall').forEach(f => {
@@ -89,13 +106,19 @@
         [f.at[0] + Math.cos(i * Math.PI / 6) * f.radiusM, f.at[1] + Math.sin(i * Math.PI / 6) * f.radiusM]);
       prism(p, stageY, stageY + (Number(f.heightM) || 1), '#91887a');
     });
-    // A wire reference for the ceiling, never a solid lid hiding the model.
+    // An open wire grid communicates the ceiling height without hiding the stage.
     if (venue.ceiling.hasCeiling !== false) {
       const corners = room || [[main.minX, main.minZ], [main.maxX, main.minZ], [main.maxX, main.maxZ], [main.minX, main.maxZ]];
       corners.forEach((a, i) => {
         lines.push([point(a, stageY + ceiling), point(corners[(i + 1) % corners.length], stageY + ceiling)]);
         if (room) lines.push([point(a, 0), point(a, stageY + ceiling)]);
       });
+      if (!room) {
+        const midX = (main.minX + main.maxX) / 2;
+        const midZ = (main.minZ + main.maxZ) / 2;
+        lines.push([[midX, stageY + ceiling, main.minZ], [midX, stageY + ceiling, main.maxZ]]);
+        lines.push([[main.minX, stageY + ceiling, midZ], [main.maxX, stageY + ceiling, midZ]]);
+      }
     }
     const all = [...faces.flatMap(f => f.vertices), ...lines.flat()];
     const center = [0, 1, 2].map(i => (Math.min(...all.map(p => p[i])) + Math.max(...all.map(p => p[i]))) / 2);

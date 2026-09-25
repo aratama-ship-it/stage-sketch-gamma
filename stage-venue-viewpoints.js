@@ -7,8 +7,10 @@
   const wrap = canvas.closest('.stage-venue-editor-canvas-wrap');
   const step = document.getElementById('venue-viewpoints-step');
   const control = name => document.getElementById(`venue-viewpoints-${name}`);
-  const choose = control('select'), nameInput = control('name'), add = control('add'), remove = control('remove'), reset = control('reset');
+  const choose = control('select'), nameInput = control('name'), eyeHeight = control('eye-height');
+  const add = control('add'), remove = control('remove'), reset = control('reset');
   const status = control('status');
+  const floorHeight = control('floor-height');
   const message = text => { status.textContent = text; };
   const hint = document.createElement('p'); hint.id = 'venue-viewpoints-hint';
   hint.textContent = '見る位置：図の点を選択・ドラッグすると、その位置からの見え方を右に表示します。';
@@ -20,7 +22,8 @@
   const line = document.createElementNS(svg.namespaceURI, 'path'); svg.append(line); layer.append(svg); wrap.append(layer);
   const buttons = new Map(); let selected = 'seat-center', key = '', drag = null, cameraActive = false, adding = false, wasEditing = false, syncing = false;
   function select(id) {
-    selected = id; cameraActive = true; adding = false; nameInput.blur(); sync();
+    nameInput.blur(); eyeHeight.blur();
+    selected = id; cameraActive = true; adding = false; sync();
   }
   function sync() {
     if (syncing) return;
@@ -68,8 +71,8 @@
       button.hidden = row.x < 0 || row.x > 1 || row.y < 0 || row.y > 1;
       button.classList.toggle('is-selected', row.key === selected);
       button.setAttribute('aria-pressed', String(row.key === selected));
-      button.setAttribute('aria-label', `${row.point.label}の見る位置。ドラッグまたは矢印キーで移動`);
-      button.title = `${row.point.label}：舞台前端から${row.point.distanceM}m・左右${row.point.offsetM}m`;
+      button.setAttribute('aria-label', `${row.point.label}の見る位置。目の高さ${row.point.eyeM}m。ドラッグまたは矢印キーで移動`);
+      button.title = `${row.point.label}：舞台前端から${row.point.distanceM}m・左右${row.point.offsetM}m・目の高さ${row.point.eyeM}m`;
       button.children[0].textContent = index + 1; button.children[1].textContent = row.point.label;
     });
     // 点の座標は動かさず、名前だけ空いている方向へ逃がす。
@@ -95,7 +98,10 @@
     }
     choose.value = selected || ''; choose.disabled = !active;
     if (document.activeElement !== nameInput) nameInput.value = active?.point.label || '';
-    nameInput.disabled = remove.disabled = !active;
+    if (document.activeElement !== eyeHeight) eyeHeight.value = active ? String(active.point.eyeM) : '';
+    if (floorHeight) floorHeight.textContent = active?.floorM == null ? '客席区画の外側です。' :
+      `この位置の客席床：舞台床から${Math.round(active.floorM * 100) / 100}m`;
+    nameInput.disabled = eyeHeight.disabled = remove.disabled = !active;
     control('count').textContent = `（${view.points.length}/5）`;
     if (view.points.length >= 5) adding = false;
     add.disabled = view.points.length >= 5;
@@ -156,6 +162,26 @@
   });
   nameInput.addEventListener('keydown', event => {
     if (event.key === 'Enter') { event.preventDefault(); nameInput.blur(); }
+  });
+  function commitEyeHeight() {
+    const point = editor.viewpointPlot().points.find(row => row.key === selected)?.point;
+    if (!point) return;
+    const value = eyeHeight.value.trim(), number = Number(value);
+    if (!value || !Number.isFinite(number) || number < -10 || number > 60) {
+      eyeHeight.value = String(point.eyeM);
+      message('目の高さは−10〜60mで入力してください。'); return;
+    }
+    if (editor.setViewpointEyeHeight(selected, number)) {
+      const current = editor.viewpointPlot().points.find(row => row.key === selected)?.point.eyeM;
+      message(`目の高さを${current}mにしました。「一つ戻す」で取り消せます。`);
+      sync();
+    }
+    eyeHeight.value = String(editor.viewpointPlot().points.find(row => row.key === selected)?.point.eyeM ?? point.eyeM);
+  }
+  eyeHeight.addEventListener('change', commitEyeHeight);
+  eyeHeight.addEventListener('blur', commitEyeHeight);
+  eyeHeight.addEventListener('keydown', event => {
+    if (event.key === 'Enter') { event.preventDefault(); eyeHeight.blur(); }
   });
   add.addEventListener('click', () => { adding = !adding; message(adding ? '平面図を押して置いてください。' : '配置を取り消しました。'); sync(); });
   remove.addEventListener('click', () => {

@@ -20,6 +20,41 @@
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const roundM = (value) => Math.round(value * 1000) / 1000;
 
+  // Audience elevations are stage-relative. Legacy areas have no elevation and
+  // remain at world 0, even when the older stageHeightM property is present.
+  const audienceHeight = {
+    at(area, stageOutline, point, stageHeightM = 0) {
+      const elevation = area?.elevation;
+      if (!elevation) return -(Number(stageHeightM) || 0);
+      const polygon = area.polygon;
+      if (!Array.isArray(polygon) || polygon.length < 3 || !Array.isArray(stageOutline) || !stageOutline.length) {
+        return elevation.frontM;
+      }
+      const center = points => points.reduce((sum, p) => [sum[0] + p[0] / points.length, sum[1] + p[1] / points.length], [0, 0]);
+      const stage = center(stageOutline), audience = center(polygon);
+      let dx = audience[0] - stage[0], dy = audience[1] - stage[1];
+      if (Math.hypot(dx, dy) < .001) { dx = 0; dy = 1; }
+      const distance = Math.hypot(dx, dy);
+      const project = p => ((p[0] - stage[0]) * dx + (p[1] - stage[1]) * dy) / distance;
+      const depths = polygon.map(project), near = Math.min(...depths), far = Math.max(...depths);
+      const ratio = far - near < .001 ? 0 : Math.max(0, Math.min(1, (project(point) - near) / (far - near)));
+      return elevation.frontM + (elevation.rearM - elevation.frontM) * ratio;
+    },
+    containing(areas, stageOutline, point, stageHeightM = 0) {
+      const inside = polygon => {
+        let result = false;
+        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+          const a = polygon[i], b = polygon[j];
+          if ((a[1] > point[1]) !== (b[1] > point[1]) &&
+              point[0] < (b[0] - a[0]) * (point[1] - a[1]) / (b[1] - a[1]) + a[0]) result = !result;
+        }
+        return result;
+      };
+      const area = [...(areas || [])].reverse().find(item => Array.isArray(item.polygon) && inside(item.polygon));
+      return area ? { area, floorM: audienceHeight.at(area, stageOutline, point, stageHeightM) } : null;
+    },
+  };
+
   const rectangleOutline = (width, depth) => [
     [0, 0],
     [width, 0],
@@ -320,6 +355,7 @@
     mode: area.mode === "standing" ? "standing" : "seated",
     eyeM: Number.isFinite(Number(area.eyeM)) ? Number(area.eyeM) : 1.2,
     side: area.side,
+    ...(area.elevation ? { elevation: { ...area.elevation } } : {}),
   }));
 
   const audiencePolygons = (audience, width, depth, house, areas) => {
@@ -1730,10 +1766,29 @@
     }
     venue.ceiling = venue.ceiling && typeof venue.ceiling === "object"
       ? venue.ceiling : { heightM: 6, rigging: "none", note: "高さ・吊り条件は要確認。" };
+    if (venue.ceiling.frontBorder !== undefined) {
+      const border = venue.ceiling.frontBorder;
+      const opening = border?.openingHeightM;
+      const height = Number(venue.ceiling.heightM);
+      const roundedOpening = Math.round(opening * 10) / 10;
+      if (!border || typeof border !== "object" || typeof border.enabled !== "boolean" ||
+          typeof opening !== "number" || !Number.isFinite(opening) || opening < 0.1 || opening > 100 ||
+          (border.enabled && (!Number.isFinite(height) || roundedOpening >= height))) return null;
+      venue.ceiling.frontBorder = { enabled: border.enabled, openingHeightM: roundedOpening };
+    }
     venue.audience = Array.isArray(venue.audience)
       ? venue.audience.filter((area) => area && Array.isArray(area.polygon) &&
         area.polygon.length >= 3 && area.polygon.every(validPoint))
       : [];
+    for (const area of venue.audience) {
+      if (area.elevation === undefined) continue;
+      const level = area.elevation;
+      if (!level || typeof level !== "object" ||
+          !["frontM", "rearM"].every(key => typeof level[key] === "number" &&
+            Number.isFinite(level[key]) && level[key] >= -10 && level[key] <= 60)) return null;
+      area.elevation = { frontM: Math.round(level.frontM * 100) / 100,
+        rearM: Math.round(level.rearM * 100) / 100 };
+    }
     if (Array.isArray(venue.stageWings)) {
       venue.stageWings = venue.stageWings
         .filter((area) => area && Array.isArray(area.polygon) &&
@@ -2137,6 +2192,7 @@
   // 実在劇場は配布時の選択肢に含めない。汎用の広い会場は3Dカメラで使う。
   // ID参照と、本人が取り込んだ会場ライブラリも使えるように残す。
   window.SHOSAI_VENUES = {
+    audienceHeight,
     get list() {
       return VENUES.filter((venue) => !venue.realVenue && !RETIRED_PRESET_IDS.has(venue.id))
         .concat(readLibrary().map(customLegacyVenue));

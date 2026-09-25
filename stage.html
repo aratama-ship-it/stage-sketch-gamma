@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.9">
+<meta name="stage-sketch-gamma-version" content="v0.2.10">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092517">
+<link rel="stylesheet" href="style.css?v=2026092519">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -68,7 +68,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.9</span>
+              <span class="stage-app-version">0.2.10</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -2542,6 +2542,17 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0210-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0210-title">v0.2.10</h3>
+        <time datetime="2026-09-25">2026-09-25</time>
+      </header>
+      <ul>
+        <li>劇場設定4番で天井高と前一文字の開口高さを設定し、平面図・劇場プレビューへ反映できます。</li>
+        <li>劇場設定5番で客席区画の舞台側・後方の床高を舞台床基準で設定できます。平床・傾斜床・段差を平面図と立体で確認できます。</li>
+        <li>劇場設定9番で見る位置ごとの目の高さを調整できます。客席の床高を変えると、その上の視点も追従します。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v029-title">
       <header class="stage-release-entry-head">
         <h3 id="stage-release-v029-title">v0.2.9</h3>
@@ -3090,8 +3101,25 @@
             <button type="button" data-venue-editor-rigging="full" aria-pressed="false">可</button>
           </div>
         </div>
+        <div class="stage-venue-editor-setting">
+          <span>前一文字</span>
+          <div class="stage-tool-grid stage-venue-editor-ceiling-presence" role="group" aria-label="前一文字の有無">
+            <button type="button" data-venue-editor-front-border="yes" aria-pressed="false">幕あり</button>
+            <button type="button" data-venue-editor-front-border="no" aria-pressed="true">幕なし</button>
+          </div>
+        </div>
+        <div class="stage-venue-editor-setting" id="stage-venue-editor-front-border-details" hidden>
+          <label for="stage-venue-editor-front-border-opening">開口高さ</label>
+          <div class="stage-venue-editor-ceiling-input">
+            <input type="number" class="stage-text-input" id="stage-venue-editor-front-border-opening"
+                   min="0.1" max="100" step="0.1" value="4.5" inputmode="decimal" aria-describedby="stage-venue-editor-front-border-help">
+            <span aria-hidden="true">m</span>
+          </div>
+          <p class="stage-profile-hint stage-venue-editor-ceiling-help" id="stage-venue-editor-front-border-help">舞台床から幕の下端まで。天井高より低く設定します。</p>
+        </div>
+        <p class="stage-profile-hint">前一文字は天井のある劇場式ステージで設定できます。幕は舞台前端に置きます。</p>
       </div>
-      <p class="stage-profile-hint" id="stage-venue-editor-ceiling-outdoor-note" hidden>天井なしでは高さと吊りを使いません。入力した値は残します。</p>
+      <p class="stage-profile-hint" id="stage-venue-editor-ceiling-outdoor-note" hidden>天井なしでは高さ・吊り・前一文字を使いません。入力した値は残します。</p>
         </section>
         <section class="stage-venue-editor-audience-guide" aria-labelledby="stage-venue-editor-audience-title">
       <h3 id="stage-venue-editor-audience-title">5. 客席</h3>
@@ -3106,6 +3134,18 @@
         <button type="button" class="btn-quiet" id="stage-venue-editor-audience-merge" disabled>重なりを合成</button>
       </div>
       <button type="button" class="btn-quiet stage-venue-editor-audience-full" id="stage-venue-editor-audience-full" hidden disabled>全周に配置</button>
+      <div id="stage-venue-editor-audience-elevation" class="stage-venue-editor-audience-elevation" hidden>
+        <p class="stage-profile-hint">客席を選ぶと床高を設定できます。舞台床を0mとして、舞台側と後方が同じなら平床、異なれば傾斜床になります。段差は区画を分けて作ります。</p>
+        <div class="stage-venue-editor-setting">
+          <label for="stage-venue-editor-audience-front-height">舞台側の床高</label>
+          <div class="stage-venue-editor-ceiling-input"><input type="number" class="stage-text-input" id="stage-venue-editor-audience-front-height" min="-10" max="60" step="0.1" inputmode="decimal"><span aria-hidden="true">m</span></div>
+        </div>
+        <div class="stage-venue-editor-setting">
+          <label for="stage-venue-editor-audience-rear-height">後方の床高</label>
+          <div class="stage-venue-editor-ceiling-input"><input type="number" class="stage-text-input" id="stage-venue-editor-audience-rear-height" min="-10" max="60" step="0.1" inputmode="decimal"><span aria-hidden="true">m</span></div>
+        </div>
+        <button type="button" class="btn-quiet" id="stage-venue-editor-audience-height-reset">既定の高さに戻す</button>
+      </div>
         </section>
         <section class="stage-venue-editor-wings-guide" aria-labelledby="stage-venue-editor-wings-title">
       <h3 id="stage-venue-editor-wings-title">6. 舞台袖</h3>
@@ -3148,6 +3188,14 @@
             <select id="venue-viewpoints-select" class="stage-text-input"></select>
             <label for="venue-viewpoints-name">名前</label>
             <input id="venue-viewpoints-name" class="stage-text-input" type="text" maxlength="40" autocomplete="off">
+            <label for="venue-viewpoints-eye-height">目の高さ</label>
+            <div class="stage-venue-editor-ceiling-input">
+              <input id="venue-viewpoints-eye-height" class="stage-text-input" type="number"
+                     min="-10" max="60" step="0.1" inputmode="decimal" aria-describedby="venue-viewpoints-eye-height-help">
+              <span aria-hidden="true">m</span>
+            </div>
+            <p id="venue-viewpoints-eye-height-help" class="stage-profile-hint">舞台床を0mとした目の高さです。客席の床高を変えると、その上の見る位置も同じ分だけ上下します。</p>
+            <p id="venue-viewpoints-floor-height" class="stage-profile-hint" aria-live="polite"></p>
             <button id="venue-viewpoints-add" type="button" class="btn-quiet" aria-pressed="false">＋ 点を置く</button>
             <button id="venue-viewpoints-remove" type="button" class="btn-quiet">選択した点を削除</button>
             <button id="venue-viewpoints-reset" type="button" class="btn-quiet">編集前に戻す</button>
@@ -3453,19 +3501,19 @@
   </button>
 </div>
 
-<script src="stage-venues.js?v=2026092514"></script>
+<script src="stage-venues.js?v=2026092522"></script>
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=2026092506"></script>
-    <script src="stage-i18n.zh-Hans.js?v=2026092506"></script>
-    <script src="stage-i18n.zh-Hant.js?v=2026092506"></script>
+    <script src="stage-i18n.js?v=2026092518"></script>
+    <script src="stage-i18n.zh-Hans.js?v=2026092518"></script>
+    <script src="stage-i18n.zh-Hant.js?v=2026092518"></script>
 <script src="stage-prompt-i18n.js?v=2026092050"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026092402"></script>
 <script src="stage-samples/romeo-juliet-cued.js?v=2026092435"></script>
 <script src="stage-samples/romeo-juliet-second.js?v=20260925-rj2"></script>
-<script src="stage-samples/feature-test-show.js?v=2026092514"></script>
+<script src="stage-samples/feature-test-show.js?v=2026092519"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
 <script src="stage-machinery.js?v=2026092055"></script>
@@ -3505,11 +3553,11 @@
 <script src="stage-session.js?v=20260924-lightimport1"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
-<script src="stage-venue-curtains.js?v=2026092501"></script>
-<script src="stage-venue-editor.js?v=2026092514"></script>
+<script src="stage-venue-curtains.js?v=2026092518"></script>
+<script src="stage-venue-editor.js?v=2026092522"></script>
 <script src="gamma-workspace.js?v=2026092514"></script>
 <script src="gamma-mobile.js?v=2026092202"></script>
-<script src="stage-venue-preview.js?v=2026092501"></script>
-<script src="stage-venue-viewpoints.js?v=2026092501"></script>
+<script src="stage-venue-preview.js?v=2026092519"></script>
+<script src="stage-venue-viewpoints.js?v=2026092503"></script>
 </body>
 </html>

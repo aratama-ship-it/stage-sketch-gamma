@@ -46,5 +46,20 @@
     });
     return curtains;
   }
-  root.GAMMA_VENUE_CURTAINS = Object.freeze({ forVenue });
+  // Optional venue fixture. Older venues have no frontBorder field and retain their old drawing.
+  function frontBorderForVenue(venue) {
+    const border = venue?.ceiling?.frontBorder;
+    const outline = venue?.floor?.outline;
+    const ceiling = Number(venue?.ceiling?.heightM);
+    const opening = Number(border?.openingHeightM);
+    if (venue?.stageFormat !== 'theatre' || venue?.ceiling?.hasCeiling === false ||
+        border?.enabled !== true || !valid(outline) ||
+        !Number.isFinite(ceiling) || !Number.isFinite(opening) ||
+        opening < .1 || opening >= ceiling) return null;
+    const xs = outline.map(p => p[0]), zs = outline.map(p => p[1]);
+    const near = Math.max(...zs);
+    return { from: [Math.min(...xs), near], to: [Math.max(...xs), near],
+      openingHeightM: opening, topHeightM: ceiling };
+  }
+  root.GAMMA_VENUE_CURTAINS = Object.freeze({ forVenue, frontBorderForVenue });
 })(typeof window !== 'undefined' ? window : globalThis);
