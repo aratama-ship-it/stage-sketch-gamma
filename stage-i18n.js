@@ -1432,6 +1432,7 @@
     "最初の位置に戻す": "Reset position",
     "ドラッグ": "Drag",
     "見回す": "Look around",
+    "場面を切り替え": "Change scene",
     "シーンを切り替え": "Change scene",
     "の視界": " — view",
     "目の高さ": "eye height",
@@ -2778,3 +2779,24 @@
     generated: { sceneTitle: "Scene {n}", untitledShow: "Untitled show" },
   };
 })();
+
+// Accept the canonical scene wording while retaining historical lookup keys.
+(() => {
+  const packs = [window.SHOSAI_I18N, ...Object.values(window.SHOSAI_I18N_PACKS || {})];
+  for (const pack of packs) {
+    if (pack?.say) {
+      for (const [pattern,replacement] of [...pack.say]) {
+        if (pattern.source.includes('場面') && !pack.say.some(([other])=>other.source===pattern.source.replaceAll('場面','シーン'))) pack.say.push([new RegExp(pattern.source.replaceAll('場面','シーン'),pattern.flags),replacement]);
+      }
+    }
+    const text = pack?.text; if (!text) continue;
+    for (const [key,value] of Object.entries(text)) {
+      if (key.includes('場面') && !key.includes('場面問答')) {
+        const canonical=key.replaceAll('場面','シーン');
+        if (!(canonical in text)) text[canonical]=value;
+      }
+    }
+  }
+})();
+
+window.SHOSAI_I18N.text["無料テスト版γ"] = "Gamma · free test version";

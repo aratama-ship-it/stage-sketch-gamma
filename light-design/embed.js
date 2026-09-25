@@ -12,6 +12,19 @@
   let placementUnderlaySnapshot=null;
   const key=id=>'gamma:lighting-draft-v1:'+id;
   const message=text=>hooks.toast(text);
+  let saveStatus=null, draftState='none', applying=false, applyError='', appliedNotice='';
+  function renderSaveStatus() {
+    if(!saveStatus) return;
+    const draftText=draftState==='saved'?'このブラウザに控え保存済み':draftState==='failed'?'控えを保存できません。控え・書き出しからファイルへ残してください':'控えを保存中…';
+    let text='ショーの照明を表示中。編集後は「LXキューを適用」でショーへ反映します。', level='info';
+    if(applying) text='ショーへ適用中…';
+    else if(changedElsewhere) {text='ショーが別のタブで更新されています。照明を控え・書き出しから残し、読み直してください。';level='warn';}
+    else if(applyError) {text='適用できませんでした: '+applyError+' · '+draftText;level='warn';}
+    else if(state.dirty) {text='未適用 · '+draftText+'。「照明デザイン」の「LXキューを適用」でショーへ反映します。';level=draftState==='failed'?'warn':'info';}
+    else if(appliedNotice) {text=appliedNotice;level=appliedNotice.includes('できません')||appliedNotice.includes('整理')?'warn':'info';}
+    if(saveStatus.textContent!==text) saveStatus.textContent=text;
+    saveStatus.dataset.level=level;
+  }
   function arrangeEmbeddedToolbar() {
     const bar=document.querySelector('.figbar'), save=document.getElementById('save');
     if(!bar) return;
@@ -21,14 +34,44 @@
     actions.append(runtime,document.getElementById('transport'),document.getElementById('prefs'));
     bar.append(actions);
     save.hidden=true;
+    // The limited public preview keeps its existing lock guidance.
+    if(new URLSearchParams(location.search).get('public')==='1') return;
+    const row=document.createElement('div');row.className='gamma-light-state-row';
+    saveStatus=document.createElement('p');saveStatus.id='gamma-light-save-status';
+    saveStatus.setAttribute('role','status');saveStatus.setAttribute('aria-live','polite');saveStatus.setAttribute('aria-atomic','true');
+    const controls=document.createElement('button');controls.type='button';controls.className='btn small';
+    controls.id='gamma-light-save-controls';controls.textContent='控え・書き出し';
+    controls.title='編集中の照明を名前付きで残す・ファイルへ書き出す';
+    controls.onclick=()=>save.click();
+    row.append(saveStatus,controls);bar.after(row);renderSaveStatus();
+  }
+  // The embedded editor uses the same dialog contract as the main workspace.
+  // Observe its existing close paths (load, save, backdrop, Escape) without changing their actions.
+  function bindEmbeddedDialogs() {
+    const dialog=document.getElementById('dialog');
+    let release=null, box=null, trigger=null;
+    document.addEventListener('pointerdown',event=>{
+      if(dialog.hidden) trigger=event.target.closest('button');
+    },true);
+    document.addEventListener('keydown',()=>{if(dialog.hidden) trigger=document.activeElement;},true);
+    new MutationObserver(()=>{
+      const next=dialog.hidden?null:dialog.querySelector('.in');
+      if(next===box) return;
+      release?.();release=null;box=next;
+      if(!box) return;
+      box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');
+      box.setAttribute('aria-label',box.querySelector('.kicker,.ptitle')?.textContent || '照明の設定');
+      release=window.GAMMA_UI.containDialog(box,{returnFocus:trigger,onCancel:()=>{dialog.hidden=true;}});
+    }).observe(dialog,{attributes:true,attributeFilter:['hidden'],childList:true});
   }
   function build() { return {...appliedExtras,...hooks.buildDesign(state.designName || context.title)}; }
   function saveDraft() {
     if(!context || loading || !state.dirty) return;
     /* stripPassthrough: 劇場プリセットの照明プラン集は編集対象ではないので控えに複製しない
        （2026-09-17。理由は gamma-light-model.js のコメントを参照）。 */
-    try { localStorage.setItem(key(context.showId),JSON.stringify({version:1,showId:context.showId,basis:context.basis,design:model.stripPassthrough(build())})); }
-    catch(error) { message('編集内容の控えを保存できません。照明をファイルへ書き出してください'); }
+    try { localStorage.setItem(key(context.showId),JSON.stringify({version:1,showId:context.showId,basis:context.basis,design:model.stripPassthrough(build())})); draftState='saved'; }
+    catch(error) { draftState='failed';message('編集内容の控えを保存できません。照明をファイルへ書き出してください'); }
+    renderSaveStatus();
   }
   function setPlacementUnderlay(hidden) {
     if(hidden) {
@@ -59,7 +102,8 @@
     hooks.stop();
     if(context?.showId===next.showId && state.dirty) {
       if(context.basis!==next.basis || changedElsewhere) {
-        message('ショーが更新されています。照明の編集中データは保持しています。「保存」からファイルへ控えてください');
+        changedElsewhere=true;renderSaveStatus();
+        message('ショーが更新されています。照明の編集中データは保持しています。「控え・書き出し」からファイルへ控えてください');
       } else {synchronizePieces(next);synchronizeVenueMask(next);state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));}
       active=true;setMode(mode);return;
     }
@@ -95,7 +139,7 @@
       hooks.applyDesign(design,{host:true});
       synchronizePieces(next);
       appliedExtras=model.clone(design);context=next;synchronizeVenueMask(next);changedElsewhere=false;
-      state.dirty=dirty;state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
+      state.dirty=dirty;draftState=dirty?'saved':'none';applyError='';appliedNotice='';renderSaveStatus();state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
       lastScene=state.scenes[state.sceneIndex].id;
       state.seq=Date.now(); // avoids collisions with fixture / cue IDs imported from earlier sessions
       active=true;setMode(mode);
@@ -104,7 +148,8 @@
   }
   function suspend(){saveDraft();active=false;hooks.stop();}
   async function apply() {
-    if(!context) return;
+    if(!context || applying) return;
+    applying=true;renderSaveStatus();
     try {
       if(changedElsewhere) throw Error('別のタブでショーが変更されました。照明をファイルへ控えてから読み直してください');
       hooks.stop();
@@ -113,11 +158,14 @@
       parent.GAMMA_WORKSPACE.captureHostHistory();
       context=result.context;synchronizeVenueMask(context);state.dirty=false;
       // Remove only our own draft AFTER durable host acceptance.
-      try {localStorage.removeItem(key(context.showId));} catch {message('照明は保存しました。編集控えの整理は次回行います');}
+      applyError='';draftState='none';
+      appliedNotice=result.shelfPersisted?'適用済み · 照明をこのブラウザのショーへ保存しました。':'適用済み · ショー一覧の控えを更新できません。ショーをファイルへ書き出してください。';
+      try {localStorage.removeItem(key(context.showId));} catch {appliedNotice+=' 編集控えの整理は次回行います。';message('照明は保存しました。編集控えの整理は次回行います');}
       hooks.renderAll();
       message(result.shelfPersisted?'照明デザインをショーへ保存しました':'照明は保存しました。ショー一覧の控えを更新できないため、ショーを書き出してください');
       return result;
-    } catch(error) {state.dirty=true;saveDraft();message('適用できませんでした: '+error.message);return {persisted:false,error:error.message||String(error)};}
+    } catch(error) {applyError=error.message;state.dirty=true;saveDraft();message('適用できませんでした: '+error.message);return {persisted:false,error:error.message||String(error)};}
+    finally {applying=false;renderSaveStatus();}
   }
   document.documentElement.dataset.gammaEmbedded='true';
   /* V-04（2026-09-24 本人指示）: 本体の「画面の色」（赤みの黒／青みの黒）をこのページにも写す。
@@ -132,6 +180,7 @@
   syncSkin();
   try { new MutationObserver(syncSkin).observe(parent.document.documentElement,{attributes:true,attributeFilter:['data-stage-skin']}); } catch(_) {}
   arrangeEmbeddedToolbar();
+  bindEmbeddedDialogs();
   document.getElementById('apply').onclick=apply;
   document.getElementById('close').onclick=()=>{suspend();parent.GAMMA_WORKSPACE.normal();};
   document.getElementById('close').title='編集を保持して通常モードへ戻る';
@@ -155,6 +204,7 @@
   window.addEventListener('gamma-light-edit',()=>{
     parent.GAMMA_WORKSPACE.syncHistory();
     if(loading || !context) return;
+    if(state.dirty && !applying) {draftState='pending';renderSaveStatus();}
     clearTimeout(draftTimer); draftTimer=setTimeout(saveDraft,250);
     const scene=state.scenes[state.sceneIndex];
     if(active && scene && scene.id!==lastScene){lastScene=scene.id;parent.GAMMA_LIGHT_HOST.openScene(scene.id);}
@@ -164,6 +214,6 @@
   window.addEventListener('beforeunload',event=>{saveDraft();if(state.dirty){event.preventDefault();event.returnValue='';}});
   window.GAMMA_LIGHT_EDITOR=Object.freeze({open,suspend,apply,build,undo:hooks.undo,redo:hooks.redo,
     validateImport(design){model.validate(design,context.scenes.map(row=>row.id));if(JSON.stringify(design.stage)!==JSON.stringify(context.stage))throw Error('劇場寸法が異なる照明デザインです。舞台で寸法を確認してください');},
-    externalChange(){changedElsewhere=true;hooks.stop();if(state.dirty)message('別のタブでショーが更新されました。編集中の照明は保持しています');},
+    externalChange(){changedElsewhere=true;hooks.stop();renderSaveStatus();if(state.dirty)message('別のタブでショーが更新されました。編集中の照明は保持しています');},
     status:()=>({showId:context?.showId,dirty:state.dirty,active,changedElsewhere,canUndo:Boolean(state.history.length),canRedo:Boolean(state.future.length)})});
 })();

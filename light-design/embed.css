@@ -42,9 +42,11 @@ html[data-gamma-embedded] .gamma-light-actions {
 /* Gammaでは下部の操作説明列を環境設定へ集約する。保存／LXキュー適用は上部に残す。 */
 html[data-gamma-embedded] .foot { display:none !important; }
 html[data-gamma-embedded] .gamma-light-actions #apply {
-  min-height: 28px;
-  padding: 3px 9px;
-  font-size: 12.5px;
+  min-height: var(--ctrl-sm);
+  padding: 3px 8px;
+  font-size: var(--fs-4);
+  line-height: 1.5;
+  border-radius: var(--radius-sm);
 }
 html[data-gamma-embedded] .gamma-light-actions #runtime-status {
   font-size: 11px;
@@ -53,8 +55,8 @@ html[data-gamma-embedded] .gamma-light-actions #runtime-status {
 }
 html[data-gamma-embedded][data-gamma-light-mode="place"] .gamma-light-actions { display:none; }
 html[data-gamma-embedded] .gamma-light-actions .gearbtn {
-  width: 28px;
-  height: 28px;
+  width: var(--ctrl-sm);
+  height: var(--ctrl-sm);
 }
 @media (max-width: 1300px) {
   html[data-gamma-embedded] .figbar {
@@ -109,3 +111,36 @@ html[data-gamma-embedded][data-stage-skin="blue-black"] .gpick-t:not([aria-expan
 html[data-gamma-embedded][data-stage-skin="blue-black"] .gobo { background: #131518; }
 html[data-gamma-embedded][data-stage-skin="blue-black"] .gpick-face { background: #0f1113; }
 html[data-gamma-embedded][data-stage-skin="blue-black"] .gradslot .chip.empty { background: repeating-linear-gradient(45deg, #24272b 0 4px, #191c20 4px 8px); }
+html[data-gamma-embedded] .scenebox .btn.small {
+  min-height:var(--ctrl-sm); font-size:var(--fs-4); line-height:1.5;
+  border-radius:var(--radius-sm);
+}
+html[data-gamma-embedded] .gamma-light-state-row {
+  display:flex; flex-wrap:wrap; align-items:center; gap:var(--gamma-gap);
+  flex:0 0 auto; padding:4px 0;
+}
+html[data-gamma-embedded] #gamma-light-save-status {
+  flex:1 1 240px; min-width:min(100%,240px); margin:0;
+  font-size:var(--fs-4); line-height:1.6; color:var(--milk-dim); overflow-wrap:anywhere;
+}
+html[data-gamma-embedded] #gamma-light-save-status[data-level="warn"] {
+  border-left:2px solid var(--brass); padding-left:8px; color:var(--milk);
+}
+html[data-gamma-embedded] #gamma-light-save-controls {
+  min-height:var(--ctrl-lg); padding:4px 12px; font-size:var(--fs-4); line-height:1.5;
+  border-radius:var(--radius-sm); flex:0 0 auto;
+}
+
+html[data-gamma-embedded] :is(.filters button,.seg button,.btn.small,.ontoggle) { min-height:var(--ctrl-sm); height:auto; font-size:var(--fs-3); line-height:1.5; border-radius:var(--radius-sm); }
+html[data-gamma-embedded] :is(.field input:not([type="range"]):not([type="checkbox"]):not([type="color"]),.field select,.search) { min-height:var(--ctrl-md); font-size:var(--fs-4); line-height:1.5; }
+html[data-gamma-embedded] .ptitle { font-size:var(--fs-5); line-height:1.5; font-weight:600; letter-spacing:.04em; }
+html[data-gamma-embedded] #conflicts .btn { white-space:normal; height:auto; text-align:left; overflow-wrap:anywhere; }
+
+/* Preserve the deliberately compact controls inside the drawing itself. */
+html[data-gamma-embedded] :is(.planwrap .btn.small,.sec .btn.small,.fmode button) { min-height:24px; font-size:10.5px; padding:2px 8px; }
+/* Translated captions may be wider: retain every action and wrap the compact filter row. */
+html[data-gamma-embedded]:lang(en) .filters { flex-wrap:wrap; gap:2px; }
+html[data-gamma-embedded]:lang(en) .filters button { flex:1 1 42px; margin:0; }
+html[data-gamma-embedded]:lang(en) .sec.front .sechead { display:flex; flex-wrap:wrap; overflow:visible; }
+html[data-gamma-embedded]:lang(en) .sec.front .sechead .viewtitle { position:static; transform:none; margin-right:auto; }
+html[data-gamma-embedded]:lang(en) .sec.front .sechead .fmode { margin-left:auto; }

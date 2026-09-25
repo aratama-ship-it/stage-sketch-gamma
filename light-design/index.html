@@ -139,13 +139,13 @@
   .list.cols2 .row .nm{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .list.cols2 .row .nm small{display:none}
   .list.cols2 button.st{min-width:34px;padding:1px 4px}
-  /* 図の上の中央。照明デザインではLX cue、配置では現在のシーンを出す。 */
+  /* 図の上の中央。照明デザインではLXキュー、配置では現在のシーンを出す。 */
   .scenebox{grid-column:2;justify-self:center;gap:12px}
   /* R-21（2026-09-17 本人要望）: 「ボールドがすごい」ので細くする。大きさは変えない。 */
   .place-scene{min-height:30px;max-width:360px;padding:3px 12px;font:400 16px/1.2 var(--sans);color:var(--milk);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .scenebar{display:flex;align-items:center;gap:4px;min-width:0}
   .scenebar .name{font-family:var(--serif);font-size:13px;color:var(--milk);flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
-  /* シーンの2段（LX cueパネルの上）。セクション／シーンを同じ形の1行で切り替える。 */
+  /* シーンの2段（LXキューパネルの上）。セクション／シーンを同じ形の1行で切り替える。 */
   .lxscene{display:flex;flex-direction:column;gap:3px;padding-bottom:5px;border-bottom:1px solid var(--line-dark)}
   .lxpick{display:flex;align-items:center;gap:3px;min-width:0;font-size:10px;color:var(--milk-dim);letter-spacing:.02em}
   .lxpick>span{flex:0 0 auto;white-space:nowrap}
@@ -154,7 +154,7 @@
   /* 半分幅のパネルなので、中のボタンは折り返しを許す（.btn は既定で nowrap）。 */
   #panel-lxq .btn{white-space:normal;line-height:1.3}
   #allscenes{width:100%;min-height:26px}
-  /* すべてのシーンの一覧（モーダル）。セクション→シーン→LX cue の3段で並べる。 */
+  /* すべてのシーンの一覧（モーダル）。セクション→シーン→LXキュー の3段で並べる。 */
   .dialog .in:has(.alllist){max-width:620px}
   .alllist{display:grid;gap:8px;max-height:52vh;overflow-y:auto}
   .allsec{display:grid;gap:4px}
@@ -170,13 +170,13 @@
   .allq.editing{background:var(--rust);color:var(--milk)}
   .allnone{font-size:11px;color:var(--milk-dim)}
   /* 図の上の中央＝いま画面に出ているデザインがどのキューか。いちばん大きく出す。 */
-  /* R-21: 照明デザイン側（LX cue の表示）も同じく細く。大きさ（20px）は変えない。
+  /* R-21: 照明デザイン側（LXキュー の表示）も同じく細く。大きさ（20px）は変えない。
    * 下の .qnow.draft は「未登録の下書き」を表す。太さでの差は無くなるが、
    * 色（--milk-dim）と大きさ（15px）で区別が付く。 */
   .qnow{font:400 20px/1.2 var(--sans);color:var(--brass);letter-spacing:.04em;white-space:nowrap;display:flex;align-items:baseline;gap:9px}
   .qnow em{font-style:normal;font-weight:400;font-size:14px;color:var(--milk);font-family:var(--serif);letter-spacing:.06em}
   .qnow.draft{color:var(--milk-dim);font-weight:400;font-size:15px}
-  /* 前後の LX cue へ。中央の表示の左右に置く（2026-09-13 本人要望）。 */
+  /* 前後の LXキュー へ。中央の表示の左右に置く（2026-09-13 本人要望）。 */
   .qnav{min-height:30px;padding:2px 10px;font-size:15px;line-height:1}
   .scenebox{align-items:center}
   /* 再生はシーン全体の操作なので図上バー右端。コピー／ペーストだけを灯体情報に残す。 */
@@ -222,7 +222,7 @@
   .figgrid.placement-unfolded .sec.side.r{display:flex}
   /* ---- R-14（2026-09-17 本人要望）: 図を1枚だけウィンドウいっぱいに広げる ----
    * 目的は「正面図の映像を大きい画面で見ること」。編集のための表示ではないので、
-   * 左右のパネル（灯体の一覧・灯体情報・LX cue）は隠して画面を全部使う。
+   * 左右のパネル（灯体の一覧・灯体情報・LXキュー）は隠して画面を全部使う。
    * キーは F=正面図 / p=平面図 / O=側面図、Esc かもう一度同じキーで戻る。
    * 広げている間も Space（再生）と ←→（シーン送り）は効く（本人指定）。 */
   .figgrid[data-solo]{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);justify-items:stretch}
@@ -249,7 +249,7 @@
   html.placement-underlay-hidden #showtoggles [data-show="names"]{display:none}
   /* 上段の左右＝灯体パネル／設定パネル。幅は下の側面図とそろえる（app.jsが設定） */
   .panel{grid-row:1;min-width:0;min-height:0;overflow:hidden;border:1px solid var(--line-dark);background:rgba(25,21,18,.45);padding:8px;display:flex;flex-direction:column;gap:7px;align-self:stretch}
-  /* 左の枠は1枠ぶんのまま。その中で灯体（左）とLX cue（右）が<b>横幅を半分ずつ</b>分け合う
+  /* 左の枠は1枠ぶんのまま。その中で灯体（左）とLXキュー（右）が<b>横幅を半分ずつ</b>分け合う
      （2026-09-13 本人指定。縦に積むと両方が半分の高さになり一覧が2行しか見えなかったので横並び、
      ただし枠は広げずコンパクトに収める）。幅は syncFigureSizes が .leftcol へ入れる。 */
   .leftcol{grid-column:1;grid-row:1;display:flex;flex-direction:row;gap:8px;min-width:0;min-height:0;align-self:stretch;justify-self:start}
@@ -506,13 +506,13 @@
   .tsbtns .btn{min-height:28px;padding:2px 6px;font-size:12px;white-space:nowrap}
   #aim-mirror{width:100%;margin:4px 0}
   #aim-mirror[aria-pressed="true"]{color:var(--milk);border-color:var(--brass);background:rgba(156,130,63,.22)}
-  /* LX cue。#lxqbox は .inspbody の外（パネル直下）なので、幅の面倒を自分で見る。
+  /* LXキュー。#lxqbox は .inspbody の外（パネル直下）なので、幅の面倒を自分で見る。
      .pbox は display:grid なので、中身が縮まないとパネルごと広がる（HANDOFFの落とし穴）。 */
   #lxqbox{min-width:0}
   #lxqbox>*{min-width:0}
   #lxqbox .btn{white-space:normal;line-height:1.3}
   #lxqbox .field>.numin{width:84px;justify-self:start;min-height:26px;border:1px solid var(--line-dark);background:var(--desk-2);color:var(--milk);font:13px var(--sans);padding:2px 6px;text-align:right;font-variant-numeric:tabular-nums}
-  /* LX cueの一覧。1行＝番号・名前・呼び出す・消す（2026-09-13 本人要望）。 */
+  /* LXキューの一覧。1行＝番号・名前・呼び出す・消す（2026-09-13 本人要望）。 */
   /* 半分幅（1440で約150px）に収まる1行。番号→名前→呼び出す→消す。
      名前は縮められるようにして、番号と2つのボタンだけは必ず出す。 */
   /* 番号・名前・消す の3つ（呼び出しは行を押す操作に一本化した）。4列のままだと
@@ -662,7 +662,8 @@
   .kbd b{color:var(--milk);font-weight:500;border:1px solid var(--line-dark);padding:0 4px;margin:0 2px}
 </style>
 <style>.option-b-controls button{min-height:44px}.option-b-controls :focus-visible{outline:2px solid #d3ac59;outline-offset:2px}</style>
-<link rel="stylesheet" href="embed.css?v=2026092430">
+<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20260925-ui1">
+<link rel="stylesheet" href="embed.css?v=20260925-ui1">
 </head>
 <body>
 <div class="proto-note">舞台スケッチ γ — 照明の配置・デザイン</div>
@@ -727,7 +728,7 @@
               </span>
             </span>
           </span>
-          <!-- 中央は、照明デザインでは編集中のLX cue、配置では現在のシーン名。
+          <!-- 中央は、照明デザインでは編集中のLXキュー、配置では現在のシーン名。
                配置のシーン名を押すとシーン一覧を開く。 -->
           <span class="fb scenebox" id="scenerow">
             <button type="button" class="btn small quiet qnav" id="q-prev">〈</button>
@@ -742,9 +743,9 @@
         <!-- 凸の形: 上＝平面図（真上から）、下段＝下手｜客席から（正面）｜上手。
              下段は3つとも縦軸が高さなので、高さの目盛りが横一直線にそろう。 -->
         <div class="figgrid">
-          <!-- 左は2枠ぶんを横並び（2026-09-13 本人要望）。左＝灯体の一覧、右＝LX cue。
+          <!-- 左は2枠ぶんを横並び（2026-09-13 本人要望）。左＝灯体の一覧、右＝LXキュー。
                縦に積むと両方が半分の高さになるので、横に並べて高さをまるごと使う。
-               LX cueは照明デザインの中ではなく独立したパネル。 -->
+               LXキューは照明デザインの中ではなく独立したパネル。 -->
           <div class="leftcol">
           <!-- 上段左＝灯体の一覧（下手を見る図の真上）。2026-09-11 本人要望で左列から移動 -->
           <section class="panel" id="panel-fixtures">
@@ -795,7 +796,7 @@
               <button type="button" class="btn small" id="allscenes" title="セクションとシーンを全部並べて見ます">シーンの一覧</button>
             </div>
             <div class="lxhead">
-              <p class="ptitle">LX cue</p>
+              <p class="ptitle">LXキュー</p>
               <button type="button" class="ontoggle" id="lxlink" aria-pressed="true"><span class="sw"></span><b><span class="swlab">シーンと連動</span>オン</b></button>
             </div>
             <div class="lxbody" id="lxqbox"></div>
@@ -924,6 +925,7 @@
      結果や注意は「灯体情報」パネル最下部の #insp-log へ常設で出す。
      要素は残さない（.toast のCSSも使われなくなる）。 -->
 
+<script src="../gamma-ui.js?v=20260925-ui1"></script>
 <script src="rig-engine.js?v=2026092130"></script>
 <script src="../stage-performer-contour.js?v=2026092506"></script>
 <script src="../stage-performer-body.js?v=2026092506"></script>
@@ -932,13 +934,15 @@
 <script src="volume-light.js?v=20260915-2"></script>
 <script src="laser-effects.js?v=20260915-5-color-presets"></script>
 <script src="laser-effects-ui.js?v=20260915-3-supported-shapes"></script>
-<script src="app.js?v=2026092431"></script>
+<script src="app.js?v=20260925-ui1"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20260915-3-vertical-cards"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->
 <script src="selected-light-presets-engine.js?v=2026092114"></script>
 <script src="selected-light-presets-ui.js?v=2026092114"></script>
-<script src="../gamma-light-model.js?v=2026092113"></script>
-<script src="embed.js?v=2026092434"></script>
+<script src="../gamma-light-model.js?v=20260925-ui1"></script>
+<script src="embed.js?v=20260925-ui1"></script>
+<script src="../gamma-ui-i18n.js?v=20260925-ui1"></script>
+<script src="ui-i18n.js?v=20260925-ui1"></script>
 </body>
 </html>

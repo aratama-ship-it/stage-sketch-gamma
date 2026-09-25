@@ -84,7 +84,7 @@
     const hint = node('p', t('共有された文章と画面だけを表示します。演者の自分用メモは表示されません。', 'Only explicitly shared notes and screens appear here. Personal notes stay private.'));
     const filters = node('div', '', 'stage-feedback-filters');
     function filter(id, label) { const group = node('div'), caption = node('label', label), select = node('select'); caption.htmlFor = id; select.id = id; group.append(caption, select); filters.append(group); return select; }
-    const showFilter = filter('stage-feedback-show', t('ショー', 'Show')), sceneFilter = filter('stage-feedback-scene', t('場面', 'Scene')), nameFilter = filter('stage-feedback-name', t('表示名', 'Display name'));
+    const showFilter = filter('stage-feedback-show', t('ショー', 'Show')), sceneFilter = filter('stage-feedback-scene', t('シーン', 'Scene')), nameFilter = filter('stage-feedback-name', t('表示名', 'Display name'));
     const message = node('p'); message.setAttribute('role', 'status'); message.setAttribute('aria-live','polite');
     const list = node('ol', '', 'stage-share-study-notes');
     const refresh = button(t('再取得', 'Refresh'), retrieve);
@@ -93,7 +93,7 @@
     const option = (value, label) => { const el = node('option', label); el.value = value; return el; };
     function resetSubFilters() {
       const selected = rows.filter(row => !showFilter.value || row.link.showId === showFilter.value);
-      sceneFilter.replaceChildren(option('',t('全場面', 'All scenes')), ...[...new Map(selected.map(row => [row.link.showId + ':' + row.memo.sceneId, row.memo.sceneTitle])).entries()].map(([id,title]) => option(id,title)));
+      sceneFilter.replaceChildren(option('',t('全シーン', 'All scenes')), ...[...new Map(selected.map(row => [row.link.showId + ':' + row.memo.sceneId, row.memo.sceneTitle])).entries()].map(([id,title]) => option(id,title)));
       nameFilter.replaceChildren(option('',t('全員', 'Everyone')), ...[...new Set(selected.map(row => row.memo.name))].map(name => option(name,name)));
     }
     function render() {
@@ -299,7 +299,7 @@
     stamp = node('p', '', 'stage-share-study-meta'); controls = node('div', '', 'stage-share-study-block'); notes = node('div', '', 'stage-share-study-note-list');
     confirmBox = node('div', '', 'stage-share-study-block stage-share-study-confirm'); confirmBox.hidden = true; library = node('div', '', 'stage-share-study-library');
     refreshButton = button(t('状態・メモを再取得', 'Refresh status and notes'), refresh);
-    const published = node('p', t('発行・更新した時点の全場面を公開します。編集中の変更は、次に「公開内容を更新」するまで届きません。', 'Publishes all scenes as a snapshot. Working changes stay private until you update the published content.'), 'stage-share-study-copy');
+    const published = node('p', t('発行・更新した時点の全シーンを公開します。編集中の変更は、次に「公開内容を更新」するまで届きません。', 'Publishes all scenes as a snapshot. Working changes stay private until you update the published content.'), 'stage-share-study-copy');
     const recipients = node('p', t('受取人は招待リンクから、このショーを開けます。自分用メモは本人だけに保存され、共有ボタンを押した内容だけが届きます。ローカル音源と端末内の独自モデルは共有されません。', 'Recipients can open this show from the invitation link. Personal notes stay private; you receive only what they explicitly share. Local audio and device-only custom models are not shared.'), 'stage-share-study-muted');
     const history = node('p', t('更新後も以前の舞台図を最大50版・32 MiBまで残し、リンクの受取人が確認できます。保存上限では更新を止め、古い内容を自動削除しません。', 'Earlier stage views remain available to recipients of this link, up to 50 revisions / 32 MiB. At the limit, updates stop; earlier content is not deleted automatically.'), 'stage-share-study-muted');
     const limit = node('p', t('上限に達したときは、不要なリンクを無効化してから保存データを削除すると、発行枠が空きます。', 'When you reach the limit, revoke an unneeded link and then delete its saved data to free a show slot.'), 'stage-share-study-muted');

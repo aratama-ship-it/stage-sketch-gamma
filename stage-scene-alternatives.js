@@ -219,7 +219,7 @@
     const labels = {pieces:'配置・姿勢・持ち物',note:'シーンのメモ',notes:'付箋',strokes:'ペン',arrows:'動線・矢印',background:'背景色',photo:'写真',screenTexts:'文字',beat:'演出内容',rehearsal:'時間・再生設定',transitionNote:'転換メモ',audioTrackId:'音楽',formationLink:'フォーメーション連携',lightingIntent:'照明の意図',blackout:'暗転',stashed:'舞台裏の配置'};
     for (const key of fields) if (JSON.stringify(a.content[key]) !== JSON.stringify(b.content[key])) rows.push(labels[key]);
     if (JSON.stringify(a.lighting) !== JSON.stringify(b.lighting)) rows.push('照明デザイン');
-    if (JSON.stringify(a.cues.map(({id,...cue})=>cue)) !== JSON.stringify(b.cues.map(({id,...cue})=>cue))) rows.push('場面のキュー');
+    if (JSON.stringify(a.cues.map(({id,...cue})=>cue)) !== JSON.stringify(b.cues.map(({id,...cue})=>cue))) rows.push('シーンのキュー');
     return rows;
   }
   function remapScene(scene, oldId, idFactory) {

@@ -1161,6 +1161,7 @@
     "最初の位置に戻す": "回到初始位置",
     "ドラッグ": "拖曳",
     "見回す": "環視",
+    "場面を切り替え": "切換場景",
     "シーンを切り替え": "切換場景",
     "の視界": "的視野",
     "目の高さ": "視線高度",
@@ -2262,3 +2263,24 @@
 
   window.SHOSAI_I18N_PACKS["zh-Hant"] = { text: TEXT, maps: MAPS, say: SAY, generated: GENERATED, needsReview: NEEDS_REVIEW };
 })();
+
+// Accept the canonical scene wording while retaining historical lookup keys.
+(() => {
+  const packs = [window.SHOSAI_I18N, ...Object.values(window.SHOSAI_I18N_PACKS || {})];
+  for (const pack of packs) {
+    if (pack?.say) {
+      for (const [pattern,replacement] of [...pack.say]) {
+        if (pattern.source.includes('場面') && !pack.say.some(([other])=>other.source===pattern.source.replaceAll('場面','シーン'))) pack.say.push([new RegExp(pattern.source.replaceAll('場面','シーン'),pattern.flags),replacement]);
+      }
+    }
+    const text = pack?.text; if (!text) continue;
+    for (const [key,value] of Object.entries(text)) {
+      if (key.includes('場面') && !key.includes('場面問答')) {
+        const canonical=key.replaceAll('場面','シーン');
+        if (!(canonical in text)) text[canonical]=value;
+      }
+    }
+  }
+})();
+
+window.SHOSAI_I18N_PACKS["zh-Hant"].text["無料テスト版γ"] = "γ 免費測試版";

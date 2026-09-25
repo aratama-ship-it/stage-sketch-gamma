@@ -82,6 +82,11 @@
   mountMachineryWorkspace();
   let latestContext=null;
   const editor=()=>frame.contentWindow?.GAMMA_LIGHT_EDITOR;
+  function syncFrameTheme() {
+    const root=frame.contentDocument?.documentElement;
+    if(root) root.dataset.stageSkin=document.documentElement.dataset.stageSkin || 'warm-black';
+  }
+  window.addEventListener('gamma-ui-theme-change',syncFrameTheme);
   function close3dWorkspace() {
     const overlay=document.getElementById('stage-fpv-overlay');
     if(!overlay || overlay.hidden || !overlay.classList.contains('stage-fpv-workspace')) return;
@@ -173,14 +178,18 @@
      ほかの文字（読み込み中など）に戻るときは、下の MutationObserver が小窓の形を外す。 */
   function failed(error) {
     status.textContent='';
-    status.classList.add('is-failure');
     status.setAttribute('role','alert');
-    const head=document.createElement('strong');head.className='gamma-light-status-title';head.textContent='照明を開けませんでした';
-    const why=document.createElement('span');why.className='gamma-light-status-why';why.textContent=error.message;
-    const closeButton=document.createElement('button');closeButton.type='button';closeButton.className='gamma-light-status-close';
-    closeButton.textContent='✕';closeButton.setAttribute('aria-label','閉じる');
-    closeButton.onclick=()=>{status.textContent='';};
-    status.append(closeButton,head,why);
+    status.classList.add('gamma-workspace-error');
+    const header=document.createElement('header'), heading=document.createElement('h3');
+    heading.textContent='照明を開けませんでした';
+    const details=document.createElement('div');details.id='gamma-light-recovery-details';
+    const message=document.createElement('p');message.textContent=String(error?.message || error);
+    message.setAttribute('data-no-i18n','');details.append(message);
+    const toggle=document.createElement('button');toggle.type='button';
+    const toggleLabel=()=>{toggle.textContent=details.hidden?'復旧の案内を開く':'復旧の案内を閉じる';toggle.setAttribute('aria-expanded',String(!details.hidden));};
+    toggle.setAttribute('aria-controls',details.id);toggleLabel();
+    toggle.onclick=()=>{details.hidden=!details.hidden;toggleLabel();};
+    header.append(heading,toggle);status.append(header,details);
     const ctx=latestContext || host.context(), draftKey='gamma:lighting-draft-v1:'+ctx.showId;
     const raw=localStorage.getItem(draftKey);
     if(raw) {
@@ -188,7 +197,7 @@
       exportButton.onclick=()=>{const url=URL.createObjectURL(new Blob([raw],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='gamma-lighting-recovery.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
       const savedButton=document.createElement('button');savedButton.type='button';savedButton.textContent='控えを保管して保存済みの照明を開く';
       savedButton.onclick=()=>{try{trimConflicts(draftKey,1);localStorage.setItem(draftKey+':conflict:'+Date.now(),raw);localStorage.removeItem(draftKey);editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(error){failed(error);}};
-      status.append(exportButton,savedButton);
+      details.append(exportButton,savedButton);
       /* 控えの中身（design）は、照明エディタの「保存 → 読み込む」でそのまま戻せる形。
          まるごとの控え（上のボタン）は復旧用の原本、こちらは戻して使うためのファイル。
          2026-09-17: 控えが残ったまま開けない状態から抜ける道が「保管」しかなく、
@@ -212,7 +221,7 @@
           localStorage.removeItem(draftKey);
           try{editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(again){failed(again);}
         };
-        status.append(useButton,dropButton);
+        details.append(useButton,dropButton);
       }
     }
     if(!isQuotaError(error)) return;
@@ -224,11 +233,11 @@
       +(raw?'まず「編集控えを書き出す」でファイルへ控えてから、下で空けてください。':'下のどれかを消すと開けるようになります。');
     const list=document.createElement('p');
     list.textContent='内訳: '+rows.slice(0,4).map(row=>`${row.key}（${sizeText(row.bytes)}）`).join('　/　');
-    status.append(note,list);
+    details.append(note,list);
     /* 控えは、いま開いているショーのぶんとは限らない（別のショーの控えが残っていることがある）。
        消す前に全部まとめて書き出せるようにする。 */
     const lightRows=rows.filter(row=>row.key.startsWith('gamma:lighting-draft-v1:'));
-    if(lightRows.length) status.append(dumpButton(lightRows,'照明の控えをすべて書き出す','gamma-lighting-storage-recovery.json',
+    if(lightRows.length) details.append(dumpButton(lightRows,'照明の控えをすべて書き出す','gamma-lighting-storage-recovery.json',
       'いま開いているショーのぶんに限らず、この端末に残っている照明の控えを1つのファイルへまとめます'));
     /* 空けられるのは「アプリが自動で作った控え」だけ。ショー本体と編集中の控えには触れない。
        2026-09-17 実機の内訳: ショー本体1.4MB・編集中の控え1.0MB・作り替え前の控え744KB で上限に達していた。 */
@@ -236,15 +245,15 @@
     if(!backupRows.length) {
       const none=document.createElement('p');
       none.textContent='自動で作られた控えは残っていません。照明を「LXキューを適用」で確定するか、使わないショーを減らすと空きます。';
-      status.append(none);
+      details.append(none);
       return;
     }
     const bytes=backupRows.reduce((sum,row)=>sum+row.bytes,0);
     const what=document.createElement('p');
     what.textContent='空けられるもの（アプリが自動で作った控え・ショー本体や編集中の控えは消しません）: '
       +BACKUP_KINDS.map(kind=>{const hit=backupRows.filter(row=>kind.test(row.key));return hit.length?`${kind.name} ${hit.length}件（約${sizeText(hit.reduce((sum,row)=>sum+row.bytes,0))}）`:null;}).filter(Boolean).join('　/　');
-    status.append(what);
-    status.append(dumpButton(backupRows,'自動の控えを書き出す','gamma-storage-backup.json','消す前の控えです。念のため取っておいてください'));
+    details.append(what);
+    details.append(dumpButton(backupRows,'自動の控えを書き出す','gamma-storage-backup.json','消す前の控えです。念のため取っておいてください'));
     const purge=document.createElement('button');purge.type='button';
     purge.textContent=`書き出した自動の控えを消して空ける（${backupRows.length}件・約${sizeText(bytes)}）`;
     purge.onclick=()=>{
@@ -252,7 +261,7 @@
       backupRows.forEach(row=>localStorage.removeItem(row.key));
       try{editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(again){failed(again);}
     };
-    status.append(purge);
+    details.append(purge);
   }
   // 小窓（開けなかったとき）以外の文字に変わったら、赤い枠の形を外す
   new MutationObserver(()=>{
@@ -494,7 +503,7 @@
    *   失敗したらモードを切り替えない。切り替えると「適用したつもりで移動したのに入っていない」が起きる。 */
   /* T-14（2026-09-18 本人要望）: 劇場設定でも同じ形の窓を出すので、題と本文と
    * ボタンの文言を受け取れるようにした（R-30 の照明版をそのまま一般化）。 */
-  function askApplyBeforeLeaving(copy) {
+  function askApplyBeforeLeaving(copy, returnFocus) {
     const text = copy || {
       title: '照明をショーへ適用しますか？',
       body: 'まだ適用していない照明の編集があります。適用すると、いまの照明がこのショーへ保存されます。'
@@ -508,7 +517,7 @@
       backdrop.className='stage-modal-backdrop';
       const box=document.createElement('div');
       box.className='stage-modal gamma-light-leave-modal';
-      box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
+      box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true'); box.setAttribute('aria-label',text.title);
       box.innerHTML='<header class="stage-modal-head"><h2>'+text.title+'</h2></header>'
         +'<div class="stage-modal-body"><p>'+text.body+'</p></div>';
       const acts=document.createElement('footer');
@@ -523,18 +532,19 @@
                   mk('キャンセル','cancel','btn-quiet'),
                   mk(text.apply,'apply','stage-minor-action'));
       box.append(acts);
-      const onKey=(e)=>{if(e.key==='Escape'){e.preventDefault();cleanup();resolve('cancel');}};
-      function cleanup(){document.removeEventListener('keydown',onKey,true);backdrop.remove();box.remove();}
-      backdrop.onclick=()=>{cleanup();resolve('cancel');};
-      document.addEventListener('keydown',onKey,true);
+      let releaseFocus=null;
+      function cleanup(){backdrop.remove();box.remove();releaseFocus?.();}
+      const cancel=()=>{cleanup();resolve('cancel');};
+      backdrop.onclick=cancel;
       document.body.append(backdrop,box);
-      acts.lastElementChild.focus();    // 主操作は右端＝最後の要素。
+      releaseFocus=window.GAMMA_UI.containDialog(box,{initialFocus:acts.lastElementChild,returnFocus,onCancel:cancel});
     });
   }
 
   async function select(next) {
     if(!['normal','light-placement','light-design','venue-setup','script','cuesheet'].includes(next)) return;
     const switchingMode=mode!==next;
+    const returnFocus=document.querySelector('#stage-workspace-tabs [data-stage-workspace-mode="'+next+'"]');
     // スマホ確認機では劇場・照明編集へ移らず、ショーの読込と閲覧を使う。
     if(phoneViewerWorkspace() && next!=='normal') return;
     /* 案A（2026-09-23）: 劇場が決まるまで閉じるのは機材配置・照明デザインだけ。
@@ -560,7 +570,7 @@
           +'ただしショー本体にはまだ入りません。',
         skip:'反映しないで移る',
         apply:'この劇場を反映する',
-      });
+      },returnFocus);
       if(answer==='cancel') return;
       if(answer==='apply') {
         try { window.SHOSAI_VENUE_EDITOR?.apply?.(); }
@@ -572,7 +582,7 @@
     if(mode!==next && isLightMode(mode) && !isLightMode(next)) {
       const lightStatus=editor()?.status?.();
       if(lightStatus?.dirty) {
-        const answer=await askApplyBeforeLeaving();
+        const answer=await askApplyBeforeLeaving(null,returnFocus);
         if(answer==='cancel') return;
         if(answer==='apply') {
           try {
@@ -609,9 +619,14 @@
           goVenue.addEventListener('click',()=>select('venue-setup'));
           status.append(goVenue);
         } else if(!loaded) {
-          frame.src='light-design/index.html?embed=gamma&v=2026092506'; loaded=true;
+          frame.src='light-design/index.html?embed=gamma&v=20260925-ui1'; loaded=true;
           status.textContent='照明デザインを開いています…';
-        } else if(editor()) editor().open(context, next);
+        } else if(editor()) {
+          editor().open(context, next);
+          frame.hidden=false;
+          status.textContent='';
+          status.classList.remove('gamma-workspace-error');
+        }
       } else if(next==='venue-setup') {
         const context=host.context(); latestContext=context;
         if(context.readOnly) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
@@ -642,7 +657,9 @@
     } catch(error) { panel.hidden=false; failed(error); }
   }
   frame.addEventListener('load',()=>{
-    try { editor().open(host.context(),mode); frame.hidden=false; status.textContent=''; syncHistory(); scheduleFrameHeight(); }
+    try { syncFrameTheme(); editor().open(host.context(),mode); frame.hidden=false;
+      status.textContent=''; status.classList.remove('gamma-workspace-error');
+      syncHistory(); scheduleFrameHeight(); }
     catch(error) { failed(error); }
   });
   /* ヘッダーの主要タブは左から1〜5。モードの状態を直接書き換えず、必ずタブを押すことで

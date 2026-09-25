@@ -38,9 +38,9 @@
     }
     if (!object(design.stage) || ['W','D','H'].some(k=>!Number.isFinite(design.stage[k]) || design.stage[k]<=0 || design.stage[k]>300)) throw Error('舞台寸法を確認してください');
     if (!object(design.rig)) throw Error('仕込みがありません');
-    const fixtures=ids(design.rig.fixtures,'灯体'),trusses=ids(design.rig.trusses,'バトン'),scenes=ids(design.scenes,'場面');
-    if (!scenes.size || fixtures.size>1000 || trusses.size>200 || scenes.size>2000) throw Error('仕込み・場面の件数を確認してください');
-    if (expectedSceneIds && (scenes.size!==expectedSceneIds.length || expectedSceneIds.some(id=>!scenes.has(id)))) throw Error('ショーと照明の場面IDが一致しません。場面の並び順による自動割当は行いません');
+    const fixtures=ids(design.rig.fixtures,'灯体'),trusses=ids(design.rig.trusses,'バトン'),scenes=ids(design.scenes,'シーン');
+    if (!scenes.size || fixtures.size>1000 || trusses.size>200 || scenes.size>2000) throw Error('仕込み・シーンの件数を確認してください');
+    if (expectedSceneIds && (scenes.size!==expectedSceneIds.length || expectedSceneIds.some(id=>!scenes.has(id)))) throw Error('ショーと照明のシーンIDが一致しません。シーンの並び順による自動割当は行いません');
     for (const fixture of design.rig.fixtures) {
       if (!object(fixture.mount) || !['truss','floor','side','front','cyc','legacy-panel'].includes(fixture.mount.type)) throw Error('対応していない灯体の取り付け方です');
       if (fixture.mount.type==='truss' && !trusses.has(fixture.mount.trussId)) throw Error('灯体が参照するバトンがありません');

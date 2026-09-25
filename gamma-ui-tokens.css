@@ -1,0 +1,100 @@
+/* Gamma shared tokens. See gamma-dev/DESIGN_TOKENS.md. */
+:root {
+  --gamma-gap: 8px;
+  --gamma-hit: 36px;
+
+  /* 文字サイズの階段。0.5px刻みはここでは使わない。 */
+  --fs-1: 9px;   /* 最小の補助文字・キャプション */
+  --fs-2: 10px;  /* パネル見出し・小さいラベル */
+  --fs-3: 11px;  /* 本文の基準（既存で最頻出） */
+  --fs-4: 12px;  /* やや強調した本文・ボタン */
+  --fs-5: 13px;  /* タブ・見出し級 */
+  --fs-6: 14px;  /* 強調ラベル・主要ボタン */
+  --fs-7: 16px;  /* 小見出し */
+  --fs-8: 18px;  /* 見出し */
+  --fs-9: 22px;  /* 大見出し */
+
+  /* 操作の高さ3段。既存の44px（アイコン操作）・34px（.btn基準）・28px（小型）を正式な階段にする。 */
+  --ctrl-sm: 28px;
+  --ctrl-md: 34px;
+  --ctrl-lg: 44px;
+
+  /* 角丸2段＋円 */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-full: 50%;
+
+  /* アイコンボタンの正方形2段 */
+  --icon-sm: 32px;
+  --icon-lg: 44px;
+}
+:root[data-stage-skin] {
+  --desk:#191512; --desk-2:#201b16; --desk-3:#282119; --line-dark:#382f25;
+  --stage-ui-recess-rgb:13,12,11;
+  --gamma-ui-3d:#0d0a08;
+  --recess:rgba(var(--stage-ui-recess-rgb),.3);
+}
+:root[data-stage-skin="blue-black"] {
+  --desk: #141619;
+  --desk-2: #1b1e22;
+  --desk-3: #23272c;
+  --line-dark: #373d44;
+  --stage-ui-recess-rgb: 13, 14, 16;
+  --stage-ui-seat-rgb: 21, 23, 26;
+  --stage-ui-desk-rgb: 20, 22, 25;
+  --stage-ui-panel-rgb: 27, 30, 34;
+  --stage-ui-scrim-rgb: 7, 8, 9;
+  --stage-ui-pose-rgb: 13, 14, 16;
+  --stage-ui-grid-rgb: 49, 53, 58;
+  --stage-ui-float-rgb: 21, 23, 26;
+  --stage-ui-float-deep-rgb: 13, 14, 16;
+  --stage-ui-rail: #15171a;
+  --stage-ui-phone: #15171a;
+  --stage-ui-raised: var(--desk-2);
+  --stage-ui-desk: var(--desk);
+  --stage-ui-model-base: #0d0e10;
+  --stage-ui-model-head: var(--desk-2);
+  --stage-ui-model-control: var(--desk-3);
+  --stage-ui-model-side: var(--desk);
+}
+:root[data-stage-skin="blue-black"] { --gamma-ui-3d:#0d0e10; }
+
+/* Repeated display controls share dimensions; canvas and scene colors remain independent. */
+html[data-stage-skin] .stage-center-bar .stage-name-toggle,
+html[data-gamma-embedded] .showtoggles button {
+  min-height:var(--ctrl-sm); height:auto; padding:3px 8px;
+  font-size:var(--fs-3); line-height:1.5;
+}
+html[data-stage-skin] .stage-view-select select {
+  height:var(--ctrl-sm); font-size:var(--fs-3); line-height:calc(var(--ctrl-sm) - 2px);
+}
+html[data-stage-skin] #stage-fpv-overlay { background:var(--gamma-ui-3d); }
+html[data-stage-skin] .stage-scene-resize,
+html[data-stage-skin] .stage-roster-list-resize { height:12px; }
+html[data-stage-skin] .stage-scene-resize:focus-visible,
+html[data-stage-skin] .stage-roster-list-resize:focus-visible {
+  outline:2px solid var(--brass); outline-offset:2px; border-top-color:var(--brass);
+}
+body.gamma-is-list-resizing, body.gamma-is-list-resizing * { cursor:ns-resize !important; user-select:none !important; }
+
+/* Shared role rules: compact desktop work controls, not every icon or canvas handle. */
+:root { --gamma-selected-bg:#3a311b; --gamma-primary-bg:#9d4424; }
+html[data-stage-skin] :is(.stage-seat,.stage-canvas-tool,.stage-tool-bar button,.stage-roster-add-row),
+html[data-gamma-embedded] :is(.filters button,.seg button,.btn.small,.ontoggle) {
+  min-height:var(--ctrl-sm); border-radius:var(--radius-sm); font-size:var(--fs-3); line-height:1.5;
+}
+html[data-stage-skin] :is(.stage-panel,.stage-modal) :is(input.stage-text-input,select.stage-text-input,.stage-minor-action),
+html[data-gamma-embedded] :is(.field input:not([type="range"]):not([type="checkbox"]):not([type="color"]),.field select,.search,.btn:not(.small)) {
+  min-height:var(--ctrl-md); border-radius:var(--radius-sm); font-size:var(--fs-4); line-height:1.5;
+}
+html[data-stage-skin] .stage-panel-head,
+html[data-gamma-embedded] .ptitle { font-size:var(--fs-5); font-weight:600; line-height:1.5; letter-spacing:.04em; }
+html[data-stage-skin] :is(.stage-name-toggle,.stage-seat,.stage-canvas-tool,.stage-tool-bar button)[aria-pressed="true"],
+html[data-stage-skin] #stage-fpv-overlay .stage-fpv-chip.on,
+html[data-gamma-embedded] :is(.showtoggles button,.filters button,.seg button,.ontoggle,.slp-tab,.fmode button)[aria-pressed="true"] {
+  background:var(--gamma-selected-bg); border-color:var(--brass); color:var(--milk);
+  box-shadow:inset 0 -2px 0 var(--brass);
+}
+html[data-gamma-embedded] #apply { background:var(--gamma-primary-bg); color:var(--milk); border-color:var(--rust); }
+html[data-stage-skin] :is(button,input,select,textarea):focus-visible,
+html[data-gamma-embedded] :is(button,input,select,textarea):focus-visible { outline:2px solid var(--brass); outline-offset:2px; }

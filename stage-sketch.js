@@ -6067,6 +6067,7 @@
     const active = standalone || !location.hash || location.hash === "#stage";
     if (active) document.documentElement.dataset.stageSkin = skin;
     else delete document.documentElement.dataset.stageSkin;
+    window.dispatchEvent(new CustomEvent("gamma-ui-theme-change"));
     els.skinButtons.forEach((button) => {
       button.setAttribute("aria-pressed", String(button.dataset.stageUiSkin === skin));
     });
@@ -11401,7 +11402,10 @@
      **警告が誰にも見えないまま保存が失敗する**（2026-08-23 に判明。P1-7の芯）。
      ★ここを経由せず els.saveStatus.textContent へ直接書かないこと。 */
   function setSaveStatus(text, level = "info", code = "") {
-    if (els.saveStatus) els.saveStatus.textContent = text;
+    if (els.saveStatus) {
+      els.saveStatus.textContent = text;
+      els.saveStatus.dataset.level = level;
+    }
     const recovery = document.getElementById("stage-save-recovery-link");
     if (recovery) {
       recovery.hidden = code !== "QUOTA_EXCEEDED";
@@ -18554,7 +18558,25 @@
     }).observe(els.sceneDesc);
   }
 
+  // One focused edit in a scene-note field is one application Undo step.
+  // This listener runs before the existing input handler changes the stored note.
+  function trackSceneNoteUndo(input, currentScene) {
+    let recordedScene = null;
+    const reset = () => { recordedScene = null; };
+    input.addEventListener("focus", reset);
+    input.addEventListener("blur", reset);
+    input.addEventListener("input", () => {
+      const scene = currentScene();
+      if (!scene || (scene.note || "") === input.value.slice(0, 200)) return;
+      if (recordedScene !== scene.id) {
+        checkpoint();
+        recordedScene = scene.id;
+      }
+    }, true);
+  }
+
   if (els.sceneDescText) {
+    trackSceneNoteUndo(els.sceneDescText, sc);
     els.sceneDescText.addEventListener("input", () => {
       const scene = sc();
       if (!scene) return;
@@ -19003,71 +19025,25 @@
         handle.setAttribute("aria-valuetext", `${current}px`);
       });
     };
-    const finish = (commit) => {
-      const drag = ui.drag;
-      if (!drag) return;
-      ui.drag = null;
-      document.body.classList.remove("is-roster-list-resizing");
-      if (drag.handle.hasPointerCapture(drag.pointerId)) drag.handle.releasePointerCapture(drag.pointerId);
-      if (commit) { prefs.rosterListHeights = drag.heights; savePrefs(); }
-      apply();
-    };
-    const reset = (key) => {
-      finish(false);
-      const next = readPrefs();
-      delete next[key];
-      prefs.rosterListHeights = next;
-      savePrefs(); apply();
-    };
     handles.forEach((handle) => {
       const list = listFor(handle);
       if (!list) return;
       const key = handle.dataset.rosterListResize;
-      handle.title = "ドラッグで高さを変更。上下キーで調整、ダブルクリックまたはEnterで元に戻す";
       ui.handles.push(handle);
-      handle.addEventListener("pointerdown", (event) => {
-        if (event.button !== 0 || event.isPrimary === false || ui.drag) return;
-        event.preventDefault(); event.stopPropagation();
-        apply();
-        ui.drag = {
-          handle, key, pointerId: event.pointerId, startY: event.clientY,
-          startHeight: list.getBoundingClientRect().height,
-          maxHeight: fullHeight(list), heights: readPrefs(),
-        };
-        handle.setPointerCapture(event.pointerId);
-        handle.focus({ preventScroll: true });
-        document.body.classList.add("is-roster-list-resizing");
-      });
-      handle.addEventListener("pointermove", (event) => {
-        const drag = ui.drag;
-        if (!drag || drag.handle !== handle || event.pointerId !== drag.pointerId) return;
-        event.preventDefault();
-        const minHeight = Math.min(80, drag.maxHeight);
-        drag.heights[key] = Math.round(clamp(
-          drag.startHeight + (event.clientY - drag.startY), minHeight, drag.maxHeight,
-        ));
-        if (!ui.frame) ui.frame = requestAnimationFrame(() => { ui.frame = 0; apply(); });
-      });
-      handle.addEventListener("pointerup", (event) => {
-        if (ui.drag && event.pointerId === ui.drag.pointerId) finish(true);
-      });
-      handle.addEventListener("pointercancel", () => finish(false));
-      handle.addEventListener("lostpointercapture", () => finish(false));
-      handle.addEventListener("dblclick", (event) => { event.preventDefault(); reset(key); });
-      handle.addEventListener("keydown", (event) => {
-        if (!["ArrowUp", "ArrowDown", "Home", "End", "Enter"].includes(event.key)) return;
-        event.preventDefault(); event.stopPropagation();
-        if (event.isComposing || event.metaKey || event.ctrlKey || event.altKey) return;
-        if (event.key === "Enter") { reset(key); return; }
-        const max = fullHeight(list);
-        const min = Math.min(80, max);
-        const current = list.getBoundingClientRect().height;
-        const nextHeight = event.key === "Home" ? min : event.key === "End" ? max
-          : current + (event.key === "ArrowDown" ? 1 : -1) * (event.shiftKey ? 60 : 20);
-        const next = readPrefs();
-        next[key] = Math.round(clamp(nextHeight, min, max));
-        prefs.rosterListHeights = next;
-        savePrefs(); apply();
+      window.GAMMA_UI.bindHeight(handle, {
+        value: () => list.getBoundingClientRect().height,
+        bounds: () => { const max = fullHeight(list); return { min: Math.min(80, max), max }; },
+        start: () => { ui.drag = { heights: readPrefs() }; },
+        preview: (height) => { ui.drag.heights[key] = height; apply(); },
+        commit: (height) => {
+          const next = ui.drag.heights; next[key] = height;
+          ui.drag = null; prefs.rosterListHeights = next; savePrefs(); apply();
+        },
+        cancel: () => { ui.drag = null; apply(); },
+        reset: () => {
+          const next = readPrefs(); delete next[key];
+          prefs.rosterListHeights = next; savePrefs(); apply();
+        },
       });
     });
     ui.observer = new MutationObserver(() => {
@@ -19077,8 +19053,7 @@
       const list = listFor(handle);
       if (list) ui.observer.observe(list, { childList: true });
     });
-    window.addEventListener("resize", () => { finish(false); apply(); });
-    window.addEventListener("blur", () => finish(false));
+    window.addEventListener("resize", apply);
     apply();
   }
 
@@ -19620,12 +19595,14 @@
       render();
       persistSoon();
     });
+    trackSceneNoteUndo(sceneNote, sc);
     sceneNote.addEventListener("input", () => {
       sc().note = sceneNote.value.slice(0, 200);
       syncSceneDesc();
       persistSoon();
     });
 
+    trackSceneNoteUndo(memoInput, sc);
     memoInput.addEventListener("input", () => {
       sc().note = memoInput.value.slice(0, 200);
       syncSceneDesc();
@@ -25215,6 +25192,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
             const contentHeight = note.scrollHeight + borderHeight;
             note.style.height = `${Math.ceil(Math.max(46, currentHeight, contentHeight))}px`;
           };
+          trackSceneNoteUndo(note, () => scene);
           note.addEventListener("input", () => {
             scene.note = note.value.slice(0, 200);
             growNote(true);
@@ -25343,6 +25321,11 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
    * いま編集している絵へ必ず戻す。 */
   function sceneGridThumbnail(scene, view) {
     const keepScene = state.project.activeSceneId;
+    const sceneIndex = state.project.scenes.findIndex(item => item.id === scene.id);
+    const originalScene = state.project.scenes[sceneIndex];
+    // Drawing resolves support heights and positions. Thumbnail previews must not
+    // write those derived values into scenes the user has not edited.
+    if (originalScene) state.project.scenes[sceneIndex] = JSON.parse(JSON.stringify(originalScene));
     const keepFront = Object.assign({}, zoomState.front);
     const keepPlan = Object.assign({}, zoomState.plan);
     try {
@@ -25360,6 +25343,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       thumb.getContext("2d").drawImage(source, 0, 0, thumb.width, thumb.height);
       return thumb.toDataURL("image/jpeg", 0.82);
     } finally {
+      if (originalScene) state.project.scenes[sceneIndex] = originalScene;
       state.project.activeSceneId = keepScene;
       zoomState.front = keepFront;
       zoomState.plan = keepPlan;
@@ -27066,16 +27050,21 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       } }));
     } catch (_) { /* 古い環境では何もしない */ }
   }
+  let releasePrefsFocus = null;
   function openPrefs() {
     closePanelVisibilityMenu();
     renderPrefs();
     renderPrefKeys();
     if (els.prefsModal) els.prefsModal.hidden = false;
     if (els.prefsBackdrop) els.prefsBackdrop.hidden = false;
+    if (els.prefsModal && !releasePrefsFocus) releasePrefsFocus = window.GAMMA_UI?.containDialog(els.prefsModal, {
+      initialFocus: els.prefsClose, returnFocus: els.prefsBtn, onCancel: closePrefs,
+    });
   }
   function closePrefs() {
     if (els.prefsModal) els.prefsModal.hidden = true;
     if (els.prefsBackdrop) els.prefsBackdrop.hidden = true;
+    releasePrefsFocus?.(); releasePrefsFocus = null;
   }
 
   function manualLink(label, sectionId) {
@@ -27783,6 +27772,24 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
      ブラウザの「印刷」からPDFにして、稽古場へ紙で持っていける。
      絵は本物の描画（drawStage）をシーンごとに退避・切替して撮る。 */
   function openPrintPage() {
+    const keepProject = state.project;
+    const keepFront = { ...zoomState.front };
+    const keepPlan = { ...zoomState.plan };
+    try {
+      state.project = JSON.parse(JSON.stringify(keepProject));
+      buildPrintPage();
+    } catch (error) {
+      console.error("stage print: 印刷用ページを作れませんでした", error);
+      exportFailureNotice("印刷用ページを作れませんでした。もう一度お試しください。");
+    } finally {
+      state.project = keepProject;
+      zoomState.front = keepFront;
+      zoomState.plan = keepPlan;
+      render();
+    }
+  }
+
+  function buildPrintPage() {
     const rows = state.project.scenes.filter((row) => row.kind === "scene");
     if (!rows.length) { announce("印刷するシーンがありません。"); return; }
     const keepScene = state.project.activeSceneId;
@@ -27870,10 +27877,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     let propsPlotHtml = "";
     const propsForPlot = registeredProps();
     if (featureOn("propsplot") && propsForPlot.length) {
-      const head = printSceneRows.map((row, index) => (
-        `<th title="${escapeHtml(row.title || "")}">${index + 1}</th>`
-      )).join("");
-      const body = propsForPlot.map((prop) => {
+      const plotRows = propsForPlot.map((prop) => {
         let before = null;
         const cells = printSceneRows.map((row) => {
           const entry = propPlotState(row, prop);
@@ -27882,11 +27886,18 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           const value = entry.kind === "held" ? propHolderName(entry.holder).slice(0, 8)
             : (entry.kind === "floor" ? (en ? "floor" : "床") : "");
           return `<td${changed ? ' class="changed"' : ""}>${escapeHtml(value)}</td>`;
-        }).join("");
-        return `<tr><th>${escapeHtml(prop.name || "")}</th>${cells}</tr>`;
-      }).join("");
-      propsPlotHtml = `<section class="scene props-plot"><header><h3>${en ? "Props plot" : "小道具の香盤表"}</h3></header>
-<table class="cues props-plot-table"><thead><tr><th>${en ? "Prop" : "小道具名"}</th>${head}</tr></thead><tbody>${body}</tbody></table></section>`;
+        });
+        return { name: escapeHtml(prop.name || ""), cells };
+      });
+      const plots = [];
+      for (let start = 0; start < printSceneRows.length; start += 12) {
+        const rows = printSceneRows.slice(start, start + 12);
+        const head = rows.map((row, index) => `<th title="${escapeHtml(row.title || "")}">${start + index + 1}</th>`).join("");
+        const body = plotRows.map((row) => `<tr><th>${row.name}</th>${row.cells.slice(start, start + 12).join("")}</tr>`).join("");
+        plots.push(`<section class="scene props-plot"><header><h3>${en ? "Props plot" : "小道具の香盤表"} (${start + 1}–${start + rows.length})</h3></header>
+<table class="cues props-plot-table"><thead><tr><th>${en ? "Prop" : "小道具名"}</th>${head}</tr></thead><tbody>${body}</tbody></table></section>`);
+      }
+      propsPlotHtml = plots.join("\n");
     }
 
     state.project.activeSceneId = keepScene;
@@ -27924,6 +27935,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   table.bamiri th, table.bamiri td, table.cues th, table.cues td {
     border: 1px solid #bbb; padding: 2px 8px; text-align: left; }
   table.bamiri th, table.cues th { background: #eee; }
+  table.props-plot-table { width: 100%; table-layout: fixed; }
+  table.props-plot-table th, table.props-plot-table td { overflow-wrap: anywhere; padding: 2px 3px; }
+  table.props-plot-table th:first-child { width: 20%; }
   table.props-plot-table td.changed { font-weight: 600; text-decoration: underline; text-decoration-color: #888; }
   @media print {
     body { margin: 10mm; }
@@ -34801,27 +34815,29 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   });
 
   if (els.sceneAdd) els.sceneAdd.addEventListener("click", () => addScene(false));
-  /* シーンの欄の高さ。下の取っ手を引いて変える。
-     ブラウザ既定の掴み手は地の色に沈んで見えないので、自前で持つ。 */
-  if (els.sceneResize && els.sceneList) {
-    els.sceneResize.addEventListener("pointerdown", (e) => {
-      const startY = e.clientY;
-      const startH = els.sceneList.getBoundingClientRect().height;
-      const move = (ev) => {
-        ev.preventDefault();
-        const next = clamp(startH + (ev.clientY - startY), 120, window.innerHeight * 2 / 3);
-        els.sceneList.style.height = `${Math.round(next)}px`;
-        state.sceneListHeightMode = "manual";
-        state.sceneListHeight = Math.round(next);
-      };
-      const up = () => {
-        window.removeEventListener("pointermove", move);
-        window.removeEventListener("pointerup", up);
-        persistSoon();
-      };
-      window.addEventListener("pointermove", move, { passive: false });
-      window.addEventListener("pointerup", up);
+  /* シーン一覧も他の一覧と同じ操作。確定するまで保存状態は変更しない。 */
+  if (els.sceneResize && els.sceneList && window.GAMMA_UI && !STUDY_READ_ONLY) {
+    const restore = () => {
+      if (state.sceneListHeightMode === "manual" && state.sceneListHeight) {
+        els.sceneList.style.height = `${state.sceneListHeight}px`;
+      } else els.sceneList.style.removeProperty("height");
+    };
+    const heightUi = window.GAMMA_UI.bindHeight(els.sceneResize, {
+      value: () => els.sceneList.getBoundingClientRect().height,
+      bounds: () => ({ min: 120, max: Math.max(120, Math.round(window.innerHeight * 2 / 3)) }),
+      start: () => {},
+      preview: (height) => { els.sceneList.style.height = `${height}px`; },
+      commit: (height) => {
+        state.sceneListHeightMode = "manual"; state.sceneListHeight = height;
+        restore(); persistSoon();
+      },
+      cancel: restore,
+      reset: () => {
+        state.sceneListHeightMode = "auto"; state.sceneListHeight = null;
+        restore(); persistSoon();
+      },
     });
+    new ResizeObserver(heightUi.update).observe(els.sceneList);
   }
 
   if (els.sceneSection) els.sceneSection.addEventListener("click", addSection);
@@ -35538,40 +35554,6 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
    * 対訳表は日本語そのものを鍵にしているので、元の日本語を各要素へ覚えさせておき、
    * 日本語へ戻すときはそれを書き戻す（訳し戻しの表を持たずに済む）。 */
   function applyLang() {
-    /* 文字そのものを差し替える。要素ではなく文字の節（テキストノード）を回すので、
-     * 「向き <span>客席</span>」のように中に別の要素を抱えた札も拾える。
-     * 元の日本語は節に覚えさせておき、戻すときはそれを書き戻す。 */
-    const swapText = (root) => {
-      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-      const nodes = [];
-      while (walker.nextNode()) nodes.push(walker.currentNode);
-      nodes.forEach((node) => {
-        if (node.parentNode && node.parentNode.closest("[data-no-i18n]")) return;
-        const raw = node.__ja === undefined ? node.nodeValue : node.__ja;
-        // Japanese has no translation pack; restore remembered text before the pack lookup.
-        if (lang === "ja" && node.__ja !== undefined) {
-          node.nodeValue = raw;
-          return;
-        }
-        // HTMLの改行や字下げで空白が入るので、鍵を引くときは詰めてから照らす
-        const key = raw.trim().replace(/\s+/g, " ");
-        if (!key || !packValue("text", (text) => text[key])) return;
-        if (node.__ja === undefined) node.__ja = raw;
-        node.nodeValue = lang === "ja" ? raw : tx(key);
-      });
-    };
-    const swapAttr = (root, attr, store) => {
-      root.querySelectorAll(`[${attr}]`).forEach((el) => {
-        if (!el.dataset[store]) {
-          const now = el.getAttribute(attr);
-          if (!now || !now.trim()) return;
-          el.dataset[store] = now;
-        }
-        const ja = el.dataset[store];
-        const translated = packValue("text", (text) => text[ja.trim()]);
-        el.setAttribute(attr, lang === "ja" ? ja : (translated || ja));
-      });
-    };
     const roots = [
       document.getElementById("view-stage"),
       // 使い方の案内はモーダルではない重ね物なので、明示して回す
@@ -35581,10 +35563,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     // 読み上げや行分けのために、文書そのものの言語も合わせる
     document.documentElement.lang = lang;
     roots.forEach((root) => {
-      swapText(root);
-      swapAttr(root, "placeholder", "jaPh");
-      swapAttr(root, "title", "jaTitle");
-      swapAttr(root, "aria-label", "jaAria");
+      window.GAMMA_UI.translateDOM(root, { language: lang, lookup: key => packValue("text", text => text[key]) });
     });
     if (els.lang) {
       els.lang.value = lang;
@@ -35594,6 +35573,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     syncReleaseNotification();
     document.documentElement.lang = lang;
   }
+
+  window.GAMMA_UI.watchDialogs(document.body, {
+    exclude: dialog => dialog.id === 'stage-venue-editor-modal' && !!dialog.closest('#gamma-venue-workspace'),
+  });
 
   // 言語を変えると、中で組み立てている名前も作り直す必要がある
   function setLang(next) {
@@ -36462,8 +36445,11 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
 
     const entries = [];
     let drawError = null;
+    const keepProject = state.project;
     selectedId = null;
     try {
+      // Rendering resolves support heights and positions. Work on a copy.
+      state.project = JSON.parse(JSON.stringify(keepProject));
       jobs.forEach((job) => {
         // シーンを切り替えて描く。描き終えたら元のシーンへ戻す
         state.project.activeSceneId = job.scene.id;
@@ -36495,6 +36481,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     } catch (error) {
       drawError = error;
     } finally {
+      state.project = keepProject;
       state.project.activeSceneId = keepScene;
       selectedId = keepSelected;
       renderScenes();
@@ -36563,12 +36550,17 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     zoom.oy = 0;
     pitchStyle = styleKey;
     let drawError = null;
+    let pngUrl = null;
+    const keepProject = state.project;
     try {
+      state.project = JSON.parse(JSON.stringify(keepProject));
       drawStage(output.getContext("2d", { alpha: false }), false, "front");
       finishPitchCanvas(output, scene, styleKey, sizeKey, caption);
+      pngUrl = output.toDataURL("image/png");
     } catch (error) {
       drawError = error;
     } finally {
+      state.project = keepProject;
       pitchStyle = null;
       selectedId = keepSelected;
       Object.assign(zoom, keepZoom);
@@ -36582,7 +36574,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const stamp = stampNow();
     const base = `${safeName(state.project.title)}-pitch-${safeName(scene.title)}-${stamp}`;
     const downloads = [{
-      href: output.toDataURL("image/png"),
+      href: pngUrl,
       name: `${base}.png`,
     }];
     const venueInfo = venue();

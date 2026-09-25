@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.15">
+<meta name="stage-sketch-gamma-version" content="v0.2.16">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
@@ -19,9 +19,10 @@
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="gamma.css?v=2026092517">
+<link rel="stylesheet" href="gamma-ui-tokens.css?v=20260925-ui1">
+<link rel="stylesheet" href="gamma.css?v=20260925-ui1">
 <link rel="stylesheet" href="gamma-mobile.css?v=2026091950">
-<script src="gamma-light-model.js?v=2026092113"></script>
+<script src="gamma-light-model.js?v=20260925-ui1"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=2026091987">
 <link rel="stylesheet" href="stage-scene-alternatives.css?v=2026092209">
 <link rel="stylesheet" href="stage-vox-panel.css?v=2026092432">
@@ -68,7 +69,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.15</span>
+              <span class="stage-app-version">0.2.16</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -557,7 +558,7 @@
               <!-- 一覧と高さの取っ手も本体の中に置く。外に出すと、畳んでも一覧だけ残る -->
               <div class="stage-scene-list" id="stage-scene-list">
               </div>
-              <div class="stage-scene-resize" id="stage-scene-resize" role="separator"
+              <div class="stage-scene-resize" id="stage-scene-resize" role="separator" tabindex="0" aria-controls="stage-scene-list"
                    aria-label="シーンの欄の高さを変える" title="上下に引くと高さが変わります"></div>
             </div>
           </section>
@@ -1237,7 +1238,7 @@
               <span>最終保存 <time id="stage-last-save-time">—</time></span>
               <span>最終バックアップ <time id="stage-last-backup-time">—</time></span>
             </div>
-            <p id="stage-save-status">変更はこの端末のブラウザ内へ自動保存します。</p>
+            <p id="stage-save-status" role="status" aria-live="polite" aria-atomic="true">変更はこの端末のブラウザ内へ自動保存します。</p>
             <p class="stage-backup-note"><a id="stage-storage-health" href="storage-recovery.html" target="_blank" rel="noopener">保存容量・自動整理を確認</a></p>
             <a id="stage-save-recovery-link" class="stage-save-recovery-link"
                href="storage-recovery.html" target="_blank" rel="noopener" hidden>保存容量を確認・修復（別タブ）</a>
@@ -2360,6 +2361,7 @@
      aria-labelledby="stage-prefs-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-prefs-title">環境設定</h2>
+    <span class="gamma-edition-label">無料テスト版γ</span>
     <button type="button" class="stage-modal-close" id="stage-prefs-close" aria-label="閉じる">✕</button>
   </header>
   <div class="stage-modal-body">
@@ -2560,6 +2562,17 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0216-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0216-title">v0.2.16</h3>
+        <time datetime="2026-09-26">2026-09-26</time>
+      </header>
+      <ul>
+        <li>画面の配色と操作を整理し、ダイアログのキーボード操作、シーン・出演者一覧の高さ調整、照明画面の状態表示を揃えました。</li>
+        <li>シーンメモの編集をUndoで戻せるようにしました。狭い画面ではシーン名と前後ボタンが重ならない配置にしました。</li>
+        <li>書き出し・印刷の描画が元のシーンを変更しないようにしました。小道具の香盤表は12シーンごとに分け、ピッチ画像の変換失敗も画面で知らせます。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0215-title">
       <header class="stage-release-entry-head">
         <h3 id="stage-release-v0215-title">v0.2.15</h3>
@@ -3586,9 +3599,9 @@
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=2026092518"></script>
-    <script src="stage-i18n.zh-Hans.js?v=2026092518"></script>
-    <script src="stage-i18n.zh-Hant.js?v=2026092518"></script>
+    <script src="stage-i18n.js?v=20260925-ui1"></script>
+    <script src="stage-i18n.zh-Hans.js?v=20260925-ui1"></script>
+    <script src="stage-i18n.zh-Hant.js?v=20260925-ui1"></script>
 <script src="stage-prompt-i18n.js?v=2026092050"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026092402"></script>
@@ -3597,9 +3610,9 @@
 <script src="stage-samples/feature-test-show.js?v=2026092529"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
-<script src="stage-machinery.js?v=2026092055"></script>
+<script src="stage-machinery.js?v=20260925-ui1"></script>
 <script src="stage-scrim.js?v=2026092059"></script>
-<script src="stage-first-person.js?v=2026092509"></script>
+<script src="stage-first-person.js?v=20260925-ui1"></script>
 <script src="stage-audio-store.js?v=2026092523"></script>
 <script src="stage-project-backup-store.js?v=2026092523"></script>
 <script src="stage-storage-codec.js?v=2026092523"></script>
@@ -3612,7 +3625,7 @@
 <script src="stage-lighting-plan-overlay.js?v=2026092113"></script>
 <script src="light-design/rig-engine.js?v=2026092130"></script>
 <script src="light-design/laser-effects.js?v=20260915-5-color-presets"></script>
-<script src="stage-light-render.js?v=2026092201"></script>
+<script src="stage-light-render.js?v=20260925-ui1"></script>
 <script src="gamma-light-cue-overlay.js?v=2026092114"></script>
 <script src="gamma-range-fields.js?v=2026091780"></script>
 <script src="gamma-number-scrub.js?v=2026091780"></script>
@@ -3621,25 +3634,27 @@
 <script src="stage-cue-sheet.js?v=2026092423"></script>
 <script src="docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113"></script>
 <script src="stage-light-panel-import.js?v=2026092209"></script>
-<script src="stage-scene-alternatives.js?v=2026092208"></script>
+<script src="stage-scene-alternatives.js?v=20260925-ui1"></script>
 <script src="stage-shortcuts.js?v=2026092218"></script>
 <!-- U-12（2026-09-24）: 並べ替えの動き（一覧・タイムラインの段・セリフ画面の行で共有） -->
 <script src="stage-reorder-motion.js?v=2026092420"></script>
 <script src="stage-performer-motion.js?v=2026092506"></script>
 <script src="stage-performer-contour.js?v=2026092506"></script>
 <script src="stage-performer-body.js?v=2026092506"></script>
-<script src="stage-sketch.js?v=2026092526"></script>
+<script src="gamma-ui.js?v=20260925-ui1"></script>
+<script src="gamma-ui-i18n.js?v=20260925-ui1"></script>
+<script src="stage-sketch.js?v=20260925-ui1"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092210"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-vox-panel.js?v=2026092432"></script>
 <script src="stage-script-editor.js?v=2026092431"></script>
     <script src="stage-timeline.js?v=2026092423"></script>
-<script src="stage-session.js?v=20260924-lightimport1"></script>
-<script src="stage-study-owner.js?v=2026091501"></script>
+<script src="stage-session.js?v=20260925-ui1"></script>
+<script src="stage-study-owner.js?v=20260925-ui1"></script>
 <script src="stage-usage.js?v=2026091501"></script>
 <script src="stage-venue-curtains.js?v=2026092519"></script>
 <script src="stage-venue-editor.js?v=2026092528"></script>
-<script src="gamma-workspace.js?v=2026092516"></script>
+<script src="gamma-workspace.js?v=20260925-ui1"></script>
 <script src="gamma-mobile.js?v=2026092202"></script>
 <script src="stage-venue-preview.js?v=2026092523"></script>
 <script src="stage-venue-viewpoints.js?v=2026092503"></script>

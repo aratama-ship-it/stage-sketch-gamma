@@ -12,7 +12,7 @@
   const E = window.RIG_ENGINE, V = window.VOLUME_LIGHT, LE = window.LASER_EFFECTS, LUI = window.LASER_EFFECTS_UI;
   let distanceMetric = false, spatialQuick = false;
   /* 光条・光だまり・まぶしさ・人物の受光を、全図で同じ見え方へ固定する。
-     灯の強さやLX cueには入れないので、保存済みの照明データは変わらない。 */
+     灯の強さやLXキューには入れないので、保存済みの照明データは変わらない。 */
   const VISUAL_GAIN = 1.8;
   const visualAlpha = (value) => E.clamp(E.finite(value, 0) * VISUAL_GAIN, 0, 1);
   const $ = (id) => document.getElementById(id);
@@ -295,7 +295,7 @@
     slGrad: { from: "#7ab8ff", to: "#ff7a5c" },   // 1灯ずつ色をずらす（グラデーション）の2色（2026-09-12 本人要望）
     /* 「動きの型」欄はアコーディオンで畳んでおく（2026-09-13 本人要望）。
        組の動きはサーチライトと同じ「複数ムービングの動かし方」の欄へ統合した。 */
-    /* LX cueパネル（左列の上）。現在のシーンと連動＝いま編集しているシーンのLX cueを出す。
+    /* LXキューパネル（左列の上）。現在のシーンと連動＝いま編集しているシーンのLXキューを出す。
        切ると見ているシーンを固定できる（2026-09-13 本人要望）。 */
     lxLink: true,
     lxScene: 0,
@@ -567,7 +567,7 @@
     set(secL.parentElement, "width", sideW); set(secL, "height", secH);
     set(secR.parentElement, "width", sideW); set(secR, "height", secH);
     // 上段の左右パネルは、真下の側面図と同じ幅にそろえる（6枠がきれいに並ぶ）
-    /* 左の枠は真下の側面図と同じ1枠ぶん。中の2枚（灯体・LX cue）が flex:1 1 0 で半分ずつ分け合う
+    /* 左の枠は真下の側面図と同じ1枠ぶん。中の2枚（灯体・LXキュー）が flex:1 1 0 で半分ずつ分け合う
        （2026-09-13 本人指定「横幅をそれぞれ半分にしてコンパクトに収める」）。 */
     { const lc = document.querySelector(".leftcol"); if (lc) set(lc, "width", sideW); }
     set($("panel-insp"), "width", sideW);
@@ -3154,7 +3154,7 @@
     // 20灯以上でも一度に見渡せるよう、多いときは1行表示へ落とす（2026-09-11 実測で7行しか見えなかった）
     host.classList.toggle("compact", state.rig.fixtures.length > 12);
     // 灯体情報のページは1行が短い（番号・名前・オンオフ）ので、横に2列へ折り返す（2026-09-11 本人要望）
-    /* 幅があるときだけ横2列（配置モードは LX cue パネルが隠れて枠いっぱいに広がる）。
+    /* 幅があるときだけ横2列（配置モードは LXキュー パネルが隠れて枠いっぱいに広がる）。
        半分幅では2列にすると1枠70px前後になり、名前もオン・オフも読めない（2026-09-13）。 */
     host.classList.toggle("cols2", host.clientWidth >= 230);
     const c = cue(); const grouped = new Set(c.groups.flatMap((g) => g.members));
@@ -4308,7 +4308,7 @@
     renderAll();
   }
 
-  /* ---------- LX cue（本番で読み上げる番号） ----------
+  /* ---------- LXキュー（本番で読み上げる番号） ----------
      いまの明かり一式（そのシーンの cue）を「セクション-シーン-連番」で登録する（2026-09-13 本人要望）。
      セクション1・シーン1なら 1-1-1 → 1-1-2 → … と連番だけが増える。
      番号はシーンが持ち（`sc.lx = {section, no}`）、登録した明かりはシーンの中に並ぶ（`sc.lxq`）。
@@ -4331,21 +4331,21 @@
     state.scenes.forEach((sc) => { const q = lxEditingQ(sc); if (q) q.cue = JSON.parse(cueJson(sc.cue)); });
   }
 
-  /* LX cueパネルが見ているシーン。連動していれば「いま編集しているシーン」、
+  /* LXキューパネルが見ているシーン。連動していれば「いま編集しているシーン」、
      切ってあれば固定した番号（2026-09-13 本人要望）。 */
   const lxSceneIndex = () => (state.lxLink ? state.sceneIndex : E.clamp(Math.round(E.finite(state.lxScene, 0)), 0, state.scenes.length - 1));
   const lxScene = () => state.scenes[lxSceneIndex()];
   /* パネルから登録・呼び出しをしたら、そのシーンを画面にも出す——
      何をしたのか見えないまま値だけ変わるのを避ける。連動しているときは何も起きない。 */
   const lxGoto = (i) => { if (state.sceneIndex !== i) { state.sceneIndex = i; state.sel.clear(); stop(); home(); } };
-  /* その LX cue の編集に入る。画面の明かりを中身で置き換え、編集中の印を移す。
+  /* その LXキュー の編集に入る。画面の明かりを中身で置き換え、編集中の印を移す。
      一覧の行クリックと、図の上の中央にある前後ボタンの両方から呼ぶ（2026-09-13）。 */
   function lxEnterCue(si, id) {
     lxGoto(si);
     const s2 = state.scenes[si]; const t = lxList(s2).find((z) => z.id === id); if (!t) return;
     s2.cue = JSON.parse(cueJson(t.cue)); s2.lxEditing = t.id;
     state.sel.clear(); stop(); home();
-    commit(`LX cue ${lxNo(s2, E.finite(t.seq, 1))} の編集に入りました`);
+    commit(`LXキュー ${lxNo(s2, E.finite(t.seq, 1))} の編集に入りました`);
   }
   /* ---------- セクション（シーンの上の層） ----------
      セクション番号はシーンが持っている（`sc.lx.section`）ので、実在するセクションは
@@ -4379,7 +4379,7 @@
     lxGotoScene(list[j].i);
   }
 
-  /* 並び替え。つまんだ LX cue を落とし先の位置へ入れ直し、番号（連番）を1から振り直す
+  /* 並び替え。つまんだ LXキュー を落とし先の位置へ入れ直し、番号（連番）を1から振り直す
      （2026-09-13 本人要望。キュー番号は進行順そのものなので、並べ替えたら番号も付け直す）。 */
   function lxReorder(si, dragId, dropId) {
     if (!dragId || dragId === dropId) return;
@@ -4390,11 +4390,11 @@
     list.splice(to, 0, moved);
     list.forEach((q, i) => { q.seq = i + 1; });
     sc.lxq = list;
-    commit(`LX cue の順番を変えました（${lxNo(sc, E.finite(moved.seq, 1))} へ）`);
+    commit(`LXキュー の順番を変えました（${lxNo(sc, E.finite(moved.seq, 1))} へ）`);
   }
 
-  /* いまのシーンの LX cue を番号順に並べ、前後の行き先を返す。
-     どの LX cue にも入っていない下書きのときは、前は無し・次は1本目にする。 */
+  /* いまのシーンの LXキュー を番号順に並べ、前後の行き先を返す。
+     どの LXキュー にも入っていない下書きのときは、前は無し・次は1本目にする。 */
   function lxNeighbors() {
     const sc = scene(), list = [...lxList(sc)].sort((a, b) => E.finite(a.seq, 0) - E.finite(b.seq, 0));
     if (!list.length) return { list, prev: null, next: null };
@@ -4405,7 +4405,7 @@
 
   function renderLxq() {
     const host = $("lxqbox"); if (!host) return;
-    /* 配置モードでは LX cue は使わないので、パネルごと隠して灯体に枠を明け渡す
+    /* 配置モードでは LXキュー は使わないので、パネルごと隠して灯体に枠を明け渡す
        （2026-09-13 本人要望。灯体は左の枠いっぱい＝以前の広さに戻る）。 */
     const panel = $("panel-lxq"); if (panel) panel.hidden = state.mode !== "move";
     if (state.mode !== "move") { host.innerHTML = ""; return; }
@@ -4414,13 +4414,13 @@
     if (link) {
       link.setAttribute("aria-pressed", String(Boolean(state.lxLink)));
       link.querySelector("b").innerHTML = `<span class="swlab">シーンと連動</span>${state.lxLink ? "オン" : "オフ"}`;
-      link.title = state.lxLink ? "いま編集しているシーンのLX cueを出しています。押すと、いま見ているシーンに固定します" : "見るシーンを固定しています。押すと、いま編集しているシーンに合わせて切り替わります";
+      link.title = state.lxLink ? "いま編集しているシーンのLXキューを出しています。押すと、いま見ているシーンに固定します" : "見るシーンを固定しています。押すと、いま編集しているシーンに合わせて切り替わります";
     }
     const si = lxSceneIndex(), sc = state.scenes[si], x = lxOf(sc), list = lxList(sc), nowJson = cueJson(sc.cue);
     /* 上は動かない部分（どのシーンか・番号・登録）、下だけ巻く。
        いちばん押す「登録」が一覧に押し出されないようにする（2026-09-13 実測で隠れた）。 */
     const b = el("div", "lxtop");
-    /* どのシーンのLX cueを出しているか。連動なら読むだけ、切ってあれば選べる。 */
+    /* どのシーンのLXキューを出しているか。連動なら読むだけ、切ってあれば選べる。 */
     if (state.lxLink) {
       /* 連動しているときのシーン名は図の上の帯が出しているので、ここでは繰り返さない
          （左列は縦が足りず、1行でも一覧の見える本数が変わる）。 */
@@ -4443,23 +4443,23 @@
     /* 新規キュー。いま画面に出ている明かりをそのまま持ち上げて次の番号のキューにし、
        そのままそのキューの編集に入る（2026-09-13 本人要望「新規キューを作ってデザインを始める」）。
        前のキューからの続きを作ることが多いので、白紙ではなく<b>いまの明かりから</b>始める。 */
-    /* 半分幅では「＋ 新規 LX cue 1-1-6」が2行になり、一覧の見える本数を1本食う。
-       パネル名が LX cue なので番号だけで通じる（説明は title に入れてある）。 */
+    /* 半分幅では「＋ 新規 LXキュー 1-1-6」が2行になり、一覧の見える本数を1本食う。
+       パネル名が LXキュー なので番号だけで通じる（説明は title に入れてある）。 */
     b.append(btn(`＋ 新規 ${lxNo(sc, lxNextSeq(sc))}`, () => {
       lxGoto(si);
       const s2 = lxScene(); const seq = lxNextSeq(s2); const id = uid("q");
       s2.lxq = lxList(s2).concat([{ id, seq, name: "", at: new Date().toISOString(), cue: JSON.parse(cueJson(s2.cue)) }]);
       s2.lxEditing = id;
-      commit(`LX cue ${lxNo(s2, seq)} を作りました。このまま編集できます`);
-    }, "primary", "いま出ている明かりを次の番号の LX cue にして、そのまま編集を続けます"));
+      commit(`LXキュー ${lxNo(s2, seq)} を作りました。このまま編集できます`);
+    }, "primary", "いま出ている明かりを次の番号の LXキュー にして、そのまま編集を続けます"));
     host.append(b);
     const li = el("div", "lxlist"); host.append(li);
-    if (!list.length) { li.append(el("p", "lxnone", "まだ LX cue がありません。〈＋ 新規 LX cue〉でいまの明かりを1本目にして、そこから作り込めます。")); return; }
+    if (!list.length) { li.append(el("p", "lxnone", "まだ LXキュー がありません。〈＋ 新規 LXキュー〉でいまの明かりを1本目にして、そこから作り込めます。")); return; }
     const editing = lxEditingOf(sc);
     [...list].sort((a2, b2) => E.finite(a2.seq, 0) - E.finite(b2.seq, 0)).forEach((q) => {
       const isEdit = q.id === editing;
       const row = el("div", "lxrow" + (isEdit ? " editing" : cueJson(q.cue) === nowJson ? " cur" : ""));
-      row.title = isEdit ? "この LX cue を編集しています（変えたところはそのまま入ります）" : `LX cue ${lxNo(sc, E.finite(q.seq, 1))} を編集する（画面の明かりをこの中身に入れ替えます）`;
+      row.title = isEdit ? "この LXキュー を編集しています（変えたところはそのまま入ります）" : `LXキュー ${lxNo(sc, E.finite(q.seq, 1))} を編集する（画面の明かりをこの中身に入れ替えます）`;
       const no = el("span", "qno"); no.textContent = lxNo(sc, E.finite(q.seq, 1));
       /* 番号をつまんで上下に落とすと並びが変わる。行ごと掴めるようにすると
          名前欄の文字が選べなくなるので、掴めるのは番号だけにする。 */
@@ -4481,9 +4481,9 @@
         lxEnterCue(si, q.id);
       };
       row.append(btn("✕", () => {
-        dialog(`<p class="ptitle">LX cue ${lxNo(sc, E.finite(q.seq, 1))} を消しますか？</p><p class="hint">この LX cue を一覧から消します。画面に出ている明かりはそのまま残ります。</p>`,
-          [["やめる", null], ["消す", () => { const s2 = lxScene(); s2.lxq = lxList(s2).filter((z) => z.id !== q.id); if (s2.lxEditing === q.id) s2.lxEditing = null; commit(`LX cue ${lxNo(s2, E.finite(q.seq, 1))} を消しました`); }, "primary"]]);
-      }, "small quiet", `LX cue ${lxNo(sc, E.finite(q.seq, 1))} を消す`));
+        dialog(`<p class="ptitle">LXキュー ${lxNo(sc, E.finite(q.seq, 1))} を消しますか？</p><p class="hint">この LXキュー を一覧から消します。画面に出ている明かりはそのまま残ります。</p>`,
+          [["やめる", null], ["消す", () => { const s2 = lxScene(); s2.lxq = lxList(s2).filter((z) => z.id !== q.id); if (s2.lxEditing === q.id) s2.lxEditing = null; commit(`LXキュー ${lxNo(s2, E.finite(q.seq, 1))} を消しました`); }, "primary"]]);
+      }, "small quiet", `LXキュー ${lxNo(sc, E.finite(q.seq, 1))} を消す`));
       li.append(row);
     });
   }
@@ -4884,7 +4884,7 @@
     $("lighttoggles").hidden = !inMove;
     $("dimwrap").hidden = !(inMove && showOn("blackout"));
     { const d = E.clamp(E.finite(state.dim, 100), 0, 100); $("dim").value = d; $("dimnum").value = d; }
-    /* シーンの2段（LX cueパネルの上）。上＝セクション、下＝そのセクションの中のシーン。 */
+    /* シーンの2段（LXキューパネルの上）。上＝セクション、下＝そのセクションの中のシーン。 */
     { const secs = lxSections(), cur = lxCurSection(), inSec = lxScenesIn(cur);
       const pos = inSec.findIndex((x) => x.i === state.sceneIndex) + 1;
       const sectionTitle = lxSectionTitle(cur);
@@ -4894,7 +4894,7 @@
       $("scene-name").textContent = `${pos || 1}. ${scene().name}`;
       $("scene-name").title = `シーン ${state.sceneIndex + 1}「${scene().name}」（セクション${cur}の${pos}/${inSec.length}）`;
       $("scene-prev").disabled = $("scene-next").disabled = inSec.length < 2; }
-    /* 図の上の中央は、照明デザインではLX cue、配置では現在のシーン。
+    /* 図の上の中央は、照明デザインではLXキュー、配置では現在のシーン。
        どちらも同じ場所を使うことで、モードを切り替えても図の位置を動かさない。 */
     { const ps = $("place-scene");
       if (ps) {
@@ -4910,14 +4910,14 @@
        どのキューにも入っていなければ「未登録の下書き」と出す。 */
     { const qn = $("qnow");
       if (qn) { qn.hidden = !inMove; const sc0 = scene(), q0 = lxEditingQ(sc0);
-        qn.innerHTML = q0 ? `LX cue ${lxNo(sc0, E.finite(q0.seq, 1))}${q0.name ? `<em>${q0.name.replace(/[<>&]/g, "")}</em>` : ""}` : "未登録の下書き";
+        qn.innerHTML = q0 ? `LXキュー ${lxNo(sc0, E.finite(q0.seq, 1))}${q0.name ? `<em>${q0.name.replace(/[<>&]/g, "")}</em>` : ""}` : "未登録の下書き";
         qn.classList.toggle("draft", !q0);
-        qn.title = q0 ? "この LX cue を編集しています。変えたところはそのまま入ります" : "どの LX cue にも入っていません。LX cue パネルの〈＋ 新規 LX cue〉で1本にできます"; } }
-    /* 中央の表示の左右＝前後の LX cue へ。行き先が無ければ押せなくする。 */
+        qn.title = q0 ? "この LXキュー を編集しています。変えたところはそのまま入ります" : "どの LXキュー にも入っていません。LXキュー パネルの〈＋ 新規 LXキュー〉で1本にできます"; } }
+    /* 中央の表示の左右＝前後の LXキュー へ。行き先が無ければ押せなくする。 */
     { const nb = lxNeighbors(), sc0 = scene();
       const set2 = (id, q, word) => { const b = $(id); if (!b) return;
         b.disabled = !q; b.hidden = state.mode !== "move";
-        b.title = q ? `${word}の LX cue ${lxNo(sc0, E.finite(q.seq, 1))}${q.name ? `「${q.name}」` : ""} へ` : `${word}の LX cue はありません`; };
+        b.title = q ? `${word}の LXキュー ${lxNo(sc0, E.finite(q.seq, 1))}${q.name ? `「${q.name}」` : ""} へ` : `${word}の LXキュー はありません`; };
       set2("q-prev", nb.prev, "前"); set2("q-next", nb.next, "次"); }
     $("transport").hidden = !inMove;
     $("empty").hidden = Boolean(state.rig.trusses.length || state.rig.fixtures.length);
@@ -4970,7 +4970,7 @@
   $("sec-next").onclick = () => lxStepSection(1);
   $("allscenes").onclick = () => openAllScenes();
   $("place-scene").onclick = () => openAllScenes();
-  /* すべてのシーンの一覧。セクション→シーン→そのシーンの LX cue を並べ、押せばそこへ移る。
+  /* すべてのシーンの一覧。セクション→シーン→そのシーンの LXキュー を並べ、押せばそこへ移る。
      セクションやシーンが増えても全体を一度に見渡せるように（2026-09-13 本人要望）。 */
   function openAllScenes() {
     const esc = (t) => String(t).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
@@ -4981,17 +4981,17 @@
         const editing = lxEditingOf(sc);
         const chips = qs.length
           ? qs.map((q) => `<button type="button" class="allq${q.id === editing ? " editing" : ""}" data-scene="${i}" data-q="${q.id}" title="${esc(q.name || "")}">${lxNo(sc, E.finite(q.seq, 1))}</button>`).join("")
-          : `<span class="allnone">LX cue なし</span>`;
+          : `<span class="allnone">LXキュー なし</span>`;
         return `<div class="allscene${i === state.sceneIndex ? " cur" : ""}">
-            <span class="allsname" data-scene="${i}" role="button" tabindex="0">${esc(sc.name)}<small>シーン${i + 1}・LX cue ${qs.length}本</small></span>
+            <span class="allsname" data-scene="${i}" role="button" tabindex="0">${esc(sc.name)}<small>シーン${i + 1}・LXキュー ${qs.length}本</small></span>
             <span class="allqs">${chips}</span>
           </div>`;
       }).join("");
       const sectionTitle = lxSectionTitle(sec);
       return `<div class="allsec"><p class="kicker">セクション ${sec}${sectionTitle ? `　${esc(sectionTitle)}` : ""}</p>${scenes}</div>`;
     }).join("");
-    dialog(`<p class="ptitle">すべてのシーンと LX cue</p>
-      <p class="hint">シーン名を押すとそのシーンへ、番号を押すとその LX cue の編集に入ります。セクション番号は LX cue パネルの〈番号〉で変えられます。</p>
+    dialog(`<p class="ptitle">すべてのシーンと LXキュー</p>
+      <p class="hint">シーン名を押すとそのシーンへ、番号を押すとその LXキュー の編集に入ります。セクション番号は LXキュー パネルの〈番号〉で変えられます。</p>
       <div class="alllist">${body}</div>`, [["閉じる", null]]);
     const d = $("dialog");
     d.querySelectorAll("[data-scene]").forEach((elm) => {
@@ -5365,9 +5365,9 @@
         level: "強さ 0〜100（0は消灯と同じ）", levelTo: "動きの終点の強さ（無ければ変化なし）",
         beamDeg: "光の広がり（度）", beamDegTo: "動きの終点の広がり（無ければ変化なし）",
         periodSec: "1往復（1周）の秒数", offsetSec: "何秒遅らせて始めるか",
-        lx: "そのシーンのLX cue番号の頭2つ { section, no }",
+        lx: "そのシーンのLXキュー番号の頭2つ { section, no }",
         lxq: "登録した明かりの控え。番号は section-no-seq、cue はそのときの灯の設定一式",
-        environment: "LX cueごとの表示用のもや { haze: 0〜100 }。未設定は35。測光値ではありません",
+        environment: "LXキューごとの表示用のもや { haze: 0〜100 }。未設定は35。測光値ではありません",
         barn: "固定灯のバーンドア（仕込み） { back, front, left, right } 各0〜1。0=開いている、1=中心まで閉める。床・空中は back=奥側/front=手前側、奥の壁・客席は back=上/front=下",
         shutter: "カッター（シーンごと） { on, w, h, rot }。w/h は光の輪に内接する正方形の辺を1とした比（0.1〜1.4）。1.4でその向きは輪の外まで開く。rot は回転（度、-90〜90）",
       },
@@ -5470,7 +5470,7 @@
       </div>
       <input type="file" id="dspick" accept=".json,application/json" hidden>
       <p class="hint">${stored===null?'保存一覧を読めないため、ブラウザへの上書きを止めています。':''}保存先はこのブラウザです。これまで保存したデザインも同じ一覧から呼び出せます。別の環境へ渡すときはファイルにします。
-      LX cueの設定を保存します。ショー全体へ適用するには「LXキューを適用」を押してください。
+      LXキューの設定を保存します。ショー全体へ適用するには「LXキューを適用」を押してください。
       演者・セットは含めず、読み込み先にある配置を残します。</p>
       <p class="prefname">保存したデザイン</p>
       <div class="dslist">${rows}</div>`, [["閉じる", null, "primary"]]);

@@ -1675,6 +1675,7 @@
   function makeChip(label, color, active, onClick) {
     const chip = createElement("button", "", `stage-fpv-chip${active ? " on" : ""}`);
     chip.type = "button";
+    chip.setAttribute("aria-pressed", String(Boolean(active)));
     const dot = createElement("span", "", "dot");
     dot.style.background = color;
     const name = createElement("span");
@@ -4321,6 +4322,8 @@
 
   function onKeyDown(event) {
     if (!state.opened || event.isComposing) return;
+    const modal = event.target?.closest?.('[role="dialog"][aria-modal="true"]');
+    if (modal && modal !== elements?.root) return;
     if (typingInField(event.target)) return;
     const code = event.code || event.key;
     if (state.previewOnly) {

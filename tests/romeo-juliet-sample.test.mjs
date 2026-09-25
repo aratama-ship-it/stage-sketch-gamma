@@ -49,13 +49,21 @@ test("Romeo and Juliet is loaded before the app and included in the versioned PW
     read("stage.html"), read("stage-sw.js"), read("stage-sketch.js"),
   ]);
   const libraryScript = html.indexOf('stage-samples/romeo-juliet-cued.js?v=2026092435');
-  const appScript = html.indexOf('stage-sketch.js?v=2026092526');
+  const appScript = html.indexOf('stage-sketch.js?v=20260925-ui1');
   assert.ok(libraryScript >= 0 && libraryScript < appScript);
-  assert.match(worker, /stage-sketch-gamma-shell-v371/);
+  assert.match(worker, /stage-sketch-gamma-shell-v372/);
 
   assert.match(worker, /stage-samples\/romeo-juliet-cued\.js\?v=2026092435/);
   assert.match(app, /function shelveRomeoJulietSample\(\)/);
   assert.match(app, /const saved = shows\[built\.project\.id\]/);
   assert.match(app, /savedProject\.lightingDesign = projectIoClone\(bundledDesign\)/);
   assert.match(app, /openArgs\.has\("romeo-juliet-sample"\)/);
+});
+
+test("legacy Romeo and Juliet wording stays recognizable during migration", async () => {
+  const app = await read("stage-sketch.js");
+  const legacy = app.slice(app.indexOf("const ROMEO_JULIET_OLD_WORDING"), app.indexOf("function backfillRomeoJulietSampleData"));
+  assert.match(legacy, /"rj-section-rj-cond-01": "第1場面/);
+  assert.match(legacy, /"rj-frame-rj-cond-00-open": "Q00｜開演前｜誰もいない舞台｜場面明かり"/);
+  assert.match(legacy, /mine\.role\.includes\("場面"\) && mine\.role\.replace\(\/場面\/g, "シーン"\)/);
 });

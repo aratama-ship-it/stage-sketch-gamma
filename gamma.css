@@ -1,37 +1,4 @@
-/* Gamma uses the existing Stage Sketch type, spacing and surface palette. */
-/* ---- デザイントークン（2026-09-17 UI再設計 第1段） ----
- * 根拠: docs/ui-audit-2026-09-16/UI_REWORK_SPEC.md §2 A-1/A-2（実測: font-size 786宣言・約30種、
- * ボタン高22種）。ここでは階段だけを定義する。既存の786件を今回すべて置き換えるのではなく、
- * 新規・変更箇所からこの階段へ寄せていく（design-policy: 新規装飾体系は追加しない＝色は既存のまま）。 */
-:root {
-  --gamma-gap: 8px;
-  --gamma-hit: 36px;
-
-  /* 文字サイズの階段。0.5px刻みはここでは使わない。 */
-  --fs-1: 9px;   /* 最小の補助文字・キャプション */
-  --fs-2: 10px;  /* パネル見出し・小さいラベル */
-  --fs-3: 11px;  /* 本文の基準（既存で最頻出） */
-  --fs-4: 12px;  /* やや強調した本文・ボタン */
-  --fs-5: 13px;  /* タブ・見出し級 */
-  --fs-6: 14px;  /* 強調ラベル・主要ボタン */
-  --fs-7: 16px;  /* 小見出し */
-  --fs-8: 18px;  /* 見出し */
-  --fs-9: 22px;  /* 大見出し */
-
-  /* 操作の高さ3段。既存の44px（アイコン操作）・34px（.btn基準）・28px（小型）を正式な階段にする。 */
-  --ctrl-sm: 28px;
-  --ctrl-md: 34px;
-  --ctrl-lg: 44px;
-
-  /* 角丸2段＋円 */
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-full: 50%;
-
-  /* アイコンボタンの正方形2段 */
-  --icon-sm: 32px;
-  --icon-lg: 44px;
-}
+/* Gamma dimensions and theme tokens: gamma-ui-tokens.css. */
 .stage-brand-row { flex-wrap: wrap; gap: var(--gamma-gap); }
 .stage-gamma-label { font-size: 11px; font-weight: 500; color: #b6a995; margin-left: 8px; white-space: nowrap; }
 #stage-workspace-tabs { flex-wrap: wrap; }
@@ -353,7 +320,7 @@ body[data-gamma-workspace="cuesheet"].stage-timeline-expanded:not(.stage-fullscr
    * ★結果としてS-06前の高さ（41.3px）とほぼ同じになる。ただしS-06前と違い、
    *   親の align-content:start で「窓が縦に長いと箱だけ伸びる」不具合は直っている。 */
   padding-block: 10px;
-  /* 万一この箱が引き伸ばされる場面があっても見出しが上に貼り付かないよう、中身は中央に置く。 */
+  /* 万一この箱が引き伸ばされるシーンがあっても見出しが上に貼り付かないよう、中身は中央に置く。 */
   align-content: center;
 }
 #gamma-venue-workspace .gamma-venue-step-toggle:hover { color: var(--milk); }
@@ -814,3 +781,48 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head {
     overflow-x: hidden;
   }
 }
+
+/* 狭い画面ではシーン名を操作ボタンの下へ送り、互いの当たり判定を重ねない。 */
+@media (max-width: 720px) {
+  html:not(.stage-phone-viewer):not(.stage-pwa-tablet) .stage-scene-bar .stage-scene-step {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 8px;
+    width: 100%;
+  }
+  html:not(.stage-phone-viewer):not(.stage-pwa-tablet) .stage-scene-bar .stage-scene-step-left { grid-area: 1 / 1; }
+  html:not(.stage-phone-viewer):not(.stage-pwa-tablet) .stage-scene-bar .stage-scene-step > .is-next { grid-area: 1 / 2; }
+  html:not(.stage-phone-viewer):not(.stage-pwa-tablet) .stage-scene-bar .stage-scene-now-open {
+    grid-area: 2 / 1 / 3 / -1;
+    position: static;
+    transform: none;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  html:not(.stage-phone-viewer):not(.stage-pwa-tablet) .stage-scene-bar .stage-scene-now { display: block; max-width: 100%; }
+}
+
+@media (max-width: 720px) {
+  html:not(.stage-phone-viewer):not(.stage-pwa-tablet) .stage-sketch-head > .stage-brand-block {
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+  }
+}
+#stage-save-status { overflow-wrap: anywhere; }
+#stage-save-status[data-level="warn"] {
+  border-left: 2px solid var(--brass);
+  padding-left: 8px;
+  color: var(--milk);
+}
+html[data-stage-skin] .stage-modal:not([hidden]) { max-height: calc(100dvh - 32px); overflow-y: auto; }
+html[data-stage-skin] #gamma-venue-workspace .stage-modal { max-height: none; }
+html[data-stage-skin] .stage-modal :is(input,select,textarea) { max-width: 100%; min-width: 0; }
+.gamma-workspace-error { border: 1px solid var(--brass); border-left-width: 3px; padding: 12px; color: var(--milk); background: var(--desk-2); }
+.gamma-workspace-error header { display: flex; align-items: center; gap: 8px; }
+.gamma-workspace-error h3 { flex: 1; margin: 0; font-size: var(--fs-5); }
+.gamma-workspace-error p { font-size: var(--fs-4); line-height: 1.6; overflow-wrap: anywhere; }
+.gamma-workspace-error button { min-height: var(--ctrl-md); font-size: var(--fs-4); white-space: normal; }
+.gamma-workspace-error:empty { border: 0; padding: 0; background: transparent; }
+.gamma-edition-label { margin-left: auto; color: var(--milk-dim); font-size: var(--fs-4); }

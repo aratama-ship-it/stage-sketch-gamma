@@ -706,7 +706,7 @@
     }
     const documentBytes = utf8ByteLength(documentText);
     if (documentBytes > MAX_SESSION_DOCUMENT_BYTES) {
-      setStatus(`共有する舞台データが大きすぎます（${Math.ceil(documentBytes / 1024)}KB）。写真や不要な場面を減らしてから共有してください。`, true);
+      setStatus(`共有する舞台データが大きすぎます（${Math.ceil(documentBytes / 1024)}KB）。写真や不要なシーンを減らしてから共有してください。`, true);
       return;
     }
     if (!force && (documentText === lastSentDocument
@@ -940,7 +940,7 @@
         pendingHostDocuments.clear();
       }
       const reason = message.reason === "no-host" ? "ホストが接続していません。"
-        : message.reason === "doc-too-large" ? "共有する舞台データが大きすぎます。写真や不要な場面を減らしてから共有してください。"
+        : message.reason === "doc-too-large" ? "共有する舞台データが大きすぎます。写真や不要なシーンを減らしてから共有してください。"
           : message.reason === "doc-storage-failed" ? "共有サーバーへ保存できませんでした。作業はこの端末に残っています。ショーを書き出してから、もう一度お試しください。"
             : "この操作は共有できません。";
       setStatus(reason, true);
