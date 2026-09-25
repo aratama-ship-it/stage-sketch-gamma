@@ -883,6 +883,7 @@
       // 実寸ぶんを積み上げてから傾ける。順を逆にすると、見上げても人の丈が変わらない
       return { x: originX + (jx * cos + jz * sin) * ux, y: bend(originY - jy * uy + wz * zDrop), z: wz };
     };
+    if (root.STAGE_PERFORMER_BODY) return root.STAGE_PERFORMER_BODY.projectRig(pose, project, ux, uy);
     const P = {};
     Object.keys(joints).forEach((k) => { P[k] = project(joints[k][0], joints[k][1], joints[k][2]); });
 
@@ -987,6 +988,7 @@
 
   /* ===== paintBody（本体 8066-8159） ===== */
   function paintBody(target, rig, color, look, shade) {
+    if (root.STAGE_PERFORMER_BODY && rig.shoulderBlends) return root.STAGE_PERFORMER_BODY.paint(target, rig, color, look, shade);
     const P = rig.P;
     const ux = rig.ux;
     const uy = rig.uy;

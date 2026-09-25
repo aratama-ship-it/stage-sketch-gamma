@@ -2216,7 +2216,7 @@
         z: footCam.z,
       });
     }
-    const pose = body.poseById(body.resolvePoseId(piece, data.pieces));
+    const pose = piece.performancePose || body.poseById(body.resolvePoseId(piece, data.pieces));
     const mask = data.pieces.find((p) => p.heldBy === piece.id && p.holdMode === "face" && p.propShape === "mask");
     const joints = pose.joints;
     const yaw = finite(piece.facing, 0) * Math.PI / 180;
@@ -2328,7 +2328,16 @@
       bottom: { ...rawLook.bottom, color: costumeLitColor3dFor(piece, rawLook.bottom.color) || rawLook.bottom.color },
     } : null;
     const bodyColor = costumeLitColor3d(piece) || piece.color || "#c9c2b4";   // G-D: 光だまりの色で染める（既定は切）
-    paintBody3d(ctx, body, P, rings, wheel, props, eyes, bodyColor, look, { mask, project, pose, H });
+    if (window.STAGE_PERFORMER_BODY) {
+      const rig = window.STAGE_PERFORMER_BODY.projectRig(pose, project, P.head.s);
+      if (tooClose) return null;
+      if (wheel) paintWheel3d(ctx, wheel, P, "far");
+      if (mask) body.paintFaceMask(ctx, project, pose, H, mask, false);
+      window.STAGE_PERFORMER_BODY.paint(ctx, rig, bodyColor, look);
+      if (mask) body.paintFaceMask(ctx, project, pose, H, mask, true);
+      if (wheel) paintWheel3d(ctx, wheel, P, "near");
+      if (props) paintProps3d(ctx, props);
+    } else paintBody3d(ctx, body, P, rings, wheel, props, eyes, bodyColor, look, { mask, project, pose, H });
     data.pieces.filter((p) => p.heldBy === piece.id && p.holdMode !== "face" && p.propShape === "mask")
       .forEach((item) => {
         const wrist = joints[item.holdSide === "L" ? "wrL" : "wrR"];

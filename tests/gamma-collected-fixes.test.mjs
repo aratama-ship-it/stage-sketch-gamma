@@ -46,19 +46,20 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.doesNotMatch(lightHtml, /id="statebadge"/);
   assert.match(html, />ツール</);
   assert.match(html, />表示するもの</);
-  assert.match(html, /class="stage-app-version">0\.2\.4</);
+  assert.match(html, /class="stage-app-version">0\.2\.5</);
   assert.match(html, /id="stage-release-v023-title">v0\.2\.3</);
-  assert.match(html, /<meta name="stage-sketch-gamma-version" content="v0\.2\.4">/);
+  assert.match(html, /<meta name="stage-sketch-gamma-version" content="v0\.2\.5">/);
   assert.match(html, /id="stage-release-v024-title">v0\.2\.4</);
+  assert.match(html, /id="stage-release-v025-title">v0\.2\.5</);
   // AI用JSON（project.id なし・light あり）が旧照明の移行器で止まらない（2026-09-24）
   assert.match(main, /if \(appearsToHaveLegacyLighting && parsed && parsed\.project === sourceProject\s*&& !\(typeof sourceProject\.id === "string" && sourceProject\.id\)\) \{\s*migrationInput = \{ \.\.\.parsed, project: \{ \.\.\.sourceProject, id: rid\("show"\) \} \};\s*migrationText = JSON\.stringify\(migrationInput\);/);
   assert.match(main, /migrationApi\.prepare\(migrationInput, \{ sourceText: migrationText, venues \}\)/);
   // 読み込み時の保険: rehearsal が無いシーンへ既定の転換3秒（控えを持つ保存データは触らない）（2026-09-24）
   assert.match(main, /function backfillMissingSceneRehearsal\(project\) \{[\s\S]*?if \(hasSectionMemo\) return project;[\s\S]*?row\.rehearsal = \{ holdDurationSeconds: DEFAULT_SCENE_HOLD_SECONDS, transitionToNextSeconds: NEW_SCENE_TRAVEL_SECONDS \};/);
   assert.match(main, /const project = backfillMissingSceneRehearsal\(stripRemovedSceneFields\(projectIoClone\(document\.project\)\)\);/);
-  assert.match(html, /stage-sketch\.js\?v=2026092504/);
-  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v349"/);
-  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=2026092504"/);
+  assert.match(html, /stage-sketch\.js\?v=2026092506/);
+  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v350"/);
+  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=2026092506"/);
   assert.match(html, /id="stage-show-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-set-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-light-names" checked>\s*<span class="stage-tool-icon"/);
@@ -119,8 +120,8 @@ test("lighting apply belongs to the LX cue panel and playback uses an accessible
   assert.match(html, /\.fixture-power\.off \.fixture-power-lens\{fill:none\}/);
   assert.match(html, /\.fixture-power\.off \.fixture-power-slash\{display:block\}/);
   assert.doesNotMatch(html, /\.fixture-power\.on \.fixture-power-slash\{display:none\}/);
-  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=2026092435/);
-  assert.match(worker, /stage-sketch-gamma-shell-v349/);
+  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=2026092506/);
+  assert.match(worker, /stage-sketch-gamma-shell-v350/);
   assert.match(worker, /light-design\/app\.js\?v=2026092431/);
   assert.match(worker, /light-design\/embed\.js\?v=2026092434/);
 });

@@ -223,3 +223,13 @@ public-dist/
 !/formation/presets/editor.html
 !/formation/presets/editor.js
 !/formation/presets/editor.css
+
+# Approved performer body and scene-transition walking (0.2.5).
+!/stage-performer-body.js
+!/stage-performer-contour.js
+!/stage-performer-motion.js
+!/stage-samples/build-feature-test-show.mjs
+!/stage-samples/feature-test-show.json
+!/tests/performer-body.test.mjs
+!/tests/performer-motion.test.mjs
+!/tests/feature-test-show.test.mjs

@@ -229,11 +229,11 @@ test("removing the current duplicate makes room before a large imported-show swi
 test("the app shell advances with the storage transaction code", () => {
   assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092501/);
   assert.match(stageHtml, /style\.css\?v=2026092441/);
-  assert.match(stageHtml, /stage-sketch\.js\?v=2026092504/);
-  assert.match(serviceWorker, /stage-sketch-gamma-shell-v349/);
+  assert.match(stageHtml, /stage-sketch\.js\?v=2026092506/);
+  assert.match(serviceWorker, /stage-sketch-gamma-shell-v350/);
   assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092501/);
   assert.match(serviceWorker, /\.\/style\.css\?v=2026092441/);
-  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092504/);
+  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092506/);
 });
 
 test("indoor standing reception venue keeps its 3D room layout outside show data", () => {
@@ -261,9 +261,9 @@ test("indoor standing reception venue keeps its 3D room layout outside show data
   assert.match(firstPerson, /function drawStandingGuest\(ctx, guest\)/);
   assert.match(firstPerson, /if \(reception\) \{\s*drawShell\(ctx\);\s*drawHouse\(ctx\);/);
   assert.match(stageHtml, /stage-venues\.js\?v=2026092224/);
-  assert.match(stageHtml, /stage-first-person\.js\?v=2026092434/);
+  assert.match(stageHtml, /stage-first-person\.js\?v=2026092506/);
   assert.match(serviceWorker, /stage-venues\.js\?v=2026092224/);
-  assert.match(serviceWorker, /stage-first-person\.js\?v=2026092434/);
+  assert.match(serviceWorker, /stage-first-person\.js\?v=2026092506/);
 });
 
 test("scene alternatives are an opt-in right-side panel without changing scene data", () => {

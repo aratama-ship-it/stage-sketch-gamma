@@ -4722,7 +4722,8 @@
   }
 
   // 二点の間を割った点。手足の中間の節（腿やふくらはぎのふくらみ）を作る
-  const lerpPt = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+  const lerpPt = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t,
+    ...(Number.isFinite(a.s) && Number.isFinite(b.s) ? { s: a.s + (b.s - a.s) * t } : {}) });
 
   /* 手足の節を、中間のふくらみを挟んだ列に開く。
      肩→肘→手首 の3点が 肩→上腕→肘→前腕→手首 の5点になる。 */
@@ -12011,9 +12012,9 @@
    *   画面横 = x·cosθ + z·sinθ
    *   奥行き = -x·sinθ + z·cosθ （大きいほど手前。重なりの順に使う）
    * zDrop は「手前へ出た部位ほど少し下に来る」ぶん。舞台では床と同じ傾きを使う。 */
-  function buildRig(poseId, originX, originY, ux, uy, yaw, zDrop, tilt) {
+  function buildRig(poseId, originX, originY, ux, uy, yaw, zDrop, tilt, sampledPose) {
     const bend = tilt || ((y) => y);
-    const pose = poseById(poseId);
+    const pose = sampledPose || poseById(poseId);
     const joints = pose.joints;
     const cos = Math.cos(yaw);
     const sin = Math.sin(yaw);
@@ -12022,6 +12023,7 @@
       // 実寸ぶんを積み上げてから傾ける。順を逆にすると、見上げても人の丈が変わらない
       return { x: originX + (jx * cos + jz * sin) * ux, y: bend(originY - jy * uy + wz * zDrop), z: wz };
     };
+    if (window.STAGE_PERFORMER_BODY) return window.STAGE_PERFORMER_BODY.projectRig(pose, project, ux, uy);
     const P = {};
     Object.keys(joints).forEach((k) => { P[k] = project(joints[k][0], joints[k][1], joints[k][2]); });
 
@@ -12159,7 +12161,7 @@
             ? "trapeze_hang"
           : piece.pose;
     const rig = buildRig(poseId, pos.x, pos.rawY === undefined ? pos.y : pos.rawY,
-      H * per.x, H * per.y, ((piece.animFacing !== undefined ? piece.animFacing : piece.facing || 0) * Math.PI) / 180, zDrop, L.plan ? null : L.tilt);
+      H * per.x, H * per.y, (performerFacing(piece) * Math.PI) / 180, zDrop, L.plan ? null : L.tilt, samplePerformancePose(piece));
     rig.per = per;
     rig.H = H;
     return rig;
@@ -12204,6 +12206,15 @@
    * 断面を積んだ立体の外周。奥にあるものから塗り、奥の手足は色を沈ませる。
    * 舞台の絵でも姿勢の見本でも、ここを通す。 */
   function paintBody(target, rig, color, look) {
+    if (window.STAGE_PERFORMER_BODY && rig.shoulderBlends) {
+      if (rig.wheel) paintWheel(target, rig, "far");
+      if (rig.mask) paintFaceMask(target, rig.project, rig.pose, rig.H, rig.mask, false);
+      window.STAGE_PERFORMER_BODY.paint(target, rig, color, look);
+      if (rig.mask) paintFaceMask(target, rig.project, rig.pose, rig.H, rig.mask, true);
+      if (rig.wheel) paintWheel(target, rig, "near");
+      if (rig.props) paintProps(target, rig);
+      return;
+    }
     const P = rig.P;
     const ux = rig.ux;
     const uy = rig.uy;
@@ -12212,6 +12223,7 @@
     /* 道具の輪は体より先に、輪の向こう側だけ塗る。手前側は体のあとに塗る。
      * 一本の線で一度に塗ると、人が輪の手前にいるのか奥にいるのか読めない。 */
     if (rig.wheel) paintWheel(target, rig, "far");
+
 
     const parts = LIMBS.map((limb) => ({
       kind: "limb", limb,
@@ -12418,7 +12430,7 @@
   /* 3Dカメラ（stage-first-person.js）へ体モデルを貸し出す窓口。
    * FPVは読み込み順で先に評価されるため、FPV側は描画時に遅延参照する。 */
   window.SHOSAI_STAGE_BODY = Object.freeze({
-    poseById, resolvePoseId, maskFacePoint, paintMask, paintFaceMask, paintSmoothProp,
+    poseById, resolvePoseId, samplePerformancePose, buildRig, paintBody, maskFacePoint, paintMask, paintFaceMask, paintSmoothProp,
     normalizeLook, resolveLook, normalizeSectionCostumes, normalizeSectionCostume, performerCostumeKey,
     sectionForScene, resolveLookForSection, resolveLookForScene,
     topKindById, bottomKindById, hairStyleById, lengthById, sleeveById,
@@ -25810,6 +25822,16 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   let sceneAnim = null;
   let spinRun = null;
 
+  const performerGait = new Map();
+  function performerFacing(piece) {
+    return performerGait.get(piece.id)?.facing ?? piece.animFacing ?? piece.facing ?? 0;
+  }
+  function samplePerformancePose(piece, pieces = sc().pieces) {
+    const pose = poseById(resolvePoseId(piece, pieces));
+    // IDs survive visual-placement copies; transient joint data stays outside saved pieces.
+    return performerGait.get(piece.id)?.pose || pose;
+  }
+
   const wrapSpinAngle = (angle) => ((angle % 360) + 540) % 360 - 180;
 
   function spinningRevolves() {
@@ -25984,10 +26006,13 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       delete entry.piece.animBeamV;
       delete entry.piece.animBase;
       delete entry.piece.animPose;
+      performerGait.delete(entry.piece.id);
+      delete entry.piece.animFacing;
       delete entry.piece.animGlow;
       delete entry.piece.animMech;
     });
-    // はけの駒は描くためだけの写しなので、捨てるだけでよい
+    // はけの駒も含め、途中の姿勢は次のシーンへ持ち越さない。
+    performerGait.clear();
     sceneAnim = null;
     resetSpinRunClock();
   }
@@ -26048,6 +26073,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       const route = twin.route;
       pieces.push({
         piece,
+        fromFacing: finite(twin.facing, 0),
         from: { u: twin.u, v: twin.v },
         ctrl: route ? { u: route.bu, v: route.bv } : null,
         to: { u: piece.u, v: piece.v },
@@ -26136,7 +26162,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     // タイムライン再生中は、その同じ区間長を明示して渡してもよい。
     const scheduledSeconds = fromScene && fromScene.rehearsal
       ? rehearsalSeconds(fromScene.rehearsal.transitionToNextSeconds) : null;
-    const span = Number.isFinite(Number(durationMs))
+    const span = durationMs !== null && durationMs !== undefined && Number.isFinite(Number(durationMs))
       ? clamp(Number(durationMs), 100, 86400000)
       : scheduledSeconds !== null
         ? clamp(scheduledSeconds * 1000, 100, 86400000)
@@ -26149,7 +26175,11 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       movers.forEach((entry) => {
         const piece = entry.piece;
         // 道のりの補間（0..1）。曲がりがあれば二次曲線をたどる
+        let travelProgress = null;
+        let walkingTime = t;
+        let walkingSpan = 1;
         const along = (p2) => {
+          travelProgress = p2;
           const k = 1 - p2;
           if (entry.ctrl) {
             piece.animU = k * k * entry.from.u + 2 * k * p2 * entry.ctrl.u + p2 * p2 * entry.to.u;
@@ -26176,7 +26206,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
             piece.animBase = sb * (1 - p2);   // まず降りる（前の姿勢のまま）
             if (entry.fromPose) piece.animPose = entry.fromPose; else delete piece.animPose;
           } else if (t < down + walkSpan) {
-            along(easeInOut((t - down) / walkSpan));
+            walkingTime = (t - down) / walkSpan;
+            walkingSpan = walkSpan;
+            along(easeInOut(walkingTime));
             piece.animBase = 0;
             piece.animPose = "walk";          // 床は歩く
           } else {
@@ -26190,6 +26222,31 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           along(e);
           // 移動中は前のシーンの姿勢のまま。終わったら stopSceneAnim が消して新しい姿勢になる
           if (entry.fromPose) piece.animPose = entry.fromPose;
+        }
+        const motion = window.STAGE_PERFORMER_MOTION;
+        performerGait.delete(piece.id);
+        delete piece.animFacing;
+        if (motion && piece.type === "performer" && travelProgress !== null) {
+          const pose = poseById(resolvePoseId(piece, sc().pieces));
+          const carrying = Boolean(pose.props || pose.wheel)
+            || sc().pieces.some(other => other.heldBy === piece.id);
+          if (motion.upright(pose) && !carrying) {
+            if (entry.walkPlan === undefined) entry.walkPlan = motion.planWalk(entry, venueSize(), {
+              heightM: pieceHeightM(piece) * piece.size / 100,
+              durationSeconds: span / 1000 * walkingSpan,
+              // Land in the walking stance; stopSceneAnim then applies the saved destination pose.
+              pose, endPose: pose.id === "walk" ? poseById("stand") : pose,
+              toFacing: piece.facing || 0,
+            });
+            if (entry.walkPlan) {
+              const frame = motion.sampleWalk(entry.walkPlan, walkingTime);
+              piece.animU = frame.u; piece.animV = frame.v;
+              performerGait.set(piece.id, frame);
+              Object.defineProperty(piece, "animFacing", {
+                value: frame.facing, writable: true, configurable: true, enumerable: false,
+              });
+            }
+          }
         }
         if (entry.beam) {
           piece.animBeamU = entry.beam.from.u + (entry.beam.to.u - entry.beam.from.u) * e;
@@ -34115,6 +34172,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
             const propShape = visual.type === "prop" ? scaledPropShape(visual, dims) : null;
             return {
               ...visual,
+              performancePose: visual.type === "performer" ? samplePerformancePose(visual, current.pieces) : null,
+              facing: performerFacing(candidate),
               lookMode: visual.type === "performer"
                 ? (costumeLook ? "custom" : "plain") : visual.lookMode,
               look: costumeLook ? projectIoClone(costumeLook) : null,
@@ -34134,6 +34193,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
           }).concat(
             sceneAnim && sceneAnim.exits ? sceneAnim.exits.map((entry) => ({
               ...entry.piece,
+              performancePose: samplePerformancePose(entry.piece),
+              facing: performerFacing(entry.piece),
               dims: pieceDims(entry.piece),
               exitWalker: true,
             })) : []
@@ -37060,7 +37121,12 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       // A direct local verification link always opens the bundled test show.
       if (openArgs.has("feature-test") && ["localhost", "127.0.0.1", "::1"].includes(location.hostname)) {
         const testShow = (window.SHOSAI_STAGE_LOCAL_SHOWS || []).find(doc => /^gamma-feature-test-v/.test(doc.project?.id || ""));
-        if (testShow) openShow(testShow.project.id).then(() => window.GAMMA_WORKSPACE?.normal());
+        if (testShow) openShow(testShow.project.id).then(() => {
+          window.GAMMA_WORKSPACE?.normal();
+          if (openArgs.has("motion")) {
+            openScene("ft-scene-a4"); stopSceneAnim(); render();
+          }
+        });
       }
       consumeCastHandoff();
       // ?sample を付けて開くと、見本から始まる（人へ渡すリンク用）

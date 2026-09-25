@@ -31,6 +31,9 @@
   "use strict";
 
   const TEXT = {
+    "演者の体型と肩・首・手足のつながりを、なめらかな形に整えました。": "Refined the performer body with smoother connections at the shoulders, neck, arms, and legs.",
+    "シーン転換の移動に、足を着いて歩く動きを追加しました。停止中は設定した姿勢を保ちます。": "Added grounded walking during scene transitions. Performers keep their selected pose while stationary.",
+    "正面図・3D・照明デザインで、同じ人体の形を使います。": "The front view, 3D view, and lighting design now use the same body shape.",
     "キューシート": "Cue sheets",
     "一覧へ戻る": "Back to list",
     "全体表": "Master sheet",
