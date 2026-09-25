@@ -398,7 +398,8 @@ body[data-gamma-workspace="cuesheet"].stage-timeline-expanded:not(.stage-fullscr
 /* X-1（2026-09-17）: 手順7の見出しだけブラウザ既定の h3（17.55px/700）のまま残っていた。
  * style.css の見出し指定（11px/500）が .stage-venue-editor-machinery h3 を列挙し漏れていたため。
  * 他の手順と同じ見た目に揃える。 */
-#gamma-venue-workspace .stage-venue-editor-machinery > h3 {
+#gamma-venue-workspace .stage-venue-editor-machinery > h3,
+#gamma-venue-workspace .stage-venue-editor-viewpoints > h3 {
   margin: 0;
   font-size: var(--fs-3);
   font-weight: 500;
@@ -406,7 +407,8 @@ body[data-gamma-workspace="cuesheet"].stage-timeline-expanded:not(.stage-fullscr
 
 /* 2026-09-17 本人指示: 手順7だけ枠に入っていなかった。X-1の見出しと同じ漏れで、
    style.css の枠の指定が手順1〜6しか列挙していない。1〜6と同じ枠・余白に揃える。 */
-#gamma-venue-workspace .stage-venue-editor-machinery {
+#gamma-venue-workspace .stage-venue-editor-machinery,
+#gamma-venue-workspace .stage-venue-editor-viewpoints {
   display: grid;
   gap: 8px;
   padding: 10px;

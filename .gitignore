@@ -190,6 +190,11 @@ public-dist/
 !/stage-timeline.js
 !/stage-usage.js
 !/stage-venue-editor.js
+!/stage-venue-curtains.js
+!/stage-venue-preview.css
+!/stage-venue-preview.js
+!/stage-venue-viewpoints.css
+!/stage-venue-viewpoints.js
 !/stage-venue-lines.js
 !/stage-venue-report.js
 !/stage-venues.js

@@ -373,13 +373,59 @@
     return rectangleOutline(size.width, size.depth);
   };
 
+  /* 編集可能な袖を持つ形式プリセット。幅は作図の初期値で、実会場の実測値ではない。
+   * 客席が左右に並ぶトラバースは演技帯の両端、三方・全周客席は後方の退場口へ置く。
+   * 保存済みカスタム会場の読込・正規化では、この初期値を補わない。 */
+  const PRESET_WING_LAYOUTS = Object.freeze({
+    proscenium: "sides", "hall-fan": "sides", "hall-shoebox": "sides",
+    "circus-theatre": "sides", "gym-stage": "sides", "end-stage": "sides",
+    blackbox: "sides", "kabuki-stage": "sides", traverse: "ends",
+    thrust: "rear", "in-the-round": "rear", "arena-show": "rear", "dome-show": "rear",
+  });
+  const presetWingsForSize = (venue, size, floor) => {
+    const layout = PRESET_WING_LAYOUTS[venue.id];
+    if (!layout) return [];
+    const width = size.width, depth = size.depth;
+    const wingWidth = roundM(Math.min(4, Math.max(1.5, width * 0.2)));
+    const area = (id, label, x1, y1, x2, y2) => ({
+      id, label, side: "custom", shape: "rectangle",
+      polygon: [[x1, y1], [x2, y1], [x2, y2], [x1, y2]].map(p => p.map(roundM)),
+    });
+    if (layout === "ends") return [
+      area("wing-area-1", "舞台袖（奥側）", 0, -wingWidth, width, 0),
+      area("wing-area-2", "舞台袖（手前側）", 0, depth, width, depth + wingWidth),
+    ];
+    if (layout === "rear") {
+      // 円形劇場は後方の客席2ブロック間の通路に収める。ドーム中央は6mの客席通路を空ける。
+      const rearWidth = venue.id === "in-the-round" ? roundM(width * 0.1)
+        : size.id === "dome-centre" ? 5
+        : roundM(Math.min(12, Math.max(3, width * 0.5)));
+      const rearDepth = roundM(Math.min(5, Math.max(3, depth * 0.4)));
+      const connector = (floor.extensions || []).find(item => item.id === "rear-access");
+      const rearEdge = connector ? Math.min(...connector.polygon.map(point => point[1])) : 0;
+      return [area("wing-area-1", "舞台袖（後方・出入口）",
+        (width - rearWidth) / 2, -rearDepth, (width + rearWidth) / 2, rearEdge)];
+    }
+    // 弧を持つホールは、側面の終点まで。客席へふくらむ前端には袖を伸ばさない。
+    const sideEnd = Math.min(...[0, width].map(x => Math.max(...floor.outline
+      .filter(p => Math.abs(p[0] - x) < 0.01).map(p => p[1]))));
+    return [
+      area("wing-area-1", "舞台袖（下手）", -wingWidth, 0, 0, sideEnd),
+      area("wing-area-2", "舞台袖（上手）", width, 0, width + wingWidth, sideEnd),
+    ];
+  };
+
   const createSizeV2 = (venue, size) => {
+    // ブラックボックスの寸法は室全体。舞台と客席は、その内側の独立した区画。
+    const stageSize = venue.id === "blackbox" ? { ...size,
+      width: roundM(size.width * 0.55), depth: roundM(size.depth * 0.35),
+    } : size;
     const arc = typeof size.arcM === "number" ? size.arcM : venue.arcM;
     const rawHouse = size.house || venue.house;
     // 弧の出は客席の前縁にも要る。会場の側で二重に書かせない
     const house = (rawHouse && arc > 0) ? Object.assign({}, rawHouse, { arcM: arc }) : rawHouse;
     const floor = {
-      outline: floorOutlineFor(venue, size, arc),
+      outline: floorOutlineFor(venue, stageSize, arc),
       levels: [],
     };
     /* 花道・サブステージ（VENUE_PRESETS_STAGE3_2026_09_19）。作成会場が既に持っている
@@ -413,6 +459,19 @@
       access: accessForSize(venue.id, size.width, size.depth),
       capacity: {},
     };
+    const wings = presetWingsForSize(venue, stageSize, floor);
+    if (wings.length) variant.stageWings = wings;
+    if (venue.id === "blackbox") {
+      const left = roundM((stageSize.width - size.width) / 2);
+      const back = roundM(-size.depth * 0.1);
+      variant.room = { outline: rectangleOutline(size.width, size.depth)
+        .map(([x, y]) => [roundM(x + left), roundM(y + back)]) };
+      variant.floor.stageHeightM = 0;
+      variant.audience = [{ id: "audience-area-1", side: "front", mode: "audience", eyeM: 1.2,
+        polygon: [[0, stageSize.depth + 0.6], [stageSize.width, stageSize.depth + 0.6],
+          [stageSize.width, back + size.depth - 0.8], [0, back + size.depth - 0.8]].map(p => p.map(roundM)),
+      }];
+    }
 
     if (typeof size.ring === "number") variant.ringM = size.ring;
     if (typeof size.seats === "number") variant.capacity.seats = size.seats;
@@ -433,6 +492,8 @@
       basis: venue.id,
       scale: { gridM: 1, confidence: "approx" },
       floor: primary.floor,
+      ...(primary.stageWings ? { stageWings: primary.stageWings } : {}),
+      ...(primary.room ? { room: primary.room } : {}),
       ceiling: primary.ceiling,
       audience: primary.audience,
       fixtures: primary.fixtures,
@@ -452,6 +513,14 @@
       ...(venue.flexibleHouse ? { flexibleHouse: true } : {}),
       sizes,
     };
+  };
+
+  // 円形舞台の後端は一点。袖へ幅を持って抜けるため、短い演技床を後方へつなぐ。
+  const circularRearAccess = (diameter, width, rearReach) => {
+    const cx = diameter / 2, half = width / 2;
+    return { id: "rear-access", shape: "rectangle", merged: true, label: "後方出入口",
+      polygon: [[cx - half, -rearReach], [cx + half, -rearReach],
+        [cx + half, 1.2], [cx - half, 1.2]].map(p => p.map(roundM)) };
   };
 
   /* 採取した公共ホールの出所と、どこまでが代表値でどこからが目安かを書いた一文（VENUE_PRESETS_STAGE7_2026_09_19）。
@@ -754,6 +823,9 @@
     source: "空中演目の最低高さは Katie Hardwick 技術要件ほか。舞台寸法は形式プリセットの目安",
   });
   VENUES_V2.push(circusTheatreV2);
+
+  // 新規選択からは外す。以前このIDを保存したショーの読込・再編集には定義を残す。
+  const RETIRED_PRESET_IDS = new Set(["circus-theatre"]);
 
   /* ── 実在会場プリセット ──────────────────────────────
    * 形式プリセット（上のVENUES_V2）と違い、実在の劇場を図面から起こす。
@@ -1187,10 +1259,12 @@
         note: "演劇の全周客席の劇場。国内の代表例は青山円形劇場（2015年閉館・客席376・迫り44基のうち中央4基が演技床。演技円の直径は資料が見つからず）。2026-09-20 追加調査: 海外の代表例 Royal Exchange Theatre（マンチェスター）も調べたが、二次資料間で客席数（600〜800）・演技エリアの径（8m案／21mの劇場モジュール案／70ft＝21.3mの演技エリア案）が一致せず、いずれも既存の暫定値（演技円9〜11m）よりかなり大きい規模を指している可能性がある。一次資料（劇場公式の技術資料）には辿り着けず、数値の採用は見送った。演技円の径・客席4ブロック・ブロック間の通路はいずれも暫定値で、実在館の図面からの値ではない。",
       },
       sizes: [
-        { id: "ring9", label: "小（演技円 9m）", width: 9, depth: 9, height: 6, seats: 300 },
-        { id: "ring11", label: "中（演技円 11m）", width: 11, depth: 11, height: 7, seats: 450 },
+        { id: "ring9", label: "小（演技円 9m）", width: 9, depth: 9, height: 6, seats: 300,
+          extensions: [circularRearAccess(9, 0.9, 0.6)] },
+        { id: "ring11", label: "中（演技円 11m）", width: 11, depth: 11, height: 7, seats: 450,
+          extensions: [circularRearAccess(11, 1.1, 0.6)] },
       ],
-      note: "客席が演技空間を全周から囲む劇場。サーカスのビッグトップと違って客席は単床で、演技円も小さい。正面が無いので、どの角度からも成立する立ち位置と向きを決めることになる。ブロックの間の4か所が出入りの通路で、そこから登場すると全周の客席の間を通ることになる。寸法は暫定値。",
+      note: "客席が演技空間を全周から囲む劇場。サーカスのビッグトップと違って客席は単床で、演技円も小さい。正面が無いので、どの角度からも成立する立ち位置と向きを決めることになる。後方の客席ブロック間に退場用の袖を置き、ほかのブロック間も出入りの通路として使う。寸法は暫定値。",
       source: "形式の分類は The Theatres Trust。国内の代表例は青山円形劇場。海外の Royal Exchange Theatre 等も調べたが確度は上がらず。寸法は暫定値",
     }),
   );
@@ -1284,15 +1358,18 @@
         {
           id: "dome-centre", label: "センターステージ", width: 14, depth: 14, height: 16, seats: 45000,
           circle: true,
+          extensions: [circularRearAccess(14, 2, 0.8)],
           audienceAreas: [
             band("audience-arena-front", -12, 15, 26, 34, "front"),
-            band("audience-arena-back", -12, -20, 26, -1, "round"),
+            // 中央の6mを後方の袖へ通じる出入り通路として空ける。
+            band("audience-arena-back-left", -12, -20, 4, -1, "round"),
+            band("audience-arena-back-right", 10, -20, 26, -1, "round"),
             band("audience-arena-left", -32, -1, -13, 15, "left"),
             band("audience-arena-right", 27, -1, 46, 15, "right"),
           ],
         },
       ],
-      note: "ドームでの公演。器が丸いので客席は全周にあり、舞台の後ろ側も売ることがある。エンド＋花道は片側に舞台を組んで花道を客席の中へ伸ばす形、センターステージは中央に丸い舞台を組んで全周から見せる形。どちらもアリーナ席は公演ごとの仮設で、ステージ構成によって席数も割り方も変わる。ここにあるのは「よくある1例」。寸法は暫定値。",
+      note: "ドームでの公演。器が丸いので客席は全周にあり、舞台の後ろ側も売ることがある。エンド＋花道は片側に舞台を組んで花道を客席の中へ伸ばす形、センターステージは中央に丸い舞台を組んで全周から見せる形。センターステージ後方の客席中央は退場用の袖への通路として空ける。どちらもアリーナ席は公演ごとの仮設で、ステージ構成によって席数も割り方も変わる。ここにあるのは「よくある1例」。寸法は暫定値。",
       source: "構成は座席解説などの二次情報から。寸法は暫定値で、公的な標準値ではない",
     }),
   );
@@ -1602,6 +1679,19 @@
         !raw.floor || !Array.isArray(raw.floor.outline) ||
         raw.floor.outline.length < 3 || !raw.floor.outline.every(validPoint)) return null;
     const venue = clone(raw);
+    // Optional enclosure: reject malformed data instead of silently dropping its boundary.
+    if (venue.room != null && (!Array.isArray(venue.room.outline) ||
+        venue.room.outline.length < 3 || !venue.room.outline.every(validPoint))) return null;
+    // Section 9 has at most five independent plan positions. Do not truncate imported data.
+    if (venue.viewPositions != null) {
+      const points = venue.viewPositions;
+      if (!Array.isArray(points) || points.length > 5 || new Set(points.map(p => p?.id)).size !== points.length ||
+          !points.every(p => p && typeof p.id === "string" && p.id.length > 0 && p.id.length <= 60 &&
+            typeof p.label === "string" && p.label.trim().length > 0 && p.label.length <= 40 &&
+            ["offsetM", "distanceM", "eyeM", "fovDeg"].every(key => typeof p[key] === "number" && Number.isFinite(p[key])) &&
+            Math.abs(p.offsetM) <= 200 && Math.abs(p.distanceM) <= 400 && p.eyeM >= -10 && p.eyeM <= 60 &&
+            p.fovDeg >= 10 && p.fovDeg <= 170)) return null;
+    }
     venue.id = venue.id.trim().slice(0, 100);
     venue.label = venue.label.trim().slice(0, 100);
     venue.basis = typeof venue.basis === "string" ? venue.basis : "custom";
@@ -1748,6 +1838,8 @@
     return {
       id,
       label,
+      ...(typeof raw.presetSeatId === "string" && /^[a-zA-Z0-9:-]{1,60}$/.test(raw.presetSeatId)
+        ? { presetSeatId: raw.presetSeatId } : {}),
       distanceM: roundM(Math.min(distanceM, 400)),
       eyeM: roundM(Math.max(-10, Math.min(eyeM, 60))),
       offsetM: roundM(Math.max(-200, Math.min(num(raw.offsetM) || 0, 200))),
@@ -1780,7 +1872,29 @@
     const saved = readLibrary().find((venue) => venue.id === venueId);
     const raw = saved ? saved.viewpoints : readViewpointStore()[venueId];
     return (Array.isArray(raw) ? raw : [])
-      .map(normalizeViewpoint).filter(Boolean).slice(0, MAX_VIEWPOINTS);
+      .map(normalizeViewpoint).filter(Boolean).filter((point, index, list) => {
+        const group = list.slice(0, index + 1).filter(item => Boolean(item.presetSeatId) === Boolean(point.presetSeatId));
+        return group.length <= (point.presetSeatId ? 12 : MAX_VIEWPOINTS);
+      });
+  };
+
+  // 同じ席のIDを使い、図の点・正面図・保存値の対応を保つ。
+  const viewpointPlotSeats = (venueId, geometry, saved = listViewpoints(venueId)) => {
+    const venue = legacyVenueById(venueId);
+    const overriddenPreset = saved.some(point => SEATS.some(seat => seat.id === point.presetSeatId));
+    const approx = venue?.custom && !overriddenPreset && window.SHOSAI_VENUE_LINES?.approxFrontSeats
+      ? window.SHOSAI_VENUE_LINES.approxFrontSeats(geometry, SEATS) : [];
+    const base = approx.length ? approx : SEATS;
+    const width = outlineDimensions(geometry.floor.outline).width;
+    const rows = base.map(seat => {
+      const point = saved.find(point => point.presetSeatId === seat.id);
+      return { key: seat.id, point: point || { id: `seat-${seat.id}`, presetSeatId: seat.id,
+        label: seat.label, distanceM: seat.eye || 8, offsetM: ((seat.plan?.x ?? .5) - .5) * width,
+        eyeM: seat.plan?.eyeM ?? (seat.plan?.tier === "balcony" ? 5.5 : 1.2), fovDeg: 60 } };
+    });
+    saved.filter(point => !base.some(seat => seat.id === point.presetSeatId))
+      .forEach(point => rows.push({ key: point.presetSeatId || `viewpoint:${point.id}`, point }));
+    return clone(rows);
   };
 
   const saveViewpoints = (venueId, list) => {
@@ -1801,7 +1915,7 @@
 
   const addViewpoint = (venueId, raw) => {
     const list = listViewpoints(venueId);
-    if (list.length >= MAX_VIEWPOINTS) return { ok: false, reason: "full", max: MAX_VIEWPOINTS };
+    if (list.filter(point => !point.presetSeatId).length >= MAX_VIEWPOINTS) return { ok: false, reason: "full", max: MAX_VIEWPOINTS };
     const serial = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
     const point = normalizeViewpoint(Object.assign({}, raw, {
       id: `vp-${serial}`, savedAt: new Date().toISOString(),
@@ -1824,6 +1938,23 @@
     const next = list.filter((item) => item.id !== id);
     if (next.length === list.length) return false;
     return saveViewpoints(venueId, next);
+  };
+
+  // 平面図の下書きを確定する。別画面で変更済みの視点は上書きしない。
+  const updateViewpoint = (venueId, id, raw, expected) => {
+    const list = listViewpoints(venueId);
+    const index = list.findIndex(point => point.id === id);
+    if (index < 0) return { ok: false, reason: "missing" };
+    if (!expected || JSON.stringify(list[index]) !== JSON.stringify(normalizeViewpoint(expected, index))) {
+      return { ok: false, reason: "conflict" };
+    }
+    const point = normalizeViewpoint({ ...raw, id,
+      ...(list[index].presetSeatId ? { presetSeatId: list[index].presetSeatId } : {}),
+      savedAt: new Date().toISOString() }, index);
+    if (!point) return { ok: false, reason: "invalid" };
+    list[index] = point;
+    if (!saveViewpoints(venueId, list)) return { ok: false, reason: "write-failed" };
+    return { ok: true, viewpoint: clone(point), count: list.length };
   };
 
   const importVenues = (incoming) => {
@@ -2007,7 +2138,7 @@
   // ID参照と、本人が取り込んだ会場ライブラリも使えるように残す。
   window.SHOSAI_VENUES = {
     get list() {
-      return VENUES.filter((venue) => !venue.realVenue)
+      return VENUES.filter((venue) => !venue.realVenue && !RETIRED_PRESET_IDS.has(venue.id))
         .concat(readLibrary().map(customLegacyVenue));
     },
     byId: legacyVenueById,
@@ -2059,13 +2190,16 @@
       storageKey: VIEWPOINT_KEY,
       list: (venueId) => clone(listViewpoints(venueId)),
       add: addViewpoint,
+      update: updateViewpoint,
+      plotSeats: viewpointPlotSeats,
       remove: removeViewpoint,
       // その劇場の視点がどこに書かれるか（自作劇場＝劇場データ／プリセット＝この端末の控え）
       storedIn: (venueId) => (readLibrary().some((venue) => venue.id === venueId) ? "venue" : "device"),
     },
     v2: {
       get list() {
-        return VENUES_V2.filter((venue) => !venue.realVenue).concat(readLibrary());
+        return VENUES_V2.filter((venue) => !venue.realVenue && !RETIRED_PRESET_IDS.has(venue.id))
+          .concat(readLibrary());
       },
       byId: venueV2ById,
     },

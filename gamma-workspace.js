@@ -263,7 +263,7 @@
    * 見出しの意味と読み上げ順を保ったまま、見出し全体を押せるようにする。 */
   const VENUE_STEPS='.stage-venue-editor-format,.stage-venue-editor-shape,.stage-venue-editor-extension,'
     +'.stage-venue-editor-ceiling,.stage-venue-editor-audience-guide,.stage-venue-editor-wings-guide,'
-    +'.stage-venue-editor-walls-guide,.stage-venue-editor-machinery';
+    +'.stage-venue-editor-walls-guide,.stage-venue-editor-machinery,.stage-venue-editor-viewpoints';
   const venueSteps=()=>[...venueWorkspace.querySelectorAll('.stage-venue-editor-menu '+VENUE_STEPS)];
   function openVenueStep(target) {
     venueSteps().forEach(section=>{
@@ -300,12 +300,101 @@
     if(!sections.some(section=>section.classList.contains('is-open'))) openVenueStep(sections[0]);
   }
 
+  // 幅は劇場データと分け、このブラウザの表示設定として覚える。
+  // 舞台タブと同じ取っ手・キー操作を使い、図の再描画は既存のResizeObserverへ任せる。
+  let venueMenuWidthUi=null;
+  function setupVenueMenuWidth() {
+    if(venueMenuWidthUi) { venueMenuWidthUi.sync(); return; }
+    const grid=venueWorkspace.querySelector('.stage-venue-editor-workspace');
+    const menu=grid?.querySelector('.stage-venue-editor-menu');
+    if(!grid || !menu) return;
+    const storageKey='gamma-venue-menu-width-v1';
+    const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
+    let preferred=null, drag=null, frame=0, width=220, maximum=480;
+    try {
+      const saved=Number(localStorage.getItem(storageKey));
+      if(Number.isFinite(saved) && saved>=220 && saved<=480) preferred=saved;
+    } catch(_) { /* 保存不可でも幅変更は使える。 */ }
+    const handle=document.createElement('div');
+    handle.id='venue-menu-width-handle'; handle.className='stage-panel-width-handle';
+    handle.tabIndex=0; handle.setAttribute('role','separator');
+    handle.setAttribute('aria-orientation','vertical');
+    handle.setAttribute('aria-label','劇場形式プリセット・設定列の幅');
+    if(!menu.id) menu.id='venue-editor-menu';
+    handle.setAttribute('aria-controls',menu.id);
+    handle.title='ドラッグで幅を変更。左右キーで調整、ダブルクリックまたはEnterで元に戻す';
+    const grip=document.createElement('span'); grip.setAttribute('aria-hidden','true'); handle.append(grip);
+    grid.append(handle);
+    function sync() {
+      frame=0;
+      const total=grid.getBoundingClientRect().width;
+      if(!total || window.innerWidth<=900) return;
+      maximum=Math.max(220,Math.min(480,Math.floor(total-420-18)));
+      const fallback=clamp(window.innerWidth*.18,220,280);
+      width=Math.round(clamp(drag ? drag.width : preferred??fallback,220,maximum));
+      grid.style.setProperty('--venue-menu-width',width+'px');
+      handle.setAttribute('aria-valuemin','220');
+      handle.setAttribute('aria-valuemax',String(maximum));
+      handle.setAttribute('aria-valuenow',String(width));
+      handle.setAttribute('aria-valuetext',width+'px');
+    }
+    function schedule() { if(!frame) frame=requestAnimationFrame(sync); }
+    function save() {
+      try {
+        if(preferred===null) localStorage.removeItem(storageKey);
+        else localStorage.setItem(storageKey,String(preferred));
+      } catch(_) { /* メモリ上の表示設定は保つ。 */ }
+    }
+    function finish(commit) {
+      if(!drag) return;
+      const done=drag; drag=null;
+      document.body.classList.remove('is-panel-resizing');
+      if(handle.hasPointerCapture(done.pointerId)) handle.releasePointerCapture(done.pointerId);
+      if(commit) { preferred=done.width; save(); }
+      sync();
+    }
+    function reset() { finish(false); preferred=null; save(); sync(); }
+    handle.addEventListener('pointerdown',event=>{
+      if(event.button!==0 || event.isPrimary===false || drag || window.innerWidth<=900) return;
+      event.preventDefault(); event.stopPropagation(); sync();
+      drag={pointerId:event.pointerId,startX:event.clientX,startWidth:width,width};
+      handle.setPointerCapture(event.pointerId); handle.focus({preventScroll:true});
+      document.body.classList.add('is-panel-resizing');
+    });
+    handle.addEventListener('pointermove',event=>{
+      if(!drag || event.pointerId!==drag.pointerId) return;
+      event.preventDefault();
+      drag.width=Math.round(clamp(drag.startWidth+event.clientX-drag.startX,220,maximum));
+      schedule();
+    });
+    handle.addEventListener('pointerup',event=>{ if(drag && event.pointerId===drag.pointerId) finish(true); });
+    handle.addEventListener('pointercancel',()=>finish(false));
+    handle.addEventListener('lostpointercapture',()=>finish(false));
+    handle.addEventListener('dblclick',event=>{ event.preventDefault(); reset(); });
+    handle.addEventListener('keydown',event=>{
+      if(!['ArrowLeft','ArrowRight','Home','End','Enter','Escape'].includes(event.key)) return;
+      if(event.isComposing || event.metaKey || event.ctrlKey || event.altKey) return;
+      event.preventDefault(); event.stopPropagation();
+      if(event.key==='Escape') { finish(false); return; }
+      if(event.key==='Enter') { reset(); return; }
+      finish(false); sync();
+      preferred=Math.round(clamp(event.key==='Home' ? 220 : event.key==='End' ? maximum
+        : width+(event.key==='ArrowRight'?1:-1)*(event.shiftKey?30:10),220,maximum));
+      save(); sync();
+    });
+    new ResizeObserver(schedule).observe(grid);
+    window.addEventListener('resize',()=>{ finish(false); schedule(); });
+    window.addEventListener('blur',()=>finish(false));
+    venueMenuWidthUi={sync}; sync();
+  }
+
   function showVenue() {
     if(venueBackdrop) venueBackdrop.hidden=true;
     window.dispatchEvent(new Event('stage-venue-editor-open'));
     if(venueBackdrop) venueBackdrop.hidden=true;
     venueModal.hidden=false;
     setupVenueSteps();
+    setupVenueMenuWidth();
   }
   function hideVenue() {
     venueModal.hidden=true;

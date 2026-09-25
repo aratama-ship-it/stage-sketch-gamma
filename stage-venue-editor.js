@@ -73,6 +73,11 @@
     objectRemove: $("stage-venue-editor-object-remove"),
     accessType: $("stage-venue-editor-access-type"),
     stageHeight: $("stage-venue-editor-stage-height"),
+    roomSettings: $("venue-room-settings"),
+    roomWidth: $("venue-room-width"),
+    roomDepth: $("venue-room-depth"),
+    roomResize: $("venue-room-resize"),
+    roomMove: $("venue-room-move-stage"),
     ceilingHeight: $("stage-venue-editor-ceiling-height"),
     ceilingDetails: $("stage-venue-editor-ceiling-details"),
     ceilingOutdoorNote: $("stage-venue-editor-ceiling-outdoor-note"),
@@ -153,9 +158,15 @@
     return [[6, 4], [18, 4], [18, 12], [6, 12]];
   }
 
+  let viewpointMode = false, viewBeforeViewpoints = null;
+  const initialViewPositionsByTemplate = new Map();
+  const initialViewPositions = () => initialViewPositionsByTemplate.get(state.templateKey) ?? null;
   const state = {
     shape: "rectangle",
     points: pointsForShape("rectangle"),
+    room: null,
+    viewpoints: [],
+    viewPositions: null,
     stageExtensions: [],
     audience: [],
     wings: [],
@@ -190,6 +201,7 @@
     view: {
       center: [12, 8],
       zoom: 1,
+      fit: true,
     },
   };
 
@@ -266,7 +278,7 @@
       const point = points[index];
       const next = points[(index + 1) % points.length];
       if (!point.every(Number.isFinite) || !next.every(Number.isFinite) ||
-          distance(point, next) < MIN_SEGMENT_M) return false;
+          distance(point, next) < (points.length > 8 ? 0.05 : MIN_SEGMENT_M)) return false;
     }
     for (let first = 0; first < points.length; first += 1) {
       const firstNext = (first + 1) % points.length;
@@ -297,7 +309,69 @@
   function allContentPoints() {
     return allStagePoints()
       .concat(state.audience.flatMap((item) => audiencePolygon(item)))
-      .concat(state.wings.flatMap((item) => item.polygon || []));
+      .concat(state.wings.flatMap((item) => item.polygon || []))
+      .concat(state.room?.outline || [])
+      .concat((viewpointMode ? viewpointRows() : []).flatMap(row => {
+        const p = viewpointWorld(row.point);
+        return [[p[0] - 1.2, p[1] - 1.2], [p[0] + 1.2, p[1] + 1.2]];
+      }));
+  }
+
+  function roomContains(points, outline = state.room?.outline) {
+    return !outline || points.every(point => pointInPolygon(point, outline));
+  }
+
+  function roomContents() {
+    return allStagePoints().concat(state.wings.flatMap(item => item.polygon || []),
+      state.audience.flatMap(audiencePolygon), state.walls.flatMap(item => item.polygon || []),
+      state.fixtures.flatMap(item => item.polygon || (item.at ? [item.at] : [])));
+  }
+
+  function resizeRoom(width, depth) {
+    if (!state.room || !Number.isFinite(width) || !Number.isFinite(depth) ||
+        width < 3 || depth < 3 || width > 200 || depth > 200) {
+      setStatus("会場の幅・奥行きは3〜200mで入力してください。");
+      return false;
+    }
+    const box = polygonBounds(state.room.outline);
+    const outline = rectangleFromPoints([box.minX, box.minY], [box.minX + width, box.minY + depth]);
+    if (!roomContains(roomContents(), outline)) {
+      setStatus("舞台・客席などが外枠からはみ出します。先に内側へ動かすか、会場を広げてください。");
+      return false;
+    }
+    state.room.outline = outline;
+    fitViewToTemplate();
+    setStatus(`会場の外枠を ${roundM(width)}m × ${roundM(depth)}m にしました。舞台・客席の寸法はそのままです。`);
+    return true;
+  }
+
+  function moveWholeStage(pointer, point) {
+    const delta = point.map((value, i) => roundM(value - pointer.start[i]));
+    const move = polygon => polygon.map(p => p.map((value, i) => roundM(value + delta[i])));
+    const points = move(pointer.originalPoints);
+    const extensions = pointer.originalExtensions.map(item => ({ ...item, polygon: move(item.polygon) }));
+    const wings = pointer.originalWings.map(item => ({ ...item, polygon: move(item.polygon) }));
+    if (!roomContains(points.concat(extensions.flatMap(item => item.polygon), wings.flatMap(item => item.polygon)))) {
+      setStatus("舞台と袖が会場の外枠を越える位置には動かせません。");
+      return;
+    }
+    state.points = points;
+    state.stageExtensions = extensions;
+    state.wings = wings;
+    setStatus("会場の内側で舞台と袖を動かしています。客席と外枠の位置はそのままです。");
+  }
+
+  function drawEnclosure() {
+    if (!state.room) return;
+    ctx.save();
+    ctx.beginPath(); pathPolygon(state.room.outline);
+    ctx.strokeStyle = cssColor("--milk-dim", "#bdb3a4");
+    ctx.lineWidth = 2; ctx.setLineDash([]); ctx.stroke();
+    const box = polygonBounds(state.room.outline), p = toCanvas([box.minX, box.minY]);
+    ctx.fillStyle = cssColor("--milk-dim", "#bdb3a4");
+    ctx.font = "12px sans-serif"; ctx.textAlign = "left";
+    ctx.fillText(`会場 ${roundM(box.maxX - box.minX)} × ${roundM(box.maxY - box.minY)}m`, p[0] + 6, p[1] - 8);
+    ctx.restore();
   }
 
   function dimensions(points = allStagePoints()) {
@@ -337,13 +411,11 @@
 
   function view() {
     const baseWorldW = INITIAL_WORLD.maxX - INITIAL_WORLD.minX;
-    const baseWorldH = INITIAL_WORLD.maxY - INITIAL_WORLD.minY;
+    const usableWidth = Math.max(1, canvasCssWidth() - CANVAS_PADDING * 2);
+    const usableHeight = Math.max(1, canvasCssHeight() - CANVAS_PADDING * 2);
     const worldW = baseWorldW / state.view.zoom;
-    const worldH = baseWorldH / state.view.zoom;
-    const scale = Math.min(
-      (canvasCssWidth() - (CANVAS_PADDING * 2)) / worldW,
-      (canvasCssHeight() - (CANVAS_PADDING * 2)) / worldH,
-    );
+    const scale = usableWidth / worldW;
+    const worldH = usableHeight / scale;
     const drawnW = worldW * scale;
     const drawnH = worldH * scale;
     const minX = state.view.center[0] - (worldW / 2);
@@ -397,6 +469,7 @@
     if (nextZoom === state.view.zoom) return;
     state.view.center = outlineCenter();
     state.view.zoom = nextZoom;
+    state.view.fit = false;
     const dims = dimensions();
     setStatus(`${direction === "in" ? "拡大" : "縮小"}しました。舞台寸法は 間口 だいたい${approxM(dims.width)}m・奥行 だいたい${approxM(dims.depth)}m のままです。`);
     render();
@@ -1803,6 +1876,16 @@
   }
 
   function renderControls(linesResult) {
+    if (els.roomSettings) {
+      els.roomSettings.hidden = !state.room;
+      if (state.room) {
+        const dims = dimensions(state.room.outline);
+        if (!els.roomSettings.contains(document.activeElement)) {
+          els.roomWidth.value = dims.width; els.roomDepth.value = dims.depth;
+        }
+        els.roomMove.setAttribute("aria-pressed", String(state.mode === "stage-move"));
+      }
+    }
     /* T-33: プリセットから作った劇場のときだけ押せる（ライブラリの劇場には戻す先が無い）。 */
     if (els.presetReapply) els.presetReapply.disabled = !selectedTemplateDetail();
     document.querySelectorAll("[data-venue-editor-stage-format]").forEach((button) => {
@@ -1847,7 +1930,7 @@
         `${regionLabel(state.areaMode)}を配置中 ・ 客席${state.audience.length}個／舞台袖${state.wings.length}個`,
       );
     } else {
-      els.audienceSelection.textContent = tx("5番または6番を選択してください");
+      els.audienceSelection.textContent = viewpointMode ? "9番の一覧から点を選択・追加できます" : tx("5番または6番を選択してください");
     }
 
     const fixture = selectedFixture();
@@ -1951,6 +2034,7 @@
     }
     const linesResult = currentLines();
     drawGrid();
+    drawEnclosure();
     drawStageWings();
     drawFloor();
     drawMovementLines(linesResult);
@@ -1965,7 +2049,9 @@
     drawAccess();
     drawShowMachinery();
     drawPlacementPreview();
+    drawPreviewCurtains();
     renderControls(linesResult);
+    window.dispatchEvent(new Event("stage-venue-draft-render"));
   }
 
   function setStatus(message) {
@@ -1976,6 +2062,9 @@
     return clone({
       shape: state.shape,
       points: state.points,
+      room: state.room,
+      viewpoints: state.viewpoints,
+      viewPositions: state.viewPositions,
       stageExtensions: state.stageExtensions,
       audience: state.audience,
       wings: state.wings,
@@ -2045,7 +2134,7 @@
 
   function applyDocumentSnapshot(snapshot) {
     [
-      "shape", "points", "stageExtensions", "audience", "wings", "walls", "fixtures", "access", "ceiling",
+      "shape", "points", "room", "viewpoints", "viewPositions", "stageExtensions", "audience", "wings", "walls", "fixtures", "access", "ceiling",
       "stageHeightM",
       "stageFormat", "templateKey", "nextFurnitureHeight", "nextAccessType", "bandSerial",
       "regionSerial", "extensionSerial", "elementSerial",
@@ -2078,6 +2167,12 @@
   function withHistory(action) {
     const before = documentSnapshot();
     const result = action();
+    if (!roomContains(roomContents())) {
+      applyDocumentSnapshot(before);
+      setStatus("会場の外枠を越えるため、変更を取り消しました。先に外枠を広げてください。");
+      render();
+      return false;
+    }
     commitHistory(before);
     return result;
   }
@@ -2241,13 +2336,14 @@
     const width = Math.max(1, Math.max(...xs) - Math.min(...xs));
     const depth = Math.max(1, Math.max(...ys) - Math.min(...ys));
     const baseWidth = INITIAL_WORLD.maxX - INITIAL_WORLD.minX;
-    const baseDepth = INITIAL_WORLD.maxY - INITIAL_WORLD.minY;
+    const aspect = Math.max(1, canvasCssWidth() - CANVAS_PADDING * 2) /
+      Math.max(1, canvasCssHeight() - CANVAS_PADDING * 2);
     state.view.center = [
       (Math.min(...xs) + Math.max(...xs)) / 2,
       (Math.min(...ys) + Math.max(...ys)) / 2,
     ];
-    state.view.zoom = clamp(Math.min(baseWidth / (width * 1.15), baseDepth / (depth * 1.15), 1),
-      VIEW_ZOOM_MIN, VIEW_ZOOM_MAX);
+    state.view.zoom = clamp(baseWidth / (Math.max(width, depth * aspect) * 1.15), VIEW_ZOOM_MIN, VIEW_ZOOM_MAX);
+    state.view.fit = true;
   }
 
   /* T-33（2026-09-18 本人要望）: 同じプリセットをもう一度当て直せるようにする。
@@ -2264,6 +2360,11 @@
 
     state.shape = inferTemplateShape(floor.outline);
     state.points = clone(floor.outline);
+    state.room = clone(variant.room || venue.room || null);
+    state.viewpoints = window.SHOSAI_VENUES.viewpoints.list(venue.id);
+    state.viewPositions = clone(variant.viewPositions || venue.viewPositions || null);
+    initialViewPositionsByTemplate.set(key, clone(state.viewPositions));
+    viewpointMode = false; viewBeforeViewpoints = null;
     state.stageExtensions = clone(Array.isArray(floor.extensions) ? floor.extensions : []);
     /* ★下敷きが舞台の高さを持っていれば引き継ぐ。持っていなければ未入力へ戻す
      * （持たない会場を読んで保存し直しても鍵が増えない＝絵が変わらない）。 */
@@ -2414,10 +2515,16 @@
 
   function setShape(shape) {
     state.shape = shape;
-    state.points = pointsForShape(shape);
+    const next = pointsForShape(shape);
+    if (state.room) {
+      const before = polygonBounds(state.points), box = polygonBounds(next);
+      state.points = next.map(([x, y]) => [
+        roundM(before.minX + (x - box.minX) / (box.maxX - box.minX) * (before.maxX - before.minX)),
+        roundM(before.minY + (y - box.minY) / (box.maxY - box.minY) * (before.maxY - before.minY)),
+      ]);
+    } else state.points = next;
     state.stageExtensions = [];
-    state.audience = [];
-    state.wings = [];
+    if (!state.room) { state.audience = []; state.wings = []; }
     state.fixtures = [];
     state.access = [];
     state.areaMode = null;
@@ -2561,13 +2668,14 @@
   }
 
   function setMode(mode) {
-    if (!["select", "column", "furniture", "door"].includes(mode)) return;
+    if (!["select", "column", "furniture", "door", "stage-move"].includes(mode)) return;
     state.mode = mode;
     state.areaMode = null;
     state.stageExtensionMode = null;
     state.selectedArea = null;
     const messages = {
       select: "選択モードです。辺・角・観客を調整し、置いたものをタップして選べます。",
+      "stage-move": "舞台の内側をドラッグして、舞台と袖を一緒に動かします。",
       column: "柱モードです。部屋の中をタップして置き、そのままドラッグすると太さが変わります。",
       furniture: "什器モードです。部屋の中で矩形をドラッグしてください。",
       door: "扉モードです。扉または搬入口を選び、部屋の辺をタップしてください。",
@@ -2740,9 +2848,10 @@
       roundM(minX + (((corner[0] - box.minX) / oldWidth) * width)),
       roundM(minY + (((corner[1] - box.minY) / oldDepth) * depth)),
     ]);
-    pointer.valid = true;
+    pointer.valid = roomContains(pointer.preview);
     const dims = dimensions(pointer.preview);
-    setStatus(`${regionLabel(pointer.areaKind)} ${dims.width}m × ${dims.depth}m にしています。`);
+    setStatus(pointer.valid ? `${regionLabel(pointer.areaKind)} ${dims.width}m × ${dims.depth}m にしています。`
+      : "会場の外枠の内側に収めてください。");
   }
 
   /* T-34（2026-09-18 本人報告「プリセットの客席がドラッグドロップで動かせない」）:
@@ -2776,9 +2885,10 @@
       roundM(corner[0] + delta[0]),
       roundM(corner[1] + delta[1]),
     ]);
-    pointer.valid = true;
+    pointer.valid = roomContains(pointer.preview);
     const dims = dimensions(pointer.preview);
-    setStatus(`${regionLabel(pointer.areaKind)} ${dims.width}m × ${dims.depth}m を動かしています。`);
+    setStatus(pointer.valid ? `${regionLabel(pointer.areaKind)} ${dims.width}m × ${dims.depth}m を動かしています。`
+      : "会場の外枠の内側に収めてください。");
   }
 
   function beginArea(pointerId, point) {
@@ -2914,6 +3024,14 @@
     const audienceAreaHit = audienceHandleHit || (!areaResizeHit && corner < 0 && edge < 0
       ? hitAudienceArea(point) : null);
     els.canvas.setPointerCapture(event.pointerId);
+
+    if (state.mode === "stage-move" && state.room) {
+      if (pointInPolygon(point, state.points)) {
+        activePointer = { pointerId: event.pointerId, kind: "stage-move", start: point, moved: false,
+          originalPoints: clone(state.points), originalExtensions: clone(state.stageExtensions), originalWings: clone(state.wings) };
+      }
+      return;
+    }
 
     if (state.stageExtensionMode) {
       beginStageExtension(event.pointerId, point);
@@ -3144,11 +3262,11 @@
       ? circleFromPoints(pointer.start, target)
       : rectangleFromPoints(pointer.start, target);
     const dims = dimensions(pointer.preview);
-    pointer.valid = dims.width >= AREA_MIN_SIDE_M && dims.depth >= AREA_MIN_SIDE_M;
+    pointer.valid = dims.width >= AREA_MIN_SIDE_M && dims.depth >= AREA_MIN_SIDE_M && roomContains(pointer.preview);
     const label = regionLabel(pointer.areaKind);
     setStatus(pointer.valid
       ? `${label} ${dims.width}m × ${dims.depth}m を描いています。`
-      : `${label}は幅・奥行とも0.4m以上で描いてください。`);
+      : `${label}は幅・奥行とも0.4m以上で、会場の外枠の内側に描いてください。`);
   }
 
   function moveStageExtension(pointer, point) {
@@ -3241,6 +3359,7 @@
     }
     if (!activePointer.moved) return;
     if (activePointer.kind === "corner") moveCorner(activePointer, point);
+    if (activePointer.kind === "stage-move") moveWholeStage(activePointer, point);
     if (activePointer.kind === "edge") moveEdge(activePointer, point);
     if (activePointer.kind === "audience") moveAudience(activePointer, point);
     if (activePointer.kind === "column-new") moveColumn(activePointer, point);
@@ -3265,6 +3384,7 @@
       if (movedAtRelease || finished.moved) {
         if (movedAtRelease) finished.moved = true;
         if (finished.kind === "corner") moveCorner(finished, releasePoint);
+        if (finished.kind === "stage-move") moveWholeStage(finished, releasePoint);
         if (finished.kind === "edge") moveEdge(finished, releasePoint);
         if (finished.kind === "audience") moveAudience(finished, releasePoint);
         if (finished.kind === "column-new") moveColumn(finished, releasePoint);
@@ -3302,7 +3422,7 @@
       setStatus(`${finished.shape === "circle" ? "丸" : "四角"}の追加ステージを動かしました。`);
     } else if (!cancelled && finished.kind === "stage-extension-move" && finished.moved) {
       setStatus("舞台面のつながりが切れるため、追加ステージの位置は変えていません。");
-    } else if (!cancelled && finished.kind === "area-resize" && finished.moved) {
+    } else if (!cancelled && finished.kind === "area-resize" && finished.moved && finished.valid) {
       const items = areaStore(finished.areaKind);
       const item = items.find((candidate) => candidate.id === finished.id);
       if (item) {
@@ -3311,7 +3431,7 @@
       }
       const dims = dimensions(finished.preview);
       setStatus(`${regionLabel(finished.areaKind)}を ${dims.width}m × ${dims.depth}m にしました。`);
-    } else if (!cancelled && finished.kind === "area-move" && finished.moved) {
+    } else if (!cancelled && finished.kind === "area-move" && finished.moved && finished.valid) {
       const items = areaStore(finished.areaKind);
       const item = items.find((candidate) => candidate.id === finished.id);
       if (item) item.polygon = clone(finished.preview);
@@ -3380,6 +3500,12 @@
     if (cancelled && before) {
       applyDocumentSnapshot(before);
       setStatus("操作を取り消しました。");
+      render();
+      return;
+    }
+    if (before && !roomContains(roomContents())) {
+      applyDocumentSnapshot(before);
+      setStatus("会場の外枠を越えるため、配置は変更していません。");
       render();
       return;
     }
@@ -3474,6 +3600,9 @@
       basis: "custom",
       stageFormat: state.stageFormat,
       scale: { gridM: 1, confidence: "approx" },
+      ...(state.room ? { room: clone(state.room) } : {}),
+      ...(state.viewpoints.length ? { viewpoints: clone(state.viewpoints) } : {}),
+      ...(state.viewPositions !== null ? { viewPositions: clone(state.viewPositions) } : {}),
       floor: {
         outline: state.points.map(geometryPoint),
         extensions: state.stageExtensions.map((item) => ({
@@ -3956,6 +4085,15 @@
       () => setStageFormat(button.dataset.venueEditorStageFormat),
     ));
   });
+  if (els.roomResize) els.roomResize.addEventListener("click", () => {
+    const width = Number(els.roomWidth.value), depth = Number(els.roomDepth.value);
+    els.roomResize.blur();
+    withHistory(() => resizeRoom(width, depth));
+    render();
+  });
+  if (els.roomMove) els.roomMove.addEventListener("click", () => {
+    setMode(state.mode === "stage-move" ? "select" : "stage-move");
+  });
   document.querySelectorAll("[data-venue-editor-shape]").forEach((button) => {
     button.addEventListener("click", () => withHistory(
       () => setShape(button.dataset.venueEditorShape),
@@ -4042,7 +4180,13 @@
     let pending = 0;
     new ResizeObserver(() => {
       if (pending || venueModalHidden()) return;
-      pending = window.requestAnimationFrame(() => { pending = 0; if (!venueModalHidden()) render(); });
+      pending = window.requestAnimationFrame(() => {
+        pending = 0;
+        if (venueModalHidden()) return;
+        syncCanvasResolution();
+        if (state.view.fit && !activePointer) fitViewToTemplate();
+        render();
+      });
     }).observe(els.canvas);
   }
   els.close.addEventListener("click", requestCloseEditor);
@@ -4206,7 +4350,184 @@
     event.returnValue = "";
   });
 
+  /* Local candidate: read-only preview data, including uncommitted pointer geometry.
+     View/camera state never enters documentSnapshot or buildVenue. */
+  function previewSnapshot() {
+    const venue = buildVenue("custom-room-preview", "作成中の劇場", {});
+    const walls = state.walls.map((item, index) => ({
+      ...clone(item), heightM: venue.fixtures[index]?.heightM ?? state.ceiling.heightM,
+    }));
+    const pointer = activePointer;
+    if (pointer?.preview && pointer.valid !== false) {
+      const list = pointer.areaKind === "wing" ? venue.stageWings
+        : pointer.areaKind === "wall" ? walls
+        : pointer.areaKind === "audience" ? venue.audience : venue.floor.extensions;
+      if (["area-move", "area-resize", "stage-extension-move"].includes(pointer.kind)) {
+        const item = pointer.areaKind === "audience"
+          ? list[state.audience.findIndex(item => item.id === pointer.id)]
+          : list.find(item => item.id === pointer.id);
+        if (item) item.polygon = clone(pointer.preview);
+      } else if (["area-new", "stage-extension-new"].includes(pointer.kind)) {
+        list.push({ id: "drawing-preview", polygon: clone(pointer.preview) });
+      }
+    }
+    const curtains = window.GAMMA_VENUE_CURTAINS.forVenue(venue);
+    return clone({ venue, walls, curtains, dragging: Boolean(activePointer) });
+  }
+
+  function viewpointRows() {
+    if (state.viewPositions !== null) return state.viewPositions.map(point => ({ key: point.id, point: clone(point) }));
+    const venueId = String(state.templateKey || "").split(":")[0];
+    return window.SHOSAI_VENUES.viewpoints.plotSeats(venueId,
+      { floor: { outline: state.points }, audience: state.audience }, state.viewpoints)
+      .slice(0, 5).map(row => ({ key: row.point.id, point: row.point }));
+  }
+  function viewpointWorld(point) {
+    const box = polygonBounds(state.points);
+    return [(box.minX + box.maxX) / 2 + point.offsetM, box.maxY + point.distanceM];
+  }
+  function viewpointPlot() {
+    return { key: state.templateKey, visible: !els.modal.hidden, editing: viewpointMode,
+      canReset: JSON.stringify(state.viewPositions) !== JSON.stringify(initialViewPositions()),
+      points: viewpointRows().map(row => {
+        const world = viewpointWorld(row.point), xy = toCanvas(world);
+        return { ...row, world, x: xy[0] / canvasCssWidth(), y: xy[1] / canvasCssHeight() };
+      }), target: toCanvas([(polygonBounds(state.points).minX + polygonBounds(state.points).maxX) / 2,
+        (polygonBounds(state.points).minY + polygonBounds(state.points).maxY) / 2])
+        .map((n, i) => n / (i ? canvasCssHeight() : canvasCssWidth())) };
+  }
+  function setViewpointMode(enabled) {
+    enabled = Boolean(enabled && !els.modal.hidden);
+    if (enabled === viewpointMode) return;
+    if (activePointer?.kind === "viewpoint") finishViewpointMove(true);
+    viewpointMode = enabled;
+    if (enabled) {
+      viewBeforeViewpoints = clone(state.view);
+      fitViewToTemplate();
+    } else if (viewBeforeViewpoints) {
+      state.view = clone(viewBeforeViewpoints); viewBeforeViewpoints = null;
+    }
+    render();
+  }
+  function canEditViewpoints() { return viewpointMode && !els.modal.hidden && !pendingConflict; }
+  function pointAt(clientX, clientY) {
+    const world = fromEvent({ clientX, clientY }), box = polygonBounds(state.points);
+    return { offsetM: roundM(clamp(world[0] - (box.minX + box.maxX) / 2, -200, 200)),
+      distanceM: roundM(clamp(world[1] - box.maxY, -400, 400)) };
+  }
+  function editViewpoints(change) {
+    if (!canEditViewpoints() || activePointer) return false;
+    const before = documentSnapshot(), next = viewpointRows().map(row => clone(row.point));
+    if (!change(next)) return false;
+    state.viewPositions = next; commitHistory(before); render(); return true;
+  }
+  function addViewpointAt(clientX, clientY) {
+    const point = { id: `position-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,6)}`,
+      label: `見る位置 ${viewpointRows().length + 1}`, ...pointAt(clientX, clientY), eyeM: 1.2, fovDeg: 60 };
+    const ok = editViewpoints(points => { if (points.length >= 5) return false; points.push(point); return true; });
+    return ok ? point.id : null;
+  }
+  function renameViewpoint(key, label) {
+    label = String(label || "").trim().slice(0, 40);
+    if (!label) return false;
+    return editViewpoints(points => {
+      const point = points.find(p => p.id === key);
+      if (!point || point.label === label) return false;
+      point.label = label; return true;
+    });
+  }
+  function removeViewpoint(key) {
+    return editViewpoints(points => {
+      const index = points.findIndex(p => p.id === key);
+      if (index < 0) return false;
+      points.splice(index, 1); return true;
+    });
+  }
+  function resetViewpoints() {
+    if (!canEditViewpoints() || activePointer) return false;
+    const before = documentSnapshot(); state.viewPositions = clone(initialViewPositions());
+    commitHistory(before); fitViewToTemplate(); render(); return true;
+  }
+  function beginViewpointMove(key) {
+    if (!canEditViewpoints() || activePointer) return false;
+    const row = viewpointRows().find(row => row.key === key);
+    if (!row) return false;
+    pointerHistoryStart = documentSnapshot();
+    state.viewPositions = viewpointRows().map(row => clone(row.point));
+    activePointer = { kind: "viewpoint", pointerId: -101, point: row.point, moved: false };
+    return true;
+  }
+  function moveViewpointAt(clientX, clientY) {
+    if (!canEditViewpoints() || activePointer?.kind !== "viewpoint") return false;
+    const point = { ...activePointer.point, ...pointAt(clientX, clientY) };
+    const index = state.viewPositions.findIndex(item => item.id === point.id);
+    if (index < 0) return false;
+    state.viewPositions[index] = point;
+    activePointer.moved = true; render(); return true;
+  }
+  function finishViewpointMove(cancelled) {
+    if (activePointer?.kind !== "viewpoint") return;
+    const before = pointerHistoryStart;
+    activePointer = null; pointerHistoryStart = null;
+    if (cancelled) applyDocumentSnapshot(before); else commitHistory(before);
+    render();
+  }
+
+  function drawPreviewCurtains() {
+    ctx.save();
+    ctx.strokeStyle = cssColor("--brass", "#d3ac59");
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.setLineDash([]);
+    previewSnapshot().curtains.forEach(({ from, to }) => {
+      const a = toCanvas(from), b = toCanvas(to);
+      ctx.beginPath();
+      ctx.moveTo(a[0], a[1]);
+      ctx.lineTo(b[0], b[1]);
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
+  // Same draft/history/conflict path as the plan. No automatic apply or save.
+  function beginPreviewMove(kind, id) {
+    if (els.modal.hidden || pendingConflict || activePointer || !["wing", "wall"].includes(kind)) return false;
+    const item = areaStore(kind).find(item => item.id === id && Array.isArray(item.polygon));
+    if (!item) return false;
+    pointerHistoryStart = documentSnapshot();
+    activePointer = beginAreaMovePointer(-100, [0, 0], kind, item);
+    state.selectedArea = { kind, id };
+    render();
+    return true;
+  }
+  function movePreviewArea(dx, dy) {
+    if (activePointer?.pointerId !== -100 || !Number.isFinite(dx) || !Number.isFinite(dy)) return false;
+    activePointer.moved = Math.hypot(dx, dy) >= MOVE_START_M;
+    if (activePointer.moved) moveAreaItem(activePointer, [dx, dy]);
+    render();
+    return true;
+  }
+  function finishPreviewMove(cancelled) {
+    if (activePointer?.pointerId !== -100) return;
+    const finished = activePointer;
+    const before = pointerHistoryStart;
+    activePointer = null;
+    pointerHistoryStart = null;
+    if (cancelled) {
+      applyDocumentSnapshot(before);
+    } else if (finished.moved && finished.valid) {
+      const item = areaStore(finished.areaKind).find(item => item.id === finished.id);
+      if (item) item.polygon = clone(finished.preview);
+      if (beginConflictResolution(before)) return;
+      commitHistory(before);
+    }
+    render();
+  }
+
   window.SHOSAI_VENUE_EDITOR = Object.freeze({
+    previewSnapshot, beginPreviewMove, movePreviewArea, finishPreviewMove,
+    viewpointPlot, setViewpointMode, addViewpointAt, renameViewpoint, removeViewpoint, resetViewpoints,
+    beginViewpointMove, moveViewpointAt, finishViewpointMove,
     storageKey: library.storageKey,
     /* T-14（2026-09-18 本人要望）: 劇場設定を変更したまま別タブへ移ろうとしたら
      * 「この劇場を反映しますか」を出すため、未反映かどうかを外から見えるようにする。

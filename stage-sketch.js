@@ -7536,7 +7536,7 @@
       sceneListHeight: raw.sceneListHeightMode === "manual"
         ? clamp(finite(raw.sceneListHeight, 320), 120, 1200) : null,
       layout: normalizeLayout(raw.layout),
-      seat: (typeof raw.seat === "string" && raw.seat.startsWith("approx-"))
+      seat: (typeof raw.seat === "string" && (raw.seat.startsWith("approx-") || raw.seat.startsWith("viewpoint:")))
         ? raw.seat
         : VENUES.seatById(typeof raw.seat === "string" ? raw.seat : "").id,
       // G-J: 会場ごとに席の並びが違うため、ここでは存在検査までしない
@@ -10711,7 +10711,7 @@
     if (viewpointSeatCache.key === key) return viewpointSeatCache.seats;
     const seats = store.list(v.id).map((point) => {
       const seat = lines.deriveSeat({
-        id: `viewpoint:${point.id}`,
+        id: point.presetSeatId || `viewpoint:${point.id}`,
         label: point.label,
         short: point.label,
         distanceM: point.distanceM,
@@ -10741,27 +10741,19 @@
   function frontSeatList() {
     const v = venue();
     const approx = approxFrontSeatsForVenue(v);
-    const base = approx && approx.length ? approx : VENUES.seats;
-    return base.concat(customViewpointSeats(v));
+    const saved = VENUES.viewpoints.list(v.id);
+    const usePreset = saved.some(point => VENUES.seats.some(seat => seat.id === point.presetSeatId));
+    const base = !usePreset && approx && approx.length ? approx : VENUES.seats;
+    const custom = customViewpointSeats(v);
+    return base.map(seat => custom.find(point => point.id === seat.id) || seat)
+      .concat(custom.filter(point => !base.some(seat => seat.id === point.id)));
   }
 
   function frontSeatById(id) {
-    const v = venue();
-    const viewpoints = customViewpointSeats(v);
-    const viewpoint = viewpoints.find((seat) => seat.id === id);
-    if (viewpoint) return viewpoint;
-    const approx = approxFrontSeatsForVenue(v);
-    // 近似できなかった会場（空配列）は既存5席で扱う。席の札の作り方と揃える
-    if (approx && approx.length) return approx.find((seat) => seat.id === id) || approx[0] || VENUES.seatById("center");
-    /* ★2026-09-18 本人報告「1階・2階の表示が出ていない」:
-     * ここが undefined を返すと renderVenueControls が seat.id で止まり、
-     * 席の札が1つも出なくなる（その後の描画もまとめて落ちる）。
-     * 近似席を選んだまま会場が近似でなくなると起きる
-     *   （例: approx-near を選んだあとプリセットの劇場へ戻す。
-     *    近似席の重複を1つに絞ったので、消えたidが残る経路も増えた）。
-     * ★席は必ず1つ返す。選べない状態を作らない。 */
-    return VENUES.seatById(id) || VENUES.seatById("center") || VENUES.seats[0] || null;
+    const seats = frontSeatList();
+    return seats.find(seat => seat.id === id) || seats.find(seat => seat.id === "center") || seats[0] || VENUES.seatById("center");
   }
+
   /* 実効の寸法。旧ショーに手入力寸法が残っている場合だけ読み込み互換として重ねる。
    * 新しい会場は会場エディタで作り、ここでは寸法を直接編集しない。 */
   const venueSize = () => {
@@ -11042,7 +11034,16 @@
          いままでは舞台の外接だけで尺を決めていたので、客席が図の下や横へ出て切れていた
          （扇形ホール大で下へ16m、能舞台で右へ7.6m、ドーム公演で四方へ28m）。
          劇場設定（カスタム編集）の平面図は「全体の中心を真ん中に」直したので、そこへ揃える。 */
-      const outside = planOutsideRatios(v, size);
+      let outside = planOutsideRatios(v, size);
+      const viewingPoints = window.GAMMA_STAGE_VIEWPOINTS?.fitPoints() || [];
+      if (viewingPoints.length) {
+        outside = { top: 0, bottom: 0, left: WING_M / size.width, right: WING_M / size.width, ...outside };
+        viewingPoints.forEach(point => {
+          outside.left = Math.max(outside.left, (1.2 - point.offsetM - size.width / 2) / size.width);
+          outside.right = Math.max(outside.right, (point.offsetM + 1.2 - size.width / 2) / size.width);
+          outside.bottom = Math.max(outside.bottom, (point.distanceM + 1.2) / size.depth);
+        });
+      }
       const fit = planFit({
         W, H, audience: v.audience, width: size.width, depth: size.depth, wingM: WING_M,
         ...(Number.isFinite(houseM) ? { houseM } : {}),
@@ -18175,6 +18176,8 @@
     venueSize: () => ({ ...venueSize() }),
   });
 
+
+
   let selectedLightMotionRaf = 0;
   function scheduleSelectedLightMotionRender() {
     const scene = sc();
@@ -18238,13 +18241,14 @@
 
     if (state.showFront || forceCanvases || presenting) {
       drawStage(ctx, true, "front");
-      canvas.setAttribute("aria-label", sx(`${v.label}（${size.label}）を${VENUES.seatById(state.seat).label}から見た正面図。${counts}。背景の線${sc().strokes.length}本。`, `Front view of ${venueName(v)} (${sizeName(size)}) from ${seatName(VENUES.seatById(state.seat))}. ${counts}. ${sc().strokes.length} backdrop strokes.`));
+      canvas.setAttribute("aria-label", sx(`${v.label}（${size.label}）を${seatName(frontSeatById(state.seat))}から見た正面図。${counts}。背景の線${sc().strokes.length}本。`, `Front view of ${venueName(v)} (${sizeName(size)}) from ${seatName(frontSeatById(state.seat))}. ${counts}. ${sc().strokes.length} backdrop strokes.`));
     }
     if ((state.showPlan || forceCanvases || presenting) && planCtx) {
       drawStage(planCtx, true, "plan");
       planCanvas.setAttribute("aria-label", sx(`${v.label}（${size.label}）を上から見た平面図。${counts}。`, `Plan view of ${venueName(v)} (${sizeName(size)}) from above. ${counts}.`));
     }
     renderSecondSeatView();
+    window.GAMMA_STAGE_VIEWPOINTS?.sync();
     if (els.frontCaption) {
       const L = layout("front");
       const pannable = L.panRange > 0 || L.panRangeY > 0;
@@ -29729,20 +29733,22 @@ ${propsPlotHtml}
         const bits = current.audience === "round"
           ? (sx(`直径${s2.width}m`, `⌀${s2.width}m`))
           : `${s2.width}×${s2.depth}m`;
-        opt.textContent = `${sizeName(s2)} — ${bits}`;
+        opt.textContent = `${sizeName(s2)} — ${roomSizeLabel(current.id, s2.id) || bits}`;
         els.sizeSelect.append(opt);
       });
       els.sizeSelect.value = size.id;
     }
 
     if (els.venueScale) {
-      const japaneseBits = current.audience === "round"
+      const japaneseBits = roomSizeLabel(current.id, size.id)
+        ? [roomSizeLabel(current.id, size.id), `舞台 ${size.width}×${size.depth}m`]
+        : current.audience === "round"
         ? [`直径 ${size.width}m`]
         : [`間口 ${size.width}m`, `奥行 ${size.depth}m`];
       if (size.height) japaneseBits.push(`高さ ${size.height}m`);
       if (size.seats) japaneseBits.push(`客席 約${size.seats}席`);
       if (size.crowd) japaneseBits.push(`観客 〜${size.crowd.toLocaleString()}人`);
-      const japaneseScale = japaneseBits.join(" ・ ") + `（${current.source}）`;
+      const japaneseScale = japaneseBits.join(" ・ ") + `（${roomSizeLabel(current.id, size.id) ? '編集用の目安' : current.source}）`;
       const bits = current.audience === "round"
         ? [`Diameter ${size.width}m`]
         : [`Width ${size.width}m`, `Depth ${size.depth}m`];
@@ -29775,8 +29781,7 @@ ${propsPlotHtml}
        空配列は「近似できなかった」であって「席が無い」ではないので、既存5席へ落とす。 */
     const approxSeats = approxFrontSeatsForVenue(current);
     // L-02: カスタム視点は並びの右端へ足す
-    const seats = (approxSeats && approxSeats.length ? approxSeats : VENUES.seats)
-      .concat(customViewpointSeats(current));
+    const seats = frontSeatList();
     /* ★選んでいた席が今の一覧に無いときは、先頭の席へ寄せて状態も直す。
      * そのままだと aria-pressed がどれにも付かず、どこから見ているのか分からなくなる。 */
     let seat = frontSeatById(state.seat) || seats[0];
@@ -30022,7 +30027,7 @@ ${propsPlotHtml}
    *   （先頭5件のハッシュの錠と、IDで参照している保存データのため）。
    * ★ここに載っていない会場は、選択欄では「そのほか」へ、一覧では末尾へ自動で落ちる。 */
   const VENUE_GROUPS = [
-    { label: "劇場（額縁）", ids: ["proscenium", "hall-fan", "hall-shoebox", "circus-theatre"] },
+    { label: "劇場（額縁）", ids: ["proscenium", "hall-fan", "hall-shoebox"] },
     { label: "劇場（オープン）", ids: ["thrust", "end-stage", "blackbox", "in-the-round", "traverse"] },
     { label: "日本の劇場と現場", ids: ["kabuki-stage", "noh-stage", "gym-stage", "banquet-hall", "indoor-event-space"] },
     { label: "大会場の公演", ids: ["arena-show", "dome-show", "arena-concert", "dome-concert"] },
@@ -30032,7 +30037,7 @@ ${propsPlotHtml}
 
   /* 形から選ぶ一覧（VENUE_GALLERY_2026_09_19）。
    * ★絵はその場で描く。画像ファイルを持たないので、プリセットを足せば自動で増える。
-   * ★描くのは3つだけ（舞台の床・追加ステージ・客席）。概要なのでこれで足りる。
+   * ★舞台の床・追加ステージ・客席・舞台袖を、同じプリセットの座標から描く。
    * ★色は CSS 変数から読む＝肌（skin）を変えても一覧の絵が浮かない。 */
   function choicesForGallery() {
     const list = VENUES.list;
@@ -30052,6 +30057,13 @@ ${propsPlotHtml}
    * 全周の会場は間口ではなく直径として読むので `直径11m`（英語は `⌀11m`）。
    * 寸法を持たない会場では空文字を返し、行ごと出さない。 */
   function venueSizeSummary(venue) {
+    const flexible = VENUES.library.venueV2ById(venue.id);
+    if (flexible?.room && flexible.sizes?.length) {
+      const widths = flexible.sizes.map(s => s.room.outline.map(p => p[0]))
+        .map(xs => Math.max(...xs) - Math.min(...xs));
+      const low = Math.min(...widths), high = Math.max(...widths);
+      return sx(`会場 ${low === high ? low : `${low}〜${high}`}m四方`, `Room ${low === high ? low : `${low}–${high}`}m square`);
+    }
     const sizes = (venue.sizes || []).filter((size) =>
       Number.isFinite(size.width) && Number.isFinite(size.depth));
     if (!sizes.length) return "";
@@ -30069,6 +30081,14 @@ ${propsPlotHtml}
       && sizes.every((size) => Math.abs(size.width - size.depth) < 0.05);
     if (round) return sx(`直径${widths}m`, `⌀${widths}m`);
     return `${widths}×${span(sizes.map((size) => size.depth))}m`;
+  }
+
+  function roomSizeLabel(venueId, sizeId) {
+    const data = VENUES.library.venueV2ById(venueId);
+    const room = data?.sizes?.find(s => s.id === sizeId)?.room || data?.room;
+    if (!Array.isArray(room?.outline)) return "";
+    const dims = [0, 1].map(i => Math.round((Math.max(...room.outline.map(p => p[i])) - Math.min(...room.outline.map(p => p[i]))) * 100) / 100);
+    return sx(`会場 ${dims[0]}×${dims[1]}m`, `Room ${dims[0]}×${dims[1]}m`);
   }
 
   const cssColor = (name, fallback) => {
@@ -30092,7 +30112,15 @@ ${propsPlotHtml}
       .filter((item) => item && Array.isArray(item.polygon)).map((item) => item.polygon));
     const house = (v2.audience || [])
       .filter((area) => area && Array.isArray(area.polygon)).map((area) => area.polygon);
-    const points = stage.concat(house).flat();
+    const wings = (v2.stageWings || [])
+      .filter((area) => area && Array.isArray(area.polygon)).map((area) => area.polygon);
+    const enclosure = Array.isArray(v2.room?.outline) ? v2.room.outline : [];
+    // トラバースは一覧の横長の枠で演技帯が横に見える向きにする。
+    // 描画座標だけを回し、平面図・立体・保存する会場座標は変えない。
+    const displayPoint = venueId === "traverse"
+      ? (point) => [point[1], -point[0]]
+      : (point) => point;
+    const points = stage.concat(house, wings, [enclosure]).flat().map(displayPoint);
     if (!points.length) return;
     const xs = points.map((point) => point[0]);
     const ys = points.map((point) => point[1]);
@@ -30110,21 +30138,25 @@ ${propsPlotHtml}
        ★これが無いと、円形劇場とシャピトーがほぼ同じ絵になる（実測して気づいた）。
        線を引く余白のぶん、中身を少し小さくする。 */
     const tent = v2.tent === true;
-    /* 客席の位置が決まっていない会場（ブラックボックス）は、塗らずに破線で出す
-       （VENUE_THUMB_FRAME_2026_09_19）。塗ってしまうとエンドステージと同じ絵になる。 */
+    /* ブラックボックスの客席は一例なので、錆色の塗りに破線を重ねて可変配置と示す。 */
     const flexibleHouse = v2.flexibleHouse === true;
     const pad = 5;
     const room = bowl ? 0.42 : (tent ? 0.88 : 1);
-    const scale = Math.min(((width - (pad * 2)) * room) / spanX,
+    const center = [0, 1].map(i => (Math.min(...v2.floor.outline.map(p => p[i])) + Math.max(...v2.floor.outline.map(p => p[i]))) / 2);
+    const tentRadius = tent ? Math.max(...points.map(p => Math.hypot(p[0] - center[0], p[1] - center[1]))) : 0;
+    const scale = tent ? (Math.min(width, height) / 2 - pad - 3) / tentRadius : Math.min(((width - (pad * 2)) * room) / spanX,
       ((height - (pad * 2)) * room) / spanY);
     const drawnW = spanX * scale;
     const drawnH = spanY * scale;
     const offsetX = (width - drawnW) / 2;
     const offsetY = bowl ? ((height - drawnH) * 0.3) : ((height - drawnH) / 2);
-    const at = (point) => [
-      offsetX + ((point[0] - minX) * scale),
-      offsetY + ((point[1] - minY) * scale),
-    ];
+    const at = (rawPoint) => {
+      const point = displayPoint(rawPoint);
+      return [
+        tent ? width / 2 + (point[0] - center[0]) * scale : offsetX + ((point[0] - minX) * scale),
+        tent ? height / 2 + (point[1] - center[1]) * scale : offsetY + ((point[1] - minY) * scale),
+      ];
+    };
     const fill = (polygons, color) => {
       if (!polygons.length) return;
       ctx.fillStyle = color;
@@ -30181,22 +30213,21 @@ ${propsPlotHtml}
       ctx.restore();
     };
 
-    /* 天幕の輪郭。中身の外接を一回り大きくした楕円で描く。 */
+    /* 天幕の輪郭は真円。画像自体もCSSで縦横比を保つ。 */
     const drawTent = () => {
       ctx.save();
       ctx.strokeStyle = cssColor("--ink-soft", "#6a604e");
       ctx.lineWidth = 1.5;
       ctx.setLineDash([3, 3]);
       ctx.beginPath();
-      ctx.ellipse(offsetX + (drawnW / 2), offsetY + (drawnH / 2),
-        (drawnW / 2) + 3, (drawnH / 2) + 3, 0, 0, Math.PI * 2);
+      ctx.arc(width / 2, height / 2, tentRadius * scale + 3, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     };
 
     /* 額縁（プロセニアム枠）。fixtures に frame: true の壁として入っている
        （VENUE_THUMB_FRAME_2026_09_19）。★元の壁は 0.25m 角で、そのまま描くと点になるので
-       最小4pxの印にする。プロセニアムには出て、劇場のサーカス公演には出ない。 */
+       最小4pxの印にする。 */
     const drawFrames = () => {
       const frames = (v2.fixtures || [])
         .filter((item) => item && item.frame === true && Array.isArray(item.polygon));
@@ -30218,7 +30249,7 @@ ${propsPlotHtml}
 
     const outlineHouse = () => {
       ctx.save();
-      ctx.strokeStyle = cssColor("--ink-soft", "#6a604e");
+      ctx.strokeStyle = cssColor("--rust", "#a84b26");
       ctx.lineWidth = 1.5;
       ctx.setLineDash([3, 3]);
       house.forEach((polygon) => {
@@ -30233,12 +30264,53 @@ ${propsPlotHtml}
       ctx.restore();
     };
 
+    const drawWings = () => {
+      wings.forEach((polygon) => {
+        const outline = polygon.map(at);
+        const xs = outline.map((point) => point[0]);
+        const ys = outline.map((point) => point[1]);
+        const minX = Math.min(...xs), maxX = Math.max(...xs);
+        const minY = Math.min(...ys), maxY = Math.max(...ys);
+        ctx.save();
+        ctx.beginPath();
+        outline.forEach(([x, y], index) => {
+          if (index) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = cssColor("--milk-dim", "#bdb3a4");
+        ctx.globalAlpha = 0.32;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = cssColor("--milk-dim", "#bdb3a4");
+        ctx.lineWidth = 1.4;
+        ctx.setLineDash([3, 2]);
+        ctx.stroke();
+        ctx.clip();
+        ctx.beginPath();
+        for (let x = minX - (maxY - minY); x <= maxX; x += 7) {
+          ctx.moveTo(x, maxY);
+          ctx.lineTo(x + (maxY - minY), minY);
+        }
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 0.5;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+      });
+    };
+
     ctx.fillStyle = cssColor("--desk", "#191512");
     ctx.fillRect(0, 0, width, height);
     if (bowl) drawBowl(bowl);
     if (tent) drawTent();
+    if (enclosure.length) strokeOutline(enclosure, cssColor("--milk-dim", "#bdb3a4"), 1.5);
+    ctx.save();
+    ctx.globalAlpha = 0.42;
+    fill(house, cssColor("--rust", "#a84b26"));
+    ctx.restore();
     if (flexibleHouse) outlineHouse();
-    else fill(house, cssColor("--ink-soft", "#6a604e"));
+    else house.forEach((polygon) => strokeOutline(polygon, cssColor("--rust", "#a84b26"), 1));
+    drawWings();
     fill([v2.floor.outline], cssColor("--paper-2", "#e7dcc5"));
     fill(stage.slice(1), cssColor("--brass", "#9c823f"));
     strokeOutline(v2.floor.outline, cssColor("--paper", "#efe7d6"), bowl ? 0.9 : 1);
@@ -30364,7 +30436,7 @@ ${propsPlotHtml}
         const dimensions = selectedVenue.audience === "round"
           ? sx(`直径${size.width}m`, `⌀${size.width}m`)
           : `${size.width}×${size.depth}m`;
-        option.textContent = `${sizeName(size)} — ${dimensions}`;
+        option.textContent = `${sizeName(size)} — ${roomSizeLabel(selectedVenue.id, size.id) || dimensions}`;
         els.sizeSelect.append(option);
       });
       els.sizeSelect.value = selectedSize.id;
@@ -30375,13 +30447,15 @@ ${propsPlotHtml}
       els.venueNote.hidden = !note;
     }
     if (els.venueScale) {
-      const dimensions = selectedVenue.audience === "round"
+      const dimensions = roomSizeLabel(selectedVenue.id, selectedSize.id)
+        ? [roomSizeLabel(selectedVenue.id, selectedSize.id), `舞台 ${selectedSize.width}×${selectedSize.depth}m`]
+        : selectedVenue.audience === "round"
         ? [`直径 ${selectedSize.width}m`]
         : [`間口 ${selectedSize.width}m`, `奥行 ${selectedSize.depth}m`];
       if (selectedSize.height) dimensions.push(`高さ ${selectedSize.height}m`);
       if (selectedSize.seats) dimensions.push(`客席 約${selectedSize.seats}席`);
       if (selectedSize.crowd) dimensions.push(`観客 〜${selectedSize.crowd.toLocaleString()}人`);
-      els.venueScale.textContent = `${dimensions.join(" ・ ")}（${selectedVenue.source}）`;
+      els.venueScale.textContent = `${dimensions.join(" ・ ")}（${roomSizeLabel(selectedVenue.id, selectedSize.id) ? '編集用の目安' : selectedVenue.source}）`;
     }
     window.dispatchEvent(new CustomEvent("stage-venue-editor-template", {
       detail: { venueId: selectedVenue.id, sizeId: selectedSize.id },

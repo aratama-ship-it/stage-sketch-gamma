@@ -28,17 +28,17 @@ vm.runInContext(modelSource, modelContext);
 const gamma = modelContext.GAMMA_LIGHT_MODEL;
 const expanded = plans.expandCatalog(JSON.parse(rawCatalog), venues);
 
-test("現在選べる22劇場・39規模のすべてに照明プリセットがある", () => {
+test("現在選べる21劇場・37規模のすべてに照明プリセットがある", () => {
   assert.equal(expanded.ok, true);
   const expected = venues.flatMap((venue) => venue.sizes.map((size) => `${venue.id}/${size.id}`));
-  assert.equal(venues.length, 22);
-  assert.equal(expected.length, 39);
+  assert.equal(venues.length, 21);
+  assert.equal(expected.length, 37);
   assert.equal(expanded.catalog.presets.length, expected.length);
   assert.deepEqual(
     new Set(expanded.catalog.presets.map((preset) => `${preset.venueType}/${preset.sizeId}`)),
     new Set(expected),
   );
-  assert.equal(expanded.catalog.generatedVenuePresetCount, 36);
+  assert.equal(expanded.catalog.generatedVenuePresetCount, 34);
 });
 
 test("各プリセットは劇場形式と規模で選ばれ、全消灯の編集用デザインになる", () => {

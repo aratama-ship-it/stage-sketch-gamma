@@ -1,0 +1,45 @@
+.venue-live-layout { --preview-gap:8px; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:var(--preview-gap); min-height:340px; flex:1 1 auto; }
+#gamma-venue-workspace .stage-venue-editor-panel > .stage-venue-editor-audience-step:has(.venue-live-layout) { overflow-y:auto; }
+#gamma-venue-workspace .venue-live-layout .stage-venue-editor-canvas-wrap { width:100%; height:100%; aspect-ratio:auto; margin:0; min-width:0; }
+.venue-live-panel { min-width:0; min-height:0; display:flex; flex-direction:column; background:var(--desk-2,#201b16); border:1px solid var(--line-dark,#382f25); color:var(--milk,#f2ead6); }
+.venue-live-head { display:flex; flex:0 0 auto; align-items:center; flex-wrap:wrap; gap:6px; padding:8px; }
+.venue-live-head strong { font-size:13px; margin-right:auto; }
+.venue-live-panel button { height:34px; min-height:34px; padding:0 8px; font-size:12px; border-radius:2px; border:1px solid var(--milk-dim,#bdb3a4); background:transparent; color:inherit; }
+.venue-live-panel button[aria-pressed=true] { background:var(--milk,#f2ead6); color:var(--desk-2,#201b16); }
+.venue-live-panel button:focus-visible { outline:2px solid var(--gold,#c8913f); outline-offset:2px; }
+.venue-live-canvas-wrap { min-height:160px; min-width:0; flex:1; position:relative; overflow:hidden; }
+#venue-live-canvas { position:absolute; inset:0; width:100%; height:100%; touch-action:none; cursor:grab; outline-offset:-3px; }
+#venue-live-canvas:active { cursor:grabbing; }
+.venue-live-foot { flex:0 0 auto; padding:6px 8px; font-size:11px; line-height:1.5; color:var(--milk-dim,#bdb3a4); }
+.venue-live-foot p { margin:0; }
+.venue-live-controls { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:6px; }
+.venue-live-controls label { display:flex; align-items:center; gap:4px; cursor:pointer; font-size:12px; }
+.venue-live-controls input { width:14px; min-height:14px; height:14px; accent-color:var(--gold,#c8913f); }
+.venue-live-only-plan .venue-live-layout { grid-template-columns:1fr; }
+.venue-live-only-plan .venue-live-panel { display:none; }
+#venue-live-toggle { align-self:flex-end; min-height:28px; height:28px; font-size:11px; }
+.stage-venue-gallery-item canvas { height:auto; aspect-ratio:132 / 82; }
+.venue-room-settings { --room-gap:8px; --room-control-height:44px; display:grid; gap:var(--room-gap); padding:10px; border:1px solid var(--line-dark,#382f25); }
+.venue-room-settings[hidden] { display:none; }
+.venue-room-settings h3, .venue-room-settings p { margin:0; }
+.venue-room-settings h3 { font-size:13px; }
+#gamma-venue-workspace .venue-room-settings .stage-profile-hint { color:var(--milk-dim,#bdb3a4); opacity:1; font-size:11px; line-height:1.5; }
+.venue-room-dimensions { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:var(--room-gap); }
+.venue-room-dimensions label { min-width:0; font-size:12px; }
+#gamma-venue-workspace .venue-room-settings input, #gamma-venue-workspace .venue-room-settings button { min-width:0; width:100%; min-height:var(--room-control-height); }
+.venue-room-settings button[aria-pressed=true] { color:var(--milk,#f2ead6); border-color:var(--brass,#d3ac59); background:rgba(156,130,63,.16); }
+@media (min-width:901px) {
+  #gamma-venue-workspace .stage-venue-editor-workspace { --venue-menu-width:clamp(220px,18vw,280px); grid-template-columns:var(--venue-menu-width) minmax(0,1fr); column-gap:18px; position:relative; }
+  #gamma-venue-workspace .stage-venue-editor-menu { border-right:0; }
+  #venue-menu-width-handle { left:var(--venue-menu-width); right:auto; }
+  #gamma-venue-workspace .stage-venue-editor-formats { grid-template-columns:1fr; }
+  #gamma-venue-workspace .stage-venue-editor-shapes { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #gamma-venue-workspace .stage-venue-editor-menu button { white-space:normal; overflow-wrap:anywhere; }
+}
+@media (max-width:1050px) {
+  .venue-live-layout { grid-template-columns:1fr; min-height:560px; }
+  #gamma-venue-workspace .stage-venue-editor-panel > .stage-venue-editor-audience-step:has(.venue-live-layout) { overflow-y:auto; }
+  #gamma-venue-workspace .venue-live-layout .stage-venue-editor-canvas-wrap { min-height:260px; }
+}
+
+@media (max-width:900px) { #venue-menu-width-handle { display:none; } }
