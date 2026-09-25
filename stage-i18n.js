@@ -2116,6 +2116,13 @@
       karate_zenkutsu: "Karate front stance", karate_roundhouse_kick_mid: "Roundhouse kick (mid)", boxing_guard: "Boxing guard",
       push: "Push", pull: "Pull rope", read_book: "Read a book or paper", phone_call: "Talk on the phone", drink: "Drink", toast: "Toast",
       sweep: "Sweep", tray_serve: "Carry a tray", umbrella_hold: "Hold an umbrella", flag_wave: "Wave a flag", torch_raise: "Raise a torch or lantern",
+      bouquet_offer: "Offer a bouquet", ballet_first_position: "Ballet first position (bras bas)", ballet_fifth_position_en_haut: "Ballet fifth position, arms en haut",
+      ballet_arabesque: "Arabesque", ballet_attitude: "Attitude derrière", ballet_grand_jete: "Grand jeté (apex)", ballet_pirouette_passe: "Pirouette en passé",
+      contemporary_floor_roll: "Contemporary floor roll (mid)", contemporary_contraction: "Contraction (standing)", contemporary_low_lunge_floor: "Floorwork low lunge",
+      offbalance_fall_back: "Off-balance fall (backward)", breaking_baby_freeze: "Baby freeze", breaking_chair_freeze: "Chair freeze", breaking_toprock: "Toprock",
+      ballroom_hold_lead: "Ballroom hold (lead)", ballroom_hold_follow: "Ballroom hold (follow)", dip_lead: "Dip (supporting partner)", dip_follow: "Dip (dipped partner)",
+      tap_stance: "Tap dance stance", jazz_hands: "Jazz hands", sing_micstand: "Singing at mic stand", taiko_strike: "Striking taiko",
+      drums_play: "Playing drum kit", piano_play: "Playing keyboard (seated)", cello_play: "Playing cello",
       trapeze_sit: "Sitting on the bar", trapeze_hang: "Hanging from the bar",
     },
     setKind: {

@@ -1722,6 +1722,13 @@
       karate_zenkutsu: "空手道前屈立", karate_roundhouse_kick_mid: "迴旋踢中段", boxing_guard: "拳擊防守架勢",
       push: "推", pull: "拉繩", read_book: "閱讀書報", phone_call: "打電話", drink: "飲用", toast: "乾杯",
       sweep: "掃地", tray_serve: "端托盤", umbrella_hold: "撐傘", flag_wave: "揮旗", torch_raise: "高舉火把或提燈",
+      bouquet_offer: "遞出花束", ballet_first_position: "芭蕾一位（手臂預備位）", ballet_fifth_position_en_haut: "芭蕾五位（雙臂高舉）",
+      ballet_arabesque: "芭蕾阿拉貝斯克", ballet_attitude: "芭蕾鶴立式", ballet_grand_jete: "芭蕾大跳（最高點）", ballet_pirouette_passe: "芭蕾旋轉（Passé）",
+      contemporary_floor_roll: "現代舞地面滾動（中途）", contemporary_contraction: "現代舞收縮（站立）", contemporary_low_lunge_floor: "地板動作低弓步",
+      offbalance_fall_back: "失衡後倒", breaking_baby_freeze: "霹靂舞嬰兒定格", breaking_chair_freeze: "霹靂舞椅子定格", breaking_toprock: "霹靂舞Toprock",
+      ballroom_hold_lead: "國標舞架型（領舞）", ballroom_hold_follow: "國標舞架型（跟舞）", dip_lead: "下腰造型（支撐方）", dip_follow: "下腰造型（後仰方）",
+      tap_stance: "踢踏舞站姿", jazz_hands: "爵士手", sing_micstand: "在立式麥克風前演唱", taiko_strike: "擊打太鼓",
+      drums_play: "坐著演奏爵士鼓", piano_play: "坐著彈奏鍵盤", cello_play: "坐著演奏大提琴",
       trapeze_sit: "坐在橫桿上", trapeze_hang: "掛在橫桿上",
     },
     setKind: {
