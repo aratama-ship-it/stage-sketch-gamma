@@ -8,6 +8,7 @@
   const DB_NAME = "gamma:stage-project-backups-v1";
   const STORE = "snapshots";
   const VERSION = 1;
+  const PENDING_SWITCH_KEY = "\u0000pending-show-switch-v1";
   const token = () => (window.crypto?.randomUUID ? window.crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
@@ -127,6 +128,35 @@
     });
   }
 
+  /* localStorage の2キーを容量不足時に逆順で入れ替える間の復旧記録。
+     先に IndexedDB へ確定させ、両キーが一致してからだけ消す。 */
+  function beginPendingSwitch(record) {
+    if (!record || typeof record.token !== "string" || !record.token) return Promise.resolve(false);
+    return withStore("readwrite", (store, setResult) => {
+      const request = store.get(PENDING_SWITCH_KEY);
+      request.onsuccess = () => {
+        if (request.result !== undefined) { setResult(false); return; }
+        store.put(record, PENDING_SWITCH_KEY);
+        setResult(true);
+      };
+    });
+  }
+
+  function getPendingSwitch() {
+    return withStore("readonly", (store) => requestValue(store.get(PENDING_SWITCH_KEY), null));
+  }
+
+  function clearPendingSwitch(tokenToClear) {
+    return withStore("readwrite", (store, setResult) => {
+      const request = store.get(PENDING_SWITCH_KEY);
+      request.onsuccess = () => {
+        if (!request.result || request.result.token !== tokenToClear) { setResult(false); return; }
+        store.delete(PENDING_SWITCH_KEY);
+        setResult(true);
+      };
+    });
+  }
+
   function latest() {
     return withStore("readonly", (store) => {
       if (typeof store.getAll === "function") {
@@ -150,5 +180,6 @@
     });
   }
 
-  window.SHOSAI_STAGE_PROJECT_BACKUP_STORE = Object.freeze({ get, put, putIfCurrent, remove, removeIfCurrent, restoreIfCurrent, latest });
+  window.SHOSAI_STAGE_PROJECT_BACKUP_STORE = Object.freeze({ get, put, putIfCurrent, remove, removeIfCurrent,
+    restoreIfCurrent, latest, beginPendingSwitch, getPendingSwitch, clearPendingSwitch });
 })();

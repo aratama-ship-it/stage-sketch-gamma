@@ -44,13 +44,23 @@ const featureShowState = JSON.stringify(featureShow);
 
 const show = (id, marker) => JSON.stringify({ project: { id, marker } });
 class MemoryStorage {
-  constructor(values = {}) { this.values = new Map(Object.entries(values)); this.failKey = null; this.maxLength = Infinity; }
+  constructor(values = {}) {
+    this.values = new Map(Object.entries(values)); this.failKey = null;
+    this.maxLength = Infinity; this.maxTotalLength = Infinity;
+  }
   getItem(key) { return this.values.has(key) ? this.values.get(key) : null; }
-  setItem(key, value) { if (key === this.failKey || String(value).length > this.maxLength) { const error = new Error("quota"); error.name = "QuotaExceededError"; throw error; } this.values.set(key, String(value)); }
+  setItem(key, value) {
+    const next = String(value);
+    const total = [...this.values.entries()].reduce((sum, [id, current]) => sum + (id === key ? 0 : current.length), next.length);
+    if (key === this.failKey || next.length > this.maxLength || total > this.maxTotalLength) {
+      const error = new Error("quota"); error.name = "QuotaExceededError"; throw error;
+    }
+    this.values.set(key, next);
+  }
   removeItem(key) { this.values.delete(key); }
 }
 class MemoryBackup {
-  constructor() { this.values = new Map(); this.available = true; this.removed = []; }
+  constructor() { this.values = new Map(); this.available = true; this.removed = []; this.pending = null; }
   async put(projectId, serializedState) {
     if (!this.available) throw new Error("backup unavailable");
     this.values.set(projectId, { projectId, serializedState, savedAt: "backup-now", token: `put-${projectId}-${serializedState}` });
@@ -79,6 +89,9 @@ class MemoryBackup {
     return this.remove(projectId);
   }
   async latest() { return [...this.values.values()].at(-1) || null; }
+  async beginPendingSwitch(record) { if (this.pending) return false; this.pending = record; return true; }
+  async getPendingSwitch() { return this.pending; }
+  async clearPendingSwitch(token) { if (this.pending?.token !== token) return false; this.pending = null; return true; }
 }
 
 test("current saves remove only the open show's duplicate from the shelf", async () => {
@@ -123,6 +136,78 @@ test("quota during a switch restores both durable strings", async () => {
   assert.equal(storage.getItem("shelf"), shelf);
 });
 
+test("a smaller target switches at the final quota by reversing verified writes", async () => {
+  const old = show("old", "o".repeat(800));
+  const next = show("next", "short");
+  const shelf = JSON.stringify({ next: { savedAt: "then", state: JSON.parse(next) } });
+  const finalShelf = JSON.stringify({ old: { savedAt: "now", state: JSON.parse(old) } });
+  const storage = new MemoryStorage({ current: old, shelf });
+  storage.maxTotalLength = Math.max(old.length + shelf.length, next.length + finalShelf.length) + 2;
+  assert.ok(old.length + finalShelf.length > storage.maxTotalLength,
+    "the shelf-first intermediate state must exceed the quota");
+  const backup = new MemoryBackup();
+  const store = create({ storage, currentKey: "current", shelfKey: "shelf", backup, now: () => "now" });
+  const result = await store.switch({ currentProjectId: "old", currentSerializedState: old,
+    nextProjectId: "next", nextSerializedState: next, intent: "switch-show" });
+  assert.equal(result.ok, true);
+  assert.equal(storage.getItem("current"), next);
+  assert.equal(storage.getItem("shelf"), finalShelf);
+  assert.equal(backup.values.get("old").serializedState, old);
+  assert.equal(backup.values.get("next").serializedState, next);
+  assert.equal(backup.pending, null);
+});
+
+test("an interrupted current-first switch restores the outgoing show before startup writes", async () => {
+  const old = show("old", "valuable-edit");
+  const next = show("next", "target");
+  const beforeShelf = JSON.stringify({ next: { savedAt: "then", state: JSON.parse(next) } });
+  const nextShelf = JSON.stringify({ old: { savedAt: "now", state: JSON.parse(old) } });
+  const storage = new MemoryStorage({ current: next, shelf: beforeShelf });
+  const backup = new MemoryBackup();
+  backup.pending = { token: "j1", currentProjectId: "old", nextProjectId: "next",
+    beforeCurrent: old, beforeShelf, nextCurrent: next, nextShelf };
+  const store = create({ storage, currentKey: "current", shelfKey: "shelf", backup });
+  const result = await store.recoverPendingSwitch();
+  assert.equal(result.ok, true);
+  assert.equal(result.restoredCurrent, old);
+  assert.equal(storage.getItem("current"), old);
+  assert.equal(storage.getItem("shelf"), beforeShelf);
+  assert.equal(backup.pending, null);
+});
+
+test("a completed switch with an uncleared journal keeps the new show", async () => {
+  const old = show("old", "valuable-edit");
+  const next = show("next", "target");
+  const beforeShelf = JSON.stringify({ next: { savedAt: "then", state: JSON.parse(next) } });
+  const nextShelf = JSON.stringify({ old: { savedAt: "now", state: JSON.parse(old) } });
+  const storage = new MemoryStorage({ current: next, shelf: nextShelf });
+  const backup = new MemoryBackup();
+  backup.pending = { token: "j2", currentProjectId: "old", nextProjectId: "next",
+    beforeCurrent: old, beforeShelf, nextCurrent: next, nextShelf };
+  const store = create({ storage, currentKey: "current", shelfKey: "shelf", backup });
+  assert.equal((await store.recoverPendingSwitch()).ok, true);
+  assert.equal(storage.getItem("current"), next);
+  assert.equal(storage.getItem("shelf"), nextShelf);
+  assert.equal(backup.pending, null);
+});
+
+test("an uncleared journal accepts a later autosave of the completed show", async () => {
+  const old = show("old", "valuable-edit");
+  const next = show("next", "target");
+  const updatedNext = show("next", "later-autosave");
+  const beforeShelf = JSON.stringify({ next: { savedAt: "then", state: JSON.parse(next) } });
+  const nextShelf = JSON.stringify({ old: { savedAt: "now", state: JSON.parse(old) } });
+  const storage = new MemoryStorage({ current: updatedNext, shelf: nextShelf });
+  const backup = new MemoryBackup();
+  backup.pending = { token: "j3", currentProjectId: "old", nextProjectId: "next",
+    beforeCurrent: old, beforeShelf, nextCurrent: next, nextShelf };
+  const store = create({ storage, currentKey: "current", shelfKey: "shelf", backup });
+  assert.equal((await store.recoverPendingSwitch()).ok, true);
+  assert.equal(storage.getItem("current"), updatedNext);
+  assert.equal(storage.getItem("shelf"), nextShelf);
+  assert.equal(backup.pending, null);
+});
+
 test("removing the current duplicate makes room before a large imported-show switch", async () => {
   const old = show("old", "o".repeat(220));
   const next = show("next", "n".repeat(220));
@@ -142,13 +227,13 @@ test("removing the current duplicate makes room before a large imported-show swi
 });
 
 test("the app shell advances with the storage transaction code", () => {
-  assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092213/);
+  assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092501/);
   assert.match(stageHtml, /style\.css\?v=2026092441/);
-  assert.match(stageHtml, /stage-sketch\.js\?v=2026092501/);
-  assert.match(serviceWorker, /stage-sketch-gamma-shell-v346/);
-  assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092213/);
+  assert.match(stageHtml, /stage-sketch\.js\?v=2026092504/);
+  assert.match(serviceWorker, /stage-sketch-gamma-shell-v349/);
+  assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092501/);
   assert.match(serviceWorker, /\.\/style\.css\?v=2026092441/);
-  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092501/);
+  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092504/);
 });
 
 test("indoor standing reception venue keeps its 3D room layout outside show data", () => {

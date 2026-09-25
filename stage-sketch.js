@@ -143,14 +143,15 @@
       try { return storage.getItem(currentKey) === beforeCurrent && storage.getItem(shelfKey) === beforeShelf; }
       catch (_) { return false; }
     };
-    const writePair = ({ beforeCurrent, beforeShelf, serializedCurrent, serializedShelf }) => {
+    const writePair = ({ beforeCurrent, beforeShelf, serializedCurrent, serializedShelf, currentFirst = false }) => {
       let failure;
       try {
-        // The shelf gets smaller before the current snapshot changes. This is
-        // what makes a full Safari localStorage shelf recoverable without a
-        // delete-and-reload step.
+        // The usual path releases the target from the shelf first. If the
+        // target is smaller, a verified recovery journal permits the reverse
+        // order so the current key frees capacity before the shelf grows.
+        if (currentFirst) storage.setItem(currentKey, serializedCurrent);
         storage.setItem(shelfKey, serializedShelf);
-        storage.setItem(currentKey, serializedCurrent);
+        if (!currentFirst) storage.setItem(currentKey, serializedCurrent);
       } catch (error) { failure = classify(error); }
       if (!failure) {
         try {
@@ -265,12 +266,77 @@
         // The next show becomes the sole localStorage current copy; its verified
         // backup was written before this entry can be removed.
         delete previous.shelf[nextProjectId];
-        const result = writePair({ ...previous, serializedCurrent: nextSerializedState,
-          serializedShelf: JSON.stringify(previous.shelf) });
+        const serializedShelf = JSON.stringify(previous.shelf);
+        let result = writePair({ ...previous, serializedCurrent: nextSerializedState, serializedShelf });
+        if (!result.ok && result.error.code === "QUOTA_EXCEEDED" && result.error.restored
+            && previous.beforeCurrent && nextSerializedState.length < previous.beforeCurrent.length
+            && typeof backup?.beginPendingSwitch === "function"
+            && typeof backup?.clearPendingSwitch === "function") {
+          // The normal order can temporarily require the size of BOTH shows.
+          // Protect the outgoing show before freeing space in the current key.
+          const currentBackup = await preserveBackup(previous, currentProjectId, currentSerializedState);
+          if (currentBackup.conflict) return fail("CONCURRENT_EDIT");
+          if (currentBackup.available) {
+            const journal = { token: `${now()}-${Math.random().toString(36).slice(2)}`,
+              currentProjectId, nextProjectId, beforeCurrent: previous.beforeCurrent,
+              beforeShelf: previous.beforeShelf, nextCurrent: nextSerializedState,
+              nextShelf: serializedShelf };
+            let started = false;
+            try { started = await backup.beginPendingSwitch(journal); } catch (_) {}
+            if (!started) return fail("CONCURRENT_EDIT");
+            if (!unchanged(previous)) {
+              try { await backup.clearPendingSwitch(journal.token); } catch (_) {}
+              return fail("CONCURRENT_EDIT");
+            }
+            result = writePair({ ...previous, serializedCurrent: nextSerializedState,
+              serializedShelf, currentFirst: true });
+            if (result.ok || result.error.restored) {
+              try { await backup.clearPendingSwitch(journal.token); } catch (_) { /* Next launch reconciles it. */ }
+            }
+          }
+        }
         if (!result.ok) return result;
         // Current project's backup may belong to another tab; keeping it is
         // safer than deleting a copy whose generation we did not write here.
         return { ok: true, value: { projectId: nextProjectId, savedAt, intent, revision: null, verified: true } };
+      },
+      async recoverPendingSwitch() {
+        if (!backup || typeof backup.getPendingSwitch !== "function") return { ok: true, pending: false };
+        let journal;
+        try { journal = await backup.getPendingSwitch(); } catch (_) { return { ok: true, pending: false }; }
+        if (!journal) return { ok: true, pending: false };
+        if (!snapshot(journal.currentProjectId, journal.beforeCurrent)
+            || !snapshot(journal.nextProjectId, journal.nextCurrent)
+            || !shelfFrom(journal.beforeShelf) || !shelfFrom(journal.nextShelf)) return fail("CORRUPT_JOURNAL");
+        let current, shelf;
+        try { current = storage.getItem(currentKey); shelf = storage.getItem(shelfKey); }
+        catch (_) { return fail("READ_FAILED"); }
+        const clear = async () => {
+          try { await backup.clearPendingSwitch(journal.token); } catch (_) { /* Retry on next launch. */ }
+        };
+        if (current === journal.beforeCurrent && shelf === journal.beforeShelf) {
+          await clear(); return { ok: true, pending: false };
+        }
+        if (current === journal.nextCurrent && shelf === journal.nextShelf) {
+          await clear(); return { ok: true, pending: false };
+        }
+        // Clearing the journal can fail after a completed switch. A later
+        // autosave may update the current show while the completed shelf stays
+        // intact; that is still a finished switch, not a conflicting edit.
+        if (shelf === journal.nextShelf && snapshot(journal.nextProjectId, current)) {
+          await clear(); return { ok: true, pending: false };
+        }
+        if (shelf === journal.beforeShelf && snapshot(journal.currentProjectId, current)) {
+          await clear(); return { ok: true, pending: false };
+        }
+        if (current === journal.nextCurrent && shelf === journal.beforeShelf) {
+          try { storage.setItem(currentKey, journal.beforeCurrent); }
+          catch (_) { return fail("PARTIAL_WRITE", { restored: false }); }
+          if (storage.getItem(currentKey) !== journal.beforeCurrent) return fail("PARTIAL_WRITE", { restored: false });
+          await clear();
+          return { ok: true, pending: true, restoredCurrent: journal.beforeCurrent };
+        }
+        return fail("CONCURRENT_EDIT");
       },
       async latestRecovery() {
         if (!backup || typeof backup.latest !== "function") return null;
@@ -7702,7 +7768,7 @@
     const project = next && next.project;
     if (!project) return;
     const requestedId = typeof project.id === "string" ? project.id : "";
-    const shows = readShows();
+    const shows = availableShows();
     const existing = requestedId && shows[requestedId] && shows[requestedId].state;
     if (!requestedId || !existing) {
       if (!requestedId) project.id = rid("show");
@@ -7727,6 +7793,7 @@
       version: pj.versionLabel || "v1",
       scenes: (pj.scenes || []).filter((x) => x.kind !== "section").length,
       savedAt: entry.savedAt || "",
+      bundled: Boolean(entry.bundled),
     };
   }
 
@@ -10525,6 +10592,31 @@
     if (!doc.project || !Array.isArray(doc.project.scenes)) return null;
     const prepared = prepareProjectImportDocument(doc);
     return normalizeState({ project: prepared.project });
+  }
+
+  /* 同梱ショーは配信ファイルを原本として一覧に見せる。起動のたびに大きな
+     プロジェクトを localStorage へ複製すると、利用者のショーを保存する余地を
+     奪う。端末に保存された同じ ID のショーは常にそちらを優先する。 */
+  function availableShows() {
+    const shows = readShows();
+    if (shelfCorrupt) return shows;
+    const addBundled = (built) => {
+      const id = built?.project?.id;
+      if (!id || Object.prototype.hasOwnProperty.call(shows, id)) return;
+      Object.defineProperty(shows, id, {
+        value: { savedAt: "", state: built, bundled: true }, enumerable: true,
+        configurable: true, writable: true,
+      });
+    };
+    const sample = buildSampleShow();
+    if (sample) addBundled(drawSampleRoutes(sample));
+    const seam = buildSeamGardenSampleShow();
+    if (seam) addBundled(drawSampleRoutes(seam));
+    addBundled(buildRomeoJulietSampleShow());
+    const local = Array.isArray(window.SHOSAI_STAGE_LOCAL_SHOWS)
+      ? window.SHOSAI_STAGE_LOCAL_SHOWS : [];
+    local.forEach((doc) => addBundled(buildLocalShow(doc)));
+    return shows;
   }
 
   /* ★2026-09-23 本人指摘: 試験場ショーを v2→v3 へ作り直したら、まだ一度も開いていない
@@ -22251,7 +22343,7 @@
   function previousShowForNewShow() {
     if (!state.project?.venueSetupPending || newShowReturn?.draftId !== state.project.id) return null;
     const id = newShowReturn.previousId;
-    return id && id !== state.project.id && readShows()[id] ? id : null;
+    return id && id !== state.project.id && availableShows()[id] ? id : null;
   }
 
   function syncNewShowReturn() {
@@ -22281,7 +22373,7 @@
     const editor = window.SHOSAI_VENUE_EDITOR;
     if (editor?.hasUnappliedChanges?.()
       && !window.confirm("劇場設定の未反映の編集は破棄されます。作りかけのショーは一覧に残します。前のショーへ戻りますか？")) return;
-    const entry = readShows()[previousId];
+    const entry = availableShows()[previousId];
     if (!entry?.state) { syncNewShowReturn(); openShows(); return; }
     const next = normalizeState(entry.state);
     next.layout = state.layout;
@@ -22309,7 +22401,7 @@
   }
 
   async function openShow(id) {
-    const shows = readShows();
+    const shows = availableShows();
     const entry = shows[id];
     if (!entry) return;
     if (id === state.project.id) {
@@ -22396,7 +22488,7 @@
 
   function renderShows() {
     if (!els.showList) return;
-    const shows = readShows();
+    const shows = availableShows();
     // Rendering the shelf must not write either durable copy.
     if (!shelfCorrupt) shows[state.project.id] = { savedAt: state.lastSavedAt || "", state };
     const rows = Object.keys(shows)
@@ -22439,19 +22531,22 @@
       meta.className = "stage-show-meta";
       const when = info.savedAt ? info.savedAt.slice(0, 10).replace(/-/g, "/") : "";
       meta.textContent = `${info.version}・${info.scenes}シーン${when ? `・${when}` : ""}`
+        + (info.bundled ? "・同梱見本" : "")
         + (info.id === state.project.id ? "・開いています" : "");
       open.append(title, meta);
       open.addEventListener("click", () => openShow(info.id));
-
-      const remove = document.createElement("button");
-      remove.type = "button";
-      remove.className = "stage-cast-remove";
-      remove.textContent = "✕";
-      remove.setAttribute("aria-label", `${info.title}を消す`);
-      remove.disabled = info.id === state.project.id;
-      remove.addEventListener("click", () => deleteShow(info.id));
-
-      row.append(open, remove);
+      row.append(open);
+      // 配信物から直接見せている見本は端末に消す複製が無い。
+      if (!info.bundled) {
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "stage-cast-remove";
+        remove.textContent = "✕";
+        remove.setAttribute("aria-label", `${info.title}を消す`);
+        remove.disabled = info.id === state.project.id;
+        remove.addEventListener("click", () => deleteShow(info.id));
+        row.append(remove);
+      }
       els.showList.append(row);
     });
   }
@@ -24765,24 +24860,6 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
             return;
           }
           if (scene.kind === "section") {
-            const sectionIndex = p.scenes.indexOf(scene);
-            const children = sceneChildren(sectionIndex);
-            const firstScene = children.find((row) => row.kind === "scene");
-            if (firstScene && !children.some((row) => row.id === p.activeSceneId)
-                && !document.body.classList.contains("stage-session-guest")) {
-              // 別のセクションを選んだら、畳まれた親も開いて最初のシーンを表示する。
-              let depth = firstScene.depth;
-              for (let i = p.scenes.indexOf(firstScene) - 1; i >= sectionIndex && depth > scene.depth; i -= 1) {
-                const ancestor = p.scenes[i];
-                if (ancestor.depth >= depth) continue;
-                if (ancestor.kind === "section") delete state.closedSections[ancestor.id];
-                depth = ancestor.depth;
-              }
-              openScene(firstScene.id, { cursorRowId: scene.id });
-              renderSceneGrid();
-              focusSceneChip(scene.id);
-              return;
-            }
             if (state.cursorRowId === scene.id) {
               state.closedSections[scene.id] = !state.closedSections[scene.id];
             }
@@ -24797,7 +24874,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           focusSceneChip(scene.id);
         });
         head.append(grip, button);
-        // セクションは移動・開閉とダブルクリック編集だけに絞り、補助メニューを出さない。
+        // セクションは開閉とダブルクリック編集だけに絞り、補助メニューを出さない。
         if (isCursor && !wrapPickStartId && scene.kind === "scene") {
           const more = document.createElement("details");
           more.className = "stage-scene-more";
@@ -24960,9 +25037,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         const sameOrder = visibleIds.length === renderedIds.length
           && visibleIds.every((id, k) => id === renderedIds[k]);
         if (sameOrder) {
-          const targets = new Set([
-            activeChange.fromId, activeChange.toId, activeChange.cursorFromId, activeChange.cursorToId,
-          ].filter(Boolean));
+          const targets = new Set([activeChange.fromId, activeChange.toId, activeChange.cursorFromId].filter(Boolean));
           p.scenes.forEach((scene, i) => {
             if (!targets.has(scene.id) || sceneHidden(i)) return;
             const row = els.sceneList.querySelector(`:scope > [data-scene-id="${CSS.escape(scene.id)}"]`);
@@ -27613,7 +27688,7 @@ ${propsPlotHtml}
     if (sceneAlternatives && (options.fromTimeline || state.project.activeSceneId !== id)) sceneAlternatives.adopted(state.project);
     selectedNoteId = null;
     const cursorFromId = state.cursorRowId;    // 直前にカーソルがあった行（セクションの場合もある）も描き直す対象
-    state.cursorRowId = options.cursorRowId || id;
+    state.cursorRowId = id;
     const transitionFromScene = options.transitionFromSceneId
       ? state.project.scenes.find(
         (row) => row.kind === "scene" && row.id === options.transitionFromSceneId,
@@ -27642,9 +27717,7 @@ ${propsPlotHtml}
     const liveSpins = captureLiveSpins();
     state.project.activeSceneId = id;
     selectedId = null;
-    renderScenes({ activeChange: {
-      fromId: before ? before.id : null, toId: id, cursorFromId, cursorToId: state.cursorRowId,
-    } });
+    renderScenes({ activeChange: { fromId: before ? before.id : null, toId: id, cursorFromId } });
     renderCast();
     renderSets();
     renderLights();
@@ -28114,7 +28187,7 @@ ${propsPlotHtml}
    * 版は別々のショーとして棚（readShows）に入っていて、parentVersionId で親子が繋がっている。
    * いま開いている版から根までさかのぼり、その根に繋がる版をすべて集めて並べる。 */
   function versionFamilyRows() {
-    const shows = readShows();
+    const shows = availableShows();
     const byId = new Map();
     Object.keys(shows).forEach((id) => {
       const project = shows[id] && shows[id].state && shows[id].state.project;
@@ -36871,26 +36944,26 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
 
   async function finishInitialStageSetup(identity) {
     if (STUDY_READ_ONLY) return;
-    /* ★2026-09-23 本人指摘: 同梱の見本（特にロミオとジュリエット）が棚に一切出ない、
-     * という報告が続いた。原因は置き場所ではなく実行タイミング。この4つの呼び出しは
-     * 以前、この関数の下の方（IndexedDBの保護コピー確認を await した後）にあった。
-     * 実機（Safari＋Service Worker）では、その await の間に何らかの理由でページの
-     * 再読み込みが起き、棚への書き込みが完了する前に中断される→再読み込み後の
-     * 新しい実行が古い（書き込み前の）localStorageを読んでしまい、直前の書き込みが
-     * 無かったことになる、という再現性のある事故が実際に本人環境で起きていた
-     * （診断ログで確認: 一部の同梱見本だけ棚から消えていた）。
-     * この関数はasyncだが、最初のawaitに達するまでは同期実行なので、
-     * ここ（一番最初・await の手前）で先に済ませておけば、途中で割り込まれる余地が無い。
-     * state・RETIRED_LOCAL_SHOW_IDS等モジュール上部のconstを参照するため、
-     * それらの初期化が終わっているこの位置より前には置けない。 */
-    if (!loaded.restored) shelveSample();
-    shelveSeamGardenSample();
-    shelveRomeoJulietSample();
-    openRomeoJulietOnFirstRun();
-    backfillOpenRomeoJulietVoxOffsets();
-    backfillBundledSampleShelf();
-    backfillOpenBundledSampleTimings();
-    syncLocalShows();
+    // 容量不足で逆順の入れ替え中に中断した場合、最初の保存・見本の更新より
+    // 前に元の現行ショーを戻す。復旧不能なら以後の自動書き込みを止める。
+    const pendingSwitch = await ProjectStore.recoverPendingSwitch();
+    const pendingBlocked = !pendingSwitch.ok;
+    if (pendingBlocked) alternativesStorageBlocked = true;
+    if (pendingSwitch.restoredCurrent) {
+      state = normalizeState(JSON.parse(pendingSwitch.restoredCurrent));
+      loaded.value = state;
+      loaded.restored = true;
+      projectRecoveryNeeded = false;
+      selectedAudioTrackId = state.project.audioTracks[0]?.id || null;
+    }
+    // 同梱ショーは availableShows が配信ファイルから表示する。起動時に棚へ
+    // 複製しないので、容量不足でも見本の一覧表示を妨げない。
+    if (!pendingBlocked) {
+      openRomeoJulietOnFirstRun();
+      backfillOpenRomeoJulietVoxOffsets();
+      backfillBundledSampleShelf();
+      backfillOpenBundledSampleTimings();
+    }
     try {
       if (projectRecoveryNeeded) {
         const recovery = await ProjectStore.latestRecovery();
@@ -36959,6 +37032,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       setSaveStatus(loaded.restored
         ? "この端末に保存した前回のスケッチを開きました。"
         : "変更はこの端末のブラウザ内へ自動保存します。");
+      if (pendingBlocked) reportProjectStoreFailure(pendingSwitch);
       applyLang();
       applyFeatureFlags();
 
@@ -36975,14 +37049,13 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
           setSaveStatus("旧シーン構造の控えを保存できなかったため、変換後の自動保存を止めました。ファイルへ書き出してから、もう一度開いてください。", "warn");
         }
       }
-      const shelfMigration = migrateStoredShowShelf();
+      const shelfMigration = pendingBlocked ? { migrated: 0, safe: true } : migrateStoredShowShelf();
       if (!shelfMigration.safe) {
         setSaveStatus("ショー一覧の旧シーン構造を退避できなかったため、一覧全体の変換保存を止めました。ファイルへ書き出すか容量を空けてから、もう一度開いてください。", "warn");
       } else if (shelfMigration.migrated) {
         announce(`${shelfMigration.migrated}件のショーを、セクションの中にシーンを置く形式へ更新しました。`);
       }
-      // 同梱の見本を棚へ置く処理はここではなく、この関数の一番最初（最初のawaitより前）で
-      // 済ませてある。理由は関数冒頭の本人指摘コメントを参照。
+      // 同梱の見本は availableShows から表示する。棚の保存に失敗しても隠れない。
       syncNewShowReturn();
       // A direct local verification link always opens the bundled test show.
       if (openArgs.has("feature-test") && ["localhost", "127.0.0.1", "::1"].includes(location.hostname)) {
