@@ -1,6 +1,6 @@
 # AI showwright for StageSketch（舞台スケッチ γ向け）
 
-プロンプト v0.2.9。舞台スケッチ γ（ガンマ）向けの公開用プロンプト配布・JSON点検ページです。MCPは配布しません。
+プロンプト v0.2.10。舞台スケッチ γ（ガンマ）向けの公開用プロンプト配布・JSON点検ページです。MCPは配布しません。
 
 正本: docs/ai-json-manual/AI_MANUAL_ja.md、tools/ai-json-check-core.mjs。共通規則のMD部分はcoreのcontractMarkdown()と一致必須。SELF_CHECKは本文末尾と一致必須。CLIとページは同じcheckJsonText/validateを使います。
 
