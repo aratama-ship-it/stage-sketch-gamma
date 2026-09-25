@@ -4250,6 +4250,184 @@
       ...Array.from({ length: 13 }, (_, i) => boxAt(0, 0.115, -0.105 + i * 0.0175, 1.72, 0.006, 0.005, 1.15)),
       ...[-0.62, -0.42, -0.21, 0, 0.21, 0.42, 0.62].map((x) => boxAt(x, 0.09, 0, 0.025, 0.22, 0.03, 0.72)),
     ] };
+  /* 2026-09-26 大道具追加（第4弾）。回転属性を使わず、正面図で輪郭が読める向きにする。
+   * 曲線・斜材は既存の小箱の連なりで近似し、人が乗る物の最高天面は dims.h に揃える。 */
+  PROP_SHAPES.rocking_chair = { ja: "ロッキングチェア", en: "Rocking chair", dims: { w: 0.6, d: 0.9, h: 1.1 }, grip: null,
+    parts: [
+      ...[-0.28, 0.28].flatMap((z) => Array.from({ length: 9 }, (_, i) => {
+        const x = -0.28 + i * 0.07;
+        const y = 0.02 + 0.16 * Math.pow(x / 0.28, 2);
+        return boxAt(x, y, z, 0.08, 0.07, 0.035, 0.68);
+      })),
+      boxAt(0, 0.48, 0.03, 0.54, 0.55, 0.1, 0.92),
+      boxAt(0, 0.58, -0.31, 0.54, 0.08, 0.52, 0.82),
+      ...[-0.16, 0, 0.16].map((x) => boxAt(x, 0.62, -0.26, 0.045, 0.05, 0.42, 1.02)),
+      ...[-0.23, 0.23].flatMap((x) => [
+        boxAt(x, 0.18, 0.06, 0.05, 0.06, 0.36, 0.7),
+        boxAt(x, 0.56, 0.05, 0.05, 0.06, 0.24, 0.74),
+        boxAt(x, 0.77, 0.02, 0.05, 0.36, 0.05, 0.88),
+      ]),
+    ] };
+  PROP_SHAPES.hospital_bed = { ja: "病院ベッド（柵付き・背上げ）", en: "Hospital bed", dims: { w: 1, d: 2.1, h: 1 }, grip: null,
+    parts: [
+      boxAt(0, 0.62, 0, 1, 2.1, 0.14, 0.7),
+      boxAt(0, 0.76, 0.3, 0.94, 1.35, 0.14, 1.06),
+      ...slantPanel(5, 0.94, 0.86, 0.998, -0.35, -0.98, 0.04, 1.1),
+      ...[-0.46, 0.46].flatMap((x) => [-0.98, 0.98].map((z) => boxAt(x, 0.2, z, 0.06, 0.06, 0.8, 0.66))),
+      ...[-0.48, 0.48].map((x) => boxAt(x, 0.8, 0, 0.04, 1.88, 0.2, 0.82)),
+      boxAt(0, 0.88, -1.01, 0.9, 0.05, 0.08, 0.88),
+      boxAt(0, 0.78, 1.01, 0.9, 0.05, 0.08, 0.78),
+      ...[-0.42, 0.42].flatMap((x) => [-0.91, 0.91].map((z) => ({ shape: "sphere", x, y: 0.08, z, dia: 0.12, tint: 0.55 }))),
+    ] };
+  PROP_SHAPES.kitchen_unit = { ja: "キッチン（シンク・コンロ）", en: "Kitchen unit", dims: { w: 1.8, d: 0.65, h: 0.85 }, grip: null,
+    parts: [
+      boxAt(0, 0.05, 0, 1.76, 0.62, 0.74, 0.82),
+      boxAt(0, 0.79, 0, 1.8, 0.65, 0.06, 1.08),
+      { shape: "panel", x: -0.42, y: 0.6, z: 0.321, w: 0.64, d: 0.018, h: 0.18, tint: 0.58 },
+      ...[-0.6, 0, 0.6].map((x) => ({ shape: "panel", x, y: 0.12, z: 0.321, w: 0.54, d: 0.018, h: 0.55, tint: 0.94 })),
+      ...[-0.28, 0.28].flatMap((x) => [-0.12, 0.12].map((z) => ({ shape: "cylinder", x: x + 0.48, y: 0.842, z, dia: 0.12, h: 0.008, tint: 0.62 }))),
+      ...[-0.22, 0, 0.22].map((x) => ({ shape: "sphere", x: x + 0.46, y: 0.66, z: 0.34, dia: 0.045, tint: 0.68 })),
+    ] };
+  PROP_SHAPES.television_set = { ja: "テレビ（ブラウン管・台付き）", en: "Television", dims: { w: 0.7, d: 0.5, h: 1 }, grip: null,
+    parts: [
+      boxAt(0, 0.02, 0, 0.58, 0.42, 0.08, 0.66),
+      ...[-0.23, 0.23].map((x) => boxAt(x, 0.1, 0, 0.05, 0.05, 0.28, 0.68)),
+      boxAt(0, 0.38, 0, 0.66, 0.48, 0.58, 0.78),
+      { shape: "panel", x: -0.05, y: 0.49, z: 0.241, w: 0.46, d: 0.018, h: 0.36, tint: 1.12 },
+      boxAt(0.27, 0.5, 0.245, 0.08, 0.02, 0.3, 0.62),
+      ...[0.59, 0.7].map((y) => ({ shape: "sphere", x: 0.27, y, z: 0.26, dia: 0.045, tint: 0.95 })),
+      boxAt(-0.12, 0.95, 0, 0.03, 0.03, 0.05, 0.72), boxAt(0.12, 0.95, 0, 0.03, 0.03, 0.05, 0.72),
+    ] };
+  PROP_SHAPES.blackboard = { ja: "黒板・ホワイトボード（脚付き）", en: "Blackboard / whiteboard", dims: { w: 1.8, d: 0.6, h: 1.9 }, grip: null,
+    parts: [
+      { shape: "panel", x: 0, y: 0.42, z: 0, w: 1.68, d: 0.06, h: 1.3, tint: 0.48 },
+      boxAt(0, 0.39, 0, 1.8, 0.08, 0.06, 0.78), boxAt(0, 1.72, 0, 1.8, 0.08, 0.06, 0.78),
+      boxAt(-0.87, 0.42, 0, 0.06, 0.08, 1.3, 0.78), boxAt(0.87, 0.42, 0, 0.06, 0.08, 1.3, 0.78),
+      ...[-0.65, 0.65].map((x) => boxAt(x, 0, 0, 0.07, 0.07, 1.9, 0.66)),
+      boxAt(0, 0, 0, 1.55, 0.6, 0.06, 0.62),
+      boxAt(0, 0.34, 0.08, 1.68, 0.18, 0.05, 0.9),
+    ] };
+  PROP_SHAPES.futon = { ja: "布団（敷き・掛け）", en: "Futon", dims: { w: 1, d: 2, h: 0.3 }, grip: null,
+    parts: [
+      boxAt(0, 0.02, 0, 1, 2, 0.18, 0.86),
+      { shape: "panel", x: 0, y: 0.2, z: 0.18, w: 0.94, d: 1.58, h: 0.1, tint: 1.06 },
+      boxAt(0, 0.22, -0.76, 0.72, 0.32, 0.08, 1.15),
+      boxAt(0, 0, -0.97, 1, 0.06, 0.05, 0.72),
+    ] };
+  PROP_SHAPES.toilet = { ja: "トイレ（洋式便器）", en: "Toilet", dims: { w: 0.45, d: 0.7, h: 0.8 }, grip: null,
+    parts: [
+      boxAt(0, 0, 0.08, 0.34, 0.48, 0.32, 0.82),
+      { shape: "cylinder", x: 0, y: 0.3, z: 0.12, dia: 0.45, h: 0.12, tint: 1.05 },
+      { shape: "cylinder", x: 0, y: 0.42, z: 0.12, dia: 0.4, h: 0.04, tint: 0.72 },
+      boxAt(0, 0.28, -0.26, 0.42, 0.18, 0.52, 0.94),
+      { shape: "panel", x: 0, y: 0.67, z: -0.16, w: 0.36, d: 0.03, h: 0.1, tint: 1.08 },
+      { shape: "sphere", x: 0.13, y: 0.69, z: -0.14, dia: 0.035, tint: 0.62 },
+    ] };
+  PROP_SHAPES.mannequin = { ja: "マネキン（トルソー）", en: "Mannequin", dims: { w: 0.45, d: 0.3, h: 1.75 }, grip: null,
+    parts: [
+      { shape: "cylinder", y: 0, dia: 0.3, h: 0.06, tint: 0.62 },
+      { shape: "cylinder", y: 0.06, dia: 0.035, h: 0.82, tint: 0.68 },
+      boxAt(0, 0.82, 0, 0.24, 0.18, 0.18, 0.76),
+      boxAt(0, 0.98, 0, 0.34, 0.22, 0.3, 0.94),
+      boxAt(0, 1.24, 0, 0.45, 0.24, 0.18, 1.02),
+      boxAt(0, 1.39, 0, 0.28, 0.2, 0.16, 0.9),
+      { shape: "cylinder", y: 1.52, dia: 0.08, h: 0.12, tint: 0.76 },
+      { shape: "sphere", x: 0, y: 1.64, z: 0, dia: 0.22, tint: 1.04 },
+    ] };
+  PROP_SHAPES.grandfather_clock = { ja: "柱時計", en: "Grandfather clock", dims: { w: 0.5, d: 0.3, h: 2 }, grip: null,
+    parts: [
+      boxAt(0, 0, 0, 0.46, 0.28, 0.12, 0.7),
+      boxAt(0, 0.12, 0, 0.38, 0.26, 1.32, 0.82),
+      { shape: "panel", x: 0, y: 0.36, z: 0.136, w: 0.28, d: 0.018, h: 0.74, tint: 0.52 },
+      { shape: "sphere", x: 0, y: 0.68, z: 0.16, dia: 0.12, tint: 1.08 },
+      boxAt(0, 0.75, 0.15, 0.025, 0.02, 0.45, 0.72),
+      boxAt(0, 1.44, 0, 0.5, 0.3, 0.5, 0.88),
+      { shape: "sphere", x: 0, y: 1.69, z: 0.16, dia: 0.34, tint: 1.1 },
+      boxAt(0, 1.66, 0.175, 0.02, 0.02, 0.14, 0.56),
+      boxAt(0, 1.94, 0, 0.46, 0.3, 0.06, 0.72),
+    ] };
+  PROP_SHAPES.dressing_table = { ja: "鏡台（楽屋のドレッサー）", en: "Dressing table", dims: { w: 1, d: 0.5, h: 1.5 }, grip: null,
+    parts: [
+      boxAt(0, 0.7, 0, 1, 0.5, 0.08, 0.92),
+      ...[-0.43, 0.43].flatMap((x) => [-0.19, 0.19].map((z) => boxAt(x, 0, z, 0.06, 0.06, 0.7, 0.68))),
+      { shape: "panel", x: 0, y: 0.82, z: -0.21, w: 0.72, d: 0.035, h: 0.6, tint: 1.16 },
+      boxAt(0, 0.78, -0.23, 0.82, 0.05, 0.06, 0.72), boxAt(0, 1.42, -0.23, 0.82, 0.05, 0.08, 0.72),
+      boxAt(-0.39, 0.82, -0.23, 0.05, 0.05, 0.6, 0.72), boxAt(0.39, 0.82, -0.23, 0.05, 0.05, 0.6, 0.72),
+      { shape: "panel", x: 0, y: 0.48, z: 0.251, w: 0.86, d: 0.018, h: 0.18, tint: 0.8 },
+      ...[-0.18, 0.18].map((x) => ({ shape: "sphere", x, y: 0.57, z: 0.27, dia: 0.035, tint: 0.58 })),
+    ] };
+  PROP_SHAPES.lectern_podium = { ja: "演台（講演台）", en: "Lectern", dims: { w: 0.7, d: 0.5, h: 1.2 }, grip: null,
+    parts: [
+      boxAt(0, 0, 0, 0.62, 0.48, 0.08, 0.68),
+      boxAt(0, 0.08, -0.04, 0.42, 0.34, 0.84, 0.78),
+      boxAt(0, 0.92, -0.06, 0.58, 0.4, 0.08, 0.88),
+      ...slantPanel(5, 0.7, 0.98, 1.198, 0.18, -0.18, 0.04, 1.05),
+    ] };
+  PROP_SHAPES.cocktail_table = { ja: "丸テーブル（ハイテーブル・宴会の円卓・ちゃぶ台）", en: "Cocktail table (standing)", dims: { w: 0.6, d: 0.6, h: 1.1 }, grip: null,
+    parts: [
+      { shape: "cylinder", y: 0, dia: 0.42, h: 0.06, tint: 0.66 },
+      { shape: "cylinder", y: 0.06, dia: 0.08, h: 0.98, tint: 0.76 },
+      { shape: "cylinder", y: 1.04, dia: 0.6, h: 0.06, tint: 1.02 },
+    ] };
+  PROP_SHAPES.hanamichi = { ja: "花道（ランウェイ・客席へ伸びる細い台）", en: "Hanamichi runway", dims: { w: 1.5, d: 12, h: 0.9 }, grip: null,
+    parts: [
+      boxAt(0, 0.78, 0, 1.5, 12, 0.12, 1.02),
+      ...[-0.65, 0.65].flatMap((x) => [-5.5, -3.3, -1.1, 1.1, 3.3, 5.5].map((z) => boxAt(x, 0, z, 0.1, 0.1, 0.78, 0.68))),
+    ] };
+  PROP_SHAPES.thrust_extension = { ja: "張り出し舞台（エプロン延長）", en: "Thrust extension (apron)", dims: { w: 8, d: 3, h: 0.9 }, grip: null,
+    parts: [
+      boxAt(0, 0.78, 0, 8, 3, 0.12, 1.02),
+      ...[-3.7, -1.25, 1.25, 3.7].flatMap((x) => [-1.3, 1.3].map((z) => boxAt(x, 0, z, 0.12, 0.12, 0.78, 0.68))),
+    ] };
+  PROP_SHAPES.sub_stage_in_house = { ja: "サブステージ（客席内の小舞台・センターステージ）", en: "Satellite stage in the house", dims: { w: 6, d: 6, h: 1 }, grip: null,
+    parts: [
+      boxAt(0, 0.88, 0, 6, 6, 0.12, 1.02),
+      ...[-2.7, 0, 2.7].flatMap((x) => [-2.7, 0, 2.7].map((z) => boxAt(x, 0, z, 0.14, 0.14, 0.88, 0.68))),
+    ] };
+  PROP_SHAPES.foh_console = { ja: "オペ卓（客席内の音響・照明ブース）", en: "FOH mixing position", dims: { w: 3, d: 2, h: 1 }, grip: null,
+    parts: [
+      boxAt(0, 0.72, 0, 3, 2, 0.1, 0.82),
+      ...[-1.38, 1.38].flatMap((x) => [-0.88, 0.88].map((z) => boxAt(x, 0, z, 0.1, 0.1, 0.72, 0.62))),
+      boxAt(-0.72, 0.82, -0.18, 1.35, 0.82, 0.18, 0.95),
+      boxAt(0.72, 0.82, -0.18, 1.35, 0.82, 0.18, 1.05),
+      ...[-1.08, -0.72, -0.36, 0, 0.36, 0.72, 1.08].map((x) => boxAt(x, 0.86, 0.38, 0.18, 0.26, 0.06, 0.7 + 0.04 * Math.abs(x))),
+    ] };
+  PROP_SHAPES.camera_tripod_position = { ja: "撮影カメラの位置（三脚・収録用）", en: "Video camera position (tripod)", dims: { w: 0.8, d: 0.8, h: 1.6 }, grip: null,
+    parts: [
+      ...slantBeam(6, 0, -0.36, 0.72, 0.06, 0, 0.28, 0.04).map((part) => ({ ...part, tint: 0.68 })),
+      ...slantBeam(6, 0, 0.36, 0.72, 0.06, 0, 0.28, 0.04).map((part) => ({ ...part, tint: 0.68 })),
+      ...slantBeam(6, 0, 0, 0.72, 0.06, 0, -0.36, 0.04).map((part) => ({ ...part, tint: 0.62 })),
+      { shape: "cylinder", y: 0.68, dia: 0.07, h: 0.7, tint: 0.72 },
+      boxAt(0, 1.36, 0, 0.2, 0.2, 0.08, 0.62),
+      boxAt(0, 1.44, 0, 0.48, 0.28, 0.16, 0.82),
+      boxAt(0.29, 1.47, 0, 0.1, 0.12, 0.1, 0.58),
+    ] };
+  // 2026-09-26 Claude: 1つの箱では段が読めなかった。奥へ0.5mずつ上がる4段と、段ごとの座面を置いた（客席側＝手前が低い）
+  PROP_SHAPES.bleacher_seating = { ja: "仮設客席（ブリーチャー・床席の区画）", en: "Bleacher seating", dims: { w: 6.0, d: 4.0, h: 2.06 }, grip: null,
+    parts: [
+      boxAt(0, 0, 1.50, 6.0, 1.0, 0.50, 0.86),
+      boxAt(0, 0.50, 1.80, 5.8, 0.35, 0.06, 1.15),
+      boxAt(0, 0, 0.50, 6.0, 1.0, 1.00, 0.72),
+      boxAt(0, 1.00, 0.80, 5.8, 0.35, 0.06, 1.15),
+      boxAt(0, 0, -0.50, 6.0, 1.0, 1.50, 0.86),
+      boxAt(0, 1.50, -0.20, 5.8, 0.35, 0.06, 1.15),
+      boxAt(0, 0, -1.50, 6.0, 1.0, 2.00, 0.72),
+      boxAt(0, 2.00, -1.20, 5.8, 0.35, 0.06, 1.15),
+    ] };
+  PROP_SHAPES.flight_case = { ja: "フライトケース（ロードケース・キャスター付き）", en: "Flight case (road case)", dims: { w: 0.6, d: 0.6, h: 1 }, grip: null,
+    parts: [
+      boxAt(0, 0.08, 0, 0.6, 0.6, 0.84, 0.58),
+      boxAt(0, 0.92, 0, 0.6, 0.6, 0.08, 0.72),
+      ...[-0.28, 0.28].flatMap((x) => [-0.28, 0.28].map((z) => boxAt(x, 0.1, z, 0.04, 0.04, 0.88, 0.9))),
+      boxAt(0, 0.5, 0.301, 0.26, 0.018, 0.18, 0.88),
+      boxAt(0, 0.56, 0.315, 0.14, 0.018, 0.05, 0.56),
+      ...[-0.22, 0.22].flatMap((x) => [-0.22, 0.22].map((z) => ({ shape: "sphere", x, y: 0.06, z, dia: 0.1, tint: 0.48 }))),
+    ] };
+  PROP_SHAPES.rigging_point_mark = { ja: "吊り点の印（リギングポイント）", en: "Rigging point marker", dims: { w: 0.2, d: 0.2, h: 0.2 }, grip: null,
+    parts: [
+      { shape: "panel", x: 0, y: 0, z: 0, w: 0.2, d: 0.2, h: 0.03, tint: 0.82 },
+      { shape: "cylinder", x: 0, y: 0.03, z: 0, dia: 0.06, h: 0.17, tint: 1.18 },
+    ] };
   const PROP_SHAPE_ORDER = Object.keys(PROP_SHAPES);
   /* T-32（2026-09-18 本人要望）: 「家具」「建て込み」「登る・上がる」「屋外・情景」は
    * 小道具ではなく大道具として扱う。
@@ -4276,6 +4454,11 @@
     "cloud_cutout", "crescent_moon", "sun_moon_disc", "star_hanging",
     "rickshaw", "wheelchair", "motorcycle", "rowboat", "train_car_section", "mine_cart", "kitchen_car", "stroller",
     "harp", "koto",
+    // 2026-09-26 大道具追加（第4弾）
+    "rocking_chair", "hospital_bed", "kitchen_unit", "television_set", "blackboard", "futon", "toilet", "mannequin",
+    "grandfather_clock", "dressing_table", "lectern_podium", "cocktail_table",
+    "hanamichi", "thrust_extension", "sub_stage_in_house", "foh_console", "camera_tripod_position", "bleacher_seating",
+    "flight_case", "rigging_point_mark",
   ]);
   /* 2026-09-22 本人指定: 次の形は当面、追加用の大道具・小道具一覧から外す。
    * PROP_SHAPES 自体は消さない。既存ショーの駒は描画・保存でき、以前どおり大道具として数える。 */
@@ -4310,9 +4493,12 @@
     /* 2026-09-23 本人指示: 「登る・上がる」は独立した見出しにせず「建て込み」へ合流。 */
     { ja: "建て込み", ids: ["ladder", "stepladder", "stairs", "stairs6", "slope", "spiralstairs",
       "door", "window", "column", "railing", "bridge", "platform", "truss", "cage", "torii", "screen", "frameportal", "framepicture", "framehang", "framecube", "chandelier", "balcony"] },
-    { ja: "家具", ids: ["sofa", "bed", "bookshelf", "dresser", "mirror", "desk", "counter", "fireplace", "phonebooth", "clothesrack"] },
+    { ja: "家具", ids: ["sofa", "bed", "bookshelf", "dresser", "mirror", "desk", "counter", "fireplace", "phonebooth", "clothesrack",
+      "rocking_chair", "hospital_bed", "kitchen_unit", "television_set", "blackboard", "futon", "toilet", "mannequin", "grandfather_clock", "dressing_table", "lectern_podium", "cocktail_table"] },
     { ja: "屋外・情景", ids: ["tree", "rock", "streetlamp", "signboard", "barrel", "planter", "well", "tent", "cart", "bus_stop", "vending_machine", "traffic_light", "tree_stump", "giant_mushroom"] },
     { ja: "空・吊り物", ids: ["cloud_cutout", "crescent_moon", "sun_moon_disc", "star_hanging"] },
+    { ja: "客席・舞台の拡張", ids: ["hanamichi", "thrust_extension", "sub_stage_in_house", "foh_console", "camera_tripod_position", "bleacher_seating"] },
+    { ja: "裏方・転換", ids: ["flight_case", "rigging_point_mark"] },
     /* 2026-09-23 本人指示: 自転車は乗り物。見出し名はROSTER_SET_KIND_GROUPSの
        「乗り物」(車)と揃え、大道具一覧では同じ一枠へ合流させる。
        ★同日追記: 「乗り物」の中身は乗り物だけにする（球は情景ではないので外す）。 */
