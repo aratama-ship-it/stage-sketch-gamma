@@ -5161,6 +5161,16 @@
     musicAudio: document.getElementById("stage-music-audio"),
     resetLayout: document.getElementById("stage-reset-layout"),
     resetAll: document.getElementById("stage-reset-all"),
+    resetModal: document.getElementById("stage-reset-modal"),
+    resetBackdrop: document.getElementById("stage-reset-backdrop"),
+    resetTitle: document.getElementById("stage-reset-title"),
+    resetLead: document.getElementById("stage-reset-lead"),
+    resetDetail: document.getElementById("stage-reset-detail"),
+    resetWarning: document.getElementById("stage-reset-warning"),
+    resetError: document.getElementById("stage-reset-error"),
+    resetConfirm: document.getElementById("stage-reset-confirm"),
+    resetCancel: document.getElementById("stage-reset-cancel"),
+    resetClose: document.getElementById("stage-reset-close"),
     sceneMusic: document.getElementById("stage-scene-music"),
     musicToggle: document.getElementById("stage-music-toggle"),
     musicRestart: document.getElementById("stage-music-restart"),
@@ -26964,61 +26974,138 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
      書き出し済みのファイルは端末の外にあるので消えない。 */
   const RESET_KEYS = [
     BETA_STORAGE_KEY, SHOWS_KEY, SHOWS_BROKEN_KEY, PROJECT_BACKUP_RESET_KEY, PREFS_KEY, TOUR_KEY,
-    LANG_KEY, STAGE_MODELS_KEY, CAST_HANDOFF_KEY, LAST_USER_KEY,
+    LEGACY_STORAGE_KEY, LEGACY_SHOWS_KEY, LANG_KEY, STAGE_MODELS_KEY, CAST_HANDOFF_KEY, LAST_USER_KEY,
     STAGE_AI_PERMISSION_KEY, "gamma:shosai-stage-tablet-view",
+    `${SHOWS_KEY}-pre-section-hierarchy-v1`,
   ];
 
-  async function resetToFirstRun() {
-    const showCount = (() => {
-      try { return (JSON.parse(localStorage.getItem(SHOWS_KEY) || "[]") || []).length; }
-      catch (_) { return 0; }
-    })();
-    const first = languageValue(
-      () => `Reset this device to how it was the very first time you opened Stage Sketch.\n\n`
-        + `• ${showCount} show(s) kept on this device\n`
-        + `• Display settings, language, and whether you have seen the tour\n`
-        + `• Set pieces you built, and any music you loaded\n\n`
-        + `Files you have already exported are not touched. Continue?`,
-      () => `この端末の舞台スケッチを、はじめて開いたときの状態に戻します。\n\n`
-        + `・この端末に置いたショー ${showCount}本\n`
-        + `・表示の設定、言語、案内を見たかどうか\n`
-        + `・組んだセットの型、読み込んだ音源\n\n`
-        + `書き出し済みのファイルは消えません。続けますか？`,
-    );
-    if (!window.confirm(first)) return;
-    const second = languageValue(
-      () => "Really reset? This cannot be undone.\n\nIf you want to keep anything, stop here and use Export to save it to a file first.",
-      () => "本当に戻しますか。この操作は取り消せません。\n\n残したいものがあるなら、いったんやめて〈書き出す〉でファイルに保存してください。",
-    );
-    if (!window.confirm(second)) return;
+  let resetDialogStep = 0;
+  let resetInProgress = false;
+  let resetReturnFocus = null;
 
-    /* ガンマ版の領域（gamma:）に限定して消す。旧版と他アプリの鍵には触れない。
-       会場の下書きや移行済みの目印など、後から増えた鍵を取り残さないため。
-       （この端末の舞台スケッチ以外のデータには shosai- を使っていない） */
-    const keys = new Set(RESET_KEYS);
+  function resetStoredShowCount() {
     try {
-      for (let i = 0; i < localStorage.length; i += 1) {
-        const key = localStorage.key(i);
+      const raw = localStorage.getItem(SHOWS_KEY);
+      if (raw === null) return 0;
+      const shows = JSON.parse(raw);
+      return shows && typeof shows === "object" && !Array.isArray(shows)
+        ? Object.keys(shows).length : null;
+    } catch (_) { return null; }
+  }
+
+  function renderResetDialog() {
+    const finalStep = resetDialogStep === 2;
+    const count = resetStoredShowCount();
+    const countText = count === null
+      ? sx("件数を確認できない保存済みショー", "saved shows (count unavailable)")
+      : sx(`保存済みショー ${count}本`, `${count} saved show(s)`);
+    els.resetTitle.textContent = finalStep
+      ? sx("削除前の最終確認", "Final reset confirmation")
+      : sx("設定をリセット", "Reset this device");
+    els.resetLead.textContent = finalStep
+      ? sx("本当に初回状態へ戻しますか？", "Reset to the first-use state?")
+      : sx("この端末の舞台スケッチを初回状態へ戻します。", "Return Stage Sketch on this device to its first-use state.");
+    els.resetDetail.textContent = sx(
+      `${countText}、現在開いているショー、表示設定、言語、組んだセット、読み込んだ音源が消えます。書き出し済みのファイルは残ります。`,
+      `${countText}, the open show, display settings, language, built set pieces, and loaded music will be removed. Exported files remain untouched.`,
+    );
+    els.resetWarning.textContent = finalStep
+      ? sx("この操作は取り消せません。残したいものがあれば「やめる」を押し、ショーを書き出してください。", "This cannot be undone. Cancel and export any show you want to keep.")
+      : sx("確認を2段階で行います。この画面ではまだ何も削除しません。", "There are two confirmation steps. Nothing is deleted on this screen.");
+    els.resetConfirm.textContent = finalStep
+      ? sx("ショーと設定を削除", "Delete shows and settings")
+      : sx("削除内容を確認", "Review deletion");
+    els.resetCancel.textContent = sx("やめる", "Cancel");
+    els.resetClose.setAttribute("aria-label", sx("閉じる", "Close"));
+  }
+
+  function openResetDialog() {
+    if (!els.resetModal || !els.resetBackdrop) return;
+    resetReturnFocus = document.activeElement;
+    resetDialogStep = 1;
+    els.resetError.hidden = true;
+    els.resetError.textContent = "";
+    renderResetDialog();
+    els.resetBackdrop.hidden = false;
+    els.resetModal.hidden = false;
+    els.resetCancel.focus();
+  }
+
+  function closeResetDialog() {
+    if (resetInProgress) return;
+    resetDialogStep = 0;
+    els.resetModal.hidden = true;
+    els.resetBackdrop.hidden = true;
+    (resetReturnFocus && resetReturnFocus.isConnected ? resetReturnFocus : els.resetAll)?.focus();
+    resetReturnFocus = null;
+  }
+
+  async function resetToFirstRun() {
+    if (resetInProgress || resetDialogStep !== 2) return;
+    resetInProgress = true;
+    els.resetConfirm.disabled = true;
+    els.resetCancel.disabled = true;
+    els.resetClose.disabled = true;
+    els.resetError.hidden = true;
+    let removedAny = false;
+    try {
+      if (!rawStorage) throw new Error("localStorage unavailable");
+
+      /* 明示した舞台スケッチの保存鍵と gamma: 領域を消す。
+         会場の下書きや移行済みの目印など、後から増えた鍵も取り残さない。 */
+      const keys = new Set(RESET_KEYS);
+      for (let i = 0; i < rawStorage.length; i += 1) {
+        const key = rawStorage.key(i);
         if (key && key.startsWith("gamma:")) keys.add(key);
       }
-    } catch (_) { /* 一覧が取れなくても、明示した鍵は消す */ }
-    keys.forEach((key) => {
-      try { localStorage.removeItem(key); } catch (_) { /* 消せないものは残る */ }
-    });
-    /* IndexedDBの保護コピーは実体を急いで削除せず、ここより前のものを復元候補から
-       外す印を残す。途中でブラウザが閉じても、リセット前のショーを勝手に開かない。 */
-    try { localStorage.setItem(PROJECT_BACKUP_RESET_KEY, nowIso()); } catch (_) { /* 次回も確認付き */ }
-    /* 音源は IndexedDB。データベースごと捨てる（開いている接続があると
-       消えるのが遅れることがあるので、待たずに再読み込みへ進む） */
-    try {
+      for (const key of keys) {
+        if (rawStorage.getItem(key) === null) continue;
+        rawStorage.removeItem(key);
+        removedAny = true;
+      }
+      if ([...keys].some((key) => rawStorage.getItem(key) !== null)) {
+        throw new Error("reset keys remained in localStorage");
+      }
+      /* IndexedDBの保護コピーは実体を急いで削除せず、ここより前のものを復元候補から
+         外す印を残す。途中でブラウザが閉じても、リセット前のショーを勝手に開かない。 */
+      const resetAt = nowIso();
+      rawStorage.setItem(PROJECT_BACKUP_RESET_KEY, resetAt);
+      if (rawStorage.getItem(PROJECT_BACKUP_RESET_KEY) !== resetAt) {
+        throw new Error("reset marker was not saved");
+      }
+      try { sessionStorage.removeItem(NEW_SHOW_RETURN_KEY); } catch (_) { /* 利用できない環境では再起動時にも読めない */ }
+      /* 音源は IndexedDB。データベースごと捨てる（開いている接続があると
+         消えるのが遅れることがあるので、待たずに再読み込みへ進む） */
       if (els.musicAudio) { els.musicAudio.pause(); els.musicAudio.removeAttribute("src"); }
       if (window.indexedDB && window.indexedDB.deleteDatabase) {
         window.indexedDB.deleteDatabase("gamma:shosai-stage-audio");
         window.indexedDB.deleteDatabase("gamma:scene-alternatives-audio-v1");
       }
-    } catch (_) { /* 消せなくても続ける */ }
-    /* 保存の自動書き戻しが走る前に、この場で読み直す */
-    window.location.reload();
+      /* 保存の自動書き戻しが走る前に、この場で読み直す */
+      window.location.reload();
+    } catch (error) {
+      console.error("stage reset: 初期化できませんでした", error);
+      els.resetError.textContent = removedAny
+        ? sx("リセットを完了できませんでした。一部の保存データが消えた可能性があります。この画面を閉じず、必要なショーを書き出してください。", "Reset did not complete. Some saved data may have been removed. Keep this page open and export any show you need.")
+        : sx("リセットできませんでした。保存領域を確認し、もう一度お試しください。", "Reset failed. Check this browser's storage and try again.");
+      els.resetError.hidden = false;
+      els.resetError.focus();
+      resetInProgress = false;
+      els.resetConfirm.disabled = false;
+      els.resetCancel.disabled = false;
+      els.resetClose.disabled = false;
+    }
+  }
+
+  function advanceResetDialog() {
+    if (resetInProgress) return;
+    if (resetDialogStep === 1) {
+      resetDialogStep = 2;
+      renderResetDialog();
+      els.resetCancel.focus();
+      return;
+    }
+    if (resetDialogStep === 2) resetToFirstRun();
   }
 
   /* ショーの内容や環境設定を消さず、机の組み方だけを配布時へ戻す。
@@ -36892,7 +36979,32 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   if (els.helpOpen) els.helpOpen.addEventListener("click", openManualHelpFromPrefs);
   if (els.manualOpen) els.manualOpen.addEventListener("click", openManualBook);
   if (els.resetLayout) els.resetLayout.addEventListener("click", resetPanelLayoutToDistributionDefault);
-  if (els.resetAll) els.resetAll.addEventListener("click", resetToFirstRun);
+  if (els.resetAll) els.resetAll.addEventListener("click", openResetDialog);
+  if (els.resetConfirm) els.resetConfirm.addEventListener("click", advanceResetDialog);
+  if (els.resetCancel) els.resetCancel.addEventListener("click", closeResetDialog);
+  if (els.resetClose) els.resetClose.addEventListener("click", closeResetDialog);
+  if (els.resetBackdrop) els.resetBackdrop.addEventListener("click", closeResetDialog);
+  document.addEventListener("keydown", (event) => {
+    if (!resetDialogStep) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      closeResetDialog();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const actions = [els.resetClose, els.resetConfirm, els.resetCancel].filter((element) => element && !element.disabled);
+    if (!actions.length) return;
+    const first = actions[0];
+    const last = actions[actions.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }, true);
   if (els.quickOpen) els.quickOpen.addEventListener("click", openQuickGuide);
   if (els.helpClose) els.helpClose.addEventListener("click", closeManualHelp);
   if (els.helpBackdrop) els.helpBackdrop.addEventListener("click", closeManualHelp);

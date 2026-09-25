@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.5">
+<meta name="stage-sketch-gamma-version" content="v0.2.6">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092441">
+<link rel="stylesheet" href="style.css?v=2026092501">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -66,7 +66,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.5</span>
+              <span class="stage-app-version">0.2.6</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -2427,7 +2427,7 @@
       <button type="button" class="stage-minor-action" id="stage-reset-layout">配置を戻す</button>
     </div>
     <!-- 取り返しのつかない操作なので、設定のいちばん下に単独で置く。
-         押しても二度たずねるまでは何も起きない（stage-sketch.js の resetToFirstRun）。 -->
+         アプリ内で二段階の確認を終えるまでは保存データを変更しない。 -->
     <div class="stage-pref-row stage-pref-reset-row">
       <span class="stage-pref-lang-body">
         <span class="stage-pref-name">設定をリセット</span>
@@ -2444,6 +2444,25 @@
      <div class="stage-pref-keys-body" id="stage-pref-keys-body"></div>
      <p class="stage-pref-hint">キーを押して割り当てを変えられます。設定はこの端末・このブラウザにだけ保存されます。</p>
    </aside>
+  </div>
+</div>
+
+<div class="stage-modal-backdrop stage-reset-backdrop" id="stage-reset-backdrop" hidden></div>
+<div class="stage-modal stage-reset-modal" id="stage-reset-modal" role="dialog" aria-modal="true"
+     aria-labelledby="stage-reset-title" aria-describedby="stage-reset-lead stage-reset-detail" hidden>
+  <header class="stage-modal-head">
+    <h2 id="stage-reset-title">設定をリセット</h2>
+    <button type="button" class="stage-modal-close" id="stage-reset-close" aria-label="閉じる">✕</button>
+  </header>
+  <div class="stage-modal-body">
+    <p class="stage-reset-lead" id="stage-reset-lead"></p>
+    <p class="stage-reset-detail" id="stage-reset-detail"></p>
+    <p class="stage-reset-warning" id="stage-reset-warning"></p>
+    <p class="stage-reset-error" id="stage-reset-error" role="alert" tabindex="-1" hidden></p>
+    <footer class="stage-venue-editor-actions stage-project-export-actions stage-reset-actions">
+      <button type="button" class="stage-minor-action stage-danger" id="stage-reset-confirm"></button>
+      <button type="button" class="btn-quiet" id="stage-reset-cancel">やめる</button>
+    </footer>
   </div>
 </div>
 
@@ -2511,6 +2530,15 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v026-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v026-title">v0.2.6</h3>
+        <time datetime="2026-09-25">2026-09-25</time>
+      </header>
+      <ul>
+        <li>環境設定の赤い「リセット」を押すと、アプリ内で削除内容を2段階で確認できます。保存領域の削除に失敗した場合は画面に知らせ、再読み込みを止めます。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v025-title">
       <header class="stage-release-entry-head">
         <h3 id="stage-release-v025-title">v0.2.5</h3>
@@ -3399,7 +3427,7 @@
 <script src="stage-performer-motion.js?v=2026092506"></script>
 <script src="stage-performer-contour.js?v=2026092506"></script>
 <script src="stage-performer-body.js?v=2026092506"></script>
-<script src="stage-sketch.js?v=2026092506"></script>
+<script src="stage-sketch.js?v=2026092507"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092210"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-vox-panel.js?v=2026092432"></script>
