@@ -230,7 +230,7 @@ test("the app shell advances with the storage transaction code", () => {
   assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092523/);
   assert.match(stageHtml, /style\.css\?v=2026092519/);
   assert.match(stageHtml, /stage-sketch\.js\?v=2026092523/);
-  assert.match(serviceWorker, /stage-sketch-gamma-shell-v360/);
+  assert.match(serviceWorker, /stage-sketch-gamma-shell-v361/);
   assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092523/);
   assert.match(serviceWorker, /\.\/style\.css\?v=2026092519/);
   assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092523/);
@@ -263,9 +263,9 @@ test("indoor standing reception venue keeps its 3D room layout outside show data
   assert.match(firstPerson, /function drawStandingGuest\(ctx, guest\)/);
   assert.match(firstPerson, /if \(reception\) \{\s*drawShell\(ctx\);\s*drawHouse\(ctx\);/);
   assert.match(stageHtml, /stage-venues\.js\?v=2026092522/);
-  assert.match(stageHtml, /stage-first-person\.js\?v=2026092506/);
+  assert.match(stageHtml, /stage-first-person\.js\?v=2026092507/);
   assert.match(serviceWorker, /stage-venues\.js\?v=2026092522/);
-  assert.match(serviceWorker, /stage-first-person\.js\?v=2026092506/);
+  assert.match(serviceWorker, /stage-first-person\.js\?v=2026092507/);
 });
 
 test("scene alternatives are an opt-in right-side panel without changing scene data", () => {
