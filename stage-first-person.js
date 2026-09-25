@@ -1070,6 +1070,7 @@
 #stage-fpv-edit .dot{width:9px;height:9px;border-radius:50%;flex:none}
 #stage-fpv-edit .fv{opacity:.65}
 #stage-fpv-edit-poses{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.stage-fpv-pose-group{flex:none;align-self:stretch;width:168px;padding:4px 6px;border:1px solid rgba(232,226,212,.16);border-radius:3px;background:rgba(var(--stage-ui-float-rgb,22,16,11),.86);color:#e8e2d4;font:11px/1.3 inherit;font-family:inherit}
 .stage-fpv-pose-tile{flex:none;width:64px;padding:0;border:1px solid rgba(232,226,212,.16);border-radius:3px;background:rgba(var(--stage-ui-float-rgb,22,16,11),.86);color:#e8e2d4;font-size:10px;cursor:pointer;font-family:inherit}
 .stage-fpv-pose-tile canvas{display:block;width:100%;height:56px;background:transparent}
 .stage-fpv-pose-tile span{display:block;padding:1px 2px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1336,8 +1337,41 @@
       ? text("姿勢を選ぶ")
       : text("体をドラッグで移動・リングかスクロールで向き");
     const poses = state.bridge && state.bridge.listPoses ? state.bridge.listPoses(piece.id) : [];
-    let activeTile = null;
+    /* D2（2026-09-26 本人決定）: 姿勢が約200件になるので、正面図の下の帯と同じく
+       先頭の選択欄で分類を切り替え、選んだ分類の姿勢だけを並べる。選ぶ演者が変わったらその姿勢の分類へ合わせる。 */
+    const groups = [];
     poses.forEach((pose) => {
+      const key = pose.group || "";
+      let group = groups.find((item) => item.key === key);
+      if (!group) { group = { key, label: pose.groupLabel || key, poses: [] }; groups.push(group); }
+      group.poses.push(pose);
+    });
+    if (state.poseGroupFor !== piece.id || !groups.some((group) => group.key === state.poseGroup)) {
+      state.poseGroupFor = piece.id;
+      const own = groups.find((group) => group.poses.some((pose) => pose.id === piece.pose));
+      state.poseGroup = (own || groups[0] || { key: "" }).key;
+    }
+    if (groups.length > 1) {
+      const select = createElement("select", "", "stage-fpv-pose-group");
+      select.setAttribute("aria-label", text("姿勢の分類"));
+      groups.forEach((group) => {
+        const option = createElement("option");
+        option.value = group.key;
+        option.textContent = group.label;
+        select.appendChild(option);
+      });
+      select.value = state.poseGroup;
+      select.addEventListener("change", () => {
+        state.poseGroup = select.value;
+        updateEditPanel();
+        const again = elements.editPoses.querySelector(".stage-fpv-pose-group");
+        if (again) again.focus();
+      });
+      elements.editPoses.appendChild(select);
+    }
+    const shown = (groups.find((group) => group.key === state.poseGroup) || { poses }).poses;
+    let activeTile = null;
+    shown.forEach((pose) => {
       const tile = createElement("button", "", `stage-fpv-pose-tile${piece.pose === pose.id ? " on" : ""}`);
       tile.type = "button";
       const preview = createElement("canvas");

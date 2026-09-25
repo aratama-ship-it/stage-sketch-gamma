@@ -46,4 +46,9 @@ test("姿勢の窓・帯・演者を追加する窓が分類で並ぶ", () => {
   assert.match(main, /groupedPoses\(selectablePoses\(\[\]\)\)\.forEach\(\(group\) => \{/);
   assert.match(main, /stage-select stage-pose-strip-group/);
   assert.match(main, /openPoseModal\(\{ focusSearch: true \}\)/);
+  // 3D画面の姿勢の札も分類で切り替える（窓口が分類を渡し、3D画面の先頭に選択欄を置く）
+  const fpv = read("stage-first-person.js");
+  assert.match(main, /id: p\.id, label: poseName\(p\), group: group\.ja, groupLabel: tx\(group\.ja\),/);
+  assert.match(fpv, /createElement\("select", "", "stage-fpv-pose-group"\)/);
+  assert.match(fpv, /\.stage-fpv-pose-group\{/);
 });
