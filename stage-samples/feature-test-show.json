@@ -203,7 +203,7 @@
     "cueType": "light",
     "sceneId": "ft-scene-c2a",
     "offsetSeconds": 0,
-    "memo": "明かり: C-3 小道具の全形 1/3（65種）",
+    "memo": "明かり: C-3 小道具の全形 1/3（69種）",
     "locked": false
    },
    {
@@ -212,7 +212,7 @@
     "cueType": "light",
     "sceneId": "ft-scene-c2b",
     "offsetSeconds": 0,
-    "memo": "明かり: C-3 小道具の全形 2/3（64種）",
+    "memo": "明かり: C-3 小道具の全形 2/3（68種）",
     "locked": false
    },
    {
@@ -221,7 +221,7 @@
     "cueType": "light",
     "sceneId": "ft-scene-c2c",
     "offsetSeconds": 0,
-    "memo": "明かり: C-3 小道具の全形 3/3（64種）",
+    "memo": "明かり: C-3 小道具の全形 3/3（68種）",
     "locked": false
    },
    {
@@ -1566,7 +1566,7 @@
     "name": "台＋箱＋椅子",
     "pieces": [
      {
-      "id": "ft-rig1-block-je",
+      "id": "ft-rig1-block-jq",
       "type": "block",
       "setId": "ft-set-block",
       "originId": "ft-origin-block",
@@ -1584,7 +1584,7 @@
       }
      },
      {
-      "id": "ft-rig1-block2-jf",
+      "id": "ft-rig1-block2-jr",
       "type": "block",
       "setId": "ft-set-block2",
       "originId": "ft-origin-block2",
@@ -1603,7 +1603,7 @@
       "base": 0.5
      },
      {
-      "id": "ft-rig1-chair-jg",
+      "id": "ft-rig1-chair-js",
       "type": "chair",
       "setId": "ft-set-chair",
       "originId": "ft-origin-chair",
@@ -1627,7 +1627,7 @@
     "name": "ベンチ2つ（向かい合わせ）",
     "pieces": [
      {
-      "id": "ft-rig2-bench-jh",
+      "id": "ft-rig2-bench-jt",
       "type": "bench",
       "setId": "ft-set-bench",
       "originId": "ft-origin-bench",
@@ -6579,8 +6579,8 @@
     "id": "ft-scene-c2a",
     "kind": "scene",
     "depth": 1,
-    "title": "C-3 小道具の全形 1/3（65種）",
-    "note": "確認: 本体にある小道具の形を全部（登録の無い駒・名前＝形の名前。193種を3シーンに分けた）。正面図の形、平面図の足元、3Dでの見え方、選んだときの枠。形が増えたら生成し直す。",
+    "title": "C-3 小道具の全形 1/3（69種）",
+    "note": "確認: 本体にある小道具の形を全部（登録の無い駒・名前＝形の名前。205種を3シーンに分けた）。正面図の形、平面図の足元、3Dでの見え方、選んだときの枠。形が増えたら生成し直す。",
     "background": "#40362d",
     "pieces": [
      {
@@ -7362,6 +7362,54 @@
       "size": 100,
       "color": "#d3ac59",
       "name": "時計（置き時計）"
+     },
+     {
+      "id": "ft-c2a-prop-ae",
+      "type": "prop",
+      "setId": null,
+      "propShape": "fan",
+      "u": 0.55,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "扇子"
+     },
+     {
+      "id": "ft-c2a-prop-af",
+      "type": "prop",
+      "setId": null,
+      "propShape": "scarf",
+      "u": 0.65,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "布・ベール・スカーフ"
+     },
+     {
+      "id": "ft-c2a-prop-ag",
+      "type": "prop",
+      "setId": null,
+      "propShape": "torch",
+      "u": 0.75,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "松明（たいまつ）"
+     },
+     {
+      "id": "ft-c2a-prop-ah",
+      "type": "prop",
+      "setId": null,
+      "propShape": "candle",
+      "u": 0.85,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "ロウソク・燭台"
      }
     ],
     "notes": [],
@@ -7384,64 +7432,16 @@
     "id": "ft-scene-c2b",
     "kind": "scene",
     "depth": 1,
-    "title": "C-3 小道具の全形 2/3（64種）",
-    "note": "確認: 本体にある小道具の形を全部（登録の無い駒・名前＝形の名前。193種を3シーンに分けた）。正面図の形、平面図の足元、3Dでの見え方、選んだときの枠。形が増えたら生成し直す。",
+    "title": "C-3 小道具の全形 2/3（68種）",
+    "note": "確認: 本体にある小道具の形を全部（登録の無い駒・名前＝形の名前。205種を3シーンに分けた）。正面図の形、平面図の足元、3Dでの見え方、選んだときの枠。形が増えたら生成し直す。",
     "background": "#40362d",
     "pieces": [
-     {
-      "id": "ft-c2b-prop-ae",
-      "type": "prop",
-      "setId": null,
-      "propShape": "fan",
-      "u": 0.05,
-      "v": 0.12,
-      "facing": 0,
-      "size": 100,
-      "color": "#d3ac59",
-      "name": "扇子"
-     },
-     {
-      "id": "ft-c2b-prop-af",
-      "type": "prop",
-      "setId": null,
-      "propShape": "scarf",
-      "u": 0.15,
-      "v": 0.12,
-      "facing": 0,
-      "size": 100,
-      "color": "#d3ac59",
-      "name": "布・ベール・スカーフ"
-     },
-     {
-      "id": "ft-c2b-prop-ag",
-      "type": "prop",
-      "setId": null,
-      "propShape": "torch",
-      "u": 0.25,
-      "v": 0.12,
-      "facing": 0,
-      "size": 100,
-      "color": "#d3ac59",
-      "name": "松明（たいまつ）"
-     },
-     {
-      "id": "ft-c2b-prop-ah",
-      "type": "prop",
-      "setId": null,
-      "propShape": "candle",
-      "u": 0.35,
-      "v": 0.12,
-      "facing": 0,
-      "size": 100,
-      "color": "#d3ac59",
-      "name": "ロウソク・燭台"
-     },
      {
       "id": "ft-c2b-prop-ai",
       "type": "prop",
       "setId": null,
       "propShape": "treasurechest",
-      "u": 0.45,
+      "u": 0.05,
       "v": 0.12,
       "facing": 0,
       "size": 100,
@@ -7453,7 +7453,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "cane",
-      "u": 0.55,
+      "u": 0.15,
       "v": 0.12,
       "facing": 0,
       "size": 100,
@@ -7465,7 +7465,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "handbag",
-      "u": 0.65,
+      "u": 0.25,
       "v": 0.12,
       "facing": 0,
       "size": 100,
@@ -7477,7 +7477,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "wagasa",
-      "u": 0.75,
+      "u": 0.35,
       "v": 0.12,
       "facing": 0,
       "size": 100,
@@ -7489,7 +7489,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "guitar",
-      "u": 0.85,
+      "u": 0.45,
       "v": 0.12,
       "facing": 0,
       "size": 100,
@@ -7501,7 +7501,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "bassguitar",
-      "u": 0.95,
+      "u": 0.55,
       "v": 0.12,
       "facing": 0,
       "size": 100,
@@ -7513,8 +7513,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "violin",
-      "u": 0.05,
-      "v": 0.258,
+      "u": 0.65,
+      "v": 0.12,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -7525,8 +7525,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "trumpet",
-      "u": 0.15,
-      "v": 0.258,
+      "u": 0.75,
+      "v": 0.12,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -7537,8 +7537,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "accordion",
-      "u": 0.25,
-      "v": 0.258,
+      "u": 0.85,
+      "v": 0.12,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -7549,8 +7549,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "cigarbox",
-      "u": 0.35,
-      "v": 0.258,
+      "u": 0.95,
+      "v": 0.12,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -7561,7 +7561,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "devilstick",
-      "u": 0.45,
+      "u": 0.05,
       "v": 0.258,
       "facing": 0,
       "size": 100,
@@ -7573,7 +7573,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "poi",
-      "u": 0.55,
+      "u": 0.15,
       "v": 0.258,
       "facing": 0,
       "size": 100,
@@ -7585,7 +7585,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "hoop",
-      "u": 0.65,
+      "u": 0.25,
       "v": 0.258,
       "facing": 0,
       "size": 100,
@@ -7597,7 +7597,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "grandpiano",
-      "u": 0.75,
+      "u": 0.35,
       "v": 0.258,
       "facing": 0,
       "size": 100,
@@ -7609,7 +7609,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "grandpianoopen",
-      "u": 0.85,
+      "u": 0.45,
       "v": 0.258,
       "facing": 0,
       "size": 100,
@@ -7621,7 +7621,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "uprightpiano",
-      "u": 0.95,
+      "u": 0.55,
       "v": 0.258,
       "facing": 0,
       "size": 100,
@@ -7633,8 +7633,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "micstand",
-      "u": 0.05,
-      "v": 0.397,
+      "u": 0.65,
+      "v": 0.258,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -7645,8 +7645,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "musicstand",
-      "u": 0.15,
-      "v": 0.397,
+      "u": 0.75,
+      "v": 0.258,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -7657,8 +7657,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "speaker",
-      "u": 0.25,
-      "v": 0.397,
+      "u": 0.85,
+      "v": 0.258,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -7669,8 +7669,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "keyboardstand",
-      "u": 0.35,
-      "v": 0.397,
+      "u": 0.95,
+      "v": 0.258,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -7681,7 +7681,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "djbooth",
-      "u": 0.45,
+      "u": 0.05,
       "v": 0.397,
       "facing": 0,
       "size": 100,
@@ -7693,7 +7693,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "rolabola",
-      "u": 0.55,
+      "u": 0.15,
       "v": 0.397,
       "facing": 0,
       "size": 100,
@@ -7705,7 +7705,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "germanwheel",
-      "u": 0.65,
+      "u": 0.25,
       "v": 0.397,
       "facing": 0,
       "size": 100,
@@ -7717,7 +7717,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "minitramp",
-      "u": 0.75,
+      "u": 0.35,
       "v": 0.397,
       "facing": 0,
       "size": 100,
@@ -7729,7 +7729,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "rollingglobe",
-      "u": 0.85,
+      "u": 0.45,
       "v": 0.397,
       "facing": 0,
       "size": 100,
@@ -7741,7 +7741,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "russianbar",
-      "u": 0.95,
+      "u": 0.55,
       "v": 0.397,
       "facing": 0,
       "size": 100,
@@ -7753,8 +7753,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "crashmat",
-      "u": 0.05,
-      "v": 0.535,
+      "u": 0.65,
+      "v": 0.397,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -7765,8 +7765,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "crashmatround",
-      "u": 0.15,
-      "v": 0.535,
+      "u": 0.75,
+      "v": 0.397,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -7777,8 +7777,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "russianswing",
-      "u": 0.25,
-      "v": 0.535,
+      "u": 0.85,
+      "v": 0.397,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -7789,8 +7789,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "slackline",
-      "u": 0.35,
-      "v": 0.535,
+      "u": 0.95,
+      "v": 0.397,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -7801,7 +7801,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "walljump",
-      "u": 0.45,
+      "u": 0.05,
       "v": 0.535,
       "facing": 0,
       "size": 100,
@@ -7813,7 +7813,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "unicycle",
-      "u": 0.55,
+      "u": 0.15,
       "v": 0.535,
       "facing": 0,
       "size": 100,
@@ -7825,7 +7825,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "spiralstairs",
-      "u": 0.65,
+      "u": 0.25,
       "v": 0.535,
       "facing": 0,
       "size": 100,
@@ -7837,7 +7837,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "stilts",
-      "u": 0.75,
+      "u": 0.35,
       "v": 0.535,
       "facing": 0,
       "size": 100,
@@ -7849,7 +7849,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "cart",
-      "u": 0.85,
+      "u": 0.45,
       "v": 0.535,
       "facing": 0,
       "size": 100,
@@ -7861,7 +7861,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "bicycle",
-      "u": 0.95,
+      "u": 0.55,
       "v": 0.535,
       "facing": 0,
       "size": 100,
@@ -7873,8 +7873,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "aerialhoop",
-      "u": 0.05,
-      "v": 0.673,
+      "u": 0.65,
+      "v": 0.535,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -7885,8 +7885,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "aerialstraps",
-      "u": 0.15,
-      "v": 0.673,
+      "u": 0.75,
+      "v": 0.535,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -7897,8 +7897,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "aerialhammock",
-      "u": 0.25,
-      "v": 0.673,
+      "u": 0.85,
+      "v": 0.535,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -7909,8 +7909,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "spanishweb",
-      "u": 0.35,
-      "v": 0.673,
+      "u": 0.95,
+      "v": 0.535,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -7921,7 +7921,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "swingpole",
-      "u": 0.45,
+      "u": 0.05,
       "v": 0.673,
       "facing": 0,
       "size": 100,
@@ -7933,7 +7933,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "cello",
-      "u": 0.55,
+      "u": 0.15,
       "v": 0.673,
       "facing": 0,
       "size": 100,
@@ -7945,7 +7945,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "doublebass",
-      "u": 0.65,
+      "u": 0.25,
       "v": 0.673,
       "facing": 0,
       "size": 100,
@@ -7957,7 +7957,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "axe",
-      "u": 0.75,
+      "u": 0.35,
       "v": 0.673,
       "facing": 0,
       "size": 100,
@@ -7969,7 +7969,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "hammer",
-      "u": 0.85,
+      "u": 0.45,
       "v": 0.673,
       "facing": 0,
       "size": 100,
@@ -7981,7 +7981,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "saw",
-      "u": 0.95,
+      "u": 0.55,
       "v": 0.673,
       "facing": 0,
       "size": 100,
@@ -7993,8 +7993,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "shovel",
-      "u": 0.05,
-      "v": 0.812,
+      "u": 0.65,
+      "v": 0.673,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8005,8 +8005,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "fishing_rod",
-      "u": 0.15,
-      "v": 0.812,
+      "u": 0.75,
+      "v": 0.673,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8017,8 +8017,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "oar",
-      "u": 0.25,
-      "v": 0.812,
+      "u": 0.85,
+      "v": 0.673,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8029,8 +8029,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "crutch",
-      "u": 0.35,
-      "v": 0.812,
+      "u": 0.95,
+      "v": 0.673,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8041,7 +8041,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "baseball_bat",
-      "u": 0.45,
+      "u": 0.05,
       "v": 0.812,
       "facing": 0,
       "size": 100,
@@ -8053,7 +8053,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "balloon",
-      "u": 0.55,
+      "u": 0.15,
       "v": 0.812,
       "facing": 0,
       "size": 100,
@@ -8065,7 +8065,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "magic_wand",
-      "u": 0.65,
+      "u": 0.25,
       "v": 0.812,
       "facing": 0,
       "size": 100,
@@ -8077,7 +8077,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "pogo_stick",
-      "u": 0.75,
+      "u": 0.35,
       "v": 0.812,
       "facing": 0,
       "size": 100,
@@ -8089,7 +8089,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "flute",
-      "u": 0.85,
+      "u": 0.45,
       "v": 0.812,
       "facing": 0,
       "size": 100,
@@ -8101,7 +8101,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "saxophone",
-      "u": 0.95,
+      "u": 0.55,
       "v": 0.812,
       "facing": 0,
       "size": 100,
@@ -8113,8 +8113,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "shamisen",
-      "u": 0.05,
-      "v": 0.95,
+      "u": 0.65,
+      "v": 0.812,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8125,8 +8125,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "handpan",
-      "u": 0.15,
-      "v": 0.95,
+      "u": 0.75,
+      "v": 0.812,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8137,8 +8137,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "taiko_bachi",
-      "u": 0.25,
-      "v": 0.95,
+      "u": 0.85,
+      "v": 0.812,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8149,12 +8149,108 @@
       "type": "prop",
       "setId": null,
       "propShape": "hyoshigi",
+      "u": 0.95,
+      "v": 0.812,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "拍子木"
+     },
+     {
+      "id": "ft-c2b-prop-c6",
+      "type": "prop",
+      "setId": null,
+      "propShape": "tambourine",
+      "u": 0.05,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "タンバリン"
+     },
+     {
+      "id": "ft-c2b-prop-c7",
+      "type": "prop",
+      "setId": null,
+      "propShape": "handbell",
+      "u": 0.15,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "ハンドベル"
+     },
+     {
+      "id": "ft-c2b-prop-c8",
+      "type": "prop",
+      "setId": null,
+      "propShape": "snare_marching",
+      "u": 0.25,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "スネアドラム（マーチング用・肩掛け）"
+     },
+     {
+      "id": "ft-c2b-prop-c9",
+      "type": "prop",
+      "setId": null,
+      "propShape": "kotsuzumi",
       "u": 0.35,
       "v": 0.95,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
-      "name": "拍子木"
+      "name": "小鼓（こつづみ）"
+     },
+     {
+      "id": "ft-c2b-prop-ca",
+      "type": "prop",
+      "setId": null,
+      "propShape": "knife_throwing",
+      "u": 0.45,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "ナイフ（投げナイフ・ジャグリング用）"
+     },
+     {
+      "id": "ft-c2b-prop-cb",
+      "type": "prop",
+      "setId": null,
+      "propShape": "spinning_plate",
+      "u": 0.55,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "皿回し（皿と棒）"
+     },
+     {
+      "id": "ft-c2b-prop-cc",
+      "type": "prop",
+      "setId": null,
+      "propShape": "kendama",
+      "u": 0.65,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "けん玉"
+     },
+     {
+      "id": "ft-c2b-prop-cd",
+      "type": "prop",
+      "setId": null,
+      "propShape": "bullwhip",
+      "u": 0.75,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "鞭（ブルウィップ）"
      }
     ],
     "notes": [],
@@ -8177,112 +8273,16 @@
     "id": "ft-scene-c2c",
     "kind": "scene",
     "depth": 1,
-    "title": "C-3 小道具の全形 3/3（64種）",
-    "note": "確認: 本体にある小道具の形を全部（登録の無い駒・名前＝形の名前。193種を3シーンに分けた）。正面図の形、平面図の足元、3Dでの見え方、選んだときの枠。形が増えたら生成し直す。",
+    "title": "C-3 小道具の全形 3/3（68種）",
+    "note": "確認: 本体にある小道具の形を全部（登録の無い駒・名前＝形の名前。205種を3シーンに分けた）。正面図の形、平面図の足元、3Dでの見え方、選んだときの枠。形が増えたら生成し直す。",
     "background": "#40362d",
     "pieces": [
-     {
-      "id": "ft-c2c-prop-c6",
-      "type": "prop",
-      "setId": null,
-      "propShape": "tambourine",
-      "u": 0.05,
-      "v": 0.12,
-      "facing": 0,
-      "size": 100,
-      "color": "#d3ac59",
-      "name": "タンバリン"
-     },
-     {
-      "id": "ft-c2c-prop-c7",
-      "type": "prop",
-      "setId": null,
-      "propShape": "handbell",
-      "u": 0.15,
-      "v": 0.12,
-      "facing": 0,
-      "size": 100,
-      "color": "#d3ac59",
-      "name": "ハンドベル"
-     },
-     {
-      "id": "ft-c2c-prop-c8",
-      "type": "prop",
-      "setId": null,
-      "propShape": "snare_marching",
-      "u": 0.25,
-      "v": 0.12,
-      "facing": 0,
-      "size": 100,
-      "color": "#d3ac59",
-      "name": "スネアドラム（マーチング用・肩掛け）"
-     },
-     {
-      "id": "ft-c2c-prop-c9",
-      "type": "prop",
-      "setId": null,
-      "propShape": "kotsuzumi",
-      "u": 0.35,
-      "v": 0.12,
-      "facing": 0,
-      "size": 100,
-      "color": "#d3ac59",
-      "name": "小鼓（こつづみ）"
-     },
-     {
-      "id": "ft-c2c-prop-ca",
-      "type": "prop",
-      "setId": null,
-      "propShape": "knife_throwing",
-      "u": 0.45,
-      "v": 0.12,
-      "facing": 0,
-      "size": 100,
-      "color": "#d3ac59",
-      "name": "ナイフ（投げナイフ・ジャグリング用）"
-     },
-     {
-      "id": "ft-c2c-prop-cb",
-      "type": "prop",
-      "setId": null,
-      "propShape": "spinning_plate",
-      "u": 0.55,
-      "v": 0.12,
-      "facing": 0,
-      "size": 100,
-      "color": "#d3ac59",
-      "name": "皿回し（皿と棒）"
-     },
-     {
-      "id": "ft-c2c-prop-cc",
-      "type": "prop",
-      "setId": null,
-      "propShape": "kendama",
-      "u": 0.65,
-      "v": 0.12,
-      "facing": 0,
-      "size": 100,
-      "color": "#d3ac59",
-      "name": "けん玉"
-     },
-     {
-      "id": "ft-c2c-prop-cd",
-      "type": "prop",
-      "setId": null,
-      "propShape": "bullwhip",
-      "u": 0.75,
-      "v": 0.12,
-      "facing": 0,
-      "size": 100,
-      "color": "#d3ac59",
-      "name": "鞭（ブルウィップ）"
-     },
      {
       "id": "ft-c2c-prop-ce",
       "type": "prop",
       "setId": null,
       "propShape": "lasso",
-      "u": 0.85,
+      "u": 0.05,
       "v": 0.12,
       "facing": 0,
       "size": 100,
@@ -8294,7 +8294,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "boomerang",
-      "u": 0.95,
+      "u": 0.15,
       "v": 0.12,
       "facing": 0,
       "size": 100,
@@ -8306,8 +8306,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "jump_rope",
-      "u": 0.05,
-      "v": 0.258,
+      "u": 0.25,
+      "v": 0.12,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8318,8 +8318,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "barbell",
-      "u": 0.15,
-      "v": 0.258,
+      "u": 0.35,
+      "v": 0.12,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8330,8 +8330,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "flashlight",
-      "u": 0.25,
-      "v": 0.258,
+      "u": 0.45,
+      "v": 0.12,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8342,8 +8342,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "chochin",
-      "u": 0.35,
-      "v": 0.258,
+      "u": 0.55,
+      "v": 0.12,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8354,8 +8354,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "flip_board",
-      "u": 0.45,
-      "v": 0.258,
+      "u": 0.65,
+      "v": 0.12,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8366,8 +8366,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "basket",
-      "u": 0.55,
-      "v": 0.258,
+      "u": 0.75,
+      "v": 0.12,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8378,8 +8378,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "backpack",
-      "u": 0.65,
-      "v": 0.258,
+      "u": 0.85,
+      "v": 0.12,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8390,8 +8390,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "cup_saucer",
-      "u": 0.75,
-      "v": 0.258,
+      "u": 0.95,
+      "v": 0.12,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8402,7 +8402,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "plate",
-      "u": 0.85,
+      "u": 0.05,
       "v": 0.258,
       "facing": 0,
       "size": 100,
@@ -8414,7 +8414,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "kitchen_knife",
-      "u": 0.95,
+      "u": 0.15,
       "v": 0.258,
       "facing": 0,
       "size": 100,
@@ -8426,8 +8426,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "cake",
-      "u": 0.05,
-      "v": 0.397,
+      "u": 0.25,
+      "v": 0.258,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8438,8 +8438,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "pistol",
-      "u": 0.15,
-      "v": 0.397,
+      "u": 0.35,
+      "v": 0.258,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8450,8 +8450,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "rifle",
-      "u": 0.25,
-      "v": 0.397,
+      "u": 0.45,
+      "v": 0.258,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8462,8 +8462,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "bow_arrow",
-      "u": 0.35,
-      "v": 0.397,
+      "u": 0.55,
+      "v": 0.258,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8474,8 +8474,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "bus_stop",
-      "u": 0.45,
-      "v": 0.397,
+      "u": 0.65,
+      "v": 0.258,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8486,8 +8486,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "vending_machine",
-      "u": 0.55,
-      "v": 0.397,
+      "u": 0.75,
+      "v": 0.258,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8498,8 +8498,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "traffic_light",
-      "u": 0.65,
-      "v": 0.397,
+      "u": 0.85,
+      "v": 0.258,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8510,8 +8510,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "tree_stump",
-      "u": 0.75,
-      "v": 0.397,
+      "u": 0.95,
+      "v": 0.258,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8522,7 +8522,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "giant_mushroom",
-      "u": 0.85,
+      "u": 0.05,
       "v": 0.397,
       "facing": 0,
       "size": 100,
@@ -8534,7 +8534,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "balcony",
-      "u": 0.95,
+      "u": 0.15,
       "v": 0.397,
       "facing": 0,
       "size": 100,
@@ -8546,8 +8546,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "cloud_cutout",
-      "u": 0.05,
-      "v": 0.535,
+      "u": 0.25,
+      "v": 0.397,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8558,8 +8558,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "crescent_moon",
-      "u": 0.15,
-      "v": 0.535,
+      "u": 0.35,
+      "v": 0.397,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8570,8 +8570,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "sun_moon_disc",
-      "u": 0.25,
-      "v": 0.535,
+      "u": 0.45,
+      "v": 0.397,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8582,8 +8582,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "star_hanging",
-      "u": 0.35,
-      "v": 0.535,
+      "u": 0.55,
+      "v": 0.397,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8594,8 +8594,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "rickshaw",
-      "u": 0.45,
-      "v": 0.535,
+      "u": 0.65,
+      "v": 0.397,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8606,8 +8606,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "wheelchair",
-      "u": 0.55,
-      "v": 0.535,
+      "u": 0.75,
+      "v": 0.397,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8618,8 +8618,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "motorcycle",
-      "u": 0.65,
-      "v": 0.535,
+      "u": 0.85,
+      "v": 0.397,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8630,8 +8630,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "rowboat",
-      "u": 0.75,
-      "v": 0.535,
+      "u": 0.95,
+      "v": 0.397,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8642,7 +8642,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "train_car_section",
-      "u": 0.85,
+      "u": 0.05,
       "v": 0.535,
       "facing": 0,
       "size": 100,
@@ -8654,7 +8654,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "mine_cart",
-      "u": 0.95,
+      "u": 0.15,
       "v": 0.535,
       "facing": 0,
       "size": 100,
@@ -8666,8 +8666,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "kitchen_car",
-      "u": 0.05,
-      "v": 0.673,
+      "u": 0.25,
+      "v": 0.535,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8678,8 +8678,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "stroller",
-      "u": 0.15,
-      "v": 0.673,
+      "u": 0.35,
+      "v": 0.535,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8690,8 +8690,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "harp",
-      "u": 0.25,
-      "v": 0.673,
+      "u": 0.45,
+      "v": 0.535,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8702,8 +8702,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "koto",
-      "u": 0.35,
-      "v": 0.673,
+      "u": 0.55,
+      "v": 0.535,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8714,8 +8714,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "rocking_chair",
-      "u": 0.45,
-      "v": 0.673,
+      "u": 0.65,
+      "v": 0.535,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8726,8 +8726,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "hospital_bed",
-      "u": 0.55,
-      "v": 0.673,
+      "u": 0.75,
+      "v": 0.535,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8738,8 +8738,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "kitchen_unit",
-      "u": 0.65,
-      "v": 0.673,
+      "u": 0.85,
+      "v": 0.535,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8750,8 +8750,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "television_set",
-      "u": 0.75,
-      "v": 0.673,
+      "u": 0.95,
+      "v": 0.535,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8762,7 +8762,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "blackboard",
-      "u": 0.85,
+      "u": 0.05,
       "v": 0.673,
       "facing": 0,
       "size": 100,
@@ -8774,7 +8774,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "futon",
-      "u": 0.95,
+      "u": 0.15,
       "v": 0.673,
       "facing": 0,
       "size": 100,
@@ -8786,8 +8786,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "toilet",
-      "u": 0.05,
-      "v": 0.812,
+      "u": 0.25,
+      "v": 0.673,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8798,8 +8798,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "mannequin",
-      "u": 0.15,
-      "v": 0.812,
+      "u": 0.35,
+      "v": 0.673,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8810,8 +8810,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "grandfather_clock",
-      "u": 0.25,
-      "v": 0.812,
+      "u": 0.45,
+      "v": 0.673,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8822,8 +8822,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "dressing_table",
-      "u": 0.35,
-      "v": 0.812,
+      "u": 0.55,
+      "v": 0.673,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8834,8 +8834,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "lectern_podium",
-      "u": 0.45,
-      "v": 0.812,
+      "u": 0.65,
+      "v": 0.673,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8846,8 +8846,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "cocktail_table",
-      "u": 0.55,
-      "v": 0.812,
+      "u": 0.75,
+      "v": 0.673,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8858,8 +8858,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "hanamichi",
-      "u": 0.65,
-      "v": 0.812,
+      "u": 0.85,
+      "v": 0.673,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8870,8 +8870,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "thrust_extension",
-      "u": 0.75,
-      "v": 0.812,
+      "u": 0.95,
+      "v": 0.673,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8882,7 +8882,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "sub_stage_in_house",
-      "u": 0.85,
+      "u": 0.05,
       "v": 0.812,
       "facing": 0,
       "size": 100,
@@ -8894,7 +8894,7 @@
       "type": "prop",
       "setId": null,
       "propShape": "foh_console",
-      "u": 0.95,
+      "u": 0.15,
       "v": 0.812,
       "facing": 0,
       "size": 100,
@@ -8906,8 +8906,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "camera_tripod_position",
-      "u": 0.05,
-      "v": 0.95,
+      "u": 0.25,
+      "v": 0.812,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8918,8 +8918,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "bleacher_seating",
-      "u": 0.15,
-      "v": 0.95,
+      "u": 0.35,
+      "v": 0.812,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8930,8 +8930,8 @@
       "type": "prop",
       "setId": null,
       "propShape": "flight_case",
-      "u": 0.25,
-      "v": 0.95,
+      "u": 0.45,
+      "v": 0.812,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
@@ -8942,12 +8942,156 @@
       "type": "prop",
       "setId": null,
       "propShape": "rigging_point_mark",
+      "u": 0.55,
+      "v": 0.812,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "吊り点の印（リギングポイント）"
+     },
+     {
+      "id": "ft-c2c-prop-dy",
+      "type": "prop",
+      "setId": null,
+      "propShape": "freestanding_aerial_rig",
+      "u": 0.65,
+      "v": 0.812,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "自立式エアリアルリグ（Aフレーム・門型）"
+     },
+     {
+      "id": "ft-c2c-prop-dz",
+      "type": "prop",
+      "setId": null,
+      "propShape": "safety_net",
+      "u": 0.75,
+      "v": 0.812,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "セーフティネット（落下防止の網）"
+     },
+     {
+      "id": "ft-c2c-prop-e0",
+      "type": "prop",
+      "setId": null,
+      "propShape": "flying_trapeze_rig",
+      "u": 0.85,
+      "v": 0.812,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "フライングトラピーズ一式（台・キャッチバー・ネッ"
+     },
+     {
+      "id": "ft-c2c-prop-e1",
+      "type": "prop",
+      "setId": null,
+      "propShape": "korean_cradle",
+      "u": 0.95,
+      "v": 0.812,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "コリアンクレードル"
+     },
+     {
+      "id": "ft-c2c-prop-e2",
+      "type": "prop",
+      "setId": null,
+      "propShape": "russian_cradle",
+      "u": 0.05,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "ロシアンクレードル（台付き）"
+     },
+     {
+      "id": "ft-c2c-prop-e3",
+      "type": "prop",
+      "setId": null,
+      "propShape": "aerial_ladder",
+      "u": 0.15,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "吊りはしご（ロープラダー）"
+     },
+     {
+      "id": "ft-c2c-prop-e4",
+      "type": "prop",
+      "setId": null,
+      "propShape": "high_wire_tower",
+      "u": 0.25,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "ハイワイヤの櫓（端の支柱と登り台）"
+     },
+     {
+      "id": "ft-c2c-prop-e5",
+      "type": "prop",
+      "setId": null,
+      "propShape": "globe_of_death",
       "u": 0.35,
       "v": 0.95,
       "facing": 0,
       "size": 100,
       "color": "#d3ac59",
-      "name": "吊り点の印（リギングポイント）"
+      "name": "グローブ・オブ・デス（金網の球）"
+     },
+     {
+      "id": "ft-c2c-prop-e6",
+      "type": "prop",
+      "setId": null,
+      "propShape": "crane_hoist",
+      "u": 0.45,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "クレーン（屋外で演者を吊る）"
+     },
+     {
+      "id": "ft-c2c-prop-e7",
+      "type": "prop",
+      "setId": null,
+      "propShape": "lunge_belt",
+      "u": 0.55,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "ロンジ（稽古の補助ベルトと吊り綱）"
+     },
+     {
+      "id": "ft-c2c-prop-e8",
+      "type": "prop",
+      "setId": null,
+      "propShape": "wind_machine",
+      "u": 0.65,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "風送機（大型ファン）"
+     },
+     {
+      "id": "ft-c2c-prop-e9",
+      "type": "prop",
+      "setId": null,
+      "propShape": "water_screen",
+      "u": 0.75,
+      "v": 0.95,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "ウォータースクリーン（水の幕）"
      }
     ],
     "notes": [],
@@ -8975,7 +9119,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-c3-trap-dy",
+      "id": "ft-c3-trap-ea",
       "type": "trapeze",
       "setId": "ft-set-trap",
       "originId": "ft-origin-trap",
@@ -8992,7 +9136,7 @@
       }
      },
      {
-      "id": "ft-c3-p01-dz",
+      "id": "ft-c3-p01-eb",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -9006,7 +9150,7 @@
       "trapMode": "hang"
      },
      {
-      "id": "ft-c3-tissue-e0",
+      "id": "ft-c3-tissue-ec",
       "type": "tissue",
       "setId": "ft-set-tissue",
       "originId": "ft-origin-tissue",
@@ -9022,7 +9166,7 @@
       }
      },
      {
-      "id": "ft-c3-p02-e1",
+      "id": "ft-c3-p02-ed",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -9036,7 +9180,7 @@
       "tissueH": 3.5
      },
      {
-      "id": "ft-c3-pole-e2",
+      "id": "ft-c3-pole-ee",
       "type": "pole",
       "setId": "ft-set-pole",
       "originId": "ft-origin-pole",
@@ -9053,7 +9197,7 @@
       }
      },
      {
-      "id": "ft-c3-p03-e3",
+      "id": "ft-c3-p03-ef",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -9068,7 +9212,7 @@
       "poleH": 4.5
      },
      {
-      "id": "ft-c3-cyr-e4",
+      "id": "ft-c3-cyr-eg",
       "type": "cyrwheel",
       "setId": "ft-set-cyr",
       "originId": "ft-origin-cyr",
@@ -9084,7 +9228,7 @@
       }
      },
      {
-      "id": "ft-c3-p04-e5",
+      "id": "ft-c3-p04-eh",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -9097,7 +9241,7 @@
       "name": ""
      },
      {
-      "id": "ft-c3-teeter-e6",
+      "id": "ft-c3-teeter-ei",
       "type": "teeter",
       "setId": "ft-set-teeter",
       "originId": "ft-origin-teeter",
@@ -9115,7 +9259,7 @@
       }
      },
      {
-      "id": "ft-c3-p05-e7",
+      "id": "ft-c3-p05-ej",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -9128,7 +9272,7 @@
       "name": ""
      },
      {
-      "id": "ft-c3-wire-e8",
+      "id": "ft-c3-wire-ek",
       "type": "wire",
       "setId": "ft-set-wire",
       "originId": "ft-origin-wire",
@@ -9145,7 +9289,7 @@
       }
      },
      {
-      "id": "ft-c3-p06-e9",
+      "id": "ft-c3-p06-el",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -9158,7 +9302,7 @@
       "name": ""
      },
      {
-      "id": "ft-c3-tramp-ea",
+      "id": "ft-c3-tramp-em",
       "type": "trampoline",
       "setId": "ft-set-tramp",
       "originId": "ft-origin-tramp",
@@ -9176,7 +9320,7 @@
       }
      },
      {
-      "id": "ft-c3-p07-eb",
+      "id": "ft-c3-p07-en",
       "type": "performer",
       "castId": "ft-cast-p07",
       "originId": "ft-origin-p07",
@@ -9189,7 +9333,7 @@
       "name": ""
      },
      {
-      "id": "ft-c3-diabolo-ec",
+      "id": "ft-c3-diabolo-eo",
       "type": "diabolo",
       "setId": "ft-set-diabolo",
       "originId": "ft-origin-diabolo",
@@ -9231,7 +9375,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-c4-flown-ed",
+      "id": "ft-c4-flown-ep",
       "type": "block",
       "setId": "ft-set-flown",
       "originId": "ft-origin-flown",
@@ -9249,7 +9393,7 @@
       }
      },
      {
-      "id": "ft-c4-p01-ee",
+      "id": "ft-c4-p01-eq",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -9263,7 +9407,7 @@
       "base": 3.3
      },
      {
-      "id": "ft-c4-block-ef",
+      "id": "ft-c4-block-er",
       "type": "block",
       "setId": "ft-set-block",
       "originId": "ft-origin-block",
@@ -9281,7 +9425,7 @@
       }
      },
      {
-      "id": "ft-c4-p02-eg",
+      "id": "ft-c4-p02-es",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -9295,7 +9439,7 @@
       "base": 0.5
      },
      {
-      "id": "ft-c4-block2-eh",
+      "id": "ft-c4-block2-et",
       "type": "block",
       "setId": "ft-set-block2",
       "originId": "ft-origin-block2",
@@ -9313,7 +9457,7 @@
       }
      },
      {
-      "id": "ft-c4-sphere-ei",
+      "id": "ft-c4-sphere-eu",
       "type": "sphere",
       "setId": "ft-set-sphere",
       "originId": "ft-origin-sphere",
@@ -9375,7 +9519,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-c5-block-ej",
+      "id": "ft-c5-block-ev",
       "type": "block",
       "setId": "ft-set-block",
       "originId": "ft-origin-block",
@@ -9393,7 +9537,7 @@
       }
      },
      {
-      "id": "ft-c5-block2-ek",
+      "id": "ft-c5-block2-ew",
       "type": "block",
       "setId": "ft-set-block2",
       "originId": "ft-origin-block2",
@@ -9412,7 +9556,7 @@
       "base": 0.5
      },
      {
-      "id": "ft-c5-chair-el",
+      "id": "ft-c5-chair-ex",
       "type": "chair",
       "setId": "ft-set-chair",
       "originId": "ft-origin-chair",
@@ -9430,7 +9574,7 @@
       }
      },
      {
-      "id": "ft-c5-p01-em",
+      "id": "ft-c5-p01-ey",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -9469,7 +9613,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-c6-wall0-en",
+      "id": "ft-c6-wall0-ez",
       "type": "wall",
       "setId": null,
       "u": 0.18,
@@ -9485,7 +9629,7 @@
       }
      },
      {
-      "id": "ft-c6-wall45-eo",
+      "id": "ft-c6-wall45-f0",
       "type": "wall",
       "setId": null,
       "u": 0.5,
@@ -9501,7 +9645,7 @@
       }
      },
      {
-      "id": "ft-c6-wall90-ep",
+      "id": "ft-c6-wall90-f1",
       "type": "wall",
       "setId": null,
       "u": 0.82,
@@ -9550,7 +9694,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-d1-seri-eq",
+      "id": "ft-d1-seri-f2",
       "type": "seri",
       "setId": "ft-set-seri",
       "originId": "ft-origin-seri",
@@ -9569,7 +9713,7 @@
       "seriH": 1.5
      },
      {
-      "id": "ft-d1-p01-er",
+      "id": "ft-d1-p01-f3",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -9583,7 +9727,7 @@
       "base": 1.5
      },
      {
-      "id": "ft-d1-seri2-es",
+      "id": "ft-d1-seri2-f4",
       "type": "seri",
       "setId": "ft-set-seri2",
       "originId": "ft-origin-seri2",
@@ -9602,7 +9746,7 @@
       "seriH": -1.2
      },
      {
-      "id": "ft-d1-revolve-et",
+      "id": "ft-d1-revolve-f5",
       "type": "revolve",
       "setId": "ft-set-revolve",
       "originId": "ft-origin-revolve",
@@ -9621,7 +9765,7 @@
       "spinRate": 5
      },
      {
-      "id": "ft-d1-bench-eu",
+      "id": "ft-d1-bench-f6",
       "type": "bench",
       "setId": "ft-set-bench",
       "originId": "ft-origin-bench",
@@ -9639,7 +9783,7 @@
       }
      },
      {
-      "id": "ft-d1-p02-ev",
+      "id": "ft-d1-p02-f7",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -9652,7 +9796,7 @@
       "name": ""
      },
      {
-      "id": "ft-d1-p03-ew",
+      "id": "ft-d1-p03-f8",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -9690,7 +9834,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-d3-deck-ex",
+      "id": "ft-d3-deck-f9",
       "type": "deck",
       "setId": "ft-set-deck",
       "originId": "ft-origin-deck",
@@ -9710,7 +9854,7 @@
       "deckH": 1.2
      },
      {
-      "id": "ft-d3-p04-ey",
+      "id": "ft-d3-p04-fa",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -9724,7 +9868,7 @@
       "base": 1.2
      },
      {
-      "id": "ft-d3-pool-ez",
+      "id": "ft-d3-pool-fb",
       "type": "pool",
       "setId": "ft-set-pool",
       "originId": "ft-origin-pool",
@@ -9744,7 +9888,7 @@
       "poolH": -1.5
      },
      {
-      "id": "ft-d3-p06-f0",
+      "id": "ft-d3-p06-fc",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -9783,7 +9927,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-d4-curtain-front-f1",
+      "id": "ft-d4-curtain-front-fd",
       "type": "curtain",
       "setId": "ft-set-curtain-front",
       "originId": "ft-origin-curtain-front",
@@ -9802,7 +9946,7 @@
       "open": 30
      },
      {
-      "id": "ft-d4-curtain-traveler-f2",
+      "id": "ft-d4-curtain-traveler-fe",
       "type": "curtain",
       "setId": "ft-set-curtain-traveler",
       "originId": "ft-origin-curtain-traveler",
@@ -9821,7 +9965,7 @@
       "open": 60
      },
      {
-      "id": "ft-d4-curtain-drop-f3",
+      "id": "ft-d4-curtain-drop-ff",
       "type": "curtain",
       "setId": "ft-set-curtain-drop",
       "originId": "ft-origin-curtain-drop",
@@ -9840,7 +9984,7 @@
       "open": 100
      },
      {
-      "id": "ft-d4-curtain-leg-f4",
+      "id": "ft-d4-curtain-leg-fg",
       "type": "curtain",
       "setId": "ft-set-curtain-leg",
       "originId": "ft-origin-curtain-leg",
@@ -9859,7 +10003,7 @@
       "open": 0
      },
      {
-      "id": "ft-d4-curtain-cyc-f5",
+      "id": "ft-d4-curtain-cyc-fh",
       "type": "curtain",
       "setId": "ft-set-curtain-cyc",
       "originId": "ft-origin-curtain-cyc",
@@ -9878,7 +10022,7 @@
       "open": 0
      },
      {
-      "id": "ft-d4-curtain-scrim-white-f6",
+      "id": "ft-d4-curtain-scrim-white-fi",
       "type": "curtain",
       "setId": "ft-set-curtain-scrim-white",
       "originId": "ft-origin-curtain-scrim-white",
@@ -9897,7 +10041,7 @@
       "sheer": 25
      },
      {
-      "id": "ft-d4-curtain-scrim-black-f7",
+      "id": "ft-d4-curtain-scrim-black-fj",
       "type": "curtain",
       "setId": "ft-set-curtain-scrim-black",
       "originId": "ft-origin-curtain-scrim-black",
@@ -9916,7 +10060,7 @@
       "sheer": 75
      },
      {
-      "id": "ft-d4-p05-f8",
+      "id": "ft-d4-p05-fk",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -9961,7 +10105,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-e1-l-hang-f9",
+      "id": "ft-e1-l-hang-fl",
       "type": "light",
       "setId": "ft-set-l-hang",
       "originId": "ft-origin-l-hang",
@@ -9980,7 +10124,7 @@
       "glow": 1
      },
      {
-      "id": "ft-e1-l-ss-fa",
+      "id": "ft-e1-l-ss-fm",
       "type": "light",
       "setId": "ft-set-l-ss",
       "originId": "ft-origin-l-ss",
@@ -9999,7 +10143,7 @@
       "glow": 0.4
      },
      {
-      "id": "ft-e1-l-front-fb",
+      "id": "ft-e1-l-front-fn",
       "type": "light",
       "setId": "ft-set-l-front",
       "originId": "ft-origin-l-front",
@@ -10018,7 +10162,7 @@
       "glow": 1.5
      },
      {
-      "id": "ft-e1-l-floor-fc",
+      "id": "ft-e1-l-floor-fo",
       "type": "light",
       "setId": "ft-set-l-floor",
       "originId": "ft-origin-l-floor",
@@ -10037,7 +10181,7 @@
       "glow": 1
      },
      {
-      "id": "ft-e1-p01-fd",
+      "id": "ft-e1-p01-fp",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -10050,7 +10194,7 @@
       "name": ""
      },
      {
-      "id": "ft-e1-p02-fe",
+      "id": "ft-e1-p02-fq",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -10063,7 +10207,7 @@
       "name": ""
      },
      {
-      "id": "ft-e1-p03-ff",
+      "id": "ft-e1-p03-fr",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -10076,7 +10220,7 @@
       "name": ""
      },
      {
-      "id": "ft-e1-l-grp-a-fg",
+      "id": "ft-e1-l-grp-a-fs",
       "type": "light",
       "setId": "ft-set-l-grp-a",
       "originId": "ft-origin-l-grp-a",
@@ -10095,7 +10239,7 @@
       "glow": 1
      },
      {
-      "id": "ft-e1-l-grp-b-fh",
+      "id": "ft-e1-l-grp-b-ft",
       "type": "light",
       "setId": "ft-set-l-grp-b",
       "originId": "ft-origin-l-grp-b",
@@ -10114,7 +10258,7 @@
       "glow": 1
      },
      {
-      "id": "ft-e1-l-hang2-fi",
+      "id": "ft-e1-l-hang2-fu",
       "type": "light",
       "setId": "ft-set-l-hang2",
       "originId": "ft-origin-l-hang2",
@@ -10139,7 +10283,7 @@
       }
      },
      {
-      "id": "ft-e1-p04-fj",
+      "id": "ft-e1-p04-fv",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -10152,7 +10296,7 @@
       "name": ""
      },
      {
-      "id": "ft-e1-p05-fk",
+      "id": "ft-e1-p05-fw",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -10190,7 +10334,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-e3-l-hang2-fl",
+      "id": "ft-e3-l-hang2-fx",
       "type": "light",
       "setId": "ft-set-l-hang2",
       "originId": "ft-origin-l-hang2",
@@ -10216,7 +10360,7 @@
       }
      },
      {
-      "id": "ft-e3-p06-fm",
+      "id": "ft-e3-p06-fy",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -10306,7 +10450,7 @@
         "background": "#40362d",
         "pieces": [
          {
-          "id": "ft-f1-p01-fn",
+          "id": "ft-f1-p01-fz",
           "type": "performer",
           "castId": "ft-cast-p01",
           "originId": "ft-origin-p01",
@@ -10319,7 +10463,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-p02-fo",
+          "id": "ft-f1-p02-g0",
           "type": "performer",
           "castId": "ft-cast-p02",
           "originId": "ft-origin-p02",
@@ -10332,7 +10476,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-p05-fp",
+          "id": "ft-f1-p05-g1",
           "type": "performer",
           "castId": "ft-cast-p05",
           "originId": "ft-origin-p05",
@@ -10345,7 +10489,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-block-fq",
+          "id": "ft-f1-block-g2",
           "type": "block",
           "setId": "ft-set-block",
           "originId": "ft-origin-block",
@@ -10640,7 +10784,7 @@
         "background": "#40362d",
         "pieces": [
          {
-          "id": "ft-f1-p01-fn",
+          "id": "ft-f1-p01-fz",
           "type": "performer",
           "castId": "ft-cast-p01",
           "originId": "ft-origin-p01",
@@ -10653,7 +10797,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-p02-fo",
+          "id": "ft-f1-p02-g0",
           "type": "performer",
           "castId": "ft-cast-p02",
           "originId": "ft-origin-p02",
@@ -10666,7 +10810,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-p05-fp",
+          "id": "ft-f1-p05-g1",
           "type": "performer",
           "castId": "ft-cast-p05",
           "originId": "ft-origin-p05",
@@ -10679,7 +10823,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-block-fq",
+          "id": "ft-f1-block-g2",
           "type": "block",
           "setId": "ft-set-block",
           "originId": "ft-origin-block",
@@ -10975,7 +11119,7 @@
         "background": "#40362d",
         "pieces": [
          {
-          "id": "ft-f1-p01-fn",
+          "id": "ft-f1-p01-fz",
           "type": "performer",
           "castId": "ft-cast-p01",
           "originId": "ft-origin-p01",
@@ -10988,7 +11132,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-p02-fo",
+          "id": "ft-f1-p02-g0",
           "type": "performer",
           "castId": "ft-cast-p02",
           "originId": "ft-origin-p02",
@@ -11001,7 +11145,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-p05-fp",
+          "id": "ft-f1-p05-g1",
           "type": "performer",
           "castId": "ft-cast-p05",
           "originId": "ft-origin-p05",
@@ -11014,7 +11158,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-block-fq",
+          "id": "ft-f1-block-g2",
           "type": "block",
           "setId": "ft-set-block",
           "originId": "ft-origin-block",
@@ -11310,7 +11454,7 @@
         "background": "#40362d",
         "pieces": [
          {
-          "id": "ft-f1-p01-fn",
+          "id": "ft-f1-p01-fz",
           "type": "performer",
           "castId": "ft-cast-p01",
           "originId": "ft-origin-p01",
@@ -11323,7 +11467,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-p02-fo",
+          "id": "ft-f1-p02-g0",
           "type": "performer",
           "castId": "ft-cast-p02",
           "originId": "ft-origin-p02",
@@ -11336,7 +11480,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-p05-fp",
+          "id": "ft-f1-p05-g1",
           "type": "performer",
           "castId": "ft-cast-p05",
           "originId": "ft-origin-p05",
@@ -11349,7 +11493,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-block-fq",
+          "id": "ft-f1-block-g2",
           "type": "block",
           "setId": "ft-set-block",
           "originId": "ft-origin-block",
@@ -11641,7 +11785,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-f1-p01-fn",
+      "id": "ft-f1-p01-fz",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -11654,7 +11798,7 @@
       "name": ""
      },
      {
-      "id": "ft-f1-p02-fo",
+      "id": "ft-f1-p02-g0",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -11667,7 +11811,7 @@
       "name": ""
      },
      {
-      "id": "ft-f1-p05-fp",
+      "id": "ft-f1-p05-g1",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -11680,7 +11824,7 @@
       "name": ""
      },
      {
-      "id": "ft-f1-block-fq",
+      "id": "ft-f1-block-g2",
       "type": "block",
       "setId": "ft-set-block",
       "originId": "ft-origin-block",
@@ -11723,7 +11867,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-f2-p03-fr",
+      "id": "ft-f2-p03-g3",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -11761,7 +11905,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-f3-p04-fs",
+      "id": "ft-f3-p04-g4",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -11774,7 +11918,7 @@
       "name": ""
      },
      {
-      "id": "ft-f3-p05-ft",
+      "id": "ft-f3-p05-g5",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -11812,7 +11956,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-f4-p06-fu",
+      "id": "ft-f4-p06-g6",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -11857,7 +12001,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-g1-p01-fv",
+      "id": "ft-g1-p01-g7",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -11870,7 +12014,7 @@
       "name": ""
      },
      {
-      "id": "ft-g1-p02-fw",
+      "id": "ft-g1-p02-g8",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -11897,7 +12041,7 @@
       "view": "front",
       "x": 400,
       "y": 200,
-      "pieceId": "ft-g1-p01-fv",
+      "pieceId": "ft-g1-p01-g7",
       "text": "演者01に付いて回る付箋"
      },
      {
@@ -12006,7 +12150,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-g2-p03-fx",
+      "id": "ft-g2-p03-g9",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -12144,7 +12288,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-g3-p04-fy",
+      "id": "ft-g3-p04-ga",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -12259,7 +12403,7 @@
     "background": "#1a2340",
     "pieces": [
      {
-      "id": "ft-g5-p05-fz",
+      "id": "ft-g5-p05-gb",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -12272,7 +12416,7 @@
       "name": ""
      },
      {
-      "id": "ft-g5-p06-g0",
+      "id": "ft-g5-p06-gc",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -12314,7 +12458,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-g6-p01-g2",
+      "id": "ft-g6-p01-ge",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -12333,7 +12477,7 @@
       }
      },
      {
-      "id": "ft-g6-p02-g3",
+      "id": "ft-g6-p02-gf",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -12352,7 +12496,7 @@
       }
      },
      {
-      "id": "ft-g6-p03-g4",
+      "id": "ft-g6-p03-gg",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -12371,7 +12515,7 @@
       }
      },
      {
-      "id": "ft-g6-block-g5",
+      "id": "ft-g6-block-gh",
       "type": "block",
       "setId": "ft-set-block",
       "originId": "ft-origin-block",
@@ -12395,7 +12539,7 @@
       }
      },
      {
-      "id": "ft-g6-l-hang-g6",
+      "id": "ft-g6-l-hang-gi",
       "type": "light",
       "setId": "ft-set-l-hang",
       "originId": "ft-origin-l-hang",
@@ -12420,7 +12564,7 @@
       }
      },
      {
-      "id": "ft-g6-p04-g7",
+      "id": "ft-g6-p04-gj",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -12433,7 +12577,7 @@
       "name": ""
      },
      {
-      "id": "ft-g6-curtain-scrim-white-g1",
+      "id": "ft-g6-curtain-scrim-white-gd",
       "type": "curtain",
       "setId": "ft-set-curtain-scrim-white",
       "originId": "ft-origin-curtain-scrim-white",
@@ -12458,7 +12602,7 @@
     "arrows": [],
     "screenTexts": [
      {
-      "id": "ft-sct-ft-g6-curtain-scrim-white-g1",
+      "id": "ft-sct-ft-g6-curtain-scrim-white-gd",
       "text": "しずかな雨",
       "u": 0.5,
       "v": 0.18,
@@ -12468,7 +12612,7 @@
       "vertical": false,
       "opacity": 1,
       "angle": 0,
-      "surfaceId": "ft-g6-curtain-scrim-white-g1"
+      "surfaceId": "ft-g6-curtain-scrim-white-gd"
      }
     ],
     "beat": {
@@ -12492,7 +12636,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-g7-p01-g9",
+      "id": "ft-g7-p01-gl",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -12505,7 +12649,7 @@
       "name": ""
      },
      {
-      "id": "ft-g7-p02-ga",
+      "id": "ft-g7-p02-gm",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -12518,7 +12662,7 @@
       "name": ""
      },
      {
-      "id": "ft-g7-p03-gb",
+      "id": "ft-g7-p03-gn",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -12531,7 +12675,7 @@
       "name": ""
      },
      {
-      "id": "ft-g7-block-gc",
+      "id": "ft-g7-block-go",
       "type": "block",
       "setId": "ft-set-block",
       "originId": "ft-origin-block",
@@ -12549,7 +12693,7 @@
       }
      },
      {
-      "id": "ft-g7-l-hang-gd",
+      "id": "ft-g7-l-hang-gp",
       "type": "light",
       "setId": "ft-set-l-hang",
       "originId": "ft-origin-l-hang",
@@ -12568,7 +12712,7 @@
       "glow": 1
      },
      {
-      "id": "ft-g7-p04-ge",
+      "id": "ft-g7-p04-gq",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -12581,7 +12725,7 @@
       "name": ""
      },
      {
-      "id": "ft-g7-curtain-scrim-white-g8",
+      "id": "ft-g7-curtain-scrim-white-gk",
       "type": "curtain",
       "setId": "ft-set-curtain-scrim-white",
       "originId": "ft-origin-curtain-scrim-white",
@@ -12606,7 +12750,7 @@
     "arrows": [],
     "screenTexts": [
      {
-      "id": "ft-sct-ft-g7-curtain-scrim-white-g8",
+      "id": "ft-sct-ft-g7-curtain-scrim-white-gk",
       "text": "しずかな雨",
       "u": 0.5,
       "v": 0.18,
@@ -12616,7 +12760,7 @@
       "vertical": false,
       "opacity": 1,
       "angle": 0,
-      "surfaceId": "ft-g7-curtain-scrim-white-g8"
+      "surfaceId": "ft-g7-curtain-scrim-white-gk"
      }
     ],
     "beat": {
@@ -12659,7 +12803,7 @@
         "background": "#40362d",
         "pieces": [
          {
-          "id": "ft-h1-p01-gf",
+          "id": "ft-h1-p01-gr",
           "type": "performer",
           "castId": "ft-cast-p01",
           "originId": "ft-origin-p01",
@@ -12729,7 +12873,7 @@
         "background": "#40362d",
         "pieces": [
          {
-          "id": "ft-h1-p01-gf",
+          "id": "ft-h1-p01-gr",
           "type": "performer",
           "castId": "ft-cast-p01",
           "originId": "ft-origin-p01",
@@ -12800,7 +12944,7 @@
         "background": "#40362d",
         "pieces": [
          {
-          "id": "ft-h1-p01-gf",
+          "id": "ft-h1-p01-gr",
           "type": "performer",
           "castId": "ft-cast-p01",
           "originId": "ft-origin-p01",
@@ -12871,7 +13015,7 @@
         "background": "#40362d",
         "pieces": [
          {
-          "id": "ft-h1-p01-gf",
+          "id": "ft-h1-p01-gr",
           "type": "performer",
           "castId": "ft-cast-p01",
           "originId": "ft-origin-p01",
@@ -12938,7 +13082,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-h1-p01-gf",
+      "id": "ft-h1-p01-gr",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -12976,7 +13120,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-h2-p02-gg",
+      "id": "ft-h2-p02-gs",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -13015,7 +13159,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-h3-p03-gi",
+      "id": "ft-h3-p03-gu",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -13028,7 +13172,7 @@
       "name": ""
      },
      {
-      "id": "ft-h3-p01-gh",
+      "id": "ft-h3-p01-gt",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -13047,7 +13191,7 @@
       }
      },
      {
-      "id": "ft-h3-prop-ball-gj",
+      "id": "ft-h3-prop-ball-gv",
       "type": "prop",
       "setId": "ft-set-prop-ball",
       "originId": "ft-origin-prop-ball",
@@ -13058,7 +13202,7 @@
       "color": "#d3ac59",
       "name": "",
       "propShape": "ball",
-      "heldBy": "ft-h3-p01-gh",
+      "heldBy": "ft-h3-p01-gt",
       "holdSide": "R",
       "holdMode": "hand"
      }
@@ -13089,7 +13233,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-h4-p04-gl",
+      "id": "ft-h4-p04-gx",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -13102,7 +13246,7 @@
       "name": ""
      },
      {
-      "id": "ft-h4-p01-gm",
+      "id": "ft-h4-p01-gy",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -13115,7 +13259,7 @@
       "name": ""
      },
      {
-      "id": "ft-h4-p02-gk",
+      "id": "ft-h4-p02-gw",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -13128,7 +13272,7 @@
       "name": ""
      },
      {
-      "id": "ft-h4-prop-ball-gn",
+      "id": "ft-h4-prop-ball-gz",
       "type": "prop",
       "setId": "ft-set-prop-ball",
       "originId": "ft-origin-prop-ball",
@@ -13139,7 +13283,7 @@
       "color": "#d3ac59",
       "name": "",
       "propShape": "ball",
-      "heldBy": "ft-h4-p02-gk",
+      "heldBy": "ft-h4-p02-gw",
       "holdSide": "L",
       "holdMode": "hand"
      }
@@ -13177,7 +13321,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-i1-p05-go",
+      "id": "ft-i1-p05-h0",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -13222,7 +13366,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-i2-p06-gp",
+      "id": "ft-i2-p06-h1",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -13260,7 +13404,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-i3-p06-gq",
+      "id": "ft-i3-p06-h2",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -13298,7 +13442,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-i4-p06-gr",
+      "id": "ft-i4-p06-h3",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -13311,7 +13455,7 @@
       "name": ""
      },
      {
-      "id": "ft-i4-p07-gs",
+      "id": "ft-i4-p07-h4",
       "type": "performer",
       "castId": "ft-cast-p07",
       "originId": "ft-origin-p07",
@@ -13349,7 +13493,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-i5-p06-gt",
+      "id": "ft-i5-p06-h5",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -13362,7 +13506,7 @@
       "name": ""
      },
      {
-      "id": "ft-i5-p07-gu",
+      "id": "ft-i5-p07-h6",
       "type": "performer",
       "castId": "ft-cast-p07",
       "originId": "ft-origin-p07",
@@ -13408,7 +13552,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-j1-p01-hp",
+      "id": "ft-j1-p01-i1",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -13421,7 +13565,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p02-hq",
+      "id": "ft-j1-p02-i2",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -13434,7 +13578,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p03-hr",
+      "id": "ft-j1-p03-i3",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -13447,7 +13591,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p04-hs",
+      "id": "ft-j1-p04-i4",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -13460,7 +13604,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p05-ht",
+      "id": "ft-j1-p05-i5",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -13473,7 +13617,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p06-hu",
+      "id": "ft-j1-p06-i6",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -13486,7 +13630,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p07-hv",
+      "id": "ft-j1-p07-i7",
       "type": "performer",
       "castId": "ft-cast-p07",
       "originId": "ft-origin-p07",
@@ -13499,7 +13643,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p08-hw",
+      "id": "ft-j1-p08-i8",
       "type": "performer",
       "castId": "ft-cast-p08",
       "originId": "ft-origin-p08",
@@ -13512,7 +13656,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p09-hx",
+      "id": "ft-j1-p09-i9",
       "type": "performer",
       "castId": "ft-cast-p09",
       "originId": "ft-origin-p09",
@@ -13525,7 +13669,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p10-hy",
+      "id": "ft-j1-p10-ia",
       "type": "performer",
       "castId": "ft-cast-p10",
       "originId": "ft-origin-p10",
@@ -13538,7 +13682,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p11-hz",
+      "id": "ft-j1-p11-ib",
       "type": "performer",
       "castId": "ft-cast-p11",
       "originId": "ft-origin-p11",
@@ -13551,7 +13695,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p12-i0",
+      "id": "ft-j1-p12-ic",
       "type": "performer",
       "castId": "ft-cast-p12",
       "originId": "ft-origin-p12",
@@ -13564,7 +13708,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p13-i1",
+      "id": "ft-j1-p13-id",
       "type": "performer",
       "castId": "ft-cast-p13",
       "originId": "ft-origin-p13",
@@ -13577,7 +13721,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p14-i2",
+      "id": "ft-j1-p14-ie",
       "type": "performer",
       "castId": "ft-cast-p14",
       "originId": "ft-origin-p14",
@@ -13590,7 +13734,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p15-i3",
+      "id": "ft-j1-p15-if",
       "type": "performer",
       "castId": "ft-cast-p15",
       "originId": "ft-origin-p15",
@@ -13603,7 +13747,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p16-i4",
+      "id": "ft-j1-p16-ig",
       "type": "performer",
       "castId": "ft-cast-p16",
       "originId": "ft-origin-p16",
@@ -13616,7 +13760,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p17-i5",
+      "id": "ft-j1-p17-ih",
       "type": "performer",
       "castId": "ft-cast-p17",
       "originId": "ft-origin-p17",
@@ -13629,7 +13773,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p18-i6",
+      "id": "ft-j1-p18-ii",
       "type": "performer",
       "castId": "ft-cast-p18",
       "originId": "ft-origin-p18",
@@ -13642,7 +13786,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p19-i7",
+      "id": "ft-j1-p19-ij",
       "type": "performer",
       "castId": "ft-cast-p19",
       "originId": "ft-origin-p19",
@@ -13655,7 +13799,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p20-i8",
+      "id": "ft-j1-p20-ik",
       "type": "performer",
       "castId": "ft-cast-p20",
       "originId": "ft-origin-p20",
@@ -13668,7 +13812,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-np-gv",
+      "id": "ft-j1-np-h7",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13681,7 +13825,7 @@
       "name": "juggle_one_hand"
      },
      {
-      "id": "ft-j1-np-gw",
+      "id": "ft-j1-np-h8",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13694,7 +13838,7 @@
       "name": "face_balance"
      },
      {
-      "id": "ft-j1-np-gx",
+      "id": "ft-j1-np-h9",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13707,7 +13851,7 @@
       "name": "diabolo_spin"
      },
      {
-      "id": "ft-j1-np-gy",
+      "id": "ft-j1-np-ha",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13720,7 +13864,7 @@
       "name": "diabolo_high_toss"
      },
      {
-      "id": "ft-j1-np-gz",
+      "id": "ft-j1-np-hb",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13733,7 +13877,7 @@
       "name": "cigarbox_hold"
      },
      {
-      "id": "ft-j1-np-h0",
+      "id": "ft-j1-np-hc",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13746,7 +13890,7 @@
       "name": "devilstick_play"
      },
      {
-      "id": "ft-j1-np-h1",
+      "id": "ft-j1-np-hd",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13759,7 +13903,7 @@
       "name": "poi_spin"
      },
      {
-      "id": "ft-j1-np-h2",
+      "id": "ft-j1-np-he",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13772,7 +13916,7 @@
       "name": "hoop_waist_spin"
      },
      {
-      "id": "ft-j1-np-h3",
+      "id": "ft-j1-np-hf",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13785,7 +13929,7 @@
       "name": "rolabola_stand"
      },
      {
-      "id": "ft-j1-np-h4",
+      "id": "ft-j1-np-hg",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13798,7 +13942,7 @@
       "name": "germanwheel_ride"
      },
      {
-      "id": "ft-j1-np-h5",
+      "id": "ft-j1-np-hh",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13811,7 +13955,7 @@
       "name": "ride_astride"
      },
      {
-      "id": "ft-j1-np-h6",
+      "id": "ft-j1-np-hi",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13824,7 +13968,7 @@
       "name": "doublebass_play"
      },
      {
-      "id": "ft-j1-np-h7",
+      "id": "ft-j1-np-hj",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13837,7 +13981,7 @@
       "name": "dj_play"
      },
      {
-      "id": "ft-j1-np-h8",
+      "id": "ft-j1-np-hk",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13850,7 +13994,7 @@
       "name": "kyudo_draw"
      },
      {
-      "id": "ft-j1-np-h9",
+      "id": "ft-j1-np-hl",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13863,7 +14007,7 @@
       "name": "h2h_base_stand"
      },
      {
-      "id": "ft-j1-np-ha",
+      "id": "ft-j1-np-hm",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13876,7 +14020,7 @@
       "name": "base_supine_legs_up"
      },
      {
-      "id": "ft-j1-np-hb",
+      "id": "ft-j1-np-hn",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13889,7 +14033,7 @@
       "name": "two_high_base"
      },
      {
-      "id": "ft-j1-np-hc",
+      "id": "ft-j1-np-ho",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13902,7 +14046,7 @@
       "name": "shoulder_ride_base"
      },
      {
-      "id": "ft-j1-np-hd",
+      "id": "ft-j1-np-hp",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13915,7 +14059,7 @@
       "name": "banquine_base"
      },
      {
-      "id": "ft-j1-np-he",
+      "id": "ft-j1-np-hq",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13928,7 +14072,7 @@
       "name": "bridal_carry_base"
      },
      {
-      "id": "ft-j1-np-hf",
+      "id": "ft-j1-np-hr",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13941,7 +14085,7 @@
       "name": "piggyback_base"
      },
      {
-      "id": "ft-j1-np-hg",
+      "id": "ft-j1-np-hs",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13954,7 +14098,7 @@
       "name": "hug_holder"
      },
      {
-      "id": "ft-j1-np-hh",
+      "id": "ft-j1-np-ht",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13967,7 +14111,7 @@
       "name": "hand_in_hand"
      },
      {
-      "id": "ft-j1-np-hi",
+      "id": "ft-j1-np-hu",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13980,7 +14124,7 @@
       "name": "shoulder_arm"
      },
      {
-      "id": "ft-j1-np-hj",
+      "id": "ft-j1-np-hv",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -13993,7 +14137,7 @@
       "name": "whisper"
      },
      {
-      "id": "ft-j1-np-hk",
+      "id": "ft-j1-np-hw",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -14006,7 +14150,7 @@
       "name": "handshake"
      },
      {
-      "id": "ft-j1-np-hl",
+      "id": "ft-j1-np-hx",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -14019,7 +14163,7 @@
       "name": "propose_kneel"
      },
      {
-      "id": "ft-j1-np-hm",
+      "id": "ft-j1-np-hy",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -14032,7 +14176,7 @@
       "name": "reach_up_help"
      },
      {
-      "id": "ft-j1-np-hn",
+      "id": "ft-j1-np-hz",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -14045,7 +14189,7 @@
       "name": "pole_climb"
      },
      {
-      "id": "ft-j1-np-ho",
+      "id": "ft-j1-np-i0",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -14058,143 +14202,11 @@
       "name": "pole_layback"
      },
      {
-      "id": "ft-j1-box-i9",
-      "type": "chair",
-      "setId": null,
-      "u": 0.06,
-      "v": 0.75,
-      "facing": 0,
-      "size": 100,
-      "color": "#5b4a3a",
-      "name": ""
-     },
-     {
-      "id": "ft-j1-box-ia",
-      "type": "block",
-      "setId": null,
-      "u": 0.158,
-      "v": 0.75,
-      "facing": 0,
-      "size": 100,
-      "color": "#efe7d6",
-      "name": ""
-     },
-     {
-      "id": "ft-j1-box-ib",
-      "type": "chair",
-      "setId": null,
-      "u": 0.256,
-      "v": 0.75,
-      "facing": 0,
-      "size": 100,
-      "color": "#5b4a3a",
-      "name": ""
-     },
-     {
-      "id": "ft-j1-box-ic",
-      "type": "block",
-      "setId": null,
-      "u": 0.353,
-      "v": 0.75,
-      "facing": 0,
-      "size": 100,
-      "color": "#efe7d6",
-      "name": ""
-     },
-     {
-      "id": "ft-j1-box-id",
-      "type": "chair",
-      "setId": null,
-      "u": 0.451,
-      "v": 0.75,
-      "facing": 0,
-      "size": 100,
-      "color": "#5b4a3a",
-      "name": ""
-     },
-     {
-      "id": "ft-j1-box-ie",
-      "type": "block",
-      "setId": null,
-      "u": 0.549,
-      "v": 0.75,
-      "facing": 0,
-      "size": 100,
-      "color": "#efe7d6",
-      "name": ""
-     },
-     {
-      "id": "ft-j1-box-if",
-      "type": "chair",
-      "setId": null,
-      "u": 0.647,
-      "v": 0.75,
-      "facing": 0,
-      "size": 100,
-      "color": "#5b4a3a",
-      "name": ""
-     },
-     {
-      "id": "ft-j1-box-ig",
-      "type": "block",
-      "setId": null,
-      "u": 0.744,
-      "v": 0.75,
-      "facing": 0,
-      "size": 100,
-      "color": "#efe7d6",
-      "name": ""
-     },
-     {
-      "id": "ft-j1-box-ih",
-      "type": "chair",
-      "setId": null,
-      "u": 0.842,
-      "v": 0.75,
-      "facing": 0,
-      "size": 100,
-      "color": "#5b4a3a",
-      "name": ""
-     },
-     {
-      "id": "ft-j1-box-ii",
-      "type": "block",
-      "setId": null,
-      "u": 0.94,
-      "v": 0.75,
-      "facing": 0,
-      "size": 100,
-      "color": "#efe7d6",
-      "name": ""
-     },
-     {
-      "id": "ft-j1-box-ij",
-      "type": "chair",
-      "setId": null,
-      "u": 0.06,
-      "v": 0.825,
-      "facing": 0,
-      "size": 100,
-      "color": "#5b4a3a",
-      "name": ""
-     },
-     {
-      "id": "ft-j1-box-ik",
-      "type": "block",
-      "setId": null,
-      "u": 0.158,
-      "v": 0.825,
-      "facing": 0,
-      "size": 100,
-      "color": "#efe7d6",
-      "name": ""
-     },
-     {
       "id": "ft-j1-box-il",
       "type": "chair",
       "setId": null,
-      "u": 0.256,
-      "v": 0.825,
+      "u": 0.06,
+      "v": 0.75,
       "facing": 0,
       "size": 100,
       "color": "#5b4a3a",
@@ -14204,6 +14216,138 @@
       "id": "ft-j1-box-im",
       "type": "block",
       "setId": null,
+      "u": 0.158,
+      "v": 0.75,
+      "facing": 0,
+      "size": 100,
+      "color": "#efe7d6",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-in",
+      "type": "chair",
+      "setId": null,
+      "u": 0.256,
+      "v": 0.75,
+      "facing": 0,
+      "size": 100,
+      "color": "#5b4a3a",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-io",
+      "type": "block",
+      "setId": null,
+      "u": 0.353,
+      "v": 0.75,
+      "facing": 0,
+      "size": 100,
+      "color": "#efe7d6",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-ip",
+      "type": "chair",
+      "setId": null,
+      "u": 0.451,
+      "v": 0.75,
+      "facing": 0,
+      "size": 100,
+      "color": "#5b4a3a",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-iq",
+      "type": "block",
+      "setId": null,
+      "u": 0.549,
+      "v": 0.75,
+      "facing": 0,
+      "size": 100,
+      "color": "#efe7d6",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-ir",
+      "type": "chair",
+      "setId": null,
+      "u": 0.647,
+      "v": 0.75,
+      "facing": 0,
+      "size": 100,
+      "color": "#5b4a3a",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-is",
+      "type": "block",
+      "setId": null,
+      "u": 0.744,
+      "v": 0.75,
+      "facing": 0,
+      "size": 100,
+      "color": "#efe7d6",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-it",
+      "type": "chair",
+      "setId": null,
+      "u": 0.842,
+      "v": 0.75,
+      "facing": 0,
+      "size": 100,
+      "color": "#5b4a3a",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-iu",
+      "type": "block",
+      "setId": null,
+      "u": 0.94,
+      "v": 0.75,
+      "facing": 0,
+      "size": 100,
+      "color": "#efe7d6",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-iv",
+      "type": "chair",
+      "setId": null,
+      "u": 0.06,
+      "v": 0.825,
+      "facing": 0,
+      "size": 100,
+      "color": "#5b4a3a",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-iw",
+      "type": "block",
+      "setId": null,
+      "u": 0.158,
+      "v": 0.825,
+      "facing": 0,
+      "size": 100,
+      "color": "#efe7d6",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-ix",
+      "type": "chair",
+      "setId": null,
+      "u": 0.256,
+      "v": 0.825,
+      "facing": 0,
+      "size": 100,
+      "color": "#5b4a3a",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-iy",
+      "type": "block",
+      "setId": null,
       "u": 0.353,
       "v": 0.825,
       "facing": 0,
@@ -14212,7 +14356,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-box-in",
+      "id": "ft-j1-box-iz",
       "type": "chair",
       "setId": null,
       "u": 0.451,
@@ -14223,7 +14367,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-box-io",
+      "id": "ft-j1-box-j0",
       "type": "block",
       "setId": null,
       "u": 0.549,
@@ -14234,7 +14378,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-box-ip",
+      "id": "ft-j1-box-j1",
       "type": "chair",
       "setId": null,
       "u": 0.647,
@@ -14245,7 +14389,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-box-iq",
+      "id": "ft-j1-box-j2",
       "type": "block",
       "setId": null,
       "u": 0.744,
@@ -14256,7 +14400,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-box-ir",
+      "id": "ft-j1-box-j3",
       "type": "chair",
       "setId": null,
       "u": 0.842,
@@ -14267,7 +14411,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-box-is",
+      "id": "ft-j1-box-j4",
       "type": "block",
       "setId": null,
       "u": 0.94,
@@ -14278,7 +14422,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-box-it",
+      "id": "ft-j1-box-j5",
       "type": "chair",
       "setId": null,
       "u": 0.06,
@@ -14289,7 +14433,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-box-iu",
+      "id": "ft-j1-box-j6",
       "type": "block",
       "setId": null,
       "u": 0.158,
@@ -14300,7 +14444,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-box-iv",
+      "id": "ft-j1-box-j7",
       "type": "chair",
       "setId": null,
       "u": 0.256,
@@ -14311,7 +14455,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-box-iw",
+      "id": "ft-j1-box-j8",
       "type": "block",
       "setId": null,
       "u": 0.353,
@@ -14322,7 +14466,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-box-ix",
+      "id": "ft-j1-box-j9",
       "type": "chair",
       "setId": null,
       "u": 0.451,
@@ -14333,7 +14477,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-box-iy",
+      "id": "ft-j1-box-ja",
       "type": "block",
       "setId": null,
       "u": 0.549,
@@ -14344,7 +14488,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-box-iz",
+      "id": "ft-j1-box-jb",
       "type": "chair",
       "setId": null,
       "u": 0.647,
@@ -14355,7 +14499,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-box-j0",
+      "id": "ft-j1-box-jc",
       "type": "block",
       "setId": null,
       "u": 0.744,
@@ -14366,7 +14510,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-box-j1",
+      "id": "ft-j1-box-jd",
       "type": "chair",
       "setId": null,
       "u": 0.842,
@@ -14377,7 +14521,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-box-j2",
+      "id": "ft-j1-box-je",
       "type": "block",
       "setId": null,
       "u": 0.94,
@@ -14413,7 +14557,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-j2-p01-j3",
+      "id": "ft-j2-p01-jf",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -14426,7 +14570,7 @@
       "name": ""
      },
      {
-      "id": "ft-j2-p02-j4",
+      "id": "ft-j2-p02-jg",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -14439,7 +14583,7 @@
       "name": ""
      },
      {
-      "id": "ft-j2-p03-j5",
+      "id": "ft-j2-p03-jh",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -14452,7 +14596,7 @@
       "name": ""
      },
      {
-      "id": "ft-j2-p04-j6",
+      "id": "ft-j2-p04-ji",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -14465,7 +14609,7 @@
       "name": ""
      },
      {
-      "id": "ft-j2-p05-j7",
+      "id": "ft-j2-p05-jj",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -14478,7 +14622,7 @@
       "name": ""
      },
      {
-      "id": "ft-j2-p06-j8",
+      "id": "ft-j2-p06-jk",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -14491,7 +14635,7 @@
       "name": ""
      },
      {
-      "id": "ft-j2-p07-j9",
+      "id": "ft-j2-p07-jl",
       "type": "performer",
       "castId": "ft-cast-p07",
       "originId": "ft-origin-p07",
@@ -14504,7 +14648,7 @@
       "name": ""
      },
      {
-      "id": "ft-j2-p08-ja",
+      "id": "ft-j2-p08-jm",
       "type": "performer",
       "castId": "ft-cast-p08",
       "originId": "ft-origin-p08",
@@ -14517,7 +14661,7 @@
       "name": ""
      },
      {
-      "id": "ft-j2-pole-jb",
+      "id": "ft-j2-pole-jn",
       "type": "pole",
       "setId": "ft-set-pole",
       "originId": "ft-origin-pole",
@@ -14534,7 +14678,7 @@
       }
      },
      {
-      "id": "ft-j2-trap-jc",
+      "id": "ft-j2-trap-jo",
       "type": "trapeze",
       "setId": "ft-set-trap",
       "originId": "ft-origin-trap",
@@ -14551,7 +14695,7 @@
       }
      },
      {
-      "id": "ft-j2-wall-jd",
+      "id": "ft-j2-wall-jp",
       "type": "wall",
       "setId": "ft-set-wall",
       "originId": "ft-origin-wall",
@@ -15169,7 +15313,7 @@
     },
     {
      "id": "ft-scene-c2a",
-     "name": "C-3 小道具の全形 1/3（65種）",
+     "name": "C-3 小道具の全形 1/3（69種）",
      "lx": {
       "section": 1,
       "no": 16
@@ -15186,7 +15330,7 @@
     },
     {
      "id": "ft-scene-c2b",
-     "name": "C-3 小道具の全形 2/3（64種）",
+     "name": "C-3 小道具の全形 2/3（68種）",
      "lx": {
       "section": 1,
       "no": 17
@@ -15203,7 +15347,7 @@
     },
     {
      "id": "ft-scene-c2c",
-     "name": "C-3 小道具の全形 3/3（64種）",
+     "name": "C-3 小道具の全形 3/3（68種）",
      "lx": {
       "section": 1,
       "no": 18

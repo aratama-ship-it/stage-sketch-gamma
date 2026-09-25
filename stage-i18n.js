@@ -2209,6 +2209,10 @@
       hanamichi: "Hanamichi runway", thrust_extension: "Thrust extension (apron)", sub_stage_in_house: "Satellite stage in the house",
       foh_console: "FOH mixing position", camera_tripod_position: "Video camera position (tripod)", bleacher_seating: "Bleacher seating (temporary)",
       flight_case: "Flight case (road case)", rigging_point_mark: "Rigging point marker",
+      freestanding_aerial_rig: "Free-standing aerial rig (A-frame / portal)", safety_net: "Safety net", flying_trapeze_rig: "Flying trapeze rig (platform, catch trap, net)",
+      korean_cradle: "Korean cradle", russian_cradle: "Russian cradle (platform type)", aerial_ladder: "Aerial ladder (rope ladder)",
+      high_wire_tower: "High-wire pylon with platform", globe_of_death: "Globe of death", crane_hoist: "Crane (outdoor performer hoist)",
+      lunge_belt: "Lunge / spotting belt with rope", wind_machine: "Wind machine", water_screen: "Water screen",
     },
     lightNote: {
       hang: "straight down from the bar",

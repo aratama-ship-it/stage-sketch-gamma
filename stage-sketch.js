@@ -4428,6 +4428,121 @@
       { shape: "panel", x: 0, y: 0, z: 0, w: 0.2, d: 0.2, h: 0.03, tint: 0.82 },
       { shape: "cylinder", x: 0, y: 0.03, z: 0, dia: 0.06, h: 0.17, tint: 1.18 },
     ] };
+  /* 2026-09-26 大道具追加（第5弾）。演者を乗せる・吊る挙動は足さず、器具の外形だけを作る。
+   * 傾斜材・網・輪は、回転属性を使わない小箱の連なりで正面から読めるように近似する。 */
+  PROP_SHAPES.freestanding_aerial_rig = { ja: "自立式エアリアルリグ（Aフレーム・門型）", en: "Free-standing aerial rig (A-frame / portal)", dims: { w: 4.5, d: 4.5, h: 6 }, grip: null,
+    parts: [
+      ...[-1, 1].flatMap((sx) => [-1, 1].flatMap((sz) =>
+        slantBeam(6, sx * 2.12, sx * 0.62, 0, 5.72, sz * 2.12, sz * 0.62, 0.12))),
+      ...[-0.62, 0.62].map((z) => boxAt(0, 5.72, z, 1.36, 0.16, 0.28, 0.92)),
+      ...[-0.62, 0.62].map((x) => boxAt(x, 5.72, 0, 0.16, 1.24, 0.28, 0.82)),
+      ...[-2.05, 2.05].flatMap((x) => [-2.05, 2.05].map((z) => boxAt(x, 0, z, 0.4, 0.4, 0.12, 0.62))),
+    ] };
+  PROP_SHAPES.safety_net = { ja: "セーフティネット（落下防止の網）", en: "Safety net", dims: { w: 10, d: 6, h: 2.5 }, grip: null,
+    parts: [
+      ...[-4.85, 4.85].flatMap((x) => [-2.85, 2.85].map((z) => boxAt(x, 0, z, 0.14, 0.14, 2.5, 0.62))),
+      ...Array.from({ length: 9 }, (_, i) => {
+        const x = -4.6 + i * 1.15;
+        return boxAt(x, 1.62 + 0.58 * Math.pow(x / 4.6, 2), 0, 0.07, 5.7, 0.06, 1.04);
+      }),
+      ...Array.from({ length: 7 }, (_, i) => {
+        const z = -2.7 + i * 0.9;
+        return boxAt(0, 1.62 + 0.4 * Math.pow(z / 2.7, 2), z, 9.7, 0.07, 0.06, 0.9);
+      }),
+    ] };
+  PROP_SHAPES.flying_trapeze_rig = { ja: "フライングトラピーズ一式（台・キャッチバー・ネット）", en: "Flying trapeze rig (platform, catch trap, net)", dims: { w: 12, d: 6, h: 8 }, grip: null,
+    parts: [
+      ...[-5.72, 5.72].flatMap((x) => [-2.72, 2.72].map((z) => boxAt(x, 0, z, 0.18, 0.18, 7.72, 0.68))),
+      ...[-2.72, 2.72].map((z) => boxAt(0, 7.52, z, 11.6, 0.18, 0.2, 0.82)),
+      ...[-5.72, 5.72].map((x) => boxAt(x, 7.52, 0, 0.18, 5.6, 0.2, 0.78)),
+      boxAt(-5.35, 7.72, 0, 1.3, 1.6, 0.28, 1.12),
+      boxAt(2.8, 6.42, 0, 1.4, 0.12, 0.12, 1.02),
+      ...Array.from({ length: 7 }, (_, i) => boxAt(-4.5 + i * 1.5, 2.15 + 0.45 * Math.pow((i - 3) / 3, 2), 0, 0.07, 5.25, 0.06, 1.02)),
+      ...Array.from({ length: 5 }, (_, i) => boxAt(0, 2.15 + 0.3 * Math.pow((i - 2) / 2, 2), -2.4 + i * 1.2, 10.5, 0.07, 0.06, 0.9)),
+      ...[-5.55, -5.15].map((x) => boxAt(x, 7.72, 0, 0.08, 1.45, 0.28, 0.76)),
+    ] };
+  PROP_SHAPES.korean_cradle = { ja: "コリアンクレードル", en: "Korean cradle", dims: { w: 2, d: 1.2, h: 6 }, grip: null,
+    parts: [
+      ...[-0.88, 0.88].flatMap((x) => [-0.48, 0.48].map((z) => boxAt(x, 0, z, 0.12, 0.12, 5.78, 0.72))),
+      ...[-0.48, 0.48].map((z) => boxAt(0, 5.78, z, 1.88, 0.12, 0.22, 0.98)),
+      ...[-0.88, 0.88].map((x) => boxAt(x, 5.78, 0, 0.12, 0.96, 0.22, 0.88)),
+      ...[-0.48, 0.48].flatMap((z) => [1.8, 3.6].map((y) => boxAt(0, y, z, 1.76, 0.08, 0.08, 0.82))),
+      ...[-0.88, 0.88].flatMap((x) => slantBeam(4, x, x * 0.55, 0.12, 1.7, 0, 0, 0.08)),
+      boxAt(0, 4.72, 0, 1.45, 0.1, 0.12, 1.08),
+    ] };
+  PROP_SHAPES.russian_cradle = { ja: "ロシアンクレードル（台付き）", en: "Russian cradle (platform type)", dims: { w: 2.5, d: 1.5, h: 5 }, grip: null,
+    parts: [
+      ...[-1.08, 1.08].flatMap((x) => [-0.58, 0.58].map((z) => boxAt(x, 0, z, 0.14, 0.14, 4.72, 0.68))),
+      ...[-0.58, 0.58].map((z) => boxAt(0, 2.25, z, 2.16, 0.1, 0.12, 0.78)),
+      ...[-1.08, 1.08].map((x) => boxAt(x, 2.25, 0, 0.1, 1.16, 0.12, 0.74)),
+      ...[-1, 1].flatMap((sx) => slantBeam(5, sx * 1.08, sx * 0.45, 0.12, 2.2, -0.58, 0.58, 0.08)),
+      boxAt(0, 4.72, 0, 2.3, 1.3, 0.28, 1.12),
+    ] };
+  PROP_SHAPES.aerial_ladder = { ja: "吊りはしご（ロープラダー）", en: "Aerial ladder (rope ladder)", dims: { w: 0.5, d: 0.1, h: 5 }, grip: null,
+    parts: [
+      boxAt(-0.22, 0, 0, 0.05, 0.08, 5, 0.72), boxAt(0.22, 0, 0, 0.05, 0.08, 5, 0.72),
+      ...Array.from({ length: 12 }, (_, i) => boxAt(0, 0.22 + i * 0.4, 0, 0.44, 0.1, 0.055, 1.04)),
+    ] };
+  PROP_SHAPES.high_wire_tower = { ja: "ハイワイヤの櫓（端の支柱と登り台）", en: "High-wire pylon with platform", dims: { w: 2, d: 2, h: 8 }, grip: null,
+    parts: [
+      ...[-1, 1].flatMap((sx) => [-1, 1].flatMap((sz) => slantBeam(6, sx * 0.92, sx * 0.62, 0, 7.72, sz * 0.92, sz * 0.62, 0.08))),
+      ...Array.from({ length: 9 }, (_, i) => boxAt(0, 0.65 + i * 0.76, 0.84, 1.22, 0.08, 0.07, 1.02)),
+      ...[2.1, 4.2, 6.3].flatMap((y) => [
+        boxAt(0, y, -0.72, 1.45, 0.08, 0.08, 0.78),
+        boxAt(0, y, 0.72, 1.45, 0.08, 0.08, 0.78),
+      ]),
+      boxAt(0, 7.72, 0, 1.7, 1.7, 0.28, 1.12),
+    ] };
+  PROP_SHAPES.globe_of_death = { ja: "グローブ・オブ・デス（金網の球）", en: "Globe of death", dims: { w: 5, d: 5, h: 5 }, grip: null,
+    parts: [
+      ...Array.from({ length: 16 }, (_, i) => {
+        const a = (i / 16) * Math.PI * 2;
+        return boxAt(Math.cos(a) * 2.3, 2.5 + Math.sin(a) * 2.3 - 0.09, 0, 0.36, 0.08, 0.18, 0.88);
+      }),
+      ...Array.from({ length: 16 }, (_, i) => {
+        const a = (i / 16) * Math.PI * 2;
+        return boxAt(0, 2.5 + Math.sin(a) * 2.3 - 0.09, Math.cos(a) * 2.3, 0.08, 0.36, 0.18, 0.96);
+      }),
+      ...Array.from({ length: 16 }, (_, i) => {
+        const a = (i / 16) * Math.PI * 2;
+        return boxAt(Math.cos(a) * 2.3, 2.46, Math.sin(a) * 2.3, 0.36, 0.36, 0.08, 1.04);
+      }),
+    ] };
+  PROP_SHAPES.crane_hoist = { ja: "クレーン（屋外で演者を吊る）", en: "Crane (outdoor performer hoist)", dims: { w: 3, d: 8, h: 8 }, grip: null,
+    parts: [
+      boxAt(0, 0, 0, 3, 8, 0.45, 0.62),
+      boxAt(-0.75, 0.45, -2.55, 1.35, 2.15, 1.5, 0.88),
+      boxAt(0.45, 0.45, 1.6, 0.45, 0.45, 2.25, 0.72),
+      ...slantBeam(12, 0.45, 1.2, 2.65, 7.7, 1.6, -2.9, 0.12).map((part) => ({ ...part, tint: 0.92 })),
+      boxAt(1.2, 7.72, -2.9, 0.3, 0.3, 0.28, 1.08),
+      ...[-1.15, 1.15].flatMap((x) => [-2.9, 2.9].map((z) => ({ shape: "cylinder", x, y: 0.08, z, dia: 0.42, h: 0.36, tint: 0.5 }))),
+    ] };
+  PROP_SHAPES.lunge_belt = { ja: "ロンジ（稽古の補助ベルトと吊り綱）", en: "Lunge / spotting belt with rope", dims: { w: 0.4, d: 0.4, h: 4 }, grip: null,
+    parts: [
+      { shape: "cylinder", x: 0, y: 0.68, z: 0, dia: 0.035, h: 3.22, tint: 0.72 },
+      { shape: "cylinder", x: 0, y: 3.9, z: 0, dia: 0.08, h: 0.1, tint: 0.92 },
+      boxAt(-0.17, 0.26, 0, 0.06, 0.18, 0.34, 0.88), boxAt(0.17, 0.26, 0, 0.06, 0.18, 0.34, 0.88),
+      boxAt(0, 0.26, 0, 0.34, 0.18, 0.06, 1.06), boxAt(0, 0.54, 0, 0.34, 0.18, 0.06, 1.02),
+      boxAt(-0.09, 0.12, 0, 0.05, 0.08, 0.18, 0.78), boxAt(0.09, 0.12, 0, 0.05, 0.08, 0.18, 0.78),
+    ] };
+  PROP_SHAPES.wind_machine = { ja: "風送機（大型ファン）", en: "Wind machine", dims: { w: 0.8, d: 0.5, h: 1.2 }, grip: null,
+    parts: [
+      boxAt(0, 0, 0, 0.72, 0.5, 0.08, 0.62),
+      boxAt(0, 0.08, 0, 0.08, 0.12, 0.3, 0.68),
+      ...Array.from({ length: 12 }, (_, i) => {
+        const a = (i / 12) * Math.PI * 2;
+        return boxAt(Math.cos(a) * 0.32, 0.74 + Math.sin(a) * 0.32 - 0.045, 0, 0.12, 0.08, 0.09, 0.9);
+      }),
+      { shape: "sphere", x: 0, y: 0.68, z: 0.02, dia: 0.14, tint: 0.58 },
+      boxAt(0, 0.69, 0.03, 0.5, 0.04, 0.07, 0.76), boxAt(0, 0.48, 0.03, 0.07, 0.04, 0.5, 0.82),
+      boxAt(0, 1.1, 0, 0.5, 0.12, 0.1, 0.7),
+    ] };
+  PROP_SHAPES.water_screen = { ja: "ウォータースクリーン（水の幕）", en: "Water screen", dims: { w: 8, d: 0.3, h: 6 }, grip: null,
+    parts: [
+      boxAt(0, 5.8, 0, 8, 0.3, 0.2, 0.68),
+      boxAt(0, 0, 0, 8, 0.3, 0.15, 0.62),
+      ...Array.from({ length: 15 }, (_, i) => boxAt(-3.72 + i * 0.532, 0.15, 0, 0.46, 0.045, 5.65, 0.9 + (i % 3) * 0.08)),
+    ] };
   const PROP_SHAPE_ORDER = Object.keys(PROP_SHAPES);
   /* T-32（2026-09-18 本人要望）: 「家具」「建て込み」「登る・上がる」「屋外・情景」は
    * 小道具ではなく大道具として扱う。
@@ -4459,6 +4574,9 @@
     "grandfather_clock", "dressing_table", "lectern_podium", "cocktail_table",
     "hanamichi", "thrust_extension", "sub_stage_in_house", "foh_console", "camera_tripod_position", "bleacher_seating",
     "flight_case", "rigging_point_mark",
+    // 2026-09-26 大道具追加（第5弾）
+    "freestanding_aerial_rig", "safety_net", "flying_trapeze_rig", "korean_cradle", "russian_cradle", "aerial_ladder",
+    "high_wire_tower", "globe_of_death", "crane_hoist", "lunge_belt", "wind_machine", "water_screen",
   ]);
   /* 2026-09-22 本人指定: 次の形は当面、追加用の大道具・小道具一覧から外す。
    * PROP_SHAPES 自体は消さない。既存ショーの駒は描画・保存でき、以前どおり大道具として数える。 */
@@ -4498,7 +4616,7 @@
     { ja: "屋外・情景", ids: ["tree", "rock", "streetlamp", "signboard", "barrel", "planter", "well", "tent", "cart", "bus_stop", "vending_machine", "traffic_light", "tree_stump", "giant_mushroom"] },
     { ja: "空・吊り物", ids: ["cloud_cutout", "crescent_moon", "sun_moon_disc", "star_hanging"] },
     { ja: "客席・舞台の拡張", ids: ["hanamichi", "thrust_extension", "sub_stage_in_house", "foh_console", "camera_tripod_position", "bleacher_seating"] },
-    { ja: "裏方・転換", ids: ["flight_case", "rigging_point_mark"] },
+    { ja: "裏方・転換", ids: ["flight_case", "rigging_point_mark", "wind_machine", "water_screen"] },
     /* 2026-09-23 本人指示: 自転車は乗り物。見出し名はROSTER_SET_KIND_GROUPSの
        「乗り物」(車)と揃え、大道具一覧では同じ一枠へ合流させる。
        ★同日追記: 「乗り物」の中身は乗り物だけにする（球は情景ではないので外す）。 */
@@ -4507,6 +4625,7 @@
       "russianswing", "slackline", "walljump", "unicycle", "stilts", "aerialhoop", "aerialstraps", "aerialhammock", "spanishweb", "swingpole",
       /* R-19（2026-09-17 本人要望）: 物を伴う姿勢に対応する乗り物。本人決定で小道具の扱い。 */
       "cyrwheel", "skateboard", "rollerskate", "knife_throwing", "spinning_plate", "kendama", "bullwhip", "lasso", "boomerang", "jump_rope", "barbell", "pogo_stick",
+      "freestanding_aerial_rig", "safety_net", "flying_trapeze_rig", "korean_cradle", "russian_cradle", "aerial_ladder", "high_wire_tower", "globe_of_death", "crane_hoist", "lunge_belt",
       "cigarbox", "devilstick", "poi", "hoop", "ring", "club"] },
   ];
   /* 寸法つまみの仕様。項目は種類ごとに違うので、画面はここから組み立てる。

@@ -1815,6 +1815,10 @@
       hanamichi: "花道（伸入觀眾席的走台）", thrust_extension: "伸出式舞台（台口延伸）", sub_stage_in_house: "觀眾席內副舞台（中心舞台）",
       foh_console: "前場調音燈光台", camera_tripod_position: "攝影機位（三腳架／錄製）", bleacher_seating: "臨時看台（階梯看台／地面座席區）",
       flight_case: "航空箱（設備箱／附腳輪）", rigging_point_mark: "吊點標記（索具吊點）",
+      freestanding_aerial_rig: "自立式空中表演架（A字架／門式）", safety_net: "安全網（防墜網）", flying_trapeze_rig: "飛人鞦韆整套（平台、接人架、網）",
+      korean_cradle: "韓國搖籃", russian_cradle: "俄羅斯搖籃（附平台）", aerial_ladder: "吊梯（繩梯）",
+      high_wire_tower: "高空鋼索塔架（端柱與登台）", globe_of_death: "死亡之球（金屬網球）", crane_hoist: "起重機（戶外吊運演員）",
+      lunge_belt: "安全吊帶（訓練輔助腰帶與吊繩）", wind_machine: "風機（大型風扇）", water_screen: "水幕",
     },
     lightNote: {
       hang: "從吊桿垂直落下",
