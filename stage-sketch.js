@@ -3703,6 +3703,170 @@
       boxAt(0, 1.08, 0, 0.08, 0.045, 0.55, 0.7),
       { shape: "sphere", y: 1.63, dia: 0.11, tint: 0.6 },
     ] };
+  PROP_SHAPES.axe = { ja: "斧（手斧・まさかり）", en: "Axe", dims: { w: 0.2, d: 0.05, h: 0.8 }, grip: { x: 0, y: 0.28 },
+    parts: [
+      { shape: "cylinder", y: 0, dia: 0.035, h: 0.72, tint: 0.72 },
+      { shape: "panel", x: -0.045, y: 0.64, z: 0, w: 0.11, d: 0.035, h: 0.16, tint: 1.08 },
+      { shape: "panel", x: 0.055, y: 0.66, z: 0, w: 0.09, d: 0.05, h: 0.12, tint: 0.82 },
+    ] };
+  PROP_SHAPES.hammer = { ja: "ハンマー（金槌・大槌）", en: "Hammer / mallet", dims: { w: 0.12, d: 0.03, h: 0.33 }, grip: { x: 0, y: 0.12 },
+    parts: [
+      { shape: "cylinder", y: 0, dia: 0.025, h: 0.29, tint: 0.72 },
+      boxAt(0, 0.27, 0, 0.12, 0.03, 0.06, 0.85),
+      boxAt(-0.045, 0.275, 0, 0.03, 0.035, 0.05, 1.05),
+    ] };
+  PROP_SHAPES.saw = { ja: "のこぎり", en: "Saw", dims: { w: 0.12, d: 0.02, h: 0.55 }, grip: { x: 0, y: 0.065 },
+    parts: [
+      boxAt(0, 0, 0, 0.075, 0.02, 0.13, 0.7),
+      { shape: "panel", x: 0.01, y: 0.12, z: 0, w: 0.10, d: 0.012, h: 0.43, tint: 1.12 },
+      boxAt(-0.045, 0.15, 0, 0.025, 0.015, 0.025, 0.82),
+      boxAt(-0.045, 0.23, 0, 0.025, 0.015, 0.025, 0.86),
+      boxAt(-0.045, 0.31, 0, 0.025, 0.015, 0.025, 0.90),
+      boxAt(-0.045, 0.39, 0, 0.025, 0.015, 0.025, 0.94),
+      boxAt(-0.045, 0.47, 0, 0.025, 0.015, 0.025, 0.98),
+    ] };
+  PROP_SHAPES.shovel = { ja: "スコップ（シャベル）", en: "Shovel", dims: { w: 0.22, d: 0.06, h: 1.1 }, grip: { x: 0, y: 0.76 },
+    parts: [
+      { shape: "panel", y: 0, z: 0, w: 0.22, d: 0.06, h: 0.26, tint: 0.92 },
+      boxAt(0, 0.24, 0, 0.08, 0.05, 0.04, 0.78),
+      { shape: "cylinder", y: 0.26, dia: 0.035, h: 0.72, tint: 0.72 },
+      boxAt(-0.07, 0.97, 0, 0.035, 0.04, 0.13, 0.72),
+      boxAt(0.07, 0.97, 0, 0.035, 0.04, 0.13, 0.72),
+      boxAt(0, 1.07, 0, 0.14, 0.04, 0.03, 0.78),
+    ] };
+  // 2026-09-26 Claude: 竿が細すぎて見本・遠目で消えていた。竿を太くし、糸巻きと先から垂らした糸を足した
+  PROP_SHAPES.fishing_rod = { ja: "釣り竿（延べ竿）", en: "Fishing rod", dims: { w: 0.30, d: 0.06, h: 2.4 }, grip: { x: 0, y: 0.24 },
+    parts: [
+      { shape: "cylinder", y: 0, dia: 0.05, h: 0.60, tint: 0.62 },
+      { shape: "cylinder", y: 0.60, dia: 0.042, h: 0.60, tint: 0.70 },
+      { shape: "cylinder", y: 1.20, dia: 0.034, h: 0.60, tint: 0.78 },
+      { shape: "cylinder", y: 1.80, dia: 0.026, h: 0.60, tint: 0.86 },
+      boxAt(0.04, 0.33, 0, 0.06, 0.05, 0.07, 0.95),
+      boxAt(0.14, 0.95, 0, 0.012, 0.012, 1.45, 1.1),
+      boxAt(0.075, 2.385, 0, 0.14, 0.012, 0.012, 1.1),
+      boxAt(0.14, 0.90, 0, 0.03, 0.03, 0.05, 1.15),
+    ] };
+  PROP_SHAPES.oar = { ja: "オール（櫂）", en: "Oar / paddle", dims: { w: 0.15, d: 0.05, h: 1.8 }, grip: { x: 0, y: 0.72 },
+    parts: [
+      { shape: "panel", y: 0, z: 0, w: 0.15, d: 0.05, h: 0.52, tint: 0.82 },
+      { shape: "cylinder", y: 0.48, dia: 0.035, h: 1.32, tint: 0.72 },
+    ] };
+  PROP_SHAPES.crutch = { ja: "松葉杖", en: "Crutches", dims: { w: 0.15, d: 0.05, h: 1.2 }, grip: { x: 0, y: 0.76 },
+    parts: [
+      { shape: "cylinder", y: 0, dia: 0.025, h: 0.20, tint: 0.72 },
+      boxAt(-0.055, 0.18, 0, 0.025, 0.04, 0.91, 0.82),
+      boxAt(0.055, 0.18, 0, 0.025, 0.04, 0.91, 0.82),
+      boxAt(0, 0.72, 0, 0.13, 0.045, 0.035, 0.72),
+      boxAt(0, 0.48, 0, 0.11, 0.03, 0.025, 0.76),
+      boxAt(0, 1.08, 0, 0.15, 0.05, 0.12, 0.65),
+    ] };
+  PROP_SHAPES.baseball_bat = { ja: "バット（野球）", en: "Baseball bat", dims: { w: 0.07, d: 0.07, h: 0.85 }, grip: { x: 0, y: 0.13 },
+    parts: smoothRoundBody([
+      [0.00, 0.045, 0.68], [0.04, 0.052, 0.72], [0.16, 0.038, 0.76], [0.55, 0.052, 0.86],
+      [0.76, 0.070, 0.96], [0.83, 0.060, 0.92], [0.85, 0.032, 0.82],
+    ], 16) };
+  PROP_SHAPES.balloon = { ja: "風船（1個・束）", en: "Balloon(s)", dims: { w: 0.28, d: 0.28, h: 0.6 }, grip: { x: 0, y: 0.03 },
+    parts: [
+      boxAt(0, 0, 0, 0.012, 0.012, 0.36, 0.72),
+      boxAt(-0.04, 0.04, 0, 0.012, 0.012, 0.30, 0.78),
+      boxAt(0.04, 0.04, 0, 0.012, 0.012, 0.30, 0.78),
+      boxAt(0, 0, 0, 0.035, 0.025, 0.035, 0.62),
+      { shape: "sphere", x: -0.05, y: 0.32, z: 0, dia: 0.18, tint: 0.95 },
+      { shape: "sphere", x: 0.05, y: 0.32, z: 0, dia: 0.18, tint: 1.08 },
+      { shape: "sphere", x: 0, y: 0.40, z: 0.02, dia: 0.20, tint: 1.16 },
+    ] };
+  PROP_SHAPES.magic_wand = { ja: "魔法の杖・指揮棒（マジックワンド・タクト）", en: "Magic wand", dims: { w: 0.02, d: 0.02, h: 0.36 }, grip: { x: 0, y: 0.10 },
+    parts: [
+      { shape: "cylinder", y: 0, dia: 0.02, h: 0.36, tint: 0.65 },
+      { shape: "cylinder", y: 0, dia: 0.022, h: 0.045, tint: 1.15 },
+      { shape: "cylinder", y: 0.315, dia: 0.022, h: 0.045, tint: 1.15 },
+    ] };
+  PROP_SHAPES.pogo_stick = { ja: "ポゴスティック（ホッピング）", en: "Pogo stick", dims: { w: 0.3, d: 0.3, h: 1.2 }, grip: { x: -0.12, y: 1.08 },
+    parts: [
+      { shape: "cylinder", y: 0.08, dia: 0.055, h: 1.02, tint: 0.78 },
+      { shape: "cylinder", y: 0, dia: 0.10, h: 0.16, tint: 0.65 },
+      boxAt(-0.075, 0.24, 0, 0.15, 0.12, 0.035, 0.72),
+      boxAt(0.075, 0.24, 0, 0.15, 0.12, 0.035, 0.72),
+      boxAt(0, 1.08, 0, 0.30, 0.04, 0.035, 0.82),
+      boxAt(-0.125, 1.06, 0, 0.05, 0.055, 0.07, 0.68),
+      boxAt(0.125, 1.06, 0, 0.05, 0.055, 0.07, 0.68),
+    ] };
+  PROP_SHAPES.flute = { ja: "笛（フルート・篠笛・尺八）", en: "Flute", dims: { w: 0.02, d: 0.02, h: 0.67 }, grip: { x: 0, y: 0.34 },
+    parts: [
+      { shape: "cylinder", y: 0, dia: 0.018, h: 0.67, tint: 0.94 },
+      { shape: "cylinder", y: 0.08, dia: 0.02, h: 0.018, tint: 1.16 },
+      { shape: "cylinder", y: 0.25, dia: 0.02, h: 0.018, tint: 1.12 },
+      { shape: "cylinder", y: 0.42, dia: 0.02, h: 0.018, tint: 1.08 },
+      { shape: "cylinder", y: 0.61, dia: 0.02, h: 0.025, tint: 1.16 },
+    ] };
+  PROP_SHAPES.saxophone = { ja: "サックス（アルト）", en: "Alto saxophone", dims: { w: 0.12, d: 0.15, h: 0.66 }, grip: { x: 0.03, y: 0.40 },
+    parts: [
+      { shape: "cylinder", x: 0, y: 0, z: 0, dia: 0.12, h: 0.13, tint: 0.98 },
+      boxAt(-0.02, 0.08, 0, 0.08, 0.05, 0.035, 0.82),
+      { shape: "cylinder", x: 0.035, y: 0.11, z: 0, dia: 0.045, h: 0.38, tint: 0.94 },
+      boxAt(0.02, 0.47, 0, 0.05, 0.045, 0.08, 0.90),
+      boxAt(-0.02, 0.53, 0, 0.08, 0.035, 0.03, 0.86),
+      boxAt(-0.05, 0.55, 0, 0.035, 0.03, 0.075, 0.82),
+      boxAt(-0.03, 0.62, 0, 0.055, 0.025, 0.04, 0.68),
+    ] };
+  PROP_SHAPES.shamisen = { ja: "三味線", en: "Shamisen", dims: { w: 0.22, d: 0.1, h: 1.0 }, grip: { x: 0, y: 0.63 },
+    parts: [
+      ...smoothFlatBody([
+        [0.00, 0.18, 0.08, 0.82], [0.04, 0.22, 0.10, 0.92], [0.29, 0.22, 0.10, 1.02], [0.35, 0.16, 0.075, 0.84],
+      ], 14),
+      boxAt(0, 0.35, 0, 0.045, 0.035, 0.57, 0.72),
+      boxAt(0, 0.92, 0, 0.055, 0.04, 0.08, 0.68),
+      boxAt(-0.055, 0.93, 0, 0.08, 0.025, 0.018, 0.82),
+      boxAt(0.055, 0.96, 0, 0.08, 0.025, 0.018, 0.82),
+      boxAt(-0.05, 0.985, 0, 0.07, 0.025, 0.015, 0.82),
+    ] };
+  PROP_SHAPES.handpan = { ja: "ハンドパン", en: "Handpan", dims: { w: 0.55, d: 0.55, h: 0.25 }, grip: { x: 0, y: 0.12 },
+    parts: smoothRoundBody([
+      [0.00, 0.34, 0.74], [0.025, 0.48, 0.86], [0.08, 0.55, 0.98], [0.17, 0.52, 1.04],
+      [0.225, 0.40, 0.94], [0.25, 0.18, 0.82],
+    ], 10) };
+  PROP_SHAPES.taiko_bachi = { ja: "太鼓バチ（2本一組）", en: "Taiko drumsticks", dims: { w: 0.03, d: 0.03, h: 0.42 }, grip: { x: -0.0075, y: 0.13 },
+    parts: [
+      { shape: "cylinder", x: -0.0075, y: 0, z: 0, dia: 0.015, h: 0.42, tint: 0.82 },
+      { shape: "cylinder", x: 0.0075, y: 0, z: 0, dia: 0.015, h: 0.42, tint: 0.94 },
+    ] };
+  PROP_SHAPES.hyoshigi = { ja: "拍子木", en: "Hyoshigi clappers", dims: { w: 0.04, d: 0.04, h: 0.22 }, grip: { x: -0.01, y: 0.10 },
+    parts: [
+      boxAt(-0.01, 0, 0, 0.018, 0.04, 0.22, 0.76),
+      boxAt(0.01, 0, 0, 0.018, 0.04, 0.22, 0.94),
+    ] };
+  PROP_SHAPES.tambourine = { ja: "タンバリン", en: "Tambourine", dims: { w: 0.25, d: 0.05, h: 0.25 }, grip: { x: -0.10, y: 0.125 },
+    parts: [
+      { shape: "cylinder", axis: "z", x: 0, y: 0, z: -0.025, w: 0.25, d: 0.05, h: 0.25, tint: 0.82 },
+      { shape: "sphere", x: -0.075, y: 0.035, z: -0.03, dia: 0.025, tint: 1.18 },
+      { shape: "sphere", x: 0.075, y: 0.035, z: -0.03, dia: 0.025, tint: 1.18 },
+      { shape: "sphere", x: -0.105, y: 0.1125, z: -0.03, dia: 0.025, tint: 1.12 },
+      { shape: "sphere", x: 0.105, y: 0.1125, z: -0.03, dia: 0.025, tint: 1.12 },
+      { shape: "sphere", x: -0.065, y: 0.19, z: -0.03, dia: 0.025, tint: 1.18 },
+      { shape: "sphere", x: 0.065, y: 0.19, z: -0.03, dia: 0.025, tint: 1.18 },
+    ] };
+  PROP_SHAPES.handbell = { ja: "ハンドベル", en: "Handbell", dims: { w: 0.1, d: 0.1, h: 0.2 }, grip: { x: 0, y: 0.17 },
+    parts: [
+      ...smoothRoundBody([
+        [0.00, 0.10, 0.78], [0.035, 0.09, 0.86], [0.09, 0.055, 0.98], [0.13, 0.035, 0.84],
+      ], 8),
+      boxAt(0, 0.13, 0, 0.032, 0.032, 0.07, 0.68),
+      { shape: "sphere", y: 0, dia: 0.025, tint: 0.62 },
+    ] };
+  PROP_SHAPES.snare_marching = { ja: "スネアドラム（マーチング用・肩掛け）", en: "Marching snare drum", dims: { w: 0.36, d: 0.36, h: 0.16 }, grip: { x: 0, y: 0.08 },
+    parts: [
+      { shape: "cylinder", y: 0.015, dia: 0.35, h: 0.13, tint: 0.84 },
+      { shape: "cylinder", y: 0, dia: 0.36, h: 0.02, tint: 1.12 },
+      { shape: "cylinder", y: 0.14, dia: 0.36, h: 0.02, tint: 1.16 },
+    ] };
+  PROP_SHAPES.kotsuzumi = { ja: "小鼓（こつづみ）", en: "Kotsuzumi (shoulder drum)", dims: { w: 0.25, d: 0.1, h: 0.1 }, grip: { x: 0, y: 0.05 },
+    parts: [
+      boxAt(-0.115, 0, 0, 0.02, 0.10, 0.10, 0.96),
+      boxAt(-0.07, 0.01, 0, 0.07, 0.08, 0.08, 0.84),
+      boxAt(0, 0.02, 0, 0.07, 0.065, 0.06, 0.68),
+      boxAt(0.07, 0.01, 0, 0.07, 0.08, 0.08, 0.84),
+      boxAt(0.115, 0, 0, 0.02, 0.10, 0.10, 0.96),
+    ] };
   PROP_SHAPES.knife_throwing = { ja: "ナイフ（投げナイフ・ジャグリング用）", en: "Throwing / juggling knife", dims: { w: 0.04, d: 0.01, h: 0.32 }, grip: { x: 0, y: 0.055 },
     parts: [
       boxAt(0, 0, 0, 0.035, 0.01, 0.10, 0.65),
@@ -3958,10 +4122,11 @@
   const PROP_SHAPE_GROUPS = [
     { ja: "手に持つもの", ids: ["box", "umbrella", "ball", "staff", "sword", "book", "tophat", "lantern", "flag", "mask",
       "broom", "bucket", "rope", "bouquet", "glassbottle", "tray", "telephone", "newspaper", "clock", "fan", "scarf",
-      "torch", "candle", "treasurechest", "cane", "handbag", "wagasa", "flashlight", "chochin", "flip_board", "basket", "backpack"] },
+      "torch", "candle", "treasurechest", "cane", "handbag", "wagasa", "flashlight", "chochin", "flip_board", "basket", "backpack", "balloon", "magic_wand"] },
     { ja: "食器・飲食", ids: ["cup_saucer", "plate", "kitchen_knife", "cake"] },
-    { ja: "武器・道具", ids: ["pistol", "rifle", "bow_arrow"] },
+    { ja: "武器・道具", ids: ["pistol", "rifle", "bow_arrow", "axe", "hammer", "saw", "shovel", "fishing_rod", "oar", "crutch", "baseball_bat"] },
     { ja: "楽器", ids: ["drumset", "taiko", "grandpiano", "grandpianoopen", "uprightpiano", "micstand", "musicstand", "speaker", "keyboardstand", "djbooth", "cello", "doublebass",
+      "flute", "saxophone", "shamisen", "handpan", "taiko_bachi", "hyoshigi", "tambourine", "handbell", "snare_marching", "kotsuzumi",
       "guitar", "violin", "bassguitar", "mic", "trumpet", "accordion"] },
     /* 2026-09-23 本人指示: 「登る・上がる」は独立した見出しにせず「建て込み」へ合流。 */
     { ja: "建て込み", ids: ["ladder", "stepladder", "stairs", "stairs6", "slope", "spiralstairs",
@@ -3975,7 +4140,7 @@
     { ja: "サーカス道具", ids: ["rolabola", "germanwheel", "minitramp", "rollingglobe", "russianbar", "crashmat", "crashmatround",
       "russianswing", "slackline", "walljump", "unicycle", "stilts", "aerialhoop", "aerialstraps", "aerialhammock", "spanishweb", "swingpole",
       /* R-19（2026-09-17 本人要望）: 物を伴う姿勢に対応する乗り物。本人決定で小道具の扱い。 */
-      "cyrwheel", "skateboard", "rollerskate", "knife_throwing", "spinning_plate", "kendama", "bullwhip", "lasso", "boomerang", "jump_rope", "barbell",
+      "cyrwheel", "skateboard", "rollerskate", "knife_throwing", "spinning_plate", "kendama", "bullwhip", "lasso", "boomerang", "jump_rope", "barbell", "pogo_stick",
       "cigarbox", "devilstick", "poi", "hoop", "ring", "club"] },
   ];
   /* 寸法つまみの仕様。項目は種類ごとに違うので、画面はここから組み立てる。
