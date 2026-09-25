@@ -176,6 +176,9 @@ public-dist/
 !/stage-samples/index.js
 !/stage-samples/feature-test-show.js
 !/stage-samples/romeo-juliet-cued.js
+!/stage-samples/romeo-juliet-second.js
+!/stage-samples/romeo-juliet-second.json
+!/stage-samples/build-romeo-juliet-second.mjs
 !/stage-session.js
 !/stage-set-builder.js
 !/stage-set-model.js
