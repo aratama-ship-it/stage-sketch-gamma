@@ -51,6 +51,11 @@
 
   function createVault(indexedDB) {
     const name = "gamma:storage-recovery-archive-v1";
+    const codec = window.STAGE_STORAGE_CODEC;
+    const audioRefs = record => Array.isArray(record.audioRefs) ? record.audioRefs
+      : typeof record.value === "string" ? window.STAGE_STORAGE_HYGIENE?.audioReferences([record.value]) ?? null : null;
+    const annotate = record => ({...record, audioRefs:audioRefs(record)});
+    const unpack = record => codec ? codec.unpack(record) : Promise.resolve(record);
     function transaction(mode, operation) {
       return new Promise((resolve, reject) => {
         if (!indexedDB) { reject(new Error("ARCHIVE_UNAVAILABLE")); return; }
@@ -72,17 +77,75 @@
       });
     }
     return Object.freeze({
-      putIfAbsent(record) {
-        return transaction("readwrite", (store, done) => {
+      async putIfAbsent(record) {
+        const previous = await transaction("readonly", (store, done) => {
+          store.get(record.id).onsuccess = event => done(event.target.result ?? null);
+        });
+        if (previous !== null) {
+          const restored = await unpack(previous);
+          return valid(restored) && restored.key === record.key && restored.value === record.value;
+        }
+        const annotated = annotate(record);
+        const packed = codec ? await codec.pack(annotated) : annotated;
+        const existing = await transaction("readwrite", (store, done) => {
           const request = store.get(record.id);
           request.onsuccess = () => {
-            if (request.result === undefined) { store.add(record, record.id); done(true); }
-            else done(valid(request.result) && request.result.key === record.key && request.result.value === record.value);
+            if (request.result === undefined) { store.add(packed, record.id); done(null); }
+            else done(request.result);
+          };
+        });
+        if (existing === null) return true;
+        const restored = await unpack(existing);
+        return valid(restored) && restored.key === record.key && restored.value === record.value;
+      },
+      get(id) { return transaction("readonly", (store, done) => { store.get(id).onsuccess = event => done(event.target.result || null); }).then(unpack); },
+      async list() {
+        const records = await transaction("readonly", (store, done) => { store.getAll().onsuccess = event => done(event.target.result); });
+        // Export must fail visibly if any archived copy cannot be decoded.
+        const restored = [];
+        for (const record of records) restored.push(await unpack(record));
+        return restored.filter(valid);
+      },
+      summaries() {
+        return transaction("readonly", (store, done) => {
+          const result = [], request = store.openCursor();
+          request.onsuccess = () => {
+            const cursor = request.result;
+            if (!cursor) { done(result); return; }
+            const record = cursor.value;
+            if (record?.version === 1 && backupKind(record.key)) result.push({...(codec ? codec.summary(record)
+              : {id:record.id, key:record.key, chars:record.value?.length, storedBytes:(record.value?.length || 0) * 2}),
+              audioRefs:audioRefs(record)});
+            cursor.continue();
           };
         });
       },
-      get(id) { return transaction("readonly", (store, done) => { store.get(id).onsuccess = event => done(event.target.result || null); }); },
-      list() { return transaction("readonly", (store, done) => { store.getAll().onsuccess = event => done(event.target.result.filter(valid)); }); },
+      async compact(limit = 8) {
+        if (!codec?.available()) return { count:0, savedBytes:0 };
+        const candidates = await transaction("readonly", (store, done) => {
+          const result = [], request = store.openCursor();
+          request.onsuccess = () => {
+            const cursor = request.result;
+            if (!cursor || result.length >= limit) { done(result); return; }
+            if (valid(cursor.value) && !cursor.value.storageEncoding && !cursor.value.compressionChecked) result.push(cursor.value);
+            cursor.continue();
+          };
+        });
+        let count = 0, savedBytes = 0;
+        for (const original of candidates) {
+          const packed = await codec.pack(annotate(original));
+          if (packed === original || (await codec.unpack(packed)).value !== original.value) continue;
+          const replaced = await transaction("readwrite", (store, done) => {
+            store.get(original.id).onsuccess = event => {
+              const current = event.target.result;
+              if (!valid(current) || current.value !== original.value || current.archivedAt !== original.archivedAt) { done(false); return; }
+              store.put(packed, original.id); done(true);
+            };
+          });
+          if (replaced && packed.storageEncoding) { count++; savedBytes += codec.summary(original).storedBytes - codec.summary(packed).storedBytes; }
+        }
+        return { count, savedBytes };
+      },
     });
   }
 
@@ -231,7 +294,9 @@
       // Keep the archived copy even after successful restoration.
       return true;
     }
-    return Object.freeze({ scan, archive, restore, list: () => vault.list(), inactiveShows, archiveInactiveShow,
+    return Object.freeze({ scan, archive, restore, list: () => vault.list(),
+      summaries: () => vault.summaries ? vault.summaries() : vault.list().then(rows => rows.map(row => ({...row, chars:row.value.length}))),
+      compact: limit => vault.compact ? vault.compact(limit) : Promise.resolve({count:0,savedBytes:0}), inactiveShows, archiveInactiveShow,
       verifiedArchivedShelfChange });
   }
 

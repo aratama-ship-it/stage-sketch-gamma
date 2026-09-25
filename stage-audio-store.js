@@ -10,6 +10,9 @@
   const LEGACY_DB_NAME = "gamma:shosai-stage-audio";
   const STORE = "tracks";
   const VERSION = 1;
+  // Metadata shares the existing store, preserving access for older clients.
+  const GC_PREFIX = "\u0000orphan-audio:";
+  const GC_GRACE_MS = 24 * 60 * 60 * 1000;
 
   function validTrackId(trackId) {
     return typeof trackId === "string"
@@ -81,6 +84,7 @@
     if (!(blob instanceof Blob)) return Promise.reject(new TypeError("Audio must be a Blob"));
     return withStore("readwrite", (store) => {
       store.put(blob, trackId);
+      store.delete(GC_PREFIX + trackId);
       return true;
     });
   }
@@ -104,6 +108,7 @@
     if (!validTrackId(trackId)) return Promise.resolve(false);
     return withStore("readwrite", (store) => {
       store.delete(trackId);
+      store.delete(GC_PREFIX + trackId);
       return true;
     });
   }
@@ -122,13 +127,14 @@
           cursor.continue();
         };
       });
-    });
+    }).then(keys => keys.filter(validTrackId));
   }
 
-  /* 削除した曲もUndo中は戻せるよう、即時にはBlobを消さない。
-   * 次回起動時、現在ショーと棚のどこからも参照されないものだけを回収する。 */
-  function pruneExcept(trackIds) {
-    const live = new Set(Array.isArray(trackIds) ? trackIds.filter(validTrackId) : []);
+  /* An unreferenced file must remain unreferenced on two separate runs at
+   * least a day apart. Reuse or rewriting cancels its pending collection. */
+  function pruneExcept(trackIds, {now = Date.now(), guard = () => true} = {}) {
+    if (!Array.isArray(trackIds) || !Number.isFinite(now)) return Promise.resolve(0);
+    const live = new Set(trackIds.filter(validTrackId));
     return withStore("readwrite", (store) => new Promise((resolve, reject) => {
       let removed = 0;
       const request = store.openCursor();
@@ -136,11 +142,28 @@
       request.onsuccess = () => {
         const cursor = request.result;
         if (!cursor) { resolve(removed); return; }
-        if (!live.has(String(cursor.key))) {
-          cursor.delete();
-          removed += 1;
+        if (!guard()) { resolve(removed); return; }
+        const id = String(cursor.key);
+        if (!validTrackId(id)) {
+          // Remove only our orphan metadata whose Blob no longer exists.
+          if (id.startsWith(GC_PREFIX)) {
+            store.get(id.slice(GC_PREFIX.length)).onsuccess = event => {
+              if (event.target.result === undefined) store.delete(id);
+              cursor.continue();
+            };
+          } else cursor.continue();
+          return;
         }
-        cursor.continue();
+        const marker = GC_PREFIX + id;
+        if (live.has(id)) { store.delete(marker); cursor.continue(); return; }
+        store.get(marker).onsuccess = event => {
+          if (!guard()) { resolve(removed); return; }
+          const since = event.target.result?.since;
+          if (Number.isFinite(since) && now - since >= GC_GRACE_MS) {
+            cursor.delete(); store.delete(marker); removed++;
+          } else if (!Number.isFinite(since) || since > now) store.put({since:now}, marker);
+          cursor.continue();
+        };
       };
     }));
   }

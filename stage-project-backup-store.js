@@ -180,6 +180,55 @@
     });
   }
 
+  function pruneShelfDuplicates(storage, currentKey, shelfKey) {
+    let currentText, shelfText, current, shelf;
+    try {
+      currentText = storage.getItem(currentKey); shelfText = storage.getItem(shelfKey);
+      current = JSON.parse(currentText); shelf = JSON.parse(shelfText);
+      if (!current?.project?.id || !shelf || typeof shelf !== "object" || Array.isArray(shelf)) return Promise.resolve({removed:0, freedBytes:0});
+    } catch (_) { return Promise.resolve({removed:0, freedBytes:0}); }
+    return withStore("readwrite", (store, done) => {
+      const result = {removed:0, freedBytes:0}, request = store.openCursor();
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) { done(result); return; }
+        // Keep the independent backup of the open show, pending transactions,
+        // future metadata, and any snapshot that differs from the saved shelf.
+        if (storage.getItem(currentKey) !== currentText || storage.getItem(shelfKey) !== shelfText) { done(result); return; }
+        const record = cursor.value, id = String(cursor.key);
+        if (id !== current.project.id && id !== PENDING_SWITCH_KEY && record?.projectId === id
+            && Object.keys(record).every(key => ["projectId","serializedState","savedAt","token"].includes(key))
+            && Object.prototype.hasOwnProperty.call(shelf, id) && shelf[id]?.state?.project?.id === id
+            && JSON.stringify(shelf[id].state) === record.serializedState) {
+          cursor.delete(); result.removed++; result.freedBytes += record.serializedState.length * 2;
+        }
+        cursor.continue();
+      };
+    });
+  }
+
+  function protectedAudioIds() {
+    const collect = window.STAGE_STORAGE_HYGIENE?.audioReferences;
+    if (!collect) return Promise.resolve(null);
+    return withStore("readonly", (store, done) => {
+      const ids = new Set(); let readable = true;
+      const request = store.openCursor();
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) { done(readable ? [...ids] : null); return; }
+        const record = cursor.value;
+        const texts = cursor.key === PENDING_SWITCH_KEY
+          ? [record.beforeCurrent, record.beforeShelf, record.nextCurrent, record.nextShelf]
+          : [record.serializedState];
+        if (texts.some(text => text !== null && typeof text !== "string")) readable = false;
+        const found = collect(texts);
+        if (!found) readable = false;
+        else found.forEach(id => ids.add(id));
+        cursor.continue();
+      };
+    });
+  }
+
   window.SHOSAI_STAGE_PROJECT_BACKUP_STORE = Object.freeze({ get, put, putIfCurrent, remove, removeIfCurrent,
-    restoreIfCurrent, latest, beginPendingSwitch, getPendingSwitch, clearPendingSwitch });
+    restoreIfCurrent, latest, protectedAudioIds, pruneShelfDuplicates, beginPendingSwitch, getPendingSwitch, clearPendingSwitch });
 })();

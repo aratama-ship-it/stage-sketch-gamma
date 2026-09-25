@@ -117,7 +117,7 @@
      The current show has a verified IndexedDB recovery copy; localStorage keeps
      only inactive shows. This avoids storing a large open show twice inside
      Safari's much smaller localStorage quota. */
-  function createProjectStore({ storage, currentKey, shelfKey, backup = null, onCorrupt = () => {}, now = () => new Date().toISOString() }) {
+  function createProjectStore({ storage, currentKey, shelfKey, backup = null, maintain = null, onCorrupt = () => {}, now = () => new Date().toISOString() }) {
     let halted = false;
     const fail = (code, details = {}) => ({ ok: false, error: { code, ...details } });
     const record = value => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -149,9 +149,9 @@
         // The usual path releases the target from the shelf first. If the
         // target is smaller, a verified recovery journal permits the reverse
         // order so the current key frees capacity before the shelf grows.
-        if (currentFirst) storage.setItem(currentKey, serializedCurrent);
-        storage.setItem(shelfKey, serializedShelf);
-        if (!currentFirst) storage.setItem(currentKey, serializedCurrent);
+        if (currentFirst && beforeCurrent !== serializedCurrent) storage.setItem(currentKey, serializedCurrent);
+        if (beforeShelf !== serializedShelf) storage.setItem(shelfKey, serializedShelf);
+        if (!currentFirst && beforeCurrent !== serializedCurrent) storage.setItem(currentKey, serializedCurrent);
       } catch (error) { failure = classify(error); }
       if (!failure) {
         try {
@@ -194,6 +194,7 @@
       try { beforeBackup = await backup.get(projectId); }
       catch (_) { return unchanged(previous) ? { available: false } : { conflict: true }; }
       if (!unchanged(previous)) return { conflict: true };
+      if (beforeBackup?.serializedState === serializedState) return {available:true, backupRecord:beforeBackup};
       try {
         const backupRecord = await backup.putIfCurrent(projectId, beforeBackup, serializedState);
         if (!backupRecord) return { conflict: true };
@@ -218,7 +219,7 @@
       putShelf(previous.shelf, projectId, candidate, savedAt);
       return writePair({ ...previous, serializedCurrent: serializedState, serializedShelf: JSON.stringify(previous.shelf) });
     };
-    return Object.freeze({
+    const methods = {
       async commit({ projectId, serializedState, expectedRevision = null, intent } = {}) {
         if (halted) return fail("PARTIAL_WRITE", { halted: true });
         if (expectedRevision !== null) return fail("REVISION_UNSUPPORTED");
@@ -346,7 +347,23 @@
           return candidate;
         } catch (_) { return null; }
       },
-    });
+    };
+    // A slow IndexedDB write must not let this tab race its own next save.
+    let queue = Promise.resolve();
+    const serialized = Object.fromEntries(Object.entries(methods).map(([name, method]) => [name, (...args) => {
+      const operation = queue.then(async () => {
+        let result = await method(...args);
+        if (result?.error?.code === "QUOTA_EXCEEDED" && result.error.restored && maintain) {
+          let cleanup;
+          try { cleanup = await maintain(); } catch (_) { /* The original failure stays visible. */ }
+          if (cleanup?.freedBytes > 0) result = await method(...args);
+        }
+        return result;
+      });
+      queue = operation.catch(() => {});
+      return operation;
+    }]));
+    return Object.freeze({...serialized, whenIdle: () => queue});
   }
   window.SHOSAI_PROJECT_STORE_MODEL = Object.freeze({ create: createProjectStore });
 
@@ -2128,7 +2145,31 @@
   const SHOWS_KEY = "shosai-stage-shows-v1";
   const NEW_SHOW_RETURN_KEY = "gamma:new-show-return-v1";
   const ProjectStore = createProjectStore({ storage: localStorage, currentKey: BETA_STORAGE_KEY, shelfKey: SHOWS_KEY,
-    backup: window.SHOSAI_STAGE_PROJECT_BACKUP_STORE || null, onCorrupt: raw => markShelfCorrupt(raw) });
+    backup: window.SHOSAI_STAGE_PROJECT_BACKUP_STORE || null, onCorrupt: raw => markShelfCorrupt(raw),
+    maintain: () => storageMaintenance?.maintain({force:true}) });
+  const storageRecovery = !STUDY_READ_ONLY && window.STAGE_STORAGE_RECOVERY
+    ? window.STAGE_STORAGE_RECOVERY.create({storage:rawStorage, vault:window.STAGE_STORAGE_RECOVERY.createVault(window.indexedDB)}) : null;
+  const storageMaintenance = storageRecovery && window.STAGE_STORAGE_HYGIENE
+    ? window.STAGE_STORAGE_HYGIENE.create({storage:rawStorage, recovery:storageRecovery, onReport:renderStorageHealth,
+      pruneBackups: () => window.SHOSAI_STAGE_PROJECT_BACKUP_STORE?.pruneShelfDuplicates?.(rawStorage,
+        "gamma:scene-alternatives-v1:shosai-stage-sketch-v1", "gamma:scene-alternatives-v1:shosai-stage-shows-v1") || Promise.resolve(null)}) : null;
+  let maintenanceTimer = null;
+  function renderStorageHealth(report) {
+    const element = document.getElementById("stage-storage-health");
+    if (!element) return;
+    const mb = bytes => (bytes / 1024 / 1024).toFixed(1);
+    element.textContent = report.after.pressure
+      ? sx(`保存領域 ${mb(report.after.totalBytes)} MB（概算）・空きを確認してください`, `Storage estimate ${mb(report.after.totalBytes)} MB · Check available space`)
+      : sx(`保存領域 ${mb(report.after.totalBytes)} MB（概算）・自動整理済み`, `Storage estimate ${mb(report.after.totalBytes)} MB · Automatic cleanup checked`);
+    if (report.failed) element.textContent += sx("・一部の控えは元の場所に保持", " · Some copies remain in place");
+  }
+  function scheduleStorageMaintenance() {
+    if (!storageMaintenance) return;
+    clearTimeout(maintenanceTimer);
+    maintenanceTimer = setTimeout(() => {
+      storageMaintenance.maintain().catch(() => {});
+    }, 1200);
+  }
   // 壊れた棚の隔離先は旧Gammaキーを維持し、βの棚とは混ぜない。
   const SHOWS_BROKEN_KEY = "gamma:shosai-stage-shows-broken-v1";
   const PROJECT_BACKUP_RESET_KEY = "gamma:stage-project-backup-reset-v1";
@@ -7684,32 +7725,39 @@
     return raw;
   }
 
-  function liveAudioTrackIdsForGc() {
-    const ids = new Set(audioTracks().map((track) => track.id));
-    let raw;
-    try {
-      const saved = localStorage.getItem(SHOWS_KEY);
-      raw = saved ? JSON.parse(saved) : {};
-    } catch (_) {
-      // 棚が壊れている時は、そこだけに残る音源を誤って消さない。
-      return null;
+  function audioGcSnapshot() {
+    const texts = [snapshot(), ...history, ...future];
+    for (let i = 0; i < rawStorage.length; i++) {
+      const key = rawStorage.key(i);
+      if (/^(?:gamma:(?:scene-alternatives-v1:)?)?shosai-stage-(?:sketch|shows)(?:-broken)?-v1(?:$|-pre-section-hierarchy-v1)/.test(key)) {
+        texts.push(rawStorage.getItem(key));
+      }
     }
-    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-    Object.values(raw).forEach((entry) => {
-      const tracks = entry && entry.state && entry.state.project && entry.state.project.audioTracks;
-      if (!Array.isArray(tracks)) return;
-      tracks.forEach((track) => {
-        if (track && STAGE_AUDIO_ID_RE.test(String(track.id || ""))) ids.add(track.id);
-      });
-    });
-    return [...ids];
+    return texts;
   }
 
   function pruneOrphanAudioSoon() {
-    if (!audioStore || typeof audioStore.pruneExcept !== "function") return;
-    const liveIds = liveAudioTrackIdsForGc();
-    if (!liveIds) return;
-    setTimeout(() => { audioStore.pruneExcept(liveIds).catch(() => {}); }, 0);
+    if (!audioStore?.pruneExcept || !window.STAGE_STORAGE_HYGIENE || !storageRecovery
+        || !window.SHOSAI_STAGE_PROJECT_BACKUP_STORE?.protectedAudioIds) return;
+    setTimeout(async () => {
+      try {
+        // A broken shelf, recovery copy, or unavailable database postpones GC.
+        const before = audioGcSnapshot();
+        const ids = window.STAGE_STORAGE_HYGIENE.audioReferences(before);
+        if (!ids) return;
+        const [archives, backups] = await Promise.all([storageRecovery.summaries(),
+          window.SHOSAI_STAGE_PROJECT_BACKUP_STORE.protectedAudioIds()]);
+        if (!backups || archives.some(record => !Array.isArray(record.audioRefs))) return;
+        ids.push(...backups);
+        archives.forEach(record => ids.push(...record.audioRefs));
+        const guard = () => {
+          if (resetInProgress) return false;
+          const current = audioGcSnapshot();
+          return current.length === before.length && current.every((text, index) => text === before[index]);
+        };
+        await audioStore.pruneExcept(ids, {guard});
+      } catch (_) { /* Unknown reachability means keep the files. */ }
+    }, 1500);
   }
 
   /* 棚への保存が入りきらないことがある（localStorageは5MB前後）。
@@ -10608,6 +10656,8 @@
   /* 同梱ショーは配信ファイルを原本として一覧に見せる。起動のたびに大きな
      プロジェクトを localStorage へ複製すると、利用者のショーを保存する余地を
      奪う。端末に保存された同じ ID のショーは常にそちらを優先する。 */
+  let bundledShowsCache = null;
+  const emptyBundledShows = [];
   function availableShows() {
     const shows = readShows();
     if (shelfCorrupt) return shows;
@@ -10619,14 +10669,16 @@
         configurable: true, writable: true,
       });
     };
-    const sample = buildSampleShow();
-    if (sample) addBundled(drawSampleRoutes(sample));
-    const seam = buildSeamGardenSampleShow();
-    if (seam) addBundled(drawSampleRoutes(seam));
-    addBundled(buildRomeoJulietSampleShow());
     const local = Array.isArray(window.SHOSAI_STAGE_LOCAL_SHOWS)
-      ? window.SHOSAI_STAGE_LOCAL_SHOWS : [];
-    local.forEach((doc) => addBundled(buildLocalShow(doc)));
+      ? window.SHOSAI_STAGE_LOCAL_SHOWS : emptyBundledShows;
+    if (!bundledShowsCache || bundledShowsCache.lang !== lang || bundledShowsCache.source !== local) {
+      const sample = buildSampleShow(), seam = buildSeamGardenSampleShow();
+      bundledShowsCache = {lang, source:local, shows:[
+        sample && drawSampleRoutes(sample), seam && drawSampleRoutes(seam),
+        buildRomeoJulietSampleShow(), ...local.map(buildLocalShow),
+      ].filter(Boolean)};
+    }
+    bundledShowsCache.shows.forEach(addBundled);
     return shows;
   }
 
@@ -10657,7 +10709,7 @@
   function syncLocalShows() {
     retireLocalShows();
     const list = Array.isArray(window.SHOSAI_STAGE_LOCAL_SHOWS)
-      ? window.SHOSAI_STAGE_LOCAL_SHOWS : [];
+      ? window.SHOSAI_STAGE_LOCAL_SHOWS : emptyBundledShows;
     if (!list.length) return;
     const shows = readShows();
     let changed = false;
@@ -11248,6 +11300,7 @@
     if (history[history.length - 1] !== value) history.push(value);
     if (history.length > HISTORY_LIMIT) history.shift();
     future = [];
+    window.STAGE_STORAGE_HYGIENE?.trimHistory(history, future);
     updateHistoryButtons();
   }
 
@@ -11286,6 +11339,7 @@
     if (!history.length) return;
     future.push(snapshot());
     restore(history.pop());
+    window.STAGE_STORAGE_HYGIENE?.trimHistory(history, future);
     updateHistoryButtons();
     // 台本（project.script）やキューを戻したとき、タイムライン・セリフキューパネル・セリフ編集画面も描き直す
     window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
@@ -11296,6 +11350,7 @@
     if (!future.length) return;
     history.push(snapshot());
     restore(future.pop());
+    window.STAGE_STORAGE_HYGIENE?.trimHistory(history, future);
     updateHistoryButtons();
     window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
     announce("やり直しました。");
@@ -11385,45 +11440,59 @@
     return message;
   }
 
+  let autosaveInFlight = null;
+  let autosaveRequested = false;
+  let lastPersistedSnapshot = null;
+  async function flushAutosave() {
+    if (autosaveInFlight) return autosaveInFlight;
+    autosaveInFlight = (async () => {
+      while (autosaveRequested) {
+        autosaveRequested = false;
+        const savingState = state;
+        const previousSavedAt = savingState.lastSavedAt;
+        let savedAt = null;
+        try {
+          // UI-only repeat notifications must not rewrite the whole show and backup.
+          if (snapshot() !== lastPersistedSnapshot || localStorage.getItem(BETA_STORAGE_KEY) !== lastPersistedSnapshot) {
+            savedAt = nowIso();
+            savingState.lastSavedAt = savedAt;
+            const serializedState = snapshot();
+            const result = await ProjectStore.commit({ projectId:savingState.project.id,
+              serializedState, expectedRevision:null, intent:"autosave" });
+            shelfFailed = !result.ok;
+            if (!result.ok) {
+              if (savingState.lastSavedAt === savedAt) savingState.lastSavedAt = previousSavedAt;
+              syncSaveStamps(); reportProjectStoreFailure(result); break;
+            }
+            lastPersistedSnapshot = serializedState;
+          }
+          if (state !== savingState) break;
+          setSaveStatus(sx(`「${state.project.title}」を保存しました。`, `Saved “${state.project.title}”.`));
+          const saveError = document.getElementById("stage-show-save-error");
+          if (saveError) saveError.hidden = true;
+          updateBackupNote(); syncSaveStamps(); scheduleStorageMaintenance();
+          try { window.SHOSAI_STAGE_SESSION_HOOKS?.onLocalChange?.(); } catch (_) {}
+        } catch (_) {
+          if (savedAt && savingState.lastSavedAt === savedAt) savingState.lastSavedAt = previousSavedAt;
+          syncSaveStamps();
+          setSaveStatus(tx("この端末へ保存できませんでした。ファイルへ書き出して残してください。"), "warn");
+          break;
+        }
+      }
+    })().finally(() => { autosaveInFlight = null; });
+    return autosaveInFlight;
+  }
+
   function persistSoon() {
     if (STUDY_READ_ONLY) return;
+    if (resetInProgress) return;
     if (alternativesStorageBlocked) {
       setSaveStatus("保存データを読み取れないため自動保存を停止しています。元のデータは保持しています。", "warn"); return;
     }
     clearTimeout(saveTimer);
+    autosaveRequested = true;
     setSaveStatus(tx("変更を保存しています…") || "Saving…");
-    saveTimer = setTimeout(async () => {
-      const savingState = state;
-      const previousSavedAt = savingState.lastSavedAt;
-      try {
-        const savedAt = nowIso();
-        savingState.lastSavedAt = savedAt;
-        const result = await ProjectStore.commit({ projectId: savingState.project.id,
-          serializedState: snapshot(), expectedRevision: null, intent: "autosave" });
-        shelfFailed = !result.ok;
-        if (!result.ok) {
-          savingState.lastSavedAt = previousSavedAt;
-          syncSaveStamps();
-          reportProjectStoreFailure(result);
-          return;
-        }
-        if (state !== savingState) return;
-        setSaveStatus(sx(`「${state.project.title}」を保存しました。`, `Saved \u201c${state.project.title}\u201d.`));
-        const saveError = document.getElementById("stage-show-save-error");
-        if (saveError) saveError.hidden = true;
-        updateBackupNote();
-        syncSaveStamps();
-        try { window.SHOSAI_STAGE_SESSION_HOOKS?.onLocalChange?.(); } catch (_) {}
-      } catch (_) {
-        // 書けなかった試行を「最終保存」とは表示しない。
-        savingState.lastSavedAt = previousSavedAt;
-        syncSaveStamps();
-        /* 「画像を書き出して」と案内していたが、いまは書き出しボタンが
-           警告のすぐ隣にある。そちらへ導く（2026-08-24 P1-7対応）。 */
-        setSaveStatus(tx("この端末へ保存できませんでした。ファイルへ書き出して残してください。"),
-          "warn");
-      }
-    }, 180);
+    saveTimer = setTimeout(flushAutosave, 250);
   }
 
   function announce(message) {
@@ -11473,14 +11542,29 @@
   /* 読み込んだ写真の控え。同じデータURLを何度も復号しないため。
      読み終わった時点で一度だけ描き直す（それまでは地の色のまま出る）。 */
   const photoCache = new Map();
+  function trimPhotoCache() {
+    // Pin this show's images (normally at most 12). A smaller LRU would evict
+    // pictures still on stage and trigger an endless decode/render cycle.
+    const active = new Set(Object.values(state.project.photos || {}));
+    for (const [key, image] of photoCache) {
+      if (active.has(key)) continue;
+      photoCache.delete(key);
+      image.onload = null;
+      image.src = "";
+    }
+  }
   function photoImage(src) {
     if (!src) return null;
     const hit = photoCache.get(src);
-    if (hit) return hit.complete && hit.naturalWidth ? hit : null;
+    if (hit) {
+      photoCache.delete(src); photoCache.set(src, hit);
+      return hit.complete && hit.naturalWidth ? hit : null;
+    }
     const img = new Image();
-    img.onload = () => render();
+    img.onload = () => { trimPhotoCache(); render(); };
     img.src = src;
     photoCache.set(src, img);
+    trimPhotoCache();
     return null;
   }
 
@@ -22350,7 +22434,12 @@
      一度の二鍵トランザクションで入れ替える。次のショーは棚と現行キーへ
      二重保存しないので、大きなショーでもSafariの容量を無駄にしない。 */
   async function prepareLoadedState(next) {
+    if (resetInProgress) return false;
     clearTimeout(saveTimer);
+    autosaveRequested = false;
+    if (autosaveInFlight) await autosaveInFlight;
+    clearTimeout(saveTimer);
+    autosaveRequested = false;
     if (next.project.id === state.project.id) {
       const result = await ProjectStore.commit({ projectId: next.project.id,
         serializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "replace-open-show" });
@@ -22376,6 +22465,8 @@
     resetStageAskDraft({ clearInput: true, invalidate: true });
     clearAudioEngine();
     state = next;
+    trimPhotoCache();
+    lastPersistedSnapshot = null;
     selectedAudioTrackId = (state.project.audioTracks[0] && state.project.audioTracks[0].id) || null;
     audioPanelSignature = "";
     selectedId = null;
@@ -22491,7 +22582,7 @@
     else if (window.GAMMA_WORKSPACE?.mode?.() === "venue-setup") window.GAMMA_WORKSPACE.normal();
   }
 
-  function deleteShow(id) {
+  async function deleteShow(id) {
     const shows = readShows();
     const info = showSummary(shows[id]);
     if (!info) return;
@@ -22500,11 +22591,22 @@
       return;
     }
     if (!window.confirm(`「${info.title}」を端末から消します。戻せません。`)) return;
+    const backups = window.SHOSAI_STAGE_PROJECT_BACKUP_STORE;
+    let backupBefore = null;
+    try { backupBefore = await backups?.get(id); } catch (_) {}
+    // The asynchronous backup lookup must not overwrite a changed shelf.
+    const freshShows = readShows();
+    if (resetInProgress || state.project.id === id || JSON.stringify(freshShows) !== JSON.stringify(shows)) {
+      renderShows(); announce("別のタブでショー一覧が変わったため、削除を止めました。"); return;
+    }
     delete shows[id];
     if (!writeShows(shows)) {
       renderShows();
       announce("ショー一覧を更新できなかったため、消していません。");
       return;
+    }
+    if (backupBefore && backups?.removeIfCurrent) {
+      try { await backups.removeIfCurrent(id, backupBefore); } catch (_) { /* The show deletion is durable; retry is safe. */ }
     }
     renderShows();
     announce(`${info.title}を消しました。`);
@@ -27115,6 +27217,11 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     els.resetError.hidden = true;
     let removedAny = false;
     try {
+      clearTimeout(saveTimer); autosaveRequested = false;
+      if (autosaveInFlight) await autosaveInFlight;
+      await ProjectStore.whenIdle();
+      clearTimeout(maintenanceTimer);
+      await storageMaintenance?.whenIdle();
       if (!rawStorage) throw new Error("localStorage unavailable");
 
       /* 明示した舞台スケッチの保存鍵と gamma: 領域を消す。
@@ -37345,6 +37452,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
         ? "この端末に保存した前回のスケッチを開きました。"
         : "変更はこの端末のブラウザ内へ自動保存します。");
       if (pendingBlocked) reportProjectStoreFailure(pendingSwitch);
+      if (!pendingBlocked && !alternativesStorageBlocked) scheduleStorageMaintenance();
       applyLang();
       applyFeatureFlags();
 

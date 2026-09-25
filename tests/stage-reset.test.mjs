@@ -50,12 +50,15 @@ function resetHarness({ failRemove = null } = {}) {
   const resetError = { hidden: true, textContent: "", focus() {} };
   const context = {
     rawStorage: storage,
+    ProjectStore:{whenIdle:()=>Promise.resolve()},
     RESET_KEYS: [currentKey, shelfKey, markerKey],
     PROJECT_BACKUP_RESET_KEY: markerKey,
     NEW_SHOW_RETURN_KEY: "gamma:new-show-return-v1",
     nowIso: () => "2026-09-25T00:00:00.000Z",
     resetDialogStep: 2,
     resetInProgress: false,
+    clearTimeout() {}, saveTimer:null, maintenanceTimer:null,
+    autosaveRequested:false, autosaveInFlight:null, storageMaintenance:null,
     els: {
       resetConfirm: { disabled: false }, resetCancel: { disabled: false },
       resetClose: { disabled: false }, resetError,
@@ -97,4 +100,17 @@ test("a blocked storage removal shows an error and never reloads", async () => {
   assert.equal(resetError.hidden, false);
   assert.match(resetError.textContent, /一部の保存データが消えた可能性/);
   assert.equal(context.els.resetCancel.disabled, false);
+});
+
+test('reset waits for autosave and archive work before removing any stored show', async () => {
+  const {context,storage,events}=resetHarness();
+  let finishSave, finishMaintenance;
+  context.autosaveInFlight=new Promise(r=>finishSave=r);
+  context.storageMaintenance={whenIdle:()=>new Promise(r=>finishMaintenance=r)};
+  const reset=context.reset();
+  assert.ok(storage.getItem('shosai-stage-sketch-v1'));
+  finishSave();await new Promise(r=>setImmediate(r));
+  assert.ok(storage.getItem('shosai-stage-sketch-v1'));assert.equal(events.reloads,0);
+  finishMaintenance();await reset;
+  assert.equal(storage.getItem('shosai-stage-sketch-v1'),null);assert.equal(events.reloads,1);
 });

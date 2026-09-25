@@ -29,7 +29,7 @@
     if (other) { const li = document.createElement("li"); li.textContent = `他のアプリの保存分 · ${size(other)}`; list.append(li); }
   }
   async function renderArchives() {
-    const records = await model.list();
+    const records = await model.summaries();
     $("archive-status").textContent = records.length ? `${records.length}件をこのブラウザ内に保管しています。復元すると使用量が増えます。` : "保管済みの控えはありません。";
     $("export").disabled = busy || !records.length;
     const list = $("archives"); list.replaceChildren();
@@ -37,7 +37,8 @@
       const block = document.createElement("div"); block.className = "copy";
       const name = document.createElement("p"), key = document.createElement("code"), restore = document.createElement("button");
       const isShow = record.key === "gamma:inactive-show-entry-v1";
-      name.textContent = `${window.STAGE_STORAGE_RECOVERY.backupKind(record.key)}${isShow ? `「${record.title}」` : ""} · ${size(record.value.length * 2)}`;
+      name.textContent = `${window.STAGE_STORAGE_RECOVERY.backupKind(record.key)}${isShow ? `「${record.title}」` : ""} · ${size(record.storedBytes ?? record.chars * 2)}`
+        + (record.compressed ? `（圧縮前 ${size(record.rawBytes)}）` : "");
       key.textContent = isShow ? record.projectId : record.key;
       restore.type = "button"; restore.textContent = isShow ? "ショー一覧へ戻す" : "元の場所へ戻す";
       restore.disabled = busy;

@@ -18,10 +18,10 @@ const create = context.create;
 // The immediately preceding public release must still be able to save a show
 // after this candidate has moved its duplicate out of the localStorage shelf.
 // This guards an ordinary user rollback before any candidate is published.
-const publishedSource = execFileSync("git", ["show", "82c98817ac30f7206e8763b57714995ccd1806e6:stage-sketch.js"], {
+const publishedSource = execFileSync("git", ["show", "c7f91f27ce6d400be060ae420195e71e0e4cc9f1:stage-sketch.js"], {
   cwd: new URL("..", import.meta.url), encoding: "utf8", maxBuffer: 2 * 1024 * 1024,
 });
-const publishedFeatureShowSource = execFileSync("git", ["show", "82c98817ac30f7206e8763b57714995ccd1806e6:stage-samples/feature-test-show.js"], {
+const publishedFeatureShowSource = execFileSync("git", ["show", "c7f91f27ce6d400be060ae420195e71e0e4cc9f1:stage-samples/feature-test-show.js"], {
   cwd: new URL("..", import.meta.url), encoding: "utf8", maxBuffer: 8 * 1024 * 1024,
 });
 /* 2026-09-23: 試験場ショーは機能を足すたびに生成し直す（正本=生成スクリプト）。
@@ -37,7 +37,7 @@ const createPublished = publishedContext.create;
 const featureShowContext = { window: {} };
 vm.runInNewContext(publishedFeatureShowSource, featureShowContext);
 const featureShow = JSON.parse(JSON.stringify(featureShowContext.window.SHOSAI_STAGE_LOCAL_SHOWS.at(-1)));
-assert.equal(featureShow?.project?.id, "gamma-feature-test-v2", "bundled feature show must remain available");
+assert.equal(featureShow?.project?.id, "gamma-feature-test-v7", "bundled feature show must remain available");
 assert.ok(featureShow.project.scenes.some(scene => scene.id === "ft-scene-e1"), "feature show includes E-1");
 assert.ok(featureShow.project.scenes.some(scene => scene.id === "ft-scene-e3"), "feature show includes E-2");
 const featureShowState = JSON.stringify(featureShow);
@@ -227,14 +227,14 @@ test("removing the current duplicate makes room before a large imported-show swi
 });
 
 test("the app shell advances with the storage transaction code", () => {
-  assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092501/);
+  assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092523/);
   assert.match(stageHtml, /style\.css\?v=2026092519/);
-  assert.match(stageHtml, /stage-sketch\.js\?v=2026092517/);
-  assert.match(serviceWorker, /stage-sketch-gamma-shell-v359/);
-  assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092501/);
+  assert.match(stageHtml, /stage-sketch\.js\?v=2026092523/);
+  assert.match(serviceWorker, /stage-sketch-gamma-shell-v360/);
+  assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092523/);
   assert.match(serviceWorker, /\.\/style\.css\?v=2026092519/);
-  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092517/);
-  assert.match(stageHtml, /stage-storage-recovery\.js\?v=2026092517/);
+  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092523/);
+  assert.match(stageHtml, /stage-storage-recovery\.js\?v=2026092523/);
   assert.match(serviceWorker, /\.\/storage-recovery\.html/);
 });
 
@@ -471,4 +471,41 @@ test("a stale tab cannot replace a newer IndexedDB recovery snapshot", async () 
   assert.equal(result.ok, false);
   assert.equal(result.error.code, "CONCURRENT_EDIT");
   assert.equal((await store.latestRecovery()).serializedState, fresh);
+});
+
+test('unchanged autosaves do not rewrite localStorage or the independent backup', async () => {
+  const raw=show('test-noop','same'), storage=new MemoryStorage({current:raw,shelf:'{}'}), backup=new MemoryBackup();
+  await backup.put('test-noop',raw);
+  let writes=0, backupWrites=0;
+  const set=storage.setItem.bind(storage), put=backup.putIfCurrent.bind(backup);
+  storage.setItem=(...args)=>{writes++;return set(...args)};
+  backup.putIfCurrent=(...args)=>{backupWrites++;return put(...args)};
+  const store=create({storage,currentKey:'current',shelfKey:'shelf',backup});
+  for(let i=0;i<50;i++) assert.equal((await store.commit({projectId:'test-noop',serializedState:raw})).ok,true);
+  assert.equal(writes,0); assert.equal(backupWrites,0);
+});
+test('slow own-tab backup writes serialize successive saves without a false concurrent-edit failure', async () => {
+  const storage=new MemoryStorage({current:show('test-queue','before'),shelf:'{}'}), backup=new MemoryBackup();
+  const put=backup.putIfCurrent.bind(backup); let release;
+  backup.putIfCurrent=async(...args)=>{if(!release) await new Promise(r=>release=r);return put(...args)};
+  const store=create({storage,currentKey:'current',shelfKey:'shelf',backup});
+  const first=store.commit({projectId:'test-queue',serializedState:show('test-queue','first')});
+  const second=store.commit({projectId:'test-queue',serializedState:show('test-queue','second')});
+  await new Promise(r=>setImmediate(r)); release();
+  assert.equal((await first).ok,true); assert.equal((await second).ok,true);
+  assert.equal(JSON.parse(storage.getItem('current')).project.marker,'second');
+});
+test('quota failure retries once only after verified maintenance actually freed capacity', async () => {
+  const raw=show('test-quota','old'), next=show('test-quota','x'.repeat(200));
+  for(const free of [true,false]) {
+    const storage=new MemoryStorage({current:raw,shelf:'{}',obsolete:'x'.repeat(500)});
+    storage.maxTotalLength=raw.length+502;
+    let maintenanceCalls=0;
+    const store=create({storage,currentKey:'current',shelfKey:'shelf',backup:new MemoryBackup(),maintain:async()=>{
+      maintenanceCalls++;if(free)storage.removeItem('obsolete');return {freedBytes:free?1000:0};
+    }});
+    const result=await store.commit({projectId:'test-quota',serializedState:next});
+    assert.equal(result.ok,free);assert.equal(maintenanceCalls,1);
+    assert.equal(storage.getItem('current'),free?next:raw);
+  }
 });

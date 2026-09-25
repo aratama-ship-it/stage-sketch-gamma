@@ -247,3 +247,9 @@ public-dist/
 !/storage-recovery.html
 !/storage-recovery-ui.js
 !/tests/stage-storage-recovery.test.mjs
+
+# Verified automatic storage maintenance and bounded cache/history (0.2.11).
+!/stage-storage-codec.js
+!/stage-storage-hygiene.js
+!/tests/stage-storage-hygiene.test.mjs
+!/tests/stage-shell-hygiene.test.mjs

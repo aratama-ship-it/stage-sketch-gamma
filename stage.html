@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.10">
+<meta name="stage-sketch-gamma-version" content="v0.2.11">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
@@ -68,7 +68,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.10</span>
+              <span class="stage-app-version">0.2.11</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -1238,6 +1238,7 @@
               <span>最終バックアップ <time id="stage-last-backup-time">—</time></span>
             </div>
             <p id="stage-save-status">変更はこの端末のブラウザ内へ自動保存します。</p>
+            <p class="stage-backup-note"><a id="stage-storage-health" href="storage-recovery.html" target="_blank" rel="noopener">保存容量・自動整理を確認</a></p>
             <a id="stage-save-recovery-link" class="stage-save-recovery-link"
                href="storage-recovery.html" target="_blank" rel="noopener" hidden>保存容量を確認・修復（別タブ）</a>
             <!-- ブラウザ内の保存は設定・容量次第で消え得る。ファイルへ残した記録を正直に見せる -->
@@ -2542,6 +2543,18 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0211-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0211-title">v0.2.11</h3>
+        <time datetime="2026-09-25">2026-09-25</time>
+      </header>
+      <ul>
+        <li>旧形式の控えを自動整理します。別の保存領域へコピーし、内容の一致を確認してから元の場所を空けます。保管した控えは修復画面から復元できます。</li>
+        <li>控えを圧縮し、同じ内容の連続保存をまとめました。容量不足の場合は整理で空きができたときに一度再試行します。</li>
+        <li>取り消し履歴の容量に上限を設け、画像キャッシュを開いているショーの画像に絞りました。更新時の古いアプリキャッシュも整理します。同梱見本の不要な作り直しも減らしました。</li>
+        <li>不要な音源は24時間以上空けて再確認してから整理します。保存中のショー、別案、復旧用の控えから参照される音源は保持します。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0210-title">
       <header class="stage-release-entry-head">
         <h3 id="stage-release-v0210-title">v0.2.10</h3>
@@ -3513,15 +3526,17 @@
 <script src="stage-samples/index.js?v=2026092402"></script>
 <script src="stage-samples/romeo-juliet-cued.js?v=2026092435"></script>
 <script src="stage-samples/romeo-juliet-second.js?v=20260925-rj2"></script>
-<script src="stage-samples/feature-test-show.js?v=2026092519"></script>
+<script src="stage-samples/feature-test-show.js?v=2026092523"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
 <script src="stage-machinery.js?v=2026092055"></script>
 <script src="stage-scrim.js?v=2026092059"></script>
 <script src="stage-first-person.js?v=2026092506"></script>
-<script src="stage-audio-store.js?v=2026092208"></script>
-<script src="stage-project-backup-store.js?v=2026092501"></script>
-<script src="stage-storage-recovery.js?v=2026092517"></script>
+<script src="stage-audio-store.js?v=2026092523"></script>
+<script src="stage-project-backup-store.js?v=2026092523"></script>
+<script src="stage-storage-codec.js?v=2026092523"></script>
+<script src="stage-storage-recovery.js?v=2026092523"></script>
+<script src="stage-storage-hygiene.js?v=2026092523"></script>
 <script src="manual/manual-content.js?v=2026091502"></script>
 <script src="stage-pwa.js?v=2026091501"></script>
 <script src="stage-lighting-plans.js?v=2026092101"></script>
@@ -3544,7 +3559,7 @@
 <script src="stage-performer-motion.js?v=2026092506"></script>
 <script src="stage-performer-contour.js?v=2026092506"></script>
 <script src="stage-performer-body.js?v=2026092506"></script>
-<script src="stage-sketch.js?v=2026092517"></script>
+<script src="stage-sketch.js?v=2026092523"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092210"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-vox-panel.js?v=2026092432"></script>

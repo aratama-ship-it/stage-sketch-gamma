@@ -9,11 +9,14 @@
 :root{color-scheme:dark;--bg:#211d18;--fg:#eee7db;--muted:#c0b4a2;--accent:#ddc398;--line:#867968;--space:16px;--radius:4px;font:16px/1.65 system-ui,sans-serif;background:var(--bg);color:var(--fg)}
 *{box-sizing:border-box}body{max-width:760px;margin:0 auto;padding:24px}h1{font-size:28px;line-height:1.4}h2{font-size:20px}p{margin:var(--space) 0}header,section{margin-bottom:32px}a{color:var(--accent);text-underline-offset:4px}button{font:inherit;min-height:44px;padding:8px 16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);color:var(--fg);cursor:pointer}button:disabled{cursor:default;color:var(--muted)}button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}.primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}.actions{display:flex;gap:8px;flex-wrap:wrap}.note,small{color:var(--muted);font-size:14px}#result{border:1px solid var(--accent);border-radius:var(--radius);padding:var(--space);white-space:pre-line}#result:empty{display:none}ul{padding-left:24px}li{margin:16px 0}code{overflow-wrap:anywhere;font-size:14px}summary{cursor:pointer;min-height:44px;padding:8px 0}.copy{border-top:1px solid var(--line);padding:16px 0}.copy p{margin:0 0 8px}.copy button{margin:8px 8px 0 0}dl{margin:0}dt{color:var(--muted)}dd{margin:0 0 16px;font-size:20px}noscript{display:block;padding:16px;border:1px solid var(--accent)}
 </style>
-<script src="stage-storage-recovery.js?v=2026092517" defer></script>
-<script src="storage-recovery-ui.js?v=2026092517" defer></script>
+<script src="stage-storage-codec.js?v=2026092523" defer></script>
+<script src="stage-storage-recovery.js?v=2026092523" defer></script>
+<script src="stage-storage-hygiene.js?v=2026092523" defer></script>
+<script src="storage-recovery-ui.js?v=2026092523" defer></script>
 </head>
 <body>
 <header><p class="note">舞台スケッチγ</p><h1>保存容量の修復</h1>
+<p>通常はアプリが旧バックアップを自動整理します。控えは同じ内容を重ねて保存せず、対応するブラウザでは圧縮して保持します。制作中のショー、別案、参照されている音源は保持します。</p>
 <p>古い自動バックアップと重複した旧形式の一覧を、別の保存領域へ保管して空きを作ります。空きが足りなければ、開いていないショーを一件ずつ保管できます。</p>
 <p class="note">編集中のショーは開いたままにしてください。最初の「控えを保管」操作は現行のショー一覧を変更しません。下の「開いていないショー」は、選んだショーだけが一覧から外れ、いつでもこの画面で復元できます。音源と照明の控えは変更しません。</p></header>
 <noscript>修復にはJavaScriptが必要です。保存済みのデータは変更していません。</noscript>

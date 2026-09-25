@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v359";
+const CACHE_NAME = "stage-sketch-gamma-shell-v360";
 const APP_SHELL = [
   "./stage-performer-body.js?v=2026092506",
   "./stage-performer-contour.js?v=2026092506",
@@ -63,16 +63,18 @@ const APP_SHELL = [
   "./stage-samples/index.js?v=2026092402",
   "./stage-samples/romeo-juliet-cued.js?v=2026092435",
   "./stage-samples/romeo-juliet-second.js?v=20260925-rj2",
-  "./stage-samples/feature-test-show.js?v=2026092519",
+  "./stage-samples/feature-test-show.js?v=2026092523",
   "./stage-set-model.js?v=2026092354",
   "./stage-set-builder.js?v=2026091501",
   "./stage-machinery.js?v=2026092055",
   "./stage-scrim.js?v=2026092059",
   "./stage-first-person.js?v=2026092506",
-  "./stage-audio-store.js?v=2026092208",
-  "./stage-project-backup-store.js?v=2026092501",
-  "./stage-storage-recovery.js?v=2026092517",
-  "./storage-recovery-ui.js?v=2026092517",
+  "./stage-audio-store.js?v=2026092523",
+  "./stage-project-backup-store.js?v=2026092523",
+  "./stage-storage-codec.js?v=2026092523",
+  "./stage-storage-recovery.js?v=2026092523",
+  "./stage-storage-hygiene.js?v=2026092523",
+  "./storage-recovery-ui.js?v=2026092523",
   "./storage-recovery.html",
   "./manual/manual-content.js?v=2026091502",
   "./manual/manual-content.js",
@@ -86,7 +88,7 @@ const APP_SHELL = [
   "./stage-cue-sheet.js?v=2026092423",
   "./stage-shortcuts.js?v=2026092218",
   "./stage-reorder-motion.js?v=2026092420",
-  "./stage-sketch.js?v=2026092517",
+  "./stage-sketch.js?v=2026092523",
   "./stage-timeline.js?v=2026092423",
   "./stage-session.js?v=20260924-lightimport1",
   "./stage-study-owner.js?v=2026091501",
@@ -116,6 +118,7 @@ const STAGE_PATHS = new Set([
 const STORAGE_RECOVERY_PATH = new URL("./storage-recovery.html", self.location.href).pathname;
 const FORMATION_EDITOR_PATH = new URL("./formation/presets/editor.html", self.location.href).pathname;
 const LIGHT_EDITOR_PATH = new URL("./light-design/index.html", self.location.href).pathname;
+const APP_SHELL_URLS = new Set(APP_SHELL.map((path) => new URL(path, self.location.href).href));
 const APP_SHELL_PATHS = new Set(APP_SHELL.map((path) => new URL(path, self.location.href).pathname));
 
 /* 保存するときは「リダイレクトを経ていない素の応答」に写し直す。
@@ -170,6 +173,13 @@ async function hasCompleteAppShell(cache) {
 async function removePreviousCachesWhenReady() {
   const cache = await caches.open(CACHE_NAME);
   if (!await hasCompleteAppShell(cache)) return false;
+  // Keep exactly one URL per declared asset revision. Query strings used for
+  // preview/cache busting must not accumulate copies inside the current shell.
+  const entries = await cache.keys();
+  await Promise.all(entries.filter(request => {
+    const url = new URL(request.url);
+    return APP_SHELL_PATHS.has(url.pathname) && !APP_SHELL_URLS.has(url.href);
+  }).map(request => cache.delete(request)));
   const keys = await caches.keys();
   await Promise.all(
     keys
@@ -275,7 +285,7 @@ self.addEventListener("fetch", (event) => {
     caches.open(CACHE_NAME).then((cache) => cache.match(request)).then((cached) => {
       if (cached) return cached;
       return fetch(request).then((response) => {
-        if (response.ok) {
+        if (response.ok && APP_SHELL_URLS.has(url.href)) {
           const copy = response.clone();
           event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)));
         }
