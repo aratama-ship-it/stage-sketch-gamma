@@ -228,12 +228,12 @@ test("removing the current duplicate makes room before a large imported-show swi
 
 test("the app shell advances with the storage transaction code", () => {
   assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092523/);
-  assert.match(stageHtml, /style\.css\?v=2026092524/);
-  assert.match(stageHtml, /stage-sketch\.js\?v=2026092524/);
-  assert.match(serviceWorker, /stage-sketch-gamma-shell-v362/);
+  assert.match(stageHtml, /style\.css\?v=2026092525/);
+  assert.match(stageHtml, /stage-sketch\.js\?v=2026092525/);
+  assert.match(serviceWorker, /stage-sketch-gamma-shell-v363/);
   assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092523/);
-  assert.match(serviceWorker, /\.\/style\.css\?v=2026092524/);
-  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092524/);
+  assert.match(serviceWorker, /\.\/style\.css\?v=2026092525/);
+  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092525/);
   assert.match(stageHtml, /stage-storage-recovery\.js\?v=2026092523/);
   assert.match(serviceWorker, /\.\/storage-recovery\.html/);
 });
@@ -262,10 +262,10 @@ test("indoor standing reception venue keeps its 3D room layout outside show data
   assert.match(firstPerson, /function drawStandingReceptionHouse\(ctx, layout\)/);
   assert.match(firstPerson, /function drawStandingGuest\(ctx, guest\)/);
   assert.match(firstPerson, /if \(reception\) \{\s*drawShell\(ctx\);\s*drawHouse\(ctx\);/);
-  assert.match(stageHtml, /stage-venues\.js\?v=2026092522/);
-  assert.match(stageHtml, /stage-first-person\.js\?v=2026092507/);
-  assert.match(serviceWorker, /stage-venues\.js\?v=2026092522/);
-  assert.match(serviceWorker, /stage-first-person\.js\?v=2026092507/);
+  assert.match(stageHtml, /stage-venues\.js\?v=2026092523/);
+  assert.match(stageHtml, /stage-first-person\.js\?v=2026092508/);
+  assert.match(serviceWorker, /stage-venues\.js\?v=2026092523/);
+  assert.match(serviceWorker, /stage-first-person\.js\?v=2026092508/);
 });
 
 test("scene alternatives are an opt-in right-side panel without changing scene data", () => {

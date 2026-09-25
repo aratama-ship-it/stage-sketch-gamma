@@ -3816,7 +3816,6 @@
   };
   const venueName = (v) => tm("venue", v.id, v.label);
   const venueShortName = (v) => tm("venueShort", v.id, v.short);
-  const venueNoteText = (v) => (v.note ? tm("venueNote", v.id, v.note) : "");
   const sizeName = (z) => tm("size", z.id, z.label);
   /* 2026-09-18 本人指摘「1階の客席なのか2階の客席なのかという方が重要なので、必ず表示して」:
    * ★カスタム会場では席が近似になり、名前が「近い／中間／遠い」だけになっていた。
@@ -5256,6 +5255,7 @@
     venuePickModal: document.getElementById("stage-venue-pick-modal"),
     venuePickBackdrop: document.getElementById("stage-venue-pick-backdrop"),
     venuePickClose: document.getElementById("stage-venue-pick-close"),
+    venuePickApply: document.getElementById("stage-venue-pick-apply"),
     venueGallery: document.getElementById("stage-venue-pick-grid"),
     venueCustomOpen: document.getElementById("stage-venue-custom-open"),
     sizeSelect: document.getElementById("stage-size-select"),
@@ -5295,7 +5295,6 @@
     lightImplementationNote: document.getElementById("stage-light-implementation-note"),
     lightIntentClear: document.getElementById("stage-light-intent-clear"),
     venueScale: document.getElementById("stage-venue-scale"),
-    venueNote: document.getElementById("stage-venue-note"),
     venueMissing: document.getElementById("stage-venue-missing"),
     venueSummaryTitle: document.getElementById("stage-venue-summary-title"),
     venueSummarySize: document.getElementById("stage-venue-summary-size"),
@@ -15330,6 +15329,27 @@
       target.restore();
     }
 
+    // 作成会場のバックスクリーン。高さは保存せず、現在の天井高を使う。
+    if (v.backScreen && stepShape) {
+      const { from, to } = v.backScreen;
+      const ceilingM = Number(v.venueV2?.ceiling?.heightM) || Number(L.size.height) || 6;
+      const u1 = stepShape.uOf(from[0]), u2 = stepShape.uOf(to[0]);
+      const depth = stepShape.vOf(from[1]);
+      const low1 = place(u1, depth, L), low2 = place(u2, depth, L);
+      const high1 = stagePoint(u1, depth, ceilingM, L);
+      const high2 = stagePoint(u2, depth, ceilingM, L);
+      target.save();
+      target.beginPath();
+      target.moveTo(low1.x, low1.y); target.lineTo(low2.x, low2.y);
+      target.lineTo(high2.x, high2.y); target.lineTo(high1.x, high1.y);
+      target.closePath();
+      target.fillStyle = stageSurfaceColor("#e9e8df");
+      target.fill();
+      target.strokeStyle = "rgba(30,27,23,0.65)";
+      target.lineWidth = 2; target.stroke();
+      target.restore();
+    }
+
     // スラストは左右にも客席がある
     if (v.audience === "three") {
       target.save();
@@ -16062,7 +16082,20 @@
           target.stroke();
         });
       });
+      // 袖の手前端・奥端と内部の幕は劇場設定の3Dと同じ導出を使う。
+      const curtainVenue = v.venueV2 || { stageWings: v.stageWings,
+        floor: { outline: venueOutlineOf(v, L.size) }, audience: [] };
+      (window.GAMMA_VENUE_CURTAINS?.forVenue(curtainVenue) || []).forEach(({ from, to }) => {
+        const a = pointAt(from), b = pointAt(to);
+        target.beginPath(); target.moveTo(a.x, a.y); target.lineTo(b.x, b.y); target.stroke();
+      });
       target.restore();
+    }
+
+    if (v.backScreen) {
+      const a = pointAt(v.backScreen.from), b = pointAt(v.backScreen.to);
+      target.save(); target.beginPath(); target.moveTo(a.x, a.y); target.lineTo(b.x, b.y);
+      target.lineWidth = 5; target.strokeStyle = "#e9e8df"; target.stroke(); target.restore();
     }
 
     /* ★劇場に据え付けた壁（2026-09-19 本人決定）。
@@ -29875,14 +29908,6 @@ ${propsPlotHtml}
         ? `この会場データが見つかりません（元のID: ${current.id}）` : "";
     }
 
-    /* 会場の性格。プリセットは venueNote の対訳を、自分で作った会場は
-       書いたままの note を出す。文が無い会場では帯ごと消す。 */
-    if (els.venueNote) {
-      const note = current.missing ? "" : (venueNoteText(current) || "");
-      els.venueNote.textContent = note;
-      els.venueNote.hidden = !note;
-    }
-
     if (els.sizeSelect) {
       els.sizeSelect.innerHTML = "";
       current.sizes.forEach((s2) => {
@@ -29906,7 +29931,7 @@ ${propsPlotHtml}
       if (size.height) japaneseBits.push(`高さ ${size.height}m`);
       if (size.seats) japaneseBits.push(`客席 約${size.seats}席`);
       if (size.crowd) japaneseBits.push(`観客 〜${size.crowd.toLocaleString()}人`);
-      const japaneseScale = japaneseBits.join(" ・ ") + `（${roomSizeLabel(current.id, size.id) ? '編集用の目安' : current.source}）`;
+      const japaneseScale = japaneseBits.join(" ・ ");
       const bits = current.audience === "round"
         ? [`Diameter ${size.width}m`]
         : [`Width ${size.width}m`, `Depth ${size.depth}m`];
@@ -30541,8 +30566,10 @@ ${propsPlotHtml}
       : els.venueSelect.value;
   }
 
+  let venuePickerPendingId = null;
   function openVenuePicker() {
     if (!els.venuePickModal) return;
+    venuePickerPendingId = els.venueSelect?.value || null;
     els.venuePickModal.hidden = false;
     if (els.venuePickBackdrop) els.venuePickBackdrop.hidden = false;
     syncVenueGallerySelection();
@@ -30556,6 +30583,7 @@ ${propsPlotHtml}
     if (!els.venuePickModal || els.venuePickModal.hidden) return;
     els.venuePickModal.hidden = true;
     if (els.venuePickBackdrop) els.venuePickBackdrop.hidden = true;
+    venuePickerPendingId = null;
     if (restoreFocus) els.venuePick?.focus?.();
   }
 
@@ -30564,7 +30592,7 @@ ${propsPlotHtml}
        current.id を見ると押したタイルが光らない（実測して気づいた）。 */
   function syncVenueGallerySelection() {
     if (!els.venueGallery || !els.venueSelect) return;
-    const id = els.venueSelect.value;
+    const id = venuePickerPendingId || els.venueSelect.value;
     els.venueGallery.querySelectorAll(".stage-venue-gallery-item").forEach((item) => {
       item.setAttribute("aria-pressed", String(item.dataset.venueId === id));
     });
@@ -30599,11 +30627,6 @@ ${propsPlotHtml}
       });
       els.sizeSelect.value = selectedSize.id;
     }
-    if (els.venueNote) {
-      const note = selectedVenue.missing ? "" : (venueNoteText(selectedVenue) || "");
-      els.venueNote.textContent = note;
-      els.venueNote.hidden = !note;
-    }
     if (els.venueScale) {
       const dimensions = roomSizeLabel(selectedVenue.id, selectedSize.id)
         ? [roomSizeLabel(selectedVenue.id, selectedSize.id), `舞台 ${selectedSize.width}×${selectedSize.depth}m`]
@@ -30613,7 +30636,7 @@ ${propsPlotHtml}
       if (selectedSize.height) dimensions.push(`高さ ${selectedSize.height}m`);
       if (selectedSize.seats) dimensions.push(`客席 約${selectedSize.seats}席`);
       if (selectedSize.crowd) dimensions.push(`観客 〜${selectedSize.crowd.toLocaleString()}人`);
-      els.venueScale.textContent = `${dimensions.join(" ・ ")}（${roomSizeLabel(selectedVenue.id, selectedSize.id) ? '編集用の目安' : selectedVenue.source}）`;
+      els.venueScale.textContent = dimensions.join(" ・ ");
     }
     window.dispatchEvent(new CustomEvent("stage-venue-editor-template", {
       detail: { venueId: selectedVenue.id, sizeId: selectedSize.id },
@@ -33491,18 +33514,33 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     els.venueGallery.addEventListener("click", (event) => {
       const item = event.target.closest(".stage-venue-gallery-item");
       if (!item || !els.venueSelect) return;
-      const id = item.dataset.venueId;
-      if (!id || els.venueSelect.value === id) return;
-      els.venueSelect.value = id;
-      els.venueSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      venuePickerPendingId = item.dataset.venueId;
       syncVenueGallerySelection();
-      closeVenuePicker();
+    });
+    els.venueGallery.addEventListener("dblclick", (event) => {
+      const item = event.target.closest(".stage-venue-gallery-item");
+      if (!item) return;
+      venuePickerPendingId = item.dataset.venueId;
+      applyVenuePickerSelection();
     });
     // プルダウンで選んだときも一覧の印を合わせる（入口は2つでも見た目は1つ）
     if (els.venueSelect) {
       els.venueSelect.addEventListener("change", syncVenueGallerySelection);
     }
   }
+
+  function applyVenuePickerSelection() {
+    const id = venuePickerPendingId;
+    if (!id || !els.venueSelect) return;
+    closeVenuePicker();
+    if (id === els.venueSelect.value) {
+      window.dispatchEvent(new Event("stage-venue-editor-reapply"));
+    } else {
+      els.venueSelect.value = id;
+      els.venueSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
+  if (els.venuePickApply) els.venuePickApply.addEventListener("click", applyVenuePickerSelection);
 
   if (els.venuePick) els.venuePick.addEventListener("click", openVenuePicker);
   [els.venuePickClose, els.venuePickBackdrop].filter(Boolean)

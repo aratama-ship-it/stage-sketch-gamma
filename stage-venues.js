@@ -1718,6 +1718,14 @@
     // Optional enclosure: reject malformed data instead of silently dropping its boundary.
     if (venue.room != null && (!Array.isArray(venue.room.outline) ||
         venue.room.outline.length < 3 || !venue.room.outline.every(validPoint))) return null;
+    if (venue.backScreen !== undefined) {
+      const screen = venue.backScreen;
+      if (!screen || !validPoint(screen.from) || !validPoint(screen.to) ||
+          Math.abs(screen.from[1] - screen.to[1]) > 0.001 ||
+          Math.abs(screen.from[0] - screen.to[0]) < 0.4 ||
+          [...screen.from, ...screen.to].some(value => Math.abs(value) > 1000)) return null;
+      venue.backScreen = { from: screen.from.slice(), to: screen.to.slice() };
+    }
     // Section 9 has at most five independent plan positions. Do not truncate imported data.
     if (venue.viewPositions != null) {
       const points = venue.viewPositions;
@@ -2085,6 +2093,7 @@
        * ここを通さないと、劇場エディタで置いても図に出ない（2026-09-18 まで実際に出ていなかった）。
        * 壁は fixtures のうち「動かせない壁」だけ。什器・柱は別のもの。 */
       stageWings: clone(Array.isArray(venue.stageWings) ? venue.stageWings : []),
+      ...(venue.backScreen ? { backScreen: clone(venue.backScreen) } : {}),
       venueWalls: clone(venueWallList(venue)),
       ...(Number.isFinite(Number(venue.floor.stageHeightM))
         ? { stageHeightM: Number(venue.floor.stageHeightM) } : {}),

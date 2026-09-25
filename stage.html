@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.13">
+<meta name="stage-sketch-gamma-version" content="v0.2.14">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092524">
+<link rel="stylesheet" href="style.css?v=2026092525">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -68,7 +68,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.13</span>
+              <span class="stage-app-version">0.2.14</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -2560,6 +2560,16 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0214-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0214-title">v0.2.14</h3>
+        <time datetime="2026-09-25">2026-09-25</time>
+      </header>
+      <ul>
+        <li>劇場形式プリセットの長い説明を省き、一覧の末尾から選んだプリセットを適用できるようにしました。ダブルクリックでも適用できます。</li>
+        <li>舞台袖の手前と奥にも幕を表示します。バックスクリーンは劇場設定の平面図で横線を引いて設置でき、天井高に追従します。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0213-title">
       <header class="stage-release-entry-head"><h3 id="stage-release-v0213-title">v0.2.13</h3><time datetime="2026-09-25">2026-09-25</time></header>
       <ul>
@@ -2942,14 +2952,7 @@
         </div>
         <!-- 形から選ぶ一覧は VENUE_PICKER_MODAL_2026_09_19 でモーダルへ移した。
              ここに帯として出していたが、本人要望で「プリセットを押すと出る」形にした。 -->
-        <!-- 会場の性格を書いた文。中身は言語ごとに JS が入れるので data-no-i18n。 -->
-        <p class="stage-venue-note" id="stage-venue-note" data-no-i18n hidden></p>
         <p class="stage-venue-scale" id="stage-venue-scale"></p>
-        <!-- T-33（2026-09-18 本人要望）: 手順1〜7でカスタムしたあと、選んでいるプリセットの
-             初期形へ一撃で戻せるようにする。これまではプルダウンで別の形式を選んでから
-             目的の形式を選び直す（2回選ぶ）必要があった。同じ値を選んでも change が出ないため。 -->
-        <button type="button" class="btn-quiet stage-venue-preset-reapply"
-                id="stage-venue-preset-reapply">プリセットを適用する</button>
         <p class="stage-profile-hint" id="stage-venue-missing" hidden></p>
         <!-- R-07（2026-09-17 本人要望）: 「劇場の照明プランを追加…」のモーダルをやめ、
              中身を劇場形式プリセットのボックスの中へ出した。ここで本人に見せたいのは
@@ -3221,6 +3224,14 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/></svg><span>丸</span>
         </button>
       </div>
+      <div class="stage-venue-back-screen-controls">
+        <p class="stage-field-label">バックスクリーン</p>
+        <p class="stage-profile-hint">「設置」を押し、平面図で横方向にドラッグして幅と位置を決めます。高さは天井に追従します。</p>
+        <div class="stage-tool-grid">
+          <button type="button" id="stage-venue-back-screen-place" aria-pressed="false">バックスクリーンを設置</button>
+          <button type="button" class="btn-quiet" id="stage-venue-back-screen-remove" disabled>取り外す</button>
+        </div>
+      </div>
         </section>
         <section class="stage-venue-editor-machinery" aria-labelledby="stage-venue-editor-machinery-title">
           <h3 id="stage-venue-editor-machinery-title">8. 舞台機構</h3>
@@ -3327,6 +3338,9 @@
   <div class="stage-modal-body">
     <div class="stage-venue-pick-grid" id="stage-venue-pick-grid" data-no-i18n></div>
   </div>
+  <footer class="stage-venue-pick-actions">
+    <button type="button" class="stage-minor-action" id="stage-venue-pick-apply">プリセットを適用する</button>
+  </footer>
 </div>
 
 <div class="stage-modal stage-venue-apply-modal" id="stage-venue-apply-modal" role="dialog" aria-modal="true"
@@ -3548,7 +3562,7 @@
   </button>
 </div>
 
-<script src="stage-venues.js?v=2026092522"></script>
+<script src="stage-venues.js?v=2026092523"></script>
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
@@ -3560,12 +3574,12 @@
 <script src="stage-samples/index.js?v=2026092402"></script>
 <script src="stage-samples/romeo-juliet-cued.js?v=2026092435"></script>
 <script src="stage-samples/romeo-juliet-second.js?v=20260925-rj2"></script>
-<script src="stage-samples/feature-test-show.js?v=2026092524"></script>
+<script src="stage-samples/feature-test-show.js?v=2026092525"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
 <script src="stage-machinery.js?v=2026092055"></script>
 <script src="stage-scrim.js?v=2026092059"></script>
-<script src="stage-first-person.js?v=2026092507"></script>
+<script src="stage-first-person.js?v=2026092508"></script>
 <script src="stage-audio-store.js?v=2026092523"></script>
 <script src="stage-project-backup-store.js?v=2026092523"></script>
 <script src="stage-storage-codec.js?v=2026092523"></script>
@@ -3594,7 +3608,7 @@
 <script src="stage-performer-motion.js?v=2026092506"></script>
 <script src="stage-performer-contour.js?v=2026092506"></script>
 <script src="stage-performer-body.js?v=2026092506"></script>
-<script src="stage-sketch.js?v=2026092524"></script>
+<script src="stage-sketch.js?v=2026092525"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092210"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-vox-panel.js?v=2026092432"></script>
@@ -3603,11 +3617,11 @@
 <script src="stage-session.js?v=20260924-lightimport1"></script>
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
-<script src="stage-venue-curtains.js?v=2026092518"></script>
-<script src="stage-venue-editor.js?v=2026092522"></script>
+<script src="stage-venue-curtains.js?v=2026092519"></script>
+<script src="stage-venue-editor.js?v=2026092523"></script>
 <script src="gamma-workspace.js?v=2026092514"></script>
 <script src="gamma-mobile.js?v=2026092202"></script>
-<script src="stage-venue-preview.js?v=2026092519"></script>
+<script src="stage-venue-preview.js?v=2026092520"></script>
 <script src="stage-venue-viewpoints.js?v=2026092503"></script>
 </body>
 </html>

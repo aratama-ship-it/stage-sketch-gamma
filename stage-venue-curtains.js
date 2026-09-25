@@ -20,9 +20,9 @@
   }
   function forVenue(venue) {
     const sides = new Set((venue?.audience || []).map(a => a.side));
-    // Traverse has only left/right seating. Keep three-sided thrust and full-round excluded.
+    // Traverse's long acting strip turns the curtain rows by 90 degrees.
     const traverse = venue?.stageFormat === 'thrust' && sides.size === 2 && sides.has('left') && sides.has('right');
-    if (venue?.stageFormat !== 'theatre' && !traverse) return [];
+    if (!Array.isArray(venue?.stageWings)) return [];
     const orient = p => traverse ? [p[1], p[0]] : p.slice();
     const floors = [venue.floor?.outline, ...(venue.floor?.extensions || []).map(p => p.polygon)].filter(valid).map(p => p.map(orient));
     const curtains = [];
@@ -31,8 +31,9 @@
       const polygon = wing.polygon.map(orient);
       const zs = polygon.map(p => p[1]);
       const near = Math.max(...zs), far = Math.min(...zs);
-      // Keep the prototype's three rows, but fit each row to the drawn wing.
-      [0.10, 0.42, 0.74].forEach(t => {
+      // Close the front and rear of each wing as well as its three internal legs.
+      // A tiny inset keeps the polygon intersection valid at its exact boundary.
+      [0.001, 0.10, 0.42, 0.74, 0.999].forEach(t => {
         const z = far + (near - far) * t;
         let parts = spans(polygon, z);
         floors.forEach(floor => spans(floor, z).forEach(([lo, hi]) => {

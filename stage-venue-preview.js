@@ -26,7 +26,6 @@
         <button type="button" data-action="move" aria-pressed="false">袖・壁を動かす</button>
         <button type="button" data-action="out" aria-label="立体を縮小">−</button>
         <button type="button" data-action="in" aria-label="立体を拡大">＋</button>
-        <label><input type="checkbox" data-action="curtains" checked>幕</label>
       </div>
       <p id="venue-live-help">ドラッグで見回す · ホイールで拡大縮小</p>
       <p>袖幕の位置は平面図と共通。高さは目安です。</p>
@@ -39,7 +38,7 @@
   const canvas = panel.querySelector('canvas');
   const context = canvas.getContext('2d', { alpha: false });
   const help = panel.querySelector('#venue-live-help');
-  const state = { yaw: -.48, pitch: .40, zoom: 1, curtains: true, move: false, visible: true, viewpoint: null };
+  const state = { yaw: -.48, pitch: .40, zoom: 1, move: false, visible: true, viewpoint: null };
   const stats = { draws: 0, geometryBuilds: 0, lastMs: 0, maxMs: 0, faces: 0 };
   let frame = 0, snapshotKey = '', model, drag = null, projected = [], transform;
   let lastDrawKey = '';
@@ -89,12 +88,17 @@
       const target = wing.id !== 'drawing-preview' ? { kind: 'wing', id: wing.id } : null;
       prism(wing.polygon, Math.min(-.12, stageY - .12), stageY, '#4a443c', target, true);
     });
-    if (state.curtains) curtains.forEach(({ wingId, from, to }) => {
+    curtains.forEach(({ wingId, from, to }) => {
       const target = wingId !== 'drawing-preview' ? { kind: 'wing', id: wingId } : null;
       sheet(from, to, stageY, stageY + ceiling * .75, target);
     });
+    if (venue.backScreen) {
+      const { from, to } = venue.backScreen;
+      face([point(from, stageY), point(to, stageY), point(to, stageY + ceiling),
+        point(from, stageY + ceiling)], '#e9e8df');
+    }
     const frontBorder = window.GAMMA_VENUE_CURTAINS.frontBorderForVenue(venue);
-    if (state.curtains && frontBorder) {
+    if (frontBorder) {
       sheet(frontBorder.from, frontBorder.to,
         stageY + frontBorder.openingHeightM, stageY + frontBorder.topHeightM, null);
     }
@@ -145,7 +149,7 @@
   function draw() {
     if (!visible()) return;
     const start = performance.now(), snapshot = editor.previewSnapshot();
-    const key = JSON.stringify([snapshot, state.curtains]);
+    const key = JSON.stringify(snapshot);
     if (key !== snapshotKey) { snapshotKey = key; model = buildModel(snapshot); }
     const rect = canvas.getBoundingClientRect(), width = rect.width, height = rect.height;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -343,7 +347,6 @@
       schedule();
     }
   });
-  panel.querySelector('[data-action=curtains]').addEventListener('change', event => { endDrag(true); state.curtains = event.target.checked; schedule(); });
   toggle.addEventListener('click', () => {
     endDrag(true); state.visible = !state.visible;
     modal.classList.toggle('venue-live-only-plan', !state.visible);

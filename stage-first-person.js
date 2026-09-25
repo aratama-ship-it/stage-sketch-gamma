@@ -3180,6 +3180,14 @@
         fillPoly(ctx, [a, b, { ...b, y: curtainTop }, { ...a, y: curtainTop }], "#0e0b08");
       });
     });
+    // 袖の手前端・奥端も、劇場設定の平面図と同じ幕の位置に立てる。
+    const venueModel = currentVenueModel();
+    const curtainVenue = venueModel?.venueV2 || { stageWings: venueModel?.stageWings || [],
+      floor: { outline: venueModel?.outline || [] }, audience: [] };
+    (window.GAMMA_VENUE_CURTAINS?.forVenue(curtainVenue) || []).forEach(({ from, to }) => {
+      const a = at(from, 0), b = at(to, 0);
+      fillPoly(ctx, [a, b, { ...b, y: curtainTop }, { ...a, y: curtainTop }], "#0e0b08");
+    });
 
     /* ★劇場に据え付けた壁（2026-09-19 本人決定）。低い床から heightM まで立てる。
        間口の額縁（frame）は正面図が昔から別に描くので、ここでは立てない。 */
@@ -3194,6 +3202,13 @@
       }
       fillPoly(ctx, poly.map((point) => at(point, wall.heightM)), "#332a1f");
     });
+
+    if (venueModel?.backScreen) {
+      const a = at(venueModel.backScreen.from, 0);
+      const b = at(venueModel.backScreen.to, 0);
+      fillPoly(ctx, [a, b, { ...b, y: CEIL }, { ...a, y: CEIL }], "#e9e8df");
+      line3(ctx, { ...a, y: CEIL }, { ...b, y: CEIL }, "#403b36", 1);
+    }
 
     // 床の縁。舞台と、その外の低い所の境目を読めるようにする
     lib.boundary(shape).forEach((edge) => {
