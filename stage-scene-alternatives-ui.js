@@ -3,15 +3,18 @@
   const host = () => window.STAGE_SCENE_ALTERNATIVES_HOST;
   const anchor = document.getElementById('stage-scene-alternatives-host');
   if (!anchor) return;
+  const uiText = label => window.GAMMA_UI_TEXT?.(label, document.documentElement.lang) || label;
+  const displayLabel = label => document.documentElement.lang === 'en' && /^([A-Z])案$/.test(label)
+    ? `Version ${label[0]}` : label;
   const bar = document.createElement('div'); bar.id = 'stage-scene-alternatives'; bar.className = 'scene-alternatives';
   anchor.replaceChildren(bar);
-  const tabs = document.createElement('div'); tabs.className = 'scene-alternatives-tabs'; tabs.setAttribute('aria-label','シーンの案');
+  const tabs = document.createElement('div'); tabs.className = 'scene-alternatives-tabs'; tabs.setAttribute('aria-label', uiText('シーンの案'));
   const info = document.createElement('span'); info.className = 'scene-alternatives-info';
   const actions = document.createElement('div'); actions.className = 'scene-alternatives-actions';
-  const button = (label, handler) => { const el=document.createElement('button');el.type='button';el.textContent=label;el.className='btn-quiet';el.addEventListener('click',()=>run(handler));return el; };
+  const button = (label, handler) => { const el=document.createElement('button');el.type='button';el.textContent=uiText(label);el.className='btn-quiet';el.addEventListener('click',()=>run(handler));return el; };
   const add = button('＋ 別案を作る', ()=>host().add());
   const compare = button('案を比べる', ()=>openDialog(false));
-  const preview = button('転換を試す', ()=>host().preview()); preview.title='前の採用案から、表示中の案への転換を試します';
+  const preview = button('転換を試す', ()=>host().preview()); preview.title=uiText('前の採用案から、表示中の案への転換を試します');
   const edit = button('案の説明', ()=>openDialog(true));
   const adopt = button('この案を採用', ()=>openDialog(false, true));
   actions.append(add, compare, preview, edit, adopt); bar.append(tabs,info,actions);
@@ -29,13 +32,17 @@
     for (const item of items) {
       const selected=data ? item.id===context.currentId : true;
       const adopted=data ? item.id===data.adoptedId : true;
-      const tab=button(item.label+(adopted?' · 採用':''),()=>data && host().view(item.id));
+      const tab=button(displayLabel(item.label)+(adopted ? (document.documentElement.lang === 'en' ? ' · adopted' : ' · 採用') : ''),()=>data && host().view(item.id));
       tab.setAttribute('aria-pressed',String(selected));tab.title=item.description || item.label;
       tabs.append(tab);
     }
     const current=data?.items.find(item=>item.id===context.currentId);
     const accepted=data?.items.find(item=>item.id===data.adoptedId);
-    info.textContent=current && current.id!==data.adoptedId ? `${current.label}を編集中 · 通し再生・共有は${accepted.label}` : `${accepted?.label || 'A案'}を編集中 · 採用中`;
+    info.textContent=document.documentElement.lang === 'en'
+      ? current && current.id!==data.adoptedId
+        ? `Editing ${displayLabel(current.label)} · playback and sharing use ${displayLabel(accepted.label)}`
+        : `Editing ${displayLabel(accepted?.label || 'A案')} · adopted`
+      : current && current.id!==data.adoptedId ? `${current.label}を編集中 · 通し再生・共有は${accepted.label}` : `${accepted?.label || 'A案'}を編集中 · 採用中`;
     preview.disabled=!context.canPreview; compare.disabled=!data || data.items.length<2; edit.disabled=!data;
     adopt.hidden=!data || data.adoptedId===context.currentId;
     add.disabled=!!data && data.items.length>=26;

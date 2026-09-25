@@ -25,7 +25,7 @@ ${table(["Where", "Name", "What it does"], [
   ["Second row", ui("Full screen"), kbd("F") + ". Fill the screen with the drawing (" + ref("fullscreen", "Part 11, 11-7") + ")"],
   ["Second row", ui("Cue sheets"), "Opens the list of cue sheets (the same as the Cue sheets tab; " + ref("cuesheet", "Part 9, 9-6") + ")"],
   ["Second row", ui("Images & print"), "Export images or open the print sheet (" + ref("export", "Part 11, 11-1") + ")"],
-  ["Second row", ui("Sharing"), "Live sharing and performer links — not yet implemented in Gamma (" + ref("share", "Part 11, 11-4") + ")"],
+  ["Second row", ui("Sharing"), "Live sharing and performer links on Gamma's dedicated host (" + ref("share", "Part 11, 11-4") + ")"],
   ["Second row", "Bell — " + ui("Notifications and update history"), "What changed in each version. A dot appears when there is something new"]
 ])}`
       },
@@ -78,7 +78,7 @@ ${table(["Panel", "At first", "What it holds", "Section"], [
   [ui("Backdrop"), "Hidden", "Base colour, brush colour and size, photo, screen text", ref("backdrop", "8-3")],
   [ui("Scenes"), "Shown", "Add, reorder and step through scenes", ref("scene-list", "3-3")],
   [ui("Second seat"), "Hidden", "A second small drawing from another seat (heavier to draw; no lighting shown)", ref("viewpoints", "5-6")],
-  [ui("別案", "Alternatives"), "Hidden", "Make A/B versions of a scene, compare them and adopt one", ref("alternatives", "3-8")],
+  [ui("Alternatives"), "Hidden", "Make A/B versions of a scene, compare them and adopt one", ref("alternatives", "3-8")],
   [ui("Dialogue cues"), "Hidden", "All the show's dialogue cues and the current line shown large", ref("vox-panel", "9-5")],
   [ui("Selection"), "Shown", "Pose, facing and layering of the piece you selected", ref("inspector", "2-5")],
   [ui("AI instructions"), "Shown", "Write instructions for an AI", "—"]
@@ -91,7 +91,7 @@ ${note("Not on iPad or iPhone", "The panel switches are a computer-screen featur
         keywords: ["selection", "inspector", "details", "size", "facing", "colour", "layering", "pose", "select", "beside"],
         html: `
 <p>Select a piece on the drawing and ${ui("Selection")} on the right shows the fields that suit it: pose, facing, costume and held items for a performer; dimensions or angle for a set piece; diameter or level for a light; height or angle for machinery. The name, colour and dimensions themselves are set in the detail window of the list on the left.</p>
-<p>With ${ui("選んだものを図に添える", "Show the selection beside the drawing")} switched on in Settings (on by default), a helper appears next to the selected piece. Switched off, the details appear only in the side panel.</p>
+<p>With ${ui("Show the selection beside the drawing")} switched on in Settings (on by default), a helper appears next to the selected piece. Switched off, the details appear only in the side panel.</p>
 <p><strong>A single click</strong> on a name in a list opens its detail window (not a double click). To select the piece on stage instead, press the mark at the left of the row.</p>`
       },
       {
@@ -134,7 +134,7 @@ ${table(["Key", "What it does"], [
   [kbd("⌘Z") + " / " + kbd("⇧⌘Z"), "Undo / redo"],
   [kbd("Esc"), "Close a window, leave full screen, leave 3D"]
 ])}
-<p>The right column of Settings has ${ui("Keyboard shortcuts")} and ${ui("ショートカットを変更", "Change shortcuts")}. Press the key shown on a row, then the new key, to reassign it; ${ui("既定のキーに戻す", "Restore the default keys")} undoes your changes. Settings are saved in this device and browser only. While you are typing, text entry wins over stage shortcuts except ⌘S. On Windows and Linux read ⌘ as Ctrl.</p>`
+<p>The right column of Settings has ${ui("Keyboard shortcuts")} and ${ui("Change shortcuts")}. Press the key shown on a row, then the new key, to reassign it; ${ui("Restore the default keys")} undoes your changes. Settings are saved in this device and browser only. While you are typing, text entry wins over stage shortcuts except ⌘S. On Windows and Linux read ⌘ as Ctrl.</p>`
       }
     ]
   });

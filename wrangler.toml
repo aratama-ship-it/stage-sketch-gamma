@@ -1,0 +1,27 @@
+# Stage Sketch Gamma's separate, same-origin sharing host. This Worker has its
+# own Durable Object namespaces; deploying it cannot reuse beta room/link data.
+name = "stage-sketch-gamma-share"
+main = "worker.js"
+compatibility_date = "2026-08-19"
+workers_dev = true
+
+[assets]
+directory = "."
+binding = "ASSETS"
+run_worker_first = true
+
+[durable_objects]
+bindings = [
+  { name = "SESSION_ROOM", class_name = "SessionRoom" },
+  { name = "STUDY_LINKS", class_name = "StudyLinks" },
+  { name = "STUDY_READER_AUTH", class_name = "StudyReaderAuth" },
+  { name = "STUDY_READER_ACCOUNTS", class_name = "StudyReaderAccount" }
+]
+
+[[migrations]]
+tag = "v1-gamma-share"
+new_sqlite_classes = ["SessionRoom", "StudyLinks", "StudyReaderAuth", "StudyReaderAccount"]
+
+[vars]
+# Performer links are bearer links, as on beta. Management needs an editor login.
+STUDY_ALLOW_ANONYMOUS = "true"

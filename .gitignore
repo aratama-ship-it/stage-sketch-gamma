@@ -82,6 +82,30 @@ public-dist/
 !/BETA_UPDATE_SAFETY.md
 !/PUBLISH_RULES.md
 !/README.md
+!/worker.js
+!/wrangler.toml
+!/SHARE_DESIGN_TOKENS.md
+!/SHARE_SETUP.md
+!/build_study.py
+!/stage_extract.py
+!/session-room.js
+!/study-links.js
+!/study-reader-account.js
+!/study-reader-api.js
+!/study-reader-auth.js
+!/study.html
+!/study-frame.html
+!/stage-study-viewer.js
+!/stage-study-frame.js
+!/stage-study-pen.js
+!/stage-study-private.js
+!/stage-study-sync.js
+!/stage-study-continuity.js
+!/stage-study-sticky.js
+!/stage-study-phone.js
+!/stage-study-phone.css
+!/stage-study-navigation.js
+!/stage-study-navigation.css
 # 2026-09-17: ヘッダーのブランド表示に使う確定ロゴ一式。
 # 画面が読むのは logo-jp-gamma-inline-white.svg の1枚だが、
 # 明るい背景用・単色版・下添え版も素材としてまとめて置いておく。
@@ -254,6 +278,7 @@ public-dist/
 !/tests/performer-body.test.mjs
 !/tests/performer-motion.test.mjs
 !/tests/feature-test-show.test.mjs
+!/tests/gamma-sharing.test.mjs
 !/tests/stage-venue-front-border.test.mjs
 !/tests/stage-venue-viewpoint-height.test.mjs
 !/tests/stage-venue-audience-elevation.test.mjs

@@ -11,6 +11,10 @@
     shareClose: $("stage-share-close"),
     shareBackdrop: $("stage-share-backdrop"),
     shareTitle: $("stage-share-title"),
+    shareHostNote: $("stage-share-host-note"),
+    shareHostExplanation: $("stage-share-host-explanation"),
+    shareHostLink: $("stage-share-host-link"),
+    shareHostMigration: $("stage-share-host-migration"),
     summary: $("stage-session-summary"),
     realtimeTitle: $("stage-share-realtime-title"),
     realtimeHint: $("stage-share-realtime-hint"),
@@ -35,6 +39,15 @@
     planCanvas: $("stage-plan-canvas"),
   };
   if (!els.panel || !els.start || !els.status || !els.participants) return;
+
+  const isStaticPages = location.hostname === "aratama-ship-it.github.io"
+    && location.pathname.startsWith("/stage-sketch-gamma/");
+  if (isStaticPages && els.shareHostNote) {
+    els.shareHostNote.hidden = false;
+    els.panel.querySelectorAll(".stage-share-live, .stage-share-study").forEach((section) => {
+      section.hidden = true;
+    });
+  }
 
   const NAME_KEY = "gamma:shosai-session-name";
   const HOST_SESSION_KEY = "gamma:shosai-session-host-room";
@@ -112,6 +125,17 @@
       els.shareOpen.removeAttribute("title");
     }
     if (els.shareClose) els.shareClose.setAttribute("aria-label", shareText("閉じる", "Close"));
+    if (isStaticPages) {
+      if (els.shareHostExplanation) els.shareHostExplanation.textContent = shareText(
+        "このページは静的配信です。リアルタイム共有と演者用リンクはγ専用ホストで使えます。",
+        "This page is static. Live sharing and performer links are available on Gamma's dedicated host."
+      );
+      if (els.shareHostLink) els.shareHostLink.textContent = shareText("γの共有用画面を開く ↗", "Open Gamma sharing ↗");
+      if (els.shareHostMigration) els.shareHostMigration.textContent = shareText(
+        "このページの保存済みショーは自動では移りません。ここでJSONを書き出し、共有用画面で読み込んでください。元のショーはここに残ります。",
+        "Saved shows do not move automatically. Export JSON here and import it in the sharing editor. The original stays here."
+      );
+    }
     if (els.realtimeTitle) els.realtimeTitle.textContent = shareText("リアルタイム共有（会議用）", "Live sharing (for meetings)");
     if (els.realtimeHint) els.realtimeHint.textContent = shareText(
       "同じショーを開いたまま、会議中に配置や注釈を一緒に確認します。",

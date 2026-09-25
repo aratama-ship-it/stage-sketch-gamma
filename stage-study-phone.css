@@ -1,0 +1,77 @@
+/* Based on the main PWA's stage-phone-viewer: stacked portrait / 64px landscape rail. */
+html.study-phone, html.study-phone body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; }
+body.study-phone {
+  --phone-header: 52px; --phone-scenes: 44px; --phone-tools: 48px; --phone-rail: 64px;
+  --phone-brand: 18px; --phone-control: 12px; --phone-heading: 14px; --phone-panel: 360px;
+  position: fixed; inset: 0; padding: 0; touch-action: manipulation;
+}
+.study-phone .study-shell {
+  position: relative; display: grid; grid-template-rows: var(--phone-header) var(--phone-scenes) minmax(0,1fr) var(--phone-tools);
+  height: var(--phone-height, 100dvh); width: 100%; max-width: none; box-sizing: border-box;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.study-phone .study-header { grid-row: 1; grid-column: 1; display: flex; align-items: center; padding: 0 0 0 12px; margin: 0; border-left: 0; gap: 4px; }
+.study-phone .study-header .study-heading { min-width: 0; flex: 1; }
+.study-phone .study-header h1 { font-size: var(--phone-brand); margin: 0; letter-spacing: .03em; white-space: nowrap; }
+.study-phone .study-header .study-kicker { display: none; }
+.study-phone .study-header > .study-show-info, .study-phone .study-header > .study-header-actions { display: none; }
+.study-phone .study-workspace { grid-row: 3; grid-column: 1; display: block; min-height: 0; height: 100%; }
+.study-phone .study-stage { height: 100%; min-height: 0; }
+.study-phone .study-stage > :not(#study-frame-host), .study-phone #study-side-resize { display: none !important; }
+.study-phone #study-frame-host { height: 100%; }
+.study-phone .study-stage #study-frame-host iframe { display: block; height: 100%; width: 100%; aspect-ratio: auto; margin: 0; border: 0; }
+.study-phone #study-side { display: none; }
+.study-phone .phone-scenes { grid-row: 2; display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; background: var(--study-identity-bg); }
+.study-phone .phone-tools { grid-row: 4; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); background: var(--study-identity-bg); }
+.study-phone .phone-scenes button, .study-phone .phone-tools button, .study-phone .phone-settings {
+  min-width: 44px; min-height: 44px; height: 100%; padding: 4px; border: 0; border-bottom: 1px solid var(--study-accent); border-right: 1px solid var(--line-dark);
+  color: var(--study-accent-strong); background: var(--study-identity-bg); font: var(--phone-control)/1.5 var(--sans); letter-spacing: normal;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.study-phone .phone-scenes .phone-current { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.study-phone .phone-tools button { flex-direction: column; gap: 0; }
+.study-phone .phone-tools button span { white-space: nowrap; }
+.study-phone .phone-tools svg { width: 18px; height: 18px; flex-basis: 18px; }
+.study-phone .phone-settings { width: 44px; flex: 0 0 44px; }
+.study-phone .phone-panel {
+  position: absolute; z-index: 40; right: env(safe-area-inset-right); bottom: calc(var(--phone-tools) + env(safe-area-inset-bottom));
+  width: min(var(--phone-panel), calc(100% - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  max-height: 55%; display: flex; flex-direction: column; padding: 0; border: 1px solid var(--study-accent); background: var(--study-bg);
+}
+.study-phone .phone-panel-head { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 12px; background: var(--study-identity-bg); flex: 0 0 44px; }
+.study-phone .phone-panel-head h2 { margin: 0; color: var(--study-accent-strong); font: 500 var(--phone-heading)/1.5 var(--sans); }
+.study-phone .phone-panel-head button { min-width: 44px; min-height: 44px; padding: 8px; }
+.study-phone .phone-panel-content { overflow: auto; overscroll-behavior: contain; min-height: 0; padding: 12px; }
+.study-phone .phone-panel-content > section { min-width: 0; }
+.study-phone .phone-panel .study-controls { border: 0; padding: 0; }
+.study-phone .phone-panel .study-controls > #study-scenes-label,
+.study-phone .phone-panel .study-controls > .study-scene-row,
+.study-phone .phone-panel .study-controls > .study-toolbar,
+.study-phone .phone-panel .study-controls > .study-section-title { display: none; }
+.study-phone .phone-panel .study-memo { border: 0; padding: 0; }
+.study-phone .phone-panel textarea, .study-phone .phone-panel input, .study-phone .phone-panel select { font-size: 16px !important; }
+.study-phone .phone-panel #study-note { min-height: 112px; height: 112px; }
+.study-phone .phone-panel .study-muted { font-size: 12px; }
+.study-phone .phone-panel label, .study-phone .phone-panel legend { font-size: 12px; letter-spacing: normal; }
+.study-phone .phone-panel .study-show-info { text-align: left; }
+.study-phone .phone-panel .study-header-actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+.study-phone .phone-scene-list { display: grid; gap: 4px; }
+.study-phone .phone-scene-list button { min-height: 44px; text-align: left; font: 14px/1.5 var(--sans); }
+.study-phone .phone-share > summary { min-height: 44px; display: flex; align-items: center; color: var(--study-accent-strong); font-size: 14px; cursor: pointer; }
+.study-phone .phone-share > summary::after { content: '+'; margin-left: auto; }
+.study-phone .phone-share[open] > summary::after { content: '−'; }
+.study-phone .phone-alert { position: absolute; z-index: 45; bottom: calc(var(--phone-tools) + 8px + env(safe-area-inset-bottom)); left: 8px; right: 8px; background: var(--study-bg); border: 1px solid var(--study-accent); padding: 8px; margin: 0; font-size: 12px; }
+.study-phone #study-status:not([hidden]), .study-phone #study-retry:not([hidden]), .study-phone #study-login:not([hidden]), .study-phone #study-library:not([hidden]) { position: absolute; z-index: 50; top: calc(var(--phone-header) + var(--phone-scenes)); left: 8px; right: 8px; padding: 12px; background: var(--study-bg); max-height: 70%; overflow: auto; }
+.study-phone #study-retry:not([hidden]) { top: calc(var(--phone-header) + var(--phone-scenes) + 80px); }
+@media (orientation: landscape) {
+  body.study-phone { --phone-header: 44px; --phone-brand: 14px; }
+  .study-phone .study-shell { grid-template-columns: minmax(0,1fr) var(--phone-rail); grid-template-rows: var(--phone-header) minmax(0,1fr); }
+  .study-phone .study-header { grid-column: 1; padding-right: 50%; }
+  .study-phone .phone-settings { position: absolute; right: env(safe-area-inset-right); top: env(safe-area-inset-top); height: 44px; width: var(--phone-rail); z-index: 3; }
+  .study-phone .study-workspace { grid-column: 1; grid-row: 2; }
+  .study-phone .phone-scenes { position: absolute; grid-area: auto; right: env(safe-area-inset-right); top: calc(env(safe-area-inset-top) + 44px); width: var(--phone-rail); height: 88px; grid-template-columns: 1fr; grid-template-rows: 44px 44px; }
+  .study-phone .phone-scenes .phone-current { position: fixed; top: env(safe-area-inset-top); right: calc(env(safe-area-inset-right) + var(--phone-rail) + 8px); width: 45%; height: 44px; min-height: 44px; border: 0; }
+  .study-phone .phone-tools { position: absolute; grid-area: auto; right: env(safe-area-inset-right); top: calc(env(safe-area-inset-top) + 132px); bottom: env(safe-area-inset-bottom); width: var(--phone-rail); grid-template-columns: 1fr; grid-template-rows: repeat(4,minmax(44px,1fr)); overflow-y: auto; }
+  .study-phone .phone-panel { top: calc(var(--phone-header) + env(safe-area-inset-top)); right: calc(var(--phone-rail) + env(safe-area-inset-right)); bottom: env(safe-area-inset-bottom); max-height: none; width: min(var(--phone-panel), calc(100% - var(--phone-rail) - env(safe-area-inset-left) - env(safe-area-inset-right))); }
+  .study-phone .phone-alert { right: calc(var(--phone-rail) + 8px + env(safe-area-inset-right)); bottom: 8px; }
+}

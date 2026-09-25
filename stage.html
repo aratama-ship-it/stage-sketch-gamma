@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.31">
+<meta name="stage-sketch-gamma-version" content="v0.2.32">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
@@ -69,7 +69,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.31</span>
+              <span class="stage-app-version">0.2.32</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -1845,6 +1845,12 @@
   <div class="stage-modal-body">
     <!-- 中身の文言は stage-session.js が言語ごと自前で引き直す。
          全体ウォーカーと二重管理にならないよう、ここから下は対象外にする -->
+    <div id="stage-share-host-note" class="stage-share-host-note" data-no-i18n hidden>
+      <p id="stage-share-host-explanation"></p>
+      <a id="stage-share-host-link" href="https://stage-sketch-gamma-share.juggler-arata.workers.dev/stage.html"
+         target="_blank" rel="noopener noreferrer"></a>
+      <p id="stage-share-host-migration"></p>
+    </div>
     <section class="stage-share-channel stage-share-live" aria-labelledby="stage-share-realtime-title" data-no-i18n>
       <div class="stage-share-channel-head">
         <h3 id="stage-share-realtime-title">リアルタイム共有（会議用）</h3>
@@ -2562,6 +2568,13 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0232-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0232-title">v0.2.32</h3><time datetime="2026-09-26">2026-09-26</time></header>
+      <ul>
+        <li>γ専用ホストでリアルタイム共有と演者用リンクを使えるようにしました。GitHub Pages の共有画面には切替先と、保存済みショーの JSON 移行方法を示します。</li>
+        <li>英語表示のまま日本語で残っていた案・劇場などのラベルを補いました。日英の使いかたの冊子を姿勢205種、道具と試験場の説明に合わせました。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0231-title">
       <header class="stage-release-entry-head">
         <h3 id="stage-release-v0231-title">v0.2.31</h3>
@@ -3755,10 +3768,10 @@
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=20260926-poses7"></script>
-    <script src="stage-i18n.zh-Hans.js?v=20260926-poses7"></script>
-    <script src="stage-i18n.zh-Hant.js?v=20260926-poses7"></script>
-<script src="stage-prompt-i18n.js?v=20260926-poses7"></script>
+    <script src="stage-i18n.js?v=20260926-release32"></script>
+    <script src="stage-i18n.zh-Hans.js?v=20260926-release32"></script>
+    <script src="stage-i18n.zh-Hant.js?v=20260926-release32"></script>
+<script src="stage-prompt-i18n.js?v=20260926-release32"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026092402"></script>
 <script src="stage-samples/romeo-juliet-cued.js?v=2026092435"></script>
@@ -3768,14 +3781,14 @@
 <script src="stage-set-builder.js?v=2026091501"></script>
 <script src="stage-machinery.js?v=20260925-ui1"></script>
 <script src="stage-scrim.js?v=2026092059"></script>
-<script src="stage-first-person.js?v=20260926-poses7"></script>
+<script src="stage-first-person.js?v=20260926-release32"></script>
 <script src="stage-audio-store.js?v=2026092523"></script>
 <script src="stage-project-backup-store.js?v=2026092523"></script>
 <script src="stage-storage-codec.js?v=2026092523"></script>
 <script src="stage-storage-recovery.js?v=2026092523"></script>
 <script src="stage-storage-hygiene.js?v=2026092523"></script>
 <script src="stage-storage-pressure.js?v=2026092524"></script>
-<script src="manual-gamma/manual-content.js?v=2026092601"></script>
+<script src="manual-gamma/manual-content.js?v=20260926-release32"></script>
 <script src="stage-pwa.js?v=2026091501"></script>
 <script src="stage-lighting-plans.js?v=2026092101"></script>
 <script src="stage-lighting-plan-overlay.js?v=2026092113"></script>
@@ -3799,20 +3812,20 @@
 <script src="stage-performer-body.js?v=2026092506"></script>
 <script src="gamma-ui.js?v=20260925-ui1"></script>
 <script src="gamma-ui-i18n.js?v=20260925-ui1"></script>
-<script src="stage-sketch.js?v=20260926-poses7"></script>
-<script src="stage-scene-alternatives-ui.js?v=2026092210"></script>
+<script src="stage-sketch.js?v=20260926-release32"></script>
+<script src="stage-scene-alternatives-ui.js?v=20260926-release32"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-vox-panel.js?v=2026092432"></script>
 <script src="stage-script-editor.js?v=2026092431"></script>
     <script src="stage-timeline.js?v=2026092423"></script>
-<script src="stage-session.js?v=20260925-ui1"></script>
-<script src="stage-study-owner.js?v=20260925-ui1"></script>
+<script src="stage-session.js?v=20260926-release32"></script>
+<script src="stage-study-owner.js?v=20260926-release32"></script>
 <script src="stage-usage.js?v=2026091501"></script>
 <script src="stage-venue-curtains.js?v=2026092519"></script>
 <script src="stage-venue-editor.js?v=2026092528"></script>
 <script src="gamma-workspace.js?v=20260925-ui1"></script>
 <script src="gamma-mobile.js?v=2026092202"></script>
-<script src="stage-venue-preview.js?v=2026092523"></script>
-<script src="stage-venue-viewpoints.js?v=2026092503"></script>
+<script src="stage-venue-preview.js?v=20260926-manual2"></script>
+<script src="stage-venue-viewpoints.js?v=20260926-manual2"></script>
 </body>
 </html>

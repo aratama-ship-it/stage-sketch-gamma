@@ -23,7 +23,7 @@ ${table(["Control", "Meaning"], [
   ["0:00.0", "Playhead position"]
 ])}
 <ul>
-<li><strong>The scenes lane</strong> shows each scene as a bar as long as its time on scene. Drag the ends to change the length. A lock mark means the edge is fixed (${ui("端固定", "edge locked")}, tied to the start or end of the audio).</li>
+<li><strong>The scenes lane</strong> shows each scene as a bar as long as its time on scene. Drag the ends to change the length. A lock mark means the edge is fixed (${ui("Edge locked")}, tied to the start or end of the audio).</li>
 <li><strong>The transition lane</strong> shows the moving time between scenes.</li>
 <li>Stepping with ${kbd("↑")}${kbd("↓")} scrolls the bar so the playhead stays in view; ${kbd("←")}${kbd("→")} jump to the nearest cue.</li>
 <li>Opening the timeline on the Light design tab does not shrink the lighting views. In the Lines tab, ${kbd("E")} shows the timeline too.</li>

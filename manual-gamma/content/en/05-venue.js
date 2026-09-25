@@ -4,7 +4,7 @@
   window.MANUAL.chapters.push({
     id: "venue", no: "Part 5", short: "5", tab: "Theatre settings",
     title: "Theatre settings (tab 2) — shape, house, wings, walls, ceiling, machinery, viewpoints",
-    lead: "The front view and the outline of the plan are both built from the theatre you set up here. Several newer items in this tab still appear in Japanese in v0.2.16.",
+    lead: "The front view and the outline of the plan are both built from the theatre you set up here.",
     sections: [
       {
         id: "venue-overview", title: "How the Theatre settings tab is laid out", status: "verified",
@@ -13,7 +13,7 @@
 <p>The ${ui("Theatre settings")} tab has the venue type preset, size, lighting source and the nine steps on the left; plan editing and a theatre preview (front / 3D / whole) in the middle; and ${ui("Save to library")}, ${ui("Export theatre")}, ${ui("Import theatre")} and ${ui("Apply this theatre")} along the bottom.</p>
 ${fig("30-tab-venue", "The Theatre settings tab: presets and steps on the left, the plan and a 3D preview in the middle, save/export/apply at the bottom.", "Theatre settings tab")}
 <p>In the plan, <strong>green</strong> is the usable stage area (one square is roughly 2 m), <strong>rust</strong> is the house and <strong>dashed lines</strong> are the wings. As the note under the plan says, it is an approximate plan: access routes, loads and safety distances are not assessed.</p>
-<p>Drag the preview to look around and use the wheel to zoom. Leg positions are shared with the plan; heights are indicative. ${ui("プレビューを閉じる", "Close preview")} folds it away. From v0.2.15 the plan can also be dragged, and it opens with the stage and wings shown large. The shape, house and legs set here also appear in 3D.</p>`
+<p>Drag the preview to look around and use the wheel to zoom. Leg positions are shared with the plan; heights are indicative. ${ui("Close preview")} folds it away. From v0.2.15 the plan can also be dragged, and it opens with the stage and wings shown large. The shape, house and legs set here also appear in 3D.</p>`
       },
       {
         id: "venue-presets", title: "Choosing a theatre (35 presets, size, double-click)", status: "verified",
@@ -31,19 +31,19 @@ ${fig("30-tab-venue", "The Theatre settings tab: presets and steps on the left, 
         id: "venue-steps", title: "The nine steps (format, main shape, extra stages, ceiling, house, wings, walls, machinery, viewpoints)", status: "sourced",
         keywords: ["steps", "stage format", "end-on", "thrust", "in the round", "main shape", "rectangle", "l-shape", "circle", "custom", "extra stage", "hanamichi", "hashigakari", "ceiling", "house", "floor height", "rake", "steps in floor", "wings", "curtains", "walls", "machinery", "viewpoint", "eye height", "floor colour"],
         html: `
-<p>Further down the left column are steps 1–9. Change only what you need; there is no need to go through them all. The step headings themselves still appear in Japanese in v0.2.16.</p>
+<p>Further down the left column are steps 1–9. Change only what you need; there is no need to go through them all.</p>
 ${table(["Step", "What you decide", "Main items"], [
   ["1. Stage format", "Which sides the house can be on", ui("End-on") + " / " + ui("Thrust") + " (three sides) / " + ui("In the round")],
-  ["2. Main shape", "Outline, size and floor", ui("Rectangle") + " / " + ui("L-shape") + " / " + ui("Circle") + " / " + ui("Custom") + " (edges move one way, corners two; long-press a corner to cut it), " + ui("幅（m）", "Width (m)") + " and " + ui("奥行き（m）", "Depth (m)") + ", " + ui("Stage height") + " (−3 to 3 m from the house floor; negative for a stage below the audience, like a circus ring), and " + ui("舞台床の色", "Stage floor colour") + " (" + ui("茶色", "brown") + " / " + ui("黒", "black") + " / " + ui("グレー", "grey") + ", v0.2.15)"],
+  ["2. Main shape", "Outline, size and floor", ui("Rectangle") + " / " + ui("L-shape") + " / " + ui("Circle") + " / " + ui("Custom") + " (edges move one way, corners two; long-press a corner to cut it), " + ui("Width (m)") + " and " + ui("Depth (m)") + ", " + ui("Stage height") + " (−3 to 3 m from the house floor; negative for a stage below the audience, like a circus ring), and " + ui("Stage floor colour") + " (" + ui("Brown") + " / " + ui("Black") + " / " + ui("Grey") + ", v0.2.15)"],
   ["3. Extra stages", "Hanamichi, hashigakari, thrusts", "Add a " + ui("Rectangle") + " or " + ui("Circle") + ". Where they overlap, use " + ui("Merge overlaps") + " or " + ui("Resolve the overlap")],
   ["4. Ceiling", "Whether there is a ceiling and how high", ui("With a ceiling") + " / " + ui("No ceiling") + ", " + ui("Height") + ", " + ui("Opening height") + " (height of the front border). Shown in the plan and preview (v0.2.10)"],
-  ["5. House", "Audience areas and floor heights", ui("Place all around") + ", " + ui("舞台側の床高", "Floor height at the stage end") + " / " + ui("後方の床高", "Floor height at the back") + " (relative to the stage floor; flat, raked and stepped floors appear in the plan and in 3D), and whether the house can be rigged: " + ui("No rigging") + " / " + ui("Partial") + " / " + ui("Riggable")],
+  ["5. House", "Audience areas and floor heights", ui("Place all around") + ", " + ui("Floor height at the stage end") + " / " + ui("Floor height at the back") + " (relative to the stage floor; flat, raked and stepped floors appear in the plan and in 3D), and whether the house can be rigged: " + ui("No rigging") + " / " + ui("Partial") + " / " + ui("Riggable")],
   ["6. Wings", "Wing positions and masking", ui("With border") + " / " + ui("No border") + ", stage left and right. Legs also appear at the front and back of the wings (v0.2.14)"],
-  ["7. Walls", "Where the walls are", "Place lines on the plan. " + ui("バックスクリーンを設置", "Add a back screen") + " (draw a horizontal line; follows the ceiling height)"],
+  ["7. Walls", "Where the walls are", "Place lines on the plan. " + ui("Add a back screen") + " (draw a horizontal line; follows the ceiling height)"],
   ["8. Stage machinery", "Built-in machinery", "Place a " + ui("Stage lift") + ", " + ui("Revolve") + ", " + ui("Moving / tilting deck") + ", " + ui("Curtain") + " or " + ui("Water / moving pool floor") + " (" + ref("machinery-kinds", "Part 6") + ")"],
-  ["9. Viewpoints", "Where the front view is seen from", "Up to five. Name, " + ui("eye height") + ", " + ui("既定の高さに戻す", "Reset to the default height") + ". They follow the house floor height (" + ref("viewpoints", "5-6") + ")"]
+  ["9. Viewpoints", "Where the front view is seen from", "Up to five. Name, " + ui("eye height") + ", " + ui("Reset to the default height") + ". They follow the house floor height (" + ref("viewpoints", "5-6") + ")"]
 ])}
-<p>With a point selected on the plan you can use ${ui("＋ 点を置く", "+ Add a point")}, ${ui("選択した点を削除", "Delete the selected point")}, ${ui("編集前に戻す", "Undo edits")} and ${ui("Delete selected")}. The strip under the plan tells you what to do next (for example “select step 5 or 6”).</p>
+<p>With a point selected on the plan you can use ${ui("+ Add a point")}, ${ui("Delete the selected point")}, ${ui("Undo edits")} and ${ui("Delete selected")}. The strip under the plan tells you what to do next (for example “select step 5 or 6”).</p>
 <p>${ui("Three lines derived from the theatre")} are the reach, blind-spot and sightline limits. On the Stage tab they are checked together with the ${ui("Seat map")} in the front view.</p>`
       },
       {
@@ -78,7 +78,7 @@ ${table(["Button", "What it does"], [
         id: "viewpoints", title: "Viewpoints (where in the house, eye height, second seat)", status: "sourced",
         keywords: ["viewpoint", "seat", "house", "front row", "balcony", "eye height", "second seat", "compare", "front view", "where from"],
         html: `
-<p>The front view is always seen from somewhere in the house. Choose a seat above the front view on the Stage tab (for example ${ui("Balcony")}) and the drawing changes to that viewpoint. The seats come from step 9, ${ui("見る位置", "Viewpoints")}, in Theatre settings (up to five, each with a name and ${ui("eye height")}; they follow the house floor height).</p>
+<p>The front view is always seen from somewhere in the house. Choose a seat above the front view on the Stage tab (for example ${ui("Balcony")}) and the drawing changes to that viewpoint. The seats come from step 9, ${ui("Viewpoints")}, in Theatre settings (up to five, each with a name and ${ui("eye height")}; they follow the house floor height).</p>
 <p>The front view's ${ui("Seat map")} (on by default) is a small map showing where the current viewpoint is.</p>
 <p>Show ${ui("Second seat")} from ${ui("Panels")} to add a second small drawing from another seat (choose it in ${ui("Comparison seat")}). It is heavier to draw, and lighting is not shown in it.</p>
 ${note("Viewpoints are no longer registered from 3D", "v0.2.12 removed registering viewpoints from the 3D free camera. Viewpoints are added and edited in step 9 of Theatre settings. Viewpoints registered from 3D earlier are kept and still used by the front view.")}`
@@ -91,7 +91,7 @@ ${note("Viewpoints are no longer registered from 3D", "v0.2.12 removed registeri
 <li><strong>Hanamichi and hashigakari</strong> (step 3) are drawn as walkways leaving the stage in the front view and 3D, and pieces can stand on them.</li>
 <li><strong>The front border</strong> (the notch at the top of the front view) takes its height from ${ui("Opening height")} in step 4. On the Stage tab the front view has a ${ui("Front border")} switch. From the balcony you see it from above.</li>
 <li><strong>Legs</strong> appear with ${ui("With border")} in step 6. Several stand from front to back, and the wing space is painted darker than the legs.</li>
-<li><strong>The back screen</strong> is added in step 7 (${ui("バックスクリーンを設置", "Add a back screen")}) by drawing a horizontal line on the plan. It follows the ceiling height (v0.2.14).</li>
+<li><strong>The back screen</strong> is added in step 7 (${ui("Add a back screen")}) by drawing a horizontal line on the plan. It follows the ceiling height (v0.2.14).</li>
 </ul>`
       }
     ]

@@ -17,7 +17,7 @@ ${table(["Item", "What it does"], [
   [ui("All shows"), "Shows on this device plus the bundled samples. Click to open, ✕ to remove. " + ui("Create from a structure template") + " is here too"],
   [ui("Create a new show"), "A blank show. It starts in Theatre settings (" + ref("venue-gate", "3-2") + ")"],
   [ui("Export show"), "Save the show as a file (.json). You are asked whether to include the theatre (" + ref("export-json", "Part 11, 11-3") + ")"],
-  [ui("ショーを読み込む", "Import show"), "Open a show from a file. The " + ui("Compare before importing") + " window lets you choose " + ui("Open as a separate show") + " or " + ui("Replace the current show")],
+  [ui("Import show"), "Open a show from a file. The " + ui("Compare before importing") + " window lets you choose " + ui("Open as a separate show") + " or " + ui("Replace the current show")],
   [ui("Return to previous show"), "Right after making a new show, a band offers to leave it and go back to the show you had open"]
 ])}
 ${fig("03-show-list", "All shows — name, version, number of scenes and date. The open show and bundled samples are marked.", "All shows")}
@@ -109,14 +109,14 @@ ${fig("10-section-B", "The bar above the drawing: previous and ⊞ on the left, 
         id: "alternatives", title: "Alternatives (A–D) — make and compare versions", status: "sourced",
         keywords: ["alternatives", "version a", "version b", "compare", "adopt", "variation", "options", "switch"],
         html: `
-<p>Show the ${ui("別案", "Alternatives")} panel from ${ui("Panels")} and it appears in the right column. Save alternatives A–D for the current scene, switch between them to compare, and adopt one. Alternatives are saved with the show and included in exports. <strong>The labels in this panel are Japanese-only in v0.2.16.</strong></p>
-${fig("57-alternatives-panel", "The alternatives panel: “A案・採用” (version A, adopted), “A案を編集中・採用中” (editing A, adopted) and four buttons.", "Alternatives panel")}
+<p>Show the ${ui("Alternatives")} panel from ${ui("Panels")} and it appears in the right column. Save alternatives A–D for the current scene, switch between them to compare, and adopt one. Alternatives are saved with the show and included in exports.</p>
+${fig("57-alternatives-panel", "The alternatives panel shows “Version A · adopted,” “Editing Version A · adopted,” and four actions.", "Alternatives panel")}
 ${table(["Button", "What it does"], [
-  [ui("＋ 別案を作る", "+ Make an alternative"), "Make version B, C … from the current arrangement (up to D)"],
-  [ui("案を比べる", "Compare versions"), "Lay the versions side by side"],
-  [ui("転換を試す", "Try the transition"), "Play the change from the previous scene into that version"],
-  [ui("案の説明", "Version notes"), "Write down what the version is for"],
-  ["The version tags (A案・採用 …)", "Click to choose which version you edit. The adopted version becomes the show's main line"]
+  [ui("+ Add alternative"), "Make version B, C … from the current arrangement (up to D)"],
+  [ui("Compare versions"), "Lay the versions side by side"],
+  [ui("Try the transition"), "Play the change from the previous scene into that version"],
+  [ui("Version notes"), "Write down what the version is for"],
+  ["The version tags (Version A · adopted …)", "Click to choose which version you edit. The adopted version becomes the show's main line"]
 ])}`
       },
       {
@@ -124,7 +124,7 @@ ${table(["Button", "What it does"], [
         keywords: ["delete", "remove", "deleted by mistake", "undo", "history", "confirm", "restore"],
         html: `
 <p>The ✕ on a scene row opens a confirmation window. Tick ${ui("I confirm that I want to delete it")}, then press ${ui("Delete")}. For a section row it is ${ui("Delete this section")} (the scenes inside go too).</p>
-<p>Right after deleting, ${kbd("⌘Z")} (${ui("Undo")}) brings it back. Edits to scene notes (descriptions) can be undone too (v0.2.16). The undo history has a size limit, so very many large operations push the oldest steps out. If a whole show is gone, import your exported copy with ${ui("ショーを読み込む", "Import show")}.</p>`
+<p>Right after deleting, ${kbd("⌘Z")} (${ui("Undo")}) brings it back. Edits to scene notes (descriptions) can be undone too (v0.2.16). The undo history has a size limit, so very many large operations push the oldest steps out. If a whole show is gone, import your exported copy with ${ui("Import show")}.</p>`
       }
     ]
   });

@@ -17,7 +17,7 @@
 <dt>A red warning appears on fixed fixtures</dt><dd>A fixed fixture's direction, colour or spread differs between scenes. In reality it is set at the focus session, so match it with the “match scene …” buttons under the warning (${ref("light-design", "7-5")}).</dd>
 <dt>No sound / “Audio file not found”</dt><dd>Audio is stored per device and not included in show files. Use ${ui("Reconnect the audio file on this device")}, or ${ui("Reconnect")} on the timeline, and pick the original file (${ref("music", "9-2")}). If you cannot find the music panel, show ${ui("Music")} from ${ui("Panels")}.</dd>
 <dt>A panel is missing (music, backdrop, alternatives, dialogue cues …)</dt><dd>These start hidden. Show them from ${ui("Panels")} (${ref("panels", "2-4")}).</dd>
-<dt>My work does not appear on another device or browser</dt><dd>Saving is per device and browser. ${ui("Export show")}, then ${ui("ショーを読み込む", "Import show")} on the other side (${ref("export-json", "11-3")}).</dd>
+<dt>My work does not appear on another device or browser</dt><dd>Saving is per device and browser. ${ui("Export show")}, then ${ui("Import show")} on the other side (${ref("export-json", "11-3")}).</dd>
 <dt>I moved or deleted something by mistake</dt><dd>${ui("Undo")} (${kbd("⌘Z")}). If a whole show is gone, import your exported copy.</dd>
 <dt>Pieces jump instead of moving in transitions</dt><dd>${ui("Transition animation")} is off in Settings. Going backwards (${kbd("↑")}) jumps by design. Pieces without routes do not walk.</dd>
 <dt>The screen looks wrong or out of date</dt><dd>Reload the page. Check that the version at the top left (for example 0.2.19) matches the newest entry in the update history. For the home-screen app, close it and open it again.</dd>
@@ -33,10 +33,11 @@
 <p>Browser storage has a limit per device. Gamma shows a large warning when it gets high (v0.2.13).</p>
 ${table(["Situation", "What the app does", "What to do"], [
   ["Storage high (caution)", "A large warning; reminds you about every 15 minutes even if closed", "Use the warning's " + ui("Export show") + " to keep a copy"],
-  ["Storage critical (danger)", "Reminds about every 5 minutes; save failures are reported at a natural break", "Open the repair page with " + ui("保存容量を整理（別タブ）", "Tidy up storage (opens a new tab)")],
+  ["Storage critical (danger)", "Reminds about every 5 minutes; save failures are reported at a natural break", "Open the repair page with " + ui("Review storage (new tab)")],
   ["Not enough room to switch shows", "Keeps the open show and offers export and the repair page (v0.2.9)", "Export first, then the repair page"]
 ])}
 <p>The <strong>repair page</strong> lets you store away (free up space for) or restore “shows not currently open” that reference no audio, one at a time. Only backups whose contents are confirmed identical are stored away, and saving of the open tab is then retried. Old-format backups are moved to a separate storage area and tidied automatically (v0.2.11). Warnings wait while you are typing, playing or using another confirmation window, and stop once storage improves.</p>
+<p>Shows saved at another URL (the beta or Gamma's sharing host) do not move to this page automatically. Export JSON at the original page, then explicitly import it at the new one. Keep that exported JSON so you can recover if the original page later becomes unavailable.</p>
 ${note("Prevention", "Photos, backdrop images and audio use the most space. Export shows you no longer use before removing them from the list, and do not keep too many old versions of the same show.")}`
       },
       {

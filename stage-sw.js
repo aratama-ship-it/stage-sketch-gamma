@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v387";
+const CACHE_NAME = "stage-sketch-gamma-shell-v388";
 const APP_SHELL = [
   "./gamma-ui.js?v=20260925-ui1",
   "./gamma-ui-tokens.css?v=20260925-ui1",
@@ -9,7 +9,7 @@ const APP_SHELL = [
   "./stage-performer-contour.js?v=2026092506",
   "./stage-performer-motion.js?v=2026092506",
   "./stage-scene-alternatives.js?v=20260925-ui1",
-  "./stage-scene-alternatives-ui.js?v=2026092210",
+  "./stage-scene-alternatives-ui.js?v=20260926-release32",
   "./stage-scene-alternatives.css?v=2026092209",
   "./stage-vox-panel.css?v=2026092432",
   "./stage-panel-columns.css?v=2026092402",
@@ -59,10 +59,10 @@ const APP_SHELL = [
   "./stage-venue-lines.js?v=2026091992",
   "./stage-front-shape.js?v=2026092046",
   "./stage-venue-report.js?v=2026092047",
-  "./stage-i18n.js?v=20260926-poses7",
-  "./stage-i18n.zh-Hans.js?v=20260926-poses7",
-  "./stage-i18n.zh-Hant.js?v=20260926-poses7",
-  "./stage-prompt-i18n.js?v=20260926-poses7",
+  "./stage-i18n.js?v=20260926-release32",
+  "./stage-i18n.zh-Hans.js?v=20260926-release32",
+  "./stage-i18n.zh-Hant.js?v=20260926-release32",
+  "./stage-prompt-i18n.js?v=20260926-release32",
   "./stage-rehearsal-export.js?v=2026091501",
   "./stage-samples/index.js?v=2026092402",
   "./stage-samples/romeo-juliet-cued.js?v=2026092435",
@@ -72,7 +72,7 @@ const APP_SHELL = [
   "./stage-set-builder.js?v=2026091501",
   "./stage-machinery.js?v=20260925-ui1",
   "./stage-scrim.js?v=2026092059",
-  "./stage-first-person.js?v=20260926-poses7",
+  "./stage-first-person.js?v=20260926-release32",
   "./stage-audio-store.js?v=2026092523",
   "./stage-project-backup-store.js?v=2026092523",
   "./stage-storage-codec.js?v=2026092523",
@@ -81,7 +81,7 @@ const APP_SHELL = [
   "./stage-storage-pressure.js?v=2026092524",
   "./storage-recovery-ui.js?v=2026092523",
   "./storage-recovery.html",
-  "./manual-gamma/manual-content.js?v=2026092601",
+  "./manual-gamma/manual-content.js?v=20260926-release32",
   "./manual-gamma/manual-content.js",
   "./manual/manual-content.js?v=2026091502",
   "./manual/manual-content.js",
@@ -95,16 +95,16 @@ const APP_SHELL = [
   "./stage-cue-sheet.js?v=2026092423",
   "./stage-shortcuts.js?v=2026092218",
   "./stage-reorder-motion.js?v=2026092420",
-  "./stage-sketch.js?v=20260926-poses7",
+  "./stage-sketch.js?v=20260926-release32",
   "./stage-timeline.js?v=2026092423",
-  "./stage-session.js?v=20260925-ui1",
-  "./stage-study-owner.js?v=20260925-ui1",
-  "./stage-study.css?v=21",
+  "./stage-session.js?v=20260926-release32",
+  "./stage-study-owner.js?v=20260926-release32",
+  "./stage-study.css?v=22",
   "./stage-usage.js?v=2026091501",
   "./stage-venue-curtains.js?v=2026092519",
   "./stage-venue-editor.js?v=2026092528",
-  "./stage-venue-preview.js?v=2026092523",
-  "./stage-venue-viewpoints.js?v=2026092503",
+  "./stage-venue-preview.js?v=20260926-manual2",
+  "./stage-venue-viewpoints.js?v=20260926-manual2",
   "./stage-pwa.js?v=2026091501",
   "./stage-sketch.webmanifest",
   "./icons/stage-sketch-180.png",
@@ -250,7 +250,8 @@ self.addEventListener("fetch", (event) => {
        '/stage-study-navigation.css', '/stage-study-navigation.js'].includes(url.pathname)) return;
   // Study documents and API responses must always revalidate online; never store bearer content.
   if (url.pathname === "/study" || url.pathname.startsWith("/study/")
-      || url.pathname === "/study.html" || url.pathname.startsWith("/study-frame")) return;
+      || url.pathname === "/study.html" || url.pathname.startsWith("/study-frame")
+      || url.pathname.startsWith("/study-assets/")) return;
 
   // 画面本体はオンライン時に最新版を優先し、通信できない時だけ保存版へ戻る。
   // The same-origin formation and embedded lighting iframes are cached app assets.

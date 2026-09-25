@@ -102,6 +102,18 @@ html[data-study-renderer] { scrollbar-gutter: auto; overflow: hidden; }
 /* Editor share modal: distinguish live meeting sync from a fixed rehearsal snapshot. */
 .stage-modal.stage-share-modal { width: min(560px, calc(100vw - 24px)); }
 #stage-session-panel .stage-modal-body { display: grid; gap: 14px; }
+#stage-session-panel .stage-share-host-note {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--brass);
+  border-radius: 3px;
+  background: var(--desk);
+}
+#stage-session-panel .stage-share-host-note[hidden],
+#stage-session-panel .stage-share-channel[hidden] { display: none !important; }
+#stage-session-panel .stage-share-host-note p { margin: 0; color: var(--milk); font-size: 13px; line-height: 1.6; }
+#stage-session-panel .stage-share-host-note a { color: #f2d186; font-weight: 700; text-underline-offset: 3px; }
 #stage-session-panel .stage-share-panel-hint { margin: 0; color: var(--milk-dim); font-size: 12px; line-height: 1.6; }
 #stage-session-panel .stage-share-channel {
   display: grid;

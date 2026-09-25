@@ -23,7 +23,7 @@ ${table(["Setting", "Where it is saved"], [
         keywords: ["language", "english", "japanese", "chinese", "simplified", "traditional", "translation", "switch"],
         html: `
 <p>${ui("Language / 言語")} offers ${ui("Japanese")} / English / 中文（简体） / 中文（繁體）. Buttons, headings and explanations change; things you typed (show names, scene names, script, notes) are not translated.</p>
-<p>This booklet has Japanese and English editions. The app passes its language when you open the booklet from it; you can switch with the button in the contents. <strong>In v0.2.16 about thirty-five labels still show in Japanese in English mode</strong> (${ref("conventions", "Part 0, 0-3")}).</p>`
+<p>This booklet has Japanese and English editions. The app passes its language when you open the booklet from it; you can switch with the button in the contents.</p>`
       },
       {
         id: "skin", title: "Interface skin (warm black / blue black)", status: "verified",
@@ -73,7 +73,7 @@ ${table(["Item", "Default", "What it does", "Section"], [
   [ui("Show the true house depth"), "Off", "Stop the plan's house at its real depth with a “house ○ m” tag", ref("view-toggles", "8-6")],
   [ui("Simplify the wide view"), "Off", "Draw distant seats simply in 3D for large venues", ref("fpv-view", "10-3")],
   [ui("Icon tips"), "On", "Hovering over icons shows name, shortcut and use", ref("tools", "2-6")],
-  [ui("選んだものを図に添える", "Show the selection beside the drawing"), "On", "Show a helper beside the selected piece", ref("inspector", "2-5")],
+  [ui("Show the selection beside the drawing"), "On", "Show a helper beside the selected piece", ref("inspector", "2-5")],
   [ui("Spike sheet (print)"), "On", "Add a table of measured positions to the print page", ref("print", "11-2")],
   [ui("Props plot (print)"), "On", "Add holders and hand-offs to the print page", ref("print", "11-2")],
   [ui("Tint costumes with the light colour"), "Off", "Draw performers in a pool tinted by that light", ref("costume", "4-4")],

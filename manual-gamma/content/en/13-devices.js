@@ -31,7 +31,7 @@ ${table(["Task", "Browser (desk)", "Tablet (rehearsal room)", "Phone (in hand)"]
   ["Everyone looking at the same stage (shared session)", "●", "●", "○ join when invited"]
 ])}
 ${fig("48-device-diff", "Differences by device, inside the app.", "Differences by device")}
-${note("Gamma's new tabs are not in this table", "The table dates from the beta. " + ui("Theatre settings") + ", " + ui("Equipment placement") + ", " + ui("Light design") + ", " + ui("Lines") + " and " + ui("Cue sheets") + " are built for the computer, and touch use on iPad has not been checked. A “—” means not carried on that device, not broken. Shared sessions are not yet implemented in Gamma (" + ref("share", "Part 11, 11-4") + ").")}`
+${note("Gamma's new tabs are not in this table", "The table dates from the beta. " + ui("Theatre settings") + ", " + ui("Equipment placement") + ", " + ui("Light design") + ", " + ui("Lines") + " and " + ui("Cue sheets") + " are built for the computer, and touch use on iPad has not been checked. A “—” means not carried on that device, not broken. Sharing uses Gamma's dedicated host (" + ref("share", "Part 11, 11-4") + ").")}`
       },
       {
         id: "pc", title: "Computer (everything)", status: "verified",

@@ -25,7 +25,7 @@ ${fig("10-section-A", "The performer list with ON/OFF, lock and ✕ on each row.
 <p>Scene details (${ref("scene-detail", "Part 3, 3-5")}) list performers on stage and backstage separately. Backstage performers can also be carried over with ${ui("Create next scene")}.</p>`
       },
       {
-        id: "poses", title: "Poses (49), facing and size", status: "verified",
+        id: "poses", title: "Poses (205), facing and size", status: "verified",
         keywords: ["pose", "posture", "stand", "walk", "sit", "handstand", "dance", "acro", "facing", "direction", "rotate", "size", "look", "somersault", "unicycle", "guitar", "violin", "group", "find", "search", "pose strip", "can't find"],
         html: `
 <p>There are two places to change a pose (both grouped since v0.2.18).</p>
@@ -34,12 +34,12 @@ ${fig("10-section-A", "The performer list with ON/OFF, lock and ✕ on each row.
 <li><strong>The ${ui("Choose a pose")} window</strong> — opened with ${ui("Pose")} (for example ${ui("Stand")}) in ${ui("Selection")}, or with ${ui("Find")} at the end of the strip. Every pose is listed under group headings; type a name or a group (for example “Dance”) in the search field at the top to narrow them. When opened from ${ui("Find")}, you can start typing straight away.</li>
 </ul>
 ${fig("51b-pose-strip", "The pose strip under the front view. Pick a group in the menu at the start (here “Bows / signals / gestures”); Find at the end searches every pose.", "Pose strip")}
-${fig("51-pose-picker", "Choose a pose. Poses are grouped under headings and the search field at the top narrows them by name or group. Clicking a pose changes the selected performer.", "Choose a pose window")}
-<p>A performer holding nothing sees four groups: ${ui("Stand / walk / sit / lie")}, ${ui("Bows / signals / gestures")}, ${ui("Dance")} and ${ui("Acrobatics")} (checked with performer 01 in test scene A-3). When holding an object unlocks more poses, groups such as ${ui("Singing / instruments")} and ${ui("Circus props / riding")} are added. Poses outside every group are collected under ${ui("Other poses")}.</p>
-<p>Basic poses include stand, walk, both arms up, arms open, crouch, kneel, hug knees, cross-legged, seiza, long sit, high kneel, deep squat, all fours, dogeza, handstand, run, several dance and acrobatic shapes and more — 49 in all, laid out in test scenes A-1 and A-2.</p>
+${fig("51-pose-picker", "Choose a pose, filtered by “Handshake”, added in v0.2.29. Poses are grouped under headings and the search field at the top narrows them by name or group. Clicking a pose changes the selected performer.", "Choose a pose window")}
+<p>Groups include ${ui("Stand / walk / sit / lie")}, ${ui("Bows / signals / gestures")}, ${ui("Everyday actions")}, ${ui("Emotion / falling")}, ${ui("Stage combat / martial arts")}, ${ui("Dance")}, ${ui("Singing / instruments")}, ${ui("Acrobatics")} and ${ui("Circus props / riding")}. Poses that need an object or apparatus become available when their conditions are met. Poses outside every group are collected under ${ui("Other poses")}.</p>
+<p>Alongside standing, walking, sitting and lying, there are everyday actions, expressions of emotion, stage combat, dance, singing and playing instruments, acrobatics, supporting poses for partner acrobatics and two-person scenes. The v0.2.31 app has 205 poses: 78 in test scene A-1, 79 in A-2, three on context-help performers, and the remaining 45 in J-1.</p>
 <ul>
 <li><strong>Poses that come with objects</strong> — holding a unicycle, guitar, violin, bass guitar, accordion or trumpet unlocks matching poses (riding, playing).</li>
-<li><strong>Poses set by apparatus</strong> — sitting on or hanging from a trapeze is decided by the apparatus's ${ui("On the trapeze")} setting (${ref("aerial", "4-8")}).</li>
+<li><strong>Poses on apparatus</strong> — performers on a pole, silks or straps, or a trapeze can choose matching poses (v0.2.29). Taking them off returns them to standing. The trapeze also has an ${ui("On the trapeze")} setting (${ref("aerial", "4-8")}).</li>
 <li><strong>Facing</strong> — eight directions: towards the house, stage left, stage right, upstage and the diagonals. The body turns in the front view and the piece turns in the plan.</li>
 <li><strong>Size</strong> — per piece as a percentage (100% by default). Height is set in the performer's detail window.</li>
 </ul>
@@ -67,7 +67,7 @@ ${fig("51-pose-picker", "Choose a pose. Poses are grouped under headings and the
         html: `
 <p>${ui("＋ Add set piece")} in the ${ui("Set pieces")} panel opens a window to choose the kind. Choose a shape such as platform, box, table, chair, bench or wall, and it appears on stage in that scene. Its detail window opens straight after adding, so you can set dimensions (width × depth × height), colour and name at once. The list shows dimensions, such as “台 1.8×1.0×0.5”.</p>
 ${fig("10-section-C", "Set, props and aerial. The list on the left shows dimensions; the plan draws each piece at its true size.", "Set piece list and plan")}
-${fig("54-set-add", "Adding a set piece. The top rows are furniture (platform/box, table, chair, bench, stool, sofa, bed, bookshelf, chest of drawers, phone box, clothes rack …); the lower rows are built pieces (wall, ladder, stepladder, stairs, ramp, spiral stairs …). " + "〈Build a set〉 at the bottom left makes your own combinations.", "Add set piece window")}
+${fig("54-set-add", "Adding a set piece. Choose from furniture, built pieces, outdoor scenery, shapes flown in the sky, vehicles and other groups. Build a set at the bottom left makes your own combination.", "Add set piece window")}
 <ul>
 <li><strong>Facing</strong> is changed by the angle in ${ui("Selection")}. A selected set piece is drawn so its direction is easy to see in the plan.</li>
 <li><strong>Stacking</strong> — put a box on a platform and the front view lifts it by the platform's height.</li>
@@ -76,10 +76,10 @@ ${fig("54-set-add", "Adding a set piece. The top rows are furniture (platform/bo
 <p>Try it in: C-1 (everything that sits on the floor).</p>`
       },
       {
-        id: "props", title: "Props (112 shapes, on its side / on end)", status: "sourced",
-        keywords: ["prop", "props", "shape", "112", "ball", "club", "ring", "diabolo", "instrument", "on its side", "on end", "place", "chandelier"],
+        id: "props", title: "Props (choose a shape; on its side / on end)", status: "sourced",
+        keywords: ["prop", "props", "shape", "205", "ball", "club", "ring", "diabolo", "instrument", "on its side", "on end", "place", "chandelier"],
         html: `
-<p>${ui("＋ Add prop")} in the ${ui("Props")} panel opens the choose-a-kind window. There are 112 shapes — juggling props, instruments, everyday objects, decorations — all laid out in C-3 (two scenes). The detail window opens straight after adding.</p>
+<p>${ui("＋ Add prop")} in the ${ui("Props")} panel opens the choose-a-kind window. Choose from the shapes treated as props, including juggling gear, instruments, everyday objects and decorations. As of v0.2.30, the app defines 205 shapes in total, including shapes treated as set pieces. C-3 lays out all 205 across three scenes (69, 68 and 68). The detail window opens straight after adding.</p>
 ${fig("55-prop-add", "Adding a prop (hand-held items): box, umbrella, ball, staff, sword, bag, top hat, lantern, flag, mask, broom, bucket, bouquet, glass/bottle, telephone, newspaper/letter, folding fan, cloth, torch, candelabra, walking stick, handbag and more.", "Add prop window")}
 <p>Props placed on the floor can be set ${ui("On its side")} or ${ui("On end")} (the diabolo uses ${ui("How the diabolo sits")}). To have a performer hold one, start from the performer (${ref("holding", "4-5")}).</p>
 <p>The number of registered items is limited (the testing ground lays the shape samples out as unregistered pieces).</p>`
@@ -106,7 +106,7 @@ ${table(["Apparatus", "What you can set"], [
 ${table(["Item", "Meaning"], [
   [ui("Flown (hung from above)"), "Hang it from above instead of standing it on the floor. The front view draws it at height; the plan shows where it hangs. Also set the " + ui("Number of wires")],
   [ui("Make it a frame (wall with an opening)"), "Turn a wall into a frame with its centre open. Set the " + ui("Frame width")],
-  [ui("絵を映す", "Project an image") + " / " + ui("Remove image"), "Put a photo or picture on a surface such as a wall or scrim. It also appears as a choice under " + ui("Project onto") + " for screen text (" + ref("screen-text", "Part 8, 8-4") + ")"],
+  [ui("Project an image") + " / " + ui("Remove image"), "Put a photo or picture on a surface such as a wall or scrim. It also appears as a choice under " + ui("Project onto") + " for screen text (" + ref("screen-text", "Part 8, 8-4") + ")"],
   [ui("Reset to straight down"), "Bring a flown piece straight down to the floor below its hanging point"]
 ])}
 <p>Give a flown piece a different height in each scene and it flies in and out during transitions. Try it in: C-5 (flown, riding, backstage) and C-7 (wall angles).</p>`
@@ -134,7 +134,7 @@ ${table(["Item", "Meaning"], [
         id: "formation", title: "Selecting several and formations (2–20 people, 190 patterns)", status: "verified",
         keywords: ["formation", "arrange", "line up", "align", "multiple selection", "select several", "drag box", "shift", "pattern", "diamond", "staggered", "line", "triangle", "circle"],
         html: `
-<p>In the plan, drag a box from an empty spot, or ${kbd("Shift")}-click pieces, to select several performers. The bottom of ${ui("Selection")} then offers ${ui("フォーメーション", "Formation")}.</p>
+<p>In the plan, drag a box from an empty spot, or ${kbd("Shift")}-click pieces, to select several performers. The bottom of ${ui("Selection")} then offers ${ui("Formation")}.</p>
 ${fig("52-multi-select", "Eight performers selected by dragging a box in the plan.", "Multiple selection")}
 <p>With 2–20 people selected, press it to open the formation window. Step 1, choose a shape for that number (for eight: a line, two staggered rows, a triangle, a V, a circle, the outline of a rectangle or diamond, two triangles, facing chevrons, a W and so on — 190 patterns in all). Then a swap screen lets you decide who stands where. The top is upstage and the bottom is the house. Twenty is the limit.</p>
 ${fig("53-formation-modal", "The formation window (B-3, eight selected). Clicking a shape moves on to the swap screen.", "Formation window")}

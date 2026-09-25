@@ -79,7 +79,7 @@ ${note("Why the theatre comes first", "How the front view looks (distance, heigh
         html: `
 <p>Changes are <strong>saved automatically inside this device's browser</strong>. There is no save button to press. The ${ui("Info")} panel on the right shows the “last saved” time.</p>
 <p>That storage is <strong>not a cloud — it is only this device and this browser</strong>. It will not appear on another device, and it can vanish when browser data is cleared or storage runs short.</p>
-${note("Our one request", "At every good stopping point, press " + ui("Export show") + " in the " + ui("Show") + " panel and keep the file (.json). As long as the file exists, " + ui("ショーを読み込む", "Import show") + " brings everything back. Carrying work to another device is this same export-and-import round trip.", true)}
+${note("Our one request", "At every good stopping point, press " + ui("Export show") + " in the " + ui("Show") + " panel and keep the file (.json). As long as the file exists, " + ui("Import show") + " brings everything back. Carrying work to another device is this same export-and-import round trip.", true)}
 <h4>What the file contains</h4>
 <ul>
 <li>Included: scenes, performers, set pieces, props, lighting (pieces, equipment placement and LX cues), script, cues, alternatives, notes, painted backdrops and photos. When exporting you choose ${ui("Include theatre data")} or ${ui("Export without the theatre")}.</li>
@@ -87,7 +87,7 @@ ${note("Our one request", "At every good stopping point, press " + ui("Export sh
 <li>Not included: preferences (language, skin, feature and panel switches). Those belong to each device.</li>
 </ul>
 <h4>If a storage warning appears</h4>
-<p>When browser storage gets high, a large warning appears. Even if you close it, it reminds you about every 15 minutes (caution) or every 5 minutes (danger). From the warning you can go straight to ${ui("Export show")} and to ${ui("保存容量を整理（別タブ）", "Tidy up storage (opens a new tab)")}. If there is not enough room to switch shows, the open show is kept and links to export and to the repair page appear (${ref("storage", "Part 14, 14-2")}).</p>
+<p>When browser storage gets high, a large warning appears. Even if you close it, it reminds you about every 15 minutes (caution) or every 5 minutes (danger). From the warning you can go straight to ${ui("Export show")} and to ${ui("Review storage (new tab)")}. If there is not enough room to switch shows, the open show is kept and links to export and to the repair page appear (${ref("storage", "Part 14, 14-2")}).</p>
 <h4>Versions (v1, v2 …)</h4>
 <p>The ${ui("Version")} in the ${ui("Show")} panel starts at v1. The ＋ beside it saves and moves to v2, and the new version appears in All shows. Raise the version before a big change so you can go back.</p>`
       },
@@ -99,9 +99,9 @@ ${note("Our one request", "At every good stopping point, press " + ui("Export sh
 ${fig("04-feature-test-show", "The testing ground open. The scene list on the right is split into sections: “0 はじめに”, “A 演者と姿勢” and so on.", "The feature testing ground")}
 ${table(["Section", "What you can try"], [
   ["0 Introduction", "How to use the show. Each scene's description lists what to check"],
-  ["A Performers and poses", "All 49 poses (two scenes), eight facings, size and look, standing and first steps, walking, curves and stops"],
+  ["A Performers and poses", "All 205 poses (A-1, A-2, context-help performers and J-1), eight facings, size and look, standing and first steps, walking, curves and stops"],
   ["B Formations", "Patterns for 2, 4, 8, 16 and 20 people, building from a loose group, and conditions that block selection"],
-  ["C Set, props and aerial", "Everything that sits on the floor, prop registration and holding, all prop shapes (112, two scenes), aerial apparatus, flown pieces and backstage, saved sets, wall angles"],
+  ["C Set, props and aerial", "Everything that sits on the floor, prop registration and holding, all 205 defined shapes (including set pieces, across three scenes), aerial apparatus, flown pieces and backstage, saved sets, wall angles"],
   ["D Stage machinery", "Lifts and revolve, moving deck, six kinds of curtain (scrim transparency), water and pool floor"],
   ["E Light pieces", "Four kinds of light, groups and routes, lighting intent data"],
   ["F Light design", "Static cues (colour, level, gobo, shutters, costume tint), movement (sweeps and circles), strobe and chases, lasers, cyc and haze"],

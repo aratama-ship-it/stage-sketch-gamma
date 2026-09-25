@@ -28,7 +28,7 @@ ${fig("11-D-machinery", "Test scene D-2 (moving deck) in plan. Performers stand 
         keywords: ["scrim", "gauze", "see-through", "semi-transparent", "projection", "project", "screen", "video", "image", "photo", "surface", "wall", "layer"],
         html: `
 <p>Set a curtain's kind to <strong>scrim</strong> and its ${ui("Sheer")} value runs from a surface showing a picture (near 0%) to one you see through to the stage behind (near 100%). Give it different values in different scenes and the transition plays the change from picture to window.</p>
-<p>Surfaces such as scrims, walls and screens can carry an image with ${ui("絵を映す", "Project an image")}. Choosing a surface under ${ui("Project onto")} for the backdrop's ${ui("Screen text")} puts words on it (${ref("screen-text", "Part 8, 8-4")}). White and black scrims differ not in their own colour but in how much of the projected picture they take.</p>
+<p>Surfaces such as scrims, walls and screens can carry an image with ${ui("Project an image")}. Choosing a surface under ${ui("Project onto")} for the backdrop's ${ui("Screen text")} puts words on it (${ref("screen-text", "Part 8, 8-4")}). White and black scrims differ not in their own colour but in how much of the projected picture they take.</p>
 <p>Front view, plan and 3D all agree. Try it in: G-5 (scrim showing a picture) → G-6 (picture fades as the scrim turns see-through).</p>`
       },
       {

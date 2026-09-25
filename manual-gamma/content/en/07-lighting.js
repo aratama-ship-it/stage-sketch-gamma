@@ -62,14 +62,14 @@ ${fig("31-tab-placement", "The Equipment placement tab: battens (horizontal line
 <ul>
 <li>${ui("Presets")} — place a basic rig suited to the venue type in one go (${ref("light-presets", "7-7")}).</li>
 <li>${ui("Add batten")} — add a batten. The right panel sets its name, ${ui("Depth")} (mm from upstage) and ${ui("Height")}; ${ui("Hang fixtures on this batten")} adds fixtures; ${ui("Delete batten")} removes it.</li>
-<li>Rigging / ${ui("Front light")} / side light / ${ui("Floor")} — choose a kind and place a fixture. The cyc buttons (${ui("ホリゾント床 あり", "Cyc floor: yes")} / ${ui("ホリゾント上 なし", "Cyc top: no")}) set whether there are cyc lights.</li>
+<li>Rigging / ${ui("Front light")} / side light / ${ui("Floor")} — choose a kind and place a fixture. The cyc buttons (${ui("Floor cyc: present")} / ${ui("Upper cyc: none")}) set whether there are cyc lights.</li>
 <li>${ui("Add caption")} / ${ui("Front border")} / ${ui("Leg")} — show where the borders and legs are. (“Add caption” is the app's English label for adding a border curtain.)</li>
 <li>${ui("Mirror placement")} — when on, a fixture placed on one side is copied to the other.</li>
 </ul>
 <h4>With a fixture selected (right)</h4>
 <ul>
 <li>${ui("Name")}, ${ui("Type")}, ${ui("Number")}, ${ui("Height")}, ${ui("Depth")} and position across the stage.</li>
-<li>${ui("Space evenly")}, ${ui("Copy to opposite side")}, ${ui("Delete")}. In the list, ${ui("列を選ぶ", "Select the row")} selects every fixture on the same batten.</li>
+<li>${ui("Space evenly")}, ${ui("Copy to opposite side")}, ${ui("Delete")}. In the list, ${ui("Select the row")} selects every fixture on the same batten.</li>
 <li>${ui("Group selected fixtures")} — make your own group (for example “all moving heads”) to select together in Light design.</li>
 </ul>
 <p>${ui("Snap to 1000 mm")} in the plan snaps to whole metres. The stage size appears at the top right of the plan (for example “12400mm × 9600mm”). The three elevations below show stand and boom heights and the house side; ${ui("Distance: fixed range")} fixes the depth band. The front elevation can switch between plan and 3D and be seen from a seat (for example the balcony).</p>
@@ -91,7 +91,7 @@ ${steps([
   ui("Apply LX cues") + " sends the cues to the show (" + ref("lx-apply", "7-6") + ")."
 ])}
 <h4>Lighting fixtures (left)</h4>
-<p>${ui("番号・名前で探す", "Search by number or name")}, filters ${ui("All")} / ${ui("Off")} / ${ui("On")} / ${ui("Movement")}, and ${ui("Group selected fixtures")}. Your groups (for example “◆ ムービング全部 — 4 fixtures, select together”) appear here. The eye icon hides a fixture from the views.</p>
+<p>${ui("Search number / name")}, filters ${ui("All")} / ${ui("Off")} / ${ui("On")} / ${ui("Movement")}, and ${ui("Group selected fixtures")}. Your groups (for example “◆ ムービング全部 — 4 fixtures, select together”) appear here. The eye icon hides a fixture from the views.</p>
 <h4>Fixture details (right)</h4>
 <p>${ui("Reset")}, ${ui("Solo")} (only that light on), ${ui("Copy")}, ${ui("Paste")}. When a fixed fixture points, is coloured or spreads differently in different scenes, a <strong>red warning</strong> appears: fixed fixtures are set at the focus session, so in reality they cannot change between scenes. The “match scene …” buttons under the warning copy one scene's values to the others.</p>
 <h4>What you can build</h4>
@@ -130,7 +130,7 @@ ${table(["Message", "Meaning"], [
         id: "light-legacy", title: "Bringing in lighting from the old beta", status: "sourced",
         keywords: ["old version", "beta", "β", "lighting", "import", "convert", "migrate", "cannot import", "warning", "invalid show id"],
         html: `
-<p>Importing a beta show (with lights from the old lights panel) with ${ui("ショーを読み込む", "Import show")} keeps the original and opens a new show with the lights converted to equipment placement and LX cues (v0.2.1). If the old data had no real hanging positions, check the conversion warnings (for example, four registered lights may become 45 placements).</p>
+<p>Importing a beta show (with lights from the old lights panel) with ${ui("Import show")} keeps the original and opens a new show with the lights converted to equipment placement and LX cues (v0.2.1). If the old data had no real hanging positions, check the conversion warnings (for example, four registered lights may become 45 placements).</p>
 <p>If a small red-edged window says “Lighting could not be opened”, follow ${ui("Show recovery options")}. An old working backup is sometimes the cause.</p>`
       }
     ]

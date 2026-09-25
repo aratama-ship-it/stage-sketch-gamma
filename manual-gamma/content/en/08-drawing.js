@@ -86,8 +86,8 @@ ${steps([
 ${table(["Switch", "Where", "Meaning"], [
   [ui("Performer names") + " / " + ui("Set names"), "Top-left row", "Show name tags on the drawing"],
   [ui("Light name"), "Top right of the front view", "Show light piece names"],
-  [ui("衣装を着る・脱ぐ", "Costume on / off"), "Top right of the front view", "Draw or hide costumes (to check body shape)"],
-  [ui("床グリッド", "Floor grid"), "Top right of the front view", "A guide grid on the floor"],
+  [ui("Costume on / off"), "Top right of the front view", "Draw or hide costumes (to check body shape)"],
+  [ui("Floor grid"), "Top right of the front view", "A guide grid on the floor"],
   [ui("Front border"), "Top right of the front view", "Draw the front border (the notch at the top) or not"],
   [ui("Seat map"), "Front view", "A small map of where the viewpoint is in the house (on by default)"],
   [ui("Flown"), "Front view", "Show flown pieces"],

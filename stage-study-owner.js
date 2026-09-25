@@ -3,7 +3,7 @@
   'use strict';
   const bridge = window.SHOSAI_STAGE_STUDY_OWNER;
   if (!bridge) return;
-  const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'stage-study.css?v=21'; document.head.append(css);
+  const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'stage-study.css?v=22'; document.head.append(css);
   const en = () => bridge.isEnglish();
   const t = (ja, english) => en() ? english : ja;
   const entryTarget = document.getElementById('stage-share-study-action'); if (!entryTarget) return;

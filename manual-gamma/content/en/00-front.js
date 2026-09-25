@@ -35,8 +35,8 @@ ${steps([
 <li>The ${ui("Cue sheets")} tab — master sheet, per-performer and per-department sheets to view or print</li>
 <li>Formations (arrange 2–20 people using 190 patterns), scene alternatives (A–D), scrims and projection onto surfaces, a smoother body and walking transitions</li>
 </ul>
-<p>Your work is saved <strong>only inside the browser of the device you are using</strong> (${ref("saving", "Part 1, 1-5")}). Gamma uses a different storage area from the beta, so work drawn in the beta does not appear automatically. Export it from the beta and use ${ui("ショーを読み込む", "Import show")} in Gamma to bring it across. Shows that contain Gamma's new lighting cannot be read by the beta.</p>
-${note("Which version this covers", "This booklet describes <strong>v0.2.19</strong> (2026-09-26). Most pictures and videos were taken on v0.2.16. Since then, v0.2.17 added a compatibility fix for loading saved data (no screen changes), v0.2.18 grouped the places where you choose a pose, and v0.2.19 changed how this booklet opens from the app. The three pose pictures and the two pictures of the booklet entry were retaken on v0.2.19. In other pictures the pose strip under the front view may still show its older form, without the group menu and Find. The version number is shown at the top left, next to the logo. If yours differs, also check the update history under the bell icon (" + ref("release-history", "Appendix A-4") + ").")}`
+<p>Your work is saved <strong>only inside the browser of the device you are using</strong> (${ref("saving", "Part 1, 1-5")}). Shows drawn in the beta or at another Gamma URL do not appear automatically. Export their JSON from the original page, then use ${ui("Import show")} at the new URL. Shows that contain Gamma's new lighting cannot be read by the beta.</p>
+${note("Which version this covers", "This edition describes the published <strong>v0.2.32</strong> features (2026-09-26). Most pictures and videos were taken on v0.2.16; the pose pictures were retaken on v0.2.29, and the set-piece and prop pictures on v0.2.26. In other pictures the pose strip under the front view may still show its older form, without the group menu and Find. The version number is shown at the top left, next to the logo. If yours differs, also check the update history under the bell icon (" + ref("release-history", "Appendix A-4") + ").")}`
       },
       {
         id: "conventions", title: "Symbols and terms", status: "verified",
@@ -44,7 +44,7 @@ ${note("Which version this covers", "This booklet describes <strong>v0.2.19</str
         html: `
 ${table(["Written as", "Meaning"], [
   [ui("Export"), "Exactly what the screen says (a button, field or heading)"],
-  [ui("ショーを読み込む", "Import show"), "A label that <strong>still appears in Japanese</strong> even when the app is set to English (v0.2.16). The Japanese is what you will see; the English in quotes is its meaning"],
+  [ui("Import show"), "Another screen label. The name inside an imported show stays in its original language"],
   [kbd("F"), "A key on the keyboard. " + kbd("⌘") + " is the Mac Command key (Ctrl on Windows)"],
   ["<strong>Bold</strong>", "Easy to get wrong, or important"],
   ['<span class="tag st-verified">Checked on screen</span>', "The section was confirmed on this version's screens"],
@@ -68,11 +68,10 @@ ${table(["Written as", "Meaning"], [
         keywords: ["not covered", "unconfirmed", "sharing", "performer link", "live", "meeting", "not working", "japanese labels"],
         html: `
 <ul>
-<li><strong>Sharing (live sharing and performer links) is not implemented in Gamma yet.</strong> It is planned. The entry points are still on screen, but they do not work in Gamma for now (${ref("share", "Part 11, 11-4")}).</li>
-<li><strong>Some labels are Japanese-only.</strong> In v0.2.16, about thirty-five labels still appear in Japanese with the app set to English — mostly the theatre-settings steps, the alternatives panel, the formation window and the shortcut editor. This booklet shows them as they appear, with the meaning in quotes.</li>
+<li><strong>Sharing is available on Gamma's dedicated sharing host.</strong> GitHub Pages cannot run the sharing server. See ${ref("share", "Part 11, 11-4")} for the link and migration steps.</li>
 <li>Beta-only topics (sign-in, invitation links, the beta booklet's chapters) are not included. The app's ${ui("Quick Guide")} still describes the beta.</li>
 <li>Stage Sketch is a 2D study book for composition, colour and distance. <strong>It is not a drawing that decides stage machinery, rigging, safety distances or construction dimensions</strong> (the app says the same).</li>
-<li>The screenshots were taken of the published v0.2.16 on 2026-09-26 at 1440×900 (Chromium) with the app set to English (the three pose pictures and the two booklet-entry pictures on v0.2.19). Safari may differ in small details. iPad and iPhone screens are in Part 13.</li>
+<li>The screenshots were taken at 1440×900 in Chromium with the app set to English. Most are from v0.2.16; the pose pictures are from v0.2.29, and the set-piece and prop pictures from v0.2.26. Safari may differ in small details. iPad and iPhone screens are in Part 13.</li>
 </ul>`
       }
     ]

@@ -39,7 +39,7 @@ ${table(["Table", "Setting", "Contents"], [
         keywords: ["export", "import", "file", "json", "send", "pass on", "another device", "email", "airdrop", "theatre data", "include", "compare", "replace", "separate show", "open file"],
         html: `
 <p>${ui("Export show")} in the ${ui("Show")} panel saves the show as one file (.json). Give it a ${ui("File name")} and choose ${ui("Include theatre data")} or ${ui("Export without the theatre")} (leave out a theatre whose source may not be shared).</p>
-<p>The receiver uses ${ui("ショーを読み込む", "Import show")} and picks the file. The ${ui("Compare before importing")} window shows what it contains (scenes, performers, version); choose ${ui("Open as a separate show")} or ${ui("Replace the current show")}.</p>
+<p>The receiver uses ${ui("Import show")} and picks the file. The ${ui("Compare before importing")} window shows what it contains (scenes, performers, version); choose ${ui("Open as a separate show")} or ${ui("Replace the current show")}.</p>
 <ul>
 <li>Audio files are not included. On the receiving device use ${ui("Reconnect the audio file on this device")}.</li>
 <li>Shows with Gamma lighting (equipment placement and LX cues) cannot be read by the beta. Open them in Gamma.</li>
@@ -48,15 +48,14 @@ ${table(["Table", "Setting", "Contents"], [
 </ul>`
       },
       {
-        id: "share", title: "Sharing (live sharing, performer links) — not yet implemented in Gamma", status: "verified",
-        keywords: ["share", "sharing", "live", "meeting", "session", "invite", "url", "link", "performer link", "viewer", "guest", "host", "laser pointer", "cannot connect", "not working", "planned"],
+        id: "share", title: "Sharing (live sessions and performer links)", status: "sourced",
+        keywords: ["share", "sharing", "live", "meeting", "session", "invite", "url", "link", "performer link", "viewer", "guest", "host", "laser pointer", "cannot connect", "not working", "json", "migration"],
         html: `
-${note("Not implemented in Gamma yet — planned", "Sharing is not yet implemented in Gamma; it is planned. The " + ui("Sharing") + " window is still on screen, but opening it in v0.2.16 shows “Not connected” for live sharing and “The request failed. Refresh the status, then try again.” for performer links. For now, the reliable ways to share are passing the exported file, handing out images or prints, and showing one screen.", true)}
-${fig("42-share", "The Sharing window (v0.2.16). Entry points for live sharing (for meetings) and performer links; the performer link shows the failure message.", "Sharing window")}
-<p>For reference, this is how sharing works in the beta. This section will be rewritten when Gamma's sharing is released.</p>
+${note("Use the Gamma sharing host", "GitHub Pages serves static files and cannot run the sharing server. For sharing, <a href=\"https://stage-sketch-gamma-share.juggler-arata.workers.dev/stage.html\" target=\"_blank\" rel=\"noopener noreferrer\">open the Gamma sharing editor</a>. Shows saved on Pages do not appear there automatically: export the show as JSON on Pages, then import it in the sharing editor. The original remains on Pages.", true)}
+<p>Sign in on the sharing host, open a show, then use ${ui("Sharing")}. Anyone who receives an invitation or performer link can view the content allowed by that link; send it only to intended recipients.</p>
 <ul>
-<li><strong>Live sharing (for meetings)</strong> — look at placements and annotations together with the same show open during a meeting. The host starts a session with a display name and sends the invitation link. Guests can point with a laser pointer and draw arrows; they cannot move pieces, and the scene follows the host. The session ends about ten minutes after everyone leaves.</li>
-<li><strong>Performer link</strong> — a viewer link so performers can check the movement of the show.</li>
+<li><strong>Live sharing (for meetings)</strong> — the host enters a display name, starts a session and sends the invitation URL. Guests can use a laser pointer and arrows. They cannot edit pieces or the source show, and their scene follows the host.</li>
+<li><strong>Performer link</strong> — publishes a snapshot of all scenes to the viewer. Working changes remain private until ${ui("Update published content")}. Performers can keep notes on their own device and share selected notes with the owner. Use ${ui("Revoke link")} when access is no longer needed.</li>
 </ul>`
       },
       {
@@ -79,7 +78,7 @@ ${fig("42-share", "The Sharing window (v0.2.16). Entry points for live sharing (
 ${steps([
   "Give the AI the guide from the page, describe the show you want, and have it write the JSON.",
   "Paste the JSON into the page's checker and make sure it breaks no rules (fields not allowed, zero-second transitions, missing times and so on).",
-  "Open the JSON in Stage Sketch with " + ui("ショーを読み込む", "Import show") + "."
+  "Open the JSON in Stage Sketch with " + ui("Import show") + "."
 ])}
 <p>Each scene must have its times (time on scene and time to the next scene; the v0.2.8 contract). Gamma's new lighting (equipment placement and light design), custom theatres from Theatre settings and 3D viewpoints are outside this JSON; add them inside Stage Sketch after importing.</p>`
       },

@@ -105,7 +105,7 @@
     control('count').textContent = `（${view.points.length}/5）`;
     if (view.points.length >= 5) adding = false;
     add.disabled = view.points.length >= 5;
-    add.textContent = adding ? '配置を取り消す' : '＋ 点を置く';
+    add.textContent = window.GAMMA_UI_TEXT?.(adding ? '配置を取り消す' : '＋ 点を置く') || (adding ? '配置を取り消す' : '＋ 点を置く');
     add.setAttribute('aria-pressed', String(adding));
     reset.disabled = !view.canReset;
     layer.classList.toggle('is-placing', adding);

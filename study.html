@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ja">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+<title>Stage Sketch Viewer</title>
+<link rel="stylesheet" href="/study-assets/style.css?v=231">
+<link rel="stylesheet" href="/stage-study.css?v=25">
+<link rel="stylesheet" href="/stage-study-phone.css?v=1">
+<script src="/stage-study-sticky.js?v=5" defer></script>
+<script src="/stage-study-private.js?v=6" defer></script>
+<script src="/stage-study-sync.js?v=3" defer></script>
+<script src="/stage-study-continuity.js?v=3" defer></script>
+<script src="/stage-study-viewer.js?v=19" defer></script>
+<script src="/stage-study-phone.js?v=1" defer></script></head>
+<body class="study study-viewer"><main class="study-shell">
+<header class="study-header"><div class="study-heading"><h1 class="study-brand"><span>Stage Sketch</span> <span class="study-brand-mode">Viewer</span></h1><p class="study-kicker"><span data-text="badge">事前確認用・ショーは閲覧のみ</span><span data-text="noteAllowed">自分用メモは書き込み可</span></p></div>
+<div class="study-show-info"><h2 id="study-title" hidden></h2><p id="study-stamp" class="study-muted"></p></div>
+<div class="study-header-actions"><a id="study-product-link" class="study-product-link" href="https://aratama-ship-it.github.io/stage-sketch-gamma/" target="_blank" rel="noopener noreferrer" data-label="productAboutLabel" aria-label="舞台スケッチγについて（別タブで開く）" title="舞台スケッチγについて（別タブで開く）"><span data-text="productAbout">舞台スケッチγについて</span><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h5v5 M14 2 7 9 M6 3H2v11h11v-4"/></svg></a>
+<select id="study-language" aria-label="表示言語 / Language"><option value="ja">日本語</option><option value="en">English</option></select></div></header>
+<nav id="study-account" class="study-row study-account" aria-label="アカウント / Account" hidden><a class="study-action" id="study-library-link" href="/study" data-text="library">受け取ったショー</a><span id="study-account-name"></span><button id="study-logout" type="button" class="study-icon-label" data-label="logout" aria-label="ログアウト" title="ログアウト"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2H2v12h4 M7 8h7 m-3-3 3 3-3 3"/></svg><span data-text="logout">ログアウト</span></button></nav>
+<section id="study-login" class="study-login" hidden aria-labelledby="study-login-title"><h2 id="study-login-title" data-text="loginTitle">無料の演者アカウント</h2><p data-text="loginHint">ログインすると、受け取ったショーと自分用メモをPC・スマホで見られます。編集ライセンスは不要です。</p><button id="study-google" class="study-primary" type="button" data-text="google">Googleでログイン</button><p id="study-login-config" class="study-muted" data-text="loginConfig" hidden>Googleログインは本番設定待ちです。</p><div id="study-local" class="study-block" hidden><p data-text="localHint">ローカル確認専用。同じ演者を選ぶと、別ブラウザでもメモが同期されます。</p><div class="study-row"><button id="study-local-a" type="button">演者 A / Reader A</button><button id="study-local-b" type="button">演者 B / Reader B</button></div></div></section>
+<section id="study-library" class="study-library" hidden aria-labelledby="study-library-title"><h2 id="study-library-title" data-text="library">受け取ったショー</h2><p data-text="libraryHint">オーナーから届いたリンクを開くと、ここへ追加されます。複数のオーナーのショーをまとめて確認できます。</p><p id="study-library-empty" data-text="libraryEmpty" hidden>まだショーがありません。</p><ul id="study-library-list"></ul></section>
+<p id="study-status" class="study-status" role="status" aria-live="polite"></p>
+<button id="study-retry" type="button" hidden class="study-icon-label" data-label="retry" aria-label="再試行" title="再試行"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6a5.2 5.2 0 1 0 .1 4 M13 2v4H9"/></svg><span data-text="retry">再試行</span></button>
+<p id="study-change-summary" class="study-muted" role="status" hidden></p>
+<div id="study-workspace" class="study-workspace" hidden>
+<section class="study-stage" aria-labelledby="study-scene-heading">
+<h2 id="study-scene-heading" class="study-section-title"></h2>
+<div id="study-frame-host"></div>
+<p id="study-scene-note" class="study-note-text"></p>
+<p class="study-muted" data-text="media">ローカル音源と端末内の独自モデルは含まれません。</p>
+</section>
+<div id="study-side-resize" class="study-side-resize" role="separator" tabindex="0" aria-orientation="vertical" aria-controls="study-side" aria-label="右パネルの幅" aria-describedby="study-side-resize-hint" hidden><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v10 M12 5v10 M5 8l-2 2 2 2 M15 8l2 2-2 2"/></svg><span id="study-side-resize-hint" class="study-resize-hint" data-text="panelResizeHint">ドラッグで幅を変更。左右キーで調整、ダブルクリックまたはEnterで元に戻す。</span></div>
+<div id="study-side" class="study-side">
+<section class="study-controls" aria-labelledby="study-scenes-label">
+<label id="study-scenes-label" for="study-scenes" data-text="scene">場面</label>
+<div class="study-scene-row"><button id="study-prev" type="button" class="study-icon-button" data-label="previous" aria-label="前の場面" title="前の場面"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 5 8l5 5"/></svg></button><select id="study-scenes"></select><button id="study-next" type="button" class="study-icon-button" data-label="next" aria-label="次の場面" title="次の場面"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 3 5 5-5 5"/></svg></button></div>
+<div class="study-row study-toolbar"><div class="study-row"><button id="study-replay" type="button" class="study-icon-button" data-label="replay" aria-label="転換を再生" title="転換を再生"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 2 8 6-8 6Z"/></svg></button><button id="study-stop" type="button" class="study-icon-button" data-label="stop" aria-label="停止" title="停止"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h10v10H3Z"/></svg></button></div>
+<div><label for="study-view" data-text="view">舞台図</label><select id="study-view"><option value="both" data-text="both">正面図と平面図</option><option value="front" data-text="front">正面図</option><option value="plan" data-text="plan">平面図</option></select></div></div>
+<h2 class="study-section-title" data-text="drawingTools">書き込み</h2>
+<div class="study-row study-pen-tools" role="group" aria-label="ペン / Pen">
+<button id="study-pen" type="button" aria-pressed="false" class="study-icon-button" data-label="pen" aria-label="ペン" title="ペン"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="m11.1 2.6 2.3 2.3-7.4 7.4-3 .7.7-3Z M9.5 4.2l2.3 2.3"/></svg></button>
+<button id="study-pen-undo" type="button" disabled class="study-icon-button" data-label="penUndo" aria-label="線を1本戻す" title="線を1本戻す"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3 2 6l4 3 M2 6h7a4 4 0 0 1 0 8H7"/></svg></button>
+<button id="study-pen-clear" type="button" disabled class="study-icon-button" data-label="penClear" aria-label="線を消す" title="線を消す"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="m8.9 4.2 3.9 3.9-4.3 4.3H4.6l-1.4-1.4Z M6.1 7l3.9 3.9 M4.6 12.4h8.8"/></svg></button>
+<button id="study-sticky" type="button" class="study-icon-label" data-label="stickyTool" aria-label="メモ" title="メモ" aria-pressed="false" aria-controls="study-sticky-panel"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v8l-4 4H2Z M10 14v-4h4 M5 5h6 M5 8h3"/></svg><span data-text="stickyTool">メモ</span></button>
+</div>
+<p id="study-pen-status" class="study-muted" role="status" aria-live="polite"></p>
+<section id="study-sticky-panel" class="study-block study-sticky-panel" hidden aria-labelledby="study-sticky-heading">
+<h2 id="study-sticky-heading" class="study-section-title" data-text="stickyHeading">図に貼る自分用メモ</h2>
+<p class="study-muted" data-text="stickyHint">図の空いた場所を押して貼り、ドラッグで移動します。文字はここで編集できます。</p>
+<div class="study-row"><button id="study-sticky-front" type="button" class="study-icon-label" data-label="stickyFront" aria-label="正面図に追加" title="正面図に追加" ><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v8l-4 4H2Z M10 14v-4h4 M5 5h6 M5 8h3"/></svg><span data-text="stickyFront">正面図に追加</span></button><button id="study-sticky-plan" type="button" class="study-icon-label" data-label="stickyPlan" aria-label="平面図に追加" title="平面図に追加" ><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v8l-4 4H2Z M10 14v-4h4 M5 5h6 M5 8h3"/></svg><span data-text="stickyPlan">平面図に追加</span></button></div>
+<label for="study-sticky-list" data-text="stickyList">この場面の図上メモ</label><select id="study-sticky-list"></select>
+<p id="study-sticky-status" class="study-muted" role="status" aria-live="polite"></p>
+<div id="study-sticky-editor" hidden><label for="study-sticky-text" data-text="stickyText">貼ったメモの内容</label><textarea id="study-sticky-text" maxlength="200" aria-describedby="study-sticky-count study-sticky-save"></textarea><small id="study-sticky-count">0 / 200</small>
+<fieldset class="study-sticky-options"><legend data-text="stickyShape">形</legend><div class="study-sticky-choices">
+<button type="button" data-sticky-shape="rect" aria-pressed="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h12v10H2Z"/></svg><span data-text="stickyRect">四角</span></button>
+<button type="button" data-sticky-shape="rounded" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="3"/></svg><span data-text="stickyRounded">角丸</span></button>
+<button type="button" data-sticky-shape="bubble" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2h8q2 0 2 2v6q0 2-2 2H7l-3 3v-3q-2 0-2-2V4q0-2 2-2Z"/></svg><span data-text="stickyBubble">吹き出し</span></button>
+</div></fieldset>
+<fieldset class="study-sticky-options"><legend data-text="stickyColor">色</legend><div class="study-sticky-choices">
+<button type="button" data-sticky-color="desk" aria-pressed="true"><i aria-hidden="true"></i><span data-text="stickyDesk">墨色</span></button>
+<button type="button" data-sticky-color="paper" aria-pressed="false"><i aria-hidden="true"></i><span data-text="stickyPaper">生成り</span></button>
+<button type="button" data-sticky-color="yellow" aria-pressed="false"><i aria-hidden="true"></i><span data-text="stickyYellow">黄</span></button>
+<button type="button" data-sticky-color="rose" aria-pressed="false"><i aria-hidden="true"></i><span data-text="stickyRose">朱</span></button>
+<button type="button" data-sticky-color="sage" aria-pressed="false"><i aria-hidden="true"></i><span data-text="stickySage">緑</span></button>
+<button type="button" data-sticky-color="blue" aria-pressed="false"><i aria-hidden="true"></i><span data-text="stickyBlue">青</span></button>
+</div></fieldset>
+<label for="study-sticky-transparency" data-text="stickyTransparency">背景の透明度</label>
+<div class="study-sticky-transparency"><input id="study-sticky-transparency" type="range" min="0" max="100" step="1" value="0" aria-describedby="study-sticky-transparency-hint"><output id="study-sticky-transparency-value" for="study-sticky-transparency">0%</output></div>
+<small class="study-muted" id="study-sticky-transparency-hint" data-text="stickyTransparencyHint">0%は不透明、100%は透明。文字と枠線は残ります。</small>
+<div class="study-sticky-size"><div><label for="study-sticky-width" data-text="stickyWidth">幅</label><input id="study-sticky-width" type="number" inputmode="numeric" min="120" max="400" step="1"></div><div><label for="study-sticky-height" data-text="stickyHeight">高さ</label><input id="study-sticky-height" type="number" inputmode="numeric" min="44" max="320" step="1"></div></div>
+<button id="study-sticky-auto" type="button" data-text="stickyAuto">高さを自動に</button><p class="study-muted" data-text="stickySizeHint">右下をドラッグして大きさを変えられます。高さを自動にすると文章に合わせます。</p>
+<p id="study-sticky-save" class="study-muted" role="status" aria-live="polite"></p>
+<div class="study-row"><button id="study-sticky-position" type="button" class="study-icon-label" data-label="stickyPosition" aria-label="位置を調整" title="位置を調整" ><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1v14 M1 8h14 M5 4l3-3 3 3 M5 12l3 3 3-3 M4 5 1 8l3 3 M12 5l3 3-3 3"/></svg><span data-text="stickyPosition">位置を調整</span></button><button id="study-sticky-done" type="button" class="study-icon-label" data-label="stickyDone" aria-label="閉じる" title="閉じる" ><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="m3 8 3 3 7-7"/></svg><span data-text="stickyDone">閉じる</span></button><button id="study-sticky-remove" type="button" class="study-icon-label" data-label="stickyRemove" aria-label="はがす" title="はがす" ><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h10 M6 4V2h4v2 M4 4l1 10h6l1-10 M7 7v4 M9 7v4"/></svg><span data-text="stickyRemove">はがす</span></button></div>
+<p class="study-muted" data-text="stickyMoveHint">位置を調整するときは図のメモをドラッグ、または矢印キーで動かせます。</p>
+<div id="study-sticky-confirm" hidden><p data-text="stickyConfirm">この図上メモをはがしますか？</p><div class="study-row"><button id="study-sticky-remove-yes" type="button" data-text="stickyRemove">はがす</button><button id="study-sticky-remove-no" type="button" data-text="cancel">キャンセル</button></div></div>
+</div></section>
+<div id="study-pen-confirm" class="study-pen-confirm" hidden><p data-text="penConfirm">この場面の線をすべて消しますか？</p><div class="study-row"><button id="study-pen-clear-yes" type="button" data-text="penClearYes">すべて消す</button><button id="study-pen-clear-no" type="button" data-text="cancel">キャンセル</button></div></div>
+</section>
+<aside class="study-memo"><form id="study-note-form"><fieldset id="study-note-fields"><legend data-text="memo">自分用メモ</legend>
+<p id="study-note-scene" class="study-muted"></p>
+<p id="study-older-note" class="study-danger" data-text="older" hidden></p>
+<label for="study-note" data-text="body">この場面の自分用メモ</label><textarea id="study-note" maxlength="2000" aria-describedby="study-save-status study-note-count"></textarea>
+<small id="study-note-count">0 / 2000</small>
+<p class="study-muted study-personal-hint" data-text="personal">文章と線をこの端末に自動保存します。共有するまでオーナーには届きません。</p>
+<p id="study-save-status" class="study-muted" role="status" aria-live="polite"></p>
+<div id="study-conflict" class="study-block" hidden><p data-text="conflict">別の端末にも変更があります。使う内容を選んでください。</p><label for="study-conflict-remote" data-text="otherDevice">別の端末のメモ</label><textarea id="study-conflict-remote" readonly></textarea><p id="study-conflict-strokes" class="study-muted"></p><div class="study-row"><button id="study-use-remote" type="button" data-text="useRemote">別の端末の内容を使う</button><button id="study-use-mine" type="button" data-text="useMine">今の内容で同期する</button></div></div>
+<div id="study-import" class="study-block" hidden><p data-text="importHint">ログイン前に、この端末で書いたメモがあります。自分のメモなら、この場面をアカウントへ引き継げます。</p><button id="study-import-button" type="button" data-text="importLocal">この場面の端末メモを引き継ぐ</button></div>
+<details id="study-history" class="study-block study-history">
+<summary><span data-history-text="title">以前の場面のメモ・引き継ぎ</span><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 3 5 5-5 5"/></svg></summary>
+<p class="study-muted" data-history-text="hint"></p><p id="study-history-empty" data-history-text="empty" hidden></p>
+<div id="study-history-content">
+<label for="study-history-source" data-history-text="source"></label><select id="study-history-source"></select>
+<label for="study-history-target" data-history-text="target"></label><select id="study-history-target"></select>
+<label for="study-history-text" data-history-text="text"></label><textarea id="study-history-text" maxlength="2000"></textarea>
+<fieldset><legend data-history-text="strokes"></legend><div id="study-history-strokes" class="study-history-strokes"></div></fieldset>
+<fieldset><legend data-history-text="stickies"></legend><div id="study-history-stickies" class="study-history-strokes study-history-stickies"></div></fieldset>
+<div class="study-history-compare"><section><h2 data-history-text="from"></h2><p id="study-history-source-status" class="study-muted" role="status"></p><div id="study-history-source-frame"></div></section><section><h2 data-history-text="to"></h2><div id="study-history-target-frame"></div></section></div>
+<button type="button" id="study-history-copy" data-history-text="copy"></button>
+<p id="study-history-status" role="status" aria-live="polite"></p></div></details>
+<div class="study-block study-share">
+<p class="study-muted" data-text="private">現在表示している舞台図と線を画像にして、メモ・表示名と一緒に送ります。他の閲覧者には表示されません。</p>
+<div id="study-name-field"><label for="study-name" data-text="name">表示名（オーナーへ送信）</label><input id="study-name" maxlength="60" autocomplete="nickname" aria-describedby="study-name-saved"><p id="study-name-saved" class="study-muted" data-text="nameSaved">共有時にオーナーへ伝わる名前です。この端末にも保存します。</p></div>
+<p id="study-verified-name" hidden></p>
+<button id="study-send" type="submit" class="study-icon-label" data-label="send" aria-label="このメモと図をオーナーへ共有" title="このメモと図をオーナーへ共有"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10V1 m-3 3 3-3 3 3 M3 7H2v7h12V7h-1"/></svg><span data-text="send">このメモと図をオーナーへ共有</span></button>
+</div>
+</fieldset><p id="study-note-status" class="study-status" role="status" aria-live="polite"></p></form></aside></div>
+</div></main></body></html>

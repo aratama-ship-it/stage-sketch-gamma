@@ -32,7 +32,7 @@
     </div>`;
   layout.append(panel);
   const toggle = document.createElement('button');
-  toggle.type = 'button'; toggle.id = 'venue-live-toggle'; toggle.textContent = 'プレビューを閉じる';
+  toggle.type = 'button'; toggle.id = 'venue-live-toggle'; toggle.textContent = window.GAMMA_UI_TEXT?.('プレビューを閉じる') || 'プレビューを閉じる';
   toggle.setAttribute('aria-expanded', 'true');
   document.getElementById('stage-venue-editor-dims').before(toggle);
   const canvas = panel.querySelector('canvas');
@@ -353,7 +353,7 @@
   toggle.addEventListener('click', () => {
     endDrag(true); state.visible = !state.visible;
     modal.classList.toggle('venue-live-only-plan', !state.visible);
-    toggle.textContent = state.visible ? 'プレビューを閉じる' : 'プレビューを開く';
+    toggle.textContent = window.GAMMA_UI_TEXT?.(state.visible ? 'プレビューを閉じる' : 'プレビューを開く') || (state.visible ? 'プレビューを閉じる' : 'プレビューを開く');
     toggle.setAttribute('aria-expanded', String(state.visible)); schedule();
   });
   window.addEventListener('stage-venue-draft-render', schedule);
