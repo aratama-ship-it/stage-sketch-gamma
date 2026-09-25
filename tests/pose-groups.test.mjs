@@ -83,3 +83,15 @@ test("3D画面は目の高さ・名札の高さを姿勢の形から出せる", 
   assert.match(fpv, /const EYE_HEIGHT_FIXED = new Set\(/);
   assert.match(fpv, /function labelTopRatio\(pose\)/);
 });
+
+test("持ち物を伴う姿勢は、持ち物が左手にだけあるとき左右を入れ替えて描く", () => {
+  assert.match(main, /const LEFT_HAND_SUFFIX = "@left";/);
+  assert.match(main, /function handedPoseId\(piece, pieces, poseId\) \{/);
+  assert.match(main, /: handedPoseId\(piece, pieces, piece\.pose \|\| "stand"\);/, "resolvePoseId が持ち手を見る");
+  assert.match(main, /: handedPoseId\(piece, sc\(\)\.pieces, piece\.pose\);/, "正面図の組み立て（performerRig）も持ち手を見る");
+  // 反転の中身: 関節の L/R を入れ替え x を反転する
+  const start = main.indexOf("function leftHandedPose(pose) {");
+  const body = main.slice(start, main.indexOf("\n  }\n", start));
+  const swapSide = eval(body.match(/const swapSide = ([^;]+);/)[1]);
+  assert.equal(swapSide("wrR"), "wrL"); assert.equal(swapSide("shL"), "shR"); assert.equal(swapSide("head"), "head"); assert.equal(swapSide("neck"), "neck");
+});

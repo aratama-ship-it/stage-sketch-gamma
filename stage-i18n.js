@@ -2110,6 +2110,12 @@
       hold_head: "Hold head in hands", hand_on_chest: "Hand on chest", surprised: "Startled, recoil", pray: "Pray, palms together",
       clown_slip_fall: "Slip fall mid-air", clown_trip: "Trip forward", pratfall_sit: "Pratfall",
       shrug: "Shrug", mime_wall: "Mime wall", sign_language_speak: "Signing (sign language)",
+      hit_recoil: "Struck, recoil", punch: "Punch", kick: "Front kick", sword_ready: "Sword ready stance",
+      sword_slash: "Sword slash down", sword_raised: "Sword raised overhead", staff_ready: "Staff stance", throw: "Throw, wind-up",
+      catch_ready: "Ready to catch", hero_transform: "Transformation pose", hero_finisher: "Finishing move stance",
+      karate_zenkutsu: "Karate front stance", karate_roundhouse_kick_mid: "Roundhouse kick (mid)", boxing_guard: "Boxing guard",
+      push: "Push", pull: "Pull rope", read_book: "Read a book or paper", phone_call: "Talk on the phone", drink: "Drink", toast: "Toast",
+      sweep: "Sweep", tray_serve: "Carry a tray", umbrella_hold: "Hold an umbrella", flag_wave: "Wave a flag", torch_raise: "Raise a torch or lantern",
       trapeze_sit: "Sitting on the bar", trapeze_hang: "Hanging from the bar",
     },
     setKind: {

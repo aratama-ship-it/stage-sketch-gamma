@@ -5188,6 +5188,197 @@
       elL: [-0.235, 0.69, 0.075], wrL: [-0.07, 0.75, 0.145],
       elR: [0.235, 0.72, 0.08], wrR: [0.0725, 0.67, 0.138],
     }),
+    /* ---- 2026-09-26 本人選択: 第3回 25件（殺陣・武術／日常の動作） ----
+     * 塗りつぶした人影でも動作が読めるよう、頭だけでなく体幹・腕・脚の差を付ける。
+     * 各四肢は肩→肘0.19、肘→手首0.18、腰→膝0.24、膝→足首0.24（身長比）を基準にした。 */
+    makePose("hit_recoil", "殴られる・斬られる（のけぞる）", {
+      // 2026-09-26 Claude が作り直し: 腕を後ろへ流すだけでは のけぞりが読めなかった。
+      // 胴を後ろへ約20度反らせ、頭はさらに後ろへ。両腕は体の後ろ下へ流し、右足を一歩後ろへ引く
+      head: [0, 0.905, -0.13], neck: [0, 0.835, -0.10],
+      shL: [-0.1075, 0.80, -0.083], shR: [0.1075, 0.80, -0.083],
+      elL: [-0.17, 0.63, -0.14], wrL: [-0.20, 0.47, -0.21],
+      elR: [0.17, 0.63, -0.14], wrR: [0.20, 0.47, -0.21],
+      hipL: [-0.055, 0.52, 0.02], hipR: [0.055, 0.52, 0.02],
+      knR: [0.06, 0.29, -0.06], anR: [0.058, 0.05, -0.12], toR: [0.058, 0.012, -0.05],
+    }, { face: [0, 0.55, 0.83] }),
+    makePose("punch", "殴る（正拳突き）", {
+      // 右拳を正面へ伸ばし、左拳は胸前のガードへ引く
+      shL: [-0.085, 0.82, 0.07], shR: [0.085, 0.82, -0.07],
+      elR: [0.085, 0.82, 0.12], wrR: [0.085, 0.82, 0.30],
+      elL: [-0.199, 0.668, 0.07], wrL: [-0.091, 0.812, 0.07],
+    }, { wide: [0.819, 0, -0.574], face: [0, 0, 1] }),
+    makePose("kick", "蹴る（前蹴り）", {
+      // 左足を床につけ、右膝を前へ上げてすねを伸ばす。両拳は胸前のガード
+      elL: [-0.0415, 0.972, 0.092], wrL: [0.0665, 0.864, 0.184],
+      elR: [0.0415, 0.972, 0.092], wrR: [-0.0665, 0.864, 0.184],
+      knR: [0.055, 0.52, 0.24], anR: [0.055, 0.328, 0.384], toR: [0.055, 0.30, 0.46],
+    }),
+    makePose("sword_ready", "刀を構える（正眼）", {
+      // 右手首を胸前の握り位置へ置き、左手を柄へ添える
+      elR: [0.1075, 0.668, 0.114], wrR: [0.0535, 0.722, 0.276],
+      elL: [-0.1075, 0.668, 0.114], wrL: [0.0005, 0.722, 0.247],
+      knL: [-0.09, 0.285, 0.02], knR: [0.09, 0.285, -0.02],
+    }),
+    makePose("sword_slash", "斬る（振り下ろし）", {
+      // 2026-09-26 Claude が作り直し: 腕を下げて立つだけでは振り下ろしに見えなかった。
+      // 両手を揃えて前下へ振り下ろした瞬間。上体を前へ倒し、右足を大きく踏み込む
+      head: [0, 0.87, 0.14], neck: [0, 0.80, 0.11],
+      shL: [-0.1075, 0.77, 0.085], shR: [0.1075, 0.77, 0.085],
+      elL: [-0.09, 0.62, 0.20], wrL: [-0.02, 0.52, 0.34],
+      elR: [0.12, 0.62, 0.20], wrR: [0.04, 0.53, 0.33],
+      hipL: [-0.055, 0.49, -0.02], hipR: [0.055, 0.49, -0.02],
+      knR: [0.07, 0.27, 0.08], anR: [0.07, 0.04, 0.15], toR: [0.07, 0.012, 0.225],
+      knL: [-0.06, 0.28, -0.12], anL: [-0.058, 0.06, -0.24], toL: [-0.058, 0.012, -0.18],
+    }, { face: [0, -0.2, 0.98] }),
+    makePose("sword_raised", "刀を振り上げる（上段）", {
+      // 右手首を頭上の握り位置へ上げ、左手も柄へ添える
+      elR: [0.1075, 1.01, 0], wrR: [0.0535, 1.154, 0.093],
+      elL: [-0.1075, 1.01, 0], wrL: [0.0005, 1.154, 0],
+      knL: [-0.09, 0.285, 0.02], knR: [0.09, 0.285, -0.02],
+    }),
+    makePose("staff_ready", "棒を構える", {
+      // 2026-09-26 Claude が作り直し: 腕を横へ出すだけでは構えに見えなかった。
+      // 両手で棒を体の前に構える: 右手は腰の前、左手は胸の前。足を前後に開き、膝を緩める
+      head: [0, 0.915, 0.01], neck: [0, 0.835, 0.005],
+      shL: [-0.1075, 0.80, 0], shR: [0.1075, 0.80, 0],
+      elR: [0.145, 0.625, 0.06], wrR: [0.08, 0.58, 0.22],
+      elL: [-0.17, 0.64, 0.08], wrL: [-0.06, 0.72, 0.20],
+      hipL: [-0.055, 0.50, 0], hipR: [0.055, 0.50, 0],
+      knL: [-0.06, 0.28, 0.08], anL: [-0.058, 0.04, 0.13], toL: [-0.058, 0.012, 0.205],
+      knR: [0.06, 0.27, -0.07], anR: [0.058, 0.04, -0.12], toR: [0.058, 0.012, -0.045],
+    }),
+    makePose("throw", "投げる（振りかぶる）", {
+      // 右手を頭の後ろへ振りかぶり、左腕と左足を前へ出す
+      elR: [0.1075, 0.972, -0.114], wrR: [0.1075, 1.116, -0.222],
+      elL: [-0.1075, 0.668, 0.114], wrL: [-0.1075, 0.524, 0.222],
+      toL: [-0.058, 0.012, 0.195],
+    }),
+    makePose("catch_ready", "受け止める（構え）", {
+      // 2026-09-26 Claude が作り直し: 片腕を前へ出す形は「殴る」と同じに見えた。
+      // 膝を曲げて腰を落とし、両腕を胸の前で丸く開いて手を上向きに構える（投げられた物・人を受ける）
+      head: [0, 0.855, 0.06], neck: [0, 0.775, 0.045],
+      shL: [-0.1075, 0.74, 0.03], shR: [0.1075, 0.74, 0.03],
+      elL: [-0.20, 0.61, 0.12], wrL: [-0.13, 0.66, 0.27],
+      elR: [0.20, 0.61, 0.12], wrR: [0.13, 0.66, 0.27],
+      hipL: [-0.065, 0.44, -0.03], hipR: [0.065, 0.44, -0.03],
+      knL: [-0.10, 0.25, 0.10], knR: [0.10, 0.25, 0.10],
+      anL: [-0.11, 0.04, 0], anR: [0.11, 0.04, 0],
+      toL: [-0.11, 0.012, 0.075], toR: [0.11, 0.012, 0.075],
+    }),
+    makePose("hero_transform", "変身ポーズ（両腕を交差）", {
+      // 両前腕を顔の前で大きく交差し、足幅を広げて決める
+      elL: [-0.0415, 0.972, 0.092], wrL: [0.0665, 0.864, 0.184],
+      elR: [0.0415, 0.972, 0.092], wrR: [-0.0665, 0.864, 0.184],
+      knL: [-0.10, 0.285, 0.02], knR: [0.10, 0.285, 0.02],
+      anL: [-0.105, 0.045, 0], anR: [0.105, 0.045, 0],
+      toL: [-0.105, 0.012, 0.075], toR: [0.105, 0.012, 0.075],
+    }),
+    makePose("hero_finisher", "必殺技の構え", {
+      // 腰を落として左腕を前へ、右腕を後ろへ引き、技の直前の溜めを作る
+      head: [0, 0.81, 0.14], neck: [0, 0.75, 0.09],
+      shL: [-0.1075, 0.712, 0.084], shR: [0.1075, 0.712, 0.084],
+      elL: [-0.1075, 0.712, 0.274], wrL: [-0.1075, 0.712, 0.454],
+      elR: [0.1735, 0.56, -0.008], wrR: [0.2365, 0.416, -0.096],
+      hipL: [-0.055, 0.424, 0], hipR: [0.055, 0.424, 0],
+      knL: [-0.055, 0.232, 0.144], knR: [0.055, 0.232, 0.144],
+      anL: [-0.055, 0.04, 0], anR: [0.055, 0.04, 0],
+      toL: [-0.055, 0.012, 0.075], toR: [0.055, 0.012, 0.075],
+    }, { face: [0, -0.1, 0.995] }),
+    makePose("karate_zenkutsu", "空手の構え（前屈立ち・両拳）", {
+      // 腰を落とした前屈立ちで、前拳を伸ばし後ろ拳を脇へ引く
+      head: [0, 0.81, 0.14], neck: [0, 0.75, 0.09],
+      shL: [-0.1075, 0.712, 0.084], shR: [0.1075, 0.712, 0.084],
+      elL: [-0.1075, 0.712, 0.274], wrL: [-0.1075, 0.712, 0.454],
+      elR: [0.2215, 0.56, 0.084], wrR: [0.1135, 0.416, 0.084],
+      hipL: [-0.055, 0.424, 0], hipR: [0.055, 0.424, 0],
+      knL: [-0.055, 0.232, 0.144], knR: [0.055, 0.232, 0.144],
+      anL: [-0.055, 0.04, 0], anR: [0.055, 0.04, 0],
+      toL: [-0.055, 0.012, 0.075], toR: [0.055, 0.012, 0.075],
+    }, { face: [0, -0.1, 0.995] }),
+    makePose("karate_roundhouse_kick_mid", "回し蹴り（中間・脚を横へ振る）", {
+      // 左足を床につけ、右脚は腰から画面右へ水平に振り抜く
+      elL: [-0.0415, 0.972, 0.092], wrL: [0.0665, 0.864, 0.184],
+      elR: [0.0415, 0.972, 0.092], wrR: [-0.0665, 0.864, 0.184],
+      knR: [0.225, 0.52, 0.17], anR: [0.395, 0.52, 0.34], toR: [0.47, 0.50, 0.37],
+    }, { face: [0, 0, 1] }),
+    makePose("boxing_guard", "ボクシングの構え（両拳を顔の前）", {
+      // 両肘を脇へ畳み、左右の拳を頬の前へ置く
+      elL: [-0.0415, 0.972, 0.092], wrL: [0.0665, 0.864, 0.184],
+      elR: [0.0415, 0.972, 0.092], wrR: [-0.0665, 0.864, 0.184],
+      knL: [-0.08, 0.285, 0.03], knR: [0.08, 0.285, 0.03],
+    }),
+    makePose("push", "押す", {
+      // 2026-09-26 Claude が作り直し: 片腕を前へ出す形は「殴る」「指さす」と同じに見えた。
+      // 両腕を肩の高さで前へ伸ばして手のひらで押す。上体を約20度前へ倒し、左足を後ろへ大きく引いて踏ん張る
+      head: [0, 0.905, 0.13], neck: [0, 0.832, 0.105],
+      shL: [-0.1075, 0.80, 0.083], shR: [0.1075, 0.80, 0.083],
+      elL: [-0.13, 0.78, 0.27], wrL: [-0.12, 0.80, 0.45],
+      elR: [0.13, 0.78, 0.27], wrR: [0.12, 0.80, 0.45],
+      hipL: [-0.055, 0.52, -0.02], hipR: [0.055, 0.52, -0.02],
+      knR: [0.06, 0.29, 0.07], anR: [0.058, 0.05, 0.08], toR: [0.058, 0.012, 0.155],
+      knL: [-0.06, 0.32, -0.15], anL: [-0.058, 0.10, -0.27], toL: [-0.058, 0.012, -0.24],
+    }, { face: [0, 0, 1] }),
+    makePose("pull", "引く（ロープを引く）", {
+      // 胴を後ろへ倒し、両手を胸前へ引き付け、足を前後に踏ん張る
+      head: [0, 0.90, -0.16], neck: [0, 0.85, -0.11],
+      shL: [-0.1075, 0.808, -0.084], shR: [0.1075, 0.808, -0.084],
+      elL: [-0.1075, 0.656, 0.03], wrL: [-0.1075, 0.710, 0.192],
+      elR: [0.1075, 0.656, 0.03], wrR: [0.1075, 0.710, 0.192],
+      knL: [-0.06, 0.30, 0.10], anL: [-0.058, 0.06, 0.10], toL: [-0.058, 0.012, 0.175],
+      knR: [0.06, 0.30, -0.10], anR: [0.058, 0.06, -0.10], toR: [0.058, 0.012, -0.025],
+    }, { face: [0, 0.1, 0.995] }),
+    makePose("read_book", "本・新聞を読む", {
+      // 右手首を本の握り位置として胸前へ置き、左手を反対側へ添える
+      head: [0, 0.91, 0.08],
+      elR: [0.2215, 0.668, 0], wrR: [0.1135, 0.722, 0.133],
+      elL: [-0.2215, 0.668, 0], wrL: [-0.1135, 0.722, 0.133],
+    }, { face: [0, -0.2, 0.98] }),
+    makePose("phone_call", "電話する", {
+      // 右手首の受話器を耳へ当て、頭を受話器側へ傾ける
+      head: [0.035, 0.93, 0.015], neck: [0.02, 0.855, 0.005],
+      elR: [0.2595, 0.934, 0], wrR: [0.1155, 0.934, 0.108],
+      elL: [-0.135, 0.63, 0.015], wrL: [-0.145, 0.45, 0.03],
+    }, { face: [0.12, 0, 0.993] }),
+    makePose("drink", "飲む", {
+      // 右手首の瓶・グラスを口元へ上げ、頭を少し後ろへ傾ける
+      head: [0, 0.94, -0.035], neck: [0, 0.858, -0.015],
+      elR: [0.2975, 0.82, 0], wrR: [0.1895, 0.964, 0],
+    }, { face: [0, 0.18, 0.984] }),
+    makePose("toast", "乾杯", {
+      // 右手首のグラスを頭上近くへ掲げ、左腕を横へ開く
+      elR: [0.1075, 1.01, 0], wrR: [0.1075, 1.19, 0],
+      elL: [-0.2595, 0.934, 0], wrL: [-0.4035, 1.042, 0],
+    }),
+    makePose("sweep", "掃く", {
+      // 右手首を箒の下の握り、左手を上の添え手にして腰から少し前へ倒す
+      head: [0, 0.91, 0.11], neck: [0, 0.85, 0.07],
+      shL: [-0.1075, 0.808, 0.084], shR: [0.1075, 0.808, 0.084],
+      elR: [0.2215, 0.656, 0.084], wrR: [0.3295, 0.512, 0.084],
+      elL: [-0.1075, 0.656, 0.198], wrL: [-0.0535, 0.710, 0.360],
+    }, { face: [0, -0.15, 0.989] }),
+    makePose("tray_serve", "トレイを運ぶ（給仕）", {
+      // 右手首を水平なトレイの握り位置として肩の高さで横へ出し、左手は背へ添える
+      elR: [0.2975, 0.82, 0], wrR: [0.4775, 0.82, 0],
+      elL: [-0.1075, 0.668, -0.114], wrL: [-0.1075, 0.524, -0.222],
+      toL: [-0.058, 0.012, 0.155],
+    }),
+    makePose("umbrella_hold", "傘をさす", {
+      // 右手首を肩前の傘の握り位置へ置き、柄が身体の横で立つ形にする
+      elR: [0.2595, 0.706, 0], wrR: [0.1515, 0.85, 0],
+      elL: [-0.135, 0.63, 0.015], wrL: [-0.145, 0.45, 0.03],
+    }),
+    makePose("flag_wave", "旗を振る", {
+      // 右手首の旗を斜め上へ大きく掲げ、左腕を反対へ開いて人影に動きを出す
+      elR: [0.2595, 0.934, 0], wrR: [0.4035, 1.042, 0],
+      elL: [-0.2595, 0.706, 0], wrL: [-0.4035, 0.598, 0],
+      knL: [-0.08, 0.285, 0.03], knR: [0.08, 0.285, -0.03],
+    }),
+    makePose("torch_raise", "松明・ランタンを掲げる", {
+      // 右手首の灯りを真上へ掲げ、顔も灯りの方向へ上げる
+      head: [0, 0.93, -0.045], neck: [0, 0.855, -0.02],
+      elR: [0.1075, 1.01, 0], wrR: [0.1075, 1.19, 0],
+      elL: [-0.135, 0.63, 0.015], wrL: [-0.145, 0.45, 0.03],
+    }, { face: [0, 0.35, 0.937] }),
   ];
   /* ---- R-19（2026-09-17 本人要望）: 物を伴う姿勢は「持っているときだけ」選べるようにする ----
    * 本人の言葉:「小道具や大道具を持つという動きをしたときに、取れる姿勢としてください」。
@@ -5211,6 +5402,19 @@
     skateboard: ["skateboard"],
     bicycle: ["bicycle"],
     cyr: ["cyrwheel"],
+    sword_ready: ["sword"],
+    sword_slash: ["sword"],
+    sword_raised: ["sword"],
+    staff_ready: ["staff"],
+    read_book: ["book", "newspaper"],
+    phone_call: ["telephone"],
+    drink: ["glassbottle"],
+    toast: ["glassbottle"],
+    sweep: ["broom"],
+    tray_serve: ["tray"],
+    umbrella_hold: ["umbrella", "wagasa"],
+    flag_wave: ["flag"],
+    torch_raise: ["torch", "lantern", "candle"],
   };
   /* その演者が持っている（＝この駒を heldBy で指している）小道具の形を集める。 */
   function heldPropShapes(piece) {
@@ -5265,8 +5469,41 @@
     "sit_cross_legs", "sit_chin_rest", "sit_lean_back", "sit_reverse_chair", "sit_forward", "write_desk",
   ]);
   const isChairSitPose = (id) => CHAIR_SIT_POSES.has(id);
-  const poseById = (id) => POSES.find((p) => p.id === id)
+  const basePoseById = (id) => POSES.find((p) => p.id === id)
     || HIDDEN_POSES.find((p) => p.id === id) || POSES[0];
+  /* 2026-09-26: 持ち物を伴う姿勢（POSE_PROPS）は右手で持つ形で作ってある。
+     その持ち物を左手に持たせたときは、関節の左右を入れ替えた形で描く（id の末尾に "@left"）。
+     保存する姿勢の名前は変えない。描くときだけ resolvePoseId / performerRig で切り替える。 */
+  const LEFT_HAND_SUFFIX = "@left";
+  const leftHandPoseCache = new Map();
+  function leftHandedPose(pose) {
+    if (leftHandPoseCache.has(pose.id)) return leftHandPoseCache.get(pose.id);
+    const swapSide = (key) => (/L$/.test(key) ? key.slice(0, -1) + "R" : /R$/.test(key) ? key.slice(0, -1) + "L" : key);
+    const flip = (v) => (Array.isArray(v) && v.length === 3 ? [-v[0], v[1], v[2]] : v);
+    const joints = {};
+    Object.keys(pose.joints).forEach((key) => { joints[swapSide(key)] = flip(pose.joints[key]); });
+    const props = Array.isArray(pose.props) ? pose.props.map((prop) => ({ ...prop, c: flip(prop.c), a: flip(prop.a), b: flip(prop.b) })) : pose.props;
+    const mirrored = { ...pose, id: pose.id + LEFT_HAND_SUFFIX, joints, wide: flip(pose.wide), face: flip(pose.face), props };
+    leftHandPoseCache.set(pose.id, mirrored);
+    return mirrored;
+  }
+  const poseById = (id) => (typeof id === "string" && id.endsWith(LEFT_HAND_SUFFIX)
+    ? leftHandedPose(basePoseById(id.slice(0, -LEFT_HAND_SUFFIX.length)))
+    : basePoseById(id));
+  /* 描く姿勢の id。持ち物を伴う姿勢で、合う持ち物が左手にだけあるときは左右を入れ替えた形。 */
+  function handedPoseId(piece, pieces, poseId) {
+    const needs = POSE_PROPS[poseId];
+    if (!needs || !piece || !Array.isArray(pieces)) return poseId;
+    let left = false; let right = false;
+    pieces.forEach((item) => {
+      if (!item || item.heldBy !== piece.id || item.holdMode === "face") return;
+      const registered = pieceSet(item);
+      const shape = (registered && registered.propShape) || item.propShape || null;
+      if (!needs.includes(shape)) return;
+      if (item.holdSide === "L") left = true; else right = true;
+    });
+    return left && !right ? poseId + LEFT_HAND_SUFFIX : poseId;
+  }
 
   /* 2026-09-26 本人決定 D2: 姿勢を約150件足す前に、選ぶ場所（姿勢の窓・図の下の帯・演者を追加する窓）を分類で分ける。
      分類に無い姿勢は「その他の姿勢」へ落とす（分類へ足し忘れても選べなくはならない）。
@@ -5280,10 +5517,12 @@
     { ja: "礼・合図・身振り", ids: ["reach", "open", "hat", "dogeza", "bow_deep", "wave", "point", "look_up", "turn_back", "bow_light",
       "blow_kiss", "beckon", "raise_hand", "salute", "fist_pump", "clap", "look_down", "shade_eyes", "listen_ear", "hide_crouch", "shrug",
       "mime_wall", "sign_language_speak"] },
-    { ja: "日常の動作", ids: ["write_desk"] },
+    { ja: "日常の動作", ids: ["write_desk", "push", "pull", "read_book", "phone_call", "drink", "toast", "sweep", "tray_serve",
+      "umbrella_hold", "flag_wave", "torch_raise"] },
     { ja: "感情・倒れる", ids: ["collapse_knees", "collapse_hands_floor", "lie_spread", "cry_cover", "shout", "think_chin", "head_down",
       "hold_head", "hand_on_chest", "surprised", "pray", "clown_slip_fall", "clown_trip", "pratfall_sit"] },
-    { ja: "殺陣・武術", ids: [] },
+    { ja: "殺陣・武術", ids: ["hit_recoil", "punch", "kick", "sword_ready", "sword_slash", "sword_raised", "staff_ready", "throw",
+      "catch_ready", "hero_transform", "hero_finisher", "karate_zenkutsu", "karate_roundhouse_kick_mid", "boxing_guard"] },
     { ja: "踊る", ids: ["dance1", "dance2", "dance3", "dance4", "dance5", "windmill"] },
     { ja: "歌・楽器", ids: ["sing", "guitar", "bassguitar", "violin", "trumpet", "accordion"] },
     { ja: "アクロバット", ids: ["handstand", "handstand-mid", "sideflip", "sideflip-mid", "cartwheel-oneside-mid", "roundoff-mid",
@@ -13030,7 +13269,7 @@
           ? (piece.trapMode === "hang" ? "trapeze_hang" : "trapeze_sit")
           : mount === "tissue"
             ? "trapeze_hang"
-          : piece.pose;
+          : handedPoseId(piece, sc().pieces, piece.pose);
     const rig = buildRig(poseId, pos.x, pos.rawY === undefined ? pos.y : pos.rawY,
       H * per.x, H * per.y, (performerFacing(piece) * Math.PI) / 180, zDrop, L.plan ? null : L.tilt, samplePerformancePose(piece));
     rig.per = per;
@@ -13295,7 +13534,7 @@
       : mount === "pole" ? (piece.poleSide === "L" ? "poleflag_l" : "poleflag_r")
         : mount === "trapeze" ? (piece.trapMode === "hang" ? "trapeze_hang" : "trapeze_sit")
           : mount === "tissue" ? "trapeze_hang"
-            : (piece.pose || "stand");
+            : handedPoseId(piece, pieces, piece.pose || "stand");
   }
 
   /* 3Dカメラ（stage-first-person.js）へ体モデルを貸し出す窓口。

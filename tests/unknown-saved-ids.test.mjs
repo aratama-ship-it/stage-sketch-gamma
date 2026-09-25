@@ -47,6 +47,8 @@ test("正規化の呼び出し先が新しい関数になっている（古い�
   assert.doesNotMatch(main, /pose: POSES\.some\(\(p\) => p\.id === piece\.pose\) \? piece\.pose : "stand"/);
   assert.doesNotMatch(main, /propShape: kind === "prop" && PROP_SHAPES\[t && t\.propShape\] \? t\.propShape : "box"/);
   // 描くときは、知らない姿勢は立ち姿、知らない形は箱のまま
-  assert.match(main, /const poseById = \(id\) => POSES\.find\(\(p\) => p\.id === id\)\n    \|\| HIDDEN_POSES\.find\(\(p\) => p\.id === id\) \|\| POSES\[0\];/);
+  assert.match(main, /const basePoseById = \(id\) => POSES\.find\(\(p\) => p\.id === id\)\n    \|\| HIDDEN_POSES\.find\(\(p\) => p\.id === id\) \|\| POSES\[0\];/);
+  // 左手持ちの反転（"@left"）以外は basePoseById と同じ（2026-09-26）
+  assert.match(main, /const poseById = \(id\) => \(typeof id === "string" && id\.endsWith\(LEFT_HAND_SUFFIX\)/);
   assert.match(main, /return piece && PROP_SHAPES\[piece\.propShape\] \? piece\.propShape : "box";/);
 });

@@ -1715,6 +1715,12 @@
       hold_head: "双手抱头", hand_on_chest: "手放胸前", surprised: "受惊后仰", pray: "合掌祈祷",
       clown_slip_fall: "滑倒腾空中", clown_trip: "向前绊倒", pratfall_sit: "跌坐在地",
       shrug: "耸肩摊手", mime_wall: "默剧推墙", sign_language_speak: "用手语表达",
+      hit_recoil: "被击中后仰", punch: "正拳出拳", kick: "前踢", sword_ready: "正眼持刀",
+      sword_slash: "向下挥刀", sword_raised: "上段举刀", staff_ready: "持棒架势", throw: "振臂投掷",
+      catch_ready: "准备接住", hero_transform: "变身姿势", hero_finisher: "必杀技架势",
+      karate_zenkutsu: "空手道前屈立", karate_roundhouse_kick_mid: "回旋踢中段", boxing_guard: "拳击防守架势",
+      push: "推", pull: "拉绳", read_book: "阅读书报", phone_call: "打电话", drink: "饮用", toast: "干杯",
+      sweep: "扫地", tray_serve: "端托盘", umbrella_hold: "撑伞", flag_wave: "挥旗", torch_raise: "高举火把或提灯",
       trapeze_sit: "坐在吊杠上", trapeze_hang: "挂在吊杠上",
     },
     setKind: {
