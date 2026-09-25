@@ -57,7 +57,7 @@ if (POSES.length < 40) throw new Error(`姿勢の一覧が取れていません 
 if (PROP_SHAPES.length < 10) throw new Error(`小道具の形の一覧が取れていません (${PROP_SHAPES.length})`);
 
 // v4（2026-09-24）: 転換0秒をなくしてシーンの秒数が変わったので上げる（一度開いた棚の複製は自動で差し替わらないため）
-const PROJECT_ID = "gamma-feature-test-v7";
+const PROJECT_ID = "gamma-feature-test-v8";
 const CREATED = "2026-09-18T00:00:00.000Z";
 const STAGE = { width: 12, depth: 9 };      // proscenium / mid の実寸（stage-venues.js）
 const COLORS = ["#a84b26", "#77865f", "#9c823f", "#6d6657", "#315b8a", "#b0533f", "#4f7d6f", "#8a6a9c",
@@ -338,14 +338,19 @@ section("c", "C 舞台セット・小道具・空中");
     `${CHECK}登録した小道具6つ（箱・ボール・傘・仮面・クラブ・旗）。下の3人は持っている: 演者01=ボールを右手、演者02=傘を左手、演者03=仮面を顔（顔で持てるのは仮面だけ）。最下段は楽器を弾く姿勢（演者04=ギター・05=バイオリン・06=ベースギター・07=アコーディオン）。「選んだもの」で持ち手を外す・付け替える、香盤表（印刷）に受け渡しが出る。`, pieces);
 }
 {
-  // 小道具の全形（本体の PROP_SHAPES から自動）。登録の上限60を超えるので、登録の無い駒として2シーンに分けて並べる
-  const halfProps = Math.ceil(PROP_SHAPES.length / 2);
-  [PROP_SHAPES.slice(0, halfProps), PROP_SHAPES.slice(halfProps)].forEach((list, index) => {
+  // 小道具の全形（本体の PROP_SHAPES から自動）。1シーン80駒以下になる最小シーン数へ等分する
+  const sceneCount = Math.ceil(PROP_SHAPES.length / 80);
+  Array.from({ length: sceneCount }, (_, index) => {
+    const from = Math.ceil((PROP_SHAPES.length * index) / sceneCount);
+    const to = Math.ceil((PROP_SHAPES.length * (index + 1)) / sceneCount);
+    return PROP_SHAPES.slice(from, to);
+  }).forEach((list, index) => {
     const cols = 10;
     const positions = grid(list.length, cols, 0.05, 0.95, 0.12, 0.95);
-    scene(`c2${index ? "b" : "a"}`, `C-3 小道具の全形 ${index + 1}/2（${list.length}種）`, 1,
-      `${CHECK}本体にある小道具の形を全部（登録の無い駒・名前＝形の名前。${PROP_SHAPES.length}種を2シーンに分けた）。正面図の形、平面図の足元、3Dでの見え方、選んだときの枠。形が増えたら生成し直す。`,
-      list.map((shape, i) => ({ id: pid(`c2${index ? "b" : "a"}`, "prop"), type: "prop", setId: null, propShape: shape.id, u: round(positions[i].u), v: round(positions[i].v), facing: 0, size: 100, color: "#d3ac59", name: shape.ja.slice(0, 24) })));
+    const sceneKey = `c2${String.fromCharCode(97 + index)}`;
+    scene(sceneKey, `C-3 小道具の全形 ${index + 1}/${sceneCount}（${list.length}種）`, 1,
+      `${CHECK}本体にある小道具の形を全部（登録の無い駒・名前＝形の名前。${PROP_SHAPES.length}種を${sceneCount}シーンに分けた）。正面図の形、平面図の足元、3Dでの見え方、選んだときの枠。形が増えたら生成し直す。`,
+      list.map((shape, i) => ({ id: pid(sceneKey, "prop"), type: "prop", setId: null, propShape: shape.id, u: round(positions[i].u), v: round(positions[i].v), facing: 0, size: 100, color: "#d3ac59", name: shape.ja.slice(0, 24) })));
   });
 }
 {
@@ -406,13 +411,11 @@ scene("d1", "D-1 せり（上げ・下げ）と盆（回転）", 1, `${CHECK}左
    /* ★盆の上の大道具（2026-09-19）。位置だけでなく向きも盆と一緒に回るかを見る駒。
       細長いベンチにしてあるので、向きが回っていなければ平面図で一目で分かる。 */
    setPiece("d1", "bench", 0.72, 0.42), perf("d1", "p02", 0.64, 0.42), perf("d1", "p03", 0.8, 0.58, { facing: 180 })]);
-scene("d3", "D-2 可動デッキ（傾斜・高さ）", 1, `${CHECK}デッキは 20度傾き、1.2m 上がっている。演者04が上に立つ。傾きを 0〜±60度、高さを -4〜8m で動かす。`,
-  [setPiece("d3", "deck", 0.5, 0.5, { tilt: 20, deckH: 1.2 }), perf("d3", "p04", 0.5, 0.5, { base: 1.2 })]);
+scene("d3", "D-2 可動デッキと水面・プール床", 1, `${CHECK}デッキは 20度傾き、1.2m 上がっている。演者04が上に立つ。傾きを 0〜±60度、高さを -4〜8m で動かす。プールは床高 -1.5m・水位 1.2m。演者06は水面の高さに立つ。水位0〜3m、床高-4〜0mを動かす。`,
+  [setPiece("d3", "deck", 0.3, 0.5, { tilt: 20, deckH: 1.2 }), perf("d3", "p04", 0.3, 0.5, { base: 1.2 }),
+   setPiece("d3", "pool", 0.72, 0.55, { water: 1.2, poolH: -1.5 }), perf("d3", "p06", 0.72, 0.55, { base: 0, pose: "supine" })]);
 scene("d4", "D-3 幕6種（開き具合・紗幕の透け）", 1, `${CHECK}緞帳（front）30%、引割（traveler）60%、ドロップ（drop）100%、袖幕（leg）0%、ホリゾント（cyc）0%、紗幕・白（透け25%）、紗幕・黒（透け75%）。正面図での重なり順、平面図の線、3Dでの見え方。紗幕は他の幕と違い「開閉」でなく「透け具合」を持つこと、白紗と黒紗で地の色が違うことを確認する（シーン送りで透けていく変化そのものは G-5/G-6 で見る）。`,
   [setPiece("d4", "curtain-front", 0.5, 0.95, { open: 30 }), setPiece("d4", "curtain-traveler", 0.5, 0.6, { open: 60 }), setPiece("d4", "curtain-drop", 0.5, 0.4, { open: 100 }), setPiece("d4", "curtain-leg", 0.08, 0.5, { open: 0 }), setPiece("d4", "curtain-cyc", 0.5, 0.05, { open: 0 }), setPiece("d4", "curtain-scrim-white", 0.3, 0.78, { sheer: 25 }), setPiece("d4", "curtain-scrim-black", 0.7, 0.78, { sheer: 75 }), perf("d4", "p05", 0.5, 0.88)]);
-scene("d5", "D-4 水面・プール床", 1, `${CHECK}プールは床高 -1.5m・水位 1.2m。演者06は水面の高さに立つ。水位0〜3m、床高-4〜0mを動かす。`,
-  [setPiece("d5", "pool", 0.5, 0.55, { water: 1.2, poolH: -1.5 }), perf("d5", "p06", 0.5, 0.55, { base: 0, pose: "supine" })]);
-
 /* ======================= E 照明（駒） ======================= */
 section("e", "E 照明の駒（正面図・平面図・3D）");
 scene("e1", "E-1 4種の灯体・組・動線", 1, `${CHECK}奥から: 吊り（真上）、SS（横から・当たる高さ1.3m）、前明かり（客席上から顔へ）、転がし（床置き・下から）。光の強さ（glow）は 0.4／1／1.5。手前の組1（下手・上手）は一体で動く。ピン（動く灯体・moving）は動線を持ち、次のシーンへ光が移る。設定「照明の光だまり」「光の筋」「作業灯を消す」「動線（光）」で見え方が変わる。`,
