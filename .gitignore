@@ -233,3 +233,9 @@ public-dist/
 !/tests/performer-body.test.mjs
 !/tests/performer-motion.test.mjs
 !/tests/feature-test-show.test.mjs
+
+# Reversible storage-capacity repair (keeps live show and lighting data intact).
+!/stage-storage-recovery.js
+!/storage-recovery.html
+!/storage-recovery-ui.js
+!/tests/stage-storage-recovery.test.mjs
