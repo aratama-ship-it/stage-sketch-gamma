@@ -22,8 +22,8 @@ const posesBlock = sketch.slice(sketch.indexOf("const POSES = ["), sketch.indexO
 const POSES = new Set([...posesBlock.matchAll(/makePose\("([^"]+)"/g)].map((m) => m[1]));
 const SET_KINDS = new Set([...block("const SET_KINDS = {").matchAll(/\b([a-z]+): "/g)].map((m) => m[1]));
 const PROP_SHAPES = new Set([
-  ...[...block("const PROP_SHAPES = {").matchAll(/^    ([a-z0-9]+): \{ ja: "/gm)].map((m) => m[1]),
-  ...[...sketch.matchAll(/PROP_SHAPES\.([a-z0-9]+) = \{ ja: "/g)].map((m) => m[1]),
+  ...[...block("const PROP_SHAPES = {").matchAll(/^    ([a-z0-9_]+): \{ ja: "/gm)].map((m) => m[1]),
+  ...[...sketch.matchAll(/PROP_SHAPES\.([a-z0-9_]+) = \{ ja: "/g)].map((m) => m[1]),
 ]);
 const LIGHT_KINDS = new Set(["hang", "ss", "front", "floor"]);
 const SCREEN_FONTS = new Set([...block("const SCREEN_FONTS = {").matchAll(/^    ([a-z]+): \{ label/gm)].map((m) => m[1]));

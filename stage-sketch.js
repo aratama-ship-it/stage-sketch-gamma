@@ -3703,6 +3703,215 @@
       boxAt(0, 1.08, 0, 0.08, 0.045, 0.55, 0.7),
       { shape: "sphere", y: 1.63, dia: 0.11, tint: 0.6 },
     ] };
+  PROP_SHAPES.knife_throwing = { ja: "ナイフ（投げナイフ・ジャグリング用）", en: "Throwing / juggling knife", dims: { w: 0.04, d: 0.01, h: 0.32 }, grip: { x: 0, y: 0.055 },
+    parts: [
+      boxAt(0, 0, 0, 0.035, 0.01, 0.10, 0.65),
+      boxAt(0, 0.10, 0, 0.04, 0.01, 0.015, 0.55),
+      { shape: "panel", y: 0.115, w: 0.04, d: 0.008, h: 0.155, tint: 1.15 },
+      { shape: "panel", y: 0.27, w: 0.02, d: 0.006, h: 0.05, tint: 1.1 },
+    ] };
+  PROP_SHAPES.spinning_plate = { ja: "皿回し（皿と棒）", en: "Spinning plate on stick", dims: { w: 0.24, d: 0.24, h: 0.70 }, grip: { x: 0, y: 0.35 },
+    parts: [
+      { shape: "cylinder", y: 0, dia: 0.015, h: 0.62, tint: 0.65 },
+      { shape: "cylinder", y: 0.62, dia: 0.24, h: 0.025, tint: 1.05 },
+      { shape: "cylinder", y: 0.645, dia: 0.18, h: 0.04, tint: 1.15 },
+      { shape: "cylinder", y: 0.685, dia: 0.04, h: 0.015, tint: 0.8 },
+    ] };
+  PROP_SHAPES.kendama = { ja: "けん玉", en: "Kendama", dims: { w: 0.07, d: 0.07, h: 0.18 }, grip: { x: 0, y: 0.055 },
+    parts: [
+      { shape: "cylinder", y: 0, dia: 0.025, h: 0.125, tint: 0.75 },
+      { shape: "sphere", y: 0, dia: 0.035, tint: 0.65 },
+      boxAt(0, 0.105, 0, 0.07, 0.025, 0.022, 0.9),
+      { shape: "cylinder", x: -0.025, y: 0.122, dia: 0.04, h: 0.018, tint: 1.0 },
+      { shape: "cylinder", x: 0.025, y: 0.122, dia: 0.04, h: 0.018, tint: 1.0 },
+      { shape: "sphere", x: 0.01, y: 0.135, z: 0.01, dia: 0.045, tint: 1.1 },
+    ] };
+  PROP_SHAPES.bullwhip = { ja: "鞭（ブルウィップ）", en: "Bullwhip", dims: { w: 0.30, d: 0.30, h: 0.40 }, grip: { x: 0, y: 0.11 },
+    parts: [
+      { shape: "cylinder", y: 0, dia: 0.035, h: 0.21, tint: 0.65 },
+      { shape: "cylinder", y: 0.21, dia: 0.025, h: 0.05, tint: 0.8 },
+      boxAt(0.04, 0.255, 0, 0.08, 0.025, 0.025, 0.85),
+      boxAt(0.10, 0.28, 0.04, 0.06, 0.025, 0.025, 0.9),
+      boxAt(0.13, 0.305, 0.10, 0.025, 0.09, 0.025, 0.92),
+      boxAt(0.08, 0.33, 0.1375, 0.08, 0.025, 0.025, 0.95),
+      boxAt(0.015, 0.355, 0.13, 0.05, 0.025, 0.025, 0.95),
+      boxAt(-0.035, 0.375, 0.09, 0.05, 0.02, 0.02, 0.9),
+      boxAt(-0.07, 0.384, 0.055, 0.02, 0.02, 0.016, 0.8),
+    ] };
+  // 2026-09-26 Claude: 床に置いた輪（球8個）は点が散らばって見えた。縦に回した輪を20個の箱で連ね、握りから縄を渡す
+  PROP_SHAPES.lasso = { ja: "投げ縄（ロープトリック用）", en: "Lasso", dims: { w: 0.76, d: 0.03, h: 0.76 }, grip: { x: -0.32, y: 0.40 },
+    parts: [
+      boxAt(0.400, 0.370, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(0.384, 0.469, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(0.339, 0.558, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(0.268, 0.629, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(0.179, 0.674, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(0.080, 0.690, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(-0.019, 0.674, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(-0.108, 0.629, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(-0.179, 0.558, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(-0.224, 0.469, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(-0.240, 0.370, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(-0.224, 0.271, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(-0.179, 0.182, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(-0.108, 0.111, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(-0.019, 0.066, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(0.080, 0.050, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(0.179, 0.066, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(0.268, 0.111, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(0.339, 0.182, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(0.384, 0.271, 0, 0.06, 0.02, 0.06, 0.9),
+      boxAt(-0.28, 0.39, 0, 0.08, 0.02, 0.02, 0.8),
+    ] };
+  PROP_SHAPES.boomerang = { ja: "ブーメラン", en: "Boomerang", dims: { w: 0.40, d: 0.02, h: 0.25 }, grip: { x: 0, y: 0.045 },
+    parts: [
+      boxAt(-0.025, 0, 0, 0.05, 0.02, 0.07, 0.8),
+      boxAt(-0.065, 0.055, 0, 0.07, 0.02, 0.055, 0.85),
+      boxAt(-0.115, 0.105, 0, 0.08, 0.02, 0.05, 0.9),
+      boxAt(-0.165, 0.15, 0, 0.07, 0.02, 0.045, 0.95),
+      boxAt(0.03, 0.045, 0, 0.06, 0.02, 0.055, 0.82),
+      boxAt(0.08, 0.09, 0, 0.08, 0.02, 0.05, 0.87),
+      boxAt(0.14, 0.135, 0, 0.08, 0.02, 0.045, 0.92),
+      boxAt(0.18, 0.18, 0, 0.04, 0.02, 0.07, 0.98),
+    ] };
+  PROP_SHAPES.jump_rope = { ja: "縄跳び（短縄・大縄）", en: "Jump rope", dims: { w: 0.60, d: 0.05, h: 1.0 }, grip: { x: -0.27, y: 0.75 },
+    parts: [
+      { shape: "cylinder", x: -0.27, y: 0.68, dia: 0.035, h: 0.22, tint: 0.65 },
+      { shape: "cylinder", x: 0.27, y: 0.68, dia: 0.035, h: 0.22, tint: 0.65 },
+      boxAt(-0.285, 0.10, 0, 0.018, 0.025, 0.58, 0.9),
+      boxAt(0.285, 0.10, 0, 0.018, 0.025, 0.58, 0.9),
+      boxAt(0, 0.06, 0, 0.57, 0.025, 0.02, 0.9),
+      boxAt(-0.275, 0.90, 0, 0.02, 0.025, 0.10, 0.85),
+      boxAt(0.275, 0.90, 0, 0.02, 0.025, 0.10, 0.85),
+    ] };
+  PROP_SHAPES.barbell = { ja: "バーベル・ダンベル（怪力芸の重り）", en: "Barbell (strongman)", dims: { w: 1.80, d: 0.45, h: 0.45 }, grip: { x: 0, y: 0.225 },
+    parts: [
+      boxAt(0, 0.205, 0, 1.80, 0.045, 0.04, 0.8),
+      boxAt(-0.66, 0, 0, 0.08, 0.45, 0.45, 0.65),
+      boxAt(-0.78, 0.035, 0, 0.12, 0.40, 0.38, 0.75),
+      boxAt(0.66, 0, 0, 0.08, 0.45, 0.45, 0.65),
+      boxAt(0.78, 0.035, 0, 0.12, 0.40, 0.38, 0.75),
+    ] };
+  PROP_SHAPES.flashlight = { ja: "懐中電灯", en: "Flashlight", dims: { w: 0.05, d: 0.05, h: 0.22 }, grip: { x: 0, y: 0.09 },
+    parts: [
+      { shape: "cylinder", y: 0, dia: 0.035, h: 0.15, tint: 0.65 },
+      { shape: "cylinder", y: 0.15, dia: 0.045, h: 0.035, tint: 0.8 },
+      { shape: "cylinder", y: 0.185, dia: 0.05, h: 0.025, tint: 0.95 },
+      { shape: "cylinder", y: 0.21, dia: 0.042, h: 0.01, tint: 1.2 },
+    ] };
+  PROP_SHAPES.chochin = { ja: "提灯（手提げ・弓張）", en: "Paper lantern (chochin)", dims: { w: 0.24, d: 0.24, h: 0.50 }, grip: { x: 0, y: 0.48 },
+    parts: [
+      { shape: "cylinder", y: 0, dia: 0.12, h: 0.025, tint: 0.55 },
+      ...smoothRoundBody([
+        [0.00, 0.12, 0.75], [0.04, 0.20, 0.9], [0.10, 0.24, 1.05], [0.24, 0.24, 1.0], [0.30, 0.20, 0.9], [0.34, 0.12, 0.75],
+      ], 12).map((part) => ({ ...part, y: part.y + 0.025 })),
+      { shape: "cylinder", y: 0.365, dia: 0.13, h: 0.025, tint: 0.55 },
+      boxAt(-0.08, 0.39, 0, 0.015, 0.015, 0.08, 0.65),
+      boxAt(0.08, 0.39, 0, 0.015, 0.015, 0.08, 0.65),
+      boxAt(0, 0.47, 0, 0.175, 0.015, 0.02, 0.65),
+    ] };
+  PROP_SHAPES.flip_board = { ja: "フリップボード（スケッチブック・カンペ）", en: "Flip board / sketchbook", dims: { w: 0.42, d: 0.02, h: 0.55 }, grip: { x: 0, y: 0.05 },
+    parts: [
+      { shape: "panel", y: 0.04, w: 0.42, d: 0.018, h: 0.51, tint: 1.1 },
+      boxAt(0, 0.50, 0, 0.42, 0.02, 0.05, 0.65),
+      boxAt(-0.13, 0.515, 0.012, 0.035, 0.015, 0.035, 0.8),
+      boxAt(0.13, 0.515, 0.012, 0.035, 0.015, 0.035, 0.8),
+    ] };
+  PROP_SHAPES.basket = { ja: "かご（手提げ・花かご）", en: "Basket", dims: { w: 0.35, d: 0.25, h: 0.30 }, grip: { x: 0, y: 0.29 },
+    parts: [
+      boxAt(0, 0, 0, 0.35, 0.25, 0.025, 0.65),
+      boxAt(-0.165, 0.025, 0, 0.02, 0.25, 0.17, 0.8), boxAt(0.165, 0.025, 0, 0.02, 0.25, 0.17, 0.8),
+      ...[0.035, 0.09, 0.145].flatMap((y) => [
+        boxAt(0, y, -0.115, 0.31, 0.02, 0.025, 0.9), boxAt(0, y, 0.115, 0.31, 0.02, 0.025, 0.9),
+      ]),
+      boxAt(-0.11, 0.19, 0, 0.02, 0.02, 0.10, 0.7), boxAt(0.11, 0.19, 0, 0.02, 0.02, 0.10, 0.7),
+      boxAt(0, 0.28, 0, 0.24, 0.02, 0.02, 0.7),
+    ] };
+  PROP_SHAPES.backpack = { ja: "リュック・ランドセル", en: "Backpack / school bag", dims: { w: 0.30, d: 0.18, h: 0.42 }, grip: { x: 0, y: 0.405 },
+    parts: [
+      boxAt(0, 0, -0.02, 0.30, 0.14, 0.34, 0.8),
+      boxAt(0, 0.07, 0.07, 0.22, 0.04, 0.14, 0.9),
+      boxAt(0, 0.34, -0.02, 0.28, 0.14, 0.06, 0.7),
+      boxAt(-0.09, 0.06, -0.085, 0.035, 0.01, 0.30, 0.65),
+      boxAt(0.09, 0.06, -0.085, 0.035, 0.01, 0.30, 0.65),
+      boxAt(0, 0.40, -0.02, 0.12, 0.025, 0.02, 0.6),
+    ] };
+  PROP_SHAPES.cup_saucer = { ja: "ティーカップ（カップ・ソーサー）", en: "Cup and saucer", dims: { w: 0.15, d: 0.15, h: 0.08 }, grip: { x: 0.065, y: 0.045 },
+    parts: [
+      { shape: "cylinder", y: 0, dia: 0.15, h: 0.012, tint: 0.95 },
+      { shape: "cylinder", y: 0.012, dia: 0.07, h: 0.012, tint: 0.85 },
+      { shape: "cylinder", y: 0.024, dia: 0.08, h: 0.038, tint: 1.05 },
+      { shape: "cylinder", y: 0.062, dia: 0.09, h: 0.018, tint: 1.15 },
+      boxAt(0.055, 0.03, 0, 0.015, 0.015, 0.04, 0.9),
+      boxAt(0.0625, 0.058, 0, 0.015, 0.015, 0.012, 0.9),
+      boxAt(0.0625, 0.022, 0, 0.015, 0.015, 0.012, 0.9),
+      boxAt(0.07, 0.034, 0, 0.01, 0.015, 0.026, 0.9),
+    ] };
+  PROP_SHAPES.plate = { ja: "皿（食器）", en: "Dinner plate", dims: { w: 0.26, d: 0.26, h: 0.02 }, grip: { x: 0, y: 0.01 },
+    parts: [
+      { shape: "cylinder", y: 0, dia: 0.20, h: 0.006, tint: 0.9 },
+      { shape: "cylinder", y: 0.006, dia: 0.24, h: 0.008, tint: 1.05 },
+      { shape: "cylinder", y: 0.014, dia: 0.26, h: 0.006, tint: 1.15 },
+    ] };
+  PROP_SHAPES.kitchen_knife = { ja: "包丁", en: "Kitchen knife", dims: { w: 0.05, d: 0.02, h: 0.33 }, grip: { x: 0, y: 0.065 },
+    parts: [
+      boxAt(0, 0, 0, 0.035, 0.02, 0.13, 0.6),
+      boxAt(0, 0.13, 0, 0.05, 0.018, 0.018, 0.55),
+      { shape: "panel", y: 0.148, w: 0.05, d: 0.012, h: 0.142, tint: 1.15 },
+      { shape: "panel", y: 0.29, w: 0.025, d: 0.01, h: 0.04, tint: 1.1 },
+    ] };
+  PROP_SHAPES.cake = { ja: "ケーキ（ホール・ろうそく付き）", en: "Birthday cake", dims: { w: 0.24, d: 0.24, h: 0.15 }, grip: { x: 0, y: 0.04 },
+    parts: [
+      { shape: "cylinder", y: 0, dia: 0.24, h: 0.025, tint: 0.75 },
+      { shape: "cylinder", y: 0.025, dia: 0.22, h: 0.065, tint: 1.05 },
+      { shape: "cylinder", y: 0.09, dia: 0.23, h: 0.012, tint: 1.15 },
+      ...[-0.07, -0.035, 0, 0.035, 0.07].map((x) => ({ shape: "cylinder", x, y: 0.102, dia: 0.008, h: 0.033, tint: 0.9 })),
+      ...[-0.07, -0.035, 0, 0.035, 0.07].map((x) => ({ shape: "sphere", x, y: 0.135, dia: 0.015, tint: 1.2 })),
+    ] };
+  // 2026-09-26 Claude: 長さを左右へ向け直した（奥行き方向だと正面図で細い棒にしか見えなかった）
+  PROP_SHAPES.pistol = { ja: "拳銃", en: "Pistol", dims: { w: 0.15, d: 0.03, h: 0.14 }, grip: { x: -0.035, y: 0.055 },
+    parts: [
+      boxAt(-0.035, 0, 0, 0.055, 0.03, 0.10, 0.6),
+      boxAt(0.005, 0.10, 0, 0.135, 0.03, 0.04, 0.8),
+      boxAt(0.045, 0.125, 0, 0.06, 0.025, 0.015, 0.95),
+      boxAt(-0.005, 0.075, 0, 0.018, 0.022, 0.035, 0.7),
+      boxAt(0.03, 0.075, 0, 0.05, 0.022, 0.012, 0.7),
+      boxAt(-0.045, 0.132, 0, 0.015, 0.02, 0.008, 1.0),
+    ] };
+  // 2026-09-26 Claude: 長さを左右へ向け直した（奥行き方向だと正面図で細い棒にしか見えなかった）
+  PROP_SHAPES.rifle = { ja: "ライフル（猟銃・小銃）", en: "Rifle", dims: { w: 1.10, d: 0.06, h: 0.20 }, grip: { x: -0.12, y: 0.075 },
+    parts: [
+      boxAt(-0.39, 0, 0, 0.32, 0.06, 0.15, 0.6),
+      boxAt(-0.12, 0.07, 0, 0.28, 0.045, 0.075, 0.75),
+      boxAt(0.185, 0.105, 0, 0.73, 0.035, 0.045, 0.85),
+      boxAt(-0.1, 0.055, 0, 0.06, 0.04, 0.09, 0.65),
+      boxAt(0.12, 0.145, 0, 0.28, 0.025, 0.025, 0.95),
+      boxAt(0.255, 0.165, 0, 0.05, 0.02, 0.035, 0.9),
+    ] };
+  // 候補表のw=0.03mは「左右幅」としては弓の張り幅を表せないため、wとdを補正した。
+  // 2026-09-26 Claude: 弧を16個の箱で連ね、弦と矢を通した（破片に見えていた）。握りは弧の中央
+  PROP_SHAPES.bow_arrow = { ja: "弓矢（和弓・洋弓）", en: "Bow and arrow", dims: { w: 0.54, d: 0.03, h: 1.60 }, grip: { x: -0.22, y: 0.78 },
+    parts: [
+      boxAt(0.167, 0.042, 0, 0.035, 0.025, 0.115, 0.81),
+      boxAt(0.070, 0.136, 0, 0.035, 0.025, 0.115, 0.82),
+      boxAt(-0.012, 0.229, 0, 0.035, 0.025, 0.115, 0.83),
+      boxAt(-0.081, 0.323, 0, 0.035, 0.025, 0.115, 0.84),
+      boxAt(-0.136, 0.417, 0, 0.035, 0.025, 0.115, 0.86),
+      boxAt(-0.177, 0.511, 0, 0.035, 0.025, 0.115, 0.87),
+      boxAt(-0.205, 0.604, 0, 0.035, 0.025, 0.115, 0.88),
+      boxAt(-0.218, 0.698, 0, 0.035, 0.025, 0.115, 0.89),
+      boxAt(-0.218, 0.792, 0, 0.035, 0.025, 0.115, 0.89),
+      boxAt(-0.205, 0.886, 0, 0.035, 0.025, 0.115, 0.88),
+      boxAt(-0.177, 0.979, 0, 0.035, 0.025, 0.115, 0.87),
+      boxAt(-0.136, 1.073, 0, 0.035, 0.025, 0.115, 0.86),
+      boxAt(-0.081, 1.167, 0, 0.035, 0.025, 0.115, 0.84),
+      boxAt(-0.012, 1.261, 0, 0.035, 0.025, 0.115, 0.83),
+      boxAt(0.070, 1.354, 0, 0.035, 0.025, 0.115, 0.82),
+      boxAt(0.167, 1.448, 0, 0.035, 0.025, 0.115, 0.81),
+      boxAt(0.235, 0.05, 0, 0.01, 0.01, 1.50, 1.1),
+      boxAt(-0.03, 0.795, 0, 0.54, 0.012, 0.012, 0.7),
+      boxAt(0.25, 0.785, 0, 0.03, 0.02, 0.03, 1.0),
+    ] };
   const PROP_SHAPE_ORDER = Object.keys(PROP_SHAPES);
   /* T-32（2026-09-18 本人要望）: 「家具」「建て込み」「登る・上がる」「屋外・情景」は
    * 小道具ではなく大道具として扱う。
@@ -3749,7 +3958,9 @@
   const PROP_SHAPE_GROUPS = [
     { ja: "手に持つもの", ids: ["box", "umbrella", "ball", "staff", "sword", "book", "tophat", "lantern", "flag", "mask",
       "broom", "bucket", "rope", "bouquet", "glassbottle", "tray", "telephone", "newspaper", "clock", "fan", "scarf",
-      "torch", "candle", "treasurechest", "cane", "handbag", "wagasa"] },
+      "torch", "candle", "treasurechest", "cane", "handbag", "wagasa", "flashlight", "chochin", "flip_board", "basket", "backpack"] },
+    { ja: "食器・飲食", ids: ["cup_saucer", "plate", "kitchen_knife", "cake"] },
+    { ja: "武器・道具", ids: ["pistol", "rifle", "bow_arrow"] },
     { ja: "楽器", ids: ["drumset", "taiko", "grandpiano", "grandpianoopen", "uprightpiano", "micstand", "musicstand", "speaker", "keyboardstand", "djbooth", "cello", "doublebass",
       "guitar", "violin", "bassguitar", "mic", "trumpet", "accordion"] },
     /* 2026-09-23 本人指示: 「登る・上がる」は独立した見出しにせず「建て込み」へ合流。 */
@@ -3764,7 +3975,8 @@
     { ja: "サーカス道具", ids: ["rolabola", "germanwheel", "minitramp", "rollingglobe", "russianbar", "crashmat", "crashmatround",
       "russianswing", "slackline", "walljump", "unicycle", "stilts", "aerialhoop", "aerialstraps", "aerialhammock", "spanishweb", "swingpole",
       /* R-19（2026-09-17 本人要望）: 物を伴う姿勢に対応する乗り物。本人決定で小道具の扱い。 */
-      "cyrwheel", "skateboard", "rollerskate", "cigarbox", "devilstick", "poi", "hoop", "ring", "club"] },
+      "cyrwheel", "skateboard", "rollerskate", "knife_throwing", "spinning_plate", "kendama", "bullwhip", "lasso", "boomerang", "jump_rope", "barbell",
+      "cigarbox", "devilstick", "poi", "hoop", "ring", "club"] },
   ];
   /* 寸法つまみの仕様。項目は種類ごとに違うので、画面はここから組み立てる。
    * HTMLへ固定で並べると、種類を足すたびに二箇所直すことになる。 */

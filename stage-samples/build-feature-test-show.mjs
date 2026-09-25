@@ -50,8 +50,8 @@ const POSES = [...posesBlock.matchAll(/makePose\("([^"]+)"/g)].map((m) => m[1]);
 const propsFrom = sketch.indexOf("const PROP_SHAPES = {");
 const propsBlock = sketch.slice(propsFrom, sketch.indexOf("\n  };", propsFrom));
 const PROP_SHAPES = [
-  ...[...propsBlock.matchAll(/^    ([a-z0-9]+): \{ ja: "([^"]+)"/gm)].map((m) => ({ id: m[1], ja: m[2] })),
-  ...[...sketch.matchAll(/PROP_SHAPES\.([a-z0-9]+) = \{ ja: "([^"]+)"/g)].map((m) => ({ id: m[1], ja: m[2] })),
+  ...[...propsBlock.matchAll(/^    ([a-z0-9_]+): \{ ja: "([^"]+)"/gm)].map((m) => ({ id: m[1], ja: m[2] })),
+  ...[...sketch.matchAll(/PROP_SHAPES\.([a-z0-9_]+) = \{ ja: "([^"]+)"/g)].map((m) => ({ id: m[1], ja: m[2] })),
 ].filter((shape, index, list) => list.findIndex((x) => x.id === shape.id) === index);
 if (POSES.length < 40) throw new Error(`姿勢の一覧が取れていません (${POSES.length})`);
 if (PROP_SHAPES.length < 10) throw new Error(`小道具の形の一覧が取れていません (${PROP_SHAPES.length})`);
