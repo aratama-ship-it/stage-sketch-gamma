@@ -974,14 +974,35 @@
     return piece && (piece.animPose || piece.pose) || "stand";
   }
 
+  // 目の高さを名前で決め打ちしてある姿勢（値を変えない）。それ以外は姿勢の頭の高さから出す
+  const EYE_HEIGHT_FIXED = new Set(["stand", "sit", "kneel", "crouch", "lie_back", "handstand", "hang", "sitBar"]);
+  /* 名札の高さ（身長比）。名前で決め打ちしてある姿勢はその値。それ以外で立ち姿より低い姿勢
+     （座る・しゃがむ・寝る等）は、姿勢の一番上の高さから出す。立ち姿系は今までどおり 1.01。 */
+  function labelTopRatio(pose) {
+    const seated = pose === "sit" || Boolean(state.bridge && state.bridge.isChairSitPose && state.bridge.isChairSitPose(pose));
+    if (seated) return .78;
+    if (pose === "crouch") return .66;
+    if (pose === "kneel") return .84;
+    if (pose === "sitBar") return .7;
+    if (!EYE_HEIGHT_FIXED.has(pose)) {
+      const top = state.bridge && state.bridge.poseTopHeight ? state.bridge.poseTopHeight(pose) : null;
+      if (Number.isFinite(top) && top < 0.9) return Math.max(0.2, top + 0.08);
+    }
+    return 1.01;
+  }
   function eyeHeight(piece, heightM, pieces) {
     const pose = mountedPose(piece, pieces);
     let relative = 0.93;
-    if (pose === "sit" || pose === "kneel") relative = 0.68;
+    /* 2026-09-26: 椅子に座る姿勢は「座る」と同じ目の高さ。名前で決め打ちしていない姿勢は、姿勢の頭の高さから出す
+       （姿勢を約150件足すため。寝る・しゃがむ系で目が立ち姿の高さに浮くのを防ぐ）。 */
+    const seated = pose === "sit" || Boolean(state.bridge && state.bridge.isChairSitPose && state.bridge.isChairSitPose(pose));
+    const headY = state.bridge && state.bridge.poseHeadHeight ? state.bridge.poseHeadHeight(pose) : null;
+    if (seated || pose === "kneel") relative = 0.68;
     else if (pose === "crouch") relative = 0.55;
     else if (pose === "lie_back") relative = 0.25;
     else if (pose === "handstand") relative = 0.3;
     else if (pose === "hang") relative = 0.85;
+    else if (!EYE_HEIGHT_FIXED.has(pose) && Number.isFinite(headY) && headY < 0.9) relative = Math.max(0.08, headY - 0.005);
     return pieceBaseOf(piece) + finite(heightM, 0) * relative;
   }
 
@@ -2200,8 +2221,7 @@
     }
     const top = pose === "hang" ? pieceBaseOf(piece) + height * .95
       : pose === "lie_back" ? pieceBaseOf(piece) + .3
-      : pieceBaseOf(piece) + height * (pose === "sit" ? .78 : pose === "crouch" ? .66
-        : pose === "kneel" ? .84 : pose === "sitBar" ? .7 : 1.01);
+      : pieceBaseOf(piece) + height * (labelTopRatio(pose));
     return { x: foot.x, y: top, z: foot.z };
   }
 

@@ -52,3 +52,34 @@ test("姿勢の窓・帯・演者を追加する窓が分類で並ぶ", () => {
   assert.match(fpv, /createElement\("select", "", "stage-fpv-pose-group"\)/);
   assert.match(fpv, /\.stage-fpv-pose-group\{/);
 });
+
+test("椅子に座る姿勢は集まり（CHAIR_SIT_POSES）で判定する（座り方の変化を足すため）", () => {
+  assert.match(main, /const CHAIR_SIT_POSES = new Set\(\["sit"/);
+  for (const pattern of [
+    /if \(isChairSitPose\(pose\.id\)\) return allOnChairs;/,
+    /foundHolder\.type !== "chair"\) && isChairSitPose\(piece\.pose\)\) \{/,
+    /if \(foundHolder && foundHolder\.type === "chair" && isChairSitPose\(piece\.pose\)\) \{/,
+    /if \(isChairSitPose\(pose\.id\) && !performers\.every/,
+    /if \(isChairSitPose\(poseId\) && mountKindOf\(piece\) !== "chair"\) return false;/,
+  ]) assert.match(main, pattern);
+  assert.doesNotMatch(main, /pose\.id === "sit"|piece\.pose === "sit"|poseId === "sit"/, "「座る」の直書きが残っていない");
+  const sitBlock = main.slice(main.indexOf("const CHAIR_SIT_POSES"), main.indexOf("]);", main.indexOf("const CHAIR_SIT_POSES")));
+  const sitIds = [...sitBlock.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  // 座面の計算は腰 y=0.285H を前提にする。集まりの姿勢は腰をその高さへ置く
+  for (const id of sitIds.filter((x) => x !== "sit")) {
+    const start = main.indexOf(`makePose("${id}"`);
+    assert.ok(start > 0, `${id} が POSES にある`);
+    const body = main.slice(start, main.indexOf("\n    makePose(", start + 5));
+    const hip = body.match(/hipL: \[[-\d.]+, ([\d.]+),/);
+    assert.ok(hip && Math.abs(Number(hip[1]) - 0.285) <= 0.015, `${id} の腰の高さが 0.285 付近 (${hip && hip[1]})`);
+  }
+});
+
+test("3D画面は目の高さ・名札の高さを姿勢の形から出せる", () => {
+  const fpv = read("stage-first-person.js");
+  assert.match(main, /poseHeadHeight: \(poseId\) =>/);
+  assert.match(main, /poseTopHeight: \(poseId\) =>/);
+  assert.match(main, /isChairSitPose: \(poseId\) => isChairSitPose\(poseId\),/);
+  assert.match(fpv, /const EYE_HEIGHT_FIXED = new Set\(/);
+  assert.match(fpv, /function labelTopRatio\(pose\)/);
+});

@@ -4770,7 +4770,7 @@
         "backflip", "walkover-mid", "frontroll-mid", "roundoff-mid",
         "backhandspring-mid", "dance3", "handstand-mid",
       ].includes(pose.id)) return false;
-      if (pose.id === "sit") return allOnChairs;
+      if (isChairSitPose(pose.id)) return allOnChairs;
       const needs = POSE_PROPS[pose.id];
       if (!needs) return true;
       if (inUse.has(pose.id)) return true;
@@ -4791,6 +4791,11 @@
     if (PROP_SHAPES[id]) return id;
     return typeof id === "string" && SAVED_ID_PATTERN.test(id) ? id : "box";
   }
+  /* 椅子に座る姿勢。椅子に乗せた演者にだけ一覧へ出し、腰（y=0.285H）を座面へ合わせる。
+     2026-09-26: 座り方の変化（足を組む・頬杖など）を足すため、「sit」1つの直書きをこの集まりで判定する形に広げた。
+     ★ここへ足す姿勢は腰の高さを y=0.285 に置くこと（座面の計算が sit と同じ値を使う）。 */
+  const CHAIR_SIT_POSES = new Set(["sit"]);
+  const isChairSitPose = (id) => CHAIR_SIT_POSES.has(id);
   const poseById = (id) => POSES.find((p) => p.id === id)
     || HIDDEN_POSES.find((p) => p.id === id) || POSES[0];
 
@@ -12280,7 +12285,7 @@
       const foundHolder = found.holder ? pieces.find((other) => other.id === found.holder) : null;
       /* この版で椅子へ座らせた演者を椅子から下ろしたら、見えない椅子へ座り続けず立つ。
          読み込み時から床で sit の旧データは previousMount が無いので、そのまま保つ。 */
-      if (previousMount === "chair" && (!foundHolder || foundHolder.type !== "chair") && piece.pose === "sit") {
+      if (previousMount === "chair" && (!foundHolder || foundHolder.type !== "chair") && isChairSitPose(piece.pose)) {
         piece.pose = "stand";
       }
 
@@ -12329,7 +12334,7 @@
 
       /* 椅子では姿勢を強制しない。「座る」なら腰を座面へ合わせ、
          それ以外なら通常の支持物と同じく足を座面へ載せる。 */
-      if (foundHolder && foundHolder.type === "chair" && piece.pose === "sit") {
+      if (foundHolder && foundHolder.type === "chair" && isChairSitPose(piece.pose)) {
           const sitHip = 0.285 * pieceHeightM(piece) * (piece.size / 100);
           piece.base = Math.max(0, found.top - sitHip);
       }
@@ -31732,7 +31737,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   function applyPoseToSelection(pose) {
     const performers = selectedPerformerPieces();
     if (!pose || !performers.length || performers.some((piece) => poseLockedByMount(piece))) return 0;
-    if (pose.id === "sit" && !performers.every((piece) => mountKindOf(piece) === "chair")) return 0;
+    if (isChairSitPose(pose.id) && !performers.every((piece) => mountKindOf(piece) === "chair")) return 0;
     const changed = performers.filter((piece) => piece.pose !== pose.id);
     if (!changed.length) return 0;
     checkpoint();
@@ -35037,7 +35042,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         const piece = sc().pieces.find((p) => p.id === pieceId && p.type === "performer");
         if (!piece || !POSES.some((p) => p.id === poseId)) return false;
         if (poseLockedByMount(piece)) return false;
-        if (poseId === "sit" && mountKindOf(piece) !== "chair") return false;
+        if (isChairSitPose(poseId) && mountKindOf(piece) !== "chair") return false;
         if (piece.pose === poseId) return true;
         checkpoint();
         piece.pose = poseId;
@@ -35104,6 +35109,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         })));
       },
       drawPosePreview: (canvas, poseId, color) => drawPosePreview(canvas, poseId, color),
+      /* 2026-09-26: 3D画面の目の高さ・名札の高さを、姿勢の名前の決め打ちではなく姿勢の形から出すための窓口（身長比）。 */
+      poseHeadHeight: (poseId) => { const pose = poseById(poseId); return pose && pose.joints && pose.joints.head ? pose.joints.head[1] : null; },
+      poseTopHeight: (poseId) => { const ext = poseExtent(poseId); return ext && Number.isFinite(ext.top) ? ext.top : null; },
+      isChairSitPose: (poseId) => isChairSitPose(poseId),
       facingLabel,
       open3d: () => {
         if (!previewOnly) return;
