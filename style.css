@@ -3654,6 +3654,36 @@ html.stage-phone-viewer .stage-phone-save-notice .stage-phone-recovery-link[hidd
   text-align: center;
 }
 .stage-pose-strip-tile:hover { border-color: var(--brass); color: var(--milk); }
+/* D2（2026-09-26）: 帯の先頭の分類の選択欄と、末尾の「探す」札。高さは札に揃える（絵48px＋名前）。 */
+/* 後ろにある .stage-select（幅100%）に負けないよう、帯の中に限って指定する */
+.stage-pose-strip .stage-pose-strip-group {
+  flex: none;
+  align-self: stretch;
+  width: 152px;
+  min-height: 0;
+  padding: 4px 6px;
+  font-size: 11px;
+}
+.stage-pose-strip-more svg {
+  display: block;
+  width: 100%;
+  height: 48px;
+  padding: 12px 0;
+  box-sizing: border-box;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+.stage-pose-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.stage-pose-search-row .stage-text-input { flex: 1; min-width: 0; }
+.stage-pose-modal .stage-prop-choice-groups { margin-top: 12px; }
+.stage-pose-search-empty { margin-top: 12px; }
 .stage-pose-strip-tile.is-on {
   border-color: var(--rust);
   background: rgba(168, 75, 38, 0.16);

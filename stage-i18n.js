@@ -1538,6 +1538,10 @@
     "小道具を追加": "Add prop",
     "手に持つもの": "Handheld", "楽器": "Instruments", "登る・上がる": "Climbing", "建て込み": "Set pieces", "その他の形": "Other shapes",
     "家具": "Furniture", "屋外・情景": "Outdoor / scenery", "サーカス器具": "Circus apparatus",
+    "立つ・歩く・座る・寝る": "Stand / walk / sit / lie", "礼・合図・身振り": "Bows / signals / gestures", "感情・倒れる": "Emotion / falling",
+    "殺陣・武術": "Stage combat / martial arts", "踊る": "Dance", "歌・楽器": "Singing / instruments", "アクロバット": "Acrobatics",
+    "組み技": "Partner acrobatics", "空中・器具": "Aerial / apparatus", "サーカス道具・乗り物": "Circus props / riding", "その他の姿勢": "Other poses",
+    "姿勢の分類": "Pose group", "探す": "Find", "すべての姿勢から探す": "Find among all poses", "姿勢の名前・分類": "Pose name or group", "当てはまる姿勢がありません。": "No matching poses.",
     "出し入れの段取り、重さ、注意点など": "Handling, weight, things to watch",
     "寸法は実寸です。床の1m枡と同じものさしで描かれます。":
       "Sizes are real. They are drawn on the same scale as the 1 m floor grid.",

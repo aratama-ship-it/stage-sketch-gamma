@@ -4589,6 +4589,37 @@
   const poseById = (id) => POSES.find((p) => p.id === id)
     || HIDDEN_POSES.find((p) => p.id === id) || POSES[0];
 
+  /* 2026-09-26 本人決定 D2: 姿勢を約150件足す前に、選ぶ場所（姿勢の窓・図の下の帯・演者を追加する窓）を分類で分ける。
+     分類に無い姿勢は「その他の姿勢」へ落とす（分類へ足し忘れても選べなくはならない）。
+     並びは分類の中の並び。分類名は日本語をそのまま訳の鍵にする（小道具の分類と同じ）。 */
+  const POSE_GROUP_OTHER = "その他の姿勢";
+  const POSE_GROUPS = [
+    { ja: "立つ・歩く・座る・寝る", ids: ["stand", "walk", "run", "sit", "crouch", "kneel", "hizadachi", "floorsit", "agura",
+      "seiza", "longsit", "yankee", "allfours", "lie", "supine", "sidelie"] },
+    { ja: "礼・合図・身振り", ids: ["reach", "open", "hat", "dogeza"] },
+    { ja: "感情・倒れる", ids: [] },
+    { ja: "殺陣・武術", ids: [] },
+    { ja: "踊る", ids: ["dance1", "dance2", "dance3", "dance4", "dance5", "windmill"] },
+    { ja: "歌・楽器", ids: ["sing", "guitar", "bassguitar", "violin", "trumpet", "accordion"] },
+    { ja: "アクロバット", ids: ["handstand", "handstand-mid", "sideflip", "sideflip-mid", "cartwheel-oneside-mid", "roundoff-mid",
+      "frontroll-mid", "tuck", "backflip", "backhandspring-mid", "walkover-mid"] },
+    { ja: "組み技", ids: [] },
+    { ja: "空中・器具", ids: [] },
+    { ja: "サーカス道具・乗り物", ids: ["juggle", "cyr", "unicycle", "bicycle", "skateboard", "skate"] },
+  ];
+  function groupedPoses(poses) {
+    const byId = new Map(poses.map((pose) => [pose.id, pose]));
+    const used = new Set();
+    const groups = POSE_GROUPS.map((group) => ({
+      ja: group.ja,
+      poses: group.ids.filter((id) => byId.has(id) && !used.has(id)).map((id) => { used.add(id); return byId.get(id); }),
+    }));
+    const rest = poses.filter((pose) => !used.has(pose.id));
+    if (rest.length) groups.push({ ja: POSE_GROUP_OTHER, poses: rest });
+    return groups.filter((group) => group.poses.length);
+  }
+  const poseSearchText = (pose, groupJa) => `${poseName(pose)} ${pose.label} ${pose.id} ${tx(groupJa)} ${groupJa}`;
+
   /* 衣装・髪型の語彙。段階0では保存と引き当ての器だけを持ち、描画には使わない。 */
   const DEFAULT_SKIN = "#d9b38c";
   const DEFAULT_HAIR_COLOR = "#2a2320";
@@ -5496,6 +5527,8 @@
     poseBackdrop: document.getElementById("stage-pose-backdrop"),
     poseClose: document.getElementById("stage-pose-close"),
     poseGrid: document.getElementById("stage-pose-grid"),
+    poseSearch: document.getElementById("stage-pose-search"),
+    poseSearchEmpty: document.getElementById("stage-pose-search-empty"),
     showsOpen: document.getElementById("stage-shows-open"),
     showNew: document.getElementById("stage-show-new"),
     newShowReturnBar: document.getElementById("stage-new-show-return-bar"),
@@ -23291,11 +23324,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       const haystack = rosterSearchKey(tile.dataset.rosterSearch);
       tile.hidden = !words.every((word) => haystack.includes(word));
     });
-    if (rosterKindLayer === "prop" || rosterKindLayer === "set") {
-      host.querySelectorAll(".stage-prop-choice-group").forEach((section) => {
-        section.hidden = !section.querySelector("[data-roster-search]:not([hidden])");
-      });
-    }
+    // 空になった分類の見出しを隠す（姿勢も分類分けした＝D2・2026-09-26）
+    host.querySelectorAll(".stage-prop-choice-group").forEach((section) => {
+      section.hidden = !section.querySelector("[data-roster-search]:not([hidden])");
+    });
     if (rosterKindLayer === "set" && els.modelPicker) {
       const modelTile = host.querySelector('[data-roster-kind-choice="model"]');
       els.modelPicker.hidden = rosterKind !== "model" || Boolean(modelTile && modelTile.hidden);
@@ -23502,8 +23534,19 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const grid = els.rosterPoseGrid;
     if (!grid) return;
     grid.innerHTML = "";
-    /* R-19: 名簿から足すときはまだ何も持っていないので、物を伴う姿勢は出さない。 */
-    selectablePoses([]).forEach((pose) => {
+    /* R-19: 名簿から足すときはまだ何も持っていないので、物を伴う姿勢は出さない。
+       D2（2026-09-26）: 姿勢の窓と同じ分類で見出しを付ける。検索は既存の欄（applyRosterSearch）が効く。 */
+    groupedPoses(selectablePoses([])).forEach((group) => {
+    const section = document.createElement("section");
+    section.className = "stage-prop-choice-group";
+    const heading = document.createElement("p");
+    heading.className = "stage-kind-field-title";
+    heading.textContent = tx(group.ja);
+    const tiles = document.createElement("div");
+    tiles.className = "stage-pose-grid stage-prop-choice-grid";
+    section.append(heading, tiles);
+    grid.append(section);
+    group.poses.forEach((pose) => {
       const tile = document.createElement("button");
       tile.type = "button";
       tile.className = `stage-pose-tile${pose.id === rosterPose ? " is-on" : ""}`;
@@ -23514,7 +23557,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       canvas.height = 148;
       const label = document.createElement("span");
       label.textContent = poseName(pose);
-      tile.dataset.rosterSearch = `${label.textContent} ${pose.id}`;
+      tile.dataset.rosterSearch = poseSearchText(pose, group.ja);
       tile.append(canvas, label);
       tile.addEventListener("click", () => {
         rosterPose = pose.id;
@@ -23526,8 +23569,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         setRosterTileSelection(grid, "[data-roster-pose]", tile);
         addFromRoster();
       });
-      grid.append(tile);
+      tiles.append(tile);
       drawPosePreview(canvas, pose.id, nextPieceColor(state.project.cast.length));
+    });
     });
   }
 
@@ -23696,14 +23740,27 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     els.kindBackdrop.hidden = true;
   }
 
-  function openPoseModal() {
+  function openPoseModal(options) {
+    // クリックの受け手としても呼ばれるので、引数はイベントのこともある
+    const focusSearch = Boolean(options && options.focusSearch === true);
     const performers = selectedPerformerPieces();
     const piece = selectedPiece();
     if (!piece || !performers.length || performers.some((item) => poseLockedByMount(item)) || !els.poseModal) return;
     const grid = els.poseGrid;
     grid.innerHTML = "";
-    /* R-19: 選んでいる演者が持っている物に合う姿勢だけを出す。 */
-    selectablePoses(performers).forEach((pose) => {
+    /* R-19: 選んでいる演者が持っている物に合う姿勢だけを出す。
+       D2（2026-09-26）: 分類ごとに見出しを付けて並べる（小道具の窓と同じ部品）。 */
+    groupedPoses(selectablePoses(performers)).forEach((group) => {
+      const section = document.createElement("section");
+      section.className = "stage-prop-choice-group";
+      const heading = document.createElement("p");
+      heading.className = "stage-kind-field-title";
+      heading.textContent = tx(group.ja);
+      const tiles = document.createElement("div");
+      tiles.className = "stage-pose-grid stage-prop-choice-grid";
+      section.append(heading, tiles);
+      grid.append(section);
+      group.poses.forEach((pose) => {
       const shared = performers.every((item) => item.pose === pose.id);
       const tile = document.createElement("button");
       tile.type = "button";
@@ -23714,16 +23771,40 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       canvas.height = 148;
       const label = document.createElement("span");
       label.textContent = poseName(pose);
+      tile.dataset.poseSearch = poseSearchText(pose, group.ja);
       tile.append(canvas, label);
-      grid.append(tile);
+      tiles.append(tile);
       drawPosePreview(canvas, pose.id, piece.color);
       tile.addEventListener("click", () => {
         applyPoseToSelection(pose);
         closePoseModal();
       });
+      });
     });
+    if (els.poseSearch) {
+      els.poseSearch.value = "";
+      els.poseSearch.placeholder = tx("姿勢の名前・分類");
+    }
+    if (els.poseSearchEmpty) els.poseSearchEmpty.textContent = tx("当てはまる姿勢がありません。");
+    applyPoseSearch();
     els.poseModal.hidden = false;
     els.poseBackdrop.hidden = false;
+    if (focusSearch && els.poseSearch) els.poseSearch.focus();
+  }
+
+  function applyPoseSearch() {
+    if (!els.poseGrid) return;
+    const words = rosterSearchKey(els.poseSearch && els.poseSearch.value).trim().split(/\s+/).filter(Boolean);
+    els.poseGrid.querySelectorAll("[data-pose-search]").forEach((tile) => {
+      const haystack = rosterSearchKey(tile.dataset.poseSearch);
+      tile.hidden = !words.every((word) => haystack.includes(word));
+    });
+    els.poseGrid.querySelectorAll(".stage-prop-choice-group").forEach((section) => {
+      section.hidden = !section.querySelector("[data-pose-search]:not([hidden])");
+    });
+    if (els.poseSearchEmpty) {
+      els.poseSearchEmpty.hidden = Boolean(els.poseGrid.querySelector("[data-pose-search]:not([hidden])"));
+    }
   }
 
   function closePoseModal() {
@@ -32134,6 +32215,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   /* 正面図の下の姿勢帯。毎回39枚を描き直すと重いので、
      同じ演者・同じ色・同じ言語の間は組み直さず、ハイライトだけ動かす。 */
   let poseStripFor = "";
+  /* D2（2026-09-26）: 帯には1つの分類だけを並べる。選ぶ演者が変わったら、その演者の姿勢の分類へ合わせる。
+     保存データではなく、この画面を開いている間だけの状態。 */
+  let poseStripGroup = "";
+  let poseStripGroupFor = "";
   function renderPoseStrip(piece) {
     if (!els.poseStrip) return;
     const performers = selectedPerformerPieces();
@@ -32146,9 +32231,16 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
        入れないと、物を持たせても帯が組み直されず、増えたはずの姿勢が出てこない（実際に踏んだ）。 */
     const heldKey = performers.map((item) => [...heldPropShapes(item)].sort().join(",")).join("|");
     const mountKey = performers.map((item) => mountKindOf(item) || "floor").join("|");
-    const buildKey = `${performers.map((item) => `${item.id}:${item.color}:${item.pose}`).join("|")}|${heldKey}|${mountKey}|${lang}`;
+    const groups = groupedPoses(selectablePoses(performers));
+    const who = performers.map((item) => item.id).join("|");
+    if (poseStripGroupFor !== who || !groups.some((group) => group.ja === poseStripGroup)) {
+      poseStripGroupFor = who;
+      const own = commonPose && groups.find((group) => group.poses.some((pose) => pose.id === commonPose));
+      poseStripGroup = (own || groups[0] || { ja: "" }).ja;
+    }
+    const buildKey = `${performers.map((item) => `${item.id}:${item.color}:${item.pose}`).join("|")}|${heldKey}|${mountKey}|${lang}|${poseStripGroup}`;
     if (poseStripFor === buildKey) {
-      els.poseStrip.querySelectorAll(".stage-pose-strip-tile").forEach((tile) => {
+      els.poseStrip.querySelectorAll(".stage-pose-strip-tile[data-pose]").forEach((tile) => {
         const on = tile.dataset.pose === commonPose;
         tile.classList.toggle("is-on", on);
         tile.setAttribute("aria-pressed", String(on));
@@ -32157,8 +32249,28 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     }
     poseStripFor = buildKey;
     els.poseStrip.innerHTML = "";
-    /* R-19: 図の下の帯も同じ絞り込みにする（窓と帯で並びが違うと混乱するため）。 */
-    selectablePoses(selectedPerformerPieces()).forEach((pose) => {
+    /* R-19: 図の下の帯も同じ絞り込みにする（窓と帯で並びが違うと混乱するため）。
+       D2: 先頭に分類の選択欄、末尾に全部から探す札。帯に並べるのは選んだ分類だけ。 */
+    const groupSelect = document.createElement("select");
+    groupSelect.className = "stage-select stage-pose-strip-group";
+    groupSelect.setAttribute("aria-label", tx("姿勢の分類"));
+    groups.forEach((group) => {
+      const option = document.createElement("option");
+      option.value = group.ja;
+      option.textContent = tx(group.ja);
+      groupSelect.append(option);
+    });
+    groupSelect.value = poseStripGroup;
+    groupSelect.addEventListener("change", () => {
+      poseStripGroup = groupSelect.value;
+      poseStripFor = "";
+      renderPoseStrip(piece);
+      const first = els.poseStrip.querySelector(".stage-pose-strip-group");
+      if (first) first.focus();
+    });
+    els.poseStrip.appendChild(groupSelect);
+    const current = groups.find((group) => group.ja === poseStripGroup) || { poses: [] };
+    current.poses.forEach((pose) => {
       const tile = document.createElement("button");
       tile.type = "button";
       tile.className = `stage-pose-strip-tile${pose.id === commonPose ? " is-on" : ""}`;
@@ -32177,6 +32289,15 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         applyPoseToSelection(pose);
       });
     });
+    const more = document.createElement("button");
+    more.type = "button";
+    more.className = "stage-pose-strip-tile stage-pose-strip-more";
+    more.title = tx("すべての姿勢から探す");
+    more.setAttribute("aria-label", more.title);
+    more.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="5.5"></circle><path d="M14.6 14.6 19 19"></path></svg><span></span>`;
+    more.querySelector("span").textContent = tx("探す");
+    more.addEventListener("click", () => openPoseModal({ focusSearch: true }));
+    els.poseStrip.appendChild(more);
   }
 
   function syncInputs() {
@@ -33893,6 +34014,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   if (els.beatTemplatesClose) els.beatTemplatesClose.addEventListener("click", closeBeatTemplates);
   if (els.beatTemplatesBackdrop) els.beatTemplatesBackdrop.addEventListener("click", closeBeatTemplates);
   if (els.poseClose) els.poseClose.addEventListener("click", closePoseModal);
+  if (els.poseSearch) els.poseSearch.addEventListener("input", applyPoseSearch);
   if (els.poseBackdrop) els.poseBackdrop.addEventListener("click", closePoseModal);
   if (els.pieceFacing) {
     els.pieceFacing.addEventListener("input", (e) => {

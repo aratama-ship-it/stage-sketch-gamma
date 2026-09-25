@@ -220,7 +220,7 @@ const half = Math.ceil(POSES.length / 2);
 [POSES.slice(0, half), POSES.slice(half)].forEach((list, index) => {
   const positions = grid(list.length, 6, 0.08, 0.92, 0.2, 0.9);
   scene(`a${index + 1}`, `A-${index + 1} 全姿勢 ${index + 1}/2（${list.length}種）`, 1,
-    `${CHECK}登録の無い演者（名前＝姿勢ID）を全姿勢ぶん並べた。正面図で形が崩れていないか、平面図の足元の大きさ、選んだときの枠、3Dカメラでの見え方を見る。姿勢は本体の POSES から自動で拾っている（${POSES.length}種）。`,
+    `${CHECK}登録の無い演者（名前＝姿勢ID）を全姿勢ぶん並べた。正面図で形が崩れていないか、平面図の足元の大きさ、選んだときの枠、3Dカメラでの見え方を見る。姿勢は本体の POSES から自動で拾っている（${POSES.length}種）。姿勢を選ぶ場所（姿勢の窓・図の下の帯・演者を追加する窓）は分類の見出しで分かれ、窓と演者を追加する窓は検索で絞れること。帯は先頭の選択欄で分類を切り替え、末尾の「探す」で検索付きの窓が開くこと。`,
     list.map((pose, i) => perf(`a${index + 1}`, null, positions[i].u, positions[i].v, { pose, name: pose, color: COLORS[i % COLORS.length] })));
 });
 /* 文脈ヘルプ: A-1の登録共通固定と駒単体固定、A-2に同じ登録の固定を置く。 */
