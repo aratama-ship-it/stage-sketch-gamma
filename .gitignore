@@ -51,6 +51,19 @@ public-dist/
 /light-design/*
 !/manual/
 /manual/*
+!/manual-gamma/
+/manual-gamma/*
+# 2026-09-26: ガンマ版の使いかたの冊子（日本語・英語）。配るのは本体・本文・画像・動画・アプリ内検索用データだけ。
+# 撮影の元データ（raw）・道具（tools）・判断用の紙（plan.html・README.md・design）は手元に残す。
+!/manual-gamma/index.html
+!/manual-gamma/manual-content.js
+!/manual-gamma/content/
+!/manual-gamma/img/
+/manual-gamma/img/raw/
+/manual-gamma/img/en/raw/
+!/manual-gamma/video/
+/manual-gamma/video/raw/
+/manual-gamma/video/en/raw/
 !/public/
 /public/*
 !/stage-samples/
@@ -214,6 +227,7 @@ public-dist/
 !/tests/bundled-sample-timing.test.mjs
 !/tests/unknown-saved-ids.test.mjs
 !/tests/pose-groups.test.mjs
+!/tests/stage-manual-gamma.test.mjs
 !/tests/light-selected-audience-mask.test.mjs
 !/tests/stage-lighting-all-venues.test.mjs
 !/tests/stage-light-panel-import.test.mjs

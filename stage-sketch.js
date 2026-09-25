@@ -27166,10 +27166,30 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     releasePrefsFocus?.(); releasePrefsFocus = null;
   }
 
+  /* 2026-09-26 本人指示: 「使いかたの冊子」はγ版の冊子（manual-gamma/）を、版とともに開く。
+     冊子の本文データ（manual-gamma/manual-content.js・edition "gamma"）が読めないときだけ、従来のβ版の冊子へ落とす。
+     言語（ja 以外は英語版）とアプリの版を渡し、冊子側でアプリの方が新しければ注意を出す。 */
+  function manualBookletUrl(sectionId) {
+    const content = window.MANUAL_CONTENT || {};
+    const gamma = content.edition === "gamma" && content.booklet;
+    const appVersion = (document.querySelector('meta[name="stage-sketch-gamma-version"]') || {}).content || "";
+    const query = gamma ? `?lang=${lang === "ja" ? "ja" : "en"}${appVersion ? `&app=${encodeURIComponent(appVersion)}` : ""}` : "";
+    return `${gamma ? content.booklet : "manual/manual.html"}${query}${sectionId ? `#${sectionId}` : ""}`;
+  }
+
+  function syncManualEdition() {
+    const edition = document.getElementById("stage-manual-edition");
+    const content = window.MANUAL_CONTENT || {};
+    if (!edition) return;
+    const gamma = content.edition === "gamma" && content.appVersion;
+    edition.textContent = gamma ? `γ · ${content.appVersion}` : "";
+    edition.hidden = !gamma;
+  }
+
   function manualLink(label, sectionId) {
     const link = document.createElement("a");
     link.className = "stage-about-link";
-    link.href = `manual/manual.html${sectionId ? `#${sectionId}` : ""}`;
+    link.href = manualBookletUrl(sectionId);
     link.target = "_blank";
     link.rel = "noopener";
     link.textContent = tx(label);
@@ -27214,19 +27234,33 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       return;
     }
 
-    const hitIds = new Set(ids);
-    const fragment = document.createDocumentFragment();
+    /* γ版の冊子は節が多い（101節）ので、MANUAL_FIND の並び（見出し・言い換え語に当たったものが先）で出し、
+       最大12件にとどめる。残りは冊子の検索（?q=）で全部見られるようにする。β版の冊子は従来どおり章の順で全部。 */
+    const gammaBooklet = manual.edition === "gamma";
+    const rank = new Map(ids.map((id, index) => [id, index]));
+    const hits = [];
     manual.chapters.forEach((chapter) => {
       (chapter.sections || []).forEach((section) => {
-        if (!hitIds.has(section.id)) return;
+        if (rank.has(section.id)) hits.push({ chapter, section, order: gammaBooklet ? rank.get(section.id) : hits.length });
+      });
+    });
+    hits.sort((a, b) => a.order - b.order);
+    const MAX_HELP_RESULTS = 12;
+    const shown = gammaBooklet ? hits.slice(0, MAX_HELP_RESULTS) : hits;
+    const fragment = document.createDocumentFragment();
+    shown.forEach(({ chapter, section }) => {
+      {
         const result = document.createElement("article");
         result.className = "stage-help-result";
 
         const chapterTitle = document.createElement("p");
         chapterTitle.className = "stage-help-chapter";
-        chapterTitle.textContent = en && chapter.titleEn
-          ? `Chapter ${chapter.no} — ${chapter.titleEn}`
-          : `第${chapter.no}章 ${chapter.title}`;
+        /* γ版の冊子は「第1部 はじめる」「Part 1 — Getting started」の見出しと節番号（1-5）を持つ */
+        chapterTitle.textContent = chapter.heading
+          ? `${en ? (chapter.headingEn || chapter.heading) : chapter.heading}${section.number ? ` · ${section.number}` : ""}`
+          : (en && chapter.titleEn
+            ? `Chapter ${chapter.no} — ${chapter.titleEn}`
+            : `第${chapter.no}章 ${chapter.title}`);
 
         const heading = document.createElement("h3");
         heading.textContent = en && section.titleEn ? section.titleEn : section.title;
@@ -27243,10 +27277,17 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         body.innerHTML = en && section.htmlEn ? section.htmlEn : section.html;
         result.append(chapterTitle, heading, body, manualLink("冊子で読む", section.id));
         fragment.appendChild(result);
-      });
+      }
     });
     els.helpResults.appendChild(fragment);
     els.helpNote.textContent = "";
+    if (hits.length > shown.length) {
+      const more = manualLink("冊子で全部を見る");
+      const url = new URL(more.href, location.href);
+      url.searchParams.set("q", query.trim());
+      more.href = url.toString();
+      els.helpNote.append(document.createTextNode(`${hits.length} / ${shown.length} `), more);
+    }
   }
 
   function openManualHelpFromPrefs() {
@@ -27427,7 +27468,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   function openManualBook() {
-    window.open("manual/manual.html", "_blank", "noopener");
+    window.open(manualBookletUrl(), "_blank", "noopener");
   }
 
   /* クイックガイドは日本語版と英語版を別ファイルで持つ（本文が絵と一体のため、
@@ -37403,6 +37444,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   });
   if (els.helpOpen) els.helpOpen.addEventListener("click", openManualHelpFromPrefs);
   if (els.manualOpen) els.manualOpen.addEventListener("click", openManualBook);
+  syncManualEdition();
   if (els.resetLayout) els.resetLayout.addEventListener("click", resetPanelLayoutToDistributionDefault);
   if (els.resetAll) els.resetAll.addEventListener("click", openResetDialog);
   if (els.resetConfirm) els.resetConfirm.addEventListener("click", advanceResetDialog);

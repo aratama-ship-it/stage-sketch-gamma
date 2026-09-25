@@ -482,6 +482,7 @@
     "言葉を入れると、冊子から該当箇所だけを出します。": "Enter a word to show only the matching sections from the booklet.",
     "見つかりませんでした。別の言い方でもう一度どうぞ。": "Nothing was found. Please try another wording.",
     "冊子で読む": "Read in the booklet",
+    "冊子で全部を見る": "See every result in the booklet",
     "冊子を開く": "Open the booklet",
     "冊子を読み込めませんでした。ページを再読み込みしてください。": "The booklet could not be loaded. Please reload the page.",
     "このアプリについて": "About This App",

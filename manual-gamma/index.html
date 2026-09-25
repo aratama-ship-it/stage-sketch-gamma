@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="stage-sketch-gamma-manual" content="2026-09-25">
+<title>使いかたの手引き — 舞台スケッチ γ</title>
+<style>
+/* ============================================================
+   舞台スケッチγ 使いかたの手引き — 器（本文は content/*.js が持つ）
+   値は design/TOKEN_SHEET.md が正。ここに無い数値をコンポーネントへ直書きしない。
+   コンセプト: 「暗い机の上に置いた、引ける台本」。
+   ============================================================ */
+:root {
+  --desk: #191512; --desk-2: #282119;
+  --paper: #efe7d6; --paper-2: #e7dcc5; --paper-line: #d8c9ab;
+  --ink: #2b2620; --ink-soft: #6a604e;
+  --rust: #a84b26; --rust-deep: #8f3e1e; --brass: #9c823f; --gold: #d3ac59;
+  --desk-text: #b6a995; --desk-line: rgba(240,231,214,.14); --rust-desk: #d0714a;
+  --ok: #1f5c3a; --warn: #7a3a2a;
+  --serif: "Hiragino Mincho ProN", "Yu Mincho", YuMincho, "Noto Serif JP", serif;
+  --sans: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+  --fs-h1: 34px; --fs-h2: 22px; --fs-h3: 17px; --fs-body: 15px; --fs-small: 13.5px; --fs-caption: 12.5px;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
+  --radius-s: 2px; --radius-m: 4px;
+  --shadow-paper: 0 1px 0 rgba(0,0,0,.5), 0 12px 40px rgba(0,0,0,.45);
+  --dur-fast: 160ms; --dur-slow: 240ms; --ease: cubic-bezier(.2,.7,.2,1);
+  --side-w: 272px; --paper-w: 760px; --finder-h: 48px;
+}
+@media (prefers-reduced-motion: reduce) { :root { --dur-fast: 0ms; --dur-slow: 0ms; } }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--finder-h) + 40px); }
+body { background: var(--desk); color: var(--ink); font-family: var(--sans); font-size: var(--fs-body); line-height: 1.9; min-height: 100vh; }
+body::before { content: ""; position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse 120% 90% at 50% 0%, rgba(240,231,214,.05), transparent 60%); }
+.skip { position: absolute; left: -999px; top: 8px; background: var(--paper); color: var(--ink); padding: 6px 12px; z-index: 50; }
+.skip:focus { left: 8px; }
+a { color: var(--rust-deep); }
+:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+/* ---------- 全体の2列 ---------- */
+.book { display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); min-height: 100vh; }
+
+/* ---------- 左: 目次（机の上） ---------- */
+.side { position: sticky; top: 0; height: 100vh; overflow-y: auto; overscroll-behavior: contain; padding: var(--sp-5) var(--sp-4) var(--sp-6); border-right: 1px solid var(--desk-line); color: var(--desk-text); font-size: var(--fs-caption); line-height: 1.6; scrollbar-width: thin; }
+.side-head { margin-bottom: var(--sp-4); }
+.side .kicker { display: block; font-size: 11px; letter-spacing: .28em; color: var(--rust-desk); margin-bottom: 6px; }
+.side-title { display: block; font-family: var(--serif); font-size: 18px; letter-spacing: .06em; color: var(--paper); text-decoration: none; font-weight: 600; }
+.side-title:hover { color: var(--gold); }
+.side-note { color: var(--desk-text); margin-top: 6px; font-size: 11.5px; }
+.toc-tools { display: flex; gap: var(--sp-2); margin: var(--sp-3) 0 var(--sp-2); }
+.toc-tools button { appearance: none; background: none; border: 1px solid var(--desk-line); color: var(--desk-text); font: 11px/1.4 var(--sans); padding: 3px 8px; cursor: pointer; border-radius: var(--radius-s); min-height: 28px; }
+.toc-tools button:hover { color: var(--paper); border-color: var(--brass); }
+.toc { list-style: none; }
+.toc > li { border-top: 1px solid var(--desk-line); }
+.toc > li:last-child { border-bottom: 1px solid var(--desk-line); }
+.toc-ch { display: grid; grid-template-columns: 1fr 28px; align-items: center; }
+.toc-ch > a { display: block; padding: 8px 0 8px 0; color: var(--desk-text); text-decoration: none; font-family: var(--serif); font-size: 13px; letter-spacing: .04em; }
+.toc-ch > a .no { color: var(--brass); font-family: var(--sans); font-size: 11px; margin-right: 6px; letter-spacing: .1em; }
+.toc-ch > a:hover, .toc > li.is-current > .toc-ch > a { color: var(--paper); }
+.toc-ch > button { appearance: none; background: none; border: none; color: var(--desk-text); cursor: pointer; width: 28px; height: 28px; font-size: 11px; border-radius: var(--radius-s); }
+.toc-ch > button:hover { color: var(--paper); background: var(--desk-2); }
+.toc-ch > button::before { content: "▸"; display: inline-block; transition: transform var(--dur-fast) var(--ease); }
+.toc > li.is-open > .toc-ch > button::before { transform: rotate(90deg); }
+.toc-secs { list-style: none; display: none; padding: 0 0 8px 0; }
+.toc > li.is-open > .toc-secs { display: block; }
+.toc-secs a { display: block; padding: 4px 8px 4px 18px; color: var(--desk-text); text-decoration: none; border-left: 2px solid transparent; font-size: 12.5px; line-height: 1.5; }
+.toc-secs a:hover { color: var(--paper); background: var(--desk-2); }
+.toc-secs a.is-active { color: var(--gold); border-left-color: var(--gold); }
+.toc-secs a.hidden-by-find { display: none; }
+.side-foot { margin-top: var(--sp-5); padding-top: var(--sp-3); border-top: 1px solid var(--desk-line); font-size: 11.5px; display: grid; gap: 6px; }
+.side-foot a { color: var(--paper); }
+.side-foot a:hover { color: var(--gold); }
+
+/* ---------- 右: 紙 ---------- */
+.stage { padding: var(--sp-7) var(--sp-4) 120px; min-width: 0; }
+.paper { background: var(--paper); max-width: var(--paper-w); margin: 0 auto; padding: var(--sp-8) 56px var(--sp-8); border: 1px solid var(--paper-line); box-shadow: var(--shadow-paper); position: relative; }
+.paper::before { content: ""; position: absolute; top: 0; bottom: 0; left: 10px; width: 1px; background: var(--paper-line); }
+
+.head { border-bottom: 2px solid var(--ink); padding-bottom: var(--sp-5); }
+.head .kicker { font-size: 12px; letter-spacing: .3em; color: var(--rust-deep); margin-bottom: var(--sp-3); display: flex; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
+.head .kicker .ver { letter-spacing: .1em; color: var(--ink-soft); }
+.head h1 { font-family: var(--serif); font-weight: 600; font-size: var(--fs-h1); letter-spacing: .06em; line-height: 1.4; }
+.head .sub { margin-top: var(--sp-3); color: var(--ink-soft); font-size: var(--fs-small); line-height: 1.7; }
+.head .sub a { color: var(--rust-deep); }
+.version-note { margin-top: var(--sp-3); padding: 8px 12px; border-left: 3px solid var(--rust); background: var(--paper-2); font-size: var(--fs-small); line-height: 1.7; }
+#lang-switch { margin-left: auto; border-color: var(--brass); color: var(--paper); }
+html[lang="en"] body { line-height: 1.75; }
+html[lang="en"] .toc-ch > a, html[lang="en"] .chapter > h2, html[lang="en"] .sec h3 { letter-spacing: 0; }
+
+/* ---------- 検索（紙の上端に貼り付く） ---------- */
+.finder { position: sticky; top: 0; z-index: 20; background: var(--paper); padding: var(--sp-3) 0 var(--sp-2); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-bottom: 1px solid var(--paper-line); }
+.finder .row { display: flex; align-items: center; gap: var(--sp-2); position: relative; }
+.finder .row::before { content: "⌕"; font-size: 18px; color: var(--ink-soft); line-height: 1; }
+.finder input { flex: 1; font: 16px/1.5 var(--sans); color: var(--ink); background: transparent; border: none; border-bottom: 1px solid var(--ink-soft); padding: 6px 2px; border-radius: 0; min-height: 36px; }
+.finder input:focus { outline: none; border-bottom-color: var(--rust); }
+.finder input::placeholder { color: var(--ink-soft); opacity: .75; }
+.finder input::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
+.finder .clear { appearance: none; border: 1px solid transparent; background: none; cursor: pointer; color: var(--ink-soft); font-size: 12px; padding: 4px 6px; visibility: hidden; min-height: 28px; border-radius: var(--radius-s); }
+.finder .clear.show { visibility: visible; }
+.finder .clear:hover { border-color: var(--paper-line); color: var(--rust-deep); }
+.finder kbd.hint { font-size: 11px; color: var(--ink-soft); border: 1px solid var(--paper-line); padding: 1px 6px; border-radius: var(--radius-s); background: var(--paper-2); }
+.finder .meta { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); margin-top: 6px; font-size: var(--fs-caption); color: var(--ink-soft); min-height: 1.6em; flex-wrap: wrap; }
+.finder .meta label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.finder .meta input { accent-color: var(--rust-deep); width: 18px; height: 18px; }
+.finder .meta label { min-height: 32px; padding-right: 4px; }
+.results { position: absolute; left: 0; right: 0; top: calc(100% + 2px); background: var(--desk); color: var(--desk-text); border: 1px solid var(--desk-line); box-shadow: var(--shadow-paper); max-height: min(60vh, 520px); overflow-y: auto; display: none; z-index: 30; }
+.results.show { display: block; }
+.results ol { list-style: none; }
+.results li { border-bottom: 1px solid var(--desk-line); }
+.results li:last-child { border-bottom: none; }
+.results a { display: block; padding: 10px 14px; text-decoration: none; color: var(--desk-text); }
+.results a:hover, .results li.is-cursor a { background: var(--desk-2); }
+.results .path { font-size: 11px; letter-spacing: .06em; color: var(--brass); }
+.results .ttl { display: block; color: var(--paper); font-family: var(--serif); font-size: 14px; margin: 2px 0; }
+.results .snip { font-size: 12px; line-height: 1.6; color: var(--desk-text); }
+.results mark { background: none; color: var(--gold); font-weight: 600; }
+.results .more { padding: 8px 14px; font-size: 11.5px; color: var(--desk-text); }
+
+/* ---------- 本文 ---------- */
+.body { padding-top: var(--sp-4); }
+.lead { margin-top: var(--sp-5); padding: var(--sp-4) var(--sp-5); background: var(--paper-2); border-left: 3px solid var(--rust); font-size: var(--fs-small); line-height: 1.8; }
+.chapter { padding-top: var(--sp-6); }
+.chapter + .chapter { border-top: 1px solid var(--paper-line); margin-top: var(--sp-7); }
+.chapter > h2 { font-family: var(--serif); font-weight: 600; font-size: var(--fs-h2); letter-spacing: .08em; line-height: 1.5; margin-bottom: var(--sp-2); }
+.chapter > h2 .cno { display: block; font-size: 11.5px; letter-spacing: .3em; color: var(--rust-deep); margin-bottom: 8px; font-family: var(--sans); font-weight: 400; }
+.chapter > .ch-lead { color: var(--ink-soft); font-size: var(--fs-small); line-height: 1.8; margin-bottom: var(--sp-2); }
+.sec { margin-top: var(--sp-6); scroll-margin-top: calc(var(--finder-h) + 40px); }
+.sec.is-flash { animation: flash var(--dur-slow) var(--ease) 2 alternate; }
+@keyframes flash { from { box-shadow: inset 4px 0 0 var(--rust); } to { box-shadow: inset 4px 0 0 transparent; } }
+.sec h3 { font-family: var(--serif); font-weight: 600; font-size: var(--fs-h3); letter-spacing: .05em; line-height: 1.6; margin-bottom: var(--sp-2); display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.sec h3 .sno { font-family: var(--sans); font-size: 11.5px; color: var(--rust-deep); letter-spacing: .1em; font-weight: 400; }
+.sec h3 .anchor { appearance: none; background: none; border: none; color: var(--ink-soft); cursor: pointer; font: 14px/1 var(--sans); padding: 2px 6px; margin-left: auto; border-radius: var(--radius-s); min-width: 32px; min-height: 32px; }
+.sec h3 .anchor:hover, .sec h3 .anchor:focus-visible { color: var(--rust-deep); background: var(--paper-2); }
+.tagrow { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: var(--sp-3); }
+.tag { font-family: var(--sans); font-size: 11px; letter-spacing: .08em; color: var(--rust-deep); border: 1px solid var(--rust-deep); padding: 1px 7px; border-radius: var(--radius-s); white-space: nowrap; }
+.tag.st-verified { color: var(--ok); border-color: var(--ok); }
+.tag.st-sourced { color: var(--ink-soft); border-color: var(--ink-soft); }
+.tag.st-unverified { color: var(--warn); border-color: var(--warn); border-style: dashed; }
+.sec p + p, .sec p + ul, .sec p + ol, .sec ul + p, .sec ol + p, .sec p + table, .sec table + p, .sec p + figure, .sec figure + p, .sec figure + figure, .sec ol + figure, .sec ul + figure, .sec figure + ol, .sec figure + ul, .sec p + dl, .sec dl + p, .sec p + .note, .sec .note + p, .sec ul + .note, .sec ol + .note, .sec .note + ul, .sec figure + .note, .sec .note + figure, .sec table + figure, .sec figure + table, .sec ul + ul, .sec ol + ol, .sec ul + ol, .sec ol + ul, .sec table + ul, .sec ul + table, .sec table + ol, .sec ol + table, .sec dl + figure, .sec figure + dl, .sec h4 + * { margin-top: var(--sp-3); }
+.sec h4 { font-family: var(--sans); font-weight: 600; font-size: var(--fs-body); margin-top: var(--sp-4); color: var(--ink); }
+.sec ul, .sec ol { padding-left: 1.5em; }
+.sec li + li { margin-top: 6px; }
+.sec ol.steps { counter-reset: st; list-style: none; padding-left: 0; }
+.sec ol.steps > li { position: relative; padding-left: 2.2em; counter-increment: st; }
+.sec ol.steps > li::before { content: counter(st); position: absolute; left: 0; top: .35em; width: 1.6em; height: 1.6em; border: 1px solid var(--rust-deep); color: var(--rust-deep); font-size: 11.5px; line-height: 1.6em; text-align: center; font-family: var(--sans); border-radius: 50%; }
+.sec a { color: var(--rust-deep); text-decoration: none; border-bottom: 1px solid rgba(143,62,30,.4); overflow-wrap: anywhere; }
+.sec a:hover { border-bottom-color: var(--rust-deep); }
+.sec strong { font-weight: 600; color: var(--rust-deep); }
+.sec .ui { white-space: nowrap; }
+.sec .gloss { color: var(--ink-soft); font-size: .92em; }
+.sec kbd { font: 12.5px/1.4 var(--sans); background: var(--paper-2); border: 1px solid var(--paper-line); border-bottom-width: 2px; border-radius: var(--radius-s); padding: 1px 6px; color: var(--ink); white-space: nowrap; }
+.sec code { font: 13px/1.5 var(--sans); background: var(--paper-2); padding: 1px 5px; border-radius: var(--radius-s); overflow-wrap: anywhere; word-break: break-all; }
+.sec mark { background: rgba(211,172,89,.45); color: inherit; padding: 0 1px; }
+.note { border-left: 3px solid var(--brass); padding: 8px 14px; background: var(--paper-2); font-size: var(--fs-small); line-height: 1.75; }
+.note.warn { border-left-color: var(--rust); }
+.note .nt { display: block; font-size: 11px; letter-spacing: .2em; color: var(--rust-deep); margin-bottom: 2px; }
+.m-table { border-collapse: collapse; width: 100%; font-size: var(--fs-small); line-height: 1.6; }
+.m-table th, .m-table td { border: 1px solid var(--paper-line); padding: 6px 10px; text-align: left; vertical-align: top; }
+.m-table thead th { font-weight: 600; background: var(--paper-2); font-family: var(--serif); }
+.m-table tbody th { font-weight: 600; background: var(--paper-2); white-space: nowrap; }
+.m-table.center td { text-align: center; }
+.table-wrap { overflow-x: auto; }
+.m-faq dt { font-weight: 600; margin-top: var(--sp-4); }
+.m-faq dt::before { content: "問 "; color: var(--rust-deep); font-family: var(--serif); }
+.m-faq dd { margin: 4px 0 0 1.5em; }
+.m-gloss dt { font-weight: 600; margin-top: var(--sp-3); font-family: var(--serif); }
+.m-gloss dd { margin: 2px 0 0 1.2em; font-size: var(--fs-small); }
+
+/* 図（スクリーンショット・動画） */
+figure.shot { margin: var(--sp-4) 0 0; }
+figure.shot .frame { display: block; border: 1px solid var(--paper-line); background: var(--desk); border-radius: var(--radius-m); overflow: hidden; }
+figure.shot img, figure.shot video { display: block; width: 100%; height: auto; }
+figure.shot a.frame { cursor: zoom-in; }
+figure.shot figcaption { font-size: var(--fs-caption); color: var(--ink-soft); line-height: 1.6; margin-top: 6px; }
+figure.shot figcaption .fno { color: var(--rust-deep); letter-spacing: .1em; margin-right: 6px; }
+figure.shot .missing { display: none; border: 1px dashed var(--paper-line); padding: var(--sp-4); color: var(--ink-soft); font-size: var(--fs-caption); background: var(--paper-2); }
+figure.shot.is-missing .frame { display: none; }
+figure.shot.is-missing .missing { display: block; }
+.figgrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin-top: var(--sp-4); }
+.figgrid figure.shot { margin: 0; }
+dialog.lightbox { border: none; padding: 0; background: transparent; max-width: 96vw; max-height: 96vh; }
+dialog.lightbox::backdrop { background: rgba(0,0,0,.82); }
+dialog.lightbox img { display: block; max-width: 96vw; max-height: 88vh; width: auto; height: auto; border: 1px solid var(--desk-line); }
+dialog.lightbox figcaption { color: var(--paper); font-size: var(--fs-caption); padding: 8px 4px; display: flex; justify-content: space-between; gap: var(--sp-3); }
+dialog.lightbox button { appearance: none; background: none; border: 1px solid var(--desk-line); color: var(--paper); padding: 4px 10px; cursor: pointer; border-radius: var(--radius-s); font: 12px var(--sans); min-height: 28px; }
+
+/* 検索の絞り込み */
+.hidden-by-find { display: none !important; }
+.nohit { margin-top: var(--sp-6); color: var(--ink-soft); display: none; }
+.nohit.show { display: block; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--desk); color: var(--paper); border: 1px solid var(--desk-line); padding: 8px 14px; font-size: var(--fs-caption); border-radius: var(--radius-m); opacity: 0; pointer-events: none; transition: opacity var(--dur-fast) var(--ease); z-index: 40; }
+.toast.show { opacity: 1; }
+
+.colophon { margin-top: var(--sp-8); padding-top: var(--sp-4); border-top: 2px solid var(--ink); font-size: var(--fs-caption); color: var(--ink-soft); display: grid; gap: 6px; }
+.colophon a { color: var(--rust-deep); }
+
+/* ---------- 目次の引き出し（狭い画面） ---------- */
+.toc-toggle { display: none; position: fixed; right: 14px; bottom: 14px; z-index: 35; appearance: none; background: var(--desk); color: var(--paper); border: 1px solid var(--brass); padding: 0 16px; min-height: 44px; font: 14px var(--sans); border-radius: 22px; cursor: pointer; box-shadow: var(--shadow-paper); }
+.side-close { display: none; }
+@media (max-width: 960px) {
+  .book { grid-template-columns: minmax(0, 1fr); }
+  .side { position: fixed; inset: 0 auto 0 0; width: min(88vw, 340px); transform: translateX(-100%); visibility: hidden; transition: transform var(--dur-slow) var(--ease), visibility 0s linear var(--dur-slow); z-index: 45; background: var(--desk); box-shadow: var(--shadow-paper); }
+  .side.is-open { transform: none; visibility: visible; transition: transform var(--dur-slow) var(--ease), visibility 0s; }
+  .side-close { display: inline-block; appearance: none; background: none; border: 1px solid var(--desk-line); color: var(--paper); padding: 4px 10px; font: 12px var(--sans); cursor: pointer; border-radius: var(--radius-s); min-height: 32px; margin-bottom: var(--sp-3); }
+  .toc-toggle { display: block; }
+  .stage { padding: var(--sp-4) 0 100px; }
+  .paper { padding: var(--sp-6) 26px var(--sp-7); border-left: none; border-right: none; max-width: none; }
+  .paper::before { display: none; }
+  .figgrid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  :root { --fs-h1: 28px; --fs-h2: 20px; }
+  .paper { padding: var(--sp-5) 18px var(--sp-7); }
+  .m-table { font-size: 12.5px; }
+  .m-table th, .m-table td { padding: 5px 7px; }
+}
+
+/* ---------- タッチ端末: 押す所を 44px に ---------- */
+@media (pointer: coarse), (max-width: 960px) {
+  .toc-ch > a { min-height: 44px; display: flex; align-items: center; }
+  .toc-ch { grid-template-columns: 1fr 44px; }
+  .toc-ch > button { width: 44px; height: 44px; }
+  .toc-secs a { min-height: 44px; display: flex; align-items: center; }
+  .toc-tools button, .side-close { min-height: 44px; padding: 4px 12px; }
+  .side-foot a { display: flex; align-items: center; min-height: 44px; }
+  .finder input { min-height: 44px; }
+  .finder .clear { min-height: 44px; min-width: 44px; }
+  .finder .meta label { min-height: 44px; }
+  .sec h3 .anchor { min-width: 44px; min-height: 44px; }
+  dialog.lightbox button { min-height: 44px; }
+}
+
+/* ---------- 印刷 ---------- */
+@media print {
+  body { background: #fff; color: #000; }
+  body::before, .side, .finder, .toc-toggle, .toast, .sec h3 .anchor, figure.shot .missing { display: none !important; }
+  .book { display: block; }
+  .stage { padding: 0; }
+  .paper { box-shadow: none; border: none; max-width: none; padding: 0; background: #fff; }
+  .paper::before { display: none; }
+  .chapter { break-before: page; }
+  .chapter:first-child { break-before: auto; }
+  .sec { break-inside: avoid; }
+  .sec a { border-bottom: none; color: #000; }
+  figure.shot .frame { border-color: #999; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main" data-t="skip">本文へ</a>
+<div class="book">
+  <nav class="side" id="side" data-ta="aria-label:toc">
+    <button type="button" class="side-close" id="side-close" data-t="sideClose">✕ 目次を閉じる</button>
+    <div class="side-head">
+      <span class="kicker">STAGE SKETCH GAMMA</span>
+      <a class="side-title" href="#top" data-t="title">使いかたの冊子</a>
+      <p class="side-note" id="side-note"></p>
+    </div>
+    <div class="toc-tools">
+      <button type="button" id="toc-open-all" data-t="openAll">すべて開く</button>
+      <button type="button" id="toc-close-all" data-t="closeAll">すべて閉じる</button>
+      <button type="button" id="lang-switch" lang="en">English</button>
+    </div>
+    <ol class="toc" id="toc"></ol>
+    <div class="side-foot">
+      <a href="../stage.html" target="_blank" rel="noopener" data-t="openApp">舞台スケッチγを開く ↗</a>
+      <a href="../manual/manual.html" target="_blank" rel="noopener" data-t="betaBooklet">β版の冊子（旧版）↗</a>
+      <span id="side-updated"></span>
+    </div>
+  </nav>
+
+  <div class="stage">
+    <main class="paper" id="main">
+      <header class="head" id="top">
+        <div class="kicker"><span data-t="kicker">舞台スケッチ γ ・ 無料テスト版</span><span class="ver" id="head-ver"></span></div>
+        <h1 data-t="title">使いかたの冊子</h1>
+        <p class="sub" id="head-sub"></p>
+        <p class="version-note" id="version-note" hidden></p>
+      </header>
+
+      <div class="finder" id="finder">
+        <div class="row">
+          <label for="find" class="skip" data-t="findLabel">この冊子から引く</label>
+          <input id="find" type="search" autocomplete="off" spellcheck="false" data-ta="placeholder:placeholder" aria-controls="results" aria-expanded="false" role="combobox" aria-autocomplete="list">
+          <kbd class="hint" data-ta="title:slashHint">/</kbd>
+          <button type="button" class="clear" id="find-clear" data-t="clear" data-ta="aria-label:clearAria">✕ 消す</button>
+        </div>
+        <div class="meta">
+          <span id="find-count" role="status" aria-live="polite"></span>
+          <label><input type="checkbox" id="find-filter"> <span data-t="filter">当たった節だけ残す</span></label>
+        </div>
+        <div class="results" id="results" role="listbox" data-ta="aria-label:results"></div>
+      </div>
+
+      <div class="body" id="body"></div>
+      <p class="nohit" id="nohit" data-t="nohit"></p>
+
+      <footer class="colophon">
+        <span id="colophon"></span>
+        <span id="legend"></span>
+      </footer>
+    </main>
+  </div>
+</div>
+<button type="button" class="toc-toggle" id="toc-toggle" aria-controls="side" aria-expanded="false" data-t="toc">目次</button>
+<dialog class="lightbox" id="lightbox"><figure><img id="lightbox-img" alt=""><figcaption><span id="lightbox-cap"></span><button type="button" id="lightbox-close" data-t="lbClose">閉じる（Esc）</button></figcaption></figure></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* 言語と本文の読み込み。
+ * 言語: ?lang=ja|en が最優先 → アプリの言語設定（localStorage gamma:shosai-stage-lang。ja 以外は英語版）→ 日本語。
+ * 本文: 日本語は content/NN-*.js、英語は content/en/NN-*.js（節の id は両方で同じ＝#リンクがそのまま通じる）。
+ * FILES の並びが部の順番（tools/check.mjs もこの配列を読む）。 */
+window.MANUAL_LANG = (function () {
+  const q = new URLSearchParams(location.search).get("lang");
+  if (q === "ja" || q === "en") return q;
+  try { const v = localStorage.getItem("gamma:shosai-stage-lang"); if (v) return v === "ja" ? "ja" : "en"; } catch (_) {}
+  return "ja";
+})();
+document.documentElement.lang = window.MANUAL_LANG;
+const FILES = ["00-front", "01-start", "02-screen", "03-show-scenes", "04-cast", "05-venue", "06-machinery", "07-lighting", "08-drawing", "09-time-cues", "10-3d", "11-export-share", "12-prefs", "13-devices", "14-help", "15-appendix"];
+(function load() {
+  const base = window.MANUAL_LANG === "en" ? "content/en/" : "content/";
+  const list = ["content/_img-sizes.js", "content/_helpers.js"].concat(FILES.map((f) => base + f + ".js"));
+  let i = 0;
+  const next = () => {
+    if (i >= list.length) { window.dispatchEvent(new Event("manual-ready")); return; }
+    const sc = document.createElement("script"); sc.src = list[i++]; sc.onload = next;
+    sc.onerror = () => { console.error("読み込めません: " + sc.src); next(); };
+    document.body.appendChild(sc);
+  };
+  next();
+})();
+</script>
+<script>
+/* 器のふるまい: 目次・検索・深いリンク・図の拡大。文章は content/*.js から。 */
+window.addEventListener("manual-ready", function () {
+  "use strict";
+  const M = window.MANUAL;
+  const LANG = window.MANUAL_LANG === "en" ? "en" : "ja";
+  const UI = {
+    ja: { skip: "本文へ", toc: "目次", sideClose: "✕ 目次を閉じる", title: "使いかたの冊子", openAll: "すべて開く", closeAll: "すべて閉じる",
+      openApp: "舞台スケッチγを開く ↗", betaBooklet: "β版の冊子（旧版）↗", kicker: "舞台スケッチ γ ・ 無料テスト版", findLabel: "この冊子から引く",
+      placeholder: "例：保存 ／ 消えた ／ 盆 ／ セリフ ／ 3D ／ iPad", slashHint: "スラッシュキーで検索窓へ", clear: "✕ 消す", clearAria: "検索を消す",
+      filter: "当たった節だけ残す", results: "検索結果", lbClose: "閉じる（Esc）",
+      nohit: "この言葉では見つかりませんでした。別の言い方でもう一度どうぞ（症状の言葉でも引けます：「消えた」「動かない」「出てこない」）。それでも無ければ、アプリの〈感想を送る〉で聞いてください。冊子の側を直します。",
+      ver: (v, d) => "対応 " + v + " ・ " + d + " 版", sideNote: (v) => "対応 " + v, updated: (d) => d + " 版",
+      colophon: (v, d) => "舞台スケッチγ 使いかたの冊子 ・ " + d + " 版（対応 " + v + "）", docTitle: (v) => "使いかたの冊子 — 舞台スケッチ γ（" + v + "）",
+      status: { verified: "実機で確認", sourced: "画面の文言から", unverified: "要確認" },
+      legend: "本文の各節に付いている印の意味 — {v} この版の画面で動作・表示を確かめた ／ {s} アプリの画面・設定の文言から採った ／ {u} 動作を確かめていない。読むときは注意。",
+      anchor: "この節のリンクをコピー", fig: "図", copied: "この節のリンクをコピーしました", link: "リンク: ", tocToggle: (t) => t + " の節を開く・閉じる",
+      none: "見つかりません。別の言い方でどうぞ。", more: (n) => "ほか " + n + " 件。言葉を足すと絞れます。",
+      count: (n) => n ? n + " 節が当たりました（↑↓で選び Enter で飛ぶ）" : "0 節",
+      mismatch: (m, a) => "この冊子は " + m + " の画面で書いています。お使いのアプリは " + a + " です。画面が少し違うことがあります。アプリのアップデート履歴（ベルの印）も見てください。",
+      switchTo: "English", switchAria: "Switch to English" },
+    en: { skip: "Skip to content", toc: "Contents", sideClose: "✕ Close contents", title: "Guide Booklet", openAll: "Expand all", closeAll: "Collapse all",
+      openApp: "Open Stage Sketch Gamma ↗", betaBooklet: "Beta booklet (old) ↗", kicker: "STAGE SKETCH GAMMA · free test version", findLabel: "Search this booklet",
+      placeholder: "e.g. saving / disappeared / revolve / lines / 3D / iPad", slashHint: "Press / to jump to the search box", clear: "✕ Clear", clearAria: "Clear the search",
+      filter: "Show matching sections only", results: "Search results", lbClose: "Close (Esc)",
+      nohit: "Nothing matched those words. Try another way of putting it — symptoms work too (“disappeared”, “won't move”, “no sound”). If it still won't appear, ask through 〈Send feedback〉 in the app and we will mend the booklet.",
+      ver: (v, d) => "For " + v + " · edition of " + d, sideNote: (v) => "For " + v, updated: (d) => "Edition of " + d,
+      colophon: (v, d) => "Stage Sketch Gamma — Guide Booklet · edition of " + d + " (for " + v + ")", docTitle: (v) => "Guide Booklet — Stage Sketch Gamma (" + v + ")",
+      status: { verified: "Checked on screen", sourced: "From the app's wording", unverified: "Not yet checked" },
+      legend: "What the marks on each section mean — {v} checked on this version's screens ／ {s} taken from the app's screens and settings ／ {u} not yet checked; read with care.",
+      anchor: "Copy a link to this section", fig: "Fig. ", copied: "Link to this section copied", link: "Link: ", tocToggle: (t) => "Show or hide the sections of " + t,
+      none: "Nothing found. Try other words.", more: (n) => n + " more. Add a word to narrow it down.",
+      count: (n) => n ? n + (n === 1 ? " section found" : " sections found") + " (↑↓ to choose, Enter to jump)" : "0 sections",
+      mismatch: (m, a) => "This booklet was written against " + m + ". Your app is " + a + ", so some screens may differ. See the app's update history (the bell icon) too.",
+      switchTo: "日本語", switchAria: "日本語に切り替える" }
+  };
+  const T = UI[LANG];
+  document.querySelectorAll("[data-t]").forEach((el) => { const v = T[el.dataset.t]; if (typeof v === "string") el.textContent = v; });
+  document.querySelectorAll("[data-ta]").forEach((el) => { el.dataset.ta.split(";").forEach((pair) => { const [attr, key] = pair.split(":"); if (typeof T[key] === "string") el.setAttribute(attr, T[key]); }); });
+  const tagHtml = (k) => '<span class="tag st-' + k + '">' + T.status[k] + "</span>";
+  document.getElementById("legend").innerHTML = T.legend.replace("{v}", tagHtml("verified")).replace("{s}", tagHtml("sourced")).replace("{u}", tagHtml("unverified"));
+  const sw = document.getElementById("lang-switch");
+  sw.textContent = T.switchTo; sw.setAttribute("aria-label", T.switchAria); sw.lang = LANG === "ja" ? "en" : "ja";
+  sw.addEventListener("click", () => { const u = new URL(location.href); u.searchParams.set("lang", LANG === "ja" ? "en" : "ja"); location.href = u.toString(); });
+  /* アプリから開いたとき ?app=v0.2.16 のように版が渡る。冊子の版と違えば知らせる。 */
+  const appV = new URLSearchParams(location.search).get("app");
+  const verNum = (v) => String(v || "").replace(/^v/, "").split(".").map((n) => parseInt(n, 10) || 0);
+  const newer = (a, b) => { const x = verNum(a), y = verNum(b); for (let i = 0; i < Math.max(x.length, y.length); i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
+  if (appV && newer(appV, M.appVersion)) { const vn = document.getElementById("version-note"); vn.textContent = T.mismatch(M.appVersion, "v" + appV.replace(/^v/, "")); vn.hidden = false; }
+  const $ = (s, r) => (r || document).querySelector(s);
+  const bodyEl = $("#body"), tocEl = $("#toc"), findEl = $("#find"), resultsEl = $("#results");
+  const countEl = $("#find-count"), clearEl = $("#find-clear"), filterEl = $("#find-filter"), nohitEl = $("#nohit");
+  const norm = (s) => String(s == null ? "" : s).toLowerCase().normalize("NFKC");
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const STATUS = T.status;
+
+  $("#head-ver").textContent = T.ver(M.appVersion, M.updated);
+  $("#head-sub").innerHTML = M.sub;
+  $("#side-note").textContent = T.sideNote(M.appVersion);
+  $("#side-updated").textContent = T.updated(M.updated);
+  $("#colophon").textContent = T.colophon(M.appVersion, M.updated);
+  document.title = T.docTitle(M.appVersion);
+
+  /* ---- 組む ---- */
+  const index = []; // {id, chId, chTitle, chNo, title, keys, text, el}
+  let figNo = 0;
+  M.chapters.forEach((ch) => {
+    const chEl = document.createElement("section");
+    chEl.className = "chapter"; chEl.id = "ch-" + ch.id;
+    chEl.innerHTML = '<h2><span class="cno">' + esc(ch.no) + "</span>" + esc(ch.title) + "</h2>" + (ch.lead ? '<p class="ch-lead">' + ch.lead + "</p>" : "");
+    ch.sections.forEach((sec, i) => {
+      const secEl = document.createElement("section");
+      secEl.className = "sec"; secEl.id = sec.id;
+      const sno = ch.short + "-" + (i + 1);
+      const tags = [];
+      if (sec.status && STATUS[sec.status]) tags.push('<span class="tag st-' + sec.status + '">' + STATUS[sec.status] + "</span>");
+      (sec.tags || []).forEach((t) => tags.push('<span class="tag">' + esc(t) + "</span>"));
+      secEl.innerHTML = "<h3><span class=\"sno\">" + esc(sno) + "</span>" + esc(sec.title) +
+        '<button type="button" class="anchor" aria-label="' + T.anchor + '" title="' + T.anchor + '">§</button></h3>' +
+        (tags.length ? '<div class="tagrow">' + tags.join("") + "</div>" : "") +
+        '<div class="sec-body">' + sec.html + "</div>";
+      chEl.appendChild(secEl);
+      secEl.querySelectorAll("figure.shot").forEach((f) => { figNo += 1; const n = f.querySelector(".fno"); if (n) n.textContent = T.fig + figNo; });
+      index.push({ id: sec.id, chId: ch.id, chTitle: ch.title, chNo: ch.no, sno, title: sec.title, keys: (sec.keywords || []).join(" "), text: "", el: secEl });
+    });
+    bodyEl.appendChild(chEl);
+  });
+  index.forEach((it) => { it.text = it.el.querySelector(".sec-body").textContent.replace(/\s+/g, " ").trim(); it.hay = norm([it.title, it.keys, it.text].join(" ")); it.hayTitle = norm(it.title + " " + it.keys); });
+
+  /* ---- 目次 ---- */
+  M.chapters.forEach((ch) => {
+    const li = document.createElement("li"); li.dataset.ch = ch.id;
+    li.innerHTML = '<div class="toc-ch"><a href="#ch-' + ch.id + '"><span class="no">' + esc(ch.no) + "</span>" + esc(ch.tab || ch.title) + '</a><button type="button" aria-label="' + esc(T.tocToggle(ch.title)) + '" aria-expanded="false"></button></div>' +
+      '<ol class="toc-secs">' + ch.sections.map((s, i) => '<li><a href="#' + s.id + '" data-sec="' + s.id + '">' + esc(ch.short + "-" + (i + 1)) + "　" + esc(s.title) + "</a></li>").join("") + "</ol>";
+    tocEl.appendChild(li);
+    li.querySelector("button").addEventListener("click", () => setOpen(li, !li.classList.contains("is-open")));
+    li.querySelector(".toc-ch > a").addEventListener("click", () => { setOpen(li, true); closeSide(); });
+    li.querySelectorAll(".toc-secs a").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); go(a.dataset.sec); closeSide(); }));
+  });
+  function setOpen(li, open) { li.classList.toggle("is-open", open); li.querySelector(".toc-ch > button").setAttribute("aria-expanded", String(open)); }
+  $("#toc-open-all").addEventListener("click", () => tocEl.querySelectorAll(":scope > li").forEach((li) => setOpen(li, true)));
+  $("#toc-close-all").addEventListener("click", () => tocEl.querySelectorAll(":scope > li").forEach((li) => setOpen(li, false)));
+  const tocLinks = new Map(); tocEl.querySelectorAll(".toc-secs a").forEach((a) => tocLinks.set(a.dataset.sec, a));
+
+  /* いま読んでいる節 */
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((en) => { if (en.isIntersecting) setActive(en.target.id); });
+  }, { rootMargin: "-20% 0px -70% 0px", threshold: 0 });
+  index.forEach((it) => io.observe(it.el));
+  let activeId = null;
+  function setActive(id) {
+    if (id === activeId) return; activeId = id;
+    tocLinks.forEach((a) => a.classList.remove("is-active"));
+    const a = tocLinks.get(id); if (!a) return;
+    a.classList.add("is-active");
+    const li = a.closest(".toc > li");
+    tocEl.querySelectorAll(":scope > li").forEach((x) => x.classList.toggle("is-current", x === li));
+    if (!li.classList.contains("is-open")) setOpen(li, true);
+    const side = $("#side"); const r = a.getBoundingClientRect(); const sr = side.getBoundingClientRect();
+    // 目次の欄だけを送る（scrollIntoView はページ全体も動かしてしまうので使わない）
+    if (r.top < sr.top + 40 || r.bottom > sr.bottom - 40) side.scrollTop += (r.top - sr.top) - side.clientHeight / 2;
+  }
+
+  /* ---- 節へ飛ぶ ---- */
+  function go(id, opts) {
+    const it = index.find((x) => x.id === id); if (!it) { const ch = document.getElementById(id); if (ch) ch.scrollIntoView({ block: "start" }); return; }
+    if (filterEl.checked && it.el.classList.contains("hidden-by-find")) { filterEl.checked = false; applyFilter(); }
+    it.el.scrollIntoView({ block: "start" });
+    it.el.classList.remove("is-flash"); void it.el.offsetWidth; it.el.classList.add("is-flash");
+    if (!(opts && opts.noPush)) history.replaceState(null, "", "#" + id);
+    const q = findEl.value.trim(); if (q) highlightIn(it.el, terms(q));
+    setActive(id);
+  }
+  window.addEventListener("hashchange", () => { const id = decodeURIComponent(location.hash.slice(1)); if (id) go(id, { noPush: true }); });
+
+  /* リンクのコピー */
+  bodyEl.addEventListener("click", (e) => {
+    const b = e.target.closest(".anchor"); if (!b) return;
+    const id = b.closest(".sec").id; const url = location.href.split("#")[0] + "#" + id;
+    history.replaceState(null, "", "#" + id);
+    (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(() => toast(T.copied), () => toast(T.link + url));
+  });
+  let toastTimer = null;
+  function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 1800); }
+
+  /* ---- 検索 ---- */
+  const terms = (q) => norm(q).split(/[\s　]+/).filter(Boolean);
+  let hits = []; let cursor = -1; let timer = null;
+  function search(q) {
+    const ts = terms(q);
+    if (!ts.length) return [];
+    return index.filter((it) => ts.every((t) => it.hay.includes(t))).map((it) => {
+      let score = 0; ts.forEach((t) => { if (it.hayTitle.includes(t)) score += 10; if (norm(it.title).includes(t)) score += 5; });
+      return { it, score };
+    }).sort((a, b) => b.score - a.score).map((x) => x.it);
+  }
+  function snippet(it, ts) {
+    const text = it.text; const low = norm(text);
+    let pos = -1; for (const t of ts) { pos = low.indexOf(t); if (pos >= 0) break; }
+    if (pos < 0) return esc(text.slice(0, 80)) + (text.length > 80 ? "…" : "");
+    const s = Math.max(0, pos - 36), e = Math.min(text.length, pos + 60);
+    let frag = esc(text.slice(s, e));
+    ts.forEach((t) => { if (!t) return; frag = frag.replace(new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), (m) => "<mark>" + m + "</mark>"); });
+    return (s > 0 ? "…" : "") + frag + (e < text.length ? "…" : "");
+  }
+  function renderResults(q) {
+    const ts = terms(q); hits = search(q); cursor = -1;
+    clearEl.classList.toggle("show", q.length > 0);
+    if (!ts.length) { resultsEl.classList.remove("show"); resultsEl.innerHTML = ""; findEl.setAttribute("aria-expanded", "false"); countEl.textContent = ""; applyFilter(); return; }
+    const shown = hits.slice(0, 40);
+    resultsEl.innerHTML = shown.length
+      ? "<ol>" + shown.map((it, i) => '<li role="option" id="res-' + i + '"><a href="#' + it.id + '" data-sec="' + it.id + '"><span class="path">' + esc(it.chNo) + " " + esc(it.chTitle) + '</span><span class="ttl">' + esc(it.sno) + "　" + esc(it.title) + '</span><span class="snip">' + snippet(it, ts) + "</span></a></li>").join("") + "</ol>" + (hits.length > 40 ? '<p class="more">' + T.more(hits.length - 40) + "</p>" : "")
+      : '<p class="more">' + T.none + '</p>';
+    resultsEl.classList.add("show"); findEl.setAttribute("aria-expanded", "true");
+    countEl.textContent = T.count(hits.length);
+    applyFilter();
+  }
+  function applyFilter() {
+    const on = filterEl.checked && hits.length && findEl.value.trim();
+    const set = new Set(hits.map((h) => h.id));
+    index.forEach((it) => { const hide = on && !set.has(it.id); it.el.classList.toggle("hidden-by-find", hide); const a = tocLinks.get(it.id); if (a) a.classList.toggle("hidden-by-find", hide); });
+    document.querySelectorAll(".chapter").forEach((c) => { const any = [...c.querySelectorAll(".sec")].some((s) => !s.classList.contains("hidden-by-find")); c.classList.toggle("hidden-by-find", on && !any); });
+    nohitEl.classList.toggle("show", Boolean(findEl.value.trim()) && hits.length === 0);
+  }
+  findEl.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => renderResults(findEl.value), 80); });
+  findEl.addEventListener("focus", () => { if (findEl.value.trim()) renderResults(findEl.value); });
+  findEl.addEventListener("keydown", (e) => {
+    const items = resultsEl.querySelectorAll("li[role=option]");
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { if (!items.length) return; e.preventDefault(); cursor = e.key === "ArrowDown" ? Math.min(items.length - 1, cursor + 1) : Math.max(0, cursor - 1); items.forEach((li, i) => li.classList.toggle("is-cursor", i === cursor)); items[cursor].scrollIntoView({ block: "nearest" }); findEl.setAttribute("aria-activedescendant", "res-" + cursor); }
+    else if (e.key === "Enter") { if (!hits.length) return; e.preventDefault(); const it = hits[Math.max(0, cursor)]; resultsEl.classList.remove("show"); go(it.id); }
+    else if (e.key === "Escape") { if (resultsEl.classList.contains("show")) { resultsEl.classList.remove("show"); findEl.setAttribute("aria-expanded", "false"); } else { findEl.value = ""; renderResults(""); clearHighlights(); } }
+  });
+  resultsEl.addEventListener("click", (e) => { const a = e.target.closest("a[data-sec]"); if (!a) return; e.preventDefault(); resultsEl.classList.remove("show"); go(a.dataset.sec); });
+  document.addEventListener("click", (e) => { if (!e.target.closest(".finder")) { resultsEl.classList.remove("show"); findEl.setAttribute("aria-expanded", "false"); } });
+  clearEl.addEventListener("click", () => { findEl.value = ""; renderResults(""); clearHighlights(); findEl.focus(); });
+  filterEl.addEventListener("change", applyFilter);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "/" && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName) && !e.metaKey && !e.ctrlKey) { e.preventDefault(); findEl.focus(); findEl.select(); }
+  });
+
+  /* 本文の中の当たりを塗る（節の中だけ。前回の塗りは外す） */
+  let marked = [];
+  function clearHighlights() { marked.forEach((m) => { const p = m.parentNode; if (!p) return; p.replaceChild(document.createTextNode(m.textContent), m); p.normalize(); }); marked = []; }
+  function highlightIn(secEl, ts) {
+    clearHighlights(); if (!ts.length) return;
+    const walker = document.createTreeWalker(secEl.querySelector(".sec-body"), NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.parentNode.closest("figcaption, kbd, code, mark") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
+    const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+    const re = new RegExp(ts.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "gi");
+    nodes.forEach((n) => {
+      const text = n.textContent; if (!re.test(norm(text))) return; re.lastIndex = 0;
+      const frag = document.createDocumentFragment(); let last = 0; let m;
+      const nt = norm(text); // NFKC 正規化で長さが変わりうるので、変わった場合は塗らない
+      if (nt.length !== text.length) return;
+      while ((m = re.exec(nt))) { frag.appendChild(document.createTextNode(text.slice(last, m.index))); const mk = document.createElement("mark"); mk.textContent = text.slice(m.index, m.index + m[0].length); frag.appendChild(mk); marked.push(mk); last = m.index + m[0].length; }
+      frag.appendChild(document.createTextNode(text.slice(last))); n.parentNode.replaceChild(frag, n);
+    });
+  }
+
+  /* ---- 図の拡大 ---- */
+  const lb = $("#lightbox");
+  bodyEl.addEventListener("click", (e) => {
+    const a = e.target.closest("a.frame[data-lightbox]"); if (!a) return; e.preventDefault();
+    $("#lightbox-img").src = a.getAttribute("href"); $("#lightbox-img").alt = a.querySelector("img").alt;
+    $("#lightbox-cap").textContent = a.closest("figure").querySelector("figcaption").textContent;
+    lb.showModal();
+  });
+  $("#lightbox-close").addEventListener("click", () => lb.close());
+  lb.addEventListener("click", (e) => { if (e.target === lb) lb.close(); });
+  bodyEl.querySelectorAll("figure.shot img, figure.shot video").forEach((m) => { m.addEventListener("error", () => m.closest("figure").classList.add("is-missing")); });
+
+  /* ---- 目次の引き出し ---- */
+  const side = $("#side"), toggle = $("#toc-toggle");
+  function openSide() { side.classList.add("is-open"); toggle.setAttribute("aria-expanded", "true"); }
+  function closeSide() { side.classList.remove("is-open"); toggle.setAttribute("aria-expanded", "false"); }
+  toggle.addEventListener("click", () => (side.classList.contains("is-open") ? closeSide() : openSide()));
+  $("#side-close").addEventListener("click", closeSide);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && side.classList.contains("is-open")) closeSide(); });
+
+  /* ---- 起動 ---- */
+  const first = tocEl.querySelector(":scope > li"); if (first) setOpen(first, true);
+  const startId = decodeURIComponent(location.hash.slice(1));
+  if (startId) requestAnimationFrame(() => go(startId, { noPush: true }));
+  const p = new URLSearchParams(location.search).get("q"); if (p) { findEl.value = p; renderResults(p); }
+});
+</script>
+</body>
+</html>

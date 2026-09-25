@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.18">
+<meta name="stage-sketch-gamma-version" content="v0.2.19">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
@@ -20,7 +20,7 @@
   .spine { display: none; }
 </style>
 <link rel="stylesheet" href="gamma-ui-tokens.css?v=20260925-ui1">
-<link rel="stylesheet" href="gamma.css?v=20260925-ui1">
+<link rel="stylesheet" href="gamma.css?v=20260926-manual1">
 <link rel="stylesheet" href="gamma-mobile.css?v=2026091950">
 <script src="gamma-light-model.js?v=20260925-ui1"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=2026091987">
@@ -69,7 +69,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.18</span>
+              <span class="stage-app-version">0.2.19</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -2409,7 +2409,7 @@
         <button type="button" class="stage-about-link" id="stage-quick-open" title="90秒で読めるクイックガイドを開く">クイックガイド</button>
         <button type="button" class="stage-about-link" id="stage-tour-start" title="使い方をひととおり見る">はじめての案内</button>
         <button type="button" class="stage-about-link" id="stage-help-open">使い方をさがす</button>
-        <button type="button" class="stage-about-link" id="stage-manual-open">使いかたの冊子</button>
+        <button type="button" class="stage-about-link" id="stage-manual-open">使いかたの冊子<span class="stage-manual-edition" id="stage-manual-edition" data-no-i18n hidden></span></button>
         <button type="button" class="stage-about-link" id="stage-reach-open">端末による違い</button>
         <button type="button" class="stage-about-link" id="stage-about-open-from-prefs">このアプリについて</button>
         <button type="button" class="stage-about-link" id="stage-feedback" title="使ってみた感想を送る">感想を送る</button>
@@ -2562,6 +2562,16 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0219-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0219-title">v0.2.19</h3>
+        <time datetime="2026-09-26">2026-09-26</time>
+      </header>
+      <ul>
+        <li>環境設定の「使いかたの冊子」を、ガンマ版の冊子（日本語・英語）に差し替えました。ボタンに冊子の対応版を表示し、アプリの方が新しいときは冊子の上で知らせます。</li>
+        <li>「使い方をさがす」は、ガンマ版の冊子の本文から関係の深い順に探し、「冊子で読む」でその節を、「冊子で全部を見る」で冊子の検索結果を開きます。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0218-title">
       <header class="stage-release-entry-head">
         <h3 id="stage-release-v0218-title">v0.2.18</h3>
@@ -3623,9 +3633,9 @@
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=20260926-picker1"></script>
-    <script src="stage-i18n.zh-Hans.js?v=20260926-picker1"></script>
-    <script src="stage-i18n.zh-Hant.js?v=20260926-picker1"></script>
+    <script src="stage-i18n.js?v=20260926-manual1"></script>
+    <script src="stage-i18n.zh-Hans.js?v=20260926-manual1"></script>
+    <script src="stage-i18n.zh-Hant.js?v=20260926-manual1"></script>
 <script src="stage-prompt-i18n.js?v=2026092050"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026092402"></script>
@@ -3643,7 +3653,7 @@
 <script src="stage-storage-recovery.js?v=2026092523"></script>
 <script src="stage-storage-hygiene.js?v=2026092523"></script>
 <script src="stage-storage-pressure.js?v=2026092524"></script>
-<script src="manual/manual-content.js?v=2026091502"></script>
+<script src="manual-gamma/manual-content.js?v=2026092601"></script>
 <script src="stage-pwa.js?v=2026091501"></script>
 <script src="stage-lighting-plans.js?v=2026092101"></script>
 <script src="stage-lighting-plan-overlay.js?v=2026092113"></script>
@@ -3667,7 +3677,7 @@
 <script src="stage-performer-body.js?v=2026092506"></script>
 <script src="gamma-ui.js?v=20260925-ui1"></script>
 <script src="gamma-ui-i18n.js?v=20260925-ui1"></script>
-<script src="stage-sketch.js?v=20260926-picker1"></script>
+<script src="stage-sketch.js?v=20260926-manual1"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092210"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-vox-panel.js?v=2026092432"></script>
