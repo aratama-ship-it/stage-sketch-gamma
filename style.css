@@ -28,6 +28,21 @@
   --brass: #9c823f;
   --moss: #77865f;
   --slate: #8b98a1;
+  /* docs/storage-pressure-warning.md */
+  --storage-warning-bg: #201b16;
+  --storage-warning-text: #efe7d6;
+  --storage-warning-caution: #efc36e;
+  --storage-warning-danger: #e66b65;
+  --storage-warning-width: 620px;
+  --storage-warning-padding: 24px;
+  --storage-warning-gap: 16px;
+  --storage-warning-title: 24px;
+  --storage-warning-body: 16px;
+  --storage-warning-note: 14px;
+  --storage-warning-target: 44px;
+  --storage-warning-actions-gap: 12px;
+  --storage-warning-border: 2px;
+  --storage-warning-top: 6px;
   --stage-control-dock-gap: 10px;
   --stage-control-dock-pad-block: 9px;
   --stage-control-dock-pad-inline: 10px;
@@ -1795,6 +1810,60 @@ textarea, input[type="text"] {
 }
 
 .stage-storage-caution p { margin: 0; }
+
+.stage-storage-pressure-dialog {
+  --storage-warning-accent: var(--storage-warning-caution);
+  box-sizing: border-box;
+  width: min(var(--storage-warning-width), calc(100% - 32px));
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  padding: var(--storage-warning-padding);
+  border: var(--storage-warning-border) solid var(--storage-warning-accent);
+  border-top-width: var(--storage-warning-top);
+  color: var(--storage-warning-text);
+  background: var(--storage-warning-bg);
+  font-family: var(--sans);
+  font-size: var(--storage-warning-body);
+  line-height: 1.6;
+  overflow-y: auto;
+}
+.stage-storage-pressure-dialog[data-level="2"],
+.stage-storage-pressure-dialog[data-level="3"] { --storage-warning-accent: var(--storage-warning-danger); }
+.stage-storage-pressure-dialog::backdrop { background: rgba(8, 7, 6, 0.86); }
+.stage-storage-pressure-head { display: flex; align-items: start; gap: var(--storage-warning-gap); }
+.stage-storage-pressure-head h2 { flex: 1; margin: 0; color: inherit; font: 700 var(--storage-warning-title)/1.6 var(--sans); }
+.stage-storage-pressure-dialog p { margin: var(--storage-warning-gap) 0; }
+.stage-storage-pressure-dialog button,
+.stage-storage-pressure-dialog a {
+  box-sizing: border-box;
+  min-height: var(--storage-warning-target);
+  padding: 8px 12px;
+  border: 1px solid var(--storage-warning-text);
+  border-radius: 0;
+  background: transparent;
+  color: var(--storage-warning-text);
+  font: inherit;
+  cursor: pointer;
+}
+.stage-storage-pressure-dialog :focus-visible { outline: 2px solid var(--storage-warning-accent); outline-offset: 3px; }
+.stage-storage-pressure-head button { min-width: var(--storage-warning-target); }
+.stage-storage-pressure-usage { white-space: pre-line; font-weight: 700; }
+.stage-storage-pressure-dialog .stage-storage-pressure-note { font-size: var(--storage-warning-note); }
+.stage-storage-pressure-actions { display: flex; gap: var(--storage-warning-actions-gap); flex-wrap: wrap; }
+.stage-storage-pressure-dialog .stage-storage-pressure-primary { background: var(--storage-warning-text); color: var(--storage-warning-bg); font-weight: 700; }
+.stage-storage-pressure-status {
+  position: fixed; right: 16px; bottom: 16px; z-index: 65;
+  max-width: calc(100% - 32px); min-height: var(--storage-warning-target);
+  padding: 8px 16px; border: 2px solid var(--storage-warning-caution);
+  background: var(--storage-warning-bg); color: var(--storage-warning-text);
+  font: 700 var(--storage-warning-note)/1.6 var(--sans); cursor: pointer;
+}
+.stage-storage-pressure-status[hidden] { display: none; }
+.stage-storage-pressure-status[data-level="2"], .stage-storage-pressure-status[data-level="3"] { border-color: var(--storage-warning-danger); }
+@media (max-width: 600px) {
+  .stage-storage-pressure-dialog { --storage-warning-padding: 20px; }
+  .stage-storage-pressure-actions > * { width: 100%; text-align: center; }
+}
 
 /* β版を開いた直後の保存データ警告。作図面や初回案内より上で、毎回一度読ませる。 */
 .stage-launch-backup-backdrop {

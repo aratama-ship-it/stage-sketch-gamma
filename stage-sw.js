@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v361";
+const CACHE_NAME = "stage-sketch-gamma-shell-v362";
 const APP_SHELL = [
   "./stage-performer-body.js?v=2026092506",
   "./stage-performer-contour.js?v=2026092506",
@@ -50,7 +50,7 @@ const APP_SHELL = [
   "./light-design/selected-light-presets-ui.js?v=2026092114",
   "./light-design/embed.js?v=2026092434",
   "./stage.html",
-  "./style.css?v=2026092519",
+  "./style.css?v=2026092524",
   "./stage-venues.js?v=2026092522",
   "./stage-venue-lines.js?v=2026091992",
   "./stage-front-shape.js?v=2026092046",
@@ -63,7 +63,7 @@ const APP_SHELL = [
   "./stage-samples/index.js?v=2026092402",
   "./stage-samples/romeo-juliet-cued.js?v=2026092435",
   "./stage-samples/romeo-juliet-second.js?v=20260925-rj2",
-  "./stage-samples/feature-test-show.js?v=2026092523",
+  "./stage-samples/feature-test-show.js?v=2026092524",
   "./stage-set-model.js?v=2026092354",
   "./stage-set-builder.js?v=2026091501",
   "./stage-machinery.js?v=2026092055",
@@ -74,6 +74,7 @@ const APP_SHELL = [
   "./stage-storage-codec.js?v=2026092523",
   "./stage-storage-recovery.js?v=2026092523",
   "./stage-storage-hygiene.js?v=2026092523",
+  "./stage-storage-pressure.js?v=2026092524",
   "./storage-recovery-ui.js?v=2026092523",
   "./storage-recovery.html",
   "./manual/manual-content.js?v=2026091502",
@@ -88,7 +89,7 @@ const APP_SHELL = [
   "./stage-cue-sheet.js?v=2026092423",
   "./stage-shortcuts.js?v=2026092218",
   "./stage-reorder-motion.js?v=2026092420",
-  "./stage-sketch.js?v=2026092523",
+  "./stage-sketch.js?v=2026092524",
   "./stage-timeline.js?v=2026092423",
   "./stage-session.js?v=20260924-lightimport1",
   "./stage-study-owner.js?v=2026091501",

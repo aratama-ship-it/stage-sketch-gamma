@@ -2154,7 +2154,9 @@
       pruneBackups: () => window.SHOSAI_STAGE_PROJECT_BACKUP_STORE?.pruneShelfDuplicates?.(rawStorage,
         "gamma:scene-alternatives-v1:shosai-stage-sketch-v1", "gamma:scene-alternatives-v1:shosai-stage-shows-v1") || Promise.resolve(null)}) : null;
   let maintenanceTimer = null;
+  let storagePressure = null;
   function renderStorageHealth(report) {
+    storagePressure?.sample(report.after);
     const element = document.getElementById("stage-storage-health");
     if (!element) return;
     const mb = bytes => (bytes / 1024 / 1024).toFixed(1);
@@ -8292,7 +8294,9 @@
     setAudioStatus(`「${track.title}」を端末へ保存しています…`, `Saving “${track.title}” on this device…`);
     try {
       await audioStore.put(track.id, file);
-    } catch (_) {
+      storagePressure?.saved("audio");
+    } catch (error) {
+      if (window.STAGE_STORAGE_PRESSURE?.isQuotaError(error)) storagePressure?.failed("audio");
       setAudioStatus("音源を端末へ保存できませんでした。既存のショーは変更していません。",
         "The audio could not be stored. The show was not changed.");
       return false;
@@ -8353,6 +8357,7 @@
     }
     try {
       await audioStore.put(trackId, file);
+      storagePressure?.saved("audio");
       let track = existingTrack;
       if (!track) {
         checkpoint();
@@ -8370,7 +8375,8 @@
       setAudioStatus(`「${track.title}」の音源をこの端末へ接続しました。`,
         `Reconnected the audio for “${track.title}” on this device.`);
       return true;
-    } catch (_) {
+    } catch (error) {
+      if (window.STAGE_STORAGE_PRESSURE?.isQuotaError(error)) storagePressure?.failed("audio");
       setAudioStatus("音源を接続できませんでした。", "The audio file could not be reconnected.");
       return false;
     }
@@ -11424,6 +11430,7 @@
 
   function reportProjectStoreFailure(result) {
     const code = result.error.code;
+    if (code === "QUOTA_EXCEEDED") storagePressure?.failed("show");
     const detail = code === "CONCURRENT_EDIT"
       ? "別のタブでショーが更新されました。このタブの変更は上書きせず、ファイルへ書き出せます。"
       : code === "QUOTA_EXCEEDED"
@@ -11464,6 +11471,7 @@
               if (savingState.lastSavedAt === savedAt) savingState.lastSavedAt = previousSavedAt;
               syncSaveStamps(); reportProjectStoreFailure(result); break;
             }
+            storagePressure?.saved("show");
             lastPersistedSnapshot = serializedState;
           }
           if (state !== savingState) break;
@@ -37451,6 +37459,16 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       setSaveStatus(loaded.restored
         ? "この端末に保存した前回のスケッチを開きました。"
         : "変更はこの端末のブラウザ内へ自動保存します。");
+      if (!STUDY_READ_ONLY && storageMaintenance && !storagePressure) {
+        storagePressure = window.STAGE_STORAGE_PRESSURE?.mount({
+          inspect: () => storageMaintenance.inspect(),
+          estimate: navigator.storage?.estimate ? () => navigator.storage.estimate() : null,
+          exportShow: () => exportProject(), text: sx,
+          busy: () => Boolean(resetInProgress || launchBackupWarningOpen || sceneAnim || spinRun || pointerAction
+            || (els.musicAudio && !els.musicAudio.paused && !els.musicAudio.ended)
+            || document.querySelector('#stage-timeline-play[aria-pressed="true"]')),
+        }) || null;
+      }
       if (pendingBlocked) reportProjectStoreFailure(pendingSwitch);
       if (!pendingBlocked && !alternativesStorageBlocked) scheduleStorageMaintenance();
       applyLang();

@@ -253,3 +253,8 @@ public-dist/
 !/stage-storage-hygiene.js
 !/tests/stage-storage-hygiene.test.mjs
 !/tests/stage-shell-hygiene.test.mjs
+
+# Capacity warnings (read-only monitor and verification).
+!/stage-storage-pressure.js
+!/tests/stage-storage-pressure.test.mjs
+!/docs/storage-pressure-warning.md

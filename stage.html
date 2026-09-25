@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.12">
+<meta name="stage-sketch-gamma-version" content="v0.2.13">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092519">
+<link rel="stylesheet" href="style.css?v=2026092524">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -68,7 +68,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.12</span>
+              <span class="stage-app-version">0.2.13</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -2460,6 +2460,23 @@
   </div>
 </div>
 
+<button type="button" id="stage-storage-pressure-status" class="stage-storage-pressure-status" hidden></button>
+<dialog id="stage-storage-pressure-dialog" class="stage-storage-pressure-dialog" aria-labelledby="stage-storage-pressure-title" aria-describedby="stage-storage-pressure-lead">
+  <header class="stage-storage-pressure-head">
+    <h2 id="stage-storage-pressure-title" tabindex="-1">保存容量に注意</h2>
+    <button type="button" id="stage-storage-pressure-close" aria-label="閉じる">✕</button>
+  </header>
+  <p id="stage-storage-pressure-lead"></p>
+  <p id="stage-storage-pressure-usage" class="stage-storage-pressure-usage"></p>
+  <p id="stage-storage-pressure-estimate-note" class="stage-storage-pressure-note"></p>
+  <div class="stage-storage-pressure-actions">
+    <button type="button" id="stage-storage-pressure-export" class="stage-storage-pressure-primary">ショーを書き出す</button>
+    <a id="stage-storage-pressure-repair" href="storage-recovery.html" target="_blank" rel="noopener">保存容量を整理（別タブ）</a>
+    <button type="button" id="stage-storage-pressure-later">いったん閉じる</button>
+  </div>
+  <p id="stage-storage-pressure-repeat" class="stage-storage-pressure-note"></p>
+</dialog>
+
 <div class="stage-modal-backdrop stage-reset-backdrop" id="stage-reset-backdrop" hidden></div>
 <div class="stage-modal stage-reset-modal" id="stage-reset-modal" role="dialog" aria-modal="true"
      aria-labelledby="stage-reset-title" aria-describedby="stage-reset-lead stage-reset-detail" hidden>
@@ -2543,6 +2560,13 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0213-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0213-title">v0.2.13</h3><time datetime="2026-09-25">2026-09-25</time></header>
+      <ul>
+        <li>保存容量が高い水準になると、大きな警告を表示します。閉じても注意は約15分、危険は約5分ごとに再通知し、容量不足による保存失敗は操作の区切りで知らせます。</li>
+        <li>警告からショーの書き出し・保存容量の整理へ進めます。入力・再生・別の確認画面の操作が終わるまで待ち、容量が改善すると定期警告を止めます。警告の履歴は端末へ蓄積しません。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0212-title">
       <header class="stage-release-entry-head">
         <h3 id="stage-release-v0212-title">v0.2.12</h3>
@@ -3536,7 +3560,7 @@
 <script src="stage-samples/index.js?v=2026092402"></script>
 <script src="stage-samples/romeo-juliet-cued.js?v=2026092435"></script>
 <script src="stage-samples/romeo-juliet-second.js?v=20260925-rj2"></script>
-<script src="stage-samples/feature-test-show.js?v=2026092523"></script>
+<script src="stage-samples/feature-test-show.js?v=2026092524"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
 <script src="stage-machinery.js?v=2026092055"></script>
@@ -3547,6 +3571,7 @@
 <script src="stage-storage-codec.js?v=2026092523"></script>
 <script src="stage-storage-recovery.js?v=2026092523"></script>
 <script src="stage-storage-hygiene.js?v=2026092523"></script>
+<script src="stage-storage-pressure.js?v=2026092524"></script>
 <script src="manual/manual-content.js?v=2026091502"></script>
 <script src="stage-pwa.js?v=2026091501"></script>
 <script src="stage-lighting-plans.js?v=2026092101"></script>
@@ -3569,7 +3594,7 @@
 <script src="stage-performer-motion.js?v=2026092506"></script>
 <script src="stage-performer-contour.js?v=2026092506"></script>
 <script src="stage-performer-body.js?v=2026092506"></script>
-<script src="stage-sketch.js?v=2026092523"></script>
+<script src="stage-sketch.js?v=2026092524"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092210"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-vox-panel.js?v=2026092432"></script>
