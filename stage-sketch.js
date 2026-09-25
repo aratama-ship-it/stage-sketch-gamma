@@ -5934,6 +5934,245 @@
       anL: [-0.14, 0.04, 0.285], anR: [0.14, 0.04, 0.285],
       toL: [-0.18, 0.012, 0.355], toR: [0.18, 0.012, 0.355],
     }),
+    /* ---- 2026-09-26 本人選択: W1 第5回 25件（アクロ・サーカス・演奏・弓道） ----
+     * 支持部位と器具上の足裏は原点付近に残し、空中姿勢だけを床から離す。
+     * 塗りつぶした人影でも、支持点・体幹の向き・腕脚の開きで用途が読める形にする。 */
+    makePose("bridge_hold", "ブリッジ（保持・両足接地）", {
+      // 両手と両足を床へ置き、肩から腰までを高い弧にして反りを人影で見せる
+      head: [0, 0.14, 0.27], neck: [0, 0.23, 0.22],
+      shL: [-0.1075, 0.34, 0.16], shR: [0.1075, 0.34, 0.16],
+      elL: [-0.14, 0.17, 0.24], elR: [0.14, 0.17, 0.24],
+      wrL: [-0.14, 0.03, 0.36], wrR: [0.14, 0.03, 0.36],
+      hipL: [-0.055, 0.52, -0.08], hipR: [0.055, 0.52, -0.08],
+      knL: [-0.06, 0.30, -0.17], knR: [0.06, 0.30, -0.17],
+      anL: [-0.058, 0.07, -0.235], anR: [0.058, 0.07, -0.235],
+      toL: [-0.058, 0.012, -0.30], toR: [0.058, 0.012, -0.30],
+    }, { face: [0, 0.7, -0.714], sideView: true }),
+    makePose("one_arm_handstand", "片手倒立", {
+      // 右手を床へ積み上げ、左腕を横へ張って片手支持を明確にする
+      wrR: [0.14, 0.03, 0], elR: [0.12, 0.21, 0], shR: [0.10, 0.40, 0],
+      wrL: [-0.43, 0.55, 0], elL: [-0.27, 0.47, 0], shL: [-0.10, 0.40, 0],
+      head: [0, 0.36, 0.06], neck: [0, 0.44, 0.01],
+      hipL: [-0.055, 0.70, 0], hipR: [0.055, 0.70, 0],
+      knL: [-0.06, 0.94, 0.01], knR: [0.06, 0.94, -0.01],
+      anL: [-0.06, 1.18, 0.02], anR: [0.06, 1.18, -0.02],
+      toL: [-0.06, 1.25, 0.04], toR: [0.06, 1.25, -0.04],
+    }),
+    makePose("straddle_handstand", "開脚倒立", {
+      // 両手支持から両脚を左右へ大きく開き、足先を最上部に置く
+      wrL: [-0.145, 0.03, 0.04], wrR: [0.145, 0.03, 0.04],
+      elL: [-0.128, 0.21, 0.02], elR: [0.128, 0.21, 0.02],
+      shL: [-0.1075, 0.40, 0], shR: [0.1075, 0.40, 0],
+      head: [0, 0.36, 0.06], neck: [0, 0.44, 0.01],
+      hipL: [-0.055, 0.70, 0], hipR: [0.055, 0.70, 0],
+      knL: [-0.26, 0.82, 0], knR: [0.26, 0.82, 0],
+      anL: [-0.46, 0.95, 0], anR: [0.46, 0.95, 0],
+      toL: [-0.52, 1.00, 0], toR: [0.52, 1.00, 0],
+    }),
+    makePose("headstand", "三点倒立", {
+      // 頭と両手の三点を床へ置き、肩・腰・両足を上へ積む
+      head: [0, 0.055, 0.03], neck: [0, 0.13, 0.01],
+      shL: [-0.1075, 0.25, 0], shR: [0.1075, 0.25, 0],
+      elL: [-0.2375, 0.12, 0.04], elR: [0.2375, 0.12, 0.04],
+      wrL: [-0.30, 0.03, 0.19], wrR: [0.30, 0.03, 0.19],
+      hipL: [-0.055, 0.55, 0], hipR: [0.055, 0.55, 0],
+      knL: [-0.06, 0.79, 0.01], knR: [0.06, 0.79, -0.01],
+      anL: [-0.06, 1.03, 0.02], anR: [0.06, 1.03, -0.02],
+      toL: [-0.06, 1.10, 0.04], toR: [0.06, 1.10, -0.04],
+    }, { face: [0, -0.5, 0.866] }),
+    makePose("forearm_stand", "肘倒立（エルボースタンド）", {
+      // 両前腕を床に寝かせ、その真上へ肩・腰・両足を積む
+      wrL: [-0.11, 0.03, 0.26], wrR: [0.11, 0.03, 0.26],
+      elL: [-0.11, 0.03, 0.08], elR: [0.11, 0.03, 0.08],
+      shL: [-0.1075, 0.22, 0.08], shR: [0.1075, 0.22, 0.08],
+      head: [0, 0.15, 0.17], neck: [0, 0.22, 0.13],
+      hipL: [-0.055, 0.52, 0.08], hipR: [0.055, 0.52, 0.08],
+      knL: [-0.06, 0.76, 0.06], knR: [0.06, 0.76, 0.10],
+      anL: [-0.06, 1.00, 0.04], anR: [0.06, 1.00, 0.12],
+      toL: [-0.06, 1.07, 0.02], toR: [0.06, 1.07, 0.14],
+    }, { face: [0, -0.45, 0.893] }),
+    makePose("y_balance", "Y字バランス（片脚を横へ持ち上げる）", {
+      // 右脚で立ち、左脚を横へ伸ばして左手で足首を支える
+      elL: [-0.29, 0.785, 0], wrL: [-0.47, 0.75, 0],
+      elR: [0.2975, 0.82, 0], wrR: [0.4775, 0.82, 0],
+      knL: [-0.27, 0.62, 0], anL: [-0.47, 0.75, 0], toL: [-0.53, 0.79, 0],
+    }),
+    makePose("front_split", "前後開脚（床）", {
+      // 腰を床すれすれまで下げ、左右の脚を前後へ一直線に伸ばす
+      head: [0, 0.505, 0.01], neck: [0, 0.43, 0],
+      shL: [-0.1075, 0.39, 0], shR: [0.1075, 0.39, 0],
+      elL: [-0.13, 0.21, 0.04], elR: [0.13, 0.21, 0.04],
+      wrL: [-0.12, 0.04, 0.10], wrR: [0.12, 0.04, 0.10],
+      hipL: [-0.055, 0.09, 0], hipR: [0.055, 0.09, 0],
+      knL: [-0.055, 0.075, 0.24], anL: [-0.055, 0.075, 0.48], toL: [-0.055, 0.03, 0.55],
+      knR: [0.055, 0.075, -0.24], anR: [0.055, 0.075, -0.48], toR: [0.055, 0.03, -0.55],
+    }, { sideView: true }),
+    makePose("layout_flip_mid", "伸身宙返り（中間・逆さ）", {
+      // 空中で頭を下、伸ばした両脚を最上部にして逆さの直線を作る
+      head: [0, 0.36, 0], neck: [0, 0.44, 0],
+      shL: [-0.1075, 0.50, 0], shR: [0.1075, 0.50, 0],
+      elL: [-0.2975, 0.50, 0], elR: [0.2975, 0.50, 0],
+      wrL: [-0.4775, 0.50, 0], wrR: [0.4775, 0.50, 0],
+      hipL: [-0.055, 0.80, 0], hipR: [0.055, 0.80, 0],
+      knL: [-0.06, 1.04, 0], knR: [0.06, 1.04, 0],
+      anL: [-0.06, 1.28, 0], anR: [0.06, 1.28, 0],
+      toL: [-0.06, 1.35, 0], toR: [0.06, 1.35, 0],
+    }, { face: [0, -0.2, 0.98] }),
+    makePose("chest_stand", "チェストスタンド（胸を床に付け脚を頭上へ）", {
+      // 胸と両腕を床へ置き、腰から曲げた脚を頭上へ回す
+      head: [0, 0.07, 0.14], neck: [0, 0.08, 0.07],
+      shL: [-0.1075, 0.06, 0], shR: [0.1075, 0.06, 0],
+      elL: [-0.2975, 0.05, 0], elR: [0.2975, 0.05, 0],
+      wrL: [-0.4775, 0.04, 0.02], wrR: [0.4775, 0.04, 0.02],
+      hipL: [-0.055, 0.35, -0.06], hipR: [0.055, 0.35, -0.06],
+      knL: [-0.06, 0.55, 0.07], knR: [0.06, 0.55, 0.07],
+      anL: [-0.06, 0.72, 0.24], anR: [0.06, 0.72, 0.24],
+      toL: [-0.06, 0.76, 0.31], toR: [0.06, 0.76, 0.31],
+    }, { face: [0, -0.8, 0.6], sideView: true }),
+    makePose("backbend_standing", "後屈（立位・手は床に付けない）", {
+      // 足を床へ残し、腰から肩・頭を大きく後方へ反らす
+      head: [0, 0.62, -0.35], neck: [0, 0.68, -0.30],
+      shL: [-0.1075, 0.72, -0.22], shR: [0.1075, 0.72, -0.22],
+      elL: [-0.25, 0.82, -0.145], wrL: [-0.39, 0.91, -0.075],
+      elR: [0.25, 0.82, -0.145], wrR: [0.39, 0.91, -0.075],
+      hipL: [-0.055, 0.52, 0], hipR: [0.055, 0.52, 0],
+    }, { face: [0, 0.55, -0.835], sideView: true }),
+    makePose("crashmat_fall", "落下マットへ背中から落ちる（空中・仰向け）", {
+      // 全身を床から離した仰向けの水平姿勢にし、両腕を左右へ開く
+      head: [0, 0.36, 0.29], neck: [0, 0.35, 0.22],
+      shL: [-0.1075, 0.35, 0.15], shR: [0.1075, 0.35, 0.15],
+      elL: [-0.2975, 0.36, 0.15], elR: [0.2975, 0.36, 0.15],
+      wrL: [-0.4775, 0.38, 0.15], wrR: [0.4775, 0.38, 0.15],
+      hipL: [-0.055, 0.35, -0.15], hipR: [0.055, 0.35, -0.15],
+      knL: [-0.06, 0.34, -0.39], knR: [0.06, 0.34, -0.39],
+      anL: [-0.06, 0.33, -0.63], anR: [0.06, 0.33, -0.63],
+      toL: [-0.06, 0.31, -0.70], toR: [0.06, 0.31, -0.70],
+    }, { face: [0, 1, 0.1], sideView: true }),
+    makePose("juggle_one_hand", "片手でジャグリング（もう片手は腰）", {
+      // 右手だけを玉の下へ上げ、左手を腰へ置いて左右差を出す
+      elR: [0.22, 0.69, 0.10], wrR: [0.18, 0.86, 0.14],
+      elL: [-0.23, 0.68, 0.02], wrL: [-0.10, 0.55, 0.03],
+    }, { props: [
+      { kind: "dot", c: [0.10, 1.05, 0.12], r: 0.035, tone: "ball" },
+      { kind: "dot", c: [0.02, 1.20, 0.10], r: 0.035, tone: "ball" },
+    ] }),
+    makePose("face_balance", "顔にバランス（額・あごにクラブや棒を立てる）", {
+      // 右手首の握り点を額へ寄せ、頭を反らして縦の道具を見上げる
+      head: [0, 0.94, -0.035], neck: [0, 0.858, -0.015],
+      elR: [0.2752, 0.9039, 0.0305], wrR: [0.10, 0.94, 0.05],
+      elL: [-0.1982, 0.655, 0.0257], wrL: [-0.36, 0.58, 0.05],
+    }, { face: [0, 0.3, 0.954] }),
+    makePose("diabolo_spin", "ディアボロを回す（両手にスティック）", {
+      // 腰の前で両手首を離し、左右のスティック間に糸が張る幅を作る
+      elL: [-0.23, 0.70, 0.10], wrL: [-0.18, 0.62, 0.26],
+      elR: [0.23, 0.70, 0.10], wrR: [0.18, 0.62, 0.26],
+    }, { props: [
+      { kind: "line", a: [-0.18, 0.62, 0.26], b: [-0.22, 0.46, 0.29], w: 0.012, tone: "gear" },
+      { kind: "line", a: [0.18, 0.62, 0.26], b: [0.22, 0.46, 0.29], w: 0.012, tone: "gear" },
+      { kind: "line", a: [-0.22, 0.46, 0.29], b: [0.22, 0.46, 0.29], w: 0.008, tone: "gear" },
+    ] }),
+    makePose("diabolo_high_toss", "ディアボロを高く投げて見上げる", {
+      // 右手を投げ上げたディアボロの位置へ伸ばし、左腕も受ける幅へ開く
+      head: [0, 0.92, -0.075], neck: [0, 0.85, -0.035],
+      elR: [0.25, 0.95, 0.03], wrR: [0.22, 1.13, 0.05],
+      elL: [-0.258, 0.7117, 0.0415], wrL: [-0.41, 0.80, 0.08],
+    }, { face: [0, 0.75, 0.661], props: [
+      { kind: "line", a: [-0.41, 0.80, 0.08], b: [-0.48, 0.93, 0.10], w: 0.012, tone: "gear" },
+    ] }),
+    makePose("cigarbox_hold", "シガーボックスを構える（3箱を胸の前で挟む）", {
+      // 両肘を張って胸前の横一列を挟み、中央の握り点を右手首へ合わせる
+      elL: [-0.25, 0.70, 0.05], wrL: [-0.09, 0.62, 0.10],
+      elR: [0.25, 0.70, 0.05], wrR: [0.09, 0.62, 0.10],
+    }, { props: [
+      { kind: "line", a: [-0.27, 0.55, 0.10], b: [-0.11, 0.55, 0.10], w: 0.018, tone: "wood" },
+      { kind: "line", a: [-0.11, 0.55, 0.10], b: [-0.11, 0.69, 0.10], w: 0.018, tone: "wood" },
+      { kind: "line", a: [-0.11, 0.69, 0.10], b: [-0.27, 0.69, 0.10], w: 0.018, tone: "wood" },
+      { kind: "line", a: [-0.27, 0.69, 0.10], b: [-0.27, 0.55, 0.10], w: 0.018, tone: "wood" },
+      { kind: "line", a: [0.17, 0.55, 0.10], b: [0.33, 0.55, 0.10], w: 0.018, tone: "wood" },
+      { kind: "line", a: [0.33, 0.55, 0.10], b: [0.33, 0.69, 0.10], w: 0.018, tone: "wood" },
+      { kind: "line", a: [0.33, 0.69, 0.10], b: [0.17, 0.69, 0.10], w: 0.018, tone: "wood" },
+      { kind: "line", a: [0.17, 0.69, 0.10], b: [0.17, 0.55, 0.10], w: 0.018, tone: "wood" },
+    ] }),
+    makePose("devilstick_play", "デビルスティックを操る（両手のハンドスティック）", {
+      // 胸前で左右の手を段違いにし、中央の棒を弾く三角形を作る
+      elL: [-0.24, 0.71, 0.08], wrL: [-0.13, 0.59, 0.16],
+      elR: [0.207, 0.6876, 0.0931], wrR: [0.13, 0.55, 0.18],
+    }, { props: [
+      { kind: "line", a: [-0.13, 0.59, 0.16], b: [0.02, 0.72, 0.20], w: 0.012, tone: "gear" },
+      { kind: "line", a: [0.13, 0.55, 0.18], b: [-0.02, 0.68, 0.22], w: 0.012, tone: "gear" },
+      { kind: "line", a: [-0.04, 0.49, 0.24], b: [0.04, 0.82, 0.24], w: 0.018, tone: "gear" },
+    ] }),
+    makePose("poi_spin", "ポイを回す（両腕を横へ）", {
+      // 両腕を水平に広げ、左右の手先から別々の円弧が伸びる形にする
+      elL: [-0.2975, 0.82, 0], wrL: [-0.4775, 0.82, 0],
+      elR: [0.2975, 0.82, 0], wrR: [0.4775, 0.82, 0],
+    }, { props: [
+      { kind: "line", a: [-0.4775, 0.82, 0], b: [-0.58, 0.62, 0.02], w: 0.008, tone: "gear" },
+      { kind: "dot", c: [-0.60, 0.58, 0.02], r: 0.035, tone: "ball" },
+      { kind: "line", a: [0.4775, 0.82, 0], b: [0.58, 1.02, 0.02], w: 0.008, tone: "gear" },
+    ] }),
+    makePose("hoop_waist_spin", "フープを腰で回す", {
+      // 右手首の握り点を腰脇へ置き、左腕を頭上へ上げて回転中の人影にする
+      elR: [0.25, 0.70, 0.02], wrR: [0.14, 0.56, 0.06],
+      elL: [-0.1982, 0.9856, 0.0208], wrL: [-0.08, 1.12, 0.04],
+      hipL: [-0.065, 0.52, -0.02], hipR: [0.065, 0.52, 0.02],
+    }),
+    makePose("rolabola_stand", "ローラボーラに乗る（両脚を開き腕を横へ）", {
+      // 足裏の原点を保ち、広い足幅と水平な両腕で器具上の揺れを支える
+      elL: [-0.2975, 0.82, 0], wrL: [-0.4775, 0.82, 0],
+      elR: [0.2975, 0.82, 0], wrR: [0.4775, 0.82, 0],
+      knL: [-0.16, 0.30, 0.03], knR: [0.16, 0.30, -0.03],
+      anL: [-0.28, 0.09, 0], anR: [0.28, 0.09, 0],
+      toL: [-0.30, 0.012, 0.07], toR: [0.30, 0.012, 0.07],
+    }),
+    makePose("germanwheel_ride", "ラートに乗る（大の字で握る）", {
+      // 足裏を原点へ残し、両手と両脚を大の字に開いて輪の内側を握る
+      elL: [-0.2888, 0.8767, 0], wrL: [-0.42, 1.00, 0],
+      elR: [0.2888, 0.8767, 0], wrR: [0.42, 1.00, 0],
+      knL: [-0.1388, 0.2951, 0], knR: [0.1388, 0.2951, 0],
+      anL: [-0.33, 0.15, 0], anR: [0.33, 0.15, 0],
+      toL: [-0.36, 0.012, 0.06], toR: [0.36, 0.012, 0.06],
+    }),
+    makePose("ride_astride", "跨って乗る（馬・バイク・木馬・綱）", {
+      // 腰をy=0.30へ下げ、両膝を左右へ開き、両手を前の手綱位置へそろえる
+      head: [0, 0.715, 0.04], neck: [0, 0.64, 0.025],
+      shL: [-0.1075, 0.60, 0.02], shR: [0.1075, 0.60, 0.02],
+      elL: [-0.18, 0.47, 0.14], wrL: [-0.10, 0.42, 0.293],
+      elR: [0.18, 0.47, 0.14], wrR: [0.10, 0.42, 0.293],
+      hipL: [-0.055, 0.30, 0], hipR: [0.055, 0.30, 0],
+      knL: [-0.25, 0.16, 0.03], knR: [0.25, 0.16, 0.03],
+      anL: [-0.30, 0.04, 0.23], anR: [0.30, 0.04, 0.23],
+      toL: [-0.30, 0.012, 0.305], toR: [0.30, 0.012, 0.305],
+    }),
+    makePose("doublebass_play", "コントラバスを弾く（立って抱える）", {
+      // 左手を棹へ高く上げ、右手を低い胴へ回して大きな楽器を抱える
+      elL: [-0.2136, 0.9595, 0.0733], wrL: [-0.08, 1.06, 0.14],
+      elR: [0.2106, 0.681, 0.0784], wrR: [0.08, 0.58, 0.15],
+    }, { props: [
+      { kind: "line", a: [-0.08, 1.06, 0.14], b: [0.08, 0.45, 0.17], w: 0.035, tone: "wood" },
+      { kind: "dot", c: [0.10, 0.42, 0.18], r: 0.15, tone: "wood" },
+    ] }),
+    makePose("dj_play", "DJをする（片手をヘッドホン・片手を盤へ）", {
+      // 頭を右手へ傾け、左手を低い盤面へ伸ばして上下差を作る
+      head: [0.035, 0.91, 0.08], neck: [0.02, 0.835, 0.055],
+      shL: [-0.1075, 0.79, 0.04], shR: [0.1075, 0.79, 0.04],
+      elR: [0.275, 0.85, 0.08], wrR: [0.12, 0.93, 0.14],
+      elL: [-0.22, 0.64, 0.10], wrL: [-0.12, 0.51, 0.17],
+      hipL: [-0.055, 0.49, 0], hipR: [0.055, 0.49, 0],
+      knL: [-0.07, 0.26, 0.04], knR: [0.07, 0.26, 0.04],
+      anL: [-0.07, 0.02, 0.04], anR: [0.07, 0.02, 0.04],
+    }, { face: [0.12, -0.1, 0.988] }),
+    makePose("kyudo_draw", "弓を引く（会・矢を放つ直前）", {
+      // 身体を横へ向け、右手の弓を伸ばし、左手を頬まで引いて会の左右幅を示す
+      head: [0.02, 0.935, 0], neck: [0.01, 0.855, 0],
+      shL: [-0.03, 0.82, -0.08], shR: [0.03, 0.82, 0.08],
+      elR: [0.22, 0.82, 0.08], wrR: [0.40, 0.82, 0.08],
+      elL: [-0.2156, 0.8605, -0.08], wrL: [-0.04, 0.90, -0.08],
+      hipL: [-0.04, 0.52, -0.04], hipR: [0.04, 0.52, 0.04],
+      knL: [-0.08, 0.283, -0.04], knR: [0.08, 0.283, 0.04],
+      anL: [-0.08, 0.043, -0.04], anR: [0.08, 0.043, 0.04],
+      toL: [-0.08, 0.012, 0.035], toR: [0.08, 0.012, 0.115],
+    }, { wide: [0, 0, 1], face: [1, 0, 0] }),
   ];
   /* ---- R-19（2026-09-17 本人要望）: 物を伴う姿勢は「持っているときだけ」選べるようにする ----
    * 本人の言葉:「小道具や大道具を持つという動きをしたときに、取れる姿勢としてください」。
@@ -5971,6 +6210,15 @@
     flag_wave: ["flag"],
     torch_raise: ["torch", "lantern", "candle"],
     bouquet_offer: ["bouquet"],
+    juggle_one_hand: ["ball", "club", "ring"],
+    face_balance: ["club", "staff"],
+    diabolo_spin: ["diabolo"],
+    diabolo_high_toss: ["diabolo"],
+    cigarbox_hold: ["cigarbox"],
+    devilstick_play: ["devilstick"],
+    poi_spin: ["poi"],
+    hoop_waist_spin: ["hoop"],
+    kyudo_draw: ["bow_arrow"],
   };
   /* その演者が持っている（＝この駒を heldBy で指している）小道具の形を集める。 */
   function heldPropShapes(piece) {
@@ -5980,7 +6228,8 @@
       .filter((item) => item && item.heldBy === piece.id);
     return new Set(list.map((item) => {
       const registered = pieceSet(item);
-      return (registered && registered.propShape) || item.propShape || null;
+      // 2026-09-26: ディアボロは小道具の形ではなく駒の型なので、型の名前で判定する（ディアボロを回す姿勢のため）
+      return (registered && registered.propShape) || item.propShape || (item.type === "diabolo" ? "diabolo" : null);
     }).filter(Boolean));
   }
   /* 一覧に出す姿勢。物を伴う姿勢は、その物を持っているときだけ出す。
@@ -6055,7 +6304,7 @@
     pieces.forEach((item) => {
       if (!item || item.heldBy !== piece.id || item.holdMode === "face") return;
       const registered = pieceSet(item);
-      const shape = (registered && registered.propShape) || item.propShape || null;
+      const shape = (registered && registered.propShape) || item.propShape || (item.type === "diabolo" ? "diabolo" : null);
       if (!needs.includes(shape)) return;
       if (item.holdSide === "L") left = true; else right = true;
     });
@@ -6079,19 +6328,23 @@
     { ja: "感情・倒れる", ids: ["collapse_knees", "collapse_hands_floor", "lie_spread", "cry_cover", "shout", "think_chin", "head_down",
       "hold_head", "hand_on_chest", "surprised", "pray", "clown_slip_fall", "clown_trip", "pratfall_sit"] },
     { ja: "殺陣・武術", ids: ["hit_recoil", "punch", "kick", "sword_ready", "sword_slash", "sword_raised", "staff_ready", "throw",
-      "catch_ready", "hero_transform", "hero_finisher", "karate_zenkutsu", "karate_roundhouse_kick_mid", "boxing_guard"] },
+      "catch_ready", "hero_transform", "hero_finisher", "karate_zenkutsu", "karate_roundhouse_kick_mid", "boxing_guard", "kyudo_draw"] },
     { ja: "踊る", ids: ["dance1", "dance2", "dance3", "dance4", "dance5", "windmill", "ballet_first_position",
       "ballet_fifth_position_en_haut", "ballet_arabesque", "ballet_attitude", "ballet_grand_jete", "ballet_pirouette_passe",
       "contemporary_floor_roll", "contemporary_contraction", "contemporary_low_lunge_floor", "offbalance_fall_back",
       "breaking_baby_freeze", "breaking_chair_freeze", "breaking_toprock", "ballroom_hold_lead", "ballroom_hold_follow",
       "dip_lead", "dip_follow", "tap_stance", "jazz_hands"] },
     { ja: "歌・楽器", ids: ["sing", "guitar", "bassguitar", "violin", "trumpet", "accordion", "sing_micstand", "taiko_strike",
-      "drums_play", "piano_play", "cello_play"] },
+      "drums_play", "piano_play", "cello_play", "doublebass_play", "dj_play"] },
     { ja: "アクロバット", ids: ["handstand", "handstand-mid", "sideflip", "sideflip-mid", "cartwheel-oneside-mid", "roundoff-mid",
-      "frontroll-mid", "tuck", "backflip", "backhandspring-mid", "walkover-mid"] },
+      "frontroll-mid", "tuck", "backflip", "backhandspring-mid", "walkover-mid", "bridge_hold", "one_arm_handstand",
+      "straddle_handstand", "headstand", "forearm_stand", "y_balance", "front_split", "layout_flip_mid", "chest_stand",
+      "backbend_standing", "crashmat_fall"] },
     { ja: "組み技", ids: [] },
     { ja: "空中・器具", ids: [] },
-    { ja: "サーカス道具・乗り物", ids: ["juggle", "cyr", "unicycle", "bicycle", "skateboard", "skate"] },
+    { ja: "サーカス道具・乗り物", ids: ["juggle", "cyr", "unicycle", "bicycle", "skateboard", "skate", "juggle_one_hand",
+      "face_balance", "diabolo_spin", "diabolo_high_toss", "cigarbox_hold", "devilstick_play", "poi_spin", "hoop_waist_spin",
+      "rolabola_stand", "germanwheel_ride", "ride_astride"] },
   ];
   function groupedPoses(poses) {
     const byId = new Map(poses.map((pose) => [pose.id, pose]));

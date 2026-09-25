@@ -216,11 +216,19 @@ scene("intro", "0-1 このショーは機能の試験場", 1,
 
 /* ======================= A 演者と姿勢 ======================= */
 section("a", "A 演者と姿勢");
-const half = Math.ceil(POSES.length / 2);
-[POSES.slice(0, half), POSES.slice(half)].forEach((list, index) => {
+/* 2026-09-26: 姿勢が約210件になるため、A-1・A-2 には 80件ずつ（1シーンの上限）詰め、
+   161件目以降は J-1（80駒の上限を試す場面）の演者へ割り当てる（場面行は上限60のまま増やさない）。 */
+// A-1 には後で文脈ヘルプの駒が2つ、A-2 には1つ足される（下）。上限80駒に収まるよう 78件・79件にする。
+const A_SCENE_CAPS = [78, 79];
+const A_POSES = A_SCENE_CAPS[0] + A_SCENE_CAPS[1];
+// あふれた姿勢は、文脈ヘルプの駒3つ → J-1 の演者50人の順に割り当てる
+const HELP_POSES = POSES.slice(A_POSES, A_POSES + 3);
+const POSE_OVERFLOW = POSES.slice(A_POSES + 3);
+if (POSE_OVERFLOW.length > 50) throw new Error(`姿勢が多すぎて試験場に並べきれません（${POSES.length}件・A 群 ${A_POSES}＋ヘルプ 3＋J-1 50＝${A_POSES + 53} 件まで）`);
+[POSES.slice(0, A_SCENE_CAPS[0]), POSES.slice(A_SCENE_CAPS[0], A_POSES)].filter((list) => list.length).forEach((list, index) => {
   const positions = grid(list.length, 6, 0.08, 0.92, 0.2, 0.9);
   scene(`a${index + 1}`, `A-${index + 1} 全姿勢 ${index + 1}/2（${list.length}種）`, 1,
-    `${CHECK}登録の無い演者（名前＝姿勢ID）を全姿勢ぶん並べた。正面図で形が崩れていないか、平面図の足元の大きさ、選んだときの枠、3Dカメラでの見え方を見る。姿勢は本体の POSES から自動で拾っている（${POSES.length}種）。姿勢を選ぶ場所（姿勢の窓・図の下の帯・演者を追加する窓）は分類の見出しで分かれ、窓と演者を追加する窓は検索で絞れること。帯は先頭の選択欄で分類を切り替え、末尾の「探す」で検索付きの窓が開くこと。`,
+    `${CHECK}登録の無い演者（名前＝姿勢ID）を全姿勢ぶん並べた。正面図で形が崩れていないか、平面図の足元の大きさ、選んだときの枠、3Dカメラでの見え方を見る。姿勢は本体の POSES から自動で拾っている（${POSES.length}種。A-1 に78件・A-2 に79件、あふれた分は文脈ヘルプの駒3つと J-1 の演者に割り当て）。姿勢を選ぶ場所（姿勢の窓・図の下の帯・演者を追加する窓）は分類の見出しで分かれ、窓と演者を追加する窓は検索で絞れること。帯は先頭の選択欄で分類を切り替え、末尾の「探す」で検索付きの窓が開くこと。`,
     list.map((pose, i) => perf(`a${index + 1}`, null, positions[i].u, positions[i].v, { pose, name: pose, color: COLORS[i % COLORS.length] })));
 });
 /* 文脈ヘルプ: A-1の登録共通固定と駒単体固定、A-2に同じ登録の固定を置く。 */
@@ -228,9 +236,9 @@ const helpScene = rows.find((row) => row.id === "ft-scene-a1");
 const helpNext = rows.find((row) => row.id === "ft-scene-a2");
 const helpMember = { ...cast[0], id: "ft-cast-help-lock", name: "固定テスト・共通", locked: true };
 cast.push(helpMember);
-helpScene.pieces.push({ ...helpScene.pieces[0], id: "ft-piece-help-owner", castId: helpMember.id, name: "固定テスト・共通", u: 0.35, v: 0.12 });
-helpNext.pieces.push({ ...helpNext.pieces[0], id: "ft-piece-help-owner-next", castId: helpMember.id, name: "固定テスト・共通", u: 0.35, v: 0.12 });
-helpScene.pieces.push({ ...helpScene.pieces[0], id: "ft-piece-help-local", castId: null, name: "固定テスト・この駒", locked: true, u: 0.65, v: 0.12 });
+helpScene.pieces.push({ ...helpScene.pieces[0], id: "ft-piece-help-owner", castId: helpMember.id, name: "固定テスト・共通", u: 0.35, v: 0.12, pose: HELP_POSES[0] || helpScene.pieces[0].pose });
+helpNext.pieces.push({ ...helpNext.pieces[0], id: "ft-piece-help-owner-next", castId: helpMember.id, name: "固定テスト・共通", u: 0.35, v: 0.12, pose: HELP_POSES[1] || helpNext.pieces[0].pose });
+helpScene.pieces.push({ ...helpScene.pieces[0], id: "ft-piece-help-local", castId: null, name: "固定テスト・この駒", locked: true, u: 0.65, v: 0.12, pose: HELP_POSES[2] || helpScene.pieces[0].pose });
 helpScene.note += " D1確認: 固定テスト・共通はA-2と同じ登録の固定。固定テスト・この駒はこのシーンのみ。使い方検索の『動かせないとき』から解除し、取り消しと再読込を確かめる。";
 {
   const pieces = [];
@@ -564,13 +572,17 @@ section("j", "J 負荷と3Dカメラ");
 {
   const pieces = [];
   const p1 = grid(20, 10, 0.06, 0.94, 0.3, 0.4);
-  castKeys.forEach((key, i) => pieces.push(perf("j1", key, p1[i].u, p1[i].v, { pose: POSES[i % POSES.length] })));
+  // 161件目以降の姿勢は、まず無登録演者30人へ（名前＝姿勢ID）、残りを登録演者20人へ割り当てる
   const p2 = grid(30, 10, 0.06, 0.94, 0.5, 0.65);
-  for (let i = 0; i < 30; i += 1) pieces.push(perf("j1", null, p2[i].u, p2[i].v, { name: `無登録${i + 1}`, pose: POSES[(i * 3) % POSES.length], color: COLORS[i % COLORS.length] }));
+  for (let i = 0; i < 30; i += 1) {
+    const extra = POSE_OVERFLOW[i];
+    pieces.push(perf("j1", null, p2[i].u, p2[i].v, { name: extra || `無登録${i + 1}`, pose: extra || POSES[(i * 3) % POSES.length], color: COLORS[i % COLORS.length] }));
+  }
+  castKeys.forEach((key, i) => pieces.splice(i, 0, perf("j1", key, p1[i].u, p1[i].v, { pose: POSE_OVERFLOW[30 + i] || POSES[i % POSES.length] })));
   const p3 = grid(30, 10, 0.06, 0.94, 0.75, 0.9);
   for (let i = 0; i < 30; i += 1) pieces.push({ id: pid("j1", "box"), type: i % 2 ? "block" : "chair", setId: null, u: round(p3[i].u), v: round(p3[i].v), facing: 0, size: 100, color: i % 2 ? "#efe7d6" : "#5b4a3a", name: "" });
   if (pieces.length !== 80) throw new Error(`J-1 は80駒のはず (${pieces.length})`);
-  scene("j1", "J-1 80駒（1シーンの上限）", 1, `${CHECK}登録演者20＋無登録演者30＋無登録の台・椅子30＝80駒（上限）。81個目を置こうとすると止まる。描画の重さ、選択、転換アニメの時間を見る。`, pieces);
+  scene("j1", "J-1 80駒（1シーンの上限）", 1, `${CHECK}登録演者20＋無登録演者30＋無登録の台・椅子30＝80駒（上限）。81個目を置こうとすると止まる。描画の重さ、選択、転換アニメの時間を見る。${POSE_OVERFLOW.length ? `全姿勢のうち A 群とヘルプの駒からあふれた分（${POSE_OVERFLOW.length}種）はこの場面の演者に割り当てている（無登録演者の名前＝姿勢ID）。` : ""}`, pieces);
 }
 {
   const pieces = [];
