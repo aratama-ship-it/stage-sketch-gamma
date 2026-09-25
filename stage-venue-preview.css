@@ -10,9 +10,14 @@
 .venue-live-canvas-wrap { min-height:160px; min-width:0; flex:1; position:relative; overflow:hidden; }
 #venue-live-canvas { position:absolute; inset:0; width:100%; height:100%; touch-action:none; cursor:grab; outline-offset:-3px; }
 #venue-live-canvas:active { cursor:grabbing; }
-.venue-live-foot { flex:0 0 auto; padding:6px 8px; font-size:11px; line-height:1.5; color:var(--milk-dim,#bdb3a4); }
+.venue-live-foot { flex:0 0 auto; padding:6px 8px; font-size:11px; line-height:1.5; color:var(--milk-dim,#bdb3a4); text-align:right; }
 .venue-live-foot p { margin:0; }
-.venue-live-controls { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:6px; }
+.venue-live-controls { position:absolute; right:10px; bottom:10px; z-index:2; display:grid; grid-template-columns:max-content 44px; gap:4px; padding:4px; border:1px solid var(--line-dark,#382f25); background:var(--desk-2,#201b16); }
+.venue-live-controls button { display:flex; width:44px; height:44px; align-items:center; justify-content:center; padding:0; border-color:var(--line-dark,#382f25); background:var(--desk,#191512); font-size:20px; line-height:1; }
+.venue-live-controls button[data-action=move] { grid-column:1; grid-row:2; width:auto; padding:0 8px; font-size:11px; white-space:nowrap; }
+.venue-live-controls button[data-action=out] { grid-column:2; grid-row:1; }
+.venue-live-controls button[data-action=in] { grid-column:2; grid-row:2; }
+.venue-live-controls button:hover, .venue-live-controls button:focus-visible { border-color:var(--brass,#d3ac59); color:var(--brass,#d3ac59); }
 .venue-live-controls label { display:flex; align-items:center; gap:4px; cursor:pointer; font-size:12px; }
 .venue-live-controls input { width:14px; min-height:14px; height:14px; accent-color:var(--gold,#c8913f); }
 .venue-live-only-plan .venue-live-layout { grid-template-columns:1fr; }
@@ -29,7 +34,7 @@
 #gamma-venue-workspace .venue-room-settings input, #gamma-venue-workspace .venue-room-settings button { min-width:0; width:100%; min-height:var(--room-control-height); }
 .venue-room-settings button[aria-pressed=true] { color:var(--milk,#f2ead6); border-color:var(--brass,#d3ac59); background:rgba(156,130,63,.16); }
 @media (min-width:901px) {
-  #gamma-venue-workspace .stage-venue-editor-workspace { --venue-menu-width:clamp(220px,18vw,280px); grid-template-columns:var(--venue-menu-width) minmax(0,1fr); column-gap:18px; position:relative; }
+  #gamma-venue-workspace .stage-venue-editor-workspace { --venue-menu-width:clamp(220px,calc(100% - 438px),480px); grid-template-columns:var(--venue-menu-width) minmax(0,1fr); column-gap:18px; position:relative; }
   #gamma-venue-workspace .stage-venue-editor-menu { border-right:0; }
   #venue-menu-width-handle { left:var(--venue-menu-width); right:auto; }
   #gamma-venue-workspace .stage-venue-editor-formats { grid-template-columns:1fr; }
@@ -43,3 +48,16 @@
 }
 
 @media (max-width:900px) { #venue-menu-width-handle { display:none; } }
+#gamma-venue-workspace .stage-venue-editor-area-selection[hidden],
+#gamma-venue-workspace .stage-venue-editor-status:empty { display:none; }
+.stage-venue-editor-floor-colors { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.stage-venue-editor-floor-colors button { display:flex; align-items:center; justify-content:center; gap:6px; min-width:0; min-height:44px; padding:4px 6px; white-space:nowrap; }
+.stage-venue-editor-floor-swatch { display:block; width:14px; height:14px; flex:0 0 14px; border:1px solid #201b16; }
+[data-venue-editor-floor-color=brown] .stage-venue-editor-floor-swatch { background:#806247; }
+[data-venue-editor-floor-color=black] .stage-venue-editor-floor-swatch { background:#303030; border-color:#bdb3a4; }
+[data-venue-editor-floor-color=gray] .stage-venue-editor-floor-swatch { background:#777777; }
+@container stage-venue-editor-menu (max-width:320px) {
+  .stage-venue-editor-floor-color { grid-template-columns:1fr; }
+  .stage-venue-editor-floor-colors { grid-column:1; }
+  .stage-venue-editor-floor-colors button { flex-direction:column; gap:3px; }
+}

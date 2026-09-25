@@ -70,7 +70,6 @@
     audienceSelection: $("stage-venue-editor-audience-selection"),
     audienceFull: $("stage-venue-editor-audience-full"),
     audienceRemove: $("stage-venue-editor-audience-remove"),
-    audienceElevation: $("stage-venue-editor-audience-elevation"),
     audienceFrontHeight: $("stage-venue-editor-audience-front-height"),
     audienceRearHeight: $("stage-venue-editor-audience-rear-height"),
     audienceHeightReset: $("stage-venue-editor-audience-height-reset"),
@@ -132,8 +131,9 @@
 
   if (!els.modal || !els.canvas) return;
   const library = window.SHOSAI_VENUES && window.SHOSAI_VENUES.library;
+  const floorColors = window.SHOSAI_VENUES && window.SHOSAI_VENUES.floorColors;
   const linesEngine = window.SHOSAI_VENUE_LINES;
-  if (!library || !linesEngine) return;
+  if (!library || !floorColors || !linesEngine) return;
 
   const ctx = els.canvas.getContext("2d");
   const I18N = window.SHOSAI_I18N || { text: {}, say: [] };
@@ -188,6 +188,7 @@
       frontBorder: { enabled: false, openingHeightM: 4.5 } },
     /* 舞台の高さ。null＝未入力。書き出さないので、持たない会場の絵は1画素も変わらない。 */
     stageHeightM: null,
+    floorColor: floorColors.brown,
     stageFormat: "theatre",
     templateKey: null,
     mode: "select",
@@ -219,6 +220,7 @@
   let activePointer = null;
   let pointerHistoryStart = null;
   let longPressTimer = null;
+  let statusTimer = null;
   let returnFocus = null;
   let saveNameReturnFocus = null;
   let linesCache = { venueSignature: "", result: null };
@@ -312,17 +314,12 @@
     return stagePolygons().flat();
   }
 
-  /* 図を画面のどこへ置くかを決めるための「全体」の点（VENUE_EDITOR_FIT_WHOLE_2026_09_19）。
-   * ★舞台だけでなく客席も含める。ホテルの宴会場のように舞台が浅くて客席が深い劇場では、
-   *   舞台の中心に合わせると客席が図の下へはみ出す（本人指摘 2026-09-19）。
-   * ★読み込み時の尺合わせ（fitViewToTemplate）と、毎回の中心合わせ（outlineCenter）が
-   *   違う集合を見ていたのが原因なので、ここへまとめて両方から使う。 */
-  function allContentPoints() {
+  /* 通常の初期表示は舞台と舞台袖を基準にする。客席・会場の外枠は
+   * 図から消さず、必要なときに縮小・ドラッグして見られる。見る位置の
+   * 編集中だけは、客席側にある点も画面に収める。 */
+  function defaultViewPoints() {
     return allStagePoints()
-      .concat(state.audience.flatMap((item) => audiencePolygon(item)))
       .concat(state.wings.flatMap((item) => item.polygon || []))
-      .concat(state.room?.outline || [])
-      .concat(state.backScreen ? [state.backScreen.from, state.backScreen.to] : [])
       .concat((viewpointMode ? viewpointRows() : []).flatMap(row => {
         const p = viewpointWorld(row.point);
         return [[p[0] - 1.2, p[1] - 1.2], [p[0] + 1.2, p[1] + 1.2]];
@@ -498,8 +495,7 @@
   }
 
   function outlineCenter() {
-    // ★舞台だけでなく客席も含めた全体の中心（VENUE_EDITOR_FIT_WHOLE_2026_09_19）
-    const points = allContentPoints();
+    const points = defaultViewPoints();
     if (!points.length) return [NaN, NaN];
     const xs = points.map((point) => point[0]);
     const ys = points.map((point) => point[1]);
@@ -514,7 +510,6 @@
       ? Math.min(VIEW_ZOOM_MAX, state.view.zoom * VIEW_ZOOM_STEP)
       : Math.max(VIEW_ZOOM_MIN, state.view.zoom / VIEW_ZOOM_STEP);
     if (nextZoom === state.view.zoom) return;
-    state.view.center = outlineCenter();
     state.view.zoom = nextZoom;
     state.view.fit = false;
     const dims = dimensions();
@@ -1988,7 +1983,8 @@
         ? state.wings.find((area) => area.id === state.selectedArea.id) : null);
     els.audienceRemove.disabled = !selectedArea;
     const selectedAudience = selectedAudienceArea();
-    if (els.audienceElevation) els.audienceElevation.hidden = !selectedAudience;
+    els.audienceFrontHeight.disabled = !selectedAudience;
+    els.audienceRearHeight.disabled = !selectedAudience;
     if (selectedAudience) {
       const legacyFloor = -(Number(state.stageHeightM) || 0);
       if (document.activeElement !== els.audienceFrontHeight) {
@@ -1998,19 +1994,20 @@
         els.audienceRearHeight.value = String(selectedAudience.elevation?.rearM ?? legacyFloor);
       }
       els.audienceHeightReset.disabled = !selectedAudience.elevation;
+    } else {
+      els.audienceFrontHeight.value = "";
+      els.audienceRearHeight.value = "";
+      els.audienceHeightReset.disabled = true;
     }
     if (selectedArea) {
       const areaDims = dimensions(audiencePolygon(selectedArea));
       els.audienceSelection.textContent = translatedStatus(
         `${regionLabel(state.selectedArea.kind)} ${areaDims.width}m × ${areaDims.depth}m を選択中`,
       );
-    } else if (state.areaMode) {
-      els.audienceSelection.textContent = translatedStatus(
-        `${regionLabel(state.areaMode)}を配置中 ・ 客席${state.audience.length}個／舞台袖${state.wings.length}個`,
-      );
     } else {
-      els.audienceSelection.textContent = viewpointMode ? "9番の一覧から点を選択・追加できます" : tx("5番または6番を選択してください");
+      els.audienceSelection.textContent = "";
     }
+    els.audienceSelection.parentElement.hidden = !selectedArea;
 
     const fixture = selectedFixture();
     const access = selectedAccess();
@@ -2055,6 +2052,9 @@
     if (els.stageHeight) {
       els.stageHeight.value = Number.isFinite(state.stageHeightM) ? String(state.stageHeightM) : "";
     }
+    document.querySelectorAll("[data-venue-editor-floor-color]").forEach((button) => {
+      button.setAttribute("aria-pressed", String(floorColors[button.dataset.venueEditorFloorColor] === state.floorColor));
+    });
     document.querySelectorAll("[data-venue-editor-rigging]").forEach((button) => {
       button.setAttribute("aria-pressed", String(button.dataset.venueEditorRigging === state.ceiling.rigging));
     });
@@ -2110,19 +2110,9 @@
 
   function render() {
     syncCanvasResolution();
-    /* T-12（2026-09-18 本人要望）:「操作しているとステージが右下へずれる」への対策。
-     * 表示の中心（state.view.center）は、これまで
-     *   ①読み込み時（fitViewToTemplate） ②＋／−を押したとき（adjustZoom）
-     * の2か所でしか採り直していなかった。劇場の形（追加ステージ・客席・舞台袖）を変えると
-     * 図形の中心だけが動き、見ている中心は古いまま残るのでズレて見えていた。
-     * ＋／−で直ったのは adjustZoom が中心を採り直していたから。
-     * ここで毎回、図形の外接矩形の中心へ合わせ直す。
-     * ★手で図をずらす操作は無い（center を書くのは上記2か所だけ）ので、
-     *   採り直しても本人の見ている位置を奪わない。 */
-    /* ★掴んでいるあいだは動かさない。描き直すたびに中心を変えると、
-     * 画面→世界の対応がドラッグ中にずれて、掴んだ場所が指から逃げる
-     * （実測: 舞台を広げるドラッグで間口が 24m のはずが 30m になった）。 */
-    if (!activePointer) {
+    /* 自動フィット中だけ図形の変化に追従する。手動ズームやドラッグ後の
+     * 表示位置は再描画で奪わない。図形を掴んでいる間も中心を固定する。 */
+    if (!activePointer && state.view.fit) {
       const centered = outlineCenter();
       if (Number.isFinite(centered[0]) && Number.isFinite(centered[1])) state.view.center = centered;
     }
@@ -2152,6 +2142,11 @@
 
   function setStatus(message) {
     els.status.textContent = translatedStatus(message);
+    if (statusTimer) window.clearTimeout(statusTimer);
+    statusTimer = message ? window.setTimeout(() => {
+      els.status.textContent = "";
+      statusTimer = null;
+    }, 5000) : null;
   }
 
   function documentSnapshot() {
@@ -2171,6 +2166,7 @@
       access: state.access,
       ceiling: state.ceiling,
       stageHeightM: state.stageHeightM,
+      floorColor: state.floorColor,
       stageFormat: state.stageFormat,
       templateKey: state.templateKey,
       nextFurnitureHeight: state.nextFurnitureHeight,
@@ -2236,6 +2232,8 @@
       "stageFormat", "templateKey", "nextFurnitureHeight", "nextAccessType", "bandSerial",
       "regionSerial", "extensionSerial", "elementSerial",
     ].forEach((key) => { state[key] = clone(snapshot[key]); });
+    state.floorColor = Object.values(floorColors).includes(snapshot.floorColor)
+      ? snapshot.floorColor : floorColors.brown;
     state.selectedElement = null;
     state.selectedArea = null;
     state.selectedStageExtensionId = null;
@@ -2425,8 +2423,7 @@
   }
 
   function fitViewToTemplate() {
-    // 中心を採る集合と同じものを使う（VENUE_EDITOR_FIT_WHOLE_2026_09_19）
-    const points = allContentPoints();
+    const points = defaultViewPoints();
     if (!points.length) return;
     const xs = points.map((point) => point[0]);
     const ys = points.map((point) => point[1]);
@@ -2439,7 +2436,8 @@
       (Math.min(...xs) + Math.max(...xs)) / 2,
       (Math.min(...ys) + Math.max(...ys)) / 2,
     ];
-    state.view.zoom = clamp(baseWidth / (Math.max(width, depth * aspect) * 1.15), VIEW_ZOOM_MIN, VIEW_ZOOM_MAX);
+    // キャンバスの既存の余白（CANVAS_PADDING）だけを残して最大限大きく見せる。
+    state.view.zoom = clamp(baseWidth / Math.max(width, depth * aspect), VIEW_ZOOM_MIN, VIEW_ZOOM_MAX);
     state.view.fit = true;
   }
 
@@ -2466,6 +2464,8 @@
     /* ★下敷きが舞台の高さを持っていれば引き継ぐ。持っていなければ未入力へ戻す
      * （持たない会場を読んで保存し直しても鍵が増えない＝絵が変わらない）。 */
     state.stageHeightM = normalizeStageHeight(floor.stageHeightM);
+    state.floorColor = Object.values(floorColors).includes(floor.previewColor)
+      ? floor.previewColor : floorColors.brown;
     state.audience = clone(Array.isArray(variant.audience) ? variant.audience : []);
     state.wings = clone(Array.isArray(variant.stageWings)
       ? variant.stageWings : (Array.isArray(venue.stageWings) ? venue.stageWings : []));
@@ -3145,8 +3145,19 @@
   }
 
   function beginPointer(event) {
-    if (event.button !== undefined && event.button !== 0) return;
+    const panGesture = event.button === 1 || (event.button === 0 && event.shiftKey);
+    if (event.button !== undefined && event.button !== 0 && !panGesture) return;
     event.preventDefault();
+    if (panGesture) {
+      els.canvas.setPointerCapture(event.pointerId);
+      activePointer = {
+        pointerId: event.pointerId, kind: "pan",
+        startClient: [event.clientX, event.clientY],
+        startCenter: state.view.center.slice(), startFit: state.view.fit, moved: false,
+      };
+      els.canvas.style.cursor = "grabbing";
+      return;
+    }
     const point = fromEvent(event);
     /* T-34 二度目: 選んでいる区画の角つまみは、舞台の角・辺より先に見る
      * （区画は舞台の縁に接することが多く、後回しにすると掴めないため）。 */
@@ -3296,10 +3307,13 @@
       return;
     }
 
-    state.selectedElement = null;
-    state.selectedArea = null;
-    setStatus("辺と角を調整できます。追加ステージは3番、客席または舞台袖は5番か6番を選択してください。");
-    render();
+    // 選択モードの余白は図の移動に使う。図形の上では従来の編集操作を優先する。
+    activePointer = {
+      pointerId: event.pointerId, kind: "pan",
+      startClient: [event.clientX, event.clientY],
+      startCenter: state.view.center.slice(), startFit: state.view.fit, moved: false,
+    };
+    els.canvas.style.cursor = "grabbing";
   }
 
   function moveCorner(pointer, point) {
@@ -3446,6 +3460,25 @@
   }
 
   function movePointer(event) {
+    if (activePointer?.kind === "pan") {
+      if (event.pointerId !== activePointer.pointerId) return;
+      event.preventDefault();
+      const rect = els.canvas.getBoundingClientRect();
+      const layout = view();
+      const scaleX = canvasCssWidth() / rect.width;
+      const scaleY = canvasCssHeight() / rect.height;
+      const deltaX = (event.clientX - activePointer.startClient[0]) * scaleX;
+      const deltaY = (event.clientY - activePointer.startClient[1]) * scaleY;
+      if (Math.hypot(deltaX, deltaY) < 2 && !activePointer.moved) return;
+      activePointer.moved = true;
+      state.view.center = [
+        activePointer.startCenter[0] - deltaX / layout.scale,
+        activePointer.startCenter[1] - deltaY / layout.scale,
+      ];
+      state.view.fit = false;
+      render();
+      return;
+    }
     const point = fromEvent(event);
     if (!activePointer) {
       if (state.stageExtensionMode) {
@@ -3483,9 +3516,11 @@
       state.hoverAudienceId = audienceAreaHit ? audienceAreaHit.id : null;
       state.hoverCorner = audienceAreaHit ? -1 : corner;
       state.hoverEdge = audienceAreaHit ? -1 : edge;
-      els.canvas.style.cursor = stageExtension ? (stageExtension.merged ? "not-allowed" : "move") : (element ? "pointer" : (audienceHandleHit
-        ? "ns-resize" : (audienceAreaHit ? "pointer"
-          : (state.hoverCorner >= 0 ? "move" : (state.hoverEdge >= 0 ? "grab" : "default")))));
+      els.canvas.style.cursor = stageExtension ? (stageExtension.merged ? "not-allowed" : "move")
+        : element ? "pointer"
+          : audienceHandleHit ? "ns-resize"
+            : audienceAreaHit ? "pointer"
+              : state.hoverCorner >= 0 ? "move" : "grab";
       render();
       return;
     }
@@ -3518,6 +3553,17 @@
     if (longPressTimer) window.clearTimeout(longPressTimer);
     longPressTimer = null;
     const finished = activePointer;
+    if (finished.kind === "pan") {
+      activePointer = null;
+      if (cancelled) {
+        state.view.center = finished.startCenter;
+        state.view.fit = finished.startFit;
+      }
+      els.canvas.style.cursor = "grab";
+      if (!cancelled && finished.moved) setStatus("平面図を移動しました。舞台・客席の位置は変わっていません。");
+      render();
+      return;
+    }
     if (!cancelled && !finished.longPressed) {
       const releasePoint = fromEvent(event);
       const movedAtRelease = Array.isArray(finished.start) && finished.start.length === 2 &&
@@ -3644,6 +3690,7 @@
     finishPointer(event, cancelled);
     if (!tracked) return;
     pointerHistoryStart = null;
+    if (pointerKind === "pan") return; // 表示位置は劇場データの履歴へ入れない。
     if (cancelled && before) {
       applyDocumentSnapshot(before);
       setStatus("操作を取り消しました。");
@@ -3763,6 +3810,7 @@
         levels: [],
         /* 舞台の高さ。未入力のときは鍵ごと書かない（持たない会場は今までどおりに描かれる）。 */
         ...(Number.isFinite(state.stageHeightM) ? { stageHeightM: state.stageHeightM } : {}),
+        ...(state.floorColor !== floorColors.brown ? { previewColor: state.floorColor } : {}),
       },
       ceiling: {
         heightM: state.ceiling.heightM,
@@ -4114,6 +4162,16 @@
     return true;
   }
 
+  function setFloorColor(choice) {
+    const color = floorColors[choice];
+    if (!color) return false;
+    if (state.floorColor === color) return true;
+    state.floorColor = color;
+    setStatus(`舞台床を${{ brown: "茶色", black: "黒", gray: "グレー" }[choice]}にしました。`);
+    render();
+    return true;
+  }
+
   function setAudienceHeight(end, input) {
     const area = selectedAudienceArea(), value = Number(input);
     if (!area || typeof input === "string" && !input.trim() || !Number.isFinite(value) ||
@@ -4345,6 +4403,9 @@
     els.stageHeight.addEventListener("change", commitStageHeight);
     els.stageHeight.addEventListener("blur", commitStageHeight);
   }
+  document.querySelectorAll("[data-venue-editor-floor-color]").forEach((button) => {
+    button.addEventListener("click", () => withHistory(() => setFloorColor(button.dataset.venueEditorFloorColor)));
+  });
   for (const [input, end] of [[els.audienceFrontHeight, "frontM"], [els.audienceRearHeight, "rearM"]]) {
     if (!input) continue;
     const commit = () => {

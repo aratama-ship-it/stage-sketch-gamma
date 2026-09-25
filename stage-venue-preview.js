@@ -20,13 +20,13 @@
       <button type="button" data-view="fit" aria-label="劇場全体を表示">全体</button>
     </div>
     <div class="venue-live-canvas-wrap"><canvas id="venue-live-canvas" tabindex="0"
-      aria-label="劇場の立体。ドラッグで回転、矢印キーでも回転、プラス・マイナスで拡大縮小。Escで移動を取り消し。"></canvas></div>
-    <div class="venue-live-foot">
-      <div class="venue-live-controls">
+      aria-label="劇場の立体。ドラッグで回転、矢印キーでも回転、プラス・マイナスで拡大縮小。Escで移動を取り消し。"></canvas>
+      <div class="venue-live-controls" role="group" aria-label="劇場プレビューの操作">
         <button type="button" data-action="move" aria-pressed="false">袖・壁を動かす</button>
         <button type="button" data-action="out" aria-label="立体を縮小">−</button>
         <button type="button" data-action="in" aria-label="立体を拡大">＋</button>
-      </div>
+      </div></div>
+    <div class="venue-live-foot">
       <p id="venue-live-help">ドラッグで見回す · ホイールで拡大縮小</p>
       <p>袖幕の位置は平面図と共通。高さは目安です。</p>
     </div>`;
@@ -54,6 +54,9 @@
     const room = polygonOK(venue.room?.outline) ? venue.room.outline : null;
     const ceiling = Math.max(.1, Number(venue.ceiling.heightM) || 6);
     const stageY = Number(venue.floor.stageHeightM) || 0;
+    const floorColors = window.SHOSAI_VENUES.floorColors;
+    const floorColor = Object.values(floorColors).includes(venue.floor.previewColor)
+      ? venue.floor.previewColor : floorColors.brown;
     const faces = [], lines = [];
     const point = (p, h) => [p[0], h, p[1]];
     const face = (vertices, fill, target = null, cloth = false, base = false) => {
@@ -70,7 +73,7 @@
       });
     };
     if (room) prism(room, Math.min(-.14, stageY - .14), Math.min(-.14, stageY - .14), '#29251f', null, 2);
-    floor.forEach(p => prism(p, Math.min(-.12, stageY - .12), stageY, '#806247', null, true));
+    floor.forEach(p => prism(p, Math.min(-.12, stageY - .12), stageY, floorColor, null, true));
     (venue.audience || []).forEach(area => {
       if (!area.elevation) { prism(area.polygon, -.03, 0, '#705349', null, true); return; }
       if (!polygonOK(area.polygon)) return;

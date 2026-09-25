@@ -123,6 +123,7 @@ body[data-gamma-workspace="cuesheet"].stage-timeline-expanded:not(.stage-fullscr
 /* 劇場カスタムはモード画面として既存エディタと舞台機構を表示する。 */
 #gamma-venue-workspace .stage-venue-editor-modal {
   position: static;
+  z-index: auto; /* 3Dタブの固定オーバーレイより前に残さない */
   left: auto;
   top: auto;
   transform: none;
@@ -757,3 +758,59 @@ body.gamma-venue-setup-required .stage-workspace-tab[disabled] {
 /* inert が操作を止める。ここは見た目だけ（薄く・彩度を落とす）。 */
 body.gamma-venue-setup-required .is-venue-gated { opacity: 0.35; filter: saturate(0.6); }
 @media (prefers-reduced-motion: reduce) { .gamma-stage-gate-band.is-nudge { animation: none; outline: 2px solid #c98955; } }
+
+/* 舞台スケッチのヘッダーは、モード内をスクロールしても操作できる位置に残す。 */
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--desk);
+}
+
+/* 中間幅では操作群を1行へ押し込まず、ロゴ・タブの下へ送る。 */
+@media (min-width: 1120px) and (max-width: 1500px) {
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head {
+    flex-wrap: wrap;
+    row-gap: var(--gamma-gap);
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head .stage-history-actions {
+    flex: 1 0 600px;
+  }
+}
+
+/* 舞台タブの3列だけを画面内に収め、それぞれを独立したスクロール領域にする。
+   タイムライン開閉時の下余白は #view-stage の既存規則に任せる。 */
+@media (min-width: 1120px) {
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) #view-stage {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-sketch {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-sketch-head,
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .gamma-stage-gate-band:not([hidden]) {
+    flex: 0 0 auto;
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-sketch-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch;
+    overflow: hidden;
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-sketch-grid > [data-col] {
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-dark) transparent;
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-sketch-grid > .stage-col {
+    overflow-x: hidden;
+  }
+}

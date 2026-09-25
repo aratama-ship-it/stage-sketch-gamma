@@ -34584,6 +34584,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
           sceneIndex: scenes.indexOf(current),
           sceneCount: scenes.length,
           venue: { width: size.width, depth: size.depth, height: size.height, type: state.project.venue,
+            sizeId: state.project.venueSize,
             // 客席の囲み方。全周（ビッグトップ・TOHU等）なら3Dカメラの客席もリングになる
             audience: venue().audience,
             /* 床の輪郭と追加ステージ（VENUE_PRESETS_STAGE6_2026_09_19）。

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.14">
+<meta name="stage-sketch-gamma-version" content="v0.2.15">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
@@ -19,7 +19,7 @@
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="gamma.css?v=2026092514">
+<link rel="stylesheet" href="gamma.css?v=2026092517">
 <link rel="stylesheet" href="gamma-mobile.css?v=2026091950">
 <script src="gamma-light-model.js?v=2026092113"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=2026091987">
@@ -27,7 +27,7 @@
 <link rel="stylesheet" href="stage-vox-panel.css?v=2026092432">
 <link rel="stylesheet" href="stage-panel-columns.css?v=2026092402">
 <link rel="stylesheet" href="stage-script-editor.css?v=2026092430">
-<link rel="stylesheet" href="stage-venue-preview.css?v=2026092501">
+<link rel="stylesheet" href="stage-venue-preview.css?v=2026092504">
 <link rel="stylesheet" href="stage-venue-viewpoints.css?v=2026092501">
 </head>
 <body class="is-standalone">
@@ -68,7 +68,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.14</span>
+              <span class="stage-app-version">0.2.15</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -2560,6 +2560,18 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0215-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0215-title">v0.2.15</h3>
+        <time datetime="2026-09-25">2026-09-25</time>
+      </header>
+      <ul>
+        <li>劇場設定の平面図をドラッグで移動できるようにし、初期表示は舞台と舞台袖を大きく映すようにしました。</li>
+        <li>舞台床に茶色・黒・グレーを選べます。劇場設定の形、客席、袖幕を3D画面にも反映します。</li>
+        <li>舞台画面のヘッダーを固定し、左右の道具列と中央のプレビューをそれぞれスクロールできるようにしました。</li>
+        <li>劇場設定「5. 客席」で、舞台側・後方の床高欄を客席の選択前から表示します。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0214-title">
       <header class="stage-release-entry-head">
         <h3 id="stage-release-v0214-title">v0.2.14</h3>
@@ -3104,6 +3116,14 @@
         </div>
         <p class="stage-profile-hint stage-venue-editor-ceiling-help" id="stage-venue-editor-stage-height-help">客席の床を0とした高さです。−3〜3mまで、0.05mきざみ。マイナスは客席より低い舞台（サーカスのピステなど）。空欄のままなら、いままでどおりの見え方になります。</p>
       </div>
+      <div class="stage-venue-editor-setting stage-venue-editor-floor-color">
+        <span id="stage-venue-editor-floor-color-label">舞台床の色</span>
+        <div class="stage-tool-grid stage-venue-editor-floor-colors" role="group" aria-labelledby="stage-venue-editor-floor-color-label">
+          <button type="button" data-venue-editor-floor-color="brown" aria-pressed="true"><span class="stage-venue-editor-floor-swatch" aria-hidden="true"></span><span>茶色</span></button>
+          <button type="button" data-venue-editor-floor-color="black" aria-pressed="false"><span class="stage-venue-editor-floor-swatch" aria-hidden="true"></span><span>黒</span></button>
+          <button type="button" data-venue-editor-floor-color="gray" aria-pressed="false"><span class="stage-venue-editor-floor-swatch" aria-hidden="true"></span><span>グレー</span></button>
+        </div>
+      </div>
         </section>
         <section class="stage-venue-editor-extension" aria-labelledby="stage-venue-editor-extension-title">
       <div class="stage-venue-editor-shape-step">
@@ -3184,17 +3204,17 @@
         <button type="button" class="btn-quiet" id="stage-venue-editor-audience-merge" disabled>重なりを合成</button>
       </div>
       <button type="button" class="btn-quiet stage-venue-editor-audience-full" id="stage-venue-editor-audience-full" hidden disabled>全周に配置</button>
-      <div id="stage-venue-editor-audience-elevation" class="stage-venue-editor-audience-elevation" hidden>
-        <p class="stage-profile-hint">客席を選ぶと床高を設定できます。舞台床を0mとして、舞台側と後方が同じなら平床、異なれば傾斜床になります。段差は区画を分けて作ります。</p>
+      <div id="stage-venue-editor-audience-elevation" class="stage-venue-editor-audience-elevation">
+        <p class="stage-profile-hint" id="stage-venue-editor-audience-height-help">錆色の客席を選ぶと床高を編集できます。舞台床を0mとして、舞台側と後方が同じなら平床、異なれば傾斜床になります。段差は区画を分けて作ります。</p>
         <div class="stage-venue-editor-setting">
           <label for="stage-venue-editor-audience-front-height">舞台側の床高</label>
-          <div class="stage-venue-editor-ceiling-input"><input type="number" class="stage-text-input" id="stage-venue-editor-audience-front-height" min="-10" max="60" step="0.1" inputmode="decimal"><span aria-hidden="true">m</span></div>
+          <div class="stage-venue-editor-ceiling-input"><input type="number" class="stage-text-input" id="stage-venue-editor-audience-front-height" min="-10" max="60" step="0.1" inputmode="decimal" aria-describedby="stage-venue-editor-audience-height-help" disabled><span aria-hidden="true">m</span></div>
         </div>
         <div class="stage-venue-editor-setting">
           <label for="stage-venue-editor-audience-rear-height">後方の床高</label>
-          <div class="stage-venue-editor-ceiling-input"><input type="number" class="stage-text-input" id="stage-venue-editor-audience-rear-height" min="-10" max="60" step="0.1" inputmode="decimal"><span aria-hidden="true">m</span></div>
+          <div class="stage-venue-editor-ceiling-input"><input type="number" class="stage-text-input" id="stage-venue-editor-audience-rear-height" min="-10" max="60" step="0.1" inputmode="decimal" aria-describedby="stage-venue-editor-audience-height-help" disabled><span aria-hidden="true">m</span></div>
         </div>
-        <button type="button" class="btn-quiet" id="stage-venue-editor-audience-height-reset">既定の高さに戻す</button>
+        <button type="button" class="btn-quiet" id="stage-venue-editor-audience-height-reset" disabled>既定の高さに戻す</button>
       </div>
         </section>
         <section class="stage-venue-editor-wings-guide" aria-labelledby="stage-venue-editor-wings-title">
@@ -3277,7 +3297,8 @@
         <p class="stage-venue-editor-dims" id="stage-venue-editor-dims">間口 だいたい12m ・ 奥行 だいたい8m</p>
         <div class="stage-venue-editor-canvas-wrap">
           <canvas id="stage-venue-editor-canvas" width="960" height="640" tabindex="0"
-                  aria-label="カスタム劇場の平面。追加ステージ、客席、舞台袖を描きます"></canvas>
+                  aria-label="カスタム劇場の平面。余白をドラッグして表示位置を移動できます。追加ステージ、客席、舞台袖を描きます"
+                  title="余白をドラッグして移動／図形の上ではShift＋ドラッグで移動"></canvas>
           <div class="stage-venue-editor-zoom" role="group" aria-label="平面図の表示倍率">
             <!-- T-13（2026-09-18 本人要望）: 「戻る／進む」はここから消した。
                  ヘッダーの ↶ ↷ はショー側の履歴で、劇場設定の取り消しとは別物。
@@ -3296,12 +3317,11 @@
           <span class="stage-venue-editor-wing-swatch" aria-hidden="true"></span>
           <span>破線：舞台袖</span>
         </div>
-        <p class="stage-venue-editor-status" id="stage-venue-editor-status" aria-live="polite">3番で追加ステージ、5番または6番で客席・舞台袖を描けます。</p>
-        <div class="stage-venue-editor-area-selection">
-          <p id="stage-venue-editor-audience-selection">配置モードを選択してください</p>
+        <p class="stage-venue-editor-status" id="stage-venue-editor-status" aria-live="polite"></p>
+        <div class="stage-venue-editor-area-selection" hidden>
+          <p id="stage-venue-editor-audience-selection"></p>
           <button type="button" class="btn-quiet" id="stage-venue-editor-audience-remove" disabled>選択したものを削除</button>
         </div>
-        <p class="stage-profile-hint stage-venue-editor-boundary">目安の平面です。搬入経路・荷重・安全距離は判定しません。</p>
         </section>
         <footer class="stage-venue-editor-actions stage-venue-library-footer">
           <div class="stage-venue-library-feedback">
@@ -3562,7 +3582,7 @@
   </button>
 </div>
 
-<script src="stage-venues.js?v=2026092523"></script>
+<script src="stage-venues.js?v=2026092525"></script>
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
@@ -3574,12 +3594,12 @@
 <script src="stage-samples/index.js?v=2026092402"></script>
 <script src="stage-samples/romeo-juliet-cued.js?v=2026092435"></script>
 <script src="stage-samples/romeo-juliet-second.js?v=20260925-rj2"></script>
-<script src="stage-samples/feature-test-show.js?v=2026092525"></script>
+<script src="stage-samples/feature-test-show.js?v=2026092529"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
 <script src="stage-machinery.js?v=2026092055"></script>
 <script src="stage-scrim.js?v=2026092059"></script>
-<script src="stage-first-person.js?v=2026092508"></script>
+<script src="stage-first-person.js?v=2026092509"></script>
 <script src="stage-audio-store.js?v=2026092523"></script>
 <script src="stage-project-backup-store.js?v=2026092523"></script>
 <script src="stage-storage-codec.js?v=2026092523"></script>
@@ -3608,7 +3628,7 @@
 <script src="stage-performer-motion.js?v=2026092506"></script>
 <script src="stage-performer-contour.js?v=2026092506"></script>
 <script src="stage-performer-body.js?v=2026092506"></script>
-<script src="stage-sketch.js?v=2026092525"></script>
+<script src="stage-sketch.js?v=2026092526"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092210"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-vox-panel.js?v=2026092432"></script>
@@ -3618,10 +3638,10 @@
 <script src="stage-study-owner.js?v=2026091501"></script>
 <script src="stage-usage.js?v=2026091501"></script>
 <script src="stage-venue-curtains.js?v=2026092519"></script>
-<script src="stage-venue-editor.js?v=2026092523"></script>
-<script src="gamma-workspace.js?v=2026092514"></script>
+<script src="stage-venue-editor.js?v=2026092528"></script>
+<script src="gamma-workspace.js?v=2026092516"></script>
 <script src="gamma-mobile.js?v=2026092202"></script>
-<script src="stage-venue-preview.js?v=2026092520"></script>
+<script src="stage-venue-preview.js?v=2026092523"></script>
 <script src="stage-venue-viewpoints.js?v=2026092503"></script>
 </body>
 </html>

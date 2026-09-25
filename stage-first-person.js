@@ -180,6 +180,8 @@
    * ★持っていない会場は HOUSE_FLOOR_Y（=−1）のまま＝いままでの絵と1画素も変わらない。 */
   let houseFloorY = HOUSE_FLOOR_Y;
   function syncHouseFloor() {
+    const modeled = modeledVenue3D();
+    if (modeled) { houseFloorY = -modeled.stageHeightM; return; }
     const venue = currentVenueModel();
     const height = venue && Number(venue.stageHeightM);
     houseFloorY = Number.isFinite(height) ? -height : HOUSE_FLOOR_Y;
@@ -708,6 +710,87 @@
     return id && venues && typeof venues.byId === "function" ? venues.byId(id) : null;
   }
 
+  /* 3Dタブも劇場設定と同じ venue-v2 の「選択中の規模」を正本にする。
+     旧3Dの固定袖幕・固定客席は、この形が無い古い会場だけの代替描画。 */
+  let modeledVenueCache = { key: "", value: null };
+  function buildModeledVenue(raw, sizeId, width, depth, passed) {
+    const size = (raw?.sizes || []).find(item => item.id === sizeId);
+    const floor = size?.floor || raw?.floor;
+    const outline = passed?.outline || floor?.outline;
+    const extensions = passed?.stageExtensions || floor?.extensions || [];
+    const shapeLib = window.SHOSAI_FRONT_SHAPE;
+    if (!Array.isArray(outline) || outline.length < 3 || !shapeLib?.build) return null;
+    const shape = shapeLib.build([outline, ...extensions.map(item => item?.polygon)].filter(Boolean));
+    if (!shape) return null;
+    const venue = {
+      ...raw, floor: { ...floor, outline, extensions },
+      audience: size?.audience || raw.audience || [],
+      stageWings: size?.stageWings || raw.stageWings || [],
+      fixtures: size?.fixtures || raw.fixtures || [],
+      ceiling: size?.ceiling || raw.ceiling || {},
+      room: size?.room || raw.room,
+      backScreen: size?.backScreen || raw.backScreen,
+    };
+    const at = (point, y = 0) => toWorld(shape.uOf(point[0]), shape.vOf(point[1]), width, depth, y);
+    const stageHeightM = Number.isFinite(Number(floor?.stageHeightM)) ? Number(floor.stageHeightM) : 0;
+    const heightAt = (area, point) => window.SHOSAI_VENUES.audienceHeight.at(
+      area, outline, point, stageHeightM);
+    const inside = (polygon, point) => {
+      let hit = false;
+      for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const a = polygon[i], b = polygon[j];
+        if ((a[1] > point[1]) !== (b[1] > point[1]) &&
+            point[0] < (b[0] - a[0]) * (point[1] - a[1]) / (b[1] - a[1]) + a[0]) hit = !hit;
+      }
+      return hit;
+    };
+    const audienceBounds = venue.audience.filter(area => Array.isArray(area?.polygon) && area.polygon.length >= 3)
+      .map(area => {
+        const xs = area.polygon.map(p => p[0]), zs = area.polygon.map(p => p[1]);
+        return { area, minX: Math.min(...xs), maxX: Math.max(...xs),
+          minZ: Math.min(...zs), maxZ: Math.max(...zs) };
+      });
+    // 描く床は完全な多角形、座席の点だけ全客席で上限を設ける。
+    const totalBoundsArea = audienceBounds.reduce((sum, bounds) => sum +
+      (bounds.maxX - bounds.minX) * (bounds.maxZ - bounds.minZ), 0);
+    const pitch = Math.max(.78, Math.sqrt(totalBoundsArea / 1400));
+    const areas = audienceBounds
+      .map(({ area, minX, maxX, minZ, maxZ }) => {
+        const polygon = area.polygon;
+        const seats = [];
+        let row = 0;
+        for (let z = minZ + pitch / 2; z < maxZ; z += pitch, row += 1) {
+          let seat = 0;
+          for (let x = minX + pitch / 2; x < maxX; x += pitch, seat += 1) {
+            const point = [x, z];
+            if (!inside(polygon, point)) continue;
+            const world = at(point, heightAt(area, point));
+            seats.push({ x: world.x, z: world.z, floorY: world.y,
+              headY: world.y + (Number(area.eyeM) || HOUSE_PERSON.headYM),
+              row, seat, standing: area.mode === "standing" });
+          }
+        }
+        return { area, seats, top: polygon.map(point => at(point, heightAt(area, point))) };
+      });
+    const curtains = window.GAMMA_VENUE_CURTAINS?.forVenue(venue) || [];
+    return { venue, shape, at, areas, curtains, stageHeightM };
+  }
+  function modeledVenue3D() {
+    const passed = data?.venue;
+    const id = passed?.type, sizeId = passed?.sizeId;
+    if (!id) return null;
+    const key = `${id}|${sizeId}|${W}|${D}|${JSON.stringify(passed.outline)}|${JSON.stringify(passed.stageExtensions)}`;
+    if (modeledVenueCache.key === key) return modeledVenueCache.value;
+    const raw = window.SHOSAI_VENUES?.library?.venueV2ById(id);
+    const value = raw ? buildModeledVenue(raw, sizeId, W, D, passed) : null;
+    modeledVenueCache = { key, value };
+    return value;
+  }
+  window.addEventListener("stage-venue-library-changed", () => {
+    modeledVenueCache = { key: "", value: null };
+    wakeFrames();
+  });
+
   /* 立食会場は、舞台の後ろに客席が続く劇場とは別の「部屋」。会場プリセットから
      渡された値だけを使うので、既存ショーの駒や客席データには書き込まない。 */
   function standingReceptionLayout() {
@@ -721,6 +804,20 @@
     const stageWidth = Math.max(0, finite(width, 12));
     const stageDepth = Math.max(0, finite(depth, 9));
     const stageCeiling = Math.max(0, finite(ceiling, 8));
+    const modeled = modeledVenue3D();
+    if (modeled && modeled.venue.id === rawVenue?.id) {
+      const points = modeled.shape.polygons.flat().concat(
+        modeled.areas.flatMap(entry => entry.area.polygon), modeled.venue.room?.outline || [])
+        .map(point => modeled.at(point));
+      const heights = modeled.areas.flatMap(entry => entry.top.map(point => point.y));
+      return {
+        x: clamp(finite(pos?.x, 0), Math.min(...points.map(point => point.x)) - 8,
+          Math.max(...points.map(point => point.x)) + 8),
+        y: clamp(finite(pos?.y, 1.35), .2, Math.max(stageCeiling, ...heights) + 6),
+        z: clamp(finite(pos?.z, 0), Math.min(...points.map(point => point.z)) - 8,
+          Math.max(...points.map(point => point.z)) + 8),
+      };
+    }
     const geometry = bowlGeometry(rawVenue, stageWidth, stageDepth);
     if (geometry) {
       const side = geometry.halfWidthM + 12;
@@ -759,6 +856,21 @@
          置いていたため、壁の裏側が視界を塞いで客席が見えなかった（2026-08-29 修正）。 */
       { id: "upstage", name: "舞台奥", x: 0, y: 1.6, z: -(stageDepth / 2) + 1.2, yaw: 0, pitch: 0 },
     ];
+    const modeled = modeledVenue3D();
+    if (modeled && modeled.venue.id === rawVenue?.id) {
+      const front = modeled.areas.filter(entry => entry.area.side === "front");
+      const seats = (front.length ? front : modeled.areas).flatMap(entry => entry.seats)
+        .sort((a, b) => Math.hypot(a.x, a.z) - Math.hypot(b.x, b.z));
+      const place = (preset, seat) => {
+        if (!seat) return;
+        preset.x = seat.x; preset.y = seat.floorY + HOUSE_PERSON.headYM; preset.z = seat.z;
+        preset.yaw = Math.atan2(seat.x, -seat.z) * 180 / Math.PI;
+        preset.pitch = -Math.atan2(preset.y, Math.hypot(seat.x, seat.z)) * 180 / Math.PI;
+      };
+      place(presets[1], seats[0]);
+      place(presets[0], seats[Math.floor(seats.length / 2)]);
+      return presets;
+    }
     const geometry = bowlGeometry(rawVenue, stageWidth, stageDepth);
     if (!geometry) return presets;
     const standing = geometry.tiers.find((tier) => tier.mode === "standing" && tier.rows.length);
@@ -1157,6 +1269,8 @@
     W = finite(data.venue && data.venue.width, 12);
     D = finite(data.venue && data.venue.depth, 9);
     CEIL = finite(data.venue && data.venue.height, 8);
+    const modeled = modeledVenue3D();
+    if (modeled) CEIL = finite(modeled.venue.ceiling?.heightM, CEIL);
     syncLightToggles();
     return data;
   }
@@ -1572,7 +1686,8 @@
 
   function renderHud() {
     // 引いた絵の切り替えは、器のある会場（アリーナ・ドーム等）でしか意味がない
-    if (elements && elements.crowd) elements.crowd.hidden = !bowlGeometry(currentVenueModel(), W, D);
+    if (elements && elements.crowd) elements.crowd.hidden = Boolean(modeledVenue3D()) ||
+      !bowlGeometry(currentVenueModel(), W, D);
     if (!elements || !data) return;
     const reception = standingReceptionLayout();
     elements.house.hidden = Boolean(reception);
@@ -1581,6 +1696,7 @@
     elements.scene.textContent = data.sceneTitle || "";
     elements.approx.textContent = reception
       ? text("立食客・ハイテーブルは構図を考えるための目安です")
+      : modeledVenue3D() ? ""
       : data.venue && data.venue.audience === "round"
       ? text("客席のリングは全周の目安で描いています")
       : (data.venue && data.venue.type && data.venue.type !== "proscenium"
@@ -2702,12 +2818,44 @@
     }
   }
 
+  function drawModeledHouse(ctx, model) {
+    const filled = houseModeById(houseModeId).occupancy;
+    model.areas.map(entry => ({ ...entry,
+      depth: toCamera(entry.top.reduce((sum, point) => ({
+        x: sum.x + point.x / entry.top.length, y: sum.y + point.y / entry.top.length,
+        z: sum.z + point.z / entry.top.length,
+      }), { x: 0, y: 0, z: 0 })).z,
+    })).sort((a, b) => b.depth - a.depth).forEach(entry => {
+      const bottom = Math.min(houseFloorY - .04, ...entry.top.map(point => point.y)) - .04;
+      entry.top.forEach((point, index) => {
+        const next = entry.top[(index + 1) % entry.top.length];
+        fillPoly(ctx, [{ ...point, y: bottom }, { ...next, y: bottom }, next, point], "#4b342c");
+      });
+      fillPoly(ctx, entry.top, "#705349", "rgba(196,157,123,.32)", 1);
+    });
+    const people = model.areas.flatMap(entry => entry.seats)
+      .map(person => ({ person, depth: toCamera({ x: person.x, y: person.headY, z: person.z }).z }))
+      .filter(entry => entry.depth > NEAR)
+      .sort((a, b) => b.depth - a.depth);
+    people.forEach(({ person, depth }) => {
+      if (person.standing && !filled) return;
+      const spot = toScreen(toCamera({ x: person.x, y: person.headY, z: person.z }));
+      const pad = HOUSE_PERSON.shoulderWidthM * focal / depth + 16;
+      if (spot.x < -pad || spot.x > canvasWidth + pad ||
+          spot.y < -pad || spot.y > canvasHeight + pad) return;
+      drawHousePerson(ctx, { ...person,
+        tier: "modeled", bowl: true, occupied: seatNoise(person.row, person.seat, 3) < filled });
+    });
+  }
+
   function drawHouse(ctx) {
     const reception = standingReceptionLayout();
     if (reception) {
       drawStandingReceptionHouse(ctx, reception);
       return;
     }
+    const modeled = modeledVenue3D();
+    if (modeled) { drawModeledHouse(ctx, modeled); return; }
     const bowl = bowlHouseUnits(currentVenueModel(), W, D);
     if (bowl) {
       const visible = bowlVisibleUnits(bowl.units);
@@ -2810,7 +2958,74 @@
     units.sort((a, b) => b.depth - a.depth).forEach((unit) => unit.draw());
   }
 
+  function drawModeledShell(ctx, model) {
+    const { venue, shape, at } = model;
+    const room = venue.room?.outline;
+    if (Array.isArray(room) && room.length >= 3) {
+      fillPoly(ctx, room.map(point => at(point, houseFloorY - .08)), "#29251f");
+    }
+    const color = Object.values(window.SHOSAI_VENUES.floorColors || {}).includes(venue.floor.previewColor)
+      ? venue.floor.previewColor : "#806247";
+    shape.polygons.forEach(polygon => fillPoly(ctx, polygon.map(point => at(point, 0)), color));
+    const boundary = window.SHOSAI_FRONT_SHAPE.boundary(shape);
+    boundary.forEach(({ a, b, outward }) => {
+      const from = at(a), to = at(b);
+      const mid = { x: (from.x + to.x) / 2, z: (from.z + to.z) / 2 };
+      if (outward[0] * (camera.x - mid.x) + outward[1] * (camera.z - mid.z) <= 0) return;
+      fillPoly(ctx, [at(a, Math.min(-.12, houseFloorY - .12)),
+        at(b, Math.min(-.12, houseFloorY - .12)), to, from], "#241c15");
+    });
+    (venue.floor.extensions || []).filter(extension => extension.merged === false &&
+      Array.isArray(extension.polygon) && extension.polygon.length >= 3).forEach(extension => {
+      extension.polygon.forEach((point, index) => line3(ctx, at(point),
+        at(extension.polygon[(index + 1) % extension.polygon.length]), "rgba(200,145,63,.55)", 1));
+    });
+    (venue.stageWings || []).forEach(wing => {
+      if (!Array.isArray(wing.polygon) || wing.polygon.length < 3) return;
+      fillPoly(ctx, wing.polygon.map(point => at(point, 0)), "#4a443c");
+    });
+    // 劇場設定のライブプレビューと同じ導出。固定位置の袖幕を重ねない。
+    model.curtains.forEach(({ from, to }) => {
+      fillPoly(ctx, [at(from), at(to), at(to, CEIL * .75), at(from, CEIL * .75)], "#302c29");
+    });
+    (venue.fixtures || []).filter(fixture => fixture.type === "wall" &&
+      Array.isArray(fixture.polygon) && fixture.polygon.length >= 3).forEach(wall => {
+      const height = Number(wall.heightM) || CEIL;
+      wall.polygon.forEach((point, index) => {
+        const next = wall.polygon[(index + 1) % wall.polygon.length];
+        fillPoly(ctx, [at(point), at(next), at(next, height), at(point, height)], "#8e887f");
+      });
+    });
+    (venue.fixtures || []).filter(fixture => fixture.type !== "wall").forEach(fixture => {
+      const polygon = fixture.type === "column" && Array.isArray(fixture.at)
+        ? Array.from({ length: 12 }, (_, index) => [
+          fixture.at[0] + Math.cos(index * Math.PI / 6) * fixture.radiusM,
+          fixture.at[1] + Math.sin(index * Math.PI / 6) * fixture.radiusM])
+        : fixture.polygon;
+      if (Array.isArray(polygon) && polygon.length >= 3) {
+        fillPoly(ctx, polygon.map(point => at(point, Number(fixture.heightM) || 1)), "#91887a");
+      }
+    });
+    if (venue.backScreen) {
+      const { from, to } = venue.backScreen;
+      fillPoly(ctx, [at(from), at(to), at(to, CEIL), at(from, CEIL)], "#e9e8df");
+    }
+    const frontBorder = window.GAMMA_VENUE_CURTAINS?.frontBorderForVenue(venue);
+    if (frontBorder) fillPoly(ctx, [at(frontBorder.from, frontBorder.openingHeightM),
+      at(frontBorder.to, frontBorder.openingHeightM), at(frontBorder.to, frontBorder.topHeightM),
+      at(frontBorder.from, frontBorder.topHeightM)], "#302c29");
+    if (venue.ceiling?.hasCeiling !== false) {
+      const outline = Array.isArray(room) && room.length >= 3 ? room : venue.floor.outline;
+      outline.forEach((point, index) => {
+        const next = outline[(index + 1) % outline.length];
+        line3(ctx, at(point, CEIL), at(next, CEIL), "rgba(156,130,63,.35)", 1);
+      });
+    }
+  }
+
   function drawShell(ctx) {
+    const modeled = modeledVenue3D();
+    if (modeled && !standingReceptionLayout()) { drawModeledShell(ctx, modeled); return; }
     const venue = currentVenueModel();
     const reception = standingReceptionLayout();
     if (reception) {
@@ -3710,7 +3925,6 @@
   function renderFrame(dtSeconds = 0) {
     const ctx = elements.canvas.getContext("2d");
     if (!ctx) return;
-    syncHouseFloor();
     state.yaw += (state.targetYaw - state.yaw) * .24;
     state.pitch += (state.targetPitch - state.pitch) * .24;
     /* 目標にほぼ着いたら、そこで目標そのものへ揃える。
@@ -3720,6 +3934,7 @@
     if (Math.abs(state.targetYaw - state.yaw) <= SETTLE_EPSILON) state.yaw = state.targetYaw;
     if (Math.abs(state.targetPitch - state.pitch) <= SETTLE_EPSILON) state.pitch = state.targetPitch;
     readCurrent();
+    syncHouseFloor();
     hitTargets.length = 0;
     ringScreenPts = [];
     knobScreen = null;
@@ -3746,12 +3961,16 @@
     ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     ctx.fillStyle = "#0d0a08"; ctx.fillRect(0, 0, canvasWidth, canvasHeight);
     const reception = Boolean(standingReceptionLayout());
-    const bowlHouse = Boolean(bowlGeometry(currentVenueModel(), W, D));
+    const modeledHouse = Boolean(modeledVenue3D());
+    const bowlHouse = !modeledHouse && Boolean(bowlGeometry(currentVenueModel(), W, D));
     const roundHouse = Boolean(data && data.venue && data.venue.audience === "round");
     const inHouse = camera.z > D / 2;
     if (reception) {
       drawShell(ctx);
       drawHouse(ctx);
+    } else if (modeledHouse) {
+      drawHouse(ctx);
+      drawShell(ctx);
     } else if (bowlHouse) {
       // 器の床・屋根、遠近順の客席、床格子の順。劇場の箱や額縁は描かない。
       drawShell(ctx);
@@ -3778,7 +3997,7 @@
         if (piece === camera.me) return;
         drawOnePiece(piece);
       });
-    if (!reception && !bowlHouse && inHouse) drawProscenium(ctx);
+    if (!reception && !bowlHouse && !modeledHouse && inHouse) drawProscenium(ctx);
     const selected = !data.transition && state.sel && data.pieces.find((piece) => (
       piece.id === state.sel && piece.type === "performer" && !piece.exitWalker
     ));
@@ -4271,7 +4490,7 @@
       crowdModes: CROWD_MODES, normalizeCrowdModeId, crowdModeById,
       bowlUnitsCacheSize: () => bowlUnitsCache.size,
       frameDelta, wingWidthFor, wingLegX, wingLegPairs,
-      customStageShape, customGridSpans,
+      customStageShape, customGridSpans, buildModeledVenue,
       wingLegZs, houseSeatsPerRow, houseRiserRows, facingFromGround, uvFromGround, pickFrom,
       seatNoise, houseSeats, houseBalconyRows, houseRingRows, seatSpanEnds,
       housePerson: () => HOUSE_PERSON, houseSeat: () => HOUSE_SEAT,

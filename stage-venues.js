@@ -19,6 +19,7 @@
   const LEGACY_MIGRATION_KEY = "gamma:shosai-stage-venues-v1:migrated-stage-venue-drafts-v1";
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const roundM = (value) => Math.round(value * 1000) / 1000;
+  const floorColors = Object.freeze({ brown: "#806247", black: "#303030", gray: "#777777" });
 
   // Audience elevations are stage-relative. Legacy areas have no elevation and
   // remain at world 0, even when the older stageHeightM property is present.
@@ -1763,6 +1764,9 @@
       delete venue.floor.extensions;
     }
     venue.floor.levels = Array.isArray(venue.floor.levels) ? venue.floor.levels : [];
+    // Optional stage-floor color. Existing venues have no color field and keep the original brown preview.
+    if (venue.floor.previewColor !== undefined &&
+        !Object.values(floorColors).includes(venue.floor.previewColor)) return null;
     /* 舞台の高さ（客席の床を0とした舞台の床のm）。★任意。
      * 無い会場は今までどおりの描き方をする＝既存のショーの絵を1画素も変えない。
      * マイナスにできるのは、サーカスのピステが客席の最前列より低いことがあるため（本人 2026-09-19）。 */
@@ -2201,6 +2205,7 @@
   // 実在劇場は配布時の選択肢に含めない。汎用の広い会場は3Dカメラで使う。
   // ID参照と、本人が取り込んだ会場ライブラリも使えるように残す。
   window.SHOSAI_VENUES = {
+    floorColors,
     audienceHeight,
     get list() {
       return VENUES.filter((venue) => !venue.realVenue && !RETIRED_PRESET_IDS.has(venue.id))

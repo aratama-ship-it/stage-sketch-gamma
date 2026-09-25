@@ -26,6 +26,10 @@
     const view=document.getElementById('view-stage');
     return view ? (parseFloat(getComputedStyle(view).paddingBottom)||0) : 0;
   }
+  function workspaceTop(element) {
+    const view=document.getElementById('view-stage');
+    return element.getBoundingClientRect().top+(view?view.scrollTop:0);
+  }
   function syncFrameHeight() {
     frameResizeRequest=0;
     const narrow=window.matchMedia('(max-width: 700px)').matches;
@@ -47,15 +51,15 @@
      * ヘッダーの高さは幅で変わる（63〜113px）ので固定calcではなく実測で決める。
      * 縦に流れるのは中の手順の列だけ（gamma.css側で overflow-y:auto）。 */
     if(mode==='venue-setup') {
-      const available=Math.floor(window.innerHeight-venueWorkspace.getBoundingClientRect().top-inset-16);
+      const available=Math.floor(window.innerHeight-workspaceTop(venueWorkspace)-inset-16);
       venueWorkspace.style.height=Math.max(narrow?320:420,available)+'px';
     }
     if(mode==='script' && scriptWorkspace) {
-      const available=Math.floor(window.innerHeight-scriptWorkspace.getBoundingClientRect().top-inset-16);
+      const available=Math.floor(window.innerHeight-workspaceTop(scriptWorkspace)-inset-16);
       scriptWorkspace.style.height=Math.max(narrow?360:460,available)+'px';
     }
     if(mode==='cuesheet' && cuesheetWorkspace) {
-      const available=Math.floor(window.innerHeight-cuesheetWorkspace.getBoundingClientRect().top-inset-16);
+      const available=Math.floor(window.innerHeight-workspaceTop(cuesheetWorkspace)-inset-16);
       cuesheetWorkspace.style.height=Math.max(narrow?360:460,available)+'px';
     }
   }
@@ -308,9 +312,9 @@
     const grid=venueWorkspace.querySelector('.stage-venue-editor-workspace');
     const menu=grid?.querySelector('.stage-venue-editor-menu');
     if(!grid || !menu) return;
-    const storageKey='gamma-venue-menu-width-v1';
+    const storageKey='gamma-venue-menu-width-v2';
     const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
-    let preferred=null, drag=null, frame=0, width=220, maximum=480;
+    let preferred=null, drag=null, frame=0, width=480, maximum=480;
     try {
       const saved=Number(localStorage.getItem(storageKey));
       if(Number.isFinite(saved) && saved>=220 && saved<=480) preferred=saved;
@@ -330,8 +334,7 @@
       const total=grid.getBoundingClientRect().width;
       if(!total || window.innerWidth<=900) return;
       maximum=Math.max(220,Math.min(480,Math.floor(total-420-18)));
-      const fallback=clamp(window.innerWidth*.18,220,280);
-      width=Math.round(clamp(drag ? drag.width : preferred??fallback,220,maximum));
+      width=Math.round(clamp(drag ? drag.width : preferred??maximum,220,maximum));
       grid.style.setProperty('--venue-menu-width',width+'px');
       handle.setAttribute('aria-valuemin','220');
       handle.setAttribute('aria-valuemax',String(maximum));
@@ -531,6 +534,7 @@
 
   async function select(next) {
     if(!['normal','light-placement','light-design','venue-setup','script','cuesheet'].includes(next)) return;
+    const switchingMode=mode!==next;
     // スマホ確認機では劇場・照明編集へ移らず、ショーの読込と閲覧を使う。
     if(phoneViewerWorkspace() && next!=='normal') return;
     /* 案A（2026-09-23）: 劇場が決まるまで閉じるのは機材配置・照明デザインだけ。
@@ -626,6 +630,7 @@
       panel.hidden=!isLightMode(mode); venueWorkspace.hidden=mode!=='venue-setup'; normal.inert=mode!=='normal';
       if(scriptWorkspace) scriptWorkspace.hidden=mode!=='script';
       if(cuesheetWorkspace) cuesheetWorkspace.hidden=mode!=='cuesheet';
+      if(switchingMode) document.getElementById('view-stage')?.scrollTo(0,0);
       document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode]').forEach(button=>{
         const active=button.dataset.stageWorkspaceMode===mode;
         button.classList.toggle('is-active',active); button.setAttribute('aria-pressed',String(active));
