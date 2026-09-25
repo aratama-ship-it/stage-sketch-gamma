@@ -125,3 +125,11 @@ test("器具に乗った演者の姿勢の組は本体にあり、基準点が�
   assert.match(main, /function mountedPoseId\(piece, mount\) \{/);
   assert.match(main, /if \(previousMount && previousMount !== "chair" && isMountPose\(previousMount, piece\.pose\)\) piece\.pose = "stand";/, "器具から下ろすと立つ");
 });
+
+test("姿勢の側が描く持ち物は、手首の側で二重に描かない（正面図・3D）", () => {
+  const fpv = read("stage-first-person.js");
+  assert.match(main, /function heldDrawnByPose\(piece, pieces\) \{/);
+  assert.match(main, /if \(heldDrawnByPose\(piece\)\) return;/, "正面図の手首の持ち物");
+  assert.match(main, /heldDrawnByPose: \(pieceId\) =>/);
+  assert.match(fpv, /state\.bridge\.heldDrawnByPose\(piece\.id\)\) return;/, "3D画面の持ち物");
+});

@@ -3510,6 +3510,8 @@
   function drawPiece(ctx, piece) {
     // 保持中の仮面は演者の頭・手と一緒に描く。独立して描くと二重表示になる。
     if (piece.propShape === "mask" && piece.heldBy) return;
+    // 姿勢の側が描いている持ち物（ギターを弾く姿勢のギターなど）は、手首の側で二重に描かない（2026-09-26）
+    if (piece.heldBy && state.bridge && state.bridge.heldDrawnByPose && state.bridge.heldDrawnByPose(piece.id)) return;
     const dims = piece.dims || {};
     /* base は手の高さなので、握り点（無ければ外接の高さ中央）がそこへ来るだけ
        持ち上げる。base をそのまま足すと長い棒の握り位置が手より上へずれる。 */

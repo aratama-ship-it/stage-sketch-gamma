@@ -2131,6 +2131,8 @@
       devilstick_play: "Devil stick play", poi_spin: "Poi spinning", hoop_waist_spin: "Hula hoop at waist",
       rolabola_stand: "Stand on rola bola", germanwheel_ride: "German wheel ride", ride_astride: "Riding astride",
       doublebass_play: "Playing double bass", dj_play: "DJing", kyudo_draw: "Drawing a bow (full draw)",
+      conductor: "Conducting", flute_play: "Playing transverse flute", saxophone_play: "Playing saxophone",
+      shamisen_play: "Playing shamisen", harp_play: "Playing harp", koto_play: "Playing koto", cajon_play: "Playing cajón",
       h2h_base_stand: "Hand-to-hand base (standing)", base_supine_legs_up: "Base lying supine, legs up", two_high_base: "Two-high base",
       shoulder_ride_base: "Shoulder ride base", banquine_base: "Banquine base", bridal_carry_base: "Bridal carry (carrier)", piggyback_base: "Piggyback carrier",
       hug_holder: "Embrace, holding", hand_in_hand: "Hold hands side by side", shoulder_arm: "Arm around shoulder", whisper: "Whisper",

@@ -1737,6 +1737,8 @@
       devilstick_play: "操控花棍", poi_spin: "旋轉火舞球", hoop_waist_spin: "腰部轉呼拉圈",
       rolabola_stand: "站在滾筒平衡板上", germanwheel_ride: "乘德國輪", ride_astride: "跨坐騎乘",
       doublebass_play: "站立演奏低音提琴", dj_play: "打碟", kyudo_draw: "弓道滿弓",
+      conductor: "指揮", flute_play: "吹橫笛", saxophone_play: "吹薩克斯風",
+      shamisen_play: "彈三味線", harp_play: "彈豎琴", koto_play: "彈箏", cajon_play: "演奏木箱鼓",
       h2h_base_stand: "手托手底座（站立）", base_supine_legs_up: "仰臥舉腿底座", two_high_base: "雙層人塔底座",
       shoulder_ride_base: "肩騎底座", banquine_base: "班金底座", bridal_carry_base: "橫抱（抱人側）", piggyback_base: "背人（背負側）",
       hug_holder: "擁抱（抱人側）", hand_in_hand: "並排牽手", shoulder_arm: "搭肩", whisper: "耳語",

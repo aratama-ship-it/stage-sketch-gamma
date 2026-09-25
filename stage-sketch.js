@@ -6668,6 +6668,78 @@
       anL: [-0.07, 0.04, 0], anR: [0.07, 0.04, 0],
       toL: [-0.07, 0.00, 0.075], toR: [0.07, 0.00, 0.075],
     }),
+    /* ---- 2026-09-26 本人選択: W1 第7回 楽器の姿勢 7件 ----
+     * 楽器の輪郭・奏法ごとの腕・座り方を、人影だけでも読み分けられる手掛かりにする。 */
+    makePose("conductor", "指揮をする（右手にタクト・左手を上げる）", {
+      // 右手のタクトを高く掲げ、左手も大きく開いて合図を出す
+      elR: [0.2301, 0.9572, 0.0472], wrR: [0.20, 1.125, 0.105],
+      elL: [-0.2481, 0.9276, 0.0689], wrL: [-0.31, 1.07, 0.16],
+    }, { props: [
+      { kind: "line", a: [0.20, 1.125, 0.105], b: [0.24, 1.35, 0.12], w: 0.008, tone: "gear" },
+    ] }),
+    makePose("flute_play", "横笛を吹く（フルート・篠笛）", {
+      // 口元から右へ伸びる横笛を、左右の手で下から支える
+      elL: [-0.1647, 0.7424, 0.1637], wrL: [-0.04, 0.87, 0.14],
+      elR: [0.2523, 0.7321, 0.086], wrR: [0.15, 0.87, 0.14],
+    }, { props: [
+      { kind: "line", a: [-0.02, 0.90, 0.11], b: [0.42, 0.90, 0.11], w: 0.012, tone: "gear" },
+    ] }),
+    makePose("saxophone_play", "サックスを吹く（体の前に構える）", {
+      // 口元から身体の前へ縦に下ろした管を、上下の手で支える
+      elL: [-0.2247, 0.7325, 0.1212], wrL: [-0.06, 0.69, 0.18],
+      elR: [0.1774, 0.68, 0.1077], wrR: [0.08, 0.56, 0.20],
+    }, { props: [
+      { kind: "line", a: [0, 0.90, 0.08], b: [0.02, 0.68, 0.18], w: 0.024, tone: "gear" },
+      { kind: "line", a: [0.02, 0.68, 0.18], b: [0.10, 0.40, 0.25], w: 0.035, tone: "gear" },
+      { kind: "dot", c: [0.13, 0.39, 0.28], r: 0.055, tone: "gear" },
+    ] }),
+    makePose("shamisen_play", "三味線を弾く（棹を斜めに構える）", {
+      // 椅子に座り、左手で左上の棹を押さえ、右手を右腿上の胴へ置く
+      head: [0, 0.70, 0.02], neck: [0, 0.62, 0.01],
+      shL: [-0.1075, 0.585, 0], shR: [0.1075, 0.585, 0],
+      elL: [-0.2964, 0.5928, 0.0192], wrL: [-0.20, 0.65, 0.16],
+      elR: [0.2154, 0.4912, 0.1251], wrR: [0.08, 0.42, 0.22],
+      hipL: [-0.058, 0.285, -0.02], hipR: [0.058, 0.285, -0.02],
+      knL: [-0.065, 0.285, 0.22], knR: [0.065, 0.285, 0.22],
+      anL: [-0.06, 0.045, 0.22], anR: [0.06, 0.045, 0.22],
+      toL: [-0.06, 0.012, 0.30], toR: [0.06, 0.012, 0.30],
+    }, { props: [
+      { kind: "line", a: [0.09, 0.35, 0.21], b: [-0.30, 0.78, 0.16], w: 0.022, tone: "wood" },
+      { kind: "dot", c: [0.09, 0.34, 0.21], r: 0.11, tone: "wood" },
+    ] }),
+    makePose("harp_play", "ハープを弾く（座って抱え両手を弦へ）", {
+      // 椅子に座り、身体の右前に置くハープの弦へ高さを違えて両手を伸ばす
+      head: [0, 0.70, 0.02], neck: [0, 0.62, 0.01],
+      shL: [-0.1075, 0.585, 0], shR: [0.1075, 0.585, 0],
+      elL: [0.0379, 0.5941, 0.122], wrL: [0.20, 0.60, 0.20],
+      elR: [0.2852, 0.556, 0.0607], wrR: [0.25, 0.48, 0.22],
+      hipL: [-0.058, 0.285, -0.02], hipR: [0.058, 0.285, -0.02],
+      knL: [-0.065, 0.285, 0.22], knR: [0.065, 0.285, 0.22],
+      anL: [-0.06, 0.045, 0.22], anR: [0.06, 0.045, 0.22],
+      toL: [-0.06, 0.012, 0.30], toR: [0.06, 0.012, 0.30],
+    }, { face: [0.15, 0, 0.989] }),
+    makePose("koto_play", "箏を弾く（正座して両手を弦へ）", {
+      // 正座の腰高を保ち、床の箏へ両手を低く伸ばす
+      head: [0, 0.55, -0.07], neck: [0, 0.48, -0.08],
+      shL: [-0.1075, 0.44, -0.08], shR: [0.1075, 0.44, -0.08],
+      elL: [-0.1758, 0.3255, 0.0554], wrL: [-0.10, 0.22, 0.18],
+      elR: [0.1758, 0.3255, 0.0554], wrR: [0.10, 0.22, 0.18],
+      hipL: [-0.055, 0.14, -0.10], hipR: [0.055, 0.14, -0.10],
+      knL: [-0.06, 0.03, 0.11], knR: [0.06, 0.03, 0.11],
+      anL: [-0.058, 0.05, -0.13], anR: [0.058, 0.05, -0.13],
+      toL: [-0.058, 0.02, -0.20], toR: [0.058, 0.02, -0.20],
+    }, { face: [0, -0.35, 0.937], sideView: true }),
+    makePose("cajon_play", "カホンを叩く（またがって座り両手で面を打つ）", {
+      // 椅子に跨がり、上体を前へ倒して両手を膝の間の打面へ下ろす
+      head: [0, 0.67, 0.20], neck: [0, 0.61, 0.15],
+      shL: [-0.1075, 0.56, 0.10], shR: [0.1075, 0.56, 0.10],
+      elL: [-0.1874, 0.4093, 0.1837], wrL: [-0.07, 0.29, 0.25],
+      elR: [0.1874, 0.4093, 0.1837], wrR: [0.07, 0.29, 0.25],
+      hipL: [-0.058, 0.285, -0.02], hipR: [0.058, 0.285, -0.02],
+      knL: [-0.10, 0.285, 0.216], knR: [0.10, 0.285, 0.216],
+      anL: [-0.10, 0.045, 0.216], anR: [0.10, 0.045, 0.216],
+      toL: [-0.10, 0.012, 0.296], toR: [0.10, 0.012, 0.296],
+    }, { face: [0, -0.28, 0.96] }),
   ];
   /* ---- R-19（2026-09-17 本人要望）: 物を伴う姿勢は「持っているときだけ」選べるようにする ----
    * 本人の言葉:「小道具や大道具を持つという動きをしたときに、取れる姿勢としてください」。
@@ -6685,6 +6757,10 @@
     violin: ["violin"],
     bassguitar: ["bassguitar"],
     accordion: ["accordion"],
+    conductor: ["magic_wand"],
+    flute_play: ["flute"],
+    saxophone_play: ["saxophone"],
+    shamisen_play: ["shamisen"],
     hat: ["tophat"],
     skate: ["rollerskate"],
     unicycle: ["unicycle"],
@@ -6787,6 +6863,7 @@
   const CHAIR_SIT_POSES = new Set(["sit",
     "sit_cross_legs", "sit_chin_rest", "sit_lean_back", "sit_reverse_chair", "sit_forward", "write_desk",
     "drums_play", "piano_play", "cello_play",
+    "shamisen_play", "harp_play", "cajon_play",
   ]);
   const isChairSitPose = (id) => CHAIR_SIT_POSES.has(id);
   /* 2026-09-26: 器具に乗った演者が選べる姿勢の組（本人が選んだ空中の姿勢のため）。
@@ -6861,7 +6938,8 @@
       "breaking_baby_freeze", "breaking_chair_freeze", "breaking_toprock", "ballroom_hold_lead", "ballroom_hold_follow",
       "dip_lead", "dip_follow", "tap_stance", "jazz_hands"] },
     { ja: "歌・楽器", ids: ["sing", "guitar", "bassguitar", "violin", "trumpet", "accordion", "sing_micstand", "taiko_strike",
-      "drums_play", "piano_play", "cello_play", "doublebass_play", "dj_play"] },
+      "drums_play", "piano_play", "cello_play", "doublebass_play", "dj_play", "conductor", "flute_play", "saxophone_play",
+      "shamisen_play", "harp_play", "koto_play", "cajon_play"] },
     { ja: "アクロバット", ids: ["handstand", "handstand-mid", "sideflip", "sideflip-mid", "cartwheel-oneside-mid", "roundoff-mid",
       "frontroll-mid", "tuck", "backflip", "backhandspring-mid", "walkover-mid", "bridge_hold", "one_arm_handstand",
       "straddle_handstand", "headstand", "forearm_stand", "y_balance", "front_split", "layout_flip_mid", "chest_stand",
@@ -8158,19 +8236,26 @@
     const hair = raw.hair && typeof raw.hair === "object" ? raw.hair : {};
     const top = raw.top && typeof raw.top === "object" ? raw.top : {};
     const bottom = raw.bottom && typeof raw.bottom === "object" ? raw.bottom : {};
+    /* 2026-09-26: 衣装・髪・小物を足す前の互換対策。知らない項目（新しい版で足した手袋の色など）を消さずに残す。
+       古い版で開いて保存しても失わないため（姿勢の名前を残す v0.2.17 と同じ考え方）。知っている項目は今までどおり整える。 */
+    const keep = (value) => (value && typeof value === "object" && !Array.isArray(value) ? projectIoClone(value) : {});
     return {
+      ...keep(raw),
       skin: validColor(raw.skin, DEFAULT_SKIN),
       hair: {
+        ...keep(hair),
         // 種類idは前方互換のため保存値を残し、描画時に既定へ落とす。
         style: typeof hair.style === "string" ? hair.style.slice(0, 32) : "none",
         color: validColor(hair.color, DEFAULT_HAIR_COLOR),
       },
       top: {
+        ...keep(top),
         kind: typeof top.kind === "string" ? top.kind.slice(0, 32) : "tshirt",
         color: validColor(top.color, DEFAULT_TOP_COLOR),
         sleeve: typeof top.sleeve === "string" ? top.sleeve.slice(0, 32) : "short",
       },
       bottom: {
+        ...keep(bottom),
         kind: typeof bottom.kind === "string" ? bottom.kind.slice(0, 32) : "pants",
         color: validColor(bottom.color, DEFAULT_BOTTOM_COLOR),
         length: typeof bottom.length === "string" ? bottom.length.slice(0, 32) : "ankle",
@@ -19200,8 +19285,23 @@
     if (lean) target.restore();
   }
 
+  /* 2026-09-26: 姿勢の側が道具を描く姿勢（ギター・マイク・ジャグリング・一輪車など props / wheel を持つもの）で、
+     持たせた物がその姿勢の持ち物（POSE_PROPS）に当たるときは、手首の側の絵を描かない（二重に描いていた・2026-09-17 から）。 */
+  function heldDrawnByPose(piece, pieces) {
+    if (!piece || !piece.heldBy || piece.holdMode === "face") return false;
+    const list = Array.isArray(pieces) ? pieces : sc().pieces;
+    const holder = list.find((other) => other.id === piece.heldBy && other.type === "performer");
+    if (!holder) return false;
+    const poseId = String(resolvePoseId(holder, list) || "").replace(LEFT_HAND_SUFFIX, "");
+    const pose = poseById(poseId);
+    if (!pose || !((pose.props && pose.props.length) || pose.wheel)) return false;
+    const registered = pieceSet(piece);
+    const shape = (registered && registered.propShape) || piece.propShape || (piece.type === "diabolo" ? "diabolo" : null);
+    return Boolean(POSE_PROPS[poseId] && POSE_PROPS[poseId].includes(shape));
+  }
   function drawHeldFrontPiece(target, piece, L) {
     if (piece.holdMode === "face" && isMask(piece)) return;
+    if (heldDrawnByPose(piece)) return;
     const held = heldFrontPlacement(piece, L);
     if (!held) return;
     target.save();
@@ -37192,6 +37292,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       poseHeadHeight: (poseId) => { const pose = poseById(poseId); return pose && pose.joints && pose.joints.head ? pose.joints.head[1] : null; },
       poseTopHeight: (poseId) => { const ext = poseExtent(poseId); return ext && Number.isFinite(ext.top) ? ext.top : null; },
       isChairSitPose: (poseId) => isChairSitPose(poseId),
+      heldDrawnByPose: (pieceId) => { const piece = sc().pieces.find((p) => p.id === pieceId); return Boolean(piece && heldDrawnByPose(piece)); },
       isPoseLocked: (pieceId) => { const piece = sc().pieces.find((p) => p.id === pieceId); return Boolean(piece && poseLockedByMount(piece)); },
       facingLabel,
       open3d: () => {

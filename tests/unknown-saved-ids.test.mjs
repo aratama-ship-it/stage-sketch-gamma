@@ -52,3 +52,17 @@ test("正規化の呼び出し先が新しい関数になっている（古い�
   assert.match(main, /const poseById = \(id\) => \(typeof id === "string" && id\.endsWith\(LEFT_HAND_SUFFIX\)/);
   assert.match(main, /return piece && PROP_SHAPES\[piece\.propShape\] \? piece\.propShape : "box";/);
 });
+
+test("見た目（衣装・髪）の知らない項目を読み込みで消さない（2026-09-26）", () => {
+  const start = main.indexOf("  function normalizeLook(raw) {");
+  const body = main.slice(start, main.indexOf("\n  }\n", start) + 4);
+  const ctx = vm.createContext({ DEFAULT_SKIN: "#d9b38c", DEFAULT_HAIR_COLOR: "#2a2320", DEFAULT_TOP_COLOR: "#a84b26", DEFAULT_BOTTOM_COLOR: "#3a3f4a",
+    validColor: (v, d) => (typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v) ? v : d), projectIoClone: (v) => JSON.parse(JSON.stringify(v)) });
+  vm.runInContext(`${body}\nthis.normalizeLook = normalizeLook;`, ctx);
+  const out = ctx.normalizeLook({ skin: "#111111", gloves: { color: "#ffffff" }, top: { kind: "leotard", color: "#222222", fit: "x" }, bottom: { kind: "tutu", pattern: "stripe" }, hair: { style: "long", accessory: "pin" } });
+  assert.deepEqual(out.gloves, { color: "#ffffff" });
+  assert.equal(out.top.fit, "x"); assert.equal(out.top.kind, "leotard");
+  assert.equal(out.bottom.pattern, "stripe"); assert.equal(out.bottom.kind, "tutu");
+  assert.equal(out.hair.accessory, "pin"); assert.equal(out.hair.style, "long");
+  assert.equal(out.top.color, "#222222"); assert.equal(out.bottom.color, "#3a3f4a", "壊れた値は今までどおり既定");
+});
