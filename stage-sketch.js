@@ -4573,6 +4573,19 @@
     });
   }
 
+  /* 保存データの姿勢・形の名前。知っている名前はそのまま、知らない名前も形式が正しければ残す
+     （新しい版で足した姿勢・形を、古い版で開いて保存しても失わないため）。壊れた値だけ既定に戻す。 */
+  const SAVED_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
+  function normalizePoseId(id) {
+    if (POSES.some((p) => p.id === id)) return id;
+    // 器具に乗ったときだけ付く隠れた姿勢は、保存されていても今までどおり立ち姿へ戻す（乗っていないのに乗った形で描かないため）
+    if (HIDDEN_POSES.some((p) => p.id === id)) return "stand";
+    return typeof id === "string" && SAVED_ID_PATTERN.test(id) ? id : "stand";
+  }
+  function normalizePropShapeId(id) {
+    if (PROP_SHAPES[id]) return id;
+    return typeof id === "string" && SAVED_ID_PATTERN.test(id) ? id : "box";
+  }
   const poseById = (id) => POSES.find((p) => p.id === id)
     || HIDDEN_POSES.find((p) => p.id === id) || POSES[0];
 
@@ -6786,8 +6799,11 @@
       trapMode: piece.trapMode === "hang" ? "hang" : "sit",
       // ディアボロの置き方。古い保存や未指定は、舞台で形が読みやすい横置きに揃える
       diaboloMode: piece.diaboloMode === "stand" ? "stand" : "lay",
-      // 姿勢。用意したものの中から選ぶ（形そのものは編集させない）
-      pose: POSES.some((p) => p.id === piece.pose) ? piece.pose : "stand",
+      /* 姿勢。用意したものの中から選ぶ（形そのものは編集させない）。
+       * 2026-09-26 本人決定（姿勢を約150件足す前の互換対策）: 知らない姿勢の名前を「立つ」に書き換えない。
+       * 新しい版で作ったショーを古い版で開いても、名前は残り、描くときだけ立ち姿にする（poseById の既定）。
+       * 書き換えると、古い版で保存した時点で新しい姿勢が失われる。 */
+      pose: normalizePoseId(piece.pose),
       /* 動線。このシーンのあいだに、その駒がどこへ動くか。
        * 始点は駒そのものなので持たない（駒を動かせば矢印もついてくる）。
        * u,v が行き先、bu,bv が曲がり具合の control 点。真ん中に置けば直線になる。 */
@@ -7483,7 +7499,9 @@
                 name: typeof t.name === "string" && t.name.trim() ? t.name.slice(0, 24) : `セット ${i + 1}`,
                 color: validColor(t.color, "#8b98a1"),
                 modelId: kind === "model" && typeof t.modelId === "string" ? t.modelId : null,
-                propShape: kind === "prop" && PROP_SHAPES[t && t.propShape] ? t.propShape : "box",
+                /* 2026-09-26 本人決定: 知らない形の名前を「箱」に書き換えない（姿勢と同じ互換対策）。
+                   描くときは propShapeKey などが箱に戻すので、古い版では箱に見えるだけで名前は残る。 */
+                propShape: kind === "prop" ? normalizePropShapeId(t && t.propShape) : "box",
                 dims: (() => {
                   const d = normalizeDims(kind, t);
                   // 吊物にできる形は、地上高の置き場を必ず持つ
