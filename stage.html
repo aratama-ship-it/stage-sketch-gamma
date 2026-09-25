@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.8">
+<meta name="stage-sketch-gamma-version" content="v0.2.9">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092501">
+<link rel="stylesheet" href="style.css?v=2026092517">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -68,7 +68,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.8</span>
+              <span class="stage-app-version">0.2.9</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -1238,6 +1238,8 @@
               <span>最終バックアップ <time id="stage-last-backup-time">—</time></span>
             </div>
             <p id="stage-save-status">変更はこの端末のブラウザ内へ自動保存します。</p>
+            <a id="stage-save-recovery-link" class="stage-save-recovery-link"
+               href="storage-recovery.html" target="_blank" rel="noopener" hidden>保存容量を確認・修復（別タブ）</a>
             <!-- ブラウザ内の保存は設定・容量次第で消え得る。ファイルへ残した記録を正直に見せる -->
             <p class="stage-backup-note" id="stage-backup-note"></p>
             <div class="stage-backup-hint" id="stage-backup-hint" hidden>
@@ -2026,6 +2028,14 @@
   </header>
   <div class="stage-modal-body">
     <p class="stage-profile-hint">この端末に保存したショーと同梱見本です。編集した内容は自動保存されます。別の端末へ持っていくときは「書き出す」を使ってください。</p>
+    <section class="stage-show-save-error" id="stage-show-save-error" role="alert" hidden>
+      <p id="stage-show-save-error-text"></p>
+      <p id="stage-show-save-error-help" hidden></p>
+      <div class="stage-show-save-error-actions">
+        <button type="button" id="stage-show-save-export">ファイルへ書き出す</button>
+        <a id="stage-show-save-recovery" href="storage-recovery.html" target="_blank" rel="noopener" hidden>保存容量を修復（別タブ）</a>
+      </div>
+    </section>
     <div class="stage-show-list" id="stage-show-list"></div>
   </div>
 </div>
@@ -2532,6 +2542,16 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v029-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v029-title">v0.2.9</h3>
+        <time datetime="2026-09-25">2026-09-25</time>
+      </header>
+      <ul>
+        <li>保存容量が足りずショーを切り替えられないとき、開いているショーを保ったまま、書き出しと修復画面への入口を表示します。</li>
+        <li>修復画面から、音源参照のない開いていないショーを一件ずつ保管・復元できます。内容の一致を確認した控えだけを保管し、開いているタブの保存を再試行します。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v028-title">
       <header class="stage-release-entry-head">
         <h3 id="stage-release-v028-title">v0.2.8</h3>
@@ -3453,6 +3473,7 @@
 <script src="stage-first-person.js?v=2026092506"></script>
 <script src="stage-audio-store.js?v=2026092208"></script>
 <script src="stage-project-backup-store.js?v=2026092501"></script>
+<script src="stage-storage-recovery.js?v=2026092517"></script>
 <script src="manual/manual-content.js?v=2026091502"></script>
 <script src="stage-pwa.js?v=2026091501"></script>
 <script src="stage-lighting-plans.js?v=2026092101"></script>
@@ -3475,7 +3496,7 @@
 <script src="stage-performer-motion.js?v=2026092506"></script>
 <script src="stage-performer-contour.js?v=2026092506"></script>
 <script src="stage-performer-body.js?v=2026092506"></script>
-<script src="stage-sketch.js?v=2026092514"></script>
+<script src="stage-sketch.js?v=2026092517"></script>
 <script src="stage-scene-alternatives-ui.js?v=2026092210"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-vox-panel.js?v=2026092432"></script>

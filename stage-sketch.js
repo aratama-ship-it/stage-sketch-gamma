@@ -76,7 +76,7 @@
       "gamma:scene-alternatives-v1:", "gamma:lighting-draft-v1:",
       "shosai-stage-sketch-v1-pre-section-hierarchy-v1:",
     ];
-    const DB_NAMES = ["gamma:stage-project-backups-v1", "gamma:scene-alternatives-audio-v1", "gamma:shosai-stage-audio"];
+    const DB_NAMES = ["gamma:stage-project-backups-v1", "gamma:scene-alternatives-audio-v1", "gamma:shosai-stage-audio", "gamma:storage-recovery-archive-v1"];
     const CACHE_PREFIX = "stage-sketch-gamma-";
     try {
       Object.keys(window.localStorage).forEach((k) => {
@@ -11328,10 +11328,11 @@
        流れるたびに帯が出ては、現場で邪魔になるだけで読まれなくなる。
      ★level が info のときに帯を隠さないこと。警告が出た直後に通常の保存が走ると、
        せっかくの警告が消えてしまう。閉じるのは利用者の操作だけにする。 */
-  function syncPhoneSaveNotice(text, level) {
+  function syncPhoneSaveNotice(text, level, code = "") {
     if (level !== "warn") return;
     if (!phoneUi || !phoneUi.saveNotice) return;
     phoneUi.saveNoticeText.textContent = text;
+    phoneUi.saveNoticeRepair.hidden = code !== "QUOTA_EXCEEDED";
     phoneUi.saveNotice.hidden = false;
   }
 
@@ -11339,22 +11340,48 @@
      閲覧機ではパネルごと隠れているため、els.saveStatus へ直接代入すると
      **警告が誰にも見えないまま保存が失敗する**（2026-08-23 に判明。P1-7の芯）。
      ★ここを経由せず els.saveStatus.textContent へ直接書かないこと。 */
-  function setSaveStatus(text, level = "info") {
+  function setSaveStatus(text, level = "info", code = "") {
     if (els.saveStatus) els.saveStatus.textContent = text;
-    syncPhoneSaveNotice(text, level);
+    const recovery = document.getElementById("stage-save-recovery-link");
+    if (recovery) {
+      recovery.hidden = code !== "QUOTA_EXCEEDED";
+      recovery.textContent = sx("保存容量を確認・修復（別タブ）", "Check storage space in a new tab");
+    }
+    syncPhoneSaveNotice(text, level, code);
+  }
+
+  function showShowSaveError(message, code) {
+    if (!els.showsModal || els.showsModal.hidden) return;
+    const box = document.getElementById("stage-show-save-error");
+    if (!box) return;
+    document.getElementById("stage-show-save-error-text").textContent = message;
+    const help = document.getElementById("stage-show-save-error-help");
+    help.hidden = code !== "QUOTA_EXCEEDED";
+    help.textContent = sx("このタブを閉じず、先に書き出してください。修復画面は別タブで開きます。",
+      "Keep this tab open. Export the show first, then open recovery in a new tab.");
+    const recovery = document.getElementById("stage-show-save-recovery");
+    recovery.hidden = code !== "QUOTA_EXCEEDED";
+    recovery.textContent = sx("保存容量を修復（別タブ）", "Repair storage in a new tab");
+    document.getElementById("stage-show-save-export").textContent = sx("ファイルへ書き出す", "Export show to file");
+    box.hidden = false;
+    els.showsModal.scrollTop = 0;
   }
 
   function reportProjectStoreFailure(result) {
     const code = result.error.code;
     const detail = code === "CONCURRENT_EDIT"
       ? "別のタブでショーが更新されました。このタブの変更は上書きせず、ファイルへ書き出せます。"
+      : code === "QUOTA_EXCEEDED"
+      ? sx("この端末の保存容量が不足しています。ショーは切り替えずに残しました。先にファイルへ書き出してください。",
+        "This device is out of storage. The current show stays open. Export it to a file first.")
       : code === "CORRUPT_COLLECTION"
       ? "ショー一覧が壊れているため、保存を止めました。ファイルへ書き出してから、ショー一覧で作り直してください。"
       : code === "PARTIAL_WRITE"
         ? "保存の整合性を確認できません。自動保存を停止しました。ファイルへ書き出して残してください。"
         : "この端末へ保存できませんでした。ファイルへ書き出して残してください。";
     const message = `${tx(detail)} (${code})`;
-    setSaveStatus(message, "warn");
+    setSaveStatus(message, "warn", code);
+    showShowSaveError(message, code);
     return message;
   }
 
@@ -11382,6 +11409,8 @@
         }
         if (state !== savingState) return;
         setSaveStatus(sx(`「${state.project.title}」を保存しました。`, `Saved \u201c${state.project.title}\u201d.`));
+        const saveError = document.getElementById("stage-show-save-error");
+        if (saveError) saveError.hidden = true;
         updateBackupNote();
         syncSaveStamps();
         try { window.SHOSAI_STAGE_SESSION_HOOKS?.onLocalChange?.(); } catch (_) {}
@@ -19040,6 +19069,7 @@
     setPhoneButtonLang(phoneUi.sourceClose, "閉じる", "ショー選択を閉じる");
     setPhoneButtonLang(phoneUi.saveNoticeExport, "ファイルへ書き出す", "いまのショーをファイルへ書き出す");
     setPhoneButtonLang(phoneUi.saveNoticeClose, "閉じる", "この知らせを閉じる");
+    phoneUi.saveNoticeRepair.textContent = sx("保存容量を修復（別タブ）", "Repair storage in a new tab");
     phoneUi.titleName.textContent = tx("舞台スケッチ");
     if (phoneUi.titleBeta) phoneUi.titleBeta.textContent = tx(phoneUi.titleBetaJa);
     setPhoneIconButtonLang(phoneUi.settingsToggle, "設定を開く");
@@ -19298,7 +19328,15 @@
     saveNoticeActions.className = "stage-phone-save-notice-actions";
     const saveNoticeExport = makePhoneButton(tx("ファイルへ書き出す"), tx("いまのショーをファイルへ書き出す"));
     const saveNoticeClose = makePhoneButton(tx("閉じる"), tx("この知らせを閉じる"));
-    saveNoticeActions.append(saveNoticeExport, saveNoticeClose);
+    saveNoticeClose.classList.add("stage-phone-notice-close");
+    const saveNoticeRepair = document.createElement("a");
+    saveNoticeRepair.className = "stage-phone-button stage-phone-recovery-link";
+    saveNoticeRepair.href = "storage-recovery.html";
+    saveNoticeRepair.target = "_blank";
+    saveNoticeRepair.rel = "noopener";
+    saveNoticeRepair.hidden = true;
+    saveNoticeRepair.textContent = sx("保存容量を修復（別タブ）", "Repair storage in a new tab");
+    saveNoticeActions.append(saveNoticeExport, saveNoticeClose, saveNoticeRepair);
     saveNotice.append(saveNoticeText, saveNoticeActions);
 
     toolbar.append(fileInput);
@@ -19376,7 +19414,7 @@
       sourcePanel, sourceTitle, fileButton, seamSampleButton, sampleButton, sourceClose, fileInput,
       exportButton, settingsPanel, settingsTitle, langButtons, reachButton, settingsClose,
       sceneList, sceneListTitle, sceneListClose, sceneListScroll, sceneListRows,
-      saveNotice, saveNoticeText, saveNoticeExport, saveNoticeClose,
+      saveNotice, saveNoticeText, saveNoticeExport, saveNoticeClose, saveNoticeRepair,
       infoOpen: false, sourceOpen: false, settingsOpen: false, sceneListOpen: false,
       collapsedSections: new Set(),
       singleView: state.showPlan && !state.showFront ? "plan" : "front",
@@ -22665,9 +22703,13 @@
   function openShows() {
     if (!els.showsModal) return;
     renderShows();
+    const saveError = document.getElementById("stage-show-save-error");
+    if (saveError) saveError.hidden = true;
     els.showsModal.hidden = false;
     els.showsBackdrop.hidden = false;
   }
+
+  document.getElementById("stage-show-save-export")?.addEventListener("click", () => exportProject());
 
   function closeShows() {
     if (els.showsModal) els.showsModal.hidden = true;
@@ -27104,6 +27146,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       if (window.indexedDB && window.indexedDB.deleteDatabase) {
         window.indexedDB.deleteDatabase("gamma:shosai-stage-audio");
         window.indexedDB.deleteDatabase("gamma:scene-alternatives-audio-v1");
+        window.indexedDB.deleteDatabase("gamma:storage-recovery-archive-v1");
       }
       /* 保存の自動書き戻しが走る前に、この場で読み直す */
       window.location.reload();
@@ -37553,6 +37596,26 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   let gammaStorageChanged = false;
   window.addEventListener("storage", event => {
     if ([BETA_STORAGE_KEY, SHOWS_KEY].some(key => event.key === "gamma:scene-alternatives-v1:" + key)) gammaStorageChanged = true;
+    const shelfKey = "gamma:scene-alternatives-v1:" + SHOWS_KEY;
+    if (event.key !== shelfKey || !event.oldValue || !event.newValue || !window.STAGE_STORAGE_RECOVERY) return;
+    const previous = storageBaseline.get(shelfKey);
+    if (previous !== event.oldValue) return;
+    const currentKey = "gamma:scene-alternatives-v1:" + BETA_STORAGE_KEY;
+    const currentBefore = storageBaseline.get(currentKey);
+    const showId = state.project.id;
+    const api = window.STAGE_STORAGE_RECOVERY;
+    const verifier = api.create({ storage: rawStorage, vault: api.createVault(window.indexedDB) });
+    verifier.verifiedArchivedShelfChange(previous, event.newValue, showId).then(verified => {
+      if (!verified || state.project.id !== showId || storageBaseline.get(shelfKey) !== previous
+          || rawStorage.getItem(shelfKey) !== event.newValue
+          || rawStorage.getItem(currentKey) !== currentBefore) return;
+      // Accept only a verified, one-show archive or restore. All other cross-tab changes
+      // keep the existing conflict guard so they cannot overwrite user work.
+      storageBaseline.set(shelfKey, event.newValue);
+      gammaStorageChanged = false;
+      if (els.showsModal && !els.showsModal.hidden) renderShows();
+      if (shelfFailed) persistSoon();
+    }).catch(() => {});
   });
   /* basis は「ホストの照明編集元データが変わったか」だけを検出できればよい印。
      以前は中身（design＝劇場プリセットの照明プラン集を含みうる）をJSON文字列で丸ごと

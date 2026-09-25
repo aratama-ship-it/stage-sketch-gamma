@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>転換歩行 A / B / C 比較｜舞台スケッチγ</title>
+<style>
+:root{font:16px/1.6 system-ui,sans-serif;color:#efe7d6;background:#211d18;--paper:#efe7d6;--rust:#a84b26;--line:#655b50}
+*{box-sizing:border-box}body{max-width:1320px;margin:auto;padding:24px}header{max-width:890px}h1{font-size:clamp(25px,4vw,38px);line-height:1.25;margin:8px 0 18px}h2{font-size:20px;margin:0 0 5px}.eyebrow{color:#d8b386;font-size:12px;letter-spacing:.16em}.lead{font-size:17px;color:#e1d7c6}.note{color:#c8bbaa;font-size:14px}.controls{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin:24px 0;padding:18px;border:1px solid var(--line);background:#29231c}.controls label{display:grid;gap:5px;font-size:13px}.controls select,.controls button{height:44px;background:#211d18;color:var(--paper);border:1px solid #b6a18a;padding:8px 14px;font:inherit}.controls button{background:var(--rust);border-color:var(--rust);cursor:pointer;min-width:108px}.controls input{width:min(340px,70vw);accent-color:#d8b386;height:44px}.controls output{min-width:50px;font-variant-numeric:tabular-nums}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.card{min-width:0;background:#2b2620;border:1px solid var(--line);padding:16px}.card p{color:#c8bbaa;font-size:13px;min-height:62px;margin:0 0 12px}.card canvas{width:100%;height:auto;aspect-ratio:420/300;background:#f0e8d9;display:block}.metric{margin-top:10px;font-size:13px;font-variant-numeric:tabular-nums}.meta{margin-top:20px;border-top:1px solid var(--line);padding-top:16px}.badge{display:inline-block;padding:3px 9px;background:#57462d;color:#efe7d6;font-size:11px;margin-left:8px}a{color:#e5c59b}button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #e5c59b;outline-offset:3px}@media(max-width:900px){.grid{grid-template-columns:1fr}.card p{min-height:0}.card canvas{max-width:570px}}
+</style>
+<script src="../../light-design/stage-figure.js" defer></script>
+<script src="../../stage-performer-motion.js" defer></script>
+<script src="../../stage-performer-contour.js" defer></script>
+<script src="../../stage-performer-body.js" defer></script>
+<script src="motion-candidates.js" defer></script>
+<script src="review.js" defer></script>
+</head>
+<body>
+<header><div class="eyebrow">STAGE SKETCH γ · REVIEW CANDIDATE</div>
+<h1>転換歩行 A / B / C 比較 <span class="badge">採用前</span></h1>
+<p class="lead">同梱「テスト: 全機能の試験場」の A-4 → A-5。体型、経路、6秒の転換時間、到着位置を揃えています。B と C は外部素材を使わない手続き型の提案です。</p>
+<p class="note">この比較画面はショーを読み書きしません。舞台スケッチ本体の歩行は現行Aのままです。</p></header>
+<div class="controls">
+  <label>見る演者と経路<select id="actor">
+    <option value="0">演者01｜曲線</option><option value="1">演者02｜短い直線</option>
+    <option value="5">演者06｜小さな一歩</option><option value="6">演者07｜無移動</option>
+  </select></label>
+  <button type="button" id="play" aria-label="再生">再生</button>
+  <label>転換の位置<input id="scrub" type="range" min="0" max="600" step="1" value="0" aria-label="転換時間を動かす"></label>
+  <output id="time">0.0 / 6.0秒</output>
+</div>
+<main class="grid" id="grid">
+  <section class="card"><h2>A 現行歩行</h2><p>公開版の足運びと胴体・腕の動き。比較の基準です。</p><canvas width="420" height="300" data-variant="A" aria-label="現行歩行の動き"></canvas><div class="metric" data-metric="A"></div></section>
+  <section class="card"><h2>B 自然な歩行案</h2><p>骨盤と胸を小さく逆向きに動かし、肘を独立させます。足の接地点と脚の長さを維持します。</p><canvas width="420" height="300" data-variant="B" aria-label="自然な歩行案の動き"></canvas><div class="metric" data-metric="B"></div></section>
+  <section class="card"><h2>C 軽い小走り案</h2><p>各歩に短い両足の浮く区間を加え、最後は保存済みの立ち姿に戻します。</p><canvas width="420" height="300" data-variant="C" aria-label="軽い小走り案の動き"></canvas><div class="metric" data-metric="C"></div></section>
+</main>
+<div class="meta"><p id="status" role="status">試験用ショーを読み込み中…</p><p class="note">演者07は A-4 と A-5 で場所が変わらないため、どの案でも歩きません。後戻りの切替にも転換歩行は発生しません。C は候補で、公開版への自動採用はしません。</p></div>
+</body>
+</html>

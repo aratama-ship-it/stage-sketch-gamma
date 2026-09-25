@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v353";
+const CACHE_NAME = "stage-sketch-gamma-shell-v355";
 const APP_SHELL = [
   "./stage-performer-body.js?v=2026092506",
   "./stage-performer-contour.js?v=2026092506",
@@ -50,7 +50,7 @@ const APP_SHELL = [
   "./light-design/selected-light-presets-ui.js?v=2026092114",
   "./light-design/embed.js?v=2026092434",
   "./stage.html",
-  "./style.css?v=2026092501",
+  "./style.css?v=2026092517",
   "./stage-venues.js?v=2026092514",
   "./stage-venue-lines.js?v=2026091992",
   "./stage-front-shape.js?v=2026092046",
@@ -71,6 +71,9 @@ const APP_SHELL = [
   "./stage-first-person.js?v=2026092506",
   "./stage-audio-store.js?v=2026092208",
   "./stage-project-backup-store.js?v=2026092501",
+  "./stage-storage-recovery.js?v=2026092517",
+  "./storage-recovery-ui.js?v=2026092517",
+  "./storage-recovery.html",
   "./manual/manual-content.js?v=2026091502",
   "./manual/manual-content.js",
   "./manual/manual.html",
@@ -83,7 +86,7 @@ const APP_SHELL = [
   "./stage-cue-sheet.js?v=2026092423",
   "./stage-shortcuts.js?v=2026092218",
   "./stage-reorder-motion.js?v=2026092420",
-  "./stage-sketch.js?v=2026092514",
+  "./stage-sketch.js?v=2026092517",
   "./stage-timeline.js?v=2026092423",
   "./stage-session.js?v=20260924-lightimport1",
   "./stage-study-owner.js?v=2026091501",
@@ -110,6 +113,7 @@ const STAGE_PATHS = new Set([
   new URL("./stage.html", self.location.href).pathname,
   new URL("./stage", self.location.href).pathname,
 ]);
+const STORAGE_RECOVERY_PATH = new URL("./storage-recovery.html", self.location.href).pathname;
 const FORMATION_EDITOR_PATH = new URL("./formation/presets/editor.html", self.location.href).pathname;
 const LIGHT_EDITOR_PATH = new URL("./light-design/index.html", self.location.href).pathname;
 const APP_SHELL_PATHS = new Set(APP_SHELL.map((path) => new URL(path, self.location.href).pathname));
@@ -236,7 +240,8 @@ self.addEventListener("fetch", (event) => {
   const embeddedLightEditor = url.pathname === LIGHT_EDITOR_PATH && url.searchParams.get("embed") === "gamma";
   if (request.mode === "navigate" && url.pathname !== FORMATION_EDITOR_PATH && !embeddedLightEditor) {
     // 同じ場所にある資料棚などはこのPWAの対象にしない。
-    if (!STAGE_PATHS.has(url.pathname)) return;
+    const stageDocument = STAGE_PATHS.has(url.pathname);
+    if (!stageDocument && url.pathname !== STORAGE_RECOVERY_PATH) return;
 
     /* ★self.navigator.onLine では判定しないこと（2026-08-24 に一度これで壊した）。
        navigator.onLine はネットワークインターフェースの有無を見るだけで、実際に
@@ -255,10 +260,10 @@ self.addEventListener("fetch", (event) => {
       fetch(request).then((response) => {
         if (response.ok && !response.redirected) {
           const copy = response.clone();
-          event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put("./stage.html", copy)));
+          event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(stageDocument ? "./stage.html" : "./storage-recovery.html", copy)));
         }
         return response;
-      }).catch(() => cachedAppShellResponse(request, { stageDocument: true }))
+      }).catch(() => cachedAppShellResponse(request, { stageDocument }))
     );
     return;
   }

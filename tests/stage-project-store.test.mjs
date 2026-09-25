@@ -228,12 +228,14 @@ test("removing the current duplicate makes room before a large imported-show swi
 
 test("the app shell advances with the storage transaction code", () => {
   assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092501/);
-  assert.match(stageHtml, /style\.css\?v=2026092501/);
-  assert.match(stageHtml, /stage-sketch\.js\?v=2026092514/);
-  assert.match(serviceWorker, /stage-sketch-gamma-shell-v353/);
+  assert.match(stageHtml, /style\.css\?v=2026092517/);
+  assert.match(stageHtml, /stage-sketch\.js\?v=2026092517/);
+  assert.match(serviceWorker, /stage-sketch-gamma-shell-v355/);
   assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092501/);
-  assert.match(serviceWorker, /\.\/style\.css\?v=2026092501/);
-  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092514/);
+  assert.match(serviceWorker, /\.\/style\.css\?v=2026092517/);
+  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=2026092517/);
+  assert.match(stageHtml, /stage-storage-recovery\.js\?v=2026092517/);
+  assert.match(serviceWorker, /\.\/storage-recovery\.html/);
 });
 
 test("indoor standing reception venue keeps its 3D room layout outside show data", () => {

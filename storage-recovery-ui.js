@@ -6,6 +6,7 @@
   const setResult = text => { $("result").textContent = text; };
   const explanation = error => error.name === "QuotaExceededError" ? "戻すための空き容量が足りません。保管した控えはそのまま残っています。"
     : error.message === "RESTORE_CONFLICT" ? "元の場所に別の内容があるため上書きしていません。保管した控えを書き出して確認できます。"
+    : error.message === "CONCURRENT_EDIT" ? "別のタブで一覧が変わりました。元のデータを変更せず、保管した控えは残しています。もう一度状況を確認してください。"
     : "操作を完了できませんでした。元のデータと保管済みの控えを残しています。";
   function download(value, filename) {
     const url = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], { type: "application/json" }));
@@ -35,17 +36,43 @@
     for (const record of records) {
       const block = document.createElement("div"); block.className = "copy";
       const name = document.createElement("p"), key = document.createElement("code"), restore = document.createElement("button");
-      name.textContent = `${window.STAGE_STORAGE_RECOVERY.backupKind(record.key)} · ${size(record.value.length * 2)}`;
-      key.textContent = record.key; restore.type = "button"; restore.textContent = "元の場所へ戻す";
+      const isShow = record.key === "gamma:inactive-show-entry-v1";
+      name.textContent = `${window.STAGE_STORAGE_RECOVERY.backupKind(record.key)}${isShow ? `「${record.title}」` : ""} · ${size(record.value.length * 2)}`;
+      key.textContent = isShow ? record.projectId : record.key;
+      restore.type = "button"; restore.textContent = isShow ? "ショー一覧へ戻す" : "元の場所へ戻す";
       restore.disabled = busy;
       restore.addEventListener("click", () => run(async () => {
-        await model.restore(record.id); setResult("控えを元の場所へ戻しました。別の保存領域の控えも残しています。");
+        await model.restore(record.id);
+        setResult(isShow ? `「${record.title}」をショー一覧へ戻しました。保管先の控えも残しています。`
+          : "控えを元の場所へ戻しました。別の保存領域の控えも残しています。");
       }));
       block.append(name, key, document.createElement("br"), restore); list.append(block);
     }
   }
+  function renderInactiveShows() {
+    const shows = model.inactiveShows();
+    const eligible = shows.filter(show => show.canArchive);
+    $("inactive-status").textContent = shows.length
+      ? `${eligible.length}件を保管できます。保管したショーは復元するまでショー一覧に表示されません。`
+      : "保管できるショーはありません。現行の一覧か開いているショーを読み取れない場合も保管を止めます。";
+    const list = $("inactive-shows"); list.replaceChildren();
+    for (const show of shows) {
+      const block = document.createElement("div"); block.className = "copy";
+      const name = document.createElement("p"), button = document.createElement("button");
+      name.textContent = `${show.title}${show.version ? ` · ${show.version}` : ""} · ${size(show.bytes)}`
+        + (show.canArchive ? "" : " · 音源参照があるため保管できません");
+      button.type = "button"; button.textContent = "このショーを保管して空きを作る"; button.disabled = busy || !show.canArchive;
+      button.addEventListener("click", () => run(async () => {
+        setResult(`「${show.title}」を保管し、内容を確認しています…`);
+        const result = await model.archiveInactiveShow(show.id);
+        setResult(`「${show.title}」を保管して約${size(result.bytes)}の空きを作りました。戻すときは下の「ショー一覧へ戻す」を押してください。元のタブの「保存しました」を確認してください。`);
+      }));
+      block.append(name, button); list.append(block);
+    }
+  }
   async function refresh() {
     renderUsage();
+    renderInactiveShows();
     try { await renderArchives(); }
     catch (_) { $("archive-status").textContent = "保管先を開けませんでした。現在の保存データは変更していません。"; $("export").disabled = true; }
   }

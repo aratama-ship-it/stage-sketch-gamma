@@ -83,7 +83,9 @@ test("confirmed reset removes only Stage Sketch storage, marks backups, and relo
   assert.equal(storage.getItem("other-app:settings"), "keep");
   assert.equal(storage.getItem("gamma:stage-project-backup-reset-v1"), "2026-09-25T00:00:00.000Z");
   assert.equal(session.has("gamma:new-show-return-v1"), false);
-  assert.deepEqual(events.audioDeletes, ["gamma:shosai-stage-audio", "gamma:scene-alternatives-audio-v1"]);
+  assert.deepEqual(events.audioDeletes, [
+    "gamma:shosai-stage-audio", "gamma:scene-alternatives-audio-v1", "gamma:storage-recovery-archive-v1",
+  ]);
   assert.equal(events.reloads, 1);
 });
 

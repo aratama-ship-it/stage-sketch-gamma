@@ -184,3 +184,122 @@ test("invalid or corrupted archived records cannot restore active or unrelated k
   }
   assert.deepEqual([...storage.values], before);
 });
+
+const inactiveFixture = () => {
+  const other = structuredClone(show);
+  other.project.id = "gamma-test-inactive-v1";
+  other.project.title = "テスト: 保管対象";
+  other.project.audioTracks = [];
+  other.project.scenes.forEach(scene => { delete scene.audioTrackId; });
+  other.project.unknownFutureField = { keep: [1, 2, 3] };
+  const entry = { savedAt: "2026-09-25T00:00:00Z", state: other, futureShelfField: { keep: true } };
+  const beforeShelf = JSON.stringify({ [other.project.id]: entry });
+  const storage = new Storage({ [current]: raw, [shelf]: beforeShelf });
+  const vault = new Vault();
+  return { storage, vault, entry, other, beforeShelf,
+    model: api.create({ storage, vault, hash }) };
+};
+
+test("an inactive test show can be archived and restored without touching the open show or unknown fields", async () => {
+  const { storage, vault, model, other, entry } = inactiveFixture();
+  assert.equal(model.inactiveShows()[0].id, other.project.id);
+  const archived = await model.archiveInactiveShow(other.project.id);
+  assert.equal(storage.getItem(current), raw);
+  assert.equal(storage.getItem(shelf), "{}");
+  assert.equal(model.inactiveShows().length, 0);
+  assert.equal((await vault.get(archived.id)).value, JSON.stringify(entry));
+  await model.restore(archived.id);
+  assert.deepEqual(JSON.parse(storage.getItem(shelf))[other.project.id], entry);
+  assert.equal(storage.getItem(current), raw);
+  assert.equal((await model.list()).length, 1, "the independent recovery copy stays available");
+});
+
+test("an open tab accepts only a verified one-show archival as its new shelf baseline", async () => {
+  const { storage, vault, model, other, beforeShelf } = inactiveFixture();
+  const afterShelf = "{}";
+  assert.equal(await model.verifiedArchivedShelfChange(beforeShelf, afterShelf, show.project.id), false,
+    "an unarchived disappearance is not trusted");
+  await model.archiveInactiveShow(other.project.id);
+  assert.equal(storage.getItem(shelf), afterShelf);
+  assert.equal(await model.verifiedArchivedShelfChange(beforeShelf, afterShelf, show.project.id), true);
+  assert.equal(await model.verifiedArchivedShelfChange(beforeShelf, afterShelf, other.project.id), false,
+    "the currently open show cannot be removed");
+  assert.equal(await model.verifiedArchivedShelfChange(beforeShelf, '{"different":1}', show.project.id), false,
+    "an unrelated shelf edit is not trusted");
+  vault.values.clear();
+  assert.equal(await model.verifiedArchivedShelfChange(beforeShelf, afterShelf, show.project.id), false,
+    "the independent copy must remain readable");
+});
+
+test("restoring the same verified show is the only shelf addition an open tab accepts", async () => {
+  const { storage, model, other, beforeShelf } = inactiveFixture();
+  const archived = await model.archiveInactiveShow(other.project.id);
+  await model.restore(archived.id);
+  assert.equal(await model.verifiedArchivedShelfChange("{}", beforeShelf, show.project.id), true);
+  assert.equal(await model.verifiedArchivedShelfChange("{}", beforeShelf, other.project.id), false);
+  const changed = JSON.parse(beforeShelf);
+  changed[other.project.id].state.project.title = "別の内容";
+  assert.equal(await model.verifiedArchivedShelfChange("{}", JSON.stringify(changed), show.project.id), false);
+  assert.equal(storage.getItem(current), raw);
+});
+
+test("the current show and unreadable shelves are never offered for archival", async () => {
+  const { storage, model, other, beforeShelf } = inactiveFixture();
+  await assert.rejects(model.archiveInactiveShow(show.project.id), /SHOW_NOT_INACTIVE/);
+  assert.equal(storage.getItem(shelf), beforeShelf);
+  storage.setItem(shelf, "{");
+  assert.equal(model.inactiveShows().length, 0);
+  await assert.rejects(model.archiveInactiveShow(other.project.id), /ACTIVE_SHELF_UNREADABLE/);
+  assert.equal(storage.getItem(shelf), "{");
+});
+
+test("shows with audio references remain on the shelf so their blobs cannot be pruned", async () => {
+  const { storage, model, other } = inactiveFixture();
+  const withAudio = JSON.parse(storage.getItem(shelf));
+  withAudio[other.project.id].state.project.audioTracks = [{ id: "ft-track-a" }];
+  const before = JSON.stringify(withAudio);
+  storage.setItem(shelf, before);
+  assert.equal(model.inactiveShows()[0].canArchive, false);
+  await assert.rejects(model.archiveInactiveShow(other.project.id), /AUDIO_REFERENCES_PRESENT/);
+  assert.equal(storage.getItem(shelf), before);
+});
+
+test("a changed shelf during the asynchronous archival is not overwritten", async () => {
+  const { storage, vault, model, other, beforeShelf } = inactiveFixture();
+  const put = vault.putIfAbsent.bind(vault);
+  vault.putIfAbsent = async record => {
+    const result = await put(record);
+    storage.setItem(shelf, beforeShelf + " ");
+    return result;
+  };
+  await assert.rejects(model.archiveInactiveShow(other.project.id), /CONCURRENT_EDIT/);
+  assert.equal(storage.getItem(shelf), beforeShelf + " ");
+  assert.equal((await model.list()).length, 1, "the verified copy remains recoverable");
+});
+
+test("failed or unverified inactive-show archival leaves the shelf entry", async () => {
+  for (const fail of ["vault", "readback", "write"]) {
+    const { storage, vault, model, other, beforeShelf } = inactiveFixture();
+    if (fail === "vault") vault.putIfAbsent = async () => { throw Error("vault failed"); };
+    if (fail === "readback") vault.get = async () => null;
+    if (fail === "write") {
+      const original = storage.setItem.bind(storage);
+      storage.setItem = (key, value) => {
+        if (key === shelf) throw Object.assign(Error("full"), { name: "QuotaExceededError" });
+        return original(key, value);
+      };
+    }
+    await assert.rejects(model.archiveInactiveShow(other.project.id));
+    assert.equal(storage.getItem(shelf), beforeShelf);
+  }
+});
+
+test("restoring an archived show never overwrites a newer show with the same ID", async () => {
+  const { storage, model, other } = inactiveFixture();
+  const archived = await model.archiveInactiveShow(other.project.id);
+  const changed = structuredClone(other); changed.project.title = "新しい編集";
+  storage.setItem(shelf, JSON.stringify({ [other.project.id]: { savedAt: "later", state: changed } }));
+  await assert.rejects(model.restore(archived.id), /RESTORE_CONFLICT/);
+  assert.equal(JSON.parse(storage.getItem(shelf))[other.project.id].state.project.title, "新しい編集");
+  assert.equal((await model.list()).length, 1);
+});
