@@ -95,3 +95,33 @@ test("持ち物を伴う姿勢は、持ち物が左手にだけあるとき左�
   const swapSide = eval(body.match(/const swapSide = ([^;]+);/)[1]);
   assert.equal(swapSide("wrR"), "wrL"); assert.equal(swapSide("shL"), "shR"); assert.equal(swapSide("head"), "head"); assert.equal(swapSide("neck"), "neck");
 });
+
+test("器具に乗った演者の姿勢の組は本体にあり、基準点が器具の既定の姿勢と揃っている", () => {
+  const block = main.slice(main.indexOf("const MOUNT_POSES = {"), main.indexOf("};", main.indexOf("const MOUNT_POSES = {")));
+  const families = Object.fromEntries([...block.matchAll(/(\w+): \[([^\]]*)\]/g)].map((m) => [m[1], [...m[2].matchAll(/"([^"]+)"/g)].map((x) => x[1])]));
+  const joint = (id, key) => {
+    const start = main.indexOf(`makePose("${id}"`);
+    const body = main.slice(start, main.indexOf("\n    makePose(", start + 5) > 0 ? main.indexOf("\n    makePose(", start + 5) : main.indexOf("\n  ];", start));
+    const m = body.match(new RegExp(`${key}: \\[([-\\d.]+), ([-\\d.]+), ([-\\d.]+)\\]`));
+    return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
+  };
+  for (const [mount, ids] of Object.entries(families)) {
+    for (const id of ids) {
+      assert.ok(POSES.includes(id), `${mount} の ${id} が POSES にある`);
+      if (mount === "tissue" && id !== "pose_hair_hang") {
+        const hands = [joint(id, "wrL"), joint(id, "wrR")].filter(Boolean);
+        assert.ok(hands.some((w) => Math.abs(w[1] - 1.15) <= 0.05), `${id} は握る手首が y≈1.15（${JSON.stringify(hands)}）`);
+      }
+      if (mount === "trapeze") {
+        const feet = [joint(id, "toL"), joint(id, "toR"), joint(id, "anL"), joint(id, "anR")].filter(Boolean);
+        assert.ok(feet.length && Math.min(...feet.map((f) => f[1])) <= 0.06, `${id} は足の裏がバーの高さ y≈0`);
+      }
+      if (mount === "pole") {
+        const grips = ["wrL", "wrR", "knL", "knR", "anL", "anR"].map((k) => joint(id, k)).filter(Boolean);
+        assert.ok(grips.some((g) => Math.abs(g[0]) <= 0.08), `${id} は手足のどこかがポールの線（x≈0）に触れる`);
+      }
+    }
+  }
+  assert.match(main, /function mountedPoseId\(piece, mount\) \{/);
+  assert.match(main, /if \(previousMount && previousMount !== "chair" && isMountPose\(previousMount, piece\.pose\)\) piece\.pose = "stand";/, "器具から下ろすと立つ");
+});

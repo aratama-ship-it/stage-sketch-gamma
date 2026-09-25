@@ -1761,7 +1761,7 @@
     "kind": "scene",
     "depth": 1,
     "title": "A-1 全姿勢 1/2（78種）",
-    "note": "確認: 登録の無い演者（名前＝姿勢ID）を全姿勢ぶん並べた。正面図で形が崩れていないか、平面図の足元の大きさ、選んだときの枠、3Dカメラでの見え方を見る。姿勢は本体の POSES から自動で拾っている（174種。A-1 に78件・A-2 に79件、あふれた分は文脈ヘルプの駒3つと J-1 の演者に割り当て）。姿勢を選ぶ場所（姿勢の窓・図の下の帯・演者を追加する窓）は分類の見出しで分かれ、窓と演者を追加する窓は検索で絞れること。帯は先頭の選択欄で分類を切り替え、末尾の「探す」で検索付きの窓が開くこと。 D1確認: 固定テスト・共通はA-2と同じ登録の固定。固定テスト・この駒はこのシーンのみ。使い方検索の『動かせないとき』から解除し、取り消しと再読込を確かめる。",
+    "note": "確認: 登録の無い演者（名前＝姿勢ID）を全姿勢ぶん並べた。正面図で形が崩れていないか、平面図の足元の大きさ、選んだときの枠、3Dカメラでの見え方を見る。姿勢は本体の POSES から自動で拾っている（198種。A-1 に78件・A-2 に79件、あふれた分は文脈ヘルプの駒3つと J-1 の演者に割り当て）。姿勢を選ぶ場所（姿勢の窓・図の下の帯・演者を追加する窓）は分類の見出しで分かれ、窓と演者を追加する窓は検索で絞れること。帯は先頭の選択欄で分類を切り替え、末尾の「探す」で検索付きの窓が開くこと。 D1確認: 固定テスト・共通はA-2と同じ登録の固定。固定テスト・この駒はこのシーンのみ。使い方検索の『動かせないとき』から解除し、取り消しと再読込を確かめる。",
     "background": "#40362d",
     "pieces": [
      {
@@ -2827,7 +2827,7 @@
     "kind": "scene",
     "depth": 1,
     "title": "A-2 全姿勢 2/2（79種）",
-    "note": "確認: 登録の無い演者（名前＝姿勢ID）を全姿勢ぶん並べた。正面図で形が崩れていないか、平面図の足元の大きさ、選んだときの枠、3Dカメラでの見え方を見る。姿勢は本体の POSES から自動で拾っている（174種。A-1 に78件・A-2 に79件、あふれた分は文脈ヘルプの駒3つと J-1 の演者に割り当て）。姿勢を選ぶ場所（姿勢の窓・図の下の帯・演者を追加する窓）は分類の見出しで分かれ、窓と演者を追加する窓は検索で絞れること。帯は先頭の選択欄で分類を切り替え、末尾の「探す」で検索付きの窓が開くこと。",
+    "note": "確認: 登録の無い演者（名前＝姿勢ID）を全姿勢ぶん並べた。正面図で形が崩れていないか、平面図の足元の大きさ、選んだときの枠、3Dカメラでの見え方を見る。姿勢は本体の POSES から自動で拾っている（198種。A-1 に78件・A-2 に79件、あふれた分は文脈ヘルプの駒3つと J-1 の演者に割り当て）。姿勢を選ぶ場所（姿勢の窓・図の下の帯・演者を追加する窓）は分類の見出しで分かれ、窓と演者を追加する窓は検索で絞れること。帯は先頭の選択欄で分類を切り替え、末尾の「探す」で検索付きの窓が開くこと。",
     "background": "#40362d",
     "pieces": [
      {
@@ -13404,7 +13404,7 @@
     "kind": "scene",
     "depth": 1,
     "title": "J-1 80駒（1シーンの上限）",
-    "note": "確認: 登録演者20＋無登録演者30＋無登録の台・椅子30＝80駒（上限）。81個目を置こうとすると止まる。描画の重さ、選択、転換アニメの時間を見る。全姿勢のうち A 群とヘルプの駒からあふれた分（14種）はこの場面の演者に割り当てている（無登録演者の名前＝姿勢ID）。",
+    "note": "確認: 登録演者20＋無登録演者30＋無登録の台・椅子30＝80駒（上限）。81個目を置こうとすると止まる。描画の重さ、選択、転換アニメの時間を見る。全姿勢のうち A 群とヘルプの駒からあふれた分（38種）はこの場面の演者に割り当てている（無登録演者の名前＝姿勢ID）。",
     "background": "#40362d",
     "pieces": [
      {
@@ -13415,7 +13415,7 @@
       "u": 0.06,
       "v": 0.3,
       "facing": 0,
-      "pose": "stand",
+      "pose": "pole_invert",
       "size": 100,
       "color": "#a84b26",
       "name": ""
@@ -13428,7 +13428,7 @@
       "u": 0.158,
       "v": 0.3,
       "facing": 0,
-      "pose": "walk",
+      "pose": "tissue_split",
       "size": 100,
       "color": "#77865f",
       "name": ""
@@ -13441,7 +13441,7 @@
       "u": 0.256,
       "v": 0.3,
       "facing": 0,
-      "pose": "reach",
+      "pose": "aerial_invert_straddle",
       "size": 100,
       "color": "#9c823f",
       "name": ""
@@ -13454,7 +13454,7 @@
       "u": 0.353,
       "v": 0.3,
       "facing": 0,
-      "pose": "open",
+      "pose": "straps_flag",
       "size": 100,
       "color": "#6d6657",
       "name": ""
@@ -13467,7 +13467,7 @@
       "u": 0.451,
       "v": 0.3,
       "facing": 0,
-      "pose": "sit",
+      "pose": "straps_crucifix",
       "size": 100,
       "color": "#315b8a",
       "name": ""
@@ -13480,7 +13480,7 @@
       "u": 0.549,
       "v": 0.3,
       "facing": 0,
-      "pose": "crouch",
+      "pose": "pose_hair_hang",
       "size": 100,
       "color": "#b0533f",
       "name": ""
@@ -13493,7 +13493,7 @@
       "u": 0.647,
       "v": 0.3,
       "facing": 0,
-      "pose": "kneel",
+      "pose": "pose_harness_flight",
       "size": 100,
       "color": "#4f7d6f",
       "name": ""
@@ -13506,7 +13506,7 @@
       "u": 0.744,
       "v": 0.3,
       "facing": 0,
-      "pose": "floorsit",
+      "pose": "trapeze_stand",
       "size": 100,
       "color": "#8a6a9c",
       "name": ""
@@ -13857,10 +13857,10 @@
       "u": 0.451,
       "v": 0.575,
       "facing": 0,
-      "pose": "skateboard",
+      "pose": "h2h_base_stand",
       "size": 100,
       "color": "#6a5a8a",
-      "name": "無登録15"
+      "name": "h2h_base_stand"
      },
      {
       "id": "ft-j1-np-ha",
@@ -13870,10 +13870,10 @@
       "u": 0.549,
       "v": 0.575,
       "facing": 0,
-      "pose": "tuck",
+      "pose": "base_supine_legs_up",
       "size": 100,
       "color": "#8a4a4a",
-      "name": "無登録16"
+      "name": "base_supine_legs_up"
      },
      {
       "id": "ft-j1-np-hb",
@@ -13883,10 +13883,10 @@
       "u": 0.647,
       "v": 0.575,
       "facing": 0,
-      "pose": "sidelie",
+      "pose": "two_high_base",
       "size": 100,
       "color": "#3f7a5a",
-      "name": "無登録17"
+      "name": "two_high_base"
      },
      {
       "id": "ft-j1-np-hc",
@@ -13896,10 +13896,10 @@
       "u": 0.744,
       "v": 0.575,
       "facing": 0,
-      "pose": "point",
+      "pose": "shoulder_ride_base",
       "size": 100,
       "color": "#a08a5a",
-      "name": "無登録18"
+      "name": "shoulder_ride_base"
      },
      {
       "id": "ft-j1-np-hd",
@@ -13909,10 +13909,10 @@
       "u": 0.842,
       "v": 0.575,
       "facing": 0,
-      "pose": "turn_back",
+      "pose": "banquine_base",
       "size": 100,
       "color": "#5a5a9a",
-      "name": "無登録19"
+      "name": "banquine_base"
      },
      {
       "id": "ft-j1-np-he",
@@ -13922,10 +13922,10 @@
       "u": 0.94,
       "v": 0.575,
       "facing": 0,
-      "pose": "beckon",
+      "pose": "bridal_carry_base",
       "size": 100,
       "color": "#9a5a7a",
-      "name": "無登録20"
+      "name": "bridal_carry_base"
      },
      {
       "id": "ft-j1-np-hf",
@@ -13935,10 +13935,10 @@
       "u": 0.06,
       "v": 0.65,
       "facing": 0,
-      "pose": "fist_pump",
+      "pose": "piggyback_base",
       "size": 100,
       "color": "#a84b26",
-      "name": "無登録21"
+      "name": "piggyback_base"
      },
      {
       "id": "ft-j1-np-hg",
@@ -13948,10 +13948,10 @@
       "u": 0.158,
       "v": 0.65,
       "facing": 0,
-      "pose": "shade_eyes",
+      "pose": "hug_holder",
       "size": 100,
       "color": "#77865f",
-      "name": "無登録22"
+      "name": "hug_holder"
      },
      {
       "id": "ft-j1-np-hh",
@@ -13961,10 +13961,10 @@
       "u": 0.256,
       "v": 0.65,
       "facing": 0,
-      "pose": "stairs_climb",
+      "pose": "hand_in_hand",
       "size": 100,
       "color": "#9c823f",
-      "name": "無登録23"
+      "name": "hand_in_hand"
      },
      {
       "id": "ft-j1-np-hi",
@@ -13974,10 +13974,10 @@
       "u": 0.353,
       "v": 0.65,
       "facing": 0,
-      "pose": "march",
+      "pose": "shoulder_arm",
       "size": 100,
       "color": "#6d6657",
-      "name": "無登録24"
+      "name": "shoulder_arm"
      },
      {
       "id": "ft-j1-np-hj",
@@ -13987,10 +13987,10 @@
       "u": 0.451,
       "v": 0.65,
       "facing": 0,
-      "pose": "back_away",
+      "pose": "whisper",
       "size": 100,
       "color": "#315b8a",
-      "name": "無登録25"
+      "name": "whisper"
      },
      {
       "id": "ft-j1-np-hk",
@@ -14000,10 +14000,10 @@
       "u": 0.549,
       "v": 0.65,
       "facing": 0,
-      "pose": "lean_wall",
+      "pose": "handshake",
       "size": 100,
       "color": "#b0533f",
-      "name": "無登録26"
+      "name": "handshake"
      },
      {
       "id": "ft-j1-np-hl",
@@ -14013,10 +14013,10 @@
       "u": 0.647,
       "v": 0.65,
       "facing": 0,
-      "pose": "sit_lean_back",
+      "pose": "propose_kneel",
       "size": 100,
       "color": "#4f7d6f",
-      "name": "無登録27"
+      "name": "propose_kneel"
      },
      {
       "id": "ft-j1-np-hm",
@@ -14026,10 +14026,10 @@
       "u": 0.744,
       "v": 0.65,
       "facing": 0,
-      "pose": "write_desk",
+      "pose": "reach_up_help",
       "size": 100,
       "color": "#8a6a9c",
-      "name": "無登録28"
+      "name": "reach_up_help"
      },
      {
       "id": "ft-j1-np-hn",
@@ -14039,10 +14039,10 @@
       "u": 0.842,
       "v": 0.65,
       "facing": 0,
-      "pose": "lie_spread",
+      "pose": "pole_climb",
       "size": 100,
       "color": "#c07a3a",
-      "name": "無登録29"
+      "name": "pole_climb"
      },
      {
       "id": "ft-j1-np-ho",
@@ -14052,10 +14052,10 @@
       "u": 0.94,
       "v": 0.65,
       "facing": 0,
-      "pose": "think_chin",
+      "pose": "pole_layback",
       "size": 100,
       "color": "#5c6f8a",
-      "name": "無登録30"
+      "name": "pole_layback"
      },
      {
       "id": "ft-j1-box-i9",

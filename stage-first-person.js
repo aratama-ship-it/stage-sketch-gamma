@@ -1350,7 +1350,9 @@
     updateFacingText(piece.facing);
     elements.editPoses.textContent = "";
     const holder = supportOf(piece, data.pieces);
-    if (holder && ["pole", "trapeze", "tissue"].includes(holder.type)) {
+    // 器具の姿勢の組がある器具（2026-09-26）は、その組から姿勢を選べる。組が無ければ今までどおり器具側で固定
+    const mountLocked = !state.bridge || !state.bridge.isPoseLocked || state.bridge.isPoseLocked(piece.id);
+    if (holder && ["pole", "trapeze", "tissue"].includes(holder.type) && mountLocked) {
       elements.editHint.textContent = text("移動と姿勢は乗り物側で決まっています");
       return;
     }

@@ -6359,6 +6359,196 @@
       anL: [-0.08, 0.043, -0.04], anR: [0.08, 0.043, 0.04],
       toL: [-0.08, 0.012, 0.035], toR: [0.08, 0.012, 0.115],
     }, { wide: [0, 0, 1], face: [1, 0, 0] }),
+    makePose("h2h_base_stand", "ハンドトゥハンド・ベース（立位・両手を上へ）", {
+      // 頭上の相手を支える両手が一直線に上がる形
+      elL: [-0.1075, 1.01, 0], wrL: [-0.1075, 1.19, 0],
+      elR: [0.1075, 1.01, 0], wrR: [0.1075, 1.19, 0],
+    }),
+    makePose("base_supine_legs_up", "ベース・仰向け（両足を上げて支える／フットトゥハンド・足技）", {
+      // 背中を床へ置き、両腕と両脚を真上へ伸ばして支点を示す
+      head: [0, 0.09, 0.445], neck: [0, 0.08, 0.375],
+      shL: [-0.1075, 0.08, 0.30], shR: [0.1075, 0.08, 0.30],
+      elL: [-0.1075, 0.27, 0.30], elR: [0.1075, 0.27, 0.30],
+      wrL: [-0.1075, 0.45, 0.30], wrR: [0.1075, 0.45, 0.30],
+      hipL: [-0.055, 0.08, 0], hipR: [0.055, 0.08, 0],
+      knL: [-0.055, 0.32, 0], knR: [0.055, 0.32, 0],
+      anL: [-0.055, 0.56, 0], anR: [0.055, 0.56, 0],
+      toL: [-0.055, 0.635, 0], toR: [0.055, 0.635, 0],
+    }, { face: [0, 1, 0.1], sideView: true }),
+    makePose("two_high_base", "肩に立たれるベース（立位・肩の高さで脛を支える）", {
+      // 両手を肩の高さから正面へ出し、上の人の脛を押さえる形
+      elL: [-0.1075, 0.82, 0.19], wrL: [-0.1075, 0.82, 0.37],
+      elR: [0.1075, 0.82, 0.19], wrR: [0.1075, 0.82, 0.37],
+    }),
+    makePose("shoulder_ride_base", "肩車のベース（立位・両手で太ももを押さえる）", {
+      // 顔の両脇へ手を上げ、肩上の相手の太ももを押さえる形
+      elL: [-0.2575, 0.704, 0], wrL: [-0.2075, 0.877, 0],
+      elR: [0.2575, 0.704, 0], wrR: [0.2075, 0.877, 0],
+    }),
+    makePose("banquine_base", "バンキン・ベース（組んだ手を腰の高さに構える）", {
+      // 両肘を張り、腰前で左右の手を寄せて投げ台を作る
+      elL: [-0.24, 0.70, 0.06], wrL: [-0.105, 0.60, 0.13],
+      elR: [0.24, 0.70, 0.06], wrR: [0.105, 0.60, 0.13],
+    }),
+    makePose("bridal_carry_base", "横抱きにする（抱く側）", {
+      // 右側へ高さを違えた両腕を回し、背中と膝裏を受ける腕の輪を作る
+      elL: [0.03, 0.70, 0.07], wrL: [0.17, 0.76, 0.16],
+      elR: [0.24, 0.69, 0.06], wrR: [0.35, 0.58, 0.14],
+    }),
+    makePose("piggyback_base", "おんぶする（背負う側）", {
+      // 上体を前へ傾け、両手を腰の後ろへ回して相手の脚を支える
+      head: [0, 0.90, 0.18], neck: [0, 0.825, 0.16],
+      shL: [-0.1075, 0.79, 0.13], shR: [0.1075, 0.79, 0.13],
+      elL: [-0.225, 0.66, 0.08], wrL: [-0.14, 0.52, 0],
+      elR: [0.225, 0.66, 0.08], wrR: [0.14, 0.52, 0],
+    }, { face: [0, -0.25, 0.968] }),
+    makePose("hug_holder", "抱擁（抱く側）", {
+      // 右隣の相手を包むように両腕を同じ側へ回す
+      head: [0.025, 0.93, 0.025], neck: [0.015, 0.85, 0.015],
+      elL: [0.02, 0.72, 0.11], wrL: [0.17, 0.65, 0.18],
+      elR: [0.22, 0.72, 0.10], wrR: [0.35, 0.63, 0.20],
+    }, { face: [0.35, 0, 0.937] }),
+    makePose("hand_in_hand", "手をつなぐ（横並び）", {
+      // 右隣の相手へ右手を斜め下にまっすぐ伸ばす
+      elR: [0.26, 0.72, 0.05], wrR: [0.42, 0.64, 0.08],
+    }),
+    makePose("shoulder_arm", "肩を組む", {
+      // 右隣の相手の肩へ右腕を水平に回す
+      elR: [0.295, 0.84, 0.02], wrR: [0.475, 0.86, 0.02],
+      elL: [-0.245, 0.695, 0.02], wrL: [-0.105, 0.585, 0.03],
+    }),
+    makePose("whisper", "耳打ち（ささやく側）", {
+      // 右へ上体と顔を寄せ、右手を口元に添える
+      head: [0.13, 0.92, 0.04], neck: [0.11, 0.84, 0.03],
+      shL: [-0.0075, 0.803, 0], shR: [0.2075, 0.803, 0],
+      elL: [-0.035, 0.613, 0.015], wrL: [-0.045, 0.433, 0.03],
+      elR: [0.35, 0.69, 0.07], wrR: [0.25, 0.84, 0.10],
+      hipL: [-0.055, 0.52, 0], hipR: [0.055, 0.52, 0],
+    }, { face: [0.8, 0, 0.6] }),
+    makePose("handshake", "握手", {
+      // 右隣の相手へ右手を腰の高さで差し出す
+      elR: [0.24, 0.70, 0.06], wrR: [0.40, 0.62, 0.11],
+    }),
+    makePose("propose_kneel", "跪いてプロポーズ", {
+      // 右膝を床へ下ろし、右隣の相手へ両手を差し出す
+      head: [0, 0.695, 0.02], neck: [0, 0.615, 0.01],
+      shL: [-0.1075, 0.58, 0], shR: [0.1075, 0.58, 0],
+      elL: [0.02, 0.50, 0.12], wrL: [0.18, 0.47, 0.20],
+      elR: [0.235, 0.50, 0.12], wrR: [0.39, 0.47, 0.205],
+      hipL: [-0.055, 0.28, 0], hipR: [0.055, 0.28, 0],
+      knL: [-0.08, 0.20, 0.226], anL: [-0.08, 0.04, 0.047], toL: [-0.08, 0.012, 0.122],
+      knR: [0.08, 0.04, 0], anR: [0.08, 0.04, -0.24], toR: [0.08, 0.012, -0.315],
+    }),
+    makePose("reach_up_help", "手を差し伸べる（引き起こす側）", {
+      // 腰を引いて上体を前へ傾け、右下の相手へ手を伸ばす
+      head: [0.03, 0.91, 0.09], neck: [0.02, 0.83, 0.075],
+      shL: [-0.1075, 0.795, 0.06], shR: [0.1075, 0.795, 0.06],
+      elL: [-0.135, 0.607, 0.075], wrL: [-0.145, 0.427, 0.09],
+      elR: [0.25, 0.68, 0.10], wrR: [0.39, 0.56, 0.12],
+      hipL: [-0.055, 0.50, 0], hipR: [0.055, 0.50, 0],
+      knL: [-0.06, 0.26, 0.012], knR: [0.06, 0.26, 0.012],
+      anL: [-0.058, 0.02, 0], anR: [0.058, 0.02, 0],
+    }, { face: [0.1, -0.2, 0.975] }),
+    makePose("pole_climb", "ポールを登る（手足で挟む）", {
+      // 原点を上下の握りの中央にし、体を+X側へ置いて手脚でポールを挟む
+      head: [0.34, 0.09, 0], neck: [0.29, 0.025, 0],
+      shL: [0.26, 0.00, -0.05], shR: [0.26, -0.05, 0.05],
+      elL: [0.10, 0.11, -0.025], wrL: [0, 0.26, 0],
+      elR: [0.10, -0.16, 0.025], wrR: [0, -0.31, 0],
+      hipL: [0.22, -0.30, -0.045], hipR: [0.22, -0.35, 0.045],
+      knL: [0.04, -0.455, -0.02], knR: [0.04, -0.505, 0.02],
+      anL: [0.02, -0.695, 0], anR: [0.02, -0.745, 0],
+      toL: [0.01, -0.77, 0.02], toR: [0.01, -0.82, 0.02],
+    }, { wide: [0, 0, 1], face: [0, 0, 1] }),
+    makePose("pole_layback", "ポール（脚で挟み後ろへ反って片手を離す）", {
+      // 脚をポールへ寄せたまま上体を+Xへ反らし、左手だけで線をつかむ
+      head: [0.49, 0.12, 0], neck: [0.43, 0.09, 0],
+      shL: [0.37, 0.08, -0.05], shR: [0.37, 0.08, 0.05],
+      elL: [0.18, 0.08, -0.025], wrL: [0, 0.08, 0],
+      elR: [0.49, 0.22, 0.05], wrR: [0.61, 0.35, 0.05],
+      hipL: [0.08, 0, -0.045], hipR: [0.08, 0, 0.045],
+      knL: [0.02, -0.232, -0.02], knR: [0.02, -0.232, 0.02],
+      anL: [0.02, -0.472, 0], anR: [0.02, -0.472, 0],
+      toL: [0.01, -0.547, 0.02], toR: [0.01, -0.547, 0.02],
+    }, { wide: [0, 0, 1], face: [0.25, 0.9, 0.35] }),
+    makePose("pole_invert", "ポール（逆さ・脚で挟んで両手を離す）", {
+      // 腰を握りより上、頭を下に置き、脚でポールを挟んで両腕を横へ開く
+      head: [0.25, -0.20, 0], neck: [0.22, -0.13, 0],
+      shL: [0.20, -0.075, -0.05], shR: [0.20, -0.075, 0.05],
+      elL: [0.01, -0.075, -0.05], wrL: [-0.17, -0.075, -0.05],
+      elR: [0.39, -0.075, 0.05], wrR: [0.57, -0.075, 0.05],
+      hipL: [0.08, 0.20, -0.045], hipR: [0.08, 0.20, 0.045],
+      knL: [0.02, 0.432, -0.02], knR: [0.02, 0.432, 0.02],
+      anL: [0.02, 0.672, 0], anR: [0.02, 0.672, 0],
+      toL: [0.01, 0.747, 0.02], toR: [0.01, 0.747, 0.02],
+    }, { wide: [0, 0, 1], face: [0, -1, 0.1] }),
+    makePose("tissue_split", "ティシュー（布に脚を掛けたスプリット）", {
+      // 両手を1.15H付近で握り、腰から両脚を左右へ大きく開く
+      head: [0, 0.995, 0], neck: [0, 0.915, 0],
+      shL: [-0.1075, 0.88, 0], shR: [0.1075, 0.88, 0],
+      elL: [-0.2425, 1.0135, 0], wrL: [-0.125, 1.15, 0],
+      elR: [0.2425, 1.0135, 0], wrR: [0.125, 1.15, 0],
+      hipL: [-0.055, 0.58, 0], hipR: [0.055, 0.58, 0],
+      knL: [-0.29, 0.55, 0], knR: [0.29, 0.55, 0],
+      anL: [-0.53, 0.55, 0], anR: [0.53, 0.55, 0],
+      toL: [-0.605, 0.55, 0], toR: [0.605, 0.55, 0],
+    }),
+    makePose("aerial_invert_straddle", "逆さ吊り（開脚・両手で握る／インバート）", {
+      // 手は1.15Hに残し、腰を手より上へ上げて脚を上向きに開く
+      head: [0, 0.985, 0], neck: [0, 1.055, 0],
+      shL: [-0.1075, 1.10, 0], shR: [0.1075, 1.10, 0],
+      elL: [-0.2875, 1.15, 0], wrL: [-0.1075, 1.15, 0],
+      elR: [0.2875, 1.15, 0], wrR: [0.1075, 1.15, 0],
+      hipL: [-0.055, 1.40, 0], hipR: [0.055, 1.40, 0],
+      knL: [-0.24, 1.55, 0], knR: [0.24, 1.55, 0],
+      anL: [-0.43, 1.70, 0], anR: [0.43, 1.70, 0],
+      toL: [-0.505, 1.72, 0], toR: [0.505, 1.72, 0],
+    }, { face: [0, -1, 0.1] }),
+    makePose("straps_flag", "ストラップ（片手吊りで体を横へ／フラッグ）", {
+      // 右手首を1.15Hに固定し、全身を+Xへ水平に伸ばす
+      head: [0.25, 1.15, 0], neck: [0.32, 1.15, 0],
+      shL: [0.37, 1.15, -0.05], shR: [0.37, 1.15, 0.05],
+      elR: [0.18, 1.15, 0.025], wrR: [0, 1.15, 0],
+      elL: [0.48, 1.30, -0.05], wrL: [0.60, 1.435, -0.05],
+      hipL: [0.67, 1.15, -0.045], hipR: [0.67, 1.15, 0.045],
+      knL: [0.91, 1.15, -0.02], knR: [0.91, 1.15, 0.02],
+      anL: [1.15, 1.15, 0], anR: [1.15, 1.15, 0],
+      toL: [1.225, 1.15, 0.02], toR: [1.225, 1.15, 0.02],
+    }, { wide: [0, 0, 1], face: [0, 0, 1] }),
+    makePose("straps_crucifix", "十字懸垂（両腕を横へ開いて吊る）", {
+      // 2026-09-26 Claude が作り直し: 腕がV字に上がり十字に見えなかった。体を0.31H持ち上げ、肩の高さで両腕を水平に伸ばす（握り＝手首は y=1.15）
+      head: [0, 1.245, 0], neck: [0, 1.165, 0], shL: [-0.1075, 1.13, 0], shR: [0.1075, 1.13, 0], hipL: [-0.055, 0.83, 0], hipR: [0.055, 0.83, 0], knL: [-0.06, 0.59, 0.012], knR: [0.06, 0.59, 0.012], anL: [-0.058, 0.35, 0], anR: [0.058, 0.35, 0], toL: [-0.058, 0.33, 0.03], toR: [0.058, 0.33, 0.03], elL: [-0.2975, 1.135, 0], elR: [0.2975, 1.135, 0], wrL: [-0.4775, 1.15, 0], wrR: [0.4775, 1.15, 0],
+    }),
+    makePose("pose_hair_hang", "髪で吊られる（ヘアハング）", {
+      // 頭頂を1.15Hへ合わせ、両腕を自由に下横へ開いて手吊りとの差を出す
+      head: [0, 1.07, 0], neck: [0, 0.99, 0],
+      shL: [-0.1075, 0.955, 0], shR: [0.1075, 0.955, 0],
+      elL: [-0.27, 0.855, 0.02], wrL: [-0.42, 0.755, 0.02],
+      elR: [0.27, 0.855, 0.02], wrR: [0.42, 0.755, 0.02],
+      hipL: [-0.055, 0.655, 0], hipR: [0.055, 0.655, 0],
+      knL: [-0.06, 0.415, 0], knR: [0.06, 0.415, 0],
+      anL: [-0.058, 0.175, 0], anR: [0.058, 0.175, 0],
+      toL: [-0.058, 0.10, 0.02], toR: [0.058, 0.10, 0.02],
+    }),
+    makePose("pose_harness_flight", "ハーネスで飛ぶ（水平に伸びる）", {
+      // 胴と脚を水平に伸ばし、右手だけを1.15Hの綱へ上げる
+      head: [-0.15, 0.78, 0], neck: [-0.075, 0.78, 0],
+      shL: [0, 0.78, -0.05], shR: [0, 0.78, 0.05],
+      elL: [-0.16, 0.88, -0.025], wrL: [-0.31, 0.98, 0],
+      elR: [0, 0.97, 0.025], wrR: [0, 1.15, 0],
+      hipL: [0.30, 0.78, -0.045], hipR: [0.30, 0.78, 0.045],
+      knL: [0.54, 0.78, -0.02], knR: [0.54, 0.78, 0.02],
+      anL: [0.78, 0.78, 0], anR: [0.78, 0.78, 0],
+      toL: [0.855, 0.78, 0.02], toR: [0.855, 0.78, 0.02],
+    }, { wide: [0, 0, 1], face: [0, 0, 1] }),
+    makePose("trapeze_stand", "ブランコの上に立つ（両手でロープを握る）", {
+      // 両足をバーの高さへ置き、頭上の左右のロープを握る
+      elL: [-0.24, 0.96, 0], wrL: [-0.20, 1.135, 0],
+      elR: [0.24, 0.96, 0], wrR: [0.20, 1.135, 0],
+      knL: [-0.07, 0.28, 0], knR: [0.07, 0.28, 0],
+      anL: [-0.07, 0.04, 0], anR: [0.07, 0.04, 0],
+      toL: [-0.07, 0.00, 0.075], toR: [0.07, 0.00, 0.075],
+    }),
   ];
   /* ---- R-19（2026-09-17 本人要望）: 物を伴う姿勢は「持っているときだけ」選べるようにする ----
    * 本人の言葉:「小道具や大道具を持つという動きをしたときに、取れる姿勢としてください」。
@@ -6421,12 +6611,31 @@
   /* 一覧に出す姿勢。物を伴う姿勢は、その物を持っているときだけ出す。
     「座る」は椅子に載せた演者だけへ出す。実演向けの一部姿勢は一覧から外す。
      姿勢データ自体は旧ショーとの互換のため残す。 */
+  /* 器具側の既定の姿勢（姿勢の窓で「いつもの形」として選べる札）。選ぶと piece.pose は "stand" に戻す。 */
+  function mountDefaultPose(mount, piece) {
+    if (mount === "pole") return basePoseById(piece && piece.poleSide === "L" ? "poleflag_l" : "poleflag_r");
+    if (mount === "trapeze") return basePoseById(piece && piece.trapMode === "hang" ? "trapeze_hang" : "trapeze_sit");
+    return basePoseById("trapeze_hang");
+  }
+  const isMountDefaultPose = (pose) => Boolean(pose && HIDDEN_POSES.some((hidden) => hidden.id === pose.id));
+  /* 札に「選択中」の印を付けるか。既定の札は、器具の姿勢の組に無い姿勢のとき選択中とみなす。 */
+  const poseTileIsOn = (piece, pose) => (isMountDefaultPose(pose)
+    ? !isMountPose(mountKindOf(piece), piece.pose) : piece.pose === pose.id);
   function selectablePoses(pieces) {
     const list = Array.isArray(pieces) ? pieces.filter(Boolean) : (pieces ? [pieces] : []);
     const held = new Set();
     list.forEach((piece) => heldPropShapes(piece).forEach((shape) => held.add(shape)));
     const inUse = new Set(list.map((piece) => piece && piece.pose).filter(Boolean));
     const allOnChairs = list.length > 0 && list.every((piece) => mountKindOf(piece) === "chair");
+    /* 器具に乗っている演者は、その器具の姿勢の組だけを出す（先頭は器具側の既定の姿勢）。 */
+    const mounts = new Set(list.map((piece) => mountKindOf(piece) || ""));
+    const mount = mounts.size === 1 ? [...mounts][0] : "";
+    if (mount && mount !== "chair") {
+      const choices = mountPoseChoices(mount);
+      if (!choices.length) return [];
+      return [mountDefaultPose(mount, list[0])].concat(choices.map((id) => POSES.find((pose) => pose.id === id)));
+    }
+    if (mounts.size > 1 && [...mounts].some((m) => m && m !== "chair")) return [];
     return POSES.filter((pose) => {
       if ([
         "backflip", "walkover-mid", "frontroll-mid", "roundoff-mid",
@@ -6461,6 +6670,17 @@
     "drums_play", "piano_play", "cello_play",
   ]);
   const isChairSitPose = (id) => CHAIR_SIT_POSES.has(id);
+  /* 2026-09-26: 器具に乗った演者が選べる姿勢の組（本人が選んだ空中の姿勢のため）。
+     ここに無い姿勢で器具に乗ると、今までどおり器具側の姿勢（人間旗・座る／ぶら下がる）に固定される。
+     ★姿勢の作り方: ポールは原点を握りの中央（poleflag_r と同じ・体は +x 側。左側は "@left" で自動反転）、
+       ティシューは両手の握りを y=1.15H（trapeze_hang と同じ）、トラピーズの「立つ」は足の裏を y=0（バーの高さ）に置く。 */
+  const MOUNT_POSES = {
+    pole: ["pole_climb", "pole_layback", "pole_invert"],
+    tissue: ["tissue_split", "aerial_invert_straddle", "straps_flag", "straps_crucifix", "pose_hair_hang", "pose_harness_flight"],
+    trapeze: ["trapeze_stand"],
+  };
+  const mountPoseChoices = (mount) => (MOUNT_POSES[mount] || []).filter((id) => POSES.some((pose) => pose.id === id));
+  const isMountPose = (mount, id) => mountPoseChoices(mount).includes(id);
   const basePoseById = (id) => POSES.find((p) => p.id === id)
     || HIDDEN_POSES.find((p) => p.id === id) || POSES[0];
   /* 2026-09-26: 持ち物を伴う姿勢（POSE_PROPS）は右手で持つ形で作ってある。
@@ -6508,7 +6728,8 @@
       "sit_chin_rest", "sit_lean_back", "sit_reverse_chair", "sit_forward"] },
     { ja: "礼・合図・身振り", ids: ["reach", "open", "hat", "dogeza", "bow_deep", "wave", "point", "look_up", "turn_back", "bow_light",
       "blow_kiss", "beckon", "raise_hand", "salute", "fist_pump", "clap", "look_down", "shade_eyes", "listen_ear", "hide_crouch", "shrug",
-      "mime_wall", "sign_language_speak"] },
+      "mime_wall", "sign_language_speak", "hug_holder", "hand_in_hand", "shoulder_arm", "whisper", "handshake", "propose_kneel",
+      "reach_up_help"] },
     { ja: "日常の動作", ids: ["write_desk", "push", "pull", "read_book", "phone_call", "drink", "toast", "sweep", "tray_serve",
       "umbrella_hold", "flag_wave", "torch_raise", "bouquet_offer"] },
     { ja: "感情・倒れる", ids: ["collapse_knees", "collapse_hands_floor", "lie_spread", "cry_cover", "shout", "think_chin", "head_down",
@@ -6526,8 +6747,10 @@
       "frontroll-mid", "tuck", "backflip", "backhandspring-mid", "walkover-mid", "bridge_hold", "one_arm_handstand",
       "straddle_handstand", "headstand", "forearm_stand", "y_balance", "front_split", "layout_flip_mid", "chest_stand",
       "backbend_standing", "crashmat_fall"] },
-    { ja: "組み技", ids: [] },
-    { ja: "空中・器具", ids: [] },
+    { ja: "組み技", ids: ["h2h_base_stand", "base_supine_legs_up", "two_high_base", "shoulder_ride_base", "banquine_base",
+      "bridal_carry_base", "piggyback_base"] },
+    { ja: "空中・器具", ids: ["pole_climb", "pole_layback", "pole_invert", "tissue_split", "aerial_invert_straddle", "straps_flag",
+      "straps_crucifix", "pose_hair_hang", "pose_harness_flight", "trapeze_stand"] },
     { ja: "サーカス道具・乗り物", ids: ["juggle", "cyr", "unicycle", "bicycle", "skateboard", "skate", "juggle_one_hand",
       "face_balance", "diabolo_spin", "diabolo_high_toss", "cigarbox_hold", "devilstick_play", "poi_spin", "hoop_waist_spin",
       "rolabola_stand", "germanwheel_ride", "ride_astride"] },
@@ -6539,6 +6762,11 @@
       ja: group.ja,
       poses: group.ids.filter((id) => byId.has(id) && !used.has(id)).map((id) => { used.add(id); return byId.get(id); }),
     }));
+    // 器具側の既定の姿勢（人間旗・ブランコに座る等）は「空中・器具」へ入れる（2026-09-26）
+    const aerial = groups.find((group) => group.ja === "空中・器具");
+    poses.filter((pose) => !used.has(pose.id) && HIDDEN_POSES.some((hidden) => hidden.id === pose.id)).forEach((pose) => {
+      used.add(pose.id); if (aerial) aerial.poses.unshift(pose);
+    });
     const rest = poses.filter((pose) => !used.has(pose.id));
     if (rest.length) groups.push({ ja: POSE_GROUP_OTHER, poses: rest });
     return groups.filter((group) => group.poses.length);
@@ -14023,7 +14251,8 @@
         && Math.hypot((piece.u - other.u) * size.width, (piece.v - other.v) * size.depth) < 0.55);
       if (trap) {
         const H = pieceHeightM(piece) * (piece.size / 100);
-        const grip = TRAP_GRIP[piece.trapMode === "hang" ? "hang" : "sit"];
+        // トラピーズの上に立つ姿勢は足の裏をバーの高さへ（2026-09-26）
+        const grip = piece.pose === "trapeze_stand" && isMountPose("trapeze", piece.pose) ? 0 : TRAP_GRIP[piece.trapMode === "hang" ? "hang" : "sit"];
         piece.supportId = trap.id;
         piece.base = Math.max(0, flownLift(trap) - grip * H);
         return;
@@ -14047,6 +14276,8 @@
 
       /* 椅子では姿勢を強制しない。「座る」なら腰を座面へ合わせ、
          それ以外なら通常の支持物と同じく足を座面へ載せる。 */
+      // 器具（ポール・トラピーズ・ティシュー）から下ろした演者が器具の姿勢のままなら、椅子と同じく立つ（2026-09-26）
+      if (previousMount && previousMount !== "chair" && isMountPose(previousMount, piece.pose)) piece.pose = "stand";
       if (foundHolder && foundHolder.type === "chair" && isChairSitPose(piece.pose)) {
           const sitHip = 0.285 * pieceHeightM(piece) * (piece.size / 100);
           piece.base = Math.max(0, found.top - sitHip);
@@ -14252,7 +14483,8 @@
 
   function poseLockedByMount(piece) {
     const mount = mountKindOf(piece);
-    return Boolean(mount && mount !== "chair");
+    // 器具の姿勢の組がある器具（2026-09-26）は、その組の中から選べる
+    return Boolean(mount && mount !== "chair" && !mountPoseChoices(mount).length);
   }
 
   function performerRig(piece, pos, L) {
@@ -14264,13 +14496,8 @@
     const mount = mountKindOf(piece);
     // 転換アニメの床の区間は歩く姿勢。乗り物の強制姿勢より優先する
     const poseId = piece.animPose ? piece.animPose
-      : mount === "pole"
-        ? (piece.poleSide === "L" ? "poleflag_l" : "poleflag_r")
-        : mount === "trapeze"
-          ? (piece.trapMode === "hang" ? "trapeze_hang" : "trapeze_sit")
-          : mount === "tissue"
-            ? "trapeze_hang"
-          : handedPoseId(piece, sc().pieces, piece.pose);
+      : mount && mount !== "chair" ? mountedPoseId(piece, mount)
+        : handedPoseId(piece, sc().pieces, piece.pose);
     const rig = buildRig(poseId, pos.x, pos.rawY === undefined ? pos.y : pos.rawY,
       H * per.x, H * per.y, (performerFacing(piece) * Math.PI) / 180, zDrop, L.plan ? null : L.tilt, samplePerformancePose(piece));
     rig.per = per;
@@ -14529,13 +14756,21 @@
   }
 
   /* FPV用: 駒がいまどの姿勢IDで描かれるべきか（performerRig と同じ優先順位） */
+  /* 器具に乗った演者の描く姿勢。選んだ姿勢が器具の組にあればそれ、無ければ器具側の既定の姿勢。 */
+  function mountedPoseId(piece, mount) {
+    if (mount === "pole") {
+      if (isMountPose("pole", piece.pose)) return piece.poleSide === "L" ? piece.pose + LEFT_HAND_SUFFIX : piece.pose;
+      return piece.poleSide === "L" ? "poleflag_l" : "poleflag_r";
+    }
+    if (mount === "trapeze") return isMountPose("trapeze", piece.pose) ? piece.pose : (piece.trapMode === "hang" ? "trapeze_hang" : "trapeze_sit");
+    if (mount === "tissue") return isMountPose("tissue", piece.pose) ? piece.pose : "trapeze_hang";
+    return piece.pose || "stand";
+  }
   function resolvePoseId(piece, pieces) {
     const mount = mountKindFrom(piece, pieces);
     return piece.animPose ? piece.animPose
-      : mount === "pole" ? (piece.poleSide === "L" ? "poleflag_l" : "poleflag_r")
-        : mount === "trapeze" ? (piece.trapMode === "hang" ? "trapeze_hang" : "trapeze_sit")
-          : mount === "tissue" ? "trapeze_hang"
-            : handedPoseId(piece, pieces, piece.pose || "stand");
+      : mount ? mountedPoseId(piece, mount)
+        : handedPoseId(piece, pieces, piece.pose || "stand");
   }
 
   /* 3Dカメラ（stage-first-person.js）へ体モデルを貸し出す窓口。
@@ -25686,7 +25921,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       section.append(heading, tiles);
       grid.append(section);
       group.poses.forEach((pose) => {
-      const shared = performers.every((item) => item.pose === pose.id);
+      const shared = performers.every((item) => poseTileIsOn(item, pose));
       const tile = document.createElement("button");
       tile.type = "button";
       tile.className = `stage-pose-tile${shared ? " is-on" : ""}`;
@@ -33451,10 +33686,16 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const performers = selectedPerformerPieces();
     if (!pose || !performers.length || performers.some((piece) => poseLockedByMount(piece))) return 0;
     if (isChairSitPose(pose.id) && !performers.every((piece) => mountKindOf(piece) === "chair")) return 0;
-    const changed = performers.filter((piece) => piece.pose !== pose.id);
+    // 器具の姿勢は、その器具に乗っている演者だけへ。既定の姿勢の札は "stand"（＝器具側の姿勢）として保存する
+    const target = isMountDefaultPose(pose) ? "stand" : pose.id;
+    const mountOf = (piece) => mountKindOf(piece);
+    if (!isMountDefaultPose(pose) && Object.keys(MOUNT_POSES).some((m) => MOUNT_POSES[m].includes(pose.id))
+      && !performers.every((piece) => isMountPose(mountOf(piece), pose.id))) return 0;
+    if (!isMountDefaultPose(pose) && performers.some((piece) => { const m = mountOf(piece); return m && m !== "chair" && !isMountPose(m, pose.id); })) return 0;
+    const changed = performers.filter((piece) => piece.pose !== target);
     if (!changed.length) return 0;
     checkpoint();
-    changed.forEach((piece) => { piece.pose = pose.id; });
+    changed.forEach((piece) => { piece.pose = target; });
     updateInspector();
     render();
     persistSoon();
@@ -34207,7 +34448,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const buildKey = `${performers.map((item) => `${item.id}:${item.color}:${item.pose}`).join("|")}|${heldKey}|${mountKey}|${lang}|${poseStripGroup}`;
     if (poseStripFor === buildKey) {
       els.poseStrip.querySelectorAll(".stage-pose-strip-tile[data-pose]").forEach((tile) => {
-        const on = tile.dataset.pose === commonPose;
+        const on = performers.every((item) => poseTileIsOn(item, poseById(tile.dataset.pose)));
         tile.classList.toggle("is-on", on);
         tile.setAttribute("aria-pressed", String(on));
       });
@@ -34239,9 +34480,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     current.poses.forEach((pose) => {
       const tile = document.createElement("button");
       tile.type = "button";
-      tile.className = `stage-pose-strip-tile${pose.id === commonPose ? " is-on" : ""}`;
+      const tileOn = performers.every((item) => poseTileIsOn(item, pose));
+      tile.className = `stage-pose-strip-tile${tileOn ? " is-on" : ""}`;
       tile.dataset.pose = pose.id;
-      tile.setAttribute("aria-pressed", String(pose.id === commonPose));
+      tile.setAttribute("aria-pressed", String(tileOn));
       tile.title = poseName(pose);
       const canvas = document.createElement("canvas");
       canvas.width = 112;
@@ -36753,12 +36995,17 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       },
       setPiecePose: (pieceId, poseId) => {
         const piece = sc().pieces.find((p) => p.id === pieceId && p.type === "performer");
-        if (!piece || !POSES.some((p) => p.id === poseId)) return false;
+        const hiddenDefault = HIDDEN_POSES.some((p) => p.id === poseId);
+        if (!piece || (!POSES.some((p) => p.id === poseId) && !hiddenDefault)) return false;
         if (poseLockedByMount(piece)) return false;
         if (isChairSitPose(poseId) && mountKindOf(piece) !== "chair") return false;
-        if (piece.pose === poseId) return true;
+        const mount = mountKindOf(piece);
+        if (mount && mount !== "chair" && !hiddenDefault && !isMountPose(mount, poseId)) return false;
+        if ((!mount || mount === "chair") && Object.keys(MOUNT_POSES).some((m) => MOUNT_POSES[m].includes(poseId))) return false;
+        const target = hiddenDefault ? "stand" : poseId;
+        if (piece.pose === target) return true;
         checkpoint();
-        piece.pose = poseId;
+        piece.pose = target;
         updateInspector();
         render();
         persistSoon();
@@ -36826,6 +37073,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       poseHeadHeight: (poseId) => { const pose = poseById(poseId); return pose && pose.joints && pose.joints.head ? pose.joints.head[1] : null; },
       poseTopHeight: (poseId) => { const ext = poseExtent(poseId); return ext && Number.isFinite(ext.top) ? ext.top : null; },
       isChairSitPose: (poseId) => isChairSitPose(poseId),
+      isPoseLocked: (pieceId) => { const piece = sc().pieces.find((p) => p.id === pieceId); return Boolean(piece && poseLockedByMount(piece)); },
       facingLabel,
       open3d: () => {
         if (!previewOnly) return;
