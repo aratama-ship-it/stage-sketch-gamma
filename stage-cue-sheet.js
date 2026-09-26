@@ -194,6 +194,7 @@
     if (mount === "trapeze") parts.push(`${translate(helpers, "トラピーズ")}（${translate(helpers, piece.trapMode === "hang" ? "ぶら下がり" : "座り")}）`);
     if (mount === "pole") parts.push(`${translate(helpers, "ポール")} ${finite(piece.poleH).toFixed(1)}m`);
     if (mount === "tissue") parts.push(`${translate(helpers, "ティシュー")} ${finite(piece.tissueH).toFixed(1)}m`);
+    if (mount === "rig") parts.push(translate(helpers, "吊り点"));
     return parts.filter(Boolean).join(" / ");
   }
 

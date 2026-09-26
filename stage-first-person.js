@@ -967,7 +967,7 @@
 
   function mountedPose(piece, pieces) {
     const support = supportOf(piece, pieces);
-    if (pieceBaseOf(piece) > 0 && support && support.type === "tissue") return "hang";
+    if (pieceBaseOf(piece) > 0 && support && (support.type === "tissue" || support.type === "rigpoint")) return "hang";
     if (support && support.type === "trapeze") {
       return piece.trapMode === "hang" && pieceBaseOf(piece) > 0 ? "hang" : "sitBar";
     }
@@ -1352,7 +1352,7 @@
     const holder = supportOf(piece, data.pieces);
     // 器具の姿勢の組がある器具（2026-09-26）は、その組から姿勢を選べる。組が無ければ今までどおり器具側で固定
     const mountLocked = !state.bridge || !state.bridge.isPoseLocked || state.bridge.isPoseLocked(piece.id);
-    if (holder && ["pole", "trapeze", "tissue"].includes(holder.type) && mountLocked) {
+    if (holder && ["pole", "trapeze", "tissue", "rigpoint"].includes(holder.type) && mountLocked) {
       elements.editHint.textContent = text("移動と姿勢は乗り物側で決まっています");
       return;
     }
@@ -3688,6 +3688,11 @@
             Math.max(2.5, width / 2 * focal / Math.max(1.4, toCamera(points[index]).z)));
         }
       });
+    } else if (piece.type === "rigpoint") {
+      // 吊り点（2026-09-26 W4）。天井からワイヤー1本と金具。高さは本体が決めたシーンごとの値（base）
+      const lift = pieceBaseOf(piece) > 0 ? pieceBaseOf(piece) : finite(dims.lift, 3.5);
+      line3(ctx, { x, y: CEIL, z }, { x, y: lift, z }, "rgba(200,205,212,.7)", 1.5);
+      line3(ctx, { x, y: lift, z }, { x, y: lift - (dims.h || .3), z }, shade(color, 1), 3);
     } else if (piece.type === "trapeze") {
       const lift = finite(dims.lift, 5); const width = dims.w || 1.2;
       line3(ctx, { x: x - width / 2, y: CEIL, z }, { x: x - width / 2, y: lift, z }, "rgba(180,170,150,.65)", 1.5);
@@ -3713,7 +3718,8 @@
       drawBox(ctx, x, z, y0, y0 + dims.h, dims.w, dims.d || .4, color, finite(piece.facing, 0));
     }
     if (piece.type !== "performer" && piece.type !== "light") {
-      const top = piece.type === "tissue" || piece.type === "trapeze" ? finite(dims.lift, 5) + .25
+      const top = piece.type === "rigpoint" ? (pieceBaseOf(piece) > 0 ? pieceBaseOf(piece) : finite(dims.lift, 3.5)) + .25
+        : piece.type === "tissue" || piece.type === "trapeze" ? finite(dims.lift, 5) + .25
         : finite(dims.lift, 0) + heldLift + (dims.h || 1) + .3;
       if (toCamera({ x, y: top, z }).z < 13) queueLabel({ x, y: top, z }, labelOf(piece), false);
     }
@@ -3826,6 +3832,29 @@
       .filter((fixture) => fixture.laser && fixture.state === "on")
       .map((fixture) => ({ ...fixture.laser, color: fixture.color, level: fixture.level }));
     if (lasers.length) render.paintLasers(ctx, lasers, cueLightProjector());
+  }
+
+  /* 床を這う霧（ロースモーク・2026-09-26 W4）。シーンの lowFog（0〜100）。
+     奥行き0.5mごとに、床から約0.5mの薄い幕（客席へ向いた縦の帯）を置き、駒と同じ奥行きの順で描く。
+     手前の帯が奥の演者の足元を覆うので、霧に足が沈んで見える。 */
+  function lowFogSlices() {
+    const amount = data ? Math.max(0, Math.min(100, finite(data.lowFog, 0))) / 100 : 0;
+    if (!(amount > 0)) return [];
+    const rows = Math.max(6, Math.round(D * 2));
+    return Array.from({ length: rows + 1 }, (_, index) => {
+      const v = index / rows;
+      return { fog: { v, amount }, depth: toCamera(toWorld(0.5, v, W, D, 0.3)).z };
+    });
+  }
+
+  function drawLowFogSlice(ctx, fog) {
+    const top = 0.35 + 0.25 * fog.amount;
+    const z = toWorld(0.5, fog.v, W, D).z;
+    const x0 = -W / 2 - 0.5; const x1 = W / 2 + 0.5;
+    const band = (y0, y1, alpha) => fillPoly(ctx, [{ x: x0, y: y0, z }, { x: x1, y: y0, z }, { x: x1, y: y1, z }, { x: x0, y: y1, z }],
+      `rgba(226,230,234,${alpha.toFixed(3)})`);
+    band(0, top * 0.45, 0.12 * fog.amount);
+    band(top * 0.45, top, 0.05 * fog.amount);
   }
 
   function drawCueBeams(ctx) {
@@ -4052,8 +4081,10 @@
       .forEach((piece) => drawRoute(ctx, piece, camera.me === piece));
     data.pieces.filter((piece) => piece.type !== "light")
       .map((piece) => ({ piece, depth: toCamera(toWorld(pieceUOf(piece), pieceVOf(piece), W, D, 1)).z }))
+      .concat(lowFogSlices())
       .sort((a, b) => b.depth - a.depth)
-      .forEach(({ piece }) => {
+      .forEach(({ piece, fog }) => {
+        if (fog) { drawLowFogSlice(ctx, fog); return; }
         if (piece === camera.me) return;
         drawOnePiece(piece);
       });
@@ -4249,7 +4280,7 @@
         candidate.id === state.sel && candidate.type === "performer" && !candidate.exitWalker
       ));
       const holder = piece && supportOf(piece, data.pieces);
-      const mounted = holder && ["pole", "trapeze", "tissue", "chair"].includes(holder.type);
+      const mounted = holder && ["pole", "trapeze", "tissue", "rigpoint", "chair"].includes(holder.type);
       if (piece && !mounted) {
         const foot = toWorld(pieceUOf(piece), pieceVOf(piece), W, D, pieceBaseOf(piece));
         /* ドラッグは「掴んだ高さ」を通る水平面で受ける。足元の面に固定すると、

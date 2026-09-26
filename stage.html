@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.33">
+<meta name="stage-sketch-gamma-version" content="v0.2.34">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
@@ -69,7 +69,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.33</span>
+              <span class="stage-app-version">0.2.34</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -468,6 +468,14 @@
             <input type="range" id="stage-brush-size" min="12" max="120" step="2" value="42">
             <button type="button" class="stage-minor-action" id="stage-clear-paint">背景の塗りだけ消す</button>
               </section>
+
+            <!-- 床を這う霧（ロースモーク・2026-09-26 W4）。このシーンだけの効果。0で無し -->
+            <div class="stage-lowfog-block">
+              <label class="stage-control-label stage-range-label" for="stage-lowfog">
+                床を這う霧（ロースモーク） <span id="stage-lowfog-value">なし</span>
+              </label>
+              <input type="range" id="stage-lowfog" min="0" max="100" step="5" value="0">
+            </div>
 
             <!-- スクリーンの文字。技名・擬音・字幕を背景へ映す -->
             <div class="stage-screentext-block" id="stage-screentext-block" data-tablet-break-before>
@@ -2579,6 +2587,16 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0234-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0234-title">v0.2.34</h3>
+        <time datetime="2026-09-26">2026-09-26</time>
+      </header>
+      <ul>
+        <li>相手に乗る姿勢5件（手の上で倒立・足の上に立つ・肩の上に立つ・肩車の上・抱かれる側）。乗る側は下の人の手・足裏・肩の高さへ自動で乗ります</li>
+        <li>背景の窓に「床を這う霧（ロースモーク）」を追加（シーンごと）。大道具に「ホイール・オブ・デス」「バンジー」の形</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0233-title">
       <header class="stage-release-entry-head">
         <h3 id="stage-release-v0233-title">v0.2.33</h3>
@@ -3789,20 +3807,20 @@
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=2026092633"></script>
-    <script src="stage-i18n.zh-Hans.js?v=2026092633"></script>
-    <script src="stage-i18n.zh-Hant.js?v=2026092633"></script>
-<script src="stage-prompt-i18n.js?v=20260926-release32"></script>
+    <script src="stage-i18n.js?v=2026092634"></script>
+    <script src="stage-i18n.zh-Hans.js?v=2026092634"></script>
+    <script src="stage-i18n.zh-Hant.js?v=2026092634"></script>
+<script src="stage-prompt-i18n.js?v=2026092634"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026092402"></script>
 <script src="stage-samples/romeo-juliet-cued.js?v=2026092435"></script>
 <script src="stage-samples/romeo-juliet-second.js?v=20260925-rj2"></script>
-<script src="stage-samples/feature-test-show.js?v=2026092633"></script>
+<script src="stage-samples/feature-test-show.js?v=2026092634"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
 <script src="stage-machinery.js?v=20260925-ui1"></script>
 <script src="stage-scrim.js?v=2026092059"></script>
-<script src="stage-first-person.js?v=2026092633"></script>
+<script src="stage-first-person.js?v=2026092634"></script>
 <script src="stage-audio-store.js?v=2026092523"></script>
 <script src="stage-project-backup-store.js?v=2026092523"></script>
 <script src="stage-storage-codec.js?v=2026092523"></script>
@@ -3821,7 +3839,7 @@
 <script src="gamma-number-scrub.js?v=2026091780"></script>
 <script src="gamma-formation-presets.js?v=formation1"></script>
 <script src="gamma-formation-model.js?v=formation1"></script>
-<script src="stage-cue-sheet.js?v=2026092423"></script>
+<script src="stage-cue-sheet.js?v=2026092634"></script>
 <script src="docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113"></script>
 <script src="stage-light-panel-import.js?v=2026092209"></script>
 <script src="stage-scene-alternatives.js?v=20260925-ui1"></script>
@@ -3833,7 +3851,7 @@
 <script src="stage-performer-body.js?v=2026092633"></script>
 <script src="gamma-ui.js?v=20260925-ui1"></script>
 <script src="gamma-ui-i18n.js?v=20260925-ui1"></script>
-<script src="stage-sketch.js?v=2026092633"></script>
+<script src="stage-sketch.js?v=2026092634"></script>
 <script src="stage-scene-alternatives-ui.js?v=20260926-release32"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-vox-panel.js?v=2026092432"></script>

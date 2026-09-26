@@ -2245,6 +2245,7 @@
     pole: "チャイニーズポール",
     teeter: "ティーターボード",
     tissue: "エアリアルティシュー",
+    rigpoint: "吊り点（ワイヤー）",
     wire: "綱渡り",
     suitcase: "スーツケース",
     trampoline: "トランポリン",
@@ -2270,7 +2271,7 @@
     stool: 0.62,
     wall: 2.5,
     trapeze: 0.06, cyrwheel: 1.9, diabolo: 0.26, pole: 6, teeter: 0.75, tissue: 7,
-    wire: 1.2, suitcase: 0.44, trampoline: 0.95, cane: 0.75, car: 1.45,
+    rigpoint: 0.3, wire: 1.2, suitcase: 0.44, trampoline: 0.95, cane: 0.75, car: 1.45,
     seri: 2.7,
     revolve: 12,
     deck: 12,
@@ -2300,6 +2301,9 @@
     pole: { w: 0.05, d: 0.05, h: 6 },
     teeter: { w: 3.6, d: 0.45, h: 0.75 },
     tissue: { w: 0.3, d: 0.06, h: 7 },
+    /* 吊り点（2026-09-26 W4・本人決定 E3）: フライング・可動吊り点・バトンを1種類にまとめた駒。
+       寸法は吊り金具の大きさ。高さは登録ではなくシーンごとの値（rigH）で持ち、転換で上下する。 */
+    rigpoint: { w: 0.14, d: 0.14, h: 0.3 },
     wire: { w: 6, d: 0.06, h: 1.2 },
     suitcase: { w: 0.62, d: 0.24, h: 0.44 },
     trampoline: { w: 3.05, d: 1.7, h: 0.95 },
@@ -4517,6 +4521,27 @@
       boxAt(1.2, 7.72, -2.9, 0.3, 0.3, 0.28, 1.08),
       ...[-1.15, 1.15].flatMap((x) => [-2.9, 2.9].map((z) => ({ shape: "cylinder", x, y: 0.08, z, dia: 0.42, h: 0.36, tint: 0.5 }))),
     ] };
+  /* 2026-09-26 W4（本人決定 E3）: 回る・伸びる動きは入れず、形として置く。 */
+  PROP_SHAPES.wheel_of_death = { ja: "ホイール・オブ・デス（回転する二連の輪）", en: "Wheel of death", dims: { w: 7.2, d: 1.6, h: 4.9 }, grip: null,
+    parts: [
+      boxAt(0, 0, 0, 2.0, 1.6, 0.25, 0.6),
+      // 台からハブへ上がるA字の脚
+      ...slantBeam(8, -0.9, -0.08, 0.25, 2.95, 0, 0, 0.14),
+      ...slantBeam(8, 0.9, 0.08, 0.25, 2.95, 0, 0, 0.14),
+      boxAt(0, 2.9, 0, 0.32, 0.5, 0.32, 1.0),
+      // 腕（斜めに止めた一瞬）と両端の輪。輪は2本の縁で幅を見せる
+      ...slantBeam(14, -2.6, 2.6, 2.25, 3.85, 0, 0, 0.14).map((part) => ({ ...part, tint: 0.95 })),
+      ...[[-2.6, 2.25], [2.6, 3.85]].flatMap(([x, y]) => [-0.3, 0.3].map((side) => (
+        { shape: "cylinder", ring: true, side, x, y, dia: 2.0, w: 0.06, tint: 1.0 }))),
+    ] };
+  PROP_SHAPES.bungee_rig = { ja: "バンジー（ゴム吊り）", en: "Bungee rig", dims: { w: 3, d: 1.2, h: 5 }, grip: null,
+    parts: [
+      ...[-1.4, 1.4].flatMap((x) => [boxAt(x, 0, 0, 0.3, 1.2, 0.08, 0.6), boxAt(x, 0.08, 0, 0.14, 0.14, 4.78, 0.85)]),
+      boxAt(0, 4.86, 0, 2.94, 0.14, 0.14, 0.95),
+      // ゴムの綱2本（伸び縮みはしない）とハーネスの帯
+      ...[-0.16, 0.16].map((x) => ({ shape: "cylinder", x, y: 1.3, z: 0, dia: 0.035, h: 3.56, tint: 1.1 })),
+      boxAt(0, 0.98, 0, 0.38, 0.22, 0.32, 1.05),
+    ] };
   PROP_SHAPES.lunge_belt = { ja: "ロンジ（稽古の補助ベルトと吊り綱）", en: "Lunge / spotting belt with rope", dims: { w: 0.4, d: 0.4, h: 4 }, grip: null,
     parts: [
       { shape: "cylinder", x: 0, y: 0.68, z: 0, dia: 0.035, h: 3.22, tint: 0.72 },
@@ -4577,6 +4602,8 @@
     // 2026-09-26 大道具追加（第5弾）
     "freestanding_aerial_rig", "safety_net", "flying_trapeze_rig", "korean_cradle", "russian_cradle", "aerial_ladder",
     "high_wire_tower", "globe_of_death", "crane_hoist", "lunge_belt", "wind_machine", "water_screen",
+    // 2026-09-26 W4: 回る・伸びる器具（形のみ）
+    "wheel_of_death", "bungee_rig",
   ]);
   /* 2026-09-22 本人指定: 次の形は当面、追加用の大道具・小道具一覧から外す。
    * PROP_SHAPES 自体は消さない。既存ショーの駒は描画・保存でき、以前どおり大道具として数える。 */
@@ -4625,7 +4652,7 @@
       "russianswing", "slackline", "walljump", "unicycle", "stilts", "aerialhoop", "aerialstraps", "aerialhammock", "spanishweb", "swingpole",
       /* R-19（2026-09-17 本人要望）: 物を伴う姿勢に対応する乗り物。本人決定で小道具の扱い。 */
       "cyrwheel", "skateboard", "rollerskate", "knife_throwing", "spinning_plate", "kendama", "bullwhip", "lasso", "boomerang", "jump_rope", "barbell", "pogo_stick",
-      "freestanding_aerial_rig", "safety_net", "flying_trapeze_rig", "korean_cradle", "russian_cradle", "aerial_ladder", "high_wire_tower", "globe_of_death", "crane_hoist", "lunge_belt",
+      "freestanding_aerial_rig", "safety_net", "flying_trapeze_rig", "korean_cradle", "russian_cradle", "aerial_ladder", "high_wire_tower", "globe_of_death", "crane_hoist", "lunge_belt", "wheel_of_death", "bungee_rig",
       "cigarbox", "devilstick", "poi", "hoop", "ring", "club"] },
   ];
   /* 寸法つまみの仕様。項目は種類ごとに違うので、画面はここから組み立てる。
@@ -4652,6 +4679,7 @@
     pole: { h: "ポールの高さ" },
     teeter: { w: "板の長さ", h: "支点の高さ" },
     tissue: { h: "布の長さ", w: "布の間隔" },
+    rigpoint: { h: "金具の大きさ" },
     wire: { w: "張る長さ", h: "綱の高さ" },
     trampoline: { h: "ベッドの高さ" },
     cane: { w: "左右の間隔", h: "cane の高さ" },
@@ -4704,7 +4732,7 @@
     block: "台・箱", table: "テーブル", chair: "椅子", bench: "ベンチ", stool: "スツール",
     wall: "壁", sphere: "球", prop: "小道具",
     trapeze: "トラピーズ", cyrwheel: "シルホイール", diabolo: "ディアボロ", pole: "チャイニーズポール",
-    teeter: "ティーターボード", tissue: "エアリアルティシュー", wire: "綱渡り",
+    teeter: "ティーターボード", tissue: "エアリアルティシュー", rigpoint: "吊り点（ワイヤー）", wire: "綱渡り",
     suitcase: "スーツケース", trampoline: "トランポリン", cane: "ハンドバランス用cane",
     car: "車", seri: "せり", revolve: "盆・回り舞台", deck: "可動デッキ・傾斜デッキ",
     curtain: "幕", pool: "水面・可動プール床",
@@ -4712,7 +4740,7 @@
     light: "照明",
   };
   // 吊物にしかならない道具。床に置く形を持たない
-  const FLOWN_ONLY = { trapeze: true, tissue: true };
+  const FLOWN_ONLY = { trapeze: true, tissue: true, rigpoint: true };
   const WALL_THICKNESS = 0.3;   // 壁の厚み（m）。触らせず固定で持つ
   /* 明かりの種類。仕込む場所と当てる高さが種類ごとに決まっているので、
    * 舞台へ出したときの既定値をここに持つ（出したあとは自由に動かせる）。
@@ -6526,7 +6554,7 @@
       head: [0.025, 0.93, 0.025], neck: [0.015, 0.85, 0.015],
       elL: [0.02, 0.72, 0.11], wrL: [0.17, 0.65, 0.18],
       elR: [0.22, 0.72, 0.10], wrR: [0.35, 0.63, 0.20],
-    }, { face: [0.35, 0, 0.937] }),
+    }, { face: [0.35, 0, 0.937], pair: true }),
     makePose("hand_in_hand", "手をつなぐ（横並び）", {
       // 右隣の相手へ右手を斜め下にまっすぐ伸ばす
       elR: [0.26, 0.72, 0.05], wrR: [0.42, 0.64, 0.08],
@@ -6740,6 +6768,55 @@
       anL: [-0.10, 0.045, 0.216], anR: [0.10, 0.045, 0.216],
       toL: [-0.10, 0.012, 0.296], toR: [0.10, 0.012, 0.296],
     }, { face: [0, -0.28, 0.96] }),
+    /* 2026-09-26 W4（本人決定 E2）: 相手に乗る側。ride.on の関節（下の演者の姿勢の関節）の高さへ自動で乗る。
+       原点(y=0)は乗る面。肩車の上は脚が面より下へ垂れる（ポールの姿勢と同じく y が負になる）。 */
+    makePose("h2h_flyer_handstand", "ハンドトゥハンド・フライヤー（手の上で倒立）", {
+      // ベースの上げた両手を握って一直線に倒立する。原点は自分の手首＝ベースの手の先
+      head: [0, 0.258, 0.025], neck: [0, 0.335, 0],
+      shL: [-0.1075, 0.37, 0], shR: [0.1075, 0.37, 0],
+      elL: [-0.11, 0.18, 0], elR: [0.11, 0.18, 0],
+      wrL: [-0.11, 0.0, 0], wrR: [0.11, 0.0, 0],
+      hipL: [-0.055, 0.67, 0], hipR: [0.055, 0.67, 0],
+      knL: [-0.05, 0.91, 0], knR: [0.05, 0.91, 0],
+      anL: [-0.045, 1.15, 0], anR: [0.045, 1.15, 0],
+      toL: [-0.045, 1.23, 0.0], toR: [0.045, 1.23, 0.0],
+    }, { face: [0, -0.6, 0.8], ride: { on: ["wrL", "wrR"], lift: 0.06 } }),
+    makePose("flyer_foot_stand", "足の上に立つ（フライヤー・立位）", {
+      // 仰向けのベースが上げた足裏に立ち、両腕をV字に上げる。原点は足裏
+      elL: [-0.2, 0.99, 0], elR: [0.2, 0.99, 0],
+      wrL: [-0.285, 1.15, 0], wrR: [0.285, 1.15, 0],
+    }, { ride: { on: ["toL", "toR"], lift: 0.01 } }),
+    makePose("two_high_flyer", "肩の上に立つ（フライヤー・両腕を横へ）", {
+      // ベースの両肩に片足ずつ乗り、両腕を真横へ伸ばす。原点は足裏
+      elL: [-0.2975, 0.82, 0], elR: [0.2975, 0.82, 0],
+      wrL: [-0.4775, 0.82, 0], wrR: [0.4775, 0.82, 0],
+      knL: [-0.078, 0.28, 0.01], knR: [0.078, 0.28, 0.01],
+      anL: [-0.1, 0.04, 0], anR: [0.1, 0.04, 0],
+      toL: [-0.1, 0.012, 0.075], toR: [0.1, 0.012, 0.075],
+    }, { ride: { on: ["shL", "shR"], lift: 0.03 } }),
+    makePose("shoulder_ride_top", "肩車の上（座る・両手を上げる）", {
+      // ベースの肩へ腰を下ろし、脚を胸の前へ垂らして両手を上げる。原点は肩の上面。
+      // 腰は頭の少し後ろ（behind＝ベースより奥に描いて、ベースの頭を手前に出す）
+      head: [0, 0.465, -0.04], neck: [0, 0.385, -0.04],
+      shL: [-0.1075, 0.35, -0.04], shR: [0.1075, 0.35, -0.04],
+      elL: [-0.2, 0.52, -0.04], elR: [0.2, 0.52, -0.04],
+      wrL: [-0.285, 0.68, -0.04], wrR: [0.285, 0.68, -0.04],
+      hipL: [-0.055, 0.05, -0.04], hipR: [0.055, 0.05, -0.04],
+      knL: [-0.16, 0.01, 0.17], knR: [0.16, 0.01, 0.17],
+      anL: [-0.15, -0.23, 0.14], anR: [0.15, -0.23, 0.14],
+      toL: [-0.15, -0.265, 0.212], toR: [0.15, -0.265, 0.212],
+    }, { ride: { on: ["shL", "shR"], lift: 0.03, behind: true } }),
+    makePose("hug_held", "抱擁（抱かれる側）", {
+      // 「抱擁（抱く側）」の右隣に立ち、体を左へ55度回して両腕を相手の首へ回す。右足は後ろへ軽く上げる
+      head: [-0.033, 0.925, 0.023], neck: [0.0, 0.855, 0.0],
+      shL: [-0.062, 0.82, -0.088], shR: [0.062, 0.82, 0.088],
+      elL: [-0.206, 0.92, -0.015], elR: [-0.056, 0.92, 0.198],
+      wrL: [-0.274, 1.0, 0.131], wrR: [-0.217, 1.0, 0.213],
+      hipL: [-0.032, 0.52, -0.045], hipR: [0.032, 0.52, 0.045],
+      knL: [-0.044, 0.28, -0.042], knR: [-0.007, 0.285, 0.078],
+      anL: [-0.033, 0.04, -0.048], anR: [0.116, 0.1, -0.008],
+      toL: [-0.095, 0.012, -0.004], toR: [0.075, 0.035, 0.02],
+    }, { face: [-0.815, -0.1, 0.571], wide: [0.574, 0, 0.819], pair: true }),
   ];
   /* ---- R-19（2026-09-17 本人要望）: 物を伴う姿勢は「持っているときだけ」選べるようにする ----
    * 本人の言葉:「小道具や大道具を持つという動きをしたときに、取れる姿勢としてください」。
@@ -6874,6 +6951,8 @@
     pole: ["pole_climb", "pole_layback", "pole_invert"],
     tissue: ["tissue_split", "aerial_invert_straddle", "straps_flag", "straps_crucifix", "pose_hair_hang", "pose_harness_flight"],
     trapeze: ["trapeze_stand"],
+    // 吊り点（2026-09-26 W4）。既定の札は「ぶら下がる」（ティシューと同じ）。握りは 1.15H
+    rig: ["pose_harness_flight", "pose_hair_hang", "aerial_invert_straddle", "straps_crucifix"],
   };
   const mountPoseChoices = (mount) => (MOUNT_POSES[mount] || []).filter((id) => POSES.some((pose) => pose.id === id));
   const isMountPose = (mount, id) => mountPoseChoices(mount).includes(id);
@@ -6924,7 +7003,7 @@
       "sit_chin_rest", "sit_lean_back", "sit_reverse_chair", "sit_forward"] },
     { ja: "礼・合図・身振り", ids: ["reach", "open", "hat", "dogeza", "bow_deep", "wave", "point", "look_up", "turn_back", "bow_light",
       "blow_kiss", "beckon", "raise_hand", "salute", "fist_pump", "clap", "look_down", "shade_eyes", "listen_ear", "hide_crouch", "shrug",
-      "mime_wall", "sign_language_speak", "hug_holder", "hand_in_hand", "shoulder_arm", "whisper", "handshake", "propose_kneel",
+      "mime_wall", "sign_language_speak", "hug_holder", "hug_held", "hand_in_hand", "shoulder_arm", "whisper", "handshake", "propose_kneel",
       "reach_up_help"] },
     { ja: "日常の動作", ids: ["write_desk", "push", "pull", "read_book", "phone_call", "drink", "toast", "sweep", "tray_serve",
       "umbrella_hold", "flag_wave", "torch_raise", "bouquet_offer"] },
@@ -6945,7 +7024,8 @@
       "straddle_handstand", "headstand", "forearm_stand", "y_balance", "front_split", "layout_flip_mid", "chest_stand",
       "backbend_standing", "crashmat_fall"] },
     { ja: "組み技", ids: ["h2h_base_stand", "base_supine_legs_up", "two_high_base", "shoulder_ride_base", "banquine_base",
-      "bridal_carry_base", "piggyback_base"] },
+      "bridal_carry_base", "piggyback_base", "h2h_flyer_handstand", "flyer_foot_stand", "two_high_flyer",
+      "shoulder_ride_top"] },
     { ja: "空中・器具", ids: ["pole_climb", "pole_layback", "pole_invert", "tissue_split", "aerial_invert_straddle", "straps_flag",
       "straps_crucifix", "pose_hair_hang", "pose_harness_flight", "trapeze_stand"] },
     { ja: "サーカス道具・乗り物", ids: ["juggle", "cyr", "unicycle", "bicycle", "skateboard", "skate", "juggle_one_hand",
@@ -7285,7 +7365,7 @@
   const SOLID_TYPES = {
     block: true, table: true, chair: true, bench: true, stool: true, wall: true,
     prop: true,
-    trapeze: true, cyrwheel: true, diabolo: true, pole: true, teeter: true, tissue: true, wire: true,
+    trapeze: true, cyrwheel: true, diabolo: true, pole: true, teeter: true, tissue: true, rigpoint: true, wire: true,
     suitcase: true, trampoline: true, cane: true, car: true, seri: true, model: true,
     revolve: true, deck: true, curtain: true, pool: true,
   };
@@ -7498,6 +7578,8 @@
     arrowClearFront: document.getElementById("stage-front-arrow-clear"),
     arrowClearPlan: document.getElementById("stage-plan-arrow-clear"),
     background: document.getElementById("stage-bg-color"),
+    lowFog: document.getElementById("stage-lowfog"),
+    lowFogValue: document.getElementById("stage-lowfog-value"),
     paintColor: document.getElementById("stage-paint-color"),
     brushSize: document.getElementById("stage-brush-size"),
     brushValue: document.getElementById("stage-brush-value"),
@@ -9251,6 +9333,8 @@
     };
     // 舞台機構の値は登録寸法ではなく、シーンごとの状態として駒に持つ
     if (type === "seri") normalized.seriH = clamp(finite(piece.seriH, 0), -3, 4);
+    // 吊り点の高さ（シーンごと）。無ければ持たない（登録の地上高を使う）
+    if (type === "rigpoint" && Number.isFinite(Number(piece.rigH))) normalized.rigH = clamp(finite(piece.rigH, 3.5), 0, 10);
     if (type === "revolve") normalized.spin = clamp(finite(piece.spin, 0), -180, 180);
     if (type === "revolve") normalized.spinRate = clamp(finite(piece.spinRate, 0), -30, 30);
     if (type === "deck") {
@@ -9629,6 +9713,8 @@
       studyBeatId: typeof raw.studyBeatId === "string" ? raw.studyBeatId : null,
       note: typeof raw.note === "string" ? raw.note : "",
       background: validColor(raw.background, fallbackBg),
+      // 床を這う霧（2026-09-26 W4）。0〜100。無いシーンには足さない（古い版は知らない項目として残す）
+      ...(raw.lowFog !== undefined ? { lowFog: clamp(Math.round(finite(raw.lowFog, 0)), 0, 100) } : {}),
       pieces: Array.isArray(raw.pieces) ? raw.pieces.map(normalizePiece) : [],
       notes: Array.isArray(raw.notes) ? raw.notes.map(normalizeNote).filter(Boolean) : [],
       strokes: Array.isArray(raw.strokes)
@@ -9690,7 +9776,7 @@
    * 床からの高さ（base）と支えている駒（supportId）は置き場所から毎回引き直す。
    * 丸ごと控えると、シーンの数だけ同じ値の写しが保存に溜まる。 */
   const STASH_KEYS = ["type", "u", "v", "size", "facing", "pose", "lookMode", "look",
-    "poleSide", "poleH", "tissueH", "trapMode", "diaboloMode", "seriH", "spin", "spinRate", "tilt", "deckH",
+    "poleSide", "poleH", "tissueH", "trapMode", "diaboloMode", "seriH", "rigH", "spin", "spinRate", "tilt", "deckH",
     "curtainKind", "open", "sheer", "imageId", "water", "poolH", "glow", "beam", "route", "locked", "name"];
 
   function normalizeStash(raw) {
@@ -14320,6 +14406,20 @@
     return d.h;
   }
 
+  /* 2026-09-26 W4（本人決定 E2）: 相手に乗る姿勢（makePose の ride）。
+     下の演者の姿勢の ride.on の関節の高さ（＋lift）を上面にする。頭の上ではなく肩・手・足裏に乗る。
+     乗る姿勢でない・下が演者でないときは null（今までどおり pieceTopLocal）。保存データは増えない。 */
+  function rideTopLocal(rider, other) {
+    if (!rider || rider.type !== "performer" || !other || other.type !== "performer") return null;
+    const ride = poseById(rider.pose).ride;
+    if (!ride || !Array.isArray(ride.on) || !ride.on.length) return null;
+    const joints = poseById(other.pose).joints;
+    const ys = ride.on.map((key) => (joints[key] ? joints[key][1] : NaN)).filter(Number.isFinite);
+    if (!ys.length) return null;
+    const H = pieceHeightM(other) * (other.size / 100);
+    return Math.max(0, (ys.reduce((sum, y) => sum + y, 0) / ys.length + finite(ride.lift, 0)) * H);
+  }
+
   // 床でどれだけの面積を取るか（m）。中心のずれも返す（寝ている演者などで効く）
   function supportFootprint(piece) {
     if (piece.type === "light") return null;
@@ -14351,6 +14451,8 @@
       // 座る・寄りかかる家具は、サイズに関係なく演者の支え候補から常に外す。
       // 演者が座る対象であって、演者の上に乗ることはない。
       if (other.type === "performer" && PERFORMER_UNSUPPORTABLE_TYPES[piece.type]) return;
+      // 抱擁のように相手と重なって立つ組の姿勢（pair）は、演者の上に乗らない（2026-09-26 W4）
+      if (other.type === "performer" && piece.type === "performer" && poseById(piece.pose).pair) return;
       // 演者は「自分と同じか、それより小さい設置面積の駒」しか支えない。
       // 台やマットのような、演者より広い場所を取る什器が並び順の都合で
       // 演者の頭に乗ってしまう逆転を防ぐ（什器の種類を列挙せず、大きさだけで線引きする）。
@@ -14365,7 +14467,8 @@
       const lx = dw * Math.cos(rad) + dd * Math.sin(rad) - foot.cx;
       const ly = -dw * Math.sin(rad) + dd * Math.cos(rad) - foot.cz;
       if (Math.abs(lx) > foot.w / 2 || Math.abs(ly) > foot.d / 2) return;
-      const t = (other.base || 0) + pieceTopLocal(other);
+      const ridden = rideTopLocal(piece, other);
+      const t = (other.base || 0) + (ridden === null ? pieceTopLocal(other) : ridden);
       if (t > top) { top = t; holder = other.id; }
     });
     return { top, holder };
@@ -14436,6 +14539,11 @@
 
   function flownLift(piece) {
     const dims = pieceDims(piece);
+    /* 吊り点はシーンごとの高さ（rigH）。転換中は animMech の途中の値。無ければ登録の地上高。 */
+    if (piece && piece.type === "rigpoint") {
+      const live = piece.animMech && piece.animMech.rigH !== undefined ? piece.animMech.rigH : piece.rigH;
+      return clamp(finite(live, finite(dims && dims.lift, 3.5)), 0, 10);
+    }
     return clamp(finite(dims && dims.lift, 0), 0, 10);
   }
 
@@ -14496,6 +14604,18 @@
         const grip = piece.pose === "trapeze_stand" && isMountPose("trapeze", piece.pose) ? 0 : TRAP_GRIP[piece.trapMode === "hang" ? "hang" : "sit"];
         piece.supportId = trap.id;
         piece.base = Math.max(0, flownLift(trap) - grip * H);
+        return;
+      }
+
+      /* 吊り点（2026-09-26 W4）。近く（0.55m以内）へ置いた演者は吊り点から吊られる。
+         布と同じく握り（ハーネスの綱）を身長比 1.15 に置くので、base は吊り点の高さから 1.15H を引いた値。
+         吊り点を床近くまで下ろすと base が 0 で止まり、床に立って綱を持つ形になる。 */
+      const rigpoint = pieces.find((other) => other !== piece && other.type === "rigpoint"
+        && Math.hypot((piece.u - other.u) * size.width, (piece.v - other.v) * size.depth) < 0.55);
+      if (rigpoint) {
+        const H = pieceHeightM(piece) * (piece.size / 100);
+        piece.supportId = rigpoint.id;
+        piece.base = Math.max(0, flownLift(rigpoint) - TRAP_GRIP.hang * H);
         return;
       }
 
@@ -14994,6 +15114,7 @@
     if (holder.type === "chair") return "chair";
     if (holder.type === "trapeze") return "trapeze";
     if (holder.type === "tissue") return "tissue";
+    if (holder.type === "rigpoint") return "rig";
     return null;
   }
 
@@ -15006,6 +15127,7 @@
     }
     if (mount === "trapeze") return isMountPose("trapeze", piece.pose) ? piece.pose : (piece.trapMode === "hang" ? "trapeze_hang" : "trapeze_sit");
     if (mount === "tissue") return isMountPose("tissue", piece.pose) ? piece.pose : "trapeze_hang";
+    if (mount === "rig") return isMountPose("rig", piece.pose) ? piece.pose : "trapeze_hang";
     return piece.pose || "stand";
   }
   function resolvePoseId(piece, pieces) {
@@ -15524,6 +15646,14 @@
       // バー一本。吊りのロープは吊物の描画（drawSolid）が引く
       return [{ kind: "line", a: [-d.w / 2, 0.03, 0], b: [d.w / 2, 0.03, 0], w: 0.05, tone: "gear" }];
     }
+    if (piece.type === "rigpoint") {
+      /* 吊り点。ワイヤーは吊物の描画（drawSolid）が1本で上へ引く。ここは吊り金具（回転金具と輪）だけ。 */
+      const r = Math.max(0.03, d.w / 2);
+      return [
+        { kind: "line", a: [0, 0, 0], b: [0, -d.h * 0.5, 0], w: 0.014, tone: "gear" },
+        { kind: "ring", c: [0, -d.h * 0.5 - r, 0], r, w: 0.016, tone: "gear" },
+      ];
+    }
     if (piece.type === "tissue") {
       /* 二本の布。吊り点（駒の位置＝床からの高さ）から下へ垂れる。
        * 上は一点に集まってすぼまり、裾は床の手前でわずかに流れる。
@@ -15906,7 +16036,7 @@
       const centre = floorPoint(piece, 0, 0, L);
       const rig = flownRig(piece, dim);
       const owner = pieceSet(piece);
-      const wires = owner && Number(owner.wires) === 1 ? 1 : 2;
+      const wires = piece.type === "rigpoint" || (owner && Number(owner.wires) === 1) ? 1 : 2;
       const ceilY = Math.max(0, L.backY - 6);
       target.strokeStyle = "rgba(226,232,238,0.5)";
       target.lineWidth = 1;
@@ -16062,6 +16192,34 @@
     return (0.299 * r + 0.587 * g + 0.114 * b) < 96;
   }
 
+  /* 床を這う霧（ロースモーク・2026-09-26 W4）。シーンの lowFog（0〜100）。
+     奥から手前へ、床から約0.5mの薄い帯を重ねる。手前ほど重なって濃く見え、演者の足元が霧に沈む。
+     駒を描いたあと・光の前に塗る（光の筋は霧の上を通る）。平面図には描かない。 */
+  function drawLowFog(target, L) {
+    const amount = clamp(finite(sc().lowFog, 0), 0, 100) / 100;
+    if (!(amount > 0) || !L || L.plan) return;
+    const ROWS = 16;
+    target.save();
+    for (let i = 0; i < ROWS; i += 1) {
+      const v = i / (ROWS - 1);
+      const left = place(-0.04, v, L);
+      const right = place(1.04, v, L);
+      const rise = (0.35 + 0.25 * amount) * perMetre(left, L).y;
+      if (![left.x, left.y, right.x, rise].every(Number.isFinite) || rise <= 0) continue;
+      const floorY = (left.y + right.y) / 2;
+      const gradient = target.createLinearGradient(0, floorY, 0, floorY - rise);
+      gradient.addColorStop(0, `rgba(226,230,234,${(0.22 * amount).toFixed(3)})`);
+      gradient.addColorStop(0.55, `rgba(226,230,234,${(0.09 * amount).toFixed(3)})`);
+      gradient.addColorStop(1, "rgba(226,230,234,0)");
+      target.fillStyle = gradient;
+      target.beginPath();
+      target.ellipse((left.x + right.x) / 2, floorY, Math.abs(right.x - left.x) / 2, rise, 0, Math.PI, Math.PI * 2);
+      target.closePath();
+      target.fill();
+    }
+    target.restore();
+  }
+
   /* 吊りのロープが道具のどこへ取り付き、上でどれだけ寄るか。
    * half=取り付く左右の位置（m）、y=その高さ（m）、converge=天井での寄り具合。
    * トラピーズはバーの両端から真上へ平行に上がる。内側へ寄せて描くと
@@ -16071,6 +16229,7 @@
     const w = (dim && dim.w) || 1;
     if (piece.type === "trapeze") return { half: w / 2, y: 0.03, converge: 1 };
     if (piece.type === "tissue") return { half: w * 0.25, y: 0, converge: 0.25 };
+    if (piece.type === "rigpoint") return { half: 0, y: 0, converge: 1 };
     return { half: Math.max(0.12, (w / 2) * 0.62), y: (dim && dim.h) || 0, converge: 0.55 };
   }
 
@@ -20347,15 +20506,25 @@
      * 誰がどこに立っているかという平面図の一番の用が果たせなくなる。 */
     const planLayer = (p) => (p.type === "performer" ? 1 : 0);
     const topH = (p) => finite(p.base, 0) + pieceTopLocal(p);
+    /* 正面の奥行きの順。相手に乗る姿勢（W4）は、置いた位置ではなく乗っている演者の直前・直後に描く。
+       肩車の上（ride.behind）はベースの頭を手前に出すため直前、ほかは直後。 */
+    const frontDepthKey = (p) => {
+      const v = effectivelyPlacedPiece(p).v;
+      if (p.type !== "performer" || !p.supportId) return v;
+      const ride = poseById(p.pose).ride;
+      const holder = ride ? solid.find((other) => other.id === p.supportId && other.type === "performer") : null;
+      return holder ? effectivelyPlacedPiece(holder).v + (ride.behind ? -1e-4 : 1e-4) : v;
+    };
     /* 作業灯を消したとき、この並びのまま「光の中にいる駒」だけ描き直す（下の redrawLitPieces）。 */
     const orderedPieces = L.plan
       ? solid.slice().sort((a, b) => (planLayer(a) - planLayer(b)) || (topH(a) - topH(b)))
       : solid.filter((piece) => !piece.heldBy)
-        .sort((a, b) => effectivelyPlacedPiece(a).v - effectivelyPlacedPiece(b).v);
+        .sort((a, b) => frontDepthKey(a) - frontDepthKey(b));
     orderedPieces.forEach(draw);
     // 正面だけは演者を描き終えてから、保持中の物を手首へ重ねて手前に出す。
     if (!L.plan) solid.filter((piece) => piece.heldBy)
       .forEach((piece) => drawHeldFrontPiece(target, piece, L));
+    if (!L.plan) drawLowFog(target, L);
     /* ★正面では光を物のあとに描く。物のあとに描かないと、台や人が
      *   光の帯を四角く切り抜いて、光が途中で切れて見える。
      *   光は物で消えない——帯は物の手前を横切り、当たった物が明るくなる。 */
@@ -23722,7 +23891,7 @@
     if (SOLID_TYPES[kind] && kind !== "seri" && dims && dims.lift === undefined) dims.lift = 0;
     if (kind === "light") dims.dia = LIGHT_KINDS[lk].dia;
     const flownOnly = Boolean(FLOWN_ONLY[kind]);
-    if (flownOnly && dims) dims.lift = kind === "tissue" ? 7.4 : 2.6;
+    if (flownOnly && dims) dims.lift = kind === "tissue" ? 7.4 : kind === "rigpoint" ? 3.5 : 2.6;
     /* 形の側で flown:true を宣言した小道具（シャンデリア等）は、登録時から吊物にする。
        床置きへ戻すのは今までどおり詳細の「吊物」チェックで可能。 */
     const shapeFlown = kind === "prop" && Boolean(PROP_SHAPES[shape].flown);
@@ -25705,6 +25874,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     { ja: "建て込み", ids: ["wall"] },
     /* ★2026-09-23 本人指示: 「乗り物」の中身は乗り物だけ（球は外し、その他の大道具へ）。 */
     { ja: "乗り物", ids: ["car"] },
+    /* ★吊り点（rigpoint）は v0.2.34 では読み込みと描画だけ。追加の窓へ出すのは次の版（D3と同じ順番。
+       v0.2.33 以前は知らない駒の型を演者として読むため、読める版が行き渡ってから作れるようにする）。 */
     { ja: "空中・サーカス", ids: ["trapeze", "cyrwheel", "pole", "teeter", "tissue", "wire", "trampoline", "cane"] },
   ]);
   let rosterKind = "performer";
@@ -28713,6 +28884,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     deck: { tilt: 0, deckH: 0 },
     curtain: { open: 0, sheer: 0 },
     pool: { water: 0.9, poolH: -3 },
+    rigpoint: { rigH: 3.5 },
   };
 
   function stopSceneAnim() {
@@ -28782,8 +28954,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       const sameMech = mechKeys.every((key) => {
         // 盆の spin だけは、控えた「見えている角度」を始点にする（無ければ保存値）
         const fromValue = key === "spin" && liveSpins.has(twin) ? liveSpins.get(twin) : twin[key];
-        mechFrom[key] = finite(fromValue, mechDefaults[key]);
-        mechTo[key] = finite(piece[key], mechDefaults[key]);
+        // 吊り点の高さが未設定のシーンは、描いている高さ（登録の地上高）から・へ動かす
+        const fallbackOf = (item) => (key === "rigH" ? flownLift({ ...item, animMech: undefined }) : mechDefaults[key]);
+        mechFrom[key] = finite(fromValue, fallbackOf(twin));
+        mechTo[key] = finite(piece[key], fallbackOf(piece));
         return Math.abs(mechFrom[key] - mechTo[key]) <= 0.001;
       });
       if (sameSpot && sameBeam && sameGlow && sameMech) return;
@@ -34598,6 +34772,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
           : mount === "trapeze"
             ? poseName(poseById(piece.trapMode === "hang" ? "trapeze_hang" : "trapeze_sit"))
             : mount === "tissue" ? tx("布に掴まる")
+            : mount === "rig" ? poseName(poseById(mountedPoseId(piece, "rig")))
           : multi && !commonPose ? sx("複数の姿勢", "Mixed poses")
             : poseName(poseById(commonPose || piece.pose));
       }
@@ -34788,6 +34963,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       }
     }
     els.background.value = sc().background;
+    syncLowFogControl();
     syncPhotoControls();
     els.paintColor.value = state.paintColor;
     els.brushSize.value = String(state.brushSize);
@@ -36973,6 +37149,15 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       const piece = selectedPiece();
       if (!piece || !isFlown(piece)) return;
       const value = clamp(finite(e.target.value, 2.5), 0, 10);
+      // 吊り点はこのシーンだけの高さ（転換で上下する）。ほかの吊物は登録側（全シーン共通）
+      if (piece.type === "rigpoint") {
+        piece.rigH = value;
+        if (els.pieceLiftValue) els.pieceLiftValue.textContent = cmText(value);
+        render();
+        updateInspector();
+        persistSoon();
+        return;
+      }
       const owner = pieceSet(piece);
       const dims = owner ? owner.dims : piece.dims;
       if (dims) dims.lift = value;
@@ -37216,6 +37401,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
           actTitle,
           sceneIndex: scenes.indexOf(current),
           sceneCount: scenes.length,
+          lowFog: clamp(finite(current.lowFog, 0), 0, 100),   // 床を這う霧（2026-09-26 W4）
           venue: { width: size.width, depth: size.depth, height: size.height, type: state.project.venue,
             sizeId: state.project.venueSize,
             // 客席の囲み方。全周（ビッグトップ・TOHU等）なら3Dカメラの客席もリングになる
@@ -37674,6 +37860,23 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     sc().background = event.target.value;
     render();
   });
+  const lowFogText = (value) => (value > 0 ? `${value}` : tx("なし"));
+  function syncLowFogControl() {
+    if (!els.lowFog) return;
+    const value = clamp(Math.round(finite(sc().lowFog, 0)), 0, 100);
+    if (document.activeElement !== els.lowFog) els.lowFog.value = String(value);
+    if (els.lowFogValue) els.lowFogValue.textContent = lowFogText(value);
+  }
+  if (els.lowFog) {
+    els.lowFog.addEventListener("pointerdown", checkpoint);
+    els.lowFog.addEventListener("input", (event) => {
+      const value = clamp(Math.round(finite(event.target.value, 0)), 0, 100);
+      if (value > 0) sc().lowFog = value; else delete sc().lowFog;
+      if (els.lowFogValue) els.lowFogValue.textContent = lowFogText(value);
+      render();
+      persistSoon();
+    });
+  }
   /* 選んだものの欄は「ショーの中で動くもの」だけを持つ。
    * 名前・色・寸法・身長はショーを通して変わらないので、
    * 演者／舞台セット／照明の一覧側で決める。ここからはそこへ飛べるようにする。 */

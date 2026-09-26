@@ -109,6 +109,7 @@ REGISTERED_PROPS.forEach((id) => { const shape = PROP_SHAPES.find((x) => x.id ==
 // 空中・器具
 reg("trap", "trapeze", "トラピーズ", "#d6dce2", { dims: { w: 0.7, h: 0.06, lift: 4.2 }, flown: true });
 reg("tissue", "tissue", "エアリアルティシュー", "#b03060", { dims: { h: 7, lift: 7 }, flown: true, wires: 1 });
+reg("rig", "rigpoint", "吊り点（ワイヤー）", "#d6dce2", { dims: { w: 0.14, d: 0.14, h: 0.3, lift: 3.5 }, flown: true, wires: 1 });
 reg("cyr", "cyrwheel", "シルホイール", "#c0c0c0", { dims: { dia: 1.9, lift: 0 } });
 reg("pole", "pole", "チャイニーズポール", "#766a59", { dims: { h: 6, dia: 0.1, lift: 0 } });
 reg("teeter", "teeter", "ティーターボード", "#8b6a3a", { dims: { w: 3.0, d: 0.4, h: 0.6, lift: 0 } });
@@ -377,19 +378,31 @@ section("c", "C 舞台セット・小道具・空中");
     setPiece("c3", "wire", 0.65, 0.7), perf("c3", "p06", 0.65, 0.7, { pose: "walk", facing: 90 }),
     setPiece("c3", "tramp", 0.5, 0.55), perf("c3", "p07", 0.5, 0.55, { pose: "backflip" }),
     setPiece("c3", "diabolo", 0.9, 0.85, { diaboloMode: "stand" }),
+    // W4（2026-09-26）: 吊り点。高さ4.5m（このシーン）で演者08がハーネスで飛ぶ。次の C-5 では1.8mへ下りる
+    setPiece("c3", "rig", 0.88, 0.3, { rigH: 4.5 }), perf("c3", "p08", 0.88, 0.3, { pose: "pose_harness_flight" }),
   ];
   scene("c3", "C-4 空中・器具に乗る", 1,
-    `${CHECK}トラピーズ（ぶら下がり）、ティシュー（掴む高さ3.5m）、ポール（左側・握り4.5m）、シルホイール、ティーターボード、綱渡り、トランポリンに演者を乗せた状態。右手前にディアボロ（縦置き。横置きと切り替え）。乗り降り（駒を器具から離す）、高所の下の注意（設定でON）、3Dでの高さ。`, pieces);
+    `${CHECK}トラピーズ（ぶら下がり）、ティシュー（掴む高さ3.5m）、ポール（左側・握り4.5m）、シルホイール、ティーターボード、綱渡り、トランポリンに演者を乗せた状態。右奥は吊り点（ワイヤー）: 高さ4.5m で演者08がハーネスで飛ぶ（高さは「地上高」のつまみで、このシーンだけ変わる）。右手前にディアボロ（縦置き。横置きと切り替え）。乗り降り（駒を器具から離す）、高所の下の注意（設定でON）、3Dでの高さ。`, pieces);
 }
 {
   const pieces = [
     setPiece("c4", "flown", 0.5, 0.35), perf("c4", "p01", 0.5, 0.35, { base: 3.3 }),
     setPiece("c4", "block", 0.25, 0.65), perf("c4", "p02", 0.25, 0.65, { base: 0.5, pose: "open" }),
     setPiece("c4", "block2", 0.75, 0.65), setPiece("c4", "sphere", 0.75, 0.65, { base: 0.6 }),
+    // W4: C-4 から続く吊り点。1.8m へ下ろした（転換で下りてくる）。演者08は既定のぶら下がり
+    setPiece("c4", "rig", 0.88, 0.3, { rigH: 1.8 }), perf("c4", "p08", 0.88, 0.3),
   ];
+  // W4（2026-09-26）: 相手に乗る姿勢。支える側を先に置き、乗る側を同じ位置へ（並び順で下の人が先）
+  [["h2h_base_stand", "h2h_flyer_handstand", 0.1], ["base_supine_legs_up", "flyer_foot_stand", 0.28],
+    ["two_high_base", "two_high_flyer", 0.46], ["shoulder_ride_base", "shoulder_ride_top", 0.64]].forEach(([base, top, u], i) => {
+    pieces.push(perf("c4", null, u, 0.9, { pose: base, name: `支え${i + 1}`, color: COLORS[i * 2] }));
+    pieces.push(perf("c4", null, u, 0.9, { pose: top, name: `乗る${i + 1}`, color: COLORS[i * 2 + 1] }));
+  });
+  pieces.push(perf("c4", null, 0.84, 0.9, { pose: "hug_holder", name: "抱く", color: COLORS[8] }));
+  pieces.push(perf("c4", null, 0.87, 0.9, { pose: "hug_held", name: "抱かれる", color: COLORS[9] }));
   scene("c4", "C-5 吊物・乗る・舞台裏", 1,
-    `${CHECK}吊り台（ワイヤー1本・地上高3m。設定「吊物を描く」）の上に演者01、台の上に演者02、箱の上に球（積む）。このシーンでは椅子・テーブル・スツールを「舞台裏」へ下げてあり、戻すと元の位置（stashed）へ戻る。`, pieces,
-    { stashed: { [setId("chair")]: { u: 0.15, v: 0.8, facing: 45, size: 100 }, [setId("table")]: { u: 0.5, v: 0.85, facing: 0, size: 100 }, [setId("stool")]: { u: 0.85, v: 0.8, facing: 0, size: 100 } } });
+    `${CHECK}吊り台（ワイヤー1本・地上高3m。設定「吊物を描く」）の上に演者01、台の上に演者02、箱の上に球（積む）。床を這う霧（ロースモーク）60（背景の窓のつまみ・このシーンだけ）で足元が霧に沈む。右奥の吊り点は C-4 の4.5m から1.8mへ下ろした（前のシーンから送ると演者08ごと下りてくる）。手前の列は相手に乗る姿勢（W4）: 左から ハンドトゥハンド（手の上で倒立）・足の上に立つ・肩の上に立つ・肩車の上、右端は抱擁（抱く側と抱かれる側）。乗る側は下の人の頭ではなく手・足裏・肩の高さに乗り、肩車の上だけはベースの頭が手前に出る。乗る側を横へずらすと床へ降り、戻すと乗る。このシーンでは椅子・テーブル・スツールを「舞台裏」へ下げてあり、戻すと元の位置（stashed）へ戻る。`, pieces,
+    { lowFog: 60, stashed: { [setId("chair")]: { u: 0.15, v: 0.8, facing: 45, size: 100 }, [setId("table")]: { u: 0.5, v: 0.85, facing: 0, size: 100 }, [setId("stool")]: { u: 0.85, v: 0.8, facing: 0, size: 100 } } });
 }
 {
   // セット登録（rigs）: 組んだセットを、シーンには複製として置いてある
