@@ -135,3 +135,16 @@ test("機能テスト用ショー: 同梱ローダーの登録と内容の一致
   const embedded = JSON.parse(loader.slice(loader.indexOf("var doc = ") + "var doc = ".length, loader.indexOf(";\n  var list")));
   assert.deepEqual(embedded, doc, "ローダーとJSONは同じ内容（生成し直す）");
 });
+
+test('F-1 platform is registered before its rider, while the counter remains after performers', () => {
+  const f1 = scenes.find(row => row.title.startsWith('F-1'));
+  const rider = f1.pieces.find(piece => piece.castId === 'ft-cast-p05');
+  const platform = f1.pieces.find(piece => piece.setId === 'ft-set-block');
+  const counter = f1.pieces.find(piece => piece.name === '配色確認用カウンター');
+  assert.ok(f1.pieces.indexOf(platform) < f1.pieces.indexOf(rider), 'support lookup requires the platform before the rider');
+  assert.equal(rider.base, platform.dims.h);
+  assert.equal(rider.base, .5);
+  assert.equal(rider.u, platform.u);
+  assert.equal(rider.v, platform.v);
+  assert.equal(f1.pieces.at(-1), counter, 'counter must still reproduce the old registration-order rendering bug');
+});

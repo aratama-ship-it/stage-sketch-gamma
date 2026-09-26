@@ -10836,21 +10836,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-p05-gl",
-          "type": "performer",
-          "castId": "ft-cast-p05",
-          "originId": "ft-origin-p05",
-          "u": 0.5,
-          "v": 0.3,
-          "facing": 0,
-          "pose": "stand",
-          "size": 100,
-          "color": "#315b8a",
-          "name": "",
-          "base": 0.5
-         },
-         {
-          "id": "ft-f1-block-gm",
+          "id": "ft-f1-block-gl",
           "type": "block",
           "setId": "ft-set-block",
           "originId": "ft-origin-block",
@@ -10866,6 +10852,20 @@
            "h": 0.5,
            "lift": 0
           }
+         },
+         {
+          "id": "ft-f1-p05-gm",
+          "type": "performer",
+          "castId": "ft-cast-p05",
+          "originId": "ft-origin-p05",
+          "u": 0.5,
+          "v": 0.3,
+          "facing": 0,
+          "pose": "stand",
+          "size": 100,
+          "color": "#315b8a",
+          "name": "",
+          "base": 0.5
          },
          {
           "id": "ft-f1-block2-gn",
@@ -11188,21 +11188,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-p05-gl",
-          "type": "performer",
-          "castId": "ft-cast-p05",
-          "originId": "ft-origin-p05",
-          "u": 0.5,
-          "v": 0.3,
-          "facing": 0,
-          "pose": "stand",
-          "size": 100,
-          "color": "#315b8a",
-          "name": "",
-          "base": 0.5
-         },
-         {
-          "id": "ft-f1-block-gm",
+          "id": "ft-f1-block-gl",
           "type": "block",
           "setId": "ft-set-block",
           "originId": "ft-origin-block",
@@ -11218,6 +11204,20 @@
            "h": 0.5,
            "lift": 0
           }
+         },
+         {
+          "id": "ft-f1-p05-gm",
+          "type": "performer",
+          "castId": "ft-cast-p05",
+          "originId": "ft-origin-p05",
+          "u": 0.5,
+          "v": 0.3,
+          "facing": 0,
+          "pose": "stand",
+          "size": 100,
+          "color": "#315b8a",
+          "name": "",
+          "base": 0.5
          },
          {
           "id": "ft-f1-block2-gn",
@@ -11541,21 +11541,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-p05-gl",
-          "type": "performer",
-          "castId": "ft-cast-p05",
-          "originId": "ft-origin-p05",
-          "u": 0.5,
-          "v": 0.3,
-          "facing": 0,
-          "pose": "stand",
-          "size": 100,
-          "color": "#315b8a",
-          "name": "",
-          "base": 0.5
-         },
-         {
-          "id": "ft-f1-block-gm",
+          "id": "ft-f1-block-gl",
           "type": "block",
           "setId": "ft-set-block",
           "originId": "ft-origin-block",
@@ -11571,6 +11557,20 @@
            "h": 0.5,
            "lift": 0
           }
+         },
+         {
+          "id": "ft-f1-p05-gm",
+          "type": "performer",
+          "castId": "ft-cast-p05",
+          "originId": "ft-origin-p05",
+          "u": 0.5,
+          "v": 0.3,
+          "facing": 0,
+          "pose": "stand",
+          "size": 100,
+          "color": "#315b8a",
+          "name": "",
+          "base": 0.5
          },
          {
           "id": "ft-f1-block2-gn",
@@ -11894,21 +11894,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-p05-gl",
-          "type": "performer",
-          "castId": "ft-cast-p05",
-          "originId": "ft-origin-p05",
-          "u": 0.5,
-          "v": 0.3,
-          "facing": 0,
-          "pose": "stand",
-          "size": 100,
-          "color": "#315b8a",
-          "name": "",
-          "base": 0.5
-         },
-         {
-          "id": "ft-f1-block-gm",
+          "id": "ft-f1-block-gl",
           "type": "block",
           "setId": "ft-set-block",
           "originId": "ft-origin-block",
@@ -11924,6 +11910,20 @@
            "h": 0.5,
            "lift": 0
           }
+         },
+         {
+          "id": "ft-f1-p05-gm",
+          "type": "performer",
+          "castId": "ft-cast-p05",
+          "originId": "ft-origin-p05",
+          "u": 0.5,
+          "v": 0.3,
+          "facing": 0,
+          "pose": "stand",
+          "size": 100,
+          "color": "#315b8a",
+          "name": "",
+          "base": 0.5
          },
          {
           "id": "ft-f1-block2-gn",
@@ -12243,21 +12243,7 @@
       "name": ""
      },
      {
-      "id": "ft-f1-p05-gl",
-      "type": "performer",
-      "castId": "ft-cast-p05",
-      "originId": "ft-origin-p05",
-      "u": 0.5,
-      "v": 0.3,
-      "facing": 0,
-      "pose": "stand",
-      "size": 100,
-      "color": "#315b8a",
-      "name": "",
-      "base": 0.5
-     },
-     {
-      "id": "ft-f1-block-gm",
+      "id": "ft-f1-block-gl",
       "type": "block",
       "setId": "ft-set-block",
       "originId": "ft-origin-block",
@@ -12273,6 +12259,20 @@
        "h": 0.5,
        "lift": 0
       }
+     },
+     {
+      "id": "ft-f1-p05-gm",
+      "type": "performer",
+      "castId": "ft-cast-p05",
+      "originId": "ft-origin-p05",
+      "u": 0.5,
+      "v": 0.3,
+      "facing": 0,
+      "pose": "stand",
+      "size": 100,
+      "color": "#315b8a",
+      "name": "",
+      "base": 0.5
      },
      {
       "id": "ft-f1-block2-gn",

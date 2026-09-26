@@ -46,9 +46,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.doesNotMatch(lightHtml, /id="statebadge"/);
   assert.match(html, />ツール</);
   assert.match(html, />表示するもの</);
-  assert.match(html, /class="stage-app-version">0\.2\.37</);
+  assert.match(html, /class="stage-app-version">0\.2\.38</);
   assert.match(html, /id="stage-release-v023-title">v0\.2\.3</);
-  assert.match(html, /<meta name="stage-sketch-gamma-version" content="v0\.2\.37">/);
+  assert.match(html, /<meta name="stage-sketch-gamma-version" content="v0\.2\.38">/);
   assert.match(html, /id="stage-release-v024-title">v0\.2\.4</);
   assert.match(html, /id="stage-release-v025-title">v0\.2\.5</);
   // AI用JSON（project.id なし・light あり）が旧照明の移行器で止まらない（2026-09-24）
@@ -58,7 +58,7 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.match(main, /function backfillMissingSceneRehearsal\(project\) \{[\s\S]*?if \(hasSectionMemo\) return project;[\s\S]*?row\.rehearsal = \{ holdDurationSeconds: DEFAULT_SCENE_HOLD_SECONDS, transitionToNextSeconds: NEW_SCENE_TRAVEL_SECONDS \};/);
   assert.match(main, /const project = backfillMissingSceneRehearsal\(stripRemovedSceneFields\(projectIoClone\(document\.project\)\)\);/);
   assert.match(html, /stage-sketch\.js\?v=20260926-rj-ss36/);
-  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v393"/);
+  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v394"/);
   assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=20260926-rj-ss36"/);
   assert.match(html, /id="stage-show-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-set-names" checked>\s*<span class="stage-tool-icon"/);
@@ -121,7 +121,7 @@ test("lighting apply belongs to the LX cue panel and playback uses an accessible
   assert.match(html, /\.fixture-power\.off \.fixture-power-slash\{display:block\}/);
   assert.doesNotMatch(html, /\.fixture-power\.on \.fixture-power-slash\{display:none\}/);
   assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=20260926-render37/);
-  assert.match(worker, /stage-sketch-gamma-shell-v393/);
+  assert.match(worker, /stage-sketch-gamma-shell-v394/);
 
   assert.match(worker, /light-design\/app\.js\?v=20260926-render37/);
   assert.match(worker, /light-design\/embed\.js\?v=20260925-ui1/);
