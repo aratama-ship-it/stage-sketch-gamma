@@ -15,8 +15,8 @@
  * 各節の status: "verified"（実機で確認）/"sourced"（画面の文言から）/"unverified"（要確認）
  */
 window.MANUAL = {
-  updated: "2026-09-26",
-  appVersion: "v0.2.34",
+  updated: "2026-09-27",
+  appVersion: "v0.2.45",
   lang: window.MANUAL_LANG === "en" ? "en" : "ja",
   sub: window.MANUAL_LANG === "en"
     ? "For everyone using Stage Sketch Gamma (the free test version). There is no need to read it front to back. When you are stuck, type a word into the box below — symptoms work too. The contents on the left jump as well."

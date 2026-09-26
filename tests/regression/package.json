@@ -1,0 +1,14 @@
+{
+  "name": "stage-sketch-gamma-regression",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser checks for historical Stage Sketch Gamma regressions",
+  "scripts": {
+    "test": "node run.cjs",
+    "unit": "node --test report.test.cjs",
+    "quick": "node run.cjs --engines chromium --viewports 1800x1050"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

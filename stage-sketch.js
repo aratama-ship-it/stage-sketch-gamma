@@ -10399,7 +10399,7 @@
       if (!requestedId) project.id = rid("show");
       return;
     }
-    const savedProject = existing.state.project || {};
+    const savedProject = existing.project || {};
     const importedProject = { ...project };
     const savedComparable = { ...savedProject };
     delete importedProject.id;
@@ -10829,7 +10829,32 @@
     }
   }
 
+  // A file may finish probing after the user has changed scene, show or assignment.
+  // Capture the original target and allow only one audio file operation at a time.
+  let audioFileOperationPending = false;
+
   async function importAudioFile(file, options = {}) {
+    if (audioFileOperationPending) {
+      setAudioStatus("音源の読み込み中です。完了してから次のファイルを選んでください。",
+        "An audio file is loading. Wait for it to finish before choosing another.");
+      return false;
+    }
+    audioFileOperationPending = true;
+    try {
+    const originProject = state.project;
+    const originSceneId = typeof options.sceneId === "string" ? options.sceneId : sc()?.id;
+    const targetScene = originProject.scenes.find((scene) => scene && scene.kind === "scene" && scene.id === originSceneId);
+    if (!targetScene) return false;
+    const originalTrackId = targetScene.audioTrackId;
+    const targetAvailable = () => state.project === originProject
+      && originProject.scenes.includes(targetScene)
+      && targetScene.audioTrackId === originalTrackId
+      && audioTracks().length < STAGE_AUDIO_TRACK_LIMIT;
+    const stopChangedTarget = () => {
+      setAudioStatus("読み込み先のショー・シーン・音源指定が変わったため、割り当てを中止しました。必要なシーンで選び直してください。",
+        "The destination show, scene or audio assignment changed. Nothing was assigned. Select the file again in the intended scene.");
+      return false;
+    };
     const invalid = validAudioFile(file);
     if (invalid) { setAudioStatus(invalid, invalid); return false; }
     if (audioTracks().length >= STAGE_AUDIO_TRACK_LIMIT) {
@@ -10846,6 +10871,7 @@
         "This device does not have enough storage for that audio file.");
       return false;
     }
+    if (!targetAvailable()) return stopChangedTarget();
     setAudioStatus("音源を再生できるか確認しています…", "Checking the audio file…");
     let duration;
     try {
@@ -10855,6 +10881,7 @@
         "This audio cannot be played. Choose an MP3, M4A/AAC or WAV file.");
       return false;
     }
+    if (!targetAvailable()) return stopChangedTarget();
     const track = { id: rid("track"), title: audioFileTitle(file), durationSeconds: duration, gainDb: 0 };
     setAudioStatus(`「${track.title}」を端末へ保存しています…`, `Saving “${track.title}” on this device…`);
     try {
@@ -10866,11 +10893,7 @@
         "The audio could not be stored. The show was not changed.");
       return false;
     }
-    const requestedScene = typeof options.sceneId === "string"
-      ? state.project.scenes.find((scene) => scene && scene.kind === "scene" && scene.id === options.sceneId)
-      : null;
-    const targetScene = requestedScene || sc();
-    if (!targetScene || targetScene.kind !== "scene") return false;
+    if (!targetAvailable()) return stopChangedTarget();
     checkpoint();
     audioTracks().push(track);
     selectedAudioTrackId = track.id;
@@ -10881,9 +10904,12 @@
     render();
     persistSoon();
     try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (_) { /* 任意 */ }
-    setAudioStatus(`「${track.title}」を読み込み、選んだシーンへ割り当てました。`,
-      `Loaded “${track.title}” and assigned it to the selected scene.`);
+    setAudioStatus(`「${track.title}」を読み込み、読み込み開始時のシーンへ割り当てました。`,
+      `Loaded “${track.title}” and assigned it to the scene where loading started.`);
     return true;
+    } finally {
+      audioFileOperationPending = false;
+    }
   }
 
   async function relinkAudioFile(trackId, file) {
@@ -11209,7 +11235,9 @@
     });
     els.musicAudio.addEventListener("timeupdate", updateAudioTimeControls);
     els.musicAudio.addEventListener("durationchange", updateAudioTimeControls);
-    window.addEventListener("beforeunload", revokeAudioObjectUrl);
+    window.addEventListener("pagehide", (event) => {
+      if (!event.persisted) revokeAudioObjectUrl();
+    });
     renderAudioPanel(true);
     syncAudioControls();
   }
@@ -14025,6 +14053,8 @@
     return message;
   }
 
+  let autosaveFailed = false;
+  let showSaveTransitionsPending = 0;
   let autosaveInFlight = null;
   let autosaveRequested = false;
   let lastPersistedSnapshot = null;
@@ -14046,6 +14076,7 @@
               serializedState, expectedRevision:null, intent:"autosave" });
             shelfFailed = !result.ok;
             if (!result.ok) {
+              autosaveFailed = true;
               if (savingState.lastSavedAt === savedAt) savingState.lastSavedAt = previousSavedAt;
               syncSaveStamps(); reportProjectStoreFailure(result); break;
             }
@@ -14053,12 +14084,15 @@
             lastPersistedSnapshot = serializedState;
           }
           if (state !== savingState) break;
+          autosaveFailed = false;
           setSaveStatus(sx(`「${state.project.title}」を保存しました。`, `Saved “${state.project.title}”.`));
           const saveError = document.getElementById("stage-show-save-error");
           if (saveError) saveError.hidden = true;
           updateBackupNote(); syncSaveStamps(); scheduleStorageMaintenance();
           try { window.SHOSAI_STAGE_SESSION_HOOKS?.onLocalChange?.(); } catch (_) {}
         } catch (_) {
+          autosaveFailed = true;
+          shelfFailed = true;
           if (savedAt && savingState.lastSavedAt === savedAt) savingState.lastSavedAt = previousSavedAt;
           syncSaveStamps();
           setSaveStatus(tx("この端末へ保存できませんでした。ファイルへ書き出して残してください。"), "warn");
@@ -25189,28 +25223,36 @@
      二重保存しないので、大きなショーでもSafariの容量を無駄にしない。 */
   async function prepareLoadedState(next) {
     if (resetInProgress) return false;
-    clearTimeout(saveTimer);
-    autosaveRequested = false;
-    if (autosaveInFlight) await autosaveInFlight;
-    clearTimeout(saveTimer);
-    autosaveRequested = false;
-    if (next.project.id === state.project.id) {
-      const result = await ProjectStore.commit({ projectId: next.project.id,
-        serializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "replace-open-show" });
+    showSaveTransitionsPending++;
+    try {
+      clearTimeout(saveTimer);
+      autosaveRequested = false;
+      if (autosaveInFlight) await autosaveInFlight;
+      clearTimeout(saveTimer);
+      autosaveRequested = false;
+      if (next.project.id === state.project.id) {
+        const result = await ProjectStore.commit({ projectId: next.project.id,
+          serializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "replace-open-show" });
+        shelfFailed = !result.ok;
+        autosaveFailed = !result.ok;
+        if (!result.ok) reportProjectStoreFailure(result);
+        return result.ok;
+      }
+      const result = await ProjectStore.switch({ currentProjectId: state.project.id,
+        currentSerializedState: JSON.stringify(alternativesState(state)), nextProjectId: next.project.id,
+        nextSerializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "switch-show" });
       shelfFailed = !result.ok;
-      if (!result.ok) reportProjectStoreFailure(result);
-      return result.ok;
-    }
-    const result = await ProjectStore.switch({ currentProjectId: state.project.id,
-      currentSerializedState: JSON.stringify(alternativesState(state)), nextProjectId: next.project.id,
-      nextSerializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "switch-show" });
-    shelfFailed = !result.ok;
-    if (!result.ok) {
-      reportProjectStoreFailure(result);
-      showSwitchFailure("next");
-      return false;
-    }
-    return true;
+      autosaveFailed = !result.ok;
+      if (!result.ok) {
+        reportProjectStoreFailure(result);
+        showSwitchFailure("next");
+        return false;
+      }
+      return true;
+    } catch (error) {
+      autosaveFailed = true;
+      throw error;
+    } finally { showSaveTransitionsPending--; }
   }
 
   async function applyLoadedState(next, message) {
@@ -41563,6 +41605,21 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     },
     isEnglish() { return languageValue(() => true, () => false); },
   });
+  if (!STUDY_READ_ONLY) {
+    window.STAGE_SAVE_LIFECYCLE.install({
+      pending() {
+        if (resetInProgress) return false;
+        const durable = largeProjectStorage?.status();
+        return Boolean(autosaveRequested || autosaveInFlight || autosaveFailed || showSaveTransitionsPending || shelfFailed
+          || alternativesStorageBlocked || audioFileOperationPending || durable?.dirty || durable?.pending);
+      },
+      flush() {
+        if (resetInProgress || alternativesStorageBlocked) return;
+        clearTimeout(saveTimer);
+        return autosaveRequested ? flushAutosave() : largeProjectStorage?.flush();
+      },
+    });
+  }
   window.dispatchEvent(new Event("stage-gamma-runtime-ready"));
 
 })();

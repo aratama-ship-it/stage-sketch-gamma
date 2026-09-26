@@ -10,7 +10,7 @@
         id: "open", title: "Opening it (address, devices, browsers)", status: "verified",
         keywords: ["open", "url", "address", "login", "password", "browser", "safari", "chrome", "pc", "computer", "ipad", "iphone", "phone", "requirements", "install"],
         html: `
-<p>Open this address in a browser. Gamma has no sign-in (as of v0.2.19).</p>
+<p>Open this GitHub Pages address in a browser; this address needs no sign-in. The separate Gamma sharing address requires a host sign-in. Saved shows belong to each address and are not transferred automatically (see Part 14, 14-2).</p>
 <p><a href="https://aratama-ship-it.github.io/stage-sketch-gamma/stage.html" target="_blank" rel="noopener">https://aratama-ship-it.github.io/stage-sketch-gamma/stage.html</a></p>
 ${table(["Device", "Good for", "Notes"], [
   ["Computer (Mac / Windows)", "Everything. Theatre settings, equipment placement, light design, 3D, music and stage machinery are computer-only", "A recent Safari, Chrome, Edge or Firefox. A window 1200 px or wider is comfortable"],
@@ -23,11 +23,10 @@ ${note("Do not use a private window", "Your work is saved inside the browser, so
         id: "first-screen", title: "The first screen — a sample show is open", status: "verified",
         keywords: ["first", "first time", "sample", "example", "romeo and juliet", "eight circus", "garden of seams", "test show", "bundled", "all shows", "what is open"],
         html: `
-<p>The first time you open Gamma, the bundled sample “ロミオとジュリエット｜サーカス演劇・台本とキューの見本” (Romeo and Juliet — circus theatre, a sample with script and cues) is open at its first scene. The ${ui("Stage")} tab is selected at the top right; the tool panels are on the left, the drawings in the middle (front view above, plan view below) and the scene list on the right.</p>
+<p>In a fresh browser, Gamma opens the bundled “ロミオとジュリエット｜RJセカンド（受け渡す手）” (RJ Second) at scene A-1. An existing saved show is kept. The ${ui("Stage")} tab contains the front and plan views and the tool panels. The pictures below were captured in earlier versions; the show initially open and some panel positions have changed.</p>
 ${fig("01-first-open", "The first screen (computer, 1440 px). Logo and version (0.2.16 when captured) at the top left, seven tabs at the top right, and below them the elapsed time, volume and tool icons.", "Stage Sketch Gamma first screen")}
-<p>Five sample shows are included. Open them from ${ui("All shows")} in the ${ui("Show")} panel on the left. Show names are user data, so they stay in Japanese.</p>
+<p>Four sample shows are included. Open them from ${ui("All shows")} in the ${ui("Show")} panel on the left. Show names are user data, so they stay in Japanese.</p>
 ${table(["Sample", "What it contains", "Use it to"], [
-  ["ロミオとジュリエット｜サーカス演劇・台本とキューの見本 (Romeo and Juliet — script and cue sample)", "33 scenes. A 47-line script, dialogue, music and light cues, and a mid-size hall rig (41 fixtures)", "See the Lines tab, the dialogue cue panel, cue sheets and light design in a finished state"],
   ["見本: 八人のサーカス (Sample: Eight Circus Performers)", "8 scenes, 5 lights", "Follow a small show from start to end"],
   ["見本: 継ぎ目の庭 (Sample: The Garden of Seams)", "32 scenes, 4 lights", "See a longer structure divided into sections"],
   ["ロミオとジュリエット｜RJセカンド（受け渡す手） (RJ Second)", "34 scenes, 5 sections, 10 people; 84 dialogue, 34 sound and 51 light cues", "See show paperwork with many cues"],
@@ -79,6 +78,7 @@ ${vid("scene-workflow", "Create a new show, choose a theatre, add a performer an
         keywords: ["save", "saving", "autosave", "export", "backup", "copy", "disappeared", "lost", "storage", "another device", "sync", "cloud", "json", "last saved"],
         html: `
 <p>Changes are <strong>saved automatically inside this device's browser</strong>. There is no save button to press. The ${ui("Info")} panel on the right shows the “last saved” time.</p>
+<p>Since v0.2.39, show documents and the show list use the browser's larger storage area (IndexedDB). Device settings stay in their existing settings area. Migration keeps a copy of the original text and verifies the saved data before switching. Before closing the tab, check that the “last saved” time has updated. If the browser warns when you try to close with unfinished work, choose to stay and wait for saving to finish. This cannot protect against forced termination, power loss, or browsers that do not show a close warning.</p>
 <p>That storage is <strong>not a cloud — it is only this device and this browser</strong>. It will not appear on another device, and it can vanish when browser data is cleared or storage runs short.</p>
 ${note("Our one request", "At every good stopping point, press " + ui("Export show") + " in the " + ui("Show") + " panel and keep the file (.json). As long as the file exists, " + ui("Import show") + " brings everything back. Carrying work to another device is this same export-and-import round trip.", true)}
 <h4>What the file contains</h4>
@@ -88,7 +88,7 @@ ${note("Our one request", "At every good stopping point, press " + ui("Export sh
 <li>Not included: preferences (language, skin, feature and panel switches). Those belong to each device.</li>
 </ul>
 <h4>If a storage warning appears</h4>
-<p>When browser storage gets high, a large warning appears. Even if you close it, it reminds you about every 15 minutes (caution) or every 5 minutes (danger). From the warning you can go straight to ${ui("Export show")} and to ${ui("Review storage (new tab)")}. If there is not enough room to switch shows, the open show is kept and links to export and to the repair page appear (${ref("storage", "Part 14, 14-2")}).</p>
+<p>At the caution level, the storage indicator changes without repeated large notices. At the critical level or after a save failure, the same level is reported once while the page stays open. Worsening conditions, or a new problem after storage has recovered, are reported again. Export JSON first, then open ${ui("Review storage (new tab)")} to inspect the saved copies (${ref("storage", "Part 14, 14-2")}).</p>
 <h4>Versions (v1, v2 …)</h4>
 <p>The ${ui("Version")} in the ${ui("Show")} panel starts at v1. The ＋ beside it saves and moves to v2, and the new version appears in All shows. Raise the version before a big change so you can go back.</p>`
       },

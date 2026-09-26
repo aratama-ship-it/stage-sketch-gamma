@@ -1,0 +1,43 @@
+name: Gamma regression checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '23 18 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: gamma-check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tests/regression/package-lock.json
+      - name: Install pinned test dependencies
+        run: npm ci --ignore-scripts --prefix tests/regression
+      - name: Install isolated test browsers
+        run: tests/regression/node_modules/.bin/playwright install --with-deps chromium webkit
+      - name: Unit and compatibility checks
+        run: node --test tests/*.test.mjs tests/regression/*.test.cjs
+      - name: Browser regression checklist
+        if: ${{ !cancelled() }}
+        run: node tests/regression/run.cjs --out regression-results
+      - name: Upload evidence even when a check fails
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: gamma-regression-${{ github.sha }}
+          path: regression-results/
+          retention-days: 14

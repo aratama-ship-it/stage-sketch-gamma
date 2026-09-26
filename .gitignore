@@ -325,3 +325,25 @@ public-dist/
 !/tests/point-source-browser.cjs
 
 !/tests/rj-default-browser.cjs
+
+# Reproducible regression checks: development-only dependencies and no runtime scripts.
+!/tests/regression/
+/tests/regression/*
+!/tests/regression/run.cjs
+!/tests/regression/report.cjs
+!/tests/regression/report.test.cjs
+!/tests/regression/browser-cases.cjs
+!/tests/regression/browser-helpers.cjs
+!/tests/regression/package.json
+!/tests/regression/package-lock.json
+!/tests/regression/README.md
+!/tests/audio-import-target.test.mjs
+!/.github/
+/.github/*
+!/.github/workflows/
+/.github/workflows/*
+!/.github/workflows/gamma-regression.yml
+
+# Protect unfinished saves on close without changing the show format.
+!stage-save-lifecycle.js
+!tests/stage-save-lifecycle.test.mjs

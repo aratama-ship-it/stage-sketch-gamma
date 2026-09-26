@@ -4,3 +4,8 @@
 /.dev.vars*
 /.env*
 /node_modules/**
+
+# Developer checks and their results are not Worker assets.
+/tests/**
+/.github/**
+/regression-results/**

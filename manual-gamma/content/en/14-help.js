@@ -30,15 +30,18 @@
         id: "storage", title: "Storage warnings and the repair page", status: "sourced",
         keywords: ["storage", "space", "full", "quota", "warning", "cannot save", "cannot switch", "tidy", "repair", "restore", "backup", "free up"],
         html: `
-<p>Browser storage has a limit per device. Gamma shows a large warning when it gets high (v0.2.13).</p>
+<p>Since v0.2.39, shows and the show list use a larger browser storage area. Available space still depends on the device and browser. Keep exported show JSON and the original audio files.</p>
 ${table(["Situation", "What the app does", "What to do"], [
-  ["Storage high (caution)", "A large warning; reminds you about every 15 minutes even if closed", "Use the warning's " + ui("Export show") + " to keep a copy"],
-  ["Storage critical (danger)", "Reminds about every 5 minutes; save failures are reported at a natural break", "Open the repair page with " + ui("Review storage (new tab)")],
-  ["Not enough room to switch shows", "Keeps the open show and offers export and the repair page (v0.2.9)", "Export first, then the repair page"]
+  ["Storage high (caution)", "Changes the storage indicator without repeated large notices", "Keep a copy with " + ui("Export show")],
+  ["Storage critical or a save fails", "Reports the same level once while the page stays open; reports worsening conditions again", "Inspect the status with " + ui("Review storage (new tab)")],
+  ["Another tab or an older version conflicts", "Stops older data from overwriting the saved copy", "Export unsaved work in each tab, then close old editor tabs"],
+  ["The main saved copy cannot be read", "Stops editing instead of replacing it with an empty show", "Export raw data and backups from the repair page"]
 ])}
-<p>The <strong>repair page</strong> lets you store away (free up space for) or restore “shows not currently open” that reference no audio, one at a time. Only backups whose contents are confirmed identical are stored away, and saving of the open tab is then retried. Old-format backups are moved to a separate storage area and tidied automatically (v0.2.11). Warnings wait while you are typing, playing or using another confirmation window, and stop once storage improves.</p>
-<p>Shows saved at another URL (the beta or Gamma's sharing host) do not move to this page automatically. Export JSON at the original page, then explicitly import it at the new one. Keep that exported JSON so you can recover if the original page later becomes unavailable.</p>
-${note("Prevention", "Photos, backdrop images and audio use the most space. Export shows you no longer use before removing them from the list, and do not keep too many old versions of the same show.")}`
+<p>The <strong>repair page</strong> lists current, previous and pre-migration copies. Readable shows can be exported as JSON; unreadable content can still be preserved as raw data. The bulk raw recovery file is different from an ordinary show JSON file. Keep it for recovery.</p>
+<ol class="steps"><li>Export any unsaved work from editor tabs opened before the update.</li><li>Close all old editor tabs, then open one tab with the latest version.</li><li>If old-tab data conflicts, follow the repair page to preserve that raw text in a backup before resolving the conflict. Reload the latest editor.</li><li>Only when the main saved copy is missing can the repair page restore a previous or pre-migration copy. It does not overwrite an existing main copy. To use another backup, export its show JSON and import that file.</li></ol>
+<p>Environments still using the older small storage area can store away unopened shows that have no audio references. After migration to larger storage, export old-format backups as JSON and import them.</p>
+<p>Pages, Gamma's sharing host and the beta have separate storage. Export JSON at the original URL and import it at the destination URL. Nothing moves automatically. Audio files are not included in the JSON.</p>
+${note("Returning to an older version", "Reverting the page code alone does not make the new storage readable by an old version. Export every show as JSON first. A large show may not fit the older version's small storage area.", true)}`
       },
       {
         id: "feedback", title: "Sending feedback and bug reports", status: "sourced",

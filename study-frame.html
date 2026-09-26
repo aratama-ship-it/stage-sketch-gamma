@@ -25,7 +25,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.39</span>
+              <span class="stage-app-version">0.2.45</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo"
@@ -315,7 +315,7 @@
             </div>
           </section>
 
-          <section class="stage-panel" data-panel="machinery" data-title="舞台機構">
+          <section class="stage-panel" data-panel="machinery" data-title="舞台機構" hidden>
             <div class="stage-panel-body">
               <p class="stage-cast-hint">シーンごとに回転角・高さ・開きなどを変えられる舞台機構です。動きの再生や安全計算は行いません。</p>
               <div class="stage-machinery-kind-list" id="stage-machinery-kind-list">
@@ -2514,6 +2514,12 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0245-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0245-title">v0.2.45</h3><time datetime="2026-09-27">2026-09-27</time></header><ul><li>音源を読み込む間に場面を切り替えても、読み込みを始めた場面へ正しく割り当てるよう修正しました。</li><li>保存が終わる前にタブを閉じるとき、ブラウザの確認を出すようにしました。強制終了や電源断の保証ではありません。</li><li>同じIDのショーJSONを読み直すと処理が止まる不具合を修正しました。</li><li>冊子の保存容量・復旧・最初に開くショーの案内を、現在の仕様へ更新しました。</li></ul></section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0244-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0244-title">v0.2.44</h3><time datetime="2026-09-27">2026-09-27</time></header><ul><li>34シーンのRJセカンドを初回起動・リセット後の既定ショーにしました。</li><li>33シーンのロミオとジュリエットをショー一覧から外しました。端末に保存した原本は保持します。</li></ul></section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0243-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0243-title">v0.2.43</h3><time datetime="2026-09-27">2026-09-27</time></header><ul><li>舞台の大道具に電球（点光源）を追加。全方向へ光を広げ、近くの演者・大道具を照らします。</li><li>選んだものパネルで点灯・光の色・明るさ・届く距離を設定できます。照明デザインの灯体とは独立しています。</li></ul></section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0242-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0242-title">v0.2.42</h3><time datetime="2026-09-27">2026-09-27</time></header><ul><li>正面図・平面図で演者や物を選んだとき、選択パネルがスクロール列に切り取られる問題を修正しました。</li><li>列数の切替、中央図のスクロール、パネルの表示設定を変えた後も選択内容を表示します。</li></ul></section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0241-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0241-title">v0.2.41</h3><time datetime="2026-09-27">2026-09-27</time></header><ul><li>舞台タブのパネル列の幅変更を復旧。スクロールで隠れていた取っ手を列間へ移し、左右・右の2列目をドラッグできるようにしました。</li><li>列幅の保存とキー操作は維持しています。</li></ul></section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0240-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0240-title">v0.2.40</h3><time datetime="2026-09-27">2026-09-27</time></header><ul><li>矢印によるシーン転換をタイムラインに同期。暗転中の移動、3D描画、手と乗り物の形を修正しました。</li><li>劇場設定の袖幕・壁の取り外し・見る位置を改善。バックスクリーンを独立させ、縦横と複数枚に対応しました。</li><li>RJセカンドの演者名・台本・照明を整備。固定灯は全シーンで仕込みを共通化し、サイド光の投影を修正しました。</li><li>γ・δでは舞台機構と動線診断を非表示にしました。保存済みの値は保持します。新旧の編集タブを同時に使わず、更新後に開き直してください。</li></ul></section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0239-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0239-title">v0.2.39</h3><time datetime="2026-09-26">2026-09-26</time></header><ul><li>ショー本体と一覧を大容量の保存領域へ移行。移行前の原本と直前の保存は控えとして保持します。</li><li>容量の注意は画面の表示から確認できます。同じ注意を繰り返し開かず、危険度の上昇や保存失敗を通知します。</li><li>復旧画面から現在のショーと控えを書き出せます。更新前に開いた編集タブは閉じ、最新版で再開してください。</li></ul></section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0238-title">
       <header class="stage-release-entry-head"><h3 id="stage-release-v0238-title">v0.2.38</h3><time datetime="2026-09-26">2026-09-26</time></header>
@@ -3259,9 +3265,7 @@
         <button type="button" data-venue-editor-shape="rectangle" aria-pressed="true">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13"/></svg><span>長方形</span>
         </button>
-        <button type="button" data-venue-editor-shape="l-shape" aria-pressed="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16h16v-6H10V4z"/></svg><span>L字</span>
-        </button>
+
         <button type="button" data-venue-editor-shape="circle" aria-pressed="false">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/></svg><span>円</span>
         </button>
@@ -3328,21 +3332,8 @@
           </div>
           <p class="stage-profile-hint stage-venue-editor-ceiling-help" id="stage-venue-editor-ceiling-help">0.1〜100mの範囲で入力できます。</p>
         </div>
-        <div class="stage-venue-editor-setting">
-          <span>吊り</span>
-          <div class="stage-tool-grid stage-venue-editor-rigging" role="group" aria-label="吊り条件">
-            <button type="button" data-venue-editor-rigging="none" aria-pressed="true">不可</button>
-            <button type="button" data-venue-editor-rigging="limited" aria-pressed="false">一部可</button>
-            <button type="button" data-venue-editor-rigging="full" aria-pressed="false">可</button>
-          </div>
-        </div>
-        <div class="stage-venue-editor-setting">
-          <span>前一文字</span>
-          <div class="stage-tool-grid stage-venue-editor-ceiling-presence" role="group" aria-label="前一文字の有無">
-            <button type="button" data-venue-editor-front-border="yes" aria-pressed="false">幕あり</button>
-            <button type="button" data-venue-editor-front-border="no" aria-pressed="true">幕なし</button>
-          </div>
-        </div>
+
+
         <div class="stage-venue-editor-setting" id="stage-venue-editor-front-border-details" hidden>
           <label for="stage-venue-editor-front-border-opening">開口高さ</label>
           <div class="stage-venue-editor-ceiling-input">
@@ -3399,7 +3390,7 @@
       <!-- ★2026-09-19 本人要望「壁というのを作りましょう。複雑なショーの形の場合、壁が設置されて
            いるパターンと設置されていないパターンがあるので、それは結構大きな差」。
            置き方は客席・舞台袖とまったく同じにする（新しい操作を覚えなくていいように）。 -->
-      <h3 id="stage-venue-editor-walls-title">7. 壁</h3>
+      <h3 id="stage-venue-editor-walls-title">7. 壁・柱</h3>
       <p class="stage-profile-hint">四角または丸を選び、右の平面図でドラッグしてください。高さは天井と同じです。通れない場所として扱います。</p>
       <div class="stage-tool-grid stage-venue-editor-area-shapes" role="group" aria-labelledby="stage-venue-editor-walls-title">
         <button type="button" data-venue-editor-area-mode="wall" data-venue-editor-area-shape="rectangle" aria-pressed="false">
@@ -3409,16 +3400,19 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/></svg><span>丸</span>
         </button>
       </div>
+      <button type="button" class="btn-quiet" id="stage-venue-editor-wall-remove" disabled>取り外す</button>
+        </section>
+        <section class="stage-venue-editor-back-screens" aria-labelledby="stage-venue-editor-back-screens-title">
+          <h3 id="stage-venue-editor-back-screens-title">8. バックスクリーン</h3>
       <div class="stage-venue-back-screen-controls">
-        <p class="stage-field-label">バックスクリーン</p>
-        <p class="stage-profile-hint">「設置」を押し、平面図で横方向にドラッグして幅と位置を決めます。高さは天井に追従します。</p>
+        <p class="stage-profile-hint">「設置」を押し、平面図で横または縦方向にドラッグして位置を決めます。複数枚設置できます。高さは天井に追従します。</p>
         <div class="stage-tool-grid">
           <button type="button" id="stage-venue-back-screen-place" aria-pressed="false">バックスクリーンを設置</button>
-          <button type="button" class="btn-quiet" id="stage-venue-back-screen-remove" disabled>取り外す</button>
+          <button type="button" class="btn-quiet" id="stage-venue-back-screen-remove" disabled>最後の1枚を取り外す</button>
         </div>
       </div>
         </section>
-        <section class="stage-venue-editor-machinery" aria-labelledby="stage-venue-editor-machinery-title">
+        <section hidden class="stage-venue-editor-machinery" aria-labelledby="stage-venue-editor-machinery-title">
           <h3 id="stage-venue-editor-machinery-title">8. 舞台機構</h3>
           <p class="stage-profile-hint">舞台機構を追加し、シーンごとの状態をここで確認・変更します。安全計算や実際の動作は行いません。</p>
           <div id="stage-venue-editor-machinery-host"></div>
@@ -3744,12 +3738,12 @@
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 9h5V4M9 9 3 3M20 9h-5V4M15 9l6-6M4 15h5v5M9 15l-6 6M20 15h-5v5M15 15l6 6"/></svg>
   </button>
 </div></div>
-<script src="/study-assets/stage-venues.js?v=2026092525"></script>
+<script src="/study-assets/stage-venues.js?v=20260926-feedback40"></script>
 <script src="/study-assets/stage-venue-lines.js?v=2026091992"></script>
 <script src="/study-assets/stage-i18n.js?v=20260926-large39"></script>
 <script src="/study-assets/stage-set-model.js?v=2026092354"></script>
 <script src="/study-assets/stage-machinery.js?v=20260925-ui1"></script>
 <script src="/study-assets/gamma-ui.js?v=20260925-ui1"></script>
 <script src="/study-assets/gamma-ui-i18n.js?v=20260925-ui1"></script>
-<script src="/study-assets/stage-sketch.js?v=20260926-large39"></script>
+<script src="/study-assets/stage-sketch.js?v=20260927-guard45"></script>
 </body></html>
