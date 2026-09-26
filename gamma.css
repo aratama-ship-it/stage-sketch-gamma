@@ -438,8 +438,8 @@ body.is-standalone label:has(#stage-plan-routes-light) { display:none !important
 /* 通常／3D実験: 選択インスペクタを対象物の横へ浮かせる。既存のドラッグ管理を使える。 */
 body[data-gamma-workspace="normal"] .stage-panel.gamma-selection-floating,
 body.gamma-3d-active .stage-panel.gamma-selection-floating {
-  /* #view-stage のスクロール内容に属する、対象に貼り付いたパネル。 */
-  position: absolute; z-index: 30; width: min(240px, calc(100vw - 32px));
+  /* スクロール列の外の舞台グリッドへ置き、ヘッダーのメニューより下へ重ねる。 */
+  position: absolute; z-index: 20; width: min(240px, calc(100vw - 32px));
   max-width: calc(100vw - 32px);
   max-height: min(70vh, calc(100dvh - 32px), 620px);
   overflow: auto; margin: 0; padding: 0 12px 12px;

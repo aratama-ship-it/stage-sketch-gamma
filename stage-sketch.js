@@ -22795,6 +22795,7 @@
     const hole = document.createElement("div");
     hole.className = "stage-panel-hole";
     hole.style.height = `${rect.height}px`;
+    if (el.classList.contains("gamma-selection-floating")) hole.style.display = "none";
     el.parentElement.insertBefore(hole, el);
 
     drag = { id, el, hole, dx: ev.clientX - rect.left, dy: ev.clientY - rect.top };
@@ -22839,6 +22840,7 @@
     if (!drag) return;
     drag.el.style.left = `${ev.clientX - drag.dx}px`;
     drag.el.style.top = `${ev.clientY - drag.dy}px`;
+    if (drag.el.classList.contains("gamma-selection-floating")) return;
     const col = columnAt(ev.clientX);
     if (!col || !colEls[col]) return;
     const host = colEls[col];
@@ -22862,7 +22864,7 @@
       el.style.position = "absolute";
       setGammaFloatingPanelViewportPosition(el, left, top);
       el.style.width = `${from.width}px`;
-      el.style.zIndex = "30";
+      el.style.zIndex = "20";
       el.style.pointerEvents = "auto";
       el.dataset.gammaUserMoved = "true";
     } else {
@@ -22999,7 +23001,7 @@
         ids.forEach((id) => {
           const el = panelEl(id);
           const host = colEls[panelSingleSide()];
-          if (el && host && el.dataset.gammaWorkspace !== "venue") host.append(el);
+          if (el && host && el.dataset.gammaWorkspace !== "venue" && !el.classList.contains("gamma-selection-floating")) host.append(el);
         });
       } else (triple ? ["left", "right", "right2"] : ["left", "right"]).forEach((col) => {
         const right2Order = panelRight2Order();
@@ -23016,7 +23018,7 @@
              （ゲストの右列は隠してあるため）。 */
           if (id === "session" && document.body.classList.contains("stage-session-guest")) return;
           const el = panelEl(id);
-          if (el && colEls[col] && el.dataset.gammaWorkspace !== "venue") colEls[col].append(el);
+          if (el && colEls[col] && el.dataset.gammaWorkspace !== "venue" && !el.classList.contains("gamma-selection-floating")) colEls[col].append(el);
         });
       });
       }
@@ -23041,6 +23043,7 @@
       });
     }
     syncTabletWorkspace();
+    scheduleFloatingInspectorRefresh();
   }
 
   /* 共有パネルは元々 <details> だった。stage-session.js は「開く／閉じる」を
@@ -23073,7 +23076,7 @@
     PANEL_FEATURES.filter((f) => panelEl(f.panel)).forEach((f) => {
       const el = panelEl(f.panel);
       if (!el) return;
-      el.hidden = f.key === "panelStageSet" || (deskUi ? !featureOn(f.key) : false);
+      el.hidden = f.key === "panelStageSet" || (deskUi ? !featureOn(f.key) && !(f.panel === "inspector" && selectedPiece()) : false);
     });
   }
 
@@ -34633,16 +34636,17 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const rect = canvasEl?.getBoundingClientRect();
     if (!rect) return null;
     const edge = 16;
+    const host = document.querySelector(".stage-sketch-grid");
+    const hostRect = host?.getBoundingClientRect();
+    const centerRect = document.getElementById("stage-col-center")?.getBoundingClientRect();
     const poseStrip = els.poseStrip?.getBoundingClientRect();
-    const visualBottom = poseStrip && poseStrip.top > rect.top && poseStrip.top < rect.bottom
+    const visualBottom = floatingInspectorAnchor.view === "front" && poseStrip && poseStrip.top > rect.top && poseStrip.top < rect.bottom
       ? poseStrip.top : rect.bottom;
-    const bottom = visualBottom - edge;
-    return {
-      left: rect.left + edge,
-      right: rect.right - edge,
-      top: rect.top + edge,
-      bottom: Math.max(rect.top + edge, bottom),
-    };
+    const left = Math.max(rect.left, hostRect?.left || 0, 0) + edge;
+    const right = Math.min(rect.right, hostRect?.right || innerWidth, innerWidth) - edge;
+    const top = Math.max(rect.top, centerRect?.top || 0, hostRect?.top || 0, 0) + edge;
+    const bottom = Math.min(visualBottom, centerRect?.bottom || innerHeight, hostRect?.bottom || innerHeight, gammaFloatingPanelBottom()) - edge;
+    return { left, right: Math.max(left, right), top, bottom: Math.max(top, bottom) };
   }
 
   function clampGammaFloatingPanelPosition(left, top, width, height) {
@@ -34654,15 +34658,14 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     };
   }
 
-  // 浮動パネルの座標は画面ではなく、その親列の中で持つ。
-  // これにより #view-stage をスクロールすると、対象物と一緒に流れる。
+  // 浮動パネルはスクロール列の外、舞台グリッド直下へ置く。
+  // 親の境界線とスクロール量を含めて、表示座標を親内の座標へ変換する。
   function setGammaFloatingPanelViewportPosition(panel, left, top) {
     const apply = (nextLeft, nextTop) => {
-      // offsetParent は非表示から復帰した直後に null になるブラウザがあるため、
-      // 実際に配置コンテナになっている親列を明示的に使う。
-      const parentRect = panel.parentElement?.getBoundingClientRect();
-      panel.style.left = `${nextLeft - (parentRect?.left || 0)}px`;
-      panel.style.top = `${nextTop - (parentRect?.top || 0)}px`;
+      const parent = panel.offsetParent || panel.parentElement;
+      const parentRect = parent?.getBoundingClientRect();
+      panel.style.left = `${nextLeft - (parentRect?.left || 0) - (parent?.clientLeft || 0) + (parent?.scrollLeft || 0)}px`;
+      panel.style.top = `${nextTop - (parentRect?.top || 0) - (parent?.clientTop || 0) + (parent?.scrollTop || 0)}px`;
     };
     apply(left, top);
     // 通常列から absolute へ切り替えると親列の高さが変わることがある。
@@ -34673,6 +34676,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       apply(corrected.left, corrected.top);
     }
     requestAnimationFrame(() => {
+      if (!panel.classList.contains("gamma-selection-floating")) return;
       const settled = panel.getBoundingClientRect();
       const settledPosition = clampGammaFloatingPanelPosition(
         settled.left, settled.top, settled.width, settled.height,
@@ -34684,7 +34688,35 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     });
   }
 
+  let floatingInspectorRefreshFrame = 0;
+  function scheduleFloatingInspectorRefresh() {
+    const inspector = els.selectionControls?.closest('[data-panel="inspector"]');
+    if (!inspector?.classList.contains("gamma-selection-floating") || floatingInspectorRefreshFrame || drag?.el === inspector) return;
+    floatingInspectorRefreshFrame = requestAnimationFrame(() => {
+      floatingInspectorRefreshFrame = 0;
+      if (!inspector.classList.contains("gamma-selection-floating")) return;
+      if (inspector.dataset.gammaUserMoved === "true") {
+        const rect = inspector.getBoundingClientRect();
+        const position = clampGammaFloatingPanelPosition(rect.left, rect.top, rect.width, rect.height);
+        setGammaFloatingPanelViewportPosition(inspector, position.left, position.top);
+        return;
+      }
+      delete inspector.dataset.gammaPositionLocked;
+      updateInspector();
+    });
+  }
+  document.getElementById("stage-col-center")?.addEventListener("scroll", scheduleFloatingInspectorRefresh, { passive: true });
+  window.addEventListener("gamma-workspace-change", () => { updateInspector(); scheduleFloatingInspectorRefresh(); });
+
+  function restoreDraggedInspector() {
+    const inspector = els.selectionControls?.closest('[data-panel="inspector"]');
+    if (inspector?.dataset.gammaObjectDragging !== "true") return;
+    delete inspector.dataset.gammaPositionLocked;
+    updateInspector();
+  }
+
   let lastInspectorSelectionId = null;
+  let lastInspectorAnchorSerial = -1;
   function updateInspector() {
     syncMoveHelp();
     const piece = selectedPiece();
@@ -34706,14 +34738,18 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     els.selectionControls.hidden = !piece;
     const inspector = els.selectionControls?.closest('[data-panel="inspector"]');
     if (inspector) {
+      const newSelection = piece && (piece.id !== lastInspectorSelectionId
+        || floatingInspectorAnchor.serial !== lastInspectorAnchorSerial);
       if (piece) {
         inspector.hidden = false;
-        inspector.classList.remove("is-collapsed");
-        const body = inspector.querySelector(".stage-panel-body");
-        if (body) body.hidden = false;
-        inspector.querySelector(".stage-panel-head")?.setAttribute("aria-expanded", "true");
-        state.layout.collapsed.inspector = false;
-        if (piece.id !== lastInspectorSelectionId && !featureOn("floatingInspector")) {
+        if (newSelection) {
+          inspector.classList.remove("is-collapsed");
+          const body = inspector.querySelector(".stage-panel-body");
+          if (body) body.hidden = false;
+          inspector.querySelector(".stage-panel-head")?.setAttribute("aria-expanded", "true");
+          state.layout.collapsed.inspector = false;
+        }
+        if (newSelection && !featureOn("floatingInspector")) {
           requestAnimationFrame(() => {
             if (selectedPiece()?.id !== piece.id) return;
             (inspector.querySelector(".stage-panel-head") || inspector).scrollIntoView({block: "nearest", inline: "nearest"});
@@ -34721,6 +34757,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         }
       }
       lastInspectorSelectionId = piece?.id || null;
+      lastInspectorAnchorSerial = floatingInspectorAnchor.serial;
       if (piece && inspector.dataset.gammaObjectDragging === "true") {
         inspector.hidden = false;
         delete inspector.dataset.gammaObjectDragging;
@@ -34736,8 +34773,17 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       }
       const floating = (!document.body.dataset.gammaWorkspace || document.body.dataset.gammaWorkspace === "normal")
         && featureOn("floatingInspector");
-      const shouldFloat = Boolean(piece && floating);
+      const shouldFloat = Boolean(piece && floating && !tabletUi && !phoneViewerActive && !document.body.classList.contains("stage-fullscreen"));
+      const floatingRoot = document.querySelector(".stage-sketch-grid");
+      const wasPortaled = inspector.parentElement === floatingRoot;
       inspector.classList.toggle("gamma-selection-floating", shouldFloat);
+      if (shouldFloat && floatingRoot && !wasPortaled) {
+        floatingRoot.append(inspector);
+        delete inspector.dataset.gammaPositionLocked;
+      } else if (!shouldFloat && wasPortaled) {
+        // 元の列・並び順は保存済み設定から復元し、設定そのものは変えない。
+        applyLayout();
+      }
       if (!shouldFloat) {
         // 通常の右列へ戻すときは、浮動時の座標と寸法を残さない。
         ["position", "left", "top", "width", "maxHeight", "zIndex", "pointerEvents"].forEach((key) => {
@@ -34750,7 +34796,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         delete inspector.dataset.gammaSelectionKey;
         delete inspector.dataset.gammaObjectDragging;
       }
-      if (piece && floating && inspector.dataset.gammaPositionLocked !== "true") {
+      if (shouldFloat && inspector.dataset.gammaPositionLocked !== "true") {
         const canvasEl = floatingInspectorAnchor.view === "plan" ? planCanvas : canvas;
         const rect = canvasEl?.getBoundingClientRect();
         const bounds = gammaFloatingPanelBounds();
@@ -34760,7 +34806,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
           const preferredWidth = 240;
           const panelWidth = Math.min(preferredWidth, Math.max(160, bounds.right - bounds.left));
           inspector.style.width = `${panelWidth}px`;
-          inspector.style.maxHeight = `${Math.max(160, Math.min(620, bounds.bottom - bounds.top))}px`;
+          inspector.style.maxHeight = `${Math.max(36, Math.min(620, bounds.bottom - bounds.top))}px`;
           const box = selectionBounds(piece, layout(floatingInspectorAnchor.view));
           // 左側の対象には左、右側の対象には右へ出す。舞台中央側を塞がない。
           const objectOnLeft = box.x + box.w / 2 < W / 2;
@@ -34804,6 +34850,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
        * （docs/ui-audit-2026-09-16/UI_REWORK_SPEC.md S-3）。表示テキストを空にしてから隠す。 */
       if (els.selectedName) els.selectedName.textContent = "";
       if (els.selectionScope) { els.selectionScope.hidden = true; els.selectionScope.textContent = ""; }
+      applyPanelVisibility();
       return;
     }
     if (multi) {
@@ -35250,6 +35297,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const backToSelect = Boolean(pointerAction.fromRouteTool);
     pointerAction = null;
     el.dataset.dragging = "false";
+    restoreDraggedInspector();
     if (changed) persistSoon();
     if (dragSync) {
       let lockedSeri = false;
@@ -35329,6 +35377,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       if (pointerAction.kind === "arrow") arrowDraft = null;
       if (pointerAction.kind === "marquee") selectionMarquee = null;
       pointerAction = null;
+      restoreDraggedInspector();
       render();
     }
   }
