@@ -319,3 +319,7 @@ public-dist/
 
 # 0.2.42 actual front/plan selection panel regression.
 !/tests/selection-panel-browser.cjs
+
+!/stage-point-source.js
+!/tests/point-source.test.mjs
+!/tests/point-source-browser.cjs

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.42">
+<meta name="stage-sketch-gamma-version" content="v0.2.43">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
@@ -20,7 +20,7 @@
   .spine { display: none; }
 </style>
 <link rel="stylesheet" href="gamma-ui-tokens.css?v=20260925-ui1">
-<link rel="stylesheet" href="gamma.css?v=20260927-selection42">
+<link rel="stylesheet" href="gamma.css?v=20260927-point43">
 <link rel="stylesheet" href="gamma-mobile.css?v=2026091950">
 <script src="gamma-light-model.js?v=20260926-feedback40"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=2026091987">
@@ -69,7 +69,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.42</span>
+              <span class="stage-app-version">0.2.43</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -2588,6 +2588,7 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0243-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0243-title">v0.2.43</h3><time datetime="2026-09-27">2026-09-27</time></header><ul><li>舞台の大道具に電球（点光源）を追加。全方向へ光を広げ、近くの演者・大道具を照らします。</li><li>選んだものパネルで点灯・光の色・明るさ・届く距離を設定できます。照明デザインの灯体とは独立しています。</li></ul></section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0242-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0242-title">v0.2.42</h3><time datetime="2026-09-27">2026-09-27</time></header><ul><li>正面図・平面図で演者や物を選んだとき、選択パネルがスクロール列に切り取られる問題を修正しました。</li><li>列数の切替、中央図のスクロール、パネルの表示設定を変えた後も選択内容を表示します。</li></ul></section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0241-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0241-title">v0.2.41</h3><time datetime="2026-09-27">2026-09-27</time></header><ul><li>舞台タブのパネル列の幅変更を復旧。スクロールで隠れていた取っ手を列間へ移し、左右・右の2列目をドラッグできるようにしました。</li><li>列幅の保存とキー操作は維持しています。</li></ul></section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0240-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0240-title">v0.2.40</h3><time datetime="2026-09-27">2026-09-27</time></header><ul><li>矢印によるシーン転換をタイムラインに同期。暗転中の移動、3D描画、手と乗り物の形を修正しました。</li><li>劇場設定の袖幕・壁の取り外し・見る位置を改善。バックスクリーンを独立させ、縦横と複数枚に対応しました。</li><li>RJセカンドの演者名・台本・照明を整備。固定灯は全シーンで仕込みを共通化し、サイド光の投影を修正しました。</li><li>γ・δでは舞台機構と動線診断を非表示にしました。保存済みの値は保持します。新旧の編集タブを同時に使わず、更新後に開き直してください。</li></ul></section>
@@ -3824,12 +3825,12 @@
 <script src="stage-samples/index.js?v=2026092402"></script>
 <script src="stage-samples/romeo-juliet-cued.js?v=2026092435"></script>
 <script src="stage-samples/romeo-juliet-second.js?v=20260926-feedback40"></script>
-<script src="stage-samples/feature-test-show.js?v=20260927-selection42"></script>
+<script src="stage-samples/feature-test-show.js?v=20260927-point43"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
 <script src="stage-machinery.js?v=20260925-ui1"></script>
 <script src="stage-scrim.js?v=2026092059"></script>
-<script src="stage-first-person.js?v=20260926-feedback40"></script>
+<script src="stage-first-person.js?v=20260927-point43"></script>
 <script src="stage-audio-store.js?v=2026092523"></script>
 <script src="stage-large-project-store.js?v=20260926-large39"></script>
 <script src="stage-project-backup-store.js?v=2026092523"></script>
@@ -3861,7 +3862,8 @@
 <script src="stage-performer-body.js?v=20260926-feedback40"></script>
 <script src="gamma-ui.js?v=20260925-ui1"></script>
 <script src="gamma-ui-i18n.js?v=20260925-ui1"></script>
-<script src="stage-sketch.js?v=20260927-selection42"></script>
+<script src="stage-point-source.js?v=20260927-point43"></script>
+<script src="stage-sketch.js?v=20260927-point43"></script>
 <script src="stage-scene-alternatives-ui.js?v=20260926-release32"></script>
 <script src="gamma-formation.js?v=20260926-feedback40"></script>
 <script src="stage-vox-panel.js?v=2026092432"></script>

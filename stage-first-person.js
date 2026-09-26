@@ -2369,7 +2369,7 @@
       top: { ...rawLook.top, color: costumeLitColor3dFor(piece, rawLook.top.color) || rawLook.top.color },
       bottom: { ...rawLook.bottom, color: costumeLitColor3dFor(piece, rawLook.bottom.color) || rawLook.bottom.color },
     } : null;
-    const bodyColor = costumeLitColor3d(piece) || piece.color || "#c9c2b4";   // G-D: 光だまりの色で染める（既定は切）
+    const bodyColor = costumeLitColor3dFor(piece,piece.color) || piece.color || "#c9c2b4";   // G-D: 光だまりの色で染める（既定は切）
     if (window.STAGE_PERFORMER_BODY) {
       const rig = sharedRig;
       if (tooClose) return null;
@@ -3888,7 +3888,10 @@
     return lit ? render.tintColor(piece.color || "#c9c2b4", lit) : null;
   }
 
-  function costumeLitColor3dFor(piece, baseColor) {
+  let pointSources3d=[];
+  function pointSample3d(piece){const d=piece.dims||{};return {x:(pieceUOf(piece)-.5)*W,y:pieceVOf(piece)*D,z:pieceBaseOf(piece)+(piece.type==="performer"?.9:finite(d.h,.2)/2)};}
+  function costumeLitColor3dFor(piece,baseColor){const cue=cueCostumeLitColor3dFor(piece,baseColor);return pointSources3d.length?window.SHOSAI_STAGE_POINT_SOURCE.tint(cue||baseColor,pointSources3d,pointSample3d(piece)):cue;}
+  function cueCostumeLitColor3dFor(piece, baseColor) {
     if (!data || !data.costumeLight || !data.lightPool) return null;
     const render = window.SHOSAI_LIGHT_RENDER;
     const pools = cueLightCache.pools;
@@ -3973,7 +3976,7 @@
     if (piece.type === "performer") {
       const top = drawPerformer(ctx, piece);
       if (top && collectingPieceLabels) queueLabel({ x: top.x, y: top.y + .28, z: top.z }, labelOf(piece), true);
-    } else drawPiece(ctx, piece);
+    } else drawPiece(ctx, pointSources3d.length && piece.propShape!=="bulb" ? {...piece,color:window.SHOSAI_STAGE_POINT_SOURCE.tint(piece.color,pointSources3d,pointSample3d(piece))} : piece);
     ctx.restore();
   }
 
@@ -4121,6 +4124,16 @@
       if (!inHouse) drawProscenium(ctx);
       drawShell(ctx);
     }
+    pointSources3d=window.SHOSAI_STAGE_POINT_SOURCE?.collect(data.pieces,{width:W,depth:D})||[];
+    const pointProject = p => {
+      const cam = toCamera({ x: p.x, y: p.z, z: p.y - D / 2 });
+      if (cam.z <= NEAR) return null;
+      const q = toScreen(cam);
+      return { X: q.x, Y: q.y };
+    };
+    pointProject.clipPolygon = points => clipPolyNear(points.map(p => toCamera({ x: p.x, y: p.z, z: p.y - D / 2 })))
+      .map(p => { const q = toScreen(p); return { X: q.x, Y: q.y }; });
+    if (pointSources3d.length && !data.workLightOff) window.SHOSAI_STAGE_POINT_SOURCE.paint(ctx, pointSources3d, pointProject, { core: false });
     drawLightPools(ctx, data.pieces);
     drawCueLight(ctx);        // 床に落ちた光。駒より先＝光の上に人が立つ
     if (!(data && data.workLightOff)) { drawCueBeams(ctx); drawCueLasers(ctx); }   // 作業灯が点いているなら、筋は駒の奥
@@ -4152,6 +4165,29 @@
       ctx.save();ctx.globalAlpha=.55;
       framePieceOrder.filter(({piece})=>offstageExit(piece)).forEach(({piece})=>drawOnePiece(piece));
       ctx.restore();collectingPieceLabels=true;
+    }
+    if (pointSources3d.length) {
+      const api = window.SHOSAI_STAGE_POINT_SOURCE;
+      if (data.workLightOff) {
+        api.paint(ctx, pointSources3d, pointProject, { core: false });
+        collectingPieceLabels = false;
+        // Reuse depth order and screen clipping when restoring bodies from darkness.
+        framePieceOrder.forEach(({ piece }) => {
+          if (!piece || piece === camera.me) return;
+          const amount = api.level(pointSources3d, pointSample3d(piece));
+          if (!amount) return;
+          ctx.save(); ctx.globalAlpha = Math.min(.9, amount);
+          drawOnePiece(piece); ctx.restore();
+        });
+        collectingPieceLabels = true;
+      }
+      pointSources3d.forEach(source => {
+        ctx.save();
+        const piece = data.pieces.find(p => p.id === source.id);
+        if (piece) clipScreenOcclusion(ctx, piece);
+        api.paint(ctx, [source], pointProject, { floor: false });
+        ctx.restore();
+      });
     }
     drawLabels(ctx);
     const vignette = ctx.createRadialGradient(canvasWidth / 2, canvasHeight / 2, Math.min(canvasWidth, canvasHeight) * .42,

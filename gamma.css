@@ -836,3 +836,9 @@ html[data-stage-skin] .stage-modal :is(input,select,textarea) { max-width: 100%;
 
 /* Width grips live in the gaps, outside the scrolling panel columns. */
 .stage-sketch-grid { position: relative; }
+
+/* Electric bulb props use the selection inspector, separate from lighting fixtures. */
+#stage-point-source-controls:not([hidden]) { display: grid; gap: 8px; padding: 12px 0; border-top: 1px solid var(--stage-line, #3d3527); }
+#stage-point-source-controls p { margin: 0; }
+#stage-point-source-controls label { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+#stage-point-range { width: 80px; }

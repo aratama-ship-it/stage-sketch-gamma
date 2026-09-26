@@ -4600,6 +4600,8 @@
       boxAt(0, 0, 0, 8, 0.3, 0.15, 0.62),
       ...Array.from({ length: 15 }, (_, i) => boxAt(-3.72 + i * 0.532, 0.15, 0, 0.46, 0.045, 5.65, 0.9 + (i % 3) * 0.08)),
     ] };
+  PROP_SHAPES.bulb = { ja: "電球（点光源）", en: "Light bulb (point source)", dims: { w: 0.12, d: 0.12, h: 0.20, lift: 1.8 }, flown: true, lift: 1.8, grip: null,
+    parts: [{shape:"cylinder",y:0,dia:0.045,h:0.07,tint:0.6},{shape:"sphere",y:0.13,dia:0.12,tint:1.2}] };
   const PROP_SHAPE_ORDER = Object.keys(PROP_SHAPES);
   /* T-32（2026-09-18 本人要望）: 「家具」「建て込み」「登る・上がる」「屋外・情景」は
    * 小道具ではなく大道具として扱う。
@@ -4620,7 +4622,7 @@
     // 2026-09-23 本人指定: 吊り・張りの器具は据える物なので大道具側へ。
     "aerialstraps", "spanishweb", "slackline", "swingpole", "aerialhoop",
     // 同日追加: シャンデリア（吊り物の大道具）
-    "chandelier",
+    "chandelier", "bulb",
     // 2026-09-26 大道具追加（第3弾）
     "bus_stop", "vending_machine", "traffic_light", "tree_stump", "giant_mushroom", "balcony",
     "cloud_cutout", "crescent_moon", "sun_moon_disc", "star_hanging",
@@ -4659,6 +4661,7 @@
   /* プルダウンの分類見出し（2026-09-11 本人選択の案A）。ja は tx() で訳す。
      新しい形を足したらどこかの分類へ入れる。入れ忘れは「その他の形」へ落ちるだけで選べなくはならない。 */
   const PROP_SHAPE_GROUPS = [
+    { ja: "光る大道具", ids: ["bulb"] },
     { ja: "手に持つもの", ids: ["box", "umbrella", "ball", "staff", "sword", "book", "tophat", "lantern", "flag", "mask",
       "broom", "bucket", "rope", "bouquet", "glassbottle", "tray", "telephone", "newspaper", "clock", "fan", "scarf",
       "torch", "candle", "treasurechest", "cane", "handbag", "wagasa", "flashlight", "chochin", "flip_board", "basket", "backpack", "balloon", "magic_wand"] },
@@ -9464,7 +9467,7 @@
   function dimMeta(kind, key) {
     const meta = DIM_META[key];
     if (kind === "prop") {
-      const presetMin = Math.min(...PROP_SHAPE_ORDER.map((id) => PROP_SHAPES[id].dims[key]));
+      const presetMin = Math.min(meta.min, ...PROP_SHAPE_ORDER.map((id) => PROP_SHAPES[id].dims[key]).filter(Number.isFinite));
       return Object.assign({}, meta, { min: Math.min(meta.min, presetMin) });
     }
     if (kind === "diabolo") return Object.assign({}, meta, { min: 0.05, max: 0.5 });
@@ -10428,6 +10431,7 @@
   } catch (_) { /* セッション保存が使えなくても、その場の戻る操作は維持する。 */ }
   let projectRecoveryNeeded = !loaded.restored;
   let tool = "select";
+  let stagePointSources = [];
   let selectedId = null;
   let selectedIds = new Set();
   let selectedNoteId = null;
@@ -19480,6 +19484,7 @@
        アニメーション中は動きの途中の値で判定するので、はけていく駒は
        枠を出た瞬間に消える（＝袖へ入って見えなくなる）。 */
     if (!L.plan && !onStageArea(pieceU(piece), pieceV(piece))) return;
+    if (stagePointSources.length && piece.type !== "performer" && propShapeOf(piece) !== "bulb") piece = {...piece,color:window.SHOSAI_STAGE_POINT_SOURCE.tint(piece.color,stagePointSources,pointSample(piece,L))};
     const pos = placePiece(piece, L);
     const scale = pieceScale(piece, pos, L);
     const lean = leanAt(pos);
@@ -19490,7 +19495,7 @@
       target.translate(-pos.x, -pos.y);
     }
     if (piece.type === "light") drawLight(target, piece, pos, scale, L);
-    else if (piece.type === "prop" && ["drumset", "taiko"].includes(propShapeOf(piece))) {
+    else if (piece.type === "prop" && ["drumset", "taiko", "bulb"].includes(propShapeOf(piece))) {
       drawSmoothStageProp(target, piece, L, drawOptions);
     }
     else if (L.plan && ["revolve", "deck", "curtain", "pool", "seri"].includes(piece.type)) {
@@ -20056,7 +20061,16 @@
   function costumeLitColor(piece, L) {
     return costumeLitColorFor(piece, L, piece && piece.color);
   }
+  function pointSample(piece, L) {
+    const visual = effectivelyPlacedPiece(piece), d = pieceDims(visual) || {};
+    return { x: (pieceU(visual)-.5)*L.size.width, y: pieceV(visual)*L.size.depth,
+      z: finite(visual.base,0)+(visual.type==="performer" ? .9 : finite(d.h,.2)/2) };
+  }
   function costumeLitColorFor(piece, L, baseColor) {
+    const cue = cueCostumeLitColorFor(piece,L,baseColor);
+    return stagePointSources.length ? window.SHOSAI_STAGE_POINT_SOURCE.tint(cue||baseColor,stagePointSources,pointSample(piece,L)) : cue;
+  }
+  function cueCostumeLitColorFor(piece, L, baseColor) {
     if (!piece || !featureOn("costumeLight") || !featureOn("lightPool")) return null;
     const api = window.SHOSAI_LIGHT_RENDER;
     if (!api || typeof api.litColorAt !== "function" || typeof api.tintColor !== "function") return null;
@@ -20484,6 +20498,7 @@
   function drawStage(target, showSelection, view, opts) {
     const L = layout(view);
     refreshBases(L.size);
+    stagePointSources = window.SHOSAI_STAGE_POINT_SOURCE?.collect(sc().pieces.map(p=>({...effectivelyPlacedPiece(p),propShape:propShapeOf(p),dims:pieceDims(p)})),L.size) || [];
     buildPaintLayer(L);
     const S = target.canvas ? target.canvas.width / W : 1;
     target.save();
@@ -20551,6 +20566,11 @@
       ? solid.slice().sort((a, b) => (planLayer(a) - planLayer(b)) || (topH(a) - topH(b)))
       : solid.filter((piece) => !piece.heldBy)
         .sort((a, b) => frontDepthKey(a) - frontDepthKey(b));
+    if (stagePointSources.length && !featureOn("workLightOff")) {
+      target.save(); clipCueLightFloor(target, L);
+      window.SHOSAI_STAGE_POINT_SOURCE.paint(target, stagePointSources, worldProjector(L), { core: false });
+      target.restore();
+    }
     orderedPieces.forEach(draw);
     // 正面だけは演者を描き終えてから、保持中の物を手首へ重ねて手前に出す。
     if (!L.plan) solid.filter((piece) => piece.heldBy)
@@ -20592,6 +20612,21 @@
       drawLightCueCaption(target, L);
     }
 
+    if (stagePointSources.length) {
+      const api = window.SHOSAI_STAGE_POINT_SOURCE;
+      if (featureOn("workLightOff")) {
+        target.save(); clipCueLightFloor(target, L);
+        api.paint(target, stagePointSources, worldProjector(L), { core: false });
+        target.restore();
+        orderedPieces.forEach(p => {
+          const amount = api.level(stagePointSources, pointSample(p, L));
+          if (!amount) return;
+          target.save(); target.globalAlpha = Math.min(.9, amount);
+          draw(p); target.restore();
+        });
+      }
+      api.paint(target, stagePointSources, worldProjector(L), { floor: false });
+    }
     // 光源印と光の始点を幕の奥へ隠す。演者名などの作図用ラベルはこの後で描く。
     if (!L.plan) drawFrontBorderCurtain(target, L);
 
@@ -34708,6 +34743,20 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   document.getElementById("stage-col-center")?.addEventListener("scroll", scheduleFloatingInspectorRefresh, { passive: true });
   window.addEventListener("gamma-workspace-change", () => { updateInspector(); scheduleFloatingInspectorRefresh(); });
 
+  function syncPointSourceControls(piece) {
+    let host=document.getElementById("stage-point-source-controls");
+    if(!host){host=document.createElement("div");host.id="stage-point-source-controls";host.innerHTML='<p>点光源</p><label><input id="stage-point-on" type="checkbox"> 点灯</label><label>光の色 <input id="stage-point-color" type="color"></label><label>明るさ <input id="stage-point-level" type="range" min="0" max="2" step="0.05"></label><label>届く距離（m） <input id="stage-point-range" type="number" min="0.25" max="20" step="0.25"></label>';
+      els.selectionControls.append(host);
+      for(const [suffix,key] of [["on","on"],["color","color"],["level","level"],["range","range"]]){
+        host.querySelector("#stage-point-"+suffix).addEventListener("change",e=>{const p=selectedPiece();if(!p||propShapeOf(p)!=="bulb")return;checkpoint();p.pointSource=window.SHOSAI_STAGE_POINT_SOURCE.settings({...p.pointSource,[key]:key==="on"?e.target.checked:key==="color"?e.target.value:Number(e.target.value)});render();updateInspector();persistSoon();});
+      }
+    }
+    host.hidden=!piece||propShapeOf(piece)!=="bulb";
+    if(host.hidden)return;const settings=window.SHOSAI_STAGE_POINT_SOURCE.settings(piece.pointSource);
+    host.querySelector("#stage-point-on").checked=settings.on;
+    for(const key of ["color","level","range"])host.querySelector("#stage-point-"+key).value=String(settings[key]);
+  }
+
   function restoreDraggedInspector() {
     const inspector = els.selectionControls?.closest('[data-panel="inspector"]');
     if (inspector?.dataset.gammaObjectDragging !== "true") return;
@@ -34873,6 +34922,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       els.selectionScope.hidden = true;
       els.selectionScope.textContent = "";
     }
+    syncPointSourceControls(multi ? null : piece);
     syncDimControls(multi ? null : piece);
     const mount = multi ? null : mountKindOf(piece);
     if (els.piecePose) {
@@ -37495,7 +37545,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
               propShape: propShape ? propShape.id : visual.propShape,
               parts: visual.type === "prop" || ["revolve", "deck", "curtain", "pool", "seri"].includes(visual.type)
                 ? pieceParts(visual) : undefined,
-              smoothParts: propShape && ["drumset", "taiko"].includes(propShape.id) ? propShape.parts : null,
+              smoothParts: propShape && ["drumset", "taiko", "bulb"].includes(propShape.id) ? propShape.parts : null,
               grip: propShape ? propShape.grip : null,
               model: visual.type === "model" && owner ? stageModel(owner.modelId) : null,
               /* 映す面（紗幕・壁）の情報。★3Dでも2Dと同じ値・同じ絵を使うため、
