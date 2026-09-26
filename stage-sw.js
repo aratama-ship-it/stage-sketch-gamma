@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v394";
+const CACHE_NAME = "stage-sketch-gamma-shell-v395";
 const APP_SHELL = [
   "./gamma-ui.js?v=20260925-ui1",
   "./gamma-ui-tokens.css?v=20260925-ui1",
@@ -59,7 +59,7 @@ const APP_SHELL = [
   "./stage-venue-lines.js?v=2026091992",
   "./stage-front-shape.js?v=2026092046",
   "./stage-venue-report.js?v=2026092047",
-  "./stage-i18n.js?v=20260926-isolation35",
+  "./stage-i18n.js?v=20260926-large39",
   "./stage-i18n.zh-Hans.js?v=20260926-isolation35",
   "./stage-i18n.zh-Hant.js?v=20260926-isolation35",
   "./stage-prompt-i18n.js?v=2026092634",
@@ -74,12 +74,13 @@ const APP_SHELL = [
   "./stage-scrim.js?v=2026092059",
   "./stage-first-person.js?v=2026092634",
   "./stage-audio-store.js?v=2026092523",
+  "./stage-large-project-store.js?v=20260926-large39",
   "./stage-project-backup-store.js?v=2026092523",
   "./stage-storage-codec.js?v=2026092523",
   "./stage-storage-recovery.js?v=20260926-isolation35",
   "./stage-storage-hygiene.js?v=20260926-isolation35",
-  "./stage-storage-pressure.js?v=20260926-isolation35",
-  "./storage-recovery-ui.js?v=20260926-isolation35",
+  "./stage-storage-pressure.js?v=20260926-large39",
+  "./storage-recovery-ui.js?v=20260926-large39",
   "./storage-recovery.html",
   "./manual-gamma/manual-content.js?v=20260926-isolation35",
   "./manual-gamma/manual-content.js",
@@ -95,7 +96,7 @@ const APP_SHELL = [
   "./stage-cue-sheet.js?v=2026092634",
   "./stage-shortcuts.js?v=2026092218",
   "./stage-reorder-motion.js?v=2026092420",
-  "./stage-sketch.js?v=20260926-rj-ss36",
+  "./stage-sketch.js?v=20260926-large39",
   "./stage-timeline.js?v=2026092423",
   "./stage-session.js?v=20260926-release32",
   "./stage-study-owner.js?v=20260926-release32",

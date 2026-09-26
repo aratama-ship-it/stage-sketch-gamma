@@ -12,14 +12,16 @@
 <script src="stage-storage-codec.js?v=2026092523" defer></script>
 <script src="stage-storage-recovery.js?v=20260926-isolation35" defer></script>
 <script src="stage-storage-hygiene.js?v=20260926-isolation35" defer></script>
-<script src="storage-recovery-ui.js?v=20260926-isolation35" defer></script>
+<script src="stage-large-project-store.js?v=20260926-large39" defer></script>
+<script src="storage-recovery-ui.js?v=20260926-large39" defer></script>
 </head>
 <body>
 <header><p class="note">舞台スケッチγ</p><h1>保存容量の修復</h1>
 <p>通常はアプリがγの旧バックアップを自動整理します。控えは同じ内容を重ねて保存せず、対応するブラウザでは圧縮して保持します。制作中のショー、別案、参照されている音源は保持します。</p>
-<p>γの古い自動バックアップを、別の保存領域へ保管して空きを作ります。βの保存は対象にしません。空きが足りなければ、開いていないショーを一件ずつ保管できます。</p>
-<p class="note">編集中のショーは開いたままにしてください。最初の「控えを保管」操作は現行のショー一覧を変更しません。下の「開いていないショー」は、選んだショーだけが一覧から外れ、いつでもこの画面で復元できます。音源と照明の控えは変更しません。</p></header>
+<p>γの古い自動バックアップを、別の保存領域へ保管して空きを作ります。βの保存は対象にしません。大容量保存へ移行済みのショーは、上の書き出しから保全できます。</p>
+<p class="note">編集中のショーは開いたままにしてください。最初の「控えを保管」操作は現行のショー一覧を変更しません。下の「開いていないショー」は旧方式の保存が対象です。大容量保存へ移行後の控えは書き出し、舞台画面で読み込んでください。音源と照明の控えは変更しません。</p></header>
 <noscript>修復にはJavaScriptが必要です。保存済みのデータは変更していません。</noscript>
+<section aria-labelledby="large-title"><h2 id="large-title">大容量保存のショー</h2><p>ショー本体・一覧は専用の保存領域にあります。現在の保存、直前の保存、移行前の原本を書き出せます。</p><p id="large-status" role="status"></p><div id="large-shows"></div></section>
 <section aria-labelledby="usage-title"><h2 id="usage-title">γの保存状況</h2>
 <dl><dt>γの文字データ（概算）</dt><dd id="total">確認中…</dd><dt>保管先を移せる控え</dt><dd id="eligible">確認中…</dd></dl>
 <div class="actions"><button type="button" id="repair" class="primary" disabled>控えを保管して容量を空ける</button><button type="button" id="refresh">使用量を確認し直す</button></div>

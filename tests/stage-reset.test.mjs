@@ -49,7 +49,7 @@ function resetHarness({ failRemove = null } = {}) {
   const events = { reloads: 0, audioDeletes: [], errors: [] };
   const resetError = { hidden: true, textContent: "", focus() {} };
   const context = {
-    rawStorage: storage,
+    rawStorage: storage, largeProjectStorage:null,
     ProjectStore:{whenIdle:()=>Promise.resolve()},
     RESET_KEYS: [currentKey, shelfKey, markerKey],
     PROJECT_BACKUP_RESET_KEY: markerKey,

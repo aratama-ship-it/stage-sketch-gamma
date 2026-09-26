@@ -35,7 +35,7 @@ function mappedStorage(storage) {
   const start = app.indexOf("  let alternativesStorageBlocked = false;");
   const end = app.indexOf("  const nativeDownloadDecisionWaiters", start);
   assert.ok(start >= 0 && end > start);
-  const context = { window: { localStorage: storage }, STUDY_READ_ONLY: false };
+  const context = { window: { localStorage: storage }, STUDY_READ_ONLY: false, largeProjectStorage:null };
   vm.runInNewContext(app.slice(start, end) + "; globalThis.storage = localStorage;", context);
   return context;
 }

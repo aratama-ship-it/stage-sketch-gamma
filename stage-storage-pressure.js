@@ -3,37 +3,35 @@
   'use strict';
   const MiB = 1024 * 1024;
   const CHECK_MS = 60000;
-  const REPEAT_MS = {1:15 * 60000, 2:5 * 60000, 3:5 * 60000};
   function classify({totalBytes, usage, quota, failed = false, estimateStale = false} = {}) {
     const local = Number.isFinite(totalBytes) && totalBytes >= 0 ? totalBytes : null;
     const ratio = Number.isFinite(usage) && usage >= 0 && Number.isFinite(quota) && quota > 0
       ? usage / quota : null;
-    const level = failed ? 3 : local >= 4 * MiB ? 2
-      : local >= 3.5 * MiB ? 1 : 0;
+    const level = failed ? 3 : Math.max(local >= 4 * MiB ? 2 : local >= 3.5 * MiB ? 1 : 0,
+      !estimateStale && ratio !== null ? ratio >= .95 ? 2 : ratio >= .85 ? 1 : 0 : 0);
     return {level, totalBytes:local, ratio, usage, quota, failed, estimateStale};
   }
   function createPolicy({now = Date.now} = {}) {
-    let sample = {}, shownLevel = 0, nextAt = 0, open = false;
+    let sample = {}, shownLevel = 0, open = false;
     const failures = new Set();
     const status = () => ({...classify({...sample, failed:failures.size > 0}),
       failureSource:failures.has('show') ? 'show' : failures.has('audio') ? 'audio' : null});
     function update(value) {
       sample = {...sample, ...value};
       if (open) shownLevel = Math.max(shownLevel, status().level);
-      if (!status().level && !open) { shownLevel = 0; nextAt = 0; }
+      if (!status().level && !open) { shownLevel = 0; }
       return status();
     }
     function take({eligible = true, force = false} = {}) {
       const value = status();
-      if (open || !eligible || !value.level || (!force && value.level <= shownLevel && now() < nextAt)) return null;
+      if (open || !eligible || !value.level || (!force && (value.level === 1 || value.level <= shownLevel))) return null;
       open = true; shownLevel = value.level;
       return value;
     }
     function dismiss() {
       if (!open) return;
       open = false;
-      nextAt = now() + (REPEAT_MS[status().level] || 0);
-      if (!status().level) { shownLevel = 0; nextAt = 0; }
+      if (!status().level) { shownLevel = 0; }
     }
     function failed(source = 'show') { failures.add(source === 'audio' ? 'audio' : 'show'); return update({}); }
     function saved(source = 'show') { failures.delete(source); return update({}); }
@@ -87,9 +85,8 @@
       el('usage').hidden = !lines.length;
       el('estimate-note').textContent = text('数値はブラウザ保存領域の概算です。端末全体の空き容量ではありません。',
         'These are browser storage estimates, not the free space on your device.');
-      const minutes = REPEAT_MS[state.level] / 60000;
-      el('repeat').textContent = text(`閉じても、改善するまで約${minutes}分ごとに再通知します。`,
-        `Reminds you about every ${minutes} minutes after closing until resolved.`);
+      el('repeat').textContent = text("閉じた後は同じ注意を繰り返し表示しません。状態が悪化したときに通知します。保存状況は画面の表示から確認できます。",
+        "This notice will not repeat after closing. You will be notified if the situation worsens. Check the storage indicator for the current status.");
       el('export').textContent = text('ショーを書き出す', 'Export show');
       el('repair').textContent = text('保存容量を整理（別タブ）', 'Review storage (new tab)');
       el('later').textContent = text('いったん閉じる', 'Close for now');

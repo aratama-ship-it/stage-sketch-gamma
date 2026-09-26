@@ -303,3 +303,6 @@ public-dist/
 !/stage-storage-pressure.js
 !/tests/stage-storage-pressure.test.mjs
 !/docs/storage-pressure-warning.md
+
+!/stage-large-project-store.js
+!/tests/stage-large-project-store.test.mjs

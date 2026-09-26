@@ -15,30 +15,26 @@ test('separate text and origin quotas; missing estimates are not percentages', (
   assert.equal(api.classify({totalBytes:3.5 * MiB}).level, 1);
   assert.equal(api.classify({totalBytes:4 * MiB}).level, 2);
   assert.equal(api.classify({usage:80, quota:100}).level, 0);
-  assert.equal(api.classify({usage:90, quota:100}).level, 0);
+  assert.equal(api.classify({usage:90, quota:100}).level, 1);
   assert.equal(api.classify({totalBytes:4 * MiB, usage:1, quota:10000}).level, 2);
   for (const bad of [{}, {usage:10,quota:0}, {usage:-1,quota:10}, {usage:Infinity,quota:Infinity}]) {
     assert.equal(api.classify(bad).ratio, null);
   }
 });
-test('warning repeats 15 minutes after dismissal and never stacks', () => {
-  let clock = 0; const p = api.createPolicy({now:() => clock});
-  p.update({totalBytes:3.5 * MiB}); assert.equal(p.take().level, 1);
-  clock = 10000000; assert.equal(p.take(), null);
-  p.dismiss(); clock += 15 * 60000 - 1; assert.equal(p.take(), null);
-  clock++; assert.equal(p.take().level, 1);
+test('capacity caution remains a badge without interrupting editing, even after days', () => {
+  let clock=0;const p=api.createPolicy({now:()=>clock});p.update({totalBytes:3.5*MiB});
+  assert.equal(p.status().level,1);assert.equal(p.take(),null);clock+=86400000;assert.equal(p.take(),null);
+  assert.equal(p.take({force:true}).level,1);p.dismiss();clock+=86400000;assert.equal(p.take(),null);
 });
-test('danger repeats in five minutes, escalating immediately even in a cooldown', () => {
-  let clock = 0; const p = api.createPolicy({now:() => clock});
-  p.update({totalBytes:3.5 * MiB}); p.take(); p.dismiss();
-  p.update({totalBytes:4 * MiB}); assert.equal(p.take().level, 2); p.dismiss();
-  clock = 5 * 60000 - 1; assert.equal(p.take(), null);
-  clock++; assert.equal(p.take().level, 2); p.dismiss();
-  p.failed('show'); assert.equal(p.take().level, 3);
+test('danger interrupts once per episode; worsening or a new failure alerts', () => {
+  let clock=0;const p=api.createPolicy({now:()=>clock});p.update({totalBytes:4*MiB});
+  assert.equal(p.take().level,2);p.dismiss();clock+=86400000;assert.equal(p.take(),null);
+  p.failed('show');assert.equal(p.take().level,3);p.dismiss();clock+=86400000;assert.equal(p.take(),null);
+  p.saved('show');p.update({totalBytes:0});p.failed('show');assert.equal(p.take().level,3);
 });
 test('no immediate repeat when a visible warning escalated before dismissal', () => {
   const p = api.createPolicy({now:() => 0});
-  p.update({totalBytes:3.5 * MiB}); p.take();
+  p.update({totalBytes:3.5 * MiB}); p.take({force:true});
   p.failed('show'); p.dismiss(); assert.equal(p.take(), null);
 });
 test('busy or hidden state defers without consuming the warning; manual reopen works', () => {

@@ -10,7 +10,7 @@
    規模は「舞台を画面いっぱいに描き、人の大きさを舞台に対する比率で決める」形で
    表す。18mの舞台では人が小さく見える。寸法そのものは編集させない（設計計画書 8.5節）。 */
 
-(function () {
+(async function () {
   "use strict";
 
   // A previous Service Worker can serve the new HTML before its new module is
@@ -59,7 +59,7 @@
     )) { stripParamAndContinue(); return false; }
     const EXACT_KEYS = [
       "gamma:shosai-stage-agent-permission-v1", "gamma:shosai-stage-sketch-v1",
-      "gamma:new-show-return-v1", "gamma:shosai-stage-shows-broken-v1",
+      "gamma:large-projects-v1:revision", "gamma:new-show-return-v1", "gamma:shosai-stage-shows-broken-v1",
       "gamma:stage-project-backup-reset-v1", "gamma:shosai-stage-shows-v1",
       "gamma:shosai-stage-prefs-v1", "gamma:shosai-stage-tablet-view",
       "gamma:shosai-stage-tour-v1", "gamma:shosai-stage-release-history-seen-v1", "gamma:shosai-stage-last-user-v1",
@@ -74,7 +74,7 @@
     const PREFIXES = [
       "gamma:scene-alternatives-v1:", "gamma:lighting-draft-v1:",
     ];
-    const DB_NAMES = ["gamma:stage-project-backups-v1", "gamma:scene-alternatives-audio-v1", "gamma:shosai-stage-audio", "gamma:storage-recovery-archive-v1"];
+    const DB_NAMES = ["gamma:large-projects-v1", "gamma:stage-project-backups-v1", "gamma:scene-alternatives-audio-v1", "gamma:shosai-stage-audio", "gamma:storage-recovery-archive-v1"];
     const CACHE_PREFIX = "stage-sketch-gamma-";
     try {
       Object.keys(window.localStorage).forEach((k) => {
@@ -111,6 +111,29 @@
   // 消去→再読み込みの途中で、以下の通常起動処理が古いデータに触れないよう止める。
   if (devResetTriggered) return;
 
+  const largeReadOnly = document.documentElement?.hasAttribute?.("data-study-renderer") === true;
+  let largeProjectStorage = null;
+  if (!largeReadOnly) {
+    try {
+      if (typeof window.indexedDB?.open === "function") {
+      if (!window.STAGE_LARGE_PROJECT_STORE) throw new Error("大容量保存の更新ファイルが未読込です");
+      largeProjectStorage = await window.STAGE_LARGE_PROJECT_STORE.open({storage:window.localStorage,indexedDB:window.indexedDB,
+        onFailure: error => window.dispatchEvent(new CustomEvent("gamma-project-storage-failed", {detail:error})),
+        onConflict: error => window.dispatchEvent(new CustomEvent("gamma-project-storage-failed", {detail:error}))});
+      window.GAMMA_LARGE_PROJECT_STORAGE = largeProjectStorage;
+      } else if (window.localStorage?.getItem?.("gamma:large-projects-v1:revision") != null) {
+        throw Object.assign(new Error("STORAGE_UNAVAILABLE"),{code:"STORAGE_UNAVAILABLE"});
+      }
+    } catch (error) {
+      const notice = document.createElement("div");
+      notice.setAttribute("role", "alert");
+      notice.style.cssText = "position:fixed;inset:0;z-index:100000;background:#191512;color:#efe7d6;padding:10vh 10vw;font:18px/1.6 sans-serif";
+      const english = new URLSearchParams(location.search).get("lang") === "en" || document.documentElement.lang === "en";
+      notice.textContent = english ? "Editing stopped because saved data could not be opened safely. Saved data is preserved. Close other tabs and reopen the latest version. (" + (error.code || error.message) + ")" : "保存データを安全に開けないため、編集を停止しました。元の保存データは保持しています。ほかのタブを閉じて最新版を再読み込みしてください。 (" + (error.code || error.message) + ")";
+      const a = document.createElement("a");a.href="storage-recovery.html";a.textContent=english ? " Check and export saved data" : " 保存データを確認・書き出す";a.style.color="#a7c9f2";notice.append(a);document.body.append(notice);return;
+    }
+  }
+
   /* W05: opaque snapshots, two verified copies, no format migration.
      The current show has a verified IndexedDB recovery copy; localStorage keeps
      only inactive shows. This avoids storing a large open show twice inside
@@ -141,7 +164,7 @@
       try { return storage.getItem(currentKey) === beforeCurrent && storage.getItem(shelfKey) === beforeShelf; }
       catch (_) { return false; }
     };
-    const writePair = ({ beforeCurrent, beforeShelf, serializedCurrent, serializedShelf, currentFirst = false }) => {
+    const writePair = async ({ beforeCurrent, beforeShelf, serializedCurrent, serializedShelf, currentFirst = false }) => {
       let failure;
       try {
         // The usual path releases the target from the shelf first. If the
@@ -156,6 +179,7 @@
           if (storage.getItem(currentKey) !== serializedCurrent || storage.getItem(shelfKey) !== serializedShelf) failure = "PARTIAL_WRITE";
         } catch (_) { failure = "PARTIAL_WRITE"; }
       }
+      if (!failure) { try { await storage.flush?.(); } catch (error) { failure = classify(error); } }
       if (!failure) return { ok: true };
       // Restore each key independently; a failed first restore must not skip the second.
       for (const [key, previous] of [[currentKey, beforeCurrent], [shelfKey, beforeShelf]]) {
@@ -213,7 +237,7 @@
       Object.defineProperty(shelf, projectId,
         { value: { savedAt, state: candidate }, enumerable: true, configurable: true, writable: true });
     };
-    const legacyCommit = (previous, projectId, candidate, serializedState, savedAt) => {
+    const legacyCommit = async (previous, projectId, candidate, serializedState, savedAt) => {
       putShelf(previous.shelf, projectId, candidate, savedAt);
       return writePair({ ...previous, serializedCurrent: serializedState, serializedShelf: JSON.stringify(previous.shelf) });
     };
@@ -229,13 +253,13 @@
         const backupResult = await preserveBackup(previous, projectId, serializedState);
         if (backupResult.conflict) return fail("CONCURRENT_EDIT");
         if (!backupResult.available) {
-          const result = legacyCommit(previous, projectId, candidate, serializedState, savedAt);
+          const result = await legacyCommit(previous, projectId, candidate, serializedState, savedAt);
           if (!result.ok) return result;
           return { ok: true, value: { projectId, savedAt, intent, revision: null, verified: true, recovery: "localStorage" } };
         }
         // The IndexedDB copy is verified before this shelf duplicate is removed.
         delete previous.shelf[projectId];
-        const result = writePair({ ...previous, serializedCurrent: serializedState,
+        const result = await writePair({ ...previous, serializedCurrent: serializedState,
           serializedShelf: JSON.stringify(previous.shelf) });
         if (!result.ok) return result;
         return { ok: true, value: { projectId, savedAt, intent, revision: null, verified: true } };
@@ -255,7 +279,7 @@
         if (!backupResult.available) {
           putShelf(previous.shelf, currentProjectId, current, savedAt);
           putShelf(previous.shelf, nextProjectId, next, savedAt);
-          const result = writePair({ ...previous, serializedCurrent: nextSerializedState,
+          const result = await writePair({ ...previous, serializedCurrent: nextSerializedState,
             serializedShelf: JSON.stringify(previous.shelf) });
           if (!result.ok) return result;
           return { ok: true, value: { projectId: nextProjectId, savedAt, intent, revision: null, verified: true, recovery: "localStorage" } };
@@ -266,7 +290,7 @@
         // backup was written before this entry can be removed.
         delete previous.shelf[nextProjectId];
         const serializedShelf = JSON.stringify(previous.shelf);
-        let result = writePair({ ...previous, serializedCurrent: nextSerializedState, serializedShelf });
+        let result = await writePair({ ...previous, serializedCurrent: nextSerializedState, serializedShelf });
         if (!result.ok && result.error.code === "QUOTA_EXCEEDED" && result.error.restored
             && previous.beforeCurrent && nextSerializedState.length < previous.beforeCurrent.length
             && typeof backup?.beginPendingSwitch === "function"
@@ -287,7 +311,7 @@
               try { await backup.clearPendingSwitch(journal.token); } catch (_) {}
               return fail("CONCURRENT_EDIT");
             }
-            result = writePair({ ...previous, serializedCurrent: nextSerializedState,
+            result = await writePair({ ...previous, serializedCurrent: nextSerializedState,
               serializedShelf, currentFirst: true });
             if (result.ok || result.error.restored) {
               try { await backup.clearPendingSwitch(journal.token); } catch (_) { /* Next launch reconciles it. */ }
@@ -389,16 +413,18 @@
     showShelf: mappedAlternativesKey(alternativesKeys[1]),
   });
   const rawStorage = STUDY_READ_ONLY ? null : (window.localStorage || globalThis.localStorage || {});
+  const projectStorage = largeProjectStorage?.storage || rawStorage;
   const storageBaseline = new Map();
   if (rawStorage) for (const name of alternativesKeys) {
     const key = mappedAlternativesKey(name);
-    try { storageBaseline.set(key, rawStorage.getItem(key)); }
+    try { storageBaseline.set(key, projectStorage.getItem(key)); }
     catch (_) { alternativesStorageBlocked = true; }
   }
   // New readers write a separate namespace; an old tab cannot erase alternatives.
-  const alternativesStorage = new Proxy(rawStorage || {}, {
+  const alternativesStorage = new Proxy(projectStorage || {}, {
     get(target, key) {
       const mapped = mappedAlternativesKey;
+      if (key === "flush") return () => largeProjectStorage?.flush();
       if (key === "getItem") return name => target.getItem(mapped(name));
       if (key === "setItem") return (name, value) => {
         if (alternativesStorageBlocked && mapped(name) !== name) throw new Error("保存原本を保護しています");
@@ -2124,6 +2150,7 @@
         ? "This will delete every stage sketch show saved on this device and reopen as a first-time visit. Shows you have not exported cannot be recovered. Continue?"
         : "この端末に保存した舞台スケッチのショーをすべて消して、初回と同じ状態で開き直します。書き出していないショーは戻せません。続けますか？";
       if (window.confirm(message)) {
+        try { if (largeProjectStorage) await largeProjectStorage.reset(); } catch (error) { window.alert("保存領域を初期化できませんでした。原本を保持して編集を停止します。 / Reset failed; editing stopped."); return; }
         STAGE_KEYS.forEach((key) => {
           try { localStorage.removeItem(key); } catch (_) { /* 消せなくても続ける */ }
         });
@@ -10256,7 +10283,7 @@
   }
 
   function audioGcSnapshot() {
-    const texts = [snapshot(), ...history, ...future];
+    const texts = [snapshot(), ...history, ...future, ...Object.values(largeProjectStorage?.values() || {})];
     for (let i = 0; i < rawStorage.length; i++) {
       const key = rawStorage.key(i);
       if (/^gamma:(?:scene-alternatives-v1:)?shosai-stage-(?:sketch|shows)(?:-broken)?-v1(?:$|-pre-section-hierarchy-v1)/.test(key)) {
@@ -10275,10 +10302,10 @@
         const before = audioGcSnapshot();
         const ids = window.STAGE_STORAGE_HYGIENE.audioReferences(before);
         if (!ids) return;
-        const [archives, backups] = await Promise.all([storageRecovery.summaries(),
-          window.SHOSAI_STAGE_PROJECT_BACKUP_STORE.protectedAudioIds()]);
-        if (!backups || archives.some(record => !Array.isArray(record.audioRefs))) return;
-        ids.push(...backups);
+        const [archives, backups, largeAudio] = await Promise.all([storageRecovery.summaries(),
+          window.SHOSAI_STAGE_PROJECT_BACKUP_STORE.protectedAudioIds(), largeProjectStorage?.protectedAudioIds() || Promise.resolve([])]);
+        if (!backups || !largeAudio || archives.some(record => !Array.isArray(record.audioRefs))) return;
+        ids.push(...backups, ...largeAudio);
         archives.forEach(record => ids.push(...record.audioRefs));
         const guard = () => {
           if (resetInProgress) return false;
@@ -25257,6 +25284,7 @@
       announce("ショー一覧を更新できなかったため、消していません。");
       return;
     }
+    try { await largeProjectStorage?.flush(); } catch (error) { reportProjectStoreFailure({error:{code:error.code || "WRITE_FAILED"}}); return; }
     if (backupBefore && backups?.removeIfCurrent) {
       try { await backups.removeIfCurrent(id, backupBefore); } catch (_) { /* The show deletion is durable; retry is safe. */ }
     }
@@ -29978,6 +30006,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       clearTimeout(saveTimer); autosaveRequested = false;
       if (autosaveInFlight) await autosaveInFlight;
       await ProjectStore.whenIdle();
+      if (largeProjectStorage) { await largeProjectStorage.reset(); removedAny = true; }
       clearTimeout(maintenanceTimer);
       await storageMaintenance?.whenIdle();
       if (!rawStorage) throw new Error("localStorage unavailable");
@@ -40386,6 +40415,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       // ?romeo-juliet-sample は同梱済みの台本・キュー見本を直接開く。
       if (openArgs.has("romeo-juliet-sample")) openRomeoJulietSampleShow();
 
+      try { await largeProjectStorage?.flush(); } catch (error) { alternativesStorageBlocked = true; reportProjectStoreFailure({error:{code:error.code || "WRITE_FAILED"}}); }
       const launchWarningShown = openLaunchBackupWarning();
       if (!launchWarningShown) {
         if (document.readyState === "loading") {
@@ -40593,6 +40623,11 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     hasLocalModels() { return (state.project.sets || []).some(s => s.modelId); },
   });
   let gammaStorageChanged = false;
+  window.addEventListener("gamma-project-storage-failed", event => {
+    gammaStorageChanged = true;
+    alternativesStorageBlocked = true;
+    reportProjectStoreFailure({error:{code:event.detail?.name === "QuotaExceededError" || event.detail?.name === "NS_ERROR_DOM_QUOTA_REACHED" ? "QUOTA_EXCEEDED" : (event.detail?.code || "WRITE_FAILED")}});
+  });
   window.addEventListener("storage", event => {
     if ([BETA_STORAGE_KEY, SHOWS_KEY].some(key => event.key === "gamma:scene-alternatives-v1:" + key)) gammaStorageChanged = true;
     const shelfKey = "gamma:scene-alternatives-v1:" + SHOWS_KEY;

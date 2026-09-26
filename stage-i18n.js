@@ -31,6 +31,10 @@
   "use strict";
 
   const TEXT = {
+    "ショー本体と一覧を大容量の保存領域へ移行。移行前の原本と直前の保存は控えとして保持します。": "Moved show documents and the show shelf into larger browser storage. The original migration source and previous save are retained as recovery copies.",
+    "容量の注意は画面の表示から確認できます。同じ注意を繰り返し開かず、危険度の上昇や保存失敗を通知します。": "Check capacity using the storage indicator. The same notice no longer opens repeatedly; worsening capacity or a failed save triggers a notification.",
+    "復旧画面から現在のショーと控えを書き出せます。更新前に開いた編集タブは閉じ、最新版で再開してください。": "Export shows and recovery copies from the recovery page. Close editor tabs opened before the update and reopen the latest version.",
+
     "グレー": "Grey",
     "ショーを読み込む": "Import show",
     "ショートカットを変更": "Change shortcuts",
