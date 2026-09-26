@@ -58,7 +58,7 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.match(main, /function backfillMissingSceneRehearsal\(project\) \{[\s\S]*?if \(hasSectionMemo\) return project;[\s\S]*?row\.rehearsal = \{ holdDurationSeconds: DEFAULT_SCENE_HOLD_SECONDS, transitionToNextSeconds: NEW_SCENE_TRAVEL_SECONDS \};/);
   assert.match(main, /const project = backfillMissingSceneRehearsal\(stripRemovedSceneFields\(projectIoClone\(document\.project\)\)\);/);
   assert.match(html, /stage-sketch\.js\?v=20260927-point43/);
-  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v399"/);
+  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v400"/);
   assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=20260927-point43"/);
   assert.match(html, /id="stage-show-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-set-names" checked>\s*<span class="stage-tool-icon"/);
@@ -121,7 +121,7 @@ test("lighting apply belongs to the LX cue panel and playback uses an accessible
   assert.match(html, /\.fixture-power\.off \.fixture-power-slash\{display:block\}/);
   assert.doesNotMatch(html, /\.fixture-power\.on \.fixture-power-slash\{display:none\}/);
   assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=20260926-feedback40/);
-  assert.match(worker, /stage-sketch-gamma-shell-v399/);
+  assert.match(worker, /stage-sketch-gamma-shell-v400/);
 
   assert.match(worker, /light-design\/app\.js\?v=20260926-feedback40/);
   assert.match(worker, /light-design\/embed\.js\?v=20260925-ui1/);
