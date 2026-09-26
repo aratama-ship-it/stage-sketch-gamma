@@ -71,7 +71,8 @@ ${steps([
   "Go back with " + ui("◀ Previous") + ", then press " + ui("Next ▶") + ". You see them walk across.",
   "At a good stopping point, press " + ui("Export show") + " and keep the file (" + ref("saving", "1-5") + ")."
 ])}
-${note("Why the theatre comes first", "How the front view looks (distance, height, wing positions) and the outline of the plan both come from the theatre's dimensions. You can change the theatre later, but some pieces may end up in odd places (" + ref("venue-apply", "Part 5, 5-4") + ").")}`
+${note("Why the theatre comes first", "How the front view looks (distance, height, wing positions) and the outline of the plan both come from the theatre's dimensions. You can change the theatre later, but some pieces may end up in odd places (" + ref("venue-apply", "Part 5, 5-4") + ").")}
+${vid("scene-workflow", "Create a new show, choose a theatre, add a performer and a route, inherit the next scene, then export JSON.")}`
       },
       {
         id: "saving", title: "How saving works, and keeping copies (the most important part)", status: "sourced",

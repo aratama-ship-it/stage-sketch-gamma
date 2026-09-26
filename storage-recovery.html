@@ -10,22 +10,22 @@
 *{box-sizing:border-box}body{max-width:760px;margin:0 auto;padding:24px}h1{font-size:28px;line-height:1.4}h2{font-size:20px}p{margin:var(--space) 0}header,section{margin-bottom:32px}a{color:var(--accent);text-underline-offset:4px}button{font:inherit;min-height:44px;padding:8px 16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);color:var(--fg);cursor:pointer}button:disabled{cursor:default;color:var(--muted)}button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}.primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}.actions{display:flex;gap:8px;flex-wrap:wrap}.note,small{color:var(--muted);font-size:14px}#result{border:1px solid var(--accent);border-radius:var(--radius);padding:var(--space);white-space:pre-line}#result:empty{display:none}ul{padding-left:24px}li{margin:16px 0}code{overflow-wrap:anywhere;font-size:14px}summary{cursor:pointer;min-height:44px;padding:8px 0}.copy{border-top:1px solid var(--line);padding:16px 0}.copy p{margin:0 0 8px}.copy button{margin:8px 8px 0 0}dl{margin:0}dt{color:var(--muted)}dd{margin:0 0 16px;font-size:20px}noscript{display:block;padding:16px;border:1px solid var(--accent)}
 </style>
 <script src="stage-storage-codec.js?v=2026092523" defer></script>
-<script src="stage-storage-recovery.js?v=2026092523" defer></script>
-<script src="stage-storage-hygiene.js?v=2026092523" defer></script>
-<script src="storage-recovery-ui.js?v=2026092523" defer></script>
+<script src="stage-storage-recovery.js?v=20260926-isolation35" defer></script>
+<script src="stage-storage-hygiene.js?v=20260926-isolation35" defer></script>
+<script src="storage-recovery-ui.js?v=20260926-isolation35" defer></script>
 </head>
 <body>
 <header><p class="note">舞台スケッチγ</p><h1>保存容量の修復</h1>
-<p>通常はアプリが旧バックアップを自動整理します。控えは同じ内容を重ねて保存せず、対応するブラウザでは圧縮して保持します。制作中のショー、別案、参照されている音源は保持します。</p>
-<p>古い自動バックアップと重複した旧形式の一覧を、別の保存領域へ保管して空きを作ります。空きが足りなければ、開いていないショーを一件ずつ保管できます。</p>
+<p>通常はアプリがγの旧バックアップを自動整理します。控えは同じ内容を重ねて保存せず、対応するブラウザでは圧縮して保持します。制作中のショー、別案、参照されている音源は保持します。</p>
+<p>γの古い自動バックアップを、別の保存領域へ保管して空きを作ります。βの保存は対象にしません。空きが足りなければ、開いていないショーを一件ずつ保管できます。</p>
 <p class="note">編集中のショーは開いたままにしてください。最初の「控えを保管」操作は現行のショー一覧を変更しません。下の「開いていないショー」は、選んだショーだけが一覧から外れ、いつでもこの画面で復元できます。音源と照明の控えは変更しません。</p></header>
 <noscript>修復にはJavaScriptが必要です。保存済みのデータは変更していません。</noscript>
-<section aria-labelledby="usage-title"><h2 id="usage-title">このブラウザの保存状況</h2>
-<dl><dt>現在の使用量（概算）</dt><dd id="total">確認中…</dd><dt>保管先を移せる控え</dt><dd id="eligible">確認中…</dd></dl>
+<section aria-labelledby="usage-title"><h2 id="usage-title">γの保存状況</h2>
+<dl><dt>γの文字データ（概算）</dt><dd id="total">確認中…</dd><dt>保管先を移せる控え</dt><dd id="eligible">確認中…</dd></dl>
 <div class="actions"><button type="button" id="repair" class="primary" disabled>控えを保管して容量を空ける</button><button type="button" id="refresh">使用量を確認し直す</button></div>
 <p class="note">保管先への保存と内容の一致を確認できた控えだけを移します。空きを作れない場合は、そのまま残ります。</p>
 <p id="result" role="status" aria-live="polite"></p>
-<details><summary>容量の内訳</summary><ul id="breakdown"></ul><p class="note">文字数からの概算です。音源など別の保存領域は含みません。他のアプリの保存分は合計だけを表示します。</p></details></section>
+<details><summary>容量の内訳</summary><ul id="breakdown"></ul><p class="note">文字数からの概算です。音源など別の保存領域は含みません。βや他のアプリの保存分は読み取りません。</p></details></section>
 <section aria-labelledby="inactive-title"><h2 id="inactive-title">開いていないショーを保管する</h2>
 <p class="note">現在開いているショーと音源参照のあるショーは移せません。保管するとそのショーは舞台スケッチの一覧から一時的に外れます。この画面の「保管済みの控え」から戻すと、再び一覧に出ます。保管前に元のタブの編集を止めてください。</p>
 <p id="inactive-status" class="note">確認中…</p><div id="inactive-shows"></div></section>

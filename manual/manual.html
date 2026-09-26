@@ -8,7 +8,7 @@
 /* 見た目の方針: アプリ本体（style.css）と同じ「暗い机の上の紙」。
    色・書体のトークンは本体 :root から複製（本体CSSは読み込まない。冊子は単体で立つ）。
    発光・グラデ装飾はしない。紙・墨・錆色だけで組む。
-   言語: アプリの言語設定（localStorage shosai-stage-lang）に従い、?lang= で上書き可。
+   言語: アプリの言語設定（localStorage gamma:shosai-stage-lang）に従い、?lang= で上書き可。
    本文の日英は manual-content.js が持つ。ここは器の文言だけ。 */
 :root {
   --desk: #191512;
@@ -296,7 +296,7 @@ html[lang="en"] .m-faq dt::before { content: "Q. "; }
 <script>
 /* 本文の組み立てと検索。文章はすべて manual-content.js（正本）から来る。
    言語の決まり: URLの ?lang= が最優先（PDF生成用）、次にアプリ本体の設定
-   （localStorage shosai-stage-lang）、どちらも無ければ日本語。
+   （localStorage gamma:shosai-stage-lang）、どちらも無ければ日本語。
    右上の切替ボタンはこの冊子の表示だけを替え、アプリ側の設定は書き換えない。 */
 (function () {
   "use strict";
@@ -349,7 +349,7 @@ html[lang="en"] .m-faq dt::before { content: "Q. "; }
     const fromUrl = new URLSearchParams(location.search).get("lang");
     if (fromUrl === "en" || fromUrl === "ja") return fromUrl;
     try {
-      if (localStorage.getItem("shosai-stage-lang") === "en") return "en";
+      if (localStorage.getItem("gamma:shosai-stage-lang") === "en") return "en";
     } catch (_) { /* プライベートモード等では既定の日本語のまま */ }
     return "ja";
   })();

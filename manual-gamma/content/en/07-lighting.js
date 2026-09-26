@@ -101,7 +101,8 @@ ${table(["Kind", "What it covers", "Try it in"], [
   ["Strobe and chases", "Flashing and lighting fixtures in sequence", "F-3"],
   ["Lasers, cyc and haze", "Beam, sheet and tunnel lasers, cyclorama colour, amount of haze", "F-4"]
 ])}
-<p>To show one view large: ${kbd("F")} for the front, ${kbd("p")} for the plan, ${kbd("O")} for the side view. The side view switches between ${ui("Stage right")} and ${ui("Stage left")}. The interface skin (warm black / blue black) applies here as on the Stage tab.</p>`
+<p>To show one view large: ${kbd("F")} for the front, ${kbd("p")} for the plan, ${kbd("O")} for the side view. The side view switches between ${ui("Stage right")} and ${ui("Stage left")}. The interface skin (warm black / blue black) applies here as on the Stage tab.</p>
+${vid("lighting-cue-apply", "In F-1, create an LX cue in Lighting Design and apply it to the show.")}`
       },
       {
         id: "lx-apply", title: "Applying LX cues (to the show, backups, other tabs)", status: "sourced",

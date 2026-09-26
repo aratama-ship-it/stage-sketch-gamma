@@ -4,7 +4,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
 <title>Stage Sketch — read-only drawings</title>
-<link rel="stylesheet" href="/study-assets/style.css?v=20260926-poses1"><link rel="stylesheet" href="/stage-study.css?v=25"><link rel="stylesheet" href="/stage-study-navigation.css?v=1">
+<link rel="stylesheet" href="/study-assets/style.css?v=2026092633"><link rel="stylesheet" href="/stage-study.css?v=25"><link rel="stylesheet" href="/stage-study-navigation.css?v=1">
 <script src="/stage-study-sticky.js?v=5"></script><script src="/stage-study-pen.js?v=4"></script><script src="/stage-study-navigation.js?v=1"></script><script src="/stage-study-frame.js?v=6"></script></head>
 <body class="study-frame" data-view="both">
 <div class="study-drawings"><div class="study-drawing study-front"></div><div class="study-drawing study-plan"></div></div>
@@ -25,7 +25,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.32</span>
+              <span class="stage-app-version">0.2.35</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo"
@@ -219,6 +219,7 @@
                           aria-keyshortcuts="Meta+S Control+S">ショーを書き出す</button>
                   <label class="stage-minor-action stage-import-label">ショーを読み込む<input type="file" id="stage-import-json" accept="application/json" hidden></label>
                 </div>
+                <p class="stage-version-note stage-project-import-note">β（旧版）のショーは、βで書き出したJSONをここで読み込んでください。γはβの保存を読みません。</p>
               </div>
               <!-- 本人指定で入口を一時非表示。テンプレートと作成機能は復帰できるよう残す。 -->
               <button type="button" class="stage-minor-action" id="stage-beat-templates-open" hidden>構成テンプレートから作る</button>
@@ -423,6 +424,14 @@
             <input type="range" id="stage-brush-size" min="12" max="120" step="2" value="42">
             <button type="button" class="stage-minor-action" id="stage-clear-paint">背景の塗りだけ消す</button>
               </section>
+
+            <!-- 床を這う霧（ロースモーク・2026-09-26 W4）。このシーンだけの効果。0で無し -->
+            <div class="stage-lowfog-block">
+              <label class="stage-control-label stage-range-label" for="stage-lowfog">
+                床を這う霧（ロースモーク） <span id="stage-lowfog-value">なし</span>
+              </label>
+              <input type="range" id="stage-lowfog" min="0" max="100" step="5" value="0">
+            </div>
 
             <!-- スクリーンの文字。技名・擬音・字幕を背景へ映す -->
             <div class="stage-screentext-block" id="stage-screentext-block" data-tablet-break-before>
@@ -999,6 +1008,9 @@
                       <option value="tshirt">Tシャツ</option>
                       <option value="longtee">長袖シャツ</option>
                       <option value="tank">タンクトップ</option>
+                      <option value="leotard">レオタード</option>
+                      <option value="unitard">ユニタード</option>
+                      <option value="tsunagi">つなぎ</option>
                     </select>
                     <input type="color" id="stage-costume-top-color" value="#a84b26" aria-label="上衣の色">
                   </div>
@@ -1009,6 +1021,14 @@
                       <option value="shorts">半ズボン</option>
                     </select>
                     <input type="color" id="stage-costume-bottom-color" value="#3a3f4a" aria-label="下衣の色">
+                  </div>
+                  <div class="stage-costume-row">
+                    <label class="stage-control-label" for="stage-costume-gloves">手袋</label>
+                    <select id="stage-costume-gloves" class="stage-select">
+                      <option value="none">なし（素手）</option>
+                      <option value="gloves">手袋</option>
+                    </select>
+                    <input type="color" id="stage-costume-gloves-color" value="#f2efe8" aria-label="手袋の色">
                   </div>
                 </div>
               </div>
@@ -2494,6 +2514,30 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0235-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0235-title">v0.2.35（未公開候補）</h3><time datetime="2026-09-26">2026-09-26</time></header>
+      <ul><li>γ専用の保存領域へ分離します。βのショーはβでJSONを書き出し、γへ手動で読み込んでください。</li><li>γの表示設定は一度だけ既定値へ戻ります。保存済みのγショーは保持します。</li><li>自動整理と初期化はγの領域だけを対象にします。</li></ul>
+    </section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0234-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0234-title">v0.2.34</h3>
+        <time datetime="2026-09-26">2026-09-26</time>
+      </header>
+      <ul>
+        <li>相手に乗る姿勢5件（手の上で倒立・足の上に立つ・肩の上に立つ・肩車の上・抱かれる側）。乗る側は下の人の手・足裏・肩の高さへ自動で乗ります</li>
+        <li>背景の窓に「床を這う霧（ロースモーク）」を追加（シーンごと）。大道具に「ホイール・オブ・デス」「バンジー」の形</li>
+      </ul>
+    </section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0233-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0233-title">v0.2.33</h3>
+        <time datetime="2026-09-26">2026-09-26</time>
+      </header>
+      <ul>
+        <li>衣装の上衣に一続きの服3種（レオタード・ユニタード・つなぎ）を追加。選ぶと下衣の欄は使わない表示になります</li>
+        <li>衣装に手袋（色つき）を追加</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0232-title">
       <header class="stage-release-entry-head"><h3 id="stage-release-v0232-title">v0.2.32</h3><time datetime="2026-09-26">2026-09-26</time></header>
       <ul>
@@ -3689,10 +3733,10 @@
 </div></div>
 <script src="/study-assets/stage-venues.js?v=2026092525"></script>
 <script src="/study-assets/stage-venue-lines.js?v=2026091992"></script>
-<script src="/study-assets/stage-i18n.js?v=20260926-release32"></script>
+<script src="/study-assets/stage-i18n.js?v=20260926-isolation35"></script>
 <script src="/study-assets/stage-set-model.js?v=2026092354"></script>
 <script src="/study-assets/stage-machinery.js?v=20260925-ui1"></script>
 <script src="/study-assets/gamma-ui.js?v=20260925-ui1"></script>
 <script src="/study-assets/gamma-ui-i18n.js?v=20260925-ui1"></script>
-<script src="/study-assets/stage-sketch.js?v=20260926-release32"></script>
+<script src="/study-assets/stage-sketch.js?v=20260926-isolation35"></script>
 </body></html>

@@ -325,7 +325,7 @@ const FILES = ["00-front", "01-start", "02-screen", "03-show-scenes", "04-cast",
   let i = 0;
   const next = () => {
     if (i >= list.length) { window.dispatchEvent(new Event("manual-ready")); return; }
-    const sc = document.createElement("script"); sc.src = list[i++]; sc.onload = next;
+    const sc = document.createElement("script"); sc.src = list[i++] + "?v=20260926-followup34"; sc.onload = next;
     sc.onerror = () => { console.error("読み込めません: " + sc.src); next(); };
     document.body.appendChild(sc);
   };

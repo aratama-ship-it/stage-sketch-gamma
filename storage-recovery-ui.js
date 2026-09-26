@@ -19,14 +19,12 @@
     $("eligible").textContent = `${eligible.length}件 · ${size(eligible.reduce((sum, row) => sum + row.bytes, 0))}`;
     $("repair").disabled = busy || eligible.length === 0;
     const list = $("breakdown"); list.replaceChildren();
-    let other = 0;
     for (const row of rows) {
-      if (!/^(?:gamma:|shosai-stage-)/.test(row.key)) { other += row.bytes; continue; }
+      if (!row.key.startsWith("gamma:")) continue;
       const li = document.createElement("li"), label = document.createElement("span"), key = document.createElement("code");
       label.textContent = `${row.kind || "使用中のデータ・設定"} · ${size(row.bytes)} `;
       key.textContent = row.key; li.append(label, key); list.append(li);
     }
-    if (other) { const li = document.createElement("li"); li.textContent = `他のアプリの保存分 · ${size(other)}`; list.append(li); }
   }
   async function renderArchives() {
     const records = await model.summaries();
@@ -41,7 +39,8 @@
         + (record.compressed ? `（圧縮前 ${size(record.rawBytes)}）` : "");
       key.textContent = isShow ? record.projectId : record.key;
       restore.type = "button"; restore.textContent = isShow ? "ショー一覧へ戻す" : "元の場所へ戻す";
-      restore.disabled = busy;
+      restore.disabled = busy || !record.key.startsWith("gamma:");
+      if (!record.key.startsWith("gamma:")) restore.textContent = "βの控えは書き出しのみ";
       restore.addEventListener("click", () => run(async () => {
         await model.restore(record.id);
         setResult(isShow ? `「${record.title}」をショー一覧へ戻しました。保管先の控えも残しています。`

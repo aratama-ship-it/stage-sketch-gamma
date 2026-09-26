@@ -8,8 +8,8 @@
     const local = Number.isFinite(totalBytes) && totalBytes >= 0 ? totalBytes : null;
     const ratio = Number.isFinite(usage) && usage >= 0 && Number.isFinite(quota) && quota > 0
       ? usage / quota : null;
-    const level = failed ? 3 : local >= 4 * MiB || ratio >= 0.9 ? 2
-      : local >= 3.5 * MiB || ratio >= 0.8 ? 1 : 0;
+    const level = failed ? 3 : local >= 4 * MiB ? 2
+      : local >= 3.5 * MiB ? 1 : 0;
     return {level, totalBytes:local, ratio, usage, quota, failed, estimateStale};
   }
   function createPolicy({now = Date.now} = {}) {
@@ -79,8 +79,8 @@
           'More data may prevent edits from saving or shows from switching. Export your show, then review storage.');
       const lines = [];
       if (state.totalBytes !== null) lines.push(text(`ショーなどの文字データ: 約 ${size(state.totalBytes)}`, `Show and text storage: about ${size(state.totalBytes)}`));
-      if (state.ratio !== null) lines.push(text(`音源・控え等を含むサイト領域: 推定上限の約 ${Math.round(state.ratio * 100)}%`,
-        `Site storage including audio and backups: about ${Math.round(state.ratio * 100)}% of the estimated quota`));
+      if (state.ratio !== null) lines.push(text(`このサイトの他のアプリも含む保存領域: 推定上限の約 ${Math.round(state.ratio * 100)}%`,
+        `Site storage (including other apps on this origin): about ${Math.round(state.ratio * 100)}% of the estimated quota`));
       if (state.ratio !== null && state.estimateStale) lines.push(text('再計測できないため、サイト領域は直前の推定値を表示しています。',
         'The site estimate could not be refreshed; the last available value is shown.'));
       el('usage').textContent = lines.join('\n');

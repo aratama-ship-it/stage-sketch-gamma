@@ -687,7 +687,7 @@
   function workspaceShortcutBlocked(event) {
     const target=event.target?.nodeType===1?event.target:null;
     if(target && (target.isContentEditable || target.closest('input, textarea, select, [contenteditable="true"]'))) return true;
-    return [...document.querySelectorAll('[role="dialog"][aria-modal="true"]')]
+    return [...document.querySelectorAll('[role="dialog"][aria-modal="true"], [role="alertdialog"][aria-modal="true"]')]
       .some(dialog=>!dialog.hidden && dialog.getClientRects().length>0);
   }
   function activateWorkspaceShortcut(key) {
@@ -732,7 +732,7 @@
     const context=host.context();latestContext=context;editor().open(context,mode);scheduleFrameHeight();
   });
   window.addEventListener('storage',event=>{
-    if(event.key==='shosai-stage-sketch-v1' || event.key==='gamma:shosai-stage-sketch-v1') editor()?.externalChange();
+    if(event.key===window.SHOSAI_GAMMA_STORAGE_KEYS?.currentShow) editor()?.externalChange();
   });
   window.addEventListener('resize',scheduleFrameHeight);
   window.visualViewport?.addEventListener('resize',scheduleFrameHeight);

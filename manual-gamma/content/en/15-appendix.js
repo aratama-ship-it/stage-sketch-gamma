@@ -74,13 +74,13 @@ ${table(["Key", "What it does"], [
 <p>The number on the left is the app's number (section-scene). The code at the start of the scene name (A-1 and so on) is the scene code this booklet uses. Scene names are data and stay in Japanese.</p>
 ${table(["App number", "Scene", "What to check"], [
   ["1-1", "0-1 このショーは機能の試験場 (this show is the testing ground)", "How to use the show (the description lists what to check)"],
-  ["2-1 / 2-2", "A-1 / A-2 all poses (78 / 79)", "With three context-help performers and 45 in J-1: all 205 poses; both kinds of lock"],
+  ["2-1 / 2-2", "A-1 / A-2 all poses (78 / 79)", "With three context-help performers and J-1, plus new partner poses: all 210 poses; both kinds of lock"],
   ["2-3", "A-3 eight facings, size, look", "Facing, size, costume"],
   ["2-4 / 2-5", "A-4 standing, first steps / A-5 walking, curves, stops", "Walking transitions and curved routes"],
   ["3-1–3-5", "B-1 two in a line / B-2 four in a diamond / B-3 eight in two staggered rows / B-4 sixteen in two triangles / B-5 twenty in a line (limit)", "Formations"],
   ["3-6 / 3-7", "B-6 twenty, loose (build from here) / B-7 conditions that block selection", "Multiple-selection rules"],
   ["4-1 / 4-2", "C-1 everything on the floor / C-2 prop registration and holding", "Set pieces and held items"],
-  ["4-3–4-5", "C-3 every defined shape (69 / 68 / 68)", "205 shapes, including those treated as set pieces"],
+  ["4-3–4-5", "C-3 every defined shape (69 / 69 / 69)", "207 shapes, including those treated as set pieces"],
   ["4-6 / 4-7", "C-4 aerial and apparatus / C-5 flown, riding, backstage", "Aerial and flown"],
   ["4-8 / 4-9", "C-6 saved sets / C-7 wall angles (0, 45, 90°)", "Saved sets and walls"],
   ["5-1–5-3", "D-1 lifts and revolve / D-2 moving deck, water and pool floor / D-3 six curtains and scrim transparency", "Stage machinery"],
@@ -95,12 +95,14 @@ ${table(["App number", "Scene", "What to check"], [
 <p>Remove the testing ground from All shows and reload the page, and it comes back in its original state. Break it as much as you like.</p>`
       },
       {
-        id: "release-history", title: "Update history (published through v0.2.32)", status: "sourced",
+        id: "release-history", title: "Update history (published through v0.2.34)", status: "sourced",
         keywords: ["update", "history", "release", "version", "new", "changed", "changelog", "v0.2"],
         html: `
 <p>A short summary of the published history under the bell icon, linked to sections of this booklet. For exact published wording see the app's own history.</p>
 ${fig("43-release-history", "The update history in the app (newest first). A red dot on the bell marks something new.", "Update history")}
 ${table(["Version", "Date", "Main changes", "Section"], [
+  ["v0.2.34", "2026-09-26", "Five partner riding poses, low fog, Wheel of death and Bungee rig. 210 poses and 207 shapes. Rigpoint supports reading and rendering only", ref("aerial", "4-8")],
+  ["v0.2.33", "2026-09-26", "Add Leotard, Unitard, Coverall and Gloves", ref("costume", "4-4")],
   ["v0.2.32", "2026-09-26", "Enable sharing on Gamma's dedicated host and update English labels and both booklet editions", ref("share", "11-4")],
   ["v0.2.31", "2026-09-26", "Seven instrument poses and a fix for props drawn twice; 205 poses in all", ref("poses", "4-3")],
   ["v0.2.30", "2026-09-26", "Ten large circus apparatus shapes and two backstage / scene-change shapes added. 205 definitions in all; these are shapes without performer-rigging motion", ref("sets", "4-6")],
@@ -141,11 +143,12 @@ ${table(["Version", "Date", "Main changes", "Section"], [
         keywords: ["booklet", "manual", "correct", "update", "how it is made", "screenshots", "retake", "version", "error", "mistake", "english edition"],
         html: `
 <ul>
-<li>Written for Stage Sketch Gamma v0.2.32 (2026-09-26). Most pictures and videos were taken from the published v0.2.16. The pose pictures were retaken on v0.2.29, and the Add set piece and Add prop pictures on v0.2.26 (with the app in English for the English edition). Pose strips visible in other pictures still show the earlier design.</li>
+<li>Written for Stage Sketch Gamma v0.2.34 (2026-09-26). Most pictures and videos were taken from the published v0.2.16. The pose pictures were retaken on v0.2.29, and the Add set piece and Add prop pictures on v0.2.26 (with the app in English for the English edition). Pose strips visible in other pictures still show the earlier design.</li>
 <li>The text lives in per-part files under <code>manual-gamma/content/en/</code> (English) and <code>manual-gamma/content/</code> (Japanese); this page assembles it. Section links are the same in both languages.</li>
 <li>Screenshots are retaken with the capture scripts in <code>manual-gamma/tools/</code>, against the published version, in either language.</li>
 <li>The marks on each section (checked on screen / from the app's wording / not yet checked) record how the section was verified when written. When the app changes, the “not yet checked” sections are reviewed first.</li>
 <li>If you spot a mistake, tell us with ${ui("Send feedback")} in the app and mention “booklet part … section …”. The § on each heading copies a link to that section.</li>
+<li>The four new costume, partner-pose, low-fog and shape pictures were captured separately in Japanese and English at 1920×1080 from unpublished local candidate v0.2.35 containing the v0.2.34 features.</li>
 </ul>`
       }
     ]

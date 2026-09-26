@@ -58,9 +58,9 @@
       + "全て消して初期状態に戻します。元に戻せません。よろしいですか？"
     )) { stripParamAndContinue(); return false; }
     const EXACT_KEYS = [
-      "gamma:shosai-stage-agent-permission-v1", "gamma:shosai-stage-sketch-v1", "shosai-stage-sketch-v1",
-      "shosai-stage-shows-v1", "gamma:new-show-return-v1", "gamma:shosai-stage-shows-broken-v1",
-      "gamma:stage-project-backup-reset-v1", "gamma:shosai-stage-shows-v1", "shosai-stage-prefs-v1",
+      "gamma:shosai-stage-agent-permission-v1", "gamma:shosai-stage-sketch-v1",
+      "gamma:new-show-return-v1", "gamma:shosai-stage-shows-broken-v1",
+      "gamma:stage-project-backup-reset-v1", "gamma:shosai-stage-shows-v1",
       "gamma:shosai-stage-prefs-v1", "gamma:shosai-stage-tablet-view",
       "gamma:shosai-stage-tour-v1", "gamma:shosai-stage-release-history-seen-v1", "gamma:shosai-stage-last-user-v1",
       "gamma:shosai-stage-lang", "gamma:shosai-stage-models-v1", "gamma:shosai-cast-handoff-v1",
@@ -70,11 +70,9 @@
       "gamma:shosai.lightDesigns.v1", "gamma:shosai.lightDesigns.beforeOptionB.v1",
       "gamma:shosai-fpv-lens-v2", "gamma:shosai-fpv-house-v2", "gamma:shosai-fpv-crowd-v1", "gamma:shosai-fpv-panels-v1",
       "gamma:vox-panel-size-v1", "gamma:vox-panel-height-v1", "gamma:script-editor-widths-v1",
-      "shosai-stage-shows-v1-pre-section-hierarchy-v1",
     ];
     const PREFIXES = [
       "gamma:scene-alternatives-v1:", "gamma:lighting-draft-v1:",
-      "shosai-stage-sketch-v1-pre-section-hierarchy-v1:",
     ];
     const DB_NAMES = ["gamma:stage-project-backups-v1", "gamma:scene-alternatives-audio-v1", "gamma:shosai-stage-audio", "gamma:storage-recovery-archive-v1"];
     const CACHE_PREFIX = "stage-sketch-gamma-";
@@ -386,6 +384,10 @@
   const alternativesKeys = ["shosai-stage-sketch-v1", "shosai-stage-shows-v1"];
   const mappedAlternativesKey = name => alternativesKeys.includes(name)
     ? "gamma:scene-alternatives-v1:" + name : name;
+  window.SHOSAI_GAMMA_STORAGE_KEYS = Object.freeze({
+    currentShow: mappedAlternativesKey(alternativesKeys[0]),
+    showShelf: mappedAlternativesKey(alternativesKeys[1]),
+  });
   const rawStorage = STUDY_READ_ONLY ? null : (window.localStorage || globalThis.localStorage || {});
   const storageBaseline = new Map();
   if (rawStorage) for (const name of alternativesKeys) {
@@ -397,7 +399,7 @@
   const alternativesStorage = new Proxy(rawStorage || {}, {
     get(target, key) {
       const mapped = mappedAlternativesKey;
-      if (key === "getItem") return name => target.getItem(mapped(name)) ?? target.getItem(name);
+      if (key === "getItem") return name => target.getItem(mapped(name));
       if (key === "setItem") return (name, value) => {
         if (alternativesStorageBlocked && mapped(name) !== name) throw new Error("保存原本を保護しています");
         const destination = mapped(name);
@@ -413,7 +415,7 @@
           const error = new Error("別のタブで保存内容が変わりました"); error.name = "StorageConflictError"; throw error;
         }
         target.removeItem(destination);
-        if (destination !== name) { storageBaseline.set(destination, null); target.removeItem(name); }
+        if (destination !== name) storageBaseline.set(destination, null);
       };
       const value = Reflect.get(target, key, target);
       return typeof value === "function" ? value.bind(target) : value;
@@ -1995,7 +1997,7 @@
   // 既存の iPad ワークスペースをそのまま使い、途中でDOMを戻して壊さないため。
   const bootPrefs = (() => {
     try {
-      const value = JSON.parse(localStorage.getItem("shosai-stage-prefs-v1") || localStorage.getItem("gamma:shosai-stage-prefs-v1") || "{}");
+      const value = JSON.parse(localStorage.getItem("gamma:shosai-stage-prefs-v1") || "{}");
       return value && typeof value === "object" ? value : {};
     } catch (_) { return {}; }
   })();
@@ -2093,7 +2095,6 @@
      ★消すのは舞台スケッチの6つだけ。他の画面のものは触らない。
      ?tour を付けると、消さずに案内だけ出す。 */
   const STAGE_KEYS = [
-    "shosai-stage-sketch-v1", "shosai-stage-shows-v1",
     "gamma:scene-alternatives-v1:shosai-stage-sketch-v1", "gamma:scene-alternatives-v1:shosai-stage-shows-v1",
     "gamma:shosai-stage-sketch-v1", "gamma:shosai-stage-shows-v1",
     "gamma:shosai-stage-tour-v1", "gamma:shosai-stage-lang", "gamma:shosai-stage-venues-v1",
@@ -2138,8 +2139,8 @@
     }
   }
 
-  // βと同じ保存キーを正本にする。旧Gammaキーは読み込み時に一度だけ移行する。
-  // 旧版の保存キーは読み込み移行用に残す。正本はβと同じキーへ切り替える。
+  // 論理キーは旧版と同名でも、保存先は Proxy が gamma:scene-alternatives-v1: へ写像する。
+  // 旧Gammaキーだけを読み込み時に移行し、βの物理キーは参照しない。
   const STORAGE_KEY = "gamma:shosai-stage-sketch-v1";
   const BETA_STORAGE_KEY = "shosai-stage-sketch-v1";
   const SHOWS_KEY = "shosai-stage-shows-v1";
@@ -2177,7 +2178,7 @@
   const PROJECT_BACKUP_RESET_KEY = "gamma:stage-project-backup-reset-v1";
   const LEGACY_STORAGE_KEY = "gamma:shosai-stage-sketch-v1";
   const LEGACY_SHOWS_KEY = "gamma:shosai-stage-shows-v1";
-  const PREFS_KEY = "shosai-stage-prefs-v1";
+  const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
   const RELEASE_HISTORY_CURRENT = "v0.3.6-2026-09-12";
@@ -10140,7 +10141,6 @@
     if (STUDY_READ_ONLY) return { value: baseState(false), restored: false };
     try {
       const modernRaw = rawStorage.getItem(mappedAlternativesKey(BETA_STORAGE_KEY));
-      const legacyRaw = rawStorage.getItem(BETA_STORAGE_KEY);
       let saved = localStorage.getItem(BETA_STORAGE_KEY);
       if (!saved) {
         saved = localStorage.getItem(LEGACY_STORAGE_KEY);
@@ -10150,28 +10150,6 @@
       }
       if (saved) {
         const parsed = JSON.parse(saved);
-        let updateLegacyModernBaseline = false;
-        if (sceneAlternatives && parsed?.project && legacyRaw) {
-          const oldState = JSON.parse(legacyRaw);
-          if (!oldState?.project) {
-            // The older flat format is handled by normalizeState below.
-          } else if (!modernRaw) {
-            parsed.alternativesLegacy = sceneAlternatives.legacyBaseline(oldState.project, legacyRaw);
-            updateLegacyModernBaseline = true;
-          } else if (!parsed.alternativesLegacy) {
-            // A local pre-release alternative save has no migration marker yet.
-            parsed.alternativesLegacy = sceneAlternatives.legacyBaseline(oldState.project, legacyRaw);
-            updateLegacyModernBaseline = true;
-          } else {
-            if (!parsed.alternativesLegacy.modern) updateLegacyModernBaseline = true;
-            const oldBaseline = sceneAlternatives.legacyBaseline(oldState.project, legacyRaw);
-            if (oldBaseline.sourceHash !== parsed.alternativesLegacy.sourceHash) {
-              if (!sceneAlternatives.reconcileLegacy(parsed.project, oldState.project, parsed.alternativesLegacy)) {
-                alternativesStorageBlocked = true;
-              } else { parsed.alternativesLegacy = oldBaseline; updateLegacyModernBaseline = true; }
-            }
-          }
-        }
         const needsSectionMigration = Boolean(parsed && !parsed.project && Array.isArray(parsed.pieces))
           || hasUnsectionedSceneRows(parsed);
         const normalized = normalizeState(parsed);
@@ -10183,9 +10161,6 @@
         if (["sample-eight-circus-v1", "sample-seam-garden-v1", "romeo-juliet-gamma-cued-2026-09-21"]
           .includes(normalized.project?.id)) {
           backfillVenueSetupAppliedAt(normalized.project);
-        }
-        if (updateLegacyModernBaseline && normalized.alternativesLegacy && !alternativesStorageBlocked) {
-          normalized.alternativesLegacy.modern = sceneAlternatives.legacyBaseline(normalized.project, null);
         }
         return {
           value: normalized,
@@ -10262,7 +10237,7 @@
     const texts = [snapshot(), ...history, ...future];
     for (let i = 0; i < rawStorage.length; i++) {
       const key = rawStorage.key(i);
-      if (/^(?:gamma:(?:scene-alternatives-v1:)?)?shosai-stage-(?:sketch|shows)(?:-broken)?-v1(?:$|-pre-section-hierarchy-v1)/.test(key)) {
+      if (/^gamma:(?:scene-alternatives-v1:)?shosai-stage-(?:sketch|shows)(?:-broken)?-v1(?:$|-pre-section-hierarchy-v1)/.test(key)) {
         texts.push(rawStorage.getItem(key));
       }
     }
@@ -29764,7 +29739,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const content = window.MANUAL_CONTENT || {};
     const gamma = content.edition === "gamma" && content.booklet;
     const appVersion = (document.querySelector('meta[name="stage-sketch-gamma-version"]') || {}).content || "";
-    const query = gamma ? `?lang=${lang === "ja" ? "ja" : "en"}${appVersion ? `&app=${encodeURIComponent(appVersion)}` : ""}` : "";
+    const query = `?lang=${lang === "ja" ? "ja" : "en"}${gamma && appVersion ? `&app=${encodeURIComponent(appVersion)}` : ""}`;
     return `${gamma ? content.booklet : "manual/manual.html"}${query}${sectionId ? `#${sectionId}` : ""}`;
   }
 
@@ -29902,10 +29877,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
      案内を見たかどうか・組んだセットの型・読み込んだ音源（IndexedDB）。
      書き出し済みのファイルは端末の外にあるので消えない。 */
   const RESET_KEYS = [
-    BETA_STORAGE_KEY, SHOWS_KEY, SHOWS_BROKEN_KEY, PROJECT_BACKUP_RESET_KEY, PREFS_KEY, TOUR_KEY,
+    mappedAlternativesKey(BETA_STORAGE_KEY), mappedAlternativesKey(SHOWS_KEY),
+    SHOWS_BROKEN_KEY, PROJECT_BACKUP_RESET_KEY, PREFS_KEY, TOUR_KEY,
     LEGACY_STORAGE_KEY, LEGACY_SHOWS_KEY, LANG_KEY, STAGE_MODELS_KEY, CAST_HANDOFF_KEY, LAST_USER_KEY,
     STAGE_AI_PERMISSION_KEY, "gamma:shosai-stage-tablet-view",
-    `${SHOWS_KEY}-pre-section-hierarchy-v1`,
   ];
 
   let resetDialogStep = 0;
@@ -30164,7 +30139,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   let fullscreenTransitionPending = false;
 
   function fullscreenModalOpen() {
-    return [...document.querySelectorAll('[role="dialog"]')]
+    return [...document.querySelectorAll('[role="dialog"], [role="alertdialog"]')]
       .some((dialog) => dialog.getClientRects().length > 0);
   }
 

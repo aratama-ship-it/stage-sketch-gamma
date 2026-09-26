@@ -7,8 +7,9 @@
       const rows = recovery.scan();
       let total = 0, owned = 0, eligible = 0;
       for (const row of rows) {
+        if (!row.key.startsWith("gamma:")) continue;
         total += row.bytes;
-        if (/^(?:gamma:|shosai-stage-)/.test(row.key)) owned += row.bytes;
+        owned += row.bytes;
         if (row.kind) eligible += row.bytes;
       }
       // This is an early warning estimate, not a claim about the browser's actual quota.

@@ -43,6 +43,8 @@ ${table(["Item", "Meaning"], [
   [ui("Backdrop photo") + ", " + ui("Choose an image") + ", " + ui("Brightness"), "Lay one of your photos in as the backdrop. Brightness (%) darkens it (try G-3, brightness 60). " + ui("Remove photo") + " takes it away"],
   [ui("Edit backdrop"), "Enter backdrop editing; ✕ leaves it"]
 ])}
+<p>Adjust ${ui("Low fog (creeping smoke)")} from 0 to 100 in the Backdrop window. Zero means no fog. The amount belongs to the scene and is drawn near the floor in the front view and 3D (v0.2.34). It is separate from the haze across the lighting space.</p>
+${fig("72-low-fog", "The Backdrop window in G-4 with low fog set to 55.", "Low fog setting")}
 <p>The backdrop belongs to each scene. Photos are included in the show export (the file grows accordingly).</p>
 <p>Try it in: G-3 (screen text and backdrop photo) and G-4 (backdrop colour, blackout, transition note).</p>`
       },

@@ -86,7 +86,8 @@ ${fig("33-tab-script", "The Lines tab for a show with no script yet.", "Lines ta
 <li>${kbd("E")} shows the timeline. Undo is ${kbd("⌘Z")}.</li>
 <li>${ui("Export script")} — an A4 print page (print or PDF).</li>
 </ul>
-<p>The sample “Romeo and Juliet” contains a 47-line script. Lines marked as a proposal were added as staging suggestions and are not in the original text.</p>`
+<p>The sample “Romeo and Juliet” contains a 47-line script. Lines marked as a proposal were added as staging suggestions and are not in the original text.</p>
+${vid("dialogue-assign", "In H-3, add a script line and assign it to a dialogue cue.")}`
       },
       {
         id: "vox-panel", title: "The dialogue cue panel — the current line, large (vertical, bubbles, text size)", status: "verified",
@@ -116,7 +117,8 @@ ${table(["Group", "Sheet", "Contents"], [
   ["Not in the roster", "Unregistered pieces", "Pieces not registered as performers"]
 ])}
 ${fig("64-cuesheet-overall", "The master sheet opened with View: scenes down, performers across, with a dot where someone is on. A4 preview, Print and CSV at the top right.", "Master sheet")}
-<p>${ui("View")} opens the sheet full screen; ${ui("A4 preview")} (portrait or ${ui("Landscape")}) checks the print layout; ${ui("Print")} goes to the browser's print dialog; ${ui("CSV")} saves a file for spreadsheets. Performers appear in the order of the performer list. Cue names follow the numbering in ${ref("cues", "9-3")}, and nothing in the saved show changes.</p>`
+<p>${ui("View")} opens the sheet full screen; ${ui("A4 preview")} (portrait or ${ui("Landscape")}) checks the print layout; ${ui("Print")} goes to the browser's print dialog; ${ui("CSV")} saves a file for spreadsheets. Performers appear in the order of the performer list. Cue names follow the numbering in ${ref("cues", "9-3")}, and nothing in the saved show changes.</p>
+${vid("qsheet-print", "In H-3, open the master sheet, preview it in landscape A4 and open the printable page.")}`
       }
     ]
   });

@@ -599,6 +599,7 @@
     "ショー一覧を開く": "Open all shows",
     "作りかけのショーは一覧に残ります。": "The unfinished show stays in All shows.",
     "ショープロジェクトを書き出す": "Export show project",
+    "β（旧版）のショーは、βで書き出したJSONをここで読み込んでください。γはβの保存を読みません。": "To bring a show from the beta version, export its JSON there and import it here. Gamma does not read beta storage.",
     "ショープロジェクトを読み込む": "Import show project",
     /* 2026-09-17: 劇場反映の選択を2択にまとめたときの文言 */
     "照明機材を自動で組む（プリセット）": "Build the lighting rig automatically (preset)",

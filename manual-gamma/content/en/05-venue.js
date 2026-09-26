@@ -25,7 +25,8 @@ ${fig("30-tab-venue", "The Theatre settings tab: presets and steps on the left, 
 <li>Press ${ui("Apply the preset")} at the end of the list, or double-click an entry, to load that preset's shape into the plan (v0.2.14).</li>
 <li>Thrust, in-the-round, arena and dome presets include rear exit wings.</li>
 </ul>
-<p>If you apply a preset without changing its shape, no new custom venue is made; the preset is used as it is. If you change the shape, a new venue is saved when you apply it (${ref("venue-apply", "5-4")}).</p>`
+<p>If you apply a preset without changing its shape, no new custom venue is made; the preset is used as it is. If you change the shape, a new venue is saved when you apply it (${ref("venue-apply", "5-4")}).</p>
+${vid("venue-preset", "In A-3, choose a thrust stage and apply it to the show without adding lighting equipment.")}`
       },
       {
         id: "venue-steps", title: "The nine steps (format, main shape, extra stages, ceiling, house, wings, walls, machinery, viewpoints)", status: "sourced",

@@ -16,7 +16,7 @@
  */
 window.MANUAL = {
   updated: "2026-09-26",
-  appVersion: "v0.2.32",
+  appVersion: "v0.2.34",
   lang: window.MANUAL_LANG === "en" ? "en" : "ja",
   sub: window.MANUAL_LANG === "en"
     ? "For everyone using Stage Sketch Gamma (the free test version). There is no need to read it front to back. When you are stuck, type a word into the box below — symptoms work too. The contents on the left jump as well."
@@ -33,7 +33,7 @@ window.H = (function () {
   const ref = (id, label) => '<a href="#' + esc(id) + '">' + (label ? esc(label) : "→ 関連の節") + "</a>";
   const fig = (file, cap, alt) => { const p = pick(file); const d = p.size ? ' width="' + p.size[0] + '" height="' + p.size[1] + '"' : "";
     return '<figure class="shot"><a class="frame" href="' + p.src + '" data-lightbox><img loading="lazy" decoding="async" src="' + p.src + '"' + d + ' alt="' + esc(alt || cap || file) + '"></a><figcaption><span class="fno"></span>' + (cap || "") + '</figcaption><p class="missing">' + (EN ? "This image has not been captured yet (" : "この画像はまだ採取していません（") + esc(p.src) + (EN ? ")." : "）。") + "</p></figure>"; };
-  const vid = (file, cap) => '<figure class="shot video"><div class="frame"><video controls muted loop playsinline preload="metadata" width="1280" height="800" src="' + ((EN && (window.VIDEOS_EN || []).includes(file)) ? "video/en/" : "video/") + esc(file) + '.mp4"></video></div><figcaption><span class="fno"></span>' + (cap || "") + '</figcaption><p class="missing">' + (EN ? "This video has not been recorded yet." : "この動画はまだ収録していません。") + "</p></figure>";
+  const vid = (file, cap) => { const size=((window.VIDEO_SIZES||{})[EN?'en':'ja']||{})[file]||[1280,800];const version=((window.VIDEO_VERSIONS||{})[EN?'en':'ja']||{})[file];return '<figure class="shot video"><div class="frame"><video controls muted loop playsinline preload="metadata" width="' + size[0] + '" height="' + size[1] + '" src="' + ((EN && (window.VIDEOS_EN || []).includes(file)) ? "video/en/" : "video/") + esc(file) + '.mp4' + (version ? '?v='+version : '') + '"></video></div><figcaption><span class="fno"></span>' + (cap || "") + '</figcaption><p class="missing">' + (EN ? "This video has not been recorded yet." : "この動画はまだ収録していません。") + "</p></figure>"; };
   const steps = (arr) => '<ol class="steps">' + arr.map((s) => "<li>" + s + "</li>").join("") + "</ol>";
   const note = (title, body, warn) => '<div class="note' + (warn ? " warn" : "") + '">' + (title ? '<span class="nt">' + esc(title) + "</span>" : "") + body + "</div>";
   const table = (head, rows, opts) => '<div class="table-wrap"><table class="m-table' + (opts && opts.center ? " center" : "") + '">' + (head ? "<thead><tr>" + head.map((h) => "<th>" + h + "</th>").join("") + "</tr></thead>" : "") + "<tbody>" + rows.map((r) => "<tr>" + r.map((c, i) => (i === 0 && opts && opts.rowHead ? "<th>" : "<td>") + c + (i === 0 && opts && opts.rowHead ? "</th>" : "</td>")).join("") + "</tr>").join("") + "</tbody></table></div>";

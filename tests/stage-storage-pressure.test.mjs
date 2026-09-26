@@ -14,8 +14,8 @@ test('separate text and origin quotas; missing estimates are not percentages', (
   assert.equal(api.classify({totalBytes:3.5 * MiB - 1}).level, 0);
   assert.equal(api.classify({totalBytes:3.5 * MiB}).level, 1);
   assert.equal(api.classify({totalBytes:4 * MiB}).level, 2);
-  assert.equal(api.classify({usage:80, quota:100}).level, 1);
-  assert.equal(api.classify({usage:90, quota:100}).level, 2);
+  assert.equal(api.classify({usage:80, quota:100}).level, 0);
+  assert.equal(api.classify({usage:90, quota:100}).level, 0);
   assert.equal(api.classify({totalBytes:4 * MiB, usage:1, quota:10000}).level, 2);
   for (const bad of [{}, {usage:10,quota:0}, {usage:-1,quota:10}, {usage:Infinity,quota:Infinity}]) {
     assert.equal(api.classify(bad).ratio, null);
@@ -79,7 +79,7 @@ test('only quota errors use the storage-full warning', () => {
 test('shipping HTML loads the monitor before the app; offline shell contains the exact module', () => {
   const html = fs.readFileSync(new URL('../stage.html', import.meta.url), 'utf8');
   const sw = fs.readFileSync(new URL('../stage-sw.js', import.meta.url), 'utf8');
-  const module = html.match(/stage-storage-pressure.js\?v=\d+/)[0];
+  const module = html.match(/stage-storage-pressure.js\?v=[\w-]+/)[0];
   assert.ok(sw.includes(module));
   assert.ok(html.indexOf(module) < html.indexOf('<script src="stage-sketch.js?'));
   assert.match(html, /<dialog[^>]+stage-storage-pressure-dialog/);
@@ -128,10 +128,10 @@ test('a hanging estimate times out once without accumulating unresolved requests
 });
 test('a failed refresh retains the last high estimate instead of claiming recovery', async () => {
   let calls=0;const h=browserHarness({estimate:()=>++calls===1?Promise.resolve({usage:95,quota:100}):Promise.reject(Error('unavailable'))});
-  h.setBytes(fixtureBytes);h.advance(0);await new Promise(resolve=>setImmediate(resolve));
-  assert.ok(h.dialog.open);
+  h.setBytes(3.5 * MiB);h.advance(0);await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(h.dialog.open, true);
   h.advance(60000);await new Promise(resolve=>setImmediate(resolve));
-  assert.ok(h.dialog.open);
+  assert.equal(h.dialog.open, true);
   assert.match(h.doc.getElementById('stage-storage-pressure-usage').textContent,/95%/);
   assert.match(h.doc.getElementById('stage-storage-pressure-usage').textContent,/直前/);h.monitor.stop();
 });
