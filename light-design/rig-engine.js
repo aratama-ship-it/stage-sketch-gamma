@@ -1114,9 +1114,23 @@
     return p;
   };
 
+  /* 駒は登録順でなく、見る側からの奥行き順に塗る。元の保存配列は並べ替えない。 */
+  function stagePieceDepth(piece, view) {
+    if (view === "shimote") return 1 - finite(piece.u, 0.5);
+    if (view === "kamite") return finite(piece.u, 0.5);
+    return finite(piece.v, 0.5);
+  }
+  function orderStagePieces(pieces, view = "front") {
+    return (Array.isArray(pieces) ? pieces : []).slice().sort((a, b) => {
+      const people = Number(a.kind === "performer") - Number(b.kind === "performer");
+      if (view === "plan") return people || ((finite(a.base, 0) + finite(a.hM, 0)) - (finite(b.base, 0) + finite(b.hM, 0)));
+      return stagePieceDepth(a, view) - stagePieceDepth(b, view) || people;
+    });
+  }
+
   root.RIG_ENGINE = Object.freeze({
     DEFAULT_DIMS, FLOOR_FIXTURE_Z, SIDE_OFFSET_M, CYC_MOUNT_V, CYC_REACH_MAX, HOUSE_AHEAD_MAX, cycBarSpan, SPEED_PERIOD_MS, PLANE_VALUES, PLANE_LABEL,
-    clamp, finite,
+    clamp, finite, stagePieceDepth, orderStagePieces,
     newTruss, newFixture, isMoving, isLaser, beamDegOf, spotRadiusM, spotEllipse, spotFalloff, beamLanding, trussById, trussRow, fixtureWorld,
     newPoint, newLightCue, levelOf, isLit, levelAt, beamDegAt, strobeMul, paramPhase, mountSpot, GOBOS, goboById, goboAngleAt, goboPath, constrainPointToSurface, periodMs, groupEffect,
     pointWorld, planeVec, circleOffset, eightOffset, targetAt, pathGuide, mirrorMount, mirrorAimCompatible, mirrorAimPoint, mirrorAimPath,

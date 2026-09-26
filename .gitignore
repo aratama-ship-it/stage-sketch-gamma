@@ -250,6 +250,8 @@ public-dist/
 !/tests/
 /tests/*
 !/tests/bundled-sample-timing.test.mjs
+!/tests/rj-palette-ss-placement.test.mjs
+!/tests/light-stage-depth.test.mjs
 !/tests/unknown-saved-ids.test.mjs
 !/tests/pose-groups.test.mjs
 !/tests/stage-manual-gamma.test.mjs

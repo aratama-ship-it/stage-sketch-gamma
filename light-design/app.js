@@ -1407,7 +1407,7 @@
 
   function drawPiecesPlan(ctx, P, B) {
     const d = state.dims, pxM = B.w / d.W;
-    piecesOf().forEach((pc) => {
+    E.orderStagePieces(piecesOf(), "plan").forEach((pc) => {
       if (!showPiece(pc)) return;            // R-09: 種類ごとに出し入れする
       if (pc.kind === "curtain") { drawCurtainPlan(ctx, P, pc, d); return; }
       const q = P({ x: (pc.u - 0.5) * d.W, y: pc.v * d.D, z: 0 });
@@ -1553,19 +1553,46 @@
       return [{ S, T, level: level * VISUAL_GAIN, deg: beamOf(f), color: l.color, doors: frame ? E.frameDoors(f, l, axis) : [] }];
     });
   }
+  /* 消灯後に受光した人だけ塗り直す際も、手前の箱を突き抜けないようにする。
+     箱の実寸8頂点の投影を使い、重なる装置は一つずつclipする（重複で穴が戻らない）。 */
+  function clipForegroundSets(ctx, P, pieces, dims) {
+    const R = window.SHOSAI_SET_RENDER;
+    if (!R) return;
+    const cross = (a, b, c) => (b.X-a.X)*(c.Y-a.Y)-(b.Y-a.Y)*(c.X-a.X);
+    const hull = points => {
+      const pts = points.filter(p => Number.isFinite(p.X) && Number.isFinite(p.Y)).sort((a,b)=>a.X-b.X || a.Y-b.Y);
+      const lower=[],upper=[];
+      for (const p of pts) { while(lower.length>1 && cross(lower.at(-2),lower.at(-1),p)<=0) lower.pop(); lower.push(p); }
+      for (const p of pts.slice().reverse()) { while(upper.length>1 && cross(upper.at(-2),upper.at(-1),p)<=0) upper.pop(); upper.push(p); }
+      return lower.slice(0,-1).concat(upper.slice(0,-1));
+    };
+    pieces.filter(pc => pc.kind === "set" && showPiece(pc)).forEach(pc => {
+      setPartsOf(pc).filter(part => !part.kind || part.kind === "box").forEach(part => {
+        const pts = R.baseCorners(pc,part,dims).flatMap(p=>[P(p),P({...p,z:p.top})]);
+        const polygon=hull(pts); if(polygon.length<3) return;
+        ctx.beginPath(); ctx.rect(0,0,ctx.canvas.width,ctx.canvas.height);
+        ctx.moveTo(polygon[0].X,polygon[0].Y); polygon.slice(1).forEach(p=>ctx.lineTo(p.X,p.Y)); ctx.closePath();
+        ctx.clip("evenodd");
+      });
+    });
+  }
+
   function drawPiecesUp(ctx, P, pxPerM, opts) {
     const o = opts || {}, d = state.dims, F = window.STAGE_FIGURE;
     /* 暗幕の後に、不透明な人物を受光色で塗り直す。逆光と前明かりが共存しても黒で上書きしない。 */
     const relight = o.relight, beams = relight ? (o.beams || performerBeams()) : null;
-    piecesOf().forEach((pc) => {
+    const view = o.yawDeg === -90 ? "shimote" : o.yawDeg === 90 ? "kamite" : "front";
+    const pieces = E.orderStagePieces(piecesOf(), view);
+    pieces.forEach((pc, index) => {
       if (!showPiece(pc)) return;            // R-09: 種類ごとに出し入れする
       if (o.only && pc.id !== o.only) return;
       if (relight && pc.kind !== "performer") return;
       if (pc.kind === "curtain") { drawCurtainUp(ctx, P, pc, d); return; }
-      const foot = P({ x: (pc.u - 0.5) * d.W, y: pc.v * d.D, z: 0 });
+      const foot = P({ x: (pc.u - 0.5) * d.W, y: pc.v * d.D, z: Math.max(0, E.finite(pc.base, 0)) });
       const sc = foot.scale == null ? 1 : foot.scale;
       const k = pxPerM * sc;
       ctx.save();
+      if (relight) clipForegroundSets(ctx, P, pieces.slice(index + 1), d);
       if (pc.kind !== "performer" || !F) {
         /* R-13 ①②（2026-09-18）: 大道具は実寸の箱を、本体と同じ共有部品（stage-set-render.js）で
            立体に塗る。以前は幅 0.9m×2 固定の長方形で、サイズ感が本体と食い違っていた。

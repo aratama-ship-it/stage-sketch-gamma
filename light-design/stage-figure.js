@@ -1167,7 +1167,7 @@
       const keys = part.kind === 'head' ? ['head'] : part.kind === 'torso' ? ['shL', 'shR', 'hipL', 'hipR'] : part.limb.pts;
       const j = keys.reduce((sum, k) => sum.map((n, i) => n + rig.pose.joints[k][i] / keys.length), [0, 0, 0]);
       const center = { x: (pc.u - 0.5) * dims.W + H * (j[0] * Math.cos(a) + j[2] * Math.sin(a)),
-        y: pc.v * dims.D + H * (-j[0] * Math.sin(a) + j[2] * Math.cos(a)), z: H * j[1] };
+        y: pc.v * dims.D + H * (-j[0] * Math.sin(a) + j[2] * Math.cos(a)), z: Math.max(0, finite(pc.base, 0)) + H * j[1] };
       const half = H * (part.kind === 'head' ? 0.048 : part.kind === 'torso' ? 0.1075 : 0.035);
       const px = keys.reduce((n, k) => n + rig.P[k].x / keys.length, 0);
       const py = keys.reduce((n, k) => n + rig.P[k].y / keys.length, 0);

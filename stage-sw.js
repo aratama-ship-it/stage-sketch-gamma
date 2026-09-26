@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v392";
+const CACHE_NAME = "stage-sketch-gamma-shell-v393";
 const APP_SHELL = [
   "./gamma-ui.js?v=20260925-ui1",
   "./gamma-ui-tokens.css?v=20260925-ui1",
@@ -39,15 +39,15 @@ const APP_SHELL = [
   "./stage-venue-preview.css?v=2026092504",
   "./stage-venue-viewpoints.css?v=2026092501",
   "./gamma-light-model.js?v=20260925-ui1",
-  "./gamma-workspace.js?v=20260926-isolation35",
-  "./light-design/index.html?embed=gamma&v=20260925-ui1",
+  "./gamma-workspace.js?v=20260926-render37",
+  "./light-design/index.html?embed=gamma&v=20260926-render37",
   "./light-design/embed.css?v=20260925-ui1",
-  "./light-design/rig-engine.js?v=20260926-ss36",
-  "./light-design/stage-figure.js?v=2026092506",
+  "./light-design/rig-engine.js?v=20260926-render37",
+  "./light-design/stage-figure.js?v=20260926-render37",
   "./light-design/volume-light.js?v=20260915-2",
   "./light-design/laser-effects.js?v=20260915-5-color-presets",
   "./light-design/laser-effects-ui.js?v=20260915-3-supported-shapes",
-  "./light-design/app.js?v=20260925-ui1",
+  "./light-design/app.js?v=20260926-render37",
   "./light-design/light-presets.js?v=1789357787",
   "./light-design/light-presets-ui.js?v=20260915-3-vertical-cards",
   "./light-design/selected-light-presets-engine.js?v=2026092114",
@@ -67,7 +67,7 @@ const APP_SHELL = [
   "./stage-samples/index.js?v=2026092402",
   "./stage-samples/romeo-juliet-cued.js?v=2026092435",
   "./stage-samples/romeo-juliet-second.js?v=20260926-rj36",
-  "./stage-samples/feature-test-show.js?v=20260926-ss36",
+  "./stage-samples/feature-test-show.js?v=20260926-render37",
   "./stage-set-model.js?v=2026092354",
   "./stage-set-builder.js?v=2026091501",
   "./stage-machinery.js?v=20260925-ui1",
