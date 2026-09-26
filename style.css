@@ -3814,7 +3814,7 @@ html.stage-phone-viewer .stage-phone-save-notice .stage-phone-recovery-link[hidd
 .stage-costume-fields { display: grid; gap: 7px; }
 .stage-costume-row {
   display: grid;
-  grid-template-columns: 3.2em minmax(0, 1fr) 42px;
+  grid-template-columns: 2.4em minmax(0, 1fr) 42px;  /* ラベルは2文字。3.2em だと「レオタード」「長袖シャツ」が欠けた（2026-09-26） */
   align-items: center;
   gap: 7px;
 }
@@ -3826,6 +3826,8 @@ html.stage-phone-viewer .stage-phone-save-notice .stage-phone-recovery-link[hidd
   background: transparent;
   padding: 2px;
 }
+/* 一続きの服の下衣・素手のときの手袋の色は使わない（2026-09-26） */
+.stage-costume-row :disabled { opacity: 0.45; cursor: not-allowed; }
 
 .stage-swatches {
   display: flex;

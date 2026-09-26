@@ -56,11 +56,15 @@ test("正規化の呼び出し先が新しい関数になっている（古い�
 test("見た目（衣装・髪）の知らない項目を読み込みで消さない（2026-09-26）", () => {
   const start = main.indexOf("  function normalizeLook(raw) {");
   const body = main.slice(start, main.indexOf("\n  }\n", start) + 4);
-  const ctx = vm.createContext({ DEFAULT_SKIN: "#d9b38c", DEFAULT_HAIR_COLOR: "#2a2320", DEFAULT_TOP_COLOR: "#a84b26", DEFAULT_BOTTOM_COLOR: "#3a3f4a",
+  const ctx = vm.createContext({ DEFAULT_SKIN: "#d9b38c", DEFAULT_HAIR_COLOR: "#2a2320", DEFAULT_TOP_COLOR: "#a84b26", DEFAULT_BOTTOM_COLOR: "#3a3f4a", DEFAULT_GLOVES_COLOR: "#f2efe8",
     validColor: (v, d) => (typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v) ? v : d), projectIoClone: (v) => JSON.parse(JSON.stringify(v)) });
   vm.runInContext(`${body}\nthis.normalizeLook = normalizeLook;`, ctx);
   const out = ctx.normalizeLook({ skin: "#111111", gloves: { color: "#ffffff" }, top: { kind: "leotard", color: "#222222", fit: "x" }, bottom: { kind: "tutu", pattern: "stripe" }, hair: { style: "long", accessory: "pin" } });
-  assert.deepEqual(out.gloves, { color: "#ffffff" });
+  // 手袋は W3（2026-09-26）で知っている項目になった。色は残し、種類が無ければ none（素手）
+  assert.deepEqual(JSON.parse(JSON.stringify(out.gloves)), { color: "#ffffff", kind: "none" });
+  assert.equal(ctx.normalizeLook({ top: {} }).gloves, undefined, "手袋の項目が無い保存データへ勝手に足さない");
+  assert.equal(ctx.normalizeLook({ gloves: { kind: "gloves", color: "bad", seam: 1 } }).gloves.color, "#f2efe8");
+  assert.equal(ctx.normalizeLook({ gloves: { kind: "gloves", seam: 1 } }).gloves.seam, 1);
   assert.equal(out.top.fit, "x"); assert.equal(out.top.kind, "leotard");
   assert.equal(out.bottom.pattern, "stripe"); assert.equal(out.bottom.kind, "tutu");
   assert.equal(out.hair.accessory, "pin"); assert.equal(out.hair.style, "long");

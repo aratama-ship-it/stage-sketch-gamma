@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.32">
+<meta name="stage-sketch-gamma-version" content="v0.2.33">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=20260926-poses1">
+<link rel="stylesheet" href="style.css?v=2026092633">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -69,7 +69,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.32</span>
+              <span class="stage-app-version">0.2.33</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -1044,6 +1044,9 @@
                       <option value="tshirt">Tシャツ</option>
                       <option value="longtee">長袖シャツ</option>
                       <option value="tank">タンクトップ</option>
+                      <option value="leotard">レオタード</option>
+                      <option value="unitard">ユニタード</option>
+                      <option value="tsunagi">つなぎ</option>
                     </select>
                     <input type="color" id="stage-costume-top-color" value="#a84b26" aria-label="上衣の色">
                   </div>
@@ -1054,6 +1057,14 @@
                       <option value="shorts">半ズボン</option>
                     </select>
                     <input type="color" id="stage-costume-bottom-color" value="#3a3f4a" aria-label="下衣の色">
+                  </div>
+                  <div class="stage-costume-row">
+                    <label class="stage-control-label" for="stage-costume-gloves">手袋</label>
+                    <select id="stage-costume-gloves" class="stage-select">
+                      <option value="none">なし（素手）</option>
+                      <option value="gloves">手袋</option>
+                    </select>
+                    <input type="color" id="stage-costume-gloves-color" value="#f2efe8" aria-label="手袋の色">
                   </div>
                 </div>
               </div>
@@ -2568,6 +2579,16 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0233-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0233-title">v0.2.33</h3>
+        <time datetime="2026-09-26">2026-09-26</time>
+      </header>
+      <ul>
+        <li>衣装の上衣に一続きの服3種（レオタード・ユニタード・つなぎ）を追加。選ぶと下衣の欄は使わない表示になります</li>
+        <li>衣装に手袋（色つき）を追加</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0232-title">
       <header class="stage-release-entry-head"><h3 id="stage-release-v0232-title">v0.2.32</h3><time datetime="2026-09-26">2026-09-26</time></header>
       <ul>
@@ -3768,20 +3789,20 @@
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=20260926-release32"></script>
-    <script src="stage-i18n.zh-Hans.js?v=20260926-release32"></script>
-    <script src="stage-i18n.zh-Hant.js?v=20260926-release32"></script>
+    <script src="stage-i18n.js?v=2026092633"></script>
+    <script src="stage-i18n.zh-Hans.js?v=2026092633"></script>
+    <script src="stage-i18n.zh-Hant.js?v=2026092633"></script>
 <script src="stage-prompt-i18n.js?v=20260926-release32"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026092402"></script>
 <script src="stage-samples/romeo-juliet-cued.js?v=2026092435"></script>
 <script src="stage-samples/romeo-juliet-second.js?v=20260925-rj2"></script>
-<script src="stage-samples/feature-test-show.js?v=2026092529"></script>
+<script src="stage-samples/feature-test-show.js?v=2026092633"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
 <script src="stage-machinery.js?v=20260925-ui1"></script>
 <script src="stage-scrim.js?v=2026092059"></script>
-<script src="stage-first-person.js?v=20260926-release32"></script>
+<script src="stage-first-person.js?v=2026092633"></script>
 <script src="stage-audio-store.js?v=2026092523"></script>
 <script src="stage-project-backup-store.js?v=2026092523"></script>
 <script src="stage-storage-codec.js?v=2026092523"></script>
@@ -3809,10 +3830,10 @@
 <script src="stage-reorder-motion.js?v=2026092420"></script>
 <script src="stage-performer-motion.js?v=2026092506"></script>
 <script src="stage-performer-contour.js?v=2026092506"></script>
-<script src="stage-performer-body.js?v=2026092506"></script>
+<script src="stage-performer-body.js?v=2026092633"></script>
 <script src="gamma-ui.js?v=20260925-ui1"></script>
 <script src="gamma-ui-i18n.js?v=20260925-ui1"></script>
-<script src="stage-sketch.js?v=20260926-release32"></script>
+<script src="stage-sketch.js?v=2026092633"></script>
 <script src="stage-scene-alternatives-ui.js?v=20260926-release32"></script>
 <script src="gamma-formation.js?v=2026091987"></script>
 <script src="stage-vox-panel.js?v=2026092432"></script>

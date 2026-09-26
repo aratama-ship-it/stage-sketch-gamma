@@ -6999,7 +6999,20 @@
     tshirt: { id: "tshirt", label: "Tシャツ", labelEn: "T-shirt", collar: 0.28, hem: 0.80, sleeve: "short", shells: [] },
     longtee: { id: "longtee", label: "長袖シャツ", labelEn: "Long sleeve", collar: 0.28, hem: 0.82, sleeve: "long", shells: [] },
     tank: { id: "tank", label: "タンクトップ", labelEn: "Tank top", collar: 0.20, hem: 0.78, sleeve: "none", shells: [] },
+    /* 2026-09-26 本人選択（W3）: 胴から下まで一続きの服。onePiece のとき下衣は使わず、腰回りを上衣の色で塗る。
+       leotard は脚を出す（丈0）、full は足首まで上衣の色（ユニタードは袖なし・つなぎは長袖で見分ける）。
+       ★古い版は知らない種類を Tシャツ＋下衣で描く（保存値は normalizeLook が残す）。 */
+    leotard: { id: "leotard", label: "レオタード", labelEn: "Leotard", collar: 0.20, hem: 1.16, sleeve: "none", onePiece: "leotard", shells: [] },
+    unitard: { id: "unitard", label: "ユニタード", labelEn: "Unitard", collar: 0.20, hem: 1.16, sleeve: "none", onePiece: "full", shells: [] },
+    tsunagi: { id: "tsunagi", label: "つなぎ", labelEn: "Coverall", collar: 0.28, hem: 1.16, sleeve: "long", onePiece: "full", shells: [] },
   };
+  /* 手袋（2026-09-26 W3）。look.gloves = { kind, color }。項目が無い保存データは今までどおり素手。 */
+  const DEFAULT_GLOVES_COLOR = "#f2efe8";
+  const GLOVE_KINDS = {
+    none: { id: "none", label: "なし", labelEn: "None" },
+    gloves: { id: "gloves", label: "手袋", labelEn: "Gloves" },
+  };
+  const gloveKindById = (id) => GLOVE_KINDS[id] || GLOVE_KINDS.none;
   /* waist はズボンの上端（ベルトの位置・TORSO_RINGS の t 値）。くびれのすぐ下から股までを腰回りとして塗る。 */
   const BOTTOM_KINDS = {
     pants: { id: "pants", label: "長ズボン", labelEn: "Trousers", length: "ankle", waist: 0.68, shells: [] },
@@ -7217,6 +7230,21 @@
     if (!normalized) return null;
     const top = topKindById(normalized.top.kind);
     const bottom = bottomKindById(normalized.bottom.kind);
+    const gloves = normalized.gloves && gloveKindById(normalized.gloves.kind).id !== "none" ? normalized.gloves.color : null;
+    if (top.onePiece) {
+      // 一続きの服: 腰回りと脚を上衣の色で塗る。レオタードは脚を出す
+      return {
+        skin: normalized.skin,
+        topColor: normalized.top.color,
+        bottomColor: normalized.top.color,
+        sleeve: sleeveById(normalized.top.sleeve || top.sleeve).t,
+        length: top.onePiece === "leotard" ? 0 : LENGTHS.ankle.t,
+        collar: top.collar,
+        hem: finite(top.hem, 1.16),
+        waist: finite(bottom.waist, 0.68),
+        gloves,
+      };
+    }
     return {
       skin: normalized.skin,
       topColor: normalized.top.color,
@@ -7226,6 +7254,7 @@
       collar: top.collar,
       hem: finite(top.hem, 0.80),
       waist: finite(bottom.waist, 0.68),
+      gloves,
     };
   }
 
@@ -7810,6 +7839,8 @@
     costumeTopColor: document.getElementById("stage-costume-top-color"),
     costumeBottom: document.getElementById("stage-costume-bottom"),
     costumeBottomColor: document.getElementById("stage-costume-bottom-color"),
+    costumeGloves: document.getElementById("stage-costume-gloves"),
+    costumeGlovesColor: document.getElementById("stage-costume-gloves-color"),
     holdControls: document.getElementById("stage-hold-controls"),
     heldList: document.getElementById("stage-held-list"),
     holdSelect: document.getElementById("stage-hold-select"),
@@ -8260,6 +8291,12 @@
         color: validColor(bottom.color, DEFAULT_BOTTOM_COLOR),
         length: typeof bottom.length === "string" ? bottom.length.slice(0, 32) : "ankle",
       },
+      // 手袋は項目があるときだけ整える（無い保存データへ勝手に足さない）
+      ...(raw.gloves && typeof raw.gloves === "object" && !Array.isArray(raw.gloves) ? { gloves: {
+        ...keep(raw.gloves),
+        kind: typeof raw.gloves.kind === "string" ? raw.gloves.kind.slice(0, 32) : "none",
+        color: validColor(raw.gloves.color, DEFAULT_GLOVES_COLOR),
+      } } : {}),
     };
   }
 
@@ -14804,6 +14841,7 @@
           const dy = to.y - from.y;
           const len = Math.hypot(dx, dy) || 1;
           const tip = { x: to.x + (dx / len) * HAND_LEN * ux, y: to.y + (dy / len) * HAND_LEN * ux };
+          if (clothes && clothes.gloves) target.fillStyle = far ? mixToward(clothes.gloves, 0.26) : clothes.gloves;
           taperedChain(target, [to, lerpPt(to, tip, 0.55), tip],
             [Math.max(0.8, HAND_R * ux), Math.max(0.8, HAND_R * 1.05 * ux), Math.max(0.6, HAND_R * 0.62 * ux)]);
         } else {
@@ -14983,8 +15021,8 @@
     poseById, resolvePoseId, samplePerformancePose, buildRig, paintBody, maskFacePoint, paintMask, paintFaceMask, paintSmoothProp,
     normalizeLook, resolveLook, normalizeSectionCostumes, normalizeSectionCostume, performerCostumeKey,
     sectionForScene, resolveLookForSection, resolveLookForScene,
-    topKindById, bottomKindById, hairStyleById, lengthById, sleeveById,
-    LENGTHS, SLEEVES, TOP_KINDS, BOTTOM_KINDS, HAIR_STYLES,
+    topKindById, bottomKindById, hairStyleById, lengthById, sleeveById, gloveKindById,
+    LENGTHS, SLEEVES, TOP_KINDS, BOTTOM_KINDS, HAIR_STYLES, GLOVE_KINDS,
     TORSO_RINGS, NECK_RINGS, LIMB_TAPER, LIMB_MIDS, LIMBS,
     HAND_LEN, HAND_R, FOOT_R, HEEL_BACK, PROP_TONES,
     norm3, cross3, limbNodes, lerpPt,
@@ -34234,6 +34272,20 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (els.costumeTopColor) els.costumeTopColor.value = validColor(look.top.color, DEFAULT_TOP_COLOR);
     if (els.costumeBottom) els.costumeBottom.value = bottomKindById(look.bottom.kind).id;
     if (els.costumeBottomColor) els.costumeBottomColor.value = validColor(look.bottom.color, DEFAULT_BOTTOM_COLOR);
+    // 一続きの服（レオタード等）のときは下衣を使わないので、選べなくして理由を出す
+    const onePiece = Boolean(topKindById(look.top.kind).onePiece);
+    [els.costumeBottom, els.costumeBottomColor].forEach((el) => {
+      if (!el) return;
+      el.disabled = onePiece;
+      el.title = onePiece ? tx("一続きの服なので、下衣は使いません") : "";
+    });
+    const gloves = look.gloves || {};
+    const glovesOn = gloveKindById(gloves.kind).id !== "none";
+    if (els.costumeGloves) els.costumeGloves.value = gloveKindById(gloves.kind).id;
+    if (els.costumeGlovesColor) {
+      els.costumeGlovesColor.value = validColor(gloves.color, DEFAULT_GLOVES_COLOR);
+      els.costumeGlovesColor.disabled = !glovesOn;
+    }
   }
 
   function finishCostumeChange(message) {
@@ -39685,7 +39737,13 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     if (!piece || piece.type !== "performer") return;
     checkpoint();
     const look = editableLook(piece);
-    if (color) {
+    if (part === "gloves") {
+      // 手袋は項目ごと足す（素手に戻しても色は覚えておく）
+      const gloves = look.gloves && typeof look.gloves === "object" ? look.gloves : { kind: "none", color: DEFAULT_GLOVES_COLOR };
+      if (color) gloves.color = validColor(value, DEFAULT_GLOVES_COLOR);
+      else gloves.kind = gloveKindById(value).id;
+      look.gloves = gloves;
+    } else if (color) {
       look[part].color = validColor(value,
         part === "top" ? DEFAULT_TOP_COLOR : DEFAULT_BOTTOM_COLOR);
     } else if (part === "top") {
@@ -39703,6 +39761,8 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   if (els.costumeBottom) els.costumeBottom.addEventListener("change", () => changeCostume("bottom", els.costumeBottom.value));
   if (els.costumeTopColor) els.costumeTopColor.addEventListener("change", () => changeCostume("top", els.costumeTopColor.value, true));
   if (els.costumeBottomColor) els.costumeBottomColor.addEventListener("change", () => changeCostume("bottom", els.costumeBottomColor.value, true));
+  if (els.costumeGloves) els.costumeGloves.addEventListener("change", () => changeCostume("gloves", els.costumeGloves.value));
+  if (els.costumeGlovesColor) els.costumeGlovesColor.addEventListener("change", () => changeCostume("gloves", els.costumeGlovesColor.value, true));
   if (els.holdSelect) {
     els.holdSelect.addEventListener("change", () => {
       const holder = selectedPiece();

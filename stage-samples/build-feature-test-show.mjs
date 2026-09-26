@@ -250,8 +250,14 @@ helpScene.note += " D1確認: 固定テスト・共通はA-2と同じ登録の�
   pieces.push(perf("a3", "p17", 0.2, 0.55, { lookMode: "plain" }));
   pieces.push(perf("a3", "p18", 0.5, 0.55, { lookMode: "custom", look: { skin: "#5a3a2a", hair: { style: "short", color: "#e8d8a0" }, top: { kind: "tshirt", color: "#68d391", sleeve: "short" }, bottom: { kind: "shorts", color: "#222222", length: "mini" } } }));
   pieces.push(perf("a3", "p19", 0.8, 0.55, { lookMode: "cast" }));
+  // W3（2026-09-26）: 一続きの服3種と手袋。左から レオタード・ユニタード・つなぎ・Tシャツ＋手袋
+  [["leotard", "#c2417a", null, "none"], ["unitard", "#3b6fb6", null, "none"], ["tsunagi", "#5b6b3a", null, "long"], ["tshirt", "#2f2a26", "#f2efe8", "short"]].forEach(([kind, color, gloves, sleeve], i) => {
+    const look = { skin: "#e0b48f", hair: { style: "short", color: "#2a2320" }, top: { kind, color, sleeve }, bottom: { kind: "pants", color: "#3a3f4a" } };
+    if (gloves) look.gloves = { kind: "gloves", color: gloves };
+    pieces.push(perf("a3", null, [0.06, 0.35, 0.65, 0.94][i], 0.55, { name: kind === "tshirt" ? "手袋" : kind, lookMode: "custom", look }));
+  });
   scene("a3", "A-3 向き8方向・大きさ・見た目", 1,
-    `${CHECK}上段は向き 0→315度（8方向）。下段中央は大きさ70→150の比較で、両端の演者09・16は登録身長と見た目を一致させるため100%。中段は見た目の3方式（左: plain＝無地／中: custom＝駒だけの服／右: cast＝登録の服。演者19は登録に look がある）。演者を一人選ぶと正面図右上に衣装の着脱が出て、「選んだもの」に上衣・下衣の種類と色が出る。正面図・平面図・3D・照明デザインの正面図へ反映される。身長は登録で150〜195cmにばらしてある。`, pieces);
+    `${CHECK}上段は向き 0→315度（8方向）。下段中央は大きさ70→150の比較で、両端の演者09・16は登録身長と見た目を一致させるため100%。中段は見た目の3方式（左: plain＝無地／中: custom＝駒だけの服／右: cast＝登録の服。演者19は登録に look がある）。中段の間には一続きの服と手袋（左端 leotard＝脚を出す／unitard＝袖なしで足首まで1色／tsunagi＝長袖で足首まで1色／右端 手袋＝手だけ白）。一続きの服を選ぶと下衣の欄は選べなくなる。演者を一人選ぶと正面図右上に衣装の着脱が出て、「選んだもの」に上衣・下衣の種類と色が出る。正面図・平面図・3D・照明デザインの正面図へ反映される。身長は登録で150〜195cmにばらしてある。`, pieces);
 }
 
 /* A-4/A-5: ordinary standing, then route-driven walking. */

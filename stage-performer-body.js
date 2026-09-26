@@ -214,15 +214,24 @@
     const bottom = look.bottom && typeof look.bottom === "object" ? look.bottom : {};
     const sleeves = { none: 0, short: 0.38, threequarter: 0.72, long: 1 };
     const lengths = { mini: 0.30, knee: 0.50, midi: 0.72, ankle: 1, floor: 1.08 };
-    const defaultSleeve = top.kind === "longtee" ? "long" : top.kind === "tank" ? "none" : "short";
+    /* 2026-09-26 W3: 一続きの服（ホストの TOP_KINDS.onePiece と同じ）。腰回りと脚を上衣の色で塗り、
+       レオタードは脚を出す。手袋は look.gloves.kind が none 以外のとき手を塗る。 */
+    const onePiece = { leotard: "leotard", unitard: "full", tsunagi: "full" }[top.kind] || null;
+    const defaultSleeve = top.kind === "longtee" || top.kind === "tsunagi" ? "long"
+      : top.kind === "tank" || top.kind === "leotard" || top.kind === "unitard" ? "none" : "short";
     const defaultLength = bottom.kind === "shorts" ? "mini" : "ankle";
+    const topColor = top.color || "#a84b26";
+    const gloves = look.gloves && typeof look.gloves === "object" && look.gloves.kind && look.gloves.kind !== "none"
+      ? (look.gloves.color || "#f2efe8") : null;
     return {
       skin: look.skin || "#d9b38c",
-      topColor: top.color || "#a84b26",
-      bottomColor: bottom.color || "#3a3f4a",
+      topColor,
+      bottomColor: onePiece ? topColor : (bottom.color || "#3a3f4a"),
       sleeve: sleeves[top.sleeve || defaultSleeve] ?? sleeves[defaultSleeve],
-      length: lengths[bottom.length || defaultLength] ?? lengths[defaultLength],
-      collar: top.kind === "tank" ? 0.20 : 0.28,
+      length: onePiece === "leotard" ? 0 : onePiece ? 1
+        : lengths[bottom.length || defaultLength] ?? lengths[defaultLength],
+      collar: top.kind === "tank" || top.kind === "leotard" || top.kind === "unitard" ? 0.20 : 0.28,
+      gloves,
     };
   }
 
@@ -475,6 +484,7 @@
         if (part.limb.kind === "arm") {
           // 手の塊に親指だけを加え、四本の指は分けずに残す。
           const hand = rig.hands[part.limb.tip[1]];
+          if (clothes && clothes.gloves) target.fillStyle = partPaint(part, clothes.gloves, far);
           taperedChain(target, hand.thumb,
             [.009, .009, .0065].map((r, i) => Math.max(.6, r * (hand.thumb[i].s || ux))));
           taperedChain(target, hand.palm,

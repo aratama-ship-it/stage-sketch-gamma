@@ -2422,6 +2422,7 @@
         const len = Math.hypot(dx, dy) || 1;
         if (part.limb.kind === "arm") {
           const tip = { x: to.x + (dx / len) * body.HAND_LEN * to.s, y: to.y + (dy / len) * body.HAND_LEN * to.s };
+          if (clothes && clothes.gloves) ctx.fillStyle = far ? body.mixToward(clothes.gloves, 0.26) : clothes.gloves;
           body.taperedChain(ctx, [to, body.lerpPt(to, tip, 0.55), tip],
             [Math.max(0.8, body.HAND_R * to.s), Math.max(0.8, body.HAND_R * 1.05 * to.s), Math.max(0.6, body.HAND_R * 0.62 * to.s)]);
         } else {
