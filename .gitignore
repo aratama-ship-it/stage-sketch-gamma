@@ -323,3 +323,5 @@ public-dist/
 !/stage-point-source.js
 !/tests/point-source.test.mjs
 !/tests/point-source-browser.cjs
+
+!/tests/rj-default-browser.cjs

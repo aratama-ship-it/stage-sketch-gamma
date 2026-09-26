@@ -12057,6 +12057,16 @@
     return normalizeState({ project: prepared.project });
   }
 
+  // 2026-09-27: the 34-scene RJ Second is the main bundled show.
+  function buildRjSecondSampleShow() {
+    const source = (window.SHOSAI_STAGE_LOCAL_SHOWS || [])
+      .find(doc => doc?.project?.id === "romeo-juliet-rj-second-v1");
+    if (!source) return null;
+    const built = buildLocalShow(projectIoClone(source));
+    if (built?.project && !built.project.venueSetupAppliedAt) built.project.venueSetupAppliedAt = nowIso();
+    return built;
+  }
+
   function buildSampleShow() {
     const source = bundledSampleById("sample-eight-circus-v1");
     if (!source) return null;
@@ -13165,7 +13175,7 @@
   }
 
   /* ★U-14（2026-09-24 本人指示）: 初めて開いたとき・全部を消した（?dev-reset=1 等）あとの最初の画面は、
-   * 劇場未設定の空のショー（→劇場設定へ誘導）ではなく、「舞台」タブで『ロミオとジュリエット』の最初のシーンを開いた状態にする。
+   * 劇場未設定の空のショー（→劇場設定へ誘導）ではなく、「舞台」タブで34シーンの『RJセカンド』の最初のシーンを開いた状態にする。
    * ★劇場設定ゲートは残す（本人決定）。見本は劇場を決めてある（venueSetupAppliedAt）のでゲートに掛からない。
    * 対象は「保存が無くて空のショーを作った」ときだけ。前回のショーを開けた（restored）とき、
    * 保存を読めなかった（alternativesStorageBlocked＝上書きしないため）ときは何もしない。
@@ -13173,11 +13183,11 @@
   function openRomeoJulietOnFirstRun() {
     if (loaded.restored || alternativesStorageBlocked || STUDY_READ_ONLY) return false;
     if (!state.project || !state.project.venueSetupPending) return false;
-    const source = bundledProjectById("romeo-juliet-gamma-cued-2026-09-21");
+    const source = (window.SHOSAI_STAGE_LOCAL_SHOWS || []).find(doc => doc?.project?.id === "romeo-juliet-rj-second-v1");
     if (!source) return false;
     const entry = readShows()[source.project.id];
     let next = null;
-    try { next = entry && entry.state ? normalizeState(entry.state) : buildRomeoJulietSampleShow(); } catch (_) { next = null; }
+    try { next = entry && entry.state ? normalizeState(entry.state) : buildRjSecondSampleShow(); } catch (_) { next = null; }
     if (!next || !next.project) return false;
     backfillVenueSetupAppliedAt(next.project);
     const first = (next.project.scenes || []).find((row) => row && row.kind === "scene");
@@ -13195,13 +13205,13 @@
   }
 
   function openRomeoJulietSampleShow() {
-    const built = buildRomeoJulietSampleShow();
+    const built = buildRjSecondSampleShow();
     if (!built) {
-      announce("ロミオとジュリエットの同梱見本を読み込めませんでした。ページを再読み込みしてください。");
+      announce("RJセカンドの同梱見本を読み込めませんでした。ページを再読み込みしてください。");
       return;
     }
     applyLoadedState(built,
-      "『ロミオとジュリエット』の台本とキューの見本を開きました。元のショーはショー一覧に残っています。");
+      "『ロミオとジュリエット｜RJセカンド』の台本とキューの見本を開きました。元のショーはショー一覧に残っています。");
   }
 
   /* 個人用ショーの自動反映（stage-shows.local.js、.gitignore済み・本人専用）。
@@ -13246,7 +13256,7 @@
       const sample = buildSampleShow(), seam = buildSeamGardenSampleShow();
       bundledShowsCache = {lang, source:local, shows:[
         sample && drawSampleRoutes(sample), seam && drawSampleRoutes(seam),
-        buildRomeoJulietSampleShow(), ...local.map(buildLocalShow),
+        buildRjSecondSampleShow(), ...local.filter(doc => doc?.project?.id !== "romeo-juliet-rj-second-v1").map(buildLocalShow),
       ].filter(Boolean)};
     }
     bundledShowsCache.shows.forEach(addBundled);
@@ -25404,7 +25414,7 @@
     if (!shelfCorrupt) shows[state.project.id] = { savedAt: state.lastSavedAt || "", state };
     const rows = Object.keys(shows)
       .map((id) => showSummary(shows[id]))
-      .filter(Boolean)
+      .filter(info => info && info.id !== "romeo-juliet-gamma-cued-2026-09-21")
       .sort((a, b) => (b.savedAt || "").localeCompare(a.savedAt || ""));
     els.showList.innerHTML = "";
     if (shelfCorrupt) {
