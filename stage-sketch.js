@@ -21532,6 +21532,17 @@
       handle.setAttribute("aria-valuemax", String(Math.round(max)));
       handle.setAttribute("aria-valuenow", String(ui.widths[key]));
       handle.setAttribute("aria-valuetext", `${ui.widths[key]}px`);
+      if (handle.parentElement === ui.grid) {
+        const host = colEls[key];
+        const bounds = host.getBoundingClientRect();
+        const gridBounds = ui.grid.getBoundingClientRect();
+        const hitWidth = parseFloat(getComputedStyle(handle).width) || 18;
+        handle.hidden = max <= 0 || host.hidden || !bounds.width;
+        // 列のスクロールに切り取られない、入力欄の外の18pxの隙間。
+        const edge = key === "left" ? bounds.right : bounds.left - hitWidth;
+        write(handle, "left", `${edge - gridBounds.left - ui.grid.clientLeft}px`);
+        write(handle, "right", "auto");
+      }
     });
   }
 
@@ -21572,7 +21583,7 @@
       const grip = document.createElement("span");
       grip.setAttribute("aria-hidden", "true");
       handle.append(grip);
-      host.append(handle);
+      (["left", "right", "right2"].includes(key) ? ui.grid : host).append(handle);
       ui.handles.push(handle);
       handle.addEventListener("pointerdown", (event) => {
         if (event.button !== 0 || event.isPrimary === false || ui.drag) return;

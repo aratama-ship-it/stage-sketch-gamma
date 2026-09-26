@@ -833,3 +833,6 @@ html[data-stage-skin] .stage-modal :is(input,select,textarea) { max-width: 100%;
 
 /* Gamma/Delta: retired machinery has no UI or actions. */
 [data-panel="machinery"], [data-panel="stage-set"], .stage-venue-editor-machinery, #stage-group-machinery, #stage-machinery-empty, #stage-machinery-controls, #stage-machinery-scene-diff, #stage-machinery-estimated { display:none !important; }
+
+/* Width grips live in the gaps, outside the scrolling panel columns. */
+.stage-sketch-grid { position: relative; }

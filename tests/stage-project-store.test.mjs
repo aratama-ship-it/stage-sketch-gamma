@@ -229,11 +229,11 @@ test("removing the current duplicate makes room before a large imported-show swi
 test("the app shell advances with the storage transaction code", () => {
   assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092523/);
   assert.match(stageHtml, /style\.css\?v=2026092633/);
-  assert.match(stageHtml, /stage-sketch\.js\?v=20260926-feedback40/);
-  assert.match(serviceWorker, /stage-sketch-gamma-shell-v396/);
+  assert.match(stageHtml, /stage-sketch\.js\?v=20260927-panel41/);
+  assert.match(serviceWorker, /stage-sketch-gamma-shell-v397/);
   assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092523/);
   assert.match(serviceWorker, /\.\/style\.css\?v=2026092633/);
-  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=20260926-feedback40/);
+  assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=20260927-panel41/);
   assert.match(stageHtml, /stage-storage-recovery\.js\?v=20260926-isolation35/);
   assert.match(serviceWorker, /\.\/storage-recovery\.html/);
 });
