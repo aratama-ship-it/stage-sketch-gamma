@@ -164,10 +164,11 @@ const setPiece = (scene, key, u, v, extra = {}) => {
     ...extra,
   };
 };
+const VENUE_DIMS = { W: 12.4, D: 9.6, H: 7.2 };
 const lightPiece = (scene, key, u, v, beam = {}, extra = {}) => {
   const registered = sets.find((s) => s.id === setId(key));
   const kind = registered.lightKind;
-  const src = kind === "hang" ? { u, v } : kind === "ss" ? { u: u <= 0.5 ? -0.06 : 1.06, v } : kind === "front" ? { u, v: 1.35 } : { u, v: 1 };
+  const src = kind === "hang" ? { u, v } : kind === "ss" ? { u: u <= 0.5 ? -1 / VENUE_DIMS.W : 1 + 1 / VENUE_DIMS.W, v } : kind === "front" ? { u, v: 1.35 } : { u, v: 1 };
   const h = kind === "hang" ? 6 : kind === "ss" ? 1.7 : kind === "front" ? 8 : 0.18;
   const toH = kind === "hang" ? 0 : kind === "ss" ? 1.3 : kind === "front" ? 1.5 : 1.6;
   return {
@@ -445,7 +446,7 @@ scene("d4", "D-3 幕6種（開き具合・紗幕の透け）", 1, `${CHECK}緞�
   [setPiece("d4", "curtain-front", 0.5, 0.95, { open: 30 }), setPiece("d4", "curtain-traveler", 0.5, 0.6, { open: 60 }), setPiece("d4", "curtain-drop", 0.5, 0.4, { open: 100 }), setPiece("d4", "curtain-leg", 0.08, 0.5, { open: 0 }), setPiece("d4", "curtain-cyc", 0.5, 0.05, { open: 0 }), setPiece("d4", "curtain-scrim-white", 0.3, 0.78, { sheer: 25 }), setPiece("d4", "curtain-scrim-black", 0.7, 0.78, { sheer: 75 }), perf("d4", "p05", 0.5, 0.88)]);
 /* ======================= E 照明（駒） ======================= */
 section("e", "E 照明の駒（正面図・平面図・3D）");
-scene("e1", "E-1 4種の灯体・組・動線", 1, `${CHECK}奥から: 吊り（真上）、SS（横から・当たる高さ1.3m）、前明かり（客席上から顔へ）、転がし（床置き・下から）。光の強さ（glow）は 0.4／1／1.5。手前の組1（下手・上手）は一体で動く。ピン（動く灯体・moving）は動線を持ち、次のシーンへ光が移る。設定「照明の光だまり」「光の筋」「作業灯を消す」「動線（光）」で見え方が変わる。`,
+scene("e1", "E-1 4種の灯体・組・動線", 1, `${CHECK}奥から: 吊り（真上）、SS（横から・当たる高さ1.3m、光源は舞台端から袖裏へ1m）、前明かり（客席上から顔へ）、転がし（床置き・下から）。光の強さ（glow）は 0.4／1／1.5。手前の組1（下手・上手）は一体で動く。ピン（動く灯体・moving）は動線を持ち、次のシーンへ光が移る。設定「照明の光だまり」「光の筋」「作業灯を消す」「動線（光）」で見え方が変わる。`,
   [lightPiece("e1", "l-hang", 0.5, 0.3, {}, { glow: 1 }), lightPiece("e1", "l-ss", 0.25, 0.4, {}, { glow: 0.4 }), lightPiece("e1", "l-front", 0.75, 0.4, {}, { glow: 1.5 }), lightPiece("e1", "l-floor", 0.5, 0.55), perf("e1", "p01", 0.5, 0.3), perf("e1", "p02", 0.25, 0.4), perf("e1", "p03", 0.75, 0.4),
     lightPiece("e1", "l-grp-a", 0.3, 0.8), lightPiece("e1", "l-grp-b", 0.7, 0.8), lightPiece("e1", "l-hang2", 0.15, 0.65, {}, { route: { u: 0.85, v: 0.65, bu: 0.5, bv: 0.95 } }), perf("e1", "p04", 0.3, 0.8), perf("e1", "p05", 0.7, 0.8)]);
 scene("e3", "E-2 光の意図（データ）", 1, `${CHECK}このシーンは lightingIntent（光の意図カード）を保持している。現在は設定で非表示／OFFだが、保存→書き出し→再読込で失われないことを見る（JSONで確認）。`,
@@ -459,7 +460,7 @@ const fixtureIds = { p1: "ft-fx-01", p2: "ft-fx-02", p3: "ft-fx-03", p4: "ft-fx-
   laser2: "ft-fx-16", laser3: "ft-fx-17" };
 scene("f1", "F-1 静止のキュー（色・強さ・模様・カッター・衣装の染め）", 1, `${CHECK}照明タブで、固定灯4本が色違い・強さ違いで床を照らす（模様「ブレイクアップ（中）」付き1本）。正面図・平面図・3Dの光だまり（設定ON）が一致する。環境設定「衣装を明かりの色で染める」を入れると、青い明かりの演者02（緑）と山吹の明かりの演者05（青）が沈み、白い明かりの演者01は色が変わらない。照明を編集したら「未適用・控え保存済み」、LXキュー適用後は「適用済み」を確認。適用しないで移って戻り、控えが残ること。「控え・書き出し」からファイルへ残せること。容量不足・別タブ更新では成功表示にならず、失敗の説明が残ること（ブラウザの隔離試験で確認）。`,
   /* ★G-D（2026-09-19）: 演者05（青 #315b8a）を山吹の灯（p4・模様つき）の中へ置く＝青い衣装が沈む見本。 */
-  [perf("f1", "p01", 0.3, 0.55), perf("f1", "p02", 0.7, 0.55), perf("f1", "p05", 0.5, 0.42), setPiece("f1", "block", 0.5, 0.3)]);
+  [setPiece("f1", "block2", 0.5, 0.62, { setId: null, originId: null, name: "配色確認用カウンター", color: "#27384a", dims: { w: 5, d: 0.65, h: 1 } }), perf("f1", "p01", 0.45, 0.7, { color: "#655b4c" }), perf("f1", "p02", 0.7, 0.55), perf("f1", "p05", 0.5, 0.42), setPiece("f1", "block", 0.5, 0.3)]);
 scene("f2", "F-2 往復と円（ムービング）", 1, `${CHECK}ムービング4本のうち2本は横往復（線）、1本は円（水平）、1本は斜め往復（高さ違い）。組「左右対称」に2本が入っている。速さ slow／normal／fast。`,
   [perf("f2", "p03", 0.5, 0.6, { pose: "dance1" })]);
 scene("f3", "F-3 ストロボと順送り", 1, `${CHECK}くっきり（矩形波 8Hz duty 30）と、やわらかい（1-cos 2Hz 深さ80）。順送り（seq）は3段で順に光る。再生中に点滅が見える。`,
@@ -699,7 +700,7 @@ const lightCues = {
  * 本体の「劇場寸法の上書き（venueDims）」と照明デザインの stage が食い違うと、
  * 舞台モードは「寸法が違う劇場に光を重ねると嘘になる」と判断して光だまりを一切描かない。
  * 2026-09-18版は venueDims 12.4×9.6 に対し stage 12×9 で、F-1〜F-4 の光が図に出ていなかった。 */
-const VENUE_DIMS = { W: 12.4, D: 9.6, H: 7.2 };
+
 
 const lightingDesign = {
   format: "shosai.light-design", version: 1, name: "機能テスト用ショー",

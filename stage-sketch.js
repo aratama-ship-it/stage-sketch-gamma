@@ -1440,6 +1440,7 @@
   const prepareProjectImportDocument = (document) => {
     const project = backfillMissingSceneRehearsal(stripRemovedSceneFields(projectIoClone(document.project)));
     sceneAlternatives?.restore(project);
+    refreshRjSecondSetPalette(project);
     let venueImport = { venues: [], idMap: {}, imported: 0, skipped: 0 };
     if (document.version === 4 && Array.isArray(document.venues) && venueLibrary) {
       venueImport = venueLibrary.importVenues(document.venues);
@@ -4760,7 +4761,7 @@
       label: "SS（横から）", note: "袖のスタンドから舞台を横切って",
       dia: 2.6, h: 1.7, toH: 1.3,
       // 近い側の袖から。反対側から当てたいときは左右のつまみで振る
-      source: (u, v) => ({ u: u <= 0.5 ? -0.06 : 1.06, v }),
+      source: (u, v, widthM = 12) => ({ u: u <= 0.5 ? -1 / widthM : 1 + 1 / widthM, v }),
     },
     front: {
       label: "前明かり", note: "客席の上から顔へ",
@@ -9925,6 +9926,26 @@
     return scenes;
   }
 
+  /* RJセカンドの旧既定色だけを補正。利用者の配色・演者・配置は保持する。
+     見本を複製したショーも固有のsetIdを引き継ぐので同じ補正を受ける。 */
+  function refreshRjSecondSetPalette(project) {
+    const palette = {
+      "rj-set-bar": ["#8a7050", "#27384a"],
+      "rj-set-bar-shelf": ["#655b4c", "#344b60"],
+    };
+    const update = (row, id) => {
+      const pair = palette[id];
+      if (pair && typeof row.color === "string" && row.color.toLowerCase() === pair[0]) row.color = pair[1];
+    };
+    (project.sets || []).forEach(row => update(row, row.id));
+    const updatePieces = pieces => (pieces || []).forEach(row => update(row, row.setId));
+    (project.rigs || []).forEach(row => updatePieces(row.pieces));
+    (project.scenes || []).forEach(row => {
+      updatePieces(row.pieces);
+      (row.sceneAlternatives?.items || []).forEach(item => updatePieces(item.content?.pieces));
+    });
+  }
+
   function normalizeState(raw) {
     if (raw?.project && sceneAlternatives) { raw = projectIoClone(raw); sceneAlternatives.restore(raw.project); }
     if (!raw || typeof raw !== "object") return markVenueSetupPending(baseState(true));
@@ -10124,6 +10145,7 @@
       editsSinceExport: clamp(finite(raw.editsSinceExport, 0), 0, 99999),
       lastSavedAt: typeof raw.lastSavedAt === "string" ? raw.lastSavedAt : "",
     });
+    refreshRjSecondSetPalette(normalized.project);
     normalized.project.scenes.forEach((scene, index) => {
       const data = sceneAlternatives?.validate(scene);
       if (data) for (const item of data.items) {
@@ -12066,7 +12088,7 @@
         const [u, v] = row.lights[key];
         const x = SAMPLE_LIGHTS.find((y) => y.key === key);
         const spec = LIGHT_KINDS[x.kind];
-        const src = spec.source(u, v);
+        const src = spec.source(u, v, Number(p.venueDims?.width) || VENUES.sizeById(VENUES.byId(p.venue), p.venueSize).width);
         pieces.push(normalizePiece({ id: `sample-${key}-${i}`, type: "light",
           setId: lightId[key], originId: `sample-origin-${key}`,
           u, v, facing: 0, size: 100, color: "#d3ac59", name: "",
@@ -12188,7 +12210,7 @@
           const item = source.lights.find((candidate) => candidate.key === key);
           if (!item || !lightId[key]) return;
           const spec = LIGHT_KINDS[item.kind];
-          const src = spec.source(u, v);
+          const src = spec.source(u, v, Number(p.venueDims?.width) || VENUES.sizeById(VENUES.byId(p.venue), p.venueSize).width);
           pieces.push(normalizePiece({
             id: `seam-${key}-${row.id}`, type: "light", setId: lightId[key],
             originId: `seam-origin-${key}`, u, v, facing: 0, size: 100,
@@ -23912,7 +23934,7 @@
     // 明かりは種類ごとの仕込み位置から始める。出したあとは自由に動かせる
     if (piece.type === "light") {
       const spec = LIGHT_KINDS[lightKindOf(item)];
-      const src = spec.source(piece.u, piece.v);
+      const src = spec.source(piece.u, piece.v, venueSize().width);
       piece.beam = normalizeBeam({ u: src.u, v: src.v, h: spec.h, toH: spec.toH }, piece);
     }
     scene.pieces.push(piece);
