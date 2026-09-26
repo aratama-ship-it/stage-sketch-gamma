@@ -9,8 +9,12 @@
  *   ・シーンメモの【台本】は「取り込む」で一度だけ写す。メモ自体は消さない。
  * 本体への書き込みは SHOSAI_STAGE_SESSION_BRIDGE.applyScriptEdit だけ（取り消し1回で戻る単位）。
  * キューの番号・時刻は、タイムラインが出す「stage-timeline-vox-cues」から読む（セリフキューパネルと同じ）。 */
-(function () {
+(function initGammaRuntimestage_script_editor() {
   "use strict";
+  if (!window.SHOSAI_STAGE_SESSION_BRIDGE) {
+    window.addEventListener("stage-gamma-runtime-ready", initGammaRuntimestage_script_editor, {once:true});
+    return;
+  }
 
   const bridge = window.SHOSAI_STAGE_SESSION_BRIDGE;
   const host = document.getElementById("gamma-script-workspace");

@@ -1,5 +1,9 @@
-(() => {
+(function initGammaRuntimestage_session() {
   "use strict";
+  if (!window.SHOSAI_STAGE_SESSION_BRIDGE) {
+    window.addEventListener("stage-gamma-runtime-ready", initGammaRuntimestage_session, {once:true});
+    return;
+  }
 
   const bridge = window.SHOSAI_STAGE_SESSION_BRIDGE;
   if (!bridge) return;

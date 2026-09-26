@@ -187,5 +187,16 @@
     // Old experimental emotion/dance fields are retained in saved JSON but have no effect.
     return context.walk?.pose && !context.mounted && !context.heldProps ? context.walk.pose : pose;
   }
-  root.STAGE_PERFORMER_MOTION = Object.freeze({ standard, upright, twoBone, route, routeDistance, progress, planWalk, sampleWalk, sample, smooth });
+  // Position changes only while the cover is completely opaque.
+  function blackoutPhase(progress) {
+    const t = clamp(finite(progress));
+    return { opacity: t < .2 ? t / .2 : t <= .8 ? 1 : (1 - t) / .2,
+      placement: t < .2 ? 0 : 1 };
+  }
+  function transitionSeconds(transition, fromSceneId, toSceneId, progress) {
+    if (!transition) return null;
+    const reverse = transition.sourceSceneId === toSceneId;
+    return transition.start + (transition.end - transition.start) * (reverse ? 1 - clamp(progress) : clamp(progress));
+  }
+  root.STAGE_PERFORMER_MOTION = Object.freeze({ standard, upright, twoBone, route, routeDistance, progress, planWalk, sampleWalk, sample, smooth, blackoutPhase, transitionSeconds });
 })(typeof window === 'undefined' ? globalThis : window);

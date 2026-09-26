@@ -306,3 +306,10 @@ public-dist/
 
 !/stage-large-project-store.js
 !/tests/stage-large-project-store.test.mjs
+
+# 0.2.40 collected feedback regression checks.
+!/tests/feedback-lighting-rj.test.mjs
+!/tests/gamma-motion-feedback.test.mjs
+!/tests/venue-feedback-browser.cjs
+!/tests/venue-screen-3d-browser.cjs
+!/tests/feedback-vehicle-wheel-geometry.test.mjs

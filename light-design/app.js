@@ -390,6 +390,7 @@
      いまと同じ状態の復元になり、以降もずっと1手ぶんずれていた（色を変えて押しても戻らない）。 */
   let baseline = snapshot();
   function commit(label) {
+    syncFixedSetupEdits();
     lxSyncEditing();                   // 編集中のキューへ書き戻してから記録する（2026-09-13）
     state.history.push(baseline);      // 変更前を記録する
     if (state.history.length > 100) state.history.shift();
@@ -398,6 +399,25 @@
     state.dirty = true;
     if (label) toast(label, "元に戻す", undo);
     renderAll();
+  }
+  function syncFixedSetupEdits() {
+    const before = JSON.parse(baseline);
+    const previous = before.scenes.find(sc => sc.id === scene().id);
+    const current = cue();
+    for (const fixture of state.rig.fixtures) {
+      if (fixture.kind !== 'fixed') continue;
+      const light = current.lights[fixture.id], old = previous?.cue?.lights?.[fixture.id];
+      if (!light || !old) continue;
+      const fields = ['surface', 'color', 'path'];
+      if (!fields.some(key => JSON.stringify(light[key]) !== JSON.stringify(old[key]))) continue;
+      const point = light.path?.a || light.path?.c;
+      const setup = { surface: light.surface, color: light.color,
+        ...(point ? { path: { kind: 'still', a: JSON.parse(JSON.stringify(point)) } } : {}) };
+      fixture.fixedSetup = JSON.parse(JSON.stringify(setup));
+      for (const sc of state.scenes) for (const c of [sc.cue, ...(sc.lxq || []).map(q => q.cue)]) {
+        if (c?.lights?.[fixture.id]) Object.assign(c.lights[fixture.id], JSON.parse(JSON.stringify(setup)), { beamDeg: null, beamDegTo: null });
+      }
+    }
   }
   function restore(json) {
     const o = JSON.parse(json);
@@ -1495,6 +1515,25 @@
     if (!showOn("beam")) return true;
     const S = fixtureWorld(f), T = targetAt(f.id, state.play.t); if (!S || !T) return true;
     const from = P(S), target = P(T), landing = V.finiteLanding(S, T, state.dims);
+    if (!landing && kind !== 'plan' && V.coneProjection) {
+      const cone = V.coneProjection(S, T, beamOf(f), state.dims, P);
+      if (cone && cone.hull.length >= 3) {
+        const lv = litFactorOf(f, l), span = Math.hypot(cone.centre.X - from.X, cone.centre.Y - from.Y);
+        const radius = Math.max(1, ...cone.hull.map(p => Math.hypot(p.X-cone.centre.X, p.Y-cone.centre.Y)));
+        ctx.save(); ctx.globalCompositeOperation = 'screen';
+        ctx.beginPath(); cone.hull.forEach((p,i) => i ? ctx.lineTo(p.X,p.Y) : ctx.moveTo(p.X,p.Y)); ctx.closePath(); ctx.clip();
+        const gradient = span < radius * .5
+          ? ctx.createRadialGradient(cone.centre.X,cone.centre.Y,0,cone.centre.X,cone.centre.Y,radius)
+          : ctx.createLinearGradient(from.X,from.Y,cone.centre.X,cone.centre.Y);
+        gradient.addColorStop(0,hexA(l.color,.24*visualAlpha(lv)));
+        gradient.addColorStop(.78,hexA(l.color,.18*visualAlpha(lv)));
+        gradient.addColorStop(1,hexA(l.color,0)); ctx.fillStyle=gradient;
+        ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height); ctx.restore();
+        spots.push({fromX:from.X,fromY:from.Y,coneHull:cone.hull,lv});
+        drawDirectionLine(ctx,from,target,l.color,lv,false);
+        return true;
+      }
+    }
     const ray = landing ? null : beamPastTarget(S, T, from, target, ctx.canvas);
     const worldEnd = landing ? landing.world : ray.world, screenEnd = landing ? P(landing.world) : ray.screen;
     const view = kind === "plan" ? "plan" : kind.startsWith("front") ? "front" : "side";
@@ -2025,6 +2064,10 @@
     spots.forEach((sp) => {
       // 灯の強さぶんだけ暗幕を剥がす。20%の灯なら20%ぶんしか明るくならない（2026-09-13）
       const lv = E.clamp(E.finite(sp.lv, 1), 0, 1); if (lv <= 0) return;
+      if (sp.coneHull) {
+        mctx.beginPath(); sp.coneHull.forEach((p,i)=>i?mctx.lineTo(p.X,p.Y):mctx.moveTo(p.X,p.Y));mctx.closePath();
+        mctx.fillStyle=`rgba(0,0,0,${.65*lv})`;mctx.fill();return;
+      }
       if (sp.cycQuads) { punchCycHole(mctx, sp.cycQuads, lv); return; }   // ホリゾントライトの帯
       const fadedHole = sp.silhouette && !sp.onlyPool && !sp.asLine && sp.corners &&
         paintBeamLandingFade(mctx, { X: sp.fromX, Y: sp.fromY }, sp.corners, 0.85 * lv, "destination-out");
@@ -2824,7 +2867,7 @@
     const dg = state.drag; if (!dg) return; state.drag = null;
     cancelPendingDraw();                 // このあと renderAll が最新の姿で描き直す
     if (dg.kind === "marquee") { renderAll(); return; }   // 範囲選択は元に戻す対象にしない（選択はundo外）
-    if (dg.moved) { state.history.push(dg.before); state.future.length = 0; state.dirty = true; baseline = snapshot(); } renderAll();
+    if (dg.moved) { syncFixedSetupEdits(); lxSyncEditing(); state.history.push(dg.before); state.future.length = 0; state.dirty = true; baseline = snapshot(); } renderAll();
   };
   plan.addEventListener("pointerup", endDrag); plan.addEventListener("pointercancel", endDrag);
   plan.addEventListener("pointerleave", () => { state.hover = null; draw(); });

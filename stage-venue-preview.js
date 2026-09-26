@@ -95,11 +95,10 @@
       const target = wingId !== 'drawing-preview' ? { kind: 'wing', id: wingId } : null;
       sheet(from, to, stageY, stageY + ceiling * .75, target);
     });
-    if (venue.backScreen) {
-      const { from, to } = venue.backScreen;
+    (Array.isArray(venue.backScreens) ? venue.backScreens : (venue.backScreen ? [venue.backScreen] : [])).forEach(({ from, to }) => {
       face([point(from, stageY), point(to, stageY), point(to, stageY + ceiling),
         point(from, stageY + ceiling)], '#e9e8df');
-    }
+    });
     const frontBorder = window.GAMMA_VENUE_CURTAINS.frontBorderForVenue(venue);
     if (frontBorder) {
       sheet(frontBorder.from, frontBorder.to,
@@ -187,8 +186,24 @@
       const right = normalize([-forward[2], 0, forward[0]]);
       const up = [right[1]*forward[2]-right[2]*forward[1], right[2]*forward[0]-right[0]*forward[2], right[0]*forward[1]-right[1]*forward[0]];
       const cameraPoint = p => { const d = p.map((n, i) => n - eye[i]); return [right, up, forward].map(axis => axis.reduce((sum, n, i) => sum + n*d[i], 0)); };
-      const focal = height / 2 / Math.tan(camera.fovDeg * Math.PI / 360) * state.zoom;
-      const screen = q => [width / 2 + focal * q[0] / q[2], height / 2 - focal * q[1] / q[2], -q[2]];
+      const originalFocal = height / 2 / Math.tan(camera.fovDeg * Math.PI / 360);
+      const stageVertices = [...model.faces.filter(face => face.base !== 2 && face.fill !== '#705349').flatMap(face => face.vertices), ...model.lines.flat()];
+      const visible = stageVertices.map(cameraPoint).filter(q => q[2] >= .1);
+      const ratios = visible.map(q => [q[0] / q[2], -q[1] / q[2]]);
+      let focal = originalFocal * state.zoom, ox = width / 2, oy = height / 2;
+      if (ratios.length) {
+        const xs = ratios.map(q => q[0]), ys = ratios.map(q => q[1]);
+        const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+        focal = Math.min(focal, (width - 40) / Math.max(.001, maxX - minX), (height - 40) / Math.max(.001, maxY - minY));
+        ox = clamp(ox, 20 - minX * focal, width - 20 - maxX * focal);
+        oy = clamp(oy, 20 - minY * focal, height - 20 - maxY * focal);
+      }
+      const screen = q => [ox + focal * q[0] / q[2], oy - focal * q[1] / q[2], -q[2]];
+      stats.viewpointStageBounds = ratios.length ? {
+        left: Math.min(...ratios.map(q => ox + focal * q[0])), right: Math.max(...ratios.map(q => ox + focal * q[0])),
+        top: Math.min(...ratios.map(q => oy + focal * q[1])), bottom: Math.max(...ratios.map(q => oy + focal * q[1])),
+        width, height, visibleVertices: visible.length, stageVertices: stageVertices.length,
+      } : null;
       const cross = (a, b) => { const t = (.1-a[2])/(b[2]-a[2]); return a.map((n,i) => n + (b[i]-n)*t); };
       facePoints = vertices => {
         const points = vertices.map(cameraPoint), clipped = [];

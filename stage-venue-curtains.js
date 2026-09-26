@@ -31,10 +31,12 @@
       const polygon = wing.polygon.map(orient);
       const zs = polygon.map(p => p[1]);
       const near = Math.max(...zs), far = Math.min(...zs);
-      // Close the front and rear of each wing as well as its three internal legs.
+      // Balance the rows across each wing, with at least about two metres between legs.
       // A tiny inset keeps the polygon intersection valid at its exact boundary.
-      [0.001, 0.10, 0.42, 0.74, 0.999].forEach(t => {
-        const z = far + (near - far) * t;
+      const inset = Math.min(.001, (near - far) / 4);
+      const span = Math.max(0, near - far - inset * 2);
+      const intervals = Math.floor(span / 2);
+      Array.from({ length: intervals + 1 }, (_, i) => far + inset + (intervals ? span * i / intervals : span / 2)).forEach(z => {
         let parts = spans(polygon, z);
         floors.forEach(floor => spans(floor, z).forEach(([lo, hi]) => {
           parts = parts.flatMap(([a, b]) => {
@@ -47,14 +49,14 @@
     });
     return curtains;
   }
-  // Optional venue fixture. Older venues have no frontBorder field and retain their old drawing.
+  // Front curtain is always shown in theatre format; legacy data stays unchanged on read.
   function frontBorderForVenue(venue) {
     const border = venue?.ceiling?.frontBorder;
     const outline = venue?.floor?.outline;
     const ceiling = Number(venue?.ceiling?.heightM);
-    const opening = Number(border?.openingHeightM);
+    const opening = Number(border?.openingHeightM ?? Math.max(.1, Math.min(4.5, ceiling - .1)));
     if (venue?.stageFormat !== 'theatre' || venue?.ceiling?.hasCeiling === false ||
-        border?.enabled !== true || !valid(outline) ||
+        !valid(outline) ||
         !Number.isFinite(ceiling) || !Number.isFinite(opening) ||
         opening < .1 || opening >= ceiling) return null;
     const xs = outline.map(p => p[0]), zs = outline.map(p => p[1]);

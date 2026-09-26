@@ -71,7 +71,7 @@
       button.hidden = row.x < 0 || row.x > 1 || row.y < 0 || row.y > 1;
       button.classList.toggle('is-selected', row.key === selected);
       button.setAttribute('aria-pressed', String(row.key === selected));
-      button.setAttribute('aria-label', `${row.point.label}の見る位置。目の高さ${row.point.eyeM}m。ドラッグまたは矢印キーで移動`);
+      button.setAttribute('aria-label', `${row.point.label}の見る位置。目の高さ${row.point.eyeM}m。ドラッグまたは矢印キーで移動、スクロールで高さ変更`);
       button.title = `${row.point.label}：舞台前端から${row.point.distanceM}m・左右${row.point.offsetM}m・目の高さ${row.point.eyeM}m`;
       button.children[0].textContent = index + 1; button.children[1].textContent = row.point.label;
     });
@@ -110,12 +110,23 @@
     reset.disabled = !view.canReset;
     layer.classList.toggle('is-placing', adding);
     hint.textContent = adding ? '平面図の好きな場所を押して、見る位置を置いてください。Escで取り消し。'
-      : '見る位置：点を選択・ドラッグすると、その場所からの見え方を右に表示します。';
+      : '見る位置：点をドラッグして移動、点の上でスクロールして高さを変更できます。';
     line.setAttribute('d', active ? `M${active.x * 100},${active.y * 100} L${view.target[0] * 100},${view.target[1] * 100}` : '');
     if (cameraActive && active) preview.setViewpoint(active.point);
     else if (cameraActive && !active) preview.clearViewpoint();
     } finally { syncing = false; }
   }
+  layer.addEventListener('wheel', event => {
+    const button = event.target.closest('button[data-viewpoint]');
+    if (!button || drag || !editor.viewpointPlot().editing || !event.deltaY) return;
+    event.preventDefault(); event.stopPropagation();
+    select(button.dataset.viewpoint);
+    const row = editor.viewpointPlot().points.find(row => row.key === selected);
+    if (!row) return;
+    const current = row.point.eyeM;
+    const next = Math.max(-10, Math.min(60, Math.round((current - Math.sign(event.deltaY) * (event.shiftKey ? .5 : .1)) * 10) / 10));
+    if (editor.setViewpointEyeHeight(selected, next)) { message(`目の高さを${next}mにしました。`); sync(); }
+  }, { passive: false });
   layer.addEventListener('pointerdown', event => {
     const button = event.target.closest('button[data-viewpoint]');
     if (event.button !== 0 || drag || !editor.viewpointPlot().editing) return;
@@ -124,7 +135,7 @@
       if (adding) {
         const id = editor.addViewpointAt(event.clientX, event.clientY);
         if (id) { selected = id; cameraActive = true; adding = false; message('点を置きました。名前を変更できます。'); nameInput.blur(); sync(); }
-      }
+      } else editor.openPlanRegionAt(event.clientX, event.clientY);
       return;
     }
     button.focus(); select(button.dataset.viewpoint);

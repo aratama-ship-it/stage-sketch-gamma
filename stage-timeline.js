@@ -1,12 +1,18 @@
 /* 舞台スケッチの下部タイムライン。
  * 舞台・シーン・パネルは stage-sketch.js が正本。タイムラインは同じ舞台画面から
  * 引き出す表示部品で、セクションに保存済みのミュージックシンクを時間軸へ読む。 */
-(function () {
+(function initializeStageTimeline() {
   "use strict";
 
   const root = document.documentElement;
   const bridge = window.SHOSAI_STAGE_SESSION_BRIDGE;
   const panel = document.getElementById("stage-timeline-panel");
+  // The app restores large projects asynchronously; its bridge can arrive after
+  // this parser-loaded script. Wait without hiding a valid timeline permanently.
+  if (panel && !bridge) {
+    window.addEventListener("stage-gamma-runtime-ready", initializeStageTimeline, {once: true});
+    return;
+  }
   if (!panel || !bridge || root.hasAttribute("data-study-renderer")
       || root.classList.contains("stage-phone-viewer") || root.classList.contains("stage-pwa-tablet")) {
     if (panel) panel.hidden = true;
@@ -2662,7 +2668,7 @@
   function updatePlayhead() {
     if (!timeline) return;
     const playingThisTimeline = els.audio && audioMatchesTimeline();
-    if (!silentPlayback && playingThisTimeline && Number.isFinite(els.audio.currentTime)) seekSeconds = els.audio.currentTime;
+    if (!externalTransition && !silentPlayback && playingThisTimeline && Number.isFinite(els.audio.currentTime)) seekSeconds = els.audio.currentTime;
     seekSeconds = clamp(seekSeconds, 0, timeline.duration);
     syncTimelineLightCue(seekSeconds);
     els.surface.style.setProperty("--stage-timeline-playhead-x", `${pxFor(seekSeconds)}px`);
@@ -3981,8 +3987,28 @@
   });
   // タイムライン外（シーン送り・図上の切替）でも、ヘッダーのショー経過時間を
   // そのシーンの開始位置へそろえる。タイムライン自身の再生中は現在位置を戻さない。
+  let externalTransition = null;
+  function syncExternalTransition(detail) {
+    if (!detail || !timeline) return false;
+    const low = timeline.transitions.find(item =>
+      item.sourceSceneId === detail.fromSceneId || item.sourceSceneId === detail.toSceneId);
+    if (!low) return false;
+    const target = timeline.segments.find(item => item.sceneId && Math.abs(item.start - low.end) < 1e-6);
+    if (!target || ![detail.fromSceneId, detail.toSceneId].includes(target.sceneId)) return false;
+    seekSeconds = window.STAGE_PERFORMER_MOTION.transitionSeconds(low, detail.fromSceneId, detail.toSceneId, detail.progress);
+    // This display clock never seeks a playing audio element on every frame.
+    updatePlayhead();
+    return true;
+  }
+  window.addEventListener("stage-scene-transition-progress", event => {
+    if (!externalTransition || event.detail.fromSceneId !== externalTransition.fromSceneId
+      || event.detail.toSceneId !== externalTransition.toSceneId) return;
+    syncExternalTransition(event.detail);
+    if (event.detail.progress >= 1) externalTransition = null;
+  });
   window.addEventListener("stage-scene-change", (event) => {
     const sceneId = event && event.detail && event.detail.sceneId;
+    externalTransition = event.detail && !event.detail.fromTimeline ? event.detail.transition : null;
     if (!(event && event.detail && event.detail.fromTimeline)) {
       appliedLightCueIdentity = null;
       if (typeof bridge.applyTimelineLightCue === "function") bridge.applyTimelineLightCue(null);
@@ -3998,6 +4024,7 @@
       const segment = timeline && timeline.segments.find((item) => item.sceneId === sceneId);
       if (segment) {
         seekSeconds = segment.start;
+        if (externalTransition && syncExternalTransition(externalTransition)) return;
         if (els.audio && audioMatchesTimeline()) els.audio.currentTime = seekSeconds;
         updatePlayhead();
       }
@@ -4011,6 +4038,7 @@
     const segment = timeline.segments.find((item) => item.sceneId === sceneId);
     if (!segment) return;
     seekSeconds = segment.start;
+    if (externalTransition && syncExternalTransition(externalTransition)) return;
     if (els.audio && audioMatchesTimeline()) els.audio.currentTime = seekSeconds;
     reanchorSilentPlayback();
     updatePlayhead();

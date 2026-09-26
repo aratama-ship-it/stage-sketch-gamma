@@ -60,10 +60,35 @@ test('every drawn wing gets front, rear, and interior curtains in every stage fo
   for (const stageFormat of ['theatre', 'thrust', 'in-the-round']) {
     const curtains = plain(context.GAMMA_VENUE_CURTAINS.forVenue({ stageFormat, floor,
       stageWings: [wing], audience: [] }));
-    assert.equal(curtains.length, 5);
+    assert.equal(curtains.length, 4);
+    const gaps = curtains.slice(1).map((line, i) => line.from[1] - curtains[i].from[1]);
+    assert.ok(gaps.every(gap => gap >= 2));
+    assert.ok(Math.max(...gaps) - Math.min(...gaps) < 1e-6);
     const depths = curtains.map(line => line.from[1]).sort((a, b) => a - b);
     assert.ok(depths[0] < 0.02);
     assert.ok(depths.at(-1) > 7.98);
     assert.ok(curtains.every(line => line.wingId === wing.id));
+  }
+});
+
+
+test('multiple horizontal and vertical screens survive import export with extension fields', () => {
+  const original = plain(library.venueV2ById('proscenium'));
+  const screens = [ { id: 'horizontal', from: [2, 1], to: [10, 1], future: { role: 'rear' } },
+    { id: 'vertical', from: [3, 2], to: [3, 8] } ];
+  const input = { ...original, id: 'multi-screen', label: 'スクリーン試験', backScreens: screens,
+    backScreen: screens[0], futureVenue: { enabled: true } };
+  const result = library.importVenues([input]);
+  assert.equal(result.imported, 1);
+  const saved = library.venueV2ById(result.venues[0].id);
+  assert.deepEqual(plain(saved.backScreens), screens);
+  assert.deepEqual(plain(saved.futureVenue), input.futureVenue);
+  const output = library.exportDocument().venues.find(venue => venue.id === saved.id);
+  assert.deepEqual(plain(output.backScreens), screens);
+  const reread = library.validateVenueV2(output);
+  assert.deepEqual(plain(reread.backScreens), screens);
+  assert.ok(library.validateVenueV2({ ...input, backScreens: [] }));
+  for (const backScreens of [null, {}, [{ from: [0,0], to: [.2,0] }], [{ from: [0,0], to: [2,2] }]]) {
+    assert.equal(library.validateVenueV2({ ...input, backScreens }), null);
   }
 });

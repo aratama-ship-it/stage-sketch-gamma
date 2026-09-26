@@ -830,3 +830,6 @@ html[data-stage-skin] .stage-modal :is(input,select,textarea) { max-width: 100%;
 /* 2026-09-26 「使いかたの冊子」に添える冊子の版（γ · v0.2.17）。補助文字の色（暖色背景で約5.3:1）で小さく添える。 */
 .stage-manual-edition { margin-left: 8px; font-size: 0.85em; letter-spacing: 0.04em; color: var(--milk-dim); white-space: nowrap; }
 .stage-manual-edition[hidden] { display: none; }
+
+/* Gamma/Delta: retired machinery has no UI or actions. */
+[data-panel="machinery"], [data-panel="stage-set"], .stage-venue-editor-machinery, #stage-group-machinery, #stage-machinery-empty, #stage-machinery-controls, #stage-machinery-scene-diff, #stage-machinery-estimated { display:none !important; }

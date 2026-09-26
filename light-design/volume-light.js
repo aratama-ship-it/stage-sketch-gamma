@@ -35,6 +35,26 @@ function finiteLanding(S,T,dims){
  if(a.y<-1e-8){const t=-S.y/a.y,x=S.x+a.x*t,z=S.z+a.z*t;if(t>0&&Math.abs(x)<=dims.W/2&&z>=0&&z<=dims.H)hits.push({t,world:{x,y:0,z},surface:'back'});}
  return hits.sort((a,b)=>a.t-b.t)[0]||null;
 }
+// Bound an escaping ray to the same world volume in every view, not a
+// screen-space extension. The circular end section is perpendicular to its axis.
+function coneProjection(S,T,deg,dims,P){
+ const axis=unit(sub(T,S));if(!axis)return null;
+ const ranges=[['x',-dims.W*.65,dims.W*.65],['y',0,dims.D+Math.min(6,dims.D*.5)],['z',0,dims.H]];
+ let reach=Infinity;
+ for(const [key,lo,hi] of ranges){if(Math.abs(axis[key])<1e-8)continue;const distance=((axis[key]>0?hi:lo)-S[key])/axis[key];if(distance>1e-6)reach=Math.min(reach,distance);}
+ if(!Number.isFinite(reach))return null;
+ const end={x:S.x+axis.x*reach,y:S.y+axis.y*reach,z:S.z+axis.z*reach};
+ const right=unit(cross(Math.abs(axis.z)<.95?{x:0,y:0,z:1}:{x:0,y:1,z:0},axis)),up=cross(axis,right);
+ const radius=reach*Math.tan(clamp(deg,4,70)*Math.PI/360);
+ const from=P(S),centre=P(end),points=[from];
+ for(let i=0;i<48;i++){const angle=i*Math.PI/24,c=Math.cos(angle)*radius,s=Math.sin(angle)*radius;
+  points.push(P({x:end.x+right.x*c+up.x*s,y:end.y+right.y*c+up.y*s,z:end.z+right.z*c+up.z*s}));}
+ if(points.some(p=>!Number.isFinite(p.X+p.Y)))return null;
+ const sorted=points.slice().sort((a,b)=>a.X-b.X||a.Y-b.Y),turn=(a,b,c)=>(b.X-a.X)*(c.Y-a.Y)-(b.Y-a.Y)*(c.X-a.X);
+ const half=rows=>{const h=[];for(const p of rows){while(h.length>1&&turn(h[h.length-2],h[h.length-1],p)<=0)h.pop();h.push(p);}return h;};
+ const lo=half(sorted),hi=half(sorted.slice().reverse()),hull=lo.slice(0,-1).concat(hi.slice(0,-1));
+ return {from,centre,hull,reach,radius,end};
+}
 const depth=(p,kind)=>kind==='plan'?p.z:kind==='shimote'?p.x:kind==='kamite'?-p.x:p.y;
 function frame(kind,t){
  if(kind==='plan')return {o:{x:0,y:0,z:t},a:{x:1,y:0,z:0},b:{x:0,y:1,z:0}};
@@ -104,5 +124,5 @@ function render(ctx,P,dims,kind,beams,people,paintPerson,hazeValue,quick=false,g
 }
 function glareWeight(b,kind){const v=kind==='plan'?{x:0,y:0,z:1}:kind==='shimote'?{x:1,y:0,z:0}:kind==='kamite'?{x:-1,y:0,z:0}:{x:0,y:1,z:0};
  const cos=dot(b.axis,v),edge=Math.cos(Math.atan(b.tan));return clamp((cos-edge)/Math.max(.001,1-edge),0,1);}
-root.VOLUME_LIGHT=Object.freeze({haze,compile,weight,finiteLanding,depth,render,glareWeight,planeBounds});
+root.VOLUME_LIGHT=Object.freeze({haze,compile,weight,finiteLanding,coneProjection,depth,render,glareWeight,planeBounds});
 })(typeof window==='undefined'?globalThis:window);

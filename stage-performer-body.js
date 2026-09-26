@@ -329,9 +329,10 @@
       // 腕が正面を向くときも、外積の符号だけで親指を裏返さない。
       const turn = cross3(axis, forward);
       const turnCos = clamp(axis.reduce((sum, n, i) => sum + n * forward[i], 0), -1, 1);
-      const turnOnce = cross3(turn, outward), turnTwice = cross3(turn, turnOnce);
-      const radial = norm3(turnCos < -.9999 ? outward.map(n => -n)
-        : outward.map((n, i) => n + turnOnce[i] + turnTwice[i] / (1 + turnCos)));
+      const thumbRest = deep; // Both relaxed thumbs face body-forward.
+      const turnOnce = cross3(turn, thumbRest), turnTwice = cross3(turn, turnOnce);
+      const radial = norm3(turnCos < -.9999 ? thumbRest.map(n => -n)
+        : thumbRest.map((n, i) => n + turnOnce[i] + turnTwice[i] / (1 + turnCos)));
       hands['wr' + side] = {
         palm: [wr, add3(wr, forward, HAND_LEN * .55), add3(wr, forward, HAND_LEN)].map(project3),
         thumb: [
@@ -572,6 +573,22 @@
     };
     return JSON.stringify([rig.P,rig.rings,rig.hands,rig.shoulderBlends,rig.ux,rig.uy],relative);
   }
+  function contourGeometryKey(rig) {
+    const x=rig.P.head.x, y=rig.P.head.y, scale=rig.ux;
+    // Small silhouettes deliberately use minimum pixel radii. They cannot share
+    // a scale-independent outline without changing finger/foot thickness.
+    const points=Object.values(rig.P).concat(Object.values(rig.hands).flatMap(h=>h.palm.concat(h.thumb)));
+    if (!(scale > 0) || points.some(p=>(p.s || scale) < 128)) return geometryKey(rig);
+    const relative=(key,v)=>{
+      if (typeof v !== 'number') return v;
+      if(key==='x') v=(v-x)/scale;
+      else if(key==='y') v=(v-y)/scale;
+      else if(['s','wx','wy','dx','dy'].includes(key)) v/=scale;
+      return Math.round(v*1e10)/1e10;
+    };
+    return JSON.stringify([rig.P,rig.rings,rig.hands,rig.shoulderBlends,rig.uy/scale,
+      Math.hypot(rig.P.head.x-rig.P.neck.x,rig.P.head.y-rig.P.neck.y)>.4],relative);
+  }
   function direct(target,rig,color,look,shade) {
     if(root.STAGE_PERFORMER_CONTOUR) root.STAGE_PERFORMER_CONTOUR.paint(target,rig,color,look,shade,paintBodyParts);
     else paintBodyParts(target,rig,color,look,shade);
@@ -599,5 +616,5 @@
     }
     target.drawImage(sprite.canvas,rig.P.head.x+sprite.dx,rig.P.head.y+sprite.dy,sprite.w,sprite.h);
   }
-  root.STAGE_PERFORMER_BODY=Object.freeze({projectRig,paint,stats,geometryKey});
+  root.STAGE_PERFORMER_BODY=Object.freeze({projectRig,paint,stats,geometryKey,contourGeometryKey});
 })(typeof window==='undefined'?globalThis:window);

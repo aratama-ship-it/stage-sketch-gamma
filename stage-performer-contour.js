@@ -15,7 +15,7 @@
     let winding = 0;
     for (let i = 0; i < poly.points.length; i++) {
       const a = poly.points[i], c = poly.points[(i + 1) % poly.points.length];
-      const side = cross(sub(c, a), sub(p, a));
+      const side = (c.x-a.x)*(p.y-a.y)-(c.y-a.y)*(p.x-a.x);
       if (a.y <= p.y && c.y > p.y && side > 0) winding++;
       if (a.y > p.y && c.y <= p.y && side < 0) winding--;
     }
@@ -35,8 +35,12 @@
       return {a, b, id, d: sub(b, a), cuts: [0, 1], bounds: bounds([a, b])};
     }));
     const add = (s, t) => {if (t > EPS && t < 1 - EPS) s.cuts.push(t);};
-    for (let i = 0; i < segments.length; i++) for (let j = i + 1; j < segments.length; j++) {
-      const a = segments[i], b = segments[j];
+    // A sweep only discards pairs whose bounds cannot intersect. The original
+    // segment order remains intact for boundary traversal and identical output.
+    const sweep = segments.slice().sort((a,b) => a.bounds.x0 - b.bounds.x0);
+    for (let i = 0; i < sweep.length; i++) for (let j = i + 1; j < sweep.length; j++) {
+      const a = sweep[i], b = sweep[j];
+      if (b.bounds.x0 > a.bounds.x1 + Math.max(EPS, 1e-7)) break;
       if (!overlaps(a.bounds, b.bounds)) continue;
       const offset = sub(b.a, a.a), denominator = cross(a.d, b.d);
       if (Math.abs(denominator) > EPS * EPS) {
@@ -169,7 +173,7 @@
   const cache = new Map(), stats = {painted: 0, fallbacks: 0, precisionRetries: 0, lastMs: 0};
   function paint(target, rig, color, look, shade, drawParts) {
     const now = performance.now(), scale = rig.ux, origin = rig.P.head;
-    const cacheKey = root.STAGE_PERFORMER_BODY.geometryKey(rig);
+    const cacheKey = (root.STAGE_PERFORMER_BODY.contourGeometryKey || root.STAGE_PERFORMER_BODY.geometryKey)(rig);
     let loops = cache.get(cacheKey);
     if (!loops) {
       const record = recorder(target, scale, origin); drawParts(record, rig, color, null, null);

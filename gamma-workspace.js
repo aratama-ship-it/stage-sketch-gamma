@@ -1,5 +1,9 @@
-(() => {
+(function initGammaRuntimegamma_workspace() {
   'use strict';
+  if (!window.GAMMA_LIGHT_HOST) {
+    window.addEventListener("stage-gamma-runtime-ready", initGammaRuntimegamma_workspace, {once:true});
+    return;
+  }
   const host=window.GAMMA_LIGHT_HOST, panel=document.getElementById('gamma-light-workspace'), frame=document.getElementById('gamma-light-frame');
   if(!host || !panel || !frame) return;
   const venueWorkspace=document.getElementById('gamma-venue-workspace'), venueModal=document.getElementById('stage-venue-editor-modal'), venueBackdrop=document.getElementById('stage-venue-editor-backdrop');
@@ -70,14 +74,7 @@
   const lightPanel=document.querySelector('[data-panel="light"]');
   if(lightPanel) lightPanel.hidden=true;
   function mountMachineryWorkspace(){
-    const machineryPanel=document.querySelector('[data-panel="machinery"]');
-    const host=document.getElementById('stage-venue-editor-machinery-host');
-    if(!machineryPanel||!host) return;
-    machineryPanel.dataset.gammaWorkspace='venue';
-    machineryPanel.hidden=false;
-    // 独立ワークスペースではなく、劇場設定カスタムの7番目にまとめる。
-    host.replaceChildren(machineryPanel);
-    window.dispatchEvent(new Event('stage-gamma-machinery-mounted'));
+    document.querySelectorAll('[data-panel="machinery"],.stage-venue-editor-machinery,[data-panel="stage-set"]').forEach(panel => { panel.hidden = true; });
   }
   mountMachineryWorkspace();
   let latestContext=null;
@@ -276,7 +273,7 @@
    * 見出しの意味と読み上げ順を保ったまま、見出し全体を押せるようにする。 */
   const VENUE_STEPS='.stage-venue-editor-format,.stage-venue-editor-shape,.stage-venue-editor-extension,'
     +'.stage-venue-editor-ceiling,.stage-venue-editor-audience-guide,.stage-venue-editor-wings-guide,'
-    +'.stage-venue-editor-walls-guide,.stage-venue-editor-machinery,.stage-venue-editor-viewpoints';
+    +'.stage-venue-editor-walls-guide,.stage-venue-editor-back-screens,.stage-venue-editor-viewpoints';
   const venueSteps=()=>[...venueWorkspace.querySelectorAll('.stage-venue-editor-menu '+VENUE_STEPS)];
   function openVenueStep(target) {
     venueSteps().forEach(section=>{
@@ -541,6 +538,14 @@
     });
   }
 
+  let leaveConfirmationPending = false;
+  async function askLeaveOnce(options, focus) {
+    if (leaveConfirmationPending) return "cancel";
+    leaveConfirmationPending = true;
+    try { return await askApplyBeforeLeaving(options, focus); }
+    finally { leaveConfirmationPending = false; }
+  }
+
   async function select(next) {
     if(!['normal','light-placement','light-design','venue-setup','script','cuesheet'].includes(next)) return;
     const switchingMode=mode!==next;
@@ -563,7 +568,7 @@
      *   通常どおり確認を出す（タブを押しただけで反映が確定しないようにする）。 */
     if(mode==='venue-setup' && next!=='venue-setup'
        && window.SHOSAI_VENUE_EDITOR?.hasUnappliedChanges?.()) {
-      const answer=await askApplyBeforeLeaving({
+      const answer=await askLeaveOnce({
         title:'この劇場をショーへ反映しますか？',
         body:'まだ反映していない劇場設定の変更があります。反映すると、いまの劇場がこのショーへ入ります。'
           +'<br>反映しないで移っても編集内容は残り、次に劇場設定を開いたときに戻ります。'
@@ -582,7 +587,7 @@
     if(mode!==next && isLightMode(mode) && !isLightMode(next)) {
       const lightStatus=editor()?.status?.();
       if(lightStatus?.dirty) {
-        const answer=await askApplyBeforeLeaving(null,returnFocus);
+        const answer=await askLeaveOnce(null,returnFocus);
         if(answer==='cancel') return;
         if(answer==='apply') {
           try {
@@ -619,7 +624,7 @@
           goVenue.addEventListener('click',()=>select('venue-setup'));
           status.append(goVenue);
         } else if(!loaded) {
-          frame.src='light-design/index.html?embed=gamma&v=20260926-render37'; loaded=true;
+          frame.src='light-design/index.html?embed=gamma&v=20260926-feedback40'; loaded=true;
           status.textContent='照明デザインを開いています…';
         } else if(editor()) {
           editor().open(context, next);

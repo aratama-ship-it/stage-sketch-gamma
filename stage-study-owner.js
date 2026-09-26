@@ -1,6 +1,10 @@
 /* Explicit publication only. No auto-save or realtime hook calls these APIs. */
-(() => {
+(function initGammaRuntimestage_study_owner() {
   'use strict';
+  if (!window.SHOSAI_STAGE_STUDY_OWNER) {
+    window.addEventListener("stage-gamma-runtime-ready", initGammaRuntimestage_study_owner, {once:true});
+    return;
+  }
   const bridge = window.SHOSAI_STAGE_STUDY_OWNER;
   if (!bridge) return;
   const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'stage-study.css?v=22'; document.head.append(css);

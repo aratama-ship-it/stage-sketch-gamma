@@ -1467,6 +1467,9 @@
     const project = backfillMissingSceneRehearsal(stripRemovedSceneFields(projectIoClone(document.project)));
     sceneAlternatives?.restore(project);
     refreshRjSecondSetPalette(project);
+    if (project.lightingDesign && window.GAMMA_LIGHT_MODEL?.normalizeFixedSetup) {
+      project.lightingDesign = window.GAMMA_LIGHT_MODEL.normalizeFixedSetup(project.lightingDesign);
+    }
     let venueImport = { venues: [], idMap: {}, imported: 0, skipped: 0 };
     if (document.version === 4 && Array.isArray(document.venues) && venueLibrary) {
       venueImport = venueLibrary.importVenues(document.venues);
@@ -1592,7 +1595,7 @@
     const change = changes.includes(raw.change) ? raw.change : "";
     const assetType = raw.assetType === "performer" || raw.assetType === "set"
       ? raw.assetType : "";
-    if (!change || !assetType) return null;
+    if (!change || !assetType || ["seri", "revolve", "deck", "curtain", "pool"].includes(raw.kind)) return null;
     const from = normalizeStageAIPlacement(raw.from);
     const to = normalizeStageAIPlacement(raw.to);
     if ((change === "add" && !to) || (change === "remove" && !from)
@@ -4196,7 +4199,7 @@
     ] };
   PROP_SHAPES.rickshaw = { ja: "人力車", en: "Rickshaw", dims: { w: 1, d: 2.5, h: 1.8 }, grip: null,
     parts: [
-      ...[-0.23, 0.23].flatMap((x) => lyingCylinder("z", 14, 0.5, 0.08, x, 0, 0.38, 0.62)),
+      ...[-0.23, 0.23].flatMap((x) => lyingCylinder("x", 14, 0.5, 0.08, x, 0, 0.38, 0.62)),
       boxAt(0, 0.3, 0.25, 0.82, 0.85, 0.35, 0.82), boxAt(0, 0.65, 0.18, 0.72, 0.62, 0.12, 1.02),
       boxAt(0, 0.77, -0.08, 0.72, 0.08, 0.48, 0.76),
       boxAt(-0.22, 0.34, -0.86, 0.06, 1.35, 0.06, 0.65), boxAt(0.22, 0.34, -0.86, 0.06, 1.35, 0.06, 0.65),
@@ -4205,17 +4208,17 @@
     ] };
   PROP_SHAPES.wheelchair = { ja: "車椅子", en: "Wheelchair", dims: { w: 0.65, d: 1.05, h: 0.9 }, grip: null,
     parts: [
-      ...[-0.04, 0.04].flatMap((x) => lyingCylinder("z", 14, 0.55, 0.05, x, 0, 0.08, 0.62)),
+      ...[-0.29, 0.29].flatMap((x) => lyingCylinder("x", 14, 0.55, 0.05, x, 0, 0.08, 0.62)),
       boxAt(0, 0.43, 0.02, 0.58, 0.48, 0.07, 0.92), boxAt(0, 0.5, -0.2, 0.58, 0.07, 0.4, 0.8),
       boxAt(-0.29, 0.55, 0.02, 0.05, 0.45, 0.08, 0.72), boxAt(0.29, 0.55, 0.02, 0.05, 0.45, 0.08, 0.72),
       boxAt(0, 0.18, 0.42, 0.55, 0.16, 0.05, 0.68),
       boxAt(-0.23, 0.86, -0.25, 0.12, 0.08, 0.04, 0.65), boxAt(0.23, 0.86, -0.25, 0.12, 0.08, 0.04, 0.65),
-      { shape: "cylinder", x: -0.24, y: 0, z: 0.4, dia: 0.1, h: 0.1, tint: 0.58 },
-      { shape: "cylinder", x: 0.24, y: 0, z: 0.4, dia: 0.1, h: 0.1, tint: 0.58 },
+      ...lyingCylinder("x", 8, 0.1, 0.04, -0.24, 0, 0.4, 0.58),
+      ...lyingCylinder("x", 8, 0.1, 0.04, 0.24, 0, 0.4, 0.58),
     ] };
   PROP_SHAPES.motorcycle = { ja: "バイク・スクーター", en: "Motorcycle / scooter", dims: { w: 0.8, d: 2.1, h: 1.1 }, grip: null,
     parts: [
-      ...[-0.68, 0.68].flatMap((z) => lyingCylinder("z", 14, 0.56, 0.09, 0, 0, z, 0.58)),
+      ...[-0.68, 0.68].flatMap((z) => lyingCylinder("x", 14, 0.56, 0.09, 0, 0, z, 0.58)),
       ...slantBeam(6, 0, 0, 0.28, 0.58, -0.45, 0.08, 0.05),
       ...slantBeam(6, 0, 0, 0.28, 0.5, 0.45, 0.08, 0.05),
       boxAt(0, 0.47, 0.12, 0.56, 0.62, 0.22, 0.88), boxAt(0, 0.62, -0.25, 0.48, 0.5, 0.1, 0.68),
@@ -4240,7 +4243,7 @@
     ] };
   PROP_SHAPES.mine_cart = { ja: "トロッコ", en: "Mine cart", dims: { w: 0.9, d: 1.5, h: 1 }, grip: null,
     parts: [
-      ...[-0.25, 0.25].flatMap((x) => lyingCylinder("z", 12, 0.32, 0.08, x, 0, 0, 0.58)),
+      ...[-0.25, 0.25].flatMap((x) => lyingCylinder("x", 12, 0.32, 0.08, x, 0, 0, 0.58)),
       boxAt(0, 0.27, 0, 0.68, 1.2, 0.18, 0.72), boxAt(0, 0.45, 0, 0.82, 1.35, 0.25, 0.82),
       boxAt(0, 0.7, 0, 0.9, 1.5, 0.12, 0.92),
       boxAt(-0.42, 0.4, 0, 0.06, 1.42, 0.6, 0.7), boxAt(0.42, 0.4, 0, 0.06, 1.42, 0.6, 0.7),
@@ -4248,7 +4251,7 @@
     ] };
   PROP_SHAPES.kitchen_car = { ja: "キッチンカー", en: "Food truck", dims: { w: 2, d: 4.5, h: 2.5 }, grip: null,
     parts: [
-      ...[-0.68, 0.68].flatMap((x) => lyingCylinder("z", 12, 0.52, 0.12, x, 0, 0.85, 0.55)),
+      ...[-0.68, 0.68].flatMap((x) => lyingCylinder("x", 12, 0.52, 0.12, x, 0, 0.85, 0.55)),
       boxAt(0, 0.28, 0, 2, 4.3, 0.3, 0.68), boxAt(0, 0.58, 0, 1.92, 4.2, 1.82, 0.82),
       boxAt(0, 2.4, 0, 2, 4.5, 0.1, 0.72),
       { shape: "panel", x: 0, y: 1.05, z: 2.12, w: 1.15, d: 0.03, h: 0.82, tint: 1.13 },
@@ -4258,7 +4261,7 @@
     ] };
   PROP_SHAPES.stroller = { ja: "ベビーカー", en: "Stroller", dims: { w: 0.55, d: 0.9, h: 1 }, grip: null,
     parts: [
-      ...[-0.18, 0.18].flatMap((x) => lyingCylinder("z", 10, 0.18, 0.05, x, 0, 0.2, 0.58)),
+      ...[-0.18, 0.18].flatMap((x) => lyingCylinder("x", 10, 0.18, 0.05, x, 0, 0.2, 0.58)),
       ...[-0.18, 0.18].flatMap((x) => slantBeam(6, x, x, 0.14, 0.72, 0.28, -0.18, 0.035)),
       boxAt(0, 0.4, 0.02, 0.48, 0.58, 0.08, 0.82), boxAt(0, 0.48, -0.2, 0.48, 0.08, 0.35, 0.76),
       boxAt(0, 0.56, -0.05, 0.5, 0.45, 0.08, 0.9),
@@ -8639,7 +8642,7 @@
     // 2026-09-11 本人指示: 光の意図カードを非表示にする。以前ONにしていた端末の
     // 保存値（prefs.lightIntent）があっても無視する。カード・比較欄・図の重ねは
     // すべてこの一箇所（lightIntentOverlayOn等）から連鎖してOFFになる。
-    if (key === "lightIntent") return false;
+    if (["lightIntent", "busyness", "crossing", "highwarn", "houseDepth", "panelStageSet"].includes(key)) return false;
     // Gammaでは、舞台の転換に必要な三項目を常時有効にする。
     // 定義と保存値は残し、旧ショーの設定を読み込んでもデータは失わない。
     if (["presentation", "lineup", "pitchExport", "blackout", "sceneTiming", "sceneTransitions"].includes(key)) return true;
@@ -9546,7 +9549,7 @@
 
   // 盆の上にある駒の見かけの位置。保存値は動かさず、描画・視点・動線だけを回す。
   function effectivePlacement(piece, scene = sc()) {
-    const machinery = window.SHOSAI_STAGE_MACHINERY;
+    const machinery = null; // Gamma/Delta: legacy machinery is retained, never applied.
     if (!machinery) return { u: pieceU(piece), v: pieceV(piece), facing: finite(piece && piece.facing, 0) };
     return machinery.effectivePlacement(piece, scene, venueSize(), {
       dimsFor: pieceDims,
@@ -9956,6 +9959,9 @@
   /* RJセカンドの旧既定色だけを補正。利用者の配色・演者・配置は保持する。
      見本を複製したショーも固有のsetIdを引き継ぐので同じ補正を受ける。 */
   function refreshRjSecondSetPalette(project) {
+    const runtime = typeof window === "undefined" ? globalThis : window;
+    const bundled = (runtime.SHOSAI_STAGE_BUNDLED_PROJECT_LIBRARY?.samples || []).find(sample => sample.project?.id === "romeo-juliet-rj-second-v1")?.project;
+    runtime.GAMMA_LIGHT_MODEL?.upgradeRjSecond(project, bundled);
     const palette = {
       "rj-set-bar": ["#8a7050", "#27384a"],
       "rj-set-bar-shelf": ["#655b4c", "#344b60"],
@@ -14469,7 +14475,7 @@
       if (other === piece) return;
       if (other.heldBy) return;
       // ポールの上には立てない（付き方が特別なので refreshBases で別に扱う）
-      if (other.type === "pole") return;
+      if (["pole", "seri", "revolve", "deck", "curtain", "pool"].includes(other.type)) return;
       const foot = supportFootprint(other);
       if (!foot) return;
       // 座る・寄りかかる家具は、サイズに関係なく演者の支え候補から常に外す。
@@ -14516,8 +14522,7 @@
    * 駒の足元の四隅を舞台座標へ出してから、せりの向きへ逆回転する。
    * supportUnder と同じく、舞台の奥方向は v が小さくなる座標で扱う。 */
   function seriStraddlers(pieces, size) {
-    const raised = pieces.filter((p) => p.type === "seri"
-      && clamp(finite(p.seriH, 0), 0, 4) > 0.02);
+    const raised = []; // γ・δでは保存済みの迫りも稼働しません。
     const checked = pieces.filter((piece) => piece.type !== "seri"
       && piece.type !== "light" && !isFlown(piece));
     const found = [];
@@ -17970,14 +17975,15 @@
     }
 
     // 作成会場のバックスクリーン。高さは保存せず、現在の天井高を使う。
-    if (v.backScreen && stepShape) {
-      const { from, to } = v.backScreen;
+    for (const {from, to} of (Array.isArray(v.backScreens) ? v.backScreens : v.backScreen ? [v.backScreen] : [])) {
+      if (!stepShape) continue;
       const ceilingM = Number(v.venueV2?.ceiling?.heightM) || Number(L.size.height) || 6;
       const u1 = stepShape.uOf(from[0]), u2 = stepShape.uOf(to[0]);
       const depth = stepShape.vOf(from[1]);
-      const low1 = place(u1, depth, L), low2 = place(u2, depth, L);
+      const depth2 = stepShape.vOf(to[1]);
+      const low1 = place(u1, depth, L), low2 = place(u2, depth2, L);
       const high1 = stagePoint(u1, depth, ceilingM, L);
-      const high2 = stagePoint(u2, depth, ceilingM, L);
+      const high2 = stagePoint(u2, depth2, ceilingM, L);
       target.save();
       target.beginPath();
       target.moveTo(low1.x, low1.y); target.lineTo(low2.x, low2.y);
@@ -18732,8 +18738,8 @@
       target.restore();
     }
 
-    if (v.backScreen) {
-      const a = pointAt(v.backScreen.from), b = pointAt(v.backScreen.to);
+    for (const screen of (Array.isArray(v.backScreens) ? v.backScreens : v.backScreen ? [v.backScreen] : [])) {
+      const a = pointAt(screen.from), b = pointAt(screen.to);
       target.save(); target.beginPath(); target.moveTo(a.x, a.y); target.lineTo(b.x, b.y);
       target.lineWidth = 5; target.strokeStyle = "#e9e8df"; target.stroke(); target.restore();
     }
@@ -19468,6 +19474,7 @@
   /* 通常の駒もAI下書きの駒も、必ずこの一本を通して描く。
      下書き側で座標変換や種類別描画を複製すると、正面と平面でずれる。 */
   function drawStagePiece(target, piece, L, leanAt, drawOptions = {}) {
+    if (["seri", "revolve", "deck", "curtain", "pool"].includes(piece?.type)) return;
     piece = effectivelyPlacedPiece(piece);
     /* 袖に居るものは正面図に出さない。額縁の外は客席から見えない。
        アニメーション中は動きの途中の値で判定するので、はけていく駒は
@@ -20559,7 +20566,7 @@
     if (sceneAnim && sceneAnim.exits && sceneAnim.exits.length) {
       target.save();
       target.globalAlpha = 1 - 0.45 * (sceneAnim.progress || 0);
-      sceneAnim.exits.forEach((entry) => draw(entry.piece));
+      sceneAnim.exits.filter(entry => !(sceneAnim.blackout && sceneAnim.progress >= .2 && entry.piece.type === "performer")).forEach((entry) => draw(entry.piece));
       target.restore();
     }
 
@@ -20567,6 +20574,15 @@
     if (showSelection && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) {
       if (drawLightCueWorkLight(target, L)) {
         redrawLitPieces(target, L, orderedPieces, draw);
+        // はけ途中の演者も背景照明より手前へ戻す。現シーンにいないため
+        // orderedPiecesだけでは照明の暗幕に覆われたままになっていた。
+        if (sceneAnim?.exits?.length) {
+          target.save();
+          target.globalAlpha = 1 - 0.45 * (sceneAnim.progress || 0);
+          const walkers = sceneAnim.exits.filter(entry => !(sceneAnim.blackout && sceneAnim.progress >= .2)).map(entry => entry.piece);
+          redrawLitPieces(target, L, walkers, draw);
+          target.restore();
+        }
         // 手に持っている物も、持ち主が光の中にいれば明るく戻す（正面だけの描き方）
         if (!L.plan) redrawLitPieces(target, L, solid.filter((piece) => piece.heldBy),
           (piece) => drawHeldFrontPiece(target, piece, L));
@@ -20649,7 +20665,7 @@
     /* 暗転で始まるシーンへの転換。前半で落ちて後半で明ける（山なりの黒幕）。
        動きの中身は幕の裏で起きるのが、暗転転換の本来の姿 */
     if (!L.plan && sceneAnim && sceneAnim.blackout) {
-      const a = Math.sin(Math.PI * clamp(sceneAnim.progress || 0, 0, 1));
+      const a = (window.STAGE_PERFORMER_MOTION?.blackoutPhase(sceneAnim.progress || 0).opacity ?? 0);
       target.fillStyle = `rgba(0,0,0,${(a * 0.96).toFixed(3)})`;
       target.fillRect(0, 0, W, H);
     }
@@ -23046,7 +23062,7 @@
     PANEL_FEATURES.filter((f) => panelEl(f.panel)).forEach((f) => {
       const el = panelEl(f.panel);
       if (!el) return;
-      el.hidden = deskUi ? !featureOn(f.key) : false;
+      el.hidden = f.key === "panelStageSet" || (deskUi ? !featureOn(f.key) : false);
     });
   }
 
@@ -23055,7 +23071,7 @@
   function renderPanelVisibilityMenu() {
     if (!els.panelsMenu) return;
     els.panelsMenu.replaceChildren();
-    PANEL_FEATURES.filter((f) => panelEl(f.panel)).forEach((f) => {
+    PANEL_FEATURES.filter((f) => f.key !== "panelStageSet" && panelEl(f.panel)).forEach((f) => {
       const item = document.createElement("label");
       item.className = "stage-panel-visibility-item";
       item.title = tx(f.hint);
@@ -25652,17 +25668,13 @@
        * 向き0°・90°の2方向で測った外接枠のうち大きいほうを基準に、
        * 拡大率は回転中ずっと同じ値に固定する。 */
       const boundsAt = (facing) => selectionBounds({ ...previewPiece, facing }, previewLayout);
-      const bounds0 = boundsAt(0);
-      const bounds90 = boundsAt(90);
-      // 2つの枠を正しく包む外接矩形（幅・高さを別々にmaxすると中心がずれるので、
-      // 両端の座標をそれぞれmin/maxしてから幅・高さを引き直す）。
-      const boundsX0 = Math.min(bounds0.x, bounds90.x);
-      const boundsY0 = Math.min(bounds0.y, bounds90.y);
+      const envelopes = Array.from({length: 24}, (_, i) => boundsAt(i * 15));
+      const boundsX0 = Math.min(...envelopes.map(b => b.x));
+      const boundsY0 = Math.min(...envelopes.map(b => b.y));
       const approxBounds = {
-        x: boundsX0,
-        y: boundsY0,
-        w: Math.max(bounds0.x + bounds0.w, bounds90.x + bounds90.w) - boundsX0,
-        h: Math.max(bounds0.y + bounds0.h, bounds90.y + bounds90.h) - boundsY0,
+        x: boundsX0, y: boundsY0,
+        w: Math.max(...envelopes.map(b => b.x + b.w)) - boundsX0,
+        h: Math.max(...envelopes.map(b => b.y + b.h)) - boundsY0,
       };
       const pad = 10;
       const draw = (fit) => {
@@ -25694,31 +25706,7 @@
       const fitCacheKey = `${kind}:${propShapeId || ""}:${w}x${h}`;
       let fit = KIND_PREVIEW_FIT_CACHE.get(fitCacheKey);
       if (!fit) {
-        const trial = fitFrom(approxBounds);
-        ctx2.clearRect(0, 0, w, h);
-        draw(trial);
-        const pixels = ctx2.getImageData(0, 0, w, h).data;
-        let px0 = w; let py0 = h; let px1 = -1; let py1 = -1;
-        for (let y = 0; y < h; y += 1) {
-          for (let x = 0; x < w; x += 1) {
-            if (pixels[(y * w + x) * 4 + 3] > 10) {
-              if (x < px0) px0 = x; if (x > px1) px1 = x;
-              if (y < py0) py0 = y; if (y > py1) py1 = y;
-            }
-          }
-        }
-        if (px1 >= px0 && py1 >= py0) {
-          // 実測した画素の枠（canvas座標）を、trialの変換で逆算して駒の実寸座標へ戻す。
-          const measured = {
-            x: (px0 - trial.offsetX) / trial.scale,
-            y: (py0 - trial.offsetY) / trial.scale,
-            w: (px1 - px0 + 1) / trial.scale,
-            h: (py1 - py0 + 1) / trial.scale,
-          };
-          fit = fitFrom(measured);
-        } else {
-          fit = trial; // 何も描かれなかった場合（未対応の形など）は近似のまま
-        }
+        fit = fitFrom(approxBounds);
         KIND_PREVIEW_FIT_CACHE.set(fitCacheKey, fit);
       }
       ctx2.clearRect(0, 0, w, h);
@@ -26445,6 +26433,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   function addMachinery(kind) {
+    return; // Gamma/Delta do not create machinery.
+
     if (!["revolve", "deck", "curtain", "pool", "seri"].includes(kind)) return;
     if (!canAddSets() || !canAddScenePieces(sc())) return;
     checkpoint();
@@ -26774,7 +26764,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       { x: finite(part.b[0], 0), y: finite(part.b[2], 0), z: finite(part.b[1], 0) },
     ]));
     const flatAll = all.map(flat);
-    const rawSpan = Math.max(...flatAll.map((q) => Math.abs(q.fx))) * 2;
+    const radius = Math.max(0.05, ...all.map(q => Math.hypot(q.x, q.y)));
+    const rawSpan = radius * 2;
     const rawTop = Math.max(...flatAll.map((q) => q.z));
     /* ★小さい道具は人の影と並べない。12cmのディアボロを1.7mの人と並べると、
        道具が数画素になって形が読めない。見当をつける相手を物差しへ替える。 */
@@ -26791,9 +26782,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const labelRoom = bigEnoughForFigure ? 13 : 24;
     const k = Math.min(
       (cssWidth - margin * 2) / (spanX + figureSpanM + gapM),
-      (cssHeight - margin - labelRoom) / Math.max(0.6, topZ * (1 + tilt * 0.3)),
+      (cssHeight - margin - labelRoom) / Math.max(0.6, topZ + radius * Math.abs(tilt) * 2),
     );
-    const baseY = cssHeight - margin - labelRoom + 6;
+    const baseY = cssHeight - margin - labelRoom - radius * k * Math.abs(tilt);
     const figX = margin + (figureSpanM / 2) * k;
     const leftEdge = margin + (figureSpanM + gapM) * k;
     const centerX = leftEdge + (cssWidth - margin - leftEdge) / 2;
@@ -28750,10 +28741,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   const wrapSpinAngle = (angle) => ((angle % 360) + 540) % 360 - 180;
 
   function spinningRevolves() {
-    const scene = sc();
-    if (!scene || !Array.isArray(scene.pieces)) return [];
-    return scene.pieces.filter((piece) => piece.type === "revolve"
-      && Math.abs(finite(piece.spinRate, 0)) > 0.01);
+    return []; // 舞台機構はγ・δでは使用しません。旧保存値は維持します。
   }
 
   /* ★2026-09-19（段階5②）: 模様（ゴボ）の回転も、盆と同じ時計（spinRun）で動かす。
@@ -28831,7 +28819,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
 
   function spinRunAllowed() {
     return state.animateScenes && !document.hidden
-      && (spinningRevolves().length > 0 || spinningGobos().length > 0);
+      && (spinningGobos().length > 0);
   }
 
   function startSpinRun() {
@@ -28961,7 +28949,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const rows = state.project.scenes.filter((row) => row.kind === "scene");
     const wasAt = rows.findIndex((row) => row.id === fromScene.id);
     const nowAt = rows.findIndex((row) => row.id === state.project.activeSceneId);
-    if (wasAt < 0 || nowAt < 0 || nowAt <= wasAt) return false;
+    if (wasAt < 0 || nowAt < 0 || nowAt === wasAt) return false;
+    const timingScene = rows[Math.min(wasAt, nowAt)];
+    const blackoutScene = rows[Math.max(wasAt, nowAt)];
     const pieces = [];
     sc().pieces.forEach((piece) => {
       const twin = twinOf(piece, fromScene.pieces || []);
@@ -28972,7 +28962,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       // 明かりは強さの変化もフェードで見せる（場所が同じでも動かす対象になる）
       const sameGlow = piece.type !== "light"
         || Math.abs(finite(twin.glow, 1) - finite(piece.glow, 1)) < 0.01;
-      const mechDefaults = MACHINERY_ANIM_KEYS[piece.type] || null;
+      const mechDefaults = null; // Legacy machinery cannot animate.
       const mechKeys = mechDefaults ? Object.keys(mechDefaults) : [];
       const mechFrom = {};
       const mechTo = {};
@@ -29073,13 +29063,13 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         glowFrom: finite(old_.glow, 1), glowTo: 0 });
     });
     /* 暗転で始まるシーンへの転換は、動きが無くても暗転の幕だけは掛ける */
-    const blackout = featureOn("blackout") && Boolean(sc().blackout);
+    const blackout = featureOn("blackout") && Boolean(blackoutScene.blackout);
     if (!pieces.length && !exits.length && !blackout) return false;
     const movers = pieces.concat(exits);
     // 転換の実時間はタイムラインの「次のシーンへの移動時間」を唯一の正本にする。
     // タイムライン再生中は、その同じ区間長を明示して渡してもよい。
-    const scheduledSeconds = fromScene && fromScene.rehearsal
-      ? rehearsalSeconds(fromScene.rehearsal.transitionToNextSeconds) : null;
+    const scheduledSeconds = timingScene && timingScene.rehearsal
+      ? rehearsalSeconds(timingScene.rehearsal.transitionToNextSeconds) : null;
     const span = durationMs !== null && durationMs !== undefined && Number.isFinite(Number(durationMs))
       ? clamp(Number(durationMs), 100, 86400000)
       : scheduledSeconds !== null
@@ -29088,13 +29078,14 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const start = performance.now();
     const step = (now) => {
       const t = clamp((now - start) / span, 0, 1);
-      const e = easeInOut(t);
-      if (sceneAnim) sceneAnim.progress = e;
+      const visualT = blackout ? (t < 0.2 ? 0 : 1) : t;
+      const e = easeInOut(visualT);
+      if (sceneAnim) sceneAnim.progress = t;
       movers.forEach((entry) => {
         const piece = entry.piece;
         // 道のりの補間（0..1）。曲がりがあれば二次曲線をたどる
         let travelProgress = null;
-        let walkingTime = t;
+        let walkingTime = visualT;
         let walkingSpan = 1;
         const along = (p2) => {
           travelProgress = p2;
@@ -29117,20 +29108,20 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           const down = sb > 0.05 ? 0.25 : 0;
           const up = eb > 0.05 ? 0.3 : 0;
           const walkSpan = Math.max(0.05, 1 - down - up);
-          if (t < down) {
-            const p2 = easeInOut(t / down);
+          if (visualT < down) {
+            const p2 = easeInOut(visualT / down);
             piece.animU = entry.from.u;
             piece.animV = entry.from.v;
             piece.animBase = sb * (1 - p2);   // まず降りる（前の姿勢のまま）
             if (entry.fromPose) piece.animPose = entry.fromPose; else delete piece.animPose;
-          } else if (t < down + walkSpan) {
-            walkingTime = (t - down) / walkSpan;
+          } else if (visualT < down + walkSpan) {
+            walkingTime = (visualT - down) / walkSpan;
             walkingSpan = walkSpan;
             along(easeInOut(walkingTime));
             piece.animBase = 0;
             piece.animPose = "walk";          // 床は歩く
           } else {
-            const p2 = easeInOut((t - down - walkSpan) / (up || 1));
+            const p2 = easeInOut((visualT - down - walkSpan) / (up || 1));
             piece.animU = entry.to.u;
             piece.animV = entry.to.v;
             piece.animBase = eb * p2;         // 着いてから登る（乗り物の姿勢で）
@@ -29139,12 +29130,13 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         } else {
           along(e);
           // 移動中は前のシーンの姿勢のまま。終わったら stopSceneAnim が消して新しい姿勢になる
-          if (entry.fromPose) piece.animPose = entry.fromPose;
+          if (entry.fromPose && visualT < 1) piece.animPose = entry.fromPose;
+          else delete piece.animPose;
         }
         const motion = window.STAGE_PERFORMER_MOTION;
         performerGait.delete(piece.id);
         delete piece.animFacing;
-        if (motion && piece.type === "performer" && travelProgress !== null) {
+        if (!blackout && motion && piece.type === "performer" && travelProgress !== null) {
           const pose = poseById(resolvePoseId(piece, sc().pieces));
           const carrying = Boolean(pose.props || pose.wheel)
             || sc().pieces.some(other => other.heldBy === piece.id);
@@ -29189,12 +29181,18 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           });
         }
       });
-      render();
+      const fpv = document.getElementById("stage-fpv-overlay");
+      if (!fpv || fpv.hidden) {
+        if (state.showFront || presenting) drawStage(ctx, true, "front");
+        if ((state.showPlan || presenting) && planCtx) drawStage(planCtx, true, "plan");
+        renderSecondSeatView();
+      }
+      window.dispatchEvent(new CustomEvent("stage-scene-transition-progress", {detail: {fromSceneId: fromScene.id, toSceneId: sc().id, progress: t}}));
       if (t < 1) { sceneAnim.raf = requestAnimationFrame(step); return; }
       stopSceneAnim();
       render();
     };
-    sceneAnim = { pieces, exits, blackout, progress: 0, raf: 0 };
+    sceneAnim = { pieces, exits, blackout, progress: 0, raf: 0, fromSceneId: fromScene.id, toSceneId: sc().id, durationMs: span };
     // 切替直後に行き先の絵を一度だけ描いてから rAF を待つと、転換の始まりで別フレームが瞬く。
     // 最初の描画を同期して前シーンの座標へ戻してから、以後のフレームを予約する。
     step(start);
@@ -29730,7 +29728,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const features = prefGroup("機能のオン/オフ", "");
     const hiddenGammaFlags = new Set([
       "presentation", "cuesheet", "lineup", "pitchExport",
-      "blackout", "sceneTiming", "sceneTransitions",
+      "blackout", "sceneTiming", "sceneTransitions", "busyness", "crossing", "highwarn", "houseDepth",
       /* ★照明の3つは「照明の見え方」の選択欄へまとめた（2026-09-19）。保存値はそのまま。 */
       "lightPool", "lightBeam", "workLightOff",
     ]);
@@ -30864,7 +30862,7 @@ ${propsPlotHtml}
     if (!beginSceneAnim(transitionFromScene || before, liveSpins, options.transitionDurationMs)) render();
     persistSoon();
     window.dispatchEvent(new CustomEvent("stage-scene-change", {
-      detail: { sceneId: id, fromTimeline: Boolean(options.fromTimeline) },
+      detail: { sceneId: id, fromTimeline: Boolean(options.fromTimeline), transition: sceneAnim ? {fromSceneId: sceneAnim.fromSceneId, toSceneId: sceneAnim.toSceneId, progress: sceneAnim.progress, durationMs: sceneAnim.durationMs} : null },
     }));
     announce(`${sc().title}を開きました。`);
   }
@@ -32309,6 +32307,8 @@ ${propsPlotHtml}
   function stageAskPlanPrompt(projectId, revision, request, resolutions = []) {
     return [
       "舞台スケッチの現在ショーに対する編集計画を1件作成してください。",
+      "γ・δでは舞台機構（迫り、盆、デッキ、幕の昇降、プール）は使えません。通常の大道具として構成してください。",
+      "固定灯の向き・色・広がりは仕込み時に決め、全シーンとLXキューで共通にしてください。演者の移動に追従させず、区域ごとの固定灯の点灯と明るさで照明を構成してください。",
       `projectId: ${projectId}`,
       `expectedRevision: ${revision}`,
       `本人の指示（この文字列をrequestへそのまま入れる）: ${JSON.stringify(request)}`,
@@ -32525,7 +32525,20 @@ ${propsPlotHtml}
       const next = await STAGE_AI_PANEL_MODEL.commitAppliedExport({
         currentState: state,
         exported,
-        prepareImportDocument: prepareProjectImportDocument,
+        prepareImportDocument: document => {
+          const prepared = prepareProjectImportDocument(document);
+          const retired = new Set(["seri", "revolve", "deck", "curtain", "pool"]);
+          const existingSets = new Set((state.project.sets || []).filter(item => retired.has(item.kind)).map(item => item.id));
+          const existingByScene = new Map((state.project.scenes || []).map(scene => [scene.id,
+            new Set((scene.pieces || []).filter(piece => retired.has(piece.type)).map(piece => piece.id))]));
+          if ((prepared.project.sets || []).some(item => retired.has(item.kind) && !existingSets.has(item.id))
+            || (prepared.project.scenes || []).some(scene => (scene.pieces || []).some(piece => retired.has(piece.type)
+              && !existingByScene.get(scene.id)?.has(piece.id)))) {
+            throw new Error("γ・δでは舞台機構を生成・使用できません。舞台機構を含まない案を作成してください。");
+          }
+          if (prepared.project.lightingDesign) prepared.project.lightingDesign = window.GAMMA_LIGHT_MODEL.normalizeFixedSetup(prepared.project.lightingDesign);
+          return prepared;
+        },
         normalizeState,
         shelveCurrent: async () => {
           const didShelve = await shelveCurrent();
@@ -33377,6 +33390,7 @@ ${propsPlotHtml}
       detail: {
         venueId: state.project.venue,
         sizeId: state.project.venueSize,
+        markBaseline: true,
       },
     }));
   }
@@ -34659,6 +34673,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     });
   }
 
+  let lastInspectorSelectionId = null;
   function updateInspector() {
     syncMoveHelp();
     const piece = selectedPiece();
@@ -34680,6 +34695,21 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     els.selectionControls.hidden = !piece;
     const inspector = els.selectionControls?.closest('[data-panel="inspector"]');
     if (inspector) {
+      if (piece) {
+        inspector.hidden = false;
+        inspector.classList.remove("is-collapsed");
+        const body = inspector.querySelector(".stage-panel-body");
+        if (body) body.hidden = false;
+        inspector.querySelector(".stage-panel-head")?.setAttribute("aria-expanded", "true");
+        state.layout.collapsed.inspector = false;
+        if (piece.id !== lastInspectorSelectionId && !featureOn("floatingInspector")) {
+          requestAnimationFrame(() => {
+            if (selectedPiece()?.id !== piece.id) return;
+            (inspector.querySelector(".stage-panel-head") || inspector).scrollIntoView({block: "nearest", inline: "nearest"});
+          });
+        }
+      }
+      lastInspectorSelectionId = piece?.id || null;
       if (piece && inspector.dataset.gammaObjectDragging === "true") {
         inspector.hidden = false;
         delete inspector.dataset.gammaObjectDragging;
@@ -37414,7 +37444,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
               ...surfaceSnapshot(visual),
             };
           }).concat(
-            sceneAnim && sceneAnim.exits ? sceneAnim.exits.map((entry) => ({
+            sceneAnim && sceneAnim.exits ? sceneAnim.exits.filter(entry => !(sceneAnim.blackout && sceneAnim.progress >= .2 && entry.piece.type === "performer")).map((entry) => ({
               ...entry.piece,
               performancePose: samplePerformancePose(entry.piece),
               facing: performerFacing(entry.piece),
@@ -41413,4 +41443,6 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     },
     isEnglish() { return languageValue(() => true, () => false); },
   });
+  window.dispatchEvent(new Event("stage-gamma-runtime-ready"));
+
 })();

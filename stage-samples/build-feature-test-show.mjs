@@ -57,7 +57,7 @@ if (POSES.length < 40) throw new Error(`姿勢の一覧が取れていません 
 if (PROP_SHAPES.length < 10) throw new Error(`小道具の形の一覧が取れていません (${PROP_SHAPES.length})`);
 
 // v4（2026-09-24）: 転換0秒をなくしてシーンの秒数が変わったので上げる（一度開いた棚の複製は自動で差し替わらないため）
-const PROJECT_ID = "gamma-feature-test-v8";
+const PROJECT_ID = "gamma-feature-test-v9";
 const CREATED = "2026-09-18T00:00:00.000Z";
 const STAGE = { width: 12, depth: 9 };      // proscenium / mid の実寸（stage-venues.js）
 const COLORS = ["#a84b26", "#77865f", "#9c823f", "#6d6657", "#315b8a", "#b0533f", "#4f7d6f", "#8a6a9c",
@@ -102,6 +102,7 @@ reg("suitcase", "suitcase", "スーツケース", "#5a4632", { dims: { w: 0.7, d
 reg("tramp", "trampoline", "トランポリン", "#2f3f5f", { dims: { w: 2.4, d: 2.4, h: 1.0, lift: 0 } });
 reg("cane", "cane", "ハンドバランス用cane", "#c9b48a", { dims: { h: 1.2, lift: 0 } });
 reg("car", "car", "車", "#b0533f", { dims: { w: 1.7, d: 3.8, h: 1.4, lift: 0 } });
+reg("bar-counter", "prop", "長いバーカウンター（回転プレビュー）", "#8b6a3a", { propShape: "counter", dims: { w: 4.8, d: 0.6, h: 1.1, lift: 0 } });
 reg("flown", "block", "吊り台（地上高3m）", "#e2d6c0", { dims: { w: 1.2, d: 0.8, h: 0.3, lift: 3 }, flown: true, wires: 1 });
 // 小道具（登録は持たせる6つだけ。全形は無登録の駒として C-3/C-4 に並べる）
 const REGISTERED_PROPS = ["box", "ball", "umbrella", "mask", "club", "flag"];
@@ -328,6 +329,7 @@ section("c", "C 舞台セット・小道具・空中");
     u, v: 0.94, facing: 0, size: 100, color: "#5b4a3a", name: `椅子（${suffix}）`, dims: { h: 0.9 } });
   pieces.push(chair("座る", 0.18), perf("c1-seat", "p01", 0.18, 0.94, { pose: "sit" }));
   pieces.push(chair("立つ", 0.34), perf("c1-stand", "p02", 0.34, 0.94, { pose: "stand" }));
+  pieces.push(setPiece("c1", "bar-counter", 0.75, 0.12));
   scene("c1", "C-1 床に置く物すべて", 1,
     `${CHECK}登録できる床物を1つずつ。手前の2脚では演者01が座り、演者02が座面に立つ。どちらも選ぶと姿勢一覧に「座る」と「立つ」があり、椅子から下ろすと「座る」は一覧から消える。正面図の実寸（人と比べる）、平面図の足元、「枠の壁」の穴と枠幅0.25m、車の向き。壁は厚み固定。壁（3×2.5）は映す絵（格子模様・project.photos の再利用）を持たせてあり、正面図で縦横比を保ったまま中央へ映る（切らずにレターボックス）。隣の「枠の壁（フレーム）」には絵を付けていない（穴の向こうに絵が浮くため対象外＝操作パネルにも出ない）。この2つを同じ画面で「映る／映らない」を見比べる。`, pieces);
 }
@@ -621,7 +623,7 @@ section("j", "J 負荷と3Dカメラ");
   rows[rows.length - 1].note += '\n劇場設定9番の見る位置: 舞台タブに追加の点・操作欄がないこと。劇場設定も通常時は点がなく、8. 舞台機構の次の9. 見る位置を開くと最大5点が表示されること。任意の場所（舞台の横・後ろを含む）への配置・ドラッグ・名前変更・削除を試す。6点目を置けないこと。Undo/Redoで名前と配置を戻せること。編集前に戻す、9番を閉じる・別の項目を開く、9番を再度開く、反映・再読み込みで意図した点と名前が保持されること。戻る専用ボタンは表示しないこと。既存3D登録視点・舞台形状・袖・外枠を失わないこと。';
   rows[rows.length - 1].note += '\n見る位置の目の高さ: 9番で点を選び、舞台床基準の高さを1.2mから5.5mへ変える。右の視界が高い位置からに変わり、平面図の点の位置と名前は変わらないこと。別の点の高さは変わらず、Undo/Redo・編集前に戻す・劇場の保存と再読込でも各点の高さが正しいこと。範囲外や空欄の値は採用しないこと。';
   rows[rows.length - 1].note += '\n劇場設定列の幅: 9番の枠・見出し・余白が1〜8番と揃うこと。列の右端をドラッグして平面図と立体の幅が追従すること。左右キーとShift、上下限、ダブルクリックとEnterのリセット、再読込で幅が保持されること。9番を開いたまま幅を変えても点が図の位置に重なること。';
-  rows[rows.length - 1].note += '\n劇場設定4番の天井と前一文字: プロセニアムで天井高を変えると平面図の高さ表示・正面と立体の上端線が追従すること。前一文字を「あり」にし、開口高さを変えると、平面図の舞台前端の線と正面・立体の幕下端が一致すること。天井より高い開口を入力できないこと。天井なし・360度形式では前一文字を置けないこと。Undo/Redo、劇場ライブラリ保存と再読込で設定を保ち、前一文字を持たない旧会場には幕が増えないこと。';
+  rows[rows.length - 1].note += '\n劇場設定4番の天井と前一文字: プロセニアムで天井高を変えると平面図の高さ表示・正面と立体の上端線が追従すること。前一文字は常時あり。開口高さを変えると、平面図の舞台前端の線と正面・立体の幕下端が一致すること。天井より高い開口を入力できないこと。天井なし・360度形式では前一文字を置けないこと。Undo/Redo、劇場ライブラリ保存と再読込で設定を保ち、旧会場も天井がある劇場式では幕がありとして表示し、元の保存値を読込で破壊しないこと。';
   rows[rows.length - 1].note += '\n劇場設定5番の客席床高: プロセニアムの客席を選び、舞台床0mとして舞台側0m・後方2mへ変更する。平面図に0→2mと表示され、立体の客席が傾斜すること。9番で傾斜客席上の点を動かすと、その位置の床高と目の高さ・右の視界が連動すること。別の客席区画を前後とも1mにすると平床の段ができること。Undo/Redo・既定へ戻す・保存と再読込を確認し、床高未設定の旧会場は従来と同じ見え方であること。';
   rows[rows.length - 1].note += '\n劇場設定2番の舞台床色: 茶色を既定として黒・グレーへ切り替え、舞台本体と追加ステージの立体プレビューが同色になること。Undo/Redo、劇場ライブラリ保存と再読込を確認し、色を持たない旧会場は従来の茶色であること。';
   rows[rows.length - 1].note += '\n3Dタブと劇場モデリング: プロセニアムの袖幕は劇場設定の立体プレビューと同じ各位置に1枚ずつ現れ、固定位置の幕・舞台との接点の膜が重ならないこと。袖を動かす・消すと3Dタブも追従すること。客席の区画・錆色の床・段と傾斜、舞台色、劇場の外枠と天井高も劇場設定と一致すること。立体を客席と袖側から見回し、正面図にはない遮蔽が増えないこと。大きな客席でも回転・移動が重くならないこと。';
@@ -634,6 +636,16 @@ section("j", "J 負荷と3Dカメラ");
    容量（保存JSONは実測200KB台・localStorage 5MB前後には遠く及ばない）から来る制約ではない。
    壁の向き（C-7・3Dの回転退行チェック）を1シーン足すぶんだけ、バッファを3行→2行に減らして広げる。 */
 if (rows.length > 60) throw new Error(`シーン行が上限60を超えました (${rows.length})`);
+
+rows.find(row => row.title?.startsWith("F-4")).note += "\nサイド上手12の4度・高さ2.1mを正面/上手視点で円錐断面比較。無限遠の扇にならず共通の円形断面から投影される。";
+// 0.2.40 feedback acceptance uses the same bundled show, never a production show.
+for (const row of rows) {
+  if (row.title?.startsWith("A-")) row.note += "\n通常の立ち姿: 左右の親指は身体の前へ向き、外側へ向かない。";
+  if (row.title?.startsWith("H-")) row.note += "\n上下キー転換: アニメONではタイムラインの転換頭から進む。逆方向も同じ区間を逆に進む。暗転は完全に暗い間に配置を切り替え、明けたときには次の位置。OFFでは瞬時に切り替える。";
+  if (row.title?.startsWith("D-")) row.note += "\nγ・δでは舞台機構は非表示・使用不能。ここにある旧機構のデータは保持するが、描画・演者への位置や高さの作用・回転はない。";
+  if (row.title?.startsWith("C-")) row.note += "\n選択した演者・道具のパネルが開く。長い道具の回転台は全周で縮尺固定。乗り物の車輪は進行方向に転がる。";
+  if (row.title?.startsWith("J-2")) row.note += "\n劇場設定: L字なし。吊り条件と前一文字の有無の欄なし、幕はあり。壁・柱を選んで取り外すと選んだ壁だけ消える。スクリーンは独立項目で横・縦に複数枚配置でき保存再読込後も一致。客席・袖・舞台をクリックすると対応設定へ切り替わる。見る位置をドラッグした後は全体が見え、点の上のホイールで目の高さが変わる。袖幕の間隔は均等で最低2m。左列のボタンの四辺の枠線が見える。3Dで移動しても人物の見え方を保ち処理が軽くなる。";
+}
 
 /* ---------- 照明デザイン（機材配置・照明タブ） ---------- */
 const sceneRows = rows.filter((r) => r.kind === "scene");
@@ -650,7 +662,7 @@ const fixtures = [
   fx(fixtureIds.fr1, 9, { type: "front", u: 0.38, ahead: 4.5, h: 8 }, "前明かり 09", "fixed", 12),
   fx(fixtureIds.fr2, 10, { type: "front", u: 0.62, ahead: 4.5, h: 8 }, "前明かり 10（客席向け）", "moving", 12, { fixtureType: "moving-wash" }),
   fx(fixtureIds.sL, 11, { type: "side", side: "shimote", v: 0.5, h: 2.4 }, "サイド下手 11", "fixed", 28),
-  fx(fixtureIds.sR, 12, { type: "side", side: "kamite", v: 0.5, h: 2.4 }, "サイド上手 12", "fixed", 28),
+  fx(fixtureIds.sR, 12, { type: "side", side: "kamite", v: 0.5, h: 2.4 }, "サイド上手 12", "fixed", 4),
   fx(fixtureIds.fl, 13, { type: "floor", u: 0.5, v: 0.08 }, "転がし 13", "moving", 36, { fixtureType: "moving-wash" }),
   fx(fixtureIds.cyc, 14, { type: "cyc", len: 0.9, rung: "floor", reachM: 4.8 }, "ホリゾント列 14", "fixed", 50, { fixtureType: "led-cyc" }),
   fx(fixtureIds.laser, 15, { type: "floor", u: 0.85, v: 0.1 }, "レーザー 15（ビーム／ファン）", "laser", 4, { fixtureType: "laser" }),
@@ -692,7 +704,7 @@ const lightCues = {
     [fixtureIds.cyc]: cue({ color: "#315b8a", level: 80, surface: "back", path: { kind: "still", a: { u: 0.5, v: 0, hM: 2 } } }),
     [fixtureIds.fr2]: cue({ surface: "house", level: 60, path: { kind: "still", a: { u: 0.5, v: 1, hM: 1.5, aheadM: 6 } } }),
     [fixtureIds.sL]: cue({ color: "#ffd27a", surface: "air", path: { kind: "still", a: { u: 0.5, v: 0.5, hM: 1.5 } } }),
-    [fixtureIds.sR]: cue({ color: "#7ab8ff", surface: "air", path: { kind: "still", a: { u: 0.5, v: 0.5, hM: 1.5 } } }),
+    [fixtureIds.sR]: cue({ color: "#7ab8ff", surface: "air", path: { kind: "still", a: { u: 0.5, v: 0.5, hM: 2.1 } } }),
     [fixtureIds.fl]: cue({ color: "#d9483b", surface: "back", path: { kind: "still", a: { u: 0.5, v: 0, hM: 4 } } }),
   }, groups: [], environment: { haze: 70 } },
 };
@@ -837,6 +849,7 @@ for (const sceneId of ["ft-scene-b1", "ft-scene-h1", "ft-scene-f1"]) {
   }
 }
 alternatives.adopted(project);
+project.scenes.find(row => row.id === "ft-scene-c1").note += "\n確認: 長いバーカウンター（幅4.8m）の詳細を開く。回転プレビューは全体が収まる固定縮尺で、1周しても人の影の高さ・床の位置・縮尺が変わらない。選んだもののパネルは演者と大道具のどちらをクリックしても表示される。";
 const doc = { kind: "shosai-stage-sketch", version: 4, venues: [], project };
 const json = JSON.stringify(doc, null, 1);
 writeFileSync(join(OUTPUT, "feature-test-show.json"), json + "\n");

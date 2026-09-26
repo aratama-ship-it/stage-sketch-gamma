@@ -1,5 +1,9 @@
-(function () {
+(function initGammaRuntimegamma_formation() {
   'use strict';
+  if (!window.GAMMA_FORMATION_HOST) {
+    window.addEventListener("stage-gamma-runtime-ready", initGammaRuntimegamma_formation, {once:true});
+    return;
+  }
   const host = window.GAMMA_FORMATION_HOST;
   if (!host) return;
   let dialog = null, returnFocus = null;

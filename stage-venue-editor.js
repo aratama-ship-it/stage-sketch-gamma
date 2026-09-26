@@ -181,6 +181,7 @@
     wings: [],
     walls: [],          // ★劇場に据え付ける壁（2026-09-19 本人決定）
     backScreen: null,
+    backScreens: [],
     fixtures: [],
     access: [],
     /* V-4（2026-09-17）: 天井あり/なし・屋内/屋外。既存データに無い場合は「屋内・天井あり」＝従来の挙動。 */
@@ -219,6 +220,7 @@
 
   let activePointer = null;
   let pointerHistoryStart = null;
+  let navigationPointer = null;
   let longPressTimer = null;
   let statusTimer = null;
   let returnFocus = null;
@@ -333,7 +335,7 @@
   function roomContents() {
     return allStagePoints().concat(state.wings.flatMap(item => item.polygon || []),
       state.audience.flatMap(audiencePolygon), state.walls.flatMap(item => item.polygon || []),
-      state.backScreen ? [state.backScreen.from, state.backScreen.to] : [],
+      state.backScreens.flatMap(screen => [screen.from, screen.to]),
       state.fixtures.flatMap(item => item.polygon || (item.at ? [item.at] : [])));
   }
 
@@ -1939,7 +1941,7 @@
 
   function renderControls(linesResult) {
     if (els.backScreenPlace) els.backScreenPlace.setAttribute("aria-pressed", String(state.mode === "back-screen"));
-    if (els.backScreenRemove) els.backScreenRemove.disabled = !state.backScreen;
+    if (els.backScreenRemove) els.backScreenRemove.disabled = !state.backScreens.length;
     if (els.roomSettings) {
       els.roomSettings.hidden = !state.room;
       if (state.room) {
@@ -2020,7 +2022,9 @@
       els.objectMovable.disabled = !fixture;
       els.objectMovable.checked = Boolean(fixture && fixture.movable);
     }
-    if (els.objectRemove) els.objectRemove.disabled = !fixture && !access;
+    if (els.objectRemove) els.objectRemove.disabled = !fixture && !access && state.selectedArea?.kind !== "wall";
+    const wallRemove = $("stage-venue-editor-wall-remove");
+    if (wallRemove) wallRemove.disabled = state.selectedArea?.kind !== "wall";
 
     const furnitureLevel = fixture && fixture.type === "furniture"
       ? fixture.heightLevel : state.nextFurnitureHeight;
@@ -2162,6 +2166,7 @@
       /* ★壁も控える。入れ忘れると「壁を置いて取り消しても消えない」（2026-09-19 実測）。 */
       walls: state.walls,
       backScreen: state.backScreen,
+      backScreens: state.backScreens,
       fixtures: state.fixtures,
       access: state.access,
       ceiling: state.ceiling,
@@ -2232,6 +2237,7 @@
       "stageFormat", "templateKey", "nextFurnitureHeight", "nextAccessType", "bandSerial",
       "regionSerial", "extensionSerial", "elementSerial",
     ].forEach((key) => { state[key] = clone(snapshot[key]); });
+    state.backScreens = clone(Array.isArray(snapshot.backScreens) ? snapshot.backScreens : (snapshot.backScreen ? [snapshot.backScreen] : []));
     state.floorColor = Object.values(floorColors).includes(snapshot.floorColor)
       ? snapshot.floorColor : floorColors.brown;
     state.selectedElement = null;
@@ -2470,6 +2476,7 @@
     state.wings = clone(Array.isArray(variant.stageWings)
       ? variant.stageWings : (Array.isArray(venue.stageWings) ? venue.stageWings : []));
     state.backScreen = clone(variant.backScreen || venue.backScreen || null);
+    state.backScreens = clone(variant.backScreens || venue.backScreens || (state.backScreen ? [state.backScreen] : []));
     // 旧会場の柱・什器・扉は保存データでは保持するが、形式プリセットの編集開始時には復活させない。
     const customVenue = !library.isPreset(venue.id);
     const rawFixtures = customVenue && Array.isArray(variant.fixtures) ? clone(variant.fixtures) : [];
@@ -2495,9 +2502,10 @@
     const savedBorder = state.ceiling.frontBorder;
     const defaultOpening = Math.max(0.1, roundM(Math.min(4.5, Number(state.ceiling.heightM) - 0.1)));
     state.ceiling.frontBorder = {
-      enabled: savedBorder?.enabled === true,
+      ...savedBorder,
+      enabled: true,
       openingHeightM: typeof savedBorder?.openingHeightM === "number" &&
-        Number.isFinite(savedBorder.openingHeightM)
+        Number.isFinite(savedBorder.openingHeightM) && savedBorder.openingHeightM < Number(state.ceiling.heightM)
         ? savedBorder.openingHeightM : defaultOpening,
     };
     state.stageFormat = inferTemplateStageFormat(venue, variant);
@@ -2626,7 +2634,7 @@
     state.selectedArea = null;
     state.selectedElement = null;
     setStatus(state.mode === "back-screen"
-      ? "平面図を横方向にドラッグして、バックスクリーンの位置と幅を決めてください。"
+      ? "平面図を横または縦方向にドラッグして、バックスクリーンの位置と幅を決めてください。"
       : "バックスクリーンの設置を終了しました。");
     render();
   }
@@ -2634,15 +2642,14 @@
   function moveBackScreenPointer(pointer, point) {
     const end = snappedPoint(point);
     const outline = state.room?.outline || state.points;
-    const z = pointer.start[1];
-    pointer.preview = { from: [pointer.start[0], z], to: [end[0], z] };
-    const width = Math.abs(end[0] - pointer.start[0]);
-    const samples = Math.min(64, Math.max(2, Math.ceil(width / 0.5)));
-    pointer.valid = width >= 0.4 && Array.from({ length: samples + 1 }, (_, index) => {
-      const x = pointer.start[0] + (end[0] - pointer.start[0]) * index / samples;
-      return pointInPolygon([x, z], outline);
-    }).every(Boolean);
-    setStatus(pointer.valid ? `バックスクリーン 幅${roundM(Math.abs(end[0] - pointer.start[0]))}m。天井までの高さで表示します。`
+    const horizontal = Math.abs(end[0] - pointer.start[0]) >= Math.abs(end[1] - pointer.start[1]);
+    const to = horizontal ? [end[0], pointer.start[1]] : [pointer.start[0], end[1]];
+    pointer.preview = { from: pointer.start.slice(), to };
+    const width = Math.hypot(to[0] - pointer.start[0], to[1] - pointer.start[1]);
+    const samples = Math.min(4000, Math.max(2, Math.ceil(width / 0.05)));
+    pointer.valid = width >= 0.4 && Array.from({ length: samples + 1 }, (_, index) =>
+      pointInPolygon(pointer.start.map((v, axis) => v + (to[axis] - v) * index / samples), outline)).every(Boolean);
+    setStatus(pointer.valid ? `バックスクリーン 幅${roundM(width)}m。天井までの高さで表示します。`
       : "幅0.4m以上で、会場の範囲内に描いてください。");
   }
 
@@ -2834,6 +2841,7 @@
   }
 
   function removeSelectedElement() {
+    if (state.selectedArea?.kind === "wall") { removeSelectedArea(); return; }
     const fixture = selectedFixture();
     const access = selectedAccess();
     if (fixture) {
@@ -3172,7 +3180,7 @@
     if (state.mode === "back-screen") {
       activePointer = { pointerId: event.pointerId, kind: "back-screen",
         start: snappedPoint(point), preview: null, valid: false, moved: false };
-      setStatus("横方向にドラッグして、バックスクリーンを設置します。");
+      setStatus("横または縦方向にドラッグして、バックスクリーンを設置します。");
       return;
     }
 
@@ -3215,6 +3223,13 @@
       return;
     }
 
+    const wall = hitWallArea(point), wing = hitWingArea(point);
+    if (!areaResizeHit && !audienceHandleHit && (wall || wing)) {
+      const item = wall || wing, kind = wall ? "wall" : "wing";
+      state.selectedArea = { kind, id: item.id }; state.selectedElement = null;
+      activePointer = beginAreaMovePointer(event.pointerId, point, kind, item);
+      render(); return;
+    }
     const element = hitElement(point);
     if (element) {
       selectElement(element);
@@ -3491,7 +3506,7 @@
         return;
       }
       if (state.areaMode) {
-        const area = state.areaMode === "audience" ? hitAudienceArea(point) : hitWingArea(point);
+        const area = state.areaMode === "audience" ? hitAudienceArea(point) : state.areaMode === "wall" ? hitWallArea(point) : hitWingArea(point);
         state.hoverAudienceId = null;
         state.hoverCorner = -1;
         state.hoverEdge = -1;
@@ -3594,7 +3609,8 @@
       state.selectedElement = null;
     }
     if (!cancelled && finished.kind === "back-screen" && finished.moved && finished.valid) {
-      state.backScreen = clone(finished.preview);
+      state.backScreens.push({ id: `screen-${Date.now().toString(36)}-${state.backScreens.length}`, ...clone(finished.preview) });
+      state.backScreen = clone(state.backScreens[0]);
       setStatus("バックスクリーンを設置しました。高さは天井の設定に追従します。");
     } else if (!cancelled && finished.kind === "back-screen") {
       setStatus("幅0.4m以上で会場内に描いてください。スクリーンは変更していません。");
@@ -3676,9 +3692,18 @@
     render();
   }
 
+  function openPlanRegion(point) {
+    const selector = hitAudienceArea(point) ? ".stage-venue-editor-audience-guide"
+      : hitWingArea(point) ? ".stage-venue-editor-wings-guide"
+      : pointInPolygon(point, state.points) ? ".stage-venue-editor-shape" : null;
+    const section = selector && document.querySelector(selector);
+    if (section && !section.classList.contains("is-open")) section.querySelector(".gamma-venue-step-toggle")?.click();
+  }
+
   function beginTrackedPointer(event) {
     if (pendingConflict) return;
     const before = documentSnapshot();
+    navigationPointer = event.button === 0 && !event.shiftKey ? { id: event.pointerId, x: event.clientX, y: event.clientY } : null;
     beginPointer(event);
     pointerHistoryStart = activePointer ? before : null;
   }
@@ -3686,10 +3711,14 @@
   function finishTrackedPointer(event, cancelled) {
     const tracked = Boolean(activePointer && event.pointerId === activePointer.pointerId);
     const pointerKind = activePointer?.kind;
+    const clicked = tracked && !activePointer.moved && !cancelled;
     const before = pointerHistoryStart;
+    const navigationClick = !cancelled && navigationPointer?.id === event.pointerId && Math.hypot(event.clientX - navigationPointer.x, event.clientY - navigationPointer.y) < 4;
+    navigationPointer = null;
     finishPointer(event, cancelled);
-    if (!tracked) return;
+    if (!tracked) { if (navigationClick) openPlanRegion(fromEvent(event)); return; }
     pointerHistoryStart = null;
+    if (clicked || navigationClick) openPlanRegion(fromEvent(event));
     if (pointerKind === "pan") return; // 表示位置は劇場データの履歴へ入れない。
     if (cancelled && before) {
       applyDocumentSnapshot(before);
@@ -3789,6 +3818,7 @@
       || (templateVenueId && library.isPreset(templateVenueId)
         ? { venueId: templateVenueId, sizeId: templateSizeId } : null);
     return {
+      ...(templateVenue?.basis === "custom" ? clone(templateVenue) : {}),
       format: "venue-v2",
       id,
       label,
@@ -3799,6 +3829,7 @@
       ...(state.viewpoints.length ? { viewpoints: clone(state.viewpoints) } : {}),
       ...(state.viewPositions !== null ? { viewPositions: clone(state.viewPositions) } : {}),
       floor: {
+        ...(templateVenue?.basis === "custom" ? clone(templateVenue.floor) : {}),
         outline: state.points.map(geometryPoint),
         extensions: state.stageExtensions.map((item) => ({
           id: item.id,
@@ -3813,6 +3844,7 @@
         ...(state.floorColor !== floorColors.brown ? { previewColor: state.floorColor } : {}),
       },
       ceiling: {
+        ...clone(state.ceiling),
         heightM: state.ceiling.heightM,
         rigging: state.ceiling.rigging,
         frontBorder: clone(state.ceiling.frontBorder),
@@ -3823,7 +3855,9 @@
       },
       audience: audienceOutput(),
       stageWings: stageWingOutput(),
-      ...(state.backScreen ? { backScreen: clone(state.backScreen) } : {}),
+      backScreen: state.backScreens[0] ? clone(state.backScreens[0]) : undefined,
+      backScreens: clone(state.backScreens),
+
       fixtures: fixtureOutput(),
       access: accessOutput(),
       ...(lightingPresetBasis ? { lightingPresetBasis: clone(lightingPresetBasis) } : {}),
@@ -4466,6 +4500,17 @@
   window.addEventListener("stage-venue-editor-template", (event) => {
     if (!event.detail) return;
     const force = Boolean(event.detail.force);
+    if (event.detail.markBaseline) {
+      // The main document is authoritative when opening a show. This is not a
+      // user's choice of another preset, so it must not create an unsaved draft.
+      const loaded = loadVenueTemplate(event.detail, { force });
+      if (loaded) {
+        openingDraft = captureDraft();
+        undoStack.length = 0; redoStack.length = 0;
+        syncHistoryButtons();
+      }
+      return;
+    }
     if (!force && venueTemplateKey(event.detail) === state.templateKey) return;
     withHistory(() => loadVenueTemplate(event.detail, { force }));
   });
@@ -4492,8 +4537,9 @@
   if (els.apply) els.apply.addEventListener("click", applyDraft);
   if (els.backScreenPlace) els.backScreenPlace.addEventListener("click", setBackScreenMode);
   if (els.backScreenRemove) els.backScreenRemove.addEventListener("click", () => withHistory(() => {
-    if (!state.backScreen) return false;
-    state.backScreen = null;
+    if (!state.backScreens.length) return false;
+    state.backScreens.pop();
+    state.backScreen = clone(state.backScreens[0] || null);
     setStatus("バックスクリーンを取り外しました。");
     render();
     return true;
@@ -4555,6 +4601,7 @@
   if (els.redo) els.redo.addEventListener("click", redoHistory);
   if (els.zoomOut) els.zoomOut.addEventListener("click", () => adjustZoom("out"));
   if (els.zoomIn) els.zoomIn.addEventListener("click", () => adjustZoom("in"));
+  $("stage-venue-editor-wall-remove")?.addEventListener("click", () => withHistory(removeSelectedElement));
   if (els.objectRemove) {
     els.objectRemove.addEventListener("click", () => withHistory(removeSelectedElement));
   }
@@ -4658,7 +4705,7 @@
      View/camera state never enters documentSnapshot or buildVenue. */
   function previewSnapshot() {
     const venue = buildVenue("custom-room-preview", "作成中の劇場", {});
-    if (activePointer?.kind === "back-screen" && activePointer.valid) venue.backScreen = clone(activePointer.preview);
+    if (activePointer?.kind === "back-screen" && activePointer.valid) venue.backScreens.push(clone(activePointer.preview));
     const walls = state.walls.map((item, index) => ({
       ...clone(item), heightM: venue.fixtures[index]?.heightM ?? state.ceiling.heightM,
     }));
@@ -4817,9 +4864,8 @@
   }
 
   function drawBackScreen() {
-    const screen = activePointer?.kind === "back-screen" && activePointer.valid
-      ? activePointer.preview : state.backScreen;
-    if (!screen) return;
+    const screens = state.backScreens.concat(activePointer?.kind === "back-screen" && activePointer.valid ? [activePointer.preview] : []);
+    screens.forEach(screen => {
     const a = toCanvas(screen.from), b = toCanvas(screen.to);
     ctx.save();
     ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
@@ -4834,6 +4880,7 @@
     ctx.fillStyle = "#e9e8df";
     ctx.fillText("バックスクリーン", (a[0] + b[0]) / 2, a[1] - 9);
     ctx.restore();
+    });
   }
 
   // Same draft/history/conflict path as the plan. No automatic apply or save.
@@ -4873,6 +4920,7 @@
 
   window.SHOSAI_VENUE_EDITOR = Object.freeze({
     previewSnapshot, beginPreviewMove, movePreviewArea, finishPreviewMove,
+    openPlanRegionAt: (clientX, clientY) => openPlanRegion(fromEvent({ clientX, clientY })),
     viewpointPlot, setViewpointMode, addViewpointAt, renameViewpoint, setViewpointEyeHeight,
     removeViewpoint, resetViewpoints,
     beginViewpointMove, moveViewpointAt, finishViewpointMove,

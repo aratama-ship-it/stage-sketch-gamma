@@ -730,6 +730,7 @@
       ceiling: size?.ceiling || raw.ceiling || {},
       room: size?.room || raw.room,
       backScreen: size?.backScreen || raw.backScreen,
+      backScreens: size?.backScreens ?? raw.backScreens,
     };
     const at = (point, y = 0) => toWorld(shape.uOf(point[0]), shape.vOf(point[1]), width, depth, y);
     const stageHeightM = Number.isFinite(Number(floor?.stageHeightM)) ? Number(floor.stageHeightM) : 0;
@@ -1287,7 +1288,8 @@
   function readCurrent() {
     const value = state.bridge && state.bridge.read ? state.bridge.read() : null;
     data = value || { pieces: [], venue: {}, sceneIndex: 0, sceneCount: 0, lang: "ja" };
-    data.pieces = Array.isArray(data.pieces) ? data.pieces : [];
+    data.pieces = Array.isArray(data.pieces) ? data.pieces.filter(piece =>
+      !["seri", "revolve", "deck", "curtain", "pool"].includes(piece.type)) : [];
     W = finite(data.venue && data.venue.width, 12);
     D = finite(data.venue && data.venue.depth, 9);
     CEIL = finite(data.venue && data.venue.height, 8);
@@ -2270,9 +2272,13 @@
       if (world.y > topY) topY = world.y;
       return { x: screen.x, y: screen.y, z: -cam.z / H, s: focal / cam.z * H };
     };
+    const sharedRig = window.STAGE_PERFORMER_BODY?.projectRig(pose, project, focal / footCam.z * H);
+    if (tooClose) return null;
+    // Older deployments can still supply the original body renderer.
+    const fallbackRig = sharedRig ? null : (() => {
     const P = {};
     Object.keys(joints).forEach((k) => { P[k] = project(joints[k][0], joints[k][1], joints[k][2]); });
-    if (tooClose) return null;
+
 
     /* 胴・首の断面リング。本編 buildRig（stage-sketch.js 4947-4988行）と同じ計算。 */
     const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
@@ -2311,7 +2317,11 @@
         shMid[2] + (hipMid[2] - shMid[2]) * t - deep[2] * arc,
       ], ring);
     }));
-    if (tooClose) return null;
+
+
+      return {P, rings, eyes};
+    })();
+    const {P, rings, eyes} = sharedRig || fallbackRig;
 
     /* 道具（シルホイール・姿勢付属の小道具）も同じ変換に通す */
     let wheel = null;
@@ -2361,7 +2371,7 @@
     } : null;
     const bodyColor = costumeLitColor3d(piece) || piece.color || "#c9c2b4";   // G-D: 光だまりの色で染める（既定は切）
     if (window.STAGE_PERFORMER_BODY) {
-      const rig = window.STAGE_PERFORMER_BODY.projectRig(pose, project, P.head.s);
+      const rig = sharedRig;
       if (tooClose) return null;
       if (wheel) paintWheel3d(ctx, wheel, P, "far");
       if (mask) body.paintFaceMask(ctx, project, pose, H, mask, false);
@@ -3064,10 +3074,9 @@
         fillPoly(ctx, polygon.map(point => at(point, Number(fixture.heightM) || 1)), "#91887a");
       }
     });
-    if (venue.backScreen) {
-      const { from, to } = venue.backScreen;
+    (venue.backScreens ?? (venue.backScreen ? [venue.backScreen] : [])).forEach(({ from, to }) => {
       fillPoly(ctx, [at(from), at(to), at(to, CEIL), at(from, CEIL)], "#e9e8df");
-    }
+    });
     const frontBorder = window.GAMMA_VENUE_CURTAINS?.frontBorderForVenue(venue);
     if (frontBorder) fillPoly(ctx, [at(frontBorder.from, frontBorder.openingHeightM),
       at(frontBorder.to, frontBorder.openingHeightM), at(frontBorder.to, frontBorder.topHeightM),
@@ -3476,12 +3485,12 @@
       fillPoly(ctx, poly.map((point) => at(point, wall.heightM)), "#332a1f");
     });
 
-    if (venueModel?.backScreen) {
-      const a = at(venueModel.backScreen.from, 0);
-      const b = at(venueModel.backScreen.to, 0);
+    (venueModel?.backScreens ?? (venueModel?.backScreen ? [venueModel.backScreen] : [])).forEach(screen => {
+      const a = at(screen.from, 0);
+      const b = at(screen.to, 0);
       fillPoly(ctx, [a, b, { ...b, y: CEIL }, { ...a, y: CEIL }], "#e9e8df");
       line3(ctx, { ...a, y: CEIL }, { ...b, y: CEIL }, "#403b36", 1);
-    }
+    });
 
     // 床の縁。舞台と、その外の低い所の境目を読めるようにする
     lib.boundary(shape).forEach((edge) => {
@@ -3896,9 +3905,7 @@
     const render = window.SHOSAI_LIGHT_RENDER;
     const pools = cueLightCache.pools;
     if (!render || !pools || typeof render.litLevelAt !== "function") return;
-    data.pieces.filter((piece) => piece.type !== "light" && piece !== camera.me)
-      .map((piece) => ({ piece, depth: toCamera(toWorld(pieceUOf(piece), pieceVOf(piece), W, D, 1)).z }))
-      .sort((a, b) => b.depth - a.depth)
+    framePieceOrder.filter(({piece}) => piece && piece !== camera.me)
       .forEach(({ piece }) => {
         const dims = piece.dims || {};
         const half = Math.max(finite(dims.w, 0), finite(dims.d, 0), finite(dims.dia, 0)) / 2;
@@ -3925,12 +3932,49 @@
       { topDown: false, tMs: cueLightClockMs, floorClip: clipCueLightFloor });
   }
 
+  function offstageExit(piece) {
+    if (!piece?.exitWalker || piece.type !== "performer") return false;
+    const u=pieceUOf(piece),v=pieceVOf(piece);
+    return u < -.02 || u > 1.02 || v < -.02 || v > 1.02;
+  }
+  function oppositeScreenSide(from, to, eye, point) {
+    const side=p=>(to.x-from.x)*(p.z-from.z)-(to.z-from.z)*(p.x-from.x);
+    return side(eye)*side(point)<-1e-8;
+  }
+  let frameScreenOccluders=[];
+  function screenOccluders() {
+    const modeled=modeledVenue3D(), venue=modeled?.venue || currentVenueModel();
+    const screens=venue?.backScreens ?? (venue?.backScreen ? [venue.backScreen] : []);
+    if (!screens.length) return [];
+    const shape=modeled?.shape || customStageShape();
+    if (!shape) return [];
+    const at=modeled?.at || ((point,y=0)=>toWorld(shape.uOf(point[0]),shape.vOf(point[1]),W,D,y));
+    return screens.map(screen=>{
+      const from=at(screen.from),to=at(screen.to);
+      const polygon=clipPolyNear([from,to,{...to,y:CEIL},{...from,y:CEIL}].map(toCamera)).map(toScreen);
+      return {from,to,polygon};
+    }).filter(screen=>screen.polygon.length>=3);
+  }
+  function clipScreenOcclusion(ctx,piece) {
+    const point=toWorld(pieceUOf(piece),pieceVOf(piece),W,D,pieceBaseOf(piece));
+    for(const screen of frameScreenOccluders) {
+      if(!oppositeScreenSide(screen.from,screen.to,camera,point)) continue;
+      // Intersect the complement of each screen separately, so overlapping
+      // screens cannot open a hole through each other under even-odd clipping.
+      ctx.beginPath();ctx.rect(0,0,canvasWidth,canvasHeight);
+      screen.polygon.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+      ctx.closePath();ctx.clip('evenodd');
+    }
+  }
   function drawOnePiece(piece) {
     const ctx = elements.canvas.getContext("2d");
+    ctx.save();
+    clipScreenOcclusion(ctx,piece);
     if (piece.type === "performer") {
       const top = drawPerformer(ctx, piece);
-      if (top) queueLabel({ x: top.x, y: top.y + .28, z: top.z }, labelOf(piece), true);
+      if (top && collectingPieceLabels) queueLabel({ x: top.x, y: top.y + .28, z: top.z }, labelOf(piece), true);
     } else drawPiece(ctx, piece);
+    ctx.restore();
   }
 
   function drawMinimap() {
@@ -4011,6 +4055,8 @@
     if (elements.whoseMetrics) elements.whoseMetrics.textContent = freePositionText();
   }
 
+  let framePieceOrder = [];
+  let collectingPieceLabels = true;
   function renderFrame(dtSeconds = 0) {
     const ctx = elements.canvas.getContext("2d");
     if (!ctx) return;
@@ -4037,9 +4083,9 @@
     }
     const transition = data.transition;
     if (transition && transition.blackout) {
-      /* 暗転。本編と同じ山なりのカーブ（進行0→1で 明→暗→明） */
+      /* 本編と同じ完全暗転区間を保ち、その間だけ配置を切り替える。 */
       elements.fade.style.transition = "none";
-      elements.fade.style.opacity = String(Math.sin(Math.PI * clamp(finite(transition.progress, 0), 0, 1)));
+      elements.fade.style.opacity = String(window.STAGE_PERFORMER_MOTION.blackoutPhase(transition.progress).opacity);
     } else if (elements.fade.style.opacity !== "") {
       elements.fade.style.opacity = "";
       elements.fade.style.transition = "";
@@ -4047,6 +4093,7 @@
     moveFreeFrame(dtSeconds);
     camera = cameraPose();
     setBasis();
+    frameScreenOccluders=screenOccluders();
     ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     ctx.fillStyle = "#0d0a08"; ctx.fillRect(0, 0, canvasWidth, canvasHeight);
     const reception = Boolean(standingReceptionLayout());
@@ -4079,11 +4126,11 @@
     if (!(data && data.workLightOff)) { drawCueBeams(ctx); drawCueLasers(ctx); }   // 作業灯が点いているなら、筋は駒の奥
     data.pieces.filter((piece) => piece.type === "performer" && piece.route)
       .forEach((piece) => drawRoute(ctx, piece, camera.me === piece));
-    data.pieces.filter((piece) => piece.type !== "light")
+    framePieceOrder = data.pieces.filter((piece) => piece.type !== "light")
       .map((piece) => ({ piece, depth: toCamera(toWorld(pieceUOf(piece), pieceVOf(piece), W, D, 1)).z }))
       .concat(lowFogSlices())
-      .sort((a, b) => b.depth - a.depth)
-      .forEach(({ piece, fog }) => {
+      .sort((a, b) => b.depth - a.depth);
+    framePieceOrder.forEach(({ piece, fog }) => {
         if (fog) { drawLowFogSlice(ctx, fog); return; }
         if (piece === camera.me) return;
         drawOnePiece(piece);
@@ -4094,9 +4141,17 @@
     ));
     if (selected) drawFacingRing(ctx, selected);
     if (drawCueWorkLight(ctx)) {      // 作業灯を消す。名前より先＝名前は読めるまま残す
-      redrawLitPieces(ctx, drawOnePiece);   // 光の中にいる駒を明るく戻す
+      collectingPieceLabels = false;
+      redrawLitPieces(ctx, drawOnePiece);
+      collectingPieceLabels = true;   // 光の中にいる駒を明るく戻す
       drawCueBeams(ctx);                    // 空気の筋は暗幕の上から足す
       drawCueLasers(ctx);                    // レーザーも同じ順番
+      // Exits beyond the stage are navigation silhouettes. Restore their dim
+      // body after luminous backdrop effects, still respecting real screens.
+      collectingPieceLabels=false;
+      ctx.save();ctx.globalAlpha=.55;
+      framePieceOrder.filter(({piece})=>offstageExit(piece)).forEach(({piece})=>drawOnePiece(piece));
+      ctx.restore();collectingPieceLabels=true;
     }
     drawLabels(ctx);
     const vignette = ctx.createRadialGradient(canvasWidth / 2, canvasHeight / 2, Math.min(canvasWidth, canvasHeight) * .42,
@@ -4575,7 +4630,7 @@
     /* 環境設定から呼ぶ。設定が正本なので bridge へは書き戻さない（往復させない）。
        3Dカメラを開いていなければチップも描画も無く、次に開いたときに反映される。 */
     setCrowdMode: (id) => setCrowdMode(id, false),
-    _geom: Object.freeze({ toWorld, yawForward, rightOf, clipPolyNear, eyeHeight,
+    _geom: Object.freeze({ offstageExit, oppositeScreenSide, toWorld, yawForward, rightOf, clipPolyNear, eyeHeight,
       pieceUOf, pieceVOf, pieceBaseOf, pieceGlowOf,
       moveFree, clampFree, freePresets, bowlGeometry, bowlAudience, bowlOrientations,
       bowlHouseUnits, bowlRoofRibs, bowlFloorGrid,

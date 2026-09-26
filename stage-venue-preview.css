@@ -61,3 +61,9 @@
   .stage-venue-editor-floor-colors { grid-column:1; }
   .stage-venue-editor-floor-colors button { flex-direction:column; gap:3px; }
 }
+
+/* Stacked menu choices need all four borders, including sibling buttons. */
+#gamma-venue-workspace .stage-venue-editor-menu .stage-tool-grid button + button { border-left: 1px solid var(--line-dark, #382f25); }
+#gamma-venue-workspace .stage-lighting-source-choices button { border-left-color: var(--line-dark, #382f25); }
+#gamma-venue-workspace .stage-lighting-source-choices button[aria-pressed=true] { border-left-color: var(--brass, #d3ac59); }
+#gamma-venue-workspace .stage-venue-editor-menu .stage-tool-grid button + button[aria-pressed=true] { border-left-color: var(--rust, #a84b26); }

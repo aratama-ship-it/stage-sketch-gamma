@@ -33,7 +33,7 @@ test("機能テスト用ショー: 外枠と上限", () => {
   assert.equal(doc.kind, "shosai-stage-sketch");
   assert.equal(doc.version, 4);
   assert.deepEqual(doc.venues, []);
-  assert.equal(project.id, "gamma-feature-test-v8");
+  assert.equal(project.id, "gamma-feature-test-v9");
   /* ★2026-09-20: バッファを3行→2行に減らして広げた（build-feature-test-show.mjs 側の同日コメント参照）。
      容量由来の制約ではなく、試す人が手でもシーンを足せる余地を残すだけの自主ガード。 */
   assert.ok(rows.length <= limits.sceneRows, `シーン行 ${rows.length}: 身体表現の試験を含め上限60行`);

@@ -118,6 +118,90 @@
      復元は、控えを作った時点と中身が一致しているホストの現在値（basisが同じ＝保証済み）
      から取り直す。編集対象そのもの（rig・scenes・palette・curtains等）は控えに残す。 */
   const PASSTHROUGH_KEYS = Object.freeze(['plans', 'activePlanRef']);
+  /* Generated plans share one physical setup per fixed fixture. Brightness remains
+     cue-specific. Work on a copy so imported originals and rollback remain intact. */
+  function normalizeFixedSetup(design) {
+    const next = clone(design);
+    const cues = (next.scenes || []).flatMap(scene => [scene.cue, ...(scene.lxq || []).map(q => q.cue)]).filter(Boolean);
+    for (const fixture of next.rig?.fixtures || []) {
+      if (fixture.kind !== 'fixed') continue;
+      const source = fixture.fixedSetup || cues.map(cue => cue.lights?.[fixture.id]).find(light => light?.on === true)
+        || cues.map(cue => cue.lights?.[fixture.id]).find(Boolean);
+      if (!source) continue;
+      const point = source.path?.a || source.path?.c;
+      const setup = { surface: source.surface || 'floor', color: source.color || '#f2ead6',
+        ...(point ? { path: { kind: 'still', a: clone(point) } } : {}) };
+      fixture.fixedSetup = clone(setup);
+      for (const cue of cues) if (cue.lights?.[fixture.id]) Object.assign(cue.lights[fixture.id], clone(setup), { beamDeg: null, beamDegTo: null });
+    }
+    return next;
+  }
+  /* Upgrade only this bundled branch's legacy defaults. User text, timing,
+     placement and cue levels stay owned by the project. Unknown fields survive. */
+  function upgradeRjSecond(project, bundled) {
+    const isBranch = project?.id === 'romeo-juliet-rj-second-v1'
+      || (project?.cast || []).some(member => member.id === 'rj-cast-romeo')
+        && (project?.scenes || []).some(scene => scene.id === 'rj-a-20260924-a-1')
+        && (project?.lightingDesign?.rig?.fixtures || []).some(fixture => fixture.id === 'rj-a-20260924-lx-fl');
+    if (!project || !bundled || !isBranch
+        || bundled.id !== 'romeo-juliet-rj-second-v1' || !bundled.feedbackRevision
+        || project.feedbackRevision === bundled.feedbackRevision) return false;
+    const before = JSON.stringify(project);
+    const names = new Map((bundled.cast || []).map(member => [member.id, member.name]));
+    const legacyName = (name, target) => {
+      if (!target || typeof name !== 'string') return false;
+      const stripped = name.replace(/^\d+\s*/, '').replace(/担当$/, '');
+      return stripped === target || /^群\d+（.+担当）$/.test(name) && name.replace(/^群\d+（/, '').replace(/担当）$/, '') === target;
+    };
+    for (const member of project.cast || []) if (legacyName(member.name, names.get(member.id))) member.name = names.get(member.id);
+    for (const scene of project.scenes || []) for (const piece of scene.pieces || []) {
+      if (piece.type === 'performer' && legacyName(piece.name, names.get(piece.castId))) piece.name = names.get(piece.castId);
+    }
+    if (project.script == null && bundled.script?.lines?.length) {
+      const sceneIds = new Set((project.scenes || []).map(scene => scene.id));
+      const cueIds = new Set((project.cues || []).filter(cue => cue.cueType === 'dialogue').map(cue => cue.id));
+      const castIds = new Set((project.cast || []).map(member => member.id));
+      project.script = clone(bundled.script);
+      for (const line of project.script.lines) {
+        if (!sceneIds.has(line.sceneId)) line.sceneId = null;
+        if (!cueIds.has(line.cueId)) line.cueId = null;
+        if (line.castId && !castIds.has(line.castId)) { line.speaker = names.get(line.castId) || line.speaker; line.castId = null; }
+      }
+    }
+    const saved = project.lightingDesign, source = bundled.lightingDesign;
+    if (saved?.rig?.fixtures && saved.scenes && source?.rig?.fixtures) {
+      const sourceFixtures = new Map(source.rig.fixtures.map(fixture => [fixture.id, fixture]));
+      for (const fixture of saved.rig.fixtures) {
+        const setup = sourceFixtures.get(fixture.id)?.fixedSetup;
+        if (fixture.kind === 'fixed' && setup && !fixture.fixedSetup) fixture.fixedSetup = clone(setup);
+      }
+      const byId = new Map(source.scenes.map(scene => [scene.id, scene]));
+      const existingIds = new Set(saved.rig.fixtures.map(fixture => fixture.id));
+      const trussIds = new Set((saved.rig.trusses || []).map(truss => truss.id));
+      for (const fixture of source.rig.fixtures.filter(fixture => fixture.id.startsWith('rj-second-fill-'))) {
+        if (existingIds.has(fixture.id) || !trussIds.has(fixture.mount.trussId)) continue;
+        const next = clone(fixture);
+        next.no = Math.max(0, ...saved.rig.fixtures.map(fixture => Number(fixture.no) || 0)) + 1;
+        saved.rig.fixtures.push(next);
+        for (const scene of saved.scenes) {
+          const bundledScene = byId.get(scene.id);
+          for (const [cue, original] of [[scene.cue,bundledScene?.cue], ...(scene.lxq || []).map(q => [q.cue,bundledScene?.lxq?.find(source => source.id === q.id)?.cue])]) {
+            if (!cue?.lights) continue;
+            // Copy the bundled area fill only when its source area's level is still
+            // the bundled default. Edited or newly added LX cues keep their intent.
+            const sourceId = {'rj-second-fill-left':'fl','rj-second-fill-right':'fr','rj-second-fill-tomb':'dl','rj-second-fill-message':'ur'}[next.id];
+            const old = cue.lights[`rj-a-20260924-lx-${sourceId}`], base = original?.lights?.[`rj-a-20260924-lx-${sourceId}`];
+            const matches = old && base && old.on === base.on && old.level === base.level;
+            cue.lights[next.id] = matches && original.lights[next.id] ? clone(original.lights[next.id])
+              : { ...clone(next.fixedSetup), on: false, level: 0 };
+          }
+        }
+      }
+      project.lightingDesign = normalizeFixedSetup(saved);
+    }
+    project.feedbackRevision = bundled.feedbackRevision;
+    return before !== JSON.stringify(project);
+  }
   function stripPassthrough(design) {
     const next = clone(design);
     PASSTHROUGH_KEYS.forEach(key => { delete next[key]; });
@@ -129,5 +213,5 @@
     PASSTHROUGH_KEYS.forEach(key => { if (passthrough[key] !== undefined) design[key] = clone(passthrough[key]); });
     return design;
   }
-  root.GAMMA_LIGHT_MODEL=Object.freeze({clone,validate,empty,reconcile,stripPassthrough,restoreDraft});
+  root.GAMMA_LIGHT_MODEL=Object.freeze({clone,validate,empty,reconcile,stripPassthrough,restoreDraft,normalizeFixedSetup,upgradeRjSecond});
 })(typeof window==='undefined'?globalThis:window);

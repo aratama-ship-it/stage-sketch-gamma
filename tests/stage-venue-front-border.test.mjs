@@ -25,10 +25,11 @@ const library = context.SHOSAI_VENUES.library;
 const borderFor = context.GAMMA_VENUE_CURTAINS.frontBorderForVenue;
 const base = JSON.parse(JSON.stringify(library.venueV2ById('proscenium')));
 
-test('前一文字を持たない旧会場は表示を変えない', () => {
+test('前一文字を持たない旧会場も幕を描き保存済み原本は書き換えない', () => {
   const old = { ...base, id: 'old-room', label: '旧会場', stageFormat: 'theatre' };
   delete old.ceiling.frontBorder;
-  assert.equal(borderFor(old), null);
+  assert.ok(borderFor(old));
+  assert.ok(borderFor({ ...old, ceiling: { ...old.ceiling, frontBorder: { enabled: false, openingHeightM: 4.5 } } }));
   const validated = library.validateVenueV2(old);
   assert.ok(validated);
   assert.equal(validated.ceiling.frontBorder, undefined);

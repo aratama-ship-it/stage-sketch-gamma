@@ -1722,10 +1722,17 @@
     if (venue.backScreen !== undefined) {
       const screen = venue.backScreen;
       if (!screen || !validPoint(screen.from) || !validPoint(screen.to) ||
-          Math.abs(screen.from[1] - screen.to[1]) > 0.001 ||
-          Math.abs(screen.from[0] - screen.to[0]) < 0.4 ||
+          (Math.abs(screen.from[1] - screen.to[1]) > 0.001 && Math.abs(screen.from[0] - screen.to[0]) > 0.001) ||
+          Math.hypot(screen.from[0] - screen.to[0], screen.from[1] - screen.to[1]) < 0.4 ||
           [...screen.from, ...screen.to].some(value => Math.abs(value) > 1000)) return null;
-      venue.backScreen = { from: screen.from.slice(), to: screen.to.slice() };
+      venue.backScreen = { ...screen, from: screen.from.slice(), to: screen.to.slice() };
+    }
+    if (venue.backScreens !== undefined) {
+      if (!Array.isArray(venue.backScreens) || venue.backScreens.length > 100 ||
+          !venue.backScreens.every(screen => screen && validPoint(screen.from) && validPoint(screen.to) &&
+            Math.hypot(screen.to[0] - screen.from[0], screen.to[1] - screen.from[1]) >= .4 &&
+            (Math.abs(screen.from[0] - screen.to[0]) < .001 || Math.abs(screen.from[1] - screen.to[1]) < .001) &&
+            [...screen.from, ...screen.to].every(value => Math.abs(value) <= 1000))) return null;
     }
     // Section 9 has at most five independent plan positions. Do not truncate imported data.
     if (venue.viewPositions != null) {
@@ -1786,7 +1793,7 @@
       if (!border || typeof border !== "object" || typeof border.enabled !== "boolean" ||
           typeof opening !== "number" || !Number.isFinite(opening) || opening < 0.1 || opening > 100 ||
           (border.enabled && (!Number.isFinite(height) || roundedOpening >= height))) return null;
-      venue.ceiling.frontBorder = { enabled: border.enabled, openingHeightM: roundedOpening };
+      venue.ceiling.frontBorder = { ...border, enabled: border.enabled, openingHeightM: roundedOpening };
     }
     venue.audience = Array.isArray(venue.audience)
       ? venue.audience.filter((area) => area && Array.isArray(area.polygon) &&
@@ -2098,6 +2105,7 @@
        * 壁は fixtures のうち「動かせない壁」だけ。什器・柱は別のもの。 */
       stageWings: clone(Array.isArray(venue.stageWings) ? venue.stageWings : []),
       ...(venue.backScreen ? { backScreen: clone(venue.backScreen) } : {}),
+      ...(Array.isArray(venue.backScreens) ? { backScreens: clone(venue.backScreens) } : {}),
       venueWalls: clone(venueWallList(venue)),
       ...(Number.isFinite(Number(venue.floor.stageHeightM))
         ? { stageHeightM: Number(venue.floor.stageHeightM) } : {}),
