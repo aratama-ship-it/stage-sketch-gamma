@@ -90,13 +90,16 @@
     window.SHOSAI_STAGE_FPV?.close();
   }
   function captureHostHistory() {
-    hostHistory={undo:hostUndo?.disabled??true,redo:hostRedo?.disabled??true};
+    const current=window.SHOSAI_STAGE_SESSION_BRIDGE?.historyStatus?.();
+    hostHistory=current ? {undo:!current.canUndo,redo:!current.canRedo}
+      : {undo:hostUndo?.disabled??true,redo:hostRedo?.disabled??true};
   }
   function syncHistory() {
     if(!hostUndo || !hostRedo) return;
     // セリフ編集画面は本体の取り消し履歴をそのまま使う（台本の変更は本体の checkpoint に積まれる）
     if(mode==='script' || mode==='cuesheet') return;
     if(mode==='normal') {
+      captureHostHistory();
       hostUndo.disabled=hostHistory.undo;hostRedo.disabled=hostHistory.redo;
       return;
     }
@@ -624,7 +627,7 @@
           goVenue.addEventListener('click',()=>select('venue-setup'));
           status.append(goVenue);
         } else if(!loaded) {
-          frame.src='light-design/index.html?embed=gamma&v=20260927-feedback46'; loaded=true;
+          frame.src='light-design/index.html?embed=gamma&v=20260928-edit51'; loaded=true;
           status.textContent='照明デザインを開いています…';
         } else if(editor()) {
           editor().open(context, next);

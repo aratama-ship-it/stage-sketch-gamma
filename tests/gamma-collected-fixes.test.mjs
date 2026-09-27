@@ -47,9 +47,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.doesNotMatch(lightHtml, /id="statebadge"/);
   assert.match(html, />ツール</);
   assert.match(html, />表示するもの</);
-  assert.match(html, /class="stage-app-version">0\.2\.50</);
+  assert.match(html, /class="stage-app-version">0\.2\.51</);
   assert.match(html, /id="stage-release-v023-title">v0\.2\.3</);
-  assert.match(html, /<meta name="stage-sketch-gamma-version" content="v0\.2\.50">/);
+  assert.match(html, /<meta name="stage-sketch-gamma-version" content="v0\.2\.51">/);
   assert.match(html, /id="stage-release-v024-title">v0\.2\.4</);
   assert.match(html, /id="stage-release-v025-title">v0\.2\.5</);
   // AI用JSON（project.id なし・light あり）が旧照明の移行器で止まらない（2026-09-24）
@@ -58,9 +58,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   // 読み込み時の保険: rehearsal が無いシーンへ既定の転換3秒（控えを持つ保存データは触らない）（2026-09-24）
   assert.match(main, /function backfillMissingSceneRehearsal\(project\) \{[\s\S]*?if \(hasSectionMemo\) return project;[\s\S]*?row\.rehearsal = \{ holdDurationSeconds: DEFAULT_SCENE_HOLD_SECONDS, transitionToNextSeconds: NEW_SCENE_TRAVEL_SECONDS \};/);
   assert.match(main, /const project = backfillMissingSceneRehearsal\(stripRemovedSceneFields\(projectIoClone\(document\.project\)\)\);/);
-  assert.match(html, /stage-sketch\.js\?v=20260928-playback50/);
-  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v409"/);
-  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=20260928-playback50"/);
+  assert.match(html, /stage-sketch\.js\?v=20260928-edit51/);
+  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v410"/);
+  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=20260928-edit51"/);
   assert.match(html, /id="stage-show-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-set-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-light-names" checked>\s*<span class="stage-tool-icon"/);
@@ -121,10 +121,10 @@ test("lighting apply belongs to the LX cue panel and playback uses an accessible
   assert.match(html, /\.fixture-power\.off \.fixture-power-lens\{fill:none\}/);
   assert.match(html, /\.fixture-power\.off \.fixture-power-slash\{display:block\}/);
   assert.doesNotMatch(html, /\.fixture-power\.on \.fixture-power-slash\{display:none\}/);
-  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=20260927-feedback46/);
-  assert.match(worker, /stage-sketch-gamma-shell-v409/);
+  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=20260928-edit51/);
+  assert.match(worker, /stage-sketch-gamma-shell-v410/);
 
-  assert.match(worker, /light-design\/app\.js\?v=20260927-feedback46/);
+  assert.match(worker, /light-design\/app\.js\?v=20260928-edit51/);
   assert.match(worker, /light-design\/embed\.js\?v=20260925-ui1/);
 });
 
@@ -340,4 +340,35 @@ test("arrowheads meet the exact endpoint and follow the final segment, including
       });
     }
   }
+});
+
+
+test("stage history controls use current history after a same-tab or 3D roundtrip", () => {
+  const source = read("gamma-workspace.js");
+  const start = source.indexOf("  function captureHostHistory() {");
+  const end = source.indexOf("  function runLightHistory(", start);
+  assert.ok(start >= 0 && end > start);
+  const hostUndo = { disabled: true }, hostRedo = { disabled: true };
+  const status = { canUndo: true, canRedo: false };
+  const context = vm.createContext({
+    hostUndo, hostRedo, hostHistory: { undo: true, redo: true }, mode: "normal",
+    window: { SHOSAI_STAGE_SESSION_BRIDGE: { historyStatus: () => status } },
+    editor: () => ({ status: () => ({ canUndo: false, canRedo: true }) }),
+  });
+  vm.runInContext(source.slice(start, end) + "\nsyncHistory();", context);
+  assert.equal(hostUndo.disabled, false);
+  assert.equal(hostRedo.disabled, true);
+  status.canUndo = false; status.canRedo = true;
+  vm.runInContext("syncHistory();", context);
+  assert.equal(hostUndo.disabled, true);
+  assert.equal(hostRedo.disabled, false);
+  context.mode = "light-design";
+  status.canUndo = true; status.canRedo = false;
+  vm.runInContext("syncHistory();", context);
+  assert.equal(hostUndo.disabled, true, "lighting toolbar still belongs to lighting editor");
+  assert.equal(hostRedo.disabled, false);
+  context.mode = "normal";
+  vm.runInContext("syncHistory();", context);
+  assert.equal(hostUndo.disabled, false);
+  assert.equal(hostRedo.disabled, true);
 });

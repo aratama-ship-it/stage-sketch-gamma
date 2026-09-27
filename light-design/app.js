@@ -3282,7 +3282,9 @@
        半分幅では2列にすると1枠70px前後になり、名前もオン・オフも読めない（2026-09-13）。 */
     host.classList.toggle("cols2", host.clientWidth >= 230);
     const c = cue(); const grouped = new Set(c.groups.flatMap((g) => g.members));
-    const row = (f, idx) => { const r = document.createElement("div"); r.dataset.fixtureId = f.id; r.className = "row" + (isSel(f.id) ? " sel" : "") + (state.mode === "place" && f.mount.type !== "cyc" ? " with-delete" : ""); const st = lightState(f.id);
+    const row = (f, idx) => { const r = document.createElement("div"); r.dataset.fixtureId = f.id; r.className = "row" + (isSel(f.id) ? " sel" : "") + (state.mode === "place" && f.mount.type !== "cyc" ? " with-delete" : ""); // ボタンは編集キューを切り替える。ソロによる一時的な非表示と点灯状態を混同しない。
+      const light = lightOf(f.id), lit = isLit(light);
+      const st = !lit ? "off" : light.path && light.path.kind !== "still" ? "move" : "on";
       r.innerHTML = `<span class="no">${idx !== undefined ? idx + 1 + "." : ""}${label(f.id)}</span><span class="nm">${f.name || "名前なし"}<small>${E.describeMount(f, state.rig).replace(/（高さ約\dm）/, "")}</small></span>`;
       // 状態の欄はそのまま押せるオン／オフにする（2026-09-11 本人要望。一覧から直接切り替えたい）
       const stCell = document.createElement(state.mode === "move" ? "button" : "span");
@@ -3294,9 +3296,12 @@
       if (state.mode === "move") {
         stCell.type = "button";
         stCell.classList.add("fixture-power");
-        stCell.setAttribute("aria-label", st === "off" ? "いまオフ。押すとオン" : "いまオン。押すとオフ");
+        const powerLabel = (lit ? "いまオン。押すとオフ" : "いまオフ。押すとオン")
+          + (soloMuted(f.id) ? "（ソロ表示中はこの灯体を非表示）" : "");
+        stCell.setAttribute("aria-label", powerLabel);
+        stCell.setAttribute("aria-pressed", String(lit));
         stCell.innerHTML = `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle class="fixture-power-halo" cx="8" cy="8" r="5.1"/><circle class="fixture-power-lens" cx="8" cy="8" r="2.35"/><path class="fixture-power-rays" d="M8 1v1.25M8 14.75V15M1 8h1.25M13.75 8H15M3.05 3.05l.9.9M12.05 12.05l.9.9M12.95 3.05l-.9.9M3.95 12.05l-.9.9"/><path class="fixture-power-slash" d="m1.8 1.8 12.4 12.4"/></svg>`;
-        stCell.title = st === "off" ? "いまオフ。押すとオン" : "いまオン。押すとオフ";
+        stCell.title = powerLabel;
         stCell.onclick = (ev) => { ev.stopPropagation(); const l = lightOf(f.id); if (isLit(l)) setLight(f.id, { on: false }); else turnOn(f.id); commit(); };
       }
       r.append(stCell);

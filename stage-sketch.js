@@ -13920,7 +13920,25 @@
     updateBackupNote();
   }
 
-  function restore(value) {
+  // 一覧の再構築・パネル再配置でブラウザがスクロールを0へ戻すため、
+  // 同じ操作内で見ていた位置へ戻す。次フレームには触らず、利用者のスクロールを妨げない。
+  function preserveStagePanelScroll(renderContent) {
+    const entries = [...document.querySelectorAll("#view-stage, .stage-col, .stage-panel, .stage-panel-body, .stage-cast-list, .stage-scene-list")]
+      .map(el => [el, el.scrollTop, el.scrollLeft]);
+    const pageX = window.scrollX, pageY = window.scrollY;
+    try { return renderContent(); }
+    finally {
+      entries.forEach(([el, top, left]) => {
+        if (!el.isConnected) return;
+        if (el.scrollTop !== top) el.scrollTop = top;
+        if (el.scrollLeft !== left) el.scrollLeft = left;
+      });
+      if (window.scrollX !== pageX || window.scrollY !== pageY) window.scrollTo(pageX, pageY);
+    }
+  }
+
+  function restore(value) { return preserveStagePanelScroll(() => restoreContent(value)); }
+  function restoreContent(value) {
     clearAudioEngine();
     state = normalizeState(JSON.parse(value));
     if (!sc().pieces.some((piece) => piece.id === selectedId)) selectedId = null;
@@ -23107,7 +23125,8 @@
   });
 
   // 状態に従って、パネルを列へ並べ直す
-  function applyLayout() {
+  function applyLayout() { return preserveStagePanelScroll(applyLayoutContent); }
+  function applyLayoutContent() {
     const L = state.layout;
     // iPad PWAではパネルの置き場所は左ドロワーが正本。
     // デスクトップ時だけ、従来どおり左右の列へ並べる。
@@ -23365,7 +23384,8 @@
     return null;
   }
 
-  function renderCast() {
+  function renderCast() { return preserveStagePanelScroll(renderCastContent); }
+  function renderCastContent() {
     syncRosterGroups();
     if (!els.castList) return;
     const cast = state.project.cast;
@@ -23819,7 +23839,8 @@
   const rosterIsSet = (item) => item.kind !== "light"
     && !rosterIsMachinery(item) && !rosterIsProp(item);
 
-  function renderSets() {
+  function renderSets() { return preserveStagePanelScroll(renderSetsContent); }
+  function renderSetsContent() {
     renderSetList(els.setList, rosterIsSet, "", "set");
     renderSetList(els.propList, rosterIsProp, "", "prop");
     renderSetList(els.machineryList, rosterIsMachinery, "");
@@ -23828,7 +23849,8 @@
 
   /* 照明の一覧は種類ごとに枠を分ける。吊りとSSと前明かりと転がしは、
    * 仕込む場所も役目も別物なので、ひと続きに並べると読み分けられない。 */
-  function renderLights() {
+  function renderLights() { return preserveStagePanelScroll(renderLightsContent); }
+  function renderLightsContent() {
     const host = els.lightList;
     if (!host) return;
     host.innerHTML = "";
@@ -26635,7 +26657,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     return clone;
   }
 
-  function renderRigs() {
+  function renderRigs() { return preserveStagePanelScroll(renderRigsContent); }
+  function renderRigsContent() {
     if (!els.rigList) return;
     const rigs = state.project.rigs || [];
     els.rigList.innerHTML = "";
@@ -41150,6 +41173,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     },
   });
   window.SHOSAI_STAGE_SESSION_BRIDGE = Object.freeze({
+    historyStatus: () => ({ canUndo: history.length > 0, canRedo: future.length > 0 }),
     exportDocumentString() {
       const doc = makeProjectExportDocument(state.project, true);
       if (sceneAlternatives) doc.project = sceneAlternatives.projectCopy(state.project, { presentation: true });
