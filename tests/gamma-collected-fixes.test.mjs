@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
+import vm from "node:vm";
 
 const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
@@ -46,9 +47,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.doesNotMatch(lightHtml, /id="statebadge"/);
   assert.match(html, />ツール</);
   assert.match(html, />表示するもの</);
-  assert.match(html, /class="stage-app-version">0\.2\.46</);
+  assert.match(html, /class="stage-app-version">0\.2\.47</);
   assert.match(html, /id="stage-release-v023-title">v0\.2\.3</);
-  assert.match(html, /<meta name="stage-sketch-gamma-version" content="v0\.2\.46">/);
+  assert.match(html, /<meta name="stage-sketch-gamma-version" content="v0\.2\.47">/);
   assert.match(html, /id="stage-release-v024-title">v0\.2\.4</);
   assert.match(html, /id="stage-release-v025-title">v0\.2\.5</);
   // AI用JSON（project.id なし・light あり）が旧照明の移行器で止まらない（2026-09-24）
@@ -57,9 +58,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   // 読み込み時の保険: rehearsal が無いシーンへ既定の転換3秒（控えを持つ保存データは触らない）（2026-09-24）
   assert.match(main, /function backfillMissingSceneRehearsal\(project\) \{[\s\S]*?if \(hasSectionMemo\) return project;[\s\S]*?row\.rehearsal = \{ holdDurationSeconds: DEFAULT_SCENE_HOLD_SECONDS, transitionToNextSeconds: NEW_SCENE_TRAVEL_SECONDS \};/);
   assert.match(main, /const project = backfillMissingSceneRehearsal\(stripRemovedSceneFields\(projectIoClone\(document\.project\)\)\);/);
-  assert.match(html, /stage-sketch\.js\?v=20260927-feedback46/);
-  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v405"/);
-  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=20260927-feedback46"/);
+  assert.match(html, /stage-sketch\.js\?v=20260927-arrow47/);
+  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v406"/);
+  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=20260927-arrow47"/);
   assert.match(html, /id="stage-show-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-set-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-light-names" checked>\s*<span class="stage-tool-icon"/);
@@ -121,7 +122,7 @@ test("lighting apply belongs to the LX cue panel and playback uses an accessible
   assert.match(html, /\.fixture-power\.off \.fixture-power-slash\{display:block\}/);
   assert.doesNotMatch(html, /\.fixture-power\.on \.fixture-power-slash\{display:none\}/);
   assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=20260927-feedback46/);
-  assert.match(worker, /stage-sketch-gamma-shell-v405/);
+  assert.match(worker, /stage-sketch-gamma-shell-v406/);
 
   assert.match(worker, /light-design\/app\.js\?v=20260927-feedback46/);
   assert.match(worker, /light-design\/embed\.js\?v=20260925-ui1/);
@@ -302,4 +303,41 @@ test("the stage scene description stops at four lines and scrolls within its fie
   assert.match(sketch, /const SCENE_DESC_MAX_LINES = 4;/);
   assert.match(sketch, /Math\.min\(maxHeight, Math\.max\(SCENE_DESC_LINE, box\.scrollHeight\)\)/);
   assert.match(style, /\.stage-scene-desc-text\s*\{[\s\S]*?--scene-desc-max-lines: 4;[\s\S]*?overflow-y: auto;[\s\S]*?max-height: calc\(var\(--scene-desc-line-height\) \* var\(--scene-desc-max-lines\)\);/);
+});
+
+
+test("arrowheads meet the exact endpoint and follow the final segment, including repeated endpoints", () => {
+  const main = read("stage-sketch.js");
+  const source = main.slice(main.indexOf("  function arrowHeadInner("), main.indexOf("  function drawArrows("));
+  const sandbox = { Math, arrowScreenPoints: arrow => arrow.points, validColor: color => color,
+    finite: value => value, clamp: value => value };
+  vm.createContext(sandbox);
+  vm.runInContext(source, sandbox);
+  for (const points of [
+    [{ x: 0, y: 0 }, { x: 50, y: 50 }, { x: 100, y: 0 }],
+    [{ x: 0, y: 0 }, { x: 20, y: 5 }, { x: 40, y: 20 }, { x: 60, y: 45 }, { x: 70, y: 60 }],
+    [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 50, y: 50 }, { x: 100, y: 0 }, { x: 100, y: 0 }],
+    [{ x: 0, y: 0 }, { x: 50, y: 50 }, { x: 50.1, y: 50 }],
+  ]) {
+    for (const heads of ["one", "both"]) {
+      let path = [], triangles = [], cap;
+      const target = { save() {}, restore() {}, setLineDash() {}, beginPath() { path = []; },
+        moveTo(x,y) { path.push({x,y}); }, lineTo(x,y) { path.push({x,y}); },
+        closePath() {}, arc() {}, stroke() { cap = this.lineCap; },
+        fill() { if (path.length === 3) triangles.push(path); } };
+      sandbox.drawOneArrow(target, { points, heads, color: "#68d391", width: 6 }, { plan: true });
+      assert.equal(cap, "butt", "The shaft must not protrude beyond the triangle apex");
+      assert.equal(triangles.length, heads === "both" ? 2 : 1);
+      triangles.forEach((triangle, index) => {
+        const end = index === 0, tip = points[end ? points.length - 1 : 0];
+        const inner = sandbox.arrowHeadInner(points, end);
+        assert.deepEqual(triangle[0], tip);
+        const dx = tip.x - inner.x, dy = tip.y - inner.y;
+        const ax = tip.x - (triangle[1].x + triangle[2].x) / 2;
+        const ay = tip.y - (triangle[1].y + triangle[2].y) / 2;
+        assert.ok(Math.abs(dx * ay - dy * ax) < 1e-8, "Triangle axis must match its terminal segment");
+        assert.ok(dx * ax + dy * ay > 0, "Triangle must point outward");
+      });
+    }
+  }
 });

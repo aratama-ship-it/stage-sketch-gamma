@@ -17325,10 +17325,19 @@
       : stagePoint(point.a, point.b, 0, L));
   }
 
+  // 折れ線の遠い点を使うと矢じりが終端の線から外れる。重複した端点だけ飛ばす。
+  function arrowHeadInner(points, atEnd) {
+    const tip = points[atEnd ? points.length - 1 : 0];
+    for (let i = atEnd ? points.length - 2 : 1; atEnd ? i >= 0 : i < points.length; i += atEnd ? -1 : 1) {
+      if (Math.hypot(points[i].x - tip.x, points[i].y - tip.y) > 0.000001) return points[i];
+    }
+    return tip;
+  }
+
   function drawArrowHead(target, tip, inner, color, width) {
     const dx = tip.x - inner.x;
     const dy = tip.y - inner.y;
-    if (Math.hypot(dx, dy) < 0.5) return;
+    if (Math.hypot(dx, dy) < 0.000001) return;
     const angle = Math.atan2(dy, dx);
     const size = 9 + width * 2;
     target.fillStyle = color;
@@ -17366,7 +17375,8 @@
     target.strokeStyle = color;
     target.lineWidth = width;
     target.lineJoin = "round";
-    target.lineCap = "round";
+    // 丸い線端が三角形の頂点からはみ出さないよう、矢じり側は平らに止める。
+    target.lineCap = "butt";
     /* 破線は使わない。空中の矢印を平面図で潰して描いていた頃の印だが、
        矢印が描いた図にだけ出るようになり（2026-08-27）、空中＝正面図だけになった。 */
     target.setLineDash([]);
@@ -17377,10 +17387,16 @@
     target.stroke();
     target.setLineDash([]);
 
-    const endNear = points[Math.max(0, points.length - Math.min(4, points.length - 1) - 1)];
+    if (arrow.heads !== "both") {
+      target.fillStyle = color;
+      target.beginPath();
+      target.arc(points[0].x, points[0].y, width / 2, 0, Math.PI * 2);
+      target.fill();
+    }
+    const endNear = arrowHeadInner(points, true);
     drawArrowHead(target, points[points.length - 1], endNear, color, width);
     if (arrow.heads === "both") {
-      const startNear = points[Math.min(points.length - 1, Math.min(4, points.length - 1))];
+      const startNear = arrowHeadInner(points, false);
       drawArrowHead(target, points[0], startNear, color, width);
     }
     target.restore();
