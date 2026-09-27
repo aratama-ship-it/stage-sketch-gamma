@@ -10599,7 +10599,7 @@
        押せないボタンと「音なし 0:00 / 0:00」だけが並んでいても意味がなく、
        シーンの情報を1段ぶん押し下げるだけだった（2026-08-28 本人指摘）。 */
     if (els.sceneMusic) els.sceneMusic.hidden = audioTracks().length === 0;
-    const assignedId = normalizeAudioTrackId("scene", sc().audioTrackId);
+    const assignedId = requestedAudioTrackIdForCurrentScene();
     const track = audioTrackById(assignedId);
     const title = track ? track.title : (assignedId
       ? (tx("不明な楽曲"))
@@ -10717,10 +10717,10 @@
   }
 
   async function toggleAudioPlayback() {
-    // タイムラインの曲はタイムラインの再生ボタンで扱う。ここから通常の
-    // シーン別再生へ戻るときだけ、一時的な再生元を外す。
-    clearTimelineAudioPlayback();
-    if (!sc().audioTrackId) {
+    // 表示中の曲を止める・再開する。タイムラインの曲も同じボタンで扱い、
+    // シーンの割当曲へ戻るのは通常のシーン選択時だけにする。
+    const requestedId = requestedAudioTrackIdForCurrentScene();
+    if (!requestedId) {
       setAudioStatus("このシーンには曲が割り当てられていません。",
         "No track is assigned to this scene.");
       return;
@@ -10729,12 +10729,12 @@
       els.musicAudio.pause();
       return;
     }
-    if (audioPlayback.ready && audioPlayback.trackId === sc().audioTrackId) {
+    if (audioPlayback.ready && audioPlayback.trackId === requestedId) {
       await tryPlayCurrentAudio();
       return;
     }
     audioPlayback.playAfterLoad = true;
-    await prepareAudioForCurrentScene({ continuePlayback: true, force: true });
+    await prepareAudioForCurrentScene({ trackId: requestedId, continuePlayback: true, force: true });
   }
 
   function activateTimelineAudio(trackId, options = {}) {
@@ -29095,7 +29095,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     return liveSpins;
   }
 
-  function beginSceneAnim(fromScene, liveSpinsIn, durationMs = null) {
+  function beginSceneAnim(fromScene, liveSpinsIn, durationMs = null, timelineProgress = null) {
     stopSceneAnim();
     const liveSpins = liveSpinsIn && liveSpinsIn.size ? liveSpinsIn : captureLiveSpins();
     pauseSpinRun();
@@ -29103,7 +29103,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const rows = state.project.scenes.filter((row) => row.kind === "scene");
     const wasAt = rows.findIndex((row) => row.id === fromScene.id);
     const nowAt = rows.findIndex((row) => row.id === state.project.activeSceneId);
-    if (wasAt < 0 || nowAt < 0 || nowAt === wasAt) return false;
+    if (wasAt < 0 || nowAt <= wasAt) return false;
     const timingScene = rows[Math.min(wasAt, nowAt)];
     const blackoutScene = rows[Math.max(wasAt, nowAt)];
     const pieces = [];
@@ -29230,6 +29230,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         ? clamp(scheduledSeconds * 1000, 100, 86400000)
         : clamp(finite(state.sceneAnimMs, 2000), 200, 3000);
     const start = performance.now();
+    const controlled = Number.isFinite(timelineProgress);
     const step = (now) => {
       const t = clamp((now - start) / span, 0, 1);
       const visualT = blackout ? (t < 0.2 ? 0 : 1) : t;
@@ -29342,14 +29343,18 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         renderSecondSeatView();
       }
       window.dispatchEvent(new CustomEvent("stage-scene-transition-progress", {detail: {fromSceneId: fromScene.id, toSceneId: sc().id, progress: t}}));
-      if (t < 1) { sceneAnim.raf = requestAnimationFrame(step); return; }
+      if (t < 1) {
+        if (!controlled) sceneAnim.raf = requestAnimationFrame(step);
+        return;
+      }
       stopSceneAnim();
       render();
     };
-    sceneAnim = { pieces, exits, blackout, progress: 0, raf: 0, fromSceneId: fromScene.id, toSceneId: sc().id, durationMs: span };
+    sceneAnim = { pieces, exits, blackout, progress: 0, raf: 0, fromSceneId: fromScene.id, toSceneId: sc().id, durationMs: span,
+      timelineControlled: controlled, setProgress: controlled ? progress => step(start + clamp(progress, 0, 1) * span) : null };
     // 切替直後に行き先の絵を一度だけ描いてから rAF を待つと、転換の始まりで別フレームが瞬く。
     // 最初の描画を同期して前シーンの座標へ戻してから、以後のフレームを予約する。
-    step(start);
+    step(start + (controlled ? clamp(timelineProgress, 0, 1) * span : 0));
     return true;
   }
 
@@ -30987,7 +30992,7 @@ ${propsPlotHtml}
       const liveSpins = transitionFromScene && state.animateScenes ? captureLiveSpins() : null;
       renderScenes();
       if (transitionFromScene && state.animateScenes) {
-        beginSceneAnim(transitionFromScene, liveSpins, options.transitionDurationMs);
+        beginSceneAnim(transitionFromScene, liveSpins, options.transitionDurationMs, options.transitionProgress);
       }
       return;
     }
@@ -31013,7 +31018,8 @@ ${propsPlotHtml}
     updateInspector();
     // 転換の初期姿勢を先に書き込む。開始済みなら beginSceneAnim がその姿勢を一度だけ描く。
     // 動きが無い切替だけは、ここで通常描画する。
-    if (!beginSceneAnim(transitionFromScene || before, liveSpins, options.transitionDurationMs)) render();
+    if (options.skipTransition) { stopSceneAnim(); render(); }
+    else if (!beginSceneAnim(transitionFromScene || before, liveSpins, options.transitionDurationMs, options.transitionProgress)) render();
     persistSoon();
     window.dispatchEvent(new CustomEvent("stage-scene-change", {
       detail: { sceneId: id, fromTimeline: Boolean(options.fromTimeline), transition: sceneAnim ? {fromSceneId: sceneAnim.fromSceneId, toSceneId: sceneAnim.toSceneId, progress: sceneAnim.progress, durationMs: sceneAnim.durationMs} : null },
@@ -41176,6 +41182,12 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     activateTimelineAudio(trackId, options = {}) {
       return activateTimelineAudio(trackId, options);
     },
+    getActiveSceneId() {
+      return state.project.activeSceneId;
+    },
+    getTimelineAudioTrackId() {
+      return activeTimelineAudioTrackId();
+    },
     isTimelineAudioActive(trackId) {
       return timelineAudioIsActive(trackId);
     },
@@ -41668,6 +41680,21 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       renderScenes(); renderVenueControls(); updateInspector(); render();
       persistSoon();
       return true;
+    },
+    syncTimelineSceneTransition({ fromSceneId, toSceneId, durationMs, progress }) {
+      if (!state.animateScenes || state.project.activeSceneId !== toSceneId || !Number.isFinite(progress)) return false;
+      if (sceneAnim && sceneAnim.timelineControlled && sceneAnim.fromSceneId === fromSceneId
+          && sceneAnim.toSceneId === toSceneId) {
+        sceneAnim.setProgress(progress);
+        return true;
+      }
+      const from = state.project.scenes.find(row => row.kind === "scene" && row.id === fromSceneId);
+      return beginSceneAnim(from, null, durationMs, progress);
+    },
+    finishTimelineSceneTransition() {
+      if (!sceneAnim || !sceneAnim.timelineControlled) return;
+      stopSceneAnim();
+      render();
     },
     finishSceneTransition() {
       stopSceneAnim();

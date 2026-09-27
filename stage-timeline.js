@@ -915,7 +915,12 @@
   function fallbackTimeline(project, section) {
     const scenes = childScenes(project, section);
     const active = scenes.find((scene) => scene.id === project.activeSceneId) || scenes[0] || null;
-    const trackId = active && active.audioTrackId || (scenes.find((scene) => scene.audioTrackId) || {}).audioTrackId || null;
+    // シーン同期で一覧を描き直しても、再生中のタイムラインの曲を保つ。
+    // 通常のシーン選択では本体が所有権を外すので、そのシーンの割当曲に戻る。
+    const ownedTrackId = timeline && timeline.sectionId === (section && section.id || null)
+      && typeof bridge.getTimelineAudioTrackId === "function" ? bridge.getTimelineAudioTrackId() : null;
+    const trackId = (ownedTrackId && (project.audioTracks || []).some(track => track.id === ownedTrackId) ? ownedTrackId : null)
+      || active && active.audioTrackId || (scenes.find((scene) => scene.audioTrackId) || {}).audioTrackId || null;
     const audioTrack = (project.audioTracks || []).find((track) => track.id === trackId) || null;
     const baseDuration = Math.max(0.1, scenes.reduce((sum, scene) => sum + sceneTimelineSeconds(scene), 0));
     const desiredDuration = section ? sectionDurationSeconds(project, section) : baseDuration;
@@ -2574,33 +2579,40 @@
   }
 
   function activeStageSceneId() {
+    if (typeof bridge.getActiveSceneId === "function") return bridge.getActiveSceneId();
     const documentValue = projectDocument();
     return documentValue && documentValue.project ? documentValue.project.activeSceneId : null;
   }
 
-  // 通常再生では転換の開始に合わせて、本体の移動アニメーションも開始する。
-  // これにより、シーン帯の右端（転換終端）で次シーンの配置へ到着する。
-  function syncTimelinePlaybackScene(seconds, { allowTransition = false } = {}) {
-    syncTimelineLightCue(seconds);
+  // 転換も再生線と同じ時計で描く。一時停止・途中シーク・再開で別の時計を走らせない。
+  function syncTimelinePlaybackScene(seconds, { syncLights = true } = {}) {
+    if (syncLights) syncTimelineLightCue(seconds);
     const phase = timelineTransitionAt(seconds);
     const target = phase ? phase.target : segmentAt(seconds);
-    const previous = playbackPosition;
     playbackPosition = seconds;
-    if (!target || !target.sceneId || activeStageSceneId() === target.sceneId) return;
-    const crossedTransitionStart = phase && allowTransition && previous !== null
-      && previous < phase.transition.start + 1e-6 && seconds >= phase.transition.start - 1e-6;
-    if (crossedTransitionStart) {
-      openTimelineSceneById(target.sceneId, {
-        transitionDurationMs: (phase.transition.end - phase.transition.start) * 1000,
-      });
+    if (!target || !target.sceneId) return;
+    if (phase) {
+      const duration = phase.transition.end - phase.transition.start;
+      const progress = clamp((seconds - phase.transition.start) / duration, 0, 1);
+      if (activeStageSceneId() !== target.sceneId) {
+        openTimelineSceneById(target.sceneId, {
+          transitionFromSceneId: phase.source.sceneId,
+          transitionDurationMs: duration * 1000,
+          transitionProgress: progress,
+        });
+      } else if (typeof bridge.syncTimelineSceneTransition === "function") {
+        bridge.syncTimelineSceneTransition({ fromSceneId: phase.source.sceneId, toSceneId: target.sceneId,
+          durationMs: duration * 1000, progress });
+      }
       return;
     }
-    openTimelineSceneById(target.sceneId);
+    if (typeof bridge.finishTimelineSceneTransition === "function") bridge.finishTimelineSceneTransition();
+    if (activeStageSceneId() !== target.sceneId) openTimelineSceneById(target.sceneId, { skipTransition: true });
   }
 
   function syncSilentScene(seconds) {
     if (!silentPlayback) return;
-    syncTimelinePlaybackScene(seconds, { allowTransition: true });
+    syncTimelinePlaybackScene(seconds);
     const segment = segmentAt(seconds);
     if (segment) silentPlayback.sceneId = segment.sceneId;
   }
@@ -2635,7 +2647,7 @@
     const target = segmentAt(seekSeconds);
     if (!target) return;
     playbackPosition = seekSeconds;
-    openTimelineSceneById(target.sceneId);
+    syncTimelinePlaybackScene(seekSeconds);
     silentPlayback = {
       startedAt: performance.now(),
       startSeconds: seekSeconds,
@@ -2706,7 +2718,7 @@
   }
 
   // timeupdate は低頻度でも、HTMLAudioElement.currentTime は再生中に読める。
-  // 保存・シーン同期は従来のイベントに任せ、再生線だけを毎フレーム滑らかにする。
+  // 再生線と転換を毎フレームそろえ、照明キューの同期は従来のイベントに任せる。
   function stopAudioPlayheadAnimation() {
     if (!audioPlayheadFrame) return;
     window.cancelAnimationFrame(audioPlayheadFrame);
@@ -2721,6 +2733,8 @@
       updatePlayhead();
       return;
     }
+    // 音源時刻から転換も毎フレーム更新し、停止中は進めない。
+    syncTimelinePlaybackScene(els.audio.currentTime, { syncLights: false });
     updatePlayhead();
     audioPlayheadFrame = window.requestAnimationFrame(animateAudioPlayhead);
   }
@@ -3082,15 +3096,20 @@
       return;
     }
     if (!els.audio || !els.musicToggle) return;
-    await ensureAudioGainGraph();
     if (audioMatchesTimeline() && !els.audio.paused) {
       els.audio.pause();
       return;
     }
+    const requestedTimeline = timeline;
+    const requestedSceneId = activeStageSceneId();
+    await ensureAudioGainGraph();
+    // 音量処理の準備を待つ間にシーンや曲が変わったら、古い再生指示を実行しない。
+    if (timeline !== requestedTimeline || activeStageSceneId() !== requestedSceneId) return;
     const target = timeline.segments.find((segment) => seekSeconds >= segment.start && seekSeconds < segment.end && segment.sceneId)
       || timeline.segments.find((segment) => segment.sceneId);
     if (!target) return;
-    openTimelineSceneById(target.sceneId);
+    // 一時停止位置が転換内なら、その途中の姿勢から再開する。
+    syncTimelinePlaybackScene(seekSeconds);
     pendingSeek = seekSeconds;
     if (typeof bridge.activateTimelineAudio === "function") {
       syncTimelineAudioAt(pendingSeek, { play: true });
@@ -3932,7 +3951,7 @@
     els.audio.addEventListener(name, () => {
       if (name === "play") {
         pauseSilentPlayback({ update: false });
-        if (timeline) {
+        if (audioMatchesTimeline()) {
           playbackPosition = Number.isFinite(els.audio.currentTime) ? els.audio.currentTime : null;
           syncTimelinePlaybackScene(playbackPosition || 0);
         }
@@ -3943,16 +3962,16 @@
         els.audio.currentTime = clamp(pendingSeek, 0, Number.isFinite(els.audio.duration) ? els.audio.duration : timeline.duration);
         pendingSeek = null;
       }
-      if (name === "seeking" && timeline && Number.isFinite(els.audio.currentTime)) {
+      if (name === "seeking" && audioMatchesTimeline() && Number.isFinite(els.audio.currentTime)) {
         seekSeconds = els.audio.currentTime;
         syncSceneForSeek();
       }
-      if (name === "timeupdate" && ui.loop && ui.loopB > ui.loopA && els.audio.currentTime >= ui.loopB) {
+      if (name === "timeupdate" && audioMatchesTimeline() && ui.loop && ui.loopB > ui.loopA && els.audio.currentTime >= ui.loopB) {
         els.audio.currentTime = ui.loopA;
         playbackPosition = null;
       }
-      if (name === "timeupdate" && timeline && Number.isFinite(els.audio.currentTime)) {
-        syncTimelinePlaybackScene(els.audio.currentTime, { allowTransition: true });
+      if (name === "timeupdate" && audioMatchesTimeline() && Number.isFinite(els.audio.currentTime)) {
+        syncTimelinePlaybackScene(els.audio.currentTime);
       }
       updatePlayhead();
     });
@@ -3991,10 +4010,10 @@
   function syncExternalTransition(detail) {
     if (!detail || !timeline) return false;
     const low = timeline.transitions.find(item =>
-      item.sourceSceneId === detail.fromSceneId || item.sourceSceneId === detail.toSceneId);
+      item.sourceSceneId === detail.fromSceneId && item.targetSceneId === detail.toSceneId);
     if (!low) return false;
-    const target = timeline.segments.find(item => item.sceneId && Math.abs(item.start - low.end) < 1e-6);
-    if (!target || ![detail.fromSceneId, detail.toSceneId].includes(target.sceneId)) return false;
+    const target = timeline.segments.find(item => item.sceneId === detail.toSceneId);
+    if (!target || Math.abs(target.start - low.end) >= 1e-6) return false;
     seekSeconds = window.STAGE_PERFORMER_MOTION.transitionSeconds(low, detail.fromSceneId, detail.toSceneId, detail.progress);
     // This display clock never seeks a playing audio element on every frame.
     updatePlayhead();
@@ -4029,6 +4048,12 @@
         updatePlayhead();
       }
       return;
+    }
+    // 一覧の描き直しを省く通常のシーン選択でも、割当曲が変われば時間軸を更新する。
+    // タイムライン再生によるシーン同期では、再生元の曲をそのまま保つ。
+    if (!(event && event.detail && event.detail.fromTimeline) && timeline.source === "fallback") {
+      const { choices } = timelineChoices();
+      if (choices[0] && choices[0].trackId !== timeline.trackId) renderTimeline();
     }
     root.querySelectorAll(".stage-timeline-scene.is-current").forEach((node) => node.classList.remove("is-current"));
     root.querySelectorAll(".stage-timeline-scene").forEach((node) => {
