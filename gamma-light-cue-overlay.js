@@ -73,6 +73,11 @@
       if (!c) return null;
       return { kind: "circle", a: c, radiusM: Math.max(0, finite(path.r, 0)), plane: path.plane || "horizontal" };
     }
+    /* 点の列（2026-09-27 テスト用）は概略として最初の点だけ示す。動きは照明デザインタブで見る。 */
+    if (path.kind === "poly" && Array.isArray(path.points) && path.points.length) {
+      const a = point(path.points[0], dims);
+      return a ? { kind: "still", a, note: "poly" } : null;
+    }
     const a = point(path.a, dims);
     return a ? { kind: "still", a } : null;
   }
@@ -100,7 +105,8 @@
     let source = worldOf(marker, dims);
     let rootR = 0;
     const path = record(light.path) ? light.path : null;
-    const aimPoint = path && record(path.a) ? path.a : null;
+    const polyFirst = path && path.kind === "poly" && Array.isArray(path.points) && record(path.points[0]) ? path.points[0] : null;
+    const aimPoint = path && record(path.a) ? path.a : polyFirst;
     const target = worldOf(aimPoint, dims);
     if (!source || !target) return null;
     /* 狙い先を面の上へ落とす。軸が面に当たる点が楕円の元なので、
@@ -184,12 +190,13 @@
     return { rays, effect, surface };
   }
 
-  function build(design, sceneId, overlayApi) {
+  function build(design, sceneId, overlayApi, options) {
     const shim = planShim(design);
     if (!shim || !overlayApi || typeof overlayApi.overlayForPlan !== "function") return null;
     const base = overlayApi.overlayForPlan(shim);
     if (!base) return null;
-    const cue = sceneCue(design, sceneId);
+    /* v2-3: タイムライン再生中は「LXキューの混ぜた状態」を渡せる（無ければシーンの作業中の明かり） */
+    const cue = options && record(options.cue) ? options.cue : sceneCue(design, sceneId);
     const lights = cue && record(cue.lights) ? cue.lights : {};
     const dims = base.dims;
 

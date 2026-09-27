@@ -66,6 +66,9 @@
   });
   const isMoving = (fixture) => Boolean(fixture) && fixture.kind !== "fixed" && fixture.kind !== "laser";
   const isLaser = (fixture) => Boolean(fixture) && fixture.kind === "laser";
+  /* 色の作り方（2026-09-28）。fixture.colorMode:"wheel"＝カラーホイール機。CMY/RGB のように途中の色を作れないので、
+     キューの間はスナップの遅れの後に一瞬で替わり、動きの中（colorTo）は位相の半分で一瞬で替わる。無ければ混色（"mix"）。 */
+  const colorSnaps = (fixture) => Boolean(fixture) && fixture.colorMode === "wheel";
   /* いま実際に出ている広がり。ムービングだけ、このシーンのズーム（light.beamDeg）で上書きできる。
      固定灯は仕込みの値（fixture.beamDeg）のまま。 */
   const beamDegOf = (fixture, light) => {
@@ -360,6 +363,7 @@
   /* 1往復（1周）の時間。任意の秒数 periodSec を持っていればそれが優先。
      持っていなければ従来どおり speed の3段（2026-09-12 本人要望で秒数指定を追加）。 */
   const periodMs = (light) => {
+    if (light && light.path && light.path.kind === "poly") return polyCycleMs(light.path);
     const sec = light && light.periodSec;
     if (Number.isFinite(Number(sec)) && Number(sec) > 0) return clamp(Number(sec), 0.2, 120) * 1000;
     return SPEED_PERIOD_MS[light && light.speed] || SPEED_PERIOD_MS.normal;
@@ -367,6 +371,93 @@
 
   const tri = (t) => { const m = ((t % 1) + 1) % 1; return m < 0.5 ? m * 2 : 2 - m * 2; };
   const saw = (t) => ((t % 1) + 1) % 1;
+
+  /* ===== 実機・卓の「時間」を再現する追加（2026-09-27 テスト用ビルド） =====
+     設計: docs/light-real-effects-plan-2026-09-27/index.html（本人が推奨5点を承認）
+     ① curveMap: フェードの道筋。数値2つ（accel/decel −100〜200%）で grandMA3 の Transition 9種を近似。
+        −100=なめらか（正弦寄り）／0=一定／200=急。式はCSSと同じ3次ベジェ（内部式は非公開なので近似）。
+     ② poly: 決めた点を順に回る軌道（多角形・稲妻・A→B→C・跳び）。各点に「止まる秒」「動く秒」。
+     ③ timing / blendCues: キューの時間（フェード・遅れ・カーブ・スナップ・ムーブインブラック）。
+        前の状態と次の状態を混ぜた「描画用のキュー」を返す。描画側はこれまでどおりのキューを読むだけ。
+     ★どの鍵も省略可。無ければ今までの挙動（カット／端で減速する往復）と同じ。 */
+  const CURVE_PRESETS = Object.freeze({
+    linear: { accel: 0, decel: 0 },
+    ease: { accel: -100, decel: -100 },
+    easeIn: { accel: -100, decel: 100 },
+    easeOut: { accel: 100, decel: -100 },
+    swing: { accel: -100, decel: -100, overshoot: 25 },
+  });
+  const normalizeCurve = (raw) => {
+    if (typeof raw === "string") return CURVE_PRESETS[raw] ? normalizeCurve(CURVE_PRESETS[raw]) : null;
+    if (!raw || typeof raw !== "object") return null;
+    return { accel: clamp(finite(raw.accel, 0), -100, 200), decel: clamp(finite(raw.decel, 0), -100, 200), overshoot: clamp(finite(raw.overshoot, 0), 0, 60) };
+  };
+  const cubicBezierY = (x1, y1, x2, y2, x) => {
+    const bx = (t) => 3 * (1 - t) * (1 - t) * t * x1 + 3 * (1 - t) * t * t * x2 + t * t * t;
+    const by = (t) => 3 * (1 - t) * (1 - t) * t * y1 + 3 * (1 - t) * t * t * y2 + t * t * t;
+    let lo = 0, hi = 1, t = x;
+    for (let i = 0; i < 28; i += 1) { const v = bx(t); if (Math.abs(v - x) < 1e-6) break; if (v < x) lo = t; else hi = t; t = (lo + hi) / 2; }
+    return by(t);
+  };
+  /* 進み具合 p（0〜1）を、カーブで置き換えた進み具合にする。swing は 1 を越えてから戻る。 */
+  const curveMap = (p, curve) => {
+    const c = normalizeCurve(curve);
+    const u = clamp(finite(p, 0), 0, 1);
+    if (!c) return u;
+    const a = c.accel / 100, d = c.decel / 100;
+    const x1 = a < 0 ? 0.5 * -a : 0, y1 = a > 0 ? Math.min(1, 0.5 * a) : 0;
+    const x2 = d < 0 ? 1 - 0.5 * -d : 1, y2 = (d > 0 ? 1 - Math.min(1, 0.5 * d) : 1) + c.overshoot / 100;
+    if (!x1 && !y1 && x2 === 1 && y2 === 1) return u;
+    return cubicBezierY(x1, y1, x2, y2, u);
+  };
+
+  /* 点の列（poly）。path = { kind:"poly", points:[{u,v,hM, dwellSec?, moveSec?, curve?}...], mode:"loop"|"bounce"|"once", moveSec?, dwellSec?, curve? }
+     区間＝{from,to,moveMs,dwellMs}。到着してから dwell。moveSec 0 は「跳ぶ」。 */
+  const POLY_MODES = ["loop", "bounce", "once"];
+  const polyPoints = (path) => (path && Array.isArray(path.points) ? path.points.filter((p) => p && typeof p === "object") : []);
+  const polyTraversal = (path) => {
+    const pts = polyPoints(path);
+    const mode = path && POLY_MODES.includes(path.mode) ? path.mode : "loop";
+    if (pts.length < 2) return { pts, segs: [], cycleMs: 1000, mode };
+    const n = pts.length, order = [];
+    if (mode === "loop") for (let i = 0; i < n; i += 1) order.push([i, (i + 1) % n]);
+    else if (mode === "bounce") { for (let i = 0; i < n - 1; i += 1) order.push([i, i + 1]); for (let i = n - 1; i > 0; i -= 1) order.push([i, i - 1]); }
+    else for (let i = 0; i < n - 1; i += 1) order.push([i, i + 1]);
+    const segs = order.map(([from, to]) => ({
+      from, to,
+      moveMs: clamp(finite(pts[to].moveSec, finite(path.moveSec, 1)), 0, 600) * 1000,
+      dwellMs: clamp(finite(pts[to].dwellSec, finite(path.dwellSec, 0)), 0, 600) * 1000,
+      curve: pts[to].curve !== undefined ? pts[to].curve : path.curve,
+    }));
+    const cycleMs = Math.max(200, segs.reduce((sum, g) => sum + g.moveMs + g.dwellMs, 0));
+    return { pts, segs, cycleMs, mode };
+  };
+  const polyCycleMs = (path) => polyTraversal(path).cycleMs;
+  const polyAt = (rawPath, t, mirror, dims) => {
+    /* 組の鏡映は「点の並びを逆にして同じ時間で回る」＝往復の鏡映（端を入れ替え）と同じ意味。
+       時間を逆再生にはしない（2点の列だと同じ場所を同じ向きに通ってしまう）。 */
+    const path = mirror ? { ...rawPath, points: polyPoints(rawPath).slice().reverse() } : rawPath;
+    const { pts, segs, cycleMs, mode } = polyTraversal(path);
+    if (!pts.length) return { ...pointWorld(newPoint(), dims), phase: 0 };
+    if (!segs.length) return { ...pointWorld(pts[0], dims), phase: 0 };
+    const f = mode === "once" ? clamp(t, 0, 1) : saw(t);
+    const shapeOf = (seg) => (u) => (seg.curve !== undefined && seg.curve !== null)
+      ? curveMap(u, seg.curve)
+      : ((path.easing || "ease") === "ease" ? 0.5 - Math.cos(u * Math.PI) / 2 : u);
+    const at = f * cycleMs;
+    let acc = 0;
+    for (const seg of segs) {
+      if (at < acc + seg.moveMs) {
+        const u = seg.moveMs > 0 ? (at - acc) / seg.moveMs : 1;
+        const a = pointWorld(pts[seg.from], dims), b = pointWorld(pts[seg.to], dims), sMix = shapeOf(seg)(u);
+        return { x: a.x + (b.x - a.x) * sMix, y: a.y + (b.y - a.y) * sMix, z: a.z + (b.z - a.z) * sMix, phase: f };
+      }
+      acc += seg.moveMs;
+      if (at < acc + seg.dwellMs) return { ...pointWorld(pts[seg.to], dims), phase: f };
+      acc += seg.dwellMs;
+    }
+    return { ...pointWorld(pts[segs[segs.length - 1].to], dims), phase: f };
+  };
 
   /* 組の効果を位相へ反映する。
    *   together … 全員同じ位相／sequential … メンバー順にdelayMsずつ遅らせる
@@ -425,10 +516,27 @@
        "linear"＝端で急に折り返す機械的な動き。卓のフェードをそのまま当てた感じ。
        "ease"（既定）＝端で減速して止まり、また加速する。ムービングのヨークは
        止まる前に減速するので、実物はこちらに近い。式は cos の半周期（ease-in-out）。 */
+  /* 運び方: path.curve（加速・減速の2数値、または既定名）があればそれ、無ければ従来の easing。 */
+  const swingShape = (path) => (u) => (path.curve !== undefined && path.curve !== null)
+    ? curveMap(u, path.curve)
+    : ((path.easing || "ease") === "ease" ? 0.5 - Math.cos(u * Math.PI) / 2 : u);
   const swingPhase = (light, t, mirror) => {
     const path = light.path || {};
-    let p = tri(t);
-    if ((path.easing || "ease") === "ease") p = 0.5 - Math.cos(p * Math.PI) / 2;
+    const shape = swingShape(path);
+    /* 端で止まる（grandMA3 の Width と Transition＝1段のうち動く割合を「止まる秒」で持つ）。
+       1往復＝A→B・Bで止まる・B→A・Aで止まる。periodSec はその合計のまま。 */
+    const dw = path.dwell && typeof path.dwell === "object" ? path.dwell : null;
+    const dA = dw ? clamp(finite(dw.a, 0), 0, 600) : 0, dB = dw ? clamp(finite(dw.b, 0), 0, 600) : 0;
+    let p;
+    if (path.kind === "line" && (dA > 0 || dB > 0)) {
+      const T = periodMs(light) / 1000;
+      const fa = clamp(dA / T, 0, 0.45), fb = clamp(dB / T, 0, 0.45), m = Math.max(0.05, (1 - fa - fb) / 2);
+      const f = saw(t);
+      if (f < m) p = shape(f / m);
+      else if (f < m + fb) p = 1;
+      else if (f < 2 * m + fb) p = 1 - shape((f - m - fb) / m);
+      else p = 0;
+    } else p = shape(tri(t));
     if (path.kind === "line" && path.start === "b") p = 1 - p;
     if (mirror) p = 1 - p;
     return p;
@@ -451,6 +559,16 @@
     const base = levelOf(light);
     if (!light || light.levelTo == null) return base;
     return base + (clamp(finite(light.levelTo, base), 0, 100) - base) * clamp(finite(phase, 0), 0, 1);
+  };
+  /* 色（第6弾・2026-09-27）。終わりの色 colorTo を持つ灯は、強さ・広がりと同じ位相で始めの色から終わりの色へ混ざる。
+     無い・不正・同じ色ならそのまま。描画側は l.color を直読みせず colorAt を通す（app.js の描画約20か所）。 */
+  const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i;
+  const colorAt = (light, phase, fixture) => {
+    const base = light && HEX_COLOR_RE.test(String(light.color)) ? light.color : "#f2ead6";
+    if (!light || !HEX_COLOR_RE.test(String(light.colorTo)) || String(light.colorTo).toLowerCase() === base.toLowerCase()) return base;
+    const p = clamp(finite(phase, 0), 0, 1);
+    if (colorSnaps(fixture)) return p < 0.5 ? base : light.colorTo;   // カラーホイール: 半分で一瞬
+    return mixHex(base, light.colorTo, p);
   };
 
   /* ストロボ（ムービングの光の強さに載せる、時間で繰り返す点滅）。2026-09-13 本人要望。
@@ -519,6 +637,18 @@
       const peak = (center, width) => Math.max(0, 1 - Math.abs(phase - center) / width);
       return 1 - depth * (1 - Math.max(peak(0.07, 0.07), peak(0.26, 0.06) * 0.85));
     }
+    if (kind === "random" || kind === "randomPulse") {
+      /* 間隔がランダムな点滅（GDTF StrobeModeRandom／RandomPulse）。hz は平均の回数。
+         1回ぶんの枠の中で発光の位置を乱数で決め、たまに1回抜く。同じ seed なら同じ並び。 */
+      const slot = 1000 / Math.max(0.1, hz);
+      const k = Math.floor(t / slot), u = t / slot - k;
+      const duty = clamp(finite(strobe && strobe.duty, 50), 5, 95) / 100;
+      const skip = rand01(seed, k * 3 + 2) > 0.85;
+      const start = rand01(seed, k * 3) * (1 - duty);
+      const inFlash = !skip && u >= start && u < start + duty;
+      if (kind === "random") return inFlash ? 1 : 0;
+      return (1 - depth) + (inFlash ? depth * Math.sin(((u - start) / duty) * Math.PI) : 0);
+    }
     const duty = clamp(finite(strobe && strobe.duty, 50), 5, 95) / 100;
     return phase < duty ? 1 : 0;
   };
@@ -564,11 +694,17 @@
   const strobeMul = (strobe, tMs) => {
     if (!strobe || !strobe.on) return 1;
     if (strobe.seq && typeof strobe.seq === "object") return seqMul(strobe, finite(tMs, 0));
-    const hz = clamp(finite(strobe.hz, 6), 0.5, 20);
+    const hz = clamp(finite(strobe.hz, 6), 0.3, 20);
     const period = 1000 / hz;
     const t = finite(tMs, 0);
+    /* 実機の「スパイク」（発光の間も薄く点いたまま）と「ブラインダー」（一回点けて保持）。
+       floor＝消えている間の底（%）、loops＝周数（0=ずっと）、after＝周数を終えたあと off/hold。
+       順送り（seq）と同じ鍵名・同じ意味。 */
+    const floor = clamp(finite(strobe.floor, 0), 0, 100) / 100;
+    const loops = Math.max(0, Math.round(finite(strobe.loops, 0)));
+    if (loops > 0 && Math.floor(Math.max(0, t) / period) >= loops) return strobe.after === "hold" ? 1 : floor;
     const phase = ((((t % period) + period) % period) / period + clamp(finite(strobe.phaseNorm, 0), 0, 1)) % 1;
-    return strobeWave(strobe, phase, t, hz);
+    return Math.max(floor, strobeWave(strobe, phase, t, hz));
   };
 
   /* 時刻 tMs における光の当たる先（世界座標）。未設定・消灯は null。 */
@@ -592,6 +728,7 @@
       const o = (path.kind === "eight" ? eightOffset : circleOffset)(path.plane, ang, r, r2, path.tilt);
       return { x: c.x + o.dx, y: clamp(c.y + o.dy, 0, dims.D + HOUSE_AHEAD_MAX), z: clamp(c.z + o.dz, 0, dims.H), phase: saw(t) };
     }
+    if (path.kind === "poly") return polyAt(path, t, mirror, dims);
     return { ...pointWorld(path.a, dims), phase: 0 };
   };
 
@@ -614,6 +751,14 @@
         pts.push({ x: c.x + o.dx, y: c.y + o.dy, z: c.z + o.dz });
       }
       return { kind: "loop", shape: path.kind, c, r, r2, tilt: finite(path.tilt, 0), plane: path.plane || "horizontal", pts };
+    }
+    if (path.kind === "poly") {
+      const raw = polyPoints(path);
+      if (raw.length < 2) return null;
+      const pts = raw.map((p) => pointWorld(p, dims));
+      const mode = POLY_MODES.includes(path.mode) ? path.mode : "loop";
+      if (mode === "loop") pts.push(pts[0]);
+      return { kind: "loop", shape: "poly", mode, pts, c: pts[0] };
     }
     return null;
   };
@@ -996,15 +1141,17 @@
     const zoom = fixture && isMoving(fixture) && light.beamDegTo != null
       && Math.round(light.beamDegTo) !== Math.round(beamDegOf(fixture, light))
       ? `。広がりは${Math.round(beamDegOf(fixture, light))}°→${Math.round(light.beamDegTo)}°` : "";
+    const colorText = light.colorTo != null && /^#[0-9a-f]{6}$/i.test(String(light.colorTo)) && String(light.colorTo).toLowerCase() !== String(light.color || "").toLowerCase()
+      ? `。色は${light.color || "#f2ead6"}→${light.colorTo}` : "";
     const face = light.surface === "back" ? "ホリゾント" : light.surface === "air" ? "空中" : light.surface === "house" ? "客席（目眩まし）" : "床";
     const sp = { slow: "ゆっくり", normal: "普通の速さ", fast: "速く" }[light.speed] || "普通の速さ";
     const path = light.path || {};
     if (path.kind === "line") {
       const diag = Math.abs((path.a.hM || 0) - (path.b.hM || 0)) > 0.15 ? "（斜めの軌道）" : "";
-      return `${strength}${face}の${posWord(path.a)}〜${posWord(path.b)}を往復${diag}（${sp}）。${path.start === "b" ? posWord(path.b) : posWord(path.a)}から開始${zoom}${goboText}`;
+      return `${strength}${face}の${posWord(path.a)}〜${posWord(path.b)}を往復${diag}（${sp}）。${path.start === "b" ? posWord(path.b) : posWord(path.a)}から開始${zoom}${colorText}${goboText}`;
     }
-    if (path.kind === "circle") return `${strength}${face}の${posWord(path.c)}を中心に半径約${Math.round(path.r * 1000)}mmで${PLANE_LABEL[path.plane] || "水平の円"}・${path.dir === "ccw" ? "反時計回り" : "時計回り"}（${sp}）${zoom}${goboText}`;
-    return `${strength}${face}の${posWord(path.a || newPoint())}を静止で当てる${zoom}${goboText}`;
+    if (path.kind === "circle") return `${strength}${face}の${posWord(path.c)}を中心に半径約${Math.round(path.r * 1000)}mmで${PLANE_LABEL[path.plane] || "水平の円"}・${path.dir === "ccw" ? "反時計回り" : "時計回り"}（${sp}）${zoom}${colorText}${goboText}`;
+    return `${strength}${face}の${posWord(path.a || newPoint())}を静止で当てる${zoom}${colorText}${goboText}`;
   };
 
   /* 下手⇄上手のコピー（配置のみ。2026-09-11 本人回答＝初回は配置だけでよい）。
@@ -1128,11 +1275,199 @@
     });
   }
 
+  /* ---------- キューの時間 timing（2026-09-27） ----------
+   * timing = { fadeInSec, fadeOutSec?, delayInSec, delayOutSec?, curve?, by?:{position,beam,color}, snap?:{delaySec}, mib? }
+   *   fadeIn ＝明るくなる方・強さ以外の属性の既定（MA3 の In Fade）／fadeOut＝暗くなる方（省略＝In と同じ）
+   *   by.position などは {fadeSec, delaySec, curve} で属性群ごとに上書き（省略＝In と同じ）
+   *   snap.delaySec＝模様・カッター・レーザー種の切替を遅らせる秒／mib＝消えていた灯は先回りして向く
+   * 無ければカット（全部 0 秒）。 */
+  const normalizeTiming = (raw) => {
+    if (!raw || typeof raw !== "object") return null;
+    const sec = (v, d) => clamp(finite(v, d), 0, 600);
+    const opt = (v) => (v === undefined || v === null ? null : sec(v, 0));
+    const fam = (v) => (v && typeof v === "object"
+      ? { fadeSec: opt(v.fadeSec), delaySec: opt(v.delaySec), curve: v.curve === undefined ? null : normalizeCurve(v.curve) }
+      : null);
+    const by = raw.by && typeof raw.by === "object" ? raw.by : {};
+    return {
+      fadeInSec: sec(raw.fadeInSec, 0), fadeOutSec: opt(raw.fadeOutSec),
+      delayInSec: sec(raw.delayInSec, 0), delayOutSec: opt(raw.delayOutSec),
+      curve: normalizeCurve(raw.curve),
+      by: { position: fam(by.position), beam: fam(by.beam), color: fam(by.color) },
+      snapDelaySec: sec(raw.snap && raw.snap.delaySec, sec(raw.snapDelaySec, 0)),
+      mib: raw.mib === true,
+    };
+  };
+  const timingFamily = (T, family) => {
+    if (family === "in") return { fade: T.fadeInSec, delay: T.delayInSec, curve: T.curve };
+    if (family === "out") return { fade: T.fadeOutSec === null ? T.fadeInSec : T.fadeOutSec, delay: T.delayOutSec === null ? T.delayInSec : T.delayOutSec, curve: T.curve };
+    const f = T.by[family];
+    return { fade: f && f.fadeSec !== null ? f.fadeSec : T.fadeInSec, delay: f && f.delaySec !== null ? f.delaySec : T.delayInSec, curve: f && f.curve ? f.curve : T.curve };
+  };
+  /* GO からの経過 tGoMs で、その属性群の進み具合（0〜1。swing なら一時的に 1 を越える） */
+  const timingProgress = (timing, tGoMs, family) => {
+    const T = normalizeTiming(timing);
+    if (!T) return 1;
+    const { fade, delay, curve } = timingFamily(T, family || "in");
+    const t = finite(tGoMs, 0) / 1000;
+    if (t < delay) return 0;
+    if (fade <= 0) return 1;
+    return curveMap(Math.min(1, (t - delay) / fade), curve);
+  };
+  /* 切替が完全に終わるまでの長さ（ms）。0 ならカット。 */
+  const transitionMs = (timing) => {
+    const T = normalizeTiming(timing);
+    if (!T) return 0;
+    const ends = ["in", "out", "position", "beam", "color"].map((fam) => { const f = timingFamily(T, fam); return f.fade + f.delay; });
+    return Math.max(0, ...ends, T.snapDelaySec) * 1000;
+  };
+  const worldToPoint = (w, dims) => {
+    const p = { u: clamp(w.x / dims.W + 0.5, 0, 1), v: clamp(w.y / dims.D, 0, 1), hM: clamp(w.z, 0, dims.H) };
+    if (w.y > dims.D) p.aheadM = clamp(w.y - dims.D, 0, HOUSE_AHEAD_MAX);
+    return p;
+  };
+  const mixHex = (a, b, p) => {
+    const ok = (v) => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v);
+    if (!ok(a) || !ok(b)) return ok(b) ? b : a;
+    const q = clamp(finite(p, 0), 0, 1);
+    const ch = (i) => { const x = parseInt(a.slice(i, i + 2), 16), y = parseInt(b.slice(i, i + 2), 16); return Math.round(x + (y - x) * q); };
+    return "#" + [1, 3, 5].map((i) => ch(i).toString(16).padStart(2, "0")).join("");
+  };
+  const SNAP_KEYS = ["gobo", "shutter", "laser", "goboSoft"];
+  /* 前のキュー prevCue から次のキュー nextCue へ、timing に従って移る途中の「描画用キュー」。
+     ctx = { timing, tGoMs(GOからの実時間), tFxMs(動きの時計), dims, fixtures }
+     戻り値 { cue, done, progress }。done なら nextCue そのもの（動き・levelTo はそのまま生きる）。 */
+  const blendCues = (prevCue, nextCue, ctx) => {
+    const T = normalizeTiming(ctx && ctx.timing);
+    const next = nextCue && typeof nextCue === "object" ? nextCue : { lights: {}, groups: [] };
+    const tGo = finite(ctx && ctx.tGoMs, 0);
+    if (!T || tGo >= transitionMs(T)) return { cue: next, done: true, progress: 1 };
+    const prev = prevCue && typeof prevCue === "object" ? prevCue : { lights: {}, groups: [] };
+    const tFx = finite(ctx && ctx.tFxMs, 0);
+    const dims = (ctx && ctx.dims) || DEFAULT_DIMS;
+    const byId = new Map(((ctx && ctx.fixtures) || []).map((f) => [f.id, f]));
+    const pIn = timingProgress(T, tGo, "in"), pOut = timingProgress(T, tGo, "out");
+    const pPos = timingProgress(T, tGo, "position"), pBeam = timingProgress(T, tGo, "beam"), pCol = timingProgress(T, tGo, "color");
+    const snapped = tGo / 1000 >= T.snapDelaySec;
+    const lights = {};
+    const ids = new Set([...Object.keys(prev.lights || {}), ...Object.keys(next.lights || {})]);
+    ids.forEach((id) => {
+      const a = (prev.lights || {})[id] || null, b = (next.lights || {})[id] || null;
+      const fixture = byId.get(id) || null;
+      const aLit = isLit(a), bLit = isLit(b);
+      /* 舞台側（ctx.representative）は概略図＝動きの時計を持たず「始めの値」で描くので、位相も 0 に固定する
+         （levelTo・beamDegTo・colorTo の途中の値を混ぜると GO の瞬間に飛ぶ。2026-09-27 Safari 指摘の続き）。 */
+      const repMode = Boolean(ctx && ctx.representative);
+      const phA = repMode ? 0 : (a ? paramPhase(a, prev, id, tFx) : 0), phB = repMode ? 0 : (b ? paramPhase(b, next, id, tFx) : 0);
+      const La = aLit ? levelAt(a, phA) : 0, Lb = bLit ? levelAt(b, phB) : 0;
+      const L = clamp(La + (Lb - La) * (Lb >= La ? pIn : pOut), 0, 100);
+      const out = { ...(b || a) };
+      /* 位置。前の狙い先（消えていても向きは残っている）から次の狙い先へ。
+         両方が動いていても、その瞬間どうしを混ぜる。MIB＝消えていた灯は先回り（見えない間に済ませる）。 */
+      /* 2026-09-27 本人指摘（Safari）: 軌道が同じキュー同士（色だけ替える等）で、混ぜている間だけ「その瞬間の位置に静止」へ
+         置き換えると、舞台の概略図（動く光は代表点で描く）では GO で代表点→瞬間位置へ飛び、終わると戻る＝瞬間移動に見えた。
+         ①軌道が同じなら位置は触らない（動きはそのまま続く）。②ctx.representative（舞台側）は、その瞬間の位置でなく
+         代表点（線＝A・円＝中心・点の列＝最初の点・静止＝A）どうしを混ぜる＝概略図の描き方と同じ約束。 */
+      const samePath = Boolean(a && b && a.path && b.path && JSON.stringify(a.path) === JSON.stringify(b.path));
+      const repPoint = (p) => (!p ? null : p.kind === "poly" ? (Array.isArray(p.points) ? p.points[0] || null : null)
+        : (p.kind === "circle" || p.kind === "eight") ? (p.c || p.a || null) : (p.a || null));
+      const aimWorld = (light, cueOf, fid) => {
+        if (!light || !light.path) return null;
+        if (ctx && ctx.representative) { const pt = repPoint(light.path); return pt ? targetAt({ ...light, on: true, path: { kind: "still", a: pt } }, cueOf, fid, 0, dims) : null; }
+        return targetAt({ ...light, on: true }, cueOf, fid, tFx, dims);
+      };
+      const ta = samePath ? null : aimWorld(a, prev, id);
+      const tb = samePath ? null : aimWorld(b, next, id);
+      if (samePath) { /* 位置はそのまま（b の軌道が生きる） */ }
+      else if (b && tb) {
+        const mib = T.mib && !aLit;
+        if (ta && !mib && pPos < 1) {
+          const w = { x: ta.x + (tb.x - ta.x) * pPos, y: ta.y + (tb.y - ta.y) * pPos, z: ta.z + (tb.z - ta.z) * pPos };
+          out.path = { kind: "still", a: worldToPoint(w, dims) };
+        }
+      } else if (a && a.path) { out.path = a.path; if (a.surface) out.surface = a.surface; }
+      /* 広がり（ズーム）。ムービングだけ。 */
+      if (a && b && fixture && isMoving(fixture) && pBeam < 1) {
+        const da = beamDegAt(fixture, a, phA), db = beamDegAt(fixture, b, phB);
+        if (Math.abs(da - db) > 1e-6) { out.beamDeg = da + (db - da) * pBeam; out.beamDegTo = null; }
+      }
+      /* スナップ属性（模様・カッター・レーザー種）は遅れの後に一瞬で切り替わる。 */
+      if (a && b && !snapped) SNAP_KEYS.forEach((k) => { if (a[k] !== undefined) out[k] = a[k]; else delete out[k]; });
+      /* 色は連続的に混ざる（CMY/RGB の実機と同じ。カラーホイールの実機はスナップだが型番は持たない）。 */
+      if (a && b && a.color && b.color && (pCol < 1 || (colorSnaps(fixture) && !snapped))) {
+        /* 第6弾: 終わりの色（colorTo）を持つ灯は、その瞬間の色どうしを混ぜる。混ぜている間は終わりの色を止め、色の秒が終われば次のキューの colorTo が生きる。 */
+        const ca = colorAt(a, phA, fixture), cb = colorAt(b, phB, fixture);
+        if (ca.toLowerCase() !== cb.toLowerCase()) {
+          /* カラーホイール機は混色できない＝スナップの遅れ（snap.delaySec）の後に一瞬で替わる（模様・カッターと同じ扱い） */
+          out.color = colorSnaps(fixture) ? (snapped ? cb : ca) : mixHex(ca, cb, pCol); out.colorTo = null;
+        }
+      }
+      out.on = L > 0 ? true : (b ? b.on : false);
+      out.level = L; out.levelTo = null;
+      lights[id] = out;
+    });
+    return { cue: { ...next, lights }, done: false, progress: Math.min(pIn, pOut, pPos, pBeam, pCol) };
+  };
+
+  /* ---------- キュー番号・きっかけ・自動送り・略語（v2-1／v2-2・2026-09-27） ----------
+   * 設計: docs/cue-design-research-2026-09-27/index.html（本人が推奨5点を承認）
+   *   番号 no: 通しの文字（"12" / "12.5"）。Eos と同じく小数で間に入れる。ショー全体で一意。
+   *   きっかけ trigger: 台詞・音楽・動作の文字。
+   *   自動送り follow: { mode: "follow"（GOから sec 秒後）| "hang"（切替が終わってから sec 秒後）, sec }。無ければ GO 待ち。
+   *   略語: 前の状態と次の状態と秒数から F.I／C.I／F.O／C.O／F.C／C.C を決める（日本の現場の書き方）。 */
+  const CUE_NO_RE = /^\d{1,4}(\.\d{1,3})?$/;
+  const cueNoValid = (no) => typeof no === "string" && CUE_NO_RE.test(no);
+  const cueNoValue = (no) => (cueNoValid(no) ? Number(no) : NaN);
+  const cueNoText = (value) => { const v = Math.round(finite(value, 0) * 1000) / 1000; return Number(v.toFixed(3)).toString(); };
+  /* 次の整数番号（今ある番号の最大の整数部＋1、最小1） */
+  const cueNumberNext = (existing) => {
+    let max = 0;
+    (existing || []).forEach((no) => { const v = typeof no === "number" ? no : cueNoValue(no); if (Number.isFinite(v) && v > max) max = v; });
+    return cueNoText(Math.floor(max) + 1);
+  };
+  /* a と b の間の番号（小数で挿入）。b が無ければ a の次の整数、a が無ければ b の手前。入らなければ null。 */
+  const cueNumberBetween = (a, b) => {
+    const va = a === undefined || a === null ? NaN : (typeof a === "number" ? a : cueNoValue(a));
+    const vb = b === undefined || b === null ? NaN : (typeof b === "number" ? b : cueNoValue(b));
+    if (!Number.isFinite(va) && !Number.isFinite(vb)) return "1";
+    if (!Number.isFinite(vb)) return cueNoText(Math.floor(va) + 1);
+    if (!Number.isFinite(va)) return vb > 1 ? cueNoText(Math.max(0.001, vb - 1 >= 1 ? Math.floor(vb - 1) : vb / 2)) : cueNoText(vb / 2);
+    if (vb - va < 0.002) return null;
+    /* できるだけ切りのよい値: 差が1以上なら整数、0.1以上なら小数1桁、それ以下は中点 */
+    if (vb - va > 1) return cueNoText(Math.floor(va) + 1);
+    const mid = (va + vb) / 2;
+    const tenth = Math.round(mid * 10) / 10;
+    if (tenth > va && tenth < vb) return cueNoText(tenth);
+    return cueNoText(mid);
+  };
+  const FOLLOW_MODES = ["go", "follow", "hang"];
+  const normalizeFollow = (raw) => (raw && typeof raw === "object" && (raw.mode === "follow" || raw.mode === "hang")
+    ? { mode: raw.mode, sec: clamp(finite(raw.sec, 0), 0, 600) } : null);
+  /* GO から何 ms 後に次を出すか。null＝自動では出さない（GO 待ち） */
+  const followDelayMs = (follow, timing) => {
+    const f = normalizeFollow(follow); if (!f) return null;
+    return (f.mode === "hang" ? transitionMs(timing) : 0) + f.sec * 1000;
+  };
+  const cueLit = (cue) => Boolean(cue && cue.lights) && Object.values(cue.lights).some(isLit);
+  const cueNotation = (prevCue, cue, timing) => {
+    const T = normalizeTiming(timing);
+    const fadeIn = T ? T.fadeInSec : 0, fadeOut = T ? (T.fadeOutSec === null ? T.fadeInSec : T.fadeOutSec) : 0;
+    const before = cueLit(prevCue), after = cueLit(cue);
+    if (!before && !after) return "";
+    if (!before && after) return fadeIn > 0 ? "F.I" : "C.I";
+    if (before && !after) return fadeOut > 0 ? "F.O" : "C.O";
+    return fadeIn > 0 || fadeOut > 0 ? "F.C" : "C.C";
+  };
+  const followText = (follow) => { const f = normalizeFollow(follow); if (!f) return "GO待ち"; return f.mode === "hang" ? `終わって${cueNoText(f.sec)}秒後` : `GOから${cueNoText(f.sec)}秒後`; };
+
   root.RIG_ENGINE = Object.freeze({
+    CURVE_PRESETS, normalizeCurve, curveMap, POLY_MODES, polyPoints, polyTraversal, polyCycleMs, polyAt,
+    normalizeTiming, timingProgress, transitionMs, blendCues, mixHex, worldToPoint,
+    CUE_NO_RE, cueNoValid, cueNoValue, cueNoText, cueNumberNext, cueNumberBetween, FOLLOW_MODES, normalizeFollow, followDelayMs, cueLit, cueNotation, followText,
     DEFAULT_DIMS, FLOOR_FIXTURE_Z, SIDE_OFFSET_M, CYC_MOUNT_V, CYC_REACH_MAX, HOUSE_AHEAD_MAX, cycBarSpan, SPEED_PERIOD_MS, PLANE_VALUES, PLANE_LABEL,
     clamp, finite, stagePieceDepth, orderStagePieces,
     newTruss, newFixture, isMoving, isLaser, beamDegOf, spotRadiusM, spotEllipse, spotFalloff, beamLanding, trussById, trussRow, fixtureWorld,
-    newPoint, newLightCue, levelOf, isLit, levelAt, beamDegAt, strobeMul, paramPhase, mountSpot, GOBOS, goboById, goboAngleAt, goboPath, constrainPointToSurface, periodMs, groupEffect,
+    newPoint, newLightCue, levelOf, isLit, levelAt, beamDegAt, colorAt, colorSnaps, strobeMul, paramPhase, mountSpot, GOBOS, goboById, goboAngleAt, goboPath, constrainPointToSurface, periodMs, groupEffect,
     pointWorld, planeVec, circleOffset, eightOffset, targetAt, pathGuide, mirrorMount, mirrorAimCompatible, mirrorAimPoint, mirrorAimPath,
     FRONT_SEATS, frontPerspSetup, makeFrontPerspProjector, frontPerspToUH,
     FRONT_FAR_CAMERA_M, frontFarSetup, makeFrontFarProjector, frontFarToUH,

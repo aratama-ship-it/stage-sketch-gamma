@@ -465,9 +465,9 @@ const fixtureIds = { p1: "ft-fx-01", p2: "ft-fx-02", p3: "ft-fx-03", p4: "ft-fx-
 scene("f1", "F-1 静止のキュー（色・強さ・模様・カッター・衣装の染め）", 1, `${CHECK}照明タブで、固定灯4本が色違い・強さ違いで床を照らす（模様「ブレイクアップ（中）」付き1本）。正面図・平面図・3Dの光だまり（設定ON）が一致する。演者05は台の上（床から0.5m）へ描かれる。最後に登録したカウンターが、手前の演者01を隠さず奥の演者05を隠す（正面・3D・作業灯ON/OFF）。環境設定「衣装を明かりの色で染める」を入れると、青い明かりの演者02（緑）と山吹の明かりの演者05（青）が沈み、白い明かりの演者01は色が変わらない。照明を編集したら「未適用・控え保存済み」、LXキュー適用後は「適用済み」を確認。適用しないで移って戻り、控えが残ること。「控え・書き出し」からファイルへ残せること。容量不足・別タブ更新では成功表示にならず、失敗の説明が残ること（ブラウザの隔離試験で確認）。L01を選んでソロ表示し、未選択L02の点灯ボタンが実キューのオン状態と「押すとオフ」を示すこと。ソロ自体は保存キューを変えず、ボタンで消灯した結果はソロ解除後にも残ること。`,
   /* ★G-D（2026-09-19）: 演者05（青 #315b8a）を山吹の灯（p4・模様つき）の中へ置く＝青い衣装が沈む見本。 */
   [perf("f1", "p01", 0.45, 0.7, { color: "#655b4c" }), perf("f1", "p02", 0.7, 0.55), setPiece("f1", "block", 0.5, 0.3), perf("f1", "p05", 0.5, 0.3, { base: 0.5 }), setPiece("f1", "block2", 0.5, 0.62, { setId: null, originId: null, name: "配色確認用カウンター", color: "#27384a", dims: { w: 5, d: 0.65, h: 1 } })]);
-scene("f2", "F-2 往復と円（ムービング）", 1, `${CHECK}ムービング4本のうち2本は横往復（線）、1本は円（水平）、1本は斜め往復（高さ違い）。組「左右対称」に2本が入っている。速さ slow／normal／fast。機材一覧を下へスクロールし、選択・オンオフ・設定変更後も位置が保たれること。平面・正面・袖の灯体を右クリックしてコピー・削除し、取り消しで復元。照明デザインでは右クリックからソロ・リセットを選び、他のキューと仕込みが変わらないこと。正面・3Dでレンズ幅から広がる筋と灯体の形、平面で光だまりと芯のない胴体を確認。`,
+scene("f2", "F-2 往復と円（ムービング）・点の列・端で止まる", 1, `${CHECK}ムービング4本のうち2本は横往復（線）、1本は円（水平）、1本は斜め往復（高さ違い）。組「左右対称」に2本が入っている。速さ slow／normal／fast。機材一覧を下へスクロールし、選択・オンオフ・設定変更後も位置が保たれること。平面・正面・袖の灯体を右クリックしてコピー・削除し、取り消しで復元。照明デザインでは右クリックからソロ・リセットを選び、他のキューと仕込みが変わらないこと。正面・3Dでレンズ幅から広がる筋と灯体の形、平面で光だまりと芯のない胴体を確認。2026-09-27（テスト用ビルド）: ムービング06は端で0.5秒止まり運び方「だんだん速く」、転がし13は「点の列」（三角・各点で0.5秒止まる）。このシーンのLXキューは時間つき（上げ2秒・下げ1秒・位置3秒・MIB）＝別のLXキューから入ると照明タブでフェードが見える。`,
   [perf("f2", "p03", 0.5, 0.6, { pose: "dance1" })]);
-scene("f3", "F-3 ストロボと順送り", 1, `${CHECK}くっきり（矩形波 8Hz duty 30）と、やわらかい（1-cos 2Hz 深さ80）。順送り（seq）は3段で順に光る。再生中に点滅が見える。`,
+scene("f3", "F-3 ストロボと順送り・実機モード", 1, `${CHECK}くっきり（矩形波 8Hz duty 30）と、やわらかい（1-cos 2Hz 深さ80）。順送り（seq）は3段で順に光る。再生中に点滅が見える。2026-09-27（テスト用ビルド）: 固定04はランダム、前明かり09はランダムパルス、サイド下手11はブラインダー（1周で点けたまま）、サイド上手12はスパイク（消えている間も30%）。LXキューは上げ0.5秒。`,
   [perf("f3", "p04", 0.35, 0.6, { pose: "dance2" }), perf("f3", "p05", 0.65, 0.6, { pose: "dance3" })]);
 scene("f4", "F-4 レーザー（ビーム・シート・トンネル）・ホリゾント・霞", 1, `${CHECK}レーザー1本（床置き）、LEDホリゾント列（下段）が青、霞（haze）70。客席へ向ける制約（surface: house）を持つ前明かり1本。`,
   [perf("f4", "p06", 0.5, 0.5, { pose: "open" })]);
@@ -660,7 +660,7 @@ const fixtures = [
   fx(fixtureIds.p4, 4, { type: "truss", trussId: "ft-truss-1", u: 0.8 }, "固定 04（模様）", "fixed", 40, { fixtureType: "fresnel" }),
   fx(fixtureIds.m1, 5, { type: "truss", trussId: "ft-truss-2", u: 0.2 }, "ムービング 05", "moving", 18),
   fx(fixtureIds.m2, 6, { type: "truss", trussId: "ft-truss-2", u: 0.4 }, "ムービング 06", "moving", 18),
-  fx(fixtureIds.m3, 7, { type: "truss", trussId: "ft-truss-2", u: 0.6 }, "ムービング 07", "moving", 18),
+  { ...fx(fixtureIds.m3, 7, { type: "truss", trussId: "ft-truss-2", u: 0.6 }, "ムービング 07", "moving", 18), colorMode: "wheel" },   // カラーホイール機の例（色は混ざらず一瞬で替わる・2026-09-28）
   fx(fixtureIds.m4, 8, { type: "truss", trussId: "ft-truss-2", u: 0.8 }, "ムービング 08", "moving", 18),
   fx(fixtureIds.fr1, 9, { type: "front", u: 0.38, ahead: 4.5, h: 8 }, "前明かり 09", "fixed", 12),
   fx(fixtureIds.fr2, 10, { type: "front", u: 0.62, ahead: 4.5, h: 8 }, "前明かり 10（客席向け）", "moving", 12, { fixtureType: "moving-wash" }),
@@ -685,17 +685,26 @@ const lightCues = {
   }, groups: [], environment: { haze: 35 } },
   "ft-scene-f2": { lights: {
     [fixtureIds.m1]: cue({ path: { kind: "line", a: { u: 0.1, v: 0.6, hM: 0 }, b: { u: 0.9, v: 0.6, hM: 0 }, start: "a" }, speed: "slow", groupId: "ft-lgroup-mirror" }),
-    [fixtureIds.m2]: cue({ path: { kind: "line", a: { u: 0.9, v: 0.6, hM: 0 }, b: { u: 0.1, v: 0.6, hM: 0 }, start: "a" }, speed: "slow", groupId: "ft-lgroup-mirror" }),
+    [fixtureIds.m2]: cue({ path: { kind: "line", a: { u: 0.9, v: 0.6, hM: 0 }, b: { u: 0.1, v: 0.6, hM: 0 }, start: "a", dwell: { a: 0.5, b: 0.5 }, curve: "easeIn" }, speed: "slow", groupId: "ft-lgroup-mirror" }),
+    /* 2026-09-27 テスト用: 点の列（三角）。各点で0.5秒止まり、1秒で次へ。 */
+    [fixtureIds.fl]: cue({ color: "#ffd27a", path: { kind: "poly", mode: "loop", points: [
+      { u: 0.3, v: 0.8, hM: 0, moveSec: 1, dwellSec: 0.5 }, { u: 0.5, v: 0.45, hM: 0, moveSec: 1, dwellSec: 0.5 }, { u: 0.7, v: 0.8, hM: 0, moveSec: 1, dwellSec: 0.5 }] } }),
     [fixtureIds.m3]: cue({ color: "#68d391", path: { kind: "circle", c: { u: 0.5, v: 0.5, hM: 0 }, r: 2, plane: "horizontal", dir: "cw", start: 0 }, speed: "normal" }),
-    [fixtureIds.m4]: cue({ color: "#9b6fd0", surface: "air", path: { kind: "line", a: { u: 0.2, v: 0.3, hM: 0.5 }, b: { u: 0.8, v: 0.3, hM: 3.5 }, start: "b" }, speed: "fast", levelTo: 30, beamDeg: 10, beamDegTo: 40 }),
-  }, groups: [{ id: "ft-lgroup-mirror", members: [fixtureIds.m1, fixtureIds.m2], relation: "mirror", delayMs: 0 }], environment: { haze: 50 } },
+    [fixtureIds.m4]: cue({ color: "#9b6fd0", surface: "air", path: { kind: "line", a: { u: 0.2, v: 0.3, hM: 0.5 }, b: { u: 0.8, v: 0.3, hM: 3.5 }, start: "b" }, speed: "fast", levelTo: 30, colorTo: "#4fc3f7", beamDeg: 10, beamDegTo: 40 }),
+  }, groups: [{ id: "ft-lgroup-mirror", members: [fixtureIds.m1, fixtureIds.m2], relation: "mirror", delayMs: 0 }], environment: { haze: 50 },
+    timing: { fadeInSec: 2, fadeOutSec: 1, curve: "ease", by: { position: { fadeSec: 3 } }, mib: true } },
   "ft-scene-f3": { lights: {
     [fixtureIds.m1]: cue({ path: { kind: "still", a: { u: 0.35, v: 0.6, hM: 0 } }, strobe: { on: true, kind: "sharp", hz: 8, duty: 30, depth: 0, phaseNorm: 0 } }),
     [fixtureIds.m2]: cue({ path: { kind: "still", a: { u: 0.65, v: 0.6, hM: 0 } }, strobe: { on: true, kind: "soft", hz: 2, duty: 50, depth: 80, phaseNorm: 0 } }),
     [fixtureIds.p1]: cue({ path: { kind: "still", a: { u: 0.2, v: 0.4, hM: 0 } }, strobe: { on: true, kind: "sharp", hz: 2, duty: 34, depth: 0, phaseNorm: 0, seq: { count: 3, rank: 0, width: 1 } } }),
     [fixtureIds.p2]: cue({ path: { kind: "still", a: { u: 0.5, v: 0.4, hM: 0 } }, strobe: { on: true, kind: "sharp", hz: 2, duty: 34, depth: 0, phaseNorm: 0, seq: { count: 3, rank: 1, width: 1 } } }),
     [fixtureIds.p3]: cue({ path: { kind: "still", a: { u: 0.8, v: 0.4, hM: 0 } }, strobe: { on: true, kind: "sharp", hz: 2, duty: 34, depth: 0, phaseNorm: 0, seq: { count: 3, rank: 2, width: 1 } } }),
-  }, groups: [], environment: { haze: 35 } },
+    /* 2026-09-27 テスト用: 実機のモード（GDTF Random／RandomPulse、Martin のブラインダー・スパイク）。 */
+    [fixtureIds.p4]: cue({ color: "#7ab8ff", path: { kind: "still", a: { u: 0.5, v: 0.75, hM: 0 } }, strobe: { on: true, kind: "random", hz: 4, duty: 30, seed: 11 } }),
+    [fixtureIds.fr1]: cue({ color: "#ffd27a", path: { kind: "still", a: { u: 0.38, v: 0.55, hM: 1.3 } }, surface: "air", strobe: { on: true, kind: "randomPulse", hz: 2, duty: 50, depth: 70, seed: 12 } }),
+    [fixtureIds.sL]: cue({ color: "#f2ead6", surface: "air", path: { kind: "still", a: { u: 0.5, v: 0.5, hM: 1.5 } }, strobe: { on: true, kind: "sharp", hz: 1, duty: 50, loops: 1, after: "hold" } }),
+    [fixtureIds.sR]: cue({ color: "#d9483b", surface: "air", path: { kind: "still", a: { u: 0.5, v: 0.5, hM: 1.5 } }, strobe: { on: true, kind: "sharp", hz: 3, duty: 25, floor: 30 } }),
+  }, groups: [], environment: { haze: 35 }, timing: { fadeInSec: 0.5 } },
   "ft-scene-f4": { lights: {
     /* ★段階5①（2026-09-19）: fan/sheet/tunnel の3種。effect を明示する（暗黙の既定=fanに頼らない）。 */
     [fixtureIds.laser]: cue({ color: "#68d391", surface: "air", path: { kind: "still", a: { u: 0.2, v: 0.2, hM: 5 } },
@@ -717,16 +726,29 @@ const lightCues = {
  * 2026-09-18版は venueDims 12.4×9.6 に対し stage 12×9 で、F-1〜F-4 の光が図に出ていなかった。 */
 
 
+let lxNoCounter = 0;
+const LX_TRIGGERS = { "ft-scene-f1": "幕が上がりきったら", "ft-scene-f2": "音楽の頭で", "ft-scene-f3": "ドロップの1拍前", "ft-scene-f4": "演者が中央に着いたら" };
 const lightingDesign = {
   format: "shosai.light-design", version: 1, name: "機能テスト用ショー",
   stage: { W: VENUE_DIMS.W, D: VENUE_DIMS.D, H: VENUE_DIMS.H },   /* ★上の venueDims と必ず同じにする */
   rig: { trusses: [{ id: "ft-truss-1", v: 0.7, h: 6.5, label: "照明バトン1（固定）" }, { id: "ft-truss-2", v: 0.3, h: 6.5, label: "照明バトン2（ムービング）" }], fixtures },
   scenes: sceneRows.map((row, i) => {
-    const cue = lightCues[row.id] || { lights: {}, groups: [], environment: { haze: 35 } };
+    const { timing, ...cue } = lightCues[row.id] || { lights: {}, groups: [], environment: { haze: 35 } };
     const lit = Object.values(cue.lights).some((light) => light.on);
     return { id: row.id, name: row.title, lx: { section: 1, no: i + 1 },
       lxq: lit ? [{ id: `ft-lxq-${row.id}`, seq: 1, name: row.title.slice(0, 24),
-        at: CREATED, cue: JSON.parse(JSON.stringify(cue)) }] : [],
+        /* v2-1（2026-09-27）: 通しQ番号（点いているシーン順）ときっかけ */
+        no: String((lxNoCounter += 1)), trigger: LX_TRIGGERS[row.id] || "",
+        at: CREATED, cue: JSON.parse(JSON.stringify(cue)), ...(timing ? { timing } : {}) },
+        /* v2-3: F-2 だけ2つ目のLXキュー（6秒後に色を変える・上げ3秒・位置3秒）。タイムラインの2つ目のライトキューと結び付く。 */
+        ...(row.id === "ft-scene-f2" ? [{ id: "ft-lxq-f2-b", seq: 2, name: "色と位置を替える", no: String(lxNoCounter + 0.5), trigger: "サビの頭で",
+          at: CREATED, timing: { fadeInSec: 3, fadeOutSec: 1, by: { position: { fadeSec: 3 }, color: { fadeSec: 1 } }, curve: "ease", mib: true },
+          cue: (() => { const c = JSON.parse(JSON.stringify(cue)); Object.values(c.lights).forEach((l) => { l.color = "#d9483b"; const p = l.path; if (!p) return;
+            /* 位置の秒（3秒）が見えるよう全灯の軌道を左右反転（2026-09-27 本人「位置が動かない」→ 同じ軌道では動く理由が無かった） */
+            const flip = (pt) => { if (pt && typeof pt.u === "number") pt.u = 1 - pt.u; };
+            if (p.kind === "still" || p.kind === "line") { flip(p.a); flip(p.b); }
+            else if (p.kind === "circle" || p.kind === "eight") flip(p.c);
+            else if (p.kind === "poly" && Array.isArray(p.points)) p.points.forEach(flip); }); return c; })() }] : [])] : [],
       lxEditing: null, cue };
   }),
   palette: ["#f2ead6", "#7ab8ff", "#ffd27a", "#d9483b", "#9b6fd0", "#68d391"],
@@ -745,7 +767,11 @@ const sceneLightCues = sceneRows.map((row) => ({
   offsetSeconds: 0,
   memo: `明かり: ${row.title}`,
   locked: false,
-}));
+})).concat([{
+  /* v2-3: F-2 の2つ目（6秒後）。lxId で照明デザインの2つ目のLXキューに結び付ける。 */
+  id: "ft-light-cue-f2-b", kind: "timeline", cueType: "light", sceneId: "ft-scene-f2", offsetSeconds: 6,
+  memo: "明かり: F-2 の2つ目（赤へ・位置は左右反転へ3秒・色は1秒で先に着く・M07 はカラーホイール機で一瞬）", locked: false, lxId: "ft-lxq-f2-b",
+}]);
 
 /* ---------- 写真（生成した小さな図形のPNG。実写は入れない） ---------- */
 /* Nodeにcanvasが無いので、生のピクセル配列からPNG(RGB・無圧縮スキャンライン+zlib)を手で組む。

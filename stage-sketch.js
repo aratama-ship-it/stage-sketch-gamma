@@ -9683,6 +9683,8 @@
         cueType,
         memo: typeof cue.memo === "string" ? cue.memo.slice(0, 2000) : "",
         locked: Boolean(cue.locked),
+        /* v2-3（2026-09-27）: ライトキューが結び付く照明デザインのLXキュー（scene.lxq[].id）。任意。 */
+        ...(cueType === "light" && typeof cue.lxId === "string" && cue.lxId ? { lxId: cue.lxId.slice(0, 160) } : {}),
       };
       // 現行形はセクション全体の絶対秒。直前の試作で保存した
       // sceneId + offsetSeconds も捨てず、読める互換形として残す。
@@ -19989,7 +19991,42 @@
    *
    * モデルは毎フレーム作らない。灯体は最大1000台あり得るので、
    * 照明デザインの実体とシーンが変わったときだけ組み直す。 */
-  let timelineLightCue = { cueId: "", sceneId: "" };
+  let timelineLightCue = { cueId: "", sceneId: "" };   // v2-3 では atSeconds／playing／lxId も持つ（setTimelineLightCue で入れる）
+  /* v2-3: タイムライン再生中のLXキューの時計。GO（キューを通過した瞬間）からの経過で、
+     照明デザインの timing（フェード・遅れ・カーブ・MIB）に従って前の明かりから次の明かりへ混ぜる。
+     時計は「通過時の実時間＋シーク位置の差」。止まっているときは差だけ（途中の明かりで静止）。 */
+  let timelineLightGo = null;   // { at, offsetMs, playing }
+  let timelineLxCache = { cueId: "", link: null };
+  let timelineLightFadeRaf = 0, timelineLightFadeLast = 0;
+  function timelineLxLink() {
+    if (!timelineLightCue.cueId) return null;
+    if (timelineLxCache.cueId === timelineLightCue.cueId && timelineLxCache.design === state.project.lightingDesign) return timelineLxCache.link;
+    const api = window.SHOSAI_CUE_SHEET;
+    let link = null;
+    if (api && typeof api.cuePresentations === "function") {
+      const row = api.cuePresentations(state.project).find((cue) => cue.id === timelineLightCue.cueId);
+      link = row && row.lx ? row.lx : null;
+    }
+    timelineLxCache = { cueId: timelineLightCue.cueId, design: state.project.lightingDesign, link };
+    return link;
+  }
+  function timelineLxState() {
+    const link = timelineLxLink();
+    if (!link) return null;
+    const E = window.RIG_ENGINE;
+    const total = E && typeof E.transitionMs === "function" ? E.transitionMs(link.timing) : 0;
+    const go = timelineLightGo;
+    const tGo = go ? (go.playing ? (performance.now() - go.at) : 0) + go.offsetMs : total;
+    return { link, total, tGo, done: tGo >= total };
+  }
+  function timelineLightFadeLoop() {
+    timelineLightFadeRaf = 0;
+    const st = timelineLxState();
+    if (!st || st.done || !timelineLightGo || !timelineLightGo.playing) { lightCueOverlayCache = { design: undefined, sceneId: "", model: null }; render(); return; }
+    const now = performance.now();
+    if (now - timelineLightFadeLast >= 33) { timelineLightFadeLast = now; render(); }   // 30fps で十分
+    timelineLightFadeRaf = requestAnimationFrame(timelineLightFadeLoop);
+  }
   let lightCueOverlayCache = { design: undefined, sceneId: "", model: null };
   function setTimelineLightCue(nextCue, { renderAfter = true } = {}) {
     const cueId = nextCue && typeof nextCue.cueId === "string" ? nextCue.cueId : "";
@@ -19997,8 +20034,16 @@
     const sceneId = requestedSceneId && state.project.scenes.some(
       (row) => row.kind === "scene" && row.id === requestedSceneId,
     ) ? requestedSceneId : "";
-    if (timelineLightCue.cueId === cueId && timelineLightCue.sceneId === sceneId) return true;
-    timelineLightCue = { cueId, sceneId };
+    const atSeconds = finite(nextCue && nextCue.atSeconds, 0);
+    const seconds = finite(nextCue && nextCue.seconds, atSeconds);
+    const playing = Boolean(nextCue && nextCue.playing);
+    const offsetMs = Math.max(0, (seconds - atSeconds) * 1000);
+    const same = timelineLightCue.cueId === cueId && timelineLightCue.sceneId === sceneId;
+    if (same && timelineLightGo && timelineLightGo.playing === playing && (playing || Math.abs(timelineLightGo.offsetMs - offsetMs) < 50)) return true;
+    timelineLightCue = { cueId, sceneId, atSeconds, playing, lxId: nextCue && nextCue.lxId ? nextCue.lxId : null };
+    timelineLightGo = cueId ? { at: performance.now(), offsetMs, playing } : null;
+    if (timelineLightFadeRaf) { cancelAnimationFrame(timelineLightFadeRaf); timelineLightFadeRaf = 0; }
+    if (cueId && playing) timelineLightFadeRaf = requestAnimationFrame(timelineLightFadeLoop);
     lightCueOverlayCache = { design: undefined, sceneId: "", model: null };
     syncSpinRun(false);
     if (renderAfter) render();
@@ -20014,8 +20059,19 @@
     const sceneId = timelineLightCue.sceneId
       || (state.project && state.project.activeSceneId) || "";
     if (!api || !planApi || !design) return null;
-    if (lightCueOverlayCache.design !== design || lightCueOverlayCache.sceneId !== sceneId) {
-      lightCueOverlayCache = { design, sceneId, model: api.build(design, sceneId, planApi) };
+    /* v2-3: タイムラインのライトキューに結び付いたLXキューがあれば、その明かり（フェード中は前と混ぜた明かり）で組む */
+    let cueOverride = null, cueKey = "";
+    const st = timelineLightCue.sceneId === sceneId ? timelineLxState() : null;
+    if (st) {
+      const E = window.RIG_ENGINE;
+      if (st.done || !E || typeof E.blendCues !== "function") { cueOverride = st.link.cue; cueKey = `${st.link.id}:done`; }
+      else {
+        const blended = E.blendCues(st.link.prevCue, st.link.cue, { timing: st.link.timing, tGoMs: st.tGo, tFxMs: lightEffectClockMs(), representative: true, dims: design.stage, fixtures: design.rig && design.rig.fixtures });
+        cueOverride = blended.cue; cueKey = `${st.link.id}:${Math.round(st.tGo / 33)}`;
+      }
+    }
+    if (lightCueOverlayCache.design !== design || lightCueOverlayCache.sceneId !== sceneId || lightCueOverlayCache.cueKey !== cueKey) {
+      lightCueOverlayCache = { design, sceneId, cueKey, model: api.build(design, sceneId, planApi, cueOverride ? { cue: cueOverride } : undefined) };
     }
     return lightCueOverlayCache.model;
   }

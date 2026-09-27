@@ -106,18 +106,19 @@ test("機能テスト用ショー: 照明デザインが本体の検証を通る
   const lit = design.scenes.filter((scene) => Object.values(scene.cue.lights).some((light) => light.on));
   assert.ok(lit.length >= 4, "点いているシーンが4つ以上");
   for (const scene of lit) {
-    assert.equal(scene.lxq.length, 1, `${scene.name}: 登録済みLXキュー`);
+    assert.equal(scene.lxq.length, scene.id === "ft-scene-f2" ? 2 : 1, `${scene.name}: 登録済みLXキュー（F-2 は v2-3 の試験で2本）`);
     assert.deepEqual(scene.lxq[0].cue, scene.cue);
+    scene.lxq.forEach((q) => assert.match(q.no, /^\d+(\.\d+)?$/, `${scene.name}: LXキューに通しQ番号`));
   }
 });
 
 test("機能テスト用ショー: 全シーンの先頭にライトキューが1件ずつある", () => {
   const lightCues = project.cues.filter((cue) => cue.kind === "timeline" && cue.cueType === "light");
-  assert.equal(lightCues.length, scenes.length);
+  assert.equal(lightCues.length, scenes.length + 1, "各シーン1件＋F-2 の2つ目（v2-3）");
   const designSceneIds = new Set(project.lightingDesign.scenes.map((scene) => scene.id));
   for (const scene of scenes) {
     const cues = lightCues.filter((cue) => cue.sceneId === scene.id);
-    assert.equal(cues.length, 1, `${scene.title}: ライトキューは1件`);
+    assert.equal(cues.length, scene.id === "ft-scene-f2" ? 2 : 1, `${scene.title}: ライトキューは1件（F-2 は v2-3 の試験で2件）`);
     assert.equal(cues[0].offsetSeconds, 0, `${scene.title}: シーン先頭`);
     assert.ok(designSceneIds.has(scene.id), `${scene.title}: 切替先の照明シーンがある`);
   }

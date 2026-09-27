@@ -311,7 +311,7 @@
     "cueType": "light",
     "sceneId": "ft-scene-f2",
     "offsetSeconds": 0,
-    "memo": "明かり: F-2 往復と円（ムービング）",
+    "memo": "明かり: F-2 往復と円（ムービング）・点の列・端で止まる",
     "locked": false
    },
    {
@@ -320,7 +320,7 @@
     "cueType": "light",
     "sceneId": "ft-scene-f3",
     "offsetSeconds": 0,
-    "memo": "明かり: F-3 ストロボと順送り",
+    "memo": "明かり: F-3 ストロボと順送り・実機モード",
     "locked": false
    },
    {
@@ -475,6 +475,16 @@
     "offsetSeconds": 0,
     "memo": "明かり: J-2 3Dカメラ・この人の視界",
     "locked": false
+   },
+   {
+    "id": "ft-light-cue-f2-b",
+    "kind": "timeline",
+    "cueType": "light",
+    "sceneId": "ft-scene-f2",
+    "offsetSeconds": 6,
+    "memo": "明かり: F-2 の2つ目（赤へ・位置は左右反転へ3秒・色は1秒で先に着く・M07 はカラーホイール機で一瞬）",
+    "locked": false,
+    "lxId": "ft-lxq-f2-b"
    },
    {
     "id": "ft-cue-2",
@@ -11011,6 +11021,8 @@
            "id": "ft-lxq-ft-scene-f1",
            "seq": 1,
            "name": "F-1 静止のキュー（色・強さ・模様・カッター・",
+           "no": "1",
+           "trigger": "幕が上がりきったら",
            "at": "2026-09-18T00:00:00.000Z",
            "cue": {
             "lights": {
@@ -11363,6 +11375,8 @@
            "id": "ft-lxq-ft-scene-f1",
            "seq": 1,
            "name": "F-1 静止のキュー（色・強さ・模様・カッター・",
+           "no": "1",
+           "trigger": "幕が上がりきったら",
            "at": "2026-09-18T00:00:00.000Z",
            "cue": {
             "lights": {
@@ -11716,6 +11730,8 @@
            "id": "ft-lxq-ft-scene-f1",
            "seq": 1,
            "name": "F-1 静止のキュー（色・強さ・模様・カッター・",
+           "no": "1",
+           "trigger": "幕が上がりきったら",
            "at": "2026-09-18T00:00:00.000Z",
            "cue": {
             "lights": {
@@ -12069,6 +12085,8 @@
            "id": "ft-lxq-ft-scene-f1",
            "seq": 1,
            "name": "F-1 静止のキュー（色・強さ・模様・カッター・",
+           "no": "1",
+           "trigger": "幕が上がりきったら",
            "at": "2026-09-18T00:00:00.000Z",
            "cue": {
             "lights": {
@@ -12398,8 +12416,8 @@
     "id": "ft-scene-f2",
     "kind": "scene",
     "depth": 1,
-    "title": "F-2 往復と円（ムービング）",
-    "note": "確認: ムービング4本のうち2本は横往復（線）、1本は円（水平）、1本は斜め往復（高さ違い）。組「左右対称」に2本が入っている。速さ slow／normal／fast。機材一覧を下へスクロールし、選択・オンオフ・設定変更後も位置が保たれること。平面・正面・袖の灯体を右クリックしてコピー・削除し、取り消しで復元。照明デザインでは右クリックからソロ・リセットを選び、他のキューと仕込みが変わらないこと。正面・3Dでレンズ幅から広がる筋と灯体の形、平面で光だまりと芯のない胴体を確認。",
+    "title": "F-2 往復と円（ムービング）・点の列・端で止まる",
+    "note": "確認: ムービング4本のうち2本は横往復（線）、1本は円（水平）、1本は斜め往復（高さ違い）。組「左右対称」に2本が入っている。速さ slow／normal／fast。機材一覧を下へスクロールし、選択・オンオフ・設定変更後も位置が保たれること。平面・正面・袖の灯体を右クリックしてコピー・削除し、取り消しで復元。照明デザインでは右クリックからソロ・リセットを選び、他のキューと仕込みが変わらないこと。正面・3Dでレンズ幅から広がる筋と灯体の形、平面で光だまりと芯のない胴体を確認。2026-09-27（テスト用ビルド）: ムービング06は端で0.5秒止まり運び方「だんだん速く」、転がし13は「点の列」（三角・各点で0.5秒止まる）。このシーンのLXキューは時間つき（上げ2秒・下げ1秒・位置3秒・MIB）＝別のLXキューから入ると照明タブでフェードが見える。",
     "background": "#40362d",
     "pieces": [
      {
@@ -12436,8 +12454,8 @@
     "id": "ft-scene-f3",
     "kind": "scene",
     "depth": 1,
-    "title": "F-3 ストロボと順送り",
-    "note": "確認: くっきり（矩形波 8Hz duty 30）と、やわらかい（1-cos 2Hz 深さ80）。順送り（seq）は3段で順に光る。再生中に点滅が見える。",
+    "title": "F-3 ストロボと順送り・実機モード",
+    "note": "確認: くっきり（矩形波 8Hz duty 30）と、やわらかい（1-cos 2Hz 深さ80）。順送り（seq）は3段で順に光る。再生中に点滅が見える。2026-09-27（テスト用ビルド）: 固定04はランダム、前明かり09はランダムパルス、サイド下手11はブラインダー（1周で点けたまま）、サイド上手12はスパイク（消えている間も30%）。LXキューは上げ0.5秒。",
     "background": "#40362d",
     "pieces": [
      {
@@ -15412,7 +15430,8 @@
       "family": "moving",
       "role": "テスト",
       "origin": "test-show",
-      "safetyStatus": "concept-only"
+      "safetyStatus": "concept-only",
+      "colorMode": "wheel"
      },
      {
       "id": "ft-fx-08",
@@ -16063,6 +16082,8 @@
        "id": "ft-lxq-ft-scene-f1",
        "seq": 1,
        "name": "F-1 静止のキュー（色・強さ・模様・カッター・",
+       "no": "1",
+       "trigger": "幕が上がりきったら",
        "at": "2026-09-18T00:00:00.000Z",
        "cue": {
         "lights": {
@@ -16290,7 +16311,7 @@
     },
     {
      "id": "ft-scene-f2",
-     "name": "F-2 往復と円（ムービング）",
+     "name": "F-2 往復と円（ムービング）・点の列・端で止まる",
      "lx": {
       "section": 1,
       "no": 29
@@ -16299,7 +16320,9 @@
       {
        "id": "ft-lxq-ft-scene-f2",
        "seq": 1,
-       "name": "F-2 往復と円（ムービング）",
+       "name": "F-2 往復と円（ムービング）・点の列・端で止ま",
+       "no": "2",
+       "trigger": "音楽の頭で",
        "at": "2026-09-18T00:00:00.000Z",
        "cue": {
         "lights": {
@@ -16350,10 +16373,58 @@
             "v": 0.6,
             "hM": 0
            },
-           "start": "a"
+           "start": "a",
+           "dwell": {
+            "a": 0.5,
+            "b": 0.5
+           },
+           "curve": "easeIn"
           },
           "speed": "slow",
           "groupId": "ft-lgroup-mirror",
+          "periodSec": null,
+          "offsetSec": 0,
+          "levelTo": null,
+          "beamDegTo": null,
+          "beamDeg": null,
+          "gobo": "none",
+          "goboSpin": 0,
+          "goboAngle": 0
+         },
+         "ft-fx-13": {
+          "on": true,
+          "level": 100,
+          "color": "#ffd27a",
+          "surface": "floor",
+          "path": {
+           "kind": "poly",
+           "mode": "loop",
+           "points": [
+            {
+             "u": 0.3,
+             "v": 0.8,
+             "hM": 0,
+             "moveSec": 1,
+             "dwellSec": 0.5
+            },
+            {
+             "u": 0.5,
+             "v": 0.45,
+             "hM": 0,
+             "moveSec": 1,
+             "dwellSec": 0.5
+            },
+            {
+             "u": 0.7,
+             "v": 0.8,
+             "hM": 0,
+             "moveSec": 1,
+             "dwellSec": 0.5
+            }
+           ]
+          },
+          "speed": "normal",
+          "groupId": null,
           "periodSec": null,
           "offsetSec": 0,
           "levelTo": null,
@@ -16419,7 +16490,226 @@
           "beamDeg": 10,
           "gobo": "none",
           "goboSpin": 0,
+          "goboAngle": 0,
+          "colorTo": "#4fc3f7"
+         }
+        },
+        "groups": [
+         {
+          "id": "ft-lgroup-mirror",
+          "members": [
+           "ft-fx-05",
+           "ft-fx-06"
+          ],
+          "relation": "mirror",
+          "delayMs": 0
+         }
+        ],
+        "environment": {
+         "haze": 50
+        }
+       },
+       "timing": {
+        "fadeInSec": 2,
+        "fadeOutSec": 1,
+        "curve": "ease",
+        "by": {
+         "position": {
+          "fadeSec": 3
+         }
+        },
+        "mib": true
+       }
+      },
+      {
+       "id": "ft-lxq-f2-b",
+       "seq": 2,
+       "name": "色と位置を替える",
+       "no": "2.5",
+       "trigger": "サビの頭で",
+       "at": "2026-09-18T00:00:00.000Z",
+       "timing": {
+        "fadeInSec": 3,
+        "fadeOutSec": 1,
+        "by": {
+         "position": {
+          "fadeSec": 3
+         },
+         "color": {
+          "fadeSec": 1
+         }
+        },
+        "curve": "ease",
+        "mib": true
+       },
+       "cue": {
+        "lights": {
+         "ft-fx-05": {
+          "on": true,
+          "level": 100,
+          "color": "#d9483b",
+          "surface": "floor",
+          "path": {
+           "kind": "line",
+           "a": {
+            "u": 0.9,
+            "v": 0.6,
+            "hM": 0
+           },
+           "b": {
+            "u": 0.09999999999999998,
+            "v": 0.6,
+            "hM": 0
+           },
+           "start": "a"
+          },
+          "speed": "slow",
+          "groupId": "ft-lgroup-mirror",
+          "periodSec": null,
+          "offsetSec": 0,
+          "levelTo": null,
+          "beamDegTo": null,
+          "beamDeg": null,
+          "gobo": "none",
+          "goboSpin": 0,
           "goboAngle": 0
+         },
+         "ft-fx-06": {
+          "on": true,
+          "level": 100,
+          "color": "#d9483b",
+          "surface": "floor",
+          "path": {
+           "kind": "line",
+           "a": {
+            "u": 0.09999999999999998,
+            "v": 0.6,
+            "hM": 0
+           },
+           "b": {
+            "u": 0.9,
+            "v": 0.6,
+            "hM": 0
+           },
+           "start": "a",
+           "dwell": {
+            "a": 0.5,
+            "b": 0.5
+           },
+           "curve": "easeIn"
+          },
+          "speed": "slow",
+          "groupId": "ft-lgroup-mirror",
+          "periodSec": null,
+          "offsetSec": 0,
+          "levelTo": null,
+          "beamDegTo": null,
+          "beamDeg": null,
+          "gobo": "none",
+          "goboSpin": 0,
+          "goboAngle": 0
+         },
+         "ft-fx-13": {
+          "on": true,
+          "level": 100,
+          "color": "#d9483b",
+          "surface": "floor",
+          "path": {
+           "kind": "poly",
+           "mode": "loop",
+           "points": [
+            {
+             "u": 0.7,
+             "v": 0.8,
+             "hM": 0,
+             "moveSec": 1,
+             "dwellSec": 0.5
+            },
+            {
+             "u": 0.5,
+             "v": 0.45,
+             "hM": 0,
+             "moveSec": 1,
+             "dwellSec": 0.5
+            },
+            {
+             "u": 0.30000000000000004,
+             "v": 0.8,
+             "hM": 0,
+             "moveSec": 1,
+             "dwellSec": 0.5
+            }
+           ]
+          },
+          "speed": "normal",
+          "groupId": null,
+          "periodSec": null,
+          "offsetSec": 0,
+          "levelTo": null,
+          "beamDegTo": null,
+          "beamDeg": null,
+          "gobo": "none",
+          "goboSpin": 0,
+          "goboAngle": 0
+         },
+         "ft-fx-07": {
+          "on": true,
+          "level": 100,
+          "color": "#d9483b",
+          "surface": "floor",
+          "path": {
+           "kind": "circle",
+           "c": {
+            "u": 0.5,
+            "v": 0.5,
+            "hM": 0
+           },
+           "r": 2,
+           "plane": "horizontal",
+           "dir": "cw",
+           "start": 0
+          },
+          "speed": "normal",
+          "groupId": null,
+          "periodSec": null,
+          "offsetSec": 0,
+          "levelTo": null,
+          "beamDegTo": null,
+          "beamDeg": null,
+          "gobo": "none",
+          "goboSpin": 0,
+          "goboAngle": 0
+         },
+         "ft-fx-08": {
+          "on": true,
+          "level": 100,
+          "color": "#d9483b",
+          "surface": "air",
+          "path": {
+           "kind": "line",
+           "a": {
+            "u": 0.8,
+            "v": 0.3,
+            "hM": 0.5
+           },
+           "b": {
+            "u": 0.19999999999999996,
+            "v": 0.3,
+            "hM": 3.5
+           },
+           "start": "b"
+          },
+          "speed": "fast",
+          "groupId": null,
+          "periodSec": null,
+          "offsetSec": 0,
+          "levelTo": 30,
+          "beamDegTo": 40,
+          "beamDeg": 10,
+          "gobo": "none",
+          "goboSpin": 0,
+          "goboAngle": 0,
+          "colorTo": "#4fc3f7"
          }
         },
         "groups": [
@@ -16489,10 +16779,58 @@
           "v": 0.6,
           "hM": 0
          },
-         "start": "a"
+         "start": "a",
+         "dwell": {
+          "a": 0.5,
+          "b": 0.5
+         },
+         "curve": "easeIn"
         },
         "speed": "slow",
         "groupId": "ft-lgroup-mirror",
+        "periodSec": null,
+        "offsetSec": 0,
+        "levelTo": null,
+        "beamDegTo": null,
+        "beamDeg": null,
+        "gobo": "none",
+        "goboSpin": 0,
+        "goboAngle": 0
+       },
+       "ft-fx-13": {
+        "on": true,
+        "level": 100,
+        "color": "#ffd27a",
+        "surface": "floor",
+        "path": {
+         "kind": "poly",
+         "mode": "loop",
+         "points": [
+          {
+           "u": 0.3,
+           "v": 0.8,
+           "hM": 0,
+           "moveSec": 1,
+           "dwellSec": 0.5
+          },
+          {
+           "u": 0.5,
+           "v": 0.45,
+           "hM": 0,
+           "moveSec": 1,
+           "dwellSec": 0.5
+          },
+          {
+           "u": 0.7,
+           "v": 0.8,
+           "hM": 0,
+           "moveSec": 1,
+           "dwellSec": 0.5
+          }
+         ]
+        },
+        "speed": "normal",
+        "groupId": null,
         "periodSec": null,
         "offsetSec": 0,
         "levelTo": null,
@@ -16558,7 +16896,8 @@
         "beamDeg": 10,
         "gobo": "none",
         "goboSpin": 0,
-        "goboAngle": 0
+        "goboAngle": 0,
+        "colorTo": "#4fc3f7"
        }
       },
       "groups": [
@@ -16579,7 +16918,7 @@
     },
     {
      "id": "ft-scene-f3",
-     "name": "F-3 ストロボと順送り",
+     "name": "F-3 ストロボと順送り・実機モード",
      "lx": {
       "section": 1,
       "no": 30
@@ -16588,7 +16927,9 @@
       {
        "id": "ft-lxq-ft-scene-f3",
        "seq": 1,
-       "name": "F-3 ストロボと順送り",
+       "name": "F-3 ストロボと順送り・実機モード",
+       "no": "3",
+       "trigger": "ドロップの1拍前",
        "at": "2026-09-18T00:00:00.000Z",
        "cue": {
         "lights": {
@@ -16766,12 +17107,141 @@
             "width": 1
            }
           }
+         },
+         "ft-fx-04": {
+          "on": true,
+          "level": 100,
+          "color": "#7ab8ff",
+          "surface": "floor",
+          "path": {
+           "kind": "still",
+           "a": {
+            "u": 0.5,
+            "v": 0.75,
+            "hM": 0
+           }
+          },
+          "speed": "normal",
+          "groupId": null,
+          "periodSec": null,
+          "offsetSec": 0,
+          "levelTo": null,
+          "beamDegTo": null,
+          "beamDeg": null,
+          "gobo": "none",
+          "goboSpin": 0,
+          "goboAngle": 0,
+          "strobe": {
+           "on": true,
+           "kind": "random",
+           "hz": 4,
+           "duty": 30,
+           "seed": 11
+          }
+         },
+         "ft-fx-09": {
+          "on": true,
+          "level": 100,
+          "color": "#ffd27a",
+          "surface": "air",
+          "path": {
+           "kind": "still",
+           "a": {
+            "u": 0.38,
+            "v": 0.55,
+            "hM": 1.3
+           }
+          },
+          "speed": "normal",
+          "groupId": null,
+          "periodSec": null,
+          "offsetSec": 0,
+          "levelTo": null,
+          "beamDegTo": null,
+          "beamDeg": null,
+          "gobo": "none",
+          "goboSpin": 0,
+          "goboAngle": 0,
+          "strobe": {
+           "on": true,
+           "kind": "randomPulse",
+           "hz": 2,
+           "duty": 50,
+           "depth": 70,
+           "seed": 12
+          }
+         },
+         "ft-fx-11": {
+          "on": true,
+          "level": 100,
+          "color": "#f2ead6",
+          "surface": "air",
+          "path": {
+           "kind": "still",
+           "a": {
+            "u": 0.5,
+            "v": 0.5,
+            "hM": 1.5
+           }
+          },
+          "speed": "normal",
+          "groupId": null,
+          "periodSec": null,
+          "offsetSec": 0,
+          "levelTo": null,
+          "beamDegTo": null,
+          "beamDeg": null,
+          "gobo": "none",
+          "goboSpin": 0,
+          "goboAngle": 0,
+          "strobe": {
+           "on": true,
+           "kind": "sharp",
+           "hz": 1,
+           "duty": 50,
+           "loops": 1,
+           "after": "hold"
+          }
+         },
+         "ft-fx-12": {
+          "on": true,
+          "level": 100,
+          "color": "#d9483b",
+          "surface": "air",
+          "path": {
+           "kind": "still",
+           "a": {
+            "u": 0.5,
+            "v": 0.5,
+            "hM": 1.5
+           }
+          },
+          "speed": "normal",
+          "groupId": null,
+          "periodSec": null,
+          "offsetSec": 0,
+          "levelTo": null,
+          "beamDegTo": null,
+          "beamDeg": null,
+          "gobo": "none",
+          "goboSpin": 0,
+          "goboAngle": 0,
+          "strobe": {
+           "on": true,
+           "kind": "sharp",
+           "hz": 3,
+           "duty": 25,
+           "floor": 30
+          }
          }
         },
         "groups": [],
         "environment": {
          "haze": 35
         }
+       },
+       "timing": {
+        "fadeInSec": 0.5
        }
       }
      ],
@@ -16952,6 +17422,132 @@
           "width": 1
          }
         }
+       },
+       "ft-fx-04": {
+        "on": true,
+        "level": 100,
+        "color": "#7ab8ff",
+        "surface": "floor",
+        "path": {
+         "kind": "still",
+         "a": {
+          "u": 0.5,
+          "v": 0.75,
+          "hM": 0
+         }
+        },
+        "speed": "normal",
+        "groupId": null,
+        "periodSec": null,
+        "offsetSec": 0,
+        "levelTo": null,
+        "beamDegTo": null,
+        "beamDeg": null,
+        "gobo": "none",
+        "goboSpin": 0,
+        "goboAngle": 0,
+        "strobe": {
+         "on": true,
+         "kind": "random",
+         "hz": 4,
+         "duty": 30,
+         "seed": 11
+        }
+       },
+       "ft-fx-09": {
+        "on": true,
+        "level": 100,
+        "color": "#ffd27a",
+        "surface": "air",
+        "path": {
+         "kind": "still",
+         "a": {
+          "u": 0.38,
+          "v": 0.55,
+          "hM": 1.3
+         }
+        },
+        "speed": "normal",
+        "groupId": null,
+        "periodSec": null,
+        "offsetSec": 0,
+        "levelTo": null,
+        "beamDegTo": null,
+        "beamDeg": null,
+        "gobo": "none",
+        "goboSpin": 0,
+        "goboAngle": 0,
+        "strobe": {
+         "on": true,
+         "kind": "randomPulse",
+         "hz": 2,
+         "duty": 50,
+         "depth": 70,
+         "seed": 12
+        }
+       },
+       "ft-fx-11": {
+        "on": true,
+        "level": 100,
+        "color": "#f2ead6",
+        "surface": "air",
+        "path": {
+         "kind": "still",
+         "a": {
+          "u": 0.5,
+          "v": 0.5,
+          "hM": 1.5
+         }
+        },
+        "speed": "normal",
+        "groupId": null,
+        "periodSec": null,
+        "offsetSec": 0,
+        "levelTo": null,
+        "beamDegTo": null,
+        "beamDeg": null,
+        "gobo": "none",
+        "goboSpin": 0,
+        "goboAngle": 0,
+        "strobe": {
+         "on": true,
+         "kind": "sharp",
+         "hz": 1,
+         "duty": 50,
+         "loops": 1,
+         "after": "hold"
+        }
+       },
+       "ft-fx-12": {
+        "on": true,
+        "level": 100,
+        "color": "#d9483b",
+        "surface": "air",
+        "path": {
+         "kind": "still",
+         "a": {
+          "u": 0.5,
+          "v": 0.5,
+          "hM": 1.5
+         }
+        },
+        "speed": "normal",
+        "groupId": null,
+        "periodSec": null,
+        "offsetSec": 0,
+        "levelTo": null,
+        "beamDegTo": null,
+        "beamDeg": null,
+        "gobo": "none",
+        "goboSpin": 0,
+        "goboAngle": 0,
+        "strobe": {
+         "on": true,
+         "kind": "sharp",
+         "hz": 3,
+         "duty": 25,
+         "floor": 30
+        }
        }
       },
       "groups": [],
@@ -16972,6 +17568,8 @@
        "id": "ft-lxq-ft-scene-f4",
        "seq": 1,
        "name": "F-4 レーザー（ビーム・シート・トンネル）・ホ",
+       "no": "4",
+       "trigger": "演者が中央に着いたら",
        "at": "2026-09-18T00:00:00.000Z",
        "cue": {
         "lights": {

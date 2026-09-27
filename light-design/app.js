@@ -374,7 +374,10 @@
   const snapV = (v) => (state.snap ? E.clamp(Math.round(v * state.dims.D) / state.dims.D, 0, 1) : v);
   const snapH = (h) => (state.snap ? E.clamp(Math.round(h), 0, state.dims.H) : h);
   const scene = () => state.scenes[state.sceneIndex];
-  const cue = () => scene().cue;
+  /* キューの時間（2026-09-27 テスト用ビルド）。フェード中は「前と次を混ぜた描画用キュー」を
+     draw() の間だけここへ入れる。編集の関数は draw() の外で cue() を呼ぶので、正本は汚れない。 */
+  let drawCueOverride = null;
+  const cue = () => drawCueOverride || scene().cue;
   const lightOf = (fid) => cue().lights[fid] || null;
   const fixtureById = (id) => state.rig.fixtures.find((f) => f.id === id) || null;
   const groupOf = (fid) => cue().groups.find((g) => g.members.includes(fid)) || null;
@@ -390,6 +393,8 @@
      いまと同じ状態の復元になり、以降もずっと1手ぶんずれていた（色を変えて押しても戻らない）。 */
   let baseline = snapshot();
   function commit(label) {
+    if (lxFade) lxFadeStop();
+    lxFollowCancel();
     syncFixedSetupEdits();
     lxSyncEditing();                   // 編集中のキューへ書き戻してから記録する（2026-09-13）
     state.history.push(baseline);      // 変更前を記録する
@@ -686,6 +691,8 @@
   /* ストロボは往復（levelAt）とは別に、いまの瞬間だけ削る掛け算として上乗せする（2026-09-13 本人要望）。
      ムービングだけが持てる（配置パネルで種類を切り替えても、固定灯では箱ごと出さない）。 */
   const litFactorOf = (f, l) => (isLit(l) ? curveAt(E.levelAt(l, phaseOf(f, l)) / 100) * E.strobeMul(l && l.strobe, state.play.t) : 0);
+  /* 第6弾（2026-09-27）: 終わりの色 colorTo を持つ灯は、いまの位相での色で描く（強さ・広がりと同じ位相）。描画は l.color を直読みしない。 */
+  const colorOf = (f, l) => E.colorAt(l, phaseOf(f, l), f);
   /* ストロボの発生順（段・1始まり）。型パネルで並べている最中は、まだ当てていない並び（下書き）を
      見せる。それ以外は、いま当たっているキューの strobe.seq を見る。無ければ null＝出さない。 */
   const strobeStepOf = (fid) => {
@@ -958,7 +965,7 @@
       color: (l && l.color) || (laser && LE ? LE.COLORS[0] : COLORS[0]),
       ...(laser ? { laser: { effect: "fan", spanDeg: 0, rollDeg: 0 } } : {}) });
   }
-  function currentPoint(l) { const p = l.path || {}; return (p.kind === "circle" || p.kind === "eight") ? p.c : (p.a || E.newPoint()); }
+  function currentPoint(l) { const p = l.path || {}; return (p.kind === "circle" || p.kind === "eight") ? p.c : p.kind === "poly" ? ((p.points && p.points[0]) || E.newPoint()) : (p.a || E.newPoint()); }
   // 「当てる場所」を切り替えた直後、いまの狙い点を新しい制約（床=高さ0／奥壁=奥行き0／空中=自由）へ合わせる
   function restyleToSurface(fid) {
     const l = lightOf(fid); if (!l || !l.path) return;
@@ -972,6 +979,11 @@
     if (kind === "circle") setLight(fid, { path: { kind: "circle", c: { ...p }, r: 1.5, r2: 1.5, tilt: 0, plane: "horizontal", dir: "cw", start: 0 } });
     // 8の字は横長のほうが8に見えるので、既定は 2.2m × 1.0m
     if (kind === "eight") setLight(fid, { path: { kind: "eight", c: { ...p }, r: 2.2, r2: 1, tilt: 0, plane: "horizontal", dir: "cw", start: 0 } });
+    /* 点の列（2026-09-27）: いまの点を囲む三角から始める。各点は 動く1秒・止まる0.5秒。 */
+    if (kind === "poly") setLight(fid, { path: { kind: "poly", mode: "loop", points: [
+      { ...p, u: E.clamp(p.u - 0.2, 0, 1), v: E.clamp(p.v + 0.15, 0, 1), moveSec: 1, dwellSec: 0.5 },
+      { ...p, v: E.clamp(p.v - 0.2, 0, 1), moveSec: 1, dwellSec: 0.5 },
+      { ...p, u: E.clamp(p.u + 0.2, 0, 1), v: E.clamp(p.v + 0.15, 0, 1), moveSec: 1, dwellSec: 0.5 }] } });
   }
   function makeGroup(ids, relation) {
     const c = cue();
@@ -1313,13 +1325,13 @@
           pctx.restore(); }
         if (spatialLight(pctx, P, B.w / d.W, "plan", f, litSpots)) { if (sel) drawHandles(pctx, PH, l, f.id); return; }
         if (l.surface === "floor" || l.surface === "air") {
-          if (showOn("beam")) { const sp = drawBeam(pctx, s, tp, { S, T }, l.color, beamOf(f), dim, B.w / state.dims.W, squashFor("plan", l.surface), true, false, lv, l, l.surface === "floor" ? "floor" : null, P, frameOf(f, l)); litSpots.push({ fromX: s.X, fromY: s.Y, ...sp, lv }); }
+          if (showOn("beam")) { const sp = drawBeam(pctx, s, tp, { S, T }, colorOf(f, l), beamOf(f), dim, B.w / state.dims.W, squashFor("plan", l.surface), true, false, lv, l, l.surface === "floor" ? "floor" : null, P, frameOf(f, l)); litSpots.push({ fromX: s.X, fromY: s.Y, ...sp, lv }); }
           if (l.surface === "air") {
             // 空中の狙い点は床に落ちない。真上から見ると高さが読めないので、印＋高さ＋床への破線を出す
-            pctx.strokeStyle = hexA(l.color, dim ? 0.2 : 0.7); pctx.lineWidth = 3; pctx.beginPath();
+            pctx.strokeStyle = hexA(colorOf(f, l), dim ? 0.2 : 0.7); pctx.lineWidth = 3; pctx.beginPath();
             pctx.moveTo(tp.X - 16, tp.Y - 16); pctx.lineTo(tp.X + 16, tp.Y + 16); pctx.moveTo(tp.X + 16, tp.Y - 16); pctx.lineTo(tp.X - 16, tp.Y + 16); pctx.stroke();
             pctx.beginPath(); pctx.arc(tp.X, tp.Y, 22, 0, Math.PI * 2); pctx.stroke();
-            if (!dim) { pctx.fillStyle = hexA(l.color, 0.9); pctx.font = "17px sans-serif"; pctx.textBaseline = "bottom"; pctx.fillText(`空中 ${mmText(T.z)}`, tp.X + 26, tp.Y - 8); }
+            if (!dim) { pctx.fillStyle = hexA(colorOf(f, l), 0.9); pctx.font = "17px sans-serif"; pctx.textBaseline = "bottom"; pctx.fillText(`空中 ${mmText(T.z)}`, tp.X + 26, tp.Y - 8); }
           } // 床の輪は drawBeam が広がりから描く
         } else if (l.surface === "house") {
           /* 客席へ向けた光。狙い点は客席帯に置くが、そこに面はないので光だまりや丸い発光は描かない。 */
@@ -1331,11 +1343,11 @@
           const th = { X: s.X + (th0.X - s.X) * ext, Y: s.Y + (th0.Y - s.Y) * ext };
           if (showOn("beam")) {
             const Tfar = { x: S.x + (T.x - S.x) * ext, y: S.y + (T.y - S.y) * ext, z: S.z + (T.z - S.z) * ext };
-            const sp = drawBeam(pctx, s, th, { S, T: Tfar }, l.color, beamOf(f), dim, B.w / state.dims.W, [1, 1], false, true, lv, l, null, P, frameOf(f, l));
+            const sp = drawBeam(pctx, s, th, { S, T: Tfar }, colorOf(f, l), beamOf(f), dim, B.w / state.dims.W, [1, 1], false, true, lv, l, null, P, frameOf(f, l));
             litSpots.push({ fromX: s.X, fromY: s.Y, ...sp, lv });
           }
-          if (!dim) { pctx.fillStyle = hexA(l.color, 0.9); pctx.font = "15px sans-serif"; pctx.textBaseline = "middle"; pctx.fillText(`客席へ 舞台前から${mmText(Math.max(0, T.y - state.dims.D))}・高さ${mmText(T.z)}（目眩まし）`, th0.X + 22, th0.Y); }
-        } else if (showOn("beam")) { const sp = drawBeam(pctx, s, { X: s.X, Y: B.y }, { S, T }, l.color, beamOf(f), dim, B.w / state.dims.W, squashFor("plan", l.surface), true, false, lv, l, null, P, frameOf(f, l)); litSpots.push({ fromX: s.X, fromY: s.Y, ...sp, lv }); }
+          if (!dim) { pctx.fillStyle = hexA(colorOf(f, l), 0.9); pctx.font = "15px sans-serif"; pctx.textBaseline = "middle"; pctx.fillText(`客席へ 舞台前から${mmText(Math.max(0, T.y - state.dims.D))}・高さ${mmText(T.z)}（目眩まし）`, th0.X + 22, th0.Y); }
+        } else if (showOn("beam")) { const sp = drawBeam(pctx, s, { X: s.X, Y: B.y }, { S, T }, colorOf(f, l), beamOf(f), dim, B.w / state.dims.W, squashFor("plan", l.surface), true, false, lv, l, null, P, frameOf(f, l)); litSpots.push({ fromX: s.X, fromY: s.Y, ...sp, lv }); }
         // ハンドル（選択灯のみ・床・空中・客席は平面図で位置を動かす）
         if (sel && l.surface !== "back") drawHandles(pctx, PH, l, f.id);
       });
@@ -1525,12 +1537,12 @@
         const gradient = span < radius * .5
           ? ctx.createRadialGradient(cone.centre.X,cone.centre.Y,0,cone.centre.X,cone.centre.Y,radius)
           : ctx.createLinearGradient(from.X,from.Y,cone.centre.X,cone.centre.Y);
-        gradient.addColorStop(0,hexA(l.color,.24*visualAlpha(lv)));
-        gradient.addColorStop(.78,hexA(l.color,.18*visualAlpha(lv)));
-        gradient.addColorStop(1,hexA(l.color,0)); ctx.fillStyle=gradient;
+        gradient.addColorStop(0,hexA(colorOf(f, l),.24*visualAlpha(lv)));
+        gradient.addColorStop(.78,hexA(colorOf(f, l),.18*visualAlpha(lv)));
+        gradient.addColorStop(1,hexA(colorOf(f, l),0)); ctx.fillStyle=gradient;
         ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height); ctx.restore();
         spots.push({fromX:from.X,fromY:from.Y,coneHull:cone.hull,lv});
-        drawDirectionLine(ctx,from,target,l.color,lv,false);
+        drawDirectionLine(ctx,from,target,colorOf(f, l),lv,false);
         return true;
       }
     }
@@ -1538,11 +1550,11 @@
     const worldEnd = landing ? landing.world : ray.world, screenEnd = landing ? P(landing.world) : ray.screen;
     const view = kind === "plan" ? "plan" : kind.startsWith("front") ? "front" : "side";
     const lv = litFactorOf(f, l), dim = false;
-    const sp = drawBeam(ctx, from, screenEnd, { S, T: worldEnd }, l.color, beamOf(f), dim, k,
+    const sp = drawBeam(ctx, from, screenEnd, { S, T: worldEnd }, colorOf(f, l), beamOf(f), dim, k,
       squashFor(view, landing ? landing.surface : "air"), view === "plan", !landing,
       lv, l, landing ? landing.surface : null, P, frameOf(f, l));
     spots.push({ fromX: from.X, fromY: from.Y, ...sp, lv });
-    if (view !== "plan") drawDirectionLine(ctx, from, target, l.color, lv, dim);
+    if (view !== "plan") drawDirectionLine(ctx, from, target, colorOf(f, l), lv, dim);
     return true;
   }
   function compositeSpatial(ctx, P, k, kind, options = {}) {
@@ -1550,7 +1562,7 @@
     const all = performerBeams(), beams = state.rig.fixtures.flatMap(f => {
       const l = lightOf(f.id); if (!visibleLight(f, l) || !["air", "house"].includes(l.surface) || f.mount.type === "cyc") return [];
       const S = fixtureWorld(f), T = targetAt(f.id, state.play.t);
-      const b = V.compile({S,T,deg:beamOf(f),level:litFactorOf(f,l),color:l.color,doors:E.frameDoors(f,l,l.surface==='house'?'z':'y'),profile:goboProfile(l),f,l});
+      const b = V.compile({S,T,deg:beamOf(f),level:litFactorOf(f,l),color:colorOf(f, l),doors:E.frameDoors(f,l,l.surface==='house'?'z':'y'),profile:goboProfile(l),f,l});
       return b ? [b] : [];
     });
     const yawDeg = kind === "shimote" ? -90 : kind === "kamite" ? 90 : 0;
@@ -1589,7 +1601,7 @@
       if (!(level > 0) || !S || !T) return [];
       const end = beamEnd(l, S, T), frame = frameOf(f, l);
       const axis = end.surface === "back" ? "z" : end.surface === "floor" ? "y" : frame ? frame.axis : "y";
-      return [{ S, T, level: level * VISUAL_GAIN, deg: beamOf(f), color: l.color, doors: frame ? E.frameDoors(f, l, axis) : [] }];
+      return [{ S, T, level: level * VISUAL_GAIN, deg: beamOf(f), color: colorOf(f, l), doors: frame ? E.frameDoors(f, l, axis) : [] }];
     });
   }
   /* 消灯後に受光した人だけ塗り直す際も、手前の箱を突き抜けないようにする。
@@ -2431,6 +2443,10 @@
       ctx.beginPath(); ctx.arc(rq.X, rq.Y, 10, 0, Math.PI * 2); ctx.fillStyle = surface("#201b16"); ctx.strokeStyle = "#df6433"; ctx.lineWidth = 3; ctx.fill(); ctx.stroke();
       ctx.fillStyle = "rgba(240,231,214,0.8)"; ctx.font = "15px sans-serif"; ctx.fillText(`半径 ${mmText(p.r)}`, rq.X + 14, rq.Y - 8);
       ctx.fillText(p.dir === "ccw" ? "反時計回り" : "時計回り", c.X + 14, c.Y - 22);
+    } else if (p.kind === "poly" && Array.isArray(p.points)) {
+      const qs = p.points.map((pt, k) => hp(pt, String(k + 1), k === 0));
+      for (let k = 0; k + 1 < qs.length; k++) arrow(ctx, qs[k], qs[k + 1]);
+      if ((p.mode || "loop") === "loop" && qs.length > 2) arrow(ctx, qs[qs.length - 1], qs[0]);
     } else hp(p.a || { u: 0.5, v: 0.6 }, "", true);
   }
   function arrow(ctx, from, to) { const dx = to.X - from.X, dy = to.Y - from.Y, L = Math.hypot(dx, dy) || 1; const ux = dx / L, uy = dy / L; const sx = from.X + ux * 20, sy = from.Y + uy * 20, ex = from.X + ux * Math.min(L * 0.45, 90), ey = from.Y + uy * Math.min(L * 0.45, 90); ctx.strokeStyle = "#df6433"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke(); ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex - ux * 14 - uy * 9, ey - uy * 14 + ux * 9); ctx.lineTo(ex - ux * 14 + uy * 9, ey - uy * 14 - ux * 9); ctx.closePath(); ctx.fillStyle = "#df6433"; ctx.fill(); }
@@ -2466,16 +2482,16 @@
           const aim = houseAimOnFront(T, d.D), e2 = P(aim);
           const gY = isFront(f) ? Math.max(20, s.Y) : s.Y, R = frontView.pxPerM * (0.9 + 2.4 * lv) * glareMul(l);
           const ray = beamPastTarget(S, T, { X: s.X, Y: gY }, e2, front);
-          const sp = drawBeam(fctx, { X: s.X, Y: gY }, ray.screen, { S, T: ray.world }, l.color, beamOf(f), dim, frontView.pxPerM * Math.max(0.05, s.scale || 1), [1, 1], false, true, lv, l, null, P, frameOf(f, l));
+          const sp = drawBeam(fctx, { X: s.X, Y: gY }, ray.screen, { S, T: ray.world }, colorOf(f, l), beamOf(f), dim, frontView.pxPerM * Math.max(0.05, s.scale || 1), [1, 1], false, true, lv, l, null, P, frameOf(f, l));
           litSpotsF.push({ fromX: s.X, fromY: gY, ...sp, lv });
-          drawGlare(fctx, s.X, gY, R, l.color, lv, dim); litSpotsF.push(glareHole(s.X, gY, R, lv));
-          drawDirectionLine(fctx, { X: s.X, Y: gY }, e2, l.color, lv, dim);
+          drawGlare(fctx, s.X, gY, R, colorOf(f, l), lv, dim); litSpotsF.push(glareHole(s.X, gY, R, lv));
+          drawDirectionLine(fctx, { X: s.X, Y: gY }, e2, colorOf(f, l), lv, dim);
         } else { const be = beamEnd(l, S, T), e2 = P(be.world);
-          const sp = drawBeam(fctx, s, e2, { S, T: be.world }, l.color, beamOf(f), dim, frontView.pxPerM * Math.max(0.05, e2.scale || 1), squashFor("front", be.surface || "air"), false, !be.surface, lv, l, be.surface, P, frameOf(f, l));
+          const sp = drawBeam(fctx, s, e2, { S, T: be.world }, colorOf(f, l), beamOf(f), dim, frontView.pxPerM * Math.max(0.05, e2.scale || 1), squashFor("front", be.surface || "air"), false, !be.surface, lv, l, be.surface, P, frameOf(f, l));
           litSpotsF.push({ fromX: s.X, fromY: s.Y, ...sp, lv }); } }
-      if (l.surface === "air") { const floorY = B.y + B.h; fctx.save(); fctx.setLineDash([5, 6]); fctx.strokeStyle = hexA(l.color, dim ? 0.15 : 0.45); fctx.lineWidth = 2; fctx.beginPath(); fctx.moveTo(tp.X, tp.Y); fctx.lineTo(tp.X, floorY); fctx.stroke(); fctx.restore();
-        fctx.strokeStyle = hexA(l.color, dim ? 0.2 : 0.8); fctx.lineWidth = 3; fctx.beginPath(); fctx.moveTo(tp.X - 12, tp.Y - 12); fctx.lineTo(tp.X + 12, tp.Y + 12); fctx.moveTo(tp.X + 12, tp.Y - 12); fctx.lineTo(tp.X - 12, tp.Y + 12); fctx.stroke(); fctx.beginPath(); fctx.arc(tp.X, tp.Y, 16, 0, Math.PI * 2); fctx.stroke();
-        if (!dim) { fctx.fillStyle = hexA(l.color, 0.9); fctx.font = "15px sans-serif"; fctx.textBaseline = "bottom"; fctx.fillText(mmText(T.z), tp.X + 20, tp.Y - 6); } }
+      if (l.surface === "air") { const floorY = B.y + B.h; fctx.save(); fctx.setLineDash([5, 6]); fctx.strokeStyle = hexA(colorOf(f, l), dim ? 0.15 : 0.45); fctx.lineWidth = 2; fctx.beginPath(); fctx.moveTo(tp.X, tp.Y); fctx.lineTo(tp.X, floorY); fctx.stroke(); fctx.restore();
+        fctx.strokeStyle = hexA(colorOf(f, l), dim ? 0.2 : 0.8); fctx.lineWidth = 3; fctx.beginPath(); fctx.moveTo(tp.X - 12, tp.Y - 12); fctx.lineTo(tp.X + 12, tp.Y + 12); fctx.moveTo(tp.X + 12, tp.Y - 12); fctx.lineTo(tp.X - 12, tp.Y + 12); fctx.stroke(); fctx.beginPath(); fctx.arc(tp.X, tp.Y, 16, 0, Math.PI * 2); fctx.stroke();
+        if (!dim) { fctx.fillStyle = hexA(colorOf(f, l), 0.9); fctx.font = "15px sans-serif"; fctx.textBaseline = "bottom"; fctx.fillText(mmText(T.z), tp.X + 20, tp.Y - 6); } }
       if (l.surface === "back" || l.surface === "air" || l.surface === "house") {
         const g = showOn("path") ? E.pathGuide(l, d) : null;
         if (g && g.kind === "line") { fctx.save(); fctx.setLineDash([8, 6]); fctx.strokeStyle = "rgba(223,100,51,0.7)"; fctx.lineWidth = 2; const a = P(g.a), b = P(g.b); fctx.beginPath(); fctx.moveTo(a.X, a.Y); fctx.lineTo(b.X, b.Y); fctx.stroke(); fctx.restore(); }
@@ -2529,14 +2545,14 @@
         const ray = houseTarget ? beamPastTarget(S, T, s0, houseTarget, front) : null;
         if (ray) be.world = ray.world;
         const e2 = ray ? ray.screen : P(be.world);
-        const sp = drawBeam(fctx, s0, e2, { S, T: be.world }, l.color, beamOf(f), dim, B.w / d.D, squashFor("side", be.surface || "air"), false, !be.surface, lv, l, be.surface, P, frameOf(f, l));
+        const sp = drawBeam(fctx, s0, e2, { S, T: be.world }, colorOf(f, l), beamOf(f), dim, B.w / d.D, squashFor("side", be.surface || "air"), false, !be.surface, lv, l, be.surface, P, frameOf(f, l));
         litSpotsSide.push({ fromX: s0.X, fromY: s0.Y, ...sp, lv });
-        if (houseTarget) drawDirectionLine(fctx, s0, houseTarget, l.color, lv, dim);
+        if (houseTarget) drawDirectionLine(fctx, s0, houseTarget, colorOf(f, l), lv, dim);
       }
       if (l.surface === "house" && isSel(f.id)) drawHandles(fctx, houseProjSide(P), l, f.id);
       if (air) {
-        fctx.save(); fctx.setLineDash([5, 6]); fctx.strokeStyle = hexA(l.color, dim ? 0.15 : 0.45); fctx.lineWidth = 2; fctx.beginPath(); fctx.moveTo(tp.X, tp.Y); fctx.lineTo(tp.X, B.y + B.h); fctx.stroke(); fctx.restore();
-        fctx.strokeStyle = hexA(l.color, dim ? 0.2 : 0.8); fctx.lineWidth = 3; fctx.beginPath(); fctx.moveTo(tp.X - 12, tp.Y - 12); fctx.lineTo(tp.X + 12, tp.Y + 12); fctx.moveTo(tp.X + 12, tp.Y - 12); fctx.lineTo(tp.X - 12, tp.Y + 12); fctx.stroke(); fctx.beginPath(); fctx.arc(tp.X, tp.Y, 16, 0, Math.PI * 2); fctx.stroke();
+        fctx.save(); fctx.setLineDash([5, 6]); fctx.strokeStyle = hexA(colorOf(f, l), dim ? 0.15 : 0.45); fctx.lineWidth = 2; fctx.beginPath(); fctx.moveTo(tp.X, tp.Y); fctx.lineTo(tp.X, B.y + B.h); fctx.stroke(); fctx.restore();
+        fctx.strokeStyle = hexA(colorOf(f, l), dim ? 0.2 : 0.8); fctx.lineWidth = 3; fctx.beginPath(); fctx.moveTo(tp.X - 12, tp.Y - 12); fctx.lineTo(tp.X + 12, tp.Y + 12); fctx.moveTo(tp.X + 12, tp.Y - 12); fctx.lineTo(tp.X - 12, tp.Y + 12); fctx.stroke(); fctx.beginPath(); fctx.arc(tp.X, tp.Y, 16, 0, Math.PI * 2); fctx.stroke();
         const g = showOn("path") ? E.pathGuide(l, d) : null;
         if (g && g.kind === "line") { fctx.save(); fctx.setLineDash([8, 6]); fctx.strokeStyle = "rgba(223,100,51,0.7)"; fctx.lineWidth = 2; const a = P(g.a), b = P(g.b); fctx.beginPath(); fctx.moveTo(a.X, a.Y); fctx.lineTo(b.X, b.Y); fctx.stroke(); fctx.restore(); }
         if (g && g.kind === "loop" && g.plane === "sideVertical") { fctx.save(); fctx.setLineDash([8, 6]); fctx.strokeStyle = "rgba(223,100,51,0.7)"; fctx.lineWidth = 2; strokeLoop(fctx, P, g); fctx.restore(); }
@@ -2611,11 +2627,11 @@
           const gY0 = isFront(f) ? Math.max(20, s0.Y) : s0.Y;
           const ray = beamPastTarget(S, T, { X: s0.X, Y: gY0 }, e3, cv);
           const housePx = L.pxPerM * Math.max(0.05, e3.scale || 1);
-          const sp = drawBeam(fctx, { X: s0.X, Y: gY0 }, ray.screen, { S, T: ray.world }, l.color, beamOf(f), dim, housePx, [1, 1], false, true, lv, l, null, P, frameOf(f, l));
+          const sp = drawBeam(fctx, { X: s0.X, Y: gY0 }, ray.screen, { S, T: ray.world }, colorOf(f, l), beamOf(f), dim, housePx, [1, 1], false, true, lv, l, null, P, frameOf(f, l));
           litSpots3D.push({ fromX: s0.X, fromY: gY0, ...sp, lv });
           const Rg = L.pxPerM * Math.max(0.05, s0.scale || 1) * (0.9 + 2.4 * lv) * glareMul(l);
-          drawGlare(fctx, s0.X, gY0, Rg, l.color, lv, dim); litSpots3D.push(glareHole(s0.X, gY0, Rg, lv));
-          drawDirectionLine(fctx, { X: s0.X, Y: gY0 }, e3, l.color, lv, dim);
+          drawGlare(fctx, s0.X, gY0, Rg, colorOf(f, l), lv, dim); litSpots3D.push(glareHole(s0.X, gY0, Rg, lv));
+          drawDirectionLine(fctx, { X: s0.X, Y: gY0 }, e3, colorOf(f, l), lv, dim);
           if (isSel(f.id)) drawHandles(fctx, houseHandleProj(P, S, d.D), l, f.id);
           return;
         }
@@ -2624,7 +2640,7 @@
         const sq = be.surface === "floor"
           ? [1, Math.min(1, ((L.bottomY - L.floorY) / d.D) / (L.pxPerM * Math.max(0.05, e2.scale || 1)))]
           : squashFor("front", be.surface || "air");
-        const sp = drawBeam(fctx, s0, e2, { S, T: be.world }, l.color, beamOf(f), dim, L.pxPerM * Math.max(0.05, e2.scale || 1), sq, false, !be.surface, lv, l, be.surface, P, frameOf(f, l));
+        const sp = drawBeam(fctx, s0, e2, { S, T: be.world }, colorOf(f, l), beamOf(f), dim, L.pxPerM * Math.max(0.05, e2.scale || 1), sq, false, !be.surface, lv, l, be.surface, P, frameOf(f, l));
         litSpots3D.push({ fromX: s0.X, fromY: s0.Y, ...sp, lv });
       }
       if (showOn("path")) { const g = E.pathGuide(l, d);
@@ -2645,8 +2661,11 @@
 
   function draw() {
     const started = performance.now();
-    drawPlan(); activeSections().forEach((sec) => (sec.kind === "front" ? (state.front3d ? drawFront3D(sec) : drawFront(sec)) : drawSide(sec)));
-    activeSections().forEach(drawSectionMarquee);
+    drawCueOverride = lxFadeCue();
+    try {
+      drawPlan(); activeSections().forEach((sec) => (sec.kind === "front" ? (state.front3d ? drawFront3D(sec) : drawFront(sec)) : drawSide(sec)));
+      activeSections().forEach(drawSectionMarquee);
+    } finally { drawCueOverride = null; }
     const elapsed = performance.now() - started, runtime = state.runtime;
     runtime.drawMs = elapsed;
     runtime.averageMs = runtime.averageMs ? runtime.averageMs * 0.8 + elapsed * 0.2 : elapsed;
@@ -2750,6 +2769,7 @@
       const p = l.path || {};
       if (p.kind === "line") { if (near(p.a, fid)) return { fid, handle: "a" }; if (near(p.b, fid)) return { fid, handle: "b" }; }
       else if (p.kind === "circle" || p.kind === "eight") { const rq = pr(fid)(circleRadiusWorld(p.c, p.r, p.plane, d, p.tilt)); if (Math.hypot(pt.X - rq.X, pt.Y - rq.Y) < 18) return { fid, handle: "r" }; if (near(p.c, fid)) return { fid, handle: "c" }; }
+      else if (p.kind === "poly" && Array.isArray(p.points)) { for (let k = 0; k < p.points.length; k++) if (near(p.points[k], fid)) return { fid, handle: `p${k}` }; }
       else if (near(p.a || E.newPoint(), fid)) return { fid, handle: "a" };
     }
     return null;
@@ -2773,7 +2793,7 @@
     && Math.abs(E.finite(p.u, 0) - E.finite(q.u, 0)) < 0.004
     && Math.abs(E.finite(p.v, 0) - E.finite(q.v, 0)) < 0.006
     && Math.abs(E.finite(p.hM, 0) - E.finite(q.hM, 0)) < 0.05;
-  const pathPoint = (p, name) => (name === "c" ? p.c : p[name] || p.a);
+  const pathPoint = (p, name) => (name === "c" ? p.c : (/^p\d+$/.test(String(name)) && Array.isArray(p.points)) ? p.points[Number(String(name).slice(1))] : p[name] || p.a);
   function handleTargets(hh) {
     const src = lightOf(hh.fid); const sp = src && src.path; if (!sp) return [];
     const grabbed = hh.handle === "r" ? null : pathPoint(sp, hh.handle);
@@ -2787,6 +2807,7 @@
       let name = null;
       if (p.kind === "circle" || p.kind === "eight") name = "c";
       else if (p.kind === "line") name = samePoint(p.a, grabbed) ? "a" : samePoint(p.b, grabbed) ? "b" : (hh.handle === "a" || hh.handle === "b" ? hh.handle : null);
+      else if (p.kind === "poly") name = /^p\d+$/.test(String(hh.handle)) && pathPoint(p, hh.handle) ? hh.handle : null;
       else name = "a";
       const pt = name && pathPoint(p, name); if (!pt) return;
       out.push({ fid, handle: name, u0: E.finite(pt.u, 0), v0: E.finite(pt.v, 0), h0: E.finite(pt.hM, 0), ahead0: E.finite(pt.aheadM,6) });
@@ -3908,6 +3929,37 @@
       b.append(sw);
     }
 
+    /* ①' 終点の色（2026-09-28 本人「後回しを全部」）。ムービングだけ。単灯パネルと同じ「オートメーション」の切替＋色の列で、選んだ全灯へ入れる。 */
+    if (movers.length) {
+      const colMovers = movers.filter((fid) => { const l = litLight(fid); return l && l.colorTo != null; });
+      const allCol = colMovers.length === movers.length;
+      const b = sub(null);
+      const head = el("div", "pboxhead"); head.append(el("p", "kicker", "終点の色"));
+      head.append(switchBtn(allCol, allCol ? "色が動きの中で移っています。押すと全灯止めます" : colMovers.length ? "一部だけ移っています。押すと全灯そろえます" : "押すと全灯の動きの終点に色を置きます（位置と同じ位相で色が移ります）", () => {
+        if (allCol) { bulkEach(movers, (f, l) => { delete l.colorTo; }); commit(`${movers.length}灯の色の動きを止めました`); }
+        else { bulkEach(movers, (f, l) => { if (l.colorTo == null) l.colorTo = /^#[0-9a-f]{6}$/i.test(l.color || "") ? l.color : "#f2ead6"; }); commit(`${movers.length}灯の終点に色を置きました（終点の色を選んでください）`); }
+      }));
+      b.append(head);
+      if (colMovers.length) {
+        const tos = new Set(colMovers.map((fid) => (lightOf(fid).colorTo || "").toLowerCase()));
+        const curTo = tos.size === 1 ? [...tos][0] : "";
+        const putTo = (c, quiet) => { colMovers.forEach((fid) => { const l = lightOf(fid); if (l) l.colorTo = c; }); quiet ? draw() : commit(`${colMovers.length}灯の終点の色を変えました`); };
+        const sw2 = el("div", "swatches");
+        const swatch2 = (c, custom) => {
+          const sb = document.createElement("button"); sb.type = "button"; sb.className = custom ? "custom" : "";
+          sb.style.background = c; sb.title = custom ? `作った色 ${c}` : c;
+          sb.setAttribute("aria-pressed", String(curTo === c.toLowerCase()));
+          sb.onclick = () => putTo(c); return sb;
+        };
+        COLORS.forEach((c) => sw2.append(swatch2(c, false)));
+        state.palette.forEach((c) => sw2.append(swatch2(c, true)));
+        const pick2 = document.createElement("input"); pick2.type = "color"; pick2.className = "mkcolor";
+        pick2.value = /^#[0-9a-f]{6}$/i.test(curTo) ? curTo : "#ffd27a"; pick2.title = "終点の色を作って全灯へ入れる";
+        pick2.oninput = () => putTo(pick2.value, true); pick2.onchange = () => putTo(pick2.value.toLowerCase());
+        sw2.append(pick2); b.append(sw2);
+      }
+    }
+
     // ② 当てる場所。ムービングの位置オートメーションもこの箱にまとめる。
     let aimBox = null;
     {
@@ -4450,6 +4502,36 @@
   const lxList = (sc) => (sc && Array.isArray(sc.lxq) ? sc.lxq : []);
   const lxNo = (sc, seq) => { const x = lxOf(sc); return `${x.section}-${x.no}-${seq}`; };
   const lxNextSeq = (sc) => lxList(sc).reduce((mx, q) => Math.max(mx, E.finite(q.seq, 0)), 0) + 1;
+  /* ---------- 通しQ番号（v2-1・2026-09-27 本人承認） ----------
+     Eos・国産卓・現場のキューシートと同じ「ショー全体で通しの番号」。間に入れるときは小数（12.5）。
+     古いデータ（番号なし）は読み込んだときにシーン順→連番で振り、旧表記（1-1-2）は legacyNo に残す。 */
+  const allCueNos = () => state.scenes.flatMap((sc) => lxList(sc).map((q) => q.no)).filter((no) => E.cueNoValid(no));
+  const qLabel = (q) => (q && E.cueNoValid(q.no) ? `Q${q.no}` : "Q?");
+  const qValue = (q) => (q ? E.cueNoValue(q.no) : NaN);
+  const lxSorted = (sc) => [...lxList(sc)].sort((a, b) => {
+    const va = qValue(a), vb = qValue(b);
+    if (Number.isFinite(va) && Number.isFinite(vb) && va !== vb) return va - vb;
+    return E.finite(a.seq, 0) - E.finite(b.seq, 0);
+  });
+  function ensureCueNumbers() {
+    const used = new Set();
+    let changed = false;
+    state.scenes.forEach((sc) => {
+      [...lxList(sc)].sort((a, b) => E.finite(a.seq, 0) - E.finite(b.seq, 0)).forEach((q) => {
+        const v = E.cueNoValue(q.no);
+        if (Number.isFinite(v) && !used.has(v)) { used.add(v); return; }
+        const next = E.cueNumberNext([...used]);
+        if (!q.legacyNo) q.legacyNo = lxNo(sc, E.finite(q.seq, 1));
+        q.no = next; used.add(Number(next)); changed = true;
+      });
+    });
+    return changed;
+  }
+  /* ショー全体の並び（番号順）。略語の「前の状態」と自動送りの「次のキュー」に使う。 */
+  const lxAllSorted = () => state.scenes.flatMap((sc, si) => lxList(sc).map((q) => ({ q, sc, si })))
+    .sort((a, b) => (qValue(a.q) - qValue(b.q)) || (a.si - b.si) || (E.finite(a.q.seq, 0) - E.finite(b.q.seq, 0)));
+  const lxNextInShow = (id) => { const all = lxAllSorted(); const i = all.findIndex((x) => x.q.id === id); return i >= 0 && i + 1 < all.length ? all[i + 1] : null; };
+  const lxPrevCueOf = (id) => { const all = lxAllSorted(); const i = all.findIndex((x) => x.q.id === id); return i > 0 ? all[i - 1].q.cue : { lights: {}, groups: [] }; };
   const cueJson = (c) => JSON.stringify({ ...(c || {}), lights: (c && c.lights) || {}, groups: (c && c.groups) || [] });
   /* いま画面に出ている明かりが「どのキューの中身か」。`sc.lxEditing` にそのキューのidが入る。
      null＝どのキューにも入っていない下書き（2026-09-13 本人要望でキュー編集モードにした）。 */
@@ -4469,12 +4551,184 @@
   const lxGoto = (i) => { if (state.sceneIndex !== i) { state.sceneIndex = i; state.sel.clear(); stop(); home(); } };
   /* その LXキュー の編集に入る。画面の明かりを中身で置き換え、編集中の印を移す。
      一覧の行クリックと、図の上の中央にある前後ボタンの両方から呼ぶ（2026-09-13）。 */
-  function lxEnterCue(si, id) {
+  /* ---------- キューの時間（2026-09-27 テスト用ビルド） ----------
+     LXキューへ移るとき（GO）、そのキューの timing（フェード・遅れ・カーブ・スナップ・MIB）に従って
+     前の明かりから次の明かりへ移る。時計は GO からの実時間（tGo）。動きの時計（state.play.t）とは別。
+     描画は blendCues が返す「描画用キュー」を読むだけ。編集（commit）が入ったらフェードは打ち切る。 */
+  let lxFade = null, lxFadeRaf = 0;
+  const nowMs = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
+  /* 自動送り（v2-1）: GO のあと、そのキューの follow に従って次のキュー（番号順・シーンをまたいでよい）を自動で出す。
+     編集（commit）・別の GO・停止で取り消す。 */
+  let lxFollow = null;   // { timer, targetId, at, label }
+  function lxFollowCancel() { if (lxFollow) { clearTimeout(lxFollow.timer); lxFollow = null; } }
+  function lxFollowSchedule(q) {
+    lxFollowCancel();
+    const delay = E.followDelayMs(q.follow, q.timing);
+    const next = lxNextInShow(q.id);
+    if (delay === null || !next) return;
+    lxFollow = { targetId: next.q.id, si: next.si, at: nowMs() + delay, label: qLabel(next.q),
+      timer: setTimeout(() => { const t = lxFollow; lxFollow = null; if (t) lxEnterCue(t.si, t.targetId, { auto: true }); }, delay) };
+    lxFadeStatus();
+  }
+  /* v2-4: 手で進める（クロスフェーダー相当）。つまみを触ると時計を止め、つまみの位置＝GOからの経過にする。 */
+  const lxFadeElapsedMs = () => (lxFade ? (lxFade.manual ? lxFade.manualMs : nowMs() - lxFade.startedAt) : 0);
+  function lxFadeCue() {
+    if (!lxFade) return null;
+    if (lxFade.sceneIndex !== state.sceneIndex) { lxFadeStop(); return null; }
+    const res = E.blendCues(lxFade.prev, scene().cue, { timing: lxFade.timing, tGoMs: lxFadeElapsedMs(), tFxMs: state.play.t, dims: state.dims, fixtures: state.rig.fixtures });
+    if (res.done && !lxFade.manual) { lxFadeStop(); return null; }
+    if (res.done) return null;
+    return res.cue;
+  }
+  function lxFadeSetManual(ms) {
+    if (!lxFade) return;
+    lxFade.manual = true; lxFade.manualMs = E.clamp(ms, 0, lxFade.total);
+    if (lxFollow) lxFollowCancel();   // 手で進めている間は自動送りを止める
+    draw(); lxFadeStatus();
+  }
+  function lxFadeRelease() {
+    if (!lxFade) return;
+    /* 自動へ戻す: いまの位置から実時間で続きを進める */
+    lxFade.startedAt = nowMs() - lxFade.manualMs; lxFade.manual = false;
+    lxFadeStatus();
+  }
+  function lxFadeStop() { lxFade = null; if (lxFadeRaf) { cancelAnimationFrame(lxFadeRaf); lxFadeRaf = 0; } lxFadeStatus(); if (lxFollow && !lxFollowRaf) lxFollowRaf = requestAnimationFrame(lxFollowTick); }
+  let lxFollowRaf = 0;
+  function lxFollowTick() { lxFollowRaf = 0; if (!lxFollow) { lxFadeStatus(); return; } lxFadeStatus(); lxFollowRaf = requestAnimationFrame(lxFollowTick); }
+  function lxFadeStart(prevCue, timing, sceneIndex) {
+    lxFadeStop();
+    const total = E.transitionMs(timing);
+    if (!timing || total <= 0) { draw(); return; }
+    lxFade = { prev: prevCue, timing, sceneIndex, startedAt: nowMs(), total };
+    const tick = () => { if (!lxFade) return; if (!state.play.on) draw(); lxFadeStatus(); lxFadeRaf = requestAnimationFrame(tick); };
+    lxFadeRaf = requestAnimationFrame(tick);
+  }
+  /* 残り秒数をパネルの上に出す（ヘッダーの小さな記号だけに頼らない）。 */
+  function lxFadeStatus() {
+    let el2 = $("lxfade-status");
+    if (!el2) { const host = $("lxqbox"); if (!host) return; el2 = document.createElement("p"); el2.id = "lxfade-status"; el2.className = "hint"; el2.style.cssText = "margin:4px 0 0;color:#df6433;font-weight:600;min-height:1.2em"; host.parentNode.insertBefore(el2, host); }
+    const parts = [];
+    if (lxFade) { const remain = Math.max(0, (lxFade.total - lxFadeElapsedMs()) / 1000); parts.push(`${lxFade.manual ? "手で進めています" : "切替中"} … 残り ${remain.toFixed(1)} 秒（${lxTimingText(lxFade.timing)}）`); }
+    if (lxFollow) { const remain = Math.max(0, (lxFollow.at - nowMs()) / 1000); parts.push(`→ 続けて ${lxFollow.label}（${remain.toFixed(1)} 秒後）`); }
+    if (!parts.length) { el2.textContent = ""; el2.hidden = true; lxManualSlider(false); return; }
+    el2.hidden = false; el2.textContent = parts.join("　");
+    lxManualSlider(Boolean(lxFade));
+  }
+  /* 手で進めるつまみ（v2-4）。切替中だけ状態の下に出す。離しても位置に留まり、「自動に戻す」で続きが進む。 */
+  function lxManualSlider(show) {
+    let wrap = $("lxfade-manual");
+    if (!show) { if (wrap) wrap.hidden = true; return; }
+    if (!wrap) {
+      const host = $("lxqbox"); if (!host) return;
+      wrap = document.createElement("div"); wrap.id = "lxfade-manual"; wrap.className = "field"; wrap.style.cssText = "margin:2px 0 6px;display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;font-size:12px";
+      const lab = document.createElement("span"); lab.textContent = "手で進める";
+      const r = document.createElement("input"); r.type = "range"; r.min = 0; r.max = 1000; r.step = 1; r.id = "lxfade-manual-range"; r.title = "クロスフェーダー相当。動かすと時計が止まり、つまみの位置まで進みます";
+      r.oninput = () => { if (lxFade) lxFadeSetManual(Number(r.value) / 1000 * lxFade.total); };
+      const back = btn("自動に戻す", () => lxFadeRelease(), "small quiet", "いまの位置から、残りを実時間で進めます");
+      wrap.append(lab, r, back);
+      host.parentNode.insertBefore(wrap, host);
+    }
+    wrap.hidden = false;
+    const r = $("lxfade-manual-range");
+    if (r && lxFade && !lxFade.manual) r.value = String(Math.round(E.clamp(lxFadeElapsedMs() / Math.max(1, lxFade.total), 0, 1) * 1000));
+  }
+  const CURVE_LABELS = [["linear", "一定"], ["ease", "なめらか（既定）"], ["easeIn", "だんだん速く"], ["easeOut", "だんだん遅く"], ["swing", "はずみ（行き過ぎて戻る）"]];
+  const curveName = (c) => { if (!c) return "一定"; if (typeof c === "string") return (CURVE_LABELS.find(([k]) => k === c) || [c, c])[1]; return `加速${Math.round(E.finite(c.accel, 0))}／減速${Math.round(E.finite(c.decel, 0))}`; };
+  /* 一覧に出す短い表記。カット／F 3.0s（遅れ1.0s）など。 */
+  function lxTimingText(timing) {
+    const T = E.normalizeTiming(timing);
+    if (!T || E.transitionMs(T) <= 0) return "カット";
+    const parts = [];
+    const outSame = T.fadeOutSec === null || T.fadeOutSec === T.fadeInSec;
+    parts.push(outSame ? `フェード ${T.fadeInSec.toFixed(1)}s` : `上げ ${T.fadeInSec.toFixed(1)}s／下げ ${T.fadeOutSec.toFixed(1)}s`);
+    if (T.delayInSec > 0 || (T.delayOutSec !== null && T.delayOutSec > 0)) parts.push(`遅れ ${T.delayInSec.toFixed(1)}s${T.delayOutSec !== null && T.delayOutSec !== T.delayInSec ? `／${T.delayOutSec.toFixed(1)}s` : ""}`);
+    if (T.by.position && T.by.position.fadeSec !== null) parts.push(`位置 ${T.by.position.fadeSec.toFixed(1)}s`);
+    if (T.by.color && T.by.color.fadeSec !== null) parts.push(`色 ${T.by.color.fadeSec.toFixed(1)}s`);
+    if (T.curve && !(T.curve.accel === 0 && T.curve.decel === 0)) parts.push(curveName(timing.curve));
+    if (T.mib) parts.push("MIB");
+    return parts.join("・");
+  }
+  /* 一覧の行に収まる短い表記（2026-09-27 本人指摘: 行幅で「色 1.0s」が省略されて見えなかった）。全文は title に出す。 */
+  function lxTimingShort(timing) {
+    const T = E.normalizeTiming(timing);
+    if (!T || E.transitionMs(T) <= 0) return "カット";
+    const s = (v) => String(Math.round(v * 10) / 10);
+    const parts = [];
+    const outSame = T.fadeOutSec === null || T.fadeOutSec === T.fadeInSec;
+    parts.push(outSame ? `${s(T.fadeInSec)}s` : `${s(T.fadeInSec)}/${s(T.fadeOutSec)}s`);
+    if (T.delayInSec > 0 || (T.delayOutSec !== null && T.delayOutSec > 0)) parts.push(`遅れ${s(T.delayInSec)}s`);
+    if (T.by.position && T.by.position.fadeSec !== null) parts.push(`位置${s(T.by.position.fadeSec)}s`);
+    if (T.by.color && T.by.color.fadeSec !== null) parts.push(`色${s(T.by.color.fadeSec)}s`);
+    if (T.mib) parts.push("MIB");
+    return parts.join("・");
+  }
+  /* LXキューの「時間」を決める窓。値は q.timing に保存（無ければカット）。 */
+  function lxTimingDialog(si, qid) {
+    const sc = state.scenes[si]; const q = lxList(sc).find((z) => z.id === qid); if (!q) return;
+    const T = E.normalizeTiming(q.timing) || E.normalizeTiming({});
+    const curveKey = typeof (q.timing && q.timing.curve) === "string" ? q.timing.curve : (T.curve && (T.curve.accel || T.curve.decel) ? "custom" : "linear");
+    const num = (id, val, min, max, step, ph) => `<input id="${id}" type="number" min="${min}" max="${max}" step="${step}" value="${val === null || val === undefined ? "" : val}" placeholder="${ph || ""}" class="lxt-num">`;
+    const isCut = E.transitionMs(T) <= 0;
+    const posFade = T.by.position && T.by.position.fadeSec !== null ? T.by.position.fadeSec : null;
+    const colFade = T.by.color && T.by.color.fadeSec !== null ? T.by.color.fadeSec : null;
+    const mibDefault = q.timing ? T.mib : true;   // 先回り（MIB）は既定オン（2026-09-27 本人承認）
+    const html = `<p class="ptitle">${qLabel(q)}${q.name ? `「${q.name}」` : ""} の時間</p>
+      <p class="hint">前の明かりからこのキューへ、どう移るか。実機の卓と同じ考え方（In/Out Fade・Delay・カーブ・Snap・MIB）。空欄は「上げと同じ」。</p>
+      <div class="lxt-grid">
+        <div class="field"><span>移り方</span><div class="seg lxt-seg" role="group" aria-label="移り方"><button type="button" data-mode="cut" aria-pressed="${isCut}">カット</button><button type="button" data-mode="fade" aria-pressed="${!isCut}">フェード</button></div></div>
+        <div id="lxt-body" ${isCut ? "hidden" : ""}>
+          <p class="kicker lxt-kicker">秒</p>
+          <div class="field"><span>上げ（明るくなる方）</span>${num("lxt-in", T.fadeInSec, 0, 600, 0.1)}</div>
+          <div class="field"><span>下げ（暗くなる方）</span>${num("lxt-out", T.fadeOutSec, 0, 600, 0.1, "同じ")}</div>
+          <p class="kicker lxt-kicker">遅れ</p>
+          <div class="field"><span>上げの遅れ</span>${num("lxt-din", T.delayInSec, 0, 600, 0.1)}</div>
+          <div class="field"><span>下げの遅れ</span>${num("lxt-dout", T.delayOutSec, 0, 600, 0.1, "同じ")}</div>
+          <p class="kicker lxt-kicker">カーブ</p>
+          <div class="field"><span>効き方</span><select id="lxt-curve">${CURVE_LABELS.map(([k, t]) => `<option value="${k}" ${curveKey === k ? "selected" : ""}>${t}</option>`).join("")}<option value="custom" ${curveKey === "custom" ? "selected" : ""}>数値で（加速・減速）</option></select></div>
+          <div class="field" id="lxt-custom" ${curveKey === "custom" ? "" : "hidden"}><span>加速／減速（−100〜200）</span><span class="lxt-pair">${num("lxt-acc", T.curve ? T.curve.accel : 0, -100, 200, 10)} ${num("lxt-dec", T.curve ? T.curve.decel : 0, -100, 200, 10)}</span></div>
+          <p class="kicker lxt-kicker">属性ごとに変える</p>
+          <div class="field"><span>位置の移動（秒）</span>${num("lxt-pos", posFade, 0, 600, 0.1, "同じ")}</div>
+          <div class="field"><span>色の移り（秒）</span>${num("lxt-col", colFade, 0, 600, 0.1, "同じ")}</div>
+          <p class="kicker lxt-kicker">切替の細部</p>
+          <div class="field"><span>模様・カッター・カラーホイールの切替を遅らせる（秒）</span>${num("lxt-snap", T.snapDelaySec, 0, 600, 0.1)}</div>
+          <div class="field"><span>消えていた灯は先回りして向く（MIB）</span><input id="lxt-mib" type="checkbox" ${mibDefault ? "checked" : ""}></div>
+        </div>
+      </div>`;
+    dialog(html, [["やめる", null, "quiet"], ["決める", () => {
+      const v = (id) => { const x = $(id); const n = x && x.value !== "" ? Number(x.value) : null; return n !== null && Number.isFinite(n) ? n : null; };
+      const modeBtn = document.querySelector(".lxt-seg button[aria-pressed=\"true\"]"); const mode = modeBtn ? modeBtn.dataset.mode : "cut";
+      const s2 = state.scenes[si]; const t = lxList(s2).find((z) => z.id === qid); if (!t) return;
+      if (mode === "cut") { delete t.timing; commit(`${qLabel(t)} の移り方をカットにしました`); return; }
+      const ck = $("lxt-curve") ? $("lxt-curve").value : "linear";
+      const timing = { fadeInSec: v("lxt-in") ?? 0, delayInSec: v("lxt-din") ?? 0 };
+      if (v("lxt-out") !== null) timing.fadeOutSec = v("lxt-out");
+      if (v("lxt-dout") !== null) timing.delayOutSec = v("lxt-dout");
+      if (ck === "custom") timing.curve = { accel: v("lxt-acc") ?? 0, decel: v("lxt-dec") ?? 0 }; else if (ck !== "linear") timing.curve = ck;
+      const by = {};
+      if (v("lxt-pos") !== null) by.position = { fadeSec: v("lxt-pos") };
+      if (v("lxt-col") !== null) by.color = { fadeSec: v("lxt-col") };
+      if (Object.keys(by).length) timing.by = by;
+      if ((v("lxt-snap") ?? 0) > 0) timing.snap = { delaySec: v("lxt-snap") };
+      if ($("lxt-mib") && $("lxt-mib").checked) timing.mib = true;
+      t.timing = timing;
+      commit(`${qLabel(t)} の時間を決めました（${lxTimingText(timing)}）`);
+    }, "primary"]]);
+    const body = $("lxt-body"), curveSel = $("lxt-curve"), custom = $("lxt-custom");
+    const segBtns = Array.from(document.querySelectorAll(".lxt-seg button"));
+    const setMode = (mode) => { segBtns.forEach((b2) => b2.setAttribute("aria-pressed", String(b2.dataset.mode === mode))); if (body) body.hidden = mode === "cut"; };
+    segBtns.forEach((b2) => { b2.onclick = () => setMode(b2.dataset.mode); });
+    if (curveSel && custom) curveSel.onchange = () => { custom.hidden = curveSel.value !== "custom"; };
+  }
+  function lxEnterCue(si, id, opts = {}) {
+    lxFollowCancel();
+    const prevCue = JSON.parse(cueJson(scene().cue));   // GO の直前に見えていた明かり（別シーンからでも）
     lxGoto(si);
     const s2 = state.scenes[si]; const t = lxList(s2).find((z) => z.id === id); if (!t) return;
     s2.cue = JSON.parse(cueJson(t.cue)); s2.lxEditing = t.id;
     state.sel.clear(); stop(); home();
-    commit(`LXキュー ${lxNo(s2, E.finite(t.seq, 1))} の編集に入りました`);
+    commit(`${opts.auto ? "自動送り → " : "GO → "}${qLabel(t)}${t.name ? `「${t.name}」` : ""}（${lxTimingText(t.timing)}）`);
+    lxFadeStart(prevCue, t.timing, si);
+    lxFollowSchedule(t);
   }
   /* ---------- セクション（シーンの上の層） ----------
      セクション番号はシーンが持っている（`sc.lx.section`）ので、実在するセクションは
@@ -4519,7 +4773,11 @@
     list.splice(to, 0, moved);
     list.forEach((q, i) => { q.seq = i + 1; });
     sc.lxq = list;
-    commit(`LXキュー の順番を変えました（${lxNo(sc, E.finite(moved.seq, 1))} へ）`);
+    /* 番号も並びに合わせる: 前後の番号の間の小数へ（Eos の挿入と同じ）。入らなければ番号は変えない。 */
+    const before = list[to - 1], after = list[to + 1];
+    const between = E.cueNumberBetween(before ? before.no : undefined, after ? after.no : undefined);
+    if (between && !allCueNos().filter((no) => no !== moved.no).includes(between)) moved.no = between;
+    commit(`${qLabel(moved)} の順番を変えました`);
   }
 
   /* いまのシーンの LXキュー を番号順に並べ、前後の行き先を返す。
@@ -4534,6 +4792,7 @@
 
   function renderLxq() {
     const host = $("lxqbox"); if (!host) return;
+    ensureCueNumbers();
     /* 配置モードでは LXキュー は使わないので、パネルごと隠して灯体に枠を明け渡す
        （2026-09-13 本人要望。灯体は左の枠いっぱい＝以前の広さに戻る）。 */
     const panel = $("panel-lxq"); if (panel) panel.hidden = state.mode !== "move";
@@ -4574,26 +4833,27 @@
        前のキューからの続きを作ることが多いので、白紙ではなく<b>いまの明かりから</b>始める。 */
     /* 半分幅では「＋ 新規 LXキュー 1-1-6」が2行になり、一覧の見える本数を1本食う。
        パネル名が LXキュー なので番号だけで通じる（説明は title に入れてある）。 */
-    b.append(btn(`＋ 新規 ${lxNo(sc, lxNextSeq(sc))}`, () => {
+    b.append(btn(`＋ 新規 Q${E.cueNumberNext(allCueNos())}`, () => {
       lxGoto(si);
-      const s2 = lxScene(); const seq = lxNextSeq(s2); const id = uid("q");
-      s2.lxq = lxList(s2).concat([{ id, seq, name: "", at: new Date().toISOString(), cue: JSON.parse(cueJson(s2.cue)) }]);
+      const s2 = lxScene(); const seq = lxNextSeq(s2); const id = uid("q"); const no = E.cueNumberNext(allCueNos());
+      s2.lxq = lxList(s2).concat([{ id, seq, no, name: "", trigger: "", at: new Date().toISOString(), cue: JSON.parse(cueJson(s2.cue)) }]);
       s2.lxEditing = id;
-      commit(`LXキュー ${lxNo(s2, seq)} を作りました。このまま編集できます`);
+      commit(`Q${no} を作りました。このまま編集できます`);
     }, "primary", "いま出ている明かりを次の番号の LXキュー にして、そのまま編集を続けます"));
+    b.append(btn("Qシート（LX）", () => lxSheetDialog(), "small quiet", "全シーンのLXキューを、Q番号・きっかけ・略語・秒数の表で見る（CSVをコピーできます）"));
     host.append(b);
     const li = el("div", "lxlist"); host.append(li);
     if (!list.length) { li.append(el("p", "lxnone", "まだ LXキュー がありません。〈＋ 新規 LXキュー〉でいまの明かりを1本目にして、そこから作り込めます。")); return; }
     const editing = lxEditingOf(sc);
-    [...list].sort((a2, b2) => E.finite(a2.seq, 0) - E.finite(b2.seq, 0)).forEach((q) => {
+    const sorted = lxSorted(sc);
+    sorted.forEach((q, index) => {
       const isEdit = q.id === editing;
       const row = el("div", "lxrow" + (isEdit ? " editing" : cueJson(q.cue) === nowJson ? " cur" : ""));
-      row.title = isEdit ? "この LXキュー を編集しています（変えたところはそのまま入ります）" : `LXキュー ${lxNo(sc, E.finite(q.seq, 1))} を編集する（画面の明かりをこの中身に入れ替えます）`;
-      const no = el("span", "qno"); no.textContent = lxNo(sc, E.finite(q.seq, 1));
+      row.title = isEdit ? "この LXキュー を編集しています（変えたところはそのまま入ります）" : `${qLabel(q)} へ GO（画面の明かりをこの中身に入れ替えます）`;
+      const no = el("span", "qno"); no.textContent = qLabel(q); no.title = q.legacyNo ? `旧番号 ${q.legacyNo}。つまんで上下に動かすと順番を変えられます` : "つまんで上下に動かすと順番を変えられます";
       /* 番号をつまんで上下に落とすと並びが変わる。行ごと掴めるようにすると
          名前欄の文字が選べなくなるので、掴めるのは番号だけにする。 */
       no.draggable = true;
-      no.title = "つまんで上下に動かすと順番を変えられます";
       no.ondragstart = (ev) => { ev.dataTransfer.setData("text/plain", q.id); ev.dataTransfer.effectAllowed = "move"; row.classList.add("dragging"); };
       no.ondragend = () => { row.classList.remove("dragging"); li.querySelectorAll(".lxrow").forEach((r) => r.classList.remove("dropto")); };
       row.ondragover = (ev) => { ev.preventDefault(); ev.dataTransfer.dropEffect = "move"; row.classList.add("dropto"); };
@@ -4603,18 +4863,76 @@
       const nm = document.createElement("input"); nm.type = "text"; nm.value = q.name || ""; nm.placeholder = "名前（任意）";
       nm.onchange = () => { const s2 = lxScene(); const t = lxList(s2).find((z) => z.id === q.id); if (t) { t.name = nm.value.slice(0, 24); commit(); } };
       row.append(nm);
+      /* きっかけ（v2-1）: 台詞・音楽・動作。曖昧な書き方を避ける（舞台監督の流儀）。 */
+      const tg = document.createElement("input"); tg.type = "text"; tg.value = q.trigger || ""; tg.placeholder = "きっかけ（例: 「さよなら」の台詞で）"; tg.className = "lxtrigger"; tg.style.gridColumn = "1 / -1"; tg.style.fontSize = "12px";
+      tg.onchange = () => { const s2 = lxScene(); const t = lxList(s2).find((z) => z.id === q.id); if (t) { t.trigger = tg.value.slice(0, 200); commit(); } };
+      row.append(tg);
+      /* 自動送り（v2-1）: GO待ち／GOから○秒後／終わって○秒後 */
+      const fw = el("div", "lxfollow"); fw.style.cssText = "grid-column:1 / -1;display:flex;gap:4px;align-items:center;font-size:12px";
+      const fsel = document.createElement("select");
+      [["go", "次はGO待ち"], ["follow", "次をGOから"], ["hang", "次を終わって"]].forEach(([k, t]) => { const o = document.createElement("option"); o.value = k; o.textContent = t; o.selected = ((q.follow && q.follow.mode) || "go") === k; fsel.append(o); });
+      const fsec = document.createElement("input"); fsec.type = "number"; fsec.min = 0; fsec.max = 600; fsec.step = 0.1; fsec.style.width = "4.6em"; fsec.value = q.follow ? E.finite(q.follow.sec, 0) : 0; fsec.hidden = !(q.follow && q.follow.mode !== "go");
+      const fsecLabel = el("span", null, "秒後に出す"); fsecLabel.hidden = fsec.hidden;
+      const saveFollow = () => { const s2 = lxScene(); const t = lxList(s2).find((z) => z.id === q.id); if (!t) return; if (fsel.value === "go") delete t.follow; else t.follow = { mode: fsel.value, sec: E.clamp(E.finite(fsec.value, 0), 0, 600) }; commit(); };
+      fsel.onchange = saveFollow; fsec.onchange = saveFollow;
+      fw.append(fsel, fsec, fsecLabel);
+      row.append(fw);
       /* 行を押す＝そのキューの編集に入る。名前欄とボタンの上は行の操作にしない。 */
       row.onclick = (ev) => {
         if (ev.target.closest("input, button")) return;
         if (isEdit) return;
         lxEnterCue(si, q.id);
       };
+      /* 間に入れる（v2-1）: このキューの後ろに、いまの明かりで小数番号のキューを足す（Eos の 12.5 と同じ） */
+      const nextQ = sorted[index + 1];
+      const between = E.cueNumberBetween(q.no, nextQ ? nextQ.no : undefined);
+      const ib = btn(between ? `＋${between}` : "＋", () => {
+        if (!between) { toast("この間にはもう番号が入りません。次の番号で作ってください"); return; }
+        lxGoto(si);
+        const s2 = lxScene(); const id = uid("q"); const seq = E.finite(q.seq, 0) + 0.5;
+        s2.lxq = lxList(s2).concat([{ id, seq, no: between, name: "", trigger: "", at: new Date().toISOString(), cue: JSON.parse(cueJson(s2.cue)) }]);
+        lxList(s2).sort((a2, b2) => E.finite(a2.seq, 0) - E.finite(b2.seq, 0)).forEach((z, i2) => { z.seq = i2 + 1; });
+        s2.lxEditing = id;
+        commit(`Q${between} を ${qLabel(q)} の後ろに入れました`);
+      }, "small quiet", between ? `この後ろに Q${between} を入れる（いまの明かりから）` : "この間にはもう番号が入りません");
+      row.append(ib);
+      /* 時間（カット／フェード）。行の操作にしない（クリックで編集に入ってしまう）。 */
+      const tb = btn(lxTimingText(q.timing) === "カット" ? "⏱ カット" : `⏱ ${lxTimingShort(q.timing)}`, () => lxTimingDialog(si, q.id), "small quiet", lxTimingText(q.timing) + "。このキューへ移るときの時間（フェード・遅れ・カーブ・MIB）を決める");
+      tb.style.whiteSpace = "normal"; tb.style.textAlign = "left"; tb.style.lineHeight = "1.2";   // 短い表記でも2行に折り返して全部見せる
+      tb.style.maxWidth = "11em";
+      row.append(tb);
       row.append(btn("✕", () => {
-        dialog(`<p class="ptitle">LXキュー ${lxNo(sc, E.finite(q.seq, 1))} を消しますか？</p><p class="hint">この LXキュー を一覧から消します。画面に出ている明かりはそのまま残ります。</p>`,
-          [["やめる", null], ["消す", () => { const s2 = lxScene(); s2.lxq = lxList(s2).filter((z) => z.id !== q.id); if (s2.lxEditing === q.id) s2.lxEditing = null; commit(`LXキュー ${lxNo(s2, E.finite(q.seq, 1))} を消しました`); }, "primary"]]);
-      }, "small quiet", `LXキュー ${lxNo(sc, E.finite(q.seq, 1))} を消す`));
+        dialog(`<p class="ptitle">${qLabel(q)} を消しますか？</p><p class="hint">この LXキュー を一覧から消します。画面に出ている明かりはそのまま残ります。</p>`,
+          [["やめる", null], ["消す", () => { const s2 = lxScene(); s2.lxq = lxList(s2).filter((z) => z.id !== q.id); if (s2.lxEditing === q.id) s2.lxEditing = null; commit(`${qLabel(q)} を消しました`); }, "primary"]]);
+      }, "small quiet", `${qLabel(q)} を消す`));
       li.append(row);
     });
+  }
+
+  /* ---------- Qシート（LX）v2-2（2026-09-27 本人承認） ----------
+     列: Q番号｜シーン｜きっかけ｜略語｜上げ／下げ（秒）｜遅れ｜自動送り｜名前｜メモ。略語は前後の状態と秒数から自動（F.I/C.I/F.O/C.O/F.C/C.C）。
+     書式は現場ごとに自由なので、CSV をコピーして表計算で直せるようにする。 */
+  function lxSheetRows() {
+    ensureCueNumbers();
+    const all = lxAllSorted();
+    return all.map(({ q, sc, si }, i) => {
+      const T = E.normalizeTiming(q.timing);
+      const up = T ? T.fadeInSec : 0, down = T ? (T.fadeOutSec === null ? T.fadeInSec : T.fadeOutSec) : 0;
+      const dIn = T ? T.delayInSec : 0, dOut = T ? (T.delayOutSec === null ? T.delayInSec : T.delayOutSec) : 0;
+      const prev = i > 0 ? all[i - 1].q.cue : { lights: {}, groups: [] };
+      return { no: `Q${q.no}`, scene: `${si + 1}「${sc.name || ""}」`, trigger: q.trigger || "", notation: E.cueNotation(prev, q.cue, q.timing),
+        fade: T ? `${E.cueNoText(up)}／${E.cueNoText(down)}` : "0（カット）", delay: dIn || dOut ? `${E.cueNoText(dIn)}／${E.cueNoText(dOut)}` : "", follow: E.followText(q.follow),
+        name: q.name || "", memo: q.memo || "", legacy: q.legacyNo || "" };
+    });
+  }
+  const LX_SHEET_COLUMNS = [["no", "Q番号"], ["scene", "シーン"], ["trigger", "きっかけ"], ["notation", "略語"], ["fade", "上げ／下げ（秒）"], ["delay", "遅れ（秒）"], ["follow", "自動送り"], ["name", "名前"], ["memo", "メモ"]];
+  function lxSheetDialog() {
+    const rows = lxSheetRows();
+    const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const table = `<table class="lxsheet" style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>${LX_SHEET_COLUMNS.map(([, t]) => `<th style="text-align:left;border-bottom:1px solid #6b6155;padding:3px 6px;white-space:nowrap">${t}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${LX_SHEET_COLUMNS.map(([k]) => `<td style="padding:3px 6px;border-bottom:1px solid #3a3128;vertical-align:top">${esc(r[k])}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    const csv = [LX_SHEET_COLUMNS.map(([, t]) => t).join(","), ...rows.map((r) => LX_SHEET_COLUMNS.map(([k]) => `"${String(r[k]).replace(/"/g, '""')}"`).join(","))].join("\n");
+    dialog(`<p class="ptitle">Qシート（LX）</p><p class="hint">全シーンのLXキューを番号順に。略語は前後の明かりと秒数から自動で付けています（F.I＝フェードイン／C.I＝カットイン／F.O＝フェードアウト／C.O＝カットアウト／F.C＝フェードで替える／C.C＝カットで替える）。列の並びと書式は現場ごとに違うので、CSVを表計算で直してください。</p><div style="max-height:60vh;overflow:auto">${rows.length ? table : "<p class=\"hint\">LXキューがまだありません。</p>"}</div>`,
+      [["閉じる", null, "quiet"], ["CSVをコピー", () => { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(csv).then(() => toast("QシートのCSVをコピーしました")).catch(() => toast("コピーできませんでした")); else toast("この環境ではコピーできません"); }, "primary"]]);
   }
 
   function renderInspector() { return preservePanelScroll(renderInspectorContent); }
@@ -4657,6 +4975,15 @@
         if (m.type !== "cyc") {
           // レーザーも、設置場所を増やさずこの灯体の種類から選ぶ。ホリゾントライトは既製バーなので対象外。
           host.append(field("種類", seg([["moving", "ムービング"], ["fixed", "スポット"], ["laser", "レーザー"]], kindKey(f), (v) => setFixtureKind(f.id, v))));
+        }
+        /* 色の作り方（2026-09-28）: カラーホイール機は色を混ぜられない＝キューの間・動きの中の色は一瞬で替わる（実機どおり）。レーザー・ホリゾントは対象外。 */
+        if (m.type !== "cyc" && !(E.isLaser && E.isLaser(f))) {
+          const cm = seg([["mix", "混色（CMY/RGB）"], ["wheel", "カラーホイール"]], f.colorMode === "wheel" ? "wheel" : "mix", (v) => {
+            if (v === "wheel") f.colorMode = "wheel"; else delete f.colorMode;
+            commit(v === "wheel" ? `${label(f.id)}をカラーホイール機にしました（色は一瞬で替わります）` : `${label(f.id)}を混色の灯にしました`);
+          });
+          cm.title = "混色＝CMY/RGB で途中の色を作れる（フェードで混ざる）。カラーホイール＝色板を回す機種。途中の色が無いので、スナップの遅れの後に一瞬で替わる";
+          host.append(field("色の作り方", cm));
         }
         // 複製・反対側へコピー・削除は図の下の帯へ移した（同じ操作を2か所に置かない）
       } else if (ids.length > 1) {
@@ -4732,6 +5059,36 @@
         sw.append(pick);
         if (isCyc) sw.append(btn("グラデーション", () => openCycGradientDialog(fid), "gradbtn", "画面の左端から右端へ色を配る"));
         b.append(sw);
+        /* 第6弾（2026-09-27）: 終点の色。ムービングだけ。強さ・広がりと同じ位相で、始めの色から終わりの色へ移る。 */
+        if (mover && !isCyc) {
+          const autoColor = l.colorTo != null;
+          const head = el("div", "pboxhead"); head.append(el("p", "kicker", "終点の色"));
+          head.append(switchBtn(autoColor, autoColor ? "色が動きの中で移っています。押すと止めます（始めの色に戻ります）" : "押すと動きの終点に別の色を置き、位置と同じ位相で色が移ります", () => {
+            const l2 = lightOf(fid);
+            if (l2.colorTo != null) { delete l2.colorTo; commit("色の動きを止めました"); }
+            else { l2.colorTo = /^#[0-9a-f]{6}$/i.test(l2.color || "") ? l2.color : "#f2ead6"; commit("動きの終点に色を置きました（終点の色を選んでください）"); }
+          }));
+          b.append(head);
+          if (autoColor) {
+            const sw2 = el("div", "swatches");
+            const swatch2 = (c, custom) => {
+              const sb = document.createElement("button"); sb.type = "button"; sb.className = custom ? "custom" : "";
+              sb.style.background = c; sb.title = custom ? `作った色 ${c}` : c;
+              sb.setAttribute("aria-pressed", String((l.colorTo || "").toLowerCase() === c.toLowerCase()));
+              sb.onclick = () => { setLight(fid, { colorTo: c }); commit(); };
+              return sb;
+            };
+            COLORS.forEach((c) => sw2.append(swatch2(c, false)));
+            state.palette.forEach((c) => sw2.append(swatch2(c, true)));
+            const pick2 = document.createElement("input"); pick2.type = "color"; pick2.className = "mkcolor";
+            pick2.value = /^#[0-9a-f]{6}$/i.test(l.colorTo || "") ? l.colorTo : "#ffd27a";
+            pick2.title = "終点の色を作る";
+            pick2.oninput = () => { setLight(fid, { colorTo: pick2.value }); draw(); };
+            pick2.onchange = () => { setLight(fid, { colorTo: pick2.value.toLowerCase() }); commit(); };
+            sw2.append(pick2);
+            b.append(sw2);
+          }
+        }
         const cur = (l.color || "").toLowerCase();
         if (state.palette.some((x) => x.toLowerCase() === cur)) {
           b.append(btn(`この色（${cur}）を作った色から外す`, () => { state.palette = state.palette.filter((x) => x.toLowerCase() !== cur); commit(); }, "small quiet"));
@@ -4795,10 +5152,19 @@
           const st = l.strobe || {};
           const setStrobe = (patch) => { const l2 = lightOf(fid); l2.strobe = { ...l2.strobe, on: true, ...patch }; };
           const kind = st.kind || "soft";
-          b.append(field("種類", seg([["sharp", "ストロボ"], ["soft", "やわらかい"]], kind, (v) => { setStrobe({ kind: v }); commit(); }), true));
-          const hz = E.clamp(E.finite(st.hz, 6), 0.5, 20);
-          b.append(field("速さ", range(0.5, 20, 0.5, hz, (v) => `1秒に${v % 1 === 0 ? v : v.toFixed(1)}回`, (v) => { setStrobe({ hz: v }); draw(); }, () => commit()), true));
-          if (kind === "sharp") {
+          /* 種類（2026-09-27）: 実機の語彙（GDTF）に合わせて9種。保存値は engine の kind そのまま。 */
+          const KIND_OPTS = [["sharp", "ストロボ（くっきり）"], ["soft", "パルス（やわらかい）"], ["rampUp", "パルス・ゆっくり開く"], ["rampDown", "パルス・ゆっくり閉じる"], ["random", "ランダム"], ["randomPulse", "ランダムパルス"], ["flicker", "ちらつき（炎）"], ["lightning", "稲妻"], ["heartbeat", "鼓動"]];
+          const kindSel = document.createElement("select");
+          KIND_OPTS.forEach(([k, t]) => { const o = document.createElement("option"); o.value = k; o.textContent = t; o.selected = k === kind; kindSel.append(o); });
+          kindSel.onchange = () => { const patch = { kind: kindSel.value }; if (["flicker", "lightning", "random", "randomPulse"].includes(kindSel.value) && st.seed == null) patch.seed = Math.floor(Math.random() * 1e6); setStrobe(patch); commit(); };
+          b.append(field("種類", kindSel, true));
+          const hz = E.clamp(E.finite(st.hz, 6), 0.3, 20);
+          b.append(field("速さ", range(0.3, 20, 0.1, hz, (v) => `1秒に${v % 1 === 0 ? v : v.toFixed(1)}回`, (v) => { setStrobe({ hz: v }); draw(); }, () => commit()), true));
+          /* 実機のスパイク（底）・ブラインダー（周数＋終わったら）。 */
+          b.append(field("消えている間の強さ", range(0, 90, 5, E.clamp(E.finite(st.floor, 0), 0, 90), (v) => (v <= 0 ? "真っ暗" : `${Math.round(v)}%（スパイク）`), (v) => { setStrobe({ floor: v }); draw(); }, () => commit()), true));
+          b.append(field("繰り返し", range(0, 20, 1, E.clamp(E.finite(st.loops, 0), 0, 20), (v) => (v <= 0 ? "ずっと" : `${Math.round(v)}周で止める`), (v) => { setStrobe({ loops: v }); draw(); }, () => commit()), true));
+          if (E.finite(st.loops, 0) >= 1) b.append(field("終わったら", seg([["off", "消す"], ["hold", "点けたまま（ブラインダー）"]], st.after === "hold" ? "hold" : "off", (v) => { setStrobe({ after: v }); commit(); }), true));
+          if (kind === "sharp" || kind === "random") {
             b.append(field("点灯の長さ", range(5, 95, 5, E.clamp(E.finite(st.duty, 50), 5, 95), (v) => `${Math.round(v)}%（${v < 30 ? "短く鋭い" : v > 70 ? "長め" : "半々"}）`, (v) => { setStrobe({ duty: v }); draw(); }, () => commit()), true));
           } else {
             b.append(field("沈む深さ", range(0, 100, 5, E.clamp(E.finite(st.depth, 0), 0, 100), (v) => `${Math.round(v)}%（${v < 5 ? "点滅なし" : v < 30 ? "うっすら" : v > 80 ? "ほぼ消える" : "はっきり"}）`, (v) => { setStrobe({ depth: v }); draw(); }, () => commit()), true));
@@ -4907,10 +5273,37 @@
         b.append(head);
         if (autoPos) {
           /* 軌道の形とその寸法。止める／動かすは上のスイッチが持つので「動きなし」は置かない。 */
-          b.append(field("軌道", seg([["line", "往復"], ["circle", "円"], ["eight", "8の字"]], p.kind, (v) => { setKind(fid, v); commit(); }), true));
+          b.append(field("軌道", seg([["line", "往復"], ["circle", "円"], ["eight", "8の字"], ["poly", "点の列"]], p.kind, (v) => { setKind(fid, v); commit(); }), true));
           if (p.kind === "line") {
             b.append(field("始め方", seg([["a", "始点 → 終点"], ["b", "終点 → 始点"]], p.start || "a", (v) => { p.start = v; commit(); })));
             heightField(b, "始点の高さ", p.a); heightField(b, "終点の高さ", p.b);
+            /* 端で止まる秒（2026-09-27）。卓の Width／Transition を「止まる秒」で持つ。 */
+            const dw = p.dwell || {};
+            const dwText = (v) => (v < 0.05 ? "止まらない" : `${v.toFixed(1)}秒止まる`);
+            b.append(field("始点で止まる", range(0, 10, 0.1, E.finite(dw.a, 0), dwText, (v) => { p.dwell = { ...(p.dwell || {}), a: v }; draw(); }, () => commit())));
+            b.append(field("終点で止まる", range(0, 10, 0.1, E.finite(dw.b, 0), dwText, (v) => { p.dwell = { ...(p.dwell || {}), b: v }; draw(); }, () => commit())));
+          }
+          if (p.kind === "poly") {
+            /* 点の列（2026-09-27）。平面図で番号の丸をつまんで動かせる。各点に「動く秒」「止まる秒」。 */
+            const pts = Array.isArray(p.points) ? p.points : (p.points = []);
+            b.append(field("回り方", seg([["loop", "ぐるっと"], ["bounce", "往復"], ["once", "一度だけ"]], p.mode || "loop", (v) => { p.mode = v; commit(); }), true));
+            const total = E.polyCycleMs(p) / 1000;
+            b.append(el("p", "hint", `${pts.length}点・1周 ${total.toFixed(1)}秒（各点の秒数の合計）`));
+            pts.forEach((pt, k) => {
+              const row = el("div", "field wide"); row.append(el("span", null, `点${k + 1}`));
+              const wrap = el("div", "seg");
+              const mk = (lab, key, val, max) => { const i = document.createElement("input"); i.type = "number"; i.className = "numin"; i.min = 0; i.max = max; i.step = 0.1; i.value = val; i.title = lab; i.style.width = "4.6em"; i.onchange = () => { pt[key] = E.clamp(E.finite(i.value, val), 0, max); commit(); }; const lb = el("span", null, lab); lb.style.fontSize = "12px"; wrap.append(lb, i); };
+              mk("動く秒", "moveSec", E.finite(pt.moveSec, 1), 600); mk("止まる秒", "dwellSec", E.finite(pt.dwellSec, 0), 600);
+              wrap.append(btn("✕", () => { if (pts.length <= 2) { toast("点は2つ以上必要です"); return; } pts.splice(k, 1); commit(`点${k + 1}を消しました`); }, "small quiet", "この点を消す"));
+              row.append(wrap); b.append(row);
+            });
+            b.append(btn("＋ 点を足す（最後の点の隣に）", () => {
+              if (pts.length >= 24) { toast("点は24までです"); return; }
+              const last = pts[pts.length - 1] || E.newPoint();
+              pts.push({ ...last, u: E.clamp(E.finite(last.u, 0.5) + 0.12, 0, 1), moveSec: E.finite(last.moveSec, 1), dwellSec: E.finite(last.dwellSec, 0) });
+              commit(`点${pts.length}を足しました`);
+            }, "small"));
+            if (pts[0]) heightField(b, "点1の高さ（全点に同じ高さ）", pts[0]);
           }
           if (p.kind === "circle" || p.kind === "eight") {
             if (l.surface === "air") b.append(field("回る面", seg([["horizontal", "水平"], ["frontVertical", "客席側から見た縦"], ["sideVertical", "舞台横から見た縦"]], p.plane || "horizontal", (v) => { p.plane = v; commit(); }, "col"), true));
@@ -4936,14 +5329,31 @@
         if (b && anyAuto) {
           b.append(el("p", "kicker", "動きの時間（位置・光量・広がりで共通）"));
           // 端での運び方（2026-09-12 本人指定で「切り返し」＝リニア／イーズ）。位置・強さ・広がりに共通
-          b.append(field("切り返し", seg([["linear", "リニア"], ["ease", "イーズ"]], p.easing || "ease", (v) => { p.easing = v; commit(); })));
+          /* 運び方（2026-09-27）: 従来の リニア／イーズ に、卓の Transition に当たる緩急を足した。
+             データは path.curve（既定名か {accel,decel}）。「一定」「なめらか」は従来の easing に戻す＝古い版でも同じ形。 */
+          const curveNow = typeof p.curve === "string" ? p.curve : (p.curve && typeof p.curve === "object") ? "custom" : ((p.easing || "ease") === "linear" ? "linear" : "ease");
+          const curveSel = document.createElement("select");
+          CURVE_LABELS.concat([["custom", "数値で（加速・減速）"]]).forEach(([k, t]) => { const o = document.createElement("option"); o.value = k; o.textContent = t; o.selected = k === curveNow; curveSel.append(o); });
+          curveSel.onchange = () => {
+            const v = curveSel.value;
+            if (v === "linear" || v === "ease") { delete p.curve; p.easing = v; }
+            else if (v === "custom") { p.curve = { accel: 0, decel: 0 }; }
+            else { p.curve = v; delete p.easing; }
+            commit();
+          };
+          b.append(field("運び方", curveSel, true));
+          if (p.curve && typeof p.curve === "object") {
+            b.append(field("加速（−100 なめらか … 200 急）", range(-100, 200, 10, E.finite(p.curve.accel, 0), (v) => `${Math.round(v)}`, (v) => { p.curve.accel = v; draw(); }, () => commit())));
+            b.append(field("減速（−100 なめらか … 200 急）", range(-100, 200, 10, E.finite(p.curve.decel, 0), (v) => `${Math.round(v)}`, (v) => { p.curve.decel = v; draw(); }, () => commit())));
+          }
           const secNow = l.periodSec == null ? E.SPEED_PERIOD_MS[l.speed] / 1000 : l.periodSec;
-          b.append(field("秒で決める", range(0.4, 30, 0.1, secNow, (v) => `${v.toFixed(1)}秒`, (v) => { l.periodSec = v; draw(); }, () => commit())));
+          if (p.kind === "poly") b.append(el("p", "hint", `点の列は各点の秒数の合計で回ります（1周 ${(E.polyCycleMs(p) / 1000).toFixed(1)}秒）`));
+          else b.append(field("秒で決める", range(0.4, 30, 0.1, secNow, (v) => `${v.toFixed(1)}秒`, (v) => { l.periodSec = v; draw(); }, () => commit())));
           /* 何秒遅れて始めるか。組の「順番に動く」とは別に、一灯ずつずらせる（2026-09-12 本人要望）。 */
           b.append(field("オフセット", range(-10, 10, 0.1, E.finite(l.offsetSec, 0), (v) => (Math.abs(v) < 0.05 ? "なし" : `${v > 0 ? "+" : ""}${v.toFixed(1)}秒`), (v) => { l.offsetSec = v; draw(); }, () => commit())));
           const acts = el("div", "seg");
           acts.append(btn(state.copiedPath && state.copiedPath.from === fid ? "コピー済み" : "この動きをコピー", () => {
-            state.copiedPath = { from: fid, label: label(fid), path: JSON.parse(JSON.stringify(p)), speed: l.speed, periodSec: l.periodSec, beamDeg: l.beamDeg, beamDegTo: l.beamDegTo, levelTo: l.levelTo };
+            state.copiedPath = { from: fid, label: label(fid), path: JSON.parse(JSON.stringify(p)), speed: l.speed, periodSec: l.periodSec, beamDeg: l.beamDeg, beamDegTo: l.beamDegTo, levelTo: l.levelTo, colorTo: l.colorTo };
             renderAll(); toast(`${label(fid)}の動きをコピーしました。別のムービングを選んで貼り付けられます。`);
           }, "small"));
           b.append(field("動きのコピー", acts));
@@ -4951,7 +5361,7 @@
         if (b && state.copiedPath && state.copiedPath.from !== fid) {
           const c = state.copiedPath;
           b.append(field("貼り付け", btn(`${c.label}の動きを貼り付ける`, () => {
-            setLight(fid, { path: JSON.parse(JSON.stringify(c.path)), speed: c.speed, periodSec: c.periodSec, beamDeg: c.beamDeg, beamDegTo: c.beamDegTo, levelTo: c.levelTo });
+            setLight(fid, { path: JSON.parse(JSON.stringify(c.path)), speed: c.speed, periodSec: c.periodSec, beamDeg: c.beamDeg, beamDegTo: c.beamDegTo, levelTo: c.levelTo, colorTo: c.colorTo });
             commit(`${c.label}の動きを${label(fid)}へ写しました（オフセットは灯ごとのまま）`);
           }, "small primary")));
         }
@@ -5041,14 +5451,14 @@
        どのキューにも入っていなければ「未登録の下書き」と出す。 */
     { const qn = $("qnow");
       if (qn) { qn.hidden = !inMove; const sc0 = scene(), q0 = lxEditingQ(sc0);
-        qn.innerHTML = q0 ? `LXキュー ${lxNo(sc0, E.finite(q0.seq, 1))}${q0.name ? `<em>${q0.name.replace(/[<>&]/g, "")}</em>` : ""}` : "未登録の下書き";
+        qn.innerHTML = q0 ? `${qLabel(q0)}${q0.name ? `<em>${q0.name.replace(/[<>&]/g, "")}</em>` : ""}` : "未登録の下書き";
         qn.classList.toggle("draft", !q0);
         qn.title = q0 ? "この LXキュー を編集しています。変えたところはそのまま入ります" : "どの LXキュー にも入っていません。LXキュー パネルの〈＋ 新規 LXキュー〉で1本にできます"; } }
     /* 中央の表示の左右＝前後の LXキュー へ。行き先が無ければ押せなくする。 */
     { const nb = lxNeighbors(), sc0 = scene();
       const set2 = (id, q, word) => { const b = $(id); if (!b) return;
         b.disabled = !q; b.hidden = state.mode !== "move";
-        b.title = q ? `${word}の LXキュー ${lxNo(sc0, E.finite(q.seq, 1))}${q.name ? `「${q.name}」` : ""} へ` : `${word}の LXキュー はありません`; };
+        b.title = q ? `${word}の ${qLabel(q)}${q.name ? `「${q.name}」` : ""} へ GO` : `${word}の LXキュー はありません`; };
       set2("q-prev", nb.prev, "前"); set2("q-next", nb.next, "次"); }
     $("transport").hidden = !inMove;
     $("empty").hidden = Boolean(state.rig.trusses.length || state.rig.fixtures.length);
@@ -5111,7 +5521,7 @@
         const qs = [...lxList(sc)].sort((a, b) => E.finite(a.seq, 0) - E.finite(b.seq, 0));
         const editing = lxEditingOf(sc);
         const chips = qs.length
-          ? qs.map((q) => `<button type="button" class="allq${q.id === editing ? " editing" : ""}" data-scene="${i}" data-q="${q.id}" title="${esc(q.name || "")}">${lxNo(sc, E.finite(q.seq, 1))}</button>`).join("")
+          ? qs.map((q) => `<button type="button" class="allq${q.id === editing ? " editing" : ""}" data-scene="${i}" data-q="${q.id}" title="${esc(q.name || "")}">${qLabel(q)}</button>`).join("")
           : `<span class="allnone">LXキュー なし</span>`;
         return `<div class="allscene${i === state.sceneIndex ? " cur" : ""}">
             <span class="allsname" data-scene="${i}" role="button" tabindex="0">${esc(sc.name)}<small>シーン${i + 1}・LXキュー ${qs.length}本</small></span>
@@ -5493,7 +5903,7 @@
       stage: { ...state.dims },
       coords: {
         u: "左右 0=下手 〜 1=上手", v: "奥行き 0=最奥 〜 1=最前（客席側）", hM: "床からの高さ（m）",
-        level: "強さ 0〜100（0は消灯と同じ）", levelTo: "動きの終点の強さ（無ければ変化なし）",
+        level: "強さ 0〜100（0は消灯と同じ）", levelTo: "動きの終点の強さ（無ければ変化なし）", colorTo: "動きの終点の色 #rrggbb（無ければ変化なし）",
         beamDeg: "光の広がり（度）", beamDegTo: "動きの終点の広がり（無ければ変化なし）",
         periodSec: "1往復（1周）の秒数", offsetSec: "何秒遅らせて始めるか",
         lx: "そのシーンのLXキュー番号の頭2つ { section, no }",

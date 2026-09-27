@@ -78,6 +78,58 @@
     return scenes[0].id;
   }
 
+  /* v2-3（2026-09-27 本人承認）: タイムラインのライトキュー <-> 照明デザインのLXキュー（scene.lxq）の結び付け。
+     明示の cue.lxId があればそれ。無ければ「同じシーンの n 番目のライトキュー <-> 番号順 n 番目のLXキュー」（既定の結び付け）。
+     返すのは Q番号・きっかけ・略語・秒数・自動送りと、混ぜるための cue/prevCue。無ければ null。 */
+  const LX_NO_RE = /^\d{1,4}(\.\d{1,3})?$/;
+  const lxNoValue = (q) => (q && typeof q.no === "string" && LX_NO_RE.test(q.no) ? Number(q.no) : NaN);
+  function lxSortedOf(scene) {
+    return list(scene && scene.lxq).filter((q) => q && typeof q === "object").slice().sort((a, b) => {
+      const va = lxNoValue(a), vb = lxNoValue(b);
+      if (Number.isFinite(va) && Number.isFinite(vb) && va !== vb) return va - vb;
+      return finite(a.seq, 0) - finite(b.seq, 0);
+    });
+  }
+  function lightCueLink(project, cue, ordinal) {
+    const design = project && project.lightingDesign;
+    const sceneId = cue && (cue.sceneId || cueSceneId(project, cue));
+    if (!design || !Array.isArray(design.scenes) || !sceneId) return null;
+    const scene = design.scenes.find((row) => row && row.id === sceneId);
+    if (!scene) return null;
+    const sorted = lxSortedOf(scene);
+    let q = cue && typeof cue.lxId === "string" ? sorted.find((row) => row.id === cue.lxId) || null : null;
+    const n = Math.floor(finite(ordinal, 0));
+    if (!q && n >= 1) q = sorted[n - 1] || null;
+    if (!q) return null;
+    const sceneOrder = new Map(design.scenes.map((row, index) => [row && row.id, index]));
+    const all = design.scenes.flatMap((row) => lxSortedOf(row).map((x) => ({ q: x, sceneId: row.id })))
+      .sort((a, b) => {
+        const va = lxNoValue(a.q), vb = lxNoValue(b.q);
+        if (Number.isFinite(va) && Number.isFinite(vb) && va !== vb) return va - vb;
+        return (sceneOrder.get(a.sceneId) || 0) - (sceneOrder.get(b.sceneId) || 0) || finite(a.q.seq, 0) - finite(b.q.seq, 0);
+      });
+    const at = all.findIndex((x) => x.q.id === q.id);
+    const prevCue = at > 0 ? all[at - 1].q.cue : { lights: {}, groups: [] };
+    const E = root.RIG_ENGINE || null;
+    const T = E && typeof E.normalizeTiming === "function" ? E.normalizeTiming(q.timing) : null;
+    const fadeIn = T ? T.fadeInSec : 0, fadeOut = T ? (T.fadeOutSec === null ? T.fadeInSec : T.fadeOutSec) : 0;
+    return {
+      id: q.id, no: typeof q.no === "string" ? q.no : "", label: typeof q.no === "string" && LX_NO_RE.test(q.no) ? `Q${q.no}` : "",
+      name: typeof q.name === "string" ? q.name : "", trigger: typeof q.trigger === "string" ? q.trigger : "",
+      notation: E && typeof E.cueNotation === "function" ? E.cueNotation(prevCue, q.cue, q.timing) : "",
+      fadeIn, fadeOut, delayIn: T ? T.delayInSec : 0, mib: Boolean(T && T.mib),
+      fadeText: T ? `${fadeIn}/${fadeOut}s` : "カット",
+      follow: E && typeof E.followText === "function" ? E.followText(q.follow) : "",
+      timing: q.timing || null, cue: q.cue || { lights: {}, groups: [] }, prevCue,
+    };
+  }
+  /* Qシートの1行の文字。LXキューは Q番号・略語・秒数・きっかけを添える。 */
+  function cueLine(cue) {
+    const lx = cue && cue.lx;
+    const extra = lx ? ` [${[lx.label, lx.notation, lx.fadeText].filter(Boolean).join(" ")}]${lx.trigger ? ` きっかけ: ${lx.trigger}` : ""}` : "";
+    return `${cue.displayName}${extra}${cue.memo ? ` ${cue.memo}` : ""}`;
+  }
+
   function cuePresentations(project) {
     const rows = list(project && project.scenes);
     const numbers = sceneNumberMap(rows);
@@ -95,7 +147,8 @@
       const ordinal = (ordinals.get(ordinalKey) || 0) + 1;
       ordinals.set(ordinalKey, ordinal);
       const sceneNumber = numbers.get(cue.sceneId) || "1";
-      return { ...cue, sceneNumber, ordinal, displayName: formatCueDisplayName(cue.cueType, sceneNumber, ordinal) };
+      const lx = cue.cueType === "light" ? lightCueLink(project, cue, ordinal) : null;
+      return { ...cue, sceneNumber, ordinal, lx, displayName: formatCueDisplayName(cue.cueType, sceneNumber, ordinal) };
     });
   }
 
@@ -212,7 +265,7 @@
     const cuesByScene = new Map();
     cues.forEach((cue) => {
       if (!cuesByScene.has(cue.sceneId)) cuesByScene.set(cue.sceneId, []);
-      cuesByScene.get(cue.sceneId).push(`${cue.displayName}${cue.memo ? ` ${cue.memo}` : ""}`);
+      cuesByScene.get(cue.sceneId).push(cueLine(cue));
     });
     const t = (key) => translate(helpers, key);
     const columns = [
@@ -340,17 +393,25 @@
         const cues = list(cuesByScene.get(scene.id)).filter((cue) => cue.cueType === type);
         const base = { scene: sceneCell(scene, index), sceneId: scene.id };
         if (!cues.length) { rows.push({ ...base, cue: "—", memo: "", ...(extra ? extra(scene, index, true) : {}) }); return; }
-        cues.forEach((cue, cueIndex) => rows.push({ ...base, cue: cue.displayName, memo: text(cue.memo), ...(extra ? extra(scene, index, cueIndex === 0) : {}) }));
+        cues.forEach((cue, cueIndex) => rows.push({ ...base, cue: cue.displayName, memo: text(cue.memo), ...(extra ? extra(scene, index, cueIndex === 0, cue) : {}) }));
       });
       return rows;
     };
     if (dept === "light") {
-      const rows = cueRows("light", (scene, index, first) => {
-        if (!first) return { on: "", off: "", level: "" };
+      /* v2-3（2026-09-27）: 照明デザインのLXキューに結び付いた行は、Q番号（キュー欄の頭）・略語＋秒（時間欄）・きっかけ欄を添える。
+         結び付きが無い行は従来どおり（時間・きっかけは空欄）。 */
+      const rows = cueRows("light", (scene, index, first, cue) => {
+        const lx = cue && cue.lx;
+        const linked = lx ? {
+          cue: lx.label ? `${lx.label} · ${cue.displayName}` : cue.displayName,
+          time: [lx.notation, lx.notation && lx.fadeText === "カット" ? "" : lx.fadeText].filter(Boolean).join(" "),
+          trigger: lx.trigger || "",
+        } : { time: "", trigger: "" };
+        if (!first) return { ...linked, on: "", off: "", level: "" };
         const changes = helpers.lightChanges ? helpers.lightChanges(index > 0 ? scenes[index - 1] : null, scene) : { on: [], off: [], changed: [] };
-        return { on: list(changes.on).join(" / "), off: list(changes.off).join(" / "), level: list(changes.changed).join(" / ") };
+        return { ...linked, on: list(changes.on).join(" / "), off: list(changes.off).join(" / "), level: list(changes.changed).join(" / ") };
       });
-      return baseDepartmentSheet(project, dept, helpers, [["scene", "シーン", "20%"], ["cue", "キュー", "13%"], ["memo", "メモ", "31%"], ["on", "点く", "12%"], ["off", "消える", "12%"], ["level", "強さ", "12%"]], rows);
+      return baseDepartmentSheet(project, dept, helpers, [["scene", "シーン", "18%"], ["cue", "キュー", "15%"], ["time", "時間", "9%"], ["trigger", "きっかけ", "13%"], ["memo", "メモ", "21%"], ["on", "点く", "8%"], ["off", "消える", "8%"], ["level", "強さ", "8%"]], rows);
     }
     if (dept === "music" || dept === "dialogue") {
       return baseDepartmentSheet(project, dept, helpers, [["scene", "シーン", "26%"], ["cue", "キュー", "16%"], ["memo", "メモ", "58%"]], cueRows(dept));
@@ -388,7 +449,7 @@
     presentations.forEach((cue) => {
       if (!cueTextByScene.has(cue.sceneId)) cueTextByScene.set(cue.sceneId, { light: [], music: [], dialogue: [] });
       const bucket = cueTextByScene.get(cue.sceneId)[cue.cueType];
-      if (bucket) bucket.push(`${cue.displayName}${cue.memo ? ` ${cue.memo}` : ""}`);
+      if (bucket) bucket.push(cueLine(cue));
     });
     const cueText = (sceneId, type) => list(cueTextByScene.get(sceneId) && cueTextByScene.get(sceneId)[type]).join(" / ");
     const columns = [{ key: "scene", label: t("シーン"), role: "scene" }]
@@ -519,6 +580,9 @@
   }
 
   root.SHOSAI_CUE_SHEET = Object.freeze({
+    lightCueLink,
+    lxSortedOf,
+    cueLine,
     buildPerformerSheet,
     performerColumns,
     layoutColumns,

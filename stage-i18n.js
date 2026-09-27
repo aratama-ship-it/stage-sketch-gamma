@@ -1292,6 +1292,7 @@
     "台詞": "Line",
     "音・音楽": "Sound / music",
     "時間": "Time",
+    "きっかけ": "Trigger",
     "手動のGO": "Manual GO",
     "そのまま保つ": "Hold",
     "明るくなる": "Fade in",

@@ -60,13 +60,16 @@
   const STROBE_IDS = STROBE_METHODS.map(([id]) => id);
   /* 強さの形（rig-engine の strobeWave）。「沈む深さ」の既定は形ごとに要る値が違うので一緒に持つ
      ——稲妻は間が真っ暗でないと閃光に見えず、炎は浅く揺れないと不自然になる。 */
+  /* 2026-09-27: 実機の語彙に寄せた名前を併記（GDTF: Strobe／Pulse／PulseOpen／PulseClose／Random／RandomPulse）。保存値は変えない。 */
   const STROBE_KINDS = [
-    ["sharp", "くっきり"], ["soft", "やわらかい"],
-    ["rampUp", "だんだん明るく"], ["rampDown", "だんだん暗く"],
+    ["sharp", "ストロボ（くっきり）"], ["soft", "パルス（やわらかい）"],
+    ["rampUp", "パルス・ゆっくり開く（だんだん明るく）"], ["rampDown", "パルス・ゆっくり閉じる（だんだん暗く）"],
+    ["random", "ランダム"], ["randomPulse", "ランダムパルス"],
     ["flicker", "ちらつき（炎）"], ["lightning", "稲妻"], ["heartbeat", "鼓動"],
   ];
-  const KIND_DEPTH = { soft: 60, rampUp: 100, rampDown: 100, flicker: 45, lightning: 100, heartbeat: 85 };
-  const KIND_NEEDS_SEED = (kind) => kind === "flicker" || kind === "lightning";
+  const KIND_DEPTH = { soft: 60, rampUp: 100, rampDown: 100, randomPulse: 70, flicker: 45, lightning: 100, heartbeat: 85 };
+  const KIND_NEEDS_SEED = (kind) => ["flicker", "lightning", "random", "randomPulse"].includes(kind);
+  const KIND_USES_DUTY = (kind) => kind === "sharp" || kind === "random";
   const isStrobe = (preset) => preset && preset.family === "flash";
   const strobeMethodId = () => (STROBE_IDS.includes(ui.selectedId) ? ui.selectedId : STROBE_IDS[0]);
   const methodName = (id) => (STROBE_METHODS.find(([m]) => m === id) || [id, id])[1];
@@ -567,7 +570,13 @@
        順送り専用にしない。相方のつまみは くっきり＝点いている割合、それ以外＝沈む深さ。 */
     if (isStrobe(preset)) {
       html += sel("kind", "光り方", STROBE_KINDS);
-      html += ui.kind === "sharp" ? num("duty", "点いている割合（%）", 5, 95, 5) : num("depth", "沈む深さ（%）", 0, 100, 5);
+      html += KIND_USES_DUTY(ui.kind) ? num("duty", "点いている割合（%）", 5, 95, 5) : num("depth", "沈む深さ（%）", 0, 100, 5);
+      /* 順送り以外の方式にも底・周数（実機のスパイク／ブラインダー）。順送りは上で出している。 */
+      if (preset.id !== "flash.sequence") {
+        html += num("floor", "消えている間の強さ（%）", 0, 90, 5);
+        html += num("loops", "繰り返し（0＝ずっと）", 0, 99, 1);
+        if (Number(ui.loops) >= 1) html += sel("after", "終わったら", [["off", "消す"], ["hold", "点けたまま（ブラインダー）"]]);
+      }
     }
     /* どの方式でも、点滅と一緒に太さ・強さを決められる（2026-09-17 本人要望）。
        既定は「変えない」＝いまの値のまま。点滅を当てただけで明るさが変わると驚くため。 */

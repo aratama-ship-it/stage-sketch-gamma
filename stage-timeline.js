@@ -1514,6 +1514,8 @@
     return Number.isFinite(length) && length > 0 && Number.isFinite(seconds) && seconds >= length - 1e-3;
   }
 
+  /* v2-3: 画面に出す名前。結び付いたLXキューがあれば Q番号（＋名前・略語）、無ければ従来の表示名。 */
+  const cueShownName = (cue) => (cue && cue.shownName ? cue.shownName : (cue ? cue.displayName : ""));
   function timelineCuePresentations(project, tl = timeline) {
     const sceneNumbers = timelineSceneNumberMap(project.scenes);
     const ordinals = new Map();
@@ -1524,13 +1526,18 @@
       const ordinalKey = `${cue.cueType}:${sceneId}`;
       const ordinal = (ordinals.get(ordinalKey) || 0) + 1;
       ordinals.set(ordinalKey, ordinal);
+      /* v2-3: ライトキューは結び付いたLXキューの Q番号で見せる（無ければ従来の LXキュー n-m） */
+      const lx = cue.cueType === "light" && window.SHOSAI_CUE_SHEET && typeof window.SHOSAI_CUE_SHEET.lightCueLink === "function"
+        ? window.SHOSAI_CUE_SHEET.lightCueLink(project, { ...cue, sceneId }, ordinal) : null;
       return {
         ...cue,
         sceneId,
         sceneNumber,
+        lx,
         sceneTitle: segment && segment.title || tx("シーン"),
         displayName: `${window.SHOSAI_CUE_SHEET.formatCueDisplayName(cue.cueType, sceneNumber, ordinal)}${
           cue.cueType === "music" && musicCueIsSilent(project, tl, cue.seconds) ? tx("（無音）") : ""}`,
+        shownName: lx && lx.label ? `${lx.label}${lx.name ? `「${lx.name}」` : ""}${lx.notation ? ` ${lx.notation}` : ""}` : "",
         silent: cue.cueType === "music" && musicCueIsSilent(project, tl, cue.seconds),
       };
     });
@@ -1547,15 +1554,22 @@
     return cues[cues.length - 1] || null;
   }
 
+  function timelineIsPlaying() {
+    return Boolean(silentPlayback) || Boolean(els.audio && audioMatchesTimeline() && !els.audio.paused && !els.audio.ended);
+  }
   function syncTimelineLightCue(seconds, { force = false } = {}) {
     if (typeof bridge.applyTimelineLightCue !== "function") return false;
     const cue = timelineLightCueAt(seconds);
-    const identity = cue ? `${timeline.sectionId || "show"}:${cue.id}:${cue.sceneId}`
+    const playing = timelineIsPlaying();
+    /* v2-3: 止まっているときは「キューからの経過」も同一性に含める（シーク位置で途中の明かりを出す）。
+       再生中は経過を舞台側の時計に任せる（毎フレーム呼ばない）。 */
+    const offset = cue ? Math.max(0, seconds - cue.seconds) : 0;
+    const identity = cue ? `${timeline.sectionId || "show"}:${cue.id}:${cue.sceneId}${playing ? "" : `:${Math.round(offset * 10)}`}`
       : `${timeline && timeline.sectionId || "show"}:none`;
     if (!force && appliedLightCueIdentity === identity) return false;
     appliedLightCueIdentity = identity;
     return Boolean(bridge.applyTimelineLightCue(cue
-      ? { cueId: cue.id, sceneId: cue.sceneId }
+      ? { cueId: cue.id, sceneId: cue.sceneId, atSeconds: cue.seconds, seconds, playing, lxId: cue.lx ? cue.lx.id : null }
       : null));
   }
 
@@ -1703,7 +1717,7 @@
     if (!cue || !els.cueDetailModal) return;
     cueDetailId = cue.id;
     cueDetailReturnFocus = returnFocus || null;
-    els.cueDetailTitle.textContent = cue.displayName;
+    els.cueDetailTitle.textContent = cueShownName(cue);
     els.cueDetailScene.textContent = `${cue.sceneNumber}  ${cue.sceneTitle}`;
     els.cueDetailPosition.textContent = labelPosition(cue.seconds);
     els.cueDetailNote.value = String(cue.memo || "");
@@ -1728,10 +1742,10 @@
     const line = button.querySelector(".stage-cue-step-line");
     button.disabled = !entry;
     button.dataset.cueId = entry ? entry.id : "";
-    name.textContent = entry ? entry.displayName : tx("ありません");
+    name.textContent = entry ? cueShownName(entry) : tx("ありません");
     line.textContent = entry
       ? `${entry.speaker ? `${entry.speaker}「` : "「"}${entry.line || tx("（文字なし）")}」` : "";
-    button.title = entry ? `${entry.displayName}（${entry.sectionTitle} / ${entry.sceneTitle}）` : "";
+    button.title = entry ? `${cueShownName(entry)}（${entry.sectionTitle} / ${entry.sceneTitle}）` : "";
   }
 
   function renderCueDetailVox(cue) {
@@ -2228,7 +2242,7 @@
     peek.textContent = "";
     const head = document.createElement("p");
     head.className = "stage-timeline-cue-peek-head";
-    head.textContent = `${cue.displayName}  ${labelPosition(cue.seconds)}`;
+    head.textContent = `${cueShownName(cue)}  ${labelPosition(cue.seconds)}`;
     peek.append(head);
     if (entry && entry.speaker) {
       const who = document.createElement("p");
@@ -2306,9 +2320,9 @@
       if (cue.locked) button.append(lockIndicator(null, true));
       const label = document.createElement("span");
       label.className = "stage-timeline-cue-label";
-      label.textContent = cue.displayName;
+      label.textContent = cueShownName(cue);
       button.append(label);
-      button.title = `${labelPosition(cue.seconds)}  ${cue.displayName}（${cue.locked ? tx("キューポイントを固定") : tx("選択してDeleteで削除")}）`;
+      button.title = `${labelPosition(cue.seconds)}  ${cueShownName(cue)}（${cue.locked ? tx("キューポイントを固定") : tx("選択してDeleteで削除")}）`;
       // U-06: セリフキューは、カーソルを当てると上にセリフを出す（その小窓に同じ説明を入れるので、ブラウザの説明は出さない）
       if (cue.cueType === "dialogue") {
         button.dataset.peekHint = button.title;

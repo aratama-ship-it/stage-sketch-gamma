@@ -44,6 +44,7 @@
     for (const fixture of design.rig.fixtures) {
       if (!object(fixture.mount) || !['truss','floor','side','front','cyc','legacy-panel'].includes(fixture.mount.type)) throw Error('対応していない灯体の取り付け方です');
       if (fixture.mount.type==='truss' && !trusses.has(fixture.mount.trussId)) throw Error('灯体が参照するバトンがありません');
+      if (fixture.colorMode!==undefined && !['mix','wheel'].includes(fixture.colorMode)) throw Error('灯体の色の作り方を確認してください');
       if (fixture.mount.type==='legacy-panel') {
         if (design.version!==2 || !design.migration) throw Error('旧照明の取り付け位置に移行記録がありません');
         const mount=fixture.mount;
@@ -53,11 +54,43 @@
             || (mount.h!==null && !finiteBetween(mount.h,0,18))) throw Error('旧照明の取り付け位置が不正です');
       }
     }
+    /* 2026-09-27 テスト用: LXキューの「時間」。秒は 0〜600、カーブは既定名か {accel,decel} −100〜200。 */
+    const checkTiming = timing => {
+      if (!object(timing)) throw Error('LXキューの時間の構造を確認してください');
+      const secOK = v => v===undefined || v===null || finiteBetween(v,0,600);
+      const curveOK = c => c===undefined || c===null || (typeof c==='string' && ['linear','ease','easeIn','easeOut','swing'].includes(c))
+        || (object(c) && (c.accel===undefined || finiteBetween(c.accel,-100,200)) && (c.decel===undefined || finiteBetween(c.decel,-100,200)));
+      if (!['fadeInSec','fadeOutSec','delayInSec','delayOutSec'].every(k=>secOK(timing[k])) || !curveOK(timing.curve)) throw Error('LXキューの時間の秒数・カーブを確認してください');
+      if (timing.by!==undefined) {
+        if (!object(timing.by)) throw Error('LXキューの属性ごとの時間を確認してください');
+        for (const fam of Object.values(timing.by)) if (fam!==null && (!object(fam) || !secOK(fam.fadeSec) || !secOK(fam.delaySec) || !curveOK(fam.curve))) throw Error('LXキューの属性ごとの時間を確認してください');
+      }
+      if (timing.snap!==undefined && timing.snap!==null && (!object(timing.snap) || !secOK(timing.snap.delaySec))) throw Error('LXキューのスナップの遅れを確認してください');
+      if (timing.mib!==undefined && typeof timing.mib!=='boolean') throw Error('LXキューのムーブインブラックの値を確認してください');
+    };
     const checkCue = cue => {
       if (!object(cue) || !object(cue.lights) || !Array.isArray(cue.groups)) throw Error('照明キューの構造を確認してください');
       for (const [id,light] of Object.entries(cue.lights)) {
         if (!fixtures.has(id) || !object(light)) throw Error('キューが参照する灯体がありません');
         if (light.color!==undefined && !/^#[0-9a-f]{6}$/i.test(light.color)) throw Error('照明の色を確認してください');
+        if (light.colorTo!==undefined && light.colorTo!==null && !/^#[0-9a-f]{6}$/i.test(light.colorTo)) throw Error('照明の終点の色を確認してください');
+        /* 2026-09-27 テスト用: 点の列（poly）と点滅の底・周数。鍵が無ければ従来どおり。 */
+        if (object(light.path) && light.path.kind==='poly') {
+          const pts=light.path.points;
+          if (!Array.isArray(pts) || pts.length<2 || pts.length>24) throw Error('点の列は2〜24点で指定してください');
+          for (const pt of pts) {
+            if (!object(pt) || !finiteBetween(pt.u,-0.5,1.5) || !finiteBetween(pt.v,-0.5,1.5)
+                || (pt.hM!==undefined && !finiteBetween(pt.hM,0,30))
+                || (pt.dwellSec!==undefined && !finiteBetween(pt.dwellSec,0,600))
+                || (pt.moveSec!==undefined && !finiteBetween(pt.moveSec,0,600))) throw Error('点の列の座標・秒数を確認してください');
+          }
+          if (light.path.mode!==undefined && !['loop','bounce','once'].includes(light.path.mode)) throw Error('点の列の回り方を確認してください');
+        }
+        if (light.strobe!==undefined && light.strobe!==null) {
+          if (!object(light.strobe)) throw Error('点滅の構造を確認してください');
+          if (light.strobe.floor!==undefined && !finiteBetween(light.strobe.floor,0,100)) throw Error('点滅の底の値を確認してください');
+          if (light.strobe.loops!==undefined && !finiteBetween(light.strobe.loops,0,999)) throw Error('点滅の周数を確認してください');
+        }
         for (const point of [light.path?.a,light.path?.b,light.path?.c].filter(Boolean)) {
           if (point.coordinateMode!=='legacy-panel') continue;
           if (design.version!==2 || !finiteBetween(point.u,-0.5,1.5)
@@ -84,7 +117,14 @@
     for (const scene of design.scenes) {
       checkCue(scene.cue);
       if (scene.lxq!==undefined && !Array.isArray(scene.lxq)) throw Error('LX cue一覧を確認してください');
-      for (const q of scene.lxq || []) checkCue(q.cue);
+      for (const q of scene.lxq || []) {
+        checkCue(q.cue); if (q.timing!==undefined && q.timing!==null) checkTiming(q.timing);
+        /* v2-1（2026-09-27）: 通しQ番号・きっかけ・自動送り。無ければ従来どおり（番号は読込時に振る）。 */
+        if (q.no!==undefined && !(typeof q.no==='string' && /^\d{1,4}(\.\d{1,3})?$/.test(q.no))) throw Error('LXキューの番号を確認してください（例: 12 / 12.5）');
+        if (q.legacyNo!==undefined && typeof q.legacyNo!=='string') throw Error('LXキューの旧番号を確認してください');
+        if (q.trigger!==undefined && !(typeof q.trigger==='string' && q.trigger.length<=200)) throw Error('LXキューのきっかけを確認してください');
+        if (q.follow!==undefined && q.follow!==null && (!object(q.follow) || !['go','follow','hang'].includes(q.follow.mode) || (q.follow.sec!==undefined && !finiteBetween(q.follow.sec,0,600)))) throw Error('LXキューの自動送りを確認してください');
+      }
     }
     return clone(design);
   }
