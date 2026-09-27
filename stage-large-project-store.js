@@ -7,6 +7,75 @@
   const DB='gamma:large-projects-v1', MARKER='gamma:large-projects-v1:revision';
   const error=code=>Object.assign(new Error(code),{name:code==='CONCURRENT_EDIT'?'StorageConflictError':code,code});
   const pairValid=p=>p&&p.values&&p.version===1&&Number.isSafeInteger(p.revision)&&p.revision>=0&&KEYS.every(k=>p.values[k]===null||typeof p.values[k]==='string');
+  const record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
+  const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+  // Panel layout and save stamps are per-tab bookkeeping, not show edits.
+  // Preserve all other fields, including unknown future fields, in comparisons.
+  const showContent=state=>{if(!state)return state;const {layout,lastSavedAt,...content}=state;return content;};
+  const sameShow=(a,b)=>same(showContent(a),showContent(b));
+  function mergeShow(base,local,remote){
+    if(sameShow(local,base))return remote;
+    if(sameShow(remote,base)||sameShow(remote,local))return local;
+    throw error('CONCURRENT_EDIT');
+  }
+  // A tab keeps its own current/shelf view. Reconcile its delta by show ID,
+  // never by the shared "current" slot, inside the revision/CAS retry loop.
+  function projectView(values){
+    try{
+      const current=values[KEYS[0]]===null?null:JSON.parse(values[KEYS[0]]);
+      const shelf=values[KEYS[1]]===null?{}:JSON.parse(values[KEYS[1]]);
+      if(!record(shelf)||current!==null&&(!record(current)||!record(current.project)||typeof current.project.id!=='string'||!current.project.id))return null;
+      const shows=new Map(),opaque=new Map();
+      for(const [id,entry] of Object.entries(shelf)){
+        if(record(entry)&&record(entry.state)&&record(entry.state.project)&&entry.state.project.id===id){
+          const {state,...meta}=entry;shows.set(id,{state,meta});
+        }else opaque.set(id,entry);
+      }
+      if(current){const id=current.project.id;if(opaque.has(id))return null;shows.set(id,{state:current,meta:shows.get(id)?.meta});}
+      return {current,shelf,shows,opaque};
+    }catch(_){return null;}
+  }
+  function mergeField(base,local,remote){
+    if(same(local,base))return remote;
+    if(same(remote,base)||same(remote,local))return local;
+    throw error('CONCURRENT_EDIT');
+  }
+  function mergeValues(base,local,remote){
+    if(KEYS.every(k=>base[k]===remote[k]))return {...local};
+    const b=projectView(base),l=projectView(local),r=projectView(remote);
+    if(!b||!l||!r)throw error('CONCURRENT_EDIT');
+    // A selected show must not silently reopen an older in-memory snapshot.
+    for(const id of new Set([b.current?.project.id,l.current?.project.id].filter(Boolean))){
+      const before=b.shows.get(id)?.state,after=r.shows.get(id)?.state;
+      if(!sameShow(before,after)&&!sameShow(l.shows.get(id)?.state,after))throw error('CONCURRENT_EDIT');
+    }
+    const shows=new Map(),shelf=Object.create(null);
+    for(const id of new Set([...b.shows.keys(),...l.shows.keys(),...r.shows.keys()])){
+      const before=b.shows.get(id),localShow=l.shows.get(id),remoteShow=r.shows.get(id);
+      let state=mergeShow(before?.state,localShow?.state,remoteShow?.state);
+      if(state&&id===l.current?.project.id){
+        state={...state};for(const key of ['layout','lastSavedAt']){
+          if(Object.hasOwn(l.current,key))state[key]=l.current[key];else delete state[key];
+        }
+      }
+      if(state===undefined)continue;
+      const bm=before?.meta||{},lm=localShow?.meta||bm,rm=remoteShow?.meta||bm,meta={};
+      for(const key of new Set([...Object.keys(bm),...Object.keys(lm),...Object.keys(rm)])){
+        const value=mergeField(bm[key],lm[key],rm[key]);
+        if(value!==undefined)Object.defineProperty(meta,key,{value,enumerable:true});
+      }
+      shows.set(id,state);
+      if(id!==l.current?.project.id||Object.hasOwn(l.shelf,id))shelf[id]={...meta,state};
+    }
+    for(const id of new Set([...b.opaque.keys(),...l.opaque.keys(),...r.opaque.keys()])){
+      if(shows.has(id))throw error('CONCURRENT_EDIT');
+      const entry=mergeField(b.opaque.get(id),l.opaque.get(id),r.opaque.get(id));
+      if(entry!==undefined)shelf[id]=entry;
+    }
+    const current=l.current?shows.get(l.current.project.id):null;
+    if(l.current&&!current)throw error('CONCURRENT_EDIT');
+    return {[KEYS[0]]:current?JSON.stringify(current):null,[KEYS[1]]:JSON.stringify(shelf)};
+  }
   function repository(indexedDB){
     function transact(mode,fn){return new Promise((resolve,reject)=>{
       if(!indexedDB){reject(error('STORAGE_UNAVAILABLE'));return;}
@@ -74,7 +143,7 @@
       }
       storage.setItem(MARKER,String(durable.revision));
     }
-    let values={...durable.values},revision=durable.revision,pending=null,dirty=false,blocked=null;
+    let values={...durable.values},baseValues={...durable.values},revision=durable.revision,pending=null,dirty=false,blocked=null;
     const copy=()=>({...values});
     function fail(e){blocked=e;onFailure(e);}
     async function flush(){
@@ -84,12 +153,19 @@
       const batch=copy();dirty=false;
       pending=(async()=>{
         if(KEYS.some(k=>storage.getItem(k)!==null))throw error('LEGACY_WRITE_CONFLICT');
-        const next=await repo.commit(revision,batch);
+        let next=null;
+        for(let attempt=0;attempt<8&&!next;attempt++){
+          const head=await repo.read();
+          if(!pairValid(head))throw error('PRIMARY_CORRUPT');
+          const merged=mergeValues(baseValues,batch,head.values);
+          next=await repo.commit(head.revision,merged);
+        }
         if(!next)throw error('CONCURRENT_EDIT');
-        // Transaction completion is the commit point; no claim of saving before this.
+        // Transaction completion is the commit point. A subsequent independent
+        // save may already have advanced the head before this verification read.
         const check=await repo.read();
-        if(!pairValid(check)||check.revision!==next.revision||KEYS.some(k=>check.values[k]!==batch[k]))throw error('CONCURRENT_EDIT');
-        durable=next;revision=next.revision;
+        if(!pairValid(check)||check.revision<next.revision||check.revision===next.revision&&KEYS.some(k=>check.values[k]!==next.values[k]))throw error('CONCURRENT_EDIT');
+        durable=next;revision=next.revision;baseValues=batch;
         try{storage.setItem(MARKER,String(revision));}catch(_){/* IndexedDB is durable; marker already identifies the format. */}
       })().catch(e=>{dirty=true;fail(e);throw e;}).finally(()=>{pending=null;});
       await pending;if(dirty)return flush();
@@ -101,7 +177,22 @@
       if(key==='removeItem')return k=>KEYS.includes(k)?stage(k,null):target.removeItem(k);
       const v=Reflect.get(target,key,target);return typeof v==='function'?v.bind(target):v;
     }});
-    const changed=e=>{if((e.key===MARKER&&e.newValue!==String(revision))||KEYS.includes(e.key)){blocked=error('CONCURRENT_EDIT');onConflict(blocked);}};
+    let checking=Promise.resolve();
+    const changed=e=>{
+      if(KEYS.includes(e.key)||e.key===MARKER&&e.newValue===null){
+        if(!blocked){blocked=error('CONCURRENT_EDIT');onConflict(blocked);}return;
+      }
+      if(e.key!==MARKER||e.newValue===String(revision)||blocked)return;
+      checking=checking.then(async()=>{
+        // Own pending save has its CAS guard; avoid comparing a half-staged pair.
+        if(pending){try{await pending;}catch(_){return;}}
+        if(blocked)return;
+        const head=await repo.read();
+        if(!pairValid(head))throw error('PRIMARY_CORRUPT');
+        const b=projectView(baseValues),r=projectView(head.values),id=b?.current?.project.id;
+        if(!b||!r||id&&!sameShow(b.shows.get(id)?.state,r.shows.get(id)?.state))throw error('CONCURRENT_EDIT');
+      }).catch(e=>{if(!blocked){blocked=e;onConflict(e);}});
+    };
     root.addEventListener?.('storage',changed);
     return Object.freeze({storage:facade,flush,repository:repo,
       values:copy,status:()=>({revision,dirty,pending:!!pending,blocked:blocked?.code||null}),
@@ -110,5 +201,5 @@
       stop(){root.removeEventListener?.('storage',changed);},
     });
   }
-  root.STAGE_LARGE_PROJECT_STORE=Object.freeze({open,repository,KEYS,DB,MARKER,pairValid});
+  root.STAGE_LARGE_PROJECT_STORE=Object.freeze({open,repository,KEYS,DB,MARKER,pairValid,mergeValues});
 })(typeof window==='undefined'?globalThis:window);

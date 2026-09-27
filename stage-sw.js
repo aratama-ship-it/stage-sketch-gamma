@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v407";
+const CACHE_NAME = "stage-sketch-gamma-shell-v408";
 const APP_SHELL = [
   "./stage-point-source.js?v=20260927-point43",
   "./gamma-ui.js?v=20260925-ui1",
@@ -68,7 +68,7 @@ const APP_SHELL = [
   "./stage-samples/index.js?v=2026092402",
   "./stage-samples/romeo-juliet-cued.js?v=2026092435",
   "./stage-samples/romeo-juliet-second.js?v=20260926-feedback40",
-  "./stage-samples/feature-test-show.js?v=20260927-icons48",
+  "./stage-samples/feature-test-show.js?v=20260928-storage49",
   "./stage-set-model.js?v=2026092354",
   "./stage-set-builder.js?v=2026091501",
   "./stage-machinery.js?v=20260925-ui1",
@@ -76,7 +76,7 @@ const APP_SHELL = [
   "./stage-first-person.js?v=20260927-feedback46",
   "./stage-fixture-body.js?v=20260927-feedback46",
   "./stage-audio-store.js?v=2026092523",
-  "./stage-large-project-store.js?v=20260926-large39",
+  "./stage-large-project-store.js?v=20260928-storage49",
   "./stage-project-backup-store.js?v=2026092523",
   "./stage-storage-codec.js?v=2026092523",
   "./stage-storage-recovery.js?v=20260926-isolation35",

@@ -21,3 +21,47 @@ vm.runInNewContext(fs.readFileSync(new URL('../stage-storage-hygiene.js',import.
 test('audio referenced only by migration or previous copies stays protected',async()=>{const storage=new Storage({[current]:JSON.stringify({project:{audioTracks:[{id:'migration-audio'}]}}),[shelf]:'{}'}),r=repo(),a=await api.open({storage,repo:r});a.storage.setItem(current,JSON.stringify({project:{audioTracks:[{id:'previous-audio'}]}}));await a.flush();a.storage.setItem(current,JSON.stringify({project:{audioTracks:[{id:'current-audio'}]}}));await a.flush();assert.deepEqual([...await a.protectedAudioIds()].sort(),['current-audio','migration-audio','previous-audio']);});
 
 test('migration at the old quota boundary frees only verified sources before retrying the marker',async()=>{const original=values(),storage=new Storage(original),r=repo();const set=storage.setItem.bind(storage);storage.setItem=(k,v)=>{if(k===api.MARKER&&storage.getItem(current)!==null)throw Object.assign(Error('full'),{name:'QuotaExceededError'});set(k,v);};const a=await api.open({storage,repo:r});assert.deepEqual({...a.values()},original);assert.deepEqual(r.rows.get('migration').values,original);assert.equal(storage.getItem(api.MARKER),'0');});
+
+// Real bundled-show copies exercise identity and unknown fields across the pair.
+const fixture=JSON.parse(fs.readFileSync(new URL('../stage-samples/feature-test-show.json',import.meta.url),'utf8'));
+function show(id,title=id){return {project:{...structuredClone(fixture.project),id,title},future:{retain:[1,{x:true}]}};}
+function pair(a,b){return {[current]:JSON.stringify(a),[shelf]:JSON.stringify(b)};}
+function unpack(values){const a=JSON.parse(values[current]),b=JSON.parse(values[shelf]);return new Map([...Object.entries(b).filter(([,e])=>e?.state).map(([id,e])=>[id,e.state]),...(a?[[a.project.id,a]]:[])]);}
+async function twoShows(){const A=show('test-A'),B=show('test-B'),r=repo(),storage=new Storage(pair(A,{'test-B':{state:B,unknown:'keep'}}));const a=await api.open({storage,repo:r}),b=await api.open({storage,repo:r});b.storage.setItem(current,JSON.stringify(B));b.storage.setItem(shelf,JSON.stringify({'test-A':{state:A}}));await b.flush();return{A,B,a,b,r,storage};}
+function renameIn(a,title){const state=JSON.parse(a.storage.getItem(current));state.project.title=title;a.storage.setItem(current,JSON.stringify(state));}
+test('separate shows retain both interleaved saves, unknown fields, previous pair and reopen',async()=>{
+ const {a,b,r,storage}=await twoShows();
+ for(let i=1;i<=3;i++){renameIn(a,'A'+i);await a.flush();renameIn(b,'B'+i);await b.flush();const states=unpack((await r.read()).values);assert.equal(states.get('test-A').project.title,'A'+i);assert.equal(states.get('test-B').project.title,'B'+i);assert.deepEqual(states.get('test-A').future,{retain:[1,{x:true}]});}
+ const reopened=await api.open({storage,repo:r});const states=unpack(reopened.values());assert.equal(states.get('test-A').project.title,'A3');assert.equal(states.get('test-B').project.title,'B3');assert.equal(unpack(r.rows.get('previous').values).get('test-B').project.title,'B2');
+});
+test('simultaneous different-show writes retry the atomic CAS without losing either show',async()=>{
+ const {a,b,r}=await twoShows();renameIn(a,'concurrent A');renameIn(b,'concurrent B');await Promise.all([a.flush(),b.flush()]);const states=unpack((await r.read()).values);assert.equal(states.get('test-A').project.title,'concurrent A');assert.equal(states.get('test-B').project.title,'concurrent B');assert.equal(a.status().blocked,null);assert.equal(b.status().blocked,null);
+});
+test('same-show conflict still rejects stale state even when the global current slot moved',async()=>{
+ const {a,b,r}=await twoShows();const stale=await api.open({storage:new Storage({[api.MARKER]:'1'}),repo:r});renameIn(b,'B winner');await b.flush();renameIn(a,'A independent');await a.flush();renameIn(stale,'B stale');await assert.rejects(stale.flush(),e=>e.code==='CONCURRENT_EDIT');const states=unpack((await r.read()).values);assert.equal(states.get('test-B').project.title,'B winner');assert.equal(states.get('test-A').project.title,'A independent');
+});
+test('foreign additions, deletions, opaque entries and metadata survive a stale independent save',()=>{
+ const A=show('test-A'),B=show('test-B'),C=show('__proto__'),base=pair(A,{'test-B':{state:B},settings:{unknown:true}}),local=pair({...A,project:{...A.project,title:'A edit'}},JSON.parse(base[shelf]));
+ const remote=pair(A,JSON.parse(JSON.stringify({['__proto__']:{state:C,archivedAt:'retain'},settings:{unknown:true,newField:42}})));
+ const merged=api.mergeValues(base,local,remote),states=unpack(merged),s=JSON.parse(merged[shelf]);assert.equal(states.has('test-B'),false);assert.equal(states.get('__proto__').project.id,'__proto__');assert.equal(s.__proto__.archivedAt,'retain');assert.deepEqual(s.settings,{unknown:true,newField:42});assert.equal(states.get('test-A').project.title,'A edit');
+});
+test('deleting a concurrently edited show is rejected and same-show archived metadata is preserved',()=>{
+ const A=show('test-A'),B=show('test-B'),base=pair(A,{'test-B':{state:B,archivedAt:null}}),local=pair(A,{}),remote=pair({...B,project:{...B.project,title:'B edit'}},{'test-A':{state:A}});assert.throws(()=>api.mergeValues(base,local,remote),e=>e.code==='CONCURRENT_EDIT');
+ const merged=api.mergeValues(base,pair({...A,project:{...A.project,title:'A edit'}},{'test-B':{state:B,archivedAt:null}}),pair(A,{'test-B':{state:B,archivedAt:'remote archive'}}));assert.equal(JSON.parse(merged[shelf])['test-B'].archivedAt,'remote archive');
+});
+test('an independent save immediately following commit does not falsely report own save failure',async()=>{
+ const {a,b,r}=await twoShows();const commit=r.commit.bind(r);let once=true;r.commit=async(revision,values)=>{const next=await commit(revision,values);if(next&&once){once=false;renameIn(b,'B raced verification');await b.flush();}return next;};renameIn(a,'A committed');await a.flush();const states=unpack((await r.read()).values);assert.equal(states.get('test-A').project.title,'A committed');assert.equal(states.get('test-B').project.title,'B raced verification');assert.equal(a.status().blocked,null);
+});
+test('revision notifications distinguish another show from a changed open show',async()=>{
+ const listeners=[],env={queueMicrotask,addEventListener:(type,fn)=>listeners.push(fn)};vm.runInNewContext(source,env);const r=repo(),A=show('test-A'),B=show('test-B'),storage=new Storage(pair(A,{'test-B':{state:B}}));let conflicts=0;const a=await env.STAGE_LARGE_PROJECT_STORE.open({storage,repo:r,onConflict:()=>conflicts++});
+ await r.commit(0,pair({...B,project:{...B.project,title:'B edit'}},{'test-A':{state:A}}));listeners[0]({key:api.MARKER,newValue:'1'});await new Promise(resolve=>setImmediate(resolve));assert.equal(conflicts,0);assert.equal(a.status().blocked,null);
+ await r.commit(1,pair({...A,project:{...A.project,title:'A edit'}},{'test-B':{state:B}}));listeners[0]({key:api.MARKER,newValue:'2'});await new Promise(resolve=>setImmediate(resolve));assert.equal(conflicts,1);assert.equal(a.status().blocked,'CONCURRENT_EDIT');
+});
+
+test('layout normalization and save stamps do not masquerade as show edits, unknown fields still conflict',()=>{
+ const A=show('test-A'),B=show('test-B'),base=pair({...A,layout:{collapsed:{}},lastSavedAt:'old'},{'test-B':{state:B}});
+ const local=pair({...A,project:{...A.project,title:'A edit'},layout:{collapsed:{}},lastSavedAt:'local'},{'test-B':{state:B}});
+ const remote=pair(B,{'test-A':{state:{...A,layout:{collapsed:{cast:false}},lastSavedAt:'other tab'}}});
+ const merged=api.mergeValues(base,local,remote),state=unpack(merged).get('test-A');assert.equal(state.project.title,'A edit');assert.equal(state.lastSavedAt,'local');assert.deepEqual(state.layout,{collapsed:{}});
+ const changed=pair(B,{'test-A':{state:{...A,future:{retain:['new unknown data']}}}});assert.throws(()=>api.mergeValues(base,local,changed),e=>e.code==='CONCURRENT_EDIT');
+});
