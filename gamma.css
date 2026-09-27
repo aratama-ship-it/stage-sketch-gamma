@@ -1,6 +1,19 @@
 /* Gamma dimensions and theme tokens: gamma-ui-tokens.css. */
 .stage-brand-row { flex-wrap: wrap; gap: var(--gamma-gap); }
 .stage-gamma-label { font-size: 11px; font-weight: 500; color: #b6a995; margin-left: 8px; white-space: nowrap; }
+/* 道具ボタンと名前表示のチェックラベルは、同じ正方形の枠を使う。
+ * 共通の文字ボタン用高さ・余白で名前表示だけ横長にならないようにする。 */
+html[data-stage-skin] .stage-center-bar :is(.stage-tool-grid button.is-icon, .stage-name-toggle.is-icon) {
+  box-sizing: border-box;
+  width: var(--ctrl-md);
+  height: var(--ctrl-md);
+  min-width: var(--ctrl-md);
+  max-width: var(--ctrl-md);
+  min-height: var(--ctrl-md);
+  max-height: var(--ctrl-md);
+  flex-shrink: 0;
+  padding: 0;
+}
 #stage-workspace-tabs { flex-wrap: wrap; }
 #stage-workspace-tabs button { min-height: var(--gamma-hit); white-space: nowrap; }
 body[data-gamma-workspace^="light-"] .stage-sketch-grid { display: none !important; }

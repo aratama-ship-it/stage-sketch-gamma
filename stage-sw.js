@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v406";
+const CACHE_NAME = "stage-sketch-gamma-shell-v407";
 const APP_SHELL = [
   "./stage-point-source.js?v=20260927-point43",
   "./gamma-ui.js?v=20260925-ui1",
@@ -36,7 +36,7 @@ const APP_SHELL = [
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-small.shosai-light-design.json",
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-mid.shosai-light-design.json",
   "./docs/proscenium-lighting-presets-2026-09-15/proscenium-large.shosai-light-design.json",
-  "./gamma.css?v=20260927-feedback46",
+  "./gamma.css?v=20260927-icons48",
   "./stage-venue-preview.css?v=20260926-feedback40",
   "./stage-venue-viewpoints.css?v=2026092501",
   "./gamma-light-model.js?v=20260926-feedback40",
@@ -68,7 +68,7 @@ const APP_SHELL = [
   "./stage-samples/index.js?v=2026092402",
   "./stage-samples/romeo-juliet-cued.js?v=2026092435",
   "./stage-samples/romeo-juliet-second.js?v=20260926-feedback40",
-  "./stage-samples/feature-test-show.js?v=20260927-arrow47",
+  "./stage-samples/feature-test-show.js?v=20260927-icons48",
   "./stage-set-model.js?v=2026092354",
   "./stage-set-builder.js?v=2026091501",
   "./stage-machinery.js?v=20260925-ui1",

@@ -851,7 +851,7 @@ for (const sceneId of ["ft-scene-b1", "ft-scene-h1", "ft-scene-f1"]) {
   }
 }
 alternatives.adopted(project);
-project.scenes.find(row => row.id === "ft-scene-c1").note += "\n確認: 長いバーカウンター（幅4.8m）の詳細を開く。回転プレビューは全体が収まる固定縮尺で、1周しても人の影の高さ・床の位置・縮尺が変わらない。選んだもののパネルは演者と大道具のどちらをクリックしても表示される。";
+project.scenes.find(row => row.id === "ft-scene-c1").note += "\n確認: 長いバーカウンター（幅4.8m）の詳細を開く。回転プレビューは全体が収まる固定縮尺で、1周しても人の影の高さ・床の位置・縮尺が変わらない。選んだもののパネルは演者と大道具のどちらをクリックしても表示される。道具列の移動・矢印・照明効果・作業灯と名前表示の枠は同じ正方形で、オンオフや配色切替でも縦横の寸法がそろう。";
 const doc = { kind: "shosai-stage-sketch", version: 4, venues: [], project };
 const json = JSON.stringify(doc, null, 1);
 writeFileSync(join(OUTPUT, "feature-test-show.json"), json + "\n");
