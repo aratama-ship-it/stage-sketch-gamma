@@ -254,7 +254,9 @@
      ただし枠は広げずコンパクトに収める）。幅は syncFigureSizes が .leftcol へ入れる。 */
   .leftcol{grid-column:1;grid-row:1;display:flex;flex-direction:row;gap:8px;min-width:0;min-height:0;align-self:stretch;justify-self:start}
   .leftcol>.panel{grid-column:auto;grid-row:auto;width:auto;align-self:auto;min-width:0;flex:1 1 0}
-  #panel-lxq{gap:5px}
+  #panel-lxq{gap:5px;overflow-y:auto;overflow-x:hidden}
+  #panel-lxq>*{flex-shrink:0}
+  #panel-lxq .lxbody{min-height:80px}
   #panel-fixtures{min-height:0}
 
   .lxhead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:5px 6px}
@@ -946,7 +948,7 @@
      要素は残さない（.toast のCSSも使われなくなる）。 -->
 
 <script src="../gamma-ui.js?v=20260925-ui1"></script>
-<script src="rig-engine.js?v=20260928-lx52"></script>
+<script src="rig-engine.js?v=20260928-lx53"></script>
 <script src="../stage-performer-contour.js?v=20260926-feedback40"></script>
 <script src="../stage-performer-body.js?v=20260926-feedback40"></script>
 <script src="stage-figure.js?v=20260926-render37"></script>
@@ -954,13 +956,13 @@
 <script src="volume-light.js?v=20260926-feedback40"></script>
 <script src="laser-effects.js?v=20260915-5-color-presets"></script>
 <script src="laser-effects-ui.js?v=20260915-3-supported-shapes"></script>
-<script src="app.js?v=20260928-lx52"></script>
+<script src="app.js?v=20260928-lx53"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20260915-3-vertical-cards"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->
-<script src="selected-light-presets-engine.js?v=20260928-lx52"></script>
-<script src="selected-light-presets-ui.js?v=20260928-lx52"></script>
-<script src="../gamma-light-model.js?v=20260928-lx52"></script>
+<script src="selected-light-presets-engine.js?v=20260928-lx53"></script>
+<script src="selected-light-presets-ui.js?v=20260928-lx53"></script>
+<script src="../gamma-light-model.js?v=20260928-lx53"></script>
 <script src="embed.js?v=20260925-ui1"></script>
 <script src="../gamma-ui-i18n.js?v=20260925-ui1"></script>
 <script src="ui-i18n.js?v=20260925-ui1"></script>

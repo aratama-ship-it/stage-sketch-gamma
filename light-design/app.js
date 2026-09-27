@@ -4620,11 +4620,12 @@
     if (!show) { if (wrap) wrap.hidden = true; return; }
     if (!wrap) {
       const host = $("lxqbox"); if (!host) return;
-      wrap = document.createElement("div"); wrap.id = "lxfade-manual"; wrap.className = "field"; wrap.style.cssText = "margin:2px 0 6px;display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;font-size:12px";
-      const lab = document.createElement("span"); lab.textContent = "手で進める";
-      const r = document.createElement("input"); r.type = "range"; r.min = 0; r.max = 1000; r.step = 1; r.id = "lxfade-manual-range"; r.title = "クロスフェーダー相当。動かすと時計が止まり、つまみの位置まで進みます";
+      wrap = document.createElement("div"); wrap.id = "lxfade-manual"; wrap.className = "field"; wrap.style.cssText = "margin:2px 0 6px;display:grid;grid-template-columns:minmax(0,1fr);gap:6px;align-items:center;font-size:12px";
+      const lab = document.createElement("span"); lab.textContent = "手で進める"; lab.style.whiteSpace = "nowrap";
+      const r = document.createElement("input"); r.type = "range"; r.min = 0; r.max = 1000; r.step = 1; r.id = "lxfade-manual-range"; r.style.cssText = "width:100%;min-width:0"; r.title = "クロスフェーダー相当。動かすと時計が止まり、つまみの位置まで進みます";
       r.oninput = () => { if (lxFade) lxFadeSetManual(Number(r.value) / 1000 * lxFade.total); };
       const back = btn("自動に戻す", () => lxFadeRelease(), "small quiet", "いまの位置から、残りを実時間で進めます");
+      back.style.cssText = "justify-self:end;max-width:100%";
       wrap.append(lab, r, back);
       host.parentNode.insertBefore(wrap, host);
     }
