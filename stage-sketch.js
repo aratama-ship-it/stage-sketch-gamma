@@ -20080,6 +20080,42 @@
     return api.paintLasers(target, lasers, worldProjector(L));
   }
 
+  /* 灯体の形（2026-09-27 本人要望「光の感じと灯体の形をγへ」）。共有部品 stage-fixture-body.js の幾何
+     （ムービング＝土台・ヨーク・ヘッド／固定灯＝PAR缶）を、その図の投影（worldProjector）で描く。
+     正面図は光の筋の後に描き、レンズに点光源の芯を出す。平面図は光だまりの後に「上から見た胴体」を面で描き、
+     光の根元を隠す（芯は出さない）。光だまりを出しているとき（lightPool）だけ。点いていない灯も向きは残す。
+     ★project.lightingDesign は読むだけ。ホリゾント灯（帯）とレーザーは対象外。 */
+  function drawLightCueBodies(target, L) {
+    if (!featureOn("lightPool")) return 0;
+    const body = window.FIXTURE_BODY;
+    const model = lightCueOverlayForLayout(L);
+    if (!body || !model) return 0;
+    const project = worldProjector(L);
+    const width = Number(L.size.width) || 0, depth = Number(L.size.depth) || 0;
+    if (!(width > 0) || !(depth > 0)) return 0;
+    let drawn = 0;
+    (model.fixtures || []).forEach((fx) => {
+      if (!fx || fx.outside || fx.kind === "laser" || /^cyc/.test(String(fx.mountType || ""))) return;
+      const S = { x: (finite(fx.u, 0.5) - 0.5) * width, y: finite(fx.v, 0.5) * depth, z: Math.max(0.5, finite(fx.h, 6)) };
+      const aim = fx.pool && fx.pool.to ? fx.pool.to
+        : (fx.aim && fx.aim.a ? { x: (finite(fx.aim.a.u, 0.5) - 0.5) * width, y: finite(fx.aim.a.v, 0.5) * depth, z: finite(fx.aim.a.hM === undefined ? fx.aim.a.h : fx.aim.a.hM, 0) } : null);
+      const geom = fx.kind === "moving" ? body.movingHead(S, aim, { scale: 1 }) : body.parCan(S, aim, { scale: 1 });
+      const P = (pt) => project(pt) || { X: NaN, Y: NaN };
+      const q0 = project(geom.pivot), q1 = project({ x: geom.pivot.x + 1, y: geom.pivot.y, z: geom.pivot.z });
+      if (!q0 || !q1 || !Number.isFinite(q0.X + q0.Y + q1.X + q1.Y)) return;
+      const px = Math.max(4, Math.hypot(q1.X - q0.X, q1.Y - q0.Y));
+      /* 広がり（度）は光だまりの輪の半径と距離から戻す（レンズの芯の締まり具合に使うだけ） */
+      let beamDeg = 18;
+      if (fx.pool && Number.isFinite(fx.pool.radiusM) && fx.pool.to) {
+        const dist = Math.hypot(fx.pool.to.x - S.x, fx.pool.to.y - S.y, fx.pool.to.z - S.z) || 1;
+        beamDeg = Math.max(4, Math.min(70, 2 * Math.atan(fx.pool.radiusM / dist) * 180 / Math.PI));
+      }
+      body.draw(target, P, geom, { color: fx.color, lit: fx.state === "on" ? finite(fx.level, 100) / 100 : 0, beamDeg, px, topDown: Boolean(L.plan) });
+      drawn += 1;
+    });
+    return drawn;
+  }
+
   function drawLightCueBeams(target, L) {
     if (!featureOn("lightPool") || !featureOn("lightBeam")) return 0;
     const api = window.SHOSAI_LIGHT_RENDER;
@@ -20561,7 +20597,7 @@
     if (showSelection && L.plan && target === planCtx) drawLightingPlanOverlay(target, L);
     if (showSelection && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) {
       drawLightCuePools(target, L);
-      if (!featureOn("workLightOff")) { drawLightCueBeams(target, L); drawLightCueLasers(target, L); }
+      if (!featureOn("workLightOff")) { drawLightCueBeams(target, L); drawLightCueLasers(target, L); drawLightCueBodies(target, L); }
     }
     if (showSelection && L.plan && target === planCtx) drawLightCueOverlayPlan(target, L);
     if (showSelection && !L.plan && target === ctx) drawLightCueOverlayFront(target, L);
@@ -20652,6 +20688,7 @@
           (piece) => drawHeldFrontPiece(target, piece, L));
         drawLightCueBeams(target, L);
         drawLightCueLasers(target, L);
+        drawLightCueBodies(target, L);
       }
       drawLightCueCaption(target, L);
     }
@@ -39890,13 +39927,66 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     }
     if (els.cueSheetModal) els.cueSheetModal.classList.toggle("is-a4-preview", cueSheetA4);
   }
-  function openCueSheetView(kind, key) {
+  function cueSheetLayout() {
+    const raw = state.project.cueSheetLayout || {};
+    const all = window.SHOSAI_CUE_SHEET.performerColumns(state.project, viewingCueSheet.key, cueSheetHelpers());
+    return { order: [...window.SHOSAI_CUE_SHEET.layoutColumns(all, { order:raw.order })].map(c => c.key),
+      hidden: Array.isArray(raw.hidden) ? [...raw.hidden] : [], widths: { ...raw.widths } };
+  }
+  function saveCueSheetLayout(next) {
+    if (!cueSheetEditingAllowed()) return;
+    checkpoint(); state.project.cueSheetLayout = next; persistSoon();
+  }
+  function bindCueSheetColumns(sheet, key) {
+    const host = els.cueSheetContent, api = window.SHOSAI_CUE_SHEET;
+    const all = api.performerColumns(state.project, key, cueSheetHelpers());
+    const editable = cueSheetEditingAllowed();
+    const control = document.createElement("details"); control.className = "cue-column-options";
+    const summary = document.createElement("summary"); summary.textContent = tx("表示する列"); control.append(summary);
+    const help = document.createElement("p"); help.textContent = tx("列名をドラッグして並べ替え、列の右端をドラッグして幅を調整できます。同じショーの全演者に共通です。"); control.append(help);
+    all.forEach(column => {
+      const label = document.createElement("label"), input = document.createElement("input"); input.type = "checkbox";
+      input.checked = sheet.columns.some(c => c.key === column.key); input.disabled = !editable || (input.checked && sheet.columns.length === 1);
+      input.onchange = () => { const next = cueSheetLayout(); next.hidden = next.hidden.filter(k => k !== column.key); if (!input.checked) next.hidden.push(column.key); saveCueSheetLayout(next); refresh(); };
+      label.append(input, document.createTextNode(column.label)); control.append(label);
+    });
+    const reset = document.createElement("button"); reset.type = "button"; reset.textContent = tx("列の設定を戻す"); reset.disabled = !editable;
+    reset.onclick = () => { saveCueSheetLayout({order:[],hidden:[],widths:{}}); refresh(); }; control.append(reset); host.prepend(control);
+    function refresh() { const top = host.scrollTop, left = host.scrollLeft, open = control.open, focused = document.activeElement?.dataset?.resizeColumn; openCueSheetView("performer", key, true); host.querySelector("details").open = open; host.scrollTop = top; host.scrollLeft = left; if (focused) host.querySelector(`[data-resize-column="${focused}"]`)?.focus({preventScroll:true}); }
+    const table = host.querySelector("table"), cols = [...table.querySelectorAll("col")], heads = [...table.querySelectorAll("thead th")];
+    let total = 0;
+    heads.forEach((head, i) => {
+      const column = sheet.columns[i], stored = Number(state.project.cueSheetLayout?.widths?.[column.key]);
+      const width = Number.isFinite(stored) && stored > 0 ? Math.max(80, Math.min(800, stored)) : Math.max(80, parseFloat(column.width || "10") * 14);
+      cols[i].style.width = `${width}px`; total += width;
+      head.draggable = editable;
+      head.ondragstart = e => { if (!editable || e.target.closest("[data-resize-column]")) { e.preventDefault(); return; } e.dataTransfer.setData("text/plain",column.key); e.dataTransfer.effectAllowed = "move"; };
+      head.ondragover = e => { if (editable) e.preventDefault(); };
+      head.ondrop = e => { e.preventDefault(); if (!editable) return; const source = e.dataTransfer.getData("text/plain"), next = cueSheetLayout(); if (!next.order.includes(source) || source === column.key) return; next.order = next.order.filter(k => k !== source); next.order.splice(next.order.indexOf(column.key), 0, source); saveCueSheetLayout(next); refresh(); };
+      const handle = head.querySelector("[data-resize-column]");
+      if (!handle) return;
+      handle.setAttribute("aria-valuemin","80"); handle.setAttribute("aria-valuemax","800"); handle.setAttribute("aria-valuenow",String(Math.round(width)));
+      handle.onkeydown = e => { if (!editable || !["ArrowLeft","ArrowRight","Home","End"].includes(e.key)) return; e.preventDefault(); const next = cueSheetLayout(); next.widths[column.key] = e.key === "Home" ? 80 : e.key === "End" ? 800 : Math.max(80,Math.min(800,width + (e.key === "ArrowRight" ? 10 : -10))); saveCueSheetLayout(next); refresh(); };
+      handle.onpointerdown = e => {
+        if (!editable || e.button !== 0) return; e.preventDefault(); e.stopPropagation();
+        const x = e.clientX; let current = width;
+        handle.setPointerCapture(e.pointerId);
+        const move = ev => { current = Math.max(80,Math.min(800,width + ev.clientX-x)); cols[i].style.width = `${current}px`; table.style.width = `${total + current-width}px`; handle.setAttribute("aria-valuenow",String(Math.round(current))); };
+        const finish = ev => { handle.removeEventListener("pointermove",move); handle.removeEventListener("pointerup",finish); handle.removeEventListener("pointercancel",cancel); if (handle.hasPointerCapture(e.pointerId)) handle.releasePointerCapture(e.pointerId); const next = cueSheetLayout(); next.widths[column.key] = Math.round(current); saveCueSheetLayout(next); refresh(); };
+        const cancel = () => { handle.removeEventListener("pointermove",move); handle.removeEventListener("pointerup",finish); handle.removeEventListener("pointercancel",cancel); refresh(); };
+        handle.addEventListener("pointermove",move); handle.addEventListener("pointerup",finish); handle.addEventListener("pointercancel",cancel);
+      };
+    });
+    table.classList.add("cue-sheet-custom-columns"); table.style.width = `${total}px`;
+  }
+  function openCueSheetView(kind, key, keepFocus = false) {
     const sheet = selectedCueSheet(kind, key);
     if (!sheet || !els.cueSheetContent) return;
     syncCueSheetA4Buttons();
     if (cueSheetA4) renderCueSheetA4(sheet);
     else els.cueSheetContent.innerHTML = window.SHOSAI_CUE_SHEET.renderSheetHtml(sheet, lang, {
       editable: kind === "performer" && cueSheetEditingAllowed(),
+      customizable: kind === "performer",
     });
     if (els.cueSheetModal) els.cueSheetModal.classList.add("is-viewing-sheet");
     if (els.cueSheetList) els.cueSheetList.hidden = true;
@@ -39904,8 +39994,9 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (els.cueSheetTitle) els.cueSheetTitle.textContent = sheet.title;
     /* 見ている表から、そのまま紙とCSVへ出せるようにする（一覧へ戻らせない）。 */
     viewingCueSheet = { kind, key };
+    if (kind === "performer" && !cueSheetA4) bindCueSheetColumns(sheet, key);
     if (els.cueSheetViewTitle) els.cueSheetViewTitle.textContent = sheet.title;
-    if (els.cueSheetBack) els.cueSheetBack.focus();
+    if (!keepFocus && els.cueSheetBack) els.cueSheetBack.focus({preventScroll:true});
   }
 
   function cueSheetPrintDocument(sheet, options = {}) {

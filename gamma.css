@@ -845,3 +845,13 @@ html[data-stage-skin] .stage-modal :is(input,select,textarea) { max-width: 100%;
 
 #stage-point-source-controls label { white-space: nowrap; }
 #stage-point-level { width: 110px; min-width: 0; }
+
+/* Project-wide performer sheet columns; reuses Gamma theme tokens. */
+.cue-column-options { margin-bottom:12px; padding:8px; border:1px solid var(--line-dark); }
+.cue-column-options summary { cursor:pointer; min-height:44px; }
+.cue-column-options label { display:inline-flex; align-items:center; gap:6px; padding:8px; min-height:44px; }
+.cue-column-options button { min-height:44px; padding:6px 12px; background:var(--desk-2); color:var(--milk); border:1px solid var(--line-dark); font:inherit; }
+.cue-sheet-custom-columns thead th { position:relative; cursor:grab; padding-right:12px; }
+.cue-sheet-custom-columns .cue-column-resize { position:absolute; top:0; right:-4px; bottom:0; width:10px; cursor:col-resize; touch-action:none; z-index:3; }
+.cue-column-resize:focus-visible { outline:2px solid var(--brass); }
+.is-viewing-sheet .cue-sheet-custom-columns th, .is-viewing-sheet .cue-sheet-custom-columns td { min-width:0; }

@@ -97,7 +97,8 @@
     if (!light || !marker || marker.kind === "laser") return null;
     const surface = typeof light.surface === "string" ? light.surface : "";
     if (!POOL_SURFACES[surface]) return null;
-    const source = worldOf(marker, dims);
+    let source = worldOf(marker, dims);
+    let rootR = 0;
     const path = record(light.path) ? light.path : null;
     const aimPoint = path && record(path.a) ? path.a : null;
     const target = worldOf(aimPoint, dims);
@@ -106,6 +107,14 @@
        面から浮いた点をそのまま渡すと楕円の大きさが狂う。 */
     if (surface === "floor") target.z = 0;
     else target.y = 0;
+    /* 点光源＝灯体のレンズ面（2026-09-27 本人要望）。灯体の形の部品（stage-fixture-body.js）があれば、
+       吊り点でなく狙い先へ向いたヘッド先端から光を出し、筋の根元の幅（レンズ口径）も pool に持たせる。
+       部品が無ければ従来どおり吊り点から。ホリゾント灯は帯なので対象外。 */
+    const bodyApi = root.FIXTURE_BODY;
+    if (bodyApi && marker.kind !== "laser" && !/^cyc/.test(String(marker.mountType || ""))) {
+      const geom = marker.kind === "moving" ? bodyApi.movingHead(source, target, { scale: 1 }) : bodyApi.parCan(source, target, { scale: 1 });
+      if (geom && geom.lens && Number.isFinite(geom.lens.x + geom.lens.y + geom.lens.z)) { source = geom.lens; rootR = finite(geom.size && geom.size.headR, 0); }
+    }
     const deg = typeof engine.beamDegOf === "function" ? engine.beamDegOf(fixture, light) : 18;
     const ellipse = engine.spotEllipse(source, target, deg, surface);
     if (!ellipse || !ellipse.c || !ellipse.ea || !ellipse.eb) return null;
@@ -133,6 +142,7 @@
       c: ellipse.c, ea: ellipse.ea, eb: ellipse.eb, surface, fall,
       softness: finite(light.beamEdgeSoftness, 2),
       from: source, to: target, radiusM,
+      ...(rootR > 0 ? { rootR } : {}),
       ...(gobo ? { gobo, goboAngle: finite(light.goboAngle, 0), goboSpin: finite(light.goboSpin, 0),
         goboSoft: finite(light.goboSoft, 6) } : {}),
       ...(cuts.length ? { cuts } : {}),
@@ -199,6 +209,7 @@
       return {
         id: marker.id,
         kind: marker.kind,
+        mountType: marker.mountType || "",
         u: marker.u,
         v: marker.v,
         h: marker.h,

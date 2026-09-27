@@ -348,26 +348,42 @@
 
   /* 筋を横切る濃淡（扇形グラデーション）。塗る先の文脈を受け取るので、
      画面へ直に描くときも一時キャンバスへ描くときも同じ式が使える。 */
-  function beamGradient(target, from, cornerP, cornerM, colour, alpha, softness, gain) {
+  /* 台形の筋の「仮想の頂点」＝両縁を延長して交わる点（レンズの後ろ）。扇形のグラデーションの中心を
+     ここに置くと、等値線が台形の縁と平行になり、根元でもレンズの幅いっぱいが明るい。
+     縁が平行（交点が無い）なら null＝平行のグラデーションへ。 */
+  function beamApex(ends, cornerP, cornerM) {
+    if (!ends) return null;
+    const ax = ends.fromP.X, ay = ends.fromP.Y, bx = cornerP.X - ax, by = cornerP.Y - ay;
+    const cx = ends.fromM.X, cy = ends.fromM.Y, dx = cornerM.X - cx, dy = cornerM.Y - cy;
+    const den = bx * dy - by * dx;
+    if (Math.abs(den) < 1e-6) return null;
+    const t = ((cx - ax) * dy - (cy - ay) * dx) / den;
+    const apex = { X: ax + bx * t, Y: ay + by * t };
+    return Number.isFinite(apex.X + apex.Y) ? apex : null;
+  }
+
+  function beamGradient(target, from, cornerP, cornerM, colour, alpha, softness, gain, apex) {
     const soft = clamp(finite(softness, SOFT_DEFAULT), 0, 10);
     const feather = 0.06 + soft * 0.035;
     const profile = [[0, 0], [feather * 0.45, 0.3], [feather, 1],
       [1 - feather, 1], [1 - feather * 0.45, 0.3], [1, 0]];
     const lift = Math.max(0, finite(gain, 1));
     /* 筋は灯体（点）から放射状に伸びる。扇形のグラデーションなら等値線が灯体から出る半直線になる。
+       根元に幅があるときは中心を仮想の頂点（apex）に置く＝等値線が台形の縁に沿う。
        扇形が無い環境では平行のグラデーションへ戻す（見え方は近い）。 */
+    const origin = apex || from;
     if (typeof target.createConicGradient === "function") {
       const TAU = Math.PI * 2;
       const wrap = (value) => ((value % TAU) + TAU) % TAU;
       const angleAt = (t) => Math.atan2(
-        cornerM.Y + (cornerP.Y - cornerM.Y) * t - from.Y,
-        cornerM.X + (cornerP.X - cornerM.X) * t - from.X);
+        cornerM.Y + (cornerP.Y - cornerM.Y) * t - origin.Y,
+        cornerM.X + (cornerP.X - cornerM.X) * t - origin.X);
       const left = angleAt(0), right = angleAt(1);
       const clockwise = wrap(right - left) <= Math.PI;
       const start = clockwise ? left : right;
       const sweep = clockwise ? wrap(right - left) : wrap(left - right);
       if (sweep > 1e-4) {
-        const gradient = target.createConicGradient(start, from.X, from.Y);
+        const gradient = target.createConicGradient(start, origin.X, origin.Y);
         profile
           .map(([t, weight]) => [clamp(wrap(angleAt(t) - start) / TAU, 0, 1), weight])
           .sort((a, b) => a[0] - b[0])
@@ -444,9 +460,27 @@
     if (!from || !centre) return false;
     const span = Math.hypot(centre.X - from.X, centre.Y - from.Y);
     const alpha = clamp(level * VISUAL_GAIN, 0, 1);
+    /* 根元の幅（2026-09-27 実験室・本人要望「光の広がりは機材の幅から」）。pool.rootR（m）があれば、
+       筋は点でなくレンズ口径の幅から始まる台形になる。無ければ従来どおり点から開く三角。 */
+    const rootHalf = (() => {
+      const rootR = finite(pool.rootR, 0); if (!(rootR > 0)) return 0;
+      const q1 = P({ x: pool.from.x + 1, y: pool.from.y, z: pool.from.z });
+      const pxPerM = q1 ? Math.hypot(q1.X - from.X, q1.Y - from.Y) : 0;
+      return rootR * pxPerM;
+    })();
+    const rootEnds = (cornerP, cornerM) => {
+      if (!(rootHalf > 0.5)) return null;
+      const dx = centre.X - from.X, dy = centre.Y - from.Y, len = Math.hypot(dx, dy) || 1;
+      let nx = -dy / len * rootHalf, ny = dx / len * rootHalf;
+      if (cornerP && ((cornerP.X - centre.X) * nx + (cornerP.Y - centre.Y) * ny) < 0) { nx = -nx; ny = -ny; }
+      return { fromP: { X: from.X + nx, Y: from.Y + ny }, fromM: { X: from.X - nx, Y: from.Y - ny } };
+    };
 
     if (opts && opts.topDown) {
       if (!(span > LINE_MIN_PX)) return false;
+      /* 根元の幅を持つ光（灯体の形がある新しい pool）は、上から見る図では筋を描かない＝光だまりだけ
+         （2026-09-27 本人「平面図は光だまりだけでOK」）。根元の幅が無い旧来の pool は従来どおり破線。 */
+      if (rootHalf > 0.5) return false;
       ctx.save();
       ctx.globalCompositeOperation = "screen";
       ctx.strokeStyle = rgba(pool.color, LINE_ALPHA * alpha);
@@ -488,7 +522,8 @@
          destination-in はαを減らすことしかできないので、三角形の側を BEAM_FALL_HI 倍だけ濃く塗り、
          色止めを HI で割って 0〜1 に収める。掛け合わせると元の濃さ × 倍率に戻る。 */
     const stops = beamFalloff(pool, P, BEAM_FALL_STOPS, opts && opts.haze);   // opts.haze＝むらの振れ幅（hazeAmount で写した値）
-    const sheet = stops ? beamSheetFor(ctx, from, cornerP, cornerM) : null;
+    const ends = rootEnds(cornerP, cornerM);
+    const sheet = stops ? beamSheetFor(ctx, from, cornerP, cornerM, ends ? [ends.fromP, ends.fromM] : null) : null;
 
     if (!sheet) {
       /* ブラウザが無い／画面の外／一時キャンバスを作れないときは、長さ方向を掛けずにそのまま塗る
@@ -496,13 +531,15 @@
       ctx.save();
       ctx.globalCompositeOperation = "screen";
       ctx.fillStyle = beamGradient(ctx, from, cornerP, cornerM, pool.color, alpha, pool.softness, 1);
+      const e0 = rootEnds(cornerP, cornerM);
+      ctx.fillStyle = beamGradient(ctx, from, cornerP, cornerM, pool.color, alpha, pool.softness, 1, beamApex(e0, cornerP, cornerM));
       ctx.beginPath();
-      ctx.moveTo(from.X, from.Y);      // 灯体は点。点から広がる三角なら捻れない
-      ctx.lineTo(cornerP.X, cornerP.Y);
-      ctx.lineTo(cornerM.X, cornerM.Y);
+      if (e0) { ctx.moveTo(e0.fromP.X, e0.fromP.Y); ctx.lineTo(cornerP.X, cornerP.Y); ctx.lineTo(cornerM.X, cornerM.Y); ctx.lineTo(e0.fromM.X, e0.fromM.Y); }
+      else { ctx.moveTo(from.X, from.Y); ctx.lineTo(cornerP.X, cornerP.Y); ctx.lineTo(cornerM.X, cornerM.Y); }   // 灯体は点。点から広がる三角なら捻れない
       ctx.closePath();
       ctx.fill();
       ctx.restore();
+      if (e0) paintRootGlow(ctx, pool, from, centre, e0, cornerP, cornerM, alpha, beamApex(e0, cornerP, cornerM));
       return true;
     }
 
@@ -511,11 +548,10 @@
     sheetCtx.clearRect(0, 0, pw, ph);
     sheetCtx.setTransform(sx, 0, 0, sy, -x0 * sx, -y0 * sy);   // 以降は本体と同じ座標系のまま書ける
     sheetCtx.fillStyle = beamGradient(
-      sheetCtx, from, cornerP, cornerM, pool.color, alpha, pool.softness, BEAM_FALL_HI);
+      sheetCtx, from, cornerP, cornerM, pool.color, alpha, pool.softness, BEAM_FALL_HI, beamApex(ends, cornerP, cornerM));
     sheetCtx.beginPath();
-    sheetCtx.moveTo(from.X, from.Y);
-    sheetCtx.lineTo(cornerP.X, cornerP.Y);
-    sheetCtx.lineTo(cornerM.X, cornerM.Y);
+    if (ends) { sheetCtx.moveTo(ends.fromP.X, ends.fromP.Y); sheetCtx.lineTo(cornerP.X, cornerP.Y); sheetCtx.lineTo(cornerM.X, cornerM.Y); sheetCtx.lineTo(ends.fromM.X, ends.fromM.Y); }
+    else { sheetCtx.moveTo(from.X, from.Y); sheetCtx.lineTo(cornerP.X, cornerP.Y); sheetCtx.lineTo(cornerM.X, cornerM.Y); }
     sheetCtx.closePath();
     sheetCtx.fill();
 
@@ -537,7 +573,29 @@
     ctx.globalCompositeOperation = "screen";
     ctx.drawImage(canvas, 0, 0, pw, ph, x0, y0, w, h);
     ctx.restore();
+    if (ends) paintRootGlow(ctx, pool, from, centre, ends, cornerP, cornerM, alpha, beamApex(ends, cornerP, cornerM));
     return true;
+  }
+
+  /* 光の出だし（根元）の明るい芯。筋と同じ台形の中だけに、レンズから ROOT_FRAC までで消える光を足す。
+     形は筋そのもの＝縁が2本にならない。 */
+  const ROOT_FRAC = 0.38;
+  const ROOT_GAIN = 1.1;
+  /* 芯は本体の筋と**同じ横断面**（同じ扇形グラデーション・同じ縁のぼけ）で作り、長さ方向だけ根元に寄せる。
+     別の断面で重ねると「2つの光が層になった」ように見える（2026-09-27 本人指摘）。 */
+  function paintRootGlow(ctx, pool, from, centre, ends, cornerP, cornerM, alpha, apex) {
+    if (!(alpha > 0) || !ends) return;
+    const sheet = beamSheetFor(ctx, from, cornerP, cornerM, [ends.fromP, ends.fromM]);
+    if (!sheet) return;
+    const { canvas, ctx: sc, x0, y0, w, h, pw, ph, sx, sy } = sheet;
+    sc.setTransform(1, 0, 0, 1, 0, 0); sc.clearRect(0, 0, pw, ph); sc.setTransform(sx, 0, 0, sy, -x0 * sx, -y0 * sy);
+    sc.fillStyle = beamGradient(sc, from, cornerP, cornerM, pool.color, alpha, pool.softness, ROOT_GAIN, apex);
+    sc.beginPath(); sc.moveTo(ends.fromP.X, ends.fromP.Y); sc.lineTo(cornerP.X, cornerP.Y); sc.lineTo(cornerM.X, cornerM.Y); sc.lineTo(ends.fromM.X, ends.fromM.Y); sc.closePath(); sc.fill();
+    const shade = sc.createLinearGradient(from.X, from.Y, centre.X, centre.Y);
+    shade.addColorStop(0, "rgba(255,255,255,0.9)"); shade.addColorStop(ROOT_FRAC * 0.4, "rgba(255,255,255,0.4)"); shade.addColorStop(ROOT_FRAC, "rgba(255,255,255,0)"); shade.addColorStop(1, "rgba(255,255,255,0)");
+    sc.globalCompositeOperation = "destination-in"; sc.fillStyle = shade; sc.fillRect(x0, y0, w, h);
+    sc.globalCompositeOperation = "source-over"; sc.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.drawImage(canvas, 0, 0, pw, ph, x0, y0, w, h); ctx.restore();
   }
 
   /* 筋を描くぶんだけの一時キャンバスを用意する。画面の外は切り落とす（塗る面積＝重さなので）。 */
@@ -562,12 +620,13 @@
     };
   }
 
-  function beamSheetFor(ctx, from, cornerP, cornerM) {
+  function beamSheetFor(ctx, from, cornerP, cornerM, extra) {
     const target = ctx && ctx.canvas;
     const cw = target ? finite(target.width, 0) : 0;
     const ch = target ? finite(target.height, 0) : 0;
     if (!(cw > 0 && ch > 0)) return null;
-    const xs = [from.X, cornerP.X, cornerM.X], ys = [from.Y, cornerP.Y, cornerM.Y];
+    const pts = [from, cornerP, cornerM].concat(Array.isArray(extra) ? extra : []);
+    const xs = pts.map((q) => q.X), ys = pts.map((q) => q.Y);
     if (!xs.every(Number.isFinite) || !ys.every(Number.isFinite)) return null;
     const box = canvasBoxInUserSpace(ctx, cw, ch);
     const x0 = Math.max(Math.floor(box.x0), Math.floor(Math.min(...xs)) - 2);

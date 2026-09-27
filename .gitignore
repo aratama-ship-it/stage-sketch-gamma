@@ -184,6 +184,7 @@ public-dist/
 !/stage-reorder-motion.js
 !/stage-panel-columns.css
 !/stage-first-person.js
+!/stage-fixture-body.js
 !/stage-front-shape.js
 !/stage-i18n.js
 !/stage-i18n.zh-Hans.js
@@ -347,3 +348,8 @@ public-dist/
 # Protect unfinished saves on close without changing the show format.
 !stage-save-lifecycle.js
 !tests/stage-save-lifecycle.test.mjs
+
+!/tests/stage-fixture-body.test.mjs
+
+!/tests/cue-sheet-layout.test.mjs
+!/tests/feedback-customization-browser.cjs

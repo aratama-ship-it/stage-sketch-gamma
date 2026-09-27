@@ -2809,8 +2809,51 @@
     if (targets.length > 1) renderInspector();
   }
 
+  let fixtureMenu = null;
+  function closeFixtureMenu() { if (fixtureMenu) fixtureMenu.remove(); fixtureMenu = null; }
+  function openFixtureMenu(ev, fixture) {
+    if (!fixture) return;
+    ev.preventDefault(); closeFixtureMenu();
+    state.sel = new Set([fixture.id]); state.selEquipment = null; state.aimMirror = null;
+    state.tool = null;
+    renderAll();
+    const returnFocus = ev.currentTarget;
+    const menu = document.createElement("div");
+    menu.className = "fixture-context-menu"; menu.setAttribute("role", "menu");
+    menu.setAttribute("aria-label", label(fixture.id));
+    const actions = state.mode === "place"
+      ? [["コピー（複製）", duplicateSelected], ["削除", removeSelected]]
+      : [[state.solo ? "ソロを解除" : "ソロ", () => { state.solo = !state.solo; renderAll(); }],
+         [lightState(fixture.id) === "off" ? "オン" : "オフ", () => toggleLightOf(fixture)],
+         ["リセット（はじめに戻す）", () => resetCueLights([fixture.id], "default")]];
+    actions.forEach(([name, run]) => {
+      const button = document.createElement("button"); button.type = "button";
+      button.setAttribute("role", "menuitem"); button.textContent = name;
+      button.onclick = () => { closeFixtureMenu(); run(); };
+      menu.append(button);
+    });
+    document.body.append(menu); fixtureMenu = menu;
+    menu.style.left = `${Math.max(4, Math.min(ev.clientX, innerWidth - menu.offsetWidth - 4))}px`;
+    menu.style.top = `${Math.max(4, Math.min(ev.clientY, innerHeight - menu.offsetHeight - 4))}px`;
+    menu.querySelector("button").focus({ preventScroll: true });
+    menu.addEventListener("keydown", e => {
+      const items = [...menu.querySelectorAll("button")], i = items.indexOf(document.activeElement);
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeFixtureMenu(); returnFocus?.focus?.({preventScroll:true}); }
+      else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) {
+        e.preventDefault(); items[e.key === "Home" ? 0 : e.key === "End" ? items.length-1 : (i + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length].focus({preventScroll:true});
+      }
+    });
+  }
+  document.addEventListener("pointerdown", e => { if (fixtureMenu && !fixtureMenu.contains(e.target)) closeFixtureMenu(); }, true);
+  window.addEventListener("blur", closeFixtureMenu);
+  window.addEventListener("resize", closeFixtureMenu);
+  $("list").addEventListener("contextmenu", e => { const row = e.target.closest("[data-fixture-id]"); if (row) openFixtureMenu(e, fixtureById(row.dataset.fixtureId)); });
+  plan.addEventListener("contextmenu", e => openFixtureMenu(e, hitFixturePlan(canvasPoint(plan, e))));
+  SECS.forEach(sec => sec.cv.addEventListener("contextmenu", e => openFixtureMenu(e, hitFixtureSec(sec, canvasPoint(sec.cv, e)))));
+
   /* ---------- ポインタ操作: 平面図 ---------- */
   plan.addEventListener("pointerdown", (ev) => {
+    if (ev.button !== 0) return;
     const pt = canvasPoint(plan, ev); const B = planBox(); try { plan.setPointerCapture(ev.pointerId); } catch (_) { /* 合成イベント等 */ } plan.focus && plan.focus();
     if (state.tool === "border" || state.tool === "pros" || state.tool === "legs") return;
     if (state.tool === "truss") { addTruss(snapV(E.clamp((pt.Y - B.y) / B.h, 0, 1))); return; }   // addTruss内で灯体配置モードへ移る
@@ -2977,6 +3020,7 @@
   function bindSection(sec) {
     const cv = sec.cv;
     cv.addEventListener("pointerdown", (ev) => {
+      if (ev.button !== 0) return;
       const side = sec.kind;   // "front" | "shimote" | "kamite"。切り替えるので都度読む
       const pt = canvasPoint(cv, ev); const B = secBox(cv, side); const P = secProj(sec);
       try { cv.setPointerCapture(ev.pointerId); } catch (_) { /* 合成イベント等 */ }
@@ -3219,7 +3263,17 @@
     return `${label(f.id)} ${f.name || ""} ${E.describeMount(f, state.rig)}`.toLowerCase().includes(q.toLowerCase());
   }
 
-  function renderList() {
+  function preservePanelScroll(render) {
+    const entries = [...document.querySelectorAll(".modal, .body, .figgrid, .panel, .list, .inspbody, .lxlist, .lxbody")]
+      .map(el => [el, el.scrollTop, el.scrollLeft]);
+    const pageX = window.scrollX, pageY = window.scrollY;
+    const result = render();
+    entries.forEach(([el, top, left]) => { el.scrollTop = top; el.scrollLeft = left; });
+    if (window.scrollX !== pageX || window.scrollY !== pageY) window.scrollTo(pageX, pageY);
+    return result;
+  }
+  function renderList() { return preservePanelScroll(renderListContent); }
+  function renderListContent() {
     const host = $("list"); host.innerHTML = "";
     // 20灯以上でも一度に見渡せるよう、多いときは1行表示へ落とす（2026-09-11 実測で7行しか見えなかった）
     host.classList.toggle("compact", state.rig.fixtures.length > 12);
@@ -3228,7 +3282,7 @@
        半分幅では2列にすると1枠70px前後になり、名前もオン・オフも読めない（2026-09-13）。 */
     host.classList.toggle("cols2", host.clientWidth >= 230);
     const c = cue(); const grouped = new Set(c.groups.flatMap((g) => g.members));
-    const row = (f, idx) => { const r = document.createElement("div"); r.className = "row" + (isSel(f.id) ? " sel" : "") + (state.mode === "place" && f.mount.type !== "cyc" ? " with-delete" : ""); const st = lightState(f.id);
+    const row = (f, idx) => { const r = document.createElement("div"); r.dataset.fixtureId = f.id; r.className = "row" + (isSel(f.id) ? " sel" : "") + (state.mode === "place" && f.mount.type !== "cyc" ? " with-delete" : ""); const st = lightState(f.id);
       r.innerHTML = `<span class="no">${idx !== undefined ? idx + 1 + "." : ""}${label(f.id)}</span><span class="nm">${f.name || "名前なし"}<small>${E.describeMount(f, state.rig).replace(/（高さ約\dm）/, "")}</small></span>`;
       // 状態の欄はそのまま押せるオン／オフにする（2026-09-11 本人要望。一覧から直接切り替えたい）
       const stCell = document.createElement(state.mode === "move" ? "button" : "span");
@@ -4558,7 +4612,8 @@
     });
   }
 
-  function renderInspector() {
+  function renderInspector() { return preservePanelScroll(renderInspectorContent); }
+  function renderInspectorContent() {
     const host = $("insp"); host.innerHTML = "";
     const ids = [...state.sel];
     /* もやは軽量化のため現在使わない。操作不能な欄は灯体情報に出さない。
@@ -4929,7 +4984,8 @@
 
 
   /* ---------- 全体 ---------- */
-  function renderAll() {
+  function renderAll() { return preservePanelScroll(renderAllContent); }
+  function renderAllContent() {
     window.dispatchEvent(new Event("gamma-light-edit"));
     $("mode-place").setAttribute("aria-pressed", String(state.mode === "place")); $("mode-move").setAttribute("aria-pressed", String(state.mode === "move"));
     syncDistanceMetric();

@@ -203,7 +203,7 @@
     return list(values).filter((value) => !name || text(value).includes(name)).join(" ／ ");
   }
 
-  function buildPerformerSheet(project, castKey, helpers = {}) {
+  function buildPerformerSheetBase(project, castKey, helpers = {}) {
     const performer = performerGroups(project).find((entry) => entry.key === castKey);
     if (!performer) throw new Error(`Unknown performer sheet: ${castKey}`);
     const rows = list(project && project.scenes).filter((row) => row && row.kind === "scene");
@@ -251,6 +251,25 @@
       legend: t("● 舞台上　→ 動線あり　◆ 持ち物の変化　☀ 明かり　♪ 音　⚙ 機構"),
     };
   }
+
+  function layoutColumns(columns, layout) {
+    const source = list(columns), byKey = new Map(source.map(c => [c.key, c]));
+    const order = [...new Set(list(layout && layout.order).filter(key => byKey.has(key)))];
+    source.forEach(c => { if (!order.includes(c.key)) order.push(c.key); });
+    const hidden = new Set(list(layout && layout.hidden));
+    let visible = order.filter(key => !hidden.has(key));
+    if (!visible.length) visible = order.slice(0, 1);
+    return visible.map(key => {
+      const column = byKey.get(key), width = Number(layout && layout.widths && layout.widths[key]);
+      return { ...column, width: Number.isFinite(width) && width > 0 ? `${Math.round(Math.max(80, Math.min(800, width)))}px` : column.width };
+    });
+  }
+  function buildPerformerSheet(project, castKey, helpers) {
+    const sheet = buildPerformerSheetBase(project, castKey, helpers);
+    if (project && project.cueSheetLayout) sheet.columns = layoutColumns(sheet.columns, project.cueSheetLayout);
+    return sheet;
+  }
+  function performerColumns(project, castKey, helpers) { return buildPerformerSheetBase(project, castKey, helpers).columns; }
 
   function pieceIdentity(piece) {
     return piece && (piece.originId || piece.setId || piece.castId || piece.id);
@@ -467,7 +486,7 @@
     const columns = list(sheet && sheet.columns);
     const editable = options && options.editable === true && sheet && sheet.kind === "performer";
     const wingChoices = list(sheet && sheet.wingOptions);
-    const head = columns.map((column) => `<th scope="col" class="${escapeHtml(column.className || "")}">${escapeHtml(column.label)}</th>`).join("");
+    const head = columns.map((column) => `<th scope="col" data-cue-column="${escapeHtml(column.key)}" class="${escapeHtml(column.className || "")}"${options.customizable ? ' draggable="true"' : ""}>${escapeHtml(column.label)}${options.customizable ? `<span class="cue-column-resize" role="separator" tabindex="0" aria-orientation="vertical" aria-label="${escapeHtml(column.label)}の列幅" data-resize-column="${escapeHtml(column.key)}"></span>` : ""}</th>`).join("");
     // 列幅のバランス（2026-09-24 本人指示）。width を持つ列だけ colgroup で幅を渡す（全体表は列数が変わるので成り行き）。
     const colgroup = columns.some((column) => column.width)
       ? `<colgroup>${columns.map((column) => `<col${column.width ? ` style="width:${escapeHtml(column.width)}"` : ""}>`).join("")}</colgroup>` : "";
@@ -501,6 +520,8 @@
 
   root.SHOSAI_CUE_SHEET = Object.freeze({
     buildPerformerSheet,
+    performerColumns,
+    layoutColumns,
     buildDepartmentSheet,
     buildMasterSheet,
     listSheets,

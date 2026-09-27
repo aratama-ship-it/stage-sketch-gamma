@@ -3866,6 +3866,28 @@
     band(top * 0.45, top, 0.05 * fog.amount);
   }
 
+  /* 灯体の形（2026-09-27 本人要望）。共有部品 stage-fixture-body.js の幾何（土台・ヨーク・ヘッド／PAR缶）を
+     3Dの投影で描く。光だまりを出しているとき（lightPool）だけ。点いていない灯も向きは残す。
+     ★灯体はトラスの高さにあり駒と重ならないので、帯の後に上から描く。 */
+  function drawCueFixtureBodies(ctx) {
+    if (!data || !data.lightPool) return;
+    const body = window.FIXTURE_BODY;
+    const model = cueLightModel();
+    if (!body || !model || !model.counts.total) return;
+    if (Math.abs((model.dims && model.dims.W) - W) > 0.01 || Math.abs((model.dims && model.dims.D) - D) > 0.01) return;
+    const project = cueLightProjector();
+    const P = (pt) => project(pt) || { X: NaN, Y: NaN };
+    (model.fixtures || []).forEach((fx) => {
+      if (!fx || fx.outside || fx.kind === "laser" || /^cyc/.test(String(fx.mountType || ""))) return;
+      const S = { x: (finite(fx.u, 0.5) - 0.5) * W, y: finite(fx.v, 0.5) * D, z: Math.max(0.5, finite(fx.h, 6)) };
+      const aim = fx.pool && fx.pool.to ? fx.pool.to : (fx.aim && fx.aim.a ? { x: (finite(fx.aim.a.u, 0.5) - 0.5) * W, y: finite(fx.aim.a.v, 0.5) * D, z: finite(fx.aim.a.hM === undefined ? fx.aim.a.h : fx.aim.a.hM, 0) } : null);
+      const geom = fx.kind === "moving" ? body.movingHead(S, aim, { scale: 1 }) : body.parCan(S, aim, { scale: 1 });
+      if (geom.bbox.some((pt) => !project(pt))) return;   // カメラの後ろにある灯は描かない
+      const q0 = project(geom.pivot), q1 = project({ x: geom.pivot.x + 1, y: geom.pivot.y, z: geom.pivot.z });
+      const px = q0 && q1 ? Math.max(4, Math.hypot(q1.X - q0.X, q1.Y - q0.Y)) : 40;
+      body.draw(ctx, P, geom, { color: fx.color, lit: fx.state === "on" ? finite(fx.level, 100) / 100 : 0, beamDeg: fx.pool ? finite(fx.pool.deg, 18) : 18, px });
+    });
+  }
   function drawCueBeams(ctx) {
     if (!data || !data.lightBeam || !data.lightPool) return;
     const render = window.SHOSAI_LIGHT_RENDER;
@@ -4136,7 +4158,7 @@
     if (pointSources3d.length && !data.workLightOff) window.SHOSAI_STAGE_POINT_SOURCE.paint(ctx, pointSources3d, pointProject, { core: false });
     drawLightPools(ctx, data.pieces);
     drawCueLight(ctx);        // 床に落ちた光。駒より先＝光の上に人が立つ
-    if (!(data && data.workLightOff)) { drawCueBeams(ctx); drawCueLasers(ctx); }   // 作業灯が点いているなら、筋は駒の奥
+    if (!(data && data.workLightOff)) { drawCueBeams(ctx); drawCueFixtureBodies(ctx); drawCueLasers(ctx); }   // 作業灯が点いているなら、筋は駒の奥
     data.pieces.filter((piece) => piece.type === "performer" && piece.route)
       .forEach((piece) => drawRoute(ctx, piece, camera.me === piece));
     framePieceOrder = data.pieces.filter((piece) => piece.type !== "light")
@@ -4157,7 +4179,7 @@
       collectingPieceLabels = false;
       redrawLitPieces(ctx, drawOnePiece);
       collectingPieceLabels = true;   // 光の中にいる駒を明るく戻す
-      drawCueBeams(ctx);                    // 空気の筋は暗幕の上から足す
+      drawCueBeams(ctx); drawCueFixtureBodies(ctx);                    // 空気の筋は暗幕の上から足す
       drawCueLasers(ctx);                    // レーザーも同じ順番
       // Exits beyond the stage are navigation silhouettes. Restore their dim
       // body after luminous backdrop effects, still respecting real screens.
