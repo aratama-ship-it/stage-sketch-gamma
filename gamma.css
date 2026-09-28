@@ -816,11 +816,22 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head {
     min-width: 0;
   }
 }
-#stage-save-status { overflow-wrap: anywhere; }
-#stage-save-status[data-level="warn"] {
-  border-left: 2px solid var(--brass);
-  padding-left: 8px;
+#stage-save-status {
+  overflow-wrap: anywhere;
+  margin: 0 0 10px;
+  padding: 9px 11px;
+  border: 1px solid var(--line-dark);
+  border-left: 3px solid var(--brass);
+  background: var(--desk-2);
   color: var(--milk);
+  font-size: 12px;
+  line-height: 1.5;
+}
+#stage-save-status[data-level="saving"] { border-left-color: var(--storage-warning-caution); }
+#stage-save-status[data-level="saved"] { border-left-color: var(--moss); }
+#stage-save-status[data-level="warn"] {
+  border-left-color: var(--danger);
+  color: var(--paper);
 }
 html[data-stage-skin] .stage-modal:not([hidden]) { max-height: calc(100dvh - 32px); overflow-y: auto; }
 html[data-stage-skin] #gamma-venue-workspace .stage-modal { max-height: none; }

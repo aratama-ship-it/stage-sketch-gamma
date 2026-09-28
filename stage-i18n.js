@@ -2168,7 +2168,7 @@
       stand_hands_on_hips: "Stand, hands on hips",
       stand_contrapposto: "Stand, weight on one leg", lean_wall: "Lean on wall",
       sit_cross_legs: "Sit, legs crossed", sit_chin_rest: "Sit, chin on hand", sit_lean_back: "Sit, leaning back",
-      sit_reverse_chair: "Sit backwards on chair", sit_forward: "Sit, leaning forward", write_desk: "Write at desk",
+      sit_reverse_chair: "Sit backwards on chair", sit_forward: "Sit, leaning forward", stairs_sit: "Sit on stairs, elbows on knees", write_desk: "Write at desk",
       collapse_knees: "Collapsing to the knees", collapse_hands_floor: "Collapsed, hands on floor", lie_spread: "Lying spread-eagle",
       cry_cover: "Cry, covering face", shout: "Shout", think_chin: "Think, hand on chin", head_down: "Head hung low",
       hold_head: "Hold head in hands", hand_on_chest: "Hand on chest", surprised: "Startled, recoil", pray: "Pray, palms together",

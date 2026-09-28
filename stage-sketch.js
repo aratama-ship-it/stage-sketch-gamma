@@ -5722,6 +5722,17 @@
       anL: [-0.06, 0.045, 0.24], anR: [0.06, 0.045, 0.24],
       toL: [-0.06, 0.012, 0.32], toR: [0.06, 0.012, 0.32],
     }, { face: [0, -0.22, 0.976] }),
+    makePose("stairs_sit", "階段に座る（肘を膝に）", {
+      // 段の座面に腰を置き、両足は一段下へ。低い一段目でも足が床を貫かない。
+      head: [0, 0.50, 0.18], neck: [0, 0.45, 0.13],
+      shL: [-0.1075, 0.405, 0.10], shR: [0.1075, 0.405, 0.10],
+      elL: [-0.09, 0.225, 0.20], wrL: [-0.03, 0.18, 0.30],
+      elR: [0.09, 0.225, 0.20], wrR: [0.03, 0.18, 0.30],
+      hipL: [-0.058, 0.12, -0.02], hipR: [0.058, 0.12, -0.02],
+      knL: [-0.065, 0.21, 0.22], knR: [0.065, 0.21, 0.22],
+      anL: [-0.06, 0.045, 0.24], anR: [0.06, 0.045, 0.24],
+      toL: [-0.06, 0.012, 0.32], toR: [0.06, 0.012, 0.32],
+    }, { face: [0, -0.22, 0.976] }),
     makePose("write_desk", "書く（机に向かう）", {
       // 右手を紙へ運び、左手で紙を押さえる。頭と胸も机へ向ける
       head: [0, 0.675, 0.165], neck: [0, 0.62, 0.12],
@@ -6934,21 +6945,23 @@
     list.forEach((piece) => heldPropShapes(piece).forEach((shape) => held.add(shape)));
     const inUse = new Set(list.map((piece) => piece && piece.pose).filter(Boolean));
     const allOnChairs = list.length > 0 && list.every((piece) => mountKindOf(piece) === "chair");
+    const allOnStairs = list.length > 0 && list.every((piece) => mountKindOf(piece) === "stairs");
     /* 器具に乗っている演者は、その器具の姿勢の組だけを出す（先頭は器具側の既定の姿勢）。 */
     const mounts = new Set(list.map((piece) => mountKindOf(piece) || ""));
     const mount = mounts.size === 1 ? [...mounts][0] : "";
-    if (mount && mount !== "chair") {
+    if (mount && mount !== "chair" && mount !== "stairs") {
       const choices = mountPoseChoices(mount);
       if (!choices.length) return [];
       return [mountDefaultPose(mount, list[0])].concat(choices.map((id) => POSES.find((pose) => pose.id === id)));
     }
-    if (mounts.size > 1 && [...mounts].some((m) => m && m !== "chair")) return [];
+    if (mounts.size > 1 && [...mounts].some((m) => m && m !== "chair" && m !== "stairs")) return [];
     return POSES.filter((pose) => {
       if ([
         "backflip", "walkover-mid", "frontroll-mid", "roundoff-mid",
         "backhandspring-mid", "dance3", "handstand-mid",
       ].includes(pose.id)) return false;
       if (isChairSitPose(pose.id)) return allOnChairs;
+      if (isStairSitPose(pose.id)) return allOnStairs;
       const needs = POSE_PROPS[pose.id];
       if (!needs) return true;
       if (inUse.has(pose.id)) return true;
@@ -6978,6 +6991,7 @@
     "shamisen_play", "harp_play", "cajon_play",
   ]);
   const isChairSitPose = (id) => CHAIR_SIT_POSES.has(id);
+  const isStairSitPose = (id) => id === "stairs_sit";
   /* 2026-09-26: 器具に乗った演者が選べる姿勢の組（本人が選んだ空中の姿勢のため）。
      ここに無い姿勢で器具に乗ると、今までどおり器具側の姿勢（人間旗・座る／ぶら下がる）に固定される。
      ★姿勢の作り方: ポールは原点を握りの中央（poleflag_r と同じ・体は +x 側。左側は "@left" で自動反転）、
@@ -7035,7 +7049,7 @@
     { ja: "立つ・歩く・座る・寝る", ids: ["stand", "walk", "run", "sit", "crouch", "kneel", "hizadachi", "floorsit", "agura",
       "seiza", "longsit", "yankee", "allfours", "lie", "supine", "sidelie", "stand_arms_crossed", "stairs_climb", "sneak", "stagger",
       "march", "elder_walk", "arrogant_walk", "back_away", "stand_hands_on_hips", "stand_contrapposto", "lean_wall", "sit_cross_legs",
-      "sit_chin_rest", "sit_lean_back", "sit_reverse_chair", "sit_forward"] },
+      "sit_chin_rest", "sit_lean_back", "sit_reverse_chair", "sit_forward", "stairs_sit"] },
     { ja: "礼・合図・身振り", ids: ["reach", "open", "hat", "dogeza", "bow_deep", "wave", "point", "look_up", "turn_back", "bow_light",
       "blow_kiss", "beckon", "raise_hand", "salute", "fist_pump", "clap", "look_down", "shade_eyes", "listen_ear", "hide_crouch", "shrug",
       "mime_wall", "sign_language_speak", "hug_holder", "hug_held", "hand_in_hand", "shoulder_arm", "whisper", "handshake", "propose_kneel",
@@ -14135,7 +14149,7 @@
           }
           if (state !== savingState) break;
           autosaveFailed = false;
-          setSaveStatus(sx(`「${state.project.title}」を保存しました。`, `Saved “${state.project.title}”.`));
+          setSaveStatus(sx(`「${state.project.title}」を保存しました。`, `Saved “${state.project.title}”.`), "saved");
           const saveError = document.getElementById("stage-show-save-error");
           if (saveError) saveError.hidden = true;
           updateBackupNote(); syncSaveStamps(); scheduleStorageMaintenance();
@@ -14161,7 +14175,7 @@
     }
     clearTimeout(saveTimer);
     autosaveRequested = true;
-    setSaveStatus(tx("変更を保存しています…") || "Saving…");
+    setSaveStatus(tx("変更を保存しています…") || "Saving…", "saving");
     saveTimer = setTimeout(flushAutosave, 250);
   }
 
@@ -14564,7 +14578,18 @@
    * 候補は「自分より先に並んでいるもの」だけ。互いを支えにすると高さが
    * 際限なく積み上がるので、並び順で循環を断つ。
    * 動かしている駒は並びの最後へ回すので、必ず重なった相手の上に乗る。 */
-  const PERFORMER_UNSUPPORTABLE_TYPES = { chair: true, table: true, bench: true, stool: true };
+  const PERFORMER_UNSUPPORTABLE_TYPES = { chair: true, table: true, bench: true, stool: true, block: true, model: true };
+  const stairShapeOf = (piece) => piece && piece.type === "prop"
+    && ["stairs", "stairs6"].includes(propShapeOf(piece)) ? propShapeOf(piece) : null;
+  function performerBodyRadiusAlong(piece, dx, dz) {
+    const rad = finite(piece.facing, 0) * Math.PI / 180;
+    const lateral = dx * Math.cos(rad) + dz * Math.sin(rad);
+    const forward = -dx * Math.sin(rad) + dz * Math.cos(rad);
+    const height = pieceHeightM(piece) * (piece.size / 100);
+    const halfShoulder = height * SHOULDER_RATIO / 2;
+    const halfDepth = halfShoulder * BODY_DEPTH_RATIO;
+    return 1 / Math.hypot(lateral / halfShoulder, forward / halfDepth);
+  }
   function supportUnder(piece, size, candidates) {
     let top = 0;
     let holder = null;
@@ -14595,8 +14620,28 @@
       const lx = dw * Math.cos(rad) + dd * Math.sin(rad) - foot.cx;
       const ly = -dw * Math.sin(rad) + dd * Math.cos(rad) - foot.cz;
       if (Math.abs(lx) > foot.w / 2 || Math.abs(ly) > foot.d / 2) return;
+      // 手足や長い姿勢の描画範囲に触れただけでは、隣の演者の上へ乗せない。
+      // 乗る姿勢を明示した場合は肩・手を使う従来の判定を残す。
+      if (piece.type === "performer" && other.type === "performer"
+          && rideTopLocal(piece, other) === null) {
+        const distance = Math.hypot(dw, dd);
+        if (distance > 0) {
+          const nx = dw / distance, nz = dd / distance;
+          const contact = performerBodyRadiusAlong(piece, nx, nz)
+            + performerBodyRadiusAlong(other, nx, nz);
+          if (distance >= contact) return;
+        }
+      }
       const ridden = rideTopLocal(piece, other);
-      const t = (other.base || 0) + (ridden === null ? pieceTopLocal(other) : ridden);
+      let localTop = ridden === null ? pieceTopLocal(other) : ridden;
+      const stairShape = stairShapeOf(other);
+      if (stairShape) {
+        const count = stairShape === "stairs6" ? 6 : 4;
+        const d = pieceDims(other);
+        const step = Math.max(0, Math.min(count - 1, Math.floor((d.d / 2 - ly) / (d.d / count))));
+        localTop = d.h * (step + 1) / count;
+      }
+      const t = (other.base || 0) + localTop;
       if (t > top) { top = t; holder = other.id; }
     });
     return { top, holder };
@@ -14705,6 +14750,9 @@
       if (previousMount === "chair" && (!foundHolder || foundHolder.type !== "chair") && isChairSitPose(piece.pose)) {
         piece.pose = "stand";
       }
+      if (previousMount === "stairs" && (!foundHolder || !stairShapeOf(foundHolder)) && isStairSitPose(piece.pose)) {
+        piece.pose = "stand";
+      }
 
       /* ポール。上に立つのではなく、手で付いて浮く（人間旗）。
          近く（0.55m以内）へ置いた演者は、握りの高さ poleH でポールへ付く。 */
@@ -14768,6 +14816,10 @@
       if (previousMount && previousMount !== "chair" && isMountPose(previousMount, piece.pose)) piece.pose = "stand";
       if (foundHolder && foundHolder.type === "chair" && isChairSitPose(piece.pose)) {
           const sitHip = 0.285 * pieceHeightM(piece) * (piece.size / 100);
+          piece.base = Math.max(0, found.top - sitHip);
+      }
+      if (foundHolder && stairShapeOf(foundHolder) && isStairSitPose(piece.pose)) {
+          const sitHip = 0.12 * pieceHeightM(piece) * (piece.size / 100);
           piece.base = Math.max(0, found.top - sitHip);
       }
     });
@@ -14972,7 +15024,7 @@
   function poseLockedByMount(piece) {
     const mount = mountKindOf(piece);
     // 器具の姿勢の組がある器具（2026-09-26）は、その組の中から選べる
-    return Boolean(mount && mount !== "chair" && !mountPoseChoices(mount).length);
+    return Boolean(mount && mount !== "chair" && mount !== "stairs" && !mountPoseChoices(mount).length);
   }
 
   function performerRig(piece, pos, L) {
@@ -15239,6 +15291,7 @@
     if (!holder) return null;
     if (holder.type === "pole") return "pole";
     if (holder.type === "chair") return "chair";
+    if (stairShapeOf(holder)) return "stairs";
     if (holder.type === "trapeze") return "trapeze";
     if (holder.type === "tissue") return "tissue";
     if (holder.type === "rigpoint") return "rig";
@@ -34487,12 +34540,13 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const performers = selectedPerformerPieces();
     if (!pose || !performers.length || performers.some((piece) => poseLockedByMount(piece))) return 0;
     if (isChairSitPose(pose.id) && !performers.every((piece) => mountKindOf(piece) === "chair")) return 0;
+    if (isStairSitPose(pose.id) && !performers.every((piece) => mountKindOf(piece) === "stairs")) return 0;
     // 器具の姿勢は、その器具に乗っている演者だけへ。既定の姿勢の札は "stand"（＝器具側の姿勢）として保存する
     const target = isMountDefaultPose(pose) ? "stand" : pose.id;
     const mountOf = (piece) => mountKindOf(piece);
     if (!isMountDefaultPose(pose) && Object.keys(MOUNT_POSES).some((m) => MOUNT_POSES[m].includes(pose.id))
       && !performers.every((piece) => isMountPose(mountOf(piece), pose.id))) return 0;
-    if (!isMountDefaultPose(pose) && performers.some((piece) => { const m = mountOf(piece); return m && m !== "chair" && !isMountPose(m, pose.id); })) return 0;
+    if (!isMountDefaultPose(pose) && performers.some((piece) => { const m = mountOf(piece); return m && m !== "chair" && m !== "stairs" && !isMountPose(m, pose.id); })) return 0;
     const changed = performers.filter((piece) => piece.pose !== target);
     if (!changed.length) return 0;
     checkpoint();
@@ -37905,9 +37959,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         if (!piece || (!POSES.some((p) => p.id === poseId) && !hiddenDefault)) return false;
         if (poseLockedByMount(piece)) return false;
         if (isChairSitPose(poseId) && mountKindOf(piece) !== "chair") return false;
+        if (isStairSitPose(poseId) && mountKindOf(piece) !== "stairs") return false;
         const mount = mountKindOf(piece);
-        if (mount && mount !== "chair" && !hiddenDefault && !isMountPose(mount, poseId)) return false;
-        if ((!mount || mount === "chair") && Object.keys(MOUNT_POSES).some((m) => MOUNT_POSES[m].includes(poseId))) return false;
+        if (mount && mount !== "chair" && mount !== "stairs" && !hiddenDefault && !isMountPose(mount, poseId)) return false;
+        if ((!mount || mount === "chair" || mount === "stairs") && Object.keys(MOUNT_POSES).some((m) => MOUNT_POSES[m].includes(poseId))) return false;
         const target = hiddenDefault ? "stand" : poseId;
         if (piece.pose === target) return true;
         checkpoint();

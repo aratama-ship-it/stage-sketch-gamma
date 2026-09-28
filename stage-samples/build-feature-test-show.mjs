@@ -225,14 +225,16 @@ section("a", "A 演者と姿勢");
 // A-1 には後で文脈ヘルプの駒が2つ、A-2 には1つ足される（下）。上限80駒に収まるよう 78件・79件にする。
 const A_SCENE_CAPS = [78, 79];
 const A_POSES = A_SCENE_CAPS[0] + A_SCENE_CAPS[1];
+// 階段専用の座り方は C-4 の実物の段で検証する。
+const GENERAL_POSES = POSES.filter((id) => id !== "stairs_sit");
 // あふれた姿勢は、文脈ヘルプの駒3つ → J-1 の演者50人の順に割り当てる
-const HELP_POSES = POSES.slice(A_POSES, A_POSES + 3);
-const POSE_OVERFLOW = POSES.slice(A_POSES + 3);
+const HELP_POSES = GENERAL_POSES.slice(A_POSES, A_POSES + 3);
+const POSE_OVERFLOW = GENERAL_POSES.slice(A_POSES + 3);
 if (POSE_OVERFLOW.length > 50) throw new Error(`姿勢が多すぎて試験場に並べきれません（${POSES.length}件・A 群 ${A_POSES}＋ヘルプ 3＋J-1 50＝${A_POSES + 53} 件まで）`);
-[POSES.slice(0, A_SCENE_CAPS[0]), POSES.slice(A_SCENE_CAPS[0], A_POSES)].filter((list) => list.length).forEach((list, index) => {
+[GENERAL_POSES.slice(0, A_SCENE_CAPS[0]), GENERAL_POSES.slice(A_SCENE_CAPS[0], A_POSES)].filter((list) => list.length).forEach((list, index) => {
   const positions = grid(list.length, 6, 0.08, 0.92, 0.2, 0.9);
   scene(`a${index + 1}`, `A-${index + 1} 全姿勢 ${index + 1}/2（${list.length}種）`, 1,
-    `${CHECK}登録の無い演者（名前＝姿勢ID）を全姿勢ぶん並べた。正面図で形が崩れていないか、平面図の足元の大きさ、選んだときの枠、3Dカメラでの見え方を見る。姿勢は本体の POSES から自動で拾っている（${POSES.length}種。A-1 に78件・A-2 に79件、あふれた分は文脈ヘルプの駒3つと J-1 の演者に割り当て）。姿勢を選ぶ場所（姿勢の窓・図の下の帯・演者を追加する窓）は分類の見出しで分かれ、窓と演者を追加する窓は検索で絞れること。帯は先頭の選択欄で分類を切り替え、末尾の「探す」で検索付きの窓が開くこと。`,
+    `${CHECK}登録の無い演者（名前＝姿勢ID）を全姿勢ぶん並べた。正面図で形が崩れていないか、平面図の足元の大きさ、選んだときの枠、3Dカメラでの見え方を見る。姿勢は本体の POSES から自動で拾っている（${POSES.length}種。階段専用はC-4、A-1 に78件・A-2 に79件、あふれた分は文脈ヘルプの駒3つと J-1 の演者に割り当て）。姿勢を選ぶ場所（姿勢の窓・図の下の帯・演者を追加する窓）は分類の見出しで分かれ、窓と演者を追加する窓は検索で絞れること。帯は先頭の選択欄で分類を切り替え、末尾の「探す」で検索付きの窓が開くこと。`,
     list.map((pose, i) => perf(`a${index + 1}`, null, positions[i].u, positions[i].v, { pose, name: pose, color: COLORS[i % COLORS.length] })));
 });
 /* 文脈ヘルプ: A-1の登録共通固定と駒単体固定、A-2に同じ登録の固定を置く。 */
@@ -386,8 +388,15 @@ section("c", "C 舞台セット・小道具・空中");
     // W4（2026-09-26）: 吊り点。高さ4.5m（このシーン）で演者08がハーネスで飛ぶ。次の C-5 では1.8mへ下りる
     setPiece("c3", "rig", 0.88, 0.3, { rigH: 4.5 }), perf("c3", "p08", 0.88, 0.3, { pose: "pose_harness_flight" }),
   ];
+  // 既存の駒IDを変えずに、階段の一段下へ足を置いて座る例を追加する。
+  pieces.push(
+    { id: "ft-c3-stairs-seat", type: "prop", setId: null, propShape: "stairs",
+      u: 0.12, v: 0.87, facing: 0, size: 100, color: "#766a59", name: "階段の座面" },
+    { id: "ft-c3-stairs-actor", type: "performer", castId: castId("p09"), originId: "ft-origin-p09",
+      u: 0.12, v: 0.91, facing: 0, pose: "stairs_sit", size: 100, color: cast[8].color, name: "" },
+  );
   scene("c3", "C-4 空中・器具に乗る", 1,
-    `${CHECK}トラピーズ（ぶら下がり）、ティシュー（掴む高さ3.5m）、ポール（左側・握り4.5m）、シルホイール、ティーターボード、綱渡り、トランポリンに演者を乗せた状態。右奥は吊り点（ワイヤー）: 高さ4.5m で演者08がハーネスで飛ぶ（高さは「地上高」のつまみで、このシーンだけ変わる）。右手前にディアボロ（縦置き。横置きと切り替え）。乗り降り（駒を器具から離す）、高所の下の注意（設定でON）、3Dでの高さ。ティーターボードを回転・固定してから3Dと舞台を往復し、取り消しとやり直しで編集を戻せること。`, pieces);
+    `${CHECK}トラピーズ（ぶら下がり）、ティシュー（掴む高さ3.5m）、ポール（左側・握り4.5m）、シルホイール、ティーターボード、綱渡り、トランポリンに演者を乗せた状態。左手前の階段では演者09が肘を膝につけて座り、腰が段の上、足が一段下にある。階段の各段へ動かしても腰が段に合い、階段から離すと立つ。右奥は吊り点（ワイヤー）: 高さ4.5m で演者08がハーネスで飛ぶ（高さは「地上高」のつまみで、このシーンだけ変わる）。右手前にディアボロ（縦置き。横置きと切り替え）。乗り降り（駒を器具から離す）、高所の下の注意（設定でON）、3Dでの高さ。ティーターボードを回転・固定してから3Dと舞台を往復し、取り消しとやり直しで編集を戻せること。`, pieces);
 }
 {
   const pieces = [

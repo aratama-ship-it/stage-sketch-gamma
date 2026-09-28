@@ -1721,7 +1721,7 @@
       stand_hands_on_hips: "双手叉腰站立",
       stand_contrapposto: "单腿重心站立", lean_wall: "倚墙",
       sit_cross_legs: "翘腿坐", sit_chin_rest: "托腮坐", sit_lean_back: "靠背坐",
-      sit_reverse_chair: "反坐在椅子上", sit_forward: "前倾坐", write_desk: "伏案书写",
+      sit_reverse_chair: "反坐在椅子上", sit_forward: "前倾坐", stairs_sit: "坐在台阶上，肘靠膝盖", write_desk: "伏案书写",
       collapse_knees: "从膝盖开始倒下", collapse_hands_floor: "双手撑地倒下", lie_spread: "仰面大字躺下",
       cry_cover: "掩面哭泣", shout: "呼喊", think_chin: "托腮思考", head_down: "垂头",
       hold_head: "双手抱头", hand_on_chest: "手放胸前", surprised: "受惊后仰", pray: "合掌祈祷",
