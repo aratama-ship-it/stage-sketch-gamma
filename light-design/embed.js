@@ -113,7 +113,8 @@
     }
     saveDraft();loading=true;
     try {
-      let design=model.reconcile(next.design,next),dirty=false;
+      const hostDesign=model.reconcile(next.design,next);
+      let design=hostDesign,dirty=false;
       let raw=localStorage.getItem(key(next.showId));
       /* 2026-09-24: ロミオとジュリエット見本は照明を6灯→41灯へ組み直した（本体 stage-sketch.js の backfillRomeoJulietLightingRig）。
          古い6灯のままの編集控えが残っていると、開くたびに古い仕込みへ戻る・または控えの食い違いで開けない。
@@ -136,10 +137,11 @@
       }
       // Strict ID matching: host pieces never come from a demo or imported design.
       state.scenes=next.scenes.map(row=>({id:row.id,name:row.name,sectionId:row.sectionId||null,sectionTitle:row.sectionTitle||'',pieces:model.clone(row.pieces),cue:{lights:{},groups:[]}}));
-      hooks.applyDesign(design,{host:true});
+      hooks.applyDesign(hostDesign,{host:true});
+      if(dirty) hooks.applyDesign(design,{host:true,preserveAppliedBaseline:true});
       synchronizePieces(next);
       appliedExtras=model.clone(design);context=next;synchronizeVenueMask(next);changedElsewhere=false;
-      state.dirty=dirty;draftState=dirty?'saved':'none';applyError='';appliedNotice='';renderSaveStatus();state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
+      hooks.refreshApplyState();draftState=state.dirty?'saved':'none';applyError='';appliedNotice='';renderSaveStatus();state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
       lastScene=state.scenes[state.sceneIndex].id;
       state.seq=Date.now(); // avoids collisions with fixture / cue IDs imported from earlier sessions
       active=true;setMode(mode);
@@ -149,6 +151,7 @@
   function suspend(){saveDraft();active=false;hooks.stop();}
   async function apply() {
     if(!context || applying) return;
+    if(!hooks.refreshApplyState()) return {persisted:false,unchanged:true};
     applying=true;renderSaveStatus();
     try {
       if(changedElsewhere) throw Error('別のタブでショーが変更されました。照明をファイルへ控えてから読み直してください');
@@ -156,7 +159,7 @@
       const result=await parent.GAMMA_LIGHT_HOST.apply(build(),context.basis);
       if(!result.persisted) throw Error('保存を確認できませんでした');
       parent.GAMMA_WORKSPACE.captureHostHistory();
-      context=result.context;synchronizeVenueMask(context);state.dirty=false;
+      context=result.context;synchronizeVenueMask(context);hooks.markApplied();
       // Remove only our own draft AFTER durable host acceptance.
       applyError='';draftState='none';
       appliedNotice=result.shelfPersisted?'適用済み · 照明をこのブラウザのショーへ保存しました。':'適用済み · ショー一覧の控えを更新できません。ショーをファイルへ書き出してください。';
@@ -164,7 +167,7 @@
       hooks.renderAll();
       message(result.shelfPersisted?'照明デザインをショーへ保存しました':'照明は保存しました。ショー一覧の控えを更新できないため、ショーを書き出してください');
       return result;
-    } catch(error) {applyError=error.message;state.dirty=true;saveDraft();message('適用できませんでした: '+error.message);return {persisted:false,error:error.message||String(error)};}
+    } catch(error) {applyError=error.message;hooks.refreshApplyState();saveDraft();message('適用できませんでした: '+error.message);return {persisted:false,error:error.message||String(error)};}
     finally {applying=false;renderSaveStatus();}
   }
   document.documentElement.dataset.gammaEmbedded='true';
@@ -205,7 +208,12 @@
     parent.GAMMA_WORKSPACE.syncHistory();
     if(loading || !context) return;
     if(state.dirty && !applying) {draftState='pending';renderSaveStatus();}
-    clearTimeout(draftTimer); draftTimer=setTimeout(saveDraft,250);
+    else if(!state.dirty && !applying) {
+      clearTimeout(draftTimer);
+      try {localStorage.removeItem(key(context.showId));draftState='none';} catch(_) { /* The draft remains recoverable. */ }
+      renderSaveStatus();
+    }
+    clearTimeout(draftTimer); draftTimer=state.dirty?setTimeout(saveDraft,250):0;
     const scene=state.scenes[state.sceneIndex];
     if(active && scene && scene.id!==lastScene){lastScene=scene.id;parent.GAMMA_LIGHT_HOST.openScene(scene.id);}
   });

@@ -12,11 +12,10 @@
 #venue-live-canvas:active { cursor:grabbing; }
 .venue-live-foot { flex:0 0 auto; padding:6px 8px; font-size:11px; line-height:1.5; color:var(--milk-dim,#bdb3a4); text-align:right; }
 .venue-live-foot p { margin:0; }
-.venue-live-controls { position:absolute; right:10px; bottom:10px; z-index:2; display:grid; grid-template-columns:max-content 44px; gap:4px; padding:4px; border:1px solid var(--line-dark,#382f25); background:var(--desk-2,#201b16); }
+.venue-live-controls { position:absolute; right:10px; bottom:10px; z-index:2; display:grid; grid-template-columns:44px; gap:4px; padding:4px; border:1px solid var(--line-dark,#382f25); background:var(--desk-2,#201b16); }
 .venue-live-controls button { display:flex; width:44px; height:44px; align-items:center; justify-content:center; padding:0; border-color:var(--line-dark,#382f25); background:var(--desk,#191512); font-size:20px; line-height:1; }
-.venue-live-controls button[data-action=move] { grid-column:1; grid-row:2; width:auto; padding:0 8px; font-size:11px; white-space:nowrap; }
-.venue-live-controls button[data-action=out] { grid-column:2; grid-row:1; }
-.venue-live-controls button[data-action=in] { grid-column:2; grid-row:2; }
+.venue-live-controls button[data-action=out] { grid-column:1; grid-row:1; }
+.venue-live-controls button[data-action=in] { grid-column:1; grid-row:2; }
 .venue-live-controls button:hover, .venue-live-controls button:focus-visible { border-color:var(--brass,#d3ac59); color:var(--brass,#d3ac59); }
 .venue-live-controls label { display:flex; align-items:center; gap:4px; cursor:pointer; font-size:12px; }
 .venue-live-controls input { width:14px; min-height:14px; height:14px; accent-color:var(--gold,#c8913f); }
@@ -51,15 +50,22 @@
 #gamma-venue-workspace .stage-venue-editor-area-selection[hidden],
 #gamma-venue-workspace .stage-venue-editor-status:empty { display:none; }
 .stage-venue-editor-floor-colors { grid-template-columns:repeat(3,minmax(0,1fr)); }
-.stage-venue-editor-floor-colors button { display:flex; align-items:center; justify-content:center; gap:6px; min-width:0; min-height:44px; padding:4px 6px; white-space:nowrap; }
+.stage-venue-back-screen-colors { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.stage-venue-editor-wings-guide .stage-venue-editor-area-shapes { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.stage-venue-editor-floor-colors button, .stage-venue-back-screen-colors button { display:flex; align-items:center; justify-content:center; gap:6px; min-width:0; min-height:44px; padding:4px 6px; white-space:nowrap; }
 .stage-venue-editor-floor-swatch { display:block; width:14px; height:14px; flex:0 0 14px; border:1px solid #201b16; }
+.stage-venue-back-screen-swatch { display:block; width:14px; height:14px; flex:0 0 14px; border:1px solid #201b16; }
 [data-venue-editor-floor-color=brown] .stage-venue-editor-floor-swatch { background:#806247; }
 [data-venue-editor-floor-color=black] .stage-venue-editor-floor-swatch { background:#303030; border-color:#bdb3a4; }
 [data-venue-editor-floor-color=gray] .stage-venue-editor-floor-swatch { background:#777777; }
+[data-back-screen-color=gray] .stage-venue-back-screen-swatch { background:#777777; }
+[data-back-screen-color=black] .stage-venue-back-screen-swatch { background:#303030; border-color:#bdb3a4; }
+[data-back-screen-color=white] .stage-venue-back-screen-swatch { background:#e9e8df; }
 @container stage-venue-editor-menu (max-width:320px) {
   .stage-venue-editor-floor-color { grid-template-columns:1fr; }
   .stage-venue-editor-floor-colors { grid-column:1; }
   .stage-venue-editor-floor-colors button { flex-direction:column; gap:3px; }
+  .stage-venue-back-screen-colors { grid-template-columns:1fr; }
 }
 
 /* Stacked menu choices need all four borders, including sibling buttons. */

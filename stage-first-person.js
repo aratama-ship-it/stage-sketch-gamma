@@ -3074,8 +3074,9 @@
         fillPoly(ctx, polygon.map(point => at(point, Number(fixture.heightM) || 1)), "#91887a");
       }
     });
-    (venue.backScreens ?? (venue.backScreen ? [venue.backScreen] : [])).forEach(({ from, to }) => {
-      fillPoly(ctx, [at(from), at(to), at(to, CEIL), at(from, CEIL)], "#e9e8df");
+    (venue.backScreens ?? (venue.backScreen ? [venue.backScreen] : [])).forEach(screen => {
+      const { from, to } = screen;
+      fillPoly(ctx, [at(from), at(to), at(to, CEIL), at(from, CEIL)], window.SHOSAI_VENUES.backScreenColor(screen));
     });
     const frontBorder = window.GAMMA_VENUE_CURTAINS?.frontBorderForVenue(venue);
     if (frontBorder) fillPoly(ctx, [at(frontBorder.from, frontBorder.openingHeightM),
@@ -3488,7 +3489,7 @@
     (venueModel?.backScreens ?? (venueModel?.backScreen ? [venueModel.backScreen] : [])).forEach(screen => {
       const a = at(screen.from, 0);
       const b = at(screen.to, 0);
-      fillPoly(ctx, [a, b, { ...b, y: CEIL }, { ...a, y: CEIL }], "#e9e8df");
+      fillPoly(ctx, [a, b, { ...b, y: CEIL }, { ...a, y: CEIL }], window.SHOSAI_VENUES.backScreenColor(screen));
       line3(ctx, { ...a, y: CEIL }, { ...b, y: CEIL }, "#403b36", 1);
     });
 
@@ -4601,6 +4602,13 @@
       const presets = freePresets(W, D, CEIL, currentVenueModel());
       const preset = presets.find((candidate) => candidate.id === "front-row") || presets[0];
       state.free = { x: preset.x, y: preset.y, z: preset.z, yaw: preset.yaw, pitch: preset.pitch };
+      const point = bridge.initialViewpoint;
+      if (point && [point.offsetM, point.distanceM, point.eyeM].every(Number.isFinite)) {
+        const x = point.offsetM, y = Math.max(.2, point.eyeM), z = D / 2 + point.distanceM;
+        const distance = Math.hypot(x, z);
+        state.free = { x, y, z, yaw: Math.atan2(x, -z) * 180 / Math.PI,
+          pitch: Math.atan2(1.2 - y, Math.max(.01, distance)) * 180 / Math.PI };
+      }
       state.view = { type: "free", key: null, name: "" };
     } else if (initial) state.view = { type: "performer", key: identity(initial), name: labelOf(initial) };
     else state.view = { type: "audience", key: null, name: "" };

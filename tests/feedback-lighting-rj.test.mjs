@@ -73,6 +73,18 @@ test('試験場 F-1: 真横から客席側へ抜けるサイド光は有限の�
   assert.ok(a.hull.length>30,'灯体へ向いた円を三角形に潰さない');
 });
 
+test('試験場 F-4: L11の広い空中光は正面・側面で床を貫通しない', () => {
+  const dims = trial.lightingDesign.stage;
+  const S={x:-dims.W/2-1,y:dims.D*.5,z:2.4},T={x:0,y:dims.D*.5,z:1.5};
+  const front=p=>({X:p.x*100,Y:-p.z*100}),side=p=>({X:p.y*100,Y:-p.z*100});
+  for(const project of [front,side]) {
+    const cone=context.VOLUME_LIGHT.coneProjection(S,T,28,dims,project);
+    assert.ok(cone?.hull.length>=4);
+    assert.ok(cone.hull.every(p=>p.Y<=1e-5),'床面より下へ光を描かない');
+    assert.ok(cone.hull.some(p=>Math.abs(p.Y)<1e-5),'広い光の下縁は床面で切られる');
+  }
+});
+
 test('試験場 F-1: 固定灯の編集は保存LXにも反映し光量はそのまま', () => {
   const state={rig:clone(trial.lightingDesign.rig),scenes:clone(trial.lightingDesign.scenes)};
   const selected=state.scenes.find(s=>s.name.startsWith('F-1'));

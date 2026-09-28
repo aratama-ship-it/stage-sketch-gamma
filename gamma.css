@@ -163,8 +163,7 @@ body[data-gamma-workspace="cuesheet"].stage-timeline-expanded:not(.stage-fullscr
    * 行は中身の高さのままにする。 */
   align-content: start;
 }
-/* 右列は平面図だけを流し、「この劇場を反映する」等の操作は下へ固定して常に見えるようにする
- * （V-2実測: 反映ボタンが枠の150px下に隠れていた）。 */
+/* 右列は平面図を流し、保存・反映は左列の下で常に見えるようにする。 */
 #gamma-venue-workspace .stage-venue-editor-panel {
   display: flex;
   flex-direction: column;
@@ -194,12 +193,6 @@ body[data-gamma-workspace="cuesheet"].stage-timeline-expanded:not(.stage-fullscr
   width: 100%;
   height: 100%;
   aspect-ratio: auto;
-}
-#gamma-venue-workspace .stage-venue-editor-panel > .stage-venue-editor-actions {
-  flex: 0 0 auto;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--line-dark);
 }
 
 /* R-07（2026-09-17 本人要望）: 「照明をどこから持ってくるか」の3択。

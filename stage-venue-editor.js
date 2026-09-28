@@ -19,6 +19,7 @@
   const LONG_PRESS_MS = 620;
   const MOVE_START_M = 0.14;
   const HANDLE_HIT_PX = 13;
+  const BACK_SCREEN_TOUCH_HIT_PX = 22;
   const EDGE_HIT_PX = 18;
   const MIN_SEGMENT_M = 0.65;
   const AUDIENCE_MIN_DEPTH_M = 0.75;
@@ -88,6 +89,10 @@
     ceilingOutdoorNote: $("stage-venue-editor-ceiling-outdoor-note"),
     backScreenPlace: $("stage-venue-back-screen-place"),
     backScreenRemove: $("stage-venue-back-screen-remove"),
+    backScreenEdit: $("stage-venue-back-screen-edit"),
+    backScreenLength: $("stage-venue-back-screen-length"),
+    backScreenColors: document.querySelectorAll("[data-back-screen-color]"),
+    backScreenGridNote: $("stage-venue-back-screen-grid-note"),
     frontBorderOpening: $("stage-venue-editor-front-border-opening"),
     frontBorderDetails: $("stage-venue-editor-front-border-details"),
     name: $("stage-venue-editor-name"),
@@ -201,6 +206,7 @@
     selectedElement: null,
     selectedArea: null,
     selectedStageExtensionId: null,
+    selectedBackScreenIndex: -1,
     hoverCorner: -1,
     hoverEdge: -1,
     hoverAudienceId: null,
@@ -532,6 +538,33 @@
   function gridStepLabel(stepM) {
     if (stepM >= 1) return String(Math.round(stepM * 10) / 10);
     return String(Number(stepM.toPrecision(2)));
+  }
+
+  function backScreenGridStep() {
+    return niceGridStep(view().scale);
+  }
+
+  function snapBackScreenCoordinate(value, stepM = backScreenGridStep()) {
+    return Number((Math.round(value / stepM) * stepM).toFixed(4));
+  }
+
+  function snapBackScreenLength(value, stepM = backScreenGridStep()) {
+    const units = Math.max(Math.ceil(0.4 / stepM), Math.round(value / stepM));
+    return Number((units * stepM).toFixed(4));
+  }
+
+  function backScreenLength(screen) {
+    return distance(screen.from, screen.to);
+  }
+
+  function validBackScreen(screen) {
+    const width = backScreenLength(screen);
+    if (width < 0.4 || width > 1000) return false;
+    const outline = state.room?.outline || state.points;
+    const samples = Math.min(4000, Math.max(2, Math.ceil(width / 0.05)));
+    return Array.from({ length: samples + 1 }, (_, index) =>
+      pointInPolygon(screen.from.map((v, axis) => v +
+        (screen.to[axis] - v) * index / samples), outline)).every(Boolean);
   }
 
   function outwardNormal(edgeIndex, points = state.points) {
@@ -1193,6 +1226,21 @@
       if (item.type === "furniture" && pointInPolygon(point, item.polygon)) {
         return { kind: "fixture", id: item.id };
       }
+    }
+    return null;
+  }
+
+  function hitBackScreen(point, touch = false) {
+    const handleRadius = (touch ? BACK_SCREEN_TOUCH_HIT_PX : HANDLE_HIT_PX) / view().scale;
+    for (let index = state.backScreens.length - 1; index >= 0; index -= 1) {
+      const screen = state.backScreens[index];
+      if (distance(point, screen.from) <= handleRadius) return { index, handle: "from" };
+      if (distance(point, screen.to) <= handleRadius) return { index, handle: "to" };
+    }
+    const lineRadius = Math.max((touch ? BACK_SCREEN_TOUCH_HIT_PX : 8) / view().scale, 0.08);
+    for (let index = state.backScreens.length - 1; index >= 0; index -= 1) {
+      const screen = state.backScreens[index];
+      if (distanceToSegment(point, screen.from, screen.to) <= lineRadius) return { index, handle: null };
     }
     return null;
   }
@@ -1942,6 +1990,20 @@
   function renderControls(linesResult) {
     if (els.backScreenPlace) els.backScreenPlace.setAttribute("aria-pressed", String(state.mode === "back-screen"));
     if (els.backScreenRemove) els.backScreenRemove.disabled = !state.backScreens.length;
+    const selectedScreen = state.backScreens[state.selectedBackScreenIndex];
+    if (els.backScreenEdit) els.backScreenEdit.hidden = !selectedScreen;
+    els.backScreenColors.forEach((button) => {
+      button.disabled = !selectedScreen;
+      button.setAttribute("aria-pressed", String(button.dataset.backScreenColor === (selectedScreen?.color || "white")));
+    });
+    if (selectedScreen && els.backScreenLength && document.activeElement !== els.backScreenLength) {
+      els.backScreenLength.value = String(Number(backScreenLength(selectedScreen).toFixed(4)));
+    }
+    if (els.backScreenGridNote) {
+      els.backScreenGridNote.textContent = tx("端点をドラッグしても調整できます。長さは表示中のグリッド1枡単位に吸着します。") +
+        (isEnglish() ? ` (1 grid square: ${gridStepLabel(backScreenGridStep())} m)`
+          : `（1枡 ${gridStepLabel(backScreenGridStep())}m）`);
+    }
     if (els.roomSettings) {
       els.roomSettings.hidden = !state.room;
       if (state.room) {
@@ -2243,6 +2305,7 @@
     state.selectedElement = null;
     state.selectedArea = null;
     state.selectedStageExtensionId = null;
+    state.selectedBackScreenIndex = -1;
     state.hoverCorner = -1;
     state.hoverEdge = -1;
     state.hoverAudienceId = null;
@@ -2521,6 +2584,7 @@
     state.selectedElement = null;
     state.selectedArea = null;
     state.selectedStageExtensionId = null;
+    state.selectedBackScreenIndex = -1;
     state.hoverCorner = -1;
     state.hoverEdge = -1;
     state.hoverAudienceId = null;
@@ -2614,7 +2678,8 @@
   }
 
   function setAreaMode(kind, shape = "rectangle") {
-    if (!["audience", "wing", "wall"].includes(kind) || !["rectangle", "circle"].includes(shape)) return;
+    if (!["audience", "wing", "wall"].includes(kind) || !["rectangle", "circle"].includes(shape)
+        || (kind === "wing" && shape === "circle")) return;
     state.areaMode = kind;
     state.areaShape = shape;
     state.stageExtensionMode = null;
@@ -2622,6 +2687,7 @@
     state.selectedElement = null;
     state.selectedArea = null;
     state.selectedStageExtensionId = null;
+    state.selectedBackScreenIndex = -1;
     els.saveStatus.textContent = "";
     setStatus(`${regionLabel(kind)}の${shape === "circle" ? "丸" : "四角"}を右の平面図でドラッグしてください。`);
     render();
@@ -2633,24 +2699,77 @@
     state.stageExtensionMode = null;
     state.selectedArea = null;
     state.selectedElement = null;
+    state.selectedBackScreenIndex = -1;
     setStatus(state.mode === "back-screen"
-      ? "平面図を横または縦方向にドラッグして、バックスクリーンの位置と幅を決めてください。"
+      ? "平面図を横または縦方向にドラッグして、バックスクリーンの位置と長さを決めてください。"
       : "バックスクリーンの設置を終了しました。");
     render();
   }
 
   function moveBackScreenPointer(pointer, point) {
-    const end = snappedPoint(point);
-    const outline = state.room?.outline || state.points;
+    const end = point.map(value => snapBackScreenCoordinate(value, pointer.gridStepM));
     const horizontal = Math.abs(end[0] - pointer.start[0]) >= Math.abs(end[1] - pointer.start[1]);
     const to = horizontal ? [end[0], pointer.start[1]] : [pointer.start[0], end[1]];
-    pointer.preview = { from: pointer.start.slice(), to };
-    const width = Math.hypot(to[0] - pointer.start[0], to[1] - pointer.start[1]);
-    const samples = Math.min(4000, Math.max(2, Math.ceil(width / 0.05)));
-    pointer.valid = width >= 0.4 && Array.from({ length: samples + 1 }, (_, index) =>
-      pointInPolygon(pointer.start.map((v, axis) => v + (to[axis] - v) * index / samples), outline)).every(Boolean);
-    setStatus(pointer.valid ? `バックスクリーン 幅${roundM(width)}m。天井までの高さで表示します。`
+    pointer.preview = { color: "gray", from: pointer.start.slice(), to };
+    const width = backScreenLength(pointer.preview);
+    pointer.valid = validBackScreen(pointer.preview);
+    setStatus(pointer.valid ? `バックスクリーン 長さ${gridStepLabel(width)}m。天井までの高さで表示します。`
       : "幅0.4m以上で、会場の範囲内に描いてください。");
+  }
+
+  function moveBackScreenResizePointer(pointer, point) {
+    const original = pointer.original;
+    const axis = Math.abs(original.to[0] - original.from[0]) >=
+      Math.abs(original.to[1] - original.from[1]) ? 0 : 1;
+    const anchor = original[pointer.handle === "from" ? "to" : "from"];
+    const originalEnd = original[pointer.handle];
+    const rawLength = Math.abs(point[axis] - anchor[axis]);
+    const length = snapBackScreenLength(rawLength, pointer.gridStepM);
+    const direction = Math.sign(point[axis] - anchor[axis]) ||
+      Math.sign(originalEnd[axis] - anchor[axis]) || 1;
+    const end = anchor.slice();
+    end[axis] = Number((anchor[axis] + direction * length).toFixed(4));
+    pointer.preview = clone(original);
+    pointer.preview[pointer.handle] = end;
+    pointer.valid = validBackScreen(pointer.preview);
+    setStatus(pointer.valid
+      ? `バックスクリーンの長さを ${gridStepLabel(length)}m に調整しています。`
+      : "会場の範囲を越えるため、スクリーンの長さを変更できません。");
+  }
+
+  function setBackScreenLength(rawValue) {
+    const screen = state.backScreens[state.selectedBackScreenIndex];
+    const requested = Number(rawValue);
+    if (!screen || !String(rawValue).trim() || !Number.isFinite(requested) || requested < 0.4) {
+      setStatus("バックスクリーンの長さは0.4m以上で入力してください。");
+      return false;
+    }
+    const length = snapBackScreenLength(requested);
+    const axis = Math.abs(screen.to[0] - screen.from[0]) >=
+      Math.abs(screen.to[1] - screen.from[1]) ? 0 : 1;
+    const direction = Math.sign(screen.to[axis] - screen.from[axis]) || 1;
+    const candidate = clone(screen);
+    candidate.to = screen.from.slice();
+    candidate.to[axis] = Number((screen.from[axis] + direction * length).toFixed(4));
+    if (!validBackScreen(candidate)) {
+      setStatus("会場の範囲を越えるため、スクリーンの長さを変更できません。");
+      return false;
+    }
+    state.backScreens[state.selectedBackScreenIndex] = candidate;
+    state.backScreen = clone(state.backScreens[0] || null);
+    setStatus(`バックスクリーンの長さを ${gridStepLabel(length)}m にしました。`);
+    render();
+    return true;
+  }
+
+  function setBackScreenColor(color) {
+    const screen = state.backScreens[state.selectedBackScreenIndex];
+    if (!screen || !window.SHOSAI_VENUES.backScreenColors[color] || screen.color === color) return false;
+    state.backScreens[state.selectedBackScreenIndex] = { ...screen, color };
+    state.backScreen = clone(state.backScreens[0] || null);
+    setStatus(`バックスクリーンの色を${color === "gray" ? "グレー" : color === "black" ? "黒" : "白"}にしました。`);
+    render();
+    return true;
   }
 
   function setShape(shape) {
@@ -2694,6 +2813,7 @@
     state.selectedElement = null;
     state.selectedArea = null;
     state.selectedStageExtensionId = null;
+    state.selectedBackScreenIndex = -1;
     els.saveStatus.textContent = "";
     setStatus(`${shape === "circle" ? "丸" : "四角"}の追加ステージを描きます。既存の舞台につながる位置でドラッグしてください。`);
     render();
@@ -2813,6 +2933,7 @@
     state.areaMode = null;
     state.stageExtensionMode = null;
     state.selectedArea = null;
+    state.selectedBackScreenIndex = -1;
     const messages = {
       select: "選択モードです。辺・角・観客を調整し、置いたものをタップして選べます。",
       "stage-move": "舞台の内側をドラッグして、舞台と袖を一緒に動かします。",
@@ -3177,9 +3298,33 @@
       ? hitAudienceArea(point) : null);
     els.canvas.setPointerCapture(event.pointerId);
 
+    if (state.mode === "back-screen" ||
+        (state.mode === "select" && !state.areaMode && !state.stageExtensionMode)) {
+      const screenHit = hitBackScreen(point, event.pointerType === "touch");
+      if (screenHit) {
+        state.selectedBackScreenIndex = screenHit.index;
+        state.selectedArea = null;
+        state.selectedElement = null;
+        state.selectedStageExtensionId = null;
+        activePointer = screenHit.handle
+          ? { pointerId: event.pointerId, kind: "back-screen-resize", index: screenHit.index,
+            handle: screenHit.handle, original: clone(state.backScreens[screenHit.index]),
+            gridStepM: backScreenGridStep(), start: point, preview: null, valid: false, moved: false }
+          : { pointerId: event.pointerId, kind: "back-screen-select", start: point, moved: false };
+        setStatus(screenHit.handle
+          ? "端点をドラッグして長さを変更できます。左の長さ欄からも入力できます。"
+          : "バックスクリーンを選択しました。左の長さ欄または端点で調整できます。");
+        render();
+        return;
+      }
+      state.selectedBackScreenIndex = -1;
+    }
+
     if (state.mode === "back-screen") {
       activePointer = { pointerId: event.pointerId, kind: "back-screen",
-        start: snappedPoint(point), preview: null, valid: false, moved: false };
+        gridStepM: backScreenGridStep(),
+        start: point.map(value => snapBackScreenCoordinate(value)), startPointer: point,
+        preview: null, valid: false, moved: false };
       setStatus("横または縦方向にドラッグして、バックスクリーンを設置します。");
       return;
     }
@@ -3496,6 +3641,20 @@
     }
     const point = fromEvent(event);
     if (!activePointer) {
+      if (state.mode === "back-screen" ||
+          (state.mode === "select" && !state.areaMode && !state.stageExtensionMode)) {
+        const screenHit = hitBackScreen(point);
+        if (screenHit) {
+          state.hoverAudienceId = null;
+          state.hoverCorner = -1;
+          state.hoverEdge = -1;
+          els.canvas.style.cursor = screenHit.handle ?
+            (state.backScreens[screenHit.index].from[0] === state.backScreens[screenHit.index].to[0] ? "ns-resize" : "ew-resize")
+            : "pointer";
+          render();
+          return;
+        }
+      }
       if (state.stageExtensionMode) {
         const extension = hitStageExtension(point);
         state.hoverAudienceId = null;
@@ -3541,7 +3700,7 @@
     }
     if (event.pointerId !== activePointer.pointerId || activePointer.longPressed) return;
     event.preventDefault();
-    const moved = distance(point, activePointer.start) >= MOVE_START_M;
+    const moved = distance(point, activePointer.startPointer || activePointer.start) >= MOVE_START_M;
     if (moved && !activePointer.moved) {
       activePointer.moved = true;
       if (longPressTimer) window.clearTimeout(longPressTimer);
@@ -3556,6 +3715,7 @@
     if (activePointer.kind === "furniture-new") moveFurniture(activePointer, point);
     if (activePointer.kind === "area-new") moveArea(activePointer, point);
     if (activePointer.kind === "back-screen") moveBackScreenPointer(activePointer, point);
+    if (activePointer.kind === "back-screen-resize") moveBackScreenResizePointer(activePointer, point);
     if (activePointer.kind === "stage-extension-new") moveStageExtension(activePointer, point);
     if (activePointer.kind === "stage-extension-move") moveStageExtensionItem(activePointer, point);
     else if (activePointer.kind === "area-move") moveAreaItem(activePointer, point);
@@ -3581,8 +3741,9 @@
     }
     if (!cancelled && !finished.longPressed) {
       const releasePoint = fromEvent(event);
-      const movedAtRelease = Array.isArray(finished.start) && finished.start.length === 2 &&
-        distance(releasePoint, finished.start) >= MOVE_START_M;
+      const movementStart = finished.startPointer || finished.start;
+      const movedAtRelease = Array.isArray(movementStart) && movementStart.length === 2 &&
+        distance(releasePoint, movementStart) >= MOVE_START_M;
       if (movedAtRelease || finished.moved) {
         if (movedAtRelease) finished.moved = true;
         if (finished.kind === "corner") moveCorner(finished, releasePoint);
@@ -3592,6 +3753,8 @@
         if (finished.kind === "column-new") moveColumn(finished, releasePoint);
         if (finished.kind === "furniture-new") moveFurniture(finished, releasePoint);
         if (finished.kind === "area-new") moveArea(finished, releasePoint);
+        if (finished.kind === "back-screen") moveBackScreenPointer(finished, releasePoint);
+        if (finished.kind === "back-screen-resize") moveBackScreenResizePointer(finished, releasePoint);
         if (finished.kind === "stage-extension-new") moveStageExtension(finished, releasePoint);
         if (finished.kind === "stage-extension-move") moveStageExtensionItem(finished, releasePoint);
         else if (finished.kind === "area-move") moveAreaItem(finished, releasePoint);
@@ -3611,9 +3774,16 @@
     if (!cancelled && finished.kind === "back-screen" && finished.moved && finished.valid) {
       state.backScreens.push({ id: `screen-${Date.now().toString(36)}-${state.backScreens.length}`, ...clone(finished.preview) });
       state.backScreen = clone(state.backScreens[0]);
+      state.selectedBackScreenIndex = state.backScreens.length - 1;
       setStatus("バックスクリーンを設置しました。高さは天井の設定に追従します。");
     } else if (!cancelled && finished.kind === "back-screen") {
       setStatus("幅0.4m以上で会場内に描いてください。スクリーンは変更していません。");
+    } else if (!cancelled && finished.kind === "back-screen-resize" && finished.moved && finished.valid) {
+      state.backScreens[finished.index] = clone(finished.preview);
+      state.backScreen = clone(state.backScreens[0] || null);
+      setStatus(`バックスクリーンの長さを ${gridStepLabel(backScreenLength(finished.preview))}m にしました。`);
+    } else if (!cancelled && finished.kind === "back-screen-resize" && finished.moved) {
+      setStatus("会場の範囲を越えるため、スクリーンの長さは変更していません。");
     } else if (!cancelled && finished.kind === "stage-extension-new" && finished.moved && finished.valid) {
       const item = {
         id: `stage-extension-${state.extensionSerial}`,
@@ -3692,8 +3862,9 @@
     render();
   }
 
-  function openPlanRegion(point) {
-    const selector = hitAudienceArea(point) ? ".stage-venue-editor-audience-guide"
+  function openPlanRegion(point, touch = false) {
+    const selector = hitBackScreen(point, touch) ? ".stage-venue-editor-back-screens"
+      : hitAudienceArea(point) ? ".stage-venue-editor-audience-guide"
       : hitWingArea(point) ? ".stage-venue-editor-wings-guide"
       : pointInPolygon(point, state.points) ? ".stage-venue-editor-shape" : null;
     const section = selector && document.querySelector(selector);
@@ -3716,9 +3887,9 @@
     const navigationClick = !cancelled && navigationPointer?.id === event.pointerId && Math.hypot(event.clientX - navigationPointer.x, event.clientY - navigationPointer.y) < 4;
     navigationPointer = null;
     finishPointer(event, cancelled);
-    if (!tracked) { if (navigationClick) openPlanRegion(fromEvent(event)); return; }
+    if (!tracked) { if (navigationClick) openPlanRegion(fromEvent(event), event.pointerType === "touch"); return; }
     pointerHistoryStart = null;
-    if (clicked || navigationClick) openPlanRegion(fromEvent(event));
+    if (clicked || navigationClick) openPlanRegion(fromEvent(event), event.pointerType === "touch");
     if (pointerKind === "pan") return; // 表示位置は劇場データの履歴へ入れない。
     if (cancelled && before) {
       applyDocumentSnapshot(before);
@@ -4536,9 +4707,20 @@
   els.save.addEventListener("click", openSaveName);
   if (els.apply) els.apply.addEventListener("click", applyDraft);
   if (els.backScreenPlace) els.backScreenPlace.addEventListener("click", setBackScreenMode);
+  if (els.backScreenLength) {
+    els.backScreenLength.addEventListener("change", () => {
+      withHistory(() => setBackScreenLength(els.backScreenLength.value));
+      const screen = state.backScreens[state.selectedBackScreenIndex];
+      els.backScreenLength.value = screen ? String(Number(backScreenLength(screen).toFixed(4))) : "";
+    });
+  }
+  els.backScreenColors.forEach((button) => {
+    button.addEventListener("click", () => withHistory(() => setBackScreenColor(button.dataset.backScreenColor)));
+  });
   if (els.backScreenRemove) els.backScreenRemove.addEventListener("click", () => withHistory(() => {
     if (!state.backScreens.length) return false;
     state.backScreens.pop();
+    if (state.selectedBackScreenIndex >= state.backScreens.length) state.selectedBackScreenIndex = -1;
     state.backScreen = clone(state.backScreens[0] || null);
     setStatus("バックスクリーンを取り外しました。");
     render();
@@ -4706,6 +4888,10 @@
   function previewSnapshot() {
     const venue = buildVenue("custom-room-preview", "作成中の劇場", {});
     if (activePointer?.kind === "back-screen" && activePointer.valid) venue.backScreens.push(clone(activePointer.preview));
+    if (activePointer?.kind === "back-screen-resize" && activePointer.valid) {
+      venue.backScreens[activePointer.index] = clone(activePointer.preview);
+      if (activePointer.index === 0) venue.backScreen = clone(activePointer.preview);
+    }
     const walls = state.walls.map((item, index) => ({
       ...clone(item), heightM: venue.fixtures[index]?.heightM ?? state.ceiling.heightM,
     }));
@@ -4864,23 +5050,45 @@
   }
 
   function drawBackScreen() {
-    const screens = state.backScreens.concat(activePointer?.kind === "back-screen" && activePointer.valid ? [activePointer.preview] : []);
-    screens.forEach(screen => {
+    const screens = state.backScreens.map((screen, index) =>
+      activePointer?.kind === "back-screen-resize" && activePointer.valid && activePointer.index === index
+        ? activePointer.preview : screen);
+    if (activePointer?.kind === "back-screen" && activePointer.valid) screens.push(activePointer.preview);
+    screens.forEach((screen, index) => {
     const a = toCanvas(screen.from), b = toCanvas(screen.to);
+    const selected = index === state.selectedBackScreenIndex;
     ctx.save();
     ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+    ctx.lineWidth = selected ? 9 : 7;
+    ctx.strokeStyle = selected ? cssColor("--brass", "#9c823f") : "rgba(233,232,223,0.65)";
+    ctx.stroke();
     ctx.lineWidth = 5;
-    ctx.strokeStyle = "#e9e8df";
+    ctx.strokeStyle = window.SHOSAI_VENUES.backScreenColor(screen);
     ctx.stroke();
     ctx.lineWidth = 1;
-    ctx.strokeStyle = "#514c46";
+    ctx.strokeStyle = selected ? "#e9e8df" : "#514c46";
+    if (selected) {
+      ctx.fillStyle = cssColor("--brass", "#9c823f");
+      ctx.fillRect(a[0] - 4, a[1] - 4, 8, 8);
+      ctx.fillRect(b[0] - 4, b[1] - 4, 8, 8);
+    }
     ctx.strokeRect(a[0] - 4, a[1] - 4, 8, 8);
     ctx.strokeRect(b[0] - 4, b[1] - 4, 8, 8);
     ctx.font = "11px sans-serif"; ctx.textAlign = "center";
     ctx.fillStyle = "#e9e8df";
-    ctx.fillText("バックスクリーン", (a[0] + b[0]) / 2, a[1] - 9);
+    ctx.fillText("バックスクリーン", (a[0] + b[0]) / 2, (a[1] + b[1]) / 2 - 9);
     ctx.restore();
     });
+    if (activePointer?.kind === "back-screen-resize" && activePointer.moved && !activePointer.valid && activePointer.preview) {
+      const a = toCanvas(activePointer.preview.from), b = toCanvas(activePointer.preview.to);
+      ctx.save();
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+      ctx.setLineDash([5, 4]);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = cssColor("--danger", "#e66b65");
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
   // Same draft/history/conflict path as the plan. No automatic apply or save.

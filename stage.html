@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.54">
+<meta name="stage-sketch-gamma-version" content="v0.2.55">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=2026092633">
+<link rel="stylesheet" href="style.css?v=20260928-feedback55">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -20,15 +20,15 @@
   .spine { display: none; }
 </style>
 <link rel="stylesheet" href="gamma-ui-tokens.css?v=20260925-ui1">
-<link rel="stylesheet" href="gamma.css?v=20260927-icons48">
+<link rel="stylesheet" href="gamma.css?v=20260928-feedback55">
 <link rel="stylesheet" href="gamma-mobile.css?v=2026091950">
-<script src="gamma-light-model.js?v=20260928-storage54"></script>
+<script src="gamma-light-model.js?v=20260928-feedback55"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=2026091987">
 <link rel="stylesheet" href="stage-scene-alternatives.css?v=2026092209">
 <link rel="stylesheet" href="stage-vox-panel.css?v=2026092432">
 <link rel="stylesheet" href="stage-panel-columns.css?v=2026092402">
 <link rel="stylesheet" href="stage-script-editor.css?v=2026092430">
-<link rel="stylesheet" href="stage-venue-preview.css?v=20260926-feedback40">
+<link rel="stylesheet" href="stage-venue-preview.css?v=20260928-feedback55">
 <link rel="stylesheet" href="stage-venue-viewpoints.css?v=2026092501">
 </head>
 <body class="is-standalone">
@@ -69,7 +69,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.54</span>
+              <span class="stage-app-version">0.2.55</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -2588,6 +2588,7 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0255-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0255-title">v0.2.55</h3><time datetime="2026-09-28">2026-09-28</time></header><ul><li>劇場設定のバックスクリーンを再選択して長さを編集できるようにし、グリッドへの吸着とグレー・黒・白の色指定を追加しました。見る位置を追加したときも正面図のリストへ反映します。</li><li>劇場設定の操作欄を整理し、照明プランをファイルから読み込めるようにしました。舞台袖の「丸」選択肢と不要なプレビュー操作を整理しました。</li><li>照明デザインで選択中の灯体を見つけやすくし、LXキューの未適用の変更だけを適用ボタンで示します。空中を狙う光の横からの見え方と床での切れ方を調整しました。</li></ul></section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0254-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0254-title">v0.2.54</h3><time datetime="2026-09-28">2026-09-28</time></header><ul><li>保存領域の整理候補と旧形式からの移行時の控えをγ専用に限定し、同じ保存領域にあるβのデータへ干渉しないようにしました。</li></ul></section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0253-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0253-title">v0.2.53</h3><time datetime="2026-09-28">2026-09-28</time></header><ul><li>照明デザインのLXキュー切替中、狭いパネルでも「手で進める」つまみと「自動に戻す」ボタンを操作できるようにしました。高さが足りないときはLX欄をスクロールできます。</li></ul></section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0252-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0252-title">v0.2.52</h3><time datetime="2026-09-28">2026-09-28</time></header><ul><li>照明デザインのLXキューに「時間」を追加しました。行の「⏱」から、カット／フェード、上げ・下げの秒、遅れ、カーブ（5種＋加速・減速の数値）、位置・色だけ別の秒、模様・カッターの切替の遅れ、消えていた灯の先回り（MIB）を決められます。</li><li>LXキューに通し番号（Q1、Q2.5 のような間への挿入）、きっかけ、自動送り（GOから／終わってから）を追加し、「Qシート（LX）」を出せるようにしました。略語（F.I／C.I／F.O／C.O／F.C／C.C）は前後の明かりから自動で付きます。</li><li>舞台モードのタイムラインの照明キューをLXキューと結び付け、札とQシートにQ番号・略語・秒・きっかけを出します。再生・シークでキューの時間どおりに前の明かりから移ります。切替中は照明デザインの「手で進める」つまみで止めたり進めたりできます。</li><li>動きの中で色が移る「終点の色」（単灯・まとめて）、灯体ごとの色の作り方（混色／カラーホイール＝一瞬で替わる）、ストロボの種類（ランダム／ランダムパルス・底・周数）、往復の端で止まる秒と運び方、「点の列」の軌道を追加しました。</li><li>試験場 F-2／F-3 にこれらを試すデータを足しました。古い版で開くと時間は無視されカットになり、点の列は最初の点で止まって見えます（保存形式は互換で、足した項目はすべて省略可）。</li></ul></section>
@@ -3195,37 +3196,12 @@
   </header>
   <div class="stage-modal-body">
     <div class="stage-venue-editor-workspace">
+      <div class="stage-venue-editor-left">
       <div class="stage-venue-editor-menu">
-        <!-- V-2/V-5（2026-09-17）: 劇場形式プリセットは全幅の帯ではなく手順の列の先頭へ置く。
-             全幅の白い3px枠が縦を217px使っていた／枠幅が左列と合っていなかった、の両方がこれで直る。 -->
-      <section class="stage-project-venue stage-venue-section stage-venue-editor-presets"
-               aria-labelledby="stage-venue-select-label">
-        <label class="stage-field-label" id="stage-venue-select-label" for="stage-venue-select">劇場形式プリセット</label>
-        <div class="stage-venue-choice-row">
-          <!-- 劇場は名前の文字だけでは形が分からないので、押すと絵の一覧（モーダル）を出す
-               （VENUE_PICKER_MODAL_2026_09_19・2026-09-19 本人要望）。
-               ★値の正本は今までどおりこの select。隠して残し、ボタンから値を入れて
-                 change を出すので、反映の道筋も既存のコードも変わらない。 -->
-          <select id="stage-venue-select" class="stage-select" hidden></select>
-          <button type="button" class="stage-select stage-venue-pick" id="stage-venue-pick"
-                  aria-haspopup="dialog" aria-labelledby="stage-venue-select-label stage-venue-pick-name">
-            <span class="stage-venue-pick-name" id="stage-venue-pick-name" data-no-i18n></span>
-          </button>
-          <div class="stage-field-row">
-            <label class="stage-field-label" for="stage-size-select">規模</label>
-            <select id="stage-size-select" class="stage-select"></select>
-          </div>
-        </div>
-        <!-- 形から選ぶ一覧は VENUE_PICKER_MODAL_2026_09_19 でモーダルへ移した。
-             ここに帯として出していたが、本人要望で「プリセットを押すと出る」形にした。 -->
-        <p class="stage-venue-scale" id="stage-venue-scale"></p>
-        <p class="stage-profile-hint" id="stage-venue-missing" hidden></p>
-        <!-- R-07（2026-09-17 本人要望）: 「劇場の照明プランを追加…」のモーダルをやめ、
-             中身を劇場形式プリセットのボックスの中へ出した。ここで本人に見せたいのは
-             「照明をどこから持ってくるか」の3択（本人の言葉）:
-               1 自分で照明を組む ／ 2 劇場のプリセットを利用する ／ 3 保存してある自分のプランを適用する
-             いま選ばれているものは黄色（--brass）で分かるようにする（本人指定）。
-             「置換」の歯止め（置換と入力させる確認）は、モーダルをやめた後もそのまま残す（本人指定）。 -->
+        <!-- 照明の操作は劇場形式プリセットから独立した0番に置く。 -->
+      <section class="stage-venue-editor-lighting-step" aria-labelledby="stage-venue-editor-lighting-title">
+        <h3 id="stage-venue-editor-lighting-title">0. 照明</h3>
+        <!-- 照明の取得元と既存プランの操作を0番にまとめる。 -->
         <section class="stage-lighting-source" aria-labelledby="stage-lighting-source-label">
           <p class="stage-field-label" id="stage-lighting-source-label">照明をどこから持ってくるか</p>
           <div class="stage-lighting-source-choices" role="group" aria-labelledby="stage-lighting-source-label">
@@ -3239,9 +3215,11 @@
             </button>
             <button type="button" data-lighting-source="saved" aria-pressed="false">
               <strong>保存してある照明プランを適用する</strong>
-              <small>前に組んで保存したプランから選びます。</small>
+              <small>書き出した照明デザインのファイルを選びます。</small>
             </button>
           </div>
+          <input type="file" id="stage-lighting-plan-file" accept=".lightdesign.json,.json,application/json" hidden>
+          <p class="stage-profile-hint" id="stage-lighting-plan-file-summary" role="status" hidden></p>
           <!-- 保存済みプランの件数など。R-07でモーダルをやめた後も、
                JS（els.lightingPlanOpenSummary）が書き込む先として要素は残す。
                build_public.py も必須要素として見ている。 -->
@@ -3278,6 +3256,29 @@
         </section>
         <p class="stage-lighting-plan-overlay-status" id="stage-lighting-plan-overlay-status" hidden>平面図に劇場プランを概略表示中</p>
         <button type="button" class="btn-quiet" id="stage-lighting-plan-overlay-clear" hidden>劇場プランの重ねを外す</button>
+      </section>
+      <section class="stage-project-venue stage-venue-section stage-venue-editor-presets"
+               aria-labelledby="stage-venue-select-label">
+        <label class="stage-field-label" id="stage-venue-select-label" for="stage-venue-select">劇場形式プリセット</label>
+        <div class="stage-venue-choice-row">
+          <!-- 劇場は名前の文字だけでは形が分からないので、押すと絵の一覧（モーダル）を出す
+               （VENUE_PICKER_MODAL_2026_09_19・2026-09-19 本人要望）。
+               ★値の正本は今までどおりこの select。隠して残し、ボタンから値を入れて
+                 change を出すので、反映の道筋も既存のコードも変わらない。 -->
+          <select id="stage-venue-select" class="stage-select" hidden></select>
+          <button type="button" class="stage-select stage-venue-pick" id="stage-venue-pick"
+                  aria-haspopup="dialog" aria-labelledby="stage-venue-select-label stage-venue-pick-name">
+            <span class="stage-venue-pick-name" id="stage-venue-pick-name" data-no-i18n></span>
+          </button>
+          <div class="stage-field-row">
+            <label class="stage-field-label" for="stage-size-select">規模</label>
+            <select id="stage-size-select" class="stage-select"></select>
+          </div>
+        </div>
+        <!-- 形から選ぶ一覧は VENUE_PICKER_MODAL_2026_09_19 でモーダルへ移した。
+             ここに帯として出していたが、本人要望で「プリセットを押すと出る」形にした。 -->
+        <p class="stage-venue-scale" id="stage-venue-scale"></p>
+        <p class="stage-profile-hint" id="stage-venue-missing" hidden></p>
       </section>
         <section class="stage-venue-editor-metadata" aria-label="劇場情報">
       <!-- 2026-09-17 本人指示: 劇場名は劇場設定モードには要らないので隠す。
@@ -3458,13 +3459,10 @@
         </section>
         <section class="stage-venue-editor-wings-guide" aria-labelledby="stage-venue-editor-wings-title">
       <h3 id="stage-venue-editor-wings-title">6. 舞台袖</h3>
-      <p class="stage-profile-hint">四角または丸を選び、右の平面図でドラッグしてください。</p>
+      <p class="stage-profile-hint">四角を選び、右の平面図でドラッグしてください。</p>
       <div class="stage-tool-grid stage-venue-editor-area-shapes" role="group" aria-labelledby="stage-venue-editor-wings-title">
         <button type="button" data-venue-editor-area-mode="wing" data-venue-editor-area-shape="rectangle" aria-pressed="false">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13"/></svg><span>四角</span>
-        </button>
-        <button type="button" data-venue-editor-area-mode="wing" data-venue-editor-area-shape="circle" aria-pressed="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/></svg><span>丸</span>
         </button>
         <button type="button" class="btn-quiet" id="stage-venue-editor-wing-merge" disabled>重なりを合成</button>
       </div>
@@ -3488,10 +3486,25 @@
         <section class="stage-venue-editor-back-screens" aria-labelledby="stage-venue-editor-back-screens-title">
           <h3 id="stage-venue-editor-back-screens-title">8. バックスクリーン</h3>
       <div class="stage-venue-back-screen-controls">
-        <p class="stage-profile-hint">「設置」を押し、平面図で横または縦方向にドラッグして位置を決めます。複数枚設置できます。高さは天井に追従します。</p>
+        <p class="stage-profile-hint">「設置」を押して平面図でドラッグします。置いたスクリーンをタップすると長さを変更できます。新規配置の端点はグリッドに吸着します。複数枚設置でき、高さは天井に追従します。</p>
         <div class="stage-tool-grid">
           <button type="button" id="stage-venue-back-screen-place" aria-pressed="false">バックスクリーンを設置</button>
           <button type="button" class="btn-quiet" id="stage-venue-back-screen-remove" disabled>最後の1枚を取り外す</button>
+        </div>
+        <div id="stage-venue-back-screen-edit" class="stage-venue-back-screen-edit" hidden>
+          <label class="stage-venue-editor-setting" for="stage-venue-back-screen-length">
+            <span>長さ（m）</span>
+            <input class="stage-text-input" id="stage-venue-back-screen-length" type="number" min="0.4" step="any" inputmode="decimal" aria-describedby="stage-venue-back-screen-grid-note">
+          </label>
+          <div class="stage-venue-editor-setting stage-venue-back-screen-color">
+            <span id="stage-venue-back-screen-color-label">バックスクリーンの色</span>
+            <div class="stage-tool-grid stage-venue-back-screen-colors" role="group" aria-labelledby="stage-venue-back-screen-color-label">
+              <button type="button" data-back-screen-color="gray" aria-pressed="false"><span class="stage-venue-back-screen-swatch" aria-hidden="true"></span><span>グレー</span></button>
+              <button type="button" data-back-screen-color="black" aria-pressed="false"><span class="stage-venue-back-screen-swatch" aria-hidden="true"></span><span>黒</span></button>
+              <button type="button" data-back-screen-color="white" aria-pressed="false"><span class="stage-venue-back-screen-swatch" aria-hidden="true"></span><span>白</span></button>
+            </div>
+          </div>
+          <p id="stage-venue-back-screen-grid-note" class="stage-profile-hint">端点をドラッグしても調整できます。長さは表示中のグリッド1枡単位に吸着します。</p>
         </div>
       </div>
         </section>
@@ -3534,6 +3547,21 @@
       </div>
         </section>
       </div>
+      <footer class="stage-venue-editor-actions stage-venue-library-footer">
+        <div class="stage-venue-library-feedback">
+          <span id="stage-venue-editor-save-status" aria-live="polite"></span>
+          <span id="stage-venue-library-status" aria-live="polite"></span>
+        </div>
+        <div class="stage-io-row stage-venue-library-actions">
+          <button type="button" class="stage-minor-action" id="stage-venue-editor-save">ライブラリに保存</button>
+          <button type="button" class="btn-quiet" id="stage-venue-library-export">劇場を書き出す</button>
+          <label class="btn-quiet stage-import-label">
+            劇場を読み込む<input type="file" id="stage-venue-library-import" accept="application/json" hidden>
+          </label>
+          <button type="button" class="stage-venue-apply-button" id="stage-venue-editor-apply">この劇場を反映する</button>
+        </div>
+      </footer>
+      </div>
       <div class="stage-venue-editor-panel">
         <section class="stage-venue-editor-audience-step" aria-labelledby="stage-venue-editor-audience-title">
         <p class="stage-venue-editor-dims" id="stage-venue-editor-dims">間口 だいたい12m ・ 奥行 だいたい8m</p>
@@ -3565,24 +3593,6 @@
           <button type="button" class="btn-quiet" id="stage-venue-editor-audience-remove" disabled>選択したものを削除</button>
         </div>
         </section>
-        <footer class="stage-venue-editor-actions stage-venue-library-footer">
-          <div class="stage-venue-library-feedback">
-            <span id="stage-venue-editor-save-status" aria-live="polite"></span>
-            <span id="stage-venue-library-status" aria-live="polite"></span>
-          </div>
-          <!-- S-05（2026-09-18 本人要望）: 4つを同じ大きさで1列に並べる。
-               以前は3つの行＋その下に「この劇場を反映する」の全幅ボタン（合計108px）だった。
-               1行（44px）にすると縦が64px空き、平面図（3:2で高さから幅を逆算する）がそのぶん大きくなる。
-               色は変えない＝反映ボタンは赤地＋白の太枠のまま。主役／脇役は色で示し、大きさでは示さない。 -->
-          <div class="stage-io-row stage-venue-library-actions">
-            <button type="button" class="stage-minor-action" id="stage-venue-editor-save">ライブラリに保存</button>
-            <button type="button" class="btn-quiet" id="stage-venue-library-export">劇場を書き出す</button>
-            <label class="btn-quiet stage-import-label">
-              劇場を読み込む<input type="file" id="stage-venue-library-import" accept="application/json" hidden>
-            </label>
-            <button type="button" class="stage-venue-apply-button" id="stage-venue-editor-apply">この劇場を反映する</button>
-          </div>
-        </footer>
       </div>
     </div>
   </div>
@@ -3643,6 +3653,10 @@
       <button type="button" class="stage-venue-apply-choice" id="stage-venue-apply-manual" aria-pressed="false">
         <strong>自分で配置する / 導入しない</strong>
         <small>劇場だけを反映して舞台へ進みます。あとから機材配置でいつでも置けます。</small>
+      </button>
+      <button type="button" class="stage-venue-apply-choice" id="stage-venue-apply-file" aria-pressed="false" hidden>
+        <strong>読み込んだ照明デザインを使う</strong>
+        <small id="stage-venue-apply-file-summary"></small>
       </button>
       <!-- 「導入しない」は上の選択肢に統合した。選択の値（none）は
            保存や他の経路から渡ってくることがあるので、要素ごと残して隠す。 -->
@@ -3824,11 +3838,11 @@
   </button>
 </div>
 
-<script src="stage-venues.js?v=20260926-feedback40"></script>
+<script src="stage-venues.js?v=20260928-feedback55"></script>
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=20260928-storage54"></script>
+    <script src="stage-i18n.js?v=20260928-feedback55"></script>
     <script src="stage-i18n.zh-Hans.js?v=20260926-isolation35"></script>
     <script src="stage-i18n.zh-Hant.js?v=20260926-isolation35"></script>
 <script src="stage-prompt-i18n.js?v=2026092634"></script>
@@ -3836,12 +3850,12 @@
 <script src="stage-samples/index.js?v=2026092402"></script>
 <script src="stage-samples/romeo-juliet-cued.js?v=2026092435"></script>
 <script src="stage-samples/romeo-juliet-second.js?v=20260926-feedback40"></script>
-<script src="stage-samples/feature-test-show.js?v=20260928-storage54"></script>
+<script src="stage-samples/feature-test-show.js?v=20260928-feedback55"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
 <script src="stage-machinery.js?v=20260925-ui1"></script>
 <script src="stage-scrim.js?v=2026092059"></script>
-<script src="stage-first-person.js?v=20260927-feedback46"></script>
+<script src="stage-first-person.js?v=20260928-feedback55"></script>
 <script src="stage-fixture-body.js?v=20260927-feedback46"></script>
 <script src="stage-audio-store.js?v=2026092523"></script>
 <script src="stage-large-project-store.js?v=20260928-storage49"></script>
@@ -3854,15 +3868,15 @@
 <script src="stage-pwa.js?v=2026091501"></script>
 <script src="stage-lighting-plans.js?v=2026092101"></script>
 <script src="stage-lighting-plan-overlay.js?v=2026092113"></script>
-<script src="light-design/rig-engine.js?v=20260928-storage54"></script>
+<script src="light-design/rig-engine.js?v=20260928-feedback55"></script>
 <script src="light-design/laser-effects.js?v=20260915-5-color-presets"></script>
 <script src="stage-light-render.js?v=20260927-feedback46"></script>
-<script src="gamma-light-cue-overlay.js?v=20260928-storage54"></script>
+<script src="gamma-light-cue-overlay.js?v=20260928-feedback55"></script>
 <script src="gamma-range-fields.js?v=2026091780"></script>
 <script src="gamma-number-scrub.js?v=2026091780"></script>
 <script src="gamma-formation-presets.js?v=formation1"></script>
 <script src="gamma-formation-model.js?v=formation1"></script>
-<script src="stage-cue-sheet.js?v=20260928-storage54"></script>
+<script src="stage-cue-sheet.js?v=20260928-feedback55"></script>
 <script src="docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113"></script>
 <script src="stage-light-panel-import.js?v=2026092209"></script>
 <script src="stage-scene-alternatives.js?v=20260925-ui1"></script>
@@ -3876,20 +3890,20 @@
 <script src="gamma-ui-i18n.js?v=20260925-ui1"></script>
 <script src="stage-point-source.js?v=20260927-point43"></script>
 <script src="stage-save-lifecycle.js?v=20260927-guard45"></script>
-<script src="stage-sketch.js?v=20260928-storage54"></script>
+<script src="stage-sketch.js?v=20260928-feedback55"></script>
 <script src="stage-scene-alternatives-ui.js?v=20260926-release32"></script>
 <script src="gamma-formation.js?v=20260926-feedback40"></script>
 <script src="stage-vox-panel.js?v=2026092432"></script>
 <script src="stage-script-editor.js?v=20260926-feedback40"></script>
-    <script src="stage-timeline.js?v=20260928-storage54"></script>
+    <script src="stage-timeline.js?v=20260928-feedback55"></script>
 <script src="stage-session.js?v=20260926-feedback40"></script>
 <script src="stage-study-owner.js?v=20260926-feedback40"></script>
 <script src="stage-usage.js?v=2026091501"></script>
 <script src="stage-venue-curtains.js?v=20260926-feedback40"></script>
-<script src="stage-venue-editor.js?v=20260926-feedback40"></script>
-<script src="gamma-workspace.js?v=20260928-storage54"></script>
+<script src="stage-venue-editor.js?v=20260928-feedback55"></script>
+<script src="gamma-workspace.js?v=20260928-feedback55"></script>
 <script src="gamma-mobile.js?v=2026092202"></script>
-<script src="stage-venue-preview.js?v=20260926-feedback40"></script>
+<script src="stage-venue-preview.js?v=20260928-feedback55"></script>
 <script src="stage-venue-viewpoints.js?v=20260926-feedback40"></script>
 </body>
 </html>

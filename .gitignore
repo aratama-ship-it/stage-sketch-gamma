@@ -317,6 +317,10 @@ public-dist/
 !/tests/gamma-motion-feedback.test.mjs
 !/tests/venue-feedback-browser.cjs
 !/tests/venue-screen-3d-browser.cjs
+!/tests/venue-back-screen-edit-browser.cjs
+!/tests/venue-lighting-file-browser.cjs
+!/tests/light-apply-state-browser.cjs
+!/tests/venue-viewpoint-list-browser.cjs
 !/tests/feedback-vehicle-wheel-geometry.test.mjs
 
 # 0.2.41 panel column drag regression.

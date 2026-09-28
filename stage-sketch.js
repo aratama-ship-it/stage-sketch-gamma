@@ -7857,6 +7857,8 @@
     lightingPlanBody: document.getElementById("stage-lighting-plan-body"),
     lightingPlanCancel: document.getElementById("stage-lighting-plan-cancel"),
     lightingSourceChoices: document.querySelectorAll("[data-lighting-source]"),
+    lightingPlanFile: document.getElementById("stage-lighting-plan-file"),
+    lightingPlanFileSummary: document.getElementById("stage-lighting-plan-file-summary"),
     lightingPlanSummary: document.getElementById("stage-lighting-plan-summary"),
     lightingPlanCandidate: document.getElementById("stage-lighting-plan-candidate"),
     lightingPlanCandidateTitle: document.getElementById("stage-lighting-plan-candidate-title"),
@@ -7887,6 +7889,8 @@
     venueApplyPresetSelect: document.getElementById("stage-venue-apply-preset-select"),
     venueApplyPresetNote: document.getElementById("stage-venue-apply-preset-note"),
     venueApplyManual: document.getElementById("stage-venue-apply-manual"),
+    venueApplyFile: document.getElementById("stage-venue-apply-file"),
+    venueApplyFileSummary: document.getElementById("stage-venue-apply-file-summary"),
     venueApplyNone: document.getElementById("stage-venue-apply-none"),
     venueApplyStatus: document.getElementById("stage-venue-apply-status"),
     venueApplyConfirm: document.getElementById("stage-venue-apply-confirm"),
@@ -13367,16 +13371,32 @@
    *   控えは会場ライブラリの変更（stage-venue-library-changed）で捨てる。 */
   let viewpointSeatCache = { key: "", seats: [] };
   let viewpointCacheAge = 0;
-  function customViewpointSeats(v) {
+  function customViewpointSeats(v, explicitPoints = null) {
     const store = VENUES.viewpoints;
     const lines = window.SHOSAI_VENUE_LINES;
     if (!v || !v.id || !store || !lines || typeof lines.deriveSeat !== "function") return [];
     const size = venueSize();
-    const key = `${v.id}|${size.width}|${size.depth}|${viewpointCacheAge}`;
+    const points = explicitPoints === null ? store.list(v.id) : explicitPoints;
+    const key = `${v.id}|${size.width}|${size.depth}|${viewpointCacheAge}|${JSON.stringify(points)}`;
     if (viewpointSeatCache.key === key) return viewpointSeatCache.seats;
-    const seats = store.list(v.id).map((point) => {
+    const seats = points.map((point) => {
+      const id = point.presetSeatId || `viewpoint:${point.id}`;
+      // A front projection cannot show a point onstage, behind the stage, or beside it.
+      // Keep the point in the chooser, but open the 3D camera when selected.
+      if (explicitPoints !== null && (point.distanceM < 0.5 ||
+          Math.abs(point.offsetM) > size.width / 2 + 0.5)) {
+        return { id, label: point.label, short: point.label, viewpoint: true,
+          only3D: true, viewPosition: point };
+      }
+      const preset = explicitPoints !== null && point.presetSeatId
+        ? VENUES.seats.find(seat => seat.id === point.presetSeatId) : null;
+      const unchangedPreset = preset && Math.abs(point.distanceM - (preset.eye || 8)) < .001 &&
+        Math.abs(point.offsetM - ((preset.plan?.x ?? .5) - .5) * size.width) < .001 &&
+        Math.abs(point.eyeM - (preset.plan?.eyeM ?? (preset.plan?.tier === "balcony" ? 5.5 : 1.2))) < .001 &&
+        Math.abs(point.fovDeg - 60) < .001;
+      if (unchangedPreset) return { ...preset, label: point.label, short: point.label, viewpoint: true };
       const seat = lines.deriveSeat({
-        id: point.presetSeatId || `viewpoint:${point.id}`,
+        id,
         label: point.label,
         short: point.label,
         distanceM: point.distanceM,
@@ -13405,6 +13425,12 @@
   /* 正面図で選べる席の全部。既存（または近似）の席＋カスタム視点。 */
   function frontSeatList() {
     const v = venue();
+    const positions = v?.venueV2?.viewPositions;
+    if (Array.isArray(positions)) {
+      const explicit = customViewpointSeats(v, positions);
+      return explicit.some(seat => !seat.only3D) ? explicit
+        : [VENUES.seatById("center"), ...explicit];
+    }
     const approx = approxFrontSeatsForVenue(v);
     const saved = VENUES.viewpoints.list(v.id);
     const usePreset = saved.some(point => VENUES.seats.some(seat => seat.id === point.presetSeatId));
@@ -13416,7 +13442,9 @@
 
   function frontSeatById(id) {
     const seats = frontSeatList();
-    return seats.find(seat => seat.id === id) || seats.find(seat => seat.id === "center") || seats[0] || VENUES.seatById("center");
+    return seats.find(seat => seat.id === id && !seat.only3D) ||
+      seats.find(seat => seat.id === "center" && !seat.only3D) ||
+      seats.find(seat => !seat.only3D) || VENUES.seatById("center");
   }
 
   /* 実効の寸法。旧ショーに手入力寸法が残っている場合だけ読み込み互換として重ねる。
@@ -18061,8 +18089,9 @@
     }
 
     // 作成会場のバックスクリーン。高さは保存せず、現在の天井高を使う。
-    for (const {from, to} of (Array.isArray(v.backScreens) ? v.backScreens : v.backScreen ? [v.backScreen] : [])) {
+    for (const screen of (Array.isArray(v.backScreens) ? v.backScreens : v.backScreen ? [v.backScreen] : [])) {
       if (!stepShape) continue;
+      const {from, to} = screen;
       const ceilingM = Number(v.venueV2?.ceiling?.heightM) || Number(L.size.height) || 6;
       const u1 = stepShape.uOf(from[0]), u2 = stepShape.uOf(to[0]);
       const depth = stepShape.vOf(from[1]);
@@ -18075,7 +18104,7 @@
       target.moveTo(low1.x, low1.y); target.lineTo(low2.x, low2.y);
       target.lineTo(high2.x, high2.y); target.lineTo(high1.x, high1.y);
       target.closePath();
-      target.fillStyle = stageSurfaceColor("#e9e8df");
+      target.fillStyle = stageSurfaceColor(VENUES.backScreenColor(screen));
       target.fill();
       target.strokeStyle = "rgba(30,27,23,0.65)";
       target.lineWidth = 2; target.stroke();
@@ -18827,7 +18856,7 @@
     for (const screen of (Array.isArray(v.backScreens) ? v.backScreens : v.backScreen ? [v.backScreen] : [])) {
       const a = pointAt(screen.from), b = pointAt(screen.to);
       target.save(); target.beginPath(); target.moveTo(a.x, a.y); target.lineTo(b.x, b.y);
-      target.lineWidth = 5; target.strokeStyle = "#e9e8df"; target.stroke(); target.restore();
+      target.lineWidth = 5; target.strokeStyle = VENUES.backScreenColor(screen); target.stroke(); target.restore();
     }
 
     /* ★劇場に据え付けた壁（2026-09-19 本人決定）。
@@ -21210,7 +21239,8 @@
       const v = venue();
       const list = frontSeatList();
       // 照明デザインの席の選択も、どのあたりの席かが分かる名前で渡す。
-      return list.map((seat) => ({ id: seat.id, label: seatName(seat), short: seatShortName(seat) }));
+      return list.filter(seat => !seat.only3D)
+        .map((seat) => ({ id: seat.id, label: seatName(seat), short: seatShortName(seat) }));
     },
     currentSeat: () => state.seat,
     // いまのシーンの駒（照明を組む画面が下敷きに使う。読むだけ）
@@ -24921,6 +24951,15 @@
   }
   const lightingPlanBasis = () => JSON.stringify([state.project.id, lightingPlanProject().venue,
     lightingPlanProject().venueSize, lightingPlanProject().venueDims]);
+  let pendingLightingFile = null;
+  let lightingFileRequest = 0;
+  const sameLightingStage = (a, b) => ["W", "D", "H"].every((key) =>
+    Number.isFinite(a?.[key]) && Number.isFinite(b?.[key]) && Math.abs(a[key] - b[key]) < 0.05);
+  function showLightingFileSummary(message) {
+    if (!els.lightingPlanFileSummary) return;
+    els.lightingPlanFileSummary.hidden = !message;
+    els.lightingPlanFileSummary.textContent = message || "";
+  }
   let lightingPlanMode = "add";
   // 表示選択は作業中だけの比較状態。project / localStorage には保存しない。
   let lightingPlanOverlayId = "";
@@ -33007,8 +33046,11 @@ ${propsPlotHtml}
         button.type = "button";
         button.className = "stage-seat";
         button.setAttribute("aria-pressed", String(s2.id === seat.id));
-        button.textContent = tabletPwaActive ? seatShortName(s2) : seatName(s2);
-        button.setAttribute("aria-label", seatName(s2));
+        button.textContent = (tabletPwaActive ? seatShortName(s2) : seatName(s2)) + (s2.only3D ? "（3D）" : "");
+        button.setAttribute("aria-label", s2.only3D
+          ? sx(`${seatName(s2)}を3Dで見る`, `View ${seatName(s2)} in 3D`) : seatName(s2));
+        if (s2.only3D) button.title = sx("正面図で表せない位置のため、3Dで開きます",
+          "This position cannot be shown in the front view. Open it in 3D.");
         button.addEventListener("click", () => setSeat(s2.id));
         els.seatList.append(button);
       });
@@ -33018,13 +33060,14 @@ ${propsPlotHtml}
     if (els.front2Seat) {
       /* まだ選んでいない・今の会場に無い席なら、メインと違う席へ寄せる
          （同じ席を二つ並べても比べる意味がない）。一度選んだ後はそのまま尊重する。 */
+      const frontSeats = seats.filter(candidate => !candidate.only3D);
       let seat2 = frontSeatById(state.seat2);
-      if (!seat2 || !seats.some((candidate) => candidate.id === seat2.id)) {
-        seat2 = seats.find((candidate) => candidate.id !== seat.id) || seats[0];
+      if (!seat2 || !frontSeats.some((candidate) => candidate.id === seat2.id)) {
+        seat2 = frontSeats.find((candidate) => candidate.id !== seat.id) || frontSeats[0];
         if (seat2) state.seat2 = seat2.id;
       }
       els.front2Seat.innerHTML = "";
-      seats.forEach((s2) => {
+      frontSeats.forEach((s2) => {
         const opt = document.createElement("option");
         opt.value = s2.id;
         opt.textContent = seatName(s2);
@@ -33035,6 +33078,12 @@ ${propsPlotHtml}
   }
 
   function setSeat(id) {
+    const chosen = frontSeatList().find(seat => seat.id === id);
+    if (chosen?.only3D) {
+      setFreecamWorkspaceActive(true);
+      openFpv(undefined, "free", els.freecamOpen, true, false, chosen.viewPosition);
+      return;
+    }
     if (state.seat === id) return;
     state.seat = id;
     renderVenueControls();
@@ -33670,6 +33719,10 @@ ${propsPlotHtml}
     // 劇場のプリセットを選択中なら、形式・規模を替えた直後に対応する照明候補も読み直す。
     // ここが無いと、直前の劇場の候補や「寸法が違う」という表示が残り続ける。
     if (lightingSource === "preset") openLightingPlanModal();
+    if (lightingSource === "saved" && pendingLightingFile?.basis !== lightingPlanBasis()) {
+      setLightingSource("self");
+      showLightingFileSummary("劇場の選択が変わりました。照明デザインのファイルをもう一度選んでください。");
+    }
   }
 
   /* 「この劇場を反映する」の確定境界。劇場の確定と照明機材の始め方を一度に選ぶ。
@@ -33713,9 +33766,18 @@ ${propsPlotHtml}
       && Number.isFinite(actual[index]) && Math.abs(value - actual[index]) < 0.05);
   }
 
+  function venueApplyCompatibleFile(saved) {
+    if (!saved || !pendingLightingFile || pendingLightingFile.projectId !== state.project.id
+        || pendingLightingFile.basis !== lightingPlanBasis()) return false;
+    const venue = VENUES.byId(saved.id);
+    const size = venue && VENUES.sizeById(venue, venueApplySizeId(saved));
+    return Boolean(size && sameLightingStage(pendingLightingFile.design.stage,
+      { W: size.width, D: size.depth, H: size.height || 8 }));
+  }
+
   function setVenueApplyChoice(choice) {
-    venueApplyChoice = ["preset", "manual", "none"].includes(choice) ? choice : "none";
-    [[els.venueApplyPreset, "preset"], [els.venueApplyManual, "manual"], [els.venueApplyNone, "none"]]
+    venueApplyChoice = ["preset", "manual", "file", "none"].includes(choice) ? choice : "none";
+    [[els.venueApplyPreset, "preset"], [els.venueApplyManual, "manual"], [els.venueApplyFile, "file"], [els.venueApplyNone, "none"]]
       .forEach(([button, value]) => {
         if (!button) return;
         const selected = venueApplyChoice === value;
@@ -33724,8 +33786,9 @@ ${propsPlotHtml}
       });
     if (els.venueApplyPresetSelect) els.venueApplyPresetSelect.disabled = venueApplyChoice !== "preset"
       || !els.venueApplyPresetSelect.options.length;
-    if (els.venueApplyConfirm) els.venueApplyConfirm.disabled = venueApplyChoice === "preset"
-      && (!els.venueApplyPresetSelect || !els.venueApplyPresetSelect.options.length);
+    if (els.venueApplyConfirm) els.venueApplyConfirm.disabled = (venueApplyChoice === "preset"
+      && (!els.venueApplyPresetSelect || !els.venueApplyPresetSelect.options.length))
+      || (venueApplyChoice === "file" && !venueApplyCompatibleFile(pendingVenueApply?.venue));
   }
 
   function closeVenueApplyModal() {
@@ -33948,8 +34011,17 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (els.venueApplyPresetSelect) els.venueApplyPresetSelect.replaceChildren();
     if (els.venueApplyPresetNote) els.venueApplyPresetNote.textContent = "この劇場形式に合う型を確認しています…";
     if (els.venueApplyPreset) els.venueApplyPreset.disabled = true;
+    if (els.venueApplyFile) {
+      els.venueApplyFile.hidden = !pendingLightingFile;
+      els.venueApplyFile.disabled = !venueApplyCompatibleFile(saved);
+    }
+    if (els.venueApplyFileSummary && pendingLightingFile) {
+      els.venueApplyFileSummary.textContent = venueApplyCompatibleFile(saved)
+        ? `「${pendingLightingFile.fileName}」の灯体${pendingLightingFile.design.rig.fixtures.length}台とLXキューを使います。現在の照明はこの劇場で組み直されます。`
+        : `「${pendingLightingFile.fileName}」はこの劇場の舞台寸法と一致しません。`;
+    }
     // 劇場設定で選んだ方法を引き継ぐ。候補の読み込みで本人の選択を変えない。
-    setVenueApplyChoice(lightingSource === "preset" ? "preset" : "manual");
+    setVenueApplyChoice(lightingSource === "preset" ? "preset" : lightingSource === "saved" ? "file" : "manual");
     try {
       const catalog = await loadLightingCatalog();
       if (request !== venueApplyRequest || pendingVenueApply !== detail) return;
@@ -33975,11 +34047,12 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     } catch (_) {
       if (request !== venueApplyRequest || pendingVenueApply !== detail) return;
       if (els.venueApplyPresetNote) els.venueApplyPresetNote.textContent = "照明機材プリセットを読み込めません。劇場の反映は続けられます。";
-      setVenueApplyChoice("manual");
+      setVenueApplyChoice(venueApplyChoice === "preset" ? "manual" : venueApplyChoice);
     }
     window.requestAnimationFrame(() => {
       if (request !== venueApplyRequest || pendingVenueApply !== detail) return;
-      (venueApplyChoice === "preset" ? els.venueApplyPreset : els.venueApplyManual)?.focus();
+      (venueApplyChoice === "preset" ? els.venueApplyPreset
+        : venueApplyChoice === "file" ? els.venueApplyFile : els.venueApplyManual)?.focus();
     });
   }
 
@@ -34054,6 +34127,22 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         const rawDesign = await loadLightingDesignForPreset(preset);
         if (detail !== pendingVenueApply) return;
         project.lightingDesign = editableLightingDesignFromPreset(rawDesign, project, preset);
+      } else if (choice === "file") {
+        if (!venueApplyCompatibleFile(saved)) throw new Error("照明デザインのファイルと劇場寸法が一致しません。ファイルを選び直してください。");
+        const model = window.GAMMA_LIGHT_MODEL;
+        if (!model) throw new Error("照明デザインの検証器を使えません。");
+        const size = VENUES.sizeById(VENUES.byId(project.venue), project.venueSize);
+        const stage = { W: size.width, D: size.depth, H: size.height || 8 };
+        const scenes = project.scenes.filter((scene) => scene.kind === "scene")
+          .map((scene) => ({ id: scene.id, name: scene.title }));
+        const context = { title: project.title, stage, scenes, design: null };
+        let imported = model.reconcile(pendingLightingFile.design, context);
+        // 同じ劇場の比較プランは照明エディタのファイルに含まれない。現在のショーから引き継ぐ。
+        if (saved.id === current.venue && current.venueSize === project.venueSize
+            && current.lightingDesign && sameLightingStage(stage, current.lightingDesign.stage)) {
+          imported = model.restoreDraft(imported, { ...context, design: current.lightingDesign });
+        }
+        project.lightingDesign = model.validate(imported, scenes.map((scene) => scene.id));
       }
       const next = normalizeState({ ...state, project });
       const resultMessage = versioned
@@ -36746,6 +36835,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   });
   if (els.venueApplyPreset) els.venueApplyPreset.addEventListener("click", () => setVenueApplyChoice("preset"));
   if (els.venueApplyManual) els.venueApplyManual.addEventListener("click", () => setVenueApplyChoice("manual"));
+  if (els.venueApplyFile) els.venueApplyFile.addEventListener("click", () => setVenueApplyChoice("file"));
   if (els.venueApplyNone) els.venueApplyNone.addEventListener("click", () => setVenueApplyChoice("none"));
   [els.venueApplyClose, els.venueApplyCancel, els.venueApplyBackdrop].filter(Boolean)
     .forEach((element) => element.addEventListener("click", closeVenueApplyModal));
@@ -37683,12 +37773,13 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     fpv.setCrowdMode(featureOn("wideVenueLite") ? "lite" : "full");
   }
 
-  function openFpv(initialPieceId, initialView, returnFocus, workspace3d = false, previewOnly = false) {
+  function openFpv(initialPieceId, initialView, returnFocus, workspace3d = false, previewOnly = false, initialViewpoint = null) {
     const fpv = window.SHOSAI_STAGE_FPV;
     if (!fpv) return false;
     const opened = fpv.open({
       initialPieceId,
       initialView,
+      initialViewpoint,
       workspace3d,
       previewOnly,
       read: () => {
@@ -38024,38 +38115,51 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       if (e.key === "Enter") { e.preventDefault(); saveRig(); }
     });
   }
-  /* R-07（2026-09-17 本人要望）: 「照明をどこから持ってくるか」の3択。
-     いま選ばれているものは aria-pressed で示し、CSS が黄色（--brass）で塗る。
-     1 自分で組む … 何もしない（今の照明を変えずに残す）
-     2 劇場のプリセット … 劇場に合うプランを読み、追加／置換を選ばせる（歯止めはそのまま）
-     3 保存してある自分のプラン … 保存済みの一覧から選ぶ */
+  /* 照明の取得元。ファイルは検証後も劇場を確定するまで下書きに保持する。 */
   function setLightingSource(kind) {
     lightingSource = kind;
+    if (kind !== "saved") {
+      pendingLightingFile = null;
+      showLightingFileSummary("");
+    }
     els.lightingSourceChoices.forEach((button) => {
       button.setAttribute("aria-pressed", String(button.dataset.lightingSource === kind));
     });
     if (kind === "self") { closeLightingPlanModal(); return; }
     if (kind === "saved") {
-      // 保存済みの一覧だけを見せる。劇場プリセットの候補は出さない。
-      if (els.lightingPlanBody) els.lightingPlanBody.hidden = false;
-      pendingLightingPlan = null;
-      if (els.lightingPlanCandidate) els.lightingPlanCandidate.hidden = true;
-      if (els.lightingPlanChoice) els.lightingPlanChoice.hidden = true;
-      if (els.lightingPlanApply) els.lightingPlanApply.disabled = true;
-      const api = lightingPlanApi();
-      const existing = api && api.validateStore(lightingPlanStore());
-      renderLightingPlanExisting(existing);
-      if (els.lightingPlanSummary) {
-        els.lightingPlanSummary.textContent = existing && existing.ok
-          ? "保存してあるプランから選びます。選ぶと平面図に概略が重なります。"
-          : (existing && existing.reason) || "保存済みの照明プランを確認できません。";
-      }
+      closeLightingPlanModal();
       return;
     }
     openLightingPlanModal();
   }
   els.lightingSourceChoices.forEach((button) => {
-    button.addEventListener("click", () => setLightingSource(button.dataset.lightingSource));
+    button.addEventListener("click", () => {
+      if (button.dataset.lightingSource === "saved") els.lightingPlanFile?.click();
+      else setLightingSource(button.dataset.lightingSource);
+    });
+  });
+  if (els.lightingPlanFile) els.lightingPlanFile.addEventListener("change", async () => {
+    const file = els.lightingPlanFile.files?.[0];
+    els.lightingPlanFile.value = "";
+    if (!file) return;
+    const request = ++lightingFileRequest, basis = lightingPlanBasis(), projectId = state.project.id;
+    pendingLightingFile = null;
+    try {
+      if (file.size > 4 * 1024 * 1024) throw new Error("照明デザインのファイルが大きすぎます（4MBまで）。");
+      const raw = JSON.parse(await file.text());
+      if (request !== lightingFileRequest || basis !== lightingPlanBasis() || projectId !== state.project.id) return;
+      const model = window.GAMMA_LIGHT_MODEL;
+      if (!model) throw new Error("照明デザインの検証器を使えません。");
+      const design = model.validate(raw);
+      pendingLightingFile = { design, fileName: file.name, basis, projectId };
+      setLightingSource("saved");
+      const sceneIds = new Set(state.project.scenes.filter((row) => row.kind === "scene").map((row) => row.id));
+      const matched = design.scenes.filter((row) => sceneIds.has(row.id)).length;
+      showLightingFileSummary(`「${file.name}」を確認しました。灯体${design.rig.fixtures.length}台、舞台${design.stage.W}×${design.stage.D}×${design.stage.H}m。シーン${matched}/${sceneIds.size}件のLXキューがIDで一致します。この劇場を反映するときに最終確認します。`);
+    } catch (error) {
+      setLightingSource("self");
+      showLightingFileSummary(`読み込めませんでした: ${error.message}`);
+    }
   });
   [els.lightingPlanCancel].filter(Boolean)
     .forEach((element) => element.addEventListener("click", closeLightingPlanModal));

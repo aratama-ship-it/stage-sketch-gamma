@@ -40,15 +40,31 @@ function finiteLanding(S,T,dims){
 function coneProjection(S,T,deg,dims,P){
  const axis=unit(sub(T,S));if(!axis)return null;
  const ranges=[['x',-dims.W*.65,dims.W*.65],['y',0,dims.D+Math.min(6,dims.D*.5)],['z',0,dims.H]];
- let reach=Infinity;
- for(const [key,lo,hi] of ranges){if(Math.abs(axis[key])<1e-8)continue;const distance=((axis[key]>0?hi:lo)-S[key])/axis[key];if(distance>1e-6)reach=Math.min(reach,distance);}
+ // Each edge ray exits the room at a different distance. Cutting only the
+ // centre ray leaves the cone's end disk below the floor for wide air beams.
+ const rayReach=direction=>{
+  let distance=Infinity;
+  for(const [key,lo,hi] of ranges){
+   if(Math.abs(direction[key])<1e-8)continue;
+   const hit=((direction[key]>0?hi:lo)-S[key])/direction[key];
+   if(hit>1e-6)distance=Math.min(distance,hit);
+  }
+  return distance;
+ };
+ const reach=rayReach(axis);
  if(!Number.isFinite(reach))return null;
  const end={x:S.x+axis.x*reach,y:S.y+axis.y*reach,z:S.z+axis.z*reach};
  const right=unit(cross(Math.abs(axis.z)<.95?{x:0,y:0,z:1}:{x:0,y:1,z:0},axis)),up=cross(axis,right);
- const radius=reach*Math.tan(clamp(deg,4,70)*Math.PI/360);
+ const spread=Math.tan(clamp(deg,4,70)*Math.PI/360),radius=reach*spread;
  const from=P(S),centre=P(end),points=[from];
- for(let i=0;i<48;i++){const angle=i*Math.PI/24,c=Math.cos(angle)*radius,s=Math.sin(angle)*radius;
-  points.push(P({x:end.x+right.x*c+up.x*s,y:end.y+right.y*c+up.y*s,z:end.z+right.z*c+up.z*s}));}
+ for(let i=0;i<48;i++){
+  const angle=i*Math.PI/24,c=Math.cos(angle)*spread,s=Math.sin(angle)*spread;
+  const direction={x:axis.x+right.x*c+up.x*s,y:axis.y+right.y*c+up.y*s,z:axis.z+right.z*c+up.z*s};
+  const edgeReach=rayReach(direction);
+  if(!Number.isFinite(edgeReach))continue;
+  points.push(P({x:S.x+direction.x*edgeReach,y:S.y+direction.y*edgeReach,z:S.z+direction.z*edgeReach}));
+ }
+ if(points.length<4)return null;
  if(points.some(p=>!Number.isFinite(p.X+p.Y)))return null;
  const sorted=points.slice().sort((a,b)=>a.X-b.X||a.Y-b.Y),turn=(a,b,c)=>(b.X-a.X)*(c.Y-a.Y)-(b.Y-a.Y)*(c.X-a.X);
  const half=rows=>{const h=[];for(const p of rows){while(h.length>1&&turn(h[h.length-2],h[h.length-1],p)<=0)h.pop();h.push(p);}return h;};

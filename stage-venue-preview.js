@@ -20,9 +20,8 @@
       <button type="button" data-view="fit" aria-label="劇場全体を表示">全体</button>
     </div>
     <div class="venue-live-canvas-wrap"><canvas id="venue-live-canvas" tabindex="0"
-      aria-label="劇場の立体。ドラッグで回転、矢印キーでも回転、プラス・マイナスで拡大縮小。Escで移動を取り消し。"></canvas>
+      aria-label="劇場の立体。ドラッグで回転、矢印キーでも回転、プラス・マイナスで拡大縮小。"></canvas>
       <div class="venue-live-controls" role="group" aria-label="劇場プレビューの操作">
-        <button type="button" data-action="move" aria-pressed="false">袖・壁を動かす</button>
         <button type="button" data-action="out" aria-label="立体を縮小">−</button>
         <button type="button" data-action="in" aria-label="立体を拡大">＋</button>
       </div></div>
@@ -95,9 +94,10 @@
       const target = wingId !== 'drawing-preview' ? { kind: 'wing', id: wingId } : null;
       sheet(from, to, stageY, stageY + ceiling * .75, target);
     });
-    (Array.isArray(venue.backScreens) ? venue.backScreens : (venue.backScreen ? [venue.backScreen] : [])).forEach(({ from, to }) => {
+    (Array.isArray(venue.backScreens) ? venue.backScreens : (venue.backScreen ? [venue.backScreen] : [])).forEach(screen => {
+      const { from, to } = screen;
       face([point(from, stageY), point(to, stageY), point(to, stageY + ceiling),
-        point(from, stageY + ceiling)], '#e9e8df');
+        point(from, stageY + ceiling)], window.SHOSAI_VENUES.backScreenColor(screen));
     });
     const frontBorder = window.GAMMA_VENUE_CURTAINS.frontBorderForVenue(venue);
     if (frontBorder) {
@@ -262,7 +262,6 @@
     if (!point || JSON.stringify(state.viewpoint) === JSON.stringify(point)) return;
     if (!state.viewpoint) state.zoom = 1;
     state.viewpoint = { ...point }; state.move = false;
-    panel.querySelector('[data-action=move]').setAttribute('aria-pressed', 'false');
     panel.querySelector('[data-view=front]').setAttribute('aria-pressed', 'true');
     panel.querySelector('[data-view=orbit]').setAttribute('aria-pressed', 'false');
     help.textContent = `${point.label}から見る · 平面図の点をドラッグして移動`;

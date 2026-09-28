@@ -20,6 +20,9 @@
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const roundM = (value) => Math.round(value * 1000) / 1000;
   const floorColors = Object.freeze({ brown: "#806247", black: "#303030", gray: "#777777" });
+  const backScreenColors = Object.freeze({ gray: "#777777", black: "#303030", white: "#e9e8df" });
+  // 色のない旧保存は従来の白。これから置くスクリーンだけ灰を初期値にする。
+  const backScreenColor = (screen) => backScreenColors[screen?.color] || backScreenColors.white;
 
   // Audience elevations are stage-relative. Legacy areas have no elevation and
   // remain at world 0, even when the older stageHeightM property is present.
@@ -2214,6 +2217,8 @@
   // ID参照と、本人が取り込んだ会場ライブラリも使えるように残す。
   window.SHOSAI_VENUES = {
     floorColors,
+    backScreenColors,
+    backScreenColor,
     audienceHeight,
     get list() {
       return VENUES.filter((venue) => !venue.realVenue && !RETIRED_PRESET_IDS.has(venue.id))

@@ -386,6 +386,28 @@
   /* ---------- 履歴（モーダル内Undo） ---------- */
   /* R-11（2026-09-17）: 灯体グループも履歴に含める。含めないと「戻る」でグループだけ取り残される。 */
   const snapshot = () => JSON.stringify({ dims: state.dims, rig: state.rig, scenes: state.scenes, palette: state.palette, levelCurve: state.levelCurve, curtains: state.curtains, fixtureGroups: state.fixtureGroups, designVersion: state.designVersion, migrationKey: state.migrationKey });
+  // Compare only lighting content. Scene names and stage pieces are supplied by the host
+  // and may change without an LX edit; undoing the last edit must also clear the prompt.
+  const applyFingerprint = () => JSON.stringify({ dims: state.dims, rig: state.rig,
+    scenes: state.scenes.map(sc => ({ id: sc.id, lx: sc.lx, lxq: sc.lxq,
+      lxEditing: sc.lxEditing, cue: sc.cue })), palette: state.palette,
+    levelCurve: state.levelCurve, curtains: state.curtains,
+    fixtureGroups: state.fixtureGroups, designVersion: state.designVersion,
+    migrationKey: state.migrationKey, designName: state.designName });
+  let appliedFingerprint = applyFingerprint();
+  function markApplied() { appliedFingerprint = applyFingerprint(); state.dirty = false; }
+  function refreshApplyState() {
+    state.dirty = applyFingerprint() !== appliedFingerprint;
+    const button = $("apply");
+    if (button) {
+      button.disabled = !state.dirty;
+      button.classList.toggle("needs-apply", state.dirty);
+      button.title = state.dirty
+        ? "変更した配置と照明デザインを現在のショーのLXキューへ適用"
+        : "未適用の変更はありません";
+    }
+    return state.dirty;
+  }
   /* いま画面に出ている状態（＝最後に commit した時点）の控え。
      履歴へ積みたいのは「変更<b>前</b>」の状態だが、commit は変更が済んだ後に呼ばれるので、
      その時点から変更前を作り直せない。そこで直前の状態をここに1つ持っておく。
@@ -519,12 +541,12 @@
   /* 左右の余白は平面図・正面図・側面図で同じ値。そろえないと枠の幅が食い違う（2026-09-11 本人指摘）。
      2026-09-11 本人要望でさらに詰めた（38→32）。平面図の舞台の外に出るSSの印は SIDE_DX まで。 */
   const PAD = { planX: 32, planT: 20, planB: 46, secX: 32, secT: 14, secB: 15, headPlan: 26, headSec: 26, gap: 8 };
-  const SIDE_DX = 44;   // 内部px。PAD.planX*2(=64) − 印の半径15 より小さくする
+  const SIDE_DX = 24;   // 内部px。選択輪も平面図の左右余白に収める
   /* 前明かりは客席の上（舞台より手前）にある。実尺で描くと平面図に客席ぶんの帯が要り、
      そのぶん舞台が小さくなるので、SSと同じく「舞台の外に一定距離で並べる」描き方にする。
      本当の距離は番号の横と設定欄に数値で出す。 */
   const FRONT_DY = 58;        // 平面図: 舞台の手前端から下へ（内部px）。PAD.planB*2 に収まること
-  const FRONT_DX_SEC = 40;    // 側面図: 手前端から客席側へ（内部px）
+  const FRONT_DX_SEC = 30;    // 側面図: 選択輪が端で欠けない位置
   /* 客席へ向けた狙い点（surface: "house"）は舞台の外(y > D)にある。前明かりと同じく、
      平面図では舞台の手前端の下の客席帯に、側面図では手前端の外に「一定距離」で出す（実距離は数値で）。
      P を包んで舞台の外の点だけ置き換える。灯体の位置には使わない（前明かりの光の出どころは従来どおり）。
@@ -1372,8 +1394,8 @@
     if (state.mode === "move" && showOn("blackout")) paintBlackout(pctx, plan, litSpots);
     if (state.mode === "move" && showOn("blackout")) drawLasers(pctx, P, "plan", 0.35);
     compositeSpatial(pctx, P, B.w / d.W, "plan");
+    if (state.mode === "move" && showOn("fixtures")) redrawFixtureInfoPlan(pctx, P, B);
     if (state.mode === "move" && showOn("blackout")) {
-      redrawFixtureInfoPlan(pctx, P, B);
       planLabels.forEach((L) => plateText(pctx, L.text, L.x, L.y, { color: L.color }));
       drawBordersPlan(pctx, P, state.dims);
     }
@@ -1532,13 +1554,18 @@
       if (cone && cone.hull.length >= 3) {
         const lv = litFactorOf(f, l), span = Math.hypot(cone.centre.X - from.X, cone.centre.Y - from.Y);
         const radius = Math.max(1, ...cone.hull.map(p => Math.hypot(p.X-cone.centre.X, p.Y-cone.centre.Y)));
+        const compiled = V.compile({ S, T, deg: beamOf(f), level: lv, color: colorOf(f, l) });
+        const facingViewer = compiled && V.glareWeight(compiled, kind) > 0.35;
         ctx.save(); ctx.globalCompositeOperation = 'screen';
         ctx.beginPath(); cone.hull.forEach((p,i) => i ? ctx.lineTo(p.X,p.Y) : ctx.moveTo(p.X,p.Y)); ctx.closePath(); ctx.clip();
-        const gradient = span < radius * .5
+        const gradient = facingViewer || span < radius * .5
           ? ctx.createRadialGradient(cone.centre.X,cone.centre.Y,0,cone.centre.X,cone.centre.Y,radius)
           : ctx.createLinearGradient(from.X,from.Y,cone.centre.X,cone.centre.Y);
         gradient.addColorStop(0,hexA(colorOf(f, l),.24*visualAlpha(lv)));
-        gradient.addColorStop(.78,hexA(colorOf(f, l),.18*visualAlpha(lv)));
+        if (facingViewer) {
+          gradient.addColorStop(.55,hexA(colorOf(f, l),.10*visualAlpha(lv)));
+          gradient.addColorStop(.85,hexA(colorOf(f, l),.015*visualAlpha(lv)));
+        } else gradient.addColorStop(.78,hexA(colorOf(f, l),.18*visualAlpha(lv)));
         gradient.addColorStop(1,hexA(colorOf(f, l),0)); ctx.fillStyle=gradient;
         ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height); ctx.restore();
         spots.push({fromX:from.X,fromY:from.Y,coneHull:cone.hull,lv});
@@ -1572,7 +1599,10 @@
       // 客席向きの光・まぶしさ・ハンドルは、もやから独立した各図の専用分岐で描画済み。
       if (b.l.surface === "house") continue;
       const q=P(b.S), w=V.glareWeight(b,kind);
-      if(w>0) drawGlare(ctx,q.X,q.Y,k*.8*glareMul(b.l),b.color,b.level*w,false);
+      if(w>0) {
+        const radius = w > .35 && kind !== 'plan' ? k * (.9 + 2.4 * b.level) : k * .8;
+        drawGlare(ctx,q.X,q.Y,radius*glareMul(b.l),b.color,b.level*w,false);
+      }
       const proj=kind==='plan'?houseProjPlan(P,planBox()):kind.startsWith('front')&&b.l.surface==='house'?houseHandleProj(P,b.S,state.dims.D):b.l.surface==='house'?houseProjSide(P):P;
       const guide=showOn('path')?E.pathGuide(b.l,state.dims):null;
       if(guide){ctx.save();ctx.strokeStyle=isSel(b.f.id)?'rgba(223,100,51,.9)':'rgba(223,100,51,.35)';ctx.lineWidth=2;ctx.setLineDash([8,6]);
@@ -2337,6 +2367,12 @@
   }
   function drawFixtureMark(ctx, X, Y, shape, o) {
     const s = 15; ctx.save();
+    if (o.sel && !o.ghost) {
+      // 小さな灯体アイコンの外へ、どの図でも読み取れる選択輪を置く。
+      ctx.beginPath(); ctx.arc(X, Y, 31, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(13,12,11,0.92)"; ctx.lineWidth = 8; ctx.stroke();
+      ctx.strokeStyle = "#d3ac59"; ctx.lineWidth = 3.5; ctx.stroke();
+    }
     const fill = o.ghost ? "rgba(240,231,214,0.35)" : o.st === "unset" ? surface("#0d0c0b") : o.st === "off" ? surface("#2a2520") : (o.color || "#f2ead6");
     ctx.fillStyle = fill; ctx.strokeStyle = o.sel ? "#d3ac59" : o.ghost ? "rgba(240,231,214,0.5)" : "rgba(240,231,214,0.7)"; ctx.lineWidth = o.sel ? 5 : 2;
     const bar = shape === "bar" && o.bar && o.bar.a && o.bar.b ? o.bar : null;
@@ -2393,8 +2429,8 @@
         drawFixtureMark(ctx, q.X, q.Y, "diamond", { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "" });
       } else if (f.mount.type !== "side") {
         const frontX = side === "shimote" ? B.x + B.w + FRONT_DX_SEC : B.x - FRONT_DX_SEC;
-        ctx.save(); ctx.globalAlpha = 0.35;
-        drawFixtureMark(ctx, isFront(f) ? frontX : q.X, q.Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), { sel: false, st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) });
+        ctx.save(); ctx.globalAlpha = isSel(f.id) ? 1 : 0.35;
+        drawFixtureMark(ctx, isFront(f) ? frontX : q.X, q.Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) });
         ctx.restore();
       }
     });
@@ -2403,7 +2439,7 @@
     if (!showOn("fixtures")) return;
     state.rig.fixtures.forEach((f) => {
       const S = fixtureWorld(f); if (!S) return; const p = P(S);
-      drawFixtureMark(ctx, p.X, isFront(f) ? Math.max(20, p.Y) : p.Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) });
+      drawFixtureMark(ctx, p.X, isFront(f) ? Math.max(38, p.Y) : p.Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) });
     });
   }
   /* 客席へ向けた光の「目眩まし」。輪郭のある光だまりではなく、点のまわりにふわっと滲む光として描く。
@@ -2500,7 +2536,7 @@
       }
     });
     // 灯体
-    state.rig.fixtures.forEach((f) => { if (!showOn("fixtures")) return; const S = fixtureWorld(f); if (!S) return; const p = P(S); const Y = isFront(f) ? Math.max(20, p.Y) : p.Y;
+    state.rig.fixtures.forEach((f) => { if (!showOn("fixtures")) return; const S = fixtureWorld(f); if (!S) return; const p = P(S); const Y = isFront(f) ? Math.max(38, p.Y) : p.Y;
       const o = { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) };
       if (f.mount.type === "cyc") o.bar = cycFixtureBar(P, f);
       drawFixtureMark(fctx, p.X, Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), o);
@@ -2510,7 +2546,8 @@
       drawPiecesUp(fctx, P, frontView.pxPerM, { yawDeg: 0, relight: true }); }
     if (state.mode === "move" && showOn("blackout")) drawLasers(fctx, P, "front", 0.35);
     compositeSpatial(fctx, P, B.w / d.W, "front");
-    if (state.mode === "move" && showOn("blackout")) { redrawFixtureInfoSection(fctx, P, B, "front"); drawBordersUp(fctx, P, d); }
+    if (state.mode === "move" && showOn("fixtures")) redrawFixtureInfoSection(fctx, P, B, "front");
+    if (state.mode === "move" && showOn("blackout")) drawBordersUp(fctx, P, d);
   }
   /* ---------- 描画: 側面図（舞台中央から下手／上手を見る） ---------- */
   function drawSide(sec) {
@@ -2568,14 +2605,15 @@
         // 前明かりは舞台より手前（客席側）。側面図では手前端の外に一定距離で並べ、高さは実尺で描く
         const frontX = side === "shimote" ? B.x + B.w + FRONT_DX_SEC : B.x - FRONT_DX_SEC;
         if (!showOn("fixtures")) return;
-        fctx.globalAlpha = 0.35; drawFixtureMark(fctx, isFront(f) ? frontX : q.X, q.Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), { sel: false, st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) }); fctx.globalAlpha = 1;
+        fctx.globalAlpha = isSel(f.id) ? 1 : 0.35; drawFixtureMark(fctx, isFront(f) ? frontX : q.X, q.Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) }); fctx.globalAlpha = 1;
       } });
     drawBordersUp(fctx, P, d);
     if (state.mode === "move" && showOn("blackout")) { paintBlackout(fctx, front, litSpotsSide);
       drawPiecesUp(fctx, P, B.w / d.D, { yawDeg: side === "shimote" ? -90 : 90, relight: true }); }
     if (state.mode === "move" && showOn("blackout")) drawLasers(fctx, P, side, 0.35);
     compositeSpatial(fctx, P, B.w / d.D, side);
-    if (state.mode === "move" && showOn("blackout")) { redrawFixtureInfoSection(fctx, P, B, side); drawBordersUp(fctx, P, d); }
+    if (state.mode === "move" && showOn("fixtures")) redrawFixtureInfoSection(fctx, P, B, side);
+    if (state.mode === "move" && showOn("blackout")) drawBordersUp(fctx, P, d);
     // 予告
     const hv = state.hover;
     if (state.tool === "side" && hv && hv.canvas === side) { const q = { X: E.clamp(hv.X, B.x, B.x + B.w), Y: E.clamp(hv.Y, B.y, B.y + B.h) }; fctx.strokeStyle = "rgba(240,231,214,0.3)"; fctx.setLineDash([6, 6]); fctx.beginPath(); fctx.moveTo(q.X, B.y + B.h); fctx.lineTo(q.X, q.Y); fctx.stroke(); fctx.setLineDash([]); drawFixtureMark(fctx, q.X, q.Y, "diamond", { ghost: true }); fctx.fillStyle = "rgba(240,231,214,0.85)"; fctx.font = "16px sans-serif"; fctx.fillText(`${side === "shimote" ? "下手" : "上手"}の袖に立てる（クリック）`, q.X + 22, q.Y - 26); }
@@ -2649,12 +2687,12 @@
     });
     // 灯体
     state.rig.fixtures.forEach((f) => { const S = fixtureWorld(f); if (!S) return; const p = P(S);
-      if (showOn("fixtures")) drawFixtureMark(fctx, p.X, isFront(f) ? Math.max(20, p.Y) : p.Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) }); });
+      if (showOn("fixtures")) drawFixtureMark(fctx, p.X, isFront(f) ? Math.max(38, p.Y) : p.Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) }); });
     if (state.mode === "move" && showOn("blackout")) { paintBlackout(fctx, cv, litSpots3D);
       drawPiecesUp(fctx, P, L.pxPerM, { yawDeg: 0, zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v, relight: true }); }
     if (state.mode === "move" && showOn("blackout")) drawLasers(fctx, P, "front3d", 0.35);
     compositeSpatial(fctx, P, L.pxPerM, "front3d", { zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v });
-    if (state.mode === "move" && showOn("blackout")) redrawFixtureInfo3D(fctx, P);
+    if (state.mode === "move" && showOn("fixtures")) redrawFixtureInfo3D(fctx, P);
     fctx.fillStyle = "rgba(240,231,214,0.4)"; fctx.font = "15px sans-serif"; fctx.textBaseline = "top";
     fctx.fillText(`${L.seat.label}から見た形（舞台スケッチの正面図と同じ描き方）`, 8, h - 24);
   }
@@ -2717,7 +2755,7 @@
   function fixtureSectionXY(f, sec, P, B) {
     const S = fixtureWorld(f); if (!S) return null;
     const p = P(S);
-    if (sec.kind === "front") return { X: p.X, Y: isFront(f) ? Math.max(20, p.Y) : p.Y };
+    if (sec.kind === "front") return { X: p.X, Y: isFront(f) ? Math.max(38, p.Y) : p.Y };
     if (f.mount.type === "side") return f.mount.side === sec.kind ? p : null;
     const frontX = sec.kind === "shimote" ? B.x + B.w + FRONT_DX_SEC : B.x - FRONT_DX_SEC;
     return { X: isFront(f) ? frontX : p.X, Y: p.Y };
@@ -5402,6 +5440,7 @@
   /* ---------- 全体 ---------- */
   function renderAll() { return preservePanelScroll(renderAllContent); }
   function renderAllContent() {
+    refreshApplyState();
     window.dispatchEvent(new Event("gamma-light-edit"));
     $("mode-place").setAttribute("aria-pressed", String(state.mode === "place")); $("mode-move").setAttribute("aria-pressed", String(state.mode === "move"));
     syncDistanceMetric();
@@ -5864,7 +5903,7 @@
   }
 
   // 一撃で置く。確認ダイアログは出さない（取り消せる操作に確認を挟まない。2026-09-11 本人要望）
-  $("apply").onclick = () => { state.dirty = false; state.history.length = 0; state.future.length = 0; baseline = snapshot(); renderAll(); $("dirty").textContent = "LXキューを適用しました"; setTimeout(() => renderAll(), 2500); toast("LXキューを適用しました（試作なので画面は残ります）"); };
+  $("apply").onclick = () => { markApplied(); state.history.length = 0; state.future.length = 0; baseline = snapshot(); renderAll(); $("dirty").textContent = "LXキューを適用しました"; setTimeout(() => renderAll(), 2500); toast("LXキューを適用しました（試作なので画面は残ります）"); };
   $("close").onclick = () => { if (state.dirty) dialog("<p>変更がまだ適用されていません。</p>", [["編集に戻る", null, "quiet"], ["破棄して閉じる", () => toast("破棄しました（試作なので画面は残ります）"), "quiet"], ["適用して閉じる", () => $("apply").onclick(), "primary"]]); else toast("閉じました（試作なので画面は残ります）"); };
 
   /* ---------- 照明デザインの保存（名前を付けて残す） ----------
@@ -5978,7 +6017,8 @@
     state.sceneIndex = Math.min(state.sceneIndex, state.scenes.length - 1);
     state.sel.clear(); state.selTruss = state.rig.trusses[0] ? state.rig.trusses[0].id : null;
     state.designName = o.name || "";
-    state.history = options.host ? [] : [...previousHistory, previousSnapshot].slice(-100); state.future = []; state.dirty = !options.host; baseline = snapshot();
+    state.history = options.host ? [] : [...previousHistory, previousSnapshot].slice(-100); state.future = []; baseline = snapshot();
+    if (options.host && !options.preserveAppliedBaseline) markApplied();
     renderAll();
     } catch(error) {
       Object.assign(state,before);baseline=beforeBaseline;
@@ -6087,7 +6127,7 @@
   // 試作の検証用。製品では出さない（状態を外から読めるようにしておく）
   window.__RIG = { state, E, planBox, secBox, secOf, SECS,
     /* 「照明のあるある」（light-presets-ui.js）との接続点。app.js の内部関数をここだけから貸す（2026-09-14）。 */
-    hooks: { cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, lxEnterCue, spatialScene, compositeSpatial, getDistanceMetric:()=>distanceMetric } };
+    hooks: { cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, getDistanceMetric:()=>distanceMetric } };
 
   /* ブラウザの大きさに追従する。モーダルだからと固定にしない（2026-09-11 本人要望）。
      rAFで1回にまとめる（ドラッグ中の連続リサイズで描き直しが溜まらないように）。 */
@@ -6102,5 +6142,6 @@
   document.addEventListener('pointercancel',()=>{if(spatialQuick){spatialQuick=false;draw();}});
   window.addEventListener('blur',()=>{if(spatialQuick){spatialQuick=false;draw();}});
   clearLog();                      // R-01: 常設欄に案内を出しておく（空の枠だけが浮かないように）
+  markApplied();
   renderAll();
 })();

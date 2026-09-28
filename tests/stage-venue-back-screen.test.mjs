@@ -40,6 +40,7 @@ test('back screen is optional and survives venue import without a fixed height',
   saved.ceiling.heightM = 12;
   assert.equal(saved.backScreen.heightM, undefined);
   assert.equal(saved.ceiling.heightM, 12);
+  assert.equal(context.SHOSAI_VENUES.backScreenColor(saved.backScreen), '#e9e8df');
 });
 
 test('invalid back screen lines are rejected on import', () => {
@@ -74,8 +75,8 @@ test('every drawn wing gets front, rear, and interior curtains in every stage fo
 
 test('multiple horizontal and vertical screens survive import export with extension fields', () => {
   const original = plain(library.venueV2ById('proscenium'));
-  const screens = [ { id: 'horizontal', from: [2, 1], to: [10, 1], future: { role: 'rear' } },
-    { id: 'vertical', from: [3, 2], to: [3, 8] } ];
+  const screens = [ { id: 'horizontal', from: [2, 1], to: [10, 1], color: 'gray', future: { role: 'rear' } },
+    { id: 'vertical', from: [3, 2], to: [3, 8], color: 'black' } ];
   const input = { ...original, id: 'multi-screen', label: 'スクリーン試験', backScreens: screens,
     backScreen: screens[0], futureVenue: { enabled: true } };
   const result = library.importVenues([input]);
@@ -87,6 +88,8 @@ test('multiple horizontal and vertical screens survive import export with extens
   assert.deepEqual(plain(output.backScreens), screens);
   const reread = library.validateVenueV2(output);
   assert.deepEqual(plain(reread.backScreens), screens);
+  assert.equal(context.SHOSAI_VENUES.backScreenColor(reread.backScreens[0]), '#777777');
+  assert.equal(context.SHOSAI_VENUES.backScreenColor(reread.backScreens[1]), '#303030');
   assert.ok(library.validateVenueV2({ ...input, backScreens: [] }));
   for (const backScreens of [null, {}, [{ from: [0,0], to: [.2,0] }], [{ from: [0,0], to: [2,2] }]]) {
     assert.equal(library.validateVenueV2({ ...input, backScreens }), null);
