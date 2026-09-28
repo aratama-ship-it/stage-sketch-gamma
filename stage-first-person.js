@@ -13,6 +13,8 @@
        新しい既定から始めてもらうため。v1 は消さずに置いておく（読まなくなるだけ）。 */
   const LENS_STORAGE_KEY = "gamma:shosai-fpv-lens-v2";
   let lensId = "wide";
+  let performerLensAuto = false;
+  const currentLensId = () => performerLensAuto ? "ultrawide" : lensId;
 
   /* 客席の入り。稽古で見たい状態が2つある——本番の圧（満席）と、
      客入れ前・ゲネプロの空の劇場（座席だけ）。切り替えて見比べる。
@@ -966,6 +968,11 @@
       : null;
   }
 
+  function supportedByPerformer(piece) {
+    const support = supportOf(piece, data.pieces);
+    return piece.animBase === undefined && support && support.type === "performer";
+  }
+
   function mountedPose(piece, pieces) {
     const support = supportOf(piece, pieces);
     if (pieceBaseOf(piece) > 0 && support && (support.type === "tissue" || support.type === "rigpoint")) return "hang";
@@ -1459,7 +1466,7 @@
     elements.lens.setAttribute("aria-label", text("レンズ"));
     elements.lensChips.forEach((chip, index) => {
       const preset = LENSES[index];
-      const active = preset.id === lensId;
+      const active = preset.id === currentLensId();
       chip.textContent = text(preset.name);
       chip.classList.toggle("on", active);
       chip.setAttribute("aria-pressed", String(active));
@@ -1468,6 +1475,7 @@
 
   function setLens(id) {
     lensId = normalizeLensId(id);
+    performerLensAuto = false;
     try { window.localStorage.setItem(LENS_STORAGE_KEY, lensId); } catch (_) { /* unavailable */ }
     resize();
     syncLensChips();
@@ -1675,6 +1683,7 @@
 
   function enterFree() {
     clearSelection();
+    performerLensAuto = false;
     if (state.view.type === "free") return;
     if (!state.free) {
       const pose = cameraPose();
@@ -1698,6 +1707,7 @@
       state.free.pitch = state.targetPitch;
       pressed.clear();
     }
+    performerLensAuto = nextView.type === "performer";
     state.view = nextView;
     resetAngles();
     renderHud();
@@ -1707,6 +1717,7 @@
     const preset = freePresets(W, D, CEIL, currentVenueModel()).find((candidate) => candidate.id === id);
     if (!preset) return;
     clearSelection();
+    performerLensAuto = false;
     state.free = { x: preset.x, y: preset.y, z: preset.z, yaw: preset.yaw, pitch: preset.pitch };
     state.view = { type: "free", key: null, name: "" };
     resetAngles();
@@ -1725,6 +1736,7 @@
     const me = currentPerformer(data.pieces);
     if (state.view.type === "performer" && !me) {
       if (state.view.name) showToast(`${state.view.name}${text("はこのシーンにいません — 客席から見ています")}`);
+      performerLensAuto = false;
       state.view = { type: "audience", key: null, name: "" };
     }
     if (reset) resetAngles();
@@ -1891,7 +1903,7 @@
     canvasHeight = elements.root.clientHeight || window.innerHeight || 768;
     elements.canvas.width = canvasWidth * pixelRatio;
     elements.canvas.height = canvasHeight * pixelRatio;
-    focal = focalFor(canvasWidth, lensById(lensId).fovDeg);
+    focal = focalFor(canvasWidth, lensById(currentLensId()).fovDeg);
     placeLensColumn();
     if (panelLayouts) applyPanelLayouts();
   }
@@ -2220,7 +2232,7 @@
       segment(-.02, .5, -.07, 0, limb); segment(.02, .5, .07, 0, limb);
     }
     ctx.restore();
-    if (pieceBaseOf(piece) === 0 && pose !== "hang") {
+    if (pieceBaseOf(piece) === 0 && pose !== "hang" && !supportedByPerformer(piece)) {
       fillPoly(ctx, circlePoints(foot.x, .01, foot.z, .26), "rgba(0,0,0,.28)");
     }
     const top = pose === "hang" ? pieceBaseOf(piece) + height * .95
@@ -2357,7 +2369,7 @@
     if (tooClose) return null;
 
     /* 影。空中（base>0）でなければ、足元へ床の円（従来と同じ描き方） */
-    if (base === 0) {
+    if (base === 0 && !supportedByPerformer(piece)) {
       fillPoly(ctx, circlePoints(foot.x, .01, foot.z, .26), "rgba(0,0,0,.28)");
     }
 
@@ -2376,6 +2388,7 @@
       if (wheel) paintWheel3d(ctx, wheel, P, "far");
       if (mask) body.paintFaceMask(ctx, project, pose, H, mask, false);
       window.STAGE_PERFORMER_BODY.paint(ctx, rig, bodyColor, look);
+      window.STAGE_PERFORMER_BODY.paintNearArmContour(ctx, rig, bodyColor, look);
       if (mask) body.paintFaceMask(ctx, project, pose, H, mask, true);
       if (wheel) paintWheel3d(ctx, wheel, P, "near");
       if (props) paintProps3d(ctx, props);
@@ -3518,6 +3531,84 @@
       { x: halfWidth + 6, y: CEIL + 4, z }, { x: -halfWidth - 6, y: CEIL + 4, z }], color);
   }
 
+  // 正面図・平面図の pieceParts が返す丸い部品を、3Dでも箱へ置き換えずに描く。
+  function propPartYRange(part) {
+    if (part.kind === "sphere") return [part.c[1] - part.r, part.c[1] + part.r];
+    if (part.kind === "disc") return [part.c[1], part.c[1] + finite(part.h, 0)];
+    if (part.kind === "ring") return part.plane === "xz"
+      ? [part.c[1], part.c[1]] : [part.c[1] - part.r, part.c[1] + part.r];
+    if (part.kind === "line") return [Math.min(part.a[1], part.b[1]), Math.max(part.a[1], part.b[1])];
+    return [finite(part.lift, 0), finite(part.lift, 0) + finite(part.h, 0)];
+  }
+
+  function drawRoundPropPart(ctx, part, at, held, color) {
+    const tint = clamp(finite(part.tint, 1), .12, 1);
+    if (part.kind === "sphere") {
+      const center = at(part.c[0], part.c[1] + held, part.c[2]);
+      const cam = toCamera(center);
+      if (cam.z <= NEAR) return;
+      const screen = toScreen(cam);
+      const radius = part.r * focal / cam.z;
+      const gradient = ctx.createRadialGradient(screen.x - radius * .3, screen.y - radius * .3,
+        Math.max(1, radius * .1), screen.x, screen.y, Math.max(1, radius));
+      gradient.addColorStop(0, shade(color, 1.05));
+      gradient.addColorStop(1, shade(color, .55));
+      ctx.save(); ctx.globalAlpha = tint;
+      ctx.beginPath(); ctx.arc(screen.x, screen.y, Math.max(1, radius), 0, Math.PI * 2);
+      ctx.fillStyle = gradient; ctx.fill(); ctx.restore();
+      return;
+    }
+    if (part.kind === "line" || part.kind === "ring") {
+      const tone = part.tone === "wood" ? "#c49e68" : part.tone === "dark" ? "#403932"
+        : part.tone === "cloth" ? color : "#d6dce2";
+      const segment = (a, b) => {
+        const mid = toCamera({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, z: (a.z + b.z) / 2 });
+        const width = Math.max(1, finite(part.w, .03) * focal / Math.max(NEAR, mid.z));
+        line3(ctx, a, b, tone, width);
+      };
+      ctx.save(); ctx.globalAlpha = tint; ctx.lineCap = part.kind === "ring" ? "butt" : "round";
+      if (part.kind === "line") segment(at(part.a[0], part.a[1] + held, part.a[2]),
+        at(part.b[0], part.b[1] + held, part.b[2]));
+      else {
+        const from = finite(part.from, 0) * Math.PI / 180;
+        const to = finite(part.to, 360) * Math.PI / 180;
+        const point = (t) => part.plane === "xz"
+          ? at(part.c[0] + Math.cos(t) * part.r, part.c[1] + held, part.c[2] + Math.sin(t) * part.r)
+          : part.plane === "yz"
+            ? at(part.c[0], part.c[1] + Math.sin(t) * part.r + held, part.c[2] + Math.cos(t) * part.r)
+            : at(part.c[0] + Math.cos(t) * part.r, part.c[1] + Math.sin(t) * part.r + held, part.c[2]);
+        const steps = 32;
+        for (let i = 0; i < steps; i += 1) segment(point(from + (to - from) * i / steps),
+          point(from + (to - from) * (i + 1) / steps));
+      }
+      ctx.restore();
+      return;
+    }
+    if (part.kind !== "cylinder" && part.kind !== "disc") return;
+    const center = part.kind === "disc" ? part.c : [finite(part.ox, 0), finite(part.lift, 0), finite(part.oz, 0)];
+    const radius = finite(part.r, 0);
+    if (!(radius > 0)) return;
+    const y0 = center[1] + held, y1 = y0 + finite(part.h, 0);
+    const count = 16;
+    const lower = Array.from({ length: count }, (_, i) => {
+      const angle = i * Math.PI * 2 / count;
+      return at(center[0] + Math.cos(angle) * radius, y0, center[2] + Math.sin(angle) * radius);
+    });
+    const upper = lower.map(p => ({ ...p, y: y1 }));
+    const faces = lower.map((p, i) => {
+      const j = (i + 1) % count;
+      const q = lower[j];
+      return { depth: toCamera({ x: (p.x + q.x) / 2, y: (y0 + y1) / 2, z: (p.z + q.z) / 2 }).z,
+        points: [p, q, upper[j], upper[i]],
+        tone: .72 + .22 * Math.max(0, (p.x + q.x) / 2 - at(center[0], y0, center[2]).x) / radius };
+    }).sort((a, b) => b.depth - a.depth);
+    ctx.save(); ctx.globalAlpha = tint;
+    if (y1 > y0) faces.forEach(face => fillPoly(ctx, face.points, shade(color, face.tone)));
+    if (camera.y >= y1) fillPoly(ctx, upper, shade(color, 1));
+    else if (camera.y < y0) fillPoly(ctx, lower.slice().reverse(), shade(color, .62));
+    ctx.restore();
+  }
+
   function drawPiece(ctx, piece) {
     // 保持中の仮面は演者の頭・手と一緒に描く。独立して描くと二重表示になる。
     if (piece.propShape === "mask" && piece.heldBy) return;
@@ -3584,16 +3675,23 @@
       const facing = finite(piece.facing, 0);
       const angle = facing * Math.PI / 180;
       const cos = Math.cos(angle); const sin = Math.sin(angle);
-      const boundsBottom = Math.min(0, ...piece.parts.map((box) => finite(box.lift, 0)));
-      const boundsTop = Math.max(0, ...piece.parts.map((box) => finite(box.lift, 0) + finite(box.h, 0)));
+      const boundsBottom = Math.min(0, ...piece.parts.map((part) => propPartYRange(part)[0]));
+      const boundsTop = Math.max(0, ...piece.parts.map((part) => propPartYRange(part)[1]));
       const held = piece.heldBy
         ? Math.max(0.05, pieceBaseOf(piece)
           - (piece.grip ? finite(piece.grip.y, 0) : (boundsTop - boundsBottom) / 2))
         : 0;
+      const propBase = (piece.type === "prop" || piece.roundBlock) && !piece.heldBy ? pieceBaseOf(piece) : 0;
       piece.parts.forEach((box) => {
+        if (["sphere", "disc", "line", "ring", "cylinder"].includes(box.kind)) {
+          drawRoundPropPart(ctx, box, (px, py, pz) => ({
+            x: x + px * cos - pz * sin, y: py, z: z + px * sin + pz * cos,
+          }), held + propBase, color);
+          return;
+        }
         const offsetX = finite(box.ox, 0) * cos - finite(box.oz, 0) * sin;
         const offsetZ = finite(box.ox, 0) * sin + finite(box.oz, 0) * cos;
-        const lift = finite(box.lift, 0) + held;
+        const lift = finite(box.lift, 0) + held + propBase;
         ctx.save();
         ctx.globalAlpha = clamp(finite(box.tint, 1), .12, 1);
         drawBox(ctx, x + offsetX, z + offsetZ, lift,
@@ -4042,7 +4140,7 @@
     });
     const x = mapX(camera.x); const y = mapY(camera.z);
     const direction = yawForward(state.yaw);
-    const halfFov = lensById(lensId).fovDeg * Math.PI / 360;
+    const halfFov = lensById(currentLensId()).fovDeg * Math.PI / 360;
     ctx.beginPath(); ctx.moveTo(x, y);
     [-halfFov, halfFov].forEach((angle) => {
       const cosine = Math.cos(angle); const sine = Math.sin(angle);
@@ -4586,6 +4684,7 @@
     ensureDom();
     if (state.opened) close(false);
     state.bridge = bridge;
+    performerLensAuto = false;
     state.previewOnly = Boolean(bridge.previewOnly);
     readCurrent();
     loadPanelLayouts();
@@ -4711,10 +4810,11 @@
       houseBalcony: () => HOUSE_BALCONY, houseRing: () => HOUSE_RING,
       houseFloorY: () => houseFloorY, houseFloorAt,
       houseModes: () => HOUSE_MODES, normalizeHouseModeId, houseModeById,
-      lensPresets: () => LENSES, normalizeLensId, lensById, focalFor }),
+      lensPresets: () => LENSES, normalizeLensId, lensById, focalFor, currentLensId }),
     /* 検証用の覗き窓。描画状態には触らない */
     _probe: () => ({ camera: { ...camera }, focal, canvasWidth, canvasHeight,
-      yaw: state.yaw, pitch: state.pitch, lens: lensId, fovDeg: lensById(lensId).fovDeg,
+      yaw: state.yaw, pitch: state.pitch, lens: lensId, activeLens: currentLensId(),
+      fovDeg: lensById(currentLensId()).fovDeg,
       ground: (px, py, planeY) => groundPointAt(px, py, planeY),
       moveDrag: moveDrag ? { ...moveDrag } : null }),
     _panels: Object.freeze({

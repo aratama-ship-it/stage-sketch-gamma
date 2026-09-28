@@ -61,6 +61,53 @@ async function workspaceTabs({page}) {
 async function cuesNavigation({page}) {
   await h.scene(page,'ft-scene-c1');const initial=await h.assertFixture(page);const scenes=initial.scenes.filter(x=>x.kind==='scene'),index=scenes.findIndex(x=>x.id==='ft-scene-c1');assert(index>=0&&index<scenes.length-1,'C-1 next fixture missing');await h.reachable(page,'#stage-scene-next');await page.locator('#stage-scene-next').click();await h.settle(page);assert.equal((await h.assertFixture(page)).activeSceneId,scenes[index+1].id,'Next UI must advance one scene');await page.locator('#stage-scene-prev').click();await h.settle(page);assert.equal((await h.assertFixture(page)).activeSceneId,'ft-scene-c1','Previous UI must return C-1');return{scene:'C-1',nextScene:scenes[index+1].id,returned:true};
 }
-const cases={'selection.plan':({page})=>selection(page,'plan'),'selection.front':({page})=>selection(page,'front'),'lanes.left':({page})=>laneCase(page,'left'),'lanes.right':({page})=>laneCase(page,'right'),'lanes.third':({page})=>laneCase(page,'right2'),'storage.roundtrip':storageRoundtrip,'storage.same-id':sameIdImport,'audio.entry':audioEntry,'workspace.tabs':workspaceTabs,'cues.navigation':cuesNavigation};
-const catalog=Object.keys(cases).map(id=>({id,title:id,scene:id.startsWith('selection.')?'A-5 / C-1':'C-1',steps:id.startsWith('selection.')?'Canvas select performer and bar; floating ON/OFF; layouts 2/3/left/right':id.startsWith('lanes.')?'Pointer resize; keyboard resize; reload; Enter reset':id==='storage.roundtrip'?'Lock bar; reload; UI JSON export/import; reload':id==='storage.same-id'?'Export original fixture ID; import exact bytes; verify copied content and preserved original':id==='audio.entry'?'Show Music panel; click import file picker':id==='workspace.tabs'?'Open Script, Q sheet, 3D; return Stage; select bar':'Next scene; previous scene',expected:id.startsWith('selection.')?'Correct selected name, inspector visible and pointer reachable; lock control reachable':id.startsWith('lanes.')?'Actual host width changes and persists':'Actual UI outcome matches fixture document'}));
+async function performerTransitionMotion({page}) {
+  await h.assertFixture(page);
+  const pref=page.locator('.stage-pref-toggle').filter({hasText:'転換中に演者を歩かせる'}).locator('input[type=checkbox]');
+  const openPrefs=()=>page.locator('#stage-prefs-btn').click();
+  await openPrefs();
+  assert.equal(await pref.isChecked(),true,'Performer motion defaults on for existing devices');
+  await pref.setChecked(true);
+  await page.locator('#stage-anim-scenes').setChecked(true);
+  await page.locator('#stage-prefs-close').click();
+  await page.evaluate(()=>SHOSAI_STAGE_SESSION_BRIDGE.openSceneById('ft-scene-a4'));
+  await h.settle(page);
+  await page.evaluate(()=>{window.__performerTransitionProgress=0;window.__performerTransitionMax=0;window.addEventListener('stage-scene-transition-progress',event=>{window.__performerTransitionProgress++;window.__performerTransitionMax=Math.max(window.__performerTransitionMax,event.detail.progress);});});
+  await page.locator('#stage-scene-next').click();
+  await page.waitForFunction(()=>window.__performerTransitionProgress>0,null,{timeout:3000});
+  const onProgress=await page.evaluate(()=>window.__performerTransitionProgress);
+  await page.waitForFunction(()=>window.__performerTransitionMax>=1,null,{timeout:12000});
+  const completedMotionProgress=await page.evaluate(()=>window.__performerTransitionProgress);
+  await page.locator('#stage-scene-next').click();
+  await page.waitForFunction((before)=>window.__performerTransitionProgress>before&&JSON.parse(SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project.activeSceneId==='ft-scene-b1',completedMotionProgress,{timeout:3000});
+  const entranceOnProgress=await page.evaluate(()=>window.__performerTransitionProgress);
+  assert(entranceOnProgress>onProgress,'A-5 → B-1 emits transition progress for the entering performers');
+  await openPrefs();
+  await page.locator('#stage-anim-scenes').uncheck();
+  await page.locator('#stage-prefs-close').click();
+  await page.evaluate(()=>SHOSAI_STAGE_SESSION_BRIDGE.openSceneById('ft-scene-a4'));
+  await h.settle(page);
+  await openPrefs();
+  await pref.setChecked(false);
+  await page.locator('#stage-anim-scenes').check();
+  await page.locator('#stage-prefs-close').click();
+  await page.evaluate(()=>{window.__performerTransitionProgress=0;});
+  await page.locator('#stage-scene-next').click();
+  await h.settle(page);
+  const offProgress=await page.evaluate(()=>window.__performerTransitionProgress);
+  assert.equal(offProgress,0,'A-4 → A-5 skips performer-only transition animation when disabled');
+  await page.evaluate(()=>SHOSAI_STAGE_SESSION_BRIDGE.openSceneById('ft-scene-a5'));
+  await h.settle(page);
+  await page.locator('#stage-scene-next').click();
+  await h.settle(page);
+  const entranceOffProgress=await page.evaluate(()=>window.__performerTransitionProgress);
+  assert.equal(entranceOffProgress,0,'A-5 → B-1 skips performer entrance animation when disabled');
+  await h.reloadFixture(page);
+  await openPrefs();
+  assert.equal(await pref.isChecked(),false,'Per-device preference survives reload');
+  await page.locator('#stage-prefs-close').click();
+  return{scenes:'A-4 → A-5; A-5 → B-1',defaultOn:true,enabledProgress:onProgress,entranceOnProgress,disabledProgress:offProgress,entranceOffProgress,persistedOff:true};
+}
+const cases={'selection.plan':({page})=>selection(page,'plan'),'selection.front':({page})=>selection(page,'front'),'lanes.left':({page})=>laneCase(page,'left'),'lanes.right':({page})=>laneCase(page,'right'),'lanes.third':({page})=>laneCase(page,'right2'),'storage.roundtrip':storageRoundtrip,'storage.same-id':sameIdImport,'audio.entry':audioEntry,'workspace.tabs':workspaceTabs,'cues.navigation':cuesNavigation,'performer-transition.motion':performerTransitionMotion};
+const catalog=Object.keys(cases).map(id=>({id,title:id,scene:id.startsWith('selection.')?'A-5 / C-1':id==='performer-transition.motion'?'A-4 → A-5':'C-1',steps:id.startsWith('selection.')?'Canvas select performer and bar; floating ON/OFF; layouts 2/3/left/right':id.startsWith('lanes.')?'Pointer resize; keyboard resize; reload; Enter reset':id==='storage.roundtrip'?'Lock bar; reload; UI JSON export/import; reload':id==='storage.same-id'?'Export original fixture ID; import exact bytes; verify copied content and preserved original':id==='audio.entry'?'Show Music panel; click import file picker':id==='workspace.tabs'?'Open Script, Q sheet, 3D; return Stage; select bar':id==='performer-transition.motion'?'Environment preference ON/OFF; compare transition progress; reload persistence':'Next scene; previous scene',expected:id.startsWith('selection.')?'Correct selected name, inspector visible and pointer reachable; lock control reachable':id.startsWith('lanes.')?'Actual host width changes and persists':'Actual UI outcome matches fixture document'}));
 module.exports={cases,catalog,boot:h.boot};

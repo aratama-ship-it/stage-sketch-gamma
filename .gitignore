@@ -365,3 +365,8 @@ public-dist/
 # LXキューの時間・キュー設計 v2 のテスト（2026-09-28 統合）
 !/tests/light-cue-timing.test.mjs
 !/tests/light-cue-v2.test.mjs
+
+# Circular sphere support regression.
+!/tests/stage-sphere-support.test.mjs
+!/tests/light-plan-fixture-outline-browser.cjs
+!/tests/instrument-auto-pose-browser.cjs

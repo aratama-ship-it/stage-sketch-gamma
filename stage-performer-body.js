@@ -593,6 +593,53 @@
     if(root.STAGE_PERFORMER_CONTOUR) root.STAGE_PERFORMER_CONTOUR.paint(target,rig,color,look,shade,paintBodyParts);
     else paintBodyParts(target,rig,color,look,shade);
   }
+  // In the perspective view, a near arm can have the same fill as the torso.
+  // Reveal its edge only where it crosses the torso; leave the outer silhouette smooth.
+  function paintNearArmContour(target, rig, color = '#c9c2b4', look = null) {
+    if (!rig?.shoulderBlends || rig.ux < 45) return;
+    const P = rig.P;
+    const torsoZ = (P.shL.z + P.shR.z + P.hipL.z + P.hipR.z) / 4;
+    const torsoColor = lookSpec(look)?.topColor || color;
+    const hex = /^#([0-9a-f]{6})$/i.exec(torsoColor)?.[1];
+    const brightness = hex ? .2126 * parseInt(hex.slice(0, 2), 16)
+      + .7152 * parseInt(hex.slice(2, 4), 16)
+      + .0722 * parseInt(hex.slice(4, 6), 16) : 128;
+    target.save();
+    smoothClosedPath(target, torsoOutline(rig.rings));
+    target.clip();
+    target.strokeStyle = brightness < 90 ? 'rgba(226,215,196,0.26)' : 'rgba(24,19,15,0.27)';
+    target.lineWidth = Math.max(0.85, Math.min(1.35, rig.ux * .004));
+    target.lineCap = 'round';
+    target.lineJoin = 'round';
+    for (const limb of LIMBS) {
+      if (limb.kind !== 'arm'
+        || limb.pts.reduce((sum, key) => sum + P[key].z, 0) / limb.pts.length < torsoZ - .02) continue;
+      const nodes = limbNodes(limb.pts.map((key) => P[key]), 'arm');
+      const blend = rig.shoulderBlends[limb.pts[0]];
+      nodes[0] = blend.surfaceRoot;
+      const radii = LIMB_TAPER.arm.map((r, i) => Math.max(.8, r * (nodes[i].s || rig.ux)));
+      // Trace the two long edges without shoulder/wrist caps. Closed capsules
+      // add seams across the chest when both forearms cross in front of it.
+      for (const side of [-1, 1]) {
+        const edge = nodes.slice(1).map((point, index) => {
+          const i = index + 1;
+          const prev = nodes[Math.max(1, i - 1)], next = nodes[Math.min(nodes.length - 1, i + 1)];
+          const dx = next.x - prev.x, dy = next.y - prev.y, length = Math.hypot(dx, dy) || 1;
+          return { x: point.x - side * dy / length * radii[i],
+            y: point.y + side * dx / length * radii[i] };
+        });
+        target.beginPath();
+        target.moveTo(edge[0].x, edge[0].y);
+        for (let i = 1; i < edge.length - 1; i++) {
+          target.quadraticCurveTo(edge[i].x, edge[i].y,
+            (edge[i].x + edge[i + 1].x) / 2, (edge[i].y + edge[i + 1].y) / 2);
+        }
+        target.lineTo(edge.at(-1).x, edge.at(-1).y);
+        target.stroke();
+      }
+    }
+    target.restore();
+  }
   function paint(target,rig,color,look,shade) {
     stats.painted++;
     // A single composited body preserves opacity at overlapping joints. Cache only
@@ -616,5 +663,5 @@
     }
     target.drawImage(sprite.canvas,rig.P.head.x+sprite.dx,rig.P.head.y+sprite.dy,sprite.w,sprite.h);
   }
-  root.STAGE_PERFORMER_BODY=Object.freeze({projectRig,paint,stats,geometryKey,contourGeometryKey});
+  root.STAGE_PERFORMER_BODY=Object.freeze({projectRig,paint,paintNearArmContour,stats,geometryKey,contourGeometryKey});
 })(typeof window==='undefined'?globalThis:window);

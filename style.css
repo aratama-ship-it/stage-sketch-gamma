@@ -10987,6 +10987,9 @@ body.stage-session-guest .stage-panel-visibility-control { display: none; }
 #stage-holder-face,
 #stage-hold-select { min-height: 44px; }
 #stage-held-list .stage-cast-row { grid-template-columns: minmax(0, 1fr) auto; }
+#stage-held-list .stage-held-with-use { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin-bottom: 6px; }
+#stage-held-list .stage-held-with-use .stage-cast-name { grid-column: 1 / -1; }
+#stage-held-list .stage-held-with-use .btn-quiet { min-height: 44px; white-space: normal; }
 #stage-held-list .stage-held-mask { grid-template-columns: 1fr 1fr; margin-bottom: 6px; }
 #stage-held-list .stage-held-mask .stage-cast-name { grid-column: 1 / -1; }
 #stage-held-list .stage-held-mask .btn-quiet { min-height: 44px; }

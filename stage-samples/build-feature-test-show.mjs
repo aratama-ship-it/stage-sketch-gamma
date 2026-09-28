@@ -46,6 +46,13 @@ const sketch = readFileSync(join(ROOT, "stage-sketch.js"), "utf8");
 /* POSES 配列の中だけ（trapeze_sit / trapeze_hang は器具に乗ると自動で付く内部姿勢で、選べない）。 */
 const posesBlock = sketch.slice(sketch.indexOf("const POSES = ["), sketch.indexOf("];", sketch.indexOf("const POSES = [")));
 const POSES = [...posesBlock.matchAll(/makePose\("([^"]+)"/g)].map((m) => m[1]);
+/* 手持ち楽器の演奏形は小道具の操作から明示的に選ぶ。姿勢見本として演者に割り当てない。 */
+const instrumentBlockStart = sketch.indexOf("const HELD_INSTRUMENT_POSES = Object.freeze({");
+if (instrumentBlockStart < 0) throw new Error("手持ち楽器の姿勢表が本体に無い");
+const instrumentBlock = sketch.slice(instrumentBlockStart, sketch.indexOf("});", instrumentBlockStart));
+const HELD_INSTRUMENT_POSE_IDS = new Set([...instrumentBlock.matchAll(/:\s*"([^"]+)"/g)].map((match) => match[1]));
+if (!HELD_INSTRUMENT_POSE_IDS.size || [...HELD_INSTRUMENT_POSE_IDS].some((id) => !POSES.includes(id)))
+  throw new Error("手持ち楽器の姿勢表が本体の姿勢と一致しません");
 /* 小道具の形: 表の中の行と、後から PROP_SHAPES.xxx = { ... } で足された形の両方。 */
 const propsFrom = sketch.indexOf("const PROP_SHAPES = {");
 const propsBlock = sketch.slice(propsFrom, sketch.indexOf("\n  };", propsFrom));
@@ -57,7 +64,7 @@ if (POSES.length < 40) throw new Error(`姿勢の一覧が取れていません 
 if (PROP_SHAPES.length < 10) throw new Error(`小道具の形の一覧が取れていません (${PROP_SHAPES.length})`);
 
 // v4（2026-09-24）: 転換0秒をなくしてシーンの秒数が変わったので上げる（一度開いた棚の複製は自動で差し替わらないため）
-const PROJECT_ID = "gamma-feature-test-v9";
+const PROJECT_ID = "gamma-feature-test-v17";
 const CREATED = "2026-09-18T00:00:00.000Z";
 const STAGE = { width: 12, depth: 9 };      // proscenium / mid の実寸（stage-venues.js）
 const COLORS = ["#a84b26", "#77865f", "#9c823f", "#6d6657", "#315b8a", "#b0533f", "#4f7d6f", "#8a6a9c",
@@ -90,6 +97,12 @@ const reg = (key, kind, name, color, extra = {}) => {
 };
 // 床物
 reg("block", "block", "台 1.8×1.0×0.5", "#efe7d6", { dims: { w: 1.8, d: 1.0, h: 0.5, lift: 0 } });
+reg("round-block", "block", "円形台 直径1.2m×高さ0.4m", "#c49d67", {
+  dims: { w: 1.2, d: 1.2, h: 0.4, lift: 0 }, round: true,
+});
+reg("round-block2", "block", "円形台（中央比較）", "#c49d67", {
+  dims: { w: 1.2, d: 1.2, h: 0.4, lift: 0 }, round: true,
+});
 reg("block2", "block", "箱 0.6×0.6×0.6", "#d8c7a8", { dims: { w: 0.6, d: 0.6, h: 0.6, lift: 0 } });
 reg("table", "table", "テーブル", "#766a59", { dims: { w: 1.2, d: 0.8, h: 0.75, lift: 0 } });
 reg("chair", "chair", "椅子", "#5b4a3a", { dims: { w: 0.45, d: 0.45, h: 0.9, lift: 0 } });
@@ -108,6 +121,11 @@ reg("flown", "block", "吊り台（地上高3m）", "#e2d6c0", { dims: { w: 1.2,
 // 小道具（登録は持たせる6つだけ。全形は無登録の駒として C-3/C-4 に並べる）
 const REGISTERED_PROPS = ["box", "ball", "umbrella", "mask", "club", "flag"];
 REGISTERED_PROPS.forEach((id) => { const shape = PROP_SHAPES.find((x) => x.id === id); if (!shape) throw new Error(`小道具の形 ${id} が本体に無い`); reg(`prop-${id}`, "prop", `小道具: ${shape.ja}`, "#d3ac59", { propShape: id }); });
+for (const id of ["guitar", "violin", "bassguitar", "accordion", "doublebass"]) {
+  const shape = PROP_SHAPES.find((item) => item.id === id);
+  if (!shape) throw new Error(`楽器の形 ${id} が本体に無い`);
+  reg(`instrument-${id}`, "prop", `楽器: ${shape.ja}`, "#b88956", { propShape: id });
+}
 // 空中・器具
 reg("trap", "trapeze", "トラピーズ", "#d6dce2", { dims: { w: 0.7, h: 0.06, lift: 4.2 }, flown: true });
 reg("tissue", "tissue", "エアリアルティシュー", "#b03060", { dims: { h: 7, lift: 7 }, flown: true, wires: 1 });
@@ -225,16 +243,16 @@ section("a", "A 演者と姿勢");
 // A-1 には後で文脈ヘルプの駒が2つ、A-2 には1つ足される（下）。上限80駒に収まるよう 78件・79件にする。
 const A_SCENE_CAPS = [78, 79];
 const A_POSES = A_SCENE_CAPS[0] + A_SCENE_CAPS[1];
-// 階段専用の座り方は C-4 の実物の段で検証する。
-const GENERAL_POSES = POSES.filter((id) => id !== "stairs_sit");
+// 階段専用は C-4、手持ち楽器の自動姿勢は C-2 の「持つ」操作で検証する。
+const GENERAL_POSES = POSES.filter((id) => id !== "stairs_sit" && !HELD_INSTRUMENT_POSE_IDS.has(id));
 // あふれた姿勢は、文脈ヘルプの駒3つ → J-1 の演者50人の順に割り当てる
 const HELP_POSES = GENERAL_POSES.slice(A_POSES, A_POSES + 3);
 const POSE_OVERFLOW = GENERAL_POSES.slice(A_POSES + 3);
 if (POSE_OVERFLOW.length > 50) throw new Error(`姿勢が多すぎて試験場に並べきれません（${POSES.length}件・A 群 ${A_POSES}＋ヘルプ 3＋J-1 50＝${A_POSES + 53} 件まで）`);
 [GENERAL_POSES.slice(0, A_SCENE_CAPS[0]), GENERAL_POSES.slice(A_SCENE_CAPS[0], A_POSES)].filter((list) => list.length).forEach((list, index) => {
   const positions = grid(list.length, 6, 0.08, 0.92, 0.2, 0.9);
-  scene(`a${index + 1}`, `A-${index + 1} 全姿勢 ${index + 1}/2（${list.length}種）`, 1,
-    `${CHECK}登録の無い演者（名前＝姿勢ID）を全姿勢ぶん並べた。正面図で形が崩れていないか、平面図の足元の大きさ、選んだときの枠、3Dカメラでの見え方を見る。姿勢は本体の POSES から自動で拾っている（${POSES.length}種。階段専用はC-4、A-1 に78件・A-2 に79件、あふれた分は文脈ヘルプの駒3つと J-1 の演者に割り当て）。姿勢を選ぶ場所（姿勢の窓・図の下の帯・演者を追加する窓）は分類の見出しで分かれ、窓と演者を追加する窓は検索で絞れること。帯は先頭の選択欄で分類を切り替え、末尾の「探す」で検索付きの窓が開くこと。`,
+  scene(`a${index + 1}`, `A-${index + 1} 姿勢見本 ${index + 1}/2（${list.length}種）`, 1,
+    `${CHECK}登録の無い演者（名前＝姿勢ID）に、手持ち楽器の自動姿勢と階段専用を除いた姿勢を割り当てた。正面図で形が崩れていないか、平面図の足元の大きさ、選んだときの枠、3Dカメラでの見え方を見る。本体の POSES は${POSES.length}種。階段専用はC-4、手持ち楽器はC-2で「持つ」を選んだ後に検証する。A-1 に78件・A-2 に79件、あふれた分は文脈ヘルプの駒3つと J-1 の演者に割り当てた。姿勢を選ぶ場所（姿勢の窓・図の下の帯・演者を追加する窓）は分類の見出しで分かれ、窓と演者を追加する窓は検索で絞れること。帯は先頭の選択欄で分類を切り替え、末尾の「探す」で検索付きの窓が開くこと。`,
     list.map((pose, i) => perf(`a${index + 1}`, null, positions[i].u, positions[i].v, { pose, name: pose, color: COLORS[i % COLORS.length] })));
 });
 /* 文脈ヘルプ: A-1の登録共通固定と駒単体固定、A-2に同じ登録の固定を置く。 */
@@ -269,14 +287,14 @@ helpScene.note += " D1確認: 固定テスト・共通はA-2と同じ登録の�
 /* A-4/A-5: ordinary standing, then route-driven walking. */
 {
   const people = Array.from({ length: 8 }, (_, i) => perf("a4", castKeys[i], .12 + (i % 4) * .24, i < 4 ? .38 : .74, { facing: 0 }));
-  scene("a4", "A-4 立ち姿・歩き始め", 1, `${CHECK}全員が「立つ」の姿勢。感情やダンスの上書きはない。A-5へ送ると6秒で歩く。演者01は曲線、02は短い直線、06は小さな一歩、07はその場で止まる。正面・3Dで支持足の滑り、膝、腕、停止を確認。次のシーンボタン・下矢印・3Dの右矢印で進むと、転換の開始51秒から終了57秒までシークバーも進む。戻るボタン・上矢印・3Dの左矢印は、転換途中でも瞬間移動する。タイムラインの転換途中で一時停止すると演者と再生線が止まり、再開すると同じ位置から続く。`, people,
+  scene("a4", "A-4 立ち姿・歩き始め", 1, `${CHECK}全員が「立つ」の姿勢。感情やダンスの上書きはない。A-5へ送ると6秒で歩く。演者01は曲線、02は短い直線、07はその場で止まる。正面・3Dで支持足の滑り、膝、腕、停止を確認。環境設定「転換中に演者を歩かせる」をON/OFFにして、A-5への転換を比較する。次のシーンボタン・下矢印・3Dの右矢印で進むと、転換の開始51秒から終了57秒までシークバーも進む。戻るボタン・上矢印・3Dの左矢印は、転換途中でも瞬間移動する。タイムラインの転換途中で一時停止すると演者と再生線が止まり、再開すると同じ位置から続く。`, people,
     { rehearsal: { holdDurationSeconds: 12, transitionToNextSeconds: 6 } });
   const next = people.map((p, i) => ({ ...p, id: pid("a5", `walk${i}`), u: 1 - p.u, v: p.v + (i % 2 ? -.1 : .08), facing: 0 }));
   next[1].u = people[1].u + .12; next[1].v = people[1].v;
   next[5].u = people[5].u + .025; next[5].v = people[5].v;
   next[6].u = people[6].u; next[6].v = people[6].v;
   people[0].route = { u: next[0].u, v: next[0].v, bu: .5, bv: .15 };
-  scene("a5", "A-5 歩行・曲線・停止", 1, `${CHECK}A-4からの移動で足を交互に運び、曲線上でも支持足が床に残る。最後は両足を揃え、保存済みの「立つ」と向きへ戻る。前のシーンへ戻る操作では転換しない。正面図と平面図で演者をクリックし、図に添える設定のオン・オフ両方で選択パネルが実際に見え、操作できることを確認する。`, next);
+  scene("a5", "A-5 歩行・曲線・停止", 1, `${CHECK}A-4からの移動で足を交互に運び、曲線上でも支持足が床に残る。演者01は曲線、02は短い直線、07はその場で停止。最後は両足を揃え、保存済みの「立つ」と向きへ戻る。歩く設定のON/OFFを比較する。さらに次シーンB-1へ進むと演者09・10が袖から入り、A-5の8人がはけるので、入りとはけも同じ設定で比べる。正面図・平面図・3Dで確認。前のシーンへ戻る操作では転換しない。`, next);
 }
 
 /* ======================= B フォーメーション ======================= */
@@ -290,7 +308,7 @@ const formed = (id, presetId, keys, scalePct = 80) => {
   return keys.map((key, i) => perf(id, key, result.positions[i].u, result.positions[i].v));
 };
 const formationNote = (presetId, n) => `${CHECK}${n}人を型「${FORMATION_CATALOG.presets.find((p) => p.id === presetId).name}」（${presetId}・80%）で置いてある。平面図でドラッグ選択→「選んだもの」最下部のフォーメーションから別の型へ変える。人物の入れ替え・大きさ20〜100%・舞台外に出る型の拒否を見る。`;
-scene("b1", "B-1 2人 横並び", 1, formationNote("02-01", 2), formed("b1", "02-01", castKeys.slice(0, 2)));
+scene("b1", "B-1 2人 横並び", 1, formationNote("02-01", 2), formed("b1", "02-01", castKeys.slice(8, 10)));
 scene("b2", "B-2 4人 菱形", 1, formationNote("04-04", 4), formed("b2", "04-04", castKeys.slice(0, 4)));
 scene("b3", "B-3 8人 千鳥2列", 1, formationNote("08-02", 8), formed("b3", "08-02", castKeys.slice(0, 8)));
 scene("b5", "B-4 16人 二つの三角", 1, formationNote("16-08", 16), formed("b5", "16-08", castKeys.slice(0, 16)));
@@ -334,8 +352,19 @@ section("c", "C 舞台セット・小道具・空中");
   pieces.push(chair("立つ", 0.34), perf("c1-stand", "p02", 0.34, 0.94, { pose: "stand" }));
   pieces.push(setPiece("c1", "bar-counter", 0.75, 0.12));
   pieces.push(setPiece("c1", "point-bulb", 0.34, 0.82));
+  // Circular support regression: both corners are outside an 80cm sphere.
+  // Keep the normal sphere-top stack as a positive control in the same scene.
+  for (const [n, u, outside] of [[1, .15, true], [2, .5, false]]) {
+    pieces.push({ id: `ft-c1-round-support-${n}`, type: "sphere", setId: null,
+      u, v: .1, facing: 0, size: 100, color: "#77865f", name: `支持範囲${n}`,
+      dims: { dia: .8, lift: 0 } });
+    pieces.push({ id: `ft-c1-round-probe-${n}`, type: "block", setId: null,
+      u: u + (outside ? .36 / VENUE_DIMS.W : 0), v: .1 + (outside ? .36 / VENUE_DIMS.D : 0),
+      facing: 0, size: 100, color: "#d3ac59", name: outside ? "球の外側：床上" : "球の真上：80cm",
+      dims: { w: .06, d: .06, h: .06, lift: 0 } });
+  }
   scene("c1", "C-1 床に置く物すべて", 1,
-    `${CHECK}登録できる床物を1つずつ。保存の並行確認: この試験場をA・Bの別ショーへ複製し、2タブで別々に開く。ショー名と道具の固定を交互・同時に変更して、双方の保存と再読み込みを確認する。同じショーを2タブで変更した場合は後発の上書きを止め、未保存の変更はJSONへ書き出せること。電球（点光源）は大道具で登録し、点灯・光色・明るさ・届く距離を調整する。正面図・平面図・3Dで光源と周囲の演者／道具の変化、消灯、保存と再読み込みを確認する。照明デザインの固定灯には加わらない。手前の2脚では演者01が座り、演者02が座面に立つ。どちらも選ぶと姿勢一覧に「座る」と「立つ」があり、椅子から下ろすと「座る」は一覧から消える。正面図の実寸（人と比べる）、平面図の足元、「枠の壁」の穴と枠幅0.25m、車の向き。壁は厚み固定。壁（3×2.5）は映す絵（格子模様・project.photos の再利用）を持たせてあり、正面図で縦横比を保ったまま中央へ映る（切らずにレターボックス）。隣の「枠の壁（フレーム）」には絵を付けていない（穴の向こうに絵が浮くため対象外＝操作パネルにも出ない）。この2つを同じ画面で「映る／映らない」を見比べる。正面図と平面図で大道具をクリックし、図に添える設定のオン・オフ、1列・2列・3列表示、図のスクロール、別タブからの復帰、物をドラッグして離した後でも選択パネルが見え、操作できることを確認する。パネルの列間を横にドラッグし、2列・3列・1列の各表示で幅が変わること、列をスクロールしても取っ手を使えること、再読み込み後も幅が残ること、左右キーで調整しEnterで元に戻せることを確認する。`, pieces);
+    `${CHECK}登録できる床物を1つずつ。追加検証: 奥の2つの球（直径80cm）のうち、横・奥へ各36cmずらした6cm角の台は床上、真上の台は高さ80cmになる。平面・正面・3Dと保存再読込で照合する。保存の並行確認: この試験場をA・Bの別ショーへ複製し、2タブで別々に開く。ショー名と道具の固定を交互・同時に変更して、双方の保存と再読み込みを確認する。同じショーを2タブで変更した場合は後発の上書きを止め、未保存の変更はJSONへ書き出せること。電球（点光源）は大道具で登録し、点灯・光色・明るさ・届く距離を調整する。正面図・平面図・3Dで光源と周囲の演者／道具の変化、消灯、保存と再読み込みを確認する。照明デザインの固定灯には加わらない。手前の2脚では演者01が座り、演者02が座面に立つ。どちらも選ぶと姿勢一覧に「座る」と「立つ」があり、椅子から下ろすと「座る」は一覧から消える。正面図の実寸（人と比べる）、平面図の足元、「枠の壁」の穴と枠幅0.25m、車の向き。壁は厚み固定。壁（3×2.5）は映す絵（格子模様・project.photos の再利用）を持たせてあり、正面図で縦横比を保ったまま中央へ映る（切らずにレターボックス）。隣の「枠の壁（フレーム）」には絵を付けていない（穴の向こうに絵が浮くため対象外＝操作パネルにも出ない）。この2つを同じ画面で「映る／映らない」を見比べる。正面図と平面図で大道具をクリックし、図に添える設定のオン・オフ、1列・2列・3列表示、図のスクロール、別タブからの復帰、物をドラッグして離した後でも選択パネルが見え、操作できることを確認する。パネルの列間を横にドラッグし、2列・3列・1列の各表示で幅が変わること、列をスクロールしても取っ手を使えること、再読み込み後も幅が残ること、左右キーで調整しEnterで元に戻せることを確認する。`, pieces);
 }
 {
   const pieces = [];
@@ -346,18 +375,20 @@ section("c", "C 舞台セット・小道具・空中");
   pieces.push(...holders);
   const held = (key, holder, side, mode) => { const p = pieces.find((x) => x.setId === setId(key)); p.heldBy = holder.id; p.holdSide = side; p.holdMode = mode; p.u = holder.u; p.v = holder.v; };
   held("prop-ball", holders[0], "R", "hand"); held("prop-umbrella", holders[1], "L", "hand"); held("prop-mask", holders[2], "R", "face");
-  /* 楽器を弾く姿勢（ギター・トランペットは既存、L-01で バイオリン・ベースギター・アコーディオンを追加）。
-     持ち物の登録は無くても姿勢は選べる（本体の POSE_PROPS はUIの一覧を絞るだけで、姿勢そのものの前提ではない）。
-     ★本体に姿勢が増えたら、ここへ足して build-feature-test-show.test.mjs の網羅検査を通す。 */
+  /* 楽器は初期状態では持たせず、「持つ」と「演奏する」を分けて試す。 */
   const instrumentPlayers = [
-    perf("c2", "p04", 0.15, 0.92, { pose: "guitar" }),
-    perf("c2", "p05", 0.38, 0.92, { pose: "violin" }),
-    perf("c2", "p06", 0.62, 0.92, { pose: "bassguitar" }),
-    perf("c2", "p07", 0.85, 0.92, { pose: "accordion" }),
+    perf("c2", "p04", 0.12, 0.92, { pose: "stand" }),
+    perf("c2", "p05", 0.30, 0.92, { pose: "stand" }),
+    perf("c2", "p06", 0.48, 0.92, { pose: "stand" }),
+    perf("c2", "p07", 0.66, 0.92, { pose: "stand" }),
+    perf("c2", "p08", 0.84, 0.92, { pose: "stand" }),
   ];
   pieces.push(...instrumentPlayers);
+  ["guitar", "violin", "bassguitar", "accordion", "doublebass"].forEach((shape, index) => {
+    pieces.push(setPiece("c2", `instrument-${shape}`, instrumentPlayers[index].u, 0.83));
+  });
   scene("c2", "C-2 小道具の登録と持ち手", 1,
-    `${CHECK}登録した小道具6つ（箱・ボール・傘・仮面・クラブ・旗）。下の3人は持っている: 演者01=ボールを右手、演者02=傘を左手、演者03=仮面を顔（顔で持てるのは仮面だけ）。最下段は楽器を弾く姿勢（演者04=ギター・05=バイオリン・06=ベースギター・07=アコーディオン）。「選んだもの」で持ち手を外す・付け替える、香盤表（印刷）に受け渡しが出る。`, pieces);
+    `${CHECK}登録した小道具6つ（箱・ボール・傘・仮面・クラブ・旗）。下の3人は持っている: 演者01=ボールを右手、演者02=傘を左手、演者03=仮面を顔（顔で持てるのは仮面だけ）。手前の演者04〜08は初期状態では全員立ち姿で、ギター・バイオリン・ベースギター・アコーディオン・コントラバスは床に置いてある。各演者を選び「小道具」から対応する楽器を「持つ」だけなら立ち姿のまま、「演奏する」で演奏姿勢になり、「演奏をやめる」で立ち姿へ戻る。楽器を持ったまま通常の姿勢も選べる。姿勢一覧と3Dの姿勢選択には楽器姿勢が出ない。保存後の再読込でも持ち物と見た目が一致する。「選んだもの」で持ち手を外す・付け替える、香盤表（印刷）に受け渡しが出る。`, pieces);
 }
 {
   // 小道具の全形（本体の PROP_SHAPES から自動）。1シーン80駒以下になる最小シーン数へ等分する
@@ -371,7 +402,7 @@ section("c", "C 舞台セット・小道具・空中");
     const positions = grid(list.length, cols, 0.05, 0.95, 0.12, 0.95);
     const sceneKey = `c2${String.fromCharCode(97 + index)}`;
     scene(sceneKey, `C-3 小道具の全形 ${index + 1}/${sceneCount}（${list.length}種）`, 1,
-      `${CHECK}本体にある小道具の形を全部（登録の無い駒・名前＝形の名前。${PROP_SHAPES.length}種を${sceneCount}シーンに分けた）。正面図の形、平面図の足元、3Dでの見え方、選んだときの枠。形が増えたら生成し直す。`,
+      `${CHECK}本体にある小道具の形を全部（登録の無い駒・名前＝形の名前。${PROP_SHAPES.length}種を${sceneCount}シーンに分けた）。正面図の形、平面図の足元、3Dでの見え方、選んだときの枠。${list.some((shape) => shape.id === "balloon") ? "風船は球1個・ひも1本で、既定寸法は幅・奥行き42cm、高さ90cm。" : ""}形が増えたら生成し直す。`,
       list.map((shape, i) => ({ id: pid(sceneKey, "prop"), type: "prop", setId: null, propShape: shape.id, u: round(positions[i].u), v: round(positions[i].v), facing: 0, size: 100, color: "#d3ac59", name: shape.ja.slice(0, 24) })));
   });
 }
@@ -423,9 +454,17 @@ section("c", "C 舞台セット・小道具・空中");
   const pieces = [
     setPiece("c5", "block", 0.5, 0.6), setPiece("c5", "block2", 0.5, 0.6, { base: 0.5 }), setPiece("c5", "chair", 0.62, 0.62),
     perf("c5", "p01", 0.5, 0.6, { base: 1.1, pose: "handstand" }),
+    setPiece("c5", "round-block", 0.14, 0.35),
+    { id: pid("c5", "round-corner"), type: "block", setId: null,
+      u: round(0.14 + 0.5 / VENUE_DIMS.W), v: round(0.35 - 0.5 / VENUE_DIMS.D),
+      facing: 0, size: 100, dims: { w: 0.06, d: 0.06, h: 0.06 }, color: "#efe7d6", name: "角の比較" },
+    setPiece("c5", "round-block2", 0.32, 0.35),
+    { id: pid("c5", "round-center"), type: "block", setId: null,
+      u: 0.32, v: 0.35, facing: 0, size: 100,
+      dims: { w: 0.06, d: 0.06, h: 0.06 }, color: "#efe7d6", name: "中央の比較" },
   ];
   scene("c5", "C-6 セット登録（組んだセット）", 1,
-    `${CHECK}「セット登録」パネルに2件（台＋箱＋椅子／ベンチ2つ）が登録済み。呼び出して置く、登録し直す、消す。このシーンの駒は登録1の中身と同じ配置。組んだセット（kind: model）は端末内ライブラリ依存のためこのショーには入れていない。`, pieces);
+    `${CHECK}「セット登録」パネルに2件（台＋箱＋椅子／ベンチ2つ）が登録済み。呼び出して置く、登録し直す、消す。このシーンの中央の駒は登録1の中身と同じ配置。左の円形台は直径1.2m・高さ0.4m。平面図・正面図・3Dで同じ丸い台になり、詳細の「円形の台にする」がON、直径だけを変えられる。左の小箱は中心から横50cm・奥50cmの外接四角の角なので床、右の小箱は台の中央なので高さ0.4mに乗る。JSON書出→再読込でも round と直径・高さが保たれる。組んだセット（kind: model）は端末内ライブラリ依存のためこのショーには入れていない。`, pieces);
 }
 {
   /* ★壁の向き（2026-09-20）: 3Dが壁・箱・トランポリン等の「向き」を無視していた不具合
@@ -471,7 +510,7 @@ section("f", "F 照明デザイン（機材配置・照明タブ）");
 const fixtureIds = { p1: "ft-fx-01", p2: "ft-fx-02", p3: "ft-fx-03", p4: "ft-fx-04", m1: "ft-fx-05", m2: "ft-fx-06", m3: "ft-fx-07", m4: "ft-fx-08", fr1: "ft-fx-09", fr2: "ft-fx-10", sL: "ft-fx-11", sR: "ft-fx-12", fl: "ft-fx-13", cyc: "ft-fx-14", laser: "ft-fx-15",
   /* ★段階5①（2026-09-19）: レーザーを舞台モードへ出す試験用。fan/sheet/tunnel の3種を並べる。 */
   laser2: "ft-fx-16", laser3: "ft-fx-17" };
-scene("f1", "F-1 静止のキュー（色・強さ・模様・カッター・衣装の染め）", 1, `${CHECK}照明タブで、固定灯4本が色違い・強さ違いで床を照らす（模様「ブレイクアップ（中）」付き1本）。正面図・平面図・3Dの光だまり（設定ON）が一致する。演者05は台の上（床から0.5m）へ描かれる。最後に登録したカウンターが、手前の演者01を隠さず奥の演者05を隠す（正面・3D・作業灯ON/OFF）。環境設定「衣装を明かりの色で染める」を入れると、青い明かりの演者02（緑）と山吹の明かりの演者05（青）が沈み、白い明かりの演者01は色が変わらない。照明を編集したら「未適用・控え保存済み」、LXキュー適用後は「適用済み」を確認。適用しないで移って戻り、控えが残ること。「控え・書き出し」からファイルへ残せること。容量不足・別タブ更新では成功表示にならず、失敗の説明が残ること（ブラウザの隔離試験で確認）。L01を選んでソロ表示し、未選択L02の点灯ボタンが実キューのオン状態と「押すとオフ」を示すこと。ソロ自体は保存キューを変えず、ボタンで消灯した結果はソロ解除後にも残ること。`,
+scene("f1", "F-1 静止のキュー（色・強さ・模様・カッター・衣装の染め）", 1, `${CHECK}照明タブで、固定灯4本が色違い・強さ違いで床を照らす（模様「ブレイクアップ（中）」付き1本）。正面図・平面図・3Dの光だまり（設定ON）が一致する。演者05は台の上（床から0.5m）へ描かれる。最後に登録したカウンターが、手前の演者01を隠さず奥の演者05を隠す（正面・3D・作業灯ON/OFF）。環境設定「平面図の照明機材の白い枠を表示」をON/OFFし、灯体の淡い白枠だけが切り替わることを確かめる。選択中の金色の枠と正面・側面・3Dの灯体表示、再読み込み後の設定保持も確認する。環境設定「衣装を明かりの色で染める」を入れると、青い明かりの演者02（緑）と山吹の明かりの演者05（青）が沈み、白い明かりの演者01は色が変わらない。照明を編集したら「未適用・控え保存済み」、LXキュー適用後は「適用済み」を確認。適用しないで移って戻り、控えが残ること。「控え・書き出し」からファイルへ残せること。容量不足・別タブ更新では成功表示にならず、失敗の説明が残ること（ブラウザの隔離試験で確認）。L01を選んでソロ表示し、未選択L02の点灯ボタンが実キューのオン状態と「押すとオフ」を示すこと。ソロ自体は保存キューを変えず、ボタンで消灯した結果はソロ解除後にも残ること。`,
   /* ★G-D（2026-09-19）: 演者05（青 #315b8a）を山吹の灯（p4・模様つき）の中へ置く＝青い衣装が沈む見本。 */
   [perf("f1", "p01", 0.45, 0.7, { color: "#655b4c" }), perf("f1", "p02", 0.7, 0.55), setPiece("f1", "block", 0.5, 0.3), perf("f1", "p05", 0.5, 0.3, { base: 0.5 }), setPiece("f1", "block2", 0.5, 0.62, { setId: null, originId: null, name: "配色確認用カウンター", color: "#27384a", dims: { w: 5, d: 0.65, h: 1 } })]);
 scene("f2", "F-2 往復と円（ムービング）・点の列・端で止まる", 1, `${CHECK}ムービング4本のうち2本は横往復（線）、1本は円（水平）、1本は斜め往復（高さ違い）。組「左右対称」に2本が入っている。速さ slow／normal／fast。機材一覧を下へスクロールし、選択・オンオフ・設定変更後も位置が保たれること。平面・正面・袖の灯体を右クリックしてコピー・削除し、取り消しで復元。照明デザインでは右クリックからソロ・リセットを選び、他のキューと仕込みが変わらないこと。正面・3Dでレンズ幅から広がる筋と灯体の形、平面で光だまりと芯のない胴体を確認。2026-09-27（テスト用ビルド）: ムービング06は端で0.5秒止まり運び方「だんだん速く」、転がし13は「点の列」（三角・各点で0.5秒止まる）。このシーンのLXキューは時間つき（上げ2秒・下げ1秒・位置3秒・MIB）＝別のLXキューから入ると照明タブでフェードが見える。`,
@@ -584,7 +623,7 @@ scene("h4", "H-4 キュー（明かり・音楽・台詞）＋キューシート
        （キューシートの「受け渡し」欄に出る）。演者02はここで登場するので「出ハケ」欄が入になる。 */
     const p02 = perf("h4", "p02", 0.26, 0.62, { facing: 90 });
     return [
-      perf("h4", "p04", 0.5, 0.6, { pose: "trumpet" }),
+      perf("h4", "p04", 0.5, 0.6, { pose: "stand" }),
       perf("h4", "p01", 0.19, 0.55, { pose: "sit" }),
       p02,
       setPiece("h4", "prop-ball", 0.26, 0.62, { heldBy: p02.id, holdSide: "L", holdMode: "hand" }),
@@ -610,9 +649,9 @@ section("j", "J 負荷と3Dカメラ");
   const p2 = grid(30, 10, 0.06, 0.94, 0.5, 0.65);
   for (let i = 0; i < 30; i += 1) {
     const extra = POSE_OVERFLOW[i];
-    pieces.push(perf("j1", null, p2[i].u, p2[i].v, { name: extra || `無登録${i + 1}`, pose: extra || POSES[(i * 3) % POSES.length], color: COLORS[i % COLORS.length] }));
+    pieces.push(perf("j1", null, p2[i].u, p2[i].v, { name: extra || `無登録${i + 1}`, pose: extra || GENERAL_POSES[(i * 3) % GENERAL_POSES.length], color: COLORS[i % COLORS.length] }));
   }
-  castKeys.forEach((key, i) => pieces.splice(i, 0, perf("j1", key, p1[i].u, p1[i].v, { pose: POSE_OVERFLOW[30 + i] || POSES[i % POSES.length] })));
+  castKeys.forEach((key, i) => pieces.splice(i, 0, perf("j1", key, p1[i].u, p1[i].v, { pose: POSE_OVERFLOW[30 + i] || GENERAL_POSES[i % GENERAL_POSES.length] })));
   const p3 = grid(30, 10, 0.06, 0.94, 0.75, 0.9);
   for (let i = 0; i < 30; i += 1) pieces.push({ id: pid("j1", "box"), type: i % 2 ? "block" : "chair", setId: null, u: round(p3[i].u), v: round(p3[i].v), facing: 0, size: 100, color: i % 2 ? "#efe7d6" : "#5b4a3a", name: "" });
   if (pieces.length !== 80) throw new Error(`J-1 は80駒のはず (${pieces.length})`);

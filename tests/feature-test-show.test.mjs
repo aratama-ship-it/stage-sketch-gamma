@@ -20,6 +20,10 @@ const block = (marker) => {
 };
 const posesBlock = sketch.slice(sketch.indexOf("const POSES = ["), sketch.indexOf("];", sketch.indexOf("const POSES = [")));
 const POSES = new Set([...posesBlock.matchAll(/makePose\("([^"]+)"/g)].map((m) => m[1]));
+const instrumentBlockStart = sketch.indexOf("const HELD_INSTRUMENT_POSES = Object.freeze({");
+assert.ok(instrumentBlockStart >= 0, "手持ち楽器の自動姿勢表がある");
+const instrumentBlock = sketch.slice(instrumentBlockStart, sketch.indexOf("});", instrumentBlockStart));
+const HELD_INSTRUMENT_POSES = new Set([...instrumentBlock.matchAll(/:\s*"([^"]+)"/g)].map((match) => match[1]));
 const SET_KINDS = new Set([...block("const SET_KINDS = {").matchAll(/\b([a-z]+): "/g)].map((m) => m[1]));
 const PROP_SHAPES = new Set([
   ...[...block("const PROP_SHAPES = {").matchAll(/^    ([a-z0-9_]+): \{ ja: "/gm)].map((m) => m[1]),
@@ -33,7 +37,7 @@ test("機能テスト用ショー: 外枠と上限", () => {
   assert.equal(doc.kind, "shosai-stage-sketch");
   assert.equal(doc.version, 4);
   assert.deepEqual(doc.venues, []);
-  assert.equal(project.id, "gamma-feature-test-v9");
+  assert.equal(project.id, "gamma-feature-test-v17");
   /* ★2026-09-20: バッファを3行→2行に減らして広げた（build-feature-test-show.mjs 側の同日コメント参照）。
      容量由来の制約ではなく、試す人が手でもシーンを足せる余地を残すだけの自主ガード。 */
   assert.ok(rows.length <= limits.sceneRows, `シーン行 ${rows.length}: 身体表現の試験を含め上限60行`);
@@ -48,6 +52,46 @@ test("機能テスト用ショー: 外枠と上限", () => {
     assert.ok((scene.screenTexts || []).length <= limits.screenTextsPerScene);
   }
   assert.ok(scenes.some((scene) => scene.pieces.length === limits.piecesPerScene), "上限80駒のシーンがある");
+});
+
+test("機能テスト用ショー: 演者の転換アニメ切替に、移動・はけ・入りの比較場面がある", () => {
+  const a4 = scenes.find((scene) => scene.id === "ft-scene-a4");
+  const a5 = scenes.find((scene) => scene.id === "ft-scene-a5");
+  const b1 = scenes.find((scene) => scene.id === "ft-scene-b1");
+  assert.ok(a4 && a5 && b1, "A-4・A-5・B-1 の場面がある");
+  const castIds = (scene) => new Set(scene.pieces.filter((piece) => piece.type === "performer").map((piece) => piece.castId));
+  assert.equal([...castIds(a4)].filter((id) => !castIds(a5).has(id)).length, 0, "A-4→A-5 は全員が残って移動する");
+  assert.equal([...castIds(a5)].filter((id) => !castIds(b1).has(id)).length, 8, "A-5→B-1 では8人がはける");
+  assert.equal([...castIds(b1)].filter((id) => !castIds(a5).has(id)).length, 2, "A-5→B-1 では2人が入る");
+  assert.match(a4.note, /転換中に演者を歩かせる.*ON\/OFF/);
+  assert.match(a5.note, /入りとはけも同じ設定/);
+  assert.match(sketch, /key: "performerTransitionMotion", label: "転換中に演者を歩かせる", def: true/);
+});
+
+test("機能テスト用ショー: C-2 の楽器は初期状態で持たせず、操作後に演奏姿勢を試す", () => {
+  const c2 = scenes.find((scene) => scene.id === "ft-scene-c2");
+  assert.ok(c2);
+  for (const [key, shape] of [["p04", "guitar"], ["p05", "violin"], ["p06", "bassguitar"],
+    ["p07", "accordion"], ["p08", "doublebass"]]) {
+    const performer = c2.pieces.find((piece) => piece.castId === `ft-cast-${key}`);
+    const instrument = c2.pieces.find((piece) => piece.setId === `ft-set-instrument-${shape}`);
+    assert.ok(performer && instrument, `${key}: 演者と${shape}がある`);
+    assert.equal(performer.pose, "stand", `${key}: 初期状態は立ち姿`);
+    assert.equal(instrument.heldBy, undefined, `${shape}: 初期状態は床に置く`);
+  }
+});
+
+test("機能テスト用ショー: C-6 に円形台と角・中央の比較がある", () => {
+  const c6 = scenes.find((scene) => scene.id === "ft-scene-c5");
+  assert.ok(c6 && /C-6/.test(c6.title));
+  for (const key of ["round-block", "round-block2"]) {
+    const set = project.sets.find((item) => item.id === `ft-set-${key}`);
+    assert.equal(set?.round, true);
+    assert.deepEqual([set.dims.w, set.dims.d, set.dims.h], [1.2, 1.2, 0.4]);
+    assert.ok(c6.pieces.some((piece) => piece.setId === set.id));
+  }
+  assert.ok(c6.pieces.some((piece) => piece.name === "角の比較"));
+  assert.ok(c6.pieces.some((piece) => piece.name === "中央の比較"));
 });
 
 test("機能テスト用ショー: IDの一意性と参照", () => {
@@ -82,12 +126,17 @@ test("機能テスト用ショー: 本体の定数と一致（姿勢・種類・
   assert.ok(POSES.size >= 40 && SET_KINDS.size >= 20 && PROP_SHAPES.size >= 10 && SCREEN_FONTS.size >= 3, "定数の抽出");
   const usedPoses = new Set();
   for (const scene of scenes) for (const piece of scene.pieces) {
-    if (piece.type === "performer") { assert.ok(POSES.has(piece.pose), `${scene.title}: 姿勢 ${piece.pose}`); usedPoses.add(piece.pose); }
+    if (piece.type === "performer") {
+      assert.ok(POSES.has(piece.pose), `${scene.title}: 姿勢 ${piece.pose}`);
+      assert.ok(!HELD_INSTRUMENT_POSES.has(piece.pose), `${scene.title}: 手持ち楽器の演奏姿勢を初期表示へ置かない (${piece.pose})`);
+      usedPoses.add(piece.pose);
+    }
     else assert.ok(SET_KINDS.has(piece.type), `${scene.title}: 種類 ${piece.type}`);
     if (piece.propShape) assert.ok(PROP_SHAPES.has(piece.propShape), `小道具 ${piece.propShape}`);
     for (const text of scene.screenTexts || []) assert.ok(SCREEN_FONTS.has(text.font), `書体 ${text.font}`);
   }
-  for (const pose of POSES) assert.ok(usedPoses.has(pose), `姿勢 ${pose} を置いたシーンが無い（本体に姿勢が増えたら生成し直す）`);
+  for (const pose of POSES) if (!HELD_INSTRUMENT_POSES.has(pose))
+    assert.ok(usedPoses.has(pose), `姿勢 ${pose} を置いたシーンが無い（本体に姿勢が増えたら生成し直す）`);
   const usedShapes = new Set();
   for (const scene of scenes) for (const piece of scene.pieces) if (piece.type === "prop") usedShapes.add(piece.propShape || project.sets.find((s) => s.id === piece.setId)?.propShape);
   for (const shape of PROP_SHAPES) assert.ok(usedShapes.has(shape), `小道具の形 ${shape} を置いたシーンが無い（本体に形が増えたら生成し直す）`);

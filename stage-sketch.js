@@ -3801,15 +3801,11 @@
       [0.00, 0.045, 0.68], [0.04, 0.052, 0.72], [0.16, 0.038, 0.76], [0.55, 0.052, 0.86],
       [0.76, 0.070, 0.96], [0.83, 0.060, 0.92], [0.85, 0.032, 0.82],
     ], 16) };
-  PROP_SHAPES.balloon = { ja: "風船（1個・束）", en: "Balloon(s)", dims: { w: 0.28, d: 0.28, h: 0.6 }, grip: { x: 0, y: 0.03 },
+  PROP_SHAPES.balloon = { ja: "風船", en: "Balloon", dims: { w: 0.42, d: 0.42, h: 0.9 }, grip: { x: 0, y: 0.045 },
     parts: [
-      boxAt(0, 0, 0, 0.012, 0.012, 0.36, 0.72),
-      boxAt(-0.04, 0.04, 0, 0.012, 0.012, 0.30, 0.78),
-      boxAt(0.04, 0.04, 0, 0.012, 0.012, 0.30, 0.78),
-      boxAt(0, 0, 0, 0.035, 0.025, 0.035, 0.62),
-      { shape: "sphere", x: -0.05, y: 0.32, z: 0, dia: 0.18, tint: 0.95 },
-      { shape: "sphere", x: 0.05, y: 0.32, z: 0, dia: 0.18, tint: 1.08 },
-      { shape: "sphere", x: 0, y: 0.40, z: 0.02, dia: 0.20, tint: 1.16 },
+      boxAt(0, 0, 0, 0.018, 0.018, 0.60, 0.72),
+      boxAt(0, 0.58, 0, 0.045, 0.035, 0.035, 0.62),
+      { shape: "sphere", x: 0, y: 0.60, z: 0, dia: 0.30, tint: 1.08 },
     ] };
   PROP_SHAPES.magic_wand = { ja: "魔法の杖・指揮棒（マジックワンド・タクト）", en: "Magic wand", dims: { w: 0.02, d: 0.02, h: 0.36 }, grip: { x: 0, y: 0.10 },
     parts: [
@@ -4652,6 +4648,8 @@
     "tray", "rollingglobe", "cyrwheel",
     // 同日追加: デスクは大道具の「テーブル」（脚4本＋天板・寸法可変）と実質同じ形なので外す。
     "desk",
+    // 吊り点の印は新規追加から外す。既存ショーに置かれた印は残す。
+    "rigging_point_mark",
   ]);
   const rosterShapeIsAvailable = (shapeId) => !ROSTER_UNAVAILABLE_PROP_SHAPES.has(shapeId);
   /* 登録した項目が「大道具の一覧」へ行くか。kind が prop でも、上の形なら大道具側。
@@ -5109,12 +5107,12 @@
       { kind: "dot", c: [0.20, 0.80, 0.20], r: 0.035, tone: "ball" },
     ] }),
     makePose("guitar", "ギターを弾く", {
-      // 左手は棹の上、右手は胴の前
-      elL: [-0.22, 0.63, 0.10], wrL: [-0.30, 0.72, 0.14],
-      elR: [0.17, 0.60, 0.14], wrR: [0.06, 0.60, 0.20],
+      // 棹は客席から見て右へ。腕と楽器を一緒に反転し、握りがずれないようにする。
+      elL: [-0.17, 0.60, 0.14], wrL: [-0.06, 0.60, 0.20],
+      elR: [0.22, 0.63, 0.10], wrR: [0.30, 0.72, 0.14],
     }, { props: [
-      { kind: "line", a: [-0.34, 0.75, 0.15], b: [0.06, 0.58, 0.19], w: 0.028, tone: "wood" },
-      { kind: "dot", c: [0.10, 0.565, 0.20], r: 0.11, tone: "wood" },
+      { kind: "line", a: [0.34, 0.75, 0.15], b: [-0.06, 0.58, 0.19], w: 0.028, tone: "wood" },
+      { kind: "dot", c: [-0.10, 0.565, 0.20], r: 0.11, tone: "wood" },
     ] }),
     makePose("trumpet", "トランペットを吹く", {
       // 両手を口元へ。ラッパは斜め上へ向く
@@ -5134,12 +5132,12 @@
       { kind: "line", a: [0.36, 0.64, 0.12], b: [-0.10, 0.80, 0.13], w: 0.012, tone: "wood" },
     ] }),
     makePose("bassguitar", "ベースギターを弾く", {
-      // ギターより棹が長く、低い位置で構える。右手は胴の下側で弾く
-      elL: [-0.24, 0.56, 0.10], wrL: [-0.36, 0.62, 0.16],
-      elR: [0.16, 0.52, 0.12], wrR: [0.05, 0.50, 0.18],
+      // ギターより棹が長く、低い位置で構える。棹は客席から見て右へ。
+      elL: [-0.16, 0.52, 0.12], wrL: [-0.05, 0.50, 0.18],
+      elR: [0.24, 0.56, 0.10], wrR: [0.36, 0.62, 0.16],
     }, { props: [
-      { kind: "line", a: [-0.40, 0.64, 0.17], b: [0.05, 0.48, 0.19], w: 0.032, tone: "wood" },
-      { kind: "dot", c: [0.09, 0.46, 0.20], r: 0.13, tone: "wood" },
+      { kind: "line", a: [0.40, 0.64, 0.17], b: [-0.05, 0.48, 0.19], w: 0.032, tone: "wood" },
+      { kind: "dot", c: [-0.09, 0.46, 0.20], r: 0.13, tone: "wood" },
     ] }),
     makePose("accordion", "アコーディオンを弾く", {
       // 両手を胸の高さで左右に構え、間に蛇腹を挟む
@@ -6880,6 +6878,8 @@
     violin: ["violin"],
     bassguitar: ["bassguitar"],
     accordion: ["accordion"],
+    cello_play: ["cello"],
+    doublebass_play: ["doublebass"],
     conductor: ["magic_wand"],
     flute_play: ["flute"],
     saxophone_play: ["saxophone"],
@@ -6914,6 +6914,24 @@
     hoop_waist_spin: ["hoop"],
     kyudo_draw: ["bow_arrow"],
   };
+  /* 楽器の演奏姿勢は通常の姿勢一覧に出さず、小道具の「使う」で明示的に選ぶ。
+     保存済みの姿勢IDは残し、古いショーの読み込みで失われないようにする。 */
+  const HELD_INSTRUMENT_POSES = Object.freeze({
+    guitar: "guitar", bassguitar: "bassguitar", violin: "violin", trumpet: "trumpet",
+    accordion: "accordion", flute: "flute_play", saxophone: "saxophone_play",
+    shamisen: "shamisen_play", cello: "cello_play", doublebass: "doublebass_play",
+  });
+  const HELD_INSTRUMENT_POSE_IDS = new Set(Object.values(HELD_INSTRUMENT_POSES));
+  function heldInstrumentPoseId(piece, pieces) {
+    if (!piece || !Array.isArray(pieces)) return null;
+    for (const item of pieces) {
+      if (!item || item.heldBy !== piece.id || item.holdMode === "face") continue;
+      const registered = pieceSet(item);
+      const shape = (registered && registered.propShape) || item.propShape;
+      if (HELD_INSTRUMENT_POSES[shape] === piece.pose) return piece.pose;
+    }
+    return null;
+  }
   /* その演者が持っている（＝この駒を heldBy で指している）小道具の形を集める。 */
   function heldPropShapes(piece) {
     if (!piece) return new Set();
@@ -6956,6 +6974,7 @@
     }
     if (mounts.size > 1 && [...mounts].some((m) => m && m !== "chair" && m !== "stairs")) return [];
     return POSES.filter((pose) => {
+      if (HELD_INSTRUMENT_POSE_IDS.has(pose.id)) return false;
       if ([
         "backflip", "walkover-mid", "frontroll-mid", "roundoff-mid",
         "backhandspring-mid", "dance3", "handstand-mid",
@@ -7421,6 +7440,11 @@
   const HOLDABLE_TYPES = { prop: true, suitcase: true, diabolo: true, sphere: true, cane: true };
   const CHAIR_W = 0.5;
   const CHAIR_D = 0.55;
+  function isRoundBlock(piece) {
+    if (!piece || piece.type !== "block") return false;
+    const owner = pieceSet(piece);
+    return Boolean((owner && owner.round === true) || piece.round === true);
+  }
   // その駒が床でどれだけの面積を取るか（m）。平面図と当たり判定で使う
   function pieceFootprint(piece) {
     const d = pieceDims(piece);
@@ -8150,6 +8174,8 @@
     setInfoWires: document.getElementById("stage-setinfo-wires"),
     setInfoFramed: document.getElementById("stage-setinfo-framed"),
     setInfoFramedRow: document.getElementById("stage-setinfo-framed-row"),
+    setInfoRound: document.getElementById("stage-setinfo-round"),
+    setInfoRoundRow: document.getElementById("stage-setinfo-round-row"),
     setInfoFrameWidthRow: document.getElementById("stage-setinfo-frame-width-row"),
     setInfoFrameWidth: document.getElementById("stage-setinfo-frame-width"),
     setInfoWiresRow: document.getElementById("stage-setinfo-wires-row"),
@@ -8518,6 +8544,10 @@
       hint: "シーン一覧に構成上の役割をサブタイトルとして表示する。OFFでも内容は消えません" },
     { key: "sceneTransitions", label: "転換情報", def: false,
       hint: "選択中のシーンの上下に、次のシーンへの移動時間・暗転・メモを表示する。OFFでも内容は消えません" },
+    { key: "performerTransitionMotion", label: "転換中に演者を歩かせる", def: true,
+      hint: "ONでは演者の移動・入り・はけを歩いて表示します。OFFでは演者が次のシーンの配置へすぐ切り替わります。大道具・照明・暗転の転換は続きます" },
+    { key: "planFixtureOutline", label: "平面図の照明機材の白い枠を表示", def: true,
+      hint: "照明デザインの平面図で灯体の淡い白枠を表示します。OFFでも選択中の金色の枠と、正面図・側面図・3Dの表示は残ります" },
     /* 2026-09-11 本人指示: 光の意図カードは一時的に非表示にする（featureOn側で強制OFF。
        下のFEATURE_DEFAULTSにも載せない＝設定パネルの一覧に出さない）。
        データ・正規化関数（emptyLightingIntent等）は残す＝既存の保存データを壊さない。 */
@@ -10095,6 +10125,7 @@
                 propShape: kind === "prop" ? normalizePropShapeId(t && t.propShape) : "box",
                 dims: (() => {
                   const d = normalizeDims(kind, t);
+                  if (kind === "block" && t.round === true && d) d.d = d.w;
                   // 吊物にできる形は、地上高の置き場を必ず持つ
                   if (d && SOLID_TYPES[kind] && d.lift === undefined) {
                     d.lift = clamp(finite(t && t.dims && t.dims.lift, 0), 0, 10);
@@ -10112,6 +10143,7 @@
                 wires: t && Number(t.wires) === 1 ? 1 : 2,
                 // 壁を枠にする（穴の空いた壁＝フレーム）
                 framed: Boolean(t.framed),
+                round: kind === "block" && t.round === true ? true : undefined,
                 // T-30: 枠の幅。無ければ未設定のまま（描画側が自動計算へ落ちる）
                 frameWidth: Number.isFinite(Number(t.frameWidth)) ? clamp(Number(t.frameWidth), 0.04, 1.5) : undefined,
                 curtainKind: kind === "curtain" && ["front", "traveler", "drop", "leg", "cyc", "scrim"].includes(t.curtainKind)
@@ -14539,7 +14571,7 @@
     }
     if (piece.type === "curtain" || piece.type === "pool" || piece.type === "deck") return 0;
     if (piece.type === "performer") {
-      return poseExtent(piece.pose).top * pieceHeightM(piece) * (piece.size / 100);
+      return poseExtent(resolvePoseId(piece, sc().pieces)).top * pieceHeightM(piece) * (piece.size / 100);
     }
     const d = pieceDims(piece);
     if (!d) return 0;
@@ -14567,7 +14599,7 @@
     if (piece.type === "light") return null;
     if (piece.type === "performer") {
       const H = pieceHeightM(piece) * (piece.size / 100);
-      const ext = poseExtent(piece.pose);
+      const ext = poseExtent(resolvePoseId(piece, sc().pieces));
       return { w: ext.halfX * 2 * H, d: ext.halfZ * 2 * H, cx: ext.cx * H, cz: ext.cz * H };
     }
     const foot = pieceFootprint(piece);
@@ -14620,6 +14652,10 @@
       const lx = dw * Math.cos(rad) + dd * Math.sin(rad) - foot.cx;
       const ly = -dw * Math.sin(rad) + dd * Math.cos(rad) - foot.cz;
       if (Math.abs(lx) > foot.w / 2 || Math.abs(ly) > foot.d / 2) return;
+      // A sphere cannot support a piece beyond its circular footprint.
+      // Its axis-aligned bounding square includes empty corners.
+      if (other.type === "sphere" && Math.hypot(lx, ly) > pieceDims(other).dia / 2) return;
+      if (isRoundBlock(other) && Math.hypot(lx, ly) > pieceDims(other).w / 2) return;
       // 手足や長い姿勢の描画範囲に触れただけでは、隣の演者の上へ乗せない。
       // 乗る姿勢を明示した場合は肩・手を使う従来の判定を残す。
       if (piece.type === "performer" && other.type === "performer"
@@ -15033,11 +15069,8 @@
     const zDrop = L.plan ? 0 : ((L.bottomY - L.floorY) / (L.size.depth || 9)) * H;
     /* ポール・トラピーズ・ティシューは器具側の姿勢を使う。
        椅子は演者が選んだ「座る」「立つ」などをそのまま使う。 */
-    const mount = mountKindOf(piece);
-    // 転換アニメの床の区間は歩く姿勢。乗り物の強制姿勢より優先する
-    const poseId = piece.animPose ? piece.animPose
-      : mount && mount !== "chair" ? mountedPoseId(piece, mount)
-        : handedPoseId(piece, sc().pieces, piece.pose);
+    // 転換アニメ・器具・持ち物の優先順位は3Dと同じ関数に集約する。
+    const poseId = resolvePoseId(piece, sc().pieces);
     const rig = buildRig(poseId, pos.x, pos.rawY === undefined ? pos.y : pos.rawY,
       H * per.x, H * per.y, (performerFacing(piece) * Math.PI) / 180, zDrop, L.plan ? null : L.tilt, samplePerformancePose(piece));
     rig.per = per;
@@ -15313,8 +15346,9 @@
   function resolvePoseId(piece, pieces) {
     const mount = mountKindFrom(piece, pieces);
     return piece.animPose ? piece.animPose
-      : mount ? mountedPoseId(piece, mount)
-        : handedPoseId(piece, pieces, piece.pose || "stand");
+      : mount && mount !== "chair" && mount !== "stairs" ? mountedPoseId(piece, mount)
+        : handedPoseId(piece, pieces, HELD_INSTRUMENT_POSE_IDS.has(piece.pose) && !heldInstrumentPoseId(piece, pieces)
+          ? (mount === "chair" ? "sit" : "stand") : piece.pose || "stand");
   }
 
   /* 3Dカメラ（stage-first-person.js）へ体モデルを貸し出す窓口。
@@ -15349,10 +15383,11 @@
     const bodyColor = costumeLitColor(piece, L) || piece.color;   // G-D: 光だまりの色で染める（既定は切）
     target.save();
 
-    // ポールやトラピーズで宙に浮いている間は、影を落とさない（床に居ないため）
+    // 床にいない演者の足元の影は描かない。相手に乗る姿勢では支える人の頭を横切ってしまう。
     // 転換アニメで床を歩いている間（animBaseあり）は普通に影を落とす
     const mountHere = mountKindOf(piece);
-    if ((mountHere === "pole" || mountHere === "trapeze") && piece.animBase === undefined) {
+    const supportedByPerformer = sc().pieces.some((other) => other.id === piece.supportId && other.type === "performer");
+    if ((mountHere === "pole" || mountHere === "trapeze" || supportedByPerformer) && piece.animBase === undefined) {
       paintBody(target, rig, bodyColor, look);
       target.restore();
       return;
@@ -15790,6 +15825,8 @@
         : [{ ox: 0, oz: 0, w: d.w, d: d.d, h: -seriH, lift: seriH, tint: 1 }];
     }
     if (piece.type === "block") {
+      if (isRoundBlock(piece)) return [{ kind: "cylinder", ox: 0, oz: 0,
+        lift: 0, r: d.w / 2, h: d.h, tint: 1 }];
       return [{ ox: 0, oz: 0, w: d.w, d: d.d, h: d.h, lift: 0, tint: 1 }];
     }
     if (piece.type === "wall") {
@@ -16237,9 +16274,13 @@
       const sin = Math.sin(rad);
       target.fillStyle = "rgba(0,0,0,0.3)";
       target.beginPath();
-      [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([sx, sy], i) => {
-        const lx = (sx * foot.w) / 2;
-        const ly = (sy * foot.d) / 2;
+      const shadowPoints = isRoundBlock(piece)
+        ? Array.from({ length: 16 }, (_, i) => {
+          const angle = i * Math.PI * 2 / 16;
+          return [Math.cos(angle) * foot.w / 2, Math.sin(angle) * foot.w / 2];
+        })
+        : [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => [sx * foot.w / 2, sy * foot.d / 2]);
+      shadowPoints.forEach(([lx, ly], i) => {
         const p = floorPoint(piece, lx * cos - ly * sin, lx * sin + ly * cos, L);
         if (i) target.lineTo(p.x, p.y + 3); else target.moveTo(p.x, p.y + 3);
       });
@@ -17035,7 +17076,7 @@
       // 姿勢ごとの実際の占有範囲で描く。寝ていれば床を長く取る
       // 転換アニメの途中は、表示中の姿勢（前の姿勢や歩き）の広さで描く
       const H = pieceHeightM(piece) * (piece.size / 100);
-      const ext = poseExtent(piece.animPose || piece.pose);
+      const ext = poseExtent(resolvePoseId(piece, sc().pieces));
       const halfW = Math.max(4, ext.halfX * H * L.pxPerM);
       const halfD = Math.max(4, ext.halfZ * H * L.pxPerM);
       const rad = ((piece.facing || 0) * Math.PI) / 180;
@@ -17164,12 +17205,17 @@
       target.translate(pos.x, pos.y);
       target.rotate(-((piece.facing || 0) * Math.PI) / 180);   // 演者と同じ回り方にそろえる
       target.fillStyle = piece.color;
-      target.fillRect(-w / 2, -d / 2, w, d);
       target.strokeStyle = "rgba(0,0,0,0.3)";
       target.lineWidth = 1.5;
-      if (piece.type === "seri") target.setLineDash([6, 4]);
-      target.strokeRect(-w / 2, -d / 2, w, d);
-      if (piece.type === "seri") target.setLineDash([]);
+      if (isRoundBlock(piece)) {
+        target.beginPath(); target.arc(0, 0, w / 2, 0, Math.PI * 2);
+        target.fill(); target.stroke();
+      } else {
+        target.fillRect(-w / 2, -d / 2, w, d);
+        if (piece.type === "seri") target.setLineDash([6, 4]);
+        target.strokeRect(-w / 2, -d / 2, w, d);
+        if (piece.type === "seri") target.setLineDash([]);
+      }
       // 椅子は背もたれの側を濃くして、座る向きを分かるようにする。背は正面の反対側
       if (piece.type === "chair") {
         target.fillStyle = "rgba(13,12,11,0.4)";
@@ -17237,7 +17283,7 @@
       }
       if (piece.type === "performer") {
         const H = pieceHeightM(piece) * (piece.size / 100);
-        const ext = poseExtent(piece.pose);
+        const ext = poseExtent(resolvePoseId(piece, sc().pieces));
         const rad = ((piece.facing || 0) * Math.PI) / 180;
         const c = Math.abs(Math.cos(rad));
         const sn = Math.abs(Math.sin(rad));
@@ -26086,6 +26132,11 @@
         scan(part.c[0] + part.r, part.c[1] + (part.h || 0));
         return;
       }
+      if (part.kind === "cylinder") {
+        scan(part.ox - part.r, part.lift);
+        scan(part.ox + part.r, part.lift + part.h);
+        return;
+      }
       scan(part.ox - part.w / 2, part.lift); scan(part.ox + part.w / 2, part.lift + part.h);
     });
     const pad = 14;
@@ -26133,6 +26184,12 @@
         ctx2.fillStyle = part.tint >= 1 ? color : mixToward(color, 1 - (part.tint || 1));
         ctx2.fillRect(px(part.c[0] - part.r), py(part.c[1] + (part.h || 0)),
           Math.max(1.5, part.r * 2 * k), Math.max(1.5, (part.h || 0.03) * k));
+        return;
+      }
+      if (part.kind === "cylinder") {
+        ctx2.fillStyle = part.tint >= 1 ? color : mixToward(color, 1 - (part.tint || 1));
+        ctx2.fillRect(px(part.ox - part.r), py(part.lift + part.h),
+          Math.max(1.5, part.r * 2 * k), Math.max(1.5, part.h * k));
         return;
       }
       ctx2.fillStyle = part.tint >= 1 ? color : mixToward(color, 1 - (part.tint || 1));
@@ -26268,6 +26325,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       .map((group) => ({
         ...group,
         ids: group.ids.filter((key) => PROP_SHAPES[key]
+          && (key !== "rigging_point_mark" || selected === key)
           && (RELEASE_FEATURES.propMask || key !== "mask" || selected === "mask")),
       }))
       .filter((group) => group.ids.length);
@@ -26999,6 +27057,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (item.kind === "prop" && !mask) {
       try { smooth = scaledPropShape(piece, dims).parts || null; } catch (_) { smooth = null; }
     }
+    if (item.kind === "block" && item.round === true) smooth = [{
+      shape: "cylinder", x: 0, y: 0, z: 0, w: dims.w, d: dims.w,
+      dia: dims.w, h: dims.h, tint: 1,
+    }];
     /* ディアボロは箱でも部品の集まりでもなく、軸のまわりに回した曲面。
        形の式は drawDiabolo と共有（diaboloProfile）。 */
     const lathe = item.kind === "diabolo" ? diaboloProfile(dims) : null;
@@ -27413,6 +27475,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         els.setInfoFramedRow.hidden = item.kind !== "wall";
         if (els.setInfoFramed) els.setInfoFramed.checked = Boolean(item.framed);
       }
+      if (els.setInfoRoundRow) {
+        els.setInfoRoundRow.hidden = item.kind !== "block";
+        if (els.setInfoRound) els.setInfoRound.checked = item.round === true;
+      }
       /* T-30: 枠の幅はフレームにしているときだけ出す（値は隠しても保持する）。 */
       if (els.setInfoFrameWidthRow) {
         const showFrameWidth = item.kind === "wall" && Boolean(item.framed);
@@ -27426,6 +27492,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     }
     els.setInfoNote.value = item.note || "";
     buildDimControls(els.setInfoDims, "stage-setinfo", item.kind, item.dims, () => {
+      if (item.kind === "block" && item.round === true) item.dims.d = item.dims.w;
       item.estimated = false;
       renderSets();
       renderLights();
@@ -27433,6 +27500,14 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       render();
       persistSoon();
     }, Boolean(item.flown));
+    if (item.kind === "block" && item.round === true) {
+      const depth = els.setInfoDims.querySelector("#stage-setinfo-d");
+      const depthLabel = els.setInfoDims.querySelector('label[for="stage-setinfo-d"]');
+      const widthLabel = els.setInfoDims.querySelector('label[for="stage-setinfo-w"] span');
+      if (depth) depth.hidden = true;
+      if (depthLabel) depthLabel.hidden = true;
+      if (widthLabel) widthLabel.textContent = tx("直径");
+    }
     els.setInfo.hidden = false;
     startSetInfoPreview();          // L-04: 回転台のプレビューを回し始める
     els.setInfoBackdrop.hidden = false;
@@ -29280,7 +29355,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const timingScene = rows[Math.min(wasAt, nowAt)];
     const blackoutScene = rows[Math.max(wasAt, nowAt)];
     const pieces = [];
+    const performerTransitionMotion = featureOn("performerTransitionMotion");
     sc().pieces.forEach((piece) => {
+      if (piece.type === "performer" && !performerTransitionMotion) return;
       const twin = twinOf(piece, fromScene.pieces || []);
       if (!twin) return;
       const sameSpot = Math.abs(twin.u - piece.u) < 0.004 && Math.abs(twin.v - piece.v) < 0.004;
@@ -29334,7 +29411,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
      * 同じ場所）まで動かす。着いた所には薄い「舞台裏」の駒が待っている。 */
     const exits = [];
     const ghosts = backstageGhosts();
-    (fromScene.pieces || []).forEach((old) => {
+    (performerTransitionMotion ? (fromScene.pieces || []) : []).forEach((old) => {
       if (old.type !== "performer" || !old.castId) return;   // 登録の無い駒の消滅は「削除」なので歩かせない
       if (!onStageArea(old.u, old.v)) return;
       if (twinOf(old, sc().pieces)) return;
@@ -29357,7 +29434,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
        はけと対になる動き。駒はこのシーンに実在するので、写しではなく本物を動かす。
        正面図では枠の外から入ってくる間、onStageArea の決まりで自然に現れる。 */
     const ghostsBefore = backstageGhostsFor(fromScene);
-    sc().pieces.forEach((piece) => {
+    (performerTransitionMotion ? sc().pieces : []).forEach((piece) => {
       if (piece.type !== "performer" || !piece.castId) return;
       if (!onStageArea(piece.u, piece.v)) return;
       if (twinOf(piece, fromScene.pieces || [])) return;
@@ -34774,10 +34851,16 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       announce("両手がふさがっています。");
       return false;
     }
+    const previousHolder = sc().pieces.find((item) => item.id === piece.heldBy && item.type === "performer");
+    const wasPlaying = heldInstrumentPoseId(holder, sc().pieces);
     piece.heldBy = holder.id;
     piece.holdSide = side;
     piece.holdMode = "hand";
     piece.route = null;
+    if (previousHolder && previousHolder !== holder && HELD_INSTRUMENT_POSE_IDS.has(previousHolder.pose)
+      && !heldInstrumentPoseId(previousHolder, sc().pieces)) previousHolder.pose = mountKindOf(previousHolder) === "chair" ? "sit" : "stand";
+    if (!poseId && HELD_INSTRUMENT_POSE_IDS.has(holder.pose) && !wasPlaying)
+      holder.pose = mountKindOf(holder) === "chair" ? "sit" : "stand";
     const usePose = poseId && POSE_PROPS[poseId]?.includes(propShapeOf(piece))
       ? poseById(poseId) : null;
     if (usePose) holder.pose = usePose.id;
@@ -34809,8 +34892,11 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (!piece || !piece.heldBy) return;
     const name = heldItemName(piece);
     const worn = piece.holdMode === "face";
+    const holder = sc().pieces.find((item) => item.id === piece.heldBy && item.type === "performer");
     piece.heldBy = null;
     piece.holdMode = "hand";
+    if (holder && HELD_INSTRUMENT_POSE_IDS.has(holder.pose) && !heldInstrumentPoseId(holder, sc().pieces))
+      holder.pose = mountKindOf(holder) === "chair" ? "sit" : "stand";
     finishHoldingChange(worn ? tx("仮面を外しました。") : `${name}を手放しました。`);
   }
 
@@ -34901,6 +34987,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       sc().pieces.filter((item) => item.heldBy === piece.id).forEach((item) => {
         const row = document.createElement("div");
         row.className = isMask(item) ? "stage-cast-row stage-held-mask" : "stage-cast-row";
+        if (item.holdMode !== "face" && propUsePoses(item).length) row.classList.add("stage-held-with-use");
         const name = document.createElement("span");
         name.className = "stage-cast-name";
         name.textContent = heldItemName(item);
@@ -34913,6 +35000,23 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
           dropHeldPiece(item);
         });
         row.append(name);
+        if (item.holdMode !== "face") propUsePoses(item).forEach((pose) => {
+          const use = document.createElement("button");
+          use.type = "button";
+          use.className = "btn-quiet stage-held-use";
+          const active = piece.pose === pose.id;
+          const instrument = HELD_INSTRUMENT_POSE_IDS.has(pose.id);
+          use.textContent = active
+            ? tx(instrument ? "演奏をやめる" : "使うのをやめる")
+            : instrument ? tx("演奏する") : poseName(pose);
+          use.title = poseName(pose);
+          use.addEventListener("click", () => {
+            checkpoint();
+            piece.pose = active ? (mountKindOf(piece) === "chair" ? "sit" : "stand") : pose.id;
+            finishHoldingChange("");
+          });
+          row.append(use);
+        });
         if (isMask(item)) {
           const mode = document.createElement("button");
           mode.type = "button";
@@ -34962,7 +35066,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         }
         propUsePoses(item.candidate).forEach((pose) => {
           appendPropUseOption(useGroup, `pose:${pose.id}:${item.source}:${item.id}`,
-            `${poseName(pose)}：${item.name}`, handUnavailable);
+            `${HELD_INSTRUMENT_POSE_IDS.has(pose.id) ? tx("演奏する") : poseName(pose)}：${item.name}`, handUnavailable);
         });
       });
       if (holdGroup.children.length) els.holdSelect.append(holdGroup);
@@ -35273,7 +35377,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
             : mount === "tissue" ? tx("布に掴まる")
             : mount === "rig" ? poseName(poseById(mountedPoseId(piece, "rig")))
           : multi && !commonPose ? sx("複数の姿勢", "Mixed poses")
-            : poseName(poseById(commonPose || piece.pose));
+            : poseName(poseById(!multi ? resolvePoseId(piece, sc().pieces) : commonPose || piece.pose));
       }
       els.piecePose.disabled = !isPerformer || Boolean(mounted);
       els.piecePose.hidden = !isPerformer;
@@ -37612,6 +37716,17 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       announce(`${item.name}を${item.framed ? "フレーム（穴の空いた壁）" : "壁"}にしました。`);
     });
   }
+  if (els.setInfoRound) {
+    els.setInfoRound.addEventListener("change", (event) => {
+      const item = currentSetItem();
+      if (!item || item.kind !== "block") return;
+      checkpoint();
+      item.round = event.target.checked ? true : undefined;
+      if (item.round) item.dims.d = item.dims.w;
+      openSetInfo(item.id);
+      renderSets(); updateInspector(); render(); persistSoon();
+    });
+  }
   /* T-30（2026-09-18 本人要望）: 枠の幅。数値入力に −／＋ を添える
    * （dev-preferences 2026-09-17「数値入力は欄への打ち込みだけにせず、指で押せる −／＋ を付ける」）。 */
   if (els.setInfoFrameWidth) {
@@ -37879,8 +37994,9 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
               look: costumeLook ? projectIoClone(costumeLook) : null,
               route: visualRoute,
               dims,
+              roundBlock: isRoundBlock(visual),
               propShape: propShape ? propShape.id : visual.propShape,
-              parts: visual.type === "prop" || ["revolve", "deck", "curtain", "pool", "seri"].includes(visual.type)
+              parts: visual.type === "prop" || isRoundBlock(visual) || ["revolve", "deck", "curtain", "pool", "seri"].includes(visual.type)
                 ? pieceParts(visual) : undefined,
               smoothParts: propShape && ["drumset", "taiko", "bulb"].includes(propShape.id) ? propShape.parts : null,
               grip: propShape ? propShape.grip : null,
@@ -37957,6 +38073,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         const piece = sc().pieces.find((p) => p.id === pieceId && p.type === "performer");
         const hiddenDefault = HIDDEN_POSES.some((p) => p.id === poseId);
         if (!piece || (!POSES.some((p) => p.id === poseId) && !hiddenDefault)) return false;
+        if (HELD_INSTRUMENT_POSE_IDS.has(poseId)) return false;
         if (poseLockedByMount(piece)) return false;
         if (isChairSitPose(poseId) && mountKindOf(piece) !== "chair") return false;
         if (isStairSitPose(poseId) && mountKindOf(piece) !== "stairs") return false;

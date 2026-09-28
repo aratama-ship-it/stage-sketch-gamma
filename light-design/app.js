@@ -16,6 +16,19 @@
   const VISUAL_GAIN = 1.8;
   const visualAlpha = (value) => E.clamp(E.finite(value, 0) * VISUAL_GAIN, 0, 1);
   const $ = (id) => document.getElementById(id);
+  /* 平面図の灯体アイコンの淡い白枠。見え方だけの端末設定で、照明データには含めない。 */
+  const PLAN_FIXTURE_OUTLINE_KEY = "gamma:shosai-stage-prefs-v1";
+  let planFixtureOutline = true;
+  function readPlanFixtureOutline() {
+    try { return JSON.parse(localStorage.getItem(PLAN_FIXTURE_OUTLINE_KEY) || "{}").planFixtureOutline !== false; }
+    catch (_) { return true; }
+  }
+  planFixtureOutline = readPlanFixtureOutline();
+  window.addEventListener("storage", (event) => {
+    if (event.key !== PLAN_FIXTURE_OUTLINE_KEY) return;
+    planFixtureOutline = readPlanFixtureOutline();
+    draw();
+  });
   /* v2の復元用原本は大きいので、UndoのJSONへ操作ごとに複製しない。
      この編集画面の存続中だけ1件ずつ保管し、履歴には短い参照キーを入れる。 */
   const migrationRecords = new Map();
@@ -1382,7 +1395,7 @@
       const X = f.mount.type === "side" ? (f.mount.side === "shimote" ? B.x - SIDE_DX : B.x + B.w + SIDE_DX) : p.X;
       const Y = isFront(f) ? B.y + B.h + FRONT_DY : p.Y;     // 前明かりは客席帯に並べる（実距離は数値で）
       if (showOn("fixtures")) {
-        const o = { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f), step: strobeStepOf(f.id) };
+        const o = { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f), step: strobeStepOf(f.id), outline: planFixtureOutline };
         if (f.mount.type === "cyc") o.bar = cycFixtureBar(P, f);
         drawFixtureMark(pctx, X, Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), o);
       }
@@ -2390,9 +2403,11 @@
     }
     else if (shape === "bar") { const w = s * 1.5, h = s * 0.6; ctx.rect(X - w, Y - h, w * 2, h * 2); }   // 側面・3Dでは簡略記号
     else { ctx.moveTo(X, Y - s * 1.2); ctx.lineTo(X + s * 1.2, Y); ctx.lineTo(X, Y + s * 1.2); ctx.lineTo(X - s * 1.2, Y); ctx.closePath(); }
-    ctx.fill(); ctx.stroke();
+    ctx.fill();
+    // OFFでも選択の金色と新規配置の予告は残し、操作位置を見失わないようにする。
+    if (o.outline !== false || o.sel || o.ghost) ctx.stroke();
     // ムービングは輪をひとつ足す（形＝仕込み位置、輪＝動かせるかどうか）
-    if (o.moving && !o.ghost) { ctx.strokeStyle = o.sel ? "#d3ac59" : "rgba(240,231,214,0.55)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X, Y, s * 1.55, 0, Math.PI * 2); ctx.stroke(); }
+    if (o.moving && !o.ghost && (o.outline !== false || o.sel)) { ctx.strokeStyle = o.sel ? "#d3ac59" : "rgba(240,231,214,0.55)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X, Y, s * 1.55, 0, Math.PI * 2); ctx.stroke(); }
     if (o.st === "off") { ctx.strokeStyle = "rgba(240,231,214,0.5)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(markX - markSize, markY + markSize); ctx.lineTo(markX + markSize, markY - markSize); ctx.stroke(); }
     if (o.no) { ctx.fillStyle = o.sel ? "#1a1409" : "rgba(240,231,214,0.95)"; if (o.sel) { ctx.fillStyle = "#d3ac59"; ctx.fillRect(markX - 22, markY + markSize + 4, 44, 22); ctx.fillStyle = "#1a1409"; } ctx.font = "600 16px sans-serif"; ctx.textBaseline = "top"; ctx.textAlign = "center"; ctx.fillText(o.no, markX, markY + markSize + 6); ctx.textAlign = "left"; }
     /* ストロボの発生順（段）。番号は印の下なので、こちらは右上に丸で出す。
@@ -2416,7 +2431,7 @@
       const S = fixtureWorld(f); if (!S) return; const p = P(S);
       const X = f.mount.type === "side" ? (f.mount.side === "shimote" ? B.x - SIDE_DX : B.x + B.w + SIDE_DX) : p.X;
       const Y = isFront(f) ? B.y + B.h + FRONT_DY : p.Y;
-      const o = { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) };
+      const o = { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f), outline: planFixtureOutline };
       if (f.mount.type === "cyc") o.bar = cycFixtureBar(P, f);
       drawFixtureMark(ctx, X, Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), o);
     });
@@ -5800,14 +5815,28 @@
      目盛りどおりのリニアのままで、その数値が図の明るさへどう効くかだけをこの曲線が決める。
      音楽のベロシティカーブと同じ考え方なので、選ぶのではなく指でなぞって描く。 */
 
-  /* 環境設定（歯車）。項目はいまのところ「強さの効き方」だけ
-     （2026-09-13 本人要望: 効き方は照明デザインの欄から外し、環境設定の1項目として置く）。 */
+  /* 環境設定（歯車）。平面図の枠は照明データと独立した端末の見え方。 */
   function openPrefs() {
     dialog(`<p class="kicker">環境設定</p>
+      <div class="prefitem">
+        <label class="prefname"><input type="checkbox" id="pref-plan-fixture-outline"> 平面図の照明機材の白い枠を表示</label>
+        <p class="hint">オフでも灯体の色・番号と、選択中の金色の枠は表示します。正面図・側面図・3Dには影響しません。</p>
+      </div>
       <div class="prefitem">
         <p class="prefname">強さの効き方（全灯共通）</p>
         <div id="pref-curve"></div>
       </div>`, [["閉じる", null, "primary"]]);
+    const outline = $("pref-plan-fixture-outline");
+    outline.checked = planFixtureOutline;
+    outline.addEventListener("change", () => {
+      planFixtureOutline = outline.checked;
+      try {
+        const prefs = JSON.parse(localStorage.getItem(PLAN_FIXTURE_OUTLINE_KEY) || "{}");
+        prefs.planFixtureOutline = planFixtureOutline;
+        localStorage.setItem(PLAN_FIXTURE_OUTLINE_KEY, JSON.stringify(prefs));
+      } catch (_) { /* 現在の画面には反映する */ }
+      draw();
+    });
     mountLevelCurve($("pref-curve"));
   }
   function mountLevelCurve(host) {

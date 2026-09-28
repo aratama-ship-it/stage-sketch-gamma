@@ -29,7 +29,7 @@ test("どの姿勢も、ちょうど1つの分類に入っている", () => {
 });
 
 test("分類名と新しい文言に3言語の訳がある", () => {
-  const words = groups.map((group) => group.ja).concat(["その他の姿勢", "姿勢の分類", "探す", "すべての姿勢から探す", "姿勢の名前・分類", "当てはまる姿勢がありません。"]);
+  const words = groups.map((group) => group.ja).concat(["その他の姿勢", "姿勢の分類", "探す", "すべての姿勢から探す", "姿勢の名前・分類", "当てはまる姿勢がありません。", "演奏する", "演奏をやめる", "使うのをやめる"]);
   for (const file of ["stage-i18n.js", "stage-i18n.zh-Hans.js", "stage-i18n.zh-Hant.js"]) {
     const text = read(file);
     const lacking = words.filter((word) => !text.includes(`"${word}":`));
@@ -87,13 +87,24 @@ test("3D画面は目の高さ・名札の高さを姿勢の形から出せる", 
 test("持ち物を伴う姿勢は、持ち物が左手にだけあるとき左右を入れ替えて描く", () => {
   assert.match(main, /const LEFT_HAND_SUFFIX = "@left";/);
   assert.match(main, /function handedPoseId\(piece, pieces, poseId\) \{/);
-  assert.match(main, /: handedPoseId\(piece, pieces, piece\.pose \|\| "stand"\);/, "resolvePoseId が持ち手を見る");
-  assert.match(main, /: handedPoseId\(piece, sc\(\)\.pieces, piece\.pose\);/, "正面図の組み立て（performerRig）も持ち手を見る");
+  assert.match(main, /handedPoseId\(piece, pieces, HELD_INSTRUMENT_POSE_IDS\.has\(piece\.pose\)/, "resolvePoseId が明示した演奏姿勢と持ち手を見る");
+  assert.match(main, /const poseId = resolvePoseId\(piece, sc\(\)\.pieces\);/, "正面図の組み立ても共通の姿勢解決を使う");
   // 反転の中身: 関節の L/R を入れ替え x を反転する
   const start = main.indexOf("function leftHandedPose(pose) {");
   const body = main.slice(start, main.indexOf("\n  }\n", start));
   const swapSide = eval(body.match(/const swapSide = ([^;]+);/)[1]);
   assert.equal(swapSide("wrR"), "wrL"); assert.equal(swapSide("shL"), "shR"); assert.equal(swapSide("head"), "head"); assert.equal(swapSide("neck"), "neck");
+});
+
+test("手に持つ楽器の演奏姿勢は通常の姿勢一覧に出さず、小道具から明示して選ぶ", () => {
+  const mappings = Object.fromEntries([...main.slice(main.indexOf("const HELD_INSTRUMENT_POSES"), main.indexOf("  });", main.indexOf("const HELD_INSTRUMENT_POSES"))).matchAll(/(\w+): "([^"]+)"/g)]
+    .map((match) => [match[1], match[2]]));
+  for (const shape of ["accordion", "doublebass", "guitar", "violin", "bassguitar", "trumpet", "flute", "saxophone", "shamisen", "cello"])
+    assert.ok(mappings[shape], `${shape} に対応する演奏姿勢がある`);
+  assert.match(main, /if \(HELD_INSTRUMENT_POSE_IDS\.has\(pose\.id\)\) return false;/);
+  assert.match(main, /HELD_INSTRUMENT_POSES\[shape\] === piece\.pose/);
+  assert.match(main, /POSE_PROPS\[poseId\]\?\.includes\(propShapeOf\(piece\)\)/);
+  assert.match(main, /use\.textContent = active/);
 });
 
 test("器具に乗った演者の姿勢の組は本体にあり、基準点が器具の既定の姿勢と揃っている", () => {
