@@ -247,6 +247,9 @@ public-dist/
 /package.json
 /gamma-dev/
 /tools/
+!/tools/
+/tools/*
+!/tools/pre-publish-check.sh
 /tests/
 !/tests/
 /tests/*
@@ -257,6 +260,7 @@ public-dist/
 !/tests/pose-groups.test.mjs
 !/tests/stage-manual-gamma.test.mjs
 !/tests/gamma-beta-isolation.test.mjs
+!/tests/gamma-storage-boundary.test.mjs
 !/tests/light-selected-audience-mask.test.mjs
 !/tests/stage-lighting-all-venues.test.mjs
 !/tests/stage-light-panel-import.test.mjs

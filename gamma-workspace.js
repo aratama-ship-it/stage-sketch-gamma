@@ -138,7 +138,7 @@
   function storageRows() {
     const rows=[];
     for(let i=0;i<localStorage.length;i+=1) {
-      const k=localStorage.key(i); if(k===null) continue;
+      const k=localStorage.key(i); if(k===null || !k.startsWith('gamma:')) continue;
       rows.push({key:k,bytes:(k.length+(localStorage.getItem(k)||'').length)*2});
     }
     return rows.sort((a,b)=>b.bytes-a.bytes);
@@ -155,10 +155,10 @@
      ショー本体（shosai-stage-shows-v1）と、いま開いている企画（shosai-stage-sketch-v1）、
      編集中の照明の控えは対象にしない——消すと本人の作りかけが戻らない。 */
   const BACKUP_KINDS=[
-    {name:'作り替え前のショーの控え',test:k=>k.includes('-pre-section-hierarchy-v1')},
+    {name:'作り替え前のショーの控え',test:k=>/^gamma:shosai-stage-(?:sketch-v1-pre-section-hierarchy-v1:.+|shows-v1-pre-section-hierarchy-v1)$/.test(k)},
     {name:'読めなかったデータの退避',test:k=>k==='gamma:shosai-stage-shows-broken-v1'},
     {name:'照明デザイン集の作り替え前の控え',test:k=>k==='gamma:shosai.lightDesigns.beforeOptionB.v1'},
-    {name:'脇へ寄せた照明の控え',test:k=>k.includes(':conflict:')},
+    {name:'脇へ寄せた照明の控え',test:k=>/^gamma:lighting-draft-v1:.+:conflict:\d+$/.test(k)},
   ];
   function dumpButton(targetRows, label, filename, title) {
     const button=document.createElement('button');button.type='button';
@@ -627,7 +627,7 @@
           goVenue.addEventListener('click',()=>select('venue-setup'));
           status.append(goVenue);
         } else if(!loaded) {
-          frame.src='light-design/index.html?embed=gamma&v=20260928-lx53'; loaded=true;
+          frame.src='light-design/index.html?embed=gamma&v=20260928-storage54'; loaded=true;
           status.textContent='照明デザインを開いています…';
         } else if(editor()) {
           editor().open(context, next);

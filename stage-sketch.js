@@ -10357,7 +10357,9 @@
     const shows = readShows();
     const ids = Object.keys(shows).filter((id) => hasUnsectionedSceneRows(shows[id] && shows[id].state));
     if (!ids.length) return { migrated: 0, safe: true };
-    const backupKey = `${SHOWS_KEY}-pre-section-hierarchy-v1`;
+    // The logical show-shelf key is shared with β for the storage proxy only.
+    // Migration copies must use an explicit γ key; the proxy maps exact keys.
+    const backupKey = "gamma:shosai-stage-shows-v1-pre-section-hierarchy-v1";
     try {
       if (localStorage.getItem(backupKey) === null) localStorage.setItem(backupKey, rawText);
     } catch (_) {
@@ -40765,7 +40767,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       renderScreenTexts();
       syncScreenTextControls();
       if (loaded.sectionMigrationSource) {
-        const backupKey = `${BETA_STORAGE_KEY}-pre-section-hierarchy-v1:${state.project.id}`;
+        const backupKey = `gamma:shosai-stage-sketch-v1-pre-section-hierarchy-v1:${state.project.id}`;
         try {
           localStorage.setItem(backupKey, loaded.sectionMigrationSource);
           persistSoon();
