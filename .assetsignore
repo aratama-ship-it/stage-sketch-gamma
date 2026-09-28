@@ -4,6 +4,8 @@
 /.dev.vars*
 /.env*
 /node_modules/**
+/native-mac/**
+/gamma-dev/**
 
 # Developer checks and their results are not Worker assets.
 /tests/**
