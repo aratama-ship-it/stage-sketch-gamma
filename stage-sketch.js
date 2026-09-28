@@ -2369,23 +2369,77 @@
    * ぶんだけ実際の管がさらに下へはみ出し、床より下になった部分が描けず
    * 下側が欠けて（＝弦のように平らに）見えていた。中心線を太さの半分だけ
    * 持ち上げ、管の外側が床に接するようにする。 */
-  const ringTube = (segments, radius, tubeDia, tint) => Array.from({ length: segments }, (_, i) => {
-    const a = (i / segments) * Math.PI * 2;
-    const cx = Math.cos(a) * radius;
-    const cy = radius + tubeDia / 2 + Math.sin(a) * radius;
-    return { shape: "sphere", x: cx, y: cy - tubeDia / 2, z: 0, dia: tubeDia, tint };
+  /* 2026-09-29: 球を数珠つなぎにするのをやめ、輪（ring）1本にする。数珠は近くで見るとビーズに見えた。
+     segments は互換のため受け取るだけ。中心は y=半径+管の半径（下端 y=0・上端 y=直径の約束は同じ）。 */
+  const ringTube = (segments, radius, tubeDia, tint) => [
+    { shape: "cylinder", ring: true, cloth: true, x: 0, y: radius + tubeDia / 2, z: 0, dia: radius * 2 + tubeDia, w: tubeDia, tint },
+  ];
+  /* ---------- 2026-09-29: 回転体（lathe）と切り抜き板（flat） ----------
+   * 円柱や箱を細かく積んで曲面を近似すると、正面図でも3Dでも段が見える（傘・太陽・月・キノコ。
+   * 本人指摘「マインクラフトみたいにボコボコ」）。形の輪郭そのものを1部品として持ち、
+   * 描く直前に面へ分ける（smoothPropFaces）。当たり判定・支持判定へは外接の箱（pieceParts）を渡す。
+   *   lathe: 縦軸まわりの回転体。profile は [軸方向の位置, 直径, 明るさ] の制御点列（位置順）。
+   *          制御点の間はクラブと同じ Hermite 補間（roundProfileTangents）で滑らかにつなぐ。
+   *          y は下端。open は口の開いた入れ物（上面を塞がず内側を暗く見せる）。
+   *          bend は [x, z]（上端での中心のずれ・m）。幹を少し傾ける木のため。
+   *   flat:  客席へ面を向けた薄い切り抜き板。pts は [x, y] の輪郭（凹んでいてもよい）、d は厚み。
+   *          x・y・z は輪郭の原点（輪郭の y=0 が床）。 */
+  const lathe = (profile, extra = {}) => ({ shape: "lathe", x: 0, y: 0, z: 0, profile, ...extra });
+  const flat = (pts, d, extra = {}) => ({ shape: "flat", x: 0, y: 0, z: 0, pts, d, ...extra });
+  const circleOutline = (r, n = 48, cx = 0, cy = r) => Array.from({ length: n }, (_, i) => {
+    const a = (i / n) * Math.PI * 2;
+    return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+  });
+  /* 円の集まりの外側の輪郭（雲など）。各円の周上の点のうち他の円の中に入らない点を集め、
+     重心まわりの角度順に並べる。輪郭が重心から見て一続きになる形（雲・花）に限る。circles は [x, y, r]。 */
+  const unionOutline = (circles, n = 40) => {
+    const pts = [];
+    circles.forEach(([cx, cy, r]) => {
+      for (let i = 0; i < n; i += 1) {
+        const a = (i / n) * Math.PI * 2;
+        const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+        if (!circles.some(([ox, oy, orr]) => (ox !== cx || oy !== cy) && Math.hypot(x - ox, y - oy) < orr - 1e-6)) pts.push([x, y]);
+      }
+    });
+    const mx = pts.reduce((sum, pt) => sum + pt[0], 0) / pts.length;
+    const my = pts.reduce((sum, pt) => sum + pt[1], 0) / pts.length;
+    return pts.sort((a, b) => Math.atan2(a[1] - my, a[0] - mx) - Math.atan2(b[1] - my, b[0] - mx));
+  };
+  /* 三日月。半径 R の円（中心 (0,R)）から、右へ dx ずらした半径 r の円をくり抜いた形。
+     外の円は右端（くり抜かれる側）から反時計回り、内の円は右端から時計回りに辿ると、残る弧が一続きになる。 */
+  const crescentOutline = (R, r, dx, n = 64) => {
+    const outer = [], inner = [];
+    for (let i = 0; i <= n; i += 1) {
+      const a = (i / n) * Math.PI * 2;
+      const x = Math.cos(a) * R, y = R + Math.sin(a) * R;
+      if (Math.hypot(x - dx, y - R) >= r) outer.push([x, y]);
+    }
+    for (let i = n; i >= 0; i -= 1) {
+      const a = (i / n) * Math.PI * 2;
+      const x = dx + Math.cos(a) * r, y = R + Math.sin(a) * r;
+      if (Math.hypot(x, y - R) <= R) inner.push([x, y]);
+    }
+    return outer.concat(inner);
+  };
+  const starOutline = (R, r, points = 5, cx = 0, cy = R) => Array.from({ length: points * 2 }, (_, i) => {
+    const a = -Math.PI / 2 + (i / (points * 2)) * Math.PI * 2;
+    const k = i % 2 ? r : R;
+    return [cx + Math.cos(a) * k, cy + Math.sin(a) * k];
   });
   /* 弦楽器の胴・管楽器のベルなど「音を鳴らす部分」の輪郭を、薄い円柱を積んで近似する
      （2026-09-11 本人指摘「音を鳴らす部分がリアルでない」への対応）。
      specsは[y, 直径, 高さ, tint]の配列。円柱1本の棒状ではなく、太さが連続的に変わることで
      くびれ（バイオリン/ギターの胴）やラッパの開き（トランペットのベル）を表す。 */
+  // 2026-09-29: 円柱の積層をやめ、段の境を制御点にした回転体1部品にする（トランペットのベル）
   const bodySlices = (specs) => {
     let y = 0;
-    return specs.map(([dia, h, tint]) => {
-      const part = { shape: "cylinder", y, dia, h, tint };
+    const profile = [];
+    specs.forEach(([dia, h, tint], i) => {
+      if (i === 0) profile.push([0, dia, tint]);
       y += h;
-      return part;
+      profile.push([y, dia, tint]);
     });
+    return [lathe(profile, { segments: Math.max(8, specs.length * 3) })];
   };
   /* 弦楽器の胴は円柱の積層（＝回転体。上から見ても真円）にすると実物と違う。
      実物は正面から見た幅に対して厚み（前後）がずっと薄い板状（バイオリンで幅20cm程度に対し
@@ -2416,14 +2470,22 @@
     const last = points[points.length - 1];
     return [last[1], last[2], last[3]];
   };
+  /* 2026-09-29: 薄い箱を積む代わりに、同じ制御点から輪郭（右側を上へ・左側を下へ）を作った
+     切り抜き板1枚にする。厚みは制御点の最大値、明るさは平均。 */
   const smoothFlatBody = (points, segments) => {
     const total = points[points.length - 1][0];
-    const h = total / segments;
-    return Array.from({ length: segments }, (_, i) => {
-      const y = i * h;
-      const [w, d, tint] = sampleProfile(points, y + h / 2);
-      return { shape: "box", y, w, d, h: h * 1.02, tint };
-    });
+    const n = Math.max(segments, 24);
+    const right = [], left = [];
+    let depth = 0, tintSum = 0;
+    for (let i = 0; i <= n; i += 1) {
+      const y = (i / n) * total;
+      const [w, d, tint] = sampleProfile(points, y);
+      right.push([w / 2, y]);
+      left.push([-w / 2, y]);
+      depth = Math.max(depth, d);
+      tintSum += tint;
+    }
+    return [flat(right.concat(left.reverse()), depth, { tint: tintSum / (n + 1) })];
   };
   /* グランドピアノの「曲線側」（上から見たときだけ分かる輪郭）を薄い箱の並びで近似する。
      smoothFlatBodyは高さ方向（y）に積むが、ピアノの曲線は水平方向（z、鍵盤側から尾部側）に
@@ -2535,16 +2597,8 @@
     const last = points[points.length - 1];
     return [last[1], last[2]];
   };
-  const smoothRoundBody = (points, segments) => {
-    const total = points[points.length - 1][0];
-    const h = total / segments;
-    const tangents = roundProfileTangents(points);
-    return Array.from({ length: segments }, (_, i) => {
-      const y = i * h;
-      const [dia, tint] = sampleRoundProfile(points, tangents, y + h / 2);
-      return { shape: "cylinder", y, dia, h: h * 1.02, tint };
-    });
-  };
+  // 2026-09-29: 円柱の積層をやめ、同じ制御点を持つ回転体1部品にする（段の数は面の分割数として使う）
+  const smoothRoundBody = (points, segments) => [lathe(points, { segments: Math.max(8, Math.min(40, segments)) })];
   /* ジャグリングクラブの実物の比率（2026-09-11 本人指摘: 持ち手がもっと長い）。
      全長53cmに対し、底のノブ＋細い持ち手が下から約22cm（約4割）を占め、
      胴の最太部は下から約41cm（約77%）と、かなり上のほうにある。
@@ -2561,10 +2615,10 @@
     box: { ja: "箱", en: "Box", dims: { w: 0.4, d: 0.3, h: 0.4 }, grip: null, parts: null },
     umbrella: { ja: "傘", en: "Umbrella", dims: { w: 0.9, d: 0.9, h: 1.08 }, grip: { x: 0, y: 0.30 },
       parts: [
-        { shape: "cylinder", y: 0,    dia: 0.03,  h: 0.78, tint: 0.7 },
-        { shape: "cylinder", y: 0.78, dia: 0.90,  h: 0.09, tint: 1.0 },
-        { shape: "cylinder", y: 0.87, dia: 0.58,  h: 0.10, tint: 1.05 },
-        { shape: "cylinder", y: 0.97, dia: 0.24,  h: 0.06, tint: 1.1 },
+        { shape: "cylinder", y: 0,    dia: 0.03,  h: 0.80, tint: 0.7 },
+        // 天蓋。段々の円柱を積むと段が見える（2026-09-29 本人指摘）。縁から頂へなだらかに丸まる回転体1部品にする
+        lathe([[0, 0.90, 1.0], [0.05, 0.85, 1.02], [0.13, 0.68, 1.05], [0.21, 0.42, 1.08], [0.26, 0.17, 1.1], [0.29, 0.03, 1.1]],
+          { y: 0.78, segments: 20 }),
         { shape: "cylinder", y: 1.03, dia: 0.035, h: 0.05, tint: 0.7 },
       ] },
     // 実物のジャグリングクラブの輪郭に合わせ、段差ではなく滑らかな曲線で太さが変わるようにした
@@ -2754,13 +2808,11 @@
     }))).flat();
   };
   // 4隅から頂点へ寄せる斜め材（骨組みの屋根用）。x・y・zを同時に少しずつ動かす。
-  const slantBeam = (count, x0, x1, y0, y1, z0, z1, thick) => {
-    const dx = (x1 - x0) / count, dy = (y1 - y0) / count, dz = (z1 - z0) / count;
-    return Array.from({ length: count }, (_, i) => ({
-      shape: "box", x: x0 + dx * (i + 0.5), y: y0 + dy * i, z: z0 + dz * (i + 0.5),
-      w: Math.abs(dx) + thick, d: Math.abs(dz) + thick, h: Math.abs(dy) + 0.02, tint: 0.85,
-    }));
-  };
+  /* 2026-09-29: 箱を階段状に並べる近似（斜めの材が段々に見えた）をやめ、両端を結ぶ丸い棒（line）1本にする。
+     count は互換のため受け取るだけ。色は駒の色（tone "cloth"）。 */
+  const slantBeam = (count, x0, x1, y0, y1, z0, z1, thick) => [
+    { shape: "line", a: [x0, y0, z0], b: [x1, y1, z1], w: thick, tone: "cloth", tint: 0.85 },
+  ];
   const stairSteps = (count, w, tread, rise) => Array.from({ length: count }, (_, i) => ({
     shape: "box", y: 0, z: (tread * count) / 2 - tread * (i + 0.5),
     w, d: tread, h: rise * (i + 1), tint: 1 + 0.03 * i,
@@ -2822,17 +2874,10 @@
      axis "x" = 軸が左右方向（前後に転がる／一輪車・自転車の車輪）。
      x・y・z は外接箱の基準点で、y は最下点（他の部品と同じ約束）。 */
   // ★function宣言にして巻き上げる。スケートボード等（上で定義）からも使うため。
+  // 2026-09-29: 箱のスライス（車輪がレコード盤のように段々に見えた）をやめ、横倒しの回転体1部品にする。
+  // segments は互換のため受け取るだけ。
   function lyingCylinder(axis, segments, dia, length, x, y, z, tint) {
-    const r = dia / 2;
-    const step = (dia / segments) * 1.04; // 隣どうしを少し重ねて継ぎ目を消す
-    return Array.from({ length: segments }, (_, i) => {
-      const off = ((i + 0.5) / segments - 0.5) * dia;
-      const chord = 2 * Math.sqrt(Math.max(0, r * r - off * off));
-      const top = y + r - chord / 2;
-      return axis === "z"
-        ? { shape: "box", x: x + off, y: top, z, w: step, d: length, h: chord, tint }
-        : { shape: "box", x, y: top, z: z + off, w: length, d: step, h: chord, tint };
-    });
+    return [{ shape: "lathe", axis: axis === "z" ? "z" : "x", x, y, z, profile: [[0, dia, tint], [length, dia, tint]], segments: 1 }];
   };
   PROP_SHAPES.ladder = { ja: "はしご", en: "Ladder", dims: { w: 0.45, d: 0.95, h: 3.2 }, grip: null,
     parts: [
@@ -3104,13 +3149,10 @@
   PROP_SHAPES.tree = { ja: "木（立ち木）", en: "Tree", dims: { w: 2.6, d: 2.6, h: 4.6 }, grip: null,
     parts: [
       // 幹。根元の張り出しから上へ細くなる。まっすぐ立てず、高さに応じて少しずつ傾ける
-      ...smoothRoundBody([
+      lathe([
         [0.000, 0.58, 0.58], [0.120, 0.44, 0.62], [0.350, 0.38, 0.64], [0.800, 0.33, 0.66],
         [1.400, 0.28, 0.68], [2.000, 0.24, 0.70], [2.600, 0.20, 0.66], [3.100, 0.15, 0.62],
-      ], 34).map((part) => {
-        const t = part.y / 3.1;
-        return { ...part, x: 0.10 * t * t, z: -0.06 * t * t };
-      }),
+      ], { segments: 34, bend: [0.10, -0.06] }),
       // 枝（幹から葉の塊へ向かって斜めに出る）
       // ★葉の塊の下端(y=1.55)より低い位置から出す。葉の中に完全に埋まると枝が見えなくなる
       ...slantBeam(7, 0.05, 0.62, 1.12, 1.80, 0.02, 0.34, 0.09).map((b) => ({ ...b, tint: 0.62 })),
@@ -3174,7 +3216,8 @@
     ] };
   PROP_SHAPES.barrel = { ja: "樽", en: "Barrel", dims: { w: 0.6, d: 0.6, h: 0.9 }, grip: null,
     parts: [
-      { shape: "cylinder", x: 0, y: 0.03, z: 0, dia: 0.6, h: 0.84, tint: 0.85 },
+      // 胴は中ほどが膨らむ回転体（2026-09-29）。たが（輪）は上に重ねる
+      lathe([[0, 0.54, 0.85], [0.2, 0.62, 0.86], [0.45, 0.66, 0.88], [0.7, 0.62, 0.86], [0.9, 0.54, 0.85]], { segments: 14 }),
       { shape: "cylinder", x: 0, y: 0, z: 0, dia: 0.62, h: 0.05, tint: 0.6 },
       { shape: "cylinder", x: 0, y: 0.4, z: 0, dia: 0.64, h: 0.05, tint: 0.6 },
       { shape: "cylinder", x: 0, y: 0.85, z: 0, dia: 0.62, h: 0.05, tint: 0.6 },
@@ -3214,12 +3257,13 @@
   PROP_SHAPES.bucket = { ja: "バケツ", en: "Bucket", dims: { w: 0.33, d: 0.33, h: 0.32 }, grip: { x: 0, y: 0.3 },
     parts: [
       // ★側面だけを立てて中を空洞にする（2026-09-11 本人指摘：円柱を重ねると中身が詰まって見える）
-      ...hollowTaper(5, 40, 0.015, 0.265, 0.21, 0.285, 0.016, 0.88),
+      // 2026-09-29: 側板を並べる代わりに口の開いた回転体（open）。上面を塞がず内側を暗く塗る
+      lathe([[0, 0.21, 0.88], [0.265, 0.285, 0.9]], { y: 0.015, segments: 6, open: true }),
       // 底板。空洞の底が見えることで「入れ物」だと分かる
       { shape: "cylinder", y: 0, z: 0, dia: 0.22, h: 0.02, tint: 0.6 },
       { shape: "cylinder", y: 0.02, z: 0, dia: 0.195, h: 0.012, tint: 0.5 },
       // 口の縁（巻き込みリム）。少し外へ張り出して厚みを見せる
-      ...hollowTaper(1, 40, 0.275, 0.022, 0.29, 0.29, 0.022, 0.66),
+      lathe([[0, 0.29, 0.66], [0.022, 0.30, 0.66]], { y: 0.275, segments: 2, open: true }),
       boxAt(0, 0.30, 0, 0.24, 0.02, 0.02, 0.6),
     ] };
   PROP_SHAPES.rope = { ja: "ロープ（束・張り）", en: "Rope", dims: { w: 0.28, d: 0.28, h: 0.22 }, grip: { x: 0, y: 0.18 },
@@ -3233,10 +3277,8 @@
     parts: [
       { shape: "cylinder", y: 0, dia: 0.03, h: 0.30, tint: 0.6 },
       // 包み紙（茎の上のほうから花の塊へ向けて広がる紙のコーン）
-      { shape: "cylinder", y: 0.14, dia: 0.05, h: 0.04, tint: 0.9 },
-      { shape: "cylinder", y: 0.18, dia: 0.09, h: 0.04, tint: 0.85 },
-      { shape: "cylinder", y: 0.22, dia: 0.13, h: 0.04, tint: 0.8 },
-      { shape: "cylinder", y: 0.26, dia: 0.17, h: 0.03, tint: 0.75 },
+      // 包み紙は段でなく開いた円錐（2026-09-29）
+      lathe([[0, 0.05, 0.9], [0.15, 0.17, 0.75]], { y: 0.14, segments: 6 }),
       // 花の塊。大きさ・位置・明るさをそれぞれ変え、一つの球に見えないようにする
       { shape: "sphere", x: 0, z: 0, y: 0.29, dia: 0.14, tint: 1.15 },
       { shape: "sphere", x: -0.07, z: 0.03, y: 0.31, dia: 0.11, tint: 0.95 },
@@ -3356,10 +3398,10 @@
     ] };
   PROP_SHAPES.wagasa = { ja: "和傘・番傘", en: "Japanese umbrella", dims: { w: 1.1, d: 1.1, h: 1.16 }, grip: { x: 0, y: 0.30 },
     parts: [
-      { shape: "cylinder", y: 0, dia: 0.035, h: 0.85, tint: 0.6 },
-      { shape: "cylinder", y: 0.85, dia: 1.1, h: 0.10, tint: 1.05 },
-      { shape: "cylinder", y: 0.95, dia: 0.7, h: 0.10, tint: 1.1 },
-      { shape: "cylinder", y: 1.05, dia: 0.3, h: 0.06, tint: 1.15 },
+      { shape: "cylinder", y: 0, dia: 0.035, h: 0.87, tint: 0.6 },
+      // 番傘は洋傘より平たく、縁の近くまでほぼ直線で張る（2026-09-29 回転体へ）
+      lathe([[0, 1.10, 1.05], [0.05, 1.0, 1.07], [0.13, 0.72, 1.1], [0.21, 0.38, 1.13], [0.25, 0.12, 1.15], [0.26, 0.03, 1.15]],
+        { y: 0.85, segments: 16 }),
       { shape: "cylinder", y: 1.11, dia: 0.04, h: 0.05, tint: 0.6 },
     ] };
   PROP_SHAPES.guitar = { ja: "ギター", en: "Guitar", dims: { w: 0.35, d: 0.115, h: 1.0 }, grip: { x: 0, y: 0.60 },
@@ -3544,10 +3586,8 @@
      ローラーの軸は奥行き方向で、左右へ転がる（2026-09-11 本人指摘で縦向きから修正）。 */
   PROP_SHAPES.rolabola = { ja: "ローラボーラ", en: "Rola bola", dims: { w: 0.7, d: 0.34, h: 0.22 }, grip: null,
     parts: [
+      // ローラー。2026-09-29 から本物の丸い筒（両端の面も丸く塞がる）なので、木口の箱は要らない
       ...lyingCylinder("z", 26, 0.18, 0.34, 0, 0, 0, 0.78),
-      // ローラーの端の面（木口）。転がる向きが見た目で分かるよう少し明るくする
-      boxAt(0, 0.02, 0.165, 0.155, 0.01, 0.14, 1.0),
-      boxAt(0, 0.02, -0.165, 0.155, 0.01, 0.14, 1.0),
       // 板。ローラーの上に載り、端に落下防止の返しが付く
       boxAt(0, 0.18, 0, 0.70, 0.30, 0.04, 1.08),
       boxAt(-0.33, 0.14, 0, 0.04, 0.30, 0.04, 0.9),
@@ -3698,8 +3738,11 @@
   // 2枚の布が下で袋状に合わさる形。中央へ寄せる帯（2026-09-11 QA: 板2枚に見える指摘への対応）
   PROP_SHAPES.aerialhammock = { ja: "エアリアルハンモック", en: "Aerial hammock", dims: { w: 1.2, d: 0.15, h: 2.3 }, grip: null,
     parts: [
-      ...Array.from({ length: 5 }, (_, i) => boxAt(-0.55 + i * 0.06, 1.8 - i * 0.09, 0, 0.14, 0.03, 0.5, 0.9)),
-      ...Array.from({ length: 5 }, (_, i) => boxAt(0.55 - i * 0.06, 1.8 - i * 0.09, 0, 0.14, 0.03, 0.5, 0.9)),
+      // 布は箱の段でなく、吊り点から左右へ広がって座面へ戻る帯（太い丸い線）で（2026-09-29）
+      ...[-1, 1].flatMap((sx) => [
+        { shape: "line", a: [0, 2.2, 0], b: [sx * 0.55, 1.35, 0], w: 0.14, tone: "cloth", tint: 0.9 },
+        { shape: "line", a: [sx * 0.55, 1.35, 0], b: [sx * 0.22, 0.2, 0], w: 0.14, tone: "cloth", tint: 0.9 },
+      ]),
       boxAt(0, 0, 0, 0.55, 0.15, 0.3, 1.0),
       { shape: "sphere", y: 2.22, dia: 0.06, tint: 0.5 },
     ] };
@@ -3836,10 +3879,10 @@
       { shape: "cylinder", x: 0, y: 0, z: 0, dia: 0.12, h: 0.13, tint: 0.98 },
       boxAt(-0.02, 0.08, 0, 0.08, 0.05, 0.035, 0.82),
       { shape: "cylinder", x: 0.035, y: 0.11, z: 0, dia: 0.045, h: 0.38, tint: 0.94 },
-      boxAt(0.02, 0.47, 0, 0.05, 0.045, 0.08, 0.90),
-      boxAt(-0.02, 0.53, 0, 0.08, 0.035, 0.03, 0.86),
-      boxAt(-0.05, 0.55, 0, 0.035, 0.03, 0.075, 0.82),
-      boxAt(-0.03, 0.62, 0, 0.055, 0.025, 0.04, 0.68),
+      // ネックとマウスピースは曲がった管なので、丸い棒をつないで描く（2026-09-29）
+      { shape: "line", a: [0.035, 0.49, 0], b: [0.02, 0.545, 0], w: 0.04, tone: "cloth", tint: 0.9 },
+      { shape: "line", a: [0.02, 0.545, 0], b: [-0.045, 0.565, 0], w: 0.032, tone: "cloth", tint: 0.86 },
+      { shape: "line", a: [-0.045, 0.565, 0], b: [-0.03, 0.64, 0], w: 0.024, tone: "cloth", tint: 0.7 },
     ] };
   PROP_SHAPES.shamisen = { ja: "三味線", en: "Shamisen", dims: { w: 0.22, d: 0.1, h: 1.0 }, grip: { x: 0, y: 0.63 },
     parts: [
@@ -3893,11 +3936,9 @@
     ] };
   PROP_SHAPES.kotsuzumi = { ja: "小鼓（こつづみ）", en: "Kotsuzumi (shoulder drum)", dims: { w: 0.25, d: 0.1, h: 0.1 }, grip: { x: 0, y: 0.05 },
     parts: [
-      boxAt(-0.115, 0, 0, 0.02, 0.10, 0.10, 0.96),
-      boxAt(-0.07, 0.01, 0, 0.07, 0.08, 0.08, 0.84),
-      boxAt(0, 0.02, 0, 0.07, 0.065, 0.06, 0.68),
-      boxAt(0.07, 0.01, 0, 0.07, 0.08, 0.08, 0.84),
-      boxAt(0.115, 0, 0, 0.02, 0.10, 0.10, 0.96),
+      // 胴は横倒しの砂時計型の回転体（2026-09-29）。両端の面は皮
+      { shape: "lathe", axis: "x", x: 0, y: 0, z: 0, segments: 14,
+        profile: [[0, 0.10, 0.96], [0.02, 0.10, 0.96], [0.05, 0.08, 0.84], [0.125, 0.06, 0.68], [0.20, 0.08, 0.84], [0.23, 0.10, 0.96], [0.25, 0.10, 0.96]] },
     ] };
   PROP_SHAPES.knife_throwing = { ja: "ナイフ（投げナイフ・ジャグリング用）", en: "Throwing / juggling knife", dims: { w: 0.04, d: 0.01, h: 0.32 }, grip: { x: 0, y: 0.055 },
     parts: [
@@ -3926,49 +3967,23 @@
     parts: [
       { shape: "cylinder", y: 0, dia: 0.035, h: 0.21, tint: 0.65 },
       { shape: "cylinder", y: 0.21, dia: 0.025, h: 0.05, tint: 0.8 },
-      boxAt(0.04, 0.255, 0, 0.08, 0.025, 0.025, 0.85),
-      boxAt(0.10, 0.28, 0.04, 0.06, 0.025, 0.025, 0.9),
-      boxAt(0.13, 0.305, 0.10, 0.025, 0.09, 0.025, 0.92),
-      boxAt(0.08, 0.33, 0.1375, 0.08, 0.025, 0.025, 0.95),
-      boxAt(0.015, 0.355, 0.13, 0.05, 0.025, 0.025, 0.95),
-      boxAt(-0.035, 0.375, 0.09, 0.05, 0.02, 0.02, 0.9),
-      boxAt(-0.07, 0.384, 0.055, 0.02, 0.02, 0.016, 0.8),
+      // 撓る紐は箱の段でなく、先へ行くほど細くなる丸い棒をつないで描く（2026-09-29）
+      ...[[0, 0.26, 0, 0.06, 0.27, 0.01, 0.025], [0.06, 0.27, 0.01, 0.11, 0.29, 0.06, 0.024], [0.11, 0.29, 0.06, 0.13, 0.31, 0.12, 0.022],
+        [0.13, 0.31, 0.12, 0.08, 0.335, 0.14, 0.02], [0.08, 0.335, 0.14, 0.015, 0.36, 0.13, 0.018], [0.015, 0.36, 0.13, -0.035, 0.38, 0.09, 0.015],
+        [-0.035, 0.38, 0.09, -0.07, 0.39, 0.055, 0.012]]
+        .map(([x0, y0, z0, x1, y1, z1, w]) => ({ shape: "line", a: [x0, y0, z0], b: [x1, y1, z1], w, tone: "cloth", tint: 0.9 })),
     ] };
   // 2026-09-26 Claude: 床に置いた輪（球8個）は点が散らばって見えた。縦に回した輪を20個の箱で連ね、握りから縄を渡す
   PROP_SHAPES.lasso = { ja: "投げ縄（ロープトリック用）", en: "Lasso", dims: { w: 0.76, d: 0.03, h: 0.76 }, grip: { x: -0.32, y: 0.40 },
     parts: [
-      boxAt(0.400, 0.370, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(0.384, 0.469, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(0.339, 0.558, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(0.268, 0.629, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(0.179, 0.674, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(0.080, 0.690, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(-0.019, 0.674, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(-0.108, 0.629, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(-0.179, 0.558, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(-0.224, 0.469, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(-0.240, 0.370, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(-0.224, 0.271, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(-0.179, 0.182, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(-0.108, 0.111, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(-0.019, 0.066, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(0.080, 0.050, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(0.179, 0.066, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(0.268, 0.111, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(0.339, 0.182, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(0.384, 0.271, 0, 0.06, 0.02, 0.06, 0.9),
-      boxAt(-0.28, 0.39, 0, 0.08, 0.02, 0.02, 0.8),
+      // 輪は箱を並べずに輪（ring）1本で（2026-09-29）。中心 (0.08, 0.37)・半径 0.32・縄の太さ 0.03
+      { shape: "cylinder", ring: true, cloth: true, x: 0.08, y: 0.37, z: 0, dia: 0.64, w: 0.03, tint: 0.9 },
+      { shape: "line", a: [-0.24, 0.37, 0], b: [-0.32, 0.40, 0], w: 0.025, tone: "cloth", tint: 0.8 },
     ] };
   PROP_SHAPES.boomerang = { ja: "ブーメラン", en: "Boomerang", dims: { w: 0.40, d: 0.02, h: 0.25 }, grip: { x: 0, y: 0.045 },
     parts: [
-      boxAt(-0.025, 0, 0, 0.05, 0.02, 0.07, 0.8),
-      boxAt(-0.065, 0.055, 0, 0.07, 0.02, 0.055, 0.85),
-      boxAt(-0.115, 0.105, 0, 0.08, 0.02, 0.05, 0.9),
-      boxAt(-0.165, 0.15, 0, 0.07, 0.02, 0.045, 0.95),
-      boxAt(0.03, 0.045, 0, 0.06, 0.02, 0.055, 0.82),
-      boxAt(0.08, 0.09, 0, 0.08, 0.02, 0.05, 0.87),
-      boxAt(0.14, 0.135, 0, 0.08, 0.02, 0.045, 0.92),
-      boxAt(0.18, 0.18, 0, 0.04, 0.02, 0.07, 0.98),
+      // V字の板1枚（2026-09-29）。箱の段でなく輪郭で
+      flat([[-0.20, 0.20], [-0.19, 0.145], [-0.015, 0.0], [0.17, 0.15], [0.20, 0.21], [0.16, 0.245], [0.0, 0.085], [-0.15, 0.245]], 0.02, { tint: 0.9 }),
     ] };
   PROP_SHAPES.jump_rope = { ja: "縄跳び（短縄・大縄）", en: "Jump rope", dims: { w: 0.60, d: 0.05, h: 1.0 }, grip: { x: -0.27, y: 0.75 },
     parts: [
@@ -4088,22 +4103,8 @@
   // 2026-09-26 Claude: 弧を16個の箱で連ね、弦と矢を通した（破片に見えていた）。握りは弧の中央
   PROP_SHAPES.bow_arrow = { ja: "弓矢（和弓・洋弓）", en: "Bow and arrow", dims: { w: 0.54, d: 0.03, h: 1.60 }, grip: { x: -0.22, y: 0.78 },
     parts: [
-      boxAt(0.167, 0.042, 0, 0.035, 0.025, 0.115, 0.81),
-      boxAt(0.070, 0.136, 0, 0.035, 0.025, 0.115, 0.82),
-      boxAt(-0.012, 0.229, 0, 0.035, 0.025, 0.115, 0.83),
-      boxAt(-0.081, 0.323, 0, 0.035, 0.025, 0.115, 0.84),
-      boxAt(-0.136, 0.417, 0, 0.035, 0.025, 0.115, 0.86),
-      boxAt(-0.177, 0.511, 0, 0.035, 0.025, 0.115, 0.87),
-      boxAt(-0.205, 0.604, 0, 0.035, 0.025, 0.115, 0.88),
-      boxAt(-0.218, 0.698, 0, 0.035, 0.025, 0.115, 0.89),
-      boxAt(-0.218, 0.792, 0, 0.035, 0.025, 0.115, 0.89),
-      boxAt(-0.205, 0.886, 0, 0.035, 0.025, 0.115, 0.88),
-      boxAt(-0.177, 0.979, 0, 0.035, 0.025, 0.115, 0.87),
-      boxAt(-0.136, 1.073, 0, 0.035, 0.025, 0.115, 0.86),
-      boxAt(-0.081, 1.167, 0, 0.035, 0.025, 0.115, 0.84),
-      boxAt(-0.012, 1.261, 0, 0.035, 0.025, 0.115, 0.83),
-      boxAt(0.070, 1.354, 0, 0.035, 0.025, 0.115, 0.82),
-      boxAt(0.167, 1.448, 0, 0.035, 0.025, 0.115, 0.81),
+      // 弓は箱の段でなく弧（ring の一部）で描く（2026-09-29）。中心 (0.616, 0.745)・半径 0.834・左側 123°〜237°
+      { shape: "cylinder", ring: true, cloth: true, x: 0.616, y: 0.745, z: 0, dia: 1.668, w: 0.035, from: 122.6, to: 237.4, tint: 0.85 },
       boxAt(0.235, 0.05, 0, 0.01, 0.01, 1.50, 1.1),
       boxAt(-0.03, 0.795, 0, 0.54, 0.012, 0.012, 0.7),
       boxAt(0.25, 0.785, 0, 0.03, 0.02, 0.03, 1.0),
@@ -4148,12 +4149,10 @@
     ] };
   PROP_SHAPES.giant_mushroom = { ja: "キノコ（大）", en: "Giant mushroom", dims: { w: 1.2, d: 1.2, h: 1.5 }, grip: null,
     parts: [
-      { shape: "cylinder", y: 0, dia: 0.36, h: 1.05, tint: 0.9 },
-      { shape: "cylinder", y: 0.95, dia: 0.6, h: 0.12, tint: 0.8 },
-      { shape: "cylinder", y: 1.07, dia: 0.94, h: 0.12, tint: 0.9 },
-      { shape: "cylinder", y: 1.19, dia: 1.2, h: 0.13, tint: 1.05 },
-      { shape: "cylinder", y: 1.32, dia: 0.9, h: 0.12, tint: 1.12 },
-      { shape: "cylinder", y: 1.44, dia: 0.5, h: 0.06, tint: 1.18 },
+      // 柄（根元が少し太い）と傘（裏が少しすぼまり、上へ丸く張る）。2026-09-29 回転体へ
+      lathe([[0, 0.42, 0.88], [0.25, 0.34, 0.9], [0.8, 0.33, 0.92], [1.05, 0.36, 0.9]], { segments: 12 }),
+      lathe([[0, 0.50, 0.8], [0.05, 0.86, 0.88], [0.14, 1.14, 0.98], [0.24, 1.20, 1.05], [0.36, 1.08, 1.12], [0.47, 0.76, 1.16],
+        [0.53, 0.36, 1.18], [0.55, 0.06, 1.2]], { y: 0.95, segments: 20 }),
     ] };
   PROP_SHAPES.balcony = { ja: "バルコニー（手すり付き・張り出し）", en: "Balcony", dims: { w: 2.4, d: 1.2, h: 3.2 }, grip: null,
     parts: [
@@ -4166,33 +4165,18 @@
     ] };
   PROP_SHAPES.cloud_cutout = { ja: "雲の切り出し（吊り）", en: "Cloud cutout", dims: { w: 2.5, d: 0.2, h: 1 }, grip: null,
     parts: [
-      { shape: "panel", x: 0, y: 0.1, z: 0, w: 2.5, d: 0.12, h: 0.35, tint: 0.96 },
-      { shape: "panel", x: -0.78, y: 0.28, z: 0, w: 0.72, d: 0.14, h: 0.45, tint: 1.02 },
-      { shape: "panel", x: -0.25, y: 0.4, z: 0, w: 0.92, d: 0.16, h: 0.52, tint: 1.08 },
-      { shape: "panel", x: 0.42, y: 0.34, z: 0, w: 0.86, d: 0.14, h: 0.48, tint: 1.04 },
-      { shape: "panel", x: 0.92, y: 0.24, z: 0, w: 0.58, d: 0.12, h: 0.4, tint: 0.98 },
+      // 2026-09-29: 板を5枚ずらして重ねた段々をやめ、丸い塊の外側をなぞった輪郭1枚にする
+      flat(unionOutline([[-0.95, 0.30, 0.30], [-0.55, 0.42, 0.40], [-0.10, 0.50, 0.48], [0.40, 0.44, 0.42], [0.85, 0.32, 0.34],
+        [-0.30, 0.18, 0.22], [0.15, 0.16, 0.20], [0.60, 0.16, 0.20]], 48), 0.14, { tint: 1.02 }),
       boxAt(-0.72, 0.82, 0, 0.025, 0.025, 0.18, 0.55), boxAt(0.72, 0.82, 0, 0.025, 0.025, 0.18, 0.55),
     ] };
+  // 2026-09-29: 箱を並べた段々（本人指摘「ボコボコ」）をやめ、輪郭を持つ切り抜き板1枚にする
   PROP_SHAPES.crescent_moon = { ja: "三日月（吊り）", en: "Crescent moon", dims: { w: 1.5, d: 0.1, h: 1.5 }, grip: null,
-    parts: [
-      ...[[0.00, -0.16, 0.28], [0.125, -0.3, 0.52], [0.25, -0.42, 0.7], [0.375, -0.5, 0.82],
-        [0.5, -0.55, 0.9], [0.625, -0.58, 0.94], [0.75, -0.58, 0.94], [0.875, -0.55, 0.9],
-        [1.0, -0.5, 0.82], [1.125, -0.42, 0.7], [1.25, -0.3, 0.52], [1.375, -0.16, 0.28]]
-        .map(([y, x, w]) => boxAt(x, y, 0, w, 0.1, 0.125, 1.05)),
-    ] };
+    parts: [flat(crescentOutline(0.75, 0.62, 0.30, 72), 0.1, { tint: 1.05 })] };
   PROP_SHAPES.sun_moon_disc = { ja: "円盤（太陽・満月、吊り）", en: "Sun / full-moon disc", dims: { w: 1.5, d: 0.1, h: 1.5 }, grip: null,
-    parts: smoothFlatBody([
-      [0, 0.1, 0.1, 0.95], [0.2, 1.0, 0.1, 1.0], [0.42, 1.36, 0.1, 1.05],
-      [0.75, 1.5, 0.1, 1.1], [1.08, 1.36, 0.1, 1.05], [1.3, 1.0, 0.1, 1.0], [1.498, 0.1, 0.1, 0.95],
-    ], 20) };
+    parts: [flat(circleOutline(0.75, 72), 0.1, { tint: 1.05 })] };
   PROP_SHAPES.star_hanging = { ja: "星（吊り・立体）", en: "Star", dims: { w: 0.6, d: 0.6, h: 0.6 }, grip: null,
-    parts: [
-      boxAt(0, 0.2, 0, 0.24, 0.6, 0.2, 1.02),
-      boxAt(0, 0.4, 0, 0.14, 0.32, 0.2, 1.12), boxAt(0, 0, 0, 0.14, 0.32, 0.2, 0.92),
-      boxAt(-0.18, 0.23, 0, 0.24, 0.32, 0.14, 1.05), boxAt(0.18, 0.23, 0, 0.24, 0.32, 0.14, 1.05),
-      boxAt(-0.17, 0.07, -0.16, 0.16, 0.16, 0.16, 0.95), boxAt(0.17, 0.07, -0.16, 0.16, 0.16, 0.16, 0.95),
-      boxAt(-0.17, 0.07, 0.16, 0.16, 0.16, 0.16, 0.95), boxAt(0.17, 0.07, 0.16, 0.16, 0.16, 0.16, 0.95),
-    ] };
+    parts: [flat(starOutline(0.30, 0.125, 5), 0.2, { tint: 1.05 })] };
   PROP_SHAPES.rickshaw = { ja: "人力車", en: "Rickshaw", dims: { w: 1, d: 2.5, h: 1.8 }, grip: null,
     parts: [
       ...[-0.23, 0.23].flatMap((x) => lyingCylinder("x", 14, 0.5, 0.08, x, 0, 0.38, 0.62)),
@@ -4286,11 +4270,8 @@
    * 曲線・斜材は既存の小箱の連なりで近似し、人が乗る物の最高天面は dims.h に揃える。 */
   PROP_SHAPES.rocking_chair = { ja: "ロッキングチェア", en: "Rocking chair", dims: { w: 0.6, d: 0.9, h: 1.1 }, grip: null,
     parts: [
-      ...[-0.28, 0.28].flatMap((z) => Array.from({ length: 9 }, (_, i) => {
-        const x = -0.28 + i * 0.07;
-        const y = 0.02 + 0.16 * Math.pow(x / 0.28, 2);
-        return boxAt(x, y, z, 0.08, 0.07, 0.035, 0.68);
-      })),
+      // 揺り木は箱の段でなく弧（2026-09-29）。半径 0.325・中心の高さ 0.345・下側 210°〜330°
+      ...[-0.28, 0.28].map((z) => ({ shape: "cylinder", ring: true, cloth: true, x: 0, y: 0.345, z, dia: 0.65, w: 0.04, from: 210, to: 330, tint: 0.68 })),
       boxAt(0, 0.48, 0.03, 0.54, 0.55, 0.1, 0.92),
       boxAt(0, 0.58, -0.31, 0.54, 0.08, 0.52, 0.82),
       ...[-0.16, 0, 0.16].map((x) => boxAt(x, 0.62, -0.26, 0.045, 0.05, 0.42, 1.02)),
@@ -4527,18 +4508,12 @@
     ] };
   PROP_SHAPES.globe_of_death = { ja: "グローブ・オブ・デス（金網の球）", en: "Globe of death", dims: { w: 5, d: 5, h: 5 }, grip: null,
     parts: [
-      ...Array.from({ length: 16 }, (_, i) => {
-        const a = (i / 16) * Math.PI * 2;
-        return boxAt(Math.cos(a) * 2.3, 2.5 + Math.sin(a) * 2.3 - 0.09, 0, 0.36, 0.08, 0.18, 0.88);
-      }),
-      ...Array.from({ length: 16 }, (_, i) => {
-        const a = (i / 16) * Math.PI * 2;
-        return boxAt(0, 2.5 + Math.sin(a) * 2.3 - 0.09, Math.cos(a) * 2.3, 0.08, 0.36, 0.18, 0.96);
-      }),
-      ...Array.from({ length: 16 }, (_, i) => {
-        const a = (i / 16) * Math.PI * 2;
-        return boxAt(Math.cos(a) * 2.3, 2.46, Math.sin(a) * 2.3, 0.36, 0.36, 0.08, 1.04);
-      }),
+      // 金網の球は箱を散らさず、大円3本＋緯線2本の輪で（2026-09-29）
+      { shape: "cylinder", ring: true, x: 0, y: 2.5, z: 0, dia: 4.6, w: 0.08, tint: 1.0 },
+      { shape: "cylinder", ring: true, plane: "yz", x: 0, y: 2.5, z: 0, dia: 4.6, w: 0.08, tint: 1.0 },
+      { shape: "cylinder", ring: true, plane: "xz", x: 0, y: 2.5, z: 0, dia: 4.6, w: 0.08, tint: 1.0 },
+      { shape: "cylinder", ring: true, plane: "xz", x: 0, y: 3.65, z: 0, dia: 3.98, w: 0.06, tint: 1.0 },
+      { shape: "cylinder", ring: true, plane: "xz", x: 0, y: 1.35, z: 0, dia: 3.98, w: 0.06, tint: 1.0 },
     ] };
   PROP_SHAPES.crane_hoist = { ja: "クレーン（屋外で演者を吊る）", en: "Crane (outdoor performer hoist)", dims: { w: 3, d: 8, h: 8 }, grip: null,
     parts: [
@@ -7010,6 +6985,29 @@
     "shamisen_play", "harp_play", "cajon_play",
   ]);
   const isChairSitPose = (id) => CHAIR_SIT_POSES.has(id);
+  /* 2026-09-29: 椅子以外にも腰を掛けられる物（本人依頼「椅子であれば座ったり、その上に立ったり」の一般化・第1弾）。
+     値は「座面の高さ ÷ 駒の高さ」。1 なら上面に腰掛ける（台・ベンチ・岩・ベッドの縁）。表に無い物は立つだけ。
+     椅子（chair）は従来どおり pieceTopLocal が座面（h の半分）で、ここには載せない。
+     ★座る姿勢（CHAIR_SIT_POSES）は腰 y=0.285H を座面へ合わせる。座面の高さは登録寸法 h に比率を掛けて出す。 */
+  const SEAT_SET_KINDS = Object.freeze({ bench: 1, stool: 1, block: 1, table: 1, suitcase: 1, teeter: 1, trampoline: 1 });
+  const SEAT_PROP_SHAPES = Object.freeze({
+    sofa: 0.4375, rocking_chair: 0.527, hospital_bed: 0.9, bus_stop: 0.227, wheelchair: 0.556, rowboat: 0.9,
+    rickshaw: 0.428, toilet: 0.575, cart: 1, mine_cart: 0.82, flight_case: 1, treasurechest: 1, bed: 1, rock: 1,
+    tree_stump: 1, barrel: 1, crashmat: 1, crashmatround: 1, grandpiano: 1, grandpianoopen: 1, uprightpiano: 1,
+    counter: 1, desk: 1, dresser: 1, kitchen_unit: 1, platform: 1, hanamichi: 1, thrust_extension: 1,
+    sub_stage_in_house: 1, railing: 1, cocktail_table: 1, speaker: 1, foh_console: 1, television_set: 1,
+    dressing_table: 1, safety_net: 1, bridge: 1, djbooth: 1,
+  });
+  /* 腰を掛けられる駒なら「座面の高さ ÷ 高さ」、そうでなければ null。 */
+  function seatRatioOf(holder) {
+    if (!holder) return null;
+    if (holder.type === "chair") return 0.5;
+    if (holder.type === "prop") {
+      const shape = propShapeOf(holder);
+      return Object.prototype.hasOwnProperty.call(SEAT_PROP_SHAPES, shape) ? SEAT_PROP_SHAPES[shape] : null;
+    }
+    return Object.prototype.hasOwnProperty.call(SEAT_SET_KINDS, holder.type) ? SEAT_SET_KINDS[holder.type] : null;
+  }
   const isStairSitPose = (id) => id === "stairs_sit";
   /* 2026-09-26: 器具に乗った演者が選べる姿勢の組（本人が選んだ空中の姿勢のため）。
      ここに無い姿勢で器具に乗ると、今までどおり器具側の姿勢（人間旗・座る／ぶら下がる）に固定される。
@@ -14783,7 +14781,7 @@
       const foundHolder = found.holder ? pieces.find((other) => other.id === found.holder) : null;
       /* この版で椅子へ座らせた演者を椅子から下ろしたら、見えない椅子へ座り続けず立つ。
          読み込み時から床で sit の旧データは previousMount が無いので、そのまま保つ。 */
-      if (previousMount === "chair" && (!foundHolder || foundHolder.type !== "chair") && isChairSitPose(piece.pose)) {
+      if (previousMount === "chair" && (!foundHolder || seatRatioOf(foundHolder) === null) && isChairSitPose(piece.pose)) {
         piece.pose = "stand";
       }
       if (previousMount === "stairs" && (!foundHolder || !stairShapeOf(foundHolder)) && isStairSitPose(piece.pose)) {
@@ -14850,9 +14848,13 @@
          それ以外なら通常の支持物と同じく足を座面へ載せる。 */
       // 器具（ポール・トラピーズ・ティシュー）から下ろした演者が器具の姿勢のままなら、椅子と同じく立つ（2026-09-26）
       if (previousMount && previousMount !== "chair" && isMountPose(previousMount, piece.pose)) piece.pose = "stand";
-      if (foundHolder && foundHolder.type === "chair" && isChairSitPose(piece.pose)) {
+      const seatRatio = foundHolder ? seatRatioOf(foundHolder) : null;
+      if (seatRatio !== null && isChairSitPose(piece.pose)) {
           const sitHip = 0.285 * pieceHeightM(piece) * (piece.size / 100);
-          piece.base = Math.max(0, found.top - sitHip);
+          /* 座面の高さ。椅子は上面＝座面。ソファや車椅子は上面（背もたれ）より低い座面の比率を持つ（2026-09-29） */
+          const holderDims = pieceDims(foundHolder) || {};
+          const seatTop = found.top - pieceTopLocal(foundHolder) + seatRatio * finite(holderDims.h, 0);
+          piece.base = Math.max(0, seatTop - sitHip);
       }
       if (foundHolder && stairShapeOf(foundHolder) && isStairSitPose(piece.pose)) {
           const sitHip = 0.12 * pieceHeightM(piece) * (piece.size / 100);
@@ -15328,6 +15330,8 @@
     if (holder.type === "trapeze") return "trapeze";
     if (holder.type === "tissue") return "tissue";
     if (holder.type === "rigpoint") return "rig";
+    // 2026-09-29: ベンチ・台・ソファなど腰掛けられる物は「椅子」と同じ扱い（座る姿勢が選べ、腰を座面へ合わせる）
+    if (seatRatioOf(holder) !== null) return "chair";
     return null;
   }
 
@@ -15354,7 +15358,7 @@
   /* 3Dカメラ（stage-first-person.js）へ体モデルを貸し出す窓口。
    * FPVは読み込み順で先に評価されるため、FPV側は描画時に遅延参照する。 */
   window.SHOSAI_STAGE_BODY = Object.freeze({
-    poseById, resolvePoseId, samplePerformancePose, buildRig, paintBody, maskFacePoint, paintMask, paintFaceMask, paintSmoothProp,
+    poseById, resolvePoseId, samplePerformancePose, buildRig, paintBody, maskFacePoint, paintMask, paintFaceMask, paintSmoothProp, smoothPropFaces,
     normalizeLook, resolveLook, normalizeSectionCostumes, normalizeSectionCostume, performerCostumeKey,
     sectionForScene, resolveLookForSection, resolveLookForScene,
     topKindById, bottomKindById, hairStyleById, lengthById, sleeveById, gloveKindById,
@@ -15594,6 +15598,19 @@
       h: finite(part.h, 0) * sy,
       dia: finite(part.dia, 0) * ((sx + sz) / 2),
       tint: part.tint === undefined ? 1 : part.tint,
+      // 回転体・切り抜き板（2026-09-29）。輪郭の数値は各軸の拡大率で伸縮させる
+      profile: Array.isArray(part.profile) ? part.profile.map(([t, dia, tint]) => (part.axis === "x"
+        ? [t * sx, dia * ((sy + sz) / 2), tint] : part.axis === "z" ? [t * sz, dia * ((sx + sy) / 2), tint]
+          : [t * sy, dia * ((sx + sz) / 2), tint])) : undefined,
+      pts: Array.isArray(part.pts) ? part.pts.map(([px, py]) => [px * sx, py * sy]) : undefined,
+      bend: Array.isArray(part.bend) ? [part.bend[0] * sx, part.bend[1] * sz] : undefined,
+      // 両端を持つ棒（line）。太さ w は幅の拡大率で
+      a: Array.isArray(part.a) ? [part.a[0] * sx, part.a[1] * sy, part.a[2] * sz] : undefined,
+      b: Array.isArray(part.b) ? [part.b[0] * sx, part.b[1] * sy, part.b[2] * sz] : undefined,
+      tone: part.tone,
+      plane: part.plane,
+      open: part.open,
+      segments: part.segments,
     }));
     return {
       id,
@@ -15612,17 +15629,126 @@
     const perSphere = clamp(Math.round(SPHERE_FACE_BUDGET / sphereCount), 8, 288);
     const sphereLat = clamp(Math.round(Math.sqrt(perSphere / 2)), 2, 12);
     const sphereLon = clamp(sphereLat * 2, 4, 24);
-    const add = (points, tint) => {
-      const a = points[0], b = points[1], c = points[2];
-      const normal = norm3(cross3(b.map((v, i) => v - a[i]), c.map((v, i) => v - b[i])));
+    /* given: 法線を計算せず与える（凹んだ輪郭は先頭3点から法線を出せない）。
+       cull: 表向きの面だけ描いてよい印（外向きの法線で一貫して巻いてある部品だけ付ける）。 */
+    /* 多角形の幾何学的な法線（Newell の方法。凹んだ輪郭でも先頭3点に頼らない）。 */
+    const newellNormal = (points) => {
+      const n = [0, 0, 0];
+      for (let i = 0; i < points.length; i += 1) {
+        const p = points[i], q = points[(i + 1) % points.length];
+        n[0] += (p[1] - q[1]) * (p[2] + q[2]);
+        n[1] += (p[2] - q[2]) * (p[0] + q[0]);
+        n[2] += (p[0] - q[0]) * (p[1] + q[1]);
+      }
+      return n;
+    };
+    const add = (points, tint, given, cull) => {
+      let pts = points;
+      let normal = given;
+      if (given && cull) {
+        /* 裏面を省くには巻き方向が外向きの法線と揃っていなければならない。横倒しの回転体の蓋などで
+           逆に巻いた面は、ここで点の順を反転して揃える（2026-09-29 ローラースケートの車輪が C 字に欠けた）。 */
+        const geo = newellNormal(points);
+        if (geo[0] * given[0] + geo[1] * given[1] + geo[2] * given[2] < 0) pts = points.slice().reverse();
+      } else if (!given) {
+        const a = points[0], b = points[1], c = points[2];
+        normal = norm3(cross3(b.map((v, i) => v - a[i]), c.map((v, i) => v - b[i])));
+      }
       const light = 0.74 + 0.26 * Math.max(0, normal[1] * 0.8 - normal[0] * 0.35 - normal[2] * 0.45);
-      faces.push({ points, shade: Math.max(0, 1 - tint * light) });
+      faces.push({ points: pts, shade: Math.max(0, 1 - tint * light), cull: Boolean(cull) });
+    };
+    /* 回転体。輪（rings 段）ごとに円周を sides 分割し、隣り合う輪の間を四角い面でつなぐ。
+       法線は輪郭の傾きから求める（先頭3点からだと細い部品で誤差が出る）。 */
+    const addLathe = (part, x, y, z, tint) => {
+      const profile = part.profile;
+      const t0 = profile[0][0], total = profile[profile.length - 1][0] - t0;
+      if (!(total > 0)) return;
+      const rings = clamp(Math.round(finite(part.segments, 24)), 1, 40);
+      const maxR = Math.max(...profile.map((p) => finite(p[1], 0))) / 2;
+      const sides = clamp(Math.round(maxR * 90), 12, 32);
+      const tangents = roundProfileTangents(profile);
+      const bend = Array.isArray(part.bend) ? part.bend : [0, 0];
+      /* 軸の向き。y（既定）は下端 y から上へ。x・z は横倒し（lyingCylinder と同じ約束: y は最下点、
+         x・z は中心、長さは中心から両側へ）。 */
+      const axis = part.axis === "x" || part.axis === "z" ? part.axis : "y";
+      const axisDir = axis === "y" ? [0, 1, 0] : axis === "x" ? [1, 0, 0] : [0, 0, 1];
+      const u = axis === "y" ? [1, 0, 0] : axis === "x" ? [0, 0, 1] : [1, 0, 0];
+      const v = axis === "y" ? [0, 0, 1] : [0, 1, 0];
+      const origin = axis === "y" ? [x, y, z] : axis === "x" ? [x - total / 2 - t0, y + maxR, z] : [x, y + maxR, z - total / 2 - t0];
+      const ringAt = (i) => {
+        const t = t0 + (total * i) / rings;
+        const end = i === 0 ? profile[0] : i === rings ? profile[profile.length - 1] : null;
+        const [dia, ringTint] = end ? [end[1], end[2]] : sampleRoundProfile(profile, tangents, t);
+        const k = axis === "y" ? (i / rings) ** 2 : 0;
+        const c = origin.map((o, idx) => o + axisDir[idx] * t + (idx === 0 ? bend[0] * k : idx === 2 ? bend[1] * k : 0));
+        return { t, c, r: Math.max(0, dia / 2), tint: tint * (ringTint === undefined ? 1 : ringTint) };
+      };
+      const ring = ringAt(0);
+      const points = (rg) => Array.from({ length: sides }, (_, j) => {
+        const a = (j / sides) * Math.PI * 2;
+        const cs = Math.cos(a) * rg.r, sn = Math.sin(a) * rg.r;
+        return rg.c.map((o, idx) => o + u[idx] * cs + v[idx] * sn);
+      });
+      const capNormal = (sign) => axisDir.map((o) => o * sign);
+      let lower = ring, lowerPts = points(ring);
+      if (ring.r > 0.004) add(lowerPts.slice(), ring.tint, capNormal(-1), true);
+      for (let i = 1; i <= rings; i += 1) {
+        const upper = ringAt(i);
+        const upperPts = points(upper);
+        const dt = upper.t - lower.t, dr = upper.r - lower.r;
+        const slope = Math.hypot(dt, dr) || 1;
+        for (let j = 0; j < sides; j += 1) {
+          const k = (j + 1) % sides;
+          const am = ((j + 0.5) / sides) * Math.PI * 2;
+          const radial = u.map((o, idx) => o * Math.cos(am) + v[idx] * Math.sin(am));
+          add([lowerPts[j], lowerPts[k], upperPts[k], upperPts[j]], (lower.tint + upper.tint) / 2,
+            radial.map((o, idx) => (o * dt - axisDir[idx] * dr) / slope), true);
+        }
+        lower = upper; lowerPts = upperPts;
+      }
+      if (lower.r > 0.004) {
+        if (part.open) add(lowerPts.slice().reverse(), lower.tint * 0.45, capNormal(1), true);
+        else add(lowerPts.slice().reverse(), lower.tint, capNormal(1), true);
+      }
+    };
+    /* 切り抜き板。表（客席側 -z）と裏の面、輪郭に沿った側面。輪郭は符号付き面積で向きをそろえる。 */
+    const addFlat = (part, x, y, z, tint) => {
+      const dd = Math.max(0.004, finite(part.d, 0.05)) / 2;
+      const raw = part.pts.map(([px, py]) => [x + px, y + py]);
+      const area = raw.reduce((sum, p, i) => { const q = raw[(i + 1) % raw.length]; return sum + p[0] * q[1] - q[0] * p[1]; }, 0);
+      const pts = area > 0 ? raw : raw.slice().reverse();
+      const front = pts.map(([px, py]) => [px, py, z - dd]);
+      const back = pts.map(([px, py]) => [px, py, z + dd]);
+      add(front, tint, [0, 0, -1], true);
+      add(back.slice().reverse(), tint, [0, 0, 1], true);
+      for (let i = 0; i < pts.length; i += 1) {
+        const j = (i + 1) % pts.length;
+        const ex = pts[j][0] - pts[i][0], ey = pts[j][1] - pts[i][1];
+        const len = Math.hypot(ex, ey) || 1;
+        add([front[i], back[i], back[j], front[j]], tint, [ey / len, -ex / len, 0], true);
+      }
     };
     parts.forEach((part) => {
       const x = part.x || 0, y = part.y || 0, z = part.z || 0;
       const w = part.w || part.dia, d = part.d || part.dia, h = part.h;
       const tint = part.tint === undefined ? 1 : part.tint;
-      if (part.shape === "cylinder") {
+      if (part.shape === "lathe" && Array.isArray(part.profile) && part.profile.length > 1) {
+        addLathe(part, x, y, z, tint);
+      } else if (part.shape === "line" && Array.isArray(part.a) && Array.isArray(part.b)) {
+        // 棒。線分のまわりに細い四角柱を組む（見本の回転台など、面でしか描けない経路のため）
+        const a = [x + part.a[0], y + part.a[1], z + part.a[2]], b = [x + part.b[0], y + part.b[1], z + part.b[2]];
+        const dir = norm3(b.map((v, i) => v - a[i]));
+        const helper = Math.abs(dir[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+        const u = norm3(cross3(dir, helper)), v = norm3(cross3(dir, u));
+        const hw = Math.max(0.004, finite(part.w, 0.03)) / 2;
+        const corner = (base, su, sv) => base.map((c, i) => c + u[i] * su * hw + v[i] * sv * hw);
+        const ring = (base) => [corner(base, -1, -1), corner(base, 1, -1), corner(base, 1, 1), corner(base, -1, 1)];
+        const ra = ring(a), rb = ring(b);
+        for (let i = 0; i < 4; i += 1) add([ra[i], ra[(i + 1) % 4], rb[(i + 1) % 4], rb[i]], tint);
+        add(ra.slice().reverse(), tint); add(rb, tint);
+      } else if (part.shape === "flat" && Array.isArray(part.pts) && part.pts.length > 2) {
+        addFlat(part, x, y, z, tint);
+      } else if (part.shape === "cylinder") {
         const horizontal = part.axis === "z";
         const rings = [0, 1].map((end) => Array.from({ length: 64 }, (_, i) => {
           const a = i * Math.PI / 32;
@@ -15671,10 +15797,22 @@
     return faces;
   }
 
+  /* 画面に落とした輪郭の回り方（符号付き面積）。裏向きの面を省くのに使う。 */
+  function projectedWinding(points) {
+    let sum = 0;
+    for (let i = 0; i < points.length; i += 1) {
+      const p = points[i], q = points[(i + 1) % points.length];
+      sum += p.x * q.y - q.x * p.y;
+    }
+    return sum;
+  }
   function paintSmoothProp(target, parts, project, color, drawOptions = {}) {
     const faces = smoothPropFaces(parts).map((face) => {
       const points = face.points.map((p) => project(...p));
       if (points.some((p) => !p || !Number.isFinite(p.x + p.y + p.z))) return null;
+      /* 外向きに巻いた面（cull）は、画面で裏返って見える面を描かない。塗る面が半分になり、
+         奥の面が手前の面の縁からはみ出す線も出なくなる。 */
+      if (face.cull && drawOptions.cullBackFaces !== false && projectedWinding(points) * (drawOptions.windingSign || 1) <= 0) return null;
       return { points, shade: face.shade, depth: points.reduce((sum, p) => sum + p.z, 0) / points.length };
     }).filter(Boolean).sort((a, b) => a.depth - b.depth);
     target.save();
@@ -15691,16 +15829,26 @@
     target.restore();
   }
 
-  function drawSmoothStageProp(target, piece, L, drawOptions = {}) {
-    const parts = scaledPropShape(piece, pieceDims(piece)).parts;
+  /* 駒の局所座標（左右, 高さ, 奥行き）→ 画面。正面図と平面図の両方で使う（drawSmoothStageProp と部品の曲面）。 */
+  function propMeshProjector(piece, L) {
     const yaw = finite(piece.facing, 0) * Math.PI / 180;
     const cos = Math.cos(yaw), sin = Math.sin(yaw);
-    paintSmoothProp(target, parts, (x, y, z) => {
+    return (x, y, z) => {
       const dw = x * cos - z * sin, dd = x * sin + z * cos;
       const p = floorPoint(piece, dw, dd, L);
       return { x: p.x, y: L.plan ? p.y : L.tilt(p.rawY - y * perMetre(p, L).y),
         z: L.plan ? y : -dd + y * 0.35 };
-    }, piece.color, drawOptions);
+    };
+  }
+  function drawSmoothStageProp(target, piece, L, drawOptions = {}) {
+    const parts = scaledPropShape(piece, pieceDims(piece)).parts;
+    paintSmoothProp(target, parts, propMeshProjector(piece, L), piece.color, drawOptions);
+  }
+  /* 回転体・切り抜き板の部品（2026-09-29）。pieceParts が外接箱と一緒に持たせた spec（拡大済みの形）を曲面で描く。
+     画面の y は下向きなので、外向きに巻いた面は画面上では時計回り＝符号が負のときが表。 */
+  function paintPartMesh(target, piece, L, part, drawOptions = {}) {
+    if (!part.spec) return;
+    paintSmoothProp(target, [part.spec], propMeshProjector(piece, L), piece.color, { ...drawOptions, windingSign: -1 });
   }
 
   /* ★2026-09-23: disc/ring/sphere（本物の円で描く部品）はox/w/lift/hを持たないため、
@@ -15778,16 +15926,18 @@
          * （paintPartCylinder）、sphere は陰影付きの丸（paintPartSphere）。
          * axis:"z" は「組んだセット」の立体パーツ用の指定で、これだけは従来どおり箱で作る。 */
         return shape.parts.flatMap((part) => {
-          if (part.axis === "z") return window.SHOSAI_STAGE_MODELS.partBoxes({ ...part, shape: "box" });
+          // ★横倒しの回転体（lathe, axis "z"）は箱にしない（2026-09-29 ローラボーラのローラーが消えた）
+          if (part.axis === "z" && part.shape !== "lathe") return window.SHOSAI_STAGE_MODELS.partBoxes({ ...part, shape: "box" });
           if (part.shape === "cylinder" && part.disc) {
             return [{ kind: "disc", c: [part.x || 0, part.y || 0, part.z || 0],
               r: (part.dia || 1) / 2, h: part.h || 0, tint: part.tint }];
           }
           if (part.shape === "cylinder" && part.ring) {
             const halfDepth = d.d / 2;
-            return [{ kind: "ring", c: [part.x || 0, part.y || 0, (part.side || 0) * halfDepth],
+            // side（奥行きの半分に対する比）が無ければ z をそのまま使う。plane は輪の向き（既定は正面に立つ輪）
+            return [{ kind: "ring", c: [part.x || 0, part.y || 0, part.side !== undefined ? part.side * halfDepth : (part.z || 0)],
               r: (part.dia || 1) / 2, w: part.w || 0.03, tone: part.cloth ? "cloth" : "gear",
-              from: part.from, to: part.to }];
+              from: part.from, to: part.to, plane: part.plane }];
           }
           if (part.shape === "line" && part.rod) {
             const halfDepth = d.d / 2;
@@ -15797,6 +15947,10 @@
           /* ★2026-09-23 本人指示: 扇子は板1枚では扇に見えなかった。開いた扇の骨として、
            * 要（かなめ、駒の中心のやや上）から放射状に伸びる線を作る。要の高さは
            * 駒の実寸(d.h)からの比率で決め、拡大縮小しても要と骨の付け根がずれない。 */
+          // 両端を持つ棒（2026-09-29・slantBeam）。rod/fanRib の印がある線は上の分岐が先に拾う
+          if (part.shape === "line" && Array.isArray(part.a) && Array.isArray(part.b)) {
+            return [{ kind: "line", a: part.a, b: part.b, w: part.w || 0.03, tone: part.tone || "gear", tint: part.tint }];
+          }
           if (part.shape === "line" && part.fanRib) {
             const pivotY = d.h * FAN_PIVOT_Y_RATIO;
             return [{ kind: "line", a: [0, pivotY, 0], b: [part.x || 0, part.y || 0, 0],
@@ -15805,6 +15959,27 @@
           if (part.shape === "cylinder") {
             return [{ kind: "cylinder", ox: part.x || 0, oz: part.z || 0,
               lift: part.y || 0, r: (part.dia || 1) / 2, h: Math.max(0.005, part.h || 0.01), tint: part.tint }];
+          }
+          /* 回転体・切り抜き板（2026-09-29）。描画は spec（拡大済みの形）から曲面で行い、
+             当たり判定・支持・見本の枠取りには外接の箱の値（ox/oz/lift/w/d/h）を持たせる。 */
+          if (part.shape === "lathe" && Array.isArray(part.profile) && part.profile.length > 1) {
+            const r = Math.max(...part.profile.map((p) => finite(p[1], 0))) / 2;
+            const t0 = part.profile[0][0], len = part.profile[part.profile.length - 1][0] - t0;
+            const bx = Array.isArray(part.bend) ? Math.abs(part.bend[0]) : 0, bz = Array.isArray(part.bend) ? Math.abs(part.bend[1]) : 0;
+            if (part.axis === "x" || part.axis === "z") {
+              // 横倒し（車輪・ローラー）。y は最下点、x・z は中心
+              return [{ kind: "lathe", spec: part, ox: part.x || 0, oz: part.z || 0, lift: part.y || 0,
+                w: Math.max(0.005, part.axis === "x" ? len : r * 2), d: Math.max(0.005, part.axis === "z" ? len : r * 2),
+                h: Math.max(0.005, r * 2), tint: part.tint }];
+            }
+            return [{ kind: "lathe", spec: part, ox: part.x || 0, oz: part.z || 0, lift: (part.y || 0) + t0,
+              w: Math.max(0.005, r * 2 + bx), d: Math.max(0.005, r * 2 + bz), h: Math.max(0.005, len), tint: part.tint }];
+          }
+          if (part.shape === "flat" && Array.isArray(part.pts) && part.pts.length > 2) {
+            const xs = part.pts.map((p) => p[0]), ys = part.pts.map((p) => p[1]);
+            const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+            return [{ kind: "flat", spec: part, ox: (part.x || 0) + (x0 + x1) / 2, oz: part.z || 0, lift: (part.y || 0) + y0,
+              w: Math.max(0.005, x1 - x0), d: Math.max(0.005, part.d || 0.05), h: Math.max(0.005, y1 - y0), tint: part.tint }];
           }
           if (part.shape === "sphere") {
             const r = (part.dia || 1) / 2;
@@ -16331,6 +16506,7 @@
       else if (part.kind === "line" || part.kind === "ring") paintRigging(target, piece, L, part);
       else if (part.kind === "sphere") paintPartSphere(target, piece, L, part);
       else if (part.kind === "cylinder") paintPartCylinder(target, piece, L, part);
+      else if (part.kind === "lathe" || part.kind === "flat") paintPartMesh(target, piece, L, part, drawOptions);
       else paintBox(target, piece, L, part, drawOptions);
     });
 
@@ -26192,6 +26368,33 @@
           Math.max(1.5, part.r * 2 * k), Math.max(1.5, part.h * k));
         return;
       }
+      // 回転体・切り抜き板は正面から見た輪郭で（2026-09-29）
+      if ((part.kind === "lathe" || part.kind === "flat") && part.spec) {
+        const spec = part.spec;
+        ctx2.fillStyle = part.tint >= 1 ? color : mixToward(color, 1 - (part.tint || 1));
+        ctx2.beginPath();
+        if (part.kind === "lathe" && spec.axis === "z") {
+          // 奥行き方向の軸（ローラー）は正面から丸に見える
+          ctx2.arc(px(part.ox), py(part.lift + part.h / 2), Math.max(1.5, (part.h / 2) * k), 0, Math.PI * 2);
+        } else if (part.kind === "lathe" && spec.axis === "x") {
+          ctx2.rect(px(part.ox - part.w / 2), py(part.lift + part.h), Math.max(1.5, part.w * k), Math.max(1.5, part.h * k));
+        } else if (part.kind === "lathe") {
+          const tangents = roundProfileTangents(spec.profile);
+          const t0 = spec.profile[0][0], total = spec.profile[spec.profile.length - 1][0] - t0;
+          const n = 24;
+          const side = (sign) => Array.from({ length: n + 1 }, (_, i) => {
+            const t = t0 + (total * i) / n;
+            const dia = i === 0 ? spec.profile[0][1] : i === n ? spec.profile[spec.profile.length - 1][1] : sampleRoundProfile(spec.profile, tangents, t)[0];
+            return [(spec.x || 0) + sign * dia / 2, (spec.y || 0) + t];
+          });
+          side(1).concat(side(-1).reverse()).forEach(([x, y], i) => (i ? ctx2.lineTo(px(x), py(y)) : ctx2.moveTo(px(x), py(y))));
+        } else {
+          spec.pts.forEach(([x, y], i) => (i ? ctx2.lineTo(px((spec.x || 0) + x), py((spec.y || 0) + y)) : ctx2.moveTo(px((spec.x || 0) + x), py((spec.y || 0) + y))));
+        }
+        ctx2.closePath();
+        ctx2.fill();
+        return;
+      }
       ctx2.fillStyle = part.tint >= 1 ? color : mixToward(color, 1 - (part.tint || 1));
       ctx2.fillRect(px(part.ox - part.w / 2), py(part.lift + part.h),
         Math.max(1.5, part.w * k), Math.max(1.5, part.h * k));
@@ -27126,10 +27329,21 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       ? { r: Math.max(0.05, finite(dims.dia, finite(dims.w, 0.6)) / 2), lift: finite(dims.lift, 0) }
       : null;
     const setInfoPreviewSmoothPoints = (list) => (list || []).flatMap((part) => {
-      const hw = Math.max(finite(part.w, 0), finite(part.d, 0)) / 2;
       const x = finite(part.x, 0);
       const y = finite(part.y, 0);
       const z = finite(part.z, 0);
+      // 回転体・切り抜き板は輪郭から外接を取る（2026-09-29）
+      if (part.shape === "lathe" && Array.isArray(part.profile) && part.profile.length) {
+        const r = Math.max(...part.profile.map((p) => finite(p[1], 0))) / 2;
+        const t0 = part.profile[0][0], t1 = part.profile[part.profile.length - 1][0];
+        return [{ x: x - r, y: z - r, z: y + t0 }, { x: x + r, y: z + r, z: y + t1 }];
+      }
+      if (part.shape === "flat" && Array.isArray(part.pts) && part.pts.length) {
+        const xs = part.pts.map((p) => p[0]), ys = part.pts.map((p) => p[1]);
+        const hd = Math.max(0.004, finite(part.d, 0.05)) / 2;
+        return [{ x: x + Math.min(...xs), y: z - hd, z: y + Math.min(...ys) }, { x: x + Math.max(...xs), y: z + hd, z: y + Math.max(...ys) }];
+      }
+      const hw = Math.max(finite(part.w, 0), finite(part.d, 0)) / 2;
       return [
         { x: x - hw, y: z - hw, z: y },
         { x: x + hw, y: z + hw, z: y + Math.max(0, finite(part.h, 0)) },

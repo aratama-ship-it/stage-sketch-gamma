@@ -3577,9 +3577,22 @@
           : part.plane === "yz"
             ? at(part.c[0], part.c[1] + Math.sin(t) * part.r + held, part.c[2] + Math.cos(t) * part.r)
             : at(part.c[0] + Math.cos(t) * part.r, part.c[1] + Math.sin(t) * part.r + held, part.c[2]);
-        const steps = 32;
-        for (let i = 0; i < steps; i += 1) segment(point(from + (to - from) * i / steps),
-          point(from + (to - from) * (i + 1) / steps));
+        /* 2026-09-29: 32本の短い線を別々に引くと継ぎ目に切れ込みが出た（フープ・シルホイール）。
+           1本のつながった線として引き、太さは輪の中心の遠さで決める。 */
+        const steps = 48;
+        const pts = Array.from({ length: steps + 1 }, (_, i) => toCamera(point(from + (to - from) * i / steps)));
+        const centre = toCamera(at(part.c[0], part.c[1] + held, part.c[2]));
+        ctx.lineWidth = Math.max(1, finite(part.w, .03) * focal / Math.max(NEAR, centre.z));
+        ctx.lineJoin = "round"; ctx.strokeStyle = tone;
+        ctx.beginPath();
+        let open = false;
+        pts.forEach((c) => {
+          if (c.z <= NEAR) { open = false; return; }
+          const sp = toScreen(c);
+          if (open) ctx.lineTo(sp.x, sp.y); else ctx.moveTo(sp.x, sp.y);
+          open = true;
+        });
+        ctx.stroke();
       }
       ctx.restore();
       return;
@@ -3606,6 +3619,35 @@
     if (y1 > y0) faces.forEach(face => fillPoly(ctx, face.points, shade(color, face.tone)));
     if (camera.y >= y1) fillPoly(ctx, upper, shade(color, 1));
     else if (camera.y < y0) fillPoly(ctx, lower.slice().reverse(), shade(color, .62));
+    ctx.restore();
+  }
+
+  /* 回転体・切り抜き板（2026-09-29）。本体と同じ smoothPropFaces で面に分け、カメラからの遠い順に塗る。
+     面の明るさ（shade）は本体の正面図と同じ式から取り、外向きに巻いた面は画面で裏返るものを省く。 */
+  function drawMeshPropPart(ctx, part, at, held, color) {
+    const body = window.SHOSAI_STAGE_BODY;
+    if (!body || typeof body.smoothPropFaces !== "function" || !part.spec) return;
+    const faces = body.smoothPropFaces([part.spec]).map((face) => {
+      const points = face.points.map((p) => at(p[0], p[1] + held, p[2]));
+      const cam = points.map(toCamera);
+      if (cam.some((c) => c.z <= NEAR)) return null;
+      if (face.cull) {
+        const screen = cam.map(toScreen);
+        let winding = 0;
+        for (let i = 0; i < screen.length; i += 1) {
+          const p = screen[i], q = screen[(i + 1) % screen.length];
+          winding += p.x * q.y - q.x * p.y;
+        }
+        if (winding >= 0) return null;
+      }
+      return { points, depth: cam.reduce((sum, c) => sum + c.z, 0) / cam.length, shade: face.shade };
+    }).filter(Boolean).sort((a, b) => b.depth - a.depth);
+    ctx.save();
+    ctx.globalAlpha = clamp(finite(part.tint, 1), .12, 1);
+    faces.forEach((face) => {
+      const fill = shade(color, clamp(1.02 - face.shade * 1.6, .45, 1.02));
+      fillPoly(ctx, face.points, fill, fill, .6);
+    });
     ctx.restore();
   }
 
@@ -3683,6 +3725,12 @@
         : 0;
       const propBase = (piece.type === "prop" || piece.roundBlock) && !piece.heldBy ? pieceBaseOf(piece) : 0;
       piece.parts.forEach((box) => {
+        if (box.kind === "lathe" || box.kind === "flat") {
+          drawMeshPropPart(ctx, box, (px, py, pz) => ({
+            x: x + px * cos - pz * sin, y: py, z: z + px * sin + pz * cos,
+          }), held + propBase, color);
+          return;
+        }
         if (["sphere", "disc", "line", "ring", "cylinder"].includes(box.kind)) {
           drawRoundPropPart(ctx, box, (px, py, pz) => ({
             x: x + px * cos - pz * sin, y: py, z: z + px * sin + pz * cos,

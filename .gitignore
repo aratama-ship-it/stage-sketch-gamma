@@ -356,6 +356,7 @@ public-dist/
 # Protect unfinished saves on close without changing the show format.
 !stage-save-lifecycle.js
 !tests/stage-save-lifecycle.test.mjs
+!tests/prop-smooth-primitives.test.mjs
 
 !/tests/stage-fixture-body.test.mjs
 

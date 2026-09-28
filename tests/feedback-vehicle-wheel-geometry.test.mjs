@@ -5,6 +5,8 @@ import vm from 'node:vm';
 
 // Evaluate the actual catalogue's wheel builder and complete shape declarations.
 // Body bracing does not affect wheel bounds, so slantBeam may be omitted here.
+// 2026-09-29: lyingCylinder は箱のスライスではなく横倒しの回転体（lathe, axis "x"）1部品を返すようになった。
+// 車輪の向き（車体の長さ方向へ転がる＝軸は幅方向）と大きさを、回転体の軸・輪郭から確かめる。
 const source = readFileSync(new URL('../stage-sketch.js', import.meta.url), 'utf8');
 const builder = source.slice(source.indexOf('  function lyingCylinder('), source.indexOf('\n  };', source.indexOf('  function lyingCylinder(')) + 5);
 for (const [id, label] of Object.entries({rickshaw:'人力車',wheelchair:'車いす',motorcycle:'バイク・スクーター',mine_cart:'トロッコ',kitchen_car:'キッチンカー',stroller:'ベビーカー'})) {
@@ -19,13 +21,14 @@ for (const [id, label] of Object.entries({rickshaw:'人力車',wheelchair:'車�
     for (const {args,parts} of context.wheels) {
       const [axis,,diameter,thickness] = args;
       assert.equal(axis,'x');
-      const extent = (key,size) => Math.max(...parts.map(p=>p[key]+p[size]/2)) - Math.min(...parts.map(p=>p[key]-p[size]/2));
-      const xSpan=extent('x','w'),zSpan=extent('z','d');
-      const ySpan=Math.max(...parts.map(p=>p.y+p.h))-Math.min(...parts.map(p=>p.y));
-      assert.ok(Math.abs(xSpan-thickness)<1e-9, 'axle thickness lies across vehicle width');
-      assert.ok(zSpan>diameter*.9 && zSpan<=diameter*1.01, 'round tread lies along vehicle length');
-      assert.ok(ySpan>diameter*.9 && ySpan<=diameter*1.01, 'round tread also occupies vertical diameter');
-      assert.ok(xSpan<Math.min(ySpan,zSpan), 'thin axle cannot be mistaken for a 90 degree tread');
+      assert.equal(parts.length, 1, 'one lathe per wheel');
+      const wheel = parts[0];
+      assert.equal(wheel.shape, 'lathe'); assert.equal(wheel.axis, 'x');
+      const along = wheel.profile[wheel.profile.length - 1][0] - wheel.profile[0][0];
+      const dia = Math.max(...wheel.profile.map((p) => p[1]));
+      assert.ok(Math.abs(along-thickness)<1e-9, 'axle thickness lies across vehicle width');
+      assert.ok(Math.abs(dia-diameter)<1e-9, 'round tread diameter along vehicle length and height');
+      assert.ok(along<dia, 'thin axle cannot be mistaken for a 90 degree tread');
     }
   });
 }

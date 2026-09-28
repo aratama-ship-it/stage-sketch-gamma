@@ -57,8 +57,9 @@ test("椅子に座る姿勢は集まり（CHAIR_SIT_POSES）で判定する（�
   assert.match(main, /const CHAIR_SIT_POSES = new Set\(\["sit"/);
   for (const pattern of [
     /if \(isChairSitPose\(pose\.id\)\) return allOnChairs;/,
-    /foundHolder\.type !== "chair"\) && isChairSitPose\(piece\.pose\)\) \{/,
-    /if \(foundHolder && foundHolder\.type === "chair" && isChairSitPose\(piece\.pose\)\) \{/,
+    // 2026-09-29: 椅子以外（ベンチ・台・ソファ等）にも腰掛けられるので、判定は seatRatioOf に集約した
+    /seatRatioOf\(foundHolder\) === null\) && isChairSitPose\(piece\.pose\)\) \{/,
+    /if \(seatRatio !== null && isChairSitPose\(piece\.pose\)\) \{/,
     /if \(isChairSitPose\(pose\.id\) && !performers\.every/,
     /if \(isChairSitPose\(poseId\) && mountKindOf\(piece\) !== "chair"\) return false;/,
   ]) assert.match(main, pattern);
