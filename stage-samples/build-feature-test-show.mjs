@@ -64,8 +64,8 @@ if (POSES.length < 40) throw new Error(`姿勢の一覧が取れていません 
 if (PROP_SHAPES.length < 10) throw new Error(`小道具の形の一覧が取れていません (${PROP_SHAPES.length})`);
 
 // v4（2026-09-24）: 転換0秒をなくしてシーンの秒数が変わったので上げる（一度開いた棚の複製は自動で差し替わらないため）
-// v20（2026-09-29）: C-7 に 檻・柱・バイク・ストラップ・リラ（第3弾の関係）を追加
-const PROJECT_ID = "gamma-feature-test-v20";
+// v21（2026-09-29）: 持ち物が要る姿勢を A 群から外した（姿勢の追加に備える）
+const PROJECT_ID = "gamma-feature-test-v21";
 const CREATED = "2026-09-18T00:00:00.000Z";
 const STAGE = { width: 12, depth: 9 };      // proscenium / mid の実寸（stage-venues.js）
 const COLORS = ["#a84b26", "#77865f", "#9c823f", "#6d6657", "#315b8a", "#b0533f", "#4f7d6f", "#8a6a9c",
@@ -245,7 +245,11 @@ section("a", "A 演者と姿勢");
 const A_SCENE_CAPS = [78, 79];
 const A_POSES = A_SCENE_CAPS[0] + A_SCENE_CAPS[1];
 // 階段専用は C-4、手持ち楽器の自動姿勢は C-2 の「持つ」操作で検証する。
-const GENERAL_POSES = POSES.filter((id) => id !== "stairs_sit" && !HELD_INSTRUMENT_POSE_IDS.has(id));
+/* 2026-09-29: 持ち物が要る姿勢（POSE_PROPS の鍵）は、物なしで A 群に並べても読めないので A 群・J-1 から外す
+   （C-2 で物と一緒に確認する）。姿勢が 210 件を超えても試験場が止まらないようにするため。 */
+const posePropsStart = sketch.indexOf("const POSE_PROPS = {");
+const POSE_PROPS_IDS = new Set([...sketch.slice(posePropsStart, sketch.indexOf("};", posePropsStart)).matchAll(/^\s+([a-z0-9_]+): \[/gm)].map((m) => m[1]));
+const GENERAL_POSES = POSES.filter((id) => id !== "stairs_sit" && !HELD_INSTRUMENT_POSE_IDS.has(id) && !POSE_PROPS_IDS.has(id));
 // あふれた姿勢は、文脈ヘルプの駒3つ → J-1 の演者50人の順に割り当てる
 const HELP_POSES = GENERAL_POSES.slice(A_POSES, A_POSES + 3);
 const POSE_OVERFLOW = GENERAL_POSES.slice(A_POSES + 3);
@@ -411,8 +415,23 @@ section("c", "C 舞台セット・小道具・空中");
       pieces.push(holder, { id: pid("c2", `use-${shape}`), type: "prop", setId: null, propShape: shape, u: holder.u, v: holder.v, facing: 0, size: 100,
         color: "#d3ac59", name: "", dims: { ...dims, lift: 0 }, heldBy: holder.id, holdSide: "R", holdMode: "hand" });
     });
+  /* 2026-09-29: 小道具専用姿勢 B1 の見本。右側の列で、右手に持たせた実物と人影を同時に確認する。
+     オールは座る姿勢なので、同じ位置へ無登録のベンチを先に置く。 */
+  [["axe", "axe_chop", "斧を振り下ろす", { w: 0.2, d: 0.08, h: 0.75 }],
+    ["baseball_bat", "bat_swing", "バットを構える", { w: 0.08, d: 0.08, h: 0.9 }],
+    ["pistol", "pistol_aim", "拳銃を構える", { w: 0.28, d: 0.08, h: 0.16 }],
+    ["fan", "fan_dance", "扇で舞う", { w: 0.38, d: 0.05, h: 0.24 }],
+    ["oar", "oar_row", "オールを引く", { w: 0.14, d: 0.08, h: 1.7 }]]
+    .forEach(([shape, pose, name, dims], index) => {
+      const u = 0.49 + index * 0.11;
+      if (shape === "oar") pieces.push({ id: pid("c2", "use-oar-bench"), type: "bench", setId: null,
+        u: round(u), v: 0.55, facing: 0, size: 100, color: "#6e5c48", name: "ベンチ（無登録）", dims: { w: 1.2, d: 0.4, h: 0.45, lift: 0 } });
+      const holder = perf("c2", null, u, 0.55, { pose, name });
+      pieces.push(holder, { id: pid("c2", `use-${shape}`), type: "prop", setId: null, propShape: shape, u: holder.u, v: holder.v, facing: 0, size: 100,
+        color: "#d3ac59", name: "", dims: { ...dims, lift: 0 }, heldBy: holder.id, holdSide: "R", holdMode: "hand" });
+    });
   scene("c2", "C-2 小道具の登録と持ち手", 1,
-    `${CHECK}登録した小道具6つ（箱・ボール・傘・仮面・クラブ・旗）。下の3人は持っている: 演者01=ボールを右手、演者02=傘を左手、演者03=仮面を顔（顔で持てるのは仮面だけ）。手前の演者04〜08は初期状態では全員立ち姿で、ギター・バイオリン・ベースギター・アコーディオン・コントラバスは床に置いてある。各演者を選び「小道具」から対応する楽器を「持つ」だけなら立ち姿のまま、「演奏する」で演奏姿勢になり、「演奏をやめる」で立ち姿へ戻る。楽器を持ったまま通常の姿勢も選べる。姿勢一覧と3Dの姿勢選択には楽器姿勢が出ない。保存後の再読込でも持ち物と見た目が一致する。「選んだもの」で持ち手を外す・付け替える、香盤表（印刷）に受け渡しが出る。\n2026-09-29: 左奥の3人（v=0.55）はロープ→引く・ケーキ→トレイを運ぶ・提灯→掲げる。小道具欄の「使う」に一般の姿勢が出るか（ロープなら「引く」）。`, pieces);
+    `${CHECK}登録した小道具6つ（箱・ボール・傘・仮面・クラブ・旗）。下の3人は持っている: 演者01=ボールを右手、演者02=傘を左手、演者03=仮面を顔（顔で持てるのは仮面だけ）。手前の演者04〜08は初期状態では全員立ち姿で、ギター・バイオリン・ベースギター・アコーディオン・コントラバスは床に置いてある。各演者を選び「小道具」から対応する楽器を「持つ」だけなら立ち姿のまま、「演奏する」で演奏姿勢になり、「演奏をやめる」で立ち姿へ戻る。楽器を持ったまま通常の姿勢も選べる。姿勢一覧と3Dの姿勢選択には楽器姿勢が出ない。保存後の再読込でも持ち物と見た目が一致する。「選んだもの」で持ち手を外す・付け替える、香盤表（印刷）に受け渡しが出る。\n2026-09-29: v=0.55 の左3人はロープ→引く・ケーキ→トレイを運ぶ・提灯→掲げる。右5人は斧・バット・拳銃・扇・オールの専用姿勢で、オールの下には無登録ベンチがある。小道具欄の「使う」に対応姿勢が出て、右手首の握り位置へ実物が付くか。`, pieces);
 }
 {
   // 小道具の全形（本体の PROP_SHAPES から自動）。1シーン80駒以下になる最小シーン数へ等分する

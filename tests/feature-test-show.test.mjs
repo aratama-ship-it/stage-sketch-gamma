@@ -37,7 +37,7 @@ test("機能テスト用ショー: 外枠と上限", () => {
   assert.equal(doc.kind, "shosai-stage-sketch");
   assert.equal(doc.version, 4);
   assert.deepEqual(doc.venues, []);
-  assert.equal(project.id, "gamma-feature-test-v20");
+  assert.equal(project.id, "gamma-feature-test-v21");
   /* ★2026-09-20: バッファを3行→2行に減らして広げた（build-feature-test-show.mjs 側の同日コメント参照）。
      容量由来の制約ではなく、試す人が手でもシーンを足せる余地を残すだけの自主ガード。 */
   assert.ok(rows.length <= limits.sceneRows, `シーン行 ${rows.length}: 身体表現の試験を含め上限60行`);
@@ -79,6 +79,22 @@ test("機能テスト用ショー: C-2 の楽器は初期状態で持たせず�
     assert.equal(performer.pose, "stand", `${key}: 初期状態は立ち姿`);
     assert.equal(instrument.heldBy, undefined, `${shape}: 初期状態は床に置く`);
   }
+});
+
+test("機能テスト用ショー: C-2 に小道具専用姿勢5件とオール用ベンチがある", () => {
+  const c2 = scenes.find((scene) => scene.id === "ft-scene-c2");
+  assert.ok(c2);
+  for (const [shape, pose] of [["axe", "axe_chop"], ["baseball_bat", "bat_swing"], ["pistol", "pistol_aim"], ["fan", "fan_dance"], ["oar", "oar_row"]]) {
+    const prop = c2.pieces.find((piece) => piece.propShape === shape && piece.heldBy);
+    const performer = prop && c2.pieces.find((piece) => piece.id === prop.heldBy);
+    assert.ok(prop && performer, `${shape}: 持ち物と演者がある`);
+    assert.equal(performer.pose, pose, `${shape}: 専用姿勢`);
+    assert.equal(prop.holdSide, "R", `${shape}: 右手持ち`);
+    assert.equal(performer.v, 0.55, `${shape}: C-2 の確認列`);
+  }
+  const oar = c2.pieces.find((piece) => piece.propShape === "oar" && piece.heldBy);
+  const rower = c2.pieces.find((piece) => piece.id === oar?.heldBy);
+  assert.ok(c2.pieces.some((piece) => piece.type === "bench" && piece.setId === null && piece.u === rower?.u && piece.v === rower?.v));
 });
 
 test("機能テスト用ショー: C-6 に円形台と角・中央の比較がある", () => {
@@ -135,7 +151,11 @@ test("機能テスト用ショー: 本体の定数と一致（姿勢・種類・
     if (piece.propShape) assert.ok(PROP_SHAPES.has(piece.propShape), `小道具 ${piece.propShape}`);
     for (const text of scene.screenTexts || []) assert.ok(SCREEN_FONTS.has(text.font), `書体 ${text.font}`);
   }
-  for (const pose of POSES) if (!HELD_INSTRUMENT_POSES.has(pose))
+  // 2026-09-29: 持ち物が要る姿勢（POSE_PROPS の鍵）は物なしで並べても読めないので A 群から外した（C-2 に見本）。
+  const posePropsStart = sketch.indexOf("const POSE_PROPS = {");
+  const POSE_PROPS_IDS = new Set([...sketch.slice(posePropsStart, sketch.indexOf("};", posePropsStart)).matchAll(/^\s+([a-z0-9_]+): \[/gm)].map((m) => m[1]));
+  assert.ok(POSE_PROPS_IDS.size >= 40, "POSE_PROPS の抽出");
+  for (const pose of POSES) if (!HELD_INSTRUMENT_POSES.has(pose) && !POSE_PROPS_IDS.has(pose))
     assert.ok(usedPoses.has(pose), `姿勢 ${pose} を置いたシーンが無い（本体に姿勢が増えたら生成し直す）`);
   const usedShapes = new Set();
   for (const scene of scenes) for (const piece of scene.pieces) if (piece.type === "prop") usedShapes.add(piece.propShape || project.sets.find((s) => s.id === piece.setId)?.propShape);
