@@ -76,6 +76,13 @@
     if (!isMoving(fixture) || !light || light.beamDeg == null) return base;
     return clamp(finite(light.beamDeg, base), 4, 70);
   };
+  /* Only explicitly classified fixtures use the new optical defaults. Legacy
+     fixtures keep the former value of 2, regardless of fixtureType metadata. */
+  const opticalSoftnessOf = (fixture, light) => {
+    if (light && light.beamEdgeSoftness != null) return clamp(finite(light.beamEdgeSoftness, 2), 0, 10);
+    return fixture && fixture.opticalType === "wash" ? 7
+      : fixture && fixture.opticalType === "spot" ? 1 : 2;
+  };
   /* 光は狙った点で止まらない。そこを過ぎた光は床か奥の壁まで進み、どちらにも当たらなければ
      図の外へ抜けていく（本体 stage-sketch.js の beamLanding と同じ考え方）。
      床(z=0)と奥の壁(y=0)だけが遮る面。袖と客席側は開いている。
@@ -1466,7 +1473,7 @@
     CUE_NO_RE, cueNoValid, cueNoValue, cueNoText, cueNumberNext, cueNumberBetween, FOLLOW_MODES, normalizeFollow, followDelayMs, cueLit, cueNotation, followText,
     DEFAULT_DIMS, FLOOR_FIXTURE_Z, SIDE_OFFSET_M, CYC_MOUNT_V, CYC_REACH_MAX, HOUSE_AHEAD_MAX, cycBarSpan, SPEED_PERIOD_MS, PLANE_VALUES, PLANE_LABEL,
     clamp, finite, stagePieceDepth, orderStagePieces,
-    newTruss, newFixture, isMoving, isLaser, beamDegOf, spotRadiusM, spotEllipse, spotFalloff, beamLanding, trussById, trussRow, fixtureWorld,
+    newTruss, newFixture, isMoving, isLaser, beamDegOf, opticalSoftnessOf, spotRadiusM, spotEllipse, spotFalloff, beamLanding, trussById, trussRow, fixtureWorld,
     newPoint, newLightCue, levelOf, isLit, levelAt, beamDegAt, colorAt, colorSnaps, strobeMul, paramPhase, mountSpot, GOBOS, goboById, goboAngleAt, goboPath, constrainPointToSurface, periodMs, groupEffect,
     pointWorld, planeVec, circleOffset, eightOffset, targetAt, pathGuide, mirrorMount, mirrorAimCompatible, mirrorAimPoint, mirrorAimPath,
     FRONT_SEATS, frontPerspSetup, makeFrontPerspProjector, frontPerspToUH,

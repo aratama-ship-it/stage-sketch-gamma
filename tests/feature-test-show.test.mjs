@@ -37,7 +37,7 @@ test("機能テスト用ショー: 外枠と上限", () => {
   assert.equal(doc.kind, "shosai-stage-sketch");
   assert.equal(doc.version, 4);
   assert.deepEqual(doc.venues, []);
-  assert.equal(project.id, "gamma-feature-test-v21");
+  assert.equal(project.id, "gamma-feature-test-v22");
   /* ★2026-09-20: バッファを3行→2行に減らして広げた（build-feature-test-show.mjs 側の同日コメント参照）。
      容量由来の制約ではなく、試す人が手でもシーンを足せる余地を残すだけの自主ガード。 */
   assert.ok(rows.length <= limits.sceneRows, `シーン行 ${rows.length}: 身体表現の試験を含め上限60行`);
@@ -52,6 +52,25 @@ test("機能テスト用ショー: 外枠と上限", () => {
     assert.ok((scene.screenTexts || []).length <= limits.screenTextsPerScene);
   }
   assert.ok(scenes.some((scene) => scene.pieces.length === limits.piecesPerScene), "上限80駒のシーンがある");
+});
+
+test("機能テスト用ショー: F-1 で固定・ムービングとスポット・ウォッシュを比較する", () => {
+  const design = project.lightingDesign;
+  const f1 = design.scenes.find((scene) => scene.id === "ft-scene-f1");
+  const expected = [
+    ["ft-fx-18", "fixed", "spot"], ["ft-fx-19", "fixed", "wash"],
+    ["ft-fx-20", "moving", "spot"], ["ft-fx-21", "moving", "wash"],
+  ];
+  assert.ok(f1 && /光の比較/.test(scenes.find((scene) => scene.id === "ft-scene-f1")?.note));
+  for (const [id, kind, opticalType] of expected) {
+    const fixture = design.rig.fixtures.find((row) => row.id === id);
+    assert.equal(fixture?.kind, kind, id);
+    assert.equal(fixture?.opticalType, opticalType, id);
+    assert.equal(fixture?.beamDeg, 28, id);
+    assert.equal(f1.cue.lights[id]?.level, 65, id);
+  }
+  assert.equal(design.rig.fixtures.find((row) => row.id === "ft-fx-01")?.opticalType, undefined,
+    "既存の灯体は光学区分を付けず、旧描画を試せる");
 });
 
 test("機能テスト用ショー: 演者の転換アニメ切替に、移動・はけ・入りの比較場面がある", () => {

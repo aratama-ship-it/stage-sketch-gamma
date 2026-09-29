@@ -774,11 +774,13 @@
   }
   function addFixture(mount, kind, quiet) {
     const f = E.newFixture(uid("f"), state.nextNo++, mount, "", kind);
+    if (f.kind !== "laser") f.opticalType = "spot";
     const made = [f];
     state.rig.fixtures.push(f);
     const mirror = state.mirrorPlacement ? mirrorPlacementMount(mount) : null;
     if (mirror && !samePlacement(mount, mirror)) {
       const mf = E.newFixture(uid("f"), state.nextNo++, mirror, "", f.kind, f.beamDeg);
+      if (f.opticalType) mf.opticalType = f.opticalType;
       if (f.barn) mf.barn = { ...f.barn };
       state.rig.fixtures.push(mf);
       made.push(mf);
@@ -824,6 +826,7 @@
       // 種類（固定／ムービング）と広がりを引き継ぐ。渡し忘れると固定灯を複製したのにムービングになる
       // （2026-09-13 発見: ホリゾントライトの複製で確認）。
       const nf = E.newFixture(uid("f"), state.nextNo++, m, "", f.kind, f.beamDeg);
+      if (f.opticalType) nf.opticalType = f.opticalType;
       if (f.barn) nf.barn = { ...f.barn };   // バーンドアも仕込みの一部なので引き継ぐ（2026-09-14）
       state.rig.fixtures.push(nf); made.push(nf.id);
     });
@@ -893,6 +896,7 @@
       const f = fixtureById(id); if (!f || f.mount.type !== "side") return;
       // duplicateSelectedと同じ理由で種類・広がりを引き継ぐ
       const nf = E.newFixture(uid("f"), state.nextNo++, E.mirrorMount(f.mount), f.name ? `${f.name}（反対側）` : "", f.kind, f.beamDeg);
+      if (f.opticalType) nf.opticalType = f.opticalType;
       // バーンドアは下手⇄上手を入れ替えて写す（反対側から見れば左右が逆になる。2026-09-14）
       if (f.barn) { const b = E.barnOf(f); nf.barn = { back: b.back, front: b.front, left: b.right, right: b.left }; }
       state.rig.fixtures.push(nf); made.push(nf.id);
@@ -920,7 +924,25 @@
     if (next === "fixed" && l && l.path && l.path.kind !== "still") {
       l.path = { kind: "still", a: l.path.a || l.path.c || E.newPoint() };
     }
-    commit(`${label(fid)}を${next === "laser" ? "レーザー" : next === "fixed" ? "スポット" : "ムービング"}にしました`);
+    commit(`${label(fid)}を${next === "laser" ? "レーザー" : next === "fixed" ? "固定" : "ムービング"}にしました`);
+  }
+  const spotShapeCount = (f) => {
+    let count = E.barnActive(f) ? 1 : 0;
+    state.scenes.forEach((scene) => {
+      [scene.cue, ...(scene.lxq || []).map((q) => q.cue)].forEach((cue) => {
+        const l = cue && cue.lights && cue.lights[f.id];
+        if (l && ((l.gobo && l.gobo !== "none") || (l.shutter && l.shutter.on))) count++;
+      });
+    });
+    return count;
+  };
+  function setOpticalType(fid, opticalType) {
+    const f = fixtureById(fid);
+    if (!f || f.mount.type === "cyc" || f.kind === "laser" || !["spot", "wash"].includes(opticalType)) return;
+    if (f.opticalType === opticalType) return;
+    f.opticalType = opticalType;
+    commit(`${label(fid)}の光を${opticalType === "wash" ? "ウォッシュ" : "スポット"}にしました`);
+    if (opticalType === "wash" && spotShapeCount(f)) toast("模様・カッターの設定は保持しました。実機で使う場合は灯体を確認してください");
   }
 
   /* ---------- 動きの操作 ---------- */
@@ -1360,7 +1382,7 @@
           pctx.restore(); }
         if (spatialLight(pctx, P, B.w / d.W, "plan", f, litSpots)) { if (sel) drawHandles(pctx, PH, l, f.id); return; }
         if (l.surface === "floor" || l.surface === "air") {
-          if (showOn("beam")) { const sp = drawBeam(pctx, s, tp, { S, T }, colorOf(f, l), beamOf(f), dim, B.w / state.dims.W, squashFor("plan", l.surface), true, false, lv, l, l.surface === "floor" ? "floor" : null, P, frameOf(f, l)); litSpots.push({ fromX: s.X, fromY: s.Y, ...sp, lv }); }
+          if (showOn("beam")) { const sp = drawBeam(pctx, s, tp, { S, T }, colorOf(f, l), beamOf(f), dim, B.w / state.dims.W, squashFor("plan", l.surface), true, false, lv, renderLight(f, l), l.surface === "floor" ? "floor" : null, P, frameOf(f, l)); litSpots.push({ fromX: s.X, fromY: s.Y, ...sp, lv }); }
           if (l.surface === "air") {
             // 空中の狙い点は床に落ちない。真上から見ると高さが読めないので、印＋高さ＋床への破線を出す
             pctx.strokeStyle = hexA(colorOf(f, l), dim ? 0.2 : 0.7); pctx.lineWidth = 3; pctx.beginPath();
@@ -1378,11 +1400,11 @@
           const th = { X: s.X + (th0.X - s.X) * ext, Y: s.Y + (th0.Y - s.Y) * ext };
           if (showOn("beam")) {
             const Tfar = { x: S.x + (T.x - S.x) * ext, y: S.y + (T.y - S.y) * ext, z: S.z + (T.z - S.z) * ext };
-            const sp = drawBeam(pctx, s, th, { S, T: Tfar }, colorOf(f, l), beamOf(f), dim, B.w / state.dims.W, [1, 1], false, true, lv, l, null, P, frameOf(f, l));
+            const sp = drawBeam(pctx, s, th, { S, T: Tfar }, colorOf(f, l), beamOf(f), dim, B.w / state.dims.W, [1, 1], false, true, lv, renderLight(f, l), null, P, frameOf(f, l));
             litSpots.push({ fromX: s.X, fromY: s.Y, ...sp, lv });
           }
           if (!dim) { pctx.fillStyle = hexA(colorOf(f, l), 0.9); pctx.font = "15px sans-serif"; pctx.textBaseline = "middle"; pctx.fillText(`客席へ 舞台前から${mmText(Math.max(0, T.y - state.dims.D))}・高さ${mmText(T.z)}（目眩まし）`, th0.X + 22, th0.Y); }
-        } else if (showOn("beam")) { const sp = drawBeam(pctx, s, { X: s.X, Y: B.y }, { S, T }, colorOf(f, l), beamOf(f), dim, B.w / state.dims.W, squashFor("plan", l.surface), true, false, lv, l, null, P, frameOf(f, l)); litSpots.push({ fromX: s.X, fromY: s.Y, ...sp, lv }); }
+        } else if (showOn("beam")) { const sp = drawBeam(pctx, s, { X: s.X, Y: B.y }, { S, T }, colorOf(f, l), beamOf(f), dim, B.w / state.dims.W, squashFor("plan", l.surface), true, false, lv, renderLight(f, l), null, P, frameOf(f, l)); litSpots.push({ fromX: s.X, fromY: s.Y, ...sp, lv }); }
         // ハンドル（選択灯のみ・床・空中・客席は平面図で位置を動かす）
         if (sel && l.surface !== "back") drawHandles(pctx, PH, l, f.id);
       });
@@ -1592,7 +1614,7 @@
     const lv = litFactorOf(f, l), dim = false;
     const sp = drawBeam(ctx, from, screenEnd, { S, T: worldEnd }, colorOf(f, l), beamOf(f), dim, k,
       squashFor(view, landing ? landing.surface : "air"), view === "plan", !landing,
-      lv, l, landing ? landing.surface : null, P, frameOf(f, l));
+      lv, renderLight(f, l), landing ? landing.surface : null, P, frameOf(f, l));
     spots.push({ fromX: from.X, fromY: from.Y, ...sp, lv });
     if (view !== "plan") drawDirectionLine(ctx, from, target, colorOf(f, l), lv, dim);
     return true;
@@ -1728,6 +1750,8 @@
   const BEAM_SOFT = 1.26;
   const BEAM_EDGE_SOFTNESS_DEFAULT = 2;
   const beamEdgeSoftnessOf = (light) => E.clamp(E.finite(light && light.beamEdgeSoftness, BEAM_EDGE_SOFTNESS_DEFAULT), 0, 10);
+  const renderLight = (fixture, light) => light && E.opticalSoftnessOf
+    ? { ...light, beamEdgeSoftness: E.opticalSoftnessOf(fixture, light) } : light;
   const beamEdgeProfile = (light) => {
     const soft = beamEdgeSoftnessOf(light), feather = 0.06 + soft * 0.035;
     return [[0, 0], [feather * 0.45, 0.3], [feather, 1], [1 - feather, 1], [1 - feather * 0.45, 0.3], [1, 0]];
@@ -2533,12 +2557,12 @@
           const aim = houseAimOnFront(T, d.D), e2 = P(aim);
           const gY = isFront(f) ? Math.max(20, s.Y) : s.Y, R = frontView.pxPerM * (0.9 + 2.4 * lv) * glareMul(l);
           const ray = beamPastTarget(S, T, { X: s.X, Y: gY }, e2, front);
-          const sp = drawBeam(fctx, { X: s.X, Y: gY }, ray.screen, { S, T: ray.world }, colorOf(f, l), beamOf(f), dim, frontView.pxPerM * Math.max(0.05, s.scale || 1), [1, 1], false, true, lv, l, null, P, frameOf(f, l));
+          const sp = drawBeam(fctx, { X: s.X, Y: gY }, ray.screen, { S, T: ray.world }, colorOf(f, l), beamOf(f), dim, frontView.pxPerM * Math.max(0.05, s.scale || 1), [1, 1], false, true, lv, renderLight(f, l), null, P, frameOf(f, l));
           litSpotsF.push({ fromX: s.X, fromY: gY, ...sp, lv });
           drawGlare(fctx, s.X, gY, R, colorOf(f, l), lv, dim); litSpotsF.push(glareHole(s.X, gY, R, lv));
           drawDirectionLine(fctx, { X: s.X, Y: gY }, e2, colorOf(f, l), lv, dim);
         } else { const be = beamEnd(l, S, T), e2 = P(be.world);
-          const sp = drawBeam(fctx, s, e2, { S, T: be.world }, colorOf(f, l), beamOf(f), dim, frontView.pxPerM * Math.max(0.05, e2.scale || 1), squashFor("front", be.surface || "air"), false, !be.surface, lv, l, be.surface, P, frameOf(f, l));
+          const sp = drawBeam(fctx, s, e2, { S, T: be.world }, colorOf(f, l), beamOf(f), dim, frontView.pxPerM * Math.max(0.05, e2.scale || 1), squashFor("front", be.surface || "air"), false, !be.surface, lv, renderLight(f, l), be.surface, P, frameOf(f, l));
           litSpotsF.push({ fromX: s.X, fromY: s.Y, ...sp, lv }); } }
       if (l.surface === "air") { const floorY = B.y + B.h; fctx.save(); fctx.setLineDash([5, 6]); fctx.strokeStyle = hexA(colorOf(f, l), dim ? 0.15 : 0.45); fctx.lineWidth = 2; fctx.beginPath(); fctx.moveTo(tp.X, tp.Y); fctx.lineTo(tp.X, floorY); fctx.stroke(); fctx.restore();
         fctx.strokeStyle = hexA(colorOf(f, l), dim ? 0.2 : 0.8); fctx.lineWidth = 3; fctx.beginPath(); fctx.moveTo(tp.X - 12, tp.Y - 12); fctx.lineTo(tp.X + 12, tp.Y + 12); fctx.moveTo(tp.X + 12, tp.Y - 12); fctx.lineTo(tp.X - 12, tp.Y + 12); fctx.stroke(); fctx.beginPath(); fctx.arc(tp.X, tp.Y, 16, 0, Math.PI * 2); fctx.stroke();
@@ -2597,7 +2621,7 @@
         const ray = houseTarget ? beamPastTarget(S, T, s0, houseTarget, front) : null;
         if (ray) be.world = ray.world;
         const e2 = ray ? ray.screen : P(be.world);
-        const sp = drawBeam(fctx, s0, e2, { S, T: be.world }, colorOf(f, l), beamOf(f), dim, B.w / d.D, squashFor("side", be.surface || "air"), false, !be.surface, lv, l, be.surface, P, frameOf(f, l));
+        const sp = drawBeam(fctx, s0, e2, { S, T: be.world }, colorOf(f, l), beamOf(f), dim, B.w / d.D, squashFor("side", be.surface || "air"), false, !be.surface, lv, renderLight(f, l), be.surface, P, frameOf(f, l));
         litSpotsSide.push({ fromX: s0.X, fromY: s0.Y, ...sp, lv });
         if (houseTarget) drawDirectionLine(fctx, s0, houseTarget, colorOf(f, l), lv, dim);
       }
@@ -2680,7 +2704,7 @@
           const gY0 = isFront(f) ? Math.max(20, s0.Y) : s0.Y;
           const ray = beamPastTarget(S, T, { X: s0.X, Y: gY0 }, e3, cv);
           const housePx = L.pxPerM * Math.max(0.05, e3.scale || 1);
-          const sp = drawBeam(fctx, { X: s0.X, Y: gY0 }, ray.screen, { S, T: ray.world }, colorOf(f, l), beamOf(f), dim, housePx, [1, 1], false, true, lv, l, null, P, frameOf(f, l));
+          const sp = drawBeam(fctx, { X: s0.X, Y: gY0 }, ray.screen, { S, T: ray.world }, colorOf(f, l), beamOf(f), dim, housePx, [1, 1], false, true, lv, renderLight(f, l), null, P, frameOf(f, l));
           litSpots3D.push({ fromX: s0.X, fromY: gY0, ...sp, lv });
           const Rg = L.pxPerM * Math.max(0.05, s0.scale || 1) * (0.9 + 2.4 * lv) * glareMul(l);
           drawGlare(fctx, s0.X, gY0, Rg, colorOf(f, l), lv, dim); litSpots3D.push(glareHole(s0.X, gY0, Rg, lv));
@@ -2693,7 +2717,7 @@
         const sq = be.surface === "floor"
           ? [1, Math.min(1, ((L.bottomY - L.floorY) / d.D) / (L.pxPerM * Math.max(0.05, e2.scale || 1)))]
           : squashFor("front", be.surface || "air");
-        const sp = drawBeam(fctx, s0, e2, { S, T: be.world }, colorOf(f, l), beamOf(f), dim, L.pxPerM * Math.max(0.05, e2.scale || 1), sq, false, !be.surface, lv, l, be.surface, P, frameOf(f, l));
+        const sp = drawBeam(fctx, s0, e2, { S, T: be.world }, colorOf(f, l), beamOf(f), dim, L.pxPerM * Math.max(0.05, e2.scale || 1), sq, false, !be.surface, lv, renderLight(f, l), be.surface, P, frameOf(f, l));
         litSpots3D.push({ fromX: s0.X, fromY: s0.Y, ...sp, lv });
       }
       if (showOn("path")) { const g = E.pathGuide(l, d);
@@ -4117,7 +4141,7 @@
             (v) => { spMovers.forEach((fid) => { const l = lightOf(fid); if (l) l.beamDegTo = v; }); draw(); },
             () => commit(`${spMovers.length}灯の終点の広がりを変えました`)), true));
       }
-      const edgeValues = ids.map((fid) => Math.round(beamEdgeSoftnessOf(lightOf(fid))));
+      const edgeValues = ids.map((fid) => Math.round(E.opticalSoftnessOf(fixtureById(fid), lightOf(fid))));
       const edgeSame = allSame(edgeValues), edgeNow = edgeSame ? edgeValues[0] : BEAM_EDGE_SOFTNESS_DEFAULT;
       b.append(field(edgeSame ? "ボケ感" : "ボケ感（バラバラ）",
         range(0, 10, 1, edgeNow, (v) => `${Math.round(v)}/10（${v < 3 ? "くっきり" : v < 7 ? "普通" : "やわらかい"}）`,
@@ -5028,7 +5052,12 @@
         }
         if (m.type !== "cyc") {
           // レーザーも、設置場所を増やさずこの灯体の種類から選ぶ。ホリゾントライトは既製バーなので対象外。
-          host.append(field("種類", seg([["moving", "ムービング"], ["fixed", "スポット"], ["laser", "レーザー"]], kindKey(f), (v) => setFixtureKind(f.id, v))));
+          host.append(field("動き・種類", seg([["fixed", "固定"], ["moving", "ムービング"], ["laser", "レーザー"]], kindKey(f), (v) => setFixtureKind(f.id, v))));
+          if (f.kind !== "laser") {
+            host.append(field("光", seg([["spot", "スポット"], ["wash", "ウォッシュ"]], f.opticalType || "legacy", (v) => setOpticalType(f.id, v), "optical-choices")));
+            if (!f.opticalType) host.append(el("p", "hint", "旧表示の灯体です。光を選ぶと新しい見え方に切り替わります。"));
+            if (f.opticalType === "wash" && spotShapeCount(f)) host.append(el("p", "warn", "模様・カッターの設定を保持中。実機の能力を確認してください。"));
+          }
         }
         /* 色の作り方（2026-09-28）: カラーホイール機は色を混ぜられない＝キューの間・動きの中の色は一瞬で替わる（実機どおり）。レーザー・ホリゾントは対象外。 */
         if (m.type !== "cyc" && !(E.isLaser && E.isLaser(f))) {
@@ -5042,6 +5071,23 @@
         // 複製・反対側へコピー・削除は図の下の帯へ移した（同じ操作を2か所に置かない）
       } else if (ids.length > 1) {
         host.append(el("p", "kicker", `${ids.length}灯を選択中`));
+        const opticalFixtures = ids.map(fixtureById).filter((f) => f && f.mount.type !== "cyc" && f.kind !== "laser");
+        if (opticalFixtures.length) {
+          const types = new Set(opticalFixtures.map((f) => f.opticalType || "legacy"));
+          host.append(field("光", seg([["spot", "スポット"], ["wash", "ウォッシュ"]],
+            types.size === 1 ? [...types][0] : "mixed", (next) => {
+              const changed = opticalFixtures.filter((f) => f.opticalType !== next);
+              if (!changed.length) return;
+              changed.forEach((f) => { f.opticalType = next; });
+              const needsFixtureCheck = next === "wash" && changed.some(spotShapeCount);
+              commit(`${changed.length}灯の光を${next === "wash" ? "ウォッシュ" : "スポット"}にしました`);
+              if (needsFixtureCheck) toast("模様・カッターの設定は保持しました。実機で使う場合は灯体を確認してください");
+            }, "optical-choices")));
+          if (types.has("legacy")) host.append(el("p", "hint", "旧表示の灯体を含みます。光を選ぶと新しい見え方に切り替わります。"));
+          if (opticalFixtures.length !== ids.length) host.append(el("p", "hint", "レーザーとホリゾントライトは光の変更対象から外します。"));
+          if (opticalFixtures.some((f) => f.opticalType === "wash" && spotShapeCount(f)))
+            host.append(el("p", "warn", "模様・カッターの設定を保持中。実機の能力を確認してください。"));
+        }
       }
       return;
     }
@@ -5253,7 +5299,7 @@
         } else {
           b.append(field(null, range(4, 70, 1, f.beamDeg == null ? 16 : f.beamDeg, fmtDeg, (v) => { f.beamDeg = v; draw(); }, () => commit()), true));
         }
-        b.append(field("ボケ感", range(0, 10, 1, beamEdgeSoftnessOf(l),
+        b.append(field("ボケ感", range(0, 10, 1, E.opticalSoftnessOf(f, l),
           (v) => `${Math.round(v)}/10（${v < 3 ? "くっきり" : v < 7 ? "普通" : "やわらかい"}）`,
           (v) => { l.beamEdgeSoftness = v; draw(); }, () => commit()), true));
       }

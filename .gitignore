@@ -289,6 +289,7 @@ public-dist/
 !/tests/performer-body.test.mjs
 !/tests/performer-motion.test.mjs
 !/tests/feature-test-show.test.mjs
+!/tests/light-optics.test.mjs
 !/tests/gamma-sharing.test.mjs
 !/tests/stage-venue-front-border.test.mjs
 !/tests/stage-venue-viewpoint-height.test.mjs

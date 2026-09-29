@@ -146,7 +146,8 @@
       : [];
     return {
       c: ellipse.c, ea: ellipse.ea, eb: ellipse.eb, surface, fall,
-      softness: finite(light.beamEdgeSoftness, 2),
+      softness: typeof engine.opticalSoftnessOf === "function"
+        ? engine.opticalSoftnessOf(fixture, light) : finite(light.beamEdgeSoftness, 2),
       from: source, to: target, radiusM,
       ...(rootR > 0 ? { rootR } : {}),
       ...(gobo ? { gobo, goboAngle: finite(light.goboAngle, 0), goboSpin: finite(light.goboSpin, 0),

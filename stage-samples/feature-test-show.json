@@ -3,7 +3,7 @@
  "version": 4,
  "venues": [],
  "project": {
-  "id": "gamma-feature-test-v21",
+  "id": "gamma-feature-test-v22",
   "title": "テスト: 全機能の試験場",
   "versionLabel": "v2",
   "parentVersionId": null,
@@ -12019,7 +12019,7 @@
        "description": "",
        "useWhen": "",
        "content": {
-        "note": "確認: 照明タブで、固定灯4本が色違い・強さ違いで床を照らす（模様「ブレイクアップ（中）」付き1本）。正面図・平面図・3Dの光だまり（設定ON）が一致する。演者05は台の上（床から0.5m）へ描かれる。最後に登録したカウンターが、手前の演者01を隠さず奥の演者05を隠す（正面・3D・作業灯ON/OFF）。環境設定「平面図の照明機材の白い枠を表示」をON/OFFし、灯体の淡い白枠だけが切り替わることを確かめる。選択中の金色の枠と正面・側面・3Dの灯体表示、再読み込み後の設定保持も確認する。環境設定「衣装を明かりの色で染める」を入れると、青い明かりの演者02（緑）と山吹の明かりの演者05（青）が沈み、白い明かりの演者01は色が変わらない。照明を編集したら「未適用・控え保存済み」、LXキュー適用後は「適用済み」を確認。適用しないで移って戻り、控えが残ること。「控え・書き出し」からファイルへ残せること。容量不足・別タブ更新では成功表示にならず、失敗の説明が残ること（ブラウザの隔離試験で確認）。L01を選んでソロ表示し、未選択L02の点灯ボタンが実キューのオン状態と「押すとオフ」を示すこと。ソロ自体は保存キューを変えず、ボタンで消灯した結果はソロ解除後にも残ること。",
+        "note": "確認: 照明タブで、固定灯4本が色違い・強さ違いで床を照らす（模様「ブレイクアップ（中）」付き1本）。正面図・平面図・3Dの光だまり（設定ON）が一致する。演者05は台の上（床から0.5m）へ描かれる。最後に登録したカウンターが、手前の演者01を隠さず奥の演者05を隠す（正面・3D・作業灯ON/OFF）。環境設定「平面図の照明機材の白い枠を表示」をON/OFFし、灯体の淡い白枠だけが切り替わることを確かめる。選択中の金色の枠と正面・側面・3Dの灯体表示、再読み込み後の設定保持も確認する。環境設定「衣装を明かりの色で染める」を入れると、青い明かりの演者02（緑）と山吹の明かりの演者05（青）が沈み、白い明かりの演者01は色が変わらない。照明を編集したら「未適用・控え保存済み」、LXキュー適用後は「適用済み」を確認。適用しないで移って戻り、控えが残ること。「控え・書き出し」からファイルへ残せること。容量不足・別タブ更新では成功表示にならず、失敗の説明が残ること（ブラウザの隔離試験で確認）。L01を選んでソロ表示し、未選択L02の点灯ボタンが実キューのオン状態と「押すとオフ」を示すこと。ソロ自体は保存キューを変えず、ボタンで消灯した結果はソロ解除後にも残ること。\n光の比較: 18〜21番は同じ色・強さ・広がり角。固定スポット、固定ウォッシュ、ムービングスポット、ムービングウォッシュの順。F-1の床奥で境界と重なりを平面・正面・3Dで比べる。17番までの旧灯体は光学区分なしの従来表示を保つ。",
         "background": "#40362d",
         "pieces": [
          {
@@ -12143,6 +12143,102 @@
            "at": "2026-09-18T00:00:00.000Z",
            "cue": {
             "lights": {
+             "ft-fx-18": {
+              "on": true,
+              "level": 65,
+              "color": "#f2ead6",
+              "surface": "floor",
+              "path": {
+               "kind": "still",
+               "a": {
+                "u": 0.2,
+                "v": 0.84,
+                "hM": 0
+               }
+              },
+              "speed": "normal",
+              "groupId": null,
+              "periodSec": null,
+              "offsetSec": 0,
+              "levelTo": null,
+              "beamDegTo": null,
+              "beamDeg": null,
+              "gobo": "none",
+              "goboSpin": 0,
+              "goboAngle": 0
+             },
+             "ft-fx-19": {
+              "on": true,
+              "level": 65,
+              "color": "#f2ead6",
+              "surface": "floor",
+              "path": {
+               "kind": "still",
+               "a": {
+                "u": 0.4,
+                "v": 0.84,
+                "hM": 0
+               }
+              },
+              "speed": "normal",
+              "groupId": null,
+              "periodSec": null,
+              "offsetSec": 0,
+              "levelTo": null,
+              "beamDegTo": null,
+              "beamDeg": null,
+              "gobo": "none",
+              "goboSpin": 0,
+              "goboAngle": 0
+             },
+             "ft-fx-20": {
+              "on": true,
+              "level": 65,
+              "color": "#f2ead6",
+              "surface": "floor",
+              "path": {
+               "kind": "still",
+               "a": {
+                "u": 0.6,
+                "v": 0.84,
+                "hM": 0
+               }
+              },
+              "speed": "normal",
+              "groupId": null,
+              "periodSec": null,
+              "offsetSec": 0,
+              "levelTo": null,
+              "beamDegTo": null,
+              "beamDeg": null,
+              "gobo": "none",
+              "goboSpin": 0,
+              "goboAngle": 0
+             },
+             "ft-fx-21": {
+              "on": true,
+              "level": 65,
+              "color": "#f2ead6",
+              "surface": "floor",
+              "path": {
+               "kind": "still",
+               "a": {
+                "u": 0.8,
+                "v": 0.84,
+                "hM": 0
+               }
+              },
+              "speed": "normal",
+              "groupId": null,
+              "periodSec": null,
+              "offsetSec": 0,
+              "levelTo": null,
+              "beamDegTo": null,
+              "beamDeg": null,
+              "gobo": "none",
+              "goboSpin": 0,
+              "goboAngle": 0
+             },
              "ft-fx-01": {
               "on": true,
               "level": 100,
@@ -12256,6 +12352,102 @@
          "lxEditing": null,
          "cue": {
           "lights": {
+           "ft-fx-18": {
+            "on": true,
+            "level": 65,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+             "kind": "still",
+             "a": {
+              "u": 0.2,
+              "v": 0.84,
+              "hM": 0
+             }
+            },
+            "speed": "normal",
+            "groupId": null,
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSpin": 0,
+            "goboAngle": 0
+           },
+           "ft-fx-19": {
+            "on": true,
+            "level": 65,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+             "kind": "still",
+             "a": {
+              "u": 0.4,
+              "v": 0.84,
+              "hM": 0
+             }
+            },
+            "speed": "normal",
+            "groupId": null,
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSpin": 0,
+            "goboAngle": 0
+           },
+           "ft-fx-20": {
+            "on": true,
+            "level": 65,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+             "kind": "still",
+             "a": {
+              "u": 0.6,
+              "v": 0.84,
+              "hM": 0
+             }
+            },
+            "speed": "normal",
+            "groupId": null,
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSpin": 0,
+            "goboAngle": 0
+           },
+           "ft-fx-21": {
+            "on": true,
+            "level": 65,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+             "kind": "still",
+             "a": {
+              "u": 0.8,
+              "v": 0.84,
+              "hM": 0
+             }
+            },
+            "speed": "normal",
+            "groupId": null,
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSpin": 0,
+            "goboAngle": 0
+           },
            "ft-fx-01": {
             "on": true,
             "level": 100,
@@ -12373,7 +12565,7 @@
        "description": "位置を調整",
        "useWhen": "通常案との比較用",
        "content": {
-        "note": "確認: 照明タブで、固定灯4本が色違い・強さ違いで床を照らす（模様「ブレイクアップ（中）」付き1本）。正面図・平面図・3Dの光だまり（設定ON）が一致する。演者05は台の上（床から0.5m）へ描かれる。最後に登録したカウンターが、手前の演者01を隠さず奥の演者05を隠す（正面・3D・作業灯ON/OFF）。環境設定「平面図の照明機材の白い枠を表示」をON/OFFし、灯体の淡い白枠だけが切り替わることを確かめる。選択中の金色の枠と正面・側面・3Dの灯体表示、再読み込み後の設定保持も確認する。環境設定「衣装を明かりの色で染める」を入れると、青い明かりの演者02（緑）と山吹の明かりの演者05（青）が沈み、白い明かりの演者01は色が変わらない。照明を編集したら「未適用・控え保存済み」、LXキュー適用後は「適用済み」を確認。適用しないで移って戻り、控えが残ること。「控え・書き出し」からファイルへ残せること。容量不足・別タブ更新では成功表示にならず、失敗の説明が残ること（ブラウザの隔離試験で確認）。L01を選んでソロ表示し、未選択L02の点灯ボタンが実キューのオン状態と「押すとオフ」を示すこと。ソロ自体は保存キューを変えず、ボタンで消灯した結果はソロ解除後にも残ること。",
+        "note": "確認: 照明タブで、固定灯4本が色違い・強さ違いで床を照らす（模様「ブレイクアップ（中）」付き1本）。正面図・平面図・3Dの光だまり（設定ON）が一致する。演者05は台の上（床から0.5m）へ描かれる。最後に登録したカウンターが、手前の演者01を隠さず奥の演者05を隠す（正面・3D・作業灯ON/OFF）。環境設定「平面図の照明機材の白い枠を表示」をON/OFFし、灯体の淡い白枠だけが切り替わることを確かめる。選択中の金色の枠と正面・側面・3Dの灯体表示、再読み込み後の設定保持も確認する。環境設定「衣装を明かりの色で染める」を入れると、青い明かりの演者02（緑）と山吹の明かりの演者05（青）が沈み、白い明かりの演者01は色が変わらない。照明を編集したら「未適用・控え保存済み」、LXキュー適用後は「適用済み」を確認。適用しないで移って戻り、控えが残ること。「控え・書き出し」からファイルへ残せること。容量不足・別タブ更新では成功表示にならず、失敗の説明が残ること（ブラウザの隔離試験で確認）。L01を選んでソロ表示し、未選択L02の点灯ボタンが実キューのオン状態と「押すとオフ」を示すこと。ソロ自体は保存キューを変えず、ボタンで消灯した結果はソロ解除後にも残ること。\n光の比較: 18〜21番は同じ色・強さ・広がり角。固定スポット、固定ウォッシュ、ムービングスポット、ムービングウォッシュの順。F-1の床奥で境界と重なりを平面・正面・3Dで比べる。17番までの旧灯体は光学区分なしの従来表示を保つ。",
         "background": "#40362d",
         "pieces": [
          {
@@ -12497,6 +12689,102 @@
            "at": "2026-09-18T00:00:00.000Z",
            "cue": {
             "lights": {
+             "ft-fx-18": {
+              "on": true,
+              "level": 65,
+              "color": "#f2ead6",
+              "surface": "floor",
+              "path": {
+               "kind": "still",
+               "a": {
+                "u": 0.2,
+                "v": 0.84,
+                "hM": 0
+               }
+              },
+              "speed": "normal",
+              "groupId": null,
+              "periodSec": null,
+              "offsetSec": 0,
+              "levelTo": null,
+              "beamDegTo": null,
+              "beamDeg": null,
+              "gobo": "none",
+              "goboSpin": 0,
+              "goboAngle": 0
+             },
+             "ft-fx-19": {
+              "on": true,
+              "level": 65,
+              "color": "#f2ead6",
+              "surface": "floor",
+              "path": {
+               "kind": "still",
+               "a": {
+                "u": 0.4,
+                "v": 0.84,
+                "hM": 0
+               }
+              },
+              "speed": "normal",
+              "groupId": null,
+              "periodSec": null,
+              "offsetSec": 0,
+              "levelTo": null,
+              "beamDegTo": null,
+              "beamDeg": null,
+              "gobo": "none",
+              "goboSpin": 0,
+              "goboAngle": 0
+             },
+             "ft-fx-20": {
+              "on": true,
+              "level": 65,
+              "color": "#f2ead6",
+              "surface": "floor",
+              "path": {
+               "kind": "still",
+               "a": {
+                "u": 0.6,
+                "v": 0.84,
+                "hM": 0
+               }
+              },
+              "speed": "normal",
+              "groupId": null,
+              "periodSec": null,
+              "offsetSec": 0,
+              "levelTo": null,
+              "beamDegTo": null,
+              "beamDeg": null,
+              "gobo": "none",
+              "goboSpin": 0,
+              "goboAngle": 0
+             },
+             "ft-fx-21": {
+              "on": true,
+              "level": 65,
+              "color": "#f2ead6",
+              "surface": "floor",
+              "path": {
+               "kind": "still",
+               "a": {
+                "u": 0.8,
+                "v": 0.84,
+                "hM": 0
+               }
+              },
+              "speed": "normal",
+              "groupId": null,
+              "periodSec": null,
+              "offsetSec": 0,
+              "levelTo": null,
+              "beamDegTo": null,
+              "beamDeg": null,
+              "gobo": "none",
+              "goboSpin": 0,
+              "goboAngle": 0
+             },
              "ft-fx-01": {
               "on": true,
               "level": 100,
@@ -12610,6 +12898,102 @@
          "lxEditing": null,
          "cue": {
           "lights": {
+           "ft-fx-18": {
+            "on": true,
+            "level": 65,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+             "kind": "still",
+             "a": {
+              "u": 0.2,
+              "v": 0.84,
+              "hM": 0
+             }
+            },
+            "speed": "normal",
+            "groupId": null,
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSpin": 0,
+            "goboAngle": 0
+           },
+           "ft-fx-19": {
+            "on": true,
+            "level": 65,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+             "kind": "still",
+             "a": {
+              "u": 0.4,
+              "v": 0.84,
+              "hM": 0
+             }
+            },
+            "speed": "normal",
+            "groupId": null,
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSpin": 0,
+            "goboAngle": 0
+           },
+           "ft-fx-20": {
+            "on": true,
+            "level": 65,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+             "kind": "still",
+             "a": {
+              "u": 0.6,
+              "v": 0.84,
+              "hM": 0
+             }
+            },
+            "speed": "normal",
+            "groupId": null,
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSpin": 0,
+            "goboAngle": 0
+           },
+           "ft-fx-21": {
+            "on": true,
+            "level": 65,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+             "kind": "still",
+             "a": {
+              "u": 0.8,
+              "v": 0.84,
+              "hM": 0
+             }
+            },
+            "speed": "normal",
+            "groupId": null,
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSpin": 0,
+            "goboAngle": 0
+           },
            "ft-fx-01": {
             "on": true,
             "level": 100,
@@ -12728,7 +13112,7 @@
        "description": "小さくまとめる",
        "useWhen": "通常案との比較用",
        "content": {
-        "note": "確認: 照明タブで、固定灯4本が色違い・強さ違いで床を照らす（模様「ブレイクアップ（中）」付き1本）。正面図・平面図・3Dの光だまり（設定ON）が一致する。演者05は台の上（床から0.5m）へ描かれる。最後に登録したカウンターが、手前の演者01を隠さず奥の演者05を隠す（正面・3D・作業灯ON/OFF）。環境設定「平面図の照明機材の白い枠を表示」をON/OFFし、灯体の淡い白枠だけが切り替わることを確かめる。選択中の金色の枠と正面・側面・3Dの灯体表示、再読み込み後の設定保持も確認する。環境設定「衣装を明かりの色で染める」を入れると、青い明かりの演者02（緑）と山吹の明かりの演者05（青）が沈み、白い明かりの演者01は色が変わらない。照明を編集したら「未適用・控え保存済み」、LXキュー適用後は「適用済み」を確認。適用しないで移って戻り、控えが残ること。「控え・書き出し」からファイルへ残せること。容量不足・別タブ更新では成功表示にならず、失敗の説明が残ること（ブラウザの隔離試験で確認）。L01を選んでソロ表示し、未選択L02の点灯ボタンが実キューのオン状態と「押すとオフ」を示すこと。ソロ自体は保存キューを変えず、ボタンで消灯した結果はソロ解除後にも残ること。",
+        "note": "確認: 照明タブで、固定灯4本が色違い・強さ違いで床を照らす（模様「ブレイクアップ（中）」付き1本）。正面図・平面図・3Dの光だまり（設定ON）が一致する。演者05は台の上（床から0.5m）へ描かれる。最後に登録したカウンターが、手前の演者01を隠さず奥の演者05を隠す（正面・3D・作業灯ON/OFF）。環境設定「平面図の照明機材の白い枠を表示」をON/OFFし、灯体の淡い白枠だけが切り替わることを確かめる。選択中の金色の枠と正面・側面・3Dの灯体表示、再読み込み後の設定保持も確認する。環境設定「衣装を明かりの色で染める」を入れると、青い明かりの演者02（緑）と山吹の明かりの演者05（青）が沈み、白い明かりの演者01は色が変わらない。照明を編集したら「未適用・控え保存済み」、LXキュー適用後は「適用済み」を確認。適用しないで移って戻り、控えが残ること。「控え・書き出し」からファイルへ残せること。容量不足・別タブ更新では成功表示にならず、失敗の説明が残ること（ブラウザの隔離試験で確認）。L01を選んでソロ表示し、未選択L02の点灯ボタンが実キューのオン状態と「押すとオフ」を示すこと。ソロ自体は保存キューを変えず、ボタンで消灯した結果はソロ解除後にも残ること。\n光の比較: 18〜21番は同じ色・強さ・広がり角。固定スポット、固定ウォッシュ、ムービングスポット、ムービングウォッシュの順。F-1の床奥で境界と重なりを平面・正面・3Dで比べる。17番までの旧灯体は光学区分なしの従来表示を保つ。",
         "background": "#40362d",
         "pieces": [
          {
@@ -12852,6 +13236,102 @@
            "at": "2026-09-18T00:00:00.000Z",
            "cue": {
             "lights": {
+             "ft-fx-18": {
+              "on": true,
+              "level": 65,
+              "color": "#f2ead6",
+              "surface": "floor",
+              "path": {
+               "kind": "still",
+               "a": {
+                "u": 0.2,
+                "v": 0.84,
+                "hM": 0
+               }
+              },
+              "speed": "normal",
+              "groupId": null,
+              "periodSec": null,
+              "offsetSec": 0,
+              "levelTo": null,
+              "beamDegTo": null,
+              "beamDeg": null,
+              "gobo": "none",
+              "goboSpin": 0,
+              "goboAngle": 0
+             },
+             "ft-fx-19": {
+              "on": true,
+              "level": 65,
+              "color": "#f2ead6",
+              "surface": "floor",
+              "path": {
+               "kind": "still",
+               "a": {
+                "u": 0.4,
+                "v": 0.84,
+                "hM": 0
+               }
+              },
+              "speed": "normal",
+              "groupId": null,
+              "periodSec": null,
+              "offsetSec": 0,
+              "levelTo": null,
+              "beamDegTo": null,
+              "beamDeg": null,
+              "gobo": "none",
+              "goboSpin": 0,
+              "goboAngle": 0
+             },
+             "ft-fx-20": {
+              "on": true,
+              "level": 65,
+              "color": "#f2ead6",
+              "surface": "floor",
+              "path": {
+               "kind": "still",
+               "a": {
+                "u": 0.6,
+                "v": 0.84,
+                "hM": 0
+               }
+              },
+              "speed": "normal",
+              "groupId": null,
+              "periodSec": null,
+              "offsetSec": 0,
+              "levelTo": null,
+              "beamDegTo": null,
+              "beamDeg": null,
+              "gobo": "none",
+              "goboSpin": 0,
+              "goboAngle": 0
+             },
+             "ft-fx-21": {
+              "on": true,
+              "level": 65,
+              "color": "#f2ead6",
+              "surface": "floor",
+              "path": {
+               "kind": "still",
+               "a": {
+                "u": 0.8,
+                "v": 0.84,
+                "hM": 0
+               }
+              },
+              "speed": "normal",
+              "groupId": null,
+              "periodSec": null,
+              "offsetSec": 0,
+              "levelTo": null,
+              "beamDegTo": null,
+              "beamDeg": null,
+              "gobo": "none",
+              "goboSpin": 0,
+              "goboAngle": 0
+             },
              "ft-fx-01": {
               "on": true,
               "level": 100,
@@ -12965,6 +13445,102 @@
          "lxEditing": null,
          "cue": {
           "lights": {
+           "ft-fx-18": {
+            "on": true,
+            "level": 65,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+             "kind": "still",
+             "a": {
+              "u": 0.2,
+              "v": 0.84,
+              "hM": 0
+             }
+            },
+            "speed": "normal",
+            "groupId": null,
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSpin": 0,
+            "goboAngle": 0
+           },
+           "ft-fx-19": {
+            "on": true,
+            "level": 65,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+             "kind": "still",
+             "a": {
+              "u": 0.4,
+              "v": 0.84,
+              "hM": 0
+             }
+            },
+            "speed": "normal",
+            "groupId": null,
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSpin": 0,
+            "goboAngle": 0
+           },
+           "ft-fx-20": {
+            "on": true,
+            "level": 65,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+             "kind": "still",
+             "a": {
+              "u": 0.6,
+              "v": 0.84,
+              "hM": 0
+             }
+            },
+            "speed": "normal",
+            "groupId": null,
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSpin": 0,
+            "goboAngle": 0
+           },
+           "ft-fx-21": {
+            "on": true,
+            "level": 65,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+             "kind": "still",
+             "a": {
+              "u": 0.8,
+              "v": 0.84,
+              "hM": 0
+             }
+            },
+            "speed": "normal",
+            "groupId": null,
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSpin": 0,
+            "goboAngle": 0
+           },
            "ft-fx-01": {
             "on": true,
             "level": 100,
@@ -13083,7 +13659,7 @@
        "description": "転換に余裕を持たせる",
        "useWhen": "転換に時間が必要なとき",
        "content": {
-        "note": "確認: 照明タブで、固定灯4本が色違い・強さ違いで床を照らす（模様「ブレイクアップ（中）」付き1本）。正面図・平面図・3Dの光だまり（設定ON）が一致する。演者05は台の上（床から0.5m）へ描かれる。最後に登録したカウンターが、手前の演者01を隠さず奥の演者05を隠す（正面・3D・作業灯ON/OFF）。環境設定「平面図の照明機材の白い枠を表示」をON/OFFし、灯体の淡い白枠だけが切り替わることを確かめる。選択中の金色の枠と正面・側面・3Dの灯体表示、再読み込み後の設定保持も確認する。環境設定「衣装を明かりの色で染める」を入れると、青い明かりの演者02（緑）と山吹の明かりの演者05（青）が沈み、白い明かりの演者01は色が変わらない。照明を編集したら「未適用・控え保存済み」、LXキュー適用後は「適用済み」を確認。適用しないで移って戻り、控えが残ること。「控え・書き出し」からファイルへ残せること。容量不足・別タブ更新では成功表示にならず、失敗の説明が残ること（ブラウザの隔離試験で確認）。L01を選んでソロ表示し、未選択L02の点灯ボタンが実キューのオン状態と「押すとオフ」を示すこと。ソロ自体は保存キューを変えず、ボタンで消灯した結果はソロ解除後にも残ること。",
+        "note": "確認: 照明タブで、固定灯4本が色違い・強さ違いで床を照らす（模様「ブレイクアップ（中）」付き1本）。正面図・平面図・3Dの光だまり（設定ON）が一致する。演者05は台の上（床から0.5m）へ描かれる。最後に登録したカウンターが、手前の演者01を隠さず奥の演者05を隠す（正面・3D・作業灯ON/OFF）。環境設定「平面図の照明機材の白い枠を表示」をON/OFFし、灯体の淡い白枠だけが切り替わることを確かめる。選択中の金色の枠と正面・側面・3Dの灯体表示、再読み込み後の設定保持も確認する。環境設定「衣装を明かりの色で染める」を入れると、青い明かりの演者02（緑）と山吹の明かりの演者05（青）が沈み、白い明かりの演者01は色が変わらない。照明を編集したら「未適用・控え保存済み」、LXキュー適用後は「適用済み」を確認。適用しないで移って戻り、控えが残ること。「控え・書き出し」からファイルへ残せること。容量不足・別タブ更新では成功表示にならず、失敗の説明が残ること（ブラウザの隔離試験で確認）。L01を選んでソロ表示し、未選択L02の点灯ボタンが実キューのオン状態と「押すとオフ」を示すこと。ソロ自体は保存キューを変えず、ボタンで消灯した結果はソロ解除後にも残ること。\n光の比較: 18〜21番は同じ色・強さ・広がり角。固定スポット、固定ウォッシュ、ムービングスポット、ムービングウォッシュの順。F-1の床奥で境界と重なりを平面・正面・3Dで比べる。17番までの旧灯体は光学区分なしの従来表示を保つ。",
         "background": "#40362d",
         "pieces": [
          {
@@ -13207,6 +13783,102 @@
            "at": "2026-09-18T00:00:00.000Z",
            "cue": {
             "lights": {
+             "ft-fx-18": {
+              "on": true,
+              "level": 65,
+              "color": "#f2ead6",
+              "surface": "floor",
+              "path": {
+               "kind": "still",
+               "a": {
+                "u": 0.2,
+                "v": 0.84,
+                "hM": 0
+               }
+              },
+              "speed": "normal",
+              "groupId": null,
+              "periodSec": null,
+              "offsetSec": 0,
+              "levelTo": null,
+              "beamDegTo": null,
+              "beamDeg": null,
+              "gobo": "none",
+              "goboSpin": 0,
+              "goboAngle": 0
+             },
+             "ft-fx-19": {
+              "on": true,
+              "level": 65,
+              "color": "#f2ead6",
+              "surface": "floor",
+              "path": {
+               "kind": "still",
+               "a": {
+                "u": 0.4,
+                "v": 0.84,
+                "hM": 0
+               }
+              },
+              "speed": "normal",
+              "groupId": null,
+              "periodSec": null,
+              "offsetSec": 0,
+              "levelTo": null,
+              "beamDegTo": null,
+              "beamDeg": null,
+              "gobo": "none",
+              "goboSpin": 0,
+              "goboAngle": 0
+             },
+             "ft-fx-20": {
+              "on": true,
+              "level": 65,
+              "color": "#f2ead6",
+              "surface": "floor",
+              "path": {
+               "kind": "still",
+               "a": {
+                "u": 0.6,
+                "v": 0.84,
+                "hM": 0
+               }
+              },
+              "speed": "normal",
+              "groupId": null,
+              "periodSec": null,
+              "offsetSec": 0,
+              "levelTo": null,
+              "beamDegTo": null,
+              "beamDeg": null,
+              "gobo": "none",
+              "goboSpin": 0,
+              "goboAngle": 0
+             },
+             "ft-fx-21": {
+              "on": true,
+              "level": 65,
+              "color": "#f2ead6",
+              "surface": "floor",
+              "path": {
+               "kind": "still",
+               "a": {
+                "u": 0.8,
+                "v": 0.84,
+                "hM": 0
+               }
+              },
+              "speed": "normal",
+              "groupId": null,
+              "periodSec": null,
+              "offsetSec": 0,
+              "levelTo": null,
+              "beamDegTo": null,
+              "beamDeg": null,
+              "gobo": "none",
+              "goboSpin": 0,
+              "goboAngle": 0
+             },
              "ft-fx-01": {
               "on": true,
               "level": 100,
@@ -13320,6 +13992,102 @@
          "lxEditing": null,
          "cue": {
           "lights": {
+           "ft-fx-18": {
+            "on": true,
+            "level": 65,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+             "kind": "still",
+             "a": {
+              "u": 0.2,
+              "v": 0.84,
+              "hM": 0
+             }
+            },
+            "speed": "normal",
+            "groupId": null,
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSpin": 0,
+            "goboAngle": 0
+           },
+           "ft-fx-19": {
+            "on": true,
+            "level": 65,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+             "kind": "still",
+             "a": {
+              "u": 0.4,
+              "v": 0.84,
+              "hM": 0
+             }
+            },
+            "speed": "normal",
+            "groupId": null,
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSpin": 0,
+            "goboAngle": 0
+           },
+           "ft-fx-20": {
+            "on": true,
+            "level": 65,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+             "kind": "still",
+             "a": {
+              "u": 0.6,
+              "v": 0.84,
+              "hM": 0
+             }
+            },
+            "speed": "normal",
+            "groupId": null,
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSpin": 0,
+            "goboAngle": 0
+           },
+           "ft-fx-21": {
+            "on": true,
+            "level": 65,
+            "color": "#f2ead6",
+            "surface": "floor",
+            "path": {
+             "kind": "still",
+             "a": {
+              "u": 0.8,
+              "v": 0.84,
+              "hM": 0
+             }
+            },
+            "speed": "normal",
+            "groupId": null,
+            "periodSec": null,
+            "offsetSec": 0,
+            "levelTo": null,
+            "beamDegTo": null,
+            "beamDeg": null,
+            "gobo": "none",
+            "goboSpin": 0,
+            "goboAngle": 0
+           },
            "ft-fx-01": {
             "on": true,
             "level": 100,
@@ -13434,7 +14202,7 @@
       }
      ]
     },
-    "note": "確認: 照明タブで、固定灯4本が色違い・強さ違いで床を照らす（模様「ブレイクアップ（中）」付き1本）。正面図・平面図・3Dの光だまり（設定ON）が一致する。演者05は台の上（床から0.5m）へ描かれる。最後に登録したカウンターが、手前の演者01を隠さず奥の演者05を隠す（正面・3D・作業灯ON/OFF）。環境設定「平面図の照明機材の白い枠を表示」をON/OFFし、灯体の淡い白枠だけが切り替わることを確かめる。選択中の金色の枠と正面・側面・3Dの灯体表示、再読み込み後の設定保持も確認する。環境設定「衣装を明かりの色で染める」を入れると、青い明かりの演者02（緑）と山吹の明かりの演者05（青）が沈み、白い明かりの演者01は色が変わらない。照明を編集したら「未適用・控え保存済み」、LXキュー適用後は「適用済み」を確認。適用しないで移って戻り、控えが残ること。「控え・書き出し」からファイルへ残せること。容量不足・別タブ更新では成功表示にならず、失敗の説明が残ること（ブラウザの隔離試験で確認）。L01を選んでソロ表示し、未選択L02の点灯ボタンが実キューのオン状態と「押すとオフ」を示すこと。ソロ自体は保存キューを変えず、ボタンで消灯した結果はソロ解除後にも残ること。",
+    "note": "確認: 照明タブで、固定灯4本が色違い・強さ違いで床を照らす（模様「ブレイクアップ（中）」付き1本）。正面図・平面図・3Dの光だまり（設定ON）が一致する。演者05は台の上（床から0.5m）へ描かれる。最後に登録したカウンターが、手前の演者01を隠さず奥の演者05を隠す（正面・3D・作業灯ON/OFF）。環境設定「平面図の照明機材の白い枠を表示」をON/OFFし、灯体の淡い白枠だけが切り替わることを確かめる。選択中の金色の枠と正面・側面・3Dの灯体表示、再読み込み後の設定保持も確認する。環境設定「衣装を明かりの色で染める」を入れると、青い明かりの演者02（緑）と山吹の明かりの演者05（青）が沈み、白い明かりの演者01は色が変わらない。照明を編集したら「未適用・控え保存済み」、LXキュー適用後は「適用済み」を確認。適用しないで移って戻り、控えが残ること。「控え・書き出し」からファイルへ残せること。容量不足・別タブ更新では成功表示にならず、失敗の説明が残ること（ブラウザの隔離試験で確認）。L01を選んでソロ表示し、未選択L02の点灯ボタンが実キューのオン状態と「押すとオフ」を示すこと。ソロ自体は保存キューを変えず、ボタンで消灯した結果はソロ解除後にも残ること。\n光の比較: 18〜21番は同じ色・強さ・広がり角。固定スポット、固定ウォッシュ、ムービングスポット、ムービングウォッシュの順。F-1の床奥で境界と重なりを平面・正面・3Dで比べる。17番までの旧灯体は光学区分なしの従来表示を保つ。",
     "background": "#40362d",
     "pieces": [
      {
@@ -16724,6 +17492,78 @@
       "role": "テスト",
       "origin": "test-show",
       "safetyStatus": "concept-only"
+     },
+     {
+      "id": "ft-fx-18",
+      "no": 18,
+      "name": "比較・固定スポット",
+      "mount": {
+       "type": "truss",
+       "trussId": "ft-truss-1",
+       "u": 0.15
+      },
+      "kind": "fixed",
+      "beamDeg": 28,
+      "fixtureType": "profile-zoom",
+      "family": "profile",
+      "role": "テスト",
+      "origin": "test-show",
+      "safetyStatus": "concept-only",
+      "opticalType": "spot"
+     },
+     {
+      "id": "ft-fx-19",
+      "no": 19,
+      "name": "比較・固定ウォッシュ",
+      "mount": {
+       "type": "truss",
+       "trussId": "ft-truss-1",
+       "u": 0.35
+      },
+      "kind": "fixed",
+      "beamDeg": 28,
+      "fixtureType": "fresnel",
+      "family": "profile",
+      "role": "テスト",
+      "origin": "test-show",
+      "safetyStatus": "concept-only",
+      "opticalType": "wash"
+     },
+     {
+      "id": "ft-fx-20",
+      "no": 20,
+      "name": "比較・ムービングスポット",
+      "mount": {
+       "type": "truss",
+       "trussId": "ft-truss-2",
+       "u": 0.65
+      },
+      "kind": "moving",
+      "beamDeg": 28,
+      "fixtureType": "moving-profile",
+      "family": "moving",
+      "role": "テスト",
+      "origin": "test-show",
+      "safetyStatus": "concept-only",
+      "opticalType": "spot"
+     },
+     {
+      "id": "ft-fx-21",
+      "no": 21,
+      "name": "比較・ムービングウォッシュ",
+      "mount": {
+       "type": "truss",
+       "trussId": "ft-truss-2",
+       "u": 0.85
+      },
+      "kind": "moving",
+      "beamDeg": 28,
+      "fixtureType": "moving-wash",
+      "family": "moving",
+      "role": "テスト",
+      "origin": "test-show",
+      "safetyStatus": "concept-only",
+      "opticalType": "wash"
      }
     ]
    },
@@ -17204,6 +18044,102 @@
        "at": "2026-09-18T00:00:00.000Z",
        "cue": {
         "lights": {
+         "ft-fx-18": {
+          "on": true,
+          "level": 65,
+          "color": "#f2ead6",
+          "surface": "floor",
+          "path": {
+           "kind": "still",
+           "a": {
+            "u": 0.2,
+            "v": 0.84,
+            "hM": 0
+           }
+          },
+          "speed": "normal",
+          "groupId": null,
+          "periodSec": null,
+          "offsetSec": 0,
+          "levelTo": null,
+          "beamDegTo": null,
+          "beamDeg": null,
+          "gobo": "none",
+          "goboSpin": 0,
+          "goboAngle": 0
+         },
+         "ft-fx-19": {
+          "on": true,
+          "level": 65,
+          "color": "#f2ead6",
+          "surface": "floor",
+          "path": {
+           "kind": "still",
+           "a": {
+            "u": 0.4,
+            "v": 0.84,
+            "hM": 0
+           }
+          },
+          "speed": "normal",
+          "groupId": null,
+          "periodSec": null,
+          "offsetSec": 0,
+          "levelTo": null,
+          "beamDegTo": null,
+          "beamDeg": null,
+          "gobo": "none",
+          "goboSpin": 0,
+          "goboAngle": 0
+         },
+         "ft-fx-20": {
+          "on": true,
+          "level": 65,
+          "color": "#f2ead6",
+          "surface": "floor",
+          "path": {
+           "kind": "still",
+           "a": {
+            "u": 0.6,
+            "v": 0.84,
+            "hM": 0
+           }
+          },
+          "speed": "normal",
+          "groupId": null,
+          "periodSec": null,
+          "offsetSec": 0,
+          "levelTo": null,
+          "beamDegTo": null,
+          "beamDeg": null,
+          "gobo": "none",
+          "goboSpin": 0,
+          "goboAngle": 0
+         },
+         "ft-fx-21": {
+          "on": true,
+          "level": 65,
+          "color": "#f2ead6",
+          "surface": "floor",
+          "path": {
+           "kind": "still",
+           "a": {
+            "u": 0.8,
+            "v": 0.84,
+            "hM": 0
+           }
+          },
+          "speed": "normal",
+          "groupId": null,
+          "periodSec": null,
+          "offsetSec": 0,
+          "levelTo": null,
+          "beamDegTo": null,
+          "beamDeg": null,
+          "gobo": "none",
+          "goboSpin": 0,
+          "goboAngle": 0
+         },
          "ft-fx-01": {
           "on": true,
           "level": 100,
@@ -17317,6 +18253,102 @@
      "lxEditing": null,
      "cue": {
       "lights": {
+       "ft-fx-18": {
+        "on": true,
+        "level": 65,
+        "color": "#f2ead6",
+        "surface": "floor",
+        "path": {
+         "kind": "still",
+         "a": {
+          "u": 0.2,
+          "v": 0.84,
+          "hM": 0
+         }
+        },
+        "speed": "normal",
+        "groupId": null,
+        "periodSec": null,
+        "offsetSec": 0,
+        "levelTo": null,
+        "beamDegTo": null,
+        "beamDeg": null,
+        "gobo": "none",
+        "goboSpin": 0,
+        "goboAngle": 0
+       },
+       "ft-fx-19": {
+        "on": true,
+        "level": 65,
+        "color": "#f2ead6",
+        "surface": "floor",
+        "path": {
+         "kind": "still",
+         "a": {
+          "u": 0.4,
+          "v": 0.84,
+          "hM": 0
+         }
+        },
+        "speed": "normal",
+        "groupId": null,
+        "periodSec": null,
+        "offsetSec": 0,
+        "levelTo": null,
+        "beamDegTo": null,
+        "beamDeg": null,
+        "gobo": "none",
+        "goboSpin": 0,
+        "goboAngle": 0
+       },
+       "ft-fx-20": {
+        "on": true,
+        "level": 65,
+        "color": "#f2ead6",
+        "surface": "floor",
+        "path": {
+         "kind": "still",
+         "a": {
+          "u": 0.6,
+          "v": 0.84,
+          "hM": 0
+         }
+        },
+        "speed": "normal",
+        "groupId": null,
+        "periodSec": null,
+        "offsetSec": 0,
+        "levelTo": null,
+        "beamDegTo": null,
+        "beamDeg": null,
+        "gobo": "none",
+        "goboSpin": 0,
+        "goboAngle": 0
+       },
+       "ft-fx-21": {
+        "on": true,
+        "level": 65,
+        "color": "#f2ead6",
+        "surface": "floor",
+        "path": {
+         "kind": "still",
+         "a": {
+          "u": 0.8,
+          "v": 0.84,
+          "hM": 0
+         }
+        },
+        "speed": "normal",
+        "groupId": null,
+        "periodSec": null,
+        "offsetSec": 0,
+        "levelTo": null,
+        "beamDegTo": null,
+        "beamDeg": null,
+        "gobo": "none",
+        "goboSpin": 0,
+        "goboAngle": 0
+       },
        "ft-fx-01": {
         "on": true,
         "level": 100,

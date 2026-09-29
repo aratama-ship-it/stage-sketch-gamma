@@ -289,6 +289,8 @@
         kind: moving ? "moving" : "fixed",
         beamDeg: options.beamDeg || (fixtureType === "profile-zoom" ? 24 : fixtureType === "moving-profile" ? 18 : 36),
         fixtureType, family, role, origin: "built-in-venue-concept", safetyStatus: "concept-only",
+        ...(family === "profile" || fixtureType === "moving-profile" ? { opticalType: "spot" }
+          : family === "wash" ? { opticalType: "wash" } : {}),
       });
       defaultAim[id] = aim;
       (options.groups || []).forEach((name) => { if (groups[name]) groups[name].push(id); });

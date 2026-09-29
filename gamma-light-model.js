@@ -45,6 +45,7 @@
       if (!object(fixture.mount) || !['truss','floor','side','front','cyc','legacy-panel'].includes(fixture.mount.type)) throw Error('対応していない灯体の取り付け方です');
       if (fixture.mount.type==='truss' && !trusses.has(fixture.mount.trussId)) throw Error('灯体が参照するバトンがありません');
       if (fixture.colorMode!==undefined && !['mix','wheel'].includes(fixture.colorMode)) throw Error('灯体の色の作り方を確認してください');
+      if (fixture.opticalType!==undefined && !['spot','wash'].includes(fixture.opticalType)) throw Error('灯体の光の種類を確認してください');
       if (fixture.mount.type==='legacy-panel') {
         if (design.version!==2 || !design.migration) throw Error('旧照明の取り付け位置に移行記録がありません');
         const mount=fixture.mount;

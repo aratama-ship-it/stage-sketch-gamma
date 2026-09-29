@@ -65,7 +65,7 @@ if (PROP_SHAPES.length < 10) throw new Error(`小道具の形の一覧が取れ�
 
 // v4（2026-09-24）: 転換0秒をなくしてシーンの秒数が変わったので上げる（一度開いた棚の複製は自動で差し替わらないため）
 // v21（2026-09-29）: 持ち物が要る姿勢を A 群から外した（姿勢の追加に備える）
-const PROJECT_ID = "gamma-feature-test-v21";
+const PROJECT_ID = "gamma-feature-test-v22";
 const CREATED = "2026-09-18T00:00:00.000Z";
 const STAGE = { width: 12, depth: 9 };      // proscenium / mid の実寸（stage-venues.js）
 const COLORS = ["#a84b26", "#77865f", "#9c823f", "#6d6657", "#315b8a", "#b0533f", "#4f7d6f", "#8a6a9c",
@@ -572,7 +572,7 @@ scene("e3", "E-2 光の意図（データ）", 1, `${CHECK}このシーンは li
 section("f", "F 照明デザイン（機材配置・照明タブ）");
 const fixtureIds = { p1: "ft-fx-01", p2: "ft-fx-02", p3: "ft-fx-03", p4: "ft-fx-04", m1: "ft-fx-05", m2: "ft-fx-06", m3: "ft-fx-07", m4: "ft-fx-08", fr1: "ft-fx-09", fr2: "ft-fx-10", sL: "ft-fx-11", sR: "ft-fx-12", fl: "ft-fx-13", cyc: "ft-fx-14", laser: "ft-fx-15",
   /* ★段階5①（2026-09-19）: レーザーを舞台モードへ出す試験用。fan/sheet/tunnel の3種を並べる。 */
-  laser2: "ft-fx-16", laser3: "ft-fx-17" };
+  laser2: "ft-fx-16", laser3: "ft-fx-17", o1: "ft-fx-18", o2: "ft-fx-19", o3: "ft-fx-20", o4: "ft-fx-21" };
 scene("f1", "F-1 静止のキュー（色・強さ・模様・カッター・衣装の染め）", 1, `${CHECK}照明タブで、固定灯4本が色違い・強さ違いで床を照らす（模様「ブレイクアップ（中）」付き1本）。正面図・平面図・3Dの光だまり（設定ON）が一致する。演者05は台の上（床から0.5m）へ描かれる。最後に登録したカウンターが、手前の演者01を隠さず奥の演者05を隠す（正面・3D・作業灯ON/OFF）。環境設定「平面図の照明機材の白い枠を表示」をON/OFFし、灯体の淡い白枠だけが切り替わることを確かめる。選択中の金色の枠と正面・側面・3Dの灯体表示、再読み込み後の設定保持も確認する。環境設定「衣装を明かりの色で染める」を入れると、青い明かりの演者02（緑）と山吹の明かりの演者05（青）が沈み、白い明かりの演者01は色が変わらない。照明を編集したら「未適用・控え保存済み」、LXキュー適用後は「適用済み」を確認。適用しないで移って戻り、控えが残ること。「控え・書き出し」からファイルへ残せること。容量不足・別タブ更新では成功表示にならず、失敗の説明が残ること（ブラウザの隔離試験で確認）。L01を選んでソロ表示し、未選択L02の点灯ボタンが実キューのオン状態と「押すとオフ」を示すこと。ソロ自体は保存キューを変えず、ボタンで消灯した結果はソロ解除後にも残ること。`,
   /* ★G-D（2026-09-19）: 演者05（青 #315b8a）を山吹の灯（p4・模様つき）の中へ置く＝青い衣装が沈む見本。 */
   [perf("f1", "p01", 0.45, 0.7, { color: "#655b4c" }), perf("f1", "p02", 0.7, 0.55), setPiece("f1", "block", 0.5, 0.3), perf("f1", "p05", 0.5, 0.3, { base: 0.5 }), setPiece("f1", "block2", 0.5, 0.62, { setId: null, originId: null, name: "配色確認用カウンター", color: "#27384a", dims: { w: 5, d: 0.65, h: 1 } })]);
@@ -582,6 +582,7 @@ scene("f3", "F-3 ストロボと順送り・実機モード", 1, `${CHECK}くっ
   [perf("f3", "p04", 0.35, 0.6, { pose: "dance2" }), perf("f3", "p05", 0.65, 0.6, { pose: "dance3" })]);
 scene("f4", "F-4 レーザー（ビーム・シート・トンネル）・ホリゾント・霞", 1, `${CHECK}レーザー1本（床置き）、LEDホリゾント列（下段）が青、霞（haze）70。客席へ向ける制約（surface: house）を持つ前明かり1本。`,
   [perf("f4", "p06", 0.5, 0.5, { pose: "open" })]);
+rows.find((row) => row.title?.startsWith("F-1")).note += "\n光の比較: 18〜21番は同じ色・強さ・広がり角。固定スポット、固定ウォッシュ、ムービングスポット、ムービングウォッシュの順。F-1の床奥で境界と重なりを平面・正面・3Dで比べる。17番までの旧灯体は光学区分なしの従来表示を保つ。";
 
 /* ======================= G 図への書き込み ======================= */
 section("g", "G 図への書き込み（付箋・ペン・矢印・文字・写真・動線）");
@@ -763,7 +764,7 @@ for (const row of rows) {
 
 /* ---------- 照明デザイン（機材配置・照明タブ） ---------- */
 const sceneRows = rows.filter((r) => r.kind === "scene");
-const fx = (id, no, mount, name, kind, beamDeg, extra = {}) => ({ id, no, name, mount, kind, beamDeg, fixtureType: extra.fixtureType || (kind === "moving" ? "moving-profile" : "profile-zoom"), family: kind === "moving" ? "moving" : "profile", role: extra.role || "テスト", origin: "test-show", safetyStatus: "concept-only" });
+const fx = (id, no, mount, name, kind, beamDeg, extra = {}) => ({ id, no, name, mount, kind, beamDeg, fixtureType: extra.fixtureType || (kind === "moving" ? "moving-profile" : "profile-zoom"), family: kind === "moving" ? "moving" : "profile", role: extra.role || "テスト", origin: "test-show", safetyStatus: "concept-only", ...(extra.opticalType ? { opticalType: extra.opticalType } : {}) });
 const fixtures = [
   fx(fixtureIds.p1, 1, { type: "truss", trussId: "ft-truss-1", u: 0.2 }, "固定 01", "fixed", 26),
   fx(fixtureIds.p2, 2, { type: "truss", trussId: "ft-truss-1", u: 0.4 }, "固定 02", "fixed", 26),
@@ -782,10 +783,18 @@ const fixtures = [
   fx(fixtureIds.laser, 15, { type: "floor", u: 0.85, v: 0.1 }, "レーザー 15（ビーム／ファン）", "laser", 4, { fixtureType: "laser" }),
   fx(fixtureIds.laser2, 16, { type: "floor", u: 0.15, v: 0.1 }, "レーザー 16（シート）", "laser", 4, { fixtureType: "laser" }),
   fx(fixtureIds.laser3, 17, { type: "floor", u: 0.5, v: 0.9 }, "レーザー 17（トンネル）", "laser", 4, { fixtureType: "laser" }),
+  fx(fixtureIds.o1, 18, { type: "truss", trussId: "ft-truss-1", u: 0.15 }, "比較・固定スポット", "fixed", 28, { fixtureType: "profile-zoom", opticalType: "spot" }),
+  fx(fixtureIds.o2, 19, { type: "truss", trussId: "ft-truss-1", u: 0.35 }, "比較・固定ウォッシュ", "fixed", 28, { fixtureType: "fresnel", opticalType: "wash" }),
+  fx(fixtureIds.o3, 20, { type: "truss", trussId: "ft-truss-2", u: 0.65 }, "比較・ムービングスポット", "moving", 28, { fixtureType: "moving-profile", opticalType: "spot" }),
+  fx(fixtureIds.o4, 21, { type: "truss", trussId: "ft-truss-2", u: 0.85 }, "比較・ムービングウォッシュ", "moving", 28, { fixtureType: "moving-wash", opticalType: "wash" }),
 ];
 const cue = (over = {}) => ({ on: true, level: 100, color: "#f2ead6", surface: "floor", path: { kind: "still", a: { u: 0.5, v: 0.5, hM: 0 } }, speed: "normal", groupId: null, periodSec: null, offsetSec: 0, levelTo: null, beamDegTo: null, beamDeg: null, gobo: "none", goboSpin: 0, goboAngle: 0, ...over });
 const lightCues = {
   "ft-scene-f1": { lights: {
+    [fixtureIds.o1]: cue({ level: 65, path: { kind: "still", a: { u: 0.2, v: 0.84, hM: 0 } } }),
+    [fixtureIds.o2]: cue({ level: 65, path: { kind: "still", a: { u: 0.4, v: 0.84, hM: 0 } } }),
+    [fixtureIds.o3]: cue({ level: 65, path: { kind: "still", a: { u: 0.6, v: 0.84, hM: 0 } } }),
+    [fixtureIds.o4]: cue({ level: 65, path: { kind: "still", a: { u: 0.8, v: 0.84, hM: 0 } } }),
     [fixtureIds.p1]: cue({ color: "#f2ead6", level: 100, path: { kind: "still", a: { u: 0.3, v: 0.55, hM: 0 } } }),
     /* ★カッター（2026-09-19）: 舞台モードの「光だまり」に模様と切りを入れたので、試す灯を1つ持つ。
        横に広く・縦を半分に切り、20度回す。平面図で四角く見えれば効いている。 */
