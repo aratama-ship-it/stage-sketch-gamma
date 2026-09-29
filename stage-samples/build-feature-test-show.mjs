@@ -118,6 +118,10 @@ reg("cane", "cane", "ハンドバランス用cane", "#c9b48a", { dims: { h: 1.2,
 reg("car", "car", "車", "#b0533f", { dims: { w: 1.7, d: 3.8, h: 1.4, lift: 0 } });
 reg("point-bulb", "prop", "電球（点光源）", "#ffd58a", { propShape: "bulb", flown: true, dims: { w: 0.12, d: 0.12, h: 0.20, lift: 1.8 } });
 reg("bar-counter", "prop", "長いバーカウンター（回転プレビュー）", "#8b6a3a", { propShape: "counter", dims: { w: 4.8, d: 0.6, h: 1.1, lift: 0 } });
+// 2026-09-29 第2回: 吊り器具の小道具は地上高（lift）を持つ登録にする（無登録の駒では lift が読み込みで落ちる）
+reg("lyra-a", "prop", "リラ（吊り器具・地上高1.6m）", "#c0c0c0", { propShape: "aerialhoop", flown: true, wires: 1, dims: { w: 1, d: 0.06, h: 1.4, lift: 1.6 } });
+reg("lyra-b", "prop", "リラ（座る姿勢）", "#c0c0c0", { propShape: "aerialhoop", flown: true, wires: 1, dims: { w: 1, d: 0.06, h: 1.4, lift: 1.6 } });
+reg("hammock", "prop", "ハンモック（座る姿勢・地上高1.8m）", "#b7a4c8", { propShape: "aerialhammock", flown: true, wires: 1, dims: { w: 1.2, d: 0.15, h: 2.3, lift: 1.8 } });
 reg("flown", "block", "吊り台（地上高3m）", "#e2d6c0", { dims: { w: 1.2, d: 0.8, h: 0.3, lift: 3 }, flown: true, wires: 1 });
 // 小道具（登録は持たせる6つだけ。全形は無登録の駒として C-3/C-4 に並べる）
 const REGISTERED_PROPS = ["box", "ball", "umbrella", "mask", "club", "flag"];
@@ -245,11 +249,14 @@ section("a", "A 演者と姿勢");
 const A_SCENE_CAPS = [78, 79];
 const A_POSES = A_SCENE_CAPS[0] + A_SCENE_CAPS[1];
 // 階段専用は C-4、手持ち楽器の自動姿勢は C-2 の「持つ」操作で検証する。
-/* 2026-09-29: 持ち物が要る姿勢（POSE_PROPS の鍵）は、物なしで A 群に並べても読めないので A 群・J-1 から外す
-   （C-2 で物と一緒に確認する）。姿勢が 210 件を超えても試験場が止まらないようにするため。 */
+/* 2026-09-29: 持ち物が要る姿勢（POSE_PROPS の鍵）と、器具へ乗ったときだけ選ぶ姿勢
+   （MOUNT_POSES の値）は、物なしで A 群に並べても読めないので A 群・J-1 から外す。
+   持ち物は C-2、器具姿勢は C-7 で物と一緒に確認する。 */
 const posePropsStart = sketch.indexOf("const POSE_PROPS = {");
 const POSE_PROPS_IDS = new Set([...sketch.slice(posePropsStart, sketch.indexOf("};", posePropsStart)).matchAll(/^\s+([a-z0-9_]+): \[/gm)].map((m) => m[1]));
-const GENERAL_POSES = POSES.filter((id) => id !== "stairs_sit" && !HELD_INSTRUMENT_POSE_IDS.has(id) && !POSE_PROPS_IDS.has(id));
+const mountPosesStart = sketch.indexOf("const MOUNT_POSES = {");
+const MOUNT_POSE_IDS = new Set([...sketch.slice(mountPosesStart, sketch.indexOf("};", mountPosesStart)).matchAll(/"([a-z0-9_-]+)"/g)].map((m) => m[1]));
+const GENERAL_POSES = POSES.filter((id) => id !== "stairs_sit" && !HELD_INSTRUMENT_POSE_IDS.has(id) && !POSE_PROPS_IDS.has(id) && !MOUNT_POSE_IDS.has(id));
 // あふれた姿勢は、文脈ヘルプの駒3つ → J-1 の演者50人の順に割り当てる
 const HELP_POSES = GENERAL_POSES.slice(A_POSES, A_POSES + 3);
 const POSE_OVERFLOW = GENERAL_POSES.slice(A_POSES + 3);
@@ -531,7 +538,9 @@ section("c", "C 舞台セット・小道具・空中");
     relProp("column", "column", 0.40, 0.88, { w: 0.6, d: 0.6, h: 4 }, "#9a9080", "柱（もたれる）"), perf("c6", null, 0.40 + 0.46 / 12.4, 0.88, { pose: "lean_wall", facing: 0, name: "柱にもたれる" }),
     relProp("motorcycle", "motorcycle", 0.62, 0.88, { w: 0.8, d: 2.1, h: 1.1 }, "#5c5c66", "バイク（跨る）"), perf("c6", null, 0.62, 0.88, { pose: "ride_astride", name: "バイクに跨る" }),
     relProp("straps", "aerialstraps", 0.80, 0.86, { w: 0.15, d: 0.06, h: 2.5 }, "#d6dce2", "ストラップ（吊り器具）"), perf("c6", null, 0.80, 0.86, { pose: "straps_crucifix", name: "ストラップで十字" }),
-    relProp("lyra", "aerialhoop", 0.93, 0.86, { w: 1, d: 0.06, h: 1.4, lift: 1.6 }, "#c0c0c0", "リラ（吊り器具・地上高1.6m）"), perf("c6", null, 0.93, 0.86, { pose: "aerial_invert_straddle", name: "リラで逆さ" }),
+    setPiece("c6", "lyra-a", 0.93, 0.86), perf("c6", null, 0.93, 0.86, { pose: "aerial_invert_straddle", name: "リラで逆さ" }),
+    setPiece("c6", "lyra-b", 0.86, 0.86), perf("c6", null, 0.86, 0.86, { pose: "lyra_sit", name: "リラに座る" }),
+    setPiece("c6", "hammock", 0.72, 0.86), perf("c6", null, 0.72, 0.86, { pose: "hammock_sit", name: "ハンモックに座る" }),
   );
   scene("c6", "C-7 壁の向き（0・45・90度・3D検証）", 1,
     `${CHECK}同じ壁を0度・45度・90度で並べた（2026-09-20、3Dが駒の向きを無視していた不具合の再発防止用）。正面図・平面図・3Dの3つを見比べて、どれでも同じ向きに見えることを確認する。右端（90度）は真横を向くため、正面図では細長い線に、3Dでも薄い面にしか見えないのが正解。その90度の壁にだけ絵（格子模様）を映してあり、正しく回っていれば絵もほとんど見えなくなる。もし3Dで正面を向いた厚い壁のまま絵がはっきり見えていたら、向きが無視されている退行のサイン。\n2026-09-29: 手前の列に 檻（中の演者は床に立つ）・柱（右の演者が「壁にもたれる」で左肩を柱へ）・バイク（跨って腰が座面）・ストラップとリラ（近くの演者が吊られ、姿勢の窓に吊りの組が出る）。`,

@@ -126,8 +126,13 @@ test("器具に乗った演者の姿勢の組は本体にあり、基準点が�
         assert.ok(hands.some((w) => Math.abs(w[1] - 1.15) <= 0.05), `${id} は握る手首が y≈1.15（${JSON.stringify(hands)}）`);
       }
       if (mount === "trapeze") {
-        const feet = [joint(id, "toL"), joint(id, "toR"), joint(id, "anL"), joint(id, "anR")].filter(Boolean);
-        assert.ok(feet.length && Math.min(...feet.map((f) => f[1])) <= 0.06, `${id} は足の裏がバーの高さ y≈0`);
+        if (id === "trapeze_catch_hang") {
+          const knees = [joint(id, "knL"), joint(id, "knR")].filter(Boolean);
+          assert.ok(knees.length === 2 && knees.every((k) => Math.abs(k[1]) <= 0.01), `${id} は両膝がバーの高さ y=0`);
+        } else {
+          const feet = [joint(id, "toL"), joint(id, "toR"), joint(id, "anL"), joint(id, "anR")].filter(Boolean);
+          assert.ok(feet.length && Math.min(...feet.map((f) => f[1])) <= 0.06, `${id} は足の裏がバーの高さ y≈0`);
+        }
       }
       if (mount === "pole") {
         const grips = ["wrL", "wrR", "knL", "knR", "anL", "anR"].map((k) => joint(id, k)).filter(Boolean);

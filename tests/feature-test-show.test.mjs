@@ -110,6 +110,16 @@ test("機能テスト用ショー: C-6 に円形台と角・中央の比較が�
   assert.ok(c6.pieces.some((piece) => piece.name === "中央の比較"));
 });
 
+test("機能テスト用ショー: C-7 にリラ座りとハンモック座りの確認組がある", () => {
+  const c7 = scenes.find((scene) => scene.id === "ft-scene-c6");
+  assert.ok(c7 && /C-7/.test(c7.title));
+  for (const [shape, pose, u] of [["aerialhoop", "lyra_sit", 0.86], ["aerialhammock", "hammock_sit", 0.72]]) {
+    const apparatus = c7.pieces.find((piece) => piece.propShape === shape && piece.u === u);
+    const performer = c7.pieces.find((piece) => piece.type === "performer" && piece.pose === pose && piece.u === u && piece.v === 0.86);
+    assert.ok(apparatus && performer, `${shape}: 器具と ${pose} の演者が同じ位置にある`);
+  }
+});
+
 test("機能テスト用ショー: IDの一意性と参照", () => {
   const ids = new Set();
   const unique = (id, label) => { assert.equal(typeof id, "string", label); assert.ok(!ids.has(id), `${label}: id重複 ${id}`); ids.add(id); };
@@ -151,11 +161,14 @@ test("機能テスト用ショー: 本体の定数と一致（姿勢・種類・
     if (piece.propShape) assert.ok(PROP_SHAPES.has(piece.propShape), `小道具 ${piece.propShape}`);
     for (const text of scene.screenTexts || []) assert.ok(SCREEN_FONTS.has(text.font), `書体 ${text.font}`);
   }
-  // 2026-09-29: 持ち物が要る姿勢（POSE_PROPS の鍵）は物なしで並べても読めないので A 群から外した（C-2 に見本）。
+  // 2026-09-29: 持ち物姿勢と器具に乗る姿勢は、物なしで並べても読めないので A 群から外した（C-2／C-7 に見本）。
   const posePropsStart = sketch.indexOf("const POSE_PROPS = {");
   const POSE_PROPS_IDS = new Set([...sketch.slice(posePropsStart, sketch.indexOf("};", posePropsStart)).matchAll(/^\s+([a-z0-9_]+): \[/gm)].map((m) => m[1]));
   assert.ok(POSE_PROPS_IDS.size >= 40, "POSE_PROPS の抽出");
-  for (const pose of POSES) if (!HELD_INSTRUMENT_POSES.has(pose) && !POSE_PROPS_IDS.has(pose))
+  const mountPosesStart = sketch.indexOf("const MOUNT_POSES = {");
+  const MOUNT_POSE_IDS = new Set([...sketch.slice(mountPosesStart, sketch.indexOf("};", mountPosesStart)).matchAll(/"([a-z0-9_-]+)"/g)].map((m) => m[1]));
+  assert.ok(MOUNT_POSE_IDS.size >= 10, "MOUNT_POSES の値を抽出");
+  for (const pose of POSES) if (!HELD_INSTRUMENT_POSES.has(pose) && !POSE_PROPS_IDS.has(pose) && !MOUNT_POSE_IDS.has(pose))
     assert.ok(usedPoses.has(pose), `姿勢 ${pose} を置いたシーンが無い（本体に姿勢が増えたら生成し直す）`);
   const usedShapes = new Set();
   for (const scene of scenes) for (const piece of scene.pieces) if (piece.type === "prop") usedShapes.add(piece.propShape || project.sets.find((s) => s.id === piece.setId)?.propShape);

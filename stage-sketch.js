@@ -7094,6 +7094,191 @@
       knL: [-0.12, 0.24, 0.15], anL: [-0.13, 0.04, 0.02], toL: [-0.13, 0.012, 0.095],
       knR: [0.10, 0.23, -0.145], anR: [0.12, 0.04, -0.29], toR: [0.12, 0.012, -0.215],
     }, { wide: [0.707, 0, -0.707], face: [0, 0, 1] }),
+    /* ---- 2026-09-29 本人選択: 器具に乗る・上に立つ・残りの使う姿勢 25件 ----
+     * rig は握り y=1.15H、リラ／ハンモックの底は y=0.85H。wire と一般姿勢は床を原点にする。 */
+    makePose("lyra_sit", "リラに座る", {
+      head: [0, 1.265, 0.02], neck: [0, 1.185, 0.01],
+      shL: [-0.1075, 1.15, 0], shR: [0.1075, 1.15, 0],
+      elL: [-0.209, 1.311, 0], wrL: [-0.29, 1.15, 0],
+      elR: [0.209, 1.311, 0], wrR: [0.29, 1.15, 0],
+      hipL: [-0.055, 0.85, 0], hipR: [0.055, 0.85, 0],
+      knL: [-0.06, 0.65, 0.13], knR: [0.06, 0.65, 0.13],
+      anL: [-0.058, 0.417, 0.21], anR: [0.058, 0.417, 0.21],
+      toL: [-0.058, 0.35, 0.27], toR: [0.058, 0.35, 0.27],
+    }),
+    makePose("lyra_hang_knees", "リラに膝で吊る", {
+      head: [0, 0.05, 0.03], neck: [0, 0.13, 0.02],
+      shL: [-0.1075, 0.31, 0], shR: [0.1075, 0.31, 0],
+      elL: [-0.12, 0.12, 0], wrL: [-0.12, -0.06, 0.01],
+      elR: [0.12, 0.12, 0], wrR: [0.12, -0.06, 0.01],
+      hipL: [-0.055, 0.61, 0], hipR: [0.055, 0.61, 0],
+      knL: [-0.07, 0.85, 0], knR: [0.07, 0.85, 0],
+      anL: [-0.07, 0.99, 0.195], anR: [0.07, 0.99, 0.195],
+      toL: [-0.07, 1.04, 0.25], toR: [0.07, 1.04, 0.25],
+    }, { face: [0, -1, 0.1] }),
+    makePose("lyra_gazelle", "リラで片脚を掛けて反る", {
+      head: [-0.235, 0.60, 0.02], neck: [-0.18, 0.655, 0.01],
+      shL: [-0.2875, 0.77, 0], shR: [-0.0725, 0.77, 0],
+      elR: [-0.05, 0.95, 0.055], wrR: [0.05, 1.10, 0.055],
+      elL: [-0.46, 0.69, 0], wrL: [-0.61, 0.59, 0],
+      hipL: [0.065, 0.77, -0.045], hipR: [0.175, 0.77, 0.045],
+      knR: [0.15, 0.85, 0.27], anR: [0.15, 1.03, 0.43], toR: [0.15, 1.09, 0.47],
+      knL: [0.30, 0.81, -0.08], anL: [0.53, 0.87, -0.11], toL: [0.60, 0.90, -0.13],
+    }, { face: [-0.35, 0.2, 0.915] }),
+    makePose("hammock_recline", "ハンモックに寝る", {
+      head: [-0.265, 0.92, 0], neck: [-0.19, 0.91, 0],
+      shL: [-0.15, 0.90, -0.1075], shR: [-0.15, 0.90, 0.1075],
+      elL: [-0.15, 1.09, -0.1075], wrL: [0.03, 1.09, -0.1075],
+      elR: [-0.15, 1.09, 0.1075], wrR: [0.03, 1.09, 0.1075],
+      hipL: [0.15, 0.85, -0.055], hipR: [0.15, 0.85, 0.055],
+      knL: [0.365, 0.77, -0.13], knR: [0.365, 0.77, 0.13],
+      anL: [0.58, 0.86, -0.19], anR: [0.58, 0.86, 0.19],
+      toL: [0.65, 0.88, -0.20], toR: [0.65, 0.88, 0.20],
+    }, { wide: [0, 0, 1], face: [0, 0, 1] }),
+    makePose("hammock_sit", "ハンモックに座る", {
+      head: [0, 1.265, 0.02], neck: [0, 1.185, 0.01],
+      shL: [-0.1075, 1.15, 0], shR: [0.1075, 1.15, 0],
+      elL: [-0.174, 1.328, 0], wrL: [-0.30, 1.20, 0],
+      elR: [0.174, 1.328, 0], wrR: [0.30, 1.20, 0],
+      hipL: [-0.055, 0.85, 0], hipR: [0.055, 0.85, 0],
+      knL: [-0.06, 0.65, 0.13], knR: [0.06, 0.65, 0.13],
+      anL: [-0.058, 0.417, 0.21], anR: [0.058, 0.417, 0.21],
+      toL: [-0.058, 0.35, 0.27], toR: [0.058, 0.35, 0.27],
+    }),
+    makePose("wire_walk", "綱渡り（バランス棒）", {
+      elL: [-0.2975, 0.82, 0], wrL: [-0.4775, 0.82, 0],
+      elR: [0.2975, 0.82, 0], wrR: [0.4775, 0.82, 0],
+      knL: [-0.06, 0.29, 0.08], anL: [-0.058, 0.055, 0.13], toL: [-0.058, 0.012, 0.205],
+      knR: [0.06, 0.29, -0.08], anR: [0.058, 0.055, -0.13], toR: [0.058, 0.012, -0.055],
+    }),
+    makePose("wire_kneel", "綱の上で片膝", {
+      head: [0, 0.665, 0.01], neck: [0, 0.585, 0],
+      shL: [-0.1075, 0.55, 0], shR: [0.1075, 0.55, 0],
+      elL: [-0.2975, 0.55, 0], wrL: [-0.4775, 0.55, 0],
+      elR: [0.2975, 0.55, 0], wrR: [0.4775, 0.55, 0],
+      hipL: [-0.058, 0.25, -0.02], hipR: [0.058, 0.25, -0.02],
+      knL: [-0.062, 0.012, -0.05], anL: [-0.06, 0.055, -0.286], toL: [-0.06, 0.03, -0.36],
+      knR: [0.07, 0.24, 0.219], anR: [0.065, 0.05, 0.082], toR: [0.065, 0.012, 0.157],
+    }),
+    makePose("ladder_climb", "はしごを登る", {
+      head: [0, 0.935, 0.08], neck: [0, 0.855, 0.06],
+      shL: [-0.1075, 0.82, 0.05], shR: [0.1075, 0.82, 0.05],
+      elR: [0.16, 0.99, 0.10], wrR: [0.13, 1.16, 0.14],
+      elL: [-0.17, 0.65, 0.11], wrL: [-0.13, 0.50, 0.20],
+      hipL: [-0.055, 0.52, 0.02], hipR: [0.055, 0.52, 0.02],
+      knL: [-0.06, 0.48, 0.257], anL: [-0.06, 0.28, 0.124], toL: [-0.06, 0.28, 0.20],
+      knR: [0.06, 0.28, 0.02], anR: [0.058, 0.04, 0.02], toR: [0.058, 0.012, 0.095],
+    }, { face: [0, -0.15, 0.989] }),
+    makePose("stilts_walk", "竹馬で歩く", {
+      elL: [-0.17, 0.67, 0.10], wrL: [-0.08, 0.58, 0.225],
+      elR: [0.17, 0.67, 0.10], wrR: [0.08, 0.58, 0.225],
+      knL: [-0.06, 0.293, 0.08], anL: [-0.058, 0.053, 0.08], toL: [-0.058, 0.012, 0.155],
+      knR: [0.06, 0.293, -0.08], anR: [0.058, 0.053, -0.08], toR: [0.058, 0.012, -0.005],
+    }),
+    makePose("pogo_bounce", "ポゴスティックで跳ぶ", {
+      head: [0, 0.965, 0.05], neck: [0, 0.885, 0.04],
+      shL: [-0.1075, 0.85, 0.03], shR: [0.1075, 0.85, 0.03],
+      elL: [-0.17, 0.69, 0.11], wrL: [-0.07, 0.60, 0.23],
+      elR: [0.17, 0.69, 0.11], wrR: [0.07, 0.60, 0.23],
+      hipL: [-0.055, 0.55, 0], hipR: [0.055, 0.55, 0],
+      knL: [-0.065, 0.50, 0.235], knR: [0.065, 0.50, 0.235],
+      anL: [-0.06, 0.28, 0.14], anR: [0.06, 0.28, 0.14],
+      toL: [-0.06, 0.25, 0.215], toR: [0.06, 0.25, 0.215],
+    }, { face: [0, -0.1, 0.995] }),
+    makePose("barrel_walk", "樽の上を歩く", {
+      elL: [-0.2975, 0.82, 0], wrL: [-0.4775, 0.82, 0], elR: [0.2975, 0.82, 0], wrR: [0.4775, 0.82, 0],
+      knL: [-0.06, 0.29, 0.06], anL: [-0.058, 0.05, 0.08], toL: [-0.058, 0.012, 0.155],
+      knR: [0.06, 0.29, -0.06], anR: [0.058, 0.05, -0.08], toR: [0.058, 0.012, -0.005],
+    }),
+    makePose("globe_walk", "大玉の上を歩く", {
+      head: [0, 0.895, 0.04], neck: [0, 0.815, 0.025],
+      shL: [-0.1075, 0.78, 0.02], shR: [0.1075, 0.78, 0.02],
+      elL: [-0.28, 0.73, 0.085], wrL: [-0.44, 0.69, 0.155], elR: [0.28, 0.73, 0.085], wrR: [0.44, 0.69, 0.155],
+      hipL: [-0.055, 0.48, 0], hipR: [0.055, 0.48, 0],
+      knL: [-0.07, 0.245, 0.045], anL: [-0.065, 0.04, 0.17], toL: [-0.065, 0.012, 0.245],
+      knR: [0.07, 0.245, -0.045], anR: [0.065, 0.04, -0.17], toR: [0.065, 0.012, -0.095],
+    }, { face: [0, -0.1, 0.995] }),
+    makePose("teeter_ready", "ティーターボードの端で構える", {
+      head: [0, 0.78, 0.12], neck: [0, 0.705, 0.09], shL: [-0.1075, 0.67, 0.075], shR: [0.1075, 0.67, 0.075],
+      elL: [-0.18, 0.52, -0.02], wrL: [-0.15, 0.41, -0.16], elR: [0.18, 0.52, -0.02], wrR: [0.15, 0.41, -0.16],
+      hipL: [-0.055, 0.37, 0], hipR: [0.055, 0.37, 0],
+      knL: [-0.08, 0.22, 0.185], knR: [0.08, 0.22, 0.185], anL: [-0.07, 0.04, 0.025], anR: [0.07, 0.04, 0.025],
+      toL: [-0.07, 0.012, 0.10], toR: [0.07, 0.012, 0.10],
+    }, { face: [0, -0.25, 0.968] }),
+    makePose("russianbar_stand", "ロシアンバーの上に立つ", {
+      elL: [-0.2975, 0.82, 0], wrL: [-0.4775, 0.82, 0], elR: [0.2975, 0.82, 0], wrR: [0.4775, 0.82, 0],
+      knL: [-0.06, 0.28, 0], knR: [0.06, 0.28, 0], anL: [-0.058, 0.04, 0], anR: [0.058, 0.04, 0],
+      toL: [-0.058, 0.012, 0.075], toR: [0.058, 0.012, 0.075],
+    }),
+    makePose("cradle_catcher", "クレードルのキャッチャー", {
+      head: [0, 0.05, 0.03], neck: [0, 0.13, 0.02], shL: [-0.1075, 0.31, 0], shR: [0.1075, 0.31, 0],
+      elL: [-0.12, 0.15, 0.102], wrL: [-0.12, 0.01, 0.215], elR: [0.12, 0.15, 0.102], wrR: [0.12, 0.01, 0.215],
+      hipL: [-0.055, 0.61, 0], hipR: [0.055, 0.61, 0], knL: [-0.07, 0.85, 0], knR: [0.07, 0.85, 0],
+      anL: [-0.07, 0.99, 0.195], anR: [0.07, 0.99, 0.195], toL: [-0.07, 1.04, 0.25], toR: [0.07, 1.04, 0.25],
+    }, { face: [0, -1, 0.1] }),
+    makePose("cradle_flyer", "クレードルのフライヤー", {
+      head: [-0.235, 0.50, 0], neck: [-0.16, 0.49, 0], shL: [-0.12, 0.48, -0.1075], shR: [-0.12, 0.48, 0.1075],
+      elL: [-0.31, 0.48, -0.1075], wrL: [-0.49, 0.48, -0.1075], elR: [-0.31, 0.48, 0.1075], wrR: [-0.49, 0.48, 0.1075],
+      hipL: [0.18, 0.48, -0.055], hipR: [0.18, 0.48, 0.055],
+      knL: [0.405, 0.40, -0.055], knR: [0.405, 0.40, 0.055], anL: [0.55, 0.21, -0.055], anR: [0.55, 0.21, 0.055],
+      toL: [0.62, 0.012, -0.055], toR: [0.62, 0.012, 0.055],
+    }, { wide: [0, 0, 1], face: [0, 0, 1] }),
+    makePose("trapeze_catch_hang", "キャッチャーの膝掛け", {
+      head: [0, -0.75, 0.03], neck: [0, -0.67, 0.02], shL: [-0.1075, -0.54, 0], shR: [0.1075, -0.54, 0],
+      elL: [-0.12, -0.73, 0], wrL: [-0.12, -0.91, 0.01], elR: [0.12, -0.73, 0], wrR: [0.12, -0.91, 0.01],
+      hipL: [-0.055, -0.24, 0], hipR: [0.055, -0.24, 0], knL: [-0.07, 0, 0], knR: [0.07, 0, 0],
+      anL: [-0.07, 0.14, 0.195], anR: [0.07, 0.14, 0.195], toL: [-0.07, 0.19, 0.25], toR: [0.07, 0.19, 0.25],
+    }, { face: [0, -1, 0.1] }),
+    makePose("cloud_sit", "雲に座る", {
+      head: [0, 0.70, 0.02], neck: [0, 0.62, 0.01], shL: [-0.1075, 0.585, 0], shR: [0.1075, 0.585, 0],
+      elL: [-0.17, 0.41, 0.06], wrL: [-0.08, 0.31, 0.18], elR: [0.17, 0.41, 0.06], wrR: [0.08, 0.31, 0.18],
+      hipL: [-0.058, 0.285, -0.02], hipR: [0.058, 0.285, -0.02], knL: [-0.065, 0.285, 0.22], knR: [0.065, 0.285, 0.22],
+      anL: [-0.06, 0.045, 0.22], anR: [0.06, 0.045, 0.22], toL: [-0.06, 0.012, 0.30], toR: [0.06, 0.012, 0.30],
+    }),
+    makePose("moon_sit", "月に座る", {
+      head: [0, 0.68, -0.10], neck: [0, 0.61, -0.065], shL: [-0.1075, 0.585, -0.05], shR: [0.1075, 0.585, -0.05],
+      elL: [-0.16, 0.43, 0.045], wrL: [-0.08, 0.35, 0.185], elR: [0.16, 0.43, 0.045], wrR: [0.08, 0.35, 0.185],
+      hipL: [-0.058, 0.285, 0.025], hipR: [0.058, 0.285, 0.025],
+      knL: [-0.075, 0.30, 0.264], anL: [-0.07, 0.08, 0.36], toL: [-0.07, 0.04, 0.43],
+      knR: [0.075, 0.15, 0.225], anR: [0.07, 0.04, 0.012], toR: [0.07, 0.012, 0.087],
+    }, { face: [0, 0.15, 0.989] }),
+    makePose("blackboard_write", "黒板に書く", {
+      head: [0, 0.935, 0.06], neck: [0, 0.855, 0.04], shL: [-0.1075, 0.82, 0.03], shR: [0.1075, 0.82, 0.03],
+      elR: [0.18, 0.98, 0.105], wrR: [0.14, 1.14, 0.177], elL: [-0.205, 0.655, 0.03], wrL: [-0.14, 0.49, 0.07],
+    }, { face: [0, -0.1, 0.995] }),
+    makePose("veil_dance", "布を翻す（ベール）", {
+      head: [0, 0.94, -0.03], shL: [-0.1075, 0.82, 0], shR: [0.1075, 0.82, 0],
+      elR: [0.20, 0.98, 0.05], wrR: [0.16, 1.15, 0.09], elL: [-0.24, 0.72, -0.10], wrL: [-0.36, 0.61, -0.18],
+      knL: [-0.07, 0.293, 0.08], anL: [-0.065, 0.053, 0.08], toL: [-0.065, 0.012, 0.155],
+      knR: [0.08, 0.36, -0.18], anR: [0.09, 0.20, -0.359], toR: [0.09, 0.16, -0.424],
+    }, { face: [0, 0.15, 0.989] }),
+    makePose("cane_walk", "杖をついて歩く", {
+      head: [0, 0.82, 0.18], neck: [0, 0.77, 0.12], shL: [-0.1075, 0.74, 0.08], shR: [0.1075, 0.74, 0.08],
+      elR: [0.17, 0.58, 0.16], wrR: [0.14, 0.45, 0.28], elL: [-0.16, 0.58, 0.16], wrL: [-0.13, 0.43, 0.255],
+      hipL: [-0.055, 0.45, 0], hipR: [0.055, 0.45, 0],
+      knL: [-0.06, 0.25, 0.13], anL: [-0.058, 0.04, 0.245], toL: [-0.058, 0.012, 0.32],
+      knR: [0.06, 0.23, -0.095], anR: [0.058, 0.04, -0.24], toR: [0.058, 0.012, -0.165],
+    }, { face: [0, -0.45, 0.893] }),
+    makePose("backpack_walk", "リュックを背負って歩く", {
+      head: [0, 0.91, 0.08], neck: [0, 0.835, 0.055], shL: [-0.1075, 0.80, 0.04], shR: [0.1075, 0.80, 0.04],
+      elL: [-0.18, 0.64, 0.11], wrL: [-0.08, 0.70, 0.248], elR: [0.18, 0.64, 0.11], wrR: [0.08, 0.70, 0.248],
+      hipL: [-0.055, 0.50, 0], hipR: [0.055, 0.50, 0],
+      knL: [-0.06, 0.27, 0.07], anL: [-0.058, 0.04, 0.14], toL: [-0.058, 0.012, 0.215],
+      knR: [0.06, 0.27, -0.07], anR: [0.058, 0.04, -0.14], toR: [0.058, 0.012, -0.065],
+    }, { face: [0, -0.2, 0.98] }),
+    makePose("kitchen_cook", "調理する", {
+      head: [0, 0.82, 0.20], neck: [0, 0.765, 0.14], shL: [-0.1075, 0.735, 0.10], shR: [0.1075, 0.735, 0.10],
+      elR: [0.17, 0.61, 0.23], wrR: [0.11, 0.56, 0.392], elL: [-0.16, 0.59, 0.20], wrL: [-0.10, 0.50, 0.344],
+      hipL: [-0.055, 0.46, 0], hipR: [0.055, 0.46, 0], knL: [-0.07, 0.24, 0.095], knR: [0.07, 0.24, 0.095],
+      anL: [-0.065, 0.04, -0.038], anR: [0.065, 0.04, -0.038], toL: [-0.065, 0.012, 0.037], toR: [0.065, 0.012, 0.037],
+    }, { face: [0, -0.55, 0.835] }),
+    makePose("table_hide", "机の下に隠れる", {
+      head: [0, 0.55, 0.05], neck: [0, 0.48, 0.035], shL: [-0.1075, 0.445, 0.03], shR: [0.1075, 0.445, 0.03],
+      elL: [-0.20, 0.55, 0.155], wrL: [-0.07, 0.61, 0.264], elR: [0.20, 0.55, 0.155], wrR: [0.07, 0.61, 0.264],
+      hipL: [-0.055, 0.15, -0.02], hipR: [0.055, 0.15, -0.02],
+      knL: [-0.10, 0.22, 0.205], knR: [0.10, 0.22, 0.205], anL: [-0.08, 0.04, 0.048], anR: [0.08, 0.04, 0.048],
+      toL: [-0.08, 0.012, 0.123], toR: [0.08, 0.012, 0.123],
+    }, { face: [0, -0.35, 0.937] }),
   ];
   /* ---- R-19（2026-09-17 本人要望）: 物を伴う姿勢は「持っているときだけ」選べるようにする ----
    * 本人の言葉:「小道具や大道具を持つという動きをしたときに、取れる姿勢としてください」。
@@ -7171,6 +7356,9 @@
     pistol_aim: ["pistol"],
     rifle_aim: ["rifle"],
     fan_dance: ["fan"],
+    veil_dance: ["scarf"],
+    cane_walk: ["cane"],
+    backpack_walk: ["backpack"],
   };
   /* 2026-09-29（本人依頼「持ち方＝ただ持つ／使う」の一般化・第1弾）: 誰でも選べる一般の姿勢のうち、
      その小道具を「使う」形に当たるものを、小道具欄の「使う」から直接選べるようにする表。
@@ -7277,6 +7465,7 @@
     "drums_play", "piano_play", "cello_play",
     "shamisen_play", "harp_play", "cajon_play",
     "oar_row", "handpan_play",
+    "cloud_sit", "moon_sit",
     "ride_astride",   // 2026-09-29: バイク・馬・ベンチに跨る（腰は 0.30H＝姿勢の関節から取る）
   ]);
   const isChairSitPose = (id) => CHAIR_SIT_POSES.has(id);
@@ -7310,7 +7499,9 @@
   ]);
   const AERIAL_PROP_MOUNTS = Object.freeze({
     aerialstraps: { kind: "tissue", grip: 0.88 }, spanishweb: { kind: "tissue", grip: 0.8 },
-    aerialhoop: { kind: "rig", grip: 0.62 }, aerialhammock: { kind: "rig", grip: 0.6 },
+    // 乗る姿勢（lyra_sit・hammock_sit 等）は「両手 y=1.15H・腰はその 0.3H 下」で作ってあるので、
+    // 握りは輪の中心（座面＝輪の下端）、ハンモックは布の底の少し上に置く（2026-09-29 C-7 で目視して調整）
+    aerialhoop: { kind: "rig", grip: 0.5 }, aerialhammock: { kind: "rig", grip: 0.3 },
     freestanding_aerial_rig: { kind: "rig", grip: 0.9 }, crane_hoist: { kind: "rig", grip: 0.86 },
     bungee_rig: { kind: "rig", grip: 0.9 }, lunge_belt: { kind: "rig", grip: 0.9 },
   });
@@ -7341,9 +7532,10 @@
   const MOUNT_POSES = {
     pole: ["pole_climb", "pole_layback", "pole_invert"],
     tissue: ["tissue_split", "aerial_invert_straddle", "straps_flag", "straps_crucifix", "pose_hair_hang", "pose_harness_flight"],
-    trapeze: ["trapeze_stand"],
+    trapeze: ["trapeze_stand", "trapeze_catch_hang"],
     // 吊り点（2026-09-26 W4）。既定の札は「ぶら下がる」（ティシューと同じ）。握りは 1.15H
-    rig: ["pose_harness_flight", "pose_hair_hang", "aerial_invert_straddle", "straps_crucifix"],
+    rig: ["pose_harness_flight", "pose_hair_hang", "aerial_invert_straddle", "straps_crucifix",
+      "lyra_sit", "lyra_hang_knees", "lyra_gazelle", "hammock_recline", "hammock_sit"],
   };
   const mountPoseChoices = (mount) => (MOUNT_POSES[mount] || []).filter((id) => POSES.some((pose) => pose.id === id));
   const isMountPose = (mount, id) => mountPoseChoices(mount).includes(id);
@@ -7391,16 +7583,17 @@
     { ja: "立つ・歩く・座る・寝る", ids: ["stand", "walk", "run", "sit", "crouch", "kneel", "hizadachi", "floorsit", "agura",
       "seiza", "longsit", "yankee", "allfours", "lie", "supine", "sidelie", "stand_arms_crossed", "stairs_climb", "sneak", "stagger",
       "march", "elder_walk", "arrogant_walk", "back_away", "stand_hands_on_hips", "stand_contrapposto", "lean_wall", "sit_cross_legs",
-      "sit_chin_rest", "sit_lean_back", "sit_reverse_chair", "sit_forward", "stairs_sit", "crutch_walk"] },
+      "sit_chin_rest", "sit_lean_back", "sit_reverse_chair", "sit_forward", "stairs_sit", "crutch_walk",
+      "ladder_climb", "cloud_sit", "moon_sit", "cane_walk", "backpack_walk"] },
     { ja: "礼・合図・身振り", ids: ["reach", "open", "hat", "dogeza", "bow_deep", "wave", "point", "look_up", "turn_back", "bow_light",
       "blow_kiss", "beckon", "raise_hand", "salute", "fist_pump", "clap", "look_down", "shade_eyes", "listen_ear", "hide_crouch", "shrug",
       "mime_wall", "sign_language_speak", "hug_holder", "hug_held", "hand_in_hand", "shoulder_arm", "whisper", "handshake", "propose_kneel",
       "reach_up_help", "flip_board_show"] },
     { ja: "日常の動作", ids: ["write_desk", "push", "pull", "read_book", "phone_call", "drink", "toast", "sweep", "tray_serve",
       "umbrella_hold", "flag_wave", "torch_raise", "bouquet_offer", "axe_chop", "hammer_strike", "saw_pull", "shovel_dig", "fishing_cast",
-      "oar_row", "kendama_play", "knife_chop"] },
+      "oar_row", "kendama_play", "knife_chop", "blackboard_write", "kitchen_cook"] },
     { ja: "感情・倒れる", ids: ["collapse_knees", "collapse_hands_floor", "lie_spread", "cry_cover", "shout", "think_chin", "head_down",
-      "hold_head", "hand_on_chest", "surprised", "pray", "clown_slip_fall", "clown_trip", "pratfall_sit"] },
+      "hold_head", "hand_on_chest", "surprised", "pray", "clown_slip_fall", "clown_trip", "pratfall_sit", "table_hide"] },
     { ja: "殺陣・武術", ids: ["hit_recoil", "punch", "kick", "sword_ready", "sword_slash", "sword_raised", "staff_ready", "throw",
       "catch_ready", "hero_transform", "hero_finisher", "karate_zenkutsu", "karate_roundhouse_kick_mid", "boxing_guard", "kyudo_draw",
       "bat_swing", "whip_crack", "pistol_aim", "rifle_aim"] },
@@ -7408,7 +7601,7 @@
       "ballet_fifth_position_en_haut", "ballet_arabesque", "ballet_attitude", "ballet_grand_jete", "ballet_pirouette_passe",
       "contemporary_floor_roll", "contemporary_contraction", "contemporary_low_lunge_floor", "offbalance_fall_back",
       "breaking_baby_freeze", "breaking_chair_freeze", "breaking_toprock", "ballroom_hold_lead", "ballroom_hold_follow",
-      "dip_lead", "dip_follow", "tap_stance", "jazz_hands", "fan_dance"] },
+      "dip_lead", "dip_follow", "tap_stance", "jazz_hands", "fan_dance", "veil_dance"] },
     { ja: "歌・楽器", ids: ["sing", "guitar", "bassguitar", "violin", "trumpet", "accordion", "sing_micstand", "taiko_strike",
       "drums_play", "piano_play", "cello_play", "doublebass_play", "dj_play", "conductor", "flute_play", "saxophone_play",
       "shamisen_play", "harp_play", "koto_play", "cajon_play", "handpan_play", "hyoshigi_strike", "tambourine_shake", "handbell_ring",
@@ -7416,12 +7609,14 @@
     { ja: "アクロバット", ids: ["handstand", "handstand-mid", "sideflip", "sideflip-mid", "cartwheel-oneside-mid", "roundoff-mid",
       "frontroll-mid", "tuck", "backflip", "backhandspring-mid", "walkover-mid", "bridge_hold", "one_arm_handstand",
       "straddle_handstand", "headstand", "forearm_stand", "y_balance", "front_split", "layout_flip_mid", "chest_stand",
-      "backbend_standing", "crashmat_fall", "plate_spin", "lasso_twirl", "jump_rope_skip", "barbell_lift"] },
+      "backbend_standing", "crashmat_fall", "plate_spin", "lasso_twirl", "jump_rope_skip", "barbell_lift",
+      "wire_walk", "wire_kneel", "stilts_walk", "pogo_bounce", "barrel_walk", "globe_walk", "teeter_ready", "russianbar_stand"] },
     { ja: "組み技", ids: ["h2h_base_stand", "base_supine_legs_up", "two_high_base", "shoulder_ride_base", "banquine_base",
       "bridal_carry_base", "piggyback_base", "h2h_flyer_handstand", "flyer_foot_stand", "two_high_flyer",
-      "shoulder_ride_top"] },
+      "shoulder_ride_top", "cradle_catcher", "cradle_flyer"] },
     { ja: "空中・器具", ids: ["pole_climb", "pole_layback", "pole_invert", "tissue_split", "aerial_invert_straddle", "straps_flag",
-      "straps_crucifix", "pose_hair_hang", "pose_harness_flight", "trapeze_stand"] },
+      "straps_crucifix", "pose_hair_hang", "pose_harness_flight", "trapeze_stand",
+      "lyra_sit", "lyra_hang_knees", "lyra_gazelle", "hammock_recline", "hammock_sit", "trapeze_catch_hang"] },
     { ja: "サーカス道具・乗り物", ids: ["juggle", "cyr", "unicycle", "bicycle", "skateboard", "skate", "juggle_one_hand",
       "face_balance", "diabolo_spin", "diabolo_high_toss", "cigarbox_hold", "devilstick_play", "poi_spin", "hoop_waist_spin",
       "rolabola_stand", "germanwheel_ride", "ride_astride"] },
@@ -15168,7 +15363,8 @@
       if (aerialProp) {
         const H = pieceHeightM(piece) * (piece.size / 100);
         const dims = pieceDims(aerialProp) || {};
-        const gripY = finite(aerialProp.base, 0) + finite(dims.lift, 0) + aerialMountOf(aerialProp).grip * finite(dims.h, 2);
+        // 吊物（flown）の base は refreshBases で地上高（flownLift）になっている。床置きの器具は足元から測る
+        const gripY = finite(aerialProp.base, 0) + aerialMountOf(aerialProp).grip * finite(dims.h, 2);
         piece.supportId = aerialProp.id;
         piece.base = Math.max(0, gripY - TRAP_GRIP.hang * H);
         return;
