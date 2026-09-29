@@ -64,8 +64,8 @@ if (POSES.length < 40) throw new Error(`姿勢の一覧が取れていません 
 if (PROP_SHAPES.length < 10) throw new Error(`小道具の形の一覧が取れていません (${PROP_SHAPES.length})`);
 
 // v4（2026-09-24）: 転換0秒をなくしてシーンの秒数が変わったので上げる（一度開いた棚の複製は自動で差し替わらないため）
-// v19（2026-09-29）: C-1 椅子以外に腰掛ける・C-2 小道具を使う姿勢 を追加
-const PROJECT_ID = "gamma-feature-test-v19";
+// v20（2026-09-29）: C-7 に 檻・柱・バイク・ストラップ・リラ（第3弾の関係）を追加
+const PROJECT_ID = "gamma-feature-test-v20";
 const CREATED = "2026-09-18T00:00:00.000Z";
 const STAGE = { width: 12, depth: 9 };      // proscenium / mid の実寸（stage-venues.js）
 const COLORS = ["#a84b26", "#77865f", "#9c823f", "#6d6657", "#315b8a", "#b0533f", "#4f7d6f", "#8a6a9c",
@@ -503,8 +503,19 @@ section("c", "C 舞台セット・小道具・空中");
     { id: pid("c6", "wall45"), type: "wall", setId: null, u: 0.5, v: 0.55, facing: 45, size: 100, color: "#8b98a1", name: "45度", dims: { w: 3, h: 2.5, lift: 0 } },
     { id: pid("c6", "wall90"), type: "wall", setId: null, u: 0.82, v: 0.55, facing: 90, size: 100, color: "#8b98a1", name: "90度", dims: { w: 3, h: 2.5, lift: 0 }, imageId: "ft-photo-scrim-grid" },
   ];
+  /* 2026-09-29 第3弾: 中に入る（檻）・もたれる（柱）・跨る（バイク）・吊り器具の小道具（ストラップ・リラ）。
+     檻の中の演者は上に乗らず床に立つ。柱の右の演者は「壁にもたれる」（左肩を柱へ・facing 0）。
+     バイクの演者は「跨って乗る」で腰が座面（0.72m）へ。ストラップとリラの近くの演者は握りの高さから吊られる。 */
+  const relProp = (tag, shape, u, v, dims, color, name, extra = {}) => ({ id: pid("c6", tag), type: "prop", setId: null, propShape: shape, u, v, facing: 0, size: 100, color, name, dims: { lift: 0, ...dims }, ...extra });
+  pieces.push(
+    relProp("cage", "cage", 0.14, 0.88, { w: 2, d: 2, h: 2.2 }, "#8a8a8a", "檻（中に入る）"), perf("c6", null, 0.14, 0.88, { pose: "stand", name: "檻の中" }),
+    relProp("column", "column", 0.40, 0.88, { w: 0.6, d: 0.6, h: 4 }, "#9a9080", "柱（もたれる）"), perf("c6", null, 0.40 + 0.46 / 12.4, 0.88, { pose: "lean_wall", facing: 0, name: "柱にもたれる" }),
+    relProp("motorcycle", "motorcycle", 0.62, 0.88, { w: 0.8, d: 2.1, h: 1.1 }, "#5c5c66", "バイク（跨る）"), perf("c6", null, 0.62, 0.88, { pose: "ride_astride", name: "バイクに跨る" }),
+    relProp("straps", "aerialstraps", 0.80, 0.86, { w: 0.15, d: 0.06, h: 2.5 }, "#d6dce2", "ストラップ（吊り器具）"), perf("c6", null, 0.80, 0.86, { pose: "straps_crucifix", name: "ストラップで十字" }),
+    relProp("lyra", "aerialhoop", 0.93, 0.86, { w: 1, d: 0.06, h: 1.4, lift: 1.6 }, "#c0c0c0", "リラ（吊り器具・地上高1.6m）"), perf("c6", null, 0.93, 0.86, { pose: "aerial_invert_straddle", name: "リラで逆さ" }),
+  );
   scene("c6", "C-7 壁の向き（0・45・90度・3D検証）", 1,
-    `${CHECK}同じ壁を0度・45度・90度で並べた（2026-09-20、3Dが駒の向きを無視していた不具合の再発防止用）。正面図・平面図・3Dの3つを見比べて、どれでも同じ向きに見えることを確認する。右端（90度）は真横を向くため、正面図では細長い線に、3Dでも薄い面にしか見えないのが正解。その90度の壁にだけ絵（格子模様）を映してあり、正しく回っていれば絵もほとんど見えなくなる。もし3Dで正面を向いた厚い壁のまま絵がはっきり見えていたら、向きが無視されている退行のサイン。`,
+    `${CHECK}同じ壁を0度・45度・90度で並べた（2026-09-20、3Dが駒の向きを無視していた不具合の再発防止用）。正面図・平面図・3Dの3つを見比べて、どれでも同じ向きに見えることを確認する。右端（90度）は真横を向くため、正面図では細長い線に、3Dでも薄い面にしか見えないのが正解。その90度の壁にだけ絵（格子模様）を映してあり、正しく回っていれば絵もほとんど見えなくなる。もし3Dで正面を向いた厚い壁のまま絵がはっきり見えていたら、向きが無視されている退行のサイン。\n2026-09-29: 手前の列に 檻（中の演者は床に立つ）・柱（右の演者が「壁にもたれる」で左肩を柱へ）・バイク（跨って腰が座面）・ストラップとリラ（近くの演者が吊られ、姿勢の窓に吊りの組が出る）。`,
     pieces);
 }
 

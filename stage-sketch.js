@@ -7045,8 +7045,15 @@
     "sit_cross_legs", "sit_chin_rest", "sit_lean_back", "sit_reverse_chair", "sit_forward", "write_desk",
     "drums_play", "piano_play", "cello_play",
     "shamisen_play", "harp_play", "cajon_play",
+    "ride_astride",   // 2026-09-29: バイク・馬・ベンチに跨る（腰は 0.30H＝姿勢の関節から取る）
   ]);
   const isChairSitPose = (id) => CHAIR_SIT_POSES.has(id);
+  /* 座る姿勢の腰の高さ（身長比）。姿勢の関節表から取り、無ければ従来の 0.285。 */
+  const sitHipRatioOf = (poseId) => {
+    const pose = poseById(poseId);
+    const hip = pose && pose.joints && pose.joints.hipL;
+    return Array.isArray(hip) && Number.isFinite(hip[1]) ? hip[1] : 0.285;
+  };
   /* 2026-09-29: 椅子以外にも腰を掛けられる物（本人依頼「椅子であれば座ったり、その上に立ったり」の一般化・第1弾）。
      値は「座面の高さ ÷ 駒の高さ」。1 なら上面に腰掛ける（台・ベンチ・岩・ベッドの縁）。表に無い物は立つだけ。
      椅子（chair）は従来どおり pieceTopLocal が座面（h の半分）で、ここには載せない。
@@ -7054,12 +7061,36 @@
   const SEAT_SET_KINDS = Object.freeze({ bench: 1, stool: 1, block: 1, table: 1, suitcase: 1, teeter: 1, trampoline: 1 });
   const SEAT_PROP_SHAPES = Object.freeze({
     sofa: 0.4375, rocking_chair: 0.527, hospital_bed: 0.9, bus_stop: 0.227, wheelchair: 0.556, rowboat: 0.9,
-    rickshaw: 0.428, toilet: 0.575, cart: 1, mine_cart: 0.82, flight_case: 1, treasurechest: 1, bed: 1, rock: 1,
+    rickshaw: 0.428, toilet: 0.575, cart: 1, mine_cart: 0.82, motorcycle: 0.655, flight_case: 1, treasurechest: 1, bed: 1, rock: 1,
     tree_stump: 1, barrel: 1, crashmat: 1, crashmatround: 1, grandpiano: 1, grandpianoopen: 1, uprightpiano: 1,
     counter: 1, desk: 1, dresser: 1, kitchen_unit: 1, platform: 1, hanamichi: 1, thrust_extension: 1,
     sub_stage_in_house: 1, railing: 1, cocktail_table: 1, speaker: 1, foh_console: 1, television_set: 1,
     dressing_table: 1, safety_net: 1, bridge: 1, djbooth: 1,
   });
+  /* 2026-09-29 第3弾: 演者と物の関係の残り3種。保存データは増やさない（駒の位置・姿勢・supportId だけ）。
+     HOLLOW_PROP_SHAPES … 中に入る物。上に乗らず、中は床（檻・電話ボックス・枠・鳥居・車両など）。
+     AERIAL_PROP_MOUNTS … 器具として吊られる小道具。近く（0.55m）に置いた演者が握りの高さで付く（ティシュー・吊り点と同じ姿勢の組）。
+                          grip は「握り／ハーネスの高さ ÷ 駒の高さ」。
+     LEAN_TARGETS …… もたれられる物。演者を縁に置いて「壁にもたれる」を選ぶと、いちばん近い面へ寄せて左肩を向ける。 */
+  const HOLLOW_PROP_SHAPES = new Set([
+    "cage", "phonebooth", "tent", "framecube", "frameportal", "framepicture", "torii", "door", "window",
+    "train_car_section", "kitchen_car", "globe_of_death", "bus_stop", "clothesrack",
+  ]);
+  const AERIAL_PROP_MOUNTS = Object.freeze({
+    aerialstraps: { kind: "tissue", grip: 0.88 }, spanishweb: { kind: "tissue", grip: 0.8 },
+    aerialhoop: { kind: "rig", grip: 0.62 }, aerialhammock: { kind: "rig", grip: 0.6 },
+    freestanding_aerial_rig: { kind: "rig", grip: 0.9 }, crane_hoist: { kind: "rig", grip: 0.86 },
+    bungee_rig: { kind: "rig", grip: 0.9 }, lunge_belt: { kind: "rig", grip: 0.9 },
+  });
+  const aerialMountOf = (holder) => (holder && holder.type === "prop" ? AERIAL_PROP_MOUNTS[propShapeOf(holder)] || null : null);
+  const LEAN_SET_KINDS = new Set(["wall"]);
+  const LEAN_PROP_SHAPES = new Set([
+    "column", "tree", "streetlamp", "door", "window", "railing", "counter", "phonebooth", "vending_machine", "bus_stop",
+    "lectern_podium", "uprightpiano", "bookshelf", "dresser", "fireplace", "screen", "traffic_light", "grandfather_clock",
+    "cocktail_table", "torii", "framecube", "frameportal", "cage", "kitchen_unit", "television_set", "blackboard", "signboard",
+    "mirror", "clothesrack", "flight_case", "mannequin", "tree_stump", "barrel", "well", "planter", "vending_machine",
+  ]);
+  const isLeanTarget = (piece) => Boolean(piece) && (LEAN_SET_KINDS.has(piece.type) || (piece.type === "prop" && LEAN_PROP_SHAPES.has(propShapeOf(piece))));
   /* 腰を掛けられる駒なら「座面の高さ ÷ 高さ」、そうでなければ null。 */
   function seatRatioOf(holder) {
     if (!holder) return null;
@@ -14690,6 +14721,8 @@
     candidates.forEach((other) => {
       if (other === piece) return;
       if (other.heldBy) return;
+      // 中に入る物（檻・枠・車両）と吊り器具の小道具は上に乗らない（2026-09-29）。器具へは refreshBases で付く
+      if (other.type === "prop" && (HOLLOW_PROP_SHAPES.has(propShapeOf(other)) || AERIAL_PROP_MOUNTS[propShapeOf(other)])) return;
       // ポールの上には立てない（付き方が特別なので refreshBases で別に扱う）
       if (["pole", "seri", "revolve", "deck", "curtain", "pool"].includes(other.type)) return;
       const foot = supportFootprint(other);
@@ -14891,6 +14924,20 @@
         return;
       }
 
+      /* 吊り器具の小道具（ストラップ・コルドリス・リラ・ハンモック・自立リグ等・2026-09-29）。
+         近く（0.55m以内）へ置いた演者は、器具の握りの高さ（駒の高さ×grip）から吊られる。
+         握りは布・吊り点と同じ 1.15H。器具を床近くまで下げると base が 0 で止まる。 */
+      const aerialProp = pieces.find((other) => other !== piece && aerialMountOf(other)
+        && Math.hypot((piece.u - other.u) * size.width, (piece.v - other.v) * size.depth) < 0.55);
+      if (aerialProp) {
+        const H = pieceHeightM(piece) * (piece.size / 100);
+        const dims = pieceDims(aerialProp) || {};
+        const gripY = finite(aerialProp.base, 0) + finite(dims.lift, 0) + aerialMountOf(aerialProp).grip * finite(dims.h, 2);
+        piece.supportId = aerialProp.id;
+        piece.base = Math.max(0, gripY - TRAP_GRIP.hang * H);
+        return;
+      }
+
       /* エアリアルティシュー。布の近く（0.55m以内）へ置いた演者は布へ掴まる。
          掴む高さ（tissueH）は布の範囲へ収める。布は lift から下へ h だけ垂れている。
          体は握りの下へぶら下がるので、base は握りから身長比 1.15 を引いた高さ。
@@ -14913,7 +14960,7 @@
       if (previousMount && previousMount !== "chair" && isMountPose(previousMount, piece.pose)) piece.pose = "stand";
       const seatRatio = foundHolder ? seatRatioOf(foundHolder) : null;
       if (seatRatio !== null && isChairSitPose(piece.pose)) {
-          const sitHip = 0.285 * pieceHeightM(piece) * (piece.size / 100);
+          const sitHip = sitHipRatioOf(piece.pose) * pieceHeightM(piece) * (piece.size / 100);
           /* 座面の高さ。椅子は上面＝座面。ソファや車椅子は上面（背もたれ）より低い座面の比率を持つ（2026-09-29） */
           const holderDims = pieceDims(foundHolder) || {};
           const seatTop = found.top - pieceTopLocal(foundHolder) + seatRatio * finite(holderDims.h, 0);
@@ -15393,6 +15440,9 @@
     if (holder.type === "trapeze") return "trapeze";
     if (holder.type === "tissue") return "tissue";
     if (holder.type === "rigpoint") return "rig";
+    // 2026-09-29: 吊り器具の小道具はティシュー／吊り点と同じ姿勢の組
+    const aerial = aerialMountOf(holder);
+    if (aerial) return aerial.kind;
     // 2026-09-29: ベンチ・台・ソファなど腰掛けられる物は「椅子」と同じ扱い（座る姿勢が選べ、腰を座面へ合わせる）
     if (seatRatioOf(holder) !== null) return "chair";
     return null;
@@ -34894,6 +34944,53 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     return entries.map((entry) => ({ id: entry.id, u: tidy(entry.u + du), v: tidy(entry.v + dv) }));
   }
 
+  /* 2026-09-29: もたれる。演者の位置が、もたれられる物の外形を 0.45m 広げた範囲に入っていて、
+     その物の上に乗っていないとき、いちばん近い面を返す（面の外向きの法線と、面上の最も近い点）。 */
+  function leanTargetOf(piece, pieces) {
+    if (!piece || piece.type !== "performer") return null;
+    const size = venueSize();
+    let best = null;
+    (pieces || sc().pieces).forEach((other) => {
+      if (other === piece || other.heldBy || isFlown(other) || !isLeanTarget(other) || other.id === piece.supportId) return;
+      const foot = supportFootprint(other);
+      if (!foot) return;
+      const rad = ((other.facing || 0) * Math.PI) / 180;
+      const dw = (piece.u - other.u) * size.width;
+      const dd = -(piece.v - other.v) * size.depth;
+      const lx = dw * Math.cos(rad) + dd * Math.sin(rad) - foot.cx;
+      const ly = -dw * Math.sin(rad) + dd * Math.cos(rad) - foot.cz;
+      const hx = foot.w / 2, hz = foot.d / 2;
+      if (Math.abs(lx) > hx + 0.45 || Math.abs(ly) > hz + 0.45) return;
+      // 4つの面のうち、演者からいちばん近い面
+      const faces = [
+        { n: [1, 0], dist: Math.abs(lx - hx), point: [hx, clamp(ly, -hz, hz)] },
+        { n: [-1, 0], dist: Math.abs(lx + hx), point: [-hx, clamp(ly, -hz, hz)] },
+        { n: [0, 1], dist: Math.abs(ly - hz), point: [clamp(lx, -hx, hx), hz] },
+        { n: [0, -1], dist: Math.abs(ly + hz), point: [clamp(lx, -hx, hx), -hz] },
+      ].sort((a, b) => a.dist - b.dist);
+      const face = faces[0];
+      if (best && best.dist <= face.dist) return;
+      // 物の局所 → 舞台（dw, dd）
+      const toWorld = ([x, z]) => [x * Math.cos(rad) - z * Math.sin(rad), x * Math.sin(rad) + z * Math.cos(rad)];
+      const n = toWorld(face.n);
+      const pt = toWorld([face.point[0] + foot.cx, face.point[1] + foot.cz]);
+      best = { holder: other, dist: face.dist, normal: n, point: pt };
+    });
+    return best;
+  }
+  /* 「壁にもたれる」を選んだとき、近くに物があれば面へ寄せて左肩を物へ向ける（姿勢は左肩を預ける形）。
+     演者の +x（右）が面の法線と同じ向き＝左側が物。位置は面から体の半分（0.16m）だけ離す。 */
+  function snapLeanToTarget(piece, pieces) {
+    const target = leanTargetOf(piece, pieces);
+    if (!target) return null;
+    const size = venueSize();
+    const [nx, nz] = target.normal;
+    const dw = target.point[0] + nx * 0.16, dd = target.point[1] + nz * 0.16;
+    piece.u = clamp(target.holder.u + dw / size.width, 0, 1);
+    piece.v = clamp(target.holder.v - dd / size.depth, 0, 1);
+    piece.facing = Math.round(((Math.atan2(nz, nx) * 180) / Math.PI + 360) % 360);
+    return target.holder;
+  }
   function applyPoseToSelection(pose) {
     const performers = selectedPerformerPieces();
     if (!pose || !performers.length || performers.some((piece) => poseLockedByMount(piece))) return 0;
@@ -34909,10 +35006,12 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (!changed.length) return 0;
     checkpoint();
     changed.forEach((piece) => { piece.pose = target; });
+    const leaned = target === "lean_wall" ? changed.map((piece) => snapLeanToTarget(piece, sc().pieces)).filter(Boolean) : [];
     updateInspector();
     render();
     persistSoon();
-    announce(performers.length > 1
+    if (leaned.length) announce(sx(`${selectedPieceTitle(leaned[0])}にもたれました。`, `Leaning on ${selectedPieceTitle(leaned[0])}.`));
+    else announce(performers.length > 1
       ? sx(`${performers.length}人の姿勢を「${poseName(pose)}」にしました。`,
         `Changed the pose of ${performers.length} performers to “${poseName(pose)}”.`)
       : sx(`姿勢を「${poseName(pose)}」にしました。`, `Pose changed to “${poseName(pose)}”.`));
@@ -38366,6 +38465,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         if (piece.pose === target) return true;
         checkpoint();
         piece.pose = target;
+        if (target === "lean_wall") snapLeanToTarget(piece, sc().pieces);
         updateInspector();
         render();
         persistSoon();

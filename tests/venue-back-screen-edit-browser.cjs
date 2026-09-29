@@ -27,7 +27,7 @@ async function main() {
     await page.waitForTimeout(700);
     const projectId = await page.evaluate(() =>
       JSON.parse(SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project.id);
-    assert.equal(projectId, 'gamma-feature-test-v19');
+    assert.equal(projectId, 'gamma-feature-test-v20');
     await page.evaluate(() => {
       const scene = document.querySelector('[data-scene-id=ft-scene-c1]');
       (scene.querySelector('button') || scene).click();

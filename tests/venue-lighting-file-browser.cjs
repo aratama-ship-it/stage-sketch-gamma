@@ -29,7 +29,7 @@ async function main() {
     const project = () => page.evaluate(() =>
       JSON.parse(SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project);
     const before = await project();
-    assert.equal(before.id, 'gamma-feature-test-v19');
+    assert.equal(before.id, 'gamma-feature-test-v20');
     assert.equal(await page.locator('.stage-venue-editor-menu > .stage-venue-editor-lighting-step').count(), 1);
     assert.equal(await page.locator('.stage-venue-editor-presets .stage-lighting-source').count(), 0);
 

@@ -72,7 +72,8 @@ test("椅子に座る姿勢は集まり（CHAIR_SIT_POSES）で判定する（�
     assert.ok(start > 0, `${id} が POSES にある`);
     const body = main.slice(start, main.indexOf("\n    makePose(", start + 5));
     const hip = body.match(/hipL: \[[-\d.]+, ([\d.]+),/);
-    assert.ok(hip && Math.abs(Number(hip[1]) - 0.285) <= 0.015, `${id} の腰の高さが 0.285 付近 (${hip && hip[1]})`);
+    // 2026-09-29: 座面合わせは姿勢の関節の腰の高さを使う（sitHipRatioOf）ので、跨る姿勢（0.30）も入れられる
+    assert.ok(hip && Math.abs(Number(hip[1]) - 0.285) <= 0.02, `${id} の腰の高さが 0.285 付近 (${hip && hip[1]})`);
   }
 });
 
