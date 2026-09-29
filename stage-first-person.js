@@ -3602,7 +3602,11 @@
     const radius = finite(part.r, 0);
     if (!(radius > 0)) return;
     const y0 = center[1] + held, y1 = y0 + finite(part.h, 0);
-    const count = 16;
+    /* 2026-09-29: 角数は画面上の半径で決める（近くで大きく見える円柱ほど細かく）。16角形で固定だと
+       シルクハットや樽の縁が近くで角ばって見えた。 */
+    const camCentre = toCamera(at(center[0], (y0 + y1) / 2, center[2]));
+    const projected = camCentre.z > NEAR ? radius * focal / camCentre.z : 0;
+    const count = clamp(Math.round(projected / 4), 16, 40);
     const lower = Array.from({ length: count }, (_, i) => {
       const angle = i * Math.PI * 2 / count;
       return at(center[0] + Math.cos(angle) * radius, y0, center[2] + Math.sin(angle) * radius);

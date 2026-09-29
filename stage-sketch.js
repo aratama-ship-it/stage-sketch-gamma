@@ -4105,10 +4105,8 @@
       { shape: "cylinder", y: 0.012, dia: 0.07, h: 0.012, tint: 0.85 },
       { shape: "cylinder", y: 0.024, dia: 0.08, h: 0.038, tint: 1.05 },
       { shape: "cylinder", y: 0.062, dia: 0.09, h: 0.018, tint: 1.15 },
-      boxAt(0.055, 0.03, 0, 0.015, 0.015, 0.04, 0.9),
-      boxAt(0.0625, 0.058, 0, 0.015, 0.015, 0.012, 0.9),
-      boxAt(0.0625, 0.022, 0, 0.015, 0.015, 0.012, 0.9),
-      boxAt(0.07, 0.034, 0, 0.01, 0.015, 0.026, 0.9),
+      // 取っ手は箱4個でなく弧（2026-09-29）。カップの右側面に、正面に立つ半円
+      { shape: "cylinder", ring: true, cloth: true, x: 0.042, y: 0.045, z: 0, dia: 0.05, w: 0.012, from: -75, to: 75, tint: 0.9 },
     ] };
   PROP_SHAPES.plate = { ja: "皿（食器）", en: "Dinner plate", dims: { w: 0.26, d: 0.26, h: 0.02 }, grip: { x: 0, y: 0.01 },
     parts: [
@@ -17029,7 +17027,9 @@
       };
     };
     // ★2026-09-23 本人指摘: 8分割だとまだ角ばって見える箇所があった。12分割へ増やす。
-    const segments = 12;
+    // 2026-09-29: 画面上の半径に応じて 12〜36 分割（大きく写る円柱ほど細かく）。
+    const centrePer = perMetre(floorPoint(piece, part.ox, part.oz, L), L);
+    const segments = clamp(Math.round((part.r * centrePer.x) / 5), 12, 36);
     const base = Array.from({ length: segments }, (_, i) => {
       const t = (i / segments) * Math.PI * 2;
       return at(Math.cos(t) * part.r, Math.sin(t) * part.r);
