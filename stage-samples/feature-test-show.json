@@ -3,7 +3,7 @@
  "version": 4,
  "venues": [],
  "project": {
-  "id": "gamma-feature-test-v18",
+  "id": "gamma-feature-test-v19",
   "title": "テスト: 全機能の試験場",
   "versionLabel": "v2",
   "parentVersionId": null,
@@ -1725,7 +1725,7 @@
     "name": "台＋箱＋椅子",
     "pieces": [
      {
-      "id": "ft-rig1-block-l3",
+      "id": "ft-rig1-block-l9",
       "type": "block",
       "setId": "ft-set-block",
       "originId": "ft-origin-block",
@@ -1743,7 +1743,7 @@
       }
      },
      {
-      "id": "ft-rig1-block2-l4",
+      "id": "ft-rig1-block2-la",
       "type": "block",
       "setId": "ft-set-block2",
       "originId": "ft-origin-block2",
@@ -1762,7 +1762,7 @@
       "base": 0.5
      },
      {
-      "id": "ft-rig1-chair-l5",
+      "id": "ft-rig1-chair-lb",
       "type": "chair",
       "setId": "ft-set-chair",
       "originId": "ft-origin-chair",
@@ -1786,7 +1786,7 @@
     "name": "ベンチ2つ（向かい合わせ）",
     "pieces": [
      {
-      "id": "ft-rig2-bench-l6",
+      "id": "ft-rig2-bench-lc",
       "type": "bench",
       "setId": "ft-set-bench",
       "originId": "ft-origin-bench",
@@ -6985,7 +6985,7 @@
     "kind": "scene",
     "depth": 1,
     "title": "C-2 小道具の登録と持ち手",
-    "note": "確認: 登録した小道具6つ（箱・ボール・傘・仮面・クラブ・旗）。下の3人は持っている: 演者01=ボールを右手、演者02=傘を左手、演者03=仮面を顔（顔で持てるのは仮面だけ）。手前の演者04〜08は初期状態では全員立ち姿で、ギター・バイオリン・ベースギター・アコーディオン・コントラバスは床に置いてある。各演者を選び「小道具」から対応する楽器を「持つ」だけなら立ち姿のまま、「演奏する」で演奏姿勢になり、「演奏をやめる」で立ち姿へ戻る。楽器を持ったまま通常の姿勢も選べる。姿勢一覧と3Dの姿勢選択には楽器姿勢が出ない。保存後の再読込でも持ち物と見た目が一致する。「選んだもの」で持ち手を外す・付け替える、香盤表（印刷）に受け渡しが出る。\n選択した演者・道具のパネルが開く。長い道具の回転台は全周で縮尺固定。乗り物の車輪は進行方向に転がる。",
+    "note": "確認: 登録した小道具6つ（箱・ボール・傘・仮面・クラブ・旗）。下の3人は持っている: 演者01=ボールを右手、演者02=傘を左手、演者03=仮面を顔（顔で持てるのは仮面だけ）。手前の演者04〜08は初期状態では全員立ち姿で、ギター・バイオリン・ベースギター・アコーディオン・コントラバスは床に置いてある。各演者を選び「小道具」から対応する楽器を「持つ」だけなら立ち姿のまま、「演奏する」で演奏姿勢になり、「演奏をやめる」で立ち姿へ戻る。楽器を持ったまま通常の姿勢も選べる。姿勢一覧と3Dの姿勢選択には楽器姿勢が出ない。保存後の再読込でも持ち物と見た目が一致する。「選んだもの」で持ち手を外す・付け替える、香盤表（印刷）に受け渡しが出る。\n2026-09-29: 左奥の3人（v=0.55）はロープ→引く・ケーキ→トレイを運ぶ・提灯→掲げる。小道具欄の「使う」に一般の姿勢が出るか（ロープなら「引く」）。\n選択した演者・道具のパネルが開く。長い道具の回転台は全周で縮尺固定。乗り物の車輪は進行方向に転がる。",
     "background": "#40362d",
     "pieces": [
      {
@@ -7243,6 +7243,108 @@
       "color": "#b88956",
       "name": "",
       "propShape": "doublebass"
+     },
+     {
+      "id": "ft-c2-np-9c",
+      "type": "performer",
+      "castId": null,
+      "originId": null,
+      "u": 0.1,
+      "v": 0.55,
+      "facing": 0,
+      "pose": "pull",
+      "size": 100,
+      "color": "#6d6657",
+      "name": "ロープを引く"
+     },
+     {
+      "id": "ft-c2-use-rope-9d",
+      "type": "prop",
+      "setId": null,
+      "propShape": "rope",
+      "u": 0.1,
+      "v": 0.55,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "",
+      "dims": {
+       "w": 0.28,
+       "d": 0.28,
+       "h": 0.22,
+       "lift": 0
+      },
+      "heldBy": "ft-c2-np-9c",
+      "holdSide": "R",
+      "holdMode": "hand"
+     },
+     {
+      "id": "ft-c2-np-9e",
+      "type": "performer",
+      "castId": null,
+      "originId": null,
+      "u": 0.23,
+      "v": 0.55,
+      "facing": 0,
+      "pose": "tray_serve",
+      "size": 100,
+      "color": "#6d6657",
+      "name": "ケーキを運ぶ"
+     },
+     {
+      "id": "ft-c2-use-cake-9f",
+      "type": "prop",
+      "setId": null,
+      "propShape": "cake",
+      "u": 0.23,
+      "v": 0.55,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "",
+      "dims": {
+       "w": 0.3,
+       "d": 0.3,
+       "h": 0.22,
+       "lift": 0
+      },
+      "heldBy": "ft-c2-np-9e",
+      "holdSide": "R",
+      "holdMode": "hand"
+     },
+     {
+      "id": "ft-c2-np-9g",
+      "type": "performer",
+      "castId": null,
+      "originId": null,
+      "u": 0.36,
+      "v": 0.55,
+      "facing": 0,
+      "pose": "torch_raise",
+      "size": 100,
+      "color": "#6d6657",
+      "name": "提灯を掲げる"
+     },
+     {
+      "id": "ft-c2-use-chochin-9h",
+      "type": "prop",
+      "setId": null,
+      "propShape": "chochin",
+      "u": 0.36,
+      "v": 0.55,
+      "facing": 0,
+      "size": 100,
+      "color": "#d3ac59",
+      "name": "",
+      "dims": {
+       "w": 0.24,
+       "d": 0.24,
+       "h": 0.5,
+       "lift": 0
+      },
+      "heldBy": "ft-c2-np-9g",
+      "holdSide": "R",
+      "holdMode": "hand"
      }
     ],
     "notes": [],
@@ -7270,7 +7372,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-c2a-prop-9c",
+      "id": "ft-c2a-prop-9i",
       "type": "prop",
       "setId": null,
       "propShape": "box",
@@ -7282,7 +7384,7 @@
       "name": "箱"
      },
      {
-      "id": "ft-c2a-prop-9d",
+      "id": "ft-c2a-prop-9j",
       "type": "prop",
       "setId": null,
       "propShape": "umbrella",
@@ -7294,7 +7396,7 @@
       "name": "傘"
      },
      {
-      "id": "ft-c2a-prop-9e",
+      "id": "ft-c2a-prop-9k",
       "type": "prop",
       "setId": null,
       "propShape": "club",
@@ -7306,7 +7408,7 @@
       "name": "クラブ"
      },
      {
-      "id": "ft-c2a-prop-9f",
+      "id": "ft-c2a-prop-9l",
       "type": "prop",
       "setId": null,
       "propShape": "ball",
@@ -7318,7 +7420,7 @@
       "name": "ボール"
      },
      {
-      "id": "ft-c2a-prop-9g",
+      "id": "ft-c2a-prop-9m",
       "type": "prop",
       "setId": null,
       "propShape": "ring",
@@ -7330,7 +7432,7 @@
       "name": "リング"
      },
      {
-      "id": "ft-c2a-prop-9h",
+      "id": "ft-c2a-prop-9n",
       "type": "prop",
       "setId": null,
       "propShape": "staff",
@@ -7342,7 +7444,7 @@
       "name": "棒"
      },
      {
-      "id": "ft-c2a-prop-9i",
+      "id": "ft-c2a-prop-9o",
       "type": "prop",
       "setId": null,
       "propShape": "sword",
@@ -7354,7 +7456,7 @@
       "name": "刀"
      },
      {
-      "id": "ft-c2a-prop-9j",
+      "id": "ft-c2a-prop-9p",
       "type": "prop",
       "setId": null,
       "propShape": "book",
@@ -7366,7 +7468,7 @@
       "name": "本"
      },
      {
-      "id": "ft-c2a-prop-9k",
+      "id": "ft-c2a-prop-9q",
       "type": "prop",
       "setId": null,
       "propShape": "tophat",
@@ -7378,7 +7480,7 @@
       "name": "シルクハット"
      },
      {
-      "id": "ft-c2a-prop-9l",
+      "id": "ft-c2a-prop-9r",
       "type": "prop",
       "setId": null,
       "propShape": "lantern",
@@ -7390,7 +7492,7 @@
       "name": "ランタン"
      },
      {
-      "id": "ft-c2a-prop-9m",
+      "id": "ft-c2a-prop-9s",
       "type": "prop",
       "setId": null,
       "propShape": "flag",
@@ -7402,7 +7504,7 @@
       "name": "旗"
      },
      {
-      "id": "ft-c2a-prop-9n",
+      "id": "ft-c2a-prop-9t",
       "type": "prop",
       "setId": null,
       "propShape": "drumset",
@@ -7414,7 +7516,7 @@
       "name": "ドラムセット"
      },
      {
-      "id": "ft-c2a-prop-9o",
+      "id": "ft-c2a-prop-9u",
       "type": "prop",
       "setId": null,
       "propShape": "taiko",
@@ -7426,7 +7528,7 @@
       "name": "大太鼓"
      },
      {
-      "id": "ft-c2a-prop-9p",
+      "id": "ft-c2a-prop-9v",
       "type": "prop",
       "setId": null,
       "propShape": "mic",
@@ -7438,7 +7540,7 @@
       "name": "マイク"
      },
      {
-      "id": "ft-c2a-prop-9q",
+      "id": "ft-c2a-prop-9w",
       "type": "prop",
       "setId": null,
       "propShape": "skateboard",
@@ -7450,7 +7552,7 @@
       "name": "スケートボード"
      },
      {
-      "id": "ft-c2a-prop-9r",
+      "id": "ft-c2a-prop-9x",
       "type": "prop",
       "setId": null,
       "propShape": "rollerskate",
@@ -7462,7 +7564,7 @@
       "name": "ローラースケート"
      },
      {
-      "id": "ft-c2a-prop-9s",
+      "id": "ft-c2a-prop-9y",
       "type": "prop",
       "setId": null,
       "propShape": "cyrwheel",
@@ -7474,7 +7576,7 @@
       "name": "シルホイール"
      },
      {
-      "id": "ft-c2a-prop-9t",
+      "id": "ft-c2a-prop-9z",
       "type": "prop",
       "setId": null,
       "propShape": "mask",
@@ -7486,7 +7588,7 @@
       "name": "マスク（仮面）"
      },
      {
-      "id": "ft-c2a-prop-9u",
+      "id": "ft-c2a-prop-a0",
       "type": "prop",
       "setId": null,
       "propShape": "ladder",
@@ -7498,7 +7600,7 @@
       "name": "はしご"
      },
      {
-      "id": "ft-c2a-prop-9v",
+      "id": "ft-c2a-prop-a1",
       "type": "prop",
       "setId": null,
       "propShape": "stepladder",
@@ -7510,7 +7612,7 @@
       "name": "脚立"
      },
      {
-      "id": "ft-c2a-prop-9w",
+      "id": "ft-c2a-prop-a2",
       "type": "prop",
       "setId": null,
       "propShape": "stairs",
@@ -7522,7 +7624,7 @@
       "name": "階段（4段）"
      },
      {
-      "id": "ft-c2a-prop-9x",
+      "id": "ft-c2a-prop-a3",
       "type": "prop",
       "setId": null,
       "propShape": "stairs6",
@@ -7534,7 +7636,7 @@
       "name": "階段（6段）"
      },
      {
-      "id": "ft-c2a-prop-9y",
+      "id": "ft-c2a-prop-a4",
       "type": "prop",
       "setId": null,
       "propShape": "door",
@@ -7546,7 +7648,7 @@
       "name": "扉"
      },
      {
-      "id": "ft-c2a-prop-9z",
+      "id": "ft-c2a-prop-a5",
       "type": "prop",
       "setId": null,
       "propShape": "window",
@@ -7558,7 +7660,7 @@
       "name": "窓（窓付きの壁）"
      },
      {
-      "id": "ft-c2a-prop-a0",
+      "id": "ft-c2a-prop-a6",
       "type": "prop",
       "setId": null,
       "propShape": "column",
@@ -7570,7 +7672,7 @@
       "name": "柱"
      },
      {
-      "id": "ft-c2a-prop-a1",
+      "id": "ft-c2a-prop-a7",
       "type": "prop",
       "setId": null,
       "propShape": "railing",
@@ -7582,7 +7684,7 @@
       "name": "手すり・柵"
      },
      {
-      "id": "ft-c2a-prop-a2",
+      "id": "ft-c2a-prop-a8",
       "type": "prop",
       "setId": null,
       "propShape": "bridge",
@@ -7594,7 +7696,7 @@
       "name": "橋（渡り廊下）"
      },
      {
-      "id": "ft-c2a-prop-a3",
+      "id": "ft-c2a-prop-a9",
       "type": "prop",
       "setId": null,
       "propShape": "platform",
@@ -7606,7 +7708,7 @@
       "name": "やぐら（高台）"
      },
      {
-      "id": "ft-c2a-prop-a4",
+      "id": "ft-c2a-prop-aa",
       "type": "prop",
       "setId": null,
       "propShape": "truss",
@@ -7618,7 +7720,7 @@
       "name": "トラス"
      },
      {
-      "id": "ft-c2a-prop-a5",
+      "id": "ft-c2a-prop-ab",
       "type": "prop",
       "setId": null,
       "propShape": "cage",
@@ -7630,7 +7732,7 @@
       "name": "檻"
      },
      {
-      "id": "ft-c2a-prop-a6",
+      "id": "ft-c2a-prop-ac",
       "type": "prop",
       "setId": null,
       "propShape": "torii",
@@ -7642,7 +7744,7 @@
       "name": "鳥居"
      },
      {
-      "id": "ft-c2a-prop-a7",
+      "id": "ft-c2a-prop-ad",
       "type": "prop",
       "setId": null,
       "propShape": "screen",
@@ -7654,7 +7756,7 @@
       "name": "屏風・衝立"
      },
      {
-      "id": "ft-c2a-prop-a8",
+      "id": "ft-c2a-prop-ae",
       "type": "prop",
       "setId": null,
       "propShape": "frameportal",
@@ -7666,7 +7768,7 @@
       "name": "四角い枠（立て）"
      },
      {
-      "id": "ft-c2a-prop-a9",
+      "id": "ft-c2a-prop-af",
       "type": "prop",
       "setId": null,
       "propShape": "framepicture",
@@ -7678,7 +7780,7 @@
       "name": "額縁（立て）"
      },
      {
-      "id": "ft-c2a-prop-aa",
+      "id": "ft-c2a-prop-ag",
       "type": "prop",
       "setId": null,
       "propShape": "framehang",
@@ -7690,7 +7792,7 @@
       "name": "四角い枠（吊り）"
      },
      {
-      "id": "ft-c2a-prop-ab",
+      "id": "ft-c2a-prop-ah",
       "type": "prop",
       "setId": null,
       "propShape": "chandelier",
@@ -7702,7 +7804,7 @@
       "name": "シャンデリア"
      },
      {
-      "id": "ft-c2a-prop-ac",
+      "id": "ft-c2a-prop-ai",
       "type": "prop",
       "setId": null,
       "propShape": "framecube",
@@ -7714,7 +7816,7 @@
       "name": "立方体の枠（キューブ）"
      },
      {
-      "id": "ft-c2a-prop-ad",
+      "id": "ft-c2a-prop-aj",
       "type": "prop",
       "setId": null,
       "propShape": "slope",
@@ -7726,7 +7828,7 @@
       "name": "スロープ"
      },
      {
-      "id": "ft-c2a-prop-ae",
+      "id": "ft-c2a-prop-ak",
       "type": "prop",
       "setId": null,
       "propShape": "sofa",
@@ -7738,7 +7840,7 @@
       "name": "ソファ"
      },
      {
-      "id": "ft-c2a-prop-af",
+      "id": "ft-c2a-prop-al",
       "type": "prop",
       "setId": null,
       "propShape": "bed",
@@ -7750,7 +7852,7 @@
       "name": "ベッド"
      },
      {
-      "id": "ft-c2a-prop-ag",
+      "id": "ft-c2a-prop-am",
       "type": "prop",
       "setId": null,
       "propShape": "bookshelf",
@@ -7762,7 +7864,7 @@
       "name": "棚・本棚"
      },
      {
-      "id": "ft-c2a-prop-ah",
+      "id": "ft-c2a-prop-an",
       "type": "prop",
       "setId": null,
       "propShape": "dresser",
@@ -7774,7 +7876,7 @@
       "name": "タンス・チェスト"
      },
      {
-      "id": "ft-c2a-prop-ai",
+      "id": "ft-c2a-prop-ao",
       "type": "prop",
       "setId": null,
       "propShape": "mirror",
@@ -7786,7 +7888,7 @@
       "name": "姿見（鏡）"
      },
      {
-      "id": "ft-c2a-prop-aj",
+      "id": "ft-c2a-prop-ap",
       "type": "prop",
       "setId": null,
       "propShape": "desk",
@@ -7798,7 +7900,7 @@
       "name": "デスク（事務机）"
      },
      {
-      "id": "ft-c2a-prop-ak",
+      "id": "ft-c2a-prop-aq",
       "type": "prop",
       "setId": null,
       "propShape": "counter",
@@ -7810,7 +7912,7 @@
       "name": "カウンター（バー・受付）"
      },
      {
-      "id": "ft-c2a-prop-al",
+      "id": "ft-c2a-prop-ar",
       "type": "prop",
       "setId": null,
       "propShape": "fireplace",
@@ -7822,7 +7924,7 @@
       "name": "暖炉"
      },
      {
-      "id": "ft-c2a-prop-am",
+      "id": "ft-c2a-prop-as",
       "type": "prop",
       "setId": null,
       "propShape": "phonebooth",
@@ -7834,7 +7936,7 @@
       "name": "電話ボックス"
      },
      {
-      "id": "ft-c2a-prop-an",
+      "id": "ft-c2a-prop-at",
       "type": "prop",
       "setId": null,
       "propShape": "clothesrack",
@@ -7846,7 +7948,7 @@
       "name": "衣装ラック（ハンガーラック）"
      },
      {
-      "id": "ft-c2a-prop-ao",
+      "id": "ft-c2a-prop-au",
       "type": "prop",
       "setId": null,
       "propShape": "tree",
@@ -7858,7 +7960,7 @@
       "name": "木（立ち木）"
      },
      {
-      "id": "ft-c2a-prop-ap",
+      "id": "ft-c2a-prop-av",
       "type": "prop",
       "setId": null,
       "propShape": "rock",
@@ -7870,7 +7972,7 @@
       "name": "岩"
      },
      {
-      "id": "ft-c2a-prop-aq",
+      "id": "ft-c2a-prop-aw",
       "type": "prop",
       "setId": null,
       "propShape": "streetlamp",
@@ -7882,7 +7984,7 @@
       "name": "街灯"
      },
      {
-      "id": "ft-c2a-prop-ar",
+      "id": "ft-c2a-prop-ax",
       "type": "prop",
       "setId": null,
       "propShape": "signboard",
@@ -7894,7 +7996,7 @@
       "name": "看板・のぼり"
      },
      {
-      "id": "ft-c2a-prop-as",
+      "id": "ft-c2a-prop-ay",
       "type": "prop",
       "setId": null,
       "propShape": "barrel",
@@ -7906,7 +8008,7 @@
       "name": "樽"
      },
      {
-      "id": "ft-c2a-prop-at",
+      "id": "ft-c2a-prop-az",
       "type": "prop",
       "setId": null,
       "propShape": "planter",
@@ -7918,7 +8020,7 @@
       "name": "植木鉢・花壇"
      },
      {
-      "id": "ft-c2a-prop-au",
+      "id": "ft-c2a-prop-b0",
       "type": "prop",
       "setId": null,
       "propShape": "well",
@@ -7930,7 +8032,7 @@
       "name": "井戸"
      },
      {
-      "id": "ft-c2a-prop-av",
+      "id": "ft-c2a-prop-b1",
       "type": "prop",
       "setId": null,
       "propShape": "tent",
@@ -7942,7 +8044,7 @@
       "name": "テント・小屋の骨組み"
      },
      {
-      "id": "ft-c2a-prop-aw",
+      "id": "ft-c2a-prop-b2",
       "type": "prop",
       "setId": null,
       "propShape": "broom",
@@ -7954,7 +8056,7 @@
       "name": "箒（ほうき）"
      },
      {
-      "id": "ft-c2a-prop-ax",
+      "id": "ft-c2a-prop-b3",
       "type": "prop",
       "setId": null,
       "propShape": "bucket",
@@ -7966,7 +8068,7 @@
       "name": "バケツ"
      },
      {
-      "id": "ft-c2a-prop-ay",
+      "id": "ft-c2a-prop-b4",
       "type": "prop",
       "setId": null,
       "propShape": "rope",
@@ -7978,7 +8080,7 @@
       "name": "ロープ（束・張り）"
      },
      {
-      "id": "ft-c2a-prop-az",
+      "id": "ft-c2a-prop-b5",
       "type": "prop",
       "setId": null,
       "propShape": "bouquet",
@@ -7990,7 +8092,7 @@
       "name": "花束"
      },
      {
-      "id": "ft-c2a-prop-b0",
+      "id": "ft-c2a-prop-b6",
       "type": "prop",
       "setId": null,
       "propShape": "glassbottle",
@@ -8002,7 +8104,7 @@
       "name": "グラス・ボトル"
      },
      {
-      "id": "ft-c2a-prop-b1",
+      "id": "ft-c2a-prop-b7",
       "type": "prop",
       "setId": null,
       "propShape": "tray",
@@ -8014,7 +8116,7 @@
       "name": "トレイ（お盆）"
      },
      {
-      "id": "ft-c2a-prop-b2",
+      "id": "ft-c2a-prop-b8",
       "type": "prop",
       "setId": null,
       "propShape": "telephone",
@@ -8026,7 +8128,7 @@
       "name": "電話（受話器・スマートフォン）"
      },
      {
-      "id": "ft-c2a-prop-b3",
+      "id": "ft-c2a-prop-b9",
       "type": "prop",
       "setId": null,
       "propShape": "newspaper",
@@ -8038,7 +8140,7 @@
       "name": "新聞・手紙"
      },
      {
-      "id": "ft-c2a-prop-b4",
+      "id": "ft-c2a-prop-ba",
       "type": "prop",
       "setId": null,
       "propShape": "clock",
@@ -8050,7 +8152,7 @@
       "name": "時計（置き時計）"
      },
      {
-      "id": "ft-c2a-prop-b5",
+      "id": "ft-c2a-prop-bb",
       "type": "prop",
       "setId": null,
       "propShape": "fan",
@@ -8062,7 +8164,7 @@
       "name": "扇子"
      },
      {
-      "id": "ft-c2a-prop-b6",
+      "id": "ft-c2a-prop-bc",
       "type": "prop",
       "setId": null,
       "propShape": "scarf",
@@ -8074,7 +8176,7 @@
       "name": "布・ベール・スカーフ"
      },
      {
-      "id": "ft-c2a-prop-b7",
+      "id": "ft-c2a-prop-bd",
       "type": "prop",
       "setId": null,
       "propShape": "torch",
@@ -8086,7 +8188,7 @@
       "name": "松明（たいまつ）"
      },
      {
-      "id": "ft-c2a-prop-b8",
+      "id": "ft-c2a-prop-be",
       "type": "prop",
       "setId": null,
       "propShape": "candle",
@@ -8098,7 +8200,7 @@
       "name": "ロウソク・燭台"
      },
      {
-      "id": "ft-c2a-prop-b9",
+      "id": "ft-c2a-prop-bf",
       "type": "prop",
       "setId": null,
       "propShape": "treasurechest",
@@ -8135,7 +8237,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-c2b-prop-ba",
+      "id": "ft-c2b-prop-bg",
       "type": "prop",
       "setId": null,
       "propShape": "cane",
@@ -8147,7 +8249,7 @@
       "name": "ステッキ（杖）"
      },
      {
-      "id": "ft-c2b-prop-bb",
+      "id": "ft-c2b-prop-bh",
       "type": "prop",
       "setId": null,
       "propShape": "handbag",
@@ -8159,7 +8261,7 @@
       "name": "ハンドバッグ・鞄"
      },
      {
-      "id": "ft-c2b-prop-bc",
+      "id": "ft-c2b-prop-bi",
       "type": "prop",
       "setId": null,
       "propShape": "wagasa",
@@ -8171,7 +8273,7 @@
       "name": "和傘・番傘"
      },
      {
-      "id": "ft-c2b-prop-bd",
+      "id": "ft-c2b-prop-bj",
       "type": "prop",
       "setId": null,
       "propShape": "guitar",
@@ -8183,7 +8285,7 @@
       "name": "ギター"
      },
      {
-      "id": "ft-c2b-prop-be",
+      "id": "ft-c2b-prop-bk",
       "type": "prop",
       "setId": null,
       "propShape": "bassguitar",
@@ -8195,7 +8297,7 @@
       "name": "ベースギター"
      },
      {
-      "id": "ft-c2b-prop-bf",
+      "id": "ft-c2b-prop-bl",
       "type": "prop",
       "setId": null,
       "propShape": "violin",
@@ -8207,7 +8309,7 @@
       "name": "バイオリン"
      },
      {
-      "id": "ft-c2b-prop-bg",
+      "id": "ft-c2b-prop-bm",
       "type": "prop",
       "setId": null,
       "propShape": "trumpet",
@@ -8219,7 +8321,7 @@
       "name": "トランペット・管楽器"
      },
      {
-      "id": "ft-c2b-prop-bh",
+      "id": "ft-c2b-prop-bn",
       "type": "prop",
       "setId": null,
       "propShape": "accordion",
@@ -8231,7 +8333,7 @@
       "name": "アコーディオン"
      },
      {
-      "id": "ft-c2b-prop-bi",
+      "id": "ft-c2b-prop-bo",
       "type": "prop",
       "setId": null,
       "propShape": "cigarbox",
@@ -8243,7 +8345,7 @@
       "name": "シガーボックス"
      },
      {
-      "id": "ft-c2b-prop-bj",
+      "id": "ft-c2b-prop-bp",
       "type": "prop",
       "setId": null,
       "propShape": "devilstick",
@@ -8255,7 +8357,7 @@
       "name": "デビルスティック"
      },
      {
-      "id": "ft-c2b-prop-bk",
+      "id": "ft-c2b-prop-bq",
       "type": "prop",
       "setId": null,
       "propShape": "poi",
@@ -8267,7 +8369,7 @@
       "name": "ポイ"
      },
      {
-      "id": "ft-c2b-prop-bl",
+      "id": "ft-c2b-prop-br",
       "type": "prop",
       "setId": null,
       "propShape": "hoop",
@@ -8279,7 +8381,7 @@
       "name": "フープ（フラフープ）"
      },
      {
-      "id": "ft-c2b-prop-bm",
+      "id": "ft-c2b-prop-bs",
       "type": "prop",
       "setId": null,
       "propShape": "grandpiano",
@@ -8291,7 +8393,7 @@
       "name": "グランドピアノ"
      },
      {
-      "id": "ft-c2b-prop-bn",
+      "id": "ft-c2b-prop-bt",
       "type": "prop",
       "setId": null,
       "propShape": "grandpianoopen",
@@ -8303,7 +8405,7 @@
       "name": "グランドピアノ（開）"
      },
      {
-      "id": "ft-c2b-prop-bo",
+      "id": "ft-c2b-prop-bu",
       "type": "prop",
       "setId": null,
       "propShape": "uprightpiano",
@@ -8315,7 +8417,7 @@
       "name": "アップライトピアノ"
      },
      {
-      "id": "ft-c2b-prop-bp",
+      "id": "ft-c2b-prop-bv",
       "type": "prop",
       "setId": null,
       "propShape": "micstand",
@@ -8327,7 +8429,7 @@
       "name": "マイクスタンド"
      },
      {
-      "id": "ft-c2b-prop-bq",
+      "id": "ft-c2b-prop-bw",
       "type": "prop",
       "setId": null,
       "propShape": "musicstand",
@@ -8339,7 +8441,7 @@
       "name": "譜面台"
      },
      {
-      "id": "ft-c2b-prop-br",
+      "id": "ft-c2b-prop-bx",
       "type": "prop",
       "setId": null,
       "propShape": "speaker",
@@ -8351,7 +8453,7 @@
       "name": "スピーカー（モニター・PA）"
      },
      {
-      "id": "ft-c2b-prop-bs",
+      "id": "ft-c2b-prop-by",
       "type": "prop",
       "setId": null,
       "propShape": "keyboardstand",
@@ -8363,7 +8465,7 @@
       "name": "キーボード（スタンド付き）"
      },
      {
-      "id": "ft-c2b-prop-bt",
+      "id": "ft-c2b-prop-bz",
       "type": "prop",
       "setId": null,
       "propShape": "djbooth",
@@ -8375,7 +8477,7 @@
       "name": "DJブース"
      },
      {
-      "id": "ft-c2b-prop-bu",
+      "id": "ft-c2b-prop-c0",
       "type": "prop",
       "setId": null,
       "propShape": "rolabola",
@@ -8387,7 +8489,7 @@
       "name": "ローラボーラ"
      },
      {
-      "id": "ft-c2b-prop-bv",
+      "id": "ft-c2b-prop-c1",
       "type": "prop",
       "setId": null,
       "propShape": "germanwheel",
@@ -8399,7 +8501,7 @@
       "name": "ジャーマンホイール（ラート）"
      },
      {
-      "id": "ft-c2b-prop-bw",
+      "id": "ft-c2b-prop-c2",
       "type": "prop",
       "setId": null,
       "propShape": "minitramp",
@@ -8411,7 +8513,7 @@
       "name": "ミニトランポリン"
      },
      {
-      "id": "ft-c2b-prop-bx",
+      "id": "ft-c2b-prop-c3",
       "type": "prop",
       "setId": null,
       "propShape": "rollingglobe",
@@ -8423,7 +8525,7 @@
       "name": "大玉（ローリングボール）"
      },
      {
-      "id": "ft-c2b-prop-by",
+      "id": "ft-c2b-prop-c4",
       "type": "prop",
       "setId": null,
       "propShape": "russianbar",
@@ -8435,7 +8537,7 @@
       "name": "ロシアンバー"
      },
      {
-      "id": "ft-c2b-prop-bz",
+      "id": "ft-c2b-prop-c5",
       "type": "prop",
       "setId": null,
       "propShape": "crashmat",
@@ -8447,7 +8549,7 @@
       "name": "落下用マット（クラッシュマット）"
      },
      {
-      "id": "ft-c2b-prop-c0",
+      "id": "ft-c2b-prop-c6",
       "type": "prop",
       "setId": null,
       "propShape": "crashmatround",
@@ -8459,7 +8561,7 @@
       "name": "落下用マット（円形）"
      },
      {
-      "id": "ft-c2b-prop-c1",
+      "id": "ft-c2b-prop-c7",
       "type": "prop",
       "setId": null,
       "propShape": "russianswing",
@@ -8471,7 +8573,7 @@
       "name": "跳び板（ロシアンスイング等の大型器具）"
      },
      {
-      "id": "ft-c2b-prop-c2",
+      "id": "ft-c2b-prop-c8",
       "type": "prop",
       "setId": null,
       "propShape": "slackline",
@@ -8483,7 +8585,7 @@
       "name": "スラックライン"
      },
      {
-      "id": "ft-c2b-prop-c3",
+      "id": "ft-c2b-prop-c9",
       "type": "prop",
       "setId": null,
       "propShape": "walljump",
@@ -8495,7 +8597,7 @@
       "name": "跳躍用の壁（ウォールランニング）"
      },
      {
-      "id": "ft-c2b-prop-c4",
+      "id": "ft-c2b-prop-ca",
       "type": "prop",
       "setId": null,
       "propShape": "unicycle",
@@ -8507,7 +8609,7 @@
       "name": "一輪車"
      },
      {
-      "id": "ft-c2b-prop-c5",
+      "id": "ft-c2b-prop-cb",
       "type": "prop",
       "setId": null,
       "propShape": "spiralstairs",
@@ -8519,7 +8621,7 @@
       "name": "らせん階段"
      },
      {
-      "id": "ft-c2b-prop-c6",
+      "id": "ft-c2b-prop-cc",
       "type": "prop",
       "setId": null,
       "propShape": "stilts",
@@ -8531,7 +8633,7 @@
       "name": "竹馬・スティルト"
      },
      {
-      "id": "ft-c2b-prop-c7",
+      "id": "ft-c2b-prop-cd",
       "type": "prop",
       "setId": null,
       "propShape": "cart",
@@ -8543,7 +8645,7 @@
       "name": "荷車・リヤカー・ワゴン（キャスター台）"
      },
      {
-      "id": "ft-c2b-prop-c8",
+      "id": "ft-c2b-prop-ce",
       "type": "prop",
       "setId": null,
       "propShape": "bicycle",
@@ -8555,7 +8657,7 @@
       "name": "自転車"
      },
      {
-      "id": "ft-c2b-prop-c9",
+      "id": "ft-c2b-prop-cf",
       "type": "prop",
       "setId": null,
       "propShape": "aerialhoop",
@@ -8567,7 +8669,7 @@
       "name": "エアリアルフープ（リラ）"
      },
      {
-      "id": "ft-c2b-prop-ca",
+      "id": "ft-c2b-prop-cg",
       "type": "prop",
       "setId": null,
       "propShape": "aerialstraps",
@@ -8579,7 +8681,7 @@
       "name": "ストラップ"
      },
      {
-      "id": "ft-c2b-prop-cb",
+      "id": "ft-c2b-prop-ch",
       "type": "prop",
       "setId": null,
       "propShape": "aerialhammock",
@@ -8591,7 +8693,7 @@
       "name": "エアリアルハンモック"
      },
      {
-      "id": "ft-c2b-prop-cc",
+      "id": "ft-c2b-prop-ci",
       "type": "prop",
       "setId": null,
       "propShape": "spanishweb",
@@ -8603,7 +8705,7 @@
       "name": "スパニッシュウェブ・コルドリス（綱）"
      },
      {
-      "id": "ft-c2b-prop-cd",
+      "id": "ft-c2b-prop-cj",
       "type": "prop",
       "setId": null,
       "propShape": "swingpole",
@@ -8615,7 +8717,7 @@
       "name": "スイングポール（振り子式ポール）"
      },
      {
-      "id": "ft-c2b-prop-ce",
+      "id": "ft-c2b-prop-ck",
       "type": "prop",
       "setId": null,
       "propShape": "cello",
@@ -8627,7 +8729,7 @@
       "name": "チェロ"
      },
      {
-      "id": "ft-c2b-prop-cf",
+      "id": "ft-c2b-prop-cl",
       "type": "prop",
       "setId": null,
       "propShape": "doublebass",
@@ -8639,7 +8741,7 @@
       "name": "コントラバス"
      },
      {
-      "id": "ft-c2b-prop-cg",
+      "id": "ft-c2b-prop-cm",
       "type": "prop",
       "setId": null,
       "propShape": "axe",
@@ -8651,7 +8753,7 @@
       "name": "斧（手斧・まさかり）"
      },
      {
-      "id": "ft-c2b-prop-ch",
+      "id": "ft-c2b-prop-cn",
       "type": "prop",
       "setId": null,
       "propShape": "hammer",
@@ -8663,7 +8765,7 @@
       "name": "ハンマー（金槌・大槌）"
      },
      {
-      "id": "ft-c2b-prop-ci",
+      "id": "ft-c2b-prop-co",
       "type": "prop",
       "setId": null,
       "propShape": "saw",
@@ -8675,7 +8777,7 @@
       "name": "のこぎり"
      },
      {
-      "id": "ft-c2b-prop-cj",
+      "id": "ft-c2b-prop-cp",
       "type": "prop",
       "setId": null,
       "propShape": "shovel",
@@ -8687,7 +8789,7 @@
       "name": "スコップ（シャベル）"
      },
      {
-      "id": "ft-c2b-prop-ck",
+      "id": "ft-c2b-prop-cq",
       "type": "prop",
       "setId": null,
       "propShape": "fishing_rod",
@@ -8699,7 +8801,7 @@
       "name": "釣り竿（延べ竿）"
      },
      {
-      "id": "ft-c2b-prop-cl",
+      "id": "ft-c2b-prop-cr",
       "type": "prop",
       "setId": null,
       "propShape": "oar",
@@ -8711,7 +8813,7 @@
       "name": "オール（櫂）"
      },
      {
-      "id": "ft-c2b-prop-cm",
+      "id": "ft-c2b-prop-cs",
       "type": "prop",
       "setId": null,
       "propShape": "crutch",
@@ -8723,7 +8825,7 @@
       "name": "松葉杖"
      },
      {
-      "id": "ft-c2b-prop-cn",
+      "id": "ft-c2b-prop-ct",
       "type": "prop",
       "setId": null,
       "propShape": "baseball_bat",
@@ -8735,7 +8837,7 @@
       "name": "バット（野球）"
      },
      {
-      "id": "ft-c2b-prop-co",
+      "id": "ft-c2b-prop-cu",
       "type": "prop",
       "setId": null,
       "propShape": "balloon",
@@ -8747,7 +8849,7 @@
       "name": "風船"
      },
      {
-      "id": "ft-c2b-prop-cp",
+      "id": "ft-c2b-prop-cv",
       "type": "prop",
       "setId": null,
       "propShape": "magic_wand",
@@ -8759,7 +8861,7 @@
       "name": "魔法の杖・指揮棒（マジックワンド・タクト）"
      },
      {
-      "id": "ft-c2b-prop-cq",
+      "id": "ft-c2b-prop-cw",
       "type": "prop",
       "setId": null,
       "propShape": "pogo_stick",
@@ -8771,7 +8873,7 @@
       "name": "ポゴスティック（ホッピング）"
      },
      {
-      "id": "ft-c2b-prop-cr",
+      "id": "ft-c2b-prop-cx",
       "type": "prop",
       "setId": null,
       "propShape": "flute",
@@ -8783,7 +8885,7 @@
       "name": "笛（フルート・篠笛・尺八）"
      },
      {
-      "id": "ft-c2b-prop-cs",
+      "id": "ft-c2b-prop-cy",
       "type": "prop",
       "setId": null,
       "propShape": "saxophone",
@@ -8795,7 +8897,7 @@
       "name": "サックス（アルト）"
      },
      {
-      "id": "ft-c2b-prop-ct",
+      "id": "ft-c2b-prop-cz",
       "type": "prop",
       "setId": null,
       "propShape": "shamisen",
@@ -8807,7 +8909,7 @@
       "name": "三味線"
      },
      {
-      "id": "ft-c2b-prop-cu",
+      "id": "ft-c2b-prop-d0",
       "type": "prop",
       "setId": null,
       "propShape": "handpan",
@@ -8819,7 +8921,7 @@
       "name": "ハンドパン"
      },
      {
-      "id": "ft-c2b-prop-cv",
+      "id": "ft-c2b-prop-d1",
       "type": "prop",
       "setId": null,
       "propShape": "taiko_bachi",
@@ -8831,7 +8933,7 @@
       "name": "太鼓バチ（2本一組）"
      },
      {
-      "id": "ft-c2b-prop-cw",
+      "id": "ft-c2b-prop-d2",
       "type": "prop",
       "setId": null,
       "propShape": "hyoshigi",
@@ -8843,7 +8945,7 @@
       "name": "拍子木"
      },
      {
-      "id": "ft-c2b-prop-cx",
+      "id": "ft-c2b-prop-d3",
       "type": "prop",
       "setId": null,
       "propShape": "tambourine",
@@ -8855,7 +8957,7 @@
       "name": "タンバリン"
      },
      {
-      "id": "ft-c2b-prop-cy",
+      "id": "ft-c2b-prop-d4",
       "type": "prop",
       "setId": null,
       "propShape": "handbell",
@@ -8867,7 +8969,7 @@
       "name": "ハンドベル"
      },
      {
-      "id": "ft-c2b-prop-cz",
+      "id": "ft-c2b-prop-d5",
       "type": "prop",
       "setId": null,
       "propShape": "snare_marching",
@@ -8879,7 +8981,7 @@
       "name": "スネアドラム（マーチング用・肩掛け）"
      },
      {
-      "id": "ft-c2b-prop-d0",
+      "id": "ft-c2b-prop-d6",
       "type": "prop",
       "setId": null,
       "propShape": "kotsuzumi",
@@ -8891,7 +8993,7 @@
       "name": "小鼓（こつづみ）"
      },
      {
-      "id": "ft-c2b-prop-d1",
+      "id": "ft-c2b-prop-d7",
       "type": "prop",
       "setId": null,
       "propShape": "knife_throwing",
@@ -8903,7 +9005,7 @@
       "name": "ナイフ（投げナイフ・ジャグリング用）"
      },
      {
-      "id": "ft-c2b-prop-d2",
+      "id": "ft-c2b-prop-d8",
       "type": "prop",
       "setId": null,
       "propShape": "spinning_plate",
@@ -8915,7 +9017,7 @@
       "name": "皿回し（皿と棒）"
      },
      {
-      "id": "ft-c2b-prop-d3",
+      "id": "ft-c2b-prop-d9",
       "type": "prop",
       "setId": null,
       "propShape": "kendama",
@@ -8927,7 +9029,7 @@
       "name": "けん玉"
      },
      {
-      "id": "ft-c2b-prop-d4",
+      "id": "ft-c2b-prop-da",
       "type": "prop",
       "setId": null,
       "propShape": "bullwhip",
@@ -8939,7 +9041,7 @@
       "name": "鞭（ブルウィップ）"
      },
      {
-      "id": "ft-c2b-prop-d5",
+      "id": "ft-c2b-prop-db",
       "type": "prop",
       "setId": null,
       "propShape": "lasso",
@@ -8951,7 +9053,7 @@
       "name": "投げ縄（ロープトリック用）"
      },
      {
-      "id": "ft-c2b-prop-d6",
+      "id": "ft-c2b-prop-dc",
       "type": "prop",
       "setId": null,
       "propShape": "boomerang",
@@ -8988,7 +9090,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-c2c-prop-d7",
+      "id": "ft-c2c-prop-dd",
       "type": "prop",
       "setId": null,
       "propShape": "jump_rope",
@@ -9000,7 +9102,7 @@
       "name": "縄跳び（短縄・大縄）"
      },
      {
-      "id": "ft-c2c-prop-d8",
+      "id": "ft-c2c-prop-de",
       "type": "prop",
       "setId": null,
       "propShape": "barbell",
@@ -9012,7 +9114,7 @@
       "name": "バーベル・ダンベル（怪力芸の重り）"
      },
      {
-      "id": "ft-c2c-prop-d9",
+      "id": "ft-c2c-prop-df",
       "type": "prop",
       "setId": null,
       "propShape": "flashlight",
@@ -9024,7 +9126,7 @@
       "name": "懐中電灯"
      },
      {
-      "id": "ft-c2c-prop-da",
+      "id": "ft-c2c-prop-dg",
       "type": "prop",
       "setId": null,
       "propShape": "chochin",
@@ -9036,7 +9138,7 @@
       "name": "提灯（手提げ・弓張）"
      },
      {
-      "id": "ft-c2c-prop-db",
+      "id": "ft-c2c-prop-dh",
       "type": "prop",
       "setId": null,
       "propShape": "flip_board",
@@ -9048,7 +9150,7 @@
       "name": "フリップボード（スケッチブック・カンペ）"
      },
      {
-      "id": "ft-c2c-prop-dc",
+      "id": "ft-c2c-prop-di",
       "type": "prop",
       "setId": null,
       "propShape": "basket",
@@ -9060,7 +9162,7 @@
       "name": "かご（手提げ・花かご）"
      },
      {
-      "id": "ft-c2c-prop-dd",
+      "id": "ft-c2c-prop-dj",
       "type": "prop",
       "setId": null,
       "propShape": "backpack",
@@ -9072,7 +9174,7 @@
       "name": "リュック・ランドセル"
      },
      {
-      "id": "ft-c2c-prop-de",
+      "id": "ft-c2c-prop-dk",
       "type": "prop",
       "setId": null,
       "propShape": "cup_saucer",
@@ -9084,7 +9186,7 @@
       "name": "ティーカップ（カップ・ソーサー）"
      },
      {
-      "id": "ft-c2c-prop-df",
+      "id": "ft-c2c-prop-dl",
       "type": "prop",
       "setId": null,
       "propShape": "plate",
@@ -9096,7 +9198,7 @@
       "name": "皿（食器）"
      },
      {
-      "id": "ft-c2c-prop-dg",
+      "id": "ft-c2c-prop-dm",
       "type": "prop",
       "setId": null,
       "propShape": "kitchen_knife",
@@ -9108,7 +9210,7 @@
       "name": "包丁"
      },
      {
-      "id": "ft-c2c-prop-dh",
+      "id": "ft-c2c-prop-dn",
       "type": "prop",
       "setId": null,
       "propShape": "cake",
@@ -9120,7 +9222,7 @@
       "name": "ケーキ（ホール・ろうそく付き）"
      },
      {
-      "id": "ft-c2c-prop-di",
+      "id": "ft-c2c-prop-do",
       "type": "prop",
       "setId": null,
       "propShape": "pistol",
@@ -9132,7 +9234,7 @@
       "name": "拳銃"
      },
      {
-      "id": "ft-c2c-prop-dj",
+      "id": "ft-c2c-prop-dp",
       "type": "prop",
       "setId": null,
       "propShape": "rifle",
@@ -9144,7 +9246,7 @@
       "name": "ライフル（猟銃・小銃）"
      },
      {
-      "id": "ft-c2c-prop-dk",
+      "id": "ft-c2c-prop-dq",
       "type": "prop",
       "setId": null,
       "propShape": "bow_arrow",
@@ -9156,7 +9258,7 @@
       "name": "弓矢（和弓・洋弓）"
      },
      {
-      "id": "ft-c2c-prop-dl",
+      "id": "ft-c2c-prop-dr",
       "type": "prop",
       "setId": null,
       "propShape": "bus_stop",
@@ -9168,7 +9270,7 @@
       "name": "バス停（標識と待合ベンチ）"
      },
      {
-      "id": "ft-c2c-prop-dm",
+      "id": "ft-c2c-prop-ds",
       "type": "prop",
       "setId": null,
       "propShape": "vending_machine",
@@ -9180,7 +9282,7 @@
       "name": "自動販売機"
      },
      {
-      "id": "ft-c2c-prop-dn",
+      "id": "ft-c2c-prop-dt",
       "type": "prop",
       "setId": null,
       "propShape": "traffic_light",
@@ -9192,7 +9294,7 @@
       "name": "信号機（歩行者用・車両用）"
      },
      {
-      "id": "ft-c2c-prop-do",
+      "id": "ft-c2c-prop-du",
       "type": "prop",
       "setId": null,
       "propShape": "tree_stump",
@@ -9204,7 +9306,7 @@
       "name": "切り株"
      },
      {
-      "id": "ft-c2c-prop-dp",
+      "id": "ft-c2c-prop-dv",
       "type": "prop",
       "setId": null,
       "propShape": "giant_mushroom",
@@ -9216,7 +9318,7 @@
       "name": "キノコ（大）"
      },
      {
-      "id": "ft-c2c-prop-dq",
+      "id": "ft-c2c-prop-dw",
       "type": "prop",
       "setId": null,
       "propShape": "balcony",
@@ -9228,7 +9330,7 @@
       "name": "バルコニー（手すり付き・張り出し）"
      },
      {
-      "id": "ft-c2c-prop-dr",
+      "id": "ft-c2c-prop-dx",
       "type": "prop",
       "setId": null,
       "propShape": "cloud_cutout",
@@ -9240,7 +9342,7 @@
       "name": "雲の切り出し（吊り）"
      },
      {
-      "id": "ft-c2c-prop-ds",
+      "id": "ft-c2c-prop-dy",
       "type": "prop",
       "setId": null,
       "propShape": "crescent_moon",
@@ -9252,7 +9354,7 @@
       "name": "三日月（吊り）"
      },
      {
-      "id": "ft-c2c-prop-dt",
+      "id": "ft-c2c-prop-dz",
       "type": "prop",
       "setId": null,
       "propShape": "sun_moon_disc",
@@ -9264,7 +9366,7 @@
       "name": "円盤（太陽・満月、吊り）"
      },
      {
-      "id": "ft-c2c-prop-du",
+      "id": "ft-c2c-prop-e0",
       "type": "prop",
       "setId": null,
       "propShape": "star_hanging",
@@ -9276,7 +9378,7 @@
       "name": "星（吊り・立体）"
      },
      {
-      "id": "ft-c2c-prop-dv",
+      "id": "ft-c2c-prop-e1",
       "type": "prop",
       "setId": null,
       "propShape": "rickshaw",
@@ -9288,7 +9390,7 @@
       "name": "人力車"
      },
      {
-      "id": "ft-c2c-prop-dw",
+      "id": "ft-c2c-prop-e2",
       "type": "prop",
       "setId": null,
       "propShape": "wheelchair",
@@ -9300,7 +9402,7 @@
       "name": "車椅子"
      },
      {
-      "id": "ft-c2c-prop-dx",
+      "id": "ft-c2c-prop-e3",
       "type": "prop",
       "setId": null,
       "propShape": "motorcycle",
@@ -9312,7 +9414,7 @@
       "name": "バイク・スクーター"
      },
      {
-      "id": "ft-c2c-prop-dy",
+      "id": "ft-c2c-prop-e4",
       "type": "prop",
       "setId": null,
       "propShape": "rowboat",
@@ -9324,7 +9426,7 @@
       "name": "小舟（手漕ぎボート）"
      },
      {
-      "id": "ft-c2c-prop-dz",
+      "id": "ft-c2c-prop-e5",
       "type": "prop",
       "setId": null,
       "propShape": "train_car_section",
@@ -9336,7 +9438,7 @@
       "name": "列車の車両（客車の断面）"
      },
      {
-      "id": "ft-c2c-prop-e0",
+      "id": "ft-c2c-prop-e6",
       "type": "prop",
       "setId": null,
       "propShape": "mine_cart",
@@ -9348,7 +9450,7 @@
       "name": "トロッコ"
      },
      {
-      "id": "ft-c2c-prop-e1",
+      "id": "ft-c2c-prop-e7",
       "type": "prop",
       "setId": null,
       "propShape": "kitchen_car",
@@ -9360,7 +9462,7 @@
       "name": "キッチンカー"
      },
      {
-      "id": "ft-c2c-prop-e2",
+      "id": "ft-c2c-prop-e8",
       "type": "prop",
       "setId": null,
       "propShape": "stroller",
@@ -9372,7 +9474,7 @@
       "name": "ベビーカー"
      },
      {
-      "id": "ft-c2c-prop-e3",
+      "id": "ft-c2c-prop-e9",
       "type": "prop",
       "setId": null,
       "propShape": "harp",
@@ -9384,7 +9486,7 @@
       "name": "ハープ（コンサートハープ）"
      },
      {
-      "id": "ft-c2c-prop-e4",
+      "id": "ft-c2c-prop-ea",
       "type": "prop",
       "setId": null,
       "propShape": "koto",
@@ -9396,7 +9498,7 @@
       "name": "箏（こと）"
      },
      {
-      "id": "ft-c2c-prop-e5",
+      "id": "ft-c2c-prop-eb",
       "type": "prop",
       "setId": null,
       "propShape": "rocking_chair",
@@ -9408,7 +9510,7 @@
       "name": "ロッキングチェア"
      },
      {
-      "id": "ft-c2c-prop-e6",
+      "id": "ft-c2c-prop-ec",
       "type": "prop",
       "setId": null,
       "propShape": "hospital_bed",
@@ -9420,7 +9522,7 @@
       "name": "病院ベッド（柵付き・背上げ）"
      },
      {
-      "id": "ft-c2c-prop-e7",
+      "id": "ft-c2c-prop-ed",
       "type": "prop",
       "setId": null,
       "propShape": "kitchen_unit",
@@ -9432,7 +9534,7 @@
       "name": "キッチン（シンク・コンロ）"
      },
      {
-      "id": "ft-c2c-prop-e8",
+      "id": "ft-c2c-prop-ee",
       "type": "prop",
       "setId": null,
       "propShape": "television_set",
@@ -9444,7 +9546,7 @@
       "name": "テレビ（ブラウン管・台付き）"
      },
      {
-      "id": "ft-c2c-prop-e9",
+      "id": "ft-c2c-prop-ef",
       "type": "prop",
       "setId": null,
       "propShape": "blackboard",
@@ -9456,7 +9558,7 @@
       "name": "黒板・ホワイトボード（脚付き）"
      },
      {
-      "id": "ft-c2c-prop-ea",
+      "id": "ft-c2c-prop-eg",
       "type": "prop",
       "setId": null,
       "propShape": "futon",
@@ -9468,7 +9570,7 @@
       "name": "布団（敷き・掛け）"
      },
      {
-      "id": "ft-c2c-prop-eb",
+      "id": "ft-c2c-prop-eh",
       "type": "prop",
       "setId": null,
       "propShape": "toilet",
@@ -9480,7 +9582,7 @@
       "name": "トイレ（洋式便器）"
      },
      {
-      "id": "ft-c2c-prop-ec",
+      "id": "ft-c2c-prop-ei",
       "type": "prop",
       "setId": null,
       "propShape": "mannequin",
@@ -9492,7 +9594,7 @@
       "name": "マネキン（トルソー）"
      },
      {
-      "id": "ft-c2c-prop-ed",
+      "id": "ft-c2c-prop-ej",
       "type": "prop",
       "setId": null,
       "propShape": "grandfather_clock",
@@ -9504,7 +9606,7 @@
       "name": "柱時計"
      },
      {
-      "id": "ft-c2c-prop-ee",
+      "id": "ft-c2c-prop-ek",
       "type": "prop",
       "setId": null,
       "propShape": "dressing_table",
@@ -9516,7 +9618,7 @@
       "name": "鏡台（楽屋のドレッサー）"
      },
      {
-      "id": "ft-c2c-prop-ef",
+      "id": "ft-c2c-prop-el",
       "type": "prop",
       "setId": null,
       "propShape": "lectern_podium",
@@ -9528,7 +9630,7 @@
       "name": "演台（講演台）"
      },
      {
-      "id": "ft-c2c-prop-eg",
+      "id": "ft-c2c-prop-em",
       "type": "prop",
       "setId": null,
       "propShape": "cocktail_table",
@@ -9540,7 +9642,7 @@
       "name": "丸テーブル（ハイテーブル・宴会の円卓・ちゃぶ台）"
      },
      {
-      "id": "ft-c2c-prop-eh",
+      "id": "ft-c2c-prop-en",
       "type": "prop",
       "setId": null,
       "propShape": "hanamichi",
@@ -9552,7 +9654,7 @@
       "name": "花道（ランウェイ・客席へ伸びる細い台）"
      },
      {
-      "id": "ft-c2c-prop-ei",
+      "id": "ft-c2c-prop-eo",
       "type": "prop",
       "setId": null,
       "propShape": "thrust_extension",
@@ -9564,7 +9666,7 @@
       "name": "張り出し舞台（エプロン延長）"
      },
      {
-      "id": "ft-c2c-prop-ej",
+      "id": "ft-c2c-prop-ep",
       "type": "prop",
       "setId": null,
       "propShape": "sub_stage_in_house",
@@ -9576,7 +9678,7 @@
       "name": "サブステージ（客席内の小舞台・センターステージ）"
      },
      {
-      "id": "ft-c2c-prop-ek",
+      "id": "ft-c2c-prop-eq",
       "type": "prop",
       "setId": null,
       "propShape": "foh_console",
@@ -9588,7 +9690,7 @@
       "name": "オペ卓（客席内の音響・照明ブース）"
      },
      {
-      "id": "ft-c2c-prop-el",
+      "id": "ft-c2c-prop-er",
       "type": "prop",
       "setId": null,
       "propShape": "camera_tripod_position",
@@ -9600,7 +9702,7 @@
       "name": "撮影カメラの位置（三脚・収録用）"
      },
      {
-      "id": "ft-c2c-prop-em",
+      "id": "ft-c2c-prop-es",
       "type": "prop",
       "setId": null,
       "propShape": "bleacher_seating",
@@ -9612,7 +9714,7 @@
       "name": "仮設客席（ブリーチャー・床席の区画）"
      },
      {
-      "id": "ft-c2c-prop-en",
+      "id": "ft-c2c-prop-et",
       "type": "prop",
       "setId": null,
       "propShape": "flight_case",
@@ -9624,7 +9726,7 @@
       "name": "フライトケース（ロードケース・キャスター付き）"
      },
      {
-      "id": "ft-c2c-prop-eo",
+      "id": "ft-c2c-prop-eu",
       "type": "prop",
       "setId": null,
       "propShape": "rigging_point_mark",
@@ -9636,7 +9738,7 @@
       "name": "吊り点の印（リギングポイント）"
      },
      {
-      "id": "ft-c2c-prop-ep",
+      "id": "ft-c2c-prop-ev",
       "type": "prop",
       "setId": null,
       "propShape": "freestanding_aerial_rig",
@@ -9648,7 +9750,7 @@
       "name": "自立式エアリアルリグ（Aフレーム・門型）"
      },
      {
-      "id": "ft-c2c-prop-eq",
+      "id": "ft-c2c-prop-ew",
       "type": "prop",
       "setId": null,
       "propShape": "safety_net",
@@ -9660,7 +9762,7 @@
       "name": "セーフティネット（落下防止の網）"
      },
      {
-      "id": "ft-c2c-prop-er",
+      "id": "ft-c2c-prop-ex",
       "type": "prop",
       "setId": null,
       "propShape": "flying_trapeze_rig",
@@ -9672,7 +9774,7 @@
       "name": "フライングトラピーズ一式（台・キャッチバー・ネッ"
      },
      {
-      "id": "ft-c2c-prop-es",
+      "id": "ft-c2c-prop-ey",
       "type": "prop",
       "setId": null,
       "propShape": "korean_cradle",
@@ -9684,7 +9786,7 @@
       "name": "コリアンクレードル"
      },
      {
-      "id": "ft-c2c-prop-et",
+      "id": "ft-c2c-prop-ez",
       "type": "prop",
       "setId": null,
       "propShape": "russian_cradle",
@@ -9696,7 +9798,7 @@
       "name": "ロシアンクレードル（台付き）"
      },
      {
-      "id": "ft-c2c-prop-eu",
+      "id": "ft-c2c-prop-f0",
       "type": "prop",
       "setId": null,
       "propShape": "aerial_ladder",
@@ -9708,7 +9810,7 @@
       "name": "吊りはしご（ロープラダー）"
      },
      {
-      "id": "ft-c2c-prop-ev",
+      "id": "ft-c2c-prop-f1",
       "type": "prop",
       "setId": null,
       "propShape": "high_wire_tower",
@@ -9720,7 +9822,7 @@
       "name": "ハイワイヤの櫓（端の支柱と登り台）"
      },
      {
-      "id": "ft-c2c-prop-ew",
+      "id": "ft-c2c-prop-f2",
       "type": "prop",
       "setId": null,
       "propShape": "globe_of_death",
@@ -9732,7 +9834,7 @@
       "name": "グローブ・オブ・デス（金網の球）"
      },
      {
-      "id": "ft-c2c-prop-ex",
+      "id": "ft-c2c-prop-f3",
       "type": "prop",
       "setId": null,
       "propShape": "crane_hoist",
@@ -9744,7 +9846,7 @@
       "name": "クレーン（屋外で演者を吊る）"
      },
      {
-      "id": "ft-c2c-prop-ey",
+      "id": "ft-c2c-prop-f4",
       "type": "prop",
       "setId": null,
       "propShape": "wheel_of_death",
@@ -9756,7 +9858,7 @@
       "name": "ホイール・オブ・デス（回転する二連の輪）"
      },
      {
-      "id": "ft-c2c-prop-ez",
+      "id": "ft-c2c-prop-f5",
       "type": "prop",
       "setId": null,
       "propShape": "bungee_rig",
@@ -9768,7 +9870,7 @@
       "name": "バンジー（ゴム吊り）"
      },
      {
-      "id": "ft-c2c-prop-f0",
+      "id": "ft-c2c-prop-f6",
       "type": "prop",
       "setId": null,
       "propShape": "lunge_belt",
@@ -9780,7 +9882,7 @@
       "name": "ロンジ（稽古の補助ベルトと吊り綱）"
      },
      {
-      "id": "ft-c2c-prop-f1",
+      "id": "ft-c2c-prop-f7",
       "type": "prop",
       "setId": null,
       "propShape": "wind_machine",
@@ -9792,7 +9894,7 @@
       "name": "風送機（大型ファン）"
      },
      {
-      "id": "ft-c2c-prop-f2",
+      "id": "ft-c2c-prop-f8",
       "type": "prop",
       "setId": null,
       "propShape": "water_screen",
@@ -9804,7 +9906,7 @@
       "name": "ウォータースクリーン（水の幕）"
      },
      {
-      "id": "ft-c2c-prop-f3",
+      "id": "ft-c2c-prop-f9",
       "type": "prop",
       "setId": null,
       "propShape": "bulb",
@@ -9841,7 +9943,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-c3-trap-f4",
+      "id": "ft-c3-trap-fa",
       "type": "trapeze",
       "setId": "ft-set-trap",
       "originId": "ft-origin-trap",
@@ -9858,7 +9960,7 @@
       }
      },
      {
-      "id": "ft-c3-p01-f5",
+      "id": "ft-c3-p01-fb",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -9872,7 +9974,7 @@
       "trapMode": "hang"
      },
      {
-      "id": "ft-c3-tissue-f6",
+      "id": "ft-c3-tissue-fc",
       "type": "tissue",
       "setId": "ft-set-tissue",
       "originId": "ft-origin-tissue",
@@ -9888,7 +9990,7 @@
       }
      },
      {
-      "id": "ft-c3-p02-f7",
+      "id": "ft-c3-p02-fd",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -9902,7 +10004,7 @@
       "tissueH": 3.5
      },
      {
-      "id": "ft-c3-pole-f8",
+      "id": "ft-c3-pole-fe",
       "type": "pole",
       "setId": "ft-set-pole",
       "originId": "ft-origin-pole",
@@ -9919,7 +10021,7 @@
       }
      },
      {
-      "id": "ft-c3-p03-f9",
+      "id": "ft-c3-p03-ff",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -9934,7 +10036,7 @@
       "poleH": 4.5
      },
      {
-      "id": "ft-c3-cyr-fa",
+      "id": "ft-c3-cyr-fg",
       "type": "cyrwheel",
       "setId": "ft-set-cyr",
       "originId": "ft-origin-cyr",
@@ -9950,7 +10052,7 @@
       }
      },
      {
-      "id": "ft-c3-p04-fb",
+      "id": "ft-c3-p04-fh",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -9963,7 +10065,7 @@
       "name": ""
      },
      {
-      "id": "ft-c3-teeter-fc",
+      "id": "ft-c3-teeter-fi",
       "type": "teeter",
       "setId": "ft-set-teeter",
       "originId": "ft-origin-teeter",
@@ -9981,7 +10083,7 @@
       }
      },
      {
-      "id": "ft-c3-p05-fd",
+      "id": "ft-c3-p05-fj",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -9994,7 +10096,7 @@
       "name": ""
      },
      {
-      "id": "ft-c3-wire-fe",
+      "id": "ft-c3-wire-fk",
       "type": "wire",
       "setId": "ft-set-wire",
       "originId": "ft-origin-wire",
@@ -10011,7 +10113,7 @@
       }
      },
      {
-      "id": "ft-c3-p06-ff",
+      "id": "ft-c3-p06-fl",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -10024,7 +10126,7 @@
       "name": ""
      },
      {
-      "id": "ft-c3-tramp-fg",
+      "id": "ft-c3-tramp-fm",
       "type": "trampoline",
       "setId": "ft-set-tramp",
       "originId": "ft-origin-tramp",
@@ -10042,7 +10144,7 @@
       }
      },
      {
-      "id": "ft-c3-p07-fh",
+      "id": "ft-c3-p07-fn",
       "type": "performer",
       "castId": "ft-cast-p07",
       "originId": "ft-origin-p07",
@@ -10055,7 +10157,7 @@
       "name": ""
      },
      {
-      "id": "ft-c3-diabolo-fi",
+      "id": "ft-c3-diabolo-fo",
       "type": "diabolo",
       "setId": "ft-set-diabolo",
       "originId": "ft-origin-diabolo",
@@ -10072,7 +10174,7 @@
       "diaboloMode": "stand"
      },
      {
-      "id": "ft-c3-rig-fj",
+      "id": "ft-c3-rig-fp",
       "type": "rigpoint",
       "setId": "ft-set-rig",
       "originId": "ft-origin-rig",
@@ -10091,7 +10193,7 @@
       "rigH": 4.5
      },
      {
-      "id": "ft-c3-p08-fk",
+      "id": "ft-c3-p08-fq",
       "type": "performer",
       "castId": "ft-cast-p08",
       "originId": "ft-origin-p08",
@@ -10154,7 +10256,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-c4-flown-fl",
+      "id": "ft-c4-flown-fr",
       "type": "block",
       "setId": "ft-set-flown",
       "originId": "ft-origin-flown",
@@ -10172,7 +10274,7 @@
       }
      },
      {
-      "id": "ft-c4-p01-fm",
+      "id": "ft-c4-p01-fs",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -10186,7 +10288,7 @@
       "base": 3.3
      },
      {
-      "id": "ft-c4-block-fn",
+      "id": "ft-c4-block-ft",
       "type": "block",
       "setId": "ft-set-block",
       "originId": "ft-origin-block",
@@ -10204,7 +10306,7 @@
       }
      },
      {
-      "id": "ft-c4-p02-fo",
+      "id": "ft-c4-p02-fu",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -10218,7 +10320,7 @@
       "base": 0.5
      },
      {
-      "id": "ft-c4-block2-fp",
+      "id": "ft-c4-block2-fv",
       "type": "block",
       "setId": "ft-set-block2",
       "originId": "ft-origin-block2",
@@ -10236,7 +10338,7 @@
       }
      },
      {
-      "id": "ft-c4-sphere-fq",
+      "id": "ft-c4-sphere-fw",
       "type": "sphere",
       "setId": "ft-set-sphere",
       "originId": "ft-origin-sphere",
@@ -10253,7 +10355,7 @@
       "base": 0.6
      },
      {
-      "id": "ft-c4-rig-fr",
+      "id": "ft-c4-rig-fx",
       "type": "rigpoint",
       "setId": "ft-set-rig",
       "originId": "ft-origin-rig",
@@ -10272,7 +10374,7 @@
       "rigH": 1.8
      },
      {
-      "id": "ft-c4-p08-fs",
+      "id": "ft-c4-p08-fy",
       "type": "performer",
       "castId": "ft-cast-p08",
       "originId": "ft-origin-p08",
@@ -10285,7 +10387,7 @@
       "name": ""
      },
      {
-      "id": "ft-c4-np-ft",
+      "id": "ft-c4-np-fz",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -10298,7 +10400,7 @@
       "name": "支え1"
      },
      {
-      "id": "ft-c4-np-fu",
+      "id": "ft-c4-np-g0",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -10311,7 +10413,7 @@
       "name": "乗る1"
      },
      {
-      "id": "ft-c4-np-fv",
+      "id": "ft-c4-np-g1",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -10324,7 +10426,7 @@
       "name": "支え2"
      },
      {
-      "id": "ft-c4-np-fw",
+      "id": "ft-c4-np-g2",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -10337,7 +10439,7 @@
       "name": "乗る2"
      },
      {
-      "id": "ft-c4-np-fx",
+      "id": "ft-c4-np-g3",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -10350,7 +10452,7 @@
       "name": "支え3"
      },
      {
-      "id": "ft-c4-np-fy",
+      "id": "ft-c4-np-g4",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -10363,7 +10465,7 @@
       "name": "乗る3"
      },
      {
-      "id": "ft-c4-np-fz",
+      "id": "ft-c4-np-g5",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -10376,7 +10478,7 @@
       "name": "支え4"
      },
      {
-      "id": "ft-c4-np-g0",
+      "id": "ft-c4-np-g6",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -10389,7 +10491,7 @@
       "name": "乗る4"
      },
      {
-      "id": "ft-c4-np-g1",
+      "id": "ft-c4-np-g7",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -10402,7 +10504,7 @@
       "name": "抱く"
      },
      {
-      "id": "ft-c4-np-g2",
+      "id": "ft-c4-np-g8",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -10461,7 +10563,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-c5-block-g3",
+      "id": "ft-c5-block-g9",
       "type": "block",
       "setId": "ft-set-block",
       "originId": "ft-origin-block",
@@ -10479,7 +10581,7 @@
       }
      },
      {
-      "id": "ft-c5-block2-g4",
+      "id": "ft-c5-block2-ga",
       "type": "block",
       "setId": "ft-set-block2",
       "originId": "ft-origin-block2",
@@ -10498,7 +10600,7 @@
       "base": 0.5
      },
      {
-      "id": "ft-c5-chair-g5",
+      "id": "ft-c5-chair-gb",
       "type": "chair",
       "setId": "ft-set-chair",
       "originId": "ft-origin-chair",
@@ -10516,7 +10618,7 @@
       }
      },
      {
-      "id": "ft-c5-p01-g6",
+      "id": "ft-c5-p01-gc",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -10530,7 +10632,7 @@
       "base": 1.1
      },
      {
-      "id": "ft-c5-round-block-g7",
+      "id": "ft-c5-round-block-gd",
       "type": "block",
       "setId": "ft-set-round-block",
       "originId": "ft-origin-round-block",
@@ -10548,7 +10650,7 @@
       }
      },
      {
-      "id": "ft-c5-round-corner-g8",
+      "id": "ft-c5-round-corner-ge",
       "type": "block",
       "setId": null,
       "u": 0.18,
@@ -10564,7 +10666,7 @@
       "name": "角の比較"
      },
      {
-      "id": "ft-c5-round-block2-g9",
+      "id": "ft-c5-round-block2-gf",
       "type": "block",
       "setId": "ft-set-round-block2",
       "originId": "ft-origin-round-block2",
@@ -10582,7 +10684,7 @@
       }
      },
      {
-      "id": "ft-c5-round-center-ga",
+      "id": "ft-c5-round-center-gg",
       "type": "block",
       "setId": null,
       "u": 0.32,
@@ -10623,7 +10725,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-c6-wall0-gb",
+      "id": "ft-c6-wall0-gh",
       "type": "wall",
       "setId": null,
       "u": 0.18,
@@ -10639,7 +10741,7 @@
       }
      },
      {
-      "id": "ft-c6-wall45-gc",
+      "id": "ft-c6-wall45-gi",
       "type": "wall",
       "setId": null,
       "u": 0.5,
@@ -10655,7 +10757,7 @@
       }
      },
      {
-      "id": "ft-c6-wall90-gd",
+      "id": "ft-c6-wall90-gj",
       "type": "wall",
       "setId": null,
       "u": 0.82,
@@ -10704,7 +10806,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-d1-seri-ge",
+      "id": "ft-d1-seri-gk",
       "type": "seri",
       "setId": "ft-set-seri",
       "originId": "ft-origin-seri",
@@ -10723,7 +10825,7 @@
       "seriH": 1.5
      },
      {
-      "id": "ft-d1-p01-gf",
+      "id": "ft-d1-p01-gl",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -10737,7 +10839,7 @@
       "base": 1.5
      },
      {
-      "id": "ft-d1-seri2-gg",
+      "id": "ft-d1-seri2-gm",
       "type": "seri",
       "setId": "ft-set-seri2",
       "originId": "ft-origin-seri2",
@@ -10756,7 +10858,7 @@
       "seriH": -1.2
      },
      {
-      "id": "ft-d1-revolve-gh",
+      "id": "ft-d1-revolve-gn",
       "type": "revolve",
       "setId": "ft-set-revolve",
       "originId": "ft-origin-revolve",
@@ -10775,7 +10877,7 @@
       "spinRate": 5
      },
      {
-      "id": "ft-d1-bench-gi",
+      "id": "ft-d1-bench-go",
       "type": "bench",
       "setId": "ft-set-bench",
       "originId": "ft-origin-bench",
@@ -10793,7 +10895,7 @@
       }
      },
      {
-      "id": "ft-d1-p02-gj",
+      "id": "ft-d1-p02-gp",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -10806,7 +10908,7 @@
       "name": ""
      },
      {
-      "id": "ft-d1-p03-gk",
+      "id": "ft-d1-p03-gq",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -10844,7 +10946,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-d3-deck-gl",
+      "id": "ft-d3-deck-gr",
       "type": "deck",
       "setId": "ft-set-deck",
       "originId": "ft-origin-deck",
@@ -10864,7 +10966,7 @@
       "deckH": 1.2
      },
      {
-      "id": "ft-d3-p04-gm",
+      "id": "ft-d3-p04-gs",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -10878,7 +10980,7 @@
       "base": 1.2
      },
      {
-      "id": "ft-d3-pool-gn",
+      "id": "ft-d3-pool-gt",
       "type": "pool",
       "setId": "ft-set-pool",
       "originId": "ft-origin-pool",
@@ -10898,7 +11000,7 @@
       "poolH": -1.5
      },
      {
-      "id": "ft-d3-p06-go",
+      "id": "ft-d3-p06-gu",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -10937,7 +11039,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-d4-curtain-front-gp",
+      "id": "ft-d4-curtain-front-gv",
       "type": "curtain",
       "setId": "ft-set-curtain-front",
       "originId": "ft-origin-curtain-front",
@@ -10956,7 +11058,7 @@
       "open": 30
      },
      {
-      "id": "ft-d4-curtain-traveler-gq",
+      "id": "ft-d4-curtain-traveler-gw",
       "type": "curtain",
       "setId": "ft-set-curtain-traveler",
       "originId": "ft-origin-curtain-traveler",
@@ -10975,7 +11077,7 @@
       "open": 60
      },
      {
-      "id": "ft-d4-curtain-drop-gr",
+      "id": "ft-d4-curtain-drop-gx",
       "type": "curtain",
       "setId": "ft-set-curtain-drop",
       "originId": "ft-origin-curtain-drop",
@@ -10994,7 +11096,7 @@
       "open": 100
      },
      {
-      "id": "ft-d4-curtain-leg-gs",
+      "id": "ft-d4-curtain-leg-gy",
       "type": "curtain",
       "setId": "ft-set-curtain-leg",
       "originId": "ft-origin-curtain-leg",
@@ -11013,7 +11115,7 @@
       "open": 0
      },
      {
-      "id": "ft-d4-curtain-cyc-gt",
+      "id": "ft-d4-curtain-cyc-gz",
       "type": "curtain",
       "setId": "ft-set-curtain-cyc",
       "originId": "ft-origin-curtain-cyc",
@@ -11032,7 +11134,7 @@
       "open": 0
      },
      {
-      "id": "ft-d4-curtain-scrim-white-gu",
+      "id": "ft-d4-curtain-scrim-white-h0",
       "type": "curtain",
       "setId": "ft-set-curtain-scrim-white",
       "originId": "ft-origin-curtain-scrim-white",
@@ -11051,7 +11153,7 @@
       "sheer": 25
      },
      {
-      "id": "ft-d4-curtain-scrim-black-gv",
+      "id": "ft-d4-curtain-scrim-black-h1",
       "type": "curtain",
       "setId": "ft-set-curtain-scrim-black",
       "originId": "ft-origin-curtain-scrim-black",
@@ -11070,7 +11172,7 @@
       "sheer": 75
      },
      {
-      "id": "ft-d4-p05-gw",
+      "id": "ft-d4-p05-h2",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -11115,7 +11217,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-e1-l-hang-gx",
+      "id": "ft-e1-l-hang-h3",
       "type": "light",
       "setId": "ft-set-l-hang",
       "originId": "ft-origin-l-hang",
@@ -11134,7 +11236,7 @@
       "glow": 1
      },
      {
-      "id": "ft-e1-l-ss-gy",
+      "id": "ft-e1-l-ss-h4",
       "type": "light",
       "setId": "ft-set-l-ss",
       "originId": "ft-origin-l-ss",
@@ -11153,7 +11255,7 @@
       "glow": 0.4
      },
      {
-      "id": "ft-e1-l-front-gz",
+      "id": "ft-e1-l-front-h5",
       "type": "light",
       "setId": "ft-set-l-front",
       "originId": "ft-origin-l-front",
@@ -11172,7 +11274,7 @@
       "glow": 1.5
      },
      {
-      "id": "ft-e1-l-floor-h0",
+      "id": "ft-e1-l-floor-h6",
       "type": "light",
       "setId": "ft-set-l-floor",
       "originId": "ft-origin-l-floor",
@@ -11191,7 +11293,7 @@
       "glow": 1
      },
      {
-      "id": "ft-e1-p01-h1",
+      "id": "ft-e1-p01-h7",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -11204,7 +11306,7 @@
       "name": ""
      },
      {
-      "id": "ft-e1-p02-h2",
+      "id": "ft-e1-p02-h8",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -11217,7 +11319,7 @@
       "name": ""
      },
      {
-      "id": "ft-e1-p03-h3",
+      "id": "ft-e1-p03-h9",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -11230,7 +11332,7 @@
       "name": ""
      },
      {
-      "id": "ft-e1-l-grp-a-h4",
+      "id": "ft-e1-l-grp-a-ha",
       "type": "light",
       "setId": "ft-set-l-grp-a",
       "originId": "ft-origin-l-grp-a",
@@ -11249,7 +11351,7 @@
       "glow": 1
      },
      {
-      "id": "ft-e1-l-grp-b-h5",
+      "id": "ft-e1-l-grp-b-hb",
       "type": "light",
       "setId": "ft-set-l-grp-b",
       "originId": "ft-origin-l-grp-b",
@@ -11268,7 +11370,7 @@
       "glow": 1
      },
      {
-      "id": "ft-e1-l-hang2-h6",
+      "id": "ft-e1-l-hang2-hc",
       "type": "light",
       "setId": "ft-set-l-hang2",
       "originId": "ft-origin-l-hang2",
@@ -11293,7 +11395,7 @@
       }
      },
      {
-      "id": "ft-e1-p04-h7",
+      "id": "ft-e1-p04-hd",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -11306,7 +11408,7 @@
       "name": ""
      },
      {
-      "id": "ft-e1-p05-h8",
+      "id": "ft-e1-p05-he",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -11344,7 +11446,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-e3-l-hang2-h9",
+      "id": "ft-e3-l-hang2-hf",
       "type": "light",
       "setId": "ft-set-l-hang2",
       "originId": "ft-origin-l-hang2",
@@ -11370,7 +11472,7 @@
       }
      },
      {
-      "id": "ft-e3-p06-ha",
+      "id": "ft-e3-p06-hg",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -11460,7 +11562,7 @@
         "background": "#40362d",
         "pieces": [
          {
-          "id": "ft-f1-p01-hb",
+          "id": "ft-f1-p01-hh",
           "type": "performer",
           "castId": "ft-cast-p01",
           "originId": "ft-origin-p01",
@@ -11473,7 +11575,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-p02-hc",
+          "id": "ft-f1-p02-hi",
           "type": "performer",
           "castId": "ft-cast-p02",
           "originId": "ft-origin-p02",
@@ -11486,7 +11588,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-block-hd",
+          "id": "ft-f1-block-hj",
           "type": "block",
           "setId": "ft-set-block",
           "originId": "ft-origin-block",
@@ -11504,7 +11606,7 @@
           }
          },
          {
-          "id": "ft-f1-p05-he",
+          "id": "ft-f1-p05-hk",
           "type": "performer",
           "castId": "ft-cast-p05",
           "originId": "ft-origin-p05",
@@ -11518,7 +11620,7 @@
           "base": 0.5
          },
          {
-          "id": "ft-f1-block2-hf",
+          "id": "ft-f1-block2-hl",
           "type": "block",
           "setId": null,
           "originId": null,
@@ -11814,7 +11916,7 @@
         "background": "#40362d",
         "pieces": [
          {
-          "id": "ft-f1-p01-hb",
+          "id": "ft-f1-p01-hh",
           "type": "performer",
           "castId": "ft-cast-p01",
           "originId": "ft-origin-p01",
@@ -11827,7 +11929,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-p02-hc",
+          "id": "ft-f1-p02-hi",
           "type": "performer",
           "castId": "ft-cast-p02",
           "originId": "ft-origin-p02",
@@ -11840,7 +11942,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-block-hd",
+          "id": "ft-f1-block-hj",
           "type": "block",
           "setId": "ft-set-block",
           "originId": "ft-origin-block",
@@ -11858,7 +11960,7 @@
           }
          },
          {
-          "id": "ft-f1-p05-he",
+          "id": "ft-f1-p05-hk",
           "type": "performer",
           "castId": "ft-cast-p05",
           "originId": "ft-origin-p05",
@@ -11872,7 +11974,7 @@
           "base": 0.5
          },
          {
-          "id": "ft-f1-block2-hf",
+          "id": "ft-f1-block2-hl",
           "type": "block",
           "setId": null,
           "originId": null,
@@ -12169,7 +12271,7 @@
         "background": "#40362d",
         "pieces": [
          {
-          "id": "ft-f1-p01-hb",
+          "id": "ft-f1-p01-hh",
           "type": "performer",
           "castId": "ft-cast-p01",
           "originId": "ft-origin-p01",
@@ -12182,7 +12284,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-p02-hc",
+          "id": "ft-f1-p02-hi",
           "type": "performer",
           "castId": "ft-cast-p02",
           "originId": "ft-origin-p02",
@@ -12195,7 +12297,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-block-hd",
+          "id": "ft-f1-block-hj",
           "type": "block",
           "setId": "ft-set-block",
           "originId": "ft-origin-block",
@@ -12213,7 +12315,7 @@
           }
          },
          {
-          "id": "ft-f1-p05-he",
+          "id": "ft-f1-p05-hk",
           "type": "performer",
           "castId": "ft-cast-p05",
           "originId": "ft-origin-p05",
@@ -12227,7 +12329,7 @@
           "base": 0.5
          },
          {
-          "id": "ft-f1-block2-hf",
+          "id": "ft-f1-block2-hl",
           "type": "block",
           "setId": null,
           "originId": null,
@@ -12524,7 +12626,7 @@
         "background": "#40362d",
         "pieces": [
          {
-          "id": "ft-f1-p01-hb",
+          "id": "ft-f1-p01-hh",
           "type": "performer",
           "castId": "ft-cast-p01",
           "originId": "ft-origin-p01",
@@ -12537,7 +12639,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-p02-hc",
+          "id": "ft-f1-p02-hi",
           "type": "performer",
           "castId": "ft-cast-p02",
           "originId": "ft-origin-p02",
@@ -12550,7 +12652,7 @@
           "name": ""
          },
          {
-          "id": "ft-f1-block-hd",
+          "id": "ft-f1-block-hj",
           "type": "block",
           "setId": "ft-set-block",
           "originId": "ft-origin-block",
@@ -12568,7 +12670,7 @@
           }
          },
          {
-          "id": "ft-f1-p05-he",
+          "id": "ft-f1-p05-hk",
           "type": "performer",
           "castId": "ft-cast-p05",
           "originId": "ft-origin-p05",
@@ -12582,7 +12684,7 @@
           "base": 0.5
          },
          {
-          "id": "ft-f1-block2-hf",
+          "id": "ft-f1-block2-hl",
           "type": "block",
           "setId": null,
           "originId": null,
@@ -12875,7 +12977,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-f1-p01-hb",
+      "id": "ft-f1-p01-hh",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -12888,7 +12990,7 @@
       "name": ""
      },
      {
-      "id": "ft-f1-p02-hc",
+      "id": "ft-f1-p02-hi",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -12901,7 +13003,7 @@
       "name": ""
      },
      {
-      "id": "ft-f1-block-hd",
+      "id": "ft-f1-block-hj",
       "type": "block",
       "setId": "ft-set-block",
       "originId": "ft-origin-block",
@@ -12919,7 +13021,7 @@
       }
      },
      {
-      "id": "ft-f1-p05-he",
+      "id": "ft-f1-p05-hk",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -12933,7 +13035,7 @@
       "base": 0.5
      },
      {
-      "id": "ft-f1-block2-hf",
+      "id": "ft-f1-block2-hl",
       "type": "block",
       "setId": null,
       "originId": null,
@@ -12975,7 +13077,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-f2-p03-hg",
+      "id": "ft-f2-p03-hm",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -13013,7 +13115,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-f3-p04-hh",
+      "id": "ft-f3-p04-hn",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -13026,7 +13128,7 @@
       "name": ""
      },
      {
-      "id": "ft-f3-p05-hi",
+      "id": "ft-f3-p05-ho",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -13064,7 +13166,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-f4-p06-hj",
+      "id": "ft-f4-p06-hp",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -13109,7 +13211,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-g1-p01-hk",
+      "id": "ft-g1-p01-hq",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -13122,7 +13224,7 @@
       "name": ""
      },
      {
-      "id": "ft-g1-p02-hl",
+      "id": "ft-g1-p02-hr",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -13149,7 +13251,7 @@
       "view": "front",
       "x": 400,
       "y": 200,
-      "pieceId": "ft-g1-p01-hk",
+      "pieceId": "ft-g1-p01-hq",
       "text": "演者01に付いて回る付箋"
      },
      {
@@ -13258,7 +13360,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-g2-p03-hm",
+      "id": "ft-g2-p03-hs",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -13396,7 +13498,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-g3-p04-hn",
+      "id": "ft-g3-p04-ht",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -13511,7 +13613,7 @@
     "background": "#1a2340",
     "pieces": [
      {
-      "id": "ft-g5-p05-ho",
+      "id": "ft-g5-p05-hu",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -13524,7 +13626,7 @@
       "name": ""
      },
      {
-      "id": "ft-g5-p06-hp",
+      "id": "ft-g5-p06-hv",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -13566,7 +13668,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-g6-p01-hr",
+      "id": "ft-g6-p01-hx",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -13585,7 +13687,7 @@
       }
      },
      {
-      "id": "ft-g6-p02-hs",
+      "id": "ft-g6-p02-hy",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -13604,7 +13706,7 @@
       }
      },
      {
-      "id": "ft-g6-p03-ht",
+      "id": "ft-g6-p03-hz",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -13623,7 +13725,7 @@
       }
      },
      {
-      "id": "ft-g6-block-hu",
+      "id": "ft-g6-block-i0",
       "type": "block",
       "setId": "ft-set-block",
       "originId": "ft-origin-block",
@@ -13647,7 +13749,7 @@
       }
      },
      {
-      "id": "ft-g6-l-hang-hv",
+      "id": "ft-g6-l-hang-i1",
       "type": "light",
       "setId": "ft-set-l-hang",
       "originId": "ft-origin-l-hang",
@@ -13672,7 +13774,7 @@
       }
      },
      {
-      "id": "ft-g6-p04-hw",
+      "id": "ft-g6-p04-i2",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -13685,7 +13787,7 @@
       "name": ""
      },
      {
-      "id": "ft-g6-curtain-scrim-white-hq",
+      "id": "ft-g6-curtain-scrim-white-hw",
       "type": "curtain",
       "setId": "ft-set-curtain-scrim-white",
       "originId": "ft-origin-curtain-scrim-white",
@@ -13710,7 +13812,7 @@
     "arrows": [],
     "screenTexts": [
      {
-      "id": "ft-sct-ft-g6-curtain-scrim-white-hq",
+      "id": "ft-sct-ft-g6-curtain-scrim-white-hw",
       "text": "しずかな雨",
       "u": 0.5,
       "v": 0.18,
@@ -13720,7 +13822,7 @@
       "vertical": false,
       "opacity": 1,
       "angle": 0,
-      "surfaceId": "ft-g6-curtain-scrim-white-hq"
+      "surfaceId": "ft-g6-curtain-scrim-white-hw"
      }
     ],
     "beat": {
@@ -13744,7 +13846,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-g7-p01-hy",
+      "id": "ft-g7-p01-i4",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -13757,7 +13859,7 @@
       "name": ""
      },
      {
-      "id": "ft-g7-p02-hz",
+      "id": "ft-g7-p02-i5",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -13770,7 +13872,7 @@
       "name": ""
      },
      {
-      "id": "ft-g7-p03-i0",
+      "id": "ft-g7-p03-i6",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -13783,7 +13885,7 @@
       "name": ""
      },
      {
-      "id": "ft-g7-block-i1",
+      "id": "ft-g7-block-i7",
       "type": "block",
       "setId": "ft-set-block",
       "originId": "ft-origin-block",
@@ -13801,7 +13903,7 @@
       }
      },
      {
-      "id": "ft-g7-l-hang-i2",
+      "id": "ft-g7-l-hang-i8",
       "type": "light",
       "setId": "ft-set-l-hang",
       "originId": "ft-origin-l-hang",
@@ -13820,7 +13922,7 @@
       "glow": 1
      },
      {
-      "id": "ft-g7-p04-i3",
+      "id": "ft-g7-p04-i9",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -13833,7 +13935,7 @@
       "name": ""
      },
      {
-      "id": "ft-g7-curtain-scrim-white-hx",
+      "id": "ft-g7-curtain-scrim-white-i3",
       "type": "curtain",
       "setId": "ft-set-curtain-scrim-white",
       "originId": "ft-origin-curtain-scrim-white",
@@ -13858,7 +13960,7 @@
     "arrows": [],
     "screenTexts": [
      {
-      "id": "ft-sct-ft-g7-curtain-scrim-white-hx",
+      "id": "ft-sct-ft-g7-curtain-scrim-white-i3",
       "text": "しずかな雨",
       "u": 0.5,
       "v": 0.18,
@@ -13868,7 +13970,7 @@
       "vertical": false,
       "opacity": 1,
       "angle": 0,
-      "surfaceId": "ft-g7-curtain-scrim-white-hx"
+      "surfaceId": "ft-g7-curtain-scrim-white-i3"
      }
     ],
     "beat": {
@@ -13911,7 +14013,7 @@
         "background": "#40362d",
         "pieces": [
          {
-          "id": "ft-h1-p01-i4",
+          "id": "ft-h1-p01-ia",
           "type": "performer",
           "castId": "ft-cast-p01",
           "originId": "ft-origin-p01",
@@ -13981,7 +14083,7 @@
         "background": "#40362d",
         "pieces": [
          {
-          "id": "ft-h1-p01-i4",
+          "id": "ft-h1-p01-ia",
           "type": "performer",
           "castId": "ft-cast-p01",
           "originId": "ft-origin-p01",
@@ -14052,7 +14154,7 @@
         "background": "#40362d",
         "pieces": [
          {
-          "id": "ft-h1-p01-i4",
+          "id": "ft-h1-p01-ia",
           "type": "performer",
           "castId": "ft-cast-p01",
           "originId": "ft-origin-p01",
@@ -14123,7 +14225,7 @@
         "background": "#40362d",
         "pieces": [
          {
-          "id": "ft-h1-p01-i4",
+          "id": "ft-h1-p01-ia",
           "type": "performer",
           "castId": "ft-cast-p01",
           "originId": "ft-origin-p01",
@@ -14190,7 +14292,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-h1-p01-i4",
+      "id": "ft-h1-p01-ia",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -14228,7 +14330,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-h2-p02-i5",
+      "id": "ft-h2-p02-ib",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -14267,7 +14369,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-h3-p03-i7",
+      "id": "ft-h3-p03-id",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -14280,7 +14382,7 @@
       "name": ""
      },
      {
-      "id": "ft-h3-p01-i6",
+      "id": "ft-h3-p01-ic",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -14299,7 +14401,7 @@
       }
      },
      {
-      "id": "ft-h3-prop-ball-i8",
+      "id": "ft-h3-prop-ball-ie",
       "type": "prop",
       "setId": "ft-set-prop-ball",
       "originId": "ft-origin-prop-ball",
@@ -14310,7 +14412,7 @@
       "color": "#d3ac59",
       "name": "",
       "propShape": "ball",
-      "heldBy": "ft-h3-p01-i6",
+      "heldBy": "ft-h3-p01-ic",
       "holdSide": "R",
       "holdMode": "hand"
      }
@@ -14341,7 +14443,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-h4-p04-ia",
+      "id": "ft-h4-p04-ig",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -14354,7 +14456,7 @@
       "name": ""
      },
      {
-      "id": "ft-h4-p01-ib",
+      "id": "ft-h4-p01-ih",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -14367,7 +14469,7 @@
       "name": ""
      },
      {
-      "id": "ft-h4-p02-i9",
+      "id": "ft-h4-p02-if",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -14380,7 +14482,7 @@
       "name": ""
      },
      {
-      "id": "ft-h4-prop-ball-ic",
+      "id": "ft-h4-prop-ball-ii",
       "type": "prop",
       "setId": "ft-set-prop-ball",
       "originId": "ft-origin-prop-ball",
@@ -14391,7 +14493,7 @@
       "color": "#d3ac59",
       "name": "",
       "propShape": "ball",
-      "heldBy": "ft-h4-p02-i9",
+      "heldBy": "ft-h4-p02-if",
       "holdSide": "L",
       "holdMode": "hand"
      }
@@ -14429,7 +14531,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-i1-p05-id",
+      "id": "ft-i1-p05-ij",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -14474,7 +14576,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-i2-p06-ie",
+      "id": "ft-i2-p06-ik",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -14512,7 +14614,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-i3-p06-if",
+      "id": "ft-i3-p06-il",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -14550,7 +14652,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-i4-p06-ig",
+      "id": "ft-i4-p06-im",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -14563,7 +14665,7 @@
       "name": ""
      },
      {
-      "id": "ft-i4-p07-ih",
+      "id": "ft-i4-p07-in",
       "type": "performer",
       "castId": "ft-cast-p07",
       "originId": "ft-origin-p07",
@@ -14601,7 +14703,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-i5-p06-ii",
+      "id": "ft-i5-p06-io",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -14614,7 +14716,7 @@
       "name": ""
      },
      {
-      "id": "ft-i5-p07-ij",
+      "id": "ft-i5-p07-ip",
       "type": "performer",
       "castId": "ft-cast-p07",
       "originId": "ft-origin-p07",
@@ -14660,7 +14762,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-j1-p01-je",
+      "id": "ft-j1-p01-jk",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -14673,7 +14775,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p02-jf",
+      "id": "ft-j1-p02-jl",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -14686,7 +14788,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p03-jg",
+      "id": "ft-j1-p03-jm",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -14699,7 +14801,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p04-jh",
+      "id": "ft-j1-p04-jn",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -14712,7 +14814,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p05-ji",
+      "id": "ft-j1-p05-jo",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -14725,7 +14827,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p06-jj",
+      "id": "ft-j1-p06-jp",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -14738,7 +14840,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p07-jk",
+      "id": "ft-j1-p07-jq",
       "type": "performer",
       "castId": "ft-cast-p07",
       "originId": "ft-origin-p07",
@@ -14751,7 +14853,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p08-jl",
+      "id": "ft-j1-p08-jr",
       "type": "performer",
       "castId": "ft-cast-p08",
       "originId": "ft-origin-p08",
@@ -14764,7 +14866,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p09-jm",
+      "id": "ft-j1-p09-js",
       "type": "performer",
       "castId": "ft-cast-p09",
       "originId": "ft-origin-p09",
@@ -14777,7 +14879,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p10-jn",
+      "id": "ft-j1-p10-jt",
       "type": "performer",
       "castId": "ft-cast-p10",
       "originId": "ft-origin-p10",
@@ -14790,7 +14892,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p11-jo",
+      "id": "ft-j1-p11-ju",
       "type": "performer",
       "castId": "ft-cast-p11",
       "originId": "ft-origin-p11",
@@ -14803,7 +14905,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p12-jp",
+      "id": "ft-j1-p12-jv",
       "type": "performer",
       "castId": "ft-cast-p12",
       "originId": "ft-origin-p12",
@@ -14816,7 +14918,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p13-jq",
+      "id": "ft-j1-p13-jw",
       "type": "performer",
       "castId": "ft-cast-p13",
       "originId": "ft-origin-p13",
@@ -14829,7 +14931,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p14-jr",
+      "id": "ft-j1-p14-jx",
       "type": "performer",
       "castId": "ft-cast-p14",
       "originId": "ft-origin-p14",
@@ -14842,7 +14944,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p15-js",
+      "id": "ft-j1-p15-jy",
       "type": "performer",
       "castId": "ft-cast-p15",
       "originId": "ft-origin-p15",
@@ -14855,7 +14957,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p16-jt",
+      "id": "ft-j1-p16-jz",
       "type": "performer",
       "castId": "ft-cast-p16",
       "originId": "ft-origin-p16",
@@ -14868,7 +14970,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p17-ju",
+      "id": "ft-j1-p17-k0",
       "type": "performer",
       "castId": "ft-cast-p17",
       "originId": "ft-origin-p17",
@@ -14881,7 +14983,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p18-jv",
+      "id": "ft-j1-p18-k1",
       "type": "performer",
       "castId": "ft-cast-p18",
       "originId": "ft-origin-p18",
@@ -14894,7 +14996,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p19-jw",
+      "id": "ft-j1-p19-k2",
       "type": "performer",
       "castId": "ft-cast-p19",
       "originId": "ft-origin-p19",
@@ -14907,7 +15009,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-p20-jx",
+      "id": "ft-j1-p20-k3",
       "type": "performer",
       "castId": "ft-cast-p20",
       "originId": "ft-origin-p20",
@@ -14920,7 +15022,7 @@
       "name": ""
      },
      {
-      "id": "ft-j1-np-ik",
+      "id": "ft-j1-np-iq",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -14933,7 +15035,7 @@
       "name": "poi_spin"
      },
      {
-      "id": "ft-j1-np-il",
+      "id": "ft-j1-np-ir",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -14946,7 +15048,7 @@
       "name": "hoop_waist_spin"
      },
      {
-      "id": "ft-j1-np-im",
+      "id": "ft-j1-np-is",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -14959,7 +15061,7 @@
       "name": "rolabola_stand"
      },
      {
-      "id": "ft-j1-np-in",
+      "id": "ft-j1-np-it",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -14972,7 +15074,7 @@
       "name": "germanwheel_ride"
      },
      {
-      "id": "ft-j1-np-io",
+      "id": "ft-j1-np-iu",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -14985,7 +15087,7 @@
       "name": "ride_astride"
      },
      {
-      "id": "ft-j1-np-ip",
+      "id": "ft-j1-np-iv",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -14998,7 +15100,7 @@
       "name": "dj_play"
      },
      {
-      "id": "ft-j1-np-iq",
+      "id": "ft-j1-np-iw",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15011,7 +15113,7 @@
       "name": "kyudo_draw"
      },
      {
-      "id": "ft-j1-np-ir",
+      "id": "ft-j1-np-ix",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15024,7 +15126,7 @@
       "name": "h2h_base_stand"
      },
      {
-      "id": "ft-j1-np-is",
+      "id": "ft-j1-np-iy",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15037,7 +15139,7 @@
       "name": "base_supine_legs_up"
      },
      {
-      "id": "ft-j1-np-it",
+      "id": "ft-j1-np-iz",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15050,7 +15152,7 @@
       "name": "two_high_base"
      },
      {
-      "id": "ft-j1-np-iu",
+      "id": "ft-j1-np-j0",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15063,7 +15165,7 @@
       "name": "shoulder_ride_base"
      },
      {
-      "id": "ft-j1-np-iv",
+      "id": "ft-j1-np-j1",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15076,7 +15178,7 @@
       "name": "banquine_base"
      },
      {
-      "id": "ft-j1-np-iw",
+      "id": "ft-j1-np-j2",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15089,7 +15191,7 @@
       "name": "bridal_carry_base"
      },
      {
-      "id": "ft-j1-np-ix",
+      "id": "ft-j1-np-j3",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15102,7 +15204,7 @@
       "name": "piggyback_base"
      },
      {
-      "id": "ft-j1-np-iy",
+      "id": "ft-j1-np-j4",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15115,7 +15217,7 @@
       "name": "hug_holder"
      },
      {
-      "id": "ft-j1-np-iz",
+      "id": "ft-j1-np-j5",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15128,7 +15230,7 @@
       "name": "hand_in_hand"
      },
      {
-      "id": "ft-j1-np-j0",
+      "id": "ft-j1-np-j6",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15141,7 +15243,7 @@
       "name": "shoulder_arm"
      },
      {
-      "id": "ft-j1-np-j1",
+      "id": "ft-j1-np-j7",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15154,7 +15256,7 @@
       "name": "whisper"
      },
      {
-      "id": "ft-j1-np-j2",
+      "id": "ft-j1-np-j8",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15167,7 +15269,7 @@
       "name": "handshake"
      },
      {
-      "id": "ft-j1-np-j3",
+      "id": "ft-j1-np-j9",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15180,7 +15282,7 @@
       "name": "propose_kneel"
      },
      {
-      "id": "ft-j1-np-j4",
+      "id": "ft-j1-np-ja",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15193,7 +15295,7 @@
       "name": "reach_up_help"
      },
      {
-      "id": "ft-j1-np-j5",
+      "id": "ft-j1-np-jb",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15206,7 +15308,7 @@
       "name": "pole_climb"
      },
      {
-      "id": "ft-j1-np-j6",
+      "id": "ft-j1-np-jc",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15219,7 +15321,7 @@
       "name": "pole_layback"
      },
      {
-      "id": "ft-j1-np-j7",
+      "id": "ft-j1-np-jd",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15232,7 +15334,7 @@
       "name": "pole_invert"
      },
      {
-      "id": "ft-j1-np-j8",
+      "id": "ft-j1-np-je",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15245,7 +15347,7 @@
       "name": "tissue_split"
      },
      {
-      "id": "ft-j1-np-j9",
+      "id": "ft-j1-np-jf",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15258,7 +15360,7 @@
       "name": "aerial_invert_straddle"
      },
      {
-      "id": "ft-j1-np-ja",
+      "id": "ft-j1-np-jg",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15271,7 +15373,7 @@
       "name": "straps_flag"
      },
      {
-      "id": "ft-j1-np-jb",
+      "id": "ft-j1-np-jh",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15284,7 +15386,7 @@
       "name": "straps_crucifix"
      },
      {
-      "id": "ft-j1-np-jc",
+      "id": "ft-j1-np-ji",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15297,7 +15399,7 @@
       "name": "pose_hair_hang"
      },
      {
-      "id": "ft-j1-np-jd",
+      "id": "ft-j1-np-jj",
       "type": "performer",
       "castId": null,
       "originId": null,
@@ -15310,76 +15412,10 @@
       "name": "pose_harness_flight"
      },
      {
-      "id": "ft-j1-box-jy",
-      "type": "chair",
-      "setId": null,
-      "u": 0.06,
-      "v": 0.75,
-      "facing": 0,
-      "size": 100,
-      "color": "#5b4a3a",
-      "name": ""
-     },
-     {
-      "id": "ft-j1-box-jz",
-      "type": "block",
-      "setId": null,
-      "u": 0.158,
-      "v": 0.75,
-      "facing": 0,
-      "size": 100,
-      "color": "#efe7d6",
-      "name": ""
-     },
-     {
-      "id": "ft-j1-box-k0",
-      "type": "chair",
-      "setId": null,
-      "u": 0.256,
-      "v": 0.75,
-      "facing": 0,
-      "size": 100,
-      "color": "#5b4a3a",
-      "name": ""
-     },
-     {
-      "id": "ft-j1-box-k1",
-      "type": "block",
-      "setId": null,
-      "u": 0.353,
-      "v": 0.75,
-      "facing": 0,
-      "size": 100,
-      "color": "#efe7d6",
-      "name": ""
-     },
-     {
-      "id": "ft-j1-box-k2",
-      "type": "chair",
-      "setId": null,
-      "u": 0.451,
-      "v": 0.75,
-      "facing": 0,
-      "size": 100,
-      "color": "#5b4a3a",
-      "name": ""
-     },
-     {
-      "id": "ft-j1-box-k3",
-      "type": "block",
-      "setId": null,
-      "u": 0.549,
-      "v": 0.75,
-      "facing": 0,
-      "size": 100,
-      "color": "#efe7d6",
-      "name": ""
-     },
-     {
       "id": "ft-j1-box-k4",
       "type": "chair",
       "setId": null,
-      "u": 0.647,
+      "u": 0.06,
       "v": 0.75,
       "facing": 0,
       "size": 100,
@@ -15390,7 +15426,7 @@
       "id": "ft-j1-box-k5",
       "type": "block",
       "setId": null,
-      "u": 0.744,
+      "u": 0.158,
       "v": 0.75,
       "facing": 0,
       "size": 100,
@@ -15401,7 +15437,7 @@
       "id": "ft-j1-box-k6",
       "type": "chair",
       "setId": null,
-      "u": 0.842,
+      "u": 0.256,
       "v": 0.75,
       "facing": 0,
       "size": 100,
@@ -15412,7 +15448,7 @@
       "id": "ft-j1-box-k7",
       "type": "block",
       "setId": null,
-      "u": 0.94,
+      "u": 0.353,
       "v": 0.75,
       "facing": 0,
       "size": 100,
@@ -15423,8 +15459,8 @@
       "id": "ft-j1-box-k8",
       "type": "chair",
       "setId": null,
-      "u": 0.06,
-      "v": 0.825,
+      "u": 0.451,
+      "v": 0.75,
       "facing": 0,
       "size": 100,
       "color": "#5b4a3a",
@@ -15434,8 +15470,8 @@
       "id": "ft-j1-box-k9",
       "type": "block",
       "setId": null,
-      "u": 0.158,
-      "v": 0.825,
+      "u": 0.549,
+      "v": 0.75,
       "facing": 0,
       "size": 100,
       "color": "#efe7d6",
@@ -15445,8 +15481,8 @@
       "id": "ft-j1-box-ka",
       "type": "chair",
       "setId": null,
-      "u": 0.256,
-      "v": 0.825,
+      "u": 0.647,
+      "v": 0.75,
       "facing": 0,
       "size": 100,
       "color": "#5b4a3a",
@@ -15456,8 +15492,8 @@
       "id": "ft-j1-box-kb",
       "type": "block",
       "setId": null,
-      "u": 0.353,
-      "v": 0.825,
+      "u": 0.744,
+      "v": 0.75,
       "facing": 0,
       "size": 100,
       "color": "#efe7d6",
@@ -15467,8 +15503,8 @@
       "id": "ft-j1-box-kc",
       "type": "chair",
       "setId": null,
-      "u": 0.451,
-      "v": 0.825,
+      "u": 0.842,
+      "v": 0.75,
       "facing": 0,
       "size": 100,
       "color": "#5b4a3a",
@@ -15478,8 +15514,8 @@
       "id": "ft-j1-box-kd",
       "type": "block",
       "setId": null,
-      "u": 0.549,
-      "v": 0.825,
+      "u": 0.94,
+      "v": 0.75,
       "facing": 0,
       "size": 100,
       "color": "#efe7d6",
@@ -15489,7 +15525,7 @@
       "id": "ft-j1-box-ke",
       "type": "chair",
       "setId": null,
-      "u": 0.647,
+      "u": 0.06,
       "v": 0.825,
       "facing": 0,
       "size": 100,
@@ -15500,7 +15536,7 @@
       "id": "ft-j1-box-kf",
       "type": "block",
       "setId": null,
-      "u": 0.744,
+      "u": 0.158,
       "v": 0.825,
       "facing": 0,
       "size": 100,
@@ -15511,7 +15547,7 @@
       "id": "ft-j1-box-kg",
       "type": "chair",
       "setId": null,
-      "u": 0.842,
+      "u": 0.256,
       "v": 0.825,
       "facing": 0,
       "size": 100,
@@ -15522,7 +15558,7 @@
       "id": "ft-j1-box-kh",
       "type": "block",
       "setId": null,
-      "u": 0.94,
+      "u": 0.353,
       "v": 0.825,
       "facing": 0,
       "size": 100,
@@ -15533,8 +15569,8 @@
       "id": "ft-j1-box-ki",
       "type": "chair",
       "setId": null,
-      "u": 0.06,
-      "v": 0.9,
+      "u": 0.451,
+      "v": 0.825,
       "facing": 0,
       "size": 100,
       "color": "#5b4a3a",
@@ -15544,8 +15580,8 @@
       "id": "ft-j1-box-kj",
       "type": "block",
       "setId": null,
-      "u": 0.158,
-      "v": 0.9,
+      "u": 0.549,
+      "v": 0.825,
       "facing": 0,
       "size": 100,
       "color": "#efe7d6",
@@ -15555,8 +15591,8 @@
       "id": "ft-j1-box-kk",
       "type": "chair",
       "setId": null,
-      "u": 0.256,
-      "v": 0.9,
+      "u": 0.647,
+      "v": 0.825,
       "facing": 0,
       "size": 100,
       "color": "#5b4a3a",
@@ -15566,8 +15602,8 @@
       "id": "ft-j1-box-kl",
       "type": "block",
       "setId": null,
-      "u": 0.353,
-      "v": 0.9,
+      "u": 0.744,
+      "v": 0.825,
       "facing": 0,
       "size": 100,
       "color": "#efe7d6",
@@ -15577,8 +15613,8 @@
       "id": "ft-j1-box-km",
       "type": "chair",
       "setId": null,
-      "u": 0.451,
-      "v": 0.9,
+      "u": 0.842,
+      "v": 0.825,
       "facing": 0,
       "size": 100,
       "color": "#5b4a3a",
@@ -15588,8 +15624,8 @@
       "id": "ft-j1-box-kn",
       "type": "block",
       "setId": null,
-      "u": 0.549,
-      "v": 0.9,
+      "u": 0.94,
+      "v": 0.825,
       "facing": 0,
       "size": 100,
       "color": "#efe7d6",
@@ -15599,7 +15635,7 @@
       "id": "ft-j1-box-ko",
       "type": "chair",
       "setId": null,
-      "u": 0.647,
+      "u": 0.06,
       "v": 0.9,
       "facing": 0,
       "size": 100,
@@ -15610,7 +15646,7 @@
       "id": "ft-j1-box-kp",
       "type": "block",
       "setId": null,
-      "u": 0.744,
+      "u": 0.158,
       "v": 0.9,
       "facing": 0,
       "size": 100,
@@ -15621,7 +15657,7 @@
       "id": "ft-j1-box-kq",
       "type": "chair",
       "setId": null,
-      "u": 0.842,
+      "u": 0.256,
       "v": 0.9,
       "facing": 0,
       "size": 100,
@@ -15630,6 +15666,72 @@
      },
      {
       "id": "ft-j1-box-kr",
+      "type": "block",
+      "setId": null,
+      "u": 0.353,
+      "v": 0.9,
+      "facing": 0,
+      "size": 100,
+      "color": "#efe7d6",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-ks",
+      "type": "chair",
+      "setId": null,
+      "u": 0.451,
+      "v": 0.9,
+      "facing": 0,
+      "size": 100,
+      "color": "#5b4a3a",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-kt",
+      "type": "block",
+      "setId": null,
+      "u": 0.549,
+      "v": 0.9,
+      "facing": 0,
+      "size": 100,
+      "color": "#efe7d6",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-ku",
+      "type": "chair",
+      "setId": null,
+      "u": 0.647,
+      "v": 0.9,
+      "facing": 0,
+      "size": 100,
+      "color": "#5b4a3a",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-kv",
+      "type": "block",
+      "setId": null,
+      "u": 0.744,
+      "v": 0.9,
+      "facing": 0,
+      "size": 100,
+      "color": "#efe7d6",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-kw",
+      "type": "chair",
+      "setId": null,
+      "u": 0.842,
+      "v": 0.9,
+      "facing": 0,
+      "size": 100,
+      "color": "#5b4a3a",
+      "name": ""
+     },
+     {
+      "id": "ft-j1-box-kx",
       "type": "block",
       "setId": null,
       "u": 0.94,
@@ -15665,7 +15767,7 @@
     "background": "#40362d",
     "pieces": [
      {
-      "id": "ft-j2-p01-ks",
+      "id": "ft-j2-p01-ky",
       "type": "performer",
       "castId": "ft-cast-p01",
       "originId": "ft-origin-p01",
@@ -15678,7 +15780,7 @@
       "name": ""
      },
      {
-      "id": "ft-j2-p02-kt",
+      "id": "ft-j2-p02-kz",
       "type": "performer",
       "castId": "ft-cast-p02",
       "originId": "ft-origin-p02",
@@ -15691,7 +15793,7 @@
       "name": ""
      },
      {
-      "id": "ft-j2-p03-ku",
+      "id": "ft-j2-p03-l0",
       "type": "performer",
       "castId": "ft-cast-p03",
       "originId": "ft-origin-p03",
@@ -15704,7 +15806,7 @@
       "name": ""
      },
      {
-      "id": "ft-j2-p04-kv",
+      "id": "ft-j2-p04-l1",
       "type": "performer",
       "castId": "ft-cast-p04",
       "originId": "ft-origin-p04",
@@ -15717,7 +15819,7 @@
       "name": ""
      },
      {
-      "id": "ft-j2-p05-kw",
+      "id": "ft-j2-p05-l2",
       "type": "performer",
       "castId": "ft-cast-p05",
       "originId": "ft-origin-p05",
@@ -15730,7 +15832,7 @@
       "name": ""
      },
      {
-      "id": "ft-j2-p06-kx",
+      "id": "ft-j2-p06-l3",
       "type": "performer",
       "castId": "ft-cast-p06",
       "originId": "ft-origin-p06",
@@ -15743,7 +15845,7 @@
       "name": ""
      },
      {
-      "id": "ft-j2-p07-ky",
+      "id": "ft-j2-p07-l4",
       "type": "performer",
       "castId": "ft-cast-p07",
       "originId": "ft-origin-p07",
@@ -15756,7 +15858,7 @@
       "name": ""
      },
      {
-      "id": "ft-j2-p08-kz",
+      "id": "ft-j2-p08-l5",
       "type": "performer",
       "castId": "ft-cast-p08",
       "originId": "ft-origin-p08",
@@ -15769,7 +15871,7 @@
       "name": ""
      },
      {
-      "id": "ft-j2-pole-l0",
+      "id": "ft-j2-pole-l6",
       "type": "pole",
       "setId": "ft-set-pole",
       "originId": "ft-origin-pole",
@@ -15786,7 +15888,7 @@
       }
      },
      {
-      "id": "ft-j2-trap-l1",
+      "id": "ft-j2-trap-l7",
       "type": "trapeze",
       "setId": "ft-set-trap",
       "originId": "ft-origin-trap",
@@ -15803,7 +15905,7 @@
       }
      },
      {
-      "id": "ft-j2-wall-l2",
+      "id": "ft-j2-wall-l8",
       "type": "wall",
       "setId": "ft-set-wall",
       "originId": "ft-origin-wall",

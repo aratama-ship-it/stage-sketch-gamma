@@ -79,3 +79,20 @@ test("全ての形の部品は知っている shape だけ（描けない部品�
     for (const part of shape.parts || []) assert.ok(known.has(part.shape), `${id}: ${part.shape}`);
   }
 });
+
+test("2026-09-29 第2弾: 傾けた板（ピアノの蓋）・羽根・小道具を使う一般姿勢の表", () => {
+  const lid = parts("grandpianoopen").find((p) => p.shape === "flat");
+  assert.ok(lid && lid.plane === "xz" && lid.roll > 0 && lid.pts.length >= 40, "蓋は床と平行の板を蝶番で持ち上げた形");
+  assert.equal(parts("grandpianoopen").filter((p) => p.shape === "box" && p.h < 0.03 && p.w < 0.2).length, 0, "帯の段が残っていない");
+  const fan = parts("wind_machine");
+  assert.equal(fan.filter((p) => p.shape === "flat").length, 4, "羽根は板4枚");
+  assert.ok(fan.some((p) => p.shape === "cylinder" && p.ring), "外周の枠は輪");
+  const main = src;
+  assert.match(main, /const PROP_USE_EXTRA = Object\.freeze\(\{/);
+  assert.match(main, /rope: \["pull"\]/);
+  assert.match(main, /\|\| extra\.includes\(pose\.id\)\);/, "propUsePoses が表を見る");
+  assert.match(main, /propUseExtraPoses\(propShapeOf\(piece\)\)\.includes\(poseId\)/, "holdPieceBy が表の姿勢を受け付ける");
+  // 一般の姿勢を POSE_PROPS に入れて一覧から消していない
+  const posePropsBlock = main.slice(main.indexOf("const POSE_PROPS = {"), main.indexOf("};", main.indexOf("const POSE_PROPS = {")));
+  for (const id of ["pull", "throw", "raise_hand", "walk", "shade_eyes", "look_down", "taiko_strike"]) assert.ok(!new RegExp(`^\\s*${id}:`, "m").test(posePropsBlock), `${id} は POSE_PROPS に無い`);
+});

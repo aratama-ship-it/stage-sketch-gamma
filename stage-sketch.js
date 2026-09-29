@@ -2386,6 +2386,35 @@
    *          x・y・z は輪郭の原点（輪郭の y=0 が床）。 */
   const lathe = (profile, extra = {}) => ({ shape: "lathe", x: 0, y: 0, z: 0, profile, ...extra });
   const flat = (pts, d, extra = {}) => ({ shape: "flat", x: 0, y: 0, z: 0, pts, d, ...extra });
+  /* 切り抜き板の3次元の輪郭（2026-09-29 追加: 傾けられる板）。
+     plane "xy"（既定・客席へ向く）か "xz"（床と平行）に置き、roll（z軸まわり・度）→ tilt（x軸まわり・度）の順に
+     板の原点（x,y,z）を中心に回す。開いたピアノの蓋（xz を蝶番の線で持ち上げる）や扇風機の羽根（xy を軸で回す）に使う。
+     返り値: 表と裏の面の点（原点込み）、面の法線、輪郭を反時計回りにそろえた2次元の点。 */
+  const flatFrame = (part, ox = 0, oy = 0, oz = 0) => {
+    const half = Math.max(0.004, Number(part.d) || 0.05) / 2;
+    const raw = part.pts;
+    const area = raw.reduce((sum, q, i) => { const r = raw[(i + 1) % raw.length]; return sum + q[0] * r[1] - r[0] * q[1]; }, 0);
+    const pts2 = area > 0 ? raw : raw.slice().reverse();
+    const xz = part.plane === "xz";
+    const to3 = ([u, v]) => (xz ? [u, 0, v] : [u, v, 0]);
+    const n0 = xz ? [0, -1, 0] : [0, 0, 1];  // (u,v) を反時計回りに見たときの右手の法線
+    const roll = (Number(part.roll) || 0) * Math.PI / 180, tilt = (Number(part.tilt) || 0) * Math.PI / 180;
+    const rot = ([px, py, pz]) => {
+      const x = px * Math.cos(roll) - py * Math.sin(roll), y = px * Math.sin(roll) + py * Math.cos(roll);
+      return [x, y * Math.cos(tilt) - pz * Math.sin(tilt), y * Math.sin(tilt) + pz * Math.cos(tilt)];
+    };
+    const n = rot(n0);
+    const base = pts2.map((q) => rot(to3(q)));
+    const front = base.map((q) => [ox + q[0] - n[0] * half, oy + q[1] - n[1] * half, oz + q[2] - n[2] * half]);
+    const back = base.map((q) => [ox + q[0] + n[0] * half, oy + q[1] + n[1] * half, oz + q[2] + n[2] * half]);
+    const sideNormal = (i) => {
+      const j = (i + 1) % pts2.length;
+      const eu = pts2[j][0] - pts2[i][0], ev = pts2[j][1] - pts2[i][1];
+      const len = Math.hypot(eu, ev) || 1;
+      return rot(to3([ev / len, -eu / len]));
+    };
+    return { front, back, normal: n, sideNormal, count: pts2.length };
+  };
   const circleOutline = (r, n = 48, cx = 0, cy = r) => Array.from({ length: n }, (_, i) => {
     const a = (i / n) * Math.PI * 2;
     return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
@@ -2519,6 +2548,19 @@
      部品は回転できないので、天板の幅を数段（bands）に分け、低音側から高音側へ段々と
      高さを上げていくことで「傾いた板」を近似する（2026-09-11 本人指摘: 縁に立つ壁は違和感がある。
      天板が上がっている状態を作ってほしい、への対応）。 */
+  /* 天板の輪郭（上から見た形）。右側（高音側の弧）を手前から奥へ、左側（低音側）を奥から手前へ辿る。
+     hingeX は蝶番の x（左端）。輪郭の u はそこからの距離。 */
+  const pianoLidOutline = (points, hingeX, segments) => {
+    const total = points[points.length - 1][0];
+    const right = [], left = [];
+    for (let i = 0; i <= segments; i += 1) {
+      const z = (total * i) / segments;
+      const [l, r] = samplePianoProfile(points, Math.min(total - 1e-6, z));
+      right.push([r + hingeX, z]);
+      left.push([l + hingeX, z]);
+    }
+    return right.concat(left.reverse());
+  };
   const pianoOpenLid = (points, segments, bands, baseY, liftHeight, thickness) => {
     const total = points[points.length - 1][0];
     const dz = total / segments;
@@ -3522,10 +3564,11 @@
     parts: [
       ...pianoCurveSlices(padPianoPoints(GRANDPIANO_PROFILE, 0.025), 24, 0.58, 0.03),
       ...pianoCurveSlices(GRANDPIANO_PROFILE, 24, 0.61, 0.25),
-      ...pianoOpenLid(GRANDPIANO_PROFILE, 24, 10, 0.86, 0.95, 0.02),
-      // 支柱（本人指摘の「車の支えのようなもの」）。高音側の縁の下、胴とほぼ持ち上がった天板の裏を
-      // 斜めに1本つなぐ。z=1.0付近は幅が最も広い弧のあたり（実物でも支柱を立てる位置に近い）。
-      ...slantBeam(6, 0.645, 0.775, 0.86, 1.79, 1.0, 1.0, 0.025),
+      /* 天板（2026-09-29）: 帯の段をやめ、上から見た輪郭の板1枚を低音側の縁（x=-0.70 の蝶番）で 35度持ち上げる。
+         輪郭は胴と同じ GRANDPIANO_PROFILE から取り、原点を蝶番に置く（u = x + 0.70, v = z）。 */
+      flat(pianoLidOutline(GRANDPIANO_PROFILE, 0.70, 28), 0.03, { plane: "xz", roll: 35, x: -0.70, y: 0.875, z: 0, tint: 0.95 }),
+      // 支柱（本人指摘の「車の支えのようなもの」）。高音側の縁の下から持ち上がった天板の裏へ1本
+      { shape: "line", a: [0.62, 0.86, 1.0], b: [0.46, 1.66, 1.0], w: 0.025, tone: "cloth", tint: 0.85 },
       boxAt(-0.62, 0, 0.14, 0.08, 0.08, 0.58, 0.6), boxAt(0.55, 0, 0.14, 0.08, 0.08, 0.58, 0.6),
       boxAt(0, 0, 1.78, 0.08, 0.08, 0.58, 0.6),
     ] };
@@ -4557,10 +4600,10 @@
     parts: [
       boxAt(0, 0, 0, 0.72, 0.5, 0.08, 0.62),
       boxAt(0, 0.08, 0, 0.08, 0.12, 0.3, 0.68),
-      ...Array.from({ length: 12 }, (_, i) => {
-        const a = (i / 12) * Math.PI * 2;
-        return boxAt(Math.cos(a) * 0.32, 0.74 + Math.sin(a) * 0.32 - 0.045, 0, 0.12, 0.08, 0.09, 0.9);
-      }),
+      // 羽根の外周の枠は輪、羽根は軸で回した板4枚（2026-09-29。箱を12個並べた段をやめた）
+      { shape: "cylinder", ring: true, cloth: true, x: 0, y: 0.74, z: 0, dia: 0.72, w: 0.05, tint: 0.9 },
+      ...[15, 105, 195, 285].map((deg) => flat([[0, 0.02], [0.06, 0.08], [0.075, 0.20], [0.035, 0.30], [-0.035, 0.30], [-0.075, 0.20], [-0.06, 0.08]],
+        0.015, { roll: deg, x: 0, y: 0.74, z: 0, tint: 0.86 })),
       { shape: "sphere", x: 0, y: 0.68, z: 0.02, dia: 0.14, tint: 0.58 },
       boxAt(0, 0.69, 0.03, 0.5, 0.04, 0.07, 0.76), boxAt(0, 0.48, 0.03, 0.07, 0.04, 0.5, 0.82),
       boxAt(0, 1.1, 0, 0.5, 0.12, 0.1, 0.7),
@@ -6871,13 +6914,13 @@
     staff_ready: ["staff"],
     read_book: ["book", "newspaper"],
     phone_call: ["telephone"],
-    drink: ["glassbottle"],
-    toast: ["glassbottle"],
+    drink: ["glassbottle", "cup_saucer"],
+    toast: ["glassbottle", "cup_saucer"],
     sweep: ["broom"],
-    tray_serve: ["tray"],
+    tray_serve: ["tray", "plate", "cake"],
     umbrella_hold: ["umbrella", "wagasa"],
     flag_wave: ["flag"],
-    torch_raise: ["torch", "lantern", "candle"],
+    torch_raise: ["torch", "lantern", "candle", "chochin", "flashlight"],
     bouquet_offer: ["bouquet"],
     juggle_one_hand: ["ball", "club", "ring"],
     face_balance: ["club", "staff"],
@@ -6889,6 +6932,16 @@
     hoop_waist_spin: ["hoop"],
     kyudo_draw: ["bow_arrow"],
   };
+  /* 2026-09-29（本人依頼「持ち方＝ただ持つ／使う」の一般化・第1弾）: 誰でも選べる一般の姿勢のうち、
+     その小道具を「使う」形に当たるものを、小道具欄の「使う」から直接選べるようにする表。
+     ★POSE_PROPS へ足すと、その姿勢が「持っているときだけ」の姿勢になって一覧から消えるので、一般の姿勢はこちらに書く。 */
+  const PROP_USE_EXTRA = Object.freeze({
+    rope: ["pull"], taiko_bachi: ["taiko_strike"], knife_throwing: ["throw"], boomerang: ["throw"],
+    balloon: ["raise_hand"], flashlight: ["shade_eyes", "point"], clock: ["look_down"], flip_board: ["raise_hand"],
+    bucket: ["walk"], handbag: ["walk"], basket: ["walk"], backpack: ["walk"], suitcase: ["walk"], barbell: ["reach"],
+    fan: ["wave"], scarf: ["open"], hyoshigi: ["clap"], tambourine: ["wave"], handbell: ["wave"], kendama: ["reach"],
+  });
+  const propUseExtraPoses = (shape) => (PROP_USE_EXTRA[shape] || []).filter((id) => POSES.some((pose) => pose.id === id));
   /* 楽器の演奏姿勢は通常の姿勢一覧に出さず、小道具の「使う」で明示的に選ぶ。
      保存済みの姿勢IDは残し、古いショーの読み込みで失われないようにする。 */
   const HELD_INSTRUMENT_POSES = Object.freeze({
@@ -15602,7 +15655,9 @@
       profile: Array.isArray(part.profile) ? part.profile.map(([t, dia, tint]) => (part.axis === "x"
         ? [t * sx, dia * ((sy + sz) / 2), tint] : part.axis === "z" ? [t * sz, dia * ((sx + sy) / 2), tint]
           : [t * sy, dia * ((sx + sz) / 2), tint])) : undefined,
-      pts: Array.isArray(part.pts) ? part.pts.map(([px, py]) => [px * sx, py * sy]) : undefined,
+      pts: Array.isArray(part.pts) ? part.pts.map(([px, py]) => (part.plane === "xz" ? [px * sx, py * sz] : [px * sx, py * sy])) : undefined,
+      roll: part.roll,
+      tilt: part.tilt,
       bend: Array.isArray(part.bend) ? [part.bend[0] * sx, part.bend[1] * sz] : undefined,
       // 両端を持つ棒（line）。太さ w は幅の拡大率で
       a: Array.isArray(part.a) ? [part.a[0] * sx, part.a[1] * sy, part.a[2] * sz] : undefined,
@@ -15713,19 +15768,13 @@
     };
     /* 切り抜き板。表（客席側 -z）と裏の面、輪郭に沿った側面。輪郭は符号付き面積で向きをそろえる。 */
     const addFlat = (part, x, y, z, tint) => {
-      const dd = Math.max(0.004, finite(part.d, 0.05)) / 2;
-      const raw = part.pts.map(([px, py]) => [x + px, y + py]);
-      const area = raw.reduce((sum, p, i) => { const q = raw[(i + 1) % raw.length]; return sum + p[0] * q[1] - q[0] * p[1]; }, 0);
-      const pts = area > 0 ? raw : raw.slice().reverse();
-      const front = pts.map(([px, py]) => [px, py, z - dd]);
-      const back = pts.map(([px, py]) => [px, py, z + dd]);
-      add(front, tint, [0, 0, -1], true);
-      add(back.slice().reverse(), tint, [0, 0, 1], true);
-      for (let i = 0; i < pts.length; i += 1) {
-        const j = (i + 1) % pts.length;
-        const ex = pts[j][0] - pts[i][0], ey = pts[j][1] - pts[i][1];
-        const len = Math.hypot(ex, ey) || 1;
-        add([front[i], back[i], back[j], front[j]], tint, [ey / len, -ex / len, 0], true);
+      const frame = flatFrame(part, x, y, z);
+      const { front, back, normal } = frame;
+      add(front, tint, normal.map((v) => -v), true);
+      add(back.slice().reverse(), tint, normal, true);
+      for (let i = 0; i < frame.count; i += 1) {
+        const j = (i + 1) % frame.count;
+        add([front[i], back[i], back[j], front[j]], tint, frame.sideNormal(i), true);
       }
     };
     parts.forEach((part) => {
@@ -15976,10 +16025,13 @@
               w: Math.max(0.005, r * 2 + bx), d: Math.max(0.005, r * 2 + bz), h: Math.max(0.005, len), tint: part.tint }];
           }
           if (part.shape === "flat" && Array.isArray(part.pts) && part.pts.length > 2) {
-            const xs = part.pts.map((p) => p[0]), ys = part.pts.map((p) => p[1]);
-            const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-            return [{ kind: "flat", spec: part, ox: (part.x || 0) + (x0 + x1) / 2, oz: part.z || 0, lift: (part.y || 0) + y0,
-              w: Math.max(0.005, x1 - x0), d: Math.max(0.005, part.d || 0.05), h: Math.max(0.005, y1 - y0), tint: part.tint }];
+            // 傾き・向きを含めた3次元の輪郭から外接箱を取る
+            const frame = flatFrame(part, part.x || 0, part.y || 0, part.z || 0);
+            const all = frame.front.concat(frame.back);
+            const xs = all.map((q) => q[0]), ys = all.map((q) => q[1]), zs = all.map((q) => q[2]);
+            const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), z0 = Math.min(...zs), z1 = Math.max(...zs);
+            return [{ kind: "flat", spec: part, ox: (x0 + x1) / 2, oz: (z0 + z1) / 2, lift: y0,
+              w: Math.max(0.005, x1 - x0), d: Math.max(0.005, z1 - z0), h: Math.max(0.005, y1 - y0), tint: part.tint }];
           }
           if (part.shape === "sphere") {
             const r = (part.dia || 1) / 2;
@@ -26369,7 +26421,7 @@
         return;
       }
       // 回転体・切り抜き板は正面から見た輪郭で（2026-09-29）
-      if ((part.kind === "lathe" || part.kind === "flat") && part.spec) {
+      if ((part.kind === "lathe" || part.kind === "flat") && part.spec && !(part.kind === "flat" && (part.spec.plane || part.spec.roll || part.spec.tilt))) {
         const spec = part.spec;
         ctx2.fillStyle = part.tint >= 1 ? color : mixToward(color, 1 - (part.tint || 1));
         ctx2.beginPath();
@@ -35075,7 +35127,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       && !heldInstrumentPoseId(previousHolder, sc().pieces)) previousHolder.pose = mountKindOf(previousHolder) === "chair" ? "sit" : "stand";
     if (!poseId && HELD_INSTRUMENT_POSE_IDS.has(holder.pose) && !wasPlaying)
       holder.pose = mountKindOf(holder) === "chair" ? "sit" : "stand";
-    const usePose = poseId && POSE_PROPS[poseId]?.includes(propShapeOf(piece))
+    const usePose = poseId && (POSE_PROPS[poseId]?.includes(propShapeOf(piece)) || propUseExtraPoses(propShapeOf(piece)).includes(poseId))
       ? poseById(poseId) : null;
     if (usePose) holder.pose = usePose.id;
     finishHoldingChange(usePose
@@ -35118,7 +35170,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
    * 保存は従来どおり heldBy / holdMode / pose の組み合わせなので、既存ショーとの互換性は変えない。 */
   function propUsePoses(piece) {
     const shape = propShapeOf(piece);
-    return POSES.filter((pose) => POSE_PROPS[pose.id]?.includes(shape));
+    const extra = propUseExtraPoses(shape);
+    return POSES.filter((pose) => POSE_PROPS[pose.id]?.includes(shape) || extra.includes(pose.id));
   }
 
   function appendPropUseOption(group, value, text, disabled = false) {

@@ -64,8 +64,8 @@ if (POSES.length < 40) throw new Error(`姿勢の一覧が取れていません 
 if (PROP_SHAPES.length < 10) throw new Error(`小道具の形の一覧が取れていません (${PROP_SHAPES.length})`);
 
 // v4（2026-09-24）: 転換0秒をなくしてシーンの秒数が変わったので上げる（一度開いた棚の複製は自動で差し替わらないため）
-// v18（2026-09-29）: C-8 椅子以外に腰掛ける を追加
-const PROJECT_ID = "gamma-feature-test-v18";
+// v19（2026-09-29）: C-1 椅子以外に腰掛ける・C-2 小道具を使う姿勢 を追加
+const PROJECT_ID = "gamma-feature-test-v19";
 const CREATED = "2026-09-18T00:00:00.000Z";
 const STAGE = { width: 12, depth: 9 };      // proscenium / mid の実寸（stage-venues.js）
 const COLORS = ["#a84b26", "#77865f", "#9c823f", "#6d6657", "#315b8a", "#b0533f", "#4f7d6f", "#8a6a9c",
@@ -403,8 +403,16 @@ section("c", "C 舞台セット・小道具・空中");
   ["guitar", "violin", "bassguitar", "accordion", "doublebass"].forEach((shape, index) => {
     pieces.push(setPiece("c2", `instrument-${shape}`, instrumentPlayers[index].u, 0.83));
   });
+  /* 2026-09-29: 「持つ」と「使う」の違い。一般の姿勢で使う小道具（PROP_USE_EXTRA）と、似た物を足した POSE_PROPS
+     （ケーキ→トレイを運ぶ・提灯→掲げる）。演者は登録せず、小道具は駒に形と寸法を直接持たせる。 */
+  [["rope", "pull", "ロープを引く", { w: 0.28, d: 0.28, h: 0.22 }], ["cake", "tray_serve", "ケーキを運ぶ", { w: 0.3, d: 0.3, h: 0.22 }], ["chochin", "torch_raise", "提灯を掲げる", { w: 0.24, d: 0.24, h: 0.5 }]]
+    .forEach(([shape, pose, name, dims], index) => {
+      const holder = perf("c2", null, 0.10 + index * 0.13, 0.55, { pose, name });
+      pieces.push(holder, { id: pid("c2", `use-${shape}`), type: "prop", setId: null, propShape: shape, u: holder.u, v: holder.v, facing: 0, size: 100,
+        color: "#d3ac59", name: "", dims: { ...dims, lift: 0 }, heldBy: holder.id, holdSide: "R", holdMode: "hand" });
+    });
   scene("c2", "C-2 小道具の登録と持ち手", 1,
-    `${CHECK}登録した小道具6つ（箱・ボール・傘・仮面・クラブ・旗）。下の3人は持っている: 演者01=ボールを右手、演者02=傘を左手、演者03=仮面を顔（顔で持てるのは仮面だけ）。手前の演者04〜08は初期状態では全員立ち姿で、ギター・バイオリン・ベースギター・アコーディオン・コントラバスは床に置いてある。各演者を選び「小道具」から対応する楽器を「持つ」だけなら立ち姿のまま、「演奏する」で演奏姿勢になり、「演奏をやめる」で立ち姿へ戻る。楽器を持ったまま通常の姿勢も選べる。姿勢一覧と3Dの姿勢選択には楽器姿勢が出ない。保存後の再読込でも持ち物と見た目が一致する。「選んだもの」で持ち手を外す・付け替える、香盤表（印刷）に受け渡しが出る。`, pieces);
+    `${CHECK}登録した小道具6つ（箱・ボール・傘・仮面・クラブ・旗）。下の3人は持っている: 演者01=ボールを右手、演者02=傘を左手、演者03=仮面を顔（顔で持てるのは仮面だけ）。手前の演者04〜08は初期状態では全員立ち姿で、ギター・バイオリン・ベースギター・アコーディオン・コントラバスは床に置いてある。各演者を選び「小道具」から対応する楽器を「持つ」だけなら立ち姿のまま、「演奏する」で演奏姿勢になり、「演奏をやめる」で立ち姿へ戻る。楽器を持ったまま通常の姿勢も選べる。姿勢一覧と3Dの姿勢選択には楽器姿勢が出ない。保存後の再読込でも持ち物と見た目が一致する。「選んだもの」で持ち手を外す・付け替える、香盤表（印刷）に受け渡しが出る。\n2026-09-29: 左奥の3人（v=0.55）はロープ→引く・ケーキ→トレイを運ぶ・提灯→掲げる。小道具欄の「使う」に一般の姿勢が出るか（ロープなら「引く」）。`, pieces);
 }
 {
   // 小道具の全形（本体の PROP_SHAPES から自動）。1シーン80駒以下になる最小シーン数へ等分する
