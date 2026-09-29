@@ -17144,6 +17144,11 @@ body.is-timeline-resizing { cursor: row-resize; user-select: none; -webkit-user-
   min-height: 52px;
   padding: 4px 8px;
 }
+.stage-timeline-menu-strip.is-transport { gap: 3px; }
+.stage-timeline-menu-strip.is-transport .stage-timeline-menu-spacer { display: none; }
+.stage-timeline-menu-strip.is-transport #stage-timeline-loop { padding-inline: 6px; }
+.stage-timeline-menu-strip.is-transport #stage-timeline-grid { padding-inline: 8px; }
+.stage-timeline-menu-strip.is-transport .stage-timeline-section-duration input[type="number"] { width: 70px; }
 
 .stage-timeline-menu-strip.is-source { border-bottom: 1px solid rgba(120, 105, 86, 0.58); }
 
@@ -17176,6 +17181,13 @@ body.is-timeline-resizing { cursor: row-resize; user-select: none; -webkit-user-
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.stage-timeline-transition-animation-button {
+  display: inline-grid;
+  place-items: center;
+  line-height: 0;
+}
+.stage-timeline-transition-animation-button .stage-timeline-transition-animation-off { display: none; }
+.stage-timeline-transition-animation-button[aria-pressed="false"] .stage-timeline-transition-animation-off { display: inline; }
 .stage-timeline-square .stage-timeline-close-icon {
   width: 16px;
   height: 16px;
@@ -17394,6 +17406,31 @@ body.is-timeline-resizing { cursor: row-resize; user-select: none; -webkit-user-
   color: var(--stage-timeline-text);
   font-variant-numeric: tabular-nums;
   text-align: right;
+}
+.stage-timeline-cue-target {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  color: var(--stage-timeline-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.stage-timeline-cue-target select {
+  flex: 0 0 110px;
+  width: 110px;
+  min-width: 110px;
+  padding: 0 18px 0 6px;
+  color: var(--stage-timeline-text);
+  background: var(--desk);
+  border: 1px solid var(--stage-timeline-line);
+  border-radius: 4px;
+  font: inherit;
+}
+.stage-timeline-cue-target select:focus-visible {
+  outline: 2px solid var(--stage-timeline-accent);
+  outline-offset: 2px;
 }
 
 .stage-timeline-viewport {

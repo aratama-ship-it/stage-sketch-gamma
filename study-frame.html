@@ -4,7 +4,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
 <title>Stage Sketch — read-only drawings</title>
-<link rel="stylesheet" href="/study-assets/style.css?v=20260929-ko60"><link rel="stylesheet" href="/stage-study.css?v=25"><link rel="stylesheet" href="/stage-study-navigation.css?v=1">
+<link rel="stylesheet" href="/study-assets/style.css?v=20260930-transition2"><link rel="stylesheet" href="/stage-study.css?v=25"><link rel="stylesheet" href="/stage-study-navigation.css?v=1">
 <script src="/stage-study-sticky.js?v=5"></script><script src="/stage-study-pen.js?v=4"></script><script src="/stage-study-navigation.js?v=1"></script><script src="/stage-study-frame.js?v=6"></script></head>
 <body class="study-frame" data-view="both">
 <div class="study-drawings"><div class="study-drawing study-front"></div><div class="study-drawing study-plan"></div></div>
@@ -25,7 +25,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.55</span>
+              <span class="stage-app-version">0.2.64</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo"
@@ -770,10 +770,10 @@
                     <span class="visually-hidden">照明</span>
                   </label>
                   <label class="stage-canvas-toggle is-icon" data-tool-tip="frontBorder"
-                         title="機材配置で設定した前一文字を、正面図に出したり隠したりする" aria-label="前一文字を表示・非表示にする">
+                         title="劇場設定の天井・前一文字幕で設定した幕を、正面図に出したり隠したりする" aria-label="前一文字幕を表示・非表示にする">
                     <input type="checkbox" id="stage-show-front-border">
                     <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M2.2 3.4h11.6"/><path d="M3.1 4.4v5.9l1.5-1.1 1.7 1.4 1.7-1.4 1.7 1.4 1.7-1.4 1.5 1.1V4.4"/><path class="stage-visibility-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
-                    <span class="visually-hidden">前一文字</span>
+                    <span class="visually-hidden">前一文字幕</span>
                   </label>
                   <label class="stage-canvas-toggle is-icon" data-tool-tip="frontLightIntent"
                          title="光の意図を、図の上に作図の印として重ねる" aria-label="光の意図を表示・非表示にする">
@@ -1406,6 +1406,23 @@
             <button type="button" class="stage-timeline-record" id="stage-timeline-record" disabled hidden>記録</button>
             <button type="button" class="stage-timeline-record" id="stage-timeline-record-next" disabled hidden>記録して次へ ▶</button>
             <output id="stage-timeline-position">0:00</output>
+            <button type="button" class="stage-timeline-square stage-timeline-transition-animation-button"
+                    id="stage-timeline-transition-animation" aria-label="転換アニメーション"
+                    title="転換アニメーション" aria-pressed="true">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M3 5h13v12H3zM7 8h14v12H7zM10 11l4 3-4 3z"></path>
+                <path class="stage-timeline-transition-animation-off" d="M3 21 21 3"></path>
+              </svg>
+            </button>
+            <label class="stage-timeline-cue-target" for="stage-timeline-cue-target">
+              <span aria-hidden="true">← →</span>
+              <select id="stage-timeline-cue-target" aria-label="左右キーで移るキュー">
+                <option value="all">全部</option>
+                <option value="light">ライトキュー</option>
+                <option value="music">音楽キュー</option>
+                <option value="dialogue">セリフキュー</option>
+              </select>
+            </label>
           </div>
         </header>
         <div class="stage-timeline-viewport" id="stage-timeline-viewport" tabindex="0"
@@ -2346,13 +2363,14 @@
     <div class="stage-pref-row stage-pref-lang-row">
       <span class="stage-pref-lang-body">
         <span class="stage-pref-name">言語 / Language</span>
-        <p class="stage-pref-hint">画面の文字を日本語と英語で切り替えます。</p>
+        <p class="stage-pref-hint">画面に使う言語を選びます。</p>
       </span>
       <select class="stage-lang" id="stage-lang" data-no-i18n aria-label="言語 / Language">
         <option value="ja">日本語</option>
         <option value="en">English</option>
         <option value="zh-Hans">中文（简体）</option>
         <option value="zh-Hant">中文（繁體）</option>
+        <option value="ko">한국어</option>
       </select>
     </div>
     <section class="stage-pref-skin" aria-labelledby="stage-pref-skin-title">
@@ -2514,6 +2532,79 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0264-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0264-title">v0.2.64</h3>
+        <time datetime="2026-09-29">2026-09-29</time>
+      </header>
+      <ul>
+        <li>器具に乗る姿勢と残りの「使う」姿勢を25件足しました（リラに座る・膝で吊る・片脚を掛けて反る、ハンモックに寝る・座る、トラピーズの膝掛け、綱渡り2種、はしごを登る、竹馬、ポゴスティック、樽の上、大玉の上、ティーターボードの構え、ロシアンバーの上、クレードルのキャッチャーとフライヤー、雲と月に座る、黒板に書く、布を翻す、杖をついて歩く、リュックを背負う、調理する、机の下に隠れる）。リラ・ハンモックに乗せた演者の姿勢の窓に出ます。</li>
+        <li>吊り器具の小道具の握りの高さを見直し（リラは輪の中心、ハンモックは布の底の少し上）。同梱の「テスト: 全機能の試験場」C-7 にリラに座る・ハンモックに座るの組を足しました。</li>
+      </ul>
+    </section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0263-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0263-title">v0.2.63</h3>
+        <time datetime="2026-09-29">2026-09-29</time>
+      </header>
+      <ul>
+        <li>小道具を使う姿勢を25件足しました（斧を振り下ろす・ハンマーで打つ・のこぎりを引く・スコップで掘る・釣り竿を構える・漕ぐ・松葉杖で歩く・バットを構える・ハンドパン・拍子木・タンバリン・ハンドベル・スネアを叩いて行進・小鼓・皿回し・けん玉・鞭を振る・投げ縄を回す・縄跳び・バーベルを差し上げる・フリップを掲げる・包丁で切る・拳銃を構える・ライフルを構える・扇で舞う）。その小道具を持たせた演者の「使う」と姿勢の一覧に出ます。</li>
+        <li>同梱の「テスト: 全機能の試験場」を v21 に更新しました。持ち物が要る姿勢は A 群に並べず、C-2 で物と一緒に確認します（C-2 に5人追加）。</li>
+      </ul>
+    </section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0262-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0262-title">v0.2.62</h3>
+        <time datetime="2026-09-29">2026-09-29</time>
+      </header>
+      <ul>
+        <li>円柱の角の数を、画面に大きく写るほど細かくしました（正面図 12〜36・3D 16〜40）。シルクハット・樽・カップの縁が近くでも丸く見えます。ティーカップの取っ手は弧にしました。</li>
+      </ul>
+    </section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0261-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0261-title">v0.2.61</h3>
+        <time datetime="2026-09-29">2026-09-29</time>
+      </header>
+      <ul>
+        <li>演者と物の関係を3つ足しました。①中に入る: 檻・電話ボックス・テント・枠・鳥居・扉・窓・車両・キッチンカー・金網の球・バス停の位置へ演者を置くと、上に乗らず中の床に立ちます。②もたれる: 壁・柱・木・街灯・扉・手すり・カウンター・自販機・本棚・暖炉・衝立などの縁に演者を置いて「壁にもたれる」を選ぶと、いちばん近い面へ寄って左肩を預けます。③吊り器具の小道具: ストラップ・コルドリスはティシューと同じ、リラ・ハンモック・自立リグ・クレーン・バンジー・ロンジは吊り点と同じ姿勢の組で、近く（0.55m）に置いた演者が握りの高さから吊られます。</li>
+        <li>バイクは「跨って乗る」で腰が座面に合います。座る姿勢の腰の高さは姿勢ごとの関節から取るようになりました。</li>
+        <li>同梱の「テスト: 全機能の試験場」を v20 に更新し、C-7 に檻・柱・バイク・ストラップ・リラの確認を足しました。</li>
+      </ul>
+    </section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0260-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0260-title">v0.2.60</h3>
+        <time datetime="2026-09-29">2026-09-29</time>
+      </header>
+      <ul>
+        <li>表示言語に韓国語を追加しました。舞台、設定、照明デザインの主な操作文言を翻訳し、保存したショーの内容と識別子は言語変更で書き換えません。</li>
+      </ul>
+    </section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0259-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0259-title">v0.2.59</h3>
+        <time datetime="2026-09-29">2026-09-29</time>
+      </header>
+      <ul>
+        <li>開いたグランドピアノの天板を、帯の段でなく蝶番で持ち上げた1枚の板にしました。風送機の羽根は輪の枠と4枚の羽根に。板の部品は床と平行に置いたり傾けたりできるようになりました。</li>
+        <li>小道具の「使う」に一般の姿勢を対応づけました（ロープ→引く、太鼓バチ→打つ、ナイフ・ブーメラン→投げる、風船→手を挙げる、懐中電灯→遠くを見る・指さす、置き時計→見下ろす、扇子・タンバリン・ハンドベル→手を振る、拍子木→拍手、鞄・かご・バケツ・スーツケース→歩く など）。ケーキと皿は「トレイを運ぶ」、ティーカップは「飲む・乾杯」、提灯と懐中電灯は「掲げる」でも使えます。</li>
+        <li>同梱の「テスト: 全機能の試験場」を v19 に更新し、C-2 に小道具を使う姿勢の確認を足しました。</li>
+      </ul>
+    </section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0258-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0258-title">v0.2.58</h3>
+        <time datetime="2026-09-29">2026-09-29</time>
+      </header>
+      <ul>
+        <li>大道具・小道具の曲面を滑らかにしました。傘・和傘・太陽と月・星・雲・キノコ・樽・バケツ・車輪・輪（シルホイール・フープ・リング）・斜めの材・鞭・弓など60種の形を、円柱や箱の積み重ねから輪郭を持つ部品（回転体・切り抜き板・丸い棒・輪）に作り直し、正面図・平面図・3D・登録の見本で同じ形が出ます。</li>
+        <li>ベンチ・スツール・台・テーブル・ソファ・岩・切り株・車椅子・人力車・小舟・便座など46種の物に演者を置くと、椅子と同じ「座る」系の姿勢が選べ、腰が座面の高さに合います（ソファや車椅子は背もたれより低い座面）。物から下ろすと立ちます。</li>
+        <li>同梱の「テスト: 全機能の試験場」を v18 に更新し、C-1 に椅子以外へ座る確認を足しました。</li>
+      </ul>
+    </section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0257-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0257-title">v0.2.57</h3><time datetime="2026-09-28">2026-09-28</time></header><ul><li>円形の台を登録できるようにし、平面図・正面図・3Dで形をそろえました。球と円形台の外側では、上の物が宙に浮かないよう判定します。</li><li>演者の視界へ移るときは広角で見渡せます。腕が体の前に重なる部分には薄い輪郭を描き、演者の上に乗る人の影は省きました。</li><li>転換中の演者の歩行と、平面図での照明機材の白い枠を設定から切り替えられます。小道具の風船を1個にして大きくし、傘などの3D形状を正面図に近づけました。</li><li>楽器を持つ姿勢と演奏する姿勢を分け、一般の姿勢一覧から演奏専用姿勢を外しました。吊り点の印も大道具の選択肢から外しました。</li></ul></section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0256-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0256-title">v0.2.56</h3><time datetime="2026-09-28">2026-09-28</time></header><ul><li>階段の段に座り、肘を膝に置く姿勢を追加しました。立つときは各段の高さに合わせ、階段から離れると立ち姿へ戻ります。</li><li>演者同士は体が触れるまで近づけるようにし、台や組んだセットが演者の上へ浮かないようにしました。</li><li>情報欄の保存中・保存済み・保存失敗を読み取りやすくしました。</li></ul></section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0255-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0255-title">v0.2.55</h3><time datetime="2026-09-28">2026-09-28</time></header><ul><li>劇場設定のバックスクリーンを再選択して長さを編集できるようにし、グリッドへの吸着とグレー・黒・白の色指定を追加しました。見る位置を追加したときも正面図のリストへ反映します。</li><li>劇場設定の操作欄を整理し、照明プランをファイルから読み込めるようにしました。舞台袖の「丸」選択肢と不要なプレビュー操作を整理しました。</li><li>照明デザインで選択中の灯体を見つけやすくし、LXキューの未適用の変更だけを適用ボタンで示します。空中を狙う光の横からの見え方と床での切れ方を調整しました。</li></ul></section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0254-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0254-title">v0.2.54</h3><time datetime="2026-09-28">2026-09-28</time></header><ul><li>保存領域の整理候補と旧形式からの移行時の控えをγ専用に限定し、同じ保存領域にあるβのデータへ干渉しないようにしました。</li></ul></section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0253-title"><header class="stage-release-entry-head"><h3 id="stage-release-v0253-title">v0.2.53</h3><time datetime="2026-09-28">2026-09-28</time></header><ul><li>照明デザインのLXキュー切替中、狭いパネルでも「手で進める」つまみと「自動に戻す」ボタンを操作できるようにしました。高さが足りないときはLX欄をスクロールできます。</li></ul></section>
@@ -3079,6 +3170,10 @@
       <input type="checkbox" id="stage-setinfo-framed">
       <span>フレームにする（穴の空いた壁）</span>
     </label>
+    <label class="stage-toggle stage-flown-toggle" id="stage-setinfo-round-row" hidden>
+      <input type="checkbox" id="stage-setinfo-round">
+      <span>円形の台にする</span>
+    </label>
     <!-- T-30（2026-09-18 本人要望）: フレームの枠の幅を決められるようにする。
          これまでは「短い辺の16%（0.08〜0.5m）」の自動計算で、本人は触れなかった。 -->
     <div id="stage-setinfo-frame-width-row" hidden>
@@ -3124,6 +3219,29 @@
     <div class="stage-venue-editor-workspace">
       <div class="stage-venue-editor-left">
       <div class="stage-venue-editor-menu">
+      <section class="stage-project-venue stage-venue-section stage-venue-editor-presets"
+               aria-labelledby="stage-venue-select-label">
+        <label class="stage-field-label" id="stage-venue-select-label" for="stage-venue-select">劇場形式プリセット</label>
+        <div class="stage-venue-choice-row">
+          <!-- 劇場は名前の文字だけでは形が分からないので、押すと絵の一覧（モーダル）を出す
+               （VENUE_PICKER_MODAL_2026_09_19・2026-09-19 本人要望）。
+               ★値の正本は今までどおりこの select。隠して残し、ボタンから値を入れて
+                 change を出すので、反映の道筋も既存のコードも変わらない。 -->
+          <select id="stage-venue-select" class="stage-select" hidden></select>
+          <button type="button" class="stage-select stage-venue-pick" id="stage-venue-pick"
+                  aria-haspopup="dialog" aria-labelledby="stage-venue-select-label stage-venue-pick-name">
+            <span class="stage-venue-pick-name" id="stage-venue-pick-name" data-no-i18n></span>
+          </button>
+          <div class="stage-field-row">
+            <label class="stage-field-label" for="stage-size-select">規模</label>
+            <select id="stage-size-select" class="stage-select"></select>
+          </div>
+        </div>
+        <!-- 形から選ぶ一覧は VENUE_PICKER_MODAL_2026_09_19 でモーダルへ移した。
+             ここに帯として出していたが、本人要望で「プリセットを押すと出る」形にした。 -->
+        <p class="stage-venue-scale" id="stage-venue-scale"></p>
+        <p class="stage-profile-hint" id="stage-venue-missing" hidden></p>
+      </section>
         <!-- 照明の操作は劇場形式プリセットから独立した0番に置く。 -->
       <section class="stage-venue-editor-lighting-step" aria-labelledby="stage-venue-editor-lighting-title">
         <h3 id="stage-venue-editor-lighting-title">0. 照明</h3>
@@ -3183,34 +3301,9 @@
         <p class="stage-lighting-plan-overlay-status" id="stage-lighting-plan-overlay-status" hidden>平面図に劇場プランを概略表示中</p>
         <button type="button" class="btn-quiet" id="stage-lighting-plan-overlay-clear" hidden>劇場プランの重ねを外す</button>
       </section>
-      <section class="stage-project-venue stage-venue-section stage-venue-editor-presets"
-               aria-labelledby="stage-venue-select-label">
-        <label class="stage-field-label" id="stage-venue-select-label" for="stage-venue-select">劇場形式プリセット</label>
-        <div class="stage-venue-choice-row">
-          <!-- 劇場は名前の文字だけでは形が分からないので、押すと絵の一覧（モーダル）を出す
-               （VENUE_PICKER_MODAL_2026_09_19・2026-09-19 本人要望）。
-               ★値の正本は今までどおりこの select。隠して残し、ボタンから値を入れて
-                 change を出すので、反映の道筋も既存のコードも変わらない。 -->
-          <select id="stage-venue-select" class="stage-select" hidden></select>
-          <button type="button" class="stage-select stage-venue-pick" id="stage-venue-pick"
-                  aria-haspopup="dialog" aria-labelledby="stage-venue-select-label stage-venue-pick-name">
-            <span class="stage-venue-pick-name" id="stage-venue-pick-name" data-no-i18n></span>
-          </button>
-          <div class="stage-field-row">
-            <label class="stage-field-label" for="stage-size-select">規模</label>
-            <select id="stage-size-select" class="stage-select"></select>
-          </div>
-        </div>
-        <!-- 形から選ぶ一覧は VENUE_PICKER_MODAL_2026_09_19 でモーダルへ移した。
-             ここに帯として出していたが、本人要望で「プリセットを押すと出る」形にした。 -->
-        <p class="stage-venue-scale" id="stage-venue-scale"></p>
-        <p class="stage-profile-hint" id="stage-venue-missing" hidden></p>
-      </section>
         <section class="stage-venue-editor-metadata" aria-label="劇場情報">
-      <!-- 2026-09-17 本人指示: 劇場名は劇場設定モードには要らないので隠す。
-           名前は「この劇場を保存」のときに出るダイアログ（#stage-venue-save-name）で付ける。
-           V-3の「出所・確度・共有」と同じく、**要素は残して hidden にするだけ**——
-           JS（els.name）が読み書きしているので、消すと保存・読み込みの経路が壊れる。 -->
+      <!-- 劇場名の入力欄は非表示のまま保持し、反映時のライブラリ内部保存に使う。
+           出所・確度・共有も既存データの読み書きに必要なので保持する。 -->
       <div class="stage-field-row stage-venue-editor-name-field" hidden>
         <label class="stage-field-label" for="stage-venue-editor-name">劇場名</label>
         <input type="text" class="stage-text-input" id="stage-venue-editor-name" maxlength="100"
@@ -3252,40 +3345,24 @@
           </div>
           <button id="venue-room-resize" class="btn-quiet" type="button">外枠を変更</button>
           <button id="venue-room-move-stage" class="btn-quiet" type="button" aria-pressed="false">舞台を動かす</button>
-          <p class="stage-profile-hint">舞台の内側をドラッグすると、舞台と袖が一緒に動きます。客席は「5. 客席」から動かせます。</p>
+          <p class="stage-profile-hint">舞台の内側をドラッグすると、舞台と袖が一緒に動きます。客席は「3. 客席」から動かせます。</p>
         </section>
-        <section class="stage-venue-editor-format" aria-labelledby="stage-venue-editor-format-title">
+        <section class="stage-venue-editor-extension" aria-labelledby="stage-venue-editor-extension-title">
       <div class="stage-venue-editor-shape-step">
-        <h3 id="stage-venue-editor-format-title">1. ステージの形式</h3>
-        <p class="stage-profile-hint">形式に応じて、客席を置ける方向を正面・三方向・全周に切り替えます。</p>
+        <h3 id="stage-venue-editor-extension-title">1. ステージの形成</h3>
+        <p class="stage-profile-hint">プリセットの舞台は平面図で調整できます。四角または丸を選ぶと舞台を追加できます。</p>
       </div>
-      <div class="stage-tool-grid stage-venue-editor-formats" role="group" aria-labelledby="stage-venue-editor-format-title">
-        <button type="button" data-venue-editor-stage-format="theatre" aria-pressed="true">劇場式</button>
-        <button type="button" data-venue-editor-stage-format="thrust" aria-pressed="false">張り出し式</button>
-        <button type="button" data-venue-editor-stage-format="in-the-round" aria-pressed="false">360度ステージ</button>
-      </div>
-      <p class="stage-profile-hint stage-venue-editor-lead">形式を切り替えると、作成中の客席だけを初期化します。</p>
-        </section>
-        <section class="stage-venue-editor-shape" aria-labelledby="stage-venue-editor-shape-title">
-      <div class="stage-venue-editor-shape-step">
-        <h3 id="stage-venue-editor-shape-title">2. メインの形</h3>
-        <p class="stage-profile-hint">長方形・L字・円・カスタムから選択してください。</p>
-      </div>
-      <div class="stage-tool-grid stage-venue-editor-shapes" role="group" aria-labelledby="stage-venue-editor-shape-title">
-        <button type="button" data-venue-editor-shape="rectangle" aria-pressed="true">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13"/></svg><span>長方形</span>
+      <div class="stage-tool-grid stage-venue-editor-extension-shapes" role="group" aria-labelledby="stage-venue-editor-extension-title">
+        <button type="button" data-venue-editor-extension-shape="rectangle" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13"/></svg><span>四角</span>
         </button>
-
-        <button type="button" data-venue-editor-shape="circle" aria-pressed="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/></svg><span>円</span>
+        <button type="button" data-venue-editor-extension-shape="circle" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/></svg><span>丸</span>
         </button>
-        <button type="button" data-venue-editor-shape="freeform" aria-pressed="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18.5 7.5 6l5 3 4-5 3.5 14.5z"/></svg><span>カスタム</span>
-        </button>
+        <button type="button" class="btn-quiet" id="stage-venue-editor-extension-merge" disabled>重なりを合成</button>
       </div>
-      <p class="stage-profile-hint stage-venue-editor-lead">選択後、辺は一方向、角は二方向へ動かします。角の長押しで欠き取れます。</p>
-      <!-- 舞台の高さ（2026-09-19）: 会場データ（floor.stageHeightM）と正面図・3Dの描き方は
-           12bc428 で入っていて、入力欄だけ無かった。空欄＝未入力＝いままでどおり。 -->
+      <p class="stage-profile-hint">追加した四角・丸はドラッグで動かせます。重なる部分は合成できます。</p>
+      <p class="stage-profile-hint stage-venue-editor-lead">既存の舞台につながる位置へ追加できます。合成後は一体の舞台面になり、戻すで解除できます。</p>
       <div class="stage-venue-editor-setting">
         <label for="stage-venue-editor-stage-height">舞台の高さ</label>
         <div class="stage-venue-editor-ceiling-input">
@@ -3304,27 +3381,10 @@
         </div>
       </div>
         </section>
-        <section class="stage-venue-editor-extension" aria-labelledby="stage-venue-editor-extension-title">
-      <div class="stage-venue-editor-shape-step">
-        <h3 id="stage-venue-editor-extension-title">3. 追加のステージ</h3>
-        <p class="stage-profile-hint">四角または丸を選び、右の平面図でドラッグしてください。</p>
-      </div>
-      <div class="stage-tool-grid stage-venue-editor-extension-shapes" role="group" aria-labelledby="stage-venue-editor-extension-title">
-        <button type="button" data-venue-editor-extension-shape="rectangle" aria-pressed="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13"/></svg><span>四角</span>
-        </button>
-        <button type="button" data-venue-editor-extension-shape="circle" aria-pressed="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/></svg><span>丸</span>
-        </button>
-        <button type="button" class="btn-quiet" id="stage-venue-editor-extension-merge" disabled>重なりを合成</button>
-      </div>
-      <p class="stage-profile-hint">追加した四角・丸はドラッグで動かせます。重なる部分は合成できます。</p>
-      <p class="stage-profile-hint stage-venue-editor-lead">既存の舞台につながる位置へ追加できます。合成後は一体の舞台面になり、戻すで解除できます。</p>
-        </section>
         <!-- V-4（2026-09-17）: 4番目は「天井」としてまとめる。天井あり/なしと屋内/屋外を先に選び、
              高さと吊りは「屋内 かつ 天井あり」のときだけ出す（値は隠しても保持する）。 -->
         <section class="stage-venue-editor-ceiling" aria-labelledby="stage-venue-editor-ceiling-title">
-      <h3 id="stage-venue-editor-ceiling-title">4. 天井</h3>
+      <h3 id="stage-venue-editor-ceiling-title">2. 天井・前一文字幕</h3>
       <div class="stage-venue-editor-setting">
         <span>天井</span>
         <div class="stage-tool-grid stage-venue-editor-ceiling-presence" role="group" aria-label="天井の有無">
@@ -3345,7 +3405,7 @@
 
 
         <div class="stage-venue-editor-setting" id="stage-venue-editor-front-border-details" hidden>
-          <label for="stage-venue-editor-front-border-opening">開口高さ</label>
+          <label for="stage-venue-editor-front-border-opening">開口高さ（前一文字幕）</label>
           <div class="stage-venue-editor-ceiling-input">
             <input type="number" class="stage-text-input" id="stage-venue-editor-front-border-opening"
                    min="0.1" max="100" step="0.1" value="4.5" inputmode="decimal" aria-describedby="stage-venue-editor-front-border-help">
@@ -3353,12 +3413,12 @@
           </div>
           <p class="stage-profile-hint stage-venue-editor-ceiling-help" id="stage-venue-editor-front-border-help">舞台床から幕の下端まで。天井高より低く設定します。</p>
         </div>
-        <p class="stage-profile-hint">前一文字は天井のある劇場式ステージで設定できます。幕は舞台前端に置きます。</p>
+        <p class="stage-profile-hint">前一文字幕は天井のある劇場式ステージで設定できます。幕は舞台前端に置きます。</p>
       </div>
-      <p class="stage-profile-hint" id="stage-venue-editor-ceiling-outdoor-note" hidden>天井なしでは高さ・吊り・前一文字を使いません。入力した値は残します。</p>
+      <p class="stage-profile-hint" id="stage-venue-editor-ceiling-outdoor-note" hidden>天井なしでは高さ・吊り・前一文字幕を使いません。入力した値は残します。</p>
         </section>
         <section class="stage-venue-editor-audience-guide" aria-labelledby="stage-venue-editor-audience-title">
-      <h3 id="stage-venue-editor-audience-title">5. 客席</h3>
+      <h3 id="stage-venue-editor-audience-title">3. 客席</h3>
       <p class="stage-profile-hint">四角または丸を選び、右の平面図でドラッグしてください。</p>
       <div class="stage-tool-grid stage-venue-editor-area-shapes" role="group" aria-labelledby="stage-venue-editor-audience-title">
         <button type="button" data-venue-editor-area-mode="audience" data-venue-editor-area-shape="rectangle" aria-pressed="false">
@@ -3369,6 +3429,7 @@
         </button>
         <button type="button" class="btn-quiet" id="stage-venue-editor-audience-merge" disabled>重なりを合成</button>
       </div>
+      <button type="button" class="btn-quiet" id="stage-venue-editor-audience-select">客席を選択・編集</button>
       <button type="button" class="btn-quiet stage-venue-editor-audience-full" id="stage-venue-editor-audience-full" hidden disabled>全周に配置</button>
       <div id="stage-venue-editor-audience-elevation" class="stage-venue-editor-audience-elevation">
         <p class="stage-profile-hint" id="stage-venue-editor-audience-height-help">錆色の客席を選ぶと床高を編集できます。舞台床を0mとして、舞台側と後方が同じなら平床、異なれば傾斜床になります。段差は区画を分けて作ります。</p>
@@ -3384,7 +3445,7 @@
       </div>
         </section>
         <section class="stage-venue-editor-wings-guide" aria-labelledby="stage-venue-editor-wings-title">
-      <h3 id="stage-venue-editor-wings-title">6. 舞台袖</h3>
+      <h3 id="stage-venue-editor-wings-title">4. 舞台袖</h3>
       <p class="stage-profile-hint">四角を選び、右の平面図でドラッグしてください。</p>
       <div class="stage-tool-grid stage-venue-editor-area-shapes" role="group" aria-labelledby="stage-venue-editor-wings-title">
         <button type="button" data-venue-editor-area-mode="wing" data-venue-editor-area-shape="rectangle" aria-pressed="false">
@@ -3397,7 +3458,7 @@
       <!-- ★2026-09-19 本人要望「壁というのを作りましょう。複雑なショーの形の場合、壁が設置されて
            いるパターンと設置されていないパターンがあるので、それは結構大きな差」。
            置き方は客席・舞台袖とまったく同じにする（新しい操作を覚えなくていいように）。 -->
-      <h3 id="stage-venue-editor-walls-title">7. 壁・柱</h3>
+      <h3 id="stage-venue-editor-walls-title">5. 壁・柱</h3>
       <p class="stage-profile-hint">四角または丸を選び、右の平面図でドラッグしてください。高さは天井と同じです。通れない場所として扱います。</p>
       <div class="stage-tool-grid stage-venue-editor-area-shapes" role="group" aria-labelledby="stage-venue-editor-walls-title">
         <button type="button" data-venue-editor-area-mode="wall" data-venue-editor-area-shape="rectangle" aria-pressed="false">
@@ -3410,7 +3471,7 @@
       <button type="button" class="btn-quiet" id="stage-venue-editor-wall-remove" disabled>取り外す</button>
         </section>
         <section class="stage-venue-editor-back-screens" aria-labelledby="stage-venue-editor-back-screens-title">
-          <h3 id="stage-venue-editor-back-screens-title">8. バックスクリーン</h3>
+          <h3 id="stage-venue-editor-back-screens-title">6. バックスクリーン</h3>
       <div class="stage-venue-back-screen-controls">
         <p class="stage-profile-hint">「設置」を押して平面図でドラッグします。置いたスクリーンをタップすると長さを変更できます。新規配置の端点はグリッドに吸着します。複数枚設置でき、高さは天井に追従します。</p>
         <div class="stage-tool-grid">
@@ -3435,29 +3496,29 @@
       </div>
         </section>
         <section hidden class="stage-venue-editor-machinery" aria-labelledby="stage-venue-editor-machinery-title">
-          <h3 id="stage-venue-editor-machinery-title">8. 舞台機構</h3>
+          <h3 id="stage-venue-editor-machinery-title">舞台機構</h3>
           <p class="stage-profile-hint">舞台機構を追加し、シーンごとの状態をここで確認・変更します。安全計算や実際の動作は行いません。</p>
           <div id="stage-venue-editor-machinery-host"></div>
         </section>
         <section class="stage-venue-editor-viewpoints" id="venue-viewpoints-step" aria-labelledby="venue-viewpoints-title">
-          <h3 id="venue-viewpoints-title">9. 見る位置</h3>
+          <h3 id="venue-viewpoints-title">7. 見る位置</h3>
           <p class="stage-profile-hint">最大5点。平面図の点を動かすと、その場所からの見え方を確認できます。</p>
           <div class="venue-viewpoints-controls">
             <label for="venue-viewpoints-select">見る位置 <span id="venue-viewpoints-count"></span></label>
             <select id="venue-viewpoints-select" class="stage-text-input"></select>
             <label for="venue-viewpoints-name">名前</label>
             <input id="venue-viewpoints-name" class="stage-text-input" type="text" maxlength="40" autocomplete="off">
-            <label for="venue-viewpoints-eye-height">目の高さ</label>
+            <label for="venue-viewpoints-eye-height">視線の高さ</label>
             <div class="stage-venue-editor-ceiling-input">
               <input id="venue-viewpoints-eye-height" class="stage-text-input" type="number"
                      min="-10" max="60" step="0.1" inputmode="decimal" aria-describedby="venue-viewpoints-eye-height-help">
               <span aria-hidden="true">m</span>
             </div>
-            <p id="venue-viewpoints-eye-height-help" class="stage-profile-hint">舞台床を0mとした目の高さです。客席の床高を変えると、その上の見る位置も同じ分だけ上下します。</p>
+            <p id="venue-viewpoints-eye-height-help" class="stage-profile-hint">舞台床を0mとした視線の高さです。客席の床高を変えると、その上の見る位置も同じ分だけ上下します。</p>
             <p id="venue-viewpoints-floor-height" class="stage-profile-hint" aria-live="polite"></p>
             <button id="venue-viewpoints-add" type="button" class="btn-quiet" aria-pressed="false">＋ 点を置く</button>
             <button id="venue-viewpoints-remove" type="button" class="btn-quiet">選択した点を削除</button>
-            <button id="venue-viewpoints-reset" type="button" class="btn-quiet">編集前に戻す</button>
+            <button id="venue-viewpoints-reset" type="button" class="btn-quiet" data-no-i18n data-venue-reset-kind="viewpoints" title="見る位置を編集前の状態に戻す">やり直す</button>
             <p id="venue-viewpoints-status" class="stage-profile-hint" role="status">点の変更も「一つ戻す」で取り消せます。</p>
           </div>
         </section>
@@ -3479,7 +3540,6 @@
           <span id="stage-venue-library-status" aria-live="polite"></span>
         </div>
         <div class="stage-io-row stage-venue-library-actions">
-          <button type="button" class="stage-minor-action" id="stage-venue-editor-save">ライブラリに保存</button>
           <button type="button" class="btn-quiet" id="stage-venue-library-export">劇場を書き出す</button>
           <label class="btn-quiet stage-import-label">
             劇場を読み込む<input type="file" id="stage-venue-library-import" accept="application/json" hidden>
@@ -3620,26 +3680,6 @@
   </div>
 </div>
 
-<div class="stage-modal-backdrop stage-venue-save-name-backdrop" id="stage-venue-save-name-backdrop" hidden></div>
-<div class="stage-modal stage-rename-modal stage-venue-save-name-modal" id="stage-venue-save-name-modal" role="dialog"
-     aria-modal="true" aria-labelledby="stage-venue-save-name-title" hidden>
-  <header class="stage-modal-head">
-    <h2 id="stage-venue-save-name-title">ライブラリに保存</h2>
-    <button type="button" class="stage-modal-close" id="stage-venue-save-name-close" aria-label="キャンセル">✕</button>
-  </header>
-  <div class="stage-modal-body">
-    <form id="stage-venue-save-name-form" class="stage-venue-save-name-form">
-      <label class="stage-control-label" for="stage-venue-save-name">劇場名 <span class="stage-required">必須</span></label>
-      <input id="stage-venue-save-name" class="stage-text-input" type="text"
-             maxlength="100" required autocomplete="off" data-1p-ignore>
-      <footer class="stage-venue-editor-actions stage-venue-save-name-actions">
-        <button type="button" class="btn-quiet" id="stage-venue-save-name-cancel">キャンセル</button>
-        <button type="submit" class="stage-minor-action">ライブラリに保存</button>
-      </footer>
-    </form>
-  </div>
-</div>
-
 <div class="stage-modal-backdrop" id="stage-venue-import-backdrop" hidden></div>
 <div class="stage-modal stage-venue-import-modal" id="stage-venue-import-modal" role="dialog"
      aria-modal="true" aria-labelledby="stage-venue-import-title" hidden>
@@ -3763,12 +3803,10 @@
 </div></div>
 <script src="/study-assets/stage-venues.js?v=20260928-feedback55"></script>
 <script src="/study-assets/stage-venue-lines.js?v=2026091992"></script>
-<script src="/study-assets/stage-i18n.js?v=20260928-feedback55"></script>
-<script src="/study-assets/stage-i18n.ko.js?v=20260929-ko60"></script>
+<script src="/study-assets/stage-i18n.js?v=20260930-cuenav1"></script>
 <script src="/study-assets/stage-set-model.js?v=2026092354"></script>
 <script src="/study-assets/stage-machinery.js?v=20260925-ui1"></script>
 <script src="/study-assets/gamma-ui.js?v=20260925-ui1"></script>
 <script src="/study-assets/gamma-ui-i18n.js?v=20260925-ui1"></script>
-<script src="/study-assets/gamma-ui-i18n.ko.js?v=20260929-ko60"></script>
-<script src="/study-assets/stage-sketch.js?v=20260929-ko60"></script>
+<script src="/study-assets/stage-sketch.js?v=20260930-transition1"></script>
 </body></html>

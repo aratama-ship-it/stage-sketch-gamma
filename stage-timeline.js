@@ -102,6 +102,7 @@
     unitWarningCancel: document.getElementById("stage-timeline-unit-warning-cancel"),
     unitWarningConfirm: document.getElementById("stage-timeline-unit-warning-confirm"),
     position: document.getElementById("stage-timeline-position"),
+    cueTarget: document.getElementById("stage-timeline-cue-target"),
     viewport: document.getElementById("stage-timeline-viewport"),
     surface: document.getElementById("stage-timeline-surface"),
     loopRange: document.getElementById("stage-timeline-loop-range"),
@@ -211,6 +212,9 @@
     ui.timelineDrawerVersion = 1;
   }
   ui.mode = "normal";
+  ui.cueStepTargetExplicit = ui.cueStepTargetExplicit === true;
+  ui.cueStepTarget = ui.cueStepTargetExplicit && ["all", ...CUE_TYPES].includes(ui.cueStepTarget)
+    ? ui.cueStepTarget : (bridge.arrowKeysVoxOnly?.() ? "dialogue" : "all");
   ui.unit = ui.unit === "count" ? "count" : "time";
   ui.zoom = clamp(finite(ui.zoom, 1), ZOOM_MIN, ZOOM_MAX);
   ui.height = finite(ui.height, DEFAULT_HEIGHT);
@@ -291,6 +295,44 @@
   function saveUi() {
     try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (_) { /* 表示設定なしでも編集は続ける */ }
   }
+
+  // 左右キーの対象はショー本体ではなく、この端末のタイムライン操作設定。
+  // 照明デザインへ入るたびにライトへ寄せ、画面内での手動変更はそのまま受け付ける。
+  let cueTargetWorkspace = document.body.dataset.gammaWorkspace || "normal";
+  let cueTargetBeforeLightDesign = null;
+  function syncCueTargetControl() {
+    if (els.cueTarget) els.cueTarget.value = ui.cueStepTarget;
+  }
+  function syncCueTargetWorkspace() {
+    const next = document.body.dataset.gammaWorkspace || "normal";
+    if (next === cueTargetWorkspace) return;
+    if (next === "light-design") {
+      cueTargetBeforeLightDesign = ui.cueStepTarget;
+      ui.cueStepTarget = "light";
+    } else if (cueTargetWorkspace === "light-design" && cueTargetBeforeLightDesign !== null) {
+      ui.cueStepTarget = cueTargetBeforeLightDesign;
+      cueTargetBeforeLightDesign = null;
+    }
+    cueTargetWorkspace = next;
+    syncCueTargetControl();
+    saveUi();
+  }
+  syncCueTargetControl();
+  els.cueTarget?.addEventListener("change", () => {
+    if (!["all", ...CUE_TYPES].includes(els.cueTarget.value)) return;
+    ui.cueStepTarget = els.cueTarget.value;
+    ui.cueStepTargetExplicit = true;
+    saveUi();
+  });
+  window.addEventListener("gamma-workspace-change", syncCueTargetWorkspace);
+  window.addEventListener("stage-timeline-cue-preference-change", () => {
+    if (ui.cueStepTargetExplicit) return;
+    const preferred = bridge.arrowKeysVoxOnly?.() ? "dialogue" : "all";
+    if (cueTargetWorkspace === "light-design") cueTargetBeforeLightDesign = preferred;
+    else ui.cueStepTarget = preferred;
+    syncCueTargetControl();
+    saveUi();
+  });
 
   function normalizedAudioGainDb(value) {
     const number = Number(value);
@@ -3007,13 +3049,14 @@
     updatePlayhead();
   }
 
-  /* 左右キーはシーン送りではなく、現在位置に最も近い前後のキューへ移る。
-     ライト・音楽・セリフを時刻順に一列として扱うため、演出上の細かい合図を
-     シーンより先にたどれる。再生状態は変えず、キューを選んで再生位置だけを合わせる。 */
-  function stepNearestTimelineCue(direction) {
+  /* 左右キーは現在位置に最も近い前後のキューへ移る。
+     「全部」はライト・音楽・セリフを時刻順に一列にし、個別の選択時はその種類だけをたどる。
+     再生状態は変えず、キューを選んで再生位置だけを合わせる。 */
+  function stepNearestTimelineCue(direction, cueType = "all") {
     const documentValue = projectDocument();
     if (!timeline || !documentValue || !documentValue.project) return false;
-    const all = timelineCuePresentations(documentValue.project);
+    const all = timelineCuePresentations(documentValue.project)
+      .filter((cue) => cueType === "all" || cue.cueType === cueType);
     if (!all.length) return false;
     const epsilon = 1e-6;
     const next = direction < 0
@@ -3083,7 +3126,9 @@
     const detail = event && event.detail || {};
     const direction = Number(detail.direction);
     if (!direction) return;
-    const moved = detail.voxOnly ? stepVoxFromPlayhead(direction) : stepNearestTimelineCue(direction);
+    const moved = ui.cueStepTarget === "dialogue"
+      ? stepVoxFromPlayhead(direction)
+      : stepNearestTimelineCue(direction, ui.cueStepTarget);
     if (moved) event.preventDefault();
   });
 

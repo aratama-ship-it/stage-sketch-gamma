@@ -3067,7 +3067,7 @@
     });
     // 劇場設定のライブプレビューと同じ導出。固定位置の袖幕を重ねない。
     model.curtains.forEach(({ from, to }) => {
-      fillPoly(ctx, [at(from), at(to), at(to, CEIL * .75), at(from, CEIL * .75)], "#302c29");
+      fillPoly(ctx, [at(from), at(to), at(to, CEIL), at(from, CEIL)], "#302c29");
     });
     (venue.fixtures || []).filter(fixture => fixture.type === "wall" &&
       Array.isArray(fixture.polygon) && fixture.polygon.length >= 3).forEach(wall => {
@@ -3218,7 +3218,7 @@
       { x: halfWidth, y: 0, z: halfDepth }, { x: -halfWidth, y: 0, z: halfDepth }], "#241c15");
     }
     const legHalfWidth = .8;
-    const legHeight = Math.min(CEIL - .5, CEIL * .75);
+    const legHeight = CEIL;
     const legX = wingLegX(W);
     /* 袖幕の裾は床に着いて見えること。カスタム会場では舞台の外が1m低いので、そこまで下ろす
        （下ろさないと、幕が宙に浮いて見える）。 */
@@ -3468,7 +3468,7 @@
     }
     /* ★舞台袖のカーテン（袖幕）。袖が舞台と接している縁に沿って立てる。
        縁の選び方は共有部品 touchingEdges（平面図と同じ式）。 */
-    const curtainTop = Math.min(CEIL - .5, CEIL * .75);
+    const curtainTop = CEIL;
     wings.forEach((poly) => {
       (lib.touchingEdges ? lib.touchingEdges(poly, shape.polygons) : []).forEach(([from, to]) => {
         const a = at(from, 0);

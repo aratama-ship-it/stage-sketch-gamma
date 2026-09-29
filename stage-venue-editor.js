@@ -99,7 +99,6 @@
     source: $("stage-venue-editor-source"),
     confidence: $("stage-venue-editor-confidence"),
     sharing: $("stage-venue-editor-sharing"),
-    save: $("stage-venue-editor-save"),
     apply: $("stage-venue-editor-apply"),
     saveStatus: $("stage-venue-editor-save-status"),
     conflictBackdrop: $("stage-venue-conflict-backdrop"),
@@ -108,12 +107,6 @@
     conflictFirst: $("stage-venue-conflict-first"),
     conflictSecond: $("stage-venue-conflict-second"),
     conflictCancel: $("stage-venue-conflict-cancel"),
-    saveNameBackdrop: $("stage-venue-save-name-backdrop"),
-    saveNameModal: $("stage-venue-save-name-modal"),
-    saveNameForm: $("stage-venue-save-name-form"),
-    saveNameInput: $("stage-venue-save-name"),
-    saveNameClose: $("stage-venue-save-name-close"),
-    saveNameCancel: $("stage-venue-save-name-cancel"),
     libraryExport: $("stage-venue-library-export"),
     libraryImport: $("stage-venue-library-import"),
     libraryStatus: $("stage-venue-library-status"),
@@ -178,6 +171,7 @@
   const state = {
     shape: "rectangle",
     points: pointsForShape("rectangle"),
+    stagePresent: true,
     room: null,
     viewpoints: [],
     viewPositions: null,
@@ -223,6 +217,20 @@
       fit: true,
     },
   };
+  const contextMenu = document.createElement("div");
+  contextMenu.className = "stage-venue-editor-context-menu";
+  contextMenu.hidden = true;
+  const contextDelete = document.createElement("button");
+  contextDelete.type = "button";
+  contextDelete.textContent = "要素を削除";
+  contextMenu.append(contextDelete);
+  els.canvas.parentElement.append(contextMenu);
+  let contextTarget = null;
+
+  function closeContextMenu() {
+    contextMenu.hidden = true;
+    contextTarget = null;
+  }
 
   let activePointer = null;
   let pointerHistoryStart = null;
@@ -230,14 +238,13 @@
   let longPressTimer = null;
   let statusTimer = null;
   let returnFocus = null;
-  let saveNameReturnFocus = null;
   let linesCache = { venueSignature: "", result: null };
   let pendingLibraryImport = null;
   let pendingConflict = null;
+  let sectionDefaults = null;
+  const sectionDefaultsByKey = new Map();
   let pendingConflictHistory = null;
   let openingDraft = null;
-  let lastSavedVenue = null;
-  let lastSavedSignature = "";
   const undoStack = [];
   const redoStack = [];
 
@@ -315,7 +322,8 @@
   }
 
   function stagePolygons() {
-    return [state.points].concat(state.stageExtensions.map((item) => item.polygon));
+    return (state.stagePresent ? [state.points] : [])
+      .concat(state.stageExtensions.map((item) => item.polygon));
   }
 
   function allStagePoints() {
@@ -422,11 +430,12 @@
     ctx.stroke();
     ctx.fillStyle = cssColor("--milk", "#f0e7d6");
     ctx.font = "11px sans-serif"; ctx.textAlign = "center";
-    ctx.fillText("前一文字", (a[0] + b[0]) / 2, a[1] - 6);
+    ctx.fillText("前一文字幕", (a[0] + b[0]) / 2, a[1] - 6);
     ctx.restore();
   }
 
   function dimensions(points = allStagePoints()) {
+    if (!points.length) return { width: 0, depth: 0 };
     const xs = points.map((point) => point[0]);
     const ys = points.map((point) => point[1]);
     return {
@@ -522,6 +531,15 @@
     state.view.fit = false;
     const dims = dimensions();
     setStatus(`${direction === "in" ? "拡大" : "縮小"}しました。舞台寸法は 間口 だいたい${approxM(dims.width)}m・奥行 だいたい${approxM(dims.depth)}m のままです。`);
+    render();
+  }
+
+  function zoomByWheel(event) {
+    event.preventDefault();
+    const nextZoom = clamp(state.view.zoom * Math.exp(-event.deltaY * 0.001), VIEW_ZOOM_MIN, VIEW_ZOOM_MAX);
+    if (nextZoom === state.view.zoom) return;
+    state.view.zoom = nextZoom;
+    state.view.fit = false;
     render();
   }
 
@@ -1057,9 +1075,10 @@
   function materializeAudienceBands() {
     state.audience = state.audience.map((area) => {
       if (Array.isArray(area.polygon)) return area;
+      const { edgeIndex, depthM, ...rest } = area;
       return {
-        id: area.id,
-        label: "客席",
+        ...rest,
+        label: area.label || "客席",
         shape: "custom",
         polygon: audiencePolygon(area).map(geometryPoint),
         merged: true,
@@ -1306,6 +1325,10 @@
   }
 
   function currentLines() {
+    if (!state.stagePresent) return {
+      movement: { areas: [], movableExtensions: [] },
+      blindSpots: { areas: [] }, sightLimits: [],
+    };
     const venue = lineVenue();
     const venueSignature = JSON.stringify({
       floor: venue.floor,
@@ -1988,6 +2011,16 @@
   }
 
   function renderControls(linesResult) {
+    const stageHint = document.querySelector(".stage-venue-editor-shape-step .stage-profile-hint");
+    if (stageHint) stageHint.textContent = state.stagePresent
+      ? tx("プリセットの舞台は平面図で調整できます。四角または丸を選ぶと舞台を追加できます。")
+      : (isEnglish() ? "Choose a rectangle or circle, then drag on the floor plan to draw the first stage."
+        : "四角または丸を選び、平面図でドラッグして最初のステージを描いてください。");
+    const extensionHint = document.querySelector(".stage-venue-editor-lead");
+    if (extensionHint) extensionHint.textContent = state.stagePresent
+      ? tx("既存の舞台につながる位置へ追加できます。合成後は一体の舞台面になり、戻すで解除できます。")
+      : (isEnglish() ? "The first shape becomes the main stage."
+        : "最初に描いた形がメインのステージになります。");
     if (els.backScreenPlace) els.backScreenPlace.setAttribute("aria-pressed", String(state.mode === "back-screen"));
     if (els.backScreenRemove) els.backScreenRemove.disabled = !state.backScreens.length;
     const selectedScreen = state.backScreens[state.selectedBackScreenIndex];
@@ -2035,11 +2068,14 @@
     const dims = dimensions();
     /* 2026-09-17 本人指示: この図は平面図なので、そう名乗る（他の図と呼び方をそろえる）。
        寸法は判断に要るので残す。 */
-    els.dims.textContent = translatedStatus(`平面図 ・ 間口 だいたい${approxM(dims.width)}m ・ 奥行 だいたい${approxM(dims.depth)}m`);
+    els.dims.textContent = state.stagePresent
+      ? translatedStatus(`平面図 ・ 間口 だいたい${approxM(dims.width)}m ・ 奥行 だいたい${approxM(dims.depth)}m`)
+      : tx("平面図 ・ ステージなし。四角または丸を描いてください。");
+    if (els.apply) els.apply.disabled = !state.stagePresent || !validOutline(state.points) || !extensionsConnectedToMain();
     if (els.audienceFull) {
       const fullBands = state.audience.filter((area) => Number.isInteger(area.edgeIndex)).length;
       els.audienceFull.hidden = state.stageFormat !== "in-the-round";
-      els.audienceFull.disabled = state.stageFormat !== "in-the-round" || fullBands === state.points.length;
+      els.audienceFull.disabled = !state.stagePresent || state.stageFormat !== "in-the-round" || fullBands === state.points.length;
     }
     const selectedArea = state.selectedArea && state.selectedArea.kind === "audience"
       ? state.audience.find((area) => area.id === state.selectedArea.id)
@@ -2184,6 +2220,22 @@
     }
     const linesResult = currentLines();
     drawGrid();
+    if (!state.stagePresent) {
+      drawEnclosure();
+      drawStageWings();
+      drawAudience();
+      drawVenueWalls();
+      drawAreaResizeHandles();
+      drawFixtures();
+      drawAccess();
+      drawBackScreen();
+      drawPlacementPreview();
+      renderControls(linesResult);
+      window.dispatchEvent(new CustomEvent("stage-venue-draft-render", {
+        detail: { templateKey: state.templateKey },
+      }));
+      return;
+    }
     drawEnclosure();
     drawStageWings();
     drawFloor();
@@ -2203,7 +2255,9 @@
     drawBackScreen();
     drawCeilingAndFrontBorder();
     renderControls(linesResult);
-    window.dispatchEvent(new Event("stage-venue-draft-render"));
+    window.dispatchEvent(new CustomEvent("stage-venue-draft-render", {
+      detail: { templateKey: state.templateKey },
+    }));
   }
 
   function setStatus(message) {
@@ -2219,6 +2273,7 @@
     return clone({
       shape: state.shape,
       points: state.points,
+      stagePresent: state.stagePresent,
       room: state.room,
       viewpoints: state.viewpoints,
       viewPositions: state.viewPositions,
@@ -2299,6 +2354,7 @@
       "stageFormat", "templateKey", "nextFurnitureHeight", "nextAccessType", "bandSerial",
       "regionSerial", "extensionSerial", "elementSerial",
     ].forEach((key) => { state[key] = clone(snapshot[key]); });
+    state.stagePresent = snapshot.stagePresent !== false;
     state.backScreens = clone(Array.isArray(snapshot.backScreens) ? snapshot.backScreens : (snapshot.backScreen ? [snapshot.backScreen] : []));
     state.floorColor = Object.values(floorColors).includes(snapshot.floorColor)
       ? snapshot.floorColor : floorColors.brown;
@@ -2340,6 +2396,139 @@
     commitHistory(before);
     return result;
   }
+
+  const SECTION_RESET_FIELDS = Object.freeze({
+    room: ["room"],
+    stage: ["shape", "points", "stagePresent", "stageExtensions", "stageHeightM", "floorColor", "stageFormat"],
+    ceiling: ["ceiling"],
+    wings: ["wings"],
+    walls: ["walls"],
+    screens: ["backScreen", "backScreens"],
+  });
+
+  function resetVenueSection(section) {
+    if (section === "preset") {
+      if (state.templateKey === "__blank__") {
+        withHistory(() => loadBlankVenue({ force: true }));
+        return;
+      }
+      window.dispatchEvent(new Event("stage-venue-editor-reapply"));
+      return;
+    }
+    if (section === "lighting") {
+      document.querySelector('[data-lighting-source="self"]')?.click();
+      return;
+    }
+    if (section === "lines") {
+      state.lines.visible = { movement: true, blind: true, sight: true };
+      setStatus("3本の線をすべて表示に戻しました。");
+      render();
+      return;
+    }
+    if (section === "audience") {
+      audienceResetChoices.hidden = !audienceResetChoices.hidden;
+      return;
+    }
+    const defaults = sectionDefaultsByKey.get(state.templateKey) || sectionDefaults;
+    if (!defaults || !SECTION_RESET_FIELDS[section]) return;
+    withHistory(() => {
+      SECTION_RESET_FIELDS[section].forEach((key) => { state[key] = clone(defaults[key]); });
+      if (section === "stage") {
+        state.fixtures = state.fixtures.filter((item) => !item.frame)
+          .concat(clone(defaults.fixtures.filter((item) => item.frame)));
+        state.access = clone(defaults.access);
+      }
+      state.mode = "select";
+      state.areaMode = null;
+      state.stageExtensionMode = null;
+      state.selectedArea = null;
+      state.selectedElement = null;
+      state.selectedStageExtensionId = null;
+      state.selectedBackScreenIndex = -1;
+      const labels = { room: "会場の外枠", stage: "ステージ", ceiling: "天井", wings: "舞台袖", walls: "壁・柱", screens: "バックスクリーン" };
+      setStatus(`${labels[section]}をプリセットの状態に戻しました。`);
+      render();
+    });
+  }
+
+  [
+    [".stage-venue-editor-presets", "preset"],
+    [".stage-venue-editor-lighting-step", "lighting"],
+    [".venue-room-settings", "room"],
+    [".stage-venue-editor-extension", "stage"],
+    [".stage-venue-editor-ceiling", "ceiling"],
+    [".stage-venue-editor-audience-guide", "audience"],
+    [".stage-venue-editor-wings-guide", "wings"],
+    [".stage-venue-editor-walls-guide", "walls"],
+    [".stage-venue-editor-back-screens", "screens"],
+    [".stage-venue-editor-lines", "lines"],
+  ].forEach(([selector, section]) => {
+    const host = document.querySelector(`.stage-venue-editor-menu ${selector}`);
+    if (!host) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "btn-quiet stage-venue-editor-reset";
+    button.dataset.noI18n = "";
+    button.dataset.venueResetKind = section;
+    button.addEventListener("click", () => resetVenueSection(section));
+    host.append(button);
+  });
+
+  const audienceResetChoices = document.createElement("div");
+  audienceResetChoices.className = "stage-venue-editor-audience-reset-choices";
+  audienceResetChoices.hidden = true;
+  audienceResetChoices.setAttribute("role", "group");
+  audienceResetChoices.setAttribute("aria-label", "客席のやり直し方法");
+  const restoreAudience = document.createElement("button");
+  const clearAudience = document.createElement("button");
+  [restoreAudience, clearAudience].forEach((button) => {
+    button.type = "button";
+    button.className = "btn-quiet";
+    audienceResetChoices.append(button);
+  });
+  document.querySelector(".stage-venue-editor-audience-guide")?.append(audienceResetChoices);
+  function chooseAudienceReset(clear) {
+    const defaults = sectionDefaultsByKey.get(state.templateKey) || sectionDefaults;
+    if (!clear && !defaults) return;
+    audienceResetChoices.hidden = true;
+    withHistory(() => {
+      state.audience = clear ? [] : clone(defaults.audience);
+      state.selectedArea = null;
+      state.mode = "select";
+      state.areaMode = null;
+      state.bandSerial = nextTemplateSerial(state.audience, "audience-band-");
+      state.regionSerial = Math.max(
+        nextTemplateSerial(state.audience, "audience-area-"),
+        nextTemplateSerial(state.wings, "wing-area-"),
+      );
+      setStatus(clear ? "客席をすべて削除しました。" : "客席をプリセットの状態に戻しました。");
+      render();
+    });
+  }
+  restoreAudience.addEventListener("click", () => chooseAudienceReset(false));
+  clearAudience.addEventListener("click", () => chooseAudienceReset(true));
+
+  function syncResetButtonLanguage() {
+    const language = document.documentElement.lang;
+    const labels = {
+      ja: ["やり直す", "この項目を初期状態に戻す", "見る位置を編集前の状態に戻す"],
+      en: ["Reset", "Reset this section", "Restore the original viewpoints"],
+      "zh-Hans": ["重置", "将此项恢复到初始状态", "恢复原来的观看位置"],
+      "zh-Hant": ["重設", "將此項恢復至初始狀態", "還原原本的觀看位置"],
+      ko: ["초기화", "이 항목을 초기 상태로 되돌리기", "보기 위치를 편집 전 상태로 되돌리기"],
+    }[language] || ["Reset", "Reset this section", "Restore the original viewpoints"];
+    document.querySelectorAll("[data-venue-reset-kind]").forEach((button) => {
+      button.textContent = labels[0];
+      button.title = button.dataset.venueResetKind === "viewpoints" ? labels[2] : labels[1];
+    });
+    restoreAudience.textContent = isEnglish() ? "Restore preset seats" : "プリセットへ戻す";
+    clearAudience.textContent = isEnglish() ? "Remove all seats" : "全削除";
+    audienceResetChoices.setAttribute("aria-label", isEnglish() ? "Audience reset options" : "客席のやり直し方法");
+  }
+  syncResetButtonLanguage();
+  new MutationObserver(syncResetButtonLanguage).observe(document.documentElement, {
+    attributes: true, attributeFilter: ["lang"],
+  });
 
   function hideConflictDialog() {
     if (els.conflictBackdrop) els.conflictBackdrop.hidden = true;
@@ -2524,6 +2713,7 @@
 
     state.shape = inferTemplateShape(floor.outline);
     state.points = clone(floor.outline);
+    state.stagePresent = true;
     state.room = clone(variant.room || venue.room || null);
     state.viewpoints = window.SHOSAI_VENUES.viewpoints.list(venue.id);
     state.viewPositions = clone(variant.viewPositions || venue.viewPositions || null);
@@ -2614,8 +2804,60 @@
     els.saveStatus.textContent = "";
     // ここまでで下敷きの姿が揃う。以後この署名と突き合わせて「変えていない」を判定する
     state.templateSignature = draftSignature();
+    sectionDefaults = documentSnapshot();
+    sectionDefaultsByKey.set(key, clone(sectionDefaults));
     const label = variant && variant.label ? `${venue.label}（${variant.label}）` : venue.label;
     setStatus(`${label}をカスタム編集の初期形に読み込みました。`);
+    render();
+    return true;
+  }
+
+  function loadBlankVenue({ force = false } = {}) {
+    if (!force && state.templateKey === "__blank__") return false;
+    state.shape = "rectangle";
+    state.points = pointsForShape("rectangle");
+    state.stagePresent = false;
+    state.room = null;
+    state.viewpoints = [];
+    state.viewPositions = null;
+    initialViewPositionsByTemplate.set("__blank__", null);
+    state.stageExtensions = [];
+    state.audience = [];
+    state.wings = [];
+    state.walls = [];
+    state.backScreen = null;
+    state.backScreens = [];
+    state.fixtures = [];
+    state.access = [];
+    state.ceiling = {
+      heightM: 6, rigging: "none", hasCeiling: false, indoor: true,
+      frontBorder: { enabled: false, openingHeightM: 4.5 },
+    };
+    state.stageHeightM = null;
+    state.floorColor = floorColors.brown;
+    state.stageFormat = "theatre";
+    state.templateKey = "__blank__";
+    state.mode = "select";
+    state.areaMode = null;
+    state.stageExtensionMode = null;
+    state.selectedArea = null;
+    state.selectedElement = null;
+    state.selectedStageExtensionId = null;
+    state.selectedBackScreenIndex = -1;
+    state.bandSerial = 1;
+    state.regionSerial = 1;
+    state.extensionSerial = 1;
+    state.elementSerial = 1;
+    state.view = { center: [12, 8], zoom: 1, fit: true };
+    viewpointMode = false;
+    viewBeforeViewpoints = null;
+    if (els.name) els.name.value = "";
+    els.saveStatus.textContent = "";
+    linesCache = { venueSignature: "", result: null };
+    state.templateSignature = draftSignature();
+    sectionDefaults = documentSnapshot();
+    sectionDefaultsByKey.set("__blank__", clone(sectionDefaults));
+    setStatus("空の劇場から作り始めます。まずステージを描いてください。");
     render();
     return true;
   }
@@ -2672,8 +2914,8 @@
     els.saveStatus.textContent = "";
     const selected = STAGE_FORMATS[format];
     setStatus(format === "in-the-round"
-      ? "360度ステージにしました。5番を選んで四角を描くか、全周に配置できます。"
-      : `${selected.label}にしました。5番を選んで客席の四角を描けます。`);
+      ? "360度ステージにしました。3番を選んで四角を描くか、全周に配置できます。"
+      : `${selected.label}にしました。3番を選んで客席の四角を描けます。`);
     render();
   }
 
@@ -2774,6 +3016,7 @@
 
   function setShape(shape) {
     state.shape = shape;
+    state.stagePresent = true;
     const next = pointsForShape(shape);
     if (state.room) {
       const before = polygonBounds(state.points), box = polygonBounds(next);
@@ -2801,7 +3044,7 @@
     els.saveStatus.textContent = "";
     setStatus(shape === "freeform"
       ? "カスタムは長方形を起点に、辺と角を動かして作ります。角の長押しで欠き取れます。"
-      : "形を切り替えました。辺や角を調整した後、3番から追加のステージを組めます。");
+      : "形を切り替えました。辺や角を調整した後、ステージの形成から舞台を追加できます。");
     render();
   }
 
@@ -2815,7 +3058,9 @@
     state.selectedStageExtensionId = null;
     state.selectedBackScreenIndex = -1;
     els.saveStatus.textContent = "";
-    setStatus(`${shape === "circle" ? "丸" : "四角"}の追加ステージを描きます。既存の舞台につながる位置でドラッグしてください。`);
+    setStatus(state.stagePresent
+      ? `${shape === "circle" ? "丸" : "四角"}の追加ステージを描きます。既存の舞台につながる位置でドラッグしてください。`
+      : `${shape === "circle" ? "丸" : "四角"}で最初のステージを描きます。平面図でドラッグしてください。`);
     render();
   }
 
@@ -3292,10 +3537,9 @@
      * （区画は舞台の縁に接することが多く、後回しにすると掴めないため）。 */
     const areaResizeHit = hitAreaResizeHandle(point);
     const audienceHandleHit = areaResizeHit ? null : hitAudienceHandle(point);
-    const corner = areaResizeHit || audienceHandleHit ? -1 : hitCorner(point);
-    const edge = areaResizeHit || audienceHandleHit || corner >= 0 ? -1 : hitEdge(point);
-    const audienceAreaHit = audienceHandleHit || (!areaResizeHit && corner < 0 && edge < 0
-      ? hitAudienceArea(point) : null);
+    const corner = !state.stagePresent || areaResizeHit || audienceHandleHit ? -1 : hitCorner(point);
+    const edge = !state.stagePresent || areaResizeHit || audienceHandleHit || corner >= 0 ? -1 : hitEdge(point);
+    const audienceAreaHit = audienceHandleHit || (!areaResizeHit ? hitAudienceArea(point) : null);
     els.canvas.setPointerCapture(event.pointerId);
 
     if (state.mode === "back-screen" ||
@@ -3591,7 +3835,8 @@
     const dims = dimensions(pointer.preview);
     const largeEnough = dims.width >= STAGE_EXTENSION_MIN_SIDE_M &&
       dims.depth >= STAGE_EXTENSION_MIN_SIDE_M;
-    pointer.valid = largeEnough && extensionTouchesStage(pointer.preview);
+    pointer.valid = largeEnough && roomContains(pointer.preview) &&
+      (state.stagePresent ? extensionTouchesStage(pointer.preview) : validOutline(pointer.preview));
     const label = pointer.shape === "circle" ? "丸" : "四角";
     if (!largeEnough) {
       setStatus(`${label}の追加ステージは幅・奥行とも0.4m以上で描いてください。`);
@@ -3620,6 +3865,7 @@
   }
 
   function movePointer(event) {
+    if (!contextMenu.hidden && !activePointer) return;
     if (activePointer?.kind === "pan") {
       if (event.pointerId !== activePointer.pointerId) return;
       event.preventDefault();
@@ -3684,8 +3930,8 @@
       const element = hitElement(point);
       const stageExtension = element ? null : hitStageExtension(point);
       const audienceHandleHit = hitAudienceHandle(point);
-      const corner = element || stageExtension || audienceHandleHit ? -1 : hitCorner(point);
-      const edge = element || stageExtension || audienceHandleHit || corner >= 0 ? -1 : hitEdge(point);
+      const corner = !state.stagePresent || element || stageExtension || audienceHandleHit ? -1 : hitCorner(point);
+      const edge = !state.stagePresent || element || stageExtension || audienceHandleHit || corner >= 0 ? -1 : hitEdge(point);
       const audienceAreaHit = audienceHandleHit || (corner < 0 && edge < 0 ? hitAudienceArea(point) : null);
       state.hoverAudienceId = audienceAreaHit ? audienceAreaHit.id : null;
       state.hoverCorner = audienceAreaHit ? -1 : corner;
@@ -3785,15 +4031,23 @@
     } else if (!cancelled && finished.kind === "back-screen-resize" && finished.moved) {
       setStatus("会場の範囲を越えるため、スクリーンの長さは変更していません。");
     } else if (!cancelled && finished.kind === "stage-extension-new" && finished.moved && finished.valid) {
-      const item = {
-        id: `stage-extension-${state.extensionSerial}`,
-        shape: finished.shape,
-        polygon: clone(finished.preview),
-      };
-      state.extensionSerial += 1;
-      state.stageExtensions.push(item);
-      state.selectedStageExtensionId = item.id;
-      setStatus(`${item.shape === "circle" ? "丸" : "四角"}の追加ステージを組みました。同じ舞台面として扱います。`);
+      if (!state.stagePresent) {
+        state.points = clone(finished.preview);
+        state.shape = finished.shape;
+        state.stagePresent = true;
+        state.selectedStageExtensionId = null;
+        setStatus("最初のステージを描きました。辺や角を調整できます。");
+      } else {
+        const item = {
+          id: `stage-extension-${state.extensionSerial}`,
+          shape: finished.shape,
+          polygon: clone(finished.preview),
+        };
+        state.extensionSerial += 1;
+        state.stageExtensions.push(item);
+        state.selectedStageExtensionId = item.id;
+        setStatus(`${item.shape === "circle" ? "丸" : "四角"}の追加ステージを組みました。同じ舞台面として扱います。`);
+      }
     } else if (!cancelled && finished.kind === "stage-extension-move" && finished.moved && finished.valid) {
       const item = state.stageExtensions.find((candidate) => candidate.id === finished.id);
       if (item) item.polygon = clone(finished.preview);
@@ -3847,7 +4101,7 @@
       const item = state.fixtures.find((fixture) => fixture.id === finished.id);
       if (item) setStatus(`柱を置きました（太さ ${item.radiusM}m・${item.movable ? "可動" : "固定"}）。`);
     } else if (!cancelled && finished.kind === "edge" && !finished.moved) {
-      setStatus("辺を動かすにはドラッグします。客席または舞台袖は、左の5番か6番を選んで描いてください。");
+      setStatus("辺を動かすにはドラッグします。客席または舞台袖は、左の3番か4番を選んで描いてください。");
     }
     else if (!cancelled && finished.kind === "corner" && !finished.moved && !finished.longPressed) {
       setStatus("角を動かすにはドラッグ、欠き取るにはそのまま長押しします。");
@@ -3866,12 +4120,21 @@
     const selector = hitBackScreen(point, touch) ? ".stage-venue-editor-back-screens"
       : hitAudienceArea(point) ? ".stage-venue-editor-audience-guide"
       : hitWingArea(point) ? ".stage-venue-editor-wings-guide"
-      : pointInPolygon(point, state.points) ? ".stage-venue-editor-shape" : null;
+      : pointInPolygon(point, state.points) ? ".stage-venue-editor-extension" : null;
     const section = selector && document.querySelector(selector);
     if (section && !section.classList.contains("is-open")) section.querySelector(".gamma-venue-step-toggle")?.click();
   }
 
   function beginTrackedPointer(event) {
+    if (event.button === 0 && !contextMenu.hidden) {
+      const menuRect = contextMenu.getBoundingClientRect();
+      if (event.clientX >= menuRect.left && event.clientX <= menuRect.right &&
+          event.clientY >= menuRect.top && event.clientY <= menuRect.bottom) {
+        event.preventDefault();
+        contextDelete.click();
+        return;
+      }
+    }
     if (pendingConflict) return;
     const before = documentSnapshot();
     navigationPointer = event.button === 0 && !event.shiftKey ? { id: event.pointerId, x: event.clientX, y: event.clientY } : null;
@@ -4044,8 +4307,8 @@
   }
 
   function saveDraft(labelOverride) {
-    if (!validOutline(state.points) || !extensionsConnectedToMain()) {
-      els.saveStatus.textContent = "線が交差しているため保存できません。";
+    if (!state.stagePresent || !validOutline(state.points) || !extensionsConnectedToMain()) {
+      els.saveStatus.textContent = state.stagePresent ? "線が交差しているため保存できません。" : "先にステージを描いてください。";
       return null;
     }
     const label = typeof labelOverride === "string"
@@ -4070,13 +4333,12 @@
     }
     const saved = imported.venues[0];
     if (els.name) els.name.value = saved.label;
-    lastSavedVenue = clone(saved);
-    lastSavedSignature = draftSignature();
-    els.saveStatus.textContent = `「${saved.label}」を劇場ライブラリへ保存しました。まだショーには反映していません。`;
+    els.saveStatus.textContent = `「${saved.label}」を劇場ライブラリへ保存しました。`;
     return clone(saved);
   }
 
   function defaultAppliedVenueLabel() {
+    if (state.templateKey === "__blank__") return `カスタム劇場${nextVenueNumber(library.list())}`;
     const templateId = typeof state.templateKey === "string" ? state.templateKey.split(":")[0] : "";
     const template = templateId ? library.venueV2ById(templateId) : null;
     if (template && typeof template.label === "string" && template.label.trim()) {
@@ -4086,19 +4348,15 @@
   }
 
   function applyDraft() {
-    if (!validOutline(state.points) || !extensionsConnectedToMain()) {
-      els.saveStatus.textContent = "線が交差しているため反映できません。";
+    if (!state.stagePresent || !validOutline(state.points) || !extensionsConnectedToMain()) {
+      els.saveStatus.textContent = state.stagePresent ? "線が交差しているため反映できません。" : "先にステージを描いてください。";
       return null;
     }
-    /* 反映する劇場の決め方は3段。上から順に当てはめる。
-       1. 本人が「保存」を押していて、その後も変えていない → その保存した劇場を使う（本人の意思を優先）
-       2. ★下敷きのまま（形も記載も変えていない）→ 下敷きの劇場をそのまま使い、新しく作らない。
+    /* 下敷きのまま（形も記載も変えていない）ならその劇場をそのまま使う。
           プリセットを選び直して反映すればプリセットへ戻り、同じ内容の反映で
-          ショーの版も劇場ライブラリも増えない（2026-09-16 本人決定）
-       3. 形を変えている → 従来どおり新しい劇場としてライブラリへ保存する */
-    const signature = draftSignature();
-    const saved = (lastSavedVenue && lastSavedSignature === signature ? clone(lastSavedVenue) : null)
-      || unchangedTemplateVenue()
+          ショーの版も劇場ライブラリも増えない（2026-09-16 本人決定）。
+       形を変えていれば反映前に劇場ライブラリへ内部保存する。 */
+    const saved = unchangedTemplateVenue()
       || saveDraft((els.name && els.name.value.trim()) || defaultAppliedVenueLabel());
     if (!saved) return null;
     const templateKey = state.templateKey;
@@ -4112,48 +4370,6 @@
         },
       },
     }));
-    return saved;
-  }
-
-  function closeSaveName(restoreFocus = true) {
-    if (!els.saveNameModal || !els.saveNameBackdrop) return;
-    els.saveNameBackdrop.hidden = true;
-    els.saveNameModal.hidden = true;
-    if (restoreFocus && saveNameReturnFocus && typeof saveNameReturnFocus.focus === "function") {
-      saveNameReturnFocus.focus();
-    }
-    saveNameReturnFocus = null;
-  }
-
-  function openSaveName() {
-    if (!validOutline(state.points) || !extensionsConnectedToMain()) {
-      els.saveStatus.textContent = "線が交差しているため保存できません。";
-      return;
-    }
-    if (!els.saveNameModal || !els.saveNameBackdrop || !els.saveNameInput) {
-      saveDraft();
-      return;
-    }
-    saveNameReturnFocus = document.activeElement;
-    els.saveNameInput.value = els.name ? els.name.value.trim() : "";
-    els.saveNameBackdrop.hidden = false;
-    els.saveNameModal.hidden = false;
-    window.requestAnimationFrame(() => {
-      els.saveNameInput.focus();
-      if (typeof els.saveNameInput.select === "function") els.saveNameInput.select();
-    });
-  }
-
-  function confirmSaveName() {
-    if (!els.saveNameInput) return null;
-    const label = els.saveNameInput.value.trim();
-    if (!label) {
-      if (typeof els.saveNameInput.reportValidity === "function") els.saveNameInput.reportValidity();
-      return null;
-    }
-    const saved = saveDraft(label);
-    if (!saved) return null;
-    closeSaveName();
     return saved;
   }
 
@@ -4411,8 +4627,8 @@
   function setCeilingPresence(hasCeiling) {
     state.ceiling.hasCeiling = hasCeiling;
     setStatus(hasCeiling
-      ? "天井ありにしました。高さ・吊り・前一文字を設定できます。"
-      : "天井なしにしました。高さ・吊り・前一文字は使いません（入力した値は残します）。");
+      ? "天井ありにしました。高さ・吊り・前一文字幕を設定できます。"
+      : "天井なしにしました。高さ・吊り・前一文字幕は使いません（入力した値は残します）。");
     render();
   }
 
@@ -4420,7 +4636,7 @@
     if (enabled && (state.ceiling.hasCeiling === false || state.stageFormat !== "theatre" ||
         Number(state.ceiling.heightM) <= 0.1)) return false;
     state.ceiling.frontBorder.enabled = enabled;
-    setStatus(enabled ? "前一文字を劇場に設置しました。" : "前一文字を劇場から外しました。");
+    setStatus(enabled ? "前一文字幕を劇場に設置しました。" : "前一文字幕を劇場から外しました。");
     render();
     return true;
   }
@@ -4431,18 +4647,15 @@
     const rounded = roundM(parsed);
     if (!Number.isFinite(parsed) || rounded < 0.1 || rounded >= ceiling) return false;
     state.ceiling.frontBorder.openingHeightM = rounded;
-    setStatus(`前一文字の開口高さを${rounded}mにしました。`);
+    setStatus(`前一文字幕の開口高さを${rounded}mにしました。`);
     render();
     return true;
   }
 
 
   function openEditor() {
-    if (els.saveNameModal && !els.saveNameModal.hidden) closeSaveName(false);
     returnFocus = document.activeElement;
     openingDraft = captureDraft();
-    lastSavedVenue = null;
-    lastSavedSignature = "";
     els.backdrop.hidden = false;
     els.modal.hidden = false;
     els.saveStatus.textContent = "";
@@ -4483,6 +4696,13 @@
   }
 
   function requestPresetReapply() {
+    if (state.templateKey === "__blank__") {
+      if (templateUntouched()) {
+        setStatus("空の劇場のままです。");
+        return false;
+      }
+      return withHistory(() => loadBlankVenue({ force: true }));
+    }
     const detail = selectedTemplateDetail();
     if (!detail) {
       setStatus("いまの劇場は、プリセットから作ったものではありません。");
@@ -4518,7 +4738,6 @@
   }
 
   function finishCloseEditor() {
-    if (els.saveNameModal && !els.saveNameModal.hidden) closeSaveName(false);
     hideDiscardDialog(false);
     els.backdrop.hidden = true;
     els.modal.hidden = true;
@@ -4685,6 +4904,9 @@
     if (!force && venueTemplateKey(event.detail) === state.templateKey) return;
     withHistory(() => loadVenueTemplate(event.detail, { force }));
   });
+  window.addEventListener("stage-venue-editor-blank", () => {
+    withHistory(() => loadBlankVenue({ force: true }));
+  });
   window.addEventListener("stage-venue-editor-reapply", requestPresetReapply);
   window.addEventListener("stage-venue-editor-open", openEditor);
   /* 図の実寸が変わったら描き直す（開いた直後・窓の大きさ・列の幅の変更、どれも同じ経路）。
@@ -4704,7 +4926,6 @@
   }
   els.close.addEventListener("click", requestCloseEditor);
   els.backdrop.addEventListener("click", requestCloseEditor);
-  els.save.addEventListener("click", openSaveName);
   if (els.apply) els.apply.addEventListener("click", applyDraft);
   if (els.backScreenPlace) els.backScreenPlace.addEventListener("click", setBackScreenMode);
   if (els.backScreenLength) {
@@ -4742,15 +4963,6 @@
   if (els.discardCancel) els.discardCancel.addEventListener("click", () => hideDiscardDialog());
   if (els.discardConfirm) els.discardConfirm.addEventListener("click", discardAndCloseEditor);
   if (els.discardBackdrop) els.discardBackdrop.addEventListener("click", () => hideDiscardDialog());
-  if (els.saveNameForm) {
-    els.saveNameForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      confirmSaveName();
-    });
-  }
-  if (els.saveNameClose) els.saveNameClose.addEventListener("click", closeSaveName);
-  if (els.saveNameCancel) els.saveNameCancel.addEventListener("click", closeSaveName);
-  if (els.saveNameBackdrop) els.saveNameBackdrop.addEventListener("click", closeSaveName);
   if (els.libraryExport) els.libraryExport.addEventListener("click", downloadLibrary);
   if (els.libraryImport) {
     els.libraryImport.addEventListener("change", (event) => {
@@ -4778,11 +4990,13 @@
   if (els.audienceFull) {
     els.audienceFull.addEventListener("click", () => withHistory(() => placeFullAudience()));
   }
+  $("stage-venue-editor-audience-select")?.addEventListener("click", () => setMode("select"));
   els.audienceRemove.addEventListener("click", () => withHistory(removeSelectedArea));
   if (els.undo) els.undo.addEventListener("click", undoHistory);
   if (els.redo) els.redo.addEventListener("click", redoHistory);
   if (els.zoomOut) els.zoomOut.addEventListener("click", () => adjustZoom("out"));
   if (els.zoomIn) els.zoomIn.addEventListener("click", () => adjustZoom("in"));
+  els.canvas.addEventListener("wheel", zoomByWheel, { passive: false });
   $("stage-venue-editor-wall-remove")?.addEventListener("click", () => withHistory(removeSelectedElement));
   if (els.objectRemove) {
     els.objectRemove.addEventListener("click", () => withHistory(removeSelectedElement));
@@ -4808,14 +5022,96 @@
   els.canvas.addEventListener("pointerup", (event) => finishTrackedPointer(event, false));
   els.canvas.addEventListener("pointercancel", (event) => finishTrackedPointer(event, true));
   els.canvas.addEventListener("pointerleave", () => {
+    if (!contextMenu.hidden) return;
     if (activePointer) return;
     state.hoverCorner = -1;
     state.hoverEdge = -1;
     state.hoverAudienceId = null;
     render();
   });
-  els.canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+  const openContextMenu = (event) => {
+    event.preventDefault();
+    const point = fromEvent(event);
+    const audience = hitAudienceArea(point);
+    const extension = audience ? null : hitStageExtension(point);
+    const mainStage = !audience && !extension && state.stagePresent && pointInPolygon(point, state.points);
+    contextTarget = audience ? { kind: "audience", id: audience.id }
+      : (extension ? { kind: "stage-extension", id: extension.id }
+        : (mainStage ? { kind: "main-stage" } : null));
+    if (!contextTarget) { closeContextMenu(); return; }
+    if (audience) state.selectedArea = { kind: "audience", id: audience.id };
+    if (extension) state.selectedStageExtensionId = extension.id;
+    render();
+    contextMenu.hidden = false;
+    const wrap = els.canvas.parentElement.getBoundingClientRect();
+    contextMenu.style.left = `${clamp(event.clientX - wrap.left, 0, wrap.width - contextMenu.offsetWidth)}px`;
+    contextMenu.style.top = `${clamp(event.clientY - wrap.top, 0, wrap.height - contextMenu.offsetHeight)}px`;
+    contextDelete.focus();
+  };
+  els.canvas.addEventListener("pointerdown", (event) => {
+    if (event.button === 2) openContextMenu(event);
+  });
+  els.canvas.addEventListener("contextmenu", openContextMenu);
+  contextDelete.addEventListener("click", () => {
+    const target = contextTarget;
+    closeContextMenu();
+    if (!target) return;
+    withHistory(() => {
+      if (target.kind === "audience") {
+        state.selectedArea = { kind: "audience", id: target.id };
+        removeSelectedArea();
+        return;
+      }
+      if (target.kind === "main-stage") {
+        const promoted = state.stageExtensions.find((item) => !item.cutout);
+        if (promoted) {
+          const remaining = state.stageExtensions.filter((item) => item.id !== promoted.id);
+          if (!extensionsConnectedToMain(promoted.polygon, remaining)) {
+            setStatus("つながっている追加ステージを先に削除してください。");
+            return;
+          }
+          materializeAudienceBands();
+          state.points = clone(promoted.polygon);
+          state.shape = promoted.shape || "freeform";
+          state.stageExtensions = remaining;
+        } else if (state.stageExtensions.length) {
+          setStatus("合成されたステージを先に戻すか削除してください。");
+          return;
+        } else {
+          materializeAudienceBands();
+          state.stagePresent = false;
+        }
+        state.access = [];
+        state.fixtures = state.fixtures.filter((item) => !item.frame);
+        state.selectedStageExtensionId = null;
+        state.selectedArea = null;
+        setStatus(state.stagePresent ? "メインのステージを削除し、残るステージを基準にしました。" : "メインのステージを削除しました。四角か丸を描くと新しい舞台になります。");
+        render();
+        return;
+      }
+      const remaining = state.stageExtensions.filter((item) => item.id !== target.id);
+      if (remaining.length === state.stageExtensions.length) return;
+      if (!extensionsConnectedToMain(state.points, remaining)) {
+        setStatus("つながっている別のステージがあるため、先にそちらを削除してください。");
+        return;
+      }
+      state.stageExtensions = remaining;
+      state.selectedStageExtensionId = null;
+      setStatus("選択したステージを削除しました。");
+      render();
+    });
+  });
+  document.addEventListener("pointerdown", (event) => {
+    if (event.button === 2) return;
+    if (!contextMenu.contains(event.target)) closeContextMenu();
+  });
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !contextMenu.hidden) {
+      event.preventDefault();
+      closeContextMenu();
+      els.canvas.focus();
+      return;
+    }
     if (els.presetModal && !els.presetModal.hidden) {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -4835,13 +5131,6 @@
       if (event.key === "Escape") {
         event.preventDefault();
         cancelConflict();
-      }
-      return;
-    }
-    if (els.saveNameModal && !els.saveNameModal.hidden) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeSaveName();
       }
       return;
     }
@@ -4886,6 +5175,7 @@
   /* Local candidate: read-only preview data, including uncommitted pointer geometry.
      View/camera state never enters documentSnapshot or buildVenue. */
   function previewSnapshot() {
+    if (!state.stagePresent) return { empty: true };
     const venue = buildVenue("custom-room-preview", "作成中の劇場", {});
     if (activePointer?.kind === "back-screen" && activePointer.valid) venue.backScreens.push(clone(activePointer.preview));
     if (activePointer?.kind === "back-screen-resize" && activePointer.valid) {

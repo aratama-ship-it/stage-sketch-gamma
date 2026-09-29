@@ -58,9 +58,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   // 読み込み時の保険: rehearsal が無いシーンへ既定の転換3秒（控えを持つ保存データは触らない）（2026-09-24）
   assert.match(main, /function backfillMissingSceneRehearsal\(project\) \{[\s\S]*?if \(hasSectionMemo\) return project;[\s\S]*?row\.rehearsal = \{ holdDurationSeconds: DEFAULT_SCENE_HOLD_SECONDS, transitionToNextSeconds: NEW_SCENE_TRAVEL_SECONDS \};/);
   assert.match(main, /const project = backfillMissingSceneRehearsal\(stripRemovedSceneFields\(projectIoClone\(document\.project\)\)\);/);
-  assert.match(html, /stage-sketch\.js\?v=20260929-beta64/);
-  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v424"/);
-  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=20260929-beta64"/);
+  assert.match(html, /stage-sketch\.js\?v=20260930-transition1/);
+  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v432"/);
+  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=20260930-transition1"/);
   assert.match(html, /id="stage-show-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-set-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-light-names" checked>\s*<span class="stage-tool-icon"/);
@@ -82,7 +82,7 @@ test("canvas visibility toggles use the shared icon treatment without changing t
   assert.match(style, /\.stage-canvas-toggle\.is-icon svg \{[\s\S]*?width: 21px;[\s\S]*?height: 21px;/);
   assert.match(style, /\.stage-canvas-toggle\.is-icon:not\(:has\(input:checked\)\) \.stage-visibility-toggle-slash/);
   assert.match(sketch, /"\.stage-canvas-toggle\.is-icon"/);
-  assert.match(sketch, /frontBorder: "機材配置で設定した前一文字/);
+  assert.match(sketch, /frontBorder: "劇場設定の天井・前一文字幕/);
 });
 
 test("lighting section titles and durable apply failures cross the iframe boundary", () => {
@@ -121,11 +121,11 @@ test("lighting apply belongs to the LX cue panel and playback uses an accessible
   assert.match(html, /\.fixture-power\.off \.fixture-power-lens\{fill:none\}/);
   assert.match(html, /\.fixture-power\.off \.fixture-power-slash\{display:block\}/);
   assert.doesNotMatch(html, /\.fixture-power\.on \.fixture-power-slash\{display:none\}/);
-  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=20260930-optics1/);
-  assert.match(worker, /stage-sketch-gamma-shell-v424/);
+  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=20260930-merge1/);
+  assert.match(worker, /stage-sketch-gamma-shell-v432/);
 
   assert.match(worker, /light-design\/app\.js\?v=20260930-optics1/);
-  assert.match(worker, /light-design\/embed\.js\?v=20260928-feedback55/);
+  assert.match(worker, /light-design\/embed\.js\?v=20260930-cuenav1/);
 });
 
 test("sample A-3 uses registered height at normal visual scale for performers 09 and 16", () => {
@@ -267,7 +267,7 @@ test("front border follows the durable equipment-placement setting and stays hid
   const lightApp = read("light-design/app.js");
 
   assert.match(stage, /id="stage-show-front-border"/);
-  assert.match(stage, /機材配置で設定した前一文字/);
+  assert.match(stage, /劇場設定の天井・前一文字幕/);
   assert.match(lightApp, /\["pros", "前一文字"\]/);
   assert.match(lightApp, /curtains: \{ borderDrop: 1\.4, borderAhead: 0\.04, pros: true, prosH: 6\.2/);
   assert.match(lightApp, /c\.pros = v === "on"/);

@@ -37,7 +37,7 @@ test("機能テスト用ショー: 外枠と上限", () => {
   assert.equal(doc.kind, "shosai-stage-sketch");
   assert.equal(doc.version, 4);
   assert.deepEqual(doc.venues, []);
-  assert.equal(project.id, "gamma-feature-test-v22");
+  assert.equal(project.id, "gamma-feature-test-v25");
   /* ★2026-09-20: バッファを3行→2行に減らして広げた（build-feature-test-show.mjs 側の同日コメント参照）。
      容量由来の制約ではなく、試す人が手でもシーンを足せる余地を残すだけの自主ガード。 */
   assert.ok(rows.length <= limits.sceneRows, `シーン行 ${rows.length}: 身体表現の試験を含め上限60行`);
@@ -82,7 +82,7 @@ test("機能テスト用ショー: 演者の転換アニメ切替に、移動・
   assert.equal([...castIds(a4)].filter((id) => !castIds(a5).has(id)).length, 0, "A-4→A-5 は全員が残って移動する");
   assert.equal([...castIds(a5)].filter((id) => !castIds(b1).has(id)).length, 8, "A-5→B-1 では8人がはける");
   assert.equal([...castIds(b1)].filter((id) => !castIds(a5).has(id)).length, 2, "A-5→B-1 では2人が入る");
-  assert.match(a4.note, /転換中に演者を歩かせる.*ON\/OFF/);
+  assert.match(a4.note, /タイムラインの転換アニメーションアイコンでON\/OFF/);
   assert.match(a5.note, /入りとはけも同じ設定/);
   assert.match(sketch, /key: "performerTransitionMotion", label: "転換中に演者を歩かせる", def: true/);
 });

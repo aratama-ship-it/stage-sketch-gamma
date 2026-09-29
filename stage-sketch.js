@@ -8070,7 +8070,7 @@
     lightRender: "シーンの照明効果を表示・非表示にします。",
     workLight: "作業灯を点けたり消したりします。消すと、照明が当たる所だけが見えます。",
     frontLights: "正面図の照明を出したり隠したりします。",
-    frontBorder: "機材配置で設定した前一文字を、正面図に重ねます。",
+    frontBorder: "劇場設定の天井・前一文字幕で設定した幕を、正面図に重ねます。",
     frontLightIntent: "光の意図を作図用の印として重ねます。",
     frontFloorGrid: "正面図の床グリッドを出したり隠したりします。",
     seatMap: "正面図をどの客席位置から見ているかの小図を出します。",
@@ -8503,6 +8503,7 @@
     sceneNow: document.getElementById("stage-scene-now"),
     sceneNowOpen: document.getElementById("stage-scene-now-open"),
     animScenes: document.getElementById("stage-anim-scenes"),
+    timelineAnimScenes: document.getElementById("stage-timeline-transition-animation"),
     animMs: document.getElementById("stage-anim-ms"),
     animMsValue: document.getElementById("stage-anim-ms-value"),
     castList: document.getElementById("stage-cast-list"),
@@ -9120,7 +9121,7 @@
        入にすると、セリフキューパネルの手送りと同じ並び（ショー全体・セクションもまたぐ）でセリフキューだけを移る。 */
     /* ★U-05（2026-09-24 本人指示）: 表示の「セリフキュー」は「セリフキュー」へ統一した。キー名は変えない（保存済みの設定が読む）。 */
     { key: "arrowKeysVoxOnly", label: "左右キーはセリフキューだけ", def: false,
-      hint: "舞台の画面で左右キーを押したとき、セリフキューだけを移る。切のときは明かり・音楽・セリフの全キューを時刻順にたどります" },
+      hint: "舞台の画面で左右キーを押したとき、セリフキューだけを移る。タイムライン右端の対象を選んだ場合は、そちらの選択が優先されます" },
     /* U-02（2026-09-24 本人指示）: セリフキューパネルで前後へ移るとき、パッと差し替えずに流れるように送る。既定は入。 */
     { key: "voxScroll", label: "セリフキューを滑らかに送る", def: true,
       hint: "セリフキューパネルで前後のセリフへ移るとき、一覧が流れるように動いて次のセリフが枠へ入ってきます。切にするとすぐに切り替わります" },
@@ -9671,7 +9672,7 @@
        **初期状態はOFF**（2026-09-17 本人指示）。要るときに自分で出す。
        保存データに値があればそちらを尊重する。 */
     showSeatMap: false,
-      // 機材配置で仕込んだ前一文字を、正面図だけに重ねるか。既存ショーの見え方は変えない。
+      // 劇場設定で仕込んだ前一文字幕を、正面図だけに重ねるか。既存ショーの見え方は変えない。
       showFrontBorder: false,
       // 正面図の床グリッドは図の読み取り補助。既存ショーは従来どおり表示から始める。
       showFrontFloorGrid: true,
@@ -21382,7 +21383,7 @@
     caption.textContent = model ? lightCueOverlayCaptionText(model) : "";
   }
 
-  /* 機材配置の「前一文字」を、舞台タブの正面図にも重ねる。
+  /* 劇場設定の「前一文字幕」を、舞台タブの正面図にも重ねる。
    * 配置画面と同じく、客席側（v=1）に吊り、開口の高さ prosH より上だけを隠す。
    * ここで showFrontBorder を持つのは図の見せ方だけで、照明デザイン自体は変えない。 */
   function drawFrontBorderCurtain(target, L) {
@@ -30629,6 +30630,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const captionSizeInputs = [];
     box.addEventListener("change", () => {
       setFeaturePreference(f.key, box.checked);
+      if (f.key === "arrowKeysVoxOnly") window.dispatchEvent(new Event("stage-timeline-cue-preference-change"));
       captionSizeInputs.forEach((radio) => { radio.disabled = !box.checked; });
       applyFeatureFlags();
       if (f.key === "floatingInspector") {
@@ -34511,6 +34513,21 @@ ${propsPlotHtml}
       title.textContent = tx(label);
       host.append(title);
     };
+    const blank = document.createElement("button");
+    blank.type = "button";
+    blank.className = "stage-venue-gallery-item stage-venue-gallery-blank";
+    blank.dataset.venueId = "__blank__";
+    blank.setAttribute("aria-pressed", String(blankVenueSelected));
+    const blankCanvas = document.createElement("canvas");
+    blankCanvas.setAttribute("aria-hidden", "true");
+    const blankName = document.createElement("span");
+    blankName.className = "stage-venue-gallery-name";
+    blankName.textContent = sx("1からつくる", "Start from scratch");
+    const blankHint = document.createElement("span");
+    blankHint.className = "stage-venue-gallery-size";
+    blankHint.textContent = sx("舞台・客席・天井などを置かずに開始", "Begin with an empty venue");
+    blank.append(blankCanvas, blankName, blankHint);
+    host.append(blank);
     VENUE_GROUPS.forEach((group) => {
       const members = group.ids.map((id) => byId.get(id)).filter(Boolean);
       if (!members.length) return;
@@ -34528,6 +34545,10 @@ ${propsPlotHtml}
   /* 選ぶボタンに、いま選んでいる劇場の名前を出す。 */
   function syncVenuePickLabel() {
     if (!els.venuePickName || !els.venueSelect) return;
+    if (blankVenueSelected) {
+      els.venuePickName.textContent = sx("1からつくる", "Start from scratch");
+      return;
+    }
     const venue = VENUES.byId(els.venueSelect.value);
     els.venuePickName.textContent = venue && !venue.missing
       ? sx(`${venueName(venue)}（${venueShortName(venue)}）`,
@@ -34536,9 +34557,17 @@ ${propsPlotHtml}
   }
 
   let venuePickerPendingId = null;
+  let blankVenueSelected = false;
+  function showBlankVenueSelection() {
+    if (els.sizeSelect?.closest(".stage-field-row")) {
+      els.sizeSelect.closest(".stage-field-row").hidden = blankVenueSelected;
+    }
+    if (els.venueScale) els.venueScale.hidden = blankVenueSelected;
+    syncVenuePickLabel();
+  }
   function openVenuePicker() {
     if (!els.venuePickModal) return;
-    venuePickerPendingId = els.venueSelect?.value || null;
+    venuePickerPendingId = blankVenueSelected ? "__blank__" : (els.venueSelect?.value || null);
     els.venuePickModal.hidden = false;
     if (els.venuePickBackdrop) els.venuePickBackdrop.hidden = false;
     syncVenueGallerySelection();
@@ -34561,7 +34590,7 @@ ${propsPlotHtml}
        current.id を見ると押したタイルが光らない（実測して気づいた）。 */
   function syncVenueGallerySelection() {
     if (!els.venueGallery || !els.venueSelect) return;
-    const id = venuePickerPendingId || els.venueSelect.value;
+    const id = venuePickerPendingId || (blankVenueSelected ? "__blank__" : els.venueSelect.value);
     els.venueGallery.querySelectorAll(".stage-venue-gallery-item").forEach((item) => {
       item.setAttribute("aria-pressed", String(item.dataset.venueId === id));
     });
@@ -34581,6 +34610,8 @@ ${propsPlotHtml}
   }
 
   function previewVenueEditorTemplate(venueId, requestedSizeId) {
+    blankVenueSelected = false;
+    showBlankVenueSelection();
     const selectedVenue = VENUES.byId(venueId);
     const selectedSize = VENUES.sizeById(selectedVenue, requestedSizeId);
     if (els.venueSelect) els.venueSelect.value = selectedVenue.id;
@@ -36372,6 +36403,11 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     els.poseStrip.appendChild(more);
   }
 
+  function syncTransitionAnimationControls() {
+    if (els.animScenes) els.animScenes.checked = state.animateScenes;
+    if (els.timelineAnimScenes) els.timelineAnimScenes.setAttribute("aria-pressed", String(state.animateScenes));
+  }
+
   function syncInputs() {
     if (els.sceneList) {
       if (state.sceneListHeightMode === "manual" && state.sceneListHeight) {
@@ -36399,7 +36435,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (els.planRoutesCast) els.planRoutesCast.checked = state.showRoutesCast;
     if (els.planRoutesLight) els.planRoutesLight.checked = state.showRoutesLight;
     if (els.planRoutesSet) els.planRoutesSet.checked = state.showRoutesSet;
-    if (els.animScenes) els.animScenes.checked = state.animateScenes;
+    syncTransitionAnimationControls();
     if (els.animMs) {
       if (document.activeElement !== els.animMs) els.animMs.value = String(state.sceneAnimMs / 1000);
       // 新しい転換を作るときの初期値なので、再生アニメーションをOFFにしていても設定できる。
@@ -37761,7 +37797,13 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const id = venuePickerPendingId;
     if (!id || !els.venueSelect) return;
     closeVenuePicker();
-    if (id === els.venueSelect.value) {
+    if (id === "__blank__") {
+      blankVenueSelected = true;
+      showBlankVenueSelection();
+      window.dispatchEvent(new Event("stage-venue-editor-blank"));
+      return;
+    }
+    if (id === els.venueSelect.value && !blankVenueSelected) {
       window.dispatchEvent(new Event("stage-venue-editor-reapply"));
     } else {
       els.venueSelect.value = id;
@@ -37803,6 +37845,13 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     render();
   });
   window.addEventListener("stage-venue-editor-open", syncVenueEditorTemplate);
+  window.addEventListener("stage-venue-draft-render", (event) => {
+    if (!event.detail || !els.venueSelect) return;
+    const blank = event.detail.templateKey === "__blank__";
+    if (blankVenueSelected === blank) return;
+    blankVenueSelected = blank;
+    showBlankVenueSelection();
+  });
   window.addEventListener("stage-venue-apply-requested", (event) => {
     openVenueApplyModal(event.detail);
   });
@@ -37817,7 +37866,11 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const saved = event.detail && event.detail.venue;
     if (saved && typeof saved.id === "string") setVenue(saved.id);
   });
-  window.addEventListener("stage-venue-editor-closed", renderVenueControls);
+  window.addEventListener("stage-venue-editor-closed", () => {
+    blankVenueSelected = false;
+    renderVenueControls();
+    showBlankVenueSelection();
+  });
   document.querySelectorAll("[data-toggle-view]").forEach((button) => {
     button.addEventListener("click", () => {
       const which = button.dataset.toggleView;
@@ -37929,7 +37982,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       state.showFrontBorder = e.target.checked;
       render();
       persistSoon();
-      announce(e.target.checked ? "前一文字を正面図に出しました。" : "前一文字を正面図から隠しました。");
+      announce(e.target.checked ? "前一文字幕を正面図に出しました。" : "前一文字幕を正面図から隠しました。");
     });
   }
   if (els.frontFloorGrid) {
@@ -39004,6 +39057,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   if (els.animScenes) {
     els.animScenes.addEventListener("change", (e) => {
       state.animateScenes = e.target.checked;
+      syncTransitionAnimationControls();
       if (!state.animateScenes) stopSceneAnim();
       syncSpinRun(false);
       render();
@@ -39012,6 +39066,9 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       persistSoon();
       announce(state.animateScenes ? "転換アニメーションを入れました。" : "転換アニメーションを切りました。");
     });
+  }
+  if (els.timelineAnimScenes && els.animScenes) {
+    els.timelineAnimScenes.addEventListener("click", () => els.animScenes.click());
   }
   document.addEventListener("visibilitychange", () => syncSpinRun());
 
@@ -39052,7 +39109,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       if (!stageView || stageView.hidden) return;
       const cueStep = new CustomEvent("stage-timeline-cue-step", {
         cancelable: true,
-        detail: { direction: CUE_STEPS[event.key], voxOnly: featureOn("arrowKeysVoxOnly") },
+        detail: { direction: CUE_STEPS[event.key] },
       });
       window.dispatchEvent(cueStep);
       // キューが存在しない場合も、舞台上ではブラウザの横スクロールに渡さない。
@@ -42337,6 +42394,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     },
   });
   window.SHOSAI_STAGE_SESSION_BRIDGE = Object.freeze({
+    arrowKeysVoxOnly: () => featureOn("arrowKeysVoxOnly"),
     historyStatus: () => ({ canUndo: history.length > 0, canRedo: future.length > 0 }),
     exportDocumentString() {
       const doc = makeProjectExportDocument(state.project, true);

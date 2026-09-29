@@ -194,10 +194,17 @@
   document.addEventListener('keydown',event=>{
     const target=event.target,tag=target?.tagName;
     if(['INPUT','TEXTAREA','SELECT'].includes(tag)||target?.isContentEditable) return;
+    if(event.defaultPrevented || !document.getElementById('dialog')?.hidden) return;
     if(event.metaKey||event.ctrlKey||event.altKey||event.shiftKey||event.repeat) return;
     if(/^[1-5]$/.test(event.key)) {
       event.preventDefault();event.stopImmediatePropagation();
       parent.postMessage({type:'gamma:workspace-shortcut',key:event.key},location.origin);
+      return;
+    }
+    if(active && state.mode==='move' && !state.soloFigure
+       && (event.key==='ArrowLeft'||event.key==='ArrowRight')) {
+      event.preventDefault();event.stopImmediatePropagation();
+      parent.postMessage({type:'gamma:cue-step',direction:event.key==='ArrowRight'?1:-1},location.origin);
       return;
     }
     if(event.code!=='KeyE') return;

@@ -71,8 +71,8 @@
       button.hidden = row.x < 0 || row.x > 1 || row.y < 0 || row.y > 1;
       button.classList.toggle('is-selected', row.key === selected);
       button.setAttribute('aria-pressed', String(row.key === selected));
-      button.setAttribute('aria-label', `${row.point.label}の見る位置。目の高さ${row.point.eyeM}m。ドラッグまたは矢印キーで移動、スクロールで高さ変更`);
-      button.title = `${row.point.label}：舞台前端から${row.point.distanceM}m・左右${row.point.offsetM}m・目の高さ${row.point.eyeM}m`;
+      button.setAttribute('aria-label', `${row.point.label}の見る位置。視線の高さ${row.point.eyeM}m。ドラッグまたは矢印キーで移動、スクロールで高さ変更`);
+      button.title = `${row.point.label}：舞台前端から${row.point.distanceM}m・左右${row.point.offsetM}m・視線の高さ${row.point.eyeM}m`;
       button.children[0].textContent = index + 1; button.children[1].textContent = row.point.label;
     });
     // 点の座標は動かさず、名前だけ空いている方向へ逃がす。
@@ -99,7 +99,7 @@
     choose.value = selected || ''; choose.disabled = !active;
     if (document.activeElement !== nameInput) nameInput.value = active?.point.label || '';
     if (document.activeElement !== eyeHeight) eyeHeight.value = active ? String(active.point.eyeM) : '';
-    if (floorHeight) floorHeight.textContent = active?.floorM == null ? '客席区画の外側です。' :
+    if (floorHeight) floorHeight.textContent = active?.floorM == null ? '' :
       `この位置の客席床：舞台床から${Math.round(active.floorM * 100) / 100}m`;
     nameInput.disabled = eyeHeight.disabled = remove.disabled = !active;
     control('count').textContent = `（${view.points.length}/5）`;
@@ -125,7 +125,7 @@
     if (!row) return;
     const current = row.point.eyeM;
     const next = Math.max(-10, Math.min(60, Math.round((current - Math.sign(event.deltaY) * (event.shiftKey ? .5 : .1)) * 10) / 10));
-    if (editor.setViewpointEyeHeight(selected, next)) { message(`目の高さを${next}mにしました。`); sync(); }
+    if (editor.setViewpointEyeHeight(selected, next)) { message(`視線の高さを${next}mにしました。`); sync(); }
   }, { passive: false });
   layer.addEventListener('pointerdown', event => {
     const button = event.target.closest('button[data-viewpoint]');
@@ -180,11 +180,11 @@
     const value = eyeHeight.value.trim(), number = Number(value);
     if (!value || !Number.isFinite(number) || number < -10 || number > 60) {
       eyeHeight.value = String(point.eyeM);
-      message('目の高さは−10〜60mで入力してください。'); return;
+      message('視線の高さは−10〜60mで入力してください。'); return;
     }
     if (editor.setViewpointEyeHeight(selected, number)) {
       const current = editor.viewpointPlot().points.find(row => row.key === selected)?.point.eyeM;
-      message(`目の高さを${current}mにしました。「一つ戻す」で取り消せます。`);
+      message(`視線の高さを${current}mにしました。「一つ戻す」で取り消せます。`);
       sync();
     }
     eyeHeight.value = String(editor.viewpointPlot().points.find(row => row.key === selected)?.point.eyeM ?? point.eyeM);

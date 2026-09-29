@@ -396,11 +396,11 @@ body[data-gamma-workspace="cuesheet"].stage-timeline-expanded:not(.stage-fullscr
   border: 0;
   background: none;
 }
-/* V-5（2026-09-17）: 全幅の白い3px枠をやめ、手順の列の中の1枚として他のカードと同じ枠にする。 */
+/* 劇場形式プリセットだけを、手順の入口として黄色い太枠で示す。 */
 #gamma-venue-workspace .stage-venue-editor-presets {
   margin: 0;
   padding: 10px;
-  border: 1px solid var(--line-dark);
+  border: 3px solid #f1c54b;
   border-radius: var(--radius-sm);
 }
 #gamma-venue-workspace .stage-venue-editor-presets .stage-venue-choice-row {
@@ -675,6 +675,20 @@ body.is-timeline-marquee { user-select: none; }
   font-size: var(--fs-6);
   letter-spacing: 0.15em;
   line-height: 1.2;
+}
+
+/* 劇場の入出力は button と label で同じ字間にする。 */
+.stage-modal footer.stage-venue-library-footer .stage-venue-library-actions > button:not(#stage-venue-editor-apply),
+.stage-modal footer.stage-venue-library-footer .stage-venue-library-actions > .stage-import-label {
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+.stage-venue-library-actions #stage-venue-editor-apply { grid-column:1 / -1; }
+#stage-venue-pick-modal footer.stage-venue-pick-actions #stage-venue-pick-apply {
+  width: auto;
+  max-width: 100%;
+  margin: 0;
+  white-space: nowrap;
 }
 
 /* ===== ショーのパネル（2026-09-17 本人指示でポップアップを畳んだ後） ===== */

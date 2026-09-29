@@ -274,7 +274,7 @@
    * stage.html は書き換えず実行時に組み立てる（見出しの文字位置を見ているテストを壊さないため）。
    * 見出しの中身を button へ移して <h3><button aria-expanded></button></h3> の形にする＝
    * 見出しの意味と読み上げ順を保ったまま、見出し全体を押せるようにする。 */
-  const VENUE_STEPS='.stage-venue-editor-lighting-step,.stage-venue-editor-format,.stage-venue-editor-shape,.stage-venue-editor-extension,'
+  const VENUE_STEPS='.stage-venue-editor-lighting-step,.stage-venue-editor-extension,'
     +'.stage-venue-editor-ceiling,.stage-venue-editor-audience-guide,.stage-venue-editor-wings-guide,'
     +'.stage-venue-editor-walls-guide,.stage-venue-editor-back-screens,.stage-venue-editor-viewpoints';
   const venueSteps=()=>[...venueWorkspace.querySelectorAll('.stage-venue-editor-menu '+VENUE_STEPS)];
@@ -627,7 +627,7 @@
           goVenue.addEventListener('click',()=>select('venue-setup'));
           status.append(goVenue);
         } else if(!loaded) {
-          frame.src='light-design/index.html?embed=gamma&v=20260930-optics1'; loaded=true;
+          frame.src='light-design/index.html?embed=gamma&v=20260930-merge1'; loaded=true;
           status.textContent='照明デザインを開いています…';
         } else if(editor()) {
           editor().open(context, next);
@@ -730,6 +730,13 @@
     }
     if(event.data?.type==='gamma:timeline-toggle' && mode==='light-design') {
       window.dispatchEvent(new Event('stage-timeline-toggle-request'));
+      return;
+    }
+    if(event.data?.type==='gamma:cue-step' && mode==='light-design'
+       && (event.data.direction===1 || event.data.direction===-1)) {
+      window.dispatchEvent(new CustomEvent('stage-timeline-cue-step',{
+        cancelable:true,detail:{direction:event.data.direction},
+      }));
     }
   });
   /* タイムラインの展開・高さ変更に合わせ、照明iframeの下端をタイムラインの上へ収める。 */

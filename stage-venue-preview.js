@@ -25,15 +25,23 @@
         <button type="button" data-action="out" aria-label="立体を縮小">−</button>
         <button type="button" data-action="in" aria-label="立体を拡大">＋</button>
       </div></div>
-    <div class="venue-live-foot">
-      <p id="venue-live-help">ドラッグで見回す · ホイールで拡大縮小</p>
-      <p>袖幕の位置は平面図と共通。高さは目安です。</p>
-    </div>`;
-  layout.append(panel);
+    <div class="venue-live-foot" id="venue-live-help">ドラッグで見回す · ホイールで拡大縮小</div>`;
+  const previewColumn = document.createElement('div');
+  previewColumn.className = 'venue-live-preview-column';
+  previewColumn.append(panel);
+  const note = document.createElement('p');
+  note.className = 'venue-live-note';
+  note.textContent = '袖幕は平面図と同じ位置で、天井まで届きます。';
+  previewColumn.append(note);
+  layout.append(previewColumn);
   const toggle = document.createElement('button');
   toggle.type = 'button'; toggle.id = 'venue-live-toggle'; toggle.textContent = window.GAMMA_UI_TEXT?.('プレビューを閉じる') || 'プレビューを閉じる';
   toggle.setAttribute('aria-expanded', 'true');
-  document.getElementById('stage-venue-editor-dims').before(toggle);
+  const dims = document.getElementById('stage-venue-editor-dims');
+  const toolbar = document.createElement('div');
+  toolbar.className = 'venue-plan-toolbar';
+  dims.before(toolbar);
+  toolbar.append(dims, toggle);
   const canvas = panel.querySelector('canvas');
   const context = canvas.getContext('2d', { alpha: false });
   const help = panel.querySelector('#venue-live-help');
@@ -92,7 +100,7 @@
     });
     curtains.forEach(({ wingId, from, to }) => {
       const target = wingId !== 'drawing-preview' ? { kind: 'wing', id: wingId } : null;
-      sheet(from, to, stageY, stageY + ceiling * .75, target);
+      sheet(from, to, stageY, stageY + ceiling, target);
     });
     (Array.isArray(venue.backScreens) ? venue.backScreens : (venue.backScreen ? [venue.backScreen] : [])).forEach(screen => {
       const { from, to } = screen;
@@ -152,7 +160,7 @@
     if (!visible()) return;
     const start = performance.now(), snapshot = editor.previewSnapshot();
     const key = JSON.stringify(snapshot);
-    if (key !== snapshotKey) { snapshotKey = key; model = buildModel(snapshot); }
+    if (key !== snapshotKey) { snapshotKey = key; model = snapshot.empty ? null : buildModel(snapshot); }
     const rect = canvas.getBoundingClientRect(), width = rect.width, height = rect.height;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const background = getComputedStyle(panel).backgroundColor;
@@ -163,6 +171,13 @@
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
     context.fillStyle = background; context.fillRect(0, 0, width, height);
+    if (!model) {
+      help.textContent = 'ステージを描くと立体プレビューに表示されます。';
+      return;
+    }
+    if (help.textContent === 'ステージを描くと立体プレビューに表示されます。') {
+      help.textContent = 'ドラッグで見回す · ホイールで拡大縮小';
+    }
     const center = drag?.kind === 'move' ? drag.transform.center : model.center;
     const plain = model.all.map(p => projection(p, center));
     const xs = plain.map(p => p[0]), ys = plain.map(p => p[1]);
