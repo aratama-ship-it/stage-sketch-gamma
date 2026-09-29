@@ -15141,7 +15141,8 @@
       if (trap) {
         const H = pieceHeightM(piece) * (piece.size / 100);
         // トラピーズの上に立つ姿勢は足の裏をバーの高さへ（2026-09-26）
-        const grip = piece.pose === "trapeze_stand" && isMountPose("trapeze", piece.pose) ? 0 : TRAP_GRIP[piece.trapMode === "hang" ? "hang" : "sit"];
+        // 2026-09-29: バーに膝を掛けて逆さ（trapeze_catch_hang）も、膝を y=0（バー）に置く姿勢なので握り 0
+        const grip = ["trapeze_stand", "trapeze_catch_hang"].includes(piece.pose) && isMountPose("trapeze", piece.pose) ? 0 : TRAP_GRIP[piece.trapMode === "hang" ? "hang" : "sit"];
         piece.supportId = trap.id;
         piece.base = Math.max(0, flownLift(trap) - grip * H);
         return;
