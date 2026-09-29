@@ -189,6 +189,8 @@ public-dist/
 !/stage-i18n.js
 !/stage-i18n.zh-Hans.js
 !/stage-i18n.zh-Hant.js
+!/stage-i18n.ko.js
+!/gamma-ui-i18n.ko.js
 !/stage-light-render.js
 !/stage-light-panel-import.js
 !/stage-set-render.js

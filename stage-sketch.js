@@ -575,6 +575,7 @@
   function normalizeStageLanguage(code) {
     const value = typeof code === "string" ? code.trim().replace(/_/g, "-").toLowerCase() : "";
     if (value.startsWith("ja")) return "ja";
+    if (value.startsWith("ko")) return "ko";
     if (["zh-tw", "zh-hant", "zh-hk", "zh-mo"].includes(value)) return "zh-Hant";
     if (["zh", "zh-cn", "zh-hans", "zh-sg"].includes(value)) return "zh-Hans";
     if (value.startsWith("en")) return "en";
@@ -653,6 +654,14 @@
   function stageLanguageValue(code, english, japanese) {
     const resolved = loadedStageLanguage(code);
     if (resolved === "ja") return japanese();
+    if (resolved === "ko") {
+      const source = japanese();
+      if (typeof source === "string") {
+        const translated = window.SHOSAI_I18N_PACKS?.ko?.text?.[source];
+        if (translated) return translated;
+      }
+      return english();
+    }
     if (resolved === "en" || (window.SHOSAI_I18N_PACKS || {})[resolved]) return english();
     return japanese();
   }
@@ -8341,6 +8350,7 @@
     Object.freeze({ code: "en", label: "English" }),
     Object.freeze({ code: "zh-Hans", label: "中文（简体）" }),
     Object.freeze({ code: "zh-Hant", label: "中文（繁體）" }),
+    Object.freeze({ code: "ko", label: "한국어" }),
   ]);
   const availableStageLanguageChoices = () => STAGE_LANGUAGE_CHOICES.filter((choice) => (
     choice.code === "ja" || Boolean((window.SHOSAI_I18N_PACKS || {})[choice.code])
@@ -23873,7 +23883,7 @@
     const button = document.createElement("button");
     button.type = "button";
     button.className = "stage-kind-swatch";
-    button.title = sx(`${label}を舞台の上で選ぶ`, `Select ${label} on stage`);
+    button.title = lang === "ko" ? `‘${label}’ 무대에서 선택` : sx(`${label}を舞台の上で選ぶ`, `Select ${label} on stage`);
     button.setAttribute("aria-label", button.title);
     button.style.color = item.color;
     const glyph = document.createElement("span");
@@ -24040,7 +24050,9 @@
       ? '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="1.6"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'
       : '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="1.6"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>';
     button.setAttribute("aria-pressed", String(Boolean(item.locked)));
-    button.title = languageValue(() => (item.locked ? `Unlock ${label} (it can move again)` : `Lock ${label} (it stops moving)`), () => (item.locked ? `${label}の錠を外す（動かせるようになります）` : `${label}に錠を掛ける（動かなくなります）`));
+    button.title = lang === "ko"
+      ? (item.locked ? `‘${label}’ 잠금 해제 (다시 움직일 수 있음)` : `‘${label}’ 잠그기 (움직이지 않음)`)
+      : languageValue(() => (item.locked ? `Unlock ${label} (it can move again)` : `Lock ${label} (it stops moving)`), () => (item.locked ? `${label}の錠を外す（動かせるようになります）` : `${label}に錠を掛ける（動かなくなります）`));
     button.setAttribute("aria-label", button.title);
     button.addEventListener("click", () => {
       checkpoint();
@@ -24051,7 +24063,8 @@
       updateInspector();
       render();
       persistSoon();
-      announce(`${label}${item.locked ? "に錠を掛けました。" : "の錠を外しました。"}`);
+      announce(lang === "ko" ? `‘${label}’ ${item.locked ? "잠갔습니다." : "잠금을 해제했습니다."}`
+        : `${label}${item.locked ? "に錠を掛けました。" : "の錠を外しました。"}`);
     });
     return button;
   }
@@ -25708,7 +25721,9 @@
 
   function showSwitchFailure(which) {
     const current = which === "current";
-    const message = languageValue(() => (current
+    const message = lang === "ko" ? (current
+        ? "열려 있는 공연을 공연 목록에 보관하지 못해 전환을 중단했습니다. 파일로 내보내거나 공연 목록의 저장 공간을 확보한 뒤 다시 시도하세요."
+        : "다음 공연을 공연 목록에 저장하지 못해 전환을 중단했습니다. 현재 공연은 그대로 열려 있습니다. 파일로 내보내거나 공연 목록의 저장 공간을 확보한 뒤 다시 시도하세요.") : languageValue(() => (current
         ? "Could not preserve the show you have open, so the switch was stopped. Export it to a file or make room in the show shelf, then try again."
         : "Could not add the next show to the show shelf, so the switch was stopped. The current show is still open. Export it to a file or make room in the show shelf, then try again."), () => (current
         ? "いま開いているショーを一覧へ退避できなかったため、切り替えを止めました。ファイルへ書き出すか、ショー一覧を整理してから、もう一度お試しください。"
@@ -38995,7 +39010,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       if (els.pieceLockIconClosed) els.pieceLockIconClosed.hidden = !locked;
       const lockWord = locked ? tx("錠を外す") : tx("動かないようにする");
       els.pieceLock.setAttribute("aria-label", lockWord);
-      els.pieceLock.title = languageValue(() => (owner
+      els.pieceLock.title = lang === "ko"
+        ? (owner ? `${lockWord} (‘${owner.name}’의 잠금입니다. 잠겨 있는 동안에는 어떤 씬에서도 움직이지 않습니다)`
+          : `${lockWord} (잠겨 있는 동안에는 끌어도 움직이지 않습니다)`)
+        : languageValue(() => (owner
           ? `${lockWord} (the lock of \u201c${owner.name}\u201d. While locked it will not move in any scene)`
           : `${lockWord} (while locked, dragging will not move it)`), () => (owner
           ? `${lockWord}（「${owner.name}」の錠。掛けているあいだ、どのシーンでも動きません）`
@@ -39004,7 +39022,9 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (els.openSetInfo) {
       els.openSetInfo.hidden = !owner;
       els.openSetInfo.textContent = tx("詳細");
-      const detailsLabel = languageValue(() => (registered ? `Open details for \u201c${registered.name}\u201d` : (member ? `Open \u201c${member.name}\u201d\u2019s profile` : "")), () => (registered ? `「${registered.name}」の詳細を開く` : (member ? `「${member.name}」のプロフィールを開く` : "")));
+      const detailsLabel = lang === "ko"
+        ? (registered ? `‘${registered.name}’ 상세 정보 열기` : (member ? `‘${member.name}’ 프로필 열기` : ""))
+        : languageValue(() => (registered ? `Open details for \u201c${registered.name}\u201d` : (member ? `Open \u201c${member.name}\u201d\u2019s profile` : "")), () => (registered ? `「${registered.name}」の詳細を開く` : (member ? `「${member.name}」のプロフィールを開く` : "")));
       els.openSetInfo.title = detailsLabel;
       els.openSetInfo.setAttribute("aria-label", detailsLabel);
     }
@@ -39375,6 +39395,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       done: () => Math.abs(posSum() - tourMark.pos) > 0.5,
       ja: ["まず動かしてみる", "上が客席から見た絵、下が真上から見た図で、同じ舞台です。正面図の演者を掴んで、どこかへ動かしてください。平面図でも一緒に動きます。"],
       en: ["Move something first", "The top is what the house sees; the bottom is the same stage from above. Drag a performer in the front view — it moves in the plan too."],
+      ko: ["먼저 움직여 보기", "위쪽은 객석에서 본 정면도, 아래쪽은 같은 무대를 위에서 본 평면도입니다. 정면도에서 출연자를 잡아 움직여 보세요. 평면도에서도 함께 움직입니다."],
     },
     {
       at: '[data-panel="cast"]',
@@ -39382,6 +39403,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       done: () => (state.project.cast || []).length > tourMark.cast,
       ja: ["人を足す", "「演者・舞台セット」に名前を入れて〈追加〉を押してください。登録するとそのまま舞台に出ます。"],
       en: ["Add a person", "Type a name in Cast & set and press Add. Registering puts them on stage right away."],
+      ko: ["출연자 추가", "‘출연자 · 무대 장치’에 이름을 입력하고 〈추가〉를 누르세요. 등록하면 바로 무대에 나타납니다."],
     },
     {
       at: "#stage-piece-pose",
@@ -39389,6 +39411,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       done: () => sc().pieces.filter((p) => p.type === "performer" && p.pose !== "stand").length > tourMark.pose,
       ja: ["姿勢を変える", "いま足した人が選ばれています。〈姿勢〉を押して、30種類から一つ選んでください（宙返り、シルホイール、一輪車など）。"],
       en: ["Change the pose", "The person you just added is selected. Press Pose and pick one of 30 (somersault, Cyr wheel, unicycle and more)."],
+      ko: ["자세 변경", "방금 추가한 출연자가 선택되어 있습니다. 〈자세〉를 눌러 공중제비, 시어 휠, 외발자전거 등에서 하나를 고르세요."],
     },
     {
       at: "#stage-plan-route",
@@ -39397,6 +39420,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       done: () => sc().pieces.filter((p) => p.route).length > tourMark.route,
       ja: ["動線を引く", "平面図の〈動線を描く〉を押し、動かしたい人を掴んで、行き先で離してください。矢印が出ます。"],
       en: ["Draw a route", "Press Draw route above the plan, grab the person you want to move, and let go at the destination. An arrow appears."],
+      ko: ["이동 경로 그리기", "평면도에서 〈이동 경로 그리기〉를 누른 뒤 움직일 출연자를 잡아 목적지에서 놓으세요. 화살표가 나타납니다."],
     },
     {
       at: '[data-panel="scenes"]',
@@ -39404,6 +39428,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       done: () => state.project.scenes.length > tourMark.scenes,
       ja: ["次のシーンを作る", "シーンの欄の〈次のシーンをつくる〉を押し、〈現在のシーンから引き継ぐ〉を選んでください。引き継いだ演者は、動線の先へ移動します。"],
       en: ["Make the next scene", "Press “Create next scene”, choose “Inherit from current scene”, then select what to keep. Performers with routes move to their destinations."],
+      ko: ["다음 씬 만들기", "씬 목록에서 〈다음 씬 만들기〉를 누르고 〈현재 씬에서 가져오기〉를 선택하세요. 가져온 출연자는 이동 경로의 목적지로 이동합니다."],
     },
     {
       at: ".stage-scene-move",
@@ -39411,6 +39436,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       done: () => state.project.activeSceneId !== tourMark.scene,
       ja: ["転換を見る", "〈◀ 前のシーン〉で戻り、〈次のシーン ▶〉で進んでください（↑↓キーでも動きます）。進むときだけ、動線に沿って動いて見えます。"],
       en: ["Watch the change", "Go back with ◀ Previous and forward with Next ▶ (the ↑↓ keys work too). Moving forward plays the travel along the routes."],
+      ko: ["무대 전환 보기", "〈◀ 이전 씬〉으로 돌아가고 〈다음 씬 ▶〉으로 진행하세요. ↑↓ 키도 사용할 수 있습니다. 다음 씬으로 갈 때 이동 경로를 따라 움직이는 모습이 보입니다."],
     },
     {
       at: '[data-panel="light"]',
@@ -39418,6 +39444,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       done: () => lightCount() > tourMark.light,
       ja: ["照明を足す", "照明の配置と編集は、上部の「照明」で行います。"],
       en: ["Add a light", "Enter a name under Lights and press Add. Four types: overhead, side, front, floor. Switch the tool to Move lights to drag the fixture and the pool separately."],
+      ko: ["조명 추가", "조명 배치와 편집은 화면 위쪽의 ‘조명’에서 할 수 있습니다."],
     },
     {
       at: "#stage-front-note",
@@ -39426,11 +39453,13 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       done: () => (sc().notes || []).length > tourMark.notes,
       ja: ["メモを貼る", "〈メモ〉を押して、絵の何もない所を押してください。付箋が出て、その場で書けます。演者の脇でも、床の上でも。書き出した画像にも残ります。"],
       en: ["Pin a note", "Press Note, then press an empty spot on the picture. A sticky note appears and you can type right there. It stays in the exported image."],
+      ko: ["메모 붙이기", "〈메모〉를 누르고 그림의 빈 곳을 누르세요. 메모지가 나타나고 그 자리에서 글을 쓸 수 있습니다. 출연자 옆이나 바닥에도 놓을 수 있으며 내보낸 이미지에도 남습니다."],
     },
     {
       at: "#stage-export",
       ja: ["持ち出す", "紙のアイコン〈画像・印刷〉で、正面・平面・全シーンを画像にしたり、印刷用ページを開いたりできます。作ったものはこの端末のブラウザにだけ保存されます。以上です、あとは自由に。"],
       en: ["Take it with you", "The paper icon (Images & print) saves the front view, the plan, or every scene, and opens a print sheet. Your work lives only in this browser. That's it — go ahead."],
+      ko: ["파일로 가져가기", "종이 아이콘 〈이미지 · 인쇄〉로 정면도, 평면도, 모든 씬을 이미지로 만들거나 인쇄용 페이지를 열 수 있습니다. 작업은 현재 기기의 브라우저에만 저장됩니다. 이제 자유롭게 사용해 보세요."],
     },
   ];
 
@@ -39539,7 +39568,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     tourAt = clamp(index, 0, TOUR.length - 1);
     const step = TOUR[tourAt];
     if (step.begin) step.begin();
-    const words = languageValue(() => (step.en), () => (step.ja));
+    const words = lang === "ko" ? step.ko : languageValue(() => (step.en), () => (step.ja));
     els.tour.hidden = false;
     els.tourStep.textContent = `${tourAt + 1} / ${TOUR.length}`;
     els.tourTitle.textContent = words[0];
