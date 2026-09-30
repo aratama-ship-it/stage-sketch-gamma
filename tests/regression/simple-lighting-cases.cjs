@@ -5,21 +5,23 @@ async function project(page){const p=(await h.documentValue(page)).project;asser
 async function open(page){await h.scene(page,'ft-scene-f1');await page.locator('#gamma-design').click();await page.waitForFunction(()=>[...document.querySelectorAll('iframe')].some(i=>i.contentWindow?.GAMMA_LIGHT_EDITOR?.status().showId));const f=page.frames().find(f=>f.url().includes('light-design/index'));await f.waitForFunction(()=>!!window.GAMMA_SIMPLE_LIGHT_UI);return f;}
 async function saved(page){return (await project(page)).lightingDesign;}
 async function adopted(f){await f.waitForFunction(()=>document.querySelector('#simple-status').textContent.includes('採用済み'));}
-async function previewPixels(f){return f.locator('#simple-front').evaluate(c=>({width:c.width,height:c.height,pixels:Array.from(c.getContext('2d').getImageData(0,0,c.width,c.height).data)}));}
-function previewDifference(a,b){
- assert.equal(b.width,a.width,'preview width');assert.equal(b.height,a.height,'preview height');assert.equal(b.pixels.length,a.pixels.length,'preview pixel count');
- let maxChannelDelta=0,changedChannels=0;
- for(let i=0;i<a.pixels.length;i++){const delta=Math.abs(a.pixels[i]-b.pixels[i]);if(delta)changedChannels++;maxChannelDelta=Math.max(maxChannelDelta,delta);}
- return{maxChannelDelta,changedChannels};
-}
+async function rememberPreview(f){await f.locator('#simple-front').evaluate(c=>{window.__gammaRegressionSimplePreview={width:c.width,height:c.height,pixels:c.getContext('2d').getImageData(0,0,c.width,c.height).data};});}
+async function previewDifference(f){return f.locator('#simple-front').evaluate(c=>{
+ const a=window.__gammaRegressionSimplePreview;
+ if(!a||c.width!==a.width||c.height!==a.height)throw Error('preview dimensions changed');
+ const next=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+ let maxChannelDelta=0,changedChannels=0,changedPixels=0,lastChangedPixel=-1;
+ for(let i=0;i<a.pixels.length;i++){const delta=Math.abs(a.pixels[i]-next[i]);if(delta){changedChannels++;const pixel=i>>2;if(pixel!==lastChangedPixel){changedPixels++;lastChangedPixel=pixel;}if(delta>maxChannelDelta)maxChannelDelta=delta;}}
+ return{maxChannelDelta,changedChannels,changedPixels};
+});}
 async function copy(page,f){const original=await project(page);await f.locator('#simple-mode-on').click();await f.locator('#simple-adopt').click();await f.waitForFunction(()=>__RIG.state.rig.fixtures.length===24);const p=await project(page);assert.notEqual(p.id,original.id);assert.equal(p.parentVersionId,original.id);const preserved=await page.evaluate(async id=>{const s=JSON.parse(localStorage.getItem(SHOSAI_GAMMA_STORAGE_KEYS.showShelf)||'{}');return s[id]?.state?.project||JSON.parse((await SHOSAI_STAGE_PROJECT_BACKUP_STORE.get(id)).serializedState).project;},original.id);assert.deepEqual(preserved.lightingDesign,original.lightingDesign);assert.deepEqual(p.scenes.map(s=>s.pieces.filter(x=>x.type==='performer')),original.scenes.map(s=>s.pieces.filter(x=>x.type==='performer')));return p;}
 async function flow({page}){
  const f=await open(page),original=JSON.stringify(await saved(page));assert.equal(await f.locator('#simple-mode-off').getAttribute('aria-pressed'),'true');
  await f.evaluate(async()=>{await document.fonts.ready;});await f.locator('#simple-mode-on').click();
- const name=await f.locator('#simple-name').textContent(),image=await previewPixels(f);await f.locator('#simple-next').click();assert(previewDifference(image,await previewPixels(f)).maxChannelDelta>1,'next preset changes the preview pixels');await f.locator('#simple-prev').click();assert.equal(await f.locator('#simple-name').textContent(),name,'previous preset is restored');const previewReturnDiff=previewDifference(image,await previewPixels(f));
- // PNG encoding and canvas raster rounding can vary on Linux WebKit. A change
- // of more than one 8-bit channel level still fails at any pixel.
- assert(previewReturnDiff.maxChannelDelta<=1,'restored preview differs: '+JSON.stringify(previewReturnDiff));assert.equal(JSON.stringify(await saved(page)),original);assert.equal(await f.evaluate(()=>GAMMA_LIGHT_EDITOR.status().dirty),false);assert.equal(await f.locator('#simple-grid button').count(),12);
+ const name=await f.locator('#simple-name').textContent();await rememberPreview(f);await f.locator('#simple-next').click();const nextDiff=await previewDifference(f);assert(nextDiff.maxChannelDelta>2&&nextDiff.changedPixels>2,'next preset changes the preview pixels');await f.locator('#simple-prev').click();assert.equal(await f.locator('#simple-name').textContent(),name,'previous preset is restored');const previewReturnDiff=await previewDifference(f);
+ // Linux WebKit varied just two color components by 2/255. Bound both the
+ // channel delta and the affected pixels; keep the comparison inside the frame.
+ assert(previewReturnDiff.maxChannelDelta<=2&&previewReturnDiff.changedPixels<=2,'restored preview differs: '+JSON.stringify(previewReturnDiff));assert.equal(JSON.stringify(await saved(page)),original);assert.equal(await f.evaluate(()=>GAMMA_LIGHT_EDITOR.status().dirty),false);assert.equal(await f.locator('#simple-grid button').count(),12);
  await copy(page,f);const base=await saved(page);await f.locator('#simple-grid [data-id="pair"]').click();const persons=await f.evaluate(()=>__RIG.hooks.scene().pieces.filter(p=>p.kind==='performer').map(p=>p.id));assert(persons.length>=2);
  await f.locator('#simple-target-0').selectOption('person:'+persons[0]);await f.locator('#simple-target-1').selectOption('person:'+persons[1]);await f.locator('#simple-color').selectOption('blue');await f.locator('#simple-adopt').click();await adopted(f);
  const design=await saved(page),row=design.scenes.find(s=>s.id==='ft-scene-f1');assert.equal(row.cue.simplePreset.presetId,'pair');assert.deepEqual(row.cue.simplePreset.targets.map(t=>t.personId),persons.slice(0,2));assert.equal(row.lxq.length,1);assert.equal(row.lxq[0].timing.fadeInSec,3);assert.deepEqual(design.scenes.filter(s=>s.id!==row.id),base.scenes.filter(s=>s.id!==row.id));assert.equal(design.rig.fixtures.length,24);
