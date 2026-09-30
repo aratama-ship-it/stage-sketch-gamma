@@ -211,7 +211,7 @@
       const rows = [];
       for (let i = 0; i < storage.length; i += 1) {
         const key = storage.key(i);
-        if (key === null || !key.startsWith("gamma:")) continue;
+        if (key === null || (!key.startsWith("gamma:") && key !== "gamma-venue-menu-width-v2")) continue;
         const value = storage.getItem(key);
         if (value !== null) rows.push({ key, bytes: bytes(key, value),
           kind: key === INACTIVE_SHOW_ARCHIVE_KEY ? null : backupKind(key) });

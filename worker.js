@@ -164,6 +164,151 @@ function handleBetaStatusRequest(request) {
   return jsonResponse({ ok: true, betaActive: true, message: null, productUrl: null });
 }
 
+// Runtime closure reviewed with stage.html and the evaluated Service Worker shell.
+// Five legacy docs paths are runtime dependencies, not permission for all of docs/.
+export const EDITOR_ASSET_PATHS = new Set([
+  '/',
+  '/assets/brand/logo-jp-gamma-inline-white.svg',
+  '/docs/light-panel-migration-2026-09-13/light-panel-migration.js',
+  '/docs/proscenium-lighting-presets-2026-09-15/proscenium-large.shosai-light-design.json',
+  '/docs/proscenium-lighting-presets-2026-09-15/proscenium-lighting-presets-v1.json',
+  '/docs/proscenium-lighting-presets-2026-09-15/proscenium-mid.shosai-light-design.json',
+  '/docs/proscenium-lighting-presets-2026-09-15/proscenium-small.shosai-light-design.json',
+  '/formation/presets/editor.css',
+  '/formation/presets/editor',
+  '/formation/presets/editor.html',
+  '/formation/presets/editor.js',
+  '/gamma-formation-model.js',
+  '/gamma-formation-presets.js',
+  '/gamma-formation.css',
+  '/gamma-formation.js',
+  '/gamma-light-cue-overlay.js',
+  '/gamma-light-model.js',
+  '/gamma-mobile.css',
+  '/gamma-mobile.js',
+  '/gamma-number-scrub.js',
+  '/gamma-range-fields.js',
+  '/gamma-ui-i18n.js',
+  '/gamma-ui-i18n.ko.js',
+  '/gamma-ui-tokens.css',
+  '/gamma-ui.js',
+  '/gamma-workspace.js',
+  '/gamma.css',
+  '/index.html',
+  '/light-design/app.js',
+  '/light-design/embed.css',
+  '/light-design/embed.js',
+  '/light-design',
+  '/light-design/',
+  '/light-design/index',
+  '/light-design/index.html',
+  '/light-design/laser-effects-ui.js',
+  '/light-design/laser-effects.js',
+  '/light-design/light-presets-ui.js',
+  '/light-design/light-presets.js',
+  '/light-design/rig-engine.js',
+  '/light-design/selected-light-presets-engine.js',
+  '/light-design/selected-light-presets-ui.js',
+  '/light-design/simple-lighting-model.js',
+  '/light-design/simple-lighting-ui.js',
+  '/light-design/simple-lighting.css',
+  '/light-design/stage-figure.js',
+  '/light-design/ui-i18n.js',
+  '/light-design/volume-light.js',
+  '/manual-gamma',
+  '/manual-gamma/',
+  '/manual/manual-content.js',
+  '/manual/manual',
+  '/manual/manual.html',
+  '/manual/quick-en',
+  '/manual/quick-en.html',
+  '/manual/quick',
+  '/manual/quick.html',
+  '/public/ai-json',
+  '/public/ai-json/',
+  '/public/ai-json/AI_MANUAL_ja.md',
+  '/stage',
+  '/stage-audio-store.js',
+  '/stage-cue-sheet.js',
+  '/stage-data-safety.js',
+  '/stage-first-person.js',
+  '/stage-fixture-body.js',
+  '/stage-front-shape.js',
+  '/stage-i18n.js',
+  '/stage-i18n.ko.js',
+  '/stage-i18n.zh-Hans.js',
+  '/stage-i18n.zh-Hant.js',
+  '/stage-jog-reference.js',
+  '/stage-large-project-store.js',
+  '/stage-light-panel-import.js',
+  '/stage-light-render.js',
+  '/stage-lighting-plan-overlay.js',
+  '/stage-lighting-plans.js',
+  '/stage-machinery.js',
+  '/stage-panel-columns.css',
+  '/stage-performer-body.js',
+  '/stage-performer-contour.js',
+  '/stage-performer-motion.js',
+  '/stage-point-source.js',
+  '/stage-project-backup-store.js',
+  '/stage-prompt-i18n.js',
+  '/stage-pwa.js',
+  '/stage-rehearsal-export.js',
+  '/stage-reorder-motion.js',
+  '/stage-samples/feature-test-show.js',
+  '/stage-samples/index.js',
+  '/stage-samples/romeo-juliet-cued.js',
+  '/stage-samples/romeo-juliet-second.js',
+  '/stage-save-lifecycle.js',
+  '/stage-scene-alternatives-ui.js',
+  '/stage-scene-alternatives.css',
+  '/stage-scene-alternatives.js',
+  '/stage-scrim.js',
+  '/stage-script-editor.css',
+  '/stage-script-editor.js',
+  '/stage-session.js',
+  '/stage-set-builder.js',
+  '/stage-set-model.js',
+  '/stage-set-render.js',
+  '/stage-shortcuts.js',
+  '/stage-sketch.js',
+  '/stage-sketch.webmanifest',
+  '/stage-storage-codec.js',
+  '/stage-storage-hygiene.js',
+  '/stage-storage-pressure.js',
+  '/stage-storage-recovery.js',
+  '/stage-study-owner.js',
+  '/stage-study.css',
+  '/stage-sw.js',
+  '/stage-timeline.js',
+  '/stage-usage.js',
+  '/stage-venue-curtains.js',
+  '/stage-venue-editor.js',
+  '/stage-venue-lines.js',
+  '/stage-venue-preview.css',
+  '/stage-venue-preview.js',
+  '/stage-venue-report.js',
+  '/stage-venue-viewpoints.css',
+  '/stage-venue-viewpoints.js',
+  '/stage-venues.js',
+  '/stage-vox-panel.css',
+  '/stage-vox-panel.js',
+  '/stage.html',
+  '/storage-recovery',
+  '/storage-recovery-ui.js',
+  '/storage-recovery.html',
+  '/style.css',
+]);
+export const EDITOR_ASSET_PREFIXES = Object.freeze(['/manual-gamma/', '/public/ai-json/', '/icons/']);
+export function isEditorAssetPath(path) {
+  // Reject encoded separators, hidden segments and ambiguous paths before prefix checks.
+  if (/%|\\|[\x00-\x20\x7f]/.test(path) || path.split('/').some(part => part.startsWith('.'))) return false;
+  if (EDITOR_ASSET_PATHS.has(path)) return true;
+  if (!EDITOR_ASSET_PREFIXES.some(prefix => path.startsWith(prefix))) return false;
+  return /\.(?:html|css|js|json|png|svg|jpg|jpeg|webp|gif|mp4|webm|pdf|woff2?)$/i.test(path)
+    || path.endsWith('/') || /^[-A-Za-z0-9_]+$/.test(path.split('/').pop());
+}
+
 async function serveAuthenticatedRequest(request, env, user) {
   const studyResponse = await handleStudyApi(request, env, user);
   if (studyResponse) return studyResponse;
@@ -175,8 +320,12 @@ async function serveAuthenticatedRequest(request, env, user) {
   if (betaStatusResponse) return betaStatusResponse;
   const sessionResponse = await handleSessionRequest(request, env, user);
   if (sessionResponse) return sessionResponse;
-  // γ has a public source distribution and no private shosai-app files. All
-  // signed-in accounts need the complete editor asset graph to join a room.
+  const path = new URL(request.url).pathname;
+  if (!['GET', 'HEAD'].includes(request.method) || !isEditorAssetPath(path)) {
+    return new Response(request.method === 'HEAD' ? null : 'このファイルは配信対象ではありません。', {
+      status: 403, headers: { 'Cache-Control': 'no-store' },
+    });
+  }
   return privateAssetResponse(await env.ASSETS.fetch(request));
 }
 
@@ -675,7 +824,7 @@ export default {
     const readerAuth = await handleReaderAuth(request, env);
     if (readerAuth) return readerAuth;
     // アイコンとmanifestは認証の手前で返す（上のコメントの理由による）。
-    if (isPublicAppShellAsset(request)) {
+    if (isPublicAppShellAsset(request) && isEditorAssetPath(new URL(request.url).pathname)) {
       return env.ASSETS.fetch(request);
     }
 

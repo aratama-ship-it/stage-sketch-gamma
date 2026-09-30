@@ -522,6 +522,7 @@
     } else {
       expanded = expanded.replace(/^[●→◆](?=\s|$)/, (symbol) => words[symbol] || symbol);
     }
+    expanded = root.STAGE_DATA_SAFETY.csvSafeText(expanded);
     return /[",\r\n]/.test(expanded) ? `"${expanded.replace(/"/g, '""')}"` : expanded;
   }
 

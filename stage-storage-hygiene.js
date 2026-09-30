@@ -7,7 +7,7 @@
       const rows = recovery.scan();
       let total = 0, owned = 0, eligible = 0;
       for (const row of rows) {
-        if (!row.key.startsWith("gamma:")) continue;
+        if (!row.key.startsWith("gamma:") && row.key !== "gamma-venue-menu-width-v2") continue;
         total += row.bytes;
         owned += row.bytes;
         if (row.kind) eligible += row.bytes;

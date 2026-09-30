@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 const context={window:{}};
+vm.runInNewContext(readFileSync(new URL('../stage-data-safety.js',import.meta.url),'utf8'),context);
 vm.runInNewContext(readFileSync(new URL('../stage-cue-sheet.js',import.meta.url),'utf8'),context);
 const api=context.window.SHOSAI_CUE_SHEET;
 const fixture=JSON.parse(readFileSync(new URL('../stage-samples/feature-test-show.json',import.meta.url),'utf8')).project;

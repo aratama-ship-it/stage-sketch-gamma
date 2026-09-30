@@ -6,7 +6,7 @@ const ID = /^[A-Za-z0-9_-]{1,100}$/;
 export const STUDY_PUBLIC_ASSETS = new Set([
   '/study', '/study.html', '/study-frame', '/study-frame.html',
   '/stage-study-viewer.js', '/stage-study-frame.js', '/stage-study-pen.js', '/stage-study-private.js', '/stage-study-sync.js', '/stage-study-continuity.js', '/stage-study-sticky.js', '/stage-study.css', '/stage-study-phone.css', '/stage-study-phone.js', '/stage-study-navigation.css', '/stage-study-navigation.js',
-  '/study-assets/stage-sketch.js', '/study-assets/stage-venues.js', '/study-assets/stage-venue-lines.js',
+  '/study-assets/stage-data-safety.js', '/study-assets/stage-sketch.js', '/study-assets/stage-venues.js', '/study-assets/stage-venue-lines.js',
   '/study-assets/stage-i18n.js', '/study-assets/stage-i18n.ko.js', '/study-assets/stage-set-model.js', '/study-assets/stage-machinery.js',
   '/study-assets/gamma-ui.js', '/study-assets/gamma-ui-i18n.js', '/study-assets/gamma-ui-i18n.ko.js', '/study-assets/style.css',
 ]);

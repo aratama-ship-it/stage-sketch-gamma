@@ -759,6 +759,9 @@ section("j", "J 負荷と3Dカメラ");
    壁の向き（C-7・3Dの回転退行チェック）を1シーン足すぶんだけ、バッファを3行→2行に減らして広げる。 */
 if (rows.length > 60) throw new Error(`シーン行が上限60を超えました (${rows.length})`);
 
+rows.find(row => row.title?.startsWith("F-2")).note += "\n取込の安全性: この試験場の複製で灯体名・番号・バトン名・グループ名・LXキュー名にHTML記号を入れ、機材配置・照明デザイン・時間ダイアログ・保存一覧で文字として表示されること。検索語も同様。検証用の複製だけで試し、元の照明値は維持する。";
+rows.find(row => row.title?.startsWith("F-2")).note += "\nCSV安全性: 複製の名前・メモの先頭に = / + / - / @ / タブ / 改行復帰を入れ、Qシート・LXのCSV・劇場変更レポートの出力で引用符が前置されること。普通の日本語・カンマ・引用符は内容が保たれること。";
+rows.find(row => row.title?.startsWith("F-2")).note += "\nJSON取込: 試験場の正常な書き出しは同じ内容で戻ること。複製の未知フィールドの深い位置へ使用禁止キーを入れたJSONや64MiBを超えるファイルは取込前に止まり、開いているショーを変えないこと。";
 rows.find(row => row.title?.startsWith("F-4")).note += "\nサイド上手12の4度・高さ2.1mを正面/上手視点で円錐断面比較。無限遠の扇にならず共通の円形断面から投影される。";
 // 0.2.40 feedback acceptance uses the same bundled show, never a production show.
 for (const row of rows) {

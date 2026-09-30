@@ -138,7 +138,7 @@
   function storageRows() {
     const rows=[];
     for(let i=0;i<localStorage.length;i+=1) {
-      const k=localStorage.key(i); if(k===null || !k.startsWith('gamma:')) continue;
+      const k=localStorage.key(i); if(k===null || (!k.startsWith('gamma:') && k!=='gamma-venue-menu-width-v2')) continue;
       rows.push({key:k,bytes:(k.length+(localStorage.getItem(k)||'').length)*2});
     }
     return rows.sort((a,b)=>b.bytes-a.bytes);
@@ -627,7 +627,7 @@
           goVenue.addEventListener('click',()=>select('venue-setup'));
           status.append(goVenue);
         } else if(!loaded) {
-          frame.src='light-design/index.html?embed=gamma&v=20260930-gamma2'; loaded=true;
+          frame.src='light-design/index.html?embed=gamma&v=20261001-release69'; loaded=true;
           status.textContent='照明デザインを開いています…';
         } else if(editor()) {
           editor().open(context, next);

@@ -16,6 +16,8 @@
   const VISUAL_GAIN = 1.8;
   const visualAlpha = (value) => E.clamp(E.finite(value, 0) * VISUAL_GAIN, 0, 1);
   const $ = (id) => document.getElementById(id);
+  // Escape at HTML boundaries; keep the original names/numbers in saved designs.
+  const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   /* 平面図の灯体アイコンの淡い白枠。見え方だけの端末設定で、照明データには含めない。 */
   const PLAN_FIXTURE_OUTLINE_KEY = "gamma:shosai-stage-prefs-v1";
   let planFixtureOutline = true;
@@ -3400,7 +3402,7 @@
     const row = (f, idx) => { const r = document.createElement("div"); r.dataset.fixtureId = f.id; r.className = "row" + (isSel(f.id) ? " sel" : "") + (state.mode === "place" && f.mount.type !== "cyc" ? " with-delete" : ""); // ボタンは編集キューを切り替える。ソロによる一時的な非表示と点灯状態を混同しない。
       const light = lightOf(f.id), lit = isLit(light);
       const st = !lit ? "off" : light.path && light.path.kind !== "still" ? "move" : "on";
-      r.innerHTML = `<span class="no">${idx !== undefined ? idx + 1 + "." : ""}${label(f.id)}</span><span class="nm">${f.name || "名前なし"}<small>${E.describeMount(f, state.rig).replace(/（高さ約\dm）/, "")}</small></span>`;
+      r.innerHTML = `<span class="no">${idx !== undefined ? idx + 1 + "." : ""}${escapeHtml(label(f.id))}</span><span class="nm">${escapeHtml(f.name || "名前なし")}<small>${escapeHtml(E.describeMount(f, state.rig).replace(/（高さ約\dm）/, ""))}</small></span>`;
       // 状態の欄はそのまま押せるオン／オフにする（2026-09-11 本人要望。一覧から直接切り替えたい）
       const stCell = document.createElement(state.mode === "move" ? "button" : "span");
       stCell.className = state.mode === "move" ? "st " + st : "st spot";
@@ -3439,7 +3441,7 @@
       }; return r; };
     const equipmentRow = (item) => {
       const r = document.createElement("div"); r.className = "row equipment-row" + (state.selEquipment === item.key ? " sel" : "");
-      r.innerHTML = `<span class="no">${item.short}</span><span class="nm">${item.name}<small>${item.detail}</small></span>`;
+      r.innerHTML = `<span class="no">${escapeHtml(item.short)}</span><span class="nm">${escapeHtml(item.name)}<small>${escapeHtml(item.detail)}</small></span>`;
       const st = document.createElement("span"); st.className = "st spot"; st.textContent = item.status || ""; r.append(st);
       r.onclick = (ev) => {
         ev.stopPropagation(); state.tool = null; state.sel.clear(); state.aimMirror = null; state.selEquipment = item.key;
@@ -3463,7 +3465,7 @@
       mountSections().forEach((sec) => {
         const h = document.createElement("div"); h.className = "grp";
         const open = !state.collapsed.has(sec.key);
-        h.innerHTML = `<span>${open ? "▾" : "▸"} ${sec.name}</span><small>${sec.items.length}灯　列を選ぶ</small>`;
+        h.innerHTML = `<span>${open ? "▾" : "▸"} ${escapeHtml(sec.name)}</span><small>${sec.items.length}灯　列を選ぶ</small>`;
         h.querySelector("span").onclick = (ev) => { ev.stopPropagation(); open ? state.collapsed.add(sec.key) : state.collapsed.delete(sec.key); renderAll(); };
         h.querySelector("small").onclick = (ev) => { ev.stopPropagation(); state.sel = new Set(sec.items.map((f) => f.id)); state.aimMirror = null; const first = sec.items[0]; if (first && first.mount.type === "truss") state.selTruss = first.mount.trussId; renderAll(); };
         host.append(h);
@@ -3479,7 +3481,7 @@
         if (open) extras.forEach((item) => host.append(equipmentRow(item)));
       }
       if (!state.rig.fixtures.length && !extras.length) host.innerHTML = '<p class="hint" style="padding:6px">機材はまだありません。</p>';
-      else if (!host.children.length) host.innerHTML = `<p class="hint" style="padding:6px">「${state.search}」に当てはまる灯体はありません。</p>`;
+      else if (!host.children.length) host.innerHTML = `<p class="hint" style="padding:6px">「${escapeHtml(state.search)}」に当てはまる灯体はありません。</p>`;
       /* T-17（2026-09-18 本人要望）: 左の一覧の「N灯を選択中」は消した（右パネル最下部へ集約）。 */
       { const mb = $("make-fixture-group"); if (mb) mb.hidden = true; }   // R-11: 配置モードでは出さない
       const cycOnly = state.sel.size > 0 && [...state.sel].every((id) => { const ff = fixtureById(id); return ff && ff.mount.type === "cyc"; });
@@ -3506,7 +3508,7 @@
       const members = groupMembers(g);
       if (!members.length) return;
       const h = document.createElement("div"); h.className = "grp fixture-group";
-      h.innerHTML = `<span>◆ ${g.name}</span><small>${members.length}灯　まとめて選ぶ</small>`;
+      h.innerHTML = `<span>◆ ${escapeHtml(g.name)}</span><small>${members.length}灯　まとめて選ぶ</small>`;
       h.querySelector("small").title = "このグループの灯をまとめて選びます";
       h.onclick = (ev) => selectFixtureGroup(g.id, ev.shiftKey);
       const off = document.createElement("button");
@@ -3518,14 +3520,14 @@
       host.append(h);
       members.forEach((m) => { const f = fixtureById(m); if (f) host.append(row(f)); });
     });
-    if (state.mode === "move") c.groups.forEach((g, gi) => { const h = document.createElement("div"); h.className = "grp"; h.innerHTML = `<span>組${gi + 1}　${groupName(g)}</span><small>${g.members.length}灯</small>`; h.onclick = () => { state.sel = new Set(g.members); renderAll(); }; host.append(h); g.members.forEach((m, i) => { const f = fixtureById(m); if (f) host.append(row(f, g.relation === "sequential" ? i : undefined)); }); });
+    if (state.mode === "move") c.groups.forEach((g, gi) => { const h = document.createElement("div"); h.className = "grp"; h.innerHTML = `<span>組${gi + 1}　${escapeHtml(groupName(g))}</span><small>${g.members.length}灯</small>`; h.onclick = () => { state.sel = new Set(g.members); renderAll(); }; host.append(h); g.members.forEach((m, i) => { const f = fixtureById(m); if (f) host.append(row(f, g.relation === "sequential" ? i : undefined)); }); });
     /* 組に入っていない灯は、取り付け場所ごとに見出しを付けて並べる（2026-09-11 本人要望）。
        ここでも畳めるので、20灯以上でも「どこに何灯あるか」を先に見渡せる。 */
     const rest = state.rig.fixtures.filter((f) => !grouped.has(f.id)).filter((f) => passFilter(f.id));
     mountSections(rest).forEach((sec) => {
       const h = document.createElement("div"); h.className = "grp";
       const open = !state.collapsed.has(sec.key);
-      h.innerHTML = `<span>${open ? "▾" : "▸"} ${sec.name}</span><small>${sec.items.length}灯　まとめて選ぶ</small>`;
+      h.innerHTML = `<span>${open ? "▾" : "▸"} ${escapeHtml(sec.name)}</span><small>${sec.items.length}灯　まとめて選ぶ</small>`;
       h.querySelector("span").onclick = (ev) => { ev.stopPropagation(); open ? state.collapsed.add(sec.key) : state.collapsed.delete(sec.key); renderAll(); };
       h.querySelector("small").onclick = (ev) => { ev.stopPropagation(); state.sel = new Set(sec.items.map((f) => f.id)); renderAll(); };
       host.append(h);
@@ -3695,7 +3697,7 @@
       state.rig.trusses.forEach((t) => {
         const b = borderSetting(t);
         const nm = `奥から${E.trussRow(state.rig, t.id)}列目${t.label ? "・" + t.label : ""}`;
-        host.append(el("p", "hint", `${nm}（バトン 約${mmText(E.finite(t.h, 6))})${b.既定のまま ? "" : "・個別に調整"}`));
+        host.append(el("p", "hint", `${escapeHtml(nm)}（バトン 約${mmText(E.finite(t.h, 6))})${b.既定のまま ? "" : "・個別に調整"}`));
         host.append(field("下端の高さ", range(0, d.H, 0.1, b.bottom, (v) => `${mmText(v)}${v >= E.finite(t.h, 6) ? "（バトンより上）" : ""}`,
           (v) => { setBorder(t, { bottomM: v }); draw(); }, () => commit(), numMm(0, d.H, 0.1, "下端の高さ(mm)")), true));
         host.append(field("丈", range(0.3, 6, 0.1, b.drop, mmText,
@@ -3818,7 +3820,7 @@
     box.append(el("p", "warn", `⚠ <b>固定灯${list.length}灯</b>が、シーンによって違う向き・色・広がりになっています。固定灯は仕込みで決まるので、実物では<b>シーンごとに変えられません</b>。どれかにそろえてください。`));
     list.forEach(({ f, variants }) => {
       const row = el("div", "cflight");
-      row.append(el("p", "cfname", `${label(f.id)}（固定）　${E.describeMount(f, state.rig)}`));
+      row.append(el("p", "cfname", `${escapeHtml(label(f.id))}（固定）　${escapeHtml(E.describeMount(f, state.rig))}`));
       const acts = el("div", "cfacts");
       variants.forEach((v) => {
         const names = v.scenes.map((i) => `シーン${i + 1}「${state.scenes[i].name}」`).join("・");
@@ -4378,7 +4380,7 @@
       return values.every((v) => v === values[0]) ? values[0] : null;
     };
     const patchLaser = (patch) => active.forEach((id) => { if (!lightOf(id)) ensureOn(id); const l = lightOf(id); l.laser = { effect: "fan", spanDeg: 0, rollDeg: 0, ...(l.laser || {}), ...patch }; });
-    host.append(el("p", "kicker", `${LUI.heading}${active.length > 1 ? `　${active.length}台` : `　${label(active[0])}`}`));
+    host.append(el("p", "kicker", `${LUI.heading}${active.length > 1 ? `　${active.length}台` : `　${escapeHtml(label(active[0]))}`}`));
     const canonicalEffect = (id) => id === "beam" ? "fan" : LUI.EFFECT_ORDER.includes(id) ? id : "fan";
     const effect = same((l) => canonicalEffect((l.laser || {}).effect), "fan") || "fan";
     const cards = el("div", "laser-cards");
@@ -4767,7 +4769,7 @@
     const posFade = T.by.position && T.by.position.fadeSec !== null ? T.by.position.fadeSec : null;
     const colFade = T.by.color && T.by.color.fadeSec !== null ? T.by.color.fadeSec : null;
     const mibDefault = q.timing ? T.mib : true;   // 先回り（MIB）は既定オン（2026-09-27 本人承認）
-    const html = `<p class="ptitle">${qLabel(q)}${q.name ? `「${q.name}」` : ""} の時間</p>
+    const html = `<p class="ptitle">${qLabel(q)}${q.name ? `「${escapeHtml(q.name)}」` : ""} の時間</p>
       <p class="hint">前の明かりからこのキューへ、どう移るか。実機の卓と同じ考え方（In/Out Fade・Delay・カーブ・Snap・MIB）。空欄は「上げと同じ」。</p>
       <div class="lxt-grid">
         <div class="field"><span>移り方</span><div class="seg lxt-seg" role="group" aria-label="移り方"><button type="button" data-mode="cut" aria-pressed="${isCut}">カット</button><button type="button" data-mode="fade" aria-pressed="${!isCut}">フェード</button></div></div>
@@ -5025,7 +5027,7 @@
     const rows = lxSheetRows();
     const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     const table = `<table class="lxsheet" style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>${LX_SHEET_COLUMNS.map(([, t]) => `<th style="text-align:left;border-bottom:1px solid #6b6155;padding:3px 6px;white-space:nowrap">${t}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${LX_SHEET_COLUMNS.map(([k]) => `<td style="padding:3px 6px;border-bottom:1px solid #3a3128;vertical-align:top">${esc(r[k])}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
-    const csv = [LX_SHEET_COLUMNS.map(([, t]) => t).join(","), ...rows.map((r) => LX_SHEET_COLUMNS.map(([k]) => `"${String(r[k]).replace(/"/g, '""')}"`).join(","))].join("\n");
+    const csv = [LX_SHEET_COLUMNS.map(([, t]) => t).join(","), ...rows.map((r) => LX_SHEET_COLUMNS.map(([k]) => `"${window.STAGE_DATA_SAFETY.csvSafeText(r[k]).replace(/"/g, '""')}"`).join(","))].join("\n");
     dialog(`<p class="ptitle">Qシート（LX）</p><p class="hint">全シーンのLXキューを番号順に。略語は前後の明かりと秒数から自動で付けています（F.I＝フェードイン／C.I＝カットイン／F.O＝フェードアウト／C.O＝カットアウト／F.C＝フェードで替える／C.C＝カットで替える）。列の並びと書式は現場ごとに違うので、CSVを表計算で直してください。</p><div style="max-height:60vh;overflow:auto">${rows.length ? table : "<p class=\"hint\">LXキューがまだありません。</p>"}</div>`,
       [["閉じる", null, "quiet"], ["CSVをコピー", () => { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(csv).then(() => toast("QシートのCSVをコピーしました")).catch(() => toast("コピーできませんでした")); else toast("この環境ではコピーできません"); }, "primary"]]);
   }
@@ -5055,7 +5057,7 @@
       }
       if (ids.length === 1) {
         const f = fixtureById(ids[0]); const m = f.mount;
-        host.append(el("p", "kicker", `${label(f.id)}（${E.isLaser && E.isLaser(f) ? "レーザー" : E.isMoving(f) ? "ムービング" : "固定"}）　${E.describeMount(f, state.rig)}`));
+        host.append(el("p", "kicker", `${escapeHtml(label(f.id))}（${E.isLaser && E.isLaser(f) ? "レーザー" : E.isMoving(f) ? "ムービング" : "固定"}）　${escapeHtml(E.describeMount(f, state.rig))}`));
         const name = document.createElement("input"); name.type = "text"; name.value = f.name; name.placeholder = "例: 中央ムービング"; name.onchange = () => { f.name = name.value.slice(0, 20); commit(); }; host.append(field("名前", name));
         if (m.type === "truss") { const sel = document.createElement("select"); state.rig.trusses.forEach((tt) => { const o = document.createElement("option"); o.value = tt.id; o.textContent = `奥から${E.trussRow(state.rig, tt.id)}列目${tt.label ? "・" + tt.label : ""}`; o.selected = tt.id === m.trussId; sel.append(o); }); sel.onchange = () => { m.trussId = sel.value; state.selTruss = sel.value; commit(); }; host.append(field("吊るバトン", sel));
           host.append(field("横位置", range(0, 1, 0.01, m.u, acrossText, (v) => { m.u = v; draw(); }, () => commit(), numAcross())));
@@ -5114,7 +5116,7 @@
     if (ids.some((id) => E.isLaser && E.isLaser(fixtureById(id)))) { renderLaserInspector(host, ids); return; }
     if (ids.length === 1) {
       const fid = ids[0]; const f = fixtureById(fid); const l = lightOf(fid);
-      host.append(el("p", "kicker", `${label(fid)}（${E.isMoving(f) ? "ムービング" : "固定"}）　${f.name || ""}`));
+      host.append(el("p", "kicker", `${escapeHtml(label(fid))}（${E.isMoving(f) ? "ムービング" : "固定"}）　${escapeHtml(f.name || "")}`));
       const g = groupOf(fid);
       if (g) { const box = el("div", "box"); box.append(btn("組から外す", () => ungroup(fid), "small quiet")); host.append(box); }
       /* オン・オフはパネル右上のボタンへ集約した（2026-09-13 本人要望）。
@@ -5569,7 +5571,7 @@
        どのキューにも入っていなければ「未登録の下書き」と出す。 */
     { const qn = $("qnow");
       if (qn) { qn.hidden = !inMove; const sc0 = scene(), q0 = lxEditingQ(sc0);
-        qn.innerHTML = q0 ? `${qLabel(q0)}${q0.name ? `<em>${q0.name.replace(/[<>&]/g, "")}</em>` : ""}` : "未登録の下書き";
+        qn.innerHTML = q0 ? `${qLabel(q0)}${q0.name ? `<em>${escapeHtml(q0.name)}</em>` : ""}` : "未登録の下書き";
         qn.classList.toggle("draft", !q0);
         qn.title = q0 ? "この LXキュー を編集しています。変えたところはそのまま入ります" : "どの LXキュー にも入っていません。LXキュー パネルの〈＋ 新規 LXキュー〉で1本にできます"; } }
     /* 中央の表示の左右＝前後の LXキュー へ。行き先が無ければ押せなくする。 */
@@ -5639,7 +5641,7 @@
         const qs = [...lxList(sc)].sort((a, b) => E.finite(a.seq, 0) - E.finite(b.seq, 0));
         const editing = lxEditingOf(sc);
         const chips = qs.length
-          ? qs.map((q) => `<button type="button" class="allq${q.id === editing ? " editing" : ""}" data-scene="${i}" data-q="${q.id}" title="${esc(q.name || "")}">${qLabel(q)}</button>`).join("")
+          ? qs.map((q) => `<button type="button" class="allq${q.id === editing ? " editing" : ""}" data-scene="${i}" data-q="${escapeHtml(q.id)}" title="${esc(q.name || "")}">${qLabel(q)}</button>`).join("")
           : `<span class="allnone">LXキュー なし</span>`;
         return `<div class="allscene${i === state.sceneIndex ? " cur" : ""}">
             <span class="allsname" data-scene="${i}" role="button" tabindex="0">${esc(sc.name)}<small>シーン${i + 1}・LXキュー ${qs.length}本</small></span>
@@ -6058,6 +6060,7 @@
   /* 取り込み。シーンの演者・セットは<b>いまのもの</b>を残し、灯の設定だけ差し替える
      （デザインは灯の話なので、舞台スケッチ側の駒を上書きしない）。 */
   function applyDesign(o, options = {}) {
+    window.STAGE_DATA_SAFETY.assertSafeJson(o);
     if (window.GAMMA_LIGHT_EDITOR && !options.host) window.GAMMA_LIGHT_EDITOR.validateImport(o);
     if (window.GAMMA_LIGHT_MODEL && typeof window.GAMMA_LIGHT_MODEL.validate === "function") {
       o = window.GAMMA_LIGHT_MODEL.validate(o);
@@ -6128,7 +6131,7 @@
     const stored = readStore(), list = stored || [];
     const rows = list.length
       ? list.map((d, i) => `<div class="dsrow" data-i="${i}">
-          <span class="dsname">${(d.name || "名前なし").replace(/</g, "&lt;")}<small>${(d.savedAt || "").slice(0, 16).replace("T", " ")}　灯${(d.rig && d.rig.fixtures ? d.rig.fixtures.length : 0)}・シーン${(d.scenes || []).length}</small></span>
+          <span class="dsname">${escapeHtml(d.name || "名前なし")}<small>${escapeHtml((d.savedAt || "").slice(0, 16).replace("T", " "))}　灯${(d.rig && d.rig.fixtures ? d.rig.fixtures.length : 0)}・シーン${(d.scenes || []).length}</small></span>
           <span class="dsacts">
             <button type="button" class="btn small" data-act="load" data-i="${i}">呼び出す</button>
             <button type="button" class="btn small quiet" data-act="file" data-i="${i}">ファイルへ</button>
@@ -6136,7 +6139,7 @@
           </span></div>`).join("")
       : `<p class="hint">${stored===null?'保存内容を確認できません。保存領域はそのまま保持しています。':'まだ保存された照明デザインはありません。'}</p>`;
     dialog(`<p class="kicker">照明デザインを保存する</p>
-      <div class="field wide"><span>デザイン名</span><input type="text" id="dsname" maxlength="60" placeholder="例: オープニング案A" value="${(state.designName || "").replace(/"/g, "&quot;")}"></div>
+      <div class="field wide"><span>デザイン名</span><input type="text" id="dsname" maxlength="60" placeholder="例: オープニング案A" value="${escapeHtml(state.designName || "")}"></div>
       <div class="dsbtns">
         <button type="button" class="btn small primary" id="dssave" ${stored===null?'disabled':''}>この名前で保存</button>
         <button type="button" class="btn small" id="dsfile">ファイルへ書き出す</button>
@@ -6171,7 +6174,7 @@
     if ($("dsopen")) $("dsopen").onclick = () => $("dspick") && $("dspick").click();
     if ($("dspick")) $("dspick").onchange = async () => {
       const f = $("dspick").files && $("dspick").files[0]; if (!f) return;
-      try { applyDesign(JSON.parse(await f.text())); $("dialog").hidden = true; toast(`「${state.designName || f.name}」を読み込みました`); }
+      try { window.STAGE_DATA_SAFETY.assertJsonFileSize(f); applyDesign(window.STAGE_DATA_SAFETY.parseJson(await f.text())); $("dialog").hidden = true; toast(`「${state.designName || f.name}」を読み込みました`); }
       catch (e) { toast(`読み込めませんでした: ${e.message}`); }
     };
     document.querySelectorAll("#dialog .dsrow button").forEach((b) => {

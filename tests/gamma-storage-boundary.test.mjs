@@ -126,3 +126,26 @@ test("a failed γ current-show recovery write does not schedule migration save",
   assert.equal(storage.values.get(gammaCurrent), "legacy-current");
   untouchedBeta(storage);
 });
+
+
+test("legacy Gamma venue width is counted and explicitly reset without widening beta access", () => {
+  const key = "gamma-venue-menu-width-v2";
+  const storage = new Storage({...betaSeed(), [key]: "360", "gamma-other-app": "leave"});
+  const context = {localStorage:storage,window:{}};
+  vm.runInNewContext(slice(workspace, "  function storageRows() {", "  function dumpButton("),context);
+  assert.deepEqual(Array.from(context.storageRows(),r=>r.key),[key]);
+  vm.runInNewContext(readFileSync(new URL("../stage-storage-recovery.js",import.meta.url),"utf8"),context);
+  vm.runInNewContext(readFileSync(new URL("../stage-storage-hygiene.js",import.meta.url),"utf8"),context);
+  const recovery = context.window.STAGE_STORAGE_RECOVERY.create({storage,vault:{}});
+  const rows = recovery.scan();
+  assert.deepEqual(Array.from(rows,r=>r.key),[key]);
+  assert.equal(rows[0].kind,null); // count preference; never automatically archive it
+  const hygiene = context.window.STAGE_STORAGE_HYGIENE.create({storage,recovery});
+  assert.equal(hygiene.inspect().ownedBytes,(key.length+3)*2);
+  const reset = slice(app, "      const keys = new Set(RESET_KEYS);", "      for (const key of keys) {");
+  const resetContext = {rawStorage:storage,RESET_KEYS:[]};
+  vm.runInNewContext(reset+";globalThis.keys=keys;",resetContext);
+  assert.deepEqual(Array.from(resetContext.keys),[key]);
+  assert.match(slice(app,"    const EXACT_KEYS = [","    const PREFIXES = ["),/"gamma-venue-menu-width-v2"/);
+  untouchedBeta(storage);
+});

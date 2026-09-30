@@ -43,6 +43,7 @@
    * そのもの（grep で洗い出した一覧）。キーを増やしたら、ここにも追記すること。
    * ★通常の利用者がこのURLを踏むことはまず無いが、念のため確認ダイアログを必ず挟む。 */
   const devResetTriggered = (function devResetTrigger() {
+    if (!["127.0.0.1", "localhost"].includes(window.location.hostname)) return false;
     let params;
     try { params = new URLSearchParams(window.location.search); } catch (_) { return false; }
     if (params.get("dev-reset") !== "1") return false;
@@ -58,6 +59,7 @@
       + "全て消して初期状態に戻します。元に戻せません。よろしいですか？"
     )) { stripParamAndContinue(); return false; }
     const EXACT_KEYS = [
+      "gamma-venue-menu-width-v2",
       "gamma:shosai-stage-agent-permission-v1", "gamma:shosai-stage-sketch-v1",
       "gamma:large-projects-v1:revision", "gamma:new-show-return-v1", "gamma:shosai-stage-shows-broken-v1",
       "gamma:stage-project-backup-reset-v1", "gamma:shosai-stage-shows-v1",
@@ -1473,6 +1475,7 @@
     };
   };
   const prepareProjectImportDocument = (document) => {
+    window.STAGE_DATA_SAFETY.assertSafeJson(document);
     const project = backfillMissingSceneRehearsal(stripRemovedSceneFields(projectIoClone(document.project)));
     sceneAlternatives?.restore(project);
     refreshRjSecondSetPalette(project);
@@ -10563,6 +10566,7 @@
   }
 
   function normalizeState(raw) {
+    window.STAGE_DATA_SAFETY.assertSafeJson(raw);
     if (raw?.project && sceneAlternatives) { raw = projectIoClone(raw); sceneAlternatives.restore(raw.project); }
     if (!raw || typeof raw !== "object") return markVenueSetupPending(baseState(true));
     const fallback = baseState(false);
@@ -31218,7 +31222,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       const keys = new Set(RESET_KEYS);
       for (let i = 0; i < rawStorage.length; i += 1) {
         const key = rawStorage.key(i);
-        if (key && key.startsWith("gamma:")) keys.add(key);
+        if (key && (key.startsWith("gamma:") || key === "gamma-venue-menu-width-v2")) keys.add(key);
       }
       for (const key of keys) {
         if (rawStorage.getItem(key) === null) continue;
@@ -33022,6 +33026,8 @@ ${propsPlotHtml}
 
   function importProject(file) {
     if (!file) return;
+    try { window.STAGE_DATA_SAFETY.assertJsonFileSize(file); }
+    catch (error) { importFailureNotice(error.message); return; }
     const reader = new FileReader();
     reader.onerror = () => {
       console.error("stage import: ファイルを読めませんでした", reader.error);
@@ -33031,8 +33037,9 @@ ${propsPlotHtml}
       const text = String(reader.result);
       let parsed = null;
       try {
-        parsed = JSON.parse(text);
+        parsed = window.STAGE_DATA_SAFETY.parseJson(text);
       } catch (error) {
+        if (error.code?.startsWith("GAMMA_JSON_")) { importFailureNotice(error.message); return; }
         console.error("stage import: JSONとして読めませんでした", error, { fileName: file.name, fileSize: file.size, readLength: text.length, head: text.slice(0, 80) });
         /* 中身が空＝iCloudの未ダウンロード（プレースホルダ）をファイルとして
            選んだときの典型。原因が全く違うので、文言を分けて出す。 */
@@ -34923,7 +34930,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const lines = [["シーン", "題", "影響"].join(",")];
     payload.report.rows.forEach((row) => {
       const cells = [sceneDisplayNumber(row.id) || "", row.title, venueSwitchIssueSummary(row.issues)]
-        .map((v) => `"${String(v).replace(/"/g, '""')}"`);
+        .map((v) => `"${window.STAGE_DATA_SAFETY.csvSafeText(v).replace(/"/g, '""')}"`);
       lines.push(cells.join(","));
     });
     return "\ufeff" + lines.join("\r\n") + "\r\n";
@@ -39268,7 +39275,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     pendingLightingFile = null;
     try {
       if (file.size > 4 * 1024 * 1024) throw new Error("照明デザインのファイルが大きすぎます（4MBまで）。");
-      const raw = JSON.parse(await file.text());
+      const raw = window.STAGE_DATA_SAFETY.parseJson(await file.text());
       if (request !== lightingFileRequest || basis !== lightingPlanBasis() || projectId !== state.project.id) return;
       const model = window.GAMMA_LIGHT_MODEL;
       if (!model) throw new Error("照明デザインの検証器を使えません。");
@@ -43012,7 +43019,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     },
     applyDocumentString(text) {
       /* 受信docを現在のプロジェクトとして開く。壊れたJSONはfalseを返して何もしない */
-      let doc; try { doc = JSON.parse(text); } catch (_) { return false; }
+      let doc; try { doc = window.STAGE_DATA_SAFETY.parseJson(text); } catch (_) { return false; }
       if (!doc || doc.kind !== "shosai-stage-sketch" || !doc.project) return false;
       const { project } = prepareProjectImportDocument(doc);
       const continuePlayback = Boolean(
