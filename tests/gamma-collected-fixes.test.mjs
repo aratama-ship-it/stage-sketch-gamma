@@ -47,9 +47,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.doesNotMatch(lightHtml, /id="statebadge"/);
   assert.match(html, />ツール</);
   assert.match(html, />表示するもの</);
-  assert.match(html, /class="stage-app-version">0\.2\.64</);
+  assert.match(html, /class="stage-app-version">0\.2\.65</);
   assert.match(html, /id="stage-release-v023-title">v0\.2\.3</);
-  assert.match(html, /<meta name="stage-sketch-gamma-version" content="v0\.2\.64">/);
+  assert.match(html, /<meta name="stage-sketch-gamma-version" content="v0\.2\.65">/);
   assert.match(html, /id="stage-release-v024-title">v0\.2\.4</);
   assert.match(html, /id="stage-release-v025-title">v0\.2\.5</);
   // AI用JSON（project.id なし・light あり）が旧照明の移行器で止まらない（2026-09-24）
