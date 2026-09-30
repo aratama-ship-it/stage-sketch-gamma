@@ -284,10 +284,17 @@ public-dist/
 !/stage-performer-body.js
 !/stage-performer-contour.js
 !/stage-performer-motion.js
+!/stage-jog-reference.js
+!/jog-prototype/
+/jog-prototype/*
+!/jog-prototype/README.md
+!/jog-prototype/preview.png
+!/jog-prototype/extract_cmu_jog.py
 !/stage-samples/build-feature-test-show.mjs
 !/stage-samples/feature-test-show.json
 !/tests/performer-body.test.mjs
 !/tests/performer-motion.test.mjs
+!/tests/performer-jog.test.mjs
 !/tests/feature-test-show.test.mjs
 !/tests/light-optics.test.mjs
 !/tests/gamma-sharing.test.mjs

@@ -1,4 +1,4 @@
-/* Scene-transition walking. All feet/poses are transient; saved performance data is not applied. */
+/* Scene-transition walking and jogging. Generated feet/poses are transient; legacy performance data is not applied. */
 (function (root) {
   'use strict';
   const PI = Math.PI;
@@ -183,6 +183,148 @@
     if (t === 1 && plan.endPose) return { ...root, facing: plan.toFacing, pose: plan.endPose, feet, distanceM: plan.length, travel };
     return { ...root, facing, pose: out, feet, distanceM, travel };
   }
+  // The body shape comes from one measured two-step jog cycle. Ground contacts
+  // are planned in route space so turns and retiming do not drag planted feet.
+  function planJog(entry, size, options = {}) {
+    const routePlan = planWalk(entry, size, options);
+    if (!routePlan) return null;
+    if (!root.STAGE_JOG_REFERENCE || routePlan.sourcePose.id === 'walk'
+      || routePlan.length < routePlan.heightM * 1.2) return null;
+    const count = Math.max(2, 2 * Math.ceil(routePlan.length / (2 * routePlan.heightM * .44)));
+    const moveShare = Math.min(1, routePlan.length / (1.9 * routePlan.durationSeconds));
+    const step = routePlan.length / count;
+    const events = {};
+    for (const side of ['L', 'R']) {
+      const initial = footprint(routePlan, side, 0, routePlan.fromFacing,
+        routePlan.sourcePose.id === 'walk' ? null : routePlan.sourcePose);
+      events[side] = [{ q: 0, foot: initial }];
+      for (let k = side === 'L' ? 2 : 1; k <= count; k += 2) {
+        const last = k === count;
+        const foot = footprint(routePlan, side, k * step,
+          last ? routePlan.toFacing : pointAt(routePlan, k * step).facing,
+          last && routePlan.endPose?.id !== 'walk' ? routePlan.endPose : null);
+        events[side].push({ q: k, foot });
+      }
+      if (side === 'R') events[side].push({ q: count, foot: footprint(routePlan, side,
+        routePlan.length, routePlan.toFacing,
+        routePlan.endPose?.id === 'walk' ? null : routePlan.endPose) });
+    }
+    return { ...routePlan, count, step, events, moveShare, mode: 'jog' };
+  }
+  // The CMU cycle stays untouched; reduce only the displayed arm swing.
+  // Ten degrees of shoulder excursion means five degrees at each extreme.
+  const JOG_SHOULDER_SPAN_REDUCTION = 10 * PI / 180;
+  const JOG_ELBOW_OPENING = 10 * PI / 180;
+  let jogArmStats = null;
+  function tuneJogArms(data, joints) {
+    if (jogArmStats?.data !== data) {
+      const index = Object.fromEntries(data.joints.map((key, i) => [key, i]));
+      const sides = {};
+      for (const side of ['L', 'R']) {
+        const angles = data.frames.map(frame => {
+          const upper = sub(frame[index['el' + side]], frame[index['sh' + side]]);
+          return Math.atan2(upper[2], -upper[1]);
+        });
+        const low = Math.min(...angles), high = Math.max(...angles), span = high - low;
+        sides[side] = { center: (low + high) / 2,
+          scale: span > JOG_SHOULDER_SPAN_REDUCTION ? 1 - JOG_SHOULDER_SPAN_REDUCTION / span : 1 };
+      }
+      jogArmStats = { data, sides };
+    }
+    for (const side of ['L', 'R']) {
+      const shoulder = joints['sh' + side], elbow = joints['el' + side], wrist = joints['wr' + side];
+      const upper = sub(elbow, shoulder), forearm = sub(wrist, elbow);
+      const pitch = Math.atan2(upper[2], -upper[1]);
+      const { center, scale } = jogArmStats.sides[side];
+      const turn = (pitch - center) * (1 - scale);
+      const newUpper = pitchVector(upper, turn), carriedForearm = pitchVector(forearm, turn);
+      const upperDirection = norm(newUpper), forearmDirection = norm(carriedForearm);
+      const cosine = clamp(dot(upperDirection, forearmDirection), -1, 1);
+      const bend = Math.acos(cosine);
+      const outward = sub(forearmDirection, mul(upperDirection, cosine));
+      const pole = len(outward) > 1e-8 ? norm(outward)
+        : norm(sub([0, 0, 1], mul(upperDirection, upperDirection[2])));
+      const openBend = Math.max(0, bend - JOG_ELBOW_OPENING);
+      joints['el' + side] = add(shoulder, newUpper);
+      joints['wr' + side] = add(joints['el' + side], mul(add(
+        mul(upperDirection, Math.cos(openBend)), mul(pole, Math.sin(openBend))), len(forearm)));
+    }
+    return joints;
+  }
+  function jogReference(q) {
+    const data = root.STAGE_JOG_REFERENCE;
+    if (!data?.frames?.length) return null;
+    const frames = data.frames, phase = ((q % 2) + 2) % 2 * (frames.length - 1) / 2;
+    const a = Math.floor(phase), b = Math.min(a + 1, frames.length - 1), f = phase - a;
+    const joints = {};
+    data.joints.forEach((key, i) => { joints[key] = mix(frames[a][i], frames[b][i], f); });
+    return tuneJogArms(data, joints);
+  }
+  function jogFootAt(plan, side, q, ref) {
+    const events = plan.events[side];
+    let at = events[0];
+    for (let i = 1; i < events.length; i++) {
+      const next = events[i], begin = at.q + (at.q === 0 ? .15 : .35);
+      if (q <= begin) return { ...at.foot, contact: true, phase: 0 };
+      if (q >= next.q) { at = next; continue; }
+      const phase = clamp((q - begin) / (next.q - begin)), f = smooth(phase);
+      const mocapLift = ref ? Math.max(0, ref['an' + side][1] - .05) : 0;
+      const lift = plan.heightM * Math.sin(PI * phase) * (.065 + .18 * Math.min(mocapLift, .16));
+      const ankle = mix(at.foot.ankle, next.foot.ankle, f);
+      const toe = mix(at.foot.toe, next.foot.toe, f);
+      ankle[1] += lift; toe[1] += lift;
+      return { ankle, toe, yaw: angleMix(at.foot.yaw, next.foot.yaw, f), contact: false, phase };
+    }
+    return { ...at.foot, contact: true, phase: 0 };
+  }
+  function sampleJog(plan, t) {
+    if (!plan) return null;
+    t = clamp(t);
+    const motionT = clamp((t - (1 - plan.moveShare) / 2) / plan.moveShare);
+    const h = plan.heightM, distanceM = plan.length * progress(motionT);
+    const rootPoint = pointAt(plan, distanceM), q = distanceM / plan.step;
+    let facing = angleMix(plan.fromFacing, rootPoint.facing, smoother(q / 1.2));
+    facing = angleMix(facing, plan.toFacing, smoother((q - (plan.count - 1.5)) / 1.5));
+    const ref = jogReference(q), source = plan.sourcePose;
+    const feet = Object.fromEntries(['L', 'R'].map(side => [side, jogFootAt(plan, side, q, ref)]));
+    if (motionT === 0) return { ...rootPoint, facing: plan.fromFacing, pose: source, feet, distanceM, travel: distanceM };
+    if (motionT === 1) return { ...rootPoint, facing: plan.toFacing, pose: plan.endPose || source,
+      feet, distanceM, travel: distanceM };
+    const out = clonePose(source), j = out.joints;
+    const activity = smooth(q / .9) * smooth((plan.count - q) / .9);
+    if (!ref) return sampleWalk(plan, t);
+    const reference = source.id === 'walk' ? standard : source.joints;
+    // Retarget measured torso and bent arms while preserving this performer's size.
+    for (const key of ['head', 'neck', 'shL', 'shR', 'elL', 'elR', 'wrL', 'wrR', 'hipL', 'hipR']) {
+      j[key] = mix(reference[key], ref[key], activity);
+    }
+    const local = p => mul(rotate(sub(p, [rootPoint.x, 0, rootPoint.z]), -facing), 1 / h);
+    const targets = Object.fromEntries(['L', 'R'].map(side => [side, {
+      ankle: local(feet[side].ankle), toe: local(feet[side].toe) }]));
+    // Lower the pelvis only as far as necessary to reach the fixed contact.
+    let drop = 0;
+    for (const side of ['L', 'R']) {
+      const hip = j['hip' + side], target = targets[side].ankle;
+      const upper = len(sub(reference['kn' + side], reference['hip' + side]));
+      const lower = len(sub(reference['an' + side], reference['kn' + side]));
+      const reach = upper + lower - .025;
+      const horizontal = Math.hypot(target[0] - hip[0], target[2] - hip[2]);
+      const ceiling = target[1] + Math.sqrt(Math.max(.01, reach * reach - horizontal * horizontal));
+      drop = Math.max(drop, hip[1] - ceiling);
+    }
+    drop = (Math.max(0, drop) + .008) * activity;
+    for (const key of ['head', 'neck', 'shL', 'shR', 'elL', 'elR', 'wrL', 'wrR', 'hipL', 'hipR']) j[key][1] -= drop;
+    for (const side of ['L', 'R']) {
+      const upper = len(sub(reference['kn' + side], reference['hip' + side]));
+      const lower = len(sub(reference['an' + side], reference['kn' + side]));
+      const pole = [0, 0, 1];
+      const solved = twoBone(j['hip' + side], targets[side].ankle, upper, lower, pole);
+      j['kn' + side] = solved.joint; j['an' + side] = solved.end;
+      j['to' + side] = targets[side].toe;
+    }
+    out.wide = source.wide || [1, 0, 0]; out.face = source.face || [0, 0, 1];
+    return { ...rootPoint, facing, pose: out, feet, distanceM, travel: distanceM };
+  }
   function sample(pose, piece, context = {}) {
     // Old experimental emotion/dance fields are retained in saved JSON but have no effect.
     return context.walk?.pose && !context.mounted && !context.heldProps ? context.walk.pose : pose;
@@ -198,5 +340,5 @@
     const reverse = transition.sourceSceneId === toSceneId;
     return transition.start + (transition.end - transition.start) * (reverse ? 1 - clamp(progress) : clamp(progress));
   }
-  root.STAGE_PERFORMER_MOTION = Object.freeze({ standard, upright, twoBone, route, routeDistance, progress, planWalk, sampleWalk, sample, smooth, blackoutPhase, transitionSeconds });
+  root.STAGE_PERFORMER_MOTION = Object.freeze({ standard, upright, twoBone, route, routeDistance, progress, planWalk, sampleWalk, planJog, sampleJog, sample, smooth, blackoutPhase, transitionSeconds });
 })(typeof window === 'undefined' ? globalThis : window);

@@ -108,8 +108,36 @@ async function performerTransitionMotion({page}) {
   await page.locator('#stage-prefs-close').click();
   return{scenes:'A-4 → A-5; A-5 → B-1',defaultOn:true,enabledProgress:onProgress,entranceOnProgress,disabledProgress:offProgress,entranceOffProgress,persistedOff:true};
 }
-const cases={'selection.plan':({page})=>selection(page,'plan'),'selection.front':({page})=>selection(page,'front'),'lanes.left':({page})=>laneCase(page,'left'),'lanes.right':({page})=>laneCase(page,'right'),'lanes.third':({page})=>laneCase(page,'right2'),'storage.roundtrip':storageRoundtrip,'storage.same-id':sameIdImport,'audio.entry':audioEntry,'workspace.tabs':workspaceTabs,'cues.navigation':cuesNavigation,'performer-transition.motion':performerTransitionMotion};
-const catalog=Object.keys(cases).map(id=>({id,title:id,scene:id.startsWith('selection.')?'A-5 / C-1':id==='performer-transition.motion'?'A-4 → A-5':'C-1',steps:id.startsWith('selection.')?'Canvas select performer and bar; floating ON/OFF; layouts 2/3/left/right':id.startsWith('lanes.')?'Pointer resize; keyboard resize; reload; Enter reset':id==='storage.roundtrip'?'Lock bar; reload; UI JSON export/import; reload':id==='storage.same-id'?'Export original fixture ID; import exact bytes; verify copied content and preserved original':id==='audio.entry'?'Show Music panel; click import file picker':id==='workspace.tabs'?'Open Script, Q sheet, 3D; return Stage; select bar':id==='performer-transition.motion'?'Environment preference ON/OFF; compare transition progress; reload persistence':'Next scene; previous scene',expected:id.startsWith('selection.')?'Correct selected name, inspector visible and pointer reachable; lock control reachable':id.startsWith('lanes.')?'Actual host width changes and persists':'Actual UI outcome matches fixture document'}));
+async function performerJogAndSectionBoundary({page}) {
+  await h.scene(page,'ft-scene-a5');
+  const selected = {};
+  for (const [castId, gait] of [['ft-cast-p01','jog'],['ft-cast-p02','walk'],['ft-cast-p03','jog']]) {
+    await page.locator('#stage-cast-list [data-roster-id="'+castId+'"] .stage-kind-swatch').click();
+    await h.settle(page);
+    const inspector=await h.inspector(page);
+    const performerNumber=castId.slice(-2);
+    assert.match(inspector.name,new RegExp('演者'+performerNumber),castId+' must be the selected performer, got '+inspector.name);
+    const control=page.locator('#stage-transition-gait');
+    assert.equal(await control.inputValue(),gait,castId+' must show its saved gait');
+    selected[castId]=gait;
+    if(castId==='ft-cast-p01'){
+      await control.selectOption('walk');
+      let piece=(await h.documentValue(page)).project.scenes.find(x=>x.id==='ft-scene-a5').pieces.find(x=>x.castId===castId);
+      assert.equal(piece.transitionGait,undefined,'default walk is omitted from saved data');
+      await control.selectOption('jog');
+      piece=(await h.documentValue(page)).project.scenes.find(x=>x.id==='ft-scene-a5').pieces.find(x=>x.castId===castId);
+      assert.equal(piece.transitionGait,'jog','jog selection persists on the fixture scene');
+    }
+  }
+  await page.locator('#stage-timeline-grip').click();
+  await page.locator('#stage-timeline-panel').waitFor({state:'visible'});
+  const edges=await page.locator('.stage-timeline-transition-block.is-section-boundary').evaluateAll(nodes=>nodes.map(n=>({edge:n.classList.contains('is-incoming')?'incoming':'outgoing',text:n.textContent.trim(),title:n.title})));
+  assert(edges.some(x=>x.edge==='incoming'),'A-section timeline must show the transition before 0.00');
+  assert(edges.some(x=>x.edge==='outgoing'),'A-section timeline must show the transition into the following section');
+  return {scenes:'A-4 → A-5',joggingPerformers:['演者01','演者03'],walkingPerformer:'演者02',sectionEdges:edges.map(x=>x.edge)};
+}
+const cases={'selection.plan':({page})=>selection(page,'plan'),'selection.front':({page})=>selection(page,'front'),'lanes.left':({page})=>laneCase(page,'left'),'lanes.right':({page})=>laneCase(page,'right'),'lanes.third':({page})=>laneCase(page,'right2'),'storage.roundtrip':storageRoundtrip,'storage.same-id':sameIdImport,'audio.entry':audioEntry,'workspace.tabs':workspaceTabs,'cues.navigation':cuesNavigation,'performer-transition.motion':performerTransitionMotion,'performer-jog.scene':performerJogAndSectionBoundary};
+const catalog=Object.keys(cases).map(id=>({id,title:id,scene:id.startsWith('selection.')?'A-5 / C-1':id==='performer-transition.motion'||id==='performer-jog.scene'?'A-4 → A-5': 'C-1',steps:id.startsWith('selection.')?'Canvas select performer and bar; floating ON/OFF; layouts 2/3/left/right':id.startsWith('lanes.')?'Pointer resize; keyboard resize; reload; Enter reset':id==='storage.roundtrip'?'Lock bar; reload; UI JSON export/import; reload':id==='storage.same-id'?'Export original fixture ID; import exact bytes; verify copied content and preserved original':id==='audio.entry'?'Show Music panel; click import file picker':id==='workspace.tabs'?'Open Script, Q sheet, 3D; return Stage; select bar':id==='performer-transition.motion'?'Environment preference ON/OFF; compare transition progress; reload persistence':id==='performer-jog.scene'?'Select performers 01/02/03 in A-5, verify walk/jog persistence, open timeline and inspect both section edges':'Next scene; previous scene',expected:id.startsWith('selection.')?'Correct selected name, inspector visible and pointer reachable; lock control reachable':id.startsWith('lanes.')?'Actual host width changes and persists':'Actual UI outcome matches fixture document'}));
 const simpleLighting=require('./simple-lighting-cases.cjs');
 Object.assign(cases,simpleLighting.cases);catalog.push(...simpleLighting.catalog);
 module.exports={cases,catalog,boot:h.boot};

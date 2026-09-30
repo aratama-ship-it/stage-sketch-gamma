@@ -47,9 +47,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.doesNotMatch(lightHtml, /id="statebadge"/);
   assert.match(html, />ツール</);
   assert.match(html, />表示するもの</);
-  assert.match(html, /class="stage-app-version">0\.2\.66</);
+  assert.match(html, /class="stage-app-version">0\.2\.67</);
   assert.match(html, /id="stage-release-v023-title">v0\.2\.3</);
-  assert.match(html, /<meta name="stage-sketch-gamma-version" content="v0\.2\.66">/);
+  assert.match(html, /<meta name="stage-sketch-gamma-version" content="v0\.2\.67">/);
   assert.match(html, /id="stage-release-v024-title">v0\.2\.4</);
   assert.match(html, /id="stage-release-v025-title">v0\.2\.5</);
   // AI用JSON（project.id なし・light あり）が旧照明の移行器で止まらない（2026-09-24）
@@ -58,9 +58,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   // 読み込み時の保険: rehearsal が無いシーンへ既定の転換3秒（控えを持つ保存データは触らない）（2026-09-24）
   assert.match(main, /function backfillMissingSceneRehearsal\(project\) \{[\s\S]*?if \(hasSectionMemo\) return project;[\s\S]*?row\.rehearsal = \{ holdDurationSeconds: DEFAULT_SCENE_HOLD_SECONDS, transitionToNextSeconds: NEW_SCENE_TRAVEL_SECONDS \};/);
   assert.match(main, /const project = backfillMissingSceneRehearsal\(stripRemovedSceneFields\(projectIoClone\(document\.project\)\)\);/);
-  assert.match(html, /stage-sketch\.js\?v=20260930-simple1/);
-  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v433"/);
-  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=20260930-simple1"/);
+  assert.match(html, /stage-sketch\.js\?v=20260930-gamma2/);
+  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v434"/);
+  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=20260930-gamma2"/);
   assert.match(html, /id="stage-show-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-set-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-light-names" checked>\s*<span class="stage-tool-icon"/);
@@ -121,11 +121,11 @@ test("lighting apply belongs to the LX cue panel and playback uses an accessible
   assert.match(html, /\.fixture-power\.off \.fixture-power-lens\{fill:none\}/);
   assert.match(html, /\.fixture-power\.off \.fixture-power-slash\{display:block\}/);
   assert.doesNotMatch(html, /\.fixture-power\.on \.fixture-power-slash\{display:none\}/);
-  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=20260930-simple1/);
-  assert.match(worker, /stage-sketch-gamma-shell-v433/);
+  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=20260930-gamma2/);
+  assert.match(worker, /stage-sketch-gamma-shell-v434/);
 
-  assert.match(worker, /light-design\/app\.js\?v=20260930-simple1/);
-  assert.match(worker, /light-design\/embed\.js\?v=20260930-simple1/);
+  assert.match(worker, /light-design\/app\.js\?v=20260930-gamma2/);
+  assert.match(worker, /light-design\/embed\.js\?v=20260930-gamma2/);
 });
 
 test("sample A-3 uses registered height at normal visual scale for performers 09 and 16", () => {
@@ -259,6 +259,30 @@ test("registered scenery, props, and machinery use the performer detail modal de
   assert.match(style, /\.stage-detail-modal\s*\{[\s\S]*?border: 3px solid #b99a63;/);
   assert.match(style, /\.stage-detail-modal \.stage-modal-body\s*\{ background: #463d35; \}/);
   assert.match(style, /\.stage-detail-modal \.stage-select,/);
+});
+
+test("queued fixture, scene detail, toolbar animation, and section-edge timeline controls are present", () => {
+  const html = read("stage.html");
+  const style = read("style.css");
+  const sketch = read("stage-sketch.js");
+  const timeline = read("stage-timeline.js");
+  const worker = read("stage-sw.js");
+  const lighting = read("light-design/app.js");
+  assert.match(sketch, /照明機材の灯体/);
+  assert.match(sketch, /\["white-line", "black", "gray"\]/);
+  assert.match(sketch, /stage-fixture-body-appearance/);
+  assert.match(lighting, /fixtureBodyAppearance === "black"/);
+  assert.match(lighting, /fixtureBodyAppearance === "gray"/);
+  assert.match(style, /stage-modal#stage-rename \{ width: min\(1560px/);
+  assert.match(sketch, /castFactLine\(facts\.onStage, "人"\)/);
+  assert.match(sketch, /castFactLine\(facts\.backstage, "人"\)/);
+  assert.match(html, /<button[^>]*id="stage-toolbar-transition-animation"[^>]*>\s*<span class="stage-tool-icon"[^>]*><svg/);
+  assert.match(sketch, /toolbarAnimScenes\.addEventListener\("click"/);
+  assert.match(timeline, /0\.00の前/);
+  assert.match(timeline, /次のセクションへの転換/);
+  assert.match(style, /stage-timeline-transition-block\.is-section-boundary[\s\S]*?opacity: 0\.42/);
+  assert.match(worker, /stage-jog-reference\.js\?v=2026093003/);
+  assert.match(worker, /stage-performer-motion\.js\?v=2026093003/);
 });
 
 test("front border follows the durable equipment-placement setting and stays hidden by default", () => {

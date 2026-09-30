@@ -82,9 +82,16 @@ test("機能テスト用ショー: 演者の転換アニメ切替に、移動・
   assert.equal([...castIds(a4)].filter((id) => !castIds(a5).has(id)).length, 0, "A-4→A-5 は全員が残って移動する");
   assert.equal([...castIds(a5)].filter((id) => !castIds(b1).has(id)).length, 8, "A-5→B-1 では8人がはける");
   assert.equal([...castIds(b1)].filter((id) => !castIds(a5).has(id)).length, 2, "A-5→B-1 では2人が入る");
-  assert.match(a4.note, /タイムラインの転換アニメーションアイコンでON\/OFF/);
-  assert.match(a5.note, /入りとはけも同じ設定/);
+  assert.match(a4.note, /ツールバーの切替/);
+  assert.match(a5.note, /小走り/);
   assert.match(sketch, /key: "performerTransitionMotion", label: "転換中に演者を歩かせる", def: true/);
+});
+
+test("機能テスト用ショー A-4→A-5: 演者01と03だけ小走りを選べる", () => {
+  const a5 = scenes.find((scene) => scene.id === "ft-scene-a5");
+  assert.ok(a5);
+  assert.deepEqual(a5.pieces.filter((piece) => piece.transitionGait === "jog").map((piece) => piece.castId),
+    ["ft-cast-p01", "ft-cast-p03"]);
 });
 
 test("機能テスト用ショー: C-2 の楽器は初期状態で持たせず、操作後に演奏姿勢を試す", () => {

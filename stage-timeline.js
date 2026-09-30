@@ -250,6 +250,7 @@
   let timelineLockMenu = null;
   let timelineLockMenuOutsideHandler = null;
   let timelineWidth = 960;
+  let timelineLeftInset = 0;
   let audioAvailabilityGeneration = 0;
   let seekSeconds = 0;
   let audioPlayheadFrame = 0;
@@ -1018,8 +1019,34 @@
     return { project, section, choices: choices.length ? choices : [fallbackTimeline(project, section)] };
   }
 
+  function sectionBoundaryTransitions(project, section) {
+    const rows = Array.isArray(project.scenes) ? project.scenes : [];
+    const sectionIndex = rows.findIndex((row) => row && row.id === (section && section.id));
+    if (sectionIndex < 0) return { incoming: null, outgoing: null };
+    const depth = finite(section.depth, 0);
+    const siblings = rows.map((row, index) => ({ row, index }))
+      .filter(({ row }) => row && row.kind === "section" && finite(row.depth, 0) === depth);
+    const siblingIndex = siblings.findIndex(({ index }) => index === sectionIndex);
+    const previous = siblingIndex > 0 ? siblings[siblingIndex - 1].row : null;
+    const next = siblingIndex >= 0 && siblingIndex + 1 < siblings.length ? siblings[siblingIndex + 1].row : null;
+    const lastScene = (owner) => childScenes(project, owner).slice(-1)[0] || null;
+    const incomingScene = previous && lastScene(previous);
+    const outgoingScene = next && lastScene(section);
+    const travel = (scene) => Math.max(0, sceneSeconds(scene && scene.rehearsal && scene.rehearsal.transitionToNextSeconds, 0));
+    const incomingSeconds = travel(incomingScene), outgoingSeconds = travel(outgoingScene);
+    return {
+      incoming: incomingScene && incomingSeconds > 0 ? { scene: incomingScene, seconds: incomingSeconds, section: previous } : null,
+      outgoing: outgoingScene && outgoingSeconds > 0 ? { scene: outgoingScene, seconds: outgoingSeconds, section: next } : null,
+    };
+  }
+
   function pxFor(seconds) {
-    return clamp(seconds, 0, timeline ? timeline.duration : 0) / Math.max(0.001, timeline ? timeline.duration : 1) * timelineWidth;
+    const timeWidth = Math.max(1, timelineWidth - timelineLeftInset);
+    return timelineLeftInset + clamp(seconds, 0, timeline ? timeline.duration : 0)
+      / Math.max(0.001, timeline ? timeline.duration : 1) * timeWidth;
+  }
+  function secondsPerPixel() {
+    return (timeline ? timeline.duration : 0) / Math.max(1, timelineWidth - timelineLeftInset);
   }
 
   function zoomBy(factor, clientX = null) {
@@ -1028,13 +1055,14 @@
     const labelWidth = finite(getComputedStyle(root).getPropertyValue("--stage-timeline-label-width"), 156);
     const anchorX = Number.isFinite(clientX) ? clientX : rect.left + rect.width / 2;
     const visibleX = clamp(anchorX - rect.left - labelWidth, 0, Math.max(1, rect.width - labelWidth));
-    const secondsAtAnchor = clamp((els.viewport.scrollLeft + visibleX) / Math.max(1, timelineWidth) * timeline.duration,
+    const secondsAtAnchor = clamp((els.viewport.scrollLeft + visibleX - timelineLeftInset) * secondsPerPixel(),
       0, timeline.duration);
     const nextZoom = clamp(ui.zoom * factor, ZOOM_MIN, ZOOM_MAX);
     if (Math.abs(nextZoom - ui.zoom) < 1e-9) return;
     ui.zoom = nextZoom;
     renderTimeline();
-    els.viewport.scrollLeft = Math.max(0, secondsAtAnchor / timeline.duration * timelineWidth - visibleX);
+    els.viewport.scrollLeft = Math.max(0, timelineLeftInset + secondsAtAnchor / Math.max(0.001, timeline.duration)
+      * (timelineWidth - timelineLeftInset) - visibleX);
     saveUi();
   }
 
@@ -1202,7 +1230,7 @@
     const minimum = index > 0 ? anchors[index - 1].sec + 0.001 : 0;
     const maximum = index >= 0 && index < anchors.length - 1
       ? anchors[index + 1].sec - 0.001 : timeline.duration;
-    const seconds = clamp(anchorDrag.startSec + deltaX / Math.max(1, timelineWidth) * timeline.duration,
+    const seconds = clamp(anchorDrag.startSec + deltaX * secondsPerPixel(),
       minimum, Math.max(minimum, maximum));
     const record = { ...anchorRecord(anchorDrag.originalTrack, anchorDrag.count), sec: seconds };
     timeline.track = writeAnchorRecord(anchorDrag.originalTrack, record);
@@ -2570,6 +2598,35 @@
       placeBlock(marker, transition.start, transition.end);
       els.scenesLane.append(marker);
     });
+    const boundaries = timeline.sectionBoundaries || {};
+    if (boundaries.incoming) {
+      const block = document.createElement("div");
+      block.className = "stage-timeline-transition-block is-section-boundary is-incoming";
+      block.textContent = "→";
+      block.title = `${boundaries.incoming.section.title || tx("前のセクション")} → ${timeline.sectionTitle}（0.00の前）`;
+      block.setAttribute("role", "img");
+      block.setAttribute("aria-label", block.title);
+      block.style.left = "0px";
+      block.style.width = `${timelineLeftInset - 4}px`;
+      els.transitionsLane.append(block);
+    }
+    if (boundaries.outgoing) {
+      const start = Math.max(0, timeline.duration - boundaries.outgoing.seconds);
+      const block = document.createElement("div");
+      block.className = "stage-timeline-transition-block is-section-boundary is-outgoing";
+      block.textContent = tx("次のセクションへの転換");
+      block.title = `${timeline.sectionTitle} → ${boundaries.outgoing.section.title || tx("次のセクション")}`;
+      block.setAttribute("role", "img");
+      block.setAttribute("aria-label", block.title);
+      placeBlock(block, start, timeline.duration);
+      els.transitionsLane.append(block);
+      const marker = document.createElement("div");
+      marker.className = "stage-timeline-scene-transition-marker is-section-boundary is-outgoing";
+      marker.setAttribute("aria-hidden", "true");
+      marker.title = block.title;
+      placeBlock(marker, start, timeline.duration);
+      els.scenesLane.append(marker);
+    }
     renderCueBlocks(project);
   }
 
@@ -2818,10 +2875,12 @@
     if (!project || !choices.length) return;
     timeline = choices.find((choice) => choice.segments.some((segment) => segment.sceneId === project.activeSceneId))
       || choices[0];
+    const section = currentSection(project);
+    timeline.sectionBoundaries = sectionBoundaryTransitions(project, section);
+    timelineLeftInset = timeline.sectionBoundaries.incoming ? 40 : 0;
     seekSeconds = clamp(seekSeconds, 0, timeline.duration);
     refreshLockedTimelinePositions(project);
 
-    const section = currentSection(project);
     ui.unit = sectionTimelineUnit(section);
     syncSectionDurationControls(project);
     els.section.textContent = timeline.sectionTitle;
@@ -2863,7 +2922,7 @@
     const baseWidth = ui.unit === "time"
       ? timeline.duration * 80
       : Math.max(1, secToCount(timeline.track, timeline.duration) - secToCount(timeline.track, 0)) * 44;
-    timelineWidth = Math.min(MAX_TIMELINE_WIDTH, Math.max(available, baseWidth * ui.zoom));
+    timelineWidth = Math.min(MAX_TIMELINE_WIDTH, Math.max(available, baseWidth * ui.zoom) + timelineLeftInset);
     els.surface.style.setProperty("--stage-timeline-width", `${timelineWidth}px`);
     renderLoopRange();
     els.rulerLabel.textContent = tx(ui.unit === "count" ? "カウント" : "時間");
@@ -3135,7 +3194,7 @@
   function seekFromPointer(event) {
     if (!timeline) return;
     const rect = els.ruler.getBoundingClientRect();
-    const rawSeconds = (event.clientX - rect.left) / Math.max(1, rect.width) * timeline.duration;
+    const rawSeconds = (event.clientX - rect.left - timelineLeftInset) * secondsPerPixel();
     seekToSeconds(snappedSeconds(rawSeconds));
   }
 
@@ -3433,7 +3492,7 @@
 
   function resizeDeltaFromPointer(event) {
     if (!blockResize || !timeline) return 0;
-    const pointerDelta = (event.clientX - blockResize.startX) / Math.max(1, timelineWidth) * timeline.duration;
+    const pointerDelta = (event.clientX - blockResize.startX) * secondsPerPixel();
     const snappedBoundary = snappedSeconds(blockResize.descriptor.boundarySeconds + pointerDelta);
     const directed = blockResize.descriptor.pointAnchor === "start" ? -pointerDelta : pointerDelta;
     const snapped = snappedSeconds(blockResize.descriptor.boundarySeconds + directed);
@@ -3799,7 +3858,7 @@
     event.preventDefault();
     if (event.shiftKey) {
       seekSeconds = clamp(
-        seekSeconds - delta / Math.max(1, timelineWidth) * timeline.duration,
+        seekSeconds - delta * secondsPerPixel(),
         0,
         timeline.duration,
       );

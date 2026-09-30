@@ -96,7 +96,12 @@
   /* 描く。P(world)→{X,Y}。opts: color（点灯色）, lit（0〜1）, selected, ink（線色）, fill（面色）, beamDeg, px,
      topDown（真上から見る図＝レンズの光と芯は胴体の下に隠れるので出さない。胴体の上面を塗って光の根元を隠す） */
   function draw(ctx, P, geom, opts = {}) {
-    const ink = opts.ink || "rgba(239,231,214,0.75)", fill = opts.fill || "#2b2621", sel = opts.selected, topDown = Boolean(opts.topDown);
+    const appearance = ["black", "gray"].includes(opts.appearance) ? opts.appearance : "white-line";
+    const appearanceColors = appearance === "black"
+      ? { ink: "#55514d", fill: "#090909" }
+      : appearance === "gray" ? { ink: "#aaa6a0", fill: "#68645f" }
+        : { ink: "rgba(239,231,214,0.75)", fill: "#2b2621" };
+    const ink = opts.ink || appearanceColors.ink, fill = opts.fill || appearanceColors.fill, sel = opts.selected, topDown = Boolean(opts.topDown);
     const lw = opts.lineWidth || (sel ? 2 : 1.1);
     const poly = (pts, fillStyle, strokeStyle, close = true) => {
       ctx.beginPath(); pts.forEach((p, i) => { const q = P(p); if (i) ctx.lineTo(q.X, q.Y); else ctx.moveTo(q.X, q.Y); });
@@ -115,7 +120,7 @@
     ctx.lineJoin = "round";
     // 土台（円柱の影絵）
     polyScreen(hull(geom.base.top.concat(geom.base.bottom).map(P)), fill, ink);
-    poly(geom.base.top, "#3a3128", ink);
+    poly(geom.base.top, appearance === "white-line" ? "#3a3128" : fill, ink);
     (geom.yoke.arms || []).forEach((arm) => poly(arm, fill, ink));
     poly(geom.yoke.bar, null, ink, false);
     // ヘッド: 円柱の影絵を面で塗る（上から見ると胴体が光の根元を隠す）→ 後ろの輪 → レール → レンズ
@@ -124,12 +129,12 @@
     geom.head.rails.forEach((rail) => poly(rail, null, ink, false));
     if (topDown) {
       /* 上から: レンズは胴体の下。縁だけ、点いていれば色が少し漏れて見える。 */
-      poly(geom.head.front, "#1a1613", lit > 0 && opts.color ? hexA(opts.color, 0.35 + 0.45 * lit) : (sel ? "#df6433" : ink));
+      poly(geom.head.front, appearance === "white-line" ? "#1a1613" : fill, lit > 0 && opts.color ? hexA(opts.color, 0.35 + 0.45 * lit) : (sel ? "#df6433" : ink));
       ctx.restore();
       return;
     }
     /* レンズ面＝点光源。点いていれば色で塗り、中心に白い芯。消えていれば暗いガラス。 */
-    const lens = lit > 0 && opts.color ? hexA(opts.color, 0.35 + 0.65 * lit) : "#1a1613";
+    const lens = lit > 0 && opts.color ? hexA(opts.color, 0.35 + 0.65 * lit) : appearance === "white-line" ? "#1a1613" : fill;
     poly(geom.head.front, lens, sel ? "#df6433" : ink);
     ctx.restore();
     if (opts.glow !== false) lensGlow(ctx, P, geom, opts);

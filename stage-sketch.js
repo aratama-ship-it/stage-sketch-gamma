@@ -8505,11 +8505,14 @@
     sceneNowOpen: document.getElementById("stage-scene-now-open"),
     animScenes: document.getElementById("stage-anim-scenes"),
     timelineAnimScenes: document.getElementById("stage-timeline-transition-animation"),
+    toolbarAnimScenes: document.getElementById("stage-toolbar-transition-animation"),
     animMs: document.getElementById("stage-anim-ms"),
     animMsValue: document.getElementById("stage-anim-ms-value"),
     castList: document.getElementById("stage-cast-list"),
     pieceFacing: document.getElementById("stage-piece-facing"),
     piecePose: document.getElementById("stage-piece-pose"),
+    pieceTransitionGait: document.getElementById("stage-transition-gait"),
+    pieceTransitionGaitRow: document.getElementById("stage-transition-gait-row"),
     poseStrip: document.getElementById("stage-pose-strip"),
     poleControls: document.getElementById("stage-pole-controls"),
     poleLeft: document.getElementById("stage-pole-left"),
@@ -9938,6 +9941,9 @@
        * 登録を持たない駒（最初から置いてある例など）のための控え。 */
       locked: Boolean(piece && piece.locked),
     };
+    // 既定の歩行はデータへ足さず、明示的な小走り選択だけを保存する。
+    if (type === "performer" && piece.transitionGait === "jog") normalized.transitionGait = "jog";
+    else delete normalized.transitionGait;
     // 舞台機構の値は登録寸法ではなく、シーンごとの状態として駒に持つ
     if (type === "seri") normalized.seriH = clamp(finite(piece.seriH, 0), -3, 4);
     // 吊り点の高さ（シーンごと）。無ければ持たない（登録の地上高を使う）
@@ -21054,7 +21060,7 @@
         const dist = Math.hypot(fx.pool.to.x - S.x, fx.pool.to.y - S.y, fx.pool.to.z - S.z) || 1;
         beamDeg = Math.max(4, Math.min(70, 2 * Math.atan(fx.pool.radiusM / dist) * 180 / Math.PI));
       }
-      body.draw(target, P, geom, { color: fx.color, lit: fx.state === "on" ? finite(fx.level, 100) / 100 : 0, beamDeg, px, topDown: Boolean(L.plan) });
+      body.draw(target, P, geom, { color: fx.color, lit: fx.state === "on" ? finite(fx.level, 100) / 100 : 0, beamDeg, px, topDown: Boolean(L.plan), appearance: fixtureBodyAppearance() });
       drawn += 1;
     });
     return drawn;
@@ -29587,10 +29593,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   /* 上の事実を「3件（名前, 名前, 名前）」の形の1行にする。多いときは件数だけ先に出す。 */
-  function castFactLine(list) {
+  function castFactLine(list, unit = "件") {
     if (!list.length) return "—";
     const head = list.slice(0, 8).join("、");
-    return list.length > 8 ? `${list.length}件: ${head} ほか` : `${list.length}件: ${head}`;
+    return list.length > 8 ? `${list.length}${unit}: ${head} ほか` : `${list.length}${unit}: ${head}`;
   }
 
   function openRename(scene) {
@@ -29615,8 +29621,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (els.renameSceneCast) els.renameSceneCast.hidden = scene.kind !== "scene";
     if (scene.kind === "scene") {
       const facts = sceneCastFacts(scene);
-      if (els.renameSceneOnStage) els.renameSceneOnStage.textContent = castFactLine(facts.onStage);
-      if (els.renameSceneBackstage) els.renameSceneBackstage.textContent = castFactLine(facts.backstage);
+      if (els.renameSceneOnStage) els.renameSceneOnStage.textContent = castFactLine(facts.onStage, "人");
+      if (els.renameSceneBackstage) els.renameSceneBackstage.textContent = castFactLine(facts.backstage, "人");
       if (els.renameSceneSets) els.renameSceneSets.textContent = castFactLine(facts.sets);
       if (els.renameSceneProps) els.renameSceneProps.textContent = castFactLine(facts.props);
       if (els.renameSceneHeld) els.renameSceneHeld.textContent = facts.held.length ? facts.held.join(" / ") : "—";
@@ -30313,15 +30319,21 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           const carrying = Boolean(pose.props || pose.wheel)
             || sc().pieces.some(other => other.heldBy === piece.id);
           if (motion.upright(pose) && !carrying) {
-            if (entry.walkPlan === undefined) entry.walkPlan = motion.planWalk(entry, venueSize(), {
-              heightM: pieceHeightM(piece) * piece.size / 100,
-              durationSeconds: span / 1000 * walkingSpan,
-              // Land in the walking stance; stopSceneAnim then applies the saved destination pose.
-              pose, endPose: pose.id === "walk" ? poseById("stand") : pose,
-              toFacing: piece.facing || 0,
-            });
+            if (entry.walkPlan === undefined) {
+              const gait = (entry.exit ? entry.piece.transitionGait : piece.transitionGait) === "jog" ? "jog" : "walk";
+              const options = {
+                heightM: pieceHeightM(piece) * piece.size / 100,
+                durationSeconds: span / 1000 * walkingSpan,
+                pose, endPose: pose.id === "walk" ? poseById("stand") : pose,
+                toFacing: piece.facing || 0,
+              };
+              entry.walkPlan = gait === "jog" && motion.planJog
+                ? motion.planJog(entry, venueSize(), options) : null;
+              if (!entry.walkPlan) entry.walkPlan = motion.planWalk(entry, venueSize(), options);
+            }
             if (entry.walkPlan) {
-              const frame = motion.sampleWalk(entry.walkPlan, walkingTime);
+              const frame = entry.walkPlan.mode === "jog" ? motion.sampleJog(entry.walkPlan, walkingTime)
+                : motion.sampleWalk(entry.walkPlan, walkingTime);
               piece.animU = frame.u; piece.animV = frame.v;
               performerGait.set(piece.id, frame);
               Object.defineProperty(piece, "animFacing", {
@@ -30910,9 +30922,24 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       "lightPool", "lightBeam", "workLightOff",
     ]);
     FEATURES.filter((f) => !hiddenGammaFlags.has(f.key)).forEach((f) => { features.grid.append(prefRow(f)); });
+    features.grid.append(prefSelectRow("照明機材の灯体", fixtureBodyAppearance(), [
+      ["white-line", "白ライン"], ["black", "黒ボディ"], ["gray", "グレーボディ"],
+    ], "照明機材の灯体の色を、平面図・正面図・3Dと照明デザインで共通にします。", (next) => {
+      prefs.fixtureBodyAppearance = next;
+      savePrefs();
+      render();
+      document.getElementById("gamma-light-frame")?.contentWindow?.postMessage({
+        type: "stage-fixture-body-appearance", appearance: next,
+      }, location.origin);
+    }));
     features.grid.append(lightLookRow());
     features.grid.append(voxSizeRow());
     host.append(features.group);
+  }
+
+  function fixtureBodyAppearance() {
+    return ["white-line", "black", "gray"].includes(prefs.fixtureBodyAppearance)
+      ? prefs.fixtureBodyAppearance : "white-line";
   }
 
   /* U-09（2026-09-24 本人指示）: セリフキューの文字の大きさは、パネルの中ではなく環境設定で選ぶ。既定は一番小さい「標準」。
@@ -36202,6 +36229,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       }
     }
     renderPoseStrip(piece);
+    if (els.pieceTransitionGaitRow) {
+      els.pieceTransitionGaitRow.hidden = multi || !piece || piece.type !== "performer";
+      if (piece && !multi) els.pieceTransitionGait.value = piece.transitionGait === "jog" ? "jog" : "walk";
+    }
     if (els.fpvOpen) els.fpvOpen.hidden = multi || !(piece && piece.type === "performer");
     syncCostumeControls(multi ? null : piece);
     syncHoldingControls(multi ? null : piece);
@@ -36433,6 +36464,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   function syncTransitionAnimationControls() {
     if (els.animScenes) els.animScenes.checked = state.animateScenes;
     if (els.timelineAnimScenes) els.timelineAnimScenes.setAttribute("aria-pressed", String(state.animateScenes));
+    if (els.toolbarAnimScenes) els.toolbarAnimScenes.setAttribute("aria-pressed", String(state.animateScenes));
   }
 
   function syncInputs() {
@@ -38173,6 +38205,20 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   if (els.poseClose) els.poseClose.addEventListener("click", closePoseModal);
   if (els.poseSearch) els.poseSearch.addEventListener("input", applyPoseSearch);
   if (els.poseBackdrop) els.poseBackdrop.addEventListener("click", closePoseModal);
+  if (els.pieceTransitionGait) {
+    els.pieceTransitionGait.addEventListener("change", (e) => {
+      const piece = selectedPiece();
+      if (!piece || piece.type !== "performer") return;
+      const gait = e.target.value === "jog" ? "jog" : "walk";
+      if ((piece.transitionGait === "jog" ? "jog" : "walk") === gait) return;
+      checkpoint();
+      if (gait === "jog") piece.transitionGait = "jog";
+      else delete piece.transitionGait;
+      render();
+      persistSoon();
+      announce(gait === "jog" ? "このシーンへの移動を小走りにしました。" : "このシーンへの移動を歩行にしました。");
+    });
+  }
   if (els.pieceFacing) {
     els.pieceFacing.addEventListener("input", (e) => {
       const pieces = selectedFacingPieces();
@@ -39097,6 +39143,9 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   }
   if (els.timelineAnimScenes && els.animScenes) {
     els.timelineAnimScenes.addEventListener("click", () => els.animScenes.click());
+  }
+  if (els.toolbarAnimScenes && els.animScenes) {
+    els.toolbarAnimScenes.addEventListener("click", () => els.animScenes.click());
   }
   document.addEventListener("visibilitychange", () => syncSpinRun());
 

@@ -19,14 +19,28 @@
   /* 平面図の灯体アイコンの淡い白枠。見え方だけの端末設定で、照明データには含めない。 */
   const PLAN_FIXTURE_OUTLINE_KEY = "gamma:shosai-stage-prefs-v1";
   let planFixtureOutline = true;
+  let fixtureBodyAppearance = "white-line";
+  function readFixtureBodyAppearance() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(PLAN_FIXTURE_OUTLINE_KEY) || "{}").fixtureBodyAppearance;
+      return ["white-line", "black", "gray"].includes(saved) ? saved : "white-line";
+    } catch (_) { return "white-line"; }
+  }
   function readPlanFixtureOutline() {
     try { return JSON.parse(localStorage.getItem(PLAN_FIXTURE_OUTLINE_KEY) || "{}").planFixtureOutline !== false; }
     catch (_) { return true; }
   }
   planFixtureOutline = readPlanFixtureOutline();
+  fixtureBodyAppearance = readFixtureBodyAppearance();
   window.addEventListener("storage", (event) => {
     if (event.key !== PLAN_FIXTURE_OUTLINE_KEY) return;
     planFixtureOutline = readPlanFixtureOutline();
+    fixtureBodyAppearance = readFixtureBodyAppearance();
+    draw();
+  });
+  window.addEventListener("message", (event) => {
+    if (event.origin !== location.origin || event.data?.type !== "stage-fixture-body-appearance") return;
+    fixtureBodyAppearance = ["white-line", "black", "gray"].includes(event.data.appearance) ? event.data.appearance : "white-line";
     draw();
   });
   /* v2の復元用原本は大きいので、UndoのJSONへ操作ごとに複製しない。
@@ -2410,8 +2424,11 @@
       ctx.strokeStyle = "rgba(13,12,11,0.92)"; ctx.lineWidth = 8; ctx.stroke();
       ctx.strokeStyle = "#d3ac59"; ctx.lineWidth = 3.5; ctx.stroke();
     }
-    const fill = o.ghost ? "rgba(240,231,214,0.35)" : o.st === "unset" ? surface("#0d0c0b") : o.st === "off" ? surface("#2a2520") : (o.color || "#f2ead6");
-    ctx.fillStyle = fill; ctx.strokeStyle = o.sel ? "#d3ac59" : o.ghost ? "rgba(240,231,214,0.5)" : "rgba(240,231,214,0.7)"; ctx.lineWidth = o.sel ? 5 : 2;
+    const bodyColors = fixtureBodyAppearance === "black" ? { fill: "#090909", outline: "#55514d" }
+      : fixtureBodyAppearance === "gray" ? { fill: "#68645f", outline: "#aaa6a0" }
+        : { fill: null, outline: "rgba(240,231,214,0.7)" };
+    const fill = o.ghost ? "rgba(240,231,214,0.35)" : bodyColors.fill || (o.st === "unset" ? surface("#0d0c0b") : o.st === "off" ? surface("#2a2520") : (o.color || "#f2ead6"));
+    ctx.fillStyle = fill; ctx.strokeStyle = o.sel ? "#d3ac59" : o.ghost ? "rgba(240,231,214,0.5)" : bodyColors.outline; ctx.lineWidth = o.sel ? 5 : 2;
     const bar = shape === "bar" && o.bar && o.bar.a && o.bar.b ? o.bar : null;
     let markX = X, markY = Y, markSize = s;
     ctx.beginPath();

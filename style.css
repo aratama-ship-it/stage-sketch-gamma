@@ -2361,9 +2361,11 @@ html.stage-pwa-tablet .stage-header-app-identity { --stage-header-logo-width: 22
   cursor: default;
 }
 
-.stage-rename-modal { max-width: 380px; }
+.stage-rename-modal { max-width: none; }
 
-.stage-modal#stage-rename { width: min(520px, calc(100vw - 40px)); max-width: none; }
+.stage-modal#stage-rename { width: min(1560px, calc(100vw - 40px)); max-width: none; max-height: min(92vh, 1100px); }
+.stage-modal#stage-rename .stage-modal-body { overflow: auto; }
+.stage-modal#stage-rename #stage-rename-scene-note { min-height: min(30vh, 280px); }
 
 .stage-rename-section-fields {
   display: grid;
@@ -2401,6 +2403,14 @@ html.stage-pwa-tablet .stage-header-app-identity { --stage-header-logo-width: 22
   font-size: 9px;
   line-height: 1.55;
 }
+
+@media (max-width: 700px) {
+  .stage-modal#stage-rename { width: calc(100vw - 20px); max-height: calc(100dvh - 20px); }
+  .stage-modal#stage-rename #stage-rename-scene-note { min-height: 140px; }
+}
+
+#stage-toolbar-transition-animation .stage-transition-animation-off { display: none; }
+#stage-toolbar-transition-animation[aria-pressed="false"] .stage-transition-animation-off { display: block; }
 
 .stage-rename-colors {
   display: grid;
@@ -18101,6 +18111,21 @@ body.is-timeline-block-resizing { cursor: ew-resize; user-select: none; -webkit-
 }
 
 .stage-timeline-transition-block.is-point .stage-timeline-block-label { display: none; }
+
+.stage-timeline-transition-block.is-section-boundary {
+  opacity: 0.42;
+  filter: saturate(0.55);
+}
+.stage-timeline-transition-block.is-section-boundary.is-incoming {
+  justify-content: center;
+  padding: 0 2px;
+  color: var(--stage-timeline-text);
+  font-size: 13px;
+  background: repeating-linear-gradient(135deg, rgba(168,191,138,.35) 0 3px, rgba(168,191,138,.14) 3px 6px);
+  border: 1px dashed var(--stage-timeline-transition);
+}
+.stage-timeline-transition-block.is-section-boundary.is-outgoing { background: rgba(168,191,138,.42); }
+.stage-timeline-scene-transition-marker.is-section-boundary { opacity: 0.42; }
 
 .stage-timeline-cue {
   display: flex;

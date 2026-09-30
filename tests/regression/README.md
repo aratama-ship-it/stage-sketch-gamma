@@ -15,7 +15,7 @@ node tests/regression/run.cjs --out regression-results
 
 `regression-results/latest.json` に最新のHTMLとJSONの場所が入ります。出力HTMLをブラウザで開くと、項目ごとの操作・結果・画面を確認できます。手動欄のチェックとメモは実行IDと内容ハッシュごとに保存され、次の版へ引き継がれません。JSONとして手元へ保存できます。
 
-- 既定: Chromium / WebKit × 1800×1050 / 1366×900 × 14項目 = 56条件。
+- 既定: Chromium / WebKit × 1800×1050 / 1366×900 × 15項目 = 60条件。
 - 各条件は新規ブラウザコンテキスト。同梱「テスト: 全機能の試験場」だけをUIから開きます。
 - パネル選択は A-5・C-1、浮動ON/OFF、4レイアウト。名前だけでなくロック操作が届き、データが変わることまで検査します。
 - 幅は左右と3列目の実寸、ポインタ、キー、再読込、初期幅への復帰を確認。デスクトップで範囲ゼロ/非表示なら失敗です。
@@ -50,8 +50,10 @@ node tests/regression/run.cjs --engines chromium --viewports 1800x1050 --cases s
 
 ## 残る確認
 
-WebKit自動化は実Safari/iPad/PWA/音の聴取の代わりにはなりません。Service Workerは隔離試験では無効です。更新/オフライン起動は別途確認してください。OSファイル保存・印刷も人の確認欄に残します。既存の詳細938項目の確認帳を、この40条件で置き換えるものではありません。
+WebKit自動化は実Safari/iPad/PWA/音の聴取の代わりにはなりません。Service Workerは隔離試験では無効です。更新/オフライン起動は別途確認してください。OSファイル保存・印刷も人の確認欄に残します。既存の詳細938項目の確認帳を、この60条件で置き換えるものではありません。
 
 参考: [Playwright CI](https://playwright.dev/docs/ci-intro)、[GitHub Actionsの実行条件](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)。
 
 - かんたん照明はF-1で12種の候補比較、原本を残す共通24灯導入、2人へのスポット、暗転・取り消し・再読込・JSON読み込み、保存失敗と復旧を確認します。劇場変更の確定前警告と、寸法に合わせた共通セットも含みます。
+
+- A-4→A-5では演者01・03が「小走り」、演者02が「歩く」を表示し、既定の歩行は保存しないこと、タイムラインにAセクション開始前とBセクションへの転換が出ることを確認します。
