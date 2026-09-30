@@ -374,3 +374,10 @@ public-dist/
 !/tests/stage-sphere-support.test.mjs
 !/tests/light-plan-fixture-outline-browser.cjs
 !/tests/instrument-auto-pose-browser.cjs
+
+# Lighting beginner controls over the shared rig/cues and their regression checks
+!/light-design/simple-lighting-model.js
+!/light-design/simple-lighting-ui.js
+!/light-design/simple-lighting.css
+!/tests/simple-lighting.test.mjs
+!/tests/regression/simple-lighting-cases.cjs

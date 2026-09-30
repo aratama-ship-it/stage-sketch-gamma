@@ -105,11 +105,11 @@
         changedElsewhere=true;renderSaveStatus();
         message('ショーが更新されています。照明の編集中データは保持しています。「控え・書き出し」からファイルへ控えてください');
       } else {synchronizePieces(next);synchronizeVenueMask(next);state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));}
-      active=true;setMode(mode);return;
+      active=true;setMode(mode);window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);return;
     }
     if(context?.showId===next.showId && context.basis===next.basis) {
       synchronizePieces(next);synchronizeVenueMask(next); state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
-      active=true;setMode(mode);return;
+      active=true;setMode(mode);window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);return;
     }
     saveDraft();loading=true;
     try {
@@ -144,7 +144,7 @@
       hooks.refreshApplyState();draftState=state.dirty?'saved':'none';applyError='';appliedNotice='';renderSaveStatus();state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
       lastScene=state.scenes[state.sceneIndex].id;
       state.seq=Date.now(); // avoids collisions with fixture / cue IDs imported from earlier sessions
-      active=true;setMode(mode);
+      active=true;setMode(mode);window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);
       if(dirty) message('適用前の照明を復元しました');
     } finally {loading=false;}
   }
@@ -168,6 +168,23 @@
       message(result.shelfPersisted?'照明デザインをショーへ保存しました':'照明は保存しました。ショー一覧の控えを更新できないため、ショーを書き出してください');
       return result;
     } catch(error) {applyError=error.message;hooks.refreshApplyState();saveDraft();message('適用できませんでした: '+error.message);return {persisted:false,error:error.message||String(error)};}
+    finally {applying=false;renderSaveStatus();}
+  }
+  async function applyCandidate(design) {
+    if(!context || applying) return {persisted:false,error:'照明を準備中です'};
+    applying=true;renderSaveStatus();
+    try {
+      if(changedElsewhere) throw Error('別のタブでショーが変更されました。読み直してから採用してください');
+      model.validate(design,context.scenes.map(row=>row.id));
+      const result=await parent.GAMMA_LIGHT_HOST.apply(design,context.basis);
+      if(!result.persisted) throw Error('保存できませんでした');
+      context=result.context;appliedExtras=model.clone(design);
+      hooks.applyDesign(design);synchronizePieces(context);synchronizeVenueMask(context);hooks.markApplied();
+      applyError='';draftState='none';appliedNotice='採用済み · このブラウザのショーへ保存しました';
+      try {localStorage.removeItem(key(context.showId));} catch {}
+      parent.GAMMA_WORKSPACE.captureHostHistory();hooks.renderAll();
+      return result;
+    } catch(error) {applyError=error.message;return {persisted:false,error:error.message};}
     finally {applying=false;renderSaveStatus();}
   }
   document.documentElement.dataset.gammaEmbedded='true';
@@ -227,7 +244,7 @@
   document.addEventListener('visibilitychange',()=>{if(document.hidden)suspend();});
   window.addEventListener('pagehide',saveDraft);
   window.addEventListener('beforeunload',event=>{saveDraft();if(state.dirty){event.preventDefault();event.returnValue='';}});
-  window.GAMMA_LIGHT_EDITOR=Object.freeze({open,suspend,apply,build,undo:hooks.undo,redo:hooks.redo,
+  window.GAMMA_LIGHT_EDITOR=Object.freeze({open,suspend,apply,applyCandidate,build,undo:hooks.undo,redo:hooks.redo,
     validateImport(design){model.validate(design,context.scenes.map(row=>row.id));if(JSON.stringify(design.stage)!==JSON.stringify(context.stage))throw Error('劇場寸法が異なる照明デザインです。舞台で寸法を確認してください');},
     externalChange(){changedElsewhere=true;hooks.stop();renderSaveStatus();if(state.dirty)message('別のタブでショーが更新されました。編集中の照明は保持しています');},
     status:()=>({showId:context?.showId,dirty:state.dirty,active,changedElsewhere,canUndo:Boolean(state.history.length),canRedo:Boolean(state.future.length)})});

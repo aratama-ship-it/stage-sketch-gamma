@@ -8444,6 +8444,7 @@
     venueApplyReportList: document.getElementById("stage-venue-apply-report-list"),
     venueApplyReportPrint: document.getElementById("stage-venue-apply-report-print"),
     venueApplyReportCsv: document.getElementById("stage-venue-apply-report-csv"),
+    venueApplySimple: document.getElementById("stage-venue-apply-simple"),
     venueApplyPreset: document.getElementById("stage-venue-apply-preset"),
     venueApplyPresetSelect: document.getElementById("stage-venue-apply-preset-select"),
     venueApplyPresetNote: document.getElementById("stage-venue-apply-preset-note"),
@@ -34122,7 +34123,7 @@ ${propsPlotHtml}
       `劇場を「${venueName(venue())}」から「${venueName(nextVenue)}」へ変えます。\n\n${nextVersion}を新しく作り、照明の登録 ${counts.registrations}件・配置 ${counts.placements}件・照明意図 ${counts.intents}件・ライトキュー ${counts.cues}件を消去します。演者・大道具・小道具・シーン・音源は引き継ぎ、元の${p.versionLabel || "v1"}はショー一覧に残ります。\n\n劇場を変えて新しい版を作りますか？`,
       `Change the venue from “${venueName(venue())}” to “${venueName(nextVenue)}”?\n\nA new ${nextVersion} will be created. It clears ${counts.registrations} light registrations, ${counts.placements} placements, ${counts.intents} lighting intentions, and ${counts.cues} light cues. Cast, scenery, props, scenes, and audio carry forward; the original ${p.versionLabel || "v1"} remains in All shows.\n\nCreate the new version with this venue?`,
     );
-    if (!window.confirm(warning)) {
+    if (!window.confirm(warning + sx("\n\n現在の照明が動かなくなる可能性があります。変更後に各シーンの照明を点検してください。", "\n\nExisting lighting may stop working. Check each scene after changing the venue."))) {
       renderVenueControls();
       return false;
     }
@@ -34164,6 +34165,7 @@ ${propsPlotHtml}
 
   function setVenueSize(id) {
     if (state.project.venueSize === id && !state.project.venueDims) return;
+    if(hasVenueDependentLighting(state.project) && !window.confirm("劇場の寸法が変わると、現在の照明が動かなくなる可能性があります。変更後に各シーンの照明を点検してください。寸法を変更しますか？")) {renderVenueControls();return;}
     checkpoint();
     state.project.venueSize = id;
     // 規模を選び直したら、旧データに残る手入力寸法は外す。
@@ -34701,9 +34703,18 @@ ${propsPlotHtml}
       { W: size.width, D: size.depth, H: size.height || 8 }));
   }
 
+  function simpleDesignForProject(project) {
+    const selected=VENUES.byId(project.venue),size=VENUES.sizeById(selected,project.venueSize);
+    const stage={W:size.width,D:size.depth,H:size.height||8};
+    const venueType=selected.lightingPresetBasis?.venueId||selected.id;
+    const design=window.GAMMA_LIGHT_MODEL.empty({title:project.title,stage,
+      scenes:project.scenes.filter(s=>s.kind==="scene").map(s=>({id:s.id,name:s.title}))});
+    design.rig=window.GAMMA_SIMPLE_LIGHT_MODEL.createRig(stage,venueType);
+    return design;
+  }
   function setVenueApplyChoice(choice) {
-    venueApplyChoice = ["preset", "manual", "file", "none"].includes(choice) ? choice : "none";
-    [[els.venueApplyPreset, "preset"], [els.venueApplyManual, "manual"], [els.venueApplyFile, "file"], [els.venueApplyNone, "none"]]
+    venueApplyChoice = ["simple", "preset", "manual", "file", "none"].includes(choice) ? choice : "none";
+    [[els.venueApplySimple, "simple"], [els.venueApplyPreset, "preset"], [els.venueApplyManual, "manual"], [els.venueApplyFile, "file"], [els.venueApplyNone, "none"]]
       .forEach(([button, value]) => {
         if (!button) return;
         const selected = venueApplyChoice === value;
@@ -34918,6 +34929,11 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (els.venueApplySummary) {
       els.venueApplySummary.textContent = `「${saved.label || "この劇場"}」をショーへ反映します。照明機材の始め方を選んでください。`;
     }
+    if(hasVenueDependentLighting(state.project) && els.venueApplySummary) els.venueApplySummary.textContent += " 劇場の形や寸法が変わると、現在の照明が動かなくなる可能性があります。変更後に各シーンの照明を点検してください。";
+    if(els.venueApplySimple) {
+      try {window.GAMMA_SIMPLE_LIGHT_MODEL.validateStage((()=>{const z=VENUES.sizeById(VENUES.byId(saved.id),venueApplySizeId(saved));return {W:z.width,D:z.depth,H:z.height||8};})(),saved.lightingPresetBasis?.venueId||saved.id);els.venueApplySimple.disabled=false;}
+      catch {els.venueApplySimple.disabled=true;}
+    }
     renderVenueSwitchReport(saved);   // G-A: 壊れるシーンを先に見せる（反映は止めない）
     const versioned = venueApplyNeedsVersion(saved);
     if (els.venueApplyVersion) els.venueApplyVersion.hidden = false;
@@ -34947,7 +34963,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         : `「${pendingLightingFile.fileName}」はこの劇場の舞台寸法と一致しません。`;
     }
     // 劇場設定で選んだ方法を引き継ぐ。候補の読み込みで本人の選択を変えない。
-    setVenueApplyChoice(lightingSource === "preset" ? "preset" : lightingSource === "saved" ? "file" : "manual");
+    setVenueApplyChoice(!hasVenueDependentLighting(state.project) && !els.venueApplySimple?.disabled ? "simple" : lightingSource === "preset" ? "preset" : lightingSource === "saved" ? "file" : "manual");
     try {
       const catalog = await loadLightingCatalog();
       if (request !== venueApplyRequest || pendingVenueApply !== detail) return;
@@ -35044,7 +35060,18 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         ? `劇場を「${saved.label}」へ変更し、照明機材を選び直すため`
         : project.branchReason;
       clearVenueDependentLighting(project);
-      if (choice === "preset") {
+      if (choice === "simple") {
+        project.lightingDesign = simpleDesignForProject(project);
+        for(const row of project.scenes) for(const item of row.sceneAlternatives?.items||[]) {
+          const oldLightIds=new Set((current.sets||[]).filter(x=>x.kind==="light").map(x=>x.id));
+          item.content.pieces=item.content.pieces.filter(piece=>piece.type!=="light"&&!oldLightIds.has(piece.setId));
+          item.content.lightingIntent=null;
+          for(const id of oldLightIds) if(item.content.stashed) delete item.content.stashed[id];
+          item.cues=item.cues.filter(q=>!(q.kind==="timeline"&&q.cueType==="light"));
+          item.lighting={native:projectIoClone(project.lightingDesign.scenes.find(s=>s.id===row.id)||null)};
+        }
+        sceneAlternatives?.restore(project,{reconcile:false});
+      } else if (choice === "preset") {
         const catalog = await loadLightingCatalog();
         if (detail !== pendingVenueApply) return;
         const preset = catalog.presets.find((item) => item.id === els.venueApplyPresetSelect?.value
@@ -37855,6 +37882,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   window.addEventListener("stage-venue-apply-requested", (event) => {
     openVenueApplyModal(event.detail);
   });
+  if (els.venueApplySimple) els.venueApplySimple.addEventListener("click", () => setVenueApplyChoice("simple"));
   if (els.venueApplyPreset) els.venueApplyPreset.addEventListener("click", () => setVenueApplyChoice("preset"));
   if (els.venueApplyManual) els.venueApplyManual.addEventListener("click", () => setVenueApplyChoice("manual"));
   if (els.venueApplyFile) els.venueApplyFile.addEventListener("click", () => setVenueApplyChoice("file"));
@@ -42318,6 +42346,8 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       };
     });
     return { showId: state.project.id, title: state.project.title, stage, scenes, venueMask,
+      venueType: currentVenue.lightingPresetBasis?.venueId || venueV2?.lightingPresetBasis?.venueId || currentVenue.id,
+      existingLighting: hasVenueDependentLighting(state.project),
       activeSceneId: state.project.activeSceneId, design: state.project.lightingDesign ? projectIoClone(state.project.lightingDesign) : null,
       basis: gammaBasisFingerprint(JSON.stringify({ id: state.project.id, scenes: scenes.map(row => row.id).sort(), stage,
         venueMask, design: state.project.lightingDesign || null })),
@@ -42331,6 +42361,28 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   }
   window.GAMMA_LIGHT_HOST = Object.freeze({
     context: gammaLightingContext,
+    async beginSimpleCopy(design, basis) {
+      const current=gammaLightingContext();
+      if(current.readOnly || gammaStorageChanged || current.basis!==basis) throw Error("ショーが更新されています。元のショーを確認してから複製してください");
+      const model=window.GAMMA_LIGHT_MODEL, simple=window.GAMMA_SIMPLE_LIGHT_MODEL;
+      const checked=model.validate(design,current.scenes.map(row=>row.id));
+      if(!simple.isCommon(checked.rig,current.stage,current.venueType)) throw Error("共通セットの配置を確認できません");
+      const original=state.project;
+      const copy=sceneAlternatives?sceneAlternatives.projectCopy(original):projectIoClone(original);
+      const oldLightIds=new Set((copy.sets||[]).filter(item=>item.kind==="light").map(item=>item.id));
+      copy.id=rid("proj");copy.parentVersionId=original.id;copy.createdAt=nowIso();
+      copy.versionLabel=nextVersionLabel(original.versionLabel);copy.branchReason="照明かんたんモードの共通24灯セットを導入";
+      clearVenueDependentLighting(copy);copy.lightingDesign=checked;
+      for(const row of copy.scenes) for(const item of row.sceneAlternatives?.items||[]) {
+        item.content.pieces=item.content.pieces.filter(piece=>piece.type!=="light"&&!oldLightIds.has(piece.setId));
+        item.content.lightingIntent=null;item.cues=item.cues.filter(q=>!(q.kind==="timeline"&&q.cueType==="light"));
+        item.lighting={native:projectIoClone(checked.scenes.find(s=>s.id===row.id)||null)};
+      }
+      sceneAlternatives?.restore(copy,{reconcile:false});
+      const next={...state,project:copy};
+      if(!await applyLoadedState(next,"共通24灯セットのショーを複製しました。元の版はショー一覧に残っています")) throw Error("複製を保存できませんでした。元のショーを維持しています");
+      return gammaLightingContext();
+    },
     async apply(design, basis) {
       const current = gammaLightingContext();
       if (gammaStorageChanged) throw new Error("別のタブでショーが更新されました。編集中の照明を控えてから読み直してください");

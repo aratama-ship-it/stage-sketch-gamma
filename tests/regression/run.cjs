@@ -34,7 +34,7 @@ async function serve() {
     server.listen(0,'127.0.0.1',()=>resolve('http://127.0.0.1:'+server.address().port+'/stage.html'));
   });
 }
-function suiteFingerprint() {return hash(['run.cjs','report.cjs','browser-cases.cjs','browser-helpers.cjs'].map(name=>name+':'+hash(fs.readFileSync(path.join(__dirname,name)))).join('\n'));}
+function suiteFingerprint() {return hash(['run.cjs','report.cjs','browser-cases.cjs','browser-helpers.cjs','simple-lighting-cases.cjs'].map(name=>name+':'+hash(fs.readFileSync(path.join(__dirname,name)))).join('\n'));}
 const manual=[
 {id:'manual.safari',title:'実Safariで音源を保存・再起動・再生できる',scene:'H-3',steps:'合成音源を読み込み、再起動後に再生・停止する。',expected:'元の場面と音源の対応が保たれ、実際に聞こえる。'},
 {id:'manual.ipad',title:'iPad実機とホーム画面版で主要操作ができる',scene:'A-5 / C-1 / F-1',steps:'実機で駒の選択、パネル操作、照明の適用、保存・再起動を試す。',expected:'操作先が隠れず、保存内容を再開できる。'},

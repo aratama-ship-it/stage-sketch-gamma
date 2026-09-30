@@ -1,0 +1,30 @@
+/* The shared warm/blue editor skins provide the surfaces; simple controls add accessible text. */
+:root{--simple-text:#efe7d6;--simple-muted:#b9ad97;--simple-accent:#dec584;--simple-gap:16px;--simple-space:24px;--simple-tap:44px;--simple-border:#908574;--simple-canvas-height:430px}
+.simple-mode-choice{display:flex;align-items:center;gap:8px;flex:none;padding:8px 16px;border-bottom:1px solid var(--simple-border);color:var(--simple-text)}
+.simple-mode-choice button,.simple-mode-panel button,.simple-mode-panel select{min-height:var(--simple-tap);min-width:var(--simple-tap);padding:8px 12px;font:inherit;border:1px solid var(--simple-border);background:var(--desk-2);color:var(--simple-text);cursor:pointer}
+.simple-mode-choice button[aria-pressed=true],.simple-mode-panel button[aria-pressed=true]{border-color:var(--simple-accent);box-shadow:inset 0 0 0 1px var(--simple-accent)}
+.simple-mode-panel{padding:var(--simple-gap);color:var(--simple-text);overflow:auto;min-height:0;line-height:1.8}
+.simple-light-active .body{overflow:auto;display:block}
+.simple-light-active .body>:not(.simple-mode-choice):not(.simple-mode-panel){display:none!important}
+.simple-mode-panel h2{font-size:21px;margin:0}.simple-mode-panel h3{font-size:17px;margin:0 0 12px}
+.simple-mode-panel p{font-size:14px;margin:12px 0;color:var(--simple-muted)}
+.simple-heading,.simple-heading>div,.simple-catalog-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--simple-gap)}
+.simple-heading label{display:flex;align-items:center;gap:8px}.simple-heading select{max-width:280px}
+.simple-workbench{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:var(--simple-space);margin:16px 0 24px}
+#simple-front{width:100%;max-height:var(--simple-canvas-height);object-fit:contain;display:block;background:var(--desk);border:1px solid var(--simple-border)}
+.simple-browser{display:flex;align-items:center;gap:var(--simple-gap);margin-top:12px}.simple-browser>div{text-align:center;flex:1}
+.simple-browser strong{display:block;font-size:18px}.simple-browser span{color:var(--simple-muted);font-size:14px}
+.simple-actions{display:flex;gap:8px;flex-wrap:wrap}.simple-actions #simple-adopt{background:var(--simple-accent);color:#191512;font-weight:650}
+.simple-mode-panel button:disabled{opacity:.6;cursor:default}.simple-controls{border-left:1px solid var(--simple-border);padding-left:var(--simple-gap)}
+.simple-controls label{display:block;margin:12px 0}.simple-controls select{display:block;width:100%}.simple-controls input[type=range]{width:100%;min-height:var(--simple-tap);accent-color:var(--simple-accent)}
+.simple-controls output{float:right;color:var(--simple-accent)}.simple-controls p{font-size:14px}
+#simple-status{color:var(--simple-text);border-top:1px solid var(--simple-border);padding-top:12px}
+#simple-warning:not(:empty){border-left:3px solid var(--simple-accent);padding-left:12px;color:var(--simple-text)}
+.simple-catalog-head{margin-bottom:12px}.simple-preset-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.simple-mode-panel .simple-preset{text-align:left;padding:8px;min-width:0;white-space:normal}
+.simple-preset canvas{display:block;width:100%;aspect-ratio:1000/560;object-fit:contain}
+.simple-preset span{display:block;font-size:14px;margin-top:8px}
+.simple-mode-panel button:focus-visible,.simple-mode-choice button:focus-visible,.simple-mode-panel select:focus-visible,.simple-mode-panel input:focus-visible{outline:3px solid var(--simple-accent);outline-offset:2px}
+@media(max-width:1000px){.simple-workbench{grid-template-columns:1fr}.simple-controls{border-left:0;border-top:1px solid var(--simple-border);padding:16px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:16px}.simple-controls h3,.simple-controls p{grid-column:1/-1}.simple-preset-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.simple-mode-panel{padding:12px}.simple-heading label{display:block;width:100%}.simple-heading select{max-width:100%;width:100%}.simple-heading>div{width:100%}.simple-controls{display:block}.simple-preset-grid{grid-template-columns:1fr 1fr;gap:8px}.simple-actions #simple-adopt{width:100%}.simple-actions button{flex:1}.simple-browser strong{font-size:16px}}
+@media(prefers-reduced-motion:reduce){.simple-mode-panel *{animation:none!important;transition:none!important}}

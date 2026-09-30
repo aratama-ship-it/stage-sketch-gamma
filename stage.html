@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.65">
+<meta name="stage-sketch-gamma-version" content="v0.2.66">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
@@ -69,7 +69,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.65</span>
+              <span class="stage-app-version">0.2.66</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -2606,6 +2606,14 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0266-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0266-title">v0.2.66</h3><time datetime="2026-09-30">2026-09-30</time></header>
+      <ul>
+        <li>照明デザインに「かんたん」を追加。正面図の矢印と12種のグリッドで明かりを試し、現在のシーン・LXキューへ採用できます。色・強さ・スポットの大きさ・切替時間を調整でき、人物を対象にしたスポットと暗転・採用の取り消しに対応します。</li>
+        <li>ムービング24灯（スポット8・ウォッシュ16）をトラス2本・フロント・左右SSへ配置する共通セットを追加。標準・拡張プロセニアムの寸法に適応します。既存の仕込みがあるショーは原本を残して複製し、共通セットを導入します。</li>
+        <li>劇場の形や寸法を変更する際に、照明が動かなくなる可能性を案内します。人物スポットはそのシーンの配置を狙い、人物の移動後は再照準を案内します。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0265-title">
       <header class="stage-release-entry-head">
         <h3 id="stage-release-v0265-title">v0.2.65</h3>
@@ -3712,7 +3720,11 @@
       <legend>照明機材をどうしますか</legend>
       <!-- 2026-09-17 本人指示: 3択（導入する／自分で配置／導入しない）を2択にする。
            後ろ2つは「自動で組まない」という同じ選択なので1つにまとめた。 -->
-      <button type="button" class="stage-venue-apply-choice is-selected" id="stage-venue-apply-preset" aria-pressed="true">
+      <button type="button" class="stage-venue-apply-choice" id="stage-venue-apply-simple" aria-pressed="false">
+        <strong>かんたん照明の共通24灯セット</strong>
+        <small>スポット8灯・ウォッシュ16灯。トラス2本・フロント・両側SSを劇場寸法に合わせます。初版は標準・拡張プロセニアムです。</small>
+      </button>
+      <button type="button" class="stage-venue-apply-choice is-selected" id="stage-venue-apply-preset"  aria-pressed="true">
         <strong>照明機材を自動で組む（プリセット）</strong>
         <small>選んだ型の照明機材を、全消灯の状態で配置します。</small>
       </button>
@@ -3902,7 +3914,7 @@
 <script src="stage-samples/index.js?v=2026092402"></script>
 <script src="stage-samples/romeo-juliet-cued.js?v=2026092435"></script>
 <script src="stage-samples/romeo-juliet-second.js?v=20260926-feedback40"></script>
-<script src="stage-samples/feature-test-show.js?v=20260930-merge1"></script>
+<script src="stage-samples/feature-test-show.js?v=20260930-simple1"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
 <script src="stage-machinery.js?v=20260925-ui1"></script>
@@ -3943,7 +3955,8 @@
 <script src="gamma-ui-i18n.ko.js?v=20260929-ko60"></script>
 <script src="stage-point-source.js?v=20260927-point43"></script>
 <script src="stage-save-lifecycle.js?v=20260927-guard45"></script>
-<script src="stage-sketch.js?v=20260930-transition1"></script>
+<script src="light-design/simple-lighting-model.js?v=20260930-simple1"></script>
+<script src="stage-sketch.js?v=20260930-simple1"></script>
 <script src="stage-scene-alternatives-ui.js?v=20260926-release32"></script>
 <script src="gamma-formation.js?v=20260926-feedback40"></script>
 <script src="stage-vox-panel.js?v=2026092432"></script>
@@ -3954,7 +3967,7 @@
 <script src="stage-usage.js?v=2026091501"></script>
 <script src="stage-venue-curtains.js?v=20260926-feedback40"></script>
 <script src="stage-venue-editor.js?v=20260930-theater11"></script>
-<script src="gamma-workspace.js?v=20260930-merge1"></script>
+<script src="gamma-workspace.js?v=20260930-simple1"></script>
 <script src="gamma-mobile.js?v=2026092202"></script>
 <script src="stage-venue-preview.js?v=20260930-theater7"></script>
 <script src="stage-venue-viewpoints.js?v=20260930-theater1"></script>
