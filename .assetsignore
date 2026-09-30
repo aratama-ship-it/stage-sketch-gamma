@@ -1,4 +1,7 @@
 # Worker assets come from the repository root. Never upload local credentials or Wrangler state.
+/.git
+/.git/**
+/.gitignore
 /.wrangler/**
 /tools/**
 /.dev.vars*
