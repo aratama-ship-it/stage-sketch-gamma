@@ -9,7 +9,8 @@ const requireFromRoot = createRequire(path.join(root, 'package.json'));
 const { chromium, webkit } = requireFromRoot('./tests/regression/node_modules/playwright');
 const baseline = JSON.parse(fs.readFileSync(path.join(__dirname, 'icon-size-baseline-2026-10-01.json'), 'utf8'));
 const mime = { '.css': 'text/css', '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
-const excluded = new Set(['.stage-cast-status.is-on']);
+// 状態札（文字）と、#5 で PC 表示では隠す右上の Q シート入口（iPad式でだけ出る）は絵の倍率検査の対象外
+const excluded = new Set(['.stage-cast-status.is-on', '#stage-cue-sheet-open']);
 const canvasIcons = new Set(['#stage-front-note', '#stage-costume-toggle', '.stage-canvas-close', '#stage-plan-route', '#stage-plan-derive-route', '#stage-plan-note']);
 
 function pair(value) { return value.replace(/^font /, '').split('x').map((part) => Number.parseFloat(part)); }
