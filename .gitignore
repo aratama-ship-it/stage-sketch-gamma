@@ -244,6 +244,9 @@ public-dist/
 !/stage-venues.js
 !/stage.html
 !/style.css
+!/download/
+!/download/index.html
+!/native-latest.json
 
 # Public runtime only; internal development material stays local.
 /AGENTS.md
@@ -405,3 +408,4 @@ public-dist/
 !/tests/regression/simple-lighting-cases.cjs
 !/tests/wing-leg-count.test.mjs
 !/tests/wing-leg-count-browser.cjs
+!/tests/native-update-download-browser.cjs

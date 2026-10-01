@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ja" data-stage-skin="brown">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>舞台スケッチγ Mac版をダウンロード</title>
+  <link rel="stylesheet" href="../gamma-ui-tokens.css">
+  <style>
+    :root {
+      --milk: #efe7d6;
+      --milk-dim: #b8ad9b;
+      --brass: #c7a96b;
+      --rust: #9d4424;
+      --download-max: 920px;
+    }
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; background: var(--desk); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--milk);
+      background:
+        linear-gradient(90deg, transparent 0 23px, rgba(199, 169, 107, .14) 23px 24px, transparent 24px calc(100% - 24px), rgba(199, 169, 107, .14) calc(100% - 24px) calc(100% - 23px), transparent calc(100% - 23px)),
+        var(--desk);
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      font-size: 16px;
+      line-height: 1.85;
+    }
+    a { color: var(--milk); text-underline-offset: .22em; }
+    a:focus-visible { outline: 2px solid var(--brass); outline-offset: 4px; }
+    .download-shell { width: min(calc(100% - 48px), var(--download-max)); margin: 0 auto; padding: 48px 0 64px; }
+    .download-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: end; padding-bottom: 24px; border-bottom: 1px solid var(--brass); }
+    .download-logo { display: block; width: min(100%, 430px); height: auto; }
+    .download-kicker { margin: 14px 0 0; color: var(--milk-dim); font-size: 12px; letter-spacing: .16em; }
+    .download-version { margin: 0; color: var(--brass); font-size: 14px; letter-spacing: .08em; text-align: right; }
+    h1 { max-width: 18em; margin: 44px 0 12px; font-size: clamp(28px, 5vw, 46px); line-height: 1.28; letter-spacing: .03em; }
+    .download-lead { max-width: 42em; margin: 0; color: var(--milk-dim); }
+    .download-action { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; margin-top: 28px; padding: 10px 20px; border: 1px solid #c25d37; border-radius: var(--radius-sm); color: var(--milk); background: var(--rust); font-weight: 700; text-decoration: none; }
+    .download-action:hover { background: #b2502d; }
+    .download-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 48px; margin-top: 56px; }
+    .download-section { border-top: 1px solid var(--line-dark); padding-top: 18px; }
+    h2 { margin: 0 0 14px; color: var(--brass); font-size: 18px; letter-spacing: .08em; }
+    ol { margin: 0; padding-left: 1.5em; }
+    li + li { margin-top: 10px; }
+    .download-note { margin: 0; color: var(--milk-dim); font-size: 14px; }
+    .download-foot { display: flex; justify-content: space-between; gap: 24px; align-items: center; margin-top: 52px; padding-top: 20px; border-top: 1px solid var(--line-dark); }
+    .download-foot > a { display: inline-flex; min-height: 44px; align-items: center; }
+    .download-foot p { margin: 0; color: var(--milk-dim); font-size: 13px; }
+    @media (max-width: 680px) {
+      body { background: var(--desk); }
+      .download-shell { width: min(calc(100% - 32px), var(--download-max)); padding-top: 28px; }
+      .download-head { grid-template-columns: 1fr; gap: 14px; }
+      .download-version { text-align: left; }
+      h1 { margin-top: 32px; }
+      .download-grid { grid-template-columns: 1fr; gap: 36px; margin-top: 44px; }
+      .download-action { width: 100%; }
+      .download-foot { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main class="download-shell">
+    <header class="download-head">
+      <div>
+        <img class="download-logo" src="../assets/brand/logo-jp-gamma-inline-white.svg" alt="舞台スケッチγ">
+        <p class="download-kicker">MAC APP DOWNLOAD</p>
+      </div>
+      <p class="download-version" id="native-version" aria-live="polite">最新版は GitHub Releases でご確認ください。</p>
+    </header>
+
+    <h1>Mac版を新しい舞台へ入れ替える</h1>
+    <p class="download-lead">新しいアプリをダウンロードし、いま使っている「舞台スケッチγ.app」と置き換えます。</p>
+    <a class="download-action" href="https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest">ダウンロード（GitHub Releases）</a>
+
+    <div class="download-grid">
+      <section class="download-section" aria-labelledby="install-heading">
+        <h2 id="install-heading">導入手順</h2>
+        <ol>
+          <li>GitHub Releasesから最新のzipをダウンロードします。</li>
+          <li>zipを解凍します。</li>
+          <li>いまの「舞台スケッチγ.app」を、新しいアプリで置き換えます。置き場所は「アプリケーション」またはデスクトップです。</li>
+          <li>初回だけ、アプリを右クリックして「開く」を選びます。</li>
+        </ol>
+      </section>
+
+      <section class="download-section" aria-labelledby="storage-heading">
+        <h2 id="storage-heading">保存データについて</h2>
+        <p class="download-note">アプリ本体を置き換えても、ショーの保存データはアプリとは別のWebView保存領域に残ります。同じ舞台スケッチγ Mac版として更新するかぎり、置き換えだけで保存領域は削除されません。</p>
+      </section>
+    </div>
+
+    <footer class="download-foot">
+      <a href="../stage.html">ブラウザ版はこちら</a>
+      <p>署名・公証なしの配布版は、初回に右クリック「開く」が必要です。</p>
+    </footer>
+  </main>
+  <script>
+    fetch('../native-latest.json', { cache: 'no-store' })
+      .then((response) => {
+        if (!response.ok) throw new Error('version fetch failed');
+        return response.json();
+      })
+      .then((latest) => {
+        if (typeof latest.version !== 'string' || !/^\d+(?:\.\d+)*$/.test(latest.version)) return;
+        document.getElementById('native-version').textContent = `Mac版 最新 ${latest.version}`;
+      })
+      .catch(() => {});
+  </script>
+</body>
+</html>
