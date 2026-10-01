@@ -285,7 +285,7 @@ cast.push(helpMember);
 helpScene.pieces.push({ ...helpScene.pieces[0], id: "ft-piece-help-owner", castId: helpMember.id, name: "固定テスト・共通", u: 0.35, v: 0.12, pose: HELP_POSES[0] || helpScene.pieces[0].pose });
 helpNext.pieces.push({ ...helpNext.pieces[0], id: "ft-piece-help-owner-next", castId: helpMember.id, name: "固定テスト・共通", u: 0.35, v: 0.12, pose: HELP_POSES[1] || helpNext.pieces[0].pose });
 helpScene.pieces.push({ ...helpScene.pieces[0], id: "ft-piece-help-local", castId: null, name: "固定テスト・この駒", locked: true, u: 0.65, v: 0.12, pose: HELP_POSES[2] || helpScene.pieces[0].pose });
-helpScene.note += " D1確認: 固定テスト・共通はA-2と同じ登録の固定。固定テスト・この駒はこのシーンのみ。使い方検索の『動かせないとき』から解除し、取り消しと再読込を確かめる。レイアウト確認: 幅600／900／1300／1700pxで、iPad式／一列／二列／三列へ段階的に切り替わり、幅を戻すと選んだ表示へ復帰する。600pxのiPad式では上部のQシート入口、PC表示では作業タブのQシートを使う。";
+helpScene.note += " D1確認: 固定テスト・共通はA-2と同じ登録の固定。固定テスト・この駒はこのシーンのみ。使い方検索の『動かせないとき』から解除し、取り消しと再読込を確かめる。レイアウト確認: 幅600／900／1200／1700pxで、iPad式／一列／二列／三列へ段階的に切り替わり、幅を戻すと選んだ表示へ復帰する。600pxのiPad式では上部のQシート入口、PC表示では作業タブのQシートを使う。";
 helpScene.note += " D1確認: 固定テスト・共通はA-2と同じ登録の固定。固定テスト・この駒はこのシーンのみ。使い方検索の『動かせないとき』から解除し、取り消しと再読込を確かめる。";
 helpScene.note += " UI確認: 演者・小道具の行、正面図・平面図の帯、タイムライン、各パネルのアイコンだけの操作へカーソルを合わせ、説明の吹き出しが出ること。文字の操作には出ず、環境設定の「アイコンの説明」をOFFにすると出ないこと。";
 {

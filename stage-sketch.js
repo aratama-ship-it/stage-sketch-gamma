@@ -14,7 +14,7 @@
 const STAGE_LAYOUT_LANES_MODEL = (() => {
   "use strict";
 
-  const DEFAULT_THRESHOLDS = Object.freeze([700, 1120, 1500]);
+  const DEFAULT_THRESHOLDS = Object.freeze([700, 1120, 1300]);
   const EXIT_PADDING = 40;
   const STORAGE_KEYS = Object.freeze({
     thresholds: "gamma:shosai-stage-layout-thresholds-v1",

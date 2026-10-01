@@ -21,9 +21,9 @@ test("幅と選択から実効レーン数を決め、選択値は狭い方式�
     [900, "split", "right", "one", 1],
     [1119, "triple", "right", "one", 1],
     [1120, "triple", "right", "two", 2],
-    [1300, "split", "left", "two", 2],
-    [1499, "triple", "left", "two", 2],
-    [1500, "triple", "right", "three", 3],
+    [1200, "split", "left", "two", 2],
+    [1299, "triple", "left", "two", 2],
+    [1300, "triple", "right", "three", 3],
     [1700, "single", "right", "one", 1],
   ];
   rows.forEach(([width, selectedMode, selectedSide, layout, lanes]) => {

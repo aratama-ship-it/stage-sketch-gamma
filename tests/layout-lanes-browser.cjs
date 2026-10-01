@@ -77,7 +77,7 @@ async function waitForEditor(page) {
           return state;
         }
 
-        assert.equal((await resize(1300, 'two')).loads, 1);
+        assert.equal((await resize(1200, 'two')).loads, 1);
         const boxes = await page.evaluate(() => Object.fromEntries(['stage-col-left', 'stage-col-center', 'stage-col-right'].map((id) => {
           const rect = document.getElementById(id).getBoundingClientRect();
           return [id, { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, width: rect.width }];
@@ -94,7 +94,7 @@ async function waitForEditor(page) {
         assert.equal(backToOne.loads, 3, `${name}: one reload leaving iPad shell`);
         assert.equal(backToOne.tablet, false);
         assert.equal(await page.locator('#stage-cue-sheet-open').isVisible(), false);
-        assert.equal((await resize(1300, 'two')).loads, 3);
+        assert.equal((await resize(1200, 'two')).loads, 3);
         assert.equal((await resize(1700, 'three')).loads, 3);
         await page.locator('#stage-panels-toggle').click();
         const tripleChoice = page.locator('.stage-panel-visibility-layout button').nth(1);
