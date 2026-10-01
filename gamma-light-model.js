@@ -13,12 +13,170 @@
     if (!Array.isArray(rows) || rows.some(row => !object(row) || !idOK(row.id)) || new Set(rows.map(row=>row.id)).size !== rows.length) throw Error(label+'のIDが不正、または重複しています');
     return new Set(rows.map(row=>row.id));
   }
+  /* Optional position names. They never participate in fixtureWorld or cue aiming. */
+  const positionKinds = Object.freeze({ceiling:'シーリング', 'front-side':'フロントサイド', gallery:'ギャラリー', overhead:'吊り', ss:'SS', floor:'転がし', cyc:'ホリゾント', custom:'その他', 'front-generic':'前明かり（未分類）'});
+  const positionAreas = Object.freeze({'stage-side':'舞台側方', 'stage-rear':'舞台後方', 'audience-ceiling':'客席天井', 'audience-side':'客席側面', 'stage-overhead':'舞台上方', 'stage-floor':'舞台床', other:'その他', unspecified:'未指定'});
+  const positionSides = Object.freeze({center:'中央', shimote:'下手', kamite:'上手', unspecified:'未指定'});
+  const positionSupports = Object.freeze({truss:'トラス', batten:'バトン', bridge:'ブリッジ', stand:'スタンド', rail:'レール', floor:'床', custom:'その他'});
+  const positionEvidence = Object.freeze({virtual:'仮想', unverified:'未確認', documented:'資料と照合済み（現況未確認）'});
+  function validatePositionNames(rig) {
+    if (rig.positions !== undefined) {
+      ids(rig.positions, '設置位置');
+      if (rig.positions.length > 200) throw Error('設置位置は200か所以内にしてください');
+      for (const p of rig.positions) {
+        if (typeof p.name !== 'string' || !p.name.trim() || p.name.length > 120) throw Error('設置位置の名前は1〜120文字にしてください');
+        for (const key of ['kind','area','side','levelLabel','supportType']) {
+          if (p[key] !== undefined && p[key] !== null && (typeof p[key] !== 'string' || p[key].length > 80)) throw Error('設置位置の分類・階の表記を確認してください');
+        }
+        if (p.aliases !== undefined && (!Array.isArray(p.aliases) || p.aliases.length > 16 || p.aliases.some(a=>typeof a !== 'string' || !a.trim() || a.length > 80))) throw Error('設置位置の略称は各1〜80文字、16個以内にしてください');
+        if (p.evidence !== undefined && (!object(p.evidence) || (p.evidence.status !== undefined && (typeof p.evidence.status !== 'string' || p.evidence.status.length > 80)))) throw Error('設置位置の確認状態を確認してください');
+        if (p.source !== undefined && !object(p.source)) throw Error('設置位置の資料の構造を確認してください');
+      }
+    }
+    for (const f of rig.fixtures || []) if (f.positionRef !== undefined && f.positionRef !== null && !idOK(f.positionRef)) throw Error('灯体の設置位置名の参照を確認してください');
+  }
+  const positionList = rig => Array.isArray(rig?.positions) ? rig.positions : [];
+  const positionRecord = (rig, id) => positionList(rig).find(p=>p.id===id) || null;
+  function positionCaption(p) {
+    const detail = [...(p.aliases || []).slice(0,1), p.levelLabel].filter(v=>v && v!==p.name && !p.name.includes(v));
+    return p.name + (detail.length ? '（'+detail.join('・')+'）' : '');
+  }
+  function positionInfo(rig, fixture) {
+    const ref = fixture?.positionRef;
+    if (!ref) return {ref:null, exists:false, text:'未登録'};
+    const p = positionRecord(rig, ref);
+    return {ref, exists:!!p, text:p ? positionCaption(p) : '参照先が見つかりません：'+ref, position:p};
+  }
+  function updatePosition(rig, record) {
+    const next=clone(rig), old=positionRecord(next,record.id);
+    const p={...(old || {}),...clone(record)};
+    next.positions=old ? positionList(next).map(row=>row.id===p.id?p:row) : [...positionList(next),p];
+    validatePositionNames(next); return next;
+  }
+  function assignPosition(rig, fixtureIds, positionId) {
+    const next=clone(rig), chosen=new Set(fixtureIds);
+    if (positionId && !positionRecord(next,positionId)) throw Error('登録済みの設置位置名を選んでください');
+    if (!chosen.size || [...chosen].some(id=>!next.fixtures.some(f=>f.id===id))) throw Error('関連付ける灯体を選んでください');
+    for (const f of next.fixtures) if(chosen.has(f.id)) {if(positionId)f.positionRef=positionId;else delete f.positionRef;}
+    validatePositionNames(next);return next;
+  }
+  function removePosition(rig,id) {
+    if(!positionRecord(rig,id))throw Error('設置位置名が見つかりません');
+    if((rig.fixtures||[]).some(f=>f.mount?.type==='position'&&f.mount.positionId===id))throw Error('この区間に灯体があります。元の取り付けへ戻してから登録を解除してください');
+    const next=clone(rig);next.positions=positionList(next).filter(p=>p.id!==id);
+    for(const f of next.fixtures)if(f.positionRef===id)delete f.positionRef;
+    return next;
+  }
+  function prosceniumPositionNames() {
+    return [
+      ['pos-truss-back','奥トラス','overhead','stage-overhead','center','truss',''],
+      ['pos-truss-front','手前トラス','overhead','stage-overhead','center','truss',''],
+      ['pos-cl-1','第1シーリング','ceiling','audience-ceiling','center',null,'1CL'],
+      ['pos-ss-shimote','下手SS','ss','stage-side','shimote','stand',''],
+      ['pos-ss-kamite','上手SS','ss','stage-side','kamite','stand',''],
+      ['pos-fr-shimote','下手フロント','front-side','audience-side','shimote',null,'下手FR'],
+      ['pos-fr-kamite','上手フロント','front-side','audience-side','kamite',null,'上手FR'],
+      ['pos-gal-shimote','下手ギャラリー','gallery','stage-side','shimote','rail','下手GAL'],
+      ['pos-gal-kamite','上手ギャラリー','gallery','stage-side','kamite','rail','上手GAL'],
+      ['pos-gal-rear','奥ギャラリー','gallery','stage-rear','center','rail','奥GAL'],
+    ].map(([id,name,kind,area,side,supportType,alias])=>({id,name,kind,area,side,supportType,aliases:alias?[alias]:[],levelLabel:kind==='gallery'?'1層':'',evidence:{status:'virtual'},source:{label:'舞台スケッチ内部プロセニアム',revision:'proscenium-names-v1'}}));
+  }
+  function withProsceniumPositionNames(rig, assignCommon=false) {
+    const next=clone(rig), existing=new Set(positionList(next).map(p=>p.id));
+    next.positions=[...positionList(next),...prosceniumPositionNames().filter(p=>!existing.has(p.id))];
+    if(assignCommon)for(const f of next.fixtures){
+      const ref=f.simpleRole==='back'?'pos-truss-back':f.simpleRole==='front'?'pos-truss-front':f.simpleRole==='front-light'?'pos-cl-1':f.simpleRole==='side'?'pos-ss-'+f.mount.side:null;
+      if(ref && !f.positionRef)f.positionRef=ref;
+    }
+    validatePositionNames(next);return next;
+  }
+  const positionNames=Object.freeze({kinds:positionKinds,areas:positionAreas,sides:positionSides,supports:positionSupports,evidence:positionEvidence,
+    validate:validatePositionNames,list:positionList,record:positionRecord,caption:positionCaption,info:positionInfo,
+    update:updatePosition,assign:assignPosition,remove:removePosition,proscenium:prosceniumPositionNames,withProscenium:withProsceniumPositionNames});
+
+  /* Physical supports are separate from their human-facing name references. */
+  const positionLimits={W:[4,24],D:[3,16],H:[3,14]};
+  function layoutDims(d) {
+    if(!object(d)||Object.entries(positionLimits).some(([k,[a,b]])=>!finiteBetween(d[k],a,b)))throw Error('設置区間の対応寸法は間口4〜24m・奥行3〜16m・高さ3〜14mです');
+  }
+  function geometryOK(g) {
+    if(!object(g)||g.kind!=='segment')throw Error('設置区間の形を確認してください');
+    for(const p of [g.a,g.b]){
+      if(!object(p))throw Error('設置区間の端点がありません');
+      for(const [k,v] of Object.entries(p))if(!['xW','xM','yD','yM','zH','zM'].includes(k)||!finiteBetween(v,-30,30))throw Error('設置区間の座標を確認してください');
+    }
+  }
+  const layoutPoint=(p,d)=>({x:(p.xW||0)*d.W+(p.xM||0),y:(p.yD||0)*d.D+(p.yM||0),z:(p.zH||0)*d.H+(p.zM||0)});
+  function layoutSegment(rig,id,dims){
+    layoutDims(dims);const p=positionRecord(rig,id);
+    if(!p)throw Error('灯体が参照する設置区間がありません');geometryOK(p.geometry);
+    const a=layoutPoint(p.geometry.a,dims),b=layoutPoint(p.geometry.b,dims);
+    if([a,b].some(p=>Math.abs(p.x)>dims.W/2+5||p.y < -5||p.y>dims.D+20||p.z<0||p.z>dims.H))throw Error('設置区間が対応する範囲を超えています');
+    const length=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z);
+    if(length<0.01)throw Error('設置区間の長さを確認してください');
+    return {a,b,length};
+  }
+  function positionWorld(rig,mount,dims){
+    if(!object(mount)||!idOK(mount.positionId)||!finiteBetween(mount.t,0,1))throw Error('設置区間と位置を選び直してください');
+    const {a,b}=layoutSegment(rig,mount.positionId,dims);
+    return Object.fromEntries(['x','y','z'].map(k=>[k,a[k]+(b[k]-a[k])*mount.t]));
+  }
+  function layoutProscenium(rig){
+    const next=withProsceniumPositionNames(rig);
+    const rules={
+      'pos-fr-shimote':[{xW:-.5,xM:-1,yD:1.1,zH:.45},{xW:-.5,xM:-1,yD:1.1,zH:.75}],
+      'pos-fr-kamite':[{xW:.5,xM:1,yD:1.1,zH:.45},{xW:.5,xM:1,yD:1.1,zH:.75}],
+      'pos-gal-shimote':[{xW:-.5,xM:-1,yM:-1,zH:.6},{xW:-.5,xM:-1,yD:.85,zH:.6}],
+      'pos-gal-kamite':[{xW:.5,xM:1,yM:-1,zH:.6},{xW:.5,xM:1,yD:.85,zH:.6}],
+      'pos-gal-rear':[{xW:-.5,xM:-1,yM:-1,zH:.6},{xW:.5,xM:1,yM:-1,zH:.6}],
+    };
+    next.positionLayout={...(next.positionLayout||{}),venueId:'proscenium',version:1};
+    for(const p of next.positions)if(rules[p.id]&&!p.geometry){const [a,b]=rules[p.id];p.geometry={kind:'segment',a,b};}
+    return next;
+  }
+  function bindPosition(design,fixtureIds,id,distance){
+    validate(design);layoutDims(design.stage);
+    const next=clone(design),rig=layoutProscenium(next.rig),selected=new Set(fixtureIds);
+    const fs=rig.fixtures.filter(f=>selected.has(f.id));
+    if(!fs.length||fs.length!==selected.size||fs.some(f=>f.mount.type==='cyc'))throw Error('配置する灯体を選んでください（ホリゾント列は対象外です）');
+    const segment=layoutSegment(rig,id,next.stage);
+    if(fs.length===1&&!finiteBetween(distance,0,segment.length))throw Error('区間内の距離を指定してください');
+    fs.forEach((f,i)=>{
+      if(f.mount.type!=='position')f.positionMountPrevious={mount:clone(f.mount),positionRef:f.positionRef||null};
+      f.mount={type:'position',positionId:id,t:fs.length===1?distance/segment.length:(i+1)/(fs.length+1)};
+      f.positionRef=id;
+    });
+    if(next.version!==3)next.positionLayoutRollback={version:1,originalDesign:clone(design)};
+    next.version=3;next.rig=rig;return validate(next);
+  }
+  function unbindPosition(design,fixtureIds){
+    const next=validate(design),selected=new Set(fixtureIds);
+    for(const id of selected){const f=next.rig.fixtures.find(f=>f.id===id);
+      if(!f||f.mount.type!=='position'||!object(f.positionMountPrevious?.mount))throw Error('元の取り付けを確認できません');
+      f.mount=clone(f.positionMountPrevious.mount);
+      if(f.positionMountPrevious.positionRef)f.positionRef=f.positionMountPrevious.positionRef;else delete f.positionRef;
+      delete f.positionMountPrevious;
+    }
+    return validate(next);
+  }
+  function nearestPositionT(rig,mount,dims,project,point){
+    const {a,b}=layoutSegment(rig,mount.positionId,dims);
+    const cost=t=>{const q=project(Object.fromEntries(['x','y','z'].map(k=>[k,a[k]+(b[k]-a[k])*t])));return (point.X-q.X)**2+(point.Y-q.Y)**2;};
+    let best=mount.t,bestCost=cost(best);
+    // Compare actual projected points: peripheral bands and perspective are not affine.
+    for(let i=0;i<=64;i++){const t=i/64,c=cost(t);if(c<bestCost-1e-10){best=t;bestCost=c;}}
+    let lo=Math.max(0,best-1/64),hi=Math.min(1,best+1/64);
+    for(let i=0;i<24;i++){const u=(2*lo+hi)/3,v=(lo+2*hi)/3;if(cost(u)<cost(v))hi=v;else lo=u;}
+    const t=(lo+hi)/2;return cost(t)<bestCost-1e-10?t:best;
+  }
+  const positionLayout=Object.freeze({limits:positionLimits,validateDims:layoutDims,segment:layoutSegment,world:positionWorld,withProscenium:layoutProscenium,bind:bindPosition,unbind:unbindPosition,nearestT:nearestPositionT});
+
   function validate(design, expectedSceneIds) {
-    if (!object(design) || design.format !== 'shosai.light-design' || ![1,2].includes(design.version)) throw Error('対応していない照明デザイン形式です。原本は変更していません');
+    if (!object(design) || design.format !== 'shosai.light-design' || ![1,2,3].includes(design.version)) throw Error('対応していない照明デザイン形式です。原本は変更していません');
     if (JSON.stringify(design).length > 4 * 1024 * 1024) throw Error('照明データが大きすぎます');
     /* version 2 は旧ベータ照明からのコピー変換専用。復元用の原本と記録が
        欠けた v2 を通常デザインとして受け入れない。 */
-    if (design.version === 2) {
+    if (design.version === 2 || (design.version === 3 && design.migration !== undefined)) {
       const migration = design.migration;
       if (!object(migration) || migration.migrator !== 'stage-light-panel-v1' || migration.version !== 1
           || !object(migration.originalDocument) || !object(migration.originalDocument.project)
@@ -36,18 +194,29 @@
     } else if (design.migration !== undefined) {
       throw Error('旧照明の移行記録と形式の版が一致しません');
     }
+    if(design.version===3){
+      const backup=design.positionLayoutRollback;
+      if(!object(backup)||backup.version!==1||!object(backup.originalDesign)||![1,2].includes(backup.originalDesign.version))throw Error('配置前の照明の控えを確認できません');
+      validate(backup.originalDesign);
+    }
     if (!object(design.stage) || ['W','D','H'].some(k=>!Number.isFinite(design.stage[k]) || design.stage[k]<=0 || design.stage[k]>300)) throw Error('舞台寸法を確認してください');
     if (!object(design.rig)) throw Error('仕込みがありません');
+    validatePositionNames(design.rig);
     const fixtures=ids(design.rig.fixtures,'灯体'),trusses=ids(design.rig.trusses,'バトン'),scenes=ids(design.scenes,'シーン');
     if (!scenes.size || fixtures.size>1000 || trusses.size>200 || scenes.size>2000) throw Error('仕込み・シーンの件数を確認してください');
     if (expectedSceneIds && (scenes.size!==expectedSceneIds.length || expectedSceneIds.some(id=>!scenes.has(id)))) throw Error('ショーと照明のシーンIDが一致しません。シーンの並び順による自動割当は行いません');
     for (const fixture of design.rig.fixtures) {
-      if (!object(fixture.mount) || !['truss','floor','side','front','cyc','legacy-panel'].includes(fixture.mount.type)) throw Error('対応していない灯体の取り付け方です');
+      if (!object(fixture.mount) || !['truss','floor','side','front','cyc','legacy-panel','position'].includes(fixture.mount.type)) throw Error('対応していない灯体の取り付け方です');
+      if(fixture.mount.type==='position'){
+        if(design.version!==3||design.rig.positionLayout?.venueId!=='proscenium'||design.rig.positionLayout.version!==1)throw Error('設置区間に対応した照明形式ではありません');
+        positionWorld(design.rig,fixture.mount,design.stage);
+        if(fixture.positionMountPrevious!==undefined){const old=fixture.positionMountPrevious.mount;if(!object(old)||!['truss','floor','side','front','cyc','legacy-panel'].includes(old.type)||old.type==='truss'&&!trusses.has(old.trussId))throw Error('元の取り付けを確認してください');}
+      }
       if (fixture.mount.type==='truss' && !trusses.has(fixture.mount.trussId)) throw Error('灯体が参照するバトンがありません');
       if (fixture.colorMode!==undefined && !['mix','wheel'].includes(fixture.colorMode)) throw Error('灯体の色の作り方を確認してください');
       if (fixture.opticalType!==undefined && !['spot','wash'].includes(fixture.opticalType)) throw Error('灯体の光の種類を確認してください');
       if (fixture.mount.type==='legacy-panel') {
-        if (design.version!==2 || !design.migration) throw Error('旧照明の取り付け位置に移行記録がありません');
+        if (![2,3].includes(design.version) || !design.migration) throw Error('旧照明の取り付け位置に移行記録がありません');
         const mount=fixture.mount;
         if (![mount.u,mount.v,mount.h].every(value=>value===null || finiteBetween(value,-0.5,18))
             || (mount.u!==null && !finiteBetween(mount.u,-0.5,1.5))
@@ -94,7 +263,7 @@
         }
         for (const point of [light.path?.a,light.path?.b,light.path?.c].filter(Boolean)) {
           if (point.coordinateMode!=='legacy-panel') continue;
-          if (design.version!==2 || !finiteBetween(point.u,-0.5,1.5)
+          if (![2,3].includes(design.version) || !design.migration || !finiteBetween(point.u,-0.5,1.5)
               || !finiteBetween(point.v,-0.5,1) || !finiteBetween(point.hM,0,18)) {
             throw Error('旧照明の当て先が不正です');
           }
@@ -254,5 +423,5 @@
     PASSTHROUGH_KEYS.forEach(key => { if (passthrough[key] !== undefined) design[key] = clone(passthrough[key]); });
     return design;
   }
-  root.GAMMA_LIGHT_MODEL=Object.freeze({clone,validate,empty,reconcile,stripPassthrough,restoreDraft,normalizeFixedSetup,upgradeRjSecond});
+  root.GAMMA_LIGHT_MODEL=Object.freeze({clone,validate,empty,reconcile,stripPassthrough,restoreDraft,normalizeFixedSetup,upgradeRjSecond,positionNames,positionLayout});
 })(typeof window==='undefined'?globalThis:window);

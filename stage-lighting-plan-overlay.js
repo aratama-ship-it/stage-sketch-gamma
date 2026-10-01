@@ -32,7 +32,7 @@
       .filter((truss) => truss.id);
   }
 
-  function markerForFixture(fixture, trusses, dims) {
+  function markerForFixture(fixture, trusses, dims, rig) {
     if (!record(fixture) || !record(fixture.mount)) return null;
     const mount = fixture.mount;
     const kind = fixture.kind === "laser" ? "laser" : fixture.kind === "moving" ? "moving" : "fixed";
@@ -48,7 +48,10 @@
       conceptual: true,
     };
     if (!marker.id) return null;
-    if (mount.type === "truss") {
+    if(mount.type === "position"){
+      let p;try{p=root.GAMMA_LIGHT_MODEL?.positionLayout?.world(rig,mount,dims);}catch(_){return null;}
+      if(!p)return null;marker.u=p.x/dims.W+.5;marker.v=p.y/dims.D;marker.h=p.z;marker.outside=marker.u<0||marker.u>1||marker.v<0||marker.v>1;marker.conceptual=false;
+    } else if (mount.type === "truss") {
       const truss = trusses.find((item) => item.id === mount.trussId);
       if (!truss) return null;
       marker.u = clamp(finite(mount.u, 0.5), 0, 1);
@@ -94,7 +97,7 @@
       : (record(plan.design.stage) ? plan.design.stage : {});
     const trusses = normalisedTrusses(plan);
     const markers = list(plan.design.rig.fixtures)
-      .map((fixture) => markerForFixture(fixture, trusses, dims))
+      .map((fixture) => markerForFixture(fixture, trusses, dims, plan.design.rig))
       .filter(Boolean);
     if (!markers.length) return null;
     return {

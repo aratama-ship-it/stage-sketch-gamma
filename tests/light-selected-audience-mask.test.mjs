@@ -153,7 +153,8 @@ test("UIと埋め込みは会場マスクを保存物と分け、未定義時だ
   assert.match(app, /venueMask:\s*null/);
   assert.match(app, /coordinateSpace === "venue-m"/);
   assert.match(embed, /state\.venueMask=next&&next\.venueMask\?model\.clone\(next\.venueMask\):null/);
-  const buildLine = embed.split("\n").find((line) => line.includes("function build()")) || "";
+  const buildStart=embed.indexOf("function build()");
+  const buildLine=embed.slice(buildStart,embed.indexOf("function saveDraft()",buildStart));
   assert.match(buildLine, /hooks\.buildDesign/);
   assert.doesNotMatch(buildLine, /venueMask/);
   assert.match(sketch, /venueLibrary\.venueV2ById\(currentVenue\.id\)/);

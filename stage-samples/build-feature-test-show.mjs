@@ -37,6 +37,7 @@ const OUTPUT = process.env.GAMMA_FIXTURE_OUTPUT || HERE;
 globalThis.window = globalThis;
 await import(join(ROOT, "gamma-formation-presets.js"));
 await import(join(ROOT, "gamma-formation-model.js"));
+await import(join(ROOT, "gamma-light-model.js"));
 const FORMATION = globalThis.GAMMA_FORMATION_MODEL;
 const FORMATION_CATALOG = globalThis.GAMMA_FORMATION_CATALOG;
 if (!FORMATION || !FORMATION_CATALOG) throw new Error("フォーメーションのカタログ／モデルを読めませんでした");
@@ -801,6 +802,15 @@ const fixtures = [
   fx(fixtureIds.o3, 20, { type: "truss", trussId: "ft-truss-2", u: 0.65 }, "比較・ムービングスポット", "moving", 28, { fixtureType: "moving-profile", opticalType: "spot" }),
   fx(fixtureIds.o4, 21, { type: "truss", trussId: "ft-truss-2", u: 0.85 }, "比較・ムービングウォッシュ", "moving", 28, { fixtureType: "moving-wash", opticalType: "wash" }),
 ];
+rows.find(row=>row.title?.startsWith("F-2")).note += "\nGAL・フロント配置: 選択灯の『設置区間へ配置』で下手GAL・上手フロントへ移動。回廊の帯とレールの線を確認。区間内のm入力とドラッグ、複数灯の等間隔配置、元の取り付け、Undo/Redo、v3書出・再取込・保存再読込を確認。全キューと人物IDを保持。登録解除は配置灯がある間は止める。拡張寸法でも追従し、劇場形状変更前の照明注意を維持。配置前の照明ファイルを復元できること。";
+// F-1/F-2: only names are attached; the existing test rig coordinates stay intact.
+for(const f of fixtures) {
+  const m=f.mount;
+  const ref=m.type==='front'?'pos-cl-1':m.type==='side'?'pos-ss-'+m.side:m.type==='truss'?(m.trussId==='ft-truss-1'?'pos-truss-front':'pos-truss-back'):null;
+  if(ref)f.positionRef=ref;
+}
+rows.find(row=>row.title?.startsWith("F-2")).note += "\n設置位置名: 機材配置の設置位置名を開く。第1シーリングの名前・略称・階の表記を編集し、名前だけをGALへ関連付ける。灯体の取り付け値・人数・キューは不変で、一覧・選択灯の図・仕込みCSVへ同じ名前が出ること。追加・登録解除・複数灯への関連付け・Undo/Redo・保存再読込を確認。参照切れは座標を保って案内する。旧データに位置名を勝手に生成しない。";
+rows.find(row=>row.title?.startsWith("F-1")).note += "\nかんたん照明の設置位置名: 新規共通セットは10か所の仮想位置名と24灯の名称参照を持つ。候補の『この光の設置位置名』で確認。位置名だけを改名・関連付けしても12種の矢印・グリッド・人物スポット・暗転と共通セット判定が変わらないこと。";
 const cue = (over = {}) => ({ on: true, level: 100, color: "#f2ead6", surface: "floor", path: { kind: "still", a: { u: 0.5, v: 0.5, hM: 0 } }, speed: "normal", groupId: null, periodSec: null, offsetSec: 0, levelTo: null, beamDegTo: null, beamDeg: null, gobo: "none", goboSpin: 0, goboAngle: 0, ...over });
 const lightCues = {
   "ft-scene-f1": { lights: {
@@ -864,7 +874,7 @@ const LX_TRIGGERS = { "ft-scene-f1": "幕が上がりきったら", "ft-scene-f2
 const lightingDesign = {
   format: "shosai.light-design", version: 1, name: "機能テスト用ショー",
   stage: { W: VENUE_DIMS.W, D: VENUE_DIMS.D, H: VENUE_DIMS.H },   /* ★上の venueDims と必ず同じにする */
-  rig: { trusses: [{ id: "ft-truss-1", v: 0.7, h: 6.5, label: "照明バトン1（固定）" }, { id: "ft-truss-2", v: 0.3, h: 6.5, label: "照明バトン2（ムービング）" }], fixtures },
+  rig: { positions: globalThis.GAMMA_LIGHT_MODEL.positionNames.proscenium(), trusses: [{ id: "ft-truss-1", v: 0.7, h: 6.5, label: "照明バトン1（固定）" }, { id: "ft-truss-2", v: 0.3, h: 6.5, label: "照明バトン2（ムービング）" }], fixtures },
   scenes: sceneRows.map((row, i) => {
     const { timing, ...cue } = lightCues[row.id] || { lights: {}, groups: [], environment: { haze: 35 } };
     const lit = Object.values(cue.lights).some((light) => light.on);

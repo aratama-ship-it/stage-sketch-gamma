@@ -186,7 +186,7 @@ test("本体読み込みと照明編集画面がv2移行記録を維持する接
   const sketchAt = html.indexOf('<script src="stage-sketch.js');
   assert.ok(converterAt > 0 && converterAt < importAt);
   assert.ok(importAt < sketchAt);
-  assert.match(app, /SUPPORTED_DESIGN_VERSIONS = Object\.freeze\(\[1, 2\]\)/);
+  assert.match(app, /SUPPORTED_DESIGN_VERSIONS = Object\.freeze\(\[1, 2, 3\]\)/);
   assert.match(app, /\.\.\.\(migration \? \{ migration \} : \{\}\)/);
   assert.match(app, /f\.mount\.type === "floor" \|\| f\.mount\.type === "legacy-panel"/);
 });

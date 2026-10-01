@@ -291,6 +291,7 @@
   // 灯体の世界座標（光源）
   const fixtureWorld = (fixture, rig, dims = DEFAULT_DIMS) => {
     const m = fixture.mount || {};
+    if(m.type === "position"){try{return root.GAMMA_LIGHT_MODEL.positionLayout.world(rig,m,dims);}catch(_){return null;}}
     if (m.type === "truss") {
       const t = trussById(rig, m.trussId);
       if (!t) return null;
@@ -912,6 +913,7 @@
       const row = trussRow(rig, m.trussId);
       return t ? `吊り・奥から${row}列目のバトン（高さ約${mm(t.h)}）・${lr(m.u)}` : "吊り（バトン不明）";
     }
+    if(m.type === "position"){const p=root.GAMMA_LIGHT_MODEL?.positionNames?.record(rig,m.positionId);return p?`${root.GAMMA_LIGHT_MODEL.positionNames.caption(p)}・区間内${Math.round(m.t*100)}%`:"設置区間（参照先不明）";}
     if (m.type === "floor") return `転がし・${lr(m.u)}・${m.v < 0.4 ? "奥" : m.v > 0.6 ? "手前" : "中ほど"}`;
     if (m.type === "front") return `前明かり・${lr(m.u)}・舞台前から約${mm(finite(m.ahead, 5))}・高さ約${mm(finite(m.h, 7))}`;
     if (m.type === "side") return `SS・${m.side === "shimote" ? "下手" : "上手"}の袖（高さ約${mm(m.h)}）・${m.v < 0.4 ? "奥寄り" : m.v > 0.6 ? "手前寄り" : "中ほど"}`;
@@ -930,6 +932,7 @@
     const m = (fixture && fixture.mount) || {};
     const lr = (u) => (u < 0.4 ? "下手寄り" : u > 0.6 ? "上手寄り" : "中央");
     const fb = (v) => (v < 0.4 ? "奥" : v > 0.6 ? "手前" : "中ほど");
+    if(m.type === "position")return `区間内${Math.round(m.t*100)}%`;
     if (m.type === "truss" || m.type === "front") return lr(m.u);
     if (m.type === "floor") return `${lr(m.u)}・${fb(m.v)}`;
     if (m.type === "side") return m.v < 0.4 ? "奥寄り" : m.v > 0.6 ? "手前寄り" : "中ほど";
@@ -1132,6 +1135,11 @@
        それを goboAngle として再投入した先（帯の筋の断面 goboProfile）が clamp で 0° に潰れて
        「光だまりは回るのに帯の筋だけ止まる」になっていた（2026-09-13 本人指摘・実測で確認）。 */
     return ((a % 360) + 360) % 360;
+  };
+
+  const describeNamedMount = (fixture, rig) => {
+    const info = root.GAMMA_LIGHT_MODEL?.positionNames?.info(rig, fixture);
+    return fixture.mount?.type === "position" && info?.ref === fixture.mount.positionId ? describeMount(fixture,rig) : info?.ref ? `${info.text}（名称のみ） / ${describeMount(fixture, rig)}` : describeMount(fixture, rig);
   };
 
   const describeCue = (light, fixture) => {
@@ -1479,7 +1487,7 @@
     FRONT_SEATS, frontPerspSetup, makeFrontPerspProjector, frontPerspToUH,
     FRONT_FAR_CAMERA_M, frontFarSetup, makeFrontFarProjector, frontFarToUH,
     makePlanProjector, makeFrontProjector, makeSideProjector, planToUV, frontToUH, sideToVH,
-    describeMount, describeCue,
+    describeMount, describeNamedMount, describeCue,
     CURTAIN_KINDS, curtainKindLabel, curtainParts,
     BARN_KEYS, SHUTTER_MIN, SHUTTER_MAX, SHUTTER_ROT_MAX, newShutter, barnOf, barnActive, shutterActive, frameDoors, doorCutInEllipse, beamLandingSilhouette,
   });

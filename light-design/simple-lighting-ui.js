@@ -13,7 +13,7 @@
   panel.innerHTML='<div class="simple-heading"><h2>シーンの明かりを選ぶ</h2><div><label>シーン <select id="simple-scene"></select></label><label>対象キュー <select id="simple-cue"></select></label></div></div>'
     +'<p id="simple-rig-info"></p><div class="simple-workbench"><div><canvas id="simple-front" width="1000" height="560" aria-label="選択中の明かりの正面図"></canvas>'
     +'<div class="simple-browser"><button type="button" id="simple-prev" aria-label="前のプリセット">←</button><div><strong id="simple-name"></strong><span id="simple-count"></span></div><button type="button" id="simple-next" aria-label="次のプリセット">→</button></div>'
-    +'<p id="simple-target-description"></p><div class="simple-actions"><button type="button" id="simple-adopt">このシーンに採用</button><button type="button" id="simple-return">採用済みに戻す</button><button type="button" id="simple-undo">採用を戻す</button><button type="button" id="simple-blackout">このシーンを暗転</button></div>'
+    +'<p id="simple-target-description"></p><details id="simple-position-names"><summary>この光の設置位置名</summary><div id="simple-position-list"></div></details><div class="simple-actions"><button type="button" id="simple-adopt">このシーンに採用</button><button type="button" id="simple-return">採用済みに戻す</button><button type="button" id="simple-undo">採用を戻す</button><button type="button" id="simple-blackout">このシーンを暗転</button></div>'
     +'<p id="simple-status" role="status" aria-live="polite"></p><p id="simple-warning"></p></div><div class="simple-controls"><h3>少しだけ調整</h3>'
     +'<label>主な光の色 <select id="simple-color"><option value="white">白</option><option value="blue">青</option><option value="warm">暖色</option><option value="red">赤</option></select></label>'
     +'<label>強さ <output id="simple-level-value"></output><input id="simple-level" type="range" min="0" max="100" step="1"></label>'
@@ -98,6 +98,16 @@
     catch(e){error=e.message;$('simple-front').getContext('2d').clearRect(0,0,1000,560);}
     const targets=made?.cue.simplePreset?.targets||[];
     $('simple-target-description').textContent=targets.map((t,i)=>'スポット'+(i+1)+'：'+t.name).join(' ／ ');
+    const positions = $('simple-position-list'); positions.replaceChildren();
+    const infoModel = window.GAMMA_LIGHT_MODEL.positionNames;
+    const litFixtures = (made?.rig.fixtures || []).filter(f=>made.cue.lights[f.id]?.on && made.cue.lights[f.id]?.level>0);
+    const positionRows = new Map();
+    for (const f of litFixtures) {
+      const info = infoModel.info(made.rig,f), name = info.ref ? info.text+'（名称のみ）' : window.RIG_ENGINE.describeMount(f,made.rig);
+      if(!positionRows.has(name))positionRows.set(name,0); positionRows.set(name,positionRows.get(name)+1);
+    }
+    for (const [name,count] of positionRows) positions.append(el('p','',name+' · '+count+'灯'));
+    if(!positionRows.size)positions.append(el('p','','点灯している灯体はありません。'));
     const needsCopy=!common()&&context.existingLighting;
     $('simple-rig-info').textContent=needsCopy?'既存の仕込みを使っています。共通24灯セットはショーを複製して導入します。':'共通24灯 · スポット8／ウォッシュ16 · トラス2本・フロント・両側SS';
     $('simple-adopt').textContent=needsCopy?'複製して共通セットで始める':'このシーンに採用';

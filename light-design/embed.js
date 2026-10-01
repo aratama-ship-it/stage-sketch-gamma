@@ -64,7 +64,12 @@
       release=window.GAMMA_UI.containDialog(box,{returnFocus:trigger,onCancel:()=>{dialog.hidden=true;}});
     }).observe(dialog,{attributes:true,attributeFilter:['hidden'],childList:true});
   }
-  function build() { return {...appliedExtras,...hooks.buildDesign(state.designName || context.title)}; }
+  function build() {
+    const next={...appliedExtras,...hooks.buildDesign(state.designName || context.title)};
+    if(next.version!==3)delete next.positionLayoutRollback;
+    if(next.version===1)delete next.migration;
+    return next;
+  }
   function saveDraft() {
     if(!context || loading || !state.dirty) return;
     /* stripPassthrough: 劇場プリセットの照明プラン集は編集対象ではないので控えに複製しない
@@ -247,5 +252,5 @@
   window.GAMMA_LIGHT_EDITOR=Object.freeze({open,suspend,apply,applyCandidate,build,undo:hooks.undo,redo:hooks.redo,
     validateImport(design){model.validate(design,context.scenes.map(row=>row.id));if(JSON.stringify(design.stage)!==JSON.stringify(context.stage))throw Error('劇場寸法が異なる照明デザインです。舞台で寸法を確認してください');},
     externalChange(){changedElsewhere=true;hooks.stop();renderSaveStatus();if(state.dirty)message('別のタブでショーが更新されました。編集中の照明は保持しています');},
-    status:()=>({showId:context?.showId,dirty:state.dirty,active,changedElsewhere,canUndo:Boolean(state.history.length),canRedo:Boolean(state.future.length)})});
+    status:()=>({venueType:context?.venueType,showId:context?.showId,dirty:state.dirty,active,changedElsewhere,canUndo:Boolean(state.history.length),canRedo:Boolean(state.future.length)})});
 })();

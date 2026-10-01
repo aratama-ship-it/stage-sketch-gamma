@@ -33,7 +33,7 @@
     [.12,.272,.424,.576,.728,.88].forEach((u,i)=>add('house-'+i,{type:'front',u,ahead:.28*dims.D,h:.78*dims.H},[1,4].includes(i)?'spot':'wash','front-light','フロント '+(i+1)));
     for(const [side,title] of [['shimote','下手SS'],['kamite','上手SS']])
       [.25,.5,.75].forEach((v,i)=>add(side+'-'+i,{type:'side',side,v,h:i===1?2.2:1.7},i===1?'spot':'wash','side',title+' '+(i+1)));
-    return rig;
+    return root.GAMMA_LIGHT_MODEL?.positionNames ? root.GAMMA_LIGHT_MODEL.positionNames.withProscenium(rig,true) : rig;
   }
   function isCommon(rig,dims,venueType) {
     try {

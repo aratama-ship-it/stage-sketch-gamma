@@ -51,10 +51,12 @@
   let migrationRecordSequence = 0;
   const retainMigration = (migration) => {
     if (!migration) return null;
+    const text=JSON.stringify(migration);for(const [key,value] of migrationRecords)if(JSON.stringify(value)===text)return key;
     const key = `migration-${++migrationRecordSequence}`;
     migrationRecords.set(key, JSON.parse(JSON.stringify(migration)));
     return key;
   };
+  const currentPositionRollback = () => state.positionLayoutRollbackKey ? JSON.parse(JSON.stringify(migrationRecords.get(state.positionLayoutRollbackKey))) : null;
   const currentMigration = () => {
     const migration = state.migrationKey ? migrationRecords.get(state.migrationKey) : null;
     return migration ? JSON.parse(JSON.stringify(migration)) : null;
@@ -260,6 +262,7 @@
     nextNo: 1, seq: 1,
     designName: "",                    // いま編集している照明デザインの名前（保存で付ける）
     designVersion: 1,                  // v2は旧ベータ照明の復元記録を保つコピー変換専用
+    positionLayoutRollbackKey: null,
     migrationKey: null,                // 大きい原本そのものは migrationRecords に1件だけ置く
     /* 幕の寸法（2026-09-13 本人要望で調整できるようにした）。
        客席から光源（灯体）が見えないかを確かめるための値なので、舞台ごとに変わる＝
@@ -414,7 +417,7 @@
 
   /* ---------- 履歴（モーダル内Undo） ---------- */
   /* R-11（2026-09-17）: 灯体グループも履歴に含める。含めないと「戻る」でグループだけ取り残される。 */
-  const snapshot = () => JSON.stringify({ dims: state.dims, rig: state.rig, scenes: state.scenes, palette: state.palette, levelCurve: state.levelCurve, curtains: state.curtains, fixtureGroups: state.fixtureGroups, designVersion: state.designVersion, migrationKey: state.migrationKey });
+  const snapshot = () => JSON.stringify({ dims: state.dims, rig: state.rig, scenes: state.scenes, palette: state.palette, levelCurve: state.levelCurve, curtains: state.curtains, fixtureGroups: state.fixtureGroups, designVersion: state.designVersion, migrationKey: state.migrationKey, positionLayoutRollbackKey: state.positionLayoutRollbackKey });
   // Compare only lighting content. Scene names and stage pieces are supplied by the host
   // and may change without an LX edit; undoing the last edit must also clear the prompt.
   const applyFingerprint = () => JSON.stringify({ dims: state.dims, rig: state.rig,
@@ -422,7 +425,7 @@
       lxEditing: sc.lxEditing, cue: sc.cue })), palette: state.palette,
     levelCurve: state.levelCurve, curtains: state.curtains,
     fixtureGroups: state.fixtureGroups, designVersion: state.designVersion,
-    migrationKey: state.migrationKey, designName: state.designName });
+    positionLayoutRollbackKey: state.positionLayoutRollbackKey, migrationKey: state.migrationKey, designName: state.designName });
   let appliedFingerprint = applyFingerprint();
   function markApplied() { appliedFingerprint = applyFingerprint(); state.dirty = false; }
   function refreshApplyState() {
@@ -482,8 +485,9 @@
     if (Array.isArray(o.levelCurve) && o.levelCurve.length === LEVEL_CURVE_POINTS) state.levelCurve = o.levelCurve.slice();
     if (o.curtains) state.curtains = { ...state.curtains, ...o.curtains };
     if (Array.isArray(o.fixtureGroups)) state.fixtureGroups = o.fixtureGroups;   // R-11
-    if ([1, 2].includes(o.designVersion)) state.designVersion = o.designVersion;
+    if ([1, 2, 3].includes(o.designVersion)) state.designVersion = o.designVersion;
     if (o.migrationKey === null || (typeof o.migrationKey === "string" && migrationRecords.has(o.migrationKey))) state.migrationKey = o.migrationKey;
+    if(o.positionLayoutRollbackKey===null || migrationRecords.has(o.positionLayoutRollbackKey))state.positionLayoutRollbackKey=o.positionLayoutRollbackKey;
     state.sel = new Set([...state.sel].filter(fixtureById));
     state.selEquipment = null;
     if (state.selTruss && !E.trussById(state.rig, state.selTruss)) state.selTruss = null;
@@ -587,7 +591,7 @@
     if (!distanceMetric && w && w.y > D + 1e-6) { const fx = P({ x: 0, y: D, z: 0 }).X, bx = P({ x: 0, y: 0, z: 0 }).X; q.X = fx + Math.sign(fx - bx || 1) * FRONT_DX_SEC; }
     return q;
   };
-  const isFront = (f) => f.mount.type === "front";
+  const isFront = (f) => f.mount.type === "front" || f.mount.type === "position" && window.GAMMA_LIGHT_MODEL?.positionNames?.record(state.rig,f.mount.positionId)?.kind === "front-side";
   const shapeOf = (m) => (m.type === "truss" ? "square" : m.type === "floor" ? "circle" : m.type === "front" ? "tri" : m.type === "cyc" ? "bar" : "diamond");
   const planBox = () => {
     const w = plan.width, h = plan.height, d = state.dims;
@@ -648,6 +652,7 @@
     { const lc = document.querySelector(".leftcol"); if (lc) set(lc, "width", sideW); }
     set($("panel-insp"), "width", sideW);
   }
+  const positionPlanProjector=(P,B)=>(w)=>{const q=P(w);if(!distanceMetric){if(w.x < -state.dims.W/2)q.X=B.x-SIDE_DX;else if(w.x>state.dims.W/2)q.X=B.x+B.w+SIDE_DX;if(w.y<0)q.Y=B.y-24;else if(w.y>state.dims.D)q.Y=B.y+B.h+FRONT_DY;}return q;};
   const planProj = () => E.makePlanProjector(state.dims, planBox());
   // キャンバスの内部解像度を表示サイズへ合わせる（拡大してもぼやけない）
   function syncCanvasSize() {
@@ -660,6 +665,7 @@
         ? E.makeFrontPerspProjector(state.dims, secBox(sec.cv, "front"), state.seat)
         : E.makeFrontFarProjector(state.dims, secBox(sec.cv, "front")))
     : E.makeSideProjector(state.dims, secBox(sec.cv, sec.kind), sec.kind));
+  const positionSectionProjector=(P,canvas)=>w=>{const q=P(w);q.X=Math.max(24,Math.min(canvas.width-24,q.X));return q;};
   const canvasPoint = (c, ev) => { const r = c.getBoundingClientRect(); return { X: (ev.clientX - r.left) * c.width / r.width, Y: (ev.clientY - r.top) * c.height / r.height }; };
   // 表示（番号・光・動く範囲・1mの線）。図が4つに増えたぶん、間引けるようにする
   const showOn = (key) => state.show[key] !== false;
@@ -1429,7 +1435,7 @@
     }
     // 灯体
     state.rig.fixtures.forEach((f) => {
-      const S = fixtureWorld(f); if (!S) return; const p = P(S);
+      const S = fixtureWorld(f); if (!S) return; const p = f.mount.type === "position" ? positionPlanProjector(P,B)(S) : P(S);
       const X = f.mount.type === "side" ? (f.mount.side === "shimote" ? B.x - SIDE_DX : B.x + B.w + SIDE_DX) : p.X;
       const Y = isFront(f) ? B.y + B.h + FRONT_DY : p.Y;     // 前明かりは客席帯に並べる（実距離は数値で）
       if (showOn("fixtures")) {
@@ -2464,6 +2470,24 @@
       ctx.fillText(String(o.step), bx, by + 1);
       ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
     }
+    if (o.sel && !o.ghost && state.mode === "place" && state.sel.size === 1) {
+      const f = fixtureById([...state.sel][0]);
+      const info = window.GAMMA_LIGHT_MODEL?.positionNames?.info(state.rig, f);
+      if (info?.ref) {
+        let text = info.text + (f.mount.type === "position" && f.mount.positionId === info.ref ? "（配置）" : "（名称のみ）");
+        ctx.font = "22px sans-serif";
+        const max = Math.max(80, ctx.canvas.width - 24);
+        if (ctx.measureText(text).width > max) {
+          while (text.length > 1 && ctx.measureText(text + "…").width > max) text = text.slice(0, -1);
+          text += "…";
+        }
+        const width = ctx.measureText(text).width;
+        const x = Math.max(12, Math.min(markX - width / 2, ctx.canvas.width - width - 12));
+        const below = markY + markSize + (o.no ? 36 : 12);
+        const y = below + 32 < ctx.canvas.height ? below : Math.max(12, markY - markSize - 36);
+        plateText(ctx, text, x, y, { font: "22px sans-serif", lineH: 26, color: "#efe7d6" });
+      }
+    }
     ctx.restore();
   }
   /* 作業灯の暗幕は光のない背景だけを暗くする。暗幕の上に情報レイヤーを描き直し、
@@ -2471,7 +2495,7 @@
   function redrawFixtureInfoPlan(ctx, P, B) {
     if (!showOn("fixtures")) return;
     state.rig.fixtures.forEach((f) => {
-      const S = fixtureWorld(f); if (!S) return; const p = P(S);
+      const S = fixtureWorld(f); if (!S) return; const p = f.mount.type === "position" ? positionPlanProjector(P,B)(S) : P(S);
       const X = f.mount.type === "side" ? (f.mount.side === "shimote" ? B.x - SIDE_DX : B.x + B.w + SIDE_DX) : p.X;
       const Y = isFront(f) ? B.y + B.h + FRONT_DY : p.Y;
       const o = { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f), outline: planFixtureOutline };
@@ -2594,7 +2618,7 @@
       }
     });
     // 灯体
-    state.rig.fixtures.forEach((f) => { if (!showOn("fixtures")) return; const S = fixtureWorld(f); if (!S) return; const p = P(S); const Y = isFront(f) ? Math.max(38, p.Y) : p.Y;
+    state.rig.fixtures.forEach((f) => { if (!showOn("fixtures")) return; const S = fixtureWorld(f); if (!S) return; const p = f.mount.type === "position" ? positionSectionProjector(P,sec.cv)(S) : P(S); const Y = isFront(f) ? Math.max(38, p.Y) : p.Y;
       const o = { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) };
       if (f.mount.type === "cyc") o.bar = cycFixtureBar(P, f);
       drawFixtureMark(fctx, p.X, Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), o);
@@ -2655,7 +2679,7 @@
       }
     });
     // 灯体: この側のスタンド灯は床からの縦線＋印。他は小さく薄く
-    state.rig.fixtures.forEach((f) => { const S = fixtureWorld(f); if (!S) return; const q = P(S);
+    state.rig.fixtures.forEach((f) => { const S = fixtureWorld(f); if (!S) return; const q = f.mount.type === "position" ? positionSectionProjector(P,sec.cv)(S) : P(S);
       if (f.mount.type === "side" && f.mount.side === side) { fctx.strokeStyle = "rgba(240,231,214,0.5)"; fctx.lineWidth = 3; fctx.beginPath(); fctx.moveTo(q.X, B.y + B.h); fctx.lineTo(q.X, q.Y); fctx.stroke(); fctx.beginPath(); fctx.moveTo(q.X - 14, B.y + B.h); fctx.lineTo(q.X + 14, B.y + B.h); fctx.stroke();
         if (showOn("fixtures")) drawFixtureMark(fctx, q.X, q.Y, "diamond", { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "" });
         if (isSel(f.id) && state.mode === "place") { fctx.fillStyle = "#d3ac59"; fctx.font = "15px sans-serif"; fctx.fillText(`高さ ${mmText(f.mount.h)}・${f.mount.v < 0.4 ? "奥寄り" : f.mount.v > 0.6 ? "手前寄り" : "中ほど"}（ドラッグで奥行きと高さ）`, q.X + 22, q.Y - 26); } }
@@ -2744,7 +2768,7 @@
       if (isSel(f.id) && (l.surface === "back" || l.surface === "air")) drawHandles(fctx, (pt) => P(pt), l, f.id);
     });
     // 灯体
-    state.rig.fixtures.forEach((f) => { const S = fixtureWorld(f); if (!S) return; const p = P(S);
+    state.rig.fixtures.forEach((f) => { const S = fixtureWorld(f); if (!S) return; const p = f.mount.type === "position" ? positionSectionProjector(P,sec.cv)(S) : P(S);
       if (showOn("fixtures")) drawFixtureMark(fctx, p.X, isFront(f) ? Math.max(38, p.Y) : p.Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) }); });
     if (state.mode === "move" && showOn("blackout")) { paintBlackout(fctx, cv, litSpots3D);
       drawPiecesUp(fctx, P, L.pxPerM, { yawDeg: 0, zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v, relight: true }); }
@@ -2809,11 +2833,12 @@
     return Math.hypot(p.X - (a.X + dx * t), p.Y - (a.Y + dy * t));
   };
   // 灯体の平面図上の画面座標。当たり判定と範囲選択（マーキー）の両方で使う共通の式。
-  function fixturePlanXY(f, P, B) { const S = fixtureWorld(f); if (!S) return null; const p = P(S); const X = f.mount.type === "side" ? (f.mount.side === "shimote" ? B.x - SIDE_DX : B.x + B.w + SIDE_DX) : p.X; const Y = isFront(f) ? B.y + B.h + FRONT_DY : p.Y; return { X, Y }; }
+  function fixturePlanXY(f, P, B) { const S = fixtureWorld(f); if (!S) return null; const p = f.mount.type === "position" ? positionPlanProjector(P,B)(S) : P(S); const X = f.mount.type === "side" ? (f.mount.side === "shimote" ? B.x - SIDE_DX : B.x + B.w + SIDE_DX) : p.X; const Y = isFront(f) ? B.y + B.h + FRONT_DY : p.Y; return { X, Y }; }
   function fixtureSectionXY(f, sec, P, B) {
     const S = fixtureWorld(f); if (!S) return null;
     const p = P(S);
     if (sec.kind === "front") return { X: p.X, Y: isFront(f) ? Math.max(38, p.Y) : p.Y };
+    if (f.mount.type === "position")return p;
     if (f.mount.type === "side") return f.mount.side === sec.kind ? p : null;
     const frontX = sec.kind === "shimote" ? B.x + B.w + FRONT_DX_SEC : B.x - FRONT_DX_SEC;
     return { X: isFront(f) ? frontX : p.X, Y: p.Y };
@@ -2832,7 +2857,7 @@
     ctx.fillRect(x, y, mw, mh); ctx.strokeRect(x, y, mw, mh); ctx.restore();
   }
   function hitFixturePlan(pt) { const P = planProj(), B = planBox(); let best = null; state.rig.fixtures.forEach((f) => { const xy = fixturePlanXY(f, P, B); if (!xy) return; if (f.mount.type === "cyc") { const bar = cycFixtureBar(P, f); if (pointSegmentDistance(pt, bar.a, bar.b) < 18) best = f; } else if (Math.hypot(pt.X - xy.X, pt.Y - xy.Y) < 22) best = f; }); return best; }
-  function hitFixtureSec(sec, pt) { const P = secProj(sec); let best = null; state.rig.fixtures.forEach((f) => { if (sec.kind !== "front" && !(f.mount.type === "side" && f.mount.side === sec.kind)) return; const S = fixtureWorld(f); if (!S) return; if (sec.kind === "front" && f.mount.type === "cyc") { const bar = cycFixtureBar(P, f); if (pointSegmentDistance(pt, bar.a, bar.b) < 18) best = f; } else { const p = P(S); if (Math.hypot(pt.X - p.X, pt.Y - p.Y) < 22) best = f; } }); return best; }
+  function hitFixtureSec(sec, pt) { const P = secProj(sec); let best = null; state.rig.fixtures.forEach((f) => { if (sec.kind !== "front" && !(f.mount.type === "side" && f.mount.side === sec.kind) && f.mount.type !== "position") return; const S = fixtureWorld(f); if (!S) return; if (sec.kind === "front" && f.mount.type === "cyc") { const bar = cycFixtureBar(P, f); if (pointSegmentDistance(pt, bar.a, bar.b) < 18) best = f; } else { const p = f.mount.type === "position" ? positionSectionProjector(P,sec.cv)(S) : P(S); if (Math.hypot(pt.X - p.X, pt.Y - p.Y) < 22) best = f; } }); return best; }
   function hitTrussPlan(pt) { const B = planBox(); return state.rig.trusses.find((t) => Math.abs(pt.Y - (B.y + t.v * B.h)) < 14 && pt.X > B.x - 30 && pt.X < B.x + B.w + 30) || null; }
   function hitTrussSection(sec, pt) {
     const P = secProj(sec), d = state.dims;
@@ -3007,7 +3032,7 @@
   plan.addEventListener("pointermove", (ev) => {
     const pt = canvasPoint(plan, ev); const B = planBox(); state.hover = { canvas: "plan", ...pt };
     const dg = state.drag;
-    if (dg && dg.kind === "fixture") { const f = fixtureById(dg.fid); if (f) { const u = snapU(E.clamp((pt.X - B.x) / B.w, 0, 1)), v = snapV(E.clamp((pt.Y - B.y) / B.h, 0, 1)); if (f.mount.type === "cyc") { /* 中央固定。動かさない */ } else if (f.mount.type === "truss") f.mount.u = u; else if (f.mount.type === "floor" || f.mount.type === "legacy-panel") { f.mount.u = u; f.mount.v = v; } else f.mount.v = v; dg.moved = true; } }
+    if (dg && dg.kind === "fixture") { const f = fixtureById(dg.fid); if (f) { const u = snapU(E.clamp((pt.X - B.x) / B.w, 0, 1)), v = snapV(E.clamp((pt.Y - B.y) / B.h, 0, 1)); if(f.mount.type === "position")f.mount.t=window.GAMMA_LIGHT_MODEL.positionLayout.nearestT(state.rig,f.mount,state.dims,positionPlanProjector(planProj(),B),pt); else if (f.mount.type === "cyc") { /* 中央固定。動かさない */ } else if (f.mount.type === "truss") f.mount.u = u; else if (f.mount.type === "floor" || f.mount.type === "legacy-panel") { f.mount.u = u; f.mount.v = v; } else f.mount.v = v; dg.moved = true; } }
     else if (dg && dg.kind === "truss") { const t = E.trussById(state.rig, dg.tid); if (t) { t.v = snapV(E.clamp((pt.Y - B.y) / B.h, 0, 1)); dg.moved = true; } }
     else if (dg && dg.kind === "handle") { dg.lock = ev.shiftKey; const uv = E.planToUV(state.dims, B, pt.X, pt.Y); applyHandleDrag(dg, { u: snapU(uv.u), v: snapV(uv.v), aheadM: distanceMetric ? ((pt.Y-B.y)/B.h-1)*state.dims.D : undefined }, dg.axis); }
     else if (dg && dg.kind === "marquee") {
@@ -3152,7 +3177,7 @@
           if (ev.shiftKey) { state.sel.has(f.id) ? state.sel.delete(f.id) : state.sel.add(f.id); selectionChanged = true; }
           else if (!state.sel.has(f.id)) { state.sel = new Set([f.id]); selectionChanged = true; }
           if (selectionChanged) state.aimMirror = null;
-          if (state.mode === "place" && !ev.shiftKey) state.drag = { kind: "sideVH", fid: f.id, sec, before: snapshot(), moved: false };
+          if (state.mode === "place" && !ev.shiftKey) state.drag = { kind: f.mount.type === "position" ? "positionT" : "sideVH", fid: f.id, sec, before: snapshot(), moved: false };
           renderAll(); return;
         }
         if (state.mode === "place") {
@@ -3166,6 +3191,7 @@
       if (state.mode === "place") {
         const f = hitFixtureSec(sec, pt); if (f) {
           if (!state.sel.has(f.id)) { state.sel = new Set([f.id]); state.aimMirror = null; }
+          if(f.mount.type === "position")state.drag={kind:"positionT",fid:f.id,sec,before:snapshot(),moved:false};
           if (f.mount.type === "side") state.drag = { kind: "sideH", fid: f.id, sec, before: snapshot(), moved: false };
           renderAll(); return;
         }
@@ -3198,6 +3224,7 @@
         if (dg.moved) state.aimMirror = null;
         requestDraw({ inspector: true }); return;
       }
+      if(dg.kind === "positionT"){const f=fixtureById(dg.fid);if(f){f.mount.t=window.GAMMA_LIGHT_MODEL.positionLayout.nearestT(state.rig,f.mount,state.dims,positionSectionProjector(secProj(sec),sec.cv),pt);dg.moved=true;}requestDraw({inspector:true});return;}
       if (dg.kind === "sideVH") { const f = fixtureById(dg.fid); if (f) { const vh = E.sideToVH(state.dims, B, side, pt.X, pt.Y); f.mount.v = snapV(vh.v); f.mount.h = E.clamp(snapH(vh.h), 0.3, state.dims.H); dg.moved = true; } requestDraw({ inspector: true }); return; }
       if (dg.kind === "trussVH") { const t = E.trussById(state.rig, dg.tid); if (t) { const vh = E.sideToVH(state.dims, B, side, pt.X, pt.Y); t.v = snapV(vh.v); t.h = E.clamp(snapH(vh.h), 2, state.dims.H); t.tentative = false; dg.moved = true; } }
       else if (dg.kind === "trussH") { const t = E.trussById(state.rig, dg.tid); if (t) { const uh = state.front3d ? E.frontPerspToUH(state.dims, B, state.seat, pt.X, pt.Y, t.v) : E.frontFarToUH(state.dims, B, pt.X, pt.Y, t.v); t.h = E.clamp(snapH(uh.h), 2, state.dims.H); t.tentative = false; dg.moved = true; } }
@@ -3365,6 +3392,7 @@
     const list = from || state.rig.fixtures;
     const secs = [];
     state.rig.trusses.forEach((t) => secs.push({ key: `t:${t.id}`, name: `吊り・奥から${E.trussRow(state.rig, t.id)}列目${t.label ? "・" + t.label : ""}`, items: list.filter((f) => f.mount.type === "truss" && f.mount.trussId === t.id) }));
+    (state.rig.positions||[]).forEach(p=>secs.push({key:`position:${p.id}`,name:p.name,items:list.filter(f=>f.mount.type==="position"&&f.mount.positionId===p.id)}));
     secs.push({ key: "front", name: "前明かり（客席の上）", items: list.filter((f) => f.mount.type === "front") });
     secs.push({ key: "floor", name: "転がし（床置き）", items: list.filter((f) => f.mount.type === "floor") });
     secs.push({ key: "cyc", name: "ホリゾントライト（奥の壁ぎわ）", items: list.filter((f) => f.mount.type === "cyc") });
@@ -3377,7 +3405,7 @@
   // 20灯以上でも目当ての1灯へ届くように、番号・名前・取り付け場所の文字で絞る
   function passSearch(f) {
     const q = state.search; if (!q) return true;
-    return `${label(f.id)} ${f.name || ""} ${E.describeMount(f, state.rig)}`.toLowerCase().includes(q.toLowerCase());
+    return `${label(f.id)} ${f.name || ""} ${E.describeNamedMount(f, state.rig)}`.toLowerCase().includes(q.toLowerCase());
   }
 
   function preservePanelScroll(render) {
@@ -3402,14 +3430,14 @@
     const row = (f, idx) => { const r = document.createElement("div"); r.dataset.fixtureId = f.id; r.className = "row" + (isSel(f.id) ? " sel" : "") + (state.mode === "place" && f.mount.type !== "cyc" ? " with-delete" : ""); // ボタンは編集キューを切り替える。ソロによる一時的な非表示と点灯状態を混同しない。
       const light = lightOf(f.id), lit = isLit(light);
       const st = !lit ? "off" : light.path && light.path.kind !== "still" ? "move" : "on";
-      r.innerHTML = `<span class="no">${idx !== undefined ? idx + 1 + "." : ""}${escapeHtml(label(f.id))}</span><span class="nm">${escapeHtml(f.name || "名前なし")}<small>${escapeHtml(E.describeMount(f, state.rig).replace(/（高さ約\dm）/, ""))}</small></span>`;
+      r.innerHTML = `<span class="no">${idx !== undefined ? idx + 1 + "." : ""}${escapeHtml(label(f.id))}</span><span class="nm">${escapeHtml(f.name || "名前なし")}<small>${escapeHtml(E.describeNamedMount(f, state.rig).replace(/（高さ約\dm）/, ""))}</small></span>`;
       // 状態の欄はそのまま押せるオン／オフにする（2026-09-11 本人要望。一覧から直接切り替えたい）
       const stCell = document.createElement(state.mode === "move" ? "button" : "span");
       stCell.className = state.mode === "move" ? "st " + st : "st spot";
       /* 配置タブの3列目は空いているので、灯ごとに違う取り付け位置（下手寄り／中央など）を出す。
          2列表示にしたときに行の <small> がCSSで隠れて見えなくなっていたぶんの復帰
          （2026-09-13 本人要望）。見出しが言っている「吊り・奥から1列目」等は繰り返さない。 */
-      if (state.mode === "place") { stCell.textContent = E.mountSpot(f); stCell.title = E.describeMount(f, state.rig); }
+      if (state.mode === "place") { stCell.textContent = E.mountSpot(f); stCell.title = E.describeNamedMount(f, state.rig); }
       if (state.mode === "move") {
         stCell.type = "button";
         stCell.classList.add("fixture-power");
@@ -5032,7 +5060,7 @@
       [["閉じる", null, "quiet"], ["CSVをコピー", () => { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(csv).then(() => toast("QシートのCSVをコピーしました")).catch(() => toast("コピーできませんでした")); else toast("この環境ではコピーできません"); }, "primary"]]);
   }
 
-  function renderInspector() { return preservePanelScroll(renderInspectorContent); }
+  function renderInspector() { return preservePanelScroll(() => { renderInspectorContent(); window.GAMMA_LIGHT_POSITIONS_UI?.appendAssignment($("insp"), [...state.sel]); }); }
   function renderInspectorContent() {
     const host = $("insp"); host.innerHTML = "";
     const ids = [...state.sel];
@@ -6021,16 +6049,17 @@
      別の環境や本体へはファイルで渡す。 */
   const DESIGN_FORMAT = "shosai.light-design";
   const DESIGN_VERSION = 1;
-  const SUPPORTED_DESIGN_VERSIONS = Object.freeze([1, 2]);
+  const SUPPORTED_DESIGN_VERSIONS = Object.freeze([1, 2, 3]);
   const DESIGN_STORE = "gamma:shosai.lightDesigns.v1";
   const DESIGN_BACKUP = "gamma:shosai.lightDesigns.beforeOptionB.v1";
 
   function buildDesign(name) {
-    const version = state.designVersion === 2 ? 2 : DESIGN_VERSION;
-    const migration = version === 2 ? currentMigration() : null;
+    const version = [2,3].includes(state.designVersion) ? state.designVersion : DESIGN_VERSION;
+    const migration = version === 2 || version === 3 ? currentMigration() : null;
     if (version === 2 && !migration) throw new Error("旧照明の復元記録を確認できません。現在のショーは変更していません");
     return {
       format: DESIGN_FORMAT, version,
+      ...(version===3?{positionLayoutRollback:currentPositionRollback()}:{}),
       name: String(name || "名前なし").slice(0, 60),
       savedAt: new Date().toISOString(),
       app: "照明デザインモード（試作・逆光分離モデル）", variant: "option-b",
@@ -6095,7 +6124,8 @@
     if (Array.isArray(o.levelCurve) && o.levelCurve.length === LEVEL_CURVE_POINTS) state.levelCurve = [...o.levelCurve];
     if (o.curtains) state.curtains = { ...state.curtains, ...o.curtains };
     state.designVersion = Number(o.version);
-    state.migrationKey = state.designVersion === 2 ? retainMigration(o.migration) : null;
+    state.migrationKey = o.migration ? retainMigration(o.migration) : null;
+    state.positionLayoutRollbackKey=o.positionLayoutRollback ? retainMigration(o.positionLayoutRollback) : null;
     /* R-11（2026-09-17 本人要望）: 灯体をまとめるカスタムのグループ。
        古いデータには fixtureGroups が無いので、無ければ空として読む（壊さない）。
        いなくなった灯体は取り除き、中身が空になったグループは捨てる。 */
