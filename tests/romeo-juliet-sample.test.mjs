@@ -21,6 +21,7 @@ test("Romeo and Juliet is a complete immutable bundled project sample", async ()
   assert.equal(sample.kind, "shosai-stage-sketch");
   assert.equal(sample.version, 4);
   assert.equal(sample.project.id, "romeo-juliet-gamma-cued-2026-09-21");
+  assert.equal(sample.project.branchReason, "");
   assert.equal(sample.project.scenes.filter((scene) => scene.kind === "scene").length, 33);
   assert.equal(sample.project.cues.filter((cue) => cue.cueType === "dialogue").length, 47);
   assert.equal(sample.project.cues.filter((cue) => cue.cueType === "music").length, 19);
@@ -42,6 +43,19 @@ test("Romeo and Juliet is a complete immutable bundled project sample", async ()
   assert.equal(sample.project.lightingDesign.scenes.length, 33);
   assert.equal(sample.project.cast.map((performer) => performer.name).join("|"),
     "ロミオ|ジュリエット|ロレンス修道士|ベンヴォーリオ|ティボルト|マーキューシオ|乳母|キャピュレット|モンタギュー|ジョン修道士");
+});
+
+test("bundled Romeo and Juliet projects do not carry version notes", async () => {
+  const [library, secondSource, builder, app] = await Promise.all([
+    bundledRomeoJuliet(), read("stage-samples/romeo-juliet-second.json"),
+    read("stage-samples/build-romeo-juliet-second.mjs"), read("stage-sketch.js"),
+  ]);
+  const second = JSON.parse(secondSource);
+  assert.equal(library.samples[0].project.branchReason, "");
+  assert.equal(second.project.branchReason, "");
+  assert.match(builder, /project\.branchReason = ''/);
+  assert.match(app, /function backfillBundledVersionNote\(project\)/);
+  assert.match(app, /project\.branchReason !== before/);
 });
 
 test("Romeo and Juliet is loaded before the app and included in the versioned PWA shell", async () => {

@@ -6436,7 +6436,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      * 塗りつぶした人影でも、支持点・体幹の向き・腕脚の開きで用途が読める形にする。 */
     makePose("bridge_hold", "ブリッジ（保持・両足接地）", {
       // 両手と両足を床へ置き、肩から腰までを高い弧にして反りを人影で見せる
-      head: [0, 0.14, 0.27], neck: [0, 0.23, 0.22],
+      head: [0, 0.271, 0.252], neck: [0, 0.319, 0.188],
       shL: [-0.1075, 0.34, 0.16], shR: [0.1075, 0.34, 0.16],
       elL: [-0.14, 0.17, 0.24], elR: [0.14, 0.17, 0.24],
       wrL: [-0.14, 0.03, 0.36], wrR: [0.14, 0.03, 0.36],
@@ -6517,7 +6517,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     }, { face: [0, -0.2, 0.98] }),
     makePose("chest_stand", "チェストスタンド（胸を床に付け脚を頭上へ）", {
       // 胸と両腕を床へ置き、腰から曲げた脚を頭上へ回す
-      head: [0, 0.07, 0.14], neck: [0, 0.08, 0.07],
+      head: [0, 0.065, 0.115], neck: [0, 0.06, 0.035],
       shL: [-0.1075, 0.06, 0], shR: [0.1075, 0.06, 0],
       elL: [-0.2975, 0.05, 0], elR: [0.2975, 0.05, 0],
       wrL: [-0.4775, 0.04, 0.02], wrR: [0.4775, 0.04, 0.02],
@@ -6528,7 +6528,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     }, { face: [0, -0.8, 0.6], sideView: true }),
     makePose("backbend_standing", "後屈（立位・手は床に付けない）", {
       // 足を床へ残し、腰から肩・頭を大きく後方へ反らす
-      head: [0, 0.62, -0.35], neck: [0, 0.68, -0.30],
+      head: [0, 0.797, -0.305], neck: [0, 0.744, -0.246],
       shL: [-0.1075, 0.72, -0.22], shR: [0.1075, 0.72, -0.22],
       elL: [-0.25, 0.82, -0.145], wrL: [-0.39, 0.91, -0.075],
       elR: [0.25, 0.82, -0.145], wrR: [0.39, 0.91, -0.075],
@@ -7212,14 +7212,14 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       toL: [-0.07, 1.04, 0.25], toR: [0.07, 1.04, 0.25],
     }, { face: [0, -1, 0.1] }),
     makePose("lyra_gazelle", "リラで片脚を掛けて反る", {
-      head: [-0.235, 0.60, 0.02], neck: [-0.18, 0.655, 0.01],
+      head: [-0.295, 0.77, 0], neck: [-0.215, 0.77, 0],
       shL: [-0.2875, 0.77, 0], shR: [-0.0725, 0.77, 0],
       elR: [-0.05, 0.95, 0.055], wrR: [0.05, 1.10, 0.055],
       elL: [-0.46, 0.69, 0], wrL: [-0.61, 0.59, 0],
-      hipL: [0.065, 0.77, -0.045], hipR: [0.175, 0.77, 0.045],
+      hipL: [0.065, 0.77, 0], hipR: [0.175, 0.77, 0],
       knR: [0.15, 0.85, 0.27], anR: [0.15, 1.03, 0.43], toR: [0.15, 1.09, 0.47],
       knL: [0.30, 0.81, -0.08], anL: [0.53, 0.87, -0.11], toL: [0.60, 0.90, -0.13],
-    }, { face: [-0.35, 0.2, 0.915] }),
+    }, { wide: [0, 0, 1], face: [-0.35, 0.2, 0.915] }),
     makePose("hammock_recline", "ハンモックに寝る", {
       head: [-0.265, 0.92, 0], neck: [-0.19, 0.91, 0],
       shL: [-0.15, 0.90, -0.1075], shR: [-0.15, 0.90, 0.1075],
@@ -13289,6 +13289,16 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     "rj-gamma-dialogue-rj-cond-05-d-full-b05-d01": 70,
     "rj-gamma-dialogue-rj-cond-05-d-full-b05-d02": 71.5,
   });
+  const BUNDLED_VERSION_NOTE_REASONS = Object.freeze({
+    "romeo-juliet-rj-second-v1": "既存のロミオとジュリエット見本を残し、身体表現・照明・配置・台詞を再構成した第2の同梱ショー。10人、宴のバー、床上中心、悲劇の結末は演出上の暫定条件。",
+    "romeo-juliet-gamma-cued-2026-09-21": "旧ショー原本を保持した独立サンプル。既存台本47行と照明・音楽案をγのキューへ接続。時刻と仕込みは仮案。",
+  });
+  function backfillBundledVersionNote(project) {
+    const before = project && BUNDLED_VERSION_NOTE_REASONS[project.id];
+    if (!before || project.branchReason !== before) return false;
+    project.branchReason = "";
+    return true;
+  }
   function backfillRomeoJulietVoxOffsets(savedProject, bundledProject) {
     const cues = savedProject && Array.isArray(savedProject.cues) ? savedProject.cues : null;
     const bundledCues = bundledProject && Array.isArray(bundledProject.cues) ? bundledProject.cues : null;
@@ -13921,7 +13931,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const g = backfillRomeoJulietBookendScenes(savedProject, bundledProject);
     const h = backfillRomeoJulietCueMemos(savedProject, bundledProject);
     const i = backfillRomeoJulietWording(savedProject, bundledProject);
-    return a || b || c || d || e || f || g || h || i;
+    const j = backfillBundledVersionNote(savedProject);
+    return a || b || c || d || e || f || g || h || i || j;
   }
 
   /* ★2026-09-24 本人指示「転換が0秒のものは全部直す」: 八人のサーカス・継ぎ目の庭の棚の複製と、
@@ -13990,6 +14001,20 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (changed) writeShows(shows);
     return changed;
   }
+  function backfillBundledVersionNoteShelf() {
+    const shows = readShows();
+    let changed = false;
+    Object.keys(BUNDLED_VERSION_NOTE_REASONS).forEach((id) => {
+      const saved = shows[id];
+      if (!saved || !showSummary(saved)) return;
+      if (!backfillBundledVersionNote(saved.state && saved.state.project)) return;
+      saved.savedAt = nowIso();
+      shows[id] = saved;
+      changed = true;
+    });
+    if (changed) writeShows(shows);
+    return changed;
+  }
   /* 開いたままのショーが八人のサーカス・継ぎ目の庭そのものなら、作業中データにも届ける。 */
   function backfillOpenBundledSampleTimings() {
     if (!state || !state.project) return false;
@@ -13999,6 +14024,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (!built || !built.project || !entry.apply(state.project, built.project)) return false;
     persistSoon();
     try { window.dispatchEvent(new CustomEvent("stage-timeline-structure-change")); } catch (_) {}
+    return true;
+  }
+  function backfillOpenBundledVersionNote() {
+    if (!state || !backfillBundledVersionNote(state.project)) return false;
+    persistSoon();
     return true;
   }
   // ロミオとジュリエットも初回だけ棚へ置く。既存の同ID（編集済みを含む）は触らない。
@@ -27058,13 +27088,13 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         h: Math.max(...envelopes.map(b => b.y + b.h)) - boundsY0,
       };
       const pad = 10;
-      const draw = (fit) => {
-        ctx2.save();
-        ctx2.setTransform(fit.scale, 0, 0, fit.scale, fit.offsetX, fit.offsetY);
+      const draw = (target, fit, facing = startFacing) => {
+        target.save();
+        target.setTransform(fit.scale, 0, 0, fit.scale, fit.offsetX, fit.offsetY);
         // 一覧は132pxへ縮めるため、立体の各面の境界線まで描くと横筋として重なる。
         // 本番の舞台図は既定どおり面線を残し、ここだけ輪郭と陰影を塗りで見せる。
-        drawStagePiece(ctx2, previewPiece, previewLayout, () => 0, { showFaceEdges: false });
-        ctx2.restore();
+        drawStagePiece(target, { ...previewPiece, facing }, previewLayout, () => 0, { showFaceEdges: false });
+        target.restore();
       };
       const fitFrom = (bounds) => {
         const scale = Math.min(
@@ -27087,11 +27117,74 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       const fitCacheKey = `${kind}:${propShapeId || ""}:${w}x${h}`;
       let fit = KIND_PREVIEW_FIT_CACHE.get(fitCacheKey);
       if (!fit) {
-        fit = fitFrom(approxBounds);
+        const initialFit = fitFrom(approxBounds);
+        const measureCanvas = document.createElement("canvas");
+        measureCanvas.width = w * 2;
+        measureCanvas.height = h * 2;
+        const measureContext = measureCanvas.getContext("2d", { willReadFrequently: true });
+        const measureFit = {
+          ...initialFit,
+          offsetX: initialFit.offsetX + (measureCanvas.width - w) / 2,
+          offsetY: initialFit.offsetY + (measureCanvas.height - h) / 2,
+        };
+        const measuredFacings = [];
+        const previewOffset = TURNTABLE_START_FACING_OFFSET[propShapeId] || 0;
+        const measuredAngles = [...new Set([
+          0, 90, 180, 270,
+          ...Array.from({ length: 8 }, (_, index) => previewOffset + index * 45),
+        ])];
+        measuredAngles.forEach((facing) => {
+          measureContext.clearRect(0, 0, measureCanvas.width, measureCanvas.height);
+          draw(measureContext, measureFit, facing);
+          const pixels = measureContext.getImageData(0, 0, measureCanvas.width, measureCanvas.height).data;
+          let x0 = measureCanvas.width; let y0 = measureCanvas.height; let x1 = -1; let y1 = -1;
+          for (let y = 0; y < measureCanvas.height; y += 1) {
+            for (let x = 0; x < measureCanvas.width; x += 1) {
+              if (pixels[(y * measureCanvas.width + x) * 4 + 3] <= 10) continue;
+              x0 = Math.min(x0, x); y0 = Math.min(y0, y);
+              x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+            }
+          }
+          if (x1 < x0 || y1 < y0) return;
+          const actual = {
+            x: (x0 - measureFit.offsetX) / measureFit.scale,
+            y: (y0 - measureFit.offsetY) / measureFit.scale,
+            w: (x1 - x0 + 1) / measureFit.scale,
+            h: (y1 - y0 + 1) / measureFit.scale,
+          };
+          measuredFacings.push(actual);
+        });
+        let measured = null;
+        let measuredCenter = null;
+        let maxCenterShift = 0;
+        if (measuredFacings.length) {
+          const centersX = measuredFacings.map((bounds) => bounds.x + bounds.w / 2);
+          const centersY = measuredFacings.map((bounds) => bounds.y + bounds.h / 2);
+          const centerX = (Math.min(...centersX) + Math.max(...centersX)) / 2;
+          const centerY = (Math.min(...centersY) + Math.max(...centersY)) / 2;
+          measuredCenter = { x: centerX, y: centerY };
+          maxCenterShift = Math.max(...measuredFacings.map((bounds) => Math.max(
+            Math.abs(bounds.x + bounds.w / 2 - centerX),
+            Math.abs(bounds.y + bounds.h / 2 - centerY),
+          )));
+          const extentX = Math.max(...measuredFacings.flatMap((bounds) => [
+            centerX - bounds.x, bounds.x + bounds.w - centerX,
+          ]));
+          const extentY = Math.max(...measuredFacings.flatMap((bounds) => [
+            centerY - bounds.y, bounds.y + bounds.h - centerY,
+          ]));
+          measured = { x: centerX - extentX, y: centerY - extentY, w: extentX * 2, h: extentY * 2 };
+        }
+        fit = fitFrom(measured || approxBounds);
+        if (measuredCenter && maxCenterShift > 0 && maxCenterShift * fit.scale > 0.5) {
+          fit.scale = 0.5 / maxCenterShift;
+          fit.offsetX = w / 2 - measuredCenter.x * fit.scale;
+          fit.offsetY = h / 2 - measuredCenter.y * fit.scale;
+        }
         KIND_PREVIEW_FIT_CACHE.set(fitCacheKey, fit);
       }
       ctx2.clearRect(0, 0, w, h);
-      draw(fit);
+      draw(ctx2, fit);
       return;
     }
     const propShape = kind === "prop" && PROP_SHAPES[propShapeId] ? PROP_SHAPES[propShapeId] : null;
@@ -27235,7 +27328,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     ctx2.restore();
   }
 
-  function drawPosePreview(canvas, poseId, color) {
+  function drawPosePreview(canvas, poseId, color, previewYaw = null) {
     const ctx = canvas.getContext("2d");
     const w = canvas.width;
     const h = canvas.height;
@@ -27244,7 +27337,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      * 宙返りや寝姿のように「横から見る形」は、斜めから見ると
      * 手前と奥が重なって塊にしか見えない。そういう姿勢は真横から見せる。 */
     const pose = poseById(poseId);
-    const yaw = pose && pose.sideView ? Math.PI * 0.5 : Math.PI * 0.24;
+    const yaw = Number.isFinite(previewYaw) ? previewYaw
+      : pose && pose.sideView ? Math.PI * 0.5 : Math.PI * 0.24;
 
     // まず等倍で組んで、外に出る範囲を測る
     const probe = buildRig(poseId, 0, 0, 1, 1, yaw, 0, null);
@@ -27268,6 +27362,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const ox = pad - x0 * s + ((w - pad * 2) - bw * s) / 2;
     const oy = pad - y0 * s + ((h - pad * 2) - bh * s) / 2;
     paintBody(ctx, buildRig(poseId, ox, oy, s, s, yaw, 0, null), color, null);
+  }
+  if (openArgs.has("feature-test")) {
+    window.SHOSAI_STAGE_POSE_PREVIEW_TEST = Object.freeze({ draw: drawPosePreview });
   }
 
   // ディアボロは専用の向き・持たせる操作を保つため type は変えない。
@@ -29449,7 +29546,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (els.versionLabel && document.activeElement !== els.versionLabel) els.versionLabel.value = p.versionLabel;
     syncProjectSummary();
     if (els.versionNote) {
-      els.versionNote.textContent = p.parentVersionId
+      const bundled = Object.prototype.hasOwnProperty.call(BUNDLED_VERSION_NOTE_REASONS, p.id);
+      els.versionNote.hidden = bundled;
+      els.versionNote.textContent = bundled ? "" : p.parentVersionId
         ? (sx(`${p.branchReason || "別バージョンとして複製"}（元の版から派生）`, `${p.branchReason || "Duplicated as another version"} (derived from an earlier version)`))
         : (tx("このショーの最初の版です。"));
     }
@@ -42274,6 +42373,8 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     if (!pendingBlocked) {
       openRomeoJulietOnFirstRun();
       backfillOpenRomeoJulietVoxOffsets();
+      backfillOpenBundledVersionNote();
+      backfillBundledVersionNoteShelf();
       backfillBundledSampleShelf();
       backfillOpenBundledSampleTimings();
     }

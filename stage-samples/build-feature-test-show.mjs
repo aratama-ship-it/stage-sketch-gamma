@@ -270,8 +270,10 @@ const POSE_OVERFLOW = GENERAL_POSES.slice(A_POSES + 3);
 if (POSE_OVERFLOW.length > 50) throw new Error(`姿勢が多すぎて試験場に並べきれません（${POSES.length}件・A 群 ${A_POSES}＋ヘルプ 3＋J-1 50＝${A_POSES + 53} 件まで）`);
 [GENERAL_POSES.slice(0, A_SCENE_CAPS[0]), GENERAL_POSES.slice(A_SCENE_CAPS[0], A_POSES)].filter((list) => list.length).forEach((list, index) => {
   const positions = grid(list.length, 6, 0.08, 0.92, 0.2, 0.9);
+  const repairedPoseNote = list.some((pose) => ["bridge_hold", "chest_stand", "backbend_standing"].includes(pose))
+    ? " bridge_hold・chest_stand・backbend_standing は頭・首・肩が一続きで、ブリッジは逆V字でなく弓なりに見えること。" : "";
   scene(`a${index + 1}`, `A-${index + 1} 姿勢見本 ${index + 1}/2（${list.length}種）`, 1,
-    `${CHECK}登録の無い演者（名前＝姿勢ID）に、手持ち楽器の自動姿勢と階段専用を除いた姿勢を割り当てた。正面図で形が崩れていないか、平面図の足元の大きさ、選んだときの枠、3Dカメラでの見え方を見る。本体の POSES は${POSES.length}種。階段専用はC-4、手持ち楽器はC-2で「持つ」を選んだ後に検証する。A-1 に78件・A-2 に79件、あふれた分は文脈ヘルプの駒3つと J-1 の演者に割り当てた。姿勢を選ぶ場所（姿勢の窓・図の下の帯・演者を追加する窓）は分類の見出しで分かれ、窓と演者を追加する窓は検索で絞れること。帯は先頭の選択欄で分類を切り替え、末尾の「探す」で検索付きの窓が開くこと。`,
+    `${CHECK}登録の無い演者（名前＝姿勢ID）に、手持ち楽器の自動姿勢と階段専用を除いた姿勢を割り当てた。正面図で形が崩れていないか、平面図の足元の大きさ、選んだときの枠、3Dカメラでの見え方を見る。本体の POSES は${POSES.length}種。階段専用はC-4、手持ち楽器はC-2で「持つ」を選んだ後に検証する。A-1 に78件・A-2 に79件、あふれた分は文脈ヘルプの駒3つと J-1 の演者に割り当てた。姿勢を選ぶ場所（姿勢の窓・図の下の帯・演者を追加する窓）は分類の見出しで分かれ、窓と演者を追加する窓は検索で絞れること。帯は先頭の選択欄で分類を切り替え、末尾の「探す」で検索付きの窓が開くこと。${repairedPoseNote}`,
     list.map((pose, i) => perf(`a${index + 1}`, null, positions[i].u, positions[i].v, { pose, name: pose, color: COLORS[i % COLORS.length] })));
 });
 /* 文脈ヘルプ: A-1の登録共通固定と駒単体固定、A-2に同じ登録の固定を置く。 */
@@ -330,7 +332,7 @@ const formed = (id, presetId, keys, scalePct = 80) => {
   const result = FORMATION.plan(presetId, members, members.map((m) => m.id), STAGE, scalePct);
   return keys.map((key, i) => perf(id, key, result.positions[i].u, result.positions[i].v));
 };
-const formationNote = (presetId, n) => `${CHECK}${n}人を型「${FORMATION_CATALOG.presets.find((p) => p.id === presetId).name}」（${presetId}・80%）で置いてある。平面図でドラッグ選択→「選んだもの」最下部のフォーメーションから別の型へ変える。人物の入れ替え・大きさ20〜100%・舞台外に出る型の拒否を見る。`;
+const formationNote = (presetId, n) => `${CHECK}${n}人を型「${FORMATION_CATALOG.presets.find((p) => p.id === presetId).name}」（${presetId}・80%）で置いてある。平面図でドラッグ選択→「選んだもの」最下部のフォーメーションから別の型へ変える。人物の入れ替え・大きさ20〜100%・舞台外に出る型の拒否を見る。入れ替え画面の大きな配置図では番号の下に省略した演者名が出て重ならず、右上の縮小図は番号だけであること。`;
 scene("b1", "B-1 2人 横並び", 1, formationNote("02-01", 2), formed("b1", "02-01", castKeys.slice(8, 10)));
 scene("b2", "B-2 4人 菱形", 1, formationNote("04-04", 4), formed("b2", "04-04", castKeys.slice(0, 4)));
 scene("b3", "B-3 8人 千鳥2列", 1, formationNote("08-02", 8), formed("b3", "08-02", castKeys.slice(0, 8)));
@@ -463,7 +465,7 @@ section("c", "C 舞台セット・小道具・空中");
     const positions = grid(list.length, cols, 0.05, 0.95, 0.12, 0.95);
     const sceneKey = `c2${String.fromCharCode(97 + index)}`;
     scene(sceneKey, `C-3 小道具の全形 ${index + 1}/${sceneCount}（${list.length}種）`, 1,
-      `${CHECK}本体にある小道具の形を全部（登録の無い駒・名前＝形の名前。${PROP_SHAPES.length}種を${sceneCount}シーンに分けた）。正面図の形、平面図の足元、3Dでの見え方、選んだときの枠。${list.some((shape) => shape.id === "balloon") ? "風船は球1個・ひも1本で、既定寸法は幅・奥行き42cm、高さ90cm。" : ""}形が増えたら生成し直す。`,
+      `${CHECK}本体にある小道具の形を全部（登録の無い駒・名前＝形の名前。${PROP_SHAPES.length}種を${sceneCount}シーンに分けた）。正面図の形、平面図の足元、3Dでの見え方、選んだときの枠。小道具を追加する窓では各形が中央に収まり、回転中も縮尺と中心が揺れないこと。${list.some((shape) => shape.id === "balloon") ? "風船は球1個・ひも1本で、既定寸法は幅・奥行き42cm、高さ90cm。" : ""}形が増えたら生成し直す。`,
       list.map((shape, i) => ({ id: pid(sceneKey, "prop"), type: "prop", setId: null, propShape: shape.id, u: round(positions[i].u), v: round(positions[i].v), facing: 0, size: 100, color: "#d3ac59", name: shape.ja.slice(0, 24) })));
   });
 }
@@ -554,7 +556,7 @@ section("c", "C 舞台セット・小道具・空中");
     setPiece("c6", "hammock", 0.72, 0.86), perf("c6", null, 0.72, 0.86, { pose: "hammock_sit", name: "ハンモックに座る" }),
   );
   scene("c6", "C-7 壁の向き（0・45・90度・3D検証）", 1,
-    `${CHECK}同じ壁を0度・45度・90度で並べた（2026-09-20、3Dが駒の向きを無視していた不具合の再発防止用）。正面図・平面図・3Dの3つを見比べて、どれでも同じ向きに見えることを確認する。右端（90度）は真横を向くため、正面図では細長い線に、3Dでも薄い面にしか見えないのが正解。その90度の壁にだけ絵（格子模様）を映してあり、正しく回っていれば絵もほとんど見えなくなる。もし3Dで正面を向いた厚い壁のまま絵がはっきり見えていたら、向きが無視されている退行のサイン。\n2026-09-29: 手前の列に 檻（中の演者は床に立つ）・柱（右の演者が「壁にもたれる」で左肩を柱へ）・バイク（跨って腰が座面）・ストラップとリラ（近くの演者が吊られ、姿勢の窓に吊りの組が出る）。`,
+    `${CHECK}同じ壁を0度・45度・90度で並べた（2026-09-20、3Dが駒の向きを無視していた不具合の再発防止用）。正面図・平面図・3Dの3つを見比べて、どれでも同じ向きに見えることを確認する。右端（90度）は真横を向くため、正面図では細長い線に、3Dでも薄い面にしか見えないのが正解。その90度の壁にだけ絵（格子模様）を映してあり、正しく回っていれば絵もほとんど見えなくなる。もし3Dで正面を向いた厚い壁のまま絵がはっきり見えていたら、向きが無視されている退行のサイン。\n2026-09-29: 手前の列に 檻（中の演者は床に立つ）・柱（右の演者が「壁にもたれる」で左肩を柱へ）・バイク（跨って腰が座面）・ストラップとリラ（近くの演者が吊られ、姿勢の窓に吊りの組が出る）。リラの演者を選び「リラで片脚を掛けて反る」に替え、頭・胴・骨盤・脚が一続きに見えること。`,
     pieces);
 }
 

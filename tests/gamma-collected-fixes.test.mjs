@@ -27,7 +27,7 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.match(main, /ROSTER_PROP_SPECIAL_KINDS = Object\.freeze\(\[\s*\{ group: "サーカス道具", kind: "diabolo" \}/);
   assert.match(main, /group\.ids\.filter\(\(shapeId\) => rosterShapeIsAvailable\(shapeId\) && !ROSTER_SET_PROP_SHAPES\.has\(shapeId\)\)/);
   assert.match(main, /group\.ids\.filter\(\(shapeId\) => rosterShapeIsAvailable\(shapeId\) && ROSTER_SET_PROP_SHAPES\.has\(shapeId\)\)/);
-  assert.match(main, /drawStagePiece\(ctx2, previewPiece, previewLayout, \(\) => 0, \{ showFaceEdges: false \}\)/);
+  assert.match(main, /drawStagePiece\(target, \{ \.\.\.previewPiece, facing \}, previewLayout, \(\) => 0, \{ showFaceEdges: false \}\)/);
   assert.match(main, /function paintBox\(target, piece, L, part, drawOptions = \{\}\)/);
   assert.match(main, /if \(drawOptions\.showFaceEdges !== false\) target\.stroke\(\);/);
   assert.match(main, /function bindKindPreviewSpin\(tile, canvas, draw, options = \{\}\)/);

@@ -9,6 +9,7 @@ const project = doc.project;
 if (doc.kind !== 'shosai-stage-sketch' || doc.version !== 4
     || project?.id !== 'romeo-juliet-rj-second-v1'
     || !project.title.includes('RJセカンド')) throw Error('RJセカンドの正本が違います');
+project.branchReason = '';
 
 // Keep cast IDs and cue timing intact; the dialogue is the existing original adaptation.
 for (const member of project.cast) member.name = member.name.replace(/^\d+\s*/, '').replace(/担当$/, '');

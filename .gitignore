@@ -276,6 +276,10 @@ public-dist/
 !/tests/stage-light-panel-import.test.mjs
 !/tests/stage-project-store.test.mjs
 !/tests/romeo-juliet-sample.test.mjs
+!/tests/prop-preview-center-browser.cjs
+!/tests/pose-integrity-browser.cjs
+!/tests/bundled-version-note-browser.cjs
+!/tests/formation-names-browser.cjs
 
 # Formation preset editor runtime (local preparation; not published).
 !/gamma-formation-presets.js
