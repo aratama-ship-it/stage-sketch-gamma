@@ -545,28 +545,9 @@ body.gamma-3d-active .stage-panel.gamma-selection-floating .stage-panel-help { r
 .stage-selected-heading #stage-piece-lock svg,
 .stage-selected-heading #stage-fpv-open svg { width: 18px; height: 18px; }
 
-/* F-1: 正面図・平面図の「×」を正方形にする。
- * 実測: 分割レイアウトの中央列（stage-board-frameの実効幅420px）は既に
- * @container stage-board (max-width:520px) の「側パネルを広げたときの二列」条件に入っており、
- * .stage-canvas-tools .stage-canvas-close が width:100% で兄弟ボタン（.stage-canvas-tool等）と
- * 同じ「全幅の帯」になっていた。兄弟は意図どおり全幅のままにし、×だけを正方形にする。 */
-@container stage-board (max-width: 520px) {
-  .stage-canvas-tools .stage-canvas-close {
-    width: var(--icon-sm);
-    min-width: var(--icon-sm);
-    min-height: var(--icon-sm);
-    flex: 0 0 auto;
-    justify-self: start;
-  }
-}
 .stage-canvas-close {
-  width: var(--icon-sm);
-  min-width: var(--icon-sm);
-  height: var(--icon-sm);
-  min-height: var(--icon-sm);
   display: inline-grid;
   place-items: center;
-  padding: 0;
 }
 
 /* ===== N-1: 数値欄の左右ドラッグ編集（gamma-number-scrub.js） ===== */

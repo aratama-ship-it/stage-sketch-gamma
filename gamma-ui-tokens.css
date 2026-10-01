@@ -100,7 +100,13 @@ html[data-stage-skin] :is(button,input,select,textarea):focus-visible,
 html[data-gamma-embedded] :is(button,input,select,textarea):focus-visible { outline:2px solid var(--brass); outline-offset:2px; }
 
 /* Icon-only squares share centering; their existing hit sizes and states remain local. */
-:root { --gamma-feedback-width: 60px; --gamma-square-glyph-size: 16px; }
+:root {
+  --gamma-feedback-width: 60px;
+  --gamma-square-glyph-size: 16px;
+  --gamma-icon-scale: 1.1;
+  --gamma-canvas-bar-icon-size: 34px;
+  --gamma-canvas-bar-glyph-size: 21px;
+}
 html[data-stage-skin] :is(
   button.is-icon, button:has(> .stage-square-glyph), label.is-icon, .stage-panel-version-copy,
   .stage-history-icon, .stage-gear-btn, .stage-panel-visibility-btn,
@@ -120,7 +126,74 @@ html[data-stage-skin] :is(
 }
 .stage-square-glyph {
   display: block; flex: 0 0 auto;
-  width: var(--gamma-square-glyph-size); height: var(--gamma-square-glyph-size);
+  width: calc(var(--gamma-square-glyph-size) * var(--gamma-icon-scale));
+  height: calc(var(--gamma-square-glyph-size) * var(--gamma-icon-scale));
+}
+
+/* 正面図・平面図の帯にあるアイコン操作は、狭い幅でも同じ正方形を保つ。 */
+html[data-stage-skin] .stage-canvas-bar .stage-canvas-tools :is(
+  .stage-canvas-toggle.is-icon, .stage-canvas-tool.is-icon, .stage-canvas-close
+) {
+  box-sizing: border-box;
+  flex: 0 0 var(--gamma-canvas-bar-icon-size);
+  width: var(--gamma-canvas-bar-icon-size);
+  min-width: var(--gamma-canvas-bar-icon-size);
+  max-width: var(--gamma-canvas-bar-icon-size);
+  height: var(--gamma-canvas-bar-icon-size);
+  min-height: var(--gamma-canvas-bar-icon-size);
+  max-height: var(--gamma-canvas-bar-icon-size);
+  padding: 0;
+  place-items: center;
+  justify-self: start;
+}
+html[data-stage-skin] .stage-canvas-bar .stage-canvas-tools :is(
+  .stage-canvas-toggle.is-icon, .stage-canvas-tool.is-icon, .stage-canvas-close
+) > svg,
+html[data-stage-skin] .stage-canvas-bar .stage-canvas-tools :is(
+  .stage-canvas-toggle.is-icon, .stage-canvas-tool.is-icon, .stage-canvas-close
+) > .stage-tool-icon {
+  width: calc(var(--gamma-canvas-bar-glyph-size) * var(--gamma-icon-scale));
+  height: calc(var(--gamma-canvas-bar-glyph-size) * var(--gamma-icon-scale));
+}
+
+/* 箱はそのままに、ボタン内の絵だけを共通倍率で大きくする。 */
+html[data-stage-skin] :is(.stage-history-icon, .stage-release-open) { --gamma-icon-glyph-size: 22px; }
+html[data-stage-skin] :is(
+  .stage-ai-link, .stage-cue-sheet-icon, .stage-export-icon, .stage-header-icon,
+  .stage-timeline-square, .stage-timeline-settings-trigger
+) { --gamma-icon-glyph-size: 20px; }
+html[data-stage-skin] .stage-cast-lock { --gamma-icon-glyph-size: 13px; }
+html[data-stage-skin] :is(
+  .stage-panel-version-copy, .stage-cast-remove, .stage-scene-row-delete,
+  .stage-zoom-fab button, .stage-venue-editor-zoom button,
+  .stage-timeline-row-add, .stage-timeline-row-handle
+) { --gamma-icon-glyph-size: 16px; }
+html[data-stage-skin] .stage-scene-action-icon { --gamma-icon-glyph-size: 21px; }
+html[data-stage-skin] :is(
+  .stage-history-icon, .stage-release-open, .stage-ai-link, .stage-cue-sheet-icon,
+  .stage-export-icon, .stage-header-icon, .stage-panel-version-copy,
+  .stage-cast-remove, .stage-cast-lock, .stage-scene-row-delete,
+  .stage-scene-action-icon, .stage-zoom-fab button, .stage-venue-editor-zoom button,
+  .stage-timeline-square, .stage-timeline-settings-trigger,
+  .stage-timeline-row-add, .stage-timeline-row-handle
+) > svg {
+  width: calc(var(--gamma-icon-glyph-size) * var(--gamma-icon-scale));
+  height: calc(var(--gamma-icon-glyph-size) * var(--gamma-icon-scale));
+}
+html[data-stage-skin] :is(.stage-panel-help, .stage-hint-help, .stage-pref-help) {
+  font-size: calc(11px * var(--gamma-icon-scale));
+}
+html[data-stage-skin] .stage-scene-bar-grid {
+  font-size: calc(13px * var(--gamma-icon-scale));
+}
+html[data-stage-skin] :is(#stage-timeline-loop-a, #stage-timeline-loop-b) {
+  font-size: calc(14px * var(--gamma-icon-scale));
+}
+/* 取っ手はSVG枠が箱の高さ一杯なので、枠は保ち、中の作図だけを下端基準で拡大する。 */
+html[data-stage-skin] #stage-timeline-grip > svg > * {
+  transform-box: view-box;
+  transform-origin: 50% 100%;
+  transform: scale(var(--gamma-icon-scale));
 }
 html[data-stage-skin] #stage-feedback-open {
   display: inline-flex; align-items: center; justify-content: center;

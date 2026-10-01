@@ -1,0 +1,570 @@
+{
+ "1366": [
+  {
+   "el": "#stage-undo",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "22x22"
+  },
+  {
+   "el": "#stage-redo",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "22x22"
+  },
+  {
+   "el": "#stage-ai-showwright-link",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-cue-sheet-open",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-export",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-share-open",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-release-open",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "22x22"
+  },
+  {
+   "el": "#stage-version-copy",
+   "box": "34x34",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": ".stage-cast-status.is-on",
+   "box": "42x24",
+   "kind": "text:ON",
+   "glyph": "font 11px"
+  },
+  {
+   "el": ".stage-cast-lock",
+   "box": "22x22",
+   "kind": "svg",
+   "glyph": "13x13"
+  },
+  {
+   "el": ".stage-cast-remove",
+   "box": "22x22",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": ".stage-panel-help",
+   "box": "18x18",
+   "kind": "text:?",
+   "glyph": "font 11px"
+  },
+  {
+   "el": "#stage-scene-bar-grid",
+   "box": "30x30",
+   "kind": "text:⊞",
+   "glyph": "font 13px"
+  },
+  {
+   "el": "#stage-front-note",
+   "box": "238.5x28",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-costume-toggle",
+   "box": "238.5x28",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": ".stage-canvas-close",
+   "box": "32x32",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-plan-route",
+   "box": "238.5x28",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-plan-derive-route",
+   "box": "238.5x28",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-plan-note",
+   "box": "238.5x28",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-plan-zoom-in",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-plan-zoom-out",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-scene-grid-open",
+   "box": "34x34",
+   "kind": "svg",
+   "glyph": "21x21"
+  },
+  {
+   "el": "#stage-scene-section",
+   "box": "34x34",
+   "kind": "svg",
+   "glyph": "21x21"
+  },
+  {
+   "el": "#stage-scene-add",
+   "box": "34x34",
+   "kind": "svg",
+   "glyph": "21x21"
+  },
+  {
+   "el": ".btn-quiet.stage-scene-row-delete",
+   "box": "31x31",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-timeline-grip",
+   "box": "52x22",
+   "kind": "svg",
+   "glyph": "40x22"
+  },
+  {
+   "el": "#stage-timeline-settings-trigger",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-timeline-head",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-timeline-prev",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-timeline-play",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-timeline-next",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-timeline-loop-a",
+   "box": "44x44",
+   "kind": "text:A",
+   "glyph": "font 14px"
+  },
+  {
+   "el": "#stage-timeline-loop-b",
+   "box": "44x44",
+   "kind": "text:B",
+   "glyph": "font 14px"
+  },
+  {
+   "el": "#stage-timeline-zoom-out",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-timeline-zoom-in",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-timeline-transition-animation",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": ".stage-timeline-row-handle",
+   "box": "28x31",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": ".stage-timeline-row-handle",
+   "box": "28x39",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-timeline-add-audio",
+   "box": "32x32",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": ".stage-timeline-row-handle",
+   "box": "28x51",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-timeline-add-scene",
+   "box": "32x32",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": ".stage-timeline-row-handle",
+   "box": "28x47",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-timeline-add-transition",
+   "box": "32x32",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": ".stage-timeline-row-handle",
+   "box": "28x41",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-timeline-add-light-cue",
+   "box": "32x32",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-timeline-add-music-cue",
+   "box": "32x32",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-timeline-add-dialogue-cue",
+   "box": "32x32",
+   "kind": "svg",
+   "glyph": "16x16"
+  }
+ ],
+ "1800": [
+  {
+   "el": "#stage-undo",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "22x22"
+  },
+  {
+   "el": "#stage-redo",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "22x22"
+  },
+  {
+   "el": "#stage-ai-showwright-link",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-cue-sheet-open",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-export",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-share-open",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-release-open",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "22x22"
+  },
+  {
+   "el": "#stage-version-copy",
+   "box": "34x34",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": ".stage-cast-status.is-on",
+   "box": "42x24",
+   "kind": "text:ON",
+   "glyph": "font 11px"
+  },
+  {
+   "el": ".stage-cast-lock",
+   "box": "22x22",
+   "kind": "svg",
+   "glyph": "13x13"
+  },
+  {
+   "el": ".stage-cast-remove",
+   "box": "22x22",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": ".stage-panel-help",
+   "box": "18x18",
+   "kind": "text:?",
+   "glyph": "font 11px"
+  },
+  {
+   "el": "#stage-scene-bar-grid",
+   "box": "30x30",
+   "kind": "text:⊞",
+   "glyph": "font 13px"
+  },
+  {
+   "el": "#stage-front-note",
+   "box": "34x28",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-costume-toggle",
+   "box": "34x28",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": ".stage-canvas-close",
+   "box": "32x32",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-plan-route",
+   "box": "34x28",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-plan-derive-route",
+   "box": "34x28",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-plan-note",
+   "box": "34x28",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-plan-zoom-in",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-plan-zoom-out",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-scene-grid-open",
+   "box": "34x34",
+   "kind": "svg",
+   "glyph": "21x21"
+  },
+  {
+   "el": "#stage-scene-section",
+   "box": "34x34",
+   "kind": "svg",
+   "glyph": "21x21"
+  },
+  {
+   "el": "#stage-scene-add",
+   "box": "34x34",
+   "kind": "svg",
+   "glyph": "21x21"
+  },
+  {
+   "el": ".btn-quiet.stage-scene-row-delete",
+   "box": "31x31",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-timeline-grip",
+   "box": "52x22",
+   "kind": "svg",
+   "glyph": "40x22"
+  },
+  {
+   "el": "#stage-timeline-settings-trigger",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-timeline-head",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-timeline-prev",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-timeline-play",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-timeline-next",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-timeline-loop-a",
+   "box": "44x44",
+   "kind": "text:A",
+   "glyph": "font 14px"
+  },
+  {
+   "el": "#stage-timeline-loop-b",
+   "box": "44x44",
+   "kind": "text:B",
+   "glyph": "font 14px"
+  },
+  {
+   "el": "#stage-timeline-zoom-out",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-timeline-zoom-in",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": "#stage-timeline-transition-animation",
+   "box": "44x44",
+   "kind": "svg",
+   "glyph": "20x20"
+  },
+  {
+   "el": ".stage-timeline-row-handle",
+   "box": "28x31",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": ".stage-timeline-row-handle",
+   "box": "28x39",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-timeline-add-audio",
+   "box": "32x32",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": ".stage-timeline-row-handle",
+   "box": "28x51",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-timeline-add-scene",
+   "box": "32x32",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": ".stage-timeline-row-handle",
+   "box": "28x47",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-timeline-add-transition",
+   "box": "32x32",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": ".stage-timeline-row-handle",
+   "box": "28x41",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-timeline-add-light-cue",
+   "box": "32x32",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-timeline-add-music-cue",
+   "box": "32x32",
+   "kind": "svg",
+   "glyph": "16x16"
+  },
+  {
+   "el": "#stage-timeline-add-dialogue-cue",
+   "box": "32x32",
+   "kind": "svg",
+   "glyph": "16x16"
+  }
+ ]
+}

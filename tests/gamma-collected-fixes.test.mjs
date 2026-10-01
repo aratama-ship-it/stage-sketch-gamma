@@ -71,17 +71,19 @@ test("canvas visibility toggles use the shared icon treatment without changing t
   const html = read("stage.html");
   const sketch = read("stage-sketch.js");
   const style = read("style.css");
+  const tokens = read("gamma-ui-tokens.css");
   for (const id of [
     "stage-front-lights", "stage-show-front-border", "stage-front-light-intent", "stage-show-seatmap",
     "stage-plan-lights", "stage-plan-routes-cast", "stage-plan-routes-light", "stage-plan-routes-set", "stage-show-flown",
   ]) {
     assert.match(html, new RegExp(`class="stage-canvas-toggle is-icon"[^>]*>[\\s\\S]*?id="${id}"[\\s\\S]*?<svg`));
   }
-  assert.match(style, /\.stage-canvas-toggle\.is-icon \{[\s\S]*?width: 34px;[\s\S]*?min-height: 34px;/);
-  assert.match(style, /\.stage-canvas-tools \.stage-canvas-toggle\.is-icon \{\s*min-height: 34px;/);
-  assert.match(style, /\.stage-canvas-toggle\.is-icon svg \{[\s\S]*?width: 21px;[\s\S]*?height: 21px;/);
+  assert.match(tokens, /--gamma-canvas-bar-icon-size: 34px;/);
+  assert.match(tokens, /--gamma-canvas-bar-glyph-size: 21px;/);
+  assert.match(tokens, /\.stage-canvas-bar \.stage-canvas-tools :is\([\s\S]*?\.stage-canvas-toggle\.is-icon, \.stage-canvas-tool\.is-icon, \.stage-canvas-close[\s\S]*?width: var\(--gamma-canvas-bar-icon-size\);[\s\S]*?height: var\(--gamma-canvas-bar-icon-size\);/);
+  assert.match(tokens, /width: calc\(var\(--gamma-canvas-bar-glyph-size\) \* var\(--gamma-icon-scale\)\);/);
   assert.match(style, /\.stage-canvas-toggle\.is-icon:not\(:has\(input:checked\)\) \.stage-visibility-toggle-slash/);
-  assert.match(sketch, /"\.stage-canvas-toggle\.is-icon"/);
+  assert.match(sketch, /const ICON_TIP_OPERATION_SELECTOR = "button, a, label, \[role='button'\]"/);
   assert.match(sketch, /frontBorder: "劇場設定の天井・前一文字幕/);
 });
 
@@ -207,9 +209,10 @@ test("stage tools can toggle rendered lighting without adding show data", () => 
   assert.match(style, /\.stage-center-bar \.stage-name-toggle\.is-icon \{[\s\S]*width: 34px/);
   assert.match(style, /\.stage-center-bar \.stage-name-toggle\.is-icon svg \{ width: 21px; height: 21px; \}/);
   assert.match(style, /\.stage-center-bar \.stage-center-group\.is-display \.stage-view-select \{ margin-left: auto; \}/);
-  assert.match(sketch, /\.stage-history-actions \.stage-gear-btn/);
-  assert.match(sketch, /\.stage-header-collaboration \[aria-label\]/);
-  assert.match(sketch, /nativeTitle !== name \? nativeTitle : ""/);
+  assert.match(sketch, /document\.addEventListener\("pointerover"/);
+  assert.match(sketch, /document\.addEventListener\("focusin"/);
+  assert.match(sketch, /operation\.hasAttribute\("data-no-tip"\)/);
+  assert.match(sketch, /button\.dataset\.tipTitle/);
 });
 
 test("the 2D-study boundary note lives in Settings instead of below the stage", () => {

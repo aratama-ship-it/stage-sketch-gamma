@@ -10257,10 +10257,6 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-bar:is(:hover,
 /* 正面・平面の道具も、既存の表示トグルと同じ 34px の線画にそろえる。 */
 .stage-canvas-tool.is-icon {
   display: inline-grid;
-  width: 34px;
-  min-width: 34px;
-  min-height: 34px;
-  padding: 3px;
   place-items: center;
 }
 
@@ -10399,10 +10395,6 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-bar:is(:hover,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  min-width: 34px;
-  min-height: 34px;
-  padding: 3px;
   border: 1px solid var(--line-dark);
   color: var(--milk-dim);
 }
@@ -10420,8 +10412,6 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-bar:is(:hover,
 .stage-canvas-toggle.is-icon svg {
   display: grid;
   place-items: center;
-  width: 21px;
-  height: 21px;
 }
 
 .stage-canvas-toggle.is-icon .stage-visibility-toggle-slash { display: none; }
@@ -10438,8 +10428,6 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-bar:is(:hover,
 
 /* セクション中の全員へ一括適用する衣装。演者未選択でも常に表示する。 */
 .stage-front-costume-choice {
-  min-height: 34px;
-  padding: 3px;
   white-space: nowrap;
 }
 
@@ -10454,8 +10442,6 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-bar:is(:hover,
   border: 1px solid var(--line-dark);
   background: none;
   color: var(--milk-dim);
-  min-width: 36px;
-  min-height: 28px;
   font-size: 17px;
   line-height: 1;
   transition: color 0.15s, border-color 0.15s;
@@ -13286,12 +13272,6 @@ body.stage-modal-open .stage-tour { display: none !important; }
     justify-content: center;
     padding: 3px 5px;
     white-space: nowrap;
-  }
-
-  /* 文字札は詰めてもよいが、共通アイコンは道具列と同じ34pxを保つ。 */
-  .stage-canvas-tools .stage-canvas-toggle.is-icon {
-    min-height: 34px;
-    padding: 3px;
   }
 
   .stage-canvas-tools .stage-route-action .stage-canvas-tool-label,

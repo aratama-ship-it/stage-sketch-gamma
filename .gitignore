@@ -388,6 +388,10 @@ public-dist/
 !/tests/instrument-auto-pose-browser.cjs
 !/tests/layout-lanes.test.mjs
 !/tests/layout-lanes-browser.cjs
+!/tests/canvas-bar-icons-browser.cjs
+!/tests/icon-scale-browser.cjs
+!/tests/icon-tips-browser.cjs
+!/tests/icon-size-baseline-2026-10-01.json
 
 # Lighting beginner controls over the shared rig/cues and their regression checks
 !/light-design/simple-lighting-model.js

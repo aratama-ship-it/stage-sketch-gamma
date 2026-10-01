@@ -37929,9 +37929,51 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     toolTipEl.hidden = true;
   }
 
+  const ICON_TIP_OPERATION_SELECTOR = "button, a, label, [role='button']";
+
+  function visibleIconTipText(operation) {
+    const parts = [];
+    const walker = document.createTreeWalker(operation, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      const parent = node.parentElement;
+      if (!parent || parent.closest("[hidden], [aria-hidden='true'], .visually-hidden")) continue;
+      const style = getComputedStyle(parent);
+      if (style.display === "none" || style.visibility === "hidden") continue;
+      const value = node.nodeValue.replace(/\s+/g, " ").trim();
+      if (value) parts.push(value);
+    }
+    return parts.join(" ").trim();
+  }
+
+  function isIconOnlyOperation(operation) {
+    if (!(operation instanceof Element) || !operation.matches(ICON_TIP_OPERATION_SELECTOR)) return false;
+    if (operation.hasAttribute("data-no-tip") || operation.closest("[hidden]")) return false;
+    const style = getComputedStyle(operation);
+    const box = operation.getBoundingClientRect();
+    if (style.display === "none" || style.visibility === "hidden" || box.width < 1 || box.height < 1) return false;
+    if (!operation.getAttribute("aria-label") && !operation.getAttribute("title") && !operation.dataset.tipTitle) return false;
+    const text = visibleIconTipText(operation);
+    return !text || [...text].length <= 2;
+  }
+
+  function iconTipTargetFromNode(node) {
+    const operation = node instanceof Element ? node.closest(ICON_TIP_OPERATION_SELECTOR) : null;
+    return isIconOnlyOperation(operation) ? operation : null;
+  }
+
+  function prepareIconTipTarget(operation) {
+    if (operation.hasAttribute("title")) {
+      operation.dataset.tipTitle = operation.getAttribute("title") || "";
+      operation.removeAttribute("title");
+    }
+    return operation;
+  }
+
   function showToolTip(button) {
     if (!featureOn("toolTips") || tabletPwaActive || phoneViewerActive) return;
-    const name = button.getAttribute("aria-label") || button.textContent.trim();
+    prepareIconTipTarget(button);
+    const name = button.getAttribute("aria-label") || button.dataset.tipTitle || visibleIconTipText(button);
     const key = button.dataset.toolKey || button.dataset.tipKey || "";
     // 道具の列は data-stage-tool、絵の上の「動線を描く」「メモ」は data-tool-tip
     const toolName = button.dataset.stageTool || button.dataset.toolTip;
@@ -37949,7 +37991,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       head.append(keyTag);
     }
     tip.append(head);
-    const nativeTitle = button.getAttribute("title") || "";
+    const nativeTitle = button.dataset.tipTitle || "";
     const hintText = TOOL_HINTS[toolName] || button.dataset.tipDescription
       || (nativeTitle !== name ? nativeTitle : "");
     if (hintText) {
@@ -37973,31 +38015,29 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     toolTipFor = button;
   }
 
-  // アイコンだけの操作は、左の道具列だけでなく右上の保存・設定・共有にも同じ説明を付ける。
-  // 説明を省く項目でも、表示名と支援技術向けの名称は維持する。
-  const iconTipTargets = new Set(document.querySelectorAll([
-    "[data-stage-tool]", "[data-tool-tip]",
-    ".stage-center-bar .stage-name-toggle.is-icon",
-    ".stage-canvas-toggle.is-icon",
-    ".stage-history-actions .stage-history-icon",
-    ".stage-history-actions .stage-gear-btn",
-    ".stage-history-actions .stage-panel-visibility-btn",
-    ".stage-history-actions .stage-present-icon",
-    ".stage-history-actions .stage-cue-sheet-icon",
-    ".stage-history-actions .stage-export-icon",
-    ".stage-header-collaboration [aria-label]",
-    ".stage-present-overlay [aria-label]",
-  ].join(", ")));
-  iconTipTargets.forEach((button) => {
-    button.addEventListener("pointerenter", (event) => {
-      if (event.pointerType === "touch") return;   // 指では出さない（押した瞬間に道具が変わる）
-      showToolTip(button);
-    });
-    button.addEventListener("pointerleave", hideToolTip);
-    button.addEventListener("focus", () => showToolTip(button));
-    button.addEventListener("blur", hideToolTip);
-    button.addEventListener("click", hideToolTip);
+  document.addEventListener("pointerover", (event) => {
+    if (event.pointerType === "touch") return;
+    const operation = iconTipTargetFromNode(event.target);
+    if (operation && operation !== toolTipFor) showToolTip(operation);
   });
+  document.addEventListener("pointerout", (event) => {
+    const operation = iconTipTargetFromNode(event.target);
+    const staysInside = event.relatedTarget instanceof Node && operation?.contains(event.relatedTarget);
+    if (operation && !staysInside) hideToolTip();
+  });
+  document.addEventListener("focusin", (event) => {
+    const operation = iconTipTargetFromNode(event.target);
+    if (operation) showToolTip(operation);
+  });
+  document.addEventListener("focusout", (event) => {
+    const operation = iconTipTargetFromNode(event.target);
+    const staysInside = event.relatedTarget instanceof Node && operation?.contains(event.relatedTarget);
+    if (operation && !staysInside) hideToolTip();
+  });
+  document.addEventListener("click", (event) => {
+    if (iconTipTargetFromNode(event.target)) hideToolTip();
+  });
+  window.GAMMA_ICON_TIPS = Object.freeze({ isTarget: isIconOnlyOperation });
   window.addEventListener("scroll", () => { if (toolTipFor) hideToolTip(); }, { passive: true });
   window.addEventListener("resize", () => { if (toolTipFor) hideToolTip(); });
 
