@@ -301,6 +301,10 @@ public-dist/
 !/tests/performer-motion.test.mjs
 !/tests/performer-jog.test.mjs
 !/tests/feature-test-show.test.mjs
+!/tests/import-note-i18n.test.mjs
+!/tests/stage-export-cancel.test.mjs
+!/tests/stage-export-filename.test.mjs
+!/tests/stagesketch-roundtrip-browser.cjs
 !/tests/light-optics.test.mjs
 !/tests/gamma-sharing.test.mjs
 !/tests/stage-venue-front-border.test.mjs

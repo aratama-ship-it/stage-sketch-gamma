@@ -403,8 +403,8 @@ test("stage history controls use current history after a same-tab or 3D roundtri
 
 test("icon polish retains import actions and names every compact control", () => {
   const html = read("stage.html"), app = read("stage-sketch.js"), tokens = read("gamma-ui-tokens.css");
-  assert.match(html, /ベータのショーも読み込めます。/);
-  assert.match(html, /id="stage-import-json" accept="application\/json"/);
+  assert.match(html, /β版で書き出したJSONも読み込めます。/);
+  assert.match(html, /id="stage-import-json" accept="\.stagesketch,\.json,application\/json"/);
   assert.match(html, /id="stage-toolbar-transition-animation"[^>]*data-tool-tip="transitionAnimation"[^>]*aria-label="転換アニメーションのオンオフ"/);
   assert.match(html, /stage-feedback-label">フィードバック/);
   assert.match(html, /M2 8h6v6H2z/);
