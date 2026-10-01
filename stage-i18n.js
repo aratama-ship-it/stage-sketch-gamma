@@ -1197,7 +1197,9 @@
     "表示する図を切り替える（両方表示中は上下順を変更）": "Switch the displayed view (swap order when both are shown)",
     "いまの道具の説明": "About this tool",
     "いまの道具の説明を出す": "Show the tool description",
-    "演者や物を選び、舞台の上で動かします。": "Select a performer or object and move it on stage.",
+    "演者や物を選び、舞台の上で動かします。平面図は空き地をドラッグして移動し、Shift＋ドラッグで囲い選択できます。":
+      "Select a performer or object and move it on stage. Drag empty space to pan the plan, or Shift-drag to select an area.",
+    "持ち物は図の上で掴み、演者から離して置けます。": "Drag held items away from the performer to set them down.",
     "正面図または平面図をなぞると矢印になります。正面図では床の上か空中かを選べます。":
       "Drag on the front or plan view to draw an arrow. In the front view, choose the floor or the air.",
     "空中の矢印は正面図で描きます": "Airborne arrows are drawn in the front view.",
@@ -2411,7 +2413,7 @@
       open: "Opening ", water: "Water level ", poolH: "Floor height ", sheer: "Sheer ",
     },
     tool: {
-      select: "Select a performer or object and move it on stage.",
+      select: "Select a performer or object and move it on stage. Drag empty space to pan the plan, or Shift-drag to select an area.",
       paint: "Paint the upstage backdrop with a finger or the mouse.",
       erase: "Erase only the strokes painted on the backdrop.",
       arrow: "Drag on the front or plan view to draw an arrow. In the front view, choose the floor or the air. Use \"Clear arrows\" at the top right of the view to remove all arrows in that view.",

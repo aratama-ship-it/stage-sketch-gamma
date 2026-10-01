@@ -8156,7 +8156,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   const TOOL_HINTS = {
-    select: "演者や物を選び、舞台の上で動かします。",
+    select: "演者や物を選び、舞台の上で動かします。平面図は空き地をドラッグして移動し、Shift＋ドラッグで囲い選択できます。",
     paint: "",
     erase: "",
     arrow: "正面図または平面図で使える説明用の矢印。正面図では床の上か空中かを選べます。図の右上の「矢印を消す」で、その図の矢印をまとめて消せます。",
@@ -8891,18 +8891,20 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const sceneCreateSelection = new Set();
   const sceneCreateGroupInputs = new Map();
   const sceneCreateItemInputs = new Map();
-  const ZOOM_MIN = 1;
+  const ZOOM_MIN = 0.4;
   const ZOOM_MAX = 5;
 
   const zoomOf = (view) => zoomState[view === "plan" ? "plan" : "front"];
 
-  // 拡大しても、絵の外側が見えないように寄せ幅を丸める
+  // 拡大時は絵の外を見せず、縮小時は絵の全体を画面内から追い出さない。
   function clampZoom(zs) {
     zs.z = clamp(zs.z, ZOOM_MIN, ZOOM_MAX);
-    const maxX = W - W / zs.z;
-    const maxY = H - H / zs.z;
-    zs.ox = clamp(zs.ox, 0, Math.max(0, maxX));
-    zs.oy = clamp(zs.oy, 0, Math.max(0, maxY));
+    const edgeX = W - W / zs.z;
+    const edgeY = H - H / zs.z;
+    const restX = Math.abs(edgeX) < 0.001 ? W * 0.2 : 0;
+    const restY = Math.abs(edgeY) < 0.001 ? H * 0.2 : 0;
+    zs.ox = clamp(zs.ox, Math.min(0, edgeX) - restX, Math.max(0, edgeX) + restX);
+    zs.oy = clamp(zs.oy, Math.min(0, edgeY) - restY, Math.max(0, edgeY) + restY);
   }
 
   /* ---------- 言語 ----------
@@ -11279,6 +11281,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let selectedTextId = null;
   let pointerAction = null;
   let selectionMarquee = null;
+  let dragHoldPreview = null;
   // 確定前の自由矢印。ショーの保存やUndoへは、指を離した時点で初めて入れる。
   let arrowDraft = null;
   let history = [];
@@ -14465,18 +14468,25 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   /* @planFit:start */
-  /* 平面図の既定の大きさ。舞台の枠だけでなく、その外に描かれるもの（袖の帯・客席・
-     全周の円）と、袖へ置かれる駒まで画面へ収める。固定の余白（旧 pad=104/176）だと
-     会場の寸法と無関係なので、余ったり詰まったりした。外部を一切参照しない純粋関数に
-     してあるのは、テストから取り出して数値で確かめるため。触るときは同じ性質を保つこと。 */
+  /* 平面図の尺。作業画面は舞台枠を8割にする stage、会場編集は客席・袖まで収める all。
+     外部を一切参照しない純粋関数にしてあるのは、全会場の数値をテストするため。 */
   function planFit(input) {
-    // input: { W, H, audience, width, depth, wingM, houseM, outside }
+    // input: { W, H, audience, width, depth, wingM, houseM, outside, mode }
     // 返り値: { stage: { x, y, w, h }, pxPerM }
     /* ★houseM（客席の奥行き・m）は任意。渡さなければ今までと1画素も変わらない（2026-09-19）。 */
-    const { W, H, audience, width, depth, wingM, houseM, outside } = input;
+    const { W, H, audience, width, depth, wingM, houseM, outside, mode } = input;
     const M = 24;
     const ratio = depth / width;
     const wingRatio = wingM / width;
+    if (mode === "stage") {
+      const share = 0.8;
+      const sw = share * Math.min(W, H / ratio);
+      const sh = sw * ratio;
+      return {
+        stage: { x: (W - sw) / 2, y: (H - sh) / 2, w: sw, h: sh },
+        pxPerM: sw / width,
+      };
+    }
     /* ★会場が舞台の枠の外にも形を持つとき（客席の多角形・舞台袖）は、その外まで入れて尺を決める
        （VENUE_PLAN_FIT_OUTSIDE_2026_09_19）。outside は「枠の何倍ぶん外へ出るか」の比で、
        上下は枠の高さ、左右は枠の幅に対して数える。
@@ -14557,12 +14567,13 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
        複製をやめてここを呼ぶ形にする。式は1つだけにする。 */
   window.SHOSAI_STAGE_PLAN_FIT = Object.freeze({
     rect(input) {
-      const { W, H, venue, size, wingM, houseM } = input || {};
+      const { W, H, venue, size, wingM, houseM, mode } = input || {};
       if (!venue || !size || !(W > 0) || !(H > 0)) return null;
       const outside = planOutsideRatios(venue, size);
       const fit = planFit({
         W, H, audience: venue.audience, width: size.width, depth: size.depth,
         wingM: Number.isFinite(wingM) ? wingM : WING_M,
+        mode: mode === "all" ? "all" : "stage",
         ...(Number.isFinite(houseM) && houseM > 0 ? { houseM } : {}),
         ...(outside ? { outside } : {}),
       });
@@ -14599,6 +14610,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       }
       const fit = planFit({
         W, H, audience: v.audience, width: size.width, depth: size.depth, wingM: WING_M,
+        mode: "stage",
         ...(Number.isFinite(houseM) ? { houseM } : {}),
         ...(outside ? { outside } : {}),
       });
@@ -22007,6 +22019,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     }
 
     if (lightIntentOverlayOn()) drawLightIntentOverlay(target, L);
+
+    drawDragHoldTarget(target, L, view);
 
     if (showSelection) {
       // 平面で囲んだ対象は正面でも同じだけ囲み、二つの図の選択状態を一致させる。
@@ -35631,6 +35645,12 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         && !(L.plan ? state.showLightsPlan : state.showLightsFront)) return false;
       return !isLocked(piece);
     });
+    if (!wantLight && tool === "select") {
+      const held = pieceAtSelectionBounds(point,
+        candidates.filter((piece) => piece.heldBy && isHoldable(piece)),
+        (piece) => selectionBounds(piece, L));
+      if (held) return held;
+    }
     return pieceAtSelectionBounds(point, candidates, (piece) => selectionBounds(piece, L));
   }
 
@@ -35734,7 +35754,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     }
     if (!piece || !sc().pieces.includes(piece)) return result("no-target", sx("動かしたい対象を選んでください。", "Choose the item you want to move."));
     if (multiple) return result("multiple", sx("固定を確かめる対象を1つ選んでください。", "Select one item to check its lock."));
-    if (piece.heldBy) return result("held", sx("持ち物として人物に付いています。持ち主の設定を確認してください。", "This item is held by a performer. Check its holder settings."));
+    if (piece.heldBy) return result("held", tx("持ち物は図の上で掴み、演者から離して置けます。"));
     if (sc().formationLink) return result("linked", sx("連携したシーンです。配置を変える前に連携元を確認してください。", "This scene is linked. Check its source before changing positions."));
     if (piece.type === "light") return result("light", sx("明かりの操作は照明の画面で確認してください。", "Check lighting controls in the Lighting workspace."));
     if (tool !== "select") return result("tool", sx("位置を変えるには「動かす」道具を選んでください。", "Select the Move tool to change positions."));
@@ -36146,6 +36166,139 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       .map((piece) => piece.holdSide === "L" ? "L" : "R"));
     const order = preferred === "L" ? ["L", "R"] : ["R", "L"];
     return order.find((side) => !used.has(side)) || null;
+  }
+
+  /* @dragHold:start */
+  const HOLD_SNAP = Object.freeze({ attachM: 0.6, detachM: 0.9 });
+
+  function dragHoldCandidate(input) {
+    const { piece, performers, size, view, thresholdM = HOLD_SNAP.attachM, excludedIds = [] } = input || {};
+    if (!piece || !size || !Array.isArray(performers)) return null;
+    const excluded = new Set(excludedIds);
+    return performers.map((holder) => {
+      const dx = (Number(piece.u) - Number(holder.u)) * Number(size.width || 0);
+      const dz = (Number(piece.v) - Number(holder.v)) * Number(size.depth || 0);
+      const distanceM = Math.hypot(dx, dz);
+      return { holder, dx, dz, distanceM };
+    }).filter((entry) => !excluded.has(entry.holder.id)
+      && (view === "front"
+        ? Math.abs(entry.dx) <= thresholdM && Math.abs(entry.dz) <= thresholdM
+        : entry.distanceM <= thresholdM))
+      .sort((a, b) => {
+        const distance = a.distanceM - b.distanceM;
+        return Math.abs(distance) > 1e-9
+          ? distance : Number(b.holder.v) - Number(a.holder.v);
+      })[0] || null;
+  }
+
+  function dragHoldPreferredSide(dropX, leftX, rightX) {
+    return Math.abs(Number(dropX) - Number(leftX)) <= Math.abs(Number(dropX) - Number(rightX)) ? "L" : "R";
+  }
+
+  function dragHoldHysteresis(distanceM, held) {
+    const limit = held ? HOLD_SNAP.detachM : HOLD_SNAP.attachM;
+    return Number(distanceM) <= limit ? (held ? "restore" : "attach") : (held ? "detach" : "none");
+  }
+  /* @dragHold:end */
+
+  function holdHandPoint(holder, side, L) {
+    if (!holder) return null;
+    if (!L.plan) {
+      const visual = effectivelyPlacedPiece(holder);
+      const rig = performerRig(visual, placePiece(visual, L), L);
+      return rig.P[side === "L" ? "wrL" : "wrR"] || placePiece(visual, L);
+    }
+    const sign = side === "L" ? -1 : 1;
+    const rad = finite(holder.facing, 0) * Math.PI / 180;
+    return place(
+      holder.u + (sign * 0.28 * Math.cos(rad)) / (L.size.width || 12),
+      holder.v - (sign * 0.28 * Math.sin(rad)) / (L.size.depth || 9),
+      L,
+    );
+  }
+
+  function dragHoldPreviewFor(piece, action, L) {
+    if (!piece || !action || action.groupStart || !isHoldable(piece)) return null;
+    const performers = sc().pieces.filter((candidate) => candidate.type === "performer" && !candidate.heldBy);
+    let candidate;
+    if (action.originalHold) {
+      const holder = performers.find((item) => item.id === action.originalHold.heldBy);
+      if (!holder) return null;
+      const dx = (piece.u - holder.u) * (L.size.width || 12);
+      const dz = (piece.v - holder.v) * (L.size.depth || 9);
+      const distanceM = Math.hypot(dx, dz);
+      if (dragHoldHysteresis(distanceM, true) !== "restore") return null;
+      candidate = { holder, distanceM };
+    } else {
+      candidate = dragHoldCandidate({ piece, performers, size: L.size, view: action.view });
+      if (!candidate) return null;
+    }
+    const left = holdHandPoint(candidate.holder, "L", L);
+    const right = holdHandPoint(candidate.holder, "R", L);
+    const drop = placePiece(piece, L);
+    const preferred = action.originalHold?.holdSide || dragHoldPreferredSide(drop.x, left.x, right.x);
+    const side = action.originalHold?.holdSide || freeHoldSide(candidate.holder.id, piece.id, preferred);
+    return {
+      view: action.view,
+      holderId: candidate.holder.id,
+      side: side || preferred,
+      preferred,
+      available: Boolean(side),
+      distanceM: candidate.distanceM,
+    };
+  }
+
+  function finishDragHold(action) {
+    if (!action || action.kind !== "drag" || !action.moved || action.groupStart) return false;
+    const piece = sc().pieces.find((candidate) => candidate.id === action.id);
+    if (!piece || !isHoldable(piece)) return false;
+    const L = layout(action.view);
+    if (action.originalHold) {
+      const holder = sc().pieces.find((candidate) => candidate.id === action.originalHold.heldBy
+        && candidate.type === "performer");
+      if (holder) {
+        const distanceM = Math.hypot(
+          (piece.u - holder.u) * (L.size.width || 12),
+          (piece.v - holder.v) * (L.size.depth || 9),
+        );
+        if (dragHoldHysteresis(distanceM, true) === "restore") {
+          piece.heldBy = holder.id;
+          piece.holdSide = action.originalHold.holdSide;
+          piece.holdMode = action.originalHold.holdMode;
+          finishHoldingChange();
+          return true;
+        }
+      }
+      piece.heldBy = null;
+      piece.holdMode = "hand";
+      piece.base = 0;
+      finishHoldingChange(`${heldItemName(piece)}を手放しました。`);
+      return true;
+    }
+    const preview = dragHoldPreviewFor(piece, action, L);
+    if (!preview) return false;
+    const holder = sc().pieces.find((candidate) => candidate.id === preview.holderId
+      && candidate.type === "performer");
+    return holdPieceBy(piece, holder, preview.preferred);
+  }
+
+  function drawDragHoldTarget(target, L, view) {
+    const preview = dragHoldPreview;
+    if (!preview || preview.view !== view || target !== (L.plan ? planCtx : ctx)) return;
+    const holder = sc().pieces.find((candidate) => candidate.id === preview.holderId);
+    const point = holdHandPoint(holder, preview.side, L);
+    if (!point) return;
+    target.save();
+    target.strokeStyle = preview.available ? "rgba(239,205,116,0.96)" : "rgba(214,92,78,0.96)";
+    target.fillStyle = preview.available ? "rgba(239,205,116,0.16)" : "rgba(214,92,78,0.14)";
+    target.shadowColor = preview.available ? "rgba(239,205,116,0.9)" : "rgba(214,92,78,0.8)";
+    target.shadowBlur = 10;
+    target.lineWidth = 3;
+    target.beginPath();
+    target.arc(point.x, point.y, 15, 0, Math.PI * 2);
+    target.fill();
+    target.stroke();
+    target.restore();
   }
 
   function finishHoldingChange(message) {
@@ -37096,6 +37249,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       }
       return;
     }
+    const completedAction = pointerAction;
     const changed = pointerAction.kind === "stroke" || pointerAction.kind === "pan"
       || pointerAction.kind === "route" || pointerAction.moved;
     const tapped = pointerAction.kind === "note"
@@ -37111,6 +37265,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     pointerAction = null;
     el.dataset.dragging = "false";
     restoreDraggedInspector();
+    finishDragHold(completedAction);
+    dragHoldPreview = null;
     if (changed) persistSoon();
     if (dragSync) {
       let lockedSeri = false;
@@ -37242,16 +37398,12 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     [["front", els.frontZoom], ["plan", els.planZoom]].forEach(([view, button]) => {
       if (!button) return;
       const zs = zoomOf(view);
-      const on = zs.z > 1.01;
+      const on = Math.abs(zs.z - 1) > 0.01 || Math.abs(zs.ox) > 0.01 || Math.abs(zs.oy) > 0.01;
       button.hidden = !on;
       button.textContent = `${zs.z.toFixed(1)}× ⟲`;
-      if (els.planZoomOut) els.planZoomOut.disabled = zoomOf("plan").z <= ZOOM_MIN + 0.001;
-    // 拡大中は、何もない所を掴んで見える場所を動かせる
-    if (planCanvas) planCanvas.dataset.pannable = zoomOf("plan").z > 1.001 ? "true" : "false";
-  });
+    });
     if (els.planZoomOut) els.planZoomOut.disabled = zoomOf("plan").z <= ZOOM_MIN + 0.001;
-    // 拡大中は、何もない所を掴んで見える場所を動かせる
-    if (planCanvas) planCanvas.dataset.pannable = zoomOf("plan").z > 1.001 ? "true" : "false";
+    if (planCanvas) planCanvas.dataset.pannable = "true";
   }
 
   function onPointerDown(event) {
@@ -37493,8 +37645,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       updateInspector();
       render();
       if (!hit) {
-        /* 拡大中の平面移動はOptionドラッグ。通常のドラッグは囲い選択に使う。 */
-        if (view === "plan" && event.altKey && zoomOf("plan").z > 1.001) {
+        // 平面図の空き地は通常ドラッグで移動。囲い選択は Shift＋ドラッグ。
+        if (view === "plan" && !event.shiftKey) {
           const rect = el.getBoundingClientRect();
           const zs = zoomOf("plan");
           capture(el, event.pointerId);
@@ -37535,11 +37687,11 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         }
         return;
       }
-      // 持ち物は選べるが、手元から直接は動かさない。手放してから置き場所を決める。
-      if (hit.heldBy) return;
       /* 錠が掛かっているものは hitTest がもう返さない（当たり判定ごと素通し、
          本人の指定）。外す口は「演者・舞台セット」の一覧にある。 */
-      const pos = placePiece(hit, L);
+      const held = hit.heldBy && !L.plan ? heldFrontPlacement(hit, L) : null;
+      const rawPos = placePiece(hit, L);
+      const pos = held ? { x: rawPos.x + held.dx, y: rawPos.y + held.dy } : rawPos;
       capture(el, event.pointerId);
       el.dataset.dragging = "true";
       pointerAction = {
@@ -37548,6 +37700,9 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         before: snapshot(), moved: false,
         startU: hit.u, startV: hit.v,
         groupStart: keepGroup ? selectedPieces().map((item) => ({ id: item.id, u: item.u, v: item.v })) : null,
+        originalHold: hit.heldBy ? {
+          heldBy: hit.heldBy, holdSide: hit.holdSide === "L" ? "L" : "R", holdMode: hit.holdMode || "hand",
+        } : null,
       };
       return;
     }
@@ -37692,8 +37847,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (hit) return view === "plan" && event.shiftKey ? "copy" : "grab";
     if (view === "plan" && ghostAt(point, L)) return "grab";
     if (view === "front" && (L.panRange > 0 || L.panRangeY > 0)) return "grab";
-    if (view === "plan" && event.altKey && zoomOf("plan").z > 1.001) return "grab";
-    if (view === "plan") return "crosshair";
+    if (view === "plan") return event.shiftKey ? "crosshair" : "grab";
     return "default";
   }
 
@@ -37866,10 +38020,14 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
 
     if (pointerAction.kind === "drag") {
       const piece = sc().pieces.find((candidate) => candidate.id === pointerAction.id);
-      if (!piece || piece.heldBy) return;
+      if (!piece) return;
       if (!pointerAction.moved) {
         recordBefore(pointerAction.before);
         pointerAction.moved = true;
+        if (pointerAction.originalHold) {
+          piece.heldBy = null;
+          piece.holdMode = "hand";
+        }
         const inspector = document.querySelector('[data-panel="inspector"].gamma-selection-floating');
         if (inspector) {
           // 対象物を動かし始めたら、追従中にパネルが重ならないよう即時に隠す。
@@ -37923,6 +38081,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         piece.beam.u = next.u;
         piece.beam.v = next.v;
       }
+      dragHoldPreview = dragHoldPreviewFor(piece, pointerAction, L);
       render();
       return;
     }
@@ -38000,6 +38159,30 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
    * スクロールで向きが変わってしまっていた（本人指摘）。 */
   const FACING_WHEEL_PAD = 28;
 
+  function onPlanWheel(event) {
+    if (event.currentTarget !== planCanvas || guestSessionActive() || presenting) return;
+    event.preventDefault();
+    const zs = zoomOf("plan");
+    const rect = planCanvas.getBoundingClientRect();
+    if (event.ctrlKey || event.metaKey) {
+      const cx = (event.clientX - rect.left) * (W / rect.width);
+      const cy = (event.clientY - rect.top) * (H / rect.height);
+      const worldX = zs.ox + cx / zs.z;
+      const worldY = zs.oy + cy / zs.z;
+      const factor = Math.exp(-(Number(event.deltaY) || 0) * 0.002);
+      zs.z = clamp(zs.z * factor, ZOOM_MIN, ZOOM_MAX);
+      zs.ox = worldX - cx / zs.z;
+      zs.oy = worldY - cy / zs.z;
+    } else {
+      const k = (W / rect.width) / zs.z;
+      zs.ox += (Number(event.deltaX) || 0) * k;
+      zs.oy += (Number(event.deltaY) || 0) * k;
+    }
+    clampZoom(zs);
+    render();
+    syncZoomButtons();
+  }
+
   function onFacingWheelTarget(event, piece) {
     const el = event.currentTarget || event.target;
     if (!el || !el.getBoundingClientRect) return false;
@@ -38013,6 +38196,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
 
   function onFacingWheel(event) {
     if (guestSessionActive()) return;
+    if (event.currentTarget === planCanvas) return;
     const facingPieces = selectedFacingPieces();
     const piece = facingPieces.find((item) => onFacingWheelTarget(event, item));
     if (!piece) return;
@@ -38056,6 +38240,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     el.addEventListener("pointerup", finishPointer);
     el.addEventListener("pointercancel", finishPointer);
     el.addEventListener("keydown", onKeyDown);
+    el.addEventListener("wheel", onPlanWheel, { passive: false });
     el.addEventListener("wheel", onFacingWheel, { passive: false });
     el.addEventListener("dblclick", onCanvasNameDoubleClick);
   });

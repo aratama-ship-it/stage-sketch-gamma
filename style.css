@@ -3900,7 +3900,7 @@ html.stage-phone-viewer .stage-phone-save-notice .stage-phone-recovery-link[hidd
 
 /* 形は触っているものを当てて決める（cursorFor）。ここでは既定だけ置く */
 #stage-canvas[data-tool="select"],
-#stage-plan-canvas[data-tool="select"] { cursor: default; }
+#stage-plan-canvas[data-tool="select"] { cursor: grab; }
 #stage-canvas[data-dragging="true"],
 #stage-plan-canvas[data-dragging="true"] { cursor: grabbing; }
 #stage-canvas[data-tool="paint"] { cursor: crosshair; }
