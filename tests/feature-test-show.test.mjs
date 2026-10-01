@@ -36,7 +36,7 @@ const limits = Object.fromEntries([...block("const PROJECT_LIMITS = Object.freez
 test("機能テスト用ショー: 外枠と上限", () => {
   assert.equal(doc.kind, "shosai-stage-sketch");
   assert.equal(doc.version, 4);
-  assert.deepEqual(doc.venues, []);
+  assert.deepEqual(doc.venues.map((venue) => venue.id), ["ft-venue-leg-count-2", "ft-venue-leg-count-10"]);
   assert.equal(project.id, read("stage-samples/build-feature-test-show.mjs").match(/const PROJECT_ID = "([^"]+)"/)[1]);
   /* ★2026-09-20: バッファを3行→2行に減らして広げた（build-feature-test-show.mjs 側の同日コメント参照）。
      容量由来の制約ではなく、試す人が手でもシーンを足せる余地を残すだけの自主ガード。 */
@@ -52,6 +52,18 @@ test("機能テスト用ショー: 外枠と上限", () => {
     assert.ok((scene.screenTexts || []).length <= limits.screenTextsPerScene);
   }
   assert.ok(scenes.some((scene) => scene.pieces.length === limits.piecesPerScene), "上限80駒のシーンがある");
+});
+
+test("機能テスト用ショー: D-3 に袖幕2枚・10枚の複製会場がある", () => {
+  const d3 = scenes.find((scene) => scene.id === "ft-scene-d4");
+  assert.match(d3?.note || "", /袖幕2枚/);
+  assert.match(d3?.note || "", /袖幕10枚/);
+  for (const count of [2, 10]) {
+    const venue = doc.venues.find((item) => item.id === `ft-venue-leg-count-${count}`);
+    assert.equal(venue?.basis, "custom");
+    assert.equal(venue?.stageWings.length, 2);
+    assert.ok(venue.stageWings.every((wing) => wing.legCount === count));
+  }
 });
 
 test("機能テスト用ショー: F-1 で固定・ムービングとスポット・ウォッシュを比較する", () => {

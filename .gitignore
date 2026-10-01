@@ -399,3 +399,5 @@ public-dist/
 !/light-design/simple-lighting.css
 !/tests/simple-lighting.test.mjs
 !/tests/regression/simple-lighting-cases.cjs
+!/tests/wing-leg-count.test.mjs
+!/tests/wing-leg-count-browser.cjs

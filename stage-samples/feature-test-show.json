@@ -1,7 +1,216 @@
 {
  "kind": "shosai-stage-sketch",
  "version": 4,
- "venues": [],
+ "venues": [
+  {
+   "format": "venue-v2",
+   "id": "ft-venue-leg-count-2",
+   "label": "試験場: 袖幕2枚",
+   "basis": "custom",
+   "stageFormat": "theatre",
+   "scale": {
+    "gridM": 1,
+    "confidence": "approx"
+   },
+   "floor": {
+    "outline": [
+     [
+      0,
+      0
+     ],
+     [
+      12,
+      0
+     ],
+     [
+      12,
+      8
+     ],
+     [
+      0,
+      8
+     ]
+    ],
+    "extensions": [],
+    "levels": []
+   },
+   "ceiling": {
+    "heightM": 6,
+    "rigging": "none",
+    "hasCeiling": true,
+    "indoor": true,
+    "frontBorder": {
+     "enabled": true,
+     "openingHeightM": 4.5
+    }
+   },
+   "audience": [],
+   "stageWings": [
+    {
+     "id": "ft-wing-left-2",
+     "side": "left",
+     "label": "下手袖",
+     "shape": "rectangle",
+     "polygon": [
+      [
+       -3,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       8
+      ],
+      [
+       -3,
+       8
+      ]
+     ],
+     "legCount": 2
+    },
+    {
+     "id": "ft-wing-right-2",
+     "side": "right",
+     "label": "上手袖",
+     "shape": "rectangle",
+     "polygon": [
+      [
+       12,
+       0
+      ],
+      [
+       15,
+       0
+      ],
+      [
+       15,
+       8
+      ],
+      [
+       12,
+       8
+      ]
+     ],
+     "legCount": 2
+    }
+   ],
+   "fixtures": [],
+   "access": [],
+   "provenance": {
+    "source": "記憶",
+    "confidence": "low",
+    "sharing": "ok",
+    "note": "D-3 袖幕枚数の機能試験用。実劇場の図面ではありません。"
+   }
+  },
+  {
+   "format": "venue-v2",
+   "id": "ft-venue-leg-count-10",
+   "label": "試験場: 袖幕10枚",
+   "basis": "custom",
+   "stageFormat": "theatre",
+   "scale": {
+    "gridM": 1,
+    "confidence": "approx"
+   },
+   "floor": {
+    "outline": [
+     [
+      0,
+      0
+     ],
+     [
+      12,
+      0
+     ],
+     [
+      12,
+      8
+     ],
+     [
+      0,
+      8
+     ]
+    ],
+    "extensions": [],
+    "levels": []
+   },
+   "ceiling": {
+    "heightM": 6,
+    "rigging": "none",
+    "hasCeiling": true,
+    "indoor": true,
+    "frontBorder": {
+     "enabled": true,
+     "openingHeightM": 4.5
+    }
+   },
+   "audience": [],
+   "stageWings": [
+    {
+     "id": "ft-wing-left-10",
+     "side": "left",
+     "label": "下手袖",
+     "shape": "rectangle",
+     "polygon": [
+      [
+       -3,
+       0
+      ],
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       8
+      ],
+      [
+       -3,
+       8
+      ]
+     ],
+     "legCount": 10
+    },
+    {
+     "id": "ft-wing-right-10",
+     "side": "right",
+     "label": "上手袖",
+     "shape": "rectangle",
+     "polygon": [
+      [
+       12,
+       0
+      ],
+      [
+       15,
+       0
+      ],
+      [
+       15,
+       8
+      ],
+      [
+       12,
+       8
+      ]
+     ],
+     "legCount": 10
+    }
+   ],
+   "fixtures": [],
+   "access": [],
+   "provenance": {
+    "source": "記憶",
+    "confidence": "low",
+    "sharing": "ok",
+    "note": "D-3 袖幕枚数の機能試験用。実劇場の図面ではありません。"
+   }
+  }
+ ],
  "project": {
   "id": "gamma-feature-test-v27",
   "title": "テスト: 全機能の試験場",
@@ -11498,7 +11707,7 @@
     "kind": "scene",
     "depth": 1,
     "title": "D-3 幕6種（開き具合・紗幕の透け）",
-    "note": "確認: 緞帳（front）30%、引割（traveler）60%、ドロップ（drop）100%、袖幕（leg）0%、ホリゾント（cyc）0%、紗幕・白（透け25%）、紗幕・黒（透け75%）。正面図での重なり順、平面図の線、3Dでの見え方。紗幕は他の幕と違い「開閉」でなく「透け具合」を持つこと、白紗と黒紗で地の色が違うことを確認する（シーン送りで透けていく変化そのものは G-5/G-6 で見る）。\nγ・δでは舞台機構は非表示・使用不能。ここにある旧機構のデータは保持するが、描画・演者への位置や高さの作用・回転はない。",
+    "note": "確認: 緞帳（front）30%、引割（traveler）60%、ドロップ（drop）100%、袖幕（leg）0%、ホリゾント（cyc）0%、紗幕・白（透け25%）、紗幕・黒（透け75%）。正面図での重なり順、平面図の線、3Dでの見え方。紗幕は他の幕と違い「開閉」でなく「透け具合」を持つこと、白紗と黒紗で地の色が違うことを確認する（シーン送りで透けていく変化そのものは G-5/G-6 で見る）。劇場設定では同梱の複製会場「試験場: 袖幕2枚」「試験場: 袖幕10枚」を順に開き、正面図・平面図・3D・劇場設定プレビューで左右それぞれ2枚／10枚になることを確認する。\nγ・δでは舞台機構は非表示・使用不能。ここにある旧機構のデータは保持するが、描画・演者への位置や高さの作用・回転はない。",
     "background": "#40362d",
     "pieces": [
      {

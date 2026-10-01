@@ -568,7 +568,7 @@ scene("d1", "D-1 せり（上げ・下げ）と盆（回転）", 1, `${CHECK}左
 scene("d3", "D-2 可動デッキと水面・プール床", 1, `${CHECK}デッキは 20度傾き、1.2m 上がっている。演者04が上に立つ。傾きを 0〜±60度、高さを -4〜8m で動かす。プールは床高 -1.5m・水位 1.2m。演者06は水面の高さに立つ。水位0〜3m、床高-4〜0mを動かす。`,
   [setPiece("d3", "deck", 0.3, 0.5, { tilt: 20, deckH: 1.2 }), perf("d3", "p04", 0.3, 0.5, { base: 1.2 }),
    setPiece("d3", "pool", 0.72, 0.55, { water: 1.2, poolH: -1.5 }), perf("d3", "p06", 0.72, 0.55, { base: 0, pose: "supine" })]);
-scene("d4", "D-3 幕6種（開き具合・紗幕の透け）", 1, `${CHECK}緞帳（front）30%、引割（traveler）60%、ドロップ（drop）100%、袖幕（leg）0%、ホリゾント（cyc）0%、紗幕・白（透け25%）、紗幕・黒（透け75%）。正面図での重なり順、平面図の線、3Dでの見え方。紗幕は他の幕と違い「開閉」でなく「透け具合」を持つこと、白紗と黒紗で地の色が違うことを確認する（シーン送りで透けていく変化そのものは G-5/G-6 で見る）。`,
+scene("d4", "D-3 幕6種（開き具合・紗幕の透け）", 1, `${CHECK}緞帳（front）30%、引割（traveler）60%、ドロップ（drop）100%、袖幕（leg）0%、ホリゾント（cyc）0%、紗幕・白（透け25%）、紗幕・黒（透け75%）。正面図での重なり順、平面図の線、3Dでの見え方。紗幕は他の幕と違い「開閉」でなく「透け具合」を持つこと、白紗と黒紗で地の色が違うことを確認する（シーン送りで透けていく変化そのものは G-5/G-6 で見る）。劇場設定では同梱の複製会場「試験場: 袖幕2枚」「試験場: 袖幕10枚」を順に開き、正面図・平面図・3D・劇場設定プレビューで左右それぞれ2枚／10枚になることを確認する。`,
   [setPiece("d4", "curtain-front", 0.5, 0.95, { open: 30 }), setPiece("d4", "curtain-traveler", 0.5, 0.6, { open: 60 }), setPiece("d4", "curtain-drop", 0.5, 0.4, { open: 100 }), setPiece("d4", "curtain-leg", 0.08, 0.5, { open: 0 }), setPiece("d4", "curtain-cyc", 0.5, 0.05, { open: 0 }), setPiece("d4", "curtain-scrim-white", 0.3, 0.78, { sheer: 25 }), setPiece("d4", "curtain-scrim-black", 0.7, 0.78, { sheer: 75 }), perf("d4", "p05", 0.5, 0.88)]);
 /* ======================= E 照明（駒） ======================= */
 section("e", "E 照明の駒（正面図・平面図・3D）");
@@ -1026,7 +1026,29 @@ alternatives.adopted(project);
 project.scenes.find(row => row.id === "ft-scene-c1").note += "\n確認: 長いバーカウンター（幅4.8m）の詳細を開く。回転プレビューは全体が収まる固定縮尺で、1周しても人の影の高さ・床の位置・縮尺が変わらない。選んだもののパネルは演者と大道具のどちらをクリックしても表示される。道具列の移動・矢印・照明効果・作業灯と名前表示の枠は同じ正方形で、オンオフや配色切替でも縦横の寸法がそろう。";
 project.scenes.find(row => row.id === "ft-scene-c1").note += "\nUI確認: ツール列の転換アニメーションにカーソルを合わせるとオンオフの説明が出る。ショー欄のベータ読み込み案内は一文。版追加・閉じる・拡大縮小などの正方形ボタンはアイコンが中央。装置名アイコンの四角は左下で文字の二本線と重ならない。フィードバックは細い箱に二段。劇場設定の照明選択の箱は説明文を持たず、おすすめ照明セットを選ぶ。空の劇場にすると選択不可になり案内が一文だけ出る。一つ戻すで推奨セットが再び使える。F-1の照明デザインでも図の拡大・キュー送り・グループ解除のアイコン配置を確認する。";
 project.scenes.find(row => row.id === "ft-scene-intro").note += "\n劇場設定の確認: 形式プリセットを選び、左メニュー・平面図・立体プレビューの配置を確認する。平面図をホイールで拡大縮小し、客席を選んで舞台側と後方の床高を編集する。舞台と客席を右クリックで削除し、一つ戻すで復元する。メイン舞台を削除した状態では劇場を反映できず、新しい四角または丸の舞台を描くと反映可能になることを確認する。各項目のやり直すで初期状態に戻し、袖幕が天井高まで届くことを正面図と立体プレビューで確認する。空から作る入口と劇場の書き出し・読み込みはこのシーンで操作する。実制作ショーでは試さない。";
-const doc = { kind: "shosai-stage-sketch", version: 4, venues: [], project };
+const legCountVenue = (count) => ({
+  format: "venue-v2",
+  id: `ft-venue-leg-count-${count}`,
+  label: `試験場: 袖幕${count}枚`,
+  basis: "custom",
+  stageFormat: "theatre",
+  scale: { gridM: 1, confidence: "approx" },
+  floor: { outline: [[0, 0], [12, 0], [12, 8], [0, 8]], extensions: [], levels: [] },
+  ceiling: { heightM: 6, rigging: "none", hasCeiling: true, indoor: true,
+    frontBorder: { enabled: true, openingHeightM: 4.5 } },
+  audience: [],
+  stageWings: [
+    { id: `ft-wing-left-${count}`, side: "left", label: "下手袖", shape: "rectangle",
+      polygon: [[-3, 0], [0, 0], [0, 8], [-3, 8]], legCount: count },
+    { id: `ft-wing-right-${count}`, side: "right", label: "上手袖", shape: "rectangle",
+      polygon: [[12, 0], [15, 0], [15, 8], [12, 8]], legCount: count },
+  ],
+  fixtures: [], access: [],
+  provenance: { source: "記憶", confidence: "low", sharing: "ok",
+    note: "D-3 袖幕枚数の機能試験用。実劇場の図面ではありません。" },
+});
+const doc = { kind: "shosai-stage-sketch", version: 4,
+  venues: [legCountVenue(2), legCountVenue(10)], project };
 const json = JSON.stringify(doc, null, 1);
 writeFileSync(join(OUTPUT, "feature-test-show.json"), json + "\n");
 writeFileSync(join(OUTPUT, "feature-test-show.js"),
