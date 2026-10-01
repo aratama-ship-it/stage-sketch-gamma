@@ -132,6 +132,8 @@ async function run(engine, browserType, base) {
       const input = page.locator('#stage-venue-editor-leg-count');
       await input.fill(String(count));
       await input.dispatchEvent('change');
+      // 反映は change 後に非同期で済むことがある（負荷の高い WebKit で先読みして落ちた）
+      await page.waitForFunction((expected) => SHOSAI_VENUE_EDITOR.getVenue().stageWings.every(wing => wing.legCount === expected), count, { timeout: 5000 });
       counts[count] = await page.evaluate((expected) => {
         const venue = SHOSAI_VENUE_EDITOR.getVenue();
         const grouped = (rows) => venue.stageWings.map(wing =>
