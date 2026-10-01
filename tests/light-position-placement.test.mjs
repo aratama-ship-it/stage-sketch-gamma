@@ -8,6 +8,8 @@ const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8'),plain=x=>JSO
 const c=vm.createContext({});for(const p of ['gamma-light-model.js','light-design/rig-engine.js','stage-lighting-plan-overlay.js','light-design/simple-lighting-model.js'])vm.runInContext(read(p),c);
 const {GAMMA_LIGHT_MODEL:M,RIG_ENGINE:E,GAMMA_SIMPLE_LIGHT_MODEL:S,SHOSAI_STAGE_LIGHTING_PLAN_OVERLAY:O}=c,P=M.positionLayout,N=M.positionNames;
 const doc=JSON.parse(read('stage-samples/feature-test-show.json')),d=doc.project.lightingDesign,ids=d.rig.fixtures.filter(f=>f.kind==='moving').slice(0,3).map(f=>f.id),world=(f,r,dim)=>plain(E.fixtureWorld(f,r,dim));
+// v0.2.69 = 照明形式 v3 を知らない最後の公開版（HEAD だと候補をコミットした時点で旧版でなくなる）
+const LEGACY_MODEL_COMMIT='7af5a27544e8717e5c43bce91995f294ba1ca023';
 test('F-2: physical GAL binding changes only mounts, labels and provenance, preserving all scenes and source',()=>{
  const original=JSON.stringify(d),next=P.bind(d,[ids[0]],'pos-gal-shimote',2);
  assert.equal(next.version,3);assert.deepEqual(plain(next.positionLayoutRollback.originalDesign),d);assert.deepEqual(plain(next.scenes),d.scenes);
@@ -50,7 +52,7 @@ test('v3 JSON, reconcile, draft and v2 originalText provenance survive without r
  assert.deepEqual(plain(M.validate(JSON.parse(JSON.stringify(rebound)))),plain(rebound));
  const ctx={stage:rebound.stage,scenes:rebound.scenes.map(s=>({id:s.id,name:s.name})),title:'test',design:rebound};
  assert.deepEqual(plain(M.restoreDraft(M.stripPassthrough(rebound),ctx)),plain(rebound));assert.deepEqual(plain(M.reconcile(rebound,ctx).rig),plain(rebound.rig));
- const old=vm.createContext({});vm.runInContext(execFileSync('/Library/Developer/CommandLineTools/usr/bin/git',['show','HEAD:gamma-light-model.js'],{encoding:'utf8'}),old);assert.throws(()=>old.GAMMA_LIGHT_MODEL.validate(rebound));assert.deepEqual(plain(old.GAMMA_LIGHT_MODEL.validate(rebound.positionLayoutRollback.originalDesign)),plain(legacy));
+ const old=vm.createContext({});vm.runInContext(execFileSync('/Library/Developer/CommandLineTools/usr/bin/git',['show',LEGACY_MODEL_COMMIT+':gamma-light-model.js'],{encoding:'utf8'}),old);assert.throws(()=>old.GAMMA_LIGHT_MODEL.validate(rebound));assert.deepEqual(plain(old.GAMMA_LIGHT_MODEL.validate(rebound.positionLayoutRollback.originalDesign)),plain(legacy));
 });
 
 
