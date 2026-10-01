@@ -7,6 +7,7 @@ let count=context?.members.length||0,draft=null,history=[],future=[],selected=nu
 const members=context?.members||[];
 const memberNumber=id=>String(members.findIndex(m=>m.id===id)+1).padStart(2,'0');
 const memberName=id=>members.find(m=>m.id===id)?.name||'人物';
+const shortMemberName=id=>{const chars=Array.from(memberName(id));return chars.length>4?chars.slice(0,4).join('')+'…':chars.join('');};
 const viewScale=()=>Math.min(940/context.stage.width,575/context.stage.depth);
 const pixelsPerUnit=()=>Math.min(context.stage.width/2.2,context.stage.depth/1.4)*scalePct/100*viewScale();
 const point=s=>({x:500+s.x*pixelsPerUnit(),y:305+s.depth*pixelsPerUnit()});
@@ -27,7 +28,7 @@ function paint(){
  for(const el of nodes){const i=Number(el.dataset.slot),id=draft.assignment[i];
   el.setAttribute('aria-label',`位置${i+1} ${memberName(id)}${selected===i?' 選択中':''}`);
   el.setAttribute('aria-pressed',String(selected===i));el.classList.toggle('selected',selected===i);
-  if(el.classList.contains('person'))el.textContent=memberNumber(id);
+  if(el.classList.contains('person')){el.querySelector('.person-number').textContent=memberNumber(id);el.querySelector('.person-name').textContent=shortMemberName(id);}
   else {el.querySelector('span').textContent=memberNumber(id)+' '+memberName(id);el.querySelector('small').textContent=`位置${i+1}`;}
  }
  $('undo').disabled=!history.length;$('redo').disabled=!future.length;
@@ -42,7 +43,7 @@ function buildBoard(){
  const width=Math.max(Math.min($('viewport').clientWidth,(heightCap-2)/.65),minWidth);
  $('board').style.width=width+'px';$('board').style.height=width*.65+'px';
  const empty=diagram(p,null,true);
- $('board').innerHTML=empty+p.slots.map((s,i)=>{const v=point(s);return `<button class="person" data-slot="${i}" style="left:${v.x/10}%;top:${v.y/6.5}%"></button>`}).join('');
+ $('board').innerHTML=empty+p.slots.map((s,i)=>{const v=point(s);return `<button class="person" data-slot="${i}" style="left:${v.x/10}%;top:${v.y/6.5}%"><span class="person-number"></span><span class="person-name"></span></button>`}).join('');
  $('roster').innerHTML=p.slots.map((s,i)=>`<button data-slot="${i}"><small></small><span></span></button>`).join('');
  $('scroll-hint').hidden=width<=$('viewport').clientWidth+1&&width*.65<=$('viewport').clientHeight+1;
  paint();
@@ -86,7 +87,7 @@ $('board').addEventListener('pointermove',e=>{
  const g=gesture;if(!g||g.pointerId!==e.pointerId)return;
  if(!g.dragging&&Math.hypot(e.clientX-g.x,e.clientY-g.y)<6)return;
  e.preventDefault();
- if(!g.dragging){g.dragging=true;selected=null;paint();g.el.classList.add('drag-source');g.ghost=document.createElement('div');g.ghost.className='person drag-ghost';g.ghost.textContent=memberNumber(draft.assignment[g.source]);g.ghost.setAttribute('aria-hidden','true');$('editor').append(g.ghost);}
+ if(!g.dragging){g.dragging=true;selected=null;paint();g.el.classList.add('drag-source');g.ghost=document.createElement('div');g.ghost.className='person drag-ghost';const id=draft.assignment[g.source],number=document.createElement('span'),name=document.createElement('span');number.className='person-number';number.textContent=memberNumber(id);name.className='person-name';name.textContent=shortMemberName(id);g.ghost.append(number,name);g.ghost.setAttribute('aria-hidden','true');$('editor').append(g.ghost);}
  g.ghost.style.left=e.clientX+'px';g.ghost.style.top=e.clientY+'px';
  g.target=targetAt(e.clientX,e.clientY);
  $('editor').querySelectorAll('[data-slot]').forEach(el=>el.classList.toggle('drop-target',g.target!==null&&g.target!==g.source&&Number(el.dataset.slot)===g.target));
