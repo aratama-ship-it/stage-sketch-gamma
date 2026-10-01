@@ -571,10 +571,16 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     try {
       const handle = await window.showSaveFilePicker({
         suggestedName: filename,
-        types: [{
-          description: "JSON",
-          accept: { "application/json": [".json"] },
-        }],
+        types: [
+          {
+            description: "舞台スケッチのショー（.stagesketch）",
+            accept: { "application/json": [".stagesketch"] },
+          },
+          {
+            description: "JSON（.json）",
+            accept: { "application/json": [".json"] },
+          },
+        ],
       });
       const writable = await handle.createWritable();
       await writable.write(blob);
@@ -605,14 +611,16 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function normaliseProjectExportFilename(value) {
-    const withoutExtension = String(value || "").trim().replace(/\.json$/i, "");
+    const requested = String(value || "").trim();
+    const requestedExtension = /\.json$/i.test(requested) ? ".json" : ".stagesketch";
+    const withoutExtension = requested.replace(/\.(?:stagesketch|json)$/i, "");
     const clean = withoutExtension
       .replace(/[\u0000-\u001f\u007f/\\:*?"<>|]+/g, "_")
       .replace(/\s+/g, " ")
       .replace(/[. ]+$/g, "")
       .slice(0, 80)
       .trim();
-    return `${clean || "show-v1"}.json`;
+    return `${clean || "show-v1"}${clean ? requestedExtension : ".stagesketch"}`;
   }
 
   function isProjectExportShortcut(event) {
@@ -11195,6 +11203,24 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   function shelveCurrent() {
     return shelveState(state);
+  }
+
+  function comparableProjectJson(value) {
+    return JSON.stringify(value, (_key, item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return item;
+      return Object.keys(item).sort().reduce((sorted, key) => {
+        sorted[key] = item[key];
+        return sorted;
+      }, {});
+    });
+  }
+
+  let latestProjectExportComparable = null;
+
+  function exportedProjectComparisonJson(project) {
+    const comparable = { ...project };
+    delete comparable.id;
+    return comparableProjectJson(comparable);
   }
 
   /* 読み込んだファイルは、同じ project.id を持っていても別の内容なら
@@ -23148,7 +23174,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     phoneUi.sceneNote.setAttribute("aria-label", tx("シーンのメモ"));
     phoneUi.sourcePanel.setAttribute("aria-label", tx("開くショーを選ぶ"));
     phoneUi.sourceTitle.textContent = tx("ショーを開く");
-    setPhoneButtonLang(phoneUi.fileButton, "JSONファイル", "JSONファイルからショーを開く");
+    setPhoneButtonLang(phoneUi.fileButton, "ショーのファイル", "ショーのファイル（.stagesketch／.json）を開く");
     setPhoneButtonLang(phoneUi.seamSampleButton, "継ぎ目の庭", "継ぎ目の庭のサンプルを開く");
     setPhoneButtonLang(phoneUi.sampleButton, "サンプルショー", "サンプルショーを開く");
     setPhoneButtonLang(phoneUi.exportButton, "ファイルへ書き出す", "いまのショーをファイルへ書き出す");
@@ -23339,7 +23365,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     sourcePanel.hidden = true;
     const sourceTitle = document.createElement("strong");
     sourceTitle.textContent = tx("ショーを開く");
-    const fileButton = makePhoneButton(tx("JSONファイル"), tx("JSONファイルからショーを開く"));
+    const fileButton = makePhoneButton(tx("ショーのファイル"), tx("ショーのファイル（.stagesketch／.json）を開く"));
     const seamSampleButton = makePhoneButton(tx("継ぎ目の庭"), tx("継ぎ目の庭のサンプルを開く"));
     const sampleButton = makePhoneButton(tx("サンプルショー"), tx("サンプルショーを開く"));
     /* 書き出しは読み込みの対。同じパネルに置く。
@@ -23394,7 +23420,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
     const fileInput = document.createElement("input");
     fileInput.type = "file";
-    fileInput.accept = "application/json,.json";
+    fileInput.accept = ".stagesketch,.json,application/json";
     fileInput.className = "stage-phone-file-input";
     fileInput.hidden = true;
     fileInput.setAttribute("aria-hidden", "true");
@@ -33030,6 +33056,7 @@ ${propsPlotHtml}
         announce("書き出しをやめました。");
         return;
       }
+      latestProjectExportComparable = exportedProjectComparisonJson(exportDoc.project);
       // 既存の「ファイルへ書き出す」が実際に保存先まで完了した時刻だけを表示する。
       syncSaveStamps();
       persistSoon();
@@ -33273,6 +33300,21 @@ ${propsPlotHtml}
   /* エクスポート系の失敗も同じ赤いトーストで見せる。中身は同じ関数（画面上の区別は要らない）。 */
   const exportFailureNotice = importFailureNotice;
 
+  function projectDocumentMismatchMessage(parsed) {
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return "";
+    if (parsed.format === "shosai.light-design") {
+      return "これは照明デザインの書類です。照明の画面から読み込んでください。";
+    }
+    if (parsed.kind === "shosai-stage-venue-library") {
+      return "これは劇場ライブラリの書類です。劇場設定から読み込んでください。";
+    }
+    if (parsed.schemaVersion === 2 && parsed.stage && Array.isArray(parsed.formations)
+        && Array.isArray(parsed.cues)) {
+      return "これは稽古用の書類です。ショーとして読み込むことはできません。";
+    }
+    return "";
+  }
+
   function importProject(file) {
     if (!file) return;
     try { window.STAGE_DATA_SAFETY.assertJsonFileSize(file); }
@@ -33297,8 +33339,19 @@ ${propsPlotHtml}
             + "ファイルアプリ／Finderで一度開いて中身が見えることを確認してから、もう一度選んでください。");
         } else {
           importFailureNotice(`「${file.name}」をJSONとして読めませんでした（${text.length}文字・先頭「${text.slice(0, 20)}…」）。`
-            + "書き出したJSONファイル（.json）を選んでください。");
+            + "舞台スケッチで書き出したショーのファイル（.stagesketch または .json）を選んでください。");
         }
+        return;
+      }
+      const matchesLatestProjectExport = Boolean(
+        latestProjectExportComparable
+        && parsed?.kind === "shosai-stage-sketch"
+        && parsed?.project
+        && exportedProjectComparisonJson(parsed.project) === latestProjectExportComparable
+      );
+      const mismatchMessage = projectDocumentMismatchMessage(parsed);
+      if (mismatchMessage) {
+        importFailureNotice(mismatchMessage);
         return;
       }
       let lightingMigration = null;
@@ -33355,7 +33408,7 @@ ${propsPlotHtml}
       const incoming = parsed && parsed.project ? parsed : { project: parsed };
       if (!incoming.project || !Array.isArray(incoming.project.scenes)) {
         console.error("stage import: project.scenes がありません", parsed && Object.keys(parsed));
-        importFailureNotice("このファイルにはシーンが入っていません。");
+        importFailureNotice("舞台スケッチで書き出したショーのファイル（.stagesketch または .json）を選んでください。");
         return;
       }
       const editSummary = incoming.editSummary;
@@ -33392,6 +33445,7 @@ ${propsPlotHtml}
       }
       pendingImport = next;
       pendingImportLightingMigration = lightingMigration;
+      pendingImportMatchesLatestExport = matchesLatestProjectExport;
       renderImportSummary(next, editSummary, lightingMigration);
       if (els.importModal) els.importModal.hidden = false;
       if (els.importBackdrop) els.importBackdrop.hidden = false;
@@ -33402,6 +33456,7 @@ ${propsPlotHtml}
   /* 読み込み候補。窓を閉じたら捨てる */
   let pendingImport = null;
   let pendingImportLightingMigration = null;
+  let pendingImportMatchesLatestExport = false;
 
   function importCounts(st) {
     const scenes = (st.project.scenes || []).filter((r) => r.kind === "scene");
@@ -33564,6 +33619,7 @@ ${propsPlotHtml}
   function closeImportPreview() {
     pendingImport = null;
     pendingImportLightingMigration = null;
+    pendingImportMatchesLatestExport = false;
     if (els.importReplace) {
       els.importReplace.hidden = false;
       els.importReplace.disabled = false;
@@ -33594,7 +33650,10 @@ ${propsPlotHtml}
     // 「置き換える」場合も、直前に開いていたショーを先に棚へ残す。
     // 取り込み元と同じIDでも、内容が違えば新しいIDを割り当てて共存させる。
     // MCP編集結果だけは同じ正本IDを保ち、appliedRevisionと対応させる。
-    if (next.mcpRevision === null) reserveImportedShowId(next);
+    if (next.mcpRevision === null
+        && !(pendingImportMatchesLatestExport && next.project.id === state.project.id)) {
+      reserveImportedShowId(next);
+    }
     if (!await prepareLoadedState(next)) return;
     closeImportPreview();
     checkpoint();

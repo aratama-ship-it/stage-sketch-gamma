@@ -643,7 +643,7 @@
     "ショー一覧を開く": "Open all shows",
     "作りかけのショーは一覧に残ります。": "The unfinished show stays in All shows.",
     "ショープロジェクトを書き出す": "Export show project",
-    "β（旧版）のショーは、βで書き出したJSONをここで読み込んでください。γはβの保存を読みません。": "To bring a show from the beta version, export its JSON there and import it here. Gamma does not read beta storage.",
+    "β版で書き出したJSONも読み込めます。": "JSON files exported from the beta version can also be imported.",
     "ショープロジェクトを読み込む": "Import show project",
     /* 2026-09-17: 劇場反映の選択を2択にまとめたときの文言 */
     "照明機材を自動で組む（プリセット）": "Build the lighting rig automatically (preset)",
@@ -655,8 +655,10 @@
     "ショーを書き出す": "Export show",
     "ファイル名": "File name",
     "キャンセル": "Cancel",
-    "この名前は書き出すファイルだけに使います。ショー名は変わりません。":
-      "This name is used only for the exported file. The show name will not change.",
+    "この名前は書き出すファイルだけに使います。ショー名は変わりません。標準は .stagesketch。AI や他のツールへ渡すときは名前の末尾に .json と付けると JSON のまま書き出せます。":
+      "This name is used only for the exported file. The show name will not change. The standard format is .stagesketch. To pass it to AI or another tool, add .json to the end of the name to export it as JSON.",
+    "ショーのファイル": "Show file",
+    "ショーのファイル（.stagesketch／.json）を開く": "Open a show file (.stagesketch/.json)",
     "書き出すと、次に保存先を選べます。": "After you choose Export, select where to save the file.",
     "このブラウザで設定されているダウンロード先へ書き出します。":
       "The file will be exported to the download location set in this browser.",
@@ -1377,7 +1379,6 @@
     "舞台裏の演者": "Performers off stage",
     /* R-07（2026-09-17）: 照明をどこから持ってくるかの3択。 */
     "フィードバック": "Feedback",
-    "ベータのショーも読み込めます。": "Beta shows can also be imported.",
     "おすすめ照明セット": "Recommended lighting set",
     "カスタム劇場では機材配置プリセットを利用できません。": "Rig presets are unavailable for custom theatres.",
     "転換アニメーションのオンオフ": "Toggle transition animation",
@@ -2738,7 +2739,16 @@
     [/^AIの実行を止めました。$/, "Stopped the AI run."],
     [/^このショーをファイルへ書き出しました。チームへ渡せます。$/, "Exported this show to a file. You can hand it to your team."],
     [/^書き出しをやめました。$/, "Export cancelled."],
-    [/^このファイルにはシーンが入っていません。$/, "This file has no scenes in it."],
+    [/^舞台スケッチで書き出したショーのファイル（\.stagesketch または \.json）を選んでください。$/,
+      "Choose a show file exported from Stage Sketch (.stagesketch or .json)."],
+    [/^「(.+)」をJSONとして読めませんでした（(\d+)文字・先頭「(.+)…」）。舞台スケッチで書き出したショーのファイル（\.stagesketch または \.json）を選んでください。$/,
+      "Could not read “$1” as JSON ($2 characters; starts with “$3…”). Choose a show file exported from Stage Sketch (.stagesketch or .json)."],
+    [/^これは照明デザインの書類です。照明の画面から読み込んでください。$/,
+      "This is a lighting design document. Import it from the Lighting screen."],
+    [/^これは劇場ライブラリの書類です。劇場設定から読み込んでください。$/,
+      "This is a theatre library document. Import it from Theatre settings."],
+    [/^これは稽古用の書類です。ショーとして読み込むことはできません。$/,
+      "This is a rehearsal document. It cannot be imported as a show."],
     [/^このシーンには動線がありません。平面図で行き先を引いてください。$/, "This scene has no routes. Draw destinations in the plan first."],
     [/^どちらか一方は開いたままにします。$/, "One view always stays open."],
     [/^動かしたい演者・物・明かりを掴んでください。$/, "Grab the performer, object or light you want to move."],

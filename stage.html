@@ -264,9 +264,9 @@
                 <div class="stage-project-transfer-actions">
                   <button type="button" id="stage-export-json" class="stage-minor-action"
                           aria-keyshortcuts="Meta+S Control+S">ショーを書き出す</button>
-                  <label class="stage-minor-action stage-import-label">ショーを読み込む<input type="file" id="stage-import-json" accept="application/json" hidden></label>
+                  <label class="stage-minor-action stage-import-label">ショーを読み込む<input type="file" id="stage-import-json" accept=".stagesketch,.json,application/json" hidden></label>
                 </div>
-                <p class="stage-version-note stage-project-import-note">ベータのショーも読み込めます。</p>
+                <p class="stage-version-note stage-project-import-note">β版で書き出したJSONも読み込めます。</p>
               </div>
               <!-- 本人指定で入口を一時非表示。テンプレートと作成機能は復帰できるよう残す。 -->
               <button type="button" class="stage-minor-action" id="stage-beat-templates-open" hidden>構成テンプレートから作る</button>
@@ -3879,7 +3879,7 @@
       <input id="stage-project-export-name" class="stage-text-input" type="text"
              maxlength="80" required autocomplete="off" data-1p-ignore spellcheck="false"
              aria-describedby="stage-project-export-hint">
-      <p class="stage-profile-hint" id="stage-project-export-hint">この名前は書き出すファイルだけに使います。ショー名は変わりません。<br><span id="stage-project-export-destination"></span></p>
+      <p class="stage-profile-hint" id="stage-project-export-hint">この名前は書き出すファイルだけに使います。ショー名は変わりません。標準は .stagesketch。AI や他のツールへ渡すときは名前の末尾に .json と付けると JSON のまま書き出せます。<br><span id="stage-project-export-destination"></span></p>
       <footer class="stage-venue-editor-actions stage-project-export-actions">
         <button type="button" class="btn-quiet" id="stage-project-export-cancel">キャンセル</button>
         <button type="submit" class="stage-minor-action">書き出す</button>
