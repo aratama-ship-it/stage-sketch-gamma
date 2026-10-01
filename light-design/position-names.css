@@ -1,0 +1,44 @@
+/* Scoped additions inherit the lighting editor's shared theme. */
+.position-names-open{grid-column:1/-1;width:100%;min-height:44px!important;font-size:14px!important;line-height:1.6!important}
+.position-assignment{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line-dark);padding:12px 0;color:var(--milk);font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+.position-assignment p{margin:0;color:var(--milk)}
+.position-assignment select,.position-assignment button{width:100%;min-height:44px!important;font-size:14px!important;line-height:1.6!important;white-space:normal}
+.position-label-warning{border:1px solid var(--brass);padding:8px}
+#dialog .in:has(#position-manager){width:min(960px,calc(100% - 32px));max-width:960px;max-height:calc(100% - 32px);padding:20px;gap:16px;overflow:hidden;grid-template-rows:minmax(0,1fr) auto}
+.position-manager{font:14px/1.6 var(--sans);color:var(--milk);min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:8px}
+.position-manager h2{font-size:18px;margin:0 0 8px;color:var(--milk)}
+.position-manager h3{font-size:14px;margin:0 0 8px;color:var(--milk);overflow-wrap:anywhere}
+.position-manager p{margin:8px 0;color:var(--milk)}
+.pn-actions{display:flex;flex-wrap:wrap;gap:8px}
+.position-manager button,.position-manager input,.position-manager select{min-height:44px;border:1px solid var(--brass);border-radius:4px;background:var(--recess);color:var(--milk);padding:8px;font:inherit;line-height:1.6}
+.position-manager button{cursor:pointer;white-space:normal;text-align:left}
+.position-manager button:focus-visible,.position-manager input:focus-visible,.position-manager select:focus-visible{outline:2px solid var(--milk);outline-offset:2px}
+.position-manager button[aria-pressed=true]{border:2px solid var(--milk);padding:7px;font-weight:700}
+.position-manager button:disabled{opacity:.6;cursor:default}
+.pn-scroll{max-height:70vh;min-height:0;overflow:auto;padding:4px}.position-manager>*:not(.pn-scroll){flex-shrink:0}
+.pn-layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px}
+#pn-list{display:flex;flex-direction:column;gap:8px}
+#pn-list button{width:100%;overflow-wrap:anywhere}
+.pn-editor{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.pn-editor label{display:flex;flex-direction:column;gap:8px;min-width:0;color:var(--milk)}
+.pn-editor input,.pn-editor select{width:100%;min-width:0}
+.pn-table{overflow:auto;margin-top:12px}
+.pn-table table{border-collapse:collapse;width:100%;min-width:580px}
+.pn-table th,.pn-table td{border-bottom:1px solid var(--line-dark);padding:8px;vertical-align:top;text-align:left;overflow-wrap:anywhere}
+.position-manager summary{min-height:44px;display:flex;align-items:center;cursor:pointer;text-decoration:underline}
+#pn-remove{grid-column:1/-1}
+@media(max-width:700px){.pn-layout,.pn-editor{grid-template-columns:1fr}#dialog .in:has(#position-manager){padding:12px}.pn-scroll{max-height:62vh}}
+
+#simple-position-names{font-size:14px;line-height:1.6;margin-top:8px}#simple-position-names summary{min-height:44px;cursor:pointer;display:flex;align-items:center;text-decoration:underline}#simple-position-list{overflow-wrap:anywhere}
+
+#dialog .in:has(#position-manager) .acts button{min-height:44px;font-size:14px;line-height:1.6;color:var(--milk);border-color:var(--brass)}
+
+.position-assignment select,.position-manager select{-webkit-appearance:none;appearance:none;height:44px!important;padding-right:36px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M3 6l5 5 5-5' fill='none' stroke='%23efe7d6' stroke-width='2'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:16px}
+
+.position-placement{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line-dark);padding-top:12px;font-size:14px;line-height:1.6;min-width:0}
+.position-placement label{display:flex;flex-direction:column;gap:8px}
+.position-distance{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:8px}
+.position-distance input{width:100%;min-width:0;height:44px;font-size:14px;line-height:1.6;color:var(--milk);background:var(--recess);border:1px solid var(--brass)}
+.position-placement svg{width:100%;height:220px;display:block;border:1px solid var(--brass)}
+.position-placement p{overflow-wrap:anywhere}
+.position-placement [hidden]{display:none!important}

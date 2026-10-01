@@ -145,6 +145,9 @@ public-dist/
 !/light-design/light-presets-ui.js
 !/light-design/light-presets.js
 !/light-design/rig-engine.js
+!/light-design/position-names-ui.js
+!/light-design/position-names.css
+!/light-design/position-placement-ui.js
 !/light-design/selected-light-presets-engine.js
 !/light-design/selected-light-presets-ui.js
 !/light-design/stage-figure.js
@@ -256,6 +259,8 @@ public-dist/
 !/tests/
 /tests/*
 !/tests/bundled-sample-timing.test.mjs
+!/tests/light-position-names.test.mjs
+!/tests/light-position-placement.test.mjs
 !/tests/rj-palette-ss-placement.test.mjs
 !/tests/light-stage-depth.test.mjs
 !/tests/unknown-saved-ids.test.mjs
