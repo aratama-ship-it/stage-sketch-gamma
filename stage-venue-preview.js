@@ -22,8 +22,8 @@
     <div class="venue-live-canvas-wrap"><canvas id="venue-live-canvas" tabindex="0"
       aria-label="劇場の立体。ドラッグで回転、矢印キーでも回転、プラス・マイナスで拡大縮小。"></canvas>
       <div class="venue-live-controls" role="group" aria-label="劇場プレビューの操作">
-        <button type="button" data-action="out" aria-label="立体を縮小">−</button>
-        <button type="button" data-action="in" aria-label="立体を拡大">＋</button>
+        <button type="button" data-action="out" aria-label="立体を縮小"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 8h10"/></svg></button>
+        <button type="button" data-action="in" aria-label="立体を拡大"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></button>
       </div></div>
     <div class="venue-live-foot" id="venue-live-help">ドラッグで見回す · ホイールで拡大縮小</div>`;
   const previewColumn = document.createElement('div');

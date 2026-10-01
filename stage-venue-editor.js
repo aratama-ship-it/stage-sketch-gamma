@@ -2232,7 +2232,8 @@
       drawPlacementPreview();
       renderControls(linesResult);
       window.dispatchEvent(new CustomEvent("stage-venue-draft-render", {
-        detail: { templateKey: state.templateKey },
+        detail: { templateKey: state.templateKey, lightingPresetAvailable: state.stagePresent
+          && lightingTemplateCompatible() },
       }));
       return;
     }
@@ -2256,7 +2257,8 @@
     drawCeilingAndFrontBorder();
     renderControls(linesResult);
     window.dispatchEvent(new CustomEvent("stage-venue-draft-render", {
-      detail: { templateKey: state.templateKey },
+      detail: { templateKey: state.templateKey, lightingPresetAvailable: state.stagePresent
+          && lightingTemplateCompatible() },
     }));
   }
 
@@ -4669,6 +4671,16 @@
     if (!state.templateKey) return null;
     const [venueId, sizeId = ""] = String(state.templateKey).split(":");
     return venueId ? { venueId, sizeId } : null;
+  }
+
+  function lightingTemplateCompatible() {
+    if (!library.isPreset(String(state.templateKey || "").split(":")[0])) return false;
+    const baseline = sectionDefaultsByKey.get(state.templateKey);
+    if (!baseline) return false;
+    // Compare geometry, not metadata or the currently loaded history signature.
+    // Undoing a blank/custom draft must restore the preset's availability.
+    return ["shape", "points", "stagePresent", "room", "stageExtensions", "ceiling", "stageHeightM", "stageFormat"]
+      .every((key) => snapshotSignature(state[key]) === snapshotSignature(baseline[key]));
   }
 
   function templateUntouched() {

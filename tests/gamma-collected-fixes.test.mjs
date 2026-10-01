@@ -47,9 +47,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.doesNotMatch(lightHtml, /id="statebadge"/);
   assert.match(html, />ツール</);
   assert.match(html, />表示するもの</);
-  assert.match(html, /class="stage-app-version">0\.2\.69</);
+  assert.match(html, /class="stage-app-version">0\.2\.70</);
   assert.match(html, /id="stage-release-v023-title">v0\.2\.3</);
-  assert.match(html, /<meta name="stage-sketch-gamma-version" content="v0\.2\.69">/);
+  assert.match(html, /<meta name="stage-sketch-gamma-version" content="v0\.2\.70">/);
   assert.match(html, /id="stage-release-v024-title">v0\.2\.4</);
   assert.match(html, /id="stage-release-v025-title">v0\.2\.5</);
   // AI用JSON（project.id なし・light あり）が旧照明の移行器で止まらない（2026-09-24）
@@ -58,9 +58,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   // 読み込み時の保険: rehearsal が無いシーンへ既定の転換3秒（控えを持つ保存データは触らない）（2026-09-24）
   assert.match(main, /function backfillMissingSceneRehearsal\(project\) \{[\s\S]*?if \(hasSectionMemo\) return project;[\s\S]*?row\.rehearsal = \{ holdDurationSeconds: DEFAULT_SCENE_HOLD_SECONDS, transitionToNextSeconds: NEW_SCENE_TRAVEL_SECONDS \};/);
   assert.match(main, /const project = backfillMissingSceneRehearsal\(stripRemovedSceneFields\(projectIoClone\(document\.project\)\)\);/);
-  assert.match(html, /stage-sketch\.js\?v=20261001-release69/);
-  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v439"/);
-  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=20261001-release69"/);
+  assert.match(html, /stage-sketch\.js\?v=20261001-release70/);
+  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v440"/);
+  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=20261001-release70"/);
   assert.match(html, /id="stage-show-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-set-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-light-names" checked>\s*<span class="stage-tool-icon"/);
@@ -121,10 +121,10 @@ test("lighting apply belongs to the LX cue panel and playback uses an accessible
   assert.match(html, /\.fixture-power\.off \.fixture-power-lens\{fill:none\}/);
   assert.match(html, /\.fixture-power\.off \.fixture-power-slash\{display:block\}/);
   assert.doesNotMatch(html, /\.fixture-power\.on \.fixture-power-slash\{display:none\}/);
-  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=20261001-release69/);
-  assert.match(worker, /stage-sketch-gamma-shell-v439/);
+  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=20261001-release70/);
+  assert.match(worker, /stage-sketch-gamma-shell-v440/);
 
-  assert.match(worker, /light-design\/app\.js\?v=20261001-release69/);
+  assert.match(worker, /light-design\/app\.js\?v=20261001-release70/);
   assert.match(worker, /light-design\/embed\.js\?v=20260930-gamma2/);
 });
 
@@ -395,4 +395,22 @@ test("stage history controls use current history after a same-tab or 3D roundtri
   vm.runInContext("syncHistory();", context);
   assert.equal(hostUndo.disabled, false);
   assert.equal(hostRedo.disabled, true);
+});
+
+
+test("icon polish retains import actions and names every compact control", () => {
+  const html = read("stage.html"), app = read("stage-sketch.js"), tokens = read("gamma-ui-tokens.css");
+  assert.match(html, /ベータのショーも読み込めます。/);
+  assert.match(html, /id="stage-import-json" accept="application\/json"/);
+  assert.match(html, /id="stage-toolbar-transition-animation"[^>]*data-tool-tip="transitionAnimation"[^>]*aria-label="転換アニメーションのオンオフ"/);
+  assert.match(html, /stage-feedback-label">フィードバック/);
+  assert.match(html, /M2 8h6v6H2z/);
+  assert.match(html, /M10 3h4M10 6h4/);
+  assert.match(tokens, /--gamma-feedback-width: 60px/);
+  assert.match(tokens, /align-items: center; justify-content: center;[\s\S]*?letter-spacing: 0/);
+  const source = html.slice(html.indexOf('<section class="stage-lighting-source"'), html.indexOf('id="stage-lighting-plan-file"'));
+  assert.doesNotMatch(source, /<small>|照明をどこから持ってくるか|劇場のプリセットを利用する/);
+  assert.match(source, /おすすめ照明セット/);
+  assert.match(source, /カスタム劇場では機材配置プリセットを利用できません。/);
+  assert.match(app, /button.disabled = !recommendedLightingAvailable/);
 });

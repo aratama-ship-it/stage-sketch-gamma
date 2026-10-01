@@ -4,7 +4,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
 <title>Stage Sketch — read-only drawings</title>
-<link rel="stylesheet" href="/study-assets/style.css?v=20260930-transition2"><link rel="stylesheet" href="/stage-study.css?v=25"><link rel="stylesheet" href="/stage-study-navigation.css?v=1">
+<link rel="stylesheet" href="/study-assets/style.css?v=20260930-gamma2"><link rel="stylesheet" href="/stage-study.css?v=25"><link rel="stylesheet" href="/stage-study-navigation.css?v=1">
 <script src="/stage-study-sticky.js?v=5"></script><script src="/stage-study-pen.js?v=4"></script><script src="/stage-study-navigation.js?v=1"></script><script src="/stage-study-frame.js?v=6"></script></head>
 <body class="study-frame" data-view="both">
 <div class="study-drawings"><div class="study-drawing study-front"></div><div class="study-drawing study-plan"></div></div>
@@ -25,7 +25,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.65</span>
+              <span class="stage-app-version">0.2.70</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo"
@@ -85,7 +85,7 @@
             </button>
           </div>
           <!-- 感想・改善点を送る窓。β利用者が画面を離れずに書けるよう、上部に置く（2026-09-03 本人指示） -->
-          <button type="button" class="stage-lang" id="stage-feedback-open" data-tablet-icon="✎">感想を送る</button>
+          <button type="button" class="stage-lang" id="stage-feedback-open" aria-label="フィードバック"><span class="stage-feedback-label">フィードバック</span></button>
           <a class="stage-lang stage-ai-link" id="stage-ai-showwright-link"
              target="_blank" rel="noopener noreferrer"
              aria-label="AI showwright for StageSketch"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/><path d="M18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.456-2.456L14.25 6l1.035-.259a3.375 3.375 0 0 0 2.456-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg></a>
@@ -143,6 +143,8 @@
                 <span class="stage-tool-split" aria-hidden="true"></span>
                 <button type="button" id="stage-work-light-toggle" class="is-icon" data-tool-tip="workLight" data-tip-key="G" data-stage-shortcut-action="view.workLight" data-stage-shortcut-title="作業灯を点ける・消す（{key}）"
                         aria-label="作業灯" aria-keyshortcuts="G" aria-pressed="true"><span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5.4 6.5a2.6 2.6 0 1 1 5.2 0c0 1.4-1 1.8-1.5 2.7H6.9c-.5-.9-1.5-1.3-1.5-2.7Z"/><path d="M6.8 10.5h2.4M7.2 12h1.6"/><path class="stage-work-light-rays" d="M8 1.2v1M3.5 2.8l.8.8M12.5 2.8l-.8.8M2.7 6.4h1.1M12.2 6.4h1.1"/><path class="stage-work-light-slash" d="M3.3 12.7 12.7 3.3"/></svg></span><span class="stage-tool-label">作業灯</span></button>
+                <span class="stage-tool-split" aria-hidden="true"></span>
+                <button type="button" id="stage-toolbar-transition-animation" class="is-icon" data-tool-tip="transitionAnimation" aria-label="転換アニメーションのオンオフ" title="転換アニメーションのオンオフ" aria-pressed="true"><span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h13v12H3zM7 8h14v12H7zM10 11l4 3-4 3z"/><path class="stage-transition-animation-off" d="M3 21 21 3"/></svg></span><span class="stage-tool-label">転換アニメーション</span></button>
               </div>
             </div>
             <p class="stage-tool-hint" id="stage-tool-hint" hidden>演者や物を選び、舞台の上で動かします。</p>
@@ -155,7 +157,7 @@
               </label>
               <label class="stage-toggle stage-name-toggle is-icon" title="装置名を出したり隠したりする">
                 <input type="checkbox" id="stage-show-set-names" checked>
-                <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.1h7.4v6.3H2z"/><path d="M3.6 2.1h7.3v6.3M11.4 4.2h2.6M11.4 6.6h2.1"/><path class="stage-name-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
+                <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h6v6H2z"/><path d="M10 3h4M10 6h4"/><path class="stage-name-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
                 <span class="visually-hidden">装置名</span>
               </label>
               <label class="stage-toggle stage-name-toggle is-icon" title="照明名を出したり隠したりする"
@@ -204,7 +206,7 @@
                            placeholder="v1" aria-label="バージョン">
                     <!-- v1の横で次の版を作る。＋は版の欄の中の右端に置く。 -->
                     <button type="button" id="stage-version-copy" class="stage-minor-action stage-panel-version-copy"
-                            aria-label="別バージョンとして複製" title="いまのショーを複製して次の版（v1 → v2）を作り、複製のほうへ移ります。もとのショーはそのまま残ります">＋</button>
+                            aria-label="別バージョンとして複製" title="いまのショーを複製して次の版（v1 → v2）を作り、複製のほうへ移ります。もとのショーはそのまま残ります"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></button>
                   </div>
                 </div>
               </div>
@@ -219,7 +221,7 @@
                           aria-keyshortcuts="Meta+S Control+S">ショーを書き出す</button>
                   <label class="stage-minor-action stage-import-label">ショーを読み込む<input type="file" id="stage-import-json" accept="application/json" hidden></label>
                 </div>
-                <p class="stage-version-note stage-project-import-note">β（旧版）のショーは、βで書き出したJSONをここで読み込んでください。γはβの保存を読みません。</p>
+                <p class="stage-version-note stage-project-import-note">ベータのショーも読み込めます。</p>
               </div>
               <!-- 本人指定で入口を一時非表示。テンプレートと作成機能は復帰できるよう残す。 -->
               <button type="button" class="stage-minor-action" id="stage-beat-templates-open" hidden>構成テンプレートから作る</button>
@@ -386,7 +388,7 @@
                aria-labelledby="stage-bg-modal-title" hidden>
             <header class="stage-modal-head">
               <h2 id="stage-bg-modal-title">背景</h2>
-              <button type="button" class="stage-modal-close" id="stage-bg-close" aria-label="閉じる">✕</button>
+              <button type="button" class="stage-modal-close" id="stage-bg-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
             </header>
             <div class="stage-modal-body">
               <p class="stage-background-intro">地の色、描画、スクリーンの文字、写真をまとめて設定します。</p>
@@ -801,7 +803,7 @@
                   <button type="button" class="stage-canvas-tool stage-arrow-clear-view" id="stage-front-arrow-clear"
                           data-arrow-view="front" hidden>矢印を消す</button>
                   <button type="button" class="stage-canvas-close" data-toggle-view="front"
-                          aria-expanded="true" aria-label="正面図を閉じる">×</button>
+                          aria-expanded="true" aria-label="正面図を閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
                 </div>
               </div>
               <div class="stage-canvas-inner" id="stage-front-inner">
@@ -880,7 +882,7 @@
                   <button type="button" class="stage-canvas-tool stage-arrow-clear-view" id="stage-plan-arrow-clear"
                           data-arrow-view="plan" hidden>矢印を消す</button>
                   <button type="button" class="stage-canvas-close" data-toggle-view="plan"
-                          aria-expanded="true" aria-label="平面図を閉じる">×</button>
+                          aria-expanded="true" aria-label="平面図を閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
                 </div>
               </div>
               <div class="stage-canvas-inner" id="stage-plan-inner">
@@ -891,8 +893,8 @@
                 <!-- 拡大の押しボタン。指のピンチが無いPCのための入口。
                      拡大中は何もない所を掴むと見える場所を動かせる -->
                 <div class="stage-zoom-fab">
-                  <button type="button" id="stage-plan-zoom-in" title="拡大" aria-label="平面図を拡大">＋</button>
-                  <button type="button" id="stage-plan-zoom-out" title="縮小" aria-label="平面図を縮小">−</button>
+                  <button type="button" id="stage-plan-zoom-in" title="拡大" aria-label="平面図を拡大"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></button>
+                  <button type="button" id="stage-plan-zoom-out" title="縮小" aria-label="平面図を縮小"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 8h10"/></svg></button>
                 </div>
                 <div class="stage-depth-label stage-depth-front">手前（客席側）</div>
               </div>
@@ -996,6 +998,7 @@
                       id="stage-selected-light-preset-open" aria-haspopup="dialog"
                       aria-controls="stage-selected-light-preset-modal" hidden>選んだ灯に型を適用…</button>
               <div class="stage-inline-control" id="stage-pose-inline"><label class="stage-control-label" for="stage-piece-pose">姿勢</label><button type="button" id="stage-piece-pose" class="stage-pose-button"><span id="stage-pose-label">立つ</span><span aria-hidden="true">▸</span></button></div>
+              <div class="stage-inline-control" id="stage-transition-gait-row" hidden><label class="stage-control-label" for="stage-transition-gait">このシーンへの移動</label><select id="stage-transition-gait" class="stage-select"><option value="walk">歩く</option><option value="jog">小走り</option></select></div>
               <!-- セクションごとの衣装。既存の単色表示は「衣装を着せる」までそのまま残す -->
               <div class="stage-costume-controls" id="stage-costume-controls" hidden>
                 <div class="stage-costume-heading">
@@ -1399,9 +1402,9 @@
             <span class="stage-timeline-menu-spacer" aria-hidden="true"></span>
             <button type="button" id="stage-timeline-grid" title="スナップ単位" data-no-i18n>スナップ 1/4</button>
             <button type="button" class="stage-timeline-square" id="stage-timeline-zoom-out"
-                    aria-label="タイムラインを縮小" title="縮小（− キー、Cmd+ホイール）">−</button>
+                    aria-label="タイムラインを縮小" title="縮小（− キー、Cmd+ホイール）"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 8h10"/></svg></button>
             <button type="button" class="stage-timeline-square" id="stage-timeline-zoom-in"
-                    aria-label="タイムラインを拡大" title="拡大（＋ キー、Cmd+ホイール）">＋</button>
+                    aria-label="タイムラインを拡大" title="拡大（＋ キー、Cmd+ホイール）"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></button>
             <button type="button" id="stage-timeline-split" disabled>シーン分割</button>
             <button type="button" class="stage-timeline-record" id="stage-timeline-record" disabled hidden>記録</button>
             <button type="button" class="stage-timeline-record" id="stage-timeline-record-next" disabled hidden>記録して次へ ▶</button>
@@ -1516,7 +1519,7 @@
   <header class="stage-modal-head">
     <h2 id="stage-timeline-cue-detail-title">LXcue 1-1-1</h2>
     <button type="button" class="stage-modal-close" id="stage-timeline-cue-detail-close"
-            aria-label="閉じる">✕</button>
+            aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body stage-timeline-cue-detail-body">
     <dl class="stage-timeline-cue-facts">
@@ -1559,7 +1562,7 @@
   <header class="stage-modal-head">
     <h2 id="stage-timeline-audio-detail-title">音源情報</h2>
     <button type="button" class="stage-modal-close" id="stage-timeline-audio-detail-close"
-            aria-label="閉じる">✕</button>
+            aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body stage-timeline-audio-detail-body">
     <dl class="stage-timeline-cue-facts">
@@ -1599,7 +1602,7 @@
   <header class="stage-modal-head">
     <h2 id="stage-timeline-audio-source-title">音源を追加</h2>
     <button type="button" class="stage-modal-close" id="stage-timeline-audio-source-close"
-            aria-label="閉じる">✕</button>
+            aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body stage-timeline-audio-source-body">
     <p id="stage-timeline-audio-source-copy">このシーンに割り当てる音源を選びます。</p>
@@ -1624,7 +1627,7 @@
      aria-describedby="stage-timeline-unit-warning-summary stage-timeline-unit-warning-caution" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-timeline-unit-warning-title">表示単位を切り替えますか？</h2>
-    <button type="button" class="stage-modal-close" id="stage-timeline-unit-warning-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-timeline-unit-warning-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body stage-timeline-unit-warning-body">
     <p id="stage-timeline-unit-warning-summary">このセクションをカウント式で表示します。</p>
@@ -1642,7 +1645,7 @@
      aria-labelledby="stage-profile-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-profile-title">演者プロフィール</h2>
-    <button type="button" class="stage-modal-close" id="stage-profile-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-profile-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <label class="stage-control-label" for="stage-profile-name">名前</label>
@@ -1668,7 +1671,7 @@
      aria-labelledby="stage-light-preset-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-light-preset-title">照明プリセット</h2>
-    <button type="button" class="stage-modal-close" id="stage-light-preset-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-light-preset-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <p class="stage-light-preset-intent-note" id="stage-light-preset-intent-note" hidden></p>
@@ -1681,7 +1684,7 @@
      aria-labelledby="stage-selected-light-preset-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-selected-light-preset-title">選んだ灯に型を適用</h2>
-    <button type="button" class="stage-modal-close" id="stage-selected-light-preset-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-selected-light-preset-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <p class="stage-selected-light-preset-summary" id="stage-selected-light-preset-summary"></p>
@@ -1732,7 +1735,7 @@
      aria-labelledby="stage-export-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-export-title">画像・印刷</h2>
-    <button type="button" class="stage-modal-close" id="stage-export-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-export-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <div id="stage-export-purpose-block">
@@ -1800,7 +1803,7 @@
      aria-labelledby="stage-cue-sheet-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-cue-sheet-title">キューシート</h2>
-    <button type="button" class="stage-modal-close" id="stage-cue-sheet-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-cue-sheet-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body stage-cue-sheet-body">
     <div id="stage-cue-sheet-list"></div>
@@ -1824,7 +1827,7 @@
      aria-labelledby="stage-share-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-share-title">共有</h2>
-    <button type="button" class="stage-modal-close" id="stage-share-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-share-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <!-- 中身の文言は stage-session.js が言語ごと自前で引き直す。
@@ -1884,7 +1887,7 @@
   <header class="stage-modal-head">
     <h2 id="stage-rehearsal-export-title">Vision Pro稽古用JSON</h2>
     <button type="button" class="stage-modal-close" id="stage-rehearsal-export-close"
-            aria-label="閉じる">✕</button>
+            aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <p class="stage-rehearsal-lead">書き出す前に、シーン・演者・時間・劇場形式を検査します。</p>
@@ -1936,7 +1939,7 @@
      aria-labelledby="stage-rename-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-rename-title">名前を変える</h2>
-    <button type="button" class="stage-modal-close" id="stage-rename-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-rename-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <label class="stage-control-label" for="stage-rename-input">名前</label>
@@ -2000,7 +2003,7 @@
       <h2 id="stage-formation-title">シーンを組む</h2>
       <p class="stage-formation-status" id="stage-formation-status">セクションの演者・舞台・セットを読み込んでいます。</p>
     </div>
-    <button type="button" class="stage-modal-close" id="stage-formation-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-formation-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-formation-body">
     <iframe id="stage-formation-frame" title="シーンを組む" loading="eager"></iframe>
@@ -2012,7 +2015,7 @@
      aria-labelledby="stage-shows-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-shows-title">ショー一覧</h2>
-    <button type="button" class="stage-modal-close" id="stage-shows-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-shows-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <p class="stage-profile-hint">この端末に保存したショーと同梱見本です。編集した内容は自動保存されます。別の端末へ持っていくときは「書き出す」を使ってください。</p>
@@ -2241,7 +2244,7 @@
   <header class="stage-modal-head">
     <h2 id="stage-scene-create-title">次のシーンをつくる</h2>
     <button type="button" class="stage-modal-close" id="stage-scene-create-close"
-            aria-label="閉じる">✕</button>
+            aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <form id="stage-scene-create-form">
     <div class="stage-modal-body stage-scene-create-body">
@@ -2287,7 +2290,7 @@
   <header class="stage-modal-head">
     <h2 id="stage-scene-delete-title">シーンを削除</h2>
     <button type="button" class="stage-modal-close" id="stage-scene-delete-close"
-            aria-label="閉じる">✕</button>
+            aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body stage-scene-delete-body">
     <p class="stage-scene-delete-message" id="stage-scene-delete-message"></p>
@@ -2321,7 +2324,7 @@
                 aria-pressed="false">平面図</button>
       </div>
       <button type="button" class="stage-modal-close" id="stage-scene-grid-close"
-              aria-label="閉じる">✕</button>
+              aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
     </div>
   </header>
   <div class="stage-modal-body stage-scene-grid-body">
@@ -2334,7 +2337,7 @@
      aria-modal="true" aria-labelledby="stage-beat-templates-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-beat-templates-title">構成テンプレートから新しいショーを作る</h2>
-    <button type="button" class="stage-modal-close" id="stage-beat-templates-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-beat-templates-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <p class="stage-beat-template-lead">これは正解ではなく、書き換えて使うための初期値です。シーン名と役割だけを作り、演者や道具は置きません。いまのショーは一覧に残ります。</p>
@@ -2348,7 +2351,7 @@
   <header class="stage-modal-head">
     <h2 id="stage-prefs-title">環境設定</h2>
     <span class="gamma-edition-label">無料テスト版γ</span>
-    <button type="button" class="stage-modal-close" id="stage-prefs-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-prefs-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
    <div class="stage-storage-caution" role="alert">
@@ -2454,7 +2457,7 @@
      aria-labelledby="stage-reset-title" aria-describedby="stage-reset-lead stage-reset-detail" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-reset-title">設定をリセット</h2>
-    <button type="button" class="stage-modal-close" id="stage-reset-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-reset-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <p class="stage-reset-lead" id="stage-reset-lead"></p>
@@ -2473,7 +2476,7 @@
      aria-labelledby="stage-help-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-help-title">使い方をさがす</h2>
-    <button type="button" class="stage-modal-close" id="stage-help-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-help-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body stage-help-body">
     <details class="stage-move-help-entry">
@@ -2497,7 +2500,7 @@
      aria-labelledby="stage-feedback-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-feedback-title">感想を送る</h2>
-    <button type="button" class="stage-modal-close" id="stage-feedback-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-feedback-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body stage-feedback-body">
     <iframe id="stage-feedback-frame" class="stage-feedback-frame" title="感想を送る" loading="lazy"></iframe>
@@ -2508,7 +2511,7 @@
      aria-labelledby="stage-about-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-about-title">このアプリについて</h2>
-    <button type="button" class="stage-modal-close" id="stage-about-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-about-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body stage-about-body">
     <a class="stage-about-feedback" target="_blank" rel="noopener">ご意見・ご感想・ご要望を送る ↗</a>
@@ -2528,10 +2531,34 @@
      aria-labelledby="stage-release-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-release-title">アップデート履歴</h2>
-    <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0270-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0270-title">v0.2.70</h3><time datetime="2026-10-01">2026-10-01</time></header>
+      <ul><li>閉じる・追加・拡大縮小などの正方形ボタンのアイコンを中央にそろえ、フィードバックの箱と転換アニメーションの説明を整えました。劇場設定の照明選択を「おすすめ照明セット」に整理し、カスタム劇場では選べないことを一文で案内します。</li></ul>
+    </section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0269-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0269-title">v0.2.69</h3><time datetime="2026-10-01">2026-10-01</time></header>
+      <ul><li>照明の名前に記号があっても文字として表示し、CSVを書き出すときは意図しない計算を防ぐようにしました。読み込むJSONの大きさと内容を確認し、開発用の全消去は手元の開発環境だけに限定しました。共有サイトで配るファイルも、利用に必要なものに絞りました。</li></ul>
+    </section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0267-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0267-title">v0.2.67</h3><time datetime="2026-09-30">2026-09-30</time></header>
+      <ul>
+        <li>演者ごとの転換動作に「歩く／小走り」を追加。試験場 A-4→A-5 で直線・曲線の小走りを確認できます。</li>
+        <li>環境設定から照明機材の表示色を「白ライン・黒ボディ・グレーボディ」に切替可能にしました。シーン詳細を広げ、出演人数を「人」で表示します。</li>
+        <li>ツールバーから転換アニメーションを切替可能にし、タイムラインにセクション開始前と終了後の転換を薄い表示で追加しました。</li>
+      </ul>
+    </section>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0266-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0266-title">v0.2.66</h3><time datetime="2026-09-30">2026-09-30</time></header>
+      <ul>
+        <li>照明デザインに「かんたん」を追加。正面図の矢印と12種のグリッドで明かりを試し、現在のシーン・LXキューへ採用できます。色・強さ・スポットの大きさ・切替時間を調整でき、人物を対象にしたスポットと暗転・採用の取り消しに対応します。</li>
+        <li>ムービング24灯（スポット8・ウォッシュ16）をトラス2本・フロント・左右SSへ配置する共通セットを追加。標準・拡張プロセニアムの寸法に適応します。既存の仕込みがあるショーは原本を残して複製し、共通セットを導入します。</li>
+        <li>劇場の形や寸法を変更する際に、照明が動かなくなる可能性を案内します。人物スポットはそのシーンの配置を狙い、人物の移動後は再照準を案内します。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0265-title">
       <header class="stage-release-entry-head">
         <h3 id="stage-release-v0265-title">v0.2.65</h3>
@@ -3053,7 +3080,7 @@
      aria-labelledby="stage-import-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-import-title">読み込む前に見比べる</h2>
-    <button type="button" class="stage-modal-close" id="stage-import-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-import-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <div id="stage-import-summary"></div>
@@ -3069,7 +3096,7 @@
      aria-labelledby="stage-kind-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-kind-title">種類を選ぶ</h2>
-    <button type="button" class="stage-modal-close" id="stage-kind-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-kind-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <div class="stage-kind-form">
@@ -3115,7 +3142,7 @@
      aria-labelledby="stage-pose-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-pose-title">姿勢を選ぶ</h2>
-    <button type="button" class="stage-modal-close" id="stage-pose-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-pose-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <p class="stage-profile-hint">絵は斜め前から見たところです。舞台での見え方は、向きによって変わります。</p>
@@ -3133,7 +3160,7 @@
      aria-labelledby="stage-setinfo-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-setinfo-title">舞台セット</h2>
-    <button type="button" class="stage-modal-close" id="stage-setinfo-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-setinfo-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <!-- L-04（2026-09-18 本人要望）: 回転台に乗せたように回るプレビュー。
@@ -3190,11 +3217,11 @@
     <div id="stage-setinfo-frame-width-row" hidden>
       <label class="stage-control-label" for="stage-setinfo-frame-width">枠の幅</label>
       <div class="stage-setinfo-frame-width">
-        <button type="button" class="stage-step-button" data-frame-width-step="-0.02" aria-label="枠の幅を細くする">−</button>
+        <button type="button" class="stage-step-button" data-frame-width-step="-0.02" aria-label="枠の幅を細くする"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 8h10"/></svg></button>
         <input type="number" class="stage-text-input" id="stage-setinfo-frame-width"
                min="0.04" max="1.5" step="0.02" inputmode="decimal">
         <span aria-hidden="true">m</span>
-        <button type="button" class="stage-step-button" data-frame-width-step="0.02" aria-label="枠の幅を太くする">＋</button>
+        <button type="button" class="stage-step-button" data-frame-width-step="0.02" aria-label="枠の幅を太くする"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></button>
       </div>
       <p class="stage-profile-hint">0.04〜1.5m。壁の短い辺の半分までに収まります。</p>
     </div>
@@ -3224,7 +3251,7 @@
      aria-labelledby="stage-venue-editor-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-venue-editor-title">劇場設定</h2>
-    <button type="button" class="stage-modal-close" id="stage-venue-editor-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-venue-editor-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <div class="stage-venue-editor-workspace">
@@ -3257,28 +3284,25 @@
       <section class="stage-venue-editor-lighting-step" aria-labelledby="stage-venue-editor-lighting-title">
         <h3 id="stage-venue-editor-lighting-title">0. 照明</h3>
         <!-- 照明の取得元と既存プランの操作を0番にまとめる。 -->
-        <section class="stage-lighting-source" aria-labelledby="stage-lighting-source-label">
-          <p class="stage-field-label" id="stage-lighting-source-label">照明をどこから持ってくるか</p>
-          <div class="stage-lighting-source-choices" role="group" aria-labelledby="stage-lighting-source-label">
+        <section class="stage-lighting-source" aria-labelledby="stage-venue-editor-lighting-title">
+          <div class="stage-lighting-source-choices" role="group" aria-labelledby="stage-venue-editor-lighting-title">
             <button type="button" data-lighting-source="self" aria-pressed="true">
               <strong>自分で照明を組む</strong>
-              <small>今の照明は変えずに残します。あとから機材配置・照明で組みます。</small>
             </button>
             <button type="button" data-lighting-source="preset" aria-pressed="false">
-              <strong>劇場のプリセットを利用する</strong>
-              <small>選んでいる劇場に合う照明プランを、全消灯の状態で持ってきます。</small>
+              <strong>おすすめ照明セット</strong>
             </button>
             <button type="button" data-lighting-source="saved" aria-pressed="false">
               <strong>保存してある照明プランを適用する</strong>
-              <small>書き出した照明デザインのファイルを選びます。</small>
             </button>
           </div>
+          <p class="stage-profile-hint" id="stage-lighting-custom-note" role="status" hidden>カスタム劇場では機材配置プリセットを利用できません。</p>
           <input type="file" id="stage-lighting-plan-file" accept=".lightdesign.json,.json,application/json" hidden>
           <p class="stage-profile-hint" id="stage-lighting-plan-file-summary" role="status" hidden></p>
           <!-- 保存済みプランの件数など。R-07でモーダルをやめた後も、
                JS（els.lightingPlanOpenSummary）が書き込む先として要素は残す。
                build_public.py も必須要素として見ている。 -->
-          <p class="stage-profile-hint" id="stage-lighting-plan-open-summary">今の照明は変えずに残します</p>
+          <p class="stage-profile-hint" id="stage-lighting-plan-open-summary" hidden></p>
           <div class="stage-lighting-plan-body" id="stage-lighting-plan-body" hidden>
               <p class="stage-lighting-plan-summary" id="stage-lighting-plan-summary">劇場に合う照明プランを確認しています…</p>
               <section class="stage-lighting-plan-candidate" id="stage-lighting-plan-candidate" hidden>
@@ -3571,9 +3595,9 @@
                  ヘッダーの ↶ ↷ はショー側の履歴で、劇場設定の取り消しとは別物。
                  劇場設定の取り消しは ⌘Z（stage-venue-editor.js が窓を開いているあいだ横取りする）。 -->
             <button type="button" id="stage-venue-editor-zoom-out" aria-label="平面図を縮小"
-                    title="平面図を縮小" aria-controls="stage-venue-editor-canvas">−</button>
+                    title="平面図を縮小" aria-controls="stage-venue-editor-canvas"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 8h10"/></svg></button>
             <button type="button" id="stage-venue-editor-zoom-in" aria-label="平面図を拡大"
-                    title="平面図を拡大" aria-controls="stage-venue-editor-canvas">＋</button>
+                    title="平面図を拡大" aria-controls="stage-venue-editor-canvas"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></button>
           </div>
         </div>
         <div class="stage-venue-editor-canvas-legend" aria-label="平面図の凡例">
@@ -3602,7 +3626,7 @@
      aria-labelledby="stage-venue-pick-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-venue-pick-title">劇場を選ぶ</h2>
-    <button type="button" class="stage-modal-close" id="stage-venue-pick-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-venue-pick-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <div class="stage-venue-pick-grid" id="stage-venue-pick-grid" data-no-i18n></div>
@@ -3616,7 +3640,7 @@
      aria-labelledby="stage-venue-apply-title" aria-describedby="stage-venue-apply-summary" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-venue-apply-title">この劇場をショーへ反映</h2>
-    <button type="button" class="stage-modal-close" id="stage-venue-apply-close" aria-label="閉じる">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-venue-apply-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <p class="stage-venue-apply-summary" id="stage-venue-apply-summary"></p>
@@ -3638,7 +3662,11 @@
       <legend>照明機材をどうしますか</legend>
       <!-- 2026-09-17 本人指示: 3択（導入する／自分で配置／導入しない）を2択にする。
            後ろ2つは「自動で組まない」という同じ選択なので1つにまとめた。 -->
-      <button type="button" class="stage-venue-apply-choice is-selected" id="stage-venue-apply-preset" aria-pressed="true">
+      <button type="button" class="stage-venue-apply-choice" id="stage-venue-apply-simple" aria-pressed="false">
+        <strong>かんたん照明の共通24灯セット</strong>
+        <small>スポット8灯・ウォッシュ16灯。トラス2本・フロント・両側SSを劇場寸法に合わせます。初版は標準・拡張プロセニアムです。</small>
+      </button>
+      <button type="button" class="stage-venue-apply-choice is-selected" id="stage-venue-apply-preset"  aria-pressed="true">
         <strong>照明機材を自動で組む（プリセット）</strong>
         <small>選んだ型の照明機材を、全消灯の状態で配置します。</small>
       </button>
@@ -3696,7 +3724,7 @@
      aria-modal="true" aria-labelledby="stage-venue-import-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-venue-import-title">劇場ライブラリの取り込み</h2>
-    <button type="button" class="stage-modal-close" id="stage-venue-import-close" aria-label="キャンセル">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-venue-import-close" aria-label="キャンセル"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <p class="stage-profile-hint">内容を確認してから、取り込む劇場を確定してください。</p>
@@ -3759,7 +3787,7 @@
      aria-modal="true" aria-labelledby="stage-project-export-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-project-export-title">ショーを書き出す</h2>
-    <button type="button" class="stage-modal-close" id="stage-project-export-close" aria-label="キャンセル">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-project-export-close" aria-label="キャンセル"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <form id="stage-project-export-form">
@@ -3781,7 +3809,7 @@
      aria-labelledby="stage-venue-export-title" hidden>
   <header class="stage-modal-head">
     <h2 id="stage-venue-export-title">劇場データの共有確認</h2>
-    <button type="button" class="stage-modal-close" id="stage-venue-export-cancel" aria-label="キャンセル">✕</button>
+    <button type="button" class="stage-modal-close" id="stage-venue-export-cancel" aria-label="キャンセル"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
     <p>この劇場の資料は外部共有不可の設定です。</p>
@@ -3814,11 +3842,10 @@
 </div></div>
 <script src="/study-assets/stage-venues.js?v=20260928-feedback55"></script>
 <script src="/study-assets/stage-venue-lines.js?v=2026091992"></script>
-<script src="/study-assets/stage-i18n.js?v=20260930-cuenav1"></script>
+<script src="/study-assets/stage-i18n.js?v=20261001-release70"></script>
 <script src="/study-assets/stage-set-model.js?v=2026092354"></script>
 <script src="/study-assets/stage-machinery.js?v=20260925-ui1"></script>
 <script src="/study-assets/gamma-ui.js?v=20260925-ui1"></script>
 <script src="/study-assets/gamma-ui-i18n.js?v=20260925-ui1"></script>
-<script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
-<script src="/study-assets/stage-sketch.js?v=20261001-release69"></script>
+<script src="/study-assets/stage-sketch.js?v=20261001-release70"></script>
 </body></html>

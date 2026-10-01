@@ -8058,6 +8058,11 @@
   const HAND_R = 0.019;
   const FOOT_R = 0.021;        // 足の甲の厚み
   const HEEL_BACK = 0.030;     // 踵がくるぶしより後ろへ出る量
+  function squareGlyphSvg(kind) {
+    const path = { close: "M4 4l8 8M12 4l-8 8", plus: "M8 3v10M3 8h10", minus: "M3 8h10" }[kind];
+    return `<svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="${path}"/></svg>`;
+  }
+
   const TOOL_HINTS = {
     select: "演者や物を選び、舞台の上で動かします。",
     paint: "",
@@ -11679,7 +11684,7 @@
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "stage-music-track-remove";
-      remove.textContent = "×";
+      remove.innerHTML = squareGlyphSvg("close");
       remove.setAttribute("aria-label", sx(`${track.title}を外す`, `Remove ${track.title}`));
       remove.addEventListener("click", () => removeAudioTrack(track.id));
       row.append(choose, remove);
@@ -14960,7 +14965,7 @@
       const del = document.createElement("button");
       del.type = "button";
       del.className = "stage-cast-remove";
-      del.textContent = "✕";
+      del.innerHTML = squareGlyphSvg("close");
       del.setAttribute("aria-label", tx("この文字を消す"));
       del.addEventListener("click", () => {
         checkpoint();
@@ -22140,7 +22145,7 @@
     syncSingleViewSwitches();
     document.querySelectorAll("[data-toggle-view]").forEach((b) => {
       const open = b.dataset.toggleView === "front" ? state.showFront : state.showPlan;
-      b.textContent = "×";
+      b.innerHTML = squareGlyphSvg("close");
       b.setAttribute("aria-expanded", String(open));
       b.setAttribute("aria-label", sx(`${b.dataset.toggleView === "front" ? "正面図" : "平面図"}を${open ? "閉じる" : "開く"}`, `${open ? "Close" : "Open"} the ${b.dataset.toggleView === "front" ? "front" : "plan"} view`));
     });
@@ -23633,7 +23638,7 @@
     const drawerTitle = document.createElement("h2");
     const drawerClose = document.createElement("button");
     drawerClose.type = "button";
-    drawerClose.textContent = "×";
+    drawerClose.innerHTML = squareGlyphSvg("close");
     drawerClose.setAttribute("aria-label", "メニューを閉じる");
     drawerHead.append(drawerTitle, drawerClose);
     const drawerBody = document.createElement("div");
@@ -24343,7 +24348,7 @@
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "stage-cast-remove";
-      remove.textContent = "✕";
+      remove.innerHTML = squareGlyphSvg("close");
       remove.setAttribute("aria-label", sx(`${member.name}を名簿から外す`, `Remove ${member.name} from the cast`));
       remove.addEventListener("click", () => removeCastMember(member.id));
 
@@ -24825,7 +24830,7 @@
         const del = document.createElement("button");
         del.type = "button";
         del.className = "stage-cast-remove";
-        del.textContent = "✕";
+        del.innerHTML = squareGlyphSvg("close");
         del.setAttribute("aria-label", tx("この組を外す"));
         del.addEventListener("click", () => removeLightGroup(gid));
         row.append(dot, name, toggle, split, del);
@@ -24971,7 +24976,7 @@
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "stage-cast-remove";
-    remove.textContent = "✕";
+    remove.innerHTML = squareGlyphSvg("close");
     remove.setAttribute("aria-label", sx(`${item.name}を舞台セットから外す`, `Remove ${item.name} from the set list`));
     remove.addEventListener("click", () => removeSetItem(item.id));
 
@@ -25799,6 +25804,7 @@
   let lightingPlanMode = "add";
   // 表示選択は作業中だけの比較状態。project / localStorage には保存しない。
   let lightingPlanOverlayId = "";
+  let recommendedLightingAvailable = false;
   let lightingSource = "self";   // R-07: 照明をどこから持ってくるか（self / preset / saved）
 
   const lightingPlanApi = () => window.SHOSAI_STAGE_LIGHTING_PLANS || null;
@@ -25985,7 +25991,26 @@
     return true;
   }
 
+  function syncRecommendedLightingUi(available) {
+    const project = lightingPlanProject();
+    const size = VENUES.sizeById(VENUES.byId(project.venue), project.venueSize);
+    const dims = project.venueDims;
+    const dimensionsMatch = !dims || ["width", "depth", "height"].every((key) =>
+      !Number.isFinite(Number(dims[key])) || Number(dims[key]) === Number(size[key]));
+    recommendedLightingAvailable = Boolean(available) && dimensionsMatch;
+    const button = document.querySelector('[data-lighting-source="preset"]');
+    const note = document.getElementById("stage-lighting-custom-note");
+    if (note) note.hidden = recommendedLightingAvailable;
+    if (button) {
+      button.disabled = !recommendedLightingAvailable;
+      if (recommendedLightingAvailable) button.removeAttribute("aria-describedby");
+      else button.setAttribute("aria-describedby", "stage-lighting-custom-note");
+    }
+    if (!recommendedLightingAvailable && lightingSource === "preset") setLightingSource("self");
+  }
+
   async function openLightingPlanModal() {
+    if (!recommendedLightingAvailable) { closeLightingPlanModal(); return; }
     const request = ++lightingPlanRequest;
     const basis = lightingPlanBasis();
     const api = lightingPlanApi();
@@ -26010,7 +26035,8 @@
       if (request !== lightingPlanRequest || basis !== lightingPlanBasis()) return;
       const candidate = api.presetForProject(catalog, lightingPlanProject());
       if (!candidate.ok) {
-        if (els.lightingPlanSummary) els.lightingPlanSummary.textContent = candidate.reason;
+        syncRecommendedLightingUi(false);
+        closeLightingPlanModal();
         return;
       }
       const rawDesign = await loadLightingDesignForPreset(candidate.preset);
@@ -26514,7 +26540,7 @@
         const remove = document.createElement("button");
         remove.type = "button";
         remove.className = "stage-cast-remove";
-        remove.textContent = "✕";
+        remove.innerHTML = squareGlyphSvg("close");
         remove.setAttribute("aria-label", `${info.title}を消す`);
         remove.disabled = info.id === state.project.id;
         remove.addEventListener("click", () => deleteShow(info.id));
@@ -27697,7 +27723,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "stage-cast-remove";
-      remove.textContent = "✕";
+      remove.innerHTML = squareGlyphSvg("close");
       remove.setAttribute("aria-label", `${rig.name}を消す`);
       remove.addEventListener("click", () => removeRig(rig.id));
 
@@ -29096,7 +29122,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           const remove = document.createElement("button");
           remove.type = "button";
           remove.className = "btn-quiet stage-scene-row-delete";
-          remove.textContent = "✕";
+          remove.innerHTML = squareGlyphSvg("close");
           remove.title = tx("このシーンを削除");
           remove.setAttribute("aria-label", tx("このシーンを削除"));
           remove.disabled = state.project.scenes.filter((row) => row.kind === "scene").length <= 1;
@@ -37913,6 +37939,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   window.addEventListener("stage-venue-editor-open", syncVenueEditorTemplate);
   window.addEventListener("stage-venue-draft-render", (event) => {
     if (!event.detail || !els.venueSelect) return;
+    syncRecommendedLightingUi(event.detail.lightingPresetAvailable);
     const blank = event.detail.templateKey === "__blank__";
     if (blankVenueSelected === blank) return;
     blankVenueSelected = blank;
@@ -39246,6 +39273,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   }
   /* 照明の取得元。ファイルは検証後も劇場を確定するまで下書きに保持する。 */
   function setLightingSource(kind) {
+    if (kind === "preset" && !recommendedLightingAvailable) return;
     lightingSource = kind;
     if (kind !== "saved") {
       pendingLightingFile = null;

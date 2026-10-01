@@ -1372,6 +1372,11 @@
     "出ている演者": "Performers on stage",
     "舞台裏の演者": "Performers off stage",
     /* R-07（2026-09-17）: 照明をどこから持ってくるかの3択。 */
+    "フィードバック": "Feedback",
+    "ベータのショーも読み込めます。": "Beta shows can also be imported.",
+    "おすすめ照明セット": "Recommended lighting set",
+    "カスタム劇場では機材配置プリセットを利用できません。": "Rig presets are unavailable for custom theatres.",
+    "転換アニメーションのオンオフ": "Toggle transition animation",
     "照明をどこから持ってくるか": "Where the lighting comes from",
     "自分で照明を組む": "Build the lighting yourself",
     "今の照明は変えずに残します。あとから機材配置・照明で組みます。": "Keeps the current lighting unchanged. Build it later in Rig and Lighting.",

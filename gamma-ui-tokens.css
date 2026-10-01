@@ -98,3 +98,44 @@ html[data-gamma-embedded] :is(.showtoggles button,.filters button,.seg button,.o
 html[data-gamma-embedded] #apply { background:var(--gamma-primary-bg); color:var(--milk); border-color:var(--rust); }
 html[data-stage-skin] :is(button,input,select,textarea):focus-visible,
 html[data-gamma-embedded] :is(button,input,select,textarea):focus-visible { outline:2px solid var(--brass); outline-offset:2px; }
+
+/* Icon-only squares share centering; their existing hit sizes and states remain local. */
+:root { --gamma-feedback-width: 60px; --gamma-square-glyph-size: 16px; }
+html[data-stage-skin] :is(
+  button.is-icon, button:has(> .stage-square-glyph), label.is-icon, .stage-panel-version-copy,
+  .stage-history-icon, .stage-gear-btn, .stage-panel-visibility-btn,
+  .stage-present-icon, .stage-cue-sheet-icon, .stage-export-icon, .stage-header-icon,
+  .stage-release-open, .stage-ai-link, .stage-launch-backup-close,
+  .stage-cast-remove, .stage-cast-lock, .stage-cast-profile, .stage-kind-swatch,
+  .stage-scene-row-delete, .stage-scene-action-icon, .stage-scene-bar-grid,
+  .stage-modal-close, .stage-canvas-close, .btn-close, .btn-close-ev,
+  .stage-zoom-fab button, .stage-venue-editor-zoom button,
+  .stage-timeline-square, .stage-timeline-row-add, .stage-timeline-row-handle,
+  .stage-step-button, .stage-panel-help, .stage-hint-help, .stage-pref-help,
+  .gamma-light-status-close, .stage-present-zone, .stage-present-swap,
+  .stage-present-close, .stage-present-drawer-toggle
+):not([hidden]) {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0; letter-spacing: 0; line-height: 1;
+}
+.stage-square-glyph {
+  display: block; flex: 0 0 auto;
+  width: var(--gamma-square-glyph-size); height: var(--gamma-square-glyph-size);
+}
+html[data-stage-skin] #stage-feedback-open {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: 0 0 var(--gamma-feedback-width); width: var(--gamma-feedback-width);
+  padding: 0; letter-spacing: 0;
+}
+.stage-feedback-label {
+  display: block; width: 4em; font-size: var(--fs-3);
+  line-height: 1.15; text-align: center; word-break: break-all;
+}
+html.stage-pwa-tablet #stage-feedback-open::before { content: none; }
+
+/* Lighting diagrams use the same centered glyphs, including navigation and group removal. */
+html[data-gamma-embedded] :is(.solo-btn, .x, .qnav, #sec-prev, #sec-next, #scene-prev, #scene-next) {
+  display: inline-flex; align-items: center; justify-content: center;
+  letter-spacing: 0; line-height: 1;
+}
+html[data-gamma-embedded] .solo-btn { width: 24px; padding: 0; }
