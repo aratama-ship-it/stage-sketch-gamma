@@ -1815,10 +1815,15 @@
       venue.stageWings = venue.stageWings
         .filter((area) => area && Array.isArray(area.polygon) &&
           area.polygon.length >= 3 && area.polygon.every(validPoint))
-        .map((area) => ({
-          ...area,
-          side: ["left", "right", "custom"].includes(area.side) ? area.side : "custom",
-        }));
+        .map((area) => {
+          const normalized = {
+            ...area,
+            side: ["left", "right", "custom"].includes(area.side) ? area.side : "custom",
+          };
+          if (!(typeof normalized.legCount === "number" && Number.isInteger(normalized.legCount) &&
+              normalized.legCount >= 2 && normalized.legCount <= 10)) delete normalized.legCount;
+          return normalized;
+        });
     } else {
       delete venue.stageWings;
     }

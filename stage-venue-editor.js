@@ -67,6 +67,11 @@
     extensionMerge: $("stage-venue-editor-extension-merge"),
     audienceMerge: $("stage-venue-editor-audience-merge"),
     wingMerge: $("stage-venue-editor-wing-merge"),
+    wingLegCount: $("stage-venue-editor-leg-count"),
+    wingLegCountMinus: $("stage-venue-editor-leg-count-minus"),
+    wingLegCountPlus: $("stage-venue-editor-leg-count-plus"),
+    wingLegCountAuto: $("stage-venue-editor-leg-count-auto"),
+    wingLegCountHelp: $("stage-venue-editor-leg-count-help"),
     status: $("stage-venue-editor-status"),
     audienceSelection: $("stage-venue-editor-audience-selection"),
     audienceFull: $("stage-venue-editor-audience-full"),
@@ -446,6 +451,33 @@
 
   function stageWingAreas() {
     return state.wings;
+  }
+
+  function customVenueTemplate() {
+    const venueId = String(state.templateKey || "").split(":")[0];
+    const venue = venueId && venueId !== "__blank__" ? library.venueV2ById(venueId) : null;
+    return Boolean(venue && !library.isPreset(venueId) && venue.basis === "custom");
+  }
+
+  function setWingLegCount(value) {
+    const count = window.GAMMA_VENUE_CURTAINS.legCount(Number(value));
+    if (count === null || !customVenueTemplate() || !state.wings.length) return false;
+    state.wings = state.wings.map((wing) => ({ ...wing, legCount: count }));
+    setStatus("袖幕の枚数をすべての舞台袖へ反映しました。");
+    render();
+    return true;
+  }
+
+  function clearWingLegCount() {
+    if (!customVenueTemplate() || !state.wings.length) return false;
+    state.wings = state.wings.map((wing) => {
+      const next = { ...wing };
+      delete next.legCount;
+      return next;
+    });
+    setStatus("すべての舞台袖を自動の枚数に戻しました。");
+    render();
+    return true;
   }
 
   function approxM(value) {
@@ -2178,6 +2210,24 @@
     if (els.extensionMerge) els.extensionMerge.disabled = mergeableStageExtensions().length === 0;
     if (els.audienceMerge) els.audienceMerge.disabled = mergeableAreas("audience").length === 0;
     if (els.wingMerge) els.wingMerge.disabled = mergeableAreas("wing").length === 0;
+    const customWings = customVenueTemplate();
+    const canSetLegCount = customWings && state.wings.length > 0;
+    const legCounts = [...new Set(state.wings.map((wing) =>
+      window.GAMMA_VENUE_CURTAINS.legCount(wing.legCount)))];
+    const commonLegCount = legCounts.length === 1 ? legCounts[0] : null;
+    if (els.wingLegCount) {
+      els.wingLegCount.disabled = !canSetLegCount;
+      els.wingLegCount.value = commonLegCount === null ? "" : String(commonLegCount);
+      els.wingLegCount.placeholder = legCounts.length > 1 ? tx("混在") : tx("自動");
+    }
+    [els.wingLegCountMinus, els.wingLegCountPlus, els.wingLegCountAuto].filter(Boolean)
+      .forEach((button) => { button.disabled = !canSetLegCount; });
+    if (els.wingLegCountHelp) {
+      els.wingLegCountHelp.textContent = !customWings
+        ? tx("標準の劇場は複製してから変えられます")
+        : (!state.wings.length ? tx("舞台袖を描くと、すべての袖へ一括で設定できます。")
+          : tx("すべての舞台袖へ一括で設定します。自動では袖の奥行きから枚数を決めます。"));
+    }
     syncHistoryButtons();
   }
 
@@ -4192,14 +4242,8 @@
   }
 
   function stageWingOutput() {
-    return stageWingAreas().map((area) => ({
-      id: area.id,
-      side: "custom",
-      label: area.label,
-      polygon: area.polygon.map(geometryPoint),
-      ...(area.shape ? { shape: area.shape } : {}),
-      ...(area.merged ? { merged: true } : {}),
-    }));
+    return stageWingAreas().map((area) =>
+      window.GAMMA_VENUE_CURTAINS.stageWingOutput(area, geometryPoint));
   }
 
   function fixtureOutput() {
@@ -4802,6 +4846,22 @@
   }
   if (els.wingMerge) {
     els.wingMerge.addEventListener("click", () => withHistory(() => mergeOverlappingAreas("wing")));
+  }
+  if (els.wingLegCount) {
+    els.wingLegCount.addEventListener("change", () => {
+      const accepted = withHistory(() => setWingLegCount(els.wingLegCount.value));
+      if (!accepted) render();
+    });
+  }
+  const stepWingLegCount = (delta) => {
+    const current = window.GAMMA_VENUE_CURTAINS.legCount(Number(els.wingLegCount?.value));
+    const next = Math.min(10, Math.max(2, (current === null ? 4 : current) + delta));
+    withHistory(() => setWingLegCount(next));
+  };
+  if (els.wingLegCountMinus) els.wingLegCountMinus.addEventListener("click", () => stepWingLegCount(-1));
+  if (els.wingLegCountPlus) els.wingLegCountPlus.addEventListener("click", () => stepWingLegCount(1));
+  if (els.wingLegCountAuto) {
+    els.wingLegCountAuto.addEventListener("click", () => withHistory(clearWingLegCount));
   }
   document.querySelectorAll("[data-venue-editor-area-mode]").forEach((button) => {
     button.addEventListener("click", () => setAreaMode(
@@ -5454,6 +5514,8 @@
        直書きしないで済むように出す。書き換えはできない。 */
     viewLayout: () => Object.assign({}, view()),
     setStageFormat,
+    setWingLegCount: (value) => withHistory(() => setWingLegCount(value)),
+    clearWingLegCount: () => withHistory(clearWingLegCount),
     setMode,
     setCeilingHeight,
     setStageHeight,

@@ -12290,6 +12290,28 @@ body.stage-modal-open .stage-tour { display: none !important; }
   font-size: 12px;
 }
 
+.stage-venue-editor-leg-count-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stage-venue-editor-leg-count-controls .stage-text-input {
+  width: 64px;
+  min-width: 0;
+}
+.stage-venue-editor-leg-count-controls .stage-step-button {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 7px;
+}
+.stage-venue-editor-leg-count-controls .btn-quiet { min-height: 32px; }
+.stage-venue-editor-leg-count > p {
+  grid-column: 2;
+  margin: -2px 0 0;
+}
+
 .stage-venue-editor-ceiling-help {
   grid-column: 2;
   margin: -2px 0 0;

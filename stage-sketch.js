@@ -19657,8 +19657,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       target.stroke();
     };
     // 奥の対から順に重ね、手前の対が奥の対を隠していく。残った内側の縁が階段状に並び、それが袖の奥行きになる。
-    const LEG_DEPTHS = [0.10, 0.40, 0.70, 0.97];   // 0 が最も奥。0.97＝間口のすぐ裏
-    const legShade = (i) => 0.72 + (0.28 * i) / (LEG_DEPTHS.length - 1);
+    const legDepths = (count) => window.GAMMA_VENUE_CURTAINS?.frontDepths(count)
+      || [0.10, 0.40, 0.70, 0.97];
+    const legShade = (i, count) => 0.72 + (0.28 * i) / Math.max(1, count - 1);
 
     if (v.frame) {
       target.save();
@@ -19677,8 +19678,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         target.fillRect(Math.min(L.centerX, edge), legTop, Math.abs(edge - L.centerX), L.bottomY - legTop);
       });
 
-      LEG_DEPTHS.forEach((vAt, i) => {
-        [-1, 1].forEach((side) => paintLeg(side, side < 0 ? 0 : 1, vAt, legShade(i)));
+      const depths = legDepths();
+      depths.forEach((vAt, i) => {
+        [-1, 1].forEach((side) => paintLeg(side, side < 0 ? 0 : 1, vAt, legShade(i, depths.length)));
       });
       target.restore();
     } else if (stepShape && window.SHOSAI_FRONT_SHAPE && typeof window.SHOSAI_FRONT_SHAPE.touchingEdges === "function") {
@@ -19703,7 +19705,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
             const uInner = stepShape.uOf(xM);
             const v1 = stepShape.vOf(Math.min(a[1], b[1]));
             const v2 = stepShape.vOf(Math.max(a[1], b[1]));
-            LEG_DEPTHS.forEach((t, i) => paintLeg(side, uInner, v1 + (v2 - v1) * t, legShade(i)));
+            const depths = legDepths(area.legCount);
+            depths.forEach((t, i) => paintLeg(side, uInner, v1 + (v2 - v1) * t, legShade(i, depths.length)));
           });
         });
         target.restore();

@@ -2,6 +2,29 @@
 (function (root) {
   'use strict';
   const EPS = 1e-6;
+  const LEGACY_FRONT_DEPTHS = Object.freeze([0.10, 0.40, 0.70, 0.97]);
+  function legCount(value) {
+    return typeof value === 'number' && Number.isInteger(value) && value >= 2 && value <= 10
+      ? value : null;
+  }
+  function frontDepths(value) {
+    const count = legCount(value);
+    if (count === null || count === 4) return LEGACY_FRONT_DEPTHS.slice();
+    return Array.from({ length: count }, (_, index) =>
+      LEGACY_FRONT_DEPTHS[0] + (LEGACY_FRONT_DEPTHS[3] - LEGACY_FRONT_DEPTHS[0]) * index / (count - 1));
+  }
+  function stageWingOutput(area, geometryPoint = point => point.slice()) {
+    const count = legCount(area?.legCount);
+    return {
+      id: area.id,
+      side: 'custom',
+      label: area.label,
+      polygon: area.polygon.map(geometryPoint),
+      ...(area.shape ? { shape: area.shape } : {}),
+      ...(area.merged ? { merged: true } : {}),
+      ...(count === null ? {} : { legCount: count }),
+    };
+  }
   const valid = p => Array.isArray(p) && p.length >= 3 && p.every(v =>
     Array.isArray(v) && Number.isFinite(v[0]) && Number.isFinite(v[1]));
   // Intersect a horizontal line with the actual polygon, including concave shapes.
@@ -35,7 +58,8 @@
       // A tiny inset keeps the polygon intersection valid at its exact boundary.
       const inset = Math.min(.001, (near - far) / 4);
       const span = Math.max(0, near - far - inset * 2);
-      const intervals = Math.floor(span / 2);
+      const savedCount = legCount(wing.legCount);
+      const intervals = savedCount === null ? Math.floor(span / 2) : savedCount - 1;
       Array.from({ length: intervals + 1 }, (_, i) => far + inset + (intervals ? span * i / intervals : span / 2)).forEach(z => {
         let parts = spans(polygon, z);
         floors.forEach(floor => spans(floor, z).forEach(([lo, hi]) => {
@@ -64,5 +88,7 @@
     return { from: [Math.min(...xs), near], to: [Math.max(...xs), near],
       openingHeightM: opening, topHeightM: ceiling };
   }
-  root.GAMMA_VENUE_CURTAINS = Object.freeze({ forVenue, frontBorderForVenue });
+  root.GAMMA_VENUE_CURTAINS = Object.freeze({
+    legCount, frontDepths, stageWingOutput, forVenue, frontBorderForVenue,
+  });
 })(typeof window !== 'undefined' ? window : globalThis);
