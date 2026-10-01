@@ -72,7 +72,8 @@ if (PROP_SHAPES.length < 10) throw new Error(`小道具の形の一覧が取れ�
 // v25（2026-09-30）: F-1 に固定／ムービング×スポット／ウォッシュの比較灯体を追加
 // v26（2026-09-30）: F-1 でかんたん照明を確認、A-4→A-5 で演者01・03の小走りを確認
 // v27（2026-10-01）: C-1 に正方形ボタン・照明選択の UI 確認を追加（v0.2.70）
-const PROJECT_ID = "gamma-feature-test-v27";
+// v28（2026-10-01）: 修正バッチ #1〜#16（幅別レーン・吹き出し・袖幕枚数・ドラッグ保持・.stagesketch・照明配置ほか）の確認手順を各シーンへ追加（v0.2.71）
+const PROJECT_ID = "gamma-feature-test-v28";
 const CREATED = "2026-09-18T00:00:00.000Z";
 const STAGE = { width: 12, depth: 9 };      // proscenium / mid の実寸（stage-venues.js）
 const COLORS = ["#a84b26", "#77865f", "#9c823f", "#6d6657", "#315b8a", "#b0533f", "#4f7d6f", "#8a6a9c",

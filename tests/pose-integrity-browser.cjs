@@ -50,7 +50,7 @@ function neckWarnings() {
         const errors = []; page.on('pageerror', error => errors.push(error.message)); page.on('dialog', dialog => dialog.accept());
         await page.addInitScript(() => { localStorage.setItem('gamma:shosai-stage-tour-v1', 'done'); localStorage.setItem('gamma:shosai-stage-lang', 'ja'); });
         await page.goto(`http://127.0.0.1:${port}/stage.html?feature-test`, { waitUntil: 'load' });
-        await page.waitForFunction(() => window.SHOSAI_STAGE_SESSION_BRIDGE && JSON.parse(SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project.id === 'gamma-feature-test-v27');
+        await page.waitForFunction(() => window.SHOSAI_STAGE_SESSION_BRIDGE && JSON.parse(SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project.id === 'gamma-feature-test-v28');
         await page.locator('button.stage-roster-add-row[data-roster-kind-layer="performer"]').first().click({ force: true });
         await page.waitForSelector('[data-roster-pose] canvas');
         const poses = await page.locator('[data-roster-pose]').evaluateAll((tiles, screenshotIds) => tiles.map(tile => {

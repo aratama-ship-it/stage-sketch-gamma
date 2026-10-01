@@ -5,28 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.70">
+<meta name="stage-sketch-gamma-version" content="v0.2.71">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=20260930-gamma2">
+<link rel="stylesheet" href="style.css?v=20261001-release71">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="gamma-ui-tokens.css?v=20261001-release70">
-<link rel="stylesheet" href="gamma.css?v=20260930-theater7">
+<link rel="stylesheet" href="gamma-ui-tokens.css?v=20261001-release71">
+<link rel="stylesheet" href="gamma.css?v=20261001-release71">
 <link rel="stylesheet" href="gamma-mobile.css?v=2026091950">
-<script src="gamma-light-model.js?v=20260930-optics1"></script>
+<script src="gamma-light-model.js?v=20261001-release71"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=2026091987">
 <link rel="stylesheet" href="stage-scene-alternatives.css?v=2026092209">
 <link rel="stylesheet" href="stage-vox-panel.css?v=2026092432">
-<link rel="stylesheet" href="stage-panel-columns.css?v=2026092402">
+<link rel="stylesheet" href="stage-panel-columns.css?v=20261001-release71">
 <link rel="stylesheet" href="stage-script-editor.css?v=2026092430">
 <link rel="stylesheet" href="stage-venue-preview.css?v=20260930-theater7">
 <link rel="stylesheet" href="stage-venue-viewpoints.css?v=2026092501">
@@ -69,7 +69,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.70</span>
+              <span class="stage-app-version">0.2.71</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -2609,6 +2609,17 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0271-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0271-title">v0.2.71</h3><time datetime="2026-10-01">2026-10-01</time></header>
+      <ul>
+        <li>ブラウザの幅に応じて、パネルの列数をiPad式→一列→二列→三列と段階的に使えるようにしました。広い幅でも狭い方式を選べます。右上のQシートボタンはPC表示では外し、タブから開きます。</li>
+        <li>正面図・平面図の帯のアイコンを同じ大きさにそろえ、全体のアイコンの絵を一回り大きくしました。アイコンだけの操作すべてに説明の吹き出しが出ます。</li>
+        <li>平面図は舞台が画面の約8割を占める尺を既定にし、空いた所のドラッグで動かせます（囲い選択はShift＋ドラッグ）。小道具を演者へドラッグすると手に持ち、離れた所へドラッグすると置きます。</li>
+        <li>劇場設定の「舞台袖」で、複製した劇場の袖幕の枚数を2〜10枚で変えられます。照明に設置位置名と、GAL・フロントへの灯体配置を追加しました（配置すると照明の保存形式が v3 になり、旧版では照明だけ開けません）。</li>
+        <li>ショーの書き出しは .stagesketch が標準になりました（名前の末尾に .json と付ければJSONのまま）。β版で書き出したJSONも読み込めます。小道具のサムネイルの中心ずれと、姿勢4件（リラ・チェストスタンド・後屈・ブリッジ）の形を直しました。フォーメーション編集の配置図に演者の名前を出します。</li>
+        <li>Mac版アプリに更新のお知らせを追加し、ダウンロードページを用意しました。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0270-title">
       <header class="stage-release-entry-head"><h3 id="stage-release-v0270-title">v0.2.70</h3><time datetime="2026-10-01">2026-10-01</time></header>
       <ul><li>閉じる・追加・拡大縮小などの正方形ボタンのアイコンを中央にそろえ、フィードバックの箱と転換アニメーションの説明を整えました。劇場設定の照明選択を「おすすめ照明セット」に整理し、カスタム劇場では選べないことを一文で案内します。</li></ul>
@@ -3927,20 +3938,20 @@
   </button>
 </div>
 
-<script src="stage-venues.js?v=20260928-feedback55"></script>
+<script src="stage-venues.js?v=20261001-release71"></script>
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=20261001-release70"></script>
-    <script src="stage-i18n.zh-Hans.js?v=20261001-release70"></script>
-    <script src="stage-i18n.zh-Hant.js?v=20261001-release70"></script>
-    <script src="stage-i18n.ko.js?v=20261001-release70"></script>
+    <script src="stage-i18n.js?v=20261001-release71"></script>
+    <script src="stage-i18n.zh-Hans.js?v=20261001-release71"></script>
+    <script src="stage-i18n.zh-Hant.js?v=20261001-release71"></script>
+    <script src="stage-i18n.ko.js?v=20261001-release71"></script>
 <script src="stage-prompt-i18n.js?v=20260929-beta64"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026092402"></script>
-<script src="stage-samples/romeo-juliet-cued.js?v=2026092435"></script>
-<script src="stage-samples/romeo-juliet-second.js?v=20260926-feedback40"></script>
-<script src="stage-samples/feature-test-show.js?v=20261001-release70"></script>
+<script src="stage-samples/romeo-juliet-cued.js?v=20261001-release71"></script>
+<script src="stage-samples/romeo-juliet-second.js?v=20261001-release71"></script>
+<script src="stage-samples/feature-test-show.js?v=20261001-release71"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=2026091501"></script>
 <script src="stage-machinery.js?v=20260925-ui1"></script>
@@ -3957,8 +3968,8 @@
 <script src="manual-gamma/manual-content.js?v=20260927-guard45"></script>
 <script src="stage-pwa.js?v=2026091501"></script>
 <script src="stage-lighting-plans.js?v=20260930-optics1"></script>
-<script src="stage-lighting-plan-overlay.js?v=20261001-position-placement1-2026092113"></script>
-<script src="light-design/rig-engine.js?v=20261001-position-placement1"></script>
+<script src="stage-lighting-plan-overlay.js?v=20261001-release71"></script>
+<script src="light-design/rig-engine.js?v=20261001-release71"></script>
 <script src="light-design/laser-effects.js?v=20260915-5-color-presets"></script>
 <script src="stage-light-render.js?v=20260927-feedback46"></script>
 <script src="gamma-light-cue-overlay.js?v=20260930-optics1"></script>
@@ -3983,8 +3994,8 @@
 <script src="gamma-ui-i18n.ko.js?v=20260929-ko60"></script>
 <script src="stage-point-source.js?v=20260927-point43"></script>
 <script src="stage-save-lifecycle.js?v=20260927-guard45"></script>
-<script src="light-design/simple-lighting-model.js?v=20260930-gamma2"></script>
-<script src="stage-sketch.js?v=20261001-release70"></script>
+<script src="light-design/simple-lighting-model.js?v=20261001-release71"></script>
+<script src="stage-sketch.js?v=20261001-release71"></script>
 <script src="stage-scene-alternatives-ui.js?v=20260926-release32"></script>
 <script src="gamma-formation.js?v=20260926-feedback40"></script>
 <script src="stage-vox-panel.js?v=2026092432"></script>
@@ -3993,11 +4004,11 @@
 <script src="stage-session.js?v=20260926-feedback40"></script>
 <script src="stage-study-owner.js?v=20260926-feedback40"></script>
 <script src="stage-usage.js?v=2026091501"></script>
-<script src="stage-venue-curtains.js?v=20260926-feedback40"></script>
-<script src="stage-venue-editor.js?v=20261001-release70"></script>
-<script src="gamma-workspace.js?v=20261001-release70"></script>
+<script src="stage-venue-curtains.js?v=20261001-release71"></script>
+<script src="stage-venue-editor.js?v=20261001-release71"></script>
+<script src="gamma-workspace.js?v=20261001-release71"></script>
 <script src="gamma-mobile.js?v=2026092202"></script>
-<script src="stage-venue-preview.js?v=20261001-release70"></script>
+<script src="stage-venue-preview.js?v=20261001-release71"></script>
 <script src="stage-venue-viewpoints.js?v=20260930-theater1"></script>
 </body>
 </html>

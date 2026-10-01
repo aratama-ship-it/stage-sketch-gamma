@@ -37,7 +37,7 @@ async function boot(page, base) {
   await page.waitForFunction(() => window.GAMMA_WORKSPACE && window.SHOSAI_STAGE_SESSION_BRIDGE);
   const backup = page.locator('#stage-launch-backup-close');
   if (await backup.isVisible().catch(() => false)) await backup.click();
-  await page.waitForFunction(() => JSON.parse(SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project.id === 'gamma-feature-test-v27');
+  await page.waitForFunction(() => JSON.parse(SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project.id === 'gamma-feature-test-v28');
   await page.evaluate(() => {
     GAMMA_WORKSPACE.normal();
     SHOSAI_STAGE_SESSION_BRIDGE.openSceneById('ft-scene-a1');
