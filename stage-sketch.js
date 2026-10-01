@@ -10,6 +10,66 @@
    規模は「舞台を画面いっぱいに描き、人の大きさを舞台に対する比率で決める」形で
    表す。18mの舞台では人が小さく見える。寸法そのものは編集させない（設計計画書 8.5節）。 */
 
+/* stage-layout-lanes-model:start */
+const STAGE_LAYOUT_LANES_MODEL = (() => {
+  "use strict";
+
+  const DEFAULT_THRESHOLDS = Object.freeze([700, 1120, 1500]);
+  const EXIT_PADDING = 40;
+  const STORAGE_KEYS = Object.freeze({
+    thresholds: "gamma:shosai-stage-layout-thresholds-v1",
+    autoTablet: "gamma:shosai-stage-layout-auto-tablet-v1",
+  });
+
+  function parseThresholds(value) {
+    const parts = Array.isArray(value) ? value : String(value || "").split(",");
+    if (parts.length !== 3) return null;
+    const numbers = parts.map((part) => Number(part));
+    if (!numbers.every((number) => Number.isFinite(number) && number >= 320 && number <= 5000)) return null;
+    if (!(numbers[0] < numbers[1] && numbers[1] < numbers[2])) return null;
+    return numbers.map((number) => Math.round(number));
+  }
+
+  function laneLimit(width, thresholds = DEFAULT_THRESHOLDS) {
+    const values = parseThresholds(thresholds) || [...DEFAULT_THRESHOLDS];
+    const current = Number.isFinite(Number(width)) ? Number(width) : 0;
+    if (current < values[0]) return 0;
+    if (current < values[1]) return 1;
+    if (current < values[2]) return 2;
+    return 3;
+  }
+
+  function selectedLanes(mode, tabletMode = false) {
+    if (tabletMode) return 0;
+    if (mode === "single") return 1;
+    if (mode === "triple") return 3;
+    return 2;
+  }
+
+  function effectiveLayout({ width, thresholds, selectedMode, selectedSide, tabletMode = false, tripleAllowed = true }) {
+    const limit = laneLimit(width, thresholds);
+    let lanes = Math.min(selectedLanes(selectedMode, tabletMode), limit);
+    if (lanes === 3 && !tripleAllowed) lanes = 2;
+    const side = selectedSide === "right" ? "right" : "left";
+    if (lanes <= 0) return { lanes: 0, layout: "ipad", mode: "ipad", side };
+    if (lanes === 1) return { lanes: 1, layout: "one", mode: "single", side };
+    if (lanes === 2) return { lanes: 2, layout: "two", mode: "split", side };
+    return { lanes: 3, layout: "three", mode: "triple", side };
+  }
+
+  function autoTabletTransition({ width, thresholds, autoTablet = false, manualTablet = false }) {
+    const values = parseThresholds(thresholds) || [...DEFAULT_THRESHOLDS];
+    if (manualTablet) return { autoTablet: Boolean(autoTablet), reload: false };
+    if (!autoTablet && Number(width) < values[0]) return { autoTablet: true, reload: true };
+    if (autoTablet && Number(width) >= values[0] + EXIT_PADDING) return { autoTablet: false, reload: true };
+    return { autoTablet: Boolean(autoTablet), reload: false };
+  }
+
+  return Object.freeze({ DEFAULT_THRESHOLDS, EXIT_PADDING, STORAGE_KEYS, parseThresholds, laneLimit, selectedLanes, effectiveLayout, autoTabletTransition });
+})();
+if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAGE_LAYOUT_LANES_MODEL;
+/* stage-layout-lanes-model:end */
+
 (async function () {
   "use strict";
 
@@ -64,6 +124,7 @@
       "gamma:large-projects-v1:revision", "gamma:new-show-return-v1", "gamma:shosai-stage-shows-broken-v1",
       "gamma:stage-project-backup-reset-v1", "gamma:shosai-stage-shows-v1",
       "gamma:shosai-stage-prefs-v1", "gamma:shosai-stage-tablet-view",
+      "gamma:shosai-stage-layout-thresholds-v1", "gamma:shosai-stage-layout-auto-tablet-v1",
       "gamma:shosai-stage-tour-v1", "gamma:shosai-stage-release-history-seen-v1", "gamma:shosai-stage-last-user-v1",
       "gamma:shosai-stage-lang", "gamma:shosai-stage-models-v1", "gamma:shosai-cast-handoff-v1",
       "gamma:shosai-stage-venues-v1", "gamma:stage-venue-drafts-v1", "gamma:shosai-stage-viewpoints-v1",
@@ -2043,9 +2104,34 @@
       return value && typeof value === "object" ? value : {};
     } catch (_) { return {}; }
   })();
+  const layoutLaneParams = (() => {
+    try { return new URLSearchParams(window.location.search); } catch (_) { return new URLSearchParams(); }
+  })();
+  const urlLayoutThresholds = STAGE_LAYOUT_LANES_MODEL.parseThresholds(layoutLaneParams.get("layout-thresholds"));
+  if (urlLayoutThresholds) {
+    try { localStorage.setItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.thresholds, urlLayoutThresholds.join(",")); }
+    catch (_) { /* 保存できなくても、この読み込み中はURLの値を使う */ }
+  }
+  const bootLayoutThresholds = (() => {
+    if (urlLayoutThresholds) return urlLayoutThresholds;
+    try {
+      return STAGE_LAYOUT_LANES_MODEL.parseThresholds(
+        localStorage.getItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.thresholds)
+      ) || [...STAGE_LAYOUT_LANES_MODEL.DEFAULT_THRESHOLDS];
+    } catch (_) { return [...STAGE_LAYOUT_LANES_MODEL.DEFAULT_THRESHOLDS]; }
+  })();
+  const bootAutoTablet = (() => {
+    try { return localStorage.getItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet) === "1"; }
+    catch (_) { return false; }
+  })();
+  const bootPhonePreview = ["localhost", "127.0.0.1"].includes(window.location.hostname)
+    && layoutLaneParams.has("phone-viewer-preview");
+  const bootPhoneLike = navigator.maxTouchPoints > 0
+    && Math.min(window.screen.width, window.screen.height) <= 600;
   const tabletPwaActive = window.SHOSAI_TABLET_PWA === true
     || document.documentElement.classList.contains("stage-pwa-tablet")
-    || bootPrefs.tabletMode === true;
+    || bootPrefs.tabletMode === true
+    || (bootAutoTablet && !bootPhonePreview && !bootPhoneLike);
   document.documentElement.classList.toggle("stage-pwa-tablet", tabletPwaActive);
   let tabletUi = null;
   /* スマホは編集机ではなく、受け取ったJSONを現場で確認するための閲覧機にする。
@@ -2056,10 +2142,8 @@
        入れないと、実機スマホで書斎を開いただけで全画面のタブと背表紙が
        消える（2026-08-18 発見）。 */
   const standaloneStagePage = !document.querySelector(".topnav");
-  const phonePreview = ["localhost", "127.0.0.1"].includes(window.location.hostname)
-    && new URLSearchParams(window.location.search).has("phone-viewer-preview");
-  const phoneLike = navigator.maxTouchPoints > 0
-    && Math.min(window.screen.width, window.screen.height) <= 600;
+  const phonePreview = bootPhonePreview;
+  const phoneLike = bootPhoneLike;
   const phoneViewerActive = standaloneStagePage && !tabletPwaActive && (phonePreview || phoneLike) && !STUDY_READ_ONLY;
   const phoneOrientation = window.matchMedia("(orientation: portrait)");
   const tabletOrientation = window.matchMedia("(orientation: portrait)");
@@ -9291,14 +9375,149 @@
     // 旧版の全モード共通設定は、モード別の値がないときだけ引き継ぐ。
     return prefs.panelSingleSide === "right" ? "right" : "left";
   };
+  let layoutLaneThresholds = [...bootLayoutThresholds];
+  let layoutLanesReady = false;
+  let layoutLaneResizeFrame = 0;
+  let layoutLaneReloadPending = false;
+  let layoutThresholdPanel = null;
+
+  function currentLayoutLaneState(workspace = currentWorkspaceMode()) {
+    const tabletActive = workspace === "normal"
+      && document.documentElement.classList.contains("stage-pwa-tablet");
+    return STAGE_LAYOUT_LANES_MODEL.effectiveLayout({
+      width: window.innerWidth,
+      thresholds: layoutLaneThresholds,
+      selectedMode: panelLayoutMode(workspace),
+      selectedSide: panelSingleSide(workspace),
+      tabletMode: tabletActive,
+      tripleAllowed: !tabletActive && !phoneViewerActive
+        && !document.body.classList.contains("stage-session-guest"),
+    });
+  }
+
+  function effectivePanelLayoutMode(workspace = currentWorkspaceMode()) {
+    const mode = currentLayoutLaneState(workspace).mode;
+    return mode === "ipad" ? panelLayoutMode(workspace) : mode;
+  }
+
+  function syncLayoutThresholdPanel(state = currentLayoutLaneState()) {
+    if (!layoutThresholdPanel) return;
+    layoutThresholdPanel.width.textContent = `${Math.round(window.innerWidth)}px`;
+    layoutThresholdPanel.lanes.textContent = String(state.lanes);
+    layoutThresholdPanel.inputs.forEach((input, index) => {
+      if (document.activeElement !== input) input.value = String(layoutLaneThresholds[index]);
+    });
+  }
+
+  function applyStageLayoutLanes({ redraw = true } = {}) {
+    if (phoneViewerActive) return currentLayoutLaneState();
+    const autoTablet = (() => {
+      try { return localStorage.getItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet) === "1"; }
+      catch (_) { return false; }
+    })();
+    const transition = STAGE_LAYOUT_LANES_MODEL.autoTabletTransition({
+      width: window.innerWidth,
+      thresholds: layoutLaneThresholds,
+      autoTablet,
+      manualTablet: prefs.tabletMode === true || window.SHOSAI_TABLET_PWA === true,
+    });
+    if (transition.reload && !layoutLaneReloadPending) {
+      layoutLaneReloadPending = true;
+      try {
+        if (transition.autoTablet) localStorage.setItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet, "1");
+        else localStorage.removeItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet);
+      } catch (_) { /* 印を保存できない場合は再読み込みを繰り返さない */ return currentLayoutLaneState(); }
+      window.setTimeout(() => window.location.reload(), 0);
+      return currentLayoutLaneState();
+    }
+    const before = document.documentElement.dataset.stageLayout || "";
+    const state = currentLayoutLaneState();
+    document.documentElement.dataset.stageLayout = state.layout;
+    document.documentElement.dataset.stageLayoutSide = state.side;
+    syncLayoutThresholdPanel(state);
+    if (layoutLanesReady && redraw && before !== state.layout) {
+      applyLayout();
+      syncPanelWidths();
+      syncCanvasResolution();
+      render();
+      requestAnimationFrame(syncCanvasResolution);
+    }
+    return state;
+  }
+
+  function saveLayoutLaneThresholds(next) {
+    const parsed = STAGE_LAYOUT_LANES_MODEL.parseThresholds(next);
+    if (!parsed) return false;
+    layoutLaneThresholds = parsed;
+    try { localStorage.setItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.thresholds, parsed.join(",")); }
+    catch (_) { /* 即時反映は続ける */ }
+    applyStageLayoutLanes();
+    return true;
+  }
+
+  function initLayoutThresholdPanel() {
+    if (!(layoutLaneParams.get("layout-dev") === "1" || layoutLaneParams.has("layout-thresholds"))) return;
+    const panel = document.createElement("aside");
+    panel.className = "stage-layout-threshold-panel";
+    panel.setAttribute("aria-label", tx("レイアウト切替幅"));
+    panel.setAttribute("data-no-i18n", "");
+    const status = document.createElement("p");
+    const width = document.createElement("output");
+    const lanes = document.createElement("output");
+    status.append(`${tx("現在の幅")} `, width, ` / ${tx("実効レーン数")} `, lanes);
+    const fields = document.createElement("div");
+    fields.className = "stage-layout-threshold-fields";
+    const inputs = layoutLaneThresholds.map((value, index) => {
+      const label = document.createElement("label");
+      label.textContent = `t${index}`;
+      const input = document.createElement("input");
+      input.type = "number";
+      input.min = "320";
+      input.max = "5000";
+      input.step = "10";
+      input.value = String(value);
+      input.setAttribute("aria-label", `${tx("レイアウト切替幅")} t${index}`);
+      input.addEventListener("input", () => saveLayoutLaneThresholds(inputs.map((item) => item.value)));
+      label.append(input);
+      fields.append(label);
+      return input;
+    });
+    const reset = document.createElement("button");
+    reset.type = "button";
+    reset.textContent = tx("既定へ戻す");
+    reset.addEventListener("click", () => {
+      try { localStorage.removeItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.thresholds); } catch (_) { /* 続ける */ }
+      layoutLaneThresholds = [...STAGE_LAYOUT_LANES_MODEL.DEFAULT_THRESHOLDS];
+      try {
+        const params = new URLSearchParams(location.search);
+        params.delete("layout-thresholds");
+        history.replaceState(null, "", location.pathname + (params.toString() ? `?${params}` : "") + location.hash);
+      } catch (_) { /* URLを直せなくても既定値へ戻す */ }
+      inputs.forEach((input, index) => { input.value = String(layoutLaneThresholds[index]); });
+      applyStageLayoutLanes();
+    });
+    panel.append(status, fields, reset);
+    document.body.append(panel);
+    layoutThresholdPanel = { panel, width, lanes, inputs };
+    syncLayoutThresholdPanel();
+  }
+
+  applyStageLayoutLanes({ redraw: false });
+  window.addEventListener("resize", () => {
+    if (layoutLaneResizeFrame) return;
+    layoutLaneResizeFrame = requestAnimationFrame(() => {
+      layoutLaneResizeFrame = 0;
+      applyStageLayoutLanes();
+    });
+  });
   const panelColumnsForCurrentMode = () => (
-    panelLayoutMode() === "single" ? [panelSingleSide()]
+    effectivePanelLayoutMode() === "single" ? [panelSingleSide()]
       : panelTripleActive() ? ["left", "right", "right2"] : ["left", "right"]
   );
   /* 3列表示（2026-09-24 本人指示）: 左1列＋右2列。机の画面だけで使い、iPad・スマホ閲覧・
    * 共有セッションのゲストでは2列表示と同じに扱う（それぞれ独自の並べ方を持つため）。 */
   function panelTripleActive() {
-    return panelLayoutMode() === "triple" && !tabletUi && !phoneViewerActive
+    return effectivePanelLayoutMode() === "triple" && !tabletUi && !phoneViewerActive
       && !document.body.classList.contains("stage-session-guest");
   }
   /* 右の2列目に置くパネルと、その中の順番。端末ごとの設定に持つ（ショーの保存データの形は変えない。
@@ -22561,7 +22780,7 @@
     const wanted = (key, fallback) => Number.isFinite(saved[key]) ? saved[key] : fallback;
     const gridWidth = ui.grid.getBoundingClientRect().width;
     const guest = document.body.classList.contains("stage-session-guest");
-    const single = !tabletUi && !phoneViewerActive && panelLayoutMode() === "single";
+    const single = !tabletUi && !phoneViewerActive && effectivePanelLayoutMode() === "single";
     const singleSide = single ? panelSingleSide() : null;
     // 3列表示では右の2列目のぶん、隙間も1つ増える（18px × 3）
     const triple = !single && !tabletUi && !phoneViewerActive && panelTripleActive();
@@ -23973,14 +24192,14 @@
     justDragged = true;
     setTimeout(() => { justDragged = false; }, 60);
     commitLayoutFromDom();
-    announce(panelLayoutMode() === "single"
+    announce(effectivePanelLayoutMode() === "single"
       ? `${el.dataset.title || id}の並び順を変えました。`
       : `${el.dataset.title || id}を${col === "left" ? "左" : col === "right2" ? "右の2列目" : "右"}の列へ移しました。`);
   }
 
   // 並びの正本は画面。動かし終えたら、そのまま状態へ書き戻す
   function commitLayoutFromDom() {
-    if (panelLayoutMode() === "single") {
+    if (effectivePanelLayoutMode() === "single") {
       const host = colEls[panelSingleSide()];
       if (!host) return;
       const next = { ...panelSingleOrder() };
@@ -24036,11 +24255,7 @@
 
   function placeStageControls() {
     const controlBar = document.querySelector(".stage-center-bar");
-    const narrow = window.matchMedia("(max-width: 1119px)").matches;
-    // 狭い画面では図が先、パネルが後ろの一列になる。操作だけは図の上へ残す。
-    const controlHost = narrow
-      ? document.getElementById("stage-col-center")
-      : colEls[panelLayoutMode() === "single" && panelSingleSide() === "right" ? "right" : "left"];
+    const controlHost = colEls[effectivePanelLayoutMode() === "single" && panelSingleSide() === "right" ? "right" : "left"];
     if (controlBar && controlHost && controlHost.firstElementChild !== controlBar) {
       controlHost.prepend(controlBar);
     }
@@ -24059,7 +24274,7 @@
     if (!tabletUi) {
       if (!phoneViewerActive) {
       const grid = document.querySelector(".stage-sketch-grid");
-      const single = panelLayoutMode() === "single";
+      const single = effectivePanelLayoutMode() === "single";
       const triple = !single && panelTripleActive();
       if (grid) {
         grid.classList.toggle("stage-panels-single", single);
@@ -30772,6 +30987,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (options.nativeTablet) return;
     if (key === "normal" && next === "ipad") {
       prefs.tabletMode = true;
+      try { localStorage.removeItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet); } catch (_) { /* 続ける */ }
       savePrefs();
       window.setTimeout(() => window.location.reload(), 80);
       return;
@@ -30781,6 +30997,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const nextSide = next === "single-right" ? "right" : "left";
     if (key === "normal") {
       prefs.tabletMode = false;
+      try { localStorage.removeItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet); } catch (_) { /* 続ける */ }
       // 旧版は panelLayoutMode しか読まない。3列を知らない版では2列表示として開かせる。
       prefs.panelLayoutMode = nextLayout === "triple" ? "split" : nextLayout;
       if (nextLayout === "single") prefs.panelSingleSide = nextSide;
@@ -30803,8 +31020,11 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       return;
     }
     if (key === currentWorkspaceMode()) {
+      applyStageLayoutLanes({ redraw: false });
       applyLayout();
       syncPanelWidths();
+      syncCanvasResolution();
+      render();
     }
     renderPrefs();
     renderPanelVisibilityMenu();   // ヘッダー側の選択状態も合わせる
@@ -41781,6 +42001,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   if (els.prefsBackdrop) els.prefsBackdrop.addEventListener("click", closePrefs);
   window.addEventListener("stage-workspace-mode-change", () => {
     if (tabletUi || phoneViewerActive) return;
+    applyStageLayoutLanes({ redraw: false });
     applyLayout();
     syncPanelWidths();
     if (els.prefsModal && !els.prefsModal.hidden) renderPrefs();
@@ -41993,6 +42214,8 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       initStageAudio();
       pruneOrphanAudioSoon();
       syncViewSwitch();
+      initLayoutThresholdPanel();
+      applyStageLayoutLanes({ redraw: false });
       // 言語は loadState() より前に決めてある（見本の駒の名前がそこで決まるため）
       applyLayout();
       initTabletPwaWorkspace();
@@ -42001,6 +42224,8 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       initRosterAccordions();
       initRosterListHeights();
       syncPanelWidths();
+      layoutLanesReady = true;
+      applyStageLayoutLanes({ redraw: false });
       syncInputs();
       renderScenes();
       renderCast();

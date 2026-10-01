@@ -8,7 +8,7 @@
 }
 #stage-col-right2[hidden] { display: none; }
 
-.stage-sketch-grid.stage-panels-triple {
+html[data-stage-layout="three"] .stage-sketch-grid.stage-panels-triple {
   grid-template-columns:
     var(--stage-left-width, 360px)
     minmax(420px, 1fr)
@@ -28,16 +28,3 @@
 body.stage-session-guest #stage-col-right2,
 html.stage-pwa-tablet #stage-col-right2,
 html.stage-phone-viewer #stage-col-right2 { display: none; }
-
-/* 狭い画面では、2列表示と同じく全部を縦一列へ流し込む */
-@media (max-width: 1119px) {
-  .stage-sketch-grid.stage-panels-triple {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      "board"
-      "tools"
-      "inspector"
-      "inspector2";
-  }
-  .stage-panel-width-handle[data-panel-width="right2"] { display: none; }
-}

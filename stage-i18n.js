@@ -961,6 +961,10 @@
     "背景の地の色・塗る色・筆の太さなど、背景を描く欄を出す":
       "Shows the panel for the backdrop colour, brush colour and brush size",
     "パネルの表示スタイル": "Panel display style",
+    "レイアウト切替幅": "Layout breakpoints",
+    "現在の幅": "Current width",
+    "実効レーン数": "Active panel lanes",
+    "既定へ戻す": "Restore defaults",
     "表示スタイル": "Display style",
     "2列表示、1列表示、iPad表示モードをこの端末ごとに切り替えます。":
       "Switch between two columns, one column and iPad display mode on this device.",
