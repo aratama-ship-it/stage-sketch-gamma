@@ -312,6 +312,10 @@ public-dist/
 !/tests/stage-export-cancel.test.mjs
 !/tests/stage-export-filename.test.mjs
 !/tests/stagesketch-roundtrip-browser.cjs
+!/tests/plan-fit-stage-share.test.mjs
+!/tests/drag-hold.test.mjs
+!/tests/plan-pan-browser.cjs
+!/tests/drag-hold-browser.cjs
 !/tests/light-optics.test.mjs
 !/tests/gamma-sharing.test.mjs
 !/tests/stage-venue-front-border.test.mjs
