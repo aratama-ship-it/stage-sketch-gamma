@@ -1,8 +1,11 @@
 // Read-only viewport adapter. Uses the original renderer/seat projection, not editor events.
 (() => {
   'use strict';
-  window.SHOSAI_STUDY_NAVIGATION = ({ engine, canvases, cancelAnnotations }) => {
+  window.SHOSAI_STUDY_NAVIGATION = ({ engine, canvases, cancelAnnotations, onState }) => {
     const views = {}, pointers = new Map();
+    document.body.classList.toggle('viewer-phone', navigator.maxTouchPoints > 0 && Math.min(screen.width, screen.height) <= 600);
+    const phone = document.body.classList.contains('viewer-phone');
+    let fullFit = false; const stageFill = view => (view === 'front' && phone) || fullFit ? 1 : .8; const defaultZoom = view => phone && view === 'plan' && !fullFit ? 1.2 : 1;
     let language = 'ja', gesture = null, penOn = false, stickyOn = false, suppressed = false, selectedSeat = 'center';
     const text = (ja, en) => language === 'en' ? en : ja;
     const make = (tag, className) => Object.assign(document.createElement(tag), { className });
@@ -19,14 +22,14 @@
       const viewport = make('div', 'viewer-viewport'), surface = make('div', 'viewer-surface');
       surface.append(canvas); viewport.append(surface); drawing.append(bar, viewport);
       const hint = make('p', 'viewer-seat-hint'); hint.hidden = true; viewport.append(hint);
-      views[view] = { view, drawing, bar, label, reset, seat, viewport, surface, hint, z: 1, x: 0, y: 0, width: 0, height: 0 };
+      views[view] = { view, drawing, bar, label, reset, seat, viewport, surface, hint, base: 1, cx: 0, cy: 0, z: defaultZoom(view), x: 0, y: 0, width: 0, height: 0 };
     }
     function update(v) {
-      const maxX = Math.max(0, (v.width * v.z - v.viewport.clientWidth) / 2);
-      const maxY = Math.max(0, (v.height * v.z - v.viewport.clientHeight) / 2);
+      const maxX = Math.max(0, (v.width * v.base * v.z - v.viewport.clientWidth) / 2);
+      const maxY = Math.max(0, (v.height * v.base * v.z - v.viewport.clientHeight) / 2);
       v.x = Math.max(-maxX, Math.min(maxX, v.x)); v.y = Math.max(-maxY, Math.min(maxY, v.y));
-      v.surface.style.transform = `translate(${v.x}px, ${v.y}px) scale(${v.z})`;
-      v.surface.dataset.zoom = String(v.z);
+      v.surface.style.transform = `translate(${v.x + v.cx * v.z}px, ${v.y + v.cy * v.z}px) scale(${v.base * v.z})`;
+      v.surface.dataset.zoom = String(v.z); onState?.();
       v.reset.textContent = `${Math.round(v.z * 100)}% ↺`;
       v.reset.setAttribute('aria-label', text('拡大を元に戻す', 'Reset zoom') + ` · ${Math.round(v.z * 100)}%`);
     }
@@ -35,6 +38,11 @@
         const w = v.viewport.clientWidth, h = v.viewport.clientHeight;
         if (!w || !h) continue;
         v.width = Math.min(w, h * 16 / 9); v.height = v.width * 9 / 16;
+        const bounds = phone ? engine.stageBounds?.(v.view) : null;
+        v.base = bounds ? Math.min(stageFill(v.view) * w / (bounds.width * v.width), stageFill(v.view) * h / (bounds.height * v.height)) : 1;
+        v.cx = bounds ? (.5 - bounds.x - bounds.width / 2) * v.width * v.base : 0;
+        v.cy = bounds ? (v.view === 'front' ? h / 2 - 4 - (bounds.y + bounds.height - .5) * v.height * v.base : (.5 - bounds.y - bounds.height / 2) * v.height * v.base) : 0;
+        v.surface.dataset.fit = bounds ? 'main-stage' : 'full-scene-fallback';
         Object.assign(v.surface.style, { width: `${v.width}px`, height: `${v.height}px` }); update(v);
       }
     }
@@ -54,19 +62,19 @@
       selectedSeat = state.seat;
       views.front.seat.value = state.seat;
       views.front.drawing.dataset.alternateSeat = String(alternate);
-      views.front.hint.hidden = !alternate;
+      views.front.hint.hidden = !alternate; layout();
     }
     const relative = (v, x, y) => { const r = v.viewport.getBoundingClientRect(); return { x: x - r.left - r.width / 2, y: y - r.top - r.height / 2 }; };
     function begin(v, pair) {
       const a = pair[0], b = pair[1] || a;
       const center = relative(v, (a.x + b.x) / 2, (a.y + b.y) / 2);
-      gesture = { v, count: pair.length, distance: Math.hypot(a.x - b.x, a.y - b.y) || 1, z: v.z, anchorX: (center.x - v.x) / v.z, anchorY: (center.y - v.y) / v.z };
+      gesture = { v, count: pair.length, distance: Math.hypot(a.x - b.x, a.y - b.y) || 1, z: v.z, anchorX: (center.x - v.x - v.cx * v.z) / v.z, anchorY: (center.y - v.y - v.cy * v.z) / v.z };
     }
     function handleEvent(event) {
       if (event.target.closest?.('.viewer-drawing-bar')) {
         if (event.type === 'change' && event.target === views.front.seat) camera(event.target.value);
         if (event.type === 'click' && event.target.closest('[data-viewer-reset]')) {
-          const v = views[event.target.closest('[data-viewer-reset]').dataset.viewerReset]; v.z = 1; v.x = v.y = 0; update(v);
+          const v = views[event.target.closest('[data-viewer-reset]').dataset.viewerReset]; v.z = defaultZoom(v.view); v.x = v.y = 0; layout();
         }
         return 'native';
       }
@@ -91,7 +99,7 @@
               const a = pair[0], b = pair[1] || a, target = gesture.v;
               const center = relative(target, (a.x + b.x) / 2, (a.y + b.y) / 2);
               target.z = Math.max(1, Math.min(4, gesture.z * (pair.length === 2 ? Math.hypot(a.x - b.x, a.y - b.y) / gesture.distance : 1)));
-              target.x = center.x - gesture.anchorX * target.z; target.y = center.y - gesture.anchorY * target.z; update(target);
+              target.x = center.x - (gesture.anchorX + target.cx) * target.z; target.y = center.y - (gesture.anchorY + target.cy) * target.z; update(target);
             }
           }
         } else if (['pointerup', 'pointercancel', 'lostpointercapture'].includes(event.type)) {
@@ -107,15 +115,20 @@
     layout();
     return {
       handleEvent, layout,
-      loaded(lang) { relabel(lang); camera(selectedSeat); layout(); },
+      reset() { for (const v of Object.values(views)) { v.z = defaultZoom(v.view); v.x = v.y = 0; } layout(); },
+      loaded(lang) { relabel(lang); camera(selectedSeat); this.reset(); },
       mode(kind, enabled) { if (kind === 'pen') penOn = enabled; else stickyOn = enabled; if (enabled) camera('center'); },
       central() { camera('center'); },
+      fill(full) { fullFit = full; this.reset(); },
+      state() { const c = engine.camera(); return { seats: c.seats.map(x => ({ id: x.id, label: x.label })), seat: c.seat, zoom: { front: Math.round(views.front.z * 100), plan: Math.round(views.plan.z * 100) } }; },
+      seat(id) { camera(id); },
+      resetView(view) { const v = views[view]; if (v) { v.z = defaultZoom(v.view); v.x = v.y = 0; layout(); } },
       crop(view, source) {
         const v = views[view], out = document.createElement('canvas');
         const ratio = Math.min(1, 960 / v.viewport.clientWidth, 960 / v.viewport.clientHeight);
         out.width = Math.max(1, Math.round(v.viewport.clientWidth * ratio)); out.height = Math.max(1, Math.round(v.viewport.clientHeight * ratio));
         const ctx = out.getContext('2d'); ctx.fillStyle = '#191512'; ctx.fillRect(0, 0, out.width, out.height);
-        ctx.drawImage(source, (v.viewport.clientWidth / 2 - v.width * v.z / 2 + v.x) * ratio, (v.viewport.clientHeight / 2 - v.height * v.z / 2 + v.y) * ratio, v.width * v.z * ratio, v.height * v.z * ratio);
+        ctx.drawImage(source, (v.viewport.clientWidth / 2 - v.width * v.base * v.z / 2 + v.x + v.cx * v.z) * ratio, (v.viewport.clientHeight / 2 - v.height * v.base * v.z / 2 + v.y + v.cy * v.z) * ratio, v.width * v.base * v.z * ratio, v.height * v.base * v.z * ratio);
         return out;
       },
       annotationsVisible(view) { return view !== 'front' || engine.camera().seat === 'center'; },

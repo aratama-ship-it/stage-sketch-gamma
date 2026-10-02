@@ -22,7 +22,8 @@
     const front = document.getElementById('stage-canvas'); const plan = document.getElementById('stage-plan-canvas');
     front.removeAttribute('tabindex'); plan.removeAttribute('tabindex');
     document.querySelector('.study-front').append(front); document.querySelector('.study-plan').append(plan);
-    navigation = window.SHOSAI_STUDY_NAVIGATION({ engine, canvases: { front, plan }, cancelAnnotations(pointer) {
+    let controlsQueued = false; const postControls = () => { if (controlsQueued) return; controlsQueued = true; requestAnimationFrame(() => { controlsQueued = false; if (navigation) window.parent.postMessage({ channel: 'stage-study', action: 'controls-state', state: navigation.state() }, location.origin); }); };
+    navigation = window.SHOSAI_STUDY_NAVIGATION({ engine, canvases: { front, plan }, onState: postControls, cancelAnnotations(pointer) {
       const event = { type: 'pointercancel', pointerId: pointer.pointerId, target: pointer.target };
       pen?.handleEvent(event); sticky?.handleEvent(event);
     } });
@@ -40,6 +41,9 @@
       try {
         if (message.action === 'load') { canAnnotate = Boolean(message.annotationsEditable); engine.load(message.document, message.lang); sceneId = message.sceneId; revision = message.revision; engine.scene(sceneId); pen.load(message.strokes); pen.mode(message.penEnabled); sticky.load(message.stickies); sticky.configure({ editable: canAnnotate && !message.penEnabled, enabled: Boolean(message.stickyEnabled), lang: message.lang }); }
         else if (message.action === 'scene') { sceneId = message.sceneId; engine.scene(sceneId); pen.load(message.strokes); pen.show(true); sticky.load(message.stickies); sticky.show(true); }
+        else if (message.action === 'fit') { navigation?.fill(Boolean(message.full)); }
+        else if (message.action === 'seat') { navigation?.seat(String(message.id)); }
+        else if (message.action === 'reset-view') { navigation?.resetView(message.view); }
         else if (message.action === 'replay') { pen.mode(false); pen.show(false); sticky.show(false); engine.replay(); }
         else if (message.action === 'stop') { engine.stop(); engine.scene(sceneId); pen.show(true); sticky.show(true); }
         else if (message.action === 'pen-mode') { engine.stop(); engine.scene(sceneId); pen.mode(message.enabled); sticky.configure({ editable: canAnnotate && !message.enabled, enabled: false }); }
@@ -67,6 +71,7 @@
         if (message.action === 'replay') { navigation.mode('pen', false); navigation.mode('sticky', false); }
         if (['sticky-add', 'sticky-focus'].includes(message.action)) navigation.central();
         navigation.layout();
+        if (message.action === 'scene' && document.body.classList.contains('viewer-phone')) navigation.reset();
         if (message.action === 'load') window.parent.postMessage({ channel: 'stage-study', action: 'loaded' }, location.origin);
       } catch { window.parent.postMessage({ channel: 'stage-study', action: 'error' }, location.origin); }
     });

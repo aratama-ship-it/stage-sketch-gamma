@@ -1,3 +1,9 @@
+
+@media (orientation: landscape) {
+  .viewer-phone.study-frame[data-view="both"] .study-drawings { grid-template-columns: minmax(0,2fr) minmax(0,1fr); grid-template-rows: 1fr; }
+}
+.viewer-phone.study-frame .study-drawing { grid-template-rows: minmax(0,1fr); }
+.viewer-phone .viewer-drawing-bar { display: none; }
 .study-frame { --viewer-blue: #9dd4e6; --viewer-bar: #1c272c; --viewer-row: 44px; }
 .study-frame .study-drawings { gap: 4px; }
 .study-frame .study-drawing { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: var(--viewer-row) minmax(0, 1fr); justify-content: stretch; align-items: stretch; }

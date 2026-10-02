@@ -370,13 +370,14 @@
       }
       }
       if (current !== epoch) return;
-      data = result; scenes = result.document.project.scenes.filter(s => s.kind === 'scene'); at = Math.max(0, scenes.findIndex(s => s.id === lastScene)); restorePrivate();
+      data = result; scenes = result.document.project.scenes.filter(s => s.kind === 'scene');
+      window.dispatchEvent(new CustomEvent('stage-study-loaded', { detail: { project: result.document.project, scenes } })); at = Math.max(0, scenes.findIndex(s => s.id === lastScene)); restorePrivate();
       $('study-title').textContent = result.document.project.title; $('study-title').hidden = false;
       $('study-scenes').replaceChildren(...scenes.map((scene, i) => { const el = document.createElement('option'); el.value = scene.id; el.textContent = `${i + 1}. ${scene.title}`; return el; }));
       $('study-name-field').hidden = Boolean(result.displayName); $('study-verified-name').hidden = !result.displayName;
       $('study-verified-name').textContent = result.displayName || '';
       $('study-name').required = !result.displayName;
-      frame = document.createElement('iframe'); frame.title = t('both'); frame.setAttribute('sandbox', 'allow-scripts'); frame.referrerPolicy = 'no-referrer'; frame.src = '/study-frame.html?v=8';
+      frame = document.createElement('iframe'); frame.title = t('both'); frame.setAttribute('sandbox', 'allow-scripts'); frame.referrerPolicy = 'no-referrer'; frame.src = '/study-frame.html?v=9';
       $('study-frame-host').replaceChildren(frame); $('study-workspace').hidden = false;
       relabel();
     } catch (error) { if (current === epoch) conceal(error.status === 401 ? 'loginRequired' : error.status === 404 ? 'unavailable' : 'network'); }
