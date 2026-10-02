@@ -74,7 +74,7 @@ if (PROP_SHAPES.length < 10) throw new Error(`小道具の形の一覧が取れ�
 // v27（2026-10-01）: C-1 に正方形ボタン・照明選択の UI 確認を追加（v0.2.70）
 // v29（2026-10-02）: レーン切替幅を 1000／1520／1800px に変更（確認手順の幅を更新）・bridge_hold を姿勢の選択一覧から外した（v0.2.72）
 // v28（2026-10-01）: 修正バッチ #1〜#16（幅別レーン・吹き出し・袖幕枚数・ドラッグ保持・.stagesketch・照明配置ほか）の確認手順を各シーンへ追加（v0.2.71）
-const PROJECT_ID = "gamma-feature-test-v31";
+const PROJECT_ID = "gamma-feature-test-v32";   // v32: F-5 ミラーボール・J-3 負荷（2026-10-03）
 const CREATED = "2026-09-18T00:00:00.000Z";
 const STAGE = { width: 12, depth: 9 };      // proscenium / mid の実寸（stage-venues.js）
 const COLORS = ["#a84b26", "#77865f", "#9c823f", "#6d6657", "#315b8a", "#b0533f", "#4f7d6f", "#8a6a9c",
@@ -594,7 +594,9 @@ scene("e3", "E-2 光の意図（データ）", 1, `${CHECK}このシーンは li
 section("f", "F 照明デザイン（機材配置・照明タブ）");
 const fixtureIds = { p1: "ft-fx-01", p2: "ft-fx-02", p3: "ft-fx-03", p4: "ft-fx-04", m1: "ft-fx-05", m2: "ft-fx-06", m3: "ft-fx-07", m4: "ft-fx-08", fr1: "ft-fx-09", fr2: "ft-fx-10", sL: "ft-fx-11", sR: "ft-fx-12", fl: "ft-fx-13", cyc: "ft-fx-14", laser: "ft-fx-15",
   /* ★段階5①（2026-09-19）: レーザーを舞台モードへ出す試験用。fan/sheet/tunnel の3種を並べる。 */
-  laser2: "ft-fx-16", laser3: "ft-fx-17", o1: "ft-fx-18", o2: "ft-fx-19", o3: "ft-fx-20", o4: "ft-fx-21" };
+  laser2: "ft-fx-16", laser3: "ft-fx-17", o1: "ft-fx-18", o2: "ft-fx-19", o3: "ft-fx-20", o4: "ft-fx-21",
+  /* ミラーボール（2026-10-03）: 吊り球1＋ピン2本（前明かり位置・6°）。 */
+  ball: "ft-fx-22", pin1: "ft-fx-23", pin2: "ft-fx-24" };
 scene("f1", "F-1 静止のキュー（色・強さ・模様・カッター・衣装の染め）", 1, `${CHECK}照明タブで、固定灯4本が色違い・強さ違いで床を照らす（模様「ブレイクアップ（中）」付き1本）。正面図・平面図・3Dの光だまり（設定ON）が一致する。演者05は台の上（床から0.5m）へ描かれる。最後に登録したカウンターが、手前の演者01を隠さず奥の演者05を隠す（正面・3D・作業灯ON/OFF）。環境設定「平面図の照明機材の白い枠を表示」をON/OFFし、灯体の淡い白枠だけが切り替わることを確かめる。選択中の金色の枠と正面・側面・3Dの灯体表示、再読み込み後の設定保持も確認する。環境設定「衣装を明かりの色で染める」を入れると、青い明かりの演者02（緑）と山吹の明かりの演者05（青）が沈み、白い明かりの演者01は色が変わらない。全画面へ入っても作業灯OFF・照明の色と点灯が通常表示と一致し、図を入れ替えても維持すること。照明操作の簡単／詳細が「詳細画面の表示」の左にあり、高さ44pxで切替後も戻れること。照明を編集したら「未適用・控え保存済み」、LXキュー適用後は「適用済み」を確認。適用しないで移って戻り、控えが残ること。「控え・書き出し」からファイルへ残せること。容量不足・別タブ更新では成功表示にならず、失敗の説明が残ること（ブラウザの隔離試験で確認）。L01を選んでソロ表示し、未選択L02の点灯ボタンが実キューのオン状態と「押すとオフ」を示すこと。ソロ自体は保存キューを変えず、ボタンで消灯した結果はソロ解除後にも残ること。`,
   /* ★G-D（2026-09-19）: 演者05（青 #315b8a）を山吹の灯（p4・模様つき）の中へ置く＝青い衣装が沈む見本。 */
   [perf("f1", "p01", 0.45, 0.7, { color: "#655b4c" }), perf("f1", "p02", 0.7, 0.55), setPiece("f1", "block", 0.5, 0.3), perf("f1", "p05", 0.5, 0.3, { base: 0.5 }), setPiece("f1", "block2", 0.5, 0.62, { setId: null, originId: null, name: "配色確認用カウンター", color: "#27384a", dims: { w: 5, d: 0.65, h: 1 } })]);
@@ -602,7 +604,7 @@ scene("f2", "F-2 往復と円（ムービング）・点の列・端で止まる
   [perf("f2", "p03", 0.5, 0.6, { pose: "dance1" })]);
 scene("f3", "F-3 ストロボと順送り・実機モード", 1, `${CHECK}くっきり（矩形波 8Hz duty 30）と、やわらかい（1-cos 2Hz 深さ80）。順送り（seq）は3段で順に光る。再生中に点滅が見える。2026-09-27（テスト用ビルド）: 固定04はランダム、前明かり09はランダムパルス、サイド下手11はブラインダー（1周で点けたまま）、サイド上手12はスパイク（消えている間も30%）。LXキューは上げ0.5秒。`,
   [perf("f3", "p04", 0.35, 0.6, { pose: "dance2" }), perf("f3", "p05", 0.65, 0.6, { pose: "dance3" })]);
-scene("f4", "F-4 レーザー（ビーム・シート・トンネル）・ホリゾント・霞", 1, `${CHECK}レーザー1本（床置き）、LEDホリゾント列（下段）が青、霞（haze）70。客席へ向ける制約（surface: house）を持つ前明かり1本。`,
+scene("f4", "F-4 レーザー・ホリゾント・霞・ミラーボール", 1, `${CHECK}レーザー1本（床置き）、LEDホリゾント列（下段）が青、霞（haze）70。客席へ向ける制約（surface: house）を持つ前明かり1本。\nミラーボール（2026-10-03・シーン上限60のため F-4 に同居）: 照明バトン2の中央に球（◎22・直径30cm・1.5回転/分）。前明かり位置のピン2本（L23 白・L24 琥珀・6°）が球を狙う（照明タブで狙いが「ミラーボール」）。設定「照明の光だまり」を入れると、平面図は床の粒、正面図は床＋ホリゾントの粒、3Dカメラは天井・袖にも粒が出る。「照明の光の筋」で球から細い線（12粒に1本）。「作業灯を消す」でも粒は暗幕の上に残る。転換アニメONで再生すると正面図・平面図の粒が流れる（盆・ゴボと同じ時計）。3Dはピンが当たっていれば常に回る。環境設定「ミラーボールの粒を多めに」で2.5倍（600→1,500枚）。照明タブで球を選ぶと「回す／止める」だけが出て、ピンを選ぶと狙いに「ミラーボール」があり「高さ」の欄は出ない。配置パネルで球の直径・回る速さを変えられ、バトン以外の灯は球にできない。`,
   [perf("f4", "p06", 0.5, 0.5, { pose: "open" })]);
 rows.find((row) => row.title?.startsWith("F-1")).note += "\n光の比較: 18〜21番は同じ色・強さ・広がり角。固定スポット、固定ウォッシュ、ムービングスポット、ムービングウォッシュの順。F-1の床奥で境界と重なりを平面・正面・3Dで比べる。17番までの旧灯体は光学区分なしの従来表示を保つ。";
 
@@ -747,7 +749,7 @@ section("j", "J 負荷と3Dカメラ");
   const pieces = [];
   [0, 45, 90, 135, 180, 225, 270, 315].forEach((facing, i) => pieces.push(perf("j2", castKeys[i], 0.15 + (i % 4) * 0.23, i < 4 ? 0.45 : 0.75, { facing })));
   pieces.push(setPiece("j2", "pole", 0.5, 0.25), setPiece("j2", "trap", 0.2, 0.2), setPiece("j2", "wall", 0.8, 0.2));
-  scene("j2", "J-2 3Dカメラ・この人の視界", 1, `${CHECK}8方向を向く8人。誰かを選んで「この人の視界」を開き、向きどおりに見えるか。「3Dモードで見る」へ進んでも同じ向きを保つこと。3Dカメラ（自由視点）でポール・トラピーズ・壁の高さ。「見る位置の図」で席を変える。劇場寸法は上書き（12.4×9.6×7.2m）。`, pieces);
+  scene("j2", "J-2 3Dカメラ・この人の視界", 1, `${CHECK}8方向を向く8人。誰かを選んで「この人の視界」を開き、向きどおりに見えるか。「3Dモードで見る」へ進んでも同じ向きを保つこと。3Dカメラ（自由視点）でポール・トラピーズ・壁の高さ。「見る位置の図」で席を変える。劇場寸法は上書き（12.4×9.6×7.2m）。\nミラーボール（負荷・2026-10-03）: このシーンの明かりは球＋ピン2本＋固定灯4本（模様回転つき）＋霞70。「照明の光だまり」「光の筋」「作業灯を消す」「粒を多めに」を全部入れて3Dカメラで回し、重さを見る（PERF_HEADED=1 の計測もこのシーン）。`, pieces);
   // 劇場プレビューとプリセットの回帰を、実制作ショーではなくJ-2で確かめる。
   rows[rows.length - 1].note += '\n劇場プレビューの袖幕: プロセニアム・扇形ホール・角形ホール・学校体育館・エンドステージ・ブラックボックス・歌舞伎舞台には、各規模で左右の袖が最初からあること。トラバースは左右の客席を避けて両端に袖があり、幕の向きも客席に合わせること。袖をすべて削除すると幕も消え、プリセットを適用し直すと初期の袖へ戻ること。新規の袖は四角だけが選べ、袖の移動・サイズ変更・削除・取り消しができること。旧保存の丸い袖も平面図とプレビューで幕の位置が一致すること。張り出し式・360度では左右の袖幕を自動追加しないこと。';
   rows[rows.length - 1].note += '\n後方の退場用舞台袖: スラスト・円形劇場・アリーナ公演・ドーム公演の全構成で、舞台の後方に1つ袖があること。平面図・立体プレビュー・サムネイルで同じ位置に見え、袖を動かしても客席と重ならないこと。円形劇場は後方の客席ブロック間を通れ、ドームのセンターステージは後方客席の中央6mが通路として空いていること。後方の出入口を3列の袖幕で塞がないこと。';
@@ -810,6 +812,10 @@ const fixtures = [
   fx(fixtureIds.laser, 15, { type: "floor", u: 0.85, v: 0.1 }, "レーザー 15（ビーム／ファン）", "laser", 4, { fixtureType: "laser" }),
   fx(fixtureIds.laser2, 16, { type: "floor", u: 0.15, v: 0.1 }, "レーザー 16（シート）", "laser", 4, { fixtureType: "laser" }),
   fx(fixtureIds.laser3, 17, { type: "floor", u: 0.5, v: 0.9 }, "レーザー 17（トンネル）", "laser", 4, { fixtureType: "laser" }),
+  /* ミラーボール（2026-10-03・F-5／J-3）: バトン2中央に球（直径30cm・1.5回転/分）、前明かり位置からピン2本（固定・6°）。 */
+  { ...fx(fixtureIds.ball, 22, { type: "truss", trussId: "ft-truss-2", u: 0.5 }, "ミラーボール 22", "mirrorball", 16), mirrorBall: { diameterM: 0.3, rpm: 1.5 } },
+  fx(fixtureIds.pin1, 23, { type: "front", u: 0.35, ahead: 3, h: 7.5 }, "ピン 23（ミラーボール用）", "fixed", 6),
+  fx(fixtureIds.pin2, 24, { type: "front", u: 0.65, ahead: 3, h: 7.5 }, "ピン 24（ミラーボール用）", "fixed", 6),
   fx(fixtureIds.o1, 18, { type: "truss", trussId: "ft-truss-1", u: 0.15 }, "比較・固定スポット", "fixed", 28, { fixtureType: "profile-zoom", opticalType: "spot" }),
   fx(fixtureIds.o2, 19, { type: "truss", trussId: "ft-truss-1", u: 0.35 }, "比較・固定ウォッシュ", "fixed", 28, { fixtureType: "fresnel", opticalType: "wash" }),
   fx(fixtureIds.o3, 20, { type: "truss", trussId: "ft-truss-2", u: 0.65 }, "比較・ムービングスポット", "moving", 28, { fixtureType: "moving-profile", opticalType: "spot" }),
@@ -874,6 +880,22 @@ const lightCues = {
     [fixtureIds.sL]: cue({ color: "#ffd27a", surface: "air", path: { kind: "still", a: { u: 0.5, v: 0.5, hM: 1.5 } } }),
     [fixtureIds.sR]: cue({ color: "#7ab8ff", surface: "air", path: { kind: "still", a: { u: 0.5, v: 0.5, hM: 2.1 } } }),
     [fixtureIds.fl]: cue({ color: "#d9483b", surface: "back", path: { kind: "still", a: { u: 0.5, v: 0, hM: 4 } } }),
+    /* ミラーボール（2026-10-03・シーン上限60のため F-4 に同居）: 球は on＝回す・level 0（旧版では消灯の空中灯）。
+       ピンは surface "air" のまま target で球へ。path.a は球の中心（バトン2 h6.5 − 吊り代0.3 − 半径0.15 ＝ 6.05m・u0.5・v0.3）
+       ＝旧版のための代表点。 */
+    [fixtureIds.ball]: cue({ level: 0, surface: "air", path: { kind: "still", a: { u: 0.5, v: 0.3, hM: 4.5 } } }),
+    [fixtureIds.pin1]: cue({ color: "#f2ead6", surface: "air", target: { fixtureId: fixtureIds.ball }, path: { kind: "still", a: { u: 0.5, v: 0.3, hM: 6.05 } } }),
+    [fixtureIds.pin2]: cue({ color: "#ffd27a", surface: "air", target: { fixtureId: fixtureIds.ball }, path: { kind: "still", a: { u: 0.5, v: 0.3, hM: 6.05 } } }),
+  }, groups: [], environment: { haze: 70 } },
+  /* J-2（3Dカメラ）: 負荷の確認。球とピン2本に固定灯4本（模様の回転つき）と霞70を足す＝粒＋光だまり＋筋が同時に出る重い条件。 */
+  "ft-scene-j2": { lights: {
+    [fixtureIds.ball]: cue({ level: 0, surface: "air", path: { kind: "still", a: { u: 0.5, v: 0.3, hM: 4.5 } } }),
+    [fixtureIds.pin1]: cue({ color: "#f2ead6", surface: "air", target: { fixtureId: fixtureIds.ball }, path: { kind: "still", a: { u: 0.5, v: 0.3, hM: 6.05 } } }),
+    [fixtureIds.pin2]: cue({ color: "#7ab8ff", surface: "air", target: { fixtureId: fixtureIds.ball }, path: { kind: "still", a: { u: 0.5, v: 0.3, hM: 6.05 } } }),
+    [fixtureIds.p1]: cue({ color: "#f2ead6", level: 60, path: { kind: "still", a: { u: 0.25, v: 0.6, hM: 0 } } }),
+    [fixtureIds.p2]: cue({ color: "#f2ead6", level: 60, path: { kind: "still", a: { u: 0.5, v: 0.6, hM: 0 } } }),
+    [fixtureIds.p3]: cue({ color: "#f2ead6", level: 60, path: { kind: "still", a: { u: 0.75, v: 0.6, hM: 0 } } }),
+    [fixtureIds.p4]: cue({ color: "#ffd27a", level: 70, gobo: "break-mid", goboSpin: 15, path: { kind: "still", a: { u: 0.5, v: 0.35, hM: 0 } } }),
   }, groups: [], environment: { haze: 70 } },
 };
 /* ★劇場の寸法。ここ1か所で決める（2026-09-19）。

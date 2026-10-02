@@ -232,10 +232,41 @@
       };
     });
 
+    /* ミラーボール（2026-10-03・docs/mirror-ball-plan-2026-10-03/DESIGN.md）。球ごとに
+       「中心・半径・回る速さ・当てているピン」を pool / laser とは別の枠 mirrorBall で返す。
+       粒の位置は時刻で変わるので、ここでは計算しない（描く側が共有部品 mirrorBallDotsAt(…, tMs) を呼ぶ）。
+       ピン＝その球を light.target に持つ、点いていて強さ>0 の灯。球の on は「回す／止める」（rpm を 0 にする）。
+       ★球自身の pool・aim・laser は作らない（球は光を出さない）。 */
+    const byId = new Map(fixtures.map((row) => [row.id, row]));
+    fixtures.forEach((row) => {
+      if (row.kind !== "mirrorball") return;
+      const fixture = fixtureById.get(row.id);
+      const spec = engine && typeof engine.mirrorBallOf === "function" ? engine.mirrorBallOf(fixture)
+        : { diameterM: 0.3, rpm: 1 };
+      const hang = engine && engine.MIRROR_BALL ? finite(engine.MIRROR_BALL.hangM, 0.3) : 0.3;
+      const top = worldOf({ u: row.u, v: row.v, hM: row.h }, dims);
+      const R = spec.diameterM / 2;
+      const centre = { x: top.x, y: top.y, z: Math.max(R, top.z - hang - R) };
+      const sources = [];
+      Object.keys(lights).forEach((id) => {
+        const light = lights[id];
+        if (!record(light) || light.on !== true || !(clamp(finite(light.level, 100), 0, 100) > 0)) return;
+        if (!record(light.target) || light.target.fixtureId !== row.id) return;
+        const pin = byId.get(id);
+        if (!pin || pin.kind === "mirrorball") return;
+        sources.push({ from: worldOf({ u: pin.u, v: pin.v, hM: pin.h }, dims), color: pin.color, level: pin.level,
+          beamDeg: engine && typeof engine.beamDegOf === "function" ? engine.beamDegOf(fixtureById.get(id), light) : 6 });
+      });
+      row.mirrorBall = { centre, radiusM: R, rpm: row.state === "on" ? spec.rpm : 0, phaseDeg: 0, hangFrom: top, sources };
+      row.pool = null; row.aim = null; row.laser = null;
+    });
+
     /* 図にしていないもの。黙って省かずに、画面へ「出していない」と書くための材料。 */
     const notes = [];
     const lasers = fixtures.filter((row) => row.kind === "laser" && row.state === "on").length;
     if (lasers) notes.push({ key: "laser", count: lasers });
+    const mirrorBallsLit = fixtures.filter((row) => row.mirrorBall && row.mirrorBall.sources.length).length;
+    if (mirrorBallsLit) notes.push({ key: "mirrorBall", count: mirrorBallsLit });
     const lxq = list(design.scenes).reduce((sum, scene) =>
       sum + (record(scene) && Array.isArray(scene.lxq) ? scene.lxq.length : 0), 0);
     if (lxq) notes.push({ key: "lxq", count: lxq });
@@ -250,7 +281,8 @@
       trusses: base.trusses,
       fixtures,
       counts: { total: fixtures.length, lit, unset, laser: base.counts.laser,
-        pools: fixtures.filter((row) => row.pool).length },
+        pools: fixtures.filter((row) => row.pool).length,
+        mirrorBall: fixtures.filter((row) => row.mirrorBall).length },
       notes,
     };
   }

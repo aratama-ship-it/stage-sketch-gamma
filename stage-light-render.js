@@ -866,13 +866,196 @@
     return drawn;
   }
 
+
+  /* ---------- ミラーボール（2026-10-03・設計 docs/mirror-ball-plan-2026-10-03/DESIGN.md） ----------
+     鏡片の法線 n、入射 d（ピン→鏡片）に対し反射 r = d − 2(d·n)n。鏡片の位置 F = C + R·n から r の向きへ進み、
+     最初に当たる面（床 z=0／奥の壁 y=0／天井 z=H／袖 x=±W/2／客席側 y=D）に「粒」が落ちる。
+     球の回転は n を鉛直軸(z)まわりに回すだけ（rpm → 1分で1周）。
+     ★mirrorBallDotsAt は世界座標だけの純粋関数（canvas 不要・node で検査できる）。
+     ★塗り（paintMirrorBalls）は 面×色×明るさ3段ごとに Path2D へ全部の粒を入れて1回 fill（lighter）。
+       粒を1つずつ fill すると数百〜千回の合成になる。shadowBlur は使わない（Safari で重い・ctx.filter は無視される）。
+     ★「mirror」の語は組の鏡映（mirrorMount 等）に既に使っているので、ここは必ず mirrorBall と書く。 */
+  const MIRROR_BALL_FACETS = Object.freeze({ low: 240, mid: 600, high: 1500 });   // 鏡片の標本数（実物 φ300 は約2,800枚）
+  const MIRROR_BALL_DOT_BASE_M = 0.012;     // 粒の半径の底（鏡片 10mm ＋ 少し）
+  const MIRROR_BALL_DOT_SPREAD = 0.006;     // 1m 進むごとの広がり（≒0.7°・推測値。デモで見た目を確認した）
+  const MIRROR_BALL_DOT_FALL_M = 7;         // 明るさが半分になる距離(m)
+  const MIRROR_BALL_DOT_ALPHA = Object.freeze([0.9, 0.6, 0.3]);   // 明るさ3段
+  const MIRROR_BALL_RAY_EVERY = 12;         // 筋は何粒に1本か
+  const MIRROR_BALL_RAY_ALPHA = 0.08;
+  const MIRROR_BALL_HALO = 2;               // 淡い輪の半径倍率
+  const MIRROR_BALL_HANG_M = 0.3;           // バトンから球の天辺までの吊り代（モーター分）
+  const mirrorBallFacetCache = new Map();
+  const mbUnit = (v) => { const n = Math.hypot(v.x, v.y, v.z); return n > 1e-9 ? { x: v.x / n, y: v.y / n, z: v.z / n } : null; };
+  /* 鏡片の法線＝フィボナッチ球（決定的・一様）。数ごとに1回だけ作って使い回す。 */
+  function mirrorBallFacets(count) {
+    const n = Math.max(12, Math.min(6000, Math.round(finite(count, MIRROR_BALL_FACETS.mid))));
+    let list = mirrorBallFacetCache.get(n);
+    if (list) return list;
+    list = [];
+    const golden = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < n; i += 1) {
+      const z = 1 - 2 * (i + 0.5) / n;
+      const r = Math.sqrt(Math.max(0, 1 - z * z));
+      const a = golden * i;
+      list.push({ x: r * Math.cos(a), y: r * Math.sin(a), z });
+    }
+    mirrorBallFacetCache.set(n, list);
+    return list;
+  }
+  /* 粒の一覧（世界座標m）。
+     ball = { centre:{x,y,z}, radiusM, rpm, phaseDeg, sources:[{ from:{x,y,z}, color:"#rrggbb", level:0..100, beamDeg }] }
+     opts = { dims:{W,D,H}, facets, surfaces:{floor,back,ceil,side}, every }
+     返り値 { dots:[{ P, F, on, b, rm, color, bin, ray }], counts:{floor,back,ceil,side,house} }
+       P＝落ちた点・F＝鏡片の位置・on＝落ちた面・b＝明るさ(0..1)・rm＝粒の半径(m)・bin＝明るさ3段・ray＝筋を描く粒か */
+  function mirrorBallDotsAt(ball, tMs, opts) {
+    const o = opts || {};
+    const dims = o.dims || {};
+    const W = finite(dims.W, 12), D = finite(dims.D, 9), H = finite(dims.H, 8);
+    const surfaces = o.surfaces || { floor: true, back: true };
+    const out = { dots: [], counts: { floor: 0, back: 0, ceil: 0, side: 0, house: 0 } };
+    const C = ball && ball.centre;
+    if (!C || !Array.isArray(ball.sources) || !ball.sources.length) return out;
+    const R = Math.max(0.05, finite(ball.radiusM, 0.15));
+    const facets = mirrorBallFacets(o.facets);
+    const every = Math.max(1, Math.round(finite(o.every, MIRROR_BALL_RAY_EVERY)));
+    const ang = finite(ball.phaseDeg, 0) * Math.PI / 180
+      + finite(ball.rpm, 0) * Math.PI * 2 / 60 * (finite(tMs, 0) / 1000);
+    const ca = Math.cos(ang), sa = Math.sin(ang);
+    ball.sources.forEach((src) => {
+      const S = src && src.from;
+      const level = clamp(finite(src && src.level, 100), 0, 100) / 100;
+      if (!S || !(level > 0)) return;
+      const colour = typeof src.color === "string" && /^#[0-9a-f]{6}$/i.test(src.color) ? src.color : "#f2ead6";
+      const toC = mbUnit({ x: C.x - S.x, y: C.y - S.y, z: C.z - S.z });
+      if (!toC) return;
+      const cosHalf = Math.cos(clamp(finite(src.beamDeg, 6), 1, 170) * Math.PI / 360);
+      let k = 0;
+      for (let i = 0; i < facets.length; i += 1) {
+        const n0 = facets[i];
+        const n = { x: n0.x * ca - n0.y * sa, y: n0.x * sa + n0.y * ca, z: n0.z };
+        const F = { x: C.x + R * n.x, y: C.y + R * n.y, z: C.z + R * n.z };
+        const d = mbUnit({ x: F.x - S.x, y: F.y - S.y, z: F.z - S.z });
+        if (!d) continue;
+        const dn = d.x * n.x + d.y * n.y + d.z * n.z;
+        if (dn >= 0) continue;                                              // 光の当たらない裏側
+        if (d.x * toC.x + d.y * toC.y + d.z * toC.z < cosHalf) continue;      // ピンの円錐の外
+        const r = { x: d.x - 2 * dn * n.x, y: d.y - 2 * dn * n.y, z: d.z - 2 * dn * n.z };
+        let t = Infinity, on = null;
+        const hit = (tt, kind) => { if (tt > 1e-4 && tt < t) { t = tt; on = kind; } };
+        if (r.z < -1e-9) hit((0 - F.z) / r.z, "floor");
+        if (r.z > 1e-9) hit((H - F.z) / r.z, "ceil");
+        if (r.y < -1e-9) hit((0 - F.y) / r.y, "back");
+        if (r.y > 1e-9) hit((D - F.y) / r.y, "house");
+        if (r.x < -1e-9) hit((-W / 2 - F.x) / r.x, "side");
+        if (r.x > 1e-9) hit((W / 2 - F.x) / r.x, "side");
+        if (!on) continue;
+        out.counts[on] += 1;
+        if (!surfaces[on]) continue;
+        const P = { x: F.x + r.x * t, y: F.y + r.y * t, z: F.z + r.z * t };
+        const b = level / (1 + (t / MIRROR_BALL_DOT_FALL_M) * (t / MIRROR_BALL_DOT_FALL_M));
+        k += 1;
+        out.dots.push({ P, F, on, b, rm: MIRROR_BALL_DOT_BASE_M + t * MIRROR_BALL_DOT_SPREAD, color: colour,
+          bin: b > 0.55 ? 0 : b > 0.28 ? 1 : 2, ray: (k % every) === 0 });
+      }
+    });
+    return out;
+  }
+  /* 面の中の2軸（粒の足跡を画面へ写すため。床・天井は x/y、奥の壁は x/z、袖は y/z）。 */
+  const MIRROR_BALL_AXES = Object.freeze({
+    floor: [{ x: 1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }], ceil: [{ x: 1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }],
+    back: [{ x: 1, y: 0, z: 0 }, { x: 0, y: 0, z: 1 }], side: [{ x: 0, y: 1, z: 0 }, { x: 0, y: 0, z: 1 }],
+  });
+  /* 球の体。金属の小さな円＋ピンの方向へ光る点。吊り線は hangFrom（バトン上の点）があるときだけ。 */
+  function paintMirrorBallBody(ctx, ball, P, opts) {
+    const o = opts || {};
+    const C = ball && ball.centre; if (!C) return false;
+    const c = P(C); if (!c) return false;
+    const R = Math.max(0.05, finite(ball.radiusM, 0.15));
+    const e = P({ x: C.x + R, y: C.y, z: C.z });
+    const e2 = P({ x: C.x, y: C.y, z: C.z + R });
+    const rp = Math.max(2, Math.max(e ? Math.hypot(e.X - c.X, e.Y - c.Y) : 0, e2 ? Math.hypot(e2.X - c.X, e2.Y - c.Y) : 0));
+    if (!Number.isFinite(rp) || rp > 600) return false;
+    ctx.save();
+    if (!o.topDown && ball.hangFrom) {
+      const h = P(ball.hangFrom);
+      if (h) { ctx.strokeStyle = "rgba(200,200,200,0.5)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(c.X, c.Y - rp); ctx.lineTo(h.X, h.Y); ctx.stroke(); }
+    }
+    const g = ctx.createRadialGradient(c.X - rp * 0.3, c.Y - rp * 0.3, rp * 0.1, c.X, c.Y, rp);
+    g.addColorStop(0, "#f4f4f4"); g.addColorStop(0.5, "#b9bcc3"); g.addColorStop(1, "#5b5f68");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.X, c.Y, rp, 0, Math.PI * 2); ctx.fill();
+    ctx.globalCompositeOperation = "lighter";
+    (ball.sources || []).forEach((src) => {
+      const s = src && src.from ? P(src.from) : null; if (!s) return;
+      const lv = clamp(finite(src.level, 100), 0, 100) / 100; if (!(lv > 0)) return;
+      const dx = s.X - c.X, dy = s.Y - c.Y, L = Math.hypot(dx, dy) || 1;
+      ctx.fillStyle = rgba(typeof src.color === "string" ? src.color : "#f2ead6", 0.95 * lv);
+      ctx.beginPath(); ctx.arc(c.X + dx / L * rp * 0.55, c.Y + dy / L * rp * 0.55, Math.max(1.2, rp * 0.18), 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.restore();
+    return true;
+  }
+  /* まとめて塗る。balls は ball（上）に加えて dims を持ってもよい。
+     opts = { tMs, dims, facets, surfaces, rays, every, topDown }。返り値＝描いた球の数。 */
+  function paintMirrorBalls(ctx, balls, P, opts) {
+    if (!Array.isArray(balls) || !balls.length || typeof Path2D === "undefined") return 0;
+    const o = opts || {};
+    let drawn = 0;
+    balls.forEach((ball) => {
+      if (!ball || !ball.centre) return;
+      const res = mirrorBallDotsAt(ball, o.tMs, { dims: o.dims || ball.dims, facets: o.facets, surfaces: o.surfaces, every: o.every });
+      const groups = new Map(), halos = new Map(), rays = new Map();
+      res.dots.forEach((dot) => {
+        const q = P(dot.P); if (!q) return;
+        const axes = MIRROR_BALL_AXES[dot.on]; if (!axes) return;
+        const qa = P({ x: dot.P.x + axes[0].x * dot.rm, y: dot.P.y + axes[0].y * dot.rm, z: dot.P.z + axes[0].z * dot.rm });
+        const qb = P({ x: dot.P.x + axes[1].x * dot.rm, y: dot.P.y + axes[1].y * dot.rm, z: dot.P.z + axes[1].z * dot.rm });
+        if (!qa || !qb) return;
+        const ax = qa.X - q.X, ay = qa.Y - q.Y, bx = qb.X - q.X, by = qb.Y - q.Y;
+        const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
+        if (!Number.isFinite(la + lb)) return;
+        /* 2軸が画面上で直交していなくても楕円で近似する（長い方を長軸、もう片方の直交成分を短軸）。 */
+        const longer = la >= lb ? { x: ax, y: ay, len: la } : { x: bx, y: by, len: lb };
+        const other = la >= lb ? { x: bx, y: by } : { x: ax, y: ay };
+        const across = longer.len > 0 ? Math.abs(longer.x * other.y - longer.y * other.x) / longer.len : 0;
+        const rx = Math.max(0.6, longer.len), ry = Math.max(0.4, across);
+        if (rx > 400) return;                      // カメラの至近で画面いっぱいになる粒は描かない
+        const rot = longer.len > 0 ? Math.atan2(longer.y, longer.x) : 0;
+        const key = `${dot.color}|${dot.bin}`;
+        let path = groups.get(key); if (!path) { path = new Path2D(); groups.set(key, path); }
+        path.moveTo(q.X + rx * Math.cos(rot), q.Y + rx * Math.sin(rot));
+        path.ellipse(q.X, q.Y, rx, ry, rot, 0, Math.PI * 2);
+        let halo = halos.get(key); if (!halo) { halo = new Path2D(); halos.set(key, halo); }
+        halo.moveTo(q.X + rx * MIRROR_BALL_HALO * Math.cos(rot), q.Y + rx * MIRROR_BALL_HALO * Math.sin(rot));
+        halo.ellipse(q.X, q.Y, rx * MIRROR_BALL_HALO, ry * MIRROR_BALL_HALO, rot, 0, Math.PI * 2);
+        if (o.rays && dot.ray) {
+          const f = P(dot.F);
+          if (f) { let line = rays.get(dot.color); if (!line) { line = new Path2D(); rays.set(dot.color, line); } line.moveTo(f.X, f.Y); line.lineTo(q.X, q.Y); }
+        }
+      });
+      if (groups.size) {
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        halos.forEach((path, key) => { const at = key.lastIndexOf("|"); ctx.fillStyle = rgba(key.slice(0, at), MIRROR_BALL_DOT_ALPHA[+key.slice(at + 1)] * 0.18); ctx.fill(path); });
+        groups.forEach((path, key) => { const at = key.lastIndexOf("|"); ctx.fillStyle = rgba(key.slice(0, at), MIRROR_BALL_DOT_ALPHA[+key.slice(at + 1)]); ctx.fill(path); });
+        rays.forEach((path, colour) => { ctx.strokeStyle = rgba(colour, MIRROR_BALL_RAY_ALPHA); ctx.lineWidth = 1; ctx.stroke(path); });
+        ctx.restore();
+      }
+      paintMirrorBallBody(ctx, ball, P, o);
+      drawn += 1;
+    });
+    return drawn;
+  }
+
   const api = Object.freeze({
     paintPool, paintPools, paintBeam, paintBeams, paintWorkLight, litLevelAt, paintLaser, paintLasers,
+    mirrorBallFacets, mirrorBallDotsAt, paintMirrorBalls, paintMirrorBallBody, MIRROR_BALL_FACETS, MIRROR_BALL_HANG_M,
     beamFalloff, beamLandingTangents, fadeBeamLanding, beamSheetFor, litColorAt, tintColor, hazeAmount, hazeAt, noise3,
     TOKENS: Object.freeze({ VISUAL_GAIN, BEAM_SOFT, ALPHA_CORE, ALPHA_MID, ALPHA_EDGE, SOFT_DEFAULT,
       MIN_AREA_PX, BAND_ALPHA, BAND_MIN_PX, LINE_ALPHA, LINE_MIN_PX, HOLE_BAND, HOLE_LINE_PX,
       BEAM_FALL_R0, BEAM_FALL_P, BEAM_FALL_LO, BEAM_FALL_HI, BEAM_FALL_STOPS, BEAM_FALL_NORM_T, BEAM_LANDING_FADE_START,
-      HAZE_AMOUNT, HAZE_MAX, HAZE_SCALE_M, COSTUME_AMBIENT }),
+      HAZE_AMOUNT, HAZE_MAX, HAZE_SCALE_M, COSTUME_AMBIENT,
+      MIRROR_BALL_FACETS, MIRROR_BALL_DOT_BASE_M, MIRROR_BALL_DOT_SPREAD, MIRROR_BALL_DOT_FALL_M, MIRROR_BALL_DOT_ALPHA,
+      MIRROR_BALL_RAY_EVERY, MIRROR_BALL_RAY_ALPHA, MIRROR_BALL_HALO, MIRROR_BALL_HANG_M }),
   });
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.SHOSAI_LIGHT_RENDER = api;

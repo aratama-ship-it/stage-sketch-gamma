@@ -35,7 +35,7 @@
   function markerForFixture(fixture, trusses, dims, rig) {
     if (!record(fixture) || !record(fixture.mount)) return null;
     const mount = fixture.mount;
-    const kind = fixture.kind === "laser" ? "laser" : fixture.kind === "moving" ? "moving" : "fixed";
+    const kind = fixture.kind === "laser" ? "laser" : fixture.kind === "mirrorball" ? "mirrorball" : fixture.kind === "moving" ? "moving" : "fixed";   // mirrorball: 2026-10-03
     const marker = {
       id: typeof fixture.id === "string" ? fixture.id : "",
       kind,
@@ -111,6 +111,7 @@
         fixed: markers.filter((marker) => marker.kind === "fixed").length,
         moving: markers.filter((marker) => marker.kind === "moving").length,
         laser: markers.filter((marker) => marker.kind === "laser").length,
+        mirrorBall: markers.filter((marker) => marker.kind === "mirrorball").length,
       },
     };
   }

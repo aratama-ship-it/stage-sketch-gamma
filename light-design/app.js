@@ -450,6 +450,7 @@
     if (lxFade) lxFadeStop();
     lxFollowCancel();
     syncFixedSetupEdits();
+    syncMirrorBallTargets();           // 球を狙うピンの代表点を球の中心へ（2026-10-03）
     lxSyncEditing();                   // 編集中のキューへ書き戻してから記録する（2026-09-13）
     state.history.push(baseline);      // 変更前を記録する
     if (state.history.length > 100) state.history.shift();
@@ -593,6 +594,7 @@
   };
   const isFront = (f) => f.mount.type === "front" || f.mount.type === "position" && window.GAMMA_LIGHT_MODEL?.positionNames?.record(state.rig,f.mount.positionId)?.kind === "front-side";
   const shapeOf = (m) => (m.type === "truss" ? "square" : m.type === "floor" ? "circle" : m.type === "front" ? "tri" : m.type === "cyc" ? "bar" : "diamond");
+  const markShapeOf = (f) => (E.isLaser && E.isLaser(f)) ? "diamond" : (E.isMirrorBall && E.isMirrorBall(f)) ? "ball" : shapeOf(f.mount);   // ミラーボール（2026-10-03）
   const planBox = () => {
     const w = plan.width, h = plan.height, d = state.dims;
     const padX = PAD.planX * 2, padT = PAD.planT * 2, padB = PAD.planB * 2;
@@ -759,13 +761,13 @@
     return seq && Number.isFinite(Number(seq.rank)) ? Math.round(Number(seq.rank)) + 1 : null;
   };
   // 点ける。強さが0のまま点けても光らないので、そのときは全開に戻す
-  function turnOn(fid) { ensureOn(fid); const l = lightOf(fid); if (l && levelOf(l) <= 0) setLight(fid, { level: 100 }); }
+  function turnOn(fid) { if (isBallFixture(fid)) { ensureBallCue(fid, true); return; } ensureOn(fid); const l = lightOf(fid); if (l && levelOf(l) <= 0) setLight(fid, { level: 100 }); }
   const LEVEL_WORD = (v) => (v <= 0 ? "消灯" : v < 25 ? "かすか" : v < 55 ? "暗め" : v < 85 ? "普通" : "全開");
 
   /* 一覧や絞り込みに出す状態。未設定と消灯は分けず、どちらも「オフ」として見せる
      （2026-09-13 本人要望「つけるという表現はなしに／最初から全部オフに」）。
      データの上では未設定（on:null）のままなので、まとめて変更が「未設定は点けてから」を判断できる。 */
-  const lightState = (fid) => { const l = lightOf(fid); if (soloMuted(fid) || !l || l.on !== true || levelOf(l) <= 0) return "off"; return (l.path && l.path.kind !== "still") ? "move" : "on"; };
+  const lightState = (fid) => { const l = lightOf(fid); if (isBallFixture(fid)) return (!soloMuted(fid) && l && l.on === true) ? "on" : "off"; if (soloMuted(fid) || !l || l.on !== true || levelOf(l) <= 0) return "off"; return (l.path && l.path.kind !== "still") ? "move" : "on"; };
   const STATE_LABEL = { off: "オフ", on: "オン", move: "動き" };
 
   /* ---------- 配置の操作 ---------- */
@@ -819,6 +821,7 @@
     if (has.length) {
       const ids = has.map((f) => f.id);
       state.rig.fixtures = state.rig.fixtures.filter((f) => !ids.includes(f.id));
+    ids.forEach(clearMirrorBallTargets);
       state.scenes.forEach((sc) => { ids.forEach((id) => delete sc.cue.lights[id]); });
       ids.forEach((id) => state.sel.delete(id));
       commit(`ホリゾントライト（${rung === "top" ? "上" : "床"}）を外しました`);
@@ -833,6 +836,7 @@
   function removeSelected() {
     const ids = [...state.sel]; if (!ids.length) return;
     state.rig.fixtures = state.rig.fixtures.filter((f) => !ids.includes(f.id));
+    ids.forEach(clearMirrorBallTargets);
     state.scenes.forEach((s) => { ids.forEach((id) => delete s.cue.lights[id]); s.cue.groups = s.cue.groups.map((g) => ({ ...g, members: g.members.filter((m) => !ids.includes(m)) })).filter((g) => g.members.length >= 2); });
     state.sel.clear();
     commit(`${ids.length === 1 ? label(ids[0]) : ids.length + "灯"}を削除しました`);
@@ -930,23 +934,102 @@
   const canSpread = () => { const fs = [...state.sel].map(fixtureById).filter(Boolean); return fs.length >= 1 && fs.every((f) => f.mount.type === "truss" && f.mount.trussId === fs[0].mount.trussId); };
   /* 番号の頭文字で種類が分かるようにする（2026-09-11 本人要望）。
      M＝ムービング、L＝固定。番号は通し番号のままなので、種類を変えても番号はずれない。 */
-  const label = (fid) => { const f = fixtureById(fid); return f ? `${E.isLaser && E.isLaser(f) ? "◆" : E.isMoving(f) ? "M" : "L"}${String(f.no).padStart(2, "0")}` : ""; };
+  const label = (fid) => { const f = fixtureById(fid); return f ? `${E.isLaser && E.isLaser(f) ? "◆" : E.isMirrorBall && E.isMirrorBall(f) ? "◎" : E.isMoving(f) ? "M" : "L"}${String(f.no).padStart(2, "0")}` : ""; };
 
   /* 設置場所はそのままに、灯体の種類だけを切り替える。レーザーは新しい設置道具ではなく
      ムービング／スポットと同じ「選んだ灯体の種類」として扱う。レーザー固有の設定は残すので、
      いったん別の種類へ変えて戻しても、作っていた形・色は失わない。 */
+  /* ---------- ミラーボール（2026-10-03・docs/mirror-ball-plan-2026-10-03/DESIGN.md） ----------
+     球は「灯体の種類」のひとつ（バトンに吊る）。持つのは直径と回る速さだけ。シーンのキューは on＝回す／止める
+     （level 0・空中・代表点は球の少し下＝旧版では消灯の空中灯に見える）。
+     ピンは既存の灯体で、狙いに「ミラーボール」を選ぶと light.target={fixtureId} が付き、path.a は球の中心へ
+     同期される（旧版はこれを「空中の点を狙う光」として読む）。粒は共有部品 paintMirrorBalls が描く。
+     ★「mirror」の語は組の鏡映（mirrorMount 等）で使っているので、ここは必ず mirrorBall と書く。 */
+  const mirrorBallsInRig = () => state.rig.fixtures.filter((f) => E.isMirrorBall && E.isMirrorBall(f));
+  const isBallFixture = (fid) => Boolean(E.isMirrorBall && E.isMirrorBall(fixtureById(fid)));
+  function ballRestPoint(f) {
+    const c = E.mirrorBallCentre(f, state.rig, state.dims);
+    return { u: c ? E.clamp(c.x / state.dims.W + 0.5, 0, 1) : 0.5, v: c ? E.clamp(c.y / state.dims.D, 0, 1) : 0.5, hM: c ? Math.max(0, c.z - 1) : 4 };
+  }
+  /* 球のキューを「回す／止める」で書く。色は残し、強さは常に0（球は光を出さない）。 */
+  function ensureBallCue(fid, on) {
+    const f = fixtureById(fid); if (!f) return;
+    const l = lightOf(fid);
+    setLight(fid, { on: Boolean(on), level: 0, surface: "air", path: { kind: "still", a: ballRestPoint(f) }, color: (l && l.color) || COLORS[0] });
+    const l2 = lightOf(fid); if (l2 && l2.target) delete l2.target;
+  }
+  /* ピンを球へ向ける。surface は "air" のまま、target を付け、代表点を球の中心へ。
+     ムービングで絞りが未設定なら細い光（6°）にする。固定灯の広がりは仕込みの値のまま（勝手に変えない）。 */
+  function aimAtMirrorBall(fid, ballId) {
+    const ball = fixtureById(ballId); const f = fixtureById(fid); if (!ball || !f) return;
+    const a = E.mirrorBallAimPoint(ball, state.rig, state.dims) || E.newPoint({ hM: 4 });
+    const l = lightOf(fid) || {};
+    setLight(fid, { surface: "air", target: { fixtureId: ballId }, path: { kind: "still", a },
+      ...(E.isMoving(f) && l.beamDeg == null ? { beamDeg: E.MIRROR_BALL.pinBeamDeg } : {}) });
+  }
+  /* 球が動いた・直径が変わったとき、球を狙うピンの代表点（path.a）を球の中心へ合わせ直す（全シーン・LXキュー含む）。
+     commit のたびに走る（軽い）。 */
+  function syncMirrorBallTargets() {
+    if (!E.mirrorBallTargetOf || !mirrorBallsInRig().length) return;
+    const fix = (cueLike) => {
+      if (!cueLike || !cueLike.lights) return;
+      Object.keys(cueLike.lights).forEach((id) => {
+        const l = cueLike.lights[id]; const ball = E.mirrorBallTargetOf(l, state.rig); if (!ball) return;
+        const a = E.mirrorBallAimPoint(ball, state.rig, state.dims); if (a) l.path = { kind: "still", a };
+      });
+    };
+    (state.scenes || []).forEach((sc) => { fix(sc.cue); (sc.lxq || []).forEach((q) => fix(q.cue)); });
+  }
+  /* 球を消した・球でなくしたとき、その球を狙っていたピンの target を外す（空中の点を狙う光として残る）。 */
+  function clearMirrorBallTargets(ballId) {
+    const fix = (cueLike) => {
+      if (!cueLike || !cueLike.lights) return;
+      Object.values(cueLike.lights).forEach((l) => { if (l && l.target && l.target.fixtureId === ballId) delete l.target; });
+    };
+    (state.scenes || []).forEach((sc) => { fix(sc.cue); (sc.lxq || []).forEach((q) => fix(q.cue)); });
+  }
+  /* 動きパネル（球を選んだとき）: 回す／止める だけ。色・強さ・狙いは持たない。当てているピンを添える。 */
+  function renderMirrorBallInspector(host, ids) {
+    const balls = ids.filter(isBallFixture);
+    if (balls.length !== ids.length) { host.append(el("p", "warn", "ミラーボールだけを選んでください")); return; }
+    balls.forEach((fid) => {
+      const f = fixtureById(fid); const l = lightOf(fid); const spec = E.mirrorBallOf(f);
+      host.append(el("p", "kicker", `${escapeHtml(label(fid))}（ミラーボール）　${escapeHtml(f.name || "")}`));
+      const b = el("div", "pbox"); b.append(el("p", "kicker", "回転"));
+      b.append(field(null, seg([["on", "回す"], ["off", "止める"]], l && l.on === true ? "on" : "off", (v) => {
+        ensureBallCue(fid, v === "on"); commit(`${label(fid)}を${v === "on" ? "回しました" : "止めました"}`);
+      }), true));
+      b.append(el("p", "hint", `直径 ${Math.round(spec.diameterM * 100)}cm・${spec.rpm ? `${spec.rpm}回転/分` : "モーターなし（止まったまま）"}。直径と速さは配置パネルで変えられます`));
+      const pins = state.rig.fixtures.filter((p) => { const pl = lightOf(p.id); return pl && pl.target && pl.target.fixtureId === fid && isLit(pl); });
+      b.append(el("p", "hint", pins.length
+        ? `当てているピン: ${pins.map((p) => escapeHtml(label(p.id))).join("・")}。粒は床・ホリゾント（3Dは天井・袖も）に散ります`
+        : "まだピンを当てていません。ピンにする灯体を選び、「狙い」で「ミラーボール」を選んでください"));
+      host.append(b);
+    });
+  }
+
   function setFixtureKind(fid, kind) {
     const f = fixtureById(fid);
     if (!f || f.mount.type === "cyc") return;
-    const next = ["moving", "fixed", "laser"].includes(kind) ? kind : "moving";
+    const next = ["moving", "fixed", "laser", "mirrorball"].includes(kind) ? kind : "moving";
     if (f.kind === next) return;
+    /* ミラーボールは吊り物。バトン以外に付いている灯は球にしない（2026-10-03）。 */
+    if (next === "mirrorball" && f.mount.type !== "truss") { toast("ミラーボールは吊り物です。バトンに付けた灯体を選んでください"); return; }
+    const was = f.kind;
     f.kind = next;
     const l = lightOf(fid);
     if (next === "laser" && l && !l.laser) l.laser = { effect: "fan", spanDeg: 0, rollDeg: 0 };
     if (next === "fixed" && l && l.path && l.path.kind !== "still") {
       l.path = { kind: "still", a: l.path.a || l.path.c || E.newPoint() };
     }
-    commit(`${label(fid)}を${next === "laser" ? "レーザー" : next === "fixed" ? "固定" : "ムービング"}にしました`);
+    if (next === "mirrorball") {
+      if (!f.mirrorBall) f.mirrorBall = { ...E.MIRROR_BALL.defaults };
+      if (l) ensureBallCue(fid, l.on === true);
+    } else if (was === "mirrorball") {
+      clearMirrorBallTargets(fid);
+      if (l && l.on === true && levelOf(l) <= 0) l.level = 100;   // 球から戻したら光る灯として強さを戻す
+    }
+    commit(`${label(fid)}を${next === "laser" ? "レーザー" : next === "mirrorball" ? "ミラーボール" : next === "fixed" ? "固定" : "ムービング"}にしました`);
   }
   const spotShapeCount = (f) => {
     let count = E.barnActive(f) ? 1 : 0;
@@ -1035,6 +1118,7 @@
   }
 
   function ensureOn(fid) {
+    if (isBallFixture(fid)) { ensureBallCue(fid, true); return; }   // 球は「回す」
     const l = lightOf(fid);
     const fresh = !l || l.on === null || l.on === undefined;
     if (!fresh) { if (l.on !== true) setLight(fid, { on: true }); return; }
@@ -1203,8 +1287,8 @@
      ゴボ・ストロボ・カッター）＋固定灯だけ仕込み側の広がりとバーンドア。
      コピーしないもの: 取り付け位置・番号・名前（＝どの灯かを決めるもの）と groupId
      （組は他の灯との関係なので、持ち込むと無関係な灯が同じ組に入ってしまう）。 */
-  const kindKey = (f) => (!f ? null : E.isLaser && E.isLaser(f) ? "laser" : f.mount && f.mount.type === "cyc" ? "cyc" : E.isMoving(f) ? "moving" : "fixed");
-  const KIND_NAME = { moving: "ムービング", fixed: "固定", cyc: "ホリゾント", laser: "レーザー" };
+  const kindKey = (f) => (!f ? null : E.isLaser && E.isLaser(f) ? "laser" : E.isMirrorBall && E.isMirrorBall(f) ? "mirrorball" : f.mount && f.mount.type === "cyc" ? "cyc" : E.isMoving(f) ? "moving" : "fixed");
+  const KIND_NAME = { moving: "ムービング", fixed: "固定", cyc: "ホリゾント", laser: "レーザー", mirrorball: "ミラーボール" };
   const clone = (v) => (v == null ? v : JSON.parse(JSON.stringify(v)));
 
   function copySettings() {
@@ -1331,6 +1415,34 @@
     });
   }
 
+  /* ミラーボール（2026-10-03）: 球と粒。粒は共有部品 paintMirrorBalls（面×色×明るさごとに Path2D でまとめて加算）。
+     平面図は床の粒だけ、正面図（3D含む）は床＋ホリゾント、側面図は球だけ（粒は線につぶれる）。
+     時計は再生の時計（state.play.t ms）。止まっていれば位相0の静止画。レーザーと同じ順番・同じ門（beam）。 */
+  function drawMirrorBalls(ctx, P, view, alphaScale = 1) {
+    const R = window.SHOSAI_LIGHT_RENDER;
+    if (!R || typeof R.paintMirrorBalls !== "function" || state.mode !== "move" || !showOn("beam")) return 0;
+    const balls = mirrorBallsInRig().map((f) => {
+      const top = fixtureWorld(f); const centre = E.mirrorBallCentre(f, state.rig, state.dims);
+      if (!top || !centre) return null;
+      const spec = E.mirrorBallOf(f); const bl = lightOf(f.id);
+      const sources = state.rig.fixtures.map((pin) => {
+        if (E.isMirrorBall(pin)) return null;
+        const pl = lightOf(pin.id);
+        if (!visibleLight(pin, pl) || !pl.target || pl.target.fixtureId !== f.id) return null;
+        const S = fixtureWorld(pin); if (!S) return null;
+        return { from: S, color: colorOf(pin, pl), level: litFactorOf(pin, pl) * 100, beamDeg: beamOf(pin) };
+      }).filter(Boolean);
+      return { centre, radiusM: spec.diameterM / 2, rpm: bl && bl.on === true ? spec.rpm : 0, phaseDeg: 0, hangFrom: top, sources };
+    }).filter(Boolean);
+    if (!balls.length) return 0;
+    const surfaces = view === "plan" ? { floor: true } : (view === "front" || view === "front3d") ? { floor: true, back: true } : {};
+    ctx.save(); if (alphaScale !== 1) ctx.globalAlpha = alphaScale;
+    const n = R.paintMirrorBalls(ctx, balls, P, { tMs: state.play.t, dims: state.dims, facets: R.MIRROR_BALL_FACETS ? R.MIRROR_BALL_FACETS.mid : 600,
+      surfaces, rays: view !== "plan", topDown: view === "plan" });
+    ctx.restore();
+    return n;
+  }
+
   /* ---------- 描画: 平面図 ---------- */
   const isSel = (fid) => state.sel.has(fid);
   function drawPlan() {
@@ -1354,7 +1466,7 @@
 
     const litSpots = [];   // 作業灯を消す（ブラックアウト）用。光の当たっている場所だけ集める
     drawCycWashes(pctx, P, state.dims, litSpots);   // 壁の色。演者・セットより先に塗る
-    drawLasers(pctx, P, "plan");
+    drawLasers(pctx, P, "plan"); drawMirrorBalls(pctx, P, "plan");
     drawPiecesPlan(pctx, P, B);   // 舞台スケッチの配置。光より先に描いて下敷きにする
     /* トラス。名前は<b>灯体の印より後に</b>まとめて書く（下の planLabels）——
        印は下で描くので、ここで書くと文字の上に印が乗って読めなくなる（2026-09-13 本人指摘）。 */
@@ -1441,7 +1553,7 @@
       if (showOn("fixtures")) {
         const o = { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f), step: strobeStepOf(f.id), outline: planFixtureOutline };
         if (f.mount.type === "cyc") o.bar = cycFixtureBar(P, f);
-        drawFixtureMark(pctx, X, Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), o);
+        drawFixtureMark(pctx, X, Y, markShapeOf(f), o);
       }
     });
     // バトンの名前と予告（印の上に重ねて、暗い板の上に書く）
@@ -1449,7 +1561,7 @@
     // 作業灯を消す（2026-09-13 本人要望）。灯体の印は暗くしたくないので、印より前・マーキーより後に重ねる
     drawBordersPlan(pctx, P, state.dims);
     if (state.mode === "move" && showOn("blackout")) paintBlackout(pctx, plan, litSpots);
-    if (state.mode === "move" && showOn("blackout")) drawLasers(pctx, P, "plan", 0.35);
+    if (state.mode === "move" && showOn("blackout")) drawLasers(pctx, P, "plan", 0.35); drawMirrorBalls(pctx, P, "plan", 0.35);
     compositeSpatial(pctx, P, B.w / d.W, "plan");
     if (state.mode === "move" && showOn("fixtures")) redrawFixtureInfoPlan(pctx, P, B);
     if (state.mode === "move" && showOn("blackout")) {
@@ -2442,6 +2554,7 @@
     ctx.beginPath();
     if (shape === "square") ctx.rect(X - s, Y - s, s * 2, s * 2);
     else if (shape === "circle") ctx.arc(X, Y, s, 0, Math.PI * 2);
+    else if (shape === "ball") ctx.arc(X, Y, s * 1.05, 0, Math.PI * 2);   // ミラーボール＝丸に十字
     else if (shape === "tri") { ctx.moveTo(X, Y + s * 1.15); ctx.lineTo(X + s * 1.15, Y - s * 0.9); ctx.lineTo(X - s * 1.15, Y - s * 0.9); ctx.closePath(); }
     else if (bar) {
       const dx = bar.b.X - bar.a.X, dy = bar.b.Y - bar.a.Y, len = Math.hypot(dx, dy) || 1;
@@ -2457,6 +2570,7 @@
     if (o.outline !== false || o.sel || o.ghost) ctx.stroke();
     // ムービングは輪をひとつ足す（形＝仕込み位置、輪＝動かせるかどうか）
     if (o.moving && !o.ghost && (o.outline !== false || o.sel)) { ctx.strokeStyle = o.sel ? "#d3ac59" : "rgba(240,231,214,0.55)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X, Y, s * 1.55, 0, Math.PI * 2); ctx.stroke(); }
+    if (shape === "ball" && !o.ghost) { ctx.strokeStyle = o.sel ? "#d3ac59" : "rgba(13,12,11,0.8)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(markX - markSize * 0.75, markY); ctx.lineTo(markX + markSize * 0.75, markY); ctx.moveTo(markX, markY - markSize * 0.75); ctx.lineTo(markX, markY + markSize * 0.75); ctx.stroke(); }
     if (o.st === "off") { ctx.strokeStyle = "rgba(240,231,214,0.5)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(markX - markSize, markY + markSize); ctx.lineTo(markX + markSize, markY - markSize); ctx.stroke(); }
     if (o.no) { ctx.fillStyle = o.sel ? "#1a1409" : "rgba(240,231,214,0.95)"; if (o.sel) { ctx.fillStyle = "#d3ac59"; ctx.fillRect(markX - 22, markY + markSize + 4, 44, 22); ctx.fillStyle = "#1a1409"; } ctx.font = "600 16px sans-serif"; ctx.textBaseline = "top"; ctx.textAlign = "center"; ctx.fillText(o.no, markX, markY + markSize + 6); ctx.textAlign = "left"; }
     /* ストロボの発生順（段）。番号は印の下なので、こちらは右上に丸で出す。
@@ -2500,7 +2614,7 @@
       const Y = isFront(f) ? B.y + B.h + FRONT_DY : p.Y;
       const o = { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f), outline: planFixtureOutline };
       if (f.mount.type === "cyc") o.bar = cycFixtureBar(P, f);
-      drawFixtureMark(ctx, X, Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), o);
+      drawFixtureMark(ctx, X, Y, markShapeOf(f), o);
     });
   }
   function redrawFixtureInfoSection(ctx, P, B, side) {
@@ -2512,7 +2626,7 @@
       } else if (f.mount.type !== "side") {
         const frontX = side === "shimote" ? B.x + B.w + FRONT_DX_SEC : B.x - FRONT_DX_SEC;
         ctx.save(); ctx.globalAlpha = isSel(f.id) ? 1 : 0.35;
-        drawFixtureMark(ctx, isFront(f) ? frontX : q.X, q.Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) });
+        drawFixtureMark(ctx, isFront(f) ? frontX : q.X, q.Y, markShapeOf(f), { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) });
         ctx.restore();
       }
     });
@@ -2521,7 +2635,7 @@
     if (!showOn("fixtures")) return;
     state.rig.fixtures.forEach((f) => {
       const S = fixtureWorld(f); if (!S) return; const p = P(S);
-      drawFixtureMark(ctx, p.X, isFront(f) ? Math.max(38, p.Y) : p.Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) });
+      drawFixtureMark(ctx, p.X, isFront(f) ? Math.max(38, p.Y) : p.Y, markShapeOf(f), { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) });
     });
   }
   /* 客席へ向けた光の「目眩まし」。輪郭のある光だまりではなく、点のまわりにふわっと滲む光として描く。
@@ -2583,7 +2697,7 @@
     if(!simple) fctx.fillText("床", B.x - 40, B.y + B.h); fctx.fillText("下手", 30, B.y + 14); fctx.fillText("上手", B.x + B.w + 30, B.y + 14);
     const litSpotsF = [];   // 作業灯を消す（ブラックアウト）用
     drawCycWashes(fctx, P, d, litSpotsF);   // 壁の色。演者・セットより先に塗る
-    drawLasers(fctx, P, "front");
+    drawLasers(fctx, P, "front"); drawMirrorBalls(fctx, P, "front");
     drawPiecesUp(fctx, P, frontView.pxPerM, { yawDeg: 0 });
     // トラス
     if(!simple) state.rig.trusses.forEach((t) => { const a = P({ x: -d.W / 2, y: t.v * d.D, z: t.h }), b = P({ x: d.W / 2, y: t.v * d.D, z: t.h }); const sel = state.selTruss === t.id && state.mode === "place"; fctx.strokeStyle = sel ? "#d3ac59" : "rgba(156,130,63,0.75)"; fctx.lineWidth = sel ? 5 : 3; fctx.beginPath(); fctx.moveTo(a.X, a.Y); fctx.lineTo(b.X, b.Y); fctx.stroke();
@@ -2621,12 +2735,12 @@
     state.rig.fixtures.forEach((f) => { if (!showOn("fixtures")) return; const S = fixtureWorld(f); if (!S) return; const p = f.mount.type === "position" ? positionSectionProjector(P,sec.cv)(S) : P(S); const Y = isFront(f) ? Math.max(38, p.Y) : p.Y;
       const o = { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) };
       if (f.mount.type === "cyc") o.bar = cycFixtureBar(P, f);
-      drawFixtureMark(fctx, p.X, Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), o);
+      drawFixtureMark(fctx, p.X, Y, markShapeOf(f), o);
       if (f.mount.type === "side" && isSel(f.id) && state.mode === "place") { fctx.fillStyle = "#d3ac59"; fctx.font = "15px sans-serif"; fctx.fillText(`高さ ${mmText(f.mount.h)}（ドラッグ）`, p.X + (f.mount.side === "shimote" ? -180 : 26), p.Y - 26); } });
     drawBordersUp(fctx, P, d);
     if (state.mode === "move" && showOn("blackout")) { paintBlackout(fctx, front, litSpotsF);
       drawPiecesUp(fctx, P, frontView.pxPerM, { yawDeg: 0, relight: true }); }
-    if (state.mode === "move" && showOn("blackout")) drawLasers(fctx, P, "front", 0.35);
+    if (state.mode === "move" && showOn("blackout")) drawLasers(fctx, P, "front", 0.35); drawMirrorBalls(fctx, P, "front", 0.35);
     compositeSpatial(fctx, P, B.w / d.W, "front");
     if (state.mode === "move" && showOn("fixtures")) redrawFixtureInfoSection(fctx, P, B, "front");
     if (state.mode === "move" && showOn("blackout")) drawBordersUp(fctx, P, d);
@@ -2650,7 +2764,7 @@
     fctx.fillText("床", B.x - 40, B.y + B.h);
     fctx.fillText("客席 ▶", side === "shimote" ? 30 : B.x + B.w + 20, B.y + 14); fctx.fillText("奥壁", side === "shimote" ? B.x + B.w + 20 : 30, B.y + 14);
     fctx.fillText(`${side === "shimote" ? "下手" : "上手"}側のスタンド・ブーム（舞台中央から見る）`, B.x + 10, B.y - 18);
-    drawLasers(fctx, P, side);
+    drawLasers(fctx, P, side); drawMirrorBalls(fctx, P, side);
     drawPiecesUp(fctx, P, B.w / d.D, { yawDeg: side === "shimote" ? -90 : 90 });
     // トラス（断面＝点）
     state.rig.trusses.forEach((t) => { const q = P({ x: 0, y: t.v * d.D, z: t.h }); const sel = state.selTruss === t.id && state.mode === "place"; fctx.beginPath(); fctx.arc(q.X, q.Y, sel ? 10 : 7, 0, Math.PI * 2); fctx.fillStyle = sel ? "#d3ac59" : "rgba(156,130,63,0.75)"; fctx.fill(); fctx.fillStyle = "rgba(156,130,63,0.9)"; fctx.font = "14px sans-serif"; fctx.fillText(`奥から${E.trussRow(state.rig, t.id)}列目`, q.X + 12, q.Y - 14); });
@@ -2687,12 +2801,12 @@
         // 前明かりは舞台より手前（客席側）。側面図では手前端の外に一定距離で並べ、高さは実尺で描く
         const frontX = side === "shimote" ? B.x + B.w + FRONT_DX_SEC : B.x - FRONT_DX_SEC;
         if (!showOn("fixtures")) return;
-        fctx.globalAlpha = isSel(f.id) ? 1 : 0.35; drawFixtureMark(fctx, isFront(f) ? frontX : q.X, q.Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) }); fctx.globalAlpha = 1;
+        fctx.globalAlpha = isSel(f.id) ? 1 : 0.35; drawFixtureMark(fctx, isFront(f) ? frontX : q.X, q.Y, markShapeOf(f), { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) }); fctx.globalAlpha = 1;
       } });
     drawBordersUp(fctx, P, d);
     if (state.mode === "move" && showOn("blackout")) { paintBlackout(fctx, front, litSpotsSide);
       drawPiecesUp(fctx, P, B.w / d.D, { yawDeg: side === "shimote" ? -90 : 90, relight: true }); }
-    if (state.mode === "move" && showOn("blackout")) drawLasers(fctx, P, side, 0.35);
+    if (state.mode === "move" && showOn("blackout")) drawLasers(fctx, P, side, 0.35); drawMirrorBalls(fctx, P, side, 0.35);
     compositeSpatial(fctx, P, B.w / d.D, side);
     if (state.mode === "move" && showOn("fixtures")) redrawFixtureInfoSection(fctx, P, B, side);
     if (state.mode === "move" && showOn("blackout")) drawBordersUp(fctx, P, d);
@@ -2724,7 +2838,7 @@
     fctx.strokeStyle = "rgba(239,231,214,0.25)"; fctx.stroke();
     const litSpots3D = [];   // 作業灯を消す（ブラックアウト）用
     drawCycWashes(fctx, P, d, litSpots3D);   // 壁の色。演者・セットより先に塗る
-    drawLasers(fctx, P, "front3d");
+    drawLasers(fctx, P, "front3d"); drawMirrorBalls(fctx, P, "front3d");
     drawPiecesUp(fctx, P, L.pxPerM, { yawDeg: 0, zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v });
     // 奥バトンは3Dの照明見え方には不要なので描かず、ほかのバトンも名称・高さは注記しない。
     state.rig.trusses.filter((t) => t.label !== "奥バトン").forEach((t) => { const a = at(0, t.v, t.h), b = at(1, t.v, t.h); const sel = state.selTruss === t.id && state.mode === "place";
@@ -2769,10 +2883,10 @@
     });
     // 灯体
     state.rig.fixtures.forEach((f) => { const S = fixtureWorld(f); if (!S) return; const p = f.mount.type === "position" ? positionSectionProjector(P,sec.cv)(S) : P(S);
-      if (showOn("fixtures")) drawFixtureMark(fctx, p.X, isFront(f) ? Math.max(38, p.Y) : p.Y, E.isLaser && E.isLaser(f) ? "diamond" : shapeOf(f.mount), { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) }); });
+      if (showOn("fixtures")) drawFixtureMark(fctx, p.X, isFront(f) ? Math.max(38, p.Y) : p.Y, markShapeOf(f), { sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) }); });
     if (state.mode === "move" && showOn("blackout")) { paintBlackout(fctx, cv, litSpots3D);
       drawPiecesUp(fctx, P, L.pxPerM, { yawDeg: 0, zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v, relight: true }); }
-    if (state.mode === "move" && showOn("blackout")) drawLasers(fctx, P, "front3d", 0.35);
+    if (state.mode === "move" && showOn("blackout")) drawLasers(fctx, P, "front3d", 0.35); drawMirrorBalls(fctx, P, "front3d", 0.35);
     compositeSpatial(fctx, P, L.pxPerM, "front3d", { zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v });
     if (state.mode === "move" && showOn("fixtures")) redrawFixtureInfo3D(fctx, P);
     fctx.fillStyle = "rgba(240,231,214,0.4)"; fctx.font = "15px sans-serif"; fctx.textBaseline = "top";
@@ -4591,7 +4705,7 @@
 
   function syncLightToggle(ids) {
     const tgl = $("lighttoggle"), panel = $("panel-insp"); if (!tgl || !panel) return;
-    const fid = state.mode === "move" && ids.length === 1 ? ids[0] : null;
+    const fid = state.mode === "move" && ids.length === 1 && !isBallFixture(ids[0]) ? ids[0] : null;   // 球は「回す／止める」の seg で操作する
     tgl.hidden = !fid;
     if (!fid) { tgl.onclick = null; return; }
     const on = isLit(lightOf(fid));
@@ -5085,7 +5199,7 @@
       }
       if (ids.length === 1) {
         const f = fixtureById(ids[0]); const m = f.mount;
-        host.append(el("p", "kicker", `${escapeHtml(label(f.id))}（${E.isLaser && E.isLaser(f) ? "レーザー" : E.isMoving(f) ? "ムービング" : "固定"}）　${escapeHtml(E.describeMount(f, state.rig))}`));
+        host.append(el("p", "kicker", `${escapeHtml(label(f.id))}（${E.isLaser && E.isLaser(f) ? "レーザー" : isBallFixture(f.id) ? "ミラーボール" : E.isMoving(f) ? "ムービング" : "固定"}）　${escapeHtml(E.describeMount(f, state.rig))}`));
         const name = document.createElement("input"); name.type = "text"; name.value = f.name; name.placeholder = "例: 中央ムービング"; name.onchange = () => { f.name = name.value.slice(0, 20); commit(); }; host.append(field("名前", name));
         if (m.type === "truss") { const sel = document.createElement("select"); state.rig.trusses.forEach((tt) => { const o = document.createElement("option"); o.value = tt.id; o.textContent = `奥から${E.trussRow(state.rig, tt.id)}列目${tt.label ? "・" + tt.label : ""}`; o.selected = tt.id === m.trussId; sel.append(o); }); sel.onchange = () => { m.trussId = sel.value; state.selTruss = sel.value; commit(); }; host.append(field("吊るバトン", sel));
           host.append(field("横位置", range(0, 1, 0.01, m.u, acrossText, (v) => { m.u = v; draw(); }, () => commit(), numAcross())));
@@ -5099,7 +5213,18 @@
         }
         if (m.type !== "cyc") {
           // レーザーも、設置場所を増やさずこの灯体の種類から選ぶ。ホリゾントライトは既製バーなので対象外。
-          host.append(field("動き・種類", seg([["fixed", "固定"], ["moving", "ムービング"], ["laser", "レーザー"]], kindKey(f), (v) => setFixtureKind(f.id, v))));
+          /* ミラーボール（2026-10-03）は吊り物なので、バトンに付いている灯だけが選べる。 */
+          const kinds = [["fixed", "固定"], ["moving", "ムービング"], ["laser", "レーザー"]];
+          if (m.type === "truss") kinds.push(["mirrorball", "ミラーボール"]);
+          host.append(field("動き・種類", seg(kinds, kindKey(f), (v) => setFixtureKind(f.id, v))));
+          if (isBallFixture(f.id)) {
+            const mb = f.mirrorBall || (f.mirrorBall = { ...E.MIRROR_BALL.defaults });
+            host.append(field("直径", seg(E.MIRROR_BALL.diametersM.map((d) => [String(d), `${Math.round(d * 100)}cm`]), String(E.mirrorBallOf(f).diameterM),
+              (v) => { mb.diameterM = Number(v); commit(`${label(f.id)}の直径を${Math.round(Number(v) * 100)}cmにしました`); })));
+            host.append(field("回る速さ", seg(E.MIRROR_BALL.rpms.map((r) => [String(r), r === 0 ? "止める" : `${r}回転/分`]), String(E.mirrorBallOf(f).rpm),
+              (v) => { mb.rpm = Number(v); commit(`${label(f.id)}の回る速さを${Number(v) ? `${v}回転/分` : "0"}にしました`); })));
+            host.append(el("p", "hint", "鏡を貼った球。細い光（ピンスポット）を当てると粒が部屋じゅうに散る。ピンにしたい灯体を選び、動きの「狙い」で「ミラーボール」を選ぶ。回す／止めるはシーンごと（動きパネル）"));
+          }
           if (f.kind !== "laser") {
             host.append(field("光", seg([["spot", "スポット"], ["wash", "ウォッシュ"]], f.opticalType || "legacy", (v) => setOpticalType(f.id, v), "optical-choices")));
             if (!f.opticalType) host.append(el("p", "hint", "旧表示の灯体です。光を選ぶと新しい見え方に切り替わります。"));
@@ -5141,6 +5266,7 @@
     // ---- 動きモード ----
     // パネル名「照明デザイン」は静的HTML(#insphead)へ移した。ここでは繰り返さない。
     if (!ids.length) return;
+    if (ids.some(isBallFixture)) { renderMirrorBallInspector(host, ids); return; }
     if (ids.some((id) => E.isLaser && E.isLaser(fixtureById(id)))) { renderLaserInspector(host, ids); return; }
     if (ids.length === 1) {
       const fid = ids[0]; const f = fixtureById(fid); const l = lightOf(fid);
@@ -5248,18 +5374,36 @@
       let aimBox = null;
       if (f.mount.type !== "cyc") {
         const b = aimBox = box("狙い");
-        b.append(field(null, seg([["floor", "床"], ["back", "ホリゾント"], ["house", "客席"], ["air", "空中"]], l.surface, (v) => {
+        /* ミラーボール（2026-10-03）: 仕込みに球があるときだけ、狙いに「ミラーボール」が増える。 */
+        const ballsInRig = mirrorBallsInRig();
+        const aimOpts = [["floor", "床"], ["back", "ホリゾント"], ["house", "客席"], ["air", "空中"]];
+        if (ballsInRig.length) aimOpts.push(["mirrorball", "ミラーボール"]);
+        const aimBall = E.mirrorBallTargetOf ? E.mirrorBallTargetOf(l, state.rig) : null;
+        const aimNow = aimBall ? "mirrorball" : l.surface;
+        b.append(field(null, seg(aimOpts, aimNow, (v) => {
+          if (v === "mirrorball") { aimAtMirrorBall(fid, (aimBall || ballsInRig[0]).id); commit(`${label(fid)}を${label((aimBall || ballsInRig[0]).id)}へ向けました`); return; }
+          const l0 = lightOf(fid); if (l0 && l0.target) delete l0.target;
           setLight(fid, { surface: v }); restyleToSurface(fid);
           const l2 = lightOf(fid); if (l2.path && l2.path.kind === "circle") l2.path.plane = (v === "back" || v === "house") ? "frontVertical" : v === "floor" ? "horizontal" : (l2.path.plane || "horizontal");
           commit();
         }), true));
+        if (aimNow === "mirrorball") {
+          if (ballsInRig.length > 1) b.append(field("どの球", seg(ballsInRig.map((bf) => [bf.id, label(bf.id)]), aimBall.id, (v) => { aimAtMirrorBall(fid, v); commit(`${label(fid)}を${label(v)}へ向けました`); })));
+          const deg = E.beamDegOf(f, l);
+          if (deg > E.MIRROR_BALL.pinWideDeg) {
+            b.append(el("p", "warn", `広がり${Math.round(deg)}°。ピンは細い光（${E.MIRROR_BALL.pinBeamDeg}°前後）で球に当てるのが普通です`));
+            if (E.isMoving(f)) b.append(btn(`${E.MIRROR_BALL.pinBeamDeg}°に絞る`, () => { setLight(fid, { beamDeg: E.MIRROR_BALL.pinBeamDeg }); commit(`${label(fid)}を${E.MIRROR_BALL.pinBeamDeg}°に絞りました`); }, "small"));
+            else b.append(el("p", "hint", "固定灯の広がりは配置パネル（仕込み）で変えます"));
+          }
+          b.append(el("p", "hint", "狙いは球の中心に固定されます（球を動かすと追従）。粒は平面図＝床、正面図＝床とホリゾント"));
+        }
         if (l.surface === "house" || l.surface === "air") {
           /* まぶしさ（光源から丸く広がるほう）の大きさ。光の帯とは別のレイヤーなので別に決める。 */
           b.append(field("まぶしさ", range(0.2, 3, 0.1, glareMul(l),
             (v) => `${v.toFixed(1)}倍（${v < 0.6 ? "小さく締まる" : v > 1.6 ? "視界が飛ぶ" : "普通"}）`,
             (v) => { l.glare = v; draw(); }, () => commit())));
         }
-        if (!autoPos) {
+        if (!autoPos && aimNow !== "mirrorball") {
           heightField(b, "高さ", p.a || E.newPoint());
           if (!mover && p.kind !== "still") b.append(el("p", "warn", "⚠ この灯には動きが付いたままです。固定灯なので実際には動きません。"));
         }
@@ -6245,6 +6389,11 @@
     cue().lights['example-laser-fan']=E.newLightCue({on:true,level:75,surface:'air',color:'#38e04a',path:{kind:'still',a:{u:.48,v:.82,hM:2.2}},laser:{effect:'fan',spanDeg:60,vis:60},speed:'normal'});
     state.rig.fixtures.push(E.newFixture('example-laser-tunnel',8,{type:'floor',u:.88,v:.8},'レーザー・トンネル','laser',1));
     cue().lights['example-laser-tunnel']=E.newLightCue({on:true,level:70,surface:'air',color:'#2ad3ff',path:{kind:'still',a:{u:.58,v:.35,hM:3.4}},laser:{effect:'tunnel',spanDeg:24,vis:60},speed:'slow'});
+    /* ミラーボール（2026-10-03）: 奥バトン中央に球、前明かり位置からピン2本（6°）。 */
+    const exBall=E.newFixture('example-mirror-ball',9,{type:'truss',trussId:'example-back',u:.5},'ミラーボール','mirrorball',16); exBall.mirrorBall={diameterM:.3,rpm:1.5}; state.rig.fixtures.push(exBall);
+    cue().lights['example-mirror-ball']=E.newLightCue({on:true,level:0,surface:'air',color:'#f2ead6',path:{kind:'still',a:{u:.5,v:.15,hM:4.5}}});
+    [[.35,'#f2ead6'],[.65,'#ffd27a']].forEach(([u,color],i)=>{const id='example-pin'+i; state.rig.fixtures.push(E.newFixture(id,10+i,{type:'front',u,ahead:3,h:7.5},'ピン','fixed',6));
+      cue().lights[id]=E.newLightCue({on:true,level:100,surface:'air',color,target:{fixtureId:'example-mirror-ball'},path:{kind:'still',a:E.mirrorBallAimPoint(exBall,state.rig,state.dims)||{u:.5,v:.15,hM:5.5}}});});
     state.mode='move';state.show.blackout=false;state.dim=100;state.sel=new Set(['example-r1']);
     state.history=[];state.future=[];baseline=snapshot();
   }

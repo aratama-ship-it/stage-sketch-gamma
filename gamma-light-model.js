@@ -215,6 +215,11 @@
       if (fixture.mount.type==='truss' && !trusses.has(fixture.mount.trussId)) throw Error('灯体が参照するバトンがありません');
       if (fixture.colorMode!==undefined && !['mix','wheel'].includes(fixture.colorMode)) throw Error('灯体の色の作り方を確認してください');
       if (fixture.opticalType!==undefined && !['spot','wash'].includes(fixture.opticalType)) throw Error('灯体の光の種類を確認してください');
+      /* ミラーボール（2026-10-03）: 直径と回る速さだけ検査する。無い項目は既定値で読むので落とさない。 */
+      if (fixture.mirrorBall!==undefined) {
+        const mb=fixture.mirrorBall;
+        if (!object(mb) || (mb.diameterM!==undefined && !finiteBetween(mb.diameterM,0.1,1.0)) || (mb.rpm!==undefined && !finiteBetween(mb.rpm,0,6))) throw Error('ミラーボールの直径・回る速さを確認してください');
+      }
       if (fixture.mount.type==='legacy-panel') {
         if (![2,3].includes(design.version) || !design.migration) throw Error('旧照明の取り付け位置に移行記録がありません');
         const mount=fixture.mount;
@@ -243,6 +248,8 @@
       for (const [id,light] of Object.entries(cue.lights)) {
         if (!fixtures.has(id) || !object(light)) throw Error('キューが参照する灯体がありません');
         if (light.color!==undefined && !/^#[0-9a-f]{6}$/i.test(light.color)) throw Error('照明の色を確認してください');
+        /* ピンの当て先（ミラーボール・2026-10-03）。形だけ検査し、参照先が無くても落とさない（描画側が無視する）。 */
+        if (light.target!==undefined && (!object(light.target) || !idOK(light.target.fixtureId))) throw Error('照明の当て先を確認してください');
         if (light.colorTo!==undefined && light.colorTo!==null && !/^#[0-9a-f]{6}$/i.test(light.colorTo)) throw Error('照明の終点の色を確認してください');
         /* 2026-09-27 テスト用: 点の列（poly）と点滅の底・周数。鍵が無ければ従来どおり。 */
         if (object(light.path) && light.path.kind==='poly') {

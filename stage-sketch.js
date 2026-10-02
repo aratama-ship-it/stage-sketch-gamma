@@ -9231,6 +9231,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
        ★look（上衣の色など）は描画に使われていない＝画面に出ている色は piece.color。染めるのはそれ。 */
     { key: "costumeLight", label: "衣装を明かりの色で染める", def: false,
       hint: "光だまりに入っている演者を、その明かりの色を掛けた色で描く。赤い明かりの下で青い衣装が沈むシーンに気づけます（「照明の見え方」が切のときは効きません）" },
+    /* ミラーボール（2026-10-03・docs/mirror-ball-plan-2026-10-03/DESIGN.md）: 粒の数。
+       既定（切）は鏡面600枚＝ピン1本で約300粒（本人決定 D5）。入で1,500枚。
+       粒そのものは「照明の光だまり」の門、筋は「照明の光の筋」の門（レーザーと同じ）。 */
+    { key: "mirrorBallDense", label: "ミラーボールの粒を多めに", def: false,
+      hint: "ミラーボールの粒を2.5倍にする（鏡面600→1,500枚）。「照明の光だまり」が切のときは効きません。図が重くなります" },
     { key: "pitchExport", label: "ピッチ書き出し", def: true,
       hint: "書き出しモーダルに「ピッチとして」が出る。作図の線を落とし、光と空気を効かせた一枚絵と、生成AI用の条件文を出す" },
     /* 2026-09-24 本人指示: 左右キーで移るキューを「全キュー」か「セリフキューだけ」かで選ぶ。
@@ -21332,6 +21337,34 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return lasers.length ? lasers : null;
   }
 
+  /* ミラーボール（2026-10-03・docs/mirror-ball-plan-2026-10-03/DESIGN.md）。読取モデルの mirrorBall 枠
+     （中心・半径・回る速さ・当てているピン）から球の一覧を作り、共有部品 paintMirrorBalls が時刻から粒を
+     計算して塗る。時計は盆・ゴボと同じ spinRun（止まっていれば位相0の静止画＝余計な再描画をしない）。
+     ★粒は「光だまり」の門、筋は「光の筋」の門。平面図は床の粒だけ、正面図は床＋ホリゾント。
+     ★レーザーと同じ順番で呼ぶ（作業灯が点いていれば駒の奥、消していれば暗幕の上から加算）。
+     ★読むだけ。project.lightingDesign も駒も書き換えない。 */
+  function lightCueMirrorBallList(L) {
+    const model = lightCueOverlayForLayout(L);
+    if (!model) return null;
+    const balls = (model.fixtures || []).filter((fixture) => fixture.mirrorBall).map((fixture) => fixture.mirrorBall);
+    return balls.length ? balls : null;
+  }
+  function drawLightCueMirrorBalls(target, L) {
+    if (!featureOn("lightPool")) return 0;
+    const api = window.SHOSAI_LIGHT_RENDER;
+    if (!api || typeof api.paintMirrorBalls !== "function") return 0;
+    const balls = lightCueMirrorBallList(L);
+    if (!balls) return 0;
+    const model = lightCueOverlayForLayout(L);
+    const facets = api.MIRROR_BALL_FACETS
+      ? (featureOn("mirrorBallDense") ? api.MIRROR_BALL_FACETS.high : api.MIRROR_BALL_FACETS.mid) : 600;
+    return api.paintMirrorBalls(target, balls, worldProjector(L), {
+      tMs: lightEffectClockMs(), dims: model && model.dims, facets,
+      surfaces: L.plan ? { floor: true } : { floor: true, back: true },
+      rays: featureOn("lightBeam"), topDown: Boolean(L.plan),
+    });
+  }
+
   function drawLightCueLasers(target, L) {
     if (!featureOn("lightPool") || !featureOn("lightBeam")) return 0;
     const api = window.SHOSAI_LIGHT_RENDER;
@@ -21655,7 +21688,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const laserDrawn = featureOn("lightPool") && featureOn("lightBeam");
     const notes = model.notes
       .filter((note) => note.key !== "laser" || !laserDrawn)
+      .filter((note) => note.key !== "mirrorBall" || !featureOn("lightPool"))   // 光だまりを出していれば粒も描いている
       .map((note) => {
+        if (note.key === "mirrorBall") {
+          return languageValue(() => `${note.count} mirror balls: position only`,
+            () => `ミラーボール${note.count}台は球の位置だけ`);
+        }
         if (note.key === "laser") {
           return languageValue(() => `${note.count} lasers: position only`,
             () => `レーザー${note.count}台は位置だけ`);
@@ -21776,6 +21814,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       || Math.abs(Number(overlay.dims.D) - Number(L.size.depth)) > 0.01) return;
 
     const colorFor = (kind) => {
+      if (kind === "mirrorball") return "#c9ced6";   // ミラーボール（2026-10-03）
       if (kind === "laser") return "#cb5c8d";
       if (kind === "moving") return "#81b8cc";
       return "#c8a963";
@@ -21857,7 +21896,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (showSelection && L.plan && target === planCtx) drawLightingPlanOverlay(target, L);
     if ((showSelection || STUDY_READ_ONLY) && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) {
       drawLightCuePools(target, L);
-      if (!featureOn("workLightOff")) { drawLightCueBeams(target, L); drawLightCueLasers(target, L); drawLightCueBodies(target, L); }
+      if (!featureOn("workLightOff")) { drawLightCueBeams(target, L); drawLightCueLasers(target, L); drawLightCueMirrorBalls(target, L); drawLightCueBodies(target, L); }
     }
     if (showSelection && L.plan && target === planCtx) drawLightCueOverlayPlan(target, L);
     if (showSelection && !L.plan && target === ctx) drawLightCueOverlayFront(target, L);
@@ -21948,6 +21987,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
           (piece) => drawHeldFrontPiece(target, piece, L));
         drawLightCueBeams(target, L);
         drawLightCueLasers(target, L);
+        drawLightCueMirrorBalls(target, L);   // ミラーボールの粒も暗幕の上から加算
         drawLightCueBodies(target, L);
       }
       drawLightCueCaption(target, L);
@@ -30401,6 +30441,15 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       && fixture.pool.gobo && Math.abs(finite(fixture.pool.goboSpin, 0)) > 0.01);
   }
 
+  /* ミラーボール（2026-10-03）: 回っている球（rpm>0 でピンが当たっている）があれば、ゴボと同じ時計で描き続ける。 */
+  function spinningMirrorBalls() {
+    if (!featureOn("lightPool")) return [];
+    const model = lightCueOverlayModel();
+    if (!model) return [];
+    return (model.fixtures || []).filter((fixture) => fixture.mirrorBall
+      && fixture.mirrorBall.rpm > 0 && fixture.mirrorBall.sources.length > 0);
+  }
+
   /* いま動いている時計（ms）。spinRun が動いていなければ0＝模様は goboAngle の値で止まる
      （盆も模様も回っていないシーンはこれまでと同じ、余計な再描画をしない）。 */
   function lightEffectClockMs() {
@@ -30466,7 +30515,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
 
   function spinRunAllowed() {
     return state.animateScenes && !document.hidden
-      && (spinningGobos().length > 0);
+      && (spinningGobos().length > 0 || spinningMirrorBalls().length > 0);
   }
 
   function startSpinRun() {
@@ -39704,6 +39753,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
           lightBeam: featureOn("lightBeam"),
           workLightOff: featureOn("workLightOff"),
           costumeLight: featureOn("costumeLight"),   // G-D 衣装の色×明かりの色（3Dも同じ式で染める）
+          mirrorBallDense: featureOn("mirrorBallDense"),   // ミラーボールの粒の数（2026-10-03）
           lang,
         };
       },

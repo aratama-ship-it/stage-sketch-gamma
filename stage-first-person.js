@@ -3908,7 +3908,7 @@
    * ★模型は毎フレーム組み直さない。照明デザインの実体とシーンが変わったときだけ。
    * ★舞台の寸法が照明デザインを作ったときと違うなら、重ねると嘘になるので描かない（舞台モードと同じ判定）。
    */
-  const cueLightCache = { design: undefined, sceneId: "", model: null, pools: null };
+  const cueLightCache = { design: undefined, sceneId: "", model: null, pools: null, mirrorBalls: null };
   /* ★2026-09-19（段階5②）: 模様の回転の時計。RAFのタイムスタンプをそのまま使う
      （goboAngleAt は絶対時刻の差分だけを見るので、0始まりに揃える必要がない）。 */
   let cueLightClockMs = 0;
@@ -3928,6 +3928,9 @@
       cueLightCache.pools = model ? model.fixtures
         .filter((fixture) => fixture.pool && fixture.state === "on")
         .map((fixture) => ({ ...fixture.pool, color: fixture.color, level: fixture.level })) : null;
+      /* ミラーボール（2026-10-03）: 球の一覧も同じ参照のまま使い回す（粒は毎フレーム時刻から計算）。 */
+      cueLightCache.mirrorBalls = model ? model.fixtures
+        .filter((fixture) => fixture.mirrorBall).map((fixture) => fixture.mirrorBall) : null;
     }
     return cueLightCache.model;
   }
@@ -4039,6 +4042,27 @@
       body.draw(ctx, P, geom, { color: fx.color, lit: fx.state === "on" ? finite(fx.level, 100) / 100 : 0, beamDeg: fx.pool ? finite(fx.pool.deg, 18) : 18, px });
     });
   }
+  /* ミラーボール（2026-10-03・docs/mirror-ball-plan-2026-10-03/DESIGN.md）。舞台モードと同じ模型・同じ共有部品で、
+     違うのは投影と「落とす面」だけ: 3Dは床・奥の壁に加えて天井・袖の壁にも粒を落とす（本人決定 D3②）。
+     時計は rAF のタイムスタンプ（ゴボ回転と同じ）。レーザーと同じ順番で呼ぶ。 */
+  function drawCueMirrorBalls(ctx) {
+    if (!data || !data.lightPool) return;
+    const render = window.SHOSAI_LIGHT_RENDER;
+    const model = cueLightModel();
+    if (!render || typeof render.paintMirrorBalls !== "function" || !model) return;
+    const balls = cueLightCache.mirrorBalls;
+    if (!balls || !balls.length) return;
+    if (Math.abs((model.dims && model.dims.W) - W) > 0.01
+      || Math.abs((model.dims && model.dims.D) - D) > 0.01) return;
+    const facets = render.MIRROR_BALL_FACETS
+      ? (data.mirrorBallDense ? render.MIRROR_BALL_FACETS.high : render.MIRROR_BALL_FACETS.mid) : 600;
+    render.paintMirrorBalls(ctx, balls, cueLightProjector(), {
+      tMs: cueLightClockMs, dims: { W, D, H: CEIL }, facets,
+      surfaces: { floor: true, back: true, ceil: true, side: true },
+      rays: Boolean(data.lightBeam), topDown: false,
+    });
+  }
+
   function drawCueBeams(ctx) {
     if (!data || !data.lightBeam || !data.lightPool) return;
     const render = window.SHOSAI_LIGHT_RENDER;
@@ -4309,7 +4333,7 @@
     if (pointSources3d.length && !data.workLightOff) window.SHOSAI_STAGE_POINT_SOURCE.paint(ctx, pointSources3d, pointProject, { core: false });
     drawLightPools(ctx, data.pieces);
     drawCueLight(ctx);        // 床に落ちた光。駒より先＝光の上に人が立つ
-    if (!(data && data.workLightOff)) { drawCueBeams(ctx); drawCueFixtureBodies(ctx); drawCueLasers(ctx); }   // 作業灯が点いているなら、筋は駒の奥
+    if (!(data && data.workLightOff)) { drawCueBeams(ctx); drawCueFixtureBodies(ctx); drawCueLasers(ctx); drawCueMirrorBalls(ctx); }   // 作業灯が点いているなら、筋は駒の奥
     data.pieces.filter((piece) => piece.type === "performer" && piece.route)
       .forEach((piece) => drawRoute(ctx, piece, camera.me === piece));
     framePieceOrder = data.pieces.filter((piece) => piece.type !== "light")
@@ -4332,6 +4356,7 @@
       collectingPieceLabels = true;   // 光の中にいる駒を明るく戻す
       drawCueBeams(ctx); drawCueFixtureBodies(ctx);                    // 空気の筋は暗幕の上から足す
       drawCueLasers(ctx);                    // レーザーも同じ順番
+      drawCueMirrorBalls(ctx);               // ミラーボールの粒も暗幕の上から加算
       // Exits beyond the stage are navigation silhouettes. Restore their dim
       // body after luminous backdrop effects, still respecting real screens.
       collectingPieceLabels=false;
@@ -4391,8 +4416,15 @@
     if (data && data.transition) return true;                        // 転換の最中
     if (sceneTimer || pendingScene !== null) return true;            // シーン送りの途中
     /* ★2026-09-19（段階5②）: 模様（ゴボ）が回っている灯があれば、盆と同じ理由で描き続ける。 */
-    if (data && data.lightPool && spinningCueGobos()) return true;
+    if (data && data.lightPool && (spinningCueGobos() || spinningCueMirrorBalls())) return true;
     return false;
+  }
+
+  /* ミラーボール（2026-10-03）: 回っている球（rpm>0・ピンが当たっている）があれば描き続ける（ゴボと同じ理由）。 */
+  function spinningCueMirrorBalls() {
+    if (!cueLightModel()) return false;
+    return Boolean(cueLightCache.mirrorBalls && cueLightCache.mirrorBalls.some((ball) =>
+      ball && ball.rpm > 0 && Array.isArray(ball.sources) && ball.sources.length > 0));
   }
 
   /* 点いていて模様(gobo)を持ち、回転(goboSpin)がある灯が1つでもあるか。cueLightModel() を

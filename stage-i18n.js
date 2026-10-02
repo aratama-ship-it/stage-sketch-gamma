@@ -1006,6 +1006,9 @@
     "上部の「全画面」またはFキーで図を全画面に。右下の小窓で正面と平面を入れ替えられます": "Use Full screen at the top or press F. Click the bottom-right preview to swap front and plan views",
     "全画面の説明": "Full-screen caption",
     "照明の光だまり": "Light pools",
+    "ミラーボールの粒を多めに": "More mirror ball sparkles",
+    "ミラーボールの粒を2.5倍にする（鏡面600→1,500枚）。「照明の光だまり」が切のときは効きません。図が重くなります":
+      "Draw 2.5\u00d7 more mirror ball sparkles (600 \u2192 1,500 facets). Needs light pools on. Heavier",
     "照明の見え方": "How the light looks",
     "切（いまの概略）": "Off (simple marks)",
     "光だまり": "Light pools",

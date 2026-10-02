@@ -59,13 +59,32 @@
      既定はムービング。fixed の灯には往復・円を付けさせない（2026-09-11 本人要望）。 */
   const newFixture = (id, no, mount, name, kind, beamDeg) => ({
     id, no, name: name || "", mount,
-    kind: kind === "laser" ? "laser" : kind === "fixed" ? "fixed" : "moving",
+    kind: kind === "laser" ? "laser" : kind === "mirrorball" ? "mirrorball" : kind === "fixed" ? "fixed" : "moving",
     // 光の広がり（度）。ムービングのズーム範囲は実機で 7°〜50°（PLUTO600 PROFILE MK2）。
     // 固定灯はランプ／レンズで決まり、ショー中は変えられない（PARは玉を替えるしかない）。
     beamDeg: clamp(finite(beamDeg, 16), 4, 70),
   });
-  const isMoving = (fixture) => Boolean(fixture) && fixture.kind !== "fixed" && fixture.kind !== "laser";
+  const isMoving = (fixture) => Boolean(fixture) && fixture.kind !== "fixed" && fixture.kind !== "laser" && fixture.kind !== "mirrorball";
   const isLaser = (fixture) => Boolean(fixture) && fixture.kind === "laser";
+  /* ミラーボール（2026-10-03・docs/mirror-ball-plan-2026-10-03/DESIGN.md）。灯体の種類のひとつ。
+     吊り物なのでバトンに付ける。持つのは直径と回る速さだけ（型番・モーター種別・DMXは持たない＝機材はモデル化しない）。
+     ピンスポットは既存の灯体で、cue の light.target = { fixtureId: 球のid } で「この光が球を照らしている」と結ぶ。
+     surface は "air" のまま・path.a は球の中心（旧版のための代表点）＝新しい列挙値は kind だけ。
+     ★「mirror」の語は組の鏡映（mirrorMount 等）で使っているので、ここは必ず mirrorBall と書く。 */
+  const MIRROR_BALL = Object.freeze({
+    diametersM: Object.freeze([0.2, 0.3, 0.45]),   // Panasonic φ203/305/407・丸茂 φ300/450 を丸めた
+    rpms: Object.freeze([0, 1, 1.5, 3]),           // 定速型 1〜1.2rpm・モーター単体 1〜1.5rpm・変速型 〜4.5rpm
+    defaults: Object.freeze({ diameterM: 0.3, rpm: 1 }),
+    hangM: 0.3,                                    // バトンから球の天辺までの吊り代（モーター分）
+    pinBeamDeg: 6,                                 // ピンスポットの既定の広がり（実機の値は未確認）
+    pinWideDeg: 10,                                // これより広いピンには「細くする」注記を出す
+  });
+  const isMirrorBall = (fixture) => Boolean(fixture) && fixture.kind === "mirrorball";
+  const mirrorBallOf = (fixture) => {
+    const m = (fixture && fixture.mirrorBall) || {};
+    return { diameterM: clamp(finite(m.diameterM, MIRROR_BALL.defaults.diameterM), 0.1, 1.0),
+      rpm: clamp(finite(m.rpm, MIRROR_BALL.defaults.rpm), 0, 6) };
+  };
   /* 色の作り方（2026-09-28）。fixture.colorMode:"wheel"＝カラーホイール機。CMY/RGB のように途中の色を作れないので、
      キューの間はスナップの遅れの後に一瞬で替わり、動きの中（colorTo）は位相の半分で一瞬で替わる。無ければ混色（"mix"）。 */
   const colorSnaps = (fixture) => Boolean(fixture) && fixture.colorMode === "wheel";
@@ -323,6 +342,25 @@
       return { x: 0, y: CYC_MOUNT_V * dims.D, z: m.rung === "top" ? dims.H : 0 };   // 横は中央固定
     }
     return null;
+  };
+
+  /* ミラーボールの中心（世界座標m）。取り付け点から吊り代と半径だけ下。床より下へは行かない。 */
+  const mirrorBallCentre = (fixture, rig, dims = DEFAULT_DIMS) => {
+    const S = fixtureWorld(fixture, rig, dims); if (!S) return null;
+    const R = mirrorBallOf(fixture).diameterM / 2;
+    return { x: S.x, y: S.y, z: Math.max(R, S.z - MIRROR_BALL.hangM - R) };
+  };
+  /* ピンの狙い点（旧版のための代表点）。球の中心を Point3 {u,v,hM} へ戻す。 */
+  const mirrorBallAimPoint = (fixture, rig, dims = DEFAULT_DIMS) => {
+    const C = mirrorBallCentre(fixture, rig, dims); if (!C) return null;
+    return { u: clamp(C.x / dims.W + 0.5, 0, 1), v: clamp(C.y / dims.D, 0, 1), hM: clamp(C.z, 0, dims.H) };
+  };
+  /* この光が照らしている球（light.target.fixtureId）。無い・球でない なら null。 */
+  const mirrorBallTargetOf = (light, rig) => {
+    const id = light && light.target && typeof light.target.fixtureId === "string" ? light.target.fixtureId : "";
+    if (!id || !rig || !Array.isArray(rig.fixtures)) return null;
+    const ball = rig.fixtures.find((row) => row && row.id === id);
+    return isMirrorBall(ball) ? ball : null;
   };
 
   /* ---------- cue（シーンごと） ----------
@@ -1481,7 +1519,7 @@
     CUE_NO_RE, cueNoValid, cueNoValue, cueNoText, cueNumberNext, cueNumberBetween, FOLLOW_MODES, normalizeFollow, followDelayMs, cueLit, cueNotation, followText,
     DEFAULT_DIMS, FLOOR_FIXTURE_Z, SIDE_OFFSET_M, CYC_MOUNT_V, CYC_REACH_MAX, HOUSE_AHEAD_MAX, cycBarSpan, SPEED_PERIOD_MS, PLANE_VALUES, PLANE_LABEL,
     clamp, finite, stagePieceDepth, orderStagePieces,
-    newTruss, newFixture, isMoving, isLaser, beamDegOf, opticalSoftnessOf, spotRadiusM, spotEllipse, spotFalloff, beamLanding, trussById, trussRow, fixtureWorld,
+    newTruss, newFixture, isMoving, isLaser, MIRROR_BALL, isMirrorBall, mirrorBallOf, mirrorBallCentre, mirrorBallAimPoint, mirrorBallTargetOf, beamDegOf, opticalSoftnessOf, spotRadiusM, spotEllipse, spotFalloff, beamLanding, trussById, trussRow, fixtureWorld,
     newPoint, newLightCue, levelOf, isLit, levelAt, beamDegAt, colorAt, colorSnaps, strobeMul, paramPhase, mountSpot, GOBOS, goboById, goboAngleAt, goboPath, constrainPointToSurface, periodMs, groupEffect,
     pointWorld, planeVec, circleOffset, eightOffset, targetAt, pathGuide, mirrorMount, mirrorAimCompatible, mirrorAimPoint, mirrorAimPath,
     FRONT_SEATS, frontPerspSetup, makeFrontPerspProjector, frontPerspToUH,
