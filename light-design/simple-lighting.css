@@ -1,11 +1,14 @@
 /* The shared warm/blue editor skins provide the surfaces; simple controls add accessible text. */
 :root{--simple-text:#efe7d6;--simple-muted:#b9ad97;--simple-accent:#dec584;--simple-gap:16px;--simple-space:24px;--simple-tap:44px;--simple-border:#908574;--simple-canvas-height:430px}
-.simple-mode-choice{display:flex;align-items:center;gap:8px;flex:none;padding:8px 16px;border-bottom:1px solid var(--simple-border);color:var(--simple-text)}
+.simple-mode-choice{display:flex;align-items:center;gap:8px;flex:none;padding:0;color:var(--simple-text);white-space:nowrap}
+.simple-light-toolbar .fb{flex-wrap:wrap}
+.simple-light-toolbar .simple-mode-choice button{height:var(--simple-tap)}
+.simple-light-active .simple-light-toolbar .fb>:not(.simple-mode-choice),.simple-light-active .simple-light-toolbar>:not(.fb){display:none!important}
 .simple-mode-choice button,.simple-mode-panel button,.simple-mode-panel select{min-height:var(--simple-tap);min-width:var(--simple-tap);padding:8px 12px;font:inherit;border:1px solid var(--simple-border);background:var(--desk-2);color:var(--simple-text);cursor:pointer}
 .simple-mode-choice button[aria-pressed=true],.simple-mode-panel button[aria-pressed=true]{border-color:var(--simple-accent);box-shadow:inset 0 0 0 1px var(--simple-accent)}
 .simple-mode-panel{padding:var(--simple-gap);color:var(--simple-text);overflow:auto;min-height:0;line-height:1.8}
 .simple-light-active .body{overflow:auto;display:block}
-.simple-light-active .body>:not(.simple-mode-choice):not(.simple-mode-panel){display:none!important}
+.simple-light-active .body>:not(.simple-light-toolbar):not(.simple-mode-panel){display:none!important}
 .simple-mode-panel h2{font-size:21px;margin:0}.simple-mode-panel h3{font-size:17px;margin:0 0 12px}
 .simple-mode-panel p{font-size:14px;margin:12px 0;color:var(--simple-muted)}
 .simple-heading,.simple-heading>div,.simple-catalog-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--simple-gap)}

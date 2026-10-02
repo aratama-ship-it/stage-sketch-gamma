@@ -1,8 +1,8 @@
 {
-  "version": "0.2.73",
+  "version": "0.2.77",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.2.73/stage-sketch-gamma-mac-0.2.73.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.2.77/stage-sketch-gamma-mac-0.2.77.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "設定画面から最新のMac版をダウンロードできるようにしました。",
-  "updated": "2026-10-02"
+  "notes": "膝立ちの人体・服、全画面照明、照明操作、演者視点を修正しました。",
+  "updated": "2026-10-03"
 }

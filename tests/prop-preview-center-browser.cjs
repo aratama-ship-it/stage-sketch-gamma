@@ -32,7 +32,7 @@ const server = http.createServer((request, response) => {
         const errors = []; page.on('pageerror', error => errors.push(error.message)); page.on('dialog', dialog => dialog.accept());
         await page.addInitScript(() => { localStorage.setItem('gamma:shosai-stage-tour-v1', 'done'); localStorage.setItem('gamma:shosai-stage-lang', 'ja'); });
         await page.goto(`http://127.0.0.1:${port}/stage.html?feature-test`, { waitUntil: 'load' });
-        await page.waitForFunction(() => window.SHOSAI_STAGE_SESSION_BRIDGE && JSON.parse(SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project.id === 'gamma-feature-test-v29');
+        await page.waitForFunction(() => window.SHOSAI_STAGE_SESSION_BRIDGE && JSON.parse(SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project.id === 'gamma-feature-test-v31');
         const started = Date.now();
         await page.locator('button.stage-roster-add-row[data-roster-kind-layer="prop"]').first().click({ force: true });
         await page.waitForSelector('#stage-roster-prop-grid [data-roster-prop-shape] canvas');

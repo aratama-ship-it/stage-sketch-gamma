@@ -5,6 +5,38 @@ import vm from "node:vm";
 
 const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
+test("cached HTML dependencies use exactly the revisions declared in the app shell", () => {
+  const origin = "https://gamma.example/";
+  const declaration = read("stage-sw.js").match(/const APP_SHELL = (\[[\s\S]*?\n\]);/);
+  assert.ok(declaration, "app shell declaration is required");
+  const shell = vm.runInNewContext(declaration[1]);
+  const urls = new Set(shell.map(path => new URL(path, origin).href));
+  const paths = new Set(shell.map(path => new URL(path, origin).pathname));
+  for (const file of ["stage.html", "light-design/index.html", "formation/presets/editor.html", "storage-recovery.html"]) {
+    for (const [, ref] of read(file).matchAll(/(?:src|href)="([^"#]+)"/g)) {
+      const url = new URL(ref, new URL(file, origin));
+      if (url.origin !== origin || !/\.(?:js|css)$/.test(url.pathname) || !paths.has(url.pathname)) continue;
+      assert.ok(urls.has(url.href), `${file}: ${ref} has no matching cached revision`);
+    }
+  }
+});
+
+test("cached HTML dependencies use exactly the revisions declared in the app shell", () => {
+  const origin = "https://gamma.example/";
+  const declaration = read("stage-sw.js").match(/const APP_SHELL = (\[[\s\S]*?\n\]);/);
+  assert.ok(declaration, "app shell declaration is required");
+  const shell = vm.runInNewContext(declaration[1]);
+  const urls = new Set(shell.map(path => new URL(path, origin).href));
+  const paths = new Set(shell.map(path => new URL(path, origin).pathname));
+  for (const file of ["stage.html", "light-design/index.html", "formation/presets/editor.html", "storage-recovery.html"]) {
+    for (const [, ref] of read(file).matchAll(/(?:src|href)="([^"#]+)"/g)) {
+      const url = new URL(ref, new URL(file, origin));
+      if (url.origin !== origin || !/\.(?:js|css)$/.test(url.pathname) || !paths.has(url.pathname)) continue;
+      assert.ok(urls.has(url.href), `${file}: ${ref} has no matching cached revision`);
+    }
+  }
+});
+
 test("collected UI fixes retain data while changing the visible controls", () => {
   const main = read("stage-sketch.js");
   const timeline = read("stage-timeline.js");
@@ -47,9 +79,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   assert.doesNotMatch(lightHtml, /id="statebadge"/);
   assert.match(html, />ツール</);
   assert.match(html, />表示するもの</);
-  assert.match(html, /class="stage-app-version">0\.2\.76</);
+  assert.match(html, /class="stage-app-version">0\.2\.77</);
   assert.match(html, /id="stage-release-v023-title">v0\.2\.3</);
-  assert.match(html, /<meta name="stage-sketch-gamma-version" content="v0\.2\.76">/);
+  assert.match(html, /<meta name="stage-sketch-gamma-version" content="v0\.2\.77">/);
   assert.match(html, /id="stage-release-v024-title">v0\.2\.4</);
   assert.match(html, /id="stage-release-v025-title">v0\.2\.5</);
   // AI用JSON（project.id なし・light あり）が旧照明の移行器で止まらない（2026-09-24）
@@ -58,9 +90,9 @@ test("collected UI fixes retain data while changing the visible controls", () =>
   // 読み込み時の保険: rehearsal が無いシーンへ既定の転換3秒（控えを持つ保存データは触らない）（2026-09-24）
   assert.match(main, /function backfillMissingSceneRehearsal\(project\) \{[\s\S]*?if \(hasSectionMemo\) return project;[\s\S]*?row\.rehearsal = \{ holdDurationSeconds: DEFAULT_SCENE_HOLD_SECONDS, transitionToNextSeconds: NEW_SCENE_TRAVEL_SECONDS \};/);
   assert.match(main, /const project = backfillMissingSceneRehearsal\(stripRemovedSceneFields\(projectIoClone\(document\.project\)\)\);/);
-  assert.match(html, /stage-sketch\.js\?v=20261003-release76/);
-  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v447"/);
-  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=20261003-release76"/);
+  assert.match(html, /stage-sketch\.js\?v=20261003-release77/);
+  assert.match(serviceWorker, /CACHE_NAME = "stage-sketch-gamma-shell-v448"/);
+  assert.match(serviceWorker, /"\.\/stage-sketch\.js\?v=20261003-release77"/);
   assert.match(html, /id="stage-show-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-set-names" checked>\s*<span class="stage-tool-icon"/);
   assert.match(html, /id="stage-show-light-names" checked>\s*<span class="stage-tool-icon"/);
@@ -123,8 +155,8 @@ test("lighting apply belongs to the LX cue panel and playback uses an accessible
   assert.match(html, /\.fixture-power\.off \.fixture-power-lens\{fill:none\}/);
   assert.match(html, /\.fixture-power\.off \.fixture-power-slash\{display:block\}/);
   assert.doesNotMatch(html, /\.fixture-power\.on \.fixture-power-slash\{display:none\}/);
-  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=20261001-release71/);
-  assert.match(worker, /stage-sketch-gamma-shell-v447/);
+  assert.match(workspace, /light-design\/index\.html\?embed=gamma&v=20261003-release77/);
+  assert.match(worker, /stage-sketch-gamma-shell-v448/);
 
   assert.match(worker, /light-design\/app\.js\?v=20261001-release71/);
   assert.match(worker, /light-design\/embed\.js\?v=20261001-release71/);

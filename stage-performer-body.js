@@ -56,15 +56,11 @@
       left.push({ x: ring.o.x - nx * r, y: ring.o.y - ny * r });
     });
     const end = rings[rings.length - 1];
-    const notch = end && end.crotch ? [
-      lerpPt(end.o, right[right.length - 1], .45), end.crotch,
-      lerpPt(end.o, left[left.length - 1], .45),
-    ] : [];
-    return right.concat(notch, left.reverse());
+    return right.concat(end.cap ? [end.cap] : [], left.reverse());
   }
 
   // Comparison proposal: follow one curved contour from shoulder to wrist.
-  function taperedChain(target, pts, radii, startCapScale = 1) {
+  function taperedChain(target, pts, radii, startCapScale = 1, endCapScale = 1) {
     if (pts.length < 2) return;
     const tangent = (a, b) => {
       const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
@@ -77,7 +73,7 @@
       right.push({ x: p.x + t.y * r, y: p.y - t.x * r });
     });
     const a = pts[0], b = pts[pts.length - 1], ta = tangent(a, pts[1]), tb = tangent(pts[pts.length - 2], b);
-    const capB = { x: b.x + tb.x * radii[radii.length - 1], y: b.y + tb.y * radii[radii.length - 1] };
+    const capB = { x: b.x + tb.x * radii[radii.length - 1] * endCapScale, y: b.y + tb.y * radii[radii.length - 1] * endCapScale };
     const capA = { x: a.x - ta.x * radii[0] * startCapScale, y: a.y - ta.y * radii[0] * startCapScale };
     smoothClosedPath(target, left.concat([capB], right.reverse(), [capA]), .42);
     target.fill();
@@ -165,9 +161,8 @@
     { t: 0.62, halfX: 0.074, rz: 0.051 },    // くびれ
     { t: 0.80, halfX: 0.082, rz: 0.060, back: 0.006 },
     { t: 0.96, halfX: 0.084, rz: 0.070, back: 0.014 }, // 後方へ丸みを付ける
-    { t: 1.10, halfX: 0.076, rz: 0.059, back: 0.012 },
-    { t: 1.20, halfX: 0.024, rz: 0.038, back: 0.003 },
-    { t: 1.24, halfX: 0.035, rz: 0.031, crotch: 0.023 }, // 脚の間を丸い曲線でつなぐ
+    { t: 1.04, halfX: 0.072, rz: 0.059, back: 0.012 },
+    { t: 1.09, halfX: 0.060, rz: 0.046, back: 0.008, cap: 0.012 }, // 腰の下端を丸め、左右の腿へつなぐ
   ];
 
   /* 首の断面。★胴の軸（肩→腰）の延長ではなく、「肩の中点→頭」に沿って積む。
@@ -266,8 +261,8 @@
       const o = at([0, 0, 0]);
       const w = at([wide[0] * ring.halfX, wide[1] * ring.halfX, wide[2] * ring.halfX]);
       const d = at([deep[0] * ring.rz, deep[1] * ring.rz, deep[2] * ring.rz]);
-      const crotch = ring.crotch ? project(...c.map((n, i) => n - axis[i] * ring.crotch)) : null;
-      return { o, wx: w.x - o.x, wy: w.y - o.y, dx: d.x - o.x, dy: d.y - o.y, crotch };
+      const cap = ring.cap ? project(...c.map((n, i) => n + axis[i] * ring.cap)) : null;
+      return { o, wx: w.x - o.x, wy: w.y - o.y, dx: d.x - o.x, dy: d.y - o.y, cap };
     };
     // 首は肩→頭、胴は肩→腰。別々の軸に沿って積み、上から順に並べる
     const headJ = joints.head;
@@ -416,18 +411,7 @@
     const paintGarment = (nodes, radii, amount, rootCap) => {
       const garment = chainPrefix(nodes, radii, amount);
       if (garment.points.length < 2) return;
-      // Sleeves and trouser hems end across the limb, not in a rounded cap.
-      const end = garment.points.at(-1), prev = garment.points.at(-2);
-      const len = Math.hypot(end.x-prev.x,end.y-prev.y) || 1;
-      const dx=(end.x-prev.x)/len,dy=(end.y-prev.y)/len,extent=ux*4;
-      target.save(); target.beginPath();
-      target.moveTo(end.x-dy*extent,end.y+dx*extent);
-      target.lineTo(end.x+dy*extent,end.y-dx*extent);
-      target.lineTo(end.x+dy*extent-dx*extent,end.y-dx*extent-dy*extent);
-      target.lineTo(end.x-dy*extent-dx*extent,end.y+dx*extent-dy*extent);
-      target.closePath(); target.clip();
-      taperedChain(target,nodes,radii.map(r=>r+.6),rootCap);
-      target.restore();
+      taperedChain(target, garment.points, garment.radii.map(r => r + .6), rootCap, 0);
     };
 
     /* 道具の輪は体より先に、輪の向こう側だけ塗る。手前側は体のあとに塗る。

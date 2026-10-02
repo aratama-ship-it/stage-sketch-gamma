@@ -1670,7 +1670,7 @@
     } else {
       const me = currentPerformer(data.pieces);
       if (me) {
-        state.targetYaw = finite(me.facing, 0);
+        state.targetYaw = -finite(me.facing, 0);
         state.targetPitch = 0;
       } else {
         state.targetYaw = 180;

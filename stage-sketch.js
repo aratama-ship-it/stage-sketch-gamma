@@ -9401,7 +9401,6 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let layoutLanesReady = false;
   let layoutLaneResizeFrame = 0;
   let layoutLaneReloadPending = false;
-  let layoutThresholdPanel = null;
 
   function currentLayoutLaneState(workspace = currentWorkspaceMode()) {
     const tabletActive = workspace === "normal"
@@ -9422,15 +9421,6 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   function effectivePanelLayoutMode(workspace = currentWorkspaceMode()) {
     const mode = currentLayoutLaneState(workspace).mode;
     return mode === "ipad" ? panelLayoutMode(workspace) : mode;
-  }
-
-  function syncLayoutThresholdPanel(state = currentLayoutLaneState()) {
-    if (!layoutThresholdPanel) return;
-    layoutThresholdPanel.width.textContent = `${Math.round(window.innerWidth)}px`;
-    layoutThresholdPanel.lanes.textContent = String(state.lanes);
-    layoutThresholdPanel.inputs.forEach((input, index) => {
-      if (document.activeElement !== input) input.value = String(layoutLaneThresholds[index]);
-    });
   }
 
   function applyStageLayoutLanes({ redraw = true } = {}) {
@@ -9459,7 +9449,6 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const state = currentLayoutLaneState();
     document.documentElement.dataset.stageLayout = state.layout;
     document.documentElement.dataset.stageLayoutSide = state.side;
-    syncLayoutThresholdPanel(state);
     if (layoutLanesReady && redraw && before !== state.layout) {
       applyLayout();
       syncPanelWidths();
@@ -9468,63 +9457,6 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       requestAnimationFrame(syncCanvasResolution);
     }
     return state;
-  }
-
-  function saveLayoutLaneThresholds(next) {
-    const parsed = STAGE_LAYOUT_LANES_MODEL.parseThresholds(next);
-    if (!parsed) return false;
-    layoutLaneThresholds = parsed;
-    try { localStorage.setItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.thresholds, parsed.join(",")); }
-    catch (_) { /* 即時反映は続ける */ }
-    applyStageLayoutLanes();
-    return true;
-  }
-
-  function initLayoutThresholdPanel() {
-    if (!(layoutLaneParams.get("layout-dev") === "1" || layoutLaneParams.has("layout-thresholds"))) return;
-    const panel = document.createElement("aside");
-    panel.className = "stage-layout-threshold-panel";
-    panel.setAttribute("aria-label", tx("レイアウト切替幅"));
-    panel.setAttribute("data-no-i18n", "");
-    const status = document.createElement("p");
-    const width = document.createElement("output");
-    const lanes = document.createElement("output");
-    status.append(`${tx("現在の幅")} `, width, ` / ${tx("実効レーン数")} `, lanes);
-    const fields = document.createElement("div");
-    fields.className = "stage-layout-threshold-fields";
-    const inputs = layoutLaneThresholds.map((value, index) => {
-      const label = document.createElement("label");
-      label.textContent = `t${index}`;
-      const input = document.createElement("input");
-      input.type = "number";
-      input.min = "320";
-      input.max = "5000";
-      input.step = "10";
-      input.value = String(value);
-      input.setAttribute("aria-label", `${tx("レイアウト切替幅")} t${index}`);
-      input.addEventListener("input", () => saveLayoutLaneThresholds(inputs.map((item) => item.value)));
-      label.append(input);
-      fields.append(label);
-      return input;
-    });
-    const reset = document.createElement("button");
-    reset.type = "button";
-    reset.textContent = tx("既定へ戻す");
-    reset.addEventListener("click", () => {
-      try { localStorage.removeItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.thresholds); } catch (_) { /* 続ける */ }
-      layoutLaneThresholds = [...STAGE_LAYOUT_LANES_MODEL.DEFAULT_THRESHOLDS];
-      try {
-        const params = new URLSearchParams(location.search);
-        params.delete("layout-thresholds");
-        history.replaceState(null, "", location.pathname + (params.toString() ? `?${params}` : "") + location.hash);
-      } catch (_) { /* URLを直せなくても既定値へ戻す */ }
-      inputs.forEach((input, index) => { input.value = String(layoutLaneThresholds[index]); });
-      applyStageLayoutLanes();
-    });
-    panel.append(status, fields, reset);
-    document.body.append(panel);
-    layoutThresholdPanel = { panel, width, lanes, inputs };
-    syncLayoutThresholdPanel();
   }
 
   applyStageLayoutLanes({ redraw: false });
@@ -21533,7 +21465,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   /* 舞台の寸法が照明デザインを作ったときと違うなら、重ねると嘘になるので描かない。 */
   function lightCueOverlayForLayout(L) {
     const model = lightCueOverlayModel();
-    if (!model || presenting || !model.counts.total) return null;
+    if (!model || !model.counts.total) return null;
     if (Math.abs(finite(model.dims.W, -1) - Number(L.size.width)) > 0.01
       || Math.abs(finite(model.dims.D, -1) - Number(L.size.depth)) > 0.01) return null;
     return model;
@@ -42763,7 +42695,6 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
       initStageAudio();
       pruneOrphanAudioSoon();
       syncViewSwitch();
-      initLayoutThresholdPanel();
       applyStageLayoutLanes({ redraw: false });
       // 言語は loadState() より前に決めてある（見本の駒の名前がそこで決まるため）
       applyLayout();

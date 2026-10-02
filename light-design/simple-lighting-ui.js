@@ -21,7 +21,12 @@
     +'<label>人物用スポットの直径 <output id="simple-size-value"></output><input id="simple-size" type="range" min=".5" max="4" step=".1"></label>'
     +'<label>前の明かりから移る時間 <select id="simple-fade"><option value="0">すぐ</option><option value="1">1秒</option><option value="3">3秒</option><option value="5">5秒</option><option value="10">10秒</option></select></label></div></div>'
     +'<div class="simple-catalog-head"><h3>プリセットから選ぶ</h3><label>絞り込み <select id="simple-category"><option value="">すべて</option><option>全体</option><option>スポット</option><option>方向・組合せ</option><option>暗転</option></select></label></div><div id="simple-grid" class="simple-preset-grid"></div>';
-  document.querySelector('.body').prepend(bar,panel);
+  const toolbar=document.querySelector('.figbar'), display=toolbar.querySelector('.fb');
+  toolbar.classList.add('simple-light-toolbar');
+  display.querySelector('b').textContent='詳細画面の表示';
+  display.prepend(bar);
+  // Keep the mode choice reachable while the detailed figures are hidden.
+  document.querySelector('.body').prepend(toolbar,panel);
   const active=()=>wanted&&state.mode==='move';
   const sc=()=>hooks.scene();
   const common=()=>context&&M.isCommon(state.rig,state.dims,context.venueType);

@@ -32,7 +32,7 @@ async function boot(page, base) {
   await page.waitForFunction(() => window.GAMMA_ICON_TIPS && window.GAMMA_WORKSPACE && window.SHOSAI_STAGE_SESSION_BRIDGE);
   const backup = page.locator('#stage-launch-backup-close');
   if (await backup.isVisible().catch(() => false)) await backup.click();
-  await page.waitForFunction(() => JSON.parse(SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project.id === 'gamma-feature-test-v29');
+  await page.waitForFunction(() => JSON.parse(SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project.id === 'gamma-feature-test-v31');
   await page.evaluate(() => {
     GAMMA_WORKSPACE.normal();
     if (!SHOSAI_STAGE_SESSION_BRIDGE.openSceneById('ft-scene-a1')) throw new Error('A-1を開けません');

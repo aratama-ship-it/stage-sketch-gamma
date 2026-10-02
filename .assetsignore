@@ -14,3 +14,6 @@
 /tests/**
 /.github/**
 /regression-results/**
+
+# Patch rejects are local review notes, never public assets.
+/*.rej

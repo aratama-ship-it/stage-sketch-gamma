@@ -16785,29 +16785,7 @@ body.is-panel-resizing { cursor: col-resize; user-select: none; -webkit-user-sel
 body.is-panel-resizing .stage-sketch-grid { transition: none; }
 html[data-stage-layout="ipad"] .stage-panel-width-handle:is([data-panel-width="left"], [data-panel-width="right"], [data-panel-width="right2"]) { display: none; }
 
-/* 開発用。?layout-dev=1 または ?layout-thresholds=... のときだけJSが生成する。 */
-.stage-layout-threshold-panel {
-  position: fixed;
-  right: 12px;
-  bottom: 12px;
-  z-index: 10020;
-  display: grid;
-  gap: 8px;
-  width: 238px;
-  padding: 10px;
-  border: 1px solid var(--brass);
-  border-radius: 3px;
-  color: var(--milk);
-  background: rgba(25, 21, 18, 0.96);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  font: 12px/1.4 var(--sans);
-}
-.stage-layout-threshold-panel p { margin: 0; }
-.stage-layout-threshold-panel output { color: var(--paper); font-weight: 700; }
-.stage-layout-threshold-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.stage-layout-threshold-fields label { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 3px; }
-.stage-layout-threshold-fields input { min-width: 0; width: 100%; padding: 4px; color: var(--milk); background: var(--desk); border: 1px solid var(--line-dark); }
-.stage-layout-threshold-panel button { min-height: 32px; padding: 5px 8px; border: 1px solid var(--line-dark); color: var(--milk); }
+
 
 /* ============ 舞台編集の下部タイムライン ============
    タイムラインは舞台画面の下から引き出す。図と左右パネルは一つだけを常に使い、

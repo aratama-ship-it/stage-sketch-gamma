@@ -425,3 +425,5 @@ public-dist/
 /design/*
 !/design/HORIZONTAL_LAYOUT_TOKENS.md
 !/tests/panel-bottom-browser.cjs
+
+!/tests/fix6-browser.cjs

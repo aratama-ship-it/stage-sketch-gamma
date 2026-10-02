@@ -107,22 +107,13 @@ async function waitForEditor(page) {
         await page.goto(`${base}?feature-test&layout-thresholds=500,800,1200`);
         await waitForEditor(page);
         await page.waitForFunction(() => document.documentElement.dataset.stageLayout === 'two');
-        await page.locator('.stage-layout-threshold-panel').waitFor({ state: 'visible' });
+        assert.equal(await page.locator('.stage-layout-threshold-panel').count(), 0);
         assert.equal(await page.evaluate(() => localStorage.getItem('gamma:shosai-stage-layout-thresholds-v1')), '500,800,1200');
-        const inputs = page.locator('.stage-layout-threshold-fields input');
-        await inputs.nth(1).fill('1150');
-        await page.waitForFunction(() => document.documentElement.dataset.stageLayout === 'one');
-        await inputs.nth(1).fill('800');
-        await page.waitForFunction(() => document.documentElement.dataset.stageLayout === 'two');
-        await page.goto(`${base}?feature-test&layout-dev=1`);
-        await waitForEditor(page);
-        await page.waitForFunction(() => document.documentElement.dataset.stageLayout === 'two');
-        await page.setViewportSize({ width: 1200, height: 900 });
-        await page.getByRole('button', { name: '既定へ戻す' }).click();
-        await page.waitForFunction(() => document.documentElement.dataset.stageLayout === 'one');
-        assert.equal(await page.evaluate(() => localStorage.getItem('gamma:shosai-stage-layout-thresholds-v1')), null);
+        await page.reload();
+        await page.waitForFunction(() => !!window.SHOSAI_STAGE_SESSION_BRIDGE);
+        assert.equal(await page.locator('.stage-layout-threshold-panel').count(), 0);
         assert.deepEqual(errors, [], `${name}: page errors`);
-        results.push({ browser: name, scene: 'A-1', widths: seen, automaticReloads: 2, customThresholds: '500,800,1200', errors });
+        results.push({ browser: name, scene: 'A-1', widths: seen, automaticReloads: 2, customThresholds: '500,800,1200', removedPanel: true, errors });
         await context.close();
       } finally {
         await browser.close();
