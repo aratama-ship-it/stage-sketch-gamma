@@ -90,7 +90,7 @@ async function run(engine, browserType, base) {
     });
     await page.goto(`${base}/stage.html?feature-test`);
     await page.waitForFunction(() => window.SHOSAI_VENUE_EDITOR && window.SHOSAI_STAGE_SESSION_BRIDGE &&
-      JSON.parse(SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project.id === 'gamma-feature-test-v28');
+      JSON.parse(SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project.id === 'gamma-feature-test-v29');
     await dismiss(page);
     await page.evaluate(() => {
       const animation = document.getElementById('stage-anim-scenes');

@@ -64,7 +64,7 @@ async function canvasPoint(page, selector, u, v) {
       });
       await page.goto(`http://127.0.0.1:${port}/stage.html?feature-test`);
       await page.waitForFunction(() => window.SHOSAI_STAGE_SESSION_BRIDGE
-        && JSON.parse(SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project.id === "gamma-feature-test-v28");
+        && JSON.parse(SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project.id === "gamma-feature-test-v29");
       await page.evaluate(() => {
         GAMMA_WORKSPACE.normal();
         SHOSAI_STAGE_SESSION_BRIDGE.openSceneById("ft-scene-c2");

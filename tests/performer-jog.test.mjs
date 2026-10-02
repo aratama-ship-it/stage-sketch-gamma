@@ -21,7 +21,7 @@ const world = (frame, p) => { const a = frame.facing * Math.PI / 180, h = 1.65;
     frame.v * size.depth + h*(-p[0]*Math.sin(a)+p[2]*Math.cos(a))]; };
 
 test('A-4/A-5: curved and straight jogs are configured, short moves fall back to walk', () => {
-  assert.equal(fixture.project.id, 'gamma-feature-test-v28');
+  assert.equal(fixture.project.id, 'gamma-feature-test-v29');
   assert.equal(a5[0].transitionGait, 'jog'); assert.equal(a5[2].transitionGait, 'jog');
   assert.equal(a5[1].transitionGait, undefined);
   assert.equal(make(0).mode, 'jog'); assert.equal(make(2).mode, 'jog');

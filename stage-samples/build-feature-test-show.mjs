@@ -72,8 +72,9 @@ if (PROP_SHAPES.length < 10) throw new Error(`小道具の形の一覧が取れ�
 // v25（2026-09-30）: F-1 に固定／ムービング×スポット／ウォッシュの比較灯体を追加
 // v26（2026-09-30）: F-1 でかんたん照明を確認、A-4→A-5 で演者01・03の小走りを確認
 // v27（2026-10-01）: C-1 に正方形ボタン・照明選択の UI 確認を追加（v0.2.70）
+// v29（2026-10-02）: レーン切替幅を 1000／1520／1800px に変更（確認手順の幅を更新）・bridge_hold を姿勢の選択一覧から外した（v0.2.72）
 // v28（2026-10-01）: 修正バッチ #1〜#16（幅別レーン・吹き出し・袖幕枚数・ドラッグ保持・.stagesketch・照明配置ほか）の確認手順を各シーンへ追加（v0.2.71）
-const PROJECT_ID = "gamma-feature-test-v28";
+const PROJECT_ID = "gamma-feature-test-v29";
 const CREATED = "2026-09-18T00:00:00.000Z";
 const STAGE = { width: 12, depth: 9 };      // proscenium / mid の実寸（stage-venues.js）
 const COLORS = ["#a84b26", "#77865f", "#9c823f", "#6d6657", "#315b8a", "#b0533f", "#4f7d6f", "#8a6a9c",
@@ -272,7 +273,7 @@ if (POSE_OVERFLOW.length > 50) throw new Error(`姿勢が多すぎて試験場�
 [GENERAL_POSES.slice(0, A_SCENE_CAPS[0]), GENERAL_POSES.slice(A_SCENE_CAPS[0], A_POSES)].filter((list) => list.length).forEach((list, index) => {
   const positions = grid(list.length, 6, 0.08, 0.92, 0.2, 0.9);
   const repairedPoseNote = list.some((pose) => ["bridge_hold", "chest_stand", "backbend_standing"].includes(pose))
-    ? " bridge_hold・chest_stand・backbend_standing は頭・首・肩が一続きで、ブリッジは逆V字でなく弓なりに見えること。" : "";
+    ? " chest_stand・backbend_standing は頭・首・肩が一続きに見えること。bridge_hold は姿勢の選択一覧から外した姿勢で、この見本（すでに使っているショーと同じ）では崩れずに描かれ、選択の窓・演者を追加する窓には出ないこと。" : "";
   scene(`a${index + 1}`, `A-${index + 1} 姿勢見本 ${index + 1}/2（${list.length}種）`, 1,
     `${CHECK}登録の無い演者（名前＝姿勢ID）に、手持ち楽器の自動姿勢と階段専用を除いた姿勢を割り当てた。正面図で形が崩れていないか、平面図の足元の大きさ、選んだときの枠、3Dカメラでの見え方を見る。本体の POSES は${POSES.length}種。階段専用はC-4、手持ち楽器はC-2で「持つ」を選んだ後に検証する。A-1 に78件・A-2 に79件、あふれた分は文脈ヘルプの駒3つと J-1 の演者に割り当てた。姿勢を選ぶ場所（姿勢の窓・図の下の帯・演者を追加する窓）は分類の見出しで分かれ、窓と演者を追加する窓は検索で絞れること。帯は先頭の選択欄で分類を切り替え、末尾の「探す」で検索付きの窓が開くこと。${repairedPoseNote}`,
     list.map((pose, i) => perf(`a${index + 1}`, null, positions[i].u, positions[i].v, { pose, name: pose, color: COLORS[i % COLORS.length] })));
@@ -285,7 +286,7 @@ cast.push(helpMember);
 helpScene.pieces.push({ ...helpScene.pieces[0], id: "ft-piece-help-owner", castId: helpMember.id, name: "固定テスト・共通", u: 0.35, v: 0.12, pose: HELP_POSES[0] || helpScene.pieces[0].pose });
 helpNext.pieces.push({ ...helpNext.pieces[0], id: "ft-piece-help-owner-next", castId: helpMember.id, name: "固定テスト・共通", u: 0.35, v: 0.12, pose: HELP_POSES[1] || helpNext.pieces[0].pose });
 helpScene.pieces.push({ ...helpScene.pieces[0], id: "ft-piece-help-local", castId: null, name: "固定テスト・この駒", locked: true, u: 0.65, v: 0.12, pose: HELP_POSES[2] || helpScene.pieces[0].pose });
-helpScene.note += " D1確認: 固定テスト・共通はA-2と同じ登録の固定。固定テスト・この駒はこのシーンのみ。使い方検索の『動かせないとき』から解除し、取り消しと再読込を確かめる。レイアウト確認: 幅600／900／1200／1700pxで、iPad式／一列／二列／三列へ段階的に切り替わり、幅を戻すと選んだ表示へ復帰する。600pxのiPad式では上部のQシート入口、PC表示では作業タブのQシートを使う。";
+helpScene.note += " D1確認: 固定テスト・共通はA-2と同じ登録の固定。固定テスト・この駒はこのシーンのみ。使い方検索の『動かせないとき』から解除し、取り消しと再読込を確かめる。レイアウト確認: 幅900／1200／1600／1900pxで、iPad式／一列／二列／三列へ段階的に切り替わり（切替幅は1000／1520／1800px。三列は「3列表示」を選んだときだけで、既定は二列）、幅を戻すと選んだ表示へ復帰する。900pxのiPad式では上部のQシート入口、PC表示では作業タブのQシートを使う。";
 helpScene.note += " D1確認: 固定テスト・共通はA-2と同じ登録の固定。固定テスト・この駒はこのシーンのみ。使い方検索の『動かせないとき』から解除し、取り消しと再読込を確かめる。";
 helpScene.note += " UI確認: 演者・小道具の行、正面図・平面図の帯、タイムライン、各パネルのアイコンだけの操作へカーソルを合わせ、説明の吹き出しが出ること。文字の操作には出ず、環境設定の「アイコンの説明」をOFFにすると出ないこと。";
 {

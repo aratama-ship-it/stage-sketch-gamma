@@ -41,7 +41,7 @@ async function waitForEditor(page) {
     for (const [name, launcher] of [['chromium', chromium], ['webkit', webkit]]) {
       const browser = await launcher.launch({ headless: true });
       try {
-        const context = await browser.newContext({ viewport: { width: 1700, height: 900 }, locale: 'ja-JP', serviceWorkers: 'block' });
+        const context = await browser.newContext({ viewport: { width: 1900, height: 900 }, locale: 'ja-JP', serviceWorkers: 'block' });
         await context.addInitScript(() => {
           if (window !== top) return;
           const prefs = { panelLayoutMode: 'split', panelLayoutByWorkspace: { normal: 'triple' }, panelSingleSide: 'right', panelSingleSideByWorkspace: { normal: 'right' } };
@@ -77,7 +77,7 @@ async function waitForEditor(page) {
           return state;
         }
 
-        assert.equal((await resize(1200, 'two')).loads, 1);
+        assert.equal((await resize(1600, 'two')).loads, 1);
         const boxes = await page.evaluate(() => Object.fromEntries(['stage-col-left', 'stage-col-center', 'stage-col-right'].map((id) => {
           const rect = document.getElementById(id).getBoundingClientRect();
           return [id, { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, width: rect.width }];
@@ -85,38 +85,39 @@ async function waitForEditor(page) {
         assert(boxes['stage-col-left'].right <= boxes['stage-col-center'].left + 1, `${name}: left panel beside canvas`);
         assert(boxes['stage-col-center'].right <= boxes['stage-col-right'].left + 1, `${name}: right panel beside canvas`);
         assert(boxes['stage-col-left'].width > 0 && boxes['stage-col-right'].width > 0, `${name}: split panels visible`);
-        assert.equal((await resize(900, 'one')).loads, 1);
-        const ipad = await resize(600, 'ipad');
+        assert.equal((await resize(1200, 'one')).loads, 1);
+        const ipad = await resize(900, 'ipad');
         assert.equal(ipad.loads, 2, `${name}: one reload entering iPad shell`);
         assert.equal(ipad.tablet, true);
         await page.locator('#stage-cue-sheet-open').waitFor({ state: 'visible' });
-        const backToOne = await resize(900, 'one');
+        const backToOne = await resize(1200, 'one');
         assert.equal(backToOne.loads, 3, `${name}: one reload leaving iPad shell`);
         assert.equal(backToOne.tablet, false);
         assert.equal(await page.locator('#stage-cue-sheet-open').isVisible(), false);
-        assert.equal((await resize(1200, 'two')).loads, 3);
-        assert.equal((await resize(1700, 'three')).loads, 3);
+        assert.equal((await resize(1600, 'two')).loads, 3);
+        assert.equal((await resize(1900, 'three')).loads, 3);
         await page.locator('#stage-panels-toggle').click();
         const tripleChoice = page.locator('.stage-panel-visibility-layout button').nth(1);
-        assert.equal(await tripleChoice.isEnabled(), true, `${name}: triple choice enabled at 1700px`);
+        assert.equal(await tripleChoice.isEnabled(), true, `${name}: triple choice enabled at 1900px`);
         await tripleChoice.click();
         await page.waitForFunction(() => document.documentElement.dataset.stageLayout === 'three');
         assert.equal(await page.locator('#stage-col-right2').isVisible(), true, `${name}: triple available`);
 
-        await page.setViewportSize({ width: 900, height: 900 });
+        await page.setViewportSize({ width: 1100, height: 900 });
         await page.goto(`${base}?feature-test&layout-thresholds=500,800,1200`);
         await waitForEditor(page);
         await page.waitForFunction(() => document.documentElement.dataset.stageLayout === 'two');
         await page.locator('.stage-layout-threshold-panel').waitFor({ state: 'visible' });
         assert.equal(await page.evaluate(() => localStorage.getItem('gamma:shosai-stage-layout-thresholds-v1')), '500,800,1200');
         const inputs = page.locator('.stage-layout-threshold-fields input');
-        await inputs.nth(1).fill('1000');
+        await inputs.nth(1).fill('1150');
         await page.waitForFunction(() => document.documentElement.dataset.stageLayout === 'one');
         await inputs.nth(1).fill('800');
         await page.waitForFunction(() => document.documentElement.dataset.stageLayout === 'two');
         await page.goto(`${base}?feature-test&layout-dev=1`);
         await waitForEditor(page);
         await page.waitForFunction(() => document.documentElement.dataset.stageLayout === 'two');
+        await page.setViewportSize({ width: 1200, height: 900 });
         await page.getByRole('button', { name: '既定へ戻す' }).click();
         await page.waitForFunction(() => document.documentElement.dataset.stageLayout === 'one');
         assert.equal(await page.evaluate(() => localStorage.getItem('gamma:shosai-stage-layout-thresholds-v1')), null);

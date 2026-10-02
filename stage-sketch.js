@@ -14,7 +14,7 @@
 const STAGE_LAYOUT_LANES_MODEL = (() => {
   "use strict";
 
-  const DEFAULT_THRESHOLDS = Object.freeze([700, 1120, 1300]);
+  const DEFAULT_THRESHOLDS = Object.freeze([1000, 1520, 1800]);
   const EXIT_PADDING = 40;
   const STORAGE_KEYS = Object.freeze({
     thresholds: "gamma:shosai-stage-layout-thresholds-v1",
@@ -7528,7 +7528,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       if (HELD_INSTRUMENT_POSE_IDS.has(pose.id)) return false;
       if ([
         "backflip", "walkover-mid", "frontroll-mid", "roundoff-mid",
-        "backhandspring-mid", "dance3", "handstand-mid",
+        "backhandspring-mid", "dance3", "handstand-mid", "bridge_hold",
       ].includes(pose.id)) return false;
       if (isChairSitPose(pose.id)) return allOnChairs;
       if (isStairSitPose(pose.id)) return allOnStairs;

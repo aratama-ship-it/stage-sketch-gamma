@@ -15,10 +15,10 @@ async function selection(page,view) {
   await h.floating(page,true);await h.layout(page,0);return {checks,scene:'A-5 / C-1',assertions:checks.length};
 }
 async function laneCase(page,key) {
-  await h.assertFixture(page); await h.layout(page,key==='right2'?1:0); const before=await h.lane(page,key);
-  if(!before.visible){assert(page.viewportSize().width<1366,'Expected desktop lane unexpectedly hidden');assert(before.max===0||page.viewportSize().width<1100,'Expected desktop lane unexpectedly hidden');return{status:'na',reason:'CSS layout at this viewport has no resizable lane',key,before};}
+  const need=key==='right2'?1800:1520; await h.assertFixture(page); await h.layout(page,key==='right2'?1:0); const before=await h.lane(page,key);
+  if(!before.visible){assert(page.viewportSize().width<need,'Expected desktop lane unexpectedly hidden');assert(before.max===0||page.viewportSize().width<need,'Expected desktop lane unexpectedly hidden');return{status:'na',reason:'CSS layout at this viewport has no resizable lane',key,before};}
   assert(before.reachable&&!before.overlap,`Lane handle unreachable or over panel: ${JSON.stringify(before)}`);
-  if(before.max<=before.min){assert(page.viewportSize().width<1366,'Expected desktop lane has no resize range');return{status:'na',reason:'Viewport leaves no lane-width adjustment range',key,before};}
+  if(before.max<=before.min){assert(page.viewportSize().width<need,'Expected desktop lane has no resize range');return{status:'na',reason:'Viewport leaves no lane-width adjustment range',key,before};}
   const grow=before.max-before.value,shrink=before.value-before.min;const delta=grow>=shrink?Math.min(40,grow):-Math.min(40,shrink);assert(Math.abs(delta)>=1,'Resizable lane must allow a measurable change');
   await page.mouse.move(before.x,before.y);await page.mouse.down();await page.mouse.move(before.x+delta*(key==='left'?1:-1),before.y,{steps:8});await page.mouse.up();await h.settle(page);
   const dragged=await h.lane(page,key);assert.equal(dragged.value,before.value+delta,'Pointer drag must change actual width');assert(Math.abs(dragged.width-dragged.value)<2,'Host width must match saved width');
