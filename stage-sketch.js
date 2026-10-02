@@ -9431,7 +9431,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       autoTablet,
       manualTablet: prefs.tabletMode === true || window.SHOSAI_TABLET_PWA === true,
     });
-    if (transition.reload && !layoutLaneReloadPending) {
+    if (transition.reload && !STUDY_READ_ONLY && !layoutLaneReloadPending) {
       layoutLaneReloadPending = true;
       try {
         if (transition.autoTablet) localStorage.setItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet, "1");
