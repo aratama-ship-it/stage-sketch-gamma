@@ -4938,7 +4938,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const lightKindOf = (item) => (item && LIGHT_KINDS[item.lightKind] ? item.lightKind : "hang");
   const SET_KIND_ORDER = [
     "block", "table", "chair", "bench", "stool", "wall", "sphere", "prop", "model",
-    "trapeze", "cyrwheel", "diabolo", "pole", "teeter", "tissue", "wire",
+    "trapeze", "cyrwheel", "diabolo", "pole", "teeter", "tissue", "rigpoint", "wire",
     "suitcase", "trampoline", "cane", "car", "seri", "revolve", "deck", "curtain", "pool",
   ];
   /* ---------- 演者の骨格と姿勢 ----------
@@ -25411,7 +25411,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       color: validColor(pieceColor, defaultSetColor(kind, shape)),
       modelId: kind === "model" ? modelId : null,
       propShape: shape,
-      dims, note: "", locked: false, flown: flownOnly || shapeFlown, wires: 2, framed: false, lightKind: lk,
+      dims, note: "", locked: false, flown: flownOnly || shapeFlown, wires: kind === "rigpoint" ? 1 : 2, framed: false, lightKind: lk,
       curtainKind: kind === "curtain" ? "front" : undefined,
     };
     state.project.sets.push(item);
@@ -27502,9 +27502,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     { ja: "建て込み", ids: ["wall"] },
     /* ★2026-09-23 本人指示: 「乗り物」の中身は乗り物だけ（球は外し、その他の大道具へ）。 */
     { ja: "乗り物", ids: ["car"] },
-    /* ★吊り点（rigpoint）は v0.2.34 では読み込みと描画だけ。追加の窓へ出すのは次の版（D3と同じ順番。
-       v0.2.33 以前は知らない駒の型を演者として読むため、読める版が行き渡ってから作れるようにする）。 */
-    { ja: "空中・サーカス", ids: ["trapeze", "cyrwheel", "pole", "teeter", "tissue", "wire", "trampoline", "cane"] },
+    /* 吊り点（rigpoint）: v0.2.34 で読み込みと描画を先に出し、2026-10-03 に追加の窓へ出した（D3と同じ順番。
+       v0.2.33 以前は知らない駒の型を演者として読むため、読める版が行き渡るのを待った）。 */
+    { ja: "空中・サーカス", ids: ["trapeze", "cyrwheel", "pole", "teeter", "tissue", "rigpoint", "wire", "trampoline", "cane"] },
   ]);
   let rosterKind = "performer";
   let rosterKindLayer = "performer";
