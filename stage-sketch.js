@@ -9242,6 +9242,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   ];
   /* U-03 吹き出しの状態と縦書きの字の扱い。描画（drawVoxBubble）より前に宣言しておく（起動直後の描画で未初期化にならないように）。 */
   let voxBubbleLine = null;
+  let studySpeakerCast = "";
   const VERTICAL_ROTATE = new Set([..."ー―─…‥〜～-—()（）「」『』［］[]【】〈〉《》｛｝{}<>＜＞=＝"]);
   const VERTICAL_SHIFT = new Set([..."、。，．,."]);
   const VERTICAL_SMALL = new Set([..."ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ"]);
@@ -21005,6 +21006,48 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return columns;
   }
 
+  function drawStudySpeakerMark(target, L, shown) {
+    const piece = shown.find((item) => item.type === "performer" && !item.heldBy && item.castId === studySpeakerCast);
+    if (!piece) return;
+    const visualPiece = effectivelyPlacedPiece(piece);
+    const pos = placePiece(visualPiece, L);
+    const bounds = selectionBounds(visualPiece, L);
+    const color = piece.color || "#d6be84";
+    const bw = 104, bh = 66, tail = 16;
+    const anchorY = bounds.y - (state.showNames ? 26 : 8);
+    const left = clamp(pos.x - bw / 2, 4, Math.max(4, W - bw - 4));
+    const top = Math.max(4, anchorY - tail - bh);
+    const tipX = clamp(pos.x, left + 22, left + bw - 22);
+    const r = bh / 2;
+    target.save();
+    target.shadowColor = "rgba(0,0,0,0.5)";
+    target.shadowBlur = 8;
+    target.shadowOffsetY = 2;
+    target.fillStyle = "rgba(239,231,214,0.97)";
+    target.strokeStyle = color;
+    target.lineWidth = 6;
+    target.beginPath();
+    target.moveTo(left + r, top);
+    target.lineTo(left + bw - r, top);
+    target.arc(left + bw - r, top + r, r, -Math.PI / 2, Math.PI / 2);
+    target.lineTo(tipX + 12, top + bh);
+    target.lineTo(tipX, Math.min(anchorY, top + bh + tail));
+    target.lineTo(tipX - 12, top + bh);
+    target.lineTo(left + r, top + bh);
+    target.arc(left + r, top + r, r, Math.PI / 2, Math.PI * 1.5);
+    target.closePath();
+    target.fill();
+    target.shadowColor = "transparent";
+    target.stroke();
+    target.fillStyle = color;
+    [-1, 0, 1].forEach((step) => {
+      target.beginPath();
+      target.arc(left + bw / 2 + step * 22, top + bh / 2, 6.5, 0, Math.PI * 2);
+      target.fill();
+    });
+    target.restore();
+  }
+
   function drawVoxBubble(target, L, shown) {
     const piece = voxBubbleSpeakerPiece(shown);
     if (!piece) return;
@@ -21844,7 +21887,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (L.plan) drawPlanVenue(target, L);
     else drawFrontVenue(target, L);
     if (showSelection && L.plan && target === planCtx) drawLightingPlanOverlay(target, L);
-    if (showSelection && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) {
+    if ((showSelection || STUDY_READ_ONLY) && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) {
       drawLightCuePools(target, L);
       if (!featureOn("workLightOff")) { drawLightCueBeams(target, L); drawLightCueLasers(target, L); drawLightCueBodies(target, L); }
     }
@@ -21920,7 +21963,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     }
 
     // 名前。頭上（平面では点の脇）に小さく置く。演者・装置・照明は別々に出し入れする
-    if (showSelection && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) {
+    if ((showSelection || STUDY_READ_ONLY) && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) {
       if (drawLightCueWorkLight(target, L)) {
         redrawLitPieces(target, L, orderedPieces, draw);
         // はけ途中の演者も背景照明より手前へ戻す。現シーンにいないため
@@ -21977,6 +22020,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     }
     // U-03: いまのセリフの吹き出し（正面図だけ・環境設定で入のときだけ）
     if (!pitchStyle && !L.plan && target === ctx && featureOn("voxBubble")) drawVoxBubble(target, L, shown);
+    if (!pitchStyle && studySpeakerCast && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) drawStudySpeakerMark(target, L, shown);
 
     /* 動線は平面図だけ。上から見た床の上の道筋なので、正面図には出しようがない。
        ★転換アニメの最中は出さない（本人指定）。動いている駒の足元に
@@ -42740,6 +42784,36 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   if (STUDY_READ_ONLY) {
     // Only presentation state is mutable. No editor, save, export or session bridge is exposed.
     window.SHOSAI_STAGE_STUDY_RENDERER = Object.freeze({
+      light(mode) {
+        if (mode !== "work" && mode !== "show") return;
+        const step = LIGHT_LOOK_STEPS.find(item => item.value === (mode === "show" ? "dark" : "off"));
+        prefs.lightPool = step.pool;
+        prefs.lightBeam = step.beam;
+        prefs.workLightOff = step.work;
+        applyFeatureFlags();
+        render();
+      },
+      speaker(castId) {
+        studySpeakerCast = castId ? String(castId) : "";
+        render();
+      },
+      stageBounds(view) {
+        const L = layout(view), size = L.size;
+        if (![size.width, size.depth].every(n => Number.isFinite(n) && n > 0)) return null;
+        const points = L.plan
+          ? [[L.stage.x, L.stage.y], [L.stage.x + L.stage.w, L.stage.y + L.stage.h]]
+          : [[L.centerX - L.frontW / 2, L.bottomY], [L.centerX + L.frontW / 2, L.bottomY],
+             [L.centerX + L.shift - L.backW / 2, L.backY], [L.centerX + L.shift + L.backW / 2, L.backY]];
+        const xs = points.map(p => p[0]), ys = points.map(p => p[1]);
+        const x = Math.min(...xs) / W, y = Math.min(...ys) / H;
+        const width = (Math.max(...xs) - Math.min(...xs)) / W;
+        const height = (Math.max(...ys) - Math.min(...ys)) / H;
+        return [x, y, width, height].every(Number.isFinite) && width > 0 && height > 0
+          ? { x, y, width, height, metres: { width: size.width, depth: size.depth, height: size.height }, venue: state.project.venue } : null;
+      },
+      lightInfo() {
+        return Boolean(lightCueOverlayForLayout(layout("plan")));
+      },
       load(doc, language) {
         stopSceneAnim(); stopSpinRun();
         lang = language === "en" ? "en" : "ja";

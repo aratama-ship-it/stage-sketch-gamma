@@ -41,6 +41,8 @@
       try {
         if (message.action === 'load') { canAnnotate = Boolean(message.annotationsEditable); engine.load(message.document, message.lang); sceneId = message.sceneId; revision = message.revision; engine.scene(sceneId); pen.load(message.strokes); pen.mode(message.penEnabled); sticky.load(message.stickies); sticky.configure({ editable: canAnnotate && !message.penEnabled, enabled: Boolean(message.stickyEnabled), lang: message.lang }); }
         else if (message.action === 'scene') { sceneId = message.sceneId; engine.scene(sceneId); pen.load(message.strokes); pen.show(true); sticky.load(message.stickies); sticky.show(true); }
+        else if (message.action === 'light') { engine.light(message.mode); }
+        else if (message.action === 'speaker') { engine.speaker(message.castId); }
         else if (message.action === 'fit') { navigation?.fill(Boolean(message.full)); }
         else if (message.action === 'seat') { navigation?.seat(String(message.id)); }
         else if (message.action === 'reset-view') { navigation?.resetView(message.view); }
@@ -72,7 +74,10 @@
         if (['sticky-add', 'sticky-focus'].includes(message.action)) navigation.central();
         navigation.layout();
         if (message.action === 'scene' && document.body.classList.contains('viewer-phone')) navigation.reset();
-        if (message.action === 'load') window.parent.postMessage({ channel: 'stage-study', action: 'loaded' }, location.origin);
+        if (message.action === 'load') {
+          window.parent.postMessage({ channel: 'stage-study', action: 'light-capability', hasLights: engine.lightInfo() }, location.origin);
+          window.parent.postMessage({ channel: 'stage-study', action: 'loaded' }, location.origin);
+        }
       } catch { window.parent.postMessage({ channel: 'stage-study', action: 'error' }, location.origin); }
     });
     new ResizeObserver(() => engine.resize()).observe(document.querySelector('.study-drawings'));

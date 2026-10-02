@@ -9,6 +9,9 @@ export const STUDY_PUBLIC_ASSETS = new Set([
   '/study-assets/stage-data-safety.js', '/study-assets/stage-sketch.js', '/study-assets/stage-venues.js', '/study-assets/stage-venue-lines.js',
   '/study-assets/stage-i18n.js', '/study-assets/stage-i18n.ko.js', '/study-assets/stage-set-model.js', '/study-assets/stage-machinery.js',
   '/study-assets/gamma-ui.js', '/study-assets/gamma-ui-i18n.js', '/study-assets/gamma-ui-i18n.ko.js', '/study-assets/style.css',
+  '/study-assets/gamma-light-model.js', '/study-assets/stage-fixture-body.js', '/study-assets/stage-lighting-plan-overlay.js',
+  '/study-assets/light-design/rig-engine.js', '/study-assets/light-design/laser-effects.js', '/study-assets/stage-light-render.js',
+  '/study-assets/gamma-light-cue-overlay.js',
 ]);
 export const studyResponse = (body, status = 200) => new Response(JSON.stringify(body), {
   status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'private, no-store',
