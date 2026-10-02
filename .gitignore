@@ -417,3 +417,4 @@ public-dist/
 !/tests/wing-leg-count.test.mjs
 !/tests/wing-leg-count-browser.cjs
 !/tests/native-update-download-browser.cjs
+!/tests/native-download-prefs-browser.cjs

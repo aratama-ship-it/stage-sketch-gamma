@@ -548,6 +548,11 @@
     /* ---- 上部 ---- */
     "使い方": "Guide",
     "使い方・アプリについて": "How to use and about the app",
+    "Mac版アプリ": "Mac app",
+    "最新のMac版アプリをダウンロードして、いま使っているアプリと入れ替えます。入れ替え方は導入手順にあります。": "Download the latest Mac app and replace the one you are using. The steps are on the install page.",
+    "最新のMac版をダウンロード": "Download the latest Mac app",
+    "導入手順を見る": "See install steps",
+    "最新版の情報を取得できませんでした。ダウンロードページから確認できます。": "Could not check the latest version. You can check it on the download page.",
     "案内・検索・冊子・端末の違い・アプリの説明・感想の送り先をまとめています。": "Tours, search, the booklet, device differences, app information, and where to send feedback.",
     "使い方とアプリについて": "How to use and about the app",
     "動かせないとき": "When an item will not move",

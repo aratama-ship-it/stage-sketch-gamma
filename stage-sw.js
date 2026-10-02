@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v443";
+const CACHE_NAME = "stage-sketch-gamma-shell-v444";
 const APP_SHELL = [
   "./stage-data-safety.js?v=20261001-release69",
   "./stage-point-source.js?v=20260927-point43",
@@ -64,15 +64,15 @@ const APP_SHELL = [
   "./light-design/position-names.css?v=20261001-release71",
   "./light-design/simple-lighting.css?v=20260930-gamma2",
   "./stage.html",
-  "./style.css?v=20261001-release71",
+  "./style.css?v=20261002-release73",
   "./stage-venues.js?v=20261001-release71",
   "./stage-venue-lines.js?v=2026091992",
   "./stage-front-shape.js?v=2026092046",
   "./stage-venue-report.js?v=2026092047",
-  "./stage-i18n.js?v=20261001-release71",
-  "./stage-i18n.ko.js?v=20261001-release71",
-  "./stage-i18n.zh-Hans.js?v=20261001-release71",
-  "./stage-i18n.zh-Hant.js?v=20261001-release71",
+  "./stage-i18n.js?v=20261002-release73",
+  "./stage-i18n.ko.js?v=20261002-release73",
+  "./stage-i18n.zh-Hans.js?v=20261002-release73",
+  "./stage-i18n.zh-Hant.js?v=20261002-release73",
   "./stage-prompt-i18n.js?v=20260929-beta64",
   "./stage-rehearsal-export.js?v=2026091501",
   "./stage-samples/index.js?v=2026092402",
@@ -109,7 +109,7 @@ const APP_SHELL = [
   "./stage-shortcuts.js?v=2026092218",
   "./stage-reorder-motion.js?v=2026092420",
   "./stage-save-lifecycle.js?v=20260927-guard45",
-  "./stage-sketch.js?v=20261002-release72",
+  "./stage-sketch.js?v=20261002-release73",
   "./stage-timeline.js?v=20260930-gamma2",
   "./stage-session.js?v=20260926-feedback40",
   "./stage-study-owner.js?v=20260926-feedback40",

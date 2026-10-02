@@ -31387,6 +31387,28 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     return `${gamma ? content.booklet : "manual/manual.html"}${query}${sectionId ? `#${sectionId}` : ""}`;
   }
 
+  function syncNativeDownload() {
+    const box = document.getElementById("stage-pref-native");
+    if (!box) return;
+    const inNativeShell = location.hostname === "127.0.0.1" && (location.port === "8957" || location.port === "8958");
+    if (inNativeShell) { box.hidden = true; return; }
+    const link = document.getElementById("stage-native-download");
+    const badge = document.getElementById("stage-native-version");
+    const note = document.getElementById("stage-native-note");
+    fetch("native-latest.json", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error("native-latest fetch failed");
+        return response.json();
+      })
+      .then((latest) => {
+        if (typeof latest.version !== "string" || !/^\d+(?:\.\d+)*$/.test(latest.version)) throw new Error("native-latest version invalid");
+        badge.textContent = latest.version;
+        badge.hidden = false;
+        if (typeof latest.zip === "string" && latest.zip.startsWith("https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/")) link.href = latest.zip;
+      })
+      .catch(() => { note.hidden = false; });
+  }
+
   function syncManualEdition() {
     const edition = document.getElementById("stage-manual-edition");
     const content = window.MANUAL_CONTENT || {};
@@ -42402,6 +42424,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   if (els.helpOpen) els.helpOpen.addEventListener("click", openManualHelpFromPrefs);
   if (els.manualOpen) els.manualOpen.addEventListener("click", openManualBook);
   syncManualEdition();
+  syncNativeDownload();
   if (els.resetLayout) els.resetLayout.addEventListener("click", resetPanelLayoutToDistributionDefault);
   if (els.resetAll) els.resetAll.addEventListener("click", openResetDialog);
   if (els.resetConfirm) els.resetConfirm.addEventListener("click", advanceResetDialog);

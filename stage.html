@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ | Stage Sketch Gamma</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.2.72">
+<meta name="stage-sketch-gamma-version" content="v0.2.73">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="舞台スケッチ γ">
 <link rel="manifest" href="stage-sketch.webmanifest">
 <link rel="apple-touch-icon" href="icons/stage-sketch-180.png">
 <link rel="icon" href="icons/stage-sketch-192.png" sizes="192x192" type="image/png">
-<link rel="stylesheet" href="style.css?v=20261001-release71">
+<link rel="stylesheet" href="style.css?v=20261002-release73">
 <style>
   /* 単独ページでは、他の画面へ行く帯を持たない。
      その代わり上の余白だけ詰めて、絵が早く出るようにする。 */
@@ -69,7 +69,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.72</span>
+              <span class="stage-app-version">0.2.73</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo" src="assets/brand/logo-jp-gamma-inline-white.svg"
@@ -2461,6 +2461,15 @@
         <button type="button" class="stage-about-link" id="stage-about-open-from-prefs">このアプリについて</button>
         <button type="button" class="stage-about-link" id="stage-feedback" title="使ってみた感想を送る">感想を送る</button>
       </div>
+      <div class="stage-pref-native" id="stage-pref-native">
+        <span class="stage-pref-name">Mac版アプリ</span>
+        <p class="stage-pref-hint">最新のMac版アプリをダウンロードして、いま使っているアプリと入れ替えます。入れ替え方は導入手順にあります。</p>
+        <p class="stage-pref-hint" id="stage-native-note" hidden>最新版の情報を取得できませんでした。ダウンロードページから確認できます。</p>
+        <div class="stage-prefs-links" aria-label="Mac版アプリ">
+          <a class="stage-about-link" id="stage-native-download" href="https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest" target="_blank" rel="noopener">最新のMac版をダウンロード<span class="stage-manual-edition" id="stage-native-version" data-no-i18n hidden></span></a>
+          <a class="stage-about-link" href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/" target="_blank" rel="noopener">導入手順を見る</a>
+        </div>
+      </div>
       <p class="stage-pref-boundary-note">これは構図・色・距離感を考えるための2D習作です。舞台機構、リギング、安全距離、施工寸法を決める図面ではありません。</p>
     </details>
     <section class="stage-pref-group stage-transition-animation-group" aria-labelledby="stage-transition-animation-group-title">
@@ -2609,6 +2618,12 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0273-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0273-title">v0.2.73</h3><time datetime="2026-10-02">2026-10-02</time></header>
+      <ul>
+        <li>設定の「使い方・アプリについて」から、最新のMac版アプリをダウンロードできるようにしました。最新版の番号も表示され、入れ替えの手順ページも開けます。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0272-title">
       <header class="stage-release-entry-head"><h3 id="stage-release-v0272-title">v0.2.72</h3><time datetime="2026-10-02">2026-10-02</time></header>
       <ul>
@@ -3949,10 +3964,10 @@
 <script src="stage-venue-lines.js?v=2026091992"></script>
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
-    <script src="stage-i18n.js?v=20261001-release71"></script>
-    <script src="stage-i18n.zh-Hans.js?v=20261001-release71"></script>
-    <script src="stage-i18n.zh-Hant.js?v=20261001-release71"></script>
-    <script src="stage-i18n.ko.js?v=20261001-release71"></script>
+    <script src="stage-i18n.js?v=20261002-release73"></script>
+    <script src="stage-i18n.zh-Hans.js?v=20261002-release73"></script>
+    <script src="stage-i18n.zh-Hant.js?v=20261002-release73"></script>
+    <script src="stage-i18n.ko.js?v=20261002-release73"></script>
 <script src="stage-prompt-i18n.js?v=20260929-beta64"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026092402"></script>
@@ -4002,7 +4017,7 @@
 <script src="stage-point-source.js?v=20260927-point43"></script>
 <script src="stage-save-lifecycle.js?v=20260927-guard45"></script>
 <script src="light-design/simple-lighting-model.js?v=20261001-release71"></script>
-<script src="stage-sketch.js?v=20261002-release72"></script>
+<script src="stage-sketch.js?v=20261002-release73"></script>
 <script src="stage-scene-alternatives-ui.js?v=20260926-release32"></script>
 <script src="gamma-formation.js?v=20261001-release71b"></script>
 <script src="stage-vox-panel.js?v=2026092432"></script>

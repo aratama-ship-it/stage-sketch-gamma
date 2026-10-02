@@ -1,7 +1,8 @@
 {
-  "version": "0.2.71",
+  "version": "0.2.73",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.2.73/stage-sketch-gamma-mac-0.2.73.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "Mac版の更新通知とダウンロードページを追加しました。",
-  "updated": "2026-10-01"
+  "notes": "設定画面から最新のMac版をダウンロードできるようにしました。",
+  "updated": "2026-10-02"
 }

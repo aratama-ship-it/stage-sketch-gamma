@@ -18528,3 +18528,9 @@ body.is-setinfo-preview-dragging .stage-setinfo-preview canvas { cursor: grabbin
 .stage-move-help-entry label { display: block; margin: 8px 0; }
 .stage-move-help-entry { margin-bottom: 12px; }
 .stage-move-help button:focus-visible, .stage-move-help-entry select:focus-visible, .stage-move-help-entry summary:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+
+.stage-pref-native {
+  padding: 14px 2px 4px;
+  border-top: 1px solid var(--line-dark);
+}
+.stage-pref-native .stage-prefs-links { margin-top: 8px; }
