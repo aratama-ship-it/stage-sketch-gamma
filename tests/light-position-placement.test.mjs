@@ -52,7 +52,7 @@ test('v3 JSON, reconcile, draft and v2 originalText provenance survive without r
  assert.deepEqual(plain(M.validate(JSON.parse(JSON.stringify(rebound)))),plain(rebound));
  const ctx={stage:rebound.stage,scenes:rebound.scenes.map(s=>({id:s.id,name:s.name})),title:'test',design:rebound};
  assert.deepEqual(plain(M.restoreDraft(M.stripPassthrough(rebound),ctx)),plain(rebound));assert.deepEqual(plain(M.reconcile(rebound,ctx).rig),plain(rebound.rig));
- const old=vm.createContext({});vm.runInContext(execFileSync('/Library/Developer/CommandLineTools/usr/bin/git',['show',LEGACY_MODEL_COMMIT+':gamma-light-model.js'],{encoding:'utf8'}),old);assert.throws(()=>old.GAMMA_LIGHT_MODEL.validate(rebound));assert.deepEqual(plain(old.GAMMA_LIGHT_MODEL.validate(rebound.positionLayoutRollback.originalDesign)),plain(legacy));
+ const old=vm.createContext({});vm.runInContext(execFileSync('git',['show',LEGACY_MODEL_COMMIT+':gamma-light-model.js'],{encoding:'utf8'}),old);assert.throws(()=>old.GAMMA_LIGHT_MODEL.validate(rebound));assert.deepEqual(plain(old.GAMMA_LIGHT_MODEL.validate(rebound.positionLayoutRollback.originalDesign)),plain(legacy));
 });
 
 

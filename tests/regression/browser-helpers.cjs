@@ -28,7 +28,7 @@ async function boot(page, baseURL) {
 }
 async function scene(page,id) { await assertFixture(page); assert(await page.evaluate(id=>SHOSAI_STAGE_SESSION_BRIDGE.openSceneById(id),id),`Missing fixture scene ${id}`); await settle(page); }
 async function reloadFixture(page) { await page.waitForTimeout(1600); await page.reload(); await page.waitForFunction(()=>!!window.SHOSAI_STAGE_SESSION_BRIDGE&&!!window.GAMMA_WORKSPACE); await assertFixture(page); await dismissBackup(page); await settle(page); }
-async function layout(page,index) { await assertFixture(page); await page.locator('#stage-panels-toggle').click(); await page.locator('.stage-panel-visibility-layout button').nth(index).click(); await page.locator('#stage-panels-toggle').click(); await settle(page); }
+async function layout(page,index) { await assertFixture(page); await page.locator('#stage-panel-layout-toggle').click(); await page.locator('.stage-panel-layout-choices button').nth(index).click();  await settle(page); }
 async function floating(page,on) { await assertFixture(page); await page.locator('#stage-prefs-btn').click(); await page.locator('.stage-pref-toggle').filter({hasText:/選んだものを図に添える|Attach.*selected|selected.*diagram/i}).locator('input[type=checkbox]').setChecked(on); await page.locator('#stage-prefs-close').click(); await settle(page); }
 async function selectPlan(page,sceneId,id) {
   await scene(page,sceneId); const canvas=page.locator('#stage-plan-canvas'); await canvas.scrollIntoViewIfNeeded();

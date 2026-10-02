@@ -47,7 +47,7 @@ test('new names survive JSON, scene reconciliation, drafts, unknown fields and t
  const archived=plain(next);archived.archivedScenes=[archived.scenes.pop()];
  const restored=M.reconcile(archived,ctx);assert.equal(restored.archivedScenes.length,0);assert.deepEqual(plain(restored.rig),plain(next.rig));
  const old=vm.createContext({});
- vm.runInContext(execFileSync('/Library/Developer/CommandLineTools/usr/bin/git',['show','HEAD:gamma-light-model.js'],{cwd:new URL('..',import.meta.url),encoding:'utf8'}),old);
+ vm.runInContext(execFileSync('git',['show','HEAD:gamma-light-model.js'],{cwd:new URL('..',import.meta.url),encoding:'utf8'}),old);
  assert.deepEqual(plain(old.GAMMA_LIGHT_MODEL.validate(next).rig),plain(next.rig));
  const legacy=plain(d);delete legacy.rig.positions;for(const f of legacy.rig.fixtures)delete f.positionRef;
  assert.deepEqual(plain(M.validate(legacy)),legacy,'old designs receive no invented labels');

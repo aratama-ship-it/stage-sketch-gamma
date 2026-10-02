@@ -53,9 +53,9 @@ async function run(name, launcher) {
       return page.evaluate(() => JSON.parse(GAMMA_LARGE_PROJECT_STORAGE.storage.getItem(SHOSAI_GAMMA_STORAGE_KEYS.currentShow)).layout);
     };
     const choose = async value => {
-      await page.locator('#stage-panels-toggle').click();
-      await page.locator(`.stage-panel-visibility-layout [data-panel-layout="${value}"]`).click();
-      await page.locator('#stage-panels-toggle').click();
+      await page.locator('#stage-panel-layout-toggle').click();
+      await page.locator(`[data-panel-layout="${value}"]`).click();
+      assert.equal(await page.locator('#stage-panel-layout-menu').isVisible(), false);
     };
     const collapse = async (id, wanted) => {
       const head = page.locator(`[data-panel-head="${id}"]`);
@@ -73,10 +73,51 @@ async function run(name, launcher) {
       return { width: innerWidth, cols, front: box('stage-canvas'), plan: box('stage-plan-canvas'), frontCell: box('stage-front-cell'), planCell: box('stage-plan-cell'), dock: box('stage-bottom-panels'), columns: [1,2,3,4].map(i => box('stage-col-bottom'+i)), icons, scrollWidth: document.getElementById('view-stage').scrollWidth, clientWidth: document.getElementById('view-stage').clientWidth };
     });
     await page.goto(base + '?feature-test');
+    if (!['localhost','127.0.0.1'].includes(new URL(base).hostname)) {
+      await page.waitForFunction(() => window.GAMMA_WORKSPACE && window.SHOSAI_STAGE_SESSION_BRIDGE);
+      await page.locator('#stage-shows-open').click();
+      await page.locator('#stage-show-list .stage-show-open').filter({hasText:/全機能の試験場|All.feature test/i}).first().click();
+    }
     await ready();
     assert.equal(await page.locator('html').getAttribute('data-stage-layout'), 'two', name + ': existing default');
     const originalDocument = await documentValue();
     const originalLayout = await savedLayout();
+    const styleToggle = page.locator('#stage-panel-layout-toggle');
+    const visibilityToggle = page.locator('#stage-panels-toggle');
+    const styleMenu = page.locator('#stage-panel-layout-menu');
+    const visibilityMenu = page.locator('#stage-panels-menu');
+    for (const button of [styleToggle, visibilityToggle]) {
+      const r = await button.boundingBox(); assert(r.width === 44 && r.height === 44);
+      assert(await button.getAttribute('aria-label'));
+    }
+    assert.notEqual(await styleToggle.locator('svg').innerHTML(), await visibilityToggle.locator('svg').innerHTML());
+    await styleToggle.click();
+    assert.equal(await styleMenu.locator('[data-panel-layout]').count(), 6);
+    assert.equal(await styleMenu.locator('[aria-pressed="true"]').getAttribute('data-panel-layout'),'split');
+    await page.keyboard.press('Escape');
+    assert.equal(await styleMenu.isVisible(),false);
+    assert.equal(await styleToggle.evaluate(el=>el===document.activeElement),true);
+    await styleToggle.press('Enter');
+    assert.equal(await styleMenu.isVisible(),true);
+    await visibilityToggle.click();
+    assert.equal(await styleMenu.isVisible(),false);
+    assert.equal(await visibilityMenu.locator('[data-panel-layout]').count(),0);
+    assert.equal(await visibilityMenu.getByText('パネルの表示スタイル',{exact:true}).count(),0);
+    await styleToggle.click();
+    assert.equal(await visibilityMenu.isVisible(),false);
+    await page.locator('#stage-prefs-btn').click();
+    assert.equal(await styleMenu.isVisible(),false);
+    assert.equal(await page.locator('#stage-prefs-list [data-stage-workspace-panel-layout]').count(),0);
+    assert.equal(await page.locator('#stage-prefs-list').getByText('パネルの表示スタイル',{exact:true}).count(),0);
+    await page.locator('#stage-prefs-close').click();
+    await styleToggle.click();
+    await page.locator('#stage-workspace-tabs [data-stage-workspace-mode="cuesheet"]').click();
+    assert.equal(await styleMenu.isVisible(),false);
+    assert.equal(await styleToggle.isVisible(),false);
+    await page.locator('#stage-workspace-tabs [data-stage-workspace-mode="normal"]').click();
+    assert.equal(await styleToggle.isVisible(),true);
+    assert.deepEqual(await documentValue(), originalDocument);
+    results.push({browser:name,scene:'B-3',check:'independent icon, exclusive menus, keyboard, preferences and workspace'});
     await choose('bottom');
     await page.waitForFunction(() => document.documentElement.dataset.stageLayout === 'bottom');
     assert.deepEqual(await documentValue(), originalDocument, name + ': mode choice keeps show JSON');
@@ -98,6 +139,19 @@ async function run(name, launcher) {
       assert(g.icons.every(icon => icon.w === 44 && icon.h === 44), name + ': equal 44px canvas icons ' + JSON.stringify(g.icons));
       if (columns === 3) assert(g.columns[3].y > g.columns[0].y, name + ': fourth column wraps');
       if (columns === 2) assert(g.columns[2].y > g.columns[0].y, name + ': lower row wraps');
+      await styleToggle.click();
+      const menuRect=await styleMenu.boundingBox();
+      assert(menuRect.x>=12 && menuRect.x+menuRect.width<=width-12);
+      for (const choice of await styleMenu.locator('button').all()) {
+        assert((await choice.boundingBox()).height>=44);
+        assert.equal(await choice.evaluate(el=>el.scrollWidth<=el.clientWidth),true);
+        assert.equal(await choice.evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));}),true);
+      }
+      await page.screenshot({ path: path.join(output, `${name}-${width}-style-menu.png`) });
+      await page.locator('.stage-panel-layout-title').click();
+      assert.equal(await styleMenu.isVisible(),true);
+      await page.locator('#stage-workspace-tabs [data-stage-workspace-mode="normal"]').click();
+      assert.equal(await styleMenu.isVisible(),false);
       await page.screenshot({ path: path.join(output, `${name}-${width}.png`) });
       results.push({ browser:name, scene:'B-3', check:'geometry', ...g });
     }
@@ -167,9 +221,13 @@ async function run(name, launcher) {
     assert.equal(prefs.panelLayoutMode,'split',name+': old-version fallback');
     assert.equal(prefs.panelLayoutByWorkspace.normal,'bottom');
     await page.locator('#stage-prefs-btn').click();
-    assert.equal(await page.locator('[data-stage-workspace-panel-layout="normal"]').inputValue(),'bottom');
+    assert.equal(await page.locator('[data-stage-workspace-panel-layout]').count(),0);
+    assert.equal(await page.locator('#stage-prefs-list').getByText('パネルの表示スタイル',{exact:true}).count(),0);
     await page.locator('#stage-prefs-close').click();
-    results.push({browser:name,scene:'B-3',check:'wrapped drag, reload and shared preference',saved:prefs.panelBottomLayout});
+    await page.locator('#stage-panel-layout-toggle').click();
+    assert.equal(await page.locator('[data-panel-layout="bottom"]').getAttribute('aria-pressed'),'true');
+    await page.keyboard.press('Escape');
+    results.push({browser:name,scene:'B-3',check:'wrapped drag, reload and independent style preference',saved:prefs.panelBottomLayout});
 
     await page.setViewportSize({width:900,height:1050});
     await page.waitForFunction(()=>document.documentElement.classList.contains('stage-pwa-tablet')&&document.documentElement.dataset.stageLayout==='ipad');

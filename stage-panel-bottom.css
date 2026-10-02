@@ -122,8 +122,3 @@ html[data-stage-layout="bottom"]:not(.stage-pwa-tablet):not(.stage-phone-viewer)
   height: var(--ctrl-lg);
   align-items: center;
 }
-/* 新しい選択肢は末尾の一段を使い、ラベルを途中で折らない。 */
-.stage-panel-visibility-layout button:last-child[data-panel-layout="bottom"] {
-  grid-column: 1 / -1;
-  min-height: var(--ctrl-lg);
-}

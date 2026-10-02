@@ -96,8 +96,8 @@ async function waitForEditor(page) {
         assert.equal(await page.locator('#stage-cue-sheet-open').isVisible(), false);
         assert.equal((await resize(1600, 'two')).loads, 3);
         assert.equal((await resize(1900, 'three')).loads, 3);
-        await page.locator('#stage-panels-toggle').click();
-        const tripleChoice = page.locator('.stage-panel-visibility-layout button').nth(1);
+        await page.locator('#stage-panel-layout-toggle').click();
+        const tripleChoice = page.locator('.stage-panel-layout-choices button').nth(1);
         assert.equal(await tripleChoice.isEnabled(), true, `${name}: triple choice enabled at 1900px`);
         await tripleChoice.click();
         await page.waitForFunction(() => document.documentElement.dataset.stageLayout === 'three');

@@ -8672,6 +8672,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     prefsBtn: document.getElementById("stage-prefs-btn"),
     panelsToggle: document.getElementById("stage-panels-toggle"),
     panelsMenu: document.getElementById("stage-panels-menu"),
+    panelLayoutControl: document.getElementById("stage-panel-layout-control"),
+    panelLayoutToggle: document.getElementById("stage-panel-layout-toggle"),
+    panelLayoutMenu: document.getElementById("stage-panel-layout-menu"),
     prefsModal: document.getElementById("stage-prefs-modal"),
     prefsBackdrop: document.getElementById("stage-prefs-backdrop"),
     prefsClose: document.getElementById("stage-prefs-close"),
@@ -24584,35 +24587,68 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       item.append(box, name);
       els.panelsMenu.append(item);
     });
-    /* R-27（2026-09-17 本人要望）: 下に棒線で区切って「列の並べ方」を足す。
-       効くのは舞台モードだけ（配置・照明・劇場設定は専用の画面を使うため）なので、
-       ほかのモードでは丸ごと出さない。押せない選択肢を並べて迷わせない。
-       「iPad表示モード」はここには出さない — 選ぶとページが再読み込みされ、
-       小さなメニューから不意に押せると驚きが大きいため（環境設定には残してある）。 */
-    if (currentWorkspaceMode() !== "normal") return;
-    const rule = document.createElement("div");
-    rule.className = "stage-panel-visibility-rule";
+  }
+
+  /* 2026-10-03 本人指定: 表示スタイルとパネルON/OFFは独立した入口にする。
+     保存・反映は従来の applyPanelLayoutChoice を使い、ショーの配置を変えない。 */
+  function syncPanelLayoutControl() {
+    const available = currentWorkspaceMode() === "normal" && !phoneViewerActive
+      && window.SHOSAI_TABLET_PWA !== true && !document.body.classList.contains("stage-session-guest");
+    if (els.panelLayoutControl) els.panelLayoutControl.hidden = !available;
+    if (!available) closePanelLayoutMenu();
+    return available;
+  }
+
+  function renderPanelLayoutMenu() {
+    if (!els.panelLayoutMenu) return;
+    els.panelLayoutMenu.replaceChildren();
     const head = document.createElement("p");
-    head.className = "stage-panel-visibility-subhead";
+    head.className = "stage-panel-layout-title";
     head.textContent = tx("パネルの表示スタイル");
     const group = document.createElement("div");
-    group.className = "stage-panel-visibility-layout";
+    group.className = "stage-panel-layout-choices";
     group.setAttribute("role", "group");
     group.setAttribute("aria-label", tx("パネルの表示スタイル"));
     const now = panelLayoutChoiceValue("normal");
-    PANEL_LAYOUT_OPTIONS.forEach(([value, label]) => {
+    [...PANEL_LAYOUT_OPTIONS, ["ipad", "iPad表示モード"]].forEach(([value, label]) => {
       const button = document.createElement("button");
       button.type = "button";
       button.dataset.panelLayout = value;
-      button.textContent = tx(label);
+      const mark = document.createElement("span");
+      mark.className = "stage-panel-layout-mark";
+      mark.setAttribute("aria-hidden", "true");
+      mark.textContent = now === value ? "✓" : "";
+      const name = document.createElement("span");
+      name.textContent = tx(label);
+      button.append(mark, name);
       button.setAttribute("aria-pressed", String(now === value));
       button.addEventListener("click", () => {
         applyPanelLayoutChoice("normal", value);
+        closePanelLayoutMenu(true);
         announce(`パネルの表示スタイルを「${tx(label)}」にしました。`);
       });
       group.append(button);
     });
-    els.panelsMenu.append(rule, head, group);
+    els.panelLayoutMenu.append(head, group);
+  }
+
+  function closePanelLayoutMenu(returnFocus = false) {
+    if (!els.panelLayoutMenu || els.panelLayoutMenu.hidden) return;
+    els.panelLayoutMenu.hidden = true;
+    if (els.panelLayoutToggle) {
+      els.panelLayoutToggle.setAttribute("aria-expanded", "false");
+      if (returnFocus) els.panelLayoutToggle.focus();
+    }
+  }
+
+  function togglePanelLayoutMenu() {
+    if (!els.panelLayoutToggle || !els.panelLayoutMenu || !syncPanelLayoutControl()) return;
+    if (!els.panelLayoutMenu.hidden) { closePanelLayoutMenu(); return; }
+    closePanelVisibilityMenu();
+    renderPanelLayoutMenu();
+    els.panelLayoutMenu.hidden = false;
+    els.panelLayoutToggle.setAttribute("aria-expanded", "true");
+    (els.panelLayoutMenu.querySelector('[aria-pressed="true"]') || els.panelLayoutMenu.querySelector("button"))?.focus();
   }
 
   function closePanelVisibilityMenu(returnFocus = false) {
@@ -24629,6 +24665,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       || document.body.classList.contains("stage-session-guest")) return;
     const opening = els.panelsMenu.hidden;
     if (!opening) { closePanelVisibilityMenu(); return; }
+    closePanelLayoutMenu();
     renderPanelVisibilityMenu();
     els.panelsMenu.hidden = false;
     els.panelsToggle.setAttribute("aria-expanded", "true");
@@ -31231,10 +31268,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     return row;
   }
 
-  /* R-27（2026-09-17 本人要望）: パネルの並べ方を、環境設定とヘッダーのメニューの両方から変える。
-   * 「項目と保存値は共用し、二重の設定にはしない」という renderPanelVisibilityMenu の方針に合わせ、
-   * 実際に prefs を書いて反映する処理はこの1か所にまとめ、両方から呼ぶ。
-   * 片方だけ直すと、ヘッダーと環境設定で値がずれる。 */
+  /* 表示スタイルの保存と反映は、独立したヘッダーメニューからここへ集約する。 */
   const PANEL_LAYOUT_OPTIONS = [["split", "2列表示"], ["triple", "3列表示"], ["single-left", "1列・左"], ["single-right", "1列・右"], ["bottom", "下部・二図横並び"]];
   function panelLayoutChoiceValue(key) {
     if (key === "normal" && tabletUi) return "ipad";
@@ -31285,39 +31319,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       render();
     }
     renderPrefs();
-    renderPanelVisibilityMenu();   // ヘッダー側の選択状態も合わせる
-  }
-
-  function panelLayoutPrefsGroup() {
-    const nativeTablet = window.SHOSAI_TABLET_PWA === true;
-    const hintText = nativeTablet
-      ? "このiPad PWAでは常に有効です。"
-      : "下部・二図横並びでは図の下にパネルを並べます。2列・3列表示では図の左右へ、1列表示では一方の列へ並べます。";
-    const section = prefGroup("パネルの表示スタイル", hintText);
-    // 配置・照明デザイン・劇場カスタムは専用ワークスペースであり、
-    // 通常の左右パネル列を使わないため、ここでは舞台モードだけを扱う。
-    const definitions = workspaceModeDefinitions().filter((definition) => definition.key === "normal");
-    definitions.forEach((definition) => {
-      const options = PANEL_LAYOUT_OPTIONS.map((option) => [...option]);
-      if (definition.key === "normal") options.push(["ipad", "iPad表示モード"]);
-      const value = panelLayoutChoiceValue(definition.key);
-      const row = prefSelectRow(definition.label, value, options, hintText,
-        (next) => applyPanelLayoutChoice(definition.key, next, { nativeTablet }));
-      const select = row.querySelector("select");
-      if (select) {
-        select.dataset.stageWorkspacePanelLayout = definition.key;
-        if (definition.key === "normal") {
-          // このグループ自体が舞台モードの設定なので、行名を重ねて表示しない。
-          row.querySelector(".stage-pref-name")?.remove();
-          row.querySelector(".stage-pref-help")?.remove();
-          row.querySelector(".stage-pref-hint")?.remove();
-          select.setAttribute("aria-label", tx("パネルの表示スタイル"));
-        }
-        if (nativeTablet) select.disabled = true;
-      }
-      section.grid.append(row);
-    });
-    return section.group;
+    renderPanelLayoutMenu();
   }
 
   /* 一群ぶんの器。見出し・添え書き・二列の枠を返す */
@@ -31421,7 +31423,6 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const host = els.prefsList;
     if (!host) return;
     host.innerHTML = "";
-    if (!phoneViewerActive) host.append(panelLayoutPrefsGroup());
     const features = prefGroup("機能のオン/オフ", "");
     const hiddenGammaFlags = new Set([
       "presentation", "cuesheet", "lineup", "pitchExport",
@@ -31478,6 +31479,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   let releasePrefsFocus = null;
   function openPrefs() {
     closePanelVisibilityMenu();
+    closePanelLayoutMenu();
     renderPrefs();
     renderPrefKeys();
     if (els.prefsModal) els.prefsModal.hidden = false;
@@ -31895,6 +31897,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   // 機能のオン/オフをボタンの表示へ反映する
   function applyFeatureFlags() {
     applyPanelVisibility();
+    syncPanelLayoutControl();
     if (els.presentBtn) els.presentBtn.hidden = !featureOn("presentation");
     syncStageLightToggles();
     syncMultiSelectionControls();
@@ -42530,6 +42533,7 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   }));
   if (els.prefsBtn) els.prefsBtn.addEventListener("click", openPrefs);
   if (els.panelsToggle) els.panelsToggle.addEventListener("click", togglePanelVisibilityMenu);
+  if (els.panelLayoutToggle) els.panelLayoutToggle.addEventListener("click", togglePanelLayoutMenu);
   if (els.prefsClose) els.prefsClose.addEventListener("click", closePrefs);
   if (els.prefsBackdrop) els.prefsBackdrop.addEventListener("click", closePrefs);
   window.addEventListener("stage-workspace-mode-change", () => {
@@ -42543,6 +42547,9 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
      すでに表示していた照明候補だけが前のショーのまま残り得る。劇場設定へ入るたびに
      現在の劇場・規模を正本として候補を読み直し、表示と適用対象を一致させる。 */
   window.addEventListener("gamma-workspace-change", () => {
+    closePanelVisibilityMenu();
+    closePanelLayoutMenu();
+    syncPanelLayoutControl();
     if (document.body.dataset.stageWorkspaceMode !== "venue-setup") return;
     if (lightingSource === "preset") openLightingPlanModal();
   });
@@ -42594,12 +42601,18 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   if (els.aboutBackdrop) els.aboutBackdrop.addEventListener("click", closeAbout);
   if (els.presentBtn) els.presentBtn.addEventListener("click", toggleStageFullscreen);
   document.addEventListener("pointerdown", (event) => {
+    if (els.panelLayoutMenu && !els.panelLayoutMenu.hidden
+      && !els.panelLayoutControl?.contains(event.target)) closePanelLayoutMenu();
     if (els.panelsMenu && !els.panelsMenu.hidden
       && !els.panelsMenu.contains(event.target) && !els.panelsToggle?.contains(event.target)) {
       closePanelVisibilityMenu();
     }
   });
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && els.panelLayoutMenu && !els.panelLayoutMenu.hidden) {
+      event.preventDefault();
+      closePanelLayoutMenu(true);
+    }
     if (event.key === "Escape" && els.panelsMenu && !els.panelsMenu.hidden) {
       event.preventDefault();
       closePanelVisibilityMenu(true);

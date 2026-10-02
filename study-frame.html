@@ -4,7 +4,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
 <title>Stage Sketch — read-only drawings</title>
-<link rel="stylesheet" href="/study-assets/style.css?v=20261002-release73"><link rel="stylesheet" href="/stage-study.css?v=25"><link rel="stylesheet" href="/stage-study-navigation.css?v=2">
+<link rel="stylesheet" href="/study-assets/style.css?v=20261003-release76"><link rel="stylesheet" href="/stage-study.css?v=25"><link rel="stylesheet" href="/stage-study-navigation.css?v=2">
 <script src="/stage-study-sticky.js?v=5"></script><script src="/stage-study-pen.js?v=4"></script><script src="/stage-study-navigation.js?v=2"></script><script src="/stage-study-frame.js?v=8"></script></head>
 <body class="study-frame" data-view="both">
 <div class="study-drawings"><div class="study-drawing study-front"></div><div class="study-drawing study-plan"></div></div>
@@ -25,7 +25,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.75</span>
+              <span class="stage-app-version">0.2.76</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo"
@@ -90,6 +90,15 @@
              target="_blank" rel="noopener noreferrer"
              aria-label="AI showwright for StageSketch"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/><path d="M18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.456-2.456L14.25 6l1.035-.259a3.375 3.375 0 0 0 2.456-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg></a>
           <button type="button" class="stage-lang stage-gear-btn" id="stage-prefs-btn" data-tablet-icon="⚙" aria-label="設定"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.2" stroke-width="1.3"/><circle cx="8" cy="8" r="1.4" stroke-width="1.3"/><path stroke-width="2.3" d="M8 3.10V1.90M11.94 5.55l1.04-.60M11.94 10.45l1.04.60M8 12.90v1.20M4.06 10.45l-1.04.60M4.06 5.55l-1.04-.60"/></svg></span></button>
+          <div class="stage-panel-layout-control" id="stage-panel-layout-control">
+            <button type="button" class="stage-lang stage-header-icon stage-panel-layout-btn" id="stage-panel-layout-toggle"
+                    aria-label="パネルの表示スタイル"
+                    aria-haspopup="true" aria-expanded="false" aria-controls="stage-panel-layout-menu">
+              <span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="1.75" y="2.25" width="12.5" height="11.5" rx="0.75"/><path d="M1.75 8.75h12.5M8 2.25v6.5M5.9 8.75v5M10.1 8.75v5"/></svg></span>
+            </button>
+            <div class="stage-panel-layout-menu" id="stage-panel-layout-menu"
+                 role="group" aria-label="パネルの表示スタイル" hidden></div>
+          </div>
           <div class="stage-panel-visibility-control">
             <button type="button" class="stage-lang stage-panel-visibility-btn" id="stage-panels-toggle"
                     aria-label="パネルのオン/オフ"
@@ -2550,6 +2559,13 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0276-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0276-title">v0.2.76</h3><time datetime="2026-10-03">2026-10-03</time></header>
+      <ul>
+        <li>パネルの表示スタイルを上部の独立したアイコンへ移しました。2列・3列・1列の左右・下部の二図横並びをここから選べます。</li>
+        <li>パネルのオン／オフは隣のアイコンで切り替えます。表示スタイルは環境設定から外し、これまでの並びと保存値は引き継ぎます。</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0275-title">
       <header class="stage-release-entry-head"><h3 id="stage-release-v0275-title">v0.2.75</h3><time datetime="2026-10-02">2026-10-02</time></header>
       <ul>
@@ -3919,5 +3935,5 @@
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
 <script src="/study-assets/gamma-ui.js?v=20260925-ui1"></script>
 <script src="/study-assets/gamma-ui-i18n.js?v=20260925-ui1"></script>
-<script src="/study-assets/stage-sketch.js?v=20261002-release75"></script>
+<script src="/study-assets/stage-sketch.js?v=20261003-release76"></script>
 </body></html>

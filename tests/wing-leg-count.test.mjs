@@ -70,9 +70,9 @@ test("stageWingOutputの保存・再読込でlegCountを保持し、不正値は
 });
 
 test("v0.2.70の正規化は未知のlegCountを保持し、旧描画は参照しない", () => {
-  const oldSource = execFileSync('/Library/Developer/CommandLineTools/usr/bin/git',
+  const oldSource = execFileSync('git',
     ['show', '72adf13:stage-venues.js'], { cwd: new URL('..', import.meta.url), encoding: 'utf8' });
-  const oldSketch = execFileSync('/Library/Developer/CommandLineTools/usr/bin/git',
+  const oldSketch = execFileSync('git',
     ['show', '72adf13:stage-sketch.js'], { cwd: new URL('..', import.meta.url), encoding: 'utf8',
       maxBuffer: 8 * 1024 * 1024 });
   const oldContext = vm.createContext({ console, localStorage: context.localStorage,

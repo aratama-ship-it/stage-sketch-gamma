@@ -10692,7 +10692,7 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-bar:is(:hover,
    ★ .stage-history-actions button（クラス+要素）の font-size: 11px の方が
      .stage-gear-btn（クラスのみ）より詳細度が高く、後で書いても負けて
      字が小さいままになっていた。button. を付けて詳細度を合わせる。 */
-.stage-history-actions button:is(.stage-gear-btn, .stage-panel-visibility-btn) {
+.stage-history-actions button:is(.stage-gear-btn, .stage-panel-visibility-btn, .stage-panel-layout-btn) {
   --stage-header-icon-hit-size: var(--stage-history-action-height);
   --stage-header-icon-size: 22px;
   flex: 0 0 var(--stage-header-icon-hit-size);
@@ -10709,47 +10709,93 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-bar:is(:hover,
 }
 
 .stage-gear-btn svg,
+.stage-panel-layout-btn svg,
 .stage-panel-visibility-btn svg {
   width: var(--stage-header-icon-size);
   height: var(--stage-header-icon-size);
   display: block;
 }
 
+.stage-panel-layout-btn > span[aria-hidden="true"],
 .stage-panel-visibility-btn > span[aria-hidden="true"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
+.stage-panel-layout-control,
 .stage-panel-visibility-control {
   position: relative;
   display: inline-flex;
   flex: 0 0 auto;
 }
 
+.stage-panel-layout-btn[aria-expanded="true"],
 .stage-panel-visibility-btn[aria-expanded="true"] {
   color: var(--paper);
   border-color: var(--brass);
   background: rgba(211, 172, 89, 0.08);
 }
 
-/* R-27（2026-09-17 本人要望）: パネルON/OFFのメニューの下に棒線で区切って「列の並べ方」を置く。
- * 選択中は他のトグルと同じ真鍮色で示す。 */
-.stage-panel-visibility-rule { margin: 8px 0 6px; border-top: 1px solid var(--line-dark); }
-.stage-panel-visibility-subhead { margin: 0 0 5px; color: var(--milk-dim); font-size: 10px; letter-spacing: .1em; }
-.stage-panel-visibility-layout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
-.stage-panel-visibility-layout button {
-  min-height: 28px;
-  padding: 3px 4px;
+/* 表示スタイルの専用メニュー。ON/OFFとは入口・選択肢を分ける。 */
+:root {
+  --stage-panel-layout-menu-width: 320px;
+  --stage-panel-layout-menu-edge: 12px;
+  --stage-panel-layout-menu-gap: 8px;
+  --stage-panel-layout-menu-padding: 12px;
+  --stage-panel-layout-choice-gap: 8px;
+  --stage-panel-layout-font-size: 12px;
+  --stage-panel-layout-line-height: 1.5;
+}
+.stage-panel-layout-menu {
+  position: absolute;
+  z-index: 24;
+  top: calc(100% + var(--stage-panel-layout-menu-gap));
+  right: 0;
+  width: var(--stage-panel-layout-menu-width);
+  max-width: calc(100vw - var(--stage-panel-layout-menu-edge) * 2);
+  max-height: calc(100vh - 120px);
+  padding: var(--stage-panel-layout-menu-padding);
+  overflow-y: auto;
+  color: var(--milk);
+  background: var(--desk);
+  border: 1px solid var(--line-dark);
+  border-radius: 4px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.38);
+}
+.stage-panel-layout-title {
+  margin: 0 0 var(--stage-panel-layout-menu-gap);
+  font-size: var(--stage-panel-layout-font-size);
+  line-height: var(--stage-panel-layout-line-height);
+}
+.stage-panel-layout-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--stage-panel-layout-choice-gap);
+}
+.stage-panel-layout-choices button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--stage-panel-layout-choice-gap);
+  min-height: var(--ctrl-lg);
+  padding: var(--stage-panel-layout-menu-gap);
   border: 1px solid var(--line-dark);
   background: var(--recess);
-  color: var(--milk-dim);
-  font-size: 11px;
-  white-space: nowrap;
+  color: var(--milk);
+  font-size: var(--stage-panel-layout-font-size);
+  line-height: var(--stage-panel-layout-line-height);
+  text-align: left;
+  white-space: normal;
   cursor: pointer;
 }
-.stage-panel-visibility-layout button:hover { border-color: var(--brass); color: var(--milk); }
-.stage-panel-visibility-layout button[aria-pressed="true"] { border-color: var(--brass); color: #c9a961; background: rgba(156,130,63,.18); }
+.stage-panel-layout-choices button:is([data-panel-layout="bottom"], [data-panel-layout="ipad"]) { grid-column: 1 / -1; }
+.stage-panel-layout-choices button:hover { border-color: var(--brass); }
+.stage-panel-layout-choices button[aria-pressed="true"] { border-color: var(--brass); color: #c9a961; background: rgba(156,130,63,.18); }
+.stage-panel-layout-mark { flex: 0 0 1em; }
+body[data-stage-workspace-mode]:not([data-stage-workspace-mode="normal"]) .stage-panel-layout-control,
+html.stage-phone-viewer .stage-panel-layout-control,
+body.stage-session-guest .stage-panel-layout-control { display: none; }
 
 .stage-panel-visibility-menu {
   position: absolute;
@@ -18534,3 +18580,17 @@ body.is-setinfo-preview-dragging .stage-setinfo-preview canvas { cursor: grabbin
   border-top: 1px solid var(--line-dark);
 }
 .stage-pref-native .stage-prefs-links { margin-top: 8px; }
+
+/* ブラウザのiPad表示からも従来の表示スタイルへ戻れる入口を保つ。 */
+html.stage-pwa-tablet .stage-tablet-top-controls .stage-panel-layout-btn::before,
+html.stage-pwa-tablet .stage-tablet-top-controls .stage-panel-layout-menu button::before { content: none; }
+html.stage-pwa-tablet .stage-tablet-top-controls .stage-panel-layout-btn svg { display: block; }
+html.stage-pwa-tablet .stage-tablet-top-controls .stage-panel-layout-menu button {
+  flex: initial;
+  width: auto;
+  min-width: 0;
+  padding: var(--stage-panel-layout-menu-gap);
+  overflow: visible;
+  font-size: var(--stage-panel-layout-font-size);
+  white-space: normal;
+}
