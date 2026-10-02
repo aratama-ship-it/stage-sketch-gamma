@@ -186,6 +186,7 @@ public-dist/
 !/stage-vox-panel.css
 !/stage-reorder-motion.js
 !/stage-panel-columns.css
+!/stage-panel-bottom.css
 !/stage-first-person.js
 !/stage-fixture-body.js
 !/stage-front-shape.js
@@ -418,3 +419,9 @@ public-dist/
 !/tests/wing-leg-count-browser.cjs
 !/tests/native-update-download-browser.cjs
 !/tests/native-download-prefs-browser.cjs
+
+# 下部・二図横並びの仕様と操作回帰。
+!/design/
+/design/*
+!/design/HORIZONTAL_LAYOUT_TOKENS.md
+!/tests/panel-bottom-browser.cjs

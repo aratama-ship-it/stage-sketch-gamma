@@ -968,6 +968,11 @@
     "背景の地の色・塗る色・筆の太さなど、背景を描く欄を出す":
       "Shows the panel for the backdrop colour, brush colour and brush size",
     "パネルの表示スタイル": "Panel display style",
+    "下部・二図横並び": "Views side by side · panels below",
+    "正面・平面": "Front · plan",
+    "平面・正面": "Plan · front",
+    "表示する図。二図の名前は左から右の順": "Views to show. View names are ordered from left to right",
+    "下部・二図横並びでは図の下にパネルを並べます。2列・3列表示では図の左右へ、1列表示では一方の列へ並べます。": "Place panels below the two views. Two or three columns put panels beside the views; one column puts them on one side.",
     "レイアウト切替幅": "Layout breakpoints",
     "現在の幅": "Current width",
     "実効レーン数": "Active panel lanes",

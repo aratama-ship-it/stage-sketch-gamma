@@ -249,6 +249,7 @@ export const EDITOR_ASSET_PATHS = new Set([
   '/stage-lighting-plans.js',
   '/stage-machinery.js',
   '/stage-panel-columns.css',
+  '/stage-panel-bottom.css',
   '/stage-performer-body.js',
   '/stage-performer-contour.js',
   '/stage-performer-motion.js',

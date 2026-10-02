@@ -1,0 +1,129 @@
+/* 承認済みの「下部・二図横並び」。数値の正本: design/HORIZONTAL_LAYOUT_TOKENS.md。
+   舞台モードで選んだときだけ適用し、既存の左右列・iPad・スマホはそのまま使う。 */
+:root {
+  --stage-bottom-gap: 8px;
+  --stage-bottom-control-gap: 4px;
+  --stage-bottom-view-select-width: 104px;
+  --stage-bottom-edge: 12px;
+  --stage-bottom-columns: 2;
+}
+.stage-bottom-panels[hidden] { display: none; }
+.stage-bottom-column { min-width: 0; }
+
+@media (min-width: 1024px) {
+  :root { --stage-bottom-columns: 3; }
+}
+@media (min-width: 1280px) {
+  :root { --stage-bottom-columns: 4; }
+}
+
+/* 既存の通常表示は3列を独立スクロールにする。この表示では図を縮めず、
+   図 → パネル → タイムラインの順に、ページ全体で縦へ流す。 */
+html[data-stage-layout="bottom"]:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) #view-stage {
+  height: 100dvh;
+  overflow: auto;
+  padding: var(--stage-bottom-edge);
+}
+html[data-stage-layout="bottom"]:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-sketch {
+  display: block;
+  height: auto;
+}
+html[data-stage-layout="bottom"]:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-sketch-grid.stage-panels-bottom {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  gap: var(--stage-bottom-gap);
+  overflow: visible;
+}
+html[data-stage-layout="bottom"]:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-sketch-grid > :is(#stage-col-left, #stage-col-right, #stage-col-right2, .stage-panel-width-handle) {
+  display: none;
+}
+html[data-stage-layout="bottom"]:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-sketch-grid > #stage-col-center {
+  width: 100%;
+  overflow: visible;
+}
+html[data-stage-layout="bottom"]:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-bottom-panels:not([hidden]) {
+  display: grid;
+  grid-template-columns: repeat(var(--stage-bottom-columns), minmax(0, 1fr));
+  align-items: start;
+  gap: var(--stage-bottom-gap);
+  width: 100%;
+}
+html[data-stage-layout="bottom"] .stage-bottom-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--stage-bottom-gap);
+}
+html[data-stage-layout="bottom"] .stage-bottom-column > .stage-panel {
+  width: 100%;
+  margin: 0;
+  min-width: 0;
+}
+html[data-stage-layout="bottom"] .stage-bottom-column .stage-panel-head { min-height: var(--ctrl-lg); }
+html[data-stage-layout="bottom"] .stage-bottom-column :is(input, select, textarea) { max-width: 100%; }
+
+html[data-stage-layout="bottom"] .stage-canvas-stack {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--stage-bottom-gap);
+}
+html[data-stage-layout="bottom"] .stage-canvas-stack:has(> .stage-board-frame.is-closed) {
+  grid-template-columns: minmax(0, 1fr);
+}
+html[data-stage-layout="bottom"] .stage-canvas-stack:has(> .stage-board-frame.is-closed) > .stage-board-frame.is-closed { order: 1; }
+html[data-stage-layout="bottom"] .stage-canvas-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  min-height: var(--ctrl-lg);
+  --gamma-canvas-bar-icon-size: var(--ctrl-lg);
+}
+html[data-stage-layout="bottom"] .stage-canvas-bar .stage-canvas-caption { flex: 0 0 auto; white-space: nowrap; }
+html[data-stage-layout="bottom"] .stage-canvas-bar .stage-seat-list { flex: 1 1 0; width: 0; }
+html[data-stage-layout="bottom"] .stage-canvas-bar .stage-canvas-tools {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  width: auto;
+  min-width: 0;
+  gap: var(--stage-bottom-control-gap);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+html[data-stage-layout="bottom"] .stage-canvas-tools::-webkit-scrollbar { display: none; }
+html[data-stage-layout="bottom"] .stage-canvas-tools > * { flex-shrink: 0; }
+/* 光の意図を開いても図の左に固定列を作らない。 */
+html[data-stage-layout="bottom"] .stage-work-area.is-docked { display: contents; }
+html[data-stage-layout="bottom"] .stage-work-area.is-docked > .stage-light-intent {
+  position: static;
+  max-height: none;
+  overflow: visible;
+}
+html[data-stage-layout="bottom"] .stage-center-bar { margin-bottom: var(--stage-bottom-gap); }
+html[data-stage-layout="bottom"] .stage-center-bar .stage-view-select select { width: var(--stage-bottom-view-select-width); }
+
+html[data-stage-layout="bottom"]:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-timeline-panel {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  flex: none;
+  z-index: auto;
+  box-shadow: none;
+  transform: none;
+}
+html[data-stage-layout="bottom"]:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-timeline-panel.is-collapsed {
+  height: var(--ctrl-lg);
+}
+html[data-stage-layout="bottom"]:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-timeline-resize-handle {
+  position: relative;
+  inset: auto;
+  margin-top: var(--stage-bottom-gap);
+  min-height: var(--ctrl-lg);
+  height: var(--ctrl-lg);
+  align-items: center;
+}
+/* 新しい選択肢は末尾の一段を使い、ラベルを途中で折らない。 */
+.stage-panel-visibility-layout button:last-child[data-panel-layout="bottom"] {
+  grid-column: 1 / -1;
+  min-height: var(--ctrl-lg);
+}

@@ -41,6 +41,19 @@ test("iPad手動選択と共有ゲストのtriple制限を維持する", () => {
   assert.equal(model.effectiveLayout({ width: 1900, selectedMode: "triple", tripleAllowed: false }).layout, "two");
 });
 
+test("下部表示は図の左右列と別の幅で折り返し、専用画面には適用しない", () => {
+  for (const [width, lanes] of [[960, 2], [1023, 2], [1024, 3], [1279, 3], [1280, 4], [1900, 4]]) {
+    const actual = model.effectiveLayout({ width, selectedMode: "bottom" });
+    assert.equal(actual.layout, "bottom");
+    assert.equal(actual.lanes, lanes);
+  }
+  assert.equal(model.effectiveLayout({ width: 959, selectedMode: "bottom" }).layout, "ipad");
+  assert.equal(model.effectiveLayout({ width: 1440, selectedMode: "bottom", tabletMode: true }).layout, "ipad");
+  assert.equal(model.effectiveLayout({ width: 1900, selectedMode: "bottom", bottomAllowed: false }).layout, "two");
+  assert.deepEqual(JSON.parse(JSON.stringify(model.autoTabletTransition({ width: 959, selectedMode: "bottom" }))), { autoTablet: true, reload: true });
+  assert.deepEqual(JSON.parse(JSON.stringify(model.autoTabletTransition({ width: 960, selectedMode: "bottom", autoTablet: true }))), { autoTablet: false, reload: true });
+});
+
 test("閾値はURLと保存値に使える3つの昇順整数だけを受ける", () => {
   assert.deepEqual([...model.parseThresholds("500,800,1200")], [500, 800, 1200]);
   assert.equal(model.parseThresholds("1000,1000,1800"), null);

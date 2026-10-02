@@ -16,6 +16,7 @@ const STAGE_LAYOUT_LANES_MODEL = (() => {
 
   const DEFAULT_THRESHOLDS = Object.freeze([1000, 1520, 1800]);
   const EXIT_PADDING = 40;
+  const BOTTOM_MIN_WIDTH = 960;
   const STORAGE_KEYS = Object.freeze({
     thresholds: "gamma:shosai-stage-layout-thresholds-v1",
     autoTablet: "gamma:shosai-stage-layout-auto-tablet-v1",
@@ -46,7 +47,12 @@ const STAGE_LAYOUT_LANES_MODEL = (() => {
     return 2;
   }
 
-  function effectiveLayout({ width, thresholds, selectedMode, selectedSide, tabletMode = false, tripleAllowed = true }) {
+  function effectiveLayout({ width, thresholds, selectedMode, selectedSide, tabletMode = false, tripleAllowed = true, bottomAllowed = true }) {
+    // 下部の列は図の幅を奪わないため、左右列の切替幅とは別に判定する。
+    if (selectedMode === "bottom" && bottomAllowed && !tabletMode && Number(width) >= BOTTOM_MIN_WIDTH) {
+      const lanes = Number(width) >= 1280 ? 4 : Number(width) >= 1024 ? 3 : 2;
+      return { lanes, layout: "bottom", mode: "bottom", side: "left" };
+    }
     const limit = laneLimit(width, thresholds);
     let lanes = Math.min(selectedLanes(selectedMode, tabletMode), limit);
     if (lanes === 3 && !tripleAllowed) lanes = 2;
@@ -57,15 +63,17 @@ const STAGE_LAYOUT_LANES_MODEL = (() => {
     return { lanes: 3, layout: "three", mode: "triple", side };
   }
 
-  function autoTabletTransition({ width, thresholds, autoTablet = false, manualTablet = false }) {
+  function autoTabletTransition({ width, thresholds, selectedMode, autoTablet = false, manualTablet = false }) {
     const values = parseThresholds(thresholds) || [...DEFAULT_THRESHOLDS];
+    const minimum = selectedMode === "bottom" ? BOTTOM_MIN_WIDTH : values[0];
+    const padding = selectedMode === "bottom" ? 0 : EXIT_PADDING;
     if (manualTablet) return { autoTablet: Boolean(autoTablet), reload: false };
-    if (!autoTablet && Number(width) < values[0]) return { autoTablet: true, reload: true };
-    if (autoTablet && Number(width) >= values[0] + EXIT_PADDING) return { autoTablet: false, reload: true };
+    if (!autoTablet && Number(width) < minimum) return { autoTablet: true, reload: true };
+    if (autoTablet && Number(width) >= minimum + padding) return { autoTablet: false, reload: true };
     return { autoTablet: Boolean(autoTablet), reload: false };
   }
 
-  return Object.freeze({ DEFAULT_THRESHOLDS, EXIT_PADDING, STORAGE_KEYS, parseThresholds, laneLimit, selectedLanes, effectiveLayout, autoTabletTransition });
+  return Object.freeze({ DEFAULT_THRESHOLDS, EXIT_PADDING, BOTTOM_MIN_WIDTH, STORAGE_KEYS, parseThresholds, laneLimit, selectedLanes, effectiveLayout, autoTabletTransition });
 })();
 if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAGE_LAYOUT_LANES_MODEL;
 /* stage-layout-lanes-model:end */
@@ -9371,7 +9379,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const panelLayoutMode = (workspace = currentWorkspaceMode()) => {
     const saved = prefs.panelLayoutByWorkspace && typeof prefs.panelLayoutByWorkspace === "object"
       ? prefs.panelLayoutByWorkspace[workspace] : null;
-    if (saved === "single" || saved === "split" || saved === "triple") return saved;
+    if (saved === "single" || saved === "split" || saved === "triple" || (workspace === "normal" && saved === "bottom")) return saved;
     // 旧版の通常モード設定だけはそのまま引き継ぐ。
     if (workspace === "normal" && (prefs.panelLayoutMode === "single" || prefs.panelLayoutMode === "split")) {
       return prefs.panelLayoutMode;
@@ -9403,6 +9411,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       tabletMode: tabletActive,
       tripleAllowed: !tabletActive && !phoneViewerActive
         && !document.body.classList.contains("stage-session-guest"),
+      bottomAllowed: workspace === "normal" && !phoneViewerActive
+        && !document.body.classList.contains("stage-session-guest"),
     });
   }
 
@@ -9429,6 +9439,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const transition = STAGE_LAYOUT_LANES_MODEL.autoTabletTransition({
       width: window.innerWidth,
       thresholds: layoutLaneThresholds,
+      selectedMode: panelLayoutMode("normal"),
       autoTablet,
       manualTablet: prefs.tabletMode === true || window.SHOSAI_TABLET_PWA === true,
     });
@@ -9522,9 +9533,31 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     });
   });
   const panelColumnsForCurrentMode = () => (
-    effectivePanelLayoutMode() === "single" ? [panelSingleSide()]
+    panelBottomActive() ? PANEL_BOTTOM_COLUMNS
+      : effectivePanelLayoutMode() === "single" ? [panelSingleSide()]
       : panelTripleActive() ? ["left", "right", "right2"] : ["left", "right"]
   );
+  const PANEL_BOTTOM_COLUMNS = ["bottom1", "bottom2", "bottom3", "bottom4"];
+  const PANEL_BOTTOM_DEFAULT = [
+    ["scenes", "alternatives", "vox", "study"],
+    ["cast", "sets", "props", "background", "rigs", "light", "machinery", "stage-set"],
+    ["inspector", "seat2", "ask"],
+    ["project", "music", "save", "session", "venue"],
+  ];
+  function panelBottomActive() {
+    return currentWorkspaceMode() === "normal" && effectivePanelLayoutMode() === "bottom"
+      && !tabletUi && !phoneViewerActive && !document.body.classList.contains("stage-session-guest");
+  }
+  function panelBottomLayout() {
+    const saved = prefs.panelBottomLayout || {};
+    const cols = {};
+    const order = {};
+    PANEL_BOTTOM_DEFAULT.forEach((ids, column) => ids.forEach((id, index) => {
+      cols[id] = PANEL_BOTTOM_COLUMNS.includes(saved.cols?.[id]) ? saved.cols[id] : PANEL_BOTTOM_COLUMNS[column];
+      order[id] = Number.isFinite(saved.order?.[id]) ? saved.order[id] : index;
+    }));
+    return { cols, order };
+  }
   /* 3列表示（2026-09-24 本人指示）: 左1列＋右2列。机の画面だけで使い、iPad・スマホ閲覧・
    * 共有セッションのゲストでは2列表示と同じに扱う（それぞれ独自の並べ方を持つため）。 */
   function panelTripleActive() {
@@ -22877,6 +22910,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     right: document.getElementById("stage-col-right"),
     right2: document.getElementById("stage-col-right2"),
     center: document.getElementById("stage-col-center"),
+    bottom1: document.getElementById("stage-col-bottom1"),
+    bottom2: document.getElementById("stage-col-bottom2"),
+    bottom3: document.getElementById("stage-col-bottom3"),
+    bottom4: document.getElementById("stage-col-bottom4"),
   };
 
   // 横幅はショーではなく、この端末の画面設定。通常列と引き出しを別々に覚える。
@@ -22949,7 +22986,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         const bounds = host.getBoundingClientRect();
         const gridBounds = ui.grid.getBoundingClientRect();
         const hitWidth = parseFloat(getComputedStyle(handle).width) || 18;
-        handle.hidden = max <= 0 || host.hidden || !bounds.width;
+        handle.hidden = panelBottomActive() || max <= 0 || host.hidden || !bounds.width;
         // 列のスクロールに切り取られない、入力欄の外の18pxの隙間。
         const edge = key === "left" ? bounds.right : bounds.left - hitWidth;
         write(handle, "left", `${edge - gridBounds.left - ui.grid.clientLeft}px`);
@@ -24224,14 +24261,16 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   // 指の位置がどちらの列にあるか。列から離れすぎていたら動かさない
-  function columnAt(x) {
+  function columnAt(x, y) {
     let best = null;
     let near = Infinity;
     panelColumnsForCurrentMode().forEach((col) => {
       const host = colEls[col];
       if (!host) return;
       const r = host.getBoundingClientRect();
-      const d = x < r.left ? r.left - x : (x > r.right ? x - r.right : 0);
+      const dx = x < r.left ? r.left - x : (x > r.right ? x - r.right : 0);
+      const dy = panelBottomActive() ? (y < r.top ? r.top - y : y > r.bottom ? y - r.bottom : 0) : 0;
+      const d = Math.hypot(dx, dy);
       if (d < near) { near = d; best = col; }
     });
     return near > 240 ? null : best;
@@ -24253,7 +24292,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     drag.el.style.left = `${ev.clientX - drag.dx}px`;
     drag.el.style.top = `${ev.clientY - drag.dy}px`;
     if (drag.el.classList.contains("gamma-selection-floating")) return;
-    const col = columnAt(ev.clientX);
+    const col = columnAt(ev.clientX, ev.clientY);
     if (!col || !colEls[col]) return;
     const host = colEls[col];
     const ref = insertionRef(host, ev.clientY);
@@ -24309,13 +24348,26 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     justDragged = true;
     setTimeout(() => { justDragged = false; }, 60);
     commitLayoutFromDom();
-    announce(effectivePanelLayoutMode() === "single"
+    announce(panelBottomActive() ? `${el.dataset.title || id}の下部パネルの並びを変えました。`
+      : effectivePanelLayoutMode() === "single"
       ? `${el.dataset.title || id}の並び順を変えました。`
       : `${el.dataset.title || id}を${col === "left" ? "左" : col === "right2" ? "右の2列目" : "右"}の列へ移しました。`);
   }
 
   // 並びの正本は画面。動かし終えたら、そのまま状態へ書き戻す
   function commitLayoutFromDom() {
+    if (panelBottomActive()) {
+      const next = panelBottomLayout();
+      PANEL_BOTTOM_COLUMNS.forEach((col) => {
+        [...colEls[col].children].filter((el) => el.dataset?.panel).forEach((el, index) => {
+          next.cols[el.dataset.panel] = col;
+          next.order[el.dataset.panel] = index;
+        });
+      });
+      prefs.panelBottomLayout = next;
+      savePrefs();
+      return;
+    }
     if (effectivePanelLayoutMode() === "single") {
       const host = colEls[panelSingleSide()];
       if (!host) return;
@@ -24371,7 +24423,13 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function placeStageControls() {
+    if (presenting) return;
     const controlBar = document.querySelector(".stage-center-bar");
+    if (panelBottomActive()) {
+      const sceneBar = document.getElementById("stage-scene-bar");
+      if (controlBar && sceneBar && sceneBar.nextElementSibling !== controlBar) sceneBar.after(controlBar);
+      return;
+    }
     const controlHost = colEls[effectivePanelLayoutMode() === "single" && panelSingleSide() === "right" ? "right" : "left"];
     if (controlBar && controlHost && controlHost.firstElementChild !== controlBar) {
       controlHost.prepend(controlBar);
@@ -24393,14 +24451,26 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       const grid = document.querySelector(".stage-sketch-grid");
       const single = effectivePanelLayoutMode() === "single";
       const triple = !single && panelTripleActive();
+      const bottom = panelBottomActive();
       if (grid) {
         grid.classList.toggle("stage-panels-single", single);
         grid.classList.toggle("stage-panels-on-right", single && panelSingleSide() === "right");
         grid.classList.toggle("stage-panels-triple", triple);
+        grid.classList.toggle("stage-panels-bottom", bottom);
       }
       if (colEls.right2) colEls.right2.hidden = !triple;
+      const dock = document.getElementById("stage-bottom-panels");
+      if (dock) dock.hidden = !bottom;
       placeStageControls();
-      if (single) {
+      if (bottom) {
+        const layout = panelBottomLayout();
+        PANEL_BOTTOM_COLUMNS.forEach((col) => {
+          PANELS.filter((id) => layout.cols[id] === col).sort((a, b) => layout.order[a] - layout.order[b]).forEach((id) => {
+            const el = panelEl(id);
+            if (el && el.dataset.gammaWorkspace !== "venue" && !el.classList.contains("gamma-selection-floating")) colEls[col].append(el);
+          });
+        });
+      } else if (single) {
         const oneColumnOrder = panelSingleOrder();
         const ids = [...PANELS].sort((a, b) => {
           const fallback = (id) => (L.cols[id] === "left" ? 0 : PANELS.length) + L.order[id];
@@ -24452,6 +24522,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       });
     }
     syncTabletWorkspace();
+    syncViewSwitch();
     scheduleFloatingInspectorRefresh();
   }
 
@@ -24532,6 +24603,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     PANEL_LAYOUT_OPTIONS.forEach(([value, label]) => {
       const button = document.createElement("button");
       button.type = "button";
+      button.dataset.panelLayout = value;
       button.textContent = tx(label);
       button.setAttribute("aria-pressed", String(now === value));
       button.addEventListener("click", () => {
@@ -31163,11 +31235,11 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
    * 「項目と保存値は共用し、二重の設定にはしない」という renderPanelVisibilityMenu の方針に合わせ、
    * 実際に prefs を書いて反映する処理はこの1か所にまとめ、両方から呼ぶ。
    * 片方だけ直すと、ヘッダーと環境設定で値がずれる。 */
-  const PANEL_LAYOUT_OPTIONS = [["split", "2列表示"], ["triple", "3列表示"], ["single-left", "1列・左"], ["single-right", "1列・右"]];
+  const PANEL_LAYOUT_OPTIONS = [["split", "2列表示"], ["triple", "3列表示"], ["single-left", "1列・左"], ["single-right", "1列・右"], ["bottom", "下部・二図横並び"]];
   function panelLayoutChoiceValue(key) {
     if (key === "normal" && tabletUi) return "ipad";
     const mode = panelLayoutMode(key);
-    return mode === "single" ? `single-${panelSingleSide(key)}` : mode === "triple" ? "triple" : "split";
+    return mode === "single" ? `single-${panelSingleSide(key)}` : mode === "bottom" ? "bottom" : mode === "triple" ? "triple" : "split";
   }
   function applyPanelLayoutChoice(key, next, options = {}) {
     if (options.nativeTablet) return;
@@ -31179,13 +31251,13 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       return;
     }
     const nextLayout = next === "single-left" || next === "single-right" ? "single"
-      : next === "triple" ? "triple" : "split";
+      : next === "bottom" && key === "normal" ? "bottom" : next === "triple" ? "triple" : "split";
     const nextSide = next === "single-right" ? "right" : "left";
     if (key === "normal") {
       prefs.tabletMode = false;
       try { localStorage.removeItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet); } catch (_) { /* 続ける */ }
-      // 旧版は panelLayoutMode しか読まない。3列を知らない版では2列表示として開かせる。
-      prefs.panelLayoutMode = nextLayout === "triple" ? "split" : nextLayout;
+      // 旧版が知らない表示は2列表示として開く。ショーの配置データは変えない。
+      prefs.panelLayoutMode = nextLayout === "triple" || nextLayout === "bottom" ? "split" : nextLayout;
       if (nextLayout === "single") prefs.panelSingleSide = nextSide;
     }
     prefs.panelLayoutByWorkspace = {
@@ -31220,7 +31292,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const nativeTablet = window.SHOSAI_TABLET_PWA === true;
     const hintText = nativeTablet
       ? "このiPad PWAでは常に有効です。"
-      : "2列表示では左右に分け、3列表示では右をさらに2列に分け、1列表示では全パネルを一方の列へ並べます。";
+      : "下部・二図横並びでは図の下にパネルを並べます。2列・3列表示では図の左右へ、1列表示では一方の列へ並べます。";
     const section = prefGroup("パネルの表示スタイル", hintText);
     // 配置・照明デザイン・劇場カスタムは専用ワークスペースであり、
     // 通常の左右パネル列を使わないため、ここでは舞台モードだけを扱う。
@@ -31736,7 +31808,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const message = tx("パネル配置を初期状態に戻しますか？ショーの内容、スキン、機能設定は変わりません。");
     if (!window.confirm(message)) return;
     state.layout = defaultLayout();
-    ["panelLayoutMode", "panelLayoutByWorkspace", "panelSingleSide", "panelSingleSideByWorkspace", "panelSingleOrder", "panelWidths", "rosterListHeights", "rosterAccordionClosed", "tabletMode"].forEach((key) => {
+    ["panelLayoutMode", "panelLayoutByWorkspace", "panelSingleSide", "panelSingleSideByWorkspace", "panelSingleOrder", "panelBottomLayout", "panelWidths", "rosterListHeights", "rosterAccordionClosed", "tabletMode"].forEach((key) => {
       delete prefs[key];
     });
     savePrefs();
@@ -31911,6 +31983,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (tabletUi) {
       move(tabletUi.rail, els.presentDrawerBody);
       move(tabletUi.drawer, els.presentDrawerBody);
+    } else if (panelBottomActive()) {
+      move(document.querySelector(".stage-center-bar"), els.presentDrawerBody);
+      PANEL_BOTTOM_COLUMNS.forEach((col) => move(colEls[col], els.presentDrawerBody));
     } else move(colEls.left, els.presentDrawerBody);
     els.presentDrawerBody.classList.toggle("is-tablet", Boolean(tabletUi));
     presenting = true;
@@ -36793,7 +36868,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         delete inspector.dataset.gammaPositionLocked;
       }
       const floating = (!document.body.dataset.gammaWorkspace || document.body.dataset.gammaWorkspace === "normal")
-        && featureOn("floatingInspector");
+        && featureOn("floatingInspector") && !panelBottomActive();
       const shouldFloat = Boolean(piece && floating && !tabletUi && !phoneViewerActive && !document.body.classList.contains("stage-fullscreen"));
       const floatingRoot = document.querySelector(".stage-sketch-grid");
       const wasPortaled = inspector.parentElement === floatingRoot;
@@ -38704,6 +38779,12 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
 
   function syncViewSwitch() {
     if (!els.viewSelect) return;
+    const bottom = panelBottomActive();
+    els.viewSelect.querySelector('option[value="both-front"]').textContent = tx(bottom ? "正面・平面" : "両方1");
+    els.viewSelect.querySelector('option[value="both-plan"]').textContent = tx(bottom ? "平面・正面" : "両方2");
+    els.viewSelect.setAttribute("aria-label", tx(bottom
+      ? "表示する図。二図の名前は左から右の順"
+      : "表示する図。Tで切替。両方1は正面が上、両方2は平面が上"));
     if (state.showFront && state.showPlan) {
       els.viewSelect.value = state.layout.centerOrder[0] === "plan" ? "both-plan" : "both-front";
     } else {
