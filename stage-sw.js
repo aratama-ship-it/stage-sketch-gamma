@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v456";
+const CACHE_NAME = "stage-sketch-gamma-shell-v457";
 const APP_SHELL = [
   "./stage-data-safety.js?v=20261001-release69",
   "./stage-point-source.js?v=20260927-point43",
@@ -60,7 +60,7 @@ const APP_SHELL = [
   "./light-design/rig-engine.js?v=20261003-release80",
   "./light-design/stage-figure.js?v=20260926-render37",
   "./light-design/volume-light.js?v=20260928-feedback55",
-  "./light-design/laser-effects.js?v=20260915-5-color-presets",
+  "./light-design/laser-effects.js?v=20261003-sheet85",
   "./light-design/laser-effects-ui.js?v=20260915-3-supported-shapes",
   "./light-design/app.js?v=20261003-glint84",
   "./light-design/light-presets.js?v=1789357787",

@@ -92,10 +92,17 @@
       /* シートは放射状の線を描かず、光源と左右端で囲んだ一枚の面として描く。 */
       const g = ctx.createLinearGradient(lines[0].a.X, lines[0].a.Y, lines.at(-1).b.X, lines.at(-1).b.Y);
       colors.forEach((c, i) => g.addColorStop(colors.length === 1 ? 0 : i / (colors.length - 1), rgba(c, 0.22 * a)));
-      ctx.fillStyle = g; ctx.shadowColor = rgba(colorAt(0), 0.28 * a); ctx.shadowBlur = 12;
+      /* ★影のぼかし（shadowBlur）は使わない（2026-10-03・v0.2.85）。空中狙いのシートは光線を reach×6 まで延ばすので、
+         舞台モードの正面図・平面図では多角形の頂点が画面外 2万〜5.6万px に出る。WebKit は影つきの塗りを形の外接矩形
+         全体で処理するらしく 1回の fill に約3.7秒かかり、F-4＋「光の筋」で3D・舞台モードが止まった（Chromium は無事）。
+         縁の柔らかさは、同じ形の縁を太く薄い線2段（lighter）で重ねて出す。見た目はほぼ同じ（docs/research-2026-10-03-laser-sheet-webkit）。 */
+      ctx.fillStyle = g;
       ctx.beginPath(); ctx.moveTo(lines[0].a.X, lines[0].a.Y);
       lines.forEach((q) => ctx.lineTo(q.b.X, q.b.Y)); ctx.closePath(); ctx.fill();
-      ctx.shadowBlur = 0; ctx.strokeStyle = rgba(colorAt(0), 0.28 * a); ctx.lineWidth = 1;
+      ctx.lineJoin = "round";
+      ctx.lineWidth = 22; ctx.strokeStyle = rgba(colorAt(0), 0.05 * a); ctx.stroke();
+      ctx.lineWidth = 10; ctx.strokeStyle = rgba(colorAt(0), 0.08 * a); ctx.stroke();
+      ctx.strokeStyle = rgba(colorAt(0), 0.28 * a); ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(lines[0].b.X, lines[0].b.Y); ctx.lineTo(lines.at(-1).b.X, lines.at(-1).b.Y); ctx.stroke();
       ctx.restore(); return;
     }

@@ -230,7 +230,7 @@ test("the app shell advances with the storage transaction code", () => {
   assert.match(stageHtml, /stage-project-backup-store\.js\?v=2026092523/);
   assert.match(stageHtml, /style\.css\?v=20261003-release77/);
   assert.match(stageHtml, /stage-sketch\.js\?v=20261003-glint84/);
-  assert.match(serviceWorker, /stage-sketch-gamma-shell-v456/);
+  assert.match(serviceWorker, /stage-sketch-gamma-shell-v457/);
   assert.match(serviceWorker, /\.\/stage-project-backup-store\.js\?v=2026092523/);
   assert.match(serviceWorker, /\.\/style\.css\?v=20261003-release77/);
   assert.match(serviceWorker, /\.\/stage-sketch\.js\?v=20261003-glint84/);
