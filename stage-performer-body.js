@@ -202,31 +202,76 @@
   const FOOT_R = 0.0175;       // 足の甲の厚み
   const HEEL_BACK = 0.011;     // 踵の後方への張り出しを抑える
 
-  /* ホストで正規化された衣装を、舞台モードと同じ丈へ変換する。 */
+  /* 服の種類ごとの体の側の塗り分け（2026-10-03 本人承認 G1・G2 で服の殻を24件＋試作3件に広げた）。
+   *  sleeve … 袖の既定の丈／onePiece … 一続き（"leotard"＝脚を出す・"full"＝足首まで上衣の色）
+   *  waistAt … 下衣を塗り始める胴の位置（上着は腰まで隠す）／legTop … 脚の付け根から上衣の色で塗る割合（裾が腿にかかる）
+   *  torso … 胴と袖を塗る色（エプロン＝中のシャツ）／sleeveColor … 袖だけの色（ベスト＝中のシャツの袖）
+   *  bodice … ワンピース（胴も下衣の色）／length … 下衣の既定の丈。輪郭の外へ出る形は SHELL_OPS（paintShells）が描く。 */
+  const SHIRT = "#ece6da";
+  const TOP_SPECS = {
+    tshirt: { sleeve: "short" }, longtee: { sleeve: "long" }, tank: { sleeve: "none", collar: 0.20 },
+    leotard: { sleeve: "none", collar: 0.20, onePiece: "leotard" }, unitard: { sleeve: "none", collar: 0.20, onePiece: "full" },
+    tsunagi: { sleeve: "long", onePiece: "full" },
+    jacket: { sleeve: "long", waistAt: 1.0, legTop: 0.14 },
+    kimono: { sleeve: "long", onePiece: "full" },
+    coat: { sleeve: "long", waistAt: 1.0, legTop: 0.42 },
+    cape: { sleeve: "long" },
+    shirt_open: { sleeve: "long", waistAt: 0.9 },
+    haori: { sleeve: "long", waistAt: 1.0, legTop: 0.3 },
+    happi: { sleeve: "threequarter", waistAt: 1.0, legTop: 0.08 },
+    hakui: { sleeve: "long", waistAt: 1.0, legTop: 0.45 },
+    kappogi: { sleeve: "long", waistAt: 1.0, legTop: 0.4, collar: 0.22 },
+    tailcoat: { sleeve: "long" },
+    poncho: { sleeve: "long" },
+    spacesuit: { sleeve: "long", onePiece: "full" },
+    clown_baggy: { sleeve: "long", onePiece: "full" },
+    vest: { sleeve: "long", sleeveColor: SHIRT, collar: 0.2 },
+    hoodie: { sleeve: "long", waistAt: 0.95, legTop: 0.04 },
+    dogi: { sleeve: "threequarter", waistAt: 1.0, legTop: 0.1 },
+    sailor: { sleeve: "long" },
+    uniform_tunic: { sleeve: "long", waistAt: 1.0, legTop: 0.08, collar: 0.34 },
+    apron: { sleeve: "short", torso: SHIRT },
+  };
+  const BOTTOM_SPECS = {
+    pants: { length: "ankle" }, shorts: { length: "mini" },
+    skirt_a: { length: "knee" }, skirt_tight: { length: "knee" }, tutu: { length: "none" },
+    dress: { length: "knee", bodice: true }, hakama: { length: "ankle" }, mermaid: { length: "ankle" },
+    leggings: { length: "midi" }, monpe: { length: "ankle" },
+  };
   function lookSpec(look) {
     if (!look || typeof look !== "object") return null;
     const top = look.top && typeof look.top === "object" ? look.top : {};
     const bottom = look.bottom && typeof look.bottom === "object" ? look.bottom : {};
     const sleeves = { none: 0, short: 0.38, threequarter: 0.72, long: 1 };
-    const lengths = { mini: 0.30, knee: 0.50, midi: 0.72, ankle: 1, floor: 1.08 };
-    /* 2026-09-26 W3: 一続きの服（ホストの TOP_KINDS.onePiece と同じ）。腰回りと脚を上衣の色で塗り、
-       レオタードは脚を出す。手袋は look.gloves.kind が none 以外のとき手を塗る。 */
-    const onePiece = { leotard: "leotard", unitard: "full", tsunagi: "full" }[top.kind] || null;
-    const defaultSleeve = top.kind === "longtee" || top.kind === "tsunagi" ? "long"
-      : top.kind === "tank" || top.kind === "leotard" || top.kind === "unitard" ? "none" : "short";
-    const defaultLength = bottom.kind === "shorts" ? "mini" : "ankle";
-    const topColor = top.color || "#a84b26";
+    const lengths = { none: 0, mini: 0.30, knee: 0.50, midi: 0.72, calf: 0.8, ankle: 1, floor: 1.08 };
+    /* 2026-09-26 W3: 一続きの服。腰回りと脚を上衣の色で塗り、レオタードは脚を出す。手袋は look.gloves.kind が none 以外のとき手を塗る。 */
+    const T = TOP_SPECS[top.kind] || TOP_SPECS.tshirt;
+    const B = BOTTOM_SPECS[bottom.kind] || BOTTOM_SPECS.pants;
+    const onePiece = T.onePiece || null;
+    const garment = top.color || "#a84b26";
+    const bottomRaw = bottom.color || "#3a3f4a";
+    const topColor = B.bodice && !onePiece ? bottomRaw : (T.torso || garment);
     const gloves = look.gloves && typeof look.gloves === "object" && look.gloves.kind && look.gloves.kind !== "none"
       ? (look.gloves.color || "#f2efe8") : null;
+    const defaultSleeve = T.sleeve || "short";
+    // 下衣の丈。保存値（bottom.length）より、種類の形が決まっている物（チュチュ・レギンス等）は種類を優先しない＝保存値優先
+    const len = bottom.length && lengths[bottom.length] !== undefined ? lengths[bottom.length] : lengths[B.length];
     return {
       skin: look.skin || "#d9b38c",
       topColor,
-      bottomColor: onePiece ? topColor : (bottom.color || "#3a3f4a"),
+      garment,
+      sleeveColor: T.sleeveColor || (T.torso ? T.torso : null),
+      bottomColor: onePiece ? garment : bottomRaw,
+      bottomRaw,
       sleeve: sleeves[top.sleeve || defaultSleeve] ?? sleeves[defaultSleeve],
-      length: onePiece === "leotard" ? 0 : onePiece ? 1
-        : lengths[bottom.length || defaultLength] ?? lengths[defaultLength],
-      collar: top.kind === "tank" || top.kind === "leotard" || top.kind === "unitard" ? 0.20 : 0.28,
+      length: onePiece === "leotard" ? 0 : onePiece ? 1 : (bottom.kind === "tutu" ? 0 : len),
+      collar: T.collar || 0.28,
       gloves,
+      // 上衣の裾が腿にかかる服は、腰回り（股まで）も上衣の色のまま（下衣の色の三角が股に出ないように）
+      waistAt: T.legTop > 0 ? 1.3 : (T.waistAt || 0.62),
+      legTop: T.legTop || 0,
+      // 下衣の形は、足首まで一続きの服（着物・つなぎ等）のときだけ出さない（レオタード＋チュチュは出す）
+      shell: { top: SHELL_OPS[top.kind] ? top.kind : null, bottom: onePiece !== "full" && SHELL_OPS[bottom.kind] ? bottom.kind : null },
     };
   }
 
@@ -453,13 +498,17 @@
         if (clothes) {
           const amount = part.limb.kind === "arm" ? clothes.sleeve : clothes.length;
           if (amount > 0) {
-            const garmentColor = part.limb.kind === "arm" ? clothes.topColor : clothes.bottomColor;
+            const garmentColor = part.limb.kind === "arm" ? (clothes.sleeveColor || clothes.topColor) : clothes.bottomColor;
             target.fillStyle = partPaint(part, garmentColor, far);
             if (part.limb.kind === 'arm') {
               fillConnection(rig.shoulderBlends[part.limb.pts[0]]);
               fillConnection(rig.shoulderBlends[part.limb.pts[0]].outer);
             }
             paintGarment(nodes, radii, amount, rootCap);
+          }
+          if (part.limb.kind === "leg" && clothes.legTop > 0) {
+            target.fillStyle = partPaint(part, clothes.garment || clothes.topColor, far);
+            paintGarment(nodes, radii, clothes.legTop, rootCap);
           }
           target.fillStyle = partPaint(part, skinColor, far);
         }
@@ -499,10 +548,13 @@
           smoothClosedPath(target, torsoOutline(rig.rings.slice(collarIndex)));
           target.fill();
           // Trousers include the pelvis, connecting both legs at the waist.
-          const waistIndex = NECK_RINGS.length + TORSO_RINGS.findIndex(ring => ring.t >= .62);
-          target.fillStyle = partPaint(part, clothes.bottomColor, false);
-          smoothClosedPath(target, torsoOutline(rig.rings.slice(waistIndex)));
-          target.fill();
+          // 下衣を塗り始める断面。胴の範囲より下（上着が股まで覆う）なら、腰回りは上衣の色のまま
+          const waistRing = TORSO_RINGS.findIndex(ring => ring.t >= (clothes.waistAt || .62));
+          if (waistRing >= 0) {
+            target.fillStyle = partPaint(part, clothes.bottomColor, false);
+            smoothClosedPath(target, torsoOutline(rig.rings.slice(NECK_RINGS.length + waistRing)));
+            target.fill();
+          }
         }
         return;
       }
@@ -705,6 +757,208 @@
     target.restore();
   }
 
+  /* ===== 服の殻（2026-10-03 本人承認 G1・G2） =====
+   * 体の輪郭の外へ出る部分を、体の座標で作って project で写す。輪郭の外の部分は体より先に塗り（体が手前に重なる）、
+   * 胸元の合わせ・帯・ボタンのように体の上に乗るものは体の後に塗る。種類ごとの部品の並びが SHELL_OPS。
+   * 色の名前: "top"＝上衣の色・"bottom"＝下衣の色（一続きの服では差し色＝帯など。本人決定 G2）・"skin"・"shirt"・"dark"・#hex。 */
+  const SHELL_OPS = {
+    jacket: [["skirt", { rings: [[0.62, 0.082, 0.058], [1.0, 0.098, 0.074]], hem: { t: 1.22, r: 0.1, rz: 0.075 } }], ["innerV", { to: 0.5 }]],
+    coat: [["skirt", { rings: [[0.62, 0.084, 0.06], [1.0, 0.1, 0.076]], hem: { at: "knee", dy: -0.04, r: 0.15, rz: 0.11, spread: 0.06, max: 0.2 } }],
+      ["dots", { ts: [0.2, 0.42, 0.64, 0.86], x: 0.03, color: "dark" }]],
+    cape: [["cape", { color: "top" }]],
+    shirt_open: [["innerV", { to: 0.88, w: 0.05, color: "skin" }]],
+    haori: [["skirt", { rings: [[0.62, 0.086, 0.06], [1.0, 0.1, 0.076]], hem: { t: 1.55, r: 0.12, rz: 0.085 } }], ["innerV", { to: 1.4, w: 0.03, color: "bottom" }],
+      ["tamoto", { drop: 0.1 }]],
+    happi: [["skirt", { rings: [[0.62, 0.084, 0.06], [1.0, 0.1, 0.076]], hem: { t: 1.12, r: 0.1, rz: 0.075 } }], ["frontBand", { to: 1.08, color: "shirt" }]],
+    hakui: [["skirt", { rings: [[0.62, 0.084, 0.06], [1.0, 0.1, 0.076]], hem: { at: "knee", dy: -0.05, r: 0.13, rz: 0.1, spread: 0.05, max: 0.17 } }], ["innerV", { to: 0.42, color: "bottom" }]],
+    kappogi: [["skirt", { rings: [[0.62, 0.088, 0.064], [1.0, 0.104, 0.08]], hem: { at: "knee", dy: 0.02, r: 0.13, rz: 0.1, spread: 0.05, max: 0.17 } }]],
+    tailcoat: [["tails", {}], ["innerV", { to: 0.55 }], ["bow", {}]],
+    poncho: [["poncho", {}]],
+    spacesuit: [["backpack", {}], ["bulk", { scale: 1.22 }], ["helmet", {}]],
+    clown_baggy: [["bulk", { scale: 1.32 }], ["ruff", {}], ["dots", { ts: [0.25, 0.5, 0.75], x: 0, r: 0.016, color: "bottom" }]],
+    kimono: [["tube", {}], ["tamoto", { drop: 0.13 }], ["obi", { color: "bottom" }], ["eri", { color: "shirt" }]],
+    vest: [["innerV", { to: 0.36 }], ["dots", { ts: [0.42, 0.56, 0.7], x: 0, r: 0.007, color: "dark" }]],
+    hoodie: [["hood", {}], ["strings", {}]],
+    dogi: [["eri", { color: "top", width: 0.024, dark: 0.18, deep: 0.62 }], ["belt", { t: 0.86, color: "dark" }]],
+    sailor: [["sailor", { color: "bottom" }]],
+    uniform_tunic: [["standCollar", {}], ["dots", { ts: [0.08, 0.28, 0.48, 0.68, 0.88], x: 0, r: 0.008, color: "#c9a24a" }]],
+    apron: [["apron", { color: "top" }]],
+    skirt_a: [["skirt", { rings: [[0.68, 0.076, 0.055]], hem: { at: "knee", dy: -0.02, r: 0.15, rz: 0.12, spread: 0.08, max: 0.24 }, color: "bottom" }]],
+    skirt_tight: [["skirt", { rings: [[0.68, 0.076, 0.055], [0.96, 0.088, 0.072]], hem: { at: "knee", dy: -0.03, r: 0.095, rz: 0.075, spread: 0.02, max: 0.12 }, color: "bottom" }]],
+    dress: [["skirt", { rings: [[0.62, 0.074, 0.052]], hem: { at: "knee", dy: -0.13, r: 0.17, rz: 0.13, spread: 0.08, max: 0.25 }, color: "bottom" }]],
+    tutu: [["disc", { t: 0.95, r: 0.27, color: "bottom" }]],
+    hakama: [["skirt", { rings: [[0.62, 0.084, 0.06], [1.0, 0.11, 0.08]], hem: { at: "ankle", dy: -0.02, r: 0.17, rz: 0.13, spread: 0.06, max: 0.22 }, color: "bottom" }], ["belt", { t: 0.66, color: "bottom", width: 0.07 }]],
+    mermaid: [["skirt", { rings: [[0.68, 0.076, 0.055], [0.96, 0.088, 0.072]], hem: { at: "knee", dy: -0.02, r: 0.085, rz: 0.07, spread: 0.02, max: 0.1 }, color: "bottom" }],
+      ["flare", { color: "bottom" }]],
+    leggings: [],
+    monpe: [["legVolume", { color: "bottom" }]],
+  };
+  function shellFrame(pose) {
+    const j = pose.joints;
+    const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
+    const shMid = mid(j.shL, j.shR), hipMid = mid(j.hipL, j.hipR);
+    const axis = norm3([hipMid[0] - shMid[0], hipMid[1] - shMid[1], hipMid[2] - shMid[2]]);
+    const w0 = pose.wide || [1, 0, 0];
+    const dot = w0[0] * axis[0] + w0[1] * axis[1] + w0[2] * axis[2];
+    let wide = norm3([w0[0] - axis[0] * dot, w0[1] - axis[1] * dot, w0[2] - axis[2] * dot]);
+    if (!wide.every(Number.isFinite)) wide = [1, 0, 0];
+    const deep = norm3(cross3(axis, wide));       // 体の前
+    const at = (t) => [0, 1, 2].map((i) => shMid[i] + (hipMid[i] - shMid[i]) * t);
+    // 胴の座標の点（t＝肩0→腰1、x＝左右、f＝前後）
+    const body = (t, x, f) => [0, 1, 2].map((i) => at(t)[i] + wide[i] * x + deep[i] * f);
+    // 胴の断面の楕円の点
+    const ring = (t, halfX, rz, n = 16, back = 0) => Array.from({ length: n }, (_, k) => {
+      const a = (k / n) * Math.PI * 2;
+      return body(t, Math.cos(a) * halfX, Math.sin(a) * rz - back);
+    });
+    // 重力で垂れる水平の輪（床と平行・中心 c・半径 rx×rz）。床で止める
+    const flat = (c, rx, rz, n = 16) => Array.from({ length: n }, (_, k) => {
+      const a = (k / n) * Math.PI * 2;
+      return [c[0] + wide[0] * Math.cos(a) * rx + deep[0] * Math.sin(a) * rz, Math.max(0.012, c[1]),
+        c[2] + wide[2] * Math.cos(a) * rx + deep[2] * Math.sin(a) * rz];
+    });
+    const spreadOf = (a, b) => Math.hypot(j[a][0] - j[b][0], j[a][2] - j[b][2]) / 2;
+    return { j, shMid, hipMid, axis, wide, deep, at, body, ring, flat, mid, spreadOf };
+  }
+  function paintShells(target, rig, look, layer, shade) {
+    const clothes = lookSpec(look);
+    const shell = clothes && clothes.shell;
+    if (!shell || (!shell.top && !shell.bottom) || !rig || !rig.pose || !rig.project) return;
+    const S = shellFrame(rig.pose);
+    const project = (p) => rig.project(p[0], p[1], p[2]);
+    const P = rig.P;
+    const over = layer === "over";
+    const torsoZ = (P.shL.z + P.shR.z + P.hipL.z + P.hipR.z) / 4;
+    const centerZ = project(S.at(0.5)).z;
+    const front = project(S.body(0.3, 0, 0.06)).z > project(S.at(0.3)).z;   // 胸がこちらを向いているか
+    const unit = P.neck.s || rig.ux;
+    const tint = (hex) => (shade ? shade({ kind: "torso", z: torsoZ }, hex) : hex);
+    const colorOf = (name) => tint(name === "top" ? clothes.garment : name === "bottom" ? clothes.bottomRaw : name === "skin" ? clothes.skin
+      : name === "shirt" ? SHIRT : name === "dark" ? mixToward(clothes.garment, 0.55) : name || clothes.garment);
+    const fill = (pts3, color) => { target.fillStyle = colorOf(color); fillPath(target, hull(pts3.map(project))); };
+    // 部品の真ん中が胴より手前か（体の前後どちらに塗るか）
+    const inFront = (pts3) => pts3.map(project).reduce((sum, p) => sum + p.z, 0) / pts3.length >= centerZ;
+    const hemCenter = (hem) => {
+      if (hem.at === "knee" || hem.at === "ankle") {
+        const c = hem.at === "knee" ? S.mid(S.j.knL, S.j.knR) : S.mid(S.j.anL, S.j.anR);
+        const spread = hem.at === "knee" ? S.spreadOf("knL", "knR") : S.spreadOf("anL", "anR");
+        const r = Math.min(hem.max || hem.r, Math.max(hem.r, spread + (hem.spread || 0)));
+        return { c: [c[0], c[1] + (hem.dy || 0), c[2]], r, rz: hem.rz * (r / hem.r) };
+      }
+      return { c: S.at(hem.t), r: hem.r, rz: hem.rz };
+    };
+    const strokeV = (l, v, r, color, width) => {
+      target.strokeStyle = colorOf(color); target.lineWidth = Math.max(1, width * unit); target.lineCap = "round"; target.lineJoin = "round";
+      target.beginPath(); target.moveTo(l.x, l.y); target.lineTo(v.x, v.y); if (r) target.lineTo(r.x, r.y); target.stroke();
+    };
+    const OPS = {
+      // 腰から下へ広がる裾（上着・スカート・袴）。体の後ろに塗る＝脚と腕が手前に重なる
+      skirt: (o) => { if (over) return; const h = hemCenter(o.hem);
+        fill(o.rings.flatMap(([t, x, z]) => S.ring(t, x, z)).concat(S.flat(h.c, h.r, h.rz)), o.color || "top"); },
+      // マーメイドの膝から下の広がり
+      flare: (o) => { if (over) return; const k = S.mid(S.j.knL, S.j.knR), a = S.mid(S.j.anL, S.j.anR);
+        fill(S.flat([k[0], k[1] - 0.05, k[2]], 0.07, 0.06).concat(S.flat([a[0], 0.012, a[2]], 0.2, 0.15)), o.color); },
+      // 着物の足首までの筒
+      tube: () => { if (over) return; const a = S.mid(S.j.anL, S.j.anR);
+        fill(S.ring(0.75, 0.084, 0.062).concat(S.flat([a[0], a[1] - 0.02, a[2]], Math.min(0.12, Math.max(0.085, S.spreadOf("anL", "anR") + 0.04)), 0.07)), "top"); },
+      // チュチュ。腰の高さの水平の円盤。全体は体の後ろ、手前の半分は体の上
+      disc: (o) => { const c = S.at(o.t);
+        // 重ねたチュールの厚み。真横から見ても線にならないよう、上面と、縁が少し垂れた下面を取る
+        const pts = S.flat([c[0], c[1] + 0.03, c[2]], o.r * 0.55, o.r * 0.5, 24).concat(S.flat([c[0], c[1] - 0.035, c[2]], o.r, o.r * 0.9, 24));
+        if (!over) fill(pts, o.color); else { target.fillStyle = colorOf(o.color);
+          const c = project(S.at(o.t)); fillPath(target, hull(pts.map(project).filter((p) => p.z >= c.z).concat([project(S.body(o.t, -0.09, 0.02)), project(S.body(o.t, 0.09, 0.02))]))); } },
+      // もんぺ。脚ごとのふくらみ（腿・膝が太く、足首ですぼまる）
+      legVolume: (o) => { if (over) return; ["L", "R"].forEach((side) => {
+        const pts = [[S.j["hip" + side], 0.075], [S.j["kn" + side], 0.072], [S.j["an" + side], 0.04]].flatMap(([p, r]) =>
+          Array.from({ length: 10 }, (_, k) => { const a = (k / 10) * Math.PI * 2; return [0, 1, 2].map((i) => p[i] + S.wide[i] * Math.cos(a) * r + S.deep[i] * Math.sin(a) * r); }));
+        fill(pts, o.color); }); },
+      // 中のシャツ（前の開き）。首元から to までの細い三角。胸がこちら向きのときだけ
+      innerV: (o) => { if (!over || !front) return; const w = o.w || 0.035;
+        target.fillStyle = colorOf(o.color || "shirt");
+        fillPath(target, [S.body(-0.02, -w, 0.05), S.body(-0.02, w, 0.05), S.body(o.to, 0, 0.064)].map(project)); },
+      // 法被の前の襟（縦の帯）
+      frontBand: (o) => { if (!over || !front) return; [-1, 1].forEach((s) => {
+        target.fillStyle = colorOf(o.color); fillPath(target, [S.body(-0.03, 0.03 * s, 0.05), S.body(-0.03, 0.05 * s, 0.05), S.body(o.to, 0.022 * s, 0.072), S.body(o.to, 0.004 * s, 0.072)].map(project)); }); },
+      // 白い襟／道着の襟。首元から胸の合わせへの V
+      eri: (o) => { if (!over || !front) return;
+        const color = o.dark ? tint(mixToward(clothes.garment, o.dark)) : o.color;
+        const l = project(S.body(-0.04, -0.045, 0.035)), r = project(S.body(-0.04, 0.045, 0.035)), v = project(S.body(o.deep || 0.36, 0.008, 0.066));
+        if (o.dark) { target.strokeStyle = color; target.lineWidth = Math.max(1, (o.width || 0.012) * unit); target.lineCap = "round";
+          target.beginPath(); target.moveTo(l.x, l.y); target.lineTo(v.x, v.y); target.lineTo(r.x, r.y); target.stroke(); }
+        else strokeV(l, v, r, color, o.width || 0.012); },
+      // 帯・ベルト。胴の帯域の、こちら向きの半分
+      obi: (o) => { if (!over) return; const band = S.ring(0.52, 0.094, 0.066, 20).concat(S.ring(0.8, 0.09, 0.068, 20)).map(project).filter((p) => p.z >= project(S.at(0.66)).z);
+        target.fillStyle = colorOf(o.color); if (band.length >= 3) fillPath(target, hull(band));
+        if (!front) fill([S.body(0.42, -0.08, -0.1), S.body(0.42, 0.08, -0.1), S.body(0.92, -0.085, -0.1), S.body(0.92, 0.085, -0.1)], o.color); },
+      belt: (o) => { if (!over) return; const w = o.width || 0.04;
+        const band = S.ring(o.t - w, 0.092, 0.068, 20).concat(S.ring(o.t + w, 0.094, 0.07, 20)).map(project).filter((p) => p.z >= project(S.at(o.t)).z);
+        target.fillStyle = colorOf(o.color); if (band.length >= 3) fillPath(target, hull(band)); },
+      // ボタン。胸の真ん中の縦の列。胸がこちら向きのときだけ
+      dots: (o) => { if (!over || !front) return; target.fillStyle = colorOf(o.color);
+        o.ts.forEach((t) => { const c = project(S.body(t, o.x || 0, 0.072)); target.beginPath(); target.arc(c.x, c.y, Math.max(0.8, (o.r || 0.009) * unit), 0, Math.PI * 2); target.fill(); }); },
+      // 袂。前腕から下へ垂れる袋。腕より手前なら体の後、奥なら体の前
+      tamoto: (o) => { ["L", "R"].forEach((side) => {
+        const el = S.j["el" + side], wr = S.j["wr" + side];
+        const a = [0, 1, 2].map((i) => el[i] + (wr[i] - el[i]) * 0.15), b = [0, 1, 2].map((i) => el[i] + (wr[i] - el[i]) * 0.85);
+        const drop = (p, d) => [p[0], Math.max(0.012, p[1] - d), p[2]];
+        const bag = [a, b, drop(b, o.drop - 0.01), drop([0, 1, 2].map((i) => (a[i] + b[i]) / 2), o.drop + 0.02), drop(a, o.drop - 0.03)].map(project);
+        const z = bag.reduce((sum, p) => sum + p.z, 0) / bag.length;
+        if ((z >= P["el" + side].z - 1e-6) === over) { target.fillStyle = colorOf("top"); fillPath(target, hull(bag)); } }); },
+      // 燕尾。腰の後ろから膝の裏へ2枚。正面からは脚の後ろ、後ろ姿では体の上
+      tails: () => { [-1, 1].forEach((s) => {
+        const k = S.mid(S.j.knL, S.j.knR);
+        const panel = [S.body(0.72, 0.075 * s, -0.04), S.body(0.72, 0.01 * s, -0.06), [k[0] + S.wide[0] * 0.02 * s - S.deep[0] * 0.08, k[1] - 0.02, k[2] + S.wide[2] * 0.02 * s - S.deep[2] * 0.08],
+          [k[0] + S.wide[0] * 0.075 * s - S.deep[0] * 0.07, k[1] + 0.03, k[2] + S.wide[2] * 0.075 * s - S.deep[2] * 0.07]];
+        if (front !== over) fill(panel, "top"); }); },
+      // 蝶ネクタイ
+      bow: () => { if (!over || !front) return; target.fillStyle = colorOf("dark");
+        fillPath(target, [S.body(-0.03, -0.03, 0.06), S.body(0.0, -0.03, 0.062), S.body(-0.015, 0, 0.064)].map(project));
+        fillPath(target, [S.body(-0.03, 0.03, 0.06), S.body(0.0, 0.03, 0.062), S.body(-0.015, 0, 0.064)].map(project)); },
+      // マント。肩から脹脛まで。正面からは体の後ろ（両脇に見える）、後ろ姿では体の上
+      cape: (o) => { const a = S.mid(S.j.anL, S.j.anR);
+        const pts = S.ring(0.02, 0.13, 0.06, 16, 0.02).concat(S.flat([a[0] - S.deep[0] * 0.12, 0.2, a[2] - S.deep[2] * 0.12], 0.26, 0.12));
+        if (front !== over) fill(pts, o.color);
+        if (over && front) { target.fillStyle = colorOf("dark"); const c = project(S.body(-0.03, 0, 0.06)); target.beginPath(); target.arc(c.x, c.y, Math.max(1, 0.012 * unit), 0, Math.PI * 2); target.fill(); } },
+      // ポンチョ。肩から腰へ広がる布。腕も覆うので体の上に塗る（手は裾の下から出る）
+      poncho: () => { if (!over) return; fill(S.ring(0.03, 0.12, 0.07).concat(S.flat(S.at(0.92), 0.28, 0.2)), "top");
+        if (front) { target.fillStyle = colorOf("shirt"); [0.35, 0.6].forEach((t) => {
+          const a = project(S.body(t, -0.2, 0.08)), b = project(S.body(t, 0.2, 0.08)); target.fillRect(Math.min(a.x, b.x), Math.min(a.y, b.y) - 0.006 * unit, Math.abs(b.x - a.x), 0.012 * unit); }); } },
+      // 着ぐるみ・道化服のふくらみ。胴の断面を太らせて体の後ろに塗る
+      bulk: (o) => { if (over) return; fill(S.ring(0.05, 0.112 * o.scale, 0.06 * o.scale).concat(S.ring(0.62, 0.074 * o.scale, 0.051 * o.scale), S.ring(1.02, 0.09 * o.scale, 0.07 * o.scale)), "top"); },
+      // 宇宙服の背負い箱と、頭を包むヘルメット
+      backpack: () => { const box = [S.body(0.04, -0.075, -0.07), S.body(0.04, 0.075, -0.07), S.body(0.6, -0.075, -0.07), S.body(0.6, 0.075, -0.07),
+        S.body(0.04, -0.075, -0.15), S.body(0.6, 0.075, -0.15), S.body(0.04, 0.075, -0.15), S.body(0.6, -0.075, -0.15)];
+        if (inFront(box) === over) fill(box, "#d8dbe0"); },
+      helmet: () => { if (!over) return; const h = P.head; const r = 0.11 * (h.s || rig.ux);
+        target.save(); target.globalAlpha *= 0.28; target.fillStyle = tint("#cfe3f2"); target.beginPath(); target.arc(h.x, h.y, r, 0, Math.PI * 2); target.fill(); target.restore();
+        target.strokeStyle = tint("#e9eef3"); target.lineWidth = Math.max(1, 0.01 * (h.s || rig.ux)); target.beginPath(); target.arc(h.x, h.y, r, 0, Math.PI * 2); target.stroke(); },
+      // 道化のひだ襟。首元の輪に白い丸を並べる（こちら向きの半分）
+      ruff: () => { if (!over) return; target.fillStyle = tint("#f4f1ea");
+        S.ring(-0.05, 0.085, 0.07, 14).map(project).filter((p) => p.z >= project(S.at(-0.05)).z - 1e-6).forEach((c) => {
+          target.beginPath(); target.arc(c.x, c.y, Math.max(1, 0.026 * unit), 0, Math.PI * 2); target.fill(); }); },
+      // パーカーのフード（首の後ろ）と紐
+      hood: () => { const pts = S.ring(-0.12, 0.07, 0.05, 12, 0.05).concat(S.ring(0.02, 0.09, 0.05, 12, 0.04));
+        if (inFront(pts) === over) fill(pts, "top"); },
+      strings: () => { if (!over || !front) return; [-1, 1].forEach((s) => strokeV(project(S.body(-0.02, 0.025 * s, 0.06)), project(S.body(0.28, 0.03 * s, 0.07)), null, "shirt", 0.006)); },
+      // セーラー服。前は襟の V とスカーフ、後ろ姿は四角い襟
+      sailor: (o) => { if (!over) return;
+        if (front) { strokeV(project(S.body(-0.04, -0.06, 0.03)), project(S.body(0.3, 0, 0.066)), project(S.body(-0.04, 0.06, 0.03)), o.color, 0.022);
+          target.fillStyle = tint("#c0392b"); fillPath(target, [S.body(0.22, -0.025, 0.07), S.body(0.22, 0.025, 0.07), S.body(0.38, 0, 0.072)].map(project)); }
+        else fill([S.body(-0.03, -0.1, -0.06), S.body(-0.03, 0.1, -0.06), S.body(0.3, -0.1, -0.075), S.body(0.3, 0.1, -0.075)], o.color); },
+      // 詰襟。首元の帯（こちら向きの半分）
+      standCollar: () => { if (!over) return; const band = S.ring(-0.1, 0.05, 0.045, 16).concat(S.ring(-0.02, 0.06, 0.05, 16)).map(project).filter((p) => p.z >= project(S.at(-0.06)).z);
+        target.fillStyle = colorOf("dark"); if (band.length >= 3) fillPath(target, hull(band)); },
+      // エプロン。胸から膝の前の布と肩紐。胸がこちら向きのときだけ
+      apron: (o) => { if (!over || !front) return; const k = S.mid(S.j.knL, S.j.knR);
+        fill([S.body(0.12, -0.06, 0.065), S.body(0.12, 0.06, 0.065), S.body(0.62, -0.08, 0.06), S.body(0.62, 0.08, 0.06),
+          [k[0] + S.wide[0] * -0.12 + S.deep[0] * 0.08, k[1], k[2] + S.wide[2] * -0.12 + S.deep[2] * 0.08], [k[0] + S.wide[0] * 0.12 + S.deep[0] * 0.08, k[1], k[2] + S.wide[2] * 0.12 + S.deep[2] * 0.08]], o.color);
+        [-1, 1].forEach((s) => strokeV(project(S.body(-0.02, 0.05 * s, 0.03)), project(S.body(0.14, 0.055 * s, 0.065)), null, o.color, 0.012)); },
+    };
+    target.save();
+    [shell.bottom, shell.top].filter(Boolean).forEach((kind) => (SHELL_OPS[kind] || []).forEach(([name, o]) => { if (OPS[name]) OPS[name](o); }));
+    target.restore();
+  }
+
   const sprites = new Map(); let spritePixels = 0;
   const stats = {painted: 0, cached: 0, rasterized: 0};
   function geometryKey(rig) {
@@ -734,9 +988,11 @@
   }
   function direct(target,rig,color,look,shade) {
     const hair = hairSpec(look);
+    paintShells(target, rig, look, "behind", shade);
     if (hair) paintHair(target, rig, hair, "behind", shade);
     if(root.STAGE_PERFORMER_CONTOUR) root.STAGE_PERFORMER_CONTOUR.paint(target,rig,color,look,shade,paintBodyParts);
     else paintBodyParts(target,rig,color,look,shade);
+    paintShells(target, rig, look, "over", shade);
     if (hair) paintHair(target, rig, hair, "over", shade);
   }
   // In the perspective view, a near arm can have the same fill as the torso.

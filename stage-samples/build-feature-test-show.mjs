@@ -320,8 +320,42 @@ helpScene.note += " UI確認: 演者・小道具の行、正面図・平面図�
     pieces.push(perf("a3", null, 0.08 + i * 0.076, 0.15, { name: `髪 ${style}`, facing, lookMode: "custom",
       look: { skin: "#e0b48f", hair: { style, color }, top: { kind: "tshirt", color: "#3b6fb6", sleeve: "short" }, bottom: { kind: "pants", color: "#3a3f4a", length: "ankle" } } }));
   });
+  // W5（2026-10-03 本人承認 G1・G2）: 服の殻27種。手前の2列に並べる（向きは 20度。着物・法被などは下衣の色が帯・差し色）
+  [
+    ["jacket", {"kind": "jacket", "color": "#2f3a4f", "sleeve": "long"}, {"kind": "pants", "color": "#25272c", "length": "ankle"}, "short"],
+    ["coat", {"kind": "coat", "color": "#6b4a2f", "sleeve": "long"}, {"kind": "pants", "color": "#25272c", "length": "ankle"}, "short"],
+    ["cape", {"kind": "cape", "color": "#7a1f2b", "sleeve": "long"}, {"kind": "pants", "color": "#25272c", "length": "ankle"}, "short"],
+    ["shirt_open", {"kind": "shirt_open", "color": "#4f6b8a", "sleeve": "long"}, {"kind": "pants", "color": "#25272c", "length": "ankle"}, "short"],
+    ["haori", {"kind": "haori", "color": "#2b2b38", "sleeve": "long"}, {"kind": "pants", "color": "#25272c", "length": "ankle"}, "short"],
+    ["happi", {"kind": "happi", "color": "#2f5ea8", "sleeve": "threequarter"}, {"kind": "pants", "color": "#25272c", "length": "ankle"}, "short"],
+    ["hakui", {"kind": "hakui", "color": "#f2f2ee", "sleeve": "long"}, {"kind": "pants", "color": "#25272c", "length": "ankle"}, "short"],
+    ["kappogi", {"kind": "kappogi", "color": "#f4f1e8", "sleeve": "long"}, {"kind": "pants", "color": "#25272c", "length": "ankle"}, "short"],
+    ["tailcoat", {"kind": "tailcoat", "color": "#1c1c22", "sleeve": "long"}, {"kind": "pants", "color": "#25272c", "length": "ankle"}, "short"],
+    ["poncho", {"kind": "poncho", "color": "#b0612b", "sleeve": "long"}, {"kind": "pants", "color": "#25272c", "length": "ankle"}, "short"],
+    ["spacesuit", {"kind": "spacesuit", "color": "#e8e8ea", "sleeve": "long"}, {"kind": "pants", "color": "#25272c", "length": "ankle"}, "short"],
+    ["clown_baggy", {"kind": "clown_baggy", "color": "#d4a72c", "sleeve": "long"}, {"kind": "pants", "color": "#25272c", "length": "ankle"}, "short"],
+    ["kimono", {"kind": "kimono", "color": "#6d3b6b", "sleeve": "long"}, {"kind": "pants", "color": "#c9a24a", "length": "ankle"}, "short"],
+    ["vest", {"kind": "vest", "color": "#5a4632", "sleeve": "long"}, {"kind": "pants", "color": "#25272c", "length": "ankle"}, "short"],
+    ["hoodie", {"kind": "hoodie", "color": "#7d8a5a", "sleeve": "long"}, {"kind": "pants", "color": "#25272c", "length": "ankle"}, "short"],
+    ["dogi", {"kind": "dogi", "color": "#f4f1ea", "sleeve": "threequarter"}, {"kind": "pants", "color": "#f4f1ea", "length": "ankle"}, "short"],
+    ["sailor", {"kind": "sailor", "color": "#f4f1ea", "sleeve": "long"}, {"kind": "skirt_a", "color": "#1f2a4a", "length": "knee"}, "short"],
+    ["uniform_tunic", {"kind": "uniform_tunic", "color": "#1f2633", "sleeve": "long"}, {"kind": "pants", "color": "#25272c", "length": "ankle"}, "short"],
+    ["apron", {"kind": "apron", "color": "#c98a8a", "sleeve": "short"}, {"kind": "pants", "color": "#25272c", "length": "ankle"}, "short"],
+    ["skirt_a", {"kind": "tshirt", "color": "#e9e2d0", "sleeve": "short"}, {"kind": "skirt_a", "color": "#a84b26", "length": "knee"}, "long"],
+    ["skirt_tight", {"kind": "tshirt", "color": "#e9e2d0", "sleeve": "short"}, {"kind": "skirt_tight", "color": "#2e2e34", "length": "knee"}, "long"],
+    ["dress", {"kind": "tshirt", "color": "#e9e2d0", "sleeve": "short"}, {"kind": "dress", "color": "#3a6a5a", "length": "knee"}, "long"],
+    ["tutu", {"kind": "leotard", "color": "#f0b8c8", "sleeve": "none"}, {"kind": "tutu", "color": "#f0b8c8", "length": "mini"}, "bun"],
+    ["hakama", {"kind": "longtee", "color": "#e9e2d0", "sleeve": "long"}, {"kind": "hakama", "color": "#3d3466", "length": "ankle"}, "long"],
+    ["mermaid", {"kind": "tank", "color": "#6a2a4a", "sleeve": "none"}, {"kind": "mermaid", "color": "#6a2a4a", "length": "ankle"}, "long"],
+    ["leggings", {"kind": "tshirt", "color": "#e9e2d0", "sleeve": "short"}, {"kind": "leggings", "color": "#202024", "length": "midi"}, "long"],
+    ["monpe", {"kind": "longtee", "color": "#e9e2d0", "sleeve": "long"}, {"kind": "monpe", "color": "#5a5a3e", "length": "ankle"}, "long"],
+  ].forEach(([kind, top, bottom, hair], i) => {
+    const row = i < 14 ? 0 : 1, col = row ? i - 14 : i;
+    pieces.push(perf("a3", null, 0.05 + col * 0.069, row ? 0.99 : 0.91, { name: `服 ${kind}`, facing: 20, lookMode: "custom",
+      look: { skin: "#e0b48f", hair: { style: hair, color: "#2a2320" }, top, bottom } }));
+  });
   scene("a3", "A-3 向き8方向・大きさ・見た目", 1,
-    `${CHECK}上段は向き 0→315度（8方向）。下段中央は大きさ70→150の比較で、両端の演者09・16は登録身長と見た目を一致させるため100%。中段は見た目の3方式（左: plain＝無地／中: custom＝駒だけの服／右: cast＝登録の服。演者19は登録に look がある）。中段の間には一続きの服と手袋（左端 leotard＝脚を出す／unitard＝袖なしで足首まで1色／tsunagi＝長袖で足首まで1色／右端 手袋＝手だけ白）。一続きの服を選ぶと下衣の欄は選べなくなる。奥の列は髪12種（なし以外の全部。左から ショート・ロング・ポニーテール・坊主・ボブ・お団子・三つ編み・ツインテール・日本髪・ちょんまげ・オールバック・巻き毛。向きは 0/45/135/180 の繰り返し）。衣装の欄の「髪」で種類と色を変えられる。演者を一人選ぶと正面図右上に衣装の着脱が出て、「選んだもの」に上衣・下衣の種類と色が出る。正面図・平面図・3D・照明デザインの正面図へ反映される。追加の立つ・片膝・両膝（正面と側面）は、股間に突起が出ずズボンが曲げた脚全体を覆うこと。身長は登録で150〜195cmにばらしてある。`, pieces);
+    `${CHECK}上段は向き 0→315度（8方向）。下段中央は大きさ70→150の比較で、両端の演者09・16は登録身長と見た目を一致させるため100%。中段は見た目の3方式（左: plain＝無地／中: custom＝駒だけの服／右: cast＝登録の服。演者19は登録に look がある）。中段の間には一続きの服と手袋（左端 leotard＝脚を出す／unitard＝袖なしで足首まで1色／tsunagi＝長袖で足首まで1色／右端 手袋＝手だけ白）。一続きの服を選ぶと下衣の欄は選べなくなる。奥の列は髪12種（なし以外の全部。左から ショート・ロング・ポニーテール・坊主・ボブ・お団子・三つ編み・ツインテール・日本髪・ちょんまげ・オールバック・巻き毛。向きは 0/45/135/180 の繰り返し）。衣装の欄の「髪」で種類と色を変えられる。手前の2列は服の殻27種（上衣19・下衣8。着物の帯・法被の差し色などは下衣の色。衣装の欄の上衣・下衣は分類つきの選択欄）。演者を一人選ぶと正面図右上に衣装の着脱が出て、「選んだもの」に上衣・下衣の種類と色が出る。正面図・平面図・3D・照明デザインの正面図へ反映される。追加の立つ・片膝・両膝（正面と側面）は、股間に突起が出ずズボンが曲げた脚全体を覆うこと。身長は登録で150〜195cmにばらしてある。`, pieces);
 }
 
 /* A-4/A-5: ordinary standing, then route-driven walking and jogging. */

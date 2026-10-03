@@ -204,10 +204,11 @@
       textSources.set(node, next);
       if (node.nodeValue !== next.rendered) node.nodeValue = next.rendered;
     }
-    for (const element of [root,...root.querySelectorAll('[title],[placeholder],[aria-label]')]) {
+    // optgroup の label も訳す（2026-10-03: 衣装の選択欄を分類で分けた）
+    for (const element of [root,...root.querySelectorAll('[title],[placeholder],[aria-label],optgroup[label]')]) {
       if (element.closest(exclude + ',script,style,[contenteditable="true"]')) continue;
       const records = attributeSources.get(element) || {};
-      for (const name of ['title','placeholder','aria-label']) {
+      for (const name of element.tagName === 'OPTGROUP' ? ['label'] : ['title','placeholder','aria-label']) {
         const current = element.getAttribute(name); if (!current) continue;
         const next = translate(current, records[name]); records[name] = next;
         if (current !== next.rendered) element.setAttribute(name,next.rendered);

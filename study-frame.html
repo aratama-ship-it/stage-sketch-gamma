@@ -25,7 +25,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.82</span>
+              <span class="stage-app-version">0.2.83</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo"
@@ -1019,20 +1019,61 @@
                   <div class="stage-costume-row">
                     <label class="stage-control-label" for="stage-costume-top">上衣</label>
                     <select id="stage-costume-top" class="stage-select">
-                      <option value="tshirt">Tシャツ</option>
-                      <option value="longtee">長袖シャツ</option>
-                      <option value="tank">タンクトップ</option>
-                      <option value="leotard">レオタード</option>
-                      <option value="unitard">ユニタード</option>
-                      <option value="tsunagi">つなぎ</option>
+                      <optgroup label="基本">
+                        <option value="tshirt">Tシャツ</option>
+                        <option value="longtee">長袖シャツ</option>
+                        <option value="tank">タンクトップ</option>
+                        <option value="shirt_open">前を開けたシャツ</option>
+                        <option value="vest">ベスト</option>
+                        <option value="hoodie">パーカー</option>
+                      </optgroup>
+                      <optgroup label="一続きの服">
+                        <option value="leotard">レオタード</option>
+                        <option value="unitard">ユニタード</option>
+                        <option value="tsunagi">つなぎ</option>
+                      </optgroup>
+                      <optgroup label="上着・羽織り">
+                        <option value="jacket">ジャケット</option>
+                        <option value="coat">コート</option>
+                        <option value="hakui">白衣</option>
+                        <option value="tailcoat">燕尾服</option>
+                        <option value="cape">マント</option>
+                        <option value="poncho">ポンチョ</option>
+                      </optgroup>
+                      <optgroup label="和装">
+                        <option value="kimono">着物</option>
+                        <option value="haori">羽織</option>
+                        <option value="happi">法被</option>
+                        <option value="kappogi">割烹着</option>
+                        <option value="dogi">道着</option>
+                      </optgroup>
+                      <optgroup label="衣装">
+                        <option value="sailor">セーラー服</option>
+                        <option value="uniform_tunic">制服の上着（詰襟）</option>
+                        <option value="apron">エプロン</option>
+                        <option value="spacesuit">宇宙服</option>
+                        <option value="clown_baggy">道化のぶかぶか服</option>
+                      </optgroup>
                     </select>
                     <input type="color" id="stage-costume-top-color" value="#a84b26" aria-label="上衣の色">
                   </div>
                   <div class="stage-costume-row">
                     <label class="stage-control-label" for="stage-costume-bottom">下衣</label>
                     <select id="stage-costume-bottom" class="stage-select">
-                      <option value="pants">長ズボン</option>
-                      <option value="shorts">半ズボン</option>
+                      <optgroup label="ズボン">
+                        <option value="pants">長ズボン</option>
+                        <option value="shorts">半ズボン</option>
+                        <option value="leggings">レギンス（七分丈）</option>
+                        <option value="monpe">もんぺ</option>
+                        <option value="hakama">袴</option>
+                      </optgroup>
+                      <optgroup label="スカート">
+                        <option value="skirt_a">Aラインスカート</option>
+                        <option value="skirt_tight">タイトスカート</option>
+                        <option value="dress">ワンピース</option>
+                        <option value="mermaid">マーメイドスカート</option>
+                        <option value="tutu">チュチュ</option>
+                      </optgroup>
                     </select>
                     <input type="color" id="stage-costume-bottom-color" value="#3a3f4a" aria-label="下衣の色">
                   </div>
@@ -2580,6 +2621,16 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0283-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0283-title">v0.2.83</h3>
+        <time datetime="2026-10-03">2026-10-03</time>
+      </header>
+      <ul>
+        <li>衣装の服を27種に増やしました。上衣はコート・マント・羽織・法被・白衣・割烹着・燕尾服・ポンチョ・宇宙服・道化の服・ジャケット・着物・ベスト・パーカー・道着・セーラー服・詰襟・エプロン・前を開けたシャツ、下衣はAライン・タイト・マーメイドのスカート・ワンピース・チュチュ・袴・レギンス・もんぺ</li>
+        <li>選択欄は分類（基本・一続きの服・上着・和装・衣装／ズボン・スカート）で分けました。着物・法被などで使わない下衣の色は、帯や差し色の色になります</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0282-title">
       <header class="stage-release-entry-head"><h3 id="stage-release-v0282-title">v0.2.82</h3><time datetime="2026-10-03">2026-10-03</time></header>
       <ul>
@@ -3994,7 +4045,7 @@
 <script src="/study-assets/gamma-light-model.js?v=20261003-release80"></script>
 <script src="/study-assets/stage-venues.js?v=20261001-release71"></script>
 <script src="/study-assets/stage-venue-lines.js?v=2026091992"></script>
-<script src="/study-assets/stage-i18n.js?v=20261003-hair81"></script>
+<script src="/study-assets/stage-i18n.js?v=20261003-shells83"></script>
 <script src="/study-assets/stage-set-model.js?v=2026092354"></script>
 <script src="/study-assets/stage-machinery.js?v=20260925-ui1"></script>
 <script src="/study-assets/stage-fixture-body.js?v=20260930-gamma2"></script>
@@ -4004,7 +4055,7 @@
 <script src="/study-assets/stage-light-render.js?v=20261003-release80"></script>
 <script src="/study-assets/gamma-light-cue-overlay.js?v=20261003-release80"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
-<script src="/study-assets/gamma-ui.js?v=20260925-ui1"></script>
+<script src="/study-assets/gamma-ui.js?v=20261003-shells83"></script>
 <script src="/study-assets/gamma-ui-i18n.js?v=20260925-ui1"></script>
-<script src="/study-assets/stage-sketch.js?v=20261003-release82"></script>
+<script src="/study-assets/stage-sketch.js?v=20261003-shells83"></script>
 </body></html>

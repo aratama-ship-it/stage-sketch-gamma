@@ -7777,6 +7777,28 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     leotard: { id: "leotard", label: "レオタード", labelEn: "Leotard", collar: 0.20, hem: 1.16, sleeve: "none", onePiece: "leotard", shells: [] },
     unitard: { id: "unitard", label: "ユニタード", labelEn: "Unitard", collar: 0.20, hem: 1.16, sleeve: "none", onePiece: "full", shells: [] },
     tsunagi: { id: "tsunagi", label: "つなぎ", labelEn: "Coverall", collar: 0.28, hem: 1.16, sleeve: "long", onePiece: "full", shells: [] },
+    /* 2026-10-03 W5 試作（服の殻）。輪郭の外へ出る裾・袂・帯は stage-performer-body.js の paintShells が描く。
+       着物は一続き（下衣の欄は使わず、下衣の色を帯の色にする）。 */
+    jacket: { id: "jacket", label: "ジャケット", labelEn: "Jacket", collar: 0.28, hem: 1.0, sleeve: "long", shells: ["jacket"] },
+    kimono: { id: "kimono", label: "着物", labelEn: "Kimono", collar: 0.28, hem: 1.16, sleeve: "long", onePiece: "full", obi: true, shells: ["kimono"] },
+    /* 2026-10-03 本人承認（G1・G2）: 服の殻の残り。描画は stage-performer-body.js の TOP_SPECS／SHELL_OPS。 */
+    coat: { id: "coat", label: "コート", labelEn: "Coat", collar: 0.28, hem: 1.0, sleeve: "long", shells: ["coat"] },
+    cape: { id: "cape", label: "マント", labelEn: "Cape", collar: 0.28, hem: 1.0, sleeve: "long", shells: ["cape"] },
+    shirt_open: { id: "shirt_open", label: "前を開けたシャツ", labelEn: "Open shirt", collar: 0.28, hem: 1.0, sleeve: "long", shells: ["shirt_open"] },
+    haori: { id: "haori", label: "羽織", labelEn: "Haori", collar: 0.28, hem: 1.0, sleeve: "long", shells: ["haori"] },
+    happi: { id: "happi", label: "法被", labelEn: "Happi coat", collar: 0.28, hem: 1.0, sleeve: "threequarter", shells: ["happi"] },
+    hakui: { id: "hakui", label: "白衣", labelEn: "Lab coat", collar: 0.28, hem: 1.0, sleeve: "long", shells: ["hakui"] },
+    kappogi: { id: "kappogi", label: "割烹着", labelEn: "Kappogi apron coat", collar: 0.28, hem: 1.0, sleeve: "long", shells: ["kappogi"] },
+    tailcoat: { id: "tailcoat", label: "燕尾服", labelEn: "Tailcoat", collar: 0.28, hem: 1.0, sleeve: "long", shells: ["tailcoat"] },
+    poncho: { id: "poncho", label: "ポンチョ", labelEn: "Poncho", collar: 0.28, hem: 1.0, sleeve: "long", shells: ["poncho"] },
+    spacesuit: { id: "spacesuit", label: "宇宙服", labelEn: "Spacesuit", collar: 0.28, hem: 1.0, sleeve: "long", onePiece: "full", shells: ["spacesuit"] },
+    clown_baggy: { id: "clown_baggy", label: "道化のぶかぶか服", labelEn: "Baggy clown suit", collar: 0.28, hem: 1.0, sleeve: "long", onePiece: "full", shells: ["clown_baggy"] },
+    vest: { id: "vest", label: "ベスト", labelEn: "Vest", collar: 0.28, hem: 1.0, sleeve: "long", shells: ["vest"] },
+    hoodie: { id: "hoodie", label: "パーカー", labelEn: "Hoodie", collar: 0.28, hem: 1.0, sleeve: "long", shells: ["hoodie"] },
+    dogi: { id: "dogi", label: "道着", labelEn: "Martial arts uniform", collar: 0.28, hem: 1.0, sleeve: "threequarter", shells: ["dogi"] },
+    sailor: { id: "sailor", label: "セーラー服", labelEn: "Sailor top", collar: 0.28, hem: 1.0, sleeve: "long", shells: ["sailor"] },
+    uniform_tunic: { id: "uniform_tunic", label: "制服の上着（詰襟）", labelEn: "Uniform tunic", collar: 0.28, hem: 1.0, sleeve: "long", shells: ["uniform_tunic"] },
+    apron: { id: "apron", label: "エプロン", labelEn: "Apron", collar: 0.28, hem: 1.0, sleeve: "short", shells: ["apron"] },
   };
   /* 手袋（2026-09-26 W3）。look.gloves = { kind, color }。項目が無い保存データは今までどおり素手。 */
   const DEFAULT_GLOVES_COLOR = "#f2efe8";
@@ -7789,6 +7811,14 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const BOTTOM_KINDS = {
     pants: { id: "pants", label: "長ズボン", labelEn: "Trousers", length: "ankle", waist: 0.68, shells: [] },
     shorts: { id: "shorts", label: "半ズボン", labelEn: "Shorts", length: "mini", waist: 0.68, shells: [] },
+    skirt_a: { id: "skirt_a", label: "Aラインスカート", labelEn: "A-line skirt", length: "knee", waist: 0.68, shells: ["skirt_a"] },
+    skirt_tight: { id: "skirt_tight", label: "タイトスカート", labelEn: "Pencil skirt", length: "knee", waist: 0.68, shells: ["skirt_tight"] },
+    tutu: { id: "tutu", label: "チュチュ", labelEn: "Tutu", length: "mini", waist: 0.68, shells: ["tutu"] },
+    dress: { id: "dress", label: "ワンピース", labelEn: "Dress", length: "knee", waist: 0.68, shells: ["dress"] },
+    hakama: { id: "hakama", label: "袴", labelEn: "Hakama", length: "ankle", waist: 0.68, shells: ["hakama"] },
+    mermaid: { id: "mermaid", label: "マーメイドスカート", labelEn: "Mermaid skirt", length: "ankle", waist: 0.68, shells: ["mermaid"] },
+    leggings: { id: "leggings", label: "レギンス（七分丈）", labelEn: "Leggings (cropped)", length: "midi", waist: 0.68, shells: ["leggings"] },
+    monpe: { id: "monpe", label: "もんぺ", labelEn: "Monpe work trousers", length: "ankle", waist: 0.68, shells: ["monpe"] },
   };
   /* 髪型。描画は stage-performer-body.js の HAIR_STYLE_SPECS（2026-10-03 本人承認で11種。保存済みの「ショート」も描く）。 */
   const HAIR_STYLES = {
@@ -36576,11 +36606,14 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (els.costumeBottom) els.costumeBottom.value = bottomKindById(look.bottom.kind).id;
     if (els.costumeBottomColor) els.costumeBottomColor.value = validColor(look.bottom.color, DEFAULT_BOTTOM_COLOR);
     // 一続きの服（レオタード等）のときは下衣を使わないので、選べなくして理由を出す
-    const onePiece = Boolean(topKindById(look.top.kind).onePiece);
+    const topKind = topKindById(look.top.kind);
+    const onePiece = Boolean(topKind.onePiece);
     [els.costumeBottom, els.costumeBottomColor].forEach((el) => {
       if (!el) return;
-      el.disabled = onePiece;
-      el.title = onePiece ? tx("一続きの服なので、下衣は使いません") : "";
+      // 着物は下衣の色を帯の色に使う（2026-10-03）。種類だけ選べなくする
+      const obiColor = el === els.costumeBottomColor && topKind.obi;
+      el.disabled = onePiece && !obiColor;
+      el.title = obiColor ? tx("着物のときは帯の色") : onePiece ? tx("一続きの服なので、下衣は使いません") : "";
     });
     if (els.costumeHair) els.costumeHair.value = hairStyleById(look.hair.style).id;
     if (els.costumeHairColor) {
