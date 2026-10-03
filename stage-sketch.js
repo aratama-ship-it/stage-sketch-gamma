@@ -7807,6 +7807,23 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     gloves: { id: "gloves", label: "手袋", labelEn: "Gloves" },
   };
   const gloveKindById = (id) => GLOVE_KINDS[id] || GLOVE_KINDS.none;
+  /* 帽子と小物（2026-10-03 W5 試作）。look.hat = { kind, color }・look.accessories = [id, ...]。
+     描画は stage-performer-body.js の HAT_SPECS・paintAccessories。小物の色は物ごとに決まり、髭だけ髪の色。 */
+  const DEFAULT_HAT_COLORS = { cap: "#2f5ea8", beret: "#9b2335", straw: "#d9be7a", fedora: "#3b3b40", bowler: "#1c1c20",
+    crown: "#d4a72c", helmet: "#c9ced6", hachimaki: "#f2efe8", hood: "#5a4f62" };
+  const HAT_KINDS = { none: { id: "none", label: "なし", labelEn: "None" },
+    cap: { id: "cap", label: "キャップ", labelEn: "Cap" },
+    beret: { id: "beret", label: "ベレー帽", labelEn: "Beret" },
+    straw: { id: "straw", label: "麦わら帽子", labelEn: "Straw hat" },
+    fedora: { id: "fedora", label: "中折れ帽", labelEn: "Fedora" },
+    bowler: { id: "bowler", label: "山高帽", labelEn: "Bowler hat" },
+    crown: { id: "crown", label: "王冠", labelEn: "Crown" },
+    helmet: { id: "helmet", label: "ヘルメット", labelEn: "Helmet" },
+    hachimaki: { id: "hachimaki", label: "鉢巻", labelEn: "Hachimaki headband" },
+    hood: { id: "hood", label: "フード（頭巾）", labelEn: "Hood" },
+  };
+  const hatKindById = (id) => HAT_KINDS[id] || HAT_KINDS.none;
+  const ACCESSORIES = [{ id: "glasses", label: "眼鏡", labelEn: "Glasses" }, { id: "beard", label: "髭", labelEn: "Beard" }, { id: "wings", label: "羽", labelEn: "Wings" }, { id: "harness", label: "落下用ハーネス", labelEn: "Safety harness" }, { id: "headset", label: "ヘッドセット", labelEn: "Headset mic" }, { id: "clown_shoes", label: "道化の靴", labelEn: "Clown shoes" }];
   /* waist はズボンの上端（ベルトの位置・TORSO_RINGS の t 値）。くびれのすぐ下から股までを腰回りとして塗る。 */
   const BOTTOM_KINDS = {
     pants: { id: "pants", label: "長ズボン", labelEn: "Trousers", length: "ankle", waist: 0.68, shells: [] },
@@ -8676,6 +8693,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     costumeBottomColor: document.getElementById("stage-costume-bottom-color"),
     costumeHair: document.getElementById("stage-costume-hair"),
     costumeHairColor: document.getElementById("stage-costume-hair-color"),
+    costumeHat: document.getElementById("stage-costume-hat"),
+    costumeHatColor: document.getElementById("stage-costume-hat-color"),
+    costumeAccessories: document.getElementById("stage-costume-accessories"),
     costumeGloves: document.getElementById("stage-costume-gloves"),
     costumeGlovesColor: document.getElementById("stage-costume-gloves-color"),
     holdControls: document.getElementById("stage-hold-controls"),
@@ -9142,6 +9162,14 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         kind: typeof raw.gloves.kind === "string" ? raw.gloves.kind.slice(0, 32) : "none",
         color: validColor(raw.gloves.color, DEFAULT_GLOVES_COLOR),
       } } : {}),
+      // 帽子・小物も項目があるときだけ整える。知らない帽子・小物の名前は消さない（新しい版で足した物を古い版で失わない）
+      ...(raw.hat && typeof raw.hat === "object" && !Array.isArray(raw.hat) ? { hat: {
+        ...keep(raw.hat),
+        kind: typeof raw.hat.kind === "string" ? raw.hat.kind.slice(0, 32) : "none",
+        color: validColor(raw.hat.color, DEFAULT_HAT_COLORS[raw.hat.kind] || "#3b3b40"),
+      } } : {}),
+      ...(Array.isArray(raw.accessories) ? { accessories: raw.accessories
+        .filter((id) => typeof id === "string" && /^[a-z0-9_]{1,32}$/.test(id)).filter((id, i, all) => all.indexOf(id) === i).slice(0, 16) } : {}),
     };
   }
 
@@ -36622,6 +36650,18 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       els.costumeHairColor.value = validColor(look.hair.color, DEFAULT_HAIR_COLOR);
       els.costumeHairColor.disabled = hairStyleById(look.hair.style).id === "none";
     }
+    const hat = look.hat || {};
+    if (els.costumeHat) els.costumeHat.value = hatKindById(hat.kind).id;
+    if (els.costumeHatColor) {
+      els.costumeHatColor.value = validColor(hat.color, DEFAULT_HAT_COLORS[hat.kind] || "#3b3b40");
+      els.costumeHatColor.disabled = hatKindById(hat.kind).id === "none";
+    }
+    if (els.costumeAccessories) {
+      const on = new Set(Array.isArray(look.accessories) ? look.accessories : []);
+      els.costumeAccessories.querySelectorAll("[data-accessory]").forEach((button) => {
+        button.setAttribute("aria-pressed", String(on.has(button.dataset.accessory)));
+      });
+    }
     const gloves = look.gloves || {};
     const glovesOn = gloveKindById(gloves.kind).id !== "none";
     if (els.costumeGloves) els.costumeGloves.value = gloveKindById(gloves.kind).id;
@@ -42432,7 +42472,18 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     if (!piece || piece.type !== "performer") return;
     checkpoint();
     const look = editableLook(piece);
-    if (part === "hair") {
+    if (part === "hat") {
+      // 帽子を初めて選んだときは、その帽子の既定の色にする（色を変えたあとは保つ）
+      const hat = look.hat && typeof look.hat === "object" ? look.hat : { kind: "none" };
+      if (color) hat.color = validColor(value, DEFAULT_HAT_COLORS[hat.kind] || "#3b3b40");
+      else { const kind = hatKindById(value).id; if (!hat.color || hat.kind === "none") hat.color = DEFAULT_HAT_COLORS[kind] || "#3b3b40"; hat.kind = kind; }
+      look.hat = hat;
+    } else if (part === "accessory") {
+      const list = Array.isArray(look.accessories) ? look.accessories.slice() : [];
+      const at = list.indexOf(value);
+      if (at >= 0) list.splice(at, 1); else list.push(value);
+      look.accessories = list;
+    } else if (part === "hair") {
       if (color) look.hair.color = validColor(value, DEFAULT_HAIR_COLOR);
       else look.hair.style = hairStyleById(value).id;
     } else if (part === "gloves") {
@@ -42461,6 +42512,12 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   if (els.costumeBottomColor) els.costumeBottomColor.addEventListener("change", () => changeCostume("bottom", els.costumeBottomColor.value, true));
   if (els.costumeHair) els.costumeHair.addEventListener("change", () => changeCostume("hair", els.costumeHair.value));
   if (els.costumeHairColor) els.costumeHairColor.addEventListener("change", () => changeCostume("hair", els.costumeHairColor.value, true));
+  if (els.costumeHat) els.costumeHat.addEventListener("change", () => changeCostume("hat", els.costumeHat.value));
+  if (els.costumeHatColor) els.costumeHatColor.addEventListener("change", () => changeCostume("hat", els.costumeHatColor.value, true));
+  if (els.costumeAccessories) els.costumeAccessories.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-accessory]");
+    if (button) changeCostume("accessory", button.dataset.accessory);
+  });
   if (els.costumeGloves) els.costumeGloves.addEventListener("change", () => changeCostume("gloves", els.costumeGloves.value));
   if (els.costumeGlovesColor) els.costumeGlovesColor.addEventListener("change", () => changeCostume("gloves", els.costumeGlovesColor.value, true));
   if (els.holdSelect) {

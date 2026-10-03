@@ -4,7 +4,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
 <title>Stage Sketch — read-only drawings</title>
-<link rel="stylesheet" href="/study-assets/style.css?v=20261003-release77"><link rel="stylesheet" href="/stage-study.css?v=25"><link rel="stylesheet" href="/stage-study-navigation.css?v=2">
+<link rel="stylesheet" href="/study-assets/style.css?v=20261004-hats86"><link rel="stylesheet" href="/stage-study.css?v=25"><link rel="stylesheet" href="/stage-study-navigation.css?v=2">
 <script src="/stage-study-sticky.js?v=5"></script><script src="/stage-study-pen.js?v=4"></script><script src="/stage-study-navigation.js?v=2"></script><script src="/stage-study-frame.js?v=8"></script></head>
 <body class="study-frame" data-view="both">
 <div class="study-drawings"><div class="study-drawing study-front"></div><div class="study-drawing study-plan"></div></div>
@@ -25,7 +25,7 @@
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-              <span class="stage-app-version">0.2.85</span>
+              <span class="stage-app-version">0.2.86</span>
             </span>
             <span class="stage-header-app-copy">
               <img class="stage-header-logo"
@@ -1103,6 +1103,33 @@
                       <option value="gloves">手袋</option>
                     </select>
                     <input type="color" id="stage-costume-gloves-color" value="#f2efe8" aria-label="手袋の色">
+                  </div>
+                  <div class="stage-costume-row">
+                    <label class="stage-control-label" for="stage-costume-hat">帽子</label>
+                    <select id="stage-costume-hat" class="stage-select">
+                      <option value="none">なし</option>
+                      <option value="cap">キャップ</option>
+                      <option value="beret">ベレー帽</option>
+                      <option value="straw">麦わら帽子</option>
+                      <option value="fedora">中折れ帽</option>
+                      <option value="bowler">山高帽</option>
+                      <option value="crown">王冠</option>
+                      <option value="helmet">ヘルメット</option>
+                      <option value="hachimaki">鉢巻</option>
+                      <option value="hood">フード（頭巾）</option>
+                    </select>
+                    <input type="color" id="stage-costume-hat-color" value="#3b3b40" aria-label="帽子の色">
+                  </div>
+                  <div class="stage-costume-row stage-costume-accessories-row">
+                    <span class="stage-control-label">小物</span>
+                    <div class="stage-costume-accessories" id="stage-costume-accessories" role="group" aria-label="小物（押すと付け外し）">
+                      <button type="button" class="btn-quiet" data-accessory="glasses" aria-pressed="false">眼鏡</button>
+                      <button type="button" class="btn-quiet" data-accessory="beard" aria-pressed="false">髭</button>
+                      <button type="button" class="btn-quiet" data-accessory="wings" aria-pressed="false">羽</button>
+                      <button type="button" class="btn-quiet" data-accessory="harness" aria-pressed="false">落下用ハーネス</button>
+                      <button type="button" class="btn-quiet" data-accessory="headset" aria-pressed="false">ヘッドセット</button>
+                      <button type="button" class="btn-quiet" data-accessory="clown_shoes" aria-pressed="false">道化の靴</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2621,6 +2648,15 @@
   </header>
   <div class="stage-modal-body stage-release-body">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0286-title">
+      <header class="stage-release-entry-head">
+        <h3 id="stage-release-v0286-title">v0.2.86</h3>
+        <time datetime="2026-10-04">2026-10-04</time>
+      </header>
+      <ul>
+        <li>衣装に帽子（キャップ・ベレー帽・麦わら帽子・中折れ帽・山高帽・王冠・ヘルメット・鉢巻・フード）と小物（眼鏡・髭・羽・落下用ハーネス・ヘッドセット・道化の靴）を追加しました。小物は押して付け外しでき、いくつでも同時に付けられます</li>
+      </ul>
+    </section>
     <section class="stage-release-entry" aria-labelledby="stage-release-v0285-title">
       <header class="stage-release-entry-head"><h3 id="stage-release-v0285-title">v0.2.85</h3><time datetime="2026-10-03">2026-10-03</time></header>
       <ul>
@@ -4057,7 +4093,7 @@
 <script src="/study-assets/gamma-light-model.js?v=20261003-release80"></script>
 <script src="/study-assets/stage-venues.js?v=20261001-release71"></script>
 <script src="/study-assets/stage-venue-lines.js?v=2026091992"></script>
-<script src="/study-assets/stage-i18n.js?v=20261003-shells83"></script>
+<script src="/study-assets/stage-i18n.js?v=20261004-hats86"></script>
 <script src="/study-assets/stage-set-model.js?v=2026092354"></script>
 <script src="/study-assets/stage-machinery.js?v=20260925-ui1"></script>
 <script src="/study-assets/stage-fixture-body.js?v=20260930-gamma2"></script>
@@ -4069,5 +4105,5 @@
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
 <script src="/study-assets/gamma-ui.js?v=20261003-shells83"></script>
 <script src="/study-assets/gamma-ui-i18n.js?v=20260925-ui1"></script>
-<script src="/study-assets/stage-sketch.js?v=20261003-glint84"></script>
+<script src="/study-assets/stage-sketch.js?v=20261004-hats86"></script>
 </body></html>

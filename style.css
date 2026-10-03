@@ -3849,6 +3849,11 @@ html.stage-phone-viewer .stage-phone-save-notice .stage-phone-recovery-link[hidd
 }
 /* 一続きの服の下衣・素手のときの手袋の色は使わない（2026-09-26） */
 .stage-costume-row :disabled { opacity: 0.45; cursor: not-allowed; }
+/* 小物は押して付け外しする札を並べる（2026-10-03）。ラベル列の右を2列分使って折り返す */
+.stage-costume-accessories-row { align-items: start; }
+.stage-costume-accessories { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 4px; }
+.stage-costume-accessories .btn-quiet { min-height: 28px; padding: 3px 8px; font-size: 12px; }
+.stage-costume-accessories .btn-quiet[aria-pressed="true"] { background: var(--stage-ink, #efe7d6); color: var(--stage-paper-deep, #191512); }
 
 .stage-swatches {
   display: flex;

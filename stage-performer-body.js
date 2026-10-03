@@ -959,6 +959,217 @@
     target.restore();
   }
 
+  /* ===== 被り物と小物（2026-10-03 W5 試作・本人に見せて決める） =====
+   * 帽子は look.hat = { kind, color }、小物は look.accessories = ["glasses", ...]（同時に付けられる）。
+   * 形は髪と同じ頭の座標（hairFrame）と胴の座標（shellFrame）で作る。帽子のつばは頭の向きに沿った水平の輪で、
+   * 奥の半分は体より先、手前の半分と山（クラウン）は髪の後に塗る。小物の色は物ごとに決め、髭だけ髪の色。 */
+  const HAT_SPECS = {
+    cap: { crown: { scale: 1.12, edge: 78 }, visor: { len: 0.075, at: 74 }, color: "#2f5ea8" },
+    beret: { beret: true, color: "#9b2335" },
+    straw: { cyl: { r: 0.07, h: 0.06, at: 66 }, brim: { r: 0.165, at: 66 }, color: "#d9be7a" },
+    fedora: { cyl: { r: 0.068, h: 0.08, at: 68, crease: true }, brim: { r: 0.11, at: 68 }, color: "#3b3b40" },
+    bowler: { crown: { scale: 1.13, edge: 72 }, brim: { r: 0.085, at: 74 }, color: "#1c1c20" },
+    crown: { tiara: { points: 8, h: 0.05, at: 40 }, color: "#d4a72c" },
+    helmet: { crown: { scale: 1.24, edge: 98 }, visorLine: true, color: "#c9ced6" },
+    hachimaki: { band: { from: 62, to: 76 }, tails: true, color: "#f2efe8" },
+    hood: { hood: { scale: 1.2, edge: 130 }, color: "#5a4f62" },
+  };
+  const ACCESSORY_COLORS = { glasses: "#1d1b19", wings: "#f4f1ea", harness: "#1f2124", headset: "#1d1b19", clown_shoes: "#c0392b" };
+  function hatSpec(look) {
+    const hat = look && look.hat && typeof look.hat === "object" ? look.hat : null;
+    const spec = hat && HAT_SPECS[hat.kind];
+    return spec ? { ...spec, color: /^#[0-9a-f]{6}$/i.test(hat.color || "") ? hat.color : spec.color,
+      skin: /^#[0-9a-f]{6}$/i.test(look.skin || "") ? look.skin : "#d9b38c" } : null;
+  }
+  function paintHat(target, rig, hat, layer, shade) {
+    if (!rig || !rig.pose || !rig.project || !hat) return;
+    const F = hairFrame(rig.pose);
+    const project = (p) => rig.project(p[0], p[1], p[2]);
+    const head = rig.P.head, s = head.s || rig.ux, over = layer === "over";
+    const tint = (hex) => (shade ? shade({ kind: "head", z: head.z }, hex) : hex);
+    const lift = (p, d) => [0, 1, 2].map((i) => p[i] + F.up[i] * d);
+    // 頭の向きに沿った水平の輪（つば）。theta の高さ、半径 r
+    const brimRing = (at, r, n = 28) => { const c = lift(F.hc, Math.cos(at * Math.PI / 180) * HEAD_AXES.up);
+      return Array.from({ length: n }, (_, k) => { const a = (k / n) * Math.PI * 2;
+        return [0, 1, 2].map((i) => c[i] + F.side[i] * Math.sin(a) * r + F.fwd[i] * Math.cos(a) * r * 1.05); }); };
+    const crownPts = (c) => { const pts = [];
+      for (let phi = 0; phi < 360; phi += 15) {
+        const k = (1 - Math.cos(phi * Math.PI / 180)) / 2, edge = c.front ? c.front + (c.edge - c.front) * k : c.edge;
+        for (let step = 0; step <= 6; step += 1) {
+          const theta = (edge * step) / 6;
+          const p = F.on(theta, phi, c.scale);
+          pts.push(c.rise ? lift(p, c.rise * Math.max(0, Math.cos(theta * Math.PI / 180))) : p);
+        } }
+      if (c.rise) pts.push(lift(F.on(0, 0, c.scale), c.rise * 1.6));
+      return pts; };
+    target.save();
+    target.fillStyle = tint(hat.color);
+    if (hat.brim) {
+      // つば。外周は少し垂らして厚みを出す（真横の目線でも線にならない）
+      const outer = brimRing(hat.brim.at, hat.brim.r).map((p) => lift(p, -0.014)), inner = brimRing(hat.brim.at, 0.062);
+      const all = outer.concat(inner).map(project);
+      if (!over) fillPath(target, hull(all));
+      else { const front = all.filter((p) => p.z >= head.z); if (front.length >= 3) fillPath(target, hull(front)); }
+    }
+    if (hat.cyl && over) {
+      // 筒形の山（麦わら帽子・中折れ帽）。つばの高さから h だけ上へ、上面は少しすぼめる
+      const bottom = brimRing(hat.cyl.at, hat.cyl.r), top = brimRing(hat.cyl.at, hat.cyl.r * 0.92).map((p) => lift(p, hat.cyl.h));
+      fillPath(target, hull(bottom.concat(top).map(project)));
+      if (hat.cyl.crease) { target.strokeStyle = tint(mixToward(hat.color, 0.45)); target.lineWidth = Math.max(1, 0.006 * s);
+        const c = lift(F.hc, Math.cos(hat.cyl.at * Math.PI / 180) * HEAD_AXES.up + hat.cyl.h - 0.008);
+        const a = project([0, 1, 2].map((i) => c[i] + F.fwd[i] * 0.05)), b = project([0, 1, 2].map((i) => c[i] - F.fwd[i] * 0.04));
+        target.beginPath(); target.moveTo(a.x, a.y); target.lineTo(b.x, b.y); target.stroke();
+        // 帽子の帯
+        target.fillStyle = tint(mixToward(hat.color, 0.6));
+        const band = brimRing(hat.cyl.at, hat.cyl.r * 1.01).concat(brimRing(hat.cyl.at, hat.cyl.r).map((p) => lift(p, 0.016))).map(project).filter((p) => p.z >= head.z);
+        if (band.length >= 3) fillPath(target, hull(band));
+        target.fillStyle = tint(hat.color); }
+    }
+    if (hat.hood && over) {
+      // フード。頭を包み、顔のところだけ開ける（顔がこちら向きなら肌の楕円を塗り戻し、目を描き直す）
+      fillPath(target, hull(crownPts(hat.hood).map(project)));
+      const facing = rig.faceAt && rig.faceAt.z >= head.z;
+      if (facing) {
+        const c = project([0, 1, 2].map((i) => F.hc[i] + F.fwd[i] * 0.03 - F.up[i] * 0.006));
+        const tipX = project([0, 1, 2].map((i) => F.hc[i] + F.fwd[i] * 0.03 + F.side[i] * 0.04)), tipY = project([0, 1, 2].map((i) => F.hc[i] + F.fwd[i] * 0.03 + F.up[i] * 0.05));
+        const rx = Math.hypot(tipX.x - c.x, tipX.y - c.y), ry = Math.hypot(tipY.x - c.x, tipY.y - c.y);
+        target.fillStyle = tint(hat.skin); target.beginPath();
+        target.ellipse(c.x, c.y, Math.max(1, rx), Math.max(1, ry), Math.atan2(tipY.x - c.x, -(tipY.y - c.y)), 0, Math.PI * 2); target.fill();
+        if (rig.eyes) { target.fillStyle = "rgba(13,12,11,0.5)"; rig.eyes.filter((e) => e.z >= head.z - 0.004).forEach((e) => {
+          target.beginPath(); target.arc(e.x, e.y, Math.max(0.9, 0.0095 * s), 0, Math.PI * 2); target.fill(); }); }
+        target.fillStyle = tint(hat.color);
+      }
+    }
+    if (over && hat.crown) {
+      const pts = crownPts(hat.crown).map(project);
+      // フードは顔を開ける＝こちら向きの点のうち顔の前は塗らない（凸包は顔をまたぐので、こちら向きの縁だけ）
+      fillPath(target, hull(hat.crown.front ? pts.filter((p) => p.z <= head.z + 0.04 * s || p.y < head.y - 0.02 * s) : pts));
+      if (hat.crown.crease) { target.strokeStyle = tint(mixToward(hat.color, 0.4)); target.lineWidth = Math.max(1, 0.006 * s);
+        const a = project(lift(F.on(0, 0, hat.crown.scale), hat.crown.rise * 1.2)), b = project(lift(F.on(30, 180, hat.crown.scale), hat.crown.rise));
+        target.beginPath(); target.moveTo(a.x, a.y); target.lineTo(b.x, b.y); target.stroke(); }
+    }
+    if (hat.visor && over) {
+      // キャップのつば。額の前へ平たく出す
+      const base = (sideW) => [0, 1, 2].map((i) => F.hc[i] + F.up[i] * Math.cos(hat.visor.at * Math.PI / 180) * HEAD_AXES.up + F.side[i] * sideW + F.fwd[i] * HEAD_AXES.fwd * 1.05);
+      const tip = (sideW) => [0, 1, 2].map((i) => base(sideW)[i] + F.fwd[i] * hat.visor.len - F.up[i] * 0.01);
+      const v = [base(-0.045), base(0.045), tip(0.04), tip(-0.04)].map(project);
+      if (v.reduce((sum, p) => sum + p.z, 0) / 4 >= head.z) fillPath(target, hull(v));
+    }
+    if (hat.beret && over) {
+      // ベレー。頭の上に平たく被せ、少し横へ傾けた円盤
+      const c = lift(F.on(25, 90, 1.05), 0.012);
+      const ring = Array.from({ length: 24 }, (_, k) => { const a = (k / 24) * Math.PI * 2;
+        return [0, 1, 2].map((i) => c[i] + F.side[i] * Math.cos(a) * 0.075 + F.fwd[i] * Math.sin(a) * 0.07 + F.up[i] * Math.cos(a) * 0.012); });
+      fillPath(target, hull(ring.map(project).concat(crownPts({ scale: 1.06, edge: 55 }).map(project).filter((p) => p.z >= head.z - 1e-6))));
+    }
+    if (hat.tiara && over) {
+      // 王冠。頭の上の輪に立てた帯。手前の弧を、歯（とがり）と谷を交互に並べた形で塗る
+      const n = hat.tiara.points * 4;
+      const rim = (phi, h) => lift(F.on(hat.tiara.at, phi, 1.07), h);
+      const vis = [];
+      for (let k = 0; k <= n; k += 1) { const phi = -90 + (180 * k) / n;   // 顔の向きを中心に左右90度＝どの向きでも手前側を作れるよう、こちら向きで選び直す
+        vis.push(phi); }
+      const facing = rig.faceAt && rig.faceAt.z >= head.z ? 0 : 180;
+      const arc = vis.map((phi) => phi + facing);
+      const tops = arc.map((phi, k) => project(rim(phi, k % 4 === 2 ? hat.tiara.h : hat.tiara.h * 0.45)));
+      const bases = arc.map((phi) => project(rim(phi, 0)));
+      target.beginPath(); tops.forEach((p, i) => (i ? target.lineTo(p.x, p.y) : target.moveTo(p.x, p.y)));
+      bases.slice().reverse().forEach((p) => target.lineTo(p.x, p.y)); target.closePath(); target.fill();
+    }
+    if (hat.band && over) {
+      // 鉢巻。額の帯（こちら向きの半分）と、後ろで結んだ端
+      const band = [];
+      for (let phi = 0; phi < 360; phi += 12) { band.push(F.on(hat.band.from, phi, 1.06)); band.push(F.on(hat.band.to, phi, 1.06)); }
+      const proj = band.map(project).filter((p) => p.z >= head.z);
+      if (proj.length >= 3) fillPath(target, hull(proj));
+    }
+    if (hat.tails) {
+      const knot = F.on(70, 180, 1.08);
+      const ends = [[0.05, 0.03, 0.02], [0.09, 0.05, -0.015]].map(([dy, b, out]) => project([knot[0] - F.fwd[0] * b + F.side[0] * out, knot[1] - dy, knot[2] - F.fwd[2] * b + F.side[2] * out]));
+      const z = (ends[0].z + ends[1].z) / 2;
+      if ((z >= head.z) === over) { ends.forEach((e) => taperedChain(target, [project(knot), e], [Math.max(0.7, 0.012 * s), Math.max(0.6, 0.006 * s)])); }
+    }
+    if (hat.visorLine && over) {
+      // ヘルメットのバイザーの縁（こちら向きの弧）
+      const arc = Array.from({ length: 13 }, (_, k) => project(F.on(78, -60 + k * 10, 1.25))).filter((p) => p.z >= head.z);
+      if (arc.length >= 2) { target.strokeStyle = tint(mixToward(hat.color, 0.5)); target.lineWidth = Math.max(1, 0.01 * s);
+        target.beginPath(); arc.forEach((p, i) => (i ? target.lineTo(p.x, p.y) : target.moveTo(p.x, p.y))); target.stroke(); }
+    }
+    target.restore();
+  }
+  function paintAccessories(target, rig, look, layer, shade) {
+    const list = look && Array.isArray(look.accessories) ? look.accessories : [];
+    if (!list.length || !rig || !rig.pose || !rig.project) return;
+    const has = (id) => list.includes(id);
+    const F = hairFrame(rig.pose), S = shellFrame(rig.pose);
+    const project = (p) => rig.project(p[0], p[1], p[2]);
+    const P = rig.P, head = P.head, s = head.s || rig.ux, over = layer === "over";
+    const torsoZ = (P.shL.z + P.shR.z + P.hipL.z + P.hipR.z) / 4;
+    const tint = (hex) => (shade ? shade({ kind: "head", z: head.z }, hex) : hex);
+    const stroke = (pts, color, w) => { if (pts.length < 2) return; target.strokeStyle = tint(color); target.lineWidth = Math.max(1, w * s); target.lineCap = "round"; target.lineJoin = "round";
+      target.beginPath(); pts.forEach((p, i) => (i ? target.lineTo(p.x, p.y) : target.moveTo(p.x, p.y))); target.stroke(); };
+    target.save();
+    if (has("wings")) {
+      // 背中の羽。肩甲骨から上と外へ広がる2枚。正面からは体の後ろ、後ろ姿では体の上
+      [-1, 1].forEach((sign) => {
+        const at = (t, x, f, up) => [0, 1, 2].map((i) => S.at(t)[i] + S.wide[i] * x * sign + S.deep[i] * f - S.axis[i] * up);
+        const wing = [at(0.15, 0.04, -0.07, 0), at(0.1, 0.1, -0.1, 0.11), at(0.02, 0.2, -0.11, 0.18), at(0.15, 0.25, -0.11, 0.08), at(0.42, 0.18, -0.1, -0.03), at(0.48, 0.05, -0.08, 0)].map(project);
+        const z = wing.reduce((sum, p) => sum + p.z, 0) / wing.length;
+        if ((z >= torsoZ) === over) { target.fillStyle = tint(ACCESSORY_COLORS.wings); fillPath(target, hull(wing)); }
+      });
+    }
+    if (over) {
+      if (has("harness")) {
+        // 落下用ハーネス。腰のベルト・腿の輪・肩紐（こちら向きの半分）
+        const c = ACCESSORY_COLORS.harness;
+        const belt = S.ring(0.82, 0.088, 0.066, 24).map(project).filter((p) => p.z >= project(S.at(0.82)).z);
+        stroke(belt.sort((a, b) => a.x - b.x), c, 0.022);
+        const front = project(S.body(0.3, 0, 0.06)).z > project(S.at(0.3)).z;
+        if (front) [-1, 1].forEach((sg) => stroke([project(S.body(-0.02, 0.06 * sg, 0.04)), project(S.body(0.4, 0.05 * sg, 0.066)), project(S.body(0.82, 0.03 * sg, 0.07))], c, 0.016));
+        ["L", "R"].forEach((side) => { const hp = S.j["hip" + side], kn = S.j["kn" + side];
+          const c0 = [0, 1, 2].map((i) => hp[i] + (kn[i] - hp[i]) * 0.2);
+          const loop = Array.from({ length: 12 }, (_, k) => { const a = (k / 12) * Math.PI * 2; return project([0, 1, 2].map((i) => c0[i] + S.wide[i] * Math.cos(a) * 0.058 + S.deep[i] * Math.sin(a) * 0.058)); })
+            .filter((p) => p.z >= project(c0).z);
+          stroke(loop.sort((a, b) => a.x - b.x), c, 0.016); });
+      }
+      if (has("clown_shoes")) {
+        // 道化の大きな靴。足の先を前へ大きく伸ばした楕円
+        ["L", "R"].forEach((side) => { const an = S.j["an" + side], to = S.j["to" + side];
+          const dir = norm3([to[0] - an[0], 0, to[2] - an[2]]); const tip = [an[0] + dir[0] * 0.15, 0.03, an[2] + dir[2] * 0.15];
+          const pts = [an, tip].flatMap((c, k) => Array.from({ length: 10 }, (_, q) => { const a = (q / 10) * Math.PI * 2, r = k ? 0.05 : 0.04;
+            return project([c[0] + Math.cos(a) * r, Math.max(0.005, 0.03 + Math.sin(a) * r * 0.6), c[2] + Math.sin(a) * r * 0.2]); }));
+          target.fillStyle = tint(ACCESSORY_COLORS.clown_shoes); fillPath(target, hull(pts)); });
+      }
+      if (has("beard")) {
+        // 髭。顎と頬の下（こちら向きの半分）を髪の色で
+        const pts = [];
+        // 顎から頬の下。口より下（theta 125 以降）を取り、顎先は少し下へ垂らす
+        for (let phi = -75; phi <= 75; phi += 15) for (let theta = 125; theta <= 175; theta += 10) {
+          const p = F.on(theta, phi, 1.06); pts.push(project(theta >= 165 ? [p[0], p[1] - 0.015, p[2]] : p)); }
+        const vis = pts.filter((p) => p.z >= head.z);
+        const color = look.hair && /^#[0-9a-f]{6}$/i.test(look.hair.color || "") ? look.hair.color : "#2a2320";
+        if (vis.length >= 3) { target.fillStyle = tint(color); fillPath(target, hull(vis)); }
+      }
+      if (has("glasses") && rig.eyes) {
+        // 眼鏡。こちら側に見える目の周りの輪と、ブリッジ
+        const vis = rig.eyes.filter((e) => e.z >= head.z - 0.004);
+        target.strokeStyle = tint(ACCESSORY_COLORS.glasses); target.lineWidth = Math.max(0.8, 0.005 * s);
+        vis.forEach((e) => { target.beginPath(); target.arc(e.x, e.y, Math.max(1.2, 0.017 * s), 0, Math.PI * 2); target.stroke(); });
+        if (vis.length === 2) stroke(vis, ACCESSORY_COLORS.glasses, 0.005);
+      }
+      if (has("headset")) {
+        // ヘッドセット。頭の上を通る細い弧と、耳から口元へのマイク
+        const arc = Array.from({ length: 9 }, (_, k) => project(F.on(90 - k * 22.5 * (k <= 4 ? 1 : 1), k <= 4 ? 90 : -90, 1.08)));
+        const band = [project(F.on(90, 90, 1.08)), project(F.on(45, 90, 1.08)), project(F.on(0, 0, 1.08)), project(F.on(45, -90, 1.08)), project(F.on(90, -90, 1.08))];
+        stroke(band.filter((p) => true), ACCESSORY_COLORS.headset, 0.008); void arc;
+        const ear = F.on(95, 90, 1.08), mouth = F.on(118, 25, 1.12);
+        const e = project(ear), m = project(mouth);
+        if (m.z >= head.z - 0.01) { stroke([e, m], ACCESSORY_COLORS.headset, 0.006); target.fillStyle = tint(ACCESSORY_COLORS.headset); target.beginPath(); target.arc(m.x, m.y, Math.max(1, 0.008 * s), 0, Math.PI * 2); target.fill(); }
+      }
+    }
+    target.restore();
+  }
+
   const sprites = new Map(); let spritePixels = 0;
   const stats = {painted: 0, cached: 0, rasterized: 0};
   function geometryKey(rig) {
@@ -988,12 +1199,17 @@
   }
   function direct(target,rig,color,look,shade) {
     const hair = hairSpec(look);
+    const hat = hatSpec(look);
     paintShells(target, rig, look, "behind", shade);
+    paintAccessories(target, rig, look, "behind", shade);
     if (hair) paintHair(target, rig, hair, "behind", shade);
+    if (hat) paintHat(target, rig, hat, "behind", shade);
     if(root.STAGE_PERFORMER_CONTOUR) root.STAGE_PERFORMER_CONTOUR.paint(target,rig,color,look,shade,paintBodyParts);
     else paintBodyParts(target,rig,color,look,shade);
     paintShells(target, rig, look, "over", shade);
     if (hair) paintHair(target, rig, hair, "over", shade);
+    if (hat) paintHat(target, rig, hat, "over", shade);
+    paintAccessories(target, rig, look, "over", shade);
   }
   // In the perspective view, a near arm can have the same fill as the torso.
   // Reveal its edge only where it crosses the torso; leave the outer silhouette smooth.

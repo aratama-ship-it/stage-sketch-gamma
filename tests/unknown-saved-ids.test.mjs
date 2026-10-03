@@ -56,7 +56,7 @@ test("正規化の呼び出し先が新しい関数になっている（古い�
 test("見た目（衣装・髪）の知らない項目を読み込みで消さない（2026-09-26）", () => {
   const start = main.indexOf("  function normalizeLook(raw) {");
   const body = main.slice(start, main.indexOf("\n  }\n", start) + 4);
-  const ctx = vm.createContext({ DEFAULT_SKIN: "#d9b38c", DEFAULT_HAIR_COLOR: "#2a2320", DEFAULT_TOP_COLOR: "#a84b26", DEFAULT_BOTTOM_COLOR: "#3a3f4a", DEFAULT_GLOVES_COLOR: "#f2efe8",
+  const ctx = vm.createContext({ DEFAULT_SKIN: "#d9b38c", DEFAULT_HAIR_COLOR: "#2a2320", DEFAULT_TOP_COLOR: "#a84b26", DEFAULT_BOTTOM_COLOR: "#3a3f4a", DEFAULT_GLOVES_COLOR: "#f2efe8", DEFAULT_HAT_COLORS: { cap: "#2f5ea8" },
     validColor: (v, d) => (typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v) ? v : d), projectIoClone: (v) => JSON.parse(JSON.stringify(v)) });
   vm.runInContext(`${body}\nthis.normalizeLook = normalizeLook;`, ctx);
   const out = ctx.normalizeLook({ skin: "#111111", gloves: { color: "#ffffff" }, top: { kind: "leotard", color: "#222222", fit: "x" }, bottom: { kind: "tutu", pattern: "stripe" }, hair: { style: "long", accessory: "pin" } });
@@ -65,6 +65,13 @@ test("見た目（衣装・髪）の知らない項目を読み込みで消さ�
   assert.equal(ctx.normalizeLook({ top: {} }).gloves, undefined, "手袋の項目が無い保存データへ勝手に足さない");
   assert.equal(ctx.normalizeLook({ gloves: { kind: "gloves", color: "bad", seam: 1 } }).gloves.color, "#f2efe8");
   assert.equal(ctx.normalizeLook({ gloves: { kind: "gloves", seam: 1 } }).gloves.seam, 1);
+  // 帽子と小物（2026-10-03 W5）。項目が無い保存データには足さない／知らない名前と項目は残す
+  const plain = ctx.normalizeLook({ top: {} });
+  assert.equal(plain.hat, undefined); assert.equal(plain.accessories, undefined);
+  const hat = ctx.normalizeLook({ hat: { kind: "tophat_future", color: "bad", brim: 2 } }).hat;
+  assert.equal(hat.kind, "tophat_future"); assert.equal(hat.brim, 2); assert.equal(hat.color, "#3b3b40");
+  assert.equal(ctx.normalizeLook({ hat: { kind: "cap" } }).hat.color, "#2f5ea8");
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.normalizeLook({ accessories: ["glasses", "glasses", "mask_future", 3, "BAD id"] }).accessories)), ["glasses", "mask_future"]);
   assert.equal(out.top.fit, "x"); assert.equal(out.top.kind, "leotard");
   assert.equal(out.bottom.pattern, "stripe"); assert.equal(out.bottom.kind, "tutu");
   assert.equal(out.hair.accessory, "pin"); assert.equal(out.hair.style, "long");
