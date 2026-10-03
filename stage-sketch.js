@@ -14788,6 +14788,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function snapshot() {
+    syncRunOfShow();
     /* 2026-09-17: セクション時間はシーンの秒数の合計の控え。
        シーンパネルの入力欄は scene.rehearsal を直に書くので、
        書き出す直前にここで揃えておかないとファイルの中だけ食い違う
@@ -15013,7 +15014,16 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return autosaveInFlight;
   }
 
+  let runOfShowRevision = 0;
+  function syncRunOfShow() {
+    if (!state.project.runOfShow || !window.STAGE_RUN_OF_SHOW_MODEL) return;
+    try { window.STAGE_RUN_OF_SHOW_MODEL.projectDocument(state.project, false); }
+    catch (_) { /* An unsupported extension must stay intact, including during autosave. */ }
+  }
   function persistSoon() {
+    syncRunOfShow();
+    runOfShowRevision++;
+    window.dispatchEvent(new Event("stage-run-of-show-change"));
     if (STUDY_READ_ONLY) return;
     if (resetInProgress) return;
     if (alternativesStorageBlocked) {
@@ -33172,6 +33182,9 @@ ${propsPlotHtml}
       }
       return result;
     });
+    if (copy.runOfShow?.version === 1 && Array.isArray(copy.runOfShow.items)) {
+      copy.runOfShow.items.forEach(item => { if(sceneIds.has(item.sceneId)) item.sceneId=sceneIds.get(item.sceneId); });
+    }
     for (const cue of copy.cues || []) {
       cue.id = rid("cue");
       if (sceneIds.has(cue.sceneId)) cue.sceneId = sceneIds.get(cue.sceneId);
@@ -43336,6 +43349,75 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
         })
         .filter((item) => Number.isFinite(item.u) && Number.isFinite(item.v)
           && item.widthM > 0 && item.depthM > 0);
+    },
+  });
+  /* Paper editing uses the same state, checkpoint, autosave and file export as the stage. */
+  const runOfShowModel = window.STAGE_RUN_OF_SHOW_MODEL;
+  function runOfShowToken() { return `${state.project.id}:${runOfShowRevision}`; }
+  function requireRunOfShowEdit(token) {
+    if (STUDY_READ_ONLY || document.body.classList.contains("stage-session-guest") || window.GAMMA_LIGHT_HOST?.context?.().readOnly) throw Error("閲覧中は進行表を変更できません。");
+    if (gammaStorageChanged) throw Error("別のタブまたは保存状態が更新されています。入力を控えてからショーを読み直してください。");
+    if (token !== runOfShowToken()) throw Error("ショーが更新されています。最新の進行表を表示しました。もう一度編集してください。");
+    if (alternativesStorageBlocked) throw Error("保存データを確認できないため編集を停止しています。");
+  }
+  window.SHOSAI_STAGE_RUN_OF_SHOW_HOST = Object.freeze({
+    canEdit(token) { requireRunOfShowEdit(token); return true; },
+    read() {
+      const doc = runOfShowModel.projectDocument(state.project);
+      window.ROSFiles.validateStructure(doc, runOfShowModel.columnSets);
+      return { token: runOfShowToken(), document: doc };
+    },
+    apply(document, token) {
+      requireRunOfShowEdit(token);
+      window.STAGE_DATA_SAFETY.assertSafeJson(document);
+      const result = runOfShowModel.plan(state.project, document);
+      checkpoint();
+      state.project.scenes = result.rows;
+      for (const edit of result.changes) {
+        edit.scene.title = edit.title;
+        edit.scene.rehearsal.holdDurationSeconds = edit.hold;
+        edit.scene.rehearsal.transitionToNextSeconds = edit.transition;
+      }
+      state.project.runOfShow = result.document;
+      refreshSectionDurationCache(state.project);
+      renderScenes(); updateInspector(); render(); persistSoon();
+      window.dispatchEvent(new Event("stage-timeline-structure-change"));
+      return this.read();
+    },
+    createScene(itemId, token) {
+      requireRunOfShowEdit(token);
+      const doc = runOfShowModel.projectDocument(state.project);
+      const at = doc.items.findIndex(row => row.id === itemId), row = doc.items[at];
+      if (!row) throw Error("項目が見つかりません。");
+      if (row.sceneId) return row.sceneId;
+      if (!row.title.trim() || row.hold === null || row.transition === null) throw Error("項目名と時間を入力してからシーンを作ってください。");
+      if (row.hold > 86400 || row.transition > 86400) throw Error("舞台シーンの各時間は86400秒以内で入力してください。");
+      if (!canAddSceneRows()) throw Error("このショーで作成できるシーン数に達しています。");
+      const previous = doc.items.slice(0,at).reverse().find(item => item.sceneId);
+      const next = doc.items.slice(at+1).find(item => item.sceneId);
+      const rows = state.project.scenes;
+      let index = previous ? rows.findIndex(scene => scene.id === previous.sceneId)+1 : rows.findIndex(scene => scene.id === next?.sceneId);
+      if (previous && rows[index]?.depth > rows[index-1].depth) throw Error("子シーンがある場面の直後には作れません。子シーンの後へ項目を移すか、舞台タブで作成してください。");
+      if (index < 0) index = rows.length;
+      const reference = rows.find(scene => scene.id === (previous?.sceneId || next?.sceneId)) || sc();
+      const scene = newScene(row.title, false, "scene", reference.depth);
+      scene.rehearsal.holdDurationSeconds = row.hold;
+      scene.rehearsal.transitionToNextSeconds = row.transition;
+      checkpoint();
+      rows.splice(index,0,scene); row.sceneId=scene.id; row.created=true;
+      state.project.runOfShow=doc;
+      refreshSectionDurationCache(state.project);
+      renderScenes(); persistSoon();
+      window.dispatchEvent(new Event("stage-timeline-structure-change"));
+      return scene.id;
+    },
+    historyStatus: () => ({canUndo:history.length>0,canRedo:future.length>0}),
+    undo, redo,
+    async save() { persistSoon(); await flushAutosave(); return {ok:!autosaveFailed}; },
+    export() { return exportProject(); },
+    openScene(id) {
+      openScene(id, {skipTransition:true});
+      document.getElementById("stage-workspace-normal")?.click();
     },
   });
   window.SHOSAI_STAGE_SESSION_BRIDGE = Object.freeze({

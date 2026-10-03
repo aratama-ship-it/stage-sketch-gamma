@@ -1,0 +1,11 @@
+:root{--ros-frame-min:520px;--ros-shell-height:152px}
+#gamma-run-of-show-workspace{width:100%;min-height:0}
+#gamma-run-of-show-workspace[hidden]{display:none}
+#gamma-run-of-show-frame{display:block;width:100%;height:calc(100dvh - var(--ros-shell-height));min-height:var(--ros-frame-min);border:0;background:#f5f3ed;color-scheme:light}
+body[data-gamma-workspace="run-of-show"] .stage-sketch-grid,
+body[data-gamma-workspace="run-of-show"] #stage-timeline-panel,
+body[data-gamma-workspace="run-of-show"] .stage-boundary-note{display:none!important}
+body[data-gamma-workspace="run-of-show"].stage-timeline-expanded:not(.stage-fullscreen) #view-stage{padding-bottom:0}
+
+body[data-gamma-workspace="run-of-show"]::before{display:none}
+body[data-gamma-workspace="run-of-show"] #stage-timeline-grip,body[data-gamma-workspace="run-of-show"] .stage-timeline-resize-handle{display:none!important}

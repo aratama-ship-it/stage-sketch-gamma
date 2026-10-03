@@ -16,6 +16,7 @@ function env() {
 const request = (path, auth, method = 'GET') => new Request(origin + path, { method, headers: auth });
 const blocked = ['/tests/a.js','/tools/deploy.sh','/docs/private.json','/docs/plan.html','/README.md','/package.json',
   '/stage-samples/README.md','/stage-samples/build-feature-test-show.mjs','/light-design/private.json',
+  '/run-of-show/private.js','/run-of-show/TOKEN_SHEET.md','/run-of-show/INTEGRATION.md','/run-of-show/verification/manifest.json',
   '/stage-secret.js','/stage-sketch_backup_old.js','/.claude/settings.json','/.git/config','/.env',
   '/worker.js','/wrangler.toml','/assets/brand/provenance.json','/public/ai-json/README.md','/icons/private.md',
   '/private.webmanifest','/manual-gamma/.private.json','/manual-gamma/%2e%2e/tools/a.js',
@@ -40,7 +41,7 @@ test('evaluated SW shell and local HTML dependency closure are allowed', async (
   vm.runInNewContext(read('stage-sw.js').split('/* 配信層')[0] + '; this.shell=APP_SHELL;', c);
   const paths = new Set(c.shell.map(p => new URL(p,origin).pathname));
   paths.add('/stage-sw.js'); paths.add('/storage-recovery.html');
-  const documents = ['stage.html','storage-recovery.html','light-design/index.html','formation/presets/editor.html','manual-gamma/index.html','public/ai-json/index.html'];
+  const documents = ['stage.html','storage-recovery.html','light-design/index.html','formation/presets/editor.html','manual-gamma/index.html','public/ai-json/index.html','run-of-show/index.html'];
   for (const file of documents) {
     paths.add('/'+file);
     for (const m of read(file).matchAll(/(?:src|href)="([^"#]+)"/g)) {

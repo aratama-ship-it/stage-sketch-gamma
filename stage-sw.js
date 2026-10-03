@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v452";
+const CACHE_NAME = "stage-sketch-gamma-shell-v454";
 const APP_SHELL = [
   "./stage-data-safety.js?v=20261001-release69",
   "./stage-point-source.js?v=20260927-point43",
@@ -23,6 +23,16 @@ const APP_SHELL = [
   "./gamma-formation-model.js?v=formation1",
   "./gamma-formation.js?v=20261001-release71b",
   "./stage-vox-panel.js?v=2026092432",
+  "./stage-run-of-show-files.js?v=ros5",
+  "./stage-run-of-show-model.js?v=ros5",
+  "./stage-run-of-show-pane.js?v=ros5",
+  "./stage-run-of-show.css?v=ros5",
+  "./run-of-show/index.html?v=ros5",
+  "./run-of-show/editor.js?v=ros5",
+  "./run-of-show/editor.css?v=ros5",
+  "./run-of-show/pagination.js?v=ros5",
+  "./run-of-show/paper-edit.js?v=ros5",
+  "./run-of-show/timing.js?v=ros5",
   "./stage-script-editor.js?v=20260926-feedback40",
   "./gamma-formation.css?v=2026091987",
   "./formation/presets/editor.html?v=20261001-release71b",
@@ -44,7 +54,7 @@ const APP_SHELL = [
   "./stage-venue-preview.css?v=20260930-theater7",
   "./stage-venue-viewpoints.css?v=2026092501",
   "./gamma-light-model.js?v=20261003-release80",
-  "./gamma-workspace.js?v=20261003-release80",
+  "./gamma-workspace.js?v=20261003-release82",
   "./light-design/index.html?embed=gamma&v=20261003-release80",
   "./light-design/embed.css?v=20260925-ui1",
   "./light-design/rig-engine.js?v=20261003-release80",
@@ -79,7 +89,7 @@ const APP_SHELL = [
   "./stage-samples/index.js?v=2026092402",
   "./stage-samples/romeo-juliet-cued.js?v=20261001-release71",
   "./stage-samples/romeo-juliet-second.js?v=20261001-release71",
-  "./stage-samples/feature-test-show.js?v=20261003-hair81",
+  "./stage-samples/feature-test-show.js?v=20261003-release82",
   "./stage-set-model.js?v=2026092354",
   "./stage-set-builder.js?v=2026091501",
   "./stage-machinery.js?v=20260925-ui1",
@@ -110,7 +120,7 @@ const APP_SHELL = [
   "./stage-shortcuts.js?v=2026092218",
   "./stage-reorder-motion.js?v=2026092420",
   "./stage-save-lifecycle.js?v=20260927-guard45",
-  "./stage-sketch.js?v=20261003-hair81",
+  "./stage-sketch.js?v=20261003-release82",
   "./stage-timeline.js?v=20260930-gamma2",
   "./stage-session.js?v=20260926-feedback40",
   "./stage-study-owner.js?v=20260926-feedback40",
@@ -140,6 +150,7 @@ const STAGE_PATHS = new Set([
 const STORAGE_RECOVERY_PATH = new URL("./storage-recovery.html", self.location.href).pathname;
 const FORMATION_EDITOR_PATH = new URL("./formation/presets/editor.html", self.location.href).pathname;
 const LIGHT_EDITOR_PATH = new URL("./light-design/index.html", self.location.href).pathname;
+const RUN_OF_SHOW_EDITOR_PATH = new URL("./run-of-show/index.html", self.location.href).pathname;
 const APP_SHELL_URLS = new Set(APP_SHELL.map((path) => new URL(path, self.location.href).href));
 const APP_SHELL_PATHS = new Set(APP_SHELL.map((path) => new URL(path, self.location.href).pathname));
 
@@ -271,7 +282,7 @@ self.addEventListener("fetch", (event) => {
   // 画面本体はオンライン時に最新版を優先し、通信できない時だけ保存版へ戻る。
   // The same-origin formation and embedded lighting iframes are cached app assets.
   const embeddedLightEditor = url.pathname === LIGHT_EDITOR_PATH && url.searchParams.get("embed") === "gamma";
-  if (request.mode === "navigate" && url.pathname !== FORMATION_EDITOR_PATH && !embeddedLightEditor) {
+  if (request.mode === "navigate" && url.pathname !== FORMATION_EDITOR_PATH && url.pathname !== RUN_OF_SHOW_EDITOR_PATH && !embeddedLightEditor) {
     // 同じ場所にある資料棚などはこのPWAの対象にしない。
     const stageDocument = STAGE_PATHS.has(url.pathname);
     if (!stageDocument && url.pathname !== STORAGE_RECOVERY_PATH) return;

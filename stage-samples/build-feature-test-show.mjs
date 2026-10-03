@@ -74,7 +74,8 @@ if (PROP_SHAPES.length < 10) throw new Error(`小道具の形の一覧が取れ�
 // v27（2026-10-01）: C-1 に正方形ボタン・照明選択の UI 確認を追加（v0.2.70）
 // v29（2026-10-02）: レーン切替幅を 1000／1520／1800px に変更（確認手順の幅を更新）・bridge_hold を姿勢の選択一覧から外した（v0.2.72）
 // v28（2026-10-01）: 修正バッチ #1〜#16（幅別レーン・吹き出し・袖幕枚数・ドラッグ保持・.stagesketch・照明配置ほか）の確認手順を各シーンへ追加（v0.2.71）
-const PROJECT_ID = "gamma-feature-test-v32";   // v32: F-5 ミラーボール・J-3 負荷（2026-10-03）
+// v32: F-5 ミラーボール・J-3 負荷（2026-10-03）
+const PROJECT_ID = "gamma-feature-test-v33"; // v33: H-1/H-2 進行表の紙面編集・画像・改ページ
 const CREATED = "2026-09-18T00:00:00.000Z";
 const STAGE = { width: 12, depth: 9 };      // proscenium / mid の実寸（stage-venues.js）
 const COLORS = ["#a84b26", "#77865f", "#9c823f", "#6d6657", "#315b8a", "#b0533f", "#4f7d6f", "#8a6a9c",
@@ -1089,6 +1090,25 @@ const legCountVenue = (count) => ({
   provenance: { source: "記憶", confidence: "low", sharing: "ok",
     note: "D-3 袖幕枚数の機能試験用。実劇場の図面ではありません。" },
 });
+/* H-1/H-2: Run of Show editing, embedded images, midnight, long paragraphs and unknown durations. */
+await import(join(ROOT, "stage-run-of-show-model.js"));
+project.runOfShow = globalThis.STAGE_RUN_OF_SHOW_MODEL.initial(project);
+project.runOfShow.documentInfo = {title:project.title,venue:"試験用会場",date:"2026-10-03",revision:"DRAFT 01",startTime:"23:58:00"};
+const rosH1 = project.runOfShow.items.find(row=>row.sceneId==="ft-scene-h1");
+const rosH2 = project.runOfShow.items.find(row=>row.sceneId==="ft-scene-h2");
+const rosImage = JSON.parse(readFileSync(join(HERE,"run-of-show-test-image.json"),"utf8"));
+project.runOfShow.assets=[rosImage];
+rosH1.owner="舞台監督（試験記入）";rosH1.standby="各部の準備を確認";rosH1.go="舞台監督の合図（試験）";
+rosH1.details="H-1 進行表の紙面に直接記入します。名称・時間は舞台と共通。詳細・備考は自由記入。\n"+"改ページ確認：段落を編集しても文章を欠落させず、続きと画像の説明を保持します。\n".repeat(18);
+rosH1.notes="H-1の合計は30＋5＝35秒。時間の固定を保つ。";
+rosH1.detailAssets=[{assetId:rosImage.id,caption:"H-1 試験用の配置図。縮尺なし。"}];
+rosH2.owner="音響（未接続）";rosH2.details="H-2 紙面から名称・尺・順序を変更し、舞台タブと往復。音源Aは未接続のまま保持。";
+rosH2.notes="並べ替え・画像追加・取り消し・保存・再読込・ショーファイル往復を確認。";
+rosH2.noteAssets=[{assetId:rosImage.id,caption:"H-2 同じ試験画像を参照。"}];
+const rosFree=globalThis.STAGE_RUN_OF_SHOW_MODEL.item("ros-free-announcement");
+rosFree.title="H 進行のみ：客席案内（尺未定）";rosFree.details="この項目はまだ舞台シーンを持ちません。時間を入力してから舞台シーンを作れます。";
+project.runOfShow.items.splice(project.runOfShow.items.indexOf(rosH1),0,rosFree);
+project.runOfShow.selected=rosH1.id;
 const doc = { kind: "shosai-stage-sketch", version: 4,
   venues: [legCountVenue(2), legCountVenue(10)], project };
 const json = JSON.stringify(doc, null, 1);

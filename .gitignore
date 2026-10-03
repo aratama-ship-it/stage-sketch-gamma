@@ -427,3 +427,17 @@ public-dist/
 !/tests/panel-bottom-browser.cjs
 
 !/tests/fix6-browser.cjs
+
+# Run of Show product source and deterministic feature-test image.
+!/stage-run-of-show-*.js
+!/stage-run-of-show.css
+!/run-of-show/
+/run-of-show/*
+!/run-of-show/index.html
+!/run-of-show/editor.js
+!/run-of-show/editor.css
+!/run-of-show/pagination.js
+!/run-of-show/paper-edit.js
+!/run-of-show/timing.js
+!/stage-samples/run-of-show-test-image.json
+!/tests/run-of-show.test.mjs

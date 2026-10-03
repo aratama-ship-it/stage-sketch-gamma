@@ -97,7 +97,7 @@
   function syncHistory() {
     if(!hostUndo || !hostRedo) return;
     // セリフ編集画面は本体の取り消し履歴をそのまま使う（台本の変更は本体の checkpoint に積まれる）
-    if(mode==='script' || mode==='cuesheet') return;
+    if(mode==='script' || mode==='cuesheet' || mode==='run-of-show') return;
     if(mode==='normal') {
       captureHostHistory();
       hostUndo.disabled=hostHistory.undo;hostRedo.disabled=hostHistory.redo;
@@ -112,7 +112,7 @@
     hostUndo.disabled=!lightStatus?.canUndo;hostRedo.disabled=!lightStatus?.canRedo;
   }
   function runLightHistory(event,direction) {
-    if(mode==='normal' || mode==='script' || mode==='cuesheet') return;
+    if(mode==='normal' || mode==='script' || mode==='cuesheet' || mode==='run-of-show') return;
     event.preventDefault();event.stopImmediatePropagation();
     if(mode==='venue-setup') window.SHOSAI_VENUE_EDITOR?.[direction]?.();
     else editor()?.[direction]();
@@ -550,14 +550,15 @@
   }
 
   async function select(next) {
-    if(!['normal','light-placement','light-design','venue-setup','script','cuesheet'].includes(next)) return;
+    if(!['normal','light-placement','light-design','venue-setup','script','cuesheet','run-of-show'].includes(next)) return;
+    if(mode==='run-of-show' && next!==mode && !window.GAMMA_RUN_OF_SHOW_PANE?.finish?.())return;
     const switchingMode=mode!==next;
     const returnFocus=document.querySelector('#stage-workspace-tabs [data-stage-workspace-mode="'+next+'"]');
     // スマホ確認機では劇場・照明編集へ移らず、ショーの読込と閲覧を使う。
     if(phoneViewerWorkspace() && next!=='normal') return;
     /* 案A（2026-09-23）: 劇場が決まるまで閉じるのは機材配置・照明デザインだけ。
        舞台タブへは戻れる（中は入口以外 inert。syncStageGate）。 */
-    if(next!=='venue-setup' && next!=='normal' && venueSetupPending()) {
+    if(next!=='venue-setup' && next!=='normal' && next!=='run-of-show' && venueSetupPending()) {
       // 勝手に別の場所へ行かず、やることが1つだけ残っている状態にする
       gatedToVenue=true;
       if(mode!=='venue-setup') select('venue-setup');
@@ -644,6 +645,10 @@
         if(context.readOnly) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
         editor()?.suspend();
         window.SHOSAI_SCRIPT_EDITOR?.open?.();
+      } else if(next==='run-of-show') {
+        if(host.context().readOnly) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
+        editor()?.suspend();
+        window.GAMMA_RUN_OF_SHOW_PANE?.open?.();
       } else if(next==='cuesheet') {
         editor()?.suspend();
         window.SHOSAI_STAGE_CUE_SHEET_HOST?.open?.();
@@ -652,6 +657,8 @@
       document.body.dataset.stageWorkspaceMode=mode;
       panel.hidden=!isLightMode(mode); venueWorkspace.hidden=mode!=='venue-setup'; normal.inert=mode!=='normal';
       if(scriptWorkspace) scriptWorkspace.hidden=mode!=='script';
+      const rosWorkspace=document.getElementById('gamma-run-of-show-workspace');
+      if(rosWorkspace)rosWorkspace.hidden=mode!=='run-of-show';
       if(cuesheetWorkspace) cuesheetWorkspace.hidden=mode!=='cuesheet';
       if(switchingMode) document.getElementById('view-stage')?.scrollTo(0,0);
       document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode]').forEach(button=>{
@@ -753,7 +760,8 @@
   window.visualViewport?.addEventListener('resize',scheduleFrameHeight);
   // 初回表示でもモード属性を付け、浮動パネルなど舞台モード専用CSSの基準を揃える。
   // 新しいショー（劇場がまだ決まっていない）は、そのまま劇場設定を開いて始める。
-  if(venueSetupPending()) { gatedToVenue=true; select('venue-setup'); } else select('normal');
+  if(location.hash==='#run-of-show') select('run-of-show');
+  else if(venueSetupPending()) { gatedToVenue=true; select('venue-setup'); } else select('normal');
   /* 共有の閲覧かどうかは body のクラスで後から決まる。決まったら鍵を見直す。 */
   new MutationObserver(syncVenueGate).observe(document.body,{attributes:true,attributeFilter:['class']});
   /* 劇場を反映したら鍵は外れる（反映後に select() が呼ばれ、その中で見直す）。

@@ -17,3 +17,8 @@
 
 # Patch rejects are local review notes, never public assets.
 /*.rej
+
+# Run of Show local validation and engineering notes stay out of deployed assets.
+/run-of-show/verification/**
+/run-of-show/TOKEN_SHEET.md
+/run-of-show/INTEGRATION.md
