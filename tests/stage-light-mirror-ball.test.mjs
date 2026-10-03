@@ -215,3 +215,70 @@ test("配線: 読取モデルの印・設定の英訳・試験場 F-4／J-2", ()
   assert.match(b, /"ft-scene-j2": \{ lights: \{/);
   assert.match(b, /target: \{ fixtureId: fixtureIds\.ball \}/);
 });
+
+/* ---------- 球そのものの光り（2026-10-03 本人要望・v0.2.82） ----------
+   ピンの光を各鏡片が反射し、反射の向きが「見ている方向」に近い鏡片だけが光る。回れば入れ替わって瞬く。 */
+const f4Ball = () => ({ centre: { x: 0, y: 2.88, z: 6.05 }, radiusM: 0.15, rpm: 1.5, phaseDeg: 0,
+  sources: [{ from: { x: -1.86, y: 12.6, z: 7.5 }, color: "#f2ead6", level: 100, beamDeg: 6 }, { from: { x: 1.86, y: 12.6, z: 7.5 }, color: "#ffd27a", level: 100, beamDeg: 6 }] });
+const unit3 = (v) => { const n = Math.hypot(v.x, v.y, v.z); return { x: v.x / n, y: v.y / n, z: v.z / n }; };
+
+test("きらめき: 正面から見ると数個の鏡片が光り、条件（視線側・ピン側・反射が視線に近い）を満たす", () => {
+  const R = render(); const ball = f4Ball(), v = unit3({ x: 0, y: 1, z: 0.2 });
+  const cosSigma = Math.cos(R.TOKENS.MIRROR_BALL_GLINT_SIGMA_DEG * Math.PI / 180);
+  for (const t of [0, 700, 1500, 3000, 9000]) {
+    const { glints } = R.mirrorBallGlintsAt(ball, t, { dir: { x: 0, y: 1, z: 0.2 } });
+    assert.ok(glints.length >= 1 && glints.length <= R.TOKENS.MIRROR_BALL_GLINT_MAX, `t=${t} 個数 ${glints.length}`);
+    glints.forEach((g) => {
+      assert.ok(Math.abs(Math.hypot(g.n.x, g.n.y, g.n.z) - 1) < 1e-9);
+      assert.ok(g.I > 0 && g.I <= 1);
+      assert.ok(g.n.x * v.x + g.n.y * v.y + g.n.z * v.z > 0.05, "視線側を向く鏡片");
+      // 光った鏡片は、どちらかのピンの反射が視線に近い（独立に計算し直す）
+      const F = { x: ball.centre.x + 0.15 * g.n.x, y: ball.centre.y + 0.15 * g.n.y, z: ball.centre.z + 0.15 * g.n.z };
+      const ok = ball.sources.some((s) => { const d = unit3({ x: F.x - s.from.x, y: F.y - s.from.y, z: F.z - s.from.z }); const dn = d.x * g.n.x + d.y * g.n.y + d.z * g.n.z; if (dn >= 0) return false;
+        const r = { x: d.x - 2 * dn * g.n.x, y: d.y - 2 * dn * g.n.y, z: d.z - 2 * dn * g.n.z }; return r.x * v.x + r.y * v.y + r.z * v.z > cosSigma - 1e-9; });
+      assert.ok(ok, "反射が視線に近い鏡片だけ");
+    });
+    for (let i = 1; i < glints.length; i += 1) assert.ok(glints[i - 1].I >= glints[i].I, "強い順");
+  }
+});
+
+test("きらめき: 回れば入れ替わる・止めれば動かない・同じ入力なら同じ・ピンが無い／消灯／視線なしなら出ない", () => {
+  const R = render(); const key = (o) => o.glints.map((g) => g.i).sort((a, b) => a - b).join(",");
+  const view = { dir: { x: 0, y: 1, z: 0.2 } };
+  assert.equal(key(R.mirrorBallGlintsAt(f4Ball(), 0, view)), key(R.mirrorBallGlintsAt(f4Ball(), 0, view)));
+  assert.notEqual(key(R.mirrorBallGlintsAt(f4Ball(), 0, view)), key(R.mirrorBallGlintsAt(f4Ball(), 20000, view)));
+  const still = { ...f4Ball(), rpm: 0 };
+  assert.equal(key(R.mirrorBallGlintsAt(still, 0, view)), key(R.mirrorBallGlintsAt(still, 20000, view)));
+  assert.equal(R.mirrorBallGlintsAt({ ...f4Ball(), sources: [] }, 0, view).glints.length, 0);
+  assert.equal(R.mirrorBallGlintsAt({ ...f4Ball(), sources: [{ from: { x: 0, y: 12, z: 7 }, level: 0 }] }, 0, view).glints.length, 0);
+  assert.equal(R.mirrorBallGlintsAt(f4Ball(), 0, null).glints.length, 0);
+  assert.equal(R.mirrorBallGlintsAt(f4Ball(), 0, { eye: { x: 0, y: 14, z: 1.5 } }).glints.length > 0, true, "カメラの位置（eye）でも出る");
+});
+
+test("きらめきの絵: 見る向きを渡したときだけ、体にきらめきとにじみを描く", () => {
+  globalThis.Path2D = class { moveTo() {} lineTo() {} ellipse() {} arc() {} };
+  try {
+    const R = render();
+    const count = (opts) => { const c = { arc: 0, grad: 0, stroke: 0 };
+      const ctx = { save() {}, restore() {}, beginPath() {}, moveTo() {}, lineTo() {}, arc() { c.arc++; }, fill() {}, stroke() { c.stroke++; }, createRadialGradient() { c.grad++; return { addColorStop() {} }; },
+        set globalCompositeOperation(_) {}, get globalCompositeOperation() { return "source-over"; }, set fillStyle(_) {}, set strokeStyle(_) {}, set lineWidth(_) {} };
+      const P = (p) => ({ X: 300 + p.x * 60, Y: 400 - p.z * 60 + p.y * 10 });
+      R.paintMirrorBallBody(ctx, f4Ball(), P, { tMs: 0, ...opts }); return c; };
+    const plain = count({}), withView = count({ viewDir: { x: 0, y: 1, z: 0.2 } });
+    assert.ok(withView.arc > plain.arc, `きらめきの円が増える ${plain.arc} → ${withView.arc}`);
+    assert.equal(withView.grad, plain.grad, "にじみ（放射グラデーション）は光を受けていれば見る向きに関係なく出る");
+    assert.ok(plain.grad >= 2, "体のグラデーション＋にじみ");
+    const noPin = (() => { const c = { arc: 0 }; const ctx = { save() {}, restore() {}, beginPath() {}, moveTo() {}, lineTo() {}, arc() { c.arc++; }, fill() {}, stroke() {}, createRadialGradient() { return { addColorStop() {} }; }, set globalCompositeOperation(_) {}, get globalCompositeOperation() { return "source-over"; }, set fillStyle(_) {}, set strokeStyle(_) {}, set lineWidth(_) {} };
+      R.paintMirrorBallBody(ctx, { ...f4Ball(), sources: [] }, (p) => ({ X: 300 + p.x * 60, Y: 400 - p.z * 60 }), { tMs: 0, viewDir: { x: 0, y: 1, z: 0.2 } }); return c.arc; })();
+    assert.equal(noPin, 1, "ピンが当たっていない球は体だけ（きらめきもにじみも出ない）");
+  } finally { delete globalThis.Path2D; }
+});
+
+test("配線: きらめきの見る向きを、舞台モード・3Dカメラ・照明タブがそれぞれ渡す", () => {
+  assert.match(read("stage-sketch.js"), /viewDir: L\.plan \? \{ x: 0, y: 0, z: 1 \} : \{ x: 0, y: 1, z: 0\.2 \},/);
+  assert.match(read("stage-first-person.js"), /eye: \{ x: camera\.x, y: camera\.z \+ D \/ 2, z: camera\.y \},/);
+  const app = read("light-design/app.js");
+  assert.match(app, /const viewDir = view === "plan" \? \{ x: 0, y: 0, z: 1 \}/);
+  assert.match(app, /topDown: view === "plan", viewDir \}\);/);
+  assert.match(read("stage-light-render.js"), /paintMirrorBallBody\(ctx, ball, P, o\);/);
+});

@@ -1437,8 +1437,10 @@
     if (!balls.length) return 0;
     const surfaces = view === "plan" ? { floor: true } : (view === "front" || view === "front3d") ? { floor: true, back: true } : {};
     ctx.save(); if (alphaScale !== 1) ctx.globalAlpha = alphaScale;
+    /* 球のきらめきの見る向き（球から見ている側へ）。平面図は真上・正面図と3D風は客席側のやや上・側面図は舞台中央側から。 */
+    const viewDir = view === "plan" ? { x: 0, y: 0, z: 1 } : view === "shimote" ? { x: 1, y: 0, z: 0.15 } : view === "kamite" ? { x: -1, y: 0, z: 0.15 } : { x: 0, y: 1, z: 0.2 };
     const n = R.paintMirrorBalls(ctx, balls, P, { tMs: state.play.t, dims: state.dims, facets: R.MIRROR_BALL_FACETS ? R.MIRROR_BALL_FACETS.mid : 600,
-      surfaces, rays: view !== "plan", topDown: view === "plan" });
+      surfaces, rays: view !== "plan", topDown: view === "plan", viewDir });
     ctx.restore();
     return n;
   }

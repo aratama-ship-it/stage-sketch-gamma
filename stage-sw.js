@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v455";
+const CACHE_NAME = "stage-sketch-gamma-shell-v456";
 const APP_SHELL = [
   "./stage-data-safety.js?v=20261001-release69",
   "./stage-point-source.js?v=20260927-point43",
@@ -41,7 +41,7 @@ const APP_SHELL = [
 
   "./stage-lighting-plans.js?v=20260930-optics1",
   "./stage-lighting-plan-overlay.js?v=20261003-release80",
-  "./stage-light-render.js?v=20261003-release80",
+  "./stage-light-render.js?v=20261003-glint84",
   "./stage-set-render.js?v=2026092040",
   "./gamma-light-cue-overlay.js?v=20261003-release80",
   "./docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113",
@@ -54,15 +54,15 @@ const APP_SHELL = [
   "./stage-venue-preview.css?v=20260930-theater7",
   "./stage-venue-viewpoints.css?v=2026092501",
   "./gamma-light-model.js?v=20261003-release80",
-  "./gamma-workspace.js?v=20261003-release82",
-  "./light-design/index.html?embed=gamma&v=20261003-release80",
+  "./gamma-workspace.js?v=20261003-glint84",
+  "./light-design/index.html?embed=gamma&v=20261003-glint84",
   "./light-design/embed.css?v=20260925-ui1",
   "./light-design/rig-engine.js?v=20261003-release80",
   "./light-design/stage-figure.js?v=20260926-render37",
   "./light-design/volume-light.js?v=20260928-feedback55",
   "./light-design/laser-effects.js?v=20260915-5-color-presets",
   "./light-design/laser-effects-ui.js?v=20260915-3-supported-shapes",
-  "./light-design/app.js?v=20261003-release80",
+  "./light-design/app.js?v=20261003-glint84",
   "./light-design/light-presets.js?v=1789357787",
   "./light-design/light-presets-ui.js?v=20260915-3-vertical-cards",
   "./light-design/selected-light-presets-engine.js?v=20260928-feedback55",
@@ -94,7 +94,7 @@ const APP_SHELL = [
   "./stage-set-builder.js?v=2026091501",
   "./stage-machinery.js?v=20260925-ui1",
   "./stage-scrim.js?v=2026092059",
-  "./stage-first-person.js?v=20261003-release80",
+  "./stage-first-person.js?v=20261003-glint84",
   "./stage-fixture-body.js?v=20260930-gamma2",
   "./stage-audio-store.js?v=2026092523",
   "./stage-large-project-store.js?v=20260928-storage49",
@@ -120,7 +120,7 @@ const APP_SHELL = [
   "./stage-shortcuts.js?v=2026092218",
   "./stage-reorder-motion.js?v=2026092420",
   "./stage-save-lifecycle.js?v=20260927-guard45",
-  "./stage-sketch.js?v=20261003-shells83",
+  "./stage-sketch.js?v=20261003-glint84",
   "./stage-timeline.js?v=20260930-gamma2",
   "./stage-session.js?v=20260926-feedback40",
   "./stage-study-owner.js?v=20260926-feedback40",

@@ -21416,6 +21416,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       tMs: lightEffectClockMs(), dims: model && model.dims, facets,
       surfaces: L.plan ? { floor: true } : { floor: true, back: true },
       rays: featureOn("lightBeam"), topDown: Boolean(L.plan),
+      /* 球のきらめきの見る向き（球から見ている側へ）: 平面図は真上から・正面図は客席側のやや上から。 */
+      viewDir: L.plan ? { x: 0, y: 0, z: 1 } : { x: 0, y: 1, z: 0.2 },
     });
   }
 

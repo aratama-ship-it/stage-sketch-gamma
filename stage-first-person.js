@@ -4060,6 +4060,8 @@
       tMs: cueLightClockMs, dims: { W, D, H: CEIL }, facets,
       surfaces: { floor: true, back: true, ceil: true, side: true },
       rays: Boolean(data.lightBeam), topDown: false,
+      /* 球のきらめきは実際のカメラの位置から見る（3D世界 x・高さ y・奥行き z → 舞台スケッチの x・奥行き y・高さ z）。 */
+      eye: { x: camera.x, y: camera.z + D / 2, z: camera.y },
     });
   }
 
