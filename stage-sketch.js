@@ -7790,9 +7790,21 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     pants: { id: "pants", label: "長ズボン", labelEn: "Trousers", length: "ankle", waist: 0.68, shells: [] },
     shorts: { id: "shorts", label: "半ズボン", labelEn: "Shorts", length: "mini", waist: 0.68, shells: [] },
   };
+  /* 髪型。描画は stage-performer-body.js の HAIR_STYLE_SPECS（2026-10-03 本人承認で11種。保存済みの「ショート」も描く）。 */
   const HAIR_STYLES = {
     none: { id: "none", label: "なし", labelEn: "None", parts: [] },
     short: { id: "short", label: "ショート", labelEn: "Short", parts: [] },
+    long: { id: "long", label: "ロング", labelEn: "Long", parts: [] },
+    ponytail: { id: "ponytail", label: "ポニーテール", labelEn: "Ponytail", parts: [] },
+    buzz: { id: "buzz", label: "坊主", labelEn: "Buzz cut", parts: [] },
+    bob: { id: "bob", label: "ボブ", labelEn: "Bob", parts: [] },
+    bun: { id: "bun", label: "お団子", labelEn: "Bun", parts: [] },
+    braid: { id: "braid", label: "三つ編み", labelEn: "Braid", parts: [] },
+    twin_tails: { id: "twin_tails", label: "ツインテール", labelEn: "Twin tails", parts: [] },
+    updo_wa: { id: "updo_wa", label: "日本髪", labelEn: "Japanese updo", parts: [] },
+    chonmage: { id: "chonmage", label: "ちょんまげ", labelEn: "Topknot (chonmage)", parts: [] },
+    slicked_back: { id: "slicked_back", label: "オールバック", labelEn: "Slicked back", parts: [] },
+    curly: { id: "curly", label: "巻き毛", labelEn: "Curly", parts: [] },
   };
   const topKindById = (id) => TOP_KINDS[id] || TOP_KINDS.tshirt;
   const bottomKindById = (id) => BOTTOM_KINDS[id] || BOTTOM_KINDS.pants;
@@ -8632,6 +8644,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     costumeTopColor: document.getElementById("stage-costume-top-color"),
     costumeBottom: document.getElementById("stage-costume-bottom"),
     costumeBottomColor: document.getElementById("stage-costume-bottom-color"),
+    costumeHair: document.getElementById("stage-costume-hair"),
+    costumeHairColor: document.getElementById("stage-costume-hair-color"),
     costumeGloves: document.getElementById("stage-costume-gloves"),
     costumeGlovesColor: document.getElementById("stage-costume-gloves-color"),
     holdControls: document.getElementById("stage-hold-controls"),
@@ -36555,6 +36569,11 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       el.disabled = onePiece;
       el.title = onePiece ? tx("一続きの服なので、下衣は使いません") : "";
     });
+    if (els.costumeHair) els.costumeHair.value = hairStyleById(look.hair.style).id;
+    if (els.costumeHairColor) {
+      els.costumeHairColor.value = validColor(look.hair.color, DEFAULT_HAIR_COLOR);
+      els.costumeHairColor.disabled = hairStyleById(look.hair.style).id === "none";
+    }
     const gloves = look.gloves || {};
     const glovesOn = gloveKindById(gloves.kind).id !== "none";
     if (els.costumeGloves) els.costumeGloves.value = gloveKindById(gloves.kind).id;
@@ -42365,7 +42384,10 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
     if (!piece || piece.type !== "performer") return;
     checkpoint();
     const look = editableLook(piece);
-    if (part === "gloves") {
+    if (part === "hair") {
+      if (color) look.hair.color = validColor(value, DEFAULT_HAIR_COLOR);
+      else look.hair.style = hairStyleById(value).id;
+    } else if (part === "gloves") {
       // 手袋は項目ごと足す（素手に戻しても色は覚えておく）
       const gloves = look.gloves && typeof look.gloves === "object" ? look.gloves : { kind: "none", color: DEFAULT_GLOVES_COLOR };
       if (color) gloves.color = validColor(value, DEFAULT_GLOVES_COLOR);
@@ -42389,6 +42411,8 @@ html, body { margin: 0; padding: 0; color: #1c1a17; background: #fff; font-famil
   if (els.costumeBottom) els.costumeBottom.addEventListener("change", () => changeCostume("bottom", els.costumeBottom.value));
   if (els.costumeTopColor) els.costumeTopColor.addEventListener("change", () => changeCostume("top", els.costumeTopColor.value, true));
   if (els.costumeBottomColor) els.costumeBottomColor.addEventListener("change", () => changeCostume("bottom", els.costumeBottomColor.value, true));
+  if (els.costumeHair) els.costumeHair.addEventListener("change", () => changeCostume("hair", els.costumeHair.value));
+  if (els.costumeHairColor) els.costumeHairColor.addEventListener("change", () => changeCostume("hair", els.costumeHairColor.value, true));
   if (els.costumeGloves) els.costumeGloves.addEventListener("change", () => changeCostume("gloves", els.costumeGloves.value));
   if (els.costumeGlovesColor) els.costumeGlovesColor.addEventListener("change", () => changeCostume("gloves", els.costumeGlovesColor.value, true));
   if (els.holdSelect) {

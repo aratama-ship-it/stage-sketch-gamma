@@ -546,6 +546,165 @@
   }
 
 
+  /* ===== 髪（2026-09-26 W5 試作・本人決定 E4＝まず3種を見てもらう） =====
+   * 頭の中心・首→頭の向き（up）・顔の向き（fwd）から体の座標で形を作り、関節と同じ project で画面へ写す。
+   *  cap … 頭を覆う部分。頭の楕円体の上側を、前は額の生え際・後ろは襟足まで取り、写した点の外周（凸包）を塗る。
+   *  back … 頭の後ろから垂れる部分（ロングの背中・ポニーテールの房）。重力で下へ垂らす（体の軸ではなく床の下向き）。
+   *  side … 顔の両脇へ垂れる房（ロング）。
+   * 描く順: 後ろ側（back）は、顔がこちらを向いていれば体より先、背中を向けていれば体より後。cap と side は体の後。 */
+  /* 髪型の形（体の座標・身長比）。2026-10-03 本人承認（F1）で11種に広げた。
+   *  cap   … 頭のかぶり。scale＝頭からのふくらみ、front／back＝生え際の角度（up からの度。前・後ろ）、alpha＝薄さ。
+   *  side  … 顔の両脇の房（drop＝頭の中心から垂れる長さ）。sheet … 後ろへ垂れる面（drop）。
+   *  tails … 結んだ房。from＝付け根（theta, phi, scale）、path＝[下へ, 後ろへ, 外へ]の通り道、r＝太さの並び。
+   *  knots … 丸い塊（お団子・髷・巻き毛のふくらみ）。crown … 剃った頭頂部（ちょんまげの月代）を肌の色で塗り戻す。
+   *  phi は顔の向きから回る角度（0=前・90=右・180=後ろ）。 */
+  const HAIR_STYLE_SPECS = {
+    short: { cap: { scale: 1.07, front: 55, back: 118 } },
+    buzz: { cap: { scale: 1.02, front: 50, back: 108, alpha: 0.62 } },
+    long: { cap: { scale: 1.09, front: 55, back: 120 }, side: { drop: 0.2 }, sheet: { drop: 0.34 } },
+    ponytail: { cap: { scale: 1.04, front: 52, back: 112 },
+      tails: [{ from: [80, 180, 1.05], path: [[0.03, 0.035, 0], [0.13, 0.05, 0], [0.24, 0.035, 0]], r: [0.026, 0.028, 0.02, 0.008] }] },
+    bob: { cap: { scale: 1.13, front: 52, back: 126 }, side: { drop: 0.085, wide: 1.12 }, sheet: { drop: 0.1 } },
+    bun: { cap: { scale: 1.04, front: 52, back: 112 }, knots: [{ at: [22, 180, 1.2], r: 0.05 }] },
+    braid: { cap: { scale: 1.04, front: 52, back: 116 },
+      tails: [{ from: [104, 180, 1.03], path: [[0.06, 0.012, 0], [0.12, 0.016, 0], [0.18, 0.014, 0], [0.24, 0.012, 0], [0.3, 0.01, 0], [0.34, 0.01, 0]],
+        r: [0.02, 0.016, 0.019, 0.015, 0.017, 0.013, 0.009] }] },
+    twin_tails: { cap: { scale: 1.05, front: 52, back: 114 },
+      tails: [-1, 1].map((sign) => ({ from: [62, 112 * sign, 1.06],
+        path: [[0.02, 0.01, 0.03 * sign], [0.12, 0.02, 0.05 * sign], [0.24, 0.015, 0.045 * sign]], r: [0.022, 0.024, 0.017, 0.007] })) },
+    updo_wa: { cap: { scale: 1.12, front: 50, back: 116 },
+      knots: [{ at: [12, 180, 1.22], r: 0.05 }, { at: [86, 100, 1.08], r: 0.032 }, { at: [86, -100, 1.08], r: 0.032 }, { at: [100, 180, 1.1], r: 0.036 }] },
+    chonmage: { cap: { scale: 1.04, front: 60, back: 116 }, crown: { theta: 40 },
+      tails: [{ from: [46, 180, 1.06], path: [[-0.028, -0.035, 0], [-0.03, -0.075, 0], [-0.022, -0.1, 0]], r: [0.02, 0.022, 0.019, 0.012], along: "up" }] },
+    slicked_back: { cap: { scale: 1.035, front: 42, back: 126 }, sheet: { drop: 0.06, back: 0.04 } },
+    curly: { cap: { scale: 1.17, front: 54, back: 122 },
+      knots: [[20, 0], [30, 90], [30, -90], [25, 180], [55, 60], [55, -60], [60, 135], [60, -135], [75, 100], [75, -100], [90, 160], [90, -160], [8, 45]]
+        .map(([theta, phi]) => ({ at: [theta, phi, 1.17], r: 0.026 })) },
+  };
+  const HEAD_AXES = { up: 0.066, side: 0.05, fwd: 0.058 };
+  function hairSpec(look) {
+    const hair = look && look.hair && typeof look.hair === "object" ? look.hair : null;
+    const spec = hair && HAIR_STYLE_SPECS[hair.style];
+    return spec ? { ...spec, color: /^#[0-9a-f]{6}$/i.test(hair.color || "") ? hair.color : "#2a2320",
+      skin: /^#[0-9a-f]{6}$/i.test(look.skin || "") ? look.skin : "#d9b38c" } : null;
+  }
+  function hairFrame(pose) {
+    const j = pose.joints, hc = j.head, nk = j.neck || [hc[0], hc[1] - 0.08, hc[2]];
+    let up = norm3([hc[0] - nk[0], hc[1] - nk[1], hc[2] - nk[2]]);
+    if (!up.every(Number.isFinite)) up = [0, 1, 0];
+    const f = pose.face || [0, 0, 1];
+    const d = f[0] * up[0] + f[1] * up[1] + f[2] * up[2];
+    let fwd = norm3([f[0] - up[0] * d, f[1] - up[1] * d, f[2] - up[2] * d]);
+    if (!fwd.every(Number.isFinite) || Math.hypot(...fwd) < 0.5) fwd = norm3(cross3([1, 0, 0], up));
+    const side = norm3(cross3(up, fwd));
+    // 頭の楕円体の上の点。theta は up からの角度、phi は顔の向きから回る角度（度）
+    const on = (theta, phi, scale = 1) => {
+      const t = theta * Math.PI / 180, p = phi * Math.PI / 180;
+      const u = Math.cos(t) * HEAD_AXES.up * scale, s = Math.sin(t) * Math.sin(p) * HEAD_AXES.side * scale,
+        w = Math.sin(t) * Math.cos(p) * HEAD_AXES.fwd * scale;
+      return [0, 1, 2].map((i) => hc[i] + up[i] * u + side[i] * s + fwd[i] * w);
+    };
+    return { hc, up, fwd, side, on };
+  }
+  function hull(points) {
+    const pts = points.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y)).slice().sort((a, b) => a.x - b.x || a.y - b.y);
+    if (pts.length < 3) return pts;
+    const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+    const lower = [], upper = [];
+    pts.forEach((p) => { while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop(); lower.push(p); });
+    pts.slice().reverse().forEach((p) => { while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop(); upper.push(p); });
+    return lower.slice(0, -1).concat(upper.slice(0, -1));
+  }
+  function fillPath(target, pts) {
+    if (pts.length < 3) return;
+    smoothClosedPath(target, pts, 0.35);
+    target.fill();
+  }
+  function paintHair(target, rig, hair, layer, shade) {
+    if (!rig || !rig.pose || !rig.project || !hair) return;
+    const F = hairFrame(rig.pose);
+    const project = (p) => rig.project(p[0], p[1], p[2]);
+    const head = rig.P.head;
+    // 背中を向けているか。顔の少し前の点が頭の中心より奥なら、こちらに見えているのは後頭部
+    const facingAway = rig.faceAt && head ? rig.faceAt.z < head.z - 1e-6 : false;
+    const tint = (hex) => (shade ? shade({ kind: "head", z: head.z }, hex) : hex);
+    const color = tint(hair.color);
+    const s = head.s || rig.ux;
+    // 垂れる髪は床（姿勢の y=0＝乗っている面）で止める。寝た姿勢で床を突き抜けないように
+    const floorY = (y) => Math.max(0.012, y);
+    const over = layer === "over";
+    // 部品の真ん中が頭より手前なら頭の上（over）、奥なら体より先（behind）に塗る
+    const inLayer = (pts) => (pts.reduce((sum, p) => sum + p.z, 0) / pts.length >= head.z) === over;
+    target.save();
+    target.fillStyle = color;
+    if (hair.sheet && ((layer === "behind" && !facingAway) || (over && facingAway))) {
+      // 後ろへ垂れる面（ロング・ボブ・オールバックの襟足）。後頭部の弧から重力で垂らす
+      const drop = hair.sheet.drop, back = hair.sheet.back || 0.07;
+      const top = [-100, -140, 180, 140, 100].map((phi) => project(F.on(phi === 180 ? 70 : 88, phi, hair.cap.scale)));
+      const at = (dy, sideW, b) => project([F.hc[0] + F.side[0] * sideW - F.fwd[0] * b,
+        floorY(F.hc[1] - dy), F.hc[2] + F.side[2] * sideW - F.fwd[2] * b]);
+      const w = 0.075 * (hair.side && hair.side.wide ? hair.side.wide : 1);
+      fillPath(target, top.concat([at(drop, w, back), at(drop + 0.02, 0, back + 0.01), at(drop, -w, back)]));
+    }
+    const cap = hair.cap;
+    if (cap) {
+      /* 頭を覆う部分。全部の点の外周は体より先に塗る（頭の輪郭の外に出た分だけ、髪のふくらみとして見える）。
+         頭の上に重ねるのは、こちらを向いた半分の点だけ（裏側の点まで入れると、正面から顔が髪で隠れる）。 */
+      const ring = (front, back, scale, from = 0) => {
+        const pts = [];
+        for (let phi = 0; phi < 360; phi += 15) {
+          const k = (1 - Math.cos(phi * Math.PI / 180)) / 2;          // 0=前・1=後ろ
+          const edge = front + (back - front) * k;
+          for (let step = 0; step <= 6; step += 1) pts.push(project(F.on(from + ((edge - from) * step) / 6, phi, scale)));
+        }
+        return pts;
+      };
+      const pts = ring(cap.front, cap.back, cap.scale);
+      if (cap.alpha) target.globalAlpha *= cap.alpha;
+      if (!over) fillPath(target, hull(pts));
+      else fillPath(target, hull(pts.filter((p) => p.z >= head.z)));
+      target.globalAlpha = 1;
+      if (over && hair.crown) {
+        // 月代（さかやき）。頭頂部を剃った肌の色で塗り戻す。こちら向きの点だけ
+        target.fillStyle = tint(hair.skin);
+        const crown = ring(hair.crown.theta, hair.crown.theta, cap.scale + 0.01).filter((p) => p.z >= head.z);
+        if (crown.length >= 3) fillPath(target, hull(crown.concat([project(F.on(0, 0, cap.scale + 0.01))])));
+        target.fillStyle = color;
+      }
+    }
+    (hair.tails || []).forEach((tail) => {
+      // 結んだ房。付け根から通り道に沿って垂らす（ちょんまげの髷は頭頂から前へ寝かせる＝along "up"）
+      const root = F.on(...tail.from);
+      const step = ([dy, b, out]) => {
+        if (tail.along === "up") return project([0, 1, 2].map((i) => root[i] - F.up[i] * dy - F.fwd[i] * b + F.side[i] * out));
+        return project([root[0] - F.fwd[0] * b + F.side[0] * out, floorY(root[1] - dy), root[2] - F.fwd[2] * b + F.side[2] * out]);
+      };
+      const pts = [project(root)].concat(tail.path.map(step));
+      if (!inLayer(pts)) return;
+      taperedChain(target, pts, tail.r.map((r) => Math.max(0.7, r * s)));
+    });
+    (hair.knots || []).forEach((knot) => {
+      const c = project(F.on(...knot.at));
+      if (!inLayer([c])) return;
+      target.beginPath();
+      target.arc(c.x, c.y, Math.max(1, knot.r * (c.s || s)), 0, Math.PI * 2);
+      target.fill();
+    });
+    if (hair.side) {
+      /* 顔の両脇の房。こめかみから drop の長さまで、厚みのある房として作り、外周を塗る。
+         房の真ん中が頭より手前なら頭の上に、奥なら体より先に塗る（斜めから見たとき奥の房が顔に重ならない）。 */
+      const drop = hair.side.drop, wide = hair.side.wide || 1;
+      [-1, 1].forEach((sign) => {
+        const low = (sideW, fwd) => project([F.hc[0] + F.side[0] * sideW * wide * sign + F.fwd[0] * fwd,
+          floorY(F.hc[1] - drop), F.hc[2] + F.side[2] * sideW * wide * sign + F.fwd[2] * fwd]);
+        const lock = [project(F.on(58, 62 * sign, 1.1 * wide)), project(F.on(88, 95 * sign, 1.12 * wide)), project(F.on(96, 130 * sign, 1.1 * wide)),
+          low(0.05, 0.012), low(0.088, -0.015), low(0.072, -0.055)];
+        if (inLayer(lock)) fillPath(target, hull(lock));
+      });
+    }
+    target.restore();
+  }
+
   const sprites = new Map(); let spritePixels = 0;
   const stats = {painted: 0, cached: 0, rasterized: 0};
   function geometryKey(rig) {
@@ -574,8 +733,11 @@
       Math.hypot(rig.P.head.x-rig.P.neck.x,rig.P.head.y-rig.P.neck.y)>.4],relative);
   }
   function direct(target,rig,color,look,shade) {
+    const hair = hairSpec(look);
+    if (hair) paintHair(target, rig, hair, "behind", shade);
     if(root.STAGE_PERFORMER_CONTOUR) root.STAGE_PERFORMER_CONTOUR.paint(target,rig,color,look,shade,paintBodyParts);
     else paintBodyParts(target,rig,color,look,shade);
+    if (hair) paintHair(target, rig, hair, "over", shade);
   }
   // In the perspective view, a near arm can have the same fill as the torso.
   // Reveal its edge only where it crosses the torso; leave the outer silhouette smooth.
