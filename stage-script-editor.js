@@ -201,13 +201,16 @@ ${body}
     // 台本の書き出し（2026-09-24 本人指示）: 「シーンメモから取り込み直す」の左。A4縦の印刷用の窓を開き、印刷かPDF保存へ。
     ui.exportScript = el("button", "script-ed-btn quiet", tx("台本を書き出す"));
     ui.exportScript.type = "button";
+    ui.exportScript.dataset.tipDescription = "台本をA4縦の印刷用画面で開きます。";
     ui.exportScript.title = tx("A4の印刷用の窓で開きます（印刷・PDF保存）");
     ui.exportScript.addEventListener("click", exportScript);
     ui.reimport = el("button", "script-ed-btn quiet", tx("シーンメモから取り込み直す"));
     ui.reimport.type = "button";
+    ui.reimport.dataset.tipDescription = "現在の台本を、シーンメモの台本から作り直します。確認後に置き換えます。";
     ui.reimport.addEventListener("click", reimport);
     ui.addLine = el("button", "script-ed-btn primary", tx("＋ 行を足す"));
     ui.addLine.type = "button";
+    ui.addLine.dataset.tipDescription = "台本に新しい行を追加します。行を選んでいるときは、その下に入ります。";
     ui.addLine.addEventListener("click", () => addLineAfter(selectedId));
     actions.append(ui.exportScript, ui.reimport, ui.addLine);
     head.append(ui.summary, actions);
@@ -472,6 +475,7 @@ ${body}
       if (scene) {
         const add = el("button", "script-ed-btn small", tx("＋ このシーンに行を足す"));
         add.type = "button";
+        add.dataset.tipDescription = "このシーンの台本の末尾に新しい行を追加します。";
         add.addEventListener("click", () => addLineToScene(scene.id));
         head.append(add);
       }

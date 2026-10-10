@@ -1198,7 +1198,9 @@
     const keyGuide = createElement("div", "stage-fpv-keys", "stage-fpv-hud");
     keyGuide.hidden = true;
     const helpButton = createElement("button", "stage-fpv-help", "stage-fpv-hud");
-    helpButton.type = "button"; helpButton.textContent = "?";
+    helpButton.type = "button";
+    helpButton.dataset.tipDescription = "3Dで移動・見回すためのキー操作を表示します。";
+    helpButton.textContent = "?";
     helpButton.setAttribute("aria-controls", "stage-fpv-keys");
     helpButton.setAttribute("aria-expanded", "false");
     helpButton.onclick = () => { clearTimeout(helpTimer); setHelpVisible(keyGuide.hidden); };
@@ -1305,6 +1307,7 @@
     preview3d.textContent = "3Dモードで見る";
     const closeButton = createElement("button", "stage-fpv-close");
     closeButton.type = "button";
+    closeButton.dataset.tipDescription = "3Dの視界を閉じて、元の作業画面へ戻ります。";
     closeButton.textContent = "✕";
     optics.append(lightControls, panelToggles, lens, house, crowd);
     root.append(canvas, fade, title, minimap, optics,
@@ -1940,7 +1943,8 @@
   function syncWorkspaceInset() {
     const classList = elements && elements.root && elements.root.classList;
     if (!classList || typeof classList.contains !== "function" || !classList.contains("stage-fpv-workspace")) return;
-    const header = document.querySelector(".stage-sketch-head");
+    const information = document.getElementById("gamma-information-bar");
+    const header = information && !information.hidden ? information : document.querySelector(".stage-sketch-head");
     const top = header && typeof header.getBoundingClientRect === "function"
       ? header.getBoundingClientRect().bottom : 0;
     const value = `${Math.max(0, Math.round(top))}px`;

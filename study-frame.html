@@ -34,7 +34,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.38</span>
+                <span class="stage-app-version">0.3.39</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -56,22 +56,22 @@
               <button type="button" class="stage-workspace-tab is-active" id="stage-workspace-normal"
                       data-stage-workspace-mode="normal" data-stage-panel-layout-default="split"
                       data-stage-workspace-shortcut="1" data-gamma-title="舞台（1）"
-                      aria-keyshortcuts="1" title="舞台（1）" aria-pressed="true">舞台</button>
-              <button type="button" class="stage-workspace-tab" id="gamma-venue" data-stage-workspace-mode="venue-setup" data-stage-workspace-shortcut="2" data-gamma-title="劇場設定（2）" aria-keyshortcuts="2" title="劇場設定（2）" aria-pressed="false" aria-controls="gamma-venue-workspace">劇場設定</button>
-              <button type="button" class="stage-workspace-tab" id="gamma-placement" data-stage-workspace-mode="light-placement" data-stage-workspace-shortcut="3" data-gamma-title="機材配置（3）" aria-keyshortcuts="3" title="機材配置（3）" aria-pressed="false" aria-controls="gamma-light-workspace">機材配置</button>
-              <button type="button" class="stage-workspace-tab" id="gamma-design" data-stage-workspace-mode="light-design" data-stage-workspace-shortcut="4" data-gamma-title="照明デザイン（4）" aria-keyshortcuts="4" title="照明デザイン（4）" aria-pressed="false" aria-controls="gamma-light-workspace">照明デザイン</button>
-              <button type="button" class="stage-workspace-tab" id="gamma-script" data-stage-workspace-mode="script" data-gamma-title="セリフ" title="セリフ" aria-pressed="false" aria-controls="gamma-script-workspace">セリフ</button>
+                      aria-keyshortcuts="1" title="舞台（1）" aria-pressed="true" data-tip-description="演者や大道具を配置し、シーンの動きを編集します。">舞台</button>
+              <button type="button" class="stage-workspace-tab" id="gamma-venue" data-stage-workspace-mode="venue-setup" data-stage-workspace-shortcut="2" data-gamma-title="劇場設定（2）" aria-keyshortcuts="2" title="劇場設定（2）" aria-pressed="false" aria-controls="gamma-venue-workspace" data-tip-description="舞台の形・客席・舞台袖・見る位置を設定します。">劇場設定</button>
+              <button type="button" class="stage-workspace-tab" id="gamma-placement" data-stage-workspace-mode="light-placement" data-stage-workspace-shortcut="3" data-gamma-title="機材配置（3）" aria-keyshortcuts="3" title="機材配置（3）" aria-pressed="false" aria-controls="gamma-light-workspace" data-tip-description="灯体とバトンを配置し、照明の仕込みを編集します。">機材配置</button>
+              <button type="button" class="stage-workspace-tab" id="gamma-design" data-stage-workspace-mode="light-design" data-stage-workspace-shortcut="4" data-gamma-title="照明デザイン（4）" aria-keyshortcuts="4" title="照明デザイン（4）" aria-pressed="false" aria-controls="gamma-light-workspace" data-tip-description="灯体の色・強さ・動きを調整し、LXキューを編集します。">照明デザイン</button>
+              <button type="button" class="stage-workspace-tab" id="gamma-script" data-stage-workspace-mode="script" data-gamma-title="セリフ" title="セリフ" aria-pressed="false" aria-controls="gamma-script-workspace" data-tip-description="シーンごとの台本を編集し、話者やセリフキューを割り当てます。">セリフ</button>
               <button type="button" class="stage-workspace-tab" id="stage-freecam-open"
                       data-stage-workspace-launch="3d" data-stage-workspace-shortcut="5"
                       data-gamma-title="3D（5）" aria-keyshortcuts="5" title="3D（5）"
                       aria-pressed="false"
-                      aria-controls="stage-fpv-overlay">3D</button>
+                      aria-controls="stage-fpv-overlay" data-tip-description="自由カメラや演者の視点から舞台を立体で確認します。">3D</button>
               <!-- Qシート（2026-09-24 本人指示）: 右上の窓から、セリフ・3Dの次のタブへ。中身は #stage-cue-sheet-modal を
                    #gamma-cuesheet-workspace へ移して使う（gamma-workspace.js）。 -->
               <button type="button" class="stage-workspace-tab" id="gamma-cuesheet" data-stage-workspace-mode="cuesheet"
                       data-gamma-title="Qシート" title="Qシート" aria-pressed="false"
-                      aria-controls="gamma-cuesheet-workspace">Qシート</button>
-              <button type="button" class="stage-workspace-tab" id="gamma-run-of-show" data-stage-workspace-mode="run-of-show" data-gamma-title="進行表" title="進行表" aria-pressed="false" aria-controls="gamma-run-of-show-workspace">進行表</button>
+                      aria-controls="gamma-cuesheet-workspace" data-tip-description="全体・演者・部署ごとのキューを表で確認し、出力します。">Qシート</button>
+              <button type="button" class="stage-workspace-tab" id="gamma-run-of-show" data-stage-workspace-mode="run-of-show" data-gamma-title="進行表" title="進行表" aria-pressed="false" aria-controls="gamma-run-of-show-workspace" data-tip-description="シーンやキューの進行を紙面で編集し、印刷します。">進行表</button>
             </nav>
           </div>
         </div>
@@ -122,12 +122,15 @@
                   data-tip-description="画面の中の操作を名前で探して、その場所へ連れていきます">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="7"/><path d="M15.6 15.6 21 21"/></svg>
           </button>
+          <button type="button" class="stage-lang stage-header-icon" id="gamma-information-toggle" data-no-i18n aria-label="情報バーを表示" aria-controls="gamma-information-bar" aria-expanded="false" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 10v7M12 6.8v.2"/></svg>
+          </button>
           <!-- 感想・改善点を送る窓。β利用者が画面を離れずに書けるよう、上部に置く（2026-09-03 本人指示） -->
           <button type="button" class="stage-lang stage-header-icon" id="stage-feedback-open" aria-label="フィードバック" title="フィードバック"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2h12v9H7l-4 3v-3H2zM5 5h6M5 8h4"/></svg></button>
           <a class="stage-lang stage-ai-link" id="stage-ai-showwright-link"
              target="_blank" rel="noopener noreferrer"
              aria-label="AI showwright for StageSketch"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/><path d="M18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.456-2.456L14.25 6l1.035-.259a3.375 3.375 0 0 0 2.456-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg></a>
-          <button type="button" class="stage-lang stage-gear-btn" id="stage-prefs-btn" data-tablet-icon="⚙" aria-label="設定" aria-haspopup="dialog" aria-controls="stage-prefs-modal"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.2" stroke-width="1.3"/><circle cx="8" cy="8" r="1.4" stroke-width="1.3"/><path stroke-width="2.3" d="M8 3.10V1.90M11.94 5.55l1.04-.60M11.94 10.45l1.04.60M8 12.90v1.20M4.06 10.45l-1.04.60M4.06 5.55l-1.04-.60"/></svg></span></button>
+          <button type="button" class="stage-lang stage-gear-btn" id="stage-prefs-btn" data-tablet-icon="⚙" aria-label="設定" aria-haspopup="dialog" aria-controls="stage-prefs-modal" data-tip-description="言語・見た目・操作に関する設定を開きます。"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.2" stroke-width="1.3"/><circle cx="8" cy="8" r="1.4" stroke-width="1.3"/><path stroke-width="2.3" d="M8 3.10V1.90M11.94 5.55l1.04-.60M11.94 10.45l1.04.60M8 12.90v1.20M4.06 10.45l-1.04.60M4.06 5.55l-1.04-.60"/></svg></span></button>
           <div class="stage-panel-layout-control" id="stage-panel-layout-control">
             <button type="button" class="stage-lang stage-header-icon stage-panel-layout-btn" id="stage-panel-layout-toggle"
                     aria-label="パネルの表示スタイル"
@@ -140,7 +143,7 @@
           <div class="stage-panel-visibility-control">
             <button type="button" class="stage-lang stage-panel-visibility-btn" id="stage-panels-toggle"
                     aria-label="パネルのオン/オフ"
-                    aria-haspopup="true" aria-expanded="false" aria-controls="stage-panels-menu">
+                    aria-haspopup="true" aria-expanded="false" aria-controls="stage-panels-menu" data-tip-description="舞台画面に出す操作パネルを選びます。">
               <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 6 2 2 4-4M13 6h8M13 17h8"/><rect x="3" y="14" width="6" height="6" rx="1"/></svg></span>
             </button>
             <div class="stage-panel-visibility-menu" id="stage-panels-menu"
@@ -164,6 +167,10 @@
         </div>
         </div>
       </header>
+      <aside id="gamma-information-bar" aria-label="情報バー" hidden data-no-i18n>
+        <div id="gamma-information-context"><div class="gamma-information-heading"><strong id="gamma-information-name">操作の説明</strong><kbd id="gamma-information-key" hidden></kbd></div><p id="gamma-information-hint"></p></div>
+        <div id="gamma-information-summary" aria-label="現在の情報"></div>
+      </aside>
 
       <section id="gamma-light-workspace" aria-label="照明の配置とデザイン" hidden>
         <div id="gamma-light-playback-bar" hidden>
@@ -597,7 +604,7 @@
               <div class="stage-scene-move">
                 <button type="button" class="btn-quiet stage-scene-action-icon stage-scene-grid-open"
                         id="stage-scene-grid-open" data-tool-tip="sceneGrid"
-                        aria-label="シーン一覧を開く">
+                        aria-label="シーン一覧を開く" data-tip-description="シーンを一覧で確認し、開くシーンを選びます。">
                   <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="5" height="5"/><rect x="12" y="3" width="5" height="5"/><rect x="3" y="12" width="5" height="5"/><rect x="12" y="12" width="5" height="5"/></svg>
                 </button>
                 <button type="button" class="btn-quiet stage-scene-action-icon" id="stage-scene-section"
@@ -627,7 +634,7 @@
                 <button type="button" id="stage-scene-bar-grid" class="btn-quiet stage-scene-bar-grid" aria-label="シーン一覧を開く"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z"/></svg></button>
               <!-- 2026-10-05 本人指示: シーンのメモ（説明）を「常に表示」と「帯にカーソルを合わせたときだけ」で切り替える。
                    押した状態＝常に表示（帯の中に1行で置き、図に重ねない）。端末ごとの表示設定（prefs.sceneDescPinned）。 -->
-              <button type="button" id="stage-scene-desc-pin" class="btn-quiet stage-scene-bar-grid stage-scene-desc-pin" aria-pressed="false" aria-label="シーンのメモを常に表示する" title="シーンのメモを常に表示する"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 4.5h6.5l2.5 2.5v6.5h-9z"/><path d="M10 4.5v2.5h2.5"/><path d="M5.5 9.5h5M5.5 11.5h3.5"/><circle class="stage-scene-desc-pin-head" cx="6" cy="3.2" r="1.4"/></svg></button>
+              <button type="button" id="stage-scene-desc-pin" class="btn-quiet stage-scene-bar-grid stage-scene-desc-pin" aria-pressed="false" aria-label="シーンのメモを常に表示する" title="シーンのメモを常に表示する"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 4.5h6.5l2.5 2.5v6.5h-9z"/><path d="M10 4.5v2.5h2.5"/><path d="M5.5 9.5h5M5.5 11.5h3.5"/><circle class="stage-scene-desc-pin-head" cx="6" cy="3.2" r="1.4"/></svg><span>シーンの説明</span></button>
               </div>
               <!-- T-23（2026-09-18 本人要望）: 名前を押しても「シーンの詳細」を開けるようにする。
                    押せるものはボタンにする（.stage-cast-name と同じ考え方）。
@@ -635,6 +642,7 @@
                    （「押せるもの」と「読み上げ領域」を1つの要素で兼ねない）。 -->
               <button type="button" class="stage-scene-now-open" id="stage-scene-now-open">
                 <span class="stage-scene-now" id="stage-scene-now" aria-live="polite"></span>
+                <span class="stage-scene-edit-label">編集</span>
               </button>
               <!-- 2026-09-24 本人指示（2回目）: 「次のシーン」は帯の一番右へ寄せ、シーン名は帯の中央に置く。
                    並びは 前のシーン・一覧⊞（左）／シーン名（中央）／次のシーン（右）。読み上げ・Tabの順も見た目どおり。 -->
@@ -2819,16 +2827,17 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261010-v0338">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261010-v0339">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0338-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0338-title">v0.3.38</h3><time datetime="2026-10-10">2026-10-10</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0339-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0339-title">v0.3.39</h3><time datetime="2026-10-10">2026-10-10</time></header>
       <ul>
-        <li>初回の見本をRJセカンドにし、舞台タブから紗幕とせりを置けるようにしました。</li>
-        <li>機能検索に別名と近い候補を追加し、クイックガイドと冊子の案内を更新しました。</li>
-        <li>照明の適用ボタンと寸法表示、劇場設定の説明、読み込み時と操作後の通知を改善しました。</li>
-        <li>操作名、舞台上・舞台裏、時間・日付の表示を統一し、空の一覧に追加の入口を設けました。</li>
+        <li>全タブで現在の情報と操作の説明を見られる情報バーを追加しました。ヘッダーから表示を切り替えられます。</li>
+        <li>灯体名は通常は短い番号で表示し、選択時やカーソルを合わせたときに名前を出します。機材配置と照明の欄も使いやすくしました。</li>
+        <li>シーン操作の入口、劇場設定の入力・削除、選択中の操作欄と文字表示を改善しました。</li>
+        <li>シーン分割などを元に戻したとき、ほかのシーンの支持台との関連が失われる不具合を修正しました。</li>
+        <li>Mac版に隊形の試作ページとAI用の手引きを同梱しました。保存形式は変わりません。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3196,16 +3205,16 @@
       </div>
       <div class="stage-tool-grid stage-venue-editor-extension-shapes" role="group" aria-labelledby="stage-venue-editor-extension-title">
         <button type="button" data-venue-editor-extension-shape="rectangle" aria-pressed="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13"/></svg><span>四角</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13"/></svg><span>四角を追加</span>
         </button>
         <button type="button" data-venue-editor-extension-shape="circle" aria-pressed="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/></svg><span>丸</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/></svg><span>丸を追加</span>
         </button>
         <!-- ★2026-10-06 本人「ステージの形成に線で囲うものがないと、図面に対してフレキシブルに対応できない」。保存は既存の形式（追加ステージ shape custom）。 -->
         <button type="button" data-venue-editor-extension-shape="polygon" aria-pressed="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7 L13 4 L20 10 L16 19 L6 17 Z" fill="none" stroke-linejoin="round"/></svg><span>線で囲う</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7 L13 4 L20 10 L16 19 L6 17 Z" fill="none" stroke-linejoin="round"/></svg><span>線で囲って追加</span>
         </button>
-        <button type="button" class="btn-quiet" id="stage-venue-editor-extension-merge" disabled>重なりを合成</button>
+        <button type="button" class="btn-quiet" id="stage-venue-editor-extension-merge" disabled data-tip-description="重なっている舞台の形を一つの面へ合成します。">重なりを合成</button>
       </div>
       <p class="stage-profile-hint">追加した四角・丸はドラッグで動かせます。重なる部分は合成できます。</p>
       <p class="stage-profile-hint">線で囲うは、角を順にクリックし、最初の点・ダブルクリック・Enter で閉じます（⌥で15°きざみ・壁の端や角に吸着）。</p>
@@ -3267,10 +3276,10 @@
       <p class="stage-profile-hint">四角または丸を選び、右の平面図でドラッグしてください。</p>
       <div class="stage-tool-grid stage-venue-editor-area-shapes" role="group" aria-labelledby="stage-venue-editor-audience-title">
         <button type="button" data-venue-editor-area-mode="audience" data-venue-editor-area-shape="rectangle" aria-pressed="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13"/></svg><span>四角</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13"/></svg><span>四角を追加</span>
         </button>
         <button type="button" data-venue-editor-area-mode="audience" data-venue-editor-area-shape="circle" aria-pressed="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/></svg><span>丸</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/></svg><span>丸を追加</span>
         </button>
         <button type="button" class="btn-quiet" id="stage-venue-editor-audience-merge" disabled>重なりを合成</button>
       </div>
@@ -3296,7 +3305,7 @@
       <p class="stage-profile-hint">四角を選び、右の平面図でドラッグしてください。</p>
       <div class="stage-tool-grid stage-venue-editor-area-shapes" role="group" aria-labelledby="stage-venue-editor-wings-title">
         <button type="button" data-venue-editor-area-mode="wing" data-venue-editor-area-shape="rectangle" aria-pressed="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13"/></svg><span>四角</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13"/></svg><span>四角を追加</span>
         </button>
         <button type="button" class="btn-quiet" id="stage-venue-editor-wing-merge" disabled>重なりを合成</button>
       </div>
@@ -3306,7 +3315,7 @@
           <button type="button" class="stage-step-button" id="stage-venue-editor-leg-count-minus" aria-label="袖幕を1枚減らす" disabled><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 8h10"/></svg></button>
           <input type="number" class="stage-text-input" id="stage-venue-editor-leg-count" min="2" max="10" step="1" inputmode="numeric" aria-describedby="stage-venue-editor-leg-count-help" disabled>
           <button type="button" class="stage-step-button" id="stage-venue-editor-leg-count-plus" aria-label="袖幕を1枚増やす" disabled><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></button>
-          <button type="button" class="btn-quiet" id="stage-venue-editor-leg-count-auto" disabled>自動</button>
+          <button type="button" class="btn-quiet" id="stage-venue-editor-leg-count-auto" disabled>自動に戻す</button>
         </div>
         <p class="stage-profile-hint" id="stage-venue-editor-leg-count-help">標準の劇場は複製してから変えられます</p>
       </div>
@@ -3321,14 +3330,14 @@
       <p class="stage-profile-hint">直線は、壁の中心線の点をクリックしていきます（ダブルクリックか Enter で終わり・⌥で15°きざみ）。</p>
       <div class="stage-tool-grid stage-venue-editor-area-shapes" role="group" aria-labelledby="stage-venue-editor-walls-title">
         <button type="button" data-venue-editor-area-mode="wall" data-venue-editor-area-shape="rectangle" aria-pressed="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13"/></svg><span>四角</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13"/></svg><span>四角を追加</span>
         </button>
         <button type="button" data-venue-editor-area-mode="wall" data-venue-editor-area-shape="circle" aria-pressed="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/></svg><span>丸</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/></svg><span>丸を追加</span>
         </button>
         <!-- ★2026-10-06 本人決定 D2: 図面をなぞる「直線」の壁。保存は既存の壁と同じ多角形（細長い四角）。 -->
         <button type="button" data-venue-editor-area-mode="wall" data-venue-editor-area-shape="line" aria-pressed="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18.5 L11 9.5 L20 12.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>直線</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18.5 L11 9.5 L20 12.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>直線の壁を追加</span>
         </button>
       </div>
       <div class="stage-venue-editor-setting stage-venue-editor-wall-size" id="stage-venue-editor-wall-size" hidden>
@@ -3344,7 +3353,7 @@
         <p class="stage-profile-hint">長さは端から端まで、向きは右が0°・下が90°。選んだ壁の両端の点をドラッグしても直せます。</p>
       </div>
       <!-- ★#5（2026-10-07）: 「取り外す」→「削除」。中身は図の下の「削除」と同じ（選んだ壁を消す・⌘Zで戻る）ので、呼び名を1つにそろえた。 -->
-      <button type="button" class="btn-quiet" id="stage-venue-editor-wall-remove" disabled>削除</button>
+      <button type="button" class="btn-quiet" id="stage-venue-editor-wall-remove" aria-describedby="stage-venue-editor-audience-selection" hidden disabled>選んだ壁を削除</button>
       <!-- ★2026-10-06 本人決定 D5（第2段）: 会場トレースの「壁の内側から舞台を作る」を移植。部屋も含む・紙の四角は使わない。 -->
       <div class="stage-venue-editor-setting stage-venue-editor-wall-enclose" id="stage-venue-editor-wall-enclose">
         <button type="button" class="btn-quiet" id="stage-venue-editor-wall-enclose-run" disabled>壁の内側を舞台の形にする</button>
@@ -3441,7 +3450,7 @@
         </div>
         <div class="stage-io-row stage-venue-library-actions">
           <button type="button" class="btn-quiet" id="stage-venue-library-export">劇場を書き出す</button>
-          <button type="button" class="stage-venue-apply-button" id="stage-venue-editor-apply">この劇場を適用</button>
+          <button type="button" class="stage-venue-apply-button" id="stage-venue-editor-apply" data-tip-description="編集中の劇場設定を現在のショーへ適用します。">この劇場を適用</button>
         </div>
       </footer>
       </div>
@@ -3788,9 +3797,9 @@
 <script src="/study-assets/stage-performer-motion.js?v=20261009-v0335"></script>
 <script src="/study-assets/stage-idle-motion.js?v=20261005-v032"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
-<script src="/study-assets/gamma-ui.js?v=20261008-v0328"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261010-v0338"></script>
+<script src="/study-assets/gamma-ui.js?v=20261010-v0339"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261010-v0339"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261009-v0333"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="/study-assets/stage-sketch.js?v=20261010-v0338"></script>
+<script src="/study-assets/stage-sketch.js?v=20261010-v0339"></script>
 </body></html>

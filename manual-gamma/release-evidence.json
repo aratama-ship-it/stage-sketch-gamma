@@ -1,5 +1,5 @@
 {
-  "appVersion": "v0.3.38",
+  "appVersion": "v0.3.39",
   "contentUpdated": "2026-10-10",
   "requiredScreens": [
     {
@@ -130,10 +130,10 @@
       "language": "ja",
       "scene": "A1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.38",
-      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
-      "capturedAt": "2026-10-10T03:18:53.193Z",
-      "sha256": "28e78dee417a03933af2e4392e967e3e7f0175f5d6db95e1fb1d087f8e7cbc4d",
+      "capturedVersion": "v0.3.39",
+      "capturedCommit": "6e754403ab50d575e1a18f47b87b11bf39c66c01",
+      "capturedAt": "2026-10-10T06:34:59.316Z",
+      "sha256": "febdf76d7c6f69b04dbaf5fe2c84e9ef0f973b9b6390de90e8d45de2f6c6b06e",
       "viewport": [
         1440,
         900
@@ -141,7 +141,7 @@
       "engine": "chromium",
       "actualUiLanguage": "ja",
       "paperLanguage": null,
-      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+      "sourceSha256": "877816a72a2501a62bb597c59f87246e6d07c481065756a80cf04e7fc0a4c4ad"
     },
     {
       "id": "venue",
@@ -149,10 +149,10 @@
       "language": "ja",
       "scene": "C1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.38",
-      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
-      "capturedAt": "2026-10-10T03:18:53.876Z",
-      "sha256": "95bd83f0e3c0d4797bfe37391c009f4cc9e7fd4bb267c91ca2f4783846a52813",
+      "capturedVersion": "v0.3.39",
+      "capturedCommit": "6e754403ab50d575e1a18f47b87b11bf39c66c01",
+      "capturedAt": "2026-10-10T06:35:00.099Z",
+      "sha256": "fde546a5c441d30333a06600b94ed6d0b31283550185b7c99b8a9bbca42f8011",
       "viewport": [
         1440,
         900
@@ -160,7 +160,7 @@
       "engine": "chromium",
       "actualUiLanguage": "ja",
       "paperLanguage": null,
-      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+      "sourceSha256": "877816a72a2501a62bb597c59f87246e6d07c481065756a80cf04e7fc0a4c4ad"
     },
     {
       "id": "lighting",
@@ -168,10 +168,10 @@
       "language": "ja",
       "scene": "F1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.38",
-      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
-      "capturedAt": "2026-10-10T03:18:54.809Z",
-      "sha256": "6a5e07ea36583e5435710f3bb18a0671a05b37e9c42083c641e19fe6964a1498",
+      "capturedVersion": "v0.3.39",
+      "capturedCommit": "6e754403ab50d575e1a18f47b87b11bf39c66c01",
+      "capturedAt": "2026-10-10T06:35:01.084Z",
+      "sha256": "019d0283546d6516c7a19e084beb214376d9f44a606c0e93b97a7ad3e849a0fb",
       "viewport": [
         1440,
         900
@@ -179,7 +179,7 @@
       "engine": "chromium",
       "actualUiLanguage": "ja",
       "paperLanguage": null,
-      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+      "sourceSha256": "877816a72a2501a62bb597c59f87246e6d07c481065756a80cf04e7fc0a4c4ad"
     },
     {
       "id": "qsheet",
@@ -187,10 +187,10 @@
       "language": "ja",
       "scene": "H1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.38",
-      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
-      "capturedAt": "2026-10-10T03:18:55.274Z",
-      "sha256": "10bd6095c2c8a3d436298896eb586fddc342306a04db075c7d09e2726ad0c52f",
+      "capturedVersion": "v0.3.39",
+      "capturedCommit": "6e754403ab50d575e1a18f47b87b11bf39c66c01",
+      "capturedAt": "2026-10-10T06:35:01.562Z",
+      "sha256": "65230173b269ef10267e31a6518332b959b57c3951320084649019bb00584b00",
       "viewport": [
         1440,
         900
@@ -198,7 +198,7 @@
       "engine": "chromium",
       "actualUiLanguage": "ja",
       "paperLanguage": null,
-      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+      "sourceSha256": "877816a72a2501a62bb597c59f87246e6d07c481065756a80cf04e7fc0a4c4ad"
     },
     {
       "id": "runshow",
@@ -206,10 +206,10 @@
       "language": "ja",
       "scene": "H1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.38",
-      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
-      "capturedAt": "2026-10-10T03:18:57.961Z",
-      "sha256": "cbf8fb9f17c4aee8bb353f016332ccf44b6ac6f039977f67881db139f0aa5e97",
+      "capturedVersion": "v0.3.39",
+      "capturedCommit": "6e754403ab50d575e1a18f47b87b11bf39c66c01",
+      "capturedAt": "2026-10-10T06:35:04.533Z",
+      "sha256": "2f25da2b9b82c44532a935b39743073f16e43f82cdec6e4b1a3ac4d644ecf539",
       "viewport": [
         1440,
         900
@@ -217,7 +217,7 @@
       "engine": "chromium",
       "actualUiLanguage": "ja",
       "paperLanguage": "ja",
-      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+      "sourceSha256": "877816a72a2501a62bb597c59f87246e6d07c481065756a80cf04e7fc0a4c4ad"
     },
     {
       "id": "preferences",
@@ -225,10 +225,10 @@
       "language": "ja",
       "scene": "A1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.38",
-      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
-      "capturedAt": "2026-10-10T03:18:58.643Z",
-      "sha256": "7aaea6033d27bff4612d72a704de43503f9ac5984f9ec0983adbea2863725516",
+      "capturedVersion": "v0.3.39",
+      "capturedCommit": "6e754403ab50d575e1a18f47b87b11bf39c66c01",
+      "capturedAt": "2026-10-10T06:35:05.231Z",
+      "sha256": "2be65e3a3fa9e3d0dcf20e0993616c528612fe3002f2f0035a52fe4acee08ac3",
       "viewport": [
         1440,
         900
@@ -236,7 +236,7 @@
       "engine": "chromium",
       "actualUiLanguage": "ja",
       "paperLanguage": null,
-      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+      "sourceSha256": "877816a72a2501a62bb597c59f87246e6d07c481065756a80cf04e7fc0a4c4ad"
     },
     {
       "id": "stage",
@@ -244,10 +244,10 @@
       "language": "en",
       "scene": "A1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.38",
-      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
-      "capturedAt": "2026-10-10T03:19:00.398Z",
-      "sha256": "a3e723b88bf54b2475d479dde8061b57da1bd5b514da8e92b5368164f1100e08",
+      "capturedVersion": "v0.3.39",
+      "capturedCommit": "6e754403ab50d575e1a18f47b87b11bf39c66c01",
+      "capturedAt": "2026-10-10T06:35:07.142Z",
+      "sha256": "6efc4d243223bf6a612c70afa4664c2f616832a289ddea30753cf447ba3441b3",
       "viewport": [
         1440,
         900
@@ -255,7 +255,7 @@
       "engine": "chromium",
       "actualUiLanguage": "en",
       "paperLanguage": null,
-      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+      "sourceSha256": "877816a72a2501a62bb597c59f87246e6d07c481065756a80cf04e7fc0a4c4ad"
     },
     {
       "id": "venue",
@@ -263,10 +263,10 @@
       "language": "en",
       "scene": "C1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.38",
-      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
-      "capturedAt": "2026-10-10T03:19:01.116Z",
-      "sha256": "01aca4143030d16057df63882740d604df17a791f5c50bb36d78ee1056bba835",
+      "capturedVersion": "v0.3.39",
+      "capturedCommit": "6e754403ab50d575e1a18f47b87b11bf39c66c01",
+      "capturedAt": "2026-10-10T06:35:07.907Z",
+      "sha256": "8f685141b3331c1095feddf80c2e5e87faf6622f999b6b5160854e49dd25b743",
       "viewport": [
         1440,
         900
@@ -274,7 +274,7 @@
       "engine": "chromium",
       "actualUiLanguage": "en",
       "paperLanguage": null,
-      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+      "sourceSha256": "877816a72a2501a62bb597c59f87246e6d07c481065756a80cf04e7fc0a4c4ad"
     },
     {
       "id": "lighting",
@@ -282,10 +282,10 @@
       "language": "en",
       "scene": "F1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.38",
-      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
-      "capturedAt": "2026-10-10T03:19:02.068Z",
-      "sha256": "7acf3408b27d292043a09a60a19dd2f9ce32205cc53165738200ed77e70171d2",
+      "capturedVersion": "v0.3.39",
+      "capturedCommit": "6e754403ab50d575e1a18f47b87b11bf39c66c01",
+      "capturedAt": "2026-10-10T06:35:08.910Z",
+      "sha256": "af103b5805f68d08223a6c66d2c565df520c92c6b3411712aff5001b09e1877b",
       "viewport": [
         1440,
         900
@@ -293,7 +293,7 @@
       "engine": "chromium",
       "actualUiLanguage": "en",
       "paperLanguage": null,
-      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+      "sourceSha256": "877816a72a2501a62bb597c59f87246e6d07c481065756a80cf04e7fc0a4c4ad"
     },
     {
       "id": "qsheet",
@@ -301,10 +301,10 @@
       "language": "en",
       "scene": "H1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.38",
-      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
-      "capturedAt": "2026-10-10T03:19:02.529Z",
-      "sha256": "69550bcebb17d12ccf5b059b4bd492b9684c5496d4dc304bca4e17d0792677ae",
+      "capturedVersion": "v0.3.39",
+      "capturedCommit": "6e754403ab50d575e1a18f47b87b11bf39c66c01",
+      "capturedAt": "2026-10-10T06:35:09.422Z",
+      "sha256": "f7373c1005be9ab315540f0c8596e87e7e8c54661654b7847d672e76ff5dbf9b",
       "viewport": [
         1440,
         900
@@ -312,7 +312,7 @@
       "engine": "chromium",
       "actualUiLanguage": "en",
       "paperLanguage": null,
-      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+      "sourceSha256": "877816a72a2501a62bb597c59f87246e6d07c481065756a80cf04e7fc0a4c4ad"
     },
     {
       "id": "runshow",
@@ -320,10 +320,10 @@
       "language": "en",
       "scene": "H1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.38",
-      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
-      "capturedAt": "2026-10-10T03:19:05.232Z",
-      "sha256": "ccc749c93b426abc9169da618004f107de88cd8ba3a9cd5252a4bd5558ac7f2b",
+      "capturedVersion": "v0.3.39",
+      "capturedCommit": "6e754403ab50d575e1a18f47b87b11bf39c66c01",
+      "capturedAt": "2026-10-10T06:35:12.375Z",
+      "sha256": "f4a63926cecf430fa5bdca710fc8ccba72eb44ffdea1d4600b339ed662d3227b",
       "viewport": [
         1440,
         900
@@ -331,7 +331,7 @@
       "engine": "chromium",
       "actualUiLanguage": "en",
       "paperLanguage": "en",
-      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+      "sourceSha256": "877816a72a2501a62bb597c59f87246e6d07c481065756a80cf04e7fc0a4c4ad"
     },
     {
       "id": "preferences",
@@ -339,10 +339,10 @@
       "language": "en",
       "scene": "A1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.38",
-      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
-      "capturedAt": "2026-10-10T03:19:05.931Z",
-      "sha256": "eb9f1d8c507f39f0324326ddc930b99fa33c688da8d92dfe8b2e0a1cfd152be3",
+      "capturedVersion": "v0.3.39",
+      "capturedCommit": "6e754403ab50d575e1a18f47b87b11bf39c66c01",
+      "capturedAt": "2026-10-10T06:35:13.092Z",
+      "sha256": "de22c96af2515a867d0fb167b056d7f0c742d02e6b267004dc252e1bc696d0eb",
       "viewport": [
         1440,
         900
@@ -350,18 +350,14 @@
       "engine": "chromium",
       "actualUiLanguage": "en",
       "paperLanguage": null,
-      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+      "sourceSha256": "877816a72a2501a62bb597c59f87246e6d07c481065756a80cf04e7fc0a4c4ad"
     }
   ],
   "legacyImagesNote": "Unlisted existing images retain their original capture versions (mostly v0.2.16; poses v0.2.29; props v0.2.26).",
   "status": "verified",
   "visualReview": {
-    "reviewedAt": "2026-10-10T03:20:05.038595+00:00",
-    "reviewer": "Codex",
-    "detail": "12 current-version screens inspected visually. Initial review identified wrapped paper clock/duration cells; after the fix the Japanese and English paper captures were recaptured and reinspected. Other ten screen layouts were unchanged by that paper-only correction.",
-    "limitations": [
-      "Dense fixture pose-label overlap is an existing issue.",
-      "Unlisted legacy images are not claimed freshly captured."
-    ]
+    "reviewedAt": "2026-10-10",
+    "method": "12-image contact sheet plus full-size lighting and running-order images",
+    "limits": "Chromium captures of Japanese and English; browser behavior and Safari/Mac are separate checks"
   }
 }

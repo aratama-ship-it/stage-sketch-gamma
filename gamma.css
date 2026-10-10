@@ -1327,3 +1327,63 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) { --stage-pref-help-size: 2
 .stage-piece-context-menu button { min-height: 30px; padding: 6px 10px; text-align: left; color: var(--milk); background: transparent; border: 0; }
 .stage-piece-context-menu button:hover, .stage-piece-context-menu button:focus-visible { background: var(--gamma-selected-bg); }
 .stage-piece-context-menu button:disabled { opacity: .45; }
+
+/* D-31: 説明の表示設定は既定OFFのまま、文字のある入口からも操作できる。 */
+.stage-scene-bar .stage-scene-desc-pin {
+  width: auto;
+  min-height: 32px;
+  gap: 4px;
+  padding-inline: 6px;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--milk);
+}
+.stage-scene-desc-pin > svg { flex: 0 0 20px; }
+
+/* D-32: 既存の詳細ボタンは、シーン名だけでなく編集入口として読めるようにする。 */
+.stage-scene-now-open { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; }
+.stage-scene-now-open .stage-scene-now { min-width: 0; }
+.stage-scene-edit-label { flex: none; color: var(--milk); border-bottom: 1px solid currentColor; font: 11px/1.4 var(--sans); }
+body.stage-session-guest .stage-scene-edit-label,
+html[data-study-renderer] .stage-scene-edit-label { display: none; }
+
+/* D-33: 選択中の行はポインタなしでも操作入口が見える。 */
+.stage-scene-row.is-cursor .stage-scene-more > summary {
+  min-width: 32px;
+  min-height: 32px;
+  border-color: var(--line-dark);
+  color: var(--milk);
+}
+.stage-scene-more > summary:focus-visible,
+.stage-scene-more-menu button:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: -2px;
+}
+
+/* D-34: 無効理由はTabで読める。操作可否はaria-disabledとclick guardで一致させる。 */
+#stage-timeline-split[aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
+#stage-timeline-split:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+/* D-50: 浮き欄の見出しと重ならない明示的な閉じるボタン。 */
+.stage-inspector-close { display: none; }
+.stage-panel.gamma-selection-floating > .stage-inspector-close {
+  display: inline-flex; position: absolute; top: 4px; right: 6px;
+  align-items: center; justify-content: center; width: 32px; height: 32px;
+  padding: 6px; border: 1px solid var(--line-dark); background: var(--desk-2); color: var(--milk);
+}
+.stage-panel.gamma-selection-floating > .stage-panel-head { padding-right: 48px; }
+.stage-inspector-close > svg { width: 18px; height: 18px; }
+.stage-inspector-close:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+/* Bodyに置き、タイムライン操作帯のoverflowに説明を切らせない。 */
+.stage-timeline-split-reason {
+  position: fixed; z-index: 1000; pointer-events: none;
+  width: min(250px, 70vw); padding: 8px 10px; white-space: normal;
+  background: var(--desk-2); color: var(--milk); border: 1px solid var(--line-dark); font: 12px/1.5 var(--sans);
+}
+/* D-31/D-32: 翻訳で左右の操作が長くても、中央の題と重ねない。 */
+@media (min-width: 721px) {
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-bar .stage-scene-step {
+    grid-template-columns: max-content minmax(0, 1fr) max-content;
+  }
+}

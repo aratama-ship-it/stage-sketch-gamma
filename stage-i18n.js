@@ -31,6 +31,36 @@
   "use strict";
 
   const TEXT = {
+    "情報バー": "Information bar",
+    "情報バーを表示": "Show information bar",
+    "情報バーを非表示": "Hide information bar",
+    "現在の情報": "Current information",
+    "機能にカーソルを合わせると、ここに説明を表示します。": "Hover over a control to see its explanation here.",
+    "全タブで保存状況と操作の説明を表示します。": "Show save status and control help in every tab.",
+
+    "劇場全体を読み込み直す": "Reload entire theatre",
+    "見る位置を編集前に戻す": "Restore original viewpoints",
+    "客席を戻す・削除する": "Restore or delete seating",
+    "この手順を既定に戻す": "Reset this step to defaults",
+    "客席をプリセットに戻す": "Restore preset seating",
+    "客席をすべて削除する": "Delete all seating",
+    "客席のやり直し方法": "Seating reset options",
+
+    "選んだ壁を削除": "Delete selected wall",
+
+    "自動に戻す": "Restore automatic",
+    "現在は自動です。": "Currently automatic. ",
+    "袖ごとに設定が異なります。": "Wings have different settings. ",
+
+    "四角を追加": "Add rectangle",
+    "丸を追加": "Add circle",
+    "線で囲って追加": "Draw polygon",
+    "直線の壁を追加": "Draw straight wall",
+    "選択を解除して閉じる": "Clear selection and close",
+    "セクション表示に切り替えると、シーンを分割できます。": "Switch to section view to split a scene.",
+    "この表示ではシーンを分割できません。": "Scenes cannot be split in this view.",
+    "再生位置をシーンの中央付近に置くと分割できます。": "Move the playhead away from the scene edges to split it.",
+
     "公演名・劇場は各200文字、文書版は80文字まで。空欄は「未設定」と表示します。文書版は手動で更新。「元に戻す」で編集を取り消せます。保存操作で項目・画像と一緒に残ります。": "Show title and theatre: up to 200 characters each. Document revision: up to 80. Empty fields display “Not set”. Update the revision manually. Use “Undo” to undo edits. Saving retains these fields with the items and images.",
     "操作名、舞台上・舞台裏、時間・日付の表示を統一し、空の一覧に追加の入口を設けました。": "Unified control names, On stage and Offstage labels, time and date formats, and added action links to empty lists.",
     "照明の適用ボタンと寸法表示、劇場設定の説明、読み込み時と操作後の通知を改善しました。": "Improved the lighting Apply button, dimension displays, theatre settings help, and import and action notifications.",
@@ -3959,4 +3989,60 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "右寄せ": "Align right",
   "編集": "Edit",
   "印刷 / PDF": "Print / PDF"
+});
+
+// Concrete descriptions for existing information-bar controls.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "演者や大道具を配置し、シーンの動きを編集します。": "Place performers and set pieces, and edit scene movement.",
+  "舞台の形・客席・舞台袖・見る位置を設定します。": "Set the stage shape, seating, wings and viewpoints.",
+  "灯体とバトンを配置し、照明の仕込みを編集します。": "Place fixtures and battens to edit the lighting rig.",
+  "灯体の色・強さ・動きを調整し、LXキューを編集します。": "Adjust fixture colour, intensity and movement, and edit LX cues.",
+  "シーンごとの台本を編集し、話者やセリフキューを割り当てます。": "Edit the script by scene and assign speakers and dialogue cues.",
+  "自由カメラや演者の視点から舞台を立体で確認します。": "Inspect the stage in 3D from a free camera or performer viewpoint.",
+  "全体・演者・部署ごとのキューを表で確認し、出力します。": "Review and export overall, performer and department cue sheets.",
+  "シーンやキューの進行を紙面で編集し、印刷します。": "Edit and print the running order of scenes and cues.",
+  "言語・見た目・操作に関する設定を開きます。": "Open language, appearance and interaction settings.",
+  "舞台画面に出す操作パネルを選びます。": "Choose which control panels appear in the stage workspace.",
+  "シーンを一覧で確認し、開くシーンを選びます。": "Review the scene list and choose a scene to open.",
+  "重なっている舞台の形を一つの面へ合成します。": "Merge overlapping stage shapes into one surface.",
+  "編集中の劇場設定を現在のショーへ適用します。": "Apply the edited theatre settings to the current show.",
+  "劇場に合う仕込みや用途別の型を選びます。": "Choose a rig fitted to the theatre or a preset by purpose.",
+  "編集中の明かりの動きを再生・停止します。": "Play or pause the movement of the lighting being edited.",
+  "選んだ灯体の明かりの設定をコピーします。": "Copy the lighting settings of the selected fixtures.",
+  "コピーした明かりの設定を選んだ灯体へ貼り付けます。": "Paste the copied lighting settings onto the selected fixtures.",
+  "選んだ機材を仕込みから削除します。": "Remove the selected equipment from the rig.",
+  "共通セットの明かりを選ぶ、かんたんな操作へ切り替えます。": "Switch to simple controls for choosing looks for the common rig.",
+  "灯体ごとの設定とLXキューを編集する画面へ切り替えます。": "Switch to per-fixture settings and LX cue editing.",
+  "現在の明かりを新しい番号のLXキューとして追加します。": "Add the current lighting as an LX cue with a new number.",
+  "選択項目の次に、舞台シーンを持たない進行項目を追加します。": "Add a running-order item without a stage scene after the selection.",
+  "選択した進行項目を複製して次に置きます。": "Duplicate the selected running-order item and place it next.",
+  "紙面の入力を確定し、現在のショーを保存します。": "Finish editing the paper fields and save the current show.",
+  "ブラウザの印刷画面で進行表を印刷・PDF保存します。": "Print the running order or save it as PDF using the browser print dialog.",
+  "進行表を含むショー全体をファイルへ書き出します。": "Export the entire show, including its running order, to a file.",
+  "配布する版の内容・変更点・届け先の返答を確認します。": "Review a distribution version, its changes and recipient replies.",
+  "進行表に表示する列を選びます。": "Choose the columns shown in the running order.",
+  "画面上の紙を白地・黒地で切り替えます。": "Switch the on-screen paper between white and black.",
+  "紙面と印刷の文字サイズを標準の10ptへ戻します。": "Restore paper and print text to the standard 10 pt size.",
+  "表の幅・表示倍率・項目一覧の幅を初期値へ戻します。": "Reset table width, display scale and item-list width.",
+  "項目を選ぶための一覧を開閉します。": "Show or hide the list used to select an item.",
+  "進行表の入力・選択・移動の操作方法を表示します。": "Show how to enter, select and move running-order items.",
+  "台本をA4縦の印刷用画面で開きます。": "Open the script in an A4 portrait print view.",
+  "現在の台本を、シーンメモの台本から作り直します。確認後に置き換えます。": "Rebuild the current script from scene notes, replacing it after confirmation.",
+  "台本に新しい行を追加します。行を選んでいるときは、その下に入ります。": "Add a new script line. When a line is selected, insert it below that line.",
+  "このシーンの台本の末尾に新しい行を追加します。": "Append a new line to this scene’s script.",
+  "この対象のキューシートを画面で確認します。": "View the cue sheet for this subject on screen.",
+  "この対象のキューシートを印刷用の画面で開きます。": "Open a print view of the cue sheet for this subject.",
+  "この対象のキューシートをCSVファイルへ書き出します。": "Export this subject’s cue sheet as a CSV file.",
+  "この演者の全項目と出演シーンの舞台図をまとめて開きます。": "Open all columns for this performer together with stage diagrams of their scenes.",
+  "3Dで移動・見回すためのキー操作を表示します。": "Show the keyboard controls for moving and looking around in 3D.",
+  "3Dの視界を閉じて、元の作業画面へ戻ります。": "Close the 3D view and return to the previous workspace."
+});
+
+// v0.3.39 release notes.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "全タブで現在の情報と操作の説明を見られる情報バーを追加しました。ヘッダーから表示を切り替えられます。": "An information bar now shows current information and control descriptions across all tabs. Toggle it from the header.",
+  "灯体名は通常は短い番号で表示し、選択時やカーソルを合わせたときに名前を出します。機材配置と照明の欄も使いやすくしました。": "Fixtures normally show short numbers, with names on selection or hover. Equipment placement and lighting panels are easier to use.",
+  "シーン操作の入口、劇場設定の入力・削除、選択中の操作欄と文字表示を改善しました。": "Improved scene controls, theatre setting inputs and deletion, selected-item controls and text display.",
+  "シーン分割などを元に戻したとき、ほかのシーンの支持台との関連が失われる不具合を修正しました。": "Undoing operations such as scene splits now preserves support relationships in other scenes.",
+  "Mac版に隊形の試作ページとAI用の手引きを同梱しました。保存形式は変わりません。": "The Mac app now includes the formation prototype and AI guide. The save format is unchanged."
 });

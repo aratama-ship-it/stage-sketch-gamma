@@ -3176,7 +3176,47 @@
       && seekSeconds > activeSegment.start + (activeSceneEnd - activeSegment.start) * 0.05
       && seekSeconds < activeSceneEnd - (activeSceneEnd - activeSegment.start) * 0.05);
     const disabled = timeScope === "show" || typeof bridge.splitTimelineScene !== "function" || !canSplit;
-    if (els.split.disabled !== disabled) els.split.disabled = disabled;
+    // aria-disabled keeps the explanation reachable by keyboard as well as pointer.
+    els.split.disabled = false;
+    els.split.setAttribute("aria-disabled", String(disabled));
+    const reason = timeScope === "show" ? tx("セクション表示に切り替えると、シーンを分割できます。")
+      : typeof bridge.splitTimelineScene !== "function" ? tx("この表示ではシーンを分割できません。")
+        : !canSplit ? tx("再生位置をシーンの中央付近に置くと分割できます。") : "";
+    els.split.dataset.unavailableReason = reason;
+    els.split.removeAttribute("title");
+    let help = document.getElementById("stage-timeline-split-reason");
+    if (!help) {
+      help = document.createElement("span");
+      help.id = "stage-timeline-split-reason";
+      help.className = "stage-timeline-split-reason";
+      help.setAttribute("role", "tooltip");
+      help.hidden = true;
+      document.body.append(help);
+      els.split.setAttribute("aria-describedby", help.id);
+      let positionFrame = 0;
+      const positionReason = () => {
+        positionFrame = 0;
+        if (panel.hidden || ui.collapsed || !els.split.getClientRects().length) help.hidden = true;
+        if (help.hidden) return;
+        const box = els.split.getBoundingClientRect(), size = help.getBoundingClientRect();
+        help.style.left = `${Math.max(8, Math.min(box.right - size.width, innerWidth - size.width - 8))}px`;
+        help.style.top = `${Math.max(8, box.top - size.height - 8)}px`;
+        positionFrame = requestAnimationFrame(positionReason);
+      };
+      const showReason = () => {
+        help.hidden = !els.split.dataset.unavailableReason;
+        if (!help.hidden && !positionFrame) positionReason();
+      };
+      els.split.addEventListener("focus", showReason);
+      els.split.addEventListener("pointerenter", showReason);
+      els.split.addEventListener("blur", () => { help.hidden = true; });
+      els.split.addEventListener("pointerleave", () => { if (document.activeElement !== els.split) help.hidden = true; });
+      els.split.addEventListener("keydown", event => { if (event.key === "Escape") help.hidden = true; });
+      window.addEventListener("resize", () => { help.hidden = true; });
+      window.addEventListener("scroll", () => { help.hidden = true; }, true);
+    }
+    help.textContent = reason;
+    if (!reason) help.hidden = true;
   }
 
   function updatePlayhead() {
@@ -3711,6 +3751,7 @@
   }
 
   function splitSceneAtPlayhead() {
+    if (els.split.getAttribute("aria-disabled") === "true") return false;
     if (!timeline || !timeline.sectionId || typeof bridge.splitTimelineScene !== "function") return false;
     const segment = segmentAt(seekSeconds);
     if (!segment || !segment.sceneId) return false;

@@ -36,7 +36,7 @@ ${steps([
 <li>Formations (arrange 2–20 people using 190 patterns), scene alternatives (A–D), scrims and projection onto surfaces, a smoother body and walking transitions</li>
 </ul>
 <p>Your work is saved <strong>only inside the browser of the device you are using</strong> (${ref("saving", "Part 1, 1-5")}). Shows drawn in the beta or at another Gamma URL do not appear automatically. Export their JSON from the original page, then use ${ui("Import show")} at the new URL. Shows that contain Gamma's new lighting cannot be read by the beta.</p>
-${note("Which version this covers", "The text covers v0.3.37. Updated screens are listed in the release evidence. Older pictures and videos remain where their operation has not changed: most are from v0.2.16, poses from v0.2.29, and props from v0.2.26. The text version is not the capture version of every picture. We review text and the affected screens on every release.")}`
+${note("Which version this covers", "The text covers v0.3.39. Updated screens are listed in the release evidence. Older pictures and videos remain where their operation has not changed: most are from v0.2.16, poses from v0.2.29, and props from v0.2.26. The text version is not the capture version of every picture. We review text and the affected screens on every release.")}`
       },
       {
         id: "conventions", title: "Symbols and terms", status: "verified",
@@ -69,7 +69,7 @@ ${table(["Written as", "Meaning"], [
         html: `
 <ul>
 <li><strong>Sharing is available on Gamma's dedicated sharing host.</strong> GitHub Pages cannot run the sharing server. See ${ref("share", "Part 11, 11-4")} for the link and migration steps.</li>
-<li>Beta-only topics (sign-in, invitation links, the beta booklet's chapters) are not included. The app's ${ui("Quick Guide")} still describes the beta.</li>
+<li>Beta-only topics (sign-in, invitation links, the beta booklet's chapters) are not included. In Settings → About this app, ${ui("Quick Guide")} opens this Gamma booklet at ${ref("first-90-seconds", "Your first 90 seconds")}.</li>
 <li>Stage Sketch is a 2D study book for composition, colour and distance. <strong>It is not a drawing that decides stage machinery, rigging, safety distances or construction dimensions</strong> (the app says the same).</li>
 <li>The screenshots were taken at 1440×900 in Chromium with the app set to English. Most are from v0.2.16; the pose pictures are from v0.2.29, and the set-piece and prop pictures from v0.2.26. Safari may differ in small details. iPad and iPhone screens are in Part 13.</li>
 </ul>`

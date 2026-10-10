@@ -1,8 +1,8 @@
 {
-  "version": "0.3.38",
+  "version": "0.3.39",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.38/stage-sketch-gamma-mac-0.3.38.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.39/stage-sketch-gamma-mac-0.3.39.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "初回の見本、紗幕・せりの追加、機能検索と冊子、照明・劇場設定、操作名・時間・日付の表示を改善しました（v0.3.38）。",
+  "notes": "情報バー、灯体の番号表示、シーンと劇場の操作を改善し、Undo時の支持台との関連を保持します（v0.3.39）。",
   "updated": "2026-10-10"
 }

@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.38";
+  const GAMMA_APP_VERSION = "v0.3.39";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -6179,7 +6179,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
        * 始点は駒そのものなので持たない（駒を動かせば矢印もついてくる）。
        * u,v が行き先、bu,bv が曲がり具合の control 点。真ん中に置けば直線になる。 */
       route: normalizeRoute(piece && piece.route),
-      // 床からの高さ(m)と、支えている駒。どちらも置き場所から毎回引き直す派生値
+      // 床からの高さ(m)と、支えている駒。描画時に位置から引き直す。シーンの復元時は下で有効な参照を戻す
       base: clamp(finite(piece.base, 0), 0, 40),
       supportId: null,
       /* 明かりの当て方。どこから出て、どこへ落ちるか。
@@ -6574,6 +6574,34 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     };
   }
 
+  function normalizeScenePieces(raw) {
+    const source = Array.isArray(raw) ? raw : [];
+    const pieces = source.map(normalizePiece);
+    const byId = new Map(pieces.map((piece) => [piece.id, piece]));
+    // Undo/読み込みでは未表示のシーンも通る。保存済みの支持関係は同じシーン内で保ち、
+    // 次の描画で位置から引き直す。単体の駒を作る normalizePiece には参照を持ち越さない。
+    pieces.forEach((piece, index) => {
+      const supportId = source[index].supportId;
+      if (typeof supportId === "string" && supportId !== piece.id && byId.has(supportId)) {
+        piece.supportId = supportId;
+      }
+    });
+    // 不正な循環（そこへ繋がる鎖を含む）は保持しない。順番によらず一度だけ判定する。
+    const valid = new Map();
+    pieces.forEach((piece) => {
+      const path = new Set();
+      let current = piece;
+      while (current && !valid.has(current.id) && !path.has(current.id)) {
+        path.add(current.id);
+        current = byId.get(current.supportId);
+      }
+      const safe = !current || valid.get(current.id) === true;
+      path.forEach((id) => valid.set(id, safe));
+    });
+    pieces.forEach((piece) => { if (!valid.get(piece.id)) piece.supportId = null; });
+    return pieces;
+  }
+
   function normalizeScene(raw, index) {
     const fallbackBg = "#40362d";
     const kind = raw.kind === "section" ? "section" : "scene";
@@ -6597,7 +6625,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       // 動く効果（2026-10-04）。知らない効果の名前も残し、知っている物だけ 0〜100 に整える
       ...(raw.effects && typeof raw.effects === "object" && !Array.isArray(raw.effects) ? { effects: Object.fromEntries(Object.entries(projectIoClone(raw.effects))
         .filter(([key]) => /^[a-z0-9_]{1,32}$/.test(key)).map(([key, value]) => [key, SCENE_EFFECT_KEYS.includes(key) ? clamp(Math.round(finite(value, 0)), 0, 100) : value])) } : {}),
-      pieces: Array.isArray(raw.pieces) ? raw.pieces.map(normalizePiece) : [],
+      pieces: normalizeScenePieces(raw.pieces),
       notes: Array.isArray(raw.notes) ? raw.notes.map(normalizeNote).filter(Boolean) : [],
       strokes: Array.isArray(raw.strokes)
         ? raw.strokes.map(normalizeStroke).filter((stroke) => stroke.points.length)
@@ -21333,6 +21361,17 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         togglePanel(id);
       });
       el.prepend(head);
+      if (id === "inspector") {
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className = "stage-inspector-close";
+        close.innerHTML = squareGlyphSvg("close");
+        close.setAttribute("aria-label", tx("選択を解除して閉じる"));
+        close.title = tx("選択を解除して閉じる");
+        close.setAttribute("aria-keyshortcuts", "Escape");
+        close.addEventListener("click", closeFloatingInspector);
+        el.append(close);
+      }
 
       /* 説明文は畳んでおき、「?」を押したときだけ出す。
        * 道具の数が多く、説明が常に見えていると、道具そのものが下へ押し出される。
@@ -26998,8 +27037,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           focusSceneChip(scene.id);
         });
         head.append(grip, button);
-        // セクションは移動・開閉とダブルクリック編集だけに絞り、補助メニューを出さない。
-        if (isCursor && !wrapPickStartId && scene.kind === "scene") {
+        // 選択行には補助操作の入口を残す。セクションもキーボードから名前を編集できる。
+        if (isCursor && !wrapPickStartId) {
           const more = document.createElement("details");
           more.className = "stage-scene-more";
           const summary = document.createElement("summary");
@@ -27024,8 +27063,18 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           outdent.disabled = !canShiftSceneDepth(scene, -1);
           const indent = menuButton("一段内側へ入れる", () => shiftSceneDepth(scene, 1));
           indent.disabled = !canShiftSceneDepth(scene, 1);
-          menuButton("名前を変える", () => openRename(scene));
+          menuButton(scene.kind === "section" ? "名前を変える" : "シーンの詳細", () => openRename(scene, summary));
           menuButton("ここから範囲をまとめて新しいセクションにする", () => beginWrapPick(scene.id));
+          if (scene.kind === "scene") {
+            menuButton("次のシーンをつくる", () => openSceneCreate(scene, summary));
+            const remove = menuButton("このシーンを削除", () => openSceneDelete(scene, summary));
+            remove.disabled = p.scenes.filter((item) => item.kind === "scene").length <= 1;
+          }
+          more.addEventListener("keydown", (event) => {
+            if (event.key !== "Escape" || !more.open) return;
+            event.preventDefault(); event.stopPropagation();
+            more.open = false; summary.focus();
+          });
           more.append(summary, menu);
           head.append(more);
         }
@@ -27582,6 +27631,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
    * 吸われて文字を打てない（実際それで動かなかった）。 */
   /* 名前を変える小窓。シーンにもセクションにも同じものを使う。 */
   let renameTarget = null;
+  let renameReturnFocus = null;
   // Search navigation suspends this editor only; never writes a draft into a show.
   const renameSearchDrafts = new WeakMap();
   const renameDraftFields = ["renameInput", "renameSubtitle", "renameSceneNote", "renameSectionNote"];
@@ -27704,8 +27754,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     return list.length > 8 ? `${list.length}${unit}: ${head} ほか` : `${list.length}${unit}: ${head}`;
   }
 
-  function openRename(scene) {
+  function openRename(scene, returnTo = document.activeElement) {
     if (!scene || !els.rename) return;
+    renameReturnFocus = returnTo;
     renameTarget = scene;
     els.renameTitle.textContent = tx(scene.kind === "section" ? "セクションの詳細" : "シーンの詳細");
     els.renameInput.value = scene.title;
@@ -27806,6 +27857,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   function closeRename() {
+    const returnTo = renameReturnFocus, sceneId = renameTarget?.id;
+    renameReturnFocus = null;
     if (renameTarget) renameSearchDrafts.get(state.project)?.delete(renameDraftKey(renameTarget));
     renameDraftConflictPanel?.remove(); renameDraftConflictPanel = null;
     renameDraftConflicts = {}; renameEditBaseline = null;
@@ -27813,6 +27866,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (!els.rename) return;
     els.rename.hidden = true;
     els.renameBackdrop.hidden = true;
+    requestAnimationFrame(() => {
+      if (returnTo?.isConnected && returnTo.getClientRects().length) returnTo.focus({ preventScroll: true });
+      else if (sceneId) focusSceneChip(sceneId);
+    });
   }
 
   function commitRename() {
@@ -37126,6 +37183,27 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     }
   }
 
+  // Close changes only the current selection, never the show or its panel preferences.
+  function closeFloatingInspector() {
+    const inspector = document.querySelector('[data-panel="inspector"].gamma-selection-floating');
+    if (!inspector || inspector.hidden) return;
+    const source = floatingInspectorAnchor.view === "plan" ? planCanvas : canvas;
+    selectedId = null;
+    selectedIds.clear();
+    updateInspector();
+    render();
+    source?.focus({ preventScroll: true });
+  }
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || event.defaultPrevented || event.isComposing || fullscreenModalOpen()) return;
+    // A drag or context menu owns Escape until its own cancellation is complete.
+    if (pointerAction || drag || document.querySelector(".stage-piece-context-menu")) return;
+    const inspector = document.querySelector('[data-panel="inspector"].gamma-selection-floating:not([hidden])');
+    if (!inspector || !(inspector.contains(event.target) || event.target === canvas || event.target === planCanvas || event.target === document.body)) return;
+    event.preventDefault();
+    closeFloatingInspector();
+  });
+
   function gammaFloatingPanelBottom() {
     const timeline = document.getElementById("stage-timeline-panel");
     if (!timeline || timeline.hidden || getComputedStyle(timeline).display === "none") return window.innerHeight;
@@ -37646,7 +37724,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
 
   function syncTransitionAnimationControls() {
     if (els.animScenes) els.animScenes.checked = state.animateScenes;
-    { const naming = document.getElementById("stage-cue-naming"); if (naming) naming.value = state.project && state.project.cueNaming === "scene" ? "scene" : "serial"; }
+    { const naming = document.getElementById("stage-cue-naming"); if (naming) { naming.value = state.project && state.project.cueNaming === "scene" ? "scene" : "serial"; window.GAMMA_UI?.refreshSelect?.(naming); } }
     if (els.timelineAnimScenes) els.timelineAnimScenes.setAttribute("aria-pressed", String(state.animateScenes));
     if (els.toolbarAnimScenes) els.toolbarAnimScenes.setAttribute("aria-pressed", String(state.animateScenes));
   }
@@ -39201,7 +39279,17 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   document.addEventListener("click", (event) => {
     if (iconTipTargetFromNode(event.target)) hideToolTip();
   });
-  window.GAMMA_ICON_TIPS = Object.freeze({ isTarget: isIconOnlyOperation });
+  // Read-only description access for the all-tab information bar; same wording as icon tips.
+  function describeOperation(operation) {
+    const tool = operation.dataset.stageTool || operation.dataset.toolTip;
+    const name = operation.getAttribute("aria-label") || operation.dataset.tipTitle || operation.title
+      || operation.labels?.[0]?.textContent.trim() || visibleIconTipText(operation);
+    const nativeTitle = operation.dataset.tipTitle || operation.title || "";
+    const hint = operation.dataset.unavailableReason || TOOL_HINTS[tool] || operation.dataset.tipDescription
+      || (nativeTitle !== name ? nativeTitle : "");
+    return { name: tx(name), key: operation.dataset.toolKey || operation.dataset.tipKey || operation.getAttribute("aria-keyshortcuts") || "", description: tm("tool", tool, tx(hint)) };
+  }
+  window.GAMMA_ICON_TIPS = Object.freeze({ isTarget: isIconOnlyOperation, describe: describeOperation });
   window.addEventListener("scroll", () => { if (toolTipFor) hideToolTip(); }, { passive: true });
   window.addEventListener("resize", () => { if (toolTipFor) hideToolTip(); });
 
@@ -39485,6 +39573,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     } else {
       els.viewSelect.value = state.showPlan ? "plan" : "front";
     }
+    window.GAMMA_UI?.refreshSelect?.(els.viewSelect);
   }
 
   if (els.showNames) {
@@ -42016,7 +42105,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   function isTyping(el) {
     if (!el) return false;
     const tag = el.tagName;
-    return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
+    return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable
+      || Boolean(el.closest?.('[role="combobox"],[role="listbox"],[role="option"]'));
   }
 
   /* 保存に近い操作として⌘S／Ctrl+Sで名前確認を開く。
@@ -42850,16 +42940,19 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         view.type = "button";
         view.className = "stage-minor-action";
         view.textContent = tx("見る");
+        view.dataset.tipDescription = "この対象のキューシートを画面で確認します。";
         view.addEventListener("click", () => openCueSheetView(entry.kind, entry.key));
         const print = document.createElement("button");
         print.type = "button";
         print.className = "stage-minor-action stage-cue-sheet-sub";
         print.textContent = tx("印刷");
+        print.dataset.tipDescription = "この対象のキューシートを印刷用の画面で開きます。";
         print.addEventListener("click", () => openCueSheetPrint(entry.kind, entry.key));
         const csv = document.createElement("button");
         csv.type = "button";
         csv.className = "stage-minor-action stage-cue-sheet-sub";
         csv.textContent = tx("CSV");
+        csv.dataset.tipDescription = "この対象のキューシートをCSVファイルへ書き出します。";
         csv.addEventListener("click", () => downloadCueSheetCsv(entry.kind, entry.key));
         row.append(label, view, print, csv);
         if (entry.kind === "performer") {
@@ -42868,6 +42961,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
           pack.type = "button";
           pack.className = "stage-minor-action stage-cue-sheet-pack";
           pack.textContent = tx("引き継ぎパック");
+          pack.dataset.tipDescription = "この演者の全項目と出演シーンの舞台図をまとめて開きます。";
           pack.addEventListener("click", () => openCueSheetView("handover", entry.key));
           row.append(pack);
         }

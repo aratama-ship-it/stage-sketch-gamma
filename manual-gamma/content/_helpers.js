@@ -16,7 +16,7 @@
  */
 window.MANUAL = {
   updated: "2026-10-10",
-  appVersion: "v0.3.38",
+  appVersion: "v0.3.39",
   lang: window.MANUAL_LANG === "en" ? "en" : "ja",
   sub: window.MANUAL_LANG === "en"
     ? "For everyone using Stage Sketch Gamma (the free test version). There is no need to read it front to back. When you are stuck, type a word into the box below — symptoms work too. The contents on the left jump as well."

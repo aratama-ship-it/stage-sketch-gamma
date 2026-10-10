@@ -132,7 +132,7 @@
       if (event.defaultPrevented || event.repeat || event.isComposing || event.keyCode === 229
           || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || !/^[1-5]$/.test(event.key)) return;
       const target = event.composedPath?.()[0] || event.target;
-      if (target?.isContentEditable || target?.closest?.('input, textarea, select, [role="textbox"]')) return;
+      if (target?.isContentEditable || target?.closest?.('input, textarea, select, [role="textbox"], [role="combobox"], [role="listbox"], [role="option"]')) return;
       if (blocked() || !activate(event.key)) return;
       event.preventDefault(); event.stopImmediatePropagation();
     };
@@ -222,5 +222,247 @@
   const sourceText = node => textSources.get(node)?.source ?? null;
   const sourceAttribute = (element, name) => attributeSources.get(element)?.[name]?.source ?? null;
 
-  window.GAMMA_UI = Object.freeze({ containDialog, bindHeight, bindWorkspaceKeys, watchDialogs, translateDOM, sourceText, sourceAttribute });
+  // D-13 / D-22: preserve native input values and their existing change routes.
+  const shortControlRecords = new Set();
+  let shortControlSerial = 0;
+  function enhanceControls(root) {
+    const shortSelects = '#stage-view-select,#stage-lang,#stage-cue-naming,#stage-size-select,.stage-pref-layout-select';
+    root.querySelectorAll('.stage-toggle input[type="checkbox"]').forEach(input => {
+      if (input.closest('.stage-pref-switch-hit,.stage-name-toggle,.is-icon')) return;
+      const hit = document.createElement('span'); hit.className = 'stage-pref-switch-hit';
+      const mark = document.createElement('span'); mark.className = 'stage-pref-switch'; mark.setAttribute('aria-hidden','true');
+      input.before(hit); hit.append(input,mark); input.setAttribute('role','switch');
+    });
+    root.querySelectorAll(shortSelects).forEach(select => {
+      if (select.dataset.gammaShortSelect || select.multiple || select.options.length < 2 || select.options.length > 6) return;
+      select.dataset.gammaShortSelect = 'true';
+      const wrap = document.createElement('span'); wrap.className = 'gamma-short-select';
+      const trigger = document.createElement('button'); trigger.type = 'button'; trigger.className = 'gamma-short-select-trigger';
+      trigger.setAttribute('role','combobox'); trigger.setAttribute('aria-haspopup','listbox'); trigger.setAttribute('aria-expanded','false');
+      const text = document.createElement('span'); trigger.append(text);
+      const list = document.createElement('span'); list.className = 'gamma-short-select-list'; list.hidden = true;
+      list.setAttribute('role','listbox'); list.id = 'gamma-options-' + (select.id || String(++shortControlSerial));
+      trigger.setAttribute('aria-controls',list.id);
+      const label = select.getAttribute('aria-label') || [...select.labels].map(label=>label.textContent.trim()).join(' ') || '';
+      trigger.setAttribute('aria-label',label);
+      select.before(wrap); wrap.append(select,trigger,list); select.classList.add('gamma-short-select-native'); select.tabIndex=-1; select.setAttribute('aria-hidden','true');
+      let opened = false;
+      const close = focus => { opened=false; list.hidden=true; trigger.setAttribute('aria-expanded','false'); if(focus)trigger.focus({preventScroll:true}); };
+      const sync = () => {
+        text.textContent=select.selectedOptions[0]?.textContent || '';
+        trigger.disabled=select.disabled;
+        trigger.setAttribute('aria-label',select.getAttribute('aria-label') || label);
+        if (select.disabled || !select.isConnected || !visible(trigger)) close(false);
+        list.replaceChildren();
+        [...select.options].forEach((option,index)=>{
+          const button=document.createElement('button');button.type='button';button.setAttribute('role','option');
+          button.setAttribute('aria-selected',String(option.selected));button.disabled=option.disabled;
+          button.textContent=option.textContent;button.dataset.index=String(index);
+          button.addEventListener('click',event=>{
+            event.preventDefault();
+            if(option.disabled||select.disabled)return;
+            select.selectedIndex=index;select.dispatchEvent(new Event('change',{bubbles:true}));
+            if (select.isConnected) { sync(); close(true); }
+            else {
+              close(false); enhanceControls(document.body);
+              const replacement = [...document.querySelectorAll(shortSelects)].find(next =>
+                select.id ? next.id === select.id : next.getAttribute('aria-label') === label);
+              const target = replacement?.closest('.gamma-short-select')?.querySelector('.gamma-short-select-trigger');
+              target?.focus({preventScroll:true});
+              requestAnimationFrame(() => { if (target?.isConnected && visible(target)) target.focus({preventScroll:true}); });
+            }
+          });
+          list.append(button);
+        });
+      };
+      const open = () => {sync();if(trigger.disabled)return;opened=true;list.hidden=false;trigger.setAttribute('aria-expanded','true');
+        const rect=trigger.getBoundingClientRect();wrap.classList.toggle('opens-up',innerHeight-rect.bottom<Math.min(240,select.options.length*36+8)&&rect.top>240);
+        const button=list.children[select.selectedIndex];if(button&&!button.disabled)button.focus({preventScroll:true});
+      };
+      trigger.addEventListener('click',()=>opened?close(true):open());
+      trigger.addEventListener('keydown',event=>{if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){event.preventDefault();event.stopPropagation();open();}});
+      list.addEventListener('keydown',event=>{
+        const buttons=[...list.children].filter(button=>!button.disabled),index=buttons.indexOf(document.activeElement);
+        if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){
+          event.preventDefault();event.stopPropagation();const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:(index+(event.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length;
+          buttons[next]?.focus({preventScroll:true});
+        }else if(event.key==='Tab')close(false);
+      });
+      // Window capture precedes modal key handlers: the first Esc closes only the list.
+      const onKey = event => { if(opened && event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); close(true); } };
+      const onPointer = event => { if(opened && !wrap.contains(event.target)) close(false); };
+      const onResize = () => close(false);
+      window.addEventListener('keydown',onKey,true);
+      document.addEventListener('pointerdown',onPointer,true);
+      window.addEventListener('resize',onResize);
+      select.addEventListener('change',sync);
+      const observer = new MutationObserver(sync);
+      observer.observe(select,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['disabled','selected','aria-label']});
+      const record = { select, refresh() {
+        text.textContent = select.selectedOptions[0]?.textContent || '';
+        trigger.disabled = select.disabled;
+        trigger.setAttribute('aria-label',select.getAttribute('aria-label') || label);
+        [...list.children].forEach((button,index) => button.setAttribute('aria-selected',String(index === select.selectedIndex)));
+        if (select.disabled) close(false);
+      }, dispose() {
+        observer.disconnect(); select.removeEventListener('change',sync);
+        window.removeEventListener('keydown',onKey,true);
+        document.removeEventListener('pointerdown',onPointer,true);
+        window.removeEventListener('resize',onResize);
+        shortControlRecords.delete(record);
+      } };
+      shortControlRecords.add(record);
+      sync();
+    });
+  }
+
+  const refreshSelect = select => { for (const record of shortControlRecords) if (record.select === select) record.refresh(); };
+
+  window.GAMMA_UI = Object.freeze({ containDialog, bindHeight, bindWorkspaceKeys, watchDialogs, translateDOM, sourceText, sourceAttribute, enhanceControls, refreshSelect });
+  const startControls = () => {
+    enhanceControls(document.body);
+    let queued = false;
+    new MutationObserver(records => {
+      for (const record of shortControlRecords) if (!record.select.isConnected) record.dispose();
+      if (queued || !records.some(record => [...record.addedNodes].some(node => node.nodeType === 1))) return;
+      queued = true; requestAnimationFrame(() => { queued = false; enhanceControls(document.body); });
+    }).observe(document.body,{childList:true,subtree:true});
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',startControls,{once:true});
+  else startControls();
+})();
+
+/* Shared, read-only information. No show state, storage or transport changes. */
+(() => {
+  'use strict';
+  const toggle = document.getElementById('gamma-information-toggle');
+  const bar = document.getElementById('gamma-information-bar');
+  if (!toggle || !bar) return;
+  const source = document.querySelector('[data-panel="save"]');
+  const summary = document.getElementById('gamma-information-summary');
+  const context = document.getElementById('gamma-information-context');
+  const contextName = document.getElementById('gamma-information-name');
+  const contextKey = document.getElementById('gamma-information-key');
+  const contextHint = document.getElementById('gamma-information-hint');
+  const selector = 'button,a[href],summary,label,input,select,textarea,[role="button"],[role="combobox"],[role="option"],[data-tip-description]';
+  const documents = new Map();
+  let enabled = false, hovered = null, focused = null, keyboard = false, pending = false;
+  const text = value => window.SHOSAI_STAGE_I18N_MODEL?.text(document.documentElement.lang, value) || value;
+  const setText = (node, value) => { if (node.textContent !== value) node.textContent = value; };
+  const available = node => node?.isConnected && !node.closest('[hidden],[inert]')
+    && node.getClientRects().length && node.ownerDocument.defaultView.getComputedStyle(node).visibility !== 'hidden';
+  function nameOf(node) {
+    const label = node.labels?.[0];
+    return node.getAttribute('aria-label') || node.dataset.tipTitle || node.title
+      || (label ? label.textContent : node.textContent)?.replace(/\s+/g, ' ').trim() || '';
+  }
+  function describe(node) {
+    if (!available(node)) return null;
+    const native = node.ownerDocument.defaultView.GAMMA_ICON_TIPS?.describe?.(node);
+    if (native?.name) return native;
+    const name = nameOf(node);
+    if (!name) return null;
+    const description = node.dataset.unavailableReason || node.dataset.tipDescription
+      || node.dataset.tipTitle || node.title || '';
+    return {name:text(name),key:node.dataset.toolKey || node.dataset.tipKey || node.getAttribute('aria-keyshortcuts') || '',description:text(description === name ? '' : description)};
+  }
+  function renderContext() {
+    const item = describe(hovered) || describe(focused);
+    context.dataset.hasFunction = String(Boolean(item));
+    setText(contextName, item?.name || text('操作の説明'));
+    setText(contextKey, item?.key || ''); contextKey.hidden = !item?.key;
+    setText(contextHint, item?.description || (item ? '' : text('機能にカーソルを合わせると、ここに説明を表示します。')));
+  }
+  function sourceVisible(node) {
+    if (!node) return false;
+    // A different tab may hide the panel's ancestors. Only the information item's
+    // own visibility matters; keep source hidden/recovery flags authoritative.
+    for (let n=node;n && n!==source;n=n.parentElement) if(n.hidden) return false;
+    return true;
+  }
+  function syncInformation() {
+    if (!enabled || !source) return;
+    const activeSource = summary.contains(document.activeElement) ? document.activeElement.dataset.infoSource : null;
+    const fragment = document.createDocumentFragment();
+    for (const node of source.querySelectorAll('.stage-panel-body > p,#stage-save-stamps,#stage-save-recovery-link,#stage-backup-hint')) {
+      if (!sourceVisible(node) || !node.textContent.trim()) continue;
+      const item = document.createElement('span'); item.className='gamma-information-item';
+      if (node.id==='stage-backup-hint') {
+        const note=node.querySelector('p');if(note)item.append(document.createTextNode(note.textContent.trim()+' '));
+      } else if (!node.querySelector('a,button') && node.tagName!=='A') item.append(document.createTextNode(node.textContent.trim().replace(/\s+/g,' ')));
+      const actions=node.tagName==='A'?[node]:[...node.querySelectorAll('a,button')];
+      for (const original of actions) {
+        if (!sourceVisible(original)) continue;
+        const action=document.createElement(original.tagName==='A'?'a':'button');
+        action.textContent=original.textContent;action.className='gamma-information-action';
+        action.dataset.infoSource=original.id || String([...source.querySelectorAll('a,button')].indexOf(original));
+        if(original.tagName==='A') {action.href=original.href;action.target=original.target;action.rel=original.rel;}
+        else {action.type='button';action.disabled=original.disabled;action.addEventListener('click',()=>original.click());}
+        item.append(action);
+      }
+      fragment.append(item);
+    }
+    // No cloned IDs, live regions, editable fields or source nodes.
+    summary.replaceChildren(fragment);
+    if(activeSource) [...summary.querySelectorAll('[data-info-source]')].find(node=>node.dataset.infoSource===activeSource)?.focus({preventScroll:true});
+    summary.setAttribute('aria-label',text('現在の情報'));
+  }
+  function scheduleSync() {
+    if (!enabled || pending) return;
+    pending=true;queueMicrotask(()=>{pending=false;syncInformation();renderContext();});
+  }
+  function clearContext() { hovered=null;focused=null;if(enabled)renderContext(); }
+  function findTarget(node) {
+    const target=node?.nodeType===1?node:node?.parentElement;
+    if(target?.closest('#gamma-information-context'))return null;
+    return target?.closest(selector) || null;
+  }
+  function bindDocument(doc) {
+    if(documents.has(doc))return;
+    const listeners=[];
+    const on=(type,callback)=>{doc.addEventListener(type,callback,true);listeners.push([type,callback]);};
+    on('pointerover',event=>{if(!enabled||event.pointerType==='touch')return;hovered=findTarget(event.target);renderContext();});
+    on('pointerout',event=>{if(!enabled)return;const next=findTarget(event.relatedTarget);if(hovered && hovered.ownerDocument===doc && hovered!==next){hovered=next;renderContext();}});
+    on('keydown',event=>{keyboard=true;if(event.key==='Escape')clearContext();});
+    on('pointerdown',()=>{keyboard=false;focused=null;});
+    on('focusin',event=>{if(enabled&&keyboard){focused=findTarget(event.target);renderContext();}});
+    on('focusout',()=>{if(enabled){focused=null;renderContext();}});
+    documents.set(doc,()=>{for(const [type,callback]of listeners)doc.removeEventListener(type,callback,true);documents.delete(doc);});
+  }
+  function bindFrame(frame) {
+    let previous=null;
+    const bind=()=>{
+      if(previous){documents.get(previous)?.();if(hovered?.ownerDocument===previous||focused?.ownerDocument===previous)clearContext();}
+      previous=null;
+      try{const doc=frame.contentDocument;if(doc&&doc.defaultView.location.origin===location.origin){previous=doc;bindDocument(doc);}}catch(_){/* Cross-origin content has no access to this bar. */}
+    };
+    frame.addEventListener('load',bind);bind();
+  }
+  function syncToggle() {
+    toggle.setAttribute('aria-pressed',String(enabled));
+    toggle.setAttribute('aria-expanded',String(enabled));
+    toggle.setAttribute('aria-label',text(enabled?'情報バーを非表示':'情報バーを表示'));
+    toggle.dataset.tipTitle=toggle.getAttribute('aria-label');
+    toggle.dataset.tipDescription=text('全タブで保存状況と操作の説明を表示します。');
+    bar.setAttribute('aria-label',text('情報バー'));
+  }
+  toggle.addEventListener('click',()=>{
+    enabled=!enabled;bar.hidden=!enabled;clearContext();syncToggle();
+    if(enabled){syncInformation();renderContext();}
+  });
+  bindDocument(document);
+  for(const id of ['gamma-light-frame','gamma-run-of-show-frame']){const frame=document.getElementById(id);if(frame)bindFrame(frame);}
+  if(source)new MutationObserver(scheduleSync).observe(source,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['hidden','disabled']});
+  new MutationObserver(()=>{syncToggle();scheduleSync();}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+  window.addEventListener('gamma-workspace-change',clearContext);
+  window.addEventListener('stage-fpv-visibility',clearContext);
+  window.addEventListener('blur',clearContext);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)clearContext();});
+  // Workspaces calculate their available height from their actual top edge.
+  // Dispatch only on real bar-height changes, never on every cursor movement.
+  const header=document.querySelector('.stage-sketch-head');
+  if(header)new ResizeObserver(()=>bar.style.setProperty('--gamma-info-header-height',header.getBoundingClientRect().height+'px')).observe(header);
+  let previousHeight=0;
+  new ResizeObserver(()=>{const height=bar.getBoundingClientRect().height;if(height!==previousHeight){previousHeight=height;requestAnimationFrame(()=>window.dispatchEvent(new Event('resize')));}}).observe(bar);
+  syncToggle();renderContext();
 })();

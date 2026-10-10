@@ -688,7 +688,8 @@
     // 灯体一覧・LXキュー・下手側面図は、設定した可変幅を共有する。
     { const lc = document.querySelector(".leftcol"); if (lc) set(lc, "width", leftW); }
     const fixturesPanel = $("panel-fixtures"), lxqPanel = $("panel-lxq");
-    if (fixturesPanel) { set(fixturesPanel, "width", fixtureW); fixturesPanel.style.flexBasis = fixtureW + "px"; }
+    const visibleFixtureWidth = state.mode === "move" ? fixtureW : leftW;
+    if (fixturesPanel) { set(fixturesPanel, "width", visibleFixtureWidth); fixturesPanel.style.flexBasis = visibleFixtureWidth + "px"; }
     if (lxqPanel) { set(lxqPanel, "width", lxqW); lxqPanel.style.flexBasis = lxqW + "px"; }
     set($("panel-insp"), "width", sideW);
     syncPanelSplitterA11y();
@@ -721,6 +722,7 @@
       outer.setAttribute("aria-valuetext", `追加幅 ${Math.round(panelLayoutMetrics.effectiveExtra)}px（希望 ${Math.round(panelLayout.leftExtra)}px）`);
     }
     if (inner) {
+      inner.hidden = state.mode !== "move";
       const share = panelLayoutMetrics.share;
       const minimum = Math.min(0.5, PANEL_MIN_WIDTH / Math.max(1, panelLayoutMetrics.panelWidth));
       inner.setAttribute("aria-valuemin", String(Math.round(minimum * 100)));
@@ -2731,6 +2733,118 @@
       b: P({ x: span.xR, y: span.y, z: span.z0 }),
     };
   }
+  /* Labels are a view-only layer: layout never writes to fixtures or cues. */
+  function layoutFixtureLabels(rows, width, height) {
+    const gap = 6, margin = 6, placed = [];
+    const intersects = (a,b) => a.x < b.x+b.w+gap && a.x+a.w+gap > b.x && a.y < b.y+b.h+gap && a.y+a.h+gap > b.y;
+    const ordered = rows.map((r,index)=>({...r,index})).sort((a,b)=>Number(!!b.focused)-Number(!!a.focused)||Number(!!b.selected)-Number(!!a.selected)||Number(!!b.hovered)-Number(!!a.hovered)||a.index-b.index);
+    for (const row of ordered) {
+      const w = Math.min(row.w, width-margin*2), h = Math.min(row.h,height-margin*2);
+      const x0 = Math.max(margin,Math.min(width-w-margin,row.anchorX-w/2)), y0 = Math.max(margin,Math.min(height-h-margin,row.anchorY+24));
+      const candidates = [{x:x0,y:y0,w,h}];
+      // Search nearby rows first. A stable order keeps unrelated labels steady.
+      for (let ring=1;ring<=Math.ceil(Math.max(width,height)/32);ring++) {
+        for (const dy of [ring*38,-ring*38]) candidates.push({x:x0,y:y0+dy,w,h});
+        for (let dy=-ring;dy<=ring;dy++) for (const dx of [-ring*32,ring*32]) candidates.push({x:x0+dx,y:y0+dy*38,w,h});
+        for (let dx=-ring+1;dx<ring;dx++) for (const dy of [-ring*38,ring*38]) candidates.push({x:x0+dx*32,y:y0+dy,w,h});
+        if (candidates.some(c=>c.x>=margin&&c.y>=margin&&c.x+c.w<=width-margin&&c.y+c.h<=height-margin&&!placed.some(p=>intersects(c,p)))) break;
+      }
+      let box=candidates.find(c=>c.x>=margin&&c.y>=margin&&c.x+c.w<=width-margin&&c.y+c.h<=height-margin&&!placed.some(p=>intersects(c,p)));
+      if (!box) {
+        // Offset grids leave holes near narrow canvas edges; fill those before fallback.
+        let nearest=Infinity;
+        for(let y=margin;y+h<=height-margin;y+=8)for(let x=margin;x+w<=width-margin;x+=8){
+          const candidate={x,y,w,h},distance=(x-x0)**2+(y-y0)**2;
+          if(distance<nearest&&!placed.some(p=>intersects(candidate,p))){box=candidate;nearest=distance;}
+        }
+      }
+      // Pathological density: retain every number, choosing the least occupied slot.
+      if (!box) box=candidates.filter(c=>c.x>=margin&&c.y>=margin&&c.x+c.w<=width-margin&&c.y+c.h<=height-margin).sort((a,b)=>placed.filter(p=>intersects(a,p)).length-placed.filter(p=>intersects(b,p)).length)[0]||{x:x0,y:y0,w,h};
+      placed.push({...row,...box});
+    }
+    if (placed.some((r,i)=>placed.some((q,j)=>i!==j&&intersects(r,q)))) {
+      // If independent near-anchor searches fragment a narrow view, repack on
+      // common rows. Numbers still identify the original, unmoved fixture anchors.
+      const grid=[],stepX=Math.max(...rows.map(r=>r.numberWidth || (r.h===32?r.w:0)),40)+gap;
+      for(const row of ordered){
+        const w=Math.min(row.w,width-margin*2),h=Math.min(row.h,height-margin*2),candidates=[];
+        for(let y=margin;y+h<=height-margin;y+=38)for(let x=margin;x+w<=width-margin;x+=stepX){
+          const box={x,y,w,h};if(!grid.some(p=>intersects(box,p)))candidates.push(box);
+        }
+        candidates.sort((a,b)=>(a.x+a.w/2-row.anchorX)**2+(a.y-row.anchorY-24)**2-((b.x+b.w/2-row.anchorX)**2+(b.y-row.anchorY-24)**2));
+        if(!candidates.length)return placed;
+        grid.push({...row,...candidates[0]});
+      }
+      return grid;
+    }
+    return placed;
+  }
+  let fixtureLabelFrame = null;
+  const fixtureLabelViews = new Map();
+  const fixtureLabelLayoutCache = new WeakMap();
+  let fixtureLabelHover = null;
+  function queueFixtureLabel(ctx,f,number,X,Y) {
+    if (!f || !number) return;
+    if (!fixtureLabelFrame) { // Standalone simple/playback canvases retain their own drawing route.
+      ctx.save();if(isSel(f.id)){ctx.fillStyle="#d3ac59";ctx.fillRect(X-22,Y+19,44,22);}ctx.font="600 16px sans-serif";ctx.fillStyle=isSel(f.id)?"#1a1409":"rgba(240,231,214,0.95)";ctx.textAlign="center";ctx.textBaseline="top";ctx.fillText(number,X,Y+21);ctx.restore();return;
+    }
+    let rows=fixtureLabelFrame.get(ctx);if(!rows){rows=new Map();fixtureLabelFrame.set(ctx,rows);}
+    rows.set(f.id,{id:f.id,number,anchorX:X,anchorY:Y,selected:isSel(f.id),focused:[...state.sel].at(-1)===f.id,hovered:fixtureLabelHover?.id===f.id});
+  }
+  function fixtureLabelAt(canvas,pt) {
+    return (fixtureLabelViews.get(canvas)||[]).find(r=>pt.X>=r.x&&pt.X<=r.x+r.w&&pt.Y>=r.y&&pt.Y<=r.y+r.h)||null;
+  }
+  function hoverFixtureLabel(canvas,pt,body) {
+    const old=fixtureLabelHover, r=old?.canvas===canvas&&old.hit;
+    const retained=r&&pt.X>=r.x&&pt.X<=r.x+r.w&&pt.Y>=r.y&&pt.Y<=r.y+r.h;
+    const hit=fixtureLabelAt(canvas,pt),f=retained?fixtureById(old.id):hit?fixtureById(hit.id):body();
+    fixtureLabelHover=f?{id:f.id,canvas,hit:retained?r:hit?{x:hit.x,y:hit.y,w:hit.w,h:hit.h}:null}:null;
+    canvas.title=f?`${label(f.id)} ${f.name||""}`:"";
+    return old?.id !== fixtureLabelHover?.id;
+  }
+  function selectFixtureLabel(canvas,pt,event) {
+    if(state.tool)return false;
+    const row=fixtureLabelAt(canvas,pt);if(!row)return false;
+    if(event.shiftKey)state.sel.has(row.id)?state.sel.delete(row.id):state.sel.add(row.id);
+    else state.sel=new Set([row.id]);
+    state.selEquipment=null;state.aimMirror=null;
+    // A displaced number selects, never drags the actual fixture to the plate.
+    renderAll();return true;
+  }
+  function paintFixtureLabels() {
+    fixtureLabelViews.clear();
+    for(const [ctx,items]of fixtureLabelFrame){
+      ctx.save();ctx.font="600 20px sans-serif";
+      const width=logicalWidth(ctx.canvas),height=logicalHeight(ctx.canvas);
+      const rows=[...items.values()].map(row=>{
+        const f=fixtureById(row.id),lines=[row.number];
+        if(row.focused||row.hovered){
+          const info=row.selected&&state.mode==="place"&&state.sel.size===1?window.GAMMA_LIGHT_MODEL?.positionNames?.info(state.rig,f):null;
+          const texts=[f?.name,info?.ref?info.text+(f.mount.type==="position"&&f.mount.positionId===info.ref?"（配置）":"（名称のみ）"):null].filter(Boolean);
+          const max=Math.max(60,Math.min(280,width-24));
+          for(const text of texts){let line="";for(const ch of text){if(line&&ctx.measureText(line+ch).width>max){lines.push(line);line="";}line+=ch;}if(line)lines.push(line);}
+        }
+        return {...row,lines,numberWidth:ctx.measureText(row.number).width+16,w:Math.max(...lines.map(t=>ctx.measureText(t).width))+16,h:lines.length*24+8};
+      });
+      // Playback changes light output far more often than label geometry. Reuse
+      // unchanged placements so collision searches do not run on every frame.
+      const key=JSON.stringify([width,height,rows]),cached=fixtureLabelLayoutCache.get(ctx.canvas);
+      const layout=cached?.key===key?cached.layout:layoutFixtureLabels(rows,width,height);
+      if(cached?.key!==key)fixtureLabelLayoutCache.set(ctx.canvas,{key,layout});
+      fixtureLabelViews.set(ctx.canvas,layout);
+      // Draw leader lines first so they cannot cross the text of another plate.
+      for(const r of layout){ctx.strokeStyle=r.selected?"#d3ac59":"rgba(239,231,214,.65)";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(r.anchorX,r.anchorY);ctx.lineTo(Math.max(r.x,Math.min(r.x+r.w,r.anchorX)),Math.max(r.y,Math.min(r.y+r.h,r.anchorY)));ctx.stroke();}
+      for(const r of [...layout].reverse()){
+        ctx.fillStyle=r.selected?"#d3ac59":"#0d0c0b";ctx.fillRect(r.x,r.y,r.w,r.h);
+        ctx.strokeStyle=r.selected||r.hovered?"#d3ac59":"rgba(239,231,214,.35)";ctx.lineWidth=r.selected||r.hovered?2:1;ctx.strokeRect(r.x,r.y,r.w,r.h);
+        ctx.fillStyle=r.selected?"#1a1409":"#efe7d6";ctx.textAlign="center";ctx.textBaseline="middle";
+        r.lines.forEach((text,i)=>ctx.fillText(text,r.x+r.w/2,r.y+16+i*24));
+      }
+      ctx.restore();
+    }
+  }
+  function fixtureLabelSnapshot(){return [...fixtureLabelViews].map(([canvas,rows])=>({canvas:canvas.id,width:logicalWidth(canvas),height:logicalHeight(canvas),rows:rows.map(r=>({...r,lines:[...r.lines]}))}));}
+
   function drawFixtureMark(ctx, X, Y, shape, o) {
     const s = 15; ctx.save();
     if (o.sel && !o.ghost) {
@@ -2772,7 +2886,7 @@
     if (o.moving && !o.ghost && (o.outline !== false || o.sel)) { ctx.strokeStyle = o.sel ? "#d3ac59" : stateFill ? "rgba(240,231,214,0.55)" : ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X, Y, s * 1.55, 0, Math.PI * 2); ctx.stroke(); }
     if (shape === "ball" && !o.ghost) { ctx.strokeStyle = o.sel ? "#d3ac59" : stateFill ? "rgba(13,12,11,0.8)" : ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(markX - markSize * 0.75, markY); ctx.lineTo(markX + markSize * 0.75, markY); ctx.moveTo(markX, markY - markSize * 0.75); ctx.lineTo(markX, markY + markSize * 0.75); ctx.stroke(); }
     if (o.st === "off") { ctx.strokeStyle = "rgba(240,231,214,0.5)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(markX - markSize, markY + markSize); ctx.lineTo(markX + markSize, markY - markSize); ctx.stroke(); }
-    if (o.no) { ctx.fillStyle = o.sel ? "#1a1409" : "rgba(240,231,214,0.95)"; if (o.sel) { ctx.fillStyle = "#d3ac59"; ctx.fillRect(markX - 22, markY + markSize + 4, 44, 22); ctx.fillStyle = "#1a1409"; } ctx.font = "600 16px sans-serif"; ctx.textBaseline = "top"; ctx.textAlign = "center"; ctx.fillText(o.no, markX, markY + markSize + 6); ctx.textAlign = "left"; }
+    if (o.no && !o.ghost) queueFixtureLabel(ctx,o.fixture,o.no,markX,markY+markSize-15);
     /* ストロボの発生順（段）。番号は印の下なので、こちらは右上に丸で出す。
        同じ数字が付いた灯は一緒に光る（2026-09-17 本人要望）。 */
     if (o.step != null) {
@@ -2784,7 +2898,7 @@
       ctx.fillText(String(o.step), bx, by + 1);
       ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
     }
-    if (o.sel && !o.ghost && state.mode === "place" && state.sel.size === 1) {
+    if (!fixtureLabelFrame && o.sel && !o.ghost && state.mode === "place" && state.sel.size === 1) {
       const f = fixtureById([...state.sel][0]);
       const info = window.GAMMA_LIGHT_MODEL?.positionNames?.info(state.rig, f);
       if (info?.ref) {
@@ -2869,13 +2983,7 @@
         ctx.strokeStyle = "#0d0c0b"; ctx.lineWidth = 6; ctx.strokeRect(b.left-6,b.top-6,b.right-b.left+12,b.bottom-b.top+12);
         ctx.strokeStyle = "#d3ac59"; ctx.lineWidth = 3; ctx.strokeRect(b.left-6,b.top-6,b.right-b.left+12,b.bottom-b.top+12);
       }
-      if (showOn("no")) {
-        ctx.font = "600 16px sans-serif";
-        const text = label(f.id), width = ctx.measureText(text).width + 12, x = (b.left+b.right-width)/2, y = b.bottom+10;
-        ctx.fillStyle = isSel(f.id) ? "#d3ac59" : "#0d0c0b"; ctx.fillRect(x,y,width,24);
-        ctx.fillStyle = isSel(f.id) ? "#1a1409" : "#efe7d6"; ctx.textAlign="center";ctx.textBaseline="middle";
-        ctx.fillText(text,(b.left+b.right)/2,y+12);
-      }
+      if (showOn("no")) queueFixtureLabel(ctx,f,label(f.id),(b.left+b.right)/2,b.bottom);
       ctx.restore();
     });
   }
@@ -3135,10 +3243,12 @@
     if (playbackPreviewActive) return;
     const started = performance.now();
     drawCueOverride = lxFadeCue();
+    fixtureLabelFrame = new Map();
     try {
       drawPlan(); activeSections().forEach((sec) => (sec.kind === "front" ? (state.front3d ? drawFront3D(sec) : drawFront(sec)) : drawSide(sec)));
+      paintFixtureLabels();
       activeSections().forEach(drawSectionMarquee);
-    } finally { drawCueOverride = null; }
+    } finally { drawCueOverride = null; fixtureLabelFrame = null; }
     const elapsed = performance.now() - started, runtime = state.runtime;
     runtime.drawMs = elapsed;
     runtime.averageMs = runtime.averageMs ? runtime.averageMs * 0.8 + elapsed * 0.2 : elapsed;
@@ -3272,8 +3382,9 @@
     const ctx = sec.ctx; ctx.save(); ctx.fillStyle = "rgba(211,172,89,0.12)"; ctx.strokeStyle = "rgba(211,172,89,0.85)"; ctx.lineWidth = 1.5; ctx.setLineDash([7, 5]);
     ctx.fillRect(x, y, mw, mh); ctx.strokeRect(x, y, mw, mh); ctx.restore();
   }
-  function hitFixturePlan(pt) { const P = planProj(), B = planBox(); let best = null; state.rig.fixtures.forEach((f) => { const xy = fixturePlanXY(f, P, B); if (!xy) return; if (f.mount.type === "cyc") { const bar = cycFixtureBar(P, f); if (pointSegmentDistance(pt, bar.a, bar.b) < 18) best = f; } else if (Math.hypot(pt.X - xy.X, pt.Y - xy.Y) < 22) best = f; }); return best; }
+  function hitFixturePlan(pt) { const tagged=fixtureLabelAt(plan,pt);if(tagged)return fixtureById(tagged.id); const P = planProj(), B = planBox(); let best = null; state.rig.fixtures.forEach((f) => { const xy = fixturePlanXY(f, P, B); if (!xy) return; if (f.mount.type === "cyc") { const bar = cycFixtureBar(P, f); if (pointSegmentDistance(pt, bar.a, bar.b) < 18) best = f; } else if (Math.hypot(pt.X - xy.X, pt.Y - xy.Y) < 22) best = f; }); return best; }
   function hitFixtureSec(sec, pt) {
+    const tagged=fixtureLabelAt(sec.cv,pt);if(tagged)return fixtureById(tagged.id);
     const P = secProj(sec); let best = null;
     const fixtures = sec.kind === "front" && state.front3d
       ? [...state.rig.fixtures].sort((a,b) => (fixtureWorld(a)?.y || 0) - (fixtureWorld(b)?.y || 0)) : state.rig.fixtures;
@@ -3446,6 +3557,7 @@
       else toast("舞台より手前（客席側の帯）をクリックしてください");
       return;
     }
+    if (selectFixtureLabel(plan,pt,ev)) return;
     // 選択モード
     if (state.mode === "move") { const hh = hitHandle(pt, houseProjPlan(planProj(), B), ["floor", "air", "house"]); if (hh) { startHandleDrag(hh, "uv"); return; } }
     const f = hitFixturePlan(pt);
@@ -3470,6 +3582,7 @@
   });
   plan.addEventListener("pointermove", (ev) => {
     const pt = canvasPoint(plan, ev); const B = planBox(); state.hover = { canvas: "plan", ...pt };
+    if (!state.drag) hoverFixtureLabel(plan,pt,()=>hitFixturePlan(pt));
     const dg = state.drag;
     if (dg && dg.kind === "fixture") { const f = fixtureById(dg.fid); if (f) { const u = snapU(E.clamp((pt.X - B.x) / B.w, 0, 1)), v = snapV(E.clamp((pt.Y - B.y) / B.h, 0, 1)); if(f.mount.type === "position")f.mount.t=window.GAMMA_LIGHT_MODEL.positionLayout.nearestT(state.rig,f.mount,state.dims,positionPlanProjector(planProj(),B),pt); else if (f.mount.type === "cyc") { /* 中央固定。動かさない */ } else if (f.mount.type === "truss") f.mount.u = u; else if (f.mount.type === "floor" || f.mount.type === "legacy-panel") { f.mount.u = u; f.mount.v = v; } else f.mount.v = v; dg.moved = true; } }
     else if (dg && dg.kind === "truss") { const t = E.trussById(state.rig, dg.tid); if (t) { t.v = snapV(E.clamp((pt.Y - B.y) / B.h, 0, 1)); dg.moved = true; } }
@@ -3495,7 +3608,7 @@
     if (dg.moved && snapshot() !== dg.before) { syncFixedSetupEdits(); lxSyncEditing(); state.history.push(dg.before); state.future.length = 0; state.dirty = true; baseline = snapshot(); } renderAll();
   };
   plan.addEventListener("pointerup", endDrag); plan.addEventListener("pointercancel", endDrag);
-  plan.addEventListener("pointerleave", () => { state.hover = null; draw(); });
+  plan.addEventListener("pointerleave", () => { state.hover = null; fixtureLabelHover = null; plan.title=""; draw(); });
   /* 平面図の狙い点（赤い丸）の上でホイール／トラックパッドを回すと、その灯の広がりが変わる
      （2026-09-13 本人要望「ドラッグで移動、スクロールで広がりをコントロール」）。
      下へ回すと広がり、上へ回すと絞る。ドラッグと同じく、同じ当てる場所の選択灯にまとめて効く。
@@ -3608,6 +3721,7 @@
       const pt = canvasPoint(cv, ev); const B = secBox(cv, side); const P = secProj(sec);
       try { cv.setPointerCapture(ev.pointerId); } catch (_) { /* 合成イベント等 */ }
       if (state.tool === "border" || state.tool === "pros" || state.tool === "legs") return;
+      if (selectFixtureLabel(cv,pt,ev)) return;
       if (side !== "front") {
         if (state.tool === "side") { const vh = E.sideToVH(state.dims, B, side, pt.X, pt.Y); addFixture({ type: "side", side, v: snapV(vh.v), h: Math.max(0.3, snapH(vh.h)) }); toast(`${label([...state.sel][0])}を${side === "shimote" ? "下手" : "上手"}の袖に立てました`, "元に戻す", undo); return; }
         if (state.mode === "move") { const hh = hitHandle(pt, P, distanceMetric ? ["air","house"] : ["air"]); if (hh) { startHandleDrag(hh, "vh", sec); return; } }
@@ -3652,7 +3766,7 @@
     cv.addEventListener("pointermove", (ev) => {
       const side = sec.kind;
       const pt = canvasPoint(cv, ev); const B = secBox(cv, side); state.hover = { canvas: sec.kind, ...pt }; const dg = state.drag;
-      if (!dg) { if (state.tool === "side" && side !== "front") requestDraw(); return; }
+      if (!dg) { const changed=hoverFixtureLabel(cv,pt,()=>hitFixtureSec(sec,pt)); if(changed || state.tool === "side") requestDraw(); return; }
       if (dg.sec && dg.sec !== sec) return; // 掴んだ図の上だけで動かす
       if (dg.kind === "marquee") {
         dg.x1 = pt.X; dg.y1 = pt.Y;
@@ -3684,7 +3798,7 @@
     });
     cv.addEventListener("dblclick", (ev) => { ev.preventDefault(); toggleLightOf(hitFixtureSec(sec, canvasPoint(cv, ev))); });
     cv.addEventListener("pointerup", endDrag); cv.addEventListener("pointercancel", endDrag);
-    cv.addEventListener("pointerleave", () => { state.hover = null; requestDraw(); });
+    cv.addEventListener("pointerleave", () => { state.hover = null; fixtureLabelHover = null; cv.title=""; requestDraw(); });
   }
   SECS.forEach(bindSection);
   // 側面図をどちら側にするか。選び直しても図の見方は変わらない（向きだけ入れ替わる）
@@ -5519,6 +5633,7 @@
       commit(`Q${no} を作りました。このまま編集できます`);
     }, "primary", `いま出ている明かりを次の番号 Q${E.cueNumberNext(allCueNos())} の LXキュー にして、そのまま編集を続けます`);
     newCue.id="lx-new";
+    newCue.dataset.tipDescription = "現在の明かりを新しい番号のLXキューとして追加します。";
     newCue.disabled=!state.rig.fixtures.length;
     if(newCue.disabled)newCue.title="先に機材配置で灯体を置いてください";
     newBar.append(newCue,
@@ -7051,7 +7166,7 @@
   // 試作の検証用。製品では出さない（状態を外から読めるようにしておく）
   window.__RIG = { state, E, planBox, secBox, secOf, SECS,
     /* 「照明のあるある」（light-presets-ui.js）との接続点。app.js の内部関数をここだけから貸す（2026-09-14）。 */
-    hooks: { setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
+    hooks: { fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
 
   /* ブラウザの大きさに追従する。モーダルだからと固定にしない（2026-09-11 本人要望）。
      rAFで1回にまとめる（ドラッグ中の連続リサイズで描き直しが溜まらないように）。 */

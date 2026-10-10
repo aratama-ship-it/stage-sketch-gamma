@@ -819,7 +819,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261010-v0338'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261010-v0339'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;
@@ -892,7 +892,7 @@
   }
   function workspaceShortcutBlocked(event) {
     const target=event.target?.nodeType===1?event.target:null;
-    if(target && (target.isContentEditable || target.closest('input, textarea, select, [contenteditable="true"]'))) return true;
+    if(target && (target.isContentEditable || target.closest('input, textarea, select, [contenteditable="true"], [role="combobox"], [role="listbox"], [role="option"]'))) return true;
     return [...document.querySelectorAll('[role="dialog"][aria-modal="true"], [role="alertdialog"][aria-modal="true"]')]
       .some(dialog=>!dialog.hidden && dialog.getClientRects().length>0);
   }

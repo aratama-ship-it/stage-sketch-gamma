@@ -2389,7 +2389,10 @@
     }
     if (els.objectRemove) els.objectRemove.disabled = !fixture && !access && state.selectedArea?.kind !== "wall";
     const wallRemove = $("stage-venue-editor-wall-remove");
-    if (wallRemove) wallRemove.disabled = state.selectedArea?.kind !== "wall";
+    if (wallRemove) {
+      wallRemove.disabled = state.selectedArea?.kind !== "wall";
+      wallRemove.hidden = wallRemove.disabled;
+    }
     const wall = state.selectedArea?.kind === "wall" ? state.walls.find(a => a.id === state.selectedArea.id) : null;
     const wallSize = $("stage-venue-editor-wall-size");
     const box = wall && polygonBounds(wall.polygon);
@@ -2475,16 +2478,17 @@
     if (els.wingLegCount) {
       els.wingLegCount.disabled = !canSetLegCount;
       els.wingLegCount.value = commonLegCount === null ? "" : String(commonLegCount);
-      els.wingLegCount.placeholder = legCounts.length > 1 ? tx("混在") : tx("自動");
+      els.wingLegCount.placeholder = "2–10";
     }
-    [els.wingLegCountMinus, els.wingLegCountPlus, els.wingLegCountAuto].filter(Boolean)
+    [els.wingLegCountMinus, els.wingLegCountPlus].filter(Boolean)
       .forEach((button) => { button.disabled = !canSetLegCount; });
+    if (els.wingLegCountAuto) els.wingLegCountAuto.disabled = !canSetLegCount || legCounts.every((count) => count === null);
     if (els.wingLegCountHelp) {
-      els.wingLegCountHelp.dataset.venueStateNote = String(!canSetLegCount);
+      els.wingLegCountHelp.dataset.venueStateNote = String(!canSetLegCount || commonLegCount === null);
       els.wingLegCountHelp.textContent = !customWings
         ? tx("標準の劇場は複製してから変えられます")
         : (!state.wings.length ? tx("舞台袖を描くと、すべての袖へ一括で設定できます。")
-          : tx("すべての舞台袖へ一括で設定します。自動では袖の奥行きから枚数を決めます。"));
+          : (legCounts.every((count) => count === null) ? tx("現在は自動です。") : legCounts.length > 1 ? tx("袖ごとに設定が異なります。") : "") + tx("すべての舞台袖へ一括で設定します。自動では袖の奥行きから枚数を決めます。"));
     }
     syncHistoryButtons();
   }
@@ -3503,21 +3507,17 @@
   clearAudience.addEventListener("click", () => chooseAudienceReset(true));
 
   function syncResetButtonLanguage() {
-    const language = document.documentElement.lang;
-    const labels = {
-      ja: ["やり直す", "この項目を初期状態に戻す", "見る位置を編集前の状態に戻す"],
-      en: ["Reset", "Reset this section", "Restore the original viewpoints"],
-      "zh-Hans": ["重置", "将此项恢复到初始状态", "恢复原来的观看位置"],
-      "zh-Hant": ["重設", "將此項恢復至初始狀態", "還原原本的觀看位置"],
-      ko: ["초기화", "이 항목을 초기 상태로 되돌리기", "보기 위치를 편집 전 상태로 되돌리기"],
-    }[language] || ["Reset", "Reset this section", "Restore the original viewpoints"];
     document.querySelectorAll("[data-venue-reset-kind]").forEach((button) => {
-      button.textContent = labels[0];
-      button.title = button.dataset.venueResetKind === "viewpoints" ? labels[2] : labels[1];
+      const kind = button.dataset.venueResetKind;
+      const label = kind === "preset" ? "劇場全体を読み込み直す"
+        : kind === "viewpoints" ? "見る位置を編集前に戻す"
+          : kind === "audience" ? "客席を戻す・削除する" : "この手順を既定に戻す";
+      button.textContent = tx(label);
+      button.title = tx(label);
     });
-    restoreAudience.textContent = isEnglish() ? "Restore preset seats" : "プリセットへ戻す";
-    clearAudience.textContent = isEnglish() ? "Remove all seats" : "全削除";
-    audienceResetChoices.setAttribute("aria-label", isEnglish() ? "Audience reset options" : "客席のやり直し方法");
+    restoreAudience.textContent = tx("客席をプリセットに戻す");
+    clearAudience.textContent = tx("客席をすべて削除する");
+    audienceResetChoices.setAttribute("aria-label", tx("客席のやり直し方法"));
   }
   /* ★13-c（2026-10-06）: 日本語が同じでも意味が違う語は、共通の訳（長さ＝Duration・向き＝Facing・外す＝衣装を脱がす）が
    * 当たってしまう。壁の長さ・向き・図面を外すは、ここで別の鍵（data-venue-label）から訳す。

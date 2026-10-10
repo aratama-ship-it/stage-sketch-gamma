@@ -1,12 +1,93 @@
-/* v0.3.0–v0.3.37: source mapping in gamma-dev/batch-a-20261010/N-19-sources.json. */
+/* v0.3.0–v0.3.37: gamma-dev/batch-a-20261010/N-19-sources.json.
+ * v0.3.39: high-ui implementation-status (19 IDs), gamma-ui.js information bar, Undo commit 270e417. */
 (function () { window.MANUAL.chapters.push({
   "id": "whats-new-0-3",
   "no": "Part 15",
   "short": "15",
   "tab": "New in v0.3",
   "title": "What is new in v0.3",
-  "lead": "Changes in v0.3.0–v0.3.37, with their controls and scenes to try.",
+  "lead": "Changes in v0.3.0–v0.3.39, with their controls and scenes to try.",
   "sections": [
+    {
+      "id": "new-039-common",
+      "title": "Choose options, switch settings and read help",
+      "status": "sourced",
+      "keywords": [
+        "ON",
+        "OFF",
+        "options",
+        "Settings",
+        "dialog",
+        "narrow screen"
+      ],
+      "html": "<p>ON/OFF states and the selected option now use distinct colours. Small list controls and help text are larger, and dialog widths suit their contents. The top tabs stay on one line on narrower screens.</p>\n<p>Where: Open a short option list in Settings or another panel. Use ↑↓ to choose, Enter to confirm, Esc to close, or Tab to move on.</p>\n<p>Try it in: C-1 and D-3. Switch to the light skin in Settings.</p>\n<p class=\"m-source\">Release history: v0.3.39</p>"
+    },
+    {
+      "id": "new-039-scenes",
+      "title": "Scene description, editing and actions",
+      "status": "sourced",
+      "keywords": [
+        "Scene description",
+        "Edit",
+        "split",
+        "selection",
+        "close"
+      ],
+      "html": "<p>The scene-description control now has a text label, with Edit beside the scene name. The selected scene row shows its … menu, including actions to create the next scene or delete the selected one.</p>\n<p>Where: Stage → Scene description, Edit beside the scene name, or … in the scene row. If splitting is unavailable, hover over or focus its control to read the reason.</p>\n<p>Close the selected-piece controls with their close button or Esc to clear the selection. Try it in: A-4 and H-1.</p>\n<p class=\"m-source\">Release history: v0.3.39</p>"
+    },
+    {
+      "id": "new-039-venue",
+      "title": "Add theatre shapes and identify what will be reset",
+      "status": "sourced",
+      "keywords": [
+        "Theatre settings",
+        "Add rectangle",
+        "Add circle",
+        "legs",
+        "automatic",
+        "wall"
+      ],
+      "html": "<p>Shape controls now say Add rectangle, Add circle or Draw outline to add. After choosing a control, drag on the plan or click its corners to create the shape. Ceiling-field labels have more room.</p>\n<p>Where: Theatre settings → Stage shape. Use the automatic-reset control beside the number of masking legs to return to automatic calculation. In Walls and pillars, selecting a wall reveals the control to delete that wall.</p>\n<p>Reset controls name their scope, such as reloading the whole theatre or restoring the current step. Check that scope before using them. Try it in: open Theatre settings from D-3.</p>\n<p class=\"m-source\">Release history: v0.3.39</p>"
+    },
+    {
+      "id": "new-039-fixtures",
+      "title": "Fixture numbers, names and the equipment list",
+      "status": "sourced",
+      "keywords": [
+        "fixture number",
+        "fixture name",
+        "Equipment placement",
+        "Light design",
+        "label"
+      ],
+      "html": "<p>The fixture list is wider in Equipment placement. Drawings use short fixture numbers; select a fixture or hover over its label to read its name. Offset labels connect back to their fixtures, and moving a label does not move the fixture.</p>\n<p>Where: Equipment placement or Light design → select a fixture in the drawing or hover over its label. Try it in: F-1 and J-1.</p>\n<p class=\"m-source\">Release history: v0.3.39</p>"
+    },
+    {
+      "id": "new-039-information",
+      "title": "Save status and control help across tabs",
+      "status": "sourced",
+      "keywords": [
+        "Information bar",
+        "save status",
+        "control help",
+        "shortcut",
+        "i"
+      ],
+      "html": "<p>The round i button in the header, Show information bar, opens a band containing save status and control help. It starts hidden and remains available when you move between tabs.</p>\n<p>Where: Press the i button, then hover over a control. Keyboard focus also shows the control name, description and any assigned shortcut. Press i again to hide the bar.</p>\n<p>Try it in: start at A-4 and switch between Stage, Equipment placement, Light design and Run of show to inspect their controls.</p>\n<p class=\"m-source\">Release history: v0.3.39</p>"
+    },
+    {
+      "id": "new-039-undo",
+      "title": "Keep support relationships when undoing",
+      "status": "sourced",
+      "keywords": [
+        "Undo",
+        "support",
+        "set piece",
+        "split",
+        "restore"
+      ],
+      "html": "<p>Undoing scene edits or splits now preserves valid relationships between a piece and the piece supporting it, including in scenes that are not currently displayed.</p>\n<p>Where: After editing on the Stage tab, press Undo in the header or ⌘Z (Ctrl+Z on Windows). Try it in: undo a split in H-1, then check that pieces resting on set pieces in C-1 retain their relationships.</p>\n<p class=\"m-source\">Release history: v0.3.39</p>"
+    },
     {
       "id": "new-03-field",
       "title": "Show mode and transition guidance",

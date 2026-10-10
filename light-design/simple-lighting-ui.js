@@ -12,7 +12,7 @@
      html[data-gamma-playback] で決め、押したら外側の確認画面を開く。
      2026-10-06 本人指示: 「かんたん／詳細」は同じ帯の「表示」の切替（.showtoggles）と同じ部品・同じ見た目にする
      （箱だけ44pxで大きく、離れた2つのボタンで他と合っていなかった）。ボタンの寸法・文字・押下表示は .showtoggles のものがそのまま効く。 */
-  bar.innerHTML='<button type="button" id="simple-playback-open">再生中の照明を見る</button><strong>照明の操作</strong><span class="showtoggles simple-mode-toggle" role="group" aria-label="照明の操作"><button type="button" id="simple-mode-on">かんたん</button><button type="button" id="simple-mode-off">詳細</button></span>';
+  bar.innerHTML='<button type="button" id="simple-playback-open">再生中の照明を見る</button><strong>照明の操作</strong><span class="showtoggles simple-mode-toggle" role="group" aria-label="照明の操作"><button type="button" id="simple-mode-on" data-tip-description="共通セットの明かりを選ぶ、かんたんな操作へ切り替えます。">かんたん</button><button type="button" id="simple-mode-off" data-tip-description="灯体ごとの設定とLXキューを編集する画面へ切り替えます。">詳細</button></span>';
   bar.querySelector('#simple-playback-open').addEventListener('click',()=>parent.GAMMA_WORKSPACE?.beginPlaybackPreview?.());
   const panel=el('section','simple-mode-panel');panel.id='simple-lighting';
   panel.innerHTML='<div class="simple-heading"><h2>シーンの明かりを選ぶ</h2><div><label>シーン <select id="simple-scene"></select></label><label>対象キュー <select id="simple-cue"></select></label></div></div>'
