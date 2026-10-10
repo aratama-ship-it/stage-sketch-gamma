@@ -354,7 +354,9 @@ ${body}
     ui.body.hidden = !hasScript;
     ui.empty.hidden = hasScript;
     ui.reimport.hidden = !hasScript;
+    ui.addLine.hidden = !hasScript;
     ui.addLine.disabled = !hasScript || !sceneRows().length;
+    ui.exportScript.disabled = !hasScript || !script.lines.length;
     if (!hasScript) { renderEmpty(); renderSummary(); return; }
     if (selectedId && !script.lines.some((line) => line.id === selectedId)) selectedId = null;
     renderSummary();

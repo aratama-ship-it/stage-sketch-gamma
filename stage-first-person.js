@@ -881,17 +881,32 @@
     const centerZ = stageDepth / 2 + 9;
     const frontZ = stageDepth / 2 + 1.2;
     const seatedEye = HOUSE_PERSON.headYM;
+    const utilityPresets = [
+      { id: "stage-right-wing", name: "上手袖", x: stageWidth / 2 + 1.5, y: 1.6, z: 0, yaw: 90, pitch: 0 },
+      { id: "stage-left-wing", name: "下手袖", x: -(stageWidth / 2 + 1.5), y: 1.6, z: 0, yaw: -90, pitch: 0 },
+      { id: "overhead", name: "真上", x: 0, y: stageCeiling + 4, z: 0, yaw: 180, pitch: -88 },
+      { id: "upstage", name: "舞台奥", x: 0, y: 1.6, z: -(stageDepth / 2) + 1.2, yaw: 0, pitch: 0 },
+    ];
+    const registered = rawVenue?.venueV2?.viewPositions || rawVenue?.viewPositions;
+    if (Array.isArray(registered) && registered.length) {
+      const registeredPresets = registered.map((point) => {
+        const x = finite(point.offsetM, 0), y = Math.max(.2, finite(point.eyeM, 1.2));
+        const z = stageDepth / 2 + finite(point.distanceM, 8);
+        const targetX = finite(point.targetOffsetM, 0);
+        const targetZ = stageDepth / 2 + finite(point.targetDistanceM, -stageDepth / 2);
+        const dx = x - targetX, dz = z - targetZ;
+        return { id: `viewpoint:${point.id}`, name: point.label || "見る位置", x, y, z,
+          yaw: Math.atan2(dx, -dz) * 180 / Math.PI,
+          pitch: Math.atan2(1.2 - y, Math.max(.01, Math.hypot(dx, dz))) * 180 / Math.PI };
+      });
+      return [...registeredPresets, ...utilityPresets];
+    }
     const presets = [
       { id: "audience-center", name: "客席中央", x: 0,
         y: houseFloorAt(centerZ, stageWidth, stageDepth) + seatedEye, z: centerZ, yaw: 180, pitch: -2 },
       { id: "front-row", name: "最前列", x: 0,
         y: houseFloorAt(frontZ, stageWidth, stageDepth) + seatedEye, z: frontZ, yaw: 180, pitch: 2 },
-      { id: "stage-right-wing", name: "上手袖", x: stageWidth / 2 + 1.5, y: 1.6, z: 0, yaw: 90, pitch: 0 },
-      { id: "stage-left-wing", name: "下手袖", x: -(stageWidth / 2 + 1.5), y: 1.6, z: 0, yaw: -90, pitch: 0 },
-      { id: "overhead", name: "真上", x: 0, y: stageCeiling + 4, z: 0, yaw: 180, pitch: -88 },
-      /* 舞台奥は「舞台の奥のほう」であって、奥壁の外ではない。以前は壁の1m後ろに
-         置いていたため、壁の裏側が視界を塞いで客席が見えなかった（2026-08-29 修正）。 */
-      { id: "upstage", name: "舞台奥", x: 0, y: 1.6, z: -(stageDepth / 2) + 1.2, yaw: 0, pitch: 0 },
+      ...utilityPresets,
     ];
     const modeled = modeledVenue3D();
     if (modeled && modeled.venue.id === rawVenue?.id) {
@@ -1201,6 +1216,7 @@
     helpButton.type = "button";
     helpButton.dataset.tipDescription = "3Dで移動・見回すためのキー操作を表示します。";
     helpButton.textContent = "?";
+    helpButton.setAttribute("aria-label", "この欄の説明を出す");
     helpButton.setAttribute("aria-controls", "stage-fpv-keys");
     helpButton.setAttribute("aria-expanded", "false");
     helpButton.onclick = () => { clearTimeout(helpTimer); setHelpVisible(keyGuide.hidden); };
@@ -1865,6 +1881,15 @@
       row.append(capsWrap, what);
       elements.keyGuide.appendChild(row);
     });
+    const more = createElement("div", "", "row stage-help-search-line");
+    const moreText = createElement("span", "", "what");
+    moreText.textContent = text("詳しくは「使い方をさがす」で調べられます。");
+    const moreButton = createElement("button", "", "stage-about-link");
+    moreButton.type = "button";
+    moreButton.textContent = text("使い方をさがす");
+    moreButton.onclick = () => document.getElementById("stage-help-open")?.click();
+    more.append(moreText, moreButton);
+    elements.keyGuide.appendChild(more);
     elements.closeButton.setAttribute("aria-label", text("視界を閉じる"));
     PANEL_KEYS.forEach((key) => {
       const label = text(key === "front" ? "正面図" : "平面図");

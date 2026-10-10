@@ -47,7 +47,9 @@
   }
   compactBand.addEventListener('change', compactPaperToolbar); compactPaperToolbar();
   for(const id of ['storage-status' ,'paper-size-note','pagination-status','paper-edit-status'])new MutationObserver(()=>{$('band-status').textContent=$(id).textContent;}).observe($(id),{childList:true,subtree:true});
+  $('band-help-toggle').setAttribute('aria-label','この欄の説明を出す');
   $('band-help-toggle').addEventListener('click',()=>{const open=!$('editing-help').open;$('editing-help').open=open;$('band-help-toggle').setAttribute('aria-expanded',String(open));});
+  $('band-help-search').addEventListener('click',()=>window.parent.document.getElementById('stage-help-open')?.click());
   function popover(open){const panel=$('column-popover');panel.hidden=!open;$('columns-button').setAttribute('aria-expanded',String(open));if(open){const a=$('columns-button').getBoundingClientRect(),b=$('preview').getBoundingClientRect();
     // #14: in the left panel the list opens beside the panel (over the paper margin) instead of covering the panel.
     if(panelLayout()){const side=$('paper-panel').getBoundingClientRect(),lift=Math.max(0,Math.min(a.top-8,a.top+panel.getBoundingClientRect().height+8-innerHeight));panel.style.top=`${a.top-b.top-lift}px`;panel.style.left=`${Math.max(0,Math.min(side.right-b.left+8,b.width-360))}px`;}
@@ -282,7 +284,7 @@
   function renderDocumentInfo(preserveInput=false){
     for(const [key,id] of Object.entries(infoFields))if((!preserveInput||document.activeElement!==$(id))&&$(id).value!==documentInfo[key])$(id).value=documentInfo[key];
     syncLanguage();
-    for(const key of Object.keys(infoFields))$("paper-info-"+key).textContent=key==="startTime"?pclock(timing.startSeconds(documentInfo[key])):key==="date"&&documentInfo[key]?timing.dateText(documentInfo[key],language):documentInfo[key].trim()||P("notSet");
+    for(const key of Object.keys(infoFields))$("paper-info-"+key).textContent=key==="startTime"?pclock(timing.startSeconds(documentInfo[key])):key==="date"&&documentInfo[key]?timing.dateText(documentInfo[key],language):key==="revision"&&/^DRAFT \d+$/.test(documentInfo[key].trim())&&language==="ja"?documentInfo[key].trim().replace(/^DRAFT /,"下書き "):documentInfo[key].trim()||P("notSet");
     const end=timeline().at(-1)?.end??null,label=`終了予定：${timing.dateTime(end,documentInfo.date)}`;
     $("document-timing-status").textContent=label+(documentInfo.startTime===""?" · 開始時刻が未定です。":total()===null?" · 尺または転換が未定です。":" · 最後の転換まで含みます。");
     $("paper-timing-end").textContent=P("end")+timing.dateTime(end,documentInfo.date,language);

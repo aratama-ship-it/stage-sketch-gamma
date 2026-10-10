@@ -571,11 +571,11 @@
   }
   function syncDistanceMetric() {
     const b = $("distance-mode"); if (!b) return;
-    b.textContent = distanceMetric ? "距離：実寸" : "距離：固定帯";
+    b.textContent = distanceMetric ? "奥行きの目盛り：実寸" : "奥行きの目盛り：固定";
     b.setAttribute("aria-pressed", String(distanceMetric));
     b.title = distanceMetric
-      ? "客席方向の距離を実寸で表示します。押すと固定帯へ戻します"
-      : "客席方向を固定帯で表示します。押すと実寸へ切り替えます";
+      ? "客席方向の奥行きを実寸で表示。押すと固定の幅に切り替えます"
+      : "客席方向の奥行きを固定の幅で表示。押すと実寸に切り替えます";
   }
   const secOf = (kind) => SECS.find((x) => x.kind === kind);
   /* 舞台の矩形（内部px）。キャンバスの実寸から毎回計算するので、
@@ -5434,7 +5434,7 @@
     const colFade = T.by.color && T.by.color.fadeSec !== null ? T.by.color.fadeSec : null;
     const mibDefault = q.timing ? T.mib : true;   // 先回り（MIB）は既定オン（2026-09-27 本人承認）
     const html = `<p class="ptitle">${entryMode ? `<span>入り</span>` : qLabel(q)}${q.name ? `<span data-no-i18n>「${escapeHtml(q.name)}」</span>` : ""}<span> の時間</span></p>
-      <p class="hint">前の明かりからこのキューへ、どう移るか。実機の卓と同じ考え方（In/Out Fade・Delay・カーブ・Snap・MIB）。空欄は「上げと同じ」。</p>
+      <p class="hint">前の明かりからどう変わるか。空欄＝上げと同じ。<br><span>（In/Out Fade・Delay・カーブ・Snap・MIB）</span></p>
       <div class="lxt-grid">
         <div class="field"><span>移り方</span><div class="seg lxt-seg" role="group" aria-label="移り方">${entryMode ? `<button type="button" data-mode="auto" aria-pressed="${!sc.entry || sc.entry.mode === "auto"}">転換に揃える</button>` : ""}<button type="button" data-mode="cut" aria-pressed="${entryMode ? sc.entry?.mode === "cut" : isCut}">カット</button><button type="button" data-mode="fade" aria-pressed="${!isCut}">${entryMode ? "指定" : "フェード"}</button></div></div>
         ${entryMode ? `<p class="hint">${Number.isFinite(sceneTimingContext.get(sc.id)?.transitionInSeconds)?`<span>転換に揃える</span>（${sceneTimingContext.get(sc.id).transitionInSeconds}<span>秒</span>）`:"秒数は舞台側"}</p>` : ""}
@@ -5613,9 +5613,9 @@
     const setLx = (patch) => { const s2 = lxScene(); s2.lx = { ...lxOf(s2), ...patch }; commit(); };
     // 番号の頭2つは横1行にまとめる（縦を使わない）
     const nums = el("div", "lxnums");
-    const sIn = numIn(x.section, (v) => setLx({ section: v })); sIn.title = "セクション番号";
-    const nIn = numIn(x.no, (v) => setLx({ no: v })); nIn.title = "シーン番号";
-    nums.append(el("span", null, "番号"), sIn, el("span", null, "-"), nIn);
+    const sIn = numIn(x.section, (v) => setLx({ section: v })); sIn.title = "セクション番号"; sIn.setAttribute("aria-label", "セクション番号");
+    const nIn = numIn(x.no, (v) => setLx({ no: v })); nIn.title = "シーン番号"; nIn.setAttribute("aria-label", "シーン番号");
+    nums.append(el("span", null, "セクション - シーン"), sIn, el("span", null, "-"), nIn);
     b.append(nums);
     /* 新規キュー。いま画面に出ている明かりをそのまま持ち上げて次の番号のキューにし、
        そのままそのキューの編集に入る（2026-09-13 本人要望「新規キューを作ってデザインを始める」）。
@@ -5863,7 +5863,10 @@
     }
     // ---- 動きモード ----
     // パネル名「照明デザイン」は静的HTML(#insphead)へ移した。ここでは繰り返さない。
-    if (!ids.length) return;
+    if (!ids.length) {
+      host.append(el("p", "hint", "平面図か一覧で灯体を選ぶと、ここで色・向き・広がりを直せます"));
+      return;
+    }
     if (ids.some(isBallFixture)) { renderMirrorBallInspector(host, ids); return; }
     if (ids.some((id) => E.isLaser && E.isLaser(fixtureById(id)))) { renderLaserInspector(host, ids); return; }
     if (ids.length === 1) {

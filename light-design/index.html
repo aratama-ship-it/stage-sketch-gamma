@@ -286,6 +286,9 @@
   .leftcol,.sec.side.l{margin-right:36px}
   .figgrid[data-solo] .sec.side.l{margin-right:0}
   #panel-layout-reset{min-height:44px;white-space:normal}
+  .panel-width-menu{position:relative}
+  .panel-width-menu summary{cursor:pointer;min-height:var(--ctrl-md);display:flex;align-items:center}
+  .panel-width-actions{position:absolute;right:0;top:100%;z-index:10;min-width:190px;padding:var(--gamma-gap);background:var(--desk-2);border:1px solid var(--line-dark)}
   .pcard{min-width:0}
   .pname{flex-wrap:wrap}
   .pdetail,.plead{overflow-wrap:anywhere}
@@ -766,7 +769,7 @@
   .dialog .in,.dialog .in:has(.pgrid){display:flex;flex-direction:column;max-height:calc(100dvh - 24px);overflow:hidden}
 </style>
 <style>.option-b-controls button{min-height:44px}.option-b-controls :focus-visible{outline:2px solid #d3ac59;outline-offset:2px}</style>
-<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261010-v0339">
+<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261010-v0341">
 <link rel="stylesheet" href="embed.css?v=20261010-v0338">
 <link rel="stylesheet" href="simple-lighting.css?v=20261009-v0337">
 </head>
@@ -786,6 +789,9 @@
       <button type="button" id="mode-move" aria-pressed="true">照明デザイン</button>
     </div>
     <div class="head-right">
+      <details class="panel-width-menu"><summary class="btn small quiet">表示幅</summary><div class="panel-width-actions">
+            <button type="button" class="btn small quiet" id="panel-layout-reset" title="灯体一覧・LXキュー・下手図の幅を標準に戻します">表示幅を初期値に戻す</button>
+      </div></details>
       <span class="seg hist">
         <button type="button" id="undo" title="元に戻す（⌘Z）">元に戻す</button>
         <button type="button" id="redo" title="やり直す（⇧⌘Z）">やり直す</button>
@@ -879,7 +885,6 @@
               <p class="note" id="place-note"></p>
             </div>
             <p class="ptitle" id="fixture-list-title">灯体一覧</p>
-            <button type="button" class="btn small quiet" id="panel-layout-reset" title="灯体一覧・LXキュー・下手図の幅を標準に戻します">表示幅を初期値に戻す</button>
             <input type="search" id="search" class="search" placeholder="番号・名前で探す" aria-label="灯体を探す">
             <div class="filters" id="filters" role="group" aria-label="絞り込み">
               <button type="button" data-filter="all" aria-pressed="true">すべて</button>
@@ -1028,7 +1033,7 @@
      結果や注意は「灯体情報」パネル最下部の #insp-log へ常設で出す。
      要素は残さない（.toast のCSSも使われなくなる）。 -->
 
-<script src="../gamma-ui.js?v=20261010-v0339"></script>
+<script src="../gamma-ui.js?v=20261010-v0341"></script>
 <link rel="stylesheet" href="position-names.css?v=20261001-release71">
 <script src="../gamma-render-resolution.js?v=20261006-v0318"></script>
 <script src="rig-engine.js?v=20261006-v0315"></script>
@@ -1044,7 +1049,7 @@
 <script src="../stage-fixture-body.js?v=20261009-v0335"></script>
 <script src="../stage-light-receiver.js?v=20261004-receiver89"></script>
 <script src="../gamma-light-cue-overlay.js?v=20261006-v0318"></script>
-<script src="app.js?v=20261010-v0339"></script>
+<script src="app.js?v=20261010-v0341"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20261010-v0338"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->
@@ -1058,6 +1063,6 @@
 <script src="position-names-ui.js?v=20261001-release71"></script>
 <script src="../gamma-ui-i18n.js?v=20261010-v0338"></script>
 <script src="../gamma-ui-i18n.ko.js?v=20261010-v0338"></script>
-<script src="ui-i18n.js?v=20261010-v0338"></script>
+<script src="ui-i18n.js?v=20261010-v0341"></script>
 </body>
 </html>

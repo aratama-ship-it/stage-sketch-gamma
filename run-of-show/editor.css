@@ -194,7 +194,8 @@ html[data-stage-skin] body{background:var(--desk);color:var(--chrome-ink)}
 html[data-stage-skin] .small,html[data-stage-skin] .binding,html[data-stage-skin] .muted{color:var(--chrome-muted)}
 html[data-stage-skin] button,html[data-stage-skin] .button,html[data-stage-skin] select,html[data-stage-skin] summary{background:var(--desk-2);border-color:var(--line-dark);color:var(--chrome-ink)}
 html[data-stage-skin] button:hover{background:var(--desk-3)}
-html[data-stage-skin] button.primary,html[data-stage-skin] button[aria-pressed=true]{background:var(--brass);color:var(--desk);border-color:var(--brass)}
+html[data-stage-skin] button.primary{background:var(--gamma-primary-bg);color:var(--chrome-ink);border-color:var(--gamma-primary-bg)}
+html[data-stage-skin] button[aria-pressed=true]{background:var(--brass);color:var(--desk);border-color:var(--brass)}
 html[data-stage-skin] input,html[data-stage-skin] textarea{background:var(--desk-2);color:var(--chrome-ink);border-color:var(--line-dark)}
 .paper,.output-page,.portrait-view{background:var(--surface);color:var(--ink)}
 html[data-stage-skin] .paper .small,html[data-stage-skin] .output-page .small{color:var(--muted)}
@@ -267,16 +268,18 @@ html[data-stage-skin] .paper-band select{padding-inline:var(--s1)}
 .distribution-dialog textarea{min-height:var(--textarea)}
 .distribution-dialog input[type=checkbox]{width:20px;min-height:20px;vertical-align:middle}
 .distribution-dialog button,.distribution-dialog select{background:var(--surface);color:var(--ink);border-color:var(--line);font-size:var(--fs-body)}
-.distribution-dialog button.primary{background:var(--accent);color:var(--surface)}
+.distribution-dialog button.primary{background:var(--gamma-primary-bg);color:var(--chrome-ink,var(--surface));border-color:var(--gamma-primary-bg)}
 .distribution-dialog .distribution-check{min-height:var(--control);display:flex;align-items:center;gap:var(--s2)}
 .distribution-dialog .distribution-actions{display:flex;flex-wrap:wrap;gap:var(--s2);margin-block:var(--s4)}
 .distribution-dialog li{margin-bottom:var(--s2)}
 .distribution-dialog .distribution-error{color:var(--call);font-weight:700}
 .distribution-dialog table{font-size:var(--fs-body)}
 .distribution-dialog .distribution-close{float:right;min-width:var(--control)}
+/* P-02: dialog chrome follows the host; the printable paper keeps its palette. */
+html[data-stage-skin] .distribution-dialog{--surface:var(--desk-2);--ink:var(--chrome-ink);--muted:var(--chrome-ink);--line:var(--line-dark);background:var(--surface);color:var(--ink);border-color:var(--line)}
 html[data-stage-skin] .distribution-dialog .small{color:var(--muted)}
 html[data-stage-skin] .distribution-dialog textarea,html[data-stage-skin] .distribution-dialog select,html[data-stage-skin] .distribution-dialog button,html[data-stage-skin] .distribution-dialog summary,html[data-stage-skin] .distribution-dialog .button{background:var(--surface);color:var(--ink);border-color:var(--line)}
-html[data-stage-skin] .distribution-dialog button.primary{background:var(--accent);color:var(--surface)}
+html[data-stage-skin] .distribution-dialog button.primary{background:var(--gamma-primary-bg);color:var(--chrome-ink);border-color:var(--gamma-primary-bg)}
 @media(max-width:700px){.distribution-dialog .distribution-fields{grid-template-columns:1fr}}
 @media print{.distribution-dialog{display:none!important}}
 

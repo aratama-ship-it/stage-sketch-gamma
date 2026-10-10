@@ -628,12 +628,14 @@
     return `\uFEFF${lines.join("\r\n")}`;
   }
 
-  function csvFileName(sheet) {
+  function csvFileName(sheet, dateStamp = "") {
     const safe = (value, fallback) => {
       const cleaned = text(value).replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_").replace(/[. ]+$/g, "_").trim();
       return (cleaned || fallback).slice(0, 80);
     };
-    return `${safe(sheet && sheet.showTitle, "show")}_${safe(sheet && sheet.title, "sheet")}_${safe(sheet && sheet.versionLabel, "v1")}.csv`;
+    const rawVersion = safe(sheet && sheet.versionLabel, "v1").replace(/^v+/i, "");
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(dateStamp) ? dateStamp : "date";
+    return `${safe(sheet && sheet.showTitle, "show")}_v${rawVersion}_${safe(`Qシート-${sheet && sheet.title}`, "Qシート")}_${date}.csv`;
   }
 
   function renderSheetHtml(sheet, lang = "ja", options = {}) {

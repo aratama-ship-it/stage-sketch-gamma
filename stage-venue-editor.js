@@ -125,6 +125,7 @@
     conflictFirst: $("stage-venue-conflict-first"),
     conflictSecond: $("stage-venue-conflict-second"),
     conflictCancel: $("stage-venue-conflict-cancel"),
+    conflictClose: $("stage-venue-conflict-close"),
     libraryExport: $("stage-venue-library-export"),
     libraryImport: $("stage-venue-library-import"),
     libraryStatus: $("stage-venue-library-status"),
@@ -139,14 +140,17 @@
     importUseModal: $("stage-venue-import-use-modal"),
     importUseList: $("stage-venue-import-use-list"),
     importUseCancel: $("stage-venue-import-use-cancel"),
+    importUseClose: $("stage-venue-import-use-close"),
     importUseConfirm: $("stage-venue-import-use-confirm"),
     discardBackdrop: $("stage-venue-discard-backdrop"),
     presetBackdrop: $("stage-venue-preset-backdrop"),
     presetModal: $("stage-venue-preset-modal"),
     presetCancel: $("stage-venue-preset-cancel"),
+    presetClose: $("stage-venue-preset-close"),
     presetConfirm: $("stage-venue-preset-confirm"),
     discardModal: $("stage-venue-discard-modal"),
     discardCancel: $("stage-venue-discard-cancel"),
+    discardClose: $("stage-venue-discard-close"),
     discardConfirm: $("stage-venue-discard-confirm"),
   };
 
@@ -6638,11 +6642,12 @@
     });
   });
   if (els.presetCancel) els.presetCancel.addEventListener("click", () => hidePresetDialog());
-  if (els.presetBackdrop) els.presetBackdrop.addEventListener("click", () => hidePresetDialog());
+  if (els.presetClose) els.presetClose.addEventListener("click", () => hidePresetDialog());
   if (els.presetConfirm) els.presetConfirm.addEventListener("click", applySelectedPreset);
   if (els.discardCancel) els.discardCancel.addEventListener("click", () => hideDiscardDialog());
+  if (els.discardClose) els.discardClose.addEventListener("click", () => hideDiscardDialog());
   if (els.discardConfirm) els.discardConfirm.addEventListener("click", discardAndCloseEditor);
-  if (els.discardBackdrop) els.discardBackdrop.addEventListener("click", () => hideDiscardDialog());
+  // Destructive confirmations deliberately ignore outside clicks; use ×, Esc or Cancel.
   if (els.libraryExport) els.libraryExport.addEventListener("click", downloadLibrary);
   if (els.libraryImport) {
     els.libraryImport.addEventListener("change", (event) => {
@@ -6656,6 +6661,7 @@
   if (els.importBackdrop) els.importBackdrop.addEventListener("click", cancelImportPreview);
   if (els.importUseConfirm) els.importUseConfirm.addEventListener("click", useImportedVenue);
   if (els.importUseCancel) els.importUseCancel.addEventListener("click", () => hideImportUseDialog());
+  if (els.importUseClose) els.importUseClose.addEventListener("click", () => hideImportUseDialog());
   if (els.importUseBackdrop) els.importUseBackdrop.addEventListener("click", () => hideImportUseDialog());
   if (els.importUseList) {
     els.importUseList.addEventListener("click", (event) => {
@@ -6677,6 +6683,7 @@
   }
   // T-35: 逃げ道は3つとも同じ扱い（ボタン・Escape・背景クリック）。
   if (els.conflictCancel) els.conflictCancel.addEventListener("click", cancelConflict);
+  if (els.conflictClose) els.conflictClose.addEventListener("click", cancelConflict);
   if (els.conflictBackdrop) els.conflictBackdrop.addEventListener("click", cancelConflict);
   if (els.audienceFull) {
     els.audienceFull.addEventListener("click", () => withHistory(() => placeFullAudience()));
@@ -6822,6 +6829,21 @@
       event.preventDefault();
       if (event.shiftKey) redoHistory();
       else undoHistory();
+      return;
+    }
+    if (event.key === "Escape" && els.conflictModal && !els.conflictModal.hidden) {
+      event.preventDefault();
+      cancelConflict();
+      return;
+    }
+    if (event.key === "Escape" && els.presetModal && !els.presetModal.hidden) {
+      event.preventDefault();
+      hidePresetDialog();
+      return;
+    }
+    if (event.key === "Escape" && els.discardModal && !els.discardModal.hidden) {
+      event.preventDefault();
+      hideDiscardDialog();
       return;
     }
     if (event.key === "Escape" && els.importModal && !els.importModal.hidden) {

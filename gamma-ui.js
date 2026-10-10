@@ -316,11 +316,55 @@
     });
   }
 
+  // H-10: keep off-screen panel contents out of Tab order. Headers and
+  // scrollable columns remain reachable, so keyboard users can reveal them.
+  function bindPanelViewport(root) {
+    if (typeof IntersectionObserver !== 'function') return;
+    const selector = '.stage-col .stage-panel-body, .stage-col .stage-cast-list > .stage-cast-row';
+    const observed = new Set(), owned = new WeakSet();
+    const release = node => { if (owned.has(node)) { node.inert = false; owned.delete(node); } };
+    const observer = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        const node = entry.target;
+        if (!observed.has(node)) continue;
+        if (entry.isIntersecting) release(node);
+        else if (!node.inert && !node.contains(document.activeElement)) {
+          node.inert = true; owned.add(node);
+        }
+      }
+    });
+    const refresh = () => {
+      const current = new Set(root.querySelectorAll(selector));
+      for (const node of observed) if (!current.has(node)) {
+        observer.unobserve(node); observed.delete(node); release(node);
+      }
+      for (const node of current) if (!observed.has(node)) {
+        observed.add(node); observer.observe(node);
+      }
+      root.querySelectorAll('.stage-col').forEach(column => {
+        if (!column.hasAttribute('tabindex')) column.tabIndex = 0;
+      });
+    };
+    refresh();
+    const changes = new MutationObserver(records => {
+      if (records.some(record => [...record.addedNodes, ...record.removedNodes].some(node => node.nodeType === 1))) refresh();
+    });
+    changes.observe(root, { childList:true, subtree:true });
+    const recheckFocus = event => {
+      for (const node of observed) if (node.contains(event.target)) requestAnimationFrame(() => {
+        if (observed.has(node)) { observer.unobserve(node); observer.observe(node); }
+      });
+    };
+    root.addEventListener("focusout", recheckFocus);
+    return () => { root.removeEventListener("focusout", recheckFocus); changes.disconnect(); observer.disconnect(); observed.forEach(release); };
+  }
+
   const refreshSelect = select => { for (const record of shortControlRecords) if (record.select === select) record.refresh(); };
 
-  window.GAMMA_UI = Object.freeze({ containDialog, bindHeight, bindWorkspaceKeys, watchDialogs, translateDOM, sourceText, sourceAttribute, enhanceControls, refreshSelect });
+  window.GAMMA_UI = Object.freeze({ containDialog, bindHeight, bindWorkspaceKeys, watchDialogs, translateDOM, sourceText, sourceAttribute, enhanceControls, refreshSelect, bindPanelViewport });
   const startControls = () => {
     enhanceControls(document.body);
+    bindPanelViewport(document.body);
     let queued = false;
     new MutationObserver(records => {
       for (const record of shortControlRecords) if (!record.select.isConnected) record.dispose();

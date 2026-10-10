@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.40";
+  const GAMMA_APP_VERSION = "v0.3.41";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -662,7 +662,24 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const version = (source.versionLabel || "v1")
       .replace(/[\\/:*?"<>|\s]+/g, "_")
       .slice(0, 24) || "v1";
-    return `${title}-${version}`;
+    return projectExportFilename({ title, versionLabel: version }, "ショー", "").replace(/\.stagesketch$/i, "");
+  }
+
+  function projectExportDate(value = new Date()) {
+    const date = value instanceof Date ? value : new Date(value);
+    return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+  }
+
+  function projectExportFilename(project, kind, extension, date = new Date()) {
+    const safePart = (value, fallback, limit = 40) => String(value || fallback)
+      .replace(/[\u0000-\u001f\u007f/\\:*?"<>|\s]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, limit) || fallback;
+    const title = safePart(project && project.title, "show");
+    const rawVersion = safePart(project && project.versionLabel, "v1", 24).replace(/^v+/i, "");
+    const type = safePart(kind, "書き出し", 48);
+    const suffix = extension ? `.${String(extension).replace(/^\.+/, "")}` : ".stagesketch";
+    return `${title}_v${rawVersion}_${type}_${projectExportDate(date)}${suffix}`;
   }
 
   function normaliseProjectExportFilename(value) {
@@ -692,6 +709,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     hasProjectSaveLocationPicker,
     applyProjectExportOutcome,
     defaultProjectExportBasename,
+    projectExportDate,
+    projectExportFilename,
     normaliseProjectExportFilename,
     isProjectExportShortcut,
   });
@@ -4930,6 +4949,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (event.key === "Escape") {
       event.preventDefault();
       event.stopImmediatePropagation();
+      closeLaunchBackupWarning(true);
       return;
     }
     if (event.key !== "Tab") return;
@@ -7349,6 +7369,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   } catch (_) { /* セッション保存が使えなくても、その場の戻る操作は維持する。 */ }
   let projectRecoveryNeeded = !loaded.restored;
   let tool = "select";
+  let multiSelectMode = false; // UI-only; never written to the show or preferences.
   let stagePointSources = [];
   let selectedId = null;
   let selectedIds = new Set();
@@ -11285,6 +11306,19 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     message = sx(message);
     els.live.textContent = "";
     requestAnimationFrame(() => { els.live.textContent = message; });
+  }
+
+  function helpSearchLine() {
+    const line = document.createElement("span");
+    line.className = "stage-help-search-line";
+    line.append(document.createTextNode(tx("詳しくは「使い方をさがす」で調べられます。") + " "));
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "stage-about-link";
+    open.textContent = tx("使い方をさがす");
+    open.addEventListener("click", openManualHelpFromPrefs);
+    line.append(open);
+    return line;
   }
 
   function rgba(hex, alpha) {
@@ -21389,7 +21423,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         help.className = "stage-panel-help";
         help.textContent = "?";
         help.setAttribute("aria-pressed", "false");
-        help.setAttribute("aria-label", sx(`${el.dataset.title || id}の説明を出す`, `About ${tx(el.dataset.title || id)}`));
+        help.setAttribute("aria-label", tx("この欄の説明を出す"));
         help.title = tx("この項目の説明");
         help.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -21397,7 +21431,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
           hints.forEach((hint) => { hint.hidden = !show; });
           help.setAttribute("aria-pressed", String(show));
         });
-        el.append(help);
+        const more = helpSearchLine();
+        more.hidden = true;
+        hints.push(more);
+        el.append(help, more);
       }
 
       // つまみからドラッグする。パネル全体を掴むと中の操作ができなくなる。
@@ -22096,6 +22133,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (!cast.length) {
       return;
     }
+    const heading = document.createElement("div");
+    heading.className = "stage-cast-list-heading";
+    const onStageHeading = document.createElement("span");
+    onStageHeading.textContent = tx("舞台上");
+    heading.append(onStageHeading);
+    els.castList.append(heading);
     if (!castNameFilter && !castOnstageFilter) enableRosterReorder(els.castList);   // T-24: 名前を掴んで並べ替え
     cast.forEach((member) => {
       const row = document.createElement("div");
@@ -30778,7 +30821,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     help.type = "button";
     help.className = "stage-pref-help";
     help.textContent = "?";
-    help.setAttribute("aria-label", `${tx(label)}: ${tx("説明")}`);
+    help.setAttribute("aria-label", tx("この欄の説明を出す"));
     help.setAttribute("aria-controls", hintId);
     help.setAttribute("aria-expanded", "false");
     help.addEventListener("click", () => {
@@ -30794,6 +30837,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       hint.setAttribute("aria-hidden", "true");
       event.preventDefault();
     });
+    hint.append(document.createTextNode(" "), helpSearchLine());
     return help;
   }
 
@@ -31161,12 +31205,24 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (PREFS_GUIDE_COLUMN_QUERY?.matches) event.preventDefault();
   });
   let releasePrefsFocus = null;
+  function showPrefsSection(section) {
+    const settings = document.getElementById("stage-prefs-main");
+    const shortcuts = document.getElementById("stage-pref-keys");
+    const showShortcuts = section === "shortcuts";
+    if (settings) settings.hidden = showShortcuts;
+    if (shortcuts) shortcuts.hidden = !showShortcuts;
+    document.getElementById("stage-settings-open")?.setAttribute("aria-pressed", String(!showShortcuts));
+    document.getElementById("stage-shortcuts-open")?.setAttribute("aria-pressed", String(showShortcuts));
+    if (showShortcuts) renderPrefKeys();
+  }
+  document.getElementById("stage-settings-open")?.addEventListener("click", () => showPrefsSection("settings"));
+  document.getElementById("stage-shortcuts-open")?.addEventListener("click", () => showPrefsSection("shortcuts"));
   function openPrefs() {
     closePanelVisibilityMenu();
     closePanelLayoutMenu();
     syncPrefsGuideColumn();
     renderPrefs();
-    renderPrefKeys();
+    showPrefsSection("settings");
     if (els.prefsModal) els.prefsModal.hidden = false;
     if (els.prefsBackdrop) els.prefsBackdrop.hidden = false;
     if (els.prefsModal && !releasePrefsFocus) releasePrefsFocus = window.GAMMA_UI?.containDialog(els.prefsModal, {
@@ -31571,8 +31627,26 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   function releaseHistoryHasUnread() {
-    try { return localStorage.getItem(RELEASE_HISTORY_SEEN_KEY) !== RELEASE_HISTORY_CURRENT; }
-    catch (_) { return true; }
+    try {
+      const seen = localStorage.getItem(RELEASE_HISTORY_SEEN_KEY);
+      if (seen !== null) return seen !== RELEASE_HISTORY_CURRENT;
+      // Use the existing startup snapshot: autosave/bundled samples may already
+      // have populated the shelf by the time this notification is rendered.
+      const currentKey = mappedAlternativesKey(BETA_STORAGE_KEY), shelfKey = mappedAlternativesKey(SHOWS_KEY);
+      const hasCurrent = loaded.restored || storageBaseline.get(currentKey) != null
+        || localStorage.getItem(LEGACY_STORAGE_KEY) !== null;
+      const hasShelf = [storageBaseline.get(shelfKey), localStorage.getItem(LEGACY_SHOWS_KEY)].some(raw => {
+        if (raw == null) return false;
+        try { const shelf = JSON.parse(raw); return !shelf || typeof shelf !== "object" || Array.isArray(shelf) || Object.keys(shelf).length > 0; }
+        catch (_) { return true; } // An unreadable shelf is not a new device.
+      });
+      if (!STUDY_READ_ONLY && !alternativesStorageBlocked && storageBaseline.has(currentKey)
+        && storageBaseline.has(shelfKey) && !hasCurrent && !hasShelf) {
+        try { localStorage.setItem(RELEASE_HISTORY_SEEN_KEY, RELEASE_HISTORY_CURRENT); } catch (_) { /* Keep the first visit quiet even if UI preferences cannot be stored. */ }
+        return false;
+      }
+      return true;
+    } catch (_) { return true; }
   }
 
   function syncReleaseNotification() {
@@ -31588,6 +31662,23 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     try { localStorage.setItem(RELEASE_HISTORY_SEEN_KEY, RELEASE_HISTORY_CURRENT); }
     catch (_) { /* 保存できない端末では、次回も新着として知らせる */ }
     syncReleaseNotification();
+  }
+
+  function announceReleaseUpgradeOnce() {
+    let seen = null;
+    try { seen = localStorage.getItem(RELEASE_HISTORY_SEEN_KEY); }
+    catch (_) { return; }
+    // An empty store is a first-time device. H-05 owns its silent initial read state;
+    // D-47 only speaks when this same device has evidence of an older release.
+    if (!seen || seen === RELEASE_HISTORY_CURRENT) return;
+    // Once per browser session (sessionStorage is not saved data). The red dot stays
+    // until the history is opened: H-05 was approved on "upgrades still show the dot".
+    const onceKey = "gamma:release-upgrade-announced";
+    try { if (sessionStorage.getItem(onceKey) === RELEASE_HISTORY_CURRENT) return; } catch (_) { /* no session storage: announce */ }
+    const summary = els.releaseBody?.querySelector(":scope > .stage-release-entry li")?.textContent?.trim();
+    if (!summary) return;
+    announce(`${GAMMA_APP_VERSION}: ${tx(summary)}`, { warning: false });
+    try { sessionStorage.setItem(onceKey, RELEASE_HISTORY_CURRENT); } catch (_) { /* the dot still marks unread */ }
   }
 
   function openReleaseHistory() {
@@ -33585,10 +33676,7 @@ ${propsPlotHtml}
       );
       const data = JSON.stringify(result.document, null, 2);
       const blob = new Blob([data], { type: "application/json" });
-      const safe = (state.project.title || "show").replace(/[\\/:*?"<>|\s]+/g, "_").slice(0, 40);
-      const version = (state.project.versionLabel || "v1")
-        .replace(/[\\/:*?"<>|\s]+/g, "_").slice(0, 24);
-      const didChooseDestination = await downloadBlob(blob, `${safe}-${version}.rehearsal.json`);
+      const didChooseDestination = await downloadBlob(blob, projectExportFilename(state.project, "稽古", "rehearsal.json"));
       if (!didChooseDestination) {
         announce("書き出しをやめました。");
         return;
@@ -34062,6 +34150,7 @@ ${propsPlotHtml}
           item.append(name,actions); list.append(item);
         });
         document.getElementById("stage-lite-legacy-later").onclick = hide;
+        document.getElementById("stage-lite-legacy-close").onclick = hide;
         document.getElementById("stage-lite-legacy-dismiss").onclick = () => { try { localStorage.setItem(key,JSON.stringify("dismissed")); } catch (_) {} hide(); };
         document.getElementById("stage-lite-legacy-backdrop").onclick = hide;
         modal.onkeydown = event => {
@@ -35865,7 +35954,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (!lastVenueSwitchReport) return;
     try {
       const csv = venueSwitchReportCsv(lastVenueSwitchReport);
-      const filename = `${lastVenueSwitchReport.venueLabel}_壊れるシーン.csv`;
+      const filename = projectExportFilename(state.project, `壊れるシーン-${lastVenueSwitchReport.venueLabel}`, "csv");
       const didChooseDestination = await downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), filename);
       if (!didChooseDestination) { announce(tx("書き出しをやめました。")); return; }
       announce(tx("CSVを書き出しました。"));
@@ -36700,7 +36789,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       arrowDraft = null;
       pointerAction = null;
     }
-    tool = nextTool;
+    multiSelectMode = nextTool === "multiSelect";
+    tool = multiSelectMode ? "select" : nextTool;
     if (tool !== "select" && normalizeSelectedIds().size > 1) {
       setSelectedPieces(selectedId ? [selectedId] : [], selectedId);
     }
@@ -36726,9 +36816,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       planCanvas.dataset.tool = tool === "route" || tool === "note" || tool === "light" ? tool : "select";
     }
     document.querySelectorAll("[data-stage-tool]").forEach((button) => {
-      button.setAttribute("aria-pressed", String(button.dataset.stageTool === tool));
+      button.setAttribute("aria-pressed", String(button.dataset.stageTool === (multiSelectMode ? "multiSelect" : tool)));
     });
-    els.toolHint.textContent = tm("tool", tool, tx(TOOL_HINTS[tool]));
+    els.toolHint.hidden = tool !== "idleArea" && !multiSelectMode;
+    els.toolHint.textContent = multiSelectMode ? tx("平面図でShift＋クリックか囲って選ぶ") : tool === "idleArea" ? tx("平面図でドラッグして範囲を描く") : tm("tool", tool, tx(TOOL_HINTS[tool]));
     if (els.planRoute) els.planRoute.setAttribute("aria-pressed", String(tool === "route"));
     [els.planNote, els.frontNote].forEach((button) => {
       if (button) button.setAttribute("aria-pressed", String(tool === "note"));
@@ -38459,7 +38550,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       selectedNoteId = null;
       // 選んでいる駒の動線の取っ手は、駒そのものより先に拾う
       const current = selectedPiece();
-      const extendingSelection = view === "plan" && event.shiftKey;
+      const extendingSelection = view === "plan" && (event.shiftKey || multiSelectMode);
       const multiSelectionActive = normalizeSelectedIds().size > 1;
       let handle = view === "plan" && !extendingSelection && !multiSelectionActive
         ? routeHandleAt(point, current, L) : null;
@@ -38505,8 +38596,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
           hit = piece;
         }
       }
-      // Shiftクリックは既存の選択へ追加／解除する。移動は始めない。
-      if (view === "plan" && event.shiftKey && hit) {
+      // Shiftクリックと複数選択の道具は、既存の選択へ追加／解除する。移動は始めない。
+      if (view === "plan" && (event.shiftKey || multiSelectMode) && hit) {
         const ids = new Set(normalizeSelectedIds());
         if (ids.has(hit.id)) ids.delete(hit.id); else ids.add(hit.id);
         const ordered = Array.from(ids);
@@ -38525,7 +38616,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       render();
       if (!hit) {
         // 平面図の空き地は通常ドラッグで移動。囲い選択は Shift＋ドラッグ。
-        if (view === "plan" && !event.shiftKey) {
+        if (view === "plan" && !event.shiftKey && !multiSelectMode) {
           const rect = el.getBoundingClientRect();
           const zs = zoomOf("plan");
           capture(el, event.pointerId);
@@ -38726,7 +38817,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (hit) return view === "plan" && event.shiftKey ? "copy" : "grab";
     if (view === "plan" && ghostAt(point, L)) return "grab";
     if (view === "front" && (L.panRange > 0 || L.panRangeY > 0)) return "grab";
-    if (view === "plan") return event.shiftKey ? "crosshair" : "grab";
+    if (view === "plan") return event.shiftKey || multiSelectMode ? "crosshair" : "grab";
     return "default";
   }
 
@@ -39565,11 +39656,11 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     }
     if (bottom) els.viewSelect.title = title;
     else els.viewSelect.removeAttribute("title");
-    els.viewSelect.querySelector('option[value="both-front"]').textContent = tx(bottom ? "正面・平面" : "両方1");
-    els.viewSelect.querySelector('option[value="both-plan"]').textContent = tx(bottom ? "平面・正面" : "両方2");
+    els.viewSelect.querySelector('option[value="both-front"]').textContent = tx(bottom ? "正面・平面" : "正面＋平面");
+    els.viewSelect.querySelector('option[value="both-plan"]').textContent = tx(bottom ? "平面・正面" : "平面＋正面");
     els.viewSelect.setAttribute("aria-label", tx(bottom
       ? "表示する図。下部・二図横並びでは左から右の順。Tで入れ替え"
-      : "表示する図。Tで切替。両方1は正面が上、両方2は平面が上"));
+      : "表示する図。Tで切替。二図の名前は上から下の順"));
     if (state.showFront && state.showPlan) {
       els.viewSelect.value = state.layout.centerOrder[0] === "plan" ? "both-plan" : "both-front";
     } else {
@@ -41759,6 +41850,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     window.STAGE_SCENE_ALTERNATIVES_UI?.render?.();
     updateBackupNote();
     syncReleaseNotification();
+    announceReleaseUpgradeOnce();
     syncSaveStamps();
     translateReleaseModal();
     syncManualEdition();
@@ -42699,7 +42791,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
           const sceneDir = `${no}_${safeName(job.scene.title)}`;
           entries.push({
             // 単体で落とすときは、Downloadsに紛れないよう作品名と日時まで入れた長い名前
-            name: `${safeName(state.project.title)}-${sceneDir}-${viewLabel}-${stamp}.png`,
+            name: projectExportFilename(state.project, `作図-${sceneDir}-${viewLabel}`, "png"),
             // ZIPの中は作品名も日時も要らない。正面と平面が揃うときだけシーンごとの階層にする
             zipName: views.length > 1
               ? `${sceneDir}/${viewLabel}.png`
@@ -42740,7 +42832,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       } else {
         const didChooseDestination = await downloadBlob(
           makeZipBlob(entries.map((entry) => ({ name: entry.zipName, bytes: entry.bytes }))),
-          `${safeName(state.project.title)}-${stamp}.zip`,
+          projectExportFilename(state.project, "作図", "zip"),
         );
         if (!didChooseDestination) {
           announce("書き出しをやめました。");
@@ -42803,8 +42895,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       return;
     }
 
-    const stamp = stampNow();
-    const base = `${safeName(state.project.title)}-pitch-${safeName(scene.title)}-${stamp}`;
+    const base = projectExportFilename(state.project, `ピッチ-${safeName(scene.title)}`, "").replace(/\.stagesketch$/i, "");
     const downloads = [{
       href: pngUrl,
       name: `${base}.png`,
@@ -43272,7 +43363,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if (!sheet) return;
     try {
       const csv = window.SHOSAI_CUE_SHEET.sheetToCsv(sheet);
-      const filename = window.SHOSAI_CUE_SHEET.csvFileName(sheet);
+      const filename = window.SHOSAI_CUE_SHEET.csvFileName(sheet, projectExportDate());
       const didChooseDestination = await downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), filename);
       if (!didChooseDestination) {
         announce(tx("書き出しをやめました。"));

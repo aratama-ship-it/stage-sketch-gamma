@@ -31,6 +31,9 @@
   "use strict";
 
   const TEXT = {
+    "この欄の説明を出す": "Show an explanation of this field",
+    "詳しくは「使い方をさがす」で調べられます。": "For more detail, search How to use.",
+    "平面図か一覧で灯体を選ぶと、ここで色・向き・広がりを直せます": "Select a fixture in the plan or list to adjust its colour, direction and spread here.",
     "情報バー": "Information bar",
     "情報バーを表示": "Show information bar",
     "情報バーを非表示": "Hide information bar",
@@ -506,6 +509,8 @@
     "ここが頭": "Set start here",
     "点を消す": "Clear markers",
     "区間ループ": "Loop range",
+    "A 始点": "A Start",
+    "B 終点": "B End",
     "BPM推定": "Estimate BPM",
     "先頭を記録": "Mark first beat",
     "スナップ 1/4": "Snap 1/4",
@@ -812,6 +817,7 @@
     "タイムラインを開く・高さを変える": "Open the timeline or change its height",
     "上へ引くとタイムラインが開きます。押すと開閉、上下キーで高さを変えられます（E）": "Pull up to open the timeline. Click to toggle it, or use the up and down keys to change its height (E).",
     "いまのショーを複製して次の版（v1 → v2）を作り、複製のほうへ移ります。もとのショーはそのまま残ります": "Duplicates this show as the next version (v1 to v2) and switches to the copy. The original stays as it is.",
+    "いまのショーを複製して次の版を作ります": "Duplicate this show as the next version",
     "いまのショーを複製して、次の版を作ります。もとのショーはそのまま残ります。何を変えるための版か、一行で残してください（空でも構いません）。": "Duplicates this show as the next version. The original stays as it is. Leave one line about what this version changes (optional).",
     "何を変えるための版か": "What this version changes",
     "複製する": "Duplicate",
@@ -1591,10 +1597,10 @@
     "下部・二図横並びでは二つの図を同時に表示します。一つだけ表示するには他の並べ方を選んでください": "Bottom side-by-side layout always shows both diagrams. Choose another layout to show only one.",
     "下部・二図横並びでは二つの図を同時に表示します。": "Bottom side-by-side layout always shows both diagrams.",
     "表示する図。下部・二図横並びでは左から右の順。Tで入れ替え": "Displayed diagrams. In bottom side-by-side layout, order is left to right. Press T to swap.",
-    "両方1": "Both 1",
-    "両方2": "Both 2",
+    "正面＋平面": "Front + plan",
+    "平面＋正面": "Plan + front",
     "表示する図。両方1は正面が上、両方2は平面が上": "View to show. Both 1 places the front view above; Both 2 places the plan view above.",
-    "表示する図。Tで切替。両方1は正面が上、両方2は平面が上": "View to show. Press T to switch. Both 1 places the front view above; Both 2 places the plan view above.",
+    "表示する図。Tで切替。二図の名前は上から下の順": "Views to show. Press T to switch. View names are ordered from top to bottom.",
     "どの絵を出すか": "Which view to show",
     "等倍に戻す": "Reset zoom",
     "拡大": "Zoom in",
@@ -2076,6 +2082,7 @@
     "何のために書き出すか": "Purpose of export",
     "作図として": "As a working drawing",
     "ピッチとして": "For a pitch",
+    "ピッチ（売り込み用・説明文つき）として": "For a pitch (promotional, with explanatory copy)",
     "画風": "Style",
     "ピッチ画像の画風": "Pitch image style",
     "暗い劇場の一瞬": "A moment in a dark theatre",
@@ -4050,4 +4057,55 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 // v0.3.40 release notes.
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "セクション行のミュージックシンクの入口を表示しないようにしました。保存済みのデータとタイムラインの表示はそのままです。": "The Music Sync entry points in section rows are now hidden. Saved data and the timeline display remain unchanged."
+});
+
+// v0.3.41 release notes.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "ヘルプの「?」、窓の×・Esc、主な操作の色、図の組み合わせと見る位置の名前を揃え、情報の出し方と操作部品を分かりやすくしました。": "Help question marks, window close and Esc controls, primary-action colours, view-pair names and viewpoint names are now consistent and clearer.",
+  "照明・進行表・台本の言葉を、同じものは同じ名前で読めるように揃えました。": "Lighting, run-of-show and script wording now uses the same name for the same thing.",
+  "書き出すファイル名を揃えました。中身は変わらず、旧い名前のファイルも読み込めます。": "Exported filenames are now consistent. Their contents are unchanged, and files with the previous names can still be imported.",
+  "版を上げた最初の起動だけ、主な変更点を1行で表示するようにしました。": "The first launch after an update now shows one line describing the main changes.",
+  "キーボードのTabで、画面の流れに沿って操作へ移れるよう順路を改善しました。": "The keyboard Tab order now follows the flow of the screen more closely."
+});
+
+// L-04 UI copy.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "前の明かりからどう変わるか。空欄＝上げと同じ。": "How the previous lighting changes. Blank = same as fade in.",
+  "（In/Out Fade・Delay・カーブ・Snap・MIB）": "(In/Out Fade, Delay, Curve, Snap, MIB)"
+});
+
+// L-05 UI copy.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "セクション - シーン": "Section - Scene",
+  "セクション番号": "Section number",
+  "シーン番号": "Scene number"
+});
+
+// L-06 UI copy.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "奥行きの目盛り：実寸": "Depth scale: actual size",
+  "奥行きの目盛り：固定": "Depth scale: fixed",
+  "客席方向の奥行きを実寸で表示。押すと固定の幅に切り替えます": "Show audience depth at actual size. Press to use a fixed width.",
+  "客席方向の奥行きを固定の幅で表示。押すと実寸に切り替えます": "Show audience depth in a fixed width. Press to use actual size."
+});
+
+// L-07 UI copy.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "表示幅": "Panel widths"
+});
+
+// P-01 UI copy.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "下書き": "DRAFT"
+});
+
+// T-01 UI copy.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "平面図でドラッグして範囲を描く": "Drag on the plan view to draw an area"
+});
+
+// M-01 UI copy.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "複数選択": "Multiple selection",
+  "平面図でShift＋クリックか囲って選ぶ": "Shift-click or drag a box to select on the plan view"
 });

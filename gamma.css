@@ -1387,3 +1387,32 @@ html[data-study-renderer] .stage-scene-edit-label { display: none; }
     grid-template-columns: max-content minmax(0, 1fr) max-content;
   }
 }
+
+/* D-24: semantic alias for the existing primary-looking action treatment. */
+.stage-primary-action {
+  width: 100%; margin-top: 10px; min-height: 34px; text-align: left;
+  padding: 5px 6px; border: 1px solid var(--line-dark); color: var(--milk-dim);
+  font-size: 11px; letter-spacing: .02em; text-decoration: none;
+}
+.stage-primary-action:hover { color: var(--milk); border-color: var(--brass); }
+
+/* D-37: name the cast on-stage state column. */
+.stage-cast-list-heading {
+  display: grid; grid-template-columns: 24px minmax(0, 1fr) 42px 22px 22px;
+  gap: 4px; grid-column: 1 / -1; color: var(--milk-dim); font-size: 10px; line-height: 1.2;
+}
+.stage-cast-list-heading > span { grid-column: 3; text-align: center; }
+
+/* D-29: separate destructive roster removal from the neighbouring lock. */
+.stage-cast-remove { margin-left: 4px; color: var(--rust); }
+.stage-cast-remove:hover { color: var(--paper); background: color-mix(in srgb, var(--rust) 28%, transparent); }
+
+/* D-30: shortcuts are a settings section, not an always-visible third column. */
+.stage-pref-keys { padding-left: 0; border-left: 0; position: static; top: auto; }
+.stage-prefs-modal .stage-modal-body > .stage-pref-keys { grid-column: 1; grid-row: 3; }
+@media (min-width: 1360px) {
+  .stage-prefs-modal .stage-modal-body { grid-template-columns: 232px minmax(0, 1fr); }
+  .stage-prefs-modal .stage-modal-body > .stage-pref-keys { grid-column: 2; grid-row: 2; }
+}
+/* D-35: A/B controls carry their start/end meaning in the visible label. */
+.stage-timeline-loop-point { flex: 0 0 auto; min-width: 62px; padding-inline: 9px; }
