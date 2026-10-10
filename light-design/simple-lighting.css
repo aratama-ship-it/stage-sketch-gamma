@@ -1,0 +1,61 @@
+/* The shared warm/blue editor skins provide the surfaces; simple controls add accessible text. */
+:root{--simple-text:#efe7d6;--simple-muted:#b9ad97;--simple-accent:#dec584;--simple-gap:16px;--simple-space:24px;--simple-tap:44px;--simple-border:#908574;--simple-canvas-height:430px}
+.simple-mode-choice{display:flex;align-items:center;gap:8px;flex:none;padding:0;white-space:nowrap}
+/* 見出し「照明の操作」は、隣の見出し（.fb>b「詳細画面の表示」）と同じ大きさ・色・太さ・字間（2026-10-06 本人指示） */
+.simple-mode-choice strong{color:var(--brass);font-size:11px;font-weight:600;letter-spacing:.14em;white-space:nowrap}
+.simple-light-toolbar .fb{flex-wrap:wrap}
+#simple-playback-open{display:none;margin-right:4px}
+.simple-mode-choice #simple-playback-open{min-height:var(--ctrl-sm);padding:3px 8px;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk-dim);font-size:var(--fs-3);line-height:1.5;white-space:nowrap;cursor:pointer}
+.simple-mode-choice #simple-playback-open:hover{border-color:var(--brass);color:var(--milk)}
+html[data-gamma-playback="ready"] #simple-playback-open{display:inline-flex;align-items:center}
+.simple-light-active .simple-light-toolbar .fb>:not(.simple-mode-choice),.simple-light-active .simple-light-toolbar>:not(.fb){display:none!important}
+.simple-mode-panel button,.simple-mode-panel select{min-height:var(--simple-tap);min-width:var(--simple-tap);padding:8px 12px;font:inherit;border:1px solid var(--simple-border);background:var(--desk-2);color:var(--simple-text);cursor:pointer}
+.simple-mode-panel button[aria-pressed=true]{border-color:var(--simple-accent);box-shadow:inset 0 0 0 1px var(--simple-accent)}
+.simple-mode-panel{padding:var(--simple-gap);color:var(--simple-text);overflow:auto;min-height:0;line-height:1.8}
+.simple-light-active .body{overflow:auto;display:block}
+.simple-light-active .body>:not(.simple-light-toolbar):not(.simple-mode-panel){display:none!important}
+.simple-mode-panel h2{font-size:21px;margin:0}.simple-mode-panel h3{font-size:17px;margin:0 0 12px}
+.simple-mode-panel p{font-size:14px;margin:12px 0;color:var(--simple-muted)}
+.simple-heading,.simple-heading>div,.simple-catalog-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--simple-gap)}
+.simple-heading label{display:flex;align-items:center;gap:8px}.simple-heading select{max-width:280px}
+.simple-workbench{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:var(--simple-space);margin:16px 0 24px}
+#simple-front{width:100%;max-height:var(--simple-canvas-height);object-fit:contain;display:block;background:var(--desk);border:1px solid var(--simple-border)}
+.simple-browser{display:flex;align-items:center;gap:var(--simple-gap);margin-top:12px}.simple-browser>div{text-align:center;flex:1}
+.simple-browser strong{display:block;font-size:18px}.simple-browser span{color:var(--simple-muted);font-size:14px}
+.simple-actions{display:flex;gap:8px;flex-wrap:wrap}.simple-actions #simple-adopt{background:var(--simple-accent);color:#191512;font-weight:650}
+.simple-mode-panel button:disabled{opacity:.6;cursor:default}.simple-controls{border-left:1px solid var(--simple-border);padding-left:var(--simple-gap)}
+.simple-controls label{display:block;margin:12px 0}.simple-controls select{display:block;width:100%}.simple-controls input[type=range]{width:100%;min-height:var(--simple-tap);accent-color:var(--simple-accent)}
+.simple-controls output{float:right;color:var(--simple-accent)}.simple-controls p{font-size:14px}
+#simple-status{color:var(--simple-text);border-top:1px solid var(--simple-border);padding-top:12px}
+#simple-warning:not(:empty){border-left:3px solid var(--simple-accent);padding-left:12px;color:var(--simple-text)}
+.simple-catalog-head{margin-bottom:12px}.simple-preset-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.simple-mode-panel .simple-preset{text-align:left;padding:8px;min-width:0;white-space:normal}
+.simple-preset canvas{display:block;width:100%;aspect-ratio:1000/560;object-fit:contain}
+.simple-preset span{display:block;font-size:14px;margin-top:8px}
+.simple-mode-panel button:focus-visible,.simple-mode-panel select:focus-visible,.simple-mode-panel input:focus-visible{outline:3px solid var(--simple-accent);outline-offset:2px}
+@media(max-width:1000px){.simple-workbench{grid-template-columns:1fr}.simple-controls{border-left:0;border-top:1px solid var(--simple-border);padding:16px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:16px}.simple-controls h3,.simple-controls p{grid-column:1/-1}.simple-preset-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.simple-mode-panel{padding:12px}.simple-heading label{display:block;width:100%}.simple-heading select{max-width:100%;width:100%}.simple-heading>div{width:100%}.simple-controls{display:block}.simple-preset-grid{grid-template-columns:1fr 1fr;gap:8px}.simple-actions #simple-adopt{width:100%}.simple-actions button{flex:1}.simple-browser strong{font-size:16px}}
+@media(prefers-reduced-motion:reduce){.simple-mode-panel *{animation:none!important;transition:none!important}}
+
+/* 機材配置がプリセットでないときの「かんたん」（2026-10-06）。押せないが、カーソルを合わせるとすぐ理由を出す */
+/* ひとことが下の行のボタンの下に隠れないよう、「照明の操作」の塊ごと手前に出す */
+.simple-mode-choice{position:relative;z-index:60}
+#simple-mode-on{position:relative}
+/* ★opacity は使わない（ひとことまで薄くなって、下のボタンが透ける）。薄さは文字色と枠で出す。
+   2026-10-06: 見た目の土台は同じ帯の「表示」の切替（.showtoggles）と同じ。そのうえで、押せないことは
+   文字を一段薄く・枠を破線・カーソルを禁止にして、ふつうの「選んでいない」ボタンと見分ける */
+#simple-mode-on.is-unavailable{color:rgba(240,231,214,.4);border-style:dashed;border-color:#5a5043;background:transparent;cursor:not-allowed}
+#simple-mode-on[data-hint]:hover::after,#simple-mode-on[data-hint]:focus-visible::after{content:attr(data-hint);position:absolute;top:calc(100% + 6px);left:0;z-index:40;padding:6px 10px;border:1px solid var(--simple-border);border-radius:3px;background:var(--desk);color:var(--simple-text);font:400 13px/1.5 var(--sans);letter-spacing:.02em;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.45);pointer-events:none}
+
+/* N-08: all twelve choices remain in the initial viewport beside the preview. */
+.simple-catalog{margin-bottom:16px}
+.simple-catalog .simple-catalog-head{gap:4px;margin-bottom:8px}
+.simple-catalog .simple-catalog-head h3{font-size:14px;margin:0}
+.simple-catalog .simple-catalog-head label{display:flex;align-items:center;gap:8px;margin:0;font-size:12px}
+.simple-catalog .simple-catalog-head select{width:auto;min-height:32px;padding:2px 6px}
+.simple-catalog .simple-preset-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.simple-catalog .simple-preset{display:flex;align-items:center;gap:6px;min-height:44px;padding:4px}
+.simple-catalog .simple-preset canvas{width:44px;flex:0 0 44px;aspect-ratio:1000/560}
+.simple-catalog .simple-preset span{font-size:12px;line-height:1.35;margin:0}
+@media(max-width:1000px){.simple-catalog{grid-column:1/-1;grid-row:1}.simple-catalog .simple-preset-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.simple-workbench{display:flex;flex-direction:column}.simple-controls{order:-1}.simple-catalog{margin-bottom:0}}
+@media(max-width:600px){.simple-catalog .simple-preset-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

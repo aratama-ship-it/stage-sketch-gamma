@@ -1,0 +1,367 @@
+{
+  "appVersion": "v0.3.38",
+  "contentUpdated": "2026-10-10",
+  "requiredScreens": [
+    {
+      "id": "stage",
+      "language": "ja",
+      "file": "manual-gamma/img/01-first-open.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
+    },
+    {
+      "id": "venue",
+      "language": "ja",
+      "file": "manual-gamma/img/30-tab-venue.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
+    },
+    {
+      "id": "lighting",
+      "language": "ja",
+      "file": "manual-gamma/img/32-tab-light-design.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
+    },
+    {
+      "id": "qsheet",
+      "language": "ja",
+      "file": "manual-gamma/img/34-tab-cuesheet.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
+    },
+    {
+      "id": "runshow",
+      "language": "ja",
+      "file": "manual-gamma/img/release037-runshow.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
+    },
+    {
+      "id": "preferences",
+      "language": "ja",
+      "file": "manual-gamma/img/40-prefs.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
+    },
+    {
+      "id": "stage",
+      "language": "en",
+      "file": "manual-gamma/img/en/01-first-open.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
+    },
+    {
+      "id": "venue",
+      "language": "en",
+      "file": "manual-gamma/img/en/30-tab-venue.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
+    },
+    {
+      "id": "lighting",
+      "language": "en",
+      "file": "manual-gamma/img/en/32-tab-light-design.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
+    },
+    {
+      "id": "qsheet",
+      "language": "en",
+      "file": "manual-gamma/img/en/34-tab-cuesheet.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
+    },
+    {
+      "id": "runshow",
+      "language": "en",
+      "file": "manual-gamma/img/en/release037-runshow.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
+    },
+    {
+      "id": "preferences",
+      "language": "en",
+      "file": "manual-gamma/img/en/40-prefs.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
+    }
+  ],
+  "screenshots": [
+    {
+      "id": "stage",
+      "file": "manual-gamma/img/01-first-open.jpg",
+      "language": "ja",
+      "scene": "A1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.38",
+      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
+      "capturedAt": "2026-10-10T03:18:53.193Z",
+      "sha256": "28e78dee417a03933af2e4392e967e3e7f0175f5d6db95e1fb1d087f8e7cbc4d",
+      "viewport": [
+        1440,
+        900
+      ],
+      "engine": "chromium",
+      "actualUiLanguage": "ja",
+      "paperLanguage": null,
+      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+    },
+    {
+      "id": "venue",
+      "file": "manual-gamma/img/30-tab-venue.jpg",
+      "language": "ja",
+      "scene": "C1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.38",
+      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
+      "capturedAt": "2026-10-10T03:18:53.876Z",
+      "sha256": "95bd83f0e3c0d4797bfe37391c009f4cc9e7fd4bb267c91ca2f4783846a52813",
+      "viewport": [
+        1440,
+        900
+      ],
+      "engine": "chromium",
+      "actualUiLanguage": "ja",
+      "paperLanguage": null,
+      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+    },
+    {
+      "id": "lighting",
+      "file": "manual-gamma/img/32-tab-light-design.jpg",
+      "language": "ja",
+      "scene": "F1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.38",
+      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
+      "capturedAt": "2026-10-10T03:18:54.809Z",
+      "sha256": "6a5e07ea36583e5435710f3bb18a0671a05b37e9c42083c641e19fe6964a1498",
+      "viewport": [
+        1440,
+        900
+      ],
+      "engine": "chromium",
+      "actualUiLanguage": "ja",
+      "paperLanguage": null,
+      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+    },
+    {
+      "id": "qsheet",
+      "file": "manual-gamma/img/34-tab-cuesheet.jpg",
+      "language": "ja",
+      "scene": "H1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.38",
+      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
+      "capturedAt": "2026-10-10T03:18:55.274Z",
+      "sha256": "10bd6095c2c8a3d436298896eb586fddc342306a04db075c7d09e2726ad0c52f",
+      "viewport": [
+        1440,
+        900
+      ],
+      "engine": "chromium",
+      "actualUiLanguage": "ja",
+      "paperLanguage": null,
+      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+    },
+    {
+      "id": "runshow",
+      "file": "manual-gamma/img/release037-runshow.jpg",
+      "language": "ja",
+      "scene": "H1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.38",
+      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
+      "capturedAt": "2026-10-10T03:18:57.961Z",
+      "sha256": "cbf8fb9f17c4aee8bb353f016332ccf44b6ac6f039977f67881db139f0aa5e97",
+      "viewport": [
+        1440,
+        900
+      ],
+      "engine": "chromium",
+      "actualUiLanguage": "ja",
+      "paperLanguage": "ja",
+      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+    },
+    {
+      "id": "preferences",
+      "file": "manual-gamma/img/40-prefs.jpg",
+      "language": "ja",
+      "scene": "A1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.38",
+      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
+      "capturedAt": "2026-10-10T03:18:58.643Z",
+      "sha256": "7aaea6033d27bff4612d72a704de43503f9ac5984f9ec0983adbea2863725516",
+      "viewport": [
+        1440,
+        900
+      ],
+      "engine": "chromium",
+      "actualUiLanguage": "ja",
+      "paperLanguage": null,
+      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+    },
+    {
+      "id": "stage",
+      "file": "manual-gamma/img/en/01-first-open.jpg",
+      "language": "en",
+      "scene": "A1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.38",
+      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
+      "capturedAt": "2026-10-10T03:19:00.398Z",
+      "sha256": "a3e723b88bf54b2475d479dde8061b57da1bd5b514da8e92b5368164f1100e08",
+      "viewport": [
+        1440,
+        900
+      ],
+      "engine": "chromium",
+      "actualUiLanguage": "en",
+      "paperLanguage": null,
+      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+    },
+    {
+      "id": "venue",
+      "file": "manual-gamma/img/en/30-tab-venue.jpg",
+      "language": "en",
+      "scene": "C1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.38",
+      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
+      "capturedAt": "2026-10-10T03:19:01.116Z",
+      "sha256": "01aca4143030d16057df63882740d604df17a791f5c50bb36d78ee1056bba835",
+      "viewport": [
+        1440,
+        900
+      ],
+      "engine": "chromium",
+      "actualUiLanguage": "en",
+      "paperLanguage": null,
+      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+    },
+    {
+      "id": "lighting",
+      "file": "manual-gamma/img/en/32-tab-light-design.jpg",
+      "language": "en",
+      "scene": "F1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.38",
+      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
+      "capturedAt": "2026-10-10T03:19:02.068Z",
+      "sha256": "7acf3408b27d292043a09a60a19dd2f9ce32205cc53165738200ed77e70171d2",
+      "viewport": [
+        1440,
+        900
+      ],
+      "engine": "chromium",
+      "actualUiLanguage": "en",
+      "paperLanguage": null,
+      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+    },
+    {
+      "id": "qsheet",
+      "file": "manual-gamma/img/en/34-tab-cuesheet.jpg",
+      "language": "en",
+      "scene": "H1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.38",
+      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
+      "capturedAt": "2026-10-10T03:19:02.529Z",
+      "sha256": "69550bcebb17d12ccf5b059b4bd492b9684c5496d4dc304bca4e17d0792677ae",
+      "viewport": [
+        1440,
+        900
+      ],
+      "engine": "chromium",
+      "actualUiLanguage": "en",
+      "paperLanguage": null,
+      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+    },
+    {
+      "id": "runshow",
+      "file": "manual-gamma/img/en/release037-runshow.jpg",
+      "language": "en",
+      "scene": "H1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.38",
+      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
+      "capturedAt": "2026-10-10T03:19:05.232Z",
+      "sha256": "ccc749c93b426abc9169da618004f107de88cd8ba3a9cd5252a4bd5558ac7f2b",
+      "viewport": [
+        1440,
+        900
+      ],
+      "engine": "chromium",
+      "actualUiLanguage": "en",
+      "paperLanguage": "en",
+      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+    },
+    {
+      "id": "preferences",
+      "file": "manual-gamma/img/en/40-prefs.jpg",
+      "language": "en",
+      "scene": "A1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.38",
+      "capturedCommit": "ce4164c1649b81c1cd7cd364c8db3ecc7382f3cb",
+      "capturedAt": "2026-10-10T03:19:05.931Z",
+      "sha256": "eb9f1d8c507f39f0324326ddc930b99fa33c688da8d92dfe8b2e0a1cfd152be3",
+      "viewport": [
+        1440,
+        900
+      ],
+      "engine": "chromium",
+      "actualUiLanguage": "en",
+      "paperLanguage": null,
+      "sourceSha256": "3163091bf207c318e36cfdd6228d4131cc5b56e7aa5292cc0cd70058a7410245"
+    }
+  ],
+  "legacyImagesNote": "Unlisted existing images retain their original capture versions (mostly v0.2.16; poses v0.2.29; props v0.2.26).",
+  "status": "verified",
+  "visualReview": {
+    "reviewedAt": "2026-10-10T03:20:05.038595+00:00",
+    "reviewer": "Codex",
+    "detail": "12 current-version screens inspected visually. Initial review identified wrapped paper clock/duration cells; after the fix the Japanese and English paper captures were recaptured and reinspected. Other ten screen layouts were unchanged by that paper-only correction.",
+    "limitations": [
+      "Dense fixture pose-label overlap is an existing issue.",
+      "Unlisted legacy images are not claimed freshly captured."
+    ]
+  }
+}

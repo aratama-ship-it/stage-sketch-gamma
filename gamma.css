@@ -1,0 +1,1329 @@
+/* Gamma dimensions and theme tokens: gamma-ui-tokens.css. */
+.stage-brand-row { flex-wrap: wrap; gap: var(--gamma-gap); }
+/* Lite's two derived bands. No clock/timer state is stored in the show. */
+html[data-gamma-edition="lite"]{--ros-clock-h:36px;--ros-return-h:44px;--ros-band-edge:3px;--ros-band-gap:8px;--ros-band-small-gap:4px;--ros-band-pad:12px}
+html[data-gamma-edition="lite"] #stage-ros-clock{height:var(--ros-clock-h);display:flex;align-items:center;gap:var(--ros-band-gap);padding-inline:var(--ros-band-pad);background:var(--desk-2);color:var(--milk);font-size:var(--fs-5);white-space:nowrap}
+html[data-gamma-edition="lite"] #stage-ros-clock b{font-size:var(--fs-7);font-weight:600;color:var(--brass);font-variant-numeric:tabular-nums}
+html[data-gamma-edition="lite"] #stage-ros-clock .ros-clock-dim{color:var(--milk-dim)}
+html[data-gamma-edition="lite"] #stage-ros-return{min-height:var(--ros-return-h);background:var(--desk-2);border-left:var(--ros-band-edge) solid var(--brass);color:var(--milk)}
+html[data-gamma-edition="lite"] #stage-ros-return-button{display:flex;align-items:center;gap:var(--ros-band-gap);min-height:var(--ros-return-h);width:100%;border:0;padding:0 var(--ros-band-pad);background:transparent;color:var(--milk);text-align:left;font:inherit}
+html[data-gamma-edition="lite"] #stage-ros-return-label{flex-shrink:0}
+html[data-gamma-edition="lite"] #stage-ros-return-row{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html[data-gamma-edition="lite"] #stage-ros-return-button:focus-visible{outline:var(--ros-band-edge) solid var(--brass);outline-offset:calc(-1 * var(--ros-band-edge))}
+@media(max-width:1599px){html[data-gamma-edition="lite"] .stage-sketch-head{position:relative;padding-bottom:calc(var(--ros-clock-h) + var(--ros-band-gap))!important}html[data-gamma-edition="lite"]:not(:has(body[data-gamma-workspace="run-of-show"])) .stage-sketch-head{padding-bottom:var(--ros-band-gap)!important}html[data-gamma-edition="lite"] #stage-ros-clock{position:absolute;bottom:0;left:0;right:0;justify-content:center;overflow-x:auto}}
+@media(max-width:700px){html[data-gamma-edition="lite"] #stage-ros-clock{gap:var(--ros-band-small-gap);padding-inline:var(--ros-band-small-gap);font-size:var(--fs-3)}html[data-gamma-edition="lite"] #stage-ros-clock b{font-size:var(--fs-5)}}
+.stage-gamma-label { font-size: 11px; font-weight: 500; color: #b6a995; margin-left: 8px; white-space: nowrap; }
+/* 道具ボタンと名前表示のチェックラベルは、同じ正方形の枠を使う。
+ * 共通の文字ボタン用高さ・余白で名前表示だけ横長にならないようにする。 */
+html[data-stage-skin] .stage-center-bar :is(.stage-tool-grid button.is-icon, .stage-name-toggle.is-icon) {
+  box-sizing: border-box;
+  width: var(--ctrl-md);
+  height: var(--ctrl-md);
+  min-width: var(--ctrl-md);
+  max-width: var(--ctrl-md);
+  min-height: var(--ctrl-md);
+  max-height: var(--ctrl-md);
+  flex-shrink: 0;
+  padding: 0;
+}
+#stage-workspace-tabs { flex-wrap: wrap; }
+#stage-workspace-tabs button { min-height: var(--gamma-hit); white-space: nowrap; }
+body[data-gamma-workspace^="light-"] .stage-sketch-grid { display: none !important; }
+body[data-gamma-workspace="light-placement"] #stage-timeline-panel { display: none !important; }
+body[data-gamma-workspace="venue-setup"] .stage-sketch-grid { display: none !important; }
+body[data-gamma-workspace="venue-setup"] #stage-timeline-panel { display: none !important; }
+body[data-gamma-workspace="light-placement"].stage-timeline-expanded:not(.stage-fullscreen) #view-stage,
+body[data-gamma-workspace="venue-setup"].stage-timeline-expanded:not(.stage-fullscreen) #view-stage {
+  height: 100dvh;
+  padding-bottom: 16px;
+}
+body[data-gamma-workspace^="light-"] .stage-boundary-note,
+body[data-gamma-workspace="venue-setup"] .stage-boundary-note { display: none; }
+/* 機材配置タブ（2026-10-06 本人指示）: 上部「詳細画面の表示」の帯の上の余白を詰める。
+ * 余白の出どころは実測で確かめた＝ヘッダー（.stage-sketch-head）の下の余白 18px（style.css）。フレームの中の
+ * 上の余白（5px）ではない。
+ * 統合時（2026-10-06）に照明デザインのタブにも揃えた: 機材配置だけだとタブを切り替えるたびに上部の帯が 18px 跳ぶため。
+ * 機材配置だけに戻すなら ^="light-" を ="light-placement" に。 */
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace^="light-"] .stage-sketch-head { margin-bottom: 0; }
+/* Qシートタブ（2026-09-24 本人指摘）: 下に舞台タブの中身が残って見えていた。劇場設定と同じく舞台の画面・
+   タイムライン・取っ手・境界の注記を出さず、タブの中身だけにする。タイムラインはこのタブでは出せない。 */
+body[data-gamma-workspace="cuesheet"] .stage-sketch-grid { display: none !important; }
+body[data-gamma-workspace="cuesheet"] #stage-timeline-panel { display: none !important; }
+body[data-gamma-workspace="cuesheet"] .stage-timeline-resize-handle { display: none !important; }
+body[data-gamma-workspace="cuesheet"] .stage-boundary-note { display: none; }
+body[data-gamma-workspace="cuesheet"].stage-timeline-expanded:not(.stage-fullscreen) #view-stage {
+  height: 100dvh;
+  padding-bottom: 16px;
+}
+#gamma-light-workspace { width: 100%; min-height: 0; }
+/* V-2（2026-09-17）: 劇場設定は1画面に収める。高さは gamma-workspace.js が実測して入れる。 */
+#gamma-venue-workspace { width: 100%; min-height: 0; display: flex; flex-direction: column; }
+/* Qシートのタブ（2026-09-24 本人指示）。既存の窓（.stage-cue-sheet-modal）をタブの画面に据え置く。
+   窓としての位置決め・影・幅の上限は外し、タブの高さいっぱいに広げて、表だけがスクロールする。 */
+#gamma-cuesheet-workspace { width: 100%; min-height: 0; display: flex; flex-direction: column; }
+#gamma-cuesheet-workspace[hidden] { display: none; }
+#gamma-cuesheet-workspace .stage-cue-sheet-modal,
+#gamma-cuesheet-workspace .stage-cue-sheet-modal.is-viewing-sheet {
+  position: relative; inset: auto; top: auto; right: auto; bottom: auto; left: auto; transform: none;
+  width: 100%; max-width: none; height: 100%; max-height: none; margin: 0;
+  /* 2026-09-24 本人指摘: タブに入ると窓の枠が一つ余分に見えていた。他のモードと同じく枠・影・見出しは出さない */
+  border: 0; border-radius: 0; box-shadow: none; background: transparent;
+  display: flex; flex-direction: column; overflow: hidden; z-index: auto;
+}
+#gamma-cuesheet-workspace .stage-cue-sheet-modal[hidden] { display: none; }
+#gamma-cuesheet-workspace .stage-cue-sheet-modal > .stage-modal-head { display: none; }
+#gamma-cuesheet-workspace .stage-cue-sheet-modal > .stage-modal-body { padding: 0; background: transparent; }
+/* 表は紙色ではなく、全体のデザイン（暗い地に白い文字）に合わせる（2026-09-24 本人指示）。
+   印刷は別の窓（cueSheetPrintDocument）で紙色のまま。ここは画面で見るときだけ。 */
+#gamma-cuesheet-workspace .stage-cue-sheet-scroll,
+#gamma-cuesheet-workspace .cue-sheet-paper { background: transparent; color: var(--milk); }
+#gamma-cuesheet-workspace .stage-cue-sheet-scroll { color-scheme: dark; } /* 横スクロールバーも暗い配色に */
+#gamma-cuesheet-workspace .cue-sheet-paper-head h1 { color: var(--milk); }
+#gamma-cuesheet-workspace .cue-sheet-stamp,
+#gamma-cuesheet-workspace .cue-sheet-inferred,
+#gamma-cuesheet-workspace .cue-sheet-inferred-mark,
+#gamma-cuesheet-workspace .cue-sheet-footnote,
+#gamma-cuesheet-workspace .cue-sheet-legend { color: var(--milk-dim); }
+#gamma-cuesheet-workspace .cue-sheet-table th,
+#gamma-cuesheet-workspace .cue-sheet-table td { border-color: var(--line-dark); color: var(--milk); }
+#gamma-cuesheet-workspace .cue-sheet-table thead th,
+#gamma-cuesheet-workspace .cue-sheet-table thead th:first-child { background: var(--desk-2); color: var(--milk); }
+#gamma-cuesheet-workspace .cue-sheet-table th:first-child,
+#gamma-cuesheet-workspace .cue-sheet-paper[data-cue-sheet-kind="master"] .cue-sheet-table th[scope="row"] {
+  background: var(--desk); color: var(--milk); box-shadow: 1px 0 0 var(--line-dark);
+}
+#gamma-cuesheet-workspace .cue-sheet-table .cue-sheet-section-row th { background: var(--desk-2); color: var(--milk); }
+#gamma-cuesheet-workspace .cue-sheet-table .stage-text-input { background: var(--desk); color: var(--milk); border-color: var(--line-dark); }
+#gamma-cuesheet-workspace .cue-sheet-legend { border-top-color: var(--line-dark); }
+/* A4プレビュー（2026-09-24 本人指示）: 白い紙を暗い机に置き、画面の幅に合わせて縮める */
+.stage-cue-sheet-a4-wrap { position: relative; width: 100%; padding: 16px; box-sizing: border-box; background: var(--desk); overflow: hidden; }
+.stage-cue-sheet-a4-paper { position: relative; background: #fff; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55); transform-origin: top left; }
+.stage-cue-sheet-a4-frame { display: block; border: 0; width: 100%; background: #fff; }
+#stage-cue-sheet-view-a4[aria-pressed="true"] { border-color: var(--rust); color: var(--paper); background: rgba(168, 75, 38, 0.27); }
+#gamma-cuesheet-workspace .stage-cue-sheet-body { flex: 1 1 auto; min-height: 0; max-height: none; overflow: auto; display: flex; flex-direction: column; }
+#gamma-cuesheet-workspace #stage-cue-sheet-list { flex: 0 0 auto; }
+#gamma-cuesheet-workspace #stage-cue-sheet-view:not([hidden]) { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+#gamma-cuesheet-workspace .stage-cue-sheet-view-bar { flex: 0 0 auto; }
+#gamma-cuesheet-workspace .stage-cue-sheet-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+#gamma-venue-workspace[hidden] { display: none; }
+.gamma-new-show-return {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--gamma-gap);
+  padding: 0 0 var(--gamma-gap);
+  color: var(--milk-dim);
+  font-size: var(--fs-3);
+}
+.gamma-new-show-return[hidden] { display: none; }
+.gamma-new-show-return button[hidden] { display: none; }
+.gamma-new-show-return .btn-quiet { min-height: var(--ctrl-md); }
+/* 劇場カスタムはモード画面として既存エディタと舞台機構を表示する。 */
+#gamma-venue-workspace .stage-venue-editor-modal {
+  position: static;
+  z-index: auto; /* 3Dタブの固定オーバーレイより前に残さない */
+  left: auto;
+  top: auto;
+  transform: none;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+#gamma-venue-workspace .stage-venue-editor-modal > .stage-modal-head { display: none; }
+.stage-panel[data-panel="light"] { display: none !important; }
+#gamma-machinery-workspace { display:grid; gap:12px; margin:0 0 18px; }
+.gamma-machinery-head { border-bottom:1px solid var(--line-dark); padding:0 0 8px; }
+.gamma-machinery-head h2 { margin:0; font:600 18px var(--stage-sans, sans-serif); }
+.gamma-machinery-head p { margin:5px 0 0; color:var(--stage-muted, #b6a995); font-size:12px; }
+#gamma-machinery-workspace [data-panel="machinery"] { display:block; }
+#gamma-machinery-controls-host { display:grid; gap:8px; }
+#gamma-venue-workspace .stage-venue-editor-modal > .stage-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+  padding: 0;
+  background: transparent;
+}
+/* 2カラム（手順の列｜平面図と操作）を枠いっぱいに伸ばし、縦に流れるのは各列の中だけにする。 */
+#gamma-venue-workspace .stage-venue-editor-workspace {
+  align-items: stretch;
+  min-height: 0;
+  height: 100%;
+}
+/* R-06（2026-09-17 本人要望「1のボックスの上に謎のスペースが空いている」）の正体。
+ * 手順1の上にある .stage-venue-editor-metadata は、中の項目（劇場名・出所・確度・共有）が
+ * すべて hidden なので高さ0だが、**要素としては残っているため grid の gap を前後で2回消費**する。
+ * 実測（1440幅）: 手順どうしの間は10pxなのに、プリセットと手順1の間だけ20pxあった。
+ * 要素は消せない（JSが els.name などで読み書きしている）ので、
+ * 「中身がすべて hidden のときだけ」畳む。:has() が効かない環境では従来どおり20pxのまま。 */
+#gamma-venue-workspace .stage-venue-editor-metadata:not(:has(> *:not([hidden]))) { display: none; }
+
+#gamma-venue-workspace .stage-venue-editor-menu {
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+  /* S-06（2026-09-18）: 手順の列は grid。既定の align-content は stretch なので、
+   * 中身が枠より短いと行が引き伸ばされ、畳んだ手順の箱だけが縦に伸びて
+   * 見出しが箱の上に貼り付く（実測: 縦1600pxの窓で 21.3px → 115.6px、下に95.3pxの空白）。
+   * S-06 で手順を詰めた結果この余りが生まれ、この症状が出るようになった。
+   * 行は中身の高さのままにする。 */
+  align-content: start;
+}
+/* 右列は平面図を流し、保存・反映は左列の下で常に見えるようにする。 */
+#gamma-venue-workspace .stage-venue-editor-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+#gamma-venue-workspace .stage-venue-editor-panel > .stage-venue-editor-audience-step {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+/* 平面図は枠に収まる大きさまで縮める（縦に切れてスクロールしないように）。
+ * 3:2の比は枠側で持たせる。拡大縮小ボタンは枠の隅に貼り付いているので、
+ * 枠そのものを図と同じ大きさにしないとボタンだけ離れてしまう。 */
+#gamma-venue-workspace .stage-venue-editor-canvas-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  aspect-ratio: 3 / 2;
+  width: auto;
+  max-width: 100%;
+  margin-inline: auto;
+}
+#gamma-venue-workspace #stage-venue-editor-canvas {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+}
+
+/* R-07（2026-09-17 本人要望）: 「照明をどこから持ってくるか」の3択。
+ * モーダルをやめて劇場形式プリセットの箱の中へ出したので、常に見えている。
+ * いま選ばれているものは黄色（--brass）で示す（本人指定）。
+ * 色だけに頼らず、枠の色と左の縦線でも示す（色が分かりにくい環境でも読めるように）。 */
+#gamma-venue-workspace .stage-lighting-source { display: grid; gap: 6px; margin-top: 10px; }
+#gamma-venue-workspace .stage-lighting-source-choices { display: grid; gap: 4px; }
+#gamma-venue-workspace .stage-lighting-source-choices button {
+  display: grid;
+  gap: 2px;
+  padding: 7px 9px;
+  border: 1px solid var(--line-dark);
+  border-left: 3px solid transparent;
+  background: var(--recess);
+  color: var(--milk-dim);
+  text-align: left;
+  cursor: pointer;
+}
+#gamma-venue-workspace .stage-lighting-source-choices button strong { font-size: var(--fs-3); font-weight: 600; color: var(--milk); }
+#gamma-venue-workspace .stage-lighting-source-choices button small { font-size: var(--fs-1); line-height: 1.5; color: var(--milk-dim); }
+#gamma-venue-workspace .stage-lighting-source-choices button:hover { border-color: var(--brass); }
+#gamma-venue-workspace .stage-lighting-source-choices button[aria-pressed="true"] {
+  border-color: var(--brass);
+  border-left-color: var(--brass);
+  background: rgba(156, 130, 63, 0.18);
+}
+/* 選択中の見出しの色。--brass（#9c823f）をそのまま使うと、選択中の地（rgba(156,130,63,.18) を
+ * recess に重ねた rgb(45,38,24)）に対して 4.05:1 で AA（4.5:1）に届かなかった（2026-09-17 実測）。
+ * 同じ真鍮の系統で明度だけ上げた #c9a961 にすると 6.66:1。枠と左線は従来の --brass のまま
+ * （線は文字ではないので 3:1 でよく、recess に対して 5.05:1 ある）。 */
+#gamma-venue-workspace .stage-lighting-source-choices button[aria-pressed="true"] strong { color: #c9a961; }
+#gamma-venue-workspace .stage-lighting-plan-body { display: grid; gap: 7px; margin-top: 4px; padding: 8px; border: 1px solid var(--line-dark); background: rgba(25,21,18,.45); }
+#gamma-venue-workspace .stage-lighting-plan-body .stage-lighting-plan-actions { display: flex; justify-content: flex-end; gap: 6px; }
+
+/* R-30（2026-09-17 本人要望）: 照明から別のモードへ移るときの「適用しますか？」の窓。
+ * 既存の .stage-modal をそのまま使い、幅と操作列だけここで足す。
+ * 操作列は .stage-lighting-plan-actions と同じ作法（右寄せ・狭い画面では縦積み）。 */
+/* T-14 二度目（2026-09-18 本人指摘）: 劇場版は文言が長く（やめる／反映しないで移る／
+ * この劇場を反映する ＝ 86+166+183px ＋ 隙間16px ＝ 451px）、
+ * 460px の窓の内側（426px）に収まらず、flex-end のせいで
+ * 左端の「やめる」が窓の外へはみ出して切れていた（実測）。窓を広げる。 */
+.stage-modal.gamma-light-leave-modal { width: min(560px, calc(100vw - 32px)); z-index: 79; }
+.gamma-light-leave-modal .stage-modal-body { padding: 14px 16px; }
+.gamma-light-leave-modal .stage-modal-body p { margin: 0; font-size: var(--fs-3); line-height: 1.7; color: var(--milk); }
+.gamma-light-leave-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 0 16px 14px;
+  /* ★英語・中国語で文言が伸びても切れないよう、収まらなければ折り返す。
+   * 切れるより折り返すほうがましという判断（切れると押せなくなる）。 */
+  flex-wrap: wrap; }
+.gamma-light-leave-actions > button { width: auto; flex: 0 0 auto; white-space: nowrap; }
+/* T-19（2026-09-18 本人要望）: 3つ目（適用して移る）だけデザインが崩れていた。
+ * 原因は .stage-minor-action がパネルの縦積み用のクラスで、
+ *   style.css:3466 の margin-top:10px … 3つ目だけ10px下へずれる
+ *   style.css:1981 の color:var(--milk-dim) … 文字が他の2つより暗い
+ * が、窓のボタンをそろえる規則（.stage-modal footer button）に含まれていないため残っていた。
+ * ★この窓の中だけで打ち消す。.stage-minor-action 自体は触らない（縦積みの間隔として要る）。
+ * 主操作であることは大きさではなく色で示す（S-05 と同じ考え方）。 */
+.gamma-light-leave-actions > button { margin-top: 0; text-align: center; }
+.gamma-light-leave-actions > .stage-minor-action {
+  /* 主役。錆色の枠と明るい文字で、他の2つ（控えめ）と区別する。
+   * 地は塗らない（塗ると「適用しないで移る」との差が大きすぎ、押し間違いを誘う）。 */
+  border-color: var(--rust);
+  color: var(--milk);
+}
+.gamma-light-leave-actions > .stage-minor-action:hover,
+.gamma-light-leave-actions > .stage-minor-action:focus-visible {
+  border-color: var(--brass);
+  background: rgba(168, 75, 38, 0.22);
+}
+@media (max-width: 520px) {
+  /* 並びを逆にしたので縦積みも column。主操作が上に来る（column-reverse だと下へ回る）。 */
+  .gamma-light-leave-actions { flex-direction: column; }
+  .gamma-light-leave-actions button { width: 100%; }
+}
+
+/* 手順1〜7のアコーディオン。開いている1つ以外は見出しの行だけ残す。 */
+#gamma-venue-workspace .gamma-venue-step:not(.is-open) > :not(.gamma-venue-step-head) { display: none; }
+/* 手順1〜3は見出しが div でくるまれている。畳んだときは説明文だけ隠し、
+ * 見出し（＝押せるボタン）は必ず残す。 */
+#gamma-venue-workspace .gamma-venue-step:not(.is-open) .gamma-venue-step-head
+  > :not(h2):not(h3):not(h4):not(.gamma-venue-step-toggle) { display: none; }
+#gamma-venue-workspace .gamma-venue-step-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--ctrl-md);
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+#gamma-venue-workspace .gamma-venue-step-headline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+#gamma-venue-workspace .gamma-venue-step-headline .gamma-venue-step-toggle {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+#gamma-venue-workspace .gamma-venue-step-help {
+  flex: 0 0 18px;
+  margin: 0 3px;
+}
+#gamma-venue-workspace .gamma-venue-step-toggle::before {
+  content: "▸";
+  flex: 0 0 auto;
+  color: var(--brass);
+  font-size: var(--fs-3);
+  line-height: 1;
+}
+#gamma-venue-workspace .gamma-venue-step.is-open .gamma-venue-step-toggle::before { content: "▾"; }
+#gamma-venue-workspace .gamma-venue-step:not(.is-help-open) .gamma-venue-help-copy,
+#gamma-venue-workspace .gamma-venue-step.is-help-open .gamma-venue-help-copy[hidden] { display: none; }
+#gamma-venue-workspace .gamma-venue-step.is-help-open .gamma-venue-help-copy:not([hidden]) { display: block; }
+/* R-05（2026-09-17 本人要望）: 畳んでいる手順だけ高さを半分にして、一覧を縦に詰める。
+ * 開いている手順（情報の大きなパネル）の見出しは今までのまま変えない。
+ * ★S-06（2026-09-18）の実測で分かったこと: この min-height は実際には効いていない。
+ *   見出しの line-height が 19.25px で、calc(36px/2)=18px より高いため。
+ *   R-05 はここだけ直して「半分にした」つもりになっていたが、見た目はほとんど変わっていなかった。
+ *   実際に効くのは下の padding（手順の枠が持つ 10px + 10px）。指定自体は無害なので残す。 */
+#gamma-venue-workspace .gamma-venue-step:not(.is-open) .gamma-venue-step-toggle {
+  min-height: calc(var(--ctrl-md) / 2);
+  padding: 0;
+}
+
+/* S-06（2026-09-18 本人要望）: 畳んでいる手順をもっと詰める。本人の言葉は
+ * 「もうちょっと狭く。さらに半分ぐらいの高さでいいと思います」。
+ * 実測（1920×1000）: 畳んだ1手順は 41.3px で、内訳は 枠線1px + padding-top 10px +
+ * 見出し19.3px + padding-bottom 10px。上下の余白を落とすと 20.3px ＝ ほぼ半分になる。
+ * 6手順ぶんで約126px空く。左列は高さ775pxに対し中身864px（89pxスクロールして手順5〜7が画面外）
+ * だったので、これでスクロールが消えて1〜7が全部見える。
+ * ★枠線と背景は残す（手順の区切りが分からなくなるため）。開いている手順の余白は変えない。
+ * ★余白の指定は style.css（手順1〜6）と gamma.css（手順7 .stage-venue-editor-machinery）の
+ *   2か所に分かれているが、この規則は詳細度（id + 2クラス）でどちらにも勝つので1つで足りる。
+ * ★対象はブラウザ（デスクトップ）。本人指定によりタッチ端末の的の大きさは考慮しない。 */
+#gamma-venue-workspace .gamma-venue-step:not(.is-open) {
+  /* 本人指示（2026-09-18・3回目の調整）:
+   *  1回目「もうちょっと狭く。さらに半分ぐらいの高さで」→ padding-block:0 で 41.3px → 21.3px
+   *  2回目「上に詰めるのではなく箱の高さを詰める。文字は箱の縦中央へ」→ 親の align-content:start で解決
+   *  3回目「ちょっと狭くなりすぎた。上下にもう少し余裕が欲しい。箱の高さ自体は倍に」→ ここ
+   * 21.3px の倍＝約42px。内訳は 枠線2px + 見出し19.3px + この余白×2。
+   * ★結果としてS-06前の高さ（41.3px）とほぼ同じになる。ただしS-06前と違い、
+   *   親の align-content:start で「窓が縦に長いと箱だけ伸びる」不具合は直っている。 */
+  padding-block: 10px;
+  /* 万一この箱が引き伸ばされるシーンがあっても見出しが上に貼り付かないよう、中身は中央に置く。 */
+  align-content: center;
+}
+#gamma-venue-workspace .gamma-venue-step-toggle:hover { color: var(--milk); }
+#gamma-venue-workspace .gamma-venue-step-toggle:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+/* 2026-09-17: 「この劇場をショーへ反映」の確定ボタンが、取り消し側より弱かった
+ * （実測: 取り消し 159×54/14px/文字0.85 に対し、確定 115×44/11px/文字0.55）。
+ * 主操作のほうを大きく・明るくして、取り消しは静かな方へ戻す。 */
+#stage-venue-apply-modal .stage-venue-apply-actions #stage-venue-apply-confirm {
+  min-height: var(--ctrl-lg);
+  padding: 8px 22px;
+  border-color: var(--rust);
+  background: rgba(168, 75, 38, 0.22);
+  color: var(--milk);
+  font-size: var(--fs-6);
+  font-weight: 600;
+}
+#stage-venue-apply-modal .stage-venue-apply-actions #stage-venue-apply-confirm:hover,
+#stage-venue-apply-modal .stage-venue-apply-actions #stage-venue-apply-confirm:focus-visible {
+  border-color: var(--rust);
+  background: var(--rust);
+  color: var(--paper);
+}
+#stage-venue-apply-modal .stage-venue-apply-actions #stage-venue-apply-cancel {
+  min-height: var(--ctrl-lg);
+  color: var(--milk-dim);
+  font-size: var(--fs-6);
+}
+/* 2つの高さも揃える（取り消しだけ行送りで54pxになっていた）。 */
+#stage-venue-apply-modal .stage-venue-apply-actions #stage-venue-apply-cancel,
+#stage-venue-apply-modal .stage-venue-apply-actions #stage-venue-apply-confirm {
+  height: var(--ctrl-lg);
+  padding: 0 22px;
+  line-height: 1.2;
+  /* T-14 二度目（2026-09-18 本人指摘「高さがずれている」）:
+   * 高さは両方44pxだったが、上下の位置が5pxずれていた。
+   * 原因は .stage-minor-action の margin-top:10px（style.css:3466。パネルの縦積み用）。
+   * 親が align-items:center なので、余白の分だけ〈この内容で反映する〉が下がっていた。
+   * T-19 で照明版の窓には同じ打ち消しを入れてあるが、この窓には入っていなかった。 */
+  margin-top: 0;
+}
+
+/* X-1（2026-09-17）: 手順7の見出しだけブラウザ既定の h3（17.55px/700）のまま残っていた。
+ * style.css の見出し指定（11px/500）が .stage-venue-editor-machinery h3 を列挙し漏れていたため。
+ * 他の手順と同じ見た目に揃える。 */
+#gamma-venue-workspace .stage-venue-editor-machinery > h3,
+#gamma-venue-workspace .stage-venue-editor-viewpoints > h3 {
+  margin: 0;
+  font-size: var(--fs-3);
+  font-weight: 500;
+}
+
+/* 2026-09-17 本人指示: 手順7だけ枠に入っていなかった。X-1の見出しと同じ漏れで、
+   style.css の枠の指定が手順1〜6しか列挙していない。1〜6と同じ枠・余白に揃える。 */
+#gamma-venue-workspace .stage-venue-editor-machinery,
+#gamma-venue-workspace .stage-venue-editor-viewpoints {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line-dark);
+  background: rgba(var(--stage-ui-desk-rgb, 25, 21, 18), 0.45);
+}
+/* 中に入っている舞台機構パネルは、枠の中の中身として扱う（枠の二重を避ける）。 */
+#gamma-venue-workspace .stage-venue-editor-machinery .stage-panel {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+/* 劇場形式プリセットだけを、手順の入口として黄色い太枠で示す。 */
+#gamma-venue-workspace .stage-venue-editor-presets {
+  margin: 0;
+  padding: 10px;
+  border: 3px solid #f1c54b;
+  border-radius: var(--radius-sm);
+}
+#gamma-venue-workspace .stage-venue-editor-presets .stage-venue-choice-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+#gamma-venue-workspace #stage-venue-editor-close { display: none; }
+
+/* T-33（2026-09-18 実測）: 「プリセットを適用しますか？」の窓で、
+ * 〈プリセットを適用する〉（10文字）が2行に折り返し、高さが 44px→52px とずれていた
+ * （T-14 で本人が指摘したのと同じ症状）。
+ * ★字間を決めているのは style.css ではなく、この下の
+ *   .stage-modal footer button の 0.15em（gamma.css が後に読まれるので後勝ち）。
+ *   実測: 10文字 ×（14px + 2.1px）= 161px ＝ 枠の中身の幅とちょうど同じで溢れていた。
+ * この窓だけ字間を詰め、折り返しても高さがそろうようにする。 */
+#stage-venue-preset-modal .stage-venue-discard-actions { align-items: stretch; }
+/* ★相手は `.stage-modal footer button:not(#stage-venue-editor-apply)`。
+ *   :not(#id) はIDぶんの強さを持つので、クラス1つでは勝てない（実測で負けた）。
+ *   .stage-modal-body を挟んでクラスを2つにして勝たせる。 */
+#stage-venue-preset-modal .stage-modal-body .stage-venue-discard-actions > button {
+  letter-spacing: 0.04em;
+}
+/* gamma-workspace.js measures the space below this frame after the header has wrapped. */
+/* S-07（2026-09-18 本人要望）: iframe要素の地色も全体背景（--desk = #191512）へ揃える。
+ * 以前は #141311 で、読み込み中の一瞬だけ外側と違う色が見えていた。 */
+#gamma-light-frame { display: block; width: 100%; height: calc(100dvh - 108px); min-height: 0; border: 0; border-radius: 0; background: var(--desk); }
+#gamma-light-frame[hidden], #gamma-light-workspace[hidden] { display: none; }
+#gamma-light-playback-bar { --preview-control:44px; --preview-gap:8px; display:flex; flex-wrap:wrap; align-items:center; gap:var(--preview-gap); padding:var(--preview-gap); color:var(--paper); background:var(--desk); font-size:15px; line-height:1.5; }
+#gamma-light-playback-bar[hidden], #gamma-light-playback-view[hidden] { display:none; }
+#gamma-light-playback-bar button { height:var(--preview-control); min-height:var(--preview-control); padding:0 12px; border:1px solid var(--line-dark); border-radius:3px; background:var(--desk-2); color:var(--paper); font:inherit; }
+#gamma-light-playback-bar button[hidden] { display:none; }
+#gamma-light-playback-status { margin:0; font-size:14px; line-height:1.5; overflow-wrap:anywhere; }
+#gamma-light-playback-view { min-height:280px; background:var(--desk); }
+#gamma-light-playback-canvas { display:block; width:100%; max-width:1000px; height:auto; aspect-ratio:1000/560; margin:0 auto; }
+@media(max-width:700px) { #gamma-light-playback-status { flex-basis:100%; } }
+body[data-gamma-workspace="normal"] [data-panel="light"] { display:none !important; }
+body[data-gamma-workspace="normal"] #stage-front-lights,
+body[data-gamma-workspace="normal"] #stage-plan-lights,
+body[data-gamma-workspace="normal"] #stage-show-light-names,
+body[data-gamma-workspace="normal"] #stage-plan-routes-light { display:none !important; }
+body.is-standalone #stage-front-lights,
+body.is-standalone #stage-plan-lights,
+body.is-standalone #stage-show-light-names,
+body.is-standalone #stage-plan-routes-light { display:none !important; }
+body.is-standalone label:has(#stage-front-lights),
+body.is-standalone label:has(#stage-plan-lights),
+body.is-standalone label:has(#stage-show-light-names),
+body.is-standalone label:has(#stage-plan-routes-light) { display:none !important; }
+
+/* 通常／3D実験: 選択インスペクタを対象物の横へ浮かせる。既存のドラッグ管理を使える。 */
+body[data-gamma-workspace="normal"] .stage-panel.gamma-selection-floating,
+body.gamma-3d-active .stage-panel.gamma-selection-floating {
+  /* スクロール列の外の舞台グリッドへ置き、ヘッダーのメニューより下へ重ねる。 */
+  position: absolute; z-index: 20; width: min(240px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  max-height: min(70vh, calc(100dvh - 32px), 620px);
+  overflow: auto; margin: 0; padding: 0 12px 12px;
+  border: 1px solid var(--line-dark); border-radius: 2px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.45); background: var(--stage-ui-panel, #1b1714);
+}
+body[data-gamma-workspace="normal"] .stage-panel.gamma-selection-floating .stage-panel-head,
+body.gamma-3d-active .stage-panel.gamma-selection-floating .stage-panel-head { cursor: grab; }
+body[data-gamma-workspace="normal"] .stage-panel.gamma-selection-floating .stage-panel-help,
+body.gamma-3d-active .stage-panel.gamma-selection-floating .stage-panel-help { right: 18px; }
+#gamma-light-status { margin: 0; padding: 0 8px; color: #c6bba6; }
+#gamma-light-status:empty { display: none; }
+@media(max-width:700px) {
+  #stage-workspace-tabs { gap:4px; }
+  #stage-workspace-tabs button { font-size:12px; padding:6px 8px; }
+}
+
+#gamma-light-status button { margin:8px; min-height:36px; padding:6px 12px; }
+/* 2026-09-24 本人指示: 照明を開けなかったときの知らせは、赤い枠の小窓で画面の上の中央に出す。
+   数値: 幅は最大760px・上から140px・枠2px（#df6433）・角丸6px・内側16/18px・影 0 12px 32px rgba(0,0,0,.55)。
+   見出し15px太字（#df6433）・理由14px（行間1.6）・ボタンは今までどおり（高さ36px）。✕は右上32px四方。 */
+#gamma-light-status.is-failure {
+  position: fixed;
+  z-index: 90;
+  top: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100dvh - 180px);
+  overflow-y: auto;
+  padding: 16px 52px 14px 18px;
+  border: 2px solid #df6433;
+  border-radius: 6px;
+  background: rgb(var(--stage-ui-panel-rgb, 27, 30, 34));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  color: var(--milk, #efe7d6);
+  font-size: 14px;
+  line-height: 1.6;
+}
+#gamma-light-status.is-failure .gamma-light-status-title { display: block; margin-bottom: 4px; color: #df6433; font-size: 15px; }
+#gamma-light-status.is-failure .gamma-light-status-why { display: block; margin-bottom: 6px; }
+#gamma-light-status.is-failure button { margin: 6px 8px 0 0; }
+#gamma-light-status.is-failure .gamma-light-status-close {
+  position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; min-height: 32px; margin: 0; padding: 0;
+  border: 1px solid var(--line-dark, #382f25); background: transparent; color: var(--milk, #efe7d6); cursor: pointer;
+}
+#gamma-light-status.is-failure .gamma-light-status-close:hover { border-color: #df6433; }
+
+/* ---- ヘッダー再設計（2026-09-17 第2段） ----
+ * 根拠: docs/ui-audit-2026-09-16/UI_REWORK_SPEC.md §3-3。
+ * H-3（音量の枠線なし・右揃え）は既存のスタイルで既に満たされていたため変更不要（実測確認済み）。 */
+/* H-2: 「総経過時間」ラベルと数字をそれぞれ中央寄せにする。 */
+.stage-show-elapsed-group { text-align: center; }
+.stage-show-elapsed-group > span { display: block; text-align: center; }
+.stage-show-elapsed { text-align: center; }
+
+/* H-1: ショー名・バージョンをタブの並びから外し、左上のアプリ名の下へ縦に積む。
+ * .stage-header-app-identity は（2026-10-07 までは丸ごと aria-hidden だった。今は飾りの部分だけ aria-hidden）、
+ * 実体のあるボタン（#stage-project-settings-open）はその中に入れず兄弟にする（読み上げ順・フォーカス順を保つ）。 */
+.stage-header-topleft {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.stage-header-topleft .stage-header-project { margin: 0; align-self: flex-start; }
+.stage-header-topleft .stage-session-guest-badge,
+.stage-header-topleft .stage-session-whoami { margin: 0; }
+
+/* ---- 選んだものパネル（2026-09-17 第3段） ----
+ * 根拠: docs/ui-audit-2026-09-16/UI_REWORK_SPEC.md §3-2。 */
+/* S-1: 「詳細」と「舞台裏へ」を横並び・同じ高さにする。色は変えない（既存の.stage-icon-action/.stage-deleteのまま）。 */
+.stage-detail-backstage-row {
+  margin-top: 10px;
+}
+.stage-detail-backstage-row .stage-icon-action,
+.stage-detail-backstage-row .stage-delete {
+  width: auto;
+  min-height: var(--ctrl-md);
+  margin: 0;
+  text-align: center;
+}
+
+/* S-2: 鍵と目玉を同じ大きさの正方形に（実測: 鍵28.5×38・目32×44 → 32×32へ統一）。 */
+.stage-selected-heading #stage-piece-lock,
+.stage-selected-heading #stage-fpv-open {
+  display: inline-grid;
+  place-items: center;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+.stage-selected-heading #stage-piece-lock svg,
+.stage-selected-heading #stage-fpv-open svg { width: 18px; height: 18px; }
+
+.stage-canvas-close {
+  display: inline-grid;
+  place-items: center;
+}
+
+/* ===== N-1: 数値欄の左右ドラッグ編集（gamma-number-scrub.js） ===== */
+/* ドラッグ中だけ見た目を変える。待機中の欄にカーソルを出すと、
+ * 文字を編集したいときに入力欄に見えなくなるのでやらない。 */
+input[type="number"].is-scrubbing {
+  border-color: var(--brass);
+  cursor: ew-resize;
+}
+body.is-number-scrubbing {
+  cursor: ew-resize;
+  user-select: none;
+}
+
+/* ===== N-1後半: スライダーの値表示を編集できる数値欄にする（gamma-range-fields.js） ===== */
+/* 見た目は今までの「右端の小さな値表示」のまま。触れるものだと分かるのは
+   ホバー・フォーカスのときだけにして、ラベル行がうるさくならないようにする。 */
+.stage-range-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  flex: none;
+}
+.stage-range-value .stage-range-value-input {
+  /* 親のラベル行は flex なので、指定しないと押し潰されて数字が読めなくなる。 */
+  flex: none;
+  width: 4.5em;
+  padding: 0 2px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: right;
+  -moz-appearance: textfield;
+}
+.stage-range-value .stage-range-value-input::-webkit-outer-spin-button,
+.stage-range-value .stage-range-value-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.stage-range-value .stage-range-value-input:hover {
+  border-color: rgba(240, 231, 214, 0.22);
+}
+.stage-range-value .stage-range-value-input:focus {
+  border-color: var(--brass);
+  background: rgba(0, 0, 0, 0.25);
+  outline: none;
+}
+.stage-range-value .stage-range-unit { flex: none; white-space: nowrap; }
+
+/* ===== T-5: タイムラインの範囲選択 ===== */
+/* 平面図・正面図の矩形選択と同じ見え方にして、操作が別物に見えないようにする。 */
+.stage-timeline-marquee {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+  border: 1px solid var(--stage-timeline-accent, var(--brass));
+  background: rgba(211, 172, 89, 0.12);
+  border-radius: var(--radius-sm);
+}
+body.is-timeline-marquee { user-select: none; }
+/* まとめて選んだキューは、1件だけ選んだときより強く縁取る。
+   どれが一緒に動くのかが、掴む前に分かるようにする。 */
+.stage-timeline-cue[aria-pressed="true"] { box-shadow: 0 0 0 1px var(--stage-timeline-accent, var(--brass)); }
+
+/* ===== ショーのパネル（2026-09-17 本人指示） ===== */
+/* ショー名とバージョンを、演者・舞台セット・選んだもの・保存状態と同じパネルにした。
+   ヘッダーの中にいたときの寸法（幅220px上限・左に8pxの余白）は、
+   タブの横に置くための値だったので、パネルの中では幅いっぱいに戻す。 */
+.stage-project-panel .stage-header-project {
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+  padding: 6px 8px;
+}
+.stage-project-panel .stage-header-project-copy { width: 100%; }
+
+/* ===== H-2/H-3 の続き（2026-09-17 本人指示）: 総経過時間と音量を右側へまとめる ===== */
+/* 2つは「いま何分か」「どのくらいの音量か」という同じ種類の目盛りなので、
+   離して置かず1組にする。操作アイコンの列の最後＝共有・通知の手前に置く。 */
+.stage-header-meters {
+  display: inline-flex;
+  /* 2026-10-07（#12）: 音量がスピーカーのボタン（箱34px）になったので、隣の操作ボタン（行の下端ぞろえ）と同じ高さに置く。
+     TC の表示（2段・42px）は箱いっぱいなので、下端ぞろえでも位置は変わらない。 */
+  align-items: flex-end;
+  gap: 10px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+/* ===== モーダルの操作ボタンの寸法・文字をそろえる（2026-09-17 本人指示） ===== */
+/* 「変更しない」と「追加する」のように、同じ行に並ぶボタンの大きさと文字が
+   ばらばらだった。原因は別系統の指定が混ざっていること:
+     .btn-quiet          … 文字は継承（14px）・字間0.15em・上下8px 左右22px
+     .stage-minor-action … 文字11px・字間0.08em・高さ34px・左右6px
+   色の差（目立つ／控えめ）は意味があるのでそのまま残し、寸法と文字だけをそろえる。
+   ★ #stage-venue-editor-apply（この劇場を反映する）は意図的に一番大きい主役なので外す。 */
+/* 行の高さは一番高いボタンに引き伸ばされる（flexの既定が stretch）。
+   片方だけ伸びて見えるので、中央ぞろえにして各ボタンを自分の高さのままにする。 */
+.stage-modal footer {
+  align-items: center;
+}
+.stage-modal footer button:not(#stage-venue-editor-apply),
+.stage-modal footer a:not(#stage-venue-editor-apply) {
+  min-height: var(--ctrl-lg);
+  padding: 8px 18px;
+  font-size: var(--fs-6);
+  letter-spacing: 0.15em;
+  line-height: 1.2;
+}
+
+/* 劇場の入出力は button と label で同じ字間にする。 */
+.stage-modal footer.stage-venue-library-footer .stage-venue-library-actions > button:not(#stage-venue-editor-apply),
+.stage-modal footer.stage-venue-library-footer .stage-venue-library-actions > .stage-import-label {
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+/* ★#1（2026-10-06）: 帯は「書き出す／反映する」の2つになったので、反映ボタンを1行ぶち抜きにしていた指定は外した（狭いときは style.css の container 指定で1列になる）。 */
+#stage-venue-pick-modal footer.stage-venue-pick-actions #stage-venue-pick-apply {
+  width: auto;
+  max-width: 100%;
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* ===== ショーのパネル（2026-09-17 本人指示でポップアップを畳んだ後） ===== */
+/* 名前・バージョン・操作を縦一列に積む。パネルの幅（既定360px）で読めるよう、
+   ボタンは幅いっぱいの1列にして、文字の途中で折り返さない。 */
+.stage-project-panel .stage-panel-body > .stage-text-input { width: 100%; }
+.stage-project-panel .stage-version-note { margin: 2px 0 0; }
+.stage-project-panel-actions {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+.stage-project-panel-actions > .stage-minor-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--ctrl-md);
+  margin: 0;
+  font-size: var(--fs-4);
+  cursor: pointer;
+}
+
+/* ===== 新しいショーは、まず劇場設定（2026-09-17 本人指示） ===== */
+/* 劇場が決まるまで他のタブは押せない。押せないことが見て分かるようにする。 */
+body.gamma-venue-setup-required .stage-workspace-tab[disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+/* ===== X-13（2026-09-17）: 劇場設定のラベルだけ 9.5px で、他の文字より一段小さかった ===== */
+/* 劇場形式プリセット・規模・劇場名などの見出し文字。階段の11pxへ寄せる。
+   範囲は劇場設定モードの中だけにして、他の画面の文字は動かさない。 */
+#gamma-venue-workspace .stage-field-label,
+#gamma-venue-workspace .stage-control-label {
+  font-size: var(--fs-3);
+}
+
+/* ===== 案A（2026-09-23 本人決定）: 新しいショーでも舞台タブへ戻れる。入口以外は薄く・触れない ===== */
+/* 帯は舞台の格子（.stage-sketch-grid）の直前に gamma-workspace.js が差し込む。 */
+.gamma-stage-gate-band {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+  margin: 8px 12px 0; padding: 9px 14px;
+  border-left: 4px solid #c98955; border-radius: 8px;
+  background: rgba(201, 137, 85, 0.14); font-size: 13px;
+}
+.gamma-stage-gate-band[hidden] { display: none; }
+.gamma-stage-gate-note { opacity: 0.72; }
+.gamma-stage-gate-band.is-nudge { animation: gamma-stage-gate-nudge 0.9s ease; }
+@keyframes gamma-stage-gate-nudge {
+  0%, 100% { box-shadow: none; }
+  30% { box-shadow: 0 0 0 3px rgba(201, 137, 85, 0.85); }
+}
+/* inert が操作を止める。ここは見た目だけ（薄く・彩度を落とす）。 */
+body.gamma-venue-setup-required .is-venue-gated { opacity: 0.35; filter: saturate(0.6); }
+@media (prefers-reduced-motion: reduce) { .gamma-stage-gate-band.is-nudge { animation: none; outline: 2px solid #c98955; } }
+
+/* 舞台スケッチのヘッダーは、モード内をスクロールしても操作できる位置に残す。
+   2026-10-05 本人指示: どのパネル配置でも、ヘッダーは画面の最上端に貼る。
+   スクロール領域（#view-stage）に上余白があると sticky はその内側で止まり、余白の帯から
+   流れていく図が透けて見えた。上余白は 0 にし、同じ 12px をヘッダー自身の上の余白で取る。 */
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) #view-stage { padding-top: 0; }
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding-top: 12px;
+  background: var(--desk);
+}
+
+/* 狭い画面では元の子要素の配置を保つ。PCでは共有・通知までを同じ包みにする。 */
+.stage-header-actions-row { display: contents; }
+
+/* C1: 操作群の中は常に1段。必要な幅を保ち、入りきらないときだけ群ごと
+   ロゴ・タブの下へ送る。1500px の境界で英語の操作群だけが細くなるのを防ぐ。
+   既存のアイコン（34px）・TC・ログイン札の寸法と表示はそのまま。 */
+@media (min-width: 1000px) {
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head {
+    flex-wrap: wrap;
+    row-gap: var(--gamma-gap);
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-header-actions-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    flex: 1 0 max-content;
+    min-width: max-content;
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-header-actions-row .stage-header-collaboration {
+    flex: 0 0 auto;
+    margin-left: 0;
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head .stage-history-actions {
+    flex: 1 0 max-content;
+    min-width: max-content;
+    flex-wrap: nowrap;
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head .stage-history-actions > * {
+    flex-shrink: 0;
+  }
+}
+
+/* 舞台タブの3列だけを画面内に収め、それぞれを独立したスクロール領域にする。
+   タイムライン開閉時の下余白は #view-stage の既存規則に任せる。 */
+@media (min-width: 1120px) {
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) #view-stage {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-sketch {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-sketch-head,
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .gamma-stage-gate-band:not([hidden]) {
+    flex: 0 0 auto;
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-sketch-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch;
+    overflow: hidden;
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-sketch-grid > [data-col] {
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-dark) transparent;
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"]:not(.stage-fullscreen) .stage-sketch-grid > .stage-col {
+    overflow-x: hidden;
+  }
+}
+
+/* 狭い画面ではシーン名を操作ボタンの下へ送り、互いの当たり判定を重ねない。 */
+@media (max-width: 720px) {
+  html:not(.stage-phone-viewer):not(.stage-pwa-tablet) .stage-scene-bar .stage-scene-step {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 8px;
+    width: 100%;
+  }
+  html:not(.stage-phone-viewer):not(.stage-pwa-tablet) .stage-scene-bar .stage-scene-step-left { grid-area: 1 / 1; }
+  html:not(.stage-phone-viewer):not(.stage-pwa-tablet) .stage-scene-bar .stage-scene-step > .is-next { grid-area: 1 / 2; }
+  html:not(.stage-phone-viewer):not(.stage-pwa-tablet) .stage-scene-bar .stage-scene-now-open {
+    grid-area: 2 / 1 / 3 / -1;
+    position: static;
+    transform: none;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  html:not(.stage-phone-viewer):not(.stage-pwa-tablet) .stage-scene-bar .stage-scene-now { display: block; max-width: 100%; }
+}
+
+@media (max-width: 720px) {
+  html:not(.stage-phone-viewer):not(.stage-pwa-tablet) .stage-sketch-head > .stage-brand-block {
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+  }
+}
+#stage-save-status {
+  overflow-wrap: anywhere;
+  margin: 0 0 10px;
+  padding: 9px 11px;
+  border: 1px solid var(--line-dark);
+  border-left: 3px solid var(--brass);
+  background: var(--desk-2);
+  color: var(--milk);
+  font-size: 12px;
+  line-height: 1.5;
+}
+#stage-save-status[data-level="saving"] { border-left-color: var(--storage-warning-caution); }
+#stage-save-status[data-level="saved"] { border-left-color: var(--moss); }
+#stage-save-status[data-level="warn"] {
+  border-left-color: var(--danger);
+  color: var(--paper);
+}
+html[data-stage-skin] .stage-modal:not([hidden]) { max-height: calc(100dvh - 32px); overflow-y: auto; }
+html[data-stage-skin] #gamma-venue-workspace .stage-modal { max-height: none; }
+html[data-stage-skin] .stage-modal :is(input,select,textarea) { max-width: 100%; min-width: 0; }
+.gamma-workspace-error { border: 1px solid var(--brass); border-left-width: 3px; padding: 12px; color: var(--milk); background: var(--desk-2); }
+.gamma-workspace-error header { display: flex; align-items: center; gap: 8px; }
+.gamma-workspace-error h3 { flex: 1; margin: 0; font-size: var(--fs-5); }
+.gamma-workspace-error p { font-size: var(--fs-4); line-height: 1.6; overflow-wrap: anywhere; }
+.gamma-workspace-error button { min-height: var(--ctrl-md); font-size: var(--fs-4); white-space: normal; }
+.gamma-workspace-error:empty { border: 0; padding: 0; background: transparent; }
+.gamma-edition-label { margin-left: auto; color: var(--milk-dim); font-size: var(--fs-4); }
+
+/* 2026-09-26 「使いかたの冊子」に添える冊子の版（γ · v0.2.17）。補助文字の色（暖色背景で約5.3:1）で小さく添える。 */
+.stage-manual-edition { margin-left: 8px; font-size: 0.85em; letter-spacing: 0.04em; color: var(--milk-dim); white-space: nowrap; }
+.stage-manual-edition[hidden] { display: none; }
+
+/* Gamma/Delta: retired machinery has no UI or actions.
+   2026-10-09（本人決定「前紗幕は舞台機構にする。出したり消したりしたい」）: 劇場設定の「舞台機構」の節
+   （.stage-venue-editor-machinery＝中身は前紗幕のボタンだけ）と、舞台タブ左列の「舞台機構」パネル
+   （[data-panel="stage-set"]・#stage-group-machinery・#stage-machinery-empty＝登録した機構の一覧。ON/OFF で
+   シーンごとに出し入れする入口）は隠さない。引退した追加パネル（[data-panel="machinery"]）・機構のつまみ
+   （開き・回転など）・差分・推定の札は隠したまま。紗幕の「透け」は #stage-machinery-controls の外
+   （#stage-scrim-controls）にあるので見える。 */
+[data-panel="machinery"], #stage-machinery-controls, #stage-machinery-scene-diff, #stage-machinery-estimated { display:none !important; }
+
+/* Width grips live in the gaps, outside the scrolling panel columns. */
+.stage-sketch-grid { position: relative; }
+
+/* Electric bulb props use the selection inspector, separate from lighting fixtures. */
+#stage-point-source-controls:not([hidden]) { display: grid; gap: 8px; padding: 12px 0; border-top: 1px solid var(--stage-line, #3d3527); }
+#stage-point-source-controls p { margin: 0; }
+#stage-point-source-controls label { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+#stage-point-range { width: 80px; }
+
+#stage-point-source-controls label { white-space: nowrap; }
+#stage-point-level { width: 110px; min-width: 0; }
+
+/* Project-wide performer sheet columns; reuses Gamma theme tokens. */
+.cue-column-options { margin-bottom:12px; padding:8px; border:1px solid var(--line-dark); }
+.cue-column-options summary { cursor:pointer; min-height:44px; }
+.cue-column-options label { display:inline-flex; align-items:center; gap:6px; padding:8px; min-height:44px; }
+.cue-column-options button { min-height:44px; padding:6px 12px; background:var(--desk-2); color:var(--milk); border:1px solid var(--line-dark); font:inherit; }
+.cue-sheet-custom-columns thead th { position:relative; cursor:grab; padding-right:12px; }
+.cue-sheet-custom-columns .cue-column-resize { position:absolute; top:0; right:-4px; bottom:0; width:10px; cursor:col-resize; touch-action:none; z-index:3; }
+.cue-column-resize:focus-visible { outline:2px solid var(--brass); }
+.is-viewing-sheet .cue-sheet-custom-columns th, .is-viewing-sheet .cue-sheet-custom-columns td { min-width:0; }
+
+/* 2026-10-05 本人指示: 版の表示（Studio／Company）。赤いキッカー「STAGE SKETCH GAMMA」＋版番号の行の右端に、
+   真鍮の細い縦線で区切って置く。この行はロゴ上の空白に重ねてあり、ロゴ幅より短いので、ヘッダーの幅を増やさない
+   （ロゴの右に札を置く案は 1900px で右上の操作群が折り返した＝不採用）。
+   数値: 文字 --fs-2(10px) 700・字間.2em・大文字・色 --milk（地 #191512 に約10.9:1）・左に 1px 真鍮の縦線＋余白7px。
+   行の高さは変えない（border は行の高さの中に収まる）。900px 未満はロゴが小さく行が溢れるので出さない。Lite は run.css 側。 */
+.stage-header-app-kicker-row .stage-header-edition {
+  display: inline-block; margin-left: 2px; padding-left: 7px;
+  border-left: 1px solid var(--brass);
+  color: var(--milk); font-family: var(--sans); font-size: var(--fs-2); font-weight: 700;
+  letter-spacing: .2em; line-height: 1; text-transform: uppercase; white-space: nowrap;
+}
+@media (max-width: 900px) { .stage-header-app-kicker-row .stage-header-edition { display: none; } }
+
+/* 2026-10-07 本人指示（#11）: 「○○ でログイン中」とゲストの札は、キッカー行の Studio の右へ並べる（「| arata でログイン中」）。
+   区切りは Studio の前の縦線と同じ（1px 真鍮・左に余白7px）。文字は札として読める最小の 10px（--fs-2）・真鍮（共有セッションの色。
+   地 #191512 に約4.9:1＝以前の 11px と同じ色）。行の高さを増やさないよう line-height 1。
+   ★幅を取らない: デスクトップでは札の包み（.stage-header-app-kicker-badges）を Studio の右へ「重ねる」（absolute・left:100%）。
+     行の中へ流すと、ログイン中だけロゴ側（.stage-header-topleft）の幅が約115px 増える。2026-10-07 の実測で、
+     英語の 1440px（ログイン中）はタブが次の行へ落ちてヘッダーが 167.9→188.4px に伸びた（流し込み版）。重ね版は
+     ログインの有無・言語・名前の長さにかかわらず、ロゴ側の幅もタブ・右上の操作群の折り返しも変えない。
+     重ねる先はロゴ・キッカーの右の空き（タブの上の余白＝行の高さ20pxのうちキッカーの行）。タブとは縦にずれる。
+   長い名前は名前の部分だけ省略記号（.stage-session-whoami-name の最大幅）にして「でログイン中」は残す。全文は title（札を指すと出る）。
+   iPad・スマホ（gamma-mobile.js／stage-sketch.js）は札を別の帯へ移す。移らない iPad 表示モード（html.stage-pwa-tablet のみ）では
+   包みは display:contents（style.css）で札が行の子のまま並ぶので、行の高さを増やさないようデスクトップ限定にはしていない（下の個別の規則だけがデスクトップ限定）。 */
+.stage-header-app-kicker-badges > :is(.stage-session-whoami, .stage-session-guest-badge) {
+  flex: 0 1 auto; min-width: 0;
+  margin: 0 0 -2px 0; padding: 0 0 2px 7px;
+  border-left: 1px solid var(--brass);
+  color: var(--brass);
+  font-family: var(--sans); font-size: var(--fs-2); font-weight: 500;
+  letter-spacing: .06em; line-height: 1; vertical-align: baseline;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-header-app-kicker-badges {
+  position: absolute; left: 100%; top: 0;
+  display: inline-flex; align-items: baseline; gap: 7px;
+  margin-left: 7px; max-width: 26em;
+}
+.stage-session-whoami-name {
+  display: inline-block; max-width: 8em; overflow: hidden; text-overflow: ellipsis;
+  vertical-align: bottom; padding-bottom: 2px; margin-bottom: -2px;
+}
+
+/* 2026-10-07 本人指示（#12）: ヘッダーの音量はスピーカーのアイコンボタン。絵は音量で変わる（stage-timeline.js が data-level を書く）。
+   0＝消音（×）／1〜50＝波1本／51〜100＝波2本。大きさ・線はヘッダーの他のアイコンと同じ基準
+   （箱34px・描かれた絵 15px・線 1.6px。tests/icon-glyph-size-browser.cjs が測る）。
+   絵の外枠は 15 ÷（波2本のときの絵の幅 15.9 ÷ 24）＝22.6px。波1本・消音のときは絵が小さくなるぶん、枠は同じまま絵が小さく見える。 */
+.stage-header-volume-btn .stage-volume-wave-1,
+.stage-header-volume-btn .stage-volume-wave-2,
+.stage-header-volume-btn .stage-volume-mute { display: none; }
+.stage-header-volume-btn[data-level="low"] .stage-volume-wave-1,
+.stage-header-volume-btn[data-level="high"] .stage-volume-wave-1,
+.stage-header-volume-btn[data-level="high"] .stage-volume-wave-2,
+.stage-header-volume-btn[data-level="mute"] .stage-volume-mute { display: inline; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-header-volume-btn svg { width: 22.6px; height: 22.6px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-header-volume-btn svg :is(path, line, polyline, polygon, circle, rect, ellipse) {
+  vector-effect: non-scaling-stroke; stroke-width: var(--gamma-icon-stroke);
+}
+
+/* Lite scope; data and shared preferences remain intact. */
+html[data-gamma-edition="lite"] [data-stage-tool="idleArea"],
+html[data-gamma-edition="lite"] #stage-idle-area-delete,
+html[data-gamma-edition="lite"] [data-stage-tool="arrow"],
+html[data-gamma-edition="lite"] [data-stage-tool="arrow"] + .stage-tool-split,
+html[data-gamma-edition="lite"] #stage-light-render-toggle,
+html[data-gamma-edition="lite"] #stage-light-render-toggle + .stage-tool-split,
+html[data-gamma-edition="lite"] #stage-work-light-toggle,
+html[data-gamma-edition="lite"] #stage-work-light-toggle + .stage-tool-split,
+html[data-gamma-edition="lite"] [data-tool-tip="note"],
+html[data-gamma-edition="lite"] [data-stage-tool="paint"],
+html[data-gamma-edition="lite"] [data-stage-tool="erase"],
+html[data-gamma-edition="lite"] [data-tool-tip="frontLights"],
+html[data-gamma-edition="lite"] [data-tool-tip="planLights"],
+html[data-gamma-edition="lite"] [data-tool-tip="frontLightIntent"],
+html[data-gamma-edition="lite"] [data-tool-tip="planRoutesLight"],
+html[data-gamma-edition="lite"] label.stage-name-toggle:has(#stage-show-light-names),
+html[data-gamma-edition="lite"] .stage-header-meters,
+html[data-gamma-edition="lite"] #stage-cue-sheet-open,
+html[data-gamma-edition="lite"] #stage-share-open,
+html[data-gamma-edition="lite"] #stage-timeline-grip,
+html[data-gamma-edition="lite"] #stage-timeline-panel,
+html[data-gamma-edition="lite"] #stage-fpv-open,
+html[data-gamma-edition="lite"] .stage-venue-editor-lighting-step,
+html[data-gamma-edition="lite"] [data-panel="music"],
+html[data-gamma-edition="lite"] [data-panel="light"],
+html[data-gamma-edition="lite"] [data-panel="vox"] { display: none !important; }
+
+#stage-lite-legacy-modal { --lite-action-size: var(--ctrl-lg, 44px); --lite-gap: var(--gamma-gap, 8px); }
+#stage-lite-legacy-modal button { min-height: var(--lite-action-size); min-width: var(--lite-action-size); }
+.stage-lite-legacy-actions { display:flex; flex-wrap:wrap; gap:var(--lite-gap); }
+.stage-lite-legacy-row { border-bottom:1px solid var(--gamma-line, #68645b); padding-block:var(--lite-gap); }
+
+#stage-lite-legacy-modal .stage-modal-body { font-size:var(--fs-6); }
+#stage-lite-legacy-modal .stage-lite-legacy-actions:last-child { margin-top:var(--lite-gap); }
+
+/* Lite: retain source data while removing unavailable controls. */
+html[data-gamma-edition="lite"] [data-panel="alternatives"],
+html[data-gamma-edition="lite"] [data-panel="rigs"],
+html[data-gamma-edition="lite"] [data-panel="machinery"],
+html[data-gamma-edition="lite"] #stage-formation-entry,
+html[data-gamma-edition="lite"] #stage-formation-modal,
+html[data-gamma-edition="lite"] #stage-formation-backdrop,
+html[data-gamma-edition="lite"] [data-tool-tip="route"],
+html[data-gamma-edition="lite"] [data-tool-tip^="planRoutes"],
+html[data-gamma-edition="lite"] #stage-plan-derive-route,
+html[data-gamma-edition="lite"] #stage-route-clear,
+html[data-gamma-edition="lite"] #stage-clear-paint,
+html[data-gamma-edition="lite"] [id^="stage-arrow-clear"],
+html[data-gamma-edition="lite"] .stage-scene-create-route-option,
+html[data-gamma-edition="lite"] .stage-venue-apply-choices,
+html[data-gamma-edition="lite"] .stage-venue-apply-presets,
+html[data-gamma-edition="lite"] #stage-venue-apply-file-summary,
+html[data-gamma-edition="lite"] #stage-venue-apply-lighting-warning { display:none !important; }
+
+html[data-gamma-edition="lite"] #stage-scene-timecode-origin { display: none !important; }
+
+/* ===== 2026-10-08 改善案 A-14「機能をさがす」（⌘K／Ctrl+K・gamma-feature-search.js） =====
+   数値の正本は gamma-dev/DESIGN_TOKENS.md「2026-10-08 機能をさがす」。色は既存のトークンだけ（新しい色は増やさない）。
+   コントラスト実測（contrast.mjs）: 補助文字 #b6a995 on --desk-2 7.4:1／on 選択行 #3a311b 5.56:1、--milk-dim 系は既存どおり。
+   窓は中央でなく上寄せ（結果の増減で窓が上下に動かない）。 */
+.stage-modal.stage-feature-search-modal {
+  top: max(72px, 14vh);
+  transform: translate(-50%, 0);
+  width: min(560px, calc(100vw - 40px));
+  max-height: calc(100vh - 100px);
+}
+.stage-feature-search-lead { margin: 0 0 10px; color: var(--milk-dim); font-size: var(--fs-3); line-height: 1.6; }
+.stage-feature-search-body #stage-feature-search-input {
+  min-height: var(--ctrl-lg);
+  margin-bottom: 8px;
+  font-size: var(--fs-6);
+}
+.stage-feature-search-list {
+  margin: 0; padding: 0; list-style: none;
+  max-height: min(52vh, 420px);
+  overflow-y: auto;
+  border: 1px solid var(--line-dark);
+}
+.stage-feature-search-item {
+  display: grid;
+  gap: 2px;
+  min-height: var(--ctrl-md);
+  padding: 7px 10px;
+  border-top: 1px solid var(--line-dark);
+  cursor: pointer;
+}
+.stage-feature-search-item:first-child { border-top: 0; }
+.stage-feature-search-name { color: var(--milk); font-size: var(--fs-5); line-height: 1.4; }
+.stage-feature-search-path { color: #b6a995; font-size: var(--fs-2); line-height: 1.4; letter-spacing: .03em; }
+.stage-feature-search-alt { color: var(--milk-dim); font-size: var(--fs-2); line-height: 1.4; }
+.stage-feature-search-item:hover { background: var(--desk-3); }
+.stage-feature-search-item.is-active,
+.stage-feature-search-item[aria-selected="true"] {
+  background: var(--gamma-selected-bg);
+  box-shadow: inset 2px 0 0 var(--brass);
+}
+.stage-feature-search-item.is-active .stage-feature-search-name { color: var(--paper); }
+.stage-feature-search-note { margin: 10px 0 0; color: var(--milk-dim); font-size: var(--fs-3); line-height: 1.6; min-height: 1.6em; }
+.stage-feature-search-note .stage-feature-search-guide { display: inline; margin: 0; }
+.stage-feature-search-keys { margin: 8px 0 0; color: var(--ink-soft-sm); font-size: var(--fs-2); letter-spacing: .04em; }
+html.stage-phone-viewer #stage-feature-search-open { display: none !important; }
+/* ヘッダーの箱は隣（音量・歯車）と同じ 34px 正方形（style.css の .stage-gear-btn 系と同じ値） */
+.stage-history-actions button.stage-feature-search-btn {
+  flex: 0 0 var(--stage-history-action-height);
+  width: var(--stage-history-action-height);
+  min-width: var(--stage-history-action-height);
+  height: var(--stage-history-action-height);
+  min-height: var(--stage-history-action-height);
+  padding: 0;
+}
+
+/* 連れていった先の強調。真鍮の枠と、外へ広がって消える輪（1.6秒・1回）。動きを減らす設定では輪を出さず枠だけ。 */
+.gamma-feature-search-hit {
+  outline: 2px solid var(--brass) !important;
+  outline-offset: 3px;
+  animation: gamma-feature-search-pulse 1.6s ease-out 1 forwards;
+}
+@keyframes gamma-feature-search-pulse {
+  from { box-shadow: 0 0 0 0 rgba(156, 130, 63, .55); }
+  to { box-shadow: 0 0 0 14px rgba(156, 130, 63, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gamma-feature-search-hit { animation: none; }
+}
+
+/* B-8: existing colours and presentation shell; no saved mode/preferences. */
+.stage-field-console {
+  --field-space: 16px;
+  --field-large-space: 24px;
+  --field-small-space: 8px;
+  --field-border: 2px;
+  --field-label: 14px;
+  --field-note: clamp(20px, 2vw, 28px);
+  --field-scene: clamp(28px, 4vw, 48px);
+  --field-clock: clamp(32px, 5vw, 64px);
+  --field-go: 28px;
+  --field-control: 44px;
+  --field-go-height: 72px;
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto auto;
+  gap: var(--field-space);
+  padding: max(var(--field-large-space), env(safe-area-inset-top)) max(var(--field-large-space), env(safe-area-inset-right)) max(var(--field-large-space), env(safe-area-inset-bottom)) max(var(--field-large-space), env(safe-area-inset-left));
+  color: var(--paper);
+  background: var(--desk);
+  font-family: var(--sans);
+  line-height: 1.5;
+}
+.stage-field-console[hidden] { display: none; }
+.stage-field-head { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: var(--field-space); }
+.stage-field-head strong, .stage-field-console span { font-size: var(--field-label); }
+.stage-field-current { border: var(--field-border) solid var(--brass); padding: var(--field-space); min-width: 0; }
+.stage-field-current h2 { margin: var(--field-small-space) 0 var(--field-space); font: 700 var(--field-scene)/1.25 var(--sans); color: var(--paper); letter-spacing: 0; }
+.stage-field-console p { margin: var(--field-small-space) 0 var(--field-space); font-size: var(--field-note); overflow-wrap: anywhere; }
+#stage-field-note { white-space: pre-wrap; }
+.stage-field-next { min-width: 0; padding: var(--field-space); }
+.stage-field-clock { grid-column: 1 / -1; }
+.stage-field-clock output { display: block; font-size: var(--field-clock); font-weight: 700; font-variant-numeric: tabular-nums; }
+.stage-field-actions { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: var(--field-space); }
+.stage-field-console button { min-width: 0; min-height: var(--field-control); padding: var(--field-small-space) var(--field-space); border: var(--field-border) solid var(--brass); border-radius: 0; background: var(--desk); color: var(--paper); font: 600 var(--field-label)/1.5 var(--sans); text-align: center; }
+.stage-field-console #stage-field-go { min-height: var(--field-go-height); font-size: var(--field-go); background: var(--paper); color: var(--desk); border-color: var(--paper); }
+.stage-field-console button:disabled { opacity: .55; cursor: default; }
+.stage-field-console button:focus-visible { outline: var(--field-border) solid var(--paper); outline-offset: var(--field-small-space); }
+.stage-field-mode .stage-present-overlay > :not(.stage-field-console) { display: none !important; }
+@media (max-width: 600px) {
+  .stage-field-console { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; padding: var(--field-space); }
+  .stage-field-actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .stage-field-console #stage-field-go { grid-column: 1 / -1; }
+}
+/* B-9: device advice, separate from show/timeline data. */
+.stage-timeline-panel {
+  --stage-transition-advice-text: #ffd28c;
+  --stage-transition-advice-bg: #3b2718;
+}
+.stage-transition-feasibility {
+  flex: 0 0 auto;
+  max-height: 40%;
+  overflow-y: auto;
+  padding: 0 8px;
+  color: var(--stage-transition-advice-text);
+  background: var(--stage-transition-advice-bg);
+  border: 1px solid var(--stage-transition-advice-text);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.stage-transition-feasibility summary { min-height: 44px; align-content: center; cursor: pointer; }
+.stage-transition-feasibility ul { margin: 0; padding: 0 8px 8px 24px; }
+.stage-transition-feasibility li { overflow-wrap: anywhere; }
+.stage-timeline-transition-block.has-speed-advice {
+  color: var(--stage-transition-advice-text);
+  background: var(--stage-transition-advice-bg);
+  border: 1px solid var(--stage-transition-advice-text);
+}
+.stage-timeline-transition-block.has-speed-advice.is-compact .stage-timeline-block-label { display: inline; }
+.stage-timeline-transition-block.has-speed-advice.is-point { overflow: visible; }
+.stage-timeline-settings-panel .stage-transition-speed-setting { gap: 8px; }
+.stage-transition-speed-setting span { flex: 1; }
+.stage-timeline-settings-panel .stage-transition-speed-setting input {
+  width: 64px;
+  height: 44px;
+  min-height: 44px !important;
+}
+
+.stage-transition-speed-mark { flex: 0 0 auto; padding-right: 4px; }
+.stage-timeline-transition-block.has-speed-advice { padding-left: 2px; }
+.stage-timeline-transition-block.has-speed-advice.is-point .stage-transition-speed-mark { padding: 0; }
+.stage-timeline-transition-block.has-speed-advice.is-section-boundary { opacity: 1; filter: none; }
+.stage-transition-feasibility[hidden] { display: none; }
+/* B-2: ショー一覧で本文の取得状態を示す。 */
+.stage-show-download { font-size: 11px; line-height: 1.5; color: var(--paper); }
+.stage-show-download-cancel { min-height: 44px; max-width: 110px; white-space: normal; }
+.stage-show-open[aria-busy="true"] { cursor: wait; }
+
+/* Qシート: 引き継ぎパック（B-11の旧CSS検査を保持） */
+.stage-cue-sheet-row.has-handover { grid-template-columns: minmax(0, 1fr) auto auto auto auto; }
+#stage-cue-sheet-list .stage-cue-sheet-row > .stage-cue-sheet-pack { min-height: 44px; padding: 0 8px; white-space: nowrap; }
+#stage-cue-sheet-handover-view { width: auto; min-height: 44px; }
+.cue-sheet-cast-note { margin: 0 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Sticky-note draft status (R01/R14). */
+.stage-note-editor-status { margin: 0; font-size: var(--fs-4); line-height: 1.5; color: var(--milk-dim); }
+.stage-note-editor-status.is-warning { color: var(--milk); border-left: 3px solid var(--brass); padding-left: 6px; }
+.stage-note-editor textarea[aria-invalid="true"] { border-color: var(--brass); }
+
+/* Approved venue selection overlay. */
+.stage-venue-editor-area-selection {
+  position: absolute;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: minmax(0, auto) auto;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  max-width: calc(100% - 12px);
+  padding: 5px 6px;
+  border: 1px solid var(--rust);
+  background: rgba(var(--stage-ui-desk-rgb, 25, 21, 18), 0.96);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.48);
+}
+
+.stage-venue-editor-area-selection[hidden] { display: none; }
+
+
+/* R11: four report categories, with a vertical list inside each category. */
+#stage-cue-sheet-list { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:24px; align-items:start; }
+#stage-cue-sheet-list .stage-cue-sheet-group { min-width:0; margin-top:0; }
+#stage-cue-sheet-list .stage-cue-sheet-rows { grid-template-columns:minmax(0,1fr); }
+#stage-cue-sheet-list .stage-cue-sheet-row { grid-template-columns:repeat(4,minmax(0,auto)); justify-content:start; row-gap:2px; padding:8px 0; }
+#stage-cue-sheet-list .stage-cue-sheet-row > span { grid-column:1 / -1; white-space:normal; overflow-wrap:anywhere; line-height:1.5; }
+#stage-cue-sheet-list .stage-cue-sheet-row > button { min-width:0; min-height:44px; padding:4px 6px; white-space:normal; }
+@media (max-width:1499px) { #stage-cue-sheet-list { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:749px) { #stage-cue-sheet-list { grid-template-columns:minmax(0,1fr); } }
+
+#gamma-venue-workspace .gamma-venue-step.is-open .gamma-venue-help-copy[data-venue-state-note="true"] { display:block; }
+#stage-cue-sheet-list[hidden] { display:none; }
+
+/* Surface improvements: reuse Gamma controls and tokens. */
+.stage-surface-dialog { color:var(--milk); background:var(--desk-2); border:1px solid var(--line-dark); padding:24px; width:min(540px,calc(100vw - 32px)); max-height:80vh; overflow:auto; }
+.stage-surface-dialog::backdrop {background:#0009}
+.stage-surface-dialog footer {display:flex;justify-content:flex-end;gap:12px;margin-top:24px}
+.stage-surface-dialog button,.stage-surface-dialog select {min-height:44px;font:inherit;color:inherit;background:var(--desk-3);padding:8px 16px;border:1px solid var(--line-dark)}
+.stage-surface-targets {max-height:30vh;overflow:auto}
+.stage-cast-filter {display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.stage-cast-filter input[type=search] {width:100%;min-width:0;font:inherit;padding:8px;color:var(--milk);background:var(--desk-2);border:1px solid var(--line-dark)}
+.stage-cast-filter label {display:flex;align-items:center;gap:6px;font-size:12px;min-height:32px}
+.stage-surface-compact .stage-panel-body {display:none}
+.stage-surface-expand {display:block;width:100%;min-height:44px;white-space:normal;text-align:left;color:inherit;background:transparent;border:0;padding:8px 12px}
+#stage-rename-scene-facts dd,#stage-rename-scene-cast dd {border:0;background:transparent;box-shadow:none;padding:3px 0;min-height:0}
+#stage-rename-scene-position[role=button] {text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+#stage-prefs-list > .stage-pref-group > .stage-pref-grid {display:block}
+
+.gamma-light-loading { width:100%; padding:24px; box-sizing:border-box; }
+.gamma-light-loading p { margin:0 0 18px; }
+.gamma-light-skeleton { display:grid; grid-template-columns:minmax(100px,1fr) minmax(180px,3fr) minmax(100px,1fr); gap:12px; min-height:280px; height:45vh; max-height:560px; }
+.gamma-light-skeleton span { border:1px solid var(--line-dark, #554b3c); border-radius:4px; background:var(--desk-2, #201b15); opacity:.45; }
+#venue-live-loading { position:absolute; inset:0; z-index:1; display:grid; place-items:center; margin:0; padding:16px; color:var(--milk, #e8e2d4); background:var(--desk-2, #201b15); pointer-events:none; }
+#venue-live-loading[hidden] { display:none; }
+@media(max-width:600px) { .gamma-light-skeleton { grid-template-columns:1fr 2fr; gap:8px; } .gamma-light-skeleton span:last-child { display:none; } }
+
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head:has(#stage-panels-menu:not([hidden])) {z-index:48}
+.stage-surface-expand[hidden] {display:none}
+
+.stage-surface-dialog {margin:auto;inset:0}
+.stage-surface-dialog footer button {width:auto;flex:0 0 auto;white-space:nowrap;min-width:76px;text-align:center}
+
+.stage-modal.stage-surface-dialog {transform:none;inset:0;margin:auto;position:fixed;height:fit-content}
+
+/* N-29: keep the newly added timeline cue visible without motion. */
+.stage-timeline-cue.is-just-added{outline:3px solid var(--brass,#c7ad67);outline-offset:2px;z-index:3}
+/* N43: show both canvases together on short desktop displays, only for the default layout. */
+@media screen and (min-width:960px) and (max-height:759px){
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-short-default-pair{
+    grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:start;
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-short-default-pair>.stage-board-frame{min-width:0}
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-short-default-pair .stage-canvas-bar{gap:4px;padding:4px;min-width:0}
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-short-default-pair .stage-canvas-tools{flex-wrap:wrap;min-width:0}
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-short-default-pair .stage-seat-list{max-width:100%;overflow-x:auto}
+}
+/* N30: limits stay adjacent to the field without widening its column. */
+.stage-name-limit, .stage-duplicate-name-notice { display: block; color: var(--muted); font-size: 12px; line-height: 1.4; }
+.stage-duplicate-name-notice[hidden] { display: none; }
+
+/* N15: explicit non-overlapping targets; glyph sizes remain the shared icon sizes. */
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-cast-row:has(> .stage-kind-swatch) {
+  grid-template-columns: 28px minmax(0, 1fr) auto auto auto auto;
+}
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(.stage-kind-swatch, .stage-cast-lock, .stage-cast-remove, .stage-hint-help, .stage-panel-help) {
+  width: 28px; height: 28px; min-width: 28px; min-height: 28px; padding: 0;
+}
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-panel-help { top: 5px; right: 28px; }
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-panel:has(> .stage-panel-help) > .stage-panel-head { padding-right: 62px; }
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) { --stage-pref-help-size: 28px; }
+
+.stage-piece-context-menu { position: fixed; z-index: 1600; display: grid; min-width: 180px; max-width: min(320px, calc(100vw - 8px)); padding: 4px; background: var(--charcoal); border: 1px solid var(--brass); box-shadow: 0 5px 18px #0005; }
+.stage-piece-context-menu button { min-height: 30px; padding: 6px 10px; text-align: left; color: var(--milk); background: transparent; border: 0; }
+.stage-piece-context-menu button:hover, .stage-piece-context-menu button:focus-visible { background: var(--gamma-selected-bg); }
+.stage-piece-context-menu button:disabled { opacity: .45; }

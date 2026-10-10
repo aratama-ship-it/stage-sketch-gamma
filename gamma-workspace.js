@@ -1,0 +1,1007 @@
+(function initGammaRuntimegamma_workspace() {
+  'use strict';
+  if (!window.GAMMA_LIGHT_HOST) {
+    window.addEventListener("stage-gamma-runtime-ready", initGammaRuntimegamma_workspace, {once:true});
+    return;
+  }
+  const host=window.GAMMA_LIGHT_HOST, panel=document.getElementById('gamma-light-workspace'), frame=document.getElementById('gamma-light-frame');
+  if(!host || !panel || !frame) return;
+  const venueWorkspace=document.getElementById('gamma-venue-workspace'), venueModal=document.getElementById('stage-venue-editor-modal'), venueBackdrop=document.getElementById('stage-venue-editor-backdrop');
+  if(!venueWorkspace || !venueModal) return;
+  let venueHelpLanguageObserver=null;
+  venueWorkspace.append(venueModal);
+  venueModal.setAttribute('aria-label','劇場設定');
+  if(venueBackdrop) venueBackdrop.hidden=true;
+  const normal=document.querySelector('.stage-sketch-grid'), status=document.getElementById('gamma-light-status');
+  // セリフ編集画面（2026-09-24 本人指示・stage-script-editor.js）。劇場設定と同じく本体の中の1画面。
+  const scriptWorkspace=document.getElementById('gamma-script-workspace');
+  /* Qシート（2026-09-24 本人指示）: 右上の窓ではなく、セリフ・3Dの次の「Qシート」タブで管理する。
+     劇場設定と同じく、既存の窓（#stage-cue-sheet-modal）をタブの画面へ移して使う。開閉は本体の
+     window.SHOSAI_STAGE_CUE_SHEET_HOST（stage-sketch.js）に任せ、ここは画面の出し入れだけを持つ。 */
+  const cuesheetWorkspace=document.getElementById('gamma-cuesheet-workspace'), cuesheetModal=document.getElementById('stage-cue-sheet-modal'), cuesheetBackdrop=document.getElementById('stage-cue-sheet-backdrop');
+  if(cuesheetWorkspace && cuesheetModal) { cuesheetWorkspace.append(cuesheetModal); if(cuesheetBackdrop) cuesheetBackdrop.hidden=true; }
+  const hostUndo=document.getElementById('stage-undo'), hostRedo=document.getElementById('stage-redo');
+  let mode='normal', loaded=false;
+  const lite = window.GAMMA_EDITION === 'lite';
+  let hostHistory={undo:hostUndo?.disabled??true,redo:hostRedo?.disabled??true};
+  let frameResizeRequest=0;
+  const isLightMode=value=>value==='light-placement'||value==='light-design';
+  /* #view-stage は下に64pxの余白を持つ。これを引かないと、枠の高さぶんだけ
+   * モード全体が縦にはみ出す（V-2の実測で発覚: ページ0・#view-stage 60px超過）。 */
+  function bottomInset() {
+    const view=document.getElementById('view-stage');
+    return view ? (parseFloat(getComputedStyle(view).paddingBottom)||0) : 0;
+  }
+  function workspaceTop(element) {
+    const view=document.getElementById('view-stage');
+    return element.getBoundingClientRect().top+(view?view.scrollTop:0);
+  }
+  function syncFrameHeight() {
+    frameResizeRequest=0;
+    const narrow=window.matchMedia('(max-width: 700px)').matches;
+    const inset=bottomInset();
+    if(isLightMode(mode)) {
+      const view=document.getElementById('view-stage');
+      /* V-06（2026-09-24 本人指示）: タイムラインを出しても照明デザインの画面を縮めない（舞台タブと同じ）。
+         高さは「タイムラインを閉じているとき」の余白で決め、開いたときは #view-stage の下の余白
+         （タイムラインの高さ＋32px・style.css）をスクロールして下まで見る。
+         ★測るのは見えている位置ではなくスクロールを戻した位置（スクロール中に呼ばれても高さが変わらないように）。 */
+      const bodyStyle=getComputedStyle(document.body);
+      const closedInset=(parseFloat(bodyStyle.getPropertyValue('--stage-timeline-resize-hit'))||0)+32;
+      const frameTop=frame.getBoundingClientRect().top+(view?view.scrollTop:0);
+      const available=Math.floor(window.innerHeight-frameTop-closedInset-16);
+      frame.style.height=Math.max(narrow?280:360,available)+'px';
+      return;
+    }
+    /* V-2（2026-09-17）: 劇場設定もモード画面として1画面に収める。
+     * ヘッダーの高さは幅で変わる（63〜113px）ので固定calcではなく実測で決める。
+     * 縦に流れるのは中の手順の列だけ（gamma.css側で overflow-y:auto）。 */
+    if(mode==='venue-setup') {
+      const available=Math.floor(window.innerHeight-workspaceTop(venueWorkspace)-inset-16);
+      venueWorkspace.style.height=Math.max(narrow?320:420,available)+'px';
+    }
+    if(mode==='script' && scriptWorkspace) {
+      const available=Math.floor(window.innerHeight-workspaceTop(scriptWorkspace)-inset-16);
+      scriptWorkspace.style.height=Math.max(narrow?360:460,available)+'px';
+    }
+    if(mode==='cuesheet' && cuesheetWorkspace) {
+      const available=Math.floor(window.innerHeight-workspaceTop(cuesheetWorkspace)-inset-16);
+      cuesheetWorkspace.style.height=Math.max(narrow?360:460,available)+'px';
+    }
+  }
+  function scheduleFrameHeight() {
+    if(frameResizeRequest) return;
+    frameResizeRequest=requestAnimationFrame(syncFrameHeight);
+  }
+  const lightPanel=document.querySelector('[data-panel="light"]');
+  if(lightPanel) lightPanel.hidden=true;
+  function mountMachineryWorkspace(){
+    /* 2026-10-09（本人決定「前紗幕は舞台機構にする。出したり消したりしたい」）:
+       劇場設定の「舞台機構」の節（.stage-venue-editor-machinery＝中身は前紗幕のボタンだけ）と、
+       舞台タブ左列の「舞台機構」パネル（[data-panel="stage-set"]＝登録した機構の一覧。ON/OFF でシーンごとに出し入れする）は
+       γ 用に開き直した。引退した機構の追加パネル（[data-panel="machinery"]）だけ隠したまま。 */
+    document.querySelectorAll('[data-panel="machinery"]').forEach(panel => { panel.hidden = true; });
+  }
+  mountMachineryWorkspace();
+  let latestContext=null;
+  const editor=()=>{
+    const api=frame.contentWindow?.GAMMA_LIGHT_EDITOR;if(!api)return api;
+    return {...api,open(context,nextMode){
+      const result=api.open(context,nextMode);
+      frame.contentWindow?.__RIG?.hooks?.setSceneTimingContext?.(context,host.readSceneStepPrevious);
+      return result;
+    }};
+  };
+  const playbackBar=document.getElementById('gamma-light-playback-bar');
+  const playbackReturn=document.getElementById('gamma-light-playback-return');
+  const playbackStatus=document.getElementById('gamma-light-playback-status');
+  const playbackView=document.getElementById('gamma-light-playback-view');
+  const playbackCanvas=document.getElementById('gamma-light-playback-canvas');
+  let playbackPreview=null, playbackRaf=0, playbackLast=0;
+  /* 「再生中の照明を見る」は、照明デザインの「照明の操作」の行の左（フレームの中・#simple-playback-open）に置く
+     （2026-10-05 本人指示: 上下幅を詰める）。外側のこの帯は、確認している間と、確認できなかった理由を出すときだけ出る。
+     フレームの中のボタンの出し入れは html[data-gamma-playback] で外側が決める（出す条件は従来の帯と同じ）。 */
+  const playbackOpenInFrame=()=>frame.contentDocument?.getElementById('simple-playback-open');
+  /* 2026-10-06 本人指示: 「再生中の照明を見る」はおそらく不要なので、とりあえず非表示にする。★機能は消さない
+     （確認画面・GAMMA_WORKSPACE.beginPlaybackPreview・戻る帯はそのまま）。戻すときは次を true にする。 */
+  const PLAYBACK_PREVIEW_BUTTON_VISIBLE=false;
+  function syncPlaybackFlag(available) {
+    const root=frame.contentDocument?.documentElement;
+    if(!root) return;
+    if(PLAYBACK_PREVIEW_BUTTON_VISIBLE && available && !playbackPreview) root.dataset.gammaPlayback='ready'; else delete root.dataset.gammaPlayback;
+  }
+  function syncPlaybackBar() {
+    if(!playbackBar) return;
+    const available=mode==='light-design' && Boolean(editor()?.status()?.active);
+    if(!playbackPreview) playbackStatus.textContent='';
+    playbackBar.hidden=!available || !playbackPreview;
+    playbackReturn.hidden=!playbackPreview;
+    playbackView.hidden=!playbackPreview;
+    syncPlaybackFlag(available);
+  }
+  function stopPlaybackPreviewLoop() {
+    if(playbackRaf) cancelAnimationFrame(playbackRaf);
+    playbackRaf=0;playbackLast=0;
+  }
+  function paintPlaybackPreview() {
+    if(!playbackPreview || document.hidden || mode!=='light-design') return false;
+    try {
+      if(editor()?.status().changedElsewhere) throw Error('別のタブでショーが更新されました。下書きに戻って確認してください');
+      const input=host.readPlaybackPreview?.();
+      if(!input || input.showId!==playbackPreview.showId) throw Error('再生中の照明を確認できません。下書きに戻ってください');
+      const result=editor().paintPlaybackPreview(playbackCanvas,{...input,venueMask:playbackPreview.venueMask});
+      playbackCanvas.dataset.sceneId=input.sceneId;
+      playbackCanvas.dataset.cueId=input.cueId || '';
+      playbackCanvas.dataset.clockMs=String(result.tMs);
+      playbackCanvas.dataset.drawMs=String(result.ms);
+      playbackCanvas.dataset.valid='true';
+      playbackCanvas.setAttribute('aria-label',input.sceneTitle+' '+(input.cueLabel || 'シーンの明かり')+' 表示専用の正面図');
+      const label=input.sceneTitle+' · '+(input.cueLabel || 'シーンの明かり')+' · 表示専用'+(editor().status().dirty?' · 未適用の下書きを保持':' · 下書きを保持');
+      if(playbackStatus.textContent!==label) playbackStatus.textContent=label;
+      return input.running;
+    } catch(error) {
+      playbackCanvas.getContext('2d')?.clearRect(0,0,playbackCanvas.width,playbackCanvas.height);
+      for(const key of ['cueId','clockMs','drawMs','sceneId']) delete playbackCanvas.dataset[key];
+      playbackCanvas.dataset.valid='false';
+      playbackStatus.textContent=error.message || String(error);
+      return false;
+    }
+  }
+  function playbackPreviewTick(at) {
+    playbackRaf=0;
+    if(!playbackPreview || document.hidden || mode!=='light-design') return;
+    if(at-playbackLast<33) {playbackRaf=requestAnimationFrame(playbackPreviewTick);return;}
+    playbackLast=at;
+    if(paintPlaybackPreview()) playbackRaf=requestAnimationFrame(playbackPreviewTick);
+  }
+  function refreshPlaybackPreview() {
+    stopPlaybackPreviewLoop();
+    if(paintPlaybackPreview()) playbackRaf=requestAnimationFrame(playbackPreviewTick);
+  }
+  function beginPlaybackPreview() {
+    if(mode!=='light-design' || playbackPreview) return;
+    playbackStatus.textContent='';
+    try {
+      const current=host.context(), started=editor().beginPlaybackPreview();
+      playbackPreview={...started,venueMask:current.venueMask};
+      frame.inert=true;frame.hidden=true;
+      syncPlaybackBar();syncHistory();playbackReturn.focus();
+      refreshPlaybackPreview();
+      window.dispatchEvent(new Event('gamma-light-playback-preview-change'));
+    } catch(error) {playbackStatus.textContent=error.message || String(error);playbackBar.hidden=false;}
+  }
+  function endPlaybackPreview({focus=true}={}) {
+    if(!playbackPreview) return;
+    stopPlaybackPreviewLoop();editor()?.endPlaybackPreview();
+    playbackPreview=null;frame.inert=false;frame.hidden=false;
+    syncPlaybackBar();syncHistory();scheduleFrameHeight();
+    if(focus) playbackOpenInFrame()?.focus();
+    window.dispatchEvent(new Event('gamma-light-playback-preview-change'));
+  }
+  playbackReturn?.addEventListener('click',()=>endPlaybackPreview());
+  window.addEventListener('keydown',event=>{
+    if(!playbackPreview || event.isComposing) return;
+    const target=event.target;
+    if(['INPUT','TEXTAREA'].includes(target?.tagName) || target?.isContentEditable) return;
+    if(['Delete','Backspace'].includes(event.key)
+      || ((event.metaKey||event.ctrlKey) && ['z','y'].includes(event.key.toLowerCase()))) {
+      event.preventDefault();event.stopImmediatePropagation();
+    }
+  },true);
+  window.addEventListener('stage-timeline-light-cue-change',()=>{if(playbackPreview)refreshPlaybackPreview();});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden) stopPlaybackPreviewLoop();
+    else if(playbackPreview) refreshPlaybackPreview();
+  });
+  window.addEventListener('resize',()=>{if(playbackPreview)refreshPlaybackPreview();});
+  window.addEventListener('gamma-ui-theme-change',()=>{if(playbackPreview)refreshPlaybackPreview();});
+  function syncFrameTheme() {
+    const root=frame.contentDocument?.documentElement;
+    if(root) root.dataset.stageSkin=document.documentElement.dataset.stageSkin || 'warm-black';
+  }
+  window.addEventListener('gamma-ui-theme-change',syncFrameTheme);
+  function close3dWorkspace() {
+    window.SHOSAI_STAGE_FPV_LOADER?.cancel();
+    const overlay=document.getElementById('stage-fpv-overlay');
+    if(!overlay || overlay.hidden || !overlay.classList.contains('stage-fpv-workspace')) return;
+    window.SHOSAI_STAGE_FPV?.close();
+  }
+  function captureHostHistory() {
+    const current=window.SHOSAI_STAGE_SESSION_BRIDGE?.historyStatus?.();
+    hostHistory=current ? {undo:!current.canUndo,redo:!current.canRedo}
+      : {undo:hostUndo?.disabled??true,redo:hostRedo?.disabled??true};
+  }
+  function syncHistory() {
+    if(!hostUndo || !hostRedo) return;
+    if(playbackPreview) {hostUndo.disabled=true;hostRedo.disabled=true;return;}
+    // セリフ編集画面は本体の取り消し履歴をそのまま使う（台本の変更は本体の checkpoint に積まれる）
+    if(mode==='script' || mode==='cuesheet' || mode==='run-of-show') return;
+    if(mode==='normal') {
+      captureHostHistory();
+      hostUndo.disabled=hostHistory.undo;hostRedo.disabled=hostHistory.redo;
+      return;
+    }
+    if(mode==='venue-setup') {
+      const venueStatus=window.SHOSAI_VENUE_EDITOR?.history?.();
+      hostUndo.disabled=!venueStatus?.canUndo;hostRedo.disabled=!venueStatus?.canRedo;
+      return;
+    }
+    const lightStatus=editor()?.status();
+    hostUndo.disabled=!lightStatus?.canUndo;hostRedo.disabled=!lightStatus?.canRedo;
+  }
+  function runLightHistory(event,direction) {
+    if(mode==='normal' || mode==='script' || mode==='cuesheet' || mode==='run-of-show') return;
+    event.preventDefault();event.stopImmediatePropagation();
+    if(playbackPreview) return;
+    if(mode==='venue-setup') window.SHOSAI_VENUE_EDITOR?.[direction]?.();
+    else editor()?.[direction]();
+    syncHistory();
+  }
+  /* 劇場の履歴が変わったとき、共通の取り消しボタンも同じ状態を示す。
+     T-13（2026-09-18）: 平面図の ↺ ↻ を消したので、ボタンの disabled を監視する方法から
+     劇場設定側が出す stage-venue-history へ切り替えた。 */
+  window.addEventListener('stage-venue-history',()=>{if(mode==='venue-setup') syncHistory();});
+  hostUndo?.addEventListener('click',event=>runLightHistory(event,'undo'),true);
+  hostRedo?.addEventListener('click',event=>runLightHistory(event,'redo'),true);
+  document.addEventListener('keydown',event=>{
+    if(mode==='normal' || !['z','Z'].includes(event.key) || !(event.metaKey||event.ctrlKey) || event.altKey) return;
+    const target=event.target, tag=target?.tagName;
+    /* 2026-09-18: 選択欄（<select>）は文字を打つ所ではないので ⌘Z を譲らない。
+       焦点が選択欄にあるあいだ取り消しが効かない、という報告があった（実測で再現）。 */
+    if(['INPUT','TEXTAREA'].includes(tag) || target?.isContentEditable) return;
+    if(mode==='venue-setup' && [...document.querySelectorAll('.stage-modal')].some(dialog=>dialog!==venueModal && !dialog.hidden)) return;
+    runLightHistory(event,event.shiftKey?'redo':'undo');
+  },true);
+  /* このブラウザの保存領域の使用量。文字はUTF-16で2バイト見当＝正確な実測ではなく、
+     どれを消すか決めるための目安。2026-09-17 実機で領域がいっぱいになり照明を開けなくなった。 */
+  function storageRows() {
+    const rows=[];
+    for(let i=0;i<localStorage.length;i+=1) {
+      const k=localStorage.key(i); if(k===null || (!k.startsWith('gamma:') && k!=='gamma-venue-menu-width-v2')) continue;
+      rows.push({key:k,bytes:(k.length+(localStorage.getItem(k)||'').length)*2});
+    }
+    return rows.sort((a,b)=>b.bytes-a.bytes);
+  }
+  const sizeText=bytes=>bytes>=1048576?`${(bytes/1048576).toFixed(1)}MB`:`${Math.round(bytes/1024)}KB`;
+  const isQuotaError=error=>error?.name==='QuotaExceededError' || /quota/i.test(error?.message||'');
+  /* 「控えを保管」は押すたびに控えのまるごと複製を1件増やす。これが積もって領域を食うので、
+     書く前に古い保管ぶんを1件だけ残して片付ける（＝保管後は 前回ぶん＋今回ぶん の2件まで）。 */
+  function trimConflicts(draftKey, keep) {
+    const olds=storageRows().map(r=>r.key).filter(k=>k.startsWith(draftKey+':conflict:')).sort();
+    olds.slice(0,Math.max(0,olds.length-keep)).forEach(k=>localStorage.removeItem(k));
+  }
+  /* 領域が足りないときに消してよいのは、アプリが自動で作った控えだけ。
+     ショー本体（shosai-stage-shows-v1）と、いま開いている企画（shosai-stage-sketch-v1）、
+     編集中の照明の控えは対象にしない——消すと本人の作りかけが戻らない。 */
+  const BACKUP_KINDS=[
+    {name:'作り替え前のショーの控え',test:k=>/^gamma:shosai-stage-(?:sketch-v1-pre-section-hierarchy-v1:.+|shows-v1-pre-section-hierarchy-v1)$/.test(k)},
+    {name:'読めなかったデータの退避',test:k=>k==='gamma:shosai-stage-shows-broken-v1'},
+    {name:'照明デザイン集の作り替え前の控え',test:k=>k==='gamma:shosai.lightDesigns.beforeOptionB.v1'},
+    {name:'脇へ寄せた照明の控え',test:k=>/^gamma:lighting-draft-v1:.+:conflict:\d+$/.test(k)},
+  ];
+  function dumpButton(targetRows, label, filename, title) {
+    const button=document.createElement('button');button.type='button';
+    button.textContent=`${label}（${targetRows.length}件・約${sizeText(targetRows.reduce((sum,row)=>sum+row.bytes,0))}）`;
+    if(title) button.title=title;
+    button.onclick=()=>{
+      const payload={kind:'gamma-storage-recovery',version:1,exportedAt:new Date().toISOString(),
+        items:targetRows.map(row=>({key:row.key,value:localStorage.getItem(row.key)}))};
+      const url=URL.createObjectURL(new Blob([JSON.stringify(payload)],{type:'application/json'}));
+      const a=document.createElement('a');a.href=url;a.download=filename;a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+    };
+    return button;
+  }
+  /* 2026-09-24 本人指示: 「照明を開けませんでした…」が読み込み中の文字と同じ場所にただの文字で出ていて見えにくかった。
+     開けなかったときだけ、画面の上の中央に赤い枠の小窓（gamma.css の .is-failure）で出す。✕で閉じられる。
+     ほかの文字（読み込み中など）に戻るときは、下の MutationObserver が小窓の形を外す。 */
+  function failed(error) {
+    status.textContent='';
+    status.setAttribute('role','alert');
+    status.classList.add('gamma-workspace-error');
+    const header=document.createElement('header'), heading=document.createElement('h3');
+    heading.textContent='照明を開けませんでした';
+    const details=document.createElement('div');details.id='gamma-light-recovery-details';
+    const message=document.createElement('p');message.textContent=String(error?.message || error);
+    message.setAttribute('data-no-i18n','');details.append(message);
+    const toggle=document.createElement('button');toggle.type='button';
+    const toggleLabel=()=>{toggle.textContent=details.hidden?'復旧の案内を開く':'復旧の案内を閉じる';toggle.setAttribute('aria-expanded',String(!details.hidden));};
+    toggle.setAttribute('aria-controls',details.id);toggleLabel();
+    toggle.onclick=()=>{details.hidden=!details.hidden;toggleLabel();};
+    header.append(heading,toggle);status.append(header,details);
+    const ctx=latestContext || host.context(), draftKey='gamma:lighting-draft-v1:'+ctx.showId;
+    const raw=localStorage.getItem(draftKey);
+    if(raw) {
+      const exportButton=document.createElement('button');exportButton.type='button';exportButton.textContent='編集控えを書き出す';
+      exportButton.onclick=()=>{const url=URL.createObjectURL(new Blob([raw],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='gamma-lighting-recovery.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+      const savedButton=document.createElement('button');savedButton.type='button';savedButton.textContent='控えを保管して保存済みの照明を開く';
+      savedButton.onclick=()=>{try{trimConflicts(draftKey,1);localStorage.setItem(draftKey+':conflict:'+Date.now(),raw);localStorage.removeItem(draftKey);editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(error){failed(error);}};
+      details.append(exportButton,savedButton);
+      /* 控えの中身（design）は、照明エディタの「保存 → 読み込む」でそのまま戻せる形。
+         まるごとの控え（上のボタン）は復旧用の原本、こちらは戻して使うためのファイル。
+         2026-09-17: 控えが残ったまま開けない状態から抜ける道が「保管」しかなく、
+         保管は複製が1件増えて容量を余計に使うので、書き出して捨てる道も用意した。 */
+      let design=null;
+      try { design=JSON.parse(raw).design || null; } catch (_) { design=null; }
+      if(design) {
+        const useButton=document.createElement('button');useButton.type='button';
+        useButton.textContent='読み込める形で書き出す（.lightdesign.json）';
+        useButton.title='開いたあと、照明エディタの「保存 → 読み込む」からこのファイルを選ぶと、編集内容を戻せます';
+        useButton.onclick=()=>{
+          const url=URL.createObjectURL(new Blob([JSON.stringify(design,null,2)],{type:'application/json'}));
+          const a=document.createElement('a');a.href=url;a.download=(design.name?String(design.name).replace(/[\\/:*?"<>|]/g,'_'):'照明デザイン')+'.lightdesign.json';a.click();
+          setTimeout(()=>URL.revokeObjectURL(url),1000);
+        };
+        const dropButton=document.createElement('button');dropButton.type='button';
+        dropButton.textContent='書き出したので編集控えを捨てて開く';
+        dropButton.title='控えを消してから、保存済みの照明を開きます。容量も空きます';
+        dropButton.onclick=async()=>{
+          if(!await window.GAMMA_SURFACE_DIALOG.confirm('編集控えを消して、保存済みの照明を開きます。\n消すと、この控えの中身はこの端末から無くなります。\n先に「読み込める形で書き出す」でファイルへ控えましたか？')) return;
+          if(host.context().showId!==ctx.showId || localStorage.getItem(draftKey)!==raw){failed(new Error('確認中に控えが更新されました。削除していません。'));return;}
+          localStorage.removeItem(draftKey);
+          try{editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(again){failed(again);}
+        };
+        details.append(useButton,dropButton);
+      }
+    }
+    if(!isQuotaError(error)) return;
+    /* 領域がいっぱいのときは、消していいものを自分で選べるようにする。
+       勝手に消さない——中身は本人の編集内容そのものなので、先に書き出してもらう。 */
+    const rows=storageRows(), total=rows.reduce((sum,row)=>sum+row.bytes,0);
+    const note=document.createElement('p');
+    note.textContent=`このブラウザに保存できる量を使い切っています（いま約${sizeText(total)}）。`
+      +(raw?'まず「編集控えを書き出す」でファイルへ控えてから、下で空けてください。':'下のどれかを消すと開けるようになります。');
+    const list=document.createElement('p');
+    list.textContent='内訳: '+rows.slice(0,4).map(row=>`${row.key}（${sizeText(row.bytes)}）`).join('　/　');
+    details.append(note,list);
+    /* 控えは、いま開いているショーのぶんとは限らない（別のショーの控えが残っていることがある）。
+       消す前に全部まとめて書き出せるようにする。 */
+    const lightRows=rows.filter(row=>row.key.startsWith('gamma:lighting-draft-v1:'));
+    if(lightRows.length) details.append(dumpButton(lightRows,'照明の控えをすべて書き出す','gamma-lighting-storage-recovery.json',
+      'いま開いているショーのぶんに限らず、この端末に残っている照明の控えを1つのファイルへまとめます'));
+    /* 空けられるのは「アプリが自動で作った控え」だけ。ショー本体と編集中の控えには触れない。
+       2026-09-17 実機の内訳: ショー本体1.4MB・編集中の控え1.0MB・作り替え前の控え744KB で上限に達していた。 */
+    const backupRows=rows.filter(row=>BACKUP_KINDS.some(kind=>kind.test(row.key)));
+    if(!backupRows.length) {
+      const none=document.createElement('p');
+      none.textContent='自動で作られた控えは残っていません。照明を「LXキューを適用」で確定するか、使わないショーを減らすと空きます。';
+      details.append(none);
+      return;
+    }
+    const bytes=backupRows.reduce((sum,row)=>sum+row.bytes,0);
+    const what=document.createElement('p');
+    what.textContent='空けられるもの（アプリが自動で作った控え・ショー本体や編集中の控えは消しません）: '
+      +BACKUP_KINDS.map(kind=>{const hit=backupRows.filter(row=>kind.test(row.key));return hit.length?`${kind.name} ${hit.length}件（約${sizeText(hit.reduce((sum,row)=>sum+row.bytes,0))}）`:null;}).filter(Boolean).join('　/　');
+    details.append(what);
+    details.append(dumpButton(backupRows,'自動の控えを書き出す','gamma-storage-backup.json','消す前の控えです。念のため取っておいてください'));
+    const purge=document.createElement('button');purge.type='button';
+    purge.textContent=`書き出した自動の控えを消して空ける（${backupRows.length}件・約${sizeText(bytes)}）`;
+    purge.onclick=async()=>{
+      const confirmedValues=backupRows.map(row=>[row.key,localStorage.getItem(row.key)]);
+      if(!await window.GAMMA_SURFACE_DIALOG.confirm(`自動の控え ${backupRows.length}件（約${sizeText(bytes)}）を消します。先に「自動の控えを書き出す」でファイルへ控えましたか？`)) return;
+      if(confirmedValues.some(([key,value])=>localStorage.getItem(key)!==value)){failed(new Error('確認中に控えが更新されました。削除していません。'));return;}
+      backupRows.forEach(row=>localStorage.removeItem(row.key));
+      try{editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(again){failed(again);}
+    };
+    details.append(purge);
+  }
+  function showLightLoading(next) {
+    status.classList.add('gamma-light-loading');
+    status.setAttribute('role','status');
+    status.setAttribute('aria-live','polite');
+    status.setAttribute('aria-busy','true');
+    const label=document.createElement('p');
+    label.textContent=window.GAMMA_UI_TEXT?.(next==='light-placement'?'機材配置を開いています…':'照明デザインを開いています…') || (next==='light-placement'?'機材配置を開いています…':'照明デザインを開いています…');
+    const skeleton=document.createElement('div');
+    skeleton.className='gamma-light-skeleton';skeleton.setAttribute('aria-hidden','true');
+    for(let i=0;i<3;i++) skeleton.append(document.createElement('span'));
+    status.replaceChildren(label,skeleton);
+  }
+  // 小窓（開けなかったとき）以外の文字に変わったら、赤い枠の形を外す
+  new MutationObserver(()=>{
+    if(!status.querySelector('.gamma-light-skeleton')) {status.classList.remove('gamma-light-loading');status.removeAttribute('aria-busy');}
+    if(status.classList.contains('is-failure') && !status.querySelector('.gamma-light-status-title')) {
+      status.classList.remove('is-failure'); status.setAttribute('role','status');
+    }
+  }).observe(status,{childList:true});
+  /* ---- V-2（2026-09-17）: 手順の列をアコーディオンにする ----
+   * 1〜7を全部開いたままだと左列だけで1183px必要で、1画面に収まらない。開くのは1つだけにする。
+   * stage.html は書き換えず実行時に組み立てる（見出しの文字位置を見ているテストを壊さないため）。
+   * 見出しの中身を button へ移して <h3><button aria-expanded></button></h3> の形にする＝
+   * 見出しの意味と読み上げ順を保ったまま、見出し全体を押せるようにする。 */
+  const VENUE_STEPS='.stage-venue-editor-lighting-step,.stage-venue-editor-extension,'
+    +'.stage-venue-editor-ceiling,.stage-venue-editor-audience-guide,.stage-venue-editor-wings-guide,'
+    +'.stage-venue-editor-walls-guide,.stage-venue-editor-back-screens,'
+    // 2026-10-09: 舞台機構（前紗幕）の節も同じ畳み方にする（開き直した節が1つだけ常に開いていると並びが崩れる）
+    +'.stage-venue-editor-machinery,.stage-venue-editor-viewpoints';
+  /* ★#16（修正バッチ 2026-10-07）: 隠れている手順（hidden 属性＝劇場設定の「0. 照明」を一時非表示にしたもの、
+     または Lite の CSS で display:none にしたもの）は数えない。数えると、開いた直後に隠れた手順だけが開き、
+     見える手順がすべて畳まれていた（Studio・Lite とも）。隠すのをやめれば次に開いたときから手順に戻る。 */
+  const shownVenueStep=section=>!section.hidden && getComputedStyle(section).display!=='none';
+  const venueSteps=()=>[...venueWorkspace.querySelectorAll('.stage-venue-editor-menu '+VENUE_STEPS)].filter(shownVenueStep);
+  function openVenueStep(target) {
+    venueSteps().forEach(section=>{
+      const open=section===target;
+      section.classList.toggle('is-open',open);
+      const toggle=section.querySelector('.gamma-venue-step-toggle');
+      if(toggle) toggle.setAttribute('aria-expanded',String(open));
+      section.classList.remove('is-help-open');
+      const help=section.querySelector('.gamma-venue-step-help');
+      if(help) { help.setAttribute('aria-pressed','false'); help.setAttribute('aria-expanded','false'); }
+    });
+  }
+  function setupVenueSteps() {
+    const sections=venueSteps();
+    if(!sections.length) return;
+    sections.forEach(section=>{
+      if(section.classList.contains('gamma-venue-step')) return;
+      const head=section.querySelector('h2,h3,h4');
+      if(!head) return;
+      section.classList.add('gamma-venue-step');
+      // 見出しを含む「最上位の子」だけは畳んでも残す（手順1〜3は div でくるまれている）。
+      let holder=head; while(holder.parentElement && holder.parentElement!==section) holder=holder.parentElement;
+      holder.classList.add('gamma-venue-step-head');
+      const toggle=document.createElement('button');
+      toggle.type='button'; toggle.className='gamma-venue-step-toggle';
+      while(head.firstChild) toggle.appendChild(head.firstChild);
+      head.appendChild(toggle);
+      head.classList.add('gamma-venue-step-headline');
+      const helpCopies=[...section.querySelectorAll('.stage-profile-hint:not([role="status"]):not([role="alert"]):not([aria-live])')];
+      if(helpCopies.length) {
+        const controlIds=helpCopies.map((copy,index)=>{
+          if(!copy.id) copy.id=`gamma-venue-help-copy-${sections.indexOf(section)+1}-${index+1}`;
+          copy.classList.add('gamma-venue-help-copy');
+          return copy.id;
+        });
+        const help=document.createElement('button');
+        help.type='button'; help.className='stage-hint-help gamma-venue-step-help';
+        help.textContent='?';
+        help.dataset.venueHelpLabel='この項目の説明';
+        help.setAttribute('aria-controls',controlIds.join(' '));
+        help.setAttribute('aria-pressed','false');
+        help.setAttribute('aria-expanded','false');
+        head.append(help);
+        help.addEventListener('click',event=>{
+          event.preventDefault(); event.stopPropagation();
+          const open=help.getAttribute('aria-expanded')!=='true';
+          if(open && !section.classList.contains('is-open')) openVenueStep(section);
+          section.classList.toggle('is-help-open',open);
+          help.setAttribute('aria-pressed',String(open));
+          help.setAttribute('aria-expanded',String(open));
+        });
+      }
+      toggle.addEventListener('click',()=>{
+        const opening=!section.classList.contains('is-open');
+        openVenueStep(opening ? section : null);
+        // 開いた手順は見えるところへ寄せる（下の方の手順を開いても枠の外のままにならないように）。
+        if(opening) requestAnimationFrame(()=>{
+          try { section.scrollIntoView({block:'nearest'}); } catch(_) { section.scrollIntoView(); }
+        });
+      });
+    });
+    const syncHelpLabels=()=>venueWorkspace.querySelectorAll('[data-venue-help-label]').forEach(help=>{
+      const source=help.dataset.venueHelpLabel;
+      const language=document.documentElement.lang||'ja';
+      const label=window.SHOSAI_STAGE_I18N_MODEL?.text(language,source)||source;
+      help.setAttribute('aria-label',label);
+      help.setAttribute('title',label);
+    });
+    syncHelpLabels();
+    if(!venueHelpLanguageObserver && window.MutationObserver) {
+      venueHelpLanguageObserver=new MutationObserver(syncHelpLabels);
+      venueHelpLanguageObserver.observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+    }
+    if(!sections.some(section=>section.classList.contains('is-open'))) openVenueStep(sections[0]);
+  }
+
+  // 幅は劇場データと分け、このブラウザの表示設定として覚える。
+  // 舞台タブと同じ取っ手・キー操作を使い、図の再描画は既存のResizeObserverへ任せる。
+  let venueMenuWidthUi=null;
+  function setupVenueMenuWidth() {
+    if(venueMenuWidthUi) { venueMenuWidthUi.sync(); return; }
+    const grid=venueWorkspace.querySelector('.stage-venue-editor-workspace');
+    const menu=grid?.querySelector('.stage-venue-editor-menu');
+    if(!grid || !menu) return;
+    const storageKey='gamma-venue-menu-width-v2';
+    const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
+    let preferred=null, drag=null, frame=0, width=480, maximum=480;
+    try {
+      const saved=Number(localStorage.getItem(storageKey));
+      if(Number.isFinite(saved) && saved>=220 && saved<=480) preferred=saved;
+    } catch(_) { /* 保存不可でも幅変更は使える。 */ }
+    const handle=document.createElement('div');
+    handle.id='venue-menu-width-handle'; handle.className='stage-panel-width-handle';
+    handle.tabIndex=0; handle.setAttribute('role','separator');
+    handle.setAttribute('aria-orientation','vertical');
+    handle.setAttribute('aria-label','劇場形式プリセット・設定列の幅');
+    if(!menu.id) menu.id='venue-editor-menu';
+    handle.setAttribute('aria-controls',menu.id);
+    handle.title='ドラッグで幅を変更。左右キーで調整、ダブルクリックまたはEnterで元に戻す';
+    const grip=document.createElement('span'); grip.setAttribute('aria-hidden','true'); handle.append(grip);
+    grid.append(handle);
+    function sync() {
+      frame=0;
+      const total=grid.getBoundingClientRect().width;
+      if(!total || window.innerWidth<=900) return;
+      maximum=Math.max(220,Math.min(480,Math.floor(total-420-18)));
+      width=Math.round(clamp(drag ? drag.width : preferred??maximum,220,maximum));
+      grid.style.setProperty('--venue-menu-width',width+'px');
+      handle.setAttribute('aria-valuemin','220');
+      handle.setAttribute('aria-valuemax',String(maximum));
+      handle.setAttribute('aria-valuenow',String(width));
+      handle.setAttribute('aria-valuetext',width+'px');
+    }
+    function schedule() { if(!frame) frame=requestAnimationFrame(sync); }
+    function save() {
+      try {
+        if(preferred===null) localStorage.removeItem(storageKey);
+        else localStorage.setItem(storageKey,String(preferred));
+      } catch(_) { /* メモリ上の表示設定は保つ。 */ }
+    }
+    function finish(commit) {
+      if(!drag) return;
+      const done=drag; drag=null;
+      document.body.classList.remove('is-panel-resizing');
+      if(handle.hasPointerCapture(done.pointerId)) handle.releasePointerCapture(done.pointerId);
+      if(commit) { preferred=done.width; save(); }
+      sync();
+    }
+    function reset() { finish(false); preferred=null; save(); sync(); }
+    handle.addEventListener('pointerdown',event=>{
+      if(event.button!==0 || event.isPrimary===false || drag || window.innerWidth<=900) return;
+      event.preventDefault(); event.stopPropagation(); sync();
+      drag={pointerId:event.pointerId,startX:event.clientX,startWidth:width,width};
+      handle.setPointerCapture(event.pointerId); handle.focus({preventScroll:true});
+      document.body.classList.add('is-panel-resizing');
+    });
+    handle.addEventListener('pointermove',event=>{
+      if(!drag || event.pointerId!==drag.pointerId) return;
+      event.preventDefault();
+      drag.width=Math.round(clamp(drag.startWidth+event.clientX-drag.startX,220,maximum));
+      schedule();
+    });
+    handle.addEventListener('pointerup',event=>{ if(drag && event.pointerId===drag.pointerId) finish(true); });
+    handle.addEventListener('pointercancel',()=>finish(false));
+    handle.addEventListener('lostpointercapture',()=>finish(false));
+    handle.addEventListener('dblclick',event=>{ event.preventDefault(); reset(); });
+    handle.addEventListener('keydown',event=>{
+      if(!['ArrowLeft','ArrowRight','Home','End','Enter','Escape'].includes(event.key)) return;
+      if(event.isComposing || event.metaKey || event.ctrlKey || event.altKey) return;
+      event.preventDefault(); event.stopPropagation();
+      if(event.key==='Escape') { finish(false); return; }
+      if(event.key==='Enter') { reset(); return; }
+      finish(false); sync();
+      preferred=Math.round(clamp(event.key==='Home' ? 220 : event.key==='End' ? maximum
+        : width+(event.key==='ArrowRight'?1:-1)*(event.shiftKey?30:10),220,maximum));
+      save(); sync();
+    });
+    new ResizeObserver(schedule).observe(grid);
+    window.addEventListener('resize',()=>{ finish(false); schedule(); });
+    window.addEventListener('blur',()=>finish(false));
+    venueMenuWidthUi={sync}; sync();
+  }
+
+  function showVenue() {
+    if(venueBackdrop) venueBackdrop.hidden=true;
+    window.dispatchEvent(new Event('stage-venue-editor-open'));
+    if(venueBackdrop) venueBackdrop.hidden=true;
+    venueModal.hidden=false;
+    setupVenueSteps();
+    setupVenueMenuWidth();
+  }
+  function hideVenue() {
+    venueModal.hidden=true;
+    if(venueBackdrop) venueBackdrop.hidden=true;
+  }
+  /* 2026-09-17 本人指示: 新しいショーはまず劇場設定から。決まるまで他のモードへは行かせない。
+   * 見る専用（共有の閲覧）は止めない——劇場を決めるのは持ち主の仕事なので。 */
+  function phoneViewerWorkspace() {
+    return document.documentElement.classList.contains('stage-phone-viewer');
+  }
+  function venueSetupPending() {
+    if(phoneViewerWorkspace()) return false;
+    /* ★劇場設定の編集器が読み込まれていない配布物（体験版はこれを積まない・錠の掛かる機能なので）では、
+       劇場設定へ誘導しない。誘導すると中身の無い枠だけが開き、ヘッダーの下に大きな空きが出る
+       （2026-09-20 に体験版の初回起動で実際に出た）。舞台モードから始めれば図はそのまま使える。 */
+    if(typeof window!=='undefined' && !window.SHOSAI_VENUE_EDITOR) return false;
+    try { const context=host.context(); return Boolean(context.venueSetupPending) && !context.readOnly; }
+    catch(_) { return false; }
+  }
+  /* ゲートで劇場設定へ寄せたかどうか。共有の閲覧だと分かった時点で解くために覚えておく。 */
+  let gatedToVenue=false;
+  function syncVenueGate() {
+    const pending=venueSetupPending();
+    document.body.classList.toggle('gamma-venue-setup-required',pending);
+    /* 共有の閲覧（読み取り専用）かどうかは、セッションが決まるまで分からない。
+       あとから分かったときに、閉じ込めたままにしない。 */
+    if(!pending && gatedToVenue) { gatedToVenue=false; if(mode==='venue-setup') { select('normal'); return; } }
+    /* ★2026-09-23 本人決定（案A）: 舞台タブは開けるようにする。舞台タブの中は
+       「ショー一覧／新規ショー／読み込む／書き出す」だけ生かし、他は inert＋薄く表示
+       （syncStageGate）。機材配置・照明デザイン・3Dは今までどおり閉じる。 */
+    document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode],'
+      +'#stage-workspace-tabs [data-stage-workspace-launch]').forEach(button=>{
+      const target=button.dataset.stageWorkspaceMode;
+      const locked=pending && target!=='venue-setup' && target!=='normal' && !(lite && target==='run-of-show');
+      button.disabled=locked;
+      button.title=locked ? '先に劇場設定を済ませてください' : (button.dataset.gammaTitle || '');
+    });
+    syncStageGate(pending);
+  }
+  /* ---- 案A: 舞台タブの中を「ショーの入口」以外だけ触れなくする ----
+   * 入口（data-gamma-gate-keep を持つ要素）を含む枝は残し、含まない兄弟だけ inert にする。
+   * inert は子孫にも効くので、枝ごとに1箇所付ければよい。解くときは付けた印を辿って外す。
+   * 読み上げ用の visually-hidden と audio は止めない（ゲート中も告知と音の器は要る）。 */
+  const STAGE_GATE_KEEP='[data-gamma-gate-keep]';
+  let stageGateBand=null;
+  function stageGateBandEl() {
+    if(stageGateBand || !normal || !normal.parentNode) return stageGateBand;
+    const band=document.createElement('div');
+    band.id='gamma-stage-gate-band'; band.className='gamma-stage-gate-band'; band.hidden=true;
+    band.setAttribute('role','status');
+    const text=document.createElement('span');
+    text.textContent='まず劇場を決めると、このショーを編集できます。';
+    const go=document.createElement('button');
+    go.type='button'; go.className='btn-quiet'; go.textContent='劇場設定を開く';
+    go.addEventListener('click',()=>select('venue-setup'));
+    const note=document.createElement('span'); note.className='gamma-stage-gate-note';
+    note.textContent='別のショーを開くなら、「ショー」の欄の「ショー一覧」「新規ショーを作る」「ショーを読み込む」が使えます。';
+    band.append(text,go,note);
+    normal.parentNode.insertBefore(band,normal);
+    stageGateBand=band;
+    return band;
+  }
+  function gateSubtree(root) {
+    [...root.children].forEach(child=>{
+      if(child.matches(STAGE_GATE_KEEP)) return;
+      if(child.querySelector(STAGE_GATE_KEEP)) { gateSubtree(child); return; }
+      if(child.tagName==='AUDIO' || child.tagName==='SCRIPT' || child.classList.contains('visually-hidden')) return;
+      child.inert=true; child.classList.add('is-venue-gated');
+    });
+  }
+  function syncStageGate(pending) {
+    if(!normal) return;
+    const band=stageGateBandEl();
+    if(pending) {
+      if(!normal.querySelector('.is-venue-gated')) gateSubtree(normal);
+    } else {
+      normal.querySelectorAll('.is-venue-gated').forEach(el=>{ el.inert=false; el.classList.remove('is-venue-gated'); });
+    }
+    if(band) band.hidden=!pending || mode!=='normal';
+  }
+  /* 薄くした所を押したら、帯を一度光らせて「ここは今は触れない」と伝える。飛ばさない。 */
+  normal?.addEventListener('click',event=>{
+    if(mode!=='normal' || !venueSetupPending()) return;
+    if(event.target.closest && event.target.closest(STAGE_GATE_KEEP)) return;
+    const band=stageGateBandEl(); if(!band) return;
+    band.classList.remove('is-nudge'); void band.offsetWidth; band.classList.add('is-nudge');
+  });
+  /* ---- R-30（2026-09-17 本人要望）: 照明から別のモードへ移るとき「適用しますか？」を出す ----
+   * これまでは window.confirm の2択（OK＝そのまま切り替える／キャンセル）で、
+   * 文面も「保持したまま切り替えますか？」＝適用を勧めていなかった。
+   * 本人の要望は「この画面でやったことを残せるように」なので、その場で適用できる3択にする。
+   * 見た目はγの他の窓（.stage-modal）に合わせる。OSの素の窓が急に出る違和感をなくすため。
+   * ★適用は非同期で、失敗することもある（別タブでショーが変わった／保存できない等）。
+   *   失敗したらモードを切り替えない。切り替えると「適用したつもりで移動したのに入っていない」が起きる。 */
+  /* T-14（2026-09-18 本人要望）: 劇場設定でも同じ形の窓を出すので、題と本文と
+   * ボタンの文言を受け取れるようにした（R-30 の照明版をそのまま一般化）。 */
+  function askApplyBeforeLeaving(copy, returnFocus) {
+    const text = copy || {
+      title: '照明をショーへ適用しますか？',
+      body: 'まだ適用していない照明の編集があります。適用すると、いまの照明がこのショーへ保存されます。'
+        + '<br>適用しないで移っても編集内容は端末に控えられ、次に照明を開いたときに戻ります。'
+        + 'ただしショー本体にはまだ入りません。',
+      skip: '適用しないで移る',
+      apply: '適用して移る',
+    };
+    return new Promise((resolve) => {
+      const backdrop=document.createElement('div');
+      backdrop.className='stage-modal-backdrop';
+      const box=document.createElement('div');
+      box.className='stage-modal gamma-light-leave-modal';
+      box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true'); box.setAttribute('aria-label',text.title);
+      box.innerHTML='<header class="stage-modal-head"><h2>'+text.title+'</h2></header>'
+        +'<div class="stage-modal-body"><p>'+text.body+'</p></div>';
+      const acts=document.createElement('footer');
+      acts.className='gamma-light-leave-actions';
+      const mk=(label,value,cls)=>{const b=document.createElement('button');b.type='button';b.className=cls;b.textContent=label;
+        b.onclick=()=>{cleanup();resolve(value);};return b;};
+      /* L-03（2026-09-18 本人決定「全部Macにそろえる」）: Macの作法の並びにする。
+       * Apple HIG: 主操作は行の右端、キャンセルはそのすぐ左、3つ目の閉じるボタンはさらに左。
+       * macOSの「保存しない／キャンセル／保存」と同じ形。
+       * ★T-14 で一度「主操作を左」にしたが、Macに合わせる方針で戻した（蒸し返さない）。 */
+      acts.append(mk(text.skip,'skip','btn-quiet'),
+                  mk('キャンセル','cancel','btn-quiet'),
+                  mk(text.apply,'apply','stage-minor-action'));
+      box.append(acts);
+      let releaseFocus=null;
+      function cleanup(){backdrop.remove();box.remove();releaseFocus?.();}
+      const cancel=()=>{cleanup();resolve('cancel');};
+      backdrop.onclick=cancel;
+      document.body.append(backdrop,box);
+      releaseFocus=window.GAMMA_UI.containDialog(box,{initialFocus:acts.lastElementChild,returnFocus,onCancel:cancel});
+    });
+  }
+
+  let leaveConfirmationPending = false;
+  async function askLeaveOnce(options, focus) {
+    if (leaveConfirmationPending) return "cancel";
+    leaveConfirmationPending = true;
+    try { return await askApplyBeforeLeaving(options, focus); }
+    finally { leaveConfirmationPending = false; }
+  }
+
+  let featureSelectionAttempt = 0;
+  async function select(next) {
+    const featureAttempt = ++featureSelectionAttempt;
+    if(!['normal','light-placement','light-design','venue-setup','script','cuesheet','run-of-show'].includes(next)) return;
+    const featureGroup = isLightMode(next) ? 'light' : next === 'run-of-show' ? 'runOfShow' : null;
+    if (featureGroup && window.SHOSAI_STAGE_OFFLINE && !await window.SHOSAI_STAGE_OFFLINE.ensureGroup(featureGroup)) return;
+    if (featureAttempt !== featureSelectionAttempt) return;
+    if(mode==='run-of-show' && next!==mode && !window.GAMMA_RUN_OF_SHOW_PANE?.finish?.())return;
+    if(playbackPreview) {
+      endPlaybackPreview({focus:false});
+      if(next===mode) return;
+    }
+    const switchingMode=mode!==next;
+    const returnFocus=document.querySelector('#stage-workspace-tabs [data-stage-workspace-mode="'+next+'"]');
+    // スマホ確認機では劇場・照明編集へ移らず、ショーの読込と閲覧を使う。
+    if(phoneViewerWorkspace() && next!=='normal') return;
+    /* 案A（2026-09-23）: 劇場が決まるまで閉じるのは機材配置・照明デザインだけ。
+       舞台タブへは戻れる（中は入口以外 inert。syncStageGate）。 */
+    if(next!=='venue-setup' && next!=='normal' && next!=='run-of-show' && venueSetupPending()) {
+      // 勝手に別の場所へ行かず、やることが1つだけ残っている状態にする
+      gatedToVenue=true;
+      if(mode!=='venue-setup') select('venue-setup');
+      else syncVenueGate();
+      return;
+    }
+    /* T-14（2026-09-18 本人要望）: 劇場設定に未反映の変更があるまま別タブへ行こうとしたら
+     * 「この劇場を反映しますか」を出す。照明側（R-30）と同じ3択・同じ見た目にする。
+     * ★「この劇場を反映する」はショー全体へ効く操作で、照明機材をどうするかを聞く
+     *   既存の確認モーダルを持っている。ここではその窓を飛ばさず、apply() を呼んで
+     *   通常どおり確認を出す（タブを押しただけで反映が確定しないようにする）。 */
+    if(mode==='venue-setup' && next!=='venue-setup'
+       && window.SHOSAI_VENUE_EDITOR?.hasUnappliedChanges?.()) {
+      const answer=await askLeaveOnce({
+        title:'この劇場をショーへ反映しますか？',
+        body:'まだ反映していない劇場設定の変更があります。反映すると、いまの劇場がこのショーへ入ります。'
+          +'<br>反映しないで移っても編集内容は残り、次に劇場設定を開いたときに戻ります。'
+          +'ただしショー本体にはまだ入りません。',
+        skip:'反映しないで移る',
+        apply:'この劇場を反映する',
+      },returnFocus);
+      if(answer==='cancel') return;
+      if(answer==='apply') {
+        try { window.SHOSAI_VENUE_EDITOR?.apply?.(); }
+        catch(error) { await window.GAMMA_SURFACE_DIALOG.notice('反映できませんでした: '+(error&&error.message||error)+'\nモードは切り替えていません。'); return; }
+        // 反映は確認モーダルを経て確定する。ここではモードを切り替えず、本人の操作へ委ねる。
+        return;
+      }
+    }
+    if(mode!==next && isLightMode(mode) && !isLightMode(next)) {
+      const lightStatus=editor()?.status?.();
+      if(lightStatus?.dirty) {
+        const answer=await askLeaveOnce(null,returnFocus);
+        if(answer==='cancel') return;
+        if(answer==='apply') {
+          try {
+            const result=await editor()?.apply?.();
+            if(!result?.persisted) throw Error(result?.error||'保存を確認できませんでした');
+          }
+          catch(error) { await window.GAMMA_SURFACE_DIALOG.notice('適用できませんでした: '+(error&&error.message||error)+'\nモードは切り替えていません。'); return; }
+          // 適用が通らなかった（dirtyのまま）なら移らない。中身が入っていないのに移るのを防ぐ。
+          if(editor()?.status?.()?.dirty) { await window.GAMMA_SURFACE_DIALOG.notice('照明を適用できませんでした。モードは切り替えていません。'); return; }
+        }
+      }
+    }
+    try {
+      close3dWorkspace();
+      if(mode==='normal' && next!=='normal') captureHostHistory();
+      // セリフ編集画面では本体の履歴が動くので、出るときの状態を控え直す（舞台へ戻ったとき古い状態を出さない）
+      if(mode==='script' && next!=='script') captureHostHistory();
+      if(mode!==next && isLightMode(mode) && !isLightMode(next)) editor()?.suspend();
+      if(mode==='venue-setup' && next!=='venue-setup') hideVenue();
+      if(mode==='script' && next!=='script') window.SHOSAI_SCRIPT_EDITOR?.close?.();
+      if(mode==='cuesheet' && next!=='cuesheet') window.SHOSAI_STAGE_CUE_SHEET_HOST?.close?.();
+      if(isLightMode(next)) {
+        const context=host.context(); latestContext=context;
+        const timelinePlay=document.getElementById('stage-timeline-play');
+        if(timelinePlay?.getAttribute('aria-pressed')==='true') timelinePlay.click();
+        if(context.readOnly) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
+        /* V-7（2026-09-17）: 劇場を一度も反映していないショーでは灯体配置UIを出さず誘導する。
+         * 判定は host.context().venueApplied（stage-sketch.jsのvenueSetupWasApplied()をそのまま使用）。 */
+        if(!context.venueApplied) {
+          status.textContent='劇場が設定されていません。';
+          const goVenue=document.createElement('button');
+          goVenue.type='button'; goVenue.className='btn-quiet';
+          goVenue.textContent='劇場設定を開く';
+          goVenue.addEventListener('click',()=>select('venue-setup'));
+          status.append(goVenue);
+        } else if(!editor()) {
+          showLightLoading(next);
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261010-v0338'; loaded=true;}
+        } else if(editor()) {
+          editor().open(context, next);
+          frame.hidden=false;
+          status.textContent='';
+          status.classList.remove('gamma-workspace-error');
+        }
+      } else if(next==='venue-setup') {
+        const context=host.context(); latestContext=context;
+        if(context.readOnly) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
+        showVenue();
+      } else if(next==='script') {
+        const context=host.context(); latestContext=context;
+        if(context.readOnly) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
+        editor()?.suspend();
+        window.SHOSAI_SCRIPT_EDITOR?.open?.();
+      } else if(next==='run-of-show') {
+        if(host.context().readOnly) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
+        editor()?.suspend();
+        window.GAMMA_RUN_OF_SHOW_PANE?.open?.();
+      } else if(next==='cuesheet') {
+        editor()?.suspend();
+        window.SHOSAI_STAGE_CUE_SHEET_HOST?.open?.();
+      } else editor()?.suspend();
+      mode=next; document.body.dataset.gammaWorkspace=mode;
+      document.body.dataset.stageWorkspaceMode=mode;
+      panel.hidden=!isLightMode(mode); venueWorkspace.hidden=mode!=='venue-setup'; normal.inert=mode!=='normal';
+      if(scriptWorkspace) scriptWorkspace.hidden=mode!=='script';
+      const rosWorkspace=document.getElementById('gamma-run-of-show-workspace');
+      if(rosWorkspace)rosWorkspace.hidden=mode!=='run-of-show';
+      if(cuesheetWorkspace) cuesheetWorkspace.hidden=mode!=='cuesheet';
+      if(switchingMode) document.getElementById('view-stage')?.scrollTo(0,0);
+      document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode]').forEach(button=>{
+        const active=button.dataset.stageWorkspaceMode===mode;
+        button.classList.toggle('is-active',active); button.setAttribute('aria-pressed',String(active));
+      });
+      syncVenueGate();
+      window.dispatchEvent(new Event('gamma-workspace-change'));
+      syncHistory();
+      syncPlaybackBar();
+      scheduleFrameHeight();
+    } catch(error) { panel.hidden=false; failed(error); }
+  }
+  frame.addEventListener('load',()=>{
+    try { syncFrameTheme(); editor().open(host.context(),mode); frame.hidden=false;
+      status.textContent=''; status.classList.remove('gamma-workspace-error');
+      syncHistory();syncPlaybackBar(); scheduleFrameHeight(); }
+    catch(error) { failed(error); }
+  });
+  /* ヘッダーの主要タブは左から1〜5。モードの状態を直接書き換えず、必ずタブを押すことで
+   * 劇場未設定のゲート、照明の未適用確認、3Dの開閉を従来と同じ経路へ通す。
+   * 入力欄・修飾キー・モーダル中は文字入力やその窓の操作を優先する。 */
+  const workspaceShortcutIds = Object.freeze({
+    normal: "workspace.normal", venue: "workspace.venue", placement: "workspace.placement",
+    design: "workspace.design", "3d": "workspace.3d",
+  });
+  function syncWorkspaceShortcutLabels() {
+    const shortcuts=window.SHOSAI_STAGE_SHORTCUTS;
+    if(!shortcuts) return;
+    Object.entries(workspaceShortcutIds).forEach(([mode,id])=>{
+      const key={normal:"1",venue:"2",placement:"3",design:"4","3d":"5"}[mode];
+      const button=workspaceShortcutButton(key);
+      if(!button) return;
+      button.setAttribute("aria-keyshortcuts",shortcuts.get(id));
+      const label=String(button.dataset.gammaTitle||button.textContent||"").replace(/（[^）]*）$/,"");
+      button.title=`${label}（${shortcuts.display(shortcuts.get(id))}）`;
+    });
+  }
+  function workspaceShortcutButton(key) {
+    return document.querySelector(`#stage-workspace-tabs [data-stage-workspace-shortcut="${key}"]`);
+  }
+  function workspaceShortcutBlocked(event) {
+    const target=event.target?.nodeType===1?event.target:null;
+    if(target && (target.isContentEditable || target.closest('input, textarea, select, [contenteditable="true"]'))) return true;
+    return [...document.querySelectorAll('[role="dialog"][aria-modal="true"], [role="alertdialog"][aria-modal="true"]')]
+      .some(dialog=>!dialog.hidden && dialog.getClientRects().length>0);
+  }
+  function activateWorkspaceShortcut(key) {
+    const button=workspaceShortcutButton(key);
+    if(!button || button.disabled || button.getAttribute('aria-disabled')==='true') return false;
+    button.click();
+    return true;
+  }
+  window.SHOSAI_STAGE_SHORTCUTS?.onChange(syncWorkspaceShortcutLabels);
+  syncWorkspaceShortcutLabels();
+  document.addEventListener('keydown',event=>{
+    if(event.defaultPrevented || event.isComposing || event.repeat) return;
+    if(workspaceShortcutBlocked(event)) return;
+    const shortcuts=window.SHOSAI_STAGE_SHORTCUTS;
+    const entry=Object.entries(workspaceShortcutIds).find(([, id])=>shortcuts?.matches(event,id));
+    if(!entry || !activateWorkspaceShortcut({normal:"1",venue:"2",placement:"3",design:"4","3d":"5"}[entry[0]])) return;
+    event.preventDefault();
+  });
+  // Manual-activation tabs: arrows move focus; Enter/Space keep the existing guarded click path.
+  const workspaceTabs = document.getElementById('stage-workspace-tabs');
+  workspaceTabs?.setAttribute('role', 'tablist');
+  normal.id ||= 'gamma-normal-workspace';
+  document.getElementById('stage-workspace-normal')?.setAttribute('aria-controls', normal.id);
+  function syncTabAccessibility() {
+    workspaceTabs?.querySelectorAll('button').forEach(button => {
+      button.setAttribute('role', 'tab');
+      button.removeAttribute('aria-pressed');
+      const active = button.classList.contains('is-active');
+      button.setAttribute('aria-selected', String(active));
+      button.tabIndex = active ? 0 : -1;
+      const target = document.getElementById(button.getAttribute('aria-controls'));
+      // The 3D viewport owns its modal/workspace semantics itself.
+      if (target && button.dataset.stageWorkspaceMode) {
+        target.setAttribute('role', 'tabpanel');
+        if (active) target.setAttribute('aria-labelledby', button.id);
+      }
+    });
+  }
+  workspaceTabs?.addEventListener('keydown', event => {
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.isComposing) return;
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    const tabs = [...workspaceTabs.querySelectorAll('[role="tab"]')].filter(tab =>
+      !tab.disabled && tab.getAttribute('aria-disabled') !== 'true' && tab.getClientRects().length);
+    const at = tabs.indexOf(event.target);
+    if (at < 0) return;
+    event.preventDefault(); event.stopPropagation();
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1
+      : (at + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    tabs[next].focus();
+  });
+  window.addEventListener('gamma-workspace-change', syncTabAccessibility);
+  window.addEventListener('stage-fpv-visibility', syncTabAccessibility);
+  syncTabAccessibility();
+  document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode]').forEach(button=>button.addEventListener('click',()=>select(button.dataset.stageWorkspaceMode)));
+  document.getElementById('stage-freecam-open')?.addEventListener('click',event=>{
+    if(venueSetupPending()) { event.preventDefault(); event.stopImmediatePropagation(); select('venue-setup'); return; }
+    endPlaybackPreview({focus:false});editor()?.suspend();
+  },true);
+  window.addEventListener('stage-fpv-visibility',event=>{if(!event.detail?.active && isLightMode(mode)) editor()?.open(host.context(),mode);});
+  /* 照明デザイン内でEを押したときも、親画面の同じタイムラインを開閉する。
+     機材配置では従来どおり出さない。 */
+  window.addEventListener('message',event=>{
+    const fromLitePaper=lite && event.source===document.getElementById('gamma-run-of-show-frame')?.contentWindow;
+    if((event.source!==frame.contentWindow && !fromLitePaper) || event.origin!==location.origin) return;
+    if(event.data?.type==='gamma:workspace-shortcut' && /^[1-5]$/.test(event.data.key||'')) {
+      activateWorkspaceShortcut(event.data.key);
+      return;
+    }
+    if(fromLitePaper) return;
+    if(event.data?.type==='gamma:timeline-toggle' && mode==='light-design') {
+      window.dispatchEvent(new Event('stage-timeline-toggle-request'));
+      return;
+    }
+    if(event.data?.type==='gamma:cue-step' && mode==='light-design'
+       && (event.data.direction===1 || event.data.direction===-1)) {
+      window.dispatchEvent(new CustomEvent('stage-timeline-cue-step',{
+        cancelable:true,detail:{direction:event.data.direction},
+      }));
+    }
+  });
+  /* タイムラインの展開・高さ変更に合わせ、照明iframeの下端をタイムラインの上へ収める。 */
+  window.addEventListener('stage-timeline-layout-change',scheduleFrameHeight);
+  /* タイムライン再生・シーンレーンからシーンが変わったとき、照明側も同じシーンへ追従する。 */
+  window.addEventListener('stage-scene-change',()=>{
+    if(mode!=='light-design' || !editor()) return;
+    if(playbackPreview) {refreshPlaybackPreview();return;}
+    const context=host.context();latestContext=context;editor().open(context,mode);scheduleFrameHeight();
+  });
+  window.addEventListener('storage',event=>{
+    if(event.key===window.SHOSAI_GAMMA_STORAGE_KEYS?.currentShow) {
+      editor()?.externalChange();
+      if(playbackPreview) refreshPlaybackPreview();
+    }
+  });
+  window.addEventListener('resize',scheduleFrameHeight);
+  window.visualViewport?.addEventListener('resize',scheduleFrameHeight);
+  // 初回表示でもモード属性を付け、浮動パネルなど舞台モード専用CSSの基準を揃える。
+  // 新しいショー（劇場がまだ決まっていない）は、そのまま劇場設定を開いて始める。
+  if(lite || location.hash==='#run-of-show') select('run-of-show');
+  else if(venueSetupPending()) { gatedToVenue=true; select('venue-setup'); } else select('normal');
+  /* 共有の閲覧かどうかは body のクラスで後から決まる。決まったら鍵を見直す。 */
+  new MutationObserver(syncVenueGate).observe(document.body,{attributes:true,attributeFilter:['class']});
+  /* 劇場を反映したら鍵は外れる（反映後に select() が呼ばれ、その中で見直す）。
+     ショーを切り替えたときのために、エディタを閉じた合図でも見直しておく。 */
+  window.addEventListener('stage-venue-editor-closed',syncVenueGate);
+  /* U-13（2026-09-24）: ショーを開き直したら本体（applyLoadedState）がこれを呼び、ゲートの帯・薄い表示を見直す。
+     劇場が決まったショーへ移ったのに、前の新規ショーの「まず劇場を決めると…」が残っていた。 */
+  window.GAMMA_WORKSPACE=Object.freeze({normal:()=>select('normal'),select,mode:()=>mode,captureHostHistory,syncHistory,
+    playbackPreviewStatus:()=>({active:Boolean(playbackPreview),running:Boolean(playbackRaf)}),syncGate:()=>syncVenueGate(),
+    beginPlaybackPreview,endPlaybackPreview});
+})();

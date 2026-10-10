@@ -1,0 +1,105 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>進行表 | 舞台スケッチγ</title><link rel="stylesheet" href="editor.css?v=20261010-v0338"><link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261010-v0338"><style id="paper-page-rule">@page{size:A4 landscape;margin:10mm}</style></head><body><main><section id="preview">
+  <div class="paper-panel" id="paper-panel">
+  <div class="paper-sticky">
+  <div class="paper-band" id="paper-band" role="toolbar" aria-label="進行表の操作">
+    <div class="band-group band-view" role="group" aria-labelledby="band-heading-view"><h2 class="band-heading" id="band-heading-view">表示</h2><div id="row-mode-buttons" class="row-mode-buttons" role="group" aria-label="行の単位"><button type="button" data-row-mode="scene">シーン</button><button type="button" data-row-mode="scene-transition">シーン＋転換</button><button type="button" data-row-mode="cue">キュー</button></div><select hidden id="row-mode" aria-label="行の単位"><option value="scene">シーン</option><option value="scene-transition" selected>シーン＋転換</option><option value="cue">キュー</option></select><select id="heading-language" aria-label="進行表の言語" title="進行表の言語（この端末の設定）。自動は舞台スケッチの言語に合わせます：日本語→日本語、それ以外→English"><option value="auto" selected>自動</option><option value="bilingual">日本語＋英語</option><option value="ja">日本語</option><option value="en">English</option></select><select id="paper-format" aria-label="入力表示・用紙サイズ"><option value="free">連続入力</option><option value="a4-landscape" selected>A4横</option><option value="a4-portrait">A4縦</option></select><label class="band-size" id="paper-size-control"><span id="paper-size-label">表の幅</span><input id="paper-size-input" type="number" inputmode="numeric" autocomplete="off" data-lpignore="true" data-1p-ignore><span id="paper-size-unit" aria-hidden="true">px</span></label><input id="paper-size-range" type="range" min="50" max="100" step="1" aria-label="表示の倍率"><button type="button" id="display-reset">表示を初期値へ</button><label class="band-size">文字サイズ<input id="paper-font-size" type="number" min="8" max="18" step="0.5" value="10" aria-label="紙面と印刷の文字サイズ">pt</label><button type="button" id="paper-font-reset">標準文字サイズ</button><button id="columns-button" aria-expanded="false" aria-controls="column-popover">列 <span id="column-count"></span></button><button id="paper-ink" class="is-icon" aria-label="紙の色: 白/黒" aria-pressed="false">◩</button><button id="stage-figures-toggle" aria-pressed="false" hidden>舞台の図</button><button id="ros-index-toggle" class="is-icon" aria-label="項目の一覧" title="項目の一覧" aria-expanded="false" aria-controls="ros-index"><svg viewBox="0 0 15 15" aria-hidden="true"><path d="M5 3h9M5 7.5h9M5 12h9M1 3h1.6M1 7.5h1.6M1 12h1.6"/></svg></button></div>
+    <span class="band-split" aria-hidden="true"></span><div class="band-group band-items" role="group" aria-labelledby="band-heading-edit"><h2 class="band-heading" id="band-heading-edit">編集</h2><select id="paper-item-picker" aria-label="編集する項目"></select><div class="band-subgroup" role="group" aria-label="項目"><button id="paper-add" class="primary is-icon" aria-label="項目を追加">＋</button><button id="paper-duplicate" class="is-icon" aria-label="選択した項目を複製" title="選択した項目を複製"><svg viewBox="0 0 15 15" aria-hidden="true"><path d="M5 5h9v9H5zM1 10V1h9"/></svg></button><button id="paper-scene" aria-label="舞台シーンを作る">舞台で開く</button></div><div class="band-subgroup" role="group" aria-label="並び"><button id="paper-up" class="is-icon" aria-label="項目を上へ">↑</button><button id="paper-down" class="is-icon" aria-label="項目を下へ">↓</button></div><div class="band-subgroup" role="group" aria-label="取り消し"><button id="paper-undo" class="is-icon" aria-label="元に戻す" disabled>↶</button><button id="paper-redo" class="is-icon" aria-label="やり直す" disabled>↷</button></div>
+      <div class="band-subgroup" role="group" aria-label="セルの寄せ"><button id="align-left" class="is-icon" aria-label="左寄せ" aria-pressed="false" disabled><svg viewBox="0 0 15 15" aria-hidden="true"><path d="M1 2h13M1 6h8M1 10h13M1 14h8"/></svg></button><button id="align-center" class="is-icon" aria-label="中央寄せ" aria-pressed="false" disabled><svg viewBox="0 0 15 15" aria-hidden="true"><path d="M1 2h13M4 6h7M1 10h13M4 14h7"/></svg></button><button id="align-right" class="is-icon" aria-label="右寄せ" aria-pressed="false" disabled><svg viewBox="0 0 15 15" aria-hidden="true"><path d="M1 2h13M6 6h8M1 10h13M6 14h8"/></svg></button></div>
+    </div>
+    <span class="band-split" aria-hidden="true"></span><div class="band-group band-output" role="group" aria-labelledby="band-heading-output"><h2 class="band-heading" id="band-heading-output">出力</h2><button id="paper-save">保存する</button><button id="print-sample">印刷する / PDF</button><button id="paper-export" class="is-icon" aria-label="ショーを書き出す" title="ショーを書き出す"><svg viewBox="0 0 15 15" aria-hidden="true"><path d="M7.5 1v9M4 6.5l3.5 3.5L11 6.5M1 10v4h13v-4"/></svg></button><button id="distribution-open">配布内容を確認</button><button id="band-help-toggle" class="is-icon" aria-label="操作の説明" aria-expanded="false">?</button></div>
+  </div>
+  <div id="stage-figures" class="stage-figures" hidden aria-label="選択中の行のシーン"><figure><img id="stage-figure-front" alt="正面図"><figcaption id="stage-figure-caption"></figcaption></figure><figure><img id="stage-figure-plan" alt="平面図"><figcaption>平面図</figcaption></figure></div>
+  </div>
+  <div id="reorder-effects" class="reorder-effects" hidden></div><p id="band-status" class="small" role="status"></p>
+  <details class="editing-help" id="editing-help"><summary>操作の説明</summary><p>紙面の文字や空欄をクリックして入力。連続入力ではEnterで同じ欄の次の行へ、Shift + Enterで前の行へ。Tabで横へ。矢印キーで欄を選び、F2でも入力。詳細・備考は改行。欄外かCtrl / ⌘ + Enterで反映、Escで取消、Tabで次の欄へ。列見出しをドラッグで並べ替え、境目をドラッグで幅を変更。セルを選んで寄せ、詳細・備考の＋で画像を追加できます。</p><button type="button" id="reorder-warning-reset">並べ替えの注意を再表示する</button></details>
+  </div>
+  <div id="column-popover" class="popover" role="dialog" aria-label="列の表示" hidden><h3 id="column-context"></h3><div id="column-list"></div><label id="stage-view-control" hidden>舞台上の図（全行の既定） <select id="stage-view"><option value="front">正面図</option><option value="plan">平面図</option><option value="both">両方</option></select></label><div id="stage-view-rows" class="stage-view-rows" hidden><p id="stage-view-hint" class="small"></p><button type="button" id="stage-view-reset" hidden>行ごとの切り替えを既定に戻す</button></div><div class="toolbar"><button id="undo-layout" disabled>書式を元に戻す</button><button id="redo-layout" disabled>やり直す</button><button id="widths-reset">幅を既定へ</button></div><p id="column-help" class="small">見出しをドラッグで並べ替え・境目をドラッグで幅</p><p id="column-status" class="small" role="status"></p></div>
+  <p id="paper-size-note" hidden></p><p id="pagination-status" hidden></p><p id="paper-edit-status" hidden></p>
+  <div id="document-storage" class="document-storage" hidden>
+    <div class="toolbar" aria-label="編集内容の保存と読込">
+      <button type="button" id="save-draft" class="primary" disabled>ショーを保存</button>
+      <button type="button" id="load-draft" disabled>ブラウザ保存を開く</button>
+      <button type="button" id="export-document" disabled>ショーを書き出す</button>
+      <button type="button" id="import-document" disabled>編集ファイルを開く</button>
+      <button type="button" id="undo-document" disabled>文書の切替を戻す</button>
+      <input type="file" id="document-file" accept=".json,application/json" hidden>
+    </div>
+    <p id="storage-status" class="binding" role="status">ショーと一緒に自動保存します。</p>
+
+  </div>
+  <div id="document-error" class="document-error" role="alert" tabindex="-1" hidden><strong>内容を変更せず、操作を止めました</strong><p id="document-error-text"></p><button type="button" id="dismiss-error">閉じる</button></div>
+
+  <div class="doc-frame" data-paper-format="a4-landscape" tabindex="0" role="region" aria-label="横スクロールできる進行表">
+    <article class="paper" id="paper-source">
+      <header class="paper-header"><div class="paper-head-row1"><h3 id="paper-title">舞台監督用 進行表 / RUN OF SHOW</h3><p class="paper-revision"><span data-paper-label="revision">文書版：</span><span id="paper-info-revision">DRAFT 01</span></p></div><p class="paper-head-row2"><strong id="paper-info-title">読み込み中</strong><span class="sep">・</span><span data-paper-label="venue">劇場：</span><span id="paper-info-venue">未設定</span><span class="sep">・</span><span data-paper-label="date">公演日：</span><span id="paper-info-date">未設定</span><span class="sep">・</span><span data-paper-label="start">開始：</span><span id="paper-info-startTime">未定</span><span class="sep">〜</span><span id="paper-timing-end">終了予定：未定</span><span class="sep">・</span><span id="paper-total">進行全体の尺：未定</span><span class="sep">・</span><span data-paper-label="author">作成者：未設定</span><span class="sep">・</span>Asia/Tokyo (UTC+09:00)</p></header>
+      <p id="paper-scope-note" class="paper-scope-note" hidden></p>
+      <table class="paper-table" id="ros-table"><caption class="small" id="ros-caption">進行一覧 — 番号は進行項目、STBY / GOは合図。予定時刻は実行命令を意味しません。</caption><colgroup><col style="width:var(--w-no)"><col style="width:var(--w-start)"><col style="width:var(--w-dur)"><col style="width:var(--w-item)"><col style="width:var(--w-trigger)"><col style="width:var(--w-dept)"><col style="width:var(--w-details)"><col style="width:var(--w-notes)"></colgroup><thead><tr><th data-ja="番号" data-en="No."></th><th data-ja="予定" data-en="Start"></th><th data-ja="尺" data-en="Dur."></th><th data-ja="項目・担当" data-en="Item / Who"></th><th data-ja="待機・きっかけ" data-en="Standby / GO"></th><th data-ja="各部の指示" data-en="Departments"></th><th data-ja="詳細" data-en="Details"></th><th data-ja="備考" data-en="Notes"></th></tr></thead><tbody id="ros-body"></tbody></table>
+      <div id="portrait-view" hidden></div>
+      <footer class="paper-foot"><span id="paper-foot-abbr">LX＝照明 · SD＝音響 · VID＝映像 · STG＝舞台（略号）</span><span id="paper-foot-mode">フリー · 連続表示</span></footer>
+      <div id="paper-resize" class="paper-resize" role="separator" aria-orientation="vertical" aria-label="表の幅（ダブルクリックで自動に戻す）" tabindex="0" data-screen-only></div>
+    </article>
+    <div id="page-output" hidden></div>
+  </div>
+  <aside id="ros-index" class="ros-index" aria-labelledby="ros-index-heading" data-screen-only hidden>
+    <div id="ros-index-resize" class="ros-index-resize" role="separator" aria-orientation="vertical" aria-controls="ros-index" aria-label="一覧の幅（ダブルクリックで既定に戻す）" tabindex="0"></div>
+    <div class="ros-index-head"><h2 id="ros-index-heading">項目の一覧</h2><span id="ros-index-count" class="small"></span><button type="button" id="ros-index-close" class="is-icon" aria-label="一覧を閉じる" title="一覧を閉じる">×</button></div>
+    <ol id="ros-index-list" class="ros-index-list"></ol>
+  </aside>
+</section>
+<section id="authoring">
+  <div class="section-head"><h2>項目一覧・舞台連携の補助</h2><span class="label proposal">ショーと連携</span></div>
+  <details id="aux-editor"><summary>項目一覧・入力欄を開く</summary>
+  <div id="authoring-work">
+  <div id="document-info-editor" class="document-info-editor" aria-labelledby="document-info-heading">
+    <div class="section-head"><h3 id="document-info-heading">公演情報</h3><span class="small">すべてのページで共通</span></div>
+    <div class="editor-fields">
+      <div class="field"><label for="document-title">公演・イベント名</label><input id="document-title" type="text" maxlength="200" autocomplete="off" data-lpignore="true" data-1p-ignore placeholder="未設定"></div>
+      <div class="field"><label for="document-venue">劇場</label><input id="document-venue" type="text" maxlength="200" autocomplete="off" data-lpignore="true" data-1p-ignore placeholder="未設定"></div>
+      <div class="field"><label for="document-date">公演日</label><input id="document-date" type="date" min="0001-01-01" max="9999-12-31" autocomplete="off" data-lpignore="true" data-1p-ignore></div>
+      <div class="field"><label for="document-revision">文書版</label><input id="document-revision" type="text" maxlength="80" autocomplete="off" data-lpignore="true" data-1p-ignore placeholder="例：DRAFT 01 / REV 02"></div>
+      <div class="field"><label for="document-startTime">開始時刻（秒まで）</label><input id="document-startTime" type="time" step="1" autocomplete="off" data-lpignore="true" data-1p-ignore><p class="small">空欄は未定。予定は24時間制で表示し、項目の尺・転換時間は保持します。</p></div>
+    </div>
+    <p class="small">公演名・劇場は各200文字、文書版は80文字まで。空欄は「未設定」と表示します。文書版は手動で更新。「元に戻す」で編集を取り消せます。保存操作で項目・画像と一緒に残ります。</p>
+    <p id="document-timing-status" class="small"></p>
+    <a class="button" href="#preview">全ページへの反映を見る</a>
+  </div>
+  <div class="toolbar"><button type="button" id="add-item" class="primary">項目を追加</button><button type="button" id="move-up">選択項目を上へ</button><button type="button" id="move-down">選択項目を下へ</button><button type="button" id="undo-edit" disabled>元に戻す</button><button type="button" id="redo-edit" disabled>やり直す</button></div>
+  <div class="authoring-grid">
+    <div><div class="section-head"><h3>進行表</h3><span class="small" id="flow-total"></span></div><p class="small">項目名を押して選択。左端の「移動」をドラッグして別の項目の前へ。上下ボタンでも動かせます。</p><div class="table-wrap"><table class="flow-table"><thead><tr><th>順序</th><th>予定</th><th>項目</th><th>尺</th><th>舞台</th></tr></thead><tbody id="flow-body"></tbody></table></div></div>
+    <aside class="stage-mirror" aria-label="舞台タブのシーン一覧の模式見本"><h3>舞台タブへの反映</h3><p class="small">シーンを持つ項目だけを同じ順序で表示。以下は本体の画面ではなく、連動の模式見本です。</p><ol id="stage-list"></ol><div class="stage-fields"><label for="stage-title">舞台側でシーン名を変更</label><input id="stage-title" type="text" autocomplete="off" data-lpignore="true" data-1p-ignore><p class="small" id="stage-state" aria-live="polite"></p></div></aside>
+  </div>
+  <p id="authoring-status" class="binding" role="status">ショーの進行表を編集します。</p>
+  <div class="item-editor"><div class="section-head"><h3 id="editor-heading">選択した項目</h3><span class="label" id="item-link-state"></span></div>
+    <div class="editor-fields">
+      <div class="field"><label for="item-title">項目名</label><input id="item-title" type="text" autocomplete="off" data-lpignore="true" data-1p-ignore></div>
+      <div class="field"><label for="item-owner">担当・出演</label><input id="item-owner" type="text" autocomplete="off" data-lpignore="true" data-1p-ignore></div>
+      <div class="field"><label for="item-duration">見せる時間（秒）</label><input id="item-duration" type="number" min="0" step="0.1" placeholder="未定" autocomplete="off" data-lpignore="true" data-1p-ignore></div>
+      <div class="field"><label for="item-transition">次への転換（秒）</label><input id="item-transition" type="number" min="0" step="0.1" placeholder="未定" autocomplete="off" data-lpignore="true" data-1p-ignore></div>
+      <div class="field"><label for="item-standby">待機 / STBY</label><input id="item-standby" type="text" autocomplete="off" data-lpignore="true" data-1p-ignore></div>
+      <div class="field"><label for="item-go">実行のきっかけ / GO</label><input id="item-go" type="text" autocomplete="off" data-lpignore="true" data-1p-ignore></div>
+      <div class="field"><label for="details-text">詳細 / Details</label><textarea id="details-text" autocomplete="off" data-lpignore="true" data-1p-ignore></textarea><div class="toolbar"><button type="button" id="details-add-image" aria-label="詳細に画像を追加">画像を追加</button><button type="button" id="details-image" hidden aria-pressed="false">詳細の見本図</button></div><input type="file" id="details-files" accept="image/png,image/jpeg,image/webp" multiple hidden><div id="details-attachments" class="attachments"></div></div>
+      <div class="field"><label for="notes-text">備考 / Notes</label><textarea id="notes-text" autocomplete="off" data-lpignore="true" data-1p-ignore></textarea><div class="toolbar"><button type="button" id="notes-add-image" aria-label="備考に画像を追加">画像を追加</button><button type="button" id="notes-image" hidden aria-pressed="false">備考の見本図</button></div><input type="file" id="notes-files" accept="image/png,image/jpeg,image/webp" multiple hidden><div id="notes-attachments" class="attachments"></div></div>
+    </div>
+    <div class="toolbar"><button type="button" id="make-scene">舞台シーンを作る</button><a class="button" href="#preview">紙面に戻る</a></div><p class="small" id="scene-help"></p>
+    <p class="small">詳細・備考にPNG・JPEG・WebPを添付し、画像ごとに説明文を付けられます。1点10 MiB・4,000万画素、画像合計32 MiB・200点まで。長辺1,600px・1 MBを目安に自動で縮小して保存します（透明なPNGは透明を保ちます）。元の画像は残しません。紙面でも直接編集できます。文章は自由記入です。</p>
+  </div>
+</div>
+  </details>
+</section>
+
+</main><dialog id="distribution-dialog" class="distribution-dialog" aria-labelledby="distribution-heading">
+<button id="distribution-close" class="distribution-close" aria-label="配布・変更を閉じる">閉じる</button><h2 id="distribution-heading">配布・変更</h2>
+<p>編集内容から固定した版を作り、HTMLファイルをいつもの連絡手段で渡せます。内容を直したときは新しい版を作ります。</p>
+<p class="small">配布するのはシーンと転換の進行一覧です。キューの行・キューの列・生成した舞台図は含みません。詳細に添付した画像は含みます。</p>
+<div class="distribution-fields"><label>配布版の名前<input id="distribution-label" type="text" maxlength="80"></label><label>届け先（1行に1件）<textarea id="distribution-targets" maxlength="5000"></textarea></label></div>
+<label class="distribution-check"><input id="distribution-notes" type="checkbox">備考と備考の画像を含める</label>
+<details><summary>編集内容と前の配布版を比較</summary><ul id="distribution-draft-changes"></ul></details>
+<div class="distribution-actions"><button id="distribution-create" class="primary">新しい配布版を保存</button></div>
+<p id="distribution-status" role="status"></p><p id="distribution-empty">配布版はまだありません。</p>
+<div id="distribution-existing" hidden><h3>保存した配布版</h3><label>版を選ぶ<select id="distribution-version"></select></label><p id="distribution-version-note" class="small"></p>
+<div class="distribution-actions"><button id="distribution-download">この版のHTMLを保存</button><button id="distribution-copy">連絡文をコピー</button><button id="distribution-reply-pick">返答を取り込む</button><input id="distribution-reply-file" type="file" accept=".json,application/json" hidden></div>
+<label>連絡文<textarea id="distribution-message" hidden readonly></textarea></label>
+<details><summary>この版で変わった項目</summary><ul id="distribution-changes"></ul></details>
+<h3>届け先の返答</h3><p class="small">受け手が記入した返答の記録です。本人認証はありません。「返答なし」は未読を意味しません。</p>
+<div class="table-wrap"><table><thead><tr><th>届け先</th><th>返答</th><th>記入者</th><th>連絡・質問</th></tr></thead><tbody id="distribution-replies"></tbody></table></div></div>
+</dialog><p id="print-unavailable">ページを準備してから印刷してください。連続入力はA4へ切り替えて印刷できます。</p><script src="../stage-run-of-show-distribution.js?v=20261006-v038"></script><script src="../stage-run-of-show-files.js?v=20261009-v0335"></script><script src="timing.js?v=20261010-v0338"></script><script src="layout.js?v=20261010-v0338"></script><script src="pagination.js?v=20261010-v0338"></script><script src="images.js"></script><script src="paper-edit.js?v=ros8"></script><script src="distribution.js?v=20261010-v0338"></script><script src="../stage-reorder-warning.js?v=20261009-v0335"></script><script src="editor.js?v=20261010-v0338"></script></body></html>

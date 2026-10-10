@@ -1,0 +1,37 @@
+/* Numerical tokens: docs/timecode-implementation-2026-10-02/design/TOKEN_SHEET.md */
+:root { --tc-origin:#d9b77a; --tc-ink:#f3ecdf; --tc-muted:#b6a995; --tc-panel:#201b16; --tc-intro:#343e48; --tc-error:#ffb3a2; --tc-control:44px; --tc-gap:8px; --tc-space:16px; --tc-section:24px; --tc-dialog:480px; --tc-body:14px; --tc-clock:18px; --tc-radius:4px; --tc-seek-width:calc(11ch + 2 * var(--tc-gap) + 4px); }
+.stage-timecode-dialog { margin:auto; color:var(--tc-ink); background:var(--tc-panel); border:1px solid var(--tc-muted); border-radius:var(--tc-radius); width:min(var(--tc-dialog),calc(100vw - 2 * var(--tc-space))); max-height:calc(100dvh - 2 * var(--tc-space)); padding:var(--tc-section); box-sizing:border-box; overflow:auto; font-size:var(--tc-body); line-height:1.6; }
+.stage-timecode-dialog::backdrop { background:rgb(0 0 0 / .6); }
+.stage-timecode-dialog header,.stage-timecode-dialog footer,.tc-pair,.tc-media-row { display:flex; align-items:center; gap:var(--tc-gap); }
+.stage-timecode-dialog header { justify-content:space-between; }
+.stage-timecode-dialog h2 { margin:0; font-size:var(--tc-clock); }
+.stage-timecode-dialog label { display:grid; gap:var(--tc-gap); margin-block:var(--tc-space); min-width:0; }
+.stage-timecode-dialog input,.stage-timecode-dialog select,.stage-timecode-dialog button,#stage-timeline-panel .stage-timecode-control { min-height:var(--tc-control); height:var(--tc-control); box-sizing:border-box; border:1px solid var(--tc-muted); border-radius:var(--tc-radius); background:var(--tc-panel); color:var(--tc-ink); font:inherit; padding:var(--tc-gap); }
+.stage-timecode-dialog input,.stage-timecode-dialog select { width:100%; min-width:0; }
+.stage-timecode-dialog input::placeholder { color:var(--tc-muted); opacity:1; }
+.stage-timecode-dialog button { cursor:pointer; flex-shrink:0; min-width:var(--tc-control); }
+.stage-timecode-dialog footer { justify-content:flex-end; margin-top:var(--tc-space); }
+.stage-timecode-dialog summary { cursor:pointer; padding-block:var(--tc-gap); min-height:var(--tc-control); box-sizing:border-box; }
+.stage-timecode-dialog details { margin-top:var(--tc-section); border-block:1px solid var(--tc-muted); }
+.stage-timecode-dialog .tc-help { color:var(--tc-muted); margin:var(--tc-gap) 0; }
+.tc-pair>* { flex:1; }.tc-media-row { padding-block:var(--tc-gap); border-bottom:1px solid var(--tc-muted); }.tc-media-row span { flex:1; overflow-wrap:anywhere; }
+#tc-error,#stage-timecode-error { color:var(--tc-error); }
+#stage-timecode-error { margin:0; font-size:var(--tc-body); padding:var(--tc-gap); background:var(--tc-panel); }
+#stage-timecode-error[hidden] { display:none; }
+#stage-timecode-seek { width:var(--tc-seek-width); font-family:ui-monospace,SFMono-Regular,Menlo,monospace!important; font-variant-numeric:tabular-nums; }
+#stage-timeline-position { min-width:14ch; font-size:var(--tc-clock); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-variant-numeric:tabular-nums; }
+.stage-timecode-origin { position:absolute; top:0; bottom:0; border-left:2px solid var(--tc-origin); pointer-events:none; z-index:4; color:var(--tc-ink); font-size:var(--tc-body); }
+.stage-timecode-origin span { display:block; background:var(--tc-panel); padding-inline:var(--tc-gap); white-space:nowrap; }
+.stage-timeline-scene.is-timecode-intro { background:var(--tc-intro); color:var(--tc-ink); border-top:2px dashed var(--tc-origin); }
+.stage-timecode-dialog :focus-visible,#stage-timeline-panel .stage-timecode-control:focus-visible { outline:2px solid var(--tc-origin); outline-offset:2px; }
+
+#stage-timeline-panel:not([data-timecode-unit="count"]) #stage-timeline-position { display:none; }
+#stage-timeline-panel .stage-timecode-control[hidden] { display:none; }
+#stage-timecode-seek { font-size:var(--tc-clock)!important; }
+
+.stage-timecode-dialog .tc-check { display:flex; align-items:center; }.stage-timecode-dialog input[type="checkbox"] { width:var(--tc-control); flex-shrink:0; }
+
+#stage-scene-timecode-origin { min-height:var(--tc-control); padding:var(--tc-gap); }
+#stage-scene-timecode-origin[hidden] { display:none; }
+
+#stage-timecode-cue-position { min-height:var(--tc-control); height:var(--tc-control); font-size:var(--tc-clock); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-variant-numeric:tabular-nums; }

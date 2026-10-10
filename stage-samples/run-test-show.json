@@ -1,0 +1,996 @@
+{
+  "kind": "shosai-stage-sketch",
+  "version": 4,
+  "venues": [
+    {
+      "format": "venue-v2",
+      "id": "run-venue-1",
+      "label": "R検証用会場（架空）",
+      "basis": "custom",
+      "stageFormat": "theatre",
+      "scale": {
+        "gridM": 1,
+        "confidence": "approx"
+      },
+      "floor": {
+        "outline": [
+          [
+            0,
+            0
+          ],
+          [
+            12,
+            0
+          ],
+          [
+            12,
+            9
+          ],
+          [
+            0,
+            9
+          ]
+        ],
+        "extensions": [],
+        "levels": []
+      },
+      "ceiling": {
+        "heightM": 6.5,
+        "rigging": "none",
+        "hasCeiling": true,
+        "indoor": true
+      },
+      "audience": [],
+      "stageWings": [],
+      "fixtures": [],
+      "access": [],
+      "provenance": {
+        "source": "記憶",
+        "confidence": "low",
+        "sharing": "ok",
+        "note": "保持試験用。実劇場ではありません。"
+      }
+    }
+  ],
+  "project": {
+    "id": "run-test-show-v1",
+    "title": "テスト: 舞台スケッチ Lite",
+    "createdAt": "2026-10-05T00:00:00.000Z",
+    "versionLabel": "v1",
+    "parentVersionId": null,
+    "branchReason": "",
+    "venue": "run-venue-1",
+    "venueSize": "mid",
+    "venueDims": {
+      "W": 12,
+      "D": 9,
+      "H": 6.5
+    },
+    "cast": [
+      {
+        "id": "run-cast-1",
+        "name": "検証演者",
+        "color": "#a84b26",
+        "heightCm": 170,
+        "note": "",
+        "locked": false
+      }
+    ],
+    "sets": [
+      {
+        "id": "run-set-1",
+        "kind": "block",
+        "name": "台",
+        "color": "#efe7d6",
+        "note": "",
+        "locked": false,
+        "dims": {
+          "w": 1.8,
+          "d": 1,
+          "h": 0.5,
+          "lift": 0
+        }
+      }
+    ],
+    "rigs": [],
+    "photos": [],
+    "scenes": [
+      {
+        "id": "run-section-1",
+        "kind": "section",
+        "depth": 0,
+        "title": "第1章 開演",
+        "note": "",
+        "pieces": [],
+        "notes": [],
+        "strokes": [],
+        "arrows": [],
+        "timelineUnit": "time",
+        "timelineDurationSeconds": 80,
+        "costumes": {}
+      },
+      {
+        "id": "run-scene-1",
+        "kind": "scene",
+        "depth": 1,
+        "title": "R-1 開演（固定尺）",
+        "note": "R専用の検証データ。実制作ショーではありません。",
+        "background": "#40362d",
+        "pieces": [],
+        "notes": [],
+        "strokes": [],
+        "arrows": [],
+        "screenTexts": [],
+        "beat": {
+          "role": ""
+        },
+        "rehearsal": {
+          "holdDurationSeconds": 30,
+          "transitionToNextSeconds": 5,
+          "timelineLockEdge": "start",
+          "transitionLockEdge": "end"
+        },
+        "transitionNote": "",
+        "blackout": false
+      },
+      {
+        "id": "run-scene-2",
+        "kind": "scene",
+        "depth": 1,
+        "title": "R-2 紙面編集・画像・保持",
+        "note": "R専用の検証データ。実制作ショーではありません。",
+        "background": "#40362d",
+        "pieces": [
+          {
+            "id": "run-performer-piece",
+            "type": "performer",
+            "castId": "run-cast-1",
+            "originId": "run-origin-1",
+            "u": 0.5,
+            "v": 0.6,
+            "facing": 0,
+            "pose": "stand",
+            "size": 100,
+            "color": "#a84b26",
+            "name": "",
+            "futurePiece": {
+              "preserve": [
+                "piece",
+                3
+              ]
+            }
+          },
+          {
+            "id": "run-set-piece",
+            "type": "block",
+            "setId": "run-set-1",
+            "u": 0.3,
+            "v": 0.4,
+            "facing": 0,
+            "size": 100,
+            "color": "#efe7d6",
+            "name": "台",
+            "dims": {
+              "w": 1.8,
+              "d": 1,
+              "h": 0.5,
+              "lift": 0
+            }
+          }
+        ],
+        "notes": [],
+        "strokes": [],
+        "arrows": [],
+        "screenTexts": [],
+        "beat": {
+          "role": ""
+        },
+        "rehearsal": {
+          "holdDurationSeconds": 20,
+          "transitionToNextSeconds": 4,
+          "timelineLockEdge": null,
+          "transitionLockEdge": null
+        },
+        "transitionNote": "",
+        "blackout": false,
+        "futureScene": {
+          "preserve": [
+            "scene",
+            2
+          ]
+        }
+      },
+      {
+        "id": "run-scene-3",
+        "kind": "scene",
+        "depth": 1,
+        "title": "R-3 兄弟の並べ替え",
+        "note": "R専用の検証データ。実制作ショーではありません。",
+        "background": "#40362d",
+        "pieces": [],
+        "notes": [],
+        "strokes": [],
+        "arrows": [],
+        "screenTexts": [],
+        "beat": {
+          "role": ""
+        },
+        "rehearsal": {
+          "holdDurationSeconds": 15,
+          "transitionToNextSeconds": 6,
+          "timelineLockEdge": null,
+          "transitionLockEdge": null
+        },
+        "transitionNote": "",
+        "blackout": false
+      },
+      {
+        "id": "run-section-2",
+        "kind": "section",
+        "depth": 0,
+        "title": "第2章 終演",
+        "note": "",
+        "pieces": [],
+        "notes": [],
+        "strokes": [],
+        "arrows": [],
+        "timelineUnit": "time",
+        "timelineDurationSeconds": 64,
+        "costumes": {}
+      },
+      {
+        "id": "run-scene-4",
+        "kind": "scene",
+        "depth": 1,
+        "title": "R-4 採用案",
+        "note": "R専用の検証データ。実制作ショーではありません。",
+        "background": "#40362d",
+        "pieces": [],
+        "notes": [],
+        "strokes": [],
+        "arrows": [],
+        "screenTexts": [],
+        "beat": {
+          "role": ""
+        },
+        "rehearsal": {
+          "holdDurationSeconds": 24,
+          "transitionToNextSeconds": 4,
+          "timelineLockEdge": null,
+          "transitionLockEdge": null
+        },
+        "transitionNote": "",
+        "blackout": false,
+        "sceneAlternatives": {
+          "version": 1,
+          "adoptedId": "run-alt-b",
+          "items": [
+            {
+              "id": "run-alt-a",
+              "label": "A案",
+              "description": "短い案",
+              "useWhen": "",
+              "content": {
+                "note": "R専用の検証データ。実制作ショーではありません。",
+                "background": "#40362d",
+                "pieces": [],
+                "notes": [],
+                "strokes": [],
+                "arrows": [],
+                "screenTexts": [],
+                "beat": {
+                  "role": ""
+                },
+                "rehearsal": {
+                  "holdDurationSeconds": 18,
+                  "transitionToNextSeconds": 4,
+                  "timelineLockEdge": null,
+                  "transitionLockEdge": null
+                },
+                "transitionNote": "",
+                "blackout": false
+              },
+              "cues": [],
+              "lighting": {
+                "native": {
+                  "id": "run-scene-4",
+                  "name": "R-4 採用案",
+                  "lx": {
+                    "section": 1,
+                    "no": 1
+                  },
+                  "lxq": [],
+                  "lxEditing": null,
+                  "cue": {
+                    "lights": {
+                      "run-light-1": {
+                        "on": true,
+                        "level": 60,
+                        "color": "#fff1d2",
+                        "surface": "floor",
+                        "path": {
+                          "kind": "still",
+                          "a": {
+                            "u": 0.5,
+                            "v": 0.6,
+                            "hM": 0
+                          }
+                        }
+                      }
+                    },
+                    "groups": [],
+                    "environment": {
+                      "haze": 0
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "run-alt-b",
+              "label": "B案",
+              "description": "採用案",
+              "useWhen": "",
+              "content": {
+                "note": "R専用の検証データ。実制作ショーではありません。",
+                "background": "#40362d",
+                "pieces": [],
+                "notes": [],
+                "strokes": [],
+                "arrows": [],
+                "screenTexts": [],
+                "beat": {
+                  "role": ""
+                },
+                "rehearsal": {
+                  "holdDurationSeconds": 24,
+                  "transitionToNextSeconds": 4,
+                  "timelineLockEdge": null,
+                  "transitionLockEdge": null
+                },
+                "transitionNote": "",
+                "blackout": false
+              },
+              "cues": [],
+              "lighting": {
+                "native": {
+                  "id": "run-scene-4",
+                  "name": "R-4 採用案",
+                  "lx": {
+                    "section": 1,
+                    "no": 1
+                  },
+                  "lxq": [],
+                  "lxEditing": null,
+                  "cue": {
+                    "lights": {
+                      "run-light-1": {
+                        "on": true,
+                        "level": 60,
+                        "color": "#fff1d2",
+                        "surface": "floor",
+                        "path": {
+                          "kind": "still",
+                          "a": {
+                            "u": 0.5,
+                            "v": 0.6,
+                            "hM": 0
+                          }
+                        }
+                      }
+                    },
+                    "groups": [],
+                    "environment": {
+                      "haze": 0
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "run-scene-5",
+        "kind": "scene",
+        "depth": 1,
+        "title": "R-5 音源とキュー",
+        "note": "R専用の検証データ。実制作ショーではありません。",
+        "background": "#40362d",
+        "pieces": [],
+        "notes": [],
+        "strokes": [],
+        "arrows": [],
+        "screenTexts": [],
+        "beat": {
+          "role": ""
+        },
+        "rehearsal": {
+          "holdDurationSeconds": 12,
+          "transitionToNextSeconds": 6,
+          "timelineLockEdge": null,
+          "transitionLockEdge": null
+        },
+        "transitionNote": "",
+        "blackout": false
+      },
+      {
+        "id": "run-scene-6",
+        "kind": "scene",
+        "depth": 1,
+        "title": "R-6 終演",
+        "note": "R専用の検証データ。実制作ショーではありません。",
+        "background": "#40362d",
+        "pieces": [],
+        "notes": [],
+        "strokes": [],
+        "arrows": [],
+        "screenTexts": [],
+        "beat": {
+          "role": ""
+        },
+        "rehearsal": {
+          "holdDurationSeconds": 10,
+          "transitionToNextSeconds": 8,
+          "timelineLockEdge": null,
+          "transitionLockEdge": null
+        },
+        "transitionNote": "",
+        "blackout": false
+      }
+    ],
+    "activeSceneId": "run-scene-2",
+    "audioTracks": [
+      {
+        "id": "run-track-1",
+        "title": "検証音源（未接続）",
+        "durationSeconds": 90,
+        "gainDb": 0
+      }
+    ],
+    "cues": [
+      {
+        "id": "run-cue-1",
+        "kind": "timeline",
+        "cueType": "music",
+        "sceneId": "run-scene-5",
+        "offsetSeconds": 2,
+        "memo": "音楽開始",
+        "locked": false
+      }
+    ],
+    "timecode": {
+      "version": 1,
+      "mode": "continuous",
+      "originSceneId": "run-scene-2",
+      "originOffsetSeconds": 0,
+      "originSeconds": 3600,
+      "precision": "tenths"
+    },
+    "timelineMedia": {
+      "version": 1,
+      "placements": [
+        {
+          "id": "run-media-1",
+          "sectionId": "run-section-1",
+          "timelineId": "fallback",
+          "trackId": "run-track-1",
+          "start": {
+            "sceneId": "run-scene-2",
+            "offsetSeconds": 0
+          },
+          "mediaInSeconds": 0,
+          "mediaOutSeconds": 20
+        }
+      ]
+    },
+    "futureProject": {
+      "preserve": [
+        "project",
+        1
+      ]
+    },
+    "lightingDesign": {
+      "format": "shosai.light-design",
+      "version": 1,
+      "name": "R保持検証",
+      "stage": {
+        "W": 12,
+        "D": 9,
+        "H": 6.5
+      },
+      "rig": {
+        "positions": [],
+        "trusses": [
+          {
+            "id": "run-truss-1",
+            "v": 0.7,
+            "h": 6.5,
+            "label": "検証バトン"
+          }
+        ],
+        "fixtures": [
+          {
+            "id": "run-light-1",
+            "no": 1,
+            "name": "検証固定灯",
+            "kind": "fixed",
+            "beamDeg": 35,
+            "mount": {
+              "type": "truss",
+              "trussId": "run-truss-1",
+              "u": 0.5
+            },
+            "fixedSetup": {
+              "surface": "floor",
+              "color": "#fff1d2",
+              "path": {
+                "kind": "still",
+                "a": {
+                  "u": 0.5,
+                  "v": 0.6,
+                  "hM": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      "scenes": [
+        {
+          "id": "run-scene-1",
+          "name": "R-1 開演（固定尺）",
+          "lx": {
+            "section": 1,
+            "no": 1
+          },
+          "lxq": [],
+          "lxEditing": null,
+          "cue": {
+            "lights": {
+              "run-light-1": {
+                "on": true,
+                "level": 60,
+                "color": "#fff1d2",
+                "surface": "floor",
+                "path": {
+                  "kind": "still",
+                  "a": {
+                    "u": 0.5,
+                    "v": 0.6,
+                    "hM": 0
+                  }
+                }
+              }
+            },
+            "groups": [],
+            "environment": {
+              "haze": 0
+            }
+          }
+        },
+        {
+          "id": "run-scene-2",
+          "name": "R-2 紙面編集・画像・保持",
+          "lx": {
+            "section": 1,
+            "no": 1
+          },
+          "lxq": [],
+          "lxEditing": null,
+          "cue": {
+            "lights": {
+              "run-light-1": {
+                "on": true,
+                "level": 60,
+                "color": "#fff1d2",
+                "surface": "floor",
+                "path": {
+                  "kind": "still",
+                  "a": {
+                    "u": 0.5,
+                    "v": 0.6,
+                    "hM": 0
+                  }
+                }
+              }
+            },
+            "groups": [],
+            "environment": {
+              "haze": 0
+            }
+          }
+        },
+        {
+          "id": "run-scene-3",
+          "name": "R-3 兄弟の並べ替え",
+          "lx": {
+            "section": 1,
+            "no": 1
+          },
+          "lxq": [],
+          "lxEditing": null,
+          "cue": {
+            "lights": {
+              "run-light-1": {
+                "on": true,
+                "level": 60,
+                "color": "#fff1d2",
+                "surface": "floor",
+                "path": {
+                  "kind": "still",
+                  "a": {
+                    "u": 0.5,
+                    "v": 0.6,
+                    "hM": 0
+                  }
+                }
+              }
+            },
+            "groups": [],
+            "environment": {
+              "haze": 0
+            }
+          }
+        },
+        {
+          "id": "run-scene-4",
+          "name": "R-4 採用案",
+          "lx": {
+            "section": 1,
+            "no": 1
+          },
+          "lxq": [],
+          "lxEditing": null,
+          "cue": {
+            "lights": {
+              "run-light-1": {
+                "on": true,
+                "level": 60,
+                "color": "#fff1d2",
+                "surface": "floor",
+                "path": {
+                  "kind": "still",
+                  "a": {
+                    "u": 0.5,
+                    "v": 0.6,
+                    "hM": 0
+                  }
+                }
+              }
+            },
+            "groups": [],
+            "environment": {
+              "haze": 0
+            }
+          }
+        },
+        {
+          "id": "run-scene-5",
+          "name": "R-5 音源とキュー",
+          "lx": {
+            "section": 1,
+            "no": 1
+          },
+          "lxq": [],
+          "lxEditing": null,
+          "cue": {
+            "lights": {
+              "run-light-1": {
+                "on": true,
+                "level": 60,
+                "color": "#fff1d2",
+                "surface": "floor",
+                "path": {
+                  "kind": "still",
+                  "a": {
+                    "u": 0.5,
+                    "v": 0.6,
+                    "hM": 0
+                  }
+                }
+              }
+            },
+            "groups": [],
+            "environment": {
+              "haze": 0
+            }
+          }
+        },
+        {
+          "id": "run-scene-6",
+          "name": "R-6 終演",
+          "lx": {
+            "section": 1,
+            "no": 1
+          },
+          "lxq": [],
+          "lxEditing": null,
+          "cue": {
+            "lights": {
+              "run-light-1": {
+                "on": true,
+                "level": 60,
+                "color": "#fff1d2",
+                "surface": "floor",
+                "path": {
+                  "kind": "still",
+                  "a": {
+                    "u": 0.5,
+                    "v": 0.6,
+                    "hM": 0
+                  }
+                }
+              }
+            },
+            "groups": [],
+            "environment": {
+              "haze": 0
+            }
+          }
+        }
+      ]
+    },
+    "runOfShow": {
+      "format": "stage-sketch-run-of-show",
+      "version": 1,
+      "documentInfo": {
+        "title": "テスト: 舞台スケッチ Lite",
+        "venue": "",
+        "date": "",
+        "revision": "DRAFT 01",
+        "startTime": ""
+      },
+      "items": [
+        {
+          "id": "ros-run-scene-1",
+          "sceneId": "run-scene-1",
+          "title": "R-1 開演（固定尺）",
+          "hold": 30,
+          "transition": 5,
+          "owner": "",
+          "standby": "",
+          "go": "",
+          "dept": [],
+          "details": "",
+          "notes": "",
+          "transitionDetail": "",
+          "transitionNotes": "",
+          "detailImage": false,
+          "noteImage": false,
+          "transitionImage": false,
+          "transitionReview": false,
+          "detailAssets": [],
+          "noteAssets": []
+        },
+        {
+          "id": "ros-run-scene-2",
+          "sceneId": "run-scene-2",
+          "title": "R-2 紙面編集・画像・保持",
+          "hold": 20,
+          "transition": 4,
+          "owner": "舞台監督",
+          "standby": "",
+          "go": "",
+          "dept": [],
+          "details": "紙面から名称・時間を編集。画像と舞台データを保持して往復。",
+          "notes": "",
+          "transitionDetail": "",
+          "transitionNotes": "",
+          "detailImage": false,
+          "noteImage": false,
+          "transitionImage": false,
+          "transitionReview": false,
+          "detailAssets": [
+            {
+              "assetId": "img-32907c48af49898238d6430106f0f4dc89cb6754b6b34b78f4e4ed078c5b9a97",
+              "caption": "保持検証用の配置図"
+            }
+          ],
+          "noteAssets": []
+        },
+        {
+          "id": "ros-run-scene-3",
+          "sceneId": "run-scene-3",
+          "title": "R-3 兄弟の並べ替え",
+          "hold": 15,
+          "transition": 6,
+          "owner": "",
+          "standby": "",
+          "go": "",
+          "dept": [],
+          "details": "",
+          "notes": "",
+          "transitionDetail": "",
+          "transitionNotes": "",
+          "detailImage": false,
+          "noteImage": false,
+          "transitionImage": false,
+          "transitionReview": false,
+          "detailAssets": [],
+          "noteAssets": []
+        },
+        {
+          "id": "ros-run-scene-4",
+          "sceneId": "run-scene-4",
+          "title": "R-4 採用案",
+          "hold": 24,
+          "transition": 4,
+          "owner": "",
+          "standby": "",
+          "go": "",
+          "dept": [],
+          "details": "",
+          "notes": "",
+          "transitionDetail": "",
+          "transitionNotes": "",
+          "detailImage": false,
+          "noteImage": false,
+          "transitionImage": false,
+          "transitionReview": false,
+          "detailAssets": [],
+          "noteAssets": []
+        },
+        {
+          "id": "ros-run-scene-5",
+          "sceneId": "run-scene-5",
+          "title": "R-5 音源とキュー",
+          "hold": 12,
+          "transition": 6,
+          "owner": "",
+          "standby": "",
+          "go": "",
+          "dept": [],
+          "details": "",
+          "notes": "",
+          "transitionDetail": "",
+          "transitionNotes": "",
+          "detailImage": false,
+          "noteImage": false,
+          "transitionImage": false,
+          "transitionReview": false,
+          "detailAssets": [],
+          "noteAssets": []
+        },
+        {
+          "id": "ros-run-scene-6",
+          "sceneId": "run-scene-6",
+          "title": "R-6 終演",
+          "hold": 10,
+          "transition": 8,
+          "owner": "",
+          "standby": "",
+          "go": "",
+          "dept": [],
+          "details": "",
+          "notes": "",
+          "transitionDetail": "",
+          "transitionNotes": "",
+          "detailImage": false,
+          "noteImage": false,
+          "transitionImage": false,
+          "transitionReview": false,
+          "detailAssets": [],
+          "noteAssets": []
+        },
+        {
+          "id": "run-free-announcement",
+          "sceneId": null,
+          "title": "客席案内（舞台シーン未リンク）",
+          "hold": 12,
+          "transition": 3,
+          "owner": "",
+          "standby": "",
+          "go": "",
+          "dept": [],
+          "details": "",
+          "notes": "Rからシーンを作成できます。",
+          "transitionDetail": "",
+          "transitionNotes": "",
+          "detailImage": false,
+          "noteImage": false,
+          "transitionImage": false,
+          "transitionReview": false,
+          "detailAssets": [],
+          "noteAssets": []
+        }
+      ],
+      "selected": "ros-run-scene-1",
+      "nextId": 1,
+      "language": "bilingual",
+      "view": "ros",
+      "paperFormat": "a4-landscape",
+      "layouts": {
+        "free:ros": {
+          "order": [
+            "no",
+            "start",
+            "duration",
+            "item",
+            "trigger",
+            "dept",
+            "details",
+            "notes"
+          ],
+          "hidden": []
+        },
+        "free:calls": {
+          "order": [
+            "call",
+            "standby",
+            "go",
+            "action",
+            "details",
+            "notes"
+          ],
+          "hidden": []
+        },
+        "a4-landscape:ros": {
+          "order": [
+            "no",
+            "start",
+            "duration",
+            "item",
+            "trigger",
+            "dept",
+            "details",
+            "notes"
+          ],
+          "hidden": []
+        },
+        "a4-landscape:calls": {
+          "order": [
+            "call",
+            "standby",
+            "go",
+            "action",
+            "details",
+            "notes"
+          ],
+          "hidden": []
+        },
+        "a4-portrait:ros": {
+          "order": [
+            "no",
+            "start",
+            "duration",
+            "item",
+            "trigger",
+            "dept",
+            "details",
+            "notes"
+          ],
+          "hidden": []
+        },
+        "a4-portrait:calls": {
+          "order": [
+            "call",
+            "standby",
+            "go",
+            "action",
+            "details",
+            "notes"
+          ],
+          "hidden": []
+        }
+      },
+      "assets": [
+        {
+          "id": "img-32907c48af49898238d6430106f0f4dc89cb6754b6b34b78f4e4ed078c5b9a97",
+          "name": "h1-image.png",
+          "mime": "image/png",
+          "size": 2713,
+          "width": 480,
+          "height": 240,
+          "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAeAAAADwCAIAAABXFyDtAAAKYElEQVR4nO3de2yV5R3A8bc3WbBMRWH7QxRQhEDwBoVyUyQuQsApMLxsJk6BiSxuc6gJuIhmghvMqRMjMtFNZ4ApExUSTTYRKBYExwhGxSJyUedkMCagaEtZ5BhW20MpnF5+9Hw+f7Xved7Th3Keb9/zcHrI2b5rRwJAPLlNPQEA0hNogKAEGiAogQYISqABghJogKAEGiAogQYISqABghJogKAEGiAogQYISqABghJogKAEGiCo/CM9oXjQRQ0zE4Dmb8XLi+s+2BU0QFACDdBctjiO7kIdIJsVH9XmsCtogKAEGiAogQYISqABghJogKAEGqDZvcyuqosvHfbXFxYe6tMkSXbt3n3/QzNeWbbsbwsXVTt3yvRpE2+5NTcnp+qJFwy+ZECfvlMmT06NmTx1yuKlS5e++FLq0+cXLZr+wP3Pzftz65NOSpJkwcKFzy9alJeXV1hYOHHChLZt2iRJcuGQwV27dEmNv6Bvv6tHjUp9vL6s7KFZsyr2VeTl5f3i1tveemf9vPnzkyRZu27dOd27J0ky6vLhn3726dPPPltQUFBeXn7FiJFDL7nk/3e4f/+ezz67efyPzzvnnExm8krJsppf965f3VNtZF1mO+jCC+vlLxFonoE+rFtun3TxwIFLSkqqHS8vLy/IL0jVuarjCgo2b91SWVmZm5u7f//+Dz788LiCgoO3Lit99YoRI19duWLY4CGvvb76lZJlsx58MD8//8k5c6ZMn/bAtOlJkhTk5z983/01Z3L3tF/fO/Wetm3aLF669HczH55yx+SB/Qekfjakxq9YtWru/Gdm3PvbVoWFu3bvnjBpYttTTinq0ePgHb67ceMdU6c89ejsTGYysP+Aal83SZKpv5lebeRhZws0Y420xTF18p2jho+oefz1NWt6nHde2lM6n3XWm2+/nSRJ2YYNZ3bsePD43s8/37t373eHDi0pLU2S5Kl583503XX5+V/+pBl52WUtWrSorKysZSb/2bnziy++SJJkQN++o4YPrzngqXlzbxo3rlVhYZIkrQoLb7ph3BNz51Qd0LFDh23btmU+k7o47GyBZqyRAn1y69Zpj69Ytap3UVHam4p7Fq1YterLMatXFRf1qnLKa8W9ep3ert0/P/qovKJi46ZNnTqekbqpZcuW0355d25ubX+oG0ePueGnP5kyfdraN9ad2/3smgPe27y585mdDn7auVOn9zZtqjpg5erVPc8/P/OZ1MVhZws0Y/WzxVFeUXHjzT+r+mmSJDMfm7123borR45MPStPa8+newqPPz7tTb2Lip55bsGYa69d/fc1Iy+7/ODxZcuXv7Nhw8tLlvx7+/Y1a/+xb9++1PE5Tz+99NXlO3bsmPfHJ6pNafzYsd27dkt9PHTw4Av69VuyvOS+GTMGDhgw5tof1v5H279/f86BHZjUHVZUVGzesmXO43/IfCa1fxtTI490tkBzUj+BrrbNevGlw5IkGXf96NrPem/z5g6ntz/Urd9s1So3J+dfH3+cJMnxLVumDlZWVm7Z+v6Tv380dfVdUlra7tRTyza+27Vzl6tHjRo2ZMjQ741MO6WUnTt3bv3gg+7dug0bPKR/cZ/vj76+ZvI6tG+/vqyse7evMrq+rKxj+/ZV7/DJuXMXvfTiNVdelclM6vJtrMtsgWasKV9mV1Ja2q9Pn1oGFPfqNXP27KIePQ4eWfvGG53O+Gob4dyzz165evXlw4bNevzxigPX7PMXLMirfVchJ2fSXXemov/fTz75dttv1RxyzZVXPfjIzN179qRefDJj1iPXXHV11QG9e/R48623M51JXdRhtkAz1kiv4khr6/tbT2/XrpYB/Yr7zJw9+08HXi+RsnR5SY/zv/pHxW+0aNH6xBO7nNV50+YtPxgzus3JJw/+znfy8vJqbhd079pt/NixSZKceMIJEyfcMumuO1u0aJGXm3v7bbfV/KK9e/b8eNu28T+/+bjUy+yGjyg6sON80GmnnVa28d2lJRnNJK2aIw87W6AZy9m+a8fRvWle5m83WlJa2r/WK2iA5uHoytmUWxzqDFALv+oNEJRAAwQl0ABBCTRAUAINEJRAAwQl0ABBCTRAUAINEJRAAwQl0ABBCTRAUAINEJRAAwQl0ABBCTRAUAINEJRAAwQl0ABBCTRAUAINEJRAAwQl0ABBCTRAUAINEJRAAwQl0ABBCTRAUAINEJRAAwQl0ABBCTRAUAINEJRAAwQl0ABBCTRAUAINEJRAAwQl0ABBCTRAUAINEJRAAwQl0ABBCTRAUAINEJRAAwQl0ABBCTRAUAINEJRAAwQl0ABBCTRAUAINEJRAAwSV39QTCKr39SNqHlz52F+aYi5wrLKOMiTQh3881bxVqeFIu2wdHQWBrtNDKu1gmYa0S8M6qi/2oI/4UZXhWdBcWUf1LtuvoA/1kEp7dVxzsEtpsI4aTs72XTuO6ITiQRelPljx8uLkGFczuHXctTjqE6H5sY4arpy2OI4msnIMma8O6+iwsjfQ1X7sH+ljpdp4+9FkJ+uoQWVpoDN8VKU9S6PJNtZRQ8vSQNfX8yzP0cA6aji5Wf5jP/PCVr0HF9FkD+uoEWRjoAGOCQINEFTWBbp+n5fVvB+7HGQD66hxZF2gAY4V2f6r3k3i4X6XNvUUoDY3Ln/BNygCV9AAQQk0QFACDRCUPegmYIMPqIusu4JuiJfENcRLjiAy66hxZF2gAY4VAg0QVDYGun6fndnfIDtZR40gGwNdTSaN9ovdYB01nCwNdL281369vFs5HLuso4aWpYHO/LGlzmAdNbTsDXRNdW+0nQ2wjhpBzvZdOxrhPw8P61CpTbtfcUSDIXtYRw1UzmwPdIZXxNIM1lHDldMWR739r96Q5ayjeue9OL722KrjpbQ0Qy1LwzqqLwKdvrxpH2G6DHVhHdUXgU5PiyFz1lGG7EEDBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QlEADBCXQAEEJNEBQAg0QVP5Rn1k86KJ6nQkAX+MKGiAogQYIKmf7rh1NPQcA0nAFDRCUQAMEJdAAQQk0QFACDRCUQAMEJdAAQQk0QFACDRCUQAMEJdAAQQk0QFACDRCUQAMEJdAAQQk0QFACDRCUQAMEJdAAQQk0QFACDRCUQAMEJdAAQQk0QFACDRCUQAMEJdAAQQk0QFACDRCUQAMEJdAAQQk0QBLT/wBWHso3WzngJwAAAABJRU5ErkJggg=="
+        }
+      ]
+    }
+  },
+  "futureEnvelope": {
+    "preserve": [
+      "envelope",
+      4
+    ]
+  }
+}

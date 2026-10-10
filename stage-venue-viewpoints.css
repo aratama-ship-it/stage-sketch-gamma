@@ -1,0 +1,41 @@
+#venue-viewpoints-hint { grid-column: 1 / -1; margin: 0; padding: 8px 0; color: #f2ead6; font: 13px/1.5 var(--sans); }
+#venue-viewpoint-layer { position: absolute; z-index: 3; overflow: hidden; pointer-events: none; }
+#venue-viewpoint-layer[hidden], #venue-viewpoint-layer [hidden], #venue-viewpoints-hint[hidden] { display: none !important; }
+#venue-viewpoint-layer svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#venue-viewpoint-layer path { fill: none; stroke: #d3ac59; stroke-width: 1.5; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
+.venue-viewpoint { position: absolute; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; transform: translate(-50%, -50%); display: grid; place-items: center; border: 0; background: transparent; color: #f2ead6; pointer-events: auto; touch-action: none; cursor: grab; font: 12px/1.5 var(--sans); }
+.venue-viewpoint-dot { width: 24px; height: 24px; box-sizing: border-box; border: 2px solid #f2ead6; border-radius: 50%; background: #201b16; display: grid; place-items: center; }
+.venue-viewpoint.is-selected { z-index: 1; }
+.venue-viewpoint.is-selected .venue-viewpoint-dot { width: 28px; height: 28px; color: #d3ac59; border-color: #d3ac59; }
+.venue-viewpoint-label { position: absolute; left: 40px; top: 11px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: #201b16; padding: 1px 5px; border-radius: 2px; pointer-events: none; }
+.venue-viewpoint:focus-visible { outline: 2px solid #d3ac59; outline-offset: -2px; }
+/* ★見る先（2026-10-07）: 選んだ見る位置の線の先。既定（舞台の真ん中）は破線の輪、動かしたものは実線の輪＋中心の点。押せる範囲は見る位置の点と同じ 44px。 */
+.venue-viewpoint-target { position: absolute; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; transform: translate(-50%, -50%); display: grid; place-items: center; border: 0; background: transparent; pointer-events: auto; cursor: grab; touch-action: none; }
+.venue-viewpoint-target-ring { width: 18px; height: 18px; box-sizing: border-box; border: 2px dashed #d3ac59; border-radius: 50%; background: rgba(32,27,22,.6); }
+.venue-viewpoint-target.is-custom .venue-viewpoint-target-ring { border-style: solid; background: radial-gradient(circle, #d3ac59 0 3px, rgba(32,27,22,.7) 3.5px); }
+.venue-viewpoint-target:focus-visible { outline: 2px solid #d3ac59; outline-offset: -2px; }
+
+/* Section 9 alone owns the hit area, so ordinary venue drawing stays unobstructed. */
+#venue-viewpoint-layer:not([hidden]) { pointer-events: auto; touch-action: none; }
+#venue-viewpoint-layer.is-placing { cursor: crosshair; }
+.venue-viewpoints-controls { display: grid; grid-template-columns: minmax(0,1fr); gap: 8px; font: 11px/1.5 var(--sans); color: #f2ead6; }
+.venue-viewpoints-controls label { color: var(--milk-dim, #bdb3a4); }
+.venue-viewpoints-controls input, .venue-viewpoints-controls select, .venue-viewpoints-controls button { box-sizing: border-box; width: 100%; min-width: 0; }
+.venue-viewpoints-controls input, .venue-viewpoints-controls select { height: 34px; min-height: 34px; margin: 0; font: 12px var(--sans); }
+.venue-viewpoints-controls button { min-height: 44px; padding: 5px 6px; font: 10px/1.5 var(--sans); letter-spacing: .03em; }
+.venue-viewpoints-controls .stage-profile-hint, .stage-venue-editor-viewpoints > .stage-profile-hint { margin: 0; font: 11px/1.5 var(--sans); color: #bdb3a4; }
+.venue-viewpoints-controls button:focus-visible, .venue-viewpoints-controls input:focus-visible, .venue-viewpoints-controls select:focus-visible { outline: 2px solid #d3ac59; outline-offset: 2px; }
+
+/* R05: pair related fields/actions; retain full labels and a 44px hit area. */
+.venue-viewpoints-controls { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px 10px; }
+.venue-viewpoints-field { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.venue-viewpoints-field-wide, .venue-viewpoints-controls > p { grid-column:1 / -1; }
+.venue-viewpoints-field label { min-height: 2.8em; display:flex; align-items:end; }
+.venue-viewpoints-field-wide label { min-height:0; }
+.venue-viewpoints-controls input, .venue-viewpoints-controls select { min-height:44px; }
+.venue-viewpoints-controls .stage-venue-editor-ceiling-input { min-width:0; }
+.venue-viewpoints-controls .stage-venue-editor-ceiling-input input { width:100%; }
+.venue-height-reference { font:12px/1.5 var(--sans); color:var(--milk-dim, #bdb3a4); }
+.venue-viewpoint-label { width:max-content; max-width:160px; white-space:normal; line-height:1.3; }
+
+#gamma-venue-workspace .venue-viewpoints-controls input, #gamma-venue-workspace .venue-viewpoints-controls select { min-height:44px; }

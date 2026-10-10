@@ -1,0 +1,59 @@
+:root{--program-bg:#f5f3ed;--program-surface:#fff;--program-ink:#25352f;--program-muted:#52625a;--program-accent:#245540;--program-accent-light:#edf3ee;--program-call:#842e3b;--program-line:#79877e;--s1:4px;--s2:8px;--s3:12px;--s4:16px;--s6:24px;--s8:32px;--ctrl-lg:44px;--header:56px;--radius:4px;--focus:3px;--fs-body:16px;--fs-small:14px;--fs-h2:18px;--max-width:1440px;--dialog-width:600px}
+*{box-sizing:border-box}body{margin:0;background:var(--program-bg);color:var(--program-ink);font:var(--fs-body)/1.7 system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif}button,input,select{font:inherit;color:inherit;min-height:var(--ctrl-lg);border:1px solid var(--program-line);border-radius:var(--radius);background:var(--program-surface);padding:var(--s2) var(--s3)}button{cursor:pointer}button:hover{background:var(--program-accent-light)}button:disabled{cursor:default}button:focus-visible,input:focus-visible,select:focus-visible{outline:var(--focus) solid var(--program-accent);outline-offset:var(--s1)}[hidden]{display:none!important}.run-header{position:sticky;top:0;z-index:2;min-height:var(--header);display:flex;align-items:center;justify-content:space-between;gap:var(--s4);padding:var(--s1) var(--s8);background:var(--program-surface);border-bottom:1px solid var(--program-line)}h1{font-size:var(--fs-h2);line-height:1.5;margin:0;white-space:nowrap}h1 small{font-size:var(--fs-small);color:var(--program-muted);margin-left:var(--s2)}nav{display:flex;gap:var(--s2);flex-wrap:wrap}main{max-width:var(--max-width);margin:auto;padding:var(--s4) var(--s8)}.show-heading{display:flex;align-items:center;gap:var(--s3);margin-bottom:var(--s4)}.show-heading label{white-space:nowrap;font-size:var(--fs-small)}#show-title{flex:1;min-width:0}#save-status{font-size:var(--fs-small);color:var(--program-muted);min-width:8em}#save-status[data-error]{color:var(--program-call)}iframe{display:block;width:100%;height:calc(100vh - 152px);min-height:600px;border:0;background:var(--program-bg)}dialog{width:var(--dialog-width);max-width:calc(100vw - 64px);max-height:80vh;padding:var(--s6);border:1px solid var(--program-line);border-radius:var(--radius);background:var(--program-surface);color:var(--program-ink)}dialog::backdrop{background:rgba(37,53,47,.35)}.dialog-heading{display:flex;align-items:center;justify-content:space-between;gap:var(--s4)}h2{font-size:var(--fs-h2);line-height:1.5;margin:0}p{max-width:46em}#show-list{padding:0;list-style:none}#show-list li{border-top:1px solid var(--program-line);padding:var(--s2) 0}#show-list button{width:100%;text-align:left}#show-list small{display:block;color:var(--program-muted)}#shell-error{border:var(--focus) solid var(--program-call);padding:var(--s4);margin-bottom:var(--s4);background:var(--program-surface)}@media(max-width:1200px){.run-header{align-items:flex-start;flex-direction:column;padding-block:var(--s2)}}@media print{.run-header,.show-heading{display:none}}
+
+/* The shared paper editor receives only this small host mapping. */
+body.run-paper{--fs-h2:18px;--fs-h3:18px;--fs-h1:24px}.run-paper main{padding:0}.run-paper #preview{padding-top:0;border-top:0}.run-paper #document-storage{display:none}.run-paper .section-head h2{margin-bottom:var(--s2)}.run-paper .section-head{margin-bottom:var(--s2)}.run-paper summary{min-height:44px;padding-block:var(--s2)}@media screen{.run-paper .paper-header h3{font-size:24px}.run-paper [role=button]{min-height:44px;min-width:44px}.run-paper input,.run-paper select,.run-paper button{min-width:44px}.run-paper .paper-editable{line-height:1.55}}
+
+/* 版の札（Lite）。stage.html / company.html の Studio／Company と同じ考え（枠1px・字間.12em）。白地なので濃い緑で。 */
+.run-header .run-edition{display:inline-flex;align-items:center;height:24px;padding:0 8px;margin:0 2px;border:1px solid var(--program-accent);border-radius:var(--radius);color:var(--program-accent);font-size:var(--fs-small);font-weight:600;letter-spacing:.12em;line-height:1;vertical-align:middle}
+
+:root{--program-bg:#191512;--program-surface:#201b16;--program-ink:#efe7d6;--program-muted:#93856c;--program-accent:#9c823f;--program-line:#382f25}
+body{background:var(--program-bg);color:var(--program-ink)}button,input,select{background:var(--program-surface);color:var(--program-ink);border-color:var(--program-line)}
+
+/* Approved Lite plan A (TOKEN_SHEET.md, 2026-10-08). Loaded only in Lite, screen only.
+   The toolbar stays above the paper; the old >=1324px left panel would steal its width. */
+.lite-paper{--ros-left-min:600px;--ros-right-min:320px;--ros-gap:24px;--ros-figure-max:200px;--ros-textarea:96px;--lite-band-height:96px}
+.lite-paper main{max-width:none;padding:0 var(--pane-gutter)}
+.lite-paper #preview,.lite-paper #preview:has(.doc-frame[data-paper-format=free]){display:block;padding:0;}
+.lite-paper #paper-panel{display:block;position:sticky;top:0;max-height:none;overflow:visible;padding:0;z-index:3;grid-area:auto;background:var(--desk)}
+.lite-paper #paper-panel .paper-sticky{position:static;background:var(--desk)}
+.lite-paper #paper-panel .paper-band{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:var(--s1);padding:0;position:static}
+.lite-paper #paper-panel .paper-band .band-group,.lite-paper #paper-panel .paper-band .band-subgroup{display:contents}
+.lite-paper #paper-panel .band-heading{display:none}
+.lite-paper #paper-panel .band-split{display:block}
+.lite-paper #paper-panel .paper-band select,.lite-paper #paper-panel #paper-item-picker{flex:0 1 auto;width:auto;max-width:100%}
+.lite-paper #paper-panel #paper-item-picker{max-width:min(var(--editor),100%)}
+.lite-paper #paper-panel .band-size{display:inline-flex;flex-direction:row;flex:0 0 auto;width:auto;gap:var(--s1)}
+.lite-paper #paper-size-input{width:76px;max-width:76px;height:var(--control);padding:0 var(--s1);font-size:var(--fs-small)}
+.lite-paper #paper-size-label{display:none}
+.lite-paper #paper-panel #band-status{margin:0;font-size:var(--fs-small);color:var(--chrome-ink)}
+.lite-paper .doc-frame{grid-area:auto;min-width:0;max-width:100%}
+.lite-paper .doc-frame[data-paper-format^=a4]{padding:var(--s1)}
+.lite-paper #ros-selected{min-width:0;margin:var(--s6) 0 0;padding:var(--s4);background:var(--bg);color:var(--ink);border:var(--rule) solid var(--line)}
+.lite-paper #ros-selected .section-head{display:block}
+.lite-paper #ros-selected .label,.lite-paper #ros-selected .small{color:var(--muted)}
+.lite-paper #ros-selected h3{font-size:var(--fs-h3);overflow-wrap:anywhere;text-wrap:wrap}
+.lite-paper #ros-selected .editor-fields{display:block}
+.lite-paper #ros-selected input,.lite-paper #ros-selected textarea,.lite-paper #ros-selected button,.lite-paper #ros-selected .button{background:var(--surface);color:var(--ink);border-color:var(--line);font-size:var(--fs-body)}
+.lite-paper #ros-selected button:hover,.lite-paper #ros-selected .button:hover{background:var(--accent-light)}
+.lite-paper #ros-selected input{min-height:var(--control)}
+.lite-paper #ros-selected textarea{min-height:var(--ros-textarea)}
+.lite-paper #ros-selected output{display:block;min-height:var(--control);padding:var(--s2) var(--s3);border:var(--rule) solid var(--line);font-variant-numeric:tabular-nums}
+.lite-paper #make-scene{width:100%;min-height:var(--control);margin-bottom:var(--s4);color:var(--accent);border-color:var(--accent)}
+.lite-paper #ros-selected .stage-figures{grid-template-columns:minmax(0,1fr);height:auto;min-height:0;padding:var(--s3) 0;gap:var(--s3)}
+.lite-paper #ros-selected .stage-figures figure{height:auto;overflow:visible}
+.lite-paper #ros-selected .stage-figures img{height:auto;aspect-ratio:16/9;max-height:var(--ros-figure-max);object-fit:contain}
+.lite-paper #ros-selected .stage-figures img:not([src]){display:none}
+.lite-paper #ros-selected .stage-figures figcaption{color:var(--muted);white-space:normal}
+.lite-paper #ros-selected .toolbar:has(a[href="#preview"])>a{display:none}
+.lite-paper #paper-scene{display:none}
+.lite-paper #ros-selected input:focus-visible,.lite-paper #ros-selected textarea:focus-visible,.lite-paper #ros-selected button:focus-visible{outline:var(--focus) solid var(--call);outline-offset:var(--s1)}
+@media(min-width:1200px){
+  .lite-paper:not(.lite-stacked) #preview,.lite-paper:not(.lite-stacked) #preview:has(.doc-frame[data-paper-format=free]){display:grid;grid-template-columns:minmax(max(var(--ros-left-min),var(--lite-paper-min)),2fr) minmax(var(--ros-right-min),1fr);grid-template-rows:auto auto 1fr;grid-template-areas:none;column-gap:var(--ros-gap);justify-content:stretch;align-items:start}
+  .lite-paper #paper-panel{grid-column:1/-1;grid-row:1}
+  .lite-paper #document-error{grid-area:auto;grid-column:1/-1;grid-row:2}
+  .lite-paper .doc-frame{grid-column:1;grid-row:3}
+  .lite-paper #ros-selected{grid-column:2;grid-row:3;margin:0;position:sticky;top:var(--lite-band-height);max-height:calc(100dvh - var(--lite-band-height));overflow-y:auto;overscroll-behavior:contain}
+}
+.lite-paper.lite-stacked #ros-selected{position:static;max-height:none;overflow:visible;margin-top:var(--s6)}
+@media(max-width:1199px){.lite-paper #paper-panel{position:static}.lite-paper #ros-selected{position:static;max-height:none;overflow:visible}}

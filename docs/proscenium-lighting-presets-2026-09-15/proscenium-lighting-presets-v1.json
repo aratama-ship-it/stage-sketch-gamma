@@ -1,0 +1,5085 @@
+{
+  "format": "shosai.proscenium-lighting-presets",
+  "version": 1,
+  "generatedAt": "2026-09-15T00:00:00.000Z",
+  "status": "gamma-candidate-isolated-not-integrated-not-published",
+  "scope": "proscenium-small-mid-large",
+  "compatibility": {
+    "stageVenueSource": "stage-venues.js / VENUES_V2 / proscenium",
+    "currentPreviewFormat": "shosai.light-design@1",
+    "rigFamily": "theatre-house-v2-mixed",
+    "integrationRule": "append-or-explicit-replace-only; never silently replace an existing rig or cue",
+    "unknownFieldRule": "preserve fixture metadata and presetMeta through round trips"
+  },
+  "safety": {
+    "status": "concept-only",
+    "exclusions": [
+      "吊荷重計算",
+      "電源容量・回路",
+      "DMXアドレス",
+      "放熱・離隔",
+      "消防申請",
+      "実在会場の在庫保証",
+      "レーザー安全評価"
+    ],
+    "laser": {
+      "default": "off",
+      "aim": "air-stage-side-only",
+      "audienceScanning": "prohibited-in-preset",
+      "requiredBeforeUse": [
+        "会場承認",
+        "資格・経験を持つレーザー担当者",
+        "現地の法令・ガイドライン確認",
+        "現場測定と照射範囲確認"
+      ]
+    }
+  },
+  "fixtureTypes": {
+    "profile-zoom": {
+      "label": "プロファイル（ズーム）",
+      "family": "profile",
+      "kind": "fixed",
+      "beamDeg": 26,
+      "color": "#d3ac59"
+    },
+    "fresnel": {
+      "label": "フレネル",
+      "family": "wash",
+      "kind": "fixed",
+      "beamDeg": 40,
+      "color": "#efe7d6"
+    },
+    "led-par": {
+      "label": "LED PAR",
+      "family": "wash",
+      "kind": "fixed",
+      "beamDeg": 28,
+      "color": "#88a9c3"
+    },
+    "moving-profile": {
+      "label": "ムービング・プロファイル",
+      "family": "moving",
+      "kind": "moving",
+      "beamDeg": 18,
+      "color": "#72b6a1"
+    },
+    "moving-wash": {
+      "label": "ムービング・ウォッシュ",
+      "family": "moving",
+      "kind": "moving",
+      "beamDeg": 36,
+      "color": "#72b6a1"
+    },
+    "moving-beam": {
+      "label": "ムービング・ビーム",
+      "family": "moving",
+      "kind": "moving",
+      "beamDeg": 8,
+      "color": "#72b6a1"
+    },
+    "strobe": {
+      "label": "ストロボ",
+      "family": "effect",
+      "kind": "fixed",
+      "beamDeg": 60,
+      "color": "#df6433"
+    },
+    "blinder": {
+      "label": "ブラインダー",
+      "family": "effect",
+      "kind": "fixed",
+      "beamDeg": 60,
+      "color": "#df6433"
+    },
+    "laser-projector": {
+      "label": "演出レーザー（持込想定）",
+      "family": "laser",
+      "kind": "laser",
+      "beamDeg": 4,
+      "color": "#c877b2"
+    },
+    "led-cyc": {
+      "label": "LEDホリゾント列",
+      "family": "cyc",
+      "kind": "fixed",
+      "beamDeg": 50,
+      "color": "#7891d8"
+    }
+  },
+  "sources": [
+    {
+      "id": "setagaya-tram",
+      "venueScale": "small",
+      "title": "世田谷パブリックシアター シアタートラム",
+      "url": "https://setagaya-pt.jp/guide/tram/",
+      "equipmentUrl": "https://setagaya-pt.jp/assets/docs/about/05.tramLight_kizailist202304.pdf",
+      "usedFor": "小劇場で一般的な固定灯・プロファイル・PAR・効果機器のカテゴリ確認",
+      "accessedAt": "2026-09-15"
+    },
+    {
+      "id": "geigeki-playhouse",
+      "venueScale": "mid",
+      "title": "東京芸術劇場 プレイハウス",
+      "url": "https://www.geigeki.jp/rent/playhouse/index.html",
+      "equipmentUrl": "https://www.geigeki.jp/rent/pdf/ph_setsubi.pdf",
+      "usedFor": "中劇場の照明ブリッジ・バトン・サイド設備と機材カテゴリの確認",
+      "accessedAt": "2026-09-15"
+    },
+    {
+      "id": "nntt-opera-palace",
+      "venueScale": "large",
+      "title": "新国立劇場 オペラパレス",
+      "url": "https://cms.nntt.jac.go.jp/guide/operapalace/",
+      "usedFor": "大劇場のプロセニアム規模と複数ブリッジ／ギャラリーを持つ構成の確認",
+      "accessedAt": "2026-09-15"
+    },
+    {
+      "id": "kaat-main-studio",
+      "venueScale": "large",
+      "title": "KAAT 神奈川芸術劇場 ホール舞台平面図",
+      "url": "https://www.kaat.jp/assets/pdf/facilities_mainstudio_03.pdf",
+      "usedFor": "大規模舞台のブリッジ・キャットウォーク・フォロースポット位置の補助確認",
+      "accessedAt": "2026-09-15"
+    },
+    {
+      "id": "fda-laser",
+      "venueScale": "safety",
+      "title": "FDA: Laser Light Shows",
+      "url": "https://www.fda.gov/radiation-emitting-products/home-business-and-entertainment-products/laser-light-shows",
+      "usedFor": "レーザーを通常灯体と同一視せず、安全承認を別工程にする根拠",
+      "accessedAt": "2026-09-15"
+    },
+    {
+      "id": "ilda-safety",
+      "venueScale": "safety",
+      "title": "ILDA: Laser Safety Basics",
+      "url": "https://www.ilda.com/safety-basics.htm",
+      "usedFor": "観客方向への照射を初期状態から除外し、専門家確認を必須とする根拠",
+      "accessedAt": "2026-09-15"
+    }
+  ],
+  "presets": [
+    {
+      "id": "proscenium/small",
+      "venueType": "proscenium",
+      "sizeId": "small",
+      "label": "小劇場",
+      "stage": {
+        "W": 8,
+        "D": 7,
+        "H": 6
+      },
+      "nominalSeats": 200,
+      "intent": "少人数のストレートプレイやダンスに対応する、固定灯中心の軽量な標準仕込み。",
+      "modelStatus": "virtual-common-skeleton-not-a-venue-inventory",
+      "rig": {
+        "family": "theatre-house-v2-mixed",
+        "version": 2,
+        "trusses": [
+          {
+            "id": "small-t-01",
+            "v": 0.65,
+            "h": 5,
+            "label": "照明バトン1"
+          },
+          {
+            "id": "small-t-02",
+            "v": 0.22,
+            "h": 5,
+            "label": "照明バトン2"
+          }
+        ],
+        "fixtures": [
+          {
+            "id": "small-f-001",
+            "no": 1,
+            "name": "プロファイル（ズーム） 01",
+            "mount": {
+              "type": "front",
+              "u": 0.38,
+              "ahead": 2.5,
+              "h": 5.5571
+            },
+            "kind": "fixed",
+            "beamDeg": 16,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "中央前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-002",
+            "no": 2,
+            "name": "プロファイル（ズーム） 02",
+            "mount": {
+              "type": "front",
+              "u": 0.62,
+              "ahead": 2.5,
+              "h": 5.5571
+            },
+            "kind": "fixed",
+            "beamDeg": 16,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "中央前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-003",
+            "no": 3,
+            "name": "プロファイル（ズーム） 03",
+            "mount": {
+              "type": "front",
+              "u": 0.08,
+              "ahead": 1.5,
+              "h": 6.9803
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-004",
+            "no": 4,
+            "name": "プロファイル（ズーム） 04",
+            "mount": {
+              "type": "front",
+              "u": 0.32,
+              "ahead": 1.5,
+              "h": 6.9803
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-005",
+            "no": 5,
+            "name": "プロファイル（ズーム） 05",
+            "mount": {
+              "type": "front",
+              "u": 0.38,
+              "ahead": 1.5,
+              "h": 6.9803
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-006",
+            "no": 6,
+            "name": "プロファイル（ズーム） 06",
+            "mount": {
+              "type": "front",
+              "u": 0.62,
+              "ahead": 1.5,
+              "h": 6.9803
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-007",
+            "no": 7,
+            "name": "プロファイル（ズーム） 07",
+            "mount": {
+              "type": "front",
+              "u": 0.68,
+              "ahead": 1.5,
+              "h": 6.9803
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-008",
+            "no": 8,
+            "name": "プロファイル（ズーム） 08",
+            "mount": {
+              "type": "front",
+              "u": 0.92,
+              "ahead": 1.5,
+              "h": 6.9803
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-009",
+            "no": 9,
+            "name": "プロファイル（ズーム） 09",
+            "mount": {
+              "type": "front",
+              "u": 0.04,
+              "ahead": 2,
+              "h": 5
+            },
+            "kind": "fixed",
+            "beamDeg": 24,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "フロントサイド・クロス",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-010",
+            "no": 10,
+            "name": "プロファイル（ズーム） 10",
+            "mount": {
+              "type": "front",
+              "u": 0.96,
+              "ahead": 2,
+              "h": 5
+            },
+            "kind": "fixed",
+            "beamDeg": 24,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "フロントサイド・クロス",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-011",
+            "no": 11,
+            "name": "LED PAR 11",
+            "mount": {
+              "type": "truss",
+              "trussId": "small-t-01",
+              "u": 0.1
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-012",
+            "no": 12,
+            "name": "フレネル 12",
+            "mount": {
+              "type": "truss",
+              "trussId": "small-t-01",
+              "u": 0.26
+            },
+            "kind": "fixed",
+            "beamDeg": 40,
+            "fixtureType": "fresnel",
+            "family": "wash",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-013",
+            "no": 13,
+            "name": "ムービング・プロファイル 13",
+            "mount": {
+              "type": "truss",
+              "trussId": "small-t-01",
+              "u": 0.42
+            },
+            "kind": "moving",
+            "beamDeg": 18,
+            "fixtureType": "moving-profile",
+            "family": "moving",
+            "role": "手前地明かり／スペシャル",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-014",
+            "no": 14,
+            "name": "ムービング・プロファイル 14",
+            "mount": {
+              "type": "truss",
+              "trussId": "small-t-01",
+              "u": 0.58
+            },
+            "kind": "moving",
+            "beamDeg": 18,
+            "fixtureType": "moving-profile",
+            "family": "moving",
+            "role": "手前地明かり／スペシャル",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-015",
+            "no": 15,
+            "name": "フレネル 15",
+            "mount": {
+              "type": "truss",
+              "trussId": "small-t-01",
+              "u": 0.74
+            },
+            "kind": "fixed",
+            "beamDeg": 40,
+            "fixtureType": "fresnel",
+            "family": "wash",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-016",
+            "no": 16,
+            "name": "LED PAR 16",
+            "mount": {
+              "type": "truss",
+              "trussId": "small-t-01",
+              "u": 0.9
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-017",
+            "no": 17,
+            "name": "LED PAR 17",
+            "mount": {
+              "type": "truss",
+              "trussId": "small-t-02",
+              "u": 0.1
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "中段ウォッシュ／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-018",
+            "no": 18,
+            "name": "フレネル 18",
+            "mount": {
+              "type": "truss",
+              "trussId": "small-t-02",
+              "u": 0.26
+            },
+            "kind": "fixed",
+            "beamDeg": 40,
+            "fixtureType": "fresnel",
+            "family": "wash",
+            "role": "中段ウォッシュ／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-019",
+            "no": 19,
+            "name": "プロファイル（ズーム） 19",
+            "mount": {
+              "type": "truss",
+              "trussId": "small-t-02",
+              "u": 0.42
+            },
+            "kind": "fixed",
+            "beamDeg": 26,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "中段ウォッシュ／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-020",
+            "no": 20,
+            "name": "プロファイル（ズーム） 20",
+            "mount": {
+              "type": "truss",
+              "trussId": "small-t-02",
+              "u": 0.58
+            },
+            "kind": "fixed",
+            "beamDeg": 26,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "中段ウォッシュ／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-021",
+            "no": 21,
+            "name": "フレネル 21",
+            "mount": {
+              "type": "truss",
+              "trussId": "small-t-02",
+              "u": 0.74
+            },
+            "kind": "fixed",
+            "beamDeg": 40,
+            "fixtureType": "fresnel",
+            "family": "wash",
+            "role": "中段ウォッシュ／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-022",
+            "no": 22,
+            "name": "LED PAR 22",
+            "mount": {
+              "type": "truss",
+              "trussId": "small-t-02",
+              "u": 0.9
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "中段ウォッシュ／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-023",
+            "no": 23,
+            "name": "LED PAR 23",
+            "mount": {
+              "type": "side",
+              "side": "shimote",
+              "v": 0.32,
+              "h": 0.55
+            },
+            "kind": "fixed",
+            "beamDeg": 14,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "サイド低段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-024",
+            "no": 24,
+            "name": "プロファイル（ズーム） 24",
+            "mount": {
+              "type": "side",
+              "side": "shimote",
+              "v": 0.32,
+              "h": 2.4
+            },
+            "kind": "fixed",
+            "beamDeg": 32,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "サイド高段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-025",
+            "no": 25,
+            "name": "LED PAR 25",
+            "mount": {
+              "type": "side",
+              "side": "kamite",
+              "v": 0.32,
+              "h": 0.55
+            },
+            "kind": "fixed",
+            "beamDeg": 14,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "サイド低段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-026",
+            "no": 26,
+            "name": "プロファイル（ズーム） 26",
+            "mount": {
+              "type": "side",
+              "side": "kamite",
+              "v": 0.32,
+              "h": 2.4
+            },
+            "kind": "fixed",
+            "beamDeg": 32,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "サイド高段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-027",
+            "no": 27,
+            "name": "LED PAR 27",
+            "mount": {
+              "type": "side",
+              "side": "shimote",
+              "v": 0.68,
+              "h": 0.55
+            },
+            "kind": "fixed",
+            "beamDeg": 14,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "サイド低段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-028",
+            "no": 28,
+            "name": "プロファイル（ズーム） 28",
+            "mount": {
+              "type": "side",
+              "side": "shimote",
+              "v": 0.68,
+              "h": 2.4
+            },
+            "kind": "fixed",
+            "beamDeg": 32,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "サイド高段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-029",
+            "no": 29,
+            "name": "LED PAR 29",
+            "mount": {
+              "type": "side",
+              "side": "kamite",
+              "v": 0.68,
+              "h": 0.55
+            },
+            "kind": "fixed",
+            "beamDeg": 14,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "サイド低段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-030",
+            "no": 30,
+            "name": "プロファイル（ズーム） 30",
+            "mount": {
+              "type": "side",
+              "side": "kamite",
+              "v": 0.68,
+              "h": 2.4
+            },
+            "kind": "fixed",
+            "beamDeg": 32,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "サイド高段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-031",
+            "no": 31,
+            "name": "LED PAR 31",
+            "mount": {
+              "type": "floor",
+              "u": 0.0625,
+              "v": 0.1143
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "袖転がし",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-032",
+            "no": 32,
+            "name": "LED PAR 32",
+            "mount": {
+              "type": "floor",
+              "u": 0.9375,
+              "v": 0.1143
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "袖転がし",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-033",
+            "no": 33,
+            "name": "LEDホリゾント列 33",
+            "mount": {
+              "type": "cyc",
+              "len": 0.9,
+              "rung": "floor",
+              "reachM": 3.6
+            },
+            "kind": "fixed",
+            "beamDeg": 50,
+            "fixtureType": "led-cyc",
+            "family": "cyc",
+            "role": "ロアーホリゾント列",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "small-f-034",
+            "no": 34,
+            "name": "LEDホリゾント列 34",
+            "mount": {
+              "type": "cyc",
+              "len": 0.9,
+              "rung": "top",
+              "reachM": 3.6
+            },
+            "kind": "fixed",
+            "beamDeg": 50,
+            "fixtureType": "led-cyc",
+            "family": "cyc",
+            "role": "アッパーホリゾント列",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          }
+        ],
+        "bindings": {
+          "rigFamily": "theatre-house-v2-mixed",
+          "sizeId": "small",
+          "version": 2,
+          "groups": {
+            "CL.center": [
+              "small-f-001",
+              "small-f-002"
+            ],
+            "CL.area": [
+              "small-f-003",
+              "small-f-004",
+              "small-f-005",
+              "small-f-006",
+              "small-f-007",
+              "small-f-008"
+            ],
+            "FR": [
+              "small-f-009",
+              "small-f-010"
+            ],
+            "B1": [
+              "small-f-011",
+              "small-f-012",
+              "small-f-013",
+              "small-f-014",
+              "small-f-015",
+              "small-f-016"
+            ],
+            "B2": [
+              "small-f-017",
+              "small-f-018",
+              "small-f-019",
+              "small-f-020",
+              "small-f-021",
+              "small-f-022"
+            ],
+            "SL": [
+              "small-f-023",
+              "small-f-025",
+              "small-f-027",
+              "small-f-029"
+            ],
+            "SH": [
+              "small-f-024",
+              "small-f-026",
+              "small-f-028",
+              "small-f-030"
+            ],
+            "FL.edge.l": [
+              "small-f-031"
+            ],
+            "FL.edge.r": [
+              "small-f-032"
+            ],
+            "CY.lower": [
+              "small-f-033"
+            ],
+            "CY.upper": [
+              "small-f-034"
+            ],
+            "CL": [
+              "small-f-001",
+              "small-f-002",
+              "small-f-003",
+              "small-f-004",
+              "small-f-005",
+              "small-f-006",
+              "small-f-007",
+              "small-f-008"
+            ],
+            "CY": [
+              "small-f-033",
+              "small-f-034"
+            ],
+            "FL": [
+              "small-f-031",
+              "small-f-032"
+            ],
+            "WASH": [
+              "small-f-011",
+              "small-f-012",
+              "small-f-013",
+              "small-f-014",
+              "small-f-015",
+              "small-f-016",
+              "small-f-017",
+              "small-f-018",
+              "small-f-021",
+              "small-f-022"
+            ],
+            "SPECIAL": [
+              "small-f-013",
+              "small-f-014",
+              "small-f-019",
+              "small-f-020"
+            ],
+            "BACK": [
+              "small-f-017",
+              "small-f-018",
+              "small-f-019",
+              "small-f-020",
+              "small-f-021",
+              "small-f-022"
+            ],
+            "EFFECT": [],
+            "LASER": []
+          },
+          "defaultAim": {
+            "small-f-001": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "small-f-002": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "small-f-003": {
+              "surface": "air",
+              "a": {
+                "u": 0.2,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "small-f-004": {
+              "surface": "air",
+              "a": {
+                "u": 0.2,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "small-f-005": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "small-f-006": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "small-f-007": {
+              "surface": "air",
+              "a": {
+                "u": 0.8,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "small-f-008": {
+              "surface": "air",
+              "a": {
+                "u": 0.8,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "small-f-009": {
+              "surface": "air",
+              "a": {
+                "u": 0.65,
+                "v": 0.55,
+                "hM": 1.2
+              }
+            },
+            "small-f-010": {
+              "surface": "air",
+              "a": {
+                "u": 0.35,
+                "v": 0.55,
+                "hM": 1.2
+              }
+            },
+            "small-f-011": {
+              "surface": "floor",
+              "a": {
+                "u": 0.1,
+                "v": 0.59,
+                "hM": 0
+              }
+            },
+            "small-f-012": {
+              "surface": "floor",
+              "a": {
+                "u": 0.26,
+                "v": 0.59,
+                "hM": 0
+              }
+            },
+            "small-f-013": {
+              "surface": "floor",
+              "a": {
+                "u": 0.42,
+                "v": 0.59,
+                "hM": 0
+              }
+            },
+            "small-f-014": {
+              "surface": "floor",
+              "a": {
+                "u": 0.58,
+                "v": 0.59,
+                "hM": 0
+              }
+            },
+            "small-f-015": {
+              "surface": "floor",
+              "a": {
+                "u": 0.74,
+                "v": 0.59,
+                "hM": 0
+              }
+            },
+            "small-f-016": {
+              "surface": "floor",
+              "a": {
+                "u": 0.9,
+                "v": 0.59,
+                "hM": 0
+              }
+            },
+            "small-f-017": {
+              "surface": "floor",
+              "a": {
+                "u": 0.1,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "small-f-018": {
+              "surface": "floor",
+              "a": {
+                "u": 0.26,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "small-f-019": {
+              "surface": "floor",
+              "a": {
+                "u": 0.42,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "small-f-020": {
+              "surface": "floor",
+              "a": {
+                "u": 0.58,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "small-f-021": {
+              "surface": "floor",
+              "a": {
+                "u": 0.74,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "small-f-022": {
+              "surface": "floor",
+              "a": {
+                "u": 0.9,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "small-f-023": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.32,
+                "hM": 0.55
+              }
+            },
+            "small-f-024": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.32,
+                "hM": 1.2
+              }
+            },
+            "small-f-025": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.32,
+                "hM": 0.55
+              }
+            },
+            "small-f-026": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.32,
+                "hM": 1.2
+              }
+            },
+            "small-f-027": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.68,
+                "hM": 0.55
+              }
+            },
+            "small-f-028": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.68,
+                "hM": 1.2
+              }
+            },
+            "small-f-029": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.68,
+                "hM": 0.55
+              }
+            },
+            "small-f-030": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.68,
+                "hM": 1.2
+              }
+            },
+            "small-f-031": {
+              "surface": "air",
+              "a": {
+                "u": 0.0625,
+                "v": 0.65,
+                "hM": 1.2
+              }
+            },
+            "small-f-032": {
+              "surface": "air",
+              "a": {
+                "u": 0.9375,
+                "v": 0.65,
+                "hM": 1.2
+              }
+            },
+            "small-f-033": {
+              "surface": "back",
+              "a": {
+                "u": 0.5,
+                "v": 0,
+                "hM": 3.3
+              }
+            },
+            "small-f-034": {
+              "surface": "back",
+              "a": {
+                "u": 0.5,
+                "v": 0,
+                "hM": 3.3
+              }
+            }
+          },
+          "washDeg": 50
+        }
+      },
+      "fixtureSummary": [
+        {
+          "id": "profile-zoom",
+          "label": "プロファイル（ズーム）",
+          "family": "profile",
+          "color": "#d3ac59",
+          "count": 16
+        },
+        {
+          "id": "led-par",
+          "label": "LED PAR",
+          "family": "wash",
+          "color": "#88a9c3",
+          "count": 10
+        },
+        {
+          "id": "fresnel",
+          "label": "フレネル",
+          "family": "wash",
+          "color": "#efe7d6",
+          "count": 4
+        },
+        {
+          "id": "moving-profile",
+          "label": "ムービング・プロファイル",
+          "family": "moving",
+          "color": "#72b6a1",
+          "count": 2
+        },
+        {
+          "id": "led-cyc",
+          "label": "LEDホリゾント列",
+          "family": "cyc",
+          "color": "#7891d8",
+          "count": 2
+        }
+      ],
+      "touringSlots": [
+        {
+          "id": "small-truss-flex",
+          "label": "バトン追加持込枠",
+          "zone": "B1/B2",
+          "accepts": [
+            "小型ムービング",
+            "LED PAR"
+          ],
+          "maxCount": null,
+          "capacityStatus": "venue-confirmation-required",
+          "representedInRig": false
+        },
+        {
+          "id": "small-floor-flex",
+          "label": "床置き持込枠",
+          "zone": "奥・袖",
+          "accepts": [
+            "LED PAR",
+            "小型エフェクト"
+          ],
+          "maxCount": null,
+          "capacityStatus": "venue-confirmation-required",
+          "representedInRig": false
+        }
+      ],
+      "auxiliaryEquipment": [
+        {
+          "label": "フォロースポットは会場条件確認後に追加",
+          "status": "concept-only-not-in-rig"
+        },
+        {
+          "label": "スモーク／ヘイズは消防・会場承認後に追加",
+          "status": "concept-only-not-in-rig"
+        }
+      ],
+      "sourceIds": [
+        "setagaya-tram"
+      ]
+    },
+    {
+      "id": "proscenium/mid",
+      "venueType": "proscenium",
+      "sizeId": "mid",
+      "label": "中劇場",
+      "stage": {
+        "W": 12,
+        "D": 9,
+        "H": 8
+      },
+      "nominalSeats": 800,
+      "intent": "演劇・ダンス・音楽イベントを切り替えやすい、固定灯とムービングの混成標準仕込み。",
+      "modelStatus": "virtual-common-skeleton-not-a-venue-inventory",
+      "rig": {
+        "family": "theatre-house-v2-mixed",
+        "version": 2,
+        "trusses": [
+          {
+            "id": "mid-t-01",
+            "v": 0.78,
+            "h": 6.5,
+            "label": "照明バトン1"
+          },
+          {
+            "id": "mid-t-02",
+            "v": 0.5,
+            "h": 6.5,
+            "label": "照明バトン2"
+          },
+          {
+            "id": "mid-t-03",
+            "v": 0.22,
+            "h": 6.5,
+            "label": "照明バトン3"
+          }
+        ],
+        "fixtures": [
+          {
+            "id": "mid-f-001",
+            "no": 1,
+            "name": "プロファイル（ズーム） 01",
+            "mount": {
+              "type": "front",
+              "u": 0.38,
+              "ahead": 3.5,
+              "h": 7.1276
+            },
+            "kind": "fixed",
+            "beamDeg": 12,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "中央前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-002",
+            "no": 2,
+            "name": "プロファイル（ズーム） 02",
+            "mount": {
+              "type": "front",
+              "u": 0.62,
+              "ahead": 3.5,
+              "h": 7.1276
+            },
+            "kind": "fixed",
+            "beamDeg": 12,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "中央前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-003",
+            "no": 3,
+            "name": "プロファイル（ズーム） 03",
+            "mount": {
+              "type": "front",
+              "u": 0.08,
+              "ahead": 3.5,
+              "h": 7.1276
+            },
+            "kind": "fixed",
+            "beamDeg": 32,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-004",
+            "no": 4,
+            "name": "プロファイル（ズーム） 04",
+            "mount": {
+              "type": "front",
+              "u": 0.32,
+              "ahead": 3.5,
+              "h": 7.1276
+            },
+            "kind": "fixed",
+            "beamDeg": 32,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-005",
+            "no": 5,
+            "name": "プロファイル（ズーム） 05",
+            "mount": {
+              "type": "front",
+              "u": 0.68,
+              "ahead": 3.5,
+              "h": 7.1276
+            },
+            "kind": "fixed",
+            "beamDeg": 32,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-006",
+            "no": 6,
+            "name": "プロファイル（ズーム） 06",
+            "mount": {
+              "type": "front",
+              "u": 0.92,
+              "ahead": 3.5,
+              "h": 7.1276
+            },
+            "kind": "fixed",
+            "beamDeg": 32,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-007",
+            "no": 7,
+            "name": "プロファイル（ズーム） 07",
+            "mount": {
+              "type": "front",
+              "u": 0.08,
+              "ahead": 2,
+              "h": 8.7388
+            },
+            "kind": "fixed",
+            "beamDeg": 32,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-008",
+            "no": 8,
+            "name": "プロファイル（ズーム） 08",
+            "mount": {
+              "type": "front",
+              "u": 0.32,
+              "ahead": 2,
+              "h": 8.7388
+            },
+            "kind": "fixed",
+            "beamDeg": 32,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-009",
+            "no": 9,
+            "name": "プロファイル（ズーム） 09",
+            "mount": {
+              "type": "front",
+              "u": 0.38,
+              "ahead": 2,
+              "h": 8.7388
+            },
+            "kind": "fixed",
+            "beamDeg": 32,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-010",
+            "no": 10,
+            "name": "プロファイル（ズーム） 10",
+            "mount": {
+              "type": "front",
+              "u": 0.62,
+              "ahead": 2,
+              "h": 8.7388
+            },
+            "kind": "fixed",
+            "beamDeg": 32,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-011",
+            "no": 11,
+            "name": "プロファイル（ズーム） 11",
+            "mount": {
+              "type": "front",
+              "u": 0.68,
+              "ahead": 2,
+              "h": 8.7388
+            },
+            "kind": "fixed",
+            "beamDeg": 32,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-012",
+            "no": 12,
+            "name": "プロファイル（ズーム） 12",
+            "mount": {
+              "type": "front",
+              "u": 0.92,
+              "ahead": 2,
+              "h": 8.7388
+            },
+            "kind": "fixed",
+            "beamDeg": 32,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-013",
+            "no": 13,
+            "name": "プロファイル（ズーム） 13",
+            "mount": {
+              "type": "front",
+              "u": 0.03,
+              "ahead": 2.5,
+              "h": 6
+            },
+            "kind": "fixed",
+            "beamDeg": 22,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "フロントサイド・クロス",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-014",
+            "no": 14,
+            "name": "プロファイル（ズーム） 14",
+            "mount": {
+              "type": "front",
+              "u": 0.97,
+              "ahead": 2.5,
+              "h": 6
+            },
+            "kind": "fixed",
+            "beamDeg": 22,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "フロントサイド・クロス",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-015",
+            "no": 15,
+            "name": "プロファイル（ズーム） 15",
+            "mount": {
+              "type": "front",
+              "u": 0.09,
+              "ahead": 2.5,
+              "h": 6
+            },
+            "kind": "fixed",
+            "beamDeg": 22,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "フロントサイド・クロス",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-016",
+            "no": 16,
+            "name": "プロファイル（ズーム） 16",
+            "mount": {
+              "type": "front",
+              "u": 0.91,
+              "ahead": 2.5,
+              "h": 6
+            },
+            "kind": "fixed",
+            "beamDeg": 22,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "フロントサイド・クロス",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-017",
+            "no": 17,
+            "name": "フレネル 17",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-01",
+              "u": 0.1
+            },
+            "kind": "fixed",
+            "beamDeg": 40,
+            "fixtureType": "fresnel",
+            "family": "wash",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-018",
+            "no": 18,
+            "name": "LED PAR 18",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-01",
+              "u": 0.2143
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-019",
+            "no": 19,
+            "name": "ムービング・プロファイル 19",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-01",
+              "u": 0.3286
+            },
+            "kind": "moving",
+            "beamDeg": 18,
+            "fixtureType": "moving-profile",
+            "family": "moving",
+            "role": "手前地明かり／スペシャル",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-020",
+            "no": 20,
+            "name": "プロファイル（ズーム） 20",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-01",
+              "u": 0.4429
+            },
+            "kind": "fixed",
+            "beamDeg": 26,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-021",
+            "no": 21,
+            "name": "プロファイル（ズーム） 21",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-01",
+              "u": 0.5571
+            },
+            "kind": "fixed",
+            "beamDeg": 26,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-022",
+            "no": 22,
+            "name": "ムービング・プロファイル 22",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-01",
+              "u": 0.6714
+            },
+            "kind": "moving",
+            "beamDeg": 18,
+            "fixtureType": "moving-profile",
+            "family": "moving",
+            "role": "手前地明かり／スペシャル",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-023",
+            "no": 23,
+            "name": "LED PAR 23",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-01",
+              "u": 0.7857
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-024",
+            "no": 24,
+            "name": "フレネル 24",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-01",
+              "u": 0.9
+            },
+            "kind": "fixed",
+            "beamDeg": 40,
+            "fixtureType": "fresnel",
+            "family": "wash",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-025",
+            "no": 25,
+            "name": "LED PAR 25",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-02",
+              "u": 0.1
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "中段ウォッシュ／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-026",
+            "no": 26,
+            "name": "ムービング・ウォッシュ 26",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-02",
+              "u": 0.2143
+            },
+            "kind": "moving",
+            "beamDeg": 36,
+            "fixtureType": "moving-wash",
+            "family": "moving",
+            "role": "中段ウォッシュ／効果",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-027",
+            "no": 27,
+            "name": "フレネル 27",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-02",
+              "u": 0.3286
+            },
+            "kind": "fixed",
+            "beamDeg": 40,
+            "fixtureType": "fresnel",
+            "family": "wash",
+            "role": "中段ウォッシュ／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-028",
+            "no": 28,
+            "name": "ムービング・プロファイル 28",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-02",
+              "u": 0.4429
+            },
+            "kind": "moving",
+            "beamDeg": 18,
+            "fixtureType": "moving-profile",
+            "family": "moving",
+            "role": "中段ウォッシュ／効果",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-029",
+            "no": 29,
+            "name": "ムービング・プロファイル 29",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-02",
+              "u": 0.5571
+            },
+            "kind": "moving",
+            "beamDeg": 18,
+            "fixtureType": "moving-profile",
+            "family": "moving",
+            "role": "中段ウォッシュ／効果",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-030",
+            "no": 30,
+            "name": "フレネル 30",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-02",
+              "u": 0.6714
+            },
+            "kind": "fixed",
+            "beamDeg": 40,
+            "fixtureType": "fresnel",
+            "family": "wash",
+            "role": "中段ウォッシュ／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-031",
+            "no": 31,
+            "name": "ムービング・ウォッシュ 31",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-02",
+              "u": 0.7857
+            },
+            "kind": "moving",
+            "beamDeg": 36,
+            "fixtureType": "moving-wash",
+            "family": "moving",
+            "role": "中段ウォッシュ／効果",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-032",
+            "no": 32,
+            "name": "LED PAR 32",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-02",
+              "u": 0.9
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "中段ウォッシュ／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-033",
+            "no": 33,
+            "name": "LED PAR 33",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-03",
+              "u": 0.1
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "バック／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-034",
+            "no": 34,
+            "name": "ムービング・ビーム 34",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-03",
+              "u": 0.2143
+            },
+            "kind": "moving",
+            "beamDeg": 8,
+            "fixtureType": "moving-beam",
+            "family": "moving",
+            "role": "バック／効果",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-035",
+            "no": 35,
+            "name": "LED PAR 35",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-03",
+              "u": 0.3286
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "バック／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-036",
+            "no": 36,
+            "name": "ムービング・ウォッシュ 36",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-03",
+              "u": 0.4429
+            },
+            "kind": "moving",
+            "beamDeg": 36,
+            "fixtureType": "moving-wash",
+            "family": "moving",
+            "role": "バック／効果",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-037",
+            "no": 37,
+            "name": "ムービング・ウォッシュ 37",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-03",
+              "u": 0.5571
+            },
+            "kind": "moving",
+            "beamDeg": 36,
+            "fixtureType": "moving-wash",
+            "family": "moving",
+            "role": "バック／効果",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-038",
+            "no": 38,
+            "name": "LED PAR 38",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-03",
+              "u": 0.6714
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "バック／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-039",
+            "no": 39,
+            "name": "ムービング・ビーム 39",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-03",
+              "u": 0.7857
+            },
+            "kind": "moving",
+            "beamDeg": 8,
+            "fixtureType": "moving-beam",
+            "family": "moving",
+            "role": "バック／効果",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-040",
+            "no": 40,
+            "name": "LED PAR 40",
+            "mount": {
+              "type": "truss",
+              "trussId": "mid-t-03",
+              "u": 0.9
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "バック／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-041",
+            "no": 41,
+            "name": "LED PAR 41",
+            "mount": {
+              "type": "side",
+              "side": "shimote",
+              "v": 0.32,
+              "h": 0.55
+            },
+            "kind": "fixed",
+            "beamDeg": 10,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "サイド低段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-042",
+            "no": 42,
+            "name": "プロファイル（ズーム） 42",
+            "mount": {
+              "type": "side",
+              "side": "shimote",
+              "v": 0.32,
+              "h": 2.4
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "サイド高段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-043",
+            "no": 43,
+            "name": "LED PAR 43",
+            "mount": {
+              "type": "side",
+              "side": "kamite",
+              "v": 0.32,
+              "h": 0.55
+            },
+            "kind": "fixed",
+            "beamDeg": 10,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "サイド低段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-044",
+            "no": 44,
+            "name": "プロファイル（ズーム） 44",
+            "mount": {
+              "type": "side",
+              "side": "kamite",
+              "v": 0.32,
+              "h": 2.4
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "サイド高段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-045",
+            "no": 45,
+            "name": "LED PAR 45",
+            "mount": {
+              "type": "side",
+              "side": "shimote",
+              "v": 0.68,
+              "h": 0.55
+            },
+            "kind": "fixed",
+            "beamDeg": 10,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "サイド低段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-046",
+            "no": 46,
+            "name": "プロファイル（ズーム） 46",
+            "mount": {
+              "type": "side",
+              "side": "shimote",
+              "v": 0.68,
+              "h": 2.4
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "サイド高段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-047",
+            "no": 47,
+            "name": "LED PAR 47",
+            "mount": {
+              "type": "side",
+              "side": "kamite",
+              "v": 0.68,
+              "h": 0.55
+            },
+            "kind": "fixed",
+            "beamDeg": 10,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "サイド低段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-048",
+            "no": 48,
+            "name": "プロファイル（ズーム） 48",
+            "mount": {
+              "type": "side",
+              "side": "kamite",
+              "v": 0.68,
+              "h": 2.4
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "サイド高段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-049",
+            "no": 49,
+            "name": "ムービング・ウォッシュ 49",
+            "mount": {
+              "type": "floor",
+              "u": 0.3,
+              "v": 0.0667
+            },
+            "kind": "moving",
+            "beamDeg": 36,
+            "fixtureType": "moving-wash",
+            "family": "moving",
+            "role": "奥転がし",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-050",
+            "no": 50,
+            "name": "ムービング・ウォッシュ 50",
+            "mount": {
+              "type": "floor",
+              "u": 0.7,
+              "v": 0.0667
+            },
+            "kind": "moving",
+            "beamDeg": 36,
+            "fixtureType": "moving-wash",
+            "family": "moving",
+            "role": "奥転がし",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-051",
+            "no": 51,
+            "name": "ムービング・ウォッシュ 51",
+            "mount": {
+              "type": "floor",
+              "u": 0.0417,
+              "v": 0.0889
+            },
+            "kind": "moving",
+            "beamDeg": 36,
+            "fixtureType": "moving-wash",
+            "family": "moving",
+            "role": "袖転がし",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-052",
+            "no": 52,
+            "name": "ムービング・ウォッシュ 52",
+            "mount": {
+              "type": "floor",
+              "u": 0.9583,
+              "v": 0.0889
+            },
+            "kind": "moving",
+            "beamDeg": 36,
+            "fixtureType": "moving-wash",
+            "family": "moving",
+            "role": "袖転がし",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-053",
+            "no": 53,
+            "name": "LEDホリゾント列 53",
+            "mount": {
+              "type": "cyc",
+              "len": 0.9,
+              "rung": "floor",
+              "reachM": 4.8
+            },
+            "kind": "fixed",
+            "beamDeg": 50,
+            "fixtureType": "led-cyc",
+            "family": "cyc",
+            "role": "ロアーホリゾント列",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "mid-f-054",
+            "no": 54,
+            "name": "LEDホリゾント列 54",
+            "mount": {
+              "type": "cyc",
+              "len": 0.9,
+              "rung": "top",
+              "reachM": 4.8
+            },
+            "kind": "fixed",
+            "beamDeg": 50,
+            "fixtureType": "led-cyc",
+            "family": "cyc",
+            "role": "アッパーホリゾント列",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          }
+        ],
+        "bindings": {
+          "rigFamily": "theatre-house-v2-mixed",
+          "sizeId": "mid",
+          "version": 2,
+          "groups": {
+            "CL.center": [
+              "mid-f-001",
+              "mid-f-002"
+            ],
+            "CL.area": [
+              "mid-f-003",
+              "mid-f-004",
+              "mid-f-005",
+              "mid-f-006",
+              "mid-f-007",
+              "mid-f-008",
+              "mid-f-009",
+              "mid-f-010",
+              "mid-f-011",
+              "mid-f-012"
+            ],
+            "FR": [
+              "mid-f-013",
+              "mid-f-014",
+              "mid-f-015",
+              "mid-f-016"
+            ],
+            "B1": [
+              "mid-f-017",
+              "mid-f-018",
+              "mid-f-019",
+              "mid-f-020",
+              "mid-f-021",
+              "mid-f-022",
+              "mid-f-023",
+              "mid-f-024"
+            ],
+            "B2": [
+              "mid-f-025",
+              "mid-f-026",
+              "mid-f-027",
+              "mid-f-028",
+              "mid-f-029",
+              "mid-f-030",
+              "mid-f-031",
+              "mid-f-032"
+            ],
+            "B3": [
+              "mid-f-033",
+              "mid-f-034",
+              "mid-f-035",
+              "mid-f-036",
+              "mid-f-037",
+              "mid-f-038",
+              "mid-f-039",
+              "mid-f-040"
+            ],
+            "SL": [
+              "mid-f-041",
+              "mid-f-043",
+              "mid-f-045",
+              "mid-f-047"
+            ],
+            "SH": [
+              "mid-f-042",
+              "mid-f-044",
+              "mid-f-046",
+              "mid-f-048"
+            ],
+            "FL.rear": [
+              "mid-f-049",
+              "mid-f-050"
+            ],
+            "FL.edge.l": [
+              "mid-f-051"
+            ],
+            "FL.edge.r": [
+              "mid-f-052"
+            ],
+            "CY.lower": [
+              "mid-f-053"
+            ],
+            "CY.upper": [
+              "mid-f-054"
+            ],
+            "CL": [
+              "mid-f-001",
+              "mid-f-002",
+              "mid-f-003",
+              "mid-f-004",
+              "mid-f-005",
+              "mid-f-006",
+              "mid-f-007",
+              "mid-f-008",
+              "mid-f-009",
+              "mid-f-010",
+              "mid-f-011",
+              "mid-f-012"
+            ],
+            "CY": [
+              "mid-f-053",
+              "mid-f-054"
+            ],
+            "FL": [
+              "mid-f-049",
+              "mid-f-050",
+              "mid-f-051",
+              "mid-f-052"
+            ],
+            "WASH": [
+              "mid-f-017",
+              "mid-f-018",
+              "mid-f-019",
+              "mid-f-022",
+              "mid-f-023",
+              "mid-f-024",
+              "mid-f-025",
+              "mid-f-026",
+              "mid-f-027",
+              "mid-f-028",
+              "mid-f-029",
+              "mid-f-030",
+              "mid-f-031",
+              "mid-f-032",
+              "mid-f-033",
+              "mid-f-034",
+              "mid-f-035",
+              "mid-f-036",
+              "mid-f-037",
+              "mid-f-038",
+              "mid-f-039",
+              "mid-f-040"
+            ],
+            "SPECIAL": [
+              "mid-f-019",
+              "mid-f-020",
+              "mid-f-021",
+              "mid-f-022",
+              "mid-f-026",
+              "mid-f-028",
+              "mid-f-029",
+              "mid-f-031",
+              "mid-f-034",
+              "mid-f-036",
+              "mid-f-037",
+              "mid-f-039"
+            ],
+            "BACK": [
+              "mid-f-033",
+              "mid-f-034",
+              "mid-f-035",
+              "mid-f-036",
+              "mid-f-037",
+              "mid-f-038",
+              "mid-f-039",
+              "mid-f-040"
+            ],
+            "EFFECT": [],
+            "LASER": []
+          },
+          "defaultAim": {
+            "mid-f-001": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "mid-f-002": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "mid-f-003": {
+              "surface": "air",
+              "a": {
+                "u": 0.2,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "mid-f-004": {
+              "surface": "air",
+              "a": {
+                "u": 0.2,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "mid-f-005": {
+              "surface": "air",
+              "a": {
+                "u": 0.8,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "mid-f-006": {
+              "surface": "air",
+              "a": {
+                "u": 0.8,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "mid-f-007": {
+              "surface": "air",
+              "a": {
+                "u": 0.2,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "mid-f-008": {
+              "surface": "air",
+              "a": {
+                "u": 0.2,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "mid-f-009": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "mid-f-010": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "mid-f-011": {
+              "surface": "air",
+              "a": {
+                "u": 0.8,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "mid-f-012": {
+              "surface": "air",
+              "a": {
+                "u": 0.8,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "mid-f-013": {
+              "surface": "air",
+              "a": {
+                "u": 0.65,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "mid-f-014": {
+              "surface": "air",
+              "a": {
+                "u": 0.35,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "mid-f-015": {
+              "surface": "air",
+              "a": {
+                "u": 0.65,
+                "v": 0.7,
+                "hM": 1.2
+              }
+            },
+            "mid-f-016": {
+              "surface": "air",
+              "a": {
+                "u": 0.35,
+                "v": 0.7,
+                "hM": 1.2
+              }
+            },
+            "mid-f-017": {
+              "surface": "floor",
+              "a": {
+                "u": 0.1,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "mid-f-018": {
+              "surface": "floor",
+              "a": {
+                "u": 0.2143,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "mid-f-019": {
+              "surface": "floor",
+              "a": {
+                "u": 0.3286,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "mid-f-020": {
+              "surface": "floor",
+              "a": {
+                "u": 0.4429,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "mid-f-021": {
+              "surface": "floor",
+              "a": {
+                "u": 0.5571,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "mid-f-022": {
+              "surface": "floor",
+              "a": {
+                "u": 0.6714,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "mid-f-023": {
+              "surface": "floor",
+              "a": {
+                "u": 0.7857,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "mid-f-024": {
+              "surface": "floor",
+              "a": {
+                "u": 0.9,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "mid-f-025": {
+              "surface": "floor",
+              "a": {
+                "u": 0.1,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "mid-f-026": {
+              "surface": "floor",
+              "a": {
+                "u": 0.2143,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "mid-f-027": {
+              "surface": "floor",
+              "a": {
+                "u": 0.3286,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "mid-f-028": {
+              "surface": "floor",
+              "a": {
+                "u": 0.4429,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "mid-f-029": {
+              "surface": "floor",
+              "a": {
+                "u": 0.5571,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "mid-f-030": {
+              "surface": "floor",
+              "a": {
+                "u": 0.6714,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "mid-f-031": {
+              "surface": "floor",
+              "a": {
+                "u": 0.7857,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "mid-f-032": {
+              "surface": "floor",
+              "a": {
+                "u": 0.9,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "mid-f-033": {
+              "surface": "floor",
+              "a": {
+                "u": 0.1,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "mid-f-034": {
+              "surface": "floor",
+              "a": {
+                "u": 0.2143,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "mid-f-035": {
+              "surface": "floor",
+              "a": {
+                "u": 0.3286,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "mid-f-036": {
+              "surface": "floor",
+              "a": {
+                "u": 0.4429,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "mid-f-037": {
+              "surface": "floor",
+              "a": {
+                "u": 0.5571,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "mid-f-038": {
+              "surface": "floor",
+              "a": {
+                "u": 0.6714,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "mid-f-039": {
+              "surface": "floor",
+              "a": {
+                "u": 0.7857,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "mid-f-040": {
+              "surface": "floor",
+              "a": {
+                "u": 0.9,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "mid-f-041": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.32,
+                "hM": 0.55
+              }
+            },
+            "mid-f-042": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.32,
+                "hM": 1.2
+              }
+            },
+            "mid-f-043": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.32,
+                "hM": 0.55
+              }
+            },
+            "mid-f-044": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.32,
+                "hM": 1.2
+              }
+            },
+            "mid-f-045": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.68,
+                "hM": 0.55
+              }
+            },
+            "mid-f-046": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.68,
+                "hM": 1.2
+              }
+            },
+            "mid-f-047": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.68,
+                "hM": 0.55
+              }
+            },
+            "mid-f-048": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.68,
+                "hM": 1.2
+              }
+            },
+            "mid-f-049": {
+              "surface": "air",
+              "a": {
+                "u": 0.3,
+                "v": 0.65,
+                "hM": 1.2
+              }
+            },
+            "mid-f-050": {
+              "surface": "air",
+              "a": {
+                "u": 0.7,
+                "v": 0.65,
+                "hM": 1.2
+              }
+            },
+            "mid-f-051": {
+              "surface": "air",
+              "a": {
+                "u": 0.0417,
+                "v": 0.65,
+                "hM": 1.2
+              }
+            },
+            "mid-f-052": {
+              "surface": "air",
+              "a": {
+                "u": 0.9583,
+                "v": 0.65,
+                "hM": 1.2
+              }
+            },
+            "mid-f-053": {
+              "surface": "back",
+              "a": {
+                "u": 0.5,
+                "v": 0,
+                "hM": 4.4
+              }
+            },
+            "mid-f-054": {
+              "surface": "back",
+              "a": {
+                "u": 0.5,
+                "v": 0,
+                "hM": 4.4
+              }
+            }
+          },
+          "washDeg": 40
+        }
+      },
+      "fixtureSummary": [
+        {
+          "id": "profile-zoom",
+          "label": "プロファイル（ズーム）",
+          "family": "profile",
+          "color": "#d3ac59",
+          "count": 22
+        },
+        {
+          "id": "fresnel",
+          "label": "フレネル",
+          "family": "wash",
+          "color": "#efe7d6",
+          "count": 4
+        },
+        {
+          "id": "led-par",
+          "label": "LED PAR",
+          "family": "wash",
+          "color": "#88a9c3",
+          "count": 12
+        },
+        {
+          "id": "moving-profile",
+          "label": "ムービング・プロファイル",
+          "family": "moving",
+          "color": "#72b6a1",
+          "count": 4
+        },
+        {
+          "id": "moving-wash",
+          "label": "ムービング・ウォッシュ",
+          "family": "moving",
+          "color": "#72b6a1",
+          "count": 8
+        },
+        {
+          "id": "moving-beam",
+          "label": "ムービング・ビーム",
+          "family": "moving",
+          "color": "#72b6a1",
+          "count": 2
+        },
+        {
+          "id": "led-cyc",
+          "label": "LEDホリゾント列",
+          "family": "cyc",
+          "color": "#7891d8",
+          "count": 2
+        }
+      ],
+      "touringSlots": [
+        {
+          "id": "mid-bridge-flex",
+          "label": "ブリッジ／バトン持込枠",
+          "zone": "B1-B3",
+          "accepts": [
+            "ムービング・プロファイル",
+            "ムービング・ウォッシュ",
+            "ストロボ"
+          ],
+          "maxCount": null,
+          "capacityStatus": "venue-confirmation-required",
+          "representedInRig": false
+        },
+        {
+          "id": "mid-floor-flex",
+          "label": "床置き持込枠",
+          "zone": "奥・袖",
+          "accepts": [
+            "ムービング・ウォッシュ",
+            "ローフォグ"
+          ],
+          "maxCount": null,
+          "capacityStatus": "venue-confirmation-required",
+          "representedInRig": false
+        }
+      ],
+      "auxiliaryEquipment": [
+        {
+          "label": "フォロースポットは会場設備に合わせて別レイヤーで追加",
+          "status": "concept-only-not-in-rig"
+        },
+        {
+          "label": "ヘイズ／ローフォグは消防・会場承認後に追加",
+          "status": "concept-only-not-in-rig"
+        }
+      ],
+      "sourceIds": [
+        "geigeki-playhouse"
+      ]
+    },
+    {
+      "id": "proscenium/large",
+      "venueType": "proscenium",
+      "sizeId": "large",
+      "label": "大劇場",
+      "stage": {
+        "W": 18,
+        "D": 12,
+        "H": 12
+      },
+      "nominalSeats": 1800,
+      "intent": "演劇・ダンス・コンサートの転換を想定し、多種類の灯体と持込演出機材を見渡せる拡張仕込み。",
+      "modelStatus": "virtual-common-skeleton-not-a-venue-inventory",
+      "rig": {
+        "family": "theatre-house-v2-mixed",
+        "version": 2,
+        "trusses": [
+          {
+            "id": "large-t-01",
+            "v": 0.78,
+            "h": 8.5,
+            "label": "照明バトン1"
+          },
+          {
+            "id": "large-t-02",
+            "v": 0.5,
+            "h": 8.5,
+            "label": "照明バトン2"
+          },
+          {
+            "id": "large-t-03",
+            "v": 0.22,
+            "h": 8.5,
+            "label": "照明バトン3"
+          }
+        ],
+        "fixtures": [
+          {
+            "id": "large-f-001",
+            "no": 1,
+            "name": "プロファイル（ズーム） 01",
+            "mount": {
+              "type": "front",
+              "u": 0.38,
+              "ahead": 4.5,
+              "h": 9.0048
+            },
+            "kind": "fixed",
+            "beamDeg": 10,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "中央前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-002",
+            "no": 2,
+            "name": "プロファイル（ズーム） 02",
+            "mount": {
+              "type": "front",
+              "u": 0.62,
+              "ahead": 4.5,
+              "h": 9.0048
+            },
+            "kind": "fixed",
+            "beamDeg": 10,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "中央前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-003",
+            "no": 3,
+            "name": "プロファイル（ズーム） 03",
+            "mount": {
+              "type": "front",
+              "u": 0.08,
+              "ahead": 4.5,
+              "h": 9.0048
+            },
+            "kind": "fixed",
+            "beamDeg": 36,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-004",
+            "no": 4,
+            "name": "プロファイル（ズーム） 04",
+            "mount": {
+              "type": "front",
+              "u": 0.32,
+              "ahead": 4.5,
+              "h": 9.0048
+            },
+            "kind": "fixed",
+            "beamDeg": 36,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-005",
+            "no": 5,
+            "name": "プロファイル（ズーム） 05",
+            "mount": {
+              "type": "front",
+              "u": 0.68,
+              "ahead": 4.5,
+              "h": 9.0048
+            },
+            "kind": "fixed",
+            "beamDeg": 36,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-006",
+            "no": 6,
+            "name": "プロファイル（ズーム） 06",
+            "mount": {
+              "type": "front",
+              "u": 0.92,
+              "ahead": 4.5,
+              "h": 9.0048
+            },
+            "kind": "fixed",
+            "beamDeg": 36,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-007",
+            "no": 7,
+            "name": "プロファイル（ズーム） 07",
+            "mount": {
+              "type": "front",
+              "u": 0.02,
+              "ahead": 2.5,
+              "h": 11.1376
+            },
+            "kind": "fixed",
+            "beamDeg": 36,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-008",
+            "no": 8,
+            "name": "プロファイル（ズーム） 08",
+            "mount": {
+              "type": "front",
+              "u": 0.26,
+              "ahead": 2.5,
+              "h": 11.1376
+            },
+            "kind": "fixed",
+            "beamDeg": 36,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-009",
+            "no": 9,
+            "name": "プロファイル（ズーム） 09",
+            "mount": {
+              "type": "front",
+              "u": 0.2,
+              "ahead": 2.5,
+              "h": 11.1376
+            },
+            "kind": "fixed",
+            "beamDeg": 36,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-010",
+            "no": 10,
+            "name": "プロファイル（ズーム） 10",
+            "mount": {
+              "type": "front",
+              "u": 0.44,
+              "ahead": 2.5,
+              "h": 11.1376
+            },
+            "kind": "fixed",
+            "beamDeg": 36,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-011",
+            "no": 11,
+            "name": "プロファイル（ズーム） 11",
+            "mount": {
+              "type": "front",
+              "u": 0.38,
+              "ahead": 2.5,
+              "h": 11.1376
+            },
+            "kind": "fixed",
+            "beamDeg": 36,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-012",
+            "no": 12,
+            "name": "プロファイル（ズーム） 12",
+            "mount": {
+              "type": "front",
+              "u": 0.62,
+              "ahead": 2.5,
+              "h": 11.1376
+            },
+            "kind": "fixed",
+            "beamDeg": 36,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-013",
+            "no": 13,
+            "name": "プロファイル（ズーム） 13",
+            "mount": {
+              "type": "front",
+              "u": 0.56,
+              "ahead": 2.5,
+              "h": 11.1376
+            },
+            "kind": "fixed",
+            "beamDeg": 36,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-014",
+            "no": 14,
+            "name": "プロファイル（ズーム） 14",
+            "mount": {
+              "type": "front",
+              "u": 0.8,
+              "ahead": 2.5,
+              "h": 11.1376
+            },
+            "kind": "fixed",
+            "beamDeg": 36,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-015",
+            "no": 15,
+            "name": "プロファイル（ズーム） 15",
+            "mount": {
+              "type": "front",
+              "u": 0.74,
+              "ahead": 2.5,
+              "h": 11.1376
+            },
+            "kind": "fixed",
+            "beamDeg": 36,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-016",
+            "no": 16,
+            "name": "プロファイル（ズーム） 16",
+            "mount": {
+              "type": "front",
+              "u": 0.98,
+              "ahead": 2.5,
+              "h": 11.1376
+            },
+            "kind": "fixed",
+            "beamDeg": 36,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "エリア前明かり",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-017",
+            "no": 17,
+            "name": "プロファイル（ズーム） 17",
+            "mount": {
+              "type": "front",
+              "u": 0.02,
+              "ahead": 3,
+              "h": 8
+            },
+            "kind": "fixed",
+            "beamDeg": 20,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "フロントサイド・クロス",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-018",
+            "no": 18,
+            "name": "プロファイル（ズーム） 18",
+            "mount": {
+              "type": "front",
+              "u": 0.98,
+              "ahead": 3,
+              "h": 8
+            },
+            "kind": "fixed",
+            "beamDeg": 20,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "フロントサイド・クロス",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-019",
+            "no": 19,
+            "name": "プロファイル（ズーム） 19",
+            "mount": {
+              "type": "front",
+              "u": 0.06,
+              "ahead": 3,
+              "h": 8
+            },
+            "kind": "fixed",
+            "beamDeg": 20,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "フロントサイド・クロス",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-020",
+            "no": 20,
+            "name": "プロファイル（ズーム） 20",
+            "mount": {
+              "type": "front",
+              "u": 0.94,
+              "ahead": 3,
+              "h": 8
+            },
+            "kind": "fixed",
+            "beamDeg": 20,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "フロントサイド・クロス",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-021",
+            "no": 21,
+            "name": "プロファイル（ズーム） 21",
+            "mount": {
+              "type": "front",
+              "u": 0.1,
+              "ahead": 3,
+              "h": 8
+            },
+            "kind": "fixed",
+            "beamDeg": 20,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "フロントサイド・クロス",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-022",
+            "no": 22,
+            "name": "プロファイル（ズーム） 22",
+            "mount": {
+              "type": "front",
+              "u": 0.9,
+              "ahead": 3,
+              "h": 8
+            },
+            "kind": "fixed",
+            "beamDeg": 20,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "フロントサイド・クロス",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-023",
+            "no": 23,
+            "name": "フレネル 23",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-01",
+              "u": 0.1
+            },
+            "kind": "fixed",
+            "beamDeg": 40,
+            "fixtureType": "fresnel",
+            "family": "wash",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-024",
+            "no": 24,
+            "name": "LED PAR 24",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-01",
+              "u": 0.1889
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-025",
+            "no": 25,
+            "name": "ムービング・プロファイル 25",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-01",
+              "u": 0.2778
+            },
+            "kind": "moving",
+            "beamDeg": 18,
+            "fixtureType": "moving-profile",
+            "family": "moving",
+            "role": "手前地明かり／スペシャル",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-026",
+            "no": 26,
+            "name": "フレネル 26",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-01",
+              "u": 0.3667
+            },
+            "kind": "fixed",
+            "beamDeg": 40,
+            "fixtureType": "fresnel",
+            "family": "wash",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-027",
+            "no": 27,
+            "name": "プロファイル（ズーム） 27",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-01",
+              "u": 0.4556
+            },
+            "kind": "fixed",
+            "beamDeg": 26,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-028",
+            "no": 28,
+            "name": "プロファイル（ズーム） 28",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-01",
+              "u": 0.5444
+            },
+            "kind": "fixed",
+            "beamDeg": 26,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-029",
+            "no": 29,
+            "name": "フレネル 29",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-01",
+              "u": 0.6333
+            },
+            "kind": "fixed",
+            "beamDeg": 40,
+            "fixtureType": "fresnel",
+            "family": "wash",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-030",
+            "no": 30,
+            "name": "ムービング・プロファイル 30",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-01",
+              "u": 0.7222
+            },
+            "kind": "moving",
+            "beamDeg": 18,
+            "fixtureType": "moving-profile",
+            "family": "moving",
+            "role": "手前地明かり／スペシャル",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-031",
+            "no": 31,
+            "name": "LED PAR 31",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-01",
+              "u": 0.8111
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-032",
+            "no": 32,
+            "name": "フレネル 32",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-01",
+              "u": 0.9
+            },
+            "kind": "fixed",
+            "beamDeg": 40,
+            "fixtureType": "fresnel",
+            "family": "wash",
+            "role": "手前地明かり／スペシャル",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-033",
+            "no": 33,
+            "name": "LED PAR 33",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-02",
+              "u": 0.1
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "中段ウォッシュ／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-034",
+            "no": 34,
+            "name": "ムービング・ウォッシュ 34",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-02",
+              "u": 0.1889
+            },
+            "kind": "moving",
+            "beamDeg": 36,
+            "fixtureType": "moving-wash",
+            "family": "moving",
+            "role": "中段ウォッシュ／効果",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-035",
+            "no": 35,
+            "name": "フレネル 35",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-02",
+              "u": 0.2778
+            },
+            "kind": "fixed",
+            "beamDeg": 40,
+            "fixtureType": "fresnel",
+            "family": "wash",
+            "role": "中段ウォッシュ／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-036",
+            "no": 36,
+            "name": "ムービング・プロファイル 36",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-02",
+              "u": 0.3667
+            },
+            "kind": "moving",
+            "beamDeg": 18,
+            "fixtureType": "moving-profile",
+            "family": "moving",
+            "role": "中段ウォッシュ／効果",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-037",
+            "no": 37,
+            "name": "ストロボ 37",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-02",
+              "u": 0.4556
+            },
+            "kind": "fixed",
+            "beamDeg": 60,
+            "fixtureType": "strobe",
+            "family": "effect",
+            "role": "中段ウォッシュ／効果",
+            "origin": "touring-package",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-038",
+            "no": 38,
+            "name": "ストロボ 38",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-02",
+              "u": 0.5444
+            },
+            "kind": "fixed",
+            "beamDeg": 60,
+            "fixtureType": "strobe",
+            "family": "effect",
+            "role": "中段ウォッシュ／効果",
+            "origin": "touring-package",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-039",
+            "no": 39,
+            "name": "ムービング・プロファイル 39",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-02",
+              "u": 0.6333
+            },
+            "kind": "moving",
+            "beamDeg": 18,
+            "fixtureType": "moving-profile",
+            "family": "moving",
+            "role": "中段ウォッシュ／効果",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-040",
+            "no": 40,
+            "name": "フレネル 40",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-02",
+              "u": 0.7222
+            },
+            "kind": "fixed",
+            "beamDeg": 40,
+            "fixtureType": "fresnel",
+            "family": "wash",
+            "role": "中段ウォッシュ／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-041",
+            "no": 41,
+            "name": "ムービング・ウォッシュ 41",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-02",
+              "u": 0.8111
+            },
+            "kind": "moving",
+            "beamDeg": 36,
+            "fixtureType": "moving-wash",
+            "family": "moving",
+            "role": "中段ウォッシュ／効果",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-042",
+            "no": 42,
+            "name": "LED PAR 42",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-02",
+              "u": 0.9
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "中段ウォッシュ／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-043",
+            "no": 43,
+            "name": "LED PAR 43",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-03",
+              "u": 0.1
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "バック／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-044",
+            "no": 44,
+            "name": "ムービング・ビーム 44",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-03",
+              "u": 0.1889
+            },
+            "kind": "moving",
+            "beamDeg": 8,
+            "fixtureType": "moving-beam",
+            "family": "moving",
+            "role": "バック／効果",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-045",
+            "no": 45,
+            "name": "ブラインダー 45",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-03",
+              "u": 0.2778
+            },
+            "kind": "fixed",
+            "beamDeg": 60,
+            "fixtureType": "blinder",
+            "family": "effect",
+            "role": "バック／効果",
+            "origin": "touring-package",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-046",
+            "no": 46,
+            "name": "演出レーザー（持込想定） 46",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-03",
+              "u": 0.3667
+            },
+            "kind": "laser",
+            "beamDeg": 4,
+            "fixtureType": "laser-projector",
+            "family": "laser",
+            "role": "バック／効果",
+            "origin": "touring-package",
+            "safetyStatus": "approval-required"
+          },
+          {
+            "id": "large-f-047",
+            "no": 47,
+            "name": "ムービング・ウォッシュ 47",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-03",
+              "u": 0.4556
+            },
+            "kind": "moving",
+            "beamDeg": 36,
+            "fixtureType": "moving-wash",
+            "family": "moving",
+            "role": "バック／効果",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-048",
+            "no": 48,
+            "name": "ムービング・ウォッシュ 48",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-03",
+              "u": 0.5444
+            },
+            "kind": "moving",
+            "beamDeg": 36,
+            "fixtureType": "moving-wash",
+            "family": "moving",
+            "role": "バック／効果",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-049",
+            "no": 49,
+            "name": "演出レーザー（持込想定） 49",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-03",
+              "u": 0.6333
+            },
+            "kind": "laser",
+            "beamDeg": 4,
+            "fixtureType": "laser-projector",
+            "family": "laser",
+            "role": "バック／効果",
+            "origin": "touring-package",
+            "safetyStatus": "approval-required"
+          },
+          {
+            "id": "large-f-050",
+            "no": 50,
+            "name": "ブラインダー 50",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-03",
+              "u": 0.7222
+            },
+            "kind": "fixed",
+            "beamDeg": 60,
+            "fixtureType": "blinder",
+            "family": "effect",
+            "role": "バック／効果",
+            "origin": "touring-package",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-051",
+            "no": 51,
+            "name": "ムービング・ビーム 51",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-03",
+              "u": 0.8111
+            },
+            "kind": "moving",
+            "beamDeg": 8,
+            "fixtureType": "moving-beam",
+            "family": "moving",
+            "role": "バック／効果",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-052",
+            "no": 52,
+            "name": "LED PAR 52",
+            "mount": {
+              "type": "truss",
+              "trussId": "large-t-03",
+              "u": 0.9
+            },
+            "kind": "fixed",
+            "beamDeg": 28,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "バック／効果",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-053",
+            "no": 53,
+            "name": "LED PAR 53",
+            "mount": {
+              "type": "side",
+              "side": "shimote",
+              "v": 0.25,
+              "h": 0.55
+            },
+            "kind": "fixed",
+            "beamDeg": 8,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "サイド低段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-054",
+            "no": 54,
+            "name": "プロファイル（ズーム） 54",
+            "mount": {
+              "type": "side",
+              "side": "shimote",
+              "v": 0.25,
+              "h": 2.4
+            },
+            "kind": "fixed",
+            "beamDeg": 24,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "サイド高段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-055",
+            "no": 55,
+            "name": "LED PAR 55",
+            "mount": {
+              "type": "side",
+              "side": "kamite",
+              "v": 0.25,
+              "h": 0.55
+            },
+            "kind": "fixed",
+            "beamDeg": 8,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "サイド低段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-056",
+            "no": 56,
+            "name": "プロファイル（ズーム） 56",
+            "mount": {
+              "type": "side",
+              "side": "kamite",
+              "v": 0.25,
+              "h": 2.4
+            },
+            "kind": "fixed",
+            "beamDeg": 24,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "サイド高段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-057",
+            "no": 57,
+            "name": "LED PAR 57",
+            "mount": {
+              "type": "side",
+              "side": "shimote",
+              "v": 0.5,
+              "h": 0.55
+            },
+            "kind": "fixed",
+            "beamDeg": 8,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "サイド低段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-058",
+            "no": 58,
+            "name": "プロファイル（ズーム） 58",
+            "mount": {
+              "type": "side",
+              "side": "shimote",
+              "v": 0.5,
+              "h": 2.4
+            },
+            "kind": "fixed",
+            "beamDeg": 24,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "サイド高段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-059",
+            "no": 59,
+            "name": "LED PAR 59",
+            "mount": {
+              "type": "side",
+              "side": "kamite",
+              "v": 0.5,
+              "h": 0.55
+            },
+            "kind": "fixed",
+            "beamDeg": 8,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "サイド低段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-060",
+            "no": 60,
+            "name": "プロファイル（ズーム） 60",
+            "mount": {
+              "type": "side",
+              "side": "kamite",
+              "v": 0.5,
+              "h": 2.4
+            },
+            "kind": "fixed",
+            "beamDeg": 24,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "サイド高段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-061",
+            "no": 61,
+            "name": "LED PAR 61",
+            "mount": {
+              "type": "side",
+              "side": "shimote",
+              "v": 0.75,
+              "h": 0.55
+            },
+            "kind": "fixed",
+            "beamDeg": 8,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "サイド低段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-062",
+            "no": 62,
+            "name": "プロファイル（ズーム） 62",
+            "mount": {
+              "type": "side",
+              "side": "shimote",
+              "v": 0.75,
+              "h": 2.4
+            },
+            "kind": "fixed",
+            "beamDeg": 24,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "サイド高段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-063",
+            "no": 63,
+            "name": "LED PAR 63",
+            "mount": {
+              "type": "side",
+              "side": "kamite",
+              "v": 0.75,
+              "h": 0.55
+            },
+            "kind": "fixed",
+            "beamDeg": 8,
+            "fixtureType": "led-par",
+            "family": "wash",
+            "role": "サイド低段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-064",
+            "no": 64,
+            "name": "プロファイル（ズーム） 64",
+            "mount": {
+              "type": "side",
+              "side": "kamite",
+              "v": 0.75,
+              "h": 2.4
+            },
+            "kind": "fixed",
+            "beamDeg": 24,
+            "fixtureType": "profile-zoom",
+            "family": "profile",
+            "role": "サイド高段",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-065",
+            "no": 65,
+            "name": "ムービング・ウォッシュ 65",
+            "mount": {
+              "type": "floor",
+              "u": 0.3,
+              "v": 0.05
+            },
+            "kind": "moving",
+            "beamDeg": 36,
+            "fixtureType": "moving-wash",
+            "family": "moving",
+            "role": "奥転がし",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-066",
+            "no": 66,
+            "name": "ムービング・ウォッシュ 66",
+            "mount": {
+              "type": "floor",
+              "u": 0.7,
+              "v": 0.05
+            },
+            "kind": "moving",
+            "beamDeg": 36,
+            "fixtureType": "moving-wash",
+            "family": "moving",
+            "role": "奥転がし",
+            "origin": "house-flex",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-067",
+            "no": 67,
+            "name": "演出レーザー（持込想定） 67",
+            "mount": {
+              "type": "floor",
+              "u": 0.0278,
+              "v": 0.0667
+            },
+            "kind": "laser",
+            "beamDeg": 4,
+            "fixtureType": "laser-projector",
+            "family": "laser",
+            "role": "演出レーザー（舞台外方向のみ）",
+            "origin": "touring-package",
+            "safetyStatus": "approval-required"
+          },
+          {
+            "id": "large-f-068",
+            "no": 68,
+            "name": "演出レーザー（持込想定） 68",
+            "mount": {
+              "type": "floor",
+              "u": 0.9722,
+              "v": 0.0667
+            },
+            "kind": "laser",
+            "beamDeg": 4,
+            "fixtureType": "laser-projector",
+            "family": "laser",
+            "role": "演出レーザー（舞台外方向のみ）",
+            "origin": "touring-package",
+            "safetyStatus": "approval-required"
+          },
+          {
+            "id": "large-f-069",
+            "no": 69,
+            "name": "LEDホリゾント列 69",
+            "mount": {
+              "type": "cyc",
+              "len": 0.9,
+              "rung": "floor",
+              "reachM": 7.2
+            },
+            "kind": "fixed",
+            "beamDeg": 50,
+            "fixtureType": "led-cyc",
+            "family": "cyc",
+            "role": "ロアーホリゾント列",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          },
+          {
+            "id": "large-f-070",
+            "no": 70,
+            "name": "LEDホリゾント列 70",
+            "mount": {
+              "type": "cyc",
+              "len": 0.9,
+              "rung": "top",
+              "reachM": 7.2
+            },
+            "kind": "fixed",
+            "beamDeg": 50,
+            "fixtureType": "led-cyc",
+            "family": "cyc",
+            "role": "アッパーホリゾント列",
+            "origin": "common-house",
+            "safetyStatus": "concept-only"
+          }
+        ],
+        "bindings": {
+          "rigFamily": "theatre-house-v2-mixed",
+          "sizeId": "large",
+          "version": 2,
+          "groups": {
+            "CL.center": [
+              "large-f-001",
+              "large-f-002"
+            ],
+            "CL.area": [
+              "large-f-003",
+              "large-f-004",
+              "large-f-005",
+              "large-f-006",
+              "large-f-007",
+              "large-f-008",
+              "large-f-009",
+              "large-f-010",
+              "large-f-011",
+              "large-f-012",
+              "large-f-013",
+              "large-f-014",
+              "large-f-015",
+              "large-f-016"
+            ],
+            "FR": [
+              "large-f-017",
+              "large-f-018",
+              "large-f-019",
+              "large-f-020",
+              "large-f-021",
+              "large-f-022"
+            ],
+            "B1": [
+              "large-f-023",
+              "large-f-024",
+              "large-f-025",
+              "large-f-026",
+              "large-f-027",
+              "large-f-028",
+              "large-f-029",
+              "large-f-030",
+              "large-f-031",
+              "large-f-032"
+            ],
+            "B2": [
+              "large-f-033",
+              "large-f-034",
+              "large-f-035",
+              "large-f-036",
+              "large-f-037",
+              "large-f-038",
+              "large-f-039",
+              "large-f-040",
+              "large-f-041",
+              "large-f-042"
+            ],
+            "B3": [
+              "large-f-043",
+              "large-f-044",
+              "large-f-045",
+              "large-f-046",
+              "large-f-047",
+              "large-f-048",
+              "large-f-049",
+              "large-f-050",
+              "large-f-051",
+              "large-f-052"
+            ],
+            "SL": [
+              "large-f-053",
+              "large-f-055",
+              "large-f-057",
+              "large-f-059",
+              "large-f-061",
+              "large-f-063"
+            ],
+            "SH": [
+              "large-f-054",
+              "large-f-056",
+              "large-f-058",
+              "large-f-060",
+              "large-f-062",
+              "large-f-064"
+            ],
+            "FL.rear": [
+              "large-f-065",
+              "large-f-066"
+            ],
+            "FL.edge.l": [
+              "large-f-067"
+            ],
+            "FL.edge.r": [
+              "large-f-068"
+            ],
+            "CY.lower": [
+              "large-f-069"
+            ],
+            "CY.upper": [
+              "large-f-070"
+            ],
+            "CL": [
+              "large-f-001",
+              "large-f-002",
+              "large-f-003",
+              "large-f-004",
+              "large-f-005",
+              "large-f-006",
+              "large-f-007",
+              "large-f-008",
+              "large-f-009",
+              "large-f-010",
+              "large-f-011",
+              "large-f-012",
+              "large-f-013",
+              "large-f-014",
+              "large-f-015",
+              "large-f-016"
+            ],
+            "CY": [
+              "large-f-069",
+              "large-f-070"
+            ],
+            "FL": [
+              "large-f-065",
+              "large-f-066",
+              "large-f-067",
+              "large-f-068"
+            ],
+            "WASH": [
+              "large-f-023",
+              "large-f-024",
+              "large-f-025",
+              "large-f-026",
+              "large-f-029",
+              "large-f-030",
+              "large-f-031",
+              "large-f-032",
+              "large-f-033",
+              "large-f-034",
+              "large-f-035",
+              "large-f-036",
+              "large-f-039",
+              "large-f-040",
+              "large-f-041",
+              "large-f-042",
+              "large-f-043",
+              "large-f-044",
+              "large-f-047",
+              "large-f-048",
+              "large-f-051",
+              "large-f-052"
+            ],
+            "SPECIAL": [
+              "large-f-025",
+              "large-f-027",
+              "large-f-028",
+              "large-f-030",
+              "large-f-034",
+              "large-f-036",
+              "large-f-039",
+              "large-f-041",
+              "large-f-044",
+              "large-f-047",
+              "large-f-048",
+              "large-f-051"
+            ],
+            "BACK": [
+              "large-f-043",
+              "large-f-044",
+              "large-f-045",
+              "large-f-046",
+              "large-f-047",
+              "large-f-048",
+              "large-f-049",
+              "large-f-050",
+              "large-f-051",
+              "large-f-052"
+            ],
+            "EFFECT": [
+              "large-f-037",
+              "large-f-038",
+              "large-f-045",
+              "large-f-046",
+              "large-f-049",
+              "large-f-050",
+              "large-f-067",
+              "large-f-068"
+            ],
+            "LASER": [
+              "large-f-046",
+              "large-f-049",
+              "large-f-067",
+              "large-f-068"
+            ]
+          },
+          "defaultAim": {
+            "large-f-001": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "large-f-002": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "large-f-003": {
+              "surface": "air",
+              "a": {
+                "u": 0.2,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "large-f-004": {
+              "surface": "air",
+              "a": {
+                "u": 0.2,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "large-f-005": {
+              "surface": "air",
+              "a": {
+                "u": 0.8,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "large-f-006": {
+              "surface": "air",
+              "a": {
+                "u": 0.8,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "large-f-007": {
+              "surface": "air",
+              "a": {
+                "u": 0.14,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "large-f-008": {
+              "surface": "air",
+              "a": {
+                "u": 0.14,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "large-f-009": {
+              "surface": "air",
+              "a": {
+                "u": 0.32,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "large-f-010": {
+              "surface": "air",
+              "a": {
+                "u": 0.32,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "large-f-011": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "large-f-012": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "large-f-013": {
+              "surface": "air",
+              "a": {
+                "u": 0.68,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "large-f-014": {
+              "surface": "air",
+              "a": {
+                "u": 0.68,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "large-f-015": {
+              "surface": "air",
+              "a": {
+                "u": 0.86,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "large-f-016": {
+              "surface": "air",
+              "a": {
+                "u": 0.86,
+                "v": 0.4,
+                "hM": 1.2
+              }
+            },
+            "large-f-017": {
+              "surface": "air",
+              "a": {
+                "u": 0.65,
+                "v": 0.3,
+                "hM": 1.2
+              }
+            },
+            "large-f-018": {
+              "surface": "air",
+              "a": {
+                "u": 0.35,
+                "v": 0.3,
+                "hM": 1.2
+              }
+            },
+            "large-f-019": {
+              "surface": "air",
+              "a": {
+                "u": 0.65,
+                "v": 0.5,
+                "hM": 1.2
+              }
+            },
+            "large-f-020": {
+              "surface": "air",
+              "a": {
+                "u": 0.35,
+                "v": 0.5,
+                "hM": 1.2
+              }
+            },
+            "large-f-021": {
+              "surface": "air",
+              "a": {
+                "u": 0.65,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "large-f-022": {
+              "surface": "air",
+              "a": {
+                "u": 0.35,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "large-f-023": {
+              "surface": "floor",
+              "a": {
+                "u": 0.1,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "large-f-024": {
+              "surface": "floor",
+              "a": {
+                "u": 0.1889,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "large-f-025": {
+              "surface": "floor",
+              "a": {
+                "u": 0.2778,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "large-f-026": {
+              "surface": "floor",
+              "a": {
+                "u": 0.3667,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "large-f-027": {
+              "surface": "floor",
+              "a": {
+                "u": 0.4556,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "large-f-028": {
+              "surface": "floor",
+              "a": {
+                "u": 0.5444,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "large-f-029": {
+              "surface": "floor",
+              "a": {
+                "u": 0.6333,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "large-f-030": {
+              "surface": "floor",
+              "a": {
+                "u": 0.7222,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "large-f-031": {
+              "surface": "floor",
+              "a": {
+                "u": 0.8111,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "large-f-032": {
+              "surface": "floor",
+              "a": {
+                "u": 0.9,
+                "v": 0.72,
+                "hM": 0
+              }
+            },
+            "large-f-033": {
+              "surface": "floor",
+              "a": {
+                "u": 0.1,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "large-f-034": {
+              "surface": "floor",
+              "a": {
+                "u": 0.1889,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "large-f-035": {
+              "surface": "floor",
+              "a": {
+                "u": 0.2778,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "large-f-036": {
+              "surface": "floor",
+              "a": {
+                "u": 0.3667,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "large-f-037": {
+              "surface": "floor",
+              "a": {
+                "u": 0.4556,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "large-f-038": {
+              "surface": "floor",
+              "a": {
+                "u": 0.5444,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "large-f-039": {
+              "surface": "floor",
+              "a": {
+                "u": 0.6333,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "large-f-040": {
+              "surface": "floor",
+              "a": {
+                "u": 0.7222,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "large-f-041": {
+              "surface": "floor",
+              "a": {
+                "u": 0.8111,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "large-f-042": {
+              "surface": "floor",
+              "a": {
+                "u": 0.9,
+                "v": 0.44,
+                "hM": 0
+              }
+            },
+            "large-f-043": {
+              "surface": "floor",
+              "a": {
+                "u": 0.1,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "large-f-044": {
+              "surface": "floor",
+              "a": {
+                "u": 0.1889,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "large-f-045": {
+              "surface": "floor",
+              "a": {
+                "u": 0.2778,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "large-f-046": {
+              "surface": "floor",
+              "a": {
+                "u": 0.3667,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "large-f-047": {
+              "surface": "floor",
+              "a": {
+                "u": 0.4556,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "large-f-048": {
+              "surface": "floor",
+              "a": {
+                "u": 0.5444,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "large-f-049": {
+              "surface": "floor",
+              "a": {
+                "u": 0.6333,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "large-f-050": {
+              "surface": "floor",
+              "a": {
+                "u": 0.7222,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "large-f-051": {
+              "surface": "floor",
+              "a": {
+                "u": 0.8111,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "large-f-052": {
+              "surface": "floor",
+              "a": {
+                "u": 0.9,
+                "v": 0.16,
+                "hM": 0
+              }
+            },
+            "large-f-053": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.25,
+                "hM": 0.55
+              }
+            },
+            "large-f-054": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.25,
+                "hM": 1.2
+              }
+            },
+            "large-f-055": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.25,
+                "hM": 0.55
+              }
+            },
+            "large-f-056": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.25,
+                "hM": 1.2
+              }
+            },
+            "large-f-057": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.5,
+                "hM": 0.55
+              }
+            },
+            "large-f-058": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.5,
+                "hM": 1.2
+              }
+            },
+            "large-f-059": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.5,
+                "hM": 0.55
+              }
+            },
+            "large-f-060": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.5,
+                "hM": 1.2
+              }
+            },
+            "large-f-061": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.75,
+                "hM": 0.55
+              }
+            },
+            "large-f-062": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "large-f-063": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.75,
+                "hM": 0.55
+              }
+            },
+            "large-f-064": {
+              "surface": "air",
+              "a": {
+                "u": 0.5,
+                "v": 0.75,
+                "hM": 1.2
+              }
+            },
+            "large-f-065": {
+              "surface": "air",
+              "a": {
+                "u": 0.3,
+                "v": 0.65,
+                "hM": 1.2
+              }
+            },
+            "large-f-066": {
+              "surface": "air",
+              "a": {
+                "u": 0.7,
+                "v": 0.65,
+                "hM": 1.2
+              }
+            },
+            "large-f-067": {
+              "surface": "air",
+              "a": {
+                "u": 0.0278,
+                "v": 0.65,
+                "hM": 1.2
+              }
+            },
+            "large-f-068": {
+              "surface": "air",
+              "a": {
+                "u": 0.9722,
+                "v": 0.65,
+                "hM": 1.2
+              }
+            },
+            "large-f-069": {
+              "surface": "back",
+              "a": {
+                "u": 0.5,
+                "v": 0,
+                "hM": 6.6
+              }
+            },
+            "large-f-070": {
+              "surface": "back",
+              "a": {
+                "u": 0.5,
+                "v": 0,
+                "hM": 6.6
+              }
+            }
+          },
+          "washDeg": 36
+        }
+      },
+      "fixtureSummary": [
+        {
+          "id": "profile-zoom",
+          "label": "プロファイル（ズーム）",
+          "family": "profile",
+          "color": "#d3ac59",
+          "count": 30
+        },
+        {
+          "id": "fresnel",
+          "label": "フレネル",
+          "family": "wash",
+          "color": "#efe7d6",
+          "count": 6
+        },
+        {
+          "id": "led-par",
+          "label": "LED PAR",
+          "family": "wash",
+          "color": "#88a9c3",
+          "count": 12
+        },
+        {
+          "id": "moving-profile",
+          "label": "ムービング・プロファイル",
+          "family": "moving",
+          "color": "#72b6a1",
+          "count": 4
+        },
+        {
+          "id": "moving-wash",
+          "label": "ムービング・ウォッシュ",
+          "family": "moving",
+          "color": "#72b6a1",
+          "count": 6
+        },
+        {
+          "id": "strobe",
+          "label": "ストロボ",
+          "family": "effect",
+          "color": "#df6433",
+          "count": 2
+        },
+        {
+          "id": "moving-beam",
+          "label": "ムービング・ビーム",
+          "family": "moving",
+          "color": "#72b6a1",
+          "count": 2
+        },
+        {
+          "id": "blinder",
+          "label": "ブラインダー",
+          "family": "effect",
+          "color": "#df6433",
+          "count": 2
+        },
+        {
+          "id": "laser-projector",
+          "label": "演出レーザー（持込想定）",
+          "family": "laser",
+          "color": "#c877b2",
+          "count": 4
+        },
+        {
+          "id": "led-cyc",
+          "label": "LEDホリゾント列",
+          "family": "cyc",
+          "color": "#7891d8",
+          "count": 2
+        }
+      ],
+      "touringSlots": [
+        {
+          "id": "large-bridge-flex",
+          "label": "ブリッジ／バトン持込枠",
+          "zone": "B1-B3",
+          "accepts": [
+            "ムービング・プロファイル",
+            "ムービング・ウォッシュ",
+            "ムービング・ビーム",
+            "ストロボ",
+            "ブラインダー"
+          ],
+          "maxCount": null,
+          "capacityStatus": "venue-confirmation-required",
+          "representedInRig": false
+        },
+        {
+          "id": "large-floor-flex",
+          "label": "床置き持込枠",
+          "zone": "奥・袖",
+          "accepts": [
+            "演出レーザー",
+            "ムービング・ウォッシュ",
+            "ローフォグ",
+            "映像プロジェクター"
+          ],
+          "maxCount": null,
+          "capacityStatus": "venue-confirmation-required",
+          "representedInRig": false
+        },
+        {
+          "id": "large-house-flex",
+          "label": "客席側持込枠",
+          "zone": "フロント／フォロー位置",
+          "accepts": [
+            "フォロースポット",
+            "プロファイル"
+          ],
+          "maxCount": null,
+          "capacityStatus": "venue-confirmation-required",
+          "representedInRig": false
+        }
+      ],
+      "auxiliaryEquipment": [
+        {
+          "label": "フォロースポット（別担当・別レイヤー）",
+          "status": "concept-only-not-in-rig"
+        },
+        {
+          "label": "ヘイズ／ローフォグ（会場承認後）",
+          "status": "concept-only-not-in-rig"
+        },
+        {
+          "label": "映像プロジェクター（投射面・吊荷重確認後）",
+          "status": "concept-only-not-in-rig"
+        }
+      ],
+      "sourceIds": [
+        "nntt-opera-palace",
+        "kaat-main-studio"
+      ]
+    }
+  ]
+}

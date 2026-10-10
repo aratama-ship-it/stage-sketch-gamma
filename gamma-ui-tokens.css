@@ -1,0 +1,477 @@
+/* Gamma shared tokens. See gamma-dev/DESIGN_TOKENS.md. */
+:root {
+  --gamma-gap: 8px;
+  --gamma-hit: 36px;
+
+  /* 文字サイズの階段。0.5px刻みはここでは使わない。 */
+  --fs-1: 9px;   /* 最小の補助文字・キャプション */
+  --fs-2: 10px;  /* パネル見出し・小さいラベル */
+  --fs-3: 11px;  /* 本文の基準（既存で最頻出） */
+  --fs-4: 12px;  /* やや強調した本文・ボタン */
+  --fs-5: 13px;  /* タブ・見出し級 */
+  --fs-6: 14px;  /* 強調ラベル・主要ボタン */
+  --fs-7: 16px;  /* 小見出し */
+  --fs-8: 18px;  /* 見出し */
+  --fs-9: 22px;  /* 大見出し */
+
+  /* 操作の高さ3段。既存の44px（アイコン操作）・34px（.btn基準）・28px（小型）を正式な階段にする。 */
+  --ctrl-sm: 28px;
+  --ctrl-md: 34px;
+  --ctrl-lg: 44px;
+
+  /* 角丸2段＋円 */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-full: 50%;
+
+  /* アイコンボタンの正方形2段 */
+  --icon-sm: 32px;
+  --icon-lg: 44px;
+}
+:root[data-stage-skin] {
+  --desk:#191512; --desk-2:#201b16; --desk-3:#282119; --line-dark:#382f25;
+  --stage-ui-recess-rgb:13,12,11;
+  --gamma-ui-3d:#0d0a08;
+  --recess:rgba(var(--stage-ui-recess-rgb),.3);
+}
+:root[data-stage-skin="blue-black"] {
+  --desk: #141619;
+  --desk-2: #1b1e22;
+  --desk-3: #23272c;
+  --line-dark: #373d44;
+  --stage-ui-recess-rgb: 13, 14, 16;
+  --stage-ui-seat-rgb: 21, 23, 26;
+  --stage-ui-desk-rgb: 20, 22, 25;
+  --stage-ui-panel-rgb: 27, 30, 34;
+  --stage-ui-scrim-rgb: 7, 8, 9;
+  --stage-ui-pose-rgb: 13, 14, 16;
+  --stage-ui-grid-rgb: 49, 53, 58;
+  --stage-ui-float-rgb: 21, 23, 26;
+  --stage-ui-float-deep-rgb: 13, 14, 16;
+  --stage-ui-rail: #15171a;
+  --stage-ui-phone: #15171a;
+  --stage-ui-raised: var(--desk-2);
+  --stage-ui-desk: var(--desk);
+  --stage-ui-model-base: #0d0e10;
+  --stage-ui-model-head: var(--desk-2);
+  --stage-ui-model-control: var(--desk-3);
+  --stage-ui-model-side: var(--desk);
+}
+:root[data-stage-skin="blue-black"] { --gamma-ui-3d:#0d0e10; }
+
+/* Repeated display controls share dimensions; canvas and scene colors remain independent. */
+html[data-stage-skin] .stage-center-bar .stage-name-toggle,
+html[data-gamma-embedded] .showtoggles button {
+  min-height:var(--ctrl-sm); height:auto; padding:3px 8px;
+  font-size:var(--fs-3); line-height:1.5;
+}
+html[data-stage-skin] .stage-view-select select {
+  height:var(--ctrl-sm); font-size:var(--fs-3); line-height:calc(var(--ctrl-sm) - 2px);
+}
+html[data-stage-skin] #stage-fpv-overlay { background:var(--gamma-ui-3d); }
+html[data-stage-skin] .stage-scene-resize,
+html[data-stage-skin] .stage-roster-list-resize { height:12px; }
+html[data-stage-skin] .stage-scene-resize:focus-visible,
+html[data-stage-skin] .stage-roster-list-resize:focus-visible {
+  outline:2px solid var(--brass); outline-offset:2px; border-top-color:var(--brass);
+}
+body.gamma-is-list-resizing, body.gamma-is-list-resizing * { cursor:ns-resize !important; user-select:none !important; }
+
+/* Shared role rules: compact desktop work controls, not every icon or canvas handle. */
+:root { --gamma-selected-bg:#3a311b; --gamma-primary-bg:#9d4424; }
+html[data-stage-skin] :is(.stage-seat,.stage-canvas-tool,.stage-tool-bar button,.stage-roster-add-row),
+html[data-gamma-embedded] :is(.filters button,.seg button,.btn.small,.ontoggle) {
+  min-height:var(--ctrl-sm); border-radius:var(--radius-sm); font-size:var(--fs-3); line-height:1.5;
+}
+html[data-stage-skin] :is(.stage-panel,.stage-modal) :is(input.stage-text-input,select.stage-text-input,.stage-minor-action),
+html[data-gamma-embedded] :is(.field input:not([type="range"]):not([type="checkbox"]):not([type="color"]),.field select,.search,.btn:not(.small)) {
+  min-height:var(--ctrl-md); border-radius:var(--radius-sm); font-size:var(--fs-4); line-height:1.5;
+}
+html[data-stage-skin] .stage-panel-head,
+html[data-gamma-embedded] .ptitle { font-size:var(--fs-5); font-weight:600; line-height:1.5; letter-spacing:.04em; }
+html[data-stage-skin] :is(.stage-name-toggle,.stage-seat,.stage-canvas-tool,.stage-tool-bar button)[aria-pressed="true"],
+html[data-stage-skin] #stage-fpv-overlay .stage-fpv-chip.on,
+html[data-gamma-embedded] :is(.showtoggles button,.filters button,.seg button,.ontoggle,.slp-tab,.fmode button)[aria-pressed="true"] {
+  background:var(--gamma-selected-bg); border-color:var(--brass); color:var(--milk);
+  box-shadow:inset 0 -2px 0 var(--brass);
+}
+html[data-gamma-embedded] #apply { background:var(--gamma-primary-bg); color:var(--milk); border-color:var(--rust); }
+html[data-stage-skin] :is(button,input,select,textarea):focus-visible,
+html[data-gamma-embedded] :is(button,input,select,textarea):focus-visible { outline:2px solid var(--brass); outline-offset:2px; }
+
+/* Icon-only squares share centering; their existing hit sizes and states remain local. */
+:root {
+  --gamma-feedback-width: var(--gamma-icon-box);
+  --gamma-square-glyph-size: 16px;
+  --gamma-icon-scale: 1.1;
+  --gamma-canvas-bar-icon-size: var(--gamma-icon-box);
+  --gamma-canvas-bar-glyph-size: 21px;
+}
+html[data-stage-skin] :is(
+  button.is-icon, button:has(> .stage-square-glyph), label.is-icon, .stage-panel-version-copy,
+  .stage-history-icon, .stage-gear-btn, .stage-panel-visibility-btn,
+  .stage-present-icon, .stage-cue-sheet-icon, .stage-export-icon, .stage-header-icon,
+  .stage-release-open, .stage-ai-link, .stage-launch-backup-close,
+  .stage-cast-remove, .stage-cast-lock, .stage-cast-profile, .stage-kind-swatch,
+  .stage-scene-row-delete, .stage-scene-action-icon, .stage-scene-bar-grid,
+  .stage-modal-close, .stage-canvas-close, .btn-close, .btn-close-ev,
+  .stage-zoom-fab button, .stage-venue-editor-zoom button,
+  .stage-timeline-square, .stage-timeline-row-add, .stage-timeline-row-handle,
+  .stage-step-button, .stage-panel-help, .stage-hint-help, .stage-pref-help,
+  .gamma-light-status-close, .stage-present-zone, .stage-present-swap,
+  .stage-present-close, .stage-present-drawer-toggle
+):not([hidden]) {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0; letter-spacing: 0; line-height: 1;
+}
+.stage-square-glyph {
+  display: block; flex: 0 0 auto;
+  width: calc(var(--gamma-square-glyph-size) * var(--gamma-icon-scale));
+  height: calc(var(--gamma-square-glyph-size) * var(--gamma-icon-scale));
+}
+
+/* 正面図・平面図の帯にあるアイコン操作は、狭い幅でも同じ正方形を保つ。 */
+html[data-stage-skin] .stage-canvas-bar .stage-canvas-tools :is(
+  .stage-canvas-toggle.is-icon, .stage-canvas-tool.is-icon, .stage-canvas-close
+) {
+  box-sizing: border-box;
+  flex: 0 0 var(--gamma-canvas-bar-icon-size);
+  width: var(--gamma-canvas-bar-icon-size);
+  min-width: var(--gamma-canvas-bar-icon-size);
+  max-width: var(--gamma-canvas-bar-icon-size);
+  height: var(--gamma-canvas-bar-icon-size);
+  min-height: var(--gamma-canvas-bar-icon-size);
+  max-height: var(--gamma-canvas-bar-icon-size);
+  padding: 0;
+  place-items: center;
+  justify-self: start;
+}
+html[data-stage-skin] .stage-canvas-bar .stage-canvas-tools :is(
+  .stage-canvas-toggle.is-icon, .stage-canvas-tool.is-icon, .stage-canvas-close
+) > svg,
+html[data-stage-skin] .stage-canvas-bar .stage-canvas-tools :is(
+  .stage-canvas-toggle.is-icon, .stage-canvas-tool.is-icon, .stage-canvas-close
+) > .stage-tool-icon {
+  width: calc(var(--gamma-canvas-bar-glyph-size) * var(--gamma-icon-scale));
+  height: calc(var(--gamma-canvas-bar-glyph-size) * var(--gamma-icon-scale));
+}
+
+/* 箱はそのままに、ボタン内の絵だけを共通倍率で大きくする。 */
+html[data-stage-skin] :is(.stage-history-icon, .stage-release-open) { --gamma-icon-glyph-size: 22px; }
+html[data-stage-skin] :is(
+  .stage-ai-link, .stage-cue-sheet-icon, .stage-export-icon, .stage-header-icon,
+  .stage-timeline-square, .stage-timeline-settings-trigger
+) { --gamma-icon-glyph-size: 20px; }
+html[data-stage-skin] .stage-cast-lock { --gamma-icon-glyph-size: 13px; }
+html[data-stage-skin] :is(
+  .stage-panel-version-copy, .stage-cast-remove, .stage-scene-row-delete,
+  .stage-zoom-fab button, .stage-venue-editor-zoom button,
+  .stage-timeline-row-add, .stage-timeline-row-handle
+) { --gamma-icon-glyph-size: 16px; }
+html[data-stage-skin] .stage-scene-action-icon { --gamma-icon-glyph-size: 21px; }
+html[data-stage-skin] :is(
+  .stage-history-icon, .stage-release-open, .stage-ai-link, .stage-cue-sheet-icon,
+  .stage-export-icon, .stage-header-icon, .stage-panel-version-copy,
+  .stage-cast-remove, .stage-cast-lock, .stage-scene-row-delete,
+  .stage-scene-action-icon, .stage-zoom-fab button, .stage-venue-editor-zoom button,
+  .stage-timeline-square, .stage-timeline-settings-trigger,
+  .stage-timeline-row-add, .stage-timeline-row-handle
+) > svg {
+  width: calc(var(--gamma-icon-glyph-size) * var(--gamma-icon-scale));
+  height: calc(var(--gamma-icon-glyph-size) * var(--gamma-icon-scale));
+}
+html[data-stage-skin] :is(.stage-panel-help, .stage-hint-help, .stage-pref-help) {
+  font-size: calc(11px * var(--gamma-icon-scale));
+}
+html[data-stage-skin] .stage-scene-bar-grid {
+  font-size: calc(13px * var(--gamma-icon-scale));
+}
+html[data-stage-skin] :is(#stage-timeline-loop-a, #stage-timeline-loop-b) {
+  font-size: calc(14px * var(--gamma-icon-scale));
+}
+/* 取っ手はSVG枠が箱の高さ一杯なので、枠は保ち、中の作図だけを下端基準で拡大する。 */
+html[data-stage-skin] #stage-timeline-grip > svg > * {
+  transform-box: view-box;
+  transform-origin: 50% 100%;
+  transform: scale(var(--gamma-icon-scale));
+}
+html[data-stage-skin] #stage-feedback-open {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: 0 0 var(--gamma-feedback-width); width: var(--gamma-feedback-width);
+  padding: 0; letter-spacing: 0;
+}
+
+html.stage-pwa-tablet #stage-feedback-open::before { content: none; }
+
+/* Lighting diagrams use the same centered glyphs, including navigation and group removal. */
+html[data-gamma-embedded] :is(.solo-btn, .x, .qnav, #sec-prev, #sec-next, #scene-prev, #scene-next) {
+  display: inline-flex; align-items: center; justify-content: center;
+  letter-spacing: 0; line-height: 1;
+}
+html[data-gamma-embedded] .solo-btn { width: 24px; padding: 0; }
+
+/* ===== 2026-10-05 本人指示「アイコンの枠に対する絵の大きさを統一」 =====
+   上の --gamma-icon-glyph-size は SVG の外枠の大きさで、外枠の中の余白は絵ごとに違う
+   （同じ44pxの箱で、実際に描かれた絵が11px〜20pxまでばらついていた）。
+   ここでは「描かれた絵の長い辺」を箱の大きさごとの基準へ合わせる。外枠の数値は
+   基準 ÷（絵の長辺 ÷ 外枠）で、2026-10-05 に v0.2.97 の実画面で getBBox から実測した。
+     箱44px → 絵18px・線1.75px ／ 箱30〜34px → 絵15px・線1.6px ／
+     箱26〜29px → 絵13px・線1.5px ／ 箱22〜25px → 絵11px・線1.5px
+   線は拡大しても太らないよう non-scaling-stroke で画面上の太さを揃える
+   （歯車は線の太さが2種類あるので線はそのまま）。演者の色見本・タイムラインの取っ手は絵でなく対象外。
+   新しいアイコンを足したら tests/icon-glyph-size-browser.cjs が外れを知らせる。iPad・スマホ表示は対象外。 */
+:root {
+  --gamma-icon-box: var(--ctrl-md);
+  --gamma-icon-glyph: 15px;
+  --gamma-icon-stroke: 1.6px;
+  --gamma-icon-stroke-44: 1.75px;
+  --gamma-icon-stroke-32: 1.6px;
+  --gamma-icon-stroke-28: 1.5px;
+  --gamma-icon-stroke-22: 1.5px;
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(#stage-timeline-settings-trigger, #stage-timeline-transition-animation) svg { width: 24px; height: 24px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-present-btn svg { width: 22px; height: 22px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-release-open > svg { width: 18.5px; height: 18.5px; }
+/* 図の帯は通常・下部とも箱34px、絵15px。係数＝1÷（絵の長辺÷外枠）。 */
+html[data-stage-skin] { --gamma-canvas-glyph: var(--gamma-icon-glyph); }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-canvas-bar .stage-canvas-tools :is(#stage-front-note, #stage-plan-note) > svg { width: calc(var(--gamma-canvas-glyph) * 1.394); height: calc(var(--gamma-canvas-glyph) * 1.394); }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-canvas-bar .stage-canvas-tools #stage-costume-toggle > svg { width: calc(var(--gamma-canvas-glyph) * 1.631); height: calc(var(--gamma-canvas-glyph) * 1.631); }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-canvas-bar .stage-canvas-tools #stage-plan-route > svg { width: calc(var(--gamma-canvas-glyph) * 1.597); height: calc(var(--gamma-canvas-glyph) * 1.597); }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-canvas-bar .stage-canvas-tools #stage-plan-derive-route > svg { width: calc(var(--gamma-canvas-glyph) * 1.474); height: calc(var(--gamma-canvas-glyph) * 1.474); }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-canvas-bar .stage-canvas-tools .stage-canvas-close > svg { width: calc(var(--gamma-canvas-glyph) * 2); height: calc(var(--gamma-canvas-glyph) * 2); }
+/* 表示の入り切り（label.stage-canvas-toggle）の絵は span.stage-tool-icon の中の svg。直下の svg だけを狙う旧い書き方では
+   一度も当たらず（2026-10-06 に実測で判明）、15px のまま＝描いた絵が約10pxで、メモ・衣装（約15px）より小さく見えていた。
+   描き直した絵は「斜線と同じ 2.1〜13.9 の枠いっぱい（11.8 単位）」に収めてあり、この倍率で長辺が約15pxになる。
+   戻すときはこの 2 行を消す（svg は style.css の .stage-tool-icon svg＝15px へ戻る）。 */
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-canvas-bar .stage-canvas-tools .stage-canvas-toggle.is-icon > svg,
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-canvas-bar .stage-canvas-tools .stage-canvas-toggle.is-icon > .stage-tool-icon > svg { width: calc(var(--gamma-canvas-glyph) * 1.351); height: calc(var(--gamma-canvas-glyph) * 1.351); }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(.stage-zoom-fab, .stage-venue-editor-zoom, .venue-live-controls) button > svg,
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(#stage-timeline-zoom-in, #stage-timeline-zoom-out) > svg { width: 29px; height: 29px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(#stage-timeline-head, #stage-timeline-prev, #stage-timeline-next) > svg { width: 31px; height: 31px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-timeline-play > svg { width: 33px; height: 33px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-scene-grid-open > svg { width: 21px; height: 21px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(#stage-scene-section, #stage-scene-add) > svg { width: 20px; height: 20px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-row-delete > svg { width: 30px; height: 30px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(.stage-panel-version-copy, .stage-timeline-row-add) > svg { width: 24px; height: 24px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-timeline-row-handle > svg { width: 21px; height: 21px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-cast-remove > svg { width: 22px; height: 22px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-cast-lock > svg { width: 15px; height: 15px; }
+/* 照明デザイン（埋め込み） */
+html[data-gamma-embedded] #t-play > svg { width: 25px; height: 25px; }
+html[data-gamma-embedded] .fixture-group-off > svg { width: 22px; height: 22px; }
+html[data-gamma-embedded] button.st.fixture-power > svg { width: 19px; height: 19px; }
+html[data-gamma-embedded] button.st.fixture-power > svg :is(path, line, polyline, polygon, circle, rect, ellipse) { vector-effect: non-scaling-stroke; stroke-width: var(--gamma-icon-stroke-32); }
+
+/* 線の太さ（画面上のpx）。箱の大きさの段ごとに1つ。ヘッダーの一部は svg が span に包まれている。 */
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(#stage-panel-layout-toggle, #stage-panels-toggle, #stage-present-btn)
+  svg :is(path, line, polyline, polygon, circle, rect, ellipse) { vector-effect: non-scaling-stroke; stroke-width: var(--gamma-icon-stroke); }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(
+  .stage-zoom-fab button, .stage-venue-editor-zoom button, .venue-live-controls button,
+  #stage-timeline-head, #stage-timeline-prev, #stage-timeline-play, #stage-timeline-next,
+  #stage-timeline-zoom-in, #stage-timeline-zoom-out, #stage-timeline-transition-animation
+) > svg :is(path, line, polyline, polygon, circle, rect, ellipse) {
+  vector-effect: non-scaling-stroke; stroke-width: var(--gamma-icon-stroke-44);
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(
+  .stage-scene-action-icon, #stage-scene-grid-open, #stage-scene-section, #stage-scene-add,
+  .stage-scene-row-delete, .stage-panel-version-copy, .stage-timeline-row-add,
+  .stage-tool-row .is-icon, #stage-light-render-toggle, #stage-work-light-toggle, #stage-toolbar-transition-animation
+) svg :is(path, line, polyline, polygon, circle, rect, ellipse) {
+  vector-effect: non-scaling-stroke; stroke-width: var(--gamma-icon-stroke-32);
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-timeline-row-handle > svg :is(path, line, polyline, polygon, circle, rect, ellipse) {
+  vector-effect: non-scaling-stroke; stroke-width: var(--gamma-icon-stroke-28);
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(.stage-cast-remove, .stage-cast-lock) > svg :is(path, line, polyline, polygon, circle, rect, ellipse),
+html[data-gamma-embedded] .fixture-group-off > svg :is(path, line, polyline, polygon, circle, rect, ellipse) {
+  vector-effect: non-scaling-stroke; stroke-width: var(--gamma-icon-stroke-22);
+}
+
+/* 2026-10-05 シーンの帯: 一覧（⊞ を線画へ）と「メモを常に表示」切替。箱30px → 絵15px・線1.6px。
+   押した状態（常に表示）は他の切替と同じく真鍮の枠と色。ピンの頭を塗って「留めている」を示す。 */
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-scene-bar-grid > svg { width: 24px; height: 24px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-scene-desc-pin > svg { width: 20.5px; height: 20.5px; }
+html[data-stage-skin] :is(#stage-scene-bar-grid, #stage-scene-desc-pin) > svg :is(path, circle) { vector-effect: non-scaling-stroke; stroke-width: var(--gamma-icon-stroke-32); }
+html[data-stage-skin] .stage-scene-bar .stage-scene-desc-pin[aria-pressed="true"] { color: var(--brass); border-color: var(--brass); }
+.stage-scene-desc-pin[aria-pressed="true"] .stage-scene-desc-pin-head { fill: currentColor; }
+
+/* P1: header and diagram controls share the toolbar's 34 / 15 / 1.6 standard.
+   SVG frames were calculated from the pre-change getBBox survey, rounded to 0.5px. */
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(#stage-undo, #stage-redo, #stage-prefs-btn, #stage-panel-layout-toggle, #stage-panels-toggle, #stage-export, #stage-feature-search-open) svg { width: 20px; height: 20px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-ai-showwright-link svg { width: 18.5px; height: 18.5px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-share-open svg { width: 18.5px; height: 18.5px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(#stage-undo, #stage-redo, #stage-export, #stage-share-open, #stage-release-open, #stage-feature-search-open, .stage-canvas-bar .stage-canvas-tools :is(.stage-canvas-toggle.is-icon, .stage-canvas-tool.is-icon, .stage-canvas-close)) svg :is(path, line, polyline, polygon, circle, rect, ellipse) { vector-effect: non-scaling-stroke; stroke-width: var(--gamma-icon-stroke); }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-center-bar .stage-name-toggle.is-icon svg { width: 20px; height: 20px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-center-bar .stage-name-toggle.is-icon svg :is(path, line, polyline, polygon, circle, rect, ellipse) { vector-effect: non-scaling-stroke; stroke-width: var(--gamma-icon-stroke); }
+
+/* P8b: 16-unit drawn extent in a 20-unit SVG frame = the shared 15px glyph. */
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-canvas-tools #stage-idle-motion-toggle > svg { width: calc(var(--gamma-icon-glyph) * 1.25); height: calc(var(--gamma-icon-glyph) * 1.25); }
+
+/* F06: daylight chrome. Stage artwork and printed paper have separate palettes. */
+:root[data-stage-skin="paper-light"] {
+  color-scheme: light;
+  --desk: #f2eee5;
+  --desk-2: #fffcf5;
+  --desk-3: #e7e0d3;
+  --line-dark: #8d8475;
+  --milk: #29251f;
+  --milk-dim: #61594d;
+  --ink-soft-sm: #61594d;
+  --brass: #735916;
+  --rust: #943d1c;
+  --rust-ink: #943d1c;
+  --rust-deep: #753017;
+  --danger: #aa2828;
+  --danger-rgb: 170, 40, 40;
+  --moss: #4b6135;
+  --slate: #465c68;
+  --recess: rgba(97, 89, 77, .06);
+  --gamma-selected-bg: #e2d2a4;
+  --gamma-primary-bg: #943d1c;
+  --gamma-on-primary: #fffcf5;
+  --chrome-ink: #29251f;
+  --chrome-muted: #61594d;
+  --stage-ui-recess-rgb: 242, 238, 229;
+  --stage-ui-seat-rgb: 242, 238, 229;
+  --stage-ui-desk-rgb: 242, 238, 229;
+  --stage-ui-panel-rgb: 255, 252, 245;
+  --stage-ui-pose-rgb: 242, 238, 229;
+  --stage-ui-grid-rgb: 141, 132, 117;
+  --stage-ui-float-rgb: 255, 252, 245;
+  --stage-ui-float-deep-rgb: 242, 238, 229;
+  --stage-ui-paper-rgb: 41, 37, 31;
+  --stage-ui-rail: var(--desk);
+  --stage-ui-phone: var(--desk);
+  --stage-ui-raised: var(--desk-2);
+  --stage-ui-desk: var(--desk);
+  --stage-ui-model-head: var(--desk-2);
+  --stage-ui-model-control: var(--desk-3);
+  --stage-ui-model-side: var(--desk);
+  --storage-warning-bg: var(--desk-2);
+  --storage-warning-text: var(--milk);
+  --storage-warning-caution: #735916;
+  --storage-warning-danger: var(--danger);
+}
+html[data-stage-skin="paper-light"] .stage-header-logo { filter: brightness(.18); }
+html[data-stage-skin="paper-light"] .stage-gamma-label { color: var(--milk-dim); }
+html[data-stage-skin="paper-light"] #gamma-cuesheet-workspace .stage-cue-sheet-scroll { color-scheme: light; }
+html[data-stage-skin="paper-light"] [data-stage-ui-skin="paper-light"] .stage-pref-skin-swatch,
+[data-stage-ui-skin="paper-light"] .stage-pref-skin-swatch {
+  --skin-sample-base: #f2eee5; --skin-sample-panel: #fffcf5;
+}
+html[data-stage-skin="paper-light"][data-gamma-embedded] #apply { color: var(--gamma-on-primary); }
+html[data-stage-skin="paper-light"] :is(input, textarea)::placeholder { color: var(--milk-dim); opacity: 1; }
+
+/* U14: opaque dark seats remain readable over any stage picture, in all skins. */
+:root {
+  --gamma-viewpoint-bg: #191512;
+  --gamma-viewpoint-text: #f7f1e6;
+  --gamma-viewpoint-border: #9c8c71;
+  --gamma-viewpoint-selected: #40351e;
+  --gamma-viewpoint-focus: #e3c46f;
+}
+html[data-stage-skin] .stage-canvas-bar .stage-seat-list .stage-seat {
+  background: var(--gamma-viewpoint-bg);
+  color: var(--gamma-viewpoint-text);
+  border-color: var(--gamma-viewpoint-border);
+}
+html[data-stage-skin] .stage-canvas-bar .stage-seat-list .stage-seat:is(:hover, [aria-pressed="true"]) {
+  background: var(--gamma-viewpoint-selected);
+  color: var(--gamma-viewpoint-text);
+  border-color: var(--gamma-viewpoint-focus);
+}
+html[data-stage-skin] .stage-canvas-bar .stage-seat-list .stage-seat[aria-pressed="true"] {
+  box-shadow: inset 0 -2px 0 var(--gamma-viewpoint-focus);
+}
+html[data-stage-skin] .stage-canvas-bar .stage-seat-list .stage-seat:focus-visible {
+  outline-color: var(--gamma-viewpoint-focus);
+}
+/* Legacy fixed chrome colors adapt locally; diagrams and color/gobo swatches do not. */
+html[data-stage-skin="paper-light"] :is(.script-ed-search, .script-ed-input, .script-ed-inline, .script-ed-group-head, .script-ed-row.is-dragging) { background: var(--desk-2); }
+html[data-stage-skin="paper-light"] :is(.stage-feature-search-path, #gamma-light-status) { color: var(--milk-dim); }
+html[data-stage-skin="paper-light"] #gamma-light-status.is-failure .gamma-light-status-title { color: var(--danger); }
+html[data-stage-skin="paper-light"] #gamma-venue-workspace .stage-lighting-plan-body { background: var(--recess); }
+html[data-stage-skin="paper-light"] #gamma-venue-workspace .stage-lighting-source-choices button[aria-pressed="true"] strong { color: var(--brass); }
+html[data-stage-skin="paper-light"] #stage-cue-sheet-view-a4[aria-pressed="true"] { color: var(--milk); background: var(--gamma-selected-bg); }
+html[data-stage-skin="paper-light"] .stage-range-value .stage-range-value-input:focus { background: var(--desk-2); }
+html[data-stage-skin="paper-light"] .venue-viewpoints-controls { color: var(--milk); }
+html[data-stage-skin="paper-light"] :is(.venue-viewpoints-controls .stage-profile-hint, .stage-venue-editor-viewpoints > .stage-profile-hint) { color: var(--milk-dim); }
+html[data-stage-skin="paper-light"][data-gamma-embedded] :is(.box, .panel) { background: var(--recess); }
+html[data-stage-skin="paper-light"][data-gamma-embedded] :is(.band, .statebadge, .empty) { background: var(--desk-2); }
+html[data-stage-skin="paper-light"][data-gamma-embedded] :is(.sec.focus .viewtitle, .pwhy) { color: var(--milk-dim); }
+html[data-stage-skin="paper-light"][data-gamma-embedded] :is(.allq, .row.sel .no, button.st.on, .row button.st.fixture-power.move, .transport .btn.solo[aria-pressed="true"], .lxrow .qno) { color: var(--gamma-on-primary); }
+html[data-stage-skin="paper-light"][data-gamma-embedded] :is(button.st.off, .row .st.off) { color: var(--slate); }
+html[data-stage-skin="paper-light"][data-gamma-embedded] .lxrow.cur .qno { background: var(--brass); }
+html[data-stage-skin="paper-light"][data-gamma-embedded] .gpick-t:not([aria-expanded="true"]) { background: var(--desk-2); }
+html[data-stage-skin="paper-light"] {
+  --stage-timeline-panel: var(--desk-2);
+  --stage-timeline-text: var(--milk);
+  --stage-timeline-muted: var(--milk-dim);
+  --stage-timeline-accent: var(--brass);
+  --stage-timeline-transition: var(--moss);
+  --stage-timeline-line: var(--line-dark);
+}
+html[data-stage-skin="paper-light"] body::before { background: none; }
+html[data-stage-skin="paper-light"] .script-ed {
+  --sed-box: var(--desk-2);
+  --sed-text: var(--milk);
+  --sed-dim: var(--milk-dim);
+  --sed-brass-ink: var(--brass);
+  --sed-green: var(--moss);
+  --sed-direction: var(--milk-dim);
+  --sed-warn: var(--danger);
+}
+html[data-stage-skin="paper-light"] :is(
+  .stage-version-note, .stage-panel-grip, .stage-scene-grip, .stage-profile-hint,
+  .stage-pref-hint, .stage-pref-boundary-note, .stage-pref-caption-size-title,
+  .stage-pref-caption-size-option, .stage-pref-keyrow, .stage-pref-keyrow.is-fixed,
+  .stage-pref-keyrow-sub, .stage-native-version, .stage-hint-help
+) { color: var(--milk-dim); }
+html[data-stage-skin="paper-light"] :is(
+  .stage-pref-name, .stage-pref-row.is-planned .stage-pref-name, .stage-pref-help,
+  .stage-scene-now, .stage-scene-chip.is-open .stage-scene-name,
+  .stage-cue-sheet-row > span, .stage-scene-chip summary, #stage-native-version
+) { color: var(--milk); }
+html[data-stage-skin="paper-light"] :is(.stage-pref-group-title, .stage-pref-keycap, .stage-pref-keyrow.is-fixed .stage-pref-keycap) { color: var(--brass); }
+html[data-stage-skin="paper-light"] :is(.stage-tool-grid button[aria-pressed="true"], .stage-canvas-toggle:has(input:checked), .stage-canvas-tool[aria-pressed="true"], .stage-venue-editor-floor-color[aria-pressed="true"], .stage-venue-editor-floor-color-btn[aria-pressed="true"]) { color: var(--milk); background: var(--gamma-selected-bg); }
+html[data-stage-skin="paper-light"] .stage-scene-step > button { color: var(--milk); }
+html[data-stage-skin="paper-light"] :is(.stage-scene-chip.is-section, .stage-scene-chip.is-open) { background: var(--desk-3); }
+html[data-stage-skin="paper-light"] #stage-front-light-cue-caption { color: var(--milk); background: var(--desk-3); }
+html[data-stage-skin="paper-light"] #stage-venue-editor-apply { color: var(--gamma-on-primary); }
+html[data-stage-skin="paper-light"][data-gamma-embedded] #simple-mode-on { color: var(--milk-dim); }
+html[data-stage-skin="paper-light"] #stage-fpv-overlay :where(.stage-fpv-chip, .stage-fpv-panel, .stage-fpv-panel-hide, .stage-fpv-pose-group, #stage-fpv-help, #stage-fpv-keys, #stage-fpv-hint, #stage-fpv-edit, #stage-fpv-nav button) {
+  color: var(--milk); border-color: var(--line-dark); background-color: var(--desk-2);
+}
+html[data-stage-skin="paper-light"] #stage-fpv-overlay .stage-fpv-chip.on { background: var(--gamma-selected-bg); border-color: var(--brass); }
+html[data-stage-skin="paper-light"] #stage-fpv-overlay :is(button, select):focus-visible { outline-color: var(--brass); }
+
+html[data-stage-skin="paper-light"] :is(.stage-scene-more > summary, .stage-venue-scale) { color: var(--milk-dim); }
+html[data-stage-skin="paper-light"] :is(.stage-scene-bar .stage-scene-step-btn.is-prev, .stage-transition-animation-pref .stage-transition-animation-toggle.stage-toggle, .stage-tip-name) { color: var(--milk); }
+html[data-stage-skin="paper-light"] .stage-pref-keys-title { color: var(--brass); }
+html[data-stage-skin="paper-light"] [data-venue-editor-floor-color][aria-pressed="true"] { color: var(--milk); background: var(--gamma-selected-bg); }
+html[data-stage-skin="paper-light"] .stage-center-bar .stage-tool-grid button.is-icon[aria-pressed="true"] .stage-tool-icon { color: var(--milk); }
+
+/* N-11: keep translated feedback words intact. */
+
+
+/* N-14: storage status uses the skin ink rather than the user-agent link blue. */
+#stage-storage-health { color:var(--milk); text-decoration:underline; text-underline-offset:3px; font-size:var(--fs-3); }
+
+/* N-17: native file names can scroll/truncate, but the choose action stays whole. */
+input[data-stage-file-control] { max-width:100%; min-width:0; width:100%; color:var(--milk); font:inherit; }
+input[data-stage-file-control]::file-selector-button { font:inherit; min-height:44px; padding:6px 12px; margin-right:8px; background:var(--desk-2); color:var(--milk); border:1px solid var(--line-dark); cursor:pointer; }
+
+/* N-27: note controls must be allowed to shrink to the saved column width. */
+#gamma-cuesheet-workspace .cue-sheet-table input,
+#gamma-cuesheet-workspace .cue-sheet-table select { min-width:0; width:100%; box-sizing:border-box; }
+
+.stage-selected-file-name { display:block; min-width:0; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* D-18: persistent action result, separate from the autosave truth. */
+#stage-live.stage-action-status {
+  position:fixed; left:var(--gamma-gap); bottom:var(--gamma-gap); z-index:90;
+  max-width:min(480px,calc(100vw - 32px)); margin:0; padding:4px 8px;
+  background:var(--desk-2); color:var(--milk); border:1px solid var(--line-dark);
+  font-size:var(--fs-4); line-height:1.5; overflow-wrap:anywhere; pointer-events:none;
+}
+#stage-live.stage-action-status:empty { display:none; }

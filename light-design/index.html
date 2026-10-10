@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>試作: 照明デザインモード — 舞台スケッチ（判断用・製品ではない）</title>
+<style>
+  :root{
+    --desk:#191512;--desk-2:#201b16;--desk-3:#282119;--line-dark:#382f25;
+    --milk:#efe7d6;--milk-dim:rgba(240,231,214,.55);--brass:#9c823f;--rust:#a84b26;--rust-ink:#df6433;
+    --recess:rgba(13,12,11,.3);--sans:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;--serif:"Hiragino Mincho ProN","Yu Mincho",serif;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html,body{margin:0;background:#0d0b09;color:var(--milk);font-family:var(--sans);font-size:14px;line-height:1.5}
+  body{min-height:100vh;display:grid;place-items:center;padding:8px}
+  .proto-note{position:fixed;left:14px;top:10px;font-size:12px;color:var(--milk-dim);letter-spacing:.06em}
+  /* ---- モーダル外枠（本体 .stage-modal の語彙） ---- */
+  /* 2026-09-11 本人要望で上限を外し、画面いっぱいまで使う（図を大きく見せるため） */
+  /* 窓はブラウザの大きさに追従する（2026-09-11 本人要望）。
+     --band は「6枠のグリッドが実際に使っている幅」で、app.js が毎回入れ直す。
+     上2段（上帯・シーン行）をこの帯へ寄せるので、窓が広がっても図と縦に揃う。 */
+  .modal{--band:1400px;width:min(2600px,calc(100vw - 16px));height:min(1800px,calc(100vh - 16px));background:var(--desk-2);border:1px solid var(--line-dark);box-shadow:0 24px 60px rgba(0,0,0,.5);display:grid;grid-template-rows:minmax(60px,auto) minmax(0,1fr);overflow:hidden}
+  /* 左＝題／中央＝モード／右＝操作。1fr auto 1fr にしないとモードが中央に来ない */
+  .head{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;padding:0 max(14px,min(calc((100% - var(--band)) / 2),30px));border-bottom:1px solid var(--line-dark)}
+  .head h1{white-space:nowrap}
+  .head-right{justify-self:end}
+  /* 上帯の履歴ボタンは折り返さない（.seg の既定は flex-wrap:wrap なので、
+     文字を大きくしたとたん「元/に/戻/す」と縦積みになった。2026-09-13 実害）。 */
+  .seg.hist{flex-wrap:nowrap}
+  .seg.hist button{min-height:28px;padding:3px 7px;font-size:12.5px;white-space:nowrap}
+  .head h1{margin:0;font:500 17px/1 var(--serif);letter-spacing:.08em;color:var(--milk)}
+  .modes{display:inline-flex;justify-self:center}
+  .modes button{min-height:34px;padding:6px 13px;white-space:nowrap;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk-dim);font-size:14px;cursor:pointer}
+  .modes button+button{margin-left:-1px}
+  .modes button[aria-pressed="true"]{color:var(--milk);border-color:var(--brass);background:rgba(156,130,63,.22)}
+  /* margin-left:-1px で隣のボタンと縁を重ねているので、後に並ぶボタンの左縁（灰）が
+     選んだボタンの右縁（真鍮）の上に描かれ、枠が「閉じていない」ように見えていた
+     （2026-09-13 本人指摘）。選んだ・触れているボタンを手前に出して枠を全周見せる。 */
+  /* 触れているだけの隣のボタンが、選んでいるボタんより手前に出ないよう段を分ける
+     （2026-09-13 実害: 隣をホバーすると選択枠の縁がまた欠けた。z-indexが同値でDOM順の後勝ちだったため）。 */
+  .modes button:hover,.modes button:focus-visible{position:relative;z-index:1}
+  .modes button[aria-pressed="true"]{position:relative;z-index:2}
+  .seg.optical-choices button{min-height:34px;font-size:14px}
+  @media (pointer:coarse){.seg.optical-choices button{min-height:44px}}
+  /* 入り切らないときは縦へ折り返す（上帯の行は auto なので高さが伸びて逃げる）。
+     はみ出したまま中央のモードへ重なるより、1段増えるほうがまし。 */
+  .head-right{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+  .head-right .btn{padding:6px 9px}
+  .dirty{font-size:12.5px;color:var(--rust-ink);letter-spacing:.04em;min-width:8em;text-align:right;white-space:nowrap}
+  .dirty.ok{color:var(--brass)}
+  .runtime{font-size:11.5px;color:var(--milk-dim);letter-spacing:.02em;white-space:nowrap;border-left:1px solid var(--line-dark);padding-left:8px}
+  .btn{min-height:34px;padding:6px 10px;border:1px solid var(--line-dark);background:none;color:var(--milk);font-size:14px;cursor:pointer;letter-spacing:.04em;border-radius:1px;white-space:nowrap}
+  .btn:hover{border-color:var(--brass)}
+  .btn.primary{border-color:var(--brass);background:rgba(156,130,63,.18)}
+  #apply{border-color:var(--line-dark);background:var(--recess);color:var(--milk-dim)}
+  #apply.needs-apply{border-color:var(--rust-ink);background:rgba(168,75,38,.48);color:var(--milk);box-shadow:0 0 0 1px rgba(223,100,51,.35),0 0 14px rgba(223,100,51,.48)}
+  #apply.needs-apply:hover{background:rgba(168,75,38,.64)}
+  .btn.quiet{color:var(--milk-dim)}
+  .btn:disabled{opacity:.35;cursor:default}
+  .btn.small{min-height:28px;padding:3px 9px;font-size:12.5px}
+  /* 設定（歯車）。アイコンは舞台スケッチ本体 stage.html のSVGをそのまま使う（2026-09-13 本人指示）。 */
+  .gearbtn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border:1px solid var(--line-dark);background:none;color:var(--milk-dim);cursor:pointer}
+  .gearbtn:hover{border-color:var(--brass);color:var(--milk)}
+  .gearbtn svg{width:17px;height:17px;display:block}
+  .x{min-width:26px;min-height:24px;border:1px solid var(--line-dark);background:none;color:var(--milk-dim);font-size:13px;cursor:pointer}
+  /* ---- 本文3列 ---- */
+  /* 2026-09-11 本人要望で3列をやめ、図と同じ6枠のグリッドへ一本化した */
+  .body{display:flex;flex-direction:column;gap:5px;padding:5px 10px 7px;min-height:0}
+  .col{min-height:0;display:flex;flex-direction:column;gap:8px}
+  .box{border:1px solid var(--line-dark);background:rgba(25,21,18,.45);padding:10px}
+  .kicker{color:var(--brass);font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:none;margin:0 0 6px}
+  /* パネルの見出し（灯体・選んだ灯体・配置・灯体情報）。小さすぎて読めないという本人指摘で一段大きく（2026-09-12） */
+  .ptitle{color:var(--brass);font-size:14.5px;font-weight:600;letter-spacing:.1em;margin:0 0 6px;line-height:1.35}
+  .hint{color:var(--milk-dim);font-size:12px;line-height:1.6;margin:0}
+  /* いま当たっている状態の案内。つまみが生きていることを色で示す */
+  .hint.live{color:var(--milk);border-left:2px solid var(--brass);padding-left:7px}
+  .warn{color:var(--rust-ink);font-size:11.5px;line-height:1.6;margin:0;border-left:2px solid var(--rust-ink);padding-left:7px}
+  .conflict{flex:0 0 auto;margin-top:8px;padding:8px;border:1px solid var(--rust-ink);background:rgba(168,75,38,.10);display:flex;flex-direction:column;gap:7px}
+  .cflight{display:flex;flex-direction:column;gap:4px;border-top:1px solid rgba(223,100,51,.3);padding-top:6px}
+  .cfname{margin:0;font-size:12px;color:var(--milk)}
+  .cfacts{display:flex;flex-wrap:wrap;gap:4px}
+  .cfacts .btn{min-height:26px;padding:2px 8px;font-size:11.5px}
+  .warn b{color:var(--milk)}
+  /* 左: 一覧 */
+  .list{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:2px;padding:6px}
+  .row{display:grid;grid-template-columns:34px 1fr auto;gap:6px;align-items:center;min-height:38px;padding:2px 6px;border:1px solid transparent;cursor:pointer;color:var(--milk-dim)}
+  .row.with-delete{grid-template-columns:34px minmax(0,1fr) auto 22px}
+  .row .delete-fixture{width:22px;height:22px;padding:0;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk-dim);font:16px/1 var(--sans);cursor:pointer}
+  .row .delete-fixture:hover{border-color:var(--rust);color:var(--rust-ink)}
+  .row:hover{border-color:var(--line-dark)}
+  .row.sel{border-color:var(--brass);background:rgba(156,130,63,.16);color:var(--milk)}
+  /* 一覧の灯体記号（M01 / ◆07 など）は、枠からはみ出さないよう少し小さく軽くする。 */
+  .row .no{font:500 11.5px/1 var(--sans);color:var(--milk);background:var(--desk-3);padding:4px 1px;text-align:center;border:1px solid var(--line-dark);min-width:0;overflow:hidden;white-space:nowrap}
+  .row.sel .no{background:var(--brass);color:#1a1409;border-color:var(--brass)}
+  .row .nm{font-size:11px;line-height:1.25;overflow:hidden}
+  .row .nm small{display:block;font-size:9px;color:var(--milk-dim)}
+  .row .st{font-size:11px;letter-spacing:.04em;white-space:nowrap}
+  button.st{min-width:38px;min-height:20px;padding:1px 6px;border:1px solid var(--line-dark);background:var(--recess);cursor:pointer;font:inherit;font-size:11px}
+  button.st:hover{border-color:var(--brass)}
+  button.st.on{color:#1a1409;background:var(--brass);border-color:var(--brass)}
+  button.st.off{color:#8b98a1}
+  /* 灯体一覧の状態は文字ではなく、レンズ＋光輪で読む。ON/OFFを色だけに頼らない。 */
+  button.st.fixture-power{width:34px;min-width:34px;min-height:30px;padding:3px;display:inline-grid;place-items:center;line-height:0}
+  button.st.fixture-power svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+  button.st.fixture-power .fixture-power-lens{fill:currentColor}
+  /* 「動き」は点灯中の別状態。斜線は消灯のときだけ出し、動き中を消灯に見せない。 */
+  button.st.fixture-power .fixture-power-slash{display:none}
+  button.st.fixture-power.off .fixture-power-rays{display:none}
+  button.st.fixture-power.off .fixture-power-lens{fill:none}
+  button.st.fixture-power.off .fixture-power-slash{display:block}
+  button.st.move{color:var(--rust-ink);border-color:var(--rust-ink)}
+  /* 配置タブの3列目＝取り付け位置（下手寄り／中央など）。状態の色分けとは別の落ち着いた色にする */
+  .row .st.spot{color:var(--milk-dim);font-size:11.5px}
+  .row .st.unset{color:var(--milk-dim)} .row .st.off{color:#8b98a1} .row .st.on{color:var(--milk)} .row .st.move{color:var(--rust-ink)}
+  /* 点灯中の移動灯体も、灯体一覧ではONと同じ黄色で示す。 */
+  .row button.st.fixture-power.move{color:#1a1409;background:var(--brass);border-color:var(--brass)}
+  /* 一覧の見出し。半分幅のパネルでは「取り付け場所」と「6灯 まとめて選ぶ」を横に並べると
+     どちらも細かく折り返して読めないので、縦に積む（2026-09-13 本人指定「縦1列で大丈夫」）。 */
+  .grp{margin:6px 0 2px;padding:3px 6px;font-size:12px;color:var(--brass);border-bottom:1px solid var(--line-dark);display:flex;flex-direction:column;align-items:flex-start;gap:1px}
+  .grp small{color:var(--milk-dim);font-size:11px}
+  .filters{display:flex;flex-wrap:nowrap}
+  .filters button{flex:1 1 0;min-width:0;min-height:24px;padding:2px 3px;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk-dim);font-size:10.5px;white-space:nowrap;cursor:pointer}
+  .filters button+button{margin-left:-1px}
+  .filters button[aria-pressed="true"]{color:var(--milk);border-color:var(--brass);background:rgba(156,130,63,.22)}
+  /* 触れているだけの隣のボタンが、選んでいるボタんより手前に出ないよう段を分ける
+     （2026-09-13 実害: 隣をホバーすると選択枠の縁がまた欠けた。z-indexが同値でDOM順の後勝ちだったため）。 */
+  .filters button:hover,.filters button:focus-visible{position:relative;z-index:1}
+  .filters button[aria-pressed="true"]{position:relative;z-index:2}
+  .grp span{cursor:pointer} .grp small{cursor:pointer;text-decoration:underline}
+  /* 灯体が多いときの1行表示（.compact）。番号と名前だけを出し、取り付け場所は見出しで分かる */
+  .list.compact .row{min-height:25px;grid-template-columns:30px 1fr auto;gap:5px;padding:0 5px}
+  .list.compact .row.with-delete{grid-template-columns:30px minmax(0,1fr) auto 20px}
+  .list.compact .row .no{font-size:11px;padding:2px 1px}
+  .list.compact .row .nm{font-size:10px;white-space:nowrap;text-overflow:ellipsis}
+  .list.compact .row .nm small{display:none}
+  .list.compact .grp{margin:5px 0 1px}
+  /* 灯体情報のページ: 横2列へ折り返す。見出しは2列ぶんをまたぐ */
+  .list.cols2{display:grid;grid-template-columns:1fr 1fr;gap:2px 6px;align-content:start}
+  .list.cols2 .grp{grid-column:1/-1}
+  .list.cols2 .row{grid-template-columns:30px 1fr auto;gap:4px;padding:0 4px;min-height:26px}
+  .list.cols2 .row.with-delete{grid-template-columns:30px minmax(0,1fr) auto 20px}
+  .list.cols2 .row .no{font-size:11px;padding:2px 1px}
+  .list.cols2 .row .nm{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .list.cols2 .row .nm small{display:none}
+  .list.cols2 button.st{min-width:34px;padding:1px 4px}
+  /* 図の上の中央。照明デザインではLXキュー、配置では現在のシーンを出す。 */
+  .scenebox{grid-column:2;justify-self:center;gap:12px}
+  /* R-21（2026-09-17 本人要望）: 「ボールドがすごい」ので細くする。大きさは変えない。 */
+  .place-scene{min-height:30px;max-width:360px;padding:3px 12px;font:400 16px/1.2 var(--sans);color:var(--milk);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .scenebar{display:flex;align-items:center;gap:4px;min-width:0}
+  .scenebar .name{font-family:var(--serif);font-size:13px;color:var(--milk);flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+  /* 修正バッチ 2026-10-07 #6: LXキューパネルの上の「セクション／シーン」の2段（.lxscene／.lxpick）は図の上の中央へ移したので消した。 */
+  /* 半分幅のパネルなので、中のボタンは折り返しを許す（.btn は既定で nowrap）。 */
+  #panel-lxq .btn{white-space:normal;line-height:1.3}
+  /* すべてのシーンの一覧（モーダル）。セクション→シーン→LXキュー の3段で並べる。 */
+  .dialog .in:has(.alllist){max-width:620px}
+  .alllist{display:grid;gap:8px;max-height:52vh;overflow-y:auto}
+  .allsec{display:grid;gap:4px}
+  .allsec>.kicker{margin:0;border-bottom:1px solid var(--line-dark);padding-bottom:3px}
+  .allscene{display:grid;grid-template-columns:minmax(0,1fr);gap:3px;border:1px solid var(--line-dark);background:var(--recess);padding:6px 8px}
+  .allscene.cur{border-color:var(--brass);background:rgba(156,130,63,.14)}
+  .allsname{display:flex;align-items:baseline;gap:7px;min-width:0;cursor:pointer;color:var(--milk);font:400 13px var(--serif)}
+  .allsname:hover{color:var(--brass)}
+  .allsname small{font-family:var(--sans);font-size:11px;color:var(--milk-dim);white-space:nowrap}
+  .allqs{display:flex;flex-wrap:wrap;gap:4px}
+  .allq{font:600 11.5px/1 var(--sans);color:#1a1409;background:var(--brass);border:0;padding:4px 6px;cursor:pointer;letter-spacing:.02em}
+  .allq:hover{background:var(--milk)}
+  .allq.editing{background:var(--rust);color:var(--milk)}
+  .allnone{font-size:11px;color:var(--milk-dim)}
+  /* 図の上の中央＝いま画面に出ているデザインがどのキューか。いちばん大きく出す。 */
+  /* R-21: 照明デザイン側（LXキュー の表示）も同じく細く。大きさ（20px）は変えない。
+   * 下の .qnow.draft は「未登録の下書き」を表す。太さでの差は無くなるが、
+   * 色（--milk-dim）と大きさ（15px）で区別が付く。 */
+  /* 2026-10-06 本人指示: 「シーン 1-28／Q1 キュー名（または未登録の下書き）」を横1行に。大きさの差（12px／20px／14px）は保ち、下の線で揃える。
+   ★v0.3.3（2026-10-05）で2段にしたのは、横並びにすると中央の列が広がって左の「照明の操作」が折り返したため。
+   今回は、左の「かんたん／詳細」が小さくなったぶん（44px→他の切替と同じ高さ）に加えて、左が2段に収まらない幅では
+   中央だけ2段目へ送る（embed.css の @media。照明デザインのみ）ことで、左の折り返しを増やさない。 */
+  .qnow{font:400 20px/1.2 var(--sans);color:var(--brass);letter-spacing:.04em;white-space:nowrap;display:flex;flex-direction:row;align-items:baseline;gap:14px}
+  .qnow .qline{display:flex;align-items:baseline;gap:9px}
+  .qnow em{font-style:normal;font-weight:400;font-size:14px;color:var(--milk);font-family:var(--serif);letter-spacing:.06em;
+    /* キュー名が長いと中央の列が広がり、左の「照明の操作」の列が押し縮められて折り返す（2026-10-05）。幅に上限を置いて省略し、全文は title に出す */
+    max-width:min(11em,10vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .qnow.draft{color:var(--milk-dim);font-weight:400;font-size:15px}
+  /* シーン番号（2026-10-05）。キュー番号の上に小さく・薄く置く */
+  .qnow .qscene{display:inline-flex;align-items:baseline;gap:5px;font:400 12px/1.2 var(--sans);color:var(--milk-dim);letter-spacing:.06em}
+  .qnow .qscene b{font-weight:400;color:var(--milk);letter-spacing:.04em}
+  /* 修正バッチ 2026-10-07 #6: 図の上の中央のシーン送り「⊞ ▲ シーン 1-2 ▼ ｜ ◀ Q ▶」。シーン番号は今までの .qscene と同じ見た目。
+     番号を押してもシーンの一覧が開く（狭い幅で送りの矢印を隠したときの入口）。キュー名だけが縮む（…で切る）。 */
+  .scenenav{display:inline-flex;align-items:center;gap:8px;flex:0 0 auto}
+  .scenenav[hidden],.qsep[hidden]{display:none}
+  .sno{display:inline-flex;align-items:center;gap:5px;min-height:var(--icon-sm,32px);padding:0 4px;border:0;background:none;
+    font:400 12px/1 var(--sans);color:var(--milk-dim);letter-spacing:.06em;white-space:nowrap;cursor:pointer}
+  .sno b{font-weight:400;font-size:15px;line-height:1;color:var(--milk);letter-spacing:.04em}
+  .sno:hover b,.sno:focus-visible b{color:var(--brass)}
+  .qsep{flex:0 0 auto;width:1px;height:22px;background:var(--line-dark)}
+  .figbar .fb.scenebox{flex-wrap:nowrap;min-width:0}   /* simple-lighting.css の .simple-light-toolbar .fb（折り返す）より強く */
+  .scenebox .qnav{flex:0 0 auto}
+  .qnow .qcue{flex:0 0 auto}   /* Q番号は縮めない（縮むのはキュー名だけ） */
+  .qnow em{min-width:0}
+  /* 前後の LXキュー へ。中央の表示の左右に置く（2026-09-13 本人要望）。 */
+  .qnav{display:inline-flex;align-items:center;justify-content:center;width:var(--icon-sm,32px);min-width:var(--icon-sm,32px);height:var(--icon-sm,32px);min-height:var(--icon-sm,32px);padding:0;font-size:15px;line-height:1}
+  /* 2026-10-06 本人指示: 送りボタンは正方形。ボタンと表示の間に少し余白を持たせる */
+  .scenebox{align-items:center}
+  .fb.scenebox{gap:12px}
+  /* 再生はシーン全体の操作なので図上バー右端。コピー／ペーストだけを灯体情報に残す。 */
+  .transport{display:flex;align-items:center;gap:5px}
+  .scenebar .btn.small{min-height:24px;padding:2px 8px;font-size:12px}
+  /* 再生は、ツール群と同じ単色SVGにする。状態は再生（三角）／停止（二本線）で示し、
+     説明とショートカットは title / aria-label に残す。 */
+  .transport .btn.small.play-toggle{width:34px;min-width:34px;min-height:34px;padding:0;display:inline-grid;place-items:center}
+  .transport .play-toggle svg{display:block;width:16px;height:16px;fill:currentColor}
+  .transport .btn.small.playing{color:var(--milk);background:rgba(168,75,38,.28);border-color:var(--rust)}
+  /* コピー／ペーストは再生より一段控えめ（再生が主操作）。幅は「ペースト」に合わせて固定し、
+     使える・使えないで列が動かないようにする（2026-09-14）。 */
+  .transport .btn.small.xfer{min-width:5.4em;color:var(--milk-dim)}
+  .transport .btn.small.xfer:not([disabled]){color:var(--milk)}
+  .transport .btn.small.xfer[disabled]{opacity:.42;cursor:default;border-color:var(--line-dark)}
+  .transport .btn.small.xfer[disabled]:hover{border-color:var(--line-dark)}
+  /* ペースト直後の合図。色だけに頼らず、文字も「入れました」に一瞬変える（JS側） */
+  .transport .btn.small.xfer.done{color:var(--milk);border-color:var(--brass)}
+  /* T-16（2026-09-18 本人要望）: 記号から文字（ソロ／リセット）へ変えたので、
+     28px角の固定をやめる。帯が狭いので左右の余白は詰め、文字も小さめにする。 */
+  .transport .btn.solo{min-width:0;width:auto;padding:0 7px;font-weight:700;font-size:11px;white-space:nowrap}
+  .transport .btn.resetcue{min-width:0;width:auto;padding:0 7px;font-size:11px;white-space:nowrap}
+  /* R-11: カスタムのグループ。取り付け場所の見出しと同じ形にし、◆ と解除の✕で見分ける。 */
+  #make-fixture-group{width:100%;margin-bottom:4px;font-size:11px;min-height:26px}
+  .grp.fixture-group{display:flex;align-items:center;gap:6px}
+  .grp.fixture-group>span{color:var(--brass)}
+  .grp.fixture-group .fixture-group-off{margin-left:auto;flex:0 0 auto}
+  .transport .btn.solo[aria-pressed="true"]{color:#1a1409;background:var(--brass);border-color:var(--brass)}
+  .canvases{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;gap:5px}
+  canvas{display:block;width:100%;background:#0d0e10;border:1px solid var(--line-dark);cursor:crosshair;touch-action:none}
+  /* T字配置: 上段＝下手｜平面図｜上手、下段＝表示｜正面図｜凡例 */
+  /* 凸の形。4図とも同じ縮尺（1mが同じ長さ）になるよう、幅と高さは app.js が決める */
+  /* justify-items:center が要る。平面図と正面図は枠の幅が違う（平面図は横置き灯の印のぶん広い）ので、
+     既定の stretch のままだと中の舞台の左右がずれる */
+  /* 上段は残りの高さいっぱい。図は上に貼り付け、余ったぶんは左右のパネル（一覧・設定）が使う。
+     窓が縦に大きいほど一覧が長く見えるようになる（2026-09-11 本人要望） */
+  .figgrid{flex:1;min-height:0;display:grid;grid-template-columns:auto auto auto;grid-template-rows:minmax(0,1fr) auto;gap:8px 8px;justify-content:center;align-content:stretch;justify-items:center}
+  .planwrap{align-self:start}
+  .planwrap{position:relative;display:flex;flex-direction:column;gap:2px;min-width:0;grid-row:1;grid-column:2}
+  .sec{display:flex;flex-direction:column;gap:2px;min-width:0;grid-row:2}
+  .sec.side.l{grid-column:1} .sec.front{grid-column:2} .sec.side.r{grid-column:3;display:none}
+  /* 配置は下手・正面・上手を同時に読む展開図。照明デザインへ戻れば従来どおり左下の切替1面だけに戻す。 */
+  .figgrid.placement-unfolded .sec.side.r{display:flex}
+  /* ---- R-14（2026-09-17 本人要望）: 図を1枚だけウィンドウいっぱいに広げる ----
+   * 目的は「正面図の映像を大きい画面で見ること」。編集のための表示ではないので、
+   * 左右のパネル（灯体の一覧・灯体情報・LXキュー）は隠して画面を全部使う。
+   * キーは F=正面図 / p=平面図 / O=側面図、Esc かもう一度同じキーで戻る。
+   * 広げている間も Space（再生）と ←→（シーン送り）は効く（本人指定）。 */
+  .figgrid[data-solo]{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);justify-items:stretch}
+  .figgrid[data-solo]>*{display:none}
+  .figgrid[data-solo="plan"] .planwrap,
+  .figgrid[data-solo="front"] .sec.front,
+  .figgrid[data-solo="side"] .sec.side.l{display:flex;grid-column:1;grid-row:1;align-self:stretch;justify-self:stretch;width:100%}
+  .figgrid[data-solo] canvas{width:100%}
+  /* 広げている間は、上の帯のうち「どの図を見るか」に関わらないものを畳んで縦を稼ぐ */
+  .figgrid[data-solo] .viewhead,.figgrid[data-solo] .sechead{gap:8px}
+  /* T-18（2026-09-18 本人要望）: 帯の中の操作の枠の高さを24pxへそろえる。 */
+  .solo-btn{flex:0 0 auto;min-width:24px;min-height:24px;height:24px;padding:0 5px;border:1px solid var(--line-dark);
+            background:var(--recess);color:var(--milk-dim);font-size:11px;line-height:1;cursor:pointer}
+  .solo-btn:hover,.solo-btn:focus-visible{color:var(--milk);border-color:var(--brass)}
+  .figgrid[data-solo] .solo-btn{color:var(--milk);border-color:var(--brass);background:rgba(156,130,63,.2)}
+  .figgrid.placement-unfolded .panel.insp{grid-column:3;grid-row:1}
+  .placement-side-title{display:none}
+  .figgrid.placement-unfolded .placement-side-title{display:inline}
+  .figgrid.placement-unfolded #sidemode{display:none}
+  /* 機材配置は灯体だけを読む図。ショー側の演者・大道具・小道具・幕を
+     下敷きから外し、照明デザインへ戻ると表示操作も戻す（embed.js）。 */
+  html.placement-underlay-hidden #showtoggles [data-show="performers"],
+  html.placement-underlay-hidden #showtoggles [data-show="setpieces"],
+  html.placement-underlay-hidden #showtoggles [data-show="names"]{display:none}
+  /* 上段の左右＝灯体パネル／設定パネル。幅は下の側面図とそろえる（app.jsが設定） */
+  .panel{grid-row:1;min-width:0;min-height:0;overflow:hidden;border:1px solid var(--line-dark);background:rgba(25,21,18,.45);padding:8px;display:flex;flex-direction:column;gap:7px;align-self:stretch}
+  /* 灯体一覧とLXキューは横並び。内側の仕切りで比率を、外側の仕切りで
+     一覧・キュー・下手側面図の共通幅を調整する。初期幅は syncFigureSizes が決める。 */
+  .leftcol{position:relative;grid-column:1;grid-row:1;display:flex;flex-direction:row;gap:0;min-width:0;min-height:0;align-self:stretch;justify-self:start}
+  .leftcol>.panel{grid-column:auto;grid-row:auto;width:auto;align-self:auto;min-width:160px;flex:0 0 auto}
+  .layout-splitter{position:relative;z-index:4;flex:0 0 44px;width:44px;min-width:44px;min-height:44px;height:auto;padding:0;border:0;background:transparent;color:var(--milk-dim);cursor:col-resize;touch-action:none;user-select:none}
+  .layout-splitter::before{content:"";position:absolute;left:21px;top:0;bottom:0;width:1px;background:var(--line-dark)}
+  .layout-splitter:hover::before,.layout-splitter:focus-visible::before,.layout-splitter[aria-valuenow]:active::before{left:20px;width:3px;background:var(--brass)}
+  .layout-splitter:focus-visible{outline:1px solid var(--brass);outline-offset:-1px}
+  .layout-splitter.outer{position:absolute;right:-44px;top:0;bottom:0}
+  .layout-splitter.inner{align-self:stretch}
+  .leftcol,.sec.side.l{margin-right:36px}
+  .figgrid[data-solo] .sec.side.l{margin-right:0}
+  #panel-layout-reset{min-height:44px;white-space:normal}
+  .pcard{min-width:0}
+  .pname{flex-wrap:wrap}
+  .pdetail,.plead{overflow-wrap:anywhere}
+  #panel-lxq{gap:5px;overflow-y:auto;overflow-x:hidden}
+  #panel-lxq>*{flex-shrink:0}
+  #panel-lxq .lxbody{min-height:80px}
+  #panel-fixtures{min-height:0}
+
+  .lxhead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:5px 6px}
+  .lxhead .ptitle{margin:0}
+  .lxhead .ontoggle{min-height:26px;padding:3px 7px 3px 5px;font-size:12px;gap:5px}
+  .lxhead .ontoggle .swlab{font-size:9.5px;margin-right:4px}
+  .lxhead .ontoggle .sw{width:26px;height:14px}
+  .lxhead .ontoggle .sw::after{width:10px;height:10px}
+  .lxhead .ontoggle[aria-pressed="true"] .sw::after{left:13px}
+  /* 上（シーン・番号・登録）は動かさず、一覧だけ巻く。 */
+  .lxbody{flex:1;min-height:0;min-width:0;display:flex;flex-direction:column;gap:5px;overflow:hidden}
+  .lxtop{flex:0 0 auto;min-width:0;display:flex;flex-direction:column;gap:5px}
+  .lxlist{flex:1;min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden}
+  .lxnums{display:flex;align-items:center;gap:4px;flex-wrap:wrap;color:var(--milk-dim);font-size:11px}
+  /* 「−／数値／＋／そろえる」を1行に収める。.btn は幅100%なので、ここだけ内容幅へ戻す */
+  .poolrow{display:grid;grid-template-columns:32px minmax(0,1fr) 32px auto;gap:4px;align-items:center}
+  .poolrow .numin{width:100%;text-align:center}
+  .poolrow .btn{width:auto;min-width:0;min-height:30px;padding:3px 7px;font-size:12.5px}
+  .lxnums .numin{width:46px;min-height:25px;border:1px solid var(--line-dark);background:var(--desk-2);color:var(--milk);font:12.5px var(--sans);padding:2px 4px;text-align:right;font-variant-numeric:tabular-nums}
+  /* 照明デザインのパネルは上下2段を貫通させて高く使う（2026-09-13 本人要望）。
+     右下にあった「上手を見る」は側面図のタブに畳んだので、この列は丸ごと空いている。 */
+  .panel.insp{grid-column:3;grid-row:1/-1}
+  .panel .kicker,.panel .ptitle{margin:0}
+  .figgrid canvas{height:200px}
+  .figgrid .sechead,.figgrid .viewhead{overflow:hidden}
+  .sechead{display:flex;gap:6px;align-items:center;min-height:24px;overflow:hidden}
+  /* 正面図の題は平面図と同じ左基準へ置き、中央の表示切替は動かさない。 */
+  .sec.front .sechead{position:relative;display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+  /* 2026-09-18 本人指摘「帯の全画面表示のアイコンに、なぜか横幅がでかいものがある。正面図のもの」:
+     ★この帯だけ display:grid なので、.solo-btn の flex:0 0 auto が効かず、
+       1列目（1fr）いっぱいに広がっていた（平面図・側面図の帯は flex なので効いている）。
+       左端へ寄せて、3つの図の⛶を同じ大きさにする。 */
+  .sec.front .sechead .solo-btn{justify-self:start}
+  .sec.front .sechead .viewtitle{position:absolute;left:34px;top:50%;transform:translateY(-50%)}
+  .sec.front .sechead .viewnote{text-align:right}
+  .sec.front .sechead .fmode{grid-column:3;justify-self:center}
+  .fmode{display:flex;align-items:center;gap:5px;justify-self:center;flex-wrap:nowrap;min-width:0}
+  #frontmode{display:inline-flex;flex:0 0 auto;flex-wrap:nowrap;width:max-content}
+  #frontmode button{flex:0 0 auto}
+  .seatsel{width:132px;min-width:132px;flex:0 0 132px;height:24px;min-height:24px;padding:0 4px;line-height:1.1}
+  .seatsel:disabled{opacity:.42;color:var(--milk-dim);cursor:not-allowed}
+  /* 側面図の下手側／上手側も、正面図のタイトルと同じ見出しとして読む。 */
+  .sechead .viewtitle,.placement-side-title{color:var(--brass);font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.08em;white-space:nowrap}
+  /* 側面図の向きは言葉の幅だけを使う。親の余り幅をボタンが取らず、下手／上手が
+     横へ伸びることもない（2026-09-14 本人指摘）。 */
+  .sidemode{display:inline-flex;flex:0 0 auto;flex-wrap:nowrap;width:max-content}
+  .sidemode.showtoggles button{flex:0 0 auto;width:auto;font-size:10px;letter-spacing:0;padding:0 6px;min-height:24px;height:24px}
+  .side-sep{width:1px;height:24px;flex:0 0 auto;background:var(--line-dark);margin:0 6px}
+  .sidedistance{flex:0 0 auto;min-height:24px;height:24px;padding:0 6px;font-size:10px;white-space:nowrap}
+  .sechead .viewnote{font-size:8.5px}
+  /* 図の上の横並びバー: 左＝表示、中央＝シーン送り。
+     シーン送りは帯の中身に対してではなく<b>窓の幅そのもの</b>の中央に置く（2026-09-13 本人要望）。
+     ヘッダー（.head）と同じ 1fr auto 1fr の3分割にして、右は空列（対称にするための余白）。
+     再生（いまは再生／停止のトグル1個）は同日の要望でパネル側の見出し行へ移した。 */
+  .figbar{flex:0 0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px 14px;min-height:26px;padding-bottom:5px;margin:0 auto;border-bottom:1px solid var(--line-dark);width:min(100%,var(--band))}
+  .sceneplay{justify-self:end}
+  .fb{display:flex;align-items:center;gap:8px;min-width:0}
+  .fb>b{color:var(--brass);font-size:11px;font-weight:600;letter-spacing:.14em;white-space:nowrap}
+  .fb #legend-r{color:var(--milk-dim);font-size:11.5px}
+  .showtoggles{display:inline-flex}
+  /* 光まわりの2つ＋消し具合。ほかの「表示」と離すため、少し間を空けて右端に置く */
+  .lightgroup{align-items:center;gap:8px;margin-left:6px;padding-left:10px;border-left:1px solid var(--line-dark)}
+  .lightgroup .dimwrap{display:inline-flex;align-items:center;gap:5px}
+  .lightgroup .dimwrap input[type=range]{width:74px}
+  .lightgroup .dimwrap input[type=number]{width:58px;min-height:22px;padding:1px 4px;font-size:12px;text-align:right}
+  .lightgroup .dimwrap .t{font-size:11.5px;color:var(--milk-dim)}
+  .showtoggles button{min-height:22px;padding:1px 9px;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk-dim);font-size:11.5px;cursor:pointer;white-space:nowrap}
+  .showtoggles button+button{margin-left:-1px}
+  .showtoggles button[aria-pressed="true"]{color:var(--milk);border-color:var(--brass);background:rgba(156,130,63,.2)}
+  /* 触れているだけの隣のボタンが、選んでいるボタんより手前に出ないよう段を分ける
+     （2026-09-13 実害: 隣をホバーすると選択枠の縁がまた欠けた。z-indexが同値でDOM順の後勝ちだったため）。 */
+  /* 文字を大きくしたぶん、図の上の帯は入り切らなくなるので折り返せるようにする
+     （元から「演者・セット名」を足した時点で右端が詰まっていた）。 */
+  .fb{flex-wrap:wrap}
+  .showtoggles{flex-wrap:wrap}
+  .showtoggles button:hover,.showtoggles button:focus-visible{position:relative;z-index:1}
+  .showtoggles button[aria-pressed="true"]{position:relative;z-index:2}
+  /* 2026-09-13 本人指定の例外: 平面図・正面図のパネルの中と、機材の名前は大きくしない。
+     図の面積を削らないため／一覧の名前はもともと字余りで切れているため。 */
+  .planwrap .btn.small,.sec .btn.small,.fmode button{font-size:10.5px;min-height:24px;padding:2px 8px}
+  .search{width:100%;min-height:28px;border:1px solid var(--line-dark);background:var(--desk-2);color:var(--milk);font:13px var(--sans);padding:4px 8px}
+  .search::placeholder{color:rgba(240,231,214,.4)}
+  .vrow{display:grid;grid-template-columns:60px 1fr 40px;gap:6px;align-items:center;min-height:28px;color:var(--milk-dim);font-size:11.5px}
+  .vrow .val{text-align:right}
+  .viewhead{display:flex;align-items:center;gap:10px;min-height:24px}
+  .viewtitle{color:var(--brass);font-size:11.5px;font-weight:600;letter-spacing:.14em;white-space:nowrap}
+  .viewnote{color:var(--milk-dim);font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .snap{margin-left:auto;display:flex;align-items:center;gap:5px;color:var(--milk-dim);font-size:9.5px;white-space:nowrap;cursor:pointer;border:1px solid var(--line-dark);padding:3px 8px;min-height:24px}
+  .snap input{margin:0;accent-color:var(--brass)}
+  /* 修正バッチ 2026-10-07 #9（D11＝B）: 照明デザインでは出さない（機材配置には残す） */
+  .snap[hidden]{display:none}
+  .snap:has(input:checked){color:var(--milk);border-color:var(--brass);background:rgba(156,130,63,.18)}
+  /* いま手を入れる図に縁を付けて目線を誘導する（図は切り替えず、常に4面出す） */
+  .sec.focus canvas{border-color:var(--brass);box-shadow:0 0 0 1px rgba(156,130,63,.5)}
+  .sec.focus .viewtitle{color:#d3ac59}
+  .statebadge{position:absolute;left:8px;top:34px;font-size:10px;color:var(--milk);background:rgba(32,27,22,.85);border:1px solid var(--line-dark);padding:2px 8px;letter-spacing:.06em;pointer-events:none}
+  .legend{display:flex;justify-content:space-between;color:var(--milk-dim);font-size:9.5px;min-height:20px;align-items:center}
+  .band{position:absolute;left:0;right:0;top:0;background:rgba(32,27,22,.96);border:1px solid var(--brass);padding:10px 12px;font-size:13px;display:flex;gap:12px;align-items:center;z-index:5}
+  .band .bar{flex:1;height:6px;background:var(--desk);border:1px solid var(--line-dark)}
+  .band .bar i{display:block;height:100%;background:var(--brass)}
+  .empty{position:absolute;inset:0;display:grid;place-items:center;background:rgba(13,14,16,.86);z-index:4}
+  .empty .in{text-align:center;display:grid;gap:10px;max-width:360px}
+  .empty p{margin:0;color:var(--milk-dim)}
+  /* 右: 設定欄 */
+  .panel.insp{gap:0;position:relative}
+  /* R-01（2026-09-17 本人要望）: 灯体情報パネルの一番下の常設の表示欄。
+     いつも同じ場所にあって高さも変わらないので、出入りで下の図が動かない。
+     出すのは最新の1件だけ。取り消しはヘッダーの「戻る」を使う（本人指定）。 */
+  .insp-log{flex:0 0 auto;margin:6px 0 0;padding:5px 7px;min-height:32px;
+            border-top:1px solid var(--line-dark);
+            color:var(--milk);font-size:11px;line-height:1.35;
+            overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+  .insp-log[data-empty="true"]{color:var(--milk-dim)}
+  /* 照明デザインの見出し行。左＝パネル名、右＝シーン送り・再生とオン・オフ。
+     絶対配置ではなく普通のflex行にした（2026-09-13: パネル幅が狭いと padding-right の
+     絶対配置トリックでは見出しの文字が縦に折り返ってしまったため、素直な横並びに直した）。
+     min-height はオン・オフボタン（34px）に合わせ、何も出ていないときも高さが変わらないように。 */
+  /* パネル幅（実測340px前後）だと見出し「照明デザイン」とボタン列を横一列にできない
+     （2026-09-13 実測: 横並びだと6文字の見出しが3行に折り返った）。上下2段にする。
+     上＝パネル名、下＝シーン送り・再生とオン・オフを右寄せ。 */
+  .insphead{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:5px 6px;margin-bottom:6px}
+  .insphead .ptitle{margin:0 auto 0 0}
+  /* 2026-09-14: 再生が1ボタンになって横幅が空いたので、2段へ逃がす必要がなくなった。
+     2026-09-13 本人指定の並び「再生はオン・オフの左」に戻す（実測: 1440窓・灯体を選んだ状態で
+     見出しは1段34px・左右のはみ出し0）。 */
+  .insphead .transport{order:1}
+  .insphead .ontoggle{order:2}
+  .panelhead-actions{display:contents}
+  .panelhead-actions .transport{gap:5px}
+  .panelhead-actions .transport .btn.small.play-toggle{min-height:34px;padding:0}
+  /* オン・オフ。押すたびに切り替わる1つのボタンで、いまの状態をそのまま表示する
+     （2026-09-13 本人要望「オンとオフの切り替え式に」「ちょっと大きめに」）。 */
+  .ontoggle{display:inline-flex;align-items:center;gap:7px;
+    min-height:34px;padding:4px 11px 4px 8px;border:1px solid var(--line-dark);background:var(--recess);
+    color:var(--milk-dim);font:600 15px/1 var(--sans);letter-spacing:.1em;cursor:pointer}
+  .ontoggle:hover{border-color:var(--brass)}
+  /* 何のオン・オフかを示す言葉（2026-09-13 本人指摘）。オン／オフより一段小さく添える。 */
+  .ontoggle .swlab{font-size:10.5px;font-weight:600;letter-spacing:.04em;opacity:.72;margin-right:5px}
+  .ontoggle .sw{width:30px;height:16px;border:1px solid var(--line-dark);background:#14110e;position:relative;border-radius:9px}
+  .ontoggle .sw::after{content:"";position:absolute;top:1px;left:1px;width:12px;height:12px;border-radius:50%;background:var(--milk-dim)}
+  .ontoggle[aria-pressed="true"]{color:var(--milk);border-color:var(--brass);background:rgba(156,130,63,.22)}
+  #lighttoggle{width:max-content;min-width:0;padding:4px 8px}
+  .laser-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+  .laser-cards button{min-height:34px;padding:5px 7px;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk-dim);font:12px/1.25 var(--sans);cursor:pointer}
+  .laser-cards button[aria-pressed="true"]{border-color:var(--brass);background:rgba(156,130,63,.2);color:var(--milk)}
+  .laser-color-presets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+  .laser-color-presets button{min-width:0;min-height:32px;display:flex;align-items:center;gap:6px;padding:4px 6px;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk-dim);font:11px/1.2 var(--sans);cursor:pointer;text-align:left}
+  .laser-color-presets button:hover{border-color:var(--brass)}
+  .laser-color-presets button[aria-pressed="true"]{border-color:var(--brass);background:rgba(156,130,63,.2);color:var(--milk)}
+  .laser-color-presets i{display:block;flex:0 0 24px;height:15px;border:1px solid rgba(240,231,214,.42);background:linear-gradient(90deg,var(--laser-colors));box-sizing:border-box}
+  .laser-color-presets span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .laser-warning{margin:7px 0 0;color:var(--rust);font-size:11px;line-height:1.45}
+  .ontoggle[aria-pressed="true"] .sw{background:rgba(156,130,63,.45);border-color:var(--brass)}
+  .ontoggle[aria-pressed="true"] .sw::after{left:15px;background:var(--brass)}
+  /* 項目用スイッチは中身に合わせた幅にし、見出しの隣へまとめる。状態の語は出さない。 */
+  .pbox .pboxhead{justify-content:flex-start}
+  .ontoggle.fieldswitch{flex:0 0 auto;width:max-content;max-width:100%;justify-content:flex-start;gap:12px}
+  .ontoggle.fieldswitch .swlab{margin-right:0}
+  .field{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;align-items:center;min-height:34px;font-size:12.5px;color:var(--milk-dim)}
+  .field.wide{grid-template-columns:1fr}
+  /* LXキュー「時間」の窓（第5弾 UI本格版・2026-09-28）。値は design/TOKEN_SHEET_lx-timing_2026-09-28.md が正。
+     項目と数値を同じ行に（左＝項目・右＝数値）、入力欄は全体の暗い配色（2026-09-27 本人指摘）。新しい CSS 変数は足さない。 */
+  .dialog .in:has(.lxt-grid){max-width:400px}
+  .lxt-grid .field{grid-template-columns:minmax(0,1fr) 13em;gap:6px 12px;min-height:32px;margin:2px 0}
+  .lxt-grid .field>span:first-child{color:var(--milk-dim);font-size:12.5px;line-height:1.3}
+  .lxt-grid .field:has(select){grid-template-columns:minmax(0,1fr) minmax(13em,60%)}
+  .lxt-grid .lxt-kicker{margin:10px 0 2px;font-size:10px;letter-spacing:.16em;line-height:1.4;color:var(--brass)}
+  .lxt-grid #lxt-body>.lxt-kicker:first-child{margin-top:4px}
+  .lxt-grid .lxt-seg{width:100%;display:flex}
+  .lxt-grid .lxt-seg button{flex:1 1 0;min-height:32px;transition:background var(--duration-fast,120ms) ease,border-color var(--duration-fast,120ms) ease}
+  .lxt-grid input[type=number].lxt-num{width:6.5em;justify-self:end;min-height:28px;border:1px solid var(--line-dark);background:var(--desk-2);color:var(--milk);font:13px var(--sans);padding:3px 6px;text-align:right;border-radius:1px}
+  .lxt-grid input[type=number].lxt-num::placeholder{color:var(--milk-dim);opacity:.8}
+  .lxt-grid select{min-height:28px;padding:3px 8px}
+  .lxt-grid input[type=checkbox]{justify-self:end;width:18px;height:18px;margin:0;accent-color:var(--brass)}
+  .lxt-grid .lxt-pair{display:flex;gap:6px;justify-content:flex-end}
+  .lxt-grid .lxt-pair input[type=number].lxt-num{width:5.2em}
+  @media (prefers-reduced-motion: reduce){ .lxt-grid .lxt-seg button{transition:none} }
+  .seg{display:inline-flex;flex-wrap:wrap}
+  .seg button{min-height:32px;padding:4px 6px;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk-dim);font-size:12.5px;cursor:pointer}
+  .seg button+button{margin-left:-1px}
+  /* 選択肢は横1列にまとめ、幅は均等割り（2026-09-13 本人要望「横並びでコンパクトに」）。
+     .field の中で使う seg だけに効かせる（上帯の履歴ボタンなど他の .seg は対象外）。
+     .col（回る面など、文言が長く縦積みのままにしたいもの）は対象外にする。 */
+  .field .seg:not(.col){flex-wrap:nowrap;width:100%}
+  .field .seg:not(.col) button{flex:1 1 0;min-width:0;text-align:center;white-space:normal;line-height:1.25}
+  .seg button[aria-pressed="true"]{color:var(--milk);border-color:var(--brass);background:rgba(156,130,63,.24)}
+  /* 触れているだけの隣のボタンが、選んでいるボタんより手前に出ないよう段を分ける
+     （2026-09-13 実害: 隣をホバーすると選択枠の縁がまた欠けた。z-indexが同値でDOM順の後勝ちだったため）。 */
+  .seg button:hover,.seg button:focus-visible{position:relative;z-index:1}
+  .seg button[aria-pressed="true"]{position:relative;z-index:2}
+  .seg button:disabled{opacity:.35;cursor:default}
+  /* flex-wrap:wrap は .seg から引き継いだままだと、2列グリッドの中でこの欄の高さを測るとき
+     「もっと狭い列へ折り返せば背が縮む」とブラウザに解釈され、行の高さが0に潰れる
+     （2026-09-13 実害: 「組の動き」「この組の灯体」の文字が下の要素と重なった）。
+     縦積みで折り返す気が無いので明示的に止める。 */
+  .seg.col{flex-direction:column;flex-wrap:nowrap;align-items:stretch} .seg.col button+button{margin-left:0;margin-top:-1px;text-align:left}
+  /* 「この組の灯体」だけは横幅を抑えるため上下積みでなく左右に並べる（2026-09-13 本人要望）。
+     上のグリッド事故は「スクロールする display:grid」が原因で、ここは親(.inspbody)が
+     display:flex のまま・このボックス自体もflexなのでグリッドではない＝再発条件に当たらない。
+     数が多いときは高さの上限で打ち切ってこの中だけ縦スクロールし、外側の縦幅は抑える。 */
+  .seg.col.grouplist{flex-direction:row;flex-wrap:wrap;align-items:flex-start;max-height:150px;overflow-y:auto}
+  .seg.col.grouplist button{text-align:center;white-space:nowrap;flex:0 0 auto}
+  .seg.col.grouplist button+button{margin-left:-1px;margin-top:0}
+  /* 照明デザイン（単灯）の箱。色／当てる場所・動き／強さ／広がり／動かす を1箱ずつ
+     （2026-09-13 本人要望）。中は縦積み。見出し(.kicker)は箱の中で余白を持たない。 */
+  .pbox{border:1px solid var(--line-dark);background:var(--recess);padding:8px;display:grid;gap:7px}
+  .pbox>.kicker{margin:0}
+  .pbox .pboxhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .pbox .pboxhead .kicker{margin:0}
+  .pbox .swatches{padding:3px}
+  /* ゴボ（模様）の選び方。丸い窓の中に形を見せるので、見本も円で切る。 */
+  /* 模様（ゴボ）はプルダウンで選ぶ（2026-09-13 本人要望）。右欄は縦スクロールする枠なので
+     一覧は浮かせずその場に差し込む——浮かせると枠に切られて下が見えない。 */
+  .cyckicker{margin:7px 0 3px}
+  /* バーンドアの4本は 2×2（2026-09-14 本人指示）。各マスは 見出し／つまみ＋数値欄 の2段。値の文字は出さない。 */
+  .barn2{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;min-width:0}
+  .barn2 .cell{display:grid;gap:2px;min-width:0}
+  .barn2 .cell>span{font-size:12px;color:var(--milk-dim)}
+  .barn2 .rangewrap{min-width:0}
+  .barn2 .rangewrap input[type=range]{flex:1 1 40px;min-width:36px}
+  .barn2 .rangewrap .val{display:none}
+  .gpick{position:relative;min-width:0}   /* .pbox は grid。min-width:auto のままだと枠を押し広げる */
+  .gpick-t{width:100%;min-width:0;display:flex;align-items:center;gap:8px;padding:5px 8px;
+           border:1px solid var(--line-dark);background:#14110e;color:var(--milk);cursor:pointer;text-align:left}
+  .gpick-t:hover{border-color:var(--brass)}
+  .gpick-t[aria-expanded="true"]{border-color:var(--brass);background:rgba(156,130,63,.14)}
+  .gpick-face{flex:0 0 auto;width:24px;height:24px;border:1px solid var(--line-dark);border-radius:50%;
+              background:#0f0d0b;display:grid;place-items:center;overflow:hidden}
+  .gpick-face svg{width:100%;height:100%;display:block}
+  .gpick-face .gx{color:var(--milk-dim);font-size:13px;line-height:1}
+  .gpick-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gpick-caret{flex:0 0 auto;color:var(--milk-dim);font-size:12px}
+  .gpick-t[aria-expanded="true"] .gpick-caret{color:var(--brass)}
+  .gpick-list{margin-top:4px;padding:4px;border:1px solid var(--brass);background:var(--recess);
+              max-height:480px;overflow-y:auto}   /* 12件がそのまま入る高さ。二重スクロールを避ける */
+  /* 一覧は1行に丸1個と名前だけ（2026-09-13 本人指定）。横並びだと選択画面が横長になる */
+  .gpick-i{display:flex;align-items:center;gap:9px;width:100%;min-width:0;padding:3px 6px;
+           border:1px solid transparent;background:transparent;color:var(--milk);cursor:pointer;text-align:left}
+  .gpick-i:hover{border-color:var(--brass);background:rgba(156,130,63,.10)}
+  .gpick-i[aria-pressed="true"]{border-color:var(--brass);background:rgba(156,130,63,.20)}
+  .gpick-iname{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gpick-i .gobo{flex:0 0 auto;width:30px;height:30px}
+  .gobo{aspect-ratio:1;padding:3px;border:1px solid var(--line-dark);background:#14110e;color:var(--milk);
+        display:grid;place-items:center;border-radius:50%}
+  .gobo svg{width:100%;height:100%;display:block}
+  .gobo.none{color:var(--milk-dim);font-size:11.5px;letter-spacing:.04em}
+  .gobo .gx{display:block}
+  /* サーチライト（複数ムービングを一撃で組む）。まとまりが見えるよう枠で囲う */
+  .slbox{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px;align-content:start;border:1px solid var(--line-dark);background:var(--recess);padding:8px;margin-bottom:2px}
+  .slbox>*{grid-column:1/-1;min-width:0}
+  .slbox>.bulk-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .slbox>.bulk-head>.kicker{margin:0}
+  .slbox .bulk-actions{display:flex;flex:0 0 auto;gap:4px}
+  .slbox .bulk-actions .btn{width:auto;min-height:27px;padding:3px 8px;font-size:12px;white-space:nowrap}
+  .slbox>.field{grid-column:auto}
+  .slbox>.field.wide{grid-column:1/-1}
+  .slbox .kicker{margin:0}
+  /* 枠の中の2つ目の見出し（動きの型）。上に罫線を入れて、一括変更と切り分ける */
+  .slbox .kicker.sub2{margin-top:4px;padding-top:7px;border-top:1px solid var(--line-dark)}
+  /* 動きの型（サーチライト・組）はアコーディオンで畳んでおく（2026-09-13 本人要望）。
+     見出しをクリックで開閉。矢印は▸(閉)/▾(開)だけで示す——アイコン画像は使わない。 */
+  .slbox .kicker.accordion{cursor:pointer;user-select:none}
+  .slbox .kicker.accordion:hover{color:var(--milk)}
+  .slbox .kicker.accordion .accicon{display:inline-block;width:1em;color:var(--milk-dim)}
+  .slbox .btn{width:100%}
+  /* 選んだ灯体の操作（パネルの先頭・メイン） */
+  .tsbtns{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+  .tsbtns .btn{min-height:28px;padding:2px 6px;font-size:12px;white-space:nowrap}
+  #aim-mirror{width:100%;margin:4px 0}
+  #aim-mirror[aria-pressed="true"]{color:var(--milk);border-color:var(--brass);background:rgba(156,130,63,.22)}
+  /* LXキュー。#lxqbox は .inspbody の外（パネル直下）なので、幅の面倒を自分で見る。
+     .pbox は display:grid なので、中身が縮まないとパネルごと広がる（HANDOFFの落とし穴）。 */
+  #lxqbox{min-width:0}
+  #lxqbox>*{min-width:0}
+  #lxqbox .btn{white-space:normal;line-height:1.3}
+  #lxqbox .field>.numin{width:84px;justify-self:start;min-height:26px;border:1px solid var(--line-dark);background:var(--desk-2);color:var(--milk);font:13px var(--sans);padding:2px 6px;text-align:right;font-variant-numeric:tabular-nums}
+  /* LXキューの一覧。1行＝番号・名前・呼び出す・消す（2026-09-13 本人要望）。 */
+  /* 半分幅（1440で約150px）に収まる1行。番号→名前→呼び出す→消す。
+     名前は縮められるようにして、番号と2つのボタンだけは必ず出す。 */
+  /* 番号・名前・消す の3つ（呼び出しは行を押す操作に一本化した）。4列のままだと
+     空の列に幅を取られて名前欄が41pxまで痩せていた（2026-09-13 実測）。 */
+  /* 修正バッチ 2026-10-07 #7（本人決定 A カード）: 1キュー＝1枚の札。どこからどこまでが1本かを枠で示す。
+     色・線・角丸は既存のトークンだけ（新しい色・角丸・影は足さない。design/TOKEN_SHEET_lx-timing_2026-09-28.md）。
+     1行目＝番号・時間・消す／2行目＝名前（2行まで）／3行目＝きっかけ／4行目＝次へ自動（あるときだけ）。 */
+  .lxlist{display:flex;flex-direction:column;gap:4px}
+  /* パネル全体をスクロールし、札の入力欄を覆わない。埋込時の適用は上部操作帯、
+     単独表示時は一覧の後の通常フローに置く。 */
+  #panel-lxq .lxbody{flex:0 0 auto;min-height:0;overflow:visible}
+  #panel-lxq .lxlist{flex:0 0 auto;overflow:visible}
+  #panel-lxq>#apply{position:static}
+  .lxbar{display:flex;gap:5px}
+  .lxbar .btn{flex:1 1 0;min-width:0;padding:3px 4px}
+  .lxrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;column-gap:5px;row-gap:2px;align-items:center;min-width:0;
+    padding:4px 5px 5px;border:1px solid var(--line-dark);background:var(--recess)}
+  .lxrow .qno{justify-self:start;font:600 12.5px/1 var(--sans);color:#1a1409;background:var(--brass);padding:5px;white-space:nowrap;letter-spacing:0}
+  #panel-lxq .lxrow .btn.small.lxtime{justify-self:start;max-width:100%;min-height:24px;padding:1px 6px;font-size:12px;line-height:1.3;color:var(--milk);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lxrow .btn.small.lxdel{width:24px;min-width:24px;min-height:24px;padding:0;font-size:11px;color:var(--milk-dim)}
+  /* 名前は1行。入り切らない名前だけ2行まで（app.js が中身に合わせて高さを決める） */
+  .lxrow .lxname{grid-column:1/-1;display:block;width:100%;min-width:0;min-height:0;height:calc(12.5px * 1.35);margin:0;padding:0;resize:none;overflow:hidden;
+    border:0;border-bottom:1px solid transparent;border-radius:0;background:none;color:var(--milk);font:12.5px/1.35 var(--sans)}
+  .lxrow .lxtrg{grid-column:1/-1;display:flex;align-items:baseline;gap:4px;min-width:0;font-size:12px;color:var(--milk-dim)}
+  .lxrow .lxtrg>span{flex:0 0 auto}
+  .lxrow .lxtrigger{flex:1 1 auto;min-width:0;min-height:0;margin:0;padding:0;border:0;border-bottom:1px solid transparent;border-radius:0;background:none;
+    color:var(--milk-dim);font:12px/1.4 var(--sans);text-overflow:ellipsis}
+  .lxrow .lxname::placeholder,.lxrow .lxtrigger::placeholder{color:rgba(240,231,214,.4)}
+  .lxrow .lxfollowtext{grid-column:1/-1;margin:0;font-size:12px;color:var(--milk)}
+  .lxrow .lxfollow{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:12px;color:var(--milk-dim)}
+  .lxrow .lxfollow select{min-height:26px;font-size:12px}
+  .lxrow .lxfollow input[type=number]{width:4.4em;min-height:26px}
+  .lxrow .btn.small.lxbetween{grid-column:1/-1;justify-self:start;min-height:26px;padding:2px 7px;font-size:12px}
+  .lxrow.cur{border-color:var(--brass)}
+  .lxrow.cur .qno{background:rgba(156,130,63,.45);color:var(--milk)}
+  /* いま直しているキュー。札ごと錆色にして、一覧の中で迷わないようにする。名前・きっかけに下線を出す＝ここに書ける。 */
+  .lxrow.editing{border-color:var(--rust);background:rgba(168,75,38,.18)}
+  .lxrow.editing .qno{background:var(--rust);color:var(--milk)}
+  .lxrow.editing .lxname,.lxrow.editing .lxtrigger{border-bottom-color:var(--line-dark)}
+  .lxrow .lxname:focus-visible,.lxrow .lxtrigger:focus-visible{outline:none;border-bottom-color:var(--brass)}
+  .lxrow:not(.editing){cursor:pointer}
+  .lxrow:not(.editing):hover{border-color:var(--brass)}
+  /* 並び替え（番号をつまんで落とす）。つまんでいる札は薄く、落とし先は上に線を出す。 */
+  .lxrow .qno{cursor:grab}
+  .lxrow .qno:active{cursor:grabbing}
+  .lxrow.dragging{opacity:.4}
+  .lxrow.dropto{box-shadow:inset 0 2px 0 0 var(--brass)}
+  .lxnone{color:var(--milk-dim);font-size:11.5px;margin:0}
+  /* 配置＝サブの層。パネルの下に沈める */
+  #selacts{flex:0 0 auto;margin-bottom:8px}
+  /* 設定欄は縦積み（flex column）に戻した（2026-09-13 実害で発覚）。
+     display:grid + overflow-y:auto + 多数の auto行という組み合わせは、スクロール中の
+     グリッドで「後ろのほうの行」の高さ計算がブラウザ側で0に潰れることがある
+     （「組の動き」「この組の灯体」の文字が重なって見えなくなった。原因は.seg.colではなく
+     このスクロールするグリッド自体——中身を差し替えても消えず、display:flexへ戻したら再現しなくなった）。
+     2列表示は見た目のコンパクトさと引き換えに壊れやすい構造だったので、確実さを優先して外した。
+     子が潰れて重ならないよう flex-shrink を止めるのは前回と同じ対処。 */
+  .panel .inspbody{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:7px}
+  .panel .inspbody>*{flex:0 0 auto;min-width:0}
+  .list>*{flex:0 0 auto}
+  .panel .sub{flex:0 0 auto;margin-top:6px;padding-top:7px;border-top:1px solid var(--line-dark);background:var(--recess);margin-left:-8px;margin-right:-8px;margin-bottom:-8px;padding-left:8px;padding-right:8px;padding-bottom:8px}
+  /* パネルの<b>上</b>に置く層（配置）。罫線と余白を下向きに付け替える。 */
+  .panel .sub.subtop{margin-top:-8px;margin-bottom:6px;padding-top:8px;padding-bottom:8px;border-top:0;border-bottom:1px solid var(--line-dark)}
+  /* 配置は最初から見せる。プリセット／仕込み4操作／灯体設置4操作／ホリゾント2操作を
+     行ごとに分け、仕込み中でも灯体一覧の高さを残す。 */
+  #placebox:not(.folded){display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 5px;align-items:center}
+  #placebox .place-head{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+  #placebox .place-head .ptitle{margin:0;min-width:0}
+  #placebox .place-mirror{flex:0 0 auto;min-height:26px;padding:3px 7px;font-size:11px;letter-spacing:.04em;gap:5px;white-space:nowrap}
+  #placebox .place-mirror .sw{width:24px;height:13px}
+  #placebox .place-mirror .sw::after{width:9px;height:9px}
+  #placebox .place-mirror[aria-pressed="true"] .sw::after{left:13px}
+  #placebox #presets,#placebox #lpEntry{grid-column:span 2;width:auto !important;margin:0 !important;min-height:34px;padding:3px 5px;font-size:11.5px;line-height:1.2;white-space:normal}
+  #placebox #presets{border:2px solid rgba(240,231,214,.55);color:var(--milk);background:rgba(240,231,214,.06)}
+  #placebox #presets:hover{border-color:var(--milk)}
+  /* プリセットと個別の設置操作を区切る。線は4列ぶんの幅で引く。 */
+  #placebox #place-tools{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;border-top:1px solid var(--line-dark);padding-top:4px}
+  #placebox #place-tools button{min-height:34px;margin:0 !important;padding:3px 4px;text-align:center !important;font-size:11px;line-height:1.2;white-space:normal}
+  /* X-4（2026-09-17）: 同じ列なのに高さが28pxと34pxの2種類あった（「ホリゾント床 なし」だけ
+     2行に折り返すため）。いちばん高いものに合わせ、折返しの有無で高さが動かないようにした。 */
+  /* ホリゾント床／上も、他の設置項目と同じ1枠ぶんの幅に揃える。 */
+  #placebox #cyc-tools{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
+  #placebox #cyc-tools button{width:100%;min-height:34px;margin:0 !important;padding:3px 4px;text-align:center;font-size:11px;line-height:1.2;white-space:normal}
+  #placebox #place-note{grid-column:1/-1;margin:0;font-size:10.5px;line-height:1.35}
+  /* 畳んだときは見出しだけ残す（中身は隠して一覧に高さを渡す） */
+  .panel .sub.folded>*:not(.ptitle){display:none}
+  .panel .sub.subtop .ptitle{margin:0}
+  .panel .sub .accicon{display:inline-block;width:1em;color:var(--milk-dim)}
+  .panel .sub .kicker,.panel .sub .ptitle{margin:0 0 5px}
+  .panel .sub .note{margin:5px 0 0}
+  input[type=text],select{width:100%;min-height:32px;border:1px solid var(--line-dark);background:var(--desk-2);color:var(--milk);font:13px var(--sans);padding:5px 8px}
+  /* つまみは全幅に伸ばさず、左に寄せてコンパクトに（2026-09-13 本人要望「バーが長すぎる」）。
+     .rangewrap が input+値を横並びにする（range() のJS側でこのクラスを付ける）。 */
+  input[type=range]{width:150px;max-width:100%}
+  /* つまみ＋数値欄＋今の値。数値欄は打ち込み用なので、つまみを縮めてでも同じ行に並べる
+     （2026-09-13 本人要望「スライダーは数値で入力もできるように」）。 */
+  .rangewrap{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .rangewrap input[type=range]{flex:1 1 110px;width:auto;min-width:88px}
+  .rangewrap .numin{flex:0 0 auto;width:64px;min-height:26px;border:1px solid var(--line-dark);background:var(--desk-2);color:var(--milk);font:13px var(--sans);padding:1px 4px;text-align:right;font-variant-numeric:tabular-nums}
+  .rangewrap .numin:focus-visible{outline:2px solid var(--brass);outline-offset:1px}
+  .val{color:var(--brass);font-variant-numeric:tabular-nums}
+  /* 照明デザインでは、数値入力欄と重複するスライダー横の補助値を表示しない。
+     配置モードでは位置・高さの目安として残す。 */
+  #insphead:not([hidden])~#insp .rangewrap>.val{display:none}
+  /* .panel は overflow:hidden なので、選択中スウォッチの outline（枠の外側にはみ出す）が
+     左端で切れていた（2026-09-13 本人指摘）。余白を持たせて逃がす。 */
+  /* 選んだ色の輪（outline 2px + offset 1px＝3px 外へ出る）ぶんを左に空ける。
+     以前は margin-left:-3px で相殺していたが、スクロール枠（.inspbody の overflow-x:hidden）の
+     外側へはみ出すため左端が切れていた（2026-09-13 本人指摘）。負のマージンをやめて内側で確保する。 */
+  .swatches{display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding:3px}
+  .swatches button{width:22px;height:22px;border:1px solid var(--line-dark);cursor:pointer;padding:0}
+  .swatches button[aria-pressed="true"]{outline:2px solid var(--brass);outline-offset:1px}
+  /* 作った色は内側に細い輪を入れて、もとからある6色と見分ける */
+  .swatches button.custom{box-shadow:inset 0 0 0 2px rgba(13,12,11,.55),inset 0 0 0 3px rgba(240,231,214,.5)}
+  /* 色を作る。ブラウザの色見本をそのまま開く */
+  .swatches .mkcolor{width:22px;height:22px;padding:0;border:1px dashed var(--brass);background:var(--recess);cursor:pointer}
+  /* 色見本の並びの最後に置く「グラデーション」の入口（2026-09-14 本人要望）。
+     見本と同じ22pxの高さの枠にして、色の列の一部に見えるようにする。 */
+  /* width は .swatches button の 22px、min-height は .btn の 34px を打ち消す必要がある */
+  .swatches .gradbtn{width:auto;height:22px;min-height:22px;padding:0 7px;
+    border:1px solid var(--brass);background:var(--recess);
+    color:var(--milk);font-size:10.5px;line-height:1;letter-spacing:.04em;cursor:pointer;white-space:nowrap}
+  .swatches .gradbtn:hover{background:rgba(156,130,63,.18)}
+  /* グラデーションのポップアップ */
+  .gradslots{display:flex;gap:10px;margin:12px 0 6px}
+  .gradslot{flex:1 1 0;display:flex;align-items:center;gap:8px;padding:7px 9px;
+    border:1px solid var(--line-dark);background:var(--recess);cursor:pointer;text-align:left}
+  .gradslot[aria-pressed="true"]{border-color:var(--brass);background:rgba(156,130,63,.14)}
+  .gradslot .chip{width:26px;height:18px;flex:0 0 auto;border:1px solid var(--line-dark)}
+  .gradslot .chip.empty{background:repeating-linear-gradient(45deg,#2a241c 0 4px,#1a1611 4px 8px)}
+  .gradslot b{font-size:11.5px;font-weight:600;color:var(--milk);display:block}
+  .gradslot span{font-size:10.5px;color:var(--milk-dim)}
+  .gradprev{display:flex;gap:2px;margin:10px 0 2px;min-height:20px}
+  .gradprev i{flex:1 1 0;height:20px;border:1px solid rgba(0,0,0,.35)}
+  .swatches .mkcolor::-webkit-color-swatch-wrapper{padding:2px}
+  .swatches .mkcolor::-webkit-color-swatch{border:none;border-radius:1px}
+  .note{color:var(--milk-dim);font-size:11.5px;line-height:1.6;margin:0}
+  .foot{color:var(--milk-dim);font-size:11.5px;border-top:1px solid var(--line-dark);padding-top:5px;margin:0;flex:0 0 auto}
+  .foot b{color:var(--milk);font-weight:500;border:1px solid var(--line-dark);padding:0 4px;margin:0 2px}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--desk-3);border:1px solid var(--brass);color:var(--milk);padding:8px 14px;font-size:13px;display:flex;gap:12px;align-items:center;z-index:9}
+  .toast button{background:none;border:0;color:var(--brass);cursor:pointer;font-size:13px;text-decoration:underline}
+  /* 外側（暗いところ）を押すと閉じる。中身は .in なので、そこは素通ししない。 */
+  .dialog{position:absolute;inset:0;background:rgba(13,11,9,.7);display:grid;place-items:center;z-index:8;cursor:pointer}
+  .dialog{position:fixed}
+  .dialog .in{cursor:auto;position:relative;max-height:calc(100dvh - 24px);box-sizing:border-box}
+  .dialog .in,.dialog .in:has(.pgrid){display:flex;flex-direction:column;overflow:hidden;max-height:calc(100dvh - 24px)}
+  .dialog .dialog-content{min-height:0;overflow:auto;padding-top:28px;overscroll-behavior:contain}
+  .dialog .acts{flex:0 0 auto}
+  .dialog .dialog-close{position:absolute;right:8px;top:4px;width:44px;height:44px;padding:0;font-size:24px;z-index:1;background:var(--desk-2)}
+  .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr));gap:8px;margin:8px 0}
+  .pcard{display:flex;flex-direction:column;gap:4px;text-align:left;border:1px solid var(--line-dark);background:var(--recess);color:var(--milk-dim);padding:10px 12px;cursor:pointer;font:inherit}
+  .pcard:hover{border-color:var(--brass);background:rgba(156,130,63,.14)}
+  .pname{color:var(--milk);font-size:14.5px;font-family:var(--serif);letter-spacing:.06em;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .pname em{color:var(--brass);font-style:normal;font-size:12.5px;white-space:nowrap}
+  .plead{font-size:12.5px;color:var(--milk)}
+  .pdetail{font-size:11.5px;line-height:1.6}
+  .pwhy{font-size:11.5px;line-height:1.6;color:rgba(240,231,214,.4);border-top:1px solid var(--line-dark);padding-top:4px;margin-top:2px}
+  .dialog .in{background:var(--desk-2);border:1px solid var(--brass);padding:18px 20px;display:grid;gap:12px;max-width:380px}
+  .dialog .in:has(.pgrid){width:min(1480px,calc(100% - 32px));max-width:none;box-sizing:border-box}
+  /* ★#16（修正バッチ 2026-10-07）: 〈プリセット〉は「劇場に合わせた型」と「用途別の型」の2見出し・13種前後になるので、
+     窓の中でスクロールさせる（低い窓でも〈やめる〉まで届く）。合わない型は理由を読めるよう押せる形のまま薄くする。 */
+  .dialog .in:has(.pgrid){max-height:calc(100% - 24px);overflow-y:auto}
+  .pgroup{margin:6px 0 0;color:var(--milk);font-size:13px;font-family:var(--serif);letter-spacing:.08em;font-weight:600;border-bottom:1px solid var(--line-dark);padding-bottom:4px}
+  .pcard[aria-disabled="true"]{cursor:not-allowed;opacity:.62}
+  .pcard[aria-disabled="true"]:hover{border-color:var(--line-dark);background:var(--recess)}
+  .preason{font-size:11.5px;line-height:1.6;color:var(--milk)}
+  /* 強さの効き方（ベロシティカーブ）を指でなぞって描く枠。
+     touch-action:none にしないと、なぞったときに画面ごとスクロールして描けない。 */
+  .dialog .in:has(.curvecv){max-width:460px}
+  .curvecv{width:100%;aspect-ratio:16/9;display:block;border:1px solid var(--line-dark);background:var(--recess);touch-action:none;cursor:crosshair}
+  /* 照明デザインの保存ダイアログ。名前・操作・保存済み一覧の3段。 */
+  .dialog .in:has(.dslist){max-width:520px}
+  .dsbtns{display:flex;gap:6px;flex-wrap:wrap}
+  .dslist{display:grid;gap:4px;max-height:230px;overflow-y:auto}
+  .dsrow{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line-dark);background:var(--recess);padding:5px 7px}
+  .dsname{font-size:13px;color:var(--milk);min-width:0}
+  .dsname small{display:block;font-size:11px;color:var(--milk-dim)}
+  .dsacts{display:flex;gap:4px;flex:0 0 auto}
+  .dsacts .btn{width:auto}
+  /* 環境設定の項目。見出し＋中身を罫線で区切る（項目が増えても同じ形で並べる） */
+  .prefitem{border-top:1px solid var(--line-dark);padding-top:10px;display:grid;gap:8px}
+  .prefname{margin:0;color:var(--milk);font-size:14px;letter-spacing:.06em}
+  .prefitem #pref-curve{display:grid;gap:8px}
+  .dialog .in p{margin:0}
+  .dialog .acts{display:flex;gap:8px;flex-wrap:wrap}
+  .kbd{font-size:11.5px;color:var(--milk-dim)}
+  .kbd b{color:var(--milk);font-weight:500;border:1px solid var(--line-dark);padding:0 4px;margin:0 2px}
+  .fixture-context-menu { position:fixed; z-index:10000; display:grid; min-width:190px; max-width:calc(100vw - 8px); padding:4px; border:1px solid var(--brass); background:var(--desk-2); color:var(--milk); box-shadow:0 6px 20px #0008; }
+  .fixture-context-menu button { font:inherit; text-align:left; padding:8px 12px; min-height:44px; background:transparent; color:inherit; border:0; cursor:pointer; }
+  .fixture-context-menu button:hover, .fixture-context-menu button:focus-visible { background:var(--desk-3); outline:1px solid var(--brass); }
+.fixture-body-choices { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px; }
+.fixture-body-choices button { min-height:44px; display:flex; align-items:center; justify-content:center; gap:6px; }
+.fixture-body-sample { width:20px; height:16px; border:2px solid; flex-shrink:0; }
+  .dialog .in,.dialog .in:has(.pgrid){display:flex;flex-direction:column;max-height:calc(100dvh - 24px);overflow:hidden}
+</style>
+<style>.option-b-controls button{min-height:44px}.option-b-controls :focus-visible{outline:2px solid #d3ac59;outline-offset:2px}</style>
+<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261010-v0338">
+<link rel="stylesheet" href="embed.css?v=20261010-v0338">
+<link rel="stylesheet" href="simple-lighting.css?v=20261009-v0337">
+</head>
+<body>
+<div class="proto-note">舞台スケッチ γ — 照明の配置・デザイン</div>
+<div class="modal" id="modal">
+  <header class="head">
+    <!-- 名前（2026-09-13 本人決定で「照明を組む」から改名）。
+         本体では右のパネル群ではなく<b>上部の「編集モード」タブ</b>へ3つ目として入る予定
+         （いまは 通常モード／タイムラインモード の2つ）。同じ列に並ぶので語法をそろえて
+         「照明デザインモード」。中のタブ（配置／照明デザイン）は素の名詞なので重ならない。
+         本体へ移すとこの見出しは編集モードのタブに置き換わる＝試作の中だけの暫定表示。
+         リリース中の版に影響しないよう、本体の右パネル「照明」は当面そのまま残す（本人方針）。 -->
+    <h1>照明デザインモード</h1>
+    <div class="modes" role="group" aria-label="モード">
+      <button type="button" id="mode-place" aria-pressed="false">配置</button>
+      <button type="button" id="mode-move" aria-pressed="true">照明デザイン</button>
+    </div>
+    <div class="head-right">
+      <span class="seg hist">
+        <button type="button" id="undo" title="元に戻す（⌘Z）">元に戻す</button>
+        <button type="button" id="redo" title="やり直す（⇧⌘Z）">やり直す</button>
+      </span>
+      <span class="dirty" id="dirty"></span>
+      <span class="runtime" id="runtime-status" aria-live="polite">描画を計測中</span>
+      <button type="button" class="gearbtn" id="prefs" aria-label="環境設定" title="環境設定" hidden><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.2" stroke-width="1.3"/><circle cx="8" cy="8" r="1.4" stroke-width="1.3"/><path stroke-width="2.3" d="M8 3.10V1.90M11.94 5.55l1.04-.60M11.94 10.45l1.04.60M8 12.90v1.20M4.06 10.45l-1.04.60M4.06 5.55l-1.04-.60"/></svg></button>
+      <button type="button" class="btn" id="save" title="この照明デザインに名前を付けて保存（ファイルにも書き出せます）">保存</button>
+      <button type="button" class="x" id="close" aria-label="閉じる">✕</button>
+    </div>
+  </header>
+
+  <div class="body">
+      <div class="canvases" id="canvases">
+        <!-- 図ぜんぶに効く設定と凡例は、図の上に横並びでまとめる（2026-09-11 本人要望） -->
+        <div class="figbar">
+          <span class="fb">
+            <b>表示</b>
+            <span class="showtoggles" id="showtoggles" role="group" aria-label="表示">
+              <button type="button" data-show="fixtures" aria-pressed="true" title="灯体の印（吊り・SS・転がしなどの記号）を図に出す">機材</button>
+              <button type="button" data-show="no" aria-pressed="true">番号</button>
+              <button type="button" data-show="path" aria-pressed="true">動く範囲</button>
+              <button type="button" data-show="grid" aria-pressed="true" title="1.0mごとの目盛りを図に出す">グリッド</button>
+              <!-- R-09（2026-09-17 本人要望）: 「演者・セット」を3つに割る。
+                   駒の kind（performer / set / curtain）とそのまま1対1で対応する。
+                   右にある一文字幕・袖幕は劇場の造りとして自動で作られる別のもの。
+                   2026-09-23 本人指示: ショー側の幕（前幕・ホリゾント幕など）の
+                   表示切替は不要とのことで削除。以後は常に表示する（showcurtainsの
+                   既定trueのまま・切り替え手段だけを外した）。 -->
+              <button type="button" data-show="performers" aria-pressed="true" title="舞台スケッチ側で置いてある演者を下敷きに出す">演者</button>
+              <button type="button" data-show="setpieces" aria-pressed="true" title="舞台スケッチ側で置いてある大道具・小道具を下敷きに出す">セット</button>
+              <button type="button" data-show="names" aria-pressed="true" title="演者・セットの名前を図に出す（影絵は残す）">名前</button>
+              <button type="button" data-show="border" aria-pressed="false" title="バトンの手前に吊って灯体を客席から隠す短い幕。出すと、客席から灯体が見えていないかを確かめられます">一文字幕</button>
+              <button type="button" data-show="legs" aria-pressed="true" title="舞台の左右に吊って袖（そで）を客席から隠す幕。切ると、袖の奥まで見えるようになります">袖幕</button>
+            </span>
+            <!-- 「光」と「作業灯を消す」は照明デザインタブだけのもの。近い働きなので、
+                 ほかの「表示」から離して右端に2つ並べる（2026-09-13 本人要望）。
+                 消し具合は全消しだけでなく割合で決められる（同要望）。 -->
+            <span class="showtoggles lightgroup" id="lighttoggles" role="group" aria-label="光の見せ方" hidden>
+              <button type="button" data-show="blackout" aria-pressed="false" title="光が当たっていないところを暗くする（G）">作業灯を消す</button>
+              <span class="dimwrap" id="dimwrap" hidden>
+                <input type="range" id="dim" min="0" max="100" step="5" value="100" aria-label="作業灯をどれだけ消すか">
+                <input type="number" id="dimnum" min="0" max="100" step="5" value="100" aria-label="作業灯をどれだけ消すか（％）">
+                <span class="t">%</span>
+              </span>
+            </span>
+          </span>
+          <!-- 中央は、照明デザインでは編集中のLXキュー、配置では現在のシーン名。
+               配置のシーン名を押すとシーン一覧を開く。 -->
+          <!-- 修正バッチ 2026-10-07 #6（本人決定 D8＝A）: 図の上の中央に「⊞ ▲ シーン ▼ ｜ ◀ LXキュー ▶」をまとめる。
+               ⊞＝舞台タブと同じ一覧のアイコン（シーンの一覧: セクション → シーン → LXキュー）。
+               シーンはセクションをまたいで順に送る。キーは舞台タブと同じ ↑↓＝シーン・←→＝LXキュー。
+               #13: 狭いときは同じ段のまま、キュー名 → 送りの矢印の順に隠す（app.js fitFigbar）。 -->
+          <span class="fb scenebox" id="scenerow">
+            <span class="scenenav" id="scenenav">
+              <button type="button" class="btn small quiet qnav gridnav" id="allscenes" aria-label="シーンの一覧を開く" title="シーンの一覧（セクション → シーン → LXキュー）"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z"/></svg></button>
+              <button type="button" class="btn small quiet qnav" id="scene-prev" aria-label="前のシーンへ（↑）" title="前のシーンへ（↑）"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5 10.5 8 4 14.5 10.5"/></svg></button>
+              <button type="button" class="sno" id="scene-name" aria-label="シーンの一覧を開く"></button>
+              <button type="button" class="btn small quiet qnav" id="scene-next" aria-label="次のシーンへ（↓）" title="次のシーンへ（↓）"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5 5.5 8 12 14.5 5.5"/></svg></button>
+            </span>
+            <span class="qsep" id="qsep" aria-hidden="true"></span>
+            <button type="button" class="btn small quiet qnav" id="q-prev" aria-label="前のLXキューへ"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="10.5 1.5 4 8 10.5 14.5"/></svg></button>
+            <span class="qnow" id="qnow"></span>
+            <button type="button" class="btn small quiet qnav" id="q-next" aria-label="次のLXキューへ"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="5.5 1.5 12 8 5.5 14.5"/></svg></button>
+            <button type="button" class="btn quiet place-scene" id="place-scene" hidden aria-haspopup="dialog" title="シーンの一覧を開く"></button>
+          </span>
+          <span class="transport sceneplay" id="transport" hidden>
+            <button type="button" class="btn small play-toggle" id="t-play" aria-label="動きを再生する（Space）" aria-pressed="false" title="動きを再生する（Space）"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 3.2v9.6L12.8 8 5 3.2Z"/></svg></button>
+          </span>
+        </div>
+        <!-- 凸の形: 上＝平面図（真上から）、下段＝下手｜客席から（正面）｜上手。
+             下段は3つとも縦軸が高さなので、高さの目盛りが横一直線にそろう。 -->
+        <div class="figgrid">
+          <!-- 左は2枠ぶんを横並び（2026-09-13 本人要望）。左＝灯体の一覧、右＝LXキュー。
+               縦に積むと両方が半分の高さになるので、横に並べて高さをまるごと使う。
+               LXキューは照明デザインの中ではなく独立したパネル。 -->
+          <div class="leftcol">
+          <!-- 上段左＝灯体の一覧（下手を見る図の真上）。2026-09-11 本人要望で左列から移動 -->
+          <section class="panel" id="panel-fixtures">
+            <!-- 置く操作は灯体の一覧の上（2026-09-13 本人要望で右パネルから移動）。
+                 「置く→一覧に増える」が同じ列で続くので、視線が左右に飛ばない。 -->
+            <div class="sub subtop" id="placebox">
+              <div class="place-head">
+                <p class="ptitle">機材設置</p>
+                <button type="button" class="ontoggle place-mirror" id="mirror-placement" aria-pressed="false" title="灯体を下手／上手または舞台中央線の左右へ同時に置きます"><span class="sw" aria-hidden="true"></span><b>左右対称設置</b></button>
+              </div>
+              <button type="button" class="btn small" id="presets" style="width:100%;margin-bottom:5px">プリセット</button>
+              <div class="seg col" id="place-tools"></div>
+              <!-- ホリゾントライトは置き場所が決まっているので、床／上の2択にする。 -->
+              <div class="seg col" id="cyc-tools"></div>
+              <p class="note" id="place-note"></p>
+            </div>
+            <p class="ptitle" id="fixture-list-title">灯体一覧</p>
+            <button type="button" class="btn small quiet" id="panel-layout-reset" title="灯体一覧・LXキュー・下手図の幅を標準に戻します">表示幅を初期値に戻す</button>
+            <input type="search" id="search" class="search" placeholder="番号・名前で探す" aria-label="灯体を探す">
+            <div class="filters" id="filters" role="group" aria-label="絞り込み">
+              <button type="button" data-filter="all" aria-pressed="true">すべて</button>
+              <button type="button" data-filter="off" aria-pressed="false">オフ</button>
+              <button type="button" data-filter="on" aria-pressed="false">オン</button>
+              <button type="button" data-filter="move" aria-pressed="false">動き</button>
+            </div>
+            <!-- T-17（2026-09-18 本人要望）: 「N灯を選択中」は右パネルの最下部へまとめた。 -->
+            <!-- R-11（2026-09-17 本人要望）: 選んだ灯体をカスタムのグループにまとめる。
+                 グループは「まとめて選ぶ」ためのもので、灯体を縛らない（値が揃うのは操作した瞬間だけ）。
+                 既存の「組」（動きの組）とは別物。 -->
+            <button type="button" class="btn small" id="make-fixture-group" hidden>選んだ灯をグループにする</button>
+            <div class="list" id="list"></div>
+          </section>
+          <div class="layout-splitter inner" id="fixture-panel-resize" role="separator" aria-orientation="vertical" aria-label="灯体一覧とLXキューの幅を調整" aria-valuemin="20" aria-valuemax="80" aria-valuenow="50" tabindex="0" title="ドラッグ、左右キー、ダブルクリックで幅を調整・初期化"></div>
+          <section class="panel" id="panel-lxq">
+            <!-- 修正バッチ 2026-10-07 #6: パネル上部のセクション／シーン送りは図の上の中央（#scenerow）へ移した。 -->
+            <div class="lxhead">
+              <p class="ptitle">LXキュー</p>
+              <button type="button" class="ontoggle" id="lxlink" aria-pressed="true"><span class="sw"></span><b><span class="swlab">シーンと連動</span>オン</b></button>
+            </div>
+            <div class="lxbody" id="lxqbox"></div>
+            <button type="button" class="btn primary" id="apply" title="配置と照明デザインを現在のショーのLXキューへ適用">LXキューを適用</button>
+          </section>
+          <div class="layout-splitter outer" id="left-panel-resize" role="separator" aria-orientation="vertical" aria-label="灯体一覧・LXキュー・側面図の幅を調整" aria-valuemin="0" aria-valuemax="800" aria-valuenow="0" tabindex="0" title="ドラッグ、左右キー、ダブルクリックで幅を調整・初期化"></div>
+          </div>
+          <div class="planwrap">
+            <div class="viewhead">
+              <!-- T-18: 全画面マークは左端。 -->
+              <button type="button" class="solo-btn" data-solo-figure="plan" title="平面図だけを大きく見る（p）。Escかもう一度押すと戻ります" aria-label="平面図の拡大表示を切り替える"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10"/></svg></button>
+              <span class="viewtitle">平面図（真上から）</span>
+              <label class="snap" title="1.0mのグリッドに合わせて置く・動かす"><input type="checkbox" id="snap"><span>1.0mでそろえる</span></label>
+            </div>
+            <canvas id="plan" width="1090" height="760"></canvas>
+          </div>
+          <!-- 上段右＝選んだ機材／灯体（メイン）と配置（サブ・下の層）。2026-09-11 本人要望 -->
+          <section class="panel insp" id="panel-insp">
+            <!-- 照明デザインの見出し行: 左＝パネル名、右＝シーン送り・再生とオン・オフ。
+                 2026-09-13 本人要望で図の上の帯から移設し、シーン名の表示はやめた
+                 （パネル名「灯体情報」がわかれば足りる）。配置タブでは丸ごと隠す
+                 （配置モードは選んだ灯体／配置(ショー共通)という別の静的見出しを使う）。 -->
+            <div class="insphead" id="insphead" hidden>
+              <p class="ptitle">灯体情報</p>
+              <div class="panelhead-actions" id="panelhead-actions">
+                <!-- 2026-09-14 本人要望: 最初へ／停止／秒数／再生中の表示をやめ、再生と停止の
+                     トグル1個だけにした。文字は「押すと何が起きるか」を出す（停止中＝再生、
+                     再生中＝停止）。時刻の頭出しはシーンを選び直したときに内部で行う（home()）。 -->
+                <!-- 2026-09-14 本人要望: 再生の左隣にコピー／ペースト。
+                     同じ種類の灯体どうし（ムービング↔ムービング／固定↔固定／cyc↔cyc）だけ通す。 -->
+                <span class="transport">
+                  <!-- R-03（2026-09-17 本人要望）: この cue の灯体情報を戻す。本人指定でソロの左。
+                       帯が狭いのでボタンは1つにして、押すと4通りを選ぶ小さな窓を出す。 -->
+                  <!-- T-16（2026-09-18 本人要望）: 記号は分かりにくいので文字にする。
+                       ⟲ は「元に戻す（undo）」ではなく「この cue の灯体情報を消す／はじめに戻す」。 -->
+                  <button type="button" class="btn small resetcue" id="reset-cue" aria-label="この cue の灯体情報を戻す" title="この cue の灯体情報を戻す（消す／はじめに戻す）">リセット</button>
+                  <button type="button" class="btn small solo" id="solo" aria-pressed="false" aria-label="ソロ" title="ソロ（S）">ソロ</button>
+                  <button type="button" class="btn small xfer" id="t-copy" disabled>コピー</button>
+                  <button type="button" class="btn small xfer" id="t-paste" disabled>ペースト</button>
+                </span>
+                <button type="button" class="ontoggle" id="lighttoggle" hidden aria-pressed="false" aria-label="灯体の点灯を切り替える"><span class="sw" aria-hidden="true"></span></button>
+              </div>
+            </div>
+            <div id="selacts" hidden>
+              <p class="ptitle" id="selacts-title">選んだ灯体</p>
+              <div class="tsbtns">
+                <button type="button" class="btn quiet" id="mirror" disabled>反対側へコピー</button>
+                <button type="button" class="btn quiet" id="spread" disabled>等間隔に並べる</button>
+                <button type="button" class="btn quiet" id="del" disabled>削除</button>
+              </div>
+            </div>
+            <div class="inspbody" id="insp"></div>
+            <!-- 固定灯のシーン間の食い違い。決まるまで消えないので、設定欄とは別の固定枠に出す -->
+            <div id="conflicts"></div>
+            <!-- R-01（2026-09-17 本人要望）: 操作の結果や注意は、画面下に浮くポップアップをやめて
+                 ここへ常設で出す。上からせり出す動きは付けず、最初から場所を取っておく。
+                 出すのは最新の1件だけ（書き換え方式）。取り消しはヘッダーの「戻る」を使う。 -->
+            <p class="insp-log" id="insp-log" role="status" aria-live="polite" data-empty="true"></p>
+          </section>
+          <!-- 側面図は1枚。下手と上手を同時に見る必要はないので切り替え式にし、
+               空いた右下を照明デザインパネルが使う（2026-09-13 本人要望）。 -->
+          <div class="sec side l">
+            <div class="sechead">
+              <!-- T-18（2026-09-18 本人要望）: 全画面マークは3つの図とも左端にそろえる。 -->
+              <button type="button" class="solo-btn" data-solo-figure="side" title="側面図だけを大きく見る（O）。Escかもう一度押すと戻ります" aria-label="側面図の拡大表示を切り替える"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10"/></svg></button>
+              <span class="placement-side-title">下手側</span>
+              <span class="showtoggles sidemode" id="sidemode" role="group" aria-label="どちら側を見るか">
+                <button type="button" data-side="shimote" aria-pressed="true">下手を見る</button>
+                <button type="button" data-side="kamite" aria-pressed="false">上手を見る</button>
+              </span>
+              <span class="side-sep" aria-hidden="true"></span>
+              <button type="button" class="btn small quiet sidedistance" id="distance-mode" aria-pressed="false">距離：固定帯</button>
+            </div>
+            <canvas id="secL" width="520" height="520"></canvas>
+          </div>
+          <div class="sec front">
+            <div class="sechead">
+              <!-- T-18: 全画面マークは左端。 -->
+              <button type="button" class="solo-btn" data-solo-figure="front" title="正面図だけを大きく見る（F）。Escかもう一度押すと戻ります" aria-label="正面図の拡大表示を切り替える"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10"/></svg></button>
+              <span class="viewtitle">正面図</span>
+              <span class="fmode">
+                <span class="showtoggles" id="frontmode" role="group" aria-label="正面図の描き方">
+                  <button type="button" data-front="flat" aria-pressed="true">平面</button>
+                  <button type="button" data-front="3d" aria-pressed="false">3D</button>
+                </span>
+                <select id="seat" class="seatsel" aria-label="どの席から見るか" hidden>
+                  <option value="front">1階 前方</option>
+                  <option value="center">1階 中央</option>
+                  <option value="rear">1階 後方</option>
+                  <option value="balcony" selected>2階席</option>
+                </select>
+              </span>
+            </div>
+            <canvas id="secF" width="780" height="520"></canvas>
+          </div>
+          <div class="sec side r">
+            <div class="sechead"><span class="placement-side-title">上手側</span></div>
+            <canvas id="secR" width="520" height="520"></canvas>
+          </div>
+        </div>
+        <div class="empty" id="empty" hidden>
+          <div class="in">
+            <!-- 2026-09-17 本人指示: ここに「プリセット／奥バトン1本＋ムービング4灯／自分で組む」の
+                 3択を置くと、劇場設定の「この劇場を反映する」で「照明機材をどうしますか」を答えた
+                 直後に、同じことをもう一度聞くことになる。案内だけにして、操作は常設の
+                 「機材設置」へ一本化した。消えた「奥バトン1本＋ムービング4灯」は、
+                 プリセットの「最小の仕込み」として残してある。 -->
+            <p>まだ照明がありません。</p>
+            <p class="note">灯体一覧の上にある「機材設置」から、<b>プリセット</b>を選ぶか、<br>バトンを置いて組みます。どちらもあとから位置と灯数を変えられます。</p>
+          </div>
+        </div>
+      </div>
+    <!-- 舞台スケッチの中では会場の寸法が決まっているので既定は非表示。
+         単体で使う場合だけ出す想定（2026-09-11 本人判断） -->
+    <div class="box" id="venuebox" hidden>
+      <p class="ptitle">舞台の大きさ</p>
+      <label class="vrow"><span>間口（幅）</span><input type="range" id="dimW" min="6" max="24" step="1" value="12"><span class="val" id="dimWv">12.0m</span></label>
+      <label class="vrow"><span>奥行き</span><input type="range" id="dimD" min="4" max="18" step="1" value="8"><span class="val" id="dimDv">8.0m</span></label>
+      <label class="vrow"><span>高さ</span><input type="range" id="dimH" min="4" max="16" step="1" value="8"><span class="val" id="dimHv">8.0m</span></label>
+      <p class="note">4つの図と1.0mの線は、この寸法に合わせて描き直します。</p>
+    </div>
+    <p class="foot">選択 <b>クリック</b>　複数 <b>Shift</b>　解除 <b>Esc</b>　再生 <b>Space</b>　設定をコピー <b>⌘C</b>　貼る <b>⌘P</b>　狙い点を縦横だけに動かす <b>Shift+ドラッグ</b>　／　灯体の位置と動きを伝えるための案です。機種・回路・DMX・照度・設置の安全性は示しません。</p>
+  </div>
+  <div class="dialog" id="dialog" hidden></div>
+</div>
+<!-- R-01（2026-09-17 本人要望）: 画面下に浮くポップアップは廃止。
+     結果や注意は「灯体情報」パネル最下部の #insp-log へ常設で出す。
+     要素は残さない（.toast のCSSも使われなくなる）。 -->
+
+<script src="../gamma-ui.js?v=20261008-v0328"></script>
+<link rel="stylesheet" href="position-names.css?v=20261001-release71">
+<script src="../gamma-render-resolution.js?v=20261006-v0318"></script>
+<script src="rig-engine.js?v=20261006-v0315"></script>
+<script src="../stage-performer-contour.js?v=20261006-v0318"></script>
+<script src="../stage-performer-body.js?v=20261009-v0333"></script>
+<script src="stage-figure.js?v=20261004-receiver89"></script>
+<script src="../stage-set-render.js?v=20261004-receiver89"></script>
+<script src="volume-light.js?v=20260928-feedback55"></script>
+<script src="laser-effects.js?v=20261005-batch98"></script>
+<script src="laser-effects-ui.js?v=20260915-3-supported-shapes"></script>
+<script src="../stage-data-safety.js?v=20261001-release69"></script>
+<script src="../stage-light-eval.js?v=20261004-receiver89"></script>
+<script src="../stage-fixture-body.js?v=20261009-v0335"></script>
+<script src="../stage-light-receiver.js?v=20261004-receiver89"></script>
+<script src="../gamma-light-cue-overlay.js?v=20261006-v0318"></script>
+<script src="app.js?v=20261010-v0338"></script>
+<script src="light-presets.js?v=1789357787"></script>
+<script src="light-presets-ui.js?v=20261010-v0338"></script>
+<!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->
+<script src="selected-light-presets-engine.js?v=20260928-feedback55"></script>
+<script src="selected-light-presets-ui.js?v=20260928-feedback55"></script>
+<script src="../gamma-light-model.js?v=20261006-v0315"></script>
+<script src="simple-lighting-model.js?v=20261001-release71"></script>
+<script src="embed.js?v=20261010-v0338"></script>
+<script src="simple-lighting-ui.js?v=20261010-v0338"></script>
+<script src="position-placement-ui.js?v=20261005-batch98"></script>
+<script src="position-names-ui.js?v=20261001-release71"></script>
+<script src="../gamma-ui-i18n.js?v=20261010-v0338"></script>
+<script src="../gamma-ui-i18n.ko.js?v=20261010-v0338"></script>
+<script src="ui-i18n.js?v=20261010-v0338"></script>
+</body>
+</html>

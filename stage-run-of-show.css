@@ -1,0 +1,18 @@
+:root{--ros-frame-min:520px;--ros-shell-height:152px}
+#gamma-run-of-show-workspace{width:100%;min-height:0}
+#gamma-run-of-show-workspace[hidden]{display:none}
+#gamma-run-of-show-frame{display:block;width:100%;height:calc(100dvh - var(--ros-shell-height));min-height:var(--ros-frame-min);border:0;background:var(--desk,#191512);color-scheme:light}
+body[data-gamma-workspace="run-of-show"] .stage-sketch-grid,
+body[data-gamma-workspace="run-of-show"] #stage-timeline-panel,
+body[data-gamma-workspace="run-of-show"] .stage-boundary-note{display:none!important}
+body[data-gamma-workspace="run-of-show"].stage-timeline-expanded:not(.stage-fullscreen) #view-stage{padding-bottom:0}
+
+body[data-gamma-workspace="run-of-show"]::before{display:none}
+body[data-gamma-workspace="run-of-show"] #stage-timeline-grip,body[data-gamma-workspace="run-of-show"] .stage-timeline-resize-handle{display:none!important}
+
+/* N-12: Lite starts on paper; never reveal the unrelated stage while scripts load. */
+html[data-gamma-edition="lite"] body:not([data-gamma-workspace]) .stage-sketch-grid{display:none!important}
+html[data-gamma-edition="lite"] body:not([data-gamma-workspace]) #gamma-run-of-show-workspace{display:block!important}
+.gamma-ros-loading{display:none;margin:24px auto;width:min(720px,calc(100% - 48px));min-height:360px;padding:32px;border:1px solid var(--line-dark);background:var(--desk-2,#201b16);color:var(--milk,#efe7d6);box-sizing:border-box}
+#gamma-run-of-show-workspace[data-loading="true"] .gamma-ros-loading{display:block}
+#gamma-run-of-show-workspace[data-loading="true"] iframe{visibility:hidden;height:0;min-height:0}

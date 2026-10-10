@@ -1,0 +1,209 @@
+/* Based on the main PWA's stage-phone-viewer: stacked portrait / 64px landscape rail. */
+html.study-phone, html.study-phone body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; }
+body.study-phone {
+  --phone-header: 52px; --phone-scenes: 44px; --phone-tools: 56px; --phone-rail: 64px;
+  --phone-hit: 40px; --phone-icon: 18px; --phone-modal-width: 420px; --phone-modal-vw: 92vw;
+  --phone-modal-ratio: .8; --phone-detail-ratio: .3; --phone-dot: 5px; --phone-overlay-opacity: .8;
+  --phone-brand: 18px; --phone-control: 12px; --phone-heading: 14px; --phone-panel: 360px;
+  position: fixed; inset: 0; padding: 0; touch-action: manipulation;
+}
+.study-phone .study-shell {
+  position: relative; display: grid; grid-template-columns: minmax(0,1fr); grid-template-rows: var(--phone-header) var(--phone-scenes) auto minmax(0,1fr) var(--phone-tools);
+  height: var(--phone-height, 100dvh); width: 100%; max-width: none; box-sizing: border-box;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.study-phone .study-header { grid-row: 1; grid-column: 1; display: flex; align-items: center; padding: 0 0 0 12px; margin: 0; border-left: 0; gap: 4px; }
+.study-phone .study-header .study-heading { min-width: 0; flex: 1; }
+.study-phone .study-header h1 { font-size: var(--phone-brand); margin: 0; letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.study-phone .study-header .study-kicker { display: none; }
+.study-phone .study-header > .study-show-info, .study-phone .study-header > .study-header-actions { display: none; }
+.study-phone .study-workspace { grid-row: 4; grid-column: 1; display: block; min-height: 0; height: 100%; }
+.study-phone .study-stage { height: 100%; min-height: 0; }
+.study-phone .study-stage > :not(#study-frame-host), .study-phone #study-side-resize { display: none !important; }
+.study-phone #study-frame-host { height: 100%; }
+.study-phone .study-stage #study-frame-host iframe { display: block; height: 100%; width: 100%; aspect-ratio: auto; margin: 0; border: 0; }
+.study-phone #study-side { display: none; }
+.study-phone .phone-scenes { grid-row: 2; display: grid; grid-template-columns: minmax(0,1fr) var(--study-hit) var(--study-hit); background: var(--study-identity-bg); }
+.study-phone .phone-tools { grid-row: 5; display: grid; grid-template-columns: auto repeat(3,minmax(0,1fr)); background: var(--study-identity-bg); }
+.study-phone .phone-scenes button, .study-phone .phone-tools button, .study-phone .phone-steps button, .study-phone .phone-settings {
+  min-width: 44px; min-height: 44px; height: 100%; padding: 4px; border: 0; border-bottom: 1px solid var(--study-accent); border-right: 1px solid var(--line-dark);
+  color: var(--study-accent-strong); background: var(--study-identity-bg); font: var(--phone-control)/1.5 var(--sans); letter-spacing: normal;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.study-phone .phone-scenes .phone-current { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.study-phone .phone-tools button { flex-direction: column; gap: 0; }
+.study-phone .phone-tools button span { white-space: nowrap; }
+.study-phone .phone-tools svg { width: 18px; height: 18px; flex-basis: 18px; }
+
+.study-phone .phone-panel {
+  position: absolute; z-index: 40; right: env(safe-area-inset-right); bottom: calc(var(--phone-tools) + env(safe-area-inset-bottom));
+  width: min(var(--phone-panel), calc(100% - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  max-height: 55%; display: flex; flex-direction: column; padding: 0; border: 1px solid var(--study-accent); background: var(--study-bg);
+}
+.study-phone .phone-panel-head { display: flex; align-items: center; justify-content: space-between; box-sizing: border-box; padding: 4px 4px 4px 12px; background: var(--study-identity-bg); flex: 0 0 calc(var(--phone-hit) + 8px); }
+.study-phone .phone-panel-head h2 { margin: 0; color: var(--study-accent-strong); font: 500 var(--phone-heading)/1.5 var(--sans); }
+.study-phone .phone-panel-head button { box-sizing: border-box; flex: 0 0 var(--phone-hit); width: var(--phone-hit); min-width: var(--phone-hit); height: var(--phone-hit); min-height: var(--phone-hit); margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--study-accent-strong); background: var(--study-identity-bg); border: 1px solid var(--study-accent); }
+.study-phone .phone-panel-head button svg { display: block; width: var(--phone-icon); height: var(--phone-icon); }
+.study-phone .phone-panel-content { overflow: auto; overscroll-behavior: contain; min-height: 0; padding: 12px; }
+.study-phone .phone-panel-content > section { min-width: 0; }
+.study-phone .phone-panel .study-controls { border: 0; padding: 0; }
+.study-phone .phone-panel .study-controls > #study-scenes-label,
+.study-phone .phone-panel .study-controls > .study-scene-row,
+.study-phone .phone-panel .study-controls > .study-toolbar,
+.study-phone .phone-panel .study-controls > .study-section-title { display: none; }
+.study-phone .phone-panel .study-memo { border: 0; padding: 0; }
+.study-phone .phone-panel textarea, .study-phone .phone-panel input, .study-phone .phone-panel select { font-size: 16px !important; }
+.study-phone .phone-panel #study-note { min-height: 112px; height: 112px; }
+.study-phone .phone-panel .study-muted { font-size: 12px; }
+.study-phone .phone-panel label, .study-phone .phone-panel legend { font-size: 12px; letter-spacing: normal; }
+.study-phone .phone-panel .study-show-info { text-align: left; }
+.study-phone .phone-panel .study-header-actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+.study-phone .phone-scene-list { display: grid; gap: 4px; }
+.study-phone .phone-scene-list button { min-height: 44px; text-align: left; font: 14px/1.5 var(--sans); }
+.study-phone .phone-share > summary { min-height: 44px; display: flex; align-items: center; color: var(--study-accent-strong); font-size: 14px; cursor: pointer; }
+.study-phone .phone-share > summary::after { content: '+'; margin-left: auto; }
+.study-phone .phone-share[open] > summary::after { content: '−'; }
+.study-phone .phone-alert { position: absolute; z-index: 45; bottom: calc(var(--phone-tools) + 8px + env(safe-area-inset-bottom)); left: 8px; right: 8px; background: var(--study-bg); border: 1px solid var(--study-accent); padding: 8px; margin: 0; font-size: 12px; }
+.study-phone #study-status:not([hidden]), .study-phone #study-retry:not([hidden]), .study-phone #study-login:not([hidden]), .study-phone #study-library:not([hidden]) { position: absolute; z-index: 50; top: calc(var(--phone-header) + var(--phone-scenes)); left: 8px; right: 8px; padding: 12px; background: var(--study-bg); max-height: 70%; overflow: auto; }
+.study-phone #study-retry:not([hidden]) { top: calc(var(--phone-header) + var(--phone-scenes) + 80px); }
+
+.study-phone .phone-header-actions, .study-phone .phone-views, .study-phone .phone-steps { display: flex; flex: 0 0 auto; }
+.study-phone .phone-header-actions button {
+  min-width: var(--phone-hit); width: var(--phone-hit); min-height: var(--phone-hit); height: var(--phone-hit);
+  padding: var(--study-s2); display: flex; align-items: center; justify-content: center;
+  color: var(--study-accent-strong); background: var(--study-identity-bg); border-color: var(--study-accent);
+}
+.study-phone #phone-light[aria-pressed="true"], .study-phone .phone-views button[aria-pressed="true"] { background: var(--study-accent-strong); color: var(--study-bg); }
+.study-phone .phone-header-actions svg, .study-phone .phone-scenes svg, .study-phone .phone-steps svg { width: var(--phone-icon); height: var(--phone-icon); flex: 0 0 var(--phone-icon); }
+.study-phone .phone-steps button { width: var(--study-hit); }
+.study-phone #phone-scene-info { position: relative; }
+.study-phone #phone-scene-info[aria-disabled="true"] { opacity: .6; cursor: default; }
+.study-phone #phone-scene-info.has-note::after { content: ''; position: absolute; right: var(--study-s2); top: var(--study-s2); width: var(--phone-dot); height: var(--phone-dot); border-radius: 50%; background: currentColor; }
+.study-phone .phone-detail { grid-row: 3; grid-column: 1; min-height: 0; max-height: calc(var(--phone-height, 100dvh) * var(--phone-detail-ratio)); overflow: auto; overscroll-behavior: contain; padding: var(--study-s2) var(--study-s3); background: var(--study-bg); }
+.study-phone .phone-detail .study-note-text { margin: 0; }
+.study-phone .study-note-text { line-height: 1.8; letter-spacing: .02em; line-break: strict; word-break: auto-phrase; text-wrap: pretty; }
+.study-phone .study-note-text.phrase-wrap { word-break: keep-all; overflow-wrap: anywhere; }
+.study-phone .phone-detail { padding-block: var(--study-s3); }
+.study-phone .phone-backdrop { position: absolute; inset: 0; z-index: 39; background: var(--study-bg); opacity: var(--phone-overlay-opacity); }
+.study-phone .phone-panel.phone-modal {
+  top: calc(env(safe-area-inset-top) + (100% - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 2);
+  left: calc(env(safe-area-inset-left) + (100% - env(safe-area-inset-left) - env(safe-area-inset-right)) / 2);
+  right: auto; bottom: auto; transform: translate(-50%, -50%);
+  width: min(var(--phone-modal-vw), var(--phone-modal-width), calc(100% - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  max-height: min(calc(var(--phone-height, 100dvh) * var(--phone-modal-ratio)), calc(var(--phone-height, 100dvh) - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+}
+@media (orientation: landscape) {
+  body.study-phone { --phone-header: 44px; --phone-brand: 14px; }
+  .study-phone .study-shell { grid-template-columns: minmax(0,1fr) var(--phone-rail); grid-template-rows: var(--phone-header) var(--phone-scenes) minmax(0,1fr); }
+  .study-phone .study-header { grid-column: 1 / -1; }
+  .study-phone .study-workspace { grid-column: 1; grid-row: 3; }
+  .study-phone .phone-scenes { grid-column: 1; grid-row: 2; }
+  .study-phone .phone-detail { display: none; }
+  .study-phone .phone-tools { position: absolute; grid-area: auto; right: env(safe-area-inset-right); top: calc(env(safe-area-inset-top) + var(--phone-header)); bottom: env(safe-area-inset-bottom); width: var(--phone-rail); grid-template-columns: 1fr; grid-template-rows: repeat(3,minmax(var(--study-hit),1fr)); overflow-y: auto; }
+  .study-phone .phone-steps { position: fixed; left: calc(env(safe-area-inset-left) + var(--study-s2)); bottom: calc(env(safe-area-inset-bottom) + var(--study-s2)); z-index: 3; pointer-events: none; }
+  .study-phone .phone-steps button { height: var(--study-hit); pointer-events: auto; background: color-mix(in srgb, var(--study-identity-bg) calc(var(--phone-overlay-opacity) * 100%), transparent); }
+  .study-phone .phone-panel:not(.phone-modal) { top: calc(var(--phone-header) + env(safe-area-inset-top)); right: calc(var(--phone-rail) + env(safe-area-inset-right)); bottom: env(safe-area-inset-bottom); max-height: none; width: min(var(--phone-panel), calc(100% - var(--phone-rail) - env(safe-area-inset-left) - env(safe-area-inset-right))); }
+  .study-phone .phone-alert { right: calc(var(--phone-rail) + var(--study-s2) + env(safe-area-inset-right)); bottom: var(--study-s2); }
+}
+
+/* UI2: landscape gives every vertical pixel to the drawings. */
+.study-phone #phone-menu { display: none; }
+@media (orientation: landscape) {
+  body.study-phone { --phone-menu-gap: 8px; }
+  .study-phone .study-shell { grid-template-rows: minmax(0,1fr); }
+  .study-phone .study-workspace { grid-row: 1; }
+  .study-phone .phone-tools { top: env(safe-area-inset-top); grid-template-rows: repeat(4,minmax(var(--study-hit),1fr)); }
+  .study-phone #phone-menu { display: flex; }
+  .study-phone .phone-panel:not(.phone-modal) { top: env(safe-area-inset-top); }
+  .study-phone .phone-panel .study-header { display: flex; flex-direction: column; align-items: stretch; padding: 0; gap: var(--phone-menu-gap); }
+  .study-phone .phone-panel .study-header h1 { white-space: normal; overflow-wrap: anywhere; }
+  .study-phone .phone-panel .phone-header-actions { flex-wrap: wrap; gap: var(--study-s1); }
+  .study-phone .phone-panel .phone-scenes { margin-top: var(--phone-menu-gap); }
+  .study-phone .phone-panel .phone-current { white-space: normal; }
+}
+
+/* Line rehearsal: the existing detail row in portrait, a band above the drawing in landscape. */
+body.study-phone { --phone-lines-ratio: .4; --phone-line-size: clamp(1.45rem, 6.4vw, 2.1rem); --phone-control-text: clamp(1.05rem, 4.2vw, 1.3rem); --phone-line-leading: 1.6; --phone-figure-height: 75vw; }
+.study-phone .study-shell.phone-lines-on { grid-template-rows: var(--phone-header) var(--phone-scenes) minmax(0,1fr) min(var(--phone-figure-height), calc(var(--phone-height, 100dvh) * .5)) var(--phone-tools); }
+.study-phone .phone-scenes.has-lines { grid-template-columns: minmax(0,1fr) repeat(2,44px) 58px; }
+.study-phone #phone-lines { flex-direction: column; gap: 2px; padding: 3px; }
+.study-phone #phone-lines, .study-phone #phone-lines[aria-pressed], .study-phone #phone-lines[aria-pressed]:hover { background: var(--study-identity-bg); color: var(--study-accent-strong); border-color: var(--line-dark); }
+.study-phone #phone-lines span { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; font-size: .7rem; line-height: 1; border: 1px solid var(--study-accent); color: var(--study-accent-strong); }
+.study-phone #phone-lines .phone-mode-scene, .study-phone #phone-lines[aria-pressed="true"] .phone-mode-lines { background: var(--study-accent-strong); color: var(--study-bg); }
+.study-phone #phone-lines[aria-pressed="true"] .phone-mode-scene { background: none; color: var(--study-accent-strong); }
+.study-phone .phone-lines {
+  grid-row: 3; grid-column: 1; min-width: 0; min-height: 0; box-sizing: border-box;
+  position: relative; overflow: auto; overscroll-behavior: contain; padding: 0 var(--study-s3) var(--study-s2);
+  background: var(--study-bg); color: var(--study-ink);
+}
+.study-phone .phone-lines-head { position: sticky; top: 0; display: flex; align-items: center; min-height: var(--phone-hit); gap: var(--study-s2); background: var(--study-bg); z-index: 1; }
+.study-phone .phone-lines-meta { min-width: 0; flex: 1; font-size: var(--phone-control); }
+.study-phone .phone-line-speaker { font-size: calc(var(--phone-line-size) * .72); margin: var(--study-s1) 0; padding-left: var(--study-s2); border-left: 4px solid var(--study-accent); color: var(--study-ink); }
+.study-phone .phone-line-text { margin: var(--study-s1) 0; font-size: var(--phone-line-size); line-height: var(--phone-line-leading); }
+.study-phone .phone-line-memo { margin: var(--study-s1) 0; font-size: var(--phone-control); opacity: .8; }
+.study-phone .phone-line-next { margin-top: var(--study-s3); padding-top: var(--study-s2); border-top: 1px solid var(--study-accent); opacity: .85; }
+.study-phone .phone-line-next-label { margin: 0 0 var(--study-s1); font-size: var(--phone-control); letter-spacing: .08em; color: var(--study-accent-strong); }
+.study-phone .phone-line-next-speaker { margin: var(--study-s1) 0; padding-left: var(--study-s2); border-left: 3px solid var(--study-accent); font-size: var(--phone-control); }
+.study-phone .phone-line-next-text { margin: var(--study-s1) 0; font-size: var(--phone-control-text, .95rem); line-height: 1.6; }
+.study-phone .phone-lines-empty { font-size: var(--phone-heading); overflow-wrap: anywhere; }
+.study-phone .phone-line-ghost { position: absolute; margin: 0; pointer-events: none; }
+.study-phone .phone-lines-flow { display: contents; }
+.study-phone .phone-setting { display: flex; align-items: flex-start; gap: var(--study-s2); min-height: var(--phone-hit); padding: var(--study-s2) 0; }
+.study-phone .phone-setting input { flex: none; width: 24px; height: 24px; min-width: 24px; min-height: 24px; padding: 0; margin: 2px 0 0; accent-color: var(--study-accent-strong); }
+.study-phone .phone-setting-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.study-phone .phone-setting-hint { opacity: .75; }
+.study-phone .phone-lines-steps { box-shadow: inset 0 2px var(--study-accent); }
+.study-phone .phone-lines-steps button { border-top: 2px solid var(--study-accent); }
+.study-phone .phone-line-back svg { transform: scaleX(-1); }
+@media (orientation: landscape) {
+  body.study-phone { --phone-lines-ratio: .4; --phone-line-size: clamp(1.2rem, 3vw, 1.7rem); --phone-control-text: clamp(.95rem, 2vw, 1.15rem); }
+  .study-phone .phone-lines { display: grid; grid-template-columns: minmax(0,3fr) minmax(0,2fr); column-gap: var(--study-s3); align-content: start; }
+  .study-phone .phone-lines[hidden] { display: none; }
+  .study-phone .phone-lines-head, .study-phone .phone-lines-empty { grid-column: 1 / -1; }
+  .study-phone .phone-line-live { grid-column: 1; grid-row: 2; }
+  .study-phone .phone-line-memo { grid-column: 1; grid-row: 3; }
+  .study-phone .phone-line-next { grid-column: 2; grid-row: 2 / span 2; margin-top: var(--study-s1); padding: 0 0 0 var(--study-s3); border-top: 0; border-left: 1px solid var(--study-accent); }
+  .study-phone .study-shell.phone-lines-on { grid-template-rows: calc(var(--phone-height, 100dvh) * var(--phone-lines-ratio)) minmax(0,1fr); }
+  .study-phone .phone-lines { grid-row: 1; }
+  .study-phone .phone-lines-on .study-workspace { grid-row: 2; }
+}
+
+/* Vertical writing: the current line, its cue and the next line run in columns from right to left. */
+.study-phone .phone-lines.is-vertical { display: flex; flex-direction: column; overflow: hidden; padding-bottom: var(--study-s2); }
+.study-phone .phone-lines.is-vertical .phone-lines-head { position: static; flex: none; }
+.study-phone .phone-lines.is-vertical .phone-lines-flow { display: flex; direction: rtl; flex: 1 1 0; min-height: 0; gap: var(--study-s3); align-items: stretch; overflow-x: auto; overflow-y: hidden; overscroll-behavior: contain; position: relative; }
+.study-phone .phone-lines.is-vertical .phone-lines-flow > * { direction: ltr; writing-mode: vertical-rl; flex: none; max-height: 100%; margin: 0; box-sizing: border-box; grid-column: auto; grid-row: auto; text-combine-upright: digits 2; }
+.study-phone .phone-lines.is-vertical .phone-line-speaker { margin: 0 0 0 var(--study-s2); padding: 0 0 0 var(--study-s2); }
+.study-phone .phone-lines.is-vertical .phone-line-memo { margin: 0; }
+.study-phone .phone-lines.is-vertical .phone-line-text, .study-phone .phone-lines.is-vertical .phone-line-next-text { margin: 0 0 0 var(--study-s2); }
+.study-phone .phone-lines.is-vertical .phone-line-next { padding: 0 var(--study-s3) 0 0; border: 0; border-right: 1px solid var(--study-accent); }
+.study-phone .phone-lines.is-vertical .phone-line-next-label { margin: 0 0 0 var(--study-s2); }
+.study-phone .phone-lines.is-vertical .phone-line-next-speaker { margin: 0 0 0 var(--study-s2); padding: 0 0 0 var(--study-s2); }
+.study-phone .phone-lines.is-vertical .phone-line-ghost { direction: ltr; writing-mode: vertical-rl; }
+.study-phone .phone-show-switch { margin: 0 0 var(--study-s3); }
+.study-phone .phone-show-switch h3 { margin: 0 0 var(--study-s1); font-size: var(--phone-control); color: var(--study-accent-strong); }
+.study-phone #phone-view { position: relative; }
+.study-phone .phone-dots { position: absolute; left: 0; right: 0; bottom: 4px; display: flex; justify-content: center; gap: 4px; pointer-events: none; }
+.study-phone .phone-dots i { width: 5px; height: 5px; box-sizing: border-box; border-radius: 50%; border: 1px solid currentColor; }
+.study-phone .phone-dots i[data-on="true"] { background: currentColor; }
+.study-phone .phone-controls-pane { display: grid; gap: var(--study-s2); }
+.study-phone .phone-controls-pane[hidden] { display: none; }
+.study-phone .phone-zoom-row { display: flex; flex-wrap: wrap; gap: var(--study-s2); }
+.study-phone .phone-zoom-row button { min-height: 44px; flex: 1 1 120px; }
+.study-phone .phone-lines[data-len="long"] .phone-line-text { font-size: calc(var(--phone-line-size) * .84); }
+.study-phone .phone-lines[data-len="xlong"] .phone-line-text { font-size: calc(var(--phone-line-size) * .7); }
+.study-phone .phone-lines-head #phone-script-open { flex: 0 0 var(--phone-hit); width: var(--phone-hit); height: var(--phone-hit); min-width: var(--phone-hit); min-height: var(--phone-hit); padding: var(--study-s2); display: flex; align-items: center; justify-content: center; color: var(--study-accent-strong); background: var(--study-identity-bg); border-color: var(--study-accent); }
+.study-phone #phone-script-open svg { width: var(--phone-icon); height: var(--phone-icon); }
+.study-phone .phone-script-info { width: 100%; min-height: 44px; margin: 0 0 var(--study-s3); text-align: left; font: 14px/1.5 var(--sans); }
+.study-phone .phone-script { display: grid; gap: 4px; }
+.study-phone .phone-script-scene { margin: var(--study-s3) 0 var(--study-s1); font-size: var(--phone-control); font-weight: 500; letter-spacing: .04em; color: var(--study-accent-strong); position: sticky; top: -12px; padding: 4px 0; background: var(--study-bg); }
+.study-phone .phone-script-scene:first-child { margin-top: 0; }
+.study-phone .phone-script-line { display: grid; gap: 2px; text-align: left; min-height: 44px; padding: 6px 10px; border-left-width: 4px; border-left-style: solid; font: 15px/1.6 var(--sans); }
+.study-phone .phone-script-line[aria-current="true"] { background: var(--study-accent-strong); color: var(--study-bg); }
+.study-phone .phone-script-speaker { font-size: 12px; opacity: .8; }
+.study-phone .phone-script-text { overflow-wrap: anywhere; }
+.study-phone .phone-steps button { width: 68px; }
+.study-phone .phone-steps svg { width: 30px; height: 30px; flex: 0 0 30px; }
+@media (orientation: landscape) {
+  .study-phone .phone-steps button { width: 76px; height: 64px; }
+}

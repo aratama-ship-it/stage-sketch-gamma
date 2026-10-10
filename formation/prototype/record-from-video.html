@@ -1,0 +1,3174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ミュージックシンク — 音源に合わせてシーンを組む</title>
+<!-- 試作: 製品コードに触れない固定HTML。トークンは ../design/TOKEN_SHEET.md が正。
+     確かめる操作: ①音源を再生しながらカウントをタップして全員の配置を一括記録（前の配置を引き継ぎ差分だけ直す）
+                  ②配置の複製・左右入替・名前交換 -->
+<style>
+:root{
+  --bg:#191512;--panel:#201b16;--raised:#282119;--floor:#2a221c;--line:#382f25;
+  --text:#dcd4c4;--text-strong:#f0e7d6;--text-dim:#a9a397;
+  --accent:#e6b85c;--accent-deep:#9c823f;--record:#df6433;--record-deep:#8f3e1e;--audience:#e6b85c;--playhead:#ef4b34;--move:#8fc47a;--move-deep:#5f8f4c;
+  --raised-hover:#2f2720;--raised-active:#1d1814;--ink-on-accent:#191512;--ink-on-record:#191512;--canvas-void:#191512;--canvas-front-void:#191512;--canvas-front:#141110;
+  --fs-count:34px;--fs-h:18px;--fs-body:15px;--fs-small:13px;--fs-mark:12px;
+  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--radius:3px;
+  --duration-fast:120ms;--duration-seek:180ms;--ease:cubic-bezier(.2,.7,.2,1);
+}
+html[data-theme="sunny"]{
+  --bg:#f6c84c;--panel:#fff1b8;--raised:#fff8d6;--floor:#4a3716;--line:#6d541b;
+  --text:#352500;--text-strong:#211600;--text-dim:#644e16;
+  --accent:#b83d0f;--accent-deep:#7d280a;--record:#e6641a;--record-deep:#b83d0f;--audience:#b83d0f;--playhead:#c22a1d;--move:#2f6f3e;--move-deep:#24572f;
+  --raised-hover:#ffe18a;--raised-active:#f1bf4e;--ink-on-accent:#fff1b8;--ink-on-record:#211600;--canvas-void:#ffd75a;--canvas-front-void:#191512;--canvas-front:#251b0d;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN",system-ui,sans-serif;font-size:var(--fs-body);line-height:1.6;overscroll-behavior:none}
+button,input,select{font:inherit;color:inherit}
+button{background:var(--raised);border:1px solid var(--line);border-radius:var(--radius);min-height:44px;padding:0 var(--s3);cursor:pointer;transition:background var(--duration-fast) var(--ease)}
+button:hover{background:var(--raised-hover)}
+button:active{background:var(--raised-active)}
+button[aria-pressed="true"]{background:var(--accent);color:var(--ink-on-accent);border-color:var(--accent)}
+button.record{background:var(--record);color:var(--ink-on-record);border-color:var(--record);font-weight:700;min-width:140px}
+button.record:active{background:var(--record-deep);color:var(--text-strong)}
+button:disabled{opacity:.45;cursor:default}
+.filebtn{background:var(--raised);border:1px solid var(--line);border-radius:var(--radius);min-height:44px;display:inline-flex;align-items:center;padding:0 var(--s3);cursor:pointer;white-space:nowrap}
+.filebtn.need{background:var(--record);color:var(--ink-on-record);border-color:var(--record);font-weight:700}
+#trackName.warn{color:var(--accent)}
+button.sq{min-width:44px;padding:0}
+input[type=number],input[type=text]{background:var(--raised);border:1px solid var(--line);border-radius:var(--radius);min-height:44px;padding:0 var(--s2);width:5.5em}
+select{background:var(--raised);border:1px solid var(--line);border-radius:var(--radius);min-height:44px;padding:0 var(--s2);color:var(--text)}
+input[type=text].wide{width:100%}
+.app{display:grid;grid-template-rows:auto minmax(0,1fr) 136px 30px 96px auto;height:100%;height:100dvh}
+.scenes{position:relative;background:var(--panel);border-top:1px solid var(--line);overflow:hidden}
+.scenes canvas{width:100%;height:100%;display:block;touch-action:none}
+.lane{position:relative;background:var(--panel);border-top:1px solid var(--line);overflow:hidden}
+.lane canvas{width:100%;height:100%;display:block;touch-action:none}
+.bar{display:flex;align-items:center;flex-wrap:wrap;gap:var(--s2);row-gap:var(--s1);padding:var(--s1) var(--s3);background:var(--panel);border-bottom:1px solid var(--line);min-height:56px}
+.bar h1{font-size:var(--fs-h);font-weight:600;margin:0 var(--s3) 0 0;color:var(--text-strong)}
+.themeToggle{width:44px;min-width:44px;padding:0;font-size:20px;line-height:1;white-space:nowrap}
+.topVolume{display:flex;align-items:center;gap:var(--s1)}
+.topVolume input[type=range]{width:90px;height:44px}
+.bar .spacer{flex:1}
+.modes{display:flex;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.modes button{border:0;border-radius:0;min-width:64px}
+.main{display:grid;grid-template-columns:var(--leftW,360px) 24px minmax(0,1fr) 24px var(--rightW,300px);min-height:0}
+/* 欄の境目。つかんで横幅を変えられる。
+   線は細く見せるが、つかむ幅は指でも届くように44px取る（タブレットでも動かせる） */
+/* 溝は24px。つかむ幅は44px確保し、はみ出す10pxは両隣の余白（触るものが無い所）に重ねる */
+.split{position:relative;z-index:3;justify-self:center;width:44px;background:var(--bg);cursor:col-resize;touch-action:none}
+.split::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:1px;transform:translateX(-50%);background:var(--line)}
+.split::after{content:"";position:absolute;top:50%;left:50%;width:4px;height:34px;transform:translate(-50%,-50%);border-radius:2px;background:var(--line)}
+.split:hover::before,.split.active::before,.split:hover::after,.split.active::after{background:var(--accent)}
+.split:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.fpanel{background:var(--panel);border-right:1px solid var(--line);padding:var(--s3);display:flex;flex-direction:column;gap:var(--s2);min-height:0;overflow:hidden}
+.fpanel h2{font-size:var(--fs-small);font-weight:600;color:var(--text-dim);margin:0;letter-spacing:.04em}
+.fpanelSection{display:flex;flex-direction:column;gap:var(--s1);flex:0 0 auto;padding-bottom:var(--s2);border-bottom:1px solid var(--line);font-size:var(--fs-mark);font-weight:600;color:var(--text-dim);letter-spacing:.04em}
+.fpanelSection select{width:100%;min-height:44px;background:var(--raised);border:1px solid var(--line);border-radius:var(--radius);padding:0 var(--s2);color:var(--text)}
+#fpanelList{display:flex;flex-direction:column;gap:var(--s2);flex:1 1 auto;min-height:0;overflow:auto}
+.fcard{flex:0 0 auto;display:flex;align-items:flex-start;gap:var(--s2);width:100%;text-align:left;padding:var(--s2);background:var(--raised);border:1px solid var(--line);border-radius:var(--radius);min-height:44px;line-height:1.3}
+.fcardMain{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.fcardTrans{margin-top:var(--s1)}
+.fcardTrans>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:var(--s2);min-height:32px;font-size:var(--fs-mark);color:var(--move)}
+.fcardTrans>summary::-webkit-details-marker{display:none}
+.fcardTrans>summary::before{content:"";flex:0 0 auto;border:4px solid transparent;border-left-color:var(--move);transition:transform var(--duration-fast) var(--ease);transform-origin:30% 50%}
+.fcardTrans[open]>summary::before{transform:rotate(90deg)}
+.transBody{border-top:1px solid var(--line);padding-top:var(--s1)}
+.transHead{display:flex;align-items:center;gap:var(--s2);font-size:var(--fs-mark);color:var(--text-dim);min-height:44px}
+.transRow{display:flex;align-items:center;gap:var(--s1);min-height:44px}
+.transRow .swat{flex:0 0 auto;width:12px;height:12px;border-radius:50%}
+.transRow .who{flex:1 1 auto;min-width:0;font-size:var(--fs-mark);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.transRow .lab{flex:0 0 auto;font-size:var(--fs-mark);color:var(--text-dim)}
+.transRow input[type=number]{flex:0 0 auto;width:4.4em}
+.fcardFoot{display:flex;align-items:center;gap:var(--s2);min-width:0}
+.fcardFoot .fcardTitle{flex:1 1 auto;min-width:0}
+.mvTag{color:var(--move);font-weight:600}
+.fcardTitle{flex:1 1 auto;min-width:0;width:auto;padding:0 4px;font-size:var(--fs-mark);background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);color:var(--accent)}
+.fcardTitle::placeholder{color:var(--text-dim)}
+.fcard[aria-current="true"]{border-color:var(--accent);background:var(--raised-hover)}
+.fcardTop{display:flex;align-items:center;gap:var(--s2);justify-content:space-between;min-width:0}
+.fcard{cursor:pointer}
+.fcard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.fcard.dragging{opacity:.45}
+.fcard.over{border-color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
+.fcardPlan{flex:0 0 auto}
+.fdup{flex:0 0 auto;min-width:44px;min-height:44px;padding:0 4px;font-size:var(--fs-mark);line-height:1.3;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);color:var(--text-dim);white-space:nowrap}
+.fdup:hover{color:var(--text-strong);background:var(--raised)}
+.fcardTop b{flex:0 0 auto;font-size:var(--fs-small);color:var(--text-strong);font-weight:700;line-height:1.35;white-space:nowrap}
+.fcardSub{font-size:var(--fs-small);color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fcardPlan{position:relative;display:block;max-width:100%;background:var(--floor);border-bottom:1.5px solid var(--accent);border-radius:2px;align-self:flex-start}
+.fcardPlan i{position:absolute;width:7px;height:7px;border-radius:50%;transform:translate(-50%,-50%)}
+.fcardTop,.fcardSub,.fcardNote,.fcardMeta,.fcardMove{flex:0 0 auto}
+.fcardNote,.fcardMeta{font-size:var(--fs-mark);color:var(--text-dim);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fcardMove{font-size:var(--fs-mark);color:var(--move);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fpanelEnd b.moveKey{display:inline-block;width:10px;height:10px;background:var(--move);border-radius:2px;margin-right:4px;vertical-align:-1px}
+.fpanelEnd{flex:0 0 auto;font-size:var(--fs-mark);color:var(--text-dim);line-height:1.5;border-top:1px solid var(--line);padding-top:var(--s2)}
+.fpanelEnd button{width:100%;font-size:var(--fs-small);padding:0 var(--s2);margin-top:var(--s1)}
+.stageWrap{position:relative;min-width:0;min-height:0}
+.stageTools{position:absolute;z-index:2;left:var(--s3);bottom:var(--s3);display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;max-width:calc(100% - var(--s5));padding:var(--s1);background:var(--panel);border:1px solid var(--line);border-radius:var(--radius)}
+.stageTools .modes{flex:0 0 auto}
+.stageTools button{white-space:nowrap}
+canvas{display:block;touch-action:none}
+#front[hidden]{display:none!important}
+.side{background:var(--panel);border-left:1px solid var(--line);padding:var(--s3);display:flex;flex-direction:column;gap:var(--s3);min-height:0;overflow:auto}
+.side h2{font-size:var(--fs-small);font-weight:600;color:var(--text-dim);margin:0;letter-spacing:.04em}
+.side>.sec{border-bottom:1px solid var(--line);padding-bottom:var(--s2);flex:0 0 auto}
+.side>.sec>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:var(--s2);min-height:44px;font-size:var(--fs-small);font-weight:600;color:var(--text-dim);letter-spacing:.04em}
+.side>.sec>summary::-webkit-details-marker{display:none}
+.side>.sec>summary::before{content:"";flex:0 0 auto;border:5px solid transparent;border-left-color:var(--text-dim);margin-left:2px;transition:transform var(--duration-fast) var(--ease);transform-origin:30% 50%}
+.side>.sec[open]>summary::before{transform:rotate(90deg)}
+.side>.sec[open]>summary,.side>.sec>summary:hover{color:var(--text)}
+.side>.sec>*+*{margin-top:var(--s2)}
+.secSub{font-size:var(--fs-mark);color:var(--accent);font-weight:600;margin:var(--s3) 0 0}
+.count{display:flex;align-items:baseline;gap:var(--s2);flex-wrap:wrap}
+.count .eight{font-size:var(--fs-body);color:var(--text);white-space:nowrap}
+.count .n{font-size:var(--fs-count);line-height:1.1;color:var(--text-strong);letter-spacing:.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.count .sec{font-size:var(--fs-small);color:var(--text-dim);font-variant-numeric:tabular-nums}
+.row{display:flex;gap:var(--s2);flex-wrap:wrap;align-items:center}
+.small{font-size:var(--fs-small);color:var(--text-dim)}
+#sceneHeadRow{min-height:44px;align-items:center;cursor:pointer}
+#sceneHead{width:22px;height:22px;margin:0 8px 0 0}
+.bpmbox{background:var(--raised);border:1px solid var(--line);border-radius:var(--radius);padding:var(--s2) var(--s3)}
+.bpmbox summary{cursor:pointer;min-height:44px;line-height:44px;font-size:var(--fs-small);color:var(--text);font-weight:600}
+.bpmbox .row{margin-top:var(--s2)}
+.tapbtn{min-width:200px}
+.bpmval{font-size:var(--fs-h);color:var(--text-strong);font-variant-numeric:tabular-nums;min-width:4.5em}
+.bpmbox .step{border-top:1px solid var(--line);padding:var(--s2) 0}
+.bpmbox .stepno{display:inline-block;color:var(--accent);font-weight:700;margin-right:4px}
+.bpmbox .sub summary,#setupBox>summary{min-height:44px;line-height:44px;font-size:var(--fs-small);color:var(--text-dim);cursor:pointer}
+.quickRow{display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s1)}
+.quickRow input[type=color]{flex:0 0 auto;width:44px;height:44px;padding:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--raised)}
+.quickRow input[type=text]{flex:1 1 auto;width:auto;min-width:0}
+.castItem{border:1px solid var(--line);border-radius:var(--radius);background:var(--raised);margin-bottom:var(--s2)}
+.castItem>summary{list-style:none;display:flex;align-items:center;gap:var(--s2);min-height:44px;padding:0 var(--s2);cursor:pointer}
+.castItem>summary::-webkit-details-marker{display:none}
+.castItem>summary::before{content:"";flex:0 0 auto;border:4px solid transparent;border-left-color:var(--text-dim);transition:transform var(--duration-fast) var(--ease);transform-origin:30% 50%}
+.castItem[open]>summary::before{transform:rotate(90deg)}
+.castSwatch{flex:0 0 auto;width:18px;height:18px;border-radius:50%;border:1px solid rgba(240,231,214,.35)}
+.castName{flex:1 1 auto;font-size:var(--fs-small);color:var(--text-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.castBody{padding:var(--s2);border-top:1px solid var(--line);display:flex;flex-direction:column;gap:var(--s1)}
+.castBody label{display:flex;align-items:center;gap:var(--s2);font-size:var(--fs-mark);color:var(--text-dim);min-height:44px}
+.castBody label>span{flex:0 0 5.2em}
+.castBody input[type=text],.castBody input[type=number],.castBody select{flex:1 1 auto;width:auto;min-width:0;color:var(--text)}
+.castBody input[type=color]{flex:0 0 auto;width:44px;height:44px;padding:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--raised)}
+.castBody h3{font-size:var(--fs-mark);color:var(--accent);margin:var(--s2) 0 0;font-weight:600}
+.castBody .castRow2{display:flex;gap:var(--s2)}
+.castBody .castRow2>label{flex:1 1 0;min-width:0}
+.castBody .castRow2>label>span{flex:0 0 auto}
+.count .n.pulse{color:var(--accent);transform:scale(1.08)}
+.count .n{transition:transform var(--duration-fast) var(--ease),color var(--duration-fast) var(--ease);display:inline-block;transform-origin:left bottom}
+.count .n.pulse.head{color:#f0e7d6;text-shadow:0 0 12px rgba(230,184,92,.9)}
+.band{position:relative;background:var(--panel);border-top:1px solid var(--line);overflow:hidden}
+.band canvas{width:100%;height:100%}
+.ctrl{display:flex;align-items:center;flex-wrap:wrap;gap:var(--s2);row-gap:var(--s1);padding:var(--s1) var(--s3);background:var(--panel);border-top:1px solid var(--line);min-height:56px}
+.ctrlTempo{display:flex;align-items:center;gap:var(--s1);flex-wrap:wrap;padding-left:var(--s2);border-left:1px solid var(--line)}
+.ctrlTempo label{white-space:nowrap}
+.ctrlTempo input[type=number]{width:4.5em}
+.ctrlTempo .bpmval{min-width:0;font-size:var(--fs-small)}
+.note{background:var(--raised);border:1px solid var(--line);border-radius:var(--radius);padding:var(--s2);min-height:44px}
+.hint{font-size:var(--fs-small);color:var(--text-dim);line-height:1.5}
+.fTitle{position:absolute;left:50%;top:var(--s2);transform:translateX(-50%);display:flex;align-items:baseline;gap:var(--s2);pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:2px var(--s3);max-width:64%;white-space:nowrap;overflow:hidden}
+.fTitle:empty{display:none}
+.fTitle b{font-size:var(--fs-h);color:var(--text-strong);font-weight:700}
+.fTitle .sub{font-size:var(--fs-small);color:var(--accent);overflow:hidden;text-overflow:ellipsis}
+.fTitle .st{font-size:var(--fs-small);color:var(--move)}
+.live{position:absolute;left:var(--s3);top:var(--s2);font-size:var(--fs-small);color:var(--text-dim);pointer-events:none;background:var(--panel);padding:0 var(--s2);border-radius:var(--radius)}
+.live:empty{display:none}
+.phoneCount{display:none;position:absolute;right:var(--s3);top:var(--s2);align-items:baseline;gap:var(--s1);pointer-events:none;color:var(--text-strong);font-size:var(--fs-small);line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:2px var(--s2)}
+.phoneCount b{font-size:28px;line-height:1.5;font-variant-numeric:tabular-nums}
+.facePop{position:absolute;display:flex;align-items:center;gap:var(--s2);background:var(--pop,#e6b85c);border:2px solid rgba(25,21,18,.45);border-radius:6px;padding:var(--s2) var(--s3);z-index:5;box-shadow:0 4px 16px rgba(8,7,6,.55);color:var(--ink-on-accent)}
+.facePop[hidden]{display:none}
+.facePop::before{content:"";position:absolute;left:-9px;top:50%;transform:translateY(-50%);border:7px solid transparent;border-right-color:var(--pop,#e6b85c)}
+.facePopName{font-size:var(--fs-small);font-weight:700;color:var(--ink-on-accent);max-width:5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.facePopDeg{font-size:16px;font-weight:700;color:var(--ink-on-accent);font-variant-numeric:tabular-nums;min-width:3.4em;text-align:center}
+.facePop button{min-height:40px;min-width:40px;padding:0 var(--s2);font-size:15px;background:rgba(25,21,18,.14);border:1px solid rgba(25,21,18,.4);color:var(--ink-on-accent);border-radius:4px;font-weight:600}
+.facePop button:hover{background:rgba(25,21,18,.26)}
+.facePop button:active{background:rgba(25,21,18,.36)}
+.modal{position:fixed;inset:0;background:rgba(8,7,6,.72);display:flex;align-items:center;justify-content:center;z-index:20;padding:var(--s4)}
+.modal[hidden]{display:none}
+.modalBox{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:var(--s5);max-width:520px;max-height:84vh;overflow:auto}
+.modalBox h2{font-size:var(--fs-h);margin:0 0 var(--s3);color:var(--text-strong)}
+.modalBox p,.modalBox li{font-size:var(--fs-body);margin:0 0 var(--s2)}
+.modalBox ol{margin:0 0 var(--s4);padding-left:1.3em}
+#markOne.need{background:var(--record);color:var(--ink-on-record);border-color:var(--record);font-weight:700}
+@media (max-width:719px){
+  .app{grid-template-rows:auto minmax(0,1fr) 120px 28px 88px auto}
+  .bar{padding:var(--s1) var(--s2)}
+  .bar h1{font-size:15px;flex-basis:100%;margin:0}
+  .bar .spacer{display:none}
+  .ctrl{padding:var(--s1) var(--s2)}
+  .ctrl .spacer{display:none}
+  .main{grid-template-columns:1fr}
+  .side,.fpanel,.split{display:none}
+  .phoneCount{display:flex}
+  :root{--fs-count:40px}
+}
+@media (prefers-reduced-motion:reduce){:root{--duration-seek:0ms;--duration-fast:0ms}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="bar">
+    <h1>ミュージックシンク</h1>
+    <button id="themeToggle" class="themeToggle" aria-label="明るい黄色テーマに切り替え" aria-pressed="false" title="明るい黄色テーマに切り替え">☀</button>
+    <div class="modes" role="group" aria-label="時間の目盛り">
+      <button id="unitCount" aria-pressed="true">カウント</button>
+      <button id="unitTime" aria-pressed="false">時間</button>
+    </div>
+    <select id="songPick" aria-label="曲を選ぶ" title="編集する曲を選ぶ"></select>
+    <button id="songDel" title="いま開いている楽曲を消す">この楽曲を削除</button>
+    <button type="button" class="filebtn" id="fileBtn" aria-describedby="trackName" title="いま開いている楽曲に音源だけを追加します。シーンは変わりません">音源を追加</button><input type="file" id="file" accept="audio/*,video/*" hidden><span class="small" id="trackName">音源なし</span>
+    <div class="topVolume" aria-label="音量"><label class="small" for="vol">音量</label><input type="range" id="vol" min="0" max="100" value="100"></div>
+    <button id="soundTest2" hidden title="曲とクリックがどちらの経路で鳴るか調べて切り替える">🔊 音の確認</button>
+    <span class="spacer"></span>
+    <button id="undo" class="sq" aria-label="元に戻す">↶</button><button id="redo" class="sq" aria-label="やり直す">↷</button>
+    <button id="save">保存</button>
+    <label class="filebtn" for="load">読込<input type="file" id="load" accept="application/json" hidden></label>
+  </div>
+  <div class="main">
+    <aside class="fpanel" id="fpanel">
+      <label class="fpanelSection" id="sectionPicker" hidden>セクション
+        <select id="sectionPick" aria-label="シーンを編集するセクション"></select>
+      </label>
+      <h2>シーン一覧 <span class="small" id="fpanelCount">0</span></h2>
+      <div id="fpanelList"></div>
+      <div class="fpanelEnd" id="fpanelEnd"></div>
+    </aside>
+    <div class="split" id="splitL" role="separator" aria-orientation="vertical" tabindex="0" aria-label="左の欄の幅"></div>
+    <div class="stageWrap"><canvas id="stage"></canvas>
+      <div class="facePop" id="facePop" hidden>
+        <span class="facePopName" id="facePopName"></span>
+        <button id="facePopL" aria-label="左へ15度回す">⟲</button>
+        <span class="facePopDeg" id="facePopDeg">0°</span>
+        <button id="facePopR" aria-label="右へ15度回す">⟳</button>
+        <button id="facePopFront" aria-label="客席を向く">客席</button>
+    </div><div class="fTitle" id="fTitle" aria-live="polite"></div><div class="live" id="live"></div><div class="phoneCount" id="phoneCount" aria-hidden="true"></div>
+      <div class="stageTools" role="group" aria-label="舞台の見え方と導線">
+        <div class="modes" role="group" aria-label="舞台の見え方">
+          <button id="viewPlan" aria-pressed="true" title="真上から見た平面図">平面図</button>
+          <button id="viewFront" aria-pressed="false" title="客席から見た正面図">正面図</button>
+        </div>
+        <button id="flipPlan" aria-pressed="false" title="平面図を180度回して、演者から見た向きにする（記録の中身は変わりません）">前後反転</button>
+        <button id="paths" aria-pressed="true" title="次のシーンへの導線を舞台に出す。線の真ん中をつかむと曲がり、ダブルクリックで直線に戻ります">導線</button>
+      </div>
+    </div>
+    <div class="split" id="splitR" role="separator" aria-orientation="vertical" tabindex="0" aria-label="右の欄の幅"></div>
+    <aside class="side">
+      <details class="sec" data-sec="count" open>
+        <summary>現在のカウント</summary>
+        <div class="count"><span class="eight" id="eightText">第1エイト</span><span class="n" id="countText">1</span><span class="sec" id="secText">0:00.00</span></div>
+      </details>
+      <canvas id="front" width="276" height="120" hidden></canvas>
+      <details class="sec" data-sec="roster" open>
+        <summary id="rosterTitle">演者（タップ／ドラッグで選択）</summary>
+        <div class="row" id="editRow">
+          <button id="selAll">全員を選ぶ</button><span class="small">舞台の空いた所をドラッグで囲むと複数選択（Shiftで追加）・入れ替えは駒を相手の駒の上へ落とす</span>
+        </div>
+        <div class="row"><button id="openCast">演者の詳しい設定</button></div>
+        <div id="castQuick"></div>
+      </details>
+      <details class="sec" data-sec="info" open>
+        <summary>シーン情報 <span class="small" id="sceneCount">0</span></summary>
+        <h3 class="secSub">この配置</h3>
+        <label class="row small" id="sceneHeadRow"><input type="checkbox" id="sceneHead"> 独立したシーンにする（外すと前のシーンの途中の動きになります）</label>
+        <div id="sceneTitleRow" hidden>
+          <div class="row"><input type="text" class="wide" id="sceneTitle" placeholder="タイトル（例: サビ入り）" maxlength="40"></div>
+          <div class="row"><input type="text" class="wide" id="sceneNote" placeholder="このシーンのメモ" maxlength="80"></div>
+        </div>
+        <div class="note" id="noteBox"><input type="text" class="wide" id="note" placeholder="この配置のメモ（カウント表の行）" maxlength="60"></div>
+        <h3 class="secSub">このシーンへの移動</h3>
+        <div class="row" id="travelRow"><input type="number" id="travel" min="0" step="0.25" value="4"><span class="small" id="travelUnit">カウント前から動き始める</span></div>
+        <div class="small" id="travelHint">一人ずつずらすときは、左の一覧の「転換詳細」で演者ごとに決められます</div>
+        <h3 class="secSub">並び</h3>
+        <div class="small" id="sceneList">まだ区切っていません（1曲まるごとが1つのシーンになります）</div>
+        <div class="row" style="margin-top:8px"><button id="exportStage">舞台スケッチへ書き出す</button><button id="exportSheet">カウント表</button></div>
+      </details>
+      <div class="row" id="setupEntry"><button id="openSetup">舞台の大きさを設定</button></div>
+    </aside>
+  </div>
+  <div class="scenes" id="sceneLaneWrap" title="シーンの帯。つかんで動かすと頭が移り、右端をつかむと長さが変わります。緑は次のシーンへ動いている時間で、緑の左端をつかむと移動の長さを変えられます"><canvas id="sceneLane"></canvas></div>
+  <div class="lane" title="押すたびに 丸 → 閉じた鍵 → 開いた鍵 → 丸 と変わります。丸＝点なし（前後のロックの間を均等に割ります）／閉じた鍵＝その時刻で固定／開いた鍵＝位置はそのままで、秒数をつかんで動かせます。いちばん左は開始位置で、丸には戻せません"><canvas id="lane"></canvas></div>
+  <div class="band"><canvas id="band"></canvas></div>
+  <div class="ctrl">
+    <button id="prev" aria-label="前の配置へ">◀ 前</button>
+    <button id="play" aria-label="再生">▶ 再生</button>
+    <button id="next" aria-label="次の配置へ">次 ▶</button>
+    <button id="soundMode2" aria-pressed="false" title="各カウントでクリック音を鳴らす（8の頭は高い音）">メトロノーム</button>
+    <button id="toHead" title="曲の先頭へ">⏮ 先頭</button>
+    <button id="anchorHere" title="いま鳴っている頭の位置に合わせ直す（ずれてきたら押す）">ここが頭</button><button id="clearAnchors" title="合わせ直した点をすべて消す">点を消す</button>
+    <button id="loopA" class="sq" title="ループの始点">A</button><button id="loopB" class="sq" title="ループの終点">B</button><button id="loopOn" aria-pressed="false">区間ループ</button>
+    <div class="ctrlTempo" aria-label="テンポと拍子">
+      <label class="small" for="bpm">BPM</label><input type="number" id="bpm" value="120" min="40" max="240" step="1">
+      <button id="autoBpm" title="音源の波形からテンポを推定する">BPM推定</button><span class="bpmval" id="autoVal"></span>
+      <span class="small" id="meterLabel" title="拍子（いまは4分の4のみ）">4/4</span>
+      <button id="markOne" title="いま流れている位置を第1カウント（1）にする">先頭を記録</button>
+      <span class="small" title="合わせ直した点から逆算した、いまの区間の実際のテンポ">実測 <b id="realTempo">120.0</b></span>
+    </div>
+    <span class="spacer" style="flex:1"></span>
+    <button id="grid" title="帯の最小単位（吸着）">1/4</button><button id="zoomOut" class="sq" aria-label="タイムラインを縮小" title="縮小（− キー、Cmd+ホイール）">−</button><button id="zoomIn" class="sq" aria-label="タイムラインを拡大" title="拡大（＋ キー、Cmd+ホイール）">＋</button>
+    <button id="split" title="再生位置でシーンを分割する。分けたあとはそれぞれ別に編集できます">再生位置で分割</button><button id="record" class="record">記録</button><button id="recordNext" class="record" title="記録して、次のまとまりの頭へ進む">記録して次へ ▶</button>
+    <button id="dup" hidden title="いまの配置をこのカウントへ複製">複製</button>
+    <button id="del" hidden>削除</button>
+  </div>
+</div>
+<div class="modal" id="setupModal" hidden>
+  <div class="modalBox" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+    <div id="stageSizeSetup">
+    <h2 id="setupTitle">舞台の大きさ</h2>
+        <div class="row"><label class="small" for="stageW">舞台の幅</label><input type="number" id="stageW" min="2" max="60" step="0.5"><span class="small">m</span>
+          <label class="small" for="stageD">奥行き</label><input type="number" id="stageD" min="2" max="40" step="0.5"><span class="small">m</span></div>
+        <div class="small">正面図と平面図の縦横比、駒の大きさの目安に使います。位置は会場を変えても保たれます。</div>
+    </div>
+    <h2 style="margin-top:14px">演者 <span class="small" id="castCount"></span></h2>
+    <div id="castEdit"></div>
+    <div class="row" id="castAddRow"><input type="text" id="newDancer" placeholder="名前" maxlength="24" style="width:8em"><button id="addDancer">演者を追加</button></div>
+    <div class="row" style="margin-top:12px"><button id="setupClose" class="record">閉じる</button></div>
+  </div>
+</div>
+<audio id="audio" playsinline preload="auto"></audio>
+<script>
+(() => {
+"use strict";
+/* ---------- データ ---------- */
+const COLORS = ["#dcd4c4","#e6b85c","#8fc47a","#7fb7c9","#5fb0a8","#c98cd6","#d98c5f","#e07a8a"];
+/* ---------- 演者の登録（舞台スケッチの cast と同じ項目） ----------
+   ★実装（舞台スケッチの中の画面）では、この登録はここからは変えられない。
+   変えられるのは舞台スケッチ側だけ。単体の試作でだけ編集できるようにしてある。
+   `?cast=locked` を付けると、組み込んだときの見え方（読むだけ）を試せる。 */
+const castEditable = new URLSearchParams(location.search).get("cast") !== "locked";
+const DEFAULT_HEIGHT_CM = 165, DEFAULT_SKIN = "#d9b38c", DEFAULT_HAIR_COLOR = "#2a2320";
+const DEFAULT_TOP_COLOR = "#a84b26", DEFAULT_BOTTOM_COLOR = "#3a3f4a";
+const HAIR_STYLES = { none: "なし", short: "ショート" };
+const TOP_KINDS = { tshirt: "Tシャツ", longtee: "長袖シャツ", tank: "タンクトップ" };
+const SLEEVES = { none: "袖なし", short: "半袖", threequarter: "七分袖", long: "長袖" };
+const BOTTOM_KINDS = { pants: "長ズボン", shorts: "半ズボン" };
+const LENGTHS = { mini: "ミニ", knee: "膝丈", midi: "ミディ", ankle: "足首丈", floor: "床丈" };
+const validColor = (v, fb) => (typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v) ? v : fb);
+const pick = (map, v, fb) => (Object.prototype.hasOwnProperty.call(map, v) ? v : fb);
+function normalizeLook(raw) {
+  const o = raw && typeof raw === "object" ? raw : {};
+  const hair = o.hair && typeof o.hair === "object" ? o.hair : {};
+  const top = o.top && typeof o.top === "object" ? o.top : {};
+  const bottom = o.bottom && typeof o.bottom === "object" ? o.bottom : {};
+  return {
+    skin: validColor(o.skin, DEFAULT_SKIN),
+    hair: { style: pick(HAIR_STYLES, hair.style, "none"), color: validColor(hair.color, DEFAULT_HAIR_COLOR) },
+    top: { kind: pick(TOP_KINDS, top.kind, "tshirt"), color: validColor(top.color, DEFAULT_TOP_COLOR), sleeve: pick(SLEEVES, top.sleeve, "short") },
+    bottom: { kind: pick(BOTTOM_KINDS, bottom.kind, "pants"), color: validColor(bottom.color, DEFAULT_BOTTOM_COLOR), length: pick(LENGTHS, bottom.length, "ankle") },
+  };
+}
+function normalizeCastMember(m, i) {
+  const o = m && typeof m === "object" ? m : {};
+  return {
+    id: typeof o.id === "string" ? o.id : "c" + i,
+    name: (typeof o.name === "string" && o.name.trim() ? o.name : `演者 ${i + 1}`).slice(0, 24),
+    color: validColor(o.color, COLORS[i % COLORS.length]),
+    heightCm: Math.min(210, Math.max(120, Number.isFinite(Number(o.heightCm)) ? Number(o.heightCm) : DEFAULT_HEIGHT_CM)),
+    note: typeof o.note === "string" ? o.note.slice(0, 200) : "",
+    locked: Boolean(o.locked),
+    look: normalizeLook(o.look),
+  };
+}
+const NAMES = ["Aki","Ban","Chi","Dai","Emi","Fuu","Gen","Hana"];
+const LS_KEY = "gamma:formation-proto-v1";
+const QUERY = new URLSearchParams(location.search);
+const EMBEDDED = QUERY.get("embed") === "1";
+const THEME_KEY = LS_KEY + ":theme";
+let visualTheme = QUERY.get("theme") === "sunny" || localStorage.getItem(THEME_KEY) === "sunny" ? "sunny" : "dark";
+document.documentElement.dataset.theme = visualTheme;
+let doc = (!EMBEDDED && load()) || {
+  schemaVersion: 1,
+  stage: { widthM: 10, depthM: 8 },
+  track: { name: "", countBpm: 120, firstCountSec: 0 },
+  cast: NAMES.map((n, i) => ({ id: "d" + i, name: n, color: COLORS[i] })),
+  frames: [ { id: "f0", count: 1, poses: Object.fromEntries(NAMES.map((n, i) => ["d" + i, { u: 0.15 + i * 0.1, v: 0.5 }])), note: "" } ],
+  heroCount: 1,
+};
+let selected = new Set();
+let grid = 0.25;               // 最小単位（G1: 1/4拍）
+let unit = (QUERY.get("unit") || localStorage.getItem(LS_KEY + ":unit") || "count"); // count | time（データは常にカウントが正本。?unit=time で時間モードから開ける）
+if (unit !== "time") unit = "count";
+const TRAVEL_DEFAULT = 4;      // 何カウント前から動き始めるか（配置ごとに変更可）
+let timeSnap = 0.1;            // 時間モードの吸着（秒）: 1 / 0.5 / 0.1
+let timeZoom = 80;             // 時間モードの基準: 1秒あたりの画素
+let castFormEpoch = 0;             // 演者の欄を組み直す合図（元に戻す・読込のときだけ上げる）
+let dragCard = null;               // 一覧で並べ替え中のフォーメーション
+let stageView = localStorage.getItem(LS_KEY + ":view") === "front" ? "front" : "plan";   // 平面図 / 正面図
+let flipPlan = localStorage.getItem(LS_KEY + ":flip") === "1";   // 平面図を180度回す（見え方だけ）
+let showPaths = localStorage.getItem(LS_KEY + ":paths") !== "0";   // 導線を出すか
+let zoomLevel = Number(localStorage.getItem(LS_KEY + ":zoom") || 1);   // 拡大率（Cmd+ホイール／＋−キー／ボタン）
+let peaks = null;              // 音源の波形（10msごとの min/max）
+let peaksStep = 0.01;
+let env = null;                // 音量の包絡（5msごと・自動BPM用）
+const ENV_STEP = 0.005;
+let taps = [];                 // タップの時刻（秒・performance.now基準）
+let tapTimer = null;
+let pendingBpm = null;         // 適用待ちの値 { bpm, firstCountSec|null, source }
+let autoResult = null, tapResult = null;
+const clickOnNow = () => soundMode === "click";
+let actx = null;               // 曲とクリックの共通 AudioContext（ユーザー操作で生成）
+let outGain = null;            // すべての音の出口
+/* 再生経路。既定は "element"（ブラウザの再生＝確実に鳴る）。
+   "webaudio" にすると曲とクリックが同じ時計になり、クリックがずれない。
+   環境によっては Web Audio の音が出ないことがある（出力先が別デバイスに繋がる等）ので、既定にはしない。 */
+let route = localStorage.getItem(LS_KEY + ":route") || "webaudio";
+let nextClickCount = null;     // 次に鳴らす整数カウント
+let clockAnchor = null;        // { ctx, media } 再生位置と AudioContext の時計の対応
+let clickOffsetMs = Number(localStorage.getItem(LS_KEY + ":clickOffset") || 0); // クリックだけの遅れ補正（データは変えない）
+let lastPulseCount = null;
+let viewStartSec = null;       // 帯の左端の時刻（秒で保持＝旗を動かしても波形は動かない）
+let followUntil = 0;           // 手で動かした直後は再生の追従を止める（この時刻まで）
+let flagDrag = null;           // 「1」の旗のドラッグ
+let flagHover = false;
+let soundMode = localStorage.getItem(LS_KEY + ":sound") || "off";   // off | click | voice
+let voiceLeadMs = Number(localStorage.getItem(LS_KEY + ":voiceLead") || 180);  // 声は予約できないので前倒しで呼ぶ
+let voiceObj = null;
+/* メトロノームの決定版: クリック音を曲そのものへ焼き込んで1本の音にする。
+   再生系が何であれ、曲とクリックが同じ波形なので原理的にずれない（ブラウザの違いにも影響されない）。
+   BPM・合わせ直しの点・遅れ補正を変えたら作り直す。 */
+let originalBuffer = null;     // 曲だけ
+let originalUrl = null;        // 曲だけの再生用URL
+let sourceBlob = null;          // iframe連携時だけ親へ返す、この曲の元音源
+let bakedBuffer = null, bakedKey = "", baking = false, bakedUrl = null;
+let usingBaked = false;        // いま鳴らしている音にクリックが入っているか
+if (!Array.isArray(doc.track.anchors)) doc.track.anchors = [];    // 合わせ直しの点 [{count,sec,locked}]
+/* 拍子。いまは4分の4だけを扱うが、曲の途中で変わる場合に備えて「どのカウントから何拍子か」の配列で持つ。UIでの変更は将来。 */
+if (!Array.isArray(doc.track.meters) || !doc.track.meters.length) doc.track.meters = [{ fromCount: 1, beatsPerBar: 4, beatUnit: 4 }];
+/* 場面の区切りは配置そのものとは別の層で持つ（配置にフラグを付けない）。
+   区切りを動かしても配置の記録は壊れず、場面の名前や由来も残る。
+   segments[i] は fromFrameId の配置から、次の segment の直前までを1つの場面として扱う。
+   segment が先頭の1つだけなら「1曲＝1場面」、すべての配置を segment にすれば「フォーメーションごとに場面」。 */
+if (!doc.scenePlan || typeof doc.scenePlan !== "object") doc.scenePlan = { segments: [] };
+/* 往復編集のための土台。
+   - documentId: この作品の永続ID（ファイル名や順番では照合しない）
+   - revisionId: 保存のたびに変わる版。baseRevisionId は「読んだときの版」
+   - tombstones: 消したものの墓標。往復で復活しないように残す
+   - stageSketch: 舞台スケッチ側の領分（照明・機構・高さ・姿勢など）。こちらは中身を読まず、そのまま持ち帰る */
+if (!doc.sync || typeof doc.sync !== "object") doc.sync = {};
+if (!doc.sync.documentId) doc.sync.documentId = "doc" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+if (!doc.sync.revisionId) doc.sync.revisionId = newRevision();
+if (!Array.isArray(doc.sync.tombstones)) doc.sync.tombstones = [];
+if (!doc.stageSketch || typeof doc.stageSketch !== "object") doc.stageSketch = { links: {}, segmentExtras: {}, framePoseExtras: {} };
+if (!Array.isArray(doc.scenePlan.segments)) doc.scenePlan.segments = [];
+/* ---------- 曲は何曲でも持てる ----------
+   ★カウントの軸は曲ごとなので、配置とフォーメーションも曲ごとに持つ。
+   いま開いている曲の中身は doc.track / doc.frames / doc.scenePlan / doc.heroCount に置き、
+   同じものを doc.songs の該当する項へ写しておく（保存・元に戻すはこの形のまま通る）。
+   ★演者（doc.cast）と舞台の大きさ（doc.stage）は曲をまたいで共通。 */
+const newSongId = () => "sg" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+if (!Array.isArray(doc.songs) || !doc.songs.length) {
+  doc.songs = [{ id: newSongId(), track: doc.track, frames: doc.frames, scenePlan: doc.scenePlan, heroCount: doc.heroCount }];
+}
+if (!doc.songs.some((x) => x.id === doc.songId)) doc.songId = doc.songs[0].id;
+/* いま開いている曲の中身を、保管してある項へ写す。保存と元に戻すの直前に必ず通す */
+function syncActiveSong() {
+  const cur = doc.songs.find((x) => x.id === doc.songId); if (!cur) return;
+  cur.track = doc.track; cur.frames = doc.frames; cur.scenePlan = doc.scenePlan; cur.heroCount = doc.heroCount;
+}
+const songLabel = (sg, i) => (sg.track && sg.track.name ? sg.track.name.replace(/\.[^.]+$/, "") : `曲${i + 1}`);
+/* 旧「ダンサー」を「演者」へ読み替え、舞台スケッチと同じ項目に揃える */
+if (!Array.isArray(doc.cast)) doc.cast = Array.isArray(doc.dancers) ? doc.dancers : [];
+delete doc.dancers;
+doc.cast = doc.cast.map(normalizeCastMember);
+if (!Array.isArray(doc.sets)) doc.sets = [];
+/* v34より前に記録した分の引き上げ: 区切りが1つも無いのに配置が複数あるときは、
+   1回の記録＝1つのフォーメーションとみなして、先頭より後ろの配置に区切りを付ける（1度だけ） */
+if (!doc.scenePlan.upgradedToPerFrame) {
+  doc.scenePlan.upgradedToPerFrame = true;
+  if (!doc.scenePlan.segments.length && doc.frames.length > 1) {
+    [...doc.frames].sort((a, b) => a.count - b.count).slice(1).forEach((f) => {
+      doc.scenePlan.segments.push({ id: "sg" + Math.random().toString(36).slice(2, 9), fromFrameId: f.id, title: "", note: "", boundaryReasons: ["formation"] });
+    });
+  }
+}
+/* 最後のフォーメーションが終わるカウント。null = 曲の終わりまで
+   ★null を Number() に通すと 0（有限）になるので、読むときは endCountOf() を使う */
+if (doc.scenePlan.endCount == null || !Number.isFinite(Number(doc.scenePlan.endCount))) doc.scenePlan.endCount = null;
+else doc.scenePlan.endCount = Number(doc.scenePlan.endCount);
+const sortedSegments = () => {
+  const byId = new Map(doc.frames.map((f) => [f.id, f]));
+  return doc.scenePlan.segments
+    .filter((g) => byId.has(g.fromFrameId))
+    .map((g) => ({ ...g, count: byId.get(g.fromFrameId).count }))
+    .sort((a, b) => a.count - b.count);
+};
+const isSceneHead = (frameId) => doc.scenePlan.segments.some((g) => g.fromFrameId === frameId);
+function segmentOf(frameId) {
+  const f = doc.frames.find((x) => x.id === frameId); if (!f) return null;
+  const segs = sortedSegments(); let cur = null;
+  for (const g of segs) { if (g.count <= f.count + 1e-9) cur = g; else break; }
+  return cur;
+}
+/* 配置そのものの時点を動かす。前後の配置を追い越さないように止める */
+function moveFrameTo(frameId, count) {
+  const f = doc.frames.find((x) => x.id === frameId); if (!f) return false;
+  const others = sortedFrames().filter((x) => x.id !== frameId);
+  const prev = others.filter((x) => x.count < f.count).pop();
+  const next = others.find((x) => x.count > f.count);
+  const min = prev ? prev.count + grid : minCount();
+  const max = next ? next.count - grid : count;
+  const v = Math.max(min, Math.min(max, snap(count)));
+  if (Math.abs(v - f.count) < 1e-9) return false;
+  f.count = v; bakedKey = ""; return true;
+}
+function toggleSceneHead(frameId, title) {
+  const i = doc.scenePlan.segments.findIndex((g) => g.fromFrameId === frameId);
+  if (i >= 0) { tombstone("segment", doc.scenePlan.segments[i].id); doc.scenePlan.segments.splice(i, 1); return false; }
+  doc.scenePlan.segments.push({ id: "sg" + Date.now().toString(36), fromFrameId: frameId, title: title || "", note: "", boundaryReasons: ["formation"] });
+  return true;
+}
+const formationNo = (index) => `シーン${index + 1}`;
+const escHtml = (t) => String(t == null ? "" : t).replace(/[&<>"]/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[m]));
+/* 曲の終わり（カウント）。最後の配置の8カウント後と、音源の長さの、遠いほう */
+function songEndCount() {
+  const frames = sortedFrames();
+  return frames.length ? Math.max(frames[frames.length - 1].count + 8, secToCount(T.duration || 0)) : 9;
+}
+/* 最後のフォーメーションの頭（= それより後ろへは縮められない下限） */
+function lastHeadCount() {
+  const segs = sortedSegments(); if (segs.length) return segs[segs.length - 1].count;
+  const frames = sortedFrames(); return frames.length ? frames[0].count : minCount();
+}
+/* 最後のフォーメーションが終わるカウント。未設定なら曲の終わりまで */
+const endCountOf = () => (doc.scenePlan.endCount == null ? null : Number(doc.scenePlan.endCount));
+function planEnd() {
+  const songEnd = songEndCount(), v = endCountOf();
+  if (v === null || !Number.isFinite(v)) return songEnd;
+  return Math.max(lastHeadCount() + grid, Math.min(songEnd, v));
+}
+/* 曲の終わりまで伸ばしたときは「未設定」に戻す（曲を差し替えても最後まで付いていく） */
+function setPlanEnd(count) {
+  const songEnd = songEndCount();
+  const v = Math.max(lastHeadCount() + grid, Math.min(songEnd, snap(count)));
+  const next = v >= songEnd - 1e-9 ? null : v;
+  if (next === doc.scenePlan.endCount) return false;
+  doc.scenePlan.endCount = next; return true;
+}
+const sceneTitleOf = (g, index) => `${formationNo(index)}${g && g.title ? "　" + g.title : ""}`;
+/* ★フォーメーションの並び＝番号の正本。最初の区切りより前に配置があれば、先頭を1つ目として補う。
+   帯・波形・左の欄・一覧・書き出し・カウント表はすべてここを見る（別々に組むと番号が食い違う） */
+function formationGroups() {
+  const frames = sortedFrames(), groups = sortedSegments();
+  if (frames.length && (!groups.length || groups[0].count > frames[0].count + 1e-9)) {
+    groups.unshift({ id: "sg-head", fromFrameId: frames[0].id, title: "", note: "", count: frames[0].count, implicit: true });
+  }
+  return groups;
+}
+const formationIndexOfFrame = (frameId) => formationGroups().findIndex((g) => g.fromFrameId === frameId);
+/* i番目のフォーメーションの中で、次のフォーメーションへ動いている区間。
+   次の頭の travel カウント前に動き始め、頭のカウントで到着する。手前の頭より前には食い込ませない */
+/* 緑の始まりを動かす＝次のフォーメーションの「何カウント前から動き始めるか」を変える */
+function setTravelByStart(frameId, startCount, arriveCount, lowerCount) {
+  const f = doc.frames.find((x) => x.id === frameId); if (!f) return false;
+  const s = Math.max(lowerCount, Math.min(arriveCount, snap(startCount)));
+  const tv = Math.max(0, Math.round((arriveCount - s) * 100) / 100);
+  if (Math.abs(tv - travelOf(f)) < 1e-9) return false;
+  f.travel = tv; return true;
+}
+function moveSpanAfter(groups, i, from) {
+  const next = groups[i + 1]; if (!next) return null;
+  const nf = doc.frames.find((f) => f.id === next.fromFrameId); if (!nf) return null;
+  const tv = travelOf(nf);
+  const maxLead = doc.cast.reduce((m, d) => Math.max(m, leadOf(nf.poses[d.id])), 0);
+  if (!(tv + maxLead > 0)) return null;
+  const start = Math.max(from, next.count - tv - maxLead);
+  if (next.count - start < 1e-9) return null;
+  return { from: start, to: next.count, counts: unit === "time" ? `${((next.count - start) * 60 / bpm()).toFixed(1)}秒` : `${Math.round((next.count - start) * 100) / 100}` };
+}
+const meterAt = (c) => { const ms = [...doc.track.meters].sort((a, b) => a.fromCount - b.fromCount); let cur = ms[0]; for (const m of ms) if (c >= m.fromCount) cur = m; return cur; };
+let selAnchor = 1;             // いま選んでいる点のカウント
+if (!Array.isArray(doc.track.phrases) || !doc.track.phrases.length) doc.track.phrases = [{ fromCount: 1, length: 8 }]; // まとまり（拍子）の変更点
+let loop = { a: null, b: null, on: false };
+let history = [], future = [];
+let cursorCount = 1;           // 停止中の現在カウント
+const audio = document.getElementById("audio");
+/* 再生の窓口。デコード済みの音源があれば Web Audio の BufferSource で鳴らす（クリックと同じ時計・同じ出力）。
+   無ければ audio 要素に委ねる。呼び出し側は T だけを見る。 */
+const T = (() => {
+  const em = {}; const on = (k, f) => { (em[k] = em[k] || []).push(f); }; const emit = (k) => (em[k] || []).forEach((f) => f());
+  let buffer = null, node = null, playing = false, offset = 0, startAt = 0;
+  const useWA = () => Boolean(buffer && actx && route === "webaudio");
+  const pos = () => useWA() ? (playing ? Math.min(buffer.duration, offset + (actx.currentTime - startAt)) : offset) : audio.currentTime;
+  ["play", "pause", "seeking", "ended"].forEach((k) => audio.addEventListener(k, () => { if (!useWA()) emit(k); }));
+  return {
+    on,
+    setBuffer(b) {
+      const wasPlaying = !audio.paused;            // 要素で鳴っている最中に差し替わることがある
+      offset = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+      buffer = b;
+      if (b && wasPlaying && route === "webaudio" && actx) { audio.pause(); this.play(); }   // 経路が Web Audio のときだけ引き継ぐ
+    },
+    get usingBuffer() { return useWA(); },
+    get src() { return audio.src || (buffer ? "buffer" : ""); },
+    get duration() { return useWA() ? buffer.duration : audio.duration; },
+    get paused() { return useWA() ? !playing : audio.paused; },
+    get currentTime() { return pos(); },
+    set currentTime(v) {
+      if (useWA()) { const was = playing; if (was) this.pause(); offset = Math.max(0, Math.min(buffer.duration, v)); emit("seeking"); if (was) this.play(); }
+      else { audio.currentTime = v; }
+    },
+    async play() {
+      if (route === "webaudio") ensureCtx();
+      if (useWA()) {
+        if (playing) return; if (actx.state === "suspended") await actx.resume();
+        if (offset >= buffer.duration - 0.01) offset = 0;
+        audio.pause();   // 要素側が鳴っていたら必ず止める（二重再生を防ぐ）
+        node = actx.createBufferSource(); node.buffer = buffer; node.connect(outGain || actx.destination);
+        startAt = actx.currentTime + 0.03; node.start(startAt, offset); playing = true;
+        const mine = node; mine.onended = () => { if (node !== mine || !playing) return; playing = false; offset = buffer.duration; node = null; emit("pause"); emit("ended"); };
+        emit("play"); return;
+      }
+      await audio.play();
+    },
+    pause() {
+      if (useWA()) { if (!playing) return; offset = pos(); playing = false; const n = node; node = null; try { n.onended = null; n.stop(); } catch (_) {} emit("pause"); return; }
+      audio.pause();
+    },
+  };
+})();
+function snapshot() { syncActiveSong(); history.push(JSON.stringify(doc)); if (history.length > 100) history.shift(); future = []; }
+function undo() {
+  if (!history.length) { flash("これ以上は戻せません"); return; }
+  future.push(JSON.stringify(doc)); doc = JSON.parse(history.pop());
+  live = null; castFormEpoch++; persist(); render(); flash(`元に戻しました（あと${history.length}回）`);
+}
+function redo() {
+  if (!future.length) { flash("やり直せる操作はありません"); return; }
+  history.push(JSON.stringify(doc)); doc = JSON.parse(future.pop());
+  live = null; castFormEpoch++; persist(); render(); flash("やり直しました");
+}
+function persist() { syncActiveSong(); if (EMBEDDED) return; try { localStorage.setItem(LS_KEY, JSON.stringify(doc)); } catch (_) {} }
+function load() { try { return JSON.parse(localStorage.getItem(LS_KEY) || "null"); } catch (_) { return null; } }
+
+/* ---------- カウント ---------- */
+const bpm = () => Number(doc.track.countBpm) || 120;
+const fixedCountToSec = (c) => doc.track.firstCountSec + (c - 1) * 60 / bpm();
+const fixedSecToCount = (s) => 1 + (s - doc.track.firstCountSec) * bpm() / 60;
+/* 打った拍があるときは、その区間は拍の地図が正。最初の拍のカウントは固定グリッドの最寄り整数（1以上）。
+   前は固定BPMで遡り、後ろは最後の拍間隔で伸ばす。 */
+/* 時間の地図＝「合わせ直しの点」。count=1 は doc.track.firstCountSec（「ここが1」）で、
+   それ以外の点は doc.track.anchors=[{count,sec}]。曲はぴったり一定のテンポではないので、
+   ずれてきたところで「ここが頭」を押して点を足すと、その前後の区間だけ実効テンポが変わって誤差が消える。
+   点が1つのときは固定BPMの等間隔。2つ以上あるときは点の間を線形に按分し、外側は最寄り区間の傾きで伸ばす。 */
+function allAnchors() {
+  const extra = Array.isArray(doc.track.anchors) ? doc.track.anchors : [];
+  const m = new Map();
+  extra.forEach((a) => { const c = Number(a.count), t = Number(a.sec); if (Number.isFinite(c) && Number.isFinite(t) && c > 1 && t >= 0) m.set(Math.round(c * 4) / 4, { sec: t, locked: a.locked !== false }); });
+  const out = [{ count: 1, sec: doc.track.firstCountSec, locked: Boolean(doc.track.firstLocked) }];
+  [...m.entries()].sort((a, b) => a[0] - b[0]).forEach(([count, o]) => { if (o.sec > out[out.length - 1].sec) out.push({ count, sec: o.sec, locked: o.locked }); });
+  return out;
+}
+/* 点の読み書き（count=1 は firstCountSec が正本） */
+function anchorAt(count) { return allAnchors().find((a) => Math.abs(a.count - count) < 1e-6) || null; }
+function setAnchorSec(count, sec) {
+  if (count <= 1) { doc.track.firstCountSec = Math.max(0, sec); doc.track.firstSet = true; return; }   // 鍵を動かした＝先頭を決めた
+  const a = (doc.track.anchors || []).find((x) => Math.abs(Number(x.count) - count) < 1e-6);
+  if (a) a.sec = Math.max(0, sec);
+}
+function setAnchorLocked(count, v) {
+  if (count <= 1) { doc.track.firstLocked = Boolean(v); if (v) doc.track.firstSet = true; return; }   // 鍵を閉じた＝先頭を決めた
+  const a = (doc.track.anchors || []).find((x) => Math.abs(Number(x.count) - count) < 1e-6);
+  if (a) a.locked = Boolean(v);
+}
+const secPerCount = (a, b) => (b.sec - a.sec) / (b.count - a.count);
+function countToSec(c) {
+  const A = allAnchors();
+  if (A.length === 1) return A[0].sec + (c - 1) * 60 / bpm();
+  if (c <= A[0].count) return A[0].sec + (c - A[0].count) * secPerCount(A[0], A[1]);
+  for (let i = 0; i < A.length - 1; i++) if (c <= A[i + 1].count) return A[i].sec + (c - A[i].count) * secPerCount(A[i], A[i + 1]);
+  const n = A.length; return A[n - 1].sec + (c - A[n - 1].count) * secPerCount(A[n - 2], A[n - 1]);
+}
+function secToCount(t) {
+  const A = allAnchors();
+  if (A.length === 1) return 1 + (t - A[0].sec) * bpm() / 60;
+  if (t <= A[0].sec) return A[0].count + (t - A[0].sec) / secPerCount(A[0], A[1]);
+  for (let i = 0; i < A.length - 1; i++) if (t <= A[i + 1].sec) return A[i].count + (t - A[i].sec) / secPerCount(A[i], A[i + 1]);
+  const n = A.length; return A[n - 1].count + (t - A[n - 1].sec) / secPerCount(A[n - 2], A[n - 1]);
+}
+/* 区間の実効テンポ（1分あたりのカウント数）。合わせ直した結果を本人に見せる */
+function tempoAround(c) {
+  const A = allAnchors(); if (A.length === 1) return bpm();
+  let seg = [A[0], A[1]];
+  for (let i = 0; i < A.length - 1; i++) if (c >= A[i].count && c <= A[i + 1].count) seg = [A[i], A[i + 1]];
+  if (c > A[A.length - 1].count) seg = [A[A.length - 2], A[A.length - 1]];
+  return 60 / secPerCount(seg[0], seg[1]);
+}
+/* いま鳴っている場所を、指定のカウントに合わせる（既存の点は置き換える） */
+function anchorHere(count, sec) {
+  if (!Array.isArray(doc.track.anchors)) doc.track.anchors = [];
+  if (count <= 1) { doc.track.firstCountSec = Math.max(0, sec); return; }
+  const prev = doc.track.anchors.find((a) => Math.abs(Number(a.count) - count) < 1e-6);
+  doc.track.anchors = doc.track.anchors.filter((a) => Math.abs(Number(a.count) - count) > 1e-6);
+  doc.track.anchors.push({ count, sec: Math.max(0, sec), locked: prev ? prev.locked !== false : true });
+  doc.track.anchors.sort((a, b) => a.count - b.count);
+}
+/* まとまり（拍子）: カウント c がどのまとまりの何拍目か */
+function phraseInfo(c) {
+  const ps = [...doc.track.phrases].sort((a, b) => a.fromCount - b.fromCount);
+  let no = 0, from = 1, len = 8;
+  for (let i = 0; i < ps.length; i++) {
+    const cur = ps[i], next = ps[i + 1]; const end = next ? next.fromCount : Infinity;
+    if (c >= cur.fromCount && c < end) { const k = Math.floor((c - cur.fromCount) / cur.length); return { no: no + k + 1, beat: c - cur.fromCount - k * cur.length + 1, len: cur.length }; }
+    if (next) no += Math.ceil((next.fromCount - cur.fromCount) / cur.length);
+  }
+  return { no: Math.floor((c - 1) / 8) + 1, beat: c - Math.floor((c - 1) / 8) * 8, len: 8 };
+}
+/* カウント1（数え始め）より前＝イントロ等も動かせるように、下限は「時刻0に対応するカウント」 */
+const minCount = () => secToCount(0);
+const snap = (c) => { const v = unit === "time" ? secToCount(Math.round(countToSec(c) / timeSnap) * timeSnap) : Math.round(c / grid) * grid; return Math.max(minCount(), v); };
+const travelOf = (f) => Number.isFinite(Number(f.travel)) ? Math.max(0, Number(f.travel)) : TRAVEL_DEFAULT;
+function fmtCount(c) {
+  if (c < 1) return `頭より前・${(countToSec(c) - countToSec(1)).toFixed(1)}s`;
+  const pi = phraseInfo(c); const eight = pi.no; const beat = pi.beat;
+  const whole = Math.floor(beat + 1e-9);
+  const frac = Math.round((beat - whole) * 4) / 4;
+  const fracText = frac === 0 ? "" : frac === 0.5 ? "½" : frac === 0.25 ? "¼" : "¾";
+  return pi.len === 8 ? `第${eight}エイト・${whole}${fracText}` : `第${eight}フレーズ(${pi.len})・${whole}${fracText}`;
+}
+function fmtSec(s) { const m = Math.floor(s / 60); const r = s - m * 60; return `${m}:${r.toFixed(2).padStart(5, "0")}`; }
+function nowCount() {
+  if (!T.paused && Number.isFinite(T.currentTime)) return secToCount(actx ? mediaNow() : T.currentTime);
+  return cursorCount;
+}
+function seekCount(c) {
+  cursorCount = snap(c);
+  if (band._ppc && band._W) { const vis = band._W / band._ppc; const st = secToCount(viewStartSec === null ? countToSec(1) : viewStartSec); if (cursorCount < st || cursorCount > st + vis * 0.95) { viewStartSec = countToSec(Math.max(1 - vis * 0.25, cursorCount - vis * 0.35)); } }
+  if (T.src) { try { T.currentTime = Math.max(0, countToSec(cursorCount)); } catch (_) {} }
+  render();
+}
+
+/* ---------- 配置の評価（前の配置を引き継ぎ、次の配置へ直線補間） ---------- */
+const sortedFrames = () => [...doc.frames].sort((a, b) => a.count - b.count);
+function framesAround(c) {
+  const fs = sortedFrames();
+  let prev = null, next = null;
+  for (const f of fs) { if (f.count <= c + 1e-9) prev = f; else { next = f; break; } }
+  return { prev: prev || fs[0], next, exact: fs.find((f) => Math.abs(f.count - c) < 1e-9) || null };
+}
+const FACING_DEFAULT = 0;   // 0=客席を向く。90=上手、180=背中（舞台スケッチと同じ）
+const faceOf = (pose) => (pose && Number.isFinite(Number(pose.facing)) ? Number(pose.facing) : FACING_DEFAULT);
+const shortestTurn = (a, b) => a + (((b - a + 540) % 360) - 180);   // 回るときは近い方へ
+/* 移動の曲がり具合。行き先の pose が控え点 (cu,cv) を持てば曲がる。無ければ2点の中点＝直線になる */
+const isCurved = (b) => Boolean(b) && Number.isFinite(Number(b.cu)) && Number.isFinite(Number(b.cv));
+/* 動き出しラグ。行き先の pose に持たせる、その人だけの前倒し（カウント）。
+   lead = みんなの動き出しより何カウント早く出るか、early = 到着を何カウント早めるか。
+   マイナスにすると遅らせられる（一人ずつ動き出すのはこの差で作る） */
+const LAG_MIN = -16, LAG_MAX = 64;
+const lagOf = (p, key) => {
+  const v = Number(p && p[key]);
+  return Number.isFinite(v) ? Math.max(LAG_MIN, Math.min(LAG_MAX, v)) : 0;
+};
+const leadOf = (p) => lagOf(p, "lead");
+const earlyOf = (p) => lagOf(p, "early");
+function ctrlOf(a, b) {
+  if (isCurved(b)) return { cu: Number(b.cu), cv: Number(b.cv) };
+  return { cu: (a.u + b.u) / 2, cv: (a.v + b.v) / 2 };
+}
+const bezAt = (a, cp, b, e) => ({
+  u: (1 - e) * (1 - e) * a.u + 2 * (1 - e) * e * cp.cu + e * e * b.u,
+  v: (1 - e) * (1 - e) * a.v + 2 * (1 - e) * e * cp.cv + e * e * b.v,
+});
+/* 経路の途中の点をつかんで曲げる。M＝曲線の真ん中に来てほしい位置 */
+function setCurveByMid(a, b, mu, mv) {
+  b.cu = Math.min(1.4, Math.max(-0.4, 2 * mu - (a.u + b.u) / 2));
+  b.cv = Math.min(1.4, Math.max(-0.4, 2 * mv - (a.v + b.v) / 2));
+}
+function clearCurve(b) { delete b.cu; delete b.cv; }
+function poseAt(dancerId, c) {
+  const { prev, next } = framesAround(c);
+  const a = prev.poses[dancerId] || { u: 0.5, v: 0.5 };
+  if (!next || !next.poses[dancerId] || next.count <= prev.count) return { ...a, facing: faceOf(a) };
+  const b = next.poses[dancerId];
+  // その人だけの動き出し・到着（前倒し分をここで効かせる）
+  const start = Math.max(prev.count, next.count - travelOf(next) - leadOf(b));
+  let end = next.count - earlyOf(b);
+  if (end <= start) end = start + 1e-6;
+  if (c <= start) return { ...a, facing: faceOf(a) };
+  if (c >= end) return { ...b, facing: faceOf(b) };
+  const t = Math.min(1, Math.max(0, (c - start) / (end - start)));
+  const e = t * t * (3 - 2 * t);
+  const fa = faceOf(a), fb = shortestTurn(fa, faceOf(b));
+  const q = bezAt(a, ctrlOf(a, b), b, e);
+  return { u: q.u, v: q.v, facing: (fa + (fb - fa) * e + 360) % 360 };
+}
+/* セットは各フォーメーション頭で舞台スケッチから写す。ここでは読むだけで、
+   フォーメーション間は演者と同じカウント軸で補間して転換を見せる。 */
+function setPoseAt(setId, c) {
+  const frames = sortedFrames(); if (!frames.length) return null;
+  let prev = frames[0], next = null;
+  for (const frame of frames) { if (frame.count <= c) prev = frame; else { next = frame; break; } }
+  const a = prev.setPoses && prev.setPoses[setId];
+  if (!a) return null;
+  const b = next && next.setPoses && next.setPoses[setId];
+  if (!b || next.count <= prev.count) return { ...a, facing: faceOf(a) };
+  const t = Math.min(1, Math.max(0, (c - prev.count) / (next.count - prev.count)));
+  const e = t * t * (3 - 2 * t), fa = faceOf(a), fb = shortestTurn(fa, faceOf(b));
+  return { u: a.u + (b.u - a.u) * e, v: a.v + (b.v - a.v) * e,
+    facing: (fa + (fb - fa) * e + 360) % 360 };
+}
+/* いじり始めたら、その場を新しいフォーメーションとして自動で立てる。
+   すでに配置があるカウントなら、その配置を更新するだけ（番号は増えない）。
+   連続した操作で何度も走らないよう、少し待ってからまとめて確定する */
+let autoTimer = null;
+function scheduleAutoRecord(wait) {
+  if (autoTimer) clearTimeout(autoTimer);
+  autoTimer = setTimeout(() => { autoTimer = null; autoRecord(); }, Number.isFinite(wait) ? wait : 0);
+}
+function autoRecord() {
+  if (!live || !startReady()) return;
+  const c = snap(nowCount());
+  const had = Boolean(framesAround(c).exact);
+  recordHere();
+  if (!had) {
+    const no = formationIndexOfFrame((framesAround(c).exact || {}).id);
+    if (no >= 0) flash(`${formationNo(no)} を ${fmtCount(c)} に作りました（⌘Zで取り消せます）`);
+  }
+}
+/* 記録: いま見えている配置（引き継ぎ＋手で直した分）を、このカウントの配置として確定する */
+let live = null; // 編集中の一時配置 {dancerId:{u,v}}
+function livePose(id, c) { return (live && live[id]) || poseAt(id, c); }
+function recordHere() {
+  if (!startReady()) { flash("先に開始位置を決めてください（鍵の段のいちばん左の赤い丸、または上の「ここが1」）"); return; }
+  const c = snap(nowCount());
+  snapshot();
+  const { exact } = framesAround(c);
+  const poses = {};
+  doc.cast.forEach((d) => {
+    const p = livePose(d.id, c), old = exact && exact.poses[d.id];
+    poses[d.id] = { u: p.u, v: p.v, facing: Math.round(faceOf(p)) };
+    if (isCurved(old)) { poses[d.id].cu = old.cu; poses[d.id].cv = old.cv; }   // 上書きしても曲がりは残す
+    if (old && leadOf(old)) poses[d.id].lead = leadOf(old);                    // 動き出しラグも残す
+    if (old && earlyOf(old)) poses[d.id].early = earlyOf(old);
+  });
+  let added = null;
+  if (exact) { exact.poses = poses; }
+  else {
+    added = { id: "f" + Date.now().toString(36), count: c, poses, note: "", travel: TRAVEL_DEFAULT };
+    doc.frames.push(added);
+    // 新しく置いた配置は、そのまま1つのフォーメーションになる。
+    // 途中の動き（フォーメーションの中の通過点）にしたいときは右のチェックを外す。
+    if (!isSceneHead(added.id) && added.count > sortedFrames()[0].count + 1e-9) toggleSceneHead(added.id, "");
+  }
+  live = null; cursorCount = c;
+  persist(); render();
+  const no = formationIndexOfFrame(added ? added.id : exact.id);
+  flash(added && no >= 0
+    ? `${fmtCount(c)} に ${formationNo(no)} を記録（${doc.cast.length}人）`
+    : `${fmtCount(c)} に ${doc.cast.length}人の配置を記録`);
+}
+
+/* ---------- BPM 測定 ---------- */
+function newRevision() { return "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function bumpRevision() { doc.sync.revisionId = newRevision(); }
+function tombstone(type, id) { if (!doc.sync.tombstones.some((t) => t.type === type && t.id === id)) doc.sync.tombstones.push({ type, id, at: new Date().toISOString(), by: "formation" }); }
+const median = (a) => { const b = [...a].sort((x, y) => x - y); const m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
+/* タップ: 最後の8打の間隔の中央値。1.5秒以上あいたら数え直し */
+function tapTempo(nowSec) {
+  if (taps.length && nowSec - taps[taps.length - 1] > 1.5) taps = [];
+  taps.push(nowSec); if (taps.length > 9) taps.shift();
+  if (taps.length < 3) return null;
+  const iv = []; for (let i = 1; i < taps.length; i++) iv.push(taps[i] - taps[i - 1]);
+  const bpm = 60 / median(iv);
+  return { bpm: Math.round(bpm * 10) / 10, n: taps.length };
+}
+/* 自動: 包絡の立ち上がり（正の差分）の自己相関で 60〜200 BPM の周期を探す。候補と信頼度を返す */
+function estimateBpm(envelope, step) {
+  if (!envelope || envelope.length < 400) return null;
+  const n = envelope.length; const onset = new Float32Array(n);
+  for (let i = 1; i < n; i++) { const d = envelope[i] - envelope[i - 1]; onset[i] = d > 0 ? d : 0; }
+  const mean = onset.reduce((a, b) => a + b, 0) / n; for (let i = 0; i < n; i++) onset[i] -= mean;
+  const minLag = Math.round(60 / 200 / step), maxLag = Math.round(60 / 60 / step);
+  const ac = new Float32Array(maxLag + 2); let e0 = 0; for (let i = 0; i < n; i++) e0 += onset[i] * onset[i];
+  for (let lag = minLag; lag <= maxLag; lag++) { let sum = 0; for (let i = lag; i < n; i++) sum += onset[i] * onset[i - lag]; ac[lag] = sum / (e0 || 1); }
+  // 80〜160 を優先（半分・倍のあいまいさを避ける）。ピークは近傍の放物線補間で細かくする
+  const cands = [];
+  for (let lag = minLag + 1; lag < maxLag; lag++) {
+    if (ac[lag] > ac[lag - 1] && ac[lag] >= ac[lag + 1]) {
+      const y0 = ac[lag - 1], y1 = ac[lag], y2 = ac[lag + 1]; const denom = (y0 - 2 * y1 + y2); const dx = denom ? 0.5 * (y0 - y2) / denom : 0;
+      const L = lag + dx; const bpm = 60 / (L * step); const pref = bpm >= 80 && bpm <= 160 ? 1 : 0.7;
+      cands.push({ bpm: Math.round(bpm * 10) / 10, score: y1 * pref });
+    }
+  }
+  if (!cands.length) return null;
+  cands.sort((a, b) => b.score - a.score);
+  const best = cands[0], second = cands[1] || { score: 0 };
+  const ratio = second.score > 0 ? best.score / second.score : 9;
+  return { bpm: best.bpm, confidence: ratio > 1.6 ? "高" : ratio > 1.2 ? "中" : "低", alt: cands.slice(1, 3).map((c) => c.bpm) };
+}
+
+/* ---------- 描画 ---------- */
+const stage = document.getElementById("stage"), sctx = stage.getContext("2d");
+const front = document.getElementById("front"), fctx = front.getContext("2d");
+const band = document.getElementById("band"), bctx = band.getContext("2d");
+const lane = document.getElementById("lane"), lctx = lane.getContext("2d");
+const sceneLane = document.getElementById("sceneLane"), sctx2 = sceneLane.getContext("2d");
+const dpr = Math.min(2, window.devicePixelRatio || 1);
+let floor = { x: 0, y: 0, w: 0, h: 0 };
+function canvasTheme() {
+  const style = getComputedStyle(document.documentElement);
+  const read = (name) => style.getPropertyValue(name).trim();
+  return {
+    void: read("--canvas-void"), frontVoid: read("--canvas-front-void"), panel: read("--panel"), floor: read("--floor"), line: read("--line"),
+    text: read("--text"), strong: read("--text-strong"), dim: read("--text-dim"),
+    accent: read("--accent"), accentDeep: read("--accent-deep"), audience: read("--audience"),
+    playhead: read("--playhead"), move: read("--move"), record: read("--record"), front: read("--canvas-front"),
+  };
+}
+function fit(canvas) {
+  const r = canvas.parentElement.getBoundingClientRect();
+  canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr);
+  canvas.style.width = r.width + "px"; canvas.style.height = r.height + "px";
+}
+/* 縮小時も文字を隣の区切りへはみ出させない。線と印は残し、文字だけを省略する。 */
+function fitTimelineText(ctx, text, maxWidth) {
+  const full = String(text || "");
+  if (!full || !(maxWidth > 0)) return "";
+  if (ctx.measureText(full).width <= maxWidth) return full;
+  const ellipsis = "…";
+  if (ctx.measureText(ellipsis).width > maxWidth) return "";
+  const chars = Array.from(full);
+  let low = 0, high = chars.length;
+  while (low < high) {
+    const mid = Math.ceil((low + high) / 2);
+    if (ctx.measureText(chars.slice(0, mid).join("") + ellipsis).width <= maxWidth) low = mid;
+    else high = mid - 1;
+  }
+  return chars.slice(0, low).join("") + ellipsis;
+}
+function pickTimelineText(ctx, candidates, maxWidth) {
+  return candidates.find((text) => text && ctx.measureText(text).width <= maxWidth) || "";
+}
+function drawFittedTimelineText(ctx, text, x, y, maxWidth) {
+  const shown = fitTimelineText(ctx, text, maxWidth);
+  if (!shown) return null;
+  ctx.fillText(shown, x, y);
+  return [x, x + ctx.measureText(shown).width];
+}
+function render() {
+  const c = nowCount();
+  if (stageView === "front") { fit(stage); drawFrontStage(c); } else drawStage(c);
+  drawBand(c); drawLane(c); drawSceneLane(c); drawSide(c);
+}
+function drawStage(c) {
+  fit(stage);
+  const C = canvasTheme();
+  const W = stage.width, H = stage.height; sctx.setTransform(1, 0, 0, 1, 0, 0);
+  sctx.fillStyle = C.void; sctx.fillRect(0, 0, W, H);
+  const pad = 28 * dpr, ratio = doc.stage.widthM / doc.stage.depthM;
+  let w = W - pad * 2, h = w / ratio; if (h > H - pad * 2) { h = H - pad * 2; w = h * ratio; }
+  floor = { x: (W - w) / 2, y: (H - h) / 2, w, h };
+  sctx.fillStyle = C.floor; sctx.fillRect(floor.x, floor.y, floor.w, floor.h);
+  // 目盛り（1mごと）
+  sctx.strokeStyle = C.line; sctx.lineWidth = 1;
+  for (let m = 1; m < doc.stage.widthM; m++) { const x = floor.x + floor.w * m / doc.stage.widthM; sctx.beginPath(); sctx.moveTo(x, floor.y); sctx.lineTo(x, floor.y + floor.h); sctx.stroke(); }
+  for (let m = 1; m < doc.stage.depthM; m++) { const y = floor.y + floor.h * m / doc.stage.depthM; sctx.beginPath(); sctx.moveTo(floor.x, y); sctx.lineTo(floor.x + floor.w, y); sctx.stroke(); }
+  // センターライン
+  sctx.strokeStyle = C.accentDeep; sctx.setLineDash([6 * dpr, 6 * dpr]); sctx.beginPath(); sctx.moveTo(floor.x + floor.w / 2, floor.y); sctx.lineTo(floor.x + floor.w / 2, floor.y + floor.h); sctx.stroke(); sctx.setLineDash([]);
+  // 客席側の辺。前後反転のときは上に来る
+  const audY = flipPlan ? floor.y : floor.y + floor.h;
+  sctx.strokeStyle = C.audience; sctx.lineWidth = 3 * dpr; sctx.beginPath(); sctx.moveTo(floor.x, audY); sctx.lineTo(floor.x + floor.w, audY); sctx.stroke();
+  sctx.fillStyle = C.dim; sctx.font = `${13 * dpr}px system-ui`; sctx.textAlign = "center";
+  sctx.fillText("客席", floor.x + floor.w / 2, flipPlan ? floor.y - 8 * dpr : floor.y + floor.h + 20 * dpr);
+  const labY = flipPlan ? floor.y + floor.h + 20 * dpr : floor.y - 8 * dpr;
+  sctx.textAlign = "left"; sctx.fillText(flipPlan ? "上手" : "下手", floor.x + 6 * dpr, labY);
+  sctx.textAlign = "right"; sctx.fillText(flipPlan ? "下手" : "上手", floor.x + floor.w - 6 * dpr, labY);
+  // 舞台スケッチが正本のセット。編集対象にせず、演者より先に下敷きとして描く。
+  doc.sets.forEach((item) => {
+    const pose = setPoseAt(item.id, c); if (!pose) return;
+    const p = toPx(pose), dims = item.dims || {};
+    const wm = Number(dims.w || dims.dia || .8), dm = Number(dims.d || dims.dia || .8);
+    const w = Math.max(8 * dpr, wm / doc.stage.widthM * floor.w);
+    const h = Math.max(8 * dpr, dm / doc.stage.depthM * floor.h);
+    sctx.save(); sctx.translate(p.x, p.y);
+    sctx.rotate((faceOf(pose) + (flipPlan ? 180 : 0)) * Math.PI / 180);
+    sctx.fillStyle = item.color || "#8b98a1"; sctx.globalAlpha = .68;
+    if (dims.dia) { sctx.beginPath(); sctx.arc(0, 0, Math.max(w, h) / 2, 0, Math.PI * 2); sctx.fill(); }
+    else sctx.fillRect(-w / 2, -h / 2, w, h);
+    sctx.globalAlpha = 1; sctx.strokeStyle = C.text; sctx.lineWidth = dpr;
+    if (dims.dia) { sctx.beginPath(); sctx.arc(0, 0, Math.max(w, h) / 2, 0, Math.PI * 2); sctx.stroke(); }
+    else sctx.strokeRect(-w / 2, -h / 2, w, h);
+    sctx.restore();
+    sctx.fillStyle = C.text; sctx.font = `${10 * dpr}px system-ui`; sctx.textAlign = "center";
+    sctx.fillText((item.name || "セット").slice(0, 6), p.x, p.y - h / 2 - 4 * dpr);
+  });
+  // 導線（いまのフォーメーションから次のフォーメーションへ）
+  const { prev, next } = framesAround(c);
+  stage._pathHandles = [];
+  doc.cast.forEach((d) => {
+    if (!showPaths || !next) return;
+    const a = prev.poses[d.id], b = next.poses[d.id]; if (!a || !b) return;
+    if (Math.abs(a.u - b.u) < 1e-4 && Math.abs(a.v - b.v) < 1e-4 && !isCurved(b)) return;   // 動かない人は引かない
+    const cp = ctrlOf(a, b);
+    const p = toPx(a), q = toPx(b), cq = toPx({ u: cp.cu, v: cp.cv });
+    const on = selected.has(d.id);
+    sctx.globalAlpha = on ? 1 : 0.65;
+    sctx.strokeStyle = d.color; sctx.lineWidth = (on ? 2.5 : 2) * dpr; sctx.setLineDash([4 * dpr, 5 * dpr]);
+    sctx.beginPath(); sctx.moveTo(p.x, p.y); sctx.quadraticCurveTo(cq.x, cq.y, q.x, q.y); sctx.stroke(); sctx.setLineDash([]);
+    // 真ん中のつまみ。つかむと曲がる（ダブルクリックで直線に戻る）
+    const m = bezAt(a, cp, b, 0.5), mp = toPx({ u: m.u, v: m.v });
+    sctx.fillStyle = "#191512"; sctx.strokeStyle = d.color; sctx.lineWidth = 2 * dpr;
+    sctx.beginPath(); sctx.arc(mp.x, mp.y, 5 * dpr, 0, Math.PI * 2); sctx.fill(); sctx.stroke();
+    stage._pathHandles.push({ id: d.id, x: mp.x, y: mp.y });
+    sctx.globalAlpha = 1;
+    sctx.fillStyle = d.color; sctx.beginPath(); sctx.arc(q.x, q.y, 4 * dpr, 0, Math.PI * 2); sctx.fill();
+  });
+  // 駒
+  const r = Math.max(14, Math.min(22, floor.w / 40)) * dpr;
+  doc.cast.forEach((d) => {
+    const p = toPx(livePose(d.id, c));
+    const sel = selected.has(d.id);
+    sctx.fillStyle = d.color; sctx.beginPath(); sctx.arc(p.x, p.y, r, 0, Math.PI * 2); sctx.fill();
+    if (sel) { sctx.strokeStyle = C.accent; sctx.lineWidth = 3 * dpr; sctx.stroke(); }
+    // 向き（0=客席＝画面下）。駒の外へ伸びる細長い三角形で示す
+    const th = (faceOf(livePose(d.id, c)) + (flipPlan ? 180 : 0)) * Math.PI / 180;
+    const ux = Math.sin(th), uy = Math.cos(th);        // 向きの単位ベクトル
+    const qx = -uy, qy = ux;                           // それに直交する向き
+    const tipD = r * 1.85, baseD = r * 0.96, halfW = r * 0.40;
+    const nx = p.x + ux * tipD, ny = p.y + uy * tipD;
+    const lx = p.x + ux * baseD + qx * halfW, ly = p.y + uy * baseD + qy * halfW;
+    const rx = p.x + ux * baseD - qx * halfW, ry = p.y + uy * baseD - qy * halfW;
+    sctx.beginPath(); sctx.moveTo(nx, ny); sctx.lineTo(lx, ly); sctx.lineTo(rx, ry); sctx.closePath();
+    sctx.fillStyle = d.color; sctx.fill();
+    sctx.strokeStyle = "#191512"; sctx.lineWidth = 1.5 * dpr; sctx.lineJoin = "round"; sctx.stroke();
+    sctx.fillStyle = "#191512"; sctx.font = `${sel ? 700 : 600} ${12 * dpr}px system-ui`; sctx.textAlign = "center"; sctx.textBaseline = "middle";
+    sctx.fillText(d.name.slice(0, 2), p.x, p.y + 1);
+    sctx.globalAlpha = 1; sctx.textBaseline = "alphabetic";
+  });
+  drawMarqueeSelection(C);
+  if (performance.now() >= flashUntil) document.getElementById("live").textContent = live ? "直した分は未記録（「この配置を記録」で確定）" : "";
+}
+/* 平面図の座標。前後反転のときは上下左右をひっくり返して描くだけで、記録の値は変えない */
+const viewU = (u) => (flipPlan ? 1 - u : u);
+const viewV = (v) => (flipPlan ? 1 - v : v);
+function toPx(pose) { return { x: floor.x + viewU(pose.u) * floor.w, y: floor.y + viewV(pose.v) * floor.h }; }
+/* 画面の座標から記録の値へ戻す */
+const fromPxU = (x) => viewU((x - floor.x) / floor.w);
+const fromPxV = (y) => viewV((y - floor.y) / floor.h);
+function fromPx(x, y) { return { u: Math.min(1.1, Math.max(-0.1, (x - floor.x) / floor.w)), v: Math.min(1.05, Math.max(-0.05, (y - floor.y) / floor.h)) }; }
+function drawFront(c) {
+  const C = canvasTheme();
+  const W = front.width, H = front.height;
+  fctx.clearRect(0, 0, W, H); fctx.fillStyle = C.floor; fctx.fillRect(0, 0, W, H);
+  fctx.fillStyle = C.front; fctx.fillRect(0, H - 14, W, 14);
+  // 奥ほど小さく高く（簡易な疑似パース）
+  const list = doc.cast.map((d) => ({ d, p: livePose(d.id, c) })).sort((a, b) => a.p.v - b.p.v);
+  list.forEach(({ d, p }) => {
+    const depth = 1 - p.v;                     // 0=手前 1=奥
+    const x = 12 + p.u * (W - 24), base = H - 14 - depth * 22, h = 44 - depth * 16, w = h * 0.36;
+    fctx.globalAlpha = 1;
+    fctx.fillStyle = d.color; fctx.fillRect(x - w / 2, base - h, w, h); fctx.beginPath(); fctx.arc(x, base - h - w * 0.45, w * 0.42, 0, Math.PI * 2); fctx.fill();
+    fctx.globalAlpha = 1;
+  });
+}
+function drawBand(c) {
+  const C = canvasTheme();
+  fit(band);
+  const W = band.width, H = band.height; bctx.setTransform(1, 0, 0, 1, 0, 0);
+  bctx.fillStyle = C.panel; bctx.fillRect(0, 0, W, H);
+  const pxPerCount = (unit === "time" ? timeZoom * 60 / bpm() : 44) * zoomLevel * dpr;   // 拡大率を掛ける
+  const visible = W / pxPerCount;
+  // 表示範囲: 初回と再生中の追従は再生位置を 35% の位置へ。手で動かした直後（followUntil まで）は追従しない
+  const minStart = minCount() - visible * 0.1;
+  if (viewStartSec === null) viewStartSec = countToSec(Math.max(minStart, c - visible * 0.35));
+  let start = secToCount(viewStartSec);
+  if (!T.paused && performance.now() > followUntil && (c < start + visible * 0.05 || c > start + visible * 0.8)) { viewStartSec = countToSec(Math.max(minStart, c - visible * 0.35)); start = secToCount(viewStartSec); }
+  if (start < minStart) { start = minStart; viewStartSec = countToSec(start); }
+  const x0 = (cnt) => (cnt - start) * pxPerCount;
+  // 区間ループ
+  if (loop.a !== null && loop.b !== null) { bctx.fillStyle = "rgba(230,184,92,.12)"; bctx.fillRect(x0(loop.a), 0, x0(loop.b) - x0(loop.a), H); }
+  // 打った拍（地図）を下端の短い線で示す。打っている最中の拍は明るく
+  // 音源の波形（読み込み済みなら。両モードで薄く）
+  if (peaks) {
+    const secAt = (x) => countToSec(start + x / pxPerCount);
+    bctx.strokeStyle = "rgba(220,212,196,.28)"; bctx.lineWidth = 1;
+    const mid = H * 0.62, amp = H * 0.34;
+    bctx.beginPath();
+    for (let x = 0; x < W; x += 2 * dpr) {
+      const i = Math.floor(secAt(x) / peaksStep); if (i < 0 || i >= peaks.length) continue;
+      const [mn, mx] = peaks[i]; bctx.moveTo(x, mid - mx * amp); bctx.lineTo(x, mid - mn * amp);
+    }
+    bctx.stroke();
+  }
+  // 移動の区間（待ち→動き）を配置の手前に薄く敷く
+  sortedFrames().forEach((f, i, arr) => { if (i === 0) return; const s0 = Math.max(arr[i - 1].count, f.count - travelOf(f)); if (f.count - s0 <= 1e-9) return; bctx.fillStyle = "rgba(156,130,63,.22)"; bctx.fillRect(x0(s0), H * 0.55, x0(f.count) - x0(s0), H * 0.45); });
+  let lastRulerLabelRight = -Infinity;
+  if (unit === "time") {
+    // 時間の目盛り: 1秒ごとに線、5秒ごとに太線＋表示
+    const s1 = Math.floor(Math.max(0, countToSec(start))); const s2 = countToSec(start + visible) + 1;
+    const fine = timeZoom >= 160 ? 0.1 : timeZoom >= 80 ? 0.5 : 1;   // 細目盛り
+    for (let sec = Math.max(0, Math.floor(s1)); sec <= s2; sec = Math.round((sec + fine) * 10) / 10) {
+      const k = secToCount(sec); const x = x0(k); const whole = Math.abs(sec - Math.round(sec)) < 1e-9; const major = whole && Math.round(sec) % 5 === 0;
+      bctx.strokeStyle = major ? C.accentDeep : whole ? C.line : C.floor; bctx.lineWidth = (major ? 2 : 1) * dpr;
+      bctx.beginPath(); bctx.moveTo(x, major ? 0 : whole ? H * 0.35 : H * 0.6); bctx.lineTo(x, H); bctx.stroke();
+      if (major) {
+        const text = fmtSec(sec).replace(/\.\d+$/, ""), lx = x + 6 * dpr;
+        bctx.fillStyle = C.text; bctx.font = `${13 * dpr}px system-ui`; bctx.textAlign = "left";
+        const right = lx + bctx.measureText(text).width;
+        if (lx >= lastRulerLabelRight + 8 * dpr) { bctx.fillText(text, lx, 16 * dpr); lastRulerLabelRight = right; }
+      }
+    }
+  } else
+  // 目盛り: 1カウントごとに線、8ごとに太線＋番号、最小単位は薄い線
+  for (let k = Math.floor(start / grid) * grid; k < start + visible + 1; k += grid) {
+    const x = x0(k); const whole = Math.abs(k - Math.round(k)) < 1e-9; const eightStart = whole && ((Math.round(k) - 1) % 8 === 0);
+    bctx.strokeStyle = eightStart ? C.accentDeep : whole ? C.line : C.floor; bctx.lineWidth = (eightStart ? 2 : 1) * dpr;
+    bctx.beginPath(); bctx.moveTo(x, eightStart ? 0 : whole ? H * 0.35 : H * 0.6); bctx.lineTo(x, H); bctx.stroke();
+    if (eightStart) {
+      const text = k < 1 ? "頭より前" : `第${Math.floor((Math.round(k) - 1) / 8) + 1}エイト`, lx = x + 6 * dpr;
+      bctx.fillStyle = C.text; bctx.font = `${13 * dpr}px system-ui`; bctx.textAlign = "left";
+      const right = lx + bctx.measureText(text).width;
+      if (lx >= lastRulerLabelRight + 8 * dpr) { bctx.fillText(text, lx, 16 * dpr); lastRulerLabelRight = right; }
+    }
+    else if (whole && pxPerCount >= 14 * dpr) { bctx.fillStyle = C.dim; bctx.font = `${11 * dpr}px system-ui`; bctx.textAlign = "center"; bctx.fillText(String(((Math.round(k) - 1) % 8) + 1), x + pxPerCount / 2, 16 * dpr); }
+  }
+  // 配置の印（記録済みフレーム）
+  const bandFrames = sortedFrames(), bandGroups = formationGroups();
+  bandFrames.forEach((f, frameIndex) => {
+    const x = x0(f.count); if (x < -10 || x > W + 10) return;
+    bctx.fillStyle = C.accent; bctx.beginPath(); bctx.moveTo(x, H * 0.42); bctx.lineTo(x - 6 * dpr, H * 0.42 + 9 * dpr); bctx.lineTo(x + 6 * dpr, H * 0.42 + 9 * dpr); bctx.closePath(); bctx.fill();
+    const idx = formationIndexOfFrame(f.id);
+    if (idx >= 0) {   // フォーメーションの切れ目は縦の実線＋名前で示す
+      bctx.strokeStyle = C.text; bctx.lineWidth = 2 * dpr;
+      bctx.beginPath(); bctx.moveTo(x, 0); bctx.lineTo(x, H); bctx.stroke();
+      const nextGroup = bandGroups[idx + 1], lx = x + 5 * dpr;
+      const right = Math.min(W, x0(nextGroup ? nextGroup.count : planEnd())) - 5 * dpr;
+      bctx.fillStyle = C.text; bctx.font = `600 ${11 * dpr}px system-ui`; bctx.textAlign = "left";
+      drawFittedTimelineText(bctx, sceneTitleOf(bandGroups[idx], idx), lx, H - 4 * dpr, right - lx);
+    }
+    const label = (unit === "time" ? fmtSec(countToSec(f.count)) + (f.note ? "  " + f.note.slice(0, 10) : "") : (f.note || "").slice(0, 12));
+    if (label) {
+      const nextFrame = bandFrames[frameIndex + 1], lx = x + 8 * dpr;
+      const right = Math.min(W, x0(nextFrame ? nextFrame.count : planEnd())) - 5 * dpr;
+      bctx.fillStyle = C.text; bctx.font = `${11 * dpr}px system-ui`; bctx.textAlign = "left";
+      drawFittedTimelineText(bctx, label, lx, H * 0.42 + 8 * dpr, right - lx);
+    }
+    if (Math.abs(f.count - doc.heroCount) < 1e-9 && pxPerCount >= 24 * dpr) { bctx.fillStyle = C.dim; bctx.font = `${10 * dpr}px system-ui`; bctx.fillText("代表", x - 10 * dpr, H - 6 * dpr); }
+  });
+  // 合わせ直しの点は、上のレーンに鍵マークとして出す。帯には細い縦線だけ残す
+  allAnchors().forEach((a) => {
+    const x = x0(a.count); if (x < -10 || x > W + 10) return;
+    const isSel = Math.abs(a.count - selAnchor) < 1e-6;
+    bctx.strokeStyle = isSel ? C.strong : a.count <= 1 ? C.accent : C.accentDeep;
+    bctx.lineWidth = (isSel ? 2 : 1) * dpr; bctx.setLineDash([3 * dpr, 4 * dpr]);
+    bctx.beginPath(); bctx.moveTo(x, 0); bctx.lineTo(x, H); bctx.stroke(); bctx.setLineDash([]);
+  });
+  // 再生位置（赤。上のレーンから続く1本の線として見える）
+  const xc = x0(c); bctx.strokeStyle = C.playhead; bctx.lineWidth = 2 * dpr; bctx.beginPath(); bctx.moveTo(xc, 0); bctx.lineTo(xc, H); bctx.stroke();
+  band._start = start; band._ppc = pxPerCount; band._W = W;
+}
+/* 鍵マークのレーン。帯と同じ横位置（band._start / band._ppc）を使う */
+function drawLane(c) {
+  const C = canvasTheme();
+  fit(lane);
+  const W = lane.width, H = lane.height; lctx.setTransform(1, 0, 0, 1, 0, 0);
+  lctx.fillStyle = C.panel; lctx.fillRect(0, 0, W, H);
+  lctx.strokeStyle = C.line; lctx.lineWidth = 1; lctx.beginPath(); lctx.moveTo(0, H - 0.5); lctx.lineTo(W, H - 0.5); lctx.stroke();
+  const start = band._start, ppc = band._ppc;
+  lane._marks = [];
+  if (!Number.isFinite(start) || !Number.isFinite(ppc)) return;
+  const x0 = (cnt) => (cnt - start) * ppc;
+  const byCount = new Map(allAnchors().map((a) => [a.count, a]));
+  /* 各まとまりの頭には、まだ決めていなくても「開いた鍵」を並べておく。
+     つかんで動かせばその場で基準点になり、鍵を押せばその位置で固定できる。 */
+  const from = Math.max(1, Math.floor(start) - 1), to = Math.ceil(start + W / ppc) + 1;
+  const seen = new Set();
+  const draw = (cnt, a, nextCount) => {
+    if (seen.has(cnt)) return; seen.add(cnt);
+    const x = x0(cnt); if (x < -80 || x > W + 80) return;
+    const isSel = Math.abs(cnt - selAnchor) < 1e-6;
+    const isStart = cnt <= 1;
+    /* 3種類。丸＝点なし（前後のロックの間を均等割り）／開いた鍵＝点はそのまま・つかんで動かせる／
+       閉じた鍵＝その時刻で固定。開始位置だけは決まるまで赤い丸で催促する */
+    const set = Boolean(a) && !(isStart && !doc.track.firstSet);
+    const locked = set ? Boolean(a.locked) : false;
+    const col = isSel ? C.strong : !set ? (isStart ? C.record : C.dim) : locked ? C.accentDeep : C.accent;
+    const kw = 18 * dpr, kh = Math.min(H - 6 * dpr, 18 * dpr), ky = (H - kh) / 2, kx = x - kw / 2;
+    if (set) {
+      // 鍵。閉＝その時刻で固定、開＝時刻はそのままで、つかんで動かせる
+      lctx.fillStyle = col; lctx.fillRect(kx, ky + kh * 0.42, kw, kh * 0.58);
+      lctx.strokeStyle = col; lctx.lineWidth = 2 * dpr;
+      lctx.beginPath(); lctx.arc(kx + kw / 2 + (locked ? 0 : 3 * dpr), ky + kh * 0.42, kw * 0.26, Math.PI, locked ? 2 * Math.PI : 1.55 * Math.PI); lctx.stroke();
+      lctx.fillStyle = C.floor; lctx.fillRect(kx + kw * 0.42, ky + kh * 0.6, kw * 0.16, kh * 0.22);
+    } else {
+      // まだ決めていない: 丸。押すとその場が頭として決まる
+      lctx.strokeStyle = col; lctx.lineWidth = (isStart ? 2.5 : 1.5) * dpr;
+      lctx.beginPath(); lctx.arc(x, H / 2, (isStart ? 7 : 5) * dpr, 0, Math.PI * 2); lctx.stroke();
+    }
+    let labelRect = null;
+    if (set) {
+      const label = `${isStart ? "開始" : fmtCount(cnt)} ${a.sec.toFixed(3)}s`;
+      lctx.font = `${11 * dpr}px system-ui`; lctx.textAlign = "left";
+      const lx = kx + kw + 4 * dpr;
+      const nextX = Number.isFinite(nextCount) ? x0(nextCount) - 13 * dpr : W;
+      const short = isStart ? "開始" : `第${phraseInfo(cnt).no}`;
+      const shown = pickTimelineText(lctx, [label, short], Math.max(0, nextX - lx));
+      if (shown) {
+        const lw = lctx.measureText(shown).width;
+        if (!locked) { lctx.fillStyle = "rgba(230,184,92,.16)"; lctx.fillRect(lx - 3 * dpr, ky, lw + 6 * dpr, kh); }   // 開いた鍵＝つかんで動かせる
+        lctx.fillStyle = isSel ? C.strong : locked ? C.dim : C.accent;
+        lctx.fillText(shown, lx, ky + kh * 0.78);
+        labelRect = [lx - 4 * dpr, ky, lx + lw + 4 * dpr, ky + kh];
+      }
+    } else if (isStart) {
+      lctx.fillStyle = "#df6433"; lctx.font = `700 ${11 * dpr}px system-ui`; lctx.textAlign = "left";
+      const lx = x + 12 * dpr, nextX = Number.isFinite(nextCount) ? x0(nextCount) - 8 * dpr : W;
+      const shown = pickTimelineText(lctx, ["ここを押して開始位置を決める", "開始位置", "開始"], Math.max(0, nextX - lx));
+      if (shown) lctx.fillText(shown, lx, H * 0.5 + 4 * dpr);
+    }
+    lane._marks.push({ count: cnt, set, locked, isStart, x, keyRect: [kx, ky, kx + kw, ky + kh], labelRect });
+  };
+  const markCounts = new Set();
+  byCount.forEach((a, cnt) => { if (cnt >= from - 8 && cnt <= to + 8) markCounts.add(cnt); });
+  for (let cnt = from; cnt <= to; cnt++) if (cnt >= 1 && phraseInfo(cnt).beat === 1) markCounts.add(cnt);
+  const orderedCounts = [...markCounts].sort((a, b) => a - b);
+  orderedCounts.forEach((cnt, index) => draw(cnt, byCount.get(cnt) || null, orderedCounts[index + 1]));
+  // 再生位置。上端の逆三角形が、この線をつまんで動かせる目印
+  const xc = x0(c);
+  if (xc > -20 && xc < W + 20) {
+    lctx.strokeStyle = "#ef4b34"; lctx.lineWidth = 2 * dpr;
+    lctx.beginPath(); lctx.moveTo(xc, 8 * dpr); lctx.lineTo(xc, H); lctx.stroke();
+    lctx.fillStyle = "#ef4b34";
+    lctx.beginPath(); lctx.moveTo(xc - 7 * dpr, 0); lctx.lineTo(xc + 7 * dpr, 0); lctx.lineTo(xc, 10 * dpr); lctx.closePath(); lctx.fill();
+  }
+  lane._playX = xc;
+}
+/* 右の欄の簡易編集。色と名前だけをその場で変えられる（残りはダイアログ） */
+function renderCastQuick() {
+  const box = $("castQuick"); if (!box) return;
+  const key = doc.cast.map((d) => d.id).join(",") + "|" + castEditable + "|" + castFormEpoch;
+  if (box._key !== key) {
+    box._key = key;
+    const dis = castEditable ? "" : " disabled";
+    box.innerHTML = doc.cast.map((d) => `<span class="quickRow" data-id="${escHtml(d.id)}">`
+      + `<input type="color" data-q="color" value="${escHtml(d.color)}" aria-label="${escHtml(d.name)}の色"${dis}>`
+      + `<input type="text" data-q="name" maxlength="24" value="${escHtml(d.name)}" aria-label="${escHtml(d.name)}の名前"${dis}>`
+      + `</span>`).join("");
+    if (castEditable) [...box.querySelectorAll(".quickRow")].forEach((row) => {
+      const at = () => doc.cast.find((x) => x.id === row.dataset.id) || null;
+      [...row.querySelectorAll("[data-q]")].forEach((inp) => {
+        inp.addEventListener("change", () => {
+          const d = at(); if (!d) return;
+          snapshot(); d[inp.dataset.q] = inp.value;
+          Object.assign(d, normalizeCastMember(d, doc.cast.indexOf(d)));
+          castFormEpoch++; bumpRevision(); persist(); render();
+        });
+      });
+    });
+    return;
+  }
+  [...box.querySelectorAll(".quickRow")].forEach((row) => {
+    const d = doc.cast.find((x) => x.id === row.dataset.id); if (!d) return;
+    const col = row.querySelector('[data-q="color"]'), nm = row.querySelector('[data-q="name"]');
+    if (col && document.activeElement !== col && col.value !== d.color) col.value = d.color;
+    if (nm && document.activeElement !== nm && nm.value !== d.name) nm.value = d.name;
+  });
+}
+/* 見出しの色と名前だけは、作り直さずにその場で書き換える */
+function syncCastSummaries(box) {
+  [...box.querySelectorAll(".castItem")].forEach((el) => {
+    const d = doc.cast.find((x) => x.id === el.dataset.id); if (!d) return;
+    const sw = el.querySelector(".castSwatch"), nm = el.querySelector(".castName");
+    if (sw && sw.dataset.c !== d.color) { sw.dataset.c = d.color; sw.style.background = d.color; }
+    const label = d.name + (d.locked ? "\u3000\ud83d\udd12" : "");
+    if (nm && nm.textContent !== label) nm.textContent = label;
+  });
+}
+/* 演者の登録。舞台スケッチの「キャスト」と同じ項目をここでも編集できる。
+   ★組み込んだときは castEditable が false になり、読むだけになる（編集は舞台スケッチ側） */
+function renderCastEditor() {
+  const box = $("castEdit"); if (!box) return;
+  const addRow = $("castAddRow");
+  const cc = $("castCount"); if (cc) cc.textContent = `${doc.cast.length}人`;
+  if (addRow) addRow.hidden = !castEditable;
+  /* ★入力のたびに作り直すと、開いた欄も入力中のカーソルも消える。
+     作り直すのは「人が増えた・減った・外から入れ替わった」ときだけにする。 */
+  const key = doc.cast.map((d) => d.id).join(",") + "|" + castEditable + "|" + castFormEpoch;
+  if (box._key === key) { syncCastSummaries(box); return; }
+  box._key = key;
+  const opt = (map, cur) => Object.entries(map).map(([k, v]) => `<option value="${k}"${k === cur ? " selected" : ""}>${escHtml(v)}</option>`).join("");
+  const dis = castEditable ? "" : " disabled";
+  box.innerHTML = doc.cast.map((d) => `
+    <details class="castItem" name="castGroup" data-id="${escHtml(d.id)}">
+      <summary><span class="castSwatch" style="background:${escHtml(d.color)}"></span><span class="castName">${escHtml(d.name)}</span></summary>
+      <div class="castBody">
+        <label><span>名前</span><input type="text" data-f="name" maxlength="24" value="${escHtml(d.name)}"${dis}></label>
+        <label><span>色</span><input type="color" data-f="color" value="${escHtml(d.color)}"${dis}></label>
+        <label><span>身長</span><input type="number" data-f="heightCm" min="120" max="210" step="1" value="${d.heightCm}"${dis}><span style="flex:0 0 auto">cm</span></label>
+        <label><span>メモ</span><input type="text" data-f="note" maxlength="200" value="${escHtml(d.note)}"${dis}></label>
+        <label><span>錠</span><input type="checkbox" data-f="locked"${d.locked ? " checked" : ""}${dis} style="width:22px;height:22px"><span style="flex:1 1 auto">掛けると舞台で動かない</span></label>
+        <h3>見た目</h3>
+        <label><span>肌</span><input type="color" data-f="look.skin" value="${escHtml(d.look.skin)}"${dis}></label>
+        <div class="castRow2">
+          <label><span>髪</span><select data-f="look.hair.style"${dis}>${opt(HAIR_STYLES, d.look.hair.style)}</select></label>
+          <label><input type="color" data-f="look.hair.color" value="${escHtml(d.look.hair.color)}" aria-label="髪の色"${dis}></label>
+        </div>
+        <label><span>上</span><select data-f="look.top.kind"${dis}>${opt(TOP_KINDS, d.look.top.kind)}</select></label>
+        <div class="castRow2">
+          <label><span>袖</span><select data-f="look.top.sleeve"${dis}>${opt(SLEEVES, d.look.top.sleeve)}</select></label>
+          <label><input type="color" data-f="look.top.color" value="${escHtml(d.look.top.color)}" aria-label="上の色"${dis}></label>
+        </div>
+        <label><span>下</span><select data-f="look.bottom.kind"${dis}>${opt(BOTTOM_KINDS, d.look.bottom.kind)}</select></label>
+        <div class="castRow2">
+          <label><span>丈</span><select data-f="look.bottom.length"${dis}>${opt(LENGTHS, d.look.bottom.length)}</select></label>
+          <label><input type="color" data-f="look.bottom.color" value="${escHtml(d.look.bottom.color)}" aria-label="下の色"${dis}></label>
+        </div>
+        ${castEditable ? `<div class="row"><button type="button" data-f="del">この演者を外す</button></div>` : ""}
+      </div>
+    </details>`).join("");
+  syncCastSummaries(box);
+  if (!castEditable) return;
+  [...box.querySelectorAll(".castItem")].forEach((el) => {
+    /* ★器（オブジェクト）を掴まず、押されたときに id から引き直す。
+       整えるたびに doc.cast を作り直すと、掴んでいた器は捨てられて書き込みが消える */
+    const at = () => doc.cast.find((x) => x.id === el.dataset.id) || null;
+    [...el.querySelectorAll("[data-f]")].forEach((inp) => {
+      const path = inp.dataset.f;
+      if (path === "del") {
+        inp.onclick = () => {
+          const d = at(); if (!d) return;
+          if (doc.cast.length <= 1) { flash("最後の1人は外せません"); return; }
+          snapshot(); tombstone("cast", d.id);
+          doc.cast = doc.cast.filter((x) => x.id !== d.id);
+          doc.frames.forEach((f) => { delete f.poses[d.id]; });
+          selected.delete(d.id);
+          castFormEpoch++; bumpRevision(); persist(); render(); flash(`${d.name} を外しました`);
+        };
+        return;
+      }
+      inp.addEventListener("change", () => {
+        const d = at(); if (!d) return;
+        snapshot();
+        const keys = path.split(".");
+        let t = d; for (let k = 0; k < keys.length - 1; k++) t = t[keys[k]];
+        const last = keys[keys.length - 1];
+        if (inp.type === "checkbox") t[last] = inp.checked;
+        else if (inp.type === "number") t[last] = Number(inp.value);
+        else t[last] = inp.value;
+        Object.assign(d, normalizeCastMember(d, doc.cast.indexOf(d)));   // 器はそのまま整える
+        bumpRevision(); persist(); render();
+      });
+    });
+  });
+}
+function renderSetup() {
+  const sw = $("stageW"), sd = $("stageD");
+  if (sw && document.activeElement !== sw) sw.value = doc.stage.widthM;
+  if (sd && document.activeElement !== sd) sd.value = doc.stage.depthM;
+}
+/* 向きのポップアップ。選んだ駒の少し右に出す（舞台スケッチと同じく、ホイールでも回る） */
+function renderFacePop() {
+  const pop = $("facePop"); if (!pop) return;
+  const ids = [...selected];
+  if (stageView !== "plan" || ids.length !== 1 || !floor.w) { pop.hidden = true; return; }
+  const id = ids[0]; const c = nowCount();
+  const p = toPx(livePose(id, c));
+  const rect = stage.getBoundingClientRect(), wrap = stage.parentElement.getBoundingClientRect();
+  const r = Math.max(14, Math.min(22, floor.w / 40)) * dpr;
+  const d = doc.cast.find((x) => x.id === id);
+  const gap = 44;                                  // 駒から離して出す（駒と指が隠れないように）
+  const w = pop.offsetWidth || 230, h = pop.offsetHeight || 56;
+  let left = (p.x + r) / dpr + (rect.left - wrap.left) + gap;
+  if (left + w > wrap.width - 8) left = (p.x - r) / dpr + (rect.left - wrap.left) - gap - w;   // 右が狭ければ左へ
+  const top = p.y / dpr + (rect.top - wrap.top) - h / 2;
+  pop.style.left = `${Math.max(4, Math.min(left, wrap.width - w - 4))}px`;
+  pop.style.top = `${Math.max(4, Math.min(top, wrap.height - h - 4))}px`;
+  pop.style.setProperty("--pop", (d && d.color) || "#e6b85c");
+  pop.hidden = false;
+  $("facePopName").textContent = (d && d.name) || "";
+  $("facePopDeg").textContent = `${Math.round(faceOf(livePose(id, c)))}°`;
+}
+/* ---------- 正面図（客席から見た絵） ----------
+   舞台スケッチの作りを持ち込む。要点は3つ。
+   ①尺は縦横で一本（間口が収まる尺と舞台の高さが収まる尺の小さい方）
+   ②奥ほど小さく・高く見える擬似パース（手前と奥の倍率差だけを開く）
+   ③駒の形は実寸比率で持つ（肩幅=身長×0.25）。描画専用の物差しを作らない */
+const FRONT_SPAN = 0.62;              // 奥の間口 ÷ 手前の間口（前後の倍率差＝広角感）
+let frontGeom = null;                 // 当たり判定で使う
+function frontLayout(W, H) {
+  const pad = 26 * dpr;
+  const stageH_M = 3.2;                                     // 見える高さ（m）。奥の壁までの目安
+  const wide = W - pad * 2, tall = H - pad * 2;
+  const pxPerM = Math.min(wide / doc.stage.widthM, tall / stageH_M);
+  const floorY = pad + tall * 0.72;                          // 床の線は下から3割（見上げるぶん上へ）
+  const backY = floorY - tall * 0.26;                        // 奥の床の線
+  const cx = W / 2;
+  return { pad, pxPerM, floorY, backY, cx, wide, tall };
+}
+/* v=0(奥)〜1(手前) の位置を、画面の座標と拡大率へ */
+function frontAt(u, v) {
+  const g = frontGeom;
+  const t = Math.min(1, Math.max(0, v));
+  const span = FRONT_SPAN + (1 - FRONT_SPAN) * t;            // 奥ほど間口が狭い
+  const y = g.backY + (g.floorY - g.backY) * t;
+  const x = g.cx + (u - 0.5) * doc.stage.widthM * g.pxPerM * span;
+  return { x, y, k: span };
+}
+const frontVFromY = (y) => {
+  const g = frontGeom;
+  return Math.min(1.05, Math.max(-0.05, (y - g.backY) / Math.max(1, g.floorY - g.backY)));
+};
+const frontUFromX = (x, v) => {
+  const g = frontGeom;
+  const t = Math.min(1, Math.max(0, v));
+  const span = FRONT_SPAN + (1 - FRONT_SPAN) * t;
+  return 0.5 + (x - g.cx) / (doc.stage.widthM * g.pxPerM * span);
+};
+/* ---------- 人体モデル（舞台スケッチ stage-sketch.js からの移植） ----------
+   骨格を3次元で持ち、向きの角度だけ鉛直軸まわりに回して正射影する。
+   胴は断面（首8段＋胴6段）を積んだ立体の外周、手足は付け根から先へ細くなる鎖。
+   ★移植元では服は塗っていない（look を受け取るが使っていない）。単色のシルエット。
+   ★姿勢は「立つ」だけ。姿勢は舞台スケッチ側の持ち物という切り分け（v24）による。
+   ★描画専用の物差しを作らないこと。太さはすべて身長に対する割合で持つ。 */
+const BASE_JOINTS = {
+  head: [0, 0.935, 0], neck: [0, 0.855, 0],
+  shL: [-0.1075, 0.82, 0], shR: [0.1075, 0.82, 0],
+  elL: [-0.135, 0.63, 0.015], elR: [0.135, 0.63, 0.015],
+  wrL: [-0.145, 0.45, 0.03], wrR: [0.145, 0.45, 0.03],
+  hipL: [-0.055, 0.52, 0], hipR: [0.055, 0.52, 0],
+  knL: [-0.06, 0.28, 0.012], knR: [0.06, 0.28, 0.012],
+  anL: [-0.058, 0.04, 0], anR: [0.058, 0.04, 0],
+  toL: [-0.058, 0.012, 0.075], toR: [0.058, 0.012, 0.075],
+};
+const POSE_STAND = { joints: BASE_JOINTS, wide: [1, 0, 0], bow: 0 };
+const TORSO_RINGS = [
+  { t: 0.00, halfX: 0.112, rz: 0.051 },    // 肩
+  { t: 0.14, halfX: 0.098, rz: 0.060 },    // 肩の下
+  { t: 0.30, halfX: 0.088, rz: 0.058 },    // 胸
+  { t: 0.62, halfX: 0.072, rz: 0.049 },    // くびれ
+  { t: 0.90, halfX: 0.085, rz: 0.062 },    // 腰
+  { t: 1.16, halfX: 0.059, rz: 0.044 },    // 股
+];
+const NECK_RINGS = [
+  { s: 0.05, halfX: 0.108, rz: 0.046 },
+  { s: 0.12, halfX: 0.088, rz: 0.043 },
+  { s: 0.20, halfX: 0.060, rz: 0.038 },
+  { s: 0.28, halfX: 0.038, rz: 0.034 },
+  { s: 0.36, halfX: 0.032, rz: 0.032 },
+  { s: 0.48, halfX: 0.031, rz: 0.032 },
+  { s: 0.60, halfX: 0.031, rz: 0.033 },
+  { s: 0.80, halfX: 0.033, rz: 0.042 },
+];
+const LIMB_TAPER = { leg: [0.052, 0.054, 0.033, 0.036, 0.020], arm: [0.010, 0.030, 0.026, 0.022, 0.0132] };
+const LIMB_MIDS = { leg: [0.45, 0.35], arm: [0.5, 0.35] };
+const LIMBS = [
+  { pts: ["hipL", "knL", "anL"], kind: "leg", tip: ["anL", "toL"] },
+  { pts: ["hipR", "knR", "anR"], kind: "leg", tip: ["anR", "toR"] },
+  { pts: ["shL", "elL", "wrL"], kind: "arm", tip: ["elL", "wrL"] },
+  { pts: ["shR", "elR", "wrR"], kind: "arm", tip: ["elR", "wrR"] },
+];
+const HAND_LEN = 0.062, HAND_R = 0.019, FOOT_R = 0.021, HEEL_BACK = 0.030;
+const norm3 = (v) => { const n = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / n, v[1] / n, v[2] / n]; };
+const cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const lerpPt = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+function limbNodes(pts, kind) {
+  const mids = LIMB_MIDS[kind], out = [pts[0]];
+  for (let i = 0; i < pts.length - 1; i += 1) {
+    out.push(lerpPt(pts[i], pts[i + 1], mids[Math.min(i, mids.length - 1)]));
+    out.push(pts[i + 1]);
+  }
+  return out;
+}
+/* 色を地の暗さへ寄せる。奥の手足を沈ませる（半透明だと重なりが濃くなる） */
+function mixToward(hex, t) {
+  const c = String(hex || "#dcd4c4").replace("#", "");
+  const n = parseInt(c.length === 3 ? c.split("").map((x) => x + x).join("") : c, 16);
+  const r = Math.round(((n >> 16) & 255) * (1 - t) + 13 * t);
+  const g = Math.round(((n >> 8) & 255) * (1 - t) + 12 * t);
+  const b = Math.round((n & 255) * (1 - t) + 11 * t);
+  return `rgb(${r},${g},${b})`;
+}
+/* 節を台形で結び、関節を丸で埋める。★巻き方向を揃えること（逆だと関節に穴があく） */
+function taperedChain(target, pts, radii) {
+  target.beginPath();
+  for (let i = 0; i < pts.length - 1; i += 1) {
+    const a = pts[i], b = pts[i + 1], ra = radii[i], rb = radii[i + 1];
+    const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    const nx = -(b.y - a.y) / len, ny = (b.x - a.x) / len;
+    target.moveTo(a.x + nx * ra, a.y + ny * ra);
+    target.lineTo(a.x - nx * ra, a.y - ny * ra);
+    target.lineTo(b.x - nx * rb, b.y - ny * rb);
+    target.lineTo(b.x + nx * rb, b.y + ny * rb);
+    target.closePath();
+  }
+  pts.forEach((q, i) => { target.moveTo(q.x + radii[i], q.y); target.arc(q.x, q.y, radii[i], 0, Math.PI * 2); });
+  target.fill();
+}
+function smoothClosedPath(target, pts, tension) {
+  const n = pts.length; if (n < 3) return;
+  const k = (tension === undefined ? 0.5 : tension) / 3;
+  target.beginPath(); target.moveTo(pts[0].x, pts[0].y);
+  for (let i = 0; i < n; i += 1) {
+    const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+    target.bezierCurveTo(p1.x + (p2.x - p0.x) * k, p1.y + (p2.y - p0.y) * k,
+      p2.x - (p3.x - p1.x) * k, p2.y - (p3.y - p1.y) * k, p2.x, p2.y);
+  }
+  target.closePath();
+}
+/* 胴の外周。★凸包で取ってはいけない（くびれが埋まって樽になる） */
+function torsoOutline(rings) {
+  const right = [], left = [];
+  rings.forEach((ring, i) => {
+    const prev = rings[Math.max(0, i - 1)].o, next = rings[Math.min(rings.length - 1, i + 1)].o;
+    let ax = next.x - prev.x, ay = next.y - prev.y;
+    const len = Math.hypot(ax, ay) || 1; ax /= len; ay /= len;
+    const nx = -ay, ny = ax;
+    const w = ring.wx * nx + ring.wy * ny, d = ring.dx * nx + ring.dy * ny;
+    const r = Math.hypot(w, d);
+    right.push({ x: ring.o.x + nx * r, y: ring.o.y + ny * r });
+    left.push({ x: ring.o.x - nx * r, y: ring.o.y - ny * r });
+  });
+  return right.concat(left.reverse());
+}
+/* 骨格を組む。originX/originY は足元、ux/uy は身長に対する画素、yaw は向き（ラジアン） */
+function buildRig(originX, originY, ux, uy, yaw, zDrop) {
+  const pose = POSE_STAND, joints = pose.joints;
+  const cos = Math.cos(yaw), sin = Math.sin(yaw);
+  const project = (jx, jy, jz) => {
+    const wz = -jx * sin + jz * cos;
+    return { x: originX + (jx * cos + jz * sin) * ux, y: originY - jy * uy + wz * zDrop, z: wz };
+  };
+  const P = {};
+  Object.keys(joints).forEach((k) => { P[k] = project(joints[k][0], joints[k][1], joints[k][2]); });
+  const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
+  const shMid = mid(joints.shL, joints.shR), hipMid = mid(joints.hipL, joints.hipR);
+  const axis = norm3([hipMid[0] - shMid[0], hipMid[1] - shMid[1], hipMid[2] - shMid[2]]);
+  const w0 = pose.wide;
+  const dot = w0[0] * axis[0] + w0[1] * axis[1] + w0[2] * axis[2];
+  let wide = norm3([w0[0] - axis[0] * dot, w0[1] - axis[1] * dot, w0[2] - axis[2] * dot]);
+  if (!isFinite(wide[0])) wide = [0, 0, 1];
+  const deep = norm3(cross3(axis, wide));
+  const ringAt = (c, ring) => {
+    const at = (m) => project(c[0] + m[0], c[1] + m[1], c[2] + m[2]);
+    const o = at([0, 0, 0]);
+    const w = at([wide[0] * ring.halfX, wide[1] * ring.halfX, wide[2] * ring.halfX]);
+    const d = at([deep[0] * ring.rz, deep[1] * ring.rz, deep[2] * ring.rz]);
+    return { o, wx: w.x - o.x, wy: w.y - o.y, dx: d.x - o.x, dy: d.y - o.y };
+  };
+  const headJ = joints.head;
+  const neckRings = NECK_RINGS.slice().reverse().map((ring) => ringAt([
+    shMid[0] + (headJ[0] - shMid[0]) * ring.s,
+    shMid[1] + (headJ[1] - shMid[1]) * ring.s,
+    shMid[2] + (headJ[2] - shMid[2]) * ring.s,
+  ], ring));
+  const rings = neckRings.concat(TORSO_RINGS.map((ring) => ringAt([
+    shMid[0] + (hipMid[0] - shMid[0]) * ring.t,
+    shMid[1] + (hipMid[1] - shMid[1]) * ring.t,
+    shMid[2] + (hipMid[2] - shMid[2]) * ring.t,
+  ], ring)));
+  return { P, rings, ux, uy };
+}
+/* 骨格から体を塗る。奥にあるものから塗り、奥の手足は色を沈ませる */
+function paintBody(target, rig, color) {
+  const P = rig.P, ux = rig.ux;
+  const parts = LIMBS.map((limb) => ({ kind: "limb", limb, z: limb.pts.reduce((t, k) => t + P[k].z, 0) / limb.pts.length }));
+  parts.push({ kind: "torso", z: (P.shL.z + P.shR.z + P.hipL.z + P.hipR.z) / 4 });
+  parts.push({ kind: "head", z: P.head.z + 0.002 });
+  parts.sort((a, b) => a.z - b.z);
+  parts.forEach((part) => {
+    if (part.kind === "limb") {
+      const far = part.z < -0.02;
+      target.fillStyle = far ? mixToward(color, 0.26) : color;
+      const taper = LIMB_TAPER[part.limb.kind];
+      const nodes = limbNodes(part.limb.pts.map((k) => P[k]), part.limb.kind);
+      taperedChain(target, nodes, taper.map((r) => Math.max(0.8, r * ux)));
+      const from = P[part.limb.tip[0]], to = P[part.limb.tip[1]];
+      const dx = to.x - from.x, dy = to.y - from.y, len = Math.hypot(dx, dy) || 1;
+      if (part.limb.kind === "arm") {
+        const tip = { x: to.x + (dx / len) * HAND_LEN * ux, y: to.y + (dy / len) * HAND_LEN * ux };
+        taperedChain(target, [to, lerpPt(to, tip, 0.55), tip],
+          [Math.max(0.8, HAND_R * ux), Math.max(0.8, HAND_R * 1.05 * ux), Math.max(0.6, HAND_R * 0.62 * ux)]);
+      } else {
+        const heel = { x: from.x - (dx / len) * HEEL_BACK * ux, y: from.y - (dy / len) * HEEL_BACK * ux * 0.35 };
+        taperedChain(target, [heel, from, to],
+          [Math.max(0.8, FOOT_R * 0.9 * ux), Math.max(0.8, FOOT_R * ux), Math.max(0.6, FOOT_R * 0.62 * ux)]);
+      }
+      return;
+    }
+    if (part.kind === "torso") {
+      target.fillStyle = color;
+      smoothClosedPath(target, torsoOutline(rig.rings));
+      target.fill();
+      return;
+    }
+    const nx = P.head.x - P.neck.x, ny = P.head.y - P.neck.y;
+    const len = Math.hypot(nx, ny);
+    const angle = len > 0.4 ? Math.atan2(ny, nx) : -Math.PI / 2;
+    target.fillStyle = color;
+    target.beginPath();
+    target.ellipse(P.head.x, P.head.y, Math.max(1.2, 0.065 * ux), Math.max(1.1, 0.048 * ux), angle, 0, Math.PI * 2);
+    target.fill();
+  });
+}
+function drawFrontStage(c) {
+  const C = canvasTheme();
+  const W = stage.width, H = stage.height;
+  sctx.setTransform(1, 0, 0, 1, 0, 0);
+  sctx.fillStyle = C.frontVoid; sctx.fillRect(0, 0, W, H);
+  frontGeom = frontLayout(W, H);
+  const g = frontGeom;
+  const halfF = doc.stage.widthM * g.pxPerM / 2, halfB = halfF * FRONT_SPAN;
+  // 床（手前が広い台形）
+  sctx.fillStyle = C.floor;
+  sctx.beginPath();
+  sctx.moveTo(g.cx - halfB, g.backY); sctx.lineTo(g.cx + halfB, g.backY);
+  sctx.lineTo(g.cx + halfF, g.floorY); sctx.lineTo(g.cx - halfF, g.floorY); sctx.closePath(); sctx.fill();
+  // 1mごとの枡（奥行き方向と横方向）
+  sctx.strokeStyle = C.line; sctx.lineWidth = 1;
+  for (let m = 1; m < doc.stage.widthM; m++) {
+    const u = m / doc.stage.widthM, a = frontAt(u, 0), b = frontAt(u, 1);
+    sctx.beginPath(); sctx.moveTo(a.x, a.y); sctx.lineTo(b.x, b.y); sctx.stroke();
+  }
+  for (let m = 1; m < doc.stage.depthM; m++) {
+    const v = 1 - m / doc.stage.depthM, a = frontAt(0, v), b = frontAt(1, v);
+    sctx.beginPath(); sctx.moveTo(a.x, a.y); sctx.lineTo(b.x, b.y); sctx.stroke();
+  }
+  // 舞台の立ち上がりと、その下の暗がり（床の位置が読めるように）
+  sctx.fillStyle = C.front; sctx.fillRect(0, g.floorY, W, H - g.floorY);
+  sctx.strokeStyle = C.audience; sctx.lineWidth = 3 * dpr;
+  sctx.beginPath(); sctx.moveTo(g.cx - halfF, g.floorY); sctx.lineTo(g.cx + halfF, g.floorY); sctx.stroke();
+  sctx.fillStyle = C.dim; sctx.font = `${13 * dpr}px system-ui`;
+  sctx.textAlign = "left"; sctx.fillText("下手", 8 * dpr, g.backY - 10 * dpr);
+  sctx.textAlign = "right"; sctx.fillText("上手", W - 8 * dpr, g.backY - 10 * dpr);
+  sctx.textAlign = "center"; sctx.fillText("客席から見た正面", g.cx, H - 10 * dpr);
+  // セットは舞台スケッチから受け取った実寸・高さで描き、ここでは動かせない。
+  doc.sets.map((item) => ({ item, p: setPoseAt(item.id, c) })).filter((x) => x.p)
+    .sort((a, b) => a.p.v - b.p.v).forEach(({ item, p }) => {
+      const a = frontAt(p.u, p.v), dims = item.dims || {};
+      const w = Math.max(8 * dpr, Number(dims.w || dims.dia || .8) * g.pxPerM * a.k);
+      const h = Math.max(8 * dpr, Number(dims.h || dims.dia || .8) * g.pxPerM * a.k);
+      const lift = Number(dims.lift || 0) * g.pxPerM * a.k;
+      sctx.globalAlpha = .7; sctx.fillStyle = item.color || "#8b98a1";
+      sctx.fillRect(a.x - w / 2, a.y - lift - h, w, h);
+      sctx.globalAlpha = 1; sctx.strokeStyle = C.text; sctx.lineWidth = dpr;
+      sctx.strokeRect(a.x - w / 2, a.y - lift - h, w, h);
+      sctx.fillStyle = C.text; sctx.font = `${10 * dpr}px system-ui`; sctx.textAlign = "center";
+      sctx.fillText((item.name || "セット").slice(0, 6), a.x, a.y - lift - h - 4 * dpr);
+    });
+  // 演者。奥の人から描く
+  const list = doc.cast.map((d) => ({ d, p: livePose(d.id, c) })).sort((a, b) => a.p.v - b.p.v);
+  stage._frontHits = [];
+  list.forEach(({ d, p }) => {
+    const a = frontAt(p.u, p.v);
+    const hPx = (d.heightCm / 100) * g.pxPerM * a.k;
+    const sel = selected.has(d.id);
+    // 影
+    sctx.fillStyle = "rgba(0,0,0,.3)";
+    sctx.beginPath(); sctx.ellipse(a.x, a.y, hPx * 0.11, hPx * 0.025, 0, 0, Math.PI * 2); sctx.fill();
+    // 骨格を組んで塗る。zDrop は「奥のものほど画面で少し上に見える」量（1m奥＝何px）
+    const zDrop = ((g.floorY - g.backY) / Math.max(1, doc.stage.depthM)) * (d.heightCm / 100);
+    const rig = buildRig(a.x, a.y, hPx, hPx, (faceOf(p) * Math.PI) / 180, zDrop);
+    paintBody(sctx, rig, d.color);
+    if (sel) {
+      sctx.strokeStyle = C.accent; sctx.lineWidth = 2 * dpr;
+      sctx.strokeRect(a.x - hPx * 0.2, a.y - hPx * 1.06, hPx * 0.4, hPx * 1.1);
+    }
+    sctx.fillStyle = C.text; sctx.font = `${Math.max(9, hPx * 0.1)}px system-ui`; sctx.textAlign = "center";
+    sctx.fillText(d.name.slice(0, 4), a.x, a.y + hPx * 0.12);
+    sctx.globalAlpha = 1;
+    stage._frontHits.push({ id: d.id, x: a.x, y: a.y, h: hPx });
+  });
+  drawMarqueeSelection(C);
+  if (performance.now() >= flashUntil) document.getElementById("live").textContent = live ? "直した分は未記録（「この配置を記録」で確定）" : "";
+}
+/* 場面の段。場面を帯で描き、つかんで動かす／右端で長さを変える */
+function drawSceneLane(c) {
+  const C = canvasTheme();
+  fit(sceneLane);
+  const W = sceneLane.width, H = sceneLane.height; sctx2.setTransform(1, 0, 0, 1, 0, 0);
+  sctx2.fillStyle = C.panel; sctx2.fillRect(0, 0, W, H);
+  sctx2.strokeStyle = C.line; sctx2.lineWidth = 1; sctx2.beginPath(); sctx2.moveTo(0, H - 0.5); sctx2.lineTo(W, H - 0.5); sctx2.stroke();
+  const start = band._start, ppc = band._ppc;
+  sceneLane._bars = [];
+  if (!Number.isFinite(start) || !Number.isFinite(ppc)) return;
+  const x0 = (cnt) => (cnt - start) * ppc;
+  const frames = sortedFrames();
+  const groups = formationGroups();
+  const endCount = planEnd();
+  groups.forEach((g, i) => {
+    const from = g.count, to = groups[i + 1] ? groups[i + 1].count : endCount;
+    const x = x0(from), w = Math.max(6 * dpr, x0(to) - x);
+    if (x > W + 20 || x + w < -20) return;
+    const sel = Math.abs(nowCount() - from) < 0.5;
+    sctx2.fillStyle = g.implicit ? "rgba(156,130,63,.22)" : "rgba(230,184,92,.26)";
+    sctx2.fillRect(x, 3 * dpr, w - 2 * dpr, H - 8 * dpr);
+    // 次のフォーメーションへの移動（転換）。動き始めてから到着までを緑で塗り、始まりに縦線を引く
+    const mv = moveSpanAfter(groups, i, from);
+    let moveX = null, moveFrom = null;
+    if (mv) {
+      const mx = Math.max(x, x0(mv.from)), mw = x0(mv.to) - mx;
+      moveX = mx; moveFrom = Math.max(from, mv.from);
+      if (mw > 0.5) {
+        sctx2.fillStyle = "rgba(143,196,122,.34)";
+        sctx2.fillRect(mx, 3 * dpr, Math.min(mw, x + w - 2 * dpr - mx), H - 8 * dpr);
+        sctx2.strokeStyle = C.move; sctx2.lineWidth = 2 * dpr;
+        sctx2.beginPath(); sctx2.moveTo(mx + 1 * dpr, 3 * dpr); sctx2.lineTo(mx + 1 * dpr, H - 5 * dpr); sctx2.stroke();
+      }
+    }
+    sctx2.strokeStyle = g.implicit ? C.accentDeep : C.accent; sctx2.lineWidth = (sel ? 2 : 1) * dpr;
+    sctx2.strokeRect(x + 0.5 * dpr, 3 * dpr, w - 3 * dpr, H - 8 * dpr);
+    // 右端のつまみ。途中の帯は次の頭を動かし、最後の帯は「終わり」を動かす（色を変える）
+    sctx2.fillStyle = groups[i + 1] ? C.accent : C.accentDeep;
+    sctx2.fillRect(x + w - 5 * dpr, 3 * dpr, 4 * dpr, H - 8 * dpr);
+    sctx2.save(); sctx2.beginPath(); sctx2.rect(x, 0, Math.max(0, w - 6 * dpr), H); sctx2.clip();
+    const label = sceneTitleOf(g, i);
+    sctx2.fillStyle = C.strong; sctx2.font = `700 ${11 * dpr}px system-ui`; sctx2.textAlign = "left";
+    sctx2.fillText(label, x + 7 * dpr, 16 * dpr);
+    // サムネイル: そのフォーメーションの形を小さな平面図で
+    const thumbH = H - 34 * dpr, thumbW = thumbH * (doc.stage.widthM / doc.stage.depthM);
+    if (w > thumbW + 24 * dpr && thumbH > 10 * dpr) {
+      const tx = x + 7 * dpr, ty = 24 * dpr;
+      sctx2.fillStyle = C.floor; sctx2.fillRect(tx, ty, thumbW, thumbH);
+      sctx2.strokeStyle = C.accent; sctx2.lineWidth = 1.5 * dpr;
+      sctx2.beginPath(); sctx2.moveTo(tx, ty + thumbH); sctx2.lineTo(tx + thumbW, ty + thumbH); sctx2.stroke();
+      const head = frames.find((f) => f.id === g.fromFrameId);
+      if (head) doc.cast.forEach((d) => {
+        const pp = head.poses[d.id]; if (!pp) return;
+        const px = tx + Math.min(1, Math.max(0, pp.u)) * thumbW, py = ty + Math.min(1, Math.max(0, pp.v)) * thumbH;
+        sctx2.fillStyle = d.color; sctx2.beginPath(); sctx2.arc(px, py, Math.max(1.5 * dpr, thumbH * 0.075), 0, Math.PI * 2); sctx2.fill();
+      });
+      if (g.note) {
+        sctx2.fillStyle = C.dim; sctx2.font = `${11 * dpr}px system-ui`;
+        const nx = tx + thumbW + 8 * dpr, maxW = Math.max(0, (x + w) - nx - 8 * dpr);
+        const words = String(g.note).split("");
+        let line = "", lineNo = 0;
+        for (const ch of words) {
+          if (sctx2.measureText(line + ch).width > maxW) { sctx2.fillText(line, nx, ty + 12 * dpr + lineNo * 15 * dpr); line = ch; lineNo++; if (lineNo > 4) break; }
+          else line += ch;
+        }
+        if (lineNo <= 4) sctx2.fillText(line, nx, ty + 12 * dpr + lineNo * 15 * dpr);
+      }
+    }
+    sctx2.restore();
+    if (mv && Number.isFinite(moveX)) {   // 緑の文字はサムネイルの上に出す
+      const mw2 = x0(mv.to) - moveX;
+      if (mw2 > 46 * dpr) {
+        sctx2.fillStyle = C.move; sctx2.font = `700 ${10 * dpr}px system-ui`; sctx2.textAlign = "left";
+        sctx2.fillText(`移動 ${mv.counts}`, moveX + 6 * dpr, H - 9 * dpr);
+      }
+    }
+    sceneLane._bars.push({ index: i, seg: g, from, to, x, w, hasNext: Boolean(groups[i + 1]), nextFrameId: groups[i + 1] ? groups[i + 1].fromFrameId : null, isLast: !groups[i + 1],
+      moveX, moveFrom, moveTo: mv ? mv.to : null });
+  });
+}
+/* フォーメーションの中身（頭の配置＋その中の通過点＋区切りの情報）をひとまとまりで扱う */
+function formationBlocks() {
+  const groups = formationGroups(), frames = sortedFrames(), end = planEnd();
+  return groups.map((g, i) => {
+    const from = g.count, to = groups[i + 1] ? groups[i + 1].count : end;
+    return {
+      index: i, group: g, from, to,
+      seg: g.implicit ? null : doc.scenePlan.segments.find((x) => x.fromFrameId === g.fromFrameId) || null,
+      frames: frames.filter((f) => f.count >= from - 1e-9 && f.count < to - 1e-9),
+    };
+  });
+}
+/* 転換詳細。演者ごとに、出発と到着をどれだけ前倒しするかを決める。
+   値はカウントで持ち、秒表示のときだけその場で換算する（曲のテンポが変わっても意味が保たれる） */
+const lagToView = (counts, atCount) => (unit === "time"
+  ? Math.round((countToSec(atCount) - countToSec(atCount - counts)) * 100) / 100
+  : Math.round(counts * 100) / 100);
+const lagFromView = (v, atCount) => (unit === "time"
+  ? Math.round((atCount - secToCount(countToSec(atCount) - v)) * 1000) / 1000
+  : v);
+function renderTransBody(box) {
+  const idx = Number(box.dataset.index);
+  const groups = formationGroups(), next = groups[idx + 1];
+  if (!next) { box.innerHTML = ""; return; }
+  const nf = doc.frames.find((f) => f.id === next.fromFrameId);
+  if (!nf) { box.innerHTML = ""; return; }
+  const step = unit === "time" ? String(timeSnap) : String(grid);
+  const unitName = unit === "time" ? "秒" : "カウント";
+  const key = [idx, unit, timeSnap, grid, doc.cast.map((d) => `${d.id}:${d.name}:${d.color}`).join(","),
+    doc.cast.map((d) => `${leadOf(nf.poses[d.id])}/${earlyOf(nf.poses[d.id])}`).join(","), nf.count, travelOf(nf)].join("|");
+  if (box._key === key) return;
+  box._key = key;
+  box.innerHTML = `<div class="transHead">`
+    + `<span>${escHtml(formationNo(idx + 1))} へ・全体 ${escHtml(String(lagToView(travelOf(nf), nf.count)))}${unitName}前から</span></div>`
+    + `<div class="transHead" style="min-height:0">早めるほど先に動きます（マイナスで遅らせる）・${escHtml(unitName)}</div>`
+    + doc.cast.map((d) => {
+        const pose = nf.poses[d.id];
+        if (!pose) return "";
+        return `<div class="transRow" data-id="${escHtml(d.id)}">`
+          + `<span class="swat" style="background:${escHtml(d.color)}"></span>`
+          + `<span class="who">${escHtml(d.name)}</span>`
+          + `<span class="lab">出発</span><input type="number" data-lag="lead" step="${step}" value="${lagToView(leadOf(pose), nf.count)}" aria-label="${escHtml(d.name)}の出発を早める">`
+          + `<span class="lab">到着</span><input type="number" data-lag="early" step="${step}" value="${lagToView(earlyOf(pose), nf.count)}" aria-label="${escHtml(d.name)}の到着を早める">`
+          + `</div>`;
+      }).join("");
+  [...box.querySelectorAll(".transRow")].forEach((row) => {
+    [...row.querySelectorAll("[data-lag]")].forEach((inp) => {
+      inp.addEventListener("change", () => {
+        const f = doc.frames.find((x) => x.id === next.fromFrameId); if (!f) return;
+        const pose = f.poses[row.dataset.id]; if (!pose) return;
+        snapshot();
+        const v = lagFromView(Number(inp.value) || 0, f.count);
+        pose[inp.dataset.lag] = Math.max(LAG_MIN, Math.min(LAG_MAX, v));
+        bakedKey = ""; bumpRevision(); persist(); render();
+      });
+    });
+  });
+}
+/* 一覧からタイトルを付ける。先頭のフォーメーションは区切りを持たないので、書き込む前に作る */
+function setFormationTitle(index, value) {
+  const groups = formationGroups(), g = groups[index]; if (!g) return false;
+  const title = String(value || "").slice(0, 40);
+  snapshot();
+  let seg = doc.scenePlan.segments.find((x) => x.fromFrameId === g.fromFrameId);
+  if (!seg) {
+    if (!title) { history.pop(); return false; }
+    toggleSceneHead(g.fromFrameId, title);
+    seg = doc.scenePlan.segments.find((x) => x.fromFrameId === g.fromFrameId);
+  }
+  if (!seg) { history.pop(); return false; }
+  seg.title = title;
+  bumpRevision(); persist(); render();
+  flash(title ? `${formationNo(index)} のタイトルを「${title}」にしました` : `${formationNo(index)} のタイトルを消しました`);
+  return true;
+}
+/* いまの再生位置に、そのフォーメーションの形をそのまま複製する */
+function duplicateFormation(index) {
+  const blocks = formationBlocks(), b = blocks[index]; if (!b) return false;
+  const head = doc.frames.find((f) => f.id === b.group.fromFrameId); if (!head) return false;
+  const c = snap(nowCount());
+  if (framesAround(c).exact) { flash("そのカウントには配置があります。再生位置を動かしてから押してください"); return false; }
+  if (c <= sortedFrames()[0].count + 1e-9) { flash("先頭より後ろへ複製してください"); return false; }
+  snapshot();
+  const poses = {};
+  doc.cast.forEach((d) => { const p = head.poses[d.id]; if (p) poses[d.id] = { ...p }; });
+  const nf = { id: "f" + Date.now().toString(36), count: c, poses, note: head.note || "", travel: travelOf(head) };
+  doc.frames.push(nf);
+  toggleSceneHead(nf.id, (b.seg && b.seg.title) || "");
+  const ng = doc.scenePlan.segments.find((x) => x.fromFrameId === nf.id);
+  if (ng && b.seg) ng.note = b.seg.note || "";
+  bakedKey = ""; bumpRevision(); persist(); render();
+  const no = formationIndexOfFrame(nf.id);
+  flash(`${formationNo(index)} を ${fmtCount(c)} に複製しました（${no >= 0 ? formationNo(no) : ""}）`);
+  return true;
+}
+/* 順番の入れ替え。時間の枠（それぞれの長さ）はそのままで、中身だけを入れ替える */
+function reorderFormations(fromIndex, toIndex) {
+  const blocks = formationBlocks();
+  if (fromIndex === toIndex || !blocks[fromIndex] || toIndex < 0 || toIndex >= blocks.length) return false;
+  snapshot();
+  const slots = blocks.map((b) => ({ from: b.from, to: b.to }));
+  const order = blocks.slice();
+  const [moved] = order.splice(fromIndex, 1);
+  order.splice(toIndex, 0, moved);
+  order.forEach((b, k) => {
+    const slot = slots[k], delta = slot.from - b.from;
+    let last = null;
+    b.frames.slice().sort((x, y) => x.count - y.count).forEach((f, j) => {
+      let v = j === 0 ? slot.from : snap(f.count + delta);
+      v = Math.max(slot.from, Math.min(slot.to - grid, v));
+      if (last !== null && v <= last + 1e-9) v = Math.min(slot.to - grid, last + grid);
+      f.count = v; last = v;
+    });
+  });
+  // 2番目以降は必ず区切りを持たせる（持っていないと前のフォーメーションに吸収される）
+  order.forEach((b, k) => {
+    const head = b.frames.slice().sort((x, y) => x.count - y.count)[0]; if (!head) return;
+    if (k > 0 && !isSceneHead(head.id)) toggleSceneHead(head.id, "");
+  });
+  bakedKey = ""; bumpRevision(); persist(); render();
+  flash(`${formationNo(fromIndex)} を ${toIndex + 1} 番目へ移しました（時間の長さはそのまま）`);
+  return true;
+}
+/* 再生位置でフォーメーションを分ける */
+function splitHere() {
+  if (!startReady()) { flash("先に開始位置を決めてください（鍵の段のいちばん左の赤い丸、または上の「ここが1」）"); return; }
+  const c = snap(nowCount());
+  const { exact } = framesAround(c);
+  if (exact) {
+    if (sortedFrames()[0] === exact) { flash("先頭はすでにシーンの頭です"); return; }
+    if (isSceneHead(exact.id)) { flash("ここはすでにシーンの頭です"); return; }
+    snapshot(); toggleSceneHead(exact.id, ""); bumpRevision(); persist(); render();
+    const no = formationIndexOfFrame(exact.id);
+    flash(`${fmtCount(c)} から ${no >= 0 ? formationNo(no) : "新しいシーン"} に分けました`);
+    return;
+  }
+  recordHere();
+  const f = framesAround(c).exact; if (!f) return;
+  const no = formationIndexOfFrame(f.id);
+  flash(`${fmtCount(c)} で分けました（${no >= 0 ? formationNo(no) : ""}）`);
+}
+/* 平面図の上の見出し。いまどのフォーメーションを見ているかを常に出す */
+function renderStageTitle(c) {
+  const el = document.getElementById("fTitle"); if (!el) return;
+  const groups = formationGroups();
+  const i = groups.reduce((acc, g, k) => (c >= g.count - 1e-9 ? k : acc), -1);
+  if (i < 0) { if (el._k !== "") { el._k = ""; el.innerHTML = ""; } return; }
+  const g = groups[i];
+  const mv = moveSpanAfter(groups, i, g.count);
+  const moving = mv && c >= mv.from - 1e-9 && c < mv.to - 1e-9;
+  const next = groups[i + 1];
+  const k = `${i}|${g.title || ""}|${moving ? 1 : 0}|${next ? next.title || "" : ""}`;
+  if (el._k === k) return;
+  el._k = k;
+  el.innerHTML = `<b>${escHtml(formationNo(i))}</b>`
+    + (g.title ? `<span class="sub">${escHtml(g.title)}</span>` : "")
+    + (moving && next ? `<span class="st">→ ${escHtml(formationNo(i + 1))}${next.title ? "　" + escHtml(next.title) : ""} へ移動中</span>` : "");
+}
+/* 左のフォーメーション欄。帯と同じ並びを縦に置き、押すとその頭へ飛ぶ */
+function renderFormationPanel(c) {
+  const list = document.getElementById("fpanelList"); if (!list) return;
+  const frames = sortedFrames(), groups = formationGroups();
+  const end = planEnd();
+  // 平面図は高さ84pxを上限に、舞台の縦横比を保つ（カードが縦に伸びて一覧が読めなくなるのを防ぐ）
+  /* 平面図はカードの高さいっぱいまで。上下の段（44px×2＋すき間2）に合わせる */
+  const planCap = 112, ratio = doc.stage.widthM / doc.stage.depthM;
+  let planH = planCap, planW = planH * ratio;
+  if (planW > 120) { planW = 120; planH = planW / ratio; }
+  const key = JSON.stringify([groups.map((g) => [g.id, g.count, g.title, g.note]), end, frames.map((f) => [f.id, f.count, travelOf(f)]),
+    doc.cast.map((d) => [d.id, d.color]), doc.stage.widthM, doc.stage.depthM, unit]);
+  if (list._key !== key) {
+    list._key = key;
+    list.innerHTML = groups.length ? groups.map((g, i) => {
+      const from = g.count, to = groups[i + 1] ? groups[i + 1].count : end;
+      const head = frames.find((f) => f.id === g.fromFrameId);
+      const dots = head ? doc.cast.map((d) => {
+        const pp = head.poses[d.id]; if (!pp) return "";
+        const u = Math.min(1, Math.max(0, pp.u)) * 100, v = Math.min(1, Math.max(0, pp.v)) * 100;
+        return `<i style="left:${u.toFixed(1)}%;top:${v.toFixed(1)}%;background:${escHtml(d.color)}"></i>`;
+      }).join("") : "";
+      const inner = frames.filter((f) => f.count > from + 1e-9 && f.count < to - 1e-9).length;
+      const mv = moveSpanAfter(groups, i, from);
+      return `<div class="fcard" role="button" tabindex="0" data-count="${from}" data-index="${i}" draggable="true">`
+        + `<span class="fcardPlan" style="width:${planW.toFixed(0)}px;height:${planH.toFixed(0)}px">${dots}</span>`
+        + `<span class="fcardMain">`
+        + `<span class="fcardTop"><b>${formationNo(i)}</b></span>`
+        + `<span class="fcardFoot">`
+        + `<input type="text" class="fcardTitle" data-index="${i}" maxlength="40" value="${escHtml(g.title || "")}" placeholder="タイトル" aria-label="${escHtml(formationNo(i))}のタイトル">`
+        + `<button type="button" class="fdup" data-index="${i}" aria-label="${escHtml(formationNo(i))}を再生位置に複製" title="いまの再生位置に、このシーンの形をそのまま複製します">複製</button>`
+        + `</span>`
+        + `<span class="fcardMeta">${escHtml(fmtCount(from))} 〜 ${escHtml(fmtCount(to))}`
+        + `${inner ? `・途中 ${inner}` : ""}`
+        + `${mv ? `<b class="mvTag">・移動 ${escHtml(mv.counts)}</b>` : ""}`
+        + `${g.note ? "・" + escHtml(g.note) : ""}</span>`
+        + (groups[i + 1] ? `<details class="fcardTrans" name="transGroup" data-index="${i}"><summary>転換詳細</summary><div class="transBody" data-index="${i}"></div></details>` : "")
+        + `</span></div>`;
+    }).join("") : `<div class="small">まだ記録がありません</div>`;
+    [...list.querySelectorAll(".fcard")].forEach((b) => {
+      b.onclick = (ev) => { if (ev.target.closest(".fdup")) return; seekCount(Number(b.dataset.count)); };
+      b.onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); seekCount(Number(b.dataset.count)); } };
+      // 並べ替え。時間の枠はそのままで、中身だけが入れ替わる
+      b.addEventListener("dragstart", (ev) => { dragCard = Number(b.dataset.index); b.classList.add("dragging"); try { ev.dataTransfer.effectAllowed = "move"; ev.dataTransfer.setData("text/plain", b.dataset.index); } catch (_) {} });
+      b.addEventListener("dragend", () => { dragCard = null; [...list.querySelectorAll(".fcard")].forEach((x) => x.classList.remove("dragging", "over")); });
+      b.addEventListener("dragover", (ev) => { if (dragCard === null) return; ev.preventDefault(); try { ev.dataTransfer.dropEffect = "move"; } catch (_) {} b.classList.add("over"); });
+      b.addEventListener("dragleave", () => b.classList.remove("over"));
+      b.addEventListener("drop", (ev) => {
+        ev.preventDefault(); b.classList.remove("over");
+        const to = Number(b.dataset.index);
+        if (dragCard !== null && dragCard !== to) reorderFormations(dragCard, to);
+        dragCard = null;
+      });
+    });
+    [...list.querySelectorAll(".fdup")].forEach((b) => { b.onclick = (ev) => { ev.stopPropagation(); duplicateFormation(Number(b.dataset.index)); }; });
+    // 一覧からタイトルを付けられる。先頭のフォーメーションには区切りを作ってから書き込む
+    [...list.querySelectorAll(".fcardTrans")].forEach((el) => {
+      el.addEventListener("toggle", () => { if (el.open) renderTransBody(el.querySelector(".transBody")); });
+    });
+    [...list.querySelectorAll(".fcardTitle")].forEach((inp) => {
+      inp.onclick = (ev) => ev.stopPropagation();
+      inp.onkeydown = (ev) => { ev.stopPropagation(); if (ev.key === "Enter") inp.blur(); };
+      inp.onchange = () => setFormationTitle(Number(inp.dataset.index), inp.value);
+    });
+  }
+  [...list.querySelectorAll(".fcardTrans[open] .transBody")].forEach(renderTransBody);
+  const cur = groups.reduce((acc, g, i) => (c >= g.count - 1e-9 ? i : acc), -1);
+  const cards = [...list.querySelectorAll(".fcard")];
+  cards.forEach((b, i) => { if (i === cur) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current"); });
+  // いまのフォーメーションが変わったときだけ、見える位置へ送る（毎フレーム動かすと手でスクロールできない）
+  if (list._cur !== cur) { list._cur = cur; if (cards[cur]) cards[cur].scrollIntoView({ block: "nearest" }); }
+  const cnt = document.getElementById("fpanelCount"); if (cnt) cnt.textContent = groups.length ? `${groups.length}個` : "0";
+  const foot = document.getElementById("fpanelEnd");
+  if (foot) {
+    const trimmed = endCountOf() !== null;
+    const want = `<b class="moveKey"></b>緑＝次のシーンへ動いている時間<br>`
+      + (trimmed ? `最後は ${escHtml(fmtCount(end))} で終わり` : `最後は曲の終わりまで（${escHtml(fmtCount(end))}）`)
+      + `<button id="endHere" type="button">再生位置を最後にする</button>`
+      + (trimmed ? `<button id="endReset" type="button">曲の終わりまで戻す</button>` : "");
+    if (foot._want !== want) {
+      foot._want = want; foot.innerHTML = want;
+      const hb = document.getElementById("endHere");
+      if (hb) hb.onclick = () => {
+        const want2 = nowCount();
+        if (want2 <= lastHeadCount() + 1e-9) { flash("最後のシーンの頭より後ろで押してください"); return; }
+        snapshot();
+        if (!setPlanEnd(want2)) { flash("終わりは変わりませんでした"); return; }
+        persist(); render();
+        flash(endCountOf() === null ? "最後のシーンは曲の終わりまで" : `最後のシーンは ${fmtCount(planEnd())} で終わり`);
+      };
+      const rb = document.getElementById("endReset");
+      if (rb) rb.onclick = () => { snapshot(); doc.scenePlan.endCount = null; persist(); render(); flash("最後のシーンを曲の終わりまで戻しました"); };
+    }
+  }
+}
+function drawSide(c) {
+  syncBandButtons();
+  renderSetup();
+  renderSongPick();
+  renderCastQuick();
+  renderCastEditor();
+  renderFacePop();
+  const ft = fmtCount(snap(c)).split("・"); const secT = fmtSec(countToSec(c));
+  if (unit === "time") { document.getElementById("eightText").textContent = ""; document.getElementById("countText").textContent = secT; document.getElementById("secText").textContent = ft[0] + "・" + ft[1]; }
+  else { document.getElementById("eightText").textContent = ft[0]; document.getElementById("countText").textContent = ft[1]; }
+  if (unit !== "time") document.getElementById("secText").textContent = secT;
+  document.getElementById("phoneCount").innerHTML = unit === "time" ? `<b>${secT}</b>` : `${ft[0]}・<b>${ft[1]}</b>`;
+        const tn = document.getElementById("trackName"), fb = document.getElementById("fileBtn");
+  if (tn && fb) {
+    if (!T.src) {
+      const last = doc.track.name;
+      tn.textContent = last ? `音源なし（前回: ${last.slice(0, 18)}）もう一度選んでください` : "音源なし";
+      tn.classList.add("warn"); fb.classList.add("need");
+    } else {
+      tn.textContent = `${(doc.track.name || "音源").slice(0, 26)}${peaks ? "" : "（波形なし）"}`;
+      tn.classList.remove("warn"); fb.classList.remove("need");
+    }
+  }
+  const ml = document.getElementById("meterLabel"); if (ml) { const m = meterAt(c); ml.textContent = `${m.beatsPerBar}/${m.beatUnit}`; }
+  const tp = tempoAround(c).toFixed(1);
+    const rt = document.getElementById("realTempo"); if (rt) { rt.textContent = tp; rt.style.color = Math.abs(Number(tp) - bpm()) > 0.05 ? "var(--accent)" : "var(--text)"; }
+  const { exact } = framesAround(snap(c));
+  const note = document.getElementById("note"); if (document.activeElement !== note) note.value = exact ? exact.note : "";
+  const sh = document.getElementById("sceneHead"), str = document.getElementById("sceneTitleRow"), st = document.getElementById("sceneTitle");
+  if (sh) {
+    sh.disabled = !exact; sh.checked = Boolean(exact && isSceneHead(exact.id));
+    str.hidden = !sh.checked;
+    if (sh.checked) {
+      const g = doc.scenePlan.segments.find((x) => x.fromFrameId === exact.id);
+      const sn = document.getElementById("sceneNote");
+      if (document.activeElement !== st) st.value = g ? g.title : "";
+      if (sn && document.activeElement !== sn) sn.value = g ? (g.note || "") : "";
+    }
+  }
+  renderFormationPanel(c);
+  renderStageTitle(c);
+  const gsCount = formationGroups().length;
+  const sc2 = document.getElementById("sceneCount"); if (sc2) sc2.textContent = gsCount ? `${gsCount}個` : "0";
+  const sl = document.getElementById("sceneList");
+  if (sl) {
+    const gs = formationGroups();
+    sl.innerHTML = gs.length
+      ? gs.map((g, i) => `<div>${escHtml(sceneTitleOf(g, i))}　<span style="color:var(--text-dim)">${escHtml(fmtCount(g.count))}〜</span>${g.note ? `<br><span style="color:var(--text-dim)">${escHtml(String(g.note).slice(0, 30))}</span>` : ""}</div>`).join("")
+      : "まだ区切っていません（1曲まるごとが1つのシーンになります）";
+  }
+  note.disabled = !exact; note.placeholder = exact ? "例: 中央を空ける／Aは下手へ" : "（このカウントに配置を記録すると書けます）";
+  const tr = document.getElementById("travel"); const isFirst = exact && sortedFrames()[0] === exact;
+  tr.disabled = !exact || isFirst;
+  if (document.activeElement !== tr) { if (exact && !isFirst) tr.value = unit === "time" ? (travelOf(exact) * 60 / bpm()).toFixed(2) : String(travelOf(exact)); else tr.value = ""; }
+  tr.step = unit === "time" ? "0.05" : "0.25"; document.getElementById("travelUnit").textContent = tr.disabled ? (isFirst ? "先頭の配置には移動がありません" : "配置を記録すると設定できます") : (unit === "time" ? "秒前から動き始める（それまで前の位置で待つ）" : "カウント前から動き始める（それまで前の位置で待つ）");
+}
+let flashUntil = 0;
+function flash(text) { const el = document.getElementById("live"); el.textContent = text; flashUntil = performance.now() + 2200; setTimeout(render, 2250); }
+
+/* ---------- 入力: 駒のドラッグ ---------- */
+let drag = null, curveDrag = null, marquee = null;
+function pointInMarquee(x, y, box) {
+  return x >= Math.min(box.x0, box.x1) && x <= Math.max(box.x0, box.x1) && y >= Math.min(box.y0, box.y1) && y <= Math.max(box.y0, box.y1);
+}
+function updateMarqueeSelection() {
+  const inside = marquee.front
+    ? (stage._frontHits || []).filter((h) => pointInMarquee(h.x, h.y, marquee)).map((h) => h.id)
+    : doc.cast.filter((d) => { const p = toPx(livePose(d.id, nowCount())); return pointInMarquee(p.x, p.y, marquee); }).map((d) => d.id);
+  selected = new Set([...marquee.base, ...inside]);
+}
+function drawMarqueeSelection(C) {
+  if (!marquee) return;
+  const x = Math.min(marquee.x0, marquee.x1), y = Math.min(marquee.y0, marquee.y1);
+  const w = Math.abs(marquee.x1 - marquee.x0), h = Math.abs(marquee.y1 - marquee.y0);
+  sctx.save(); sctx.globalAlpha = 0.16; sctx.fillStyle = C.accent; sctx.fillRect(x, y, w, h);
+  sctx.globalAlpha = 1; sctx.strokeStyle = C.accent; sctx.lineWidth = 2 * dpr; sctx.setLineDash([6 * dpr, 4 * dpr]); sctx.strokeRect(x, y, w, h); sctx.restore();
+}
+function startMarquee(e, x, y, front = false) {
+  marquee = { x0: x, y0: y, x1: x, y1: y, front, base: e.shiftKey ? new Set(selected) : new Set() };
+  if (!e.shiftKey) selected.clear();
+  try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+  render();
+}
+stage.addEventListener("pointerdown", (e) => {
+  const rect = stage.getBoundingClientRect(); const x = (e.clientX - rect.left) * dpr, y = (e.clientY - rect.top) * dpr;
+  if (stageView === "front") {   // 正面図: 左右で位置、上下で奥行き
+    const hit0 = (stage._frontHits || []).slice().reverse()
+      .find((h) => Math.abs(x - h.x) <= h.h * 0.22 && y <= h.y + h.h * 0.1 && y >= h.y - h.h * 1.1);
+    if (!hit0) { startMarquee(e, x, y, true); return; }
+    if (!selected.has(hit0.id)) { if (!e.shiftKey) selected.clear(); selected.add(hit0.id); }
+    const ids0 = [...selected], c0 = nowCount(); live = live || {};
+    ids0.forEach((id) => { live[id] = { ...livePose(id, c0) }; });
+    drag = { x, y, ids: ids0, start: Object.fromEntries(ids0.map((id) => [id, { ...live[id] }])), front: true };
+    try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+    render(); return;
+  }
+  // 導線の真ん中のつまみが先（駒より手前にある）
+  const hnd = (stage._pathHandles || []).find((h) => (h.x - x) ** 2 + (h.y - y) ** 2 <= (11 * dpr) ** 2);
+  if (hnd) {
+    const { prev: pf, next: nf } = framesAround(nowCount());
+    if (nf && pf.poses[hnd.id] && nf.poses[hnd.id]) {
+      snapshot();
+      curveDrag = { id: hnd.id, a: pf.poses[hnd.id], b: nf.poses[hnd.id] };
+      try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+      return;
+    }
+  }
+  const c = nowCount(); const r = Math.max(14, Math.min(22, floor.w / 40)) * dpr + 10 * dpr;
+  let hit = null; doc.cast.forEach((d) => { const p = toPx(livePose(d.id, c)); if ((p.x - x) ** 2 + (p.y - y) ** 2 <= r * r) hit = d.id; });
+  if (!hit) { startMarquee(e, x, y); return; }
+  if (!selected.has(hit)) { if (!e.shiftKey) selected.clear(); selected.add(hit); }
+  const ids = [...selected]; live = live || {}; ids.forEach((id) => { live[id] = { ...livePose(id, c) }; });
+  drag = { x, y, ids, start: Object.fromEntries(ids.map((id) => [id, { ...live[id] }])) };
+  try { stage.setPointerCapture(e.pointerId); } catch (_) {}; render();
+});
+stage.addEventListener("pointermove", (e) => {
+  if (curveDrag) {
+    const rect = stage.getBoundingClientRect(); const x = (e.clientX - rect.left) * dpr, y = (e.clientY - rect.top) * dpr;
+    setCurveByMid(curveDrag.a, curveDrag.b, fromPxU(x), fromPxV(y));
+    render(); return;
+  }
+  if (marquee) {
+    const rect = stage.getBoundingClientRect(); marquee.x1 = (e.clientX - rect.left) * dpr; marquee.y1 = (e.clientY - rect.top) * dpr;
+    updateMarqueeSelection(); render(); return;
+  }
+  if (!drag) return;
+  const rect = stage.getBoundingClientRect(); const x = (e.clientX - rect.left) * dpr, y = (e.clientY - rect.top) * dpr;
+  if (drag.front) {   // 正面図: 画面の縦が奥行き、横が左右
+    drag.ids.forEach((id) => {
+      const s0 = drag.start[id];
+      const base = frontAt(s0.u, s0.v);
+      const v2 = frontVFromY(base.y + (y - drag.y));
+      const u2 = frontUFromX(base.x + (x - drag.x), v2);
+      live[id] = { ...s0, u: Math.min(1.1, Math.max(-0.1, u2)), v: Math.min(1.05, Math.max(-0.05, v2)) };
+    });
+    render(); return;
+  }
+  const sgn = flipPlan ? -1 : 1;   // 反転中は動かす向きも逆
+  const du = sgn * (x - drag.x) / floor.w, dv = sgn * (y - drag.y) / floor.h;
+  drag.ids.forEach((id) => { live[id] = { u: Math.min(1.1, Math.max(-0.1, drag.start[id].u + du)), v: Math.min(1.05, Math.max(-0.05, drag.start[id].v + dv)) }; });
+  render();
+});
+stage.addEventListener("pointerup", (e) => {
+  if (curveDrag) { const id = curveDrag.id; curveDrag = null; bakedKey = ""; persist(); render(); const d0 = doc.cast.find((d) => d.id === id); flash(`${d0 ? d0.name : ""}の導線を曲げました（ダブルクリックで直線に戻ります）`); return; }
+  if (marquee) { marquee = null; render(); return; }
+  if (drag && drag.ids.length === 1) {
+    const rect = stage.getBoundingClientRect(); const x = (e.clientX - rect.left) * dpr, y = (e.clientY - rect.top) * dpr;
+    const c = nowCount(); const r = Math.max(14, Math.min(22, floor.w / 40)) * dpr + 6 * dpr; const self = drag.ids[0];
+    let target = null; doc.cast.forEach((d) => { if (d.id === self) return; const p = toPx(livePose(d.id, c)); if ((p.x - x) ** 2 + (p.y - y) ** 2 <= r * r) target = d; });
+    if (target) { live[self] = { ...livePose(target.id, c) }; live[target.id] = { ...drag.start[self] }; const me1 = doc.cast.find((d) => d.id === self); flash(`${me1.name} と ${target.name} を入れ替え（未記録）`); }
+  }
+  const moved = Boolean(drag) && drag.ids.some((id) => {
+    const s0 = drag.start[id], now = live && live[id];
+    return now && (Math.abs(now.u - s0.u) > 1e-4 || Math.abs(now.v - s0.v) > 1e-4);
+  });
+  drag = null; render();
+  if (moved) { if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; } autoRecord(); }   // 置いた瞬間に確定する
+});
+stage.addEventListener("pointercancel", () => { drag = null; curveDrag = null; marquee = null; render(); });
+/* つまみをダブルクリック＝まっすぐに戻す */
+stage.addEventListener("dblclick", (e) => {
+  const rect = stage.getBoundingClientRect(); const x = (e.clientX - rect.left) * dpr, y = (e.clientY - rect.top) * dpr;
+  const hnd = (stage._pathHandles || []).find((h) => (h.x - x) ** 2 + (h.y - y) ** 2 <= (11 * dpr) ** 2);
+  if (!hnd) return;
+  const { next: nf } = framesAround(nowCount());
+  const b = nf && nf.poses[hnd.id]; if (!isCurved(b)) return;
+  snapshot(); clearCurve(b); persist(); render();
+  const d0 = doc.cast.find((d) => d.id === hnd.id);
+  flash(`${d0 ? d0.name : ""}の導線をまっすぐに戻しました`);
+});
+
+/* ---------- 帯: タップで飛ぶ／横ドラッグでスクラブ ---------- */
+let scrub = null;
+const bandX = (e) => (e.clientX - band.getBoundingClientRect().left) * dpr;
+const laneX = (e) => (e.clientX - lane.getBoundingClientRect().left) * dpr;
+const laneY = (e) => (e.clientY - lane.getBoundingClientRect().top) * dpr;
+const markHit = (x, y) => (lane._marks || []).find((m) => { if (!m.set) return Math.abs(x - m.x) <= 11 * dpr; const [kx0, ky0, kx1, ky1] = m.keyRect; return x >= kx0 - 2 * dpr && x <= kx1 + 2 * dpr && y >= ky0 - 4 * dpr && y <= ky1 + 4 * dpr; });
+const nameHit = (x) => (lane._marks || []).find((m) => { if (!m.labelRect) return false; const [lx0, , lx1] = m.labelRect; return x >= lx0 && x <= lx1; });
+const scrollBy = (px) => { viewStartSec = countToSec(secToCount(viewStartSec) + px / band._ppc); followUntil = performance.now() + 2500; render(); };
+const onWheel = (e) => {
+  e.preventDefault();
+  if (e.metaKey || e.ctrlKey) {                                  // Premiere / Logic と同じく、修飾キー＋ホイールで拡大縮小
+    const rect = e.currentTarget.getBoundingClientRect();
+    zoomBy(Math.pow(1.0015, -(e.deltaY || 0)), (e.clientX - rect.left) * dpr);
+    return;
+  }
+  const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+  scrollBy((e.deltaMode === 1 ? d * 16 : d) * dpr);
+};
+band.addEventListener("wheel", onWheel, { passive: false });
+lane.addEventListener("wheel", onWheel, { passive: false });
+/* レーン: 鍵をクリックでロック/解除、解除中の点はドラッグで移動、点の近くをクリックで選択 */
+/* 未設定のスロット（各まとまりの頭に並ぶ開いた鍵）を触ると、その場で基準点になる */
+function makeAnchorAt(count) {
+  snapshot(); bakedKey = ""; nextClickCount = null;
+  anchorHere(count, countToSec(count));      // いまの計算上の時刻をそのまま基準にする
+  setAnchorLocked(count, true);              // 押した＝決めた。以後は秒数をつかんで動かす
+  selAnchor = count; persist();
+}
+/* 決めた点を外して丸に戻す。開始位置は時間の地図の起点なので外せない（動かすことはできる） */
+function removeAnchorAt(count) {
+  if (count <= 1) return false;
+  snapshot(); bakedKey = ""; nextClickCount = null;
+  doc.track.anchors = (doc.track.anchors || []).filter((a) => Math.abs(Number(a.count) - count) > 1e-6);
+  persist(); return true;
+}
+/* 開始位置が決まっているか。決まるまで記録には入れない */
+const startReady = () => Boolean(doc.track.firstSet);
+lane.addEventListener("pointerdown", (e) => {
+  const x = laneX(e), y = laneY(e);
+  const key = markHit(x, y);
+  // 上端の三角形＝再生位置。丸や鍵と重なる位置では、少しでも下なら丸や鍵を優先する
+  const onPlayhead = Number.isFinite(lane._playX) && Math.abs(x - lane._playX) <= 10 * dpr && y <= 14 * dpr;
+  if (onPlayhead && !(key && y > 12 * dpr)) {
+    scrub = { x0: x, moved: true, from: "lane" }; try { lane.setPointerCapture(e.pointerId); } catch (_) {}
+    if (!T.paused) T.pause(); seekCount(band._start + x / band._ppc); return;
+  }
+  if (key) {
+    selAnchor = key.count;
+    const nm = key.isStart ? "開始位置" : fmtCount(key.count);
+    // 丸 →（押す）閉じた鍵 →（押す）開いた鍵 →（押す）丸。開始位置だけは丸へ戻らない
+    if (!key.set) {
+      makeAnchorAt(key.count); render();   // 開始位置は setAnchorLocked(1,true) が firstSet も立てる
+      flash(key.isStart ? "開始位置を決めてロックしました" : `${nm} をここが頭として決めました（ロック）`);
+      return;
+    }
+    if (key.locked) {
+      snapshot(); setAnchorLocked(key.count, false); bakedKey = ""; persist(); render();
+      flash(`${nm}のロックを外しました。位置は変わりません（つかんで動かせます）`);
+      return;
+    }
+    if (key.isStart) {
+      snapshot(); setAnchorLocked(key.count, true); bakedKey = ""; persist(); render();
+      flash("開始位置をロックしました（開始位置は丸には戻せません）");
+      return;
+    }
+    removeAnchorAt(key.count); render();
+    flash(`${nm} の点を外しました（丸＝前後のロックの間を均等に割ります）`);
+    return;
+  }
+  const near = nameHit(x);
+  if (near) {
+    selAnchor = near.count;
+    if (near.locked) { render(); flash("ロック中です。鍵を押して開くと動かせます"); return; }
+    const a = anchorAt(near.count); if (!a) { render(); return; }
+    const secPerPx = (60 / bpm()) / band._ppc;
+    flagDrag = { count: near.count, x0: x, sec0: a.sec, secPerPx, from: "lane" };
+    try { lane.setPointerCapture(e.pointerId); } catch (_) {}
+    render();
+  }
+});
+lane.addEventListener("pointermove", (e) => {
+  const x = laneX(e), y = laneY(e);
+  if (scrub && scrub.from === "lane") { seekCount(band._start + x / band._ppc); return; }
+  if (flagDrag) { setAnchorSec(flagDrag.count, flagDrag.sec0 + (x - flagDrag.x0) * flagDrag.secPerPx); nextClickCount = null; bakedKey = ""; render(); return; }
+  const onPlay = Number.isFinite(lane._playX) && Math.abs(x - lane._playX) <= 10 * dpr && y <= 14 * dpr;
+  const onKey = Boolean(markHit(x, y)), onName = Boolean(nameHit(x));
+  const cur = onPlay ? "ew-resize" : onKey ? "pointer" : onName ? "ew-resize" : "";
+  if (lane.style.cursor !== cur) lane.style.cursor = cur;
+});
+lane.addEventListener("pointerup", () => {
+  if (scrub && scrub.from === "lane") { scrub = null; render(); return; }
+  if (!flagDrag) return; const c = flagDrag.count; flagDrag = null; persist(); render();
+  flash(`${c <= 1 ? "開始位置" : fmtCount(c)} を ${anchorAt(c).sec.toFixed(3)}s へ`);
+});
+lane.addEventListener("pointercancel", () => { flagDrag = null; if (scrub && scrub.from === "lane") scrub = null; });
+/* 場面の段: 帯をつかんで場面の頭を動かす／右端をつかんで長さ（次の場面の頭）を動かす */
+const sceneX = (e) => (e.clientX - sceneLane.getBoundingClientRect().left) * dpr;
+let sceneDrag = null;
+sceneLane.addEventListener("wheel", onWheel, { passive: false });
+sceneLane.addEventListener("pointerdown", (e) => {
+  const x = sceneX(e); const bars = sceneLane._bars || [];
+  const mvEdge = bars.find((b) => Number.isFinite(b.moveX) && Math.abs(x - b.moveX) <= 10 * dpr && Math.abs(x - (b.x + b.w)) > 10 * dpr);
+  if (mvEdge) {
+    snapshot();
+    sceneDrag = { kind: "travel", frameId: mvEdge.nextFrameId, x0: x, base: mvEdge.moveFrom, to: mvEdge.moveTo, lower: mvEdge.from };
+    try { sceneLane.setPointerCapture(e.pointerId); } catch (_) {}
+    return;
+  }
+  const edge = bars.find((b) => Math.abs(x - (b.x + b.w)) <= 10 * dpr);
+  if (edge) {
+    snapshot();
+    sceneDrag = edge.hasNext
+      ? { kind: "edge", frameId: edge.nextFrameId, x0: x, base: edge.to }
+      : { kind: "end", x0: x, base: planEnd() };
+    try { sceneLane.setPointerCapture(e.pointerId); } catch (_) {}
+    return;
+  }
+  const bar = bars.find((b) => x >= b.x && x <= b.x + b.w);
+  if (bar) {
+    seekCount(bar.from); render();                      // どの帯を押しても、まずその頭へ飛ぶ
+    if (bar.seg.implicit) { flash("先頭のシーンは頭を動かせません（時点は曲の先頭に固定です）"); return; }
+    snapshot(); sceneDrag = { kind: "move", frameId: bar.seg.fromFrameId, x0: x, base: bar.from };
+    try { sceneLane.setPointerCapture(e.pointerId); } catch (_) {}
+  }
+});
+sceneLane.addEventListener("pointermove", (e) => {
+  const x = sceneX(e);
+  if (!sceneDrag) {
+    const bars = sceneLane._bars || [];
+    const onEdge = bars.some((b) => Math.abs(x - (b.x + b.w)) <= 10 * dpr)
+      || bars.some((b) => Number.isFinite(b.moveX) && Math.abs(x - b.moveX) <= 10 * dpr);
+    const onBar = bars.some((b) => x >= b.x && x <= b.x + b.w && !b.seg.implicit);
+    const cur = onEdge ? "ew-resize" : onBar ? "grab" : "";
+    if (sceneLane.style.cursor !== cur) sceneLane.style.cursor = cur;
+    return;
+  }
+  const delta = (x - sceneDrag.x0) / band._ppc;
+  if (sceneDrag.kind === "end") setPlanEnd(sceneDrag.base + delta);
+  else if (sceneDrag.kind === "travel") setTravelByStart(sceneDrag.frameId, sceneDrag.base + delta, sceneDrag.to, sceneDrag.lower);
+  else moveFrameTo(sceneDrag.frameId, sceneDrag.base + delta);
+  render();
+});
+sceneLane.addEventListener("pointerup", () => {
+  if (!sceneDrag) return;
+  const kind = sceneDrag.kind;
+  const f = kind === "end" ? null : doc.frames.find((x) => x.id === sceneDrag.frameId);
+  sceneDrag = null; persist(); render();
+  if (kind === "travel") {
+    if (f) flash(`移動の長さを ${travelOf(f)}カウント（${fmtCount(f.count - travelOf(f))} から動き始める）`);
+  } else if (kind === "end") {
+    flash(doc.scenePlan.endCount === null
+      ? "最後のシーンは曲の終わりまで"
+      : `最後のシーンの終わりを ${fmtCount(planEnd())} へ（ダブルクリックで曲の終わりまで戻ります）`);
+  } else if (f) {
+    flash(kind === "edge" ? `次のシーンの頭を ${fmtCount(f.count)} へ（長さが変わりました）` : `シーンの頭を ${fmtCount(f.count)} へ`);
+  }
+});
+/* 最後の帯の右端をダブルクリック＝曲の終わりまで戻す */
+sceneLane.addEventListener("dblclick", (e) => {
+  const x = sceneX(e);
+  const last = (sceneLane._bars || []).find((b) => b.isLast && Math.abs(x - (b.x + b.w)) <= 10 * dpr);
+  if (!last || doc.scenePlan.endCount === null) return;
+  snapshot(); doc.scenePlan.endCount = null; persist(); render();
+  flash("最後のシーンを曲の終わりまで戻しました");
+});
+sceneLane.addEventListener("pointercancel", () => { sceneDrag = null; });
+/* 帯: 再生位置の移動だけ */
+const bandLineHit = (x) => { const ppc = band._ppc, st = band._start; if (!Number.isFinite(ppc)) return null; return allAnchors().find((a) => Math.abs(x - (a.count - st) * ppc) <= 7 * dpr) || null; };
+band.addEventListener("pointerdown", (e) => {
+  const x = bandX(e);
+  const a = bandLineHit(x);
+  if (a) {   // 点線をつかんで動かす。動かせるのは鍵が開いているときだけ
+    selAnchor = a.count;
+    if (a.locked) { render(); flash("ロック中です。上の鍵を押して開くと動かせます"); return; }
+    snapshot(); const secPerPx = (60 / bpm()) / band._ppc;
+    flagDrag = { count: a.count, x0: x, sec0: a.sec, secPerPx, from: "band" };
+    try { band.setPointerCapture(e.pointerId); } catch (_) {}
+    render(); return;
+  }
+  scrub = { x0: x, moved: false }; try { band.setPointerCapture(e.pointerId); } catch (_) {}
+});
+band.addEventListener("pointermove", (e) => {
+  const x = bandX(e);
+  if (flagDrag && flagDrag.from === "band") { setAnchorSec(flagDrag.count, flagDrag.sec0 + (x - flagDrag.x0) * flagDrag.secPerPx); nextClickCount = null; bakedKey = ""; render(); return; }
+  if (!scrub) { const hit = Boolean(bandLineHit(x)); if (band.style.cursor !== (hit ? "ew-resize" : "")) band.style.cursor = hit ? "ew-resize" : ""; return; }
+  if (Math.abs(x - scrub.x0) > 6 * dpr) scrub.moved = true;
+  if (scrub.moved) { if (!T.paused) T.pause(); seekCount(band._start + x / band._ppc); }
+});
+band.addEventListener("pointerup", (e) => {
+  if (flagDrag && flagDrag.from === "band") { const c = flagDrag.count; flagDrag = null; persist(); render(); flash(`${c <= 1 ? "開始位置" : fmtCount(c)} を ${anchorAt(c).sec.toFixed(3)}s へ`); return; }
+  if (!scrub) return;
+  if (!scrub.moved) { const x = bandX(e); if (!T.paused) T.pause(); seekCount(band._start + x / band._ppc); live = null; }
+  scrub = null; render();
+});
+band.addEventListener("pointercancel", () => { scrub = null; flagDrag = null; });
+
+/* ---------- 操作 ---------- */
+const $ = (id) => document.getElementById(id);
+function applyVisualTheme(next, announce = false) {
+  visualTheme = next === "sunny" ? "sunny" : "dark";
+  document.documentElement.dataset.theme = visualTheme;
+  const toggle = $("themeToggle");
+  toggle.setAttribute("aria-pressed", String(visualTheme === "sunny"));
+  const nextThemeLabel = visualTheme === "sunny" ? "暗いテーマに切り替え" : "明るい黄色テーマに切り替え";
+  toggle.textContent = visualTheme === "sunny" ? "◐" : "☀";
+  toggle.title = nextThemeLabel;
+  toggle.setAttribute("aria-label", nextThemeLabel);
+  try { localStorage.setItem(THEME_KEY, visualTheme); } catch (_) {}
+  render();
+  if (announce) flash(visualTheme === "sunny" ? "明るい黄色テーマに切り替えました" : "暗いテーマに切り替えました");
+}
+$("themeToggle").onclick = () => applyVisualTheme(visualTheme === "sunny" ? "dark" : "sunny", true);
+function chooseAudioFile() {
+  const input = $("file"); input.value = ""; input.click();
+}
+function loadAudioIntoCurrentSong(file) {
+  sourceBlob = file; originalUrl = URL.createObjectURL(file); bakedBuffer = null; bakedKey = ""; bakedUrl = null;
+  audio.src = originalUrl; T.setBuffer(null); doc.track.name = file.name; doc.track.firstSet = false;
+  stashAudio(); persist(); render();
+  if (sendAudioSyncToStage()) flash(`音源: ${file.name} を舞台スケッチへ接続しています`);
+  else flash(`音源: ${file.name}`);
+  analyzePeaks(file);
+}
+$("fileBtn").onclick = () => chooseAudioFile();
+$("file").onchange = (e) => {
+  const file = e.target.files[0]; e.target.value = "";
+  if (!file) return;
+  loadAudioIntoCurrentSong(file);
+};
+async function analyzePeaks(file) {
+  peaks = null;
+  try {
+    const ctx = ensureCtx(); if (!ctx) return;
+    const buf = await ctx.decodeAudioData(await file.arrayBuffer());
+    originalBuffer = buf; bakedBuffer = null; bakedKey = ""; T.setBuffer(buf); flash(`音源を読み込みました（${buf.duration.toFixed(1)}秒）`);
+    const ch = buf.getChannelData(0); const step = Math.max(1, Math.floor(buf.sampleRate * peaksStep)); const out = [];
+    for (let i = 0; i < ch.length; i += step) { let mn = 1, mx = -1; const end = Math.min(ch.length, i + step); for (let j = i; j < end; j += 4) { const v = ch[j]; if (v < mn) mn = v; if (v > mx) mx = v; } out.push([mn, mx]); }
+    peaks = out;
+    const es = Math.max(1, Math.floor(buf.sampleRate * ENV_STEP)); const e = new Float32Array(Math.ceil(ch.length / es));
+    for (let i = 0, k = 0; i < ch.length; i += es, k++) { let acc = 0; const end = Math.min(ch.length, i + es); for (let j = i; j < end; j += 2) acc += ch[j] * ch[j]; e[k] = Math.sqrt(acc / Math.max(1, (end - i) / 2)); }
+    env = e; stashAudio(); render();
+  } catch (err) { peaks = null; env = null; T.setBuffer(null); flash("この音源は波形を読めませんでした（再生と記録はできます。クリックは少し遅れることがあります）"); }
+}
+function setBpm(v, msg) { snapshot(); doc.track.countBpm = Math.round(Math.min(240, Math.max(40, v)) * 10) / 10; $("bpm").value = doc.track.countBpm; nextClickCount = null; bakedKey = ""; persist(); render(); if (msg) flash(msg); }
+function setRoute(r, msg) {
+  route = r; localStorage.setItem(LS_KEY + ":route", r);
+  nextClickCount = null; clockAnchor = null; render(); if (msg) flash(msg);
+}
+/* 2つの経路でテスト音を鳴らし、どちらが聞こえたかを本人に選んでもらう */
+async function soundTest() {
+  const ctx = ensureCtx();
+  flash("① Web Audio の音（ピー）を鳴らします");
+  if (ctx) { try { if (ctx.state === "suspended") await ctx.resume(); const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = 880; g.gain.value = 0.25; o.connect(g).connect(outGain || ctx.destination); o.start(); o.stop(ctx.currentTime + 0.8); } catch (_) {} }
+  await new Promise((r) => setTimeout(r, 1200));
+  flash("② ブラウザの再生の音（ピー）を鳴らします");
+  const sr = 22050, n = sr * 0.8, ab = new ArrayBuffer(44 + n * 2), dv = new DataView(ab);
+  const W = (o, t) => { for (let i = 0; i < t.length; i++) dv.setUint8(o + i, t.charCodeAt(i)); };
+  W(0, "RIFF"); dv.setUint32(4, 36 + n * 2, true); W(8, "WAVE"); W(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true); W(36, "data"); dv.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) dv.setInt16(44 + i * 2, Math.round(Math.sin(2 * Math.PI * 880 * i / sr) * 8000), true);
+  const el = new Audio(URL.createObjectURL(new Blob([ab], { type: "audio/wav" }))); el.volume = Math.max(0.2, audio.volume);
+  try { await el.play(); } catch (_) {}
+  await new Promise((r) => setTimeout(r, 1200));
+  const ans = window.prompt("どちらのピー音が聞こえましたか？\n1 = ①だけ（Web Audio）\n2 = ②だけ（ブラウザ）\n3 = 両方\n0 = どちらも聞こえない", "3");
+  if (ans === "1") setRoute("webaudio", "①だけ聞こえた → 同じ時計にしました");
+  else if (ans === "2") setRoute("element", "②だけ聞こえた → ブラウザの再生にしました（クリックは遅れ補正で合わせます）");
+  else if (ans === "3") setRoute("webaudio", "両方聞こえた → クリックがずれない「同じ時計」にしました");
+  else if (ans === "0") flash("どちらも聞こえない＝ブラウザの音量かMacの出力先の問題です。タブがミュートされていないか、Macの出力先を確かめてください");
+}
+/* 声でカウント。音声合成は時刻を予約できないので、少し前倒しで呼ぶ（前倒し量は調整可能） */
+let voiceJa = Boolean(localStorage.getItem(LS_KEY + ":voiceJa"));
+const WORDS_EN = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen"];
+const WORDS_JA = ["いち", "に", "さん", "し", "ご", "ろく", "しち", "はち", "きゅう", "じゅう", "じゅういち", "じゅうに", "じゅうさん", "じゅうよん", "じゅうご", "じゅうろく"];
+function pickVoice() {
+  if (!("speechSynthesis" in window)) return null;
+  const want = voiceJa ? "ja" : "en";
+  const list = window.speechSynthesis.getVoices() || [];
+  voiceObj = list.find((v) => v.lang && v.lang.toLowerCase().startsWith(want)) || null;
+  return voiceObj;
+}
+if ("speechSynthesis" in window) window.speechSynthesis.onvoiceschanged = () => pickVoice();
+function speakBeat(n) {
+  if (!("speechSynthesis" in window)) return;
+  const words = voiceJa ? WORDS_JA : WORDS_EN;
+  const text = words[Math.max(0, Math.min(words.length - 1, n - 1))];
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = voiceJa ? 1.5 : 1.7; u.volume = Math.max(0.2, audio.volume); if (voiceObj) { u.voice = voiceObj; u.lang = voiceObj.lang; }
+    window.speechSynthesis.cancel();   // 前の読み上げが残ると遅れる
+    window.speechSynthesis.speak(u);
+  } catch (_) {}
+}
+function setSound(mode, note) {
+  soundMode = ["off", "click", "voice"].includes(mode) ? mode : "off";
+  localStorage.setItem(LS_KEY + ":sound", soundMode);
+  nextClickCount = null;
+  [["sndOff", "off"], ["sndClick", "click"], ["sndVoice", "voice"]].forEach(([id, m]) => { const b = $(id); if (b) b.setAttribute("aria-pressed", String(soundMode === m)); });
+  const b2 = $("soundMode2"); if (b2) { b2.textContent = soundMode === "voice" ? "メトロノーム（声）" : "メトロノーム"; b2.setAttribute("aria-pressed", String(soundMode !== "off")); }
+  if (soundMode === "click") ensureCtx();
+  if (soundMode === "voice") pickVoice();
+  render(); if (note) flash(note);
+}
+$("soundMode2").onclick = async () => { setSound(soundMode === "off" ? "click" : "off", soundMode === "off" ? "メトロノーム オン" : "メトロノーム オフ"); await applyBuffer(); };
+$("vol").oninput = (e) => { const g = ensureCtx() && outGain; const v = Number(e.target.value) / 100; if (g) g.gain.value = v; audio.volume = v; };
+$("toHead").onclick = () => { if (!T.paused) T.pause(); live = null; seekCount(minCount()); flash("曲の先頭へ"); };
+$("autoBpm").onclick = () => {
+  if (!env) { flash("先に音源を選んでください（解析には数秒かかります）"); return; }
+  const r = estimateBpm(env, ENV_STEP);
+  if (!r) { $("autoVal").textContent = "—"; flash("テンポを推定できませんでした。BPM を手で入れてください"); return; }
+  autoResult = r; $("autoVal").textContent = `→ ${r.bpm}`;
+  setBpm(r.bpm, `推定 ${r.bpm}（確からしさ ${r.confidence}${r.alt.length ? "・他の候補 " + r.alt.join(" / ") : ""}）。次に「ここが1」で先頭を決めてください`);
+};
+$("bpm").onchange = (e) => { snapshot(); doc.track.countBpm = Math.min(240, Math.max(40, Number(e.target.value) || 120)); persist(); render(); };
+function markFirstDone() { doc.track.firstSet = true; }
+$("markOne").onclick = () => { snapshot(); bakedKey = ""; markFirstDone(); doc.track.firstCountSec = T.src ? (actx && !T.paused ? mediaNow() : T.currentTime) : 0;  cursorCount = T.src && !T.paused ? secToCount(T.currentTime) : 1; nextClickCount = null; persist(); render(); flash(`第1エイト・1 ＝ ${doc.track.firstCountSec.toFixed(2)}s`); };
+$("undo").onclick = undo; $("redo").onclick = redo;
+/* 舞台スケッチへ渡す形。場面ごとに、先頭の配置＝場面の駒、以降の配置＝場面内の動き。
+   場面に区切っていなければ「1曲＝1場面」。再取込のために、こちら側のIDを添えて渡す。 */
+function buildStageExport() {
+  const frames = sortedFrames();
+  const groups = formationGroups();
+  const scenes = groups.map((g, i) => {
+    const start = g.count;
+    const end = groups[i + 1] ? groups[i + 1].count : planEnd();
+    // 配置を拾う範囲は最後だけ無制限（終わりを縮めても記録は落とさない）
+    const until = groups[i + 1] ? end : Infinity;
+    const inScene = frames.filter((f) => f.count >= start - 1e-9 && f.count < until - 1e-9);
+    const headFrame = inScene[0] || frames.find((f) => f.id === g.fromFrameId);
+    const travel = headFrame ? (Number.isFinite(Number(headFrame.travel)) ? Number(headFrame.travel) : TRAVEL_DEFAULT) : 0;
+    const cueStartCount = Math.max(minCount(), start - travel);
+    return {
+      sourceSegmentId: g.id,
+      sourceFrameId: headFrame ? headFrame.id : null,
+      title: sceneTitleOf(g, i),
+      arrivalCount: start,
+      endCount: Number.isFinite(end) ? end : null,
+      endSec: Number.isFinite(end) ? Math.round(countToSec(end) * 1000) / 1000 : null,
+      cueStartCount,
+      cueSeconds: Math.round((countToSec(start) - countToSec(cueStartCount)) * 1000) / 1000,
+      startSec: Math.round(countToSec(start) * 1000) / 1000,
+      poses: headFrame ? headFrame.poses : {},
+      note: headFrame ? headFrame.note : "",
+      motion: {
+        heroCount: doc.heroCount,
+        keyframes: inScene.slice(1).map((f) => ({
+          sourceFrameId: f.id, trackCount: f.count, sec: Math.round(countToSec(f.count) * 1000) / 1000,
+          travel: Number.isFinite(Number(f.travel)) ? Number(f.travel) : TRAVEL_DEFAULT,
+          poses: f.poses, note: f.note,
+        })),
+      },
+    };
+  });
+  return {
+    format: "stage-sketch-formation", version: 1,
+    source: { formationId: doc.formationId || (doc.formationId = "fm" + Date.now().toString(36)), revision: Date.now() },
+    track: { name: doc.track.name, countBpm: doc.track.countBpm, firstCountSec: doc.track.firstCountSec, anchors: doc.track.anchors, meters: doc.track.meters },
+    stage: doc.stage,
+    cast: doc.cast,
+    scenes,
+  };
+}
+/* カウント表＝稽古場で読まれる紙。「第3エイト・1 で A と B が中央へ」の形に並べる */
+function buildCountSheet() {
+  const frames = sortedFrames();
+  const nameOf = (id) => (doc.cast.find((d) => d.id === id) || {}).name || id;
+  const where = (p) => {
+    if (!p) return "";
+    const lr = p.u < 0.33 ? "下手" : p.u > 0.67 ? "上手" : "中央";
+    const fb = p.v < 0.33 ? "奥" : p.v > 0.67 ? "前" : "";
+    return fb ? `${lr}${fb}` : lr;
+  };
+  const rows = frames.map((f, i) => {
+    const prev = frames[i - 1];
+    const moved = doc.cast.filter((d) => {
+      const a = prev && prev.poses[d.id], b = f.poses[d.id];
+      if (!a || !b) return Boolean(b);
+      return Math.abs(a.u - b.u) > 0.02 || Math.abs(a.v - b.v) > 0.02 || Math.round(faceOf(a)) !== Math.round(faceOf(b));
+    });
+    const segIndex = formationIndexOfFrame(f.id);
+    const seg = segIndex >= 0 ? formationGroups()[segIndex] : null;
+    return {
+      count: f.count, countText: fmtCount(f.count), sec: fmtSec(countToSec(f.count)),
+      sceneTitle: seg ? sceneTitleOf(seg, segIndex) : null,
+      note: f.note || "",
+      moves: moved.map((d) => `${nameOf(d.id)}→${where(f.poses[d.id])}`).join("、"),
+      travel: i === 0 ? null : (Number.isFinite(Number(f.travel)) ? Number(f.travel) : TRAVEL_DEFAULT),
+    };
+  });
+  const esc = (t) => String(t).replace(/[&<>]/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[m]));
+  const head = `${esc(doc.track.name || "曲名なし")}　${doc.track.countBpm} BPM　${meterAt(1).beatsPerBar}/${meterAt(1).beatUnit}　出演 ${doc.cast.length}人`;
+  const body = rows.map((r) => `<tr${r.sceneTitle ? ' class="head"' : ""}>
+    <td class="c">${esc(r.countText)}</td><td class="s">${esc(r.sec)}</td>
+    <td>${r.sceneTitle ? `<b>${esc(r.sceneTitle)}</b><br>` : ""}${esc(r.note)}</td>
+    <td>${esc(r.moves)}</td><td class="s">${r.travel === null ? "" : `${r.travel}カウント前から`}</td></tr>`).join("");
+  return `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>カウント表 ${esc(doc.track.name || "")}</title>
+<style>body{font-family:"Hiragino Sans",system-ui,sans-serif;margin:24px;color:#1f1d1a;background:#fff;font-size:14px;line-height:1.6}
+h1{font-size:18px;margin:0 0 4px}.meta{color:#5c574f;font-size:13px;margin-bottom:14px}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid #d9d4ca;padding:6px 8px;vertical-align:top;text-align:left}
+th{background:#ecebe4;font-size:13px}tr.head td{background:#f3f0e8}
+.c{white-space:nowrap;font-weight:600}.s{white-space:nowrap;color:#5c574f;font-size:13px}
+@media print{body{margin:0}tr{break-inside:avoid}}</style></head><body>
+<h1>カウント表</h1><div class="meta">${esc(head)}　／　作成 ${new Date().toLocaleString("ja-JP")}</div>
+<table><tr><th>カウント</th><th>時間</th><th>シーン・メモ</th><th>動く人</th><th>移動</th></tr>${body}</table>
+</body></html>`;
+}
+$("exportSheet").onclick = () => {
+  const w = window.open("", "_blank");
+  if (!w) { flash("別のタブを開けませんでした（ポップアップの許可が要ります）"); return; }
+  w.document.write(buildCountSheet()); w.document.close();
+  flash("カウント表を別のタブに開きました（印刷できます）");
+};
+$("exportStage").onclick = () => {
+  if (EMBEDDED) {
+    sendAudioSyncToStage(true);
+    flash(`${doc.songs.length}曲のシーンを舞台スケッチへ反映しています`);
+    return;
+  }
+  const data = buildStageExport();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+  a.download = `${(doc.track.name || "formation").replace(/\.[^.]+$/, "")}.stage-formation.json`; a.click();
+  flash(`${data.scenes.length}個のシーンとして書き出しました（配置 ${doc.frames.length}）`);
+};
+/* 保存＝交換パッケージ。舞台スケッチ側の領分（stageSketch）はそのまま持ち帰る */
+function buildPackage() {
+  syncActiveSong();
+  return {
+    format: "formation-exchange", version: 1,
+    sync: { documentId: doc.sync.documentId, revisionId: doc.sync.revisionId, baseRevisionId: doc.sync.baseRevisionId || null, tombstones: doc.sync.tombstones, savedBy: "formation", savedAt: new Date().toISOString() },
+    formation: { track: doc.track, stage: doc.stage, cast: doc.cast, sets: doc.sets, frames: doc.frames, scenePlan: doc.scenePlan, heroCount: doc.heroCount, songs: doc.songs, songId: doc.songId },
+    stageSketch: doc.stageSketch,
+  };
+}
+function embeddedAudios() {
+  return Object.entries(audioBySong).filter(([, a]) => a && a.blob instanceof Blob)
+    .map(([songId, a]) => ({ songId, name: a.name || "", type: a.blob.type || "audio/mpeg",
+      durationSeconds: a.buffer && Number.isFinite(a.buffer.duration) ? a.buffer.duration : null, blob: a.blob }));
+}
+/* 埋め込みでは音源を選んだ時点で親へ渡す。通常の「反映」はシーン編集の確定でもあるため、
+   音源追加だけは親側でモーダルを閉じない軽い同期を使う。 */
+function sendAudioSyncToStage(fullApply = false) {
+  if (!EMBEDDED) return false;
+  bumpRevision(); syncActiveSong(); stashAudio();
+  parent.postMessage({ type: fullApply ? "stage-sketch-formation:apply" : "stage-sketch-formation:sync-audio",
+    package: buildPackage(), audios: embeddedAudios() }, location.origin);
+  return true;
+}
+function applyPackage(pkg) {
+  if (!pkg || pkg.format !== "formation-exchange" || !pkg.formation) return false;
+  const f = pkg.formation;
+  doc.track = f.track || doc.track; doc.stage = f.stage || doc.stage;
+  doc.cast = (Array.isArray(f.cast) ? f.cast : (Array.isArray(f.dancers) ? f.dancers : doc.cast)).map(normalizeCastMember);
+  doc.sets = Array.isArray(f.sets) ? f.sets : [];
+  if (Array.isArray(f.songs) && f.songs.length) {
+    doc.songs = f.songs;
+    doc.songId = f.songs.some((x) => x.id === f.songId) ? f.songId : f.songs[0].id;
+    const cur = doc.songs.find((x) => x.id === doc.songId);
+    doc.track = cur.track; doc.frames = cur.frames; doc.scenePlan = cur.scenePlan; doc.heroCount = cur.heroCount;
+  } else syncActiveSong();
+  castFormEpoch++;
+  doc.frames = Array.isArray(f.frames) ? f.frames : doc.frames;
+  doc.scenePlan = f.scenePlan || { segments: [] };
+  doc.heroCount = Number.isFinite(Number(f.heroCount)) ? Number(f.heroCount) : 1;
+  doc.stageSketch = pkg.stageSketch || { links: {}, segmentExtras: {}, framePoseExtras: {} };
+  doc.sync = { ...(pkg.sync || {}), baseRevisionId: (pkg.sync && pkg.sync.revisionId) || null };
+  if (!doc.sync.documentId) doc.sync.documentId = "doc" + Date.now().toString(36);
+  if (!Array.isArray(doc.sync.tombstones)) doc.sync.tombstones = [];
+  bakedKey = ""; live = null; return true;
+}
+$("save").onclick = () => {
+  bumpRevision();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(buildPackage(), null, 2)], { type: "application/json" }));
+  a.download = `${(doc.track.name || "formation").replace(/\.[^.]+$/, "")}.formation.json`; a.click();
+  persist(); flash("保存しました（舞台スケッチ側の内容もそのまま保持）");
+};
+$("load").onchange = (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  file.text().then((t) => {
+    let data = null; try { data = JSON.parse(t); } catch (_) { flash("読み込めませんでした"); return; }
+    snapshot();
+    if (data && data.format === "formation-exchange") { if (!applyPackage(data)) { flash("形式が違います"); return; } }
+    else { doc = data; if (!Array.isArray(doc.cast)) doc.cast = Array.isArray(doc.dancers) ? doc.dancers : []; delete doc.dancers; doc.cast = doc.cast.map(normalizeCastMember); }   // 古い形式もそのまま受ける
+    castFormEpoch++; persist(); render(); flash("読み込みました");
+  });
+};
+$("play").onclick = async () => {
+  if (!T.src) { flash("音源が入っていません。上の「音源を選ぶ」から選んでください（ページを開き直すと音源は消えます）"); return; }
+  if (T.paused) { try { if (soundMode === "click" && originalBuffer && route !== "webaudio" && bakedKey !== bakeKey()) { await applyBuffer(); } if (soundMode === "click") ensureCtx(); nextClickCount = null; T.currentTime = Math.max(0, countToSec(cursorCount)); await T.play(); $("play").textContent = "❚❚ 停止"; tick(); } catch (err) { flash("再生できません: 画面を一度タップしてから再生してください"); } }
+  else { T.pause(); cursorCount = snap(secToCount(T.currentTime)); $("play").textContent = "▶ 再生"; render(); }
+};
+function ensureCtx() {
+  if (!actx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC({ latencyHint: "interactive" }); }
+  if (actx && !outGain) { outGain = actx.createGain(); outGain.gain.value = 1; outGain.connect(actx.destination); }
+  if (actx && actx.state === "suspended") { try { actx.resume(); } catch (_) {} }
+  return actx;
+}
+function playClick(atCtxTime, head) {
+  if (!actx) return; const o = actx.createOscillator(), g = actx.createGain();
+  o.type = "square"; o.frequency.value = head ? 1760 : 1175; g.gain.setValueAtTime(0.0001, atCtxTime); g.gain.exponentialRampToValueAtTime(head ? 0.5 : 0.3, atCtxTime + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, atCtxTime + (head ? 0.07 : 0.045));
+  o.connect(g).connect(outGain || actx.destination); o.start(atCtxTime); o.stop(atCtxTime + 0.09);
+}
+/* 先読み 0.15 秒: 再生位置から次の整数カウントの時刻を求め、AudioContext の時計へ写して鳴らす */
+/* 再生位置の推定: T.currentTime は端末により 数十〜250ms 刻みでしか更新されないので、
+   AudioContext の時計に錨づけて連続値を作る。実測とのずれが 60ms を超えたら錨を取り直す（シーク・停止も）。 */
+/* ブラウザの再生（audio 要素）は currentTime が数十ms刻みでしか更新されない。
+   そこで「更新された瞬間の値」を基準に張り直し、その間だけ AudioContext の時計で埋める。
+   再生開始直後やシーク直後の不正確な値を基準に焼き付けない（＝再生位置ごとにクリックがずれない）。 */
+let lastRawTime = null;
+function mediaNow() {
+  if (T.usingBuffer) return T.currentTime;   // 同じ時計なので推定不要
+  const raw = T.currentTime;
+  if (!actx) return raw;
+  if (lastRawTime === null || raw !== lastRawTime) {   // 実測が動いた＝その値は信用できる
+    lastRawTime = raw;
+    clockAnchor = { ctx: actx.currentTime, media: raw };
+    return raw;
+  }
+  if (!clockAnchor) { clockAnchor = { ctx: actx.currentTime, media: raw }; return raw; }
+  const elapsed = actx.currentTime - clockAnchor.ctx;
+  return clockAnchor.media + Math.max(0, Math.min(elapsed, 0.4));   // 更新が途切れても暴走させない
+}
+function scheduleClicks() {
+  if (soundMode === "off" || T.paused) return;
+  if (soundMode === "click" && usingBaked) return;   // いま鳴らしている音の中にクリックが入っている
+  if (soundMode === "click" && !actx) return;
+  const now = mediaNow(); const c = secToCount(now);
+  if (nextClickCount === null || nextClickCount < Math.ceil(c - 0.02)) nextClickCount = Math.ceil(c - 0.02);
+  let guard = 0;
+  while (guard++ < 16) {
+    const t = countToSec(nextClickCount) + clickOffsetMs / 1000; if (t - now > 0.2) break;
+    const beatNo = phraseInfo(nextClickCount).beat;
+    if (soundMode === "click") {
+      const at = actx.currentTime + Math.max(0, t - now); playClick(at, beatNo === 1);
+      if (window.__proto && window.__proto.clickLog) window.__proto.clickLog.push({ count: nextClickCount, target: t, mediaNow: now, ctxAt: at });
+    } else if (soundMode === "voice") {
+      const delay = Math.max(0, (t - now) * 1000 - voiceLeadMs); const n = Math.round(beatNo);
+      setTimeout(() => { if (!T.paused && soundMode === "voice") speakBeat(n); }, delay);
+      if (window.__proto && window.__proto.clickLog) window.__proto.clickLog.push({ count: nextClickCount, target: t, mediaNow: now, voiceDelayMs: Math.round(delay) });
+    }
+    nextClickCount += 1;
+  }
+}
+function bufferToWavBlob(buf) {
+  const n = buf.length, ch = Math.min(2, buf.numberOfChannels), sr = buf.sampleRate;
+  const ab = new ArrayBuffer(44 + n * ch * 2), v = new DataView(ab);
+  const W = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  W(0, "RIFF"); v.setUint32(4, 36 + n * ch * 2, true); W(8, "WAVE"); W(12, "fmt ");
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, ch, true);
+  v.setUint32(24, sr, true); v.setUint32(28, sr * ch * 2, true); v.setUint16(32, ch * 2, true); v.setUint16(34, 16, true);
+  W(36, "data"); v.setUint32(40, n * ch * 2, true);
+  const data = []; for (let c = 0; c < ch; c++) data.push(buf.getChannelData(c));
+  let o = 44;
+  for (let i = 0; i < n; i++) for (let c = 0; c < ch; c++) { const x = Math.max(-1, Math.min(1, data[c][i])); v.setInt16(o, x < 0 ? x * 0x8000 : x * 0x7FFF, true); o += 2; }
+  return new Blob([ab], { type: "audio/wav" });
+}
+function bakeKey() { return JSON.stringify([doc.track.countBpm, doc.track.firstCountSec, doc.track.anchors, doc.track.phrases, clickOffsetMs]); }
+async function ensureBaked() {
+  if (!originalBuffer) return null;
+  const key = bakeKey();
+  if (bakedBuffer && bakedKey === key) return bakedBuffer;
+  if (baking) return null;
+  baking = true; flash("メトロノームを曲へ焼き込んでいます…");
+  try {
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if (!OAC) return null;
+    const oac = new OAC(originalBuffer.numberOfChannels, originalBuffer.length, originalBuffer.sampleRate);
+    const src = oac.createBufferSource(); src.buffer = originalBuffer; src.connect(oac.destination); src.start(0);
+    const dur = originalBuffer.duration;
+    let c = Math.ceil(secToCount(0) - 1e-6), guard = 0;
+    while (guard++ < 20000) {
+      const t = countToSec(c) + clickOffsetMs / 1000;
+      if (t > dur) break;
+      if (t >= 0) {
+        const head = phraseInfo(c).beat === 1;
+        const o = oac.createOscillator(), g = oac.createGain();
+        o.type = "square"; o.frequency.value = head ? 1760 : 1175;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(head ? 0.5 : 0.3, t + 0.002);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + (head ? 0.07 : 0.045));
+        o.connect(g).connect(oac.destination); o.start(t); o.stop(t + 0.09);
+      }
+      c += 1;
+    }
+    bakedBuffer = await oac.startRendering(); bakedKey = key;
+    if (bakedUrl) { try { URL.revokeObjectURL(bakedUrl); } catch (_) {} bakedUrl = null; }
+    return bakedBuffer;
+  } catch (err) { return null; } finally { baking = false; }
+}
+/* 再生する音そのものを差し替える（メトロノーム入り／曲だけ）。再生位置は保ち、経路は変えない。
+   焼き込んだ音は WAV にしてブラウザの再生でも鳴らせるので、どの環境でもクリックがずれない。 */
+async function applyBuffer() {
+  if (!originalBuffer) return false;
+  const pos = T.currentTime, wasPlaying = !T.paused;
+  if (wasPlaying) T.pause();
+  if (soundMode === "click" && route !== "webaudio") {
+    // ブラウザの再生は曲とクリックで時計が別なので、クリックを曲へ焼き込んでから渡す
+    const baked = await ensureBaked(); if (!baked) return false;
+    if (!bakedUrl) bakedUrl = URL.createObjectURL(bufferToWavBlob(baked));
+    audio.src = bakedUrl; T.setBuffer(baked); usingBaked = true;
+  } else {
+    // 「同じ時計」では曲もクリックも同じ AudioContext 上で鳴らす（Logic 等と同じ考え方）
+    if (originalUrl) audio.src = originalUrl;
+    T.setBuffer(originalBuffer); usingBaked = false;
+  }
+  T.currentTime = pos;
+  if (wasPlaying) await T.play();
+  render();
+  return true;
+}
+function pulseCount() {
+  const el = document.getElementById("countText"); if (T.paused) { el.classList.remove("pulse", "head"); lastPulseCount = null; return; }
+  const c = secToCount(mediaNow()); const whole = Math.floor(c + 1e-6); const frac = c - whole;
+  if (frac < 0.18) { if (lastPulseCount !== whole) { el.classList.add("pulse"); el.classList.toggle("head", phraseInfo(whole).beat === 1); lastPulseCount = whole; } }
+  else el.classList.remove("pulse", "head");
+}
+let clickTimer = null;
+function startClickTimer() { if (clickTimer) return; clickTimer = setInterval(scheduleClicks, 25); }   // 描画と独立（非表示でも止まらない）
+function stopClickTimer() { if (clickTimer) { clearInterval(clickTimer); clickTimer = null; } }
+T.on("play", startClickTimer); T.on("pause", stopClickTimer); T.on("ended", stopClickTimer);
+function tick() { if (T.paused) return; pulseCount(); if (loop.on && loop.a !== null && loop.b !== null && secToCount(T.currentTime) >= loop.b) { T.currentTime = countToSec(loop.a); } render(); requestAnimationFrame(tick); }
+T.on("ended", () => { $("play").textContent = "▶ 再生"; cursorCount = snap(secToCount(T.duration || 0)); render(); });
+$("prev").onclick = () => { const c = snap(nowCount()); const fs = sortedFrames().filter((f) => f.count < c - 1e-9); if (!T.paused) T.pause(); live = null; seekCount(fs.length ? fs[fs.length - 1].count : minCount()); };
+$("next").onclick = () => { const c = snap(nowCount()); const f = sortedFrames().find((x) => x.count > c + 1e-9); if (!T.paused) T.pause(), $("play").textContent = "▶ 再生"; live = null; if (f) seekCount(f.count); else flash("次の配置はまだありません"); };
+$("loopA").onclick = () => { loop.a = snap(nowCount()); if (loop.b !== null && loop.b <= loop.a) loop.b = null; render(); };
+$("loopB").onclick = () => { loop.b = snap(nowCount()); if (loop.a !== null && loop.b <= loop.a) loop.a = null; render(); };
+$("loopOn").onclick = () => { loop.on = !loop.on; $("loopOn").setAttribute("aria-pressed", String(loop.on)); render(); };
+$("grid").onclick = () => {
+  if (unit === "time") { timeSnap = timeSnap === 1 ? 0.5 : timeSnap === 0.5 ? 0.1 : 1; }
+  else { grid = grid === 1 ? 0.5 : grid === 0.5 ? 0.25 : 1; }
+  render();
+};
+/* 拡大縮小。ポインタの位置（または画面中央）のカウントを動かさずに倍率だけ変える */
+function zoomBy(factor, atX) {
+  const W = band.width || 1, x = Number.isFinite(atX) ? atX : W / 2;
+  const keep = band._start + x / band._ppc;                     // この位置のカウントを保つ
+  const next = Math.min(12, Math.max(0.15, zoomLevel * factor));
+  if (Math.abs(next - zoomLevel) < 1e-6) return;
+  zoomLevel = next; localStorage.setItem(LS_KEY + ":zoom", String(zoomLevel));
+  const ppc = (unit === "time" ? timeZoom * 60 / bpm() : 44) * zoomLevel * dpr;
+  viewStartSec = countToSec(keep - x / ppc);
+  followUntil = performance.now() + 2500;
+  render();
+}
+/* ---------- 曲の切り替え ----------
+   音源そのものは保存できない（この端末で選んだファイル）ので、
+   開いている間だけ曲ごとに覚えておき、戻ってきたら選び直さずに済むようにする */
+const audioBySong = {};
+function stashAudio() {
+  audioBySong[doc.songId] = { url: originalUrl, blob: sourceBlob, buffer: originalBuffer, peaks, env, name: doc.track.name || "" };
+}
+function restoreAudio(id) {
+  const a = audioBySong[id];
+  bakedBuffer = null; bakedKey = ""; bakedUrl = null; usingBaked = false;
+  originalBuffer = a ? a.buffer : null;
+  originalUrl = a ? a.url : null;
+  sourceBlob = a ? a.blob : null;
+  peaks = a ? a.peaks : null;
+  env = a ? a.env : null;
+  T.setBuffer(originalBuffer || null);
+  if (originalUrl) audio.src = originalUrl; else { audio.removeAttribute("src"); audio.load(); }
+}
+function switchSong(id) {
+  if (id === doc.songId) return false;
+  const next = doc.songs.find((x) => x.id === id); if (!next) return false;
+  if (!T.paused) T.pause();
+  syncActiveSong(); stashAudio();
+  doc.songId = id;
+  doc.track = next.track; doc.frames = next.frames; doc.scenePlan = next.scenePlan; doc.heroCount = next.heroCount;
+  restoreAudio(id);
+  if (sourceBlob && !originalBuffer) analyzePeaks(sourceBlob);
+  // 表示と再生の状態は曲ごとに作り直す
+  live = null; selected.clear(); selAnchor = 1; cursorCount = 1;
+  viewStartSec = null; loop = { a: null, b: null, on: false };
+  nextClickCount = null; clockAnchor = null; lastRawTime = null;
+  castFormEpoch++; [...document.querySelectorAll(".transBody")].forEach((b) => { b._key = ""; });
+  persist(); render();
+  return true;
+}
+function renderSongPick() {
+  const sel = $("songPick"); if (!sel) return;
+  const key = doc.songs.map((sg, i) => `${sg.id}:${songLabel(sg, i)}`).join("|") + "|" + doc.songId;
+  if (sel._key !== key) {
+    sel._key = key;
+    sel.innerHTML = doc.songs.map((sg, i) => `<option value="${escHtml(sg.id)}"${sg.id === doc.songId ? " selected" : ""}>${escHtml(songLabel(sg, i))}</option>`).join("");
+  } else if (sel.value !== doc.songId) sel.value = doc.songId;
+  const del = $("songDel"); if (del) del.disabled = doc.songs.length <= 1;
+}
+/* ---------- 欄の横幅。境目をつかんで変えられる（覚えておく） ---------- */
+const PANEL_MIN = 200, PANEL_MAX = 620, STAGE_MIN = 320, GUTTER = 48;   // 溝24px×2
+const mainEl = document.querySelector(".main");
+let panelW = {
+  left: Number(localStorage.getItem(LS_KEY + ":wL")) || 360,
+  right: Number(localStorage.getItem(LS_KEY + ":wR")) || 300,
+};
+function applyPanelWidths() {
+  if (!mainEl) return;
+  const total = mainEl.clientWidth || window.innerWidth;
+  const cap = Math.max(PANEL_MIN * 2, total - STAGE_MIN - GUTTER);
+  const clamp1 = (v) => Math.round(Math.max(PANEL_MIN, Math.min(PANEL_MAX, v)));
+  let L = clamp1(panelW.left), R = clamp1(panelW.right);
+  if (L + R > cap) {                                  // 舞台がつぶれないように、両方から同じ割合で引く
+    const room = Math.max(0, cap - PANEL_MIN * 2);
+    const extra = (L - PANEL_MIN) + (R - PANEL_MIN);
+    const k = extra > 0 ? room / extra : 0;
+    L = Math.round(PANEL_MIN + (L - PANEL_MIN) * k);
+    R = Math.round(PANEL_MIN + (R - PANEL_MIN) * k);
+  }
+  /* ★縮めた結果を panelW へ書き戻さない。書き戻すと、片方を元に戻したときに
+     もう片方が縮んだままになる。持つのは「望んだ幅」、画面に出すのは「収まる幅」 */
+  mainEl.style.setProperty("--leftW", L + "px");
+  mainEl.style.setProperty("--rightW", R + "px");
+}
+function savePanelWidths() {
+  localStorage.setItem(LS_KEY + ":wL", String(panelW.left));
+  localStorage.setItem(LS_KEY + ":wR", String(panelW.right));
+}
+function setupSplit(el, side) {
+  if (!el) return;
+  let start = null;
+  const shownW = () => {
+    const t = document.querySelector(side === "left" ? ".fpanel" : ".side");
+    return t ? t.getBoundingClientRect().width : (side === "left" ? panelW.left : panelW.right);
+  };
+  el.addEventListener("pointerdown", (e) => {
+    start = { x: e.clientX, w: shownW() };   // いま出ている幅から動かす（望んだ幅とずれていても跳ねない）
+    el.classList.add("active");
+    try { el.setPointerCapture(e.pointerId); } catch (_) {}
+    e.preventDefault();
+  });
+  el.addEventListener("pointermove", (e) => {
+    if (!start) return;
+    const d = e.clientX - start.x;
+    const v = side === "left" ? start.w + d : start.w - d;   // 右の欄は逆向き
+    if (side === "left") panelW.left = v; else panelW.right = v;
+    applyPanelWidths(); render();
+  });
+  const end = () => { if (!start) return; start = null; el.classList.remove("active"); savePanelWidths(); render(); };
+  el.addEventListener("pointerup", end);
+  el.addEventListener("pointercancel", end);
+  el.addEventListener("keydown", (e) => {
+    const step = e.shiftKey ? 40 : 10;
+    let d = 0;
+    if (e.key === "ArrowLeft") d = -step; else if (e.key === "ArrowRight") d = step; else return;
+    e.preventDefault(); e.stopPropagation();
+    if (side === "left") panelW.left += d; else panelW.right -= d;
+    applyPanelWidths(); savePanelWidths(); render();
+  });
+  el.addEventListener("dblclick", () => {
+    if (side === "left") panelW.left = 360; else panelW.right = 300;
+    applyPanelWidths(); savePanelWidths(); render();
+    flash("欄の幅を元に戻しました");
+  });
+}
+applyPanelWidths();
+setupSplit($("splitL"), "left");
+setupSplit($("splitR"), "right");
+window.addEventListener("resize", () => { applyPanelWidths(); render(); });
+/* 右の欄の開け閉めを覚えておく */
+[...document.querySelectorAll(".side > .sec")].forEach((el) => {
+  const k = LS_KEY + ":sec:" + el.dataset.sec;
+  const v = localStorage.getItem(k);
+  if (v === "0") el.open = false; else if (v === "1") el.open = true;
+  el.addEventListener("toggle", () => localStorage.setItem(k, el.open ? "1" : "0"));
+});
+function setStageView(v) {
+  stageView = v === "front" ? "front" : "plan";
+  localStorage.setItem(LS_KEY + ":view", stageView);
+  $("viewPlan").setAttribute("aria-pressed", String(stageView === "plan"));
+  $("viewFront").setAttribute("aria-pressed", String(stageView === "front"));
+  $("flipPlan").disabled = stageView !== "plan";
+  render();
+}
+$("viewPlan").onclick = () => setStageView("plan");
+$("viewFront").onclick = () => setStageView("front");
+$("flipPlan").onclick = () => {
+  flipPlan = !flipPlan; localStorage.setItem(LS_KEY + ":flip", flipPlan ? "1" : "0");
+  $("flipPlan").setAttribute("aria-pressed", String(flipPlan));
+  render();
+  flash(flipPlan ? "平面図を180度回しました（演者から見た向き。記録の中身は変わりません）" : "平面図を元の向きに戻しました");
+};
+$("songPick").onchange = (e) => {
+  const sg = doc.songs.find((x) => x.id === e.target.value);
+  if (switchSong(e.target.value)) flash(`${songLabel(sg, doc.songs.indexOf(sg))} を開きました${audioBySong[sg.id] && audioBySong[sg.id].buffer ? "" : "（「音源を追加」から音源を入れてください）"}`);
+};
+function setEmbeddedSectionPicker(sections, selectedId) {
+  const wrap = $("sectionPicker"), pick = $("sectionPick");
+  if (!EMBEDDED || !wrap || !pick) return;
+  const list = Array.isArray(sections) ? sections.filter((section) => section && typeof section.id === "string") : [];
+  pick.innerHTML = list.map((section) => `<option value="${escHtml(section.id)}">${escHtml(`${"　".repeat(Math.max(0, Math.min(4, Number(section.depth) || 0)))}${section.title || "無題のセクション"}`)}</option>`).join("");
+  if (list.some((section) => section.id === selectedId)) pick.value = selectedId;
+  pick.disabled = list.length < 2;
+  wrap.hidden = false;
+}
+$("sectionPick").onchange = (e) => {
+  if (!EMBEDDED || !e.target.value) return;
+  bumpRevision(); syncActiveSong(); stashAudio();
+  parent.postMessage({ type: "stage-sketch-formation:select-section", sectionId: e.target.value,
+    package: buildPackage(), audios: embeddedAudios() }, location.origin);
+  flash("セクションを切り替えています");
+};
+$("songDel").onclick = () => {
+  if (doc.songs.length <= 1) { flash("最後の1曲は消せません"); return; }
+  const i = doc.songs.findIndex((x) => x.id === doc.songId);
+  const name = songLabel(doc.songs[i], i);
+  snapshot();
+  delete audioBySong[doc.songId];
+  doc.songs.splice(i, 1);
+  const next = doc.songs[Math.min(i, doc.songs.length - 1)];
+  doc.songId = "";
+  doc.track = next.track; doc.frames = next.frames; doc.scenePlan = next.scenePlan; doc.heroCount = next.heroCount;
+  doc.songId = next.id;
+  restoreAudio(next.id);
+  live = null; selected.clear(); selAnchor = 1; cursorCount = 1; viewStartSec = null;
+  loop = { a: null, b: null, on: false }; nextClickCount = null; clockAnchor = null;
+  persist(); render(); flash(`${name} を消しました`);
+};
+$("paths").onclick = () => {
+  showPaths = !showPaths; localStorage.setItem(LS_KEY + ":paths", showPaths ? "1" : "0");
+  render(); flash(showPaths ? "導線を出しました（線の真ん中をつかむと曲がります）" : "導線を隠しました");
+};
+$("zoomIn").onclick = () => zoomBy(1.3);
+$("zoomOut").onclick = () => zoomBy(1 / 1.3);
+function syncBandButtons() {
+  const pb = $("paths"); if (pb) pb.setAttribute("aria-pressed", showPaths ? "true" : "false");
+  const mo = $("markOne"); if (mo) { mo.classList.toggle("need", !startReady()); mo.title = startReady() ? "いま流れている位置を第1カウント（1）にする" : "まず開始位置を決めてください。いま流れている位置が第1カウントになります"; }
+  const ub = $("undo"), rb = $("redo");
+  if (ub) { ub.disabled = !history.length; ub.title = history.length ? `元に戻す（⌘Z・あと${history.length}回）` : "戻せる操作はありません"; }
+  if (rb) { rb.disabled = !future.length; rb.title = future.length ? "やり直す（⌘⇧Z）" : "やり直せる操作はありません"; }
+  $("grid").textContent = unit === "time" ? (timeSnap === 1 ? "1s" : timeSnap === 0.5 ? "0.5s" : "0.1s") : (grid === 1 ? "1" : grid === 0.5 ? "1/2" : "1/4");
+}
+$("record").onclick = recordHere;
+$("split").onclick = splitHere;
+/* 「記録して次へ」: いまの配置を置いて、次のまとまりの頭（既定は8カウント先）へ進む。
+   前の配置はそのまま引き継がれるので、動いた人だけ直して、また押す、を繰り返せる。 */
+$("recordNext").onclick = () => {
+  if (!startReady()) { flash("先に開始位置を決めてください（鍵の段のいちばん左の赤い丸、または上の「ここが1」）"); return; }
+  const before = doc.frames.length;
+  recordHere();
+  if (doc.frames.length === before && !framesAround(snap(nowCount())).exact) return;   // 記録できなかったときは進まない
+  const c = snap(nowCount());
+  const pi = phraseInfo(c); const len = pi.len || 8;
+  const nextHead = Math.floor((c - 1) / len) * len + 1 + len;   // 次のまとまりの頭
+  if (!T.paused) T.pause();
+  seekCount(nextHead); live = null; render();
+  flash(`${fmtCount(nextHead)} へ進みました。動いた人だけ直して、また「記録して次へ」`);
+};
+$("dup").onclick = () => { const c = snap(nowCount()); const { exact } = framesAround(c); if (exact) { flash("このカウントには既に配置があります"); return; } recordHere(); };
+$("del").onclick = () => { const c = snap(nowCount()); const { exact } = framesAround(c); if (!exact || doc.frames.length <= 1) { flash("削除できる配置がありません（先頭は残します）"); return; } snapshot(); tombstone("frame", exact.id); doc.scenePlan.segments.filter((g) => g.fromFrameId === exact.id).forEach((g) => tombstone("segment", g.id)); doc.scenePlan.segments = doc.scenePlan.segments.filter((g) => g.fromFrameId !== exact.id); doc.frames = doc.frames.filter((f) => f !== exact); bumpRevision(); persist(); render(); };
+$("selAll").onclick = () => { selected = new Set(doc.cast.map((d) => d.id)); render(); };
+$("openSetup").onclick = () => { $("setupModal").hidden = false; renderSetup(); };
+$("openCast").onclick = () => { $("setupModal").hidden = false; renderSetup(); render(); };
+$("setupEntry").hidden = EMBEDDED;
+$("stageSizeSetup").hidden = EMBEDDED;
+$("setupClose").onclick = () => { $("setupModal").hidden = true; };
+$("stageW").onchange = (e) => { snapshot(); doc.stage.widthM = Math.min(60, Math.max(2, Number(e.target.value) || 10)); bumpRevision(); persist(); render(); };
+$("stageD").onchange = (e) => { snapshot(); doc.stage.depthM = Math.min(40, Math.max(2, Number(e.target.value) || 8)); bumpRevision(); persist(); render(); };
+$("addDancer").onclick = () => {
+  const name = ($("newDancer").value || "").trim() || `演者 ${doc.cast.length + 1}`;
+  snapshot();
+  const id = "d" + Date.now().toString(36) + Math.random().toString(36).slice(2, 4);
+  doc.cast.push(normalizeCastMember({ id, name: name.slice(0, 24), color: COLORS[doc.cast.length % COLORS.length] }, doc.cast.length));
+  doc.frames.forEach((f) => { if (!f.poses[id]) f.poses[id] = { u: 0.5, v: 0.75, facing: 0 }; });
+  $("newDancer").value = ""; bumpRevision(); persist(); render(); flash(`${name} を追加しました`);
+};
+function setFacing(deg, relative) {
+  if (!selected.size) { flash("先に駒を選んでください"); return; }
+  const c = nowCount(); live = live || {};
+  selected.forEach((id) => { const p = livePose(id, c); const f = relative ? faceOf(p) + deg : deg; live[id] = { u: p.u, v: p.v, facing: ((f % 360) + 360) % 360 }; });
+  render();
+  scheduleAutoRecord(500);   // 回し終わってから確定する
+}
+$("facePopL").onclick = () => setFacing(-15, true);
+$("facePopR").onclick = () => setFacing(15, true);
+$("facePopFront").onclick = () => setFacing(0, false);
+/* ホイールで回す。1ノッチ=20、15度（Shiftで5度）。下へ回すと反時計回り。 */
+let faceWheelDelta = 0, faceWheelAt = 0;
+stage.addEventListener("wheel", (e) => {
+  if (selected.size !== 1) return;
+  e.preventDefault();
+  const now = performance.now();
+  if (now - faceWheelAt >= 600) faceWheelDelta = 0;
+  faceWheelAt = now;
+  faceWheelDelta += Number(e.deltaY) || 0;
+  const notches = Math.trunc(Math.abs(faceWheelDelta) / 20) * Math.sign(faceWheelDelta);
+  if (!notches) return;
+  faceWheelDelta -= notches * 20;
+  setFacing(notches * (e.shiftKey ? 5 : 15), true);
+}, { passive: false });
+$("unitCount").onclick = () => { unit = "count"; localStorage.setItem(LS_KEY + ":unit", unit); $("unitCount").setAttribute("aria-pressed", "true"); $("unitTime").setAttribute("aria-pressed", "false"); render(); };
+$("unitTime").onclick = () => { unit = "time"; localStorage.setItem(LS_KEY + ":unit", unit); $("unitCount").setAttribute("aria-pressed", "false"); $("unitTime").setAttribute("aria-pressed", "true"); render(); };
+$("travel").addEventListener("change", (e) => { const { exact } = framesAround(snap(nowCount())); if (!exact) return; snapshot(); const v = Math.max(0, Number(e.target.value) || 0); exact.travel = unit === "time" ? Math.round(v * bpm() / 60 * 4) / 4 : Math.round(v * 4) / 4; persist(); render(); });
+$("sceneHead").addEventListener("change", (e) => {
+  const { exact } = framesAround(snap(nowCount())); if (!exact) return;
+  snapshot();
+  const added = toggleSceneHead(exact.id, "");
+  if (!added && e.target.checked) e.target.checked = false;
+  persist(); render();
+  const no2 = formationIndexOfFrame(exact.id);
+  flash(added
+    ? `${fmtCount(exact.count)} を ${no2 >= 0 ? formationNo(no2) : "新しいシーン"} にしました`
+    : `${fmtCount(exact.count)} を前のシーンの途中の動きにしました`);
+});
+$("sceneNote").addEventListener("change", (e) => {
+  const { exact } = framesAround(snap(nowCount())); if (!exact) return;
+  const g = doc.scenePlan.segments.find((x) => x.fromFrameId === exact.id); if (!g) return;
+  snapshot(); g.note = e.target.value.slice(0, 80); persist(); render();
+});
+$("sceneTitle").addEventListener("change", (e) => {
+  const { exact } = framesAround(snap(nowCount())); if (!exact) return;
+  const g = doc.scenePlan.segments.find((x) => x.fromFrameId === exact.id); if (!g) return;
+  snapshot(); g.title = e.target.value.slice(0, 40); persist(); render();
+});
+$("note").addEventListener("change", (e) => { const { exact } = framesAround(snap(nowCount())); if (!exact) return; snapshot(); exact.note = e.target.value.slice(0, 60); persist(); render(); });
+/* ずれてきたら「ここが頭」。いま鳴っている位置を、最寄りのまとまりの頭（8カウントなら第n エイトの1）へ結びつける */
+function anchorNow() {
+  if (!T.src) { flash("先に音源を選んでください"); return; }
+  const sec = T.paused ? countToSec(cursorCount) : mediaNow();
+  const c = secToCount(sec);
+  const pi = phraseInfo(c); const len = pi.len || 8;
+  const head = Math.max(1, Math.round((c - 1) / len) * len + 1);   // 最寄りのまとまりの頭
+  const gap = Math.abs(c - head);
+  if (gap > len * 0.4) { flash(`頭から離れすぎています（${fmtCount(c)}）。頭の近くで押してください`); return; }
+  snapshot(); anchorHere(head, sec); nextClickCount = null; bakedKey = ""; persist(); render();
+  flash(`${fmtCount(head)} をここに合わせました（この区間の実効テンポ ${tempoAround(head - 0.1).toFixed(1)}）`);
+}
+$("anchorHere").onclick = anchorNow;
+$("clearAnchors").onclick = () => { if (!(doc.track.anchors || []).length) return; snapshot(); doc.track.anchors = []; nextClickCount = null; persist(); render(); flash("合わせ直した点を消しました"); };
+T.on("pause", () => { clockAnchor = null; lastRawTime = null; nextClickCount = null; $("play").textContent = "▶ 再生"; });
+T.on("seeking", () => { clockAnchor = null; lastRawTime = null; nextClickCount = null; });
+T.on("play", () => { clockAnchor = null; lastRawTime = null; nextClickCount = null; $("play").textContent = "❚❚ 停止"; });
+document.addEventListener("keydown", (e) => { if (e.target.closest("input, textarea, select, [contenteditable='true']")) return; if (e.key === " ") { e.preventDefault(); $("play").click(); } if (e.key === "+" || e.key === ";" || (e.key === "=" && !e.metaKey && !e.ctrlKey)) { e.preventDefault(); zoomBy(1.3); }
+  if (e.key === "-" || e.key === "_") { e.preventDefault(); zoomBy(1 / 1.3); }
+  if (e.key === "ArrowLeft") seekCount(nowCount() - grid); if (e.key === "ArrowRight") seekCount(nowCount() + grid); if (e.key === "r" || e.key === "Enter") recordHere();
+  if (e.key === "Delete" && !e.metaKey && !e.ctrlKey) { e.preventDefault(); $("del").click(); }
+  // ★Shiftを押すと e.key は "Z"（大文字）になる。小文字に落として比べないと、やり直しが一度も発火しない
+  const k = (e.key || "").toLowerCase();
+  if ((e.metaKey || e.ctrlKey) && (k === "z" || k === "y")) {
+    e.preventDefault();
+    if (k === "y" || e.shiftKey) redo(); else undo();
+  } });
+if (unit === "time") { $("unitCount").setAttribute("aria-pressed", "false"); $("unitTime").setAttribute("aria-pressed", "true"); }
+setRoute(route);
+setSound(soundMode);
+/* 試作用サンプル: デスクトップの「Gensan (Extend).mp3」の複製を起動時に読む（ローカル確認用・公開しない） */
+async function loadSample() {
+  try {
+    const res = await fetch("sample/gensan-extend.mp3"); if (!res.ok) throw new Error(String(res.status));
+    const ab = await res.arrayBuffer();
+    originalUrl = URL.createObjectURL(new Blob([ab.slice(0)], { type: "audio/mpeg" })); audio.src = originalUrl;
+    doc.track.name = "Gensan (Extend).mp3"; persist();
+    // 波形と自動推定のためのデコード（OfflineAudioContext はユーザー操作なしで使える）
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (OAC) {
+      const oac = new OAC(1, 1, 44100);
+      const buf = await oac.decodeAudioData(ab.slice(0));
+      originalBuffer = buf; bakedBuffer = null; bakedKey = ""; T.setBuffer(buf);
+      const ch = buf.getChannelData(0); const step = Math.max(1, Math.floor(buf.sampleRate * peaksStep)); const out = [];
+      for (let i = 0; i < ch.length; i += step) { let mn = 1, mx = -1; const end = Math.min(ch.length, i + step); for (let j = i; j < end; j += 4) { const v = ch[j]; if (v < mn) mn = v; if (v > mx) mx = v; } out.push([mn, mx]); }
+      peaks = out;
+      const es = Math.max(1, Math.floor(buf.sampleRate * ENV_STEP)); const e = new Float32Array(Math.ceil(ch.length / es));
+      for (let i = 0, k = 0; i < ch.length; i += es, k++) { let acc = 0; const end = Math.min(ch.length, i + es); for (let j = i; j < end; j += 2) acc += ch[j] * ch[j]; e[k] = Math.sqrt(acc / Math.max(1, (end - i) / 2)); }
+      env = e;
+    }
+    render(); flash("サンプル音源 Gensan (Extend) を読み込みました");
+  } catch (err) { flash("サンプル音源を読めませんでした（上の「音源を選ぶ」から選んでください）"); }
+}
+if (EMBEDDED) {
+  $("exportStage").textContent = "舞台スケッチへ反映";
+  window.addEventListener("message", (event) => {
+    if (event.origin !== location.origin || event.source !== parent) return;
+    const message = event.data || {};
+    if (message.type === "stage-sketch-formation:section-switch-error") {
+      const pick = $("sectionPick"); if (pick && typeof message.sectionId === "string") pick.value = message.sectionId;
+      flash(message.message || "セクションを切り替えられませんでした"); return;
+    }
+    if (message.type !== "stage-sketch-formation:init" || !message.package) return;
+    if (!applyPackage(message.package)) { flash("舞台スケッチのデータを読めませんでした"); return; }
+    setEmbeddedSectionPicker(message.sections, message.sectionId);
+    (Array.isArray(message.audios) ? message.audios : []).forEach((entry) => {
+      if (!entry || !(entry.blob instanceof Blob) || typeof entry.songId !== "string") return;
+      audioBySong[entry.songId] = { blob: entry.blob, url: URL.createObjectURL(entry.blob), buffer: null,
+        peaks: null, env: null, name: entry.name || "" };
+    });
+    restoreAudio(doc.songId);
+    if (sourceBlob) analyzePeaks(sourceBlob);
+    persist(); render(); flash("舞台スケッチのセクションを読み込みました");
+  });
+  parent.postMessage({ type: "stage-sketch-formation:ready" }, location.origin);
+} else if (!T.src) loadSample();
+window.addEventListener("resize", render);
+// 検証用の覗き窓（試作のみ）
+window.__proto = { get doc() { return doc; }, get live() { return live; }, get unit() { return unit; }, nowCount, seekCount, get band() { return { start: band._start, ppc: band._ppc, zoom: timeZoom, snap: timeSnap }; }, setPeaks(v) { peaks = v; render(); }, tapTempo, estimateBpm, setEnv(v) { env = v; }, get soundMode() { return soundMode; }, zoomBy, get zoomLevel() { return zoomLevel; }, moveFrameTo, poseAt, leadOf, earlyOf, get sceneBars() { return sceneLane._bars; }, planEnd, setPlanEnd, songEndCount, renderFormationPanel, buildCountSheet, buildPackage, get theme() { return visualTheme; }, setTheme: applyVisualTheme, get sync() { return doc.sync; }, buildStageExport, toggleSceneHead, isSceneHead, sortedSegments, makeAnchorAt, setAnchorSec, setAnchorLocked, render, get usingBaked() { return usingBaked; }, get baked() { return { has: !!bakedBuffer, key: bakedKey, cur: bakeKey() }; }, applyBuffer, ensureBaked, setSound, anchorNow, get anchors() { return allAnchors(); }, tempoAround, clickLog: [], T, get outGain() { return outGain; }, get route() { return route; }, setRoute, mediaNow, get anchor() { return clockAnchor; }, get actx() { return actx; }, ensureCtx, get nextClick() { return nextClickCount; }, scheduleClicks, setBpm, countToSec, secToCount, phraseInfo, fmtCount,
+  clientPos(id) { const p = toPx(livePose(id, nowCount())); const r = stage.getBoundingClientRect(); return { x: r.left + p.x / dpr, y: r.top + p.y / dpr }; } };
+applyVisualTheme(visualTheme);
+})();
+</script>
+</body>
+</html>

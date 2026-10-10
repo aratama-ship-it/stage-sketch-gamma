@@ -1,0 +1,200 @@
+/* S-07（2026-09-18 本人要望）: 埋め込みのときの地色を、γ本体の全体背景（--desk = #191512）へ揃える。
+ * 直す前は4つの色がずれていた（実測）:
+ *   γ本体の body      #191512  ← これが正
+ *   iframe要素         #141311（gamma.css の #gamma-light-frame）
+ *   iframe内 html/body #0d0b09（index.html の <style>）
+ *   .modal            #201b16（index.html の var(--desk-2)）← 画面に見えている地
+ * 本人の言葉:「メインのボディ部分の背景が全体背景とずれている。多少全体背景の方が暗いです」
+ * ★単体で開いたとき（判断用の試作ページ）の見た目は変えない。ここは data-gamma-embedded 限定。 */
+html[data-gamma-embedded],
+html[data-gamma-embedded] body { background: var(--desk); }
+html[data-gamma-embedded] body { display: block; min-height: 100vh; margin: 0; padding: 0; }
+html[data-gamma-embedded] .proto-note,
+html[data-gamma-embedded] .head { display: none; }
+html[data-gamma-embedded] .modal {
+  width: 100%;
+  height: 100vh;
+  /* S-07: .modal の var(--desk-2)（#201b16）は単体ページで「暗い地の上に浮く窓」に見せるための色。
+   * 埋め込みでは外側と同じ地にする。 */
+  background: var(--desk);
+  /* R-17（2026-09-17 本人要望）: 埋め込みのときは枠を消して横幅を使い切る。
+   * .modal は単体ページ（判断用の試作）で「画面いっぱいの窓」に見せるための枠で、
+   * γの中では外側にヘッダーがあるので要らない。box-shadow と border-radius は
+   * 以前から消してあったが border だけ残っていた（box-sizing:border-box なので内側が2px広がる）。 */
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  grid-template-rows: minmax(0, 1fr);
+}
+/* R-17: 中身の左右の余白も詰める。枠の2pxより、こちらの 10px×2 のほうが効く。
+ * 0にすると図がパネルの縁に貼り付くので 4px に留める。上下（5px/7px）は横幅に関係しないので触らない。 */
+html[data-gamma-embedded] .body { padding-left: 4px; padding-right: 4px; }
+html[data-gamma-embedded] .figbar { width: 100%; }
+html[data-gamma-embedded] .gamma-light-actions {
+  grid-column: 3;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  min-width: 0;
+}
+/* Gammaでは下部の操作説明列を環境設定へ集約する。保存／LXキュー適用は上部に残す。 */
+html[data-gamma-embedded] .foot { display:none !important; }
+html[data-gamma-embedded] .gamma-light-actions #apply {
+  flex-shrink: 0;
+  white-space: nowrap;
+  min-height: var(--ctrl-sm);
+  padding: 3px 8px;
+  font-size: var(--fs-4);
+  line-height: 1.5;
+  border-radius: var(--radius-sm);
+}
+html[data-gamma-embedded] .gamma-light-actions #runtime-status {
+  font-size: 11px;
+  color: var(--milk-dim);
+  white-space: nowrap;
+}
+html[data-gamma-embedded][data-gamma-light-mode="place"] .gamma-light-actions { display:none; }
+html[data-gamma-embedded] .gamma-light-actions .gearbtn {
+  width: var(--ctrl-sm);
+  height: var(--ctrl-sm);
+}
+/* 機材配置（place）の上部の帯は今までどおり: 1300px 以下は中央（シーン名のボタン）を2段目へ、900px 以下は縦に積む。 */
+@media (max-width: 1300px) {
+  html[data-gamma-embedded]:not([data-gamma-light-mode="move"]) .figbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  html[data-gamma-embedded]:not([data-gamma-light-mode="move"]) .figbar > .fb:first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  html[data-gamma-embedded]:not([data-gamma-light-mode="move"]) .figbar > .scenebox {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
+  }
+  html[data-gamma-embedded]:not([data-gamma-light-mode="move"]) .gamma-light-actions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+@media (max-width: 900px) {
+  html[data-gamma-embedded]:not([data-gamma-light-mode="move"]) .figbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  html[data-gamma-embedded]:not([data-gamma-light-mode="move"]) .figbar > .fb:first-child,
+  html[data-gamma-embedded]:not([data-gamma-light-mode="move"]) .gamma-light-actions,
+  html[data-gamma-embedded]:not([data-gamma-light-mode="move"]) .figbar > .scenebox {
+    grid-column: 1;
+  }
+  html[data-gamma-embedded]:not([data-gamma-light-mode="move"]) .gamma-light-actions {
+    grid-row: 2;
+  }
+  html[data-gamma-embedded]:not([data-gamma-light-mode="move"]) .figbar > .scenebox {
+    grid-row: 3;
+  }
+}
+/* 修正バッチ 2026-10-07 #13（本人指示）: 照明デザイン（move）の上部の帯は1段。左のアイコン群は折り返さず縮めない。
+ * シーン送りは同じ段に置き、入り切らないときは app.js の fitFigbar() が data-fit を順に変える:
+ *   center … 窓の中央（今までの広い幅と同じ）
+ *   right  … 左のアイコン群と右の再生の間に置く（左の残りの幅の中央）。キュー名は「…」で切る
+ *   norun  … 描画時間の文字を隠す（広い幅のときだけ出す）
+ *   noname … キュー名と「シーン」の語、⊞ も隠す（シーンの一覧は番号を押して開く）
+ *   nums   … 番号「1-2 ｜ Q3」だけ。番号を押すとシーンの一覧、送りは ↑↓←→ のキー
+ *   wrap   … どれも入らないときだけ（実測ではおよそ 900px 前後より狭いとき）シーン送りを2段目の中央へ。
+ * 旧（2026-10-06 #8）: 901〜1520px（英語は〜1800px）でシーン送りを2段目へ落としていた＝やめた。 */
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar > .fb:first-child,
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar > .fb:first-child .showtoggles { flex-wrap: nowrap; }
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar > .fb:first-child { grid-column: 1; grid-row: 1; }
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar { column-gap: 10px; }
+/* 段を試している間（fitFigbar）に帯の最小幅が .body を押し広げ、その幅で図のキャンバスが作られて戻らなくなるのを防ぐ
+   （1440→1100 へ縮めたとき、帯が窓より68px広いまま残った・2026-10-07 実測）。帯と本文は窓の幅を超えない。 */
+html[data-gamma-embedded] .body, html[data-gamma-embedded] .figbar { min-width: 0; }
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar:not([data-fit="center"]):not([data-fit="wrap"]) { grid-template-columns: auto minmax(0, 1fr) auto; }
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar:not([data-fit="center"]):not([data-fit="wrap"]) > .scenebox { grid-column: 2; grid-row: 1; justify-self: center; max-width: 100%; }
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar:not([data-fit="wrap"]) .gamma-light-actions { grid-column: 3; grid-row: 1; }
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar[data-fit="noname"] .qnow em,
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar[data-fit="noname"] .sno-word,
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar[data-fit="nums"] .qnow em,
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar[data-fit="nums"] .sno-word,
+/* #scenerow を足すのは、gamma-ui-tokens.css の :is(.qnav, #scene-prev, …)（ID の強さ）に勝つため */
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar[data-fit="nums"] #scenerow .qnav,
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar[data-fit="noname"] #scenerow #allscenes { display: none; }
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar[data-fit="norun"] #runtime-status,
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar[data-fit="noname"] #runtime-status,
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar[data-fit="nums"] #runtime-status,
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar[data-fit="wrap"] #runtime-status {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar[data-fit="nums"] .sno { border: 1px solid var(--line-dark); padding: 0 9px; }
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar[data-fit="nums"] > .scenebox { gap: 8px; }
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar[data-fit="wrap"] { grid-template-columns: minmax(0, 1fr) auto; }
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar[data-fit="wrap"] > .scenebox { grid-column: 1 / -1; grid-row: 2; justify-self: center; }
+html[data-gamma-embedded][data-gamma-light-mode="move"] .figbar[data-fit="wrap"] .gamma-light-actions { grid-column: 2; grid-row: 1; }
+
+/* 修正バッチ 2026-10-07 #14: 状態の行（未適用・控え・警告）は灯体情報パネルの最下部、操作の結果（#insp-log）の上。 */
+html[data-gamma-embedded] #panel-insp .gamma-light-state-row {
+  border-top: 1px solid var(--line-dark); margin-top: 6px; padding: 6px 0 0; gap: 6px;
+}
+html[data-gamma-embedded] #panel-insp #gamma-light-save-status { flex: 1 1 100%; min-width: 0; }
+
+/* ---------- V-04（2026-09-24 本人指示）: 環境設定の「画面の色」（赤みの黒／青みの黒）を、照明デザイン・機材配置にも効かせる ----------
+ * 本体の <html data-stage-skin> を embed.js がこのページの <html> へ写す（切り替えたらすぐ追従）。
+ * 青みの黒の値は本体 style.css の :root[data-stage-skin="blue-black"] と同じ。赤みの黒は index.html の既定のまま。
+ * 図（キャンバス）の地も同じく切り替える: 赤み #0d0c0b／青み #0d0e10（本体の舞台図 stageSurfaceColor と同じ対応）。 */
+html[data-gamma-embedded] canvas { background: #0d0c0b; }
+html[data-gamma-embedded][data-stage-skin="blue-black"] {
+  --desk: #141619;
+  --desk-2: #1b1e22;
+  --desk-3: #23272c;
+  --line-dark: #373d44;
+  --recess: rgba(13, 14, 16, 0.3);
+}
+html[data-gamma-embedded][data-stage-skin="blue-black"] canvas { background: #0d0e10; }
+html[data-gamma-embedded][data-stage-skin="blue-black"] .ontoggle .sw,
+html[data-gamma-embedded][data-stage-skin="blue-black"] .gpick-t:not([aria-expanded="true"]),
+html[data-gamma-embedded][data-stage-skin="blue-black"] .gobo { background: #131518; }
+html[data-gamma-embedded][data-stage-skin="blue-black"] .gpick-face { background: #0f1113; }
+html[data-gamma-embedded][data-stage-skin="blue-black"] .gradslot .chip.empty { background: repeating-linear-gradient(45deg, #24272b 0 4px, #191c20 4px 8px); }
+html[data-gamma-embedded] .scenebox .btn.small {
+  min-height:var(--ctrl-sm); font-size:var(--fs-4); line-height:1.5;
+  border-radius:var(--radius-sm);
+}
+/* 2026-10-06 本人指示: 前後の LXキュー へ送るボタンは正方形（上の .btn.small の高さ指定より強くして揃える） */
+html[data-gamma-embedded] .scenebox .btn.small.qnav {
+  width:var(--icon-sm); min-width:var(--icon-sm); height:var(--icon-sm); min-height:var(--icon-sm); padding:0;
+}
+html[data-gamma-embedded] .gamma-light-state-row {
+  display:flex; flex-wrap:wrap; align-items:center; gap:var(--gamma-gap);
+  flex:0 0 auto; padding:4px 0;
+}
+html[data-gamma-embedded] .gamma-light-state-row[hidden], html[data-gamma-embedded] #gamma-light-save-controls[hidden] { display:none; }
+html[data-gamma-embedded] #gamma-light-save-status {
+  flex:1 1 240px; min-width:min(100%,240px); margin:0;
+  font-size:var(--fs-4); line-height:1.6; color:var(--milk-dim); overflow-wrap:anywhere;
+}
+html[data-gamma-embedded] #gamma-light-save-status[data-level="warn"] {
+  border-left:2px solid var(--brass); padding-left:8px; color:var(--milk);
+}
+html[data-gamma-embedded] #gamma-light-save-controls {
+  min-height:var(--ctrl-lg); padding:4px 12px; font-size:var(--fs-4); line-height:1.5;
+  border-radius:var(--radius-sm); flex:0 0 auto;
+}
+
+html[data-gamma-embedded] :is(.filters button,.seg button,.btn.small,.ontoggle) { min-height:var(--ctrl-sm); height:auto; font-size:var(--fs-3); line-height:1.5; border-radius:var(--radius-sm); }
+html[data-gamma-embedded] :is(.field input:not([type="range"]):not([type="checkbox"]):not([type="color"]),.field select,.search) { min-height:var(--ctrl-md); font-size:var(--fs-4); line-height:1.5; }
+html[data-gamma-embedded] .ptitle { font-size:var(--fs-5); line-height:1.5; font-weight:600; letter-spacing:.04em; }
+html[data-gamma-embedded] #conflicts .btn { white-space:normal; height:auto; text-align:left; overflow-wrap:anywhere; }
+
+/* Preserve the deliberately compact controls inside the drawing itself. */
+html[data-gamma-embedded] :is(.planwrap .btn.small,.sec .btn.small,.fmode button) { min-height:24px; font-size:10.5px; padding:2px 8px; }
+/* Translated captions may be wider: retain every action and wrap the compact filter row. */
+html[data-gamma-embedded]:lang(en) .filters { flex-wrap:wrap; gap:2px; }
+html[data-gamma-embedded]:lang(en) .filters button { flex:1 1 42px; margin:0; }
+html[data-gamma-embedded]:lang(en) .sec.front .sechead { display:flex; flex-wrap:wrap; overflow:visible; }
+html[data-gamma-embedded]:lang(en) .sec.front .sechead .viewtitle { position:static; transform:none; margin-right:auto; }
+html[data-gamma-embedded]:lang(en) .sec.front .sechead .fmode { margin-left:auto; }
+
+/* Saved fixture appearance choices share the four style swatches. */
+html[data-gamma-embedded] .seg.fixture-body-choices button { min-height:44px; }

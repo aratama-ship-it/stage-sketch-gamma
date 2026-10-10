@@ -1,0 +1,412 @@
+/* セリフキューパネル（2026-09-24。旧名 VOXキュー）。色はタイムラインのセリフ段と同じ緑、文字は既存の紙色を使う。
+ * 数値: 見出し12px／済んだ一覧の高さ上限160px／話者13px／いまのセリフ16px・行間1.7／一覧の行は最小44px・2行まで／一覧の高さ上限320px。
+ * 縦書き（U-04）: 流れの帯の高さ340px・済んだ一覧の幅上限34%・一覧の列（1行）は最小44px・3列まで。 */
+.stage-vox-panel {
+  --stage-vox-accent: var(--stage-timeline-cue-dialogue, #a8bf8a);
+  --stage-vox-text: var(--stage-timeline-text, #efe7d6);
+  --stage-vox-muted: var(--stage-timeline-muted, #cbbba4);
+  --stage-vox-line: var(--line-dark, #382f25);
+  display: grid;
+  /* 列の最小幅を0にする。長い文字でパネルが横へはみ出さないように */
+  grid-template-columns: minmax(0, 1fr);
+  /* U-01（2026-09-24 本人指摘）: 行の高さは中身ぴったり。WebKit では行が引き伸ばされたり
+     中身より低く押し込まれたりして、読み込み直後に枠の線と「前／次」が重なっていた。 */
+  grid-auto-rows: max-content;
+  align-content: start;
+  gap: 10px;
+}
+.stage-vox-stream {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: max-content;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* いまのセリフ（2026-09-24 本人指示: 左のバーだけでは弱いので四辺を枠で囲む）。
+   数値: 枠2px・角丸8px・内側余白12/14px・外側に3pxの淡い光輪。該当なしのときは点線の枠。 */
+.stage-vox-now {
+  display: flow-root;
+  min-width: 0;
+  border: 2px solid var(--stage-vox-accent);
+  border-radius: 8px;
+  padding: 12px 14px 14px;
+  background: rgba(168, 191, 138, 0.10);
+  box-shadow: 0 0 0 3px rgba(168, 191, 138, 0.14);
+  margin: 3px;                     /* 光輪がパネルの端で切れないように */
+  min-height: 84px;
+}
+.stage-vox-panel:not(.has-current) .stage-vox-now {
+  border: 1px dashed var(--stage-vox-muted);
+  background: rgba(var(--stage-ui-recess-rgb, 13, 14, 16), 0.45);
+  box-shadow: none;
+  opacity: 0.85;
+}
+.stage-vox-now p { margin: 0; }
+.stage-vox-now-cue {
+  min-width: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(168, 191, 138, 0.35);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--stage-vox-accent);
+}
+.stage-vox-panel:not(.has-current) .stage-vox-now-cue { color: var(--stage-vox-muted); border-bottom-color: var(--stage-vox-line); }
+/* 送りの動き（U-02）で、入ってくるセリフを枠の縁で切る */
+.stage-vox-now-main { overflow: hidden; }
+.stage-vox-now-speaker {
+  margin-top: 6px !important;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--stage-vox-accent);
+}
+.stage-vox-now-speaker:empty { display: none; }
+.stage-vox-now-line {
+  margin-top: 4px !important;
+  font-family: var(--serif, serif);
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--stage-vox-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.stage-vox-panel:not(.has-current) .stage-vox-now-line {
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--stage-vox-muted);
+}
+
+/* ト書き（括弧内）: セリフの中で小さく、弱い色（#b8ad98・対地 8.67:1 実測済み） */
+.stage-vox-direction { font-size: 0.7em; color: var(--stage-vox-direction, #b8ad98); }
+
+/* 話者の印（演者の色）。色だけでは話者を区別できないので名前の文字は必ず残す。紙色の細い縁で暗い色も見える。 */
+.stage-vox-chip {
+  display: inline-block;
+  width: 0.62em;
+  height: 0.62em;
+  /* 名前との間（2026-09-24 本人指摘）: 縦書きでは文字が上から下へ並ぶので、right では効かず四角と名前が重なっていた。
+     書く向きに合わせた inline-end で空ける（横書き＝右・縦書き＝下）。 */
+  margin-inline-end: 0.4em;
+  outline: 1px solid var(--stage-vox-text);
+  vertical-align: 0.02em;
+}
+/* 縦書き: 四角を文字の列の真ん中へ置く（2026-09-24 本人指摘: 右へ約3pxずれていた）。
+   vertical-align では縦書きの列の中心にそろわないので、話者の行を flex にして交差軸（横）の中央でそろえる。 */
+.stage-vox-panel.is-vertical :is(.stage-vox-now-speaker, .stage-vox-row-speaker) { display: flex; align-items: center; }
+.stage-vox-panel.is-vertical .stage-vox-now-speaker:empty { display: none; }
+.stage-vox-panel.is-vertical .stage-vox-chip { flex: 0 0 auto; vertical-align: baseline; }
+
+/* 手送り: 前・次（押すとタイムライン・舞台の図も一緒に進む）。数値: 2列・間隔8px・高さ36px。 */
+.stage-vox-step {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.stage-vox-step button {
+  min-height: 36px;
+  margin: 0;
+  border: 1px solid rgba(168, 191, 138, 0.45);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--stage-vox-text);
+  font: 600 13px/1 var(--sans, sans-serif);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.stage-vox-step button:hover:not(:disabled) { background: rgba(168, 191, 138, 0.12); border-color: var(--stage-vox-accent); }
+.stage-vox-step button:focus-visible { outline: 2px solid var(--stage-vox-accent); outline-offset: 1px; }
+.stage-vox-step button:disabled { opacity: 0.4; cursor: default; }
+.stage-vox-step-slot:empty { display: none; }
+
+/* 文字の大きさの段階（切り替えは環境設定・U-09）。数値: セリフ 16 / 22 / 30px、話者 13 / 15 / 18px。 */
+.stage-vox-panel.has-current[data-vox-size="l"] .stage-vox-now-line { font-size: 22px; line-height: 1.6; }
+.stage-vox-panel.has-current[data-vox-size="l"] .stage-vox-now-speaker { font-size: 15px; }
+.stage-vox-panel.has-current[data-vox-size="xl"] .stage-vox-now-line { font-size: 30px; line-height: 1.55; }
+.stage-vox-panel.has-current[data-vox-size="xl"] .stage-vox-now-speaker { font-size: 18px; }
+
+/* 上の帯: 件数と「セリフを編集」。数値: ボタン高さ28px・文字12px・1px枠（真鍮系） */
+.stage-vox-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.stage-vox-edit {
+  flex: 0 0 auto;
+  min-height: 28px;
+  margin: 0;
+  padding: 3px 10px;
+  border: 1px solid var(--brass, #9c823f);
+  border-radius: 1px;
+  background: rgba(156, 130, 63, 0.14);
+  color: var(--stage-vox-text);
+  font: 12px/1.2 var(--sans, sans-serif);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.stage-vox-edit:hover { background: rgba(156, 130, 63, 0.26); }
+.stage-vox-edit:focus-visible { outline: 2px solid var(--stage-vox-accent); outline-offset: 1px; }
+
+.stage-vox-section {
+  margin: 0;
+  font-size: 12px;
+  color: var(--stage-vox-muted);
+}
+.stage-vox-section:empty { display: none; }
+
+.stage-vox-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  position: relative;
+  display: grid;
+  gap: 2px;
+}
+/* 時間の流れどおり（2026-09-24）: 済んだ一覧は枠の上に低く（最大160px・下端＝直前のセリフを見せる）、
+   これからの一覧は枠の下（最大320px）。 */
+.stage-vox-past { max-height: 160px; }
+.stage-vox-list[hidden] { display: none; }
+.stage-vox-list > li { min-width: 0; }
+
+.stage-vox-row {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  min-height: 44px;
+  padding: 7px 10px 7px 11px;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: 0 5px 5px 0;
+  background: transparent;
+  color: var(--stage-vox-text);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.stage-vox-row:hover { background: rgba(168, 191, 138, 0.08); }
+.stage-vox-row:focus-visible { outline: 2px solid var(--stage-vox-accent); outline-offset: -2px; }
+.stage-vox-row.is-past { color: var(--stage-vox-muted); }
+/* 別のセクションの行も押せる（押すとタイムラインがそのセクションへ移る）。少しだけ控えめにする */
+.stage-vox-row.is-other-section:not(.is-past) { color: var(--stage-vox-text); opacity: 0.86; }
+.stage-vox-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  font-size: 11px;
+  color: var(--stage-vox-muted);
+}
+.stage-vox-row-cue { font-variant-numeric: tabular-nums; }
+.stage-vox-row-time { white-space: nowrap; font-family: var(--mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; opacity: 0.8; }
+.stage-vox-row-speaker { color: var(--stage-vox-accent); font-weight: 600; }
+.stage-vox-row-line {
+  font-size: 13px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.stage-vox-row-line.is-missing { color: var(--stage-vox-muted); font-style: italic; }
+
+.stage-vox-empty {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--stage-vox-muted);
+}
+
+/* ---------- 縦書き（U-04・2026-09-24 本人指示・日本語のときだけ） ----------
+ * 流れの帯を vertical-rl にすると、済んだ一覧 → いまの枠 → これからの一覧 が右から左へ並ぶ（右＝過去・左＝未来）。
+ * 帯の高さ（縦書きでは文字の行の長さ）は 340px に決める。決めないと1行が中身の長さまで伸びて折り返さない。
+ * 一覧は横に流れて、はみ出した分は横スクロール。行の縦線（いまの印）は上の辺へ移す。 */
+/* V-01（2026-09-24 本人指示）: 帯の高さを利用者が決めたとき（has-stream-height）。横書きは帯の中で上下に分ける。 */
+.stage-vox-panel.has-stream-height:not(.is-vertical) .stage-vox-stream {
+  display: flex;
+  flex-direction: column;
+  height: var(--stage-vox-stream-height);
+  gap: 10px;
+  overflow: hidden;
+}
+.stage-vox-panel.has-stream-height:not(.is-vertical) .stage-vox-past { flex: 0 1 auto; max-height: 35%; min-height: 0; }
+.stage-vox-panel.has-stream-height:not(.is-vertical) .stage-vox-now { flex: 0 0 auto; }
+.stage-vox-panel.has-stream-height:not(.is-vertical) .stage-vox-future { flex: 1 1 0; max-height: none; min-height: 0; }
+/* つまみ（見た目は演者一覧などの .stage-roster-list-resize をそのまま使う）。パネルの下端に置く */
+.stage-vox-resize { margin-top: -4px; }
+/* V-02: 縦書きの注意書き（数値: 11px・行間1.5・弱い色） */
+.stage-vox-vertical-note { margin: 0; font-size: 11px; line-height: 1.5; color: var(--stage-vox-muted); }
+.stage-vox-vertical-note[hidden] { display: none; }
+.stage-vox-panel.is-vertical .stage-vox-stream {
+  writing-mode: vertical-rl;
+  height: var(--stage-vox-stream-height, 340px);
+  display: flex;
+  flex-direction: column;           /* vertical-rl では column＝行の進む向き＝右から左（row は上から下になる） */
+  align-items: stretch;
+  gap: 10px;
+  overflow: hidden;
+}
+.stage-vox-panel.is-vertical .stage-vox-list {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  max-height: none;
+  max-width: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-width: 0;
+  flex: 1 1 0;
+}
+/* 一覧の行（縦書きでは1列の束）は縮めない。はみ出した分は一覧の中で横にスクロールする */
+.stage-vox-panel.is-vertical .stage-vox-list > li { flex: 0 0 auto; }
+.stage-vox-panel.is-vertical .stage-vox-past { flex: 0 1 auto; min-width: 0; max-width: 30%; }
+.stage-vox-panel.is-vertical .stage-vox-future { min-width: 44px; }
+/* いまの枠は縮めない（セリフが途中で切れないように）。中身の列の数だけ横に広がり、狭いときは左右の一覧の方を縮める。
+   上限は帯の幅から「これから」の一覧の最小幅を引いた分。それでも入りきらない長いセリフだけ、枠の中で横にスクロールする。 */
+/* 2026-09-24 本人指摘: 狭いパネルで、いまのセリフの最後の列が枠の端で切れて見えていた。
+   「これから」の一覧に残す幅を、一覧の1列ぶん（44px）＋間隔10px まで減らす（済んだ一覧は0まで縮む）。 */
+.stage-vox-panel.is-vertical .stage-vox-now { flex: 0 0 auto; min-height: 0; min-width: 84px; max-width: calc(100% - 54px); overflow: hidden; display: flex; flex-direction: column; }
+.stage-vox-panel.is-vertical .stage-vox-now-main { overflow-x: auto; overflow-y: hidden; min-width: 0; flex: 0 1 auto; }
+.stage-vox-panel.is-vertical .stage-vox-now-cue { padding-bottom: 0; padding-left: 6px; border-bottom: 0; border-left: 1px solid rgba(168, 191, 138, 0.35); }
+.stage-vox-panel.is-vertical:not(.has-current) .stage-vox-now-cue { border-left-color: var(--stage-vox-line); }
+.stage-vox-panel.is-vertical .stage-vox-now-speaker { margin-top: 0 !important; margin-right: 6px !important; }
+.stage-vox-panel.is-vertical .stage-vox-now-line { margin-top: 0 !important; margin-right: 4px !important; }
+.stage-vox-panel.is-vertical .stage-vox-row {
+  width: auto;
+  inline-size: 100%;               /* 縦書きの inline＝縦。列の高さいっぱいに */
+  min-height: 0;
+  min-width: 44px;
+  padding: 11px 7px 10px 7px;
+  border-left: 0;
+  border-top: 3px solid transparent;
+  border-radius: 0 0 5px 5px;
+  text-align: start;
+}
+/* V-01（2026-09-24 本人指摘）: 縦書きで一覧のセリフが90度横倒しになっていた。2行で省略するための -webkit-box
+   （-webkit-box-orient: vertical）が縦書きと噛み合わないため。縦書きでは箱にせず、3列ぶんの幅で切る。 */
+.stage-vox-panel.is-vertical .stage-vox-row-line {
+  display: block;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: unset;
+  max-width: calc(13px * 1.5 * 3);
+  overflow: hidden;
+}
+/* 縦書きの手送りは帯の下。右が「前」（済んだ側）、左が「次」（これから側） */
+.stage-vox-step.is-reversed { direction: rtl; margin-top: 0; }
+.stage-vox-step.is-reversed button { direction: ltr; }
+
+/* ---------- タイムラインのキュー詳細（VOXキューのとき・2026-09-24 本人指示） ----------
+ * セリフ欄: パネルの「いまのセリフ」と同じ緑の枠（1px・角丸6px）で、窓の中でも同じものだと分かるようにする。
+ * 前後移動: 2列のボタン（最小高さ64px）。上段に向き、中段にキュー名、下段にセリフ1行。 */
+.stage-cue-line {
+  margin: 0;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--stage-timeline-cue-dialogue, #a8bf8a);
+  border-radius: 6px;
+  background: rgba(168, 191, 138, 0.08);
+}
+.stage-cue-line p { margin: 0; }
+.stage-cue-line-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--milk-dim, #cbbba4);
+}
+.stage-cue-line-speaker {
+  margin-top: 6px !important;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--stage-timeline-cue-dialogue, #a8bf8a);
+}
+.stage-cue-line-text {
+  margin-top: 3px !important;
+  font-family: var(--serif, serif);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--milk, #efe7d6);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.stage-cue-line-text .stage-vox-direction { font-size: 0.7em; color: #b8ad98; }
+.stage-cue-line-speaker .stage-vox-chip { display: inline-block; width: 0.62em; height: 0.62em; margin-right: 0.4em; outline: 1px solid var(--milk, #efe7d6); }
+.stage-cue-line-text.is-missing { font-family: inherit; font-size: 12px; font-style: italic; color: var(--milk-dim, #cbbba4); }
+
+.stage-cue-line[hidden], .stage-cue-step[hidden] { display: none; }
+.stage-cue-step {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.stage-cue-step-button {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-height: 64px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line-dark, #382f25);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--milk, #efe7d6);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.stage-cue-step-button:last-child { text-align: right; }
+.stage-cue-step-button:hover:not(:disabled) { border-color: var(--stage-timeline-cue-dialogue, #a8bf8a); background: rgba(168, 191, 138, 0.08); }
+.stage-cue-step-button:focus-visible { outline: 2px solid var(--stage-timeline-cue-dialogue, #a8bf8a); outline-offset: 1px; }
+.stage-cue-step-button:disabled { cursor: default; opacity: 0.45; }
+.stage-cue-step-dir { font-size: 11px; color: var(--stage-timeline-cue-dialogue, #a8bf8a); }
+.stage-cue-step-name { font-size: 12px; font-variant-numeric: tabular-nums; }
+.stage-cue-step-line {
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--milk-dim, #cbbba4);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- U-06（2026-09-24 本人指示）: タイムラインのセリフキューにカーソルを当てたときの小窓 ----------
+ * 数値: 幅上限320px・余白8/10px・枠1px（セリフ段の緑）・角丸6px・影 0 6px 18px rgba(0,0,0,.5)。
+ * 見出し11px（キュー名と時刻）／話者12px／セリフ明朝14px・行間1.6・6行まで／添え書き10.5px。 */
+.stage-timeline-cue-peek {
+  position: fixed;
+  z-index: 80;
+  max-width: 320px;
+  padding: 8px 10px 9px;
+  border: 1px solid var(--stage-timeline-cue-dialogue, #a8bf8a);
+  border-radius: 6px;
+  background: rgb(var(--stage-ui-panel-rgb, 27, 30, 34));
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  color: var(--milk, #efe7d6);
+  pointer-events: none;
+}
+.stage-timeline-cue-peek[hidden] { display: none; }
+.stage-timeline-cue-peek p { margin: 0; }
+.stage-timeline-cue-peek-head { font-size: 11px; letter-spacing: 0.04em; color: var(--milk-dim, #cbbba4); font-variant-numeric: tabular-nums; }
+.stage-timeline-cue-peek-speaker { margin-top: 4px !important; font-size: 12px; font-weight: 600; color: var(--stage-timeline-cue-dialogue, #a8bf8a); }
+.stage-timeline-cue-peek-line {
+  margin-top: 2px !important;
+  font-family: var(--serif, serif);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.stage-timeline-cue-peek-line.is-missing { font-family: inherit; font-size: 12px; font-style: italic; color: var(--milk-dim, #cbbba4); }
+.stage-timeline-cue-peek-hint { margin-top: 5px !important; font-size: 10.5px; color: var(--milk-dim, #cbbba4); opacity: 0.85; }
+
+/* ---------- U-07（2026-09-24 本人指示）: 鳴らない音楽キュー ----------
+ * 札の幅は104px固定で「（無音）」まで入らないので、無音の札だけ中身に合わせて広げる（上限168px）。
+ * 枠は破線にして、音が無いことを文字を読まなくても分かるようにする（色は音楽キューのまま）。 */
+.stage-timeline-cue[data-cue-type="music"][data-cue-silent="true"] {
+  width: auto;
+  min-width: 104px;
+  max-width: 168px;
+  border-style: dashed;
+}

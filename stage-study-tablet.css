@@ -1,0 +1,58 @@
+/* Fixed paper coordinates; only the outside camera responds to rotation and zoom. */
+body.study-tablet {
+  --tablet-width: 1024px; --tablet-pad: 24px; --tablet-note-space: 160px;
+  --tablet-text: 24px; --tablet-ui: 14px; --tablet-input: 16px;
+  --tablet-bar: #1c272c; --tablet-muted: #a4b5ba; --tablet-line: #ffdc73;
+  --tablet-stroke: 3px; --tablet-halo: 6px; --tablet-gap: 4px;
+  padding: 0; height: 100dvh; overflow: hidden;
+}
+html:has(body.study-tablet) { overflow: hidden; scrollbar-gutter: auto; }
+.study-tablet .study-shell { display: flex; flex-direction: column; height: 100%; }
+.study-tablet .study-header { flex: 0 0 auto; grid-template-columns: minmax(0,1fr) auto; grid-template-areas: "show actions"; padding: 4px 12px; margin: 0; gap: 4px; }
+.study-tablet .study-heading { display: none; }
+.study-tablet .study-show-info { text-align: left; }
+.study-tablet #study-title { font-size: 16px; margin: 0; }
+.study-tablet #study-stamp { font-size: 11px; }
+.study-tablet #study-product-link { display: none; }
+.study-tablet .study-header-actions { flex-wrap: nowrap; gap: 4px; font-size: 14px; }
+.study-tablet #study-account { margin: 0; padding: 0 12px; }
+.study-tablet #study-status, .study-tablet #study-change-summary { padding: 0 12px; margin: 0; }
+.study-tablet .study-workspace { display: flex; flex: 1 1 0; min-height: 0; position: relative; flex-direction: column; align-items: stretch; }
+.study-tablet #study-side-resize { display: none !important; }
+.study-tablet .tablet-toolbar { flex: 0 0 auto; display: flex; gap: var(--tablet-gap); align-items: center; padding: 4px 8px; background: var(--tablet-bar); border-bottom: 1px solid var(--study-muted); }
+.study-tablet .tablet-toolbar button, .study-tablet .tablet-toolbar select { font-size: var(--tablet-ui); height: 44px; min-height: 44px; padding: 4px 8px; flex: 0 0 auto; }
+.study-tablet .tablet-toolbar .study-scene-row { flex: 1; min-width: 0; max-width: 620px; margin: 0; gap: 4px; }
+.study-tablet .tablet-toolbar #study-scenes { width: 100%; min-width: 0; font-size: 14px; }
+.study-tablet .tablet-toolbar #study-view { width: 146px; }
+.study-tablet .tablet-toolbar button { min-width: 44px; }
+.study-tablet .tablet-tools { border-top: 1px solid var(--study-muted); border-bottom: 0; flex-wrap: nowrap; overflow-x: auto; padding-bottom: max(4px, env(safe-area-inset-bottom)); }
+.study-tablet .tablet-tools button { display: inline-flex; justify-content: center; align-items: center; gap: 4px; }
+.study-tablet .tablet-tools svg { width: 20px; height: 20px; }
+.study-tablet .tablet-zoom { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+.study-tablet #tablet-scale { min-width: 46px; text-align: center; font: 14px/1.5 var(--sans); }
+.study-tablet .tablet-status { flex: 0 0 auto; min-height: 26px; margin: 0; padding: 2px 12px; background: var(--tablet-bar); color: var(--tablet-muted); font: 14px/1.5 var(--sans); }
+.study-tablet .tablet-status[data-error="true"] { color: #fff0c2; border: 2px solid #df6433; }
+.study-tablet .tablet-viewport { position: relative; flex: 1 1 0; min-height: 100px; overflow: hidden; touch-action: none; background: #100e0c; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.study-tablet .tablet-paper { position: absolute; left: 0; top: 0; width: var(--tablet-width); transform-origin: 0 0; background: var(--study-bg); isolation: isolate; }
+.study-tablet .tablet-paper .study-stage { padding: var(--tablet-pad); padding-bottom: var(--tablet-note-space); width: var(--tablet-width); pointer-events: none; }
+.study-tablet .tablet-paper .study-section-title { margin: 0 0 12px; font: 500 20px/1.5 var(--sans); letter-spacing: 0; color: var(--study-accent-strong); }
+.study-tablet .tablet-paper .study-stage iframe { width: 976px; height: 1098px; aspect-ratio: auto; margin: 0 0 12px; border: 0; pointer-events: none; }
+.study-tablet .tablet-paper[data-view="front"] .study-stage iframe,
+.study-tablet .tablet-paper[data-view="plan"] .study-stage iframe { height: 549px; }
+.study-tablet .tablet-paper .study-note-text { font: 20px/1.6 var(--sans); margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.study-tablet .tablet-paper .study-stage > .study-muted { display: none; }
+.study-tablet svg.tablet-ink { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; overflow: hidden; }
+.tablet-ink path { fill: none; stroke: var(--tablet-line); stroke-width: var(--tablet-stroke); stroke-linecap: round; stroke-linejoin: round; }
+.tablet-ink path.tablet-halo { stroke: var(--study-bg); stroke-width: var(--tablet-halo); }
+.tablet-ink text { fill: var(--tablet-line); stroke: var(--study-bg); stroke-width: 3px; paint-order: stroke; font: var(--tablet-text)/1.5 var(--sans); }
+.study-tablet #study-side { display: none; }
+.study-tablet.tablet-details #study-side { display: block; position: absolute; top: 52px; right: 8px; bottom: 92px; width: min(380px, calc(100% - 16px)); max-height: none; overflow: auto; background: var(--study-bg); border: 1px solid var(--study-accent); padding: 16px; z-index: 4; }
+.study-tablet #study-side .study-controls { display: none; }
+.study-tablet .tablet-editor { position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 20; padding: 12px; max-width: 580px; margin: auto; border: 2px solid var(--study-accent); background: var(--study-bg); }
+.study-tablet .tablet-editor label { font-size: 14px; letter-spacing: 0; margin: 0 0 4px; }
+.study-tablet .tablet-editor textarea { font-size: var(--tablet-input); min-height: 90px; height: 110px; max-height: 25dvh; }
+.study-tablet .tablet-editor footer { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.study-tablet .tablet-editor button { font-size: 16px; }
+.study-tablet .tablet-editor small { font-size: 14px; }
+@media (max-width: 900px) { .study-tablet .tablet-tools button:not(#tablet-minus):not(#tablet-plus) span { display: none; } .study-tablet #study-stamp { display: none; } }
+@media (prefers-reduced-motion: reduce) { .study-tablet * { transition: none !important; } }
