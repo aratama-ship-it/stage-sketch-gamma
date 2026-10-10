@@ -1,8 +1,8 @@
 {
-  "version": "0.3.42",
+  "version": "0.3.43",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.42/stage-sketch-gamma-mac-0.3.42.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.43/stage-sketch-gamma-mac-0.3.43.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "確認窓のボタン名と「未適用」の表示を整え、空の舞台の案内、最後の控えの時刻、ブラウザタブのショー名と版を追加しました。保存形式は変わりません（v0.3.42）。",
+  "notes": "全画面・現場モード・3D の終了ボタンを右上に揃えました。Esc で終了できるのは全画面と 3D だけで、現場モードは誤操作を防ぐため終了ボタンだけで終えます。保存形式は変わりません（v0.3.43）。",
   "updated": "2026-10-10"
 }

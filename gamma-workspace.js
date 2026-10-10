@@ -819,7 +819,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261010-v0342'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261010-v0343'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;

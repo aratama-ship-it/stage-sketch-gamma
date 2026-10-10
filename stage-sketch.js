@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.42";
+  const GAMMA_APP_VERSION = "v0.3.43";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -32007,7 +32007,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   function finishFullscreenView() {
-    // Esc may leave native fullscreen, but it must not unlock the editor.
+    // D-48 でも変えない（本番中の安全）: 全画面がブラウザ側で解けても、現場モードの表示の固定は外さない。
+    // 現場モードを終える手段は「現場モードを終了」ボタンだけ（試験場 H の手順「Esc／F／背景で編集へ戻らない」）。
     if (fieldMode) { pseudoPresenting = true; return; }
     const saved = fullscreenHome;
     if (!saved) return;
@@ -32174,7 +32175,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (!fieldMode) return;
     const action = event.target?.closest?.("#stage-field-exit, #stage-field-go, #stage-field-scene-next, #stage-field-cue-next");
     if (event.type === "keydown") {
-      if (event.key === "Tab") return; // Existing presentation focus trap.
+      if (event.key === "Tab") return; // Existing presentation focus trap. Esc stays blocked in field mode (D-48 keeps this).
       if (action && !event.metaKey && !event.ctrlKey && !event.altKey && ["Enter", " "].includes(event.key) && !event.repeat) return;
       event.preventDefault(); event.stopImmediatePropagation();
       if (event.repeat || event.isComposing || event.metaKey || event.ctrlKey || event.altKey) return;
@@ -32278,21 +32279,59 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
 
   /* 全画面かどうか。全画面中だけ、シーンの説明を絵の中へ描く。
      入るときも出るときも描き直しがいる（出たあと字が残らないように）。 */
+  let modeFullscreenElement = document.fullscreenElement;
   document.addEventListener("fullscreenchange", () => {
-    if (pseudoPresenting) return;
-    const now = document.fullscreenElement === document.documentElement;
-    if (!now && presenting) finishFullscreenView();
-    else if (now && presenting) { syncCanvasResolution(); render(); }
+    const previous = modeFullscreenElement;
+    modeFullscreenElement = document.fullscreenElement;
+    // Safari may deliver no keydown after its native Esc. Clean up here too.
+    if (previous && !modeFullscreenElement) {
+      // 現場モードは表示の固定を保つ（finishFullscreenView が疑似全画面へ切り替える）。抜けるのはボタンだけ。
+      if (fieldMode) { finishFullscreenView(); return; }
+      window.SHOSAI_STAGE_FPV?.close();
+      if (presenting) finishFullscreenView();
+    } else if (presenting && modeFullscreenElement) { syncCanvasResolution(); render(); }
   });
 
-  document.addEventListener("keydown", (event) => {
-    if (!presenting) return;
-    if (event.key !== "Escape" || event.defaultPrevented) return;
-    event.preventDefault();
-    if (fullscreenModalOpen()) return;
-    if (pseudoPresenting) exitPseudoPresentation();
-    else toggleStageFullscreen();
-  });
+  function modeExitInnerOpen(root = null) {
+    const surface = root || els.presentOverlay;
+    const overlays = [...document.querySelectorAll('[role="dialog"], [role="alertdialog"], [role="menu"], [popover], .stage-piece-context-menu, #stage-header-volume-pop, #stage-panel-layout-menu, #stage-panels-menu'),
+      ...(surface?.querySelectorAll?.('details[open], .gamma-selection-floating') || [])];
+    return overlays.some(node => node !== root && !node.hidden && !node.closest?.('[inert]') && node.getClientRects().length > 0);
+  }
+  function deferModeEscape(event, exit, root = null, dismiss = () => false) {
+    if (event.key !== "Escape" || event.defaultPrevented || event.isComposing || event.repeat) return;
+    // Snapshot before other capture/bubble listeners close their windows. Their
+    // existing handlers keep ownership of this first Esc, even without preventDefault.
+    const innerOpen = modeExitInnerOpen(root);
+    queueMicrotask(() => {
+      if (event.defaultPrevented) return;
+      if (innerOpen) {
+        // Native details/popovers do not all have a custom Esc listener.
+        (root || els.presentOverlay)?.querySelectorAll('details[open]').forEach(node => {
+          if (node.getClientRects().length) node.open = false;
+        });
+        document.querySelectorAll('[popover]').forEach(node => {
+          if (node.getClientRects().length) node.hidePopover?.();
+        });
+        return;
+      }
+      if (dismiss()) return;
+      exit();
+    });
+  }
+  window.GAMMA_MODE_EXIT = Object.freeze({ deferEscape: deferModeEscape });
+  window.addEventListener("keydown", event => {
+    // 現場モードの Esc は guardFieldInput が止める（本番中の押し間違い防止）。ここでも扱わない。
+    if (!presenting || fieldMode || window.SHOSAI_STAGE_FPV?.isOpen?.()) return;
+    deferModeEscape(event, () => {
+      if (presenting) void toggleStageFullscreen();
+    }, null, () => {
+      if (els.presentDrawer && !els.presentDrawer.hidden) {
+        setFullscreenDrawer(false); return true;
+      }
+      return false;
+    });
+  }, true);
 
   // 全画面の入口と同じ可否を守る。入力中やダイアログ操作中のFは奪わない。
   document.addEventListener("keydown", (event) => {

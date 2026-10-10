@@ -44,7 +44,7 @@
         const timer = setTimeout(() => finish(new Error("3d-load-timeout")), 30000);
         script.onload = () => finish(window.SHOSAI_STAGE_FPV ? null : new Error("3d-api-missing"));
         script.onerror = () => finish(new Error("3d-load-failed"));
-        script.src = "stage-first-person.js?v=20261010-v0342";
+        script.src = "stage-first-person.js?v=20261010-v0343";
         document.head.append(script);
       });
     })().finally(() => { loading = null; });

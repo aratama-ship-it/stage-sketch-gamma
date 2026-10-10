@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v517";
+const CACHE_NAME = "stage-sketch-gamma-shell-v518";
 // BEGIN GENERATED SHELL (node tools/asset-ledger.mjs --write-sw)
 const APP_SHELL_CORE = [
   "./assets/brand/logo-jp-gamma-inline-white.svg",
@@ -19,9 +19,9 @@ const APP_SHELL_CORE = [
   "./gamma-range-fields.js?v=2026091780",
   "./gamma-render-resolution.js?v=20261006-v0318",
   "./gamma-ui-i18n.js?v=20261010-v0338",
-  "./gamma-ui-tokens.css?v=20261010-v0342",
+  "./gamma-ui-tokens.css?v=20261010-v0343",
   "./gamma-ui.js?v=20261010-v0342",
-  "./gamma-workspace.js?v=20261010-v0342",
+  "./gamma-workspace.js?v=20261010-v0343",
   "./gamma.css?v=20261010-v0342",
   "./icons/stage-sketch-180.png",
   "./icons/stage-sketch-192.png",
@@ -29,20 +29,20 @@ const APP_SHELL_CORE = [
   "./light-design/laser-effects.js?v=20261005-batch98",
   "./light-design/rig-engine.js?v=20261006-v0315",
   "./light-design/simple-lighting-model.js?v=20261001-release71",
-  "./manual-gamma/manual-content.js?v=20261010-v0342",
-  "./manual-gamma/manual-meta.js?v=20261010-v0342",
+  "./manual-gamma/manual-content.js?v=20261010-v0343",
+  "./manual-gamma/manual-meta.js?v=20261010-v0343",
   "./run-of-show/timing.js?v=20261010-v0338",
   "./run.html",
   "./stage-audio-store.js?v=2026092523",
   "./stage-cue-sheet.js?v=20261010-v0342",
   "./stage-data-safety.js?v=20261001-release69",
-  "./stage-first-person-loader.js?v=20261010-v0342",
+  "./stage-first-person-loader.js?v=20261010-v0343",
   "./stage-fixture-body.js?v=20261009-v0335",
   "./stage-front-shape.js?v=2026092046",
-  "./stage-i18n.js?v=20261010-v0342",
+  "./stage-i18n.js?v=20261010-v0343",
   "./stage-idle-motion.js?v=20261005-v032",
   "./stage-jog-reference.js?v=2026093003",
-  "./stage-language-loader.js?v=20261010-v0342",
+  "./stage-language-loader.js?v=20261010-v0343",
   "./stage-large-project-store.js?v=20260928-storage49",
   "./stage-light-eval.js?v=20261004-receiver89",
   "./stage-light-panel-import.js?v=2026092209",
@@ -69,7 +69,7 @@ const APP_SHELL_CORE = [
   "./stage-run-of-show-distribution.js?v=20261006-v038",
   "./stage-run-of-show-files.js?v=20261009-v0335",
   "./stage-run-of-show-model.js?v=20261006-v0312",
-  "./stage-run-of-show-pane.js?v=20261010-v0342",
+  "./stage-run-of-show-pane.js?v=20261010-v0343",
   "./stage-run-of-show.css?v=20261009-v0337",
   "./stage-samples/catalog.js?v=20261010-v0338",
   "./stage-samples/index.js?v=2026092402",
@@ -86,7 +86,7 @@ const APP_SHELL_CORE = [
   "./stage-shortcuts.js?v=20261010-v0338",
   "./stage-show-overview.css?v=20261009-v0337",
   "./stage-show-overview.js?v=20261009-v0337",
-  "./stage-sketch.js?v=20261010-v0342",
+  "./stage-sketch.js?v=20261010-v0343",
   "./stage-sketch.webmanifest",
   "./stage-storage-codec.js?v=2026092523",
   "./stage-storage-hygiene.js?v=20261001-release69",
@@ -126,7 +126,7 @@ const APP_SHELL_GROUPS = {
     "./light-design/app.js?v=20261010-v0342",
     "./light-design/embed.css?v=20261010-v0338",
     "./light-design/embed.js?v=20261010-v0338",
-    "./light-design/index.html?embed=gamma&v=20261010-v0342",
+    "./light-design/index.html?embed=gamma&v=20261010-v0343",
     "./light-design/laser-effects-ui.js?v=20260915-3-supported-shapes",
     "./light-design/light-presets-ui.js?v=20261010-v0338",
     "./light-design/light-presets.js?v=1789357787",
@@ -149,9 +149,9 @@ const APP_SHELL_GROUPS = {
   ],
   "language": [
     "./gamma-ui-i18n.ko.js?v=20261010-v0338",
-    "./stage-i18n.ko.js?v=20261010-v0342",
-    "./stage-i18n.zh-Hans.js?v=20261010-v0342",
-    "./stage-i18n.zh-Hant.js?v=20261010-v0342"
+    "./stage-i18n.ko.js?v=20261010-v0343",
+    "./stage-i18n.zh-Hans.js?v=20261010-v0343",
+    "./stage-i18n.zh-Hant.js?v=20261010-v0343"
   ],
   "manual": [
     "./manual-gamma/index.html",
@@ -165,14 +165,14 @@ const APP_SHELL_GROUPS = {
     "./run-of-show/editor.css?v=20261010-v0342",
     "./run-of-show/editor.js?v=20261010-v0342",
     "./run-of-show/images.js",
-    "./run-of-show/index.html?v=20261010-v0342",
+    "./run-of-show/index.html?v=20261010-v0343",
     "./run-of-show/layout.js?v=20261010-v0338",
     "./run-of-show/pagination.js?v=20261010-v0338",
     "./run-of-show/paper-edit.js?v=ros8",
     "./run.css"
   ],
   "3d": [
-    "./stage-first-person.js?v=20261010-v0342"
+    "./stage-first-person.js?v=20261010-v0343"
   ],
   "samples": [
     "./stage-samples/feature-test-show.js?v=20261009-v0335",

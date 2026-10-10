@@ -1321,10 +1321,14 @@
     const preview3d = createElement("button", "stage-fpv-preview-3d");
     preview3d.type = "button";
     preview3d.textContent = "3Dモードで見る";
-    const closeButton = createElement("button", "stage-fpv-close");
+    const closeButton = createElement("button", "stage-fpv-close", "gamma-mode-exit");
     closeButton.type = "button";
     closeButton.dataset.tipDescription = "3Dの視界を閉じて、元の作業画面へ戻ります。";
-    closeButton.textContent = "✕";
+    const exitLabel = createElement("span"); exitLabel.textContent = text("3D を終了");
+    const exitKey = createElement("kbd"); exitKey.textContent = "Esc"; exitKey.dataset.noI18n = "";
+    closeButton.append(exitLabel, exitKey);
+    closeButton.setAttribute("aria-label", text("3D を終了"));
+    closeButton.setAttribute("aria-keyshortcuts", "Escape");
     optics.append(lightControls, panelToggles, lens, house, crowd);
     root.append(canvas, fade, title, minimap, optics,
       panels.front.panel, panels.plan.panel,
@@ -1890,7 +1894,8 @@
     moreButton.onclick = () => document.getElementById("stage-help-open")?.click();
     more.append(moreText, moreButton);
     elements.keyGuide.appendChild(more);
-    elements.closeButton.setAttribute("aria-label", text("視界を閉じる"));
+    elements.closeButton.querySelector("span").textContent = text("3D を終了");
+    elements.closeButton.setAttribute("aria-label", text("3D を終了"));
     PANEL_KEYS.forEach((key) => {
       const label = text(key === "front" ? "正面図" : "平面図");
       elements.panels[key].title.textContent = label;
@@ -5018,9 +5023,21 @@
   function onKeyDown(event) {
     if (!state.opened || event.isComposing) return;
     const modal = event.target?.closest?.('[role="dialog"][aria-modal="true"]');
+    const code = event.code || event.key;
+    if (code === "Escape" && window.GAMMA_MODE_EXIT) {
+      window.GAMMA_MODE_EXIT.deferEscape(event, () => { if (state.opened) close(); }, elements.root, () => {
+        if (!state.opened) return true;
+        let dismissed = false;
+        if (state.sel) { clearSelection(); dismissed = true; }
+        if (!elements.keyGuide.hidden) { clearTimeout(helpTimer); setHelpVisible(false); dismissed = true; }
+        // 正面図・平面図の小窓は 3D の既定の配置で、表示の有無は端末に保存される。
+        // Esc で出ようとしただけで配置を変えないよう、小窓は閉じない（閉じるのは一時的な選択欄と操作説明だけ）。
+        return dismissed;
+      });
+      return;
+    }
     if (modal && modal !== elements?.root) return;
     if (typingInField(event.target)) return;
-    const code = event.code || event.key;
     if (state.previewOnly) {
       consumeKey(event);
       if (code === "Escape") close();
@@ -5151,6 +5168,8 @@
       if (typeof elements.root.style.removeProperty === "function") elements.root.style.removeProperty("--stage-fpv-workspace-top");
       else elements.root.style["--stage-fpv-workspace-top"] = "";
     }
+    elements.closeButton.querySelector("span").textContent = text("3D を終了");
+    elements.closeButton.setAttribute("aria-label", text("3D を終了"));
     elements.root.hidden = false;
     elements.root.setAttribute("aria-hidden", "false");
     showInitialHelp();
@@ -5224,6 +5243,7 @@
   window.SHOSAI_STAGE_FPV = Object.freeze({
     open,
     close,
+    isOpen: () => state.opened,
     /* 環境設定から呼ぶ。設定が正本なので bridge へは書き戻さない（往復させない）。
        3Dカメラを開いていなければチップも描画も無く、次に開いたときに反映される。 */
     setCrowdMode: (id) => setCrowdMode(id, false),

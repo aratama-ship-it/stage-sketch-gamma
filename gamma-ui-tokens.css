@@ -586,3 +586,35 @@ html[data-stage-skin] .stage-drawing-guide:not([hidden]) { padding:var(--gamma-g
 #stage-backup-status.is-caution { color:var(--storage-warning-caution); }
 #stage-backup-status:focus-visible { outline:2px solid var(--storage-warning-caution); outline-offset:2px; }
 @media print { #stage-live.stage-action-status { display:none !important; } }
+
+/* D-48: the same exit control in presentation, field and 3D modes. */
+html[data-stage-skin] :is(#stage-present-close, #stage-field-exit, #stage-fpv-close).gamma-mode-exit {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + var(--gamma-gap));
+  right: calc(env(safe-area-inset-right, 0px) + var(--gamma-gap));
+  display: inline-flex; align-items: center; justify-content: center;
+  box-sizing: border-box; gap: var(--gamma-gap);
+  width: calc(var(--ctrl-lg) * 5); max-width: calc(100vw - var(--gamma-gap) * 2);
+  height: var(--ctrl-lg); min-height: var(--ctrl-lg);
+  padding: 0 var(--gamma-gap); border: 1px solid var(--brass);
+  border-radius: var(--radius-md); background: var(--desk); color: var(--milk);
+  font: 600 var(--fs-6)/1.5 var(--sans); letter-spacing: 0; z-index: 72;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+/* 3D は全画面ではなく、上のタブ列の下に描くタブ。終了ボタンは画面全体でなく 3D の領域の右上に置く
+   （上のタブに重ねない。右側の小窓はこのボタンの下端を基準に並ぶ＝measurePanelSpans）。 */
+html[data-stage-skin] #stage-fpv-close.gamma-mode-exit {
+  position: absolute;
+  top: var(--gamma-gap);
+  right: var(--gamma-gap);
+}
+html[data-stage-skin] .gamma-mode-exit kbd { font: inherit; font-size: var(--fs-3); }
+html[data-stage-skin] .gamma-mode-exit:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+html[data-stage-skin] .stage-present-swap {
+  top: calc(env(safe-area-inset-top, 0px) + var(--gamma-gap));
+  right: calc(env(safe-area-inset-right, 0px) + var(--ctrl-lg) * 5 + var(--gamma-gap) * 2);
+}
+html[data-stage-skin] .stage-field-head { min-height: var(--ctrl-lg); padding-right: calc(var(--ctrl-lg) * 5); }
+@media (max-width: 600px) {
+  html[data-stage-skin] .stage-field-head { padding-right: 0; padding-top: var(--ctrl-lg); }
+}

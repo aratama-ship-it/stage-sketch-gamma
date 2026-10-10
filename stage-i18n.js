@@ -1380,6 +1380,7 @@
     "シーンのキューで点いている灯体の、光が落ちる場所を正面図・平面図に出す。図が重くなります": "Show where the lit fixtures in this scene's cue land, on the front and plan views. Heavier to draw",
     "前のシーンへ": "Previous scene",
     "次のシーンへ": "Next scene",
+    "3D を終了": "Exit 3D",
     "全画面を終了": "Exit full screen",
     "文字サイズ": "Text size",
     "小": "Small",
@@ -4087,6 +4088,12 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "確認の窓のボタンを、操作に合わせて「作る」「戻る」「開く」「変更する」と表示し、「未反映」は「未適用」に改めました。": "Confirmation buttons now name the action: Create, Go back, Open and Change. ‘Not reflected’ is now ‘Not applied’.",
   "空の舞台に演者を足す案内を出し、左下に最後の控えの時刻を表示するようにしました。": "An empty stage now shows a prompt to add a performer, and the time of the latest backup stays visible at the bottom left.",
   "ブラウザのタブに、ショー名と版（Studio／Lite／Company）を表示するようにしました。": "The browser tab now shows the show name and edition (Studio, Lite or Company)."
+});
+
+// v0.3.43 release notes.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "全画面・現場モード・3D の終了ボタンを右上に揃えました。3D は 3D の領域の右上に表示します。": "The exit buttons for full screen, field mode and 3D are now aligned at the top right. In 3D, the button appears at the top right of the 3D area.",
+  "Esc で終了できるのは全画面と 3D だけです。現場モードは誤操作を防ぐため、終了ボタンだけで終えます。": "Esc exits full screen and 3D only. To prevent accidental exits, field mode can be ended only with its exit button."
 });
 
 // L-04 UI copy.

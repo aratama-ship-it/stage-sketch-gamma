@@ -32,7 +32,7 @@
     if(workspace.dataset.loading==='true'&&frame.contentDocument?.body){loadingObserver=new MutationObserver(syncLoading);loadingObserver.observe(frame.contentDocument.body,{attributes:true,attributeFilter:['class']});}
   });
   window.GAMMA_RUN_OF_SHOW_PANE={
-    open(){if(!loaded){workspace.dataset.loading='true';syncLoading();frame.src='run-of-show/index.html?v=20261010-v0342';loaded=true;}else editor()?.refresh();},
+    open(){if(!loaded){workspace.dataset.loading='true';syncLoading();frame.src='run-of-show/index.html?v=20261010-v0343';loaded=true;}else editor()?.refresh();},
     finish(){return !editor()||editor().finish();},
     summary(value){if(lite){summary=value;paintBands();}},
     openScene(row){
