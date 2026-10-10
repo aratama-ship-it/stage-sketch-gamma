@@ -1,8 +1,8 @@
 {
-  "version": "0.3.39",
+  "version": "0.3.40",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.39/stage-sketch-gamma-mac-0.3.39.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.40/stage-sketch-gamma-mac-0.3.40.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "情報バー、灯体の番号表示、シーンと劇場の操作を改善し、Undo時の支持台との関連を保持します（v0.3.39）。",
+  "notes": "セクション行のミュージックシンクの入口を隠しました。保存済みのデータとタイムライン表示は維持します（v0.3.40）。",
   "updated": "2026-10-10"
 }

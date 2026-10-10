@@ -34,7 +34,7 @@ ${fig("68-timeline-rj", "The timeline of the sample “Romeo and Juliet” aroun
 ${vid("timeline-play", "Opening the timeline in scene 1-2 of “Romeo and Juliet” and playing it. The playhead line moves past the cues.")}`
       },
       {
-        id: "music", title: "Audio (load, assign, count alignment, Music Sync)", status: "sourced",
+        id: "music", title: "Audio (load, assign, count alignment)", status: "sourced",
         keywords: ["music", "audio", "song", "track", "soundtrack", "bgm", "load", "assign", "play", "no sound", "audio file not found", "reconnect", "gain", "db", "bpm", "estimate", "first beat", "count", "anchor", "phrase", "music sync", "sync"],
         html: `
 <p>Open the timeline with ${kbd("E")} and press ${ui("＋")} in the soundtrack lane. In ${ui("Add soundtrack")}, use ${ui("Load new file")} to choose a file on this device, or ${ui("Choose from library")} to assign a registered track to the current scene.</p>
@@ -47,8 +47,8 @@ ${table(["Control", "Meaning"], [
   [ui("Replace"), "Choose this scene's soundtrack from the library or a new file. The original track stays in the library"],
   [ui("Gain") + " (dB)", "Per-track volume correction"]
 ])}
-<h4>Count alignment (Music Sync)</h4>
-<p>${ui("Open Music Sync")} on a section row opens a window for aligning that chapter's audio with counts (beats). ${ui("Estimate BPM")} guesses the tempo, ${ui("Mark first beat")} (${ui("Set start here")}) marks count one, and ${ui("Count alignment")} points (anchors) correct drift (${ui("Clear markers")} removes them). Set the phrases (8 or 16 counts) and the timeline's count scale follows this setting.</p>
+<h4>Count alignment</h4>
+<p>In a section's timeline, press ${ui("Time-based")} to switch to ${ui("Count-based")} and the tempo and count controls appear (editable when audio is assigned). ${ui("Estimate BPM")} guesses the tempo and ${ui("Mark first beat")} marks count one. Where the music drifts, press ${ui("Set start here")} near the start of an 8-count phrase to add a ${ui("Count alignment")} point (anchor); ${ui("Clear markers")} removes them. The count scale follows this tempo and these points.</p>
 <p>Audio no longer used is tidied away after at least 24 hours (audio referenced by saved shows, alternatives or recovery backups is kept).</p>
 <p>Try it in: H-2 (track A, file missing) and H-3 (track B, count sync at 120 BPM).</p>`
       },

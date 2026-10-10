@@ -4046,3 +4046,8 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "シーン分割などを元に戻したとき、ほかのシーンの支持台との関連が失われる不具合を修正しました。": "Undoing operations such as scene splits now preserves support relationships in other scenes.",
   "Mac版に隊形の試作ページとAI用の手引きを同梱しました。保存形式は変わりません。": "The Mac app now includes the formation prototype and AI guide. The save format is unchanged."
 });
+
+// v0.3.40 release notes.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "セクション行のミュージックシンクの入口を表示しないようにしました。保存済みのデータとタイムラインの表示はそのままです。": "The Music Sync entry points in section rows are now hidden. Saved data and the timeline display remain unchanged."
+});

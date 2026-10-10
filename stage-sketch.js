@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.39";
+  const GAMMA_APP_VERSION = "v0.3.40";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -513,7 +513,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     catch (_) { return ""; }
   })();
   const RELEASE_FEATURES = Object.freeze({
-    formationSync: RELEASE_SCOPE_ID !== "beta-20260912",
+    // 2026-10-10 本人決定: ミュージックシンクの入口（セクション行の「開く」「▶ 再生」）を隠す。保存データと時間軸の表示は残す。
+    // 戻すときは元の式 RELEASE_SCOPE_ID !== "beta-20260912" に。カウント合わせはタイムラインのカウント式で行える。
+    formationSync: false,
     propMask: RELEASE_SCOPE_ID !== "beta-20260912",
   });
 

@@ -43,7 +43,7 @@ ${steps([
 ${fig("10-section-A", "The scene list. Scene rows hang under section rows (▾, number, coloured square), with “Transition” frames between rows.", "Scene list and sections")}
 <ul>
 <li><strong>Row numbers</strong> are given automatically as “section-scene”, for example “2-1”. Nested sections go deeper, such as “10-2-1”.</li>
-<li><strong>A section row</strong> (▾) shows the first scene of that chapter when clicked, and ▾ folds it. The coloured square is the section colour, echoed in the line down the left of the list. A section row also offers ${ui("Open Music Sync")} (align that chapter's audio with counts; ${ref("music", "Part 9, 9-2")}).</li>
+<li><strong>A section row</strong> (▾) shows the first scene of that chapter when clicked, and ▾ folds it. The coloured square is the section colour, echoed in the line down the left of the list.</li>
 <li><strong>Reorder</strong> by dragging the ⠿ at the left of a row. The other rows slide aside.</li>
 <li>The <strong>…</strong> at the right of a row offers ${ui("Move out one level")} / ${ui("Move in one level")}, ${ui("Rename")} (the detail window with name, subtitle, description and times; ${ref("scene-detail", "3-5")}), ${ui("Group a range from here into a new section")}, ${ui("Create next scene")} and ✕ (delete).</li>
 <li>Below the selected scene a <strong>description</strong> field opens. The description appears in a small pop-up when you hover over the scene name.</li>
