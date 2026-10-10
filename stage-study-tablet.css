@@ -56,3 +56,13 @@ html:has(body.study-tablet) { overflow: hidden; scrollbar-gutter: auto; }
 .study-tablet .tablet-editor small { font-size: 14px; }
 @media (max-width: 900px) { .study-tablet .tablet-tools button:not(#tablet-minus):not(#tablet-plus) span { display: none; } .study-tablet #study-stamp { display: none; } }
 @media (prefers-reduced-motion: reduce) { .study-tablet * { transition: none !important; } }
+/* Scene-owned annotation pages share the existing navigation and details panel. */
+.study-tablet { --tablet-page-width: 160px; --tablet-page-narrow: 112px; --tablet-page-gap: 8px; }
+.study-tablet .tablet-toolbar #tablet-pages { width: var(--tablet-page-width); min-width: 0; }
+.study-tablet .tablet-page-panel { display: grid; gap: var(--tablet-page-gap); margin-bottom: 16px; }
+.study-tablet .tablet-page-panel label { margin: 0; font-size: var(--tablet-ui); letter-spacing: 0; }
+.study-tablet .tablet-page-panel input { min-width: 0; width: 100%; font-size: var(--tablet-input); height: 44px; min-height: 44px; }
+.study-tablet .tablet-page-actions { display: flex; gap: var(--tablet-page-gap); }
+.study-tablet .tablet-page-actions button { flex: 1; min-width: 44px; min-height: 44px; font-size: var(--tablet-ui); padding: 4px 8px; }
+.study-tablet #tablet-page-count { color: var(--tablet-muted); font: var(--tablet-ui)/1.5 var(--sans); }
+@media(max-width:900px) { .study-tablet .tablet-toolbar #tablet-pages { width: var(--tablet-page-narrow); } .study-tablet .tablet-toolbar #study-view { width: 104px; } }

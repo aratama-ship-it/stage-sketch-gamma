@@ -31,6 +31,9 @@
   "use strict";
 
   const TEXT = {
+    "iPadの演者用リンクで、1シーンに複数の書き込みページを作り、複製・白紙追加・名前変更・切り替えができるようになりました。": "The iPad performer viewer now supports multiple annotation pages for each scene, with duplication, blank pages, renaming and switching.",
+    "書き込みの控えは、現在のシーンの全ページをまとめて保存します。以前の書き込みも保持します。": "Annotation backups include every page in the current scene. Existing annotations are preserved.",
+
     "{{show}} — 舞台スケッチ γ {{edition}}": "{{show}} — Stage Sketch Gamma {{edition}}",
     "進行表: {{show}} — 舞台スケッチ γ {{edition}}": "{{show}} — Stage Sketch Gamma {{edition}}",
 
@@ -4136,4 +4139,15 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "複数選択": "Multiple selection",
   "平面図でShift＋クリックか囲って選ぶ": "Shift-click or drag a box to select on the plan view"
+});
+
+// Scene annotation pages, 2026-10-10.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "書き込みページ": "Annotation page",
+  "ページ名": "Page name",
+  "ページを複製": "Duplicate page",
+  "白紙を追加": "Add blank page",
+  "ページ": "Page",
+  "コピー": "copy",
+  "書き込みはページ・表示ごとにこの端末へ保存": "Notes are saved on this device for each page and view"
 });

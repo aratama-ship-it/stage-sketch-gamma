@@ -1,8 +1,8 @@
 {
-  "version": "0.3.43",
+  "version": "0.3.44",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.43/stage-sketch-gamma-mac-0.3.43.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.44/stage-sketch-gamma-mac-0.3.44.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "全画面・現場モード・3D の終了ボタンを右上に揃えました。Esc で終了できるのは全画面と 3D だけで、現場モードは誤操作を防ぐため終了ボタンだけで終えます。保存形式は変わりません（v0.3.43）。",
+  "notes": "iPadの演者用リンクで、1シーンに複数の書き込みページを作れるようになりました。ページの複製・白紙追加・名前変更・切り替えに対応しています（v0.3.44）。",
   "updated": "2026-10-10"
 }

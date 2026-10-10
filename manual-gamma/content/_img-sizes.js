@@ -7,3 +7,6 @@ window.VIDEO_VERSIONS = {"ja": {"dialogue-assign": "b9934907fd49", "formation-st
 
 window.IMG_SIZES["release037-runshow"] = [1440, 900];
 window.IMG_SIZES_EN["release037-runshow"] = [1440, 900];
+
+window.IMG_SIZES["release044-ipad-pages"] = [1440, 900];
+window.IMG_SIZES_EN["release044-ipad-pages"] = [1440, 900];

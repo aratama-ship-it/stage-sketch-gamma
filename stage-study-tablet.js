@@ -27,6 +27,7 @@
   const nav = make('nav','tablet-toolbar'), tools = make('nav','tablet-toolbar tablet-tools');
   nav.setAttribute('aria-label',t('シーンと表示')); tools.setAttribute('aria-label',t('書き込みの道具'));
   const sceneRow = document.querySelector('.study-scene-row'); nav.append(sceneRow, $('study-replay'), $('study-stop'), $('study-view'));
+  const pageSelect=make('select'); pageSelect.id='tablet-pages'; pageSelect.setAttribute('aria-label',t('書き込みページ')); nav.append(pageSelect);
   const detailButton = button('tablet-details','メモ・共有'); nav.append(detailButton);
   const viewport = make('div','tablet-viewport'), paper = make('div','tablet-paper'); viewport.id='tablet-viewport'; paper.id='tablet-paper';
   const ink = svg('svg', {'class':'tablet-ink','aria-label':t('全面書き込み'),role:'img'}), notesGroup=svg('g'), draftGroup=svg('g');
@@ -38,6 +39,12 @@
   const zoomBox=make('div','tablet-zoom'), minus=button('tablet-minus','縮小'), plus=button('tablet-plus','拡大'), fit=button('tablet-fit','全体表示','fit'), percentage=make('output'); percentage.id='tablet-scale'; minus.querySelector('span').textContent='−'; plus.querySelector('span').textContent='＋';
   zoomBox.append(minus,percentage,plus,fit); tools.append(zoomBox);
   const backup=button('tablet-export','書き込みの控えを保存','export'); $('study-side').prepend(backup);
+  const pagePanel=make('section','tablet-page-panel'); pagePanel.id='tablet-page-panel';
+  const pageLabel=make('label'); pageLabel.htmlFor='tablet-page-name'; pageLabel.textContent=t('ページ名');
+  const pageName=make('input'); pageName.id='tablet-page-name'; pageName.type='text'; pageName.maxLength=80; pageName.autocomplete='off'; pageName.setAttribute('data-1p-ignore',''); pageName.setAttribute('data-lpignore','true');
+  const pageActions=make('div','tablet-page-actions'), duplicate=button('tablet-page-duplicate','ページを複製'), blank=button('tablet-page-blank','白紙を追加');
+  const pageCount=make('small'); pageCount.id='tablet-page-count';
+  pageActions.append(duplicate,blank); pagePanel.append(pageLabel,pageName,pageActions,pageCount); $('study-side').prepend(pagePanel);
   const scope=make('p','study-muted'); scope.textContent=t('全面の書き込みはこの端末だけに保存され、オーナーへの共有には含まれません。'); $('study-side').prepend(scope);
   const editor=make('section','tablet-editor'); editor.hidden=true; editor.setAttribute('role','dialog'); editor.setAttribute('aria-modal','false'); editor.setAttribute('aria-labelledby','tablet-text-label');
   const label=make('label'); label.id='tablet-text-label'; label.htmlFor='tablet-text-input'; label.textContent=t('重ねる文字');
@@ -45,7 +52,7 @@
   const footer=make('footer'), count=make('small'), done=button('tablet-text-done','完了'); footer.append(count,done); editor.append(label,input,footer); document.body.append(editor);
   let state=null, currentKey='', session=null, mode='hand', camera={x:0,y:0,scale:1}, height=1300, fitting=true, ready=false;
   let draft=null, gesture=null, editing='', pointers=new Map(), suppressed=false, penId=null, resizePending=false;
-  const sessions=new Map();
+  const sessions=new Map(); let bookSession=null, currentView='';
   const items=()=>session?.doc.items || [];
   const clone=v=>structuredClone(v);
   const sheetPoint=p=>M.point(p,camera).map((v,i)=>Math.round(Math.max(0,Math.min(i?height:M.WIDTH,v))*100)/100);
@@ -66,18 +73,59 @@
     height=Math.min(M.MAX_HEIGHT,Math.max(320,stage.offsetHeight)); paper.style.height=height+'px'; ink.setAttribute('viewBox',`0 0 ${M.WIDTH} ${height}`);
     if(fitting) fitSheet(); else renderCamera();
   }
+  const activePage=()=>bookSession?.book.pages.find(p=>p.id===bookSession.book.activePageId);
+  const pageTitle=(page,index)=>page.name || `${t('ページ')} ${index+1}`;
+  function renderPages() {
+    const pages=bookSession?.book.pages || [];
+    pageSelect.replaceChildren(...pages.map((page,i)=>{const option=make('option'); option.value=page.id; option.textContent=pageTitle(page,i);return option;}));
+    pageSelect.value=bookSession?.book.activePageId || '';
+    if(document.activeElement!==pageName)pageName.value=activePage()?.name || '';
+    pageName.placeholder=activePage()?pageTitle(activePage(),pages.indexOf(activePage())):'';
+    pageCount.textContent=`${pages.length} / ${M.MAX_PAGES}`;
+    viewport.dataset.page=bookSession?.book.activePageId || '';
+  }
+  function bindPage() {
+    const page=activePage(); if(!page){session=null;return;}
+    const key=page.id+':'+state.view;
+    if(!bookSession.histories.has(key))bookSession.histories.set(key,{undo:[],redo:[]});
+    session={...bookSession.histories.get(key),doc:page.views[state.view],store:bookSession.store};
+    renderPages();renderNotes();
+  }
+  function saveBook() {
+    if(!bookSession)return;
+    bookSession.unsaved=!bookSession.store.put(bookSession.book);notify();
+  }
+  pageSelect.onchange=()=>{
+    if(!ready||!bookSession)return;
+    closeText();cancel();bookSession.book.activePageId=pageSelect.value;bindPage();saveBook();
+  };
+  function addPage(copy) {
+    if(!ready||!bookSession)return;
+    closeText();cancel();
+    const pages=bookSession.book.pages,source=activePage();
+    const name=copy?`${pageTitle(source,pages.indexOf(source))} ${t('コピー')}`.slice(0,80):'';
+    const next=M.appendPage(bookSession.book,{id:crypto.randomUUID(),sourceId:copy?source.id:null,name,revision:state.revision});
+    if(!next)return;
+    bookSession.book=next;bindPage();saveBook();pageName.focus();pageName.select();
+  }
+  duplicate.onclick=()=>addPage(true);blank.onclick=()=>addPage(false);
+  pageName.addEventListener('input',()=>{if(!ready||!activePage())return;activePage().name=pageName.value;renderPages();saveBook();});
   function notify(extra='') {
-    const failure=session?.store.error() || '';
+    const failure=bookSession?.store.error() || '';
+    const writable=ready && !['unreadable','conflict'].includes(failure);
     const messages={unreadable:'保存済みの書き込みを読めません。元データを保持しています。',conflict:'別のタブで書き込みが変わりました。控えを保存してから開き直してください。',full:'書き込みの保存上限です。控えを保存してください。',saveFailed:'端末に保存できません。閉じる前に控えを保存してください。'};
     status.dataset.error=String(Boolean(failure));
-    status.textContent=extra || (failure?t(messages[failure]):(session?.doc.items.length?t('この端末に保存済み'):t('書き込みはシーン・表示ごとにこの端末へ保存')))+' · '+t('二本指で全体を拡大・移動');
+    status.textContent=extra || (failure?t(messages[failure]):(session?.doc.items.length?t('この端末に保存済み'):t('書き込みはページ・表示ごとにこの端末へ保存')))+' · '+t('二本指で全体を拡大・移動');
     if(session?.doc.items.length && session.doc.revision!==state?.revision) status.textContent+=' · '+t('以前の公開版の書き込みです。重なりを確認してください。');
-    undo.disabled=!ready || !session?.undo.length; redo.disabled=!ready || !session?.redo.length;
-    for(const [key,b] of Object.entries(buttons)) {b.disabled=!ready; b.setAttribute('aria-pressed',String(mode===key));}
-    backup.disabled=!session;
+    undo.disabled=!writable || !session?.undo.length; redo.disabled=!writable || !session?.redo.length;
+    for(const [key,b] of Object.entries(buttons)) {b.disabled=!writable; b.setAttribute('aria-pressed',String(mode===key));}
+    pageSelect.disabled=!writable || !bookSession;
+    pageName.disabled=!writable || !bookSession;
+    duplicate.disabled=blank.disabled=!writable || !bookSession || bookSession.book.pages.length>=M.MAX_PAGES;
+    backup.disabled=!bookSession || failure==='unreadable';
   }
-  function checkpoint() { session.undo.push(clone(session.doc)); if(session.undo.length>20)session.undo.shift(); session.redo=[]; }
-  function save() { if(!session)return; session.unsaved=!session.store.put(session.doc); renderNotes(); notify(); }
+  function checkpoint() { session.undo.push(clone(session.doc)); if(session.undo.length>20)session.undo.shift(); session.redo.length=0; }
+  function save() { if(!session)return; activePage().views[state.view]=session.doc; saveBook(); renderNotes(); }
   function drawItem(item,parent) {
     if(item.kind==='stroke') {
       const points=item.points.length===1?[item.points[0],[item.points[0][0]+.01,item.points[0][1]]]:item.points;
@@ -132,7 +180,7 @@
     gesture={kind:'pinch',camera:{...camera},distance:Math.hypot(a.x-b.x,a.y-b.y),anchor:M.point(center,camera)};suppressed=true;fitting=false;
   }
   viewport.addEventListener('pointerdown',event=>{
-    if(!ready||event.button!==0)return;
+    if(!ready||buttons[mode].disabled||event.button!==0)return;
     if(penId!==null&&event.pointerType!=='pen')return; // Ignore palms while the Pencil is in contact.
     if(event.pointerType==='pen') { if(pointers.size)cancel();penId=event.pointerId; }
     const p=local(event);pointers.set(event.pointerId,p);
@@ -174,14 +222,14 @@
   },{passive:false});
   const zoomBy=factor=>{closeText();fitting=false;camera=M.zoom(camera,{x:viewport.clientWidth/2,y:viewport.clientHeight/2},Math.max(minScale(),Math.min(4,camera.scale*factor)));renderCamera();};
   minus.onclick=()=>zoomBy(1/1.25);plus.onclick=()=>zoomBy(1.25);fit.onclick=()=>{closeText();fitSheet();};
-  function history(back) {if(!session)return;closeText();const from=back?session.undo:session.redo,to=back?session.redo:session.undo;if(!from.length)return;to.push(clone(session.doc));session.doc=from.pop();save();}
+  function history(back) {if(!session || (back ? undo.disabled : redo.disabled))return;closeText();const from=back?session.undo:session.redo,to=back?session.redo:session.undo;if(!from.length)return;to.push(clone(session.doc));session.doc=from.pop();save();}
   undo.onclick=()=>history(true);redo.onclick=()=>history(false);
   window.addEventListener('keydown',event=>{if(!ready||/INPUT|TEXTAREA|SELECT/.test(event.target.tagName)||event.isComposing)return;
     if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='z'){event.preventDefault();event.stopImmediatePropagation();history(!event.shiftKey);}
   },true);
   detailButton.onclick=()=>{const open=document.body.classList.toggle('tablet-details');detailButton.setAttribute('aria-pressed',String(open));};
   backup.onclick=()=>{
-    if(!session)return;const blob=new Blob([JSON.stringify({format:'stage-study-tablet-backup-v1',scene:state.sceneTitle,view:state.view,...clone(session.doc)},null,2)],{type:'application/json'});
+    if(!bookSession)return;const blob=new Blob([JSON.stringify({format:'stage-study-tablet-backup-v2',scene:state.sceneTitle,sceneId:state.sceneId,...clone(bookSession.book)},null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob),a=make('a');a.href=url;a.download='stage-sketch-ipad-notes.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   };
   window.addEventListener('beforeunload',event=>{if([...sessions.values()].some(s=>s.unsaved)){event.preventDefault();event.returnValue='';}});
@@ -189,15 +237,15 @@
     state=next;ready=Boolean(next.live&&!next.pending&&!next.replaying);
     if(!next.live){closeText();cancel();ink.style.visibility='hidden';notify();return;}
     paper.dataset.view=next.view;
-    const key=[next.notebookId,next.accountId,next.sceneId,next.view].join(':');
-    if(key!==currentKey){
-      closeText();cancel();currentKey=key;
+    const key=[next.notebookId,next.accountId,next.sceneId].join(':');
+    if(key!==currentKey || next.view!==currentView){
+      closeText();cancel();currentKey=key;currentView=next.view;
       if(!sessions.has(key)){
         let storage;try{storage=window.localStorage;}catch{storage={getItem(){throw new Error('storage');}};}
-        const store=M.createStore(storage,next),doc=store.get()||{version:1,revision:next.revision,items:[]};
-        sessions.set(key,{store,doc,undo:[],redo:[],unsaved:false});
+        const store=M.createPageStore(storage,next),book=store.get()||M.newBook(next.revision);
+        sessions.set(key,{store,book,histories:new Map(),unsaved:false});
       }
-      session=sessions.get(key);renderNotes();
+      bookSession=sessions.get(key);bindPage();
     }
     ink.style.visibility=next.replaying?'hidden':'visible';viewport.dataset.scene=next.sceneId;viewport.dataset.project=next.projectId;entryURL.hash=location.hash;entry.href=entryURL.href;
     notify();requestAnimationFrame(layout);
@@ -206,9 +254,9 @@
   new ResizeObserver(()=>requestAnimationFrame(layout)).observe(viewport);
   new ResizeObserver(()=>requestAnimationFrame(layout)).observe(stage);
   window.addEventListener('blur',()=>{if(!editing)cancel();});
-  const pack=make('script');pack.src='/study-assets/stage-i18n.js?v=ipad-20261009';pack.onload=()=>{
+  const pack=make('script');pack.src='/study-assets/stage-i18n.js?v=ipad-pages-20261010';pack.onload=()=>{
     document.querySelectorAll('[data-tablet-label]').forEach(el=>{const title=t(el.dataset.tabletLabel);el.title=title;el.setAttribute('aria-label',title);if(!['tablet-minus','tablet-plus'].includes(el.id))el.querySelector('span').textContent=title;});
-    entry.textContent=t('通常の表示');label.textContent=t('重ねる文字');scope.textContent=t('全面の書き込みはこの端末だけに保存され、オーナーへの共有には含まれません。');notify();
+    pageSelect.setAttribute('aria-label',t('書き込みページ'));pageLabel.textContent=t('ページ名');renderPages();entry.textContent=t('通常の表示');label.textContent=t('重ねる文字');scope.textContent=t('全面の書き込みはこの端末だけに保存され、オーナーへの共有には含まれません。');notify();
   };document.head.append(pack);
   new MutationObserver(()=>pack.onload()).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   notify();

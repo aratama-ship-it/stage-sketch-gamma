@@ -1,363 +1,71 @@
 {
-  "appVersion": "v0.3.43",
+  "appVersion": "v0.3.44",
   "contentUpdated": "2026-10-10",
   "requiredScreens": [
     {
-      "id": "stage",
+      "id": "ipad-pages",
       "language": "ja",
-      "file": "manual-gamma/img/01-first-open.jpg",
+      "file": "manual-gamma/img/release044-ipad-pages.jpg",
       "viewport": [
         1440,
         900
       ],
-      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
+      "scene": "G-1"
     },
     {
-      "id": "venue",
-      "language": "ja",
-      "file": "manual-gamma/img/30-tab-venue.jpg",
-      "viewport": [
-        1440,
-        900
-      ],
-      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
-    },
-    {
-      "id": "lighting",
-      "language": "ja",
-      "file": "manual-gamma/img/32-tab-light-design.jpg",
-      "viewport": [
-        1440,
-        900
-      ],
-      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
-    },
-    {
-      "id": "qsheet",
-      "language": "ja",
-      "file": "manual-gamma/img/34-tab-cuesheet.jpg",
-      "viewport": [
-        1440,
-        900
-      ],
-      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
-    },
-    {
-      "id": "runshow",
-      "language": "ja",
-      "file": "manual-gamma/img/release037-runshow.jpg",
-      "viewport": [
-        1440,
-        900
-      ],
-      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
-    },
-    {
-      "id": "preferences",
-      "language": "ja",
-      "file": "manual-gamma/img/40-prefs.jpg",
-      "viewport": [
-        1440,
-        900
-      ],
-      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
-    },
-    {
-      "id": "stage",
+      "id": "ipad-pages",
       "language": "en",
-      "file": "manual-gamma/img/en/01-first-open.jpg",
+      "file": "manual-gamma/img/en/release044-ipad-pages.jpg",
       "viewport": [
         1440,
         900
       ],
-      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
-    },
-    {
-      "id": "venue",
-      "language": "en",
-      "file": "manual-gamma/img/en/30-tab-venue.jpg",
-      "viewport": [
-        1440,
-        900
-      ],
-      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
-    },
-    {
-      "id": "lighting",
-      "language": "en",
-      "file": "manual-gamma/img/en/32-tab-light-design.jpg",
-      "viewport": [
-        1440,
-        900
-      ],
-      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
-    },
-    {
-      "id": "qsheet",
-      "language": "en",
-      "file": "manual-gamma/img/en/34-tab-cuesheet.jpg",
-      "viewport": [
-        1440,
-        900
-      ],
-      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
-    },
-    {
-      "id": "runshow",
-      "language": "en",
-      "file": "manual-gamma/img/en/release037-runshow.jpg",
-      "viewport": [
-        1440,
-        900
-      ],
-      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
-    },
-    {
-      "id": "preferences",
-      "language": "en",
-      "file": "manual-gamma/img/en/40-prefs.jpg",
-      "viewport": [
-        1440,
-        900
-      ],
-      "scene": "A-1 / H-1 / C-1 according to task; bundled fixture only"
+      "scene": "G-1"
     }
   ],
   "screenshots": [
     {
-      "id": "stage",
-      "file": "manual-gamma/img/01-first-open.jpg",
+      "id": "ipad-pages",
+      "file": "manual-gamma/img/release044-ipad-pages.jpg",
       "language": "ja",
-      "scene": "A1",
+      "scene": "G-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.43",
-      "capturedCommit": "45073934d3163e406d8751bf46752a55bdf44803",
-      "capturedAt": "2026-10-10T10:46:01.902Z",
-      "sha256": "a66e4d24c86f9ddc914fa248aaba8abcd3f9f27956cfa0d3a5d9cd043edb401c",
+      "capturedVersion": "v0.3.44",
+      "capturedCommit": "605e2169dbc88913da6d2a52c3b07408a7667b54",
+      "capturedAt": "2026-10-10T11:32:48.308Z",
+      "sha256": "5f564aa24925267f6a7026c0c440501b8591837821815eab112672835fa86263",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "paperLanguage": null,
-      "sourceSha256": "40036b05ffa9c4e45a016257bc20650ec3a27a5166cccb39a94759fa020fb11b"
+      "sourceSha256": "7de6d84d10f7fdb8ee633739a73779b09d8b3cbedf31e513365f2b4c6ca916aa"
     },
     {
-      "id": "venue",
-      "file": "manual-gamma/img/30-tab-venue.jpg",
-      "language": "ja",
-      "scene": "C1",
-      "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.43",
-      "capturedCommit": "45073934d3163e406d8751bf46752a55bdf44803",
-      "capturedAt": "2026-10-10T10:46:02.515Z",
-      "sha256": "d13ba880840ab9ef12ff62896cc5f09d940a656b8cfa44929124b9339138871f",
-      "viewport": [
-        1440,
-        900
-      ],
-      "engine": "chromium",
-      "actualUiLanguage": "ja",
-      "paperLanguage": null,
-      "sourceSha256": "40036b05ffa9c4e45a016257bc20650ec3a27a5166cccb39a94759fa020fb11b"
-    },
-    {
-      "id": "lighting",
-      "file": "manual-gamma/img/32-tab-light-design.jpg",
-      "language": "ja",
-      "scene": "F1",
-      "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.43",
-      "capturedCommit": "45073934d3163e406d8751bf46752a55bdf44803",
-      "capturedAt": "2026-10-10T10:46:03.367Z",
-      "sha256": "c621dcef36c33b458ea608f67b48e03c8ecba7a91c2cc1fa518ed8eea29f0cc1",
-      "viewport": [
-        1440,
-        900
-      ],
-      "engine": "chromium",
-      "actualUiLanguage": "ja",
-      "paperLanguage": null,
-      "sourceSha256": "40036b05ffa9c4e45a016257bc20650ec3a27a5166cccb39a94759fa020fb11b"
-    },
-    {
-      "id": "qsheet",
-      "file": "manual-gamma/img/34-tab-cuesheet.jpg",
-      "language": "ja",
-      "scene": "H1",
-      "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.43",
-      "capturedCommit": "45073934d3163e406d8751bf46752a55bdf44803",
-      "capturedAt": "2026-10-10T10:46:03.963Z",
-      "sha256": "e100cd3663100cfa8284222dc06206e280b0ba492953a6bea44924d27b707276",
-      "viewport": [
-        1440,
-        900
-      ],
-      "engine": "chromium",
-      "actualUiLanguage": "ja",
-      "paperLanguage": null,
-      "sourceSha256": "40036b05ffa9c4e45a016257bc20650ec3a27a5166cccb39a94759fa020fb11b"
-    },
-    {
-      "id": "runshow",
-      "file": "manual-gamma/img/release037-runshow.jpg",
-      "language": "ja",
-      "scene": "H1",
-      "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.43",
-      "capturedCommit": "45073934d3163e406d8751bf46752a55bdf44803",
-      "capturedAt": "2026-10-10T10:46:06.615Z",
-      "sha256": "690a7fba023756c67117463ae0b5a32119083dddb099bb2118d6e9afb7cdd09a",
-      "viewport": [
-        1440,
-        900
-      ],
-      "engine": "chromium",
-      "actualUiLanguage": "ja",
-      "paperLanguage": "ja",
-      "sourceSha256": "40036b05ffa9c4e45a016257bc20650ec3a27a5166cccb39a94759fa020fb11b"
-    },
-    {
-      "id": "preferences",
-      "file": "manual-gamma/img/40-prefs.jpg",
-      "language": "ja",
-      "scene": "A1",
-      "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.43",
-      "capturedCommit": "45073934d3163e406d8751bf46752a55bdf44803",
-      "capturedAt": "2026-10-10T10:46:07.571Z",
-      "sha256": "c315f63732d6c9c3077ae56767500748abd895a8a43700b7f5fcd6d8365ba92b",
-      "viewport": [
-        1440,
-        900
-      ],
-      "engine": "chromium",
-      "actualUiLanguage": "ja",
-      "paperLanguage": null,
-      "sourceSha256": "40036b05ffa9c4e45a016257bc20650ec3a27a5166cccb39a94759fa020fb11b"
-    },
-    {
-      "id": "stage",
-      "file": "manual-gamma/img/en/01-first-open.jpg",
+      "id": "ipad-pages",
+      "file": "manual-gamma/img/en/release044-ipad-pages.jpg",
       "language": "en",
-      "scene": "A1",
+      "scene": "G-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.43",
-      "capturedCommit": "45073934d3163e406d8751bf46752a55bdf44803",
-      "capturedAt": "2026-10-10T10:46:11.020Z",
-      "sha256": "a66d2ccd8a47509d97922dbc17ab6d41f7c686d15f82380bb11031b504e74369",
+      "capturedVersion": "v0.3.44",
+      "capturedCommit": "605e2169dbc88913da6d2a52c3b07408a7667b54",
+      "capturedAt": "2026-10-10T11:32:48.697Z",
+      "sha256": "c2b784cbf13b2133139e200bf2f983c7551082cdd6447105abda12b292062fb3",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "paperLanguage": null,
-      "sourceSha256": "40036b05ffa9c4e45a016257bc20650ec3a27a5166cccb39a94759fa020fb11b"
-    },
-    {
-      "id": "venue",
-      "file": "manual-gamma/img/en/30-tab-venue.jpg",
-      "language": "en",
-      "scene": "C1",
-      "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.43",
-      "capturedCommit": "45073934d3163e406d8751bf46752a55bdf44803",
-      "capturedAt": "2026-10-10T10:46:11.634Z",
-      "sha256": "dacccf6abc2cc7662e0c2c2d7778ec266e29aed8c50d2b571f9ba6bc7942bf4d",
-      "viewport": [
-        1440,
-        900
-      ],
-      "engine": "chromium",
-      "actualUiLanguage": "en",
-      "paperLanguage": null,
-      "sourceSha256": "40036b05ffa9c4e45a016257bc20650ec3a27a5166cccb39a94759fa020fb11b"
-    },
-    {
-      "id": "lighting",
-      "file": "manual-gamma/img/en/32-tab-light-design.jpg",
-      "language": "en",
-      "scene": "F1",
-      "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.43",
-      "capturedCommit": "45073934d3163e406d8751bf46752a55bdf44803",
-      "capturedAt": "2026-10-10T10:46:12.518Z",
-      "sha256": "840d78aca0a1c2a67b4de4eec13f8c18caa3bd74beacac8e62e5aa68bf52b319",
-      "viewport": [
-        1440,
-        900
-      ],
-      "engine": "chromium",
-      "actualUiLanguage": "en",
-      "paperLanguage": null,
-      "sourceSha256": "40036b05ffa9c4e45a016257bc20650ec3a27a5166cccb39a94759fa020fb11b"
-    },
-    {
-      "id": "qsheet",
-      "file": "manual-gamma/img/en/34-tab-cuesheet.jpg",
-      "language": "en",
-      "scene": "H1",
-      "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.43",
-      "capturedCommit": "45073934d3163e406d8751bf46752a55bdf44803",
-      "capturedAt": "2026-10-10T10:46:13.116Z",
-      "sha256": "8d0f9ab314e6ad2fac62735ce89e71d1d805b363b94b0e6af3b1ab753b2d1097",
-      "viewport": [
-        1440,
-        900
-      ],
-      "engine": "chromium",
-      "actualUiLanguage": "en",
-      "paperLanguage": null,
-      "sourceSha256": "40036b05ffa9c4e45a016257bc20650ec3a27a5166cccb39a94759fa020fb11b"
-    },
-    {
-      "id": "runshow",
-      "file": "manual-gamma/img/en/release037-runshow.jpg",
-      "language": "en",
-      "scene": "H1",
-      "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.43",
-      "capturedCommit": "45073934d3163e406d8751bf46752a55bdf44803",
-      "capturedAt": "2026-10-10T10:46:15.668Z",
-      "sha256": "7142ba9f823d31df7ac4d9841dba4025af145989b78f9be04cc29c3ac72a46f0",
-      "viewport": [
-        1440,
-        900
-      ],
-      "engine": "chromium",
-      "actualUiLanguage": "en",
-      "paperLanguage": "en",
-      "sourceSha256": "40036b05ffa9c4e45a016257bc20650ec3a27a5166cccb39a94759fa020fb11b"
-    },
-    {
-      "id": "preferences",
-      "file": "manual-gamma/img/en/40-prefs.jpg",
-      "language": "en",
-      "scene": "A1",
-      "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.43",
-      "capturedCommit": "45073934d3163e406d8751bf46752a55bdf44803",
-      "capturedAt": "2026-10-10T10:46:16.587Z",
-      "sha256": "39c3175e39d0f1988e6db6fadae5e448f0bdf5c467b28bc751a1f9cd39da443a",
-      "viewport": [
-        1440,
-        900
-      ],
-      "engine": "chromium",
-      "actualUiLanguage": "en",
-      "paperLanguage": null,
-      "sourceSha256": "40036b05ffa9c4e45a016257bc20650ec3a27a5166cccb39a94759fa020fb11b"
+      "sourceSha256": "7de6d84d10f7fdb8ee633739a73779b09d8b3cbedf31e513365f2b4c6ca916aa"
     }
   ],
-  "legacyImagesNote": "Unlisted existing images retain their original capture versions (mostly v0.2.16; poses v0.2.29; props v0.2.26).",
+  "legacyImagesNote": "Only the changed iPad annotation page interface is recaptured for v0.3.44. All other images retain their original capture versions, including v0.3.43 main editor images.",
   "status": "verified",
   "visualReview": {
     "reviewedAt": "2026-10-10",
-    "method": "direct full-size review of all 12 Japanese and English images, including lighting and running-order screens",
-    "limits": "Chromium captures of Japanese and English; browser behavior and Safari/Mac are separate checks"
+    "method": "Direct visual inspection of both full-size Japanese and English iPad page captures",
+    "limits": "Browser captures of G-1; physical iPad, Pencil and Japanese IME not tested"
   }
 }

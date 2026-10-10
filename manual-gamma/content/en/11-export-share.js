@@ -76,6 +76,11 @@ ${steps([
 <li>Write ${ui("My notes")} for each scene, draw strokes and pin notes on the diagrams. Notes made without sign-in are saved on that device; notes made while signed in to a performer account sync to the account.</li>
 <li>Only pressing <strong>“Share these notes and drawings with the owner”</strong> sends your note, display name and images of the current stage views, strokes and pinned notes to the issuer. Other viewers do not see them. The issuer reads them in ${ui("Notes for this show (owner only)")} in the editor's Share window.</li>
 </ul>
+<h4>Annotation pages on iPad</h4>
+<p>Open a performer link on iPad to draw or type over the diagrams. Pinch with two fingers to zoom in or out while annotating.</p>
+<p>Open ${ui("Notes / share")} to duplicate the current page, add a blank page or rename it. Pages belong to individual scenes; use the page selector at the top to switch between them. Duplication includes annotations from the Front, Plan and Both views. Each copy can then be edited independently.</p>
+<p>iPad overlay annotations are stored in this device's browser. They are not synced to other devices or sent to the issuer. An annotation backup contains every page in the current scene.</p>
+${fig("release044-ipad-pages", "iPad annotation pages: duplicate, name and switch pages for different purposes.", "Page selection, renaming, duplication and adding a blank page")}
 <h4>What is excluded, and how to manage links</h4>
 <p>The performer viewer cannot edit the source show. Local audio and device-only custom models are not shared. Sharing requires an internet connection and the sharing host.</p>
 <p>Each account can keep links for up to 10 shows. Earlier stage views are kept up to 50 revisions / 32 MiB; updates stop at the limit. After revocation, ${ui("Create a new link")} deletes received notes. ${ui("Delete saved data")} permanently deletes the published content and notes, so keep any copies you need before using it.</p>`
