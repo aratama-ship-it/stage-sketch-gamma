@@ -567,3 +567,22 @@ html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-mod
 
 /* T-01: show guidance only while its drawing tool is selected. */
 html[data-stage-skin] .stage-drawing-guide:not([hidden]) { padding:var(--gamma-gap);border:1px solid var(--line-dark);background:var(--desk-2);color:var(--milk);font-size:var(--fs-3); }
+
+/* D-40: DOM guidance stays outside every canvas/export drawing path. */
+.stage-front-empty-hint {
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  margin:0; padding:4px 8px; color:var(--milk-dim); background:var(--desk-2);
+  font-size:var(--fs-4); line-height:1.5; white-space:nowrap; pointer-events:none;
+}
+.stage-front-empty-hint[hidden] { display:none; }
+@media print { .stage-front-empty-hint { display:none !important; } }
+
+/* D-41: same status line, with the existing caution colour and export entry. */
+#stage-backup-status {
+  display:block; min-height:var(--gamma-hit); margin:0; padding:0; border:0;
+  background:transparent; color:inherit; font:inherit; line-height:inherit;
+  text-align:left; cursor:pointer; pointer-events:auto;
+}
+#stage-backup-status.is-caution { color:var(--storage-warning-caution); }
+#stage-backup-status:focus-visible { outline:2px solid var(--storage-warning-caution); outline-offset:2px; }
+@media print { #stage-live.stage-action-status { display:none !important; } }

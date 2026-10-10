@@ -36,7 +36,7 @@ ${steps([
 <li>Formations (arrange 2–20 people using 190 patterns), scene alternatives (A–D), scrims and projection onto surfaces, a smoother body and walking transitions</li>
 </ul>
 <p>Your work is saved <strong>only inside the browser of the device you are using</strong> (${ref("saving", "Part 1, 1-5")}). Shows drawn in the beta or at another Gamma URL do not appear automatically. Export their JSON from the original page, then use ${ui("Import show")} at the new URL. Shows that contain Gamma's new lighting cannot be read by the beta.</p>
-${note("Which version this covers", "The text covers v0.3.41. Updated screens are listed in the release evidence. Older pictures and videos remain where their operation has not changed: most are from v0.2.16, poses from v0.2.29, and props from v0.2.26. The text version is not the capture version of every picture. We review text and the affected screens on every release.")}`
+${note("Which version this covers", "The text covers v0.3.42. Updated screens are listed in the release evidence. Older pictures and videos remain where their operation has not changed: most are from v0.2.16, poses from v0.2.29, and props from v0.2.26. The text version is not the capture version of every picture. We review text and the affected screens on every release.")}`
       },
       {
         id: "conventions", title: "Symbols and terms", status: "verified",

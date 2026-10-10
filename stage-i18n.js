@@ -31,6 +31,13 @@
   "use strict";
 
   const TEXT = {
+    "{{show}} — 舞台スケッチ γ {{edition}}": "{{show}} — Stage Sketch Gamma {{edition}}",
+    "進行表: {{show}} — 舞台スケッチ γ {{edition}}": "{{show}} — Stage Sketch Gamma {{edition}}",
+
+    "最後の控え:": "Last backup:",
+    "まだありません": "None yet",
+
+    "演者を足すと、ここに立ちます": "Add a performer to place them here",
     "この欄の説明を出す": "Show an explanation of this field",
     "詳しくは「使い方をさがす」で調べられます。": "For more detail, search How to use.",
     "平面図か一覧で灯体を選ぶと、ここで色・向き・広がりを直せます": "Select a fixture in the plan or list to adjust its colour, direction and spread here.",
@@ -987,6 +994,13 @@
     /* 2026-09-17: ショーのパネルへ移した操作の文言 */
     "保存してバージョンを更新": "Save as a new version",
     "新規ショーを作る": "Create a new show",
+    "新しいショーを作ります。いま開いているショーは一覧に残ります。": "Create a new show. The show you have open stays in the list.",
+    "劇場設定の未適用の編集は破棄されます。作りかけのショーは一覧に残します。前のショーへ戻りますか？": "Theatre setup edits that have not been applied will be discarded. The unfinished show stays in the list. Go back to the previous show?",
+    "劇場設定の未適用の編集は破棄されます。いまのショーは一覧に残します。別のショーを開きますか？": "Theatre setup edits that have not been applied will be discarded. The current show stays in the list. Open another show?",
+    "劇場の寸法が変わると、現在の照明が動かなくなる可能性があります。変更後に各シーンの照明を点検してください。寸法を変更しますか？": "Changing the theatre dimensions may stop the current lighting from working. Check the lighting in each scene afterwards. Change the dimensions?",
+    "作る": "Create",
+    "開く": "Open",
+    "変更する": "Change",
     "前のショーへ戻る": "Return to previous show",
     "ショー一覧を開く": "Open all shows",
     "作りかけのショーは一覧に残ります。": "The unfinished show stays in All shows.",
@@ -4066,6 +4080,13 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "書き出すファイル名を揃えました。中身は変わらず、旧い名前のファイルも読み込めます。": "Exported filenames are now consistent. Their contents are unchanged, and files with the previous names can still be imported.",
   "版を上げた最初の起動だけ、主な変更点を1行で表示するようにしました。": "The first launch after an update now shows one line describing the main changes.",
   "キーボードのTabで、画面の流れに沿って操作へ移れるよう順路を改善しました。": "The keyboard Tab order now follows the flow of the screen more closely."
+});
+
+// v0.3.42 release notes.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "確認の窓のボタンを、操作に合わせて「作る」「戻る」「開く」「変更する」と表示し、「未反映」は「未適用」に改めました。": "Confirmation buttons now name the action: Create, Go back, Open and Change. ‘Not reflected’ is now ‘Not applied’.",
+  "空の舞台に演者を足す案内を出し、左下に最後の控えの時刻を表示するようにしました。": "An empty stage now shows a prompt to add a performer, and the time of the latest backup stays visible at the bottom left.",
+  "ブラウザのタブに、ショー名と版（Studio／Lite／Company）を表示するようにしました。": "The browser tab now shows the show name and edition (Studio, Lite or Company)."
 });
 
 // L-04 UI copy.

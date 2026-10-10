@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.41";
+  const GAMMA_APP_VERSION = "v0.3.42";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -11293,6 +11293,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     saveTimer = setTimeout(flushAutosave, 250);
   }
 
+  let actionStatusTimer = null;
+  let actionStatusSerial = 0;
+
   function announce(message, options = {}) {
     /* 英語モードでは、文の「枠」を型変換表（stage-i18n.js の say）で訳す。
      * 名前や数は捕捉して埋め直す。呼び出し77箇所へ三項演算子を撒くより、
@@ -11304,8 +11307,18 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       return;
     }
     message = sx(message);
+    clearTimeout(actionStatusTimer);
+    const serial = ++actionStatusSerial;
+    els.live.dataset.transient = "true";
     els.live.textContent = "";
-    requestAnimationFrame(() => { els.live.textContent = message; });
+    requestAnimationFrame(() => {
+      if (serial === actionStatusSerial) els.live.textContent = message;
+    });
+    actionStatusTimer = setTimeout(() => {
+      if (serial !== actionStatusSerial) return;
+      delete els.live.dataset.transient;
+      syncBackupStatus();
+    }, 6000);
   }
 
   function helpSearchLine() {
@@ -19727,10 +19740,20 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     }
   }
 
+  function syncFrontEmptyHint() {
+    const hint = document.getElementById("stage-front-empty-hint");
+    if (!hint) return;
+    hint.hidden = STUDY_READ_ONLY || sc().pieces.some(piece => piece.type !== "light");
+    hint.textContent = tx("演者を足すと、ここに立ちます");
+  }
+
   function render(forceCanvases = false) {
     lastFullRenderAt = performance.now();
     fullRenderSerial += 1;
     stageVisualRevision += 1;
+    syncBrowserTitle();
+    syncFrontEmptyHint();
+    syncBackupStatus();
     syncNoteEditor();
     window.STAGE_SCENE_ALTERNATIVES_UI?.render();
     /* V-1（2026-09-17）: 劇場設定モードを開いているあいだは、舞台機構の変化を
@@ -24174,7 +24197,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (!previousId) { openShows(); return; }
     const editor = window.SHOSAI_VENUE_EDITOR;
     if (editor?.hasUnappliedChanges?.()
-      && !await surfaceProjectConfirm("劇場設定の未反映の編集は破棄されます。作りかけのショーは一覧に残します。前のショーへ戻りますか？")) return;
+      && !await surfaceProjectConfirm("劇場設定の未適用の編集は破棄されます。作りかけのショーは一覧に残します。前のショーへ戻りますか？", "戻る")) return;
     const request = ++bundledOpenRequest;
     const leavingId = state.project.id;
     let source;
@@ -24191,9 +24214,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (window.GAMMA_WORKSPACE?.mode?.() === "venue-setup") window.GAMMA_WORKSPACE.normal();
   }
 
-  async function surfaceProjectConfirm(message) {
+  // H-11: 共通の確認窓の既定ボタンは「適用」。作る・戻る・開く・変更するの確認では、その操作の動詞を渡す。
+  async function surfaceProjectConfirm(message, okLabel) {
     const basis = runOfShowToken();
-    return Boolean(await surfaceConfirm(message)) && basis === runOfShowToken() && !resetInProgress;
+    const configure = okLabel ? (dialog, ok) => { ok.textContent = tx(okLabel); } : undefined;
+    return Boolean(await surfaceConfirm(message, configure)) && basis === runOfShowToken() && !resetInProgress;
   }
   let surfaceConfirmation = false;
   function surfaceConfirm(message, configure) {
@@ -24228,7 +24253,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   });
   async function newShow() {
     const basis=state.project.id;
-    if (!await surfaceConfirm("新しいショーを作ります。いま開いているショーは一覧に残ります。") || state.project.id !== basis) return;
+    if (!await surfaceConfirm("新しいショーを作ります。いま開いているショーは一覧に残ります。", (dialog, ok) => { ok.textContent = tx("作る"); }) || state.project.id !== basis) return;
     const previousId = state.project.id;
     const fresh = markVenueSetupPending(baseState(false));
     fresh.project.title = untitledShow();
@@ -24310,7 +24335,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       && window.GAMMA_WORKSPACE?.mode?.() === "venue-setup";
     const editor = window.SHOSAI_VENUE_EDITOR;
     if (leavingPendingVenue && editor?.hasUnappliedChanges?.()
-      && !await surfaceProjectConfirm("劇場設定の未反映の編集は破棄されます。いまのショーは一覧に残します。別のショーを開きますか？")) return;
+      && !await surfaceProjectConfirm("劇場設定の未適用の編集は破棄されます。いまのショーは一覧に残します。別のショーを開きますか？", "開く")) return;
     if (request !== bundledOpenRequest || state.project.id !== previousId || resetInProgress) return false;
     if (!await applyLoadedState(next, `${next.project.title}を開きました。`)) return;
     if (leavingPendingVenue) editor?.abandonDraft?.();
@@ -24483,7 +24508,21 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     });
   }
 
+  const defaultBrowserTitle = document.title;
+  function syncBrowserTitle() {
+    if (STUDY_READ_ONLY) return;
+    const title = String(state && state.project && state.project.title || "").trim();
+    if (!title) { document.title = defaultBrowserTitle; return; }
+    const edition = document.querySelector('meta[name="gamma-edition"]')?.content || "studio";
+    const label = { studio: "Studio", company: "Company", lite: "Lite" }[edition] || "Studio";
+    const template = tx(edition === "lite"
+      ? "進行表: {{show}} — 舞台スケッチ γ {{edition}}"
+      : "{{show}} — 舞台スケッチ γ {{edition}}");
+    document.title = template.replace(/{{(show|edition)}}/g, (_, key) => key === "show" ? title : label);
+  }
+
   function syncProjectSummary() {
+    syncBrowserTitle();
     const project = state && state.project ? state.project : {};
     const title = String(project.title || "").trim() || tx("無題のショー");
     const version = String(project.versionLabel || "").trim() || "—";
@@ -24504,8 +24543,33 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   // 時刻を進めるのは、保存・書き出しの成功を確認した後だけに限る。
   function syncSaveStamps() {
+    syncBackupStatus();
     if (els.lastSaveTime) els.lastSaveTime.textContent = headerTimestamp(state && state.lastSavedAt);
     if (els.lastBackupTime) els.lastBackupTime.textContent = headerTimestamp(state && state.lastExportAt);
+  }
+
+  function syncBackupStatus() {
+    if (STUDY_READ_ONLY || !els.live || els.live.dataset.transient === "true") return;
+    let button = document.getElementById("stage-backup-status");
+    if (!button) {
+      button = document.createElement("button");
+      button.id = "stage-backup-status";
+      button.type = "button";
+      button.dataset.noI18n = "";
+      button.addEventListener("click", openExport);
+      els.live.replaceChildren(button);
+    }
+    const value = state && state.lastExportAt;
+    const at = value ? new Date(value) : null;
+    const valid = at && Number.isFinite(at.getTime());
+    // D-05: 利用者向けの日付は共通の書式（STAGE_TIME_DOMAIN.dateText）に揃える。手で月/日を組み立てない。
+    const stamp = valid
+      ? window.STAGE_TIME_DOMAIN.dateText(at, document.documentElement.lang || "ja", { time: true })
+      : tx("まだありません");
+    const text = `${tx("最後の控え:")} ${stamp}`;
+    // 状態行は読み上げ領域（aria-live）なので、文字が変わったときだけ書き換える。
+    if (button.textContent !== text) button.textContent = text;
+    button.classList.toggle("is-caution", Boolean(valid && Date.now() - at.getTime() >= 7 * 24 * 60 * 60 * 1000));
   }
 
   function syncShowTimecode(detail) {
@@ -35066,7 +35130,7 @@ ${propsPlotHtml}
       announce(sx("照明データを保持するため、このショーの劇場変更はStudioで行ってください。", "Change this show's venue in Studio to preserve its lighting data."));
       return;
     }
-    if(hasVenueDependentLighting(state.project) && !await surfaceProjectConfirm("劇場の寸法が変わると、現在の照明が動かなくなる可能性があります。変更後に各シーンの照明を点検してください。寸法を変更しますか？")) {renderVenueControls();return;}
+    if(hasVenueDependentLighting(state.project) && !await surfaceProjectConfirm("劇場の寸法が変わると、現在の照明が動かなくなる可能性があります。変更後に各シーンの照明を点検してください。寸法を変更しますか？", "変更する")) {renderVenueControls();return;}
     checkpoint();
     state.project.venueSize = id;
     // 規模を選び直したら、旧データに残る手入力寸法は外す。
@@ -41854,6 +41918,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     syncSaveStamps();
     translateReleaseModal();
     syncManualEdition();
+    syncBrowserTitle();
     document.documentElement.lang = lang;
   }
 
