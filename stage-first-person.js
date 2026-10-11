@@ -895,7 +895,7 @@
         const targetX = finite(point.targetOffsetM, 0);
         const targetZ = stageDepth / 2 + finite(point.targetDistanceM, -stageDepth / 2);
         const dx = x - targetX, dz = z - targetZ;
-        return { id: `viewpoint:${point.id}`, name: point.label || "見る位置", x, y, z,
+        return { id: `viewpoint:${point.id}`, name: viewpointName(point), x, y, z,
           yaw: Math.atan2(dx, -dz) * 180 / Math.PI,
           pitch: Math.atan2(1.2 - y, Math.max(.01, Math.hypot(dx, dz))) * 180 / Math.PI };
       });
@@ -1117,6 +1117,18 @@
     const pack = code && (window.SHOSAI_I18N_PACKS || {})[code];
     const dictionary = pack && pack.text || (code === "en" && window.SHOSAI_I18N && window.SHOSAI_I18N.text);
     return dictionary && dictionary[key] || key;
+  }
+
+  /* ★D-39（2026-10-11）: 見る位置の名前。既定の席のまま（改名なし）なら席の対訳を、
+   *   改名していれば登録名をそのまま出す。正面図の seatName（stage-sketch.js）と同じ決め方。 */
+  function viewpointName(point) {
+    const seats = (window.SHOSAI_VENUES && window.SHOSAI_VENUES.seats) || [];
+    const preset = point.presetSeatId ? seats.find((seat) => seat.id === point.presetSeatId) : null;
+    if (!preset || (point.label && point.label !== preset.label)) return point.label || "見る位置";
+    const code = data && data.lang;
+    const packs = window.SHOSAI_I18N_PACKS || {};
+    const read = (pack) => pack && pack.maps && pack.maps.seat && pack.maps.seat[preset.id];
+    return (code && code !== "ja" && (read(packs[code]) || read(packs.en))) || preset.label;
   }
 
   function createElement(tag, id, className) {

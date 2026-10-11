@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.47";
+  const GAMMA_APP_VERSION = "v0.3.48";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2720,13 +2720,22 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   /* 近似席は基準の席の数値をそのまま写したものなので、名前も基準の席で呼ぶ。
    * 距離（近い／中間／遠い）は足さない。基準が同じ席は1つに絞ってあるので、
    * 足しても区別にならず、「同じ絵が2つ並ぶ」原因になっていた。 */
+  /* ★D-39（2026-10-11）: 劇場設定の見る位置で既定の席を改名すると、席IDは既定のまま残る。
+   *   対訳は席IDで引くので、英語表示では改名後の名前が既定の英訳で上書きされ、3D と食い違っていた。
+   *   既定の名前と違う＝改名した席は、登録名をそのまま出す（3D の viewpointName と同じ決め方）。 */
+  const seatRenamed = (seat) => {
+    const preset = seat && VENUES.seats.find((candidate) => candidate.id === seat.id);
+    return !!(preset && preset !== seat && seat.label && seat.label !== preset.label);
+  };
   const seatName = (seat) => {
     const base = seatBaseOf(seat);
-    return base ? tm("seat", base.id, base.label) : tm("seat", seat.id, seat.label);
+    if (base) return tm("seat", base.id, base.label);
+    return seatRenamed(seat) ? seat.label : tm("seat", seat.id, seat.label);
   };
   const seatShortName = (seat) => {
     const base = seatBaseOf(seat);
-    return base ? tm("seatShort", base.id, base.short) : tm("seatShort", seat.id, seat.short);
+    if (base) return tm("seatShort", base.id, base.short);
+    return seatRenamed(seat) ? (seat.short || seat.label) : tm("seatShort", seat.id, seat.short);
   };
   const seatNoteText = (seat) => tm("seatNote", seat.id, seat.note);
   // 椅子は大きさ一つで決まる。幅と奥行きはそこから割り出す
@@ -42245,7 +42254,6 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
    * 結果を見に行く。どの入口から操作しても拾えるようにするため）。
    * 次へはいつでも押せるので、詰まっても止まらない。 */
   const tourMark = {};
-  const lightCount = () => (state.project.sets || []).filter((x) => x.kind === "light").length;
   const posSum = () => sc().pieces.reduce((t, p) => t + p.u * 1000 + p.v, 0);
 
   const TOUR = [
@@ -42299,12 +42307,11 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       ko: ["무대 전환 보기", "「◀ 이전 씬」으로 돌아가고 「다음 씬 ▶」으로 진행하세요. ↑↓ 키도 사용할 수 있습니다. 다음 씬으로 갈 때 이동 경로를 따라 움직이는 모습이 보입니다."],
     },
     {
-      at: '[data-panel="light"]',
-      begin: () => { tourMark.light = lightCount(); },
-      done: () => lightCount() > tourMark.light,
-      ja: ["照明を足す", "上部の「機材配置」で灯体を置き、「照明デザイン」で明かりを調整します。"],
-      en: ["Add a light", "Place fixtures in Equipment, then adjust the light in Lighting design."],
-      ko: ["조명 추가", "위쪽 ‘장비 배치’에서 조명기를 놓고 ‘조명 디자인’에서 빛을 조정하세요."],
+      at: "#gamma-placement",
+      lit: "#stage-workspace-tabs",
+      ja: ["照明を足す", "照明は上部のタブで作ります。「機材配置」（3）で灯体を置き、「照明デザイン」（4）で明かりを調整します。タブを開くと、この案内は閉じます。"],
+      en: ["Add a light", "Lighting is made in the tabs at the top. Place fixtures in Equipment (3), then adjust the light in Lighting design (4). Opening a tab closes this guide."],
+      ko: ["조명 추가", "조명은 위쪽 탭에서 만듭니다. ‘장비 배치’(3)에서 조명기를 놓고 ‘조명 디자인’(4)에서 빛을 조정하세요. 탭을 열면 이 안내는 닫힙니다."],
     },
     {
       at: "#stage-front-note",

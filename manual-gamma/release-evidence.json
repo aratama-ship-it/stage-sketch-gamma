@@ -1,71 +1,71 @@
 {
-  "appVersion": "v0.3.47",
+  "appVersion": "v0.3.48",
   "contentUpdated": "2026-10-11",
   "requiredScreens": [
     {
-      "id": "run-of-show",
+      "id": "seat-names",
       "language": "ja",
-      "file": "manual-gamma/img/release047-run-of-show.jpg",
+      "file": "manual-gamma/img/release048-seat-names.jpg",
       "viewport": [
         1440,
         900
       ],
-      "scene": "A-5"
+      "scene": "C-1"
     },
     {
-      "id": "run-of-show",
+      "id": "seat-names",
       "language": "en",
-      "file": "manual-gamma/img/en/release047-run-of-show.jpg",
+      "file": "manual-gamma/img/en/release048-seat-names.jpg",
       "viewport": [
         1440,
         900
       ],
-      "scene": "A-5"
+      "scene": "C-1"
     }
   ],
   "screenshots": [
     {
-      "id": "run-of-show",
-      "file": "manual-gamma/img/release047-run-of-show.jpg",
+      "id": "seat-names",
+      "file": "manual-gamma/img/release048-seat-names.jpg",
       "language": "ja",
-      "scene": "H-1",
+      "scene": "C-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.47",
-      "capturedCommit": "0bef391dd4d2e30e907803625a87afce7029f0fb",
-      "capturedAt": "2026-10-10T16:25:47.515Z",
-      "sha256": "d9568b264b6fe22b2d347714a32303a7d5dc69917f0935020ef102aa686ef9ab",
+      "capturedVersion": "v0.3.48",
+      "capturedCommit": "fb141e548ed57249793c99af162e005b2750ac69",
+      "capturedAt": "2026-10-11T02:04:07.703Z",
+      "sha256": "6d42bf3beb18212e345eb8fb10830c83bbaa79e92ce2c0a3e29c5e5f1b7203d5",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "sourceSha256": "1cde87eac1a5cb6b6bc028f3db0d6c7b1472ede76766e03733f5585b7f4c9c74"
+      "sourceSha256": "c6a766a415d32f514180375a5a212ac2fb9539459e55522feb8797a116eb850d"
     },
     {
-      "id": "run-of-show",
-      "file": "manual-gamma/img/en/release047-run-of-show.jpg",
+      "id": "seat-names",
+      "file": "manual-gamma/img/en/release048-seat-names.jpg",
       "language": "en",
-      "scene": "H-1",
+      "scene": "C-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.47",
-      "capturedCommit": "0bef391dd4d2e30e907803625a87afce7029f0fb",
-      "capturedAt": "2026-10-10T16:25:55.918Z",
-      "sha256": "40beb6db3f2214e737d09cec1dd5b22c7163384760a5c00cae0401580b3ef215",
+      "capturedVersion": "v0.3.48",
+      "capturedCommit": "fb141e548ed57249793c99af162e005b2750ac69",
+      "capturedAt": "2026-10-11T02:04:15.170Z",
+      "sha256": "e229ce047b5b90253aa0f6eed162a63e6a28c397536445e1a79d0224d8f669e4",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "sourceSha256": "1cde87eac1a5cb6b6bc028f3db0d6c7b1472ede76766e03733f5585b7f4c9c74"
+      "sourceSha256": "c6a766a415d32f514180375a5a212ac2fb9539459e55522feb8797a116eb850d"
     }
   ],
-  "legacyImagesNote": "Only the run-of-show screen changed by batch E4 is captured for v0.3.47. All other images retain their original capture versions, including the v0.3.46 transition HIT and v0.3.45 stage and light design images.",
+  "legacyImagesNote": "Only the stage-tab front view with renamed viewpoints (D-39 fix, venue settings to front seat buttons) is captured for v0.3.48. All other images retain their original capture versions, including the v0.3.47 run-of-show and v0.3.46 transition HIT images.",
   "status": "verified",
   "visualReview": {
     "reviewedAt": "2026-10-11",
-    "method": "Direct visual inspection of the full-size Japanese and English run-of-show (H-1) captures",
+    "method": "Direct visual inspection of the full-size Japanese and English stage-tab captures after renaming two viewpoints in venue settings; the front seat buttons and the 3D presets were also compared by script",
     "limits": "Chromium captures of the bundled feature-test show at 1440x900; Safari, iPad and the Mac app not tested"
   }
 }

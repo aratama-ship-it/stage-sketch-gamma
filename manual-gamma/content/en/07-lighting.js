@@ -3,8 +3,8 @@
   const { ui, kbd, ref, fig, vid, steps, note, table, grid } = window.H;
   window.MANUAL.chapters.push({
     id: "lighting", no: "Part 7", short: "7", tab: "Lighting",
-    title: "Lighting — light pieces on the Stage tab, equipment placement, light design",
-    lead: "Gamma's lighting has three layers. Knowing which one decides what saves a lot of confusion.",
+    title: "Lighting — equipment placement and light design",
+    lead: "In Gamma you make lighting in two places: equipment placement and light design. Knowing which one decides what saves a lot of confusion.",
     sections: [
       {
         id: "light-layers", title: "The two working layers (equipment placement / light design), and the disabled “light pieces”", status: "verified",
@@ -21,19 +21,18 @@ ${note("The Lights panel is hidden", "The " + ui("Lights") + " panel that used t
 ${fig("67-light-design-rj", "Light design in the sample “Romeo and Juliet” (scene 1-3): fixed fixtures on four battens, beams in the front view.", "Romeo and Juliet light design")}`
       },
       {
-        id: "light-pieces", title: "Light pieces on the Stage tab (four kinds, diameter, level, target height, routes)", status: "sourced",
-        keywords: ["light piece", "overhead", "side light", "front light", "floor light", "diameter", "intensity", "target height", "fixture height", "depth", "across", "light routes", "add", "lights panel"],
+        id: "light-pieces", title: "Old beta “light pieces” (cannot be placed new in Gamma — for reference)", status: "sourced",
+        keywords: ["light piece", "overhead", "side light", "front light", "floor light", "diameter", "intensity", "target height", "fixture height", "depth", "across", "light routes", "add", "lights panel", "hidden", "disabled", "legacy", "beta"],
         html: `
-<p>Type a name in the ${ui("Lights")} panel and press ${ui("Add")} to place a light piece. There are four kinds.</p>
+${note("You cannot place new ones in Gamma", "The " + ui("Lights") + " panel on the Stage tab is always hidden, and there is no way to add a light piece in Gamma today (" + ref("light-layers", "7-1") + "). This page is for reference, to understand the old data that stays inside a show imported from the beta. To make new lighting, use " + ui("Equipment placement") + " then " + ui("Light design") + ".", true)}
+<p>In the old beta, typing a name in the ${ui("Lights")} panel and pressing ${ui("Add")} placed a light piece. There were four kinds.</p>
 ${table(["Kind", "From where", "Use"], [
   ["Overhead", "Straight down from a batten", "Basic area light"],
   ["Side light", "Across from the wings", "Shapes the body; has a target height (for example 1.3 m)"],
   ["Front light", "From above the house onto faces", "Lights faces"],
   ["Floor light", "From the floor onto the body", "Light from below"]
 ])}
-<p>Selecting a light piece shows ${ui("Pool diameter (whole rig)")} (%), ${ui("Light intensity")} (%), ${ui("Pool diameter")} (cm), ${ui("Across")} (centre, towards stage left …), ${ui("Depth")} (m from upstage), ${ui("Fixture height")} (m) and ${ui("Target height")} (floor / body) in ${ui("Selection")}. ${ui("Build from preset")} offers standard rigs.</p>
-<p>Moving-light pieces can have routes, so the light travels to the next scene. Check them with the ${ui("Light routes")} display in the plan. Pieces in the same group move together.</p>
-<p>Try it in: E-1 (four kinds, groups and routes) and E-2 (lighting intent data).</p>`
+<p>A piece held a diameter, light intensity, across position, depth, fixture height and target height (floor / body); moving-light pieces had routes, and pieces in the same group moved together. When you import a beta show, this lighting is converted automatically into equipment placement and LX cues (${ref("light-legacy", "7-8")}). The old data stays inside the show after conversion but is never drawn in Gamma's views.</p>`
       },
       {
         id: "light-render", title: "Lighting effects (C) and work lights (G) — pools, beams, darkness, costume tint", status: "verified",

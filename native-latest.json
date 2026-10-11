@@ -1,8 +1,8 @@
 {
-  "version": "0.3.47",
+  "version": "0.3.48",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.47/stage-sketch-gamma-mac-0.3.47.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.48/stage-sketch-gamma-mac-0.3.48.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "進行表は中央の紙面を広く使え、右側で項目の一覧と選択中の舞台の様子を並べて確認できます。舞台タブと環境設定の操作も整えました。保存形式は変わりません（v0.3.47）。",
+  "notes": "英語など日本語以外の表示でも、劇場設定で名前を付けた「見る位置」が正面図と3Dで同じ名前・同じ順に出るようになりました。はじめての案内の照明の段と、手引きの照明の章も直しました。保存形式は変わりません（v0.3.48）。",
   "updated": "2026-10-11"
 }
