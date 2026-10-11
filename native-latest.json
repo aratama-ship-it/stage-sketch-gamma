@@ -1,8 +1,8 @@
 {
-  "version": "0.3.48",
+  "version": "0.3.49",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.48/stage-sketch-gamma-mac-0.3.48.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.49/stage-sketch-gamma-mac-0.3.49.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "英語など日本語以外の表示でも、劇場設定で名前を付けた「見る位置」が正面図と3Dで同じ名前・同じ順に出るようになりました。はじめての案内の照明の段と、手引きの照明の章も直しました。保存形式は変わりません（v0.3.48）。",
+  "notes": "正面図の席ボタンと3Dの視点ボタンが、同じ並び・同じ名前になりました。舞台を真正面から見る「完全な正面」を両方に足し、劇場設定の見る位置の一覧も、英語など日本語以外の表示で訳して出ます。保存形式は変わりません（v0.3.49）。",
   "updated": "2026-10-11"
 }

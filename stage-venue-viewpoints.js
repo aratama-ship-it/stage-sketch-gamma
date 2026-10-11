@@ -12,6 +12,17 @@
   const status = control('status');
   const floorHeight = control('floor-height');
   const message = text => { status.textContent = text; };
+  /* 改名していない既定の席は、表示の言語の対訳で見せる（改名・自分で足した位置は登録名のまま）。
+   * 表示だけの変更で、保存する名前は変えない。決め方は正面図の seatName・3D の viewpointName と同じ。 */
+  const shownLabel = row => {
+    const point = row.point, seats = window.SHOSAI_VENUES?.seats || [];
+    const preset = point.presetSeatId ? seats.find(seat => seat.id === point.presetSeatId) : null;
+    const code = document.documentElement.lang;
+    if (!preset || (point.label && point.label !== preset.label) || !code || code === 'ja') return point.label;
+    const packs = window.SHOSAI_I18N_PACKS || {};
+    const read = pack => pack?.maps?.seat?.[preset.id];
+    return read(packs[code]) || read(packs.en) || point.label;
+  };
   const hint = document.createElement('p'); hint.id = 'venue-viewpoints-hint';
   hint.textContent = '見る位置：図の点を選択・ドラッグすると、その位置からの見え方を右に表示します。';
   wrap.before(hint);
@@ -81,9 +92,9 @@
       button.hidden = row.x < 0 || row.x > 1 || row.y < 0 || row.y > 1;
       button.classList.toggle('is-selected', row.key === selected);
       button.setAttribute('aria-pressed', String(row.key === selected));
-        button.setAttribute('aria-label', `${row.point.label}の見る位置。視線の高さ${row.point.eyeM}m。ドラッグまたは矢印キーで移動`);
-      button.title = `${row.point.label}：舞台前端から${row.point.distanceM}m・左右${row.point.offsetM}m・視線の高さ${row.point.eyeM}m`;
-      button.children[0].textContent = index + 1; button.children[1].textContent = row.point.label;
+        button.setAttribute('aria-label', `${shownLabel(row)}の見る位置。視線の高さ${row.point.eyeM}m。ドラッグまたは矢印キーで移動`);
+      button.title = `${shownLabel(row)}：舞台前端から${row.point.distanceM}m・左右${row.point.offsetM}m・視線の高さ${row.point.eyeM}m`;
+      button.children[0].textContent = index + 1; button.children[1].textContent = shownLabel(row);
     });
     // 点の座標は動かさず、名前だけ空いている方向へ逃がす。
     const rectangles = view.points.map(row => ({ x: row.x*rect.width-16, y: row.y*rect.height-16, w:32, h:32 }));
@@ -99,10 +110,10 @@
       rectangles.push(box);
     });
     const active = view.points.find(row => row.key === selected);
-    const optionsKey = JSON.stringify(view.points.map(row => [row.key, row.point.label]));
+    const optionsKey = JSON.stringify([document.documentElement.lang, ...view.points.map(row => [row.key, shownLabel(row)])]);
     if (choose.dataset.options !== optionsKey) {
       choose.replaceChildren(...view.points.map((row, index) => {
-        const option = document.createElement('option'); option.value = row.key; option.textContent = `${index + 1}. ${row.point.label}`; return option;
+        const option = document.createElement('option'); option.value = row.key; option.textContent = `${index + 1}. ${shownLabel(row)}`; return option;
       }));
       choose.dataset.options = optionsKey;
     }
@@ -116,7 +127,7 @@
     if (view.points.length >= 5) adding = false;
     add.disabled = view.points.length >= 5;
     add.title = t(add.disabled ? '見る位置は最大5点です。追加するには点を削除してください。' : '平面図に見る位置を追加');
-    remove.title = active ? `${active.point.label}：${t('選択した点を削除')}` : t('見る位置を選択してください。');
+    remove.title = active ? `${shownLabel(active)}：${t('選択した点を削除')}` : t('見る位置を選択してください。');
     reset.title = t(view.canReset ? '見る位置を編集前の状態に戻す' : '見る位置は編集前の状態です。');
     add.textContent = window.GAMMA_UI_TEXT?.(adding ? '配置を取り消す' : '＋ 点を置く') || (adding ? '配置を取り消す' : '＋ 点を置く');
     add.setAttribute('aria-pressed', String(adding));
@@ -130,7 +141,7 @@
     if (active) {
       targetHandle.style.left = `${aim[0] * 100}%`; targetHandle.style.top = `${aim[1] * 100}%`;
       targetHandle.classList.toggle('is-custom', Boolean(active.targetCustom));
-      targetHandle.setAttribute('aria-label', `${active.point.label}：${t('見る先（ドラッグまたは矢印キーで移動）')}`);
+      targetHandle.setAttribute('aria-label', `${shownLabel(active)}：${t('見る先（ドラッグまたは矢印キーで移動）')}`);
       targetHandle.title = t(active.targetCustom ? 'この点を見ています。「見る先を真ん中に戻す」で戻せます。' : '舞台の真ん中を見ています。');
     }
     targetReset.textContent = t('見る先を真ん中に戻す');

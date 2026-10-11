@@ -36,6 +36,9 @@
     "進行表を開くと、右側に「項目の一覧」と選択中の「舞台の様子」を最初から表示するようにしました。": "When you open the run of show, the Item list and the selected item’s Stage view now appear on the right from the start.",
     "環境設定のショートカット一覧には、長い一覧の下まで読んでも使える「設定へ戻る」を置きました。": "The Keyboard shortcuts list in Settings now keeps a Return to Settings control available after a long list.",
     "シーンの詳細は、画面幅に合わせて項目を横に並べて読めるようにしました。": "Scene details now arrange their items across the available width for easier reading.",
+    "正面図の席ボタンと3Dの視点ボタンを、同じ並び・同じ名前にそろえました。3Dの既定の視点も、正面図と同じ「1階 最前列」「1階 中央」などの呼び名になります。": "The front-view seat buttons and the 3D viewpoint buttons now share the same order and the same names. The default 3D viewpoints are also called “Front row”, “Stalls centre” and so on, as in the front view.",
+    "舞台を真正面から、遠近をほぼ付けずに見る「完全な正面」を、正面図と3Dの両方に足しました。置かなくても、ほかの見る位置と同じように並びます。": "A “Straight-on front” viewpoint, which looks at the stage head-on with almost no perspective, is now in both the front view and 3D. It appears in the list like the other viewpoints, even if you place nothing.",
+    "劇場設定の「見る位置」の一覧で、改名していない既定の席が、英語など日本語以外の表示では訳して出るようにしました。": "In the Theatre settings list of viewpoints, seats you have not renamed are now translated in English and other non-Japanese displays.",
     "英語など日本語以外の表示でも、劇場設定で名前を付けた「見る位置」が、正面図の席ボタンと3Dの見る位置で同じ名前・同じ順に出るようにしました。": "In English and other non-Japanese displays, a viewpoint you named in Theatre settings now appears with the same name and in the same order on the front-view seat buttons and in the 3D viewpoints.",
     "はじめての案内の「照明を足す」は、操作の完了を待たず、機材配置と照明デザインのタブを教える説明の段にしました。": "The tour step “Add a light” no longer waits for you to finish an action; it now just points you to the Equipment placement and Lighting design tabs.",
     "手引きの照明の章で、いまのγでは新しく置けない「照明の駒」の説明を、旧β版の参考として読める形に直しました。": "The lighting chapter of the manual now presents the “light pieces”, which can no longer be placed new in Gamma, as reference for the old beta.",
@@ -3167,11 +3170,11 @@
     },
     seat: {
       front: "Front row", center: "Stalls centre", rear: "Stalls rear",
-      side: "Stalls side", balcony: "Balcony",
+      side: "Stalls side", balcony: "Balcony", "flat-front": "Straight-on front",
       "approx-near": "near", "approx-mid": "middle", "approx-far": "far",
     },
     seatShort: {
-      front: "front", center: "centre", rear: "rear", side: "side", balcony: "balcony",
+      front: "front", center: "centre", rear: "rear", side: "side", balcony: "balcony", "flat-front": "straight-on",
       "approx-near": "near", "approx-mid": "middle", "approx-far": "far",
     },
     seatNote: {

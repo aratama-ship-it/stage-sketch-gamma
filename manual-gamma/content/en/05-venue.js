@@ -81,7 +81,7 @@ ${table(["Button", "What it does"], [
         id: "viewpoints", title: "Viewpoints (where in the house, eye height, second seat)", status: "sourced",
         keywords: ["viewpoint", "seat", "house", "front row", "balcony", "eye height", "second seat", "compare", "front view", "where from"],
         html: `
-<p>The front view is always seen from somewhere in the house. Choose a seat above the front view on the Stage tab (for example ${ui("Balcony")}) and the drawing changes to that viewpoint. The seats come from step 9, ${ui("Viewpoints")}, in Theatre settings (up to five, each with a name and ${ui("eye height")}; they follow the house floor height).</p>
+<p>The front view is always seen from somewhere in the house. Choose a seat above the front view on the Stage tab (for example ${ui("Balcony")}) and the drawing changes to that viewpoint. The seats come from step 9, ${ui("Viewpoints")}, in Theatre settings (up to five, each with a name and ${ui("eye height")}; they follow the house floor height). ${ui("Straight-on front")} is always added at the end, even if you place nothing. Seats you have not renamed are shown in the language of the screen.</p>
 <p>Show ${ui("Second seat")} from ${ui("Panels")} to add a second small drawing from another seat (choose it in ${ui("Comparison seat")}). It is heavier to draw, and lighting is not shown in it.</p>
 ${note("Viewpoints are no longer registered from 3D", "v0.2.12 removed registering viewpoints from the 3D free camera. Viewpoints are added and edited in step 9 of Theatre settings. Viewpoints registered from 3D earlier are kept and still used by the front view.")}`
       },

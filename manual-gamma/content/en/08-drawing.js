@@ -96,7 +96,7 @@ ${table(["Switch", "Where", "Meaning"], [
   [ui("1.0× ⟲"), "Top right of each view", "Reset zoom to 1×. ＋ and − zoom"],
   [ui("Close front view") + " / " + ui("Close plan view"), "The ✕ at the top right of each view", "Close one view and show the other large (or choose " + ui("Front") + " / " + ui("Plan") + " / " + ui("Both 1") + " (front on top) / " + ui("Both 2") + " (plan on top) at the top left; " + kbd("T") + " cycles)"]
 ])}
-<p>Above the front view is the seat switch (${ui("Front row")} / ${ui("Stalls centre")} / ${ui("Stalls rear")} / ${ui("Stalls side")} / ${ui("Balcony")}). Seats are made in step 9 of Theatre settings (${ref("viewpoints", "Part 5, 5-6")}).</p>`
+<p>Above the front view is the seat switch (${ui("Front row")} / ${ui("Stalls centre")} / ${ui("Stalls rear")} / ${ui("Stalls side")} / ${ui("Balcony")} / ${ui("Straight-on front")}). ${ui("Straight-on front")} looks at the stage head-on with almost no perspective, so the full width and height of the stage show as they are. The same list, in the same order and with the same names, appears among the viewpoint buttons in 3D. Seats are made in step 9 of Theatre settings (${ref("viewpoints", "Part 5, 5-6")}).</p>`
       }
     ]
   });

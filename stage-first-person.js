@@ -887,6 +887,11 @@
       { id: "overhead", name: "真上", x: 0, y: stageCeiling + 4, z: 0, yaw: 180, pitch: -88 },
       { id: "upstage", name: "舞台奥", x: 0, y: 1.6, z: -(stageDepth / 2) + 1.2, yaw: 0, pitch: 0 },
     ];
+    /* 完全な正面: 客席の真ん中から、舞台の間口をまっすぐ正面に見る（見上げ・見下ろし・左右のずれなし）。
+     * 正面図の「完全な正面」と同じ名前・同じ並びの選択肢。 */
+    const flatFrontZ = stageDepth / 2 + Math.max(6, stageWidth * 1.05);
+    const flatFrontPreset = { id: "flat-front", name: seatLabelOf("flat-front", "完全な正面"), x: 0,
+      y: clamp(stageCeiling / 2, 1.6, 4), z: flatFrontZ, yaw: 180, pitch: 0 };
     const registered = rawVenue?.venueV2?.viewPositions || rawVenue?.viewPositions;
     if (Array.isArray(registered) && registered.length) {
       const registeredPresets = registered.map((point) => {
@@ -899,28 +904,54 @@
           yaw: Math.atan2(dx, -dz) * 180 / Math.PI,
           pitch: Math.atan2(1.2 - y, Math.max(.01, Math.hypot(dx, dz))) * 180 / Math.PI };
       });
-      return [...registeredPresets, ...utilityPresets];
+      return [...registeredPresets, flatFrontPreset, ...utilityPresets];
     }
-    const presets = [
-      { id: "audience-center", name: "客席中央", x: 0,
-        y: houseFloorAt(centerZ, stageWidth, stageDepth) + seatedEye, z: centerZ, yaw: 180, pitch: -2 },
-      { id: "front-row", name: "最前列", x: 0,
+    /* ★見る位置の統一（2026-10-11）: 既定の3Dも正面図の席と同じ5席・同じ名前・同じ順で出す。
+     *   客席中央と最前列は従来の位置のまま（R キー・初期位置が使う id も変えない）。残りの3席は席の距離・左右位置から決める。
+     *   カスタム会場で正面図が近似席に絞られているときは、同じ基準の席だけを出す。 */
+    const seatNameOf = (seat) => seatLabelOf(seat.id, seat.label);
+    const defaultSeats = defaultViewSeats(rawVenue);
+    if (!defaultSeats.length) defaultSeats.push({ id: "center", label: "客席中央" }, { id: "front", label: "最前列" });
+    const planSeatPreset = (seat) => {
+      const balcony = seat.plan && seat.plan.tier === "balcony";
+      const seatZ = stageDepth / 2 + finite(seat.eye, 8);
+      const seatX = ((seat.plan && Number.isFinite(seat.plan.x) ? seat.plan.x : .5) - .5) * stageWidth;
+      const seatY = balcony ? finite(seat.plan && seat.plan.eyeM, 5.5)
+        : houseFloorAt(seatZ, stageWidth, stageDepth) + seatedEye;
+      const dx = seatX, dz = seatZ;
+      return { id: `seat:${seat.id}`, name: seatNameOf(seat), x: seatX, y: seatY, z: seatZ,
+        yaw: Math.atan2(dx, -dz) * 180 / Math.PI,
+        pitch: Math.atan2(1.2 - seatY, Math.max(.01, Math.hypot(dx, dz))) * 180 / Math.PI };
+    };
+    const byId = {
+      front: { id: "front-row", name: "", x: 0,
         y: houseFloorAt(frontZ, stageWidth, stageDepth) + seatedEye, z: frontZ, yaw: 180, pitch: 2 },
+      center: { id: "audience-center", name: "", x: 0,
+        y: houseFloorAt(centerZ, stageWidth, stageDepth) + seatedEye, z: centerZ, yaw: 180, pitch: -2 },
+    };
+    const presets = [
+      ...defaultSeats.map((seat) => {
+        const fixed = byId[seat.id];
+        if (fixed) return { ...fixed, name: seatNameOf(seat) };
+        return planSeatPreset(seat);
+      }),
+      flatFrontPreset,
       ...utilityPresets,
     ];
+    const presetById = (id) => presets.find((preset) => preset.id === id);
     const modeled = modeledVenue3D();
     if (modeled && modeled.venue.id === rawVenue?.id) {
       const front = modeled.areas.filter(entry => entry.area.side === "front");
       const seats = (front.length ? front : modeled.areas).flatMap(entry => entry.seats)
         .sort((a, b) => Math.hypot(a.x, a.z) - Math.hypot(b.x, b.z));
       const place = (preset, seat) => {
-        if (!seat) return;
+        if (!preset || !seat) return;
         preset.x = seat.x; preset.y = seat.floorY + HOUSE_PERSON.headYM; preset.z = seat.z;
         preset.yaw = Math.atan2(seat.x, -seat.z) * 180 / Math.PI;
         preset.pitch = -Math.atan2(preset.y, Math.hypot(seat.x, seat.z)) * 180 / Math.PI;
       };
-      place(presets[1], seats[0]);
-      place(presets[0], seats[Math.floor(seats.length / 2)]);
+      place(presetById("front-row"), seats[0]);
+      place(presetById("audience-center"), seats[Math.floor(seats.length / 2)]);
       return presets;
     }
     const geometry = bowlGeometry(rawVenue, stageWidth, stageDepth);
@@ -1121,14 +1152,32 @@
 
   /* ★D-39（2026-10-11）: 見る位置の名前。既定の席のまま（改名なし）なら席の対訳を、
    *   改名していれば登録名をそのまま出す。正面図の seatName（stage-sketch.js）と同じ決め方。 */
+  function seatLabelOf(seatId, fallback) {
+    const code = data && data.lang;
+    const packs = window.SHOSAI_I18N_PACKS || {};
+    const read = (pack) => pack && pack.maps && pack.maps.seat && pack.maps.seat[seatId];
+    return (code && code !== "ja" && (read(packs[code]) || read(packs.en))) || fallback;
+  }
+
   function viewpointName(point) {
     const seats = (window.SHOSAI_VENUES && window.SHOSAI_VENUES.seats) || [];
     const preset = point.presetSeatId ? seats.find((seat) => seat.id === point.presetSeatId) : null;
     if (!preset || (point.label && point.label !== preset.label)) return point.label || "見る位置";
-    const code = data && data.lang;
-    const packs = window.SHOSAI_I18N_PACKS || {};
-    const read = (pack) => pack && pack.maps && pack.maps.seat && pack.maps.seat[preset.id];
-    return (code && code !== "ja" && (read(packs[code]) || read(packs.en))) || preset.label;
+    return seatLabelOf(preset.id, preset.label);
+  }
+
+  /* 既定（見る位置を登録していない）劇場の席。正面図の frontSeatList と同じ決め方:
+   * 作成会場は近似席の基準の席だけ、それ以外は既定の5席。 */
+  function defaultViewSeats(rawVenue) {
+    const seats = (window.SHOSAI_VENUES && window.SHOSAI_VENUES.seats) || [];
+    const lines = window.SHOSAI_VENUE_LINES;
+    if (rawVenue && rawVenue.custom && rawVenue.venueV2 && lines && typeof lines.approxFrontSeats === "function") {
+      const approx = lines.approxFrontSeats(rawVenue.venueV2, seats);
+      const bases = new Set((Array.isArray(approx) ? approx : []).map((seat) => seat.base || seat.id));
+      const kept = seats.filter((seat) => bases.has(seat.id));
+      if (kept.length) return kept;
+    }
+    return seats;
   }
 
   function createElement(tag, id, className) {

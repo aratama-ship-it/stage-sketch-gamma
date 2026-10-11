@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.48";
+  const GAMMA_APP_VERSION = "v0.3.49";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -10526,8 +10526,26 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return seats;
   }
 
-  /* 正面図で選べる席の全部。既存（または近似）の席＋カスタム視点。 */
+  /* 完全な正面（2026-10-11 本人決定）: 客席の真ん中から舞台の間口をまっすぐ正面に見る図。
+   * 手前と奥の倍率差を付けず（backW＝frontW）、床の帯もほぼ無い。地平線を下げて舞台の高さ全体を収める。
+   * 劇場には保存しない「選択肢」で、3Dの同名の見る位置（stage-first-person.js の flat-front）と並べて出す。 */
+  const FLAT_FRONT_ID = "flat-front";
+  const FLAT_FRONT_SEAT = Object.freeze({
+    id: FLAT_FRONT_ID, label: "完全な正面", short: "正面",
+    note: "真正面から見る。遠近をほぼ付けず、舞台の間口と高さがそのまま見える。",
+    plan: Object.freeze({ x: 0.5, y: 0.3, tier: "stalls" }), eye: 30,
+    floorY: 640, bottomY: 662, backW: 0.94, frontW: 0.94, shift: 0, rise: 0, apron: 0, flat: true,
+  });
+  const flatFrontSeat = () => FLAT_FRONT_SEAT;
+
+  /* 正面図で選べる席の全部。既存（または近似）の席＋カスタム視点＋完全な正面。 */
   function frontSeatList() {
+    const list = frontSeatListBase();
+    const flat = flatFrontSeat();
+    return flat ? list.concat([flat]) : list;
+  }
+
+  function frontSeatListBase() {
     const v = venue();
     const positions = v?.venueV2?.viewPositions;
     if (Array.isArray(positions)) {

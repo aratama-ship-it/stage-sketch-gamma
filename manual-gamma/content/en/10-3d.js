@@ -8,7 +8,7 @@
     sections: [
       {
         id: "fpv-basics", title: "The 3D tab (open, look around, walk, leave)", status: "verified",
-        keywords: ["3d", "camera", "free camera", "look around", "walk", "drag", "wasd", "e", "q", "r", "leave", "esc", "viewpoint", "angle", "lens", "wide", "ultra-wide", "standard", "full house", "empty house", "house centre", "front row", "wing", "overhead", "upstage", "5"],
+        keywords: ["3d", "straight-on front", "camera", "free camera", "look around", "walk", "drag", "wasd", "e", "q", "r", "leave", "esc", "viewpoint", "angle", "lens", "wide", "ultra-wide", "standard", "full house", "empty house", "house centre", "front row", "wing", "overhead", "upstage", "5"],
         html: `
 <p>The ${ui("3D")} tab (${kbd("5")}) shows the current scene in three dimensions.</p>
 ${grid([
@@ -31,11 +31,12 @@ ${table(["Button", "Meaning"], [
   [ui("Free camera"), "Move freely with keys and dragging"],
   ["A performer's name (for example ロミオ)", "See through that performer's eyes (" + ref("fpv-performer", "10-2") + ")"],
   [ui("House"), "See from the house"],
-  [ui("House centre") + " / " + ui("Front row") + " / " + ui("Stage left wing") + " / " + ui("Stage right wing") + " / " + ui("Overhead") + " / " + ui("Upstage"), "Jump the camera to a fixed position"]
+  [ui("Front row") + " / " + ui("Stalls centre") + " / " + ui("Stalls rear") + " / " + ui("Stalls side") + " / " + ui("Balcony") + " / " + ui("Straight-on front"), "The house viewpoints, in the same order and with the same names as the seat buttons above the front view. Viewpoints you renamed or added in Theatre settings appear here too. " + ui("Straight-on front") + " looks at the stage head-on with almost no perspective"],
+  [ui("Stage left wing") + " / " + ui("Stage right wing") + " / " + ui("Overhead") + " / " + ui("Upstage"), "Jump the camera to a fixed position"]
 ])}
 <p>On the right: ${ui("Lighting effects")} and ${ui("Work lights")}, small ${ui("Front view")} and ${ui("Plan view")} windows (show or hide), the lenses ${ui("Ultra-wide")}, ${ui("Wide")} and ${ui("Standard")}, and ${ui("Full house")} / ${ui("Empty house")} (the audience on the night, or the empty room before they come in). The ✕ at the top right closes 3D. Turn round from upstage to see how the house surrounds you; in a venue in the round it goes all the way.</p>
 ${fig("69-3d-rj", "3D in the sample “Romeo and Juliet” (scene 1-3). Viewpoint buttons along the bottom (free camera, each performer, house); lenses and full/empty house on the right.", "3D controls")}
-${vid("fpv-look", "“Romeo and Juliet” (scene 1-3) in 3D: looking around, walking forward with W, seeing through Romeo's eyes, then moving to house centre.")}`
+${vid("fpv-look", "“Romeo and Juliet” (scene 1-3) in 3D: looking around, walking forward with W, seeing through Romeo's eyes, then moving to Stalls centre.")}`
       },
       {
         id: "fpv-performer", title: "A performer's view (seeing through their eyes)", status: "sourced",

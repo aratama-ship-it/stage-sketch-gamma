@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v523";
+const CACHE_NAME = "stage-sketch-gamma-shell-v524";
 // BEGIN GENERATED SHELL (node tools/asset-ledger.mjs --write-sw)
 const APP_SHELL_CORE = [
   "./assets/brand/logo-jp-gamma-inline-white.svg",
@@ -29,20 +29,20 @@ const APP_SHELL_CORE = [
   "./light-design/laser-effects.js?v=20261005-batch98",
   "./light-design/rig-engine.js?v=20261011-v0347",
   "./light-design/simple-lighting-model.js?v=20261001-release71",
-  "./manual-gamma/manual-content.js?v=20261011-v0348",
-  "./manual-gamma/manual-meta.js?v=20261011-v0348",
+  "./manual-gamma/manual-content.js?v=20261011-v0349",
+  "./manual-gamma/manual-meta.js?v=20261011-v0349",
   "./run-of-show/timing.js?v=20261010-v0338",
   "./run.html",
   "./stage-audio-store.js?v=2026092523",
   "./stage-cue-sheet.js?v=20261010-v0342",
   "./stage-data-safety.js?v=20261001-release69",
-  "./stage-first-person-loader.js?v=20261011-v0348",
+  "./stage-first-person-loader.js?v=20261011-v0349",
   "./stage-fixture-body.js?v=20261009-v0335",
   "./stage-front-shape.js?v=2026092046",
-  "./stage-i18n.js?v=20261011-v0348",
+  "./stage-i18n.js?v=20261011-v0349",
   "./stage-idle-motion.js?v=20261011-v0347",
   "./stage-jog-reference.js?v=2026093003",
-  "./stage-language-loader.js?v=20261011-v0348",
+  "./stage-language-loader.js?v=20261011-v0349",
   "./stage-large-project-store.js?v=20260928-storage49",
   "./stage-light-eval.js?v=20261004-receiver89",
   "./stage-light-panel-import.js?v=2026092209",
@@ -86,7 +86,7 @@ const APP_SHELL_CORE = [
   "./stage-shortcuts.js?v=20261010-v0338",
   "./stage-show-overview.css?v=20261009-v0337",
   "./stage-show-overview.js?v=20261009-v0337",
-  "./stage-sketch.js?v=20261011-v0348",
+  "./stage-sketch.js?v=20261011-v0349",
   "./stage-sketch.webmanifest",
   "./stage-storage-codec.js?v=2026092523",
   "./stage-storage-hygiene.js?v=20261001-release69",
@@ -107,7 +107,7 @@ const APP_SHELL_CORE = [
   "./stage-venue-report.js?v=2026092047",
   "./stage-venue-underlay.js?v=20261006-v0312",
   "./stage-venue-viewpoints.css?v=20261009-v0335",
-  "./stage-venue-viewpoints.js?v=20261011-v0347",
+  "./stage-venue-viewpoints.js?v=20261011-v0349",
   "./stage-venues.js?v=20261007-v0326",
   "./stage-virtual-room.js?v=20261009-v0337",
   "./stage-vox-panel.css?v=20261005-v030",
@@ -149,9 +149,9 @@ const APP_SHELL_GROUPS = {
   ],
   "language": [
     "./gamma-ui-i18n.ko.js?v=20261010-v0338",
-    "./stage-i18n.ko.js?v=20261011-v0348",
-    "./stage-i18n.zh-Hans.js?v=20261011-v0348",
-    "./stage-i18n.zh-Hant.js?v=20261011-v0348"
+    "./stage-i18n.ko.js?v=20261011-v0349",
+    "./stage-i18n.zh-Hans.js?v=20261011-v0349",
+    "./stage-i18n.zh-Hant.js?v=20261011-v0349"
   ],
   "manual": [
     "./manual-gamma/index.html",
@@ -172,7 +172,7 @@ const APP_SHELL_GROUPS = {
     "./run.css"
   ],
   "3d": [
-    "./stage-first-person.js?v=20261011-v0348"
+    "./stage-first-person.js?v=20261011-v0349"
   ],
   "samples": [
     "./stage-samples/feature-test-show.js?v=20261011-v0347",
