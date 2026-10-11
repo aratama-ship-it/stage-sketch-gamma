@@ -236,7 +236,7 @@ html[data-stage-skin] :is(.stage-modal-close, .stage-canvas-close, .stage-inspec
 }
 html[data-stage-skin] #stage-venue-underlay-close { font-size:calc(1em * var(--gamma-close-glyph-scale)); }
 html[data-stage-skin] .gamma-close-glyph { font-size:calc(1em * var(--gamma-close-glyph-scale)); }
-html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(#stage-timeline-settings-trigger, #stage-timeline-transition-animation) svg { width: 24px; height: 24px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-timeline-square > svg { width: 21px; height: 21px; }
 html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-present-btn svg { width: 22px; height: 22px; }
 html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-release-open > svg { width: 18.5px; height: 18.5px; }
 /* 図の帯は通常・下部とも箱34px、絵15px。係数＝1÷（絵の長辺÷外枠）。 */
@@ -252,15 +252,12 @@ html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-can
    戻すときはこの 2 行を消す（svg は style.css の .stage-tool-icon svg＝15px へ戻る）。 */
 html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-canvas-bar .stage-canvas-tools .stage-canvas-toggle.is-icon > svg,
 html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-canvas-bar .stage-canvas-tools .stage-canvas-toggle.is-icon > .stage-tool-icon > svg { width: calc(var(--gamma-canvas-glyph) * 1.351); height: calc(var(--gamma-canvas-glyph) * 1.351); }
-html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(.stage-zoom-fab, .stage-venue-editor-zoom, .venue-live-controls) button > svg,
-html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(#stage-timeline-zoom-in, #stage-timeline-zoom-out) > svg { width: 29px; height: 29px; }
-html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(#stage-timeline-head, #stage-timeline-prev, #stage-timeline-next) > svg { width: 31px; height: 31px; }
-html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-timeline-play > svg { width: 33px; height: 33px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(.stage-zoom-fab, .stage-venue-editor-zoom, .venue-live-controls) button > svg { width: 29px; height: 29px; }
 html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-scene-grid-open > svg { width: 21px; height: 21px; }
 html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(#stage-scene-section, #stage-scene-add) > svg { width: 20px; height: 20px; }
 html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-row-delete > svg { width: 30px; height: 30px; }
-html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(.stage-panel-version-copy, .stage-timeline-row-add) > svg { width: 24px; height: 24px; }
-html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-timeline-row-handle > svg { width: 21px; height: 21px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-panel-version-copy > svg { width: 24px; height: 24px; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(.stage-timeline-row-add, .stage-timeline-row-handle) > svg { width: 16px; height: 16px; }
 html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-cast-remove > svg { width: 22px; height: 22px; }
 html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-cast-lock > svg { width: 15px; height: 15px; }
 /* 照明デザイン（埋め込み） */
@@ -273,21 +270,86 @@ html[data-gamma-embedded] button.st.fixture-power > svg :is(path, line, polyline
 html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(#stage-panel-layout-toggle, #stage-panels-toggle, #stage-present-btn)
   svg :is(path, line, polyline, polygon, circle, rect, ellipse) { vector-effect: non-scaling-stroke; stroke-width: var(--gamma-icon-stroke); }
 html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(
-  .stage-zoom-fab button, .stage-venue-editor-zoom button, .venue-live-controls button,
-  #stage-timeline-head, #stage-timeline-prev, #stage-timeline-play, #stage-timeline-next,
-  #stage-timeline-zoom-in, #stage-timeline-zoom-out, #stage-timeline-transition-animation
+  .stage-zoom-fab button, .stage-venue-editor-zoom button, .venue-live-controls button
 ) > svg :is(path, line, polyline, polygon, circle, rect, ellipse) {
   vector-effect: non-scaling-stroke; stroke-width: var(--gamma-icon-stroke-44);
 }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-timeline-square > svg :is(path, line, polyline, polygon, circle, rect, ellipse) {
+  vector-effect: non-scaling-stroke; stroke-width: var(--gamma-icon-stroke);
+}
 html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(
   .stage-scene-action-icon, #stage-scene-grid-open, #stage-scene-section, #stage-scene-add,
-  .stage-scene-row-delete, .stage-panel-version-copy, .stage-timeline-row-add,
+  .stage-scene-row-delete, .stage-panel-version-copy,
   .stage-tool-row .is-icon, #stage-light-render-toggle, #stage-work-light-toggle, #stage-toolbar-transition-animation
 ) svg :is(path, line, polyline, polygon, circle, rect, ellipse) {
   vector-effect: non-scaling-stroke; stroke-width: var(--gamma-icon-stroke-32);
 }
-html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-timeline-row-handle > svg :is(path, line, polyline, polygon, circle, rect, ellipse) {
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(.stage-timeline-row-add, .stage-timeline-row-handle) > svg :is(path, line, polyline, polygon, circle, rect, ellipse) {
   vector-effect: non-scaling-stroke; stroke-width: var(--gamma-icon-stroke-28);
+}
+
+/* デスクトップのタイムラインは、舞台タブの道具帯と同じ寸法階段を使う。 */
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-timeline-square {
+  box-sizing: border-box;
+  flex-basis: var(--ctrl-md) !important;
+  width: var(--ctrl-md);
+  min-width: var(--ctrl-md);
+  height: var(--ctrl-md);
+  min-height: var(--ctrl-md);
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-timeline-settings {
+  flex-basis: var(--ctrl-md);
+  width: var(--ctrl-md);
+  height: var(--ctrl-md);
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-timeline-menu-strip.is-source {
+  padding-right: calc(var(--ctrl-md) + (2 * var(--gamma-gap)));
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(
+  #stage-timecode-settings, #stage-timeline-loop-a, #stage-timeline-loop-b,
+  #stage-timeline-loop, #stage-timeline-grid, #stage-timeline-split,
+  #stage-timeline-unit-toggle, #stage-show-duration
+) {
+  box-sizing: border-box;
+  height: var(--ctrl-md);
+  min-height: var(--ctrl-md);
+  padding-inline: 10px;
+  font-size: var(--fs-3);
+  letter-spacing: .03em;
+}
+/* 「時間式」は外枠と札の枠が二重になって 36px に見えていた。デスクトップでは札の枠だけにして他の札と同じ 34px にそろえる。 */
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-timeline-unit { border: 0; }
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-timeline-section-duration {
+  font-size: var(--fs-3);
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-timeline-section-duration input[type="number"] {
+  box-sizing: border-box;
+  height: var(--ctrl-md);
+  min-height: var(--ctrl-md);
+  font-size: var(--fs-3);
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-timeline-cue-target {
+  font-size: var(--fs-3);
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-timeline-cue-target select {
+  box-sizing: border-box;
+  height: var(--ctrl-sm);
+  min-height: var(--ctrl-sm);
+  font-size: var(--fs-3);
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-timeline-row-add {
+  box-sizing: border-box;
+  flex-basis: var(--ctrl-sm);
+  width: var(--ctrl-sm);
+  height: var(--ctrl-sm);
+  min-height: var(--ctrl-sm);
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(
+  .stage-timeline-row-label, .stage-timeline-tick span,
+  .stage-timeline-audio-block, .stage-timeline-scene,
+  .stage-timeline-transition-block, .stage-timeline-cue
+) {
+  font-size: var(--fs-3);
 }
 html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(.stage-cast-remove, .stage-cast-lock) > svg :is(path, line, polyline, polygon, circle, rect, ellipse),
 html[data-gamma-embedded] .fixture-group-off > svg :is(path, line, polyline, polygon, circle, rect, ellipse) {

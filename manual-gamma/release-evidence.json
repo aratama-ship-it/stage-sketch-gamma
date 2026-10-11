@@ -1,11 +1,11 @@
 {
-  "appVersion": "v0.3.54",
+  "appVersion": "v0.3.55",
   "contentUpdated": "2026-10-11",
   "requiredScreens": [
     {
-      "id": "prefs-without-performance-area",
+      "id": "stage-toolbar-panel-controls",
       "language": "ja",
-      "file": "manual-gamma/img/release054-prefs.jpg",
+      "file": "manual-gamma/img/release055-stage-toolbar.jpg",
       "viewport": [
         1440,
         900
@@ -13,9 +13,9 @@
       "scene": "H-1"
     },
     {
-      "id": "prefs-without-performance-area",
+      "id": "stage-toolbar-panel-controls",
       "language": "en",
-      "file": "manual-gamma/img/en/release054-prefs.jpg",
+      "file": "manual-gamma/img/en/release055-stage-toolbar.jpg",
       "viewport": [
         1440,
         900
@@ -25,47 +25,47 @@
   ],
   "screenshots": [
     {
-      "id": "prefs-without-performance-area",
-      "file": "manual-gamma/img/release054-prefs.jpg",
+      "id": "stage-toolbar-panel-controls",
+      "file": "manual-gamma/img/release055-stage-toolbar.jpg",
       "language": "ja",
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.54",
-      "capturedCommit": "c73e814f30fabe73f82863edd4c7908dd85805b2",
-      "capturedAt": "2026-10-11T13:22:02.870Z",
-      "sha256": "ea1d68899f497371118b6c88675995c7873c673cfe5421458a1135ed66fd1e55",
+      "capturedVersion": "v0.3.55",
+      "capturedCommit": "57cb01c95718c4ba832459c2bb1c937203818c83",
+      "capturedAt": "2026-10-11T14:07:35.016Z",
+      "sha256": "0cab6b850e01201c28d57de2a029c156458be6a5d14236e42051543eb47adbaf",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "sourceSha256": "17084bc2e2115780a1597ed822f8f9ee117ed553a8febd3bc6afe8b6147f1d71"
+      "sourceSha256": "3a7e27aee7c252fe86f20961450db5dca7a341e8f5b73f84ee221f450624de52"
     },
     {
-      "id": "prefs-without-performance-area",
-      "file": "manual-gamma/img/en/release054-prefs.jpg",
+      "id": "stage-toolbar-panel-controls",
+      "file": "manual-gamma/img/en/release055-stage-toolbar.jpg",
       "language": "en",
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.54",
-      "capturedCommit": "c73e814f30fabe73f82863edd4c7908dd85805b2",
-      "capturedAt": "2026-10-11T13:22:09.451Z",
-      "sha256": "68e7c42f2be9d7efedfaea5210fd4165cf2ce1e7cac8a2f452db1f39d6a1eca7",
+      "capturedVersion": "v0.3.55",
+      "capturedCommit": "57cb01c95718c4ba832459c2bb1c937203818c83",
+      "capturedAt": "2026-10-11T14:08:40.547Z",
+      "sha256": "df34bb50866803345fef5c62685b75fd3cdfd93e2ab2bd9d1687ebe1e64a5da6",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "sourceSha256": "17084bc2e2115780a1597ed822f8f9ee117ed553a8febd3bc6afe8b6147f1d71"
+      "sourceSha256": "3a7e27aee7c252fe86f20961450db5dca7a341e8f5b73f84ee221f450624de52"
     }
   ],
-  "legacyImagesNote": "Only the Settings window without the Performance area row (v0.3.54) is captured. All other images retain their original capture versions. The v0.3.53 performance-area playback image is no longer referenced while the feature is hidden; its files remain for when the feature returns.",
+  "legacyImagesNote": "Only the Stage tab with the panel layout and panel on/off controls at the end of the tool strip (v0.3.55) is captured. All other images retain their original capture versions; the v0.3.54 Settings capture stays as the record of the hidden Performance area.",
   "status": "verified",
   "visualReview": {
     "reviewedAt": "2026-10-11",
-    "method": "Direct visual inspection of the full-size Japanese and English captures of the Settings window: the Playback and timing group lists the transition walking, dialogue-only arrow keys and smooth dialogue scroll switches with no Performance area row, and the guide entry shows the booklet as of v0.3.54. The capture script also asserts that no Performance area row exists. The hidden state (no plan tool, no act motion, saved areas kept) is checked in Chromium and WebKit by tests/act-areas-hidden-browser.cjs.",
+    "method": "Direct visual inspection of the full-size Japanese and English captures of the Stage tab: the tool strip shows eight evenly spaced squares ending with the panel layout and panel on/off controls, the header no longer has them, the front-view seat list has no Straight-on front, and the scene list shows the transition row without the extra memo word. The capture script asserts that both panel controls sit inside the stage tool strip and not in the header.",
     "limits": "Chromium captures of the bundled feature-test show at 1440x900; Safari, iPad and the Mac app not tested"
   }
 }

@@ -687,6 +687,16 @@
       effectiveExtra = Math.min(maxExtra, Math.max(panelLayout.leftExtra, minLeftWidth - sideW, 0));
     }
     s = Math.max(6, Math.min((r.width - chromeW - effectiveExtra) / worldW, heightScale));
+    /* E1-#18（横幅を使い切る）: 高さで縮尺が決まって横が余るときは、余りを左のパネル（灯体一覧・LXキュー）へ回す。
+       図の縮尺は変えない（4図を同じ縮尺にする約束のまま）。一覧が広がりすぎないよう左列は AUTO_LEFT_MAX までにし、
+       それ以上の余りは今までどおり左右の余白にする。手で広げた幅（leftExtra）のほうが大きければそちらを使う。 */
+    if (s >= heightScale - 1e-6) {
+      const AUTO_LEFT_MAX = 760;
+      const sideNow = Math.round(d.D * s) + PAD.secX * 2;
+      const leftover = Math.floor(r.width - chromeW - effectiveExtra - worldW * s);
+      const room = Math.max(0, AUTO_LEFT_MAX - (sideNow + effectiveExtra));
+      if (leftover > 0 && room > 0) effectiveExtra += Math.min(leftover, room);
+    }
     const set = (elm, prop, v) => { const now = parseFloat(elm.style[prop]) || 0; if (Math.abs(now - v) > 1) elm.style[prop] = v + "px"; };
     // 上帯・シーン行を図と同じ幅の帯へ寄せる。窓を変えても縦に揃う
     const band = Math.round((d.W + d.D * 2) * s) + chromeW + effectiveExtra;
@@ -1724,7 +1734,7 @@
       const S = fixtureWorld(f); if (!S) return; const p = f.mount.type === "position" ? positionPlanProjector(P,B)(S) : P(S);
       const X = f.mount.type === "side" ? (f.mount.side === "shimote" ? B.x - SIDE_DX : B.x + B.w + SIDE_DX) : p.X;
       const Y = isFront(f) ? B.y + B.h + FRONT_DY : p.Y;     // 前明かりは客席帯に並べる（実距離は数値で）
-      if (showOn("fixtures")) {
+      {   // 「機材」の切替は正面図だけ（E1-#12）。平面図の灯体は常に出す
         const o = { fixture: f, sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f), step: strobeStepOf(f.id), outline: planFixtureOutline };
         if (f.mount.type === "cyc") o.bar = cycFixtureBar(P, f);
         drawFixtureMark(pctx, X, Y, markShapeOf(f), o);
@@ -1737,7 +1747,7 @@
     if (state.mode === "move" && showOn("blackout")) paintBlackout(pctx, plan, litSpots);
     if (state.mode === "move" && showOn("blackout")) drawLasers(pctx, P, "plan", 0.35); drawMirrorBalls(pctx, P, "plan", 0.35);
     compositeSpatial(pctx, P, B.w / d.W, "plan");
-    if (state.mode === "move" && showOn("fixtures")) redrawFixtureInfoPlan(pctx, P, B);
+    if (state.mode === "move") redrawFixtureInfoPlan(pctx, P, B);
     if (state.mode === "move" && showOn("blackout")) {
       planLabels.forEach((L) => plateText(pctx, L.text, L.x, L.y, { color: L.color }));
       drawBordersPlan(pctx, P, state.dims);
@@ -2940,7 +2950,6 @@
   /* 作業灯の暗幕は光のない背景だけを暗くする。暗幕の上に情報レイヤーを描き直し、
      「表示」の機材・番号を、作業灯のON/OFFとは独立して表示する。 */
   function redrawFixtureInfoPlan(ctx, P, B) {
-    if (!showOn("fixtures")) return;
     state.rig.fixtures.forEach((f) => {
       const S = fixtureWorld(f); if (!S) return; const p = f.mount.type === "position" ? positionPlanProjector(P,B)(S) : P(S);
       const X = f.mount.type === "side" ? (f.mount.side === "shimote" ? B.x - SIDE_DX : B.x + B.w + SIDE_DX) : p.X;
@@ -2950,8 +2959,8 @@
       drawFixtureMark(ctx, X, Y, markShapeOf(f), o);
     });
   }
+  /* 「機材」の切替（正面図だけ・E1-#12）は呼ぶ側で見る。側面図からは常に呼ぶ。 */
   function redrawFixtureInfoSection(ctx, P, B, side) {
-    if (!showOn("fixtures")) return;
     state.rig.fixtures.forEach((f) => {
       const S = fixtureWorld(f); if (!S) return; const q = P(S);
       if (f.mount.type === "side" && f.mount.side === side) {
@@ -3825,14 +3834,15 @@
   });
   if ($("distance-mode")) $("distance-mode").onclick = () => { distanceMetric = !distanceMetric; syncCanvasSize(); renderAll(); };
   // 正面図の描き方（平面／3D）。3Dは本体の正面図と同じ擬似パース（2026-09-11 本人要望）
-  document.querySelectorAll("#frontmode button").forEach((b) => {
+  /* ★#frontmode には「機材」（data-show）も並ぶ（E1-#12）。平面/3D の切替は data-front を持つボタンだけ。 */
+  document.querySelectorAll("#frontmode button[data-front]").forEach((b) => {
     b.onclick = () => { state.front3d = b.dataset.front === "3d"; renderAll(); };
   });
   if ($("seat")) $("seat").addEventListener("change", () => {
     state.seat = $("seat").value;
     /* A seat has meaning only for the perspective front view. */
     state.front3d = true;
-    document.querySelectorAll("#frontmode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.front === "3d")));
+    document.querySelectorAll("#frontmode button[data-front]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.front === "3d")));
     renderAll();
   });
   window.GAMMA_LIGHT_SET_FRONT_SEATS = (seats) => {
@@ -3850,7 +3860,7 @@
   if ($("snap")) $("snap").addEventListener("change", () => { state.snap = $("snap").checked; draw(); });
 
   /* ---------- 表示・探す・舞台の大きさ（4図化で空いた場所へ入れた操作） ---------- */
-  document.querySelectorAll("#showtoggles button, #lighttoggles button").forEach((b) => {
+  document.querySelectorAll("#showtoggles button, #lighttoggles button, #frontmode button[data-show]").forEach((b) => {
     /* 作業灯を消すの入り切りでは、消し具合のつまみの出し入れもいるので renderAll で作り直す。
        ほかは図だけ描き直せば足りる。 */
     b.onclick = () => { state.show[b.dataset.show] = !showOn(b.dataset.show); if (b.dataset.show === "blackout") renderAll(); else { b.setAttribute("aria-pressed", String(showOn(b.dataset.show))); draw(); } };
@@ -6445,8 +6455,8 @@
     SECS.forEach((sec) => sec.cv.parentElement.classList.toggle("focus", state.mode === "move" && sec.kind === focusKind));
     renderToolStrip();   // 帯の出し入れで図に使える高さが変わるので、寸法合わせより先に
     syncCanvasSize();
-    document.querySelectorAll("#showtoggles button, #lighttoggles button").forEach((b) => b.setAttribute("aria-pressed", String(showOn(b.dataset.show))));
-    document.querySelectorAll("#frontmode button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.front === "3d") === Boolean(state.front3d))));
+    document.querySelectorAll("#showtoggles button, #lighttoggles button, #frontmode button[data-show]").forEach((b) => b.setAttribute("aria-pressed", String(showOn(b.dataset.show))));
+    document.querySelectorAll("#frontmode button[data-front]").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.front === "3d") === Boolean(state.front3d))));
     $("seat").hidden = false;
     $("seat").disabled = false;
     $("seat").setAttribute("aria-disabled", "false");

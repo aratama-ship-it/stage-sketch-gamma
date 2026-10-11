@@ -4904,6 +4904,22 @@
     return true;
   }
 
+  /* 2026-10-11 本人指示: 平面図は舞台・客席・壁などの上をドラッグしても動かす（図がそれらで埋まっていると動かせなかった）。
+   * 図形の本体を掴んで動かすのは、その図形をもう選んでいるときだけ。押して離しただけなら、その図形を選ぶ。
+   * 角・辺のつまみ、柱・什器などの小さな要素、置く・描く道具の操作は今までどおり。 */
+  function isSelectedTarget(target) {
+    const current = selectedRemovalTarget();
+    return Boolean(current) && current.kind === target.kind && (current.id ?? null) === (target.id ?? null);
+  }
+  function beginPlanPan(event, onClick) {
+    activePointer = {
+      pointerId: event.pointerId, kind: "pan",
+      startClient: [event.clientX, event.clientY],
+      startCenter: state.view.center.slice(), startFit: state.view.fit, moved: false, onClick,
+    };
+    els.canvas.style.cursor = "grabbing";
+  }
+
   function beginPointer(event) {
     const panGesture = event.button === 1 || (event.button === 0 && event.shiftKey);
     if (event.button !== undefined && event.button !== 0 && !panGesture) return;
@@ -4994,6 +5010,16 @@
       const stageExtension = !areaResizeHit && !areaEdgeHit && !audienceHandleHit && !hitElement(point) &&
         !hitWallArea(point) && !hitWingArea(point) && !audienceAreaHit ? hitStageExtension(point) : null;
       if (stageExtension) {
+        const target = { kind: "stage-extension", id: stageExtension.id };
+        if (!isSelectedTarget(target)) {
+          beginPlanPan(event, () => {
+            selectRemovalTarget(target);
+            setSelectionStatus(stageExtension.merged
+              ? "合成済みの追加ステージは一体の舞台面です。戻すと合成前にできます。"
+              : `${stageExtension.shape === "circle" ? "丸" : "四角"}の追加ステージを選択しました。ドラッグで動かせます。`);
+          });
+          return;
+        }
         beginStageExtensionMove(event.pointerId, point, stageExtension);
         return;
       }
@@ -5023,6 +5049,13 @@
     const wall = hitWallArea(point), wing = hitWingArea(point);
     if (!areaResizeHit && !audienceHandleHit && corner < 0 && edge < 0 && (wall || wing)) {
       const item = wall || wing, kind = wall ? "wall" : "wing";
+      if (!isSelectedTarget({ kind, id: item.id })) {
+        beginPlanPan(event, () => {
+          selectRemovalTarget({ kind, id: item.id });
+          setSelectionStatus(areaSelectedMessage(kind, Array.isArray(item.polygon)));
+        });
+        return;
+      }
       selectRemovalTarget({ kind, id: item.id });
       activePointer = beginAreaMovePointer(event.pointerId, point, kind, item);
       setSelectionStatus(areaSelectedMessage(kind, Array.isArray(item.polygon)));   // ★#5: 以前は何も出なかった
@@ -5070,6 +5103,15 @@
       return;
     }
 
+    if (audienceAreaHit && corner < 0 && edge < 0 && !isSelectedTarget({ kind: "audience", id: audienceAreaHit.id })) {
+      beginPlanPan(event, () => {
+        selectRemovalTarget({ kind: "audience", id: audienceAreaHit.id });
+        setSelectionStatus(Array.isArray(audienceAreaHit.polygon)
+          ? "この客席範囲を選択しました。ドラッグで動かせます。"
+          : "この客席範囲を選択しました。辺のタップで範囲を追加・解除できます。");
+      });
+      return;
+    }
     if (audienceAreaHit && corner < 0 && edge < 0) {
       selectRemovalTarget({ kind: "audience", id: audienceAreaHit.id });
       state.selectedArea = { kind: "audience", id: audienceAreaHit.id };
@@ -5125,10 +5167,11 @@
     }
 
     if (state.stagePresent && pointInPolygon(point, state.points)) {
-      selectRemovalTarget({ kind: "main-stage" });
-      activePointer = { pointerId: event.pointerId, kind: "stage-select", start: point, moved: false };
-      setSelectionStatus("メインのステージを選択しました。角をドラッグして形を変えられます。");
-      render();
+      // メインのステージの本体は動かせない（形は角・辺で変える）。ドラッグは図の移動、押して離せば選ぶ。
+      beginPlanPan(event, () => {
+        selectRemovalTarget({ kind: "main-stage" });
+        setSelectionStatus("メインのステージを選択しました。角をドラッグして形を変えられます。");
+      });
       return;
     }
     selectRemovalTarget(null);
@@ -5416,6 +5459,7 @@
         state.view.fit = finished.startFit;
       }
       if (!cancelled) storePlanView();
+      if (!cancelled && !finished.moved && typeof finished.onClick === "function") finished.onClick();
       els.canvas.style.cursor = "grab";
       if (!cancelled && finished.moved) setStatus("平面図を移動しました。舞台・客席の位置は変わっていません。");
       render();

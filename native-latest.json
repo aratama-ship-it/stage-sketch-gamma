@@ -1,8 +1,8 @@
 {
-  "version": "0.3.54",
+  "version": "0.3.55",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.54/stage-sketch-gamma-mac-0.3.54.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.55/stage-sketch-gamma-mac-0.3.55.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "「演目の範囲」を、設計を見直すまで非表示にしました。描いた範囲などの保存データは残ります（v0.3.54）。",
+  "notes": "照明デザインの崩れを直し、舞台タブとタイムラインの見た目をそろえました。タイムラインを閉じていてもスペースキーで再生できます（v0.3.55）。",
   "updated": "2026-10-11"
 }

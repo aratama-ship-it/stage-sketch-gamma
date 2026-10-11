@@ -31,7 +31,7 @@ ${table(["Button", "Meaning"], [
   [ui("Free camera"), "Move freely with keys and dragging"],
   ["A performer's name (for example ロミオ)", "See through that performer's eyes (" + ref("fpv-performer", "10-2") + ")"],
   [ui("House"), "See from the house"],
-  [ui("Front row") + " / " + ui("Stalls centre") + " / " + ui("Stalls rear") + " / " + ui("Stalls side") + " / " + ui("Balcony") + " / " + ui("Straight-on front"), "The house viewpoints, in the same order and with the same names as the seat buttons above the front view. Viewpoints you renamed or added in Theatre settings appear here too. " + ui("Straight-on front") + " looks at the stage head-on with almost no perspective"],
+  [ui("Front row") + " / " + ui("Stalls centre") + " / " + ui("Stalls rear") + " / " + ui("Stalls side") + " / " + ui("Balcony"), "The house viewpoints, in the same order and with the same names as the seat buttons above the front view. Viewpoints you renamed or added in Theatre settings appear here too."],
   [ui("Stage left wing") + " / " + ui("Stage right wing") + " / " + ui("Overhead") + " / " + ui("Upstage"), "Jump the camera to a fixed position"]
 ])}
 <p>On the right: ${ui("Lighting effects")} and ${ui("Work lights")}, small ${ui("Front view")} and ${ui("Plan view")} windows (show or hide), the lenses ${ui("Ultra-wide")}, ${ui("Wide")} and ${ui("Standard")}, and ${ui("Full house")} / ${ui("Empty house")} (the audience on the night, or the empty room before they come in). The ✕ at the top right closes 3D. Turn round from upstage to see how the house surrounds you; in a venue in the round it goes all the way.</p>

@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.54";
+  const GAMMA_APP_VERSION = "v0.3.55";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -10531,23 +10531,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return seats;
   }
 
-  /* 完全な正面（2026-10-11 本人決定）: 客席の真ん中から舞台の間口をまっすぐ正面に見る図。
-   * 手前と奥の倍率差を付けず（backW＝frontW）、床の帯もほぼ無い。地平線を下げて舞台の高さ全体を収める。
-   * 劇場には保存しない「選択肢」で、3Dの同名の見る位置（stage-first-person.js の flat-front）と並べて出す。 */
-  const FLAT_FRONT_ID = "flat-front";
-  const FLAT_FRONT_SEAT = Object.freeze({
-    id: FLAT_FRONT_ID, label: "完全な正面", short: "正面",
-    note: "真正面から見る。遠近をほぼ付けず、舞台の間口と高さがそのまま見える。",
-    plan: Object.freeze({ x: 0.5, y: 0.3, tier: "stalls" }), eye: 30,
-    floorY: 640, bottomY: 662, backW: 0.94, frontW: 0.94, shift: 0, rise: 0, apron: 0, flat: true,
-  });
-  const flatFrontSeat = () => FLAT_FRONT_SEAT;
-
-  /* 正面図で選べる席の全部。既存（または近似）の席＋カスタム視点＋完全な正面。 */
+  /* 正面図で選べる席の全部。既存（または近似）の席＋カスタム視点。
+   * v0.3.49 で足した「完全な正面」（flat-front）は 2026-10-11 本人指示で外した。
+   * 保存済みの席が flat-front のショーは frontSeatById が客席中央へ戻す。 */
   function frontSeatList() {
-    const list = frontSeatListBase();
-    const flat = flatFrontSeat();
-    return flat ? list.concat([flat]) : list;
+    return frontSeatListBase();
   }
 
   function frontSeatListBase() {
@@ -19149,12 +19137,14 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     target.restore();
   }
 
+  /* 2026-10-11 本人指示: 情報パネルの先頭（三列表示で右端の列の一番上）に出ていた
+     「照明 概略・…台中…台点灯 / LX cue …件はこの図では表現していません」の帯は不要なので出さない。
+     文を作る lightCueOverlayCaptionText は残す（帯を戻すならここで model から作る）。 */
   function syncFrontLightCueCaption() {
     const caption = els.frontLightCueCaption;
     if (!caption) return;
-    const model = !presenting ? lightCueOverlayForLayout(layout("front")) : null;
-    caption.hidden = !model;
-    caption.textContent = model ? lightCueOverlayCaptionText(model) : "";
+    caption.hidden = true;
+    caption.textContent = "";
   }
 
   /* 劇場設定の「前一文字幕」を、舞台タブの正面図にも重ねる。
@@ -22176,6 +22166,19 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     els.panelLayoutMenu.append(head, group);
   }
 
+  /* 2026-10-11: 2つの小窓は左の道具列（はみ出しを切る箱）の中にあるので、窓に対して固定の位置で開く。
+     ボタンの真下・左端ぞろえ。右へ出きらないときは窓の右端に寄せる。 */
+  function placeToolbarMenu(menu, button) {
+    if (!menu || !button) return;
+    const r = button.getBoundingClientRect(), edge = 12;
+    menu.style.position = "fixed";
+    menu.style.top = Math.round(r.bottom + 8) + "px";
+    menu.style.right = "auto";
+    const width = menu.getBoundingClientRect().width || 0;
+    menu.style.left = Math.round(Math.max(edge, Math.min(r.left, window.innerWidth - width - edge))) + "px";
+    menu.style.maxHeight = Math.max(160, Math.round(window.innerHeight - r.bottom - 8 - edge)) + "px";
+  }
+
   function closePanelLayoutMenu(returnFocus = false) {
     if (!els.panelLayoutMenu || els.panelLayoutMenu.hidden) return;
     els.panelLayoutMenu.hidden = true;
@@ -22191,6 +22194,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     closePanelVisibilityMenu();
     renderPanelLayoutMenu();
     els.panelLayoutMenu.hidden = false;
+    placeToolbarMenu(els.panelLayoutMenu, els.panelLayoutToggle);
     els.panelLayoutToggle.setAttribute("aria-expanded", "true");
     (els.panelLayoutMenu.querySelector('[aria-pressed="true"]') || els.panelLayoutMenu.querySelector("button"))?.focus();
   }
@@ -22212,6 +22216,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     closePanelLayoutMenu();
     renderPanelVisibilityMenu();
     els.panelsMenu.hidden = false;
+    placeToolbarMenu(els.panelsMenu, els.panelsToggle);
     els.panelsToggle.setAttribute("aria-expanded", "true");
     els.panelsMenu.querySelector("input")?.focus();
   }
@@ -24722,28 +24727,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (els.lastBackupTime) els.lastBackupTime.textContent = headerTimestamp(state && state.lastExportAt);
   }
 
+  /* 右下の状態行は、操作結果の一時表示（6秒）だけに使う。
+   * 「最後の控え: …」の常設ボタンは 2026-10-11 本人指示で箱ごと外した（控えの時刻はショー設定の「最終バックアップ」で見る）。
+   * 一時表示が終わったら空に戻す＝#stage-live:empty で箱も消える。 */
   function syncBackupStatus() {
     if (STUDY_READ_ONLY || !els.live || els.live.dataset.transient === "true") return;
-    let button = document.getElementById("stage-backup-status");
-    if (!button) {
-      button = document.createElement("button");
-      button.id = "stage-backup-status";
-      button.type = "button";
-      button.dataset.noI18n = "";
-      button.addEventListener("click", openExport);
-      els.live.replaceChildren(button);
-    }
-    const value = state && state.lastExportAt;
-    const at = value ? new Date(value) : null;
-    const valid = at && Number.isFinite(at.getTime());
-    // D-05: 利用者向けの日付は共通の書式（STAGE_TIME_DOMAIN.dateText）に揃える。手で月/日を組み立てない。
-    const stamp = valid
-      ? window.STAGE_TIME_DOMAIN.dateText(at, document.documentElement.lang || "ja", { time: true })
-      : tx("まだありません");
-    const text = `${tx("最後の控え:")} ${stamp}`;
-    // 状態行は読み上げ領域（aria-live）なので、文字が変わったときだけ書き換える。
-    if (button.textContent !== text) button.textContent = text;
-    button.classList.toggle("is-caution", Boolean(valid && Date.now() - at.getTime() >= 7 * 24 * 60 * 60 * 1000));
+    if (els.live.firstChild) els.live.replaceChildren();
   }
 
   function syncShowTimecode(detail) {
@@ -27176,7 +27165,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         kicker.textContent = tx("転換");
         const facts = [];
         if (toScene.blackout) facts.push(tx("暗転"));
-        if (toScene.transitionNote) facts.push(tx("メモ"));
+        // 2026-10-11 本人指示: 転換メモがあっても行には「メモ」と出さない（「転換」だけ。メモは開いた中で読む）。
         const summary = document.createElement("span");
         summary.className = "stage-scene-transition-point-summary";
         summary.textContent = facts.join("・");

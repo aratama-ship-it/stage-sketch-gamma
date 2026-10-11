@@ -34,7 +34,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.54</span>
+                <span class="stage-app-version">0.3.55</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -131,24 +131,6 @@
              target="_blank" rel="noopener noreferrer"
              aria-label="AI showwright for StageSketch"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/><path d="M18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.456-2.456L14.25 6l1.035-.259a3.375 3.375 0 0 0 2.456-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg></a>
           <button type="button" class="stage-lang stage-gear-btn" id="stage-prefs-btn" data-tablet-icon="⚙" aria-label="設定" aria-haspopup="dialog" aria-controls="stage-prefs-modal" data-tip-description="言語・見た目・操作に関する設定を開きます。"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.2" stroke-width="1.3"/><circle cx="8" cy="8" r="1.4" stroke-width="1.3"/><path stroke-width="2.3" d="M8 3.10V1.90M11.94 5.55l1.04-.60M11.94 10.45l1.04.60M8 12.90v1.20M4.06 10.45l-1.04.60M4.06 5.55l-1.04-.60"/></svg></span></button>
-          <div class="stage-panel-layout-control" id="stage-panel-layout-control">
-            <button type="button" class="stage-lang stage-header-icon stage-panel-layout-btn" id="stage-panel-layout-toggle"
-                    aria-label="パネルの表示スタイル"
-                    aria-haspopup="true" aria-expanded="false" aria-controls="stage-panel-layout-menu">
-              <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M9 4v16M15 4v16"/></svg></span>
-            </button>
-            <div class="stage-panel-layout-menu" id="stage-panel-layout-menu"
-                 role="group" aria-label="パネルの表示スタイル" hidden></div>
-          </div>
-          <div class="stage-panel-visibility-control">
-            <button type="button" class="stage-lang stage-panel-visibility-btn" id="stage-panels-toggle"
-                    aria-label="パネルのオン/オフ"
-                    aria-haspopup="true" aria-expanded="false" aria-controls="stage-panels-menu" data-tip-description="舞台画面に出す操作パネルを選びます。">
-              <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 6 2 2 4-4M13 6h8M13 17h8"/><rect x="3" y="14" width="6" height="6" rx="1"/></svg></span>
-            </button>
-            <div class="stage-panel-visibility-menu" id="stage-panels-menu"
-                 role="group" aria-label="パネルのオン/オフ" hidden></div>
-          </div>
           <button type="button" class="stage-lang stage-present-icon" id="stage-field-mode" aria-label="現場モード" title="現場モード" aria-controls="stage-field-console" aria-pressed="false"><span aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="2.5" r="1.3"/><path d="m5 6 3-2 3 3 3 1M8 4 6 9l4 2-1 4M6 9l-2 4H1"/></svg></span></button>
           <button type="button" class="stage-lang stage-present-icon" id="stage-present-btn" data-tablet-icon="⛶" data-tip-key="F" data-tip-description="図を全画面表示します。矢印キーでシーンを送り、Escで戻ります" data-stage-shortcut-action="view.presentation" data-stage-shortcut-title="図を全画面表示（{key}）。矢印キーでシーン送り、{key}またはEscで戻る" aria-label="全画面" aria-keyshortcuts="F" aria-pressed="false" title="図を全画面表示（F）。矢印キーでシーン送り、FまたはEscで戻る"><span aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10"/></svg></span></button>
           <button type="button" class="stage-lang stage-cue-sheet-icon" id="stage-cue-sheet-open"
@@ -212,6 +194,27 @@
                         aria-label="作業灯" aria-keyshortcuts="G" aria-pressed="true"><span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5.4 6.5a2.6 2.6 0 1 1 5.2 0c0 1.4-1 1.8-1.5 2.7H6.9c-.5-.9-1.5-1.3-1.5-2.7Z"/><path d="M6.8 10.5h2.4M7.2 12h1.6"/><path class="stage-work-light-rays" d="M8 1.2v1M3.5 2.8l.8.8M12.5 2.8l-.8.8M2.7 6.4h1.1M12.2 6.4h1.1"/><path class="stage-work-light-slash" d="M3.3 12.7 12.7 3.3"/></svg></span><span class="stage-tool-label">作業灯</span></button>
                 <span class="stage-tool-split" aria-hidden="true"></span>
                 <button type="button" id="stage-toolbar-transition-animation" class="is-icon" data-tool-tip="transitionAnimation" aria-label="転換アニメーションのオンオフ" title="転換アニメーションのオンオフ" aria-pressed="true"><span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h13v12H3zM7 8h14v12H7zM10 11l4 3-4 3z"/><path class="stage-transition-animation-off" d="M3 21 21 3"/></svg></span><span class="stage-tool-label">転換アニメーション</span></button>
+              </div>
+              <!-- 2026-10-11 本人指示: 「パネルの表示スタイル」「パネルのオン/オフ」は舞台タブでしか使わないので、ヘッダーからここ（道具の帯の末尾）へ移した。 -->
+              <div class="stage-panel-tools" role="group" aria-label="パネル">
+                <div class="stage-panel-layout-control" id="stage-panel-layout-control">
+                  <button type="button" class="stage-lang stage-header-icon stage-panel-layout-btn" id="stage-panel-layout-toggle"
+                          aria-label="パネルの表示スタイル"
+                          aria-haspopup="true" aria-expanded="false" aria-controls="stage-panel-layout-menu">
+                    <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M9 4v16M15 4v16"/></svg></span>
+                  </button>
+                  <div class="stage-panel-layout-menu" id="stage-panel-layout-menu"
+                       role="group" aria-label="パネルの表示スタイル" hidden></div>
+                </div>
+                <div class="stage-panel-visibility-control">
+                  <button type="button" class="stage-lang stage-panel-visibility-btn" id="stage-panels-toggle"
+                          aria-label="パネルのオン/オフ"
+                          aria-haspopup="true" aria-expanded="false" aria-controls="stage-panels-menu" data-tip-description="舞台画面に出す操作パネルを選びます。">
+                    <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 6 2 2 4-4M13 6h8M13 17h8"/><rect x="3" y="14" width="6" height="6" rx="1"/></svg></span>
+                  </button>
+                  <div class="stage-panel-visibility-menu" id="stage-panels-menu"
+                       role="group" aria-label="パネルのオン/オフ" hidden></div>
+                </div>
               </div>
             </div>
             <p class="stage-tool-hint stage-drawing-guide" id="stage-tool-hint" hidden>演者や物を選び、舞台の上で動かします。</p>
@@ -2832,13 +2835,23 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261011-v0354">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261011-v0355">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0354-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0354-title">v0.3.54</h3><time datetime="2026-10-11">2026-10-11</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0355-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0355-title">v0.3.55</h3><time datetime="2026-10-11">2026-10-11</time></header>
       <ul>
-        <li>「演目の範囲」（再生中に、範囲の中の演者が演目をする機能）は、設計を見直すため、いったん非表示にしました。環境設定と平面図の道具から外れ、再生中の動きも止まります。描いた範囲などの保存データはそのまま残ります。</li>
+        <li>照明デザインで、広い画面のときに灯体一覧・図・灯体情報が重なって崩れていたのを直しました。余った幅は灯体一覧とLXキューに回します。</li>
+        <li>照明デザインの正面図の「機材」で、灯体の印を出す・隠すが切り替わるようにしました（平面図・側面図の灯体はいつも出ます）。</li>
+        <li>正面図と3Dの見る位置から「完全な正面」を外しました。</li>
+        <li>画面右下の「最後の控え」の表示をなくしました。控えの時刻は情報パネルの「最終バックアップ」で見られます。</li>
+        <li>舞台タブの道具のアイコンを同じ間隔で並べ、「パネルの表示スタイル」「パネルのオン/オフ」をヘッダーから道具の帯の末尾へ移しました。</li>
+        <li>シーン一覧の転換の行は「転換」だけを出し、情報パネルの先頭の照明の概略の帯は出さないようにしました。</li>
+        <li>Qシートの「まとめ」「演者ごと」「部署」を、それぞれ枠で囲みました。</li>
+        <li>劇場設定で、畳んでいる手順には「?」を出さないようにそろえました。</li>
+        <li>劇場設定の平面図は、舞台や客席の上をドラッグしても図を動かせるようにしました。図形を動かすのは、選んでから掴んだときだけです。</li>
+        <li>タイムラインのアイコンと文字の大きさを、舞台タブにそろえました。</li>
+        <li>タイムラインを閉じていても、スペースキーで再生・停止できるようにしました。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3803,8 +3816,8 @@
 <script src="/study-assets/stage-idle-motion.js?v=20261011-v0353"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
 <script src="/study-assets/gamma-ui.js?v=20261011-v0347"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261011-v0354"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261011-v0355"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261009-v0333"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="/study-assets/stage-sketch.js?v=20261011-v0354"></script>
+<script src="/study-assets/stage-sketch.js?v=20261011-v0355"></script>
 </body></html>

@@ -21,7 +21,6 @@ ${table(["Where", "Name", "What it does"], [
   ["Second row", ui("Send feedback"), "The feedback window (" + ref("feedback", "Part 14, 14-3") + ")"],
   ["Second row", "✦ (AI)", "Opens the AI showwright page in a new tab — a guide for having an AI write a show as JSON (" + ref("ai-showwright", "Part 11, 11-6") + ")"],
   ["Second row", "⚙ " + ui("Settings"), "Preferences: language, skin, features and panels, help, reset (" + ref("prefs-overview", "Part 12") + ")"],
-  ["Second row", ui("Panels"), "Show or hide the side panels, or use three columns (" + ref("panels", "2-4") + ")"],
   ["Second row", ui("Full screen"), kbd("F") + ". Fill the screen with the drawing (" + ref("fullscreen", "Part 11, 11-7") + ")"],
   ["Second row", ui("Q sheets"), "Opens the list of Q sheets (the same as the Q sheets tab; " + ref("cuesheet", "Part 9, 9-6") + ")"],
   ["Second row", ui("Export, save & print"), "Export images, open the print sheet, or export the show, Q sheets and venues (" + ref("export", "Part 11, 11-1") + ")"],
@@ -58,7 +57,7 @@ ${fig("10-section-A", "The three columns. Lists on the left, the drawings in the
 <li><strong>Collapse</strong> — the ▾ at the right of a heading folds the panel. What is folded is saved with the show and goes into exports.</li>
 <li><strong>List height</strong> — drag the handle (a short line) at the bottom of a list. From the keyboard, focus the handle and use ${kbd("↑")}${kbd("↓")} (20 px), with ${kbd("Shift")} for 60 px, ${kbd("Home")} for the minimum, ${kbd("End")} for the maximum and ${kbd("Enter")} to fit the content. ${kbd("Esc")} while dragging returns to the previous height.</li>
 <li><strong>Column width</strong> — drag the boundary between a side column and the drawings. Widths are saved per device.</li>
-<li><strong>Display style</strong> — below ${ui("Panels")}, or ${ui("Panel display style")} in Settings, choose ${ui("Two columns")} (default), ${ui("3 columns")} (split the right side in two), ${ui("One column · left")}, ${ui("One column · right")} or ${ui("iPad display mode")}. Which panels sit in the second right column is kept as a device setting.</li>
+<li><strong>Display style</strong> — using ${ui("Panel display style")} at the end of the Stage toolbar, or the same item in Settings, choose ${ui("Two columns")} (default), ${ui("3 columns")} (split the right side in two), ${ui("One column · left")}, ${ui("One column · right")} or ${ui("iPad display mode")}. Which panels sit in the second right column is kept as a device setting.</li>
 <li><strong>Keyboard in windows</strong> — when a confirmation or settings window opens, keyboard focus moves inside it, ${kbd("Tab")} cycles within the window, and ${kbd("Esc")} closes it and returns focus to the button that opened it (made consistent in v0.2.16).</li>
 <li><strong>Reset the layout</strong> — Settings → ${ui("Reset panel layout")} → ${ui("Reset layout")} restores positions, order, folding and widths only (the show itself is untouched).</li>
 </ul>`
@@ -67,7 +66,7 @@ ${fig("10-section-A", "The three columns. Lists on the left, the drawings in the
         id: "panels", title: "The panels, and showing or hiding them", status: "sourced",
         keywords: ["panels", "list", "show", "hide", "missing", "disappeared", "music", "backdrop", "alternatives", "dialogue cues", "second seat", "ai instructions", "on", "off"],
         html: `
-<p>A first-time desk does not show every tool. Saved sets, backdrop, alternatives, dialogue cues and second seat are “show it when you need it” panels and start hidden. Show them with ${ui("Panels")} in the header (next to the gear) or the same item in Settings. <strong>This setting belongs to the device, not the show.</strong></p>
+<p>A first-time desk does not show every tool. Saved sets, backdrop, alternatives, dialogue cues and second seat are “show it when you need it” panels and start hidden. Show them with ${ui("Panels")} at the end of the Stage toolbar or the same item in Settings. <strong>This setting belongs to the device, not the show.</strong></p>
 <p>Load and assign audio in the timeline's soundtrack lane (${ref("music", "9-2")}). There is no music panel.</p>
 ${fig("44-panels-menu", "The Panels menu when captured. Music is no longer listed; audio is controlled in the timeline.", "Panels menu")}
 ${table(["Panel", "At first", "What it holds", "Section"], [

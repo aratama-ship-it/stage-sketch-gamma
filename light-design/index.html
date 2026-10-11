@@ -238,7 +238,9 @@
      既定の stretch のままだと中の舞台の左右がずれる */
   /* 上段は残りの高さいっぱい。図は上に貼り付け、余ったぶんは左右のパネル（一覧・設定）が使う。
      窓が縦に大きいほど一覧が長く見えるようになる（2026-09-11 本人要望） */
-  .figgrid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(220px,360px) minmax(0,1fr) minmax(280px,420px);grid-template-rows:minmax(0,1fr) auto;gap:8px;justify-content:stretch;align-content:stretch;justify-items:stretch}
+  /* ★列幅は app.js の syncFigureSizes() が px で決める（一覧＋LXキュー・図・灯体情報）。CSS で上限を付けると
+     中身が列からはみ出して図に重なる（v0.3.45〜0.3.52 の崩れ）。広い窓の余りは syncFigureSizes が左のパネルへ回す。 */
+  .figgrid{flex:1;min-height:0;display:grid;grid-template-columns:auto auto auto;grid-template-rows:minmax(0,1fr) auto;gap:8px;justify-content:center;align-content:stretch;justify-items:center}
   .planwrap{align-self:start}
   .planwrap{position:relative;display:flex;flex-direction:column;gap:2px;min-width:0;grid-row:1;grid-column:2}
   .sec{display:flex;flex-direction:column;gap:2px;min-width:0;grid-row:2}
@@ -771,7 +773,7 @@
   .dialog .in,.dialog .in:has(.pgrid){display:flex;flex-direction:column;max-height:calc(100dvh - 24px);overflow:hidden}
 </style>
 <style>.option-b-controls button{min-height:44px}.option-b-controls :focus-visible{outline:2px solid #d3ac59;outline-offset:2px}</style>
-<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261011-v0347">
+<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261011-v0355">
 <link rel="stylesheet" href="embed.css?v=20261010-v0338">
 <link rel="stylesheet" href="simple-lighting.css?v=20261009-v0337">
 </head>
@@ -1051,7 +1053,7 @@
 <script src="../stage-fixture-body.js?v=20261009-v0335"></script>
 <script src="../stage-light-receiver.js?v=20261004-receiver89"></script>
 <script src="../gamma-light-cue-overlay.js?v=20261006-v0318"></script>
-<script src="app.js?v=20261011-v0347"></script>
+<script src="app.js?v=20261011-v0355"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20261010-v0338"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->

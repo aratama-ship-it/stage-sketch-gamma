@@ -4238,3 +4238,18 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "「演目の範囲」（再生中に、範囲の中の演者が演目をする機能）は、設計を見直すため、いったん非表示にしました。環境設定と平面図の道具から外れ、再生中の動きも止まります。描いた範囲などの保存データはそのまま残ります。": "“Performance area” (performers act inside an area during playback) is hidden for now while its design is reconsidered. It is gone from Settings and the plan tools, and its playback motion stops. Saved data such as drawn areas stays as it is."
 });
+
+// v0.3.55 release notes.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+    "照明デザインで、広い画面のときに灯体一覧・図・灯体情報が重なって崩れていたのを直しました。余った幅は灯体一覧とLXキューに回します。": "Fixed overlapping fixture lists, drawings and fixture information in Light design on wide screens. Extra width now goes to the fixture list and LX cues.",
+    "照明デザインの正面図の「機材」で、灯体の印を出す・隠すが切り替わるようにしました（平面図・側面図の灯体はいつも出ます）。": "The “Fixtures” control in the Light design front view now shows or hides fixture markers (fixtures in the plan and side views always remain visible).",
+    "正面図と3Dの見る位置から「完全な正面」を外しました。": "Removed “Straight-on front” from the front-view and 3D viewpoints.",
+    "画面右下の「最後の控え」の表示をなくしました。控えの時刻は情報パネルの「最終バックアップ」で見られます。": "Removed the “Last backup” display at the bottom right. The backup time is available under “Last backup” in the Info panel.",
+    "舞台タブの道具のアイコンを同じ間隔で並べ、「パネルの表示スタイル」「パネルのオン/オフ」をヘッダーから道具の帯の末尾へ移しました。": "Spaced the Stage tab tool icons evenly and moved “Panel display style” and “Panels” from the header to the end of the toolbar.",
+    "シーン一覧の転換の行は「転換」だけを出し、情報パネルの先頭の照明の概略の帯は出さないようにしました。": "Transition rows in the scene list now show only “Transition”, and the lighting summary bar at the top of the Info panel is hidden.",
+    "Qシートの「まとめ」「演者ごと」「部署」を、それぞれ枠で囲みました。": "Added separate borders around “Summary”, “By performer” and “Departments” in Q sheets.",
+    "劇場設定で、畳んでいる手順には「?」を出さないようにそろえました。": "In Theatre settings, the “?” is now consistently hidden for collapsed steps.",
+    "劇場設定の平面図は、舞台や客席の上をドラッグしても図を動かせるようにしました。図形を動かすのは、選んでから掴んだときだけです。": "In the Theatre settings plan, dragging over the stage or house now pans the drawing too. A shape moves only when you select it first and then drag it.",
+    "タイムラインのアイコンと文字の大きさを、舞台タブにそろえました。": "Matched the timeline icon and text sizes to the Stage tab.",
+    "タイムラインを閉じていても、スペースキーで再生・停止できるようにしました。": "The Space key now plays or stops playback even when the timeline is closed.",
+});

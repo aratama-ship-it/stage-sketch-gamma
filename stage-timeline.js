@@ -4613,7 +4613,7 @@
       setSettingsOpen(false, { focus: true });
       return;
     }
-    if (ui.collapsed || timelineInteractionIsBlocked() || isTextEntry(event.target)) return;
+    if (timelineInteractionIsBlocked() || isTextEntry(event.target)) return;
     if (!event.metaKey && !event.ctrlKey && !event.altKey
         && (event.code === "Space" || event.key === " ")) {
       if (!els.settingsPanel.hidden || document.querySelector(".stage-modal:not([hidden])")) return;
@@ -4621,6 +4621,7 @@
       if (!event.repeat) void toggleTimelinePlayback();
       return;
     }
+    if (ui.collapsed) return;
     if (!event.metaKey && !event.ctrlKey && !event.altKey
         && (event.key === "Delete" || event.key === "Backspace") && (selectedCueId || selectedCueIds.size)) {
       event.preventDefault();

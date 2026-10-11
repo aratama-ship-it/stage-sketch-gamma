@@ -292,6 +292,9 @@ body[data-gamma-workspace="cuesheet"].stage-timeline-expanded:not(.stage-fullscr
  * 見出し（＝押せるボタン）は必ず残す。 */
 #gamma-venue-workspace .gamma-venue-step:not(.is-open) .gamma-venue-step-head
   > :not(h2):not(h3):not(h4):not(.gamma-venue-step-toggle) { display: none; }
+/* 2026-10-11 本人指摘: 畳んだ手順では「?」も出さない（全手順で揃える）。
+ * 3〜9 は上の規則のついでで隠れていたが、2 は見出しが div の中の h3 にあり「?」が残っていた。 */
+#gamma-venue-workspace .gamma-venue-step:not(.is-open) .gamma-venue-step-help { display: none; }
 #gamma-venue-workspace .gamma-venue-step-toggle {
   display: flex;
   align-items: center;
@@ -1339,6 +1342,9 @@ html.stage-phone-viewer #stage-feature-search-open { display: none !important; }
 /* R11: four report categories, with a vertical list inside each category. */
 #stage-cue-sheet-list { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:24px; align-items:start; }
 #stage-cue-sheet-list .stage-cue-sheet-group { min-width:0; margin-top:0; }
+/* 2026-10-11 本人指示: Qシートの大きな項目（まとめ・演者ごと・部署・名簿にない人）は、それぞれ枠で囲む。 */
+#stage-cue-sheet-list .stage-cue-sheet-group { box-sizing:border-box; padding:10px 14px 6px; border:1px solid var(--line-dark); border-radius:4px; background:var(--desk); }
+#stage-cue-sheet-list .stage-cue-sheet-group h3 { margin:0 0 4px; }
 #stage-cue-sheet-list .stage-cue-sheet-rows { grid-template-columns:minmax(0,1fr); }
 #stage-cue-sheet-list .stage-cue-sheet-row { grid-template-columns:repeat(4,minmax(0,auto)); justify-content:start; row-gap:2px; padding:8px 0; }
 #stage-cue-sheet-list .stage-cue-sheet-row > span { grid-column:1 / -1; white-space:normal; overflow-wrap:anywhere; line-height:1.5; }
@@ -1529,3 +1535,28 @@ html[data-study-renderer] .stage-scene-edit-label { display: none; }
 }
 /* D-35: A/B controls carry their start/end meaning in the visible label. */
 .stage-timeline-loop-point { flex: 0 0 auto; min-width: 62px; padding-inline: 9px; }
+
+/* 2026-10-11 本人指示: 舞台タブの道具の帯は、四角をすべて同じ間隔（4px）で並べる。
+ * 以前は「動かす＋複数選択」が枠を共有してくっつき、ほかは区切りの余白で離れていた（間隔が不統一）。
+ * 帯の末尾にはヘッダーから移した「パネルの表示スタイル」「パネルのオン/オフ」を同じ四角で並べる。 */
+html[data-stage-skin]:not(.stage-pwa-tablet) .stage-center-bar .stage-tool-grid { gap: 4px; }
+html[data-stage-skin]:not(.stage-pwa-tablet) .stage-center-bar .stage-tool-split { display: none; }
+html[data-stage-skin]:not(.stage-pwa-tablet) .stage-center-bar .stage-tool-grid button + button { border-left: 1px solid var(--line-dark); }
+html[data-stage-skin]:not(.stage-pwa-tablet) .stage-center-bar .stage-tool-grid button + button:hover { border-left-color: var(--brass); }
+html[data-stage-skin]:not(.stage-pwa-tablet) .stage-center-bar .stage-tool-grid button + button[aria-pressed="true"] { border-left-color: var(--rust); }
+.stage-center-bar .stage-panel-tools { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+html[data-stage-skin] .stage-center-bar :is(.stage-panel-layout-btn, .stage-panel-visibility-btn) {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ctrl-md);
+  height: var(--ctrl-md);
+  min-width: var(--ctrl-md);
+  min-height: var(--ctrl-md);
+  flex-shrink: 0;
+  padding: 0;
+}
+html[data-stage-skin] .stage-center-bar :is(.stage-panel-layout-btn, .stage-panel-visibility-btn) svg { width: 20px; height: 20px; display: block; }
+/* 左の列に置くので、小窓はボタンの左端から右へ開く（右端ぞろえだと窓の外へはみ出す）。 */
+.stage-center-bar :is(.stage-panel-layout-menu, .stage-panel-visibility-menu) { left: 0; right: auto; }

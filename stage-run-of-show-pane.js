@@ -37,7 +37,7 @@
     }
   });
   window.GAMMA_RUN_OF_SHOW_PANE={
-    open(){if(!loaded){workspace.dataset.loading='true';syncLoading();frame.src='run-of-show/index.html?v=20261011-v0352';loaded=true;}else editor()?.refresh();},
+    open(){if(!loaded){workspace.dataset.loading='true';syncLoading();frame.src='run-of-show/index.html?v=20261011-v0355';loaded=true;}else editor()?.refresh();},
     finish(){return !editor()||editor().finish();},
     summary(value){if(lite){summary=value;paintBands();}},
     openScene(row){

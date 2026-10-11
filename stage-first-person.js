@@ -887,11 +887,7 @@
       { id: "overhead", name: "真上", x: 0, y: stageCeiling + 4, z: 0, yaw: 180, pitch: -88 },
       { id: "upstage", name: "舞台奥", x: 0, y: 1.6, z: -(stageDepth / 2) + 1.2, yaw: 0, pitch: 0 },
     ];
-    /* 完全な正面: 客席の真ん中から、舞台の間口をまっすぐ正面に見る（見上げ・見下ろし・左右のずれなし）。
-     * 正面図の「完全な正面」と同じ名前・同じ並びの選択肢。 */
-    const flatFrontZ = stageDepth / 2 + Math.max(6, stageWidth * 1.05);
-    const flatFrontPreset = { id: "flat-front", name: seatLabelOf("flat-front", "完全な正面"), x: 0,
-      y: clamp(stageCeiling / 2, 1.6, 4), z: flatFrontZ, yaw: 180, pitch: 0 };
+    /* v0.3.49 の「完全な正面」（flat-front）は 2026-10-11 本人指示で外した（正面図と同じ並び）。 */
     const registered = rawVenue?.venueV2?.viewPositions || rawVenue?.viewPositions;
     if (Array.isArray(registered) && registered.length) {
       const registeredPresets = registered.map((point) => {
@@ -904,7 +900,7 @@
           yaw: Math.atan2(dx, -dz) * 180 / Math.PI,
           pitch: Math.atan2(1.2 - y, Math.max(.01, Math.hypot(dx, dz))) * 180 / Math.PI };
       });
-      return [...registeredPresets, flatFrontPreset, ...utilityPresets];
+      return [...registeredPresets, ...utilityPresets];
     }
     /* ★見る位置の統一（2026-10-11）: 既定の3Dも正面図の席と同じ5席・同じ名前・同じ順で出す。
      *   客席中央と最前列は従来の位置のまま（R キー・初期位置が使う id も変えない）。残りの3席は席の距離・左右位置から決める。
@@ -935,7 +931,6 @@
         if (fixed) return { ...fixed, name: seatNameOf(seat) };
         return planSeatPreset(seat);
       }),
-      flatFrontPreset,
       ...utilityPresets,
     ];
     const presetById = (id) => presets.find((preset) => preset.id === id);
