@@ -4102,6 +4102,14 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "3Dの視界を閉じて、元の作業画面へ戻ります。": "Close the 3D view and return to the previous workspace."
 });
 
+// v0.3.51 release notes.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "Safari で進行表の倍率を下げると、ページの最後の行が下の凡例とページ番号に重なっていたのを直しました。印刷は今までどおり実寸です。": "In Safari, lowering the run-of-show scale made the last row of a page overlap the legend and page number below it. This is fixed; printing is still at actual size.",
+  "ブラウザの窓の幅を変えても画面の幅が追従せず、変える前の幅のままだった不具合（v0.3.47 以降）を直しました。": "The screen width now follows the browser window width again; since v0.3.47 it could stay at the width it had before the window was resized.",
+  "進行表で「項目の一覧」を重ねて表示する幅のとき、右側の「舞台の様子」をボタンで消せなかったのを直しました。": "When the item list overlays the run of show, the stage view on the right can now be hidden with its button.",
+  "連続入力の進行表を再読み込みしたり開き直したりすると、「進行表を用意しています…」のまま表示されなかったのを直しました。": "Reloading or reopening a run of show in the Continuous format no longer leaves it stuck on “Preparing the running order…”."
+});
+
 // v0.3.50 release notes.
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "平面図の「待機範囲」を「演目の範囲」に改め、環境設定の「再生・時間」のオプションにしました（既定はオフ。オフでも描いた範囲は残ります）。": "Renamed “Idle areas” in plan view to “Performance areas” and made them an option under Preferences → Playback and timing (off by default; drawn areas are kept when it is off).",

@@ -22,17 +22,22 @@
   const workspace=frame?.parentElement,loadingText=workspace?.querySelector('.gamma-ros-loading');
   let loadingObserver=null;
   function syncLoading(){
-    const ready=Boolean(editor()&&frame.contentDocument?.body?.classList.contains('pages-ready'));
+    const doc=frame.contentDocument,paperState=doc?.getElementById('pagination-status')?.dataset.state;
+    // Continuous entry never paginates, so it reports state "free" instead of the pages-ready class.
+    const ready=Boolean(editor()&&(doc?.body?.classList.contains('pages-ready')||paperState==='free'||paperState==='error'));
     if(ready){workspace.dataset.loading='false';loadingObserver?.disconnect();loadingObserver=null;}
     if(loadingText)loadingText.textContent=text('進行表を用意しています…');
   }
   frame?.addEventListener('load',()=>{
     if(!loaded)return;
     loadingObserver?.disconnect();syncLoading();
-    if(workspace.dataset.loading==='true'&&frame.contentDocument?.body){loadingObserver=new MutationObserver(syncLoading);loadingObserver.observe(frame.contentDocument.body,{attributes:true,attributeFilter:['class']});}
+    if(workspace.dataset.loading==='true'&&frame.contentDocument?.body){
+      loadingObserver=new MutationObserver(syncLoading);loadingObserver.observe(frame.contentDocument.body,{attributes:true,attributeFilter:['class']});
+      const status=frame.contentDocument.getElementById('pagination-status');if(status)loadingObserver.observe(status,{attributes:true,attributeFilter:['data-state']});
+    }
   });
   window.GAMMA_RUN_OF_SHOW_PANE={
-    open(){if(!loaded){workspace.dataset.loading='true';syncLoading();frame.src='run-of-show/index.html?v=20261011-v0347';loaded=true;}else editor()?.refresh();},
+    open(){if(!loaded){workspace.dataset.loading='true';syncLoading();frame.src='run-of-show/index.html?v=20261011-v0351';loaded=true;}else editor()?.refresh();},
     finish(){return !editor()||editor().finish();},
     summary(value){if(lite){summary=value;paintBands();}},
     openScene(row){

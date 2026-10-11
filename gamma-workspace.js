@@ -1014,7 +1014,8 @@
   const scheduleDialogFit=(dialog)=>requestAnimationFrame(()=>fitDialogActions(dialog));
   const observeDialog=(node)=>{
     if(!(node instanceof HTMLElement)) return;
-    const candidates=[node,...node.querySelectorAll('.stage-modal,[role="dialog"],.dialog .in')];
+    /* document.body observes itself too; pinning its width would stop the page reflowing on window resize */
+    const candidates=[node,...node.querySelectorAll('.stage-modal,[role="dialog"],.dialog .in')].filter(el=>el!==document.body);
     candidates.forEach(dialog=>{
       if(!(dialog instanceof HTMLElement) || dialog.dataset.gammaDialogFit) return;
       dialog.dataset.gammaDialogFit='1'; scheduleDialogFit(dialog);

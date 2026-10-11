@@ -341,7 +341,7 @@ html[data-stage-skin] .distribution-dialog button.primary{background:var(--gamma
   .paper-resize::after,.page-resize::after,.ros-index-resize::after{content:"";position:absolute;top:0;bottom:0;left:calc(50% - var(--resize-line) / 2);width:var(--resize-line);background:var(--line);opacity:.45}
   .paper-resize:hover::after,.paper-resize:focus-visible::after,.paper-resize.is-active::after,.page-resize:hover::after,.page-resize.is-active::after,.ros-index-resize:hover::after,.ros-index-resize:focus-visible::after,.ros-index-resize.is-active::after{background:var(--accent);opacity:1}
   .paper-resize:focus-visible,.ros-index-resize:focus-visible{outline:none}
-  #page-output{zoom:var(--page-scale)}
+  #page-output{transform:scale(var(--page-scale));transform-origin:0 0;width:calc(100% / var(--page-scale));margin-bottom:calc(var(--page-out-h,0px) * (var(--page-scale) - 1))}
   .output-page{position:relative}
   .page-resize{position:absolute;top:0;right:0;bottom:0;width:var(--resize-hit);cursor:col-resize;touch-action:none;z-index:2}
   .ros-index:not([hidden]){display:flex;flex-direction:column;min-width:0;background:var(--desk);color:var(--chrome-ink)}

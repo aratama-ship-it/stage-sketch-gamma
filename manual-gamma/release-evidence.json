@@ -1,11 +1,11 @@
 {
-  "appVersion": "v0.3.50",
+  "appVersion": "v0.3.51",
   "contentUpdated": "2026-10-11",
   "requiredScreens": [
     {
-      "id": "act-areas",
+      "id": "run-of-show-scale",
       "language": "ja",
-      "file": "manual-gamma/img/release050-act-areas.jpg",
+      "file": "manual-gamma/img/release051-run-of-show-scale.jpg",
       "viewport": [
         1440,
         900
@@ -13,9 +13,9 @@
       "scene": "H-1"
     },
     {
-      "id": "act-areas",
+      "id": "run-of-show-scale",
       "language": "en",
-      "file": "manual-gamma/img/en/release050-act-areas.jpg",
+      "file": "manual-gamma/img/en/release051-run-of-show-scale.jpg",
       "viewport": [
         1440,
         900
@@ -25,47 +25,47 @@
   ],
   "screenshots": [
     {
-      "id": "act-areas",
-      "file": "manual-gamma/img/release050-act-areas.jpg",
+      "id": "run-of-show-scale",
+      "file": "manual-gamma/img/release051-run-of-show-scale.jpg",
       "language": "ja",
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.50",
-      "capturedCommit": "58ba57d63d7fcbe4ffdd26f8214ea866fef0a75f",
-      "capturedAt": "2026-10-11T04:31:47.436Z",
-      "sha256": "0b387d183f1f940d15ad45fe8a98269be0e822fefeabdde826867e91e174d6a5",
+      "capturedVersion": "v0.3.51",
+      "capturedCommit": "8378a8ebef2b1c1de5ce24af8a9458fac0fbae6a",
+      "capturedAt": "2026-10-11T07:26:51.634Z",
+      "sha256": "2f20f8af844a6bb69badeee389ffbe4e42178d11f9957996452fb70d614d0653",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "sourceSha256": "0d4dced659e1991bb3aef705c789d82b4d20dcf408b074b6c7d0875d7ae25714"
+      "sourceSha256": "dde50f613dec864fb3d0a82d1f247e5b853d4952db85d8e0782b43ebdffcef07"
     },
     {
-      "id": "act-areas",
-      "file": "manual-gamma/img/en/release050-act-areas.jpg",
+      "id": "run-of-show-scale",
+      "file": "manual-gamma/img/en/release051-run-of-show-scale.jpg",
       "language": "en",
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.50",
-      "capturedCommit": "58ba57d63d7fcbe4ffdd26f8214ea866fef0a75f",
-      "capturedAt": "2026-10-11T04:31:53.666Z",
-      "sha256": "eeb509242546a064dea61249b2707f07d940c619c289126444e1870c0885d06c",
+      "capturedVersion": "v0.3.51",
+      "capturedCommit": "8378a8ebef2b1c1de5ce24af8a9458fac0fbae6a",
+      "capturedAt": "2026-10-11T07:27:01.570Z",
+      "sha256": "d6bf4870576441ebfef83f7b12538f9c7d9ba9757a99451c130197d4fbdaa092",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "sourceSha256": "0d4dced659e1991bb3aef705c789d82b4d20dcf408b074b6c7d0875d7ae25714"
+      "sourceSha256": "dde50f613dec864fb3d0a82d1f247e5b853d4952db85d8e0782b43ebdffcef07"
     }
   ],
-  "legacyImagesNote": "Only the H-1 plan view with a performance area selected and the act picker shown (v0.3.50) is captured. All other images retain their original capture versions, including the v0.3.49 viewpoint and v0.3.47 run-of-show images.",
+  "legacyImagesNote": "Only the H-1 run of show shown at a reduced display scale (v0.3.51) is captured. All other images retain their original capture versions, including the v0.3.50 performance-area image, the v0.3.49 viewpoint image and the v0.3.47 run-of-show image.",
   "status": "verified",
   "visualReview": {
     "reviewedAt": "2026-10-11",
-    "method": "Direct visual inspection of the full-size Japanese and English H-1 captures: performance-area tool selected, the auto area selected, the act picker beside the delete button (\"Delete area\" in English) without overlap or truncation, and the preference notice translated. Playback motion was checked separately in Chromium and WebKit by script (act frames change only inside the areas; the cast member outside stays still).",
+    "method": "Direct visual inspection of the full-size Japanese and English H-1 captures: the run of show opened at a 60% display scale, the last row of the first page ends above the legend line and the page number (no overlap), and the page frame keeps the same proportions as the content. Resizing the window reflow, the stage-figure toggle in overlay mode and the free-format pane loading were checked separately in Chromium and WebKit by script.",
     "limits": "Chromium captures of the bundled feature-test show at 1440x900; Safari, iPad and the Mac app not tested"
   }
 }

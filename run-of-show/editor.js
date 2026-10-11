@@ -785,6 +785,8 @@
     const range=$("paper-size-range");range.min=input.min;range.max=input.max;range.step="1";range.value=String(shown);range.setAttribute("aria-label",uiText(free?"表の幅":"表示の倍率"));
     layoutIndex();
   }
+  // Scale with transform, not zoom: WebKit clamps text under zoom (9px minimum), which regrew the page text and pushed rows into the footer below ~80%.
+  new ResizeObserver(()=>{const host=$("page-output");host.style.setProperty("--page-out-h",`${host.offsetHeight}px`);}).observe($("page-output"));
   function setFreeWidth(value){freeWidthPref=value===null?null:layout.freeWidth(value,maxFreeWidth());store(FREE_WIDTH_KEY,freeWidthPref);applyPaperSize();fitEntryNumberColumn();queueTrack();}
   function setPageScale(value){pageScaleManual=value!==null;pageScalePref=layout.pageScale(value??autoPageScale());store(PAGE_SCALE_KEY,pageScaleManual?pageScalePref:null);applyPaperSize();queueTrack();}
   $("paper-size-input").addEventListener("change",event=>{const raw=event.target.value.trim();if(paperFormat==="free")setFreeWidth(raw===""?null:raw);else setPageScale(raw===""?null:raw);event.target.value=paperFormat==="free"?(freeWidthPref===null?"":String(layout.freeWidth(freeWidthPref,maxFreeWidth()))):(pageScaleManual?String(pageScalePref):"");});
@@ -926,7 +928,7 @@
   $("ros-index-toggle").addEventListener("click",()=>openIndex(indexMode==="closed"));
   $("ros-index-collapse").addEventListener("click",()=>{indexPanelCollapsed=!indexPanelCollapsed;store('gamma:ros:index-panel-collapsed',indexPanelCollapsed?'1':'0');$("ros-index-collapse").setAttribute("aria-expanded",String(!indexPanelCollapsed));$("ros-index-list").hidden=indexPanelCollapsed;});
   document.addEventListener("keydown",event=>{if(event.key==="Escape"&&indexMode==="overlay"){event.preventDefault();openIndex(false);}});
-  document.addEventListener("pointerdown",event=>{if(indexMode==="overlay"&&!event.target.closest("#ros-index,#ros-index-toggle")){indexOverlay=false;layoutIndex();}});
+  document.addEventListener("pointerdown",event=>{if(indexMode==="overlay"&&!event.target.closest("#ros-index,#ros-index-toggle,#stage-figures-toggle")){indexOverlay=false;layoutIndex();}});
   $("ros-index-resize").addEventListener("pointerdown",event=>{
     if(event.button!==0)return;const aside=$("ros-index"),start=aside.getBoundingClientRect().width,max=()=>indexMode==="docked"?indexSpace():innerWidth-32;
     startDrag(event,event.currentTarget,dx=>{const w=layout.indexWidth(start-dx,max());$("preview").style.setProperty("--index-w",`${w}px`);$("preview").style.setProperty("--index-track",`${w}px`);},(dx,cancel)=>{if(!cancel){indexWidthPref=layout.indexWidth(start-dx,max());store(INDEX_WIDTH_KEY,indexWidthPref);}layoutIndex();queueTrack();});
