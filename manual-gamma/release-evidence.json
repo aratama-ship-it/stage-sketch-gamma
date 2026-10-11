@@ -1,11 +1,11 @@
 {
-  "appVersion": "v0.3.51",
+  "appVersion": "v0.3.52",
   "contentUpdated": "2026-10-11",
   "requiredScreens": [
     {
-      "id": "run-of-show-scale",
+      "id": "run-of-show-layers",
       "language": "ja",
-      "file": "manual-gamma/img/release051-run-of-show-scale.jpg",
+      "file": "manual-gamma/img/release052-run-of-show-layers.jpg",
       "viewport": [
         1440,
         900
@@ -13,9 +13,9 @@
       "scene": "H-1"
     },
     {
-      "id": "run-of-show-scale",
+      "id": "run-of-show-layers",
       "language": "en",
-      "file": "manual-gamma/img/en/release051-run-of-show-scale.jpg",
+      "file": "manual-gamma/img/en/release052-run-of-show-layers.jpg",
       "viewport": [
         1440,
         900
@@ -25,47 +25,47 @@
   ],
   "screenshots": [
     {
-      "id": "run-of-show-scale",
-      "file": "manual-gamma/img/release051-run-of-show-scale.jpg",
+      "id": "run-of-show-layers",
+      "file": "manual-gamma/img/release052-run-of-show-layers.jpg",
       "language": "ja",
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.51",
-      "capturedCommit": "8378a8ebef2b1c1de5ce24af8a9458fac0fbae6a",
-      "capturedAt": "2026-10-11T07:26:51.634Z",
-      "sha256": "2f20f8af844a6bb69badeee389ffbe4e42178d11f9957996452fb70d614d0653",
+      "capturedVersion": "v0.3.52",
+      "capturedCommit": "533bc074375e1dfce279bc91877965beb80cb8ae",
+      "capturedAt": "2026-10-11T09:27:20.851Z",
+      "sha256": "12ed0062032c803d20c4f8a553d220f62035af1be2ae3386a5dd495cf82ecf57",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "sourceSha256": "dde50f613dec864fb3d0a82d1f247e5b853d4952db85d8e0782b43ebdffcef07"
+      "sourceSha256": "b126c842bca10f9ee04440b1ac1da22ca0214a730a775904ec8e08b714f89310"
     },
     {
-      "id": "run-of-show-scale",
-      "file": "manual-gamma/img/en/release051-run-of-show-scale.jpg",
+      "id": "run-of-show-layers",
+      "file": "manual-gamma/img/en/release052-run-of-show-layers.jpg",
       "language": "en",
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.51",
-      "capturedCommit": "8378a8ebef2b1c1de5ce24af8a9458fac0fbae6a",
-      "capturedAt": "2026-10-11T07:27:01.570Z",
-      "sha256": "d6bf4870576441ebfef83f7b12538f9c7d9ba9757a99451c130197d4fbdaa092",
+      "capturedVersion": "v0.3.52",
+      "capturedCommit": "533bc074375e1dfce279bc91877965beb80cb8ae",
+      "capturedAt": "2026-10-11T09:27:30.869Z",
+      "sha256": "1143ae7b40c5ca6ae7cf5dd6b0e636082cbafef40cc2554cb61ffadb055d00e8",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "sourceSha256": "dde50f613dec864fb3d0a82d1f247e5b853d4952db85d8e0782b43ebdffcef07"
+      "sourceSha256": "b126c842bca10f9ee04440b1ac1da22ca0214a730a775904ec8e08b714f89310"
     }
   ],
-  "legacyImagesNote": "Only the H-1 run of show shown at a reduced display scale (v0.3.51) is captured. All other images retain their original capture versions, including the v0.3.50 performance-area image, the v0.3.49 viewpoint image and the v0.3.47 run-of-show image.",
+  "legacyImagesNote": "Only the H-1 run of show with the Paper settings layer open (v0.3.52) is captured. All other images retain their original capture versions, including the v0.3.51 reduced-scale run of show, the v0.3.50 performance-area image, the v0.3.49 viewpoint image and the v0.3.47 run-of-show image. The older run-of-show picture (release037) is no longer used in the Q-sheet section.",
   "status": "verified",
   "visualReview": {
     "reviewedAt": "2026-10-11",
-    "method": "Direct visual inspection of the full-size Japanese and English H-1 captures: the run of show opened at a 60% display scale, the last row of the first page ends above the legend line and the page number (no overlap), and the page frame keeps the same proportions as the content. Resizing the window reflow, the stage-figure toggle in overlay mode and the free-format pane loading were checked separately in Chromium and WebKit by script.",
+    "method": "Direct visual inspection of the full-size Japanese and English H-1 captures: the run of show with the Paper settings layer open shows language, input view and paper size, paper colour, text size, view scale and the single Reset to default; the layer sits beside the left rail and does not cut off any of its fields. Print/Output and selection layers were operated separately in Chromium and WebKit by script (tests/run-of-show-band-layers-browser.cjs).",
     "limits": "Chromium captures of the bundled feature-test show at 1440x900; Safari, iPad and the Mac app not tested"
   }
 }

@@ -4204,3 +4204,24 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "コピー": "copy",
   "書き込みはページ・表示ごとにこの端末へ保存": "Notes are saved on this device for each page and view"
 });
+
+// Run-of-show band layers (設定／出力／選択中の操作), 2026-10-11.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "紙面の設定": "Paper settings",
+  "紙の色": "Paper colour",
+  "初期値へ": "Reset to default",
+  "選択中の操作": "Actions for the selection",
+  "選択を解除": "Clear selection",
+  "表の幅・表示倍率・項目一覧の幅・文字サイズを初期値へ戻します。": "Reset the table width, view scale, item list width and font size to their defaults.",
+  "進行表の言語・用紙・紙の色・文字サイズ・表示の倍率をまとめて変えます。": "Change the run-of-show language, paper, paper colour, font size and view scale in one place.",
+  "印刷・PDF、ショーの書き出し、配布内容の確認、操作の説明を開きます。": "Open print / PDF, show export, distribution review and control help.",
+  "選んでいるセルや列の選択を外します。": "Clear the selected cells or column."
+});
+
+// v0.3.52 release notes.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "進行表の上の帯が長くなりすぎていたため、言語・用紙サイズ・紙の色・文字サイズ・表示の倍率を「紙面の設定」の層にまとめました。ボタンを押したときだけ開き、Esc か外側のクリックで閉じます。": "The bar above the run of show had grown too long, so language, paper size, paper colour, text size and view scale now live in a “Paper settings” layer. It opens only when you press its button and closes with Esc or a click outside.",
+  "印刷・PDF、ショーの書き出し、配布内容の確認、操作の説明は「出力」の層にまとめました。「保存する」は帯に残しています。": "Print / PDF, show export, distribution review and control help are gathered in an “Output” layer. Save stays on the bar.",
+  "セルや列を選んでいる間だけ、「選択中の操作」の層（セルの寄せ・舞台で開く・選択を解除）が出ます。帯の「その他」への折りたたみはなくなり、各操作は層から使えます。": "While cells or a column are selected, an “Actions for the selection” layer offers cell alignment, Open on stage and Clear selection. The fold-away “More” on the bar is gone; every action is reachable from a layer.",
+  "表の幅・表示倍率・項目一覧の幅・文字サイズは、「紙面の設定」の「初期値へ」でまとめて戻せます。保存したデータの形式は変わりません。": "Table width, view scale, item list width and text size can be reset together with “Reset to default” in Paper settings. The format of saved data is unchanged."
+});

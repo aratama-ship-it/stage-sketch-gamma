@@ -330,8 +330,6 @@ html[data-stage-skin] .distribution-dialog button.primary{background:var(--gamma
 .band-size{display:inline-flex;align-items:center;gap:var(--s1);min-height:var(--control);font-size:var(--fs-small);white-space:nowrap;color:var(--chrome-ink)}
 .band-size input{width:76px;height:var(--control);min-height:var(--control);padding:0 var(--s1);font-size:var(--fs-small);font-variant-numeric:tabular-nums;border:1px solid var(--line-dark);border-radius:var(--radius)}
 #paper-size-unit{color:var(--chrome-muted)}
-/* The band on top keeps its two 44px rows (96px contract): the word label shows only in the left panel; the input keeps its aria-label. */
-#paper-size-label{display:none}
 .ros-index{display:none}
 @media screen{
   .paper{position:relative}
@@ -377,8 +375,7 @@ html[data-stage-skin] #ros-index-toggle[aria-expanded=true]{background:var(--bra
      when opened, retain the desktop control-column width and give the paper
      the remaining centre track. */
   main{max-width:none}
-  .paper-panel .band-size{flex:1 1 100%}.paper-panel .band-size input{flex:1 1 auto;width:auto;min-width:0}.paper-panel #paper-size-label{display:inline}
-  /* Docked index: panel | paper | index.  The controls keep the #14 width
+  .paper-panel .band-size{flex:1 1 100%}.paper-panel .band-size input{flex:1 1 auto;width:auto;min-width:0}  /* Docked index: panel | paper | index.  The controls keep the #14 width
      (--panel-w from editor.js), so labels do not collapse at 1440px and the
      paper scale absorbs the remaining width. */
   /* :has() keeps these above the two-column rules for each paper (#14). */
@@ -408,21 +405,43 @@ html[data-stage-skin] #ros-index-toggle[aria-expanded=true]{background:var(--bra
 @media print{.ros-action-tooltip,.reorder-effects{display:none!important}}
 
 /* N25: reserve the top of a short display for the actual paper. */
-.band-more[hidden]{display:none}
-.band-more-controls{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:8px}
 @media screen and (max-height:760px) and (max-width:1199px){
   .paper-band{gap:4px;padding-block:4px;position:relative}
   .paper-band .row-mode-buttons{flex:0 1 auto;width:auto}
   .paper-band .row-mode-buttons button{flex:0 0 auto;white-space:nowrap;padding-inline:6px}
-  .paper-band #paper-size-range{flex:0 1 100px;width:100px;min-width:70px;margin:0}
   .paper-band .band-split{display:none}
   .paper-band button,.paper-band select{padding-inline:6px}
-  .paper-band .band-more{position:relative;align-self:center}
-  .paper-band .band-more>summary{padding:5px 8px;cursor:pointer;white-space:nowrap}
-  .paper-band .band-more[open]>.band-more-controls{position:absolute;right:0;top:100%;width:min(360px,85vw);z-index:8;background:var(--desk-2);border:1px solid var(--line-dark);box-shadow:0 4px 12px #0005}
 }
 
 /* Time tokens remain whole in measured A4 cells, on screen and in print. */
 .pg-cell:is([data-column-id="no"],[data-column-id="tc"],[data-column-id="start"],[data-column-id="duration"]) .pg-cell-content{white-space:nowrap;overflow-wrap:normal}
 
 .pg-cell:is([data-column-id="tc"],[data-column-id="start"],[data-column-id="duration"]) .paper-editable{white-space:nowrap;overflow-wrap:normal}
+
+/* 2026-10-11 帯の層: 「紙面の設定」「出力」は押したときだけ開く小窓、「選択中の操作」は選択の脇に出る細い帯（どれも fixed＝帯の高さに影響しない）。 */
+.band-layer-button{display:inline-flex;align-items:center;gap:var(--s1)}
+.band-layer-button svg{width:var(--icon);height:var(--icon);fill:none;stroke:currentColor;stroke-width:1;flex:none}
+.paper-band .band-popover{position:fixed;z-index:5;display:flex;flex-direction:column;gap:var(--s2);width:min(var(--popover-width),calc(100vw - 16px));max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto}
+.paper-band .band-popover[hidden]{display:none}
+.paper-band .band-menu{width:max-content;min-width:200px;gap:var(--s1);padding:var(--s2)}
+.paper-band .band-menu button{width:100%;text-align:left}
+#paper-band #band-settings .band-field{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);min-height:var(--control);font-size:var(--fs-small);color:var(--chrome-ink)}
+#paper-band #band-settings select{flex:0 0 auto;width:12em;max-width:60%}
+#paper-band #band-settings .band-size{flex:0 0 auto;width:auto}
+#paper-band #band-settings .band-size-value{display:inline-flex;align-items:center;gap:var(--s1)}
+#paper-band #band-settings .band-size input{flex:0 0 76px;width:76px}
+#paper-band #band-settings #paper-size-label{display:inline}
+#paper-band #band-settings #paper-size-range{flex:0 0 auto;width:100%;min-width:0;margin:0}
+#paper-band #band-settings #display-reset{align-self:flex-end}
+.paper-band .ink-toggle{display:inline-flex;align-items:center;gap:var(--s2);padding-inline:var(--s3)}
+.ink-swatch{width:20px;height:20px;border:1px solid var(--line-dark);border-radius:var(--radius)}
+.ink-swatch[data-ink=white]{background:#fff}.ink-swatch[data-ink=black]{background:#111}
+html[data-paper-ink=white] .ink-swatch[data-ink=white],html[data-paper-ink=black] .ink-swatch[data-ink=black]{outline:2px solid var(--brass);outline-offset:2px}
+.paper-band .band-selection{position:fixed;z-index:5;display:flex;align-items:center;gap:var(--s2);padding:var(--s1) var(--s2);background:var(--desk-2);border:1px solid var(--line-dark);box-shadow:0 4px 16px #0006;color:var(--chrome-ink)}
+.paper-band .band-selection[hidden]{display:none}
+.paper-band .band-selection .band-subgroup{display:flex;gap:var(--s1)}
+#paper-scene svg{width:var(--icon);height:var(--icon);margin-right:var(--s1);vertical-align:-3px;fill:none;stroke:currentColor;stroke-width:1}
+.action-tip-target:has(>[hidden]){display:none}
+.paper-sticky:has(.band-popover:not([hidden]),.band-selection:not([hidden])){z-index:4}
+/* 左の欄（sticky・z-index なし）の中の層は、紙面の位置指定つき要素の下に潜る。層が開いている間だけ欄ごと前へ出す */
+.paper-panel:has(.band-popover:not([hidden]),.band-selection:not([hidden])){z-index:4}

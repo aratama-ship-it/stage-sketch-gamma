@@ -1,8 +1,8 @@
 {
-  "version": "0.3.51",
+  "version": "0.3.52",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.51/stage-sketch-gamma-mac-0.3.51.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.52/stage-sketch-gamma-mac-0.3.52.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "Safari で進行表の倍率を下げたとき、ページの最後の行が凡例に重なるのを直しました。窓の幅を変えても画面が追従しなかった不具合（v0.3.47 以降）なども直しています。保存形式は変わりません（v0.3.51）。",
+  "notes": "進行表の上の帯を整理し、設定は「紙面の設定」、印刷・書き出しは「出力」、揃えなどは選択中だけ出る「選択中の操作」の層にまとめました。保存形式は変わりません（v0.3.52）。",
   "updated": "2026-10-11"
 }

@@ -47,6 +47,7 @@ body{background:var(--program-bg);color:var(--program-ink)}button,input,select{b
 .lite-paper #ros-selected .stage-figures figcaption{color:var(--muted);white-space:normal}
 .lite-paper #ros-selected .toolbar:has(a[href="#preview"])>a{display:none}
 .lite-paper #paper-scene{display:none}
+.lite-paper #paper-panel .paper-band .band-selection .band-subgroup{display:flex}
 .lite-paper #ros-selected input:focus-visible,.lite-paper #ros-selected textarea:focus-visible,.lite-paper #ros-selected button:focus-visible{outline:var(--focus) solid var(--call);outline-offset:var(--s1)}
 @media(min-width:1200px){
   .lite-paper:not(.lite-stacked) #preview,.lite-paper:not(.lite-stacked) #preview:has(.doc-frame[data-paper-format=free]){display:grid;grid-template-columns:minmax(max(var(--ros-left-min),var(--lite-paper-min)),2fr) minmax(var(--ros-right-min),1fr);grid-template-rows:auto auto 1fr;grid-template-areas:none;column-gap:var(--ros-gap);justify-content:stretch;align-items:start}
