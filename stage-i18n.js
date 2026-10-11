@@ -4233,3 +4233,8 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "ディアボロはひもに掛けて回し、約2.6m投げ上げてひもで受けます。正面図と3Dの両方に出ます。印刷・画像書き出し・進行表の図には出ず、保存したデータの形式も変わりません。": "The diabolo spins on the string, is tossed about 2.6 m and caught back on the string. It shows on both the front view and 3D. It does not appear in print, image export or run-of-show pictures, and the format of saved data is unchanged.",
   "劇場設定タブで右側の「劇場プレビュー」が画面の右にはみ出し、正面・立体・全体の切り替えや拡大・縮小のボタンが押せなかった不具合（v0.3.47 以降）を直しました。": "In the Theatre settings tab, the “Theatre preview” on the right ran past the right edge of the window, so the Front / 3D / Fit all switches and the zoom buttons could not be used (since v0.3.47). This is fixed."
 });
+
+// v0.3.54 release notes.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "「演目の範囲」（再生中に、範囲の中の演者が演目をする機能）は、設計を見直すため、いったん非表示にしました。環境設定と平面図の道具から外れ、再生中の動きも止まります。描いた範囲などの保存データはそのまま残ります。": "“Performance area” (performers act inside an area during playback) is hidden for now while its design is reconsidered. It is gone from Settings and the plan tools, and its playback motion stops. Saved data such as drawn areas stays as it is."
+});

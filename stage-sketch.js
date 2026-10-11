@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.53";
+  const GAMMA_APP_VERSION = "v0.3.54";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -516,6 +516,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     // 2026-10-10 本人決定: ミュージックシンクの入口（セクション行の「開く」「▶ 再生」）を隠す。保存データと時間軸の表示は残す。
     // 戻すときは元の式 RELEASE_SCOPE_ID !== "beta-20260912" に。カウント合わせはタイムラインのカウント式で行える。
     formationSync: false,
+    // 2026-10-11 本人決定: 演目の範囲は設計を見直すまで隠す。保存データ（scene.idleAreas）は残す。戻すときは true
+    actAreas: false,
     propMask: RELEASE_SCOPE_ID !== "beta-20260912",
   });
 
@@ -5386,6 +5388,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const SPLIT_ROSTER_PANEL_FEATURES = new Set(["panelCast", "panelSets", "panelProps", "panelStageSet"]);
   const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object || {}, key);
   const featureOn = (key) => {
+    if (key === "actAreas" && !RELEASE_FEATURES.actAreas) return false;
     if (!editionAllows("cues") && ["voxScroll", "voxVertical", "arrowKeysVoxOnly", "voxBubble"].includes(key)) return false;
     if (key === "lineup" && !editionAllows("formations")) return false;
     if (["idleMotion", "idleAreas", "actAreas"].includes(key) && !editionAllows("idleAreas")) return false;
@@ -31539,7 +31542,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       /* ★2026-10-06 本人指示: 常にON（待機範囲・灯体の白い枠・小道具の香盤表）と、機能ごと非表示（バミリ図）。featureOn 側で固定。 */
       "idleAreas", "planFixtureOutline", "propsplot", "bamiri",
     ]);
-    FEATURES.filter((f) => (editionAllows("lightRender") || !["costumeLight"].includes(f.key)) && (editionAllows("cues") || (!f.key.startsWith("vox") && f.key !== "arrowKeysVoxOnly")) && f.key !== "idleMotion" && !hiddenGammaFlags.has(f.key) && (editionAllows("idleAreas") || !["idleMotion", "idleAreas","actAreas"].includes(f.key))).forEach((f) => { prefGroups.get(groupFor(f)).grid.append(prefRow(f)); });
+    FEATURES.filter((f) => (RELEASE_FEATURES.actAreas || f.key !== "actAreas") && (editionAllows("lightRender") || !["costumeLight"].includes(f.key)) && (editionAllows("cues") || (!f.key.startsWith("vox") && f.key !== "arrowKeysVoxOnly")) && f.key !== "idleMotion" && !hiddenGammaFlags.has(f.key) && (editionAllows("idleAreas") || !["idleMotion", "idleAreas","actAreas"].includes(f.key))).forEach((f) => { prefGroups.get(groupFor(f)).grid.append(prefRow(f)); });
     // Fixture appearance is fixed to white outlines and black bodies; legacy preferences remain readable.
     const reorderReset = document.createElement("button");
     reorderReset.type = "button"; reorderReset.className = "stage-minor-action";
@@ -37177,21 +37180,21 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   let selectedIdleArea = null;
   const idleAreaList = () => window.STAGE_IDLE_MOTION.areas(sc().idleAreas);
   function removeIdleArea() {
-    if (!selectedIdleArea || !editionAllows("idleAreas") || STUDY_READ_ONLY || guestSessionActive() || idleClock.playing || sceneAnim) return;
+    if (!featureOn("actAreas") || !selectedIdleArea || !editionAllows("idleAreas") || STUDY_READ_ONLY || guestSessionActive() || idleClock.playing || sceneAnim) return;
     if (!idleAreaList().some(a=>a.id===selectedIdleArea)) return;
     checkpoint();sc().idleAreas=sc().idleAreas.filter(a=>a.id!==selectedIdleArea);
     if (!sc().idleAreas.length) delete sc().idleAreas;
     selectedIdleArea=null;persistSoon();render();
   }
   document.getElementById("stage-idle-area-delete")?.addEventListener("click", removeIdleArea);
-  function setIdleAreaAct(value) { if(!selectedIdleArea) return; const area=sc().idleAreas?.find(a=>a.id===selectedIdleArea); if(!area) return; checkpoint(); if(value==='auto') delete area.act; else area.act=value; persistSoon(); render(); }
+  function setIdleAreaAct(value) { if(!featureOn("actAreas") || !selectedIdleArea) return; const area=sc().idleAreas?.find(a=>a.id===selectedIdleArea); if(!area) return; checkpoint(); if(value==='auto') delete area.act; else area.act=value; persistSoon(); render(); }
   document.getElementById("stage-idle-area-act")?.addEventListener("change", event=>setIdleAreaAct(event.target.value));
   function drawIdleAreas(target,L) {
-    const editing = !idleClock.playing && !sceneAnim && !presenting && editionAllows("idleAreas") && !STUDY_READ_ONLY && !guestSessionActive();
+    const editing = featureOn("actAreas") && !idleClock.playing && !sceneAnim && !presenting && editionAllows("idleAreas") && !STUDY_READ_ONLY && !guestSessionActive();
     const button=document.getElementById("stage-idle-area-delete");
     if(button) button.hidden=!(editing && tool==="idleArea" && idleAreaList().some(a=>a.id===selectedIdleArea));
     const act=document.getElementById("stage-idle-area-act"); if(act) { const selected=idleAreaList().find(a=>a.id===selectedIdleArea); const visible=editing&&tool==='idleArea'&&selected; const wrap=document.getElementById("stage-idle-area-act-wrap"); if(wrap) wrap.hidden=!visible; act.hidden=!visible; if(selected) act.value=selected.act||'auto'; }
-    if(!editing || (!featureOn("actAreas") && tool!=="idleArea"))return;
+    if(!editing)return;
     const draft=pointerAction?.kind==="idleArea" ? pointerAction : null;
     const list=idleAreaList();
     if(draft)list.push({id:"draft",u0:draft.start.u,v0:draft.start.v,u1:draft.current.u,v1:draft.current.v});

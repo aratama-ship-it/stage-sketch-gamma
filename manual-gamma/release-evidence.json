@@ -1,11 +1,11 @@
 {
-  "appVersion": "v0.3.53",
+  "appVersion": "v0.3.54",
   "contentUpdated": "2026-10-11",
   "requiredScreens": [
     {
-      "id": "act-props",
+      "id": "prefs-without-performance-area",
       "language": "ja",
-      "file": "manual-gamma/img/release053-act-props.jpg",
+      "file": "manual-gamma/img/release054-prefs.jpg",
       "viewport": [
         1440,
         900
@@ -13,9 +13,9 @@
       "scene": "H-1"
     },
     {
-      "id": "act-props",
+      "id": "prefs-without-performance-area",
       "language": "en",
-      "file": "manual-gamma/img/en/release053-act-props.jpg",
+      "file": "manual-gamma/img/en/release054-prefs.jpg",
       "viewport": [
         1440,
         900
@@ -25,47 +25,47 @@
   ],
   "screenshots": [
     {
-      "id": "act-props",
-      "file": "manual-gamma/img/release053-act-props.jpg",
+      "id": "prefs-without-performance-area",
+      "file": "manual-gamma/img/release054-prefs.jpg",
       "language": "ja",
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.53",
-      "capturedCommit": "75cf2e6abb9fca5241c03161f1ef0db63a049b17",
-      "capturedAt": "2026-10-11T12:20:20.103Z",
-      "sha256": "d9f83ce7008a484b441254d24c9bce5956480450e28095a1e6c7be380ba9bd74",
+      "capturedVersion": "v0.3.54",
+      "capturedCommit": "c73e814f30fabe73f82863edd4c7908dd85805b2",
+      "capturedAt": "2026-10-11T13:22:02.870Z",
+      "sha256": "ea1d68899f497371118b6c88675995c7873c673cfe5421458a1135ed66fd1e55",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "sourceSha256": "4f9126529aada7be350da24527e068058453ec0a4e17abef31253017aff34937"
+      "sourceSha256": "17084bc2e2115780a1597ed822f8f9ee117ed553a8febd3bc6afe8b6147f1d71"
     },
     {
-      "id": "act-props",
-      "file": "manual-gamma/img/en/release053-act-props.jpg",
+      "id": "prefs-without-performance-area",
+      "file": "manual-gamma/img/en/release054-prefs.jpg",
       "language": "en",
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.53",
-      "capturedCommit": "75cf2e6abb9fca5241c03161f1ef0db63a049b17",
-      "capturedAt": "2026-10-11T12:20:30.817Z",
-      "sha256": "037d5270a8bfbe656ca71d5c6f5e1f031806ce6843a93a701a2cae68618ae5ec",
+      "capturedVersion": "v0.3.54",
+      "capturedCommit": "c73e814f30fabe73f82863edd4c7908dd85805b2",
+      "capturedAt": "2026-10-11T13:22:09.451Z",
+      "sha256": "68e7c42f2be9d7efedfaea5210fd4165cf2ce1e7cac8a2f452db1f39d6a1eca7",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "sourceSha256": "4f9126529aada7be350da24527e068058453ec0a4e17abef31253017aff34937"
+      "sourceSha256": "17084bc2e2115780a1597ed822f8f9ee117ed553a8febd3bc6afe8b6147f1d71"
     }
   ],
-  "legacyImagesNote": "Only the H-1 feature-test stage during performance-area playback (v0.3.53) is captured. All other images retain their original capture versions, including the v0.3.52 run of show with the Paper settings layer, the v0.3.51 reduced-scale run of show, the v0.3.50 performance-area image and the v0.3.49 viewpoint image.",
+  "legacyImagesNote": "Only the Settings window without the Performance area row (v0.3.54) is captured. All other images retain their original capture versions. The v0.3.53 performance-area playback image is no longer referenced while the feature is hidden; its files remain for when the feature returns.",
   "status": "verified",
   "visualReview": {
     "reviewedAt": "2026-10-11",
-    "method": "Direct visual inspection of the full-size Japanese and English H-1 captures at playback time 8 s with Performance area on: performer 01's diabolo is airborne above the stage with the slack string between the sticks, performer 04's balls, performer 05's clubs and performer 06's rings are in hand or in flight, and the outside performer 03 does not perform. Prop motion itself (continuity, release speed, spins) was checked by tests/act-props.test.mjs and in Chromium and WebKit by tests/act-props-browser.cjs.",
-    "limits": "Chromium captures of the bundled feature-test show at 1440x900; Safari, iPad and the Mac app not tested; the owner's visual review of the motion is pending"
+    "method": "Direct visual inspection of the full-size Japanese and English captures of the Settings window: the Playback and timing group lists the transition walking, dialogue-only arrow keys and smooth dialogue scroll switches with no Performance area row, and the guide entry shows the booklet as of v0.3.54. The capture script also asserts that no Performance area row exists. The hidden state (no plan tool, no act motion, saved areas kept) is checked in Chromium and WebKit by tests/act-areas-hidden-browser.cjs.",
+    "limits": "Chromium captures of the bundled feature-test show at 1440x900; Safari, iPad and the Mac app not tested"
   }
 }

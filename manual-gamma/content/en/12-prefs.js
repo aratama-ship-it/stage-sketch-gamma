@@ -83,8 +83,8 @@ ${table(["Item", "Default", "What it does", "Section"], [
   [ui("How the light looks"), "Off (simple marks)", "Off / light pools / + light beams / show-level darkness", ref("light-render", "7-3")],
   [ui("Dialogue cue text size"), "Standard", "Standard 16 px / large 22 px / extra large 30 px", ref("vox-panel", "9-5")]
 ])}
-<p>In Gamma these are <strong>always on</strong> and not listed: full screen, multiple selection and formations, pitch export, scenes starting in blackout, scene times, transition information, the white outlines around fixtures on the plan, and the props plot (print) — the last two since 2026-10-06. Turn on <strong>Performance areas</strong> in Preferences to show the dashed areas on the plan and have performers inside them perform the selected act during playback. Juggling (balls, clubs and rings) and diabolo show the props flying through the air. The lighting intent card, the old “lighting Q sheet (print)” and the “spike sheet (print)” (since 2026-10-06) are not used in Gamma (the Lights sheet in Q sheets replaces the lighting table). Each item is switched with the same ON / OFF tag as the performer and set lists (2026-10-06).</p>
-${fig("release053-act-props", "Playback with “Performance area” on (feature test H-1). Performers inside the areas throw balls, clubs, rings and a diabolo.", "Props flying during playback in performance areas")}`
+<p>In Gamma these are <strong>always on</strong> and not listed: full screen, multiple selection and formations, pitch export, scenes starting in blackout, scene times, transition information, the white outlines around fixtures on the plan, and the props plot (print) — the last two since 2026-10-06. The lighting intent card, the old “lighting Q sheet (print)” and the “spike sheet (print)” (since 2026-10-06) are not used in Gamma (the Lights sheet in Q sheets replaces the lighting table). Each item is switched with the same ON / OFF tag as the performer and set lists (2026-10-06).</p>
+`
       },
       {
         id: "panel-style", title: "Panel display style, and showing or hiding panels", status: "verified",

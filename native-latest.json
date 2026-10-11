@@ -1,8 +1,8 @@
 {
-  "version": "0.3.53",
+  "version": "0.3.54",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.53/stage-sketch-gamma-mac-0.3.53.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.54/stage-sketch-gamma-mac-0.3.54.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "「演目の範囲」で、ジャグリング（ボール・クラブ・リング）とディアボロの道具が宙を飛ぶようになりました。劇場設定タブの右側がはみ出す不具合も直しました。保存形式は変わりません（v0.3.53）。",
+  "notes": "「演目の範囲」を、設計を見直すまで非表示にしました。描いた範囲などの保存データは残ります（v0.3.54）。",
   "updated": "2026-10-11"
 }
