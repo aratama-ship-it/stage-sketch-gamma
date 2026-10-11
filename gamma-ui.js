@@ -275,7 +275,12 @@
           list.append(button);
         });
       };
-      const open = () => {sync();if(trigger.disabled)return;opened=true;list.hidden=false;trigger.setAttribute('aria-expanded','true');
+      const open = () => {sync();if(trigger.disabled)return;
+        const typography=getComputedStyle(trigger);
+        list.style.fontSize=typography.fontSize;
+        list.style.letterSpacing=typography.letterSpacing;
+        list.style.fontWeight=typography.fontWeight;
+        opened=true;list.hidden=false;trigger.setAttribute('aria-expanded','true');
         const rect=trigger.getBoundingClientRect();wrap.classList.toggle('opens-up',innerHeight-rect.bottom<Math.min(240,select.options.length*36+8)&&rect.top>240);
         const button=list.children[select.selectedIndex];if(button&&!button.disabled)button.focus({preventScroll:true});
       };

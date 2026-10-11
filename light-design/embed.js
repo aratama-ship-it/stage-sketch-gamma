@@ -172,6 +172,9 @@
       // Strict ID matching: host pieces never come from a demo or imported design.
       state.scenes=next.scenes.map(row=>({id:row.id,name:row.name,sectionId:row.sectionId||null,sectionTitle:row.sectionTitle||'',pieces:model.clone(row.pieces),cue:{lights:{},groups:[]}}));
       hooks.applyDesign(hostDesign,{host:true});
+      synchronizePieces(next);synchronizeVenueMask(next);synchronizeFrontSeats(next);
+      hooks.renderAll();
+      hooks.markApplied();
       if(dirty) hooks.applyDesign(design,{host:true,preserveAppliedBaseline:true});
       synchronizePieces(next);
       appliedExtras=model.clone(design);context=next;synchronizeVenueMask(next);synchronizeFrontSeats(next);changedElsewhere=false;
@@ -179,6 +182,10 @@
       lastScene=state.scenes[state.sceneIndex].id;
       state.seq=Date.now(); // avoids collisions with fixture / cue IDs imported from earlier sessions
       active=true;setMode(mode);window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);
+      // Mode setup may normalize the first scene too; only a fresh host load
+      // becomes the applied baseline. A restored draft must keep its differences.
+      if(!dirty) hooks.markApplied();
+      hooks.refreshApplyState();draftState=state.dirty?'saved':'none';renderSaveStatus();
       if(dirty) message('適用前の照明を復元しました');
     } finally {loading=false;}
   }

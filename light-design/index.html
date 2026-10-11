@@ -773,7 +773,7 @@
   .dialog .in,.dialog .in:has(.pgrid){display:flex;flex-direction:column;max-height:calc(100dvh - 24px);overflow:hidden}
 </style>
 <style>.option-b-controls button{min-height:44px}.option-b-controls :focus-visible{outline:2px solid #d3ac59;outline-offset:2px}</style>
-<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261011-v0355">
+<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261012-v0356">
 <link rel="stylesheet" href="embed.css?v=20261010-v0338">
 <link rel="stylesheet" href="simple-lighting.css?v=20261009-v0337">
 </head>
@@ -989,11 +989,9 @@
               <span class="viewtitle">正面図</span>
               <span class="fmode">
                 <span class="showtoggles" id="frontmode" role="group" aria-label="正面図の描き方">
-                  <button type="button" data-front="flat" aria-pressed="true">平面</button>
-                  <button type="button" data-front="3d" aria-pressed="false">3D</button>
                   <button type="button" data-show="fixtures" aria-pressed="true" title="正面図の灯体の印を出す・隠す">機材</button>
                 </span>
-                <select id="seat" class="seatsel" aria-label="どの席から見るか" hidden>
+                <select id="seat" class="seatsel" aria-label="どの席から見るか">
                   <option value="front">1階 前方</option>
                   <option value="center">1階 中央</option>
                   <option value="rear">1階 後方</option>
@@ -1037,7 +1035,7 @@
      結果や注意は「灯体情報」パネル最下部の #insp-log へ常設で出す。
      要素は残さない（.toast のCSSも使われなくなる）。 -->
 
-<script src="../gamma-ui.js?v=20261011-v0347"></script>
+<script src="../gamma-ui.js?v=20261012-v0356"></script>
 <link rel="stylesheet" href="position-names.css?v=20261001-release71">
 <script src="../gamma-render-resolution.js?v=20261006-v0318"></script>
 <script src="rig-engine.js?v=20261011-v0347"></script>
@@ -1053,7 +1051,7 @@
 <script src="../stage-fixture-body.js?v=20261009-v0335"></script>
 <script src="../stage-light-receiver.js?v=20261004-receiver89"></script>
 <script src="../gamma-light-cue-overlay.js?v=20261006-v0318"></script>
-<script src="app.js?v=20261011-v0355"></script>
+<script src="app.js?v=20261012-v0356"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20261010-v0338"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->
@@ -1061,7 +1059,7 @@
 <script src="selected-light-presets-ui.js?v=20260928-feedback55"></script>
 <script src="../gamma-light-model.js?v=20261006-v0315"></script>
 <script src="simple-lighting-model.js?v=20261001-release71"></script>
-<script src="embed.js?v=20261011-v0347"></script>
+<script src="embed.js?v=20261012-v0356"></script>
 <script src="simple-lighting-ui.js?v=20261010-v0339"></script>
 <script src="position-placement-ui.js?v=20261005-batch98"></script>
 <script src="position-names-ui.js?v=20261001-release71"></script>

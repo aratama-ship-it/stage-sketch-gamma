@@ -1,11 +1,11 @@
 {
-  "appVersion": "v0.3.55",
-  "contentUpdated": "2026-10-11",
+  "appVersion": "v0.3.56",
+  "contentUpdated": "2026-10-12",
   "requiredScreens": [
     {
-      "id": "stage-toolbar-panel-controls",
+      "id": "share-window-field-mode",
       "language": "ja",
-      "file": "manual-gamma/img/release055-stage-toolbar.jpg",
+      "file": "manual-gamma/img/release056-share-field-mode.jpg",
       "viewport": [
         1440,
         900
@@ -13,9 +13,9 @@
       "scene": "H-1"
     },
     {
-      "id": "stage-toolbar-panel-controls",
+      "id": "share-window-field-mode",
       "language": "en",
-      "file": "manual-gamma/img/en/release055-stage-toolbar.jpg",
+      "file": "manual-gamma/img/en/release056-share-field-mode.jpg",
       "viewport": [
         1440,
         900
@@ -25,47 +25,47 @@
   ],
   "screenshots": [
     {
-      "id": "stage-toolbar-panel-controls",
-      "file": "manual-gamma/img/release055-stage-toolbar.jpg",
+      "id": "share-window-field-mode",
+      "file": "manual-gamma/img/release056-share-field-mode.jpg",
       "language": "ja",
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.55",
-      "capturedCommit": "57cb01c95718c4ba832459c2bb1c937203818c83",
-      "capturedAt": "2026-10-11T14:07:35.016Z",
-      "sha256": "0cab6b850e01201c28d57de2a029c156458be6a5d14236e42051543eb47adbaf",
+      "capturedVersion": "v0.3.56",
+      "capturedCommit": "2757b32397c589f05b3d0959821c4d5d238f4754",
+      "capturedAt": "2026-10-11T16:40:41.846Z",
+      "sha256": "d5dfe57129424051ff8d0e270f403b0d56c33dafe9d950d02f3699c87c22e64e",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "sourceSha256": "3a7e27aee7c252fe86f20961450db5dca7a341e8f5b73f84ee221f450624de52"
+      "sourceSha256": "8e20a92163a5dff6536a82e39c316b691fa3285b362d9eaad60d514dab9c4b00"
     },
     {
-      "id": "stage-toolbar-panel-controls",
-      "file": "manual-gamma/img/en/release055-stage-toolbar.jpg",
+      "id": "share-window-field-mode",
+      "file": "manual-gamma/img/en/release056-share-field-mode.jpg",
       "language": "en",
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.55",
-      "capturedCommit": "57cb01c95718c4ba832459c2bb1c937203818c83",
-      "capturedAt": "2026-10-11T14:08:40.547Z",
-      "sha256": "df34bb50866803345fef5c62685b75fd3cdfd93e2ab2bd9d1687ebe1e64a5da6",
+      "capturedVersion": "v0.3.56",
+      "capturedCommit": "2757b32397c589f05b3d0959821c4d5d238f4754",
+      "capturedAt": "2026-10-11T16:40:48.228Z",
+      "sha256": "37e7ac70b1ddb34e08dbf10e929668f70a8a59089802e67ab7f4535decda4ac2",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "sourceSha256": "3a7e27aee7c252fe86f20961450db5dca7a341e8f5b73f84ee221f450624de52"
+      "sourceSha256": "8e20a92163a5dff6536a82e39c316b691fa3285b362d9eaad60d514dab9c4b00"
     }
   ],
-  "legacyImagesNote": "Only the Stage tab with the panel layout and panel on/off controls at the end of the tool strip (v0.3.55) is captured. All other images retain their original capture versions; the v0.3.54 Settings capture stays as the record of the hidden Performance area.",
+  "legacyImagesNote": "Only the Share window with the show-mode entry at the top (v0.3.56) is captured. All other images retain their original capture versions; the v0.3.55 Stage tab capture stays as the record of the toolbar panel controls.",
   "status": "verified",
   "visualReview": {
-    "reviewedAt": "2026-10-11",
-    "method": "Direct visual inspection of the full-size Japanese and English captures of the Stage tab: the tool strip shows eight evenly spaced squares ending with the panel layout and panel on/off controls, the header no longer has them, the front-view seat list has no Straight-on front, and the scene list shows the transition row without the extra memo word. The capture script asserts that both panel controls sit inside the stage tool strip and not in the header.",
-    "limits": "Chromium captures of the bundled feature-test show at 1440x900; Safari, iPad and the Mac app not tested"
+    "reviewedAt": "2026-10-12",
+    "method": "Direct visual inspection of the full-size Japanese and English captures of the Share window: the first section is the show mode entry with its one-line description and the Open button, followed by live sharing and the performer link; the header no longer has the show mode icon. The capture script asserts that #stage-field-mode sits inside the Share window and not in the header.",
+    "limits": "Chromium captures of the bundled feature-test show at 1440x900; the Worker-backed status lines show a local network error because no Worker runs locally; Safari, iPad and the Mac app not tested"
   }
 }

@@ -4253,3 +4253,17 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
     "タイムラインのアイコンと文字の大きさを、舞台タブにそろえました。": "Matched the timeline icon and text sizes to the Stage tab.",
     "タイムラインを閉じていても、スペースキーで再生・停止できるようにしました。": "The Space key now plays or stops playback even when the timeline is closed.",
 });
+
+// v0.3.56 release notes and share entry.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "舞台タブでパネルを3列にしたとき、右の列の一番上に出ていた線を消しました。": "Removed the line above the first visible panel in the right columns when the Stage tab uses three panel columns.",
+  "現場モードは、ヘッダーのアイコンから「共有」の窓の中へ移しました。": "Moved show mode from the header icon into the Share window.",
+  "進行表の右の「舞台の様子」が表示されないことがあったのを直しました。表示・非表示は右のパネルの見出しで切り替えます。": "Fixed the Stage view on the right of the run of show sometimes failing to appear. Use the right panel heading to show or hide it.",
+  "照明デザインの正面図は、いつも立体（3D）で描くようにしました。見る席はプルダウンで選びます。": "The front view in Light design now always uses 3D. Choose a viewing seat from the dropdown.",
+  "照明デザインで何も変えていないときは、別のタブへ移っても「照明をショーへ適用しますか？」を出さないようにしました。": "Leaving Light design without making changes no longer asks “Apply lighting to the show?”.",
+  "舞台タブの正面図・平面図の右上の × をなくしました。表示する図はツールバーのプルダウンで切り替えます。": "Removed the × at the top right of the front and plan views in the Stage tab. Choose the displayed views from the toolbar dropdown.",
+  "パネルの「?」と「詳しくは「使い方をさがす」で調べられます。」の行を出さないようにしました。": "Panels no longer show the “?” or the “Find out more with Find help” line.",
+  "ツールバーのプルダウンを開いたときの文字が大きくなっていたのを、閉じたときと同じ大きさにそろえました。": "Text in open toolbar dropdowns now matches the size shown when they are closed.",
+  "本番中に iPad で GO・シーン送り・メモを使う画面です。": "A screen for GO, scene navigation and notes on iPad during a performance.",
+  "現場モードを開く": "Open show mode"
+});

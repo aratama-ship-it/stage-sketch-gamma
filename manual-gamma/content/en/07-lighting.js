@@ -72,7 +72,7 @@ ${fig("31-tab-placement", "The Equipment placement tab: battens (horizontal line
 <li>${ui("Space evenly")}, ${ui("Copy to opposite side")}, ${ui("Delete")}. In the list, ${ui("Select the row")} selects every fixture on the same batten.</li>
 <li>${ui("Group selected fixtures")} — make your own group (for example “all moving heads”) to select together in Light design.</li>
 </ul>
-<p>${ui("Snap to 1000 mm")} in the plan snaps to whole metres. The stage size appears at the top right of the plan (for example “12400mm × 9600mm”). The three elevations below show stand and boom heights and the house side; ${ui("Distance: fixed range")} fixes the depth band. The front elevation can switch between plan and 3D and be seen from a seat (for example the balcony).</p>
+<p>${ui("Snap to 1000 mm")} in the plan snaps to whole metres. The stage size appears at the top right of the plan (for example “12400mm × 9600mm”). The three elevations below show stand and boom heights and the house side; ${ui("Distance: fixed range")} fixes the depth band. The front elevation always uses 3D. Choose a viewpoint (for example the balcony) from the seat dropdown; use ${ui("Fixtures")} to show or hide fixture marks.</p>
 <p>Reading the numbers (the testing ground's rig as an example): L01… are fixed fixtures, M05… moving heads, marks like ◆16 are stands or floor units, LT4 and MT3 are on the upstage truss, L11 and L12 are booms in the wings, and L09 and M10 are front-of-house.</p>`
       },
       {

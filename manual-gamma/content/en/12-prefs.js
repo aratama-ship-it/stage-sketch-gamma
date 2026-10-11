@@ -10,7 +10,7 @@
         id: "prefs-overview", title: "How the Settings window is laid out", status: "verified",
         keywords: ["settings", "preferences", "gear", "options", "per device", "per show"],
         html: `
-<p>The warm-black and blue-black skins are joined by a light skin. Display preferences are stored on the device and do not recolor costumes or fixtures in the show. Field mode groups current/next scenes and cues with elapsed time and explains where to add a cue when none is available.</p>
+<p>The warm-black and blue-black skins are joined by a light skin. Display preferences are stored on the device and do not recolor costumes or fixtures in the show. Open show mode from the Share window. Show mode groups current/next scenes and cues with elapsed time and explains where to add a cue when none is available.</p>
 ${fig("40-prefs", "The Settings window on screens 1360px or wider: the saving notice at the top, help and about in the left column, language, skin, show-specific settings and features (ON / OFF tags) in the middle, keyboard shortcuts on the right. On narrower screens help and about fold above the middle column.", "Settings window")}
 <p>At the top, framed in red: “Everything you draw is saved only in this browser, on this device. It can be lost, so use Export now and then to keep a copy as a file.” (${ref("saving", "Part 1, 1-5")}).</p>
 ${table(["Setting", "Where it is saved"], [

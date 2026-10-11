@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.55";
+  const GAMMA_APP_VERSION = "v0.3.56";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2427,7 +2427,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-11`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-12`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -21570,35 +21570,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         togglePanel(id);
       });
       el.prepend(head);
-      /* 説明文は畳んでおき、「?」を押したときだけ出す。
-       * 道具の数が多く、説明が常に見えていると、道具そのものが下へ押し出される。
-       * 初めて触るときだけ要る文章なので、要るときに引き出せればよい。 */
-      // 説明として畳むもの。状態を伝える文（保存の様子など）は畳まない
-      // 「選んだもの」は選択が無いときの案内をそのまま表示し、右上の ? を置かない。
+      // パネルの説明は既定どおり隠す。見出しには説明用の「?」を置かない。
       const hints = id === "inspector"
         ? [] : [...el.querySelectorAll(".stage-cast-hint, .stage-selection-empty")];
-      if (hints.length) {
-        hints.forEach((hint) => { hint.hidden = true; });
-        const help = document.createElement("button");
-        help.type = "button";
-        help.className = "stage-panel-help";
-        help.textContent = "?";
-        help.setAttribute("aria-pressed", "false");
-        help.setAttribute("aria-label", tx("この欄の説明を出す"));
-        help.addEventListener("click", (e) => {
-          e.stopPropagation();
-          // A collapsed panel used to reveal help behind its own closed body.
-          // Open it first so the same control has the same visible result.
-          if (el.classList.contains("is-collapsed")) togglePanel(id);
-          const show = hints[0].hidden;
-          hints.forEach((hint) => { hint.hidden = !show; });
-          help.setAttribute("aria-pressed", String(show));
-        });
-        const more = helpSearchLine();
-        more.hidden = true;
-        hints.push(more);
-        el.append(help, more);
-      }
+      hints.forEach((hint) => { hint.hidden = true; });
 
       // つまみからドラッグする。パネル全体を掴むと中の操作ができなくなる。
       // HTML5のドラッグはタッチで動かないので、ポインタイベントで自前に持つ。
@@ -22068,6 +22043,39 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   /* パネルそのものの出し入れ。畳む（is-collapsed）は見出しを残すが、
      こちらは見出しごと消す。並び順は state.layout に残したままなので、
      設定で戻せば元の位置へ戻る。 */
+  // CSS-hidden panels can precede the first visible one. Re-evaluate after
+  // visibility, order or responsive layout changes without changing saved layout.
+  function syncFirstVisiblePanels() {
+    document.querySelectorAll(".stage-col").forEach((column) => {
+      let first = true;
+      [...column.children].filter(node => node.classList.contains("stage-panel")).forEach((panel) => {
+        const visible = !panel.hidden && getComputedStyle(panel).display !== "none";
+        const marked = first && visible;
+        if (panel.classList.contains("is-first-visible-panel") !== marked)
+          panel.classList.toggle("is-first-visible-panel", marked);
+        if (visible) first = false;
+      });
+    });
+  }
+  let firstVisiblePanelFrame = 0;
+  function scheduleFirstVisiblePanels() {
+    if (firstVisiblePanelFrame) return;
+    firstVisiblePanelFrame = requestAnimationFrame(() => {
+      firstVisiblePanelFrame = 0;
+      syncFirstVisiblePanels();
+    });
+  }
+  const firstVisiblePanelObserver = new MutationObserver(records => {
+    // Only changes to columns or their direct panels affect the first border.
+    // Ignore frequently updated scene rows and controls inside panel bodies.
+    if (records.some(({ target }) => target.classList?.contains("stage-col")
+      || (target.classList?.contains("stage-panel") && target.parentElement?.classList.contains("stage-col"))))
+      scheduleFirstVisiblePanels();
+  });
+  Object.values(colEls).filter(column => column?.classList.contains("stage-col")).forEach(column => firstVisiblePanelObserver.observe(column,
+    { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "class", "style"] }));
+  window.addEventListener("resize", scheduleFirstVisiblePanels);
+
   function applyPanelVisibility() {
     const deskUi = !tabletUi && !phoneViewerActive
       && !document.body.classList.contains("stage-session-guest");
@@ -22079,6 +22087,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
          前紗幕を置いたあと、この一覧の ON/OFF でシーンごとに出し入れする入口になる。 */
       el.hidden = f.retired || editionHidesPanel(f.panel) || (deskUi ? !featureOn(f.key) && !(f.panel === "inspector" && selectedPiece()) : false);
     });
+    scheduleFirstVisiblePanels();
   }
 
   /* ヘッダーから、環境設定と同じパネル別ON/OFFへ直接届く小さな一覧。
@@ -32459,7 +32468,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (fieldMode || presenting || !fieldConsole || !fieldEntry || STUDY_READ_ONLY || window.GAMMA_EDITION === "lite" || fullscreenModalOpen()) return;
     // Commit a focused editor's usual blur before locking; never cancel pending saves.
     document.activeElement?.blur?.();
-    fieldHome = { focus: fieldEntry, panelHidden: document.getElementById("stage-timeline-panel")?.hidden };
+    fieldHome = { focus: document.getElementById("stage-share-open") || fieldEntry, panelHidden: document.getElementById("stage-timeline-panel")?.hidden };
     fieldMode = true;
     document.body.classList.add("stage-field-mode"); fieldConsole.hidden = false;
     fieldEntry.setAttribute("aria-pressed", "true");
@@ -32519,7 +32528,11 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     event.preventDefault(); event.stopImmediatePropagation();
   }
   if (fieldConsole && fieldEntry && !STUDY_READ_ONLY && window.GAMMA_EDITION !== "lite") {
-    fieldEntry.addEventListener("click", enterFieldMode);
+    fieldEntry.addEventListener("click", () => {
+      if (fieldMode || presenting) return;
+      window.SHOSAI_STAGE_SESSION_HOOKS?.closeShareModal();
+      void enterFieldMode();
+    });
     fieldNode("exit").addEventListener("click", exitFieldMode);
     fieldNode("go").addEventListener("click", fieldGo);
     fieldNode("scene-next").addEventListener("click", () => { stepScene(1); syncFieldMode(); });

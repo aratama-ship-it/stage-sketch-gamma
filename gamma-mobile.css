@@ -567,13 +567,17 @@ html.stage-pwa-tablet.gm-tablet .stage-board-frame { width: min(100%, calc((100d
   html.stage-pwa-tablet.gm-tablet .gm-top-nav .gm-icon-btn,
   html.stage-pwa-tablet.gm-tablet .gm-top-right > *,
   html.stage-pwa-tablet.gm-tablet .gm-top .stage-undo-redo button { flex: 0 0 auto; }
-  html.stage-pwa-tablet.gm-tablet .gm-top #stage-field-mode { width: var(--gm-hit); min-width: var(--gm-hit); height: var(--gm-hit); }
+  html.stage-pwa-tablet.gm-tablet .gm-top #stage-share-open { width: var(--gm-hit); min-width: var(--gm-hit); height: var(--gm-hit); }
 }
 
-/* 現場モードのボタンは元の履歴操作列から移すので、記号の寸法もここで指定する。 */
-html.stage-pwa-tablet.gm-tablet .gm-top #stage-field-mode,
-html.stage-phone-viewer.gm-phone .gm-phone-bar #stage-field-mode {
-  --stage-present-icon-size: 20px;
+/* 共有入口は既存の外殻トークンを再利用: 操作域44px・記号20px。 */
+html.stage-pwa-tablet.gm-tablet .gm-top #stage-share-open,
+html.stage-phone-viewer.gm-phone .gm-phone-bar #stage-share-open {
+  flex: 0 0 var(--gm-hit);
+  width: var(--gm-hit);
+  min-width: var(--gm-hit);
+  height: var(--gm-hit);
+  min-height: var(--gm-hit);
 }
 
 /* ========================================================================

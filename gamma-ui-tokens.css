@@ -624,7 +624,7 @@ html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-mod
 .gamma-short-select-list { position:absolute;top:calc(100% + 4px);left:0;z-index:95;min-width:100%;max-width:calc(100vw - 40px);max-height:240px;overflow:auto;padding:4px;background:var(--desk-2);border:1px solid var(--brass);box-shadow:0 8px 24px rgba(0,0,0,.35); }
 .gamma-short-select-list[hidden] { display:none; }
 .gamma-short-select.opens-up .gamma-short-select-list { top:auto;bottom:calc(100% + 4px); }
-.gamma-short-select-list button { display:block;width:100%;min-height:var(--ctrl-md);padding:6px 10px;text-align:left;white-space:nowrap;color:var(--milk);font:inherit; }
+.gamma-short-select-list button { display:block;width:100%;min-height:var(--ctrl-sm);padding:6px 10px;text-align:left;white-space:nowrap;color:var(--milk);font:inherit;letter-spacing:inherit; }
 .gamma-short-select-list button[aria-selected="true"] { background:var(--gamma-selected-bg);box-shadow:inset 0 -2px 0 var(--brass); }
 .stage-view-select .gamma-short-select { width:100%; }
 

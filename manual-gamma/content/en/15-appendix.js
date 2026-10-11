@@ -98,7 +98,7 @@
         "転換",
         "field mode"
       ],
-      "html": "<p>Show mode in Studio and Company pauses editing and enlarges GO, the next scene and cue, scene notes and elapsed time.</p>\n<p>Transition guidance uses distance and transition time to flag travel that may be too fast. Its threshold can be changed in Settings.</p>\n<p>Where: Stage tab → Show mode at the top right. Check the guidance on a scene with routes and timing.</p>\n<p>Try it in: H-1 (timing), A-5 (walking routes).</p>\n<p class=\"m-source\">Release history: v0.3.30</p>"
+      "html": "<p>Show mode in Studio and Company pauses editing and enlarges GO, the next scene and cue, scene notes and elapsed time.</p>\n<p>Transition guidance uses distance and transition time to flag travel that may be too fast. Its threshold can be changed in Settings.</p>\n<p>Where: Share window → Open show mode. Check the guidance on a scene with routes and timing.</p>\n<p>Try it in: H-1 (timing), A-5 (walking routes).</p>\n<p class=\"m-source\">Release history: v0.3.30</p>"
     },
     {
       "id": "new-03-runshow",

@@ -315,7 +315,7 @@
        作った色（palette）と同じく<b>ショー共通の持ち物</b>として扱うので、rig・scenes と一緒に
        保存・Undoの対象にする（2026-09-13 本人決定）。 */
     levelCurve: null,                  // 初期化は下の resetLevelCurve()
-    front3d: false,                    // 正面図を擬似パース（本体の正面図と同じ式）で描く
+    front3d: true,                    // 正面図を擬似パース（本体の正面図と同じ式）で描く
     sideView: "shimote",               // 側面図はどちら側を見るか。1枚を切り替えて使う（2026-09-13 本人要望）
     /* 3Dで最初に見せる席。2026-09-13 本人決定で2階席。見下ろすので立ち位置の関係が読みやすく、
        灯の当たり先を確かめる最初の1枚に向く（製品 stage-sketch.js の既定は "center"）。
@@ -3334,7 +3334,7 @@
         play:{on:Boolean(input.running),t:input.tMs,last:0,raf:0},mode:"move",
         show:{beam:true,blackout:true,performers:true,setpieces:true,showcurtains:true,
           border:false,legs:true,fixtures:false,path:false,no:false,names:false},
-        sel:new Set(),selTruss:null,selEquipment:null,solo:false,drag:null,front3d:false,slpStepPreview:null,dim:100});
+        sel:new Set(),selTruss:null,selEquipment:null,solo:false,drag:null,front3d:true,slpStepPreview:null,dim:100});
       drawCueOverride = input.cue; playbackPreviewPieces = input.pieces; spatialQuick = Boolean(input.running);
       drawFront({cv:canvas,ctx,kind:"front"},{simple:true});
       return {ms:performance.now()-started,sceneId:input.sceneId,tMs:input.tMs,canvas:"gamma-light-playback-canvas"};
@@ -3833,11 +3833,7 @@
     b.onclick = () => { applySideView(b.dataset.side); renderAll(); };
   });
   if ($("distance-mode")) $("distance-mode").onclick = () => { distanceMetric = !distanceMetric; syncCanvasSize(); renderAll(); };
-  // 正面図の描き方（平面／3D）。3Dは本体の正面図と同じ擬似パース（2026-09-11 本人要望）
-  /* ★#frontmode には「機材」（data-show）も並ぶ（E1-#12）。平面/3D の切替は data-front を持つボタンだけ。 */
-  document.querySelectorAll("#frontmode button[data-front]").forEach((b) => {
-    b.onclick = () => { state.front3d = b.dataset.front === "3d"; renderAll(); };
-  });
+  // 正面図は常に本体と同じ3D投影で描く。
   if ($("seat")) $("seat").addEventListener("change", () => {
     state.seat = $("seat").value;
     /* A seat has meaning only for the perspective front view. */
@@ -6355,6 +6351,7 @@
   /* ---------- 全体 ---------- */
   function renderAll() { return preservePanelScroll(renderAllContent); }
   function renderAllContent() {
+    state.front3d = true; // Old files/drafts cannot restore the retired flat view.
     refreshApplyState();
     window.dispatchEvent(new Event("gamma-light-edit"));
     $("mode-place").setAttribute("aria-pressed", String(state.mode === "place")); $("mode-move").setAttribute("aria-pressed", String(state.mode === "move"));
@@ -7087,8 +7084,8 @@
     state.sel.clear(); state.selTruss = state.rig.trusses[0] ? state.rig.trusses[0].id : null;
     state.designName = o.name || "";
     state.history = options.host ? [] : [...previousHistory, previousSnapshot].slice(-100); state.future = []; baseline = snapshot();
-    if (options.host && !options.preserveAppliedBaseline) markApplied();
     renderAll();
+    if (options.host && !options.preserveAppliedBaseline) markApplied();
     } catch(error) {
       Object.assign(state,before);baseline=beforeBaseline;
       renderAll();throw error;

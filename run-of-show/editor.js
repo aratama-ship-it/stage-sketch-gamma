@@ -495,34 +495,37 @@
   frame.addEventListener('click',event=>{const fig=event.target.closest('[data-stage-toggle]');if(fig){event.preventDefault();toggleStage(fig);}});
   frame.addEventListener('keydown',event=>{const fig=event.target.closest?.('[data-stage-toggle]');if(fig&&(event.key==='Enter'||event.key===' ')&&!event.isComposing){event.preventDefault();toggleStage(fig);}});
   $('stage-view-reset').addEventListener('click',()=>{if(!Object.keys(stageByItem).length)return;try{bridge.canEdit(token);}catch(error){showError(error);return;}stageByItem={};markDirty();renderPaper();$("column-status").textContent="行ごとの切り替えを既定に戻しました";});
-  let stageFiguresOn=true;try{stageFiguresOn=localStorage.getItem('gamma:ros:stage-figures')!=='0';}catch(_){}
-  let stagePanelCollapsed=false,indexPanelCollapsed=false;try{stagePanelCollapsed=localStorage.getItem('gamma:ros:stage-panel-collapsed')==='1';indexPanelCollapsed=localStorage.getItem('gamma:ros:index-panel-collapsed')==='1';}catch(_){}
-  if(lite)stageFiguresOn=true;
+  const stagePanelKey='gamma:ros:stage-panel-open';
+  let stagePanelOpen=true,indexPanelCollapsed=false;
+  try {
+    if(!lite){
+      const saved=localStorage.getItem(stagePanelKey);
+      stagePanelOpen=saved===null
+        ? localStorage.getItem('gamma:ros:stage-figures')!=='0' && localStorage.getItem('gamma:ros:stage-panel-collapsed')!=='1'
+        : saved==='1';
+      if(saved===null)localStorage.setItem(stagePanelKey,stagePanelOpen?'1':'0');
+    }
+    indexPanelCollapsed=localStorage.getItem('gamma:ros:index-panel-collapsed')==='1';
+  } catch(_) {}
   function updateStageFigures(){
-    // The toolbar is a visibility control, not an indicator of the stored
-    // preference.  Below the wide default the companion column starts closed,
-    // so a remembered diagram must not look as though it is already onscreen.
-    const shown=stageFiguresOn&&!stagePanelCollapsed&&indexMode!=="closed";
-    $('stage-figures-toggle').hidden=lite||!canRenderStage;$('stage-figures-toggle').setAttribute('aria-pressed',String(shown));$('stage-figures').hidden=!shown;
-    if(!canRenderStage||!stageFiguresOn)return;
+    const shown=canRenderStage&&stagePanelOpen&&indexMode!=="closed";
+    $('ros-stage-toggle').hidden=lite||!canRenderStage;
+    $('ros-stage-toggle').setAttribute('aria-expanded',String(stagePanelOpen));
+    $('stage-figures').hidden=!shown;
+    if(!canRenderStage||!stagePanelOpen)return;
     const item=current(),caption=$('stage-figure-caption');
     if(!item?.sceneId){for(const view of ['front','plan'])$('stage-figure-'+view).removeAttribute('src');caption.textContent=lite?uiText('この項目にはシーンがありません'):'この項目にはシーンがありません';return;}
     try{const results=bridge.renderSceneImages(['front','plan'].map(view=>({sceneId:item.sceneId,view})),{scale:0.5});for(const r of results){const img=$('stage-figure-'+r.view);if(r.url)img.src=r.url;else img.removeAttribute('src');}caption.textContent=`${String(items.indexOf(item)+1).padStart(2,'0')} ${item.title}`;}catch(error){showError(error);}
     if(lite){caption.textContent=uiText('正面図');$('stage-figure-plan').nextElementSibling.textContent=uiText('平面図');for(const view of ['front','plan'])$('stage-figure-'+view).alt=uiText(view==='front'?'正面図':'平面図');}
   }
-  const toggleStageFigures=()=>{
-    const shown=stageFiguresOn&&!stagePanelCollapsed&&indexMode!=="closed";
-    stageFiguresOn=!shown;stagePanelCollapsed=false;
-    try{localStorage.setItem('gamma:ros:stage-figures',stageFiguresOn?'1':'0');localStorage.setItem('gamma:ros:stage-panel-collapsed','0');}catch(error){showError(error);}
-    // At 1200–1599px an explicit request opens the right dock.  The first
-    // layout remains paper-first, while the request uses the same dock and
-    // scale calculation as the wide desktop.
-    if(stageFiguresOn&&indexMode==="closed")openIndex(true);
+  $('ros-index-collapse').setAttribute('aria-expanded',String(!indexPanelCollapsed));$('ros-index-list').hidden=indexPanelCollapsed;
+  $('ros-stage-toggle').addEventListener('click',()=>{
+    if(lite||!canRenderStage)return;
+    stagePanelOpen=!stagePanelOpen;
+    store(stagePanelKey,stagePanelOpen?'1':'0');
+    if(stagePanelOpen&&indexMode==="closed")openIndex(true);
     else updateStageFigures();
-  };
-  $('stage-figures-toggle').addEventListener('click',toggleStageFigures);
-  $('ros-stage-toggle').setAttribute('aria-expanded',String(!stagePanelCollapsed));$('ros-index-collapse').setAttribute('aria-expanded',String(!indexPanelCollapsed));$('ros-index-list').hidden=indexPanelCollapsed;
-  $('ros-stage-toggle').addEventListener('click',()=>{stagePanelCollapsed=!stagePanelCollapsed;store('gamma:ros:stage-panel-collapsed',stagePanelCollapsed?'1':'0');$('ros-stage-toggle').setAttribute('aria-expanded',String(!stagePanelCollapsed));updateStageFigures();});
+  });
   $('stage-view').addEventListener('change',e=>changeLayout(p=>{p.stage=e.target.value;},'舞台上の図（全行の既定）を変更しました'));
   if(!canReadCues){$('row-mode').querySelector('[value=cue]')?.remove();document.querySelector('[data-row-mode=cue]').hidden=true;}
   for(const button of document.querySelectorAll('[data-row-mode]'))button.addEventListener('click',()=>{$('row-mode').value=button.dataset.rowMode;$('row-mode').dispatchEvent(new Event('change'));});
@@ -956,7 +959,7 @@
   $("ros-index-toggle").addEventListener("click",()=>openIndex(indexMode==="closed"));
   $("ros-index-collapse").addEventListener("click",()=>{indexPanelCollapsed=!indexPanelCollapsed;store('gamma:ros:index-panel-collapsed',indexPanelCollapsed?'1':'0');$("ros-index-collapse").setAttribute("aria-expanded",String(!indexPanelCollapsed));$("ros-index-list").hidden=indexPanelCollapsed;});
   document.addEventListener("keydown",event=>{if(event.key==="Escape"&&indexMode==="overlay"){event.preventDefault();openIndex(false);}});
-  document.addEventListener("pointerdown",event=>{if(indexMode==="overlay"&&!event.target.closest("#ros-index,#ros-index-toggle,#stage-figures-toggle")){indexOverlay=false;layoutIndex();}});
+  document.addEventListener("pointerdown",event=>{if(indexMode==="overlay"&&!event.target.closest("#ros-index,#ros-index-toggle")){indexOverlay=false;layoutIndex();}});
   $("ros-index-resize").addEventListener("pointerdown",event=>{
     if(event.button!==0)return;const aside=$("ros-index"),start=aside.getBoundingClientRect().width,max=()=>indexMode==="docked"?indexSpace():innerWidth-32;
     startDrag(event,event.currentTarget,dx=>{const w=layout.indexWidth(start-dx,max());$("preview").style.setProperty("--index-w",`${w}px`);$("preview").style.setProperty("--index-track",`${w}px`);},(dx,cancel)=>{if(!cancel){indexWidthPref=layout.indexWidth(start-dx,max());store(INDEX_WIDTH_KEY,indexWidthPref);}layoutIndex();queueTrack();});

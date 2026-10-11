@@ -332,9 +332,9 @@
       });
     }
     topRight.append(segment);
+    const share = $("#stage-share-open");
+    if (share) { share.classList.add("gm-icon-btn"); topRight.append(share); }
     const present = $("#stage-present-btn");
-    const field = $("#stage-field-mode");
-    if (field) topRight.append(field);
     if (present) topRight.append(present);
     const gear = $("#stage-prefs-btn");
     if (gear) topRight.append(gear);
@@ -384,10 +384,10 @@
     const drawerBody = el("div", "gm-drawer-body");
     drawer.append(drawerHead, drawerBody);
 
-    /* 設定グループの中身: 共有・通知・画像印刷・感想・AI・表示の切替・PCで行うもの */
+    /* 設定グループの中身: 通知・画像印刷・感想・AI・表示の切替・PCで行うもの */
     const settingsPage = el("div", "gm-settings");
     const settingsList = el("div", "gm-settings-list");
-    const settingsItems = [$("#stage-share-open"), $("#stage-release-open"), $("#stage-export"), $("#stage-feedback-open"), $("#stage-ai-showwright-link")]
+    const settingsItems = [$("#stage-release-open"), $("#stage-export"), $("#stage-feedback-open"), $("#stage-ai-showwright-link")]
       .filter(Boolean).map((node) => {
         node.classList.add("gm-settings-item");
         /* 絵だけのボタンには札を添える。文字は aria-label（本体が訳語も同期する）から写す。 */
@@ -596,9 +596,9 @@
     showName.addEventListener("click", () => { if (load) load.click(); });
     bar.append(showName);
     badges.forEach((b) => bar.append(b));
-    const field = $("#stage-field-mode");
-    if (field) { field.classList.add("gm-icon-btn"); bar.append(field); }
     if (info) { info.classList.add("gm-icon-btn", "gm-phone-info"); info.innerHTML = `${ICON.info}<span class="gm-phone-btn-label"></span>`; bar.append(info); }
+    const share = $("#stage-share-open");
+    if (share) { share.classList.add("gm-icon-btn"); bar.append(share); }
     if (settings) { settings.classList.add("gm-icon-btn"); bar.append(settings); }
     title.replaceChildren(bar);
 
@@ -676,14 +676,14 @@
         if (prev) nav.prepend(prev);
         if (next) nav.append(next);
         if (info) bar.insertBefore(info, settings || null);
+        if (share) bar.insertBefore(share, settings || null);   // 現場モードは共有の窓の中（2026-10-12）
         if (settings) bar.append(settings);
-        if (field) bar.append(field);
         if (load) toolbar.append(load);
         if (viewToggle) toolbar.append(viewToggle);
         rail.replaceChildren();
       } else {
         rail.replaceChildren();
-        [viewToggle, info, load, settings, field, prev, next].filter(Boolean).forEach((b) => rail.append(b));
+        [viewToggle, info, load, share, settings, prev, next].filter(Boolean).forEach((b) => rail.append(b));
       }
       html.classList.toggle("gm-phone-landscape", !portrait);
     }

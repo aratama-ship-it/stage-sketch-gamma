@@ -1560,3 +1560,9 @@ html[data-stage-skin] .stage-center-bar :is(.stage-panel-layout-btn, .stage-pane
 html[data-stage-skin] .stage-center-bar :is(.stage-panel-layout-btn, .stage-panel-visibility-btn) svg { width: 20px; height: 20px; display: block; }
 /* 左の列に置くので、小窓はボタンの左端から右へ開く（右端ぞろえだと窓の外へはみ出す）。 */
 .stage-center-bar :is(.stage-panel-layout-menu, .stage-panel-visibility-menu) { left: 0; right: auto; }
+
+/* 2026-10-12: only the first visible panel in each column has no top rule. */
+.stage-col > .stage-panel.is-first-visible-panel { border-top: 0; }
+
+/* Desktop view selection has one owner: the toolbar dropdown. */
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-canvas-close[data-toggle-view] { display: none; }
