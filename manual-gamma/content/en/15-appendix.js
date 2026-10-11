@@ -287,15 +287,15 @@
     },
     {
       "id": "new-03-idle",
-      "title": "Idle motion and standby areas",
+      "title": "Idle motion and performance areas",
       "status": "sourced",
       "keywords": [
         "待機モーション",
-        "待機範囲",
+        "演目の範囲",
         "歩く人",
         "idle motion"
       ],
-      "html": "<p>Idle motion lets stationary performers walk slowly around their positions during playback. It indicates playback, rather than actual choreography.</p>\n<p>It is off by default. Draw a permitted area for each scene; saved positions stay unchanged. Idle motion does not appear in exported images, print or run-of-show drawings.</p>\n<p>Where: Stage → the walking-person button above the front view; draw an area with Idle area above the plan.</p>\n<p>Try it in: A-4 (standing poses), H-1 (playback).</p>\n<p class=\"m-source\">Release history: v0.3.2</p>"
+      "html": "<p>Idle motion lets stationary performers make small movements in place during playback. It indicates playback, rather than actual choreography.</p>\n<p>Turn on Performance areas in Preferences to draw areas per scene. Cast members inside an area can use Automatic, Juggling, Diabolo or Dance. Saved positions stay unchanged; areas do not appear in exported images, print or run-of-show drawings.</p>\n<p>Where: Stage → Performance area above the plan. Select an area, then choose its act above the view.</p>\n<p>Try it in: H-1 (playback).</p>\n<p class=\"m-source\">Release history: v0.3.50</p>"
     },
     {
       "id": "new-03-blueprint",

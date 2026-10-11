@@ -35,8 +35,8 @@ const index = [
     "branchReason": "",
     "description": "",
     "type": "fixture",
-    "rawBytes": 953405,
-    "url": "./stage-samples/feature-test-show.json?v=20261009-v0335"
+    "rawBytes": 957250,
+    "url": "./stage-samples/feature-test-show.json?v=20261011-v0350"
   }
 ];
 // catalog.js に組み込むランタイム。index は生成器から渡される。

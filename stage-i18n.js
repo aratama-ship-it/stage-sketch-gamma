@@ -354,6 +354,19 @@
     "舞台図・照明デザイン・3Dの解像度を下げて、描画を軽くします。設定やメニューの文字・書き出す画像は変わりません。この端末・このブラウザに保存します。": "Lower the resolution of stage views, lighting design and 3D to reduce rendering work. Settings, menus and exported images stay unchanged. Saved in this browser on this device.",
     "描画の解像度を変更しました。": "Rendering resolution changed.",
     "描画の解像度を変更しました。設定を保存できないため、次回は元の値に戻ります。": "Rendering resolution changed. This preference could not be saved and will revert next time.",
+    "演目の範囲": "Performance area",
+    "演目の範囲を消す": "Delete area",
+    "平面図の演目の範囲": "Performance areas in plan view",
+    "演目の範囲を表示し、再生中は範囲内の演者が選んだ演目をします。保存した立ち位置は変わりません": "Shows performance areas. During playback, cast members inside an area perform its act. Saved positions stay unchanged.",
+    "編集中に演目の範囲を破線で表示します。再生・画像書き出しには出ません": "Show performance areas as dashed outlines while editing. Hidden during playback and image export.",
+    "演目の範囲は1シーン8個までです。": "Up to 8 performance areas per scene.",
+    "平面図をドラッグして演目の範囲を描く（最大8個）。範囲を押して選び、図の上で演目を選ぶか消します。": "Drag on the plan view to draw a performance area (up to 8). Click an area to select it, then choose its act or delete it above the view.",
+    "平面図でドラッグして演目の範囲を描く": "Drag in plan view to draw a performance area",
+    "演目:": "Act:",
+    "自動（姿勢から）": "Automatic (from pose)",
+    "ジャグリング": "Juggling",
+    "ディアボロ": "Diabolo",
+    "ダンス": "Dance",
     "待機範囲": "Idle area",
     "待機範囲を消す": "Delete idle area",
     "再生中の待機モーション": "Idle motion during playback",
@@ -4087,6 +4100,12 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "この演者の全項目と出演シーンの舞台図をまとめて開きます。": "Open all columns for this performer together with stage diagrams of their scenes.",
   "3Dで移動・見回すためのキー操作を表示します。": "Show the keyboard controls for moving and looking around in 3D.",
   "3Dの視界を閉じて、元の作業画面へ戻ります。": "Close the 3D view and return to the previous workspace."
+});
+
+// v0.3.50 release notes.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "平面図の「待機範囲」を「演目の範囲」に改め、環境設定の「再生・時間」のオプションにしました（既定はオフ。オフでも描いた範囲は残ります）。": "Renamed “Idle areas” in plan view to “Performance areas” and made them an option under Preferences → Playback and timing (off by default; drawn areas are kept when it is off).",
+  "演目の範囲の中の演者は、再生中にその場でジャグリング・ディアボロ・ダンスの姿勢を行き来します。演目は演者の姿勢から自動で決まり、範囲ごとに選んで上書きできます。再生中の待機モーションは今までどおり、範囲とは関係ありません。": "During playback, cast members inside a performance area switch in place between juggling, diabolo and dance poses. The act is chosen automatically from each cast member’s pose and can be overridden per area. Idle motion during playback is unchanged and unrelated to the areas."
 });
 
 // v0.3.39 release notes.

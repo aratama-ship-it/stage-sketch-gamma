@@ -1,71 +1,71 @@
 {
-  "appVersion": "v0.3.49",
+  "appVersion": "v0.3.50",
   "contentUpdated": "2026-10-11",
   "requiredScreens": [
     {
-      "id": "viewpoints",
+      "id": "act-areas",
       "language": "ja",
-      "file": "manual-gamma/img/release049-viewpoints.jpg",
+      "file": "manual-gamma/img/release050-act-areas.jpg",
       "viewport": [
         1440,
         900
       ],
-      "scene": "C-1"
+      "scene": "H-1"
     },
     {
-      "id": "viewpoints",
+      "id": "act-areas",
       "language": "en",
-      "file": "manual-gamma/img/en/release049-viewpoints.jpg",
+      "file": "manual-gamma/img/en/release050-act-areas.jpg",
       "viewport": [
         1440,
         900
       ],
-      "scene": "C-1"
+      "scene": "H-1"
     }
   ],
   "screenshots": [
     {
-      "id": "viewpoints",
-      "file": "manual-gamma/img/release049-viewpoints.jpg",
+      "id": "act-areas",
+      "file": "manual-gamma/img/release050-act-areas.jpg",
       "language": "ja",
-      "scene": "C-1",
+      "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.49",
-      "capturedCommit": "989ea8a8b2f26591ebb049b77c74a2904340ab0e",
-      "capturedAt": "2026-10-11T03:17:32.479Z",
-      "sha256": "3e3834c3d16c54e9994d3f944a3bbab44b95d8dac0aa888c1a32f4ac7dd09b56",
+      "capturedVersion": "v0.3.50",
+      "capturedCommit": "58ba57d63d7fcbe4ffdd26f8214ea866fef0a75f",
+      "capturedAt": "2026-10-11T04:31:47.436Z",
+      "sha256": "0b387d183f1f940d15ad45fe8a98269be0e822fefeabdde826867e91e174d6a5",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "sourceSha256": "f054408b6f6acef92908b5c4e8a098bba20f7162decb4cd8ba375c67478c9594"
+      "sourceSha256": "0d4dced659e1991bb3aef705c789d82b4d20dcf408b074b6c7d0875d7ae25714"
     },
     {
-      "id": "viewpoints",
-      "file": "manual-gamma/img/en/release049-viewpoints.jpg",
+      "id": "act-areas",
+      "file": "manual-gamma/img/en/release050-act-areas.jpg",
       "language": "en",
-      "scene": "C-1",
+      "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.49",
-      "capturedCommit": "989ea8a8b2f26591ebb049b77c74a2904340ab0e",
-      "capturedAt": "2026-10-11T03:17:38.454Z",
-      "sha256": "ddf501be49bd2a9ca29430e4711ad3d105bba147d0e48497d9321470f82c7202",
+      "capturedVersion": "v0.3.50",
+      "capturedCommit": "58ba57d63d7fcbe4ffdd26f8214ea866fef0a75f",
+      "capturedAt": "2026-10-11T04:31:53.666Z",
+      "sha256": "eeb509242546a064dea61249b2707f07d940c619c289126444e1870c0885d06c",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "sourceSha256": "f054408b6f6acef92908b5c4e8a098bba20f7162decb4cd8ba375c67478c9594"
+      "sourceSha256": "0d4dced659e1991bb3aef705c789d82b4d20dcf408b074b6c7d0875d7ae25714"
     }
   ],
-  "legacyImagesNote": "Only the stage-tab front view with the unified viewpoint list and the straight-on front viewpoint (v0.3.49) is captured. All other images retain their original capture versions, including the v0.3.47 run-of-show and v0.3.46 transition HIT images.",
+  "legacyImagesNote": "Only the H-1 plan view with a performance area selected and the act picker shown (v0.3.50) is captured. All other images retain their original capture versions, including the v0.3.49 viewpoint and v0.3.47 run-of-show images.",
   "status": "verified",
   "visualReview": {
     "reviewedAt": "2026-10-11",
-    "method": "Direct visual inspection of the full-size Japanese and English stage-tab captures with the straight-on front viewpoint selected; the front seat buttons and the 3D presets were also compared by script (same names, same order)",
+    "method": "Direct visual inspection of the full-size Japanese and English H-1 captures: performance-area tool selected, the auto area selected, the act picker beside the delete button (\"Delete area\" in English) without overlap or truncation, and the preference notice translated. Playback motion was checked separately in Chromium and WebKit by script (act frames change only inside the areas; the cast member outside stays still).",
     "limits": "Chromium captures of the bundled feature-test show at 1440x900; Safari, iPad and the Mac app not tested"
   }
 }

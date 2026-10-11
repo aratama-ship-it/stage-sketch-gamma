@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.49";
+  const GAMMA_APP_VERSION = "v0.3.50";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -4101,7 +4101,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   const TOOL_HINTS = {
-    idleArea: "平面図をドラッグして待機範囲を描く（最大8個）。範囲を押して選び、図の上の「待機範囲を消す」で削除。",
+    idleArea: "平面図をドラッグして演目の範囲を描く（最大8個）。範囲を押して選び、図の上で演目を選ぶか消します。",
     select: "演者や物を選び、舞台の上で動かします。平面図は空き地をドラッグして移動し、Shift＋ドラッグで囲い選択できます。",
     paint: "",
     erase: "",
@@ -5218,8 +5218,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const FEATURES = [
     { key: "idleMotion", label: "再生中の待機モーション", def: false,
       hint: "止まっている演者がその場で小さく動きます。保存した立ち位置は変わりません" },
-    { key: "idleAreas", label: "平面図の待機範囲", def: true,
-      hint: "編集中に待機範囲を破線で表示します。再生・画像書き出しには出ません" },
+    { key: "idleAreas", label: "平面図の演目の範囲", def: true,
+      hint: "編集中に演目の範囲を破線で表示します。再生・画像書き出しには出ません" },
+    { key: "actAreas", label: "演目の範囲", def: false,
+      hint: "演目の範囲を表示し、再生中は範囲内の演者が選んだ演目をします。保存した立ち位置は変わりません" },
     { key: "presentation", label: "全画面表示",
       hint: "上部の「全画面」またはFキーで図を全画面に。右下の小窓で正面と平面を入れ替えられます" },
     { key: "presentCaption", label: "全画面の説明",
@@ -5386,7 +5388,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const featureOn = (key) => {
     if (!editionAllows("cues") && ["voxScroll", "voxVertical", "arrowKeysVoxOnly", "voxBubble"].includes(key)) return false;
     if (key === "lineup" && !editionAllows("formations")) return false;
-    if (["idleMotion", "idleAreas"].includes(key) && !editionAllows("idleAreas")) return false;
+    if (["idleMotion", "idleAreas", "actAreas"].includes(key) && !editionAllows("idleAreas")) return false;
     if (!editionAllows("lightRender") && ["lightPool","lightBeam","workLightOff","costumeLight","cuesheet","planFixtureOutline"].includes(key)) return false;
     // 2026-09-11 本人指示: 光の意図カードを非表示にする。以前ONにしていた端末の
     // 保存値（prefs.lightIntent）があっても無視する。カード・比較欄・図の重ねは
@@ -22078,7 +22080,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         applyFeatureFlags();
         renderScenes();
         render();
-        announce(box.checked ? `設定「${f.label}」をONにしました。` : `設定「${f.label}」をOFFにしました。`);
+        announce(box.checked ? `設定「${tx(f.label)}」をONにしました。` : `設定「${tx(f.label)}」をOFFにしました。`);
         if (box.checked) {
           // Reveal the saved location; do not overwrite the user's panel layout.
           state.layout.collapsed[f.panel] = false;
@@ -28464,10 +28466,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
 
   let idleVisualDepth = 0;
   let idleClock = { playing: false, seconds: 0, sceneId: "" };
-  const idleSampler = window.STAGE_IDLE_MOTION.createSampler(window.STAGE_PERFORMER_MOTION);
+  const idleSampler = window.STAGE_IDLE_MOTION.createSampler(window.STAGE_PERFORMER_MOTION, poseById);
   let idleFrames = new Map(), idleFrameStamp = "";
   function idleMotionActive() {
-    return featureOn("idleMotion") && !document.hidden && !pointerAction
+    return (featureOn("idleMotion") || featureOn("actAreas")) && !document.hidden && !pointerAction
       && (idleClock.playing || (sceneAnim && !sceneAnim.timelineControlled));
   }
   function prepareIdleFrames() {
@@ -28483,9 +28485,11 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       if (entry && (entry.stationary || Math.hypot(entry.to.u-entry.from.u,entry.to.v-entry.from.v)>1e-6 || entry.ctrl
         || Math.abs((piece.base||0)-(entry.startBase||0))>1e-6)) continue;
       const pose = poseById(resolvePoseId(piece, scene.pieces));
-      const frame = idleSampler(piece, scene, size, seconds, pose, pieceHeightM(piece)*piece.size/100,
+      const canIdle=featureOn("idleMotion");
+      const activeScene=featureOn("actAreas") ? scene : {...scene,idleAreas:[]};
+      const frame = idleSampler(piece, activeScene, size, seconds, pose, pieceHeightM(piece)*piece.size/100,
         window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
-      idleFrames.set(piece.id, frame);
+      if (frame.act || canIdle) idleFrames.set(piece.id, frame);
     }
   }
   function idleVisualFrame(piece) {
@@ -28497,7 +28501,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const wasPlaying = idleClock.playing;
     idleClock = { playing: Boolean(d.playing), seconds: Math.max(0, finite(d.sceneSeconds, 0)), sceneId: d.sceneId };
     idleFrameStamp = "";
-    if (!sceneAnim && featureOn("idleMotion") && (wasPlaying || idleClock.playing)) {
+    if (!sceneAnim && (featureOn("idleMotion") || featureOn("actAreas")) && (wasPlaying || idleClock.playing)) {
       const now = performance.now();
       if (!idleClock.playing || now-lastIdleDraw >= 32) {
         lastIdleDraw = now;
@@ -31174,7 +31178,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       if (f.key === "wideVenueLite") pushFpvCrowdMode();
       renderScenes();
       render();
-      announce(box.checked ? `設定「${f.label}」をONにしました。` : `設定「${f.label}」をOFFにしました。`);
+      announce(box.checked ? `設定「${tx(f.label)}」をONにしました。` : `設定「${tx(f.label)}」をOFFにしました。`);
     });
     const body = document.createElement("div");
     body.className = "stage-pref-toggle-body";
@@ -31438,7 +31442,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const groupFor=f=>['bamiri','cuesheet','propsplot','pitchExport'].includes(f.key)?'印刷'
       : ['busyness','crossing','highwarn'].includes(f.key)?'警告'
       : ['planFixtureOutline','lightPool','lightBeam','workLightOff','costumeLight','mirrorBallDense'].includes(f.key)?'照明'
-      : ['idleMotion','blackout','sceneTiming','sceneTransitions','performerTransitionMotion','arrowKeysVoxOnly','voxScroll'].includes(f.key)?'再生・時間':'図の表示';
+      : ['idleMotion','actAreas','blackout','sceneTiming','sceneTransitions','performerTransitionMotion','arrowKeysVoxOnly','voxScroll'].includes(f.key)?'再生・時間':'図の表示';
     const hiddenGammaFlags = new Set([
       "presentation", "cuesheet", "lineup", "pitchExport",
       "blackout", "sceneTiming", "sceneTransitions", "busyness", "crossing", "highwarn", "houseDepth",
@@ -31447,7 +31451,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       /* ★2026-10-06 本人指示: 常にON（待機範囲・灯体の白い枠・小道具の香盤表）と、機能ごと非表示（バミリ図）。featureOn 側で固定。 */
       "idleAreas", "planFixtureOutline", "propsplot", "bamiri",
     ]);
-    FEATURES.filter((f) => (editionAllows("lightRender") || !["costumeLight"].includes(f.key)) && (editionAllows("cues") || (!f.key.startsWith("vox") && f.key !== "arrowKeysVoxOnly")) && f.key !== "idleMotion" && !hiddenGammaFlags.has(f.key) && (editionAllows("idleAreas") || !["idleMotion", "idleAreas"].includes(f.key))).forEach((f) => { prefGroups.get(groupFor(f)).grid.append(prefRow(f)); });
+    FEATURES.filter((f) => (editionAllows("lightRender") || !["costumeLight"].includes(f.key)) && (editionAllows("cues") || (!f.key.startsWith("vox") && f.key !== "arrowKeysVoxOnly")) && f.key !== "idleMotion" && !hiddenGammaFlags.has(f.key) && (editionAllows("idleAreas") || !["idleMotion", "idleAreas","actAreas"].includes(f.key))).forEach((f) => { prefGroups.get(groupFor(f)).grid.append(prefRow(f)); });
     // Fixture appearance is fixed to white outlines and black bodies; legacy preferences remain readable.
     const reorderReset = document.createElement("button");
     reorderReset.type = "button"; reorderReset.className = "stage-minor-action";
@@ -32148,6 +32152,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (els.presentBtn) els.presentBtn.hidden = !featureOn("presentation");
     syncStageLightToggles();
     syncMultiSelectionControls();
+    const performanceAreaTool = document.querySelector('[data-stage-tool="idleArea"]');
+    if (performanceAreaTool) performanceAreaTool.hidden = !featureOn("actAreas");
+    if (!featureOn("actAreas") && tool === "idleArea") setTool("select");
     // 光の意図: カード・重ねのトグル・照らし合わせをまとめて出し入れする
     if (els.frontLightIntent) {
       const on = featureOn("lightIntent");
@@ -37089,11 +37096,14 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     selectedIdleArea=null;persistSoon();render();
   }
   document.getElementById("stage-idle-area-delete")?.addEventListener("click", removeIdleArea);
+  function setIdleAreaAct(value) { if(!selectedIdleArea) return; const area=sc().idleAreas?.find(a=>a.id===selectedIdleArea); if(!area) return; checkpoint(); if(value==='auto') delete area.act; else area.act=value; persistSoon(); render(); }
+  document.getElementById("stage-idle-area-act")?.addEventListener("change", event=>setIdleAreaAct(event.target.value));
   function drawIdleAreas(target,L) {
     const editing = !idleClock.playing && !sceneAnim && !presenting && editionAllows("idleAreas") && !STUDY_READ_ONLY && !guestSessionActive();
     const button=document.getElementById("stage-idle-area-delete");
     if(button) button.hidden=!(editing && tool==="idleArea" && idleAreaList().some(a=>a.id===selectedIdleArea));
-    if(!editing || (!featureOn("idleAreas") && tool!=="idleArea"))return;
+    const act=document.getElementById("stage-idle-area-act"); if(act) { const selected=idleAreaList().find(a=>a.id===selectedIdleArea); const visible=editing&&tool==='idleArea'&&selected; const wrap=document.getElementById("stage-idle-area-act-wrap"); if(wrap) wrap.hidden=!visible; act.hidden=!visible; if(selected) act.value=selected.act||'auto'; }
+    if(!editing || (!featureOn("actAreas") && tool!=="idleArea"))return;
     const draft=pointerAction?.kind==="idleArea" ? pointerAction : null;
     const list=idleAreaList();
     if(draft)list.push({id:"draft",u0:draft.start.u,v0:draft.start.v,u1:draft.current.u,v1:draft.current.v});
@@ -37106,7 +37116,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   }
   window.addEventListener("stage-scene-change", () => { selectedIdleArea = null; idleFrameStamp = ""; });
   function setTool(nextTool) {
-    if (!editionAllows("idleAreas") && nextTool === "idleArea") return;
+    if ((!editionAllows("idleAreas") || !featureOn("actAreas")) && nextTool === "idleArea") return;
     if (nextTool !== "idleArea") selectedIdleArea = null;
     if (!editionAllows("arrowTool") && nextTool === "arrow") return;
     if (!editionAllows("penTool") && ["paint","erase"].includes(nextTool)) return;
@@ -37164,7 +37174,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       button.setAttribute("aria-pressed", String(button.dataset.stageTool === (multiSelectMode ? "multiSelect" : tool)));
     });
     els.toolHint.hidden = tool !== "idleArea" && !multiSelectMode;
-    els.toolHint.textContent = multiSelectMode ? tx("平面図でShift＋クリックか囲って選ぶ") : tool === "idleArea" ? tx("平面図でドラッグして範囲を描く") : tm("tool", tool, tx(TOOL_HINTS[tool]));
+    els.toolHint.textContent = multiSelectMode ? tx("平面図でShift＋クリックか囲って選ぶ") : tool === "idleArea" ? tx("平面図でドラッグして演目の範囲を描く") : tm("tool", tool, tx(TOOL_HINTS[tool]));
     if (els.planRoute) els.planRoute.setAttribute("aria-pressed", String(tool === "route"));
     [els.planNote, els.frontNote].forEach((button) => {
       if (button) button.setAttribute("aria-pressed", String(tool === "note"));
@@ -38742,7 +38752,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       const uv = fromScreen(point.x, point.y, L);
       selectedIdleArea = idleAreaList().find(a => uv.u >= a.u0 && uv.u <= a.u1 && uv.v >= a.v0 && uv.v <= a.v1)?.id || null;
       if (!selectedIdleArea) {
-        if (idleAreaList().length >= window.STAGE_IDLE_MOTION.MAX_AREAS) { announce(tx("待機範囲は1シーン8個までです。")); return; }
+        if (idleAreaList().length >= window.STAGE_IDLE_MOTION.MAX_AREAS) { announce(tx("演目の範囲は1シーン8個までです。")); return; }
         const start = {u:clamp(uv.u,0,1),v:clamp(uv.v,0,1)};
         pointerAction = {kind:"idleArea",pointerId:event.pointerId,el,view,start,current:start,sceneId:sc().id};
         capture(el,event.pointerId);

@@ -1052,6 +1052,43 @@ html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-hea
   vector-effect: non-scaling-stroke; stroke-width: var(--gamma-icon-stroke);
 }
 
+/* 選択中の演目の範囲だけに出す演目欄。図の上の他の操作と同じ面にし、
+ * 狭い幅では選択欄でなく補助ラベルから縮める。 */
+/* 演目の範囲を消すボタンは折り返さない（狭い幅では右の演目欄の補助ラベルから縮める）。 */
+#stage-idle-area-delete {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+#stage-idle-area-act-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 34px;
+  box-sizing: border-box;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+
+#stage-idle-area-act-wrap > span {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#stage-idle-area-act {
+  flex: 0 1 auto;
+  min-width: 0;
+  width: auto;
+  max-width: 220px;
+  min-height: 32px;
+  margin: 0;
+  padding: 5px 7px;
+  font-size: 10.5px;
+}
+
 /* Lite scope; data and shared preferences remain intact. */
 html[data-gamma-edition="lite"] [data-stage-tool="idleArea"],
 html[data-gamma-edition="lite"] #stage-idle-area-delete,

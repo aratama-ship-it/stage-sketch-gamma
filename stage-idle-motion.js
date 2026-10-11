@@ -15,17 +15,29 @@
     return () => {h=(Math.imul(h,1664525)+1013904223)|0;return (h>>>0)/4294967296;};
   }
   const clonePose = pose => ({...pose,joints:Object.fromEntries(Object.entries(pose.joints).map(([key,point])=>[key,point.slice()]))});
-  function createSampler() {
+  const ACT_POSES=Object.freeze({juggling:['juggle','juggle_one_hand'],diabolo:['diabolo_spin','diabolo_high_toss'],dance:['dance1','dance2','dance3','dance4','dance5']});
+  const bare=id=>String(id||'').replace(/@left$/,'');
+  function areaFor(piece,scene) { return areas(scene.idleAreas).find(a=>piece.u>=a.u0&&piece.u<=a.u1&&piece.v>=a.v0&&piece.v<=a.v1)||null; }
+  function actFor(piece,scene,poseId) { const area=areaFor(piece,scene); if(!area)return null; const value=area.act||'auto'; if(value!=='auto')return ACT_POSES[value]?value:null; const id=bare(poseId); return ACT_POSES.juggling.includes(id)?'juggling':ACT_POSES.diabolo.includes(id)?'diabolo':ACT_POSES.dance.includes(id)?'dance':null; }
+  function createSampler(motion,poseForId) {
     const cache=new Map();
     return function sample(piece,scene,size,seconds,pose,heightM,reducedMotion=false) {
-      // Keep idle-area data for editing and future filtering, but do not walk it.
-      areas(scene.idleAreas);
       if (reducedMotion || root.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return {...piece,pose,walking:false};
       const key=[piece.id,scene.id].join(':'); let rhythm=cache.get(key);
       if(!rhythm) {
         const rand=random(key);
         rhythm={period:2+rand()*3,phase:rand()*Math.PI*2,hand:.008+rand()*.004,nod:.008+rand()*.006,bob:.002+rand()*.003};
         cache.set(key,rhythm); if(cache.size>256) cache.delete(cache.keys().next().value);
+      }
+      const act=actFor(piece,scene,pose.id);
+      if(act&&motion?.samplePoseTransition&&poseForId) {
+        const variants=ACT_POSES[act].map(id=>poseForId(id+(String(pose.id).endsWith('@left')?'@left':'')));
+        const rand=random(`${piece.id}:${scene.id}:act`),hold=1.6+rand()*1.2,blend=.6+rand()*.2;
+        const cycle=hold+blend, phase=((Number.isFinite(seconds)?seconds:0)+(rand()*cycle))/cycle;
+        const index=Math.floor(phase)%variants.length, within=(phase-Math.floor(phase));
+        const next=variants[(index+1)%variants.length], from=variants[index];
+        const mixed=within>hold/cycle?motion.samplePoseTransition(from,next,(within-hold/cycle)/(blend/cycle)):from;
+        return {u:piece.u,v:piece.v,facing:piece.facing||0,pose:mixed,walking:false,act};
       }
       const phase=(Number.isFinite(seconds)?seconds:0)/rhythm.period*Math.PI*2+rhythm.phase;
       const out=clonePose(pose),j=out.joints, bob=Math.sin(phase)*rhythm.bob;
@@ -40,6 +52,6 @@
       return {u:piece.u,v:piece.v,facing:piece.facing||0,pose:out,walking:false};
     };
   }
-  const api={MAX_AREAS,MAX_HAND_OFFSET,areas,createSampler};
+  const api={MAX_AREAS,MAX_HAND_OFFSET,areas,areaFor,actFor,createSampler};
   root.STAGE_IDLE_MOTION=api;if(typeof module==='object')module.exports=api;
 })(typeof window==='object'?window:globalThis);

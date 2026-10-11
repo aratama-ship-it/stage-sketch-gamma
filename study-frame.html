@@ -4,7 +4,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
 <title>Stage Sketch — read-only drawings</title>
-<link rel="stylesheet" href="/study-assets/style.css?v=20261009-v0334"><link rel="stylesheet" href="/stage-study.css?v=25"><link rel="stylesheet" href="/stage-study-navigation.css?v=3">
+<link rel="stylesheet" href="/study-assets/style.css?v=20261011-v0350"><link rel="stylesheet" href="/stage-study.css?v=25"><link rel="stylesheet" href="/stage-study-navigation.css?v=3">
 <script src="/stage-study-sticky.js?v=5"></script><script src="/stage-study-pen.js?v=4"></script><script src="/stage-study-navigation.js?v=2"></script><script src="/stage-study-frame.js?v=10"></script></head>
 <body class="study-frame" data-view="both">
 <div class="study-drawings"><div class="study-drawing study-front"></div><div class="study-drawing study-plan"></div></div>
@@ -34,7 +34,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.49</span>
+                <span class="stage-app-version">0.3.50</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -202,7 +202,7 @@
                 <button type="button" data-stage-tool="select" data-tablet-icon="↔" data-tool-key="V" class="is-icon" aria-label="ものを動かす" aria-pressed="true"><span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.4v11.2M2.4 8h11.2"/><path d="M6.3 4.1 8 2.4l1.7 1.7M6.3 11.9 8 13.6l1.7-1.7"/><path d="M4.1 6.3 2.4 8l1.7 1.7M11.9 6.3 13.6 8l-1.7 1.7"/></svg></span><span class="stage-tool-label">ものを動かす</span></button>
                 <button type="button" data-stage-tool="multiSelect" class="is-icon" aria-label="複数選択" title="複数選択" aria-pressed="false"><span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path stroke-dasharray="2 2" d="M2 2h12v12H2z"/><path d="M5 5h3v3H5zM9 9h2v2H9z"/></svg></span><span class="stage-tool-label">複数選択</span></button>
                 <span class="stage-tool-split" aria-hidden="true"></span>
-                <button type="button" data-stage-tool="idleArea" class="is-icon" aria-label="待機範囲" title="待機範囲" aria-pressed="false"><span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path stroke-dasharray="2 2" d="M2 2h12v12H2z"/><path d="m5 10 3-4 3 4"/></svg></span><span class="stage-tool-label">待機範囲</span></button>
+                <button type="button" data-stage-tool="idleArea" class="is-icon" aria-label="演目の範囲" title="演目の範囲" aria-pressed="false"><span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path stroke-dasharray="2 2" d="M2 2h12v12H2z"/><path d="m5 10 3-4 3 4"/></svg></span><span class="stage-tool-label">演目の範囲</span></button>
                 <button type="button" data-stage-tool="arrow" data-tablet-icon="↗" data-tool-key="A" class="is-icon" aria-label="矢印を描く" aria-pressed="false"><span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 12.6 12.4 3.6"/><path d="M7.6 3.6h4.8v4.8"/></svg></span><span class="stage-tool-label">矢印を描く</span></button>
                 <span class="stage-tool-split" aria-hidden="true"></span>
                 <button type="button" id="stage-light-render-toggle" class="is-icon" data-tool-tip="lightRender" data-tip-key="C" data-stage-shortcut-action="view.lightRender" data-stage-shortcut-title="明かりを表示・非表示にする（{key}）"
@@ -977,7 +977,7 @@
                     <span class="stage-tool-icon" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M2.4 2.8h11.2"/><path d="M5.1 2.8v5.5M10.9 2.8v5.5"/><path d="M4.1 9.1h7.8l-1 3.3H5.1z"/><path class="stage-visibility-toggle-slash" d="m2.1 13.9 11.8-11.8"/></svg></span>
                     <span class="visually-hidden">吊物</span>
                   </label>
-                  <button type="button" class="stage-canvas-tool" id="stage-idle-area-delete" hidden>待機範囲を消す</button>
+                  <button type="button" class="stage-canvas-tool" id="stage-idle-area-delete" hidden>演目の範囲を消す</button><label class="stage-canvas-tool" id="stage-idle-area-act-wrap"><span>演目:</span><select class="stage-select" id="stage-idle-area-act"><option value="auto">自動（姿勢から）</option><option value="juggling">ジャグリング</option><option value="diabolo">ディアボロ</option><option value="dance">ダンス</option></select></label>
                   <button type="button" class="stage-canvas-tool" id="stage-route-clear" hidden>動線を消す</button>
                   <!-- 矢印を消す（2026-09-24 本人要望）: 正面図と同じ。平面図の矢印だけをまとめて消す。 -->
                   <button type="button" class="stage-canvas-tool stage-arrow-clear-view" id="stage-plan-arrow-clear"
@@ -2832,15 +2832,14 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261011-v0349">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261011-v0350">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0349-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0349-title">v0.3.49</h3><time datetime="2026-10-11">2026-10-11</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0350-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0350-title">v0.3.50</h3><time datetime="2026-10-11">2026-10-11</time></header>
       <ul>
-        <li>正面図の席ボタンと3Dの視点ボタンを、同じ並び・同じ名前にそろえました。3Dの既定の視点も、正面図と同じ「1階 最前列」「1階 中央」などの呼び名になります。</li>
-        <li>舞台を真正面から、遠近をほぼ付けずに見る「完全な正面」を、正面図と3Dの両方に足しました。置かなくても、ほかの見る位置と同じように並びます。</li>
-        <li>劇場設定の「見る位置」の一覧で、改名していない既定の席が、英語など日本語以外の表示では訳して出るようにしました。</li>
+        <li>平面図の「待機範囲」を「演目の範囲」に改め、環境設定の「再生・時間」のオプションにしました（既定はオフ。オフでも描いた範囲は残ります）。</li>
+        <li>演目の範囲の中の演者は、再生中にその場でジャグリング・ディアボロ・ダンスの姿勢を行き来します。演目は演者の姿勢から自動で決まり、範囲ごとに選んで上書きできます。再生中の待機モーションは今までどおり、範囲とは関係ありません。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3802,11 +3801,11 @@
 <script src="/study-assets/stage-light-render.js?v=20261005-beam99"></script>
 <script src="/study-assets/gamma-light-cue-overlay.js?v=20261006-v0318"></script>
 <script src="/study-assets/stage-performer-motion.js?v=20261011-v0347"></script>
-<script src="/study-assets/stage-idle-motion.js?v=20261011-v0347"></script>
+<script src="/study-assets/stage-idle-motion.js?v=20261011-v0350"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
 <script src="/study-assets/gamma-ui.js?v=20261011-v0347"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261011-v0349"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261011-v0350"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261009-v0333"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="/study-assets/stage-sketch.js?v=20261011-v0349"></script>
+<script src="/study-assets/stage-sketch.js?v=20261011-v0350"></script>
 </body></html>
