@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.52";
+  const GAMMA_APP_VERSION = "v0.3.53";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -12304,6 +12304,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       // 実寸ぶんを積み上げてから傾ける。順を逆にすると、見上げても人の丈が変わらない
       return { x: originX + (jx * cos + jz * sin) * ux, y: bend(originY - jy * uy + wz * zDrop), z: wz };
     };
+    // 同じフレームで同じ演者のリグを何度も組むので、演目の道具の投影を使い回すための目印
+    project.key = `${originX},${originY},${ux},${uy},${yaw},${zDrop}`; project.tilt = tilt;
     if (window.STAGE_PERFORMER_BODY) return window.STAGE_PERFORMER_BODY.projectRig(pose, project, ux, uy);
     const P = {};
     Object.keys(joints).forEach((k) => { P[k] = project(joints[k][0], joints[k][1], joints[k][2]); });
@@ -12722,13 +12724,30 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   // 既存の小道具の面を人体と同じ投影へ通す。楽器の厚みも横向き・3Dで保つ。
+  /* 演目の道具（stable な部品）は形が毎フレーム同じなので、面の分割を1回だけ行って使い回す。 */
+  const stableMeshFaces = new WeakMap();
+  function poseMeshFaces(group) {
+    if (!group.stable) return smoothPropFaces(group.parts);
+    let faces = stableMeshFaces.get(group.parts);
+    if (!faces) { faces = smoothPropFaces(group.parts); stableMeshFaces.set(group.parts, faces); }
+    return faces;
+  }
+  const projectedMeshCache = new WeakMap();
   function projectPoseMesh(prop, project) {
+    const reuse = project.key && prop.groups?.every((group) => group.stable);
+    const hit = reuse && projectedMeshCache.get(prop);
+    if (hit && hit.key === project.key && hit.tilt === project.tilt) return hit.result;
+    const result = projectPoseMeshFaces(prop, project);
+    if (reuse) projectedMeshCache.set(prop, { key: project.key, tilt: project.tilt, result });
+    return result;
+  }
+  function projectPoseMeshFaces(prop, project) {
     const point = p => project(...poseMeshPoint(prop, p));
     const front = point([0, 0, 1]).z > point([0, 0, 0]).z;
     // 表板に載る部品は表側から見た時だけ胴より手前。長い胴の平均深度で
     // 一括ソートすると、傾けた棹の指板・弦が胴の中へ消えるため層を分ける。
     const layers = [false, true].map(surface => prop.groups.filter(g => Boolean(g.surface) === surface)
-      .flatMap(group => smoothPropFaces(group.parts).map(face => {
+      .flatMap(group => poseMeshFaces(group).map(face => {
         const points = face.points.map(point);
         if (points.some(p => !p || !Number.isFinite(p.x + p.y + p.z))) return null;
         return { points, color: mixToward(face.color || group.color, face.shade),
@@ -17963,6 +17982,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const list = Array.isArray(pieces) ? pieces : sc().pieces;
     const holder = list.find((other) => other.id === piece.heldBy && other.type === "performer");
     if (!holder) return false;
+    const actShape = piece.type === "diabolo" ? "diabolo" : propShapeOf(piece);
+    if (["club", "ring", "ball", "diabolo"].includes(actShape)) {
+      const frame = !staticStageDepth && featureOn("actAreas") && idleMotionActive() && idleFrames.get(holder.id);
+      return Boolean(frame && ((frame.act === "diabolo" && actShape === "diabolo")
+        || (frame.act === "juggling" && actJugglingEquipment(holder, sc())?.kind === actShape)));
+    }
     const poseId = String(resolvePoseId(holder, list) || "").replace(LEFT_HAND_SUFFIX, "");
     const pose = poseById(poseId);
     if(poseId==="handpan_play"&&propShapeOf(piece)==="handpan")return true;
@@ -19283,11 +19308,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      「照明を組む」画面が正面図を借りるときに使う（モーダルの中で拡大は要らない）。
      既定（未指定）はこれまでどおり zoomOf(view) を掛ける。 */
   function drawStage(target, showSelection, view, opts) {
-    const prior = idleVisualDepth;
+    const prior = idleVisualDepth, priorStatic = staticStageDepth;
     // Only the live stage canvases may see playback offsets. Thumbnails/exports are static.
     idleVisualDepth = showSelection && (target === ctx || target === planCtx) ? 1 : 0;
+    staticStageDepth = idleVisualDepth ? 0 : 1;
     try { if (idleVisualDepth) prepareIdleFrames(); return drawStageContent(target, showSelection, view, opts); }
-    finally { idleVisualDepth = prior; }
+    finally { idleVisualDepth = prior; staticStageDepth = priorStatic; }
   }
   function drawStageContent(target, showSelection, view, opts) {
     const L = layout(view);
@@ -28465,6 +28491,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   let spinRun = null;
 
   let idleVisualDepth = 0;
+  // 静止画（書き出し・サムネイル）を描いている間は演目を出さないので、持ち物も手に持った絵のまま描く。
+  let staticStageDepth = 0;
   let idleClock = { playing: false, seconds: 0, sceneId: "" };
   const idleSampler = window.STAGE_IDLE_MOTION.createSampler(window.STAGE_PERFORMER_MOTION, poseById);
   let idleFrames = new Map(), idleFrameStamp = "";
@@ -28472,10 +28500,33 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     return (featureOn("idleMotion") || featureOn("actAreas")) && !document.hidden && !pointerAction
       && (idleClock.playing || (sceneAnim && !sceneAnim.timelineControlled));
   }
+  const actEquipmentCache = new Map();
+  function actJugglingEquipment(piece, scene) {
+    const held = scene.pieces.filter(item => item.heldBy === piece.id && item.holdMode !== "face")
+      .map(item => ({ item, propShape: propShapeOf(item) }));
+    const kind = window.STAGE_IDLE_MOTION.jugglingKind(held);
+    if (!kind) return undefined;
+    const items = held.filter(entry => entry.propShape === kind).map(entry => entry.item);
+    const signature = JSON.stringify(items.map(item => [item.id, pieceDims(item), item.color]));
+    const key = `${scene.id}:${piece.id}`, old = actEquipmentCache.get(key);
+    if (old?.signature === signature && old.kind === kind) return old;
+    const equipment = { kind, signature, items: items.map(item => {
+      const dims = pieceDims(item), shape = scaledPropShape(item, dims);
+      // 輪の部品（cylinder+ring）は面の分割では平たい円柱になるので、同じ寸法の縦の輪（ringRadii/tubeRadii）へ置き換える。
+      const parts = kind === "ring" ? shape.parts.map(part => part.ring && !part.ringRadii ? { ring: true,
+        ringRadii: [(part.dia - part.w) / 2, (part.dia - part.w) / 2], tubeRadii: [part.w / 2, part.w / 2, part.w / 2],
+        x: part.x || 0, y: part.y || 0, z: part.z || 0, tint: part.tint } : part) : shape.parts;
+      return { parts, color: item.color, length: dims.h, grip: shape.grip?.y || 0,
+        radius: kind === "ring" ? shape.parts[0].dia / 2 : dims.h / 2, centerY: kind === "ring" ? shape.parts[0].y : kind === "club" ? dims.h * window.STAGE_IDLE_MOTION.CLUB.comFrac : 0 };
+    }) };
+    actEquipmentCache.set(key, equipment);
+    if (actEquipmentCache.size > 256) actEquipmentCache.delete(actEquipmentCache.keys().next().value);
+    return equipment;
+  }
   function prepareIdleFrames() {
     if (!idleMotionActive()) { idleFrames.clear(); idleFrameStamp = ""; return; }
     const scene = sc(), seconds = idleClock.playing ? idleClock.seconds : sceneAnim.progress * sceneAnim.durationMs / 1000;
-    const stamp = `${scene.id}:${seconds}`;
+    const stamp = `${scene.id}:${seconds}:${featureOn("actAreas")}:${featureOn("idleMotion")}`;
     if (stamp === idleFrameStamp) return;
     idleFrameStamp = stamp; idleFrames = new Map();
     const size = venueSize();
@@ -28488,9 +28539,46 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       const canIdle=featureOn("idleMotion");
       const activeScene=featureOn("actAreas") ? scene : {...scene,idleAreas:[]};
       const frame = idleSampler(piece, activeScene, size, seconds, pose, pieceHeightM(piece)*piece.size/100,
-        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
-      if (frame.act || canIdle) idleFrames.set(piece.id, frame);
+        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches, actJugglingEquipment(piece, scene));
+      if (frame.act || canIdle) idleFrames.set(piece.id, actDiaboloFrame(frame, piece, scene));
     }
+  }
+  /* 演目の範囲（ディアボロ）の本体。持っているディアボロがあればその寸法・色、無ければ既定の駒と同じ寸法で描く。 */
+  const actDiaboloParts = new Map();
+  function actDiaboloFrame(frame, piece, scene) {
+    if (frame.act === "juggling" && frame.pose?.props?.some(prop => prop.equipment)) {
+      const k = 1 / (pieceHeightM(piece) * piece.size / 100);
+      const props = frame.pose.props.map(prop => {
+        const g = prop.equipment;
+        if (!g) return prop;
+        const theta = prop.theta, lean = prop.lean;
+        const axes = prop.kind === "club"
+          ? [[Math.cos(lean), -Math.sin(lean)*Math.sin(theta), -Math.sin(lean)*Math.cos(theta)],
+            [Math.sin(lean), Math.cos(lean)*Math.sin(theta), Math.cos(lean)*Math.cos(theta)], [0,-Math.cos(theta),Math.sin(theta)]]
+          : prop.kind === "ring" ? [[0,0,-1],[0,1,0],[1,0,0]] : [[1,0,0],[0,1,0],[0,0,1]];
+        const scaled = axes.map(axis => axis.map(n => n*k));
+        return { kind:"mesh", c:prop.c.map((n,i)=>n-scaled[1][i]*g.centerY), axes:scaled,
+          groups:[{color:g.color,parts:g.parts,stable:true}] };
+      });
+      return {...frame, pose:{...frame.pose,props}};
+    }
+    const index = frame.pose?.props?.findIndex((prop) => prop.kind === "diabolo") ?? -1;
+    if (index < 0) return frame;
+    const held = scene.pieces.find((item) => item.heldBy === piece.id && item.type === "diabolo");
+    const dims = held ? pieceDims(held) : PIECE_DIMS.diabolo, key = `${dims.dia}:${dims.w}`;
+    let parts = actDiaboloParts.get(key);
+    if (!parts) {
+      const { sections, len, R } = diaboloProfile(dims);
+      parts = [{ shape: "lathe", axis: "z", y: -R, segments: 24, radialSegments: 24, profile: sections.map(({ t, r }) => [t * len / 2, r * 2]) }];
+      actDiaboloParts.set(key, parts);
+      if (actDiaboloParts.size > 32) actDiaboloParts.delete(actDiaboloParts.keys().next().value);
+    }
+    const k = 1 / (pieceHeightM(piece) * piece.size / 100);
+    const mesh = { kind: "mesh", c: frame.pose.props[index].c, axes: [[k, 0, 0], [0, k, 0], [0, 0, k]],
+      groups: [{ color: held?.color || PROP_TONES.poi, parts, stable: true }] };
+    const props = frame.pose.props.slice();
+    props[index] = mesh;
+    return { ...frame, pose: { ...frame.pose, props } };
   }
   function idleVisualFrame(piece) {
     return idleVisualDepth && piece ? idleFrames.get(piece.id) || null : null;

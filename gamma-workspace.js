@@ -994,6 +994,9 @@
      has room.  The original DOM order (secondary, cancel, primary) is untouched. */
   const fitDialogActions=(dialog)=>{
     if(!(dialog instanceof HTMLElement) || dialog.hidden) return;
+    /* A window laid out inside a tab (e.g. Theatre settings) is not a floating dialog: its width comes from the tab.
+       Pinning it to the viewport width pushed its right column off-screen (from v0.3.47). */
+    if(dialog.closest('[id^="gamma-"][id$="-workspace"]')) { dialog.style.width=''; dialog.style.maxWidth=''; return; }
     const actions=dialog.querySelector(':scope > footer, footer, .gamma-light-leave-actions');
     if(!(actions instanceof HTMLElement)) return;
     const viewportLimit=Math.max(0,window.innerWidth-32);

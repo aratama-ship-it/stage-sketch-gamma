@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ Lite | Stage Sketch Gamma Lite</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.3.52">
+<meta name="stage-sketch-gamma-version" content="v0.3.53">
 <meta name="gamma-edition" content="lite">
   <script src="gamma-editions.js?v=20261008-v0330"></script>
 <meta name="mobile-web-app-capable" content="yes">
@@ -86,7 +86,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.52</span>
+                <span class="stage-app-version">0.3.53</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2911,16 +2911,16 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261011-v0352">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261011-v0353">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0352-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0352-title">v0.3.52</h3><time datetime="2026-10-11">2026-10-11</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0353-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0353-title">v0.3.53</h3><time datetime="2026-10-11">2026-10-11</time></header>
       <ul>
-        <li>進行表の上の帯が長くなりすぎていたため、言語・用紙サイズ・紙の色・文字サイズ・表示の倍率を「紙面の設定」の層にまとめました。ボタンを押したときだけ開き、Esc か外側のクリックで閉じます。</li>
-        <li>印刷・PDF、ショーの書き出し、配布内容の確認、操作の説明は「出力」の層にまとめました。「保存する」は帯に残しています。</li>
-        <li>セルや列を選んでいる間だけ、「選択中の操作」の層（セルの寄せ・舞台で開く・選択を解除）が出ます。帯の「その他」への折りたたみはなくなり、各操作は層から使えます。</li>
-        <li>表の幅・表示倍率・項目一覧の幅・文字サイズは、「紙面の設定」の「初期値へ」でまとめて戻せます。保存したデータの形式は変わりません。</li>
+        <li>「演目の範囲」をONにすると、ジャグリングとディアボロは道具が実際に宙を飛ぶようになりました。重力に合わせた放物線で飛び、手を離れる瞬間は手と道具の速さがそろいます。</li>
+        <li>ジャグリングは、両手のカスケードと、片手で2つ投げてもう片方の手で1つを腰に持つ型を行き来します。演者がクラブやリングを持っていれば、その形・大きさ・色のまま投げます（クラブは回転します）。</li>
+        <li>ディアボロはひもに掛けて回し、約2.6m投げ上げてひもで受けます。正面図と3Dの両方に出ます。印刷・画像書き出し・進行表の図には出ず、保存したデータの形式も変わりません。</li>
+        <li>劇場設定タブで右側の「劇場プレビュー」が画面の右にはみ出し、正面・立体・全体の切り替えや拡大・縮小のボタンが押せなかった不具合（v0.3.47 以降）を直しました。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3870,7 +3870,7 @@
 <script src="stage-venue-report.js?v=2026092047"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=2026092402"></script>
-<script src="stage-samples/catalog.js?v=20261011-v0350"></script>
+<script src="stage-samples/catalog.js?v=20261011-v0353"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=20261009-v0337"></script>
 <script src="stage-machinery.js?v=20261009-v0334"></script>
@@ -3886,7 +3886,7 @@
 <script src="stage-storage-recovery.js?v=20261001-release69"></script>
 <script src="stage-storage-hygiene.js?v=20261001-release69"></script>
 <script src="stage-storage-pressure.js?v=20260926-large39"></script>
-<script src="manual-gamma/manual-meta.js?v=20261011-v0352" data-manual-content="manual-gamma/manual-content.js?v=20261011-v0352"></script>
+<script src="manual-gamma/manual-meta.js?v=20261011-v0353" data-manual-content="manual-gamma/manual-content.js?v=20261011-v0353"></script>
 <script src="stage-pwa.js?v=20261009-v0337"></script>
 
 
@@ -3912,7 +3912,7 @@
 <script src="stage-reorder-motion.js?v=2026092420"></script>
 <script src="stage-jog-reference.js?v=2026093003"></script>
 <script src="stage-performer-motion.js?v=20261011-v0347"></script>
-<script src="stage-idle-motion.js?v=20261011-v0350"></script>
+<script src="stage-idle-motion.js?v=20261011-v0353"></script>
 <script src="stage-performer-contour.js?v=20261006-v0318"></script>
 <script src="stage-performer-body.js?v=20261009-v0333"></script>
 <script src="gamma-ui.js?v=20261011-v0347"></script>
@@ -3924,10 +3924,10 @@
 <script src="stage-run-of-show-model.js?v=20261006-v0312"></script>
 <script src="stage-pose-data.js?v=20261009-v0333"></script>
 <script src="stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="stage-language-loader.js?v=20261011-v0352"></script>
+<script src="stage-language-loader.js?v=20261011-v0353"></script>
 <script src="stage-reorder-warning.js?v=20261009-v0335"></script>
 <script src="stage-venue-curtains.js?v=20261011-v0347"></script>
-<script src="stage-sketch.js?v=20261011-v0352"></script>
+<script src="stage-sketch.js?v=20261011-v0353"></script>
 
 
 
@@ -3940,7 +3940,7 @@
 <script src="stage-venue-underlay.js?v=20261006-v0312"></script>
 <script src="stage-venue-editor.js?v=20261011-v0347"></script>
 <script src="stage-run-of-show-pane.js?v=20261011-v0352"></script>
-<script src="gamma-workspace.js?v=20261011-v0351"></script>
+<script src="gamma-workspace.js?v=20261011-v0353"></script>
 <script src="gamma-feature-search.js?v=20261010-v0338"></script>
 <script src="gamma-mobile.js?v=20261009-v0333"></script>
 <script src="stage-venue-preview.js?v=20261009-v0337"></script>

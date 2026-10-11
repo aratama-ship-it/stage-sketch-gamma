@@ -29213,6 +29213,140 @@
           "size": 100,
           "color": "#9c823f",
           "name": ""
+         },
+         {
+          "id": "ft-h1-p04-juggle",
+          "type": "performer",
+          "castId": "ft-cast-p04",
+          "originId": "ft-origin-p04",
+          "pose": "juggle",
+          "u": 0.27,
+          "v": 0.7,
+          "facing": 0,
+          "size": 100,
+          "color": "#6d6657",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p05-club",
+          "type": "performer",
+          "castId": "ft-cast-p05",
+          "originId": "ft-origin-p05",
+          "pose": "juggle",
+          "u": 0.39,
+          "v": 0.2,
+          "facing": 0,
+          "size": 100,
+          "color": "#315b8a",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p05-club-1",
+          "type": "prop",
+          "propShape": "club",
+          "dims": {
+           "w": 0.12,
+           "d": 0.12,
+           "h": 0.53,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p05-club",
+          "holdSide": "R",
+          "holdMode": "hand",
+          "u": 0.39,
+          "v": 0.2,
+          "size": 100,
+          "color": "#e67d48",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p05-club-2",
+          "type": "prop",
+          "propShape": "club",
+          "dims": {
+           "w": 0.12,
+           "d": 0.12,
+           "h": 0.53,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p05-club",
+          "holdSide": "L",
+          "holdMode": "hand",
+          "u": 0.39,
+          "v": 0.2,
+          "size": 100,
+          "color": "#52a3b8",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p05-club-3",
+          "type": "prop",
+          "propShape": "club",
+          "dims": {
+           "w": 0.12,
+           "d": 0.12,
+           "h": 0.53,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p05-club",
+          "holdSide": "R",
+          "holdMode": "hand",
+          "u": 0.39,
+          "v": 0.2,
+          "size": 100,
+          "color": "#e5bd46",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p06-ring",
+          "type": "performer",
+          "castId": "ft-cast-p06",
+          "originId": "ft-origin-p06",
+          "pose": "juggle",
+          "u": 0.65,
+          "v": 0.2,
+          "facing": 0,
+          "size": 100,
+          "color": "#b0533f",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p06-ring-1",
+          "type": "prop",
+          "propShape": "ring",
+          "dims": {
+           "w": 0.4,
+           "d": 0.04,
+           "h": 0.4,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p06-ring",
+          "holdSide": "R",
+          "holdMode": "hand",
+          "u": 0.65,
+          "v": 0.2,
+          "size": 100,
+          "color": "#e67d48",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p06-ring-2",
+          "type": "prop",
+          "propShape": "ring",
+          "dims": {
+           "w": 0.4,
+           "d": 0.04,
+           "h": 0.4,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p06-ring",
+          "holdSide": "L",
+          "holdMode": "hand",
+          "u": 0.65,
+          "v": 0.2,
+          "size": 100,
+          "color": "#52a3b8",
+          "name": ""
          }
         ],
         "notes": [],
@@ -29234,6 +29368,22 @@
         "effects": null,
         "idleAreas": [
          {
+          "id": "ft-act-h1-club",
+          "u0": 0.35,
+          "v0": 0.1,
+          "u1": 0.44,
+          "v1": 0.3,
+          "act": "juggling"
+         },
+         {
+          "id": "ft-act-h1-ring",
+          "u0": 0.6,
+          "v0": 0.1,
+          "u1": 0.69,
+          "v1": 0.3,
+          "act": "juggling"
+         },
+         {
           "id": "ft-act-h1-auto",
           "u0": 0.35,
           "v0": 0.4,
@@ -29248,6 +29398,14 @@
           "u1": 0.88,
           "v1": 0.76,
           "act": "dance"
+         },
+         {
+          "id": "ft-act-h1-juggle",
+          "u0": 0.2,
+          "v0": 0.55,
+          "u1": 0.34,
+          "v1": 0.85,
+          "act": "juggling"
          }
         ]
        },
@@ -29329,6 +29487,140 @@
           "size": 100,
           "color": "#9c823f",
           "name": ""
+         },
+         {
+          "id": "ft-h1-p04-juggle",
+          "type": "performer",
+          "castId": "ft-cast-p04",
+          "originId": "ft-origin-p04",
+          "pose": "juggle",
+          "u": 0.27,
+          "v": 0.7,
+          "facing": 0,
+          "size": 100,
+          "color": "#6d6657",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p05-club",
+          "type": "performer",
+          "castId": "ft-cast-p05",
+          "originId": "ft-origin-p05",
+          "pose": "juggle",
+          "u": 0.39,
+          "v": 0.2,
+          "facing": 0,
+          "size": 100,
+          "color": "#315b8a",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p05-club-1",
+          "type": "prop",
+          "propShape": "club",
+          "dims": {
+           "w": 0.12,
+           "d": 0.12,
+           "h": 0.53,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p05-club",
+          "holdSide": "R",
+          "holdMode": "hand",
+          "u": 0.39,
+          "v": 0.2,
+          "size": 100,
+          "color": "#e67d48",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p05-club-2",
+          "type": "prop",
+          "propShape": "club",
+          "dims": {
+           "w": 0.12,
+           "d": 0.12,
+           "h": 0.53,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p05-club",
+          "holdSide": "L",
+          "holdMode": "hand",
+          "u": 0.39,
+          "v": 0.2,
+          "size": 100,
+          "color": "#52a3b8",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p05-club-3",
+          "type": "prop",
+          "propShape": "club",
+          "dims": {
+           "w": 0.12,
+           "d": 0.12,
+           "h": 0.53,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p05-club",
+          "holdSide": "R",
+          "holdMode": "hand",
+          "u": 0.39,
+          "v": 0.2,
+          "size": 100,
+          "color": "#e5bd46",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p06-ring",
+          "type": "performer",
+          "castId": "ft-cast-p06",
+          "originId": "ft-origin-p06",
+          "pose": "juggle",
+          "u": 0.65,
+          "v": 0.2,
+          "facing": 0,
+          "size": 100,
+          "color": "#b0533f",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p06-ring-1",
+          "type": "prop",
+          "propShape": "ring",
+          "dims": {
+           "w": 0.4,
+           "d": 0.04,
+           "h": 0.4,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p06-ring",
+          "holdSide": "R",
+          "holdMode": "hand",
+          "u": 0.65,
+          "v": 0.2,
+          "size": 100,
+          "color": "#e67d48",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p06-ring-2",
+          "type": "prop",
+          "propShape": "ring",
+          "dims": {
+           "w": 0.4,
+           "d": 0.04,
+           "h": 0.4,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p06-ring",
+          "holdSide": "L",
+          "holdMode": "hand",
+          "u": 0.65,
+          "v": 0.2,
+          "size": 100,
+          "color": "#52a3b8",
+          "name": ""
          }
         ],
         "notes": [],
@@ -29350,6 +29642,22 @@
         "effects": null,
         "idleAreas": [
          {
+          "id": "ft-act-h1-club",
+          "u0": 0.35,
+          "v0": 0.1,
+          "u1": 0.44,
+          "v1": 0.3,
+          "act": "juggling"
+         },
+         {
+          "id": "ft-act-h1-ring",
+          "u0": 0.6,
+          "v0": 0.1,
+          "u1": 0.69,
+          "v1": 0.3,
+          "act": "juggling"
+         },
+         {
           "id": "ft-act-h1-auto",
           "u0": 0.35,
           "v0": 0.4,
@@ -29364,6 +29672,14 @@
           "u1": 0.88,
           "v1": 0.76,
           "act": "dance"
+         },
+         {
+          "id": "ft-act-h1-juggle",
+          "u0": 0.2,
+          "v0": 0.55,
+          "u1": 0.34,
+          "v1": 0.85,
+          "act": "juggling"
          }
         ]
        },
@@ -29446,6 +29762,140 @@
           "size": 100,
           "color": "#9c823f",
           "name": ""
+         },
+         {
+          "id": "ft-h1-p04-juggle",
+          "type": "performer",
+          "castId": "ft-cast-p04",
+          "originId": "ft-origin-p04",
+          "pose": "juggle",
+          "u": 0.27,
+          "v": 0.7,
+          "facing": 0,
+          "size": 100,
+          "color": "#6d6657",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p05-club",
+          "type": "performer",
+          "castId": "ft-cast-p05",
+          "originId": "ft-origin-p05",
+          "pose": "juggle",
+          "u": 0.39,
+          "v": 0.2,
+          "facing": 0,
+          "size": 100,
+          "color": "#315b8a",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p05-club-1",
+          "type": "prop",
+          "propShape": "club",
+          "dims": {
+           "w": 0.12,
+           "d": 0.12,
+           "h": 0.53,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p05-club",
+          "holdSide": "R",
+          "holdMode": "hand",
+          "u": 0.39,
+          "v": 0.2,
+          "size": 100,
+          "color": "#e67d48",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p05-club-2",
+          "type": "prop",
+          "propShape": "club",
+          "dims": {
+           "w": 0.12,
+           "d": 0.12,
+           "h": 0.53,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p05-club",
+          "holdSide": "L",
+          "holdMode": "hand",
+          "u": 0.39,
+          "v": 0.2,
+          "size": 100,
+          "color": "#52a3b8",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p05-club-3",
+          "type": "prop",
+          "propShape": "club",
+          "dims": {
+           "w": 0.12,
+           "d": 0.12,
+           "h": 0.53,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p05-club",
+          "holdSide": "R",
+          "holdMode": "hand",
+          "u": 0.39,
+          "v": 0.2,
+          "size": 100,
+          "color": "#e5bd46",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p06-ring",
+          "type": "performer",
+          "castId": "ft-cast-p06",
+          "originId": "ft-origin-p06",
+          "pose": "juggle",
+          "u": 0.65,
+          "v": 0.2,
+          "facing": 0,
+          "size": 100,
+          "color": "#b0533f",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p06-ring-1",
+          "type": "prop",
+          "propShape": "ring",
+          "dims": {
+           "w": 0.4,
+           "d": 0.04,
+           "h": 0.4,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p06-ring",
+          "holdSide": "R",
+          "holdMode": "hand",
+          "u": 0.65,
+          "v": 0.2,
+          "size": 100,
+          "color": "#e67d48",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p06-ring-2",
+          "type": "prop",
+          "propShape": "ring",
+          "dims": {
+           "w": 0.4,
+           "d": 0.04,
+           "h": 0.4,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p06-ring",
+          "holdSide": "L",
+          "holdMode": "hand",
+          "u": 0.65,
+          "v": 0.2,
+          "size": 100,
+          "color": "#52a3b8",
+          "name": ""
          }
         ],
         "notes": [],
@@ -29467,6 +29917,22 @@
         "effects": null,
         "idleAreas": [
          {
+          "id": "ft-act-h1-club",
+          "u0": 0.35,
+          "v0": 0.1,
+          "u1": 0.44,
+          "v1": 0.3,
+          "act": "juggling"
+         },
+         {
+          "id": "ft-act-h1-ring",
+          "u0": 0.6,
+          "v0": 0.1,
+          "u1": 0.69,
+          "v1": 0.3,
+          "act": "juggling"
+         },
+         {
           "id": "ft-act-h1-auto",
           "u0": 0.35,
           "v0": 0.4,
@@ -29481,6 +29947,14 @@
           "u1": 0.88,
           "v1": 0.76,
           "act": "dance"
+         },
+         {
+          "id": "ft-act-h1-juggle",
+          "u0": 0.2,
+          "v0": 0.55,
+          "u1": 0.34,
+          "v1": 0.85,
+          "act": "juggling"
          }
         ]
        },
@@ -29563,6 +30037,140 @@
           "size": 100,
           "color": "#9c823f",
           "name": ""
+         },
+         {
+          "id": "ft-h1-p04-juggle",
+          "type": "performer",
+          "castId": "ft-cast-p04",
+          "originId": "ft-origin-p04",
+          "pose": "juggle",
+          "u": 0.27,
+          "v": 0.7,
+          "facing": 0,
+          "size": 100,
+          "color": "#6d6657",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p05-club",
+          "type": "performer",
+          "castId": "ft-cast-p05",
+          "originId": "ft-origin-p05",
+          "pose": "juggle",
+          "u": 0.39,
+          "v": 0.2,
+          "facing": 0,
+          "size": 100,
+          "color": "#315b8a",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p05-club-1",
+          "type": "prop",
+          "propShape": "club",
+          "dims": {
+           "w": 0.12,
+           "d": 0.12,
+           "h": 0.53,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p05-club",
+          "holdSide": "R",
+          "holdMode": "hand",
+          "u": 0.39,
+          "v": 0.2,
+          "size": 100,
+          "color": "#e67d48",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p05-club-2",
+          "type": "prop",
+          "propShape": "club",
+          "dims": {
+           "w": 0.12,
+           "d": 0.12,
+           "h": 0.53,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p05-club",
+          "holdSide": "L",
+          "holdMode": "hand",
+          "u": 0.39,
+          "v": 0.2,
+          "size": 100,
+          "color": "#52a3b8",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p05-club-3",
+          "type": "prop",
+          "propShape": "club",
+          "dims": {
+           "w": 0.12,
+           "d": 0.12,
+           "h": 0.53,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p05-club",
+          "holdSide": "R",
+          "holdMode": "hand",
+          "u": 0.39,
+          "v": 0.2,
+          "size": 100,
+          "color": "#e5bd46",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p06-ring",
+          "type": "performer",
+          "castId": "ft-cast-p06",
+          "originId": "ft-origin-p06",
+          "pose": "juggle",
+          "u": 0.65,
+          "v": 0.2,
+          "facing": 0,
+          "size": 100,
+          "color": "#b0533f",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p06-ring-1",
+          "type": "prop",
+          "propShape": "ring",
+          "dims": {
+           "w": 0.4,
+           "d": 0.04,
+           "h": 0.4,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p06-ring",
+          "holdSide": "R",
+          "holdMode": "hand",
+          "u": 0.65,
+          "v": 0.2,
+          "size": 100,
+          "color": "#e67d48",
+          "name": ""
+         },
+         {
+          "id": "ft-h1-p06-ring-2",
+          "type": "prop",
+          "propShape": "ring",
+          "dims": {
+           "w": 0.4,
+           "d": 0.04,
+           "h": 0.4,
+           "lift": 0
+          },
+          "heldBy": "ft-h1-p06-ring",
+          "holdSide": "L",
+          "holdMode": "hand",
+          "u": 0.65,
+          "v": 0.2,
+          "size": 100,
+          "color": "#52a3b8",
+          "name": ""
          }
         ],
         "notes": [],
@@ -29584,6 +30192,22 @@
         "effects": null,
         "idleAreas": [
          {
+          "id": "ft-act-h1-club",
+          "u0": 0.35,
+          "v0": 0.1,
+          "u1": 0.44,
+          "v1": 0.3,
+          "act": "juggling"
+         },
+         {
+          "id": "ft-act-h1-ring",
+          "u0": 0.6,
+          "v0": 0.1,
+          "u1": 0.69,
+          "v1": 0.3,
+          "act": "juggling"
+         },
+         {
           "id": "ft-act-h1-auto",
           "u0": 0.35,
           "v0": 0.4,
@@ -29598,6 +30222,14 @@
           "u1": 0.88,
           "v1": 0.76,
           "act": "dance"
+         },
+         {
+          "id": "ft-act-h1-juggle",
+          "u0": 0.2,
+          "v0": 0.55,
+          "u1": 0.34,
+          "v1": 0.85,
+          "act": "juggling"
          }
         ]
        },
@@ -29635,7 +30267,7 @@
       }
      ]
     },
-    "note": "見せる時間30秒・移動5秒（開始側に固定）。待機モーションと演目の範囲（自動ディアボロ・ダンス）。現場モードのGO・送り・メモ・経過。\n確認手順: 一覧の H-1",
+    "note": "見せる時間30秒・移動5秒（開始側に固定）。待機モーションと演目の範囲（ボール・クラブ・リング・ディアボロ・ダンス）。現場モードのGO・送り・メモ・経過。\n確認手順: 一覧の H-1",
     "background": "#40362d",
     "pieces": [
      {
@@ -29676,6 +30308,140 @@
       "size": 100,
       "color": "#9c823f",
       "name": ""
+     },
+     {
+      "id": "ft-h1-p04-juggle",
+      "type": "performer",
+      "castId": "ft-cast-p04",
+      "originId": "ft-origin-p04",
+      "pose": "juggle",
+      "u": 0.27,
+      "v": 0.7,
+      "facing": 0,
+      "size": 100,
+      "color": "#6d6657",
+      "name": ""
+     },
+     {
+      "id": "ft-h1-p05-club",
+      "type": "performer",
+      "castId": "ft-cast-p05",
+      "originId": "ft-origin-p05",
+      "pose": "juggle",
+      "u": 0.39,
+      "v": 0.2,
+      "facing": 0,
+      "size": 100,
+      "color": "#315b8a",
+      "name": ""
+     },
+     {
+      "id": "ft-h1-p05-club-1",
+      "type": "prop",
+      "propShape": "club",
+      "dims": {
+       "w": 0.12,
+       "d": 0.12,
+       "h": 0.53,
+       "lift": 0
+      },
+      "heldBy": "ft-h1-p05-club",
+      "holdSide": "R",
+      "holdMode": "hand",
+      "u": 0.39,
+      "v": 0.2,
+      "size": 100,
+      "color": "#e67d48",
+      "name": ""
+     },
+     {
+      "id": "ft-h1-p05-club-2",
+      "type": "prop",
+      "propShape": "club",
+      "dims": {
+       "w": 0.12,
+       "d": 0.12,
+       "h": 0.53,
+       "lift": 0
+      },
+      "heldBy": "ft-h1-p05-club",
+      "holdSide": "L",
+      "holdMode": "hand",
+      "u": 0.39,
+      "v": 0.2,
+      "size": 100,
+      "color": "#52a3b8",
+      "name": ""
+     },
+     {
+      "id": "ft-h1-p05-club-3",
+      "type": "prop",
+      "propShape": "club",
+      "dims": {
+       "w": 0.12,
+       "d": 0.12,
+       "h": 0.53,
+       "lift": 0
+      },
+      "heldBy": "ft-h1-p05-club",
+      "holdSide": "R",
+      "holdMode": "hand",
+      "u": 0.39,
+      "v": 0.2,
+      "size": 100,
+      "color": "#e5bd46",
+      "name": ""
+     },
+     {
+      "id": "ft-h1-p06-ring",
+      "type": "performer",
+      "castId": "ft-cast-p06",
+      "originId": "ft-origin-p06",
+      "pose": "juggle",
+      "u": 0.65,
+      "v": 0.2,
+      "facing": 0,
+      "size": 100,
+      "color": "#b0533f",
+      "name": ""
+     },
+     {
+      "id": "ft-h1-p06-ring-1",
+      "type": "prop",
+      "propShape": "ring",
+      "dims": {
+       "w": 0.4,
+       "d": 0.04,
+       "h": 0.4,
+       "lift": 0
+      },
+      "heldBy": "ft-h1-p06-ring",
+      "holdSide": "R",
+      "holdMode": "hand",
+      "u": 0.65,
+      "v": 0.2,
+      "size": 100,
+      "color": "#e67d48",
+      "name": ""
+     },
+     {
+      "id": "ft-h1-p06-ring-2",
+      "type": "prop",
+      "propShape": "ring",
+      "dims": {
+       "w": 0.4,
+       "d": 0.04,
+       "h": 0.4,
+       "lift": 0
+      },
+      "heldBy": "ft-h1-p06-ring",
+      "holdSide": "L",
+      "holdMode": "hand",
+      "u": 0.65,
+      "v": 0.2,
+      "size": 100,
+      "color": "#52a3b8",
+      "name": ""
      }
     ],
     "notes": [],
@@ -29695,6 +30461,22 @@
     "blackout": false,
     "idleAreas": [
      {
+      "id": "ft-act-h1-club",
+      "u0": 0.35,
+      "v0": 0.1,
+      "u1": 0.44,
+      "v1": 0.3,
+      "act": "juggling"
+     },
+     {
+      "id": "ft-act-h1-ring",
+      "u0": 0.6,
+      "v0": 0.1,
+      "u1": 0.69,
+      "v1": 0.3,
+      "act": "juggling"
+     },
+     {
       "id": "ft-act-h1-auto",
       "u0": 0.35,
       "v0": 0.4,
@@ -29709,6 +30491,14 @@
       "u1": 0.88,
       "v1": 0.76,
       "act": "dance"
+     },
+     {
+      "id": "ft-act-h1-juggle",
+      "u0": 0.2,
+      "v0": 0.55,
+      "u1": 0.34,
+      "v1": 0.85,
+      "act": "juggling"
      }
     ]
    },

@@ -4225,3 +4225,11 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "セルや列を選んでいる間だけ、「選択中の操作」の層（セルの寄せ・舞台で開く・選択を解除）が出ます。帯の「その他」への折りたたみはなくなり、各操作は層から使えます。": "While cells or a column are selected, an “Actions for the selection” layer offers cell alignment, Open on stage and Clear selection. The fold-away “More” on the bar is gone; every action is reachable from a layer.",
   "表の幅・表示倍率・項目一覧の幅・文字サイズは、「紙面の設定」の「初期値へ」でまとめて戻せます。保存したデータの形式は変わりません。": "Table width, view scale, item list width and text size can be reset together with “Reset to default” in Paper settings. The format of saved data is unchanged."
 });
+
+// v0.3.53 release notes.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "「演目の範囲」をONにすると、ジャグリングとディアボロは道具が実際に宙を飛ぶようになりました。重力に合わせた放物線で飛び、手を離れる瞬間は手と道具の速さがそろいます。": "With “Performance area” on, juggling and diabolo props now really fly. They follow gravity-true arcs, and at release the hand and the prop move at the same speed.",
+  "ジャグリングは、両手のカスケードと、片手で2つ投げてもう片方の手で1つを腰に持つ型を行き来します。演者がクラブやリングを持っていれば、その形・大きさ・色のまま投げます（クラブは回転します）。": "Juggling alternates between a two-hand cascade and a pattern where one hand juggles two while the other holds one at the waist. If the performer holds clubs or rings, those are thrown with their own shape, size and colour (clubs spin).",
+  "ディアボロはひもに掛けて回し、約2.6m投げ上げてひもで受けます。正面図と3Dの両方に出ます。印刷・画像書き出し・進行表の図には出ず、保存したデータの形式も変わりません。": "The diabolo spins on the string, is tossed about 2.6 m and caught back on the string. It shows on both the front view and 3D. It does not appear in print, image export or run-of-show pictures, and the format of saved data is unchanged.",
+  "劇場設定タブで右側の「劇場プレビュー」が画面の右にはみ出し、正面・立体・全体の切り替えや拡大・縮小のボタンが押せなかった不具合（v0.3.47 以降）を直しました。": "In the Theatre settings tab, the “Theatre preview” on the right ran past the right edge of the window, so the Front / 3D / Fit all switches and the zoom buttons could not be used (since v0.3.47). This is fixed."
+});

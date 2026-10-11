@@ -1,11 +1,11 @@
 {
-  "appVersion": "v0.3.52",
+  "appVersion": "v0.3.53",
   "contentUpdated": "2026-10-11",
   "requiredScreens": [
     {
-      "id": "run-of-show-layers",
+      "id": "act-props",
       "language": "ja",
-      "file": "manual-gamma/img/release052-run-of-show-layers.jpg",
+      "file": "manual-gamma/img/release053-act-props.jpg",
       "viewport": [
         1440,
         900
@@ -13,9 +13,9 @@
       "scene": "H-1"
     },
     {
-      "id": "run-of-show-layers",
+      "id": "act-props",
       "language": "en",
-      "file": "manual-gamma/img/en/release052-run-of-show-layers.jpg",
+      "file": "manual-gamma/img/en/release053-act-props.jpg",
       "viewport": [
         1440,
         900
@@ -25,47 +25,47 @@
   ],
   "screenshots": [
     {
-      "id": "run-of-show-layers",
-      "file": "manual-gamma/img/release052-run-of-show-layers.jpg",
+      "id": "act-props",
+      "file": "manual-gamma/img/release053-act-props.jpg",
       "language": "ja",
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.52",
-      "capturedCommit": "533bc074375e1dfce279bc91877965beb80cb8ae",
-      "capturedAt": "2026-10-11T09:27:20.851Z",
-      "sha256": "12ed0062032c803d20c4f8a553d220f62035af1be2ae3386a5dd495cf82ecf57",
+      "capturedVersion": "v0.3.53",
+      "capturedCommit": "75cf2e6abb9fca5241c03161f1ef0db63a049b17",
+      "capturedAt": "2026-10-11T12:20:20.103Z",
+      "sha256": "d9f83ce7008a484b441254d24c9bce5956480450e28095a1e6c7be380ba9bd74",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "sourceSha256": "b126c842bca10f9ee04440b1ac1da22ca0214a730a775904ec8e08b714f89310"
+      "sourceSha256": "4f9126529aada7be350da24527e068058453ec0a4e17abef31253017aff34937"
     },
     {
-      "id": "run-of-show-layers",
-      "file": "manual-gamma/img/en/release052-run-of-show-layers.jpg",
+      "id": "act-props",
+      "file": "manual-gamma/img/en/release053-act-props.jpg",
       "language": "en",
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.52",
-      "capturedCommit": "533bc074375e1dfce279bc91877965beb80cb8ae",
-      "capturedAt": "2026-10-11T09:27:30.869Z",
-      "sha256": "1143ae7b40c5ca6ae7cf5dd6b0e636082cbafef40cc2554cb61ffadb055d00e8",
+      "capturedVersion": "v0.3.53",
+      "capturedCommit": "75cf2e6abb9fca5241c03161f1ef0db63a049b17",
+      "capturedAt": "2026-10-11T12:20:30.817Z",
+      "sha256": "037d5270a8bfbe656ca71d5c6f5e1f031806ce6843a93a701a2cae68618ae5ec",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "sourceSha256": "b126c842bca10f9ee04440b1ac1da22ca0214a730a775904ec8e08b714f89310"
+      "sourceSha256": "4f9126529aada7be350da24527e068058453ec0a4e17abef31253017aff34937"
     }
   ],
-  "legacyImagesNote": "Only the H-1 run of show with the Paper settings layer open (v0.3.52) is captured. All other images retain their original capture versions, including the v0.3.51 reduced-scale run of show, the v0.3.50 performance-area image, the v0.3.49 viewpoint image and the v0.3.47 run-of-show image. The older run-of-show picture (release037) is no longer used in the Q-sheet section.",
+  "legacyImagesNote": "Only the H-1 feature-test stage during performance-area playback (v0.3.53) is captured. All other images retain their original capture versions, including the v0.3.52 run of show with the Paper settings layer, the v0.3.51 reduced-scale run of show, the v0.3.50 performance-area image and the v0.3.49 viewpoint image.",
   "status": "verified",
   "visualReview": {
     "reviewedAt": "2026-10-11",
-    "method": "Direct visual inspection of the full-size Japanese and English H-1 captures: the run of show with the Paper settings layer open shows language, input view and paper size, paper colour, text size, view scale and the single Reset to default; the layer sits beside the left rail and does not cut off any of its fields. Print/Output and selection layers were operated separately in Chromium and WebKit by script (tests/run-of-show-band-layers-browser.cjs).",
-    "limits": "Chromium captures of the bundled feature-test show at 1440x900; Safari, iPad and the Mac app not tested"
+    "method": "Direct visual inspection of the full-size Japanese and English H-1 captures at playback time 8 s with Performance area on: performer 01's diabolo is airborne above the stage with the slack string between the sticks, performer 04's balls, performer 05's clubs and performer 06's rings are in hand or in flight, and the outside performer 03 does not perform. Prop motion itself (continuity, release speed, spins) was checked by tests/act-props.test.mjs and in Chromium and WebKit by tests/act-props-browser.cjs.",
+    "limits": "Chromium captures of the bundled feature-test show at 1440x900; Safari, iPad and the Mac app not tested; the owner's visual review of the motion is pending"
   }
 }

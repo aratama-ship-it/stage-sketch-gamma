@@ -13,3 +13,5 @@ window.IMG_SIZES_EN["release044-ipad-pages"] = [1440, 900];
 
 window.IMG_SIZES["release052-run-of-show-layers"] = [1440, 900];
 window.IMG_SIZES_EN["release052-run-of-show-layers"] = [1440, 900];
+window.IMG_SIZES["release053-act-props"] = [1440, 900];
+window.IMG_SIZES_EN["release053-act-props"] = [1440, 900];
