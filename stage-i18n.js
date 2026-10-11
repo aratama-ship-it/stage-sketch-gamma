@@ -31,6 +31,21 @@
   "use strict";
 
   const TEXT = {
+    "舞台タブの「シーンの説明」は、文字ではなく説明アイコンから開くようにしました。": "The Stage tab’s Scene description now opens from a description icon instead of a text button.",
+    "進行表の紙面は、中央で使える幅いっぱいに自動で広がるようにしました。": "The run-of-show paper now automatically fills the available centre width.",
+    "進行表を開くと、右側に「項目の一覧」と選択中の「舞台の様子」を最初から表示するようにしました。": "When you open the run of show, the Item list and the selected item’s Stage view now appear on the right from the start.",
+    "環境設定のショートカット一覧には、長い一覧の下まで読んでも使える「設定へ戻る」を置きました。": "The Keyboard shortcuts list in Settings now keeps a Return to Settings control available after a long list.",
+    "シーンの詳細は、画面幅に合わせて項目を横に並べて読めるようにしました。": "Scene details now arrange their items across the available width for easier reading.",
+    "転換で演者同士が重なったとき、正面図と平面図に「HIT」を表示するようにしました。": "When performers overlap during a transition, a HIT label now appears in the front and plan views.",
+    "転換中の移動は、どの姿勢からでも普通の歩き方でつながるようにしました。": "Movement during transitions now connects through a natural walk from every pose.",
+    "再生中の待機の動きを小さくし、向きと場所は変わらないようにしました。": "Idle movement during playback is now subtler, without changing position or facing.",
+    "前一文字幕の表示を、劇場設定の開口高さに合わせて描くようにしました。": "The front border curtain is now drawn at the opening height set in Theatre settings.",
+    "情報バーを1行にまとめ、保存の控えの状態は右下に表示するようにしました。": "The information bar is now one line, and backup status appears at the lower right.",
+    "パネル内の文字がドラッグで選ばれて操作できなくなる不具合を直しました。": "Fixed text in panels being selected while dragging, which could stop controls from working.",
+    "照明デザインの正面図で、劇場に登録したすべての見る位置を選べるようにしました。": "The front view in Light design can now use every viewpoint registered for the theatre.",
+    "確認の窓のボタンは、収まる幅では1列に並べるようにしました。": "Confirmation-window buttons now stay in one row when there is room.",
+    "演者の絞り込み欄と、平面図の「測る」を外しました。": "Removed the performer filter box and the plan view’s Measure tool.",
+    "欄を畳んだときも「?」の説明ボタンが見出しの位置に残るようにしました。": "The ? help button now stays at the heading when a panel is collapsed.",
     "iPadの演者用リンクで、1シーンに複数の書き込みページを作り、複製・白紙追加・名前変更・切り替えができるようになりました。": "The iPad performer viewer now supports multiple annotation pages for each scene, with duplication, blank pages, renaming and switching.",
     "書き込みの控えは、現在のシーンの全ページをまとめて保存します。以前の書き込みも保持します。": "Annotation backups include every page in the current scene. Existing annotations are preserved.",
 
@@ -1557,6 +1572,7 @@
     "メモを貼る": "Add a note",
     "太さ": "Thickness",
     "ショートカット一覧": "Keyboard shortcuts",
+    "設定へ戻る": "Back to settings",
     "選んだものを消す": "Delete what is selected",
     "窓を閉じる・全画面を終了": "Close a window / exit full screen",
     "文字入力中も⌘Sは使えます。ほかの舞台操作は、文字入力を優先します。WindowsとLinuxでは⌘をCtrlに読み替えてください。":
@@ -3744,6 +3760,8 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "0秒の移動": "Movement in zero seconds"
 });
 
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"舞台の様子": "Stage view"});
+
 // v0.3.30 release notes.
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "同梱の見本ショーは、一覧だけを先に読み込み、開くときに本文を読み込むようにして、起動を軽くしました。保存したショーから再開するときは、見本の本文を読みません。": "Bundled sample shows now load the list first and fetch the contents when opened, making start-up lighter. When resuming a saved show, sample contents are not loaded.",
@@ -3980,6 +3998,8 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "連続入力": "Continuous",
   "A4横": "A4 landscape",
   "A4縦": "A4 portrait",
+  "その他": "More",
+  "進行表の紙面: {format} · 全{pages}ページ · 続き{continuations}か所。画像と説明文は同じページに配置。": "Run sheet: {format} · {pages} pages · {continuations} continuations. Images and their descriptions stay on the same page.",
   "表の幅": "Table width",
   "表示の倍率": "View scale",
   "列": "Columns",

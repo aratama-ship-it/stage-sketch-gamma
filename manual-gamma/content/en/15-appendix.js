@@ -33,7 +33,7 @@
         "selection",
         "close"
       ],
-      "html": "<p>The scene-description control now has a text label, with Edit beside the scene name. The selected scene row shows its … menu, including actions to create the next scene or delete the selected one.</p>\n<p>Where: Stage → Scene description, Edit beside the scene name, or … in the scene row. If splitting is unavailable, hover over or focus its control to read the reason.</p>\n<p>Close the selected-piece controls with their close button or Esc to clear the selection. Try it in: A-4 and H-1.</p>\n<p class=\"m-source\">Release history: v0.3.39</p>"
+      "html": "<p>Open the scene description from the description icon above the Stage tab. Edit remains beside the scene name, and the selected scene row shows its … menu, including actions to create the next scene or delete the selected one.</p>\n<p>Where: Stage → description icon, Edit beside the scene name, or … in the scene row. If splitting is unavailable, hover over or focus its control to read the reason.</p>\n<p>Close the selected-piece controls with their close button or Esc to clear the selection. Try it in: A-4 and H-1.</p>\n<p class=\"m-source\">Release history: v0.3.39, v0.3.47</p>"
     },
     {
       "id": "new-039-venue",
@@ -157,15 +157,13 @@
       "title": "Performers, props and stage controls",
       "status": "sourced",
       "keywords": [
-        "演者検索",
-        "測る",
         "コピー",
         "貼り付け",
         "姿勢",
         "ポーズ",
         "performer search"
       ],
-      "html": "<p>Performer filtering, distance measurement and piece copy/paste have been added, with clearer controls, name labels and scene lists.</p>\n<p>Shapes and contact points for umbrellas, three-club juggling, instruments, aerial poses and partner poses have been refined. Advancing with the arrow also animates transitions that change only the pose.</p>\n<p>Where: Stage → performer search, Measure above the plan, and copy/paste for selected pieces.</p>\n<p>Try it in: A-4 and A-5 (performers and transitions), C-2 (held props), J-1 (many pieces).</p>\n<p class=\"m-source\">Release history: v0.3.33, v0.3.35, v0.3.37</p>"
+      "html": "<p>Piece copy/paste, control panels, name labels and scene lists have been made clearer. Performer filtering and Measure in the plan view were removed in v0.3.45.</p>\n<p>Shapes and contact points for umbrellas, three-club juggling, instruments, aerial poses and partner poses have been refined. Advancing with the arrow also animates transitions that change only the pose.</p>\n<p>Where: Stage → copy/paste for selected pieces.</p>\n<p>Try it in: A-4 and A-5 (performers and transitions), C-2 (held props), J-1 (many pieces).</p>\n<p class=\"m-source\">Release history: v0.3.33, v0.3.35, v0.3.37, v0.3.45</p>"
     },
     {
       "id": "new-03-drafts",

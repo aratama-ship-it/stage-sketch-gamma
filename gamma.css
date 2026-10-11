@@ -785,6 +785,10 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head {
   padding-top: 12px;
   background: var(--desk);
 }
+/* E1-#6: leave a compact breathing space below the sticky header on desktop. */
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head { margin-bottom: 8px; }
+/* E1-#24: the two stage boards are separated only by their caption rail and a small gap. */
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-canvas-stack { gap: 8px; }
 
 /* 狭い画面では元の子要素の配置を保つ。PCでは共有・通知までを同じ包みにする。 */
 .stage-header-actions-row { display: contents; }
@@ -926,6 +930,49 @@ html[data-stage-skin] .stage-modal :is(input,select,textarea) { max-width: 100%;
 
 /* Width grips live in the gaps, outside the scrolling panel columns. */
 .stage-sketch-grid { position: relative; }
+
+/* E3-#9: These are controls, not a reading surface. Safari can otherwise
+   begin a native text drag from a roster row and swallow the following drag. */
+#view-stage .stage-sketch-grid .stage-panel:not([data-panel="vox"]),
+#view-stage .stage-center-bar,
+#view-stage #stage-timeline-panel,
+#view-stage .stage-bottom-panels {
+  -webkit-user-select: none;
+  user-select: none;
+}
+/* E3-#9b: WebKit can still begin a range on a nested label when the broad
+   panel rule is overridden by a component stylesheet.  Name handles,
+   timeline labels, and the non-editing portion of scene rows are controls,
+   so state that contract on the actual starting nodes as well. */
+#view-stage .stage-cast-name,
+#view-stage #stage-timeline-panel :not(input, textarea, select, [contenteditable="true"]),
+#view-stage .stage-scene-row :not(input, textarea, select, [contenteditable="true"]) {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+/* E3-#9c: The central scene band and the figure chrome are controls too.
+   Keep this list tied to their DOM starting nodes: a Safari text drag may
+   begin on a nested label even when an ancestor already opts out. */
+#view-stage :is(
+  #stage-control-row,
+  .stage-canvas-bar,
+  .stage-single-view-switch,
+  .stage-depth-label,
+  #stage-timeline-grip,
+  .stage-panel-width-handle,
+  #stage-live
+) {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+/* The script workspace, notes, and native editable controls retain selection. */
+#view-stage :is(input, textarea, select, [contenteditable="true"]),
+#gamma-script-workspace,
+#gamma-script-workspace *,
+#view-stage [data-panel="vox"] .stage-vox-now-line {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
 
 /* Electric bulb props use the selection inspector, separate from lighting fixtures. */
 #stage-point-source-controls:not([hidden]) { display: grid; gap: 8px; padding: 12px 0; border-top: 1px solid var(--stage-line, #3d3527); }
@@ -1280,6 +1327,11 @@ html.stage-phone-viewer #stage-feature-search-open { display: none !important; }
 #stage-rename-scene-position[role=button] {text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 #stage-prefs-list > .stage-pref-group > .stage-pref-grid {display:block}
 
+/* E4-#30: scene details use the available dialog width.  The shared cue
+ * component keeps its two-column default; only the scene detail dialog opens
+ * short facts into as many 160px cards as fit. */
+#stage-rename .stage-timeline-cue-facts { grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); }
+
 .gamma-light-loading { width:100%; padding:24px; box-sizing:border-box; }
 .gamma-light-loading p { margin:0 0 18px; }
 .gamma-light-skeleton { display:grid; grid-template-columns:minmax(100px,1fr) minmax(180px,3fr) minmax(100px,1fr); gap:12px; min-height:280px; height:45vh; max-height:560px; }
@@ -1320,6 +1372,11 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(.stage-kind-swatch, .st
   width: 28px; height: 28px; min-width: 28px; min-height: 28px; padding: 0;
 }
 html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-panel-help { top: 5px; right: 28px; }
+/* Collapsing keeps the panel head in place; keep its help target on that same
+   top/right anchor instead of allowing an older collapsed-panel offset to move it outside. */
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-panel.is-collapsed > .stage-panel-help {
+  top: 5px; right: 28px; left: auto; transform: none;
+}
 html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-panel:has(> .stage-panel-help) > .stage-panel-head { padding-right: 62px; }
 html:not(.stage-pwa-tablet):not(.stage-phone-viewer) { --stage-pref-help-size: 28px; }
 
@@ -1330,12 +1387,11 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) { --stage-pref-help-size: 2
 
 /* D-31: 説明の表示設定は既定OFFのまま、文字のある入口からも操作できる。 */
 .stage-scene-bar .stage-scene-desc-pin {
-  width: auto;
-  min-height: 32px;
-  gap: 4px;
-  padding-inline: 6px;
-  white-space: nowrap;
-  font-size: 11px;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
   color: var(--milk);
 }
 .stage-scene-desc-pin > svg { flex: 0 0 20px; }
@@ -1396,23 +1452,43 @@ html[data-study-renderer] .stage-scene-edit-label { display: none; }
 }
 .stage-primary-action:hover { color: var(--milk); border-color: var(--brass); }
 
-/* D-37: name the cast on-stage state column. */
-.stage-cast-list-heading {
-  display: grid; grid-template-columns: 24px minmax(0, 1fr) 42px 22px 22px;
-  gap: 4px; grid-column: 1 / -1; color: var(--milk-dim); font-size: 10px; line-height: 1.2;
-}
-.stage-cast-list-heading > span { grid-column: 3; text-align: center; }
-
 /* D-29: separate destructive roster removal from the neighbouring lock. */
 .stage-cast-remove { margin-left: 4px; color: var(--rust); }
 .stage-cast-remove:hover { color: var(--paper); background: color-mix(in srgb, var(--rust) 28%, transparent); }
 
-/* D-30: shortcuts are a settings section, not an always-visible third column. */
+/* D-30/#29: shortcuts are a settings section.  The return control stays beside its
+   title so a long list never strands the reader away from the settings section. */
 .stage-pref-keys { padding-left: 0; border-left: 0; position: static; top: auto; }
 .stage-prefs-modal .stage-modal-body > .stage-pref-keys { grid-column: 1; grid-row: 3; }
+.stage-pref-keys-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 2px 0 6px;
+  background: var(--desk-2);
+}
+.stage-pref-keys-title { margin: 0; }
+.stage-pref-shortcuts-return { flex: 0 0 auto; margin: 0; }
+/* The navigation links remain above the switched section at narrow widths. */
+.stage-pref-guide { position: relative; z-index: 1; }
 @media (min-width: 1360px) {
   .stage-prefs-modal .stage-modal-body { grid-template-columns: 232px minmax(0, 1fr); }
   .stage-prefs-modal .stage-modal-body > .stage-pref-keys { grid-column: 2; grid-row: 2; }
+  /* The guidance column has its own scroll range.  Scrolling the settings/list
+     therefore never sends its navigation links away with the longer column. */
+  .stage-prefs-modal .stage-modal-body > .stage-pref-guide {
+    position: sticky;
+    top: 0;
+    max-height: calc(100vh - 116px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
 }
 /* D-35: A/B controls carry their start/end meaning in the visible label. */
 .stage-timeline-loop-point { flex: 0 0 auto; min-width: 62px; padding-inline: 9px; }

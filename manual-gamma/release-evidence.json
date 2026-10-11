@@ -1,71 +1,71 @@
 {
-  "appVersion": "v0.3.44",
-  "contentUpdated": "2026-10-10",
+  "appVersion": "v0.3.47",
+  "contentUpdated": "2026-10-11",
   "requiredScreens": [
     {
-      "id": "ipad-pages",
+      "id": "run-of-show",
       "language": "ja",
-      "file": "manual-gamma/img/release044-ipad-pages.jpg",
+      "file": "manual-gamma/img/release047-run-of-show.jpg",
       "viewport": [
         1440,
         900
       ],
-      "scene": "G-1"
+      "scene": "A-5"
     },
     {
-      "id": "ipad-pages",
+      "id": "run-of-show",
       "language": "en",
-      "file": "manual-gamma/img/en/release044-ipad-pages.jpg",
+      "file": "manual-gamma/img/en/release047-run-of-show.jpg",
       "viewport": [
         1440,
         900
       ],
-      "scene": "G-1"
+      "scene": "A-5"
     }
   ],
   "screenshots": [
     {
-      "id": "ipad-pages",
-      "file": "manual-gamma/img/release044-ipad-pages.jpg",
+      "id": "run-of-show",
+      "file": "manual-gamma/img/release047-run-of-show.jpg",
       "language": "ja",
-      "scene": "G-1",
+      "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.44",
-      "capturedCommit": "605e2169dbc88913da6d2a52c3b07408a7667b54",
-      "capturedAt": "2026-10-10T11:32:48.308Z",
-      "sha256": "5f564aa24925267f6a7026c0c440501b8591837821815eab112672835fa86263",
+      "capturedVersion": "v0.3.47",
+      "capturedCommit": "0bef391dd4d2e30e907803625a87afce7029f0fb",
+      "capturedAt": "2026-10-10T16:25:47.515Z",
+      "sha256": "d9568b264b6fe22b2d347714a32303a7d5dc69917f0935020ef102aa686ef9ab",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "sourceSha256": "7de6d84d10f7fdb8ee633739a73779b09d8b3cbedf31e513365f2b4c6ca916aa"
+      "sourceSha256": "1cde87eac1a5cb6b6bc028f3db0d6c7b1472ede76766e03733f5585b7f4c9c74"
     },
     {
-      "id": "ipad-pages",
-      "file": "manual-gamma/img/en/release044-ipad-pages.jpg",
+      "id": "run-of-show",
+      "file": "manual-gamma/img/en/release047-run-of-show.jpg",
       "language": "en",
-      "scene": "G-1",
+      "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.44",
-      "capturedCommit": "605e2169dbc88913da6d2a52c3b07408a7667b54",
-      "capturedAt": "2026-10-10T11:32:48.697Z",
-      "sha256": "c2b784cbf13b2133139e200bf2f983c7551082cdd6447105abda12b292062fb3",
+      "capturedVersion": "v0.3.47",
+      "capturedCommit": "0bef391dd4d2e30e907803625a87afce7029f0fb",
+      "capturedAt": "2026-10-10T16:25:55.918Z",
+      "sha256": "40beb6db3f2214e737d09cec1dd5b22c7163384760a5c00cae0401580b3ef215",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "sourceSha256": "7de6d84d10f7fdb8ee633739a73779b09d8b3cbedf31e513365f2b4c6ca916aa"
+      "sourceSha256": "1cde87eac1a5cb6b6bc028f3db0d6c7b1472ede76766e03733f5585b7f4c9c74"
     }
   ],
-  "legacyImagesNote": "Only the changed iPad annotation page interface is recaptured for v0.3.44. All other images retain their original capture versions, including v0.3.43 main editor images.",
+  "legacyImagesNote": "Only the run-of-show screen changed by batch E4 is captured for v0.3.47. All other images retain their original capture versions, including the v0.3.46 transition HIT and v0.3.45 stage and light design images.",
   "status": "verified",
   "visualReview": {
-    "reviewedAt": "2026-10-10",
-    "method": "Direct visual inspection of both full-size Japanese and English iPad page captures",
-    "limits": "Browser captures of G-1; physical iPad, Pencil and Japanese IME not tested"
+    "reviewedAt": "2026-10-11",
+    "method": "Direct visual inspection of the full-size Japanese and English run-of-show (H-1) captures",
+    "limits": "Chromium captures of the bundled feature-test show at 1440x900; Safari, iPad and the Mac app not tested"
   }
 }

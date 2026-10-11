@@ -28,7 +28,7 @@
   paintPaper();$("paper-ink").addEventListener('click',()=>{paperInk=paperInk==='white'?'black':'white';paintPaper();try{localStorage.setItem('gamma:ros:paper-ink',paperInk);}catch(error){showError(error);}});
   // Keep all controls available on short screens; secondary controls live in
   // a disclosure only while the toolbar is horizontal. Their listeners remain attached.
-  const compactBand = matchMedia('(max-height: 760px) and (max-width: 1323px)');
+  const compactBand = matchMedia('(max-height: 760px) and (max-width: 1199px)');
   const bandMore = document.createElement('details'); bandMore.className = 'band-more';
   const bandSummary = document.createElement('summary'); bandSummary.textContent = 'その他';
   const bandExtras = document.createElement('div'); bandExtras.className = 'band-more-controls';
@@ -106,14 +106,16 @@
     $("heading-language").querySelector("option[value=auto]").textContent=uiText("自動（{language}）").replace("{language}",layout.resolveLanguage("auto",uiLanguage())==="ja"?uiText("日本語"):"English");
     if($("heading-language").value!==languageMode)$("heading-language").value=languageMode;
   }
-  // #2 screen-only size: continuous entry = table width in px (empty = fill), A4 = page scale 50–100 % (printing stays real size).
+  // #2 screen-only size: continuous entry = table width in px; A4 fits the available centre by default.
   const FREE_WIDTH_KEY="gamma:ros:free-width",PAGE_SCALE_KEY="gamma:ros:page-scale";
-  const pageScaleDefault=lite?80:layout.PAGE_SCALE.max;
-  let freeWidthPref=layout.freeWidth(readNumber(FREE_WIDTH_KEY)),pageScalePref=layout.pageScale(readNumber(PAGE_SCALE_KEY)??pageScaleDefault);
+  const pageScaleDefault=lite?80:null;
+  let freeWidthPref=layout.freeWidth(readNumber(FREE_WIDTH_KEY)),pageScaleManual=readNumber(PAGE_SCALE_KEY)!==null,pageScalePref=layout.pageScale(readNumber(PAGE_SCALE_KEY)??(lite?80:100));
   // #3 index beside the paper: open/closed and its width.
   const INDEX_OPEN_KEY="gamma:ros:index-open",INDEX_WIDTH_KEY="gamma:ros:index-width";
   let indexPinned=true;try{indexPinned=localStorage.getItem(INDEX_OPEN_KEY)!=="0";}catch(_){}
-  let indexWidthPref=layout.indexWidth(readNumber(INDEX_WIDTH_KEY)),indexOverlay=false,indexMode="closed",indexCurrent=null,indexSignature="";
+  const NARROW_COMPANIONS_OPEN_KEY="gamma:ros:narrow-companions-open";
+  let indexWidthPref=layout.indexWidth(readNumber(INDEX_WIDTH_KEY)),indexOverlay=false,narrowCompanionsOpen=false,indexMode="closed",indexCurrent=null,indexSignature="";
+  try{narrowCompanionsOpen=localStorage.getItem(NARROW_COMPANIONS_OPEN_KEY)==="1";}catch(_){}
   let rowModeTouched=false;
   let paperFontSize=layout.paperFontSize(packet.document.paperFontSize);
   const cueField=key=>{const at=key.lastIndexOf(":");return [key.slice(4,at),key.slice(at+1)];};
@@ -334,6 +336,9 @@
     $("flow-total").textContent=`${items.length}項目 ／ 合計 ${fmt(total())}`;
     $("paper-total").textContent=P("total")+pfmt(total());
     renderIndex();
+    // A selection may come from the editor, paper, or Stage tab rather than a
+    // scroll event. Keep all three representations on the same item at once.
+    setIndexCurrent(selected);
     $("move-up").disabled=items[0].id===selected;$("move-down").disabled=items[items.length-1].id===selected;
     const history=bridge.historyStatus();$("undo-edit").disabled=!history.canUndo;$("redo-edit").disabled=!history.canRedo;
 
@@ -461,17 +466,34 @@
   frame.addEventListener('click',event=>{const fig=event.target.closest('[data-stage-toggle]');if(fig){event.preventDefault();toggleStage(fig);}});
   frame.addEventListener('keydown',event=>{const fig=event.target.closest?.('[data-stage-toggle]');if(fig&&(event.key==='Enter'||event.key===' ')&&!event.isComposing){event.preventDefault();toggleStage(fig);}});
   $('stage-view-reset').addEventListener('click',()=>{if(!Object.keys(stageByItem).length)return;try{bridge.canEdit(token);}catch(error){showError(error);return;}stageByItem={};markDirty();renderPaper();$("column-status").textContent="行ごとの切り替えを既定に戻しました";});
-  let stageFiguresOn=false;try{stageFiguresOn=localStorage.getItem('gamma:ros:stage-figures')==='1';}catch(_){}
+  let stageFiguresOn=true;try{stageFiguresOn=localStorage.getItem('gamma:ros:stage-figures')!=='0';}catch(_){}
+  let stagePanelCollapsed=false,indexPanelCollapsed=false;try{stagePanelCollapsed=localStorage.getItem('gamma:ros:stage-panel-collapsed')==='1';indexPanelCollapsed=localStorage.getItem('gamma:ros:index-panel-collapsed')==='1';}catch(_){}
   if(lite)stageFiguresOn=true;
   function updateStageFigures(){
-    $('stage-figures-toggle').hidden=lite||!canRenderStage;$('stage-figures-toggle').setAttribute('aria-pressed',String(stageFiguresOn));$('stage-figures').hidden=!canRenderStage||!stageFiguresOn;
+    // The toolbar is a visibility control, not an indicator of the stored
+    // preference.  Below the wide default the companion column starts closed,
+    // so a remembered diagram must not look as though it is already onscreen.
+    const shown=stageFiguresOn&&!stagePanelCollapsed&&indexMode!=="closed";
+    $('stage-figures-toggle').hidden=lite||!canRenderStage;$('stage-figures-toggle').setAttribute('aria-pressed',String(shown));$('stage-figures').hidden=!shown;
     if(!canRenderStage||!stageFiguresOn)return;
     const item=current(),caption=$('stage-figure-caption');
     if(!item?.sceneId){for(const view of ['front','plan'])$('stage-figure-'+view).removeAttribute('src');caption.textContent=lite?uiText('この項目にはシーンがありません'):'この項目にはシーンがありません';return;}
     try{const results=bridge.renderSceneImages(['front','plan'].map(view=>({sceneId:item.sceneId,view})),{scale:0.5});for(const r of results){const img=$('stage-figure-'+r.view);if(r.url)img.src=r.url;else img.removeAttribute('src');}caption.textContent=`${String(items.indexOf(item)+1).padStart(2,'0')} ${item.title}`;}catch(error){showError(error);}
     if(lite){caption.textContent=uiText('正面図');$('stage-figure-plan').nextElementSibling.textContent=uiText('平面図');for(const view of ['front','plan'])$('stage-figure-'+view).alt=uiText(view==='front'?'正面図':'平面図');}
   }
-  $('stage-figures-toggle').addEventListener('click',()=>{stageFiguresOn=!stageFiguresOn;try{localStorage.setItem('gamma:ros:stage-figures',stageFiguresOn?'1':'0');}catch(error){showError(error);}updateStageFigures();});
+  const toggleStageFigures=()=>{
+    const shown=stageFiguresOn&&!stagePanelCollapsed&&indexMode!=="closed";
+    stageFiguresOn=!shown;stagePanelCollapsed=false;
+    try{localStorage.setItem('gamma:ros:stage-figures',stageFiguresOn?'1':'0');localStorage.setItem('gamma:ros:stage-panel-collapsed','0');}catch(error){showError(error);}
+    // At 1200–1599px an explicit request opens the right dock.  The first
+    // layout remains paper-first, while the request uses the same dock and
+    // scale calculation as the wide desktop.
+    if(stageFiguresOn&&indexMode==="closed")openIndex(true);
+    else updateStageFigures();
+  };
+  $('stage-figures-toggle').addEventListener('click',toggleStageFigures);
+  $('ros-stage-toggle').setAttribute('aria-expanded',String(!stagePanelCollapsed));$('ros-index-collapse').setAttribute('aria-expanded',String(!indexPanelCollapsed));$('ros-index-list').hidden=indexPanelCollapsed;
+  $('ros-stage-toggle').addEventListener('click',()=>{stagePanelCollapsed=!stagePanelCollapsed;store('gamma:ros:stage-panel-collapsed',stagePanelCollapsed?'1':'0');$('ros-stage-toggle').setAttribute('aria-expanded',String(!stagePanelCollapsed));updateStageFigures();});
   $('stage-view').addEventListener('change',e=>changeLayout(p=>{p.stage=e.target.value;},'舞台上の図（全行の既定）を変更しました'));
   if(!canReadCues){$('row-mode').querySelector('[value=cue]')?.remove();document.querySelector('[data-row-mode=cue]').hidden=true;}
   for(const button of document.querySelectorAll('[data-row-mode]'))button.addEventListener('click',()=>{$('row-mode').value=button.dataset.rowMode;$('row-mode').dispatchEvent(new Event('change'));});
@@ -553,7 +575,8 @@
         const result=await window.ROSPages.render({source:sourceSnapshot,table,mount,portrait:format==="a4-portrait",scope,context,text,isCurrent:()=>revision===pageRevision});
         if(revision!==pageRevision||!result)return;
         mount.classList.remove("page-building");host.replaceChildren(mount);host.hidden=false;
-        status.textContent=`${paperNames[format]} · 全${result.pages}ページ · 続き${result.continuations}か所。画像と説明文は同じページに配置。`;
+        status.textContent=uiText("進行表の紙面: {format} · 全{pages}ページ · 続き{continuations}か所。画像と説明文は同じページに配置。")
+          .replace("{format}",uiText(paperNames[format])).replace("{pages}",result.pages).replace("{continuations}",result.continuations);
         status.dataset.state="ready";document.body.classList.toggle("pages-ready",!busy&&!paperEditor?.active);$("print-sample").disabled=busy||paperEditor?.active;paperEditor?.refresh();decoratePages();applySelectionClasses();revealRow();layoutIndex();queueTrack();
       }catch(error){
         if(revision===pageRevision){status.textContent=error.message;status.dataset.state="error";host.replaceChildren();}
@@ -733,10 +756,20 @@
   window.addEventListener("beforeunload",event=>{if(paperEditor?.hasDraft){event.preventDefault();event.returnValue="";}});
   /* ---------- G1 #2: paper width / page scale (screen only, per device) ---------- */
   function maxFreeWidth(){let outer=0;try{outer=parent.innerWidth||0;}catch(_){}return Math.max(layout.FREE_WIDTH.min,Math.round(Math.max(innerWidth,outer)));}
+  function autoPageScale(){
+    if(lite)return 80;
+    const base=(paperFormat==="a4-portrait"?210:297)*96/25.4+11;
+    // The frame is the actual centre track after the left controls and an
+    // open companion column have taken their space.  Measuring it prevents a
+    // right panel, language change, or resize from leaving the page clipped.
+    const centre=frame.clientWidth||document.documentElement.clientWidth-panelWidth()-16;
+    return layout.pageScale((centre-8)/base*100);
+  }
   function applyPaperSize(){
     const free=paperFormat==="free",paper=$("paper-source"),input=$("paper-size-input"),handle=$("paper-resize"),width=free?layout.freeWidth(freeWidthPref,maxFreeWidth()):null;
     paper.classList.toggle("has-width",width!==null);paper.style.setProperty("--free-width",width===null?"auto":`${width}px`);
-    document.documentElement.style.setProperty("--page-scale",String(pageScalePref/100));
+    const scale=free?pageScalePref:(pageScaleManual?pageScalePref:autoPageScale());
+    document.documentElement.style.setProperty("--page-scale",String(scale/100));
     if(lite){
       const need=paperNeed(),style=getComputedStyle(document.body),right=parseFloat(style.getPropertyValue('--ros-right-min'))||320,gap=parseFloat(style.getPropertyValue('--ros-gap'))||24,gutter=parseFloat(style.getPropertyValue('--pane-gutter'))||16;
       document.body.style.setProperty('--lite-paper-min',`${need}px`);
@@ -746,15 +779,15 @@
     input.min=String(free?layout.FREE_WIDTH.min:layout.PAGE_SCALE.min);input.max=String(free?maxFreeWidth():layout.PAGE_SCALE.max);input.step=String(free?layout.FREE_WIDTH.step:layout.PAGE_SCALE.step);
     input.setAttribute("aria-label",uiText(free?"連続入力の表の幅（px・空欄で画面に合わせる）":"A4の画面表示の倍率（%・印刷は実寸）"));
     $("paper-size-control").title=uiText(free?"連続入力の表の幅（この端末の設定）。表の右端のドラッグでも変えられます。空欄で画面に合わせます":"A4の画面表示の倍率（この端末の設定）。ページの右端のドラッグでも変えられます。印刷は実寸のままです");
-    const shown=free?Math.round(paper.getBoundingClientRect().width):pageScalePref;
-    if(document.activeElement!==input){input.value=free?(width===null?"":String(width)):String(pageScalePref);input.placeholder=free&&shown?String(shown):"";}
+    const shown=free?Math.round(paper.getBoundingClientRect().width):scale;
+    if(document.activeElement!==input){input.value=free?(width===null?"":String(width)):(pageScaleManual?String(scale):"");input.placeholder=free&&shown?String(shown):String(scale);}
     handle.setAttribute("aria-valuemin",String(layout.FREE_WIDTH.min));handle.setAttribute("aria-valuemax",String(maxFreeWidth()));if(free&&shown)handle.setAttribute("aria-valuenow",String(shown));
     const range=$("paper-size-range");range.min=input.min;range.max=input.max;range.step="1";range.value=String(shown);range.setAttribute("aria-label",uiText(free?"表の幅":"表示の倍率"));
     layoutIndex();
   }
   function setFreeWidth(value){freeWidthPref=value===null?null:layout.freeWidth(value,maxFreeWidth());store(FREE_WIDTH_KEY,freeWidthPref);applyPaperSize();fitEntryNumberColumn();queueTrack();}
-  function setPageScale(value){pageScalePref=layout.pageScale(value);store(PAGE_SCALE_KEY,lite?pageScalePref:pageScalePref===layout.PAGE_SCALE.max?null:pageScalePref);applyPaperSize();queueTrack();}
-  $("paper-size-input").addEventListener("change",event=>{const raw=event.target.value.trim();if(paperFormat==="free")setFreeWidth(raw===""?null:raw);else setPageScale(raw===""?layout.PAGE_SCALE.max:raw);event.target.value=paperFormat==="free"?(freeWidthPref===null?"":String(layout.freeWidth(freeWidthPref,maxFreeWidth()))):String(pageScalePref);});
+  function setPageScale(value){pageScaleManual=value!==null;pageScalePref=layout.pageScale(value??autoPageScale());store(PAGE_SCALE_KEY,pageScaleManual?pageScalePref:null);applyPaperSize();queueTrack();}
+  $("paper-size-input").addEventListener("change",event=>{const raw=event.target.value.trim();if(paperFormat==="free")setFreeWidth(raw===""?null:raw);else setPageScale(raw===""?null:raw);event.target.value=paperFormat==="free"?(freeWidthPref===null?"":String(layout.freeWidth(freeWidthPref,maxFreeWidth()))):(pageScaleManual?String(pageScalePref):"");});
   function applyPaperFont(){
     const style=document.documentElement.style;
     style.setProperty('--paper-font',`${paperFontSize}pt`);style.setProperty('--page-small',`${paperFontSize*.9}pt`);style.setProperty('--entry-font',`${paperFontSize}pt`);
@@ -792,29 +825,53 @@
   frame.addEventListener("dblclick",event=>{if(event.target.closest(".page-resize")){event.preventDefault();setPageScale(layout.PAGE_SCALE.max);}});
 
   /* ---------- G1 #3: index of every item beside the paper (transition rows are not listed) ---------- */
-  const wideLayout=()=>!lite&&matchMedia("screen and (min-width:1324px)").matches;
+  // The two companion panels belong beside the paper from the owner's wide
+  // desktop layout only. Below this iframe width their existing buttons still
+  // open them, but they must not consume the initial paper width.
+  const canDockCompanions=()=>!lite&&matchMedia("screen and (min-width:1200px)").matches;
+  const wideLayout=()=>!lite&&matchMedia("screen and (min-width:1600px)").matches;
   // Width the paper column needs beside a docked index: A4 at its scale (+4px mat each side, 3px border), or the continuous
   // table at its width (chosen width or the 1080px minimum) + frame border + the frame's vertical scrollbar. Where they do not
   // fit side by side the index folds and opens over the paper from the list button (本人決定 2026-10-07: the table never
   // scrolls sideways because of the index).
   function paperNeed(){
     if(paperFormat==="free"){const table=layout.freeWidth(freeWidthPref,maxFreeWidth())??layout.FREE_WIDTH.min,bar=Math.max(0,frame.offsetWidth-frame.clientWidth-2);return table+2+bar;}
-    const mm=paperFormat==="a4-portrait"?210:297;return mm*96/25.4*pageScalePref/100+11;
+    const mm=paperFormat==="a4-portrait"?210:297,scale=pageScaleManual?pageScalePref:autoPageScale();return mm*96/25.4*scale/100+11;
   }
   // The control panel keeps the width of 2026-10-06b #14 for every paper: clamp(160px, grid − 8px gap − A4 landscape, 240px).
   const panelWidth=()=>Math.min(240,Math.max(160,document.documentElement.clientWidth-8-8-(297*96/25.4+11)));
-  // Room left for the index: grid width (iframe − 2×4px gutter) − panel − 2×8px gap − paper.
-  function indexSpace(){return Math.floor(document.documentElement.clientWidth-8-panelWidth()-16-paperNeed());}
+  // Room available to a docked companion while an A4 page remains usable at
+  // its minimum automatic scale.  Its final scale is measured from the
+  // resulting centre track in autoPageScale(), not guessed from this reserve.
+  function indexSpace(){
+    if(paperFormat==="free")return Math.floor(document.documentElement.clientWidth-8-panelWidth()-16-paperNeed());
+    const mm=paperFormat==="a4-portrait"?210:297,minimum=mm*96/25.4*layout.PAGE_SCALE.min/100+11;
+    return Math.floor(document.documentElement.clientWidth-8-panelWidth()-16-minimum);
+  }
+  let autoScaleFrame=0;
+  function queueAutomaticPageScale(){
+    if(lite||paperFormat==="free"||pageScaleManual)return;
+    cancelAnimationFrame(autoScaleFrame);autoScaleFrame=requestAnimationFrame(()=>{
+      const next=autoPageScale(),current=Math.round(Number(document.documentElement.style.getPropertyValue("--page-scale")||1)*100);
+      if(next!==current)applyPaperSize();
+    });
+  }
   function layoutIndex(){
-    const aside=$("ros-index"),preview=$("preview"),space=indexSpace(),docked=wideLayout()&&indexPinned&&space>=layout.INDEX_WIDTH.min;
+    // 1600px keeps the owner's default two-companion layout.  At 1200–1599px
+    // it stays paper-first until either companion is explicitly opened.
+    const aside=$("ros-index"),preview=$("preview"),space=indexSpace(),docked=canDockCompanions()&&indexPinned&&(wideLayout()||narrowCompanionsOpen)&&(paperFormat!=="free"||space>=layout.INDEX_WIDTH.min);
     if(docked)indexOverlay=false;
-    // Docked, the index gives way first (240 → 160px; a chosen width is capped the same way) so the paper keeps its width.
+    // Docked, the 360px companion column gives way first (360 → 160px; a chosen width is capped the same way) so the paper keeps its width.
     const mode=docked?"docked":indexOverlay?"overlay":"closed",width=layout.indexWidth(indexWidthPref??layout.INDEX_WIDTH.initial,docked?space:document.documentElement.clientWidth-32);
     indexMode=mode;preview.dataset.index=mode;aside.dataset.mode=mode;aside.hidden=mode==="closed";preview.style.setProperty("--panel-w",`${panelWidth()}px`);
     preview.style.setProperty("--index-w",`${width}px`);
-    preview.style.setProperty("--index-track",docked&&paperFormat!=="free"&&indexWidthPref===null?"minmax(var(--index-min),1fr)":`${width}px`);
+    // Do not use spare paper width to enlarge the companion column: the paper is
+    // the primary surface, while the index follows the Stage tab's 360px default.
+    preview.style.setProperty("--index-track",`${width}px`);
     const handle=$("ros-index-resize");handle.setAttribute("aria-valuemin",String(layout.INDEX_WIDTH.min));handle.setAttribute("aria-valuemax",String(layout.indexWidth(layout.INDEX_WIDTH.max,docked?space:innerWidth)));handle.setAttribute("aria-valuenow",String(Math.round(aside.getBoundingClientRect().width)||width));
     const toggle=$("ros-index-toggle");toggle.setAttribute("aria-expanded",String(mode!=="closed"));toggle.title=mode==="closed"?"項目の一覧を開く":"項目の一覧を閉じる";
+    queueAutomaticPageScale();
+    updateStageFigures();
   }
   function renderIndex(){
     const signature=items.map((item,index)=>`${index}|${item.id}|${item.title}|${item.sceneId?1:0}`).join("\n");if(signature===indexSignature)return;indexSignature=signature;
@@ -825,25 +882,22 @@
     const current=indexCurrent;indexCurrent=null;if(current)setIndexCurrent(current);queueTrack();
   }
   function setIndexCurrent(id){
-    if(!id||indexCurrent===id)return;indexCurrent=id;const list=$("ros-index-list");
-    for(const b of list.querySelectorAll("[aria-current]"))b.removeAttribute("aria-current");
+    if(!id)return;const list=$("ros-index-list");
+    if(indexCurrent!==id){indexCurrent=id;for(const b of list.querySelectorAll("[aria-current]"))b.removeAttribute("aria-current");}
     const b=list.querySelector(`button[data-item-id="${CSS.escape(id)}"]`);if(!b)return;b.setAttribute("aria-current","location");
     // Keep the lit entry visible inside the list only; never scroll the page from here.
     const box=list.getBoundingClientRect(),row=b.getBoundingClientRect();if(!box.height)return;
     if(row.top<box.top)list.scrollTop-=box.top-row.top+8;else if(row.bottom>box.bottom)list.scrollTop+=row.bottom-box.bottom+8;
   }
-  // Scroll follow: the lit entry is the last row whose top has passed a probe line just under the sticky parts.
+  // The saved editing target is the one source of truth for the list, figures, and editor.
+  // Scrolling the paper is only reading; it must not make the index point at a different item.
   let trackFrame=0;
   function queueTrack(){cancelAnimationFrame(trackFrame);trackFrame=requestAnimationFrame(trackIndex);}
   function trackIndex(){
     if($("ros-index").hidden)return;
-    const free=paperFormat==="free",nodes=[...document.querySelectorAll(free?"#ros-body tr[data-item-id]":"#page-output .pg-row[data-item-id]")];if(!nodes.length)return;
-    const probe=free?Math.max(0,frame.getBoundingClientRect().top)+($("ros-table").tHead?.getBoundingClientRect().height||0)+8:(panelLayout()?0:document.querySelector(".paper-sticky").getBoundingClientRect().bottom)+16;
-    let low=0,high=nodes.length-1,at=0;while(low<=high){const mid=(low+high)>>1;if(nodes[mid].getBoundingClientRect().top<=probe){at=mid;low=mid+1;}else high=mid-1;}
-    // Between two A4 pages the row found may already have ended above the line: the next row is the one being read.
-    if(nodes[at+1]&&nodes[at].getBoundingClientRect().bottom<probe&&nodes[at+1].dataset.itemId!==nodes[at].dataset.itemId)at++;
-    const scroller=free?frame:document.scrollingElement;if(scroller.scrollTop>0&&scroller.scrollTop+scroller.clientHeight>=scroller.scrollHeight-2)at=nodes.length-1;
-    setIndexCurrent(nodes[at].dataset.itemId);
+    // Run after layout/scroll settles too, so a newly opened or resized list scrolls
+    // the saved editing target into view.
+    setIndexCurrent(selected);
   }
   function jumpToItem(id){
     if(!items.some(i=>i.id===id)||paperEditor.active&&!paperEditor.finish())return;
@@ -851,15 +905,26 @@
     if(indexMode==="overlay"){indexOverlay=false;layoutIndex();}
   }
   function openIndex(open){
-    if(open){if(wideLayout()){indexPinned=true;store(INDEX_OPEN_KEY,null);}indexOverlay=true;}
-    else{if(indexMode==="docked"){indexPinned=false;store(INDEX_OPEN_KEY,"0");}indexOverlay=false;}
+    if(open){
+      if(canDockCompanions()){
+        indexPinned=true;store(INDEX_OPEN_KEY,null);
+        if(!wideLayout()){narrowCompanionsOpen=true;store(NARROW_COMPANIONS_OPEN_KEY,"1");}
+      }
+      indexOverlay=true;
+    }else{
+      if(indexMode==="docked"){
+        if(!wideLayout()){narrowCompanionsOpen=false;store(NARROW_COMPANIONS_OPEN_KEY,"0");}
+        else{indexPinned=false;store(INDEX_OPEN_KEY,"0");}
+      }
+      indexOverlay=false;
+    }
     layoutIndex();
     if(indexMode!=="closed"){indexCurrent=null;trackIndex();if(indexMode==="overlay")($("ros-index-list").querySelector("[aria-current]")||$("ros-index-list").querySelector("button"))?.focus({preventScroll:true});}
     else $("ros-index-toggle").focus({preventScroll:true});
   }
   $("ros-index-list").addEventListener("click",event=>{const b=event.target.closest("button[data-item-id]");if(b)jumpToItem(b.dataset.itemId);});
   $("ros-index-toggle").addEventListener("click",()=>openIndex(indexMode==="closed"));
-  $("ros-index-close").addEventListener("click",()=>openIndex(false));
+  $("ros-index-collapse").addEventListener("click",()=>{indexPanelCollapsed=!indexPanelCollapsed;store('gamma:ros:index-panel-collapsed',indexPanelCollapsed?'1':'0');$("ros-index-collapse").setAttribute("aria-expanded",String(!indexPanelCollapsed));$("ros-index-list").hidden=indexPanelCollapsed;});
   document.addEventListener("keydown",event=>{if(event.key==="Escape"&&indexMode==="overlay"){event.preventDefault();openIndex(false);}});
   document.addEventListener("pointerdown",event=>{if(indexMode==="overlay"&&!event.target.closest("#ros-index,#ros-index-toggle")){indexOverlay=false;layoutIndex();}});
   $("ros-index-resize").addEventListener("pointerdown",event=>{
@@ -961,6 +1026,7 @@
     $('paper-item-picker').setAttribute('aria-label',uiText('編集する項目'));
     const scene=$('paper-scene');if(scene.dataset.rosSceneAction){scene.title=uiText(scene.dataset.rosSceneAction);scene.setAttribute('aria-label',scene.title);}
     $('paper-size-label').title=uiText('左右にドラッグして変更（Escで取消）');
+    for(const node of document.querySelectorAll('[data-ros-text]'))node.textContent=uiText(node.dataset.rosText);
   }
   translateAddedControls();
   new MutationObserver(()=>{translateAddedControls();syncLanguage();applyPaperSize();}).observe(parent.document.documentElement,{attributes:true,attributeFilter:['lang']});

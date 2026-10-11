@@ -99,8 +99,10 @@
   function paperText(lang,key,...args){const entry=PAPER_TEXT[key];if(!entry)return key;const text=lang==='en'?entry[1]:lang==='bilingual'?(entry[2]??entry[0]):entry[0];return text.replace(/\{(\d)\}/g,(_,i)=>String(args[Number(i)]??''));}
   // 2026-10-07 G1 #2/#3: screen-only sizes kept per device (localStorage). Printing always uses the real paper.
   // Continuous entry: table width in px (null = fill the column; minimum = editor.css --paper-min 1080px so the narrow time
-  // columns do not overflow more than today). A4: page scale in percent (never above 100 = real size).
-  const FREE_WIDTH=Object.freeze({min:1080,step:10}),PAGE_SCALE=Object.freeze({min:50,max:100,step:5}),INDEX_WIDTH=Object.freeze({min:160,max:480,initial:240});
+  // columns do not overflow more than today). A4: screen-only page scale; printing always remains real size.
+  // The run-sheet companion column shares the Stage tab's 360px default.  A
+  // person can still narrow or widen it with its existing resize handle.
+  const FREE_WIDTH=Object.freeze({min:1080,step:10}),PAGE_SCALE=Object.freeze({min:50,max:150,step:5}),INDEX_WIDTH=Object.freeze({min:160,max:480,initial:360});
   const present=value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value));
   const freeWidth=(value,max)=>present(value)?Math.round(Math.min(Math.max(Number(value),FREE_WIDTH.min),Math.max(FREE_WIDTH.min,Number.isFinite(max)?max:Infinity))):null;
   const pageScale=value=>present(value)?Math.round(Math.min(Math.max(Number(value),PAGE_SCALE.min),PAGE_SCALE.max)):PAGE_SCALE.max;

@@ -35,7 +35,7 @@ const index = [
     "branchReason": "",
     "description": "",
     "type": "fixture",
-    "rawBytes": 953393,
+    "rawBytes": 953405,
     "url": "./stage-samples/feature-test-show.json?v=20261009-v0335"
   }
 ];

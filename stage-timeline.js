@@ -1444,6 +1444,8 @@
       moved: false,
       button: event.currentTarget,
     };
+    window.getSelection?.().removeAllRanges();
+    event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
@@ -1867,10 +1869,12 @@
   }
   function syncTimelineLightCue(seconds, {force=false}={}) {
     if(typeof bridge.applyTimelineLightClock!=="function")return false;
+    const schedule=window.STAGE_LIGHT_SCHEDULE;
+    if(!schedule)return false;
     const playing=timelineIsPlaying();
     // Same section-relative effect clock as stage-timeline-position-change.
     const effectSeconds=timeline.source === "show" ? seconds-(timeDomain.sections.get(timeDomain.byId.get(segmentAt(seconds)?.sceneId)?.sectionId)?.start||0) : seconds;
-    const index=window.STAGE_LIGHT_SCHEDULE.eventAt(timelineLightEvents,seconds);
+    const index=schedule.eventAt(timelineLightEvents,seconds);
     const identity=`${timeline?.sectionId}:${index}:${playing}:${playing?'':seconds}`;
     if(!force&&appliedLightCueIdentity===identity){bridge.refreshTimelineLightClock?.({seconds,playing,effectSeconds});return false;}
     appliedLightCueIdentity=identity;
@@ -2685,12 +2689,14 @@
 
   function renderLightBands() {
     document.querySelectorAll(".stage-timeline-light-band").forEach(el=>el.remove());
+    const schedule=window.STAGE_LIGHT_SCHEDULE;
+    if(!schedule)return;
     for(const event of timelineLightEvents){
       const lane=event.kind==='lx'?els.cueLanes.light:els.transitionsLane;if(!lane)continue;
       lane.classList.add('has-light-bands');
       const index=timeline.segments.findIndex(s=>s.sceneId===event.sceneId);
       const next=timeline.segments[index+(event.kind==='lx'?1:0)];
-      const g=window.STAGE_LIGHT_SCHEDULE.band(event,next?.start,pxFor);
+      const g=schedule.band(event,next?.start,pxFor);
       const band=document.createElement("button");band.type="button";band.className="stage-timeline-light-band";
       band.dataset.eventId=event.id;band.dataset.sceneId=event.sceneId;
       if(g.cut)band.classList.add("is-cut");
@@ -4427,6 +4433,27 @@
   els.resize.addEventListener("pointermove", continueTimelineResize);
   els.resize.addEventListener("pointerup", endTimelineResize);
   els.resize.addEventListener("pointercancel", endTimelineResize);
+  /* Safari can release capture without delivering pointerup when the window
+     loses focus.  Funnel every active timeline drag through its cancel path. */
+  function cancelTimelinePointer(pointerId) {
+    const event = { pointerId, type: "pointercancel", clientX: 0, clientY: 0,
+      preventDefault() {}, stopPropagation() {} };
+    cancelAnchorDrag(event);
+    endCueMarquee(event);
+    endCueDrag(event);
+    endTimelineResize(event);
+    endDurationScrub(event);
+    endBlockResize(event);
+    endRowResize(event);
+    endRowReorder(event);
+  }
+  document.addEventListener("lostpointercapture", (event) => {
+    if (event.target.closest?.("#stage-timeline-panel")) cancelTimelinePointer(event.pointerId);
+  }, true);
+  window.addEventListener("blur", () => {
+    [anchorDrag, cueMarquee, cueDrag, timelineResize, durationScrub, blockResize, rowResize, rowReorder]
+      .filter(Boolean).forEach((drag) => cancelTimelinePointer(drag.pointerId));
+  });
   /* T-08（2026-09-18 本人要望）: 画面左下の取っ手。上の帯と同じ処理へつなぐ。
    * ★掴む対象が違うだけなので、ポインタの取り込み先だけ差し替える。
    * ★動かさずに離したときは開閉のトグル（Eキーと同じ）。 */

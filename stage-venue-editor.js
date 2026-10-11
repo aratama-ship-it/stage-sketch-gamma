@@ -3789,7 +3789,7 @@
     state.ceiling.hasCeiling = state.ceiling.hasCeiling !== false;
     state.ceiling.indoor = state.ceiling.indoor !== false;
     const savedBorder = state.ceiling.frontBorder;
-    const defaultOpening = Math.max(0.1, roundM(Math.min(4.5, Number(state.ceiling.heightM) - 0.1)));
+    const defaultOpening = roundM(window.GAMMA_VENUE_CURTAINS.frontBorderOpeningHeight(state.ceiling));
     state.ceiling.frontBorder = {
       ...savedBorder,
       enabled: true,

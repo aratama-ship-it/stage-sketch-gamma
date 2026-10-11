@@ -48,9 +48,9 @@ ${note("In a new show some tabs are closed", "Until the theatre has been applied
       },
       {
         id: "columns", title: "The Stage tab's three columns (left panels, drawings, right panels)", status: "verified",
-        keywords: ["show duration", "thumbnails", "performer search", "apply forward", "measure", "light skin", "layout", "panel", "left", "right", "middle", "three columns", "reorder", "width", "collapse", "handle", "drag"],
+        keywords: ["show duration", "thumbnails", "apply forward", "light skin", "layout", "panel", "left", "right", "middle", "three columns", "reorder", "width", "collapse", "handle", "drag"],
         html: `
-<h4>Current display controls</h4><p>Use the show duration to review section totals; missing durations remain unknown. The scene thumbnail setting adds small preview pictures. Performer search and the on-stage filter change only the list. Apply forward shows existing matching performers in later scenes before applying their position and pose; cancel leaves the show unchanged. The measurement tool in the plan view shows metres from the theatre dimensions, not construction measurements. A light skin is available in Preferences. Short displays compact the selected-item tools; expand them to reach the full controls.</p>
+<h4>Current display controls</h4><p>Use the show duration to review section totals; missing durations remain unknown. The scene thumbnail setting adds small preview pictures. Apply forward shows existing matching performers in later scenes before applying their position and pose; cancel leaves the show unchanged. A light skin is available in Preferences. Short displays compact the selected-item tools; expand them to reach the full controls.</p>
 <p>The ${ui("Stage")} tab has three columns: panels on the left (show, performers, set pieces, props, stage machinery, lights, backdrop …), the drawings in the middle, and panels on the right (scenes, info, selection, alternatives, dialogue cues …).</p>
 ${fig("10-section-A", "The three columns. Lists on the left, the drawings in the middle, the scene list and info on the right.", "Stage tab columns")}
 <ul>
@@ -136,7 +136,7 @@ ${table(["Key", "What it does"], [
   [kbd("⌘Z") + " / " + kbd("⇧⌘Z"), "Undo / redo"],
   [kbd("Esc"), "Close a window, leave full screen, leave 3D"]
 ])}
-<p>In ${ui("Keyboard shortcuts")} in the right column of Settings, click a row, then press the new key to reassign it (Esc cancels). Fixed keys such as ↑↓, ←→, Delete and Esc cannot be changed; ${ui("Restore the default keys")} undoes your changes. Settings are saved in this device and browser only. While you are typing, text entry wins over stage shortcuts except ⌘S. On Windows and Linux read ⌘ as Ctrl.</p>`
+<p>In ${ui("Keyboard shortcuts")} in the right column of Settings, click a row, then press the new key to reassign it (Esc cancels). After reading a long list, use ${ui("Return to Settings")} beside its heading to go back to Settings. Fixed keys such as ↑↓, ←→, Delete and Esc cannot be changed; ${ui("Restore the default keys")} undoes your changes. Settings are saved in this device and browser only. While you are typing, text entry wins over stage shortcuts except ⌘S. On Windows and Linux read ⌘ as Ctrl.</p>`
       }
     ]
   });

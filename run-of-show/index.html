@@ -1,4 +1,4 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>進行表 | 舞台スケッチγ</title><link rel="stylesheet" href="editor.css?v=20261010-v0342"><link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261010-v0343"><style id="paper-page-rule">@page{size:A4 landscape;margin:10mm}</style></head><body><main><section id="preview">
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>進行表 | 舞台スケッチγ</title><link rel="stylesheet" href="editor.css?v=20261011-v0347"><link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261011-v0347"><style id="paper-page-rule">@page{size:A4 landscape;margin:10mm}</style></head><body><main><section id="preview">
   <div class="paper-panel" id="paper-panel">
   <div class="paper-sticky">
   <div class="paper-band" id="paper-band" role="toolbar" aria-label="進行表の操作">
@@ -8,7 +8,6 @@
     </div>
     <span class="band-split" aria-hidden="true"></span><div class="band-group band-output" role="group" aria-labelledby="band-heading-output"><h2 class="band-heading" id="band-heading-output">出力</h2><button id="paper-save" data-tip-description="紙面の入力を確定し、現在のショーを保存します。">保存する</button><button id="print-sample" data-tip-description="ブラウザの印刷画面で進行表を印刷・PDF保存します。">印刷する / PDF</button><button id="paper-export" class="is-icon" aria-label="ショーを書き出す" title="ショーを書き出す" data-tip-description="進行表を含むショー全体をファイルへ書き出します。"><svg viewBox="0 0 15 15" aria-hidden="true"><path d="M7.5 1v9M4 6.5l3.5 3.5L11 6.5M1 10v4h13v-4"/></svg></button><button id="distribution-open" data-tip-description="配布する版の内容・変更点・届け先の返答を確認します。">配布内容を確認</button><button id="band-help-toggle" class="is-icon" aria-label="操作の説明" aria-expanded="false" data-tip-description="進行表の入力・選択・移動の操作方法を表示します。">?</button></div>
   </div>
-  <div id="stage-figures" class="stage-figures" hidden aria-label="選択中の行のシーン"><figure><img id="stage-figure-front" alt="正面図"><figcaption id="stage-figure-caption"></figcaption></figure><figure><img id="stage-figure-plan" alt="平面図"><figcaption>平面図</figcaption></figure></div>
   </div>
   <div id="reorder-effects" class="reorder-effects" hidden></div><p id="band-status" class="small" role="status"></p>
   <details class="editing-help" id="editing-help"><summary>操作の説明</summary><p>紙面の文字や空欄をクリックして入力。連続入力ではEnterで同じ欄の次の行へ、Shift + Enterで前の行へ。Tabで横へ。矢印キーで欄を選び、F2でも入力。詳細・備考は改行。欄外かCtrl / ⌘ + Enterで反映、Escで取消、Tabで次の欄へ。列見出しをドラッグで並べ替え、境目をドラッグで幅を変更。セルを選んで寄せ、詳細・備考の＋で画像を追加できます。</p><p class="stage-help-search-line">詳しくは「使い方をさがす」で調べられます。 <button type="button" id="band-help-search">使い方をさがす</button></p><button type="button" id="reorder-warning-reset">並べ替えの注意を再表示する</button></details>
@@ -42,7 +41,8 @@
   </div>
   <aside id="ros-index" class="ros-index" aria-labelledby="ros-index-heading" data-screen-only hidden>
     <div id="ros-index-resize" class="ros-index-resize" role="separator" aria-orientation="vertical" aria-controls="ros-index" aria-label="一覧の幅（ダブルクリックで既定に戻す）" tabindex="0"></div>
-    <div class="ros-index-head"><h2 id="ros-index-heading">項目の一覧</h2><span id="ros-index-count" class="small"></span><button type="button" id="ros-index-close" class="is-icon" aria-label="一覧を閉じる" title="一覧を閉じる">×</button></div>
+    <section class="ros-side-panel" id="ros-stage-panel"><button type="button" class="ros-side-head" id="ros-stage-toggle" aria-expanded="true" aria-controls="stage-figures"><span aria-hidden="true">⠿</span><span data-ros-text="舞台の様子">舞台の様子</span><span class="ros-side-disclosure" aria-hidden="true">▾</span></button><div id="stage-figures" class="stage-figures" aria-label="選択中の行のシーン"><figure><img id="stage-figure-front" alt="正面図"><figcaption id="stage-figure-caption"></figcaption></figure><figure><img id="stage-figure-plan" alt="平面図"><figcaption>平面図</figcaption></figure></div></section>
+    <div class="ros-index-head"><button type="button" class="ros-side-head" id="ros-index-collapse" aria-expanded="true" aria-controls="ros-index-list"><span aria-hidden="true">⠿</span><span id="ros-index-heading">項目の一覧</span><span id="ros-index-count" class="small"></span><span class="ros-side-disclosure" aria-hidden="true">▾</span></button></div>
     <ol id="ros-index-list" class="ros-index-list"></ol>
   </aside>
 </section>
@@ -102,4 +102,4 @@
 <details><summary>この版で変わった項目</summary><ul id="distribution-changes"></ul></details>
 <h3>届け先の返答</h3><p class="small">受け手が記入した返答の記録です。本人認証はありません。「返答なし」は未読を意味しません。</p>
 <div class="table-wrap"><table><thead><tr><th>届け先</th><th>返答</th><th>記入者</th><th>連絡・質問</th></tr></thead><tbody id="distribution-replies"></tbody></table></div></div>
-</dialog><p id="print-unavailable">ページを準備してから印刷してください。連続入力はA4へ切り替えて印刷できます。</p><script src="../stage-run-of-show-distribution.js?v=20261006-v038"></script><script src="../stage-run-of-show-files.js?v=20261009-v0335"></script><script src="timing.js?v=20261010-v0338"></script><script src="layout.js?v=20261010-v0338"></script><script src="pagination.js?v=20261010-v0338"></script><script src="images.js"></script><script src="paper-edit.js?v=ros8"></script><script src="distribution.js?v=20261010-v0338"></script><script src="../stage-reorder-warning.js?v=20261009-v0335"></script><script src="editor.js?v=20261010-v0342"></script></body></html>
+</dialog><p id="print-unavailable">ページを準備してから印刷してください。連続入力はA4へ切り替えて印刷できます。</p><script src="../stage-run-of-show-distribution.js?v=20261006-v038"></script><script src="../stage-run-of-show-files.js?v=20261009-v0335"></script><script src="timing.js?v=20261010-v0338"></script><script src="layout.js?v=20261011-v0347"></script><script src="pagination.js?v=20261010-v0338"></script><script src="images.js"></script><script src="paper-edit.js?v=ros8"></script><script src="distribution.js?v=20261010-v0338"></script><script src="../stage-reorder-warning.js?v=20261009-v0335"></script><script src="editor.js?v=20261011-v0347"></script></body></html>

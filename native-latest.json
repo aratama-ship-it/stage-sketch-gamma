@@ -1,8 +1,8 @@
 {
-  "version": "0.3.44",
+  "version": "0.3.47",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.44/stage-sketch-gamma-mac-0.3.44.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.47/stage-sketch-gamma-mac-0.3.47.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "iPadの演者用リンクで、1シーンに複数の書き込みページを作れるようになりました。ページの複製・白紙追加・名前変更・切り替えに対応しています（v0.3.44）。",
-  "updated": "2026-10-10"
+  "notes": "進行表は中央の紙面を広く使え、右側で項目の一覧と選択中の舞台の様子を並べて確認できます。舞台タブと環境設定の操作も整えました。保存形式は変わりません（v0.3.47）。",
+  "updated": "2026-10-11"
 }

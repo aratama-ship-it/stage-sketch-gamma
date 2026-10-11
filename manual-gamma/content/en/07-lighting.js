@@ -7,14 +7,15 @@
     lead: "Gamma's lighting has three layers. Knowing which one decides what saves a lot of confusion.",
     sections: [
       {
-        id: "light-layers", title: "The three layers (light pieces / equipment placement / light design)", status: "verified",
-        keywords: ["lighting", "light", "lamp", "fixture", "difference", "layers", "where", "equipment placement", "light design", "piece", "lx", "cue"],
+        id: "light-layers", title: "The two working layers (equipment placement / light design), and the disabled “light pieces”", status: "verified",
+        keywords: ["lighting", "light", "lamp", "fixture", "difference", "layers", "where", "equipment placement", "light design", "piece", "lx", "cue", "lights panel", "hidden", "disabled", "legacy", "beta"],
         html: `
 ${table(["Layer", "Where", "What it decides", "Best for"], [
-  ["Light pieces", "The " + ui("Lights") + " panel on the " + ui("Stage") + " tab", "Rough “light of this kind about here” pieces. Four kinds (overhead, side, front, floor) with diameter, level and target height", "Early ideas; putting a sense of light on the drawing"],
+  ["Light pieces", "Not in Gamma (this was the old beta's " + ui("Lights") + " panel)", "Rough “light of this kind about here” pieces: four kinds (overhead, side, front, floor)", "— Not available; new shows have no use for it"],
   ["Equipment placement", ui("Equipment placement") + " tab (" + kbd("3") + ")", "Hang fixtures on the theatre's battens and stands; set number, type, height and angle", "A first rig plan: what hangs where"],
   ["Light design", ui("Light design") + " tab (" + kbd("4") + ")", "LX cues per scene: colour, level, direction, spread and movement for each fixture, then apply to the show", "Showing in rehearsal; show paperwork"]
 ])}
+${note("The Lights panel is hidden", "The " + ui("Lights") + " panel that used to sit in the Stage tab's left column (name a piece and press Add, or " + ui("Build from preset") + ") is always hidden in Gamma and cannot be opened. There is no other way in either — not the tool row, a keyboard shortcut or a menu — so Gamma has no way to place a new light piece. Build lighting by going straight to " + ui("Equipment placement") + ", then " + ui("Light design") + ". The one exception is importing a beta show: its Lights panel data is converted automatically into equipment placement and LX cues (" + ref("light-legacy", "7-8") + "). The old light-piece data itself survives that conversion inside the show file, but it is never drawn on the Stage tab's views.", true)}
 <p>The ${ui("Info")} panel at the bottom right of the Stage tab summarises the scene's lighting, for example “Lighting summary · 0 of 17 fixtures on / 4 LX cues not shown in this view”. To draw the lights from equipment placement and light design on the Stage tab's views, use ${ui("Lighting effects")} (${kbd("C")}) and the ${ui("How the light looks")} setting (${ref("light-render", "7-3")}).</p>
 <p>The sample “Romeo and Juliet” has a basic mid-size hall rig (37 fixed fixtures plus 4 moving heads) and LX cues for every scene. To see a finished state, open ${ui("Light design")} with that sample.</p>
 ${fig("67-light-design-rj", "Light design in the sample “Romeo and Juliet” (scene 1-3): fixed fixtures on four battens, beams in the front view.", "Romeo and Juliet light design")}`

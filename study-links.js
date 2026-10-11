@@ -238,7 +238,9 @@ export async function serveStudyAsset(request, env) {
   headers.set('X-Content-Type-Options', 'nosniff'); headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
   if (['/study', '/study.html', '/study-frame', '/study-frame.html'].includes(path)) {
     const frame = path.startsWith('/study-frame');
-    headers.set('Content-Security-Policy', `default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src ${frame ? "'none'" : "'self'"}; frame-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'`);
+    // Permit only the fixed study.html entry bootstrap; the renderer stays script-src self.
+    const entryScript = frame ? "" : " 'sha256-NFovkuEQxOmss8SKmWONZfK+dxgIHYnBA4pGN77DAtQ='";
+    headers.set('Content-Security-Policy', `default-src 'none'; script-src 'self'${entryScript}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src ${frame ? "'none'" : "'self'"}; frame-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'`);
     if (frame) headers.append('Content-Security-Policy', 'sandbox allow-scripts');
   }
   return new Response(response.body, { status: response.status, headers });

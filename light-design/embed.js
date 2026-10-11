@@ -128,6 +128,9 @@
   function synchronizeVenueMask(next) {
     state.venueMask=next&&next.venueMask?model.clone(next.venueMask):null;
   }
+  function synchronizeFrontSeats(next) {
+    window.GAMMA_LIGHT_SET_FRONT_SEATS?.(next && next.frontSeats);
+  }
   function open(next, mode) {
     if(playbackPreview) return false;
     hooks.stop();
@@ -139,7 +142,7 @@
       active=true;setMode(mode);window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);return;
     }
     if(context?.showId===next.showId && context.basis===next.basis) {
-      synchronizePieces(next);synchronizeVenueMask(next); state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
+      synchronizePieces(next);synchronizeVenueMask(next);synchronizeFrontSeats(next); state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
       active=true;setMode(mode);window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);return;
     }
     saveDraft();loading=true;
@@ -171,7 +174,7 @@
       hooks.applyDesign(hostDesign,{host:true});
       if(dirty) hooks.applyDesign(design,{host:true,preserveAppliedBaseline:true});
       synchronizePieces(next);
-      appliedExtras=model.clone(design);context=next;synchronizeVenueMask(next);changedElsewhere=false;
+      appliedExtras=model.clone(design);context=next;synchronizeVenueMask(next);synchronizeFrontSeats(next);changedElsewhere=false;
       hooks.refreshApplyState();draftState=state.dirty?'saved':'none';applyError='';appliedNotice='';renderSaveStatus();state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
       lastScene=state.scenes[state.sceneIndex].id;
       state.seq=Date.now(); // avoids collisions with fixture / cue IDs imported from earlier sessions

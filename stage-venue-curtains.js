@@ -75,12 +75,20 @@
   }
   // Front curtain is always shown in theatre format; legacy data stays unchanged on read.
   const frontBorderPresent = venue => venue?.ceiling?.frontBorder?.present !== false;
+  function frontBorderOpeningHeight(ceiling, fallbackOpening) {
+    const saved = Number(ceiling?.frontBorder?.openingHeightM);
+    if (Number.isFinite(saved)) return saved;
+    const fallback = Number(fallbackOpening);
+    if (Number.isFinite(fallback)) return fallback;
+    const height = Number(ceiling?.heightM);
+    return Math.max(.1, Math.min(4.5, height - .1));
+  }
   function frontBorderForVenue(venue) {
     if (!frontBorderPresent(venue)) return null;
     const border = venue?.ceiling?.frontBorder;
     const outline = venue?.floor?.outline;
     const ceiling = Number(venue?.ceiling?.heightM);
-    const opening = Number(border?.openingHeightM ?? Math.max(.1, Math.min(4.5, ceiling - .1)));
+    const opening = frontBorderOpeningHeight(venue?.ceiling);
     if (venue?.stageFormat !== 'theatre' || venue?.ceiling?.hasCeiling === false ||
         !valid(outline) ||
         !Number.isFinite(ceiling) || !Number.isFinite(opening) ||
@@ -91,6 +99,6 @@
       openingHeightM: opening, topHeightM: ceiling };
   }
   root.GAMMA_VENUE_CURTAINS = Object.freeze({
-    legCount, frontDepths, stageWingOutput, forVenue, frontBorderPresent, frontBorderForVenue,
+    legCount, frontDepths, stageWingOutput, forVenue, frontBorderPresent, frontBorderOpeningHeight, frontBorderForVenue,
   });
 })(typeof window !== 'undefined' ? window : globalThis);

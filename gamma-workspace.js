@@ -484,7 +484,7 @@
       const language=document.documentElement.lang||'ja';
       const label=window.SHOSAI_STAGE_I18N_MODEL?.text(language,source)||source;
       help.setAttribute('aria-label',label);
-      help.setAttribute('title',label);
+      help.removeAttribute('title');
     });
     syncHelpLabels();
     if(!venueHelpLanguageObserver && window.MutationObserver) {
@@ -819,7 +819,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261010-v0343'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261011-v0347'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;
@@ -990,6 +990,41 @@
   });
   window.addEventListener('resize',scheduleFrameHeight);
   window.visualViewport?.addEventListener('resize',scheduleFrameHeight);
+  /* E1-#15: let every dialog use one row for its action choices when the viewport
+     has room.  The original DOM order (secondary, cancel, primary) is untouched. */
+  const fitDialogActions=(dialog)=>{
+    if(!(dialog instanceof HTMLElement) || dialog.hidden) return;
+    const actions=dialog.querySelector(':scope > footer, footer, .gamma-light-leave-actions');
+    if(!(actions instanceof HTMLElement)) return;
+    const viewportLimit=Math.max(0,window.innerWidth-32);
+    const buttons=[...actions.querySelectorAll(':scope > button')];
+    if(!buttons.length) return;
+    const style=getComputedStyle(actions);
+    const gap=Number.parseFloat(style.columnGap)||0;
+    const padding=(Number.parseFloat(style.paddingLeft)||0)+(Number.parseFloat(style.paddingRight)||0);
+    /* The action row is inside the window's body/footer, so include the
+       surrounding window padding and border as well as the row's own padding. */
+    const dialogExtras=Math.max(0,dialog.getBoundingClientRect().width-actions.getBoundingClientRect().width);
+    const needed=Math.ceil(buttons.reduce((sum,button)=>sum+button.getBoundingClientRect().width,0)
+      +gap*Math.max(0,buttons.length-1)+padding+dialogExtras);
+    const current=dialog.getBoundingClientRect().width;
+    dialog.style.width=`${Math.min(viewportLimit,Math.max(current,needed))}px`;
+    dialog.style.maxWidth=`${viewportLimit}px`;
+  };
+  const scheduleDialogFit=(dialog)=>requestAnimationFrame(()=>fitDialogActions(dialog));
+  const observeDialog=(node)=>{
+    if(!(node instanceof HTMLElement)) return;
+    const candidates=[node,...node.querySelectorAll('.stage-modal,[role="dialog"],.dialog .in')];
+    candidates.forEach(dialog=>{
+      if(!(dialog instanceof HTMLElement) || dialog.dataset.gammaDialogFit) return;
+      dialog.dataset.gammaDialogFit='1'; scheduleDialogFit(dialog);
+      new ResizeObserver(()=>scheduleDialogFit(dialog)).observe(dialog);
+    });
+  };
+  observeDialog(document.body);
+  new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(observeDialog)))
+    .observe(document.body,{childList:true,subtree:true});
+  window.addEventListener('resize',()=>document.querySelectorAll('.stage-modal,[role="dialog"],.dialog .in').forEach(scheduleDialogFit));
   // 初回表示でもモード属性を付け、浮動パネルなど舞台モード専用CSSの基準を揃える。
   // 新しいショー（劇場がまだ決まっていない）は、そのまま劇場設定を開いて始める。
   if(lite || location.hash==='#run-of-show') select('run-of-show');

@@ -191,7 +191,7 @@
     const bone = {}, sway = .006 * Math.sin(PI * travel / step) * activity;
     let drop = .009 * activity;
     for (const side of ['L', 'R']) {
-      const reference = source.id === 'walk' ? standard : source.joints;
+      const reference = standard;
       const hip = reference['hip' + side], knee = reference['kn' + side], ankle = reference['an' + side];
       bone[side] = [len(sub(knee, hip)), len(sub(ankle, knee))];
       const target = targets[side].ankle, reach = bone[side][0] + bone[side][1] - .0035 * activity;
@@ -200,8 +200,11 @@
       const required = hip[1] - ceiling, blend = .006 * activity;
       drop = (drop + required + Math.hypot(drop - required, blend)) / 2;
     }
-    const reference = source.id === 'walk' ? standard : source.joints;
-    for (const key of Object.keys(j)) j[key] = reference[key].slice();
+    const reference = standard;
+    // A transition always uses an ordinary standing walk.  Blend only at the
+    // entrances/exits so a saved raised-arm, seated, or reclined pose does not
+    // leak into the travelling body, while the first and last frames remain it.
+    for (const key of Object.keys(j)) j[key] = mix(source.joints[key] || reference[key], reference[key], activity);
     for (const key of ['hipL', 'hipR', 'shL', 'shR', 'neck', 'head', 'elL', 'elR', 'wrL', 'wrR']) { j[key][0] += sway; j[key][1] -= drop; }
     for (const side of ['L', 'R']) {
       const restPole = norm(sub(reference['kn' + side], mix(reference['hip' + side], reference['an' + side], .5)));
@@ -209,14 +212,14 @@
       const solved = twoBone(j['hip' + side], targets[side].ankle, ...bone[side], pole);
       j['kn' + side] = solved.joint; j['an' + side] = solved.end; j['to' + side] = targets[side].toe;
     }
-    if (source.id === 'stand' || source.id === 'walk') {
-      const separation = targets.L.ankle[2] - targets.R.ankle[2];
-      for (const side of ['L', 'R']) {
-        const theta = clamp((side === 'L' ? -1 : 1) * separation * .90, -.35, .35) * activity;
-        const swing = v => [v[0], v[1] * Math.cos(theta) + v[2] * Math.sin(theta), -v[1] * Math.sin(theta) + v[2] * Math.cos(theta)];
-        j['el' + side] = add(j['sh' + side], swing(sub(reference['el' + side], reference['sh' + side])));
-        j['wr' + side] = add(j['el' + side], swing(sub(reference['wr' + side], reference['el' + side])));
-      }
+    const separation = targets.L.ankle[2] - targets.R.ankle[2];
+    for (const side of ['L', 'R']) {
+      const theta = clamp((side === 'L' ? -1 : 1) * separation * .90, -.35, .35) * activity;
+      const swing = v => [v[0], v[1] * Math.cos(theta) + v[2] * Math.sin(theta), -v[1] * Math.sin(theta) + v[2] * Math.cos(theta)];
+      const elbow = add(j['sh' + side], swing(sub(reference['el' + side], reference['sh' + side])));
+      const wrist = add(elbow, swing(sub(reference['wr' + side], reference['el' + side])));
+      j['el' + side] = mix(j['el' + side], elbow, activity);
+      j['wr' + side] = mix(j['wr' + side], wrist, activity);
     }
     out.wide = source.wide || [1, 0, 0]; out.face = source.face || [0, 0, 1];
     if (t === 0 && source.id !== 'walk') return { ...root, facing: plan.fromFacing, pose: source, feet, distanceM: 0, travel };

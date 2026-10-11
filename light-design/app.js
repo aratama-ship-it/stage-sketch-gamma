@@ -533,17 +533,36 @@
     const d = $("dialog"); d.innerHTML = ""; d.hidden = false;
     const box = document.createElement("div"); box.className = "in";
     const content=document.createElement("div");content.className="dialog-content";content.innerHTML=html;
-    const close=document.createElement("button");close.type="button";close.className="btn dialog-close";close.textContent="×";close.setAttribute("aria-label","閉じる");close.onclick=()=>{d.hidden=true;};
+    const dismiss=()=>{d.hidden=true;window.removeEventListener("resize",fitActions);};
+    const close=document.createElement("button");close.type="button";close.className="btn dialog-close gamma-close-glyph";close.textContent="×";close.setAttribute("aria-label","閉じる");close.onclick=dismiss;
     box.append(close,content);
     const acts = document.createElement("div"); acts.className = "acts";
-    buttons.forEach(([label, fn, cls]) => { const b = document.createElement("button"); b.className = "btn " + (cls || ""); b.textContent = label; b.onclick = () => { d.hidden = true; fn && fn(); }; acts.append(b); });
+    buttons.forEach(([label, fn, cls]) => { const b = document.createElement("button"); b.className = "btn " + (cls || ""); b.textContent = label; b.onclick = () => { dismiss(); fn && fn(); }; acts.append(b); });
     box.append(acts); d.append(box);
+    /* E1-#15: preserve a single action row whenever it fits.  This is kept in
+       the iframe too, because its .dialog does not share the host DOM. */
+    const fitActions = () => {
+      if (d.hidden) return;
+      const viewportLimit = Math.max(0, window.innerWidth - 32);
+      const actionStyle = getComputedStyle(acts);
+      const gap = Number.parseFloat(actionStyle.columnGap) || 0;
+      const padding = (Number.parseFloat(actionStyle.paddingLeft) || 0) + (Number.parseFloat(actionStyle.paddingRight) || 0);
+      const actionWidth = [...acts.children].reduce((sum, button) => sum + button.getBoundingClientRect().width, 0)
+        + gap * Math.max(0, acts.children.length - 1) + padding;
+      const boxExtras = Math.max(0, box.getBoundingClientRect().width - acts.getBoundingClientRect().width);
+      const needed = Math.ceil(actionWidth + boxExtras);
+      const current = box.getBoundingClientRect().width;
+      box.style.width = `${Math.min(viewportLimit, Math.max(current, needed))}px`;
+      box.style.maxWidth = `${viewportLimit}px`;
+    };
+    requestAnimationFrame(fitActions);
+    window.addEventListener("resize", fitActions);
     /* 外側（暗いところ）を押したら閉じる（2026-09-13 本人要望）。
        中身の上で押して外で離した場合に閉じないよう、押した場所も見る。
        閉じるだけで、ボタンに付いている処理は動かさない＝「やめる」と同じ扱い。 */
     let downOnBackdrop = false;
     d.onpointerdown = (ev) => { downOnBackdrop = ev.target === d; };
-    d.onpointerup = (ev) => { if (downOnBackdrop && ev.target === d) d.hidden = true; downOnBackdrop = false; };
+    d.onpointerup = (ev) => { if (downOnBackdrop && ev.target === d) dismiss(); downOnBackdrop = false; };
   }
 
   /* ---------- 幾何: キャンバスの箱 ---------- */
@@ -796,7 +815,7 @@
   };
   const secProj = (sec) => (sec.kind === "front"
     ? (state.front3d
-        ? E.makeFrontPerspProjector(state.dims, secBox(sec.cv, "front"), state.seat)
+        ? E.makeFrontPerspProjector(state.dims, secBox(sec.cv, "front"), state.frontSeats?.[state.seat] || state.seat)
         : E.makeFrontFarProjector(state.dims, secBox(sec.cv, "front")))
     : E.makeSideProjector(state.dims, secBox(sec.cv, sec.kind), sec.kind));
   const positionSectionProjector=(P,canvas)=>w=>{const q=P(w);q.X=Math.max(24,Math.min(logicalWidth(canvas)-24,q.X));return q;};
@@ -3144,12 +3163,11 @@
     // 灯体: この側のスタンド灯は床からの縦線＋印。他は小さく薄く
     state.rig.fixtures.forEach((f) => { const S = fixtureWorld(f); if (!S) return; const q = f.mount.type === "position" ? positionSectionProjector(P,sec.cv)(S) : P(S);
       if (f.mount.type === "side" && f.mount.side === side) { fctx.strokeStyle = "rgba(240,231,214,0.5)"; fctx.lineWidth = 3; fctx.beginPath(); fctx.moveTo(q.X, B.y + B.h); fctx.lineTo(q.X, q.Y); fctx.stroke(); fctx.beginPath(); fctx.moveTo(q.X - 14, B.y + B.h); fctx.lineTo(q.X + 14, B.y + B.h); fctx.stroke();
-        if (showOn("fixtures")) drawFixtureMark(fctx, q.X, q.Y, "diamond", { fixture: f, sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "" });
+        drawFixtureMark(fctx, q.X, q.Y, "diamond", { fixture: f, sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "" });
         if (isSel(f.id) && state.mode === "place") { fctx.fillStyle = "#d3ac59"; fctx.font = "15px sans-serif"; fctx.fillText(`高さ ${metresText(f.mount.h)}・${f.mount.v < 0.4 ? "奥寄り" : f.mount.v > 0.6 ? "手前寄り" : "中ほど"}（ドラッグで奥行きと高さ）`, q.X + 22, q.Y - 26); } }
       else if (f.mount.type !== "side") {
         // 前明かりは舞台より手前（客席側）。側面図では手前端の外に一定距離で並べ、高さは実尺で描く
         const frontX = side === "shimote" ? B.x + B.w + FRONT_DX_SEC : B.x - FRONT_DX_SEC;
-        if (!showOn("fixtures")) return;
         fctx.globalAlpha = isSel(f.id) ? 1 : 0.35; drawFixtureMark(fctx, isFront(f) ? frontX : q.X, q.Y, markShapeOf(f), { fixture: f, sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) }); fctx.globalAlpha = 1;
       } });
     drawBordersUp(fctx, P, d);
@@ -3157,7 +3175,7 @@
       drawPiecesUp(fctx, P, B.w / d.D, { yawDeg: side === "shimote" ? -90 : 90, relight: true }); }
     if (state.mode === "move" && showOn("blackout")) drawLasers(fctx, P, side, 0.35); drawMirrorBalls(fctx, P, side, 0.35);
     compositeSpatial(fctx, P, B.w / d.D, side);
-    if (state.mode === "move" && showOn("fixtures")) redrawFixtureInfoSection(fctx, P, B, side);
+    if (state.mode === "move") redrawFixtureInfoSection(fctx, P, B, side);
     if (state.mode === "move" && showOn("blackout")) drawBordersUp(fctx, P, d);
     // 予告
     const hv = state.hover;
@@ -3170,7 +3188,7 @@
   function drawFront3D(sec) {
     const fctx = sec.ctx, cv = sec.cv, w = logicalWidth(cv), h = logicalHeight(cv);
     const B = secBox(cv, "front"), d = state.dims, P = secProj(sec);
-    const L = E.frontPerspSetup(d, B, state.seat);
+    const L = E.frontPerspSetup(d, B, state.frontSeats?.[state.seat] || state.seat);
     fctx.clearRect(0, 0, w, h); fctx.fillStyle = surface("#0d0c0b"); fctx.fillRect(0, 0, w, h);
     const at = (u, v, hM) => P({ x: (u - 0.5) * d.W, y: v * d.D, z: hM || 0 });
     // 床（奥から手前へ広がる台形）
@@ -3782,14 +3800,14 @@
       if(dg.kind === "positionT"){const f=fixtureById(dg.fid);if(f){f.mount.t=window.GAMMA_LIGHT_MODEL.positionLayout.nearestT(state.rig,f.mount,state.dims,positionSectionProjector(secProj(sec),sec.cv),pt);dg.moved=true;}requestDraw({inspector:true});return;}
       if (dg.kind === "sideVH") { const f = fixtureById(dg.fid); if (f) { const vh = E.sideToVH(state.dims, B, side, pt.X, pt.Y); f.mount.v = snapV(vh.v); f.mount.h = E.clamp(snapH(vh.h), 0.3, state.dims.H); dg.moved = true; } requestDraw({ inspector: true }); return; }
       if (dg.kind === "trussVH") { const t = E.trussById(state.rig, dg.tid); if (t) { const vh = E.sideToVH(state.dims, B, side, pt.X, pt.Y); t.v = snapV(vh.v); t.h = E.clamp(snapH(vh.h), 2, state.dims.H); t.tentative = false; dg.moved = true; } }
-      else if (dg.kind === "trussH") { const t = E.trussById(state.rig, dg.tid); if (t) { const uh = state.front3d ? E.frontPerspToUH(state.dims, B, state.seat, pt.X, pt.Y, t.v) : E.frontFarToUH(state.dims, B, pt.X, pt.Y, t.v); t.h = E.clamp(snapH(uh.h), 2, state.dims.H); t.tentative = false; dg.moved = true; } }
+      else if (dg.kind === "trussH") { const t = E.trussById(state.rig, dg.tid); if (t) { const uh = state.front3d ? E.frontPerspToUH(state.dims, B, state.frontSeats?.[state.seat] || state.seat, pt.X, pt.Y, t.v) : E.frontFarToUH(state.dims, B, pt.X, pt.Y); t.h = E.clamp(snapH(uh.h), 2, state.dims.H); t.tentative = false; dg.moved = true; } }
       else if (dg.kind === "sideH") { const f = fixtureById(dg.fid); if (f) { f.mount.h = E.clamp(snapH((B.y + B.h - pt.Y) / B.h * state.dims.H), 0.3, state.dims.H); dg.moved = true; } }
       else if (dg.kind === "handle" && dg.axis === "uh") {
         dg.lock = ev.shiftKey;
         // 3Dのときは擬似パースの逆算。奥行きは動かさないので、いまの点のvを渡す
         const cur = (() => { const l = lightOf(dg.fid); const pth = l && l.path; const t = !pth ? null : dg.handle === "c" ? pth.c : pth[dg.handle] || pth.a; return t ? t.v : 0.5; })();
         const uh = (side === "front" && state.front3d)
-          ? E.frontPerspToUH(state.dims, B, state.seat, pt.X, pt.Y, cur)
+          ? E.frontPerspToUH(state.dims, B, state.frontSeats?.[state.seat] || state.seat, pt.X, pt.Y, cur)
           : E.frontToUH(state.dims, B, pt.X, pt.Y);
         applyHandleDrag(dg, { u: snapU(uh.u), hM: snapH(uh.h) }, "uh");
       }
@@ -3810,7 +3828,25 @@
   document.querySelectorAll("#frontmode button").forEach((b) => {
     b.onclick = () => { state.front3d = b.dataset.front === "3d"; renderAll(); };
   });
-  if ($("seat")) $("seat").addEventListener("change", () => { state.seat = $("seat").value; draw(); });
+  if ($("seat")) $("seat").addEventListener("change", () => {
+    state.seat = $("seat").value;
+    /* A seat has meaning only for the perspective front view. */
+    state.front3d = true;
+    document.querySelectorAll("#frontmode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.front === "3d")));
+    renderAll();
+  });
+  window.GAMMA_LIGHT_SET_FRONT_SEATS = (seats) => {
+    const list = Array.isArray(seats) && seats.length ? seats : null;
+    if (!list) return;
+    state.frontSeats = Object.fromEntries(list.map(seat => [seat.id, seat]));
+    const select = $("seat");
+    if (!select) return;
+    select.replaceChildren(...list.map(seat => {
+      const option = document.createElement("option"); option.value = seat.id; option.textContent = seat.label; return option;
+    }));
+    if (!state.frontSeats[state.seat]) state.seat = state.frontSeats.center ? "center" : list[0].id;
+    select.value = state.seat;
+  };
   if ($("snap")) $("snap").addEventListener("change", () => { state.snap = $("snap").checked; draw(); });
 
   /* ---------- 表示・探す・舞台の大きさ（4図化で空いた場所へ入れた操作） ---------- */
@@ -4013,7 +4049,7 @@
       r.append(stCell);
       // 配置中は灯体だけを一覧から外せる。バトン・幕などの構造物とホリゾントバーは対象にしない。
       if (state.mode === "place" && f.mount.type !== "cyc") {
-        const remove = document.createElement("button"); remove.type = "button"; remove.className = "delete-fixture"; remove.textContent = "×";
+        const remove = document.createElement("button"); remove.type = "button"; remove.className = "delete-fixture gamma-close-glyph"; remove.textContent = "×";
         remove.title = `${label(f.id)}を削除`; remove.setAttribute("aria-label", `${label(f.id)}を削除`);
         remove.onclick = (ev) => { ev.stopPropagation(); state.sel = new Set([f.id]); state.selEquipment = null; state.aimMirror = null; removeSelected(); };
         r.append(remove);
@@ -6412,8 +6448,8 @@
     document.querySelectorAll("#showtoggles button, #lighttoggles button").forEach((b) => b.setAttribute("aria-pressed", String(showOn(b.dataset.show))));
     document.querySelectorAll("#frontmode button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.front === "3d") === Boolean(state.front3d))));
     $("seat").hidden = false;
-    $("seat").disabled = !state.front3d;
-    $("seat").setAttribute("aria-disabled", String(!state.front3d));
+    $("seat").disabled = false;
+    $("seat").setAttribute("aria-disabled", "false");
     $("filters").hidden = state.mode !== "move";
     document.querySelectorAll("#filters button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.filter === state.filter)));
     renderLxq(); renderList(); renderInspector(); renderFixedConflicts();

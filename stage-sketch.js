@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.44";
+  const GAMMA_APP_VERSION = "v0.3.47";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2425,7 +2425,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-10`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-11`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -5208,7 +5208,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      新しい機能は原則ここに並べ、切れるようにしておく（本人の方針）。 */
   const FEATURES = [
     { key: "idleMotion", label: "再生中の待機モーション", def: false,
-      hint: "止まっている演者がゆっくり歩きます。保存した立ち位置は変わりません" },
+      hint: "止まっている演者がその場で小さく動きます。保存した立ち位置は変わりません" },
     { key: "idleAreas", label: "平面図の待機範囲", def: true,
       hint: "編集中に待機範囲を破線で表示します。再生・画像書き出しには出ません" },
     { key: "presentation", label: "全画面表示",
@@ -11717,6 +11717,84 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      群衆は4人の立ち位置（stage-performer-body.js の BUILD_SPECS.crowd と同じ並び）、馬の着ぐるみは後ろの胴・後脚・尾と前の首、
      四つ足の着ぐるみは尾、大柄・マスコットは胴回りの太さぶん。足元・平面図の印・選ぶ枠がこれを使う。 */
   const CROWD_LAYOUT = [[-0.3, -0.12, 0.94], [0.28, -0.24, 1.0], [0.04, 0.2, 0.97], [-0.14, 0.4, 0.9]];
+  /* ---------- E2 #1: moving performer footprint hits ----------
+     The plan view is the source of truth: these are the same oriented ellipses
+     (including pose extent, build and facing) drawn by drawPlanPiece.  The
+     small polygon check is only reached after a one-metre spatial grid has
+     found nearby footprints, so an 80-performer rehearsal does not compare
+     every possible pair on every frame. */
+  function hitEllipsePoint(ellipse, x, z) {
+    const c = Math.cos(ellipse.angle), s = Math.sin(ellipse.angle);
+    const dx = x - ellipse.x, dz = z - ellipse.z;
+    const localX = dx * c + dz * s;
+    const localZ = -dx * s + dz * c;
+    return localX * localX / (ellipse.rx * ellipse.rx) + localZ * localZ / (ellipse.rz * ellipse.rz) <= 1 + 1e-9;
+  }
+  function hitEllipsePolygon(ellipse, steps = 16) {
+    const c = Math.cos(ellipse.angle), s = Math.sin(ellipse.angle), points = [];
+    for (let i = 0; i < steps; i++) {
+      const a = Math.PI * 2 * i / steps, lx = Math.cos(a) * ellipse.rx, lz = Math.sin(a) * ellipse.rz;
+      points.push({ x: ellipse.x + lx * c - lz * s, z: ellipse.z + lx * s + lz * c });
+    }
+    return points;
+  }
+  function hitSegmentsCross(a, b, c, d) {
+    const cross = (p, q, r) => (q.x - p.x) * (r.z - p.z) - (q.z - p.z) * (r.x - p.x);
+    const ab1 = cross(a, b, c), ab2 = cross(a, b, d), cd1 = cross(c, d, a), cd2 = cross(c, d, b);
+    return ((ab1 >= 0 && ab2 <= 0) || (ab1 <= 0 && ab2 >= 0)) && ((cd1 >= 0 && cd2 <= 0) || (cd1 <= 0 && cd2 >= 0));
+  }
+  function hitEllipsesOverlap(a, b) {
+    if (!a || !b || ![a.x, a.z, a.rx, a.rz, b.x, b.z, b.rx, b.rz].every(Number.isFinite)
+      || a.rx <= 0 || a.rz <= 0 || b.rx <= 0 || b.rz <= 0) return false;
+    const reach = Math.hypot(a.rx, a.rz) + Math.hypot(b.rx, b.rz);
+    if (Math.hypot(a.x - b.x, a.z - b.z) > reach) return false;
+    if (hitEllipsePoint(a, b.x, b.z) || hitEllipsePoint(b, a.x, a.z)) return true;
+    const ap = hitEllipsePolygon(a), bp = hitEllipsePolygon(b);
+    return ap.some((point, i) => bp.some((other, j) => hitSegmentsCross(point, ap[(i + 1) % ap.length], other, bp[(j + 1) % bp.length])));
+  }
+  function hitOverlappingPairs(footprints, cellSize = 1) {
+    const cells = new Map(), seen = new Set(), hits = [];
+    for (let i = 0; i < footprints.length; i++) {
+      const item = footprints[i], r = Math.hypot(item.rx, item.rz);
+      const x0 = Math.floor((item.x - r) / cellSize), x1 = Math.floor((item.x + r) / cellSize);
+      const z0 = Math.floor((item.z - r) / cellSize), z1 = Math.floor((item.z + r) / cellSize);
+      for (let x = x0; x <= x1; x++) for (let z = z0; z <= z1; z++) {
+        const key = `${x}:${z}`, nearby = cells.get(key) || [];
+        for (const otherIndex of nearby) {
+          const pair = otherIndex < i ? `${otherIndex}:${i}` : `${i}:${otherIndex}`;
+          if (seen.has(pair)) continue;
+          seen.add(pair);
+          if ((item.moving || footprints[otherIndex].moving) && hitEllipsesOverlap(item, footprints[otherIndex])) hits.push([footprints[otherIndex], item]);
+        }
+        nearby.push(i); cells.set(key, nearby);
+      }
+    }
+    return hits;
+  }
+  function transitionHitLabelPosition(point, nameTags, surface, front = false) {
+    if (!point || ![point.x, point.y].every(Number.isFinite)) return null;
+    const hit = { width: 30, height: 20 }, gap = 6;
+    const limit = (value, min, max) => Math.max(min, Math.min(max, value));
+    const tags = (nameTags || []).filter((tag) => tag && [tag.left, tag.top, tag.width, tag.height].every(Number.isFinite));
+    const contains = (tag, x, y) => x - hit.width / 2 < tag.left + tag.width && x + hit.width / 2 > tag.left
+      && y - hit.height / 2 < tag.top + tag.height && y + hit.height / 2 > tag.top;
+    let x = point.x, y = point.y;
+    // In the front view, always clear the higher of the two name tags. In the
+    // plan view the floor midpoint remains the primary anchor unless it overlaps one.
+    if (tags.length && (front || tags.some((tag) => contains(tag, x, y)))) {
+      y = Math.min(...tags.map((tag) => tag.top)) - gap - hit.height / 2;
+    }
+    if (surface && [surface.width, surface.height].every(Number.isFinite)) {
+      x = limit(x, hit.width / 2, Math.max(hit.width / 2, surface.width - hit.width / 2));
+      y = limit(y, hit.height / 2, Math.max(hit.height / 2, surface.height - hit.height / 2));
+    }
+    return { x, y, width: hit.width, height: hit.height };
+  }
+  function transitionHitFrontLabelPosition(a, b, nameTags, surface) {
+    if (!a || !b || ![a.x, a.y, a.w, b.x, b.y, b.w].every(Number.isFinite)) return null;
+    return transitionHitLabelPosition({ x: (a.x + a.w / 2 + b.x + b.w / 2) / 2, y: Math.min(a.y, b.y) - 13 }, nameTags, surface, true);
+  }
+  window.STAGE_TRANSITION_HITS = Object.freeze({ hitEllipsesOverlap, hitOverlappingPairs, transitionHitLabelPosition, transitionHitFrontLabelPosition });
   function performerExtent(piece) {
     const ext = poseExtent(resolvePoseId(piece, sc().pieces));
     const build = performerBuild(piece);
@@ -18382,22 +18460,25 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
   function timelineLxState() {
     const events=timelineLightEvents(),go=timelineLightGo;if(!events||!go)return null;
+    const schedule=window.STAGE_LIGHT_SCHEDULE;
+    if(!schedule)return null;
     const seconds=timelineLightSeconds();
     const key=`${go.playing?Math.floor(seconds*30):seconds}:${timelineMotionEnabled()}`;
     if(timelineLightStateCache?.events===events&&timelineLightStateCache.key===key)return timelineLightStateCache.value;
-    const st=window.STAGE_LIGHT_SCHEDULE.state(events,seconds,timelineLightContext());
+    const st=schedule.state(events,seconds,timelineLightContext());
     const value={...st,link:st.event?{id:st.event.id,cue:st.event.target,prevCue:st.event.prev,timing:st.event.timing}:null};
     timelineLightStateCache={events,key,value};return value;
   }
   function timelineLightFadeLoop() {
     timelineLightFadeRaf=0;
     const st=timelineLxState();
-    if(!st||!timelineLightGo?.playing||(st.done&&!(timelineMotionEnabled()&&window.STAGE_LIGHT_SCHEDULE.hasMotion(st.cue)))){render();return;}
+    const schedule=window.STAGE_LIGHT_SCHEDULE;
+    if(!schedule||!st||!timelineLightGo?.playing||(st.done&&!(timelineMotionEnabled()&&schedule.hasMotion(st.cue)))){render();return;}
     const now=performance.now();
     if(now-timelineLightFadeLast>=33){timelineLightFadeLast=now;
       const start=performance.now();timelineLightFrameSeconds=timelineLightSeconds();
       try{render();}finally{timelineLightFrameSeconds=null;}
-      if(timelineMotionEnabled()&&window.STAGE_LIGHT_SCHEDULE.recordRender(timelineMotionGuard,performance.now()-start)){
+      if(timelineMotionEnabled()&&schedule.recordRender(timelineMotionGuard,performance.now()-start)){
         timelineLightStateCache=null;lightCueOverlayCache={};timelineMotionStatus();render();
       }
     }
@@ -18428,7 +18509,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     timelineLightCue={cueId:st?.event?.kind==='lx'?st.event.id:'',sceneId:state.project.activeSceneId,playing:!!clock?.playing};
     lightCueOverlayCache={};syncSpinRun(false);render();
     timelineMotionStatus();
-    if(clock?.playing&&st&&(!st.done||(timelineMotionEnabled()&&window.STAGE_LIGHT_SCHEDULE.hasMotion(st.cue))))timelineLightFadeRaf=requestAnimationFrame(timelineLightFadeLoop);
+    const schedule=window.STAGE_LIGHT_SCHEDULE;
+    if(clock?.playing&&st&&schedule&&(!st.done||(timelineMotionEnabled()&&schedule.hasMotion(st.cue))))timelineLightFadeRaf=requestAnimationFrame(timelineLightFadeLoop);
     window.dispatchEvent(new CustomEvent("stage-timeline-light-cue-change",{detail:{cueId:timelineLightCue.cueId||null,sceneId:state.project.activeSceneId}}));
     return true;
   }
@@ -19021,10 +19103,18 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   /* 劇場設定の「前一文字幕」を、舞台タブの正面図にも重ねる。
    * 配置画面と同じく、客席側（v=1）に吊り、開口の高さ prosH より上だけを隠す。
    * ここで showFrontBorder を持つのは図の見せ方だけで、照明デザイン自体は変えない。 */
-  function currentVenueFrontBorderPresent() {
+  function currentVenueCeiling() {
     const v = venueLibrary?.venueV2ById(state.project.venue);
     const size = v?.sizes?.find(s => s.id === state.project.venueSize);
-    return (size?.ceiling || v?.ceiling)?.frontBorder?.present !== false;
+    return size?.ceiling || v?.ceiling || null;
+  }
+  function currentVenueFrontBorder() {
+    return currentVenueCeiling()?.frontBorder || null;
+  }
+  function currentVenueFrontBorderPresent() {
+    const border = currentVenueFrontBorder();
+    // Legacy venues have no border record; only an explicit enabled:false removes it.
+    return border?.enabled !== false && border?.present !== false;
   }
 
   function drawFrontBorderCurtain(target, L) {
@@ -19034,7 +19124,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const curtains = design.curtains;
     if (!curtains || curtains.pros === false) return false;
     const height = Math.max(1, finite(L.size && L.size.height, 8));
-    const opening = clamp(finite(curtains.prosH, 6.2), 1, height);
+    const hasSavedProsH = Object.prototype.hasOwnProperty.call(curtains, "prosH");
+    const opening = clamp(window.GAMMA_VENUE_CURTAINS.frontBorderOpeningHeight(
+      currentVenueCeiling(), hasSavedProsH ? curtains.prosH : undefined,
+    ), 1, height);
     if (opening >= height - 0.01) return false;
     const lowerLeft = stagePoint(0, 1, opening, L);
     const lowerRight = stagePoint(1, 1, opening, L);
@@ -19299,8 +19392,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     // 光源印と光の始点を幕の奥へ隠す。演者名などの作図用ラベルはこの後で描く。
     if (!L.plan) drawFrontBorderCurtain(target, L);
 
+    let visibleNameTags = [];
     if (!pitchStyle && (state.showNames || state.showSetNames || state.showLightNames)) {
-      pieceNameTags(target, shown, L).forEach(tag => {
+      visibleNameTags = pieceNameTags(target, shown, L);
+      visibleNameTags.forEach(tag => {
         target.save();
         if (tag.anchorY !== tag.y) {
           target.strokeStyle = 'rgba(239,231,214,0.7)'; target.lineWidth=1;
@@ -19315,6 +19410,13 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         target.fillText(tag.text, tag.x, tag.y);
         target.restore();
       });
+    }
+
+    // E2 #1: a transient screen overlay only; never part of print/export output.
+    // It follows the names so the warning is never hidden behind a performer tag.
+    if ((L.plan && target === planCtx) || (!L.plan && target === ctx)) {
+      refreshTransitionHits();
+      drawTransitionHits(target, L, visibleNameTags);
     }
     // U-03: いまのセリフの吹き出し（正面図だけ・環境設定で入のときだけ）
     if (!pitchStyle && !L.plan && target === ctx && featureOn("voxBubble")) drawVoxBubble(target, L, shown);
@@ -21420,18 +21522,6 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         togglePanel(id);
       });
       el.prepend(head);
-      if (id === "inspector") {
-        const close = document.createElement("button");
-        close.type = "button";
-        close.className = "stage-inspector-close";
-        close.innerHTML = squareGlyphSvg("close");
-        close.setAttribute("aria-label", tx("選択を解除して閉じる"));
-        close.title = tx("選択を解除して閉じる");
-        close.setAttribute("aria-keyshortcuts", "Escape");
-        close.addEventListener("click", closeFloatingInspector);
-        el.append(close);
-      }
-
       /* 説明文は畳んでおき、「?」を押したときだけ出す。
        * 道具の数が多く、説明が常に見えていると、道具そのものが下へ押し出される。
        * 初めて触るときだけ要る文章なので、要るときに引き出せればよい。 */
@@ -21447,9 +21537,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         help.textContent = "?";
         help.setAttribute("aria-pressed", "false");
         help.setAttribute("aria-label", tx("この欄の説明を出す"));
-        help.title = tx("この項目の説明");
         help.addEventListener("click", (e) => {
           e.stopPropagation();
+          // A collapsed panel used to reveal help behind its own closed body.
+          // Open it first so the same control has the same visible result.
+          if (el.classList.contains("is-collapsed")) togglePanel(id);
           const show = hints[0].hidden;
           hints.forEach((hint) => { hint.hidden = !show; });
           help.setAttribute("aria-pressed", String(show));
@@ -21708,7 +21800,15 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     persistSoon();
   }
 
+  const layoutTrace = [];
+  let lastLayoutOperation = null;
+  function noteLayoutOperation(kind, panel = null) {
+    lastLayoutOperation = { kind, panel, width: window.innerWidth, display: effectivePanelLayoutMode(), at: Date.now() };
+  }
+  window.GAMMA_LAYOUT_TRACE = () => layoutTrace.map((entry) => ({ ...entry }));
+
   function togglePanel(id) {
+    noteLayoutOperation("toggle", id);
     state.layout.collapsed[id] = !state.layout.collapsed[id];
     applyLayout();
     // G-J: 畳んでいるあいだは描かないので、開いた直後に一度描き直す
@@ -21787,7 +21887,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   // 状態に従って、パネルを列へ並べ直す
   function applyLayout() { return preserveStagePanelScroll(applyLayoutContent); }
-  function applyLayoutContent() {
+  function applyLayoutContent(repairing = false) {
     const L = state.layout;
     // iPad PWAではパネルの置き場所は左ドロワーが正本。
     // デスクトップ時だけ、従来どおり左右の列へ並べる。
@@ -21871,6 +21971,29 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     syncViewSwitch();
     scheduleFloatingInspectorRefresh();
     requestAnimationFrame(syncBottomScrollMode);
+    /* A stale right2 visibility flag can make CSS place an extra column on a
+       second row. Repair once only: this guard must never recurse forever. */
+    if (!repairing && layoutPlacementMismatch()) {
+      layoutTrace.push({ ...(lastLayoutOperation || { kind: "apply" }), mismatch: true });
+      if (layoutTrace.length > 20) layoutTrace.splice(0, layoutTrace.length - 20);
+      applyLayoutContent(true);
+    }
+  }
+
+  function layoutPlacementMismatch() {
+    const grid = document.querySelector(".stage-sketch-grid");
+    if (!grid || tabletUi || phoneViewerActive || panelBottomActive()) return false;
+    const triple = grid.classList.contains("stage-panels-triple");
+    const right2 = colEls.right2;
+    if (Boolean(right2 && !right2.hidden) !== triple) return true;
+    const columns = getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).filter(Boolean).length;
+    const visible = [colEls.left, colEls.center, colEls.right, right2].filter((el) => el && el.getClientRects().length).length;
+    if (columns && columns !== visible) return true;
+    const allowed = new Set(triple ? ["left", "center", "right", "right2"] : ["left", "center", "right"]);
+    return PANELS.some((id) => {
+      const el = panelEl(id);
+      return el && !el.hidden && !el.classList.contains("gamma-selection-floating") && el.parentElement?.dataset?.col && !allowed.has(el.parentElement.dataset.col);
+    });
   }
 
   /* 共有パネルは元々 <details> だった。stage-session.js は「開く／閉じる」を
@@ -22133,36 +22256,25 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     notice.hidden = !enabled || !duplicateCastName(input.value, exceptId);
     notice.textContent = notice.hidden ? "" : tx("同じ名前の演者がいます。別の演者として登録でき、一覧では番号で区別します。");
   }
-  let castNameFilter = "";
   let castOnstageFilter = false;
   function renderCast() { return preserveStagePanelScroll(renderCastContent); }
   function renderCastContent() {
     syncRosterGroups();
     if (!els.castList) return;
-    const cast = state.project.cast.filter(member =>
-      (!castNameFilter || member.name.normalize('NFKC').toLocaleLowerCase().includes(castNameFilter.normalize('NFKC').toLocaleLowerCase()))
-      && (!castOnstageFilter || castOnStage(member.id)));
+    const cast = state.project.cast.filter(member => !castOnstageFilter || castOnStage(member.id));
     if (!document.getElementById('stage-cast-filter')) {
       const bar = document.createElement('div'); bar.className = 'stage-cast-filter';
-      const input = document.createElement('input'); input.id='stage-cast-filter'; input.type='search'; input.placeholder=tx('演者を絞り込む'); input.setAttribute('aria-label', input.placeholder);
-      input.addEventListener('input', () => {castNameFilter=input.value; renderCast();});
       const label = document.createElement('label'), box=document.createElement('input'); box.type='checkbox';
       label.append(box,document.createTextNode(tx('このシーンに出ている人だけ')));
       box.addEventListener('change',()=>{castOnstageFilter=box.checked;renderCast();});
-      bar.append(input,label); els.castList.before(bar);
+      bar.append(label); els.castList.before(bar);
     }
     els.castList.innerHTML = "";
     els.castList.append(rosterAddButton("performer"));
     if (!cast.length) {
       return;
     }
-    const heading = document.createElement("div");
-    heading.className = "stage-cast-list-heading";
-    const onStageHeading = document.createElement("span");
-    onStageHeading.textContent = tx("舞台上");
-    heading.append(onStageHeading);
-    els.castList.append(heading);
-    if (!castNameFilter && !castOnstageFilter) enableRosterReorder(els.castList);   // T-24: 名前を掴んで並べ替え
+    if (!castOnstageFilter) enableRosterReorder(els.castList);   // T-24: 名前を掴んで並べ替え
     cast.forEach((member) => {
       const row = document.createElement("div");
       row.className = "stage-cast-row";
@@ -22292,11 +22404,15 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     listEl.dataset.rosterReorder = "on";
     listEl.addEventListener("pointerdown", (event) => {
       if (event.button !== 0 || STUDY_READ_ONLY || guestSessionActive()) return;
-      if (listEl === els.castList && (castNameFilter || castOnstageFilter)) return;
+      if (listEl === els.castList && castOnstageFilter) return;   // #7 で名前の絞り込みは外した（2026-10-10）
       const handle = event.target.closest(".stage-cast-name");
       if (!handle || !listEl.contains(handle)) return;
       const row = handle.closest("[data-roster-id]");
       if (!row) return;
+      // A native range left by Safari takes over the next drag from this name.
+      // Do not prevent the click here: a stationary press and double-click
+      // still open the existing name editor.
+      clearNonEditableSelection();
       rosterDrag = { listEl, row, handle, startY: event.clientY, pointerId: event.pointerId, moved: false,
         grabY: event.clientY - row.getBoundingClientRect().top };
       handle.setPointerCapture(event.pointerId);
@@ -28062,6 +28178,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
 
   function startSceneDrag(e, id, row) {
     if (e.button !== undefined && e.button > 0) return;
+    clearNonEditableSelection();
+    e.preventDefault();
     const sx = e.clientX;
     const sy = e.clientY;
     let active = false;
@@ -28192,6 +28310,19 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     window.dispatchEvent(new Event("stage-timeline-structure-change"));
   }
 
+  function clearNonEditableSelection() {
+    const selection = window.getSelection?.();
+    if (selection?.rangeCount && !selection.anchorNode?.parentElement?.closest?.('input, textarea, select, [contenteditable="true"], #gamma-script-workspace')) selection.removeAllRanges();
+  }
+
+  document.addEventListener("pointerdown", (event) => {
+    if (!event.target.closest?.('input, textarea, select, [contenteditable="true"], #gamma-script-workspace')) clearNonEditableSelection();
+  }, true);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !event.target.closest?.('input, textarea, select, [contenteditable="true"], #gamma-script-workspace')) clearNonEditableSelection();
+  }, true);
+  window.addEventListener("blur", () => { if (drag) endDrag(); if (sceneDrag) endSceneDrag(true); });
+
   // 与えられた配列の上で「畳んだセクションの中か」を見る
   function sceneHiddenIn(list, index) {
     for (let i = index - 1; i >= 0; i -= 1) {
@@ -28211,6 +28342,86 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   let sceneAnim = null;
   let timelineTransitionPhase = null;
   let transitionBadgeFrame = 0;
+  const transitionHitMarks = new Map();
+  let transitionHitFrame = 0;
+  function transitionHitKey(a, b) { return [a.id, b.id].sort().join("/"); }
+  function transitionHitFootprint(piece) {
+    const H = pieceHeightM(piece) * (piece.size / 100), ext = performerExtent(piece);
+    const angle = finite(performerFacing(piece), 0) * Math.PI / 180;
+    const c = Math.cos(angle), s = Math.sin(angle);
+    const cx = pieceU(piece) * venueSize().width + (ext.cx * H * c - ext.cz * H * s);
+    const cz = pieceV(piece) * venueSize().depth + (ext.cx * H * s + ext.cz * H * c);
+    return { piece, x: cx, z: cz, rx: ext.halfX * H, rz: ext.halfZ * H, angle, moving: false };
+  }
+  function refreshTransitionHits(now = performance.now()) {
+    const active = new Set();
+    if (sceneAnim && !sceneAnim.blackout) {
+      const moving = new Set([...sceneAnim.pieces, ...(sceneAnim.exits || [])]
+        .filter((entry) => entry.piece.type === "performer" && !entry.stationary
+          && Math.hypot(entry.to.u - entry.from.u, entry.to.v - entry.from.v) > 1e-6)
+        .map((entry) => entry.piece.id));
+      const performers = sc().pieces.filter((piece) => piece.type === "performer").concat((sceneAnim.exits || []).map((entry) => entry.piece));
+      const footprints = performers.map(transitionHitFootprint);
+      footprints.forEach((footprint) => { footprint.moving = moving.has(footprint.piece.id); });
+      window.STAGE_TRANSITION_HITS.hitOverlappingPairs(footprints).forEach(([a, b]) => {
+        const key = transitionHitKey(a.piece, b.piece), prior = transitionHitMarks.get(key);
+        transitionHitMarks.set(key, { key, a: a.piece, b: b.piece, x: (a.x + b.x) / 2, z: (a.z + b.z) / 2,
+          born: prior?.born ?? now, seen: now });
+        active.add(key);
+      });
+    }
+    transitionHitMarks.forEach((mark, key) => {
+      if (!active.has(key) && now - mark.seen >= 250) transitionHitMarks.delete(key);
+    });
+  }
+  function scheduleTransitionHitRender() {
+    if (transitionHitFrame || !transitionHitMarks.size) return;
+    transitionHitFrame = requestAnimationFrame(() => {
+      transitionHitFrame = 0;
+      render();
+      if (transitionHitMarks.size) scheduleTransitionHitRender();
+    });
+  }
+  function clearTransitionHitMarks() {
+    if (!transitionHitMarks.size) return;
+    const now = performance.now();
+    transitionHitMarks.forEach((mark) => { mark.seen = Math.min(mark.seen, now - 250); });
+    scheduleTransitionHitRender();
+  }
+  function drawTransitionHits(target, L, visibleNameTags = []) {
+    if (pitchStyle || !transitionHitMarks.size) return;
+    const now = performance.now(), reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    transitionHitMarks.forEach((mark) => {
+      const fading = Math.max(0, Math.min(1, (now - mark.seen) / 250));
+      const alpha = 1 - fading;
+      if (!alpha) return;
+      let point;
+      const nameTags = state.showNames ? visibleNameTags.filter((tag) => tag.piece.id === mark.a.id || tag.piece.id === mark.b.id) : [];
+      if (L.plan) {
+        point = window.STAGE_TRANSITION_HITS.transitionHitLabelPosition(
+          place(mark.x / L.size.width, mark.z / L.size.depth, L), nameTags, { width: W, height: H }
+        );
+      } else {
+        const a = selectionBounds(mark.a, L), b = selectionBounds(mark.b, L);
+        point = window.STAGE_TRANSITION_HITS.transitionHitFrontLabelPosition(a, b, nameTags, { width: W, height: H });
+        if (!point) return;
+      }
+      if (!point) return;
+      const { x, y } = point;
+      const pop = reduced ? 1 : 1 + 0.22 * Math.max(0, 1 - (now - mark.born) / 120);
+      target.save(); target.translate(x, y); target.scale(pop, pop); target.globalAlpha = alpha;
+      target.font = "700 11px ui-rounded, 'Hiragino Kaku Gothic ProN', sans-serif";
+      target.textAlign = "center"; target.textBaseline = "middle";
+      const w = Math.max(30, target.measureText("HIT").width + 14), h = 20, r = 5;
+      target.fillStyle = "#9c3f2d"; target.strokeStyle = "rgba(70,24,17,0.9)"; target.lineWidth = 1;
+      target.beginPath(); target.moveTo(-w / 2 + r, -h / 2); target.lineTo(w / 2 - r, -h / 2);
+      target.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r); target.lineTo(w / 2, h / 2 - r);
+      target.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2); target.lineTo(-w / 2 + r, h / 2);
+      target.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r); target.lineTo(-w / 2, -h / 2 + r);
+      target.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2); target.closePath(); target.fill(); target.stroke();
+      target.fillStyle = "#fff8ef"; target.fillText("HIT", 0, 1); target.restore();
+    });
+  }
   function transitionBadgeActive() { return Boolean(sceneAnim) || Boolean(timelineTransitionPhase); }
   function requestTransitionBadgeRender() {
     if (sceneAnim || transitionBadgeFrame) return;
@@ -28245,10 +28456,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       if (entry && (entry.stationary || Math.hypot(entry.to.u-entry.from.u,entry.to.v-entry.from.v)>1e-6 || entry.ctrl
         || Math.abs((piece.base||0)-(entry.startBase||0))>1e-6)) continue;
       const pose = poseById(resolvePoseId(piece, scene.pieces));
-      const frame = idleSampler(piece, scene, size, seconds, pose, pieceHeightM(piece)*piece.size/100);
-      // Walking preserves an upright act's upper-body pose (including juggling props).
-      // Acrobatics and wheeled poses keep their joints; only the walkthrough offset applies.
-      if (!window.STAGE_PERFORMER_MOTION.upright(pose) || pose.wheel) frame.pose = pose;
+      const frame = idleSampler(piece, scene, size, seconds, pose, pieceHeightM(piece)*piece.size/100,
+        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
       idleFrames.set(piece.id, frame);
     }
   }
@@ -30190,6 +30399,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   function stopSceneAnim() {
     if (!sceneAnim) return;
     cancelAnimationFrame(sceneAnim.raf);
+    clearTransitionHitMarks();
     sceneAnim.pieces.forEach((entry) => {
       delete entry.piece.animU;
       delete entry.piece.animV;
@@ -31281,6 +31491,11 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
   document.getElementById("stage-settings-open")?.addEventListener("click", () => showPrefsSection("settings"));
   document.getElementById("stage-shortcuts-open")?.addEventListener("click", () => showPrefsSection("shortcuts"));
+  document.getElementById("stage-shortcuts-return")?.addEventListener("click", () => {
+    showPrefsSection("settings");
+    document.getElementById("stage-prefs-main")
+      ?.querySelector("select, button:not([hidden]), input:not([hidden]), textarea:not([hidden]), [href]")?.focus();
+  });
   function openPrefs() {
     closePanelVisibilityMenu();
     closePanelLayoutMenu();
@@ -33810,7 +34025,7 @@ ${propsPlotHtml}
     }
     box.replaceChildren();
     const body = document.createElement('span'); body.textContent = message;
-    const close = document.createElement('button'); close.type = 'button'; close.textContent = '×';
+    const close = document.createElement('button'); close.type = 'button'; close.className = 'gamma-close-glyph'; close.textContent = '×';
     close.setAttribute('aria-label', tx('閉じる')); close.style.cssText = 'min-width:44px;min-height:44px;margin-left:12px;color:inherit;background:transparent;border:1px solid currentColor';
     close.onclick = () => { box.hidden = true; clearTimeout(importFailureNotice._t); };
     box.append(body, close);
@@ -38390,8 +38605,11 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (planCanvas) planCanvas.dataset.pannable = "true";
   }
 
+  // E1-#11: retain the measurement implementation and translations, but keep it out of the default tool rail.
+  const PLAN_MEASURE_ENABLED = false;
   let measureMode=false, measurePoints=[];
   const measureButton=document.getElementById('stage-plan-measure');
+  if (measureButton) measureButton.hidden = !PLAN_MEASURE_ENABLED;
   measureButton?.addEventListener('click',()=>{measureMode=!measureMode;measurePoints=[];measureButton.setAttribute('aria-pressed',String(measureMode));render();});
   document.addEventListener('keydown',event=>{if(event.key==='Escape' && measureMode){measureMode=false;measurePoints=[];measureButton?.setAttribute('aria-pressed','false');render();}},true);
   function drawMeasurement(target,L) {
@@ -44624,7 +44842,11 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
         }),
       };
     });
-    return { showId: state.project.id, title: state.project.title, stage, scenes, venueMask,
+    const frontSeats = frontSeatList().filter(seat => !seat.only3D).map(seat => ({
+      id: seat.id, label: seatName(seat), floorY: seat.floorY, bottomY: seat.bottomY,
+      backW: seat.backW, frontW: seat.frontW, rise: seat.rise,
+    }));
+    return { showId: state.project.id, title: state.project.title, stage, scenes, venueMask, frontSeats,
       cueNaming: state.project.cueNaming === "scene" ? "scene" : "serial",
       venueType: currentVenue.lightingPresetBasis?.venueId || venueV2?.lightingPresetBasis?.venueId || currentVenue.id,
       existingLighting: hasVenueDependentLighting(state.project),

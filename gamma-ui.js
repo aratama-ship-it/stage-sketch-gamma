@@ -444,6 +444,8 @@
         else {action.type='button';action.disabled=original.disabled;action.addEventListener('click',()=>original.click());}
         item.append(action);
       }
+      const itemText=item.textContent.trim();
+      if (itemText) item.title=itemText;
       fragment.append(item);
     }
     // No cloned IDs, live regions, editable fields or source nodes.

@@ -930,7 +930,7 @@
     balcony: { id: "balcony", label: "2階席", floorY: 392, bottomY: 544, backW: 0.65, frontW: 0.94, rise: -0.12 },
   };
   const frontPerspSetup = (dims, box, seatId) => {
-    const seat = FRONT_SEATS[seatId] || FRONT_SEATS.center;
+    const seat = (seatId && typeof seatId === "object" ? seatId : FRONT_SEATS[seatId]) || FRONT_SEATS.center;
     const k = box.h / FRONT_BASE_H;
     const floorY = box.y + seat.floorY * k;
     const bottomY = box.y + seat.bottomY * k;
