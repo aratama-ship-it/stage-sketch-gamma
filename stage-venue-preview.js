@@ -277,7 +277,7 @@
       context.fill();
       context.strokeStyle = state.move && f.target ? '#e4bc72' : '#b7a58b';
       context.globalAlpha = state.move && f.target ? 1 : .35; context.lineWidth = state.move && f.target ? 1.5 : .7;
-      context.stroke(); context.globalAlpha = 1;
+      if(!f.cloth)context.stroke(); context.globalAlpha = 1;
       if (f.cloth && f.points.length === 4) {
         const [a, b, c, d] = f.points;
         for (let i = 1; i < 10; i++) {

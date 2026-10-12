@@ -4,7 +4,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
 <title>Stage Sketch — read-only drawings</title>
-<link rel="stylesheet" href="/study-assets/style.css?v=20261012-v0356"><link rel="stylesheet" href="/stage-study.css?v=25"><link rel="stylesheet" href="/stage-study-navigation.css?v=3">
+<link rel="stylesheet" href="/study-assets/style.css?v=20261012-v0358"><link rel="stylesheet" href="/stage-study.css?v=20261012-v0358"><link rel="stylesheet" href="/stage-study-navigation.css?v=3">
 <script src="/stage-study-sticky.js?v=5"></script><script src="/stage-study-pen.js?v=4"></script><script src="/stage-study-navigation.js?v=2"></script><script src="/stage-study-frame.js?v=10"></script></head>
 <body class="study-frame" data-view="both">
 <div class="study-drawings"><div class="study-drawing study-front"></div><div class="study-drawing study-plan"></div></div>
@@ -34,7 +34,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.57</span>
+                <span class="stage-app-version">0.3.58</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -1711,7 +1711,7 @@
         </div>
       </section>
 
-      <p class="stage-action-status" id="stage-live" role="status" aria-live="polite" aria-atomic="true"></p>
+      <p class="stage-action-status" id="stage-live" data-action-status-visible="false" role="status" aria-live="polite" aria-atomic="true"></p>
     </section>
   </main><div class="stage-tour" id="stage-tour" hidden>
   <!-- 暗幕。穴を二つ以上あけるので、影ではなく一枚の図形で描く。
@@ -2841,17 +2841,20 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261012-v0357">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261012-v0358">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0357-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0357-title">v0.3.57</h3><time datetime="2026-10-12">2026-10-12</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0358-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0358-title">v0.3.58</h3><time datetime="2026-10-12">2026-10-12</time></header>
       <ul>
-        <li>待機モーションを使っても、正面図・平面図・3Dの演者名は揺れないようにしました。演者の動きやシーン転換に伴う名前の移動はそのままです。</li>
-        <li>英語・韓国語・中国語に切り替えたとき、主なボタンの説明や読み上げ用の名前も選んだ言語になるようにしました。</li>
-        <li>劇場設定で、選んだ舞台の角や辺を、重なった袖や客席より優先して掴めるようにしました。</li>
-        <li>劇場設定の浮動する選択欄が、図や追加ステージのつまみを遮らないようにしました。</li>
-        <li>狭い画面で劇場の読み込みボタンが折り返すときも、隣のボタンと高さが揃うようにしました。</li>
+        <li>照明デザインの正面図が、タイムライン再生とシーン送りの転換で、舞台タブと同じように動くようにしました。</li>
+        <li>タイムラインにLXキューを追加すると照明キューへ登録し、後ろのキュー番号をずらすようにしました。</li>
+        <li>進行表の列の一覧を左側に常時表示し、行の表示切り替えと紙面の設定を分けました。正面図と平面図は縦に並びます。</li>
+        <li>進行表のセルや列に、字体・文字サイズ・太字・斜体・下線・文字色・背景色・配置・罫線を設定できるようにしました。保存と配布にも引き継ぎます。</li>
+        <li>照明デザインの表示設定を正面図の上へまとめ、幕の表示を一括で切り替えます。幕の輪郭線は出さず、かんたん照明は床が見える描画にしました。</li>
+        <li>照明デザインでFは正面図、Pは平面図の拡大表示に対応しました。かんたん照明のプリセットとプレビューも広げました。</li>
+        <li>プルダウン、LXの札、見る席の文字位置を揃え、進行表の説明が二重に出る現象と不要な仕切りを取り除きました。</li>
+        <li>右下の操作結果は初めは表示せず、環境設定で切り替えます。カット時の残り時間は、灯体の向きが動いていることを明記します。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3802,7 +3805,7 @@
 <script src="/study-assets/stage-venues.js?v=20261007-v0326"></script>
 <script src="/study-assets/stage-venue-lines.js?v=2026091992"></script>
 <script src="/study-assets/stage-set-model.js?v=2026092354"></script>
-<script src="/study-assets/stage-machinery.js?v=20261009-v0334"></script>
+<script src="/study-assets/stage-machinery.js?v=20261012-v0358"></script>
 <script src="/study-assets/stage-virtual-room.js?v=20261009-v0337"></script>
 <script src="/study-assets/stage-reorder-warning.js?v=20261009-v0335"></script>
 <script src="/study-assets/stage-scrim.js?v=20261009-v0335"></script>
@@ -3816,8 +3819,8 @@
 <script src="/study-assets/stage-idle-motion.js?v=20261011-v0353"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
 <script src="/study-assets/gamma-ui.js?v=20261012-v0356"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261012-v0357"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261012-v0358"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261009-v0333"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="/study-assets/stage-sketch.js?v=20261012-v0357"></script>
+<script src="/study-assets/stage-sketch.js?v=20261012-v0358"></script>
 </body></html>

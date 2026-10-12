@@ -1,11 +1,31 @@
 {
-  "appVersion": "v0.3.57",
+  "appVersion": "v0.3.58",
   "contentUpdated": "2026-10-12",
   "requiredScreens": [
     {
-      "id": "idle-names",
+      "id": "lighting",
       "language": "ja",
-      "file": "manual-gamma/img/release057-idle-names.jpg",
+      "file": "manual-gamma/img/release058-lighting.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "F-1"
+    },
+    {
+      "id": "simple-lighting",
+      "language": "ja",
+      "file": "manual-gamma/img/release058-simple-lighting.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "F-1"
+    },
+    {
+      "id": "run-of-show",
+      "language": "ja",
+      "file": "manual-gamma/img/release058-run-of-show.jpg",
       "viewport": [
         1440,
         900
@@ -13,9 +33,9 @@
       "scene": "H-1"
     },
     {
-      "id": "idle-names",
-      "language": "en",
-      "file": "manual-gamma/img/en/release057-idle-names.jpg",
+      "id": "preferences",
+      "language": "ja",
+      "file": "manual-gamma/img/release058-preferences.jpg",
       "viewport": [
         1440,
         900
@@ -23,101 +43,193 @@
       "scene": "H-1"
     },
     {
-      "id": "venue-editing",
-      "language": "ja",
-      "file": "manual-gamma/img/release057-venue-editing.jpg",
+      "id": "lighting",
+      "language": "en",
+      "file": "manual-gamma/img/en/release058-lighting.jpg",
       "viewport": [
         1440,
         900
       ],
-      "scene": "C-1"
+      "scene": "F-1"
     },
     {
-      "id": "venue-editing",
+      "id": "simple-lighting",
       "language": "en",
-      "file": "manual-gamma/img/en/release057-venue-editing.jpg",
+      "file": "manual-gamma/img/en/release058-simple-lighting.jpg",
       "viewport": [
         1440,
         900
       ],
-      "scene": "C-1"
+      "scene": "F-1"
+    },
+    {
+      "id": "run-of-show",
+      "language": "en",
+      "file": "manual-gamma/img/en/release058-run-of-show.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "H-1"
+    },
+    {
+      "id": "preferences",
+      "language": "en",
+      "file": "manual-gamma/img/en/release058-preferences.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "H-1"
     }
   ],
   "screenshots": [
     {
-      "id": "idle-names",
-      "file": "manual-gamma/img/release057-idle-names.jpg",
+      "id": "lighting",
       "language": "ja",
-      "scene": "H-1",
-      "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.57",
-      "capturedCommit": "230f67423005145aec3f32203180d700a84df908",
-      "capturedAt": "2026-10-12T02:16:10.478Z",
-      "sha256": "8845854b95b3f4c1148b04f4ee44d3133e937ade5ba47b50abe1da94f44419bf",
+      "file": "manual-gamma/img/release058-lighting.jpg",
       "viewport": [
         1440,
         900
       ],
+      "scene": "F-1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.58",
+      "capturedCommit": "1b90b94d7d44c81beca599b13461ae531eee6766",
+      "capturedAt": "2026-10-12T11:03:41.107Z",
+      "sha256": "de4777704407278242348569c1281509baf381b30405a32aebb26ef7984db112",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "sourceSha256": "8802c8e461bac87f405ca77902e72a7ad3b001b7c1158c08bee3114d4d4895ac"
+      "sourceSha256": "2892d64c4b9cf7172de5236b5323687a8e563ab87080eb84150c266bcb89c462"
     },
     {
-      "id": "idle-names",
-      "file": "manual-gamma/img/en/release057-idle-names.jpg",
-      "language": "en",
-      "scene": "H-1",
-      "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.57",
-      "capturedCommit": "230f67423005145aec3f32203180d700a84df908",
-      "capturedAt": "2026-10-12T02:16:14.576Z",
-      "sha256": "f8ac460e6dd7ea94ce760ba8d886e90f4a17d77ff2942ef6a90770d739a9fee3",
-      "viewport": [
-        1440,
-        900
-      ],
-      "engine": "chromium",
-      "actualUiLanguage": "en",
-      "sourceSha256": "8802c8e461bac87f405ca77902e72a7ad3b001b7c1158c08bee3114d4d4895ac"
-    },
-    {
-      "id": "venue-editing",
-      "file": "manual-gamma/img/release057-venue-editing.jpg",
+      "id": "simple-lighting",
       "language": "ja",
-      "scene": "C-1",
-      "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.57",
-      "capturedCommit": "f18aec909207ce5baa7ea382ad3f338cae8fe68a",
-      "capturedAt": "2026-10-12T02:56:15.793Z",
-      "sha256": "259959223de6bde9494b1e7af2cd1516277050617e85c9866999d88b4d4b9e29",
+      "file": "manual-gamma/img/release058-simple-lighting.jpg",
       "viewport": [
         1440,
         900
       ],
+      "scene": "F-1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.58",
+      "capturedCommit": "1b90b94d7d44c81beca599b13461ae531eee6766",
+      "capturedAt": "2026-10-12T11:03:46.269Z",
+      "sha256": "4950d9e946de87d7c09d73040d061c67116b7a5ad5ee2152b375fa95c03c21f5",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "sourceSha256": "8802c8e461bac87f405ca77902e72a7ad3b001b7c1158c08bee3114d4d4895ac"
+      "sourceSha256": "2892d64c4b9cf7172de5236b5323687a8e563ab87080eb84150c266bcb89c462"
     },
     {
-      "id": "venue-editing",
-      "file": "manual-gamma/img/en/release057-venue-editing.jpg",
-      "language": "en",
-      "scene": "C-1",
-      "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.57",
-      "capturedCommit": "f18aec909207ce5baa7ea382ad3f338cae8fe68a",
-      "capturedAt": "2026-10-12T02:56:18.965Z",
-      "sha256": "ed71379e4c2c355e9525b8f41153601bc62e330dece451503cebf286598c461c",
+      "id": "run-of-show",
+      "language": "ja",
+      "file": "manual-gamma/img/release058-run-of-show.jpg",
       "viewport": [
         1440,
         900
       ],
+      "scene": "H-1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.58",
+      "capturedCommit": "1b90b94d7d44c81beca599b13461ae531eee6766",
+      "capturedAt": "2026-10-12T11:03:52.972Z",
+      "sha256": "008ce82f9a6c0d11b598e80e4e621a23ad4d0df9880533fc8b8ecf5bd28169a7",
+      "engine": "chromium",
+      "actualUiLanguage": "ja",
+      "sourceSha256": "2892d64c4b9cf7172de5236b5323687a8e563ab87080eb84150c266bcb89c462"
+    },
+    {
+      "id": "preferences",
+      "language": "ja",
+      "file": "manual-gamma/img/release058-preferences.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "H-1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.58",
+      "capturedCommit": "1b90b94d7d44c81beca599b13461ae531eee6766",
+      "capturedAt": "2026-10-12T11:03:56.770Z",
+      "sha256": "4450bdcfb3c8c2c7aadb992b64edea48be9071694a7b5a0fc366ef71f9800d54",
+      "engine": "chromium",
+      "actualUiLanguage": "ja",
+      "sourceSha256": "2892d64c4b9cf7172de5236b5323687a8e563ab87080eb84150c266bcb89c462"
+    },
+    {
+      "id": "lighting",
+      "language": "en",
+      "file": "manual-gamma/img/en/release058-lighting.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "F-1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.58",
+      "capturedCommit": "1b90b94d7d44c81beca599b13461ae531eee6766",
+      "capturedAt": "2026-10-12T11:04:01.286Z",
+      "sha256": "4afd8bbbd76b4fd1b592497ab1a14f54b83ebaada8818fa65cb8029b98dc3a8a",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "sourceSha256": "8802c8e461bac87f405ca77902e72a7ad3b001b7c1158c08bee3114d4d4895ac"
+      "sourceSha256": "2892d64c4b9cf7172de5236b5323687a8e563ab87080eb84150c266bcb89c462"
+    },
+    {
+      "id": "simple-lighting",
+      "language": "en",
+      "file": "manual-gamma/img/en/release058-simple-lighting.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "F-1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.58",
+      "capturedCommit": "1b90b94d7d44c81beca599b13461ae531eee6766",
+      "capturedAt": "2026-10-12T11:04:06.515Z",
+      "sha256": "3604c20df293d00eb2896cae28fd638fb3b1b030437a4bef8b4e852c265d219a",
+      "engine": "chromium",
+      "actualUiLanguage": "en",
+      "sourceSha256": "2892d64c4b9cf7172de5236b5323687a8e563ab87080eb84150c266bcb89c462"
+    },
+    {
+      "id": "run-of-show",
+      "language": "en",
+      "file": "manual-gamma/img/en/release058-run-of-show.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "H-1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.58",
+      "capturedCommit": "1b90b94d7d44c81beca599b13461ae531eee6766",
+      "capturedAt": "2026-10-12T11:04:13.261Z",
+      "sha256": "5607ebe72b589dfe0ca4368155db17f1b5d6c0c46232ba8fd78e0c35ae0ab33c",
+      "engine": "chromium",
+      "actualUiLanguage": "en",
+      "sourceSha256": "2892d64c4b9cf7172de5236b5323687a8e563ab87080eb84150c266bcb89c462"
+    },
+    {
+      "id": "preferences",
+      "language": "en",
+      "file": "manual-gamma/img/en/release058-preferences.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "H-1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.58",
+      "capturedCommit": "1b90b94d7d44c81beca599b13461ae531eee6766",
+      "capturedAt": "2026-10-12T11:04:17.123Z",
+      "sha256": "7cad38bac83e081e525321a9aa5b7c5ad6427609c612e1405a4cd1c8116eab02",
+      "engine": "chromium",
+      "actualUiLanguage": "en",
+      "sourceSha256": "2892d64c4b9cf7172de5236b5323687a8e563ab87080eb84150c266bcb89c462"
     }
   ],
-  "legacyImagesNote": "H-1 idle name labels and C-1 theatre editing are captured for v0.3.57 in Japanese and English. Other images retain their original capture versions, including the v0.3.56 Share window.",
+  "legacyImagesNote": "H-1 idle name labels and C-1 theatre editing are captured for v0.3.57 in Japanese and English. Other images retain their original capture versions, including the v0.3.56 Share window. v0.3.58 captures cover the changed lighting, run-of-show and preference screens; earlier captures retain their original capture versions.",
   "status": "verified",
   "visualReview": {
     "reviewedAt": "2026-10-12",

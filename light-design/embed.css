@@ -192,9 +192,6 @@ html[data-gamma-embedded] :is(.planwrap .btn.small,.sec .btn.small,.fmode button
 /* Translated captions may be wider: retain every action and wrap the compact filter row. */
 html[data-gamma-embedded]:lang(en) .filters { flex-wrap:wrap; gap:2px; }
 html[data-gamma-embedded]:lang(en) .filters button { flex:1 1 42px; margin:0; }
-html[data-gamma-embedded]:lang(en) .sec.front .sechead { display:flex; flex-wrap:wrap; overflow:visible; }
-html[data-gamma-embedded]:lang(en) .sec.front .sechead .viewtitle { position:static; transform:none; margin-right:auto; }
-html[data-gamma-embedded]:lang(en) .sec.front .sechead .fmode { margin-left:auto; }
 
 /* Saved fixture appearance choices share the four style swatches. */
 html[data-gamma-embedded] .seg.fixture-body-choices button { min-height:44px; }

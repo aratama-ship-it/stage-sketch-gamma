@@ -80,8 +80,8 @@ ${fig("31-tab-placement", "The Equipment placement tab: battens (horizontal line
         keywords: ["light design", "lx cue", "cue", "colour", "level", "direction", "spread", "type", "adjust", "moving head", "sweep", "circle", "strobe", "chase", "laser", "cyclorama", "haze", "gobo", "pattern", "shutter", "solo", "copy", "paste", "follow scene", "fixed light", "warning"],
         html: `
 <p>Fixture bodies use black fill and white outlines, and a single selected fixture can be adjusted. Resize fixture, LX-cue and view panels at their boundaries; equipment presets use the available width. A loading message shows when 3D is preparing.</p>
-<p>The ${ui("Light design")} tab has display switches (equipment, number, movement range, grid, performers, set, names, border, legs) and ${ui("Turn work lights off")} along the top, the design name (${ui("Unsaved draft")}) in the middle, and the draw time and play (▶) at the top right. From the left: ${ui("Lighting fixtures")}, the LX cue column, the plan, front and side views, and ${ui("Fixture details")}.</p>
-${fig("32-tab-light-design", "The Light design tab: light pools in the plan, beams in the front view, and on the right a warning that fixed fixtures point differently in different scenes.", "Light design tab")}
+<p>Detailed display controls are grouped above the front view. Borders and legs use a single visibility switch, with no outlines. Movement range remains on. Simple lighting has larger presets and a preview that keeps the stage floor visible. F enlarges the front view and P enlarges the plan view.</p><p>Timeline playback and scene transitions move performers and sets with the Stage tab's timing and positions. Adding an LX cue to the timeline registers it as a lighting cue and shifts later numbers. A cut changes brightness immediately, but moving-head direction travel can still take time; its countdown explicitly says that brightness is cut.</p>
+${fig("release058-lighting", "The Light design tab: light pools in the plan, beams in the front view, and on the right a warning that fixed fixtures point differently in different scenes.", "Light design tab")}
 <h4>LX cues (second column)</h4>
 ${steps([
   "Choose the scene with the ‹ › beside " + ui("Section") + " and " + ui("Scenes") + " (or from " + ui("Scene list") + "). With " + ui("Follow scene") + " on, it follows the scene chosen on the Stage tab.",
@@ -140,7 +140,17 @@ ${table(["Message", "Meaning"], [
         html: `
 <p>Importing a beta show (with lights from the old lights panel) with ${ui("Import show")} keeps the original and opens a new show with the lights converted to equipment placement and LX cues (v0.2.1). If the old data had no real hanging positions, check the conversion warnings (for example, four registered lights may become 45 placements).</p>
 <p>If a small red-edged window says “Lighting could not be opened”, follow ${ui("Show recovery options")}. An old working backup is sometimes the cause.</p>`
-      }
+      },
+      {
+  "id": "release058-07-lighting",
+  "title": "v0.3.58",
+  "status": "sourced",
+  "keywords": [
+    "v0.3.58",
+    "07-lighting"
+  ],
+  "html": "<p>Detailed display controls are grouped above the front view. Borders and legs use a single visibility switch, with no outlines. Movement range remains on. Simple lighting has larger presets and a preview that keeps the stage floor visible. F enlarges the front view and P enlarges the plan view.</p><p>Timeline playback and scene transitions move performers and sets with the Stage tab's timing and positions. Adding an LX cue to the timeline registers it as a lighting cue and shifts later numbers. A cut changes brightness immediately, but moving-head direction travel can still take time; its countdown explicitly says that brightness is cut.</p>"
+}
     ]
   });
 })();

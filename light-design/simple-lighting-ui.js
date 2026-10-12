@@ -26,10 +26,10 @@
     +'<label>人物用スポットの直径 <output id="simple-size-value"></output><input id="simple-size" type="range" min=".5" max="4" step=".1"></label>'
     +'<label>前の明かりから移る時間 <select id="simple-fade"><option value="0">すぐ</option><option value="1">1秒</option><option value="3">3秒</option><option value="5">5秒</option><option value="10">10秒</option></select></label></div></div>'
     +'<div class="simple-catalog-head"><h3>プリセットから選ぶ</h3><label>絞り込み <select id="simple-category"><option value="">すべて</option><option>全体</option><option>スポット</option><option>方向・組合せ</option><option>暗転</option></select></label></div><div id="simple-grid" class="simple-preset-grid"></div>';
-  // Keep every choice beside the preview before the optional adjustments.
+  // Give the preview and preset choices the full workbench width.
   const catalog=el('section','simple-catalog');
   catalog.append(panel.querySelector('.simple-catalog-head'),panel.querySelector('#simple-grid'));
-  panel.querySelector('.simple-controls').prepend(catalog);
+  panel.querySelector('.simple-workbench>div').append(catalog);
   const toolbar=document.querySelector('.figbar'), display=toolbar.querySelector('.fb');
   toolbar.classList.add('simple-light-toolbar');
   display.querySelector('b').textContent='詳細画面の表示';
@@ -67,7 +67,8 @@
     const previous={rig:state.rig,cue:sc().cue,show:state.show,dim:state.dim,sel:state.sel,solo:state.solo,t:state.play.t};
     try {
       state.rig=rig;sc().cue=cue;state.show={...previous.show,blackout:true,beam:true,floor:true,performers:true,names:true,fixtures:false,no:false,path:false,grid:false};state.dim=100;state.sel=new Set();state.solo=false;state.play.t=0;
-      const source=hooks.drawSimpleFront();
+      const pixelWidth=canvas.id==='simple-front'?Math.max(1000,Math.ceil(canvas.clientWidth*(window.GAMMA_RENDER_RESOLUTION?.factor()||devicePixelRatio||1))):1000;
+      const source=hooks.drawSimpleFront({pixelWidth,live:canvas.id==='simple-front'});
       canvas.width=source.width;canvas.height=source.height;canvas.getContext('2d').drawImage(source,0,0);
     } finally {state.rig=previous.rig;sc().cue=previous.cue;state.show=previous.show;state.dim=previous.dim;state.sel=previous.sel;state.solo=previous.solo;state.play.t=previous.t;}
   }
@@ -171,6 +172,8 @@
       if(opts.toDetail){mode(false);hooks.toast('適用しました。詳細表示で細かく編集できます');}
     } catch(e){error=e.message;} finally {busy=false;render();if(!active())$('simple-status').textContent=error;}   // 詳細へ移った後に「適用しています…」が古いまま残らないように
   }
+  let previewResizeFrame=0;
+  new ResizeObserver(()=>{if(active()&&!previewResizeFrame)previewResizeFrame=requestAnimationFrame(()=>{previewResizeFrame=0;render();});}).observe($('simple-front'));
   $('simple-mode-on').onclick=()=>mode(true);$('simple-mode-off').onclick=()=>mode(false);
   $('simple-prev').onclick=()=>step(-1);$('simple-next').onclick=()=>step(1);
   function step(direction){const rows=list();const index=rows.findIndex(p=>p.id===selected);setSelected(rows[(index+direction+rows.length)%rows.length].id);}
@@ -186,6 +189,7 @@
   $('simple-cue').onchange=e=>{if(e.target.value)hooks.lxEnterCue(state.sceneIndex,e.target.value);resetFromSaved();};
   window.addEventListener('gamma-light-edit',()=>{if(context&&!busy)queueMicrotask(render);});
   window.GAMMA_SIMPLE_LIGHT_UI=Object.freeze({
+    refreshPlayback(){if(active())paint($('simple-front'),state.rig,sc().cue);},
     onContext(next){const different=context?.showId!==next.showId;context=next;if(different){choices=new Map();wanted=!next.existingLighting||M.isCommon(state.rig,state.dims,next.venueType);lastScene='';thumbKey='';}render();},
     render,active,available,sync(){const before=wanted;syncAvailability();if(before!==wanted)render();}
   });

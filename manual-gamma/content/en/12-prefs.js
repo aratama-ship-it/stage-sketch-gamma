@@ -102,7 +102,17 @@ ${table(["Button", "What goes back", "What stays"], [
   [ui("Reset this device") + " → " + ui("Reset"), "<strong>This device goes back to its first-launch state. Your shows are deleted too</strong>", "Only files you exported"]
 ])}
 ${note("Export before resetting", "The red " + ui("Reset") + " asks you to confirm twice inside the app (v0.2.6); " + ui("Cancel") + " stops it. If deleting storage fails, you are told and the page does not reload. Deleted shows cannot be recovered, so export any show you want to keep first.", true)}`
-      }
+      },
+      {
+  "id": "release058-12-prefs",
+  "title": "v0.3.58",
+  "status": "sourced",
+  "keywords": [
+    "v0.3.58",
+    "12-prefs"
+  ],
+  "html": "<p>Show action results at the bottom right is off by default. Enabling it shows an explanation for six seconds after an action. This is a device preference, not part of the show. Important notifications such as save failures remain visible when it is off.</p>"
+}
     ]
   });
 })();

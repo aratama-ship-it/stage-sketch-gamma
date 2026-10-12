@@ -4,6 +4,29 @@
   const rig=window.__RIG, model=window.GAMMA_LIGHT_MODEL, state=rig.state, hooks=rig.hooks;
   let context=null, loading=false, active=false, changedElsewhere=false, appliedExtras={};
   let draftTimer=0, lastScene='', playbackPreview=false;
+  let timelineFollowing=false, timelineFrameRaf=0;
+  function clearTimelineFrame() {
+    timelineFollowing=false;
+    if(timelineFrameRaf) cancelAnimationFrame(timelineFrameRaf);
+    timelineFrameRaf=0;hooks.setTimelinePlaybackFrame(null);
+  }
+  function paintHostPlaybackFrame() {
+    timelineFrameRaf=0;
+    if(!active || playbackPreview || document.hidden || state.mode!=='move'
+      || parent.document.body.dataset.stageWorkspaceMode!=='light-design') return;
+    const input=parent.GAMMA_LIGHT_HOST.readPlaybackPreview();
+    hooks.setTimelinePlaybackFrame(input?.showId===context?.showId ? input : null);
+    window.GAMMA_SIMPLE_LIGHT_UI?.refreshPlayback?.();
+    if(input?.running) timelineFrameRaf=requestAnimationFrame(paintHostPlaybackFrame);
+  }
+  function syncTimelineFrame(event) {
+    if(!active || loading || playbackPreview || state.mode!=='move' || document.hidden
+      || parent.document.body.dataset.stageWorkspaceMode!=='light-design') return;
+    if(event.detail?.playing || event.detail?.transition) timelineFollowing=true;
+    if(timelineFollowing && !timelineFrameRaf) timelineFrameRaf=requestAnimationFrame(paintHostPlaybackFrame);
+  }
+  parent.addEventListener('stage-timeline-position-change',syncTimelineFrame);
+
   /* 機材配置は灯体を仕込むための図なので、ショーの演者・大道具・小道具・幕は
      一時的に下敷きから外す。照明デザインへ戻ると、利用者が選んでいた表示状態へ
      そのまま戻す。show は保存物に含まれない表示設定だが、モード切替で勝手に
@@ -115,6 +138,14 @@
     setPlacementUnderlay(state.mode==='place');
     document.documentElement.dataset.gammaLightMode=state.mode;
     if(state.mode==='place') {state.aimMirror=null;hooks.stop();}
+    else {
+      // Seed before the first paint so a scene change cannot flash its final placement.
+      const input=parent.GAMMA_LIGHT_HOST.readPlaybackPreview();
+      if(input?.showId===context?.showId && (input.running || timelineFollowing)) {
+        timelineFollowing=true;hooks.setTimelinePlaybackFrame(input);
+        if(input.running && !timelineFrameRaf) timelineFrameRaf=requestAnimationFrame(paintHostPlaybackFrame);
+      }
+    }
     hooks.renderAll();
   }
   function synchronizePieces(next) {
@@ -133,7 +164,7 @@
   }
   function open(next, mode) {
     if(playbackPreview) return false;
-    hooks.stop();
+    clearTimelineFrame();hooks.stop();
     if(context?.showId===next.showId && state.dirty) {
       if(context.basis!==next.basis || changedElsewhere) {
         changedElsewhere=true;renderSaveStatus();
@@ -212,7 +243,7 @@
       if(!playbackPreview) return;
       event.preventDefault();event.stopImmediatePropagation();
     },{capture:true,passive:false});
-  function suspend(){endPlaybackPreview();saveDraft();document.getElementById('dialog').hidden=true;active=false;hooks.stop();}
+  function suspend(){clearTimelineFrame();endPlaybackPreview();saveDraft();document.getElementById('dialog').hidden=true;active=false;hooks.stop();}
   async function apply() {
     if(playbackPreview) return {persisted:false,error:'表示専用プレビュー中は適用できません。下書きに戻ってください'};
     if(!context || applying) return;
@@ -294,6 +325,7 @@
     event.preventDefault();event.stopImmediatePropagation();
     parent.postMessage({type:'gamma:timeline-toggle'},location.origin);
   },true);
+  window.addEventListener('gamma-light-draft-edit',clearTimelineFrame);
   window.addEventListener('gamma-light-edit',()=>{
     parent.GAMMA_WORKSPACE.syncHistory();
     if(loading || !context) return;

@@ -252,9 +252,9 @@
    * 左右のパネル（灯体の一覧・灯体情報・LXキュー）は隠して画面を全部使う。
    * キーは F=正面図 / p=平面図 / O=側面図、Esc かもう一度同じキーで戻る。
    * 広げている間も Space（再生）と ←→（シーン送り）は効く（本人指定）。 */
-  .figgrid[data-solo]{grid-template-columns:minmax(0,1fr) minmax(280px,var(--panel-w));grid-template-rows:minmax(0,1fr);justify-items:stretch}
+  .figgrid[data-solo]{grid-template-columns:minmax(0,1fr) minmax(280px,var(--panel-w,320px));grid-template-rows:minmax(0,1fr);justify-items:stretch}
   .figgrid[data-solo]>*{display:none}
-  .figgrid[data-solo]>.panel.insp{display:flex;grid-column:2;grid-row:1;min-width:0}
+  .figgrid[data-solo]>.panel.insp{display:flex;grid-column:2;grid-row:1;min-width:0;width:auto!important}
   .figgrid[data-solo="plan"] .planwrap,
   .figgrid[data-solo="front"] .sec.front,
   .figgrid[data-solo="side"] .sec.side.l{display:flex;grid-column:1;grid-row:1;align-self:stretch;justify-self:stretch;width:100%}
@@ -277,7 +277,7 @@
   html.placement-underlay-hidden #showtoggles [data-show="names"]{display:none}
   /* 上段の左右＝灯体パネル／設定パネル。幅は下の側面図とそろえる（app.jsが設定） */
   .panel{grid-row:1;min-width:0;min-height:0;overflow:hidden;border:1px solid var(--line-dark);background:rgba(25,21,18,.45);padding:8px;display:flex;flex-direction:column;gap:7px;align-self:stretch}
-  /* 灯体一覧とLXキューは横並び。内側の仕切りで比率を、外側の仕切りで
+  /* 灯体一覧とLXキューは横並び。内側のバーと空きを置かず、外側の仕切りで
      一覧・キュー・下手側面図の共通幅を調整する。初期幅は syncFigureSizes が決める。 */
   .leftcol{position:relative;grid-column:1;grid-row:1;display:flex;flex-direction:row;gap:0;min-width:0;min-height:0;align-self:stretch;justify-self:start}
   .leftcol>.panel{grid-column:auto;grid-row:auto;width:auto;align-self:auto;min-width:160px;flex:0 0 auto}
@@ -286,7 +286,6 @@
   .layout-splitter:hover::before,.layout-splitter:focus-visible::before,.layout-splitter[aria-valuenow]:active::before{left:20px;width:3px;background:var(--brass)}
   .layout-splitter:focus-visible{outline:1px solid var(--brass);outline-offset:-1px}
   .layout-splitter.outer{position:absolute;right:-44px;top:0;bottom:0}
-  .layout-splitter.inner{align-self:stretch}
   .leftcol,.sec.side.l{margin-right:36px}
   .figgrid[data-solo] .sec.side.l{margin-right:0}
   #panel-layout-reset{min-height:44px;white-space:normal}
@@ -326,7 +325,7 @@
   .figgrid .sechead,.figgrid .viewhead{overflow:hidden}
   .sechead{display:flex;gap:6px;align-items:center;min-height:24px;overflow:hidden}
   /* 正面図の題は平面図と同じ左基準へ置き、中央の表示切替は動かさない。 */
-  .sec.front .sechead{position:relative;display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+  .sec.front .sechead{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px;align-items:center}
   /* 2026-09-18 本人指摘「帯の全画面表示のアイコンに、なぜか横幅がでかいものがある。正面図のもの」:
      ★この帯だけ display:grid なので、.solo-btn の flex:0 0 auto が効かず、
        1列目（1fr）いっぱいに広がっていた（平面図・側面図の帯は flex なので効いている）。
@@ -334,7 +333,26 @@
   .sec.front .sechead .solo-btn{justify-self:start}
   .sec.front .sechead .viewtitle{position:absolute;left:34px;top:50%;transform:translateY(-50%)}
   .sec.front .sechead .viewnote{text-align:right}
-  .sec.front .sechead .fmode{grid-column:3;justify-self:center}
+  .sec.front .sechead .fmode{grid-column:2;justify-self:center}
+  .sec.front{container-type:inline-size;container-name:light-front}
+  /* Keep the controls on the figure centre. Only a narrow figure needs
+     a second row to keep its title and enlargement button unobstructed. */
+  @container light-front (max-width:340px){
+    .sec.front .sechead .fmode{grid-column:1/-1;grid-row:2}
+    .sec.front .sechead .viewtitle{top:12px}
+  }
+  @container light-front (max-width:420px){
+    :lang(en) .sec.front .sechead .fmode{grid-column:1/-1;grid-row:2}
+    :lang(en) .sec.front .sechead .viewtitle{top:12px}
+  }
+  .front-primary-controls{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:5px;max-width:100%}
+  html.front-display-controls-active .sec.front .sechead .fmode{grid-column:1/-1;grid-row:2;width:100%;flex-direction:column;gap:4px}
+  html.front-display-controls-active .sec.front .sechead .viewtitle{top:12px}
+  .front-display-controls{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px;max-width:100%}
+  #front-display-controls .showtoggles{min-width:0;max-width:100%;justify-content:center;flex-wrap:wrap}
+  #front-display-controls .lightgroup{margin-left:0}
+  #front-display-controls .dimwrap{max-width:100%;flex-wrap:nowrap}
+  #front-display-controls .dimwrap input[type=range]{min-width:32px;flex:1 1 90px}
   .fmode{display:flex;align-items:center;gap:5px;justify-self:center;flex-wrap:nowrap;min-width:0}
   #frontmode{display:inline-flex;flex:0 0 auto;flex-wrap:nowrap;width:max-content}
   #frontmode button{flex:0 0 auto}
@@ -773,9 +791,9 @@
   .dialog .in,.dialog .in:has(.pgrid){display:flex;flex-direction:column;max-height:calc(100dvh - 24px);overflow:hidden}
 </style>
 <style>.option-b-controls button{min-height:44px}.option-b-controls :focus-visible{outline:2px solid #d3ac59;outline-offset:2px}</style>
-<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261012-v0356">
-<link rel="stylesheet" href="embed.css?v=20261010-v0338">
-<link rel="stylesheet" href="simple-lighting.css?v=20261009-v0337">
+<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261012-v0358">
+<link rel="stylesheet" href="embed.css?v=20261012-v0358">
+<link rel="stylesheet" href="simple-lighting.css?v=20261012-v0358">
 </head>
 <body>
 <div class="proto-note">舞台スケッチ γ — 照明の配置・デザイン</div>
@@ -816,7 +834,6 @@
             <b>表示</b>
             <span class="showtoggles" id="showtoggles" role="group" aria-label="表示">
               <button type="button" data-show="no" aria-pressed="true">番号</button>
-              <button type="button" data-show="path" aria-pressed="true">動く範囲</button>
               <button type="button" data-show="grid" aria-pressed="true" title="1.0mごとの目盛りを図に出す">グリッド</button>
               <!-- R-09（2026-09-17 本人要望）: 「演者・セット」を3つに割る。
                    駒の kind（performer / set / curtain）とそのまま1対1で対応する。
@@ -827,8 +844,6 @@
               <button type="button" data-show="performers" aria-pressed="true" title="舞台スケッチ側で置いてある演者を下敷きに出す">演者</button>
               <button type="button" data-show="setpieces" aria-pressed="true" title="舞台スケッチ側で置いてある大道具・小道具を下敷きに出す">セット</button>
               <button type="button" data-show="names" aria-pressed="true" title="演者・セットの名前を図に出す（影絵は残す）">名前</button>
-              <button type="button" data-show="border" aria-pressed="false" title="バトンの手前に吊って灯体を客席から隠す短い幕。出すと、客席から灯体が見えていないかを確かめられます">一文字幕</button>
-              <button type="button" data-show="legs" aria-pressed="true" title="舞台の左右に吊って袖（そで）を客席から隠す幕。切ると、袖の奥まで見えるようになります">袖幕</button>
             </span>
             <!-- 「光」と「作業灯を消す」は照明デザインタブだけのもの。近い働きなので、
                  ほかの「表示」から離して右端に2つ並べる（2026-09-13 本人要望）。
@@ -902,7 +917,6 @@
             <button type="button" class="btn small" id="make-fixture-group" hidden>選んだ灯をグループにする</button>
             <div class="list" id="list"></div>
           </section>
-          <div class="layout-splitter inner" id="fixture-panel-resize" role="separator" aria-orientation="vertical" aria-label="灯体一覧とLXキューの幅を調整" aria-valuemin="20" aria-valuemax="80" aria-valuenow="50" tabindex="0" title="ドラッグ、左右キー、ダブルクリックで幅を調整・初期化"></div>
           <section class="panel" id="panel-lxq">
             <!-- 修正バッチ 2026-10-07 #6: パネル上部のセクション／シーン送りは図の上の中央（#scenerow）へ移した。 -->
             <div class="lxhead">
@@ -988,8 +1002,10 @@
               <button type="button" class="solo-btn" data-solo-figure="front" title="正面図だけを大きく見る（F）。Escかもう一度押すと戻ります" aria-label="正面図の拡大表示を切り替える"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10"/></svg></button>
               <span class="viewtitle">正面図</span>
               <span class="fmode">
+                <span class="front-primary-controls">
                 <span class="showtoggles" id="frontmode" role="group" aria-label="正面図の描き方">
                   <button type="button" data-show="fixtures" aria-pressed="true" title="正面図の灯体の印を出す・隠す">機材</button>
+                  <button type="button" data-show="border" aria-pressed="false" title="一文字幕と袖幕をまとめて表示・非表示にします">一文字幕・袖幕</button>
                 </span>
                 <select id="seat" class="seatsel" aria-label="どの席から見るか">
                   <option value="front">1階 前方</option>
@@ -997,6 +1013,8 @@
                   <option value="rear">1階 後方</option>
                   <option value="balcony" selected>2階席</option>
                 </select>
+                </span>
+                <span class="front-display-controls" id="front-display-controls" hidden></span>
               </span>
             </div>
             <canvas id="secF" width="780" height="520"></canvas>
@@ -1042,7 +1060,7 @@
 <script src="../stage-performer-contour.js?v=20261006-v0318"></script>
 <script src="../stage-performer-body.js?v=20261009-v0333"></script>
 <script src="stage-figure.js?v=20261004-receiver89"></script>
-<script src="../stage-set-render.js?v=20261004-receiver89"></script>
+<script src="../stage-set-render.js?v=20261012-v0358"></script>
 <script src="volume-light.js?v=20260928-feedback55"></script>
 <script src="laser-effects.js?v=20261005-batch98"></script>
 <script src="laser-effects-ui.js?v=20260915-3-supported-shapes"></script>
@@ -1051,7 +1069,8 @@
 <script src="../stage-fixture-body.js?v=20261009-v0335"></script>
 <script src="../stage-light-receiver.js?v=20261004-receiver89"></script>
 <script src="../gamma-light-cue-overlay.js?v=20261006-v0318"></script>
-<script src="app.js?v=20261012-v0356"></script>
+<script src="../stage-machinery.js?v=20261012-v0358"></script>
+<script src="app.js?v=20261012-v0358"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20261010-v0338"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->
@@ -1059,12 +1078,12 @@
 <script src="selected-light-presets-ui.js?v=20260928-feedback55"></script>
 <script src="../gamma-light-model.js?v=20261006-v0315"></script>
 <script src="simple-lighting-model.js?v=20261001-release71"></script>
-<script src="embed.js?v=20261012-v0356"></script>
-<script src="simple-lighting-ui.js?v=20261010-v0339"></script>
+<script src="embed.js?v=20261012-v0358"></script>
+<script src="simple-lighting-ui.js?v=20261012-v0358"></script>
 <script src="position-placement-ui.js?v=20261005-batch98"></script>
 <script src="position-names-ui.js?v=20261001-release71"></script>
 <script src="../gamma-ui-i18n.js?v=20261010-v0338"></script>
 <script src="../gamma-ui-i18n.ko.js?v=20261010-v0338"></script>
-<script src="ui-i18n.js?v=20261010-v0342"></script>
+<script src="ui-i18n.js?v=20261012-v0358"></script>
 </body>
 </html>

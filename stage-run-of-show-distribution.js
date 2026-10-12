@@ -10,6 +10,8 @@
   function targets(value){const list=[...new Set(value.split(/[\n,、]/).map(s=>s.trim()).filter(Boolean))];if(!list.length||list.length>50||list.some(s=>s.length>80))fail('届け先は1〜50件、各80文字以内で入力してください。');return list;}
   function publicDocument(doc,includeNotes){
     const d={};for(const k of ['format','version','documentInfo','selected','nextId','language','paperFormat','layouts'])d[k]=clone(doc[k]);d.view='ros';d.rowMode='scene-transition';
+    if(doc.paperFontSize!==undefined)d.paperFontSize=doc.paperFontSize;
+    for(const key of ['cellStyles','cellAlign'])if(doc[key]){d[key]={};for(const mode of ['scene','scene-transition'])if(doc[key][mode])d[key][mode]=clone(doc[key][mode]);}
     d.documentInfo={version:1};for(const k of ['title','venue','date','revision','startTime'])d.documentInfo[k]=doc.documentInfo[k];
     d.items=doc.items.map(row=>{const i={};for(const k of ['id','sceneId',...Object.keys(labels),'detailImage','noteImage','transitionImage','transitionReview'])i[k]=clone(row[k]);
       i.detailImage=false;i.noteImage=false;i.transitionImage=false;

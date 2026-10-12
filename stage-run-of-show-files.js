@@ -82,6 +82,28 @@
   function referencedIds(items) {
     return new Set(items.flatMap(item => [...(item.detailAssets || []), ...(item.noteAssets || [])].map(ref => ref.assetId)));
   }
+  // Closed vocabulary: saved styles never contain executable CSS or external font URLs.
+  const CELL_FONTS=Object.freeze({sans:'system-ui, -apple-system, "Hiragino Sans", sans-serif',serif:'"Hiragino Mincho ProN", "Yu Mincho", Georgia, serif',mono:'ui-monospace, "SFMono-Regular", "Osaka-Mono", monospace'});
+  const CELL_STYLE_KEYS=Object.freeze(['fontFamily','fontSize','bold','italic','underline','color','fill','vertical','border']);
+  function validCellStyle(v){return record(v)&&Object.entries(v).every(([k,x])=>CELL_STYLE_KEYS.includes(k)&&(x===null||
+    (k==='fontFamily'?Object.hasOwn(CELL_FONTS,x):k==='fontSize'?typeof x==='number'&&Number.isFinite(x)&&x>=8&&x<=32:
+    ['bold','italic','underline'].includes(k)?typeof x==='boolean':['color','fill'].includes(k)?typeof x==='string'&&/^#[a-f0-9]{6}$/i.test(x):k==='vertical'?['top','middle','bottom'].includes(x):['none','all','bottom'].includes(x))));}
+  function cellStyle(styles,mode,rowId,columnId){const p=styles?.[mode];return {...p?.columns?.[columnId],...p?.cells?.[rowId+'|'+columnId]};}
+  function cellStyleCSS(v){
+    if(!validCellStyle(v))return '';
+    const css=[];for(const[k,x]of Object.entries(v)){if(x===null)continue;
+      if(k==='fontFamily')css.push('font-family:'+CELL_FONTS[x],'--ros-cell-font:'+CELL_FONTS[x]);
+      if(k==='fontSize')css.push('font-size:'+x+'pt','--ros-cell-size:'+x+'pt');
+      if(k==='bold')css.push('font-weight:'+(x?'700':'400'),'--ros-cell-weight:'+(x?'700':'400'));
+      if(k==='italic')css.push('font-style:'+(x?'italic':'normal'));
+      if(k==='underline')css.push('text-decoration:'+(x?'underline':'none'));
+      if(k==='color')css.push('color:'+x,'--ros-cell-ink:'+x);
+      if(k==='fill')css.push('background-color:'+x);
+      if(k==='vertical')css.push('vertical-align:'+x,'--ros-cell-pack:'+({top:'flex-start',middle:'center',bottom:'flex-end'}[x]));
+      if(k==='border')css.push(x==='none'?'border:0':x==='all'?'border:1px solid currentColor':'border-bottom:1px solid currentColor');
+    }return css.join(';');
+  }
+  function paintCellStyle(node,v){node.style.cssText=cellStyleCSS(v);}
   function validateStructure(doc, columnSets) {
     if (!record(doc) || doc.format !== FORMAT || doc.version !== 1) fail("進行表の形式または版に対応していません。保存内容は保持しています。");
     documentInfo(doc);
@@ -128,6 +150,15 @@
         }
       }
     }
+    if(doc.cellStyles!==undefined){
+      if(!record(doc.cellStyles))fail("セルの書式を確認できません。");
+      for(const[mode,p]of Object.entries(doc.cellStyles)){
+        if(!['scene','scene-transition','cue','calls'].includes(mode)||!record(p)||Object.keys(p).some(k=>!['columns','cells'].includes(k)))fail("セルの書式を確認できません。");
+        for(const kind of ['columns','cells'])if(p[kind]!==undefined){
+          if(!record(p[kind])||Object.keys(p[kind]).length>5000||Object.entries(p[kind]).some(([key,v])=>!validCellStyle(v)||!(kind==='cells'?/^[\w:.-]{1,120}\|[a-z]{1,20}$/:/^[a-z]{1,20}$/).test(key)))fail("セルの書式を確認できません。");
+        }
+      }
+    }
     if (!Array.isArray(doc.assets) || doc.assets.length > LIMITS.assets) fail("画像の一覧を確認できません（最大200点）。");
     const assetIds = new Set(); let bytes = 0;
     for (const asset of doc.assets) {
@@ -156,7 +187,7 @@
     }
     return doc;
   }
-  const api = { FORMAT, LIMITS, INFO_DEFAULTS, INFO_LIMITS, documentInfo, clone, imageHeader, createAsset, referencedIds, validateStructure, validateDocument };
+  const api = { CELL_FONTS, CELL_STYLE_KEYS, validCellStyle, cellStyle, cellStyleCSS, paintCellStyle, FORMAT, LIMITS, INFO_DEFAULTS, INFO_LIMITS, documentInfo, clone, imageHeader, createAsset, referencedIds, validateStructure, validateDocument };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.ROSFiles = api;
 })(globalThis);

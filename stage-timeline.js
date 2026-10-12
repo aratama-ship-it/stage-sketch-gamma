@@ -2688,6 +2688,8 @@
   }
 
   function renderLightBands() {
+    for (const lane of [els.cueLanes.light, els.transitionsLane]) lane?.classList.remove("has-light-bands");
+    document.querySelectorAll(".stage-timeline-cue.has-light-band").forEach(el=>el.classList.remove("has-light-band"));
     document.querySelectorAll(".stage-timeline-light-band").forEach(el=>el.remove());
     const schedule=window.STAGE_LIGHT_SCHEDULE;
     if(!schedule)return;
@@ -2697,6 +2699,10 @@
       const index=timeline.segments.findIndex(s=>s.sceneId===event.sceneId);
       const next=timeline.segments[index+(event.kind==='lx'?1:0)];
       const g=schedule.band(event,next?.start,pxFor);
+      if (event.kind === "lx" && !g.cut) {
+        const cueButton=[...lane.querySelectorAll(".stage-timeline-cue")].find(el=>el.dataset.cueId===event.id);
+        cueButton?.classList.add("has-light-band");
+      }
       const band=document.createElement("button");band.type="button";band.className="stage-timeline-light-band";
       band.dataset.eventId=event.id;band.dataset.sceneId=event.sceneId;
       if(g.cut)band.classList.add("is-cut");
@@ -3348,7 +3354,9 @@
         && typeof bridge.setTimelineSceneAudioTrack !== "function");
     els.addCueButtons.forEach((button) => {
       button.disabled = typeof bridge.addTimelineCue !== "function"
-        || !timeline.sectionId || !timeline.segments.some((segment) => segment.sceneId);
+        || (!timeline.sectionId && !(button.dataset.stageTimelineAddCue === "light"
+          && timeline.source === "show" && timeDomain?.byId.get(segmentAt(seekSeconds)?.sceneId)?.sectionId))
+        || !timeline.segments.some((segment) => segment.sceneId);
     });
     els.bpm.value = String(Math.round(finite(timeline.track && timeline.track.countBpm, 120)));
     els.realTempo.textContent = effectiveTempo(timeline.track, localSecToCount(seekSeconds)).toFixed(1);
@@ -3728,9 +3736,13 @@
   }
   function addCueAtPlayhead(type) {
     if (!CUE_TYPES.includes(type) || typeof bridge.addTimelineCue !== "function") return;
-    if (!timeline || !timeline.sectionId || !segmentAt(seekSeconds)) {cueAddedNotice(tx("キューを追加するシーンを選んでください"));return;}
-    const cue = bridge.addTimelineCue(type, timeline.sectionId,
-      clamp(seekSeconds, 0, timeline.duration));
+    const segment = timeline && segmentAt(seekSeconds);
+    const showCue = type === "light" && timeline?.source === "show";
+    const sectionId = showCue ? timeDomain?.byId.get(segment?.sceneId)?.sectionId : timeline?.sectionId;
+    if (!timeline || !sectionId || !segment) {cueAddedNotice(tx("キューを追加するシーンを選んでください"));return;}
+    const seconds = clamp(seekSeconds, 0, timeline.duration)
+      - (showCue ? timeDomain.sections.get(sectionId)?.start || 0 : 0);
+    const cue = bridge.addTimelineCue(type, sectionId, seconds);
     if (!cue) {cueAddedNotice(tx("キューを追加できません。編集できるシーンを選んでください"));return;}
     selectedCueId = cue.id;selectedCueIds=new Set([cue.id]);
     cueAddedNotice(cueTypeLabel(type)+tx("を追加しました"),cue.id);

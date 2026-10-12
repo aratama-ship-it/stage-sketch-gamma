@@ -2343,7 +2343,7 @@
     /* 2026-09-17 本人指示: この図は平面図なので、そう名乗る（他の図と呼び方をそろえる）。
        寸法は判断に要るので残す。 */
     els.dims.textContent = state.stagePresent
-      ? translatedStatus(`平面図 ・ 間口 だいたい${approxM(dims.width)}m ・ 奥行 だいたい${approxM(dims.depth)}m`)
+      ? tx("平面図 ・ 間口 だいたい{width}m ・ 奥行 だいたい{depth}m").replace("{width}",approxM(dims.width)).replace("{depth}",approxM(dims.depth))
       : tx("平面図 ・ ステージなし。四角・丸・線で囲うで描いてください。");
     if (els.apply) els.apply.disabled = !state.stagePresent || !validOutline(state.points) || !extensionsConnectedToMain();
     if (els.audienceFull) {

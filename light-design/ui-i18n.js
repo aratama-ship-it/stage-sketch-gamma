@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const parentRoot = window.parent !== window ? window.parent.document.documentElement : document.documentElement;
-  const excluded = '[data-no-i18n],#scene-name b,#place-scene,.nm,.dsname,.allsname,.cfname,.allq,#qnow em,#runtime-status';
+  const excluded = '[data-no-i18n],#scene-name b,#place-scene,.dsname,.allsname,.cfname,.allq,#qnow em,#runtime-status';
   let scheduled = false;
   const observer = new MutationObserver(records => {
     if(records.some(record => !(record.target.nodeType===1 ? record.target : record.target.parentElement)?.closest(excluded))) schedule();
@@ -119,13 +119,50 @@
     return null;
   }
   window.GAMMA_LIGHT_VENUE_RIG_TEXT = venueRigText;   // 検査が評価した値で確かめるための口（読むだけ）
+  // Translate complete UI templates before inserting identifiers or user names.
+  // Mount descriptions remain presentation; RIG_ENGINE and its stored numbers are untouched.
+  function lightingText(key, language = parentRoot.lang || 'ja') {
+    if (language === 'ja') return key;
+    const model = window.parent !== window ? window.parent.SHOSAI_STAGE_I18N_MODEL : window.SHOSAI_STAGE_I18N_MODEL;
+    const text = value => model?.text(language, value) || value;
+    const format = (template, values) => text(template).replace(/\{(\w+)\}/g, (all, name) => values[name] ?? all);
+    const direct = text(key); if (direct !== key) return direct;
+    const templates = [
+      [/^([LM◆◎]\d+)を削除$/, m => format('{fixture}を削除', {fixture:m[1]})],
+      [/^灯体を(\d+)つ以上選ぶと使えます$/, m => format('灯体を{count}つ以上選ぶと使えます', {count:m[1]})],
+      [/^押すと奥の壁ぎわに(\d+)本置きます$/, m => format('押すと奥の壁ぎわに{count}本置きます', {count:m[1]})],
+      [/^旧番号 ([\d-]+)。つまんで上下に動かすと順番を変えられます$/, m => format('旧番号 {number}。つまんで上下に動かすと順番を変えられます', {number:m[1]})],
+      [/^「([\s\S]+)」を解除する（灯体はそのまま残ります）$/, m => format('「{name}」を解除する（灯体はそのまま残ります）', {name:m[1]})],
+      [/^シーン「([\s\S]+)」の一覧を開く$/, m => format('シーン「{name}」の一覧を開く', {name:m[1]})],
+      [/^吊り・奥から(\d+)列目のバトン（高さ約([\d.]+mm)）・(下手寄り|中央|上手寄り)$/, m => format('吊り・奥から{row}列目のバトン（高さ約{height}）・{position}', {row:m[1],height:m[2],position:text(m[3])})],
+      [/^前明かり・(下手寄り|中央|上手寄り)・舞台前から約([\d.]+mm)・高さ約([\d.]+mm)$/, m => format('前明かり・{position}・舞台前から約{distance}・高さ約{height}', {position:text(m[1]),distance:m[2],height:m[3]})],
+      [/^転がし・(下手寄り|中央|上手寄り)・(奥|手前|中ほど)$/, m => format('転がし・{position}・{depth}', {position:text(m[1]),depth:text(m[2])})],
+      [/^SS・(下手|上手)の袖（高さ約([\d.]+mm)）・(奥寄り|手前寄り|中ほど)$/, m => format('SS・{side}の袖（高さ約{height}）・{depth}', {side:text(m[1]),height:m[2],depth:text(m[3])})],
+      [/^ホリゾントライト（(床|上)）・舞台幅(\d+)%$/, m => format('ホリゾントライト（{rung}）・舞台幅{width}%', {rung:text(m[1] === "上" ? "ホリゾントの上段" : "ホリゾントの床段"),width:m[2]})],
+      [/^([\s\S]+)（名称のみ） \/ ([\s\S]+)$/, m => format('{name}（名称のみ） / {mount}', {name:m[1],mount:lightingText(m[2],language)})],
+      [/^吊り・奥から(\d+)列目(・[\s\S]+)?$/, m => format('吊り・奥から{row}列目{label}', {row:m[1],label:m[2]||''})],
+      [/^バトン（奥から(\d+)列目・奥行き([\d.]+)m）$/, m => format('バトン（奥から{row}列目・奥行き{depth}m）', {row:m[1],depth:m[2]})],
+      [/^バトン・奥から(\d+)列目$/, m => format('バトン・奥から{row}列目', {row:m[1]})],
+      [/^奥から([\d.]+)m$/, m => format('奥から{distance}m', {distance:m[1]})],
+      [/^約([\d.]+)m$/, m => format('約{distance}m', {distance:m[1]})],
+      [/^区間内(\d+)%$/, m => format('区間内{percent}%', {percent:m[1]})],
+      [/^(いまオフ。押すとオン|いまオン。押すとオフ)（ソロ表示中はこの灯体を非表示）$/, m => text(m[1])+text('（ソロ表示中はこの灯体を非表示）')],
+    ];
+    for (const [pattern, make] of templates) { const match=key.match(pattern); if(match)return make(match); }
+    if (/^[▾▸] /.test(key)) return key.slice(0,2)+lightingText(key.slice(2),language);
+    if (/^(下手寄り|中央|上手寄り)・(奥|手前|中ほど)$/.test(key)) return key.split('・').map(text).join(' · ');
+    return venueRigText(key,language) || window.GAMMA_UI_TEXT(key,language);
+  }
+  window.GAMMA_LIGHT_UI_TEXT = lightingText;
   function render() {
     scheduled=false;
     observer.disconnect();
     const language=parentRoot.lang || 'ja';
     if(document.documentElement.lang!==language) document.documentElement.lang=language;
+    const sceneControl=document.getElementById('place-scene');
+    if(sceneControl?.dataset.uiSceneTitle)sceneControl.title=lightingText(sceneControl.dataset.uiSceneTitle,language);
     window.GAMMA_UI.translateDOM(document.body, { language:document.documentElement.lang,
-      lookup:key=>{ const row=extra[key], index=language.startsWith("en")?0:language.startsWith("ko")?1:language==="zh-Hant"?3:language.startsWith("zh")?2:-1; return row && index>=0 ? row[index] : (venueRigText(key, language) || window.GAMMA_UI_TEXT(key)); }, exclude:excluded });
+      lookup:key=>{ const row=extra[key], index=language.startsWith("en")?0:language.startsWith("ko")?1:language==="zh-Hant"?3:language.startsWith("zh")?2:-1; return row && index>=0 ? row[index] : lightingText(key, language); }, exclude:excluded });
     observer.observe(document.body, { subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:['title','placeholder','aria-label'] });
   }
   function schedule() { if(!scheduled) { scheduled=true; requestAnimationFrame(render); } }

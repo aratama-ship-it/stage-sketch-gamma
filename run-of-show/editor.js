@@ -6,7 +6,7 @@
   const canReadCues=typeof bridge?.cues==="function"&&Boolean(parent.SHOSAI_CUE_SHEET&&parent.STAGE_TIME_DOMAIN);
   const runOnly=Boolean(parent.RUN_SHELL_CORE)&&new URLSearchParams(location.search).get("host")==="run";
   const lite=bridge?.edition?.()==="lite";
-  if(runOnly||lite){document.body.classList.add(lite?"lite-paper":"run-paper");const css=document.createElement("link");css.rel="stylesheet";css.href="../run.css";if(lite)css.media="screen";document.head.append(css);}
+  if(runOnly||lite){document.body.classList.add(lite?"lite-paper":"run-paper");const css=document.createElement("link");css.rel="stylesheet";css.href="../run.css?v=20261012-ros-format-local2";if(lite)css.media="screen";document.head.append(css);}
   if(!bridge){document.body.textContent="舞台スケッチγの進行表タブから開いてください。";return;}
   let packet;try{packet=bridge.read();}catch(error){document.body.textContent=error.message;return;}
   let token=packet.token,syncing=true;
@@ -29,14 +29,7 @@
   for(const id of ['storage-status' ,'paper-size-note','pagination-status','paper-edit-status'])new MutationObserver(()=>{$('band-status').textContent=$(id).textContent;}).observe($(id),{childList:true,subtree:true});
   $('band-help-toggle').addEventListener('click',()=>{const open=!$('editing-help').open;$('editing-help').open=open;$('band-help-toggle').setAttribute('aria-expanded',String(open));});
   $('band-help-search').addEventListener('click',()=>window.parent.document.getElementById('stage-help-open')?.click());
-  function popover(open){const panel=$('column-popover');panel.hidden=!open;$('columns-button').setAttribute('aria-expanded',String(open));if(open){const a=$('columns-button').getBoundingClientRect(),b=$('preview').getBoundingClientRect();
-    // #14: in the left panel the list opens beside the panel (over the paper margin) instead of covering the panel.
-    if(panelLayout()){const side=$('paper-panel').getBoundingClientRect(),lift=Math.max(0,Math.min(a.top-8,a.top+panel.getBoundingClientRect().height+8-innerHeight));panel.style.top=`${a.top-b.top-lift}px`;panel.style.left=`${Math.max(0,Math.min(side.right-b.left+8,b.width-360))}px`;}
-    else{panel.style.top=`${a.bottom-b.top+4}px`;panel.style.left=`${Math.max(0,Math.min(a.left-b.left,b.width-360))}px`;}
-    panel.querySelector('input')?.focus();}else $('columns-button').focus();}
-  $('columns-button').addEventListener('click',()=>{const opening=$('column-popover').hidden;if(opening)closeBandLayers();popover(opening);});
-  document.addEventListener('pointerdown',event=>{if(!$('column-popover').hidden&&!event.target.closest('#column-popover,#columns-button'))popover(false);});
-  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('column-popover').hidden)popover(false);});
+  // Column visibility is a permanent part of the left menu, not a popup.
   /* 帯の層: 「紙面の設定」「出力」は押したときだけ開く小窓、「選択中の操作」は選択があるときだけ選択の脇に出る細い帯。
      どの部品も id と配線は元のまま。位置は fixed なので、帯の段数や左の欄の幅に影響しない。 */
   const bandLayers=[{button:'band-settings-button',layer:'band-settings'},{button:'band-output-button',layer:'band-output'}];
@@ -52,7 +45,6 @@
     const item=bandLayers.find(x=>x.layer===id),node=$(id),trigger=$(item.button);
     if(open){
       for(const other of bandLayers)if(other!==item)setBandLayer(other.layer,false,{focus:false});
-      if(!$('column-popover').hidden)popover(false);
       node.hidden=false;trigger.setAttribute('aria-expanded','true');placeBandLayer(item);
       if(focus)node.querySelector('select,input,button:not([disabled])')?.focus();
     }else if(!node.hidden){
@@ -81,8 +73,8 @@
       let top=Infinity,bottom=-Infinity,left=Infinity;
       for(const node of nodes){const r=node.getBoundingClientRect();top=Math.min(top,r.top);bottom=Math.max(bottom,r.bottom);left=Math.min(left,r.left);}
       const w=selectionBar.offsetWidth,h=selectionBar.offsetHeight,sticky=panelLayout()?8:$('paper-band').getBoundingClientRect().bottom+4;
-      const above=top-h-6,y=above>=sticky?above:bottom+6;
-      selectionBar.style.left=`${Math.max(8,Math.min(left,innerWidth-w-8))}px`;selectionBar.style.top=`${Math.max(sticky,Math.min(y,innerHeight-h-8))}px`;
+      const floor=Math.min(sticky,Math.max(8,innerHeight-h-8)),above=top-h-6,y=above>=floor?above:bottom+6;
+      selectionBar.style.left=`${Math.max(8,Math.min(left,innerWidth-w-8))}px`;selectionBar.style.top=`${Math.max(floor,Math.min(y,innerHeight-h-8))}px`;
     });
   }
   document.addEventListener('scroll',()=>{if(!selectionBar.hidden)syncSelectionBar();},true);
@@ -92,7 +84,9 @@
   const figureUrl="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(figureSvg);
   const el=(tag,text="",cls="")=>{const x=document.createElement(tag);x.textContent=text;if(cls)x.className=cls;return x;};
   const uiText=key=>{const model=parent.SHOSAI_STAGE_I18N_MODEL,lang=uiLanguage(),specific=model?.text(lang,'Lite: '+key);return specific&&specific!=='Lite: '+key?specific:model?.text(lang,key)||key;};
+  const uiFormat=(key,values)=>uiText(key).replace(/\{(\w+)\}/g,(all,name)=>values[name]??all);
   if(lite){
+    const columnMenu=$('column-popover');columnMenu.classList.add('lite-column-menu');columnMenu.dataset.screenOnly='';$('paper-panel').after(columnMenu);
     const aside=document.querySelector('.item-editor');aside.id='ros-selected';aside.dataset.screenOnly='';
     aside.setAttribute('aria-labelledby','editor-heading');$('preview').append(aside);
     const head=aside.querySelector('.section-head'),figures=$('stage-figures'),open=$('make-scene');
@@ -116,7 +110,7 @@
   }
   // 書式だけの設定。項目・時間・sceneId・画像の内容やUndoとは別に保持する。
   const layout=window.ROSLayout,columnSets=layout.COLUMN_SETS;
-  let selection={kind:"none"},cellAlign={},cueNotes={},stageByItem={},rowMode="scene-transition",pendingImageTarget=null;
+  let selection={kind:"none"},cellAlign={},cellStyles={},cueNotes={},stageByItem={},rowMode="scene-transition",pendingImageTarget=null;
   // 2026-10-07 G1: device settings (localStorage). None of them is written into the show.
   const store=(key,value)=>{try{if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,String(value));}catch(error){showError(error);}};
   const readNumber=key=>{try{const value=localStorage.getItem(key);return value===null?null:Number(value);}catch(_){return null;}};
@@ -211,7 +205,7 @@
   function renderColumnSettings(){
     const host=$("column-list"),profile=layoutFor(),history=layoutHistory[layoutKey()];host.replaceChildren();
     $("column-context").textContent=`${paperNames[paperFormat]} / 行の単位：${rowModeNames[rowMode]}`;
-    $("column-count").textContent=`${orderedColumns().filter(c=>!profile.hidden.includes(c.id)).length}/${orderedColumns().length}`;
+    $("column-visible-count").textContent=$("column-count").textContent=`${orderedColumns().filter(c=>!profile.hidden.includes(c.id)).length}/${orderedColumns().length}`;
     const always=`${orderedColumns().filter(c=>c.required).map(c=>c.ja).join("・")}は常時表示です。列の設定は行の単位ごとに別々に保存します。`;
     $("column-help").textContent=paperFormat==="a4-portrait"?`上段・下段それぞれの中で順序を変えられます。${always}`:`列を表示順に並べます。${always}`;
     for(const group of columnGroups()){
@@ -272,13 +266,54 @@
     }
   }
   function renderHead(table){const row=table.querySelector('thead tr');row.replaceChildren();for(const def of orderedColumns()){const th=el('th');th.dataset.columnId=def.id;th.dataset.ja=def.ja;th.dataset.en=def.en;row.append(th);}}
-  function applyAlign(){for(const row of $('ros-table').querySelectorAll('tbody tr'))for(const cell of row.cells){const values=cellAlign[rowMode]||{},a=values.cells?.[layout.alignKey(row.dataset.rowId,cell.dataset.columnId)]??values.columns?.[cell.dataset.columnId];if(a)cell.dataset.align=a;else delete cell.dataset.align;}}
+  function applyAlign(){for(const row of $('ros-table').querySelectorAll('tbody tr'))for(const cell of row.cells){const values=cellAlign[rowMode]||{},a=values.cells?.[layout.alignKey(row.dataset.rowId,cell.dataset.columnId)]??values.columns?.[cell.dataset.columnId];if(a)cell.dataset.align=a;else delete cell.dataset.align;files.paintCellStyle(cell,files.cellStyle(cellStyles,rowMode,row.dataset.rowId,cell.dataset.columnId));}}
   function cellNodes(){return [...document.querySelectorAll('.doc-frame td[data-column-id],.doc-frame .pg-cell,.doc-frame .portrait-field')];}
   function cellKey(node){return layout.alignKey(node.closest('[data-row-id]')?.dataset.rowId||node.dataset.rowId,node.dataset.columnId);}
   function selectionValues(){const values=cellAlign[alignmentMode()]||{};return selection.kind==='column'?selection.ids.map(id=>values.columns?.[id]||'left'):selection.kind==='cells'?[...selection.keys].map(key=>values.cells?.[key]??values.columns?.[key.split('|')[1]]??'left'):[];}
-  function applySelectionClasses(){const nodes=cellNodes(),existing=new Set(nodes.map(cellKey));if(selection.kind==='cells'){selection.keys=new Set([...selection.keys].filter(k=>existing.has(k)));if(!selection.keys.size)selection={kind:'none'};}for(const node of [...nodes,...document.querySelectorAll('.doc-frame th,.doc-frame .pg-label')]){const col=selection.kind==='column'&&selection.ids.includes(node.dataset.columnId),cell=selection.kind==='cells'&&selection.keys.has(cellKey(node));node.classList.toggle('is-col-selected',col);node.classList.toggle('is-cell-selected',cell);if(node.matches('th,.pg-label')){node.tabIndex=0;node.setAttribute('aria-selected',String(col));}}const values=selectionValues();for(const a of ['left','center','right']){$('align-'+a).disabled=!values.length;$('align-'+a).setAttribute('aria-pressed',String(values.length>0&&values.every(x=>x===a)));}syncSelectionBar();}
+  function applySelectionClasses(){const nodes=cellNodes(),existing=new Set(nodes.map(cellKey));if(selection.kind==='cells'){selection.keys=new Set([...selection.keys].filter(k=>existing.has(k)));if(!selection.keys.size)selection={kind:'none'};}for(const node of [...nodes,...document.querySelectorAll('.doc-frame th,.doc-frame .pg-label')]){const col=selection.kind==='column'&&selection.ids.includes(node.dataset.columnId),cell=selection.kind==='cells'&&selection.keys.has(cellKey(node));node.classList.toggle('is-col-selected',col);node.classList.toggle('is-cell-selected',cell);if(node.matches('th,.pg-label')){node.tabIndex=0;node.setAttribute('aria-selected',String(col));}}const values=selectionValues();for(const a of ['left','center','right']){$('align-'+a).disabled=!values.length;$('align-'+a).setAttribute('aria-pressed',String(values.length>0&&values.every(x=>x===a)));}syncFormatControls();syncSelectionBar();}
   function changeAlign(value){if(selection.kind==='none')return;if(paperEditor?.active&&!paperEditor.finish())return;const mode=alignmentMode(),p=cellAlign[mode]||{columns:{},cells:{}};p.columns??={};p.cells??={};if(selection.kind==='column')for(const id of selection.ids){if(value==='left')delete p.columns[id];else p.columns[id]=value;for(const key of Object.keys(p.cells))if(key.endsWith('|'+id))delete p.cells[key];}else for(const key of selection.keys){if(value==='left')delete p.cells[key];else p.cells[key]=value;}if(!Object.keys(p.columns).length)delete p.columns;if(!Object.keys(p.cells).length)delete p.cells;if(Object.keys(p).length)cellAlign[mode]=p;else delete cellAlign[mode];markDirty();renderPaper();}
   for(const a of ['left','center','right']){$('align-'+a).addEventListener('pointerdown',e=>e.preventDefault());$('align-'+a).addEventListener('click',()=>changeAlign(a));}
+  function selectedStyles(){
+    if(selection.kind==='column')return selection.ids.map(id=>files.cellStyle(cellStyles,alignmentMode(),'',id));
+    if(selection.kind==='cells')return [...selection.keys].map(key=>{const[row,col]=key.split('|');return files.cellStyle(cellStyles,alignmentMode(),row,col);});
+    return [];
+  }
+  function syncFormatControls(){
+    const styles=selectedStyles(),same=key=>styles.length&&styles.every(v=>v[key]===styles[0][key]);
+    $('cell-format-target').textContent=uiFormat(selection.kind==='column'?'選択した列: {count}列':'選択したセル: {count}個',{count:styles.length});
+    for(const key of ['bold','italic','underline'])$('cell-'+key).setAttribute('aria-pressed',same(key)&&styles[0][key]===true?'true':same(key)?'false':'mixed');
+    for(const[id,key,fallback]of [['cell-font','fontFamily',''],['cell-vertical','vertical','top'],['cell-border','border','']]){
+      const node=$(id),mixed=node.querySelector('[data-mixed]');if(!same(key)){if(!mixed){const o=el('option',uiText('混在'));o.value='mixed';o.dataset.mixed='';node.prepend(o);}node.value='mixed';}else{mixed?.remove();node.value=styles[0]?.[key]??fallback;}
+    }
+    $('cell-size').value=same('fontSize')?String(styles[0]?.fontSize??paperFontSize):'';$('cell-size').placeholder=same('fontSize')?'':'—';
+    for(const[id,key,fallback]of [['cell-color','color',paperInk==='black'?'#efe7d6':'#25352f'],['cell-fill','fill',paperInk==='black'?'#171411':'#ffffff']]){$(id).value=styles[0]?.[key]??fallback;$(id).dataset.mixed=String(!same(key));}
+  }
+  function changeCellStyle(patch,{clear=false}={}){
+    if(selection.kind==='none'||!files.validCellStyle(patch))return;
+    if(paperEditor?.active&&!paperEditor.finish())return;
+    try{bridge.canEdit(token);}catch(error){showError(error);return;}
+    const mode=alignmentMode(),p=cellStyles[mode]||{columns:{},cells:{}};p.columns??={};p.cells??={};
+    if(selection.kind==='column')for(const id of selection.ids){
+      if(clear)delete p.columns[id];else p.columns[id]={...p.columns[id],...patch};
+      for(const[key,style]of Object.entries(p.cells))if(key.endsWith('|'+id)){
+        if(clear)delete p.cells[key];else{for(const prop of Object.keys(patch))delete style[prop];if(!Object.keys(style).length)delete p.cells[key];}
+      }
+    }else for(const key of selection.keys)p.cells[key]=clear?Object.fromEntries(files.CELL_STYLE_KEYS.map(k=>[k,null])):{...p.cells[key],...patch};
+    if(clear){
+      const a=cellAlign[mode]||{columns:{},cells:{}};a.columns??={};a.cells??={};
+      if(selection.kind==='column')for(const id of selection.ids){delete a.columns[id];for(const key of Object.keys(a.cells))if(key.endsWith('|'+id))delete a.cells[key];}
+      else for(const key of selection.keys)a.cells[key]='left';
+      if(!Object.keys(a.columns).length)delete a.columns;if(!Object.keys(a.cells).length)delete a.cells;
+      if(Object.keys(a).length)cellAlign[mode]=a;else delete cellAlign[mode];
+    }
+    if(!Object.keys(p.columns).length)delete p.columns;if(!Object.keys(p.cells).length)delete p.cells;
+    if(Object.keys(p).length)cellStyles[mode]=p;else delete cellStyles[mode];
+    checkpoint();markDirty();renderPaper();
+  }
+  for(const[key,id]of [['fontFamily','cell-font'],['vertical','cell-vertical'],['border','cell-border'],['color','cell-color'],['fill','cell-fill']])$(id).addEventListener('change',e=>{if(e.target.value!=='mixed')changeCellStyle({[key]:e.target.value||null});});
+  $('cell-size').addEventListener('change',e=>{if(e.target.value===''||!e.target.reportValidity()){syncFormatControls();return;}changeCellStyle({fontSize:Number(e.target.value)});});
+  for(const key of ['bold','italic','underline']){$('cell-'+key).addEventListener('pointerdown',e=>e.preventDefault());$('cell-'+key).addEventListener('click',()=>changeCellStyle({[key]:$('cell-'+key).getAttribute('aria-pressed')!=='true'}));}
+  $('cell-format-reset').addEventListener('pointerdown',e=>e.preventDefault());$('cell-format-reset').addEventListener('click',()=>changeCellStyle({},{clear:true}));
   function selectColumn(id,shift){const ids=selection.kind==='column'&&shift?[...selection.ids]:[];if(ids.includes(id))ids.splice(ids.indexOf(id),1);else ids.push(id);selection=ids.length?{kind:'column',ids}:{kind:'none'};applySelectionClasses();}
   function selectCell(cell,shift){const key=cellKey(cell);if(key.startsWith('undefined|'))return;let keys=new Set([key]),anchor=key;if(shift&&selection.kind==='cells'){anchor=selection.anchor;const rows=[...new Set(cellNodes().map(n=>cellKey(n).split('|')[0]))],cols=orderedColumns().filter(c=>!layoutFor().hidden.includes(c.id)).map(c=>c.id),[ar,ac]=anchor.split('|'),[br,bc]=key.split('|');const y1=rows.indexOf(ar),y2=rows.indexOf(br),x1=cols.indexOf(ac),x2=cols.indexOf(bc);if([y1,y2,x1,x2].every(x=>x>=0)){keys=new Set();for(const row of rows.slice(Math.min(y1,y2),Math.max(y1,y2)+1))for(const col of cols.slice(Math.min(x1,x2),Math.max(x1,x2)+1))keys.add(layout.alignKey(row,col));}}selection={kind:'cells',keys,anchor};const item=items.find(i=>key.split('|')[0]===i.id||key.split('|')[0].startsWith(i.id+':'));if(item){selectItem(item.id,false);}else{const rowId=key.split('|')[0],node=cell.closest('[data-row-id]'),itemId=node?.dataset.itemId||document.querySelector(`#ros-body tr[data-row-id="${CSS.escape(rowId)}"]`)?.dataset.itemId;if(itemId)selectItem(itemId,false);}applySelectionClasses();}
   const frame=document.querySelector('.doc-frame');
@@ -295,7 +330,7 @@
   frame.addEventListener('dblclick',event=>{const head=event.target.closest('th,.pg-label');if(!head||paperFormat==='a4-portrait')return;const b=head.getBoundingClientRect();if(event.clientX-b.left<8||b.right-event.clientX<8){event.preventDefault();changeLayout(p=>Object.assign(p,layout.resetWidth(p,kindOfLayout(),head.dataset.columnId)),'列幅を既定へ戻しました');}});
   function decoratePages(){// Restore screen tools after projection without changing printed geometry.
     // G1 #2: the right edge of every A4 page shrinks the page on screen (aspect kept, never above real size, print unchanged).
-    for(const page of document.querySelectorAll('#page-output .output-page')){if(page.querySelector(':scope>.page-resize'))continue;const handle=el('div','','page-resize');handle.dataset.screenOnly='';handle.setAttribute('aria-hidden','true');handle.title='ドラッグでA4の画面表示を縮小・ダブルクリックで実寸（印刷は実寸）';page.append(handle);}
+    for(const page of document.querySelectorAll('#page-output .output-page')){if(page.querySelector(':scope>.page-resize'))continue;const handle=el('div','','page-resize');handle.dataset.screenOnly='';handle.setAttribute('aria-hidden','true');handle.title=uiText('ドラッグでA4の画面表示を縮小・ダブルクリックで実寸（印刷は実寸）');page.append(handle);}
     for(const cell of document.querySelectorAll('#page-output .pg-cell')){
       const rowId=cell.closest('[data-row-id]').dataset.rowId,item=items.find(i=>rowId===i.id),field=cell.dataset.columnId;
       if(!item||!['details','notes'].includes(field))continue;
@@ -335,7 +370,7 @@
   function figure(target){if(runOnly)return;const fig=el("figure"),img=el("img");img.src=figureUrl;img.alt=P("sampleAlt");fig.append(img,el("figcaption",P("sampleFigure")));target.append(fig);}
   function directMark(node,itemId,key,label,type="text",info=false){
     node.dataset[info?"directInfo":"directField"]=key;if(itemId)node.dataset.directItem=itemId;node.dataset.directType=type;
-    node.classList.add("paper-editable");node.tabIndex=0;node.setAttribute("role","button");node.setAttribute("aria-label",`${itemId?items.find(x=>x.id===itemId)?.title+"の":""}${label}を紙面で編集`);node.dataset.emptyLabel=language==="en"?"Click to fill in":"クリックして記入";return node;
+    node.classList.add("paper-editable");node.tabIndex=0;node.setAttribute("role","button");node.setAttribute("aria-label",uiFormat(itemId?"{name}の{field}を紙面で編集":"{field}を紙面で編集",{name:items.find(x=>x.id===itemId)?.title||"",field:uiText(label)}));node.dataset.emptyLabel=language==="en"?"Click to fill in":"クリックして記入";return node;
   }
   function rich(text,hasImage,refs=[],itemId=null,key=null){const td=el("td"),body=el("div",text,"text");if(key)directMark(body,itemId,key,key.includes("Notes")||key==="notes"?"備考":"詳細");td.append(body);if(hasImage)figure(td);for(const [index,ref] of refs.entries())assetFigure(td,ref,itemId,key,index);if(["details","notes"].includes(key))installImageCell(td,itemId,key);return td;}
   function selectItem(id,scroll=true){selected=id;editGroup=null;renderFlow();renderFields();updateStageFigures();for(const row of document.querySelectorAll("#ros-body tr,.pg-row,.portrait-row,.portrait-head"))row.classList.toggle("selected",(row.dataset.itemId||items.find(i=>row.dataset.rowId===i.id)?.id)===id);const target=[...document.querySelectorAll(".doc-frame [data-direct-item]")].find(n=>n.dataset.directItem===id&&n.getClientRects().length);if(target&&scroll){const y=target.getBoundingClientRect().top,band=panelLayout()?0:document.querySelector(".paper-sticky").getBoundingClientRect().height;window.scrollBy({top:y-band-48,behavior:"instant"});}}
@@ -435,7 +470,7 @@
     if(!entries.length){td.append(el("span","—","small"));return td;}
     entries.forEach((cue,i)=>{if(i)td.append(document.createTextNode("・"));
       const link=el("button",`${cue.kind} ${cue.ordinal}`,"cue-link");link.type="button";link.dataset.cueLink=cue.id;
-      const label=`キュー ${cue.no}（${cue.kind}${cue.tc&&cue.tc!=="—"?` · TC ${cue.tc}`:""}${cue.memo?` · ${cue.memo}`:""}）をキューの行で開く`;
+      const label=uiFormat("キュー {number}（{detail}）をキューの行で開く",{number:cue.no,detail:`${cue.kind}${cue.tc&&cue.tc!=="—"?` · TC ${cue.tc}`:""}${cue.memo?` · ${cue.memo}`:""}`});
       link.setAttribute("aria-label",label);link.title=label;td.append(link);});
     return td;
   }
@@ -476,7 +511,7 @@
     const img=fig.querySelector('img');fig.dataset.view=view;img.src=url;img.alt=P(view==='front'?'frontAlt':'planAlt',item.title);
     if(!toggle)return;
     const other=view==='front'?'平面図':'正面図';fig.dataset.stageToggle=item.id;fig.tabIndex=0;fig.setAttribute('role','button');
-    fig.setAttribute('aria-label',`${view==='front'?'正面図':'平面図'}（${item.title}）。押すと${other}に切り替えます`);fig.title=`押すと${other}に切り替え（この行だけ）`;
+    fig.setAttribute('aria-label',uiFormat('{view}（{name}）。押すと{other}に切り替えます',{view:uiText(view==='front'?'正面図':'平面図'),name:item.title,other:uiText(other)}));fig.title=uiFormat('押すと{view}に切り替え（この行だけ）',{view:uiText(other)});
     let tag=fig.querySelector('.stage-figure-tag');if(!tag){tag=el('span','','stage-figure-tag');tag.setAttribute('aria-hidden','true');fig.append(tag);}tag.textContent=P(view);
   }
   function toggleStage(fig){
@@ -573,7 +608,7 @@
       const block=el("article","",`portrait-row${row.classList.contains("selected")?" selected":""}`),summary=el("div","","portrait-grid portrait-summary"),grid=el("div","","portrait-grid");
       Array.from(row.cells).filter(cell=>!cell.hidden).forEach(cell=>{
         const def=defs.get(cell.dataset.columnId),field=el("div","",`portrait-field${def.compact?" compact":""}`);
-        field.dataset.columnId=def.id;field.dataset.itemId=row.dataset.itemId||row.dataset.rowId;if(cell.dataset.align)field.dataset.align=cell.dataset.align;field.dataset.rowId=row.dataset.rowId;field.append(el("div",columnLabel(def),"portrait-label"));
+        field.style.cssText=cell.style.cssText;field.dataset.columnId=def.id;field.dataset.itemId=row.dataset.itemId||row.dataset.rowId;if(cell.dataset.align)field.dataset.align=cell.dataset.align;field.dataset.rowId=row.dataset.rowId;field.append(el("div",columnLabel(def),"portrait-label"));
         for(const child of cell.childNodes)if(!(child.nodeType===1&&child.hasAttribute("data-screen-only")))field.append(child.cloneNode(true));(def.compact?summary:grid).append(field);
       });if(summary.children.length)block.append(summary);if(grid.children.length)block.append(grid);host.append(block);
     }
@@ -607,6 +642,7 @@
         const result=await window.ROSPages.render({source:sourceSnapshot,table,mount,portrait:format==="a4-portrait",scope,context,text,isCurrent:()=>revision===pageRevision});
         if(revision!==pageRevision||!result)return;
         mount.classList.remove("page-building");host.replaceChildren(mount);host.hidden=false;
+        translateAddedControls();
         status.textContent=uiText("進行表の紙面: {format} · 全{pages}ページ · 続き{continuations}か所。画像と説明文は同じページに配置。")
           .replace("{format}",uiText(paperNames[format])).replace("{pages}",result.pages).replace("{continuations}",result.continuations);
         status.dataset.state="ready";document.body.classList.toggle("pages-ready",!busy&&!paperEditor?.active);$("print-sample").disabled=busy||paperEditor?.active;paperEditor?.refresh();decoratePages();applySelectionClasses();revealRow();layoutIndex();queueTrack();
@@ -671,7 +707,7 @@
     docLanguage=doc.language;paperFormat=doc.paperFormat;
     assets.clear();for(const a of doc.assets)assets.set(a.id,a);
     loadLayouts(doc.layouts);
-    cellAlign=files.clone(doc.cellAlign||{});cueNotes=files.clone(doc.cueNotes||{});stageByItem=files.clone(doc.stageByItem||{});rowMode=doc.rowMode??"scene-transition";if(rowMode==="cue"&&!canReadCues)rowMode="scene-transition";
+    cellAlign=files.clone(doc.cellAlign||{});cellStyles=files.clone(doc.cellStyles||{});cueNotes=files.clone(doc.cueNotes||{});stageByItem=files.clone(doc.stageByItem||{});rowMode=doc.rowMode??"scene-transition";if(rowMode==="cue"&&!canReadCues)rowMode="scene-transition";
     rowModeTouched=false;
     $("paper-format").value=paperFormat;
   }
@@ -697,6 +733,7 @@
     const base={...documentBase};if(paperFontSize!==layout.PAPER_FONT.initial)base.paperFontSize=paperFontSize;else delete base.paperFontSize;if(rowMode!=='scene-transition')base.rowMode=rowMode;else if(canReadCues||rowModeTouched||base.rowMode!=='cue')delete base.rowMode;
     if(Object.keys(cueNotes).length)base.cueNotes=cueNotes;else delete base.cueNotes;
     if(Object.keys(cellAlign).length)base.cellAlign=cellAlign;else delete base.cellAlign;
+    if(Object.keys(cellStyles).length)base.cellStyles=cellStyles;else delete base.cellStyles;
     const stage=layout.packStageByItem(stageByItem,items.map(i=>i.id));if(stage)base.stageByItem=stage;else delete base.stageByItem;
     return files.clone({...base,format:files.FORMAT,version:1,documentInfo,items,selected,nextId,language:docLanguage,view,paperFormat,layouts:packedLayouts,assets:[...ids].map(id=>assets.get(id))});
   }
@@ -706,7 +743,7 @@
     documentInfo=files.documentInfo(doc);
     assets.clear();for(const asset of doc.assets)assets.set(asset.id,asset);
     loadLayouts(doc.layouts);
-    cellAlign=files.clone(doc.cellAlign||{});cueNotes=files.clone(doc.cueNotes||{});stageByItem=files.clone(doc.stageByItem||{});rowMode=doc.rowMode??"scene-transition";if(rowMode==="cue"&&!canReadCues)rowMode="scene-transition";
+    cellAlign=files.clone(doc.cellAlign||{});cellStyles=files.clone(doc.cellStyles||{});cueNotes=files.clone(doc.cueNotes||{});stageByItem=files.clone(doc.stageByItem||{});rowMode=doc.rowMode??"scene-transition";if(rowMode==="cue"&&!canReadCues)rowMode="scene-transition";
     rowModeTouched=false;
     for(const history of Object.values(layoutHistory)){history.undo.length=0;history.redo.length=0;}
     undo.length=0;redo.length=0;editGroup=null;
@@ -719,7 +756,7 @@
     img.dataset.assetId=asset.id;figure.append(img);if(field){figure.append(directMark(el("figcaption",ref.caption),itemId,`caption:${field}:${index}`,"画像の説明"));}else if(ref.caption)figure.append(el("figcaption",ref.caption));if(field)installRemove(figure,itemId,field,index);target.append(figure);
   }
   function installRemove(figure,itemId,field,index){if(!['details','notes'].includes(field))return;const remove=button('×',()=>{const item=items.find(i=>i.id===itemId),key=field==='details'?'detailAssets':'noteAssets';if(!item?.[key][index])return;checkpoint();item[key].splice(index,1);render();notice('画像を欄から外しました。元に戻せます');},'この画像を外す');remove.className='figure-remove';remove.dataset.screenOnly='';figure.append(remove);}
-  function installImageCell(cell,itemId,field){const key=field==='details'?'detailAssets':'noteAssets';if(!items.some(i=>i.id===itemId))return;const add=button('＋',()=>{selected=itemId;pendingImageTarget={itemId,key};$(field+'-files').click();},field==='details'?'詳細に画像を追加':'備考に画像を追加');add.className='cell-add-image';add.dataset.screenOnly='';cell.append(add);cell.addEventListener('dragover',e=>{e.preventDefault();cell.classList.add('is-drop-target');});cell.addEventListener('dragleave',()=>cell.classList.remove('is-drop-target'));cell.addEventListener('drop',e=>{e.preventDefault();cell.classList.remove('is-drop-target');addImages(field,key,[...e.dataTransfer.files].filter(f=>['image/png','image/jpeg','image/webp'].includes(f.type)),itemId);});}
+  function installImageCell(cell,itemId,field){const key=field==='details'?'detailAssets':'noteAssets';if(!items.some(i=>i.id===itemId))return;const add=button('＋',()=>{selected=itemId;pendingImageTarget={itemId,key};$(field+'-files').click();},uiText(field==='details'?'詳細に画像を追加':'備考に画像を追加'));add.className='cell-add-image';add.dataset.screenOnly='';cell.append(add);cell.addEventListener('dragover',e=>{e.preventDefault();cell.classList.add('is-drop-target');});cell.addEventListener('dragleave',()=>cell.classList.remove('is-drop-target'));cell.addEventListener('drop',e=>{e.preventDefault();cell.classList.remove('is-drop-target');addImages(field,key,[...e.dataTransfer.files].filter(f=>['image/png','image/jpeg','image/webp'].includes(f.type)),itemId);});}
   function renderAttachments(){
     const row=current();
     for(const [field,key] of [["details","detailAssets"],["notes","noteAssets"]]){
@@ -776,26 +813,35 @@
   $("save-draft").addEventListener("click",saveDraft);
   $("export-document").addEventListener("click",()=>{if(paperEditor.finish())bridge.export();});
   const tooltip=document.createElement('div');tooltip.id='ros-action-tooltip';tooltip.className='ros-action-tooltip';tooltip.setAttribute('role','tooltip');tooltip.hidden=true;document.body.append(tooltip);
+  let tooltipTarget=null;
+  const hideTooltip=()=>{tooltip.hidden=true;tooltipTarget?.removeAttribute('aria-describedby');tooltipTarget=null;};
   for(const button of document.querySelectorAll('.band-items button,#band-selection button')){
     const wrapper=document.createElement('span');wrapper.className='action-tip-target';button.before(wrapper);wrapper.append(button);
     const reason=()=>button.id.startsWith('align-')?'セルか列を選択してください':button.id==='paper-up'?'先頭の項目です':button.id==='paper-down'?'最後の項目です':button.id==='paper-undo'?'戻せる操作がありません':button.id==='paper-redo'?'やり直せる操作がありません':'項目を選択してください';
-    const update=()=>{const label=uiText(button.getAttribute('aria-label')||button.textContent);wrapper.tabIndex=button.disabled?0:-1;wrapper.setAttribute('aria-label',label+(button.disabled?'：'+uiText(reason()):''));button.title=label+(button.disabled?'：'+uiText(reason()):'');};
-    update();new MutationObserver(update).observe(button,{attributes:true,attributeFilter:['disabled','aria-label']});
-    const show=()=>{update();tooltip.textContent=button.title;tooltip.hidden=false;const r=wrapper.getBoundingClientRect();tooltip.style.left=Math.max(8,Math.min(innerWidth-tooltip.offsetWidth-8,r.left))+'px';tooltip.style.top=Math.max(8,Math.min(innerHeight-tooltip.offsetHeight-8,r.bottom+6))+'px';(button.disabled?wrapper:button).setAttribute('aria-describedby',tooltip.id);};
-    wrapper.addEventListener('pointerenter',show);wrapper.addEventListener('focusin',show);wrapper.addEventListener('pointerleave',()=>tooltip.hidden=true);wrapper.addEventListener('focusout',()=>tooltip.hidden=true);
+    let tooltipText='';
+    const update=()=>{
+      const label=uiText(button.getAttribute('aria-label')||button.textContent);
+      tooltipText=label+(button.disabled?'：'+uiText(reason()):'');
+      wrapper.tabIndex=button.disabled?0:-1;wrapper.setAttribute('aria-label',tooltipText);
+      // These controls already have a custom tooltip. Render/translation may
+      // restore title, so remove it to prevent a second browser tooltip.
+      if(button.hasAttribute('title'))button.removeAttribute('title');
+    };
+    update();new MutationObserver(update).observe(button,{attributes:true,attributeFilter:['disabled','aria-label','title']});
+    const show=()=>{hideTooltip();update();tooltip.textContent=tooltipText;tooltip.hidden=false;const r=wrapper.getBoundingClientRect();tooltip.style.left=Math.max(8,Math.min(innerWidth-tooltip.offsetWidth-8,r.left))+'px';tooltip.style.top=Math.max(8,Math.min(innerHeight-tooltip.offsetHeight-8,r.bottom+6))+'px';tooltipTarget=button.disabled?wrapper:button;tooltipTarget.setAttribute('aria-describedby',tooltip.id);};
+    wrapper.addEventListener('pointerenter',show);wrapper.addEventListener('focusin',show);wrapper.addEventListener('pointerleave',hideTooltip);wrapper.addEventListener('focusout',hideTooltip);
   }
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')tooltip.hidden=true;});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')hideTooltip();});
   window.addEventListener("beforeunload",event=>{if(paperEditor?.hasDraft){event.preventDefault();event.returnValue="";}});
   /* ---------- G1 #2: paper width / page scale (screen only, per device) ---------- */
   function maxFreeWidth(){let outer=0;try{outer=parent.innerWidth||0;}catch(_){}return Math.max(layout.FREE_WIDTH.min,Math.round(Math.max(innerWidth,outer)));}
   function autoPageScale(){
-    if(lite)return 80;
     const base=(paperFormat==="a4-portrait"?210:297)*96/25.4+11;
     // The frame is the actual centre track after the left controls and an
     // open companion column have taken their space.  Measuring it prevents a
     // right panel, language change, or resize from leaving the page clipped.
     const centre=frame.clientWidth||document.documentElement.clientWidth-panelWidth()-16;
-    return layout.pageScale((centre-8)/base*100);
+    return lite?Math.min(80,layout.pageScale((centre-8)/base*100)):layout.pageScale((centre-8)/base*100);
   }
   function applyPaperSize(){
     const free=paperFormat==="free",paper=$("paper-source"),input=$("paper-size-input"),handle=$("paper-resize"),width=free?layout.freeWidth(freeWidthPref,maxFreeWidth()):null;
@@ -805,7 +851,7 @@
     if(lite){
       const need=paperNeed(),style=getComputedStyle(document.body),right=parseFloat(style.getPropertyValue('--ros-right-min'))||320,gap=parseFloat(style.getPropertyValue('--ros-gap'))||24,gutter=parseFloat(style.getPropertyValue('--pane-gutter'))||16;
       document.body.style.setProperty('--lite-paper-min',`${need}px`);
-      document.body.classList.toggle('lite-stacked',document.documentElement.clientWidth-2*gutter<need+right+gap);
+      document.body.classList.toggle('lite-stacked',document.documentElement.clientWidth-2*gutter-(innerWidth>=800?196:0)<need+right+gap);
     }
     $("paper-size-label").textContent=uiText(free?"表の幅":"表示の倍率");$("paper-size-unit").textContent=free?"px":"%";
     input.min=String(free?layout.FREE_WIDTH.min:layout.PAGE_SCALE.min);input.max=String(free?maxFreeWidth():layout.PAGE_SCALE.max);input.step=String(free?layout.FREE_WIDTH.step:layout.PAGE_SCALE.step);
@@ -902,15 +948,15 @@
     // the primary surface, while the index follows the Stage tab's 360px default.
     preview.style.setProperty("--index-track",`${width}px`);
     const handle=$("ros-index-resize");handle.setAttribute("aria-valuemin",String(layout.INDEX_WIDTH.min));handle.setAttribute("aria-valuemax",String(layout.indexWidth(layout.INDEX_WIDTH.max,docked?space:innerWidth)));handle.setAttribute("aria-valuenow",String(Math.round(aside.getBoundingClientRect().width)||width));
-    const toggle=$("ros-index-toggle");toggle.setAttribute("aria-expanded",String(mode!=="closed"));toggle.title=mode==="closed"?"項目の一覧を開く":"項目の一覧を閉じる";
+    const toggle=$("ros-index-toggle");toggle.setAttribute("aria-expanded",String(mode!=="closed"));toggle.title=uiText(mode==="closed"?"項目の一覧を開く":"項目の一覧を閉じる");
     queueAutomaticPageScale();
     updateStageFigures();
   }
   function renderIndex(){
-    const signature=items.map((item,index)=>`${index}|${item.id}|${item.title}|${item.sceneId?1:0}`).join("\n");if(signature===indexSignature)return;indexSignature=signature;
+    const signature=uiLanguage()+"\n"+items.map((item,index)=>`${index}|${item.id}|${item.title}|${item.sceneId?1:0}`).join("\n");if(signature===indexSignature)return;indexSignature=signature;
     const list=$("ros-index-list"),keep=list.scrollTop;list.replaceChildren();
     for(const {id,no,title,free} of layout.indexEntries(items)){const li=el("li"),b=el("button");b.type="button";b.dataset.itemId=id;if(free)li.className="is-free";
-      b.append(el("span",no,"ros-index-no"),el("span",title,"ros-index-title"));b.title=`${no} ${title}${free?"（進行のみ）":""}へ移動`;li.append(b);list.append(li);}
+      b.append(el("span",no,"ros-index-no"),el("span",title,"ros-index-title"));b.title=uiFormat("{number} {name}{free}へ移動",{number:no,name:title,free:free?uiText("（進行のみ）"):""});li.append(b);list.append(li);}
     list.scrollTop=keep;$("ros-index-count").textContent=`${items.length}件`;
     const current=indexCurrent;indexCurrent=null;if(current)setIndexCurrent(current);queueTrack();
   }
@@ -1055,6 +1101,12 @@
     // Only toolbar chrome: item titles and the editable paper remain source data.
     parent.GAMMA_UI?.translateDOM($('paper-band'), {language:uiLanguage(),lookup:uiText,
       exclude:'#paper-item-picker,#paper-size-control,#paper-size-range,#paper-scene,#heading-language option[value="auto"],[data-no-i18n]'});
+    for(const selector of ['#ros-index-toggle','#ros-index-collapse','#ros-index-resize','#companion-toggle','.companion-heading','#details-add-image','#notes-add-image']){
+      const control=document.querySelector(selector);if(control)parent.GAMMA_UI?.translateDOM(control,{language:uiLanguage(),lookup:uiText});
+    }
+    for(const table of document.querySelectorAll('#page-output [role=table]'))table.setAttribute('aria-label',uiText('進行表'));
+    document.querySelector('.doc-frame').setAttribute('aria-label',uiText('横スクロールできる進行表'));
+    for(const page of document.querySelectorAll('#page-output .output-page'))page.setAttribute('aria-label',uiFormat('{page} / {pages}ページ',{page:page.dataset.page,pages:document.querySelectorAll('#page-output .output-page').length}));
     const reset=$('reorder-warning-reset');reset.dataset.rosAddedText ||= reset.textContent;reset.textContent=uiText(reset.dataset.rosAddedText);
     $('paper-item-picker').setAttribute('aria-label',uiText('編集する項目'));
     const scene=$('paper-scene');if(scene.dataset.rosSceneAction){scene.title=uiText(scene.dataset.rosSceneAction);scene.setAttribute('aria-label',scene.title);if(scene.lastChild?.nodeName==='SPAN')scene.lastChild.textContent=scene.title;}

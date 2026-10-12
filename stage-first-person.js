@@ -2197,7 +2197,7 @@
   }
 
   let boxReceiver3d = null;
-  function drawBox(ctx, cx, cz, y0, y1, width, depth, color, rotY = 0) {
+  function drawBox(ctx, cx, cz, y0, y1, width, depth, color, rotY = 0, outline = true) {
     const halfWidth = width / 2;
     const halfDepth = depth / 2;
     const rad = finite(rotY, 0) * Math.PI / 180;
@@ -2223,7 +2223,7 @@
         ? boxReceiver3d.api.materialColor(color, boxReceiver3d.api.sample(boxReceiver3d.emitters,
           { x: cx, y: cz + D / 2, z: y1 }, { x: 0, y: 0, z: 1 }, cueLightClockMs)) : shade(color, 1) });
     faces.sort((a, b) => b.depth - a.depth)
-      .forEach((face) => fillPoly(ctx, face.points, face.fill, "rgba(16,12,9,.35)", 1));
+      .forEach((face) => fillPoly(ctx, face.points, face.fill, outline ? "rgba(16,12,9,.35)" : null, 1));
   }
 
   /* 箱の「面」の四隅を画面座標で返す。紗幕と投影のために足した（2026-09-20）。
@@ -3974,7 +3974,7 @@
         ctx.globalAlpha = clamp(finite(box.tint, 1), .12, 1);
         drawBox(ctx, x + offsetX, z + offsetZ, lift,
           lift + finite(box.h, 0), finite(box.w, 1), finite(box.d, 1),
-          color, facing + finite(box.rotY, 0));
+          color, facing + finite(box.rotY, 0), !window.SHOSAI_STAGE_MACHINERY?.isMaskingCurtain(piece));
         ctx.restore();
       });
     } else if (piece.type === "model" && piece.model && window.SHOSAI_STAGE_MODELS) {

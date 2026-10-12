@@ -87,6 +87,7 @@
     if (base.some((p) => !p) || top.some((p) => !p)) return;
     const tint = box.tint === undefined ? 1 : finite(box.tint, 1);
     const color = piece.color;
+    const outline=!root.SHOSAI_STAGE_MACHINERY?.isMaskingCurtain?.(piece);
 
     ctx.strokeStyle = rgba(color, 0.28 * tint);
     ctx.lineWidth = 1.5;
@@ -114,7 +115,7 @@
       ctx.lineTo(top[f.i].x, top[f.i].y);
       ctx.closePath();
       ctx.fill();
-      ctx.stroke();
+      if(outline)ctx.stroke();
     });
 
     ctx.fillStyle = shade ? shade({ x: (corners[0].x + corners[2].x) / 2, y: (corners[0].y + corners[2].y) / 2, z: corners[0].top },
@@ -124,7 +125,7 @@
     top.forEach((c, i) => (i ? ctx.lineTo(c.x, c.y) : ctx.moveTo(c.x, c.y)));
     ctx.closePath();
     ctx.fill();
-    ctx.stroke();
+    if(outline)ctx.stroke();
   }
 
   /* 駒1つぶんの箱を全部塗る。返り値は画面上の外接範囲（名札の位置決め用）。 */

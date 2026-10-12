@@ -118,7 +118,7 @@
     const sorted = lxSortedOf(scene);
     let q = cue && typeof cue.lxId === "string" ? sorted.find((row) => row.id === cue.lxId) || null : null;
     const n = Math.floor(finite(ordinal, 0));
-    if (!q && n >= 1) q = sorted[n - 1] || null;
+    if (!q && !cue?.lxId && n >= 1) q = sorted[n - 1] || null;
     if (!q) return null;
     const sceneOrder = new Map(design.scenes.map((row, index) => [row && row.id, index]));
     const all = design.scenes.flatMap((row) => lxSortedOf(row).map((x) => ({ q: x, sceneId: row.id })))
@@ -173,6 +173,58 @@
       return { ...cue, sceneNumber, ordinal, lx,
         displayName: cue.cueType === "light" ? lightCueName(project, sceneNumber, ordinal, lx, helpers) : formatCueDisplayName(cue.cueType, sceneNumber, ordinal, helpers) };
     });
+  }
+
+  // Build a single undoable registration without mutating the source project.
+  // Pin legacy ordinal links before inserting, so their light settings stay attached.
+  function registerTimelineLightCue(project, cue, sourceDesign, lxId) {
+    if (cue?.cueType !== "light" || !lxId || !Array.isArray(sourceDesign?.scenes)) return null;
+    const clone = value => JSON.parse(JSON.stringify(value));
+    const design = clone(sourceDesign);
+    const prior = cuePresentations(project).filter(row => row.cueType === "light");
+    const priorById = new Map(prior.map(row => [row.id, row]));
+    const projected = cuePresentations({...project, cues:[...list(project.cues), cue]});
+    const at = projected.findIndex(row => row.id === cue.id);
+    const entry = projected[at];
+    const owner = design.scenes.find(row => row.id === entry?.sceneId);
+    if (!owner) return null;
+    const local = lxSortedOf(owner);
+    const nextLink = projected.slice(at + 1).find(row => row.cueType === "light"
+      && row.sceneId === entry.sceneId && priorById.get(row.id)?.lx);
+    const prevLink = projected.slice(0, at).reverse().find(row => row.cueType === "light"
+      && row.sceneId === entry.sceneId && priorById.get(row.id)?.lx);
+    const nextId = nextLink && priorById.get(nextLink.id).lx.id;
+    const prevId = prevLink && priorById.get(prevLink.id).lx.id;
+    const index = nextId ? local.findIndex(row => row.id === nextId)
+      : prevId ? local.findIndex(row => row.id === prevId) + 1 : 0;
+    const ownerIndex = design.scenes.indexOf(owner);
+    const next = local[index] || design.scenes.slice(ownerIndex + 1).flatMap(lxSortedOf)[0];
+    const all = design.scenes.flatMap(lxSortedOf);
+    const valid = all.filter(row => Number.isFinite(lxNoValue(row)));
+    const threshold = next ? lxNoValue(next) : Infinity;
+    if (next && !Number.isFinite(threshold)) return null;
+    const number = next ? Math.max(1, Math.ceil(threshold))
+      : Math.floor(Math.max(0,...valid.map(lxNoValue))) + 1;
+    const affected = valid.filter(row => lxNoValue(row) >= threshold);
+    const numberText = value => String(Number(value.toFixed(3)));
+    if (!LX_NO_RE.test(String(number)) || affected.some(row => !LX_NO_RE.test(numberText(lxNoValue(row) + 1)))) return null;
+    const previous = prevId && local.find(row => row.id === prevId);
+    const q = {id:lxId, seq:index + 1, no:String(number), name:cue.memo || "", trigger:"",
+      cue:clone(previous?.cue || owner.cue || {lights:{},groups:[]})};
+    affected.forEach(row => {row.no = numberText(lxNoValue(row) + 1);});
+    local.splice(Math.max(0,index),0,q);
+    local.forEach((row,i) => {row.seq=i + 1;});
+    owner.lxq = local;
+    owner.lxEditing = lxId;
+    owner.cue = clone(q.cue);
+    const cues = list(project.cues).map(old => {
+      if (old.cueType !== "light" || old.kind !== "timeline") return clone(old);
+      const link = priorById.get(old.id)?.lx;
+      return {...clone(old), lxId:link?.id || old.lxId || `unregistered:${old.id}`};
+    });
+    const linked = {...clone(cue),lxId};
+    cues.push(linked);
+    return {design,cues,cue:linked};
   }
 
   function castDisplayName(project, member) {
@@ -753,6 +805,7 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitOnePage
 
   root.SHOSAI_CUE_SHEET = Object.freeze({
     lightCueLink,
+    registerTimelineLightCue,
     performerCueSelection,
     castDisplayName,
     buildHandoverPack,

@@ -221,7 +221,11 @@
     return created;
   }
 
+  // Rendering policy only: geometry and saved curtain data are unchanged.
+  const isMaskingCurtain = piece => Boolean(piece && (piece.type === 'curtain' || piece.kind === 'curtain')
+    && ['leg','border'].includes(piece.curtainKind));
   window.SHOSAI_STAGE_MACHINERY = Object.freeze({
+    isMaskingCurtain,
     STORAGE_KEY, SOURCE_NOTE, mechVal, machineryParts, effectivePlacement,
     builtInPresets, loadPresetLibrary, expandPreset,
   });

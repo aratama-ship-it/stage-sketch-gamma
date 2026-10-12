@@ -1,5 +1,5 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v532";
+const CACHE_NAME = "stage-sketch-gamma-shell-v549";
 // BEGIN GENERATED SHELL (node tools/asset-ledger.mjs --write-sw)
 const APP_SHELL_CORE = [
   "./assets/brand/logo-jp-gamma-inline-white.svg",
@@ -18,10 +18,11 @@ const APP_SHELL_CORE = [
   "./gamma-number-scrub.js?v=2026091780",
   "./gamma-range-fields.js?v=2026091780",
   "./gamma-render-resolution.js?v=20261006-v0318",
+  "./gamma-select.css?v=20261012-v0358",
   "./gamma-ui-i18n.js?v=20261010-v0338",
-  "./gamma-ui-tokens.css?v=20261012-v0356",
+  "./gamma-ui-tokens.css?v=20261012-v0358",
   "./gamma-ui.js?v=20261012-v0356",
-  "./gamma-workspace.js?v=20261012-v0357",
+  "./gamma-workspace.js?v=20261012-v0358",
   "./gamma.css?v=20261012-v0357",
   "./icons/stage-sketch-180.png",
   "./icons/stage-sketch-192.png",
@@ -29,20 +30,20 @@ const APP_SHELL_CORE = [
   "./light-design/laser-effects.js?v=20261005-batch98",
   "./light-design/rig-engine.js?v=20261011-v0347",
   "./light-design/simple-lighting-model.js?v=20261001-release71",
-  "./manual-gamma/manual-content.js?v=20261012-v0357",
-  "./manual-gamma/manual-meta.js?v=20261012-v0357",
+  "./manual-gamma/manual-content.js?v=20261012-v0358",
+  "./manual-gamma/manual-meta.js?v=20261012-v0358",
   "./run-of-show/timing.js?v=20261010-v0338",
   "./run.html",
   "./stage-audio-store.js?v=2026092523",
-  "./stage-cue-sheet.js?v=20261012-v0357",
+  "./stage-cue-sheet.js?v=20261012-v0358",
   "./stage-data-safety.js?v=20261001-release69",
-  "./stage-first-person-loader.js?v=20261012-v0357",
+  "./stage-first-person-loader.js?v=20261012-v0358",
   "./stage-fixture-body.js?v=20261009-v0335",
   "./stage-front-shape.js?v=2026092046",
-  "./stage-i18n.js?v=20261012-v0357",
+  "./stage-i18n.js?v=20261012-v0358",
   "./stage-idle-motion.js?v=20261011-v0353",
   "./stage-jog-reference.js?v=2026093003",
-  "./stage-language-loader.js?v=20261012-v0357",
+  "./stage-language-loader.js?v=20261012-v0358",
   "./stage-large-project-store.js?v=20260928-storage49",
   "./stage-light-eval.js?v=20261004-receiver89",
   "./stage-light-panel-import.js?v=2026092209",
@@ -51,7 +52,7 @@ const APP_SHELL_CORE = [
   "./stage-light-schedule.js?v=20261009-v0331",
   "./stage-lighting-plan-overlay.js?v=20261005-batch98",
   "./stage-lighting-plans.js?v=20261005-beam99",
-  "./stage-machinery.js?v=20261009-v0334",
+  "./stage-machinery.js?v=20261012-v0358",
   "./stage-panel-bottom.css?v=20261005-v030",
   "./stage-panel-columns.css?v=20261001-release71",
   "./stage-performer-body.js?v=20261009-v0333",
@@ -66,10 +67,10 @@ const APP_SHELL_CORE = [
   "./stage-rehearsal-export.js?v=2026091501",
   "./stage-reorder-motion.js?v=2026092420",
   "./stage-reorder-warning.js?v=20261009-v0335",
-  "./stage-run-of-show-distribution.js?v=20261006-v038",
-  "./stage-run-of-show-files.js?v=20261009-v0335",
+  "./stage-run-of-show-distribution.js?v=20261012-v0358",
+  "./stage-run-of-show-files.js?v=20261012-v0358",
   "./stage-run-of-show-model.js?v=20261006-v0312",
-  "./stage-run-of-show-pane.js?v=20261012-v0356",
+  "./stage-run-of-show-pane.js?v=20261012-v0358",
   "./stage-run-of-show.css?v=20261009-v0337",
   "./stage-samples/catalog.js?v=20261012-v0357",
   "./stage-samples/index.js?v=2026092402",
@@ -86,24 +87,24 @@ const APP_SHELL_CORE = [
   "./stage-shortcuts.js?v=20261010-v0338",
   "./stage-show-overview.css?v=20261009-v0337",
   "./stage-show-overview.js?v=20261009-v0337",
-  "./stage-sketch.js?v=20261012-v0357",
+  "./stage-sketch.js?v=20261012-v0358",
   "./stage-sketch.webmanifest",
   "./stage-storage-codec.js?v=2026092523",
   "./stage-storage-hygiene.js?v=20261001-release69",
   "./stage-storage-pressure.js?v=20260926-large39",
   "./stage-storage-recovery.js?v=20261001-release69",
-  "./stage-study-owner.js?v=20261006-v039",
-  "./stage-study.css?v=25",
+  "./stage-study-owner.js?v=20261012-v0358",
+  "./stage-study.css?v=20261012-v0358",
   "./stage-time-domain.js?v=20261010-v0338",
   "./stage-timecode.css?v=20261005-v030",
   "./stage-timecode.js?v=20261005-v030",
-  "./stage-timeline.js?v=20261012-v0357",
+  "./stage-timeline.js?v=20261012-v0358",
   "./stage-usage.js?v=20261009-v0337",
   "./stage-venue-curtains.js?v=20261011-v0347",
-  "./stage-venue-editor.js?v=20261012-v0357",
+  "./stage-venue-editor.js?v=20261012-v0358",
   "./stage-venue-lines.js?v=2026091992",
   "./stage-venue-preview.css?v=20260930-theater7",
-  "./stage-venue-preview.js?v=20261009-v0337",
+  "./stage-venue-preview.js?v=20261012-v0358",
   "./stage-venue-report.js?v=2026092047",
   "./stage-venue-underlay.js?v=20261006-v0312",
   "./stage-venue-viewpoints.css?v=20261009-v0335",
@@ -115,7 +116,7 @@ const APP_SHELL_CORE = [
   "./stage.html",
   "./storage-recovery-ui.js?v=20261010-v0338",
   "./storage-recovery.html",
-  "./style.css?v=20261012-v0356"
+  "./style.css?v=20261012-v0358"
 ];
 const APP_SHELL_GROUPS = {
   "light": [
@@ -123,10 +124,10 @@ const APP_SHELL_GROUPS = {
     "./docs/proscenium-lighting-presets-2026-09-15/proscenium-lighting-presets-v1.json",
     "./docs/proscenium-lighting-presets-2026-09-15/proscenium-mid.shosai-light-design.json",
     "./docs/proscenium-lighting-presets-2026-09-15/proscenium-small.shosai-light-design.json",
-    "./light-design/app.js?v=20261012-v0356",
-    "./light-design/embed.css?v=20261010-v0338",
-    "./light-design/embed.js?v=20261012-v0356",
-    "./light-design/index.html?embed=gamma&v=20261012-v0356",
+    "./light-design/app.js?v=20261012-v0358",
+    "./light-design/embed.css?v=20261012-v0358",
+    "./light-design/embed.js?v=20261012-v0358",
+    "./light-design/index.html?embed=gamma&v=20261012-v0358",
     "./light-design/laser-effects-ui.js?v=20260915-3-supported-shapes",
     "./light-design/light-presets-ui.js?v=20261010-v0338",
     "./light-design/light-presets.js?v=1789357787",
@@ -135,23 +136,23 @@ const APP_SHELL_GROUPS = {
     "./light-design/position-placement-ui.js?v=20261005-batch98",
     "./light-design/selected-light-presets-engine.js?v=20260928-feedback55",
     "./light-design/selected-light-presets-ui.js?v=20260928-feedback55",
-    "./light-design/simple-lighting-ui.js?v=20261010-v0339",
-    "./light-design/simple-lighting.css?v=20261009-v0337",
+    "./light-design/simple-lighting-ui.js?v=20261012-v0358",
+    "./light-design/simple-lighting.css?v=20261012-v0358",
     "./light-design/stage-figure.js?v=20261004-receiver89",
-    "./light-design/ui-i18n.js?v=20261010-v0342",
+    "./light-design/ui-i18n.js?v=20261012-v0358",
     "./light-design/volume-light.js?v=20260928-feedback55",
-    "./stage-set-render.js?v=20261004-receiver89"
+    "./stage-set-render.js?v=20261012-v0358"
   ],
   "formation": [
-    "./formation/presets/editor.css?v=20261001-release71b",
-    "./formation/presets/editor.html?v=20261001-release71b",
+    "./formation/presets/editor.css?v=20261012-v0358",
+    "./formation/presets/editor.html?v=20261012-v0358",
     "./formation/presets/editor.js?v=20261001-release71b"
   ],
   "language": [
     "./gamma-ui-i18n.ko.js?v=20261010-v0338",
-    "./stage-i18n.ko.js?v=20261012-v0357",
-    "./stage-i18n.zh-Hans.js?v=20261012-v0357",
-    "./stage-i18n.zh-Hant.js?v=20261012-v0357"
+    "./stage-i18n.ko.js?v=20261012-v0358",
+    "./stage-i18n.zh-Hans.js?v=20261012-v0358",
+    "./stage-i18n.zh-Hant.js?v=20261012-v0358"
   ],
   "manual": [
     "./manual-gamma/index.html",
@@ -161,18 +162,18 @@ const APP_SHELL_GROUPS = {
     "./manual/quick.html"
   ],
   "runOfShow": [
-    "./run-of-show/distribution.js?v=20261010-v0338",
-    "./run-of-show/editor.css?v=20261011-v0352",
-    "./run-of-show/editor.js?v=20261012-v0356",
+    "./run-of-show/distribution.js?v=20261012-v0358",
+    "./run-of-show/editor.css?v=20261012-v0358",
+    "./run-of-show/editor.js?v=20261012-v0358",
     "./run-of-show/images.js",
-    "./run-of-show/index.html?v=20261012-v0356",
+    "./run-of-show/index.html?v=20261012-v0358",
     "./run-of-show/layout.js?v=20261011-v0347",
-    "./run-of-show/pagination.js?v=20261010-v0338",
+    "./run-of-show/pagination.js?v=20261012-v0358",
     "./run-of-show/paper-edit.js?v=ros8",
-    "./run.css"
+    "./run.css?v=20261012-v0358"
   ],
   "3d": [
-    "./stage-first-person.js?v=20261012-v0357"
+    "./stage-first-person.js?v=20261012-v0358"
   ],
   "samples": [
     "./stage-samples/feature-test-show.js?v=20261012-v0357",
@@ -327,7 +328,7 @@ async function inheritOpenedGroups(previousNames, current) {
       // 段階1より前の全件キャッシュには gamma 冊子の入口が無かった。既存4件の実在で引き継ぐ。
       // v0.3.30の取得済み進行表には追加前のrun.cssがない。旧9資産の実在で判定し、
       // 新しいCSSを含む全体の補充に成功するまで旧shellは残す。
-      const legacyUrls = urls.filter(u => u !== './manual-gamma/index.html' && !(group === 'runOfShow' && u === './run.css'));
+      const legacyUrls = urls.filter(u => u !== './manual-gamma/index.html' && !(group === 'runOfShow' && /^\.\/run\.css(?:\?|$)/.test(u)));
       if (!legacyUrls.every(u => paths.has(new URL(u, self.location.href).pathname))) continue;
       const previousRequests = await previous.keys();
       const usablePaths = new Set();

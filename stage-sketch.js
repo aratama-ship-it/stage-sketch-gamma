@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.57";
+  const GAMMA_APP_VERSION = "v0.3.58";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -5262,6 +5262,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
        ★FPV画面のチップ（引いた絵：くっきり／軽く）と同じ状態を指す。片方を変えるともう片方も変わる。 */
     { key: "wideVenueLite", label: "引いた絵を軽くする", def: false,
       hint: "アリーナ・ドームなど大きい劇場の3Dカメラで、遠くの客席を簡単に描いて動きを軽くする。近くの見え方は変わりません" },
+    { key: "actionStatus", label: "右下に操作結果を表示", def: false,
+      hint: "操作後の説明を右下に6秒間表示します。この端末の設定です。保存失敗などの重要な通知はOFFでも表示します" },
     { key: "toolTips", label: "アイコンの説明",
       hint: "道具のアイコンにカーソルを合わせると、名前・ショートカット・使い方を出す。覚えたらOFFにできる" },
     { key: "floatingInspector", label: "選んだものを図に添える", def: true,
@@ -14074,6 +14076,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if(!L.plan&&piece.type==="trapeze"&&sc().pieces.some(p=>p.supportId===piece.id&&p.pose==="trapeze_catch_hang"))return;
     const diabolo = piece.type === "diabolo";
     const parts = diabolo ? null : pieceParts(piece);
+    const owner=pieceSet(piece);
+    if(window.SHOSAI_STAGE_MACHINERY?.isMaskingCurtain({type:piece.type,curtainKind:piece.curtainKind||owner?.curtainKind}))
+      drawOptions={...drawOptions,showFaceEdges:false};
     if (!diabolo && !parts) return;
     const flown = isFlown(piece);
     target.save();
@@ -16842,21 +16847,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         target.stroke();
       }
 
-      // 内側の縁。舞台の明かりを拾って光るので、ここだけが袖の輪郭になる
-      target.strokeStyle = rgba(stageSurfaceColor("#c4ac84"), 0.10 + 0.18 * shade);
-      target.lineWidth = 2;
-      target.beginPath();
-      target.moveTo(inner, legTop);
-      target.lineTo(inner, floorAt);
-      target.stroke();
-
-      // 裾。床との接地を見せる
-      target.strokeStyle = `rgba(0,0,0,${0.55 * shade})`;
-      target.lineWidth = 1;
-      target.beginPath();
-      target.moveTo(Math.min(outer, inner), floorAt);
-      target.lineTo(Math.max(outer, inner), floorAt);
-      target.stroke();
+      // Masking curtains use cloth shading without an edge outline.
     };
     // 奥の対から順に重ね、手前の対が奥の対を隠していく。残った内側の縁が階段状に並び、それが袖の奥行きになる。
     const legDepths = (count) => window.GAMMA_VENUE_CURTAINS?.frontDepths(count)
@@ -18596,23 +18587,29 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const entries = row.pieces.filter(piece => piece.type !== "light").map(piece => ({piece,exit:false}))
       .concat((sceneAnim?.exits || []).filter(entry => !(sceneAnim.blackout && sceneAnim.progress >= .2 && entry.piece.type === "performer"))
         .map(entry => ({piece:entry.piece,exit:true})));
-    const pieces = entries.map(({piece,exit}) => {
-      const visual = effectivelyPlacedPiece(piece,row), dims = pieceDims(visual) || {};
-      return {id:piece.id,kind:visual.type === "performer" ? "performer" : visual.type === "curtain" ? "curtain" : "set",
-        u:finite(visual.animU,finite(visual.u,.5)),v:finite(visual.animV,finite(visual.v,.5)),
-        hM:pieceHeightM(visual),base:Math.max(0,finite(visual.animBase,finite(visual.base,0))),name:pieceLabel(visual),color:visual.color,
-        pose:visual.pose,facing:visual.type === "performer" ? performerFacing(piece) : visual.facing,
-        performancePose:visual.type === "performer" ? samplePerformancePose(visual,row.pieces) : null,
-        look:visual.type === "performer" ? projectIoClone(normalizeLook(resolveLookForScene(visual,row,state.project.cast,rows))) : null,
-        dims:projectIoClone(dims),parts:lightingContextParts(visual,dims),round:lightingContextRound(visual,dims),
-        w:dims.w ? dims.w/stage.W : .1,curtainKind:visual.curtainKind,open:visual.animOpen ?? visual.open,
-        exitWalker:exit};
-    });
+    const priorIdleDepth = idleVisualDepth;
+    let pieces;
+    idleVisualDepth = 1;
+    try {
+      prepareIdleFrames();
+      pieces = entries.map(({piece,exit}) => {
+        const visual = effectivelyPlacedPiece(piece,row), dims = pieceDims(visual) || {};
+        return {id:piece.id,kind:visual.type === "performer" ? "performer" : visual.type === "curtain" ? "curtain" : "set",
+          u:finite(visual.animU,finite(visual.u,.5)),v:finite(visual.animV,finite(visual.v,.5)),
+          hM:pieceHeightM(visual),base:Math.max(0,finite(visual.animBase,finite(visual.base,0))),name:pieceLabel(visual),color:visual.color,
+          pose:visual.pose,facing:visual.type === "performer" ? performerFacing(piece) : visual.facing,
+          performancePose:visual.type === "performer" ? samplePerformancePose(visual,row.pieces) : null,
+          look:visual.type === "performer" ? projectIoClone(normalizeLook(resolveLookForScene(visual,row,state.project.cast,rows))) : null,
+          dims:projectIoClone(dims),parts:lightingContextParts(visual,dims),round:lightingContextRound(visual,dims),
+          w:dims.w ? dims.w/stage.W : .1,curtainKind:visual.curtainKind,open:visual.animOpen ?? visual.open,
+          exitWalker:exit};
+      });
+    } finally { idleVisualDepth = priorIdleDepth; }
     const st = timelineLightCue.sceneId === row.id ? timelineLxState() : null;
     return {version:1,showId:state.project.id,sceneId:row.id,sceneTitle:row.title || "シーン",
       design,model,cue:lightCueOverlayCache.effectiveCue,cueId:timelineLightCue.cueId || null,
       cueLabel:st?.link?.q?.label || st?.link?.label || "",tMs:lightEffectClockMs(),
-      running:Boolean(spinRun || sceneAnim || timelineLightCue.playing),pieces};
+      running:Boolean(spinRun || (sceneAnim && !sceneAnim.timelineControlled) || timelineLightCue.playing),pieces};
   }
 
   /* 世界座標（x=幅方向・中央0／y=奥行き・奥が0／z=高さm）を、その図の画面座標へ。
@@ -19223,18 +19220,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       target.lineTo(bottom.x, bottom.y);
       target.stroke();
     }
-    // 裾。袖幕の内側の縁と同じ色で光らせ、その上に接地の影を一本
-    target.strokeStyle = "rgba(0,0,0,0.55)";
-    target.beginPath();
-    target.moveTo(lowerLeft.x, lowerLeft.y - 1.5);
-    target.lineTo(lowerRight.x, lowerRight.y - 1.5);
-    target.stroke();
-    target.strokeStyle = rgba(stageSurfaceColor("#c4ac84"), 0.28);
-    target.lineWidth = 2;
-    target.beginPath();
-    target.moveTo(lowerLeft.x, lowerLeft.y);
-    target.lineTo(lowerRight.x, lowerRight.y);
-    target.stroke();
+    // No hem outline: the cloth gradient defines the opening.
     target.restore();
     return true;
   }
@@ -24742,7 +24728,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (els.lastBackupTime) els.lastBackupTime.textContent = headerTimestamp(state && state.lastExportAt);
   }
 
-  /* 右下の状態行は、操作結果の一時表示（6秒）だけに使う。
+  /* 操作結果の状態行は6秒で消す。視覚表示は既定OFF・環境設定で切替、読み上げは継続。
    * 「最後の控え: …」の常設ボタンは 2026-10-11 本人指示で箱ごと外した（控えの時刻はショー設定の「最終バックアップ」で見る）。
    * 一時表示が終わったら空に戻す＝#stage-live:empty で箱も消える。 */
   function syncBackupStatus() {
@@ -32243,6 +32229,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
   // 機能のオン/オフをボタンの表示へ反映する
   function applyFeatureFlags() {
+    if (els.live) els.live.dataset.actionStatusVisible = String(featureOn("actionStatus"));
     document.querySelectorAll("[data-machinery-additions]").forEach((group) => { group.hidden = !editionAllows("machinery"); });
     applyPanelVisibility();
     syncPanelLayoutControl();
@@ -45662,10 +45649,22 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
         sectionId,
         atSeconds: Math.round(clamp(finite(atSeconds, 0), 0, 86400) * 10) / 10,
         memo: "",
+        locked: false,
       };
+      let registration = null;
+      if (type === "light") {
+        const context = gammaLightingContext();
+        const design = window.GAMMA_LIGHT_MODEL.reconcile(context.design, context);
+        registration = window.SHOSAI_CUE_SHEET.registerTimelineLightCue(state.project, cue, design, rid("lx"));
+        if (!registration) return null;
+      }
       checkpoint();
       if (!Array.isArray(state.project.cues)) state.project.cues = [];
-      state.project.cues.push(cue);
+      if (registration) {
+        state.project.lightingDesign = registration.design;
+        state.project.cues = registration.cues;
+        cue.lxId = registration.cue.lxId;
+      } else state.project.cues.push(cue);
       persistSoon();
       window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
       return jsonClone(cue);

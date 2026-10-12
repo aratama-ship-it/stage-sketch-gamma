@@ -58,3 +58,25 @@ body{background:var(--program-bg);color:var(--program-ink)}button,input,select{b
 }
 .lite-paper.lite-stacked #ros-selected{position:static;max-height:none;overflow:visible;margin-top:var(--s6)}
 @media(max-width:1199px){.lite-paper #paper-panel{position:static}.lite-paper #ros-selected{position:static;max-height:none;overflow:visible}}
+/* Permanent columns stay beside the Lite paper and do not stretch its toolbar. */
+.lite-paper:has(.lite-column-menu) #paper-panel .row-mode-buttons{display:inline-flex;gap:var(--s1);width:auto}
+.lite-paper:has(.lite-column-menu) #paper-panel .row-mode-buttons button{width:auto;white-space:nowrap}
+.lite-paper:has(.lite-column-menu) #column-popover.lite-column-menu>.band-heading{display:flex;justify-content:space-between;font-size:12px;line-height:1.4;color:var(--chrome-muted);margin:0 0 4px}
+.lite-paper:has(.lite-column-menu) #column-popover.lite-column-menu{display:block;padding:8px 0}
+.lite-paper:has(.lite-column-menu) #column-popover.lite-column-menu .column-name{display:block}
+.lite-paper:has(.lite-column-menu) #column-popover.lite-column-menu #column-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 8px}
+@media screen and (min-width:800px){
+  .lite-paper:has(.lite-column-menu) #preview,.lite-paper:has(.lite-column-menu) #preview:has(.doc-frame[data-paper-format=free]){display:grid;grid-template-columns:180px minmax(0,1fr);grid-template-rows:auto auto auto auto;grid-template-areas:none;gap:0 16px;align-items:start}
+  .lite-paper:has(.lite-column-menu) #paper-panel{grid-column:1/-1;grid-row:1}
+  .lite-paper:has(.lite-column-menu) #document-error{grid-column:1/-1;grid-row:2}
+  .lite-paper:has(.lite-column-menu) #column-popover.lite-column-menu{grid-column:1;grid-row:3/5;position:sticky;top:var(--lite-band-height);max-height:calc(100vh - var(--lite-band-height));overflow:auto}
+  .lite-paper:has(.lite-column-menu) #column-popover.lite-column-menu #column-list{display:block}
+  .lite-paper:has(.lite-column-menu) .doc-frame{grid-column:2;grid-row:3}
+  .lite-paper:has(.lite-column-menu) #ros-selected{grid-column:2;grid-row:4}
+}
+@media screen and (min-width:1200px){
+  .lite-paper:has(.lite-column-menu):not(.lite-stacked) #preview,.lite-paper:has(.lite-column-menu):not(.lite-stacked) #preview:has(.doc-frame[data-paper-format=free]){grid-template-columns:180px minmax(max(var(--ros-left-min),var(--lite-paper-min)),2fr) minmax(var(--ros-right-min),1fr);column-gap:16px}
+  .lite-paper:has(.lite-column-menu):not(.lite-stacked) #ros-selected{grid-column:3;grid-row:3}
+}
+.lite-paper:has(.lite-column-menu) #paper-panel .row-mode-buttons{flex:0 0 auto}
+.lite-paper:has(.lite-column-menu) #paper-panel .row-mode-buttons button{flex:0 0 auto;padding-inline:8px}

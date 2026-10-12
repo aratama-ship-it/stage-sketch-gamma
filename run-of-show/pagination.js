@@ -98,7 +98,7 @@ window.ROSPages = (() => {
         for (const row of rows) {
           const cell = [...row.cells].find(c => c.dataset.columnId === col.id);
           if (!cell) continue;
-          token.textContent = cell.textContent;
+          probe.style.cssText=cell.style.cssText+";position:absolute;visibility:hidden;width:max-content;white-space:nowrap";token.textContent = cell.textContent;
           width = Math.max(width, probe.offsetWidth + 2);
         }
         return width;
@@ -131,7 +131,7 @@ window.ROSPages = (() => {
       if (!portrait) { grid.style.gridTemplateColumns = weights; grid.setAttribute("role", "row"); fragment.setAttribute("role", "rowgroup"); }
       for (const col of columns) {
         const field = make("div", `pg-cell${col.compact ? " compact" : ""}`); field.dataset.columnId = col.id; if (!portrait) field.setAttribute("role", "cell");
-        const original=Array.from(sourceRow.cells).find(c=>c.dataset.columnId===col.id);if(original?.dataset.align)field.dataset.align=original.dataset.align;
+        const original=Array.from(sourceRow.cells).find(c=>c.dataset.columnId===col.id);if(original?.dataset.align)field.dataset.align=original.dataset.align;if(original)field.style.cssText=original.style.cssText;
         if (portrait) field.append(make("div", "pg-field-label", col.label));
         const content = make("div", "pg-cell-content"); field.append(content); cells.set(col.id, content);
         (portrait ? (col.compact ? summary : fields) : grid).append(field);

@@ -233,10 +233,10 @@ html[data-stage-skin] .paper-band select{padding-inline:var(--s1)}
 /* P2b: stage diagrams and cue grouping share the paper projection. */
 .paper-sticky{position:sticky;top:0;z-index:3;background:var(--desk)}
 .paper-sticky .paper-band{position:static}
-.stage-figures{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);height:25vh;min-height:140px;padding:var(--s2) 0}
+.stage-figures{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s2);height:auto;min-height:0;padding:var(--s2) 0}
 .stage-figures[hidden]{display:none}
-.stage-figures figure{margin:0;min-width:0;height:100%;overflow:hidden}
-.stage-figures img{display:block;width:100%;height:calc(100% - 1.4em);object-fit:contain;background:#0d0c0b}
+.stage-figures figure{margin:0;min-width:0;height:auto;overflow:hidden}
+.stage-figures img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain;background:#0d0c0b}
 .stage-figures figcaption{font-size:var(--fs-small);color:var(--chrome-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stage-figure{margin:0}.stage-figure img{display:block;width:100%;height:auto}.stage-figure+.stage-figure{margin-top:var(--s1)}
 .cue-head td,.portrait-head,.pg-head{background:var(--accent-light);color:var(--ink);border-block:var(--rule) solid var(--line);padding:var(--s1) var(--s2)}
@@ -345,14 +345,15 @@ html[data-stage-skin] .distribution-dialog button.primary{background:var(--gamma
   .ros-index:not([hidden]){display:flex;flex-direction:column;min-width:0;background:var(--desk);color:var(--chrome-ink)}
   .ros-index[data-mode=overlay]{position:fixed;top:0;right:0;bottom:0;width:var(--index-w);max-width:calc(100% - var(--s8));z-index:6;border-left:1px solid var(--line-dark);box-shadow:-4px 0 16px #0006;padding:var(--s2) var(--s2) var(--s2) var(--s3)}
   .ros-index-resize{position:absolute;left:calc(var(--resize-hit) / -2);top:0;bottom:0;width:var(--resize-hit);cursor:col-resize;touch-action:none;z-index:1}
+  #ros-stage-panel{flex:0 0 auto}
   .ros-side-panel{border-bottom:1px solid var(--line-dark);padding-bottom:var(--s2)}
   .ros-index-head{display:flex;align-items:center;padding-block:var(--s2);border-bottom:1px solid var(--line-dark)}
   .ros-side-head{display:flex;align-items:center;gap:var(--s2);width:100%;min-height:28px;padding:0;background:transparent;border:0;color:var(--chrome-ink);font-size:13px;font-weight:600;letter-spacing:.04em;text-align:left}
   .ros-side-head>span:nth-child(2){flex:1;min-width:0}.ros-side-disclosure{font-size:13px}.ros-side-head[aria-expanded=false] .ros-side-disclosure{transform:rotate(-90deg)}
   .ros-index-head .small{font-size:var(--fs-table);font-variant-numeric:tabular-nums}
   .ros-index-head .small{margin-left:auto}
-  .ros-index .stage-figures{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);height:180px;min-height:0;padding:var(--s2) 0 0}
-  .ros-index .stage-figures figure{margin:0;min-width:0;overflow:hidden}.ros-index .stage-figures img{display:block;width:100%;height:calc(100% - 1.4em);object-fit:contain;background:#0d0c0b}.ros-index .stage-figures figcaption{font-size:var(--fs-small);color:var(--chrome-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ros-index .stage-figures{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s2);height:auto;min-height:0;padding:var(--s2) 0 0}
+  .ros-index .stage-figures figure{margin:0;min-width:0;overflow:hidden}.ros-index .stage-figures img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain;background:#0d0c0b}.ros-index .stage-figures figcaption{font-size:var(--fs-small);color:var(--chrome-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ros-index-list{list-style:none;margin:0;padding:var(--s1) 0;overflow-y:auto;overscroll-behavior:contain;flex:1;min-height:0}
   .ros-index-list li{margin:0}
   html[data-stage-skin] .ros-index-list button,.ros-index-list button{display:flex;align-items:baseline;justify-content:flex-start;gap:var(--s2);width:100%;min-height:var(--index-row);padding:var(--s1) var(--s2);border:0;border-left:var(--index-mark) solid transparent;border-radius:0;background:none;color:var(--chrome-ink);text-align:left;font-size:var(--fs-small);line-height:1.4}
@@ -445,3 +446,41 @@ html[data-paper-ink=white] .ink-swatch[data-ink=white],html[data-paper-ink=black
 .paper-sticky:has(.band-popover:not([hidden]),.band-selection:not([hidden])){z-index:4}
 /* 左の欄（sticky・z-index なし）の中の層は、紙面の位置指定つき要素の下に潜る。層が開いている間だけ欄ごと前へ出す */
 .paper-panel:has(.band-popover:not([hidden]),.band-selection:not([hidden])){z-index:4}
+/* Column visibility belongs to the permanent menu; row units have their own group. */
+#column-popover{position:static;inset:auto;width:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;box-shadow:none;background:transparent}
+#column-popover .column-list{display:grid;grid-template-columns:minmax(0,1fr);gap:0;margin:0;padding:0;list-style:none}
+#column-popover .column-group{padding:0;border:0}
+#column-popover .column-group>h4{display:none}
+#column-popover .column-option{background:transparent;color:var(--chrome-ink);display:flex;align-items:center;min-height:44px;padding:0;margin:0;gap:4px;border:0}
+#column-popover .column-toggle{width:18px;min-width:18px;height:18px;min-height:18px;padding:0;margin:0}
+#column-popover .column-option>label{flex:1;min-width:0;min-height:44px;display:flex;align-items:center;margin:0;cursor:pointer}
+#column-popover .column-name strong{font-size:12px;font-weight:500}
+#column-popover .column-name small{font-size:10px;color:var(--chrome-muted)}
+#column-popover .column-option>.small{font-size:10px;color:var(--chrome-muted)}
+#column-visible-count{margin-left:auto;font-variant-numeric:tabular-nums}
+#paper-panel .band-columns .band-heading{display:flex;width:100%}
+#ros-stage-panel{padding-top:0;border-top:0}
+.ros-index[data-mode=docked],.ros-index[data-mode=overlay]{padding-top:0}
+/* A format panel appears only beside a selection and stays inside short windows. */
+#band-selection{display:flex;flex-wrap:wrap;align-content:flex-start;gap:8px;width:340px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;padding:8px}
+#cell-format-target{flex:0 0 100%;margin:0;font-size:12px}
+.cell-format-fields{flex:0 0 100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.cell-format-fields label{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:12px;color:var(--chrome-ink)}
+.cell-format-fields select,.cell-format-fields input{width:100%;min-width:0;height:44px;min-height:44px;background:var(--chrome-surface,var(--desk));border:1px solid var(--line-dark);color:var(--chrome-ink);padding:4px 8px;border-radius:var(--radius)}
+.cell-format-fields input[type=color]{padding:4px;cursor:pointer}
+.cell-format-fields input[data-mixed=true]{border-style:dashed}
+.cell-format-size{display:flex;align-items:center;gap:4px;min-width:0}
+#band-selection .band-subgroup{gap:4px}
+#band-selection .is-icon{min-width:44px;min-height:44px;width:44px;height:44px}
+/* User formatting follows text into split pages and into print. */
+.doc-frame :is(td,.pg-cell,.portrait-field)[style*="--ros-cell-weight"] :is(strong,b,.call){font-weight:var(--ros-cell-weight)}
+.doc-frame :is(td,.pg-cell,.portrait-field)[style*="--ros-cell-size"] :is(small,.text,.call,figcaption,.pg-block){font-size:var(--ros-cell-size)}
+.doc-frame :is(td,.pg-cell,.portrait-field)[style*="--ros-cell-font"] *{font-family:var(--ros-cell-font)}
+.doc-frame :is(td,.pg-cell,.portrait-field)[style*="--ros-cell-ink"] :is(small,.call,figcaption,a,.transition-check){color:var(--ros-cell-ink)}
+.pg-cell{display:flex;flex-direction:column;justify-content:var(--ros-cell-pack,flex-start)}
+.pg-cell-content{flex:0 0 auto;min-width:0}
+.doc-frame :is(td,.pg-cell,.portrait-field){print-color-adjust:exact;-webkit-print-color-adjust:exact}
+@media screen and (max-width:1199px){#column-popover{flex-basis:100%}#column-popover #column-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}#column-popover .column-group .column-list{display:contents}}
+
+@media print{#column-popover{display:none!important}}
+@media screen and (min-width:1600px){body:not(.lite-paper) #paper-panel .row-mode-buttons{justify-content:center}body:not(.lite-paper) #paper-panel .row-mode-buttons button{flex:0 0 auto;white-space:nowrap}}

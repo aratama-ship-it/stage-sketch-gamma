@@ -1,3 +1,4 @@
+@import url("gamma-select.css?v=20261012-select-local");
 :root {
   --study-bg: var(--desk); --study-panel: var(--desk-2); --study-ink: var(--milk);
   --study-muted: var(--ink-soft-sm); --study-accent: var(--brass); --study-danger: var(--rust-ink);

@@ -820,7 +820,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261012-v0356'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261012-v0358'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;
@@ -915,6 +915,21 @@
     if(!entry || !activateWorkspaceShortcut({normal:"1",venue:"2",placement:"3",design:"4","3d":"5"}[entry[0]])) return;
     event.preventDefault();
   });
+  // Lighting enlargement uses the same buttons even while focus is on the
+  // parent tab/header, before the stage-wide F handler can take the event.
+  document.addEventListener('keydown',event=>{
+    if(mode!=='light-design' || frame.hidden || frame.inert || document.body.classList.contains('stage-fullscreen')) return;
+    if(event.defaultPrevented || event.isComposing || event.keyCode===229 || event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
+    if(workspaceShortcutBlocked(event)) return;
+    const doc=frame.contentDocument;
+    if(!doc || !editor()?.status()?.active || !doc.getElementById('dialog')?.hidden) return;
+    const key=event.key.toLowerCase(),kind={f:'front',p:'plan'}[key];
+    const button=kind ? doc.querySelector(`[data-solo-figure="${kind}"]`)
+      : event.key==='Escape' ? doc.querySelector('[data-solo-figure][aria-pressed="true"]') : null;
+    if(!button || button.disabled) return;
+    event.preventDefault();event.stopImmediatePropagation();
+    button.focus({preventScroll:true});button.click();
+  },true);
   // Manual-activation tabs: arrows move focus; Enter/Space keep the existing guarded click path.
   const workspaceTabs = document.getElementById('stage-workspace-tabs');
   workspaceTabs?.setAttribute('role', 'tablist');
@@ -980,6 +995,10 @@
   /* タイムラインの展開・高さ変更に合わせ、照明iframeの下端をタイムラインの上へ収める。 */
   window.addEventListener('stage-timeline-layout-change',scheduleFrameHeight);
   /* タイムライン再生・シーンレーンからシーンが変わったとき、照明側も同じシーンへ追従する。 */
+  window.addEventListener('stage-timeline-cues-change',()=>{
+    if(mode!=='light-design' || !editor() || playbackPreview) return;
+    const context=host.context();latestContext=context;editor().open(context,mode);scheduleFrameHeight();
+  });
   window.addEventListener('stage-scene-change',()=>{
     if(mode!=='light-design' || !editor()) return;
     if(playbackPreview) {refreshPlaybackPreview();return;}

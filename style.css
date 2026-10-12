@@ -13611,6 +13611,9 @@ body.stage-modal-open .stage-tour { display: none !important; }
 
 /* バーの他の札（メモなど）と同じ調子にする */
 .stage-canvas-bar .stage-seat {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--line-dark);
   background: none;
   color: var(--milk-dim);
@@ -13618,7 +13621,7 @@ body.stage-modal-open .stage-tour { display: none !important; }
   padding: 3px 9px;
   font-size: 10px;
   letter-spacing: 0.03em;
-  line-height: 1;
+  line-height: normal;
   cursor: pointer;
 }
 
@@ -18531,9 +18534,11 @@ body.is-timeline-block-resizing { cursor: ew-resize; user-select: none; -webkit-
 .stage-timeline-cue-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Read-only light timing, on the lower third of the existing rows. */
-.has-light-bands > .stage-timeline-transition-block,
-.has-light-bands > .stage-timeline-cue { align-items:flex-start; padding-top:0; line-height:11px; }
+.has-light-bands > .stage-timeline-transition-block { align-items:flex-start; padding-top:0; line-height:11px; }
+/* Only a cue with its own visible timing band needs a second tier. */
+.stage-timeline-cue.has-light-band { top: 0; height: calc(100% - max(14px, 33.333%)); }
 .stage-timeline-light-band {
+  display:flex; align-items:center;
   position:absolute; bottom:0; top:auto; height:max(14px,33.333%); min-height:0;
   min-width:2px; padding:0 2px; border:0; border-radius:0; overflow:hidden;
   background:var(--stage-timeline-cue-light); color:var(--desk); z-index:3;

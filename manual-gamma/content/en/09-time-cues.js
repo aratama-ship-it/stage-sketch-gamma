@@ -108,8 +108,8 @@ ${grid([fig("58-vox-panel", "The dialogue cue panel. The box at the top is the c
         id: "cuesheet", title: "Q sheets — master, per performer, per department (view, print, CSV)", status: "verified",
         keywords: ["Q sheets", "Q sheet", "running order", "table", "master sheet", "per performer", "department", "lights", "sound", "stage management", "transition", "props", "positions", "print", "csv", "a4", "spreadsheet", "excel"],
         html: `
-${fig("release052-run-of-show-layers", "Run of show with the Paper settings layer open from the left band: language, paper size, paper colour, text size and view scale are changed together here.", "Run of show with the Paper settings layer")}
-<p>Q sheets place the overview, performers, departments and unlisted people in adjacent categories, with entries stacked inside each. Column widths and order can be adjusted on the device. In the run of show, choose scenes, scenes with transitions, or cues at the top left. The paper automatically uses the available centre width; the zoom slider or draggable number takes precedence when you set a scale. How the paper looks is gathered in ${ui("Paper settings")}: run-of-show language, paper size and entry view, paper colour, text size and zoom. ${ui("Reset to default")} in that layer returns text size and zoom (back to automatic) together. The Item list and Stage view (front and plan drawings for the selected item) appear side by side on the right from the start. Print, export, the distribution check and the operation guide are in the ${ui("Output")} layer (${ui("Save")} stays in the band). While rows or cells are selected, a small layer with left / centre / right alignment and ${ui("Open on stage")} appears; clearing the selection hides it. Click the ${ui("Stage view")} heading on the right to open or close the front and plan views. Scene-order changes also affect the stage and movement paths, so a confirmation appears.</p>
+${fig("release058-run-of-show", "Run of show with the Paper settings layer open from the left band: language, paper size, paper colour, text size and view scale are changed together here.", "Run of show with the Paper settings layer")}
+<p>The run of show's left menu contains the column list and an independent row view selector (scenes, scenes with transitions, or cues). Paper settings control language, paper size, paper colour and the overall font size. Display zoom changes only the on-screen scale, not the printed paper size.</p><p>Select cells or columns to set a font, 8–32pt size, bold, italic, underline, text and fill colours, horizontal and vertical alignment, and borders. Cell settings override column settings. Clear formatting returns to the standard style. Use undo and redo in the header. Styles are kept in saved shows, JSON export and import, distributed HTML and printouts. The stage panel stacks the front and plan views vertically.</p>
 <p>The ${ui("Q sheets")} tab (the ${ui("Q sheets")} icon in the header opens the same) lists the Q sheets, each with ${ui("View")}, ${ui("Print")} and ${ui("CSV")}.</p>
 ${fig("34-tab-cuesheet", "The Q sheets tab: Summary (master sheet), By performer, Departments (lights, music cue, dialogue cues, stage management and changes, props, positions) and Not in the roster.", "Q sheet list")}
 ${table(["Group", "Sheet", "Contents"], [
@@ -121,7 +121,17 @@ ${table(["Group", "Sheet", "Contents"], [
 ${fig("64-cuesheet-overall", "The master sheet opened with View: scenes down, performers across, with a dot where someone is on. A4 preview, Print and CSV at the top right.", "Master sheet")}
 <p>${ui("View")} opens the sheet full screen; ${ui("A4 preview")} (portrait or ${ui("Landscape")}) checks the print layout; ${ui("Print")} goes to the browser's print dialog; ${ui("CSV")} saves a file for spreadsheets. Performers appear in the order of the performer list. Cue names follow the numbering in ${ref("cues", "9-3")}, and nothing in the saved show changes.</p>
 ${vid("qsheet-print", "In H-3, open the master sheet, preview it in landscape A4 and open the printable page.")}`
-      }
+      },
+      {
+  "id": "release058-09-time-cues",
+  "title": "v0.3.58",
+  "status": "sourced",
+  "keywords": [
+    "v0.3.58",
+    "09-time-cues"
+  ],
+  "html": "<p>The run of show's left menu contains the column list and an independent row view selector (scenes, scenes with transitions, or cues). Paper settings control language, paper size, paper colour and the overall font size. Display zoom changes only the on-screen scale, not the printed paper size.</p><p>Select cells or columns to set a font, 8–32pt size, bold, italic, underline, text and fill colours, horizontal and vertical alignment, and borders. Cell settings override column settings. Clear formatting returns to the standard style. Use undo and redo in the header. Styles are kept in saved shows, JSON export and import, distributed HTML and printouts. The stage panel stacks the front and plan views vertically.</p>"
+}
     ]
   });
 })();

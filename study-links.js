@@ -5,6 +5,7 @@ export const STUDY_LIMITS = Object.freeze({ requestBytes: 1048576, documentBytes
 const TOKEN = /^[a-f0-9]{48}$/; // 192 independent random bits; no owner credential in this token.
 const ID = /^[A-Za-z0-9_-]{1,100}$/;
 export const STUDY_PUBLIC_ASSETS = new Set([
+  '/gamma-select.css',
   '/study', '/study.html', '/study-frame', '/study-frame.html',
   '/stage-study-tablet.js', '/stage-study-tablet-model.js', '/stage-study-tablet.css',
   '/stage-study-viewer.js', '/stage-study-frame.js', '/stage-study-pen.js', '/stage-study-private.js', '/stage-study-sync.js', '/stage-study-continuity.js', '/stage-study-sticky.js', '/stage-study.css', '/stage-study-phone.css', '/stage-study-phone.js', '/stage-study-navigation.css', '/stage-study-navigation.js',

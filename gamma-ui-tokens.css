@@ -1,3 +1,4 @@
+@import url("gamma-select.css?v=20261012-select-local");
 /* Gamma shared tokens. See gamma-dev/DESIGN_TOKENS.md. */
 :root {
   --gamma-gap: 8px;
@@ -547,6 +548,11 @@ input[data-stage-file-control]::file-selector-button { font:inherit; min-height:
   font-size:var(--fs-4); line-height:1.5; overflow-wrap:anywhere; pointer-events:none;
 }
 #stage-live.stage-action-status:empty { display:none; }
+/* Optional visual feedback; keep the live region available to screen readers. */
+#stage-live.stage-action-status[data-action-status-visible="false"] {
+  width:1px; height:1px; margin:0; padding:0; border:0;
+  overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap;
+}
 body:has(.stage-storage-pressure-status:not([hidden])) #stage-live.stage-action-status {
   bottom:max(76px,calc(var(--stage-timeline-grip-bottom, 0px) + 12px));
 }
