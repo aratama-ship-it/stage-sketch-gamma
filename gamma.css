@@ -1324,6 +1324,7 @@ html.stage-phone-viewer #stage-feature-search-open { display: none !important; }
 .stage-venue-editor-area-selection {
   position: absolute;
   z-index: 4;
+  pointer-events: none;
   display: grid;
   grid-template-columns: minmax(0, auto) auto;
   align-items: center;
@@ -1336,7 +1337,13 @@ html.stage-phone-viewer #stage-feature-search-open { display: none !important; }
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.48);
 }
 
+.stage-venue-editor-area-selection > button { pointer-events: auto; }
+
 .stage-venue-editor-area-selection[hidden] { display: none; }
+
+/* 劇場プリセットの「読み込む／読み込み直す」は、狭幅で上下2段になっても同じ高さにする。
+   文言は2行まで伸びられ、DESIGN_TOKENS.md の44pxは最小高として扱う。 */
+.stage-venue-editor-preset-actions { grid-auto-rows: 1fr; }
 
 
 /* R11: four report categories, with a vertical list inside each category. */

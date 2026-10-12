@@ -4256,6 +4256,8 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 
 // v0.3.56 release notes and share entry.
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "待機モーションを使っても、正面図・平面図・3Dの演者名は揺れないようにしました。演者の動きやシーン転換に伴う名前の移動はそのままです。": "Performer names now stay steady in the front view, plan and 3D while idle motion moves their bodies. Names still follow performers during scene transitions.",
+  "英語・韓国語・中国語に切り替えたとき、主なボタンの説明や読み上げ用の名前も選んだ言語になるようにしました。": "When switching to English, Korean or Chinese, the main button tips and accessible names now use the selected language.",
   "舞台タブでパネルを3列にしたとき、右の列の一番上に出ていた線を消しました。": "Removed the line above the first visible panel in the right columns when the Stage tab uses three panel columns.",
   "現場モードは、ヘッダーのアイコンから「共有」の窓の中へ移しました。": "Moved show mode from the header icon into the Share window.",
   "進行表の右の「舞台の様子」が表示されないことがあったのを直しました。表示・非表示は右のパネルの見出しで切り替えます。": "Fixed the Stage view on the right of the run of show sometimes failing to appear. Use the right panel heading to show or hide it.",
@@ -4266,4 +4268,45 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "ツールバーのプルダウンを開いたときの文字が大きくなっていたのを、閉じたときと同じ大きさにそろえました。": "Text in open toolbar dropdowns now matches the size shown when they are closed.",
   "本番中に iPad で GO・シーン送り・メモを使う画面です。": "A screen for GO, scene navigation and notes on iPad during a performance.",
   "現場モードを開く": "Open show mode"
+});
+
+// Initial Stage workspace tooltips and accessible names (I18N-ATTR1).
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "舞台（1）": "Stage (1)",
+  "劇場設定（2）": "Theatre settings (2)",
+  "機材配置（3）": "Equipment placement (3)",
+  "照明デザイン（4）": "Light design (4)",
+  "先に劇場設定を済ませてください": "Complete Theatre settings first",
+  "一つ戻す（{key}）": "Undo ({key})",
+  "やり直す（{key}）": "Redo ({key})",
+  "図を全画面表示（{key}）。矢印キーでシーン送り、{key}またはEscで戻る": "Show the diagrams full screen ({key}). Use the arrow keys to change scenes; press {key} or Esc to return",
+  "明かりを表示・非表示にする（{key}）": "Show or hide lighting ({key})",
+  "作業灯を点ける・消す（{key}）": "Turn work lights on or off ({key})",
+  "正面と平面を入れ替える（{key}）": "Swap front and plan views ({key})",
+  "正面と平面を入れ替える（X）": "Swap front and plan views (X)",
+  "ツールと表示するもの": "Tools and display",
+  "ツール": "Tools",
+  "表示するもの": "Display",
+  "パネル": "Panels",
+  "演者名を出したり隠したりする": "Show or hide performer names",
+  "装置名を出したり隠したりする": "Show or hide set names",
+  "現在のタイムコード（入力して Enter で頭出し）": "Current timecode (type a value and press Enter to jump)",
+  "メモを貼る（N）": "Add a note (N)",
+  "劇場設定の天井・前一文字幕で設定した幕を、正面図に出したり隠したりする": "Show or hide the front border curtain set in Theatre settings",
+  "前一文字幕を表示・非表示にする": "Show or hide the front border curtain",
+  "正面図の床グリッドを出したり隠したりする": "Show or hide the front-view floor grid",
+  "正面図の床グリッドを表示・非表示にする": "Show or hide the front-view floor grid",
+  "演者動線を表示・非表示にする": "Show or hide cast routes",
+  "装置動線を表示・非表示にする": "Show or hide set routes",
+  "吊物を表示・非表示にする": "Show or hide flown objects",
+  "見る先を真ん中に戻す": "Look at the stage centre",
+  "見る先（ドラッグまたは矢印キーで移動）": "Look target (drag or use the arrow keys)",
+  "Mキュー": "M cue"
+});
+
+// v0.3.57 theatre editing corrections.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "劇場設定で、選んだ舞台の角や辺を、重なった袖や客席より優先して掴めるようにしました。": "In Theatre settings, corner and edge handles of the selected stage now take priority over overlapping wing or house handles.",
+  "劇場設定の浮動する選択欄が、図や追加ステージのつまみを遮らないようにしました。": "The floating selection row in Theatre settings no longer blocks the drawing or the handles of extra stages.",
+  "狭い画面で劇場の読み込みボタンが折り返すときも、隣のボタンと高さが揃うようにしました。": "Theatre import buttons now keep matching heights when their labels wrap in a narrow panel."
 });

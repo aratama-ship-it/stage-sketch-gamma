@@ -2417,7 +2417,6 @@
     const yaw = finite(piece.facing, 0) * Math.PI / 180;
     const cos = Math.cos(yaw);
     const sin = Math.sin(yaw);
-    let topY = -Infinity;
     let tooClose = false;
     /* 体座標→ワールド→カメラ→画面。z は「大きいほど手前」（本編の慣例に合わせ、
        カメラ距離の符号を反転して身長で割る）。s はその点での px/身長単位。 */
@@ -2430,7 +2429,6 @@
       const cam = toCamera(world);
       if (cam.z <= NEAR) { tooClose = true; return { x: 0, y: 0, z: 0, s: 1 }; }
       const screen = toScreen(cam);
-      if (world.y > topY) topY = world.y;
       return { x: screen.x, y: screen.y, z: -cam.z / H, s: focal / cam.z * H };
     };
     const sharedRig = window.STAGE_PERFORMER_BODY?.projectRig(pose, project, focal / footCam.z * H);
@@ -2576,7 +2574,11 @@
           wrist[1] + (y + item.dims.h / 2 - (item.grip ? item.grip.y : item.dims.h / 2)) / H,
           wrist[2] + z / H), item.dims, item.color);
       });
-    return { x: foot.x, y: topY + 0.04 * H, z: foot.z };
+    // Anchor names to body joints, independently of idle motion and the props
+    // painted through project(). Actual movement still follows the current foot.
+    const labelPose = piece.labelPose || pose;
+    const labelTop = Math.max(...Object.values(labelPose.joints).map(joint => joint[1]));
+    return { x: foot.x, y: foot.y + (labelTop + 0.04) * H, z: foot.z };
   }
 
   /* 本編 paintBody の透視投影版。各節の px 換算はその節の s を使う

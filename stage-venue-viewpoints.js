@@ -35,10 +35,12 @@
   const t = text => window.GAMMA_UI_TEXT?.(text) || text;
   const targetHandle = document.createElement('button'); targetHandle.type = 'button';
   targetHandle.className = 'venue-viewpoint-target'; targetHandle.dataset.viewpointTarget = '';
+  targetHandle.setAttribute('aria-label', t('見る先（ドラッグまたは矢印キーで移動）'));
   targetHandle.append(Object.assign(document.createElement('span'), { className: 'venue-viewpoint-target-ring' }));
   layer.append(targetHandle);
   const targetReset = document.createElement('button'); targetReset.type = 'button'; targetReset.className = 'btn-quiet';
   targetReset.id = 'venue-viewpoints-target-reset';
+  targetReset.setAttribute('aria-label', t('見る先を真ん中に戻す'));
   remove.after(targetReset);
   const buttons = new Map(); let selected = 'seat-center', key = '', drag = null, cameraActive = false, adding = false, wasEditing = false, syncing = false;
   function select(id) {
@@ -145,6 +147,7 @@
       targetHandle.title = t(active.targetCustom ? 'この点を見ています。「見る先を真ん中に戻す」で戻せます。' : '舞台の真ん中を見ています。');
     }
     targetReset.textContent = t('見る先を真ん中に戻す');
+    targetReset.setAttribute('aria-label', t('見る先を真ん中に戻す'));
     targetReset.disabled = !active?.targetCustom;
     if (cameraActive && active) preview.setViewpoint(active.point);
     else if (cameraActive && !active) preview.clearViewpoint();

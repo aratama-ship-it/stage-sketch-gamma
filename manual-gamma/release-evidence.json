@@ -1,11 +1,11 @@
 {
-  "appVersion": "v0.3.56",
+  "appVersion": "v0.3.57",
   "contentUpdated": "2026-10-12",
   "requiredScreens": [
     {
-      "id": "share-window-field-mode",
+      "id": "idle-names",
       "language": "ja",
-      "file": "manual-gamma/img/release056-share-field-mode.jpg",
+      "file": "manual-gamma/img/release057-idle-names.jpg",
       "viewport": [
         1440,
         900
@@ -13,59 +13,115 @@
       "scene": "H-1"
     },
     {
-      "id": "share-window-field-mode",
+      "id": "idle-names",
       "language": "en",
-      "file": "manual-gamma/img/en/release056-share-field-mode.jpg",
+      "file": "manual-gamma/img/en/release057-idle-names.jpg",
       "viewport": [
         1440,
         900
       ],
       "scene": "H-1"
+    },
+    {
+      "id": "venue-editing",
+      "language": "ja",
+      "file": "manual-gamma/img/release057-venue-editing.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "C-1"
+    },
+    {
+      "id": "venue-editing",
+      "language": "en",
+      "file": "manual-gamma/img/en/release057-venue-editing.jpg",
+      "viewport": [
+        1440,
+        900
+      ],
+      "scene": "C-1"
     }
   ],
   "screenshots": [
     {
-      "id": "share-window-field-mode",
-      "file": "manual-gamma/img/release056-share-field-mode.jpg",
+      "id": "idle-names",
+      "file": "manual-gamma/img/release057-idle-names.jpg",
       "language": "ja",
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.56",
-      "capturedCommit": "2757b32397c589f05b3d0959821c4d5d238f4754",
-      "capturedAt": "2026-10-11T16:40:41.846Z",
-      "sha256": "d5dfe57129424051ff8d0e270f403b0d56c33dafe9d950d02f3699c87c22e64e",
+      "capturedVersion": "v0.3.57",
+      "capturedCommit": "230f67423005145aec3f32203180d700a84df908",
+      "capturedAt": "2026-10-12T02:16:10.478Z",
+      "sha256": "8845854b95b3f4c1148b04f4ee44d3133e937ade5ba47b50abe1da94f44419bf",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "sourceSha256": "8e20a92163a5dff6536a82e39c316b691fa3285b362d9eaad60d514dab9c4b00"
+      "sourceSha256": "8802c8e461bac87f405ca77902e72a7ad3b001b7c1158c08bee3114d4d4895ac"
     },
     {
-      "id": "share-window-field-mode",
-      "file": "manual-gamma/img/en/release056-share-field-mode.jpg",
+      "id": "idle-names",
+      "file": "manual-gamma/img/en/release057-idle-names.jpg",
       "language": "en",
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v46-pose-review",
-      "capturedVersion": "v0.3.56",
-      "capturedCommit": "2757b32397c589f05b3d0959821c4d5d238f4754",
-      "capturedAt": "2026-10-11T16:40:48.228Z",
-      "sha256": "37e7ac70b1ddb34e08dbf10e929668f70a8a59089802e67ab7f4535decda4ac2",
+      "capturedVersion": "v0.3.57",
+      "capturedCommit": "230f67423005145aec3f32203180d700a84df908",
+      "capturedAt": "2026-10-12T02:16:14.576Z",
+      "sha256": "f8ac460e6dd7ea94ce760ba8d886e90f4a17d77ff2942ef6a90770d739a9fee3",
       "viewport": [
         1440,
         900
       ],
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "sourceSha256": "8e20a92163a5dff6536a82e39c316b691fa3285b362d9eaad60d514dab9c4b00"
+      "sourceSha256": "8802c8e461bac87f405ca77902e72a7ad3b001b7c1158c08bee3114d4d4895ac"
+    },
+    {
+      "id": "venue-editing",
+      "file": "manual-gamma/img/release057-venue-editing.jpg",
+      "language": "ja",
+      "scene": "C-1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.57",
+      "capturedCommit": "f18aec909207ce5baa7ea382ad3f338cae8fe68a",
+      "capturedAt": "2026-10-12T02:56:15.793Z",
+      "sha256": "259959223de6bde9494b1e7af2cd1516277050617e85c9866999d88b4d4b9e29",
+      "viewport": [
+        1440,
+        900
+      ],
+      "engine": "chromium",
+      "actualUiLanguage": "ja",
+      "sourceSha256": "8802c8e461bac87f405ca77902e72a7ad3b001b7c1158c08bee3114d4d4895ac"
+    },
+    {
+      "id": "venue-editing",
+      "file": "manual-gamma/img/en/release057-venue-editing.jpg",
+      "language": "en",
+      "scene": "C-1",
+      "fixtureId": "gamma-feature-test-v46-pose-review",
+      "capturedVersion": "v0.3.57",
+      "capturedCommit": "f18aec909207ce5baa7ea382ad3f338cae8fe68a",
+      "capturedAt": "2026-10-12T02:56:18.965Z",
+      "sha256": "ed71379e4c2c355e9525b8f41153601bc62e330dece451503cebf286598c461c",
+      "viewport": [
+        1440,
+        900
+      ],
+      "engine": "chromium",
+      "actualUiLanguage": "en",
+      "sourceSha256": "8802c8e461bac87f405ca77902e72a7ad3b001b7c1158c08bee3114d4d4895ac"
     }
   ],
-  "legacyImagesNote": "Only the Share window with the show-mode entry at the top (v0.3.56) is captured. All other images retain their original capture versions; the v0.3.55 Stage tab capture stays as the record of the toolbar panel controls.",
+  "legacyImagesNote": "H-1 idle name labels and C-1 theatre editing are captured for v0.3.57 in Japanese and English. Other images retain their original capture versions, including the v0.3.56 Share window.",
   "status": "verified",
   "visualReview": {
     "reviewedAt": "2026-10-12",
-    "method": "Direct visual inspection of the full-size Japanese and English captures of the Share window: the first section is the show mode entry with its one-line description and the Open button, followed by live sharing and the performer link; the header no longer has the show mode icon. The capture script asserts that #stage-field-mode sits inside the Share window and not in the header.",
-    "limits": "Chromium captures of the bundled feature-test show at 1440x900; the Worker-backed status lines show a local network error because no Worker runs locally; Safari, iPad and the Mac app not tested"
+    "method": "Viewed full Japanese and English JPEGs; version 0.3.57, H-1, idle-motion switch on, performer names visible. Fixture names remain Japanese in the English UI. Viewed both full-size C-1 theatre captures: stage selected, corner handles visible, floating selection row and equal-height preset buttons visible.",
+    "limits": "Static Chromium captures; movement numerically verified by separate Chromium/WebKit H-1 checks. No physical printing or native app claim."
   }
 }

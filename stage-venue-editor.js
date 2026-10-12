@@ -4242,7 +4242,9 @@
     const maxLeft = Math.max(6, wrap.clientWidth - rowRect.width - 6);
     const maxTop = Math.max(6, wrap.clientHeight - rowRect.height - 6);
     const selected = selectedPolygonArea();
-    const polygon = selected?.polygon || (target.kind === "main-stage" ? state.points : []);
+    const selectedExtension = target.kind === "stage-extension"
+      ? state.stageExtensions.find((item) => item.id === target.id) : null;
+    const polygon = selected?.polygon || (target.kind === "main-stage" ? state.points : selectedExtension?.polygon || []);
     const blockers = polygon.flatMap((p, i) => [p, midpoint(p, polygon[(i + 1) % polygon.length])]).map(p => {
       const c = toCanvas(p);
       return [canvasRect.left - wrapRect.left + c[0] * canvasRect.width / canvasCssWidth(),
@@ -4935,13 +4937,20 @@
       return;
     }
     const point = fromEvent(event);
+    /* 選択済みのメイン舞台は、その角・辺が舞台袖や客席の角・辺と重なっていても
+     * メイン舞台のつまみを優先する。図形本体を一度選んでから直す操作契約を守る。 */
+    const selectedMainStage = state.stagePresent && isSelectedTarget({ kind: "main-stage" });
+    const selectedStageCorner = selectedMainStage ? hitCorner(point) : -1;
+    const selectedStageEdge = selectedMainStage && selectedStageCorner < 0 ? hitEdge(point) : -1;
     /* T-34 二度目: 選んでいる区画の角つまみは、舞台の角・辺より先に見る
      * （区画は舞台の縁に接することが多く、後回しにすると掴めないため）。 */
-    const areaResizeHit = hitAreaResizeHandle(point);
-    const areaEdgeHit = areaResizeHit ? null : hitAreaEdge(point);
+    const areaResizeHit = selectedStageCorner >= 0 || selectedStageEdge >= 0 ? null : hitAreaResizeHandle(point);
+    const areaEdgeHit = areaResizeHit || selectedStageCorner >= 0 || selectedStageEdge >= 0 ? null : hitAreaEdge(point);
     const audienceHandleHit = areaResizeHit || areaEdgeHit ? null : hitAudienceHandle(point);
-    const corner = !state.stagePresent || areaResizeHit || areaEdgeHit || audienceHandleHit ? -1 : hitCorner(point);
-    const edge = !state.stagePresent || areaResizeHit || areaEdgeHit || audienceHandleHit || corner >= 0 ? -1 : hitEdge(point);
+    const corner = selectedStageCorner >= 0 ? selectedStageCorner
+      : !state.stagePresent || areaResizeHit || areaEdgeHit || audienceHandleHit ? -1 : hitCorner(point);
+    const edge = selectedStageEdge >= 0 ? selectedStageEdge
+      : !state.stagePresent || areaResizeHit || areaEdgeHit || audienceHandleHit || corner >= 0 ? -1 : hitEdge(point);
     const audienceAreaHit = audienceHandleHit || (!areaResizeHit && !areaEdgeHit ? hitAudienceArea(point) : null);
     els.canvas.setPointerCapture(event.pointerId);
     if (UL && underlay.mode && underlay.loaded) { beginUnderlayPointer(event, point); return; } // ★図面

@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.56";
+  const GAMMA_APP_VERSION = "v0.3.57";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -18410,7 +18410,13 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function pieceNameTags(target, shown, L) {
-    const tags = shown.map(piece => pieceNameTag(target, piece, L, shown)).filter(Boolean);
+    // Names use the pose without idle motion. Keep transition coordinates/gait,
+    // and restore the visual scope before painting bodies or testing selection.
+    const priorIdleDepth = idleVisualDepth;
+    let tags;
+    idleVisualDepth = 0;
+    try { tags = shown.map(piece => pieceNameTag(target, piece, L, shown)).filter(Boolean); }
+    finally { idleVisualDepth = priorIdleDepth; }
     const placed = [];
     const overlap = (a,b) => a.left < b.left+b.width+2 && a.left+a.width+2 > b.left && a.top < b.top+b.height+2 && a.top+a.height+2 > b.top;
     for (const tag of tags) {
@@ -30940,7 +30946,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       if (Object.prototype.hasOwnProperty.call(element.dataset, "tipKey")) element.dataset.tipKey = shortcuts.display(value);
       if (Object.prototype.hasOwnProperty.call(element.dataset, "toolKey")) element.dataset.toolKey = value;
       if (element.dataset.stageShortcutTitle) {
-        element.title = element.dataset.stageShortcutTitle.replaceAll("{key}", shortcuts.display(value));
+        const stageShortcutTitle = tx(element.dataset.stageShortcutTitle);
+        element.title = stageShortcutTitle.replaceAll("{key}", shortcuts.display(value));
       }
     });
     document.querySelectorAll("[data-stage-shortcut-display-for]").forEach(element => {
@@ -31889,6 +31896,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     els.resetConfirm.textContent = finalStep
       ? tx("完全削除")
       : sx("削除内容を確認", "Review deletion");
+    els.resetConfirm.setAttribute("aria-label", els.resetConfirm.textContent);
     els.resetCancel.textContent = tx("キャンセル");
     els.resetClose.setAttribute("aria-label", sx("閉じる", "Close"));
   }
@@ -37968,6 +37976,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         expand.onclick=()=>{inspector.dataset.surfaceExpanded='true';delete inspector.dataset.gammaPositionLocked;updateInspector();};
         inspector.querySelector('.stage-panel-head')?.after(expand);}
       expand.textContent=piece ? [pieceLabel(piece),piece.pose ? poseName(poseById(piece.pose)) : '',Number.isFinite(piece.facing) ? String(piece.facing)+'°' : '',tx('詳細を開く')].filter(Boolean).join(' · ') : '';
+      if (expand.textContent) expand.removeAttribute('aria-label'); else expand.setAttribute('aria-label',tx('詳細を開く'));
       expand.hidden=!inspector.classList.contains('stage-surface-compact');
       if (shouldFloat && floatingRoot && !wasPortaled) {
         floatingRoot.append(inspector);
@@ -41099,6 +41108,9 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
               // 幕の種別は登録（owner）が持つことがある。3D は紗幕だけ描くので、写しに実効の種別を持たせる（2026-10-09）
               curtainKind: visual.type === "curtain" ? (visual.curtainKind || (owner && owner.curtainKind) || "front") : visual.curtainKind,
               performancePose: visual.type === "performer" ? samplePerformancePose(visual, current.pieces) : null,
+              // Transient display data only: names ignore idle joints, bodies keep them.
+              labelPose: visual.type === "performer" && idleVisualFrame(candidate)
+                ? samplePerformancePose(visual, current.pieces, true) : null,
               build: visual.type === "performer" ? performerBuild(visual) : undefined,
               facing: propShape?.id === "ring" && visual.heldBy ? visual.facing : performerFacing(candidate),
               lookMode: visual.type === "performer"
@@ -42293,6 +42305,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     roots.forEach((root) => {
       window.GAMMA_UI.translateDOM(root, { language: lang, lookup: key => packValue("text", text => text[key]) });
     });
+    // These titles are assembled after the DOM translation pass. Rebuild them
+    // from their Japanese templates whenever the display language changes.
+    syncShortcutDom();
+    window.GAMMA_WORKSPACE?.refreshLabels?.();
     if (els.lang) {
       els.lang.value = lang;
     }
@@ -43446,7 +43462,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       propSceneSummary,
       propMovesBetweenScenes,
       lightChanges: lightCueChanges,
-      cuePresentations: (project) => window.SHOSAI_CUE_SHEET.cuePresentations(project),
+      cuePresentations: (project) => window.SHOSAI_CUE_SHEET.cuePresentations(project, { tx }),
     };
   }
 

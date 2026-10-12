@@ -15,3 +15,11 @@ window.IMG_SIZES["release052-run-of-show-layers"] = [1440, 900];
 window.IMG_SIZES_EN["release052-run-of-show-layers"] = [1440, 900];
 window.IMG_SIZES["release053-act-props"] = [1440, 900];
 window.IMG_SIZES_EN["release053-act-props"] = [1440, 900];
+
+/* release057 capture dimensions from release-evidence.json */
+window.IMG_SIZES["release057-idle-names"] = [1440, 900];
+window.IMG_SIZES_EN["release057-idle-names"] = [1440, 900];
+
+window.IMG_SIZES["release057-venue-editing"] = [1440, 900];
+
+window.IMG_SIZES_EN["release057-venue-editing"] = [1440, 900];

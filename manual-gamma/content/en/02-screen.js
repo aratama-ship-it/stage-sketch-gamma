@@ -111,6 +111,8 @@ ${table(["Icon", "Name", "Key", "What it does"], [
   ["▾", "Which views", kbd("T"), ui("Front") + " / " + ui("Plan") + " / " + ui("Both 1") + " (front on top) / " + ui("Both 2") + " (plan on top). The lower right of the drawing also has front/plan switches"]
 ])}
 <p>Each view has its own row at its top right. The plan has ${ui("Draw route")}, ${ui("Draw from next")} and ${ui("Clear route")}; both views have ${ui("Add a note")}, name tags and — while the arrow tool is in hand — ${ui("Clear arrows")} (clears that view's arrows only). ＋ and − at the lower right zoom the view, and ${ui("Front")} / ${ui("Plan")} show one view large.</p>
+<p>Performer names stay steady in the front view, plan and 3D while idle motion moves their bodies. During a scene transition, the names follow the performers as they change position.</p>
+${fig("release057-idle-names", "H-1 with idle motion enabled. Name tags stay steady as the bodies move.", "Idle motion and performer names")}
 ${fig("11-G-arrows", "With the arrow tool in hand, a button to clear that view's arrows appears at the top right of the view.", "Drawing with the arrow tool")}
 <p>With ${ui("Icon tips")} on in Settings (on by default), hovering over an icon shows its name, key and how to use it. Switch it off once you know them.</p>`
       },

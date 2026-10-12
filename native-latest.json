@@ -1,8 +1,8 @@
 {
-  "version": "0.3.56",
+  "version": "0.3.57",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.56/stage-sketch-gamma-mac-0.3.56.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.57/stage-sketch-gamma-mac-0.3.57.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "進行表の舞台の様子が開かないことがあったのを直し、照明デザインで変更が無いときは適用の確認を出さないようにしました（v0.3.56）。",
+  "notes": "待機中の演者名を固定し、主な操作説明の翻訳と、劇場設定のつまみ・選択欄・ボタン高さを改善しました（v0.3.57）。",
   "updated": "2026-10-12"
 }

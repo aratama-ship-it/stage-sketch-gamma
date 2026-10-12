@@ -42,14 +42,14 @@
 
   /* 2026-09-23 本人指示: 「cue」の表記をLXcue/LXキューのように混在させず、
      片仮名の「キュー」へ統一する。 */
-  function cuePrefix(type) {
-    if (type === "light") return "LXキュー";
-    if (type === "music") return "Mキュー";
-    return "セリフキュー";
+  function cuePrefix(type, helpers) {
+    if (type === "light") return translate(helpers, "LXキュー");
+    if (type === "music") return translate(helpers, "Mキュー");
+    return translate(helpers, "セリフキュー");
   }
 
-  function formatCueDisplayName(cueType, sceneNumber, ordinal) {
-    return `${cuePrefix(cueType)} ${sceneNumber}-${ordinal}`;
+  function formatCueDisplayName(cueType, sceneNumber, ordinal, helpers) {
+    return `${cuePrefix(cueType, helpers)} ${sceneNumber}-${ordinal}`;
   }
 
   /* 修正バッチ 2026-10-07 #8（本人決定 D10）: LXキューの呼び名は切り替え式。既定は通し番号（Q3・Q3.5）で、
@@ -58,12 +58,12 @@
      そのときも Qシート・進行表の行には照明卓に打てる通し番号を添える（cueLine）。音・セリフのキューの呼び名は変えない。
      照明デザインの LXキューに結び付いていないライトキューは、通し番号では「Q—（未登録）」。 */
   const cueNamingOf = (project) => (project && project.cueNaming === "scene" ? "scene" : "serial");
-  function lightCueName(project, sceneNumber, ordinal, lx) {
+  function lightCueName(project, sceneNumber, ordinal, lx, helpers) {
     if (cueNamingOf(project) === "scene") {
       const n = lx && lx.sceneOrdinal ? lx.sceneOrdinal : ordinal;
       return `${String(sceneNumber || "1").replace(/-/g, ".")}.${n}`;
     }
-    return lx && lx.label ? lx.label : "Q—（未登録）";
+    return lx && lx.label ? lx.label : translate(helpers, "Q—（未登録）");
   }
 
   function sectionScenes(rows, sectionId) {
@@ -152,7 +152,7 @@
     return `${cue.displayName}${extra}${cue.memo ? ` ${cue.memo}` : ""}`;
   }
 
-  function cuePresentations(project) {
+  function cuePresentations(project, helpers = {}) {
     const rows = list(project && project.scenes);
     const numbers = sceneNumberMap(rows);
     const order = new Map(rows.map((row, index) => [row && row.id, index]));
@@ -171,7 +171,7 @@
       const sceneNumber = numbers.get(cue.sceneId) || "1";
       const lx = cue.cueType === "light" ? lightCueLink(project, cue, ordinal) : null;
       return { ...cue, sceneNumber, ordinal, lx,
-        displayName: cue.cueType === "light" ? lightCueName(project, sceneNumber, ordinal, lx) : formatCueDisplayName(cue.cueType, sceneNumber, ordinal) };
+        displayName: cue.cueType === "light" ? lightCueName(project, sceneNumber, ordinal, lx, helpers) : formatCueDisplayName(cue.cueType, sceneNumber, ordinal, helpers) };
     });
   }
 

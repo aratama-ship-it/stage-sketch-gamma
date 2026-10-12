@@ -607,6 +607,7 @@
     try { const context=host.context(); return Boolean(context.venueSetupPending) && !context.readOnly; }
     catch(_) { return false; }
   }
+  const translated = (text) => window.GAMMA_UI_TEXT?.(text) || text;
   /* ゲートで劇場設定へ寄せたかどうか。共有の閲覧だと分かった時点で解くために覚えておく。 */
   let gatedToVenue=false;
   function syncVenueGate() {
@@ -623,7 +624,7 @@
       const target=button.dataset.stageWorkspaceMode;
       const locked=pending && target!=='venue-setup' && target!=='normal' && !(lite && target==='run-of-show');
       button.disabled=locked;
-      button.title=locked ? '先に劇場設定を済ませてください' : (button.dataset.gammaTitle || '');
+      button.title=translated(locked ? '先に劇場設定を済ませてください' : (button.dataset.gammaTitle || ''));
     });
     syncStageGate(pending);
   }
@@ -883,8 +884,10 @@
       const button=workspaceShortcutButton(key);
       if(!button) return;
       button.setAttribute("aria-keyshortcuts",shortcuts.get(id));
-      const label=String(button.dataset.gammaTitle||button.textContent||"").replace(/（[^）]*）$/,"");
-      button.title=`${label}（${shortcuts.display(shortcuts.get(id))}）`;
+      const label=String(translated(button.dataset.gammaTitle||button.textContent||""))
+        .replace(/(?:（[^）]*）|\s*\([^)]*\))$/,"");
+      const keyLabel=shortcuts.display(shortcuts.get(id));
+      button.title=document.documentElement.lang==='ja' ? `${label}（${keyLabel}）` : `${label} (${keyLabel})`;
     });
   }
   function workspaceShortcutButton(key) {
@@ -1042,5 +1045,6 @@
      劇場が決まったショーへ移ったのに、前の新規ショーの「まず劇場を決めると…」が残っていた。 */
   window.GAMMA_WORKSPACE=Object.freeze({normal:()=>select('normal'),select,mode:()=>mode,captureHostHistory,syncHistory,
     playbackPreviewStatus:()=>({active:Boolean(playbackPreview),running:Boolean(playbackRaf)}),syncGate:()=>syncVenueGate(),
+    refreshLabels:()=>{syncWorkspaceShortcutLabels();syncVenueGate();},
     beginPlaybackPreview,endPlaybackPreview});
 })();

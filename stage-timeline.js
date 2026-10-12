@@ -1711,7 +1711,7 @@
 
   function cuePrefix(type) {
     // LXcue / Mcue / VOXcue の対応表は stage-cue-sheet.js の一か所だけを正本にする。
-    return window.SHOSAI_CUE_SHEET.cuePrefix(type);
+    return window.SHOSAI_CUE_SHEET.cuePrefix(type, { tx });
   }
 
   // 本体のシーン一覧と同じ階層番号を使う。番号自体は保存せず、並び替え後も
@@ -1844,9 +1844,9 @@
         sceneTitle: segment && segment.title || tx("シーン"),
         /* 修正バッチ 2026-10-07 #8: ライトキューの呼び名は Qシート・進行表と同じ関数（既定は通し番号・設定で 1.2.2） */
         displayName: cue.cueType === "light" ? window.SHOSAI_CUE_SHEET.lightCueName(project, sceneNumber, ordinal, lx)
-          : `${window.SHOSAI_CUE_SHEET.formatCueDisplayName(cue.cueType, sceneNumber, ordinal)}${
+          : `${window.SHOSAI_CUE_SHEET.formatCueDisplayName(cue.cueType, sceneNumber, ordinal, { tx })}${
           cue.cueType === "music" && musicCueIsSilent(project, tl, cue.seconds) ? tx("（無音）") : ""}`,
-        shownName: lx && lx.label ? `${window.SHOSAI_CUE_SHEET.lightCueName(project, sceneNumber, ordinal, lx)}${lx.name ? `「${lx.name}」` : ""}${lx.notation ? ` ${lx.notation}` : ""}` : "",
+        shownName: lx && lx.label ? `${window.SHOSAI_CUE_SHEET.lightCueName(project, sceneNumber, ordinal, lx, { tx })}${lx.name ? `「${lx.name}」` : ""}${lx.notation ? ` ${lx.notation}` : ""}` : "",
         silent: cue.cueType === "music" && musicCueIsSilent(project, tl, cue.seconds),
       };
     });
@@ -3361,6 +3361,8 @@
     els.loopB.setAttribute("aria-pressed", String(hasLoopRange));
     const snapLabel = ui.grid === 1 ? "1" : ui.grid === 0.5 ? "1/2" : "1/4";
     els.grid.textContent = `${tx("スナップ")} ${snapLabel}`;
+    // data-no-i18n のボタンなので、ツールチップもここで訳す（翻訳の一括処理は触らない）。
+    els.grid.title = tx("スナップ単位");
     const labelWidth = finite(getComputedStyle(root).getPropertyValue("--stage-timeline-label-width"), 156);
     const available = Math.max(640, els.viewport.clientWidth - labelWidth);
     const baseWidth = ui.unit === "time"
