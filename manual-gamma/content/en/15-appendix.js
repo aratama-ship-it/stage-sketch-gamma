@@ -9,6 +9,21 @@
   "lead": "Changes in v0.3.0–v0.3.39, with their controls and scenes to try.",
   "sections": [
     {
+  "id": "new-061-inputs",
+  "title": "Numeric editing, Undo and dialog keyboard controls",
+  "status": "sourced",
+  "keywords": [
+    "height",
+    "numbers",
+    "Undo",
+    "notes",
+    "Tab",
+    "lighting",
+    "run of show"
+  ],
+  "html": "<p>Profile height accepts 120–210 cm. Digits remain intact while typing, and leaving a blank field preserves the last value. Performer name, height, colour and note edits, and set-piece name, colour and note edits, can be undone. Leaving a numeric field ends that edit.</p><p>Moving to the next run-of-show cell also selects its formatting target. Tab stays within a version dialog; in a short option list it moves on to the next control. Keyboard focus is preserved after language loading.</p><p>Lighting fields have accessible names; an empty value does not become zero. Esc closes the gobo list while keeping the fixture selected. The F-key description matches the enlarged lighting view.</p><p>Check the bundled testing ground N-24 to N-26. Try scenes A-4, C-5, F-1 and H-1.</p>" + window.H.fig("release061-profile", "Height and profile fields", "Profile")
+},
+    {
       "id": "new-039-common",
       "title": "Choose options, switch settings and read help",
       "status": "sourced",

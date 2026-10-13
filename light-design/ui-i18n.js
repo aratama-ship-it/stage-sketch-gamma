@@ -9,6 +9,49 @@
   });
   /* 列は [en, ko, zh-Hans, zh-Hant]（2026-10-08 A-2: 以前は中国語が1列で、繁體でも簡体字が出ていた）。 */
   const extra = {
+    "カーブ": ["Curve", "커브", "曲线", "曲線"],
+    "光の色": ["Light colour", "빛 색", "光的颜色", "光的顏色"],
+    "狙い": ["Target surface", "대상 면", "目标表面", "目標表面"],
+    "ホリゾント": ["Cyclorama", "호리존트", "天幕", "天幕"],
+    "ミラーボール": ["Mirror ball", "미러볼", "镜面球", "鏡面球"],
+    "光量": ["Level", "광량", "光量", "光量"],
+    "光の広がり": ["Beam spread", "빛의 퍼짐", "光束范围", "光束範圍"],
+    "ボケ感": ["Softness", "부드러움", "柔化", "柔化"],
+    "模様（ゴボ）": ["Pattern (gobo)", "무늬 (고보)", "图案（Gobo）", "圖案（Gobo）"],
+    "カッター": ["Shutter", "커터", "切光片", "切光片"],
+    "四角に切る": ["Rectangular shutter", "사각으로 자르기", "矩形切光", "矩形切光"],
+    "幅": ["Width", "폭", "宽度", "寬度"],
+    "バーンドア（四方から切る）": ["Barn doors (four edges)", "반도어 (네 방향)", "遮扉（四边切光）", "遮扉（四邊切光）"],
+    "設置位置名": ["Mounting-position name", "설치 위치 이름", "安装位置名称", "安裝位置名稱"],
+    "奥側": ["Upstage edge", "무대 안쪽", "后侧", "後側"],
+    "手前側": ["Downstage edge", "무대 앞쪽", "前侧", "前側"],
+    "下手側": ["Stage-right edge", "무대 오른쪽", "舞台右侧", "舞台右側"],
+    "上手側": ["Stage-left edge", "무대 왼쪽", "舞台左侧", "舞台左側"],
+
+    "の時間": [" timing", " 시간", "的时间", "的時間"],
+    "移り方": ["Transition", "전환 방식", "过渡方式", "過渡方式"],
+    "フェード": ["Fade", "페이드", "渐变", "漸變"],
+    "上げ（明るくなる方）": ["Fade in (brightening)", "페이드 인 (밝아짐)", "淡入（变亮）", "淡入（變亮）"],
+    "下げ（暗くなる方）": ["Fade out (dimming)", "페이드 아웃 (어두워짐)", "淡出（变暗）", "淡出（變暗）"],
+    "遅れ": ["Delay", "지연", "延迟", "延遲"],
+    "上げの遅れ": ["Fade-in delay", "페이드 인 지연", "淡入延迟", "淡入延遲"],
+    "下げの遅れ": ["Fade-out delay", "페이드 아웃 지연", "淡出延迟", "淡出延遲"],
+    "同じ": ["Same", "같음", "相同", "相同"],
+    "効き方": ["Curve shape", "곡선 형태", "曲线形状", "曲線形狀"],
+    "一定": ["Linear", "일정", "匀速", "勻速"],
+    "なめらか（既定）": ["Smooth (default)", "부드럽게 (기본)", "平滑（默认）", "平滑（預設）"],
+    "だんだん速く": ["Accelerating", "점점 빠르게", "逐渐加速", "逐漸加速"],
+    "だんだん遅く": ["Decelerating", "점점 느리게", "逐渐减速", "逐漸減速"],
+    "はずみ（行き過ぎて戻る）": ["Overshoot and return", "지나쳤다가 돌아오기", "超出后返回", "超出後返回"],
+    "数値で（加速・減速）": ["Custom (acceleration / deceleration)", "숫자로 (가속·감속)", "数值（加速／减速）", "數值（加速／減速）"],
+    "加速／減速（−100〜200）": ["Acceleration / deceleration (−100 to 200)", "가속／감속 (−100~200)", "加速／减速（−100～200）", "加速／減速（−100～200）"],
+    "属性ごとに変える": ["Per attribute", "속성별 설정", "按属性设置", "按屬性設定"],
+    "位置の移動（秒）": ["Position change (seconds)", "위치 이동 (초)", "位置变化（秒）", "位置變化（秒）"],
+    "色の移り（秒）": ["Colour change (seconds)", "색 전환 (초)", "颜色变化（秒）", "顏色變化（秒）"],
+    "切替の細部": ["Switching details", "전환 세부 설정", "切换细节", "切換細節"],
+    "模様・カッター・カラーホイールの切替を遅らせる（秒）": ["Gobo / shutter / colour-wheel switch delay (seconds)", "고보·커터·컬러 휠 전환 지연 (초)", "图案／切光片／色轮切换延迟（秒）", "圖案／切光片／色輪切換延遲（秒）"],
+    "消えていた灯は先回りして向く（MIB）": ["Pre-position lights while they are off (MIB)", "꺼진 조명은 미리 방향 설정 (MIB)", "熄灯时预先调整方向（MIB）", "熄燈時預先調整方向（MIB）"],
+
     "作成する": ["Create", "만들기", "创建", "建立"],
     "正面図と平面図を入れ替える": ["Swap front and plan views", "정면도와 평면도 바꾸기", "交换正视图与平面图", "交換正視圖與平面圖"],
     "拡大キー P": ["Enlarge: P", "확대 키 P", "放大键 P", "放大鍵 P"],
@@ -177,6 +220,12 @@
   function render() {
     scheduled=false;
     observer.disconnect();
+    // These are production notes/names, never credential fields. Cover generated controls too.
+    for (const input of document.querySelectorAll('input:not([type]),input[type="text"],input[type="search"],textarea')) {
+      if (input.autocomplete !== 'off') input.autocomplete = 'off';
+      if (!input.hasAttribute('data-1p-ignore')) input.setAttribute('data-1p-ignore','true');
+      if (!input.hasAttribute('data-lpignore')) input.setAttribute('data-lpignore','true');
+    }
     const language=parentRoot.lang || 'ja';
     if(document.documentElement.lang!==language) document.documentElement.lang=language;
     const sceneControl=document.getElementById('place-scene');

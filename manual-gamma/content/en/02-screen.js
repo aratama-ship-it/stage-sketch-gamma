@@ -151,7 +151,7 @@ ${table(["Key", "What it does"], [
     "Shift",
     "Space"
   ],
-  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release059-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release060-stage", "v0.3.60 stage", "stage")
+  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release059-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release061-stage", "v0.3.60 stage", "stage")
 }
     ]
   });

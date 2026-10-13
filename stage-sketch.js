@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.60";
+  const GAMMA_APP_VERSION = "v0.3.61";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2427,7 +2427,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-13`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-14`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -22333,7 +22333,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (!els.castList) return;
     const cast = state.project.cast.filter(member => !castOnstageFilter || castOnStage(member.id));
     if (!document.getElementById('stage-cast-filter')) {
-      const bar = document.createElement('div'); bar.className = 'stage-cast-filter';
+      const bar = document.createElement('div'); bar.id = 'stage-cast-filter'; bar.className = 'stage-cast-filter';
       const label = document.createElement('label'), box=document.createElement('input'); box.type='checkbox';
       label.append(box,document.createTextNode(tx('このシーンに出ている人だけ')));
       box.addEventListener('change',()=>{castOnstageFilter=box.checked;renderCast();});
@@ -26627,6 +26627,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   function closeSetInfo() {
+    for (const input of [els.setInfoName, els.setInfoColor, els.setInfoNote]) noteEditCheckpoints.delete(input);
     stopSetInfoPreview();           // L-04: 閉じたら回すのをやめる
     setInfoId = null;
     if (els.setInfo) els.setInfo.hidden = true;
@@ -26636,8 +26637,17 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   /* ---------- 演者プロフィール ---------- */
 
   let profileId = null;
+  const noteEditCheckpoints = new WeakSet();
+  function checkpointNoteEdit(input) {
+    if (noteEditCheckpoints.has(input)) return;
+    checkpoint(); noteEditCheckpoints.add(input);
+  }
+  for (const input of [els.profileName, els.profileHeight, els.profileColor, els.profileNote, els.setInfoName, els.setInfoColor, els.setInfoNote]) {
+    input?.addEventListener("blur", () => noteEditCheckpoints.delete(input));
+  }
 
   function openProfile(castId) {
+    for (const input of [els.profileName, els.profileHeight, els.profileColor, els.profileNote]) noteEditCheckpoints.delete(input);
     const member = state.project.cast.find((c) => c.id === castId);
     if (!member || !els.profile) return;
     profileId = castId;
@@ -26654,6 +26664,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   function closeProfile() {
+    for (const input of [els.profileName, els.profileHeight, els.profileColor, els.profileNote]) noteEditCheckpoints.delete(input);
     profileId = null;
     if (els.profile) els.profile.hidden = true;
     if (els.profileBackdrop) els.profileBackdrop.hidden = true;
@@ -26679,18 +26690,28 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   if (els.profileClose) els.profileClose.addEventListener("click", closeProfile);
   if (els.profileBackdrop) els.profileBackdrop.addEventListener("click", closeProfile);
   if (els.profileName) {
-    els.profileName.addEventListener("input", (e) =>
-      { applyProfileChange((m) => { m.name = e.target.value.slice(0, 24); });
-        updateDuplicateCastNotice(els.profileName, profileId); });
+    els.profileName.addEventListener("input", (e) => {
+      const member = profileMember(), name = e.target.value.slice(0, 24);
+      if (!member || member.name === name) return;
+      checkpointNoteEdit(els.profileName);
+      applyProfileChange((m) => { m.name = name; });
+      updateDuplicateCastNotice(els.profileName, profileId);
+    });
   }
   if (els.profileHeight) {
     els.profileHeight.addEventListener("input", (e) => {
+      const member = profileMember(), height = clamp(Number(e.target.value), 120, 210);
       els.profileHeightValue.textContent = e.target.value;
-      applyProfileChange((m) => { m.heightCm = clamp(Number(e.target.value), 120, 210); });
+      if (!member || member.heightCm === height) return;
+      checkpointNoteEdit(els.profileHeight);
+      applyProfileChange((m) => { m.heightCm = height; });
     });
   }
   if (els.profileColor) {
     els.profileColor.addEventListener("input", (e) => {
+      const member = profileMember();
+      if (!member || member.color === e.target.value) return;
+      checkpointNoteEdit(els.profileColor);
       applyProfileChange((m) => {
         m.color = e.target.value;
         state.project.scenes.forEach((scene) => {
@@ -26702,8 +26723,12 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     });
   }
   if (els.profileNote) {
-    els.profileNote.addEventListener("input", (e) =>
-      applyProfileChange((m) => { m.note = e.target.value.slice(0, 200); }));
+    els.profileNote.addEventListener("input", (e) => {
+      const member = profileMember(), note = e.target.value.slice(0, 200);
+      if (!member || (member.note || "") === note) return;
+      checkpointNoteEdit(els.profileNote);
+      applyProfileChange((m) => { m.note = note; });
+    });
   }
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && profileId) closeProfile();
@@ -30948,7 +30973,17 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       const value = shortcuts.get(element.dataset.stageShortcutDisplayFor);
       if (value) element.textContent = shortcuts.display(value);
     });
+    // Lighting owns F/P for its figures; do not advertise those keys on the global fullscreen action.
+    if (els.presentBtn) {
+      if (document.body.dataset.gammaWorkspace === "light-design" && ["F", "P"].includes(shortcuts.get("view.presentation"))) {
+        els.presentBtn.removeAttribute("aria-keyshortcuts");
+        els.presentBtn.dataset.tipKey = "";
+        els.presentBtn.title = tx(els.presentBtn.dataset.tipDescription);
+      }
+      els.presentBtn.dataset.tipTitle = els.presentBtn.title;
+    }
   }
+  window.addEventListener("gamma-workspace-change", syncShortcutDom);
 
   function shortcutCaptureValue(event) {
     if (["Meta", "Control", "Alt", "Shift"].includes(event.key)) return "";
@@ -33587,7 +33622,9 @@ ${propsPlotHtml}
       const head = document.createElement("header");
       head.className = "stage-modal-head";
       const title = document.createElement("h2");
+      title.id = "stage-branch-reason-title";
       title.textContent = tx("別バージョンとして複製");
+      box.setAttribute("aria-labelledby", title.id);
       head.append(title);
       const body = document.createElement("div");
       body.className = "stage-modal-body";
@@ -33625,6 +33662,7 @@ ${propsPlotHtml}
         return button;
       };
       const onKey = (event) => {
+        if (event.isComposing || event.keyCode === 229) return;
         if (event.key === "Escape") { event.preventDefault(); done(null); }
         if (event.key === "Enter" && event.target === input) { event.preventDefault(); done(input.value); }
       };
@@ -33633,7 +33671,8 @@ ${propsPlotHtml}
         backdrop.remove(); box.remove();
         resolve(value);
       }
-      acts.append(mk("キャンセル", null, "btn-quiet"), mk("複製する", "ok", "stage-minor-action"));
+      const cancel = mk("キャンセル", null, "btn-quiet"); cancel.id = "stage-branch-reason-cancel";
+      acts.append(cancel, mk("複製する", "ok", "stage-minor-action"));
       box.append(head, body, acts);
       backdrop.addEventListener("click", () => done(null));
       document.addEventListener("keydown", onKey, true);
@@ -33693,7 +33732,9 @@ ${propsPlotHtml}
     const head = document.createElement("header");
     head.className = "stage-modal-head";
     const title = document.createElement("h2");
+    title.id = "stage-version-picker-title";
     title.textContent = tx("バージョンを切り替える");
+    box.setAttribute("aria-labelledby", title.id);
     head.append(title);
     const body = document.createElement("div");
     body.className = "stage-modal-body";
@@ -33736,6 +33777,7 @@ ${propsPlotHtml}
     cancel.type = "button";
     cancel.className = "btn-quiet";
     cancel.textContent = tx("閉じる");
+    cancel.id = "stage-version-picker-close";
     cancel.addEventListener("click", close);
     acts.append(cancel);
     box.append(head, body, acts);
@@ -40730,9 +40772,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   if (els.setInfoBackdrop) els.setInfoBackdrop.addEventListener("click", closeSetInfo);
   if (els.setInfoName) {
     els.setInfoName.addEventListener("input", (e) => {
-      const item = currentSetItem();
-      if (!item) return;
-      item.name = e.target.value.slice(0, 24);
+      const item = currentSetItem(), name = e.target.value.slice(0, 24);
+      if (!item || item.name === name) return;
+      checkpointNoteEdit(els.setInfoName);
+      item.name = name;
       els.setInfoTitle.textContent = `${item.name}（${setKindName(item.kind)}）`;
       renderSets();
       renderLights();
@@ -40979,7 +41022,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   if (els.setInfoColor) {
     els.setInfoColor.addEventListener("input", (e) => {
       const item = currentSetItem();
-      if (!item) return;
+      if (!item || item.color === e.target.value) return;
+      checkpointNoteEdit(els.setInfoColor);
       item.color = e.target.value;
       state.project.scenes.forEach((scene) => {
         scene.pieces.forEach((piece) => {
@@ -40995,7 +41039,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   if (els.setInfoNote) {
     els.setInfoNote.addEventListener("input", (e) => {
       const item = currentSetItem();
-      if (item) { item.note = e.target.value.slice(0, 200); persistSoon(); }
+      const note = e.target.value.slice(0, 200);
+      if (item && (item.note || "") !== note) { checkpointNoteEdit(els.setInfoNote); item.note = note; persistSoon(); }
     });
   }
   if (els.scenePrev) els.scenePrev.addEventListener("click", () => stepScene(-1));
@@ -42339,6 +42384,14 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   let languageRequest = 0;
   async function setLang(next) {
     const request = ++languageRequest;
+    const languageControl = els.lang?.closest(".gamma-short-select");
+    const languageFocusTarget = languageControl?.querySelector(".gamma-short-select-trigger") || els.lang;
+    let restoreLanguageFocus = document.activeElement === els.lang || Boolean(languageControl?.contains(document.activeElement));
+    const abandonLanguageFocus = event => {
+      if (event.target !== els.lang && !languageControl?.contains(event.target)) restoreLanguageFocus = false;
+    };
+    document.addEventListener("pointerdown", abandonLanguageFocus, true);
+    document.addEventListener("keydown", abandonLanguageFocus, true);
     let resolved = normalizeStageLanguage(next), succeeded = true;
     if (els.lang) { els.lang.value = lang; els.lang.disabled = true; }
     try {
@@ -42346,6 +42399,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       else if (window.SHOSAI_I18N_PACKS?.en) resolved = loadedStageLanguage(resolved);
       else throw new Error("Language loader unavailable");
     } catch (_) { resolved = "ja"; succeeded = false; }
+    document.removeEventListener("pointerdown", abandonLanguageFocus, true);
+    document.removeEventListener("keydown", abandonLanguageFocus, true);
     if (request !== languageRequest) return;
     if (els.lang) els.lang.disabled = false;
     lang = resolved;
@@ -42376,6 +42431,13 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     setTool(tool);
     if (els.exportModal && !els.exportModal.hidden) updateExportNote();
     render();
+    window.GAMMA_UI?.refreshSelect?.(els.lang);
+    // A temporary disabled state must not lose the keyboard's place after loading.
+    if (restoreLanguageFocus && languageFocusTarget?.isConnected && !languageFocusTarget.disabled
+      && !languageFocusTarget.closest("[hidden],[inert]") && languageFocusTarget.getClientRects().length
+      && (document.activeElement === document.body || languageControl?.contains(document.activeElement))) {
+      languageFocusTarget.focus({ preventScroll: true });
+    }
   }
 
   if (els.lang) {

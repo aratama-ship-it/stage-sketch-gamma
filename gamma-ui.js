@@ -10,9 +10,18 @@
     const entry = { dialog };
     dialogs.push(entry);
     dialog.dataset.gammaFocusManaged = "true";
-    const focusable = () => [...dialog.querySelectorAll(
-      'button, summary, a[href], input, select, textarea, [tabindex]'
-    )].filter(element => !element.disabled && element.tabIndex >= 0 && visible(element));
+    const focusable = () => {
+      const nodes = [...dialog.querySelectorAll(
+        'button, summary, a[href], input, select, textarea, [tabindex]'
+      )].filter(element => !element.disabled && element.tabIndex >= 0 && visible(element));
+      // A named radio group remains one Tab stop, as in native keyboard traversal.
+      return nodes.filter(element => {
+        if (!element.matches('input[type="radio"]') || !element.name) return true;
+        const group = nodes.filter(node => node.matches('input[type="radio"]')
+          && node.name === element.name && node.form === element.form);
+        return element === (group.find(node => node.checked) || group[0]);
+      });
+    };
     const owns = () => dialogs.at(-1) === entry && visible(dialog);
     const foreignDialog = () => {
       const active = document.activeElement?.closest('[role="dialog"][aria-modal="true"]');
@@ -24,16 +33,18 @@
       else { dialog.tabIndex = -1; dialog.focus({ preventScroll: true }); }
     };
     const onKey = event => {
-      if (!owns() || foreignDialog() || event.isComposing) return;
+      if (!owns() || foreignDialog() || event.isComposing || event.keyCode === 229) return;
       if (event.key === 'Escape') {
         event.preventDefault(); event.stopImmediatePropagation(); onCancel?.();
       } else if (event.key === 'Tab') {
         const targets = focusable(), index = targets.indexOf(document.activeElement);
-        if (!targets.length || index < 0 || (event.shiftKey ? index === 0 : index === targets.length - 1)) {
-          event.preventDefault(); event.stopImmediatePropagation();
-          if (targets.length) targets[event.shiftKey ? targets.length - 1 : 0].focus();
-          else focusFirst();
-        }
+        // WebKit may omit buttons from native Tab traversal; own every step within a modal.
+        event.preventDefault(); event.stopImmediatePropagation();
+        if (targets.length) {
+          const next = index < 0 ? (event.shiftKey ? targets.length - 1 : 0)
+            : (index + (event.shiftKey ? -1 : 1) + targets.length) % targets.length;
+          targets[next].focus();
+        } else focusFirst();
       }
     };
     const onFocus = event => {
@@ -55,7 +66,8 @@
       document.removeEventListener('keydown', onKey, true);
       document.removeEventListener('focusin', onFocus);
       dialog.removeEventListener('keydown', stopBackgroundKeys);
-      if (top && visible(previous) && !previous.disabled) previous.focus({ preventScroll: true });
+      const target = typeof previous === "function" ? previous() : previous;
+      if (top && visible(target) && !target.disabled) target.focus({ preventScroll: true });
     };
   }
 
@@ -166,9 +178,15 @@
         const focused = document.activeElement;
         const previous = visible(trigger) && !dialog.contains(trigger) ? trigger
           : (visible(focused) && focused !== document.body && !dialog.contains(focused) ? focused : lastOutside);
+        // Roster edits may rebuild the opener. Resolve the same registered member, not a stale node.
+        const roster = previous?.closest?.('[data-roster-id]'), listId = roster?.parentElement?.id;
+        const rosterId = roster?.dataset.rosterId;
+        const returnFocus = listId && rosterId && previous.matches('.stage-cast-name')
+          ? () => visible(previous) ? previous : root.querySelector(`#${CSS.escape(listId)} [data-roster-id="${CSS.escape(rosterId)}"] .stage-cast-name`)
+          : previous;
         active.set(dialog, containDialog(dialog, {
           initialFocus: dialog.contains(document.activeElement) ? document.activeElement : close,
-          returnFocus: previous,
+          returnFocus,
           onCancel: () => close.click(),
         }));
       }
@@ -228,6 +246,8 @@
   // Only close glyphs: a delete/clear × still needs its operation description.
   function isCloseControl(element) {
     if (!element?.matches?.('button,a,[role="button"]')) return false;
+    // The glyph-size class is shared; a fixture delete is still an action that needs its explanation.
+    if (element.matches('.delete-fixture')) return false;
     if (element.matches('.stage-modal-close,.gamma-close-glyph,.stage-launch-backup-close')) return true;
     const label = element.getAttribute('aria-label') || '';
     const close = /^(閉じる|close)$/i.test(label) || /(?:^|-)close(?:-btn|-button)?$/.test(element.id);
@@ -281,7 +301,9 @@
           button.addEventListener('click',event=>{
             event.preventDefault();
             if(option.disabled||select.disabled)return;
-            select.selectedIndex=index;select.dispatchEvent(new Event('change',{bubbles:true}));
+            select.selectedIndex=index;
+            // Return focus before change handlers can rebuild options or disable a loading field.
+            close(true); select.dispatchEvent(new Event('change',{bubbles:true}));
             if (select.isConnected) { sync(); close(true); }
             else {
               close(false); enhanceControls(document.body);
@@ -313,8 +335,12 @@
           buttons[next]?.focus({preventScroll:true});
         }else if(event.key==='Tab')close(false);
       });
-      // Window capture precedes modal key handlers: the first Esc closes only the list.
-      const onKey = event => { if(opened && event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); close(true); } };
+      // Close the popup before modal traversal: Tab moves from its trigger, not through every option.
+      const onKey = event => {
+        if (!opened) return;
+        if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); close(true); }
+        else if (event.key === 'Tab') close(true);
+      };
       const onPointer = event => { if(opened && !wrap.contains(event.target)) close(false); };
       const onResize = () => close(false);
       window.addEventListener('keydown',onKey,true);
@@ -424,7 +450,9 @@
     && node.getClientRects().length && node.ownerDocument.defaultView.getComputedStyle(node).visibility !== 'hidden';
   function nameOf(node) {
     const label = node.labels?.[0];
-    return node.getAttribute('aria-label') || node.dataset.tipTitle || node.title
+    const referenced = (node.getAttribute('aria-labelledby') || '').split(/\s+/)
+      .map(id => node.ownerDocument.getElementById(id)?.textContent || '').join(' ').replace(/\s+/g, ' ').trim();
+    return referenced || node.getAttribute('aria-label') || node.dataset.tipTitle || node.title
       || (label ? label.textContent : node.textContent)?.replace(/\s+/g, ' ').trim() || '';
   }
   function describe(node) {

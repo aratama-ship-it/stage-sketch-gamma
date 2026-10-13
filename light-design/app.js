@@ -4238,6 +4238,20 @@
      二重に出るのをやめるため）。空の <span> を残すと .field の1列目・.field.wide の1行目が
      空き枠として残るので、要素ごと作らない。 */
   const field = (lab, node, wide) => { const f = document.createElement("div"); f.className = "field" + (wide ? " wide" : "") + (lab ? "" : " nolabel"); if (lab) { const l = document.createElement("span"); l.textContent = lab; f.append(l); } f.append(node); return f; };
+  let fieldNameSerial = 0;
+  function nameInspectorFields(host) {
+    for (const f of host.querySelectorAll(".field, .barn2 .cell")) {
+      const caption = f.querySelector(":scope > span:not(.val)");
+      const heading = f.closest(".pbox")?.querySelector(":scope > .kicker");
+      const labels = [...new Set([heading, caption].filter(node => node?.textContent.trim()))];
+      if (!labels.length) continue;
+      for (const label of labels) if (!label.id) label.id = "light-field-label-" + ++fieldNameSerial;
+      for (const input of f.querySelectorAll("input, select, textarea")) {
+        if (input.hasAttribute("aria-label") || input.hasAttribute("aria-labelledby") || input.labels?.length) continue;
+        input.setAttribute("aria-labelledby", labels.map(label => label.id).join(" "));
+      }
+    }
+  }
   const btn = (t, fn, cls, title) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn " + (cls || ""); b.textContent = t; if (title) b.title = title; b.onclick = fn; return b; };
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
   /* つまみ。つまんで動かすほかに、隣の欄へ数値を打ち込んでも決められる（2026-09-13 本人要望）。
@@ -4291,7 +4305,7 @@
       // A rounded display is not an edit: preserve legacy precision on focus/blur.
       if (N.commitOnly && n.value === shownNumber) { gesture = null; return; }
       if (N.commitOnly && n.value === "") { show(cur); gesture = null; return; }
-      const raw = Number(n.value);
+      const raw = n.value === "" ? NaN : Number(n.value);
       const want = Number.isFinite(raw) ? E.clamp(from(raw), min, max) : cur;
       const snapped = !N.commitOnly && step > 0 ? E.clamp(Number((Math.round((want - min) / step) * step + min).toFixed(6)), min, max) : want;
       if (snapped !== cur) { dirty = true; show(snapped); onInput(cur); } else show(cur);
@@ -4330,7 +4344,11 @@
     const list = el("div", "gpick-list"); list.hidden = true;
     const open = (v) => { list.hidden = !v; trig.setAttribute("aria-expanded", String(v)); };
     open(false);
-    trig.onclick = () => open(list.hidden);
+    wrap.addEventListener("keydown", event => {
+      if (list.hidden || event.key !== "Escape" || event.isComposing || event.keyCode === 229) return;
+      event.preventDefault(); event.stopPropagation(); open(false); trig.focus({ preventScroll: true });
+    });
+    trig.onclick = () => { open(list.hidden); trig.focus({ preventScroll: true }); };
     E.GOBOS.forEach((g) => {
       const it = document.createElement("button"); it.type = "button"; it.className = "gpick-i";
       it.setAttribute("aria-pressed", String(!mixed && (curId || "none") === g.id));
@@ -5848,7 +5866,7 @@
       [["閉じる", null, "quiet"], ["CSVをコピー", () => { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(csv).then(() => toast("QシートのCSVをコピーしました")).catch(() => toast("コピーできませんでした")); else toast("この環境ではコピーできません"); }, "primary"]]);
   }
 
-  function renderInspector() { return preservePanelScroll(() => { renderInspectorContent(); window.GAMMA_LIGHT_POSITIONS_UI?.appendAssignment($("insp"), [...state.sel]); }); }
+  function renderInspector() { return preservePanelScroll(() => { renderInspectorContent(); window.GAMMA_LIGHT_POSITIONS_UI?.appendAssignment($("insp"), [...state.sel]); nameInspectorFields(inspectorHost); }); }
   const inspectorHost = $("insp");
   function editableLight(fid) {
     const pending = inspectorHost?.pendingOffCue;

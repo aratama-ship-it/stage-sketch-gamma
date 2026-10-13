@@ -34,7 +34,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.60</span>
+                <span class="stage-app-version">0.3.61</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -1880,7 +1880,7 @@
     <label class="stage-control-label" for="stage-profile-height">
       身長 <span id="stage-profile-height-value">165</span> cm
     </label>
-    <input type="range" id="stage-profile-height" min="140" max="200" step="1" value="165">
+    <input type="range" id="stage-profile-height" min="120" max="210" step="1" value="165">
     <label class="stage-control-label" for="stage-profile-color">色</label>
     <input type="color" id="stage-profile-color" value="#a84b26">
 
@@ -2841,19 +2841,18 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261013-v0360">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261014-v0361">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0360-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0360-title">v0.3.60</h3><time datetime="2026-10-13">2026-10-13</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0361-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0361-title">v0.3.61</h3><time datetime="2026-10-14">2026-10-14</time></header>
       <ul>
-        <li>LXキューの標準番号をセクション-シーン-Qの形へ統一しました。章ごとにQ0から並べる連番方式も選べます。途中へ追加しても小数番号を生成しません。</li>
-        <li>LXパネルでQを選ぶとタイムラインが対応位置へ移ります。時刻未指定のQは前後の配置済みQを参照し、未配置のままにします。無効Qは選択中も灰色で表示します。</li>
-        <li>照明デザインではタイムライン操作後もF/Pで正面図/平面図を拡大します。キー表示と図の交換ボタンを追加し、Pの拡大時は左側にLXキューと灯体一覧を縦に並べます。</li>
-        <li>照明の余分な縦バーを撤去し、図の見出しを統一。設定窓を広げ、操作ボタンを右下へ揃え、適用するなどの表記へ統一しました。</li>
-        <li>停止中の照明編集はストロボの消灯瞬間に隠れず、選んだ色を確認できます。再生中は実際の点滅を保ちます。</li>
-        <li>タイムラインを開いてもメイン画面の下部へスクロールできます。舞台平面図の通常ホイールは中央列をスクロールし、図の位置は動かしません。全ツールの説明と進行表の列表示の開閉を揃えました。</li>
-        <li>DANCE3を姿勢の定義と見本から削除し、全機能の試験場をv47として作り直しました。既存ショーのQ ID・明かり・配置時刻を保持します。</li>
+        <li>プロフィールと数値欄の編集を取り消せるようにし、身長の入力範囲と数字の入力を揃えました。</li>
+        <li>進行表のセル書式、列のキー操作、配布用の窓と確認ボタンを整えました。</li>
+        <li>照明の数値欄の名前、空欄の扱い、模様一覧のEsc操作とFキーの説明を揃えました。</li>
+        <li>版の窓と言語切り替えのフォーカスを保ち、明るいテーマと3Dの操作欄を整えました。</li>
+        <li>AI用の姿勢一覧を現行263種に合わせ、全機能の試験場の確認手順を更新しました。</li>
+        <li>Liteの進行表をオフラインで開く際に、スタイルを読み込めない場合がある問題を直しました。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3817,9 +3816,9 @@
 <script src="/study-assets/stage-performer-motion.js?v=20261011-v0347"></script>
 <script src="/study-assets/stage-idle-motion.js?v=20261013-v0360"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
-<script src="/study-assets/gamma-ui.js?v=20261013-v0359"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261013-v0360"></script>
+<script src="/study-assets/gamma-ui.js?v=20261014-v0361"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261014-v0361"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261013-v0360"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="/study-assets/stage-sketch.js?v=20261013-v0360"></script>
+<script src="/study-assets/stage-sketch.js?v=20261014-v0361"></script>
 </body></html>

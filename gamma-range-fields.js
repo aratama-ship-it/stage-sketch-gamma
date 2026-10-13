@@ -45,6 +45,28 @@
     return Math.round(value * factor) / factor;
   };
 
+  // Numeric typing and keyboard adjustment use the slider's existing edit-start
+  // route once per focused gesture. Keep the event local to this control so it
+  // cannot start a canvas drag or trigger an outside-click handler.
+  const editingRanges = new WeakSet();
+  const beginRangeEdit = (range) => {
+    if (editingRanges.has(range)) return;
+    editingRanges.add(range);
+    range.dispatchEvent(new Event("pointerdown"));
+  };
+  const bindKeyboardEdit = (range) => {
+    range.addEventListener("pointerdown", () => editingRanges.add(range));
+    range.addEventListener("blur", () => editingRanges.delete(range));
+    range.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented || event.isComposing || event.keyCode === 229
+        || event.metaKey || event.ctrlKey || event.altKey) return;
+      const up = ["ArrowRight", "ArrowUp", "PageUp", "End"].includes(event.key);
+      const down = ["ArrowLeft", "ArrowDown", "PageDown", "Home"].includes(event.key);
+      const value = Number(range.value);
+      if ((up && value < Number(range.max)) || (down && value > Number(range.min))) beginRangeEdit(range);
+    });
+  };
+
   const enhance = (range) => {
     const span = document.getElementById(`${range.id}-value`);
     if (!span || span.tagName !== "SPAN") return;
@@ -86,7 +108,6 @@
     /* 既存コードからの `.textContent = "250cm"` を、数値と単位に割って受け取る。
      * 打っている最中（フォーカス中）は value を上書きしない。上書きすると、
      * 途中の "2"（→内部0.02→下限で0へ丸め）が書き戻されて打てなくなる。 */
-    let writingBack = false;
     Object.defineProperty(input, "textContent", {
       configurable: true,
       get() { return `${input.value}${unit.textContent}`; },
@@ -94,7 +115,7 @@
         const parts = splitDisplay(text);
         if (!parts) { unit.textContent = String(text); input.value = ""; return; }
         unit.textContent = parts[1];
-        if (document.activeElement === input && !writingBack) return;
+        if (document.activeElement === input) return;
         input.value = String(parts[0]);
       },
     });
@@ -106,11 +127,13 @@
       if (input.value === "" || !Number.isFinite(typed)) return;
       const internal = roundToStep(typed / scale, rangeStep);
       const clamped = Math.min(Number(range.max), Math.max(Number(range.min), internal));
-      if (String(clamped) !== range.value) {
-        range.value = String(clamped);
-        writingBack = true;
+      const previous = range.value;
+      range.value = String(clamped);
+      // The native range may snap to its step. Only a real value change starts
+      // an edit and emits input; typing a partial/no-op value adds no history.
+      if (range.value !== previous) {
+        beginRangeEdit(range);
         range.dispatchEvent(new Event("input", { bubbles: true }));
-        writingBack = false;
       }
       if (eventName === "change") range.dispatchEvent(new Event("change", { bubbles: true }));
     };
@@ -119,11 +142,17 @@
       push("change");
       /* 範囲外を打たれたら、確定時にスライダーの実値へ戻して食い違いを残さない。 */
       const shown = roundToStep(Number(range.value) * scale, rangeStep * scale);
-      if (input.value !== "" && Number(input.value) !== shown) input.value = String(shown);
+      if (input.value === "" || Number(input.value) !== shown) input.value = String(shown);
+    });
+    input.addEventListener("blur", () => {
+      // Profile edit grouping is attached to the original range. Ending the
+      // number edit must end that group as well.
+      range.dispatchEvent(new Event("blur"));
     });
   };
 
   document.querySelectorAll('input[type="range"][id]').forEach((range) => {
+    bindKeyboardEdit(range);
     if (SKIP.has(range.id)) return;
     try { enhance(range); } catch (_) { /* 1つ失敗しても他は差し替える */ }
   });

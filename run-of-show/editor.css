@@ -259,22 +259,26 @@ html[data-stage-skin] .paper-band select{padding-inline:var(--s1)}
   .doc-frame[data-paper-format=free] [data-column-id=no]{position:sticky;left:0;min-width:var(--entry-no);background:var(--surface);z-index:1}
   .doc-frame[data-paper-format=free] th[data-column-id=no]{z-index:3;background:var(--accent-light)}
 }
-.distribution-dialog{width:min(var(--distribution-width),calc(100% - var(--s8)));max-height:var(--distribution-height);padding:var(--distribution-pad);border:var(--rule) solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--ink);font-size:var(--fs-body);overflow:auto}
+.distribution-dialog{width:min(var(--distribution-width),calc(100% - var(--s8)));max-height:var(--distribution-height);padding:0;border:var(--rule) solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--ink);font-size:var(--fs-body);overflow:hidden}
 .distribution-dialog::backdrop{background:#0009}
-.distribution-dialog h2{font-size:var(--fs-h2)}
+.distribution-dialog[open]{display:flex;flex-direction:column}
+.distribution-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);padding:var(--distribution-pad);border-bottom:var(--rule) solid var(--line);flex:none}
+.distribution-dialog h2{font-size:var(--fs-h2);margin:0}
+.distribution-body{min-height:0;overflow:auto;padding:var(--distribution-pad)}
 .distribution-dialog .small{color:var(--muted)}
 .distribution-dialog .distribution-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--distribution-gap)}
 .distribution-dialog label{display:block}.distribution-dialog input[type=text],.distribution-dialog textarea{width:100%;background:var(--surface);color:var(--ink);border:var(--rule) solid var(--line);padding:var(--s2);font-size:var(--fs-body)}
 .distribution-dialog textarea{min-height:var(--textarea)}
 .distribution-dialog input[type=checkbox]{width:20px;min-height:20px;vertical-align:middle}
-.distribution-dialog button,.distribution-dialog select{background:var(--surface);color:var(--ink);border-color:var(--line);font-size:var(--fs-body)}
+.distribution-dialog button,.distribution-dialog select{background:var(--surface);color:var(--ink);border-color:var(--line);font-size:var(--fs-small)}
 .distribution-dialog button.primary{background:var(--gamma-primary-bg);color:var(--chrome-ink,var(--surface));border-color:var(--gamma-primary-bg)}
 .distribution-dialog .distribution-check{min-height:var(--control);display:flex;align-items:center;gap:var(--s2)}
-.distribution-dialog .distribution-actions{display:flex;flex-wrap:wrap;gap:var(--s2);margin-block:var(--s4)}
+.distribution-dialog .distribution-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:var(--s2);margin-block:var(--s4)}
+.distribution-dialog .distribution-footer{flex:none;margin:0;padding:var(--distribution-pad);border-top:var(--rule) solid var(--line)}
 .distribution-dialog li{margin-bottom:var(--s2)}
 .distribution-dialog .distribution-error{color:var(--call);font-weight:700}
 .distribution-dialog table{font-size:var(--fs-body)}
-.distribution-dialog .distribution-close{float:right;min-width:var(--control)}
+.distribution-dialog .distribution-close{min-width:var(--control)}
 /* P-02: dialog chrome follows the host; the printable paper keeps its palette. */
 html[data-stage-skin] .distribution-dialog{--surface:var(--desk-2);--ink:var(--chrome-ink);--muted:var(--chrome-ink);--line:var(--line-dark);background:var(--surface);color:var(--ink);border-color:var(--line)}
 html[data-stage-skin] .distribution-dialog .small{color:var(--muted)}

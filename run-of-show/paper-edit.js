@@ -1,6 +1,6 @@
 "use strict";
 // Edits the visible fragment in place. Canonical data belongs to the native host; editor.js coordinates pagination.
-window.ROSPaperEditor={create({frame,read,commit,onDraft,onState,continuous=()=>false}){
+window.ROSPaperEditor={create({frame,read,commit,onDraft,onState,onBegin=()=>{},continuous=()=>false}){
   let active=null,pending=null;
   const selector="[data-direct-field],[data-direct-info]";
   const descriptor=node=>({itemId:node.dataset.directItem||null,key:node.dataset.directField||node.dataset.directInfo,info:!!node.dataset.directInfo,type:node.dataset.directType||"text",label:node.getAttribute("aria-label"),start:node.dataset.sourceStart===undefined?null:Number(node.dataset.sourceStart),end:node.dataset.sourceEnd===undefined?null:Number(node.dataset.sourceEnd)});
@@ -36,6 +36,7 @@ window.ROSPaperEditor={create({frame,read,commit,onDraft,onState,continuous=()=>
     input.maxLength=data.max||100000;input.value=original.slice(start,end);
     active={node,desc,input,original,prefix:original.slice(0,start),suffix:original.slice(end),children:[...node.childNodes]};
     node.replaceChildren(input);node.classList.add("paper-editing-field");node.removeAttribute("role");node.removeAttribute("tabindex");
+    onBegin(node,desc);
     input.addEventListener("input",()=>{input.setCustomValidity("");if(data.multiline){input.style.height="auto";input.style.height=Math.max(120,input.scrollHeight)+"px";}onDraft();state("この欄を編集中 · 欄外またはCtrl/⌘+Enterで反映 · Escで取消");});
     input.addEventListener("keydown",event=>{
       if(event.isComposing||event.keyCode===229)return;

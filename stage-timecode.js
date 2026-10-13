@@ -340,7 +340,7 @@
     document.getElementById('stage-scene-timecode-origin').hidden = false;
     window.addEventListener('stage-timecode-origin-edit', event => open(event.detail?.sceneId));
     const seekInput = document.getElementById('stage-timecode-seek');
-    seekInput.addEventListener('keydown', e => { if(e.key==='Escape') { e.preventDefault(); seekInput.setCustomValidity(''); seekInput.blur(); refreshPosition?.(); } if(e.key==='Enter') { e.preventDefault(); const ok=seek(seekInput.value); seekInput.setCustomValidity(ok ? '' : tx('ショーの範囲にある時刻を入力してください。')); seekInput.reportValidity(); } });
+    seekInput.addEventListener('keydown', e => { if(e.isComposing||e.keyCode===229)return; if(e.key==='Escape') { e.preventDefault(); seekInput.setCustomValidity(''); seekInput.blur(); refreshPosition?.(); } if(e.key==='Enter') { e.preventDefault(); const ok=seek(seekInput.value); seekInput.setCustomValidity(ok ? '' : tx('ショーの範囲にある時刻を入力してください。')); seekInput.reportValidity(); } });
     seekInput.addEventListener('input', () => seekInput.setCustomValidity(''));
     seekInput.addEventListener('blur', () => refreshPosition?.());
     document.getElementById('stage-timecode-scope').onchange = e => scope(e.target.value);

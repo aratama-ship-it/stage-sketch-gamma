@@ -31,6 +31,13 @@
   "use strict";
 
   const TEXT = {
+    "Liteの進行表をオフラインで開く際に、スタイルを読み込めない場合がある問題を直しました。": "Fixed a case where the Lite run-of-show stylesheet could not load when reopening offline.",
+    "プロフィールと数値欄の編集を取り消せるようにし、身長の入力範囲と数字の入力を揃えました。": "Profile and numeric edits can now be undone; height limits and digit entry are consistent.",
+    "進行表のセル書式、列のキー操作、配布用の窓と確認ボタンを整えました。": "Improved cell formatting, column keyboard controls, distribution dialogs and confirmation buttons in the run of show.",
+    "照明の数値欄の名前、空欄の扱い、模様一覧のEsc操作とFキーの説明を揃えました。": "Aligned lighting field names, empty values, Esc in the gobo list and F-key descriptions.",
+    "版の窓と言語切り替えのフォーカスを保ち、明るいテーマと3Dの操作欄を整えました。": "Preserved focus in version dialogs and language switching, and improved light-theme and 3D controls.",
+    "AI用の姿勢一覧を現行263種に合わせ、全機能の試験場の確認手順を更新しました。": "Updated the AI pose catalogue to the current 263 poses and expanded the bundled testing checklist.",
+
     "LXキューの標準番号をセクション-シーン-Qの形へ統一しました。章ごとにQ0から並べる連番方式も選べます。途中へ追加しても小数番号を生成しません。": "LX cue labels now use section-scene-Q by default. Optional serial labels start at Q0 in each section. Inserting a cue no longer generates fractional numbers.",
     "LXパネルでQを選ぶとタイムラインが対応位置へ移ります。時刻未指定のQは前後の配置済みQを参照し、未配置のままにします。無効Qは選択中も灰色で表示します。": "Selecting a Q in the LX panel seeks and reveals its timeline position. Unplaced cues seek near their placed neighbours without assigning a time. Disabled cues remain grey when selected.",
     "照明デザインではタイムライン操作後もF/Pで正面図/平面図を拡大します。キー表示と図の交換ボタンを追加し、Pの拡大時は左側にLXキューと灯体一覧を縦に並べます。": "F/P enlarge the lighting front/plan view even after timeline interaction. Added key badges and a view-swap button. Enlarged plan stacks LX cues and fixtures vertically on the left.",
@@ -2143,6 +2150,7 @@
       "Drawn from a three-quarter view. On stage it depends on which way the figure faces.",
     "演者プロフィール": "Performer profile",
     "身長": "height",
+    "身長 cm": "height cm",
     "色": "Colour",
     // 付箋を貼る札と、プロフィール窓の記入欄が同じ字。訳は一つしか持てない
     "メモ": "Note",
@@ -4524,4 +4532,16 @@ Object.assign(window.SHOSAI_I18N.text, {
 Object.assign(window.SHOSAI_I18N_PACKS["en"].maps.tool, {
   transitionAnimation: "Show or hide the transition movement when changing scenes.",
   panelLayout: "Choose how the stage controls and diagrams are arranged."
+});
+
+// 2026-10-13: UI audit — labels and templated hints share the language pack.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "尺": "Dur.",
+  "項目・担当": "Item / Who",
+  "待機・きっかけ": "STBY / GO",
+  "常時": "Always shown",
+  "{column}の表示": "Show {column}",
+  "名簿未登録": "Not in cast list",
+  "図を押すと、その行だけ正面図⇔平面図を切り替えます（ショーに保存・印刷にも反映）。": "Click a diagram to switch only that row between front and plan views. This is saved with the show and included in print.",
+  "行ごとに切り替えた行：{count}件": "Rows with individual view settings: {count}"
 });

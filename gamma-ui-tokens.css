@@ -754,3 +754,12 @@ html[data-stage-skin] :is(.stage-timeline-cue,.stage-timeline-unplaced-cue)[data
 html[data-stage-skin] .stage-timeline-cue[data-cue-enabled="false"][aria-pressed="true"]{z-index:3;box-shadow:0 0 0 1px var(--stage-timeline-muted);}
 
 html[data-stage-skin] #stage-timeline-light-cues.is-lx-drop-target{outline:2px solid var(--stage-timeline-accent);outline-offset:-2px;}
+
+/* 2026-10-13 UI audit: confirmation controls reuse the shared scale. */
+html[data-stage-skin] .stage-kind-submit { justify-content:flex-end; gap:var(--gamma-gap); }
+html[data-stage-skin] .stage-kind-submit .btn-quiet { min-width:0; min-height:var(--ctrl-lg); padding:8px 16px; border-width:1px; border-color:var(--line-dark); color:var(--milk); font-size:var(--fs-6); font-weight:500; line-height:1.5; letter-spacing:inherit; }
+html[data-stage-skin="paper-light"] .stage-cast-status.is-off { color:var(--milk-dim); }
+/* Preserve on/off and lock states while using the existing light-theme foregrounds. */
+html[data-stage-skin="paper-light"] .stage-cast-status.is-on { color:var(--milk); }
+html[data-stage-skin="paper-light"] .stage-cast-lock { color:var(--milk-dim); }
+html[data-stage-skin="paper-light"] .stage-cast-lock[aria-pressed="true"] { color:var(--milk); }
