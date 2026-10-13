@@ -305,6 +305,7 @@
       }
       if (scene.lxq!==undefined && !Array.isArray(scene.lxq)) throw Error('LX cue一覧を確認してください');
       for (const q of scene.lxq || []) {
+        if(q.enabled !== undefined && typeof q.enabled !== "boolean") throw Error("LXキューの有効設定を確認してください");
         checkCue(q.cue); if (q.timing!==undefined && q.timing!==null) checkTiming(q.timing);
         /* v2-1（2026-09-27）: 通しQ番号・きっかけ・自動送り。無ければ従来どおり（番号は読込時に振る）。 */
         if (q.no!==undefined && !(typeof q.no==='string' && /^\d{1,4}(\.\d{1,3})?$/.test(q.no))) throw Error('LXキューの番号を確認してください（例: 12 / 12.5）');

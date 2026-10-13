@@ -22,6 +22,21 @@
   };
   // D-03: metre labels use the same units as theatre settings.
   Object.assign(extra, {
+    "LXキューを配置しました": ["LX cue placed", "LX 큐를 배치했습니다", "已放置LX提示", "已放置LX提示"],
+    "キューを配置するシーンを選んでください": ["Select a scene to place the cue", "큐를 배치할 씬을 선택해 주세요", "请选择放置提示的场景", "請選擇放置提示的場景"],
+    "このQは一覧にありません": ["This Q is not in the list", "이 Q는 목록에 없습니다", "列表中没有此Q", "清單中沒有此Q"],
+
+    "有効": ["Enabled", "활성", "启用", "啟用"],
+    "無効": ["Disabled", "비활성", "禁用", "停用"],
+    "Qの有効・無効を切り替える": ["Enable or disable this Q", "Q 활성/비활성 전환", "启用或禁用此Q", "啟用或停用此Q"],
+    "配置するLXキューを選ぶ": ["Choose an LX cue to place", "배치할 LX 큐 선택", "选择要放置的LX提示", "選擇要放置的LX提示"],
+    "照明デザインでLXキューを作ってください": ["Create an LX cue in Lighting Design", "조명 디자인에서 LX 큐를 만들어 주세요", "请在照明设计中创建LX提示", "請在照明設計中建立LX提示"],
+    "配置できませんでした": ["Could not place the cue", "큐를 배치하지 못했습니다", "无法放置提示", "無法放置提示"],
+    "Q番号をドラッグしてタイムラインへ配置。リスト内では並べ替え。": ["Drag the Q number onto the timeline, or reorder it in the list.", "Q 번호를 드래그해 타임라인에 배치하거나 목록에서 순서를 변경합니다.", "拖动Q编号到时间轴，或在列表中排序。", "拖曳Q編號到時間軸，或在清單中排序。"],
+
+    "タイムラインを再生する（Space）": ["Play the timeline (Space)", "타임라인 재생 (Space)", "播放时间轴（Space）", "播放時間軸（Space）"],
+    "タイムラインを止める（Space）": ["Pause the timeline (Space)", "타임라인 정지 (Space)", "暂停时间轴（Space）", "暫停時間軸（Space）"],
+    "Spaceでタイムラインを再生・停止。Shift+Spaceで照明の動きを再生・停止。": ["Space plays or pauses the timeline. Shift+Space plays or pauses the lighting motion.", "Space로 타임라인을 재생·정지합니다. Shift+Space로 조명 움직임을 재생·정지합니다.", "Space播放或暂停时间轴。Shift+Space播放或暂停照明动作。", "Space播放或暫停時間軸。Shift+Space播放或暫停照明動作。"],
     "1.0mでそろえる": ["Snap to 1.0 m", "1.0m 간격으로 맞추기", "对齐到 1.0m", "對齊到 1.0m"],
     "1.0mごとの目盛りを図に出す": ["Show a 1.0 m grid on the views", "그림에 1.0m 눈금 표시", "在图上显示每 1.0m 的刻度", "在圖上顯示每 1.0m 的刻度"],
     "1.0mのグリッドに合わせて置く・動かす": ["Place and move on a 1.0 m grid", "1.0m 격자에 맞춰 배치·이동", "按 1.0m 网格放置和移动", "依 1.0m 格線放置與移動"],

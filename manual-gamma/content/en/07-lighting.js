@@ -80,15 +80,15 @@ ${fig("31-tab-placement", "The Equipment placement tab: battens (horizontal line
         keywords: ["light design", "lx cue", "cue", "colour", "level", "direction", "spread", "type", "adjust", "moving head", "sweep", "circle", "strobe", "chase", "laser", "cyclorama", "haze", "gobo", "pattern", "shutter", "solo", "copy", "paste", "follow scene", "fixed light", "warning"],
         html: `
 <p>Fixture bodies use black fill and white outlines, and a single selected fixture can be adjusted. Resize fixture, LX-cue and view panels at their boundaries; equipment presets use the available width. A loading message shows when 3D is preparing.</p>
-<p>Detailed display controls are grouped above the front view. Borders and legs use a single visibility switch, with no outlines. Movement range remains on. Simple lighting has larger presets and a preview that keeps the stage floor visible. F enlarges the front view and P enlarges the plan view.</p><p>Timeline playback and scene transitions move performers and sets with the Stage tab's timing and positions. Adding an LX cue to the timeline registers it as a lighting cue and shifts later numbers. A cut changes brightness immediately, but moving-head direction travel can still take time; its countdown explicitly says that brightness is cut.</p>
-${fig("release058-lighting", "The Light design tab: light pools in the plan, beams in the front view, and on the right a warning that fixed fixtures point differently in different scenes.", "Light design tab")}
+<p>Detailed display controls are grouped above the front view. Borders and legs use a single visibility switch, with no outlines. Movement range remains on. Simple lighting has larger presets and a preview that keeps the stage floor visible. F enlarges the front view and P enlarges the plan view.</p><p>Timeline playback and scene transitions move performers and sets with the Stage tab's timing and positions. Create LX cues in Light design first, then choose an existing Q with the timeline + or drag its Q number onto the LX lane. Unplaced Qs have no assigned time. Repositioning does not change their numbers. A cut changes brightness immediately, but moving-head direction travel can still take time; its countdown explicitly says that brightness is cut.</p>
+${fig("release059-lighting", "The Light design tab: light pools in the plan, beams in the front view, and on the right a warning that fixed fixtures point differently in different scenes.", "Light design tab")}
 <h4>LX cues (second column)</h4>
 ${steps([
   "Choose the scene with the ‹ › beside " + ui("Section") + " and " + ui("Scenes") + " (or from " + ui("Scene list") + "). With " + ui("Follow scene") + " on, it follows the scene chosen on the Stage tab.",
-  "Press the “＋ new” button (it shows the next cue number, for example “＋ 新規 1-28-2”) to make the current state the first cue. Numbers are section-scene-count (for example 1-28-1) and the name comes from the scene.",
+  "Press + New to author a Q from the current lighting. Check its Q number and name; its time is unspecified until placed on the timeline.",
   "Select fixtures in the plan or list, and in " + ui("Fixture details") + " → " + ui("Adjust") + " set " + ui("Colour") + ", " + ui("Level") + ", " + ui("Facing") + " and " + ui("Beam spread") + ". Choose whether it applies to " + ui("This scene only") + " or " + ui("All scenes") + ".",
   ui("Type") + " applies a lighting preset to the selected fixtures (" + ui("Apply a preset to selected lights") + "): " + ui("Movement settings") + ", " + ui("Set lit area") + ", " + ui("Set movement area…") + ", " + ui("Change path") + ", " + ui("Stop movement") + ", " + ui("Apply to this area") + ".",
-  "▶ plays the movement; " + ui("Stop") + " stops it.",
+  "▶ and Space play or stop the timeline. Shift+Space plays or stops lighting-program motion.",
   ui("Apply LX cues") + " sends the cues to the show (" + ref("lx-apply", "7-6") + ")."
 ])}
 <h4>Lighting fixtures (left)</h4>
@@ -149,7 +149,20 @@ ${table(["Message", "Meaning"], [
     "v0.3.58",
     "07-lighting"
   ],
-  "html": "<p>Detailed display controls are grouped above the front view. Borders and legs use a single visibility switch, with no outlines. Movement range remains on. Simple lighting has larger presets and a preview that keeps the stage floor visible. F enlarges the front view and P enlarges the plan view.</p><p>Timeline playback and scene transitions move performers and sets with the Stage tab's timing and positions. Adding an LX cue to the timeline registers it as a lighting cue and shifts later numbers. A cut changes brightness immediately, but moving-head direction travel can still take time; its countdown explicitly says that brightness is cut.</p>"
+  "html": "<p>Detailed display controls are grouped above the front view. Borders and legs use a single visibility switch, with no outlines. Movement range remains on. Simple lighting has larger presets and a preview that keeps the stage floor visible. F enlarges the front view and P enlarges the plan view.</p><p>Timeline playback and scene transitions move performers and sets with the Stage tab's timing and positions. Create LX cues in Light design first, then choose an existing Q with the timeline + or drag its Q number onto the LX lane. Unplaced Qs have no assigned time. Repositioning does not change their numbers. A cut changes brightness immediately, but moving-head direction travel can still take time; its countdown explicitly says that brightness is cut.</p>"
+},
+      {
+  "id": "release059-07-lighting",
+  "title": "v0.3.59",
+  "status": "sourced",
+  "keywords": [
+    "v0.3.59",
+    "LX",
+    "Q",
+    "Shift",
+    "Space"
+  ],
+  "html": "<p>Detailed display controls form one row above the front view. Space and ▶ play or stop the timeline; Shift+Space plays or stops lighting-program motion.</p><p>Author Qs first with + New in the LX panel. The timeline LX + chooses an existing Q; dragging the Q number onto the LX lane also places it. Enable or disable controls registered GO events while preserving the cue and its assigned time. Scene entry is separate. Unplacing a Q keeps it registered with no assigned time; delete the Q itself from the LX panel.</p>"
 }
     ]
   });

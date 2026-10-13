@@ -25,7 +25,33 @@
     if(event.detail?.playing || event.detail?.transition) timelineFollowing=true;
     if(timelineFollowing && !timelineFrameRaf) timelineFrameRaf=requestAnimationFrame(paintHostPlaybackFrame);
   }
-  parent.addEventListener('stage-timeline-position-change',syncTimelineFrame);
+  parent.addEventListener('stage-timeline-position-change',event=>{
+    if(active && state.mode==='move' && event.detail?.playing && state.play.on) {
+      // Parent Space / timeline button must stop the second clock as well.
+      const input=parent.GAMMA_LIGHT_HOST.readPlaybackPreview();
+      hooks.setTimelinePlaybackFrame(input?.showId===context?.showId ? input : null);
+      hooks.stop();
+    }
+    syncTimelineFrame(event);
+    if(active && state.mode==='move' && document.getElementById('t-play')?.getAttribute('aria-pressed')!==String(Boolean(event.detail?.playing))) hooks.renderTransport();
+  });
+  function transportAvailable() {
+    return active && !loading && !playbackPreview && state.mode==='move'
+      && parent.document.body.dataset.stageWorkspaceMode==='light-design'
+      && document.getElementById('dialog')?.hidden;
+  }
+  function toggleTimeline() {
+    if(!transportAvailable()) return;
+    hooks.stop();
+    return parent.STAGE_FIELD_TIMELINE?.go();
+  }
+  function toggleProgram() {
+    if(!transportAvailable()) return;
+    if(parent.STAGE_FIELD_TIMELINE?.read().playing) parent.STAGE_FIELD_TIMELINE.go();
+    clearTimelineFrame();hooks.togglePlay();
+  }
+  hooks.setTimelineTransportBridge({toggleTimeline,toggleProgram,
+    playing:()=>Boolean(parent.STAGE_FIELD_TIMELINE?.read().playing)});
 
   /* 機材配置は灯体を仕込むための図なので、ショーの演者・大道具・小道具・幕は
      一時的に下敷きから外す。照明デザインへ戻ると、利用者が選んでいた表示状態へ
@@ -164,7 +190,7 @@
   }
   function open(next, mode) {
     if(playbackPreview) return false;
-    clearTimelineFrame();hooks.stop();
+    clearTimelineFrame();hooks.stop();hooks.setCueSyncPending(next.cueSyncPending);
     if(context?.showId===next.showId && state.dirty) {
       if(context.basis!==next.basis || changedElsewhere) {
         changedElsewhere=true;renderSaveStatus();
@@ -244,18 +270,22 @@
       event.preventDefault();event.stopImmediatePropagation();
     },{capture:true,passive:false});
   function suspend(){clearTimelineFrame();endPlaybackPreview();saveDraft();document.getElementById('dialog').hidden=true;active=false;hooks.stop();}
-  async function apply() {
+  async function apply(options = {}) {
     if(playbackPreview) return {persisted:false,error:'表示専用プレビュー中は適用できません。下書きに戻ってください'};
     if(!context || applying) return;
-    if(!hooks.refreshApplyState()) return {persisted:false,unchanged:true};
+    if(!hooks.refreshApplyState() && !options.placement) return {persisted:false,unchanged:true};
     applying=true;renderSaveStatus();
     try {
       if(changedElsewhere) throw Error('別のタブでショーが変更されました。照明をファイルへ控えてから読み直してください');
       hooks.stop();
-      const result=await parent.GAMMA_LIGHT_HOST.apply(build(),context.basis);
+      const result=await parent.GAMMA_LIGHT_HOST.apply(build(),context.basis,options.placement ? {placement:options.placement} : {});
       if(!result.persisted) throw Error('保存を確認できませんでした');
       parent.GAMMA_WORKSPACE.captureHostHistory();
-      context=result.context;synchronizeVenueMask(context);hooks.markApplied();
+      context=result.context;synchronizeVenueMask(context);
+      if(result.designExpanded || options.placement) hooks.applyDesign(context.design,{host:true,preserveHistory:true});
+      synchronizePieces(context);
+      appliedExtras=model.clone(context.design);hooks.setCueSyncPending(false);hooks.markApplied();
+      parent.dispatchEvent(new parent.Event("stage-timeline-cues-change"));
       // Remove only our own draft AFTER durable host acceptance.
       applyError='';draftState='none';
       appliedNotice=result.shelfPersisted?'適用済み · 照明をこのブラウザのショーへ保存しました。':'適用済み · ショー一覧の控えを更新できません。ショーをファイルへ書き出してください。';
@@ -306,6 +336,23 @@
   /* iframeにフォーカスがある間も、舞台と同じEで親画面のタイムラインを開閉する。
      1〜5も親のタブへ渡し、照明図を操作した直後でも同じショートカットで移動できるようにする。 */
   document.addEventListener('keydown',event=>{
+    const target=event.target;
+    if(!transportAvailable() || event.defaultPrevented || event.isComposing || event.keyCode===229) return;
+    if(target?.isContentEditable || target?.closest?.('input,textarea,select,[role="combobox"],[role="listbox"],[role="option"]')) return;
+    if(event.code!=='Space' && event.key!==' ') return;
+    if(event.metaKey || event.ctrlKey || event.altKey) return;
+    const shortcuts=parent.SHOSAI_STAGE_SHORTCUTS;
+    const assigned=Object.keys(shortcuts?.defaults || {}).some(id=>shortcuts.matches(event,id));
+    event.preventDefault();event.stopImmediatePropagation();
+    if(event.repeat) return;
+    if(assigned) {
+      // Keep a saved assignment on Space / Shift+Space on the parent's usual shortcut path.
+      parent.document.body.dispatchEvent(new parent.KeyboardEvent('keydown',{key:event.key,code:event.code,
+        shiftKey:event.shiftKey,ctrlKey:event.ctrlKey,altKey:event.altKey,metaKey:event.metaKey,bubbles:true,cancelable:true}));
+    } else if(event.shiftKey) toggleProgram();
+    else toggleTimeline();
+  },true);
+  document.addEventListener('keydown',event=>{
     const target=event.target,tag=target?.tagName;
     if(['INPUT','TEXTAREA','SELECT'].includes(tag)||target?.isContentEditable) return;
     if(event.defaultPrevented || !document.getElementById('dialog')?.hidden) return;
@@ -343,7 +390,14 @@
   window.addEventListener('pagehide',saveDraft);
   window.addEventListener('beforeunload',event=>{const saved=saveDraft();if(state.dirty&&!saved){event.preventDefault();event.returnValue='';}});
   window.GAMMA_LIGHT_EDITOR=Object.freeze({open,suspend,apply,applyCandidate,build,
-    beginPlaybackPreview,endPlaybackPreview,paintPlaybackPreview,
+    async placeCue(placement) {
+      if(!build().scenes.flatMap(s=>s.lxq||[]).some(q=>q.id===placement.lxId))return {persisted:false,error:"このQは一覧にありません"};
+      if(state.dirty || context?.cueSyncPending) {
+        const saved=await apply();if(!saved?.persisted)return saved;
+      }
+      return apply({placement});
+    },placementChoices:()=>build(),
+    beginPlaybackPreview,endPlaybackPreview,paintPlaybackPreview,toggleProgram,
     undo:()=>{if(!playbackPreview)hooks.undo();},redo:()=>{if(!playbackPreview)hooks.redo();},
     validateImport(design){model.validate(design,context.scenes.map(row=>row.id));if(JSON.stringify(design.stage)!==JSON.stringify(context.stage))throw Error('劇場寸法が異なる照明デザインです。舞台で寸法を確認してください');},
     /* #8: 環境設定で呼び名を変えたとき、開いたままの照明デザインへすぐ反映する */

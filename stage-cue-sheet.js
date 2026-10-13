@@ -81,6 +81,7 @@
   }
 
   function cueSceneId(project, cue) {
+    if (cue?.positionUnspecified && cue.sceneId) return cue.sceneId;
     if (project?.timecode && root.STAGE_TIME_DOMAIN) return root.STAGE_TIME_DOMAIN.cuePosition(root.STAGE_TIME_DOMAIN.resolve(project), cue)?.sceneId || null;
     if (cue && cue.sceneId) return cue.sceneId;
     const scenes = sectionScenes(project && project.scenes, cue && cue.sectionId);
@@ -133,7 +134,7 @@
     const T = E && typeof E.normalizeTiming === "function" ? E.normalizeTiming(q.timing) : null;
     const fadeIn = T ? T.fadeInSec : 0, fadeOut = T ? (T.fadeOutSec === null ? T.fadeInSec : T.fadeOutSec) : 0;
     return {
-      id: q.id, no: typeof q.no === "string" ? q.no : "", label: typeof q.no === "string" && LX_NO_RE.test(q.no) ? `Q${q.no}` : "",
+      ...(q.enabled === undefined ? {} : {enabled:q.enabled}), id: q.id, no: typeof q.no === "string" ? q.no : "", label: typeof q.no === "string" && LX_NO_RE.test(q.no) ? `Q${q.no}` : "",
       sceneOrdinal: sorted.indexOf(q) + 1,
       name: typeof q.name === "string" ? q.name : "", trigger: typeof q.trigger === "string" ? q.trigger : "",
       notation: E && typeof E.cueNotation === "function" ? E.cueNotation(prevCue, q.cue, q.timing) : "",
@@ -157,7 +158,7 @@
     const numbers = sceneNumberMap(rows);
     const order = new Map(rows.map((row, index) => [row && row.id, index]));
     const resolved = list(project && project.cues)
-      .filter((cue) => cue && cue.kind === "timeline" && ["light", "music", "dialogue"].includes(cue.cueType))
+      .filter((cue) => cue && ["timeline", "light-unplaced", "light-disabled"].includes(cue.kind) && ["light", "music", "dialogue"].includes(cue.cueType))
       .map((cue, sourceIndex) => ({ ...cue, sourceIndex, ...(project?.timecode && root.STAGE_TIME_DOMAIN ? { showSeconds: root.STAGE_TIME_DOMAIN.cuePosition(root.STAGE_TIME_DOMAIN.resolve(project), cue)?.seconds } : {}), sceneId: cueSceneId(project, cue) }))
       .filter((cue) => cue.sceneId)
       .sort((a, b) => (order.get(a.sceneId) || 0) - (order.get(b.sceneId) || 0)
@@ -225,6 +226,73 @@
     const linked = {...clone(cue),lxId};
     cues.push(linked);
     return {design,cues,cue:linked};
+  }
+
+  // Reconcile the two lists by ID without mutating, dropping or retiming old marks.
+  // Missing timeline positions require an explicit policy from the caller.
+  function synchronizeLightCues(project, sourceDesign, { missingPosition, removedLxIds = [] } = {}) {
+    if (!Array.isArray(sourceDesign?.scenes)) return null;
+    const clone = value => JSON.parse(JSON.stringify(value));
+    const design = clone(sourceDesign), removed = new Set(removedLxIds);
+    const prior = cuePresentations(project).filter(row => row.cueType === "light");
+    const previous = new Map(prior.map(row => [row.id, row]));
+    const cues = list(project.cues).filter(c => !(["timeline", "light-unplaced", "light-disabled"].includes(c?.kind) && c.cueType === "light"
+      && removed.has(previous.get(c.id)?.lx?.id || c.lxId))).map(clone);
+    const owners = new Map(design.scenes.map(row => [row.id, row]));
+    const all = () => design.scenes.flatMap(row => list(row.lxq));
+    const ids = new Set([...all().map(q => q.id), ...cues.map(c => c.id)]);
+    const uid = prefix => { let n = 1; while (ids.has(prefix + n)) n++; const id = prefix + n; ids.add(id); return id; };
+    let nextNo = Math.floor(Math.max(0, ...all().map(lxNoValue).filter(Number.isFinite))) + 1;
+    const used = new Set(), added = { lighting: [], timeline: [] };
+    const newCue = (owner, mark, original) => {
+      if (!LX_NO_RE.test(String(nextNo))) throw Error("LXキューの番号を追加できません");
+      const q = original ? clone(original) : { name:mark.memo || "", trigger:"", cue:clone(owner.cue || {lights:{},groups:[]}) };
+      q.id = uid("lx-sync-"); q.no = String(nextNo++);
+      q.seq = Math.max(0, ...list(owner.lxq).map(q => finite(q.seq))) + 1;
+      owner.lxq = [...list(owner.lxq), q]; added.lighting.push(q.id); return q;
+    };
+    for (const mark of cues) {
+      if (!["timeline", "light-unplaced", "light-disabled"].includes(mark?.kind) || mark.cueType !== "light") continue;
+      const old = previous.get(mark.id), owner = owners.get(old?.sceneId || cueSceneId(project, mark));
+      if (!owner) continue; // Do not guess an owner for an unresolved/invalid anchor.
+      const desired = mark.lxId || old?.lx?.id;
+      const original = all().find(q => q.id === desired);
+      let q = original;
+      if (!q || used.has(q.id)) q = newCue(owner, mark, original);
+      else if (!list(owner.lxq).includes(q)) {
+        for (const row of design.scenes) row.lxq = list(row.lxq).filter(item => item !== q);
+        owner.lxq = [...list(owner.lxq), q];
+      }
+      mark.lxId = q.id;
+      if(!mark.positionUnspecified)mark.kind=q.enabled===false?"light-disabled":"timeline";
+      used.add(q.id);
+    }
+    for (const owner of design.scenes) for (const q of list(owner.lxq)) {
+      if (used.has(q.id) || !list(project.scenes).some(s => s.kind === "scene" && s.id === owner.id)) continue;
+      if (typeof missingPosition !== "function") throw Error("タイムラインにないLXキューの位置を指定してください");
+      const position = missingPosition(owner, q);
+      if (!position || typeof position !== "object") throw Error("LXキューの位置を確認できません");
+      const mark = {id:uid("cue-sync-"),kind:"light-unplaced",cueType:"light",sceneId:owner.id,
+        offsetSeconds:0,memo:q.name || "",locked:false,...position,lxId:q.id};
+      cues.push(mark); used.add(q.id); added.timeline.push(mark.id);
+    }
+    return {design, cues, added, changed:JSON.stringify(design) !== JSON.stringify(sourceDesign)
+      || JSON.stringify(cues) !== JSON.stringify(list(project.cues))};
+  }
+
+  function placeLightCue(project, lxId, sectionId, atSeconds, timelineId) {
+    const clone = value => JSON.parse(JSON.stringify(value));
+    const next = clone(project), q = next.lightingDesign?.scenes.flatMap(s=>list(s.lxq)).find(q=>q.id===lxId);
+    if (!q || !next.scenes.some(s=>s.id===sectionId && s.kind==="section") || !Number.isFinite(atSeconds) || atSeconds<0) return null;
+    const mark = list(next.cues).find(c=>c.cueType==="light" && c.lxId===lxId);
+    if (!mark || mark.locked) return null;
+    Object.assign(mark,{kind:"timeline",sectionId,atSeconds:Math.round(atSeconds*10)/10});
+    delete mark.sceneId;delete mark.offsetSeconds;delete mark.positionUnspecified;delete mark.timelineId;
+    if(timelineId)mark.timelineId=timelineId;
+    const owner = cueSceneId(next,mark);
+    if (!owner) return null;
+    // Registry identity and number survive re-placement, including another scene.
+    return synchronizeLightCues(next,next.lightingDesign,{missingPosition:()=>({positionUnspecified:true})});
   }
 
   function castDisplayName(project, member) {
@@ -806,6 +874,8 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitOnePage
   root.SHOSAI_CUE_SHEET = Object.freeze({
     lightCueLink,
     registerTimelineLightCue,
+    synchronizeLightCues,
+    placeLightCue,
     performerCueSelection,
     castDisplayName,
     buildHandoverPack,

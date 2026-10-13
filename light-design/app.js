@@ -431,17 +431,19 @@
     positionLayoutRollbackKey: state.positionLayoutRollbackKey, migrationKey: state.migrationKey, designName: state.designName });
   let appliedFingerprint = applyFingerprint();
   function markApplied() { appliedFingerprint = applyFingerprint(); state.dirty = false; }
+  let cueSyncPending = false;
+  function setCueSyncPending(value) { cueSyncPending = Boolean(value); refreshApplyState(); }
   function refreshApplyState() {
     state.dirty = applyFingerprint() !== appliedFingerprint;
     const button = $("apply");
     if (button) {
-      button.disabled = !state.dirty;
-      button.classList.toggle("needs-apply", state.dirty);
-      button.title = state.dirty
+      button.disabled = !state.dirty && !cueSyncPending;
+      button.classList.toggle("needs-apply", state.dirty || cueSyncPending);
+      button.title = state.dirty || cueSyncPending
         ? "変更した配置と照明デザインを現在のショーのLXキューへ適用"
         : "未適用の変更はありません";
     }
-    return state.dirty;
+    return state.dirty || cueSyncPending;
   }
   /* いま画面に出ている状態（＝最後に commit した時点）の控え。
      履歴へ積みたいのは「変更<b>前</b>」の状態だが、commit は変更が済んだ後に呼ばれるので、
@@ -1422,17 +1424,30 @@
   function home() { stop(); resetPlaybackRuntime(); }
   function tick(ts) { if (!state.play.on) return; if (!state.play.last) state.play.last = ts; state.play.t += ts - state.play.last; state.play.last = ts; renderTransport(); cancelPendingDraw(); draw(); state.play.raf = requestAnimationFrame(tick); }
   function togglePlay() { state.play.on ? stop(null, true) : play(); }
+  // The embedded workspace shares the stage timeline; standalone lighting keeps its own player.
+  let timelineTransportBridge = null;
+  function setTimelineTransportBridge(bridge) { timelineTransportBridge = bridge; renderTransport(); }
+  function toggleTransport(event) {
+    if (!timelineTransportBridge) return togglePlay();
+    if (event?.shiftKey) return timelineTransportBridge.toggleProgram();
+    return timelineTransportBridge.toggleTimeline();
+  }
   /* 再生／停止は1つのSVGトグル。押すと起きることは title / aria-label、状態は図形と色で示す。 */
   function renderTransport() {
     const b = $("t-play"); if (!b) return;
-    const label = state.play.on ? "動きを止める（Space）" : "動きを再生する（Space）";
-    b.innerHTML = state.play.on
+    const playing = timelineTransportBridge ? timelineTransportBridge.playing() : state.play.on;
+    const rawLabel = timelineTransportBridge
+      ? (playing ? "タイムラインを止める（Space）" : "タイムラインを再生する（Space）")
+      : (state.play.on ? "動きを止める（Space）" : "動きを再生する（Space）");
+    const label = window.GAMMA_LIGHT_UI_TEXT?.(rawLabel) || window.GAMMA_UI_TEXT?.(rawLabel) || rawLabel;
+    b.innerHTML = playing
       ? '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4.2 3.2h2.9v9.6H4.2zM8.9 3.2h2.9v9.6H8.9z"/></svg>'
       : '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 3.2v9.6L12.8 8 5 3.2Z"/></svg>';
     b.title = label;
     b.setAttribute("aria-label", label);
-    b.setAttribute("aria-pressed", String(state.play.on));
-    b.classList.toggle("playing", state.play.on);
+    b.setAttribute("aria-pressed", String(playing));
+    b.setAttribute("aria-keyshortcuts", "Space");
+    b.classList.toggle("playing", playing);
     renderXfer();
   }
 
@@ -1754,6 +1769,19 @@
      真上から見て真下を照らす灯は投影すると長さが0になるので、輪は必ず別に描く。 */
   /* 舞台スケッチ側の配置（演者・セット）。光がどこへ当たるかを確かめるための下敷きなので、
      姿勢や向きは描かず、実寸の高さと立ち位置だけを影絵で出す。光より先に描いて、光を上に重ねる。 */
+  // This cache lives for one synchronous draw only. A new pose, position,
+  // camera or host-clock sample is always projected afresh on the next frame.
+  let pieceRigFrame = null, foregroundClipFrame = null;
+  function projectedPieceRig(F, pc, args) {
+    if (!pieceRigFrame) return F.buildRig(...args);
+    let entries = pieceRigFrame.get(pc);
+    if (!entries) { entries = []; pieceRigFrame.set(pc, entries); }
+    const previous = entries.find(entry => entry.F === F && entry.args.every((value, i) => value === args[i]));
+    if (previous) return previous.rig;
+    const rig = F.buildRig(...args);
+    entries.push({ F, args, rig });
+    return rig;
+  }
   let playbackPreviewPieces = null;
   let timelinePlaybackFrame = null;
   function setTimelinePlaybackFrame(input) {
@@ -1962,7 +1990,11 @@
     });
     const yawDeg = kind === "shimote" ? -90 : kind === "kamite" ? 90 : 0;
     const people = kind === "plan" || !showOn("performers") ? [] : piecesOf().filter(p=>p.kind==="performer");
-    V.render(ctx,P,state.dims,kind,beams,people,p=>drawPiecesUp(ctx,P,k,{...options,yawDeg,only:p.id,relight:showOn("blackout"),beams:all}),V.haze(cue()),Boolean(state.drag||state.play.on||spatialQuick),VISUAL_GAIN);
+    // The receiver emitters and stage order are common to every performer in
+    // this composite. Recompiling and sorting once per person was quadratic.
+    const paintOptions = { ...options, yawDeg, relight: showOn("blackout"), beams: all };
+    const prepared = people.length ? preparePiecesUp(paintOptions) : null;
+    V.render(ctx,P,state.dims,kind,beams,people,p=>drawPiecesUp(ctx,P,k,{...paintOptions,only:p.id,prepared}),V.haze(cue()),Boolean(state.drag||state.play.on||spatialQuick),VISUAL_GAIN);
     for (const b of beams) {
       // 客席向きの光・まぶしさ・ハンドルは、もやから独立した各図の専用分岐で描画済み。
       if (b.l.surface === "house") continue;
@@ -2026,27 +2058,51 @@
       for (const p of pts.slice().reverse()) { while(upper.length>1 && cross(upper.at(-2),upper.at(-1),p)<=0) upper.pop(); upper.push(p); }
       return lower.slice(0,-1).concat(upper.slice(0,-1));
     };
+    let cache;
+    if (foregroundClipFrame) {
+      cache = foregroundClipFrame.get(P);
+      if (!cache) { cache = new Map(); foregroundClipFrame.set(P, cache); }
+    }
     pieces.filter(pc => pc.kind === "set" && showPiece(pc)).forEach(pc => {
-      setPartsOf(pc).filter(part => !part.kind || part.kind === "box").forEach(part => {
-        const pts = R.baseCorners(pc,part,dims).flatMap(p=>[P(p),P({...p,z:p.top})]);
-        const polygon=hull(pts); if(polygon.length<3) return;
+      let polygons = cache?.get(pc);
+      if (!polygons) {
+        polygons = setPartsOf(pc).filter(part => !part.kind || part.kind === "box").map(part => {
+          const pts = R.baseCorners(pc,part,dims).flatMap(p=>[P(p),P({...p,z:p.top})]);
+          return hull(pts);
+        }).filter(polygon => polygon.length >= 3);
+        cache?.set(pc, polygons);
+      }
+      // Keep one clip per box: combining even-odd holes would reopen overlaps.
+      for (const polygon of polygons) {
         ctx.beginPath(); ctx.rect(0,0,logicalWidth(ctx.canvas),logicalHeight(ctx.canvas));
         ctx.moveTo(polygon[0].X,polygon[0].Y); polygon.slice(1).forEach(p=>ctx.lineTo(p.X,p.Y)); ctx.closePath();
         ctx.clip("evenodd");
-      });
+      }
     });
   }
 
-  function drawPiecesUp(ctx, P, pxPerM, opts) {
-    const o = opts || {}, d = state.dims, F = window.STAGE_FIGURE;
-    /* 暗幕の後に、不透明な人物を受光色で塗り直す。逆光と前明かりが共存しても黒で上書きしない。 */
+  function preparePiecesUp(o) {
     const relight = o.relight, beams = relight ? (o.beams || performerBeams()) : null;
     const receiver = relight && window.GAMMA_LIGHT_RECEIVER_MODE !== "legacy" && window.STAGE_LIGHT_RECEIVER;
     const emitters = receiver ? receiver.compile(receiverBeams(), { goboById: E.goboById }) : null;
     const shadeBox = receiver ? (point, normal, color) => receiver.materialColor(color, receiver.sample(emitters, point, normal, state.play.t)) : null;
     const view = o.yawDeg === -90 ? "shimote" : o.yawDeg === 90 ? "kamite" : "front";
     const pieces = E.orderStagePieces(piecesOf(), view);
-    pieces.forEach((pc, index) => {
+    const entries = pieces.map((pc, index) => [pc, index]), byId = new Map();
+    for (const entry of entries) {
+      const id = entry[0].id;
+      if (!byId.has(id)) byId.set(id, []);
+      byId.get(id).push(entry);
+    }
+    return { beams, receiver, emitters, shadeBox, pieces, entries, byId };
+  }
+  function drawPiecesUp(ctx, P, pxPerM, opts) {
+    const o = opts || {}, d = state.dims, F = window.STAGE_FIGURE;
+    /* 暗幕の後に、不透明な人物を受光色で塗り直す。逆光と前明かりが共存しても黒で上書きしない。 */
+    const relight = o.relight;
+    const { beams, receiver, emitters, shadeBox, pieces, entries, byId } = o.prepared || preparePiecesUp(o);
+    (o.only ? (byId.get(o.only) || []) : entries).forEach(([pc, index]) => {
+
       if (!showPiece(pc)) return;            // R-09: 種類ごとに出し入れする
       if (o.only && pc.id !== o.only) return;
       if (relight && pc.kind !== "performer" && !(receiver && pc.kind === "set" && setPartsOf(pc).length && setPartsOf(pc).every(part => !part.kind || part.kind === "box"))) return;
@@ -2072,7 +2128,7 @@
         const yaw = (((pc.facing || 0) + (o.yawDeg || 0)) * Math.PI) / 180;
         const stretch = o.stretchAt ? o.stretchAt(pc.v) : 1;
         const zDrop = o.zDropPerM ? o.zDropPerM * H : 0;
-        const rig = F.buildRig(pc.pose || "stand", foot.X, foot.Y, H * k, H * k * stretch, yaw, zDrop, null, playbackPreviewPieces ? pc.performancePose : null);
+        const rig = projectedPieceRig(F, pc, [pc.pose || "stand", foot.X, foot.Y, H * k, H * k * stretch, yaw, zDrop, null, playbackPreviewPieces ? pc.performancePose : null]);
         if (!relight) F.paintShadow(ctx, rig);
         F.paintBody(ctx, rig, pc.color || "#d8cdb6", pc.look || null,
           receiver ? receiver.bodyPaint(ctx, rig, { ...pc, hM: H }, d,
@@ -3314,13 +3370,15 @@
     const started = performance.now();
     drawCueOverride = lxFadeCue();
     fixtureLabelFrame = new Map();
+    const previousRigFrame = pieceRigFrame, previousClipFrame = foregroundClipFrame;
+    pieceRigFrame = new Map(); foregroundClipFrame = new Map();
     try {
       withTimelinePlaybackDraw(() => {
         drawPlan(); activeSections().forEach((sec) => (sec.kind === "front" ? (state.front3d ? drawFront3D(sec) : drawFront(sec)) : drawSide(sec)));
         paintFixtureLabels();
       });
       activeSections().forEach(drawSectionMarquee);
-    } finally { drawCueOverride = null; fixtureLabelFrame = null; }
+    } finally { drawCueOverride = null; fixtureLabelFrame = null; pieceRigFrame = previousRigFrame; foregroundClipFrame = previousClipFrame; }
     const elapsed = performance.now() - started, runtime = state.runtime;
     runtime.drawMs = elapsed;
     runtime.averageMs = runtime.averageMs ? runtime.averageMs * 0.8 + elapsed * 0.2 : elapsed;
@@ -3975,7 +4033,10 @@
     }
     /* Space = 再生／停止。再生ボタン自身にフォーカスがあるときは何もしない——
        ボタンの既定の動作（click）が同じトグルを呼ぶので、ここで拾うと2回走る。 */
-    if (ev.key === " ") { if (document.activeElement !== $("t-play")) { ev.preventDefault(); togglePlay(); } }
+    if (ev.key === " " && !timelineTransportBridge && !ev.defaultPrevented && !ev.isComposing && ev.keyCode !== 229
+        && !ev.repeat && !ev.metaKey && !ev.ctrlKey && !ev.altKey && $("dialog").hidden) {
+      if (document.activeElement !== $("t-play")) { ev.preventDefault(); togglePlay(); }
+    }
     /* 設定のコピー＆ペースト（2026-09-14 本人指定で ⌘C / ⌘P。⌘V も慣れで押すので受ける）。
        ⌘P はブラウザの印刷なので preventDefault が要る。
        画面の文字を選んでいるときの ⌘C は本来のコピーに譲る。 */
@@ -5367,7 +5428,7 @@
   /* ショー全体の並び（番号順）。略語の「前の状態」と自動送りの「次のキュー」に使う。 */
   const lxAllSorted = () => state.scenes.flatMap((sc, si) => lxList(sc).map((q) => ({ q, sc, si })))
     .sort((a, b) => (qValue(a.q) - qValue(b.q)) || (a.si - b.si) || (E.finite(a.q.seq, 0) - E.finite(b.q.seq, 0)));
-  const lxNextInShow = (id) => { const all = lxAllSorted(); const i = all.findIndex((x) => x.q.id === id); return i >= 0 && i + 1 < all.length ? all[i + 1] : null; };
+  const lxNextInShow = (id) => { const all = lxAllSorted(); const i = all.findIndex((x) => x.q.id === id); return i >= 0 ? all.slice(i+1).find(x=>x.q.enabled!==false)||null : null; };
   const lxPrevCueOf = (id) => { const all = lxAllSorted(); const i = all.findIndex((x) => x.q.id === id); return i > 0 ? all[i - 1].q.cue : { lights: {}, groups: [] }; };
   const cueJson = (c) => JSON.stringify({ ...(c || {}), lights: (c && c.lights) || {}, groups: (c && c.groups) || [] });
   /* いま画面に出ている明かりが「どのキューの中身か」。`sc.lxEditing` にそのキューのidが入る。
@@ -5598,6 +5659,7 @@
   }
   const lxGoCues=new WeakMap(); // Display state only; never serialized into the draft.
   function lxEnterCue(si, id, opts = {}) {
+    if(state.scenes[si]?.lxq?.find(q=>q.id===id)?.enabled === false) return;
     lxFollowCancel();
     const prevCue = JSON.parse(cueJson(scene().cue));   // GO の直前に見えていた明かり（別シーンからでも）
     lxGoto(si);
@@ -5681,7 +5743,7 @@
   /* いまのシーンの LXキュー を番号順に並べ、前後の行き先を返す。
      どの LXキュー にも入っていない下書きのときは、前は無し・次は1本目にする。 */
   function lxNeighbors() {
-    const sc = scene(), list = [...lxList(sc)].sort((a, b) => E.finite(a.seq, 0) - E.finite(b.seq, 0));
+    const sc = scene(), list = [...lxList(sc)].filter(q=>q.enabled!==false).sort((a, b) => E.finite(a.seq, 0) - E.finite(b.seq, 0));
     if (!list.length) return { list, prev: null, next: null };
     const i = list.findIndex((q) => q.id === lxEditingOf(sc));
     if (i < 0) return { list, prev: null, next: list[0] };
@@ -5769,8 +5831,10 @@
       const no = el("span", "qno"); no.textContent = qLabel(q); no.title = q.legacyNo ? `旧番号 ${q.legacyNo}。つまんで上下に動かすと順番を変えられます` : "つまんで上下に動かすと順番を変えられます";
       /* 番号をつまんで上下に落とすと並びが変わる。札ごと掴めるようにすると
          名前欄の文字が選べなくなるので、掴めるのは番号だけにする。 */
+      no.title="Q番号をドラッグしてタイムラインへ配置。リスト内では並べ替え。";
       no.draggable = true;
-      no.ondragstart = (ev) => { ev.dataTransfer.setData("text/plain", q.id); ev.dataTransfer.effectAllowed = "move"; row.classList.add("dragging"); };
+      no.ondragstart = (ev) => { ev.dataTransfer.setData("text/plain", q.id); const showId=window.GAMMA_LIGHT_EDITOR?.status().showId;
+        if(showId)ev.dataTransfer.setData("application/x-stage-sketch-lx-cue",JSON.stringify({showId,lxId:q.id})); ev.dataTransfer.effectAllowed = "move"; row.classList.add("dragging"); };
       no.ondragend = () => { row.classList.remove("dragging"); li.querySelectorAll(".lxrow").forEach((r) => r.classList.remove("dropto")); };
       row.ondragover = (ev) => { ev.preventDefault(); ev.dataTransfer.dropEffect = "move"; row.classList.add("dropto"); };
       row.ondragleave = () => row.classList.remove("dropto");
@@ -5780,6 +5844,9 @@
       const cut = lxTimingText(q.timing) === "カット";
       const tb = btn(cut ? "カット" : `⏱ ${lxTimingShort(q.timing)}`, () => lxTimingDialog(si, q.id), "small quiet lxtime", lxTimingText(q.timing) + "。このキューへ移るときの時間（フェード・遅れ・カーブ）を決める");
       row.append(tb);
+      const enabled=btn(q.enabled===false?"無効":"有効",()=>{q.enabled=q.enabled===false;commit();},"small quiet lx-enabled");
+      enabled.setAttribute("aria-pressed",String(q.enabled!==false));enabled.title="Qの有効・無効を切り替える";
+      row.dataset.lxEnabled=String(q.enabled!==false);row.append(enabled);
       row.append(btn("✕", () => {
         dialog(`<p class="ptitle">${qLabel(q)} を消しますか？</p><p class="hint">この LXキュー を一覧から消します。画面に出ている明かりはそのまま残ります。</p>`,
           [["キャンセル", null], ["消す", () => { const s2 = lxScene(); s2.lxq = lxList(s2).filter((z) => z.id !== q.id); if (s2.lxEditing === q.id) s2.lxEditing = null; commit(`${qLabel(q)} を消しました`); }, "primary"]]);
@@ -6635,7 +6702,7 @@
   /* マウスで押した後はフォーカスを外す（ボタンが押されたまま残ると、次のSpaceで
      ボタン発火とキーボード処理の両方が走り、トグルが2回で元へ戻る）。
      キーボードで押したとき（ev.detail === 0）は外さない。Tabで辿った位置を奪わないため。 */
-  $("t-play").onclick = (ev) => { togglePlay(); if (ev.detail > 0) ev.currentTarget.blur(); };
+  $("t-play").onclick = (ev) => { toggleTransport(ev); if (ev.detail > 0) ev.currentTarget.blur(); };
   /* コピー／ペーストも同じ理由でマウス操作のときだけフォーカスを外す
      （押したまま残ると、次のショートカットがボタンの既定動作と二重に走る） */
   $("t-copy").onclick = (ev) => { copySettings(); if (ev.detail > 0) ev.currentTarget.blur(); };
@@ -7156,7 +7223,7 @@
     state.sceneIndex = Math.min(state.sceneIndex, state.scenes.length - 1);
     state.sel.clear(); state.selTruss = state.rig.trusses[0] ? state.rig.trusses[0].id : null;
     state.designName = o.name || "";
-    state.history = options.host ? [] : [...previousHistory, previousSnapshot].slice(-100); state.future = []; baseline = snapshot();
+    state.history = options.preserveHistory ? previousHistory : options.host ? [] : [...previousHistory, previousSnapshot].slice(-100); state.future = []; baseline = snapshot();
     renderAll();
     if (options.host && !options.preserveAppliedBaseline) markApplied();
     } catch(error) {
@@ -7289,7 +7356,7 @@
   // 試作の検証用。製品では出さない（状態を外から読めるようにしておく）
   window.__RIG = { state, E, planBox, secBox, secOf, SECS,
     /* 「照明のあるある」（light-presets-ui.js）との接続点。app.js の内部関数をここだけから貸す（2026-09-14）。 */
-    hooks: { setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
+    hooks: { setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
 
   /* ブラウザの大きさに追従する。モーダルだからと固定にしない（2026-09-11 本人要望）。
      rAFで1回にまとめる（ドラッグ中の連続リサイズで描き直しが溜まらないように）。 */

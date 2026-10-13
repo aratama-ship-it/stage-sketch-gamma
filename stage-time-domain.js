@@ -173,7 +173,7 @@
     if (config) for (const section of sections.values()) {
       const timelines = formationTimelines(project, section.row);
       for (const timeline of timelines) errors.push(...timelineOffset(domain, timeline).errors);
-      if (timelines.length > 1 && list(project.cues).some(c => c.kind === 'timeline' && c.sectionId === section.id && !timelines.some(t => t.songId === c.timelineId))) errors.push(fail('cue-song', '複数曲のキューに対象曲が指定されていません。', { label: section.row.title }));
+      if (timelines.length > 1 && list(project.cues).some(c => ['timeline','light-disabled'].includes(c.kind) && c.sectionId === section.id && !timelines.some(t => t.songId === c.timelineId))) errors.push(fail('cue-song', '複数曲のキューに対象曲が指定されていません。', { label: section.row.title }));
     }
     domain.valid = !!config && !errors.length;
     return domain;
@@ -230,6 +230,7 @@
     return value === null || !Number.isFinite(value) ? '—' : clock(value, tenths, value < -0.049);
   }
   function cuePosition(domain, cue) {
+    if (cue?.positionUnspecified) return null;
     if (cue?.sceneId && !cue.sectionId) {
       const scene = domain.byId.get(cue.sceneId);
       return scene ? { sceneId: scene.sceneId, seconds: scene.start + Math.max(0, num(cue.offsetSeconds)) } : null;
@@ -347,7 +348,7 @@
     if (project?.timecode?.version !== 1) return;
     const domain = resolve(project), anchors = { ...project.timecode.cueAnchors };
     for (const cue of list(project.cues)) {
-      if (cue.kind !== 'timeline' || !cue.sectionId || cue.locked) continue;
+      if (!['timeline','light-disabled'].includes(cue.kind) || !cue.sectionId || cue.locked) continue;
       const section = domain.sections.get(cue.sectionId);
       if (!section || formationTimelines(project, section.row).length) continue;
       const saved = anchors[cue.id];

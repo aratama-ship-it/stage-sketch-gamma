@@ -1787,13 +1787,15 @@
     const segments = new Map(tl.segments.map((segment) => [segment.sceneId, segment]));
     if (tl.source === "show") {
       const domain = TD.resolve(project);
-      return (project.cues || []).filter(c => c.kind === "timeline" && CUE_TYPES.includes(c.cueType)).map(cue => {
+      return (project.cues || []).filter(c => ["timeline","light-unplaced","light-disabled"].includes(c.kind) && CUE_TYPES.includes(c.cueType)).map(cue => {
+        if (cue.positionUnspecified) return segments.has(cue.sceneId) ? {...cue,seconds:null} : null;
         const position = TD.cuePosition(domain, cue); return position ? { ...cue, seconds: position.seconds } : null;
       }).filter(Boolean).sort((a,b) => a.seconds - b.seconds);
     }
     return (Array.isArray(project.cues) ? project.cues : [])
-      .filter((cue) => cue && cue.kind === "timeline" && CUE_TYPES.includes(cue.cueType))
+      .filter((cue) => cue && ["timeline","light-unplaced","light-disabled"].includes(cue.kind) && CUE_TYPES.includes(cue.cueType))
       .map((cue) => {
+        if (cue.positionUnspecified) return segments.has(cue.sceneId) ? {...cue,seconds:null} : null;
         if (cue.sectionId === tl.sectionId) {
           if (cue.timelineId && cue.timelineId !== tl.songId) return null;
           return { ...cue, seconds: clamp(finite(cue.atSeconds, 0), 0, tl.duration) };
@@ -1860,7 +1862,7 @@
     timelineLightEvents=bridge.setTimelineLightSchedule({
       segments:timeline.segments.map(s=>({...s,blackout:!!project.scenes.find(row=>row.id===s.sceneId)?.blackout})),
       transitions:timeline.transitions,
-      cues:timelineCuePresentations(project).filter(c=>c.cueType==='light').map(c=>({id:c.id,sceneId:c.sceneId,seconds:c.seconds,cueType:c.cueType}))
+      cues:timelineCuePresentations(project).filter(c=>c.cueType==='light' && !c.positionUnspecified).map(c=>({id:c.id,sceneId:c.sceneId,seconds:c.seconds,cueType:c.cueType}))
     })||[];
     appliedLightCueIdentity=null;
   }
@@ -2027,12 +2029,15 @@
     cueDetailId = cue.id;
     cueDetailReturnFocus = returnFocus || null;
     els.cueDetailTitle.textContent = cueShownName(cue);
+    els.cueDetailDelete.textContent=cue.cueType==="light" ? tx("配置を外す") : tx("削除する");
+    els.cueDetailDelete.disabled=Boolean(cue.locked || cue.cueType==="light" && cue.positionUnspecified);
     els.cueDetailScene.textContent = `${cue.sceneNumber}  ${cue.sceneTitle}`;
-    els.cueDetailPosition.textContent = labelPosition(cue.seconds);
+    els.cueDetailPosition.textContent = cue.positionUnspecified ? tx("時刻未指定") : labelPosition(cue.seconds);
     let input = document.getElementById("stage-timecode-cue-position");
     if (!input) { input = document.createElement("input"); input.id = "stage-timecode-cue-position"; input.type = "text"; input.className = "stage-text-input"; input.setAttribute("aria-label", tx("キューのタイムコード")); input.addEventListener("input", () => input.setCustomValidity("")); els.cueDetailPosition.after(input); }
-    input.hidden = !tcEditable();
-    input.disabled = !!cue.locked; input.value = timeLabel(cue.seconds);
+    input.hidden = !tcEditable() && !cue.positionUnspecified;
+    input.disabled = !!cue.locked; input.value = cue.positionUnspecified ? "" : timeLabel(cue.seconds);
+    input.placeholder = cue.positionUnspecified ? tx("時刻未指定") : "";
     els.cueDetailPosition.hidden = !input.hidden;
     els.cueDetailNote.value = String(cue.memo || "");
     cueDetailOriginalMemo = els.cueDetailNote.value;
@@ -2635,7 +2640,7 @@
     if (button.dataset.peekHint) {
       const hint = document.createElement("p");
       hint.className = "stage-timeline-cue-peek-hint";
-      hint.textContent = cue.locked ? tx("キューポイントを固定") : tx("選択してDeleteで削除");
+      hint.textContent = cue.locked ? tx("キューポイントを固定") : (cue.cueType==="light"?tx("選択してDeleteで配置を外す"):tx("選択してDeleteで削除"));
       peek.append(hint);
     }
     positionCuePeek(button);
@@ -2734,7 +2739,24 @@
       const alive = new Set(cues.map((cue) => cue.id));
       selectedCueIds = new Set([...selectedCueIds].filter((id) => alive.has(id)));
     }
-    cues.forEach((cue) => {
+    let unplaced = document.getElementById("stage-timeline-unplaced-lx");
+    if (!unplaced) {
+      unplaced = document.createElement("div");unplaced.id="stage-timeline-unplaced-lx";
+      unplaced.className="stage-timeline-unplaced-lx";
+      document.getElementById("stage-timeline-viewport").before(unplaced);
+    }
+    unplaced.replaceChildren();
+    const missing = cues.filter(c => c.cueType === "light" && c.positionUnspecified);
+    unplaced.hidden = !missing.length;
+    if (missing.length) {
+      const caption = document.createElement("span");caption.textContent=tx("時刻未指定");unplaced.append(caption);
+      for (const cue of missing) {
+        const button=document.createElement("button");button.type="button";button.className="stage-timeline-unplaced-cue";
+        button.dataset.cueId=cue.id;button.textContent=cueShownName(cue)+(cue.lx?.enabled===false?" · "+tx("無効"):"");
+        button.onclick=()=>openCueDetails(cue,button);unplaced.append(button);
+      }
+    }
+    cues.filter(c => !c.positionUnspecified).forEach((cue) => {
       const lane = els.cueLanes[cue.cueType];
       if (!lane) return;
       const button = document.createElement("button");
@@ -2743,13 +2765,14 @@
       button.dataset.cueId = cue.id;
       if(cueAddedFeedback?.id===cue.id&&cueAddedFeedback.until>Date.now())button.classList.add("is-just-added");
       button.dataset.cueType = cue.cueType;
+      button.dataset.cueEnabled=String(cue.lx?.enabled!==false);
       button.dataset.cueLocked = String(Boolean(cue.locked)); // T-5: 範囲選択から外す目印
       if (cue.cueType === "music") button.dataset.cueSilent = String(Boolean(cue.silent));   // U-07: 鳴らない音楽キュー
       button.setAttribute("aria-pressed", String(cueIsSelected(cue.id)));
       if (cue.locked) button.append(lockIndicator(null, true));
       const label = document.createElement("span");
       label.className = "stage-timeline-cue-label";
-      label.textContent = cueShownName(cue);
+      label.textContent = cueShownName(cue)+(cue.lx?.enabled===false?" · "+tx("無効"):"");
       button.append(label);
       button.title = `${labelPosition(cue.seconds)}  ${cueShownName(cue)}（${cue.locked ? tx("キューポイントを固定") : tx("選択してDeleteで削除")}）`;
       // U-06: セリフキューは、カーソルを当てると上にセリフを出す（その小窓に同じ説明を入れるので、ブラウザの説明は出さない）
@@ -3400,7 +3423,7 @@
     applyRowLayout();
     renderRuler();
     renderAnchorLane();
-    fieldCuePresentations = timelineCuePresentations(project);
+    fieldCuePresentations = timelineCuePresentations(project).filter(cue => Number.isFinite(cue.seconds) && cue.lx?.enabled!==false);
     renderFeasibility(project);
     renderBlocks(project);
     renderManagedAudio();
@@ -3582,7 +3605,7 @@
     const documentValue = projectDocument();
     if (!timeline || !documentValue || !documentValue.project) return false;
     const all = timelineCuePresentations(documentValue.project)
-      .filter((cue) => cueType === "all" || cue.cueType === cueType);
+      .filter((cue) => Number.isFinite(cue.seconds) && cue.lx?.enabled!==false && (cueType === "all" || cue.cueType === cueType));
     if (!all.length) return false;
     const epsilon = 1e-6;
     const next = direction < 0
@@ -3735,6 +3758,7 @@
     },1400);
   }
   function addCueAtPlayhead(type) {
+    if(type === "light") {openLightPlacementPicker();return;}
     if (!CUE_TYPES.includes(type) || typeof bridge.addTimelineCue !== "function") return;
     const segment = timeline && segmentAt(seekSeconds);
     const showCue = type === "light" && timeline?.source === "show";
@@ -3748,6 +3772,81 @@
     cueAddedNotice(cueTypeLabel(type)+tx("を追加しました"),cue.id);
     renderTimeline();keepPlayheadInView();
   }
+
+  function lightPlacementTarget(seconds = seekSeconds) {
+    const segment=timeline && segmentAt(seconds);
+    const sectionId=timeline?.source==="show" ? timeDomain?.byId.get(segment?.sceneId)?.sectionId : timeline?.sectionId;
+    if(!segment || !sectionId) return null;
+    return {sectionId,atSeconds:seconds-(timeline.source==="show" ? timeDomain.sections.get(sectionId)?.start||0 : 0),
+      ...(timeline.songId ? {timelineId:timeline.songId}:{} )};
+  }
+  async function placeExistingLightCue(lxId,target) {
+    if(!target)return false;
+    try {
+      const result=await window.GAMMA_WORKSPACE.placeLightCue({lxId,...target});
+      if(!result?.persisted)throw Error(result?.error || tx("配置できませんでした"));
+      window.dispatchEvent(new Event("stage-timeline-cues-change"));
+      const mark=projectDocument()?.project?.cues?.find(c=>c.lxId===lxId);
+      if(mark){selectedCueId=mark.id;selectedCueIds=new Set([mark.id]);cueAddedNotice(tx("LXキューを配置しました"),mark.id);}
+      renderTimeline();return true;
+    } catch(error) {cueAddedNotice(error.message);return false;}
+  }
+  function openLightPlacementPicker() {
+    const target=lightPlacementTarget();if(!target){cueAddedNotice(tx("キューを配置するシーンを選んでください"));return;}
+    const design=window.GAMMA_WORKSPACE.lightCuePlacementChoices();
+    const backdrop=document.createElement("div");backdrop.className="stage-modal-backdrop";
+    const modal=document.createElement("div");modal.className="stage-modal stage-lx-placement-modal";
+    modal.id="stage-lx-placement-modal";modal.setAttribute("role","dialog");modal.setAttribute("aria-modal","true");
+    modal.setAttribute("aria-label",tx("配置するLXキューを選ぶ"));
+    const head=document.createElement("header");head.className="stage-modal-head";
+    const title=document.createElement("h2");title.textContent=tx("配置するLXキューを選ぶ");
+    const close=document.createElement("button");close.type="button";close.className="stage-modal-close";close.textContent="×";close.setAttribute("aria-label",tx("閉じる"));
+    const body=document.createElement("div");body.className="stage-modal-body";
+    let release;const finish=()=>{release?.();modal.remove();backdrop.remove();};
+    close.onclick=finish;backdrop.onclick=finish;head.append(title,close);modal.append(head,body);
+    const project=projectDocument().project, domain=TD.resolve(project);
+    const filter=document.createElement("select");filter.className="stage-text-input";
+    filter.setAttribute("aria-label",tx("セクション"));
+    for(const entry of [{id:"all",title:tx("すべて")},...project.scenes.filter(s=>s.kind==="section")]) {
+      const option=document.createElement("option");option.value=entry.id;option.textContent=entry.title;filter.append(option);
+    }
+    filter.value=target.sectionId;const choices=document.createElement("div");body.append(filter,choices);
+    const renderChoices=()=>{
+      choices.replaceChildren();
+      const entries=(design?.scenes||[]).flatMap(scene=>(scene.lxq||[]).map(q=>({scene,q})));
+      entries.sort((a,b)=>Number(a.q.no)-Number(b.q.no));
+      for(const {scene,q} of entries) {
+        if(filter.value!=="all" && domain.byId.get(scene.id)?.sectionId!==filter.value)continue;
+        const mark=(project.cues||[]).find(c=>c.lxId===q.id),pos=mark && TD.cuePosition(domain,mark);
+        const status=Number.isFinite(pos?.seconds) ? TD.timecodeText(TD.effectiveTimecode(domain,pos.seconds)) : tx("時刻未指定");
+        const button=document.createElement("button");button.type="button";button.className="stage-lx-placement-choice";
+        button.dataset.lxId=q.id;button.disabled=Boolean(mark?.locked);
+        button.textContent=(q.no?"Q"+q.no:"")+" · "+(q.name||scene.name)+" · "+status+(q.enabled===false?" · "+tx("無効"):"");
+        button.onclick=async()=>{button.disabled=true;if(await placeExistingLightCue(q.id,target))finish();else button.disabled=false;};choices.append(button);
+      }
+      if(!choices.children.length){const hint=document.createElement("p");hint.textContent=tx("照明デザインでLXキューを作ってください");choices.append(hint);}
+    };
+    filter.onchange=renderChoices;renderChoices();
+    document.body.append(backdrop,modal);release=window.GAMMA_UI.containDialog(modal,{returnFocus:els.addCueButtons.find(b=>b.dataset.stageTimelineAddCue==="light"),onCancel:finish});close.focus();
+  }
+  const lightDropLane=els.cueLanes.light;
+  lightDropLane.addEventListener("dragover",event=>{
+    if(!event.dataTransfer?.types.includes("application/x-stage-sketch-lx-cue"))return;
+    event.preventDefault();event.dataTransfer.dropEffect="move";lightDropLane.classList.add("is-lx-drop-target");
+  });
+  lightDropLane.addEventListener("dragleave",()=>lightDropLane.classList.remove("is-lx-drop-target"));
+  lightDropLane.addEventListener("drop",async event=>{
+    lightDropLane.classList.remove("is-lx-drop-target");
+    const raw=event.dataTransfer?.getData("application/x-stage-sketch-lx-cue");if(!raw)return;
+    event.preventDefault();
+    try {
+      const payload=JSON.parse(raw),project=projectDocument().project;
+      if(payload.showId!==project.id)return;
+      const rect=els.ruler.getBoundingClientRect();
+      const seconds=snappedSeconds(clamp((event.clientX-rect.left-timelineLeftInset)*secondsPerPixel(),0,timeline.duration));
+      await placeExistingLightCue(payload.lxId,lightPlacementTarget(seconds));
+    } catch(error) {cueAddedNotice(error.message);}
+  });
 
   function addSceneAtPlayhead() {
     if (!timeline || typeof bridge.addTimelineSceneAfter !== "function") return false;
@@ -4262,8 +4361,8 @@
   els.addAudio.addEventListener("click", () => {
     openAudioSourceChooser({ mode: "add", returnFocus: els.addAudio });
   });
-  els.addScene.addEventListener("click", addSceneAtPlayhead);
-  els.addTransition.addEventListener("click", addTransitionAtPlayhead);
+  // Scene and transition creation belong to the stage editor, not timeline placement.
+
   els.split.addEventListener("click", splitSceneAtPlayhead);
   els.audioReplace.addEventListener("click", () => {
     const sceneId = timelineAudioTargetSceneId();
@@ -4630,7 +4729,11 @@
     if (timelineInteractionIsBlocked() || isTextEntry(event.target)) return;
     if (!event.metaKey && !event.ctrlKey && !event.altKey
         && (event.code === "Space" || event.key === " ")) {
-      if (!els.settingsPanel.hidden || document.querySelector(".stage-modal:not([hidden])")) return;
+      if (!els.settingsPanel.hidden || document.querySelector(".stage-modal:not([hidden])")
+          || event.defaultPrevented || event.isComposing || event.keyCode === 229) return;
+      const shortcuts = window.SHOSAI_STAGE_SHORTCUTS;
+      if (Object.keys(shortcuts?.defaults || {}).some(id => shortcuts.matches(event, id))) return;
+      if (event.shiftKey && document.body.dataset.gammaWorkspace === "light-design") return;
       event.preventDefault();
       if (!event.repeat) void toggleTimelinePlayback();
       return;

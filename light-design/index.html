@@ -346,8 +346,21 @@
     :lang(en) .sec.front .sechead .viewtitle{top:12px}
   }
   .front-primary-controls{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:5px;max-width:100%}
-  html.front-display-controls-active .sec.front .sechead .fmode{grid-column:1/-1;grid-row:2;width:100%;flex-direction:column;gap:4px}
-  html.front-display-controls-active .sec.front .sechead .viewtitle{top:12px}
+  /* 2026-10-13: 詳細モードの表示は見出しと同じ1段。中央を保ち、
+     幅が足りない図ではこの列だけをスクロールして全操作へ届く。 */
+  html.front-display-controls-active .sec.front{--front-heading-space:90px;--front-control-gap:5px;--front-focus-space:8px;--front-scrollbar-size:6px}
+  html.front-display-controls-active .sec.front .sechead{grid-template-columns:var(--front-heading-space) minmax(0,1fr) var(--front-heading-space)}
+  html.front-display-controls-active .sec.front .sechead .fmode{grid-column:2;grid-row:1;display:block;position:relative;width:max-content;max-width:100%;overflow-x:auto;overflow-y:hidden;padding-block:var(--front-focus-space);scrollbar-width:thin}
+  html.front-display-controls-active .sec.front .sechead .viewtitle{top:50%}
+  @container light-front (max-width:840px){
+    html.front-display-controls-active .sec.front .sechead{grid-template-columns:var(--front-heading-space) minmax(0,1fr)}
+  }
+  html.front-display-controls-active .sec.front .fmode::-webkit-scrollbar{height:var(--front-scrollbar-size)}
+  .front-controls-row{display:contents}
+  html.front-display-controls-active .front-controls-row{display:flex;align-items:center;gap:var(--front-control-gap);width:max-content}
+  html.front-display-controls-active :is(.front-primary-controls,.front-display-controls){flex:0 0 auto;max-width:none;flex-wrap:nowrap}
+  html.front-display-controls-active #front-display-controls :is(.showtoggles,.dimwrap){flex:0 0 auto;max-width:none;flex-wrap:nowrap}
+  html.front-display-controls-active #front-display-controls .showtoggles button{flex:0 0 auto}
   .front-display-controls{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px;max-width:100%}
   #front-display-controls .showtoggles{min-width:0;max-width:100%;justify-content:center;flex-wrap:wrap}
   #front-display-controls .lightgroup{margin-left:0}
@@ -609,11 +622,13 @@
   #panel-lxq>#apply{position:static}
   .lxbar{display:flex;gap:5px}
   .lxbar .btn{flex:1 1 0;min-width:0;padding:3px 4px}
-  .lxrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;column-gap:5px;row-gap:2px;align-items:center;min-width:0;
+  .lxrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;column-gap:5px;row-gap:2px;align-items:center;min-width:0;
     padding:4px 5px 5px;border:1px solid var(--line-dark);background:var(--recess)}
   .lxrow .qno{justify-self:start;font:600 12.5px/1 var(--sans);color:#1a1409;background:var(--brass);padding:5px;white-space:nowrap;letter-spacing:0}
   #panel-lxq .lxrow .btn.small.lxtime{justify-self:start;max-width:100%;min-height:24px;padding:1px 6px;font-size:12px;line-height:1.3;color:var(--milk);
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lxrow .btn.small.lx-enabled{min-height:24px;padding:1px 4px;font-size:11px;white-space:nowrap}
+  .lxrow[data-lx-enabled="false"] .qno{background:var(--recess);color:var(--milk-dim);border:1px dashed var(--line-dark)}
   .lxrow .btn.small.lxdel{width:24px;min-width:24px;min-height:24px;padding:0;font-size:11px;color:var(--milk-dim)}
   /* 名前は1行。入り切らない名前だけ2行まで（app.js が中身に合わせて高さを決める） */
   .lxrow .lxname{grid-column:1/-1;display:block;width:100%;min-width:0;min-height:0;height:calc(12.5px * 1.35);margin:0;padding:0;resize:none;overflow:hidden;
@@ -791,7 +806,7 @@
   .dialog .in,.dialog .in:has(.pgrid){display:flex;flex-direction:column;max-height:calc(100dvh - 24px);overflow:hidden}
 </style>
 <style>.option-b-controls button{min-height:44px}.option-b-controls :focus-visible{outline:2px solid #d3ac59;outline-offset:2px}</style>
-<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261012-v0358">
+<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261013-v0359">
 <link rel="stylesheet" href="embed.css?v=20261012-v0358">
 <link rel="stylesheet" href="simple-lighting.css?v=20261012-v0358">
 </head>
@@ -877,7 +892,7 @@
             <button type="button" class="btn quiet place-scene" id="place-scene" hidden aria-haspopup="dialog" title="シーンの一覧を開く"></button>
           </span>
           <span class="transport sceneplay" id="transport" hidden>
-            <button type="button" class="btn small play-toggle" id="t-play" aria-label="動きを再生する（Space）" aria-pressed="false" title="動きを再生する（Space）" data-tip-description="編集中の明かりの動きを再生・停止します。"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 3.2v9.6L12.8 8 5 3.2Z"/></svg></button>
+            <button type="button" class="btn small play-toggle" id="t-play" aria-label="動きを再生する（Space）" aria-pressed="false" title="動きを再生する（Space）" data-tip-description="Spaceでタイムラインを再生・停止。Shift+Spaceで照明の動きを再生・停止。"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 3.2v9.6L12.8 8 5 3.2Z"/></svg></button>
           </span>
         </div>
         <!-- 凸の形: 上＝平面図（真上から）、下段＝下手｜客席から（正面）｜上手。
@@ -1002,6 +1017,7 @@
               <button type="button" class="solo-btn" data-solo-figure="front" title="正面図だけを大きく見る（F）。Escかもう一度押すと戻ります" aria-label="正面図の拡大表示を切り替える"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10"/></svg></button>
               <span class="viewtitle">正面図</span>
               <span class="fmode">
+                <span class="front-controls-row">
                 <span class="front-primary-controls">
                 <span class="showtoggles" id="frontmode" role="group" aria-label="正面図の描き方">
                   <button type="button" data-show="fixtures" aria-pressed="true" title="正面図の灯体の印を出す・隠す">機材</button>
@@ -1015,6 +1031,7 @@
                 </select>
                 </span>
                 <span class="front-display-controls" id="front-display-controls" hidden></span>
+                </span>
               </span>
             </div>
             <canvas id="secF" width="780" height="520"></canvas>
@@ -1053,7 +1070,7 @@
      結果や注意は「灯体情報」パネル最下部の #insp-log へ常設で出す。
      要素は残さない（.toast のCSSも使われなくなる）。 -->
 
-<script src="../gamma-ui.js?v=20261012-v0356"></script>
+<script src="../gamma-ui.js?v=20261013-v0359"></script>
 <link rel="stylesheet" href="position-names.css?v=20261001-release71">
 <script src="../gamma-render-resolution.js?v=20261006-v0318"></script>
 <script src="rig-engine.js?v=20261011-v0347"></script>
@@ -1070,20 +1087,20 @@
 <script src="../stage-light-receiver.js?v=20261004-receiver89"></script>
 <script src="../gamma-light-cue-overlay.js?v=20261006-v0318"></script>
 <script src="../stage-machinery.js?v=20261012-v0358"></script>
-<script src="app.js?v=20261012-v0358"></script>
+<script src="app.js?v=20261013-v0359"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20261010-v0338"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->
 <script src="selected-light-presets-engine.js?v=20260928-feedback55"></script>
 <script src="selected-light-presets-ui.js?v=20260928-feedback55"></script>
-<script src="../gamma-light-model.js?v=20261006-v0315"></script>
+<script src="../gamma-light-model.js?v=20261013-v0359"></script>
 <script src="simple-lighting-model.js?v=20261001-release71"></script>
-<script src="embed.js?v=20261012-v0358"></script>
+<script src="embed.js?v=20261013-v0359"></script>
 <script src="simple-lighting-ui.js?v=20261012-v0358"></script>
 <script src="position-placement-ui.js?v=20261005-batch98"></script>
 <script src="position-names-ui.js?v=20261001-release71"></script>
 <script src="../gamma-ui-i18n.js?v=20261010-v0338"></script>
 <script src="../gamma-ui-i18n.ko.js?v=20261010-v0338"></script>
-<script src="ui-i18n.js?v=20261012-v0358"></script>
+<script src="ui-i18n.js?v=20261013-v0359"></script>
 </body>
 </html>

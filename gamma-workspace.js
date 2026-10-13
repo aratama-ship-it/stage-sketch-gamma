@@ -820,7 +820,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261012-v0358'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261013-v0359'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;
@@ -929,6 +929,21 @@
     if(!button || button.disabled) return;
     event.preventDefault();event.stopImmediatePropagation();
     button.focus({preventScroll:true});button.click();
+  },true);
+  // Shift+Space previews the lighting program; ordinary playback stays on the stage timeline.
+  document.addEventListener('keydown',event=>{
+    if(mode!=='light-design' || frame.hidden || frame.inert || document.body.classList.contains('stage-fullscreen')) return;
+    if(event.defaultPrevented || event.isComposing || event.keyCode===229 || event.repeat
+      || event.metaKey || event.ctrlKey || event.altKey || !event.shiftKey
+      || (event.code!=='Space' && event.key!==' ')) return;
+    if(workspaceShortcutBlocked(event)) return;
+    const shortcuts=window.SHOSAI_STAGE_SHORTCUTS;
+    if(Object.keys(shortcuts?.defaults || {}).some(id=>shortcuts.matches(event,id))) return;
+    const doc=frame.contentDocument;
+    if(!editor()?.status()?.active || !doc?.getElementById('dialog')?.hidden
+      || !document.getElementById('stage-timeline-settings-panel')?.hidden) return;
+    event.preventDefault();event.stopImmediatePropagation();
+    editor().toggleProgram();
   },true);
   // Manual-activation tabs: arrows move focus; Enter/Space keep the existing guarded click path.
   const workspaceTabs = document.getElementById('stage-workspace-tabs');
@@ -1063,6 +1078,8 @@
   /* U-13（2026-09-24）: ショーを開き直したら本体（applyLoadedState）がこれを呼び、ゲートの帯・薄い表示を見直す。
      劇場が決まったショーへ移ったのに、前の新規ショーの「まず劇場を決めると…」が残っていた。 */
   window.GAMMA_WORKSPACE=Object.freeze({normal:()=>select('normal'),select,mode:()=>mode,captureHostHistory,syncHistory,
+    lightCuePlacementChoices:()=>mode==='light-design' && editor()?.status().active ? editor().placementChoices() : host.placementChoices(),
+    placeLightCue:placement=>mode==='light-design' && editor()?.status().active ? editor().placeCue(placement) : host.placeCue(placement),
     playbackPreviewStatus:()=>({active:Boolean(playbackPreview),running:Boolean(playbackRaf)}),syncGate:()=>syncVenueGate(),
     refreshLabels:()=>{syncWorkspaceShortcutLabels();syncVenueGate();},
     beginPlaybackPreview,endPlaybackPreview});

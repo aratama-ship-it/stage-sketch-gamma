@@ -225,7 +225,27 @@
   // D-13 / D-22: preserve native input values and their existing change routes.
   const shortControlRecords = new Set();
   let shortControlSerial = 0;
+  // Only close glyphs: a delete/clear × still needs its operation description.
+  function isCloseControl(element) {
+    if (!element?.matches?.('button,a,[role="button"]')) return false;
+    if (element.matches('.stage-modal-close,.gamma-close-glyph,.stage-launch-backup-close')) return true;
+    const label = element.getAttribute('aria-label') || '';
+    const close = /^(閉じる|close)$/i.test(label) || /(?:^|-)close(?:-btn|-button)?$/.test(element.id);
+    const glyph = element.textContent.trim();
+    return Boolean(close && ((!glyph && element.querySelector('svg')) || /^[×✕✖✗]$/.test(glyph)));
+  }
+  function suppressCloseTip(element) {
+    if (!isCloseControl(element)) return;
+    // Keep accessible names; this marker also excludes the stage icon tooltip.
+    element.setAttribute('data-no-tip', '');
+    if (element.title && !element.hasAttribute('aria-label') && !element.hasAttribute('aria-labelledby')) {
+      element.setAttribute('aria-label', element.title);
+    }
+    element.removeAttribute('title');
+  }
+
   function enhanceControls(root) {
+    root.querySelectorAll('button,a,[role="button"]').forEach(suppressCloseTip);
     const shortSelects = '#stage-view-select,#stage-lang,#stage-cue-naming,#stage-size-select,.stage-pref-layout-select';
     root.querySelectorAll('.stage-toggle input[type="checkbox"]').forEach(input => {
       if (input.closest('.stage-pref-switch-hit,.stage-name-toggle,.is-icon')) return;
@@ -366,16 +386,18 @@
 
   const refreshSelect = select => { for (const record of shortControlRecords) if (record.select === select) record.refresh(); };
 
-  window.GAMMA_UI = Object.freeze({ containDialog, bindHeight, bindWorkspaceKeys, watchDialogs, translateDOM, sourceText, sourceAttribute, enhanceControls, refreshSelect, bindPanelViewport });
+  window.GAMMA_UI = Object.freeze({ containDialog, bindHeight, bindWorkspaceKeys, watchDialogs, translateDOM, sourceText, sourceAttribute, enhanceControls, refreshSelect, bindPanelViewport, isCloseControl });
   const startControls = () => {
     enhanceControls(document.body);
     bindPanelViewport(document.body);
     let queued = false;
+    document.addEventListener('pointerover', event => suppressCloseTip(event.target.closest?.('button,a,[role="button"]')), true);
     new MutationObserver(records => {
+      records.filter(record => record.type === 'attributes').forEach(record => suppressCloseTip(record.target));
       for (const record of shortControlRecords) if (!record.select.isConnected) record.dispose();
       if (queued || !records.some(record => [...record.addedNodes].some(node => node.nodeType === 1))) return;
       queued = true; requestAnimationFrame(() => { queued = false; enhanceControls(document.body); });
-    }).observe(document.body,{childList:true,subtree:true});
+    }).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['title','aria-label']});
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',startControls,{once:true});
   else startControls();
@@ -406,7 +428,7 @@
       || (label ? label.textContent : node.textContent)?.replace(/\s+/g, ' ').trim() || '';
   }
   function describe(node) {
-    if (!available(node)) return null;
+    if (!available(node) || window.GAMMA_UI.isCloseControl(node)) return null;
     const native = node.ownerDocument.defaultView.GAMMA_ICON_TIPS?.describe?.(node);
     if (native?.name) return native;
     const name = nameOf(node);

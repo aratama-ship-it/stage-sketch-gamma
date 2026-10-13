@@ -56,7 +56,7 @@ ${table(["Control", "Meaning"], [
         id: "cues", title: "Cues (lighting, music, dialogue) — setting, numbering, stepping, details", status: "sourced",
         keywords: ["cue", "lx", "lighting cue", "music cue", "dialogue cue", "vox", "set", "record", "number", "1-2-1", "step", "arrow keys", "details", "double-click", "note", "silent", "delete"],
         html: `
-<p>Cues go in the three lower lanes of the timeline (${ui("Lighting cue")}, ${ui("Music cue")}, ${ui("Dialogue cues")}). Use ＋ at the left of a lane, or ${ui("Record")} (${ui("Record and continue ▶")}) at the playhead.</p>
+<p>Cues go in the three lower lanes of the timeline (${ui("Lighting cue")}, ${ui("Music cue")}, ${ui("Dialogue cues")}). The LX + selects an authored Q for placement. The music and dialogue + buttons add cues.</p>
 ${table(["Kind", "Lane", "Number", "What it holds"], [
   ["Lighting cue", "Lighting cue", "LX cue 1-2-1", "A reference to an LX cue in Light design. Usually one at the start of each scene"],
   ["Music cue", "Music cue", "Music cue 1-2-1", "Starting or stopping a track. Where nothing sounds, “(silent)” is shown"],
@@ -131,6 +131,19 @@ ${vid("qsheet-print", "In H-3, open the master sheet, preview it in landscape A4
     "09-time-cues"
   ],
   "html": "<p>The run of show's left menu contains the column list and an independent row view selector (scenes, scenes with transitions, or cues). Paper settings control language, paper size, paper colour and the overall font size. Display zoom changes only the on-screen scale, not the printed paper size.</p><p>Select cells or columns to set a font, 8–32pt size, bold, italic, underline, text and fill colours, horizontal and vertical alignment, and borders. Cell settings override column settings. Clear formatting returns to the standard style. Use undo and redo in the header. Styles are kept in saved shows, JSON export and import, distributed HTML and printouts. The stage panel stacks the front and plan views vertically.</p>"
+},
+      {
+  "id": "release059-09-time-cues",
+  "title": "v0.3.59",
+  "status": "sourced",
+  "keywords": [
+    "v0.3.59",
+    "LX",
+    "Q",
+    "Shift",
+    "Space"
+  ],
+  "html": "<p>Create scenes and transitions in Stage; their timeline add buttons are hidden. LX + selects an existing Q and places it at the playhead, or drag its Q number onto the LX lane. Unplacing keeps the Q registered with no assigned time. Repositioning does not add a mark or change the Q number. Disabled Qs appear dashed and are skipped by GO playback and cue stepping. TC text matches neighbouring controls.</p>"
 }
     ]
   });

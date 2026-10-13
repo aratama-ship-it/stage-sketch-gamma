@@ -102,7 +102,7 @@ ${note("Not on iPad or iPhone", "The panel switches are a computer-screen featur
         html: `
 <p>The row at the top left is the tool in your hand. What a drag does depends on it.</p>
 ${table(["Icon", "Name", "Key", "What it does"], [
-  ["✥", ui("Move objects"), kbd("V"), "Drag pieces. In the plan, drag a box or " + kbd("Shift") + "-click to select several (" + ref("formation", "Part 4, 4-12") + ")"],
+  ["✥", ui("Move objects"), kbd("V"), "Drag pieces. In front and plan views, drag empty space to select in a box or " + kbd("Shift") + "-click to select several (" + ref("formation", "Part 4, 4-12") + ")"],
   ["↗", ui("Draw an arrow"), kbd("A"), "Draw arrows on the drawing. Choose floor or air, one or both ends, and thickness (" + ref("arrows", "Part 8, 8-1") + ")"],
   ["(lamp)", ui("Lighting effects"), kbd("C"), "Show or hide the light pools and beams of the fixtures lit by the scene's cue (" + ref("light-render", "Part 7, 7-3") + ")"],
   ["(bulb)", ui("Work lights"), kbd("G"), "With work lights off, areas without light go dark — in the front view, plan and 3D"],
@@ -139,7 +139,20 @@ ${table(["Key", "What it does"], [
   [kbd("Esc"), "Close a window, leave full screen, leave 3D"]
 ])}
 <p>In ${ui("Keyboard shortcuts")} in the right column of Settings, click a row, then press the new key to reassign it (Esc cancels). After reading a long list, use ${ui("Return to Settings")} beside its heading to go back to Settings. Fixed keys such as ↑↓, ←→, Delete and Esc cannot be changed; ${ui("Restore the default keys")} undoes your changes. Settings are saved in this device and browser only. While you are typing, text entry wins over stage shortcuts except ⌘S. On Windows and Linux read ⌘ as Ctrl.</p>`
-      }
+      },
+      {
+  "id": "release059-02-screen",
+  "title": "v0.3.59",
+  "status": "sourced",
+  "keywords": [
+    "v0.3.59",
+    "LX",
+    "Q",
+    "Shift",
+    "Space"
+  ],
+  "html": "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release059-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison")
+}
     ]
   });
 })();

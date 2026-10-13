@@ -14,7 +14,7 @@
       events.push({id:`scene:${s.sceneId}`,kind:'scene',sceneId:s.sceneId,at:blackout?end:start,target:row?.cue||dark(),
         timing:custom?entry.timing:cut?null:{fadeInSec:blackout?3:seconds,fadeOutSec:blackout?3:seconds,curve:'linear',mib:true}});
     }
-    for(const c of links) if(c.cueType==='light'&&Number.isFinite(c.seconds)&&c.lx?.cue)
+    for(const c of links) if(c.cueType==='light'&&Number.isFinite(c.seconds)&&c.lx?.cue&&c.lx.enabled!==false)
       events.push({id:c.id,kind:'lx',sceneId:c.sceneId,at:c.seconds,target:c.lx.cue,timing:c.lx.timing,lxId:c.lx.id});
     return events.sort((a,b)=>a.at-b.at||({blackout:0,scene:1,lx:2}[a.kind]-{blackout:0,scene:1,lx:2}[b.kind]));
   }

@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.58";
+  const GAMMA_APP_VERSION = "v0.3.59";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2427,7 +2427,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-12`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-13`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -4103,8 +4103,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   const TOOL_HINTS = {
+    pan: "正面図・平面図をドラッグして、見る位置を動かします。",
     idleArea: "平面図をドラッグして演目の範囲を描く（最大8個）。範囲を押して選び、図の上で演目を選ぶか消します。",
-    select: "演者や物を選び、舞台の上で動かします。平面図は空き地をドラッグして移動し、Shift＋ドラッグで囲い選択できます。",
+    select: "演者や物を選び、舞台の上で動かします。正面図・平面図の空欄をドラッグすると囲い選択、クリックすると選択解除。Shift＋ドラッグで画面を動かし、Shift＋クリックで選択を足す・外します。",
     paint: "",
     erase: "",
     arrow: "正面図または平面図で使える説明用の矢印。正面図では床の上か空中かを選べます。図の右上の「矢印を消す」で、その図の矢印をまとめて消せます。",
@@ -6563,6 +6564,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         ...(typeof cue.timelineId === "string" && cue.timelineId ? { timelineId: cue.timelineId } : {}),
         memo: typeof cue.memo === "string" ? cue.memo.slice(0, 2000) : "",
         locked: Boolean(cue.locked),
+        ...(cueType === "light" && cue.positionUnspecified === true ? {positionUnspecified:true} : {}),
         /* v2-3（2026-09-27）: ライトキューが結び付く照明デザインのLXキュー（scene.lxq[].id）。任意。 */
         ...(cueType === "light" && typeof cue.lxId === "string" && cue.lxId ? { lxId: cue.lxId.slice(0, 160) } : {}),
       };
@@ -7385,7 +7387,6 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   } catch (_) { /* セッション保存が使えなくても、その場の戻る操作は維持する。 */ }
   let projectRecoveryNeeded = !loaded.restored;
   let tool = "select";
-  let multiSelectMode = false; // UI-only; never written to the show or preferences.
   let stagePointSources = [];
   let selectedId = null;
   let selectedIds = new Set();
@@ -19510,7 +19511,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       // 平面で囲んだ対象は正面でも同じだけ囲み、二つの図の選択状態を一致させる。
       const selected = selectedPieces();
       selected.forEach((piece) => drawSelection(target, piece, L));
-      if (L.plan) drawSelectionMarquee(target, selectionMarquee);
+      if (selectionMarquee?.view === view) drawSelectionMarquee(target, selectionMarquee);
     }
 
     /* 暗転で始まるシーンへの転換。前半で落ちて後半で明ける（山なりの黒幕）。
@@ -19939,15 +19940,18 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       b.setAttribute("aria-label", sx(`${b.dataset.toggleView === "front" ? "正面図" : "平面図"}を${open ? "閉じる" : "開く"}`, `${open ? "Close" : "Open"} the ${b.dataset.toggleView === "front" ? "front" : "plan"} view`));
     });
 
+    // Keep UI/state synchronization active in other tabs, but do not repaint
+    // the hidden stage pair. Explicit capture/export still requests both.
+    const paintStageCanvases = forceCanvases || presenting || stageCanvasesShown();
     if (state.showFront || forceCanvases || presenting) {
-      drawStage(ctx, true, "front");
+      if (paintStageCanvases) drawStage(ctx, true, "front");
       canvas.setAttribute("aria-label", sx(`${v.label}（${size.label}）を${seatName(frontSeatById(state.seat))}から見た正面図。${counts}。背景の線${sc().strokes.length}本。`, `Front view of ${venueName(v)} (${sizeName(size)}) from ${seatName(frontSeatById(state.seat))}. ${counts}. ${sc().strokes.length} backdrop strokes.`));
     }
     if ((state.showPlan || forceCanvases || presenting) && planCtx) {
-      drawStage(planCtx, true, "plan");
+      if (paintStageCanvases) drawStage(planCtx, true, "plan");
       planCanvas.setAttribute("aria-label", sx(`${v.label}（${size.label}）を上から見た平面図。${counts}。`, `Plan view of ${venueName(v)} (${sizeName(size)}) from above. ${counts}.`));
     }
-    renderSecondSeatView();
+    if (paintStageCanvases) renderSecondSeatView();
     window.GAMMA_STAGE_VIEWPOINTS?.sync();
     if (els.frontCaption) {
       const L = layout("front");
@@ -30828,7 +30832,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         }
       });
       const fpv = document.getElementById("stage-fpv-overlay");
-      if (!fpv || fpv.hidden) {
+      // Motion and progress still advance above; only paint visible stage canvases.
+      // Lighting renders the same transition from its own frame snapshot.
+      if ((!fpv || fpv.hidden) && (presenting || stageCanvasesShown())) {
         if (state.showFront || presenting) drawStage(ctx, true, "front");
         if ((state.showPlan || presenting) && planCtx) drawStage(planCtx, true, "plan");
         renderSecondSeatView();
@@ -35363,7 +35369,7 @@ ${propsPlotHtml}
       pointerAction = null;
     }
     state[key] = shown;
-    if (!state.showFront && tool !== "select" && tool !== "arrow") setTool("select");
+    if (!state.showFront && !["select", "arrow", "pan"].includes(tool)) setTool("select");
     selectedId = null;
     renderVenueControls();
     updateInspector();
@@ -35391,7 +35397,7 @@ ${propsPlotHtml}
       if (scene.lightingIntent) counts.intents += 1;
       Object.keys(scene.stashed || {}).forEach((id) => { if (lightIds.has(id)) counts.stashes += 1; });
     });
-    counts.cues = (p.cues || []).filter((cue) => cue && cue.kind === "timeline" && cue.cueType === "light").length;
+    counts.cues = (p.cues || []).filter((cue) => cue && ["timeline","light-unplaced","light-disabled"].includes(cue.kind) && cue.cueType === "light").length;
     const design = p.lightingDesign && typeof p.lightingDesign === "object" ? p.lightingDesign : null;
     counts.designFixtures = Array.isArray(design?.rig?.fixtures) ? design.rig.fixtures.length : 0;
     counts.designCues = Array.isArray(design?.scenes)
@@ -35422,7 +35428,7 @@ ${propsPlotHtml}
     const lightIds = new Set((p.sets || []).filter((item) => item && item.kind === "light")
       .map((item) => item.id));
     p.sets = (p.sets || []).filter((item) => !item || item.kind !== "light");
-    p.cues = (p.cues || []).filter((cue) => !(cue && cue.kind === "timeline" && cue.cueType === "light"));
+    p.cues = (p.cues || []).filter((cue) => !(cue && ["timeline","light-unplaced","light-disabled"].includes(cue.kind) && cue.cueType === "light"));
     (p.scenes || []).forEach((scene) => {
       scene.pieces = (scene.pieces || []).filter((piece) => piece
         && piece.type !== "light" && !lightIds.has(piece.setId));
@@ -36605,7 +36611,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
           item.content.pieces=item.content.pieces.filter(piece=>piece.type!=="light"&&!oldLightIds.has(piece.setId));
           item.content.lightingIntent=null;
           for(const id of oldLightIds) if(item.content.stashed) delete item.content.stashed[id];
-          item.cues=item.cues.filter(q=>!(q.kind==="timeline"&&q.cueType==="light"));
+          item.cues=item.cues.filter(q=>!(["timeline","light-unplaced","light-disabled"].includes(q.kind)&&q.cueType==="light"));
           item.lighting={native:projectIoClone(project.lightingDesign.scenes.find(s=>s.id===row.id)||null)};
         }
         sceneAlternatives?.restore(project,{reconcile:false});
@@ -36950,7 +36956,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
 
   /* T-05: 選択の内訳。「4件の演者と1件の道具」のような表示と、
    * フォーメーションのボタンの人数を同じ数から作るために1か所へまとめる。
-   * ★照明（type === "light"）は範囲選択に入らない（planPiecesInsideMarquee が除外）ので、
+   * ★照明（type === "light"）は範囲選択に入らない（piecesInsideMarquee が除外）ので、
    *   区分は「演者」と「道具」の2つでよい（2026-09-18 本人決定）。 */
   function selectionBreakdown() {
     const pieces = selectedPieces();
@@ -37094,7 +37100,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     }
   }
 
-  function planPiecesInsideMarquee(marquee, L) {
+  function piecesInsideMarquee(marquee, L) {
     const x0 = Math.min(marquee.start.x, marquee.current.x);
     const x1 = Math.max(marquee.start.x, marquee.current.x);
     const y0 = Math.min(marquee.start.y, marquee.current.y);
@@ -37232,9 +37238,9 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       arrowDraft = null;
       pointerAction = null;
     }
-    multiSelectMode = nextTool === "multiSelect";
-    tool = multiSelectMode ? "select" : nextTool;
-    if (tool !== "select" && normalizeSelectedIds().size > 1) {
+    // The old UI-only multi-select mode now uses the regular selection tool.
+    tool = nextTool === "multiSelect" ? "select" : nextTool;
+    if (!["select", "pan"].includes(tool) && normalizeSelectedIds().size > 1) {
       setSelectedPieces(selectedId ? [selectedId] : [], selectedId);
     }
     /* 見えないものは掴めない決まりなので、道具を持ったら対象を出す。
@@ -37256,13 +37262,13 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     canvas.dataset.tool = tool;
     // 平面図で使うのは「動かす」と「動線」だけ
     if (planCanvas) {
-      planCanvas.dataset.tool = tool === "route" || tool === "note" || tool === "light" ? tool : "select";
+      planCanvas.dataset.tool = ["route", "note", "light", "pan"].includes(tool) ? tool : "select";
     }
     document.querySelectorAll("[data-stage-tool]").forEach((button) => {
-      button.setAttribute("aria-pressed", String(button.dataset.stageTool === (multiSelectMode ? "multiSelect" : tool)));
+      button.setAttribute("aria-pressed", String(button.dataset.stageTool === tool));
     });
-    els.toolHint.hidden = tool !== "idleArea" && !multiSelectMode;
-    els.toolHint.textContent = multiSelectMode ? tx("平面図でShift＋クリックか囲って選ぶ") : tool === "idleArea" ? tx("平面図でドラッグして演目の範囲を描く") : tm("tool", tool, tx(TOOL_HINTS[tool]));
+    els.toolHint.hidden = tool !== "idleArea";
+    els.toolHint.textContent = tool === "idleArea" ? tx("平面図でドラッグして演目の範囲を描く") : tm("tool", tool, tx(TOOL_HINTS[tool]));
     if (els.planRoute) els.planRoute.setAttribute("aria-pressed", String(tool === "route"));
     [els.planNote, els.frontNote].forEach((button) => {
       if (button) button.setAttribute("aria-pressed", String(tool === "note"));
@@ -38520,7 +38526,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       if (event.type === "pointercancel") {
         setSelectedPieces(action.beforeIds, action.primaryId);
       } else if (action.moved) {
-        const hits = planPiecesInsideMarquee({ start: action.start, current: action.current }, layout("plan"));
+        const hits = piecesInsideMarquee({ start: action.start, current: action.current }, layout(action.view));
         const ids = new Set(action.additive ? action.beforeIds : []);
         hits.forEach((piece) => ids.add(piece.id));
         const ordered = Array.from(ids);
@@ -38530,13 +38536,19 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         /* T-01（2026-09-18 本人要望）: 範囲選択でも、選んだ図の側に「選んだもの」を出す。
          * ここだけ anchorFloatingInspector を呼んでおらず、直前の値（初期値は "front"）が
          * 残るため、平面図で囲っても正面図側にパネルが出ていた。
-         * マーキーは平面図でしか始まらないが、将来ずれないよう action.view を使う。
+         * 正面・平面のどちらで囲った場合も、実際の操作元へ添える。
          * ★何も選べなかったときはアンカーを動かさない（次にクリックで選ぶ位置が変わるため）。 */
         if (ids.size) anchorFloatingInspector(action.view);
         setSelectedPieces(ordered, primary);
+        selectedNoteId = selectedTextId = null;
         announce(ids.size ? `${ids.size}件を選択しました。` : "囲いの中に選択できるものがありません。");
       } else if (!action.additive) {
         setSelectedPieces([]);
+        selectedNoteId = selectedTextId = null;
+      }
+      if (event.type !== "pointercancel") {
+        renderScreenTexts();
+        syncScreenTextControls();
       }
       updateInspector();
       render();
@@ -38804,9 +38816,32 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   window.addEventListener("stage-scene-change", () => closePieceContextMenu());
   window.addEventListener("gamma-workspace-change", () => closePieceContextMenu());
 
+  // Shared by the hand tool and Shift-drag from empty selection space.
+  function beginViewPan(event, el, view, point, L) {
+    if (view === "plan") {
+      const rect = el.getBoundingClientRect(), zs = zoomOf("plan");
+      capture(el, event.pointerId);
+      el.dataset.dragging = "true";
+      pointerAction = {
+        kind: "planpan", pointerId: event.pointerId, el, view,
+        sx: event.clientX, sy: event.clientY, ox: zs.ox, oy: zs.oy,
+        k: (W / rect.width) / zs.z,
+      };
+    } else if (L.panRange > 0 || L.panRangeY > 0) {
+      capture(el, event.pointerId);
+      el.dataset.dragging = "true";
+      pointerAction = {
+        kind: "pan", pointerId: event.pointerId, el, view,
+        startX: point.x, startY: point.y,
+        startPan: state.frontPan || 0, startPanY: state.frontPanY || 0,
+        range: L.panRange,
+      };
+    }
+  }
+
   function onPointerDown(event) {
     if (event.button !== 0) return;
-    if(measureMode && event.currentTarget===planCanvas){
+    if(measureMode && tool !== "pan" && event.currentTarget===planCanvas){
       event.preventDefault();const p=pointFromEvent(event),L=layout('plan');
       if(p.x<0||p.y<0||p.x>W||p.y>H)return;
       if(measurePoints.length===2)measurePoints=[];
@@ -38833,6 +38868,12 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (phoneViewerActive) return;
     // 共有ゲストが舞台上で使える作図操作は、正面・平面の自由矢印だけ。
     if (guestSessionActive() && tool !== "arrow") return;
+
+    // The hand tool pans even over objects, notes or route handles.
+    if (tool === "pan") {
+      beginViewPan(event, el, view, point, L);
+      return;
+    }
 
     /* 自由矢印は操作した図に属する。平面図では高さを持たない床の矢印にする。
      * （Alt＋クリックで1本消す分岐は 2026-09-24 に廃止。消すのは図の右上の「矢印を消す」） */
@@ -38997,7 +39038,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       selectedNoteId = null;
       // 選んでいる駒の動線の取っ手は、駒そのものより先に拾う
       const current = selectedPiece();
-      const extendingSelection = view === "plan" && (event.shiftKey || multiSelectMode);
+      const extendingSelection = event.shiftKey;
       const multiSelectionActive = normalizeSelectedIds().size > 1;
       let handle = view === "plan" && !extendingSelection && !multiSelectionActive
         ? routeHandleAt(point, current, L) : null;
@@ -39044,7 +39085,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         }
       }
       // Shiftクリックと複数選択の道具は、既存の選択へ追加／解除する。移動は始めない。
-      if (view === "plan" && (event.shiftKey || multiSelectMode) && hit) {
+      if ((event.shiftKey) && hit) {
         const ids = new Set(normalizeSelectedIds());
         if (ids.has(hit.id)) ids.delete(hit.id); else ids.add(hit.id);
         const ordered = Array.from(ids);
@@ -39062,46 +39103,22 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       updateInspector();
       render();
       if (!hit) {
-        // 平面図の空き地は通常ドラッグで移動。囲い選択は Shift＋ドラッグ。
-        if (view === "plan" && !event.shiftKey && !multiSelectMode) {
-          const rect = el.getBoundingClientRect();
-          const zs = zoomOf("plan");
-          capture(el, event.pointerId);
-          el.dataset.dragging = "true";
-          pointerAction = {
-            kind: "planpan", pointerId: event.pointerId, el, view,
-            sx: event.clientX, sy: event.clientY, ox: zs.ox, oy: zs.oy,
-            k: (W / rect.width) / zs.z,
-          };
+        // Empty-space selection is the default. Shift reserves the existing view pan.
+        if (event.shiftKey) {
+          beginViewPan(event, el, view, point, L);
           return;
         }
-        if (view === "plan") {
-          const beforeIds = Array.from(normalizeSelectedIds());
-          capture(el, event.pointerId);
-          el.dataset.dragging = "true";
-          selectionMarquee = { start: point, current: point };
-          pointerAction = {
-            kind: "marquee", pointerId: event.pointerId, el, view,
-            start: point, current: point, moved: false,
-            additive: event.shiftKey, beforeIds, primaryId: selectedId,
-          };
-          render();
-          return;
-        }
-        setSelectedPieces([]);
-        updateInspector();
+        const beforeIds = Array.from(normalizeSelectedIds());
+        capture(el, event.pointerId);
+        el.dataset.dragging = "true";
+        selectionMarquee = { view, start: point, current: point };
+        pointerAction = {
+          kind: "marquee", pointerId: event.pointerId, el, view,
+          start: point, current: point, moved: false,
+          startClientX: event.clientX, startClientY: event.clientY,
+          additive: false, beforeIds, primaryId: selectedId,
+        };
         render();
-        // 舞台が一度に入らない席では、何もない所を掴むと視線を左右に振れる
-        if (view === "front" && (L.panRange > 0 || L.panRangeY > 0)) {
-          capture(el, event.pointerId);
-          el.dataset.dragging = "true";
-          pointerAction = {
-            kind: "pan", pointerId: event.pointerId, el, view,
-            startX: point.x, startY: point.y,
-            startPan: state.frontPan || 0, startPanY: state.frontPanY || 0,
-            range: L.panRange,
-          };
-        }
         return;
       }
       /* 錠が掛かっているものは hitTest がもう返さない（当たり判定ごと素通し、
@@ -39208,7 +39225,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
 
   function onCanvasNameDoubleClick(event) {
     if (tabletPwaActive || phoneViewerActive) event.preventDefault();
-    if (STUDY_READ_ONLY || guestSessionActive() || phoneViewerActive || presenting) return;
+    if (STUDY_READ_ONLY || guestSessionActive() || phoneViewerActive || presenting || tool === "pan") return;
     const el = event.currentTarget;
     const target = nameDetailTargetAt(pointFromEvent(event), layout(viewOf(el)), el.getContext("2d"));
     if (!target || !openNameDetailTarget(target, viewOf(el))) return;
@@ -39232,8 +39249,9 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   /* 手の形で「掴める」を伝える。写真の道具と同じ作法。
    * 触っているものを毎回当てて決めるので、駒の上と何もない所で形が変わる。 */
   function cursorFor(el, event) {
-    if (pointerAction) return "grabbing";
+    if (pointerAction) return pointerAction.kind === "marquee" ? "crosshair" : "grabbing";
     if (guestSessionActive() && tool !== "arrow") return "default";
+    if (tool === "pan") return "grab";
     if (tool === "paint") return "crosshair";
     if (tool === "erase") return "cell";
     const view = viewOf(el);
@@ -39261,11 +39279,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     }
     // 錠が掛かったものは hitTest が返さないので、指の形も変わらない
     const hit = hitTest(point, L);
-    if (hit) return view === "plan" && event.shiftKey ? "copy" : "grab";
+    if (hit) return event.shiftKey ? "copy" : "grab";
     if (view === "plan" && ghostAt(point, L)) return "grab";
-    if (view === "front" && (L.panRange > 0 || L.panRangeY > 0)) return "grab";
-    if (view === "plan") return event.shiftKey || multiSelectMode ? "crosshair" : "grab";
-    return "default";
+    if (event.shiftKey) return view === "plan" || L.panRange > 0 || L.panRangeY > 0 ? "grab" : "default";
+    return "crosshair";
   }
 
   function onHover(event) {
@@ -39316,9 +39333,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (pointerAction.kind === "marquee") {
       pointerAction.current = point;
       pointerAction.moved = pointerAction.moved
-        || Math.hypot(point.x - pointerAction.start.x, point.y - pointerAction.start.y)
-          * zoomOf("plan").z >= 4;
-      selectionMarquee = { start: pointerAction.start, current: point };
+        || Math.hypot(event.clientX - pointerAction.startClientX, event.clientY - pointerAction.startClientY) >= 4;
+      selectionMarquee = { view: pointerAction.view, start: pointerAction.start, current: point };
       render();
       return;
     }
@@ -44922,6 +44938,37 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     return { dia, lift: Math.max(0, finite(dims && dims.lift, 0)) };
   }
 
+  function unplaceLightingMarks(doomed) {
+    const links=new Map(window.SHOSAI_CUE_SHEET.cuePresentations(state.project).map(q=>[q.id,q]));
+    for(const mark of doomed) if(mark.cueType==="light") {
+      const link=links.get(mark.id);
+      mark.kind="light-unplaced";mark.positionUnspecified=true;
+      mark.sceneId=link?.sceneId||mark.sceneId;
+      if(link?.lx)mark.lxId=link.lx.id;
+      delete mark.sectionId;delete mark.atSeconds;delete mark.timelineId;mark.offsetSeconds=0;
+    }
+  }
+  function synchronizedLightingProject(project, design, removedLxIds = []) {
+    const result = window.SHOSAI_CUE_SHEET.synchronizeLightCues(project, design,
+      {removedLxIds, missingPosition:() => ({positionUnspecified:true})});
+    return result;
+  }
+  function lightingCueListsDiffer(project) {
+    if (!project.lightingDesign?.scenes) return false;
+    const marks = (project.cues || []).filter(q => ["timeline","light-unplaced","light-disabled"].includes(q.kind) && q.cueType === "light");
+    const all = project.lightingDesign.scenes.flatMap(s => (s.lxq || []).map(q => [q.id,s.id]));
+    if (marks.length !== all.length) return true;
+    const owners = new Map(all), seen = new Set(); let domain;
+    if (owners.size !== all.length) return true;
+    for (const mark of marks) {
+      if (!mark.lxId || !owners.has(mark.lxId) || seen.has(mark.lxId)) return true;
+      seen.add(mark.lxId);
+      const owner = mark.positionUnspecified || !mark.sectionId ? mark.sceneId
+        : window.STAGE_TIME_DOMAIN.cuePosition(domain ||= window.STAGE_TIME_DOMAIN.resolve(project),mark)?.sceneId;
+      if (owners.get(mark.lxId) !== owner) return true;
+    }
+    return false;
+  }
   function gammaLightingContext() {
     const size = venueSize();
     const stage = { W: size.width, D: size.depth, H: size.height || 8 };
@@ -44978,6 +45025,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       backW: seat.backW, frontW: seat.frontW, rise: seat.rise,
     }));
     return { showId: state.project.id, title: state.project.title, stage, scenes, venueMask, frontSeats,
+      cueSyncPending: lightingCueListsDiffer(state.project),
       cueNaming: state.project.cueNaming === "scene" ? "scene" : "serial",
       venueType: currentVenue.lightingPresetBasis?.venueId || venueV2?.lightingPresetBasis?.venueId || currentVenue.id,
       existingLighting: hasVenueDependentLighting(state.project),
@@ -45034,7 +45082,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       clearVenueDependentLighting(copy);copy.lightingDesign=checked;
       for(const row of copy.scenes) for(const item of row.sceneAlternatives?.items||[]) {
         item.content.pieces=item.content.pieces.filter(piece=>piece.type!=="light"&&!oldLightIds.has(piece.setId));
-        item.content.lightingIntent=null;item.cues=item.cues.filter(q=>!(q.kind==="timeline"&&q.cueType==="light"));
+        item.content.lightingIntent=null;item.cues=item.cues.filter(q=>!(["timeline","light-unplaced","light-disabled"].includes(q.kind)&&q.cueType==="light"));
         item.lighting={native:projectIoClone(checked.scenes.find(s=>s.id===row.id)||null)};
       }
       sceneAlternatives?.restore(copy,{reconcile:false});
@@ -45042,7 +45090,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       if(!await applyLoadedState(next,"共通24灯セットのショーを複製しました。元の版はショー一覧に残っています")) throw Error("複製を保存できませんでした。元のショーを維持しています");
       return gammaLightingContext();
     },
-    async apply(design, basis) {
+    async apply(design, basis, options = {}) {
       const current = gammaLightingContext();
       if (gammaStorageChanged) throw new Error("別のタブでショーが更新されました。編集中の照明を控えてから読み直してください");
       if (current.readOnly) throw new Error("閲覧中は照明を変更できません");
@@ -45058,7 +45106,18 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
         catch (_) { throw Error(`${scene.title}の${item.label}で使用中の灯体があります。別案の照明も調整してから仕込みを変更してください。`); }
       }
       if (JSON.stringify(nextDesign.stage) !== JSON.stringify(current.stage)) throw new Error("舞台寸法が一致しません。劇場の寸法は通常モードで設定してください");
-      const next = projectIoClone(state); next.project.lightingDesign = nextDesign;
+      const next = projectIoClone(state);
+      const oldIds = new Set((current.design?.scenes || []).flatMap(s => (s.lxq || []).map(q => q.id)));
+      const nextIds = new Set(nextDesign.scenes.flatMap(s => (s.lxq || []).map(q => q.id)));
+      const synced = synchronizedLightingProject(state.project, nextDesign, [...oldIds].filter(id => !nextIds.has(id)));
+      next.project.lightingDesign = window.GAMMA_LIGHT_MODEL.validate(synced.design, current.scenes.map(row => row.id));
+      next.project.cues = synced.cues;
+      if(options.placement) {
+        const at=options.placement;
+        const placed=window.SHOSAI_CUE_SHEET.placeLightCue(next.project,at.lxId,at.sectionId,at.atSeconds,at.timelineId);
+        if(!placed)throw Error("このQを配置できません。固定状態と配置先を確認してください");
+        next.project.cues=placed.cues;next.project.lightingDesign=placed.design;
+      }
       // Persist and verify both copies BEFORE accepting the candidate in memory/history.
       // A quota/disabled-storage exception leaves host state and the editor draft untouched.
       const result = await ProjectStore.commit({ projectId: next.project.id,
@@ -45068,8 +45127,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       render(true);
       setSaveStatus("照明デザインをショーへ保存しました。");
       window.SHOSAI_STAGE_SESSION_HOOKS?.onLocalChange?.();
-      return { persisted: true, shelfPersisted: true, context: gammaLightingContext() };
+      return { persisted: true, shelfPersisted: true, designExpanded: synced.added.lighting.length > 0, context: gammaLightingContext() };
     },
+    placementChoices() { return gammaLightingContext().design; },
+    placeCue(placement) {const c=gammaLightingContext();return this.apply(c.design,c.basis,{placement});},
     openScene(id) { const row=state.project.scenes.find(row=>row.kind==="scene" && row.id===id); if (!row) return false; openScene(id); return true; },
   });
   /* V-1（2026-09-17）: 劇場設定モードの間口プレビュー（平面図）へ、いま置いてある舞台機構を重ねる。
@@ -45439,7 +45500,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
           return Boolean(rehearsal.transitionLockEdge)
             || Boolean(rehearsal.timelineLockEdge && !(index === 0 && rehearsal.timelineLockEdge === "start"));
         });
-        const cueLock = (state.project.cues || []).some((cue) => cue && cue.kind === "timeline" && cue.locked
+        const cueLock = (state.project.cues || []).some((cue) => cue && ["timeline","light-disabled"].includes(cue.kind) && cue.locked
           && ((cue.sectionId === section.id && finite(cue.atSeconds, 0) > 1e-6)
             || (cue.sceneId && sceneIds.has(cue.sceneId)
               && (cue.sceneId !== firstSceneId || finite(cue.offsetSeconds, 0) > 1e-6))));
@@ -45520,7 +45581,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       const canRipple = options.finalize && Number.isFinite(rippleFrom)
         && Number.isFinite(rippleSeconds) && Math.abs(rippleSeconds) > 1e-9;
       const cues = Array.isArray(state.project.cues) ? state.project.cues : [];
-      const cuesToShift = canRipple ? cues.filter((cue) => cue && cue.kind === "timeline"
+      const cuesToShift = canRipple ? cues.filter((cue) => cue && ["timeline","light-disabled"].includes(cue.kind)
         && cue.sectionId === section.id && cue.atSeconds !== null && cue.atSeconds !== undefined
         && finite(cue.atSeconds, -1) >= rippleFrom - 1e-6) : [];
       if (cuesToShift.some((cue) => cue.locked)) return false;
@@ -45550,7 +45611,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       const locked = Boolean(value.locked);
       if (identity.target === "cue") {
         const cue = (Array.isArray(state.project.cues) ? state.project.cues : [])
-          .find((item) => item && item.kind === "timeline" && item.id === identity.cueId);
+          .find((item) => item && ["timeline","light-unplaced","light-disabled"].includes(item.kind) && item.id === identity.cueId);
         if (!cue) return false;
         if (cue.locked === locked) return true;
         checkpoint();
@@ -45651,20 +45712,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
         memo: "",
         locked: false,
       };
-      let registration = null;
-      if (type === "light") {
-        const context = gammaLightingContext();
-        const design = window.GAMMA_LIGHT_MODEL.reconcile(context.design, context);
-        registration = window.SHOSAI_CUE_SHEET.registerTimelineLightCue(state.project, cue, design, rid("lx"));
-        if (!registration) return null;
-      }
+      if (type === "light") return null;
       checkpoint();
       if (!Array.isArray(state.project.cues)) state.project.cues = [];
-      if (registration) {
-        state.project.lightingDesign = registration.design;
-        state.project.cues = registration.cues;
-        cue.lxId = registration.cue.lxId;
-      } else state.project.cues.push(cue);
+      state.project.cues.push(cue);
       persistSoon();
       window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
       return jsonClone(cue);
@@ -45732,10 +45783,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       if (!editionAllows("cues")) return false;
       sceneAlternatives?.adopted(state.project);
       const D = window.STAGE_TIME_DOMAIN, domain = D.resolve(state.project);
-      const cue = (state.project.cues || []).find(c => c.kind === "timeline" && c.id === id);
+      const cue = (state.project.cues || []).find(c => ["timeline","light-unplaced","light-disabled"].includes(c.kind) && c.id === id);
       const old = cue && D.cuePosition(domain, cue);
-      if ((domain.config && !domain.valid) || !cue || !old || !Number.isFinite(showSeconds) || showSeconds < 0 || showSeconds >= domain.duration) return null;
-      if (cue.locked && Math.abs(showSeconds - old.seconds) > .051) return null;
+      if ((domain.config && !domain.valid) || !cue || (!old && !cue.positionUnspecified) || !Number.isFinite(showSeconds) || showSeconds < 0 || showSeconds >= domain.duration) return null;
+      if (cue.locked && (!old || Math.abs(showSeconds - old.seconds) > .051)) return null;
       const patch = { memo: typeof memo === "string" ? memo.slice(0,2000) : String(cue.memo || "") };
       if (cue.sectionId) {
         const section = domain.sections.get(cue.sectionId);
@@ -45753,7 +45804,16 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
         if (!source || !target || source.sectionId !== target.sectionId) return null;
         patch.sceneId = target.id; patch.offsetSeconds = Math.round((showSeconds - target.start) * 10) / 10;
       }
-      checkpoint(); Object.assign(cue, patch); persistSoon();
+      let synced = null;
+      if (cue.cueType === "light") {
+        const candidate = {...state.project, cues:projectIoClone(state.project.cues)};
+        const edited = candidate.cues.find(c => c.id === id);
+        Object.assign(edited, patch); edited.kind="timeline"; delete edited.positionUnspecified;
+        synced = synchronizedLightingProject(candidate, state.project.lightingDesign);
+      }
+      checkpoint(); Object.assign(cue, patch); cue.kind="timeline"; delete cue.positionUnspecified;
+      if (synced) { state.project.cues = synced.cues; state.project.lightingDesign = synced.design; }
+      persistSoon();
       window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
       return jsonClone(cue);
     },
@@ -45761,7 +45821,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       if (!editionAllows("cues")) return false;
       sceneAlternatives?.adopted(state.project);
       const cues = Array.isArray(state.project.cues) ? state.project.cues : [];
-      const cue = cues.find((item) => item && item.kind === "timeline" && item.id === id);
+      const cue = cues.find((item) => item && ["timeline","light-unplaced","light-disabled"].includes(item.kind) && item.id === id);
       if (!cue) return null;
       const memo = Object.prototype.hasOwnProperty.call(patch, "memo")
         ? (typeof patch.memo === "string" ? patch.memo.slice(0, 2000) : "")
@@ -45770,9 +45830,16 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
         ? Math.round(clamp(finite(patch.atSeconds, cue.atSeconds), 0, 86400) * 10) / 10
         : cue.atSeconds;
       if (cue.memo === memo && cue.atSeconds === atSeconds) return jsonClone(cue);
+      let synced = null;
+      if (cue.cueType === "light" && Object.prototype.hasOwnProperty.call(patch,"atSeconds")) {
+        const candidate = {...state.project,cues:projectIoClone(state.project.cues)};
+        Object.assign(candidate.cues.find(q=>q.id===id),{memo,atSeconds});
+        synced = synchronizedLightingProject(candidate,state.project.lightingDesign);
+      }
       checkpoint();
       cue.memo = memo;
       cue.atSeconds = atSeconds;
+      if (synced) {state.project.cues=synced.cues;state.project.lightingDesign=synced.design;}
       persistSoon();
       window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
       return jsonClone(cue);
@@ -45788,14 +45855,21 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       const changes = [];
       (Array.isArray(patches) ? patches : []).forEach((patch) => {
         if (!patch || !patch.id) return;
-        const cue = cues.find((item) => item && item.kind === "timeline" && item.id === patch.id);
+        const cue = cues.find((item) => item && ["timeline","light-disabled"].includes(item.kind) && item.id === patch.id);
         if (!cue || cue.locked) return;
         const atSeconds = Math.round(clamp(finite(patch.atSeconds, cue.atSeconds), 0, 86400) * 10) / 10;
         if (cue.atSeconds !== atSeconds) changes.push([cue, atSeconds]);
       });
       if (!changes.length) return 0;
+      let synced = null;
+      if (changes.some(([cue])=>cue.cueType==="light")) {
+        const candidate={...state.project,cues:projectIoClone(state.project.cues)};
+        changes.forEach(([cue,atSeconds])=>{candidate.cues.find(q=>q.id===cue.id).atSeconds=atSeconds;});
+        synced=synchronizedLightingProject(candidate,state.project.lightingDesign);
+      }
       checkpoint();
       changes.forEach(([cue, atSeconds]) => { cue.atSeconds = atSeconds; });
+      if (synced) {state.project.cues=synced.cues;state.project.lightingDesign=synced.design;}
       persistSoon();
       window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
       return changes.length;
@@ -45807,12 +45881,14 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       sceneAlternatives?.adopted(state.project);
       const cues = Array.isArray(state.project.cues) ? state.project.cues : [];
       const wanted = new Set(Array.isArray(ids) ? ids : []);
-      const doomed = cues.filter((cue) => cue && cue.kind === "timeline" && wanted.has(cue.id) && !cue.locked);
+      const doomed = cues.filter((cue) => cue && ["timeline","light-unplaced","light-disabled"].includes(cue.kind) && wanted.has(cue.id) && !cue.locked);
       if (!doomed.length) return 0;
+      const linked = new Map(window.SHOSAI_CUE_SHEET.cuePresentations(state.project).map(q => [q.id, q.lx?.id]));
       checkpoint();
+      unplaceLightingMarks(doomed);
       doomed.forEach((cue) => {
         const at = cues.indexOf(cue);
-        if (at >= 0) cues.splice(at, 1);
+        if (at >= 0 && cue.cueType !== "light") cues.splice(at, 1);
       });
       persistSoon();
       window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
@@ -45822,10 +45898,12 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       if (!editionAllows("cues")) return false;
       sceneAlternatives?.adopted(state.project);
       const cues = Array.isArray(state.project.cues) ? state.project.cues : [];
-      const at = cues.findIndex((cue) => cue && cue.kind === "timeline" && cue.id === id);
+      const at = cues.findIndex((cue) => cue && ["timeline","light-unplaced","light-disabled"].includes(cue.kind) && cue.id === id);
       if (at < 0) return false;
+      const linked = window.SHOSAI_CUE_SHEET.cuePresentations(state.project).find(q => q.id === id)?.lx?.id;
       checkpoint();
-      cues.splice(at, 1);
+      if (cues[at].cueType === "light") unplaceLightingMarks([cues[at]]);
+      else cues.splice(at, 1);
       persistSoon();
       window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
       return true;

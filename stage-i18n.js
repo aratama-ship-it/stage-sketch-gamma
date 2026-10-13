@@ -31,6 +31,12 @@
   "use strict";
 
   const TEXT = {
+    "舞台の空欄をドラッグして複数選択し、クリックで選択を外せます。Shiftを押しながらのドラッグ、または手のひらの道具で表示位置を動かします。": "Drag empty stage space to select several pieces, or click it to clear selection. Shift-drag or use the hand tool to pan.",
+    "照明デザインのSpaceと再生ボタンはタイムラインを再生します。Shift+Spaceは照明プログラムの動きを再生します。": "Space and the play button in Light design control the timeline. Shift+Space controls lighting-program motion.",
+    "演者がいる照明表示で重複していた描画を減らし、正面図の表示設定を一段に、タイムラインのTCを周囲と同じ文字サイズに揃えました。": "Reduced repeated rendering with performers, arranged front-view controls in one row, and matched timeline TC text to neighbouring controls.",
+    "LXキューは照明デザインで作成し、タイムラインの＋で既存Qを選ぶか、Q番号をドラッグして配置します。置き直してもQや番号は増えません。": "Create LX cues in Light design, then choose an existing Q with the timeline + or drag its Q number onto the lane. Repositioning does not add Qs or change their numbers.",
+    "照明一覧とタイムラインのQを対応させ、未配置のQは時刻未指定として表示します。有効・無効を切り替えてもQと配置位置を保持し、配置を外してもQは残します。": "Paired the lighting registry with timeline Qs. Unplaced Qs show as time unspecified. Enabling, disabling or unplacing a Q retains its definition; disabling also retains its position.",
+    "シーンと転換の追加は舞台側で行い、タイムラインの追加ボタンは表示しません。読み込み比較のボタンを揃え、閉じる×の説明は表示しません。": "Create scenes and transitions in Stage; their timeline add buttons are hidden. Aligned import comparison buttons and removed redundant close-glyph tooltips.",
     "行ごとの切り替えを既定に戻す": "Reset row-specific view choices",
     "書式を元に戻す": "Reset formatting",
     "幅を既定へ": "Reset width",
@@ -1673,8 +1679,8 @@
     "表示する図を切り替える（両方表示中は上下順を変更）": "Switch the displayed view (swap order when both are shown)",
     "いまの道具の説明": "About this tool",
     "いまの道具の説明を出す": "Show the tool description",
-    "演者や物を選び、舞台の上で動かします。平面図は空き地をドラッグして移動し、Shift＋ドラッグで囲い選択できます。":
-      "Select a performer or object and move it on stage. Drag empty space to pan the plan, or Shift-drag to select an area.",
+    "演者や物を選び、舞台の上で動かします。正面図・平面図の空欄をドラッグすると囲い選択、クリックすると選択解除。Shift＋ドラッグで画面を動かし、Shift＋クリックで選択を足す・外します。":
+      "Select and move performers or objects. In the front or plan view, drag empty space to box-select, or click it to clear selection. Shift-drag empty space to pan; Shift-click an object to add or remove it.",
     "持ち物は図の上で掴み、演者から離して置けます。": "Drag held items away from the performer to set them down.",
     "正面図または平面図をなぞると矢印になります。正面図では床の上か空中かを選べます。":
       "Drag on the front or plan view to draw an arrow. In the front view, choose the floor or the air.",
@@ -3134,7 +3140,7 @@
       open: "Opening ", water: "Water level ", poolH: "Floor height ", sheer: "Sheer ",
     },
     tool: {
-      select: "Select a performer or object and move it on stage. Drag empty space to pan the plan, or Shift-drag to select an area.",
+      select: "Select and move performers or objects. In the front or plan view, drag empty space to box-select, or click it to clear selection. Shift-drag empty space to pan; Shift-click an object to add or remove it.",
       paint: "Paint the upstage backdrop with a finger or the mouse.",
       erase: "Erase only the strokes painted on the backdrop.",
       arrow: "Drag on the front or plan view to draw an arrow. In the front view, choose the floor or the air. Use \"Clear arrows\" at the top right of the view to remove all arrows in that view.",
@@ -4230,7 +4236,7 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 // M-01 UI copy.
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "複数選択": "Multiple selection",
-  "平面図でShift＋クリックか囲って選ぶ": "Shift-click or drag a box to select on the plan view"
+  "正面図・平面図で囲って選ぶ。Shift＋クリックで追加・解除": "Box-select in the front or plan view. Shift-click to add or remove."
 });
 
 // Scene annotation pages, 2026-10-10.
@@ -4472,4 +4478,23 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "ドラッグで高さを変更。上下キーで調整、Shiftで大きく調整。Home/Endで最小/最大、Enterまたはダブルクリックで自動高。Escapeでドラッグ取消": "Drag to change height. Adjust with up/down keys; hold Shift for larger steps. Home/End for minimum/maximum; Enter or double-click for automatic height. Escape cancels the drag",
   "ホリゾントの上段": "Upper row",
   "ホリゾントの床段": "Floor row"
+});
+
+// Shared stage hand tool.
+Object.assign(window.SHOSAI_I18N.text, {
+    "有効": "Enabled",
+    "無効": "Disabled",
+    "Qの有効・無効を切り替える": "Enable or disable this Q",
+    "配置するLXキューを選ぶ": "Choose an LX cue to place",
+    "照明デザインでLXキューを作ってください": "Create an LX cue in Lighting Design",
+    "配置できませんでした": "Could not place the cue",
+    "Q番号をドラッグしてタイムラインへ配置。リスト内では並べ替え。": "Drag the Q number onto the timeline, or reorder it in the list.",
+    "配置を外す": "Remove placement",
+    "選択してDeleteで配置を外す": "Select and press Delete to remove placement",
+    "LXキューを配置しました": "LX cue placed",
+    "キューを配置するシーンを選んでください": "Select a scene to place the cue",
+    "このQは一覧にありません": "This Q is not in the list",
+    "時刻未指定": "Time unspecified",
+  "画面を動かす": "Pan view",
+  "正面図・平面図をドラッグして、見る位置を動かします。": "Drag the front or plan view to change the viewing position."
 });

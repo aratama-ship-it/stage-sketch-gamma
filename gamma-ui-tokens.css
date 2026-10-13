@@ -711,3 +711,45 @@ html[data-stage-skin] .stage-field-head { min-height: var(--ctrl-lg); padding-ri
 @media (max-width: 600px) {
   html[data-stage-skin] .stage-field-head { padding-right: 0; padding-top: var(--ctrl-lg); }
 }
+
+/* Import comparison: panel-action defaults must not offset one decision.
+   Keep both decisions reachable while the comparison itself scrolls. */
+html[data-stage-skin] #stage-import-modal:not([hidden]) {
+  display:flex; flex-direction:column; max-height:calc(100dvh - 40px); overflow:hidden;
+}
+html[data-stage-skin] #stage-import-modal > .stage-modal-head,
+html[data-stage-skin] #stage-import-modal > .stage-import-actions { flex:0 0 auto; }
+html[data-stage-skin] #stage-import-modal > .stage-modal-body { min-height:0; overflow:auto; }
+html[data-stage-skin] #stage-import-modal > .stage-import-actions {
+  grid-auto-flow:row; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:var(--gamma-gap); margin:0; padding:0 16px 18px; align-items:stretch;
+}
+html[data-stage-skin] #stage-import-modal .stage-import-actions > button {
+  display:flex; align-items:center; justify-content:center; width:100%; min-width:0;
+  min-height:var(--ctrl-lg); height:auto; margin:0; padding:8px 18px;
+  font-family:inherit; font-size:var(--fs-6); font-weight:400; line-height:1.5;
+  letter-spacing:.15em; text-align:center; white-space:normal; border-radius:var(--radius-sm);
+}
+html[data-stage-skin] #stage-import-modal > .stage-import-actions:has(> button[hidden]) { grid-template-columns:minmax(0,1fr); }
+@media(max-width:600px) {
+  html[data-stage-skin] #stage-import-modal > .stage-import-actions { grid-template-columns:minmax(0,1fr); }
+}
+
+/* Timeline TC is a compact transport readout, like its neighbouring controls.
+   Keep dialog headings and cue-detail editors on their existing text scale. */
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-timeline-panel :is(#stage-timecode-seek, #stage-timeline-position) {
+  font-size:var(--fs-3) !important; line-height:1.5;
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) #stage-timeline-panel #stage-timecode-seek {
+  height:var(--ctrl-md); min-height:var(--ctrl-md); padding-block:4px;
+}
+
+/* Unplaced LX cues have no horizontal time coordinate. Reuse the compact controls. */
+html[data-stage-skin] .stage-timeline-unplaced-lx {display:flex;align-items:center;gap:var(--space-2,8px);padding:4px 8px;overflow-x:auto;white-space:nowrap;font-size:var(--fs-3);}
+html[data-stage-skin] .stage-timeline-unplaced-lx[hidden] {display:none;}
+html[data-stage-skin] .stage-timeline-unplaced-cue {flex:0 0 auto;min-height:var(--ctrl-sm,28px);font-size:var(--fs-3);line-height:1.5;padding:4px 8px;border:1px solid var(--stage-timeline-line);background:var(--stage-timeline-panel);color:inherit;}
+
+html[data-stage-skin] .stage-lx-placement-choice{display:block;width:100%;min-height:var(--ctrl-md);text-align:left;margin-block:4px;padding:4px 8px;font-size:var(--fs-3);}
+html[data-stage-skin] .stage-timeline-cue[data-cue-enabled="false"]{border-style:dashed;color:var(--stage-timeline-muted);}
+
+html[data-stage-skin] #stage-timeline-light-cues.is-lx-drop-target{outline:2px solid var(--stage-timeline-accent);outline-offset:-2px;}
