@@ -134,7 +134,7 @@ ${vid("qsheet-print", "In H-3, open the master sheet, preview it in landscape A4
 },
       {
   "id": "release059-09-time-cues",
-  "title": "v0.3.59",
+  "title": "v0.3.60",
   "status": "sourced",
   "keywords": [
     "v0.3.59",
@@ -143,7 +143,7 @@ ${vid("qsheet-print", "In H-3, open the master sheet, preview it in landscape A4
     "Shift",
     "Space"
   ],
-  "html": "<p>Create scenes and transitions in Stage; their timeline add buttons are hidden. LX + selects an existing Q and places it at the playhead, or drag its Q number onto the LX lane. Unplacing keeps the Q registered with no assigned time. Repositioning does not add a mark or change the Q number. Disabled Qs appear dashed and are skipped by GO playback and cue stepping. TC text matches neighbouring controls.</p>"
+  "html": "<p>Click Column visibility in Run of show to expand or collapse its controls. Collapsing does not change selected columns. LX-panel Q selection reveals the corresponding timeline position. Disabled cues are grey; selecting an unplaced cue never adds a timeline mark.</p>" + "<p>Create scenes and transitions in Stage; their timeline add buttons are hidden. LX + selects an existing Q and places it at the playhead, or drag its Q number onto the LX lane. Unplacing keeps the Q registered with no assigned time. Repositioning does not add a mark or change the Q number. Disabled Qs appear dashed and are skipped by GO playback and cue stepping. TC text matches neighbouring controls.</p>" + fig("release060-run-of-show", "v0.3.60 run-of-show", "run-of-show")
 }
     ]
   });

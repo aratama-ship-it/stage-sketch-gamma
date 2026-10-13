@@ -61,7 +61,9 @@
       venueWorkspace.style.height=Math.max(narrow?320:420,available)+'px';
     }
     if(mode==='script' && scriptWorkspace) {
-      const available=Math.floor(window.innerHeight-workspaceTop(scriptWorkspace)-inset-16);
+      // The closed script workspace has 16px bottom inset; keep that size open too.
+      const closedInset=16;
+      const available=Math.floor(window.innerHeight-workspaceTop(scriptWorkspace)-closedInset-16);
       scriptWorkspace.style.height=Math.max(narrow?360:460,available)+'px';
     }
     if(mode==='cuesheet' && cuesheetWorkspace) {
@@ -820,7 +822,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261013-v0359'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261013-v0360'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;
@@ -863,8 +865,31 @@
       scheduleFrameHeight();
     } catch(error) { panel.hidden=false; failed(error); }
   }
+  // WebKit does not chain an exhausted embedded document's wheel to its host.
+  // Keep each inner panel's native scrolling, then move only the outer work lane.
+  function bindFrameScrollLane() {
+    const doc=frame.contentDocument,win=frame.contentWindow;
+    if(!doc || doc.__gammaScrollLaneBound) return;
+    doc.__gammaScrollLaneBound=true;
+    doc.addEventListener('wheel',event=>{
+      if(mode!=='light-design' || !document.body.classList.contains('stage-timeline-expanded')
+        || event.defaultPrevented || event.ctrlKey || event.metaKey || !event.deltaY) return;
+      if(doc.querySelector('#dialog:not([hidden]), .fixture-context-menu')) return;
+      const down=event.deltaY>0;
+      for(let node=event.target instanceof win.Element?event.target:null;node;node=node.parentElement) {
+        if(!/^(auto|scroll)$/.test(win.getComputedStyle(node).overflowY)) continue;
+        const remaining=node.scrollHeight-node.clientHeight-node.scrollTop;
+        if(down?remaining>1:node.scrollTop>1) return;
+      }
+      const view=document.getElementById('view-stage');
+      if(!view || (down?view.scrollHeight-view.clientHeight-view.scrollTop<=1:view.scrollTop<=1)) return;
+      const amount=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?frame.clientHeight:1);
+      event.preventDefault();
+      view.scrollTop+=amount;
+    },{passive:false});
+  }
   frame.addEventListener('load',()=>{
-    try { syncFrameTheme(); editor().open(host.context(),mode); frame.hidden=false;
+    try { bindFrameScrollLane(); syncFrameTheme(); editor().open(host.context(),mode); frame.hidden=false;
       status.textContent=''; status.classList.remove('gamma-workspace-error');
       syncHistory();syncPlaybackBar(); scheduleFrameHeight(); }
     catch(error) { failed(error); }
@@ -915,20 +940,23 @@
     if(!entry || !activateWorkspaceShortcut({normal:"1",venue:"2",placement:"3",design:"4","3d":"5"}[entry[0]])) return;
     event.preventDefault();
   });
-  // Lighting enlargement uses the same buttons even while focus is on the
-  // parent tab/header, before the stage-wide F handler can take the event.
-  document.addEventListener('keydown',event=>{
+  // Route from the active workspace before any timeline/stage key listener.
+  // The iframe API is also used by its own F/P handler.
+  window.addEventListener('keydown',event=>{
     if(mode!=='light-design' || frame.hidden || frame.inert || document.body.classList.contains('stage-fullscreen')) return;
-    if(event.defaultPrevented || event.isComposing || event.keyCode===229 || event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
+    if(event.defaultPrevented || event.isComposing || event.keyCode===229 || event.repeat || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
     if(workspaceShortcutBlocked(event)) return;
-    const doc=frame.contentDocument;
-    if(!doc || !editor()?.status()?.active || !doc.getElementById('dialog')?.hidden) return;
+    const doc=frame.contentDocument,api=editor();
+    if(!doc || !api?.status()?.active) return;
     const key=event.key.toLowerCase(),kind={f:'front',p:'plan'}[key];
-    const button=kind ? doc.querySelector(`[data-solo-figure="${kind}"]`)
-      : event.key==='Escape' ? doc.querySelector('[data-solo-figure][aria-pressed="true"]') : null;
-    if(!button || button.disabled) return;
-    event.preventDefault();event.stopImmediatePropagation();
-    button.focus({preventScroll:true});button.click();
+    if(kind){
+      event.preventDefault();event.stopImmediatePropagation();
+      api.exposeView?.(kind);
+    }else if(event.key==='Escape'){
+      const button=doc.querySelector('[data-solo-figure][aria-pressed="true"]');
+      if(!button || button.disabled) return;
+      event.preventDefault();event.stopImmediatePropagation();button.click();
+    }
   },true);
   // Shift+Space previews the lighting program; ordinary playback stays on the stage timeline.
   document.addEventListener('keydown',event=>{

@@ -4,7 +4,7 @@
   const rig=window.__RIG, model=window.GAMMA_LIGHT_MODEL, state=rig.state, hooks=rig.hooks;
   let context=null, loading=false, active=false, changedElsewhere=false, appliedExtras={};
   let draftTimer=0, lastScene='', playbackPreview=false;
-  let timelineFollowing=false, timelineFrameRaf=0;
+  let timelineFollowing=false, timelineFrameRaf=0, cuePanelStamp='';
   function clearTimelineFrame() {
     timelineFollowing=false;
     if(timelineFrameRaf) cancelAnimationFrame(timelineFrameRaf);
@@ -85,7 +85,7 @@
     const actions=document.createElement('span');actions.className='gamma-light-actions';actions.setAttribute('aria-label','照明デザインの操作');
     const runtime=document.getElementById('runtime-status');
     runtime.hidden=false;
-    actions.append(document.getElementById('apply'),runtime,document.getElementById('transport'),document.getElementById('prefs'));
+    actions.append(document.getElementById('swap-figures'),document.getElementById('apply'),runtime,document.getElementById('transport'),document.getElementById('prefs'));
     bar.append(actions);
     save.hidden=true;
     // The limited public preview keeps its existing lock guidance.
@@ -178,7 +178,7 @@
     const rows=new Map(next.scenes.map(row=>[row.id,row]));
     state.scenes.forEach(row=>{const host=rows.get(row.id);if(host){row.name=host.name;row.sectionId=host.sectionId||null;row.sectionTitle=host.sectionTitle||'';row.stageNumber=host.stageNumber||'';row.pieces=model.clone(host.pieces);}})
     /* 修正バッチ 2026-10-07 #8: LXキューの呼び名（ショーごとの設定）と舞台のシーン番号は表示だけに使う（照明デザインの保存物には入れない） */
-    state.cueNaming=next.cueNaming==='scene'?'scene':'serial';;
+    state.cueNaming=next.cueNaming==='serial'?'serial':'scene';
   }
   /* 会場の客席多角形はホスト側の正本を参照するだけで、照明デザインの保存物へ複製しない。
      形が無い会場では null のまま＝客席ワンダーを有効にしない。 */
@@ -373,9 +373,12 @@
     parent.postMessage({type:'gamma:timeline-toggle'},location.origin);
   },true);
   window.addEventListener('gamma-light-draft-edit',clearTimelineFrame);
+  window.addEventListener('gamma-light-cue-select',event=>{if(active && !loading && context) parent.GAMMA_LIGHT_HOST.selectCue(event.detail.lxId,build());});
   window.addEventListener('gamma-light-edit',()=>{
     parent.GAMMA_WORKSPACE.syncHistory();
     if(loading || !context) return;
+    const stamp=JSON.stringify(state.scenes.map(s=>[s.id,(s.lxq||[]).map(q=>[q.id,q.seq,q.no,q.enabled,q.name,q.trigger,q.timing,q.follow])]));
+    if(active && stamp!==cuePanelStamp) {cuePanelStamp=stamp;parent.GAMMA_LIGHT_HOST.draftChanged(build());}
     if(state.dirty && !applying) {draftState='pending';renderSaveStatus();}
     else if(!state.dirty && !applying) {
       clearTimeout(draftTimer);
@@ -398,10 +401,11 @@
       return apply({placement});
     },placementChoices:()=>build(),
     beginPlaybackPreview,endPlaybackPreview,paintPlaybackPreview,toggleProgram,
+    exposeView(kind) {if(!active || loading || playbackPreview || !document.getElementById("dialog").hidden || !["front","plan","side"].includes(kind)) return false;hooks.setSoloFigure(kind);return true;},
     undo:()=>{if(!playbackPreview)hooks.undo();},redo:()=>{if(!playbackPreview)hooks.redo();},
     validateImport(design){model.validate(design,context.scenes.map(row=>row.id));if(JSON.stringify(design.stage)!==JSON.stringify(context.stage))throw Error('劇場寸法が異なる照明デザインです。舞台で寸法を確認してください');},
     /* #8: 環境設定で呼び名を変えたとき、開いたままの照明デザインへすぐ反映する */
-    setCueNaming(mode){state.cueNaming=mode==='scene'?'scene':'serial';hooks.renderAll();},
+    setCueNaming(mode){state.cueNaming=mode==='serial'?'serial':'scene';hooks.renderAll();},
     externalChange(){changedElsewhere=true;hooks.stop();renderSaveStatus();if(state.dirty)message('別のタブでショーが更新されました。編集中の照明は保持しています');},
     status:()=>({venueType:context?.venueType,showId:context?.showId,dirty:state.dirty,active,changedElsewhere,
       playbackPreview,previewReady:hooks.playbackPreviewStatus().ready,

@@ -446,7 +446,7 @@ html[data-paper-ink=white] .ink-swatch[data-ink=white],html[data-paper-ink=black
 .paper-sticky:has(.band-popover:not([hidden]),.band-selection:not([hidden])){z-index:4}
 /* 左の欄（sticky・z-index なし）の中の層は、紙面の位置指定つき要素の下に潜る。層が開いている間だけ欄ごと前へ出す */
 .paper-panel:has(.band-popover:not([hidden]),.band-selection:not([hidden])){z-index:4}
-/* Column visibility belongs to the permanent menu; row units have their own group. */
+/* Column visibility stays in the left menu as a native keyboard-accessible accordion. */
 #column-popover{position:static;inset:auto;width:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;box-shadow:none;background:transparent}
 #column-popover .column-list{display:grid;grid-template-columns:minmax(0,1fr);gap:0;margin:0;padding:0;list-style:none}
 #column-popover .column-group{padding:0;border:0}
@@ -458,7 +458,12 @@ html[data-paper-ink=white] .ink-swatch[data-ink=white],html[data-paper-ink=black
 #column-popover .column-name small{font-size:10px;color:var(--chrome-muted)}
 #column-popover .column-option>.small{font-size:10px;color:var(--chrome-muted)}
 #column-visible-count{margin-left:auto;font-variant-numeric:tabular-nums}
-#paper-panel .band-columns .band-heading{display:flex;width:100%}
+#column-popover>summary.band-heading{display:flex;align-items:center;width:100%;min-height:var(--control);margin:0;padding:0;gap:var(--s1);cursor:pointer}
+#column-popover>summary::-webkit-details-marker{display:none}
+#column-popover>summary::before{content:"▸";flex:0 0 auto}
+#column-popover[open]>summary::before{content:"▾"}
+#column-popover:not([open])>:not(summary){display:none}
+#column-popover[open]>summary{margin-bottom:var(--s2)}
 #ros-stage-panel{padding-top:0;border-top:0}
 .ros-index[data-mode=docked],.ros-index[data-mode=overlay]{padding-top:0}
 /* A format panel appears only beside a selection and stays inside short windows. */

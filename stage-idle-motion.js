@@ -15,7 +15,7 @@
     return () => {h=(Math.imul(h,1664525)+1013904223)|0;return (h>>>0)/4294967296;};
   }
   const clonePose = pose => ({...pose,joints:Object.fromEntries(Object.entries(pose.joints).map(([key,point])=>[key,point.slice()]))});
-  const ACT_POSES=Object.freeze({juggling:['juggle','juggle_one_hand'],diabolo:['diabolo_spin','diabolo_high_toss'],dance:['dance1','dance2','dance3','dance4','dance5']});
+  const ACT_POSES=Object.freeze({juggling:['juggle','juggle_one_hand'],diabolo:['diabolo_spin','diabolo_high_toss'],dance:['dance1','dance2','dance4','dance5']});
   const bare=id=>String(id||'').replace(/@left$/,'');
   function areaFor(piece,scene) { return areas(scene.idleAreas).find(a=>piece.u>=a.u0&&piece.u<=a.u1&&piece.v>=a.v0&&piece.v<=a.v1)||null; }
   function actFor(piece,scene,poseId) { const area=areaFor(piece,scene); if(!area)return null; const value=area.act||'auto'; if(value!=='auto')return ACT_POSES[value]?value:null; const id=bare(poseId); return ACT_POSES.juggling.includes(id)?'juggling':ACT_POSES.diabolo.includes(id)?'diabolo':ACT_POSES.dance.includes(id)?'dance':null; }

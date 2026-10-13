@@ -195,3 +195,27 @@ html[data-gamma-embedded]:lang(en) .filters button { flex:1 1 42px; margin:0; }
 
 /* Saved fixture appearance choices share the four style swatches. */
 html[data-gamma-embedded] .seg.fixture-body-choices button { min-height:44px; }
+
+/* Lighting figures share the caption scale and shortcut badge. */
+.viewhead .viewtitle,.sechead .viewtitle{font:600 var(--fs-3,11px)/1.5 var(--sans);letter-spacing:.08em;display:inline-flex;align-items:center;gap:var(--gamma-gap,8px)}
+.view-key{display:inline-flex;align-items:center;justify-content:center;width:var(--ctrl-xs,24px);height:var(--ctrl-xs,24px);min-width:var(--ctrl-xs,24px);font:500 var(--fs-3,11px)/1 var(--sans);letter-spacing:0;color:var(--milk-dim);border:1px solid var(--line-dark);background:var(--recess)}
+.figgrid[data-swapped]:not([data-solo])>.planwrap{grid-row:2}
+.figgrid[data-swapped]:not([data-solo])>.sec.front{grid-row:1}
+html[data-gamma-light-mode="move"] .figgrid[data-solo="plan"]{grid-template-columns:minmax(260px,320px) minmax(0,1fr) minmax(280px,var(--panel-w,320px))}
+html[data-gamma-light-mode="move"] .figgrid[data-solo="plan"]>.leftcol{display:flex;flex-direction:column;grid-column:1;grid-row:1;width:auto!important;margin:0;align-self:stretch;justify-self:stretch;gap:var(--gamma-gap,8px)}
+html[data-gamma-light-mode="move"] .figgrid[data-solo="plan"]>.leftcol>.panel{width:100%!important;flex:1 1 0!important;min-height:0;min-width:0}
+html[data-gamma-light-mode="move"] .figgrid[data-solo="plan"] #panel-lxq{order:0}
+html[data-gamma-light-mode="move"] .figgrid[data-solo="plan"] #panel-fixtures{order:1}
+html[data-gamma-light-mode="move"] .figgrid[data-solo="plan"]>.planwrap{grid-column:2}
+html[data-gamma-light-mode="move"] .figgrid[data-solo="plan"]>.panel.insp{grid-column:3}
+html[data-gamma-embedded] .gamma-light-actions #swap-figures{width:var(--ctrl-sm);height:var(--ctrl-sm);min-height:var(--ctrl-sm);min-width:var(--ctrl-sm);padding:0;display:inline-flex;align-items:center;justify-content:center}
+#swap-figures[aria-pressed="true"]{border-color:var(--brass);background:var(--gamma-selected-bg,rgba(156,130,63,.18));color:var(--milk)}
+/* All lighting dialogs use the main workspace dimensions and action footer. */
+.dialog .in.gamma-light-dialog{width:min(var(--gamma-dialog-md,720px),calc(100vw - 40px));max-width:calc(100vw - 40px);padding:var(--gamma-gap,8px) calc(var(--gamma-gap,8px)*2);gap:var(--gamma-gap,8px)}
+.dialog .in.gamma-light-dialog:has(.pgrid,.slp,.alllist,#position-manager,table){width:min(var(--gamma-dialog-lg,1180px),calc(100vw - 40px))}
+.dialog .in.gamma-light-dialog:has(.dialog-content>p:only-child){width:min(var(--gamma-dialog-sm,440px),calc(100vw - 40px))}
+.dialog .gamma-light-dialog .dialog-content{padding-top:calc(var(--ctrl-sm,28px) + var(--gamma-gap,8px));padding-bottom:var(--gamma-gap,8px)}
+.dialog .gamma-light-dialog .acts{display:flex;justify-content:flex-end;align-items:center;flex:0 0 auto;gap:var(--gamma-gap,8px);padding-top:var(--gamma-gap,8px);border-top:1px solid var(--line-dark)}
+.dialog .gamma-light-dialog .acts>.btn{width:auto;min-height:var(--ctrl-md,34px);font:500 var(--fs-4,12px)/1.5 var(--sans);letter-spacing:.04em;text-align:center;white-space:nowrap;padding:4px 12px}
+.dialog .gamma-light-dialog .dialog-close{width:var(--ctrl-sm,28px);height:var(--ctrl-sm,28px);min-width:var(--ctrl-sm,28px);min-height:var(--ctrl-sm,28px);padding:0;top:var(--gamma-gap,8px);right:var(--gamma-gap,8px);font-size:20px}
+.dialog .gamma-light-dialog .lxt-grid .field{grid-template-columns:minmax(0,1fr) minmax(180px,40%)}

@@ -14,10 +14,8 @@ body[data-gamma-workspace="script"]:not(.gamma-script-timeline-open).stage-timel
   padding-bottom: 16px;
 }
 body[data-gamma-workspace="script"] .stage-boundary-note { display: none; }
-/* Eでタイムラインを出したときは、台本の欄がタイムラインの下へ潜らないよう高さの上限を下げる（156px＝ヘッダーと上の帯の分） */
-body[data-gamma-workspace="script"].gamma-script-timeline-open:not(.stage-timeline-collapsed) #gamma-script-workspace {
-  max-height: calc(100dvh - var(--stage-timeline-height) - 156px);
-}
+/* The timeline overlays the script work area. Its normal height is retained;
+   #view-stage supplies scroll clearance below the drawer, like the other tabs. */
 
 .script-ed {
   --sed-line: var(--line-dark, #382f25);

@@ -114,6 +114,11 @@
   // 2026-10-07 G1: device settings (localStorage). None of them is written into the show.
   const store=(key,value)=>{try{if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,String(value));}catch(error){showError(error);}};
   const readNumber=key=>{try{const value=localStorage.getItem(key);return value===null?null:Number(value);}catch(_){return null;}};
+  const COLUMN_OPEN_KEY="gamma:ros:columns-open",columnAccordion=$("column-popover");
+  try{columnAccordion.open=localStorage.getItem(COLUMN_OPEN_KEY)==="1";}catch(_){}
+  const syncColumnAccordion=()=>$("column-summary").setAttribute("aria-expanded",String(columnAccordion.open));
+  syncColumnAccordion();
+  columnAccordion.addEventListener("toggle",()=>{syncColumnAccordion();store(COLUMN_OPEN_KEY,columnAccordion.open?"1":"0");});
   // #1 language of everything printed (D2 = A). "auto" (default) follows Stage Sketch: Japanese → ja, others → en.
   const LANGUAGE_KEY="gamma:ros:language";
   let languageMode="auto";try{languageMode=layout.languageMode(localStorage.getItem(LANGUAGE_KEY));}catch(_){}
@@ -1023,7 +1028,7 @@
   const requestedPaper=new URLSearchParams(location.search).get("paper");
   if(["free","a4-landscape","a4-portrait"].includes(requestedPaper)){paperFormat=requestedPaper;$("paper-format").value=paperFormat;}
 
-  if(new URLSearchParams(location.search).get("columns")==="open")$("column-popover").hidden=false;
+  if(new URLSearchParams(location.search).get("columns")==="open")columnAccordion.open=true;
   document.querySelectorAll(".item-editor .editor-fields input[type=text],.item-editor .editor-fields textarea,#stage-title").forEach(input=>{input.maxLength=100000;});
   function readDirect(desc){
     let value,max=100000;

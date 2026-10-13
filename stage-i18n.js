@@ -31,6 +31,18 @@
   "use strict";
 
   const TEXT = {
+    "LXキューの標準番号をセクション-シーン-Qの形へ統一しました。章ごとにQ0から並べる連番方式も選べます。途中へ追加しても小数番号を生成しません。": "LX cue labels now use section-scene-Q by default. Optional serial labels start at Q0 in each section. Inserting a cue no longer generates fractional numbers.",
+    "LXパネルでQを選ぶとタイムラインが対応位置へ移ります。時刻未指定のQは前後の配置済みQを参照し、未配置のままにします。無効Qは選択中も灰色で表示します。": "Selecting a Q in the LX panel seeks and reveals its timeline position. Unplaced cues seek near their placed neighbours without assigning a time. Disabled cues remain grey when selected.",
+    "照明デザインではタイムライン操作後もF/Pで正面図/平面図を拡大します。キー表示と図の交換ボタンを追加し、Pの拡大時は左側にLXキューと灯体一覧を縦に並べます。": "F/P enlarge the lighting front/plan view even after timeline interaction. Added key badges and a view-swap button. Enlarged plan stacks LX cues and fixtures vertically on the left.",
+    "照明の余分な縦バーを撤去し、図の見出しを統一。設定窓を広げ、操作ボタンを右下へ揃え、適用するなどの表記へ統一しました。": "Removed the redundant lighting divider and spacing, and aligned view caption typography. Lighting dialogs are wider, with actions at the lower right and consistent Apply wording.",
+    "停止中の照明編集はストロボの消灯瞬間に隠れず、選んだ色を確認できます。再生中は実際の点滅を保ちます。": "Paused lighting editing shows the chosen colour instead of an instant strobe blackout. Playback retains the actual flashing effect.",
+    "タイムラインを開いてもメイン画面の下部へスクロールできます。舞台平面図の通常ホイールは中央列をスクロールし、図の位置は動かしません。全ツールの説明と進行表の列表示の開閉を揃えました。": "Main content remains scrollable with the timeline open. Ordinary wheel scrolling over the stage plan scrolls its centre lane without panning. Restored tooltips for every stage tool and made run-of-show column visibility collapsible.",
+    "DANCE3を姿勢の定義と見本から削除し、全機能の試験場をv47として作り直しました。既存ショーのQ ID・明かり・配置時刻を保持します。": "Removed DANCE3 from pose definitions and samples, and regenerated the feature test as v47. Existing Q IDs, lighting and placement times are preserved.",
+    "作成する": "Create",
+    "正面図と平面図を入れ替える": "Swap front and plan views",
+    "拡大キー P": "Enlarge: P",
+    "拡大キー F": "Enlarge: F",
+    "グループ名": "Group name",
     "舞台の空欄をドラッグして複数選択し、クリックで選択を外せます。Shiftを押しながらのドラッグ、または手のひらの道具で表示位置を動かします。": "Drag empty stage space to select several pieces, or click it to clear selection. Shift-drag or use the hand tool to pan.",
     "照明デザインのSpaceと再生ボタンはタイムラインを再生します。Shift+Spaceは照明プログラムの動きを再生します。": "Space and the play button in Light design control the timeline. Shift+Space controls lighting-program motion.",
     "演者がいる照明表示で重複していた描画を減らし、正面図の表示設定を一段に、タイムラインのTCを周囲と同じ文字サイズに揃えました。": "Reduced repeated rendering with performers, arranged front-view controls in one row, and matched timeline TC text to neighbouring controls.",
@@ -387,6 +399,15 @@
     "「{name}」へ移動しました。": "Moved to “{name}”.",
     "「{name}」はいま開けません。": "“{name}” cannot be opened right now.",
     /* 修正バッチ 2026-10-07 #8: LXキューの呼び名 */
+    "標準（Q1-2-1）": "Standard (Q1-2-1)",
+    "章内の整数連番（Q0・Q1・Q2）": "Section sequence (Q0, Q1, Q2)",
+    "照明デザイン・タイムライン・Qシート・進行表で同じ番号を表示します。標準はセクション–シーン–キュー順。章内の整数連番は作成順にQ0から始めます。現在のショーに保存されます。": "Lighting design, the timeline, Q sheets and the run of show share cue labels. Standard labels use section–scene–cue order. Section sequences start at Q0 in creation order. Saved with this show.",
+    "LXキューの呼び名をセクション・シーン・キュー順にしました。": "LX cue labels now use section–scene–cue order.",
+    "LXキューの呼び名を章内の整数連番にしました。": "LX cue labels now use integer sequences within each section.",
+    "＋ 後ろに追加": "＋ Add after",
+    "このQの後ろに追加する（いまの明かりから）": "Add a cue after this Q using the current light",
+    "いま出ている明かりを新しいLXキューにして、そのまま編集を続けます": "Create an LX cue from the current light and keep editing",
+    "シーン名を押すとそのシーンへ、Q番号を押すとそのLXキューの編集に入ります。": "Click a scene name to open it, or a Q number to edit that LX cue.",
     "LXキューの呼び名": "LX cue naming",
     "照明デザイン・タイムライン・Qシート・進行表で同じ呼び名になります。シーンごと（セクション.シーン.何本目）のときも、Qシートと進行表には照明卓に打てる通し番号を添えます。現在のショーに保存されます。": "Lighting design, the timeline, Q sheets and the run of show use the same naming. With per-scene naming (section.scene.number), Q sheets and the run of show still list the serial number you can enter on the lighting console. Saved with the current show.",
     "通し番号（Q1・Q1.5）": "Serial (Q1, Q1.5)",
@@ -2945,7 +2966,7 @@
       sideflip: "Side somersault",
       sing: "Sing (mic)", juggle: "Juggling", guitar: "Guitar", trumpet: "Trumpet",
       violin: "Violin", bassguitar: "Bass guitar", accordion: "Accordion",
-      dance1: "Dance · arms up", dance2: "Dance · lunge", dance3: "Dance · low and open",
+      dance1: "Dance · arms up", dance2: "Dance · lunge",
       dance4: "Dance · jump", dance5: "Dance · twist",
       windmill: "Windmill", skate: "Roller skates", unicycle: "Unicycle",
       skateboard: "Skateboard", bicycle: "Bicycle",
@@ -4497,4 +4518,10 @@ Object.assign(window.SHOSAI_I18N.text, {
     "時刻未指定": "Time unspecified",
   "画面を動かす": "Pan view",
   "正面図・平面図をドラッグして、見る位置を動かします。": "Drag the front or plan view to change the viewing position."
+});
+
+// Stage toolbar descriptions share the existing tool tooltip source.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].maps.tool, {
+  transitionAnimation: "Show or hide the transition movement when changing scenes.",
+  panelLayout: "Choose how the stage controls and diagrams are arranged."
 });

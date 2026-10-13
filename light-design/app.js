@@ -30,7 +30,6 @@
     } catch (_) { return { leftExtra: 0, fixtureShare: 0.5 }; }
   })();
   const PANEL_MIN_WIDTH = 160;
-  let panelLayoutMetrics = { maxExtra: 0, effectiveExtra: 0, leftWidth: 0, panelWidth: 0, share: 0.5 };
   function savePanelLayout() {
     try { localStorage.setItem(PANEL_LAYOUT_KEY, JSON.stringify(panelLayout)); } catch (_) { /* UI preference only */ }
   }
@@ -236,7 +235,7 @@
         { id: "p-mina", kind: "performer", name: "ミナ", u: 0.3, v: 0.62, hM: 1.68, pose: "dance1", facing: 0, color: "#a84b26" },
         { id: "p-riku", kind: "performer", name: "リク", u: 0.46, v: 0.7, hM: 1.76, pose: "dance2", facing: 0, color: "#77865f" },
         { id: "p-kai", kind: "performer", name: "カイ", u: 0.62, v: 0.6, hM: 1.71, pose: "dance4", facing: 0, color: "#9c823f" },
-        { id: "p-sora", kind: "performer", name: "ソラ", u: 0.2, v: 0.44, hM: 1.58, pose: "dance3", facing: 0, color: "#6d6657" },
+        { id: "p-sora", kind: "performer", name: "ソラ", u: 0.2, v: 0.44, hM: 1.58, pose: "dance2", facing: 0, color: "#6d6657" },
         { id: "p-noa", kind: "performer", name: "ノア", u: 0.78, v: 0.46, hM: 1.63, pose: "dance5", facing: 0, color: "#a84b26" },
         { id: "p-jin", kind: "performer", name: "ジン", u: 0.7, v: 0.76, hM: 1.82, pose: "dance1", facing: 0, color: "#77865f" },
         { id: "p-yuki", kind: "performer", name: "ユキ", u: 0.38, v: 0.42, hM: 1.55, pose: "dance4", facing: 0, color: "#9c823f" },
@@ -287,6 +286,7 @@
        配置と同じくショー共通の持ち物なので、rig と一緒に保存・Undoの対象にする。 */
     palette: [],
     hover: null, drag: null,
+    figuresSwapped: false,
     soloFigure: null,                     // R-14: 1枚だけ広げているときの図（"plan" / "front" / "side"）
     fixtureGroups: [],                    // R-11: 灯体をまとめるカスタムのグループ（ショーに1組・保存される）
     collapsed: new Set(), filter: "all",   // 一覧: 取り付け場所ごとの折り畳みと絞り込み（20灯以上向け）
@@ -528,32 +528,14 @@
   function clearLog() { const el = $("insp-log"); if (el) { el.textContent = LOG_EMPTY; el.dataset.empty = "true"; el.title = ""; } }
   function dialog(html, buttons) {
     const d = $("dialog"); d.innerHTML = ""; d.hidden = false;
-    const box = document.createElement("div"); box.className = "in";
+    const box = document.createElement("div"); box.className = "in gamma-light-dialog";
     const content=document.createElement("div");content.className="dialog-content";content.innerHTML=html;
-    const dismiss=()=>{d.hidden=true;window.removeEventListener("resize",fitActions);};
+    const dismiss=()=>{d.hidden=true;};
     const close=document.createElement("button");close.type="button";close.className="btn dialog-close gamma-close-glyph";close.textContent="×";close.setAttribute("aria-label","閉じる");close.onclick=dismiss;
     box.append(close,content);
     const acts = document.createElement("div"); acts.className = "acts";
     buttons.forEach(([label, fn, cls]) => { const b = document.createElement("button"); b.className = "btn " + (cls || ""); b.textContent = label; b.onclick = () => { dismiss(); fn && fn(); }; acts.append(b); });
     box.append(acts); d.append(box);
-    /* E1-#15: preserve a single action row whenever it fits.  This is kept in
-       the iframe too, because its .dialog does not share the host DOM. */
-    const fitActions = () => {
-      if (d.hidden) return;
-      const viewportLimit = Math.max(0, window.innerWidth - 32);
-      const actionStyle = getComputedStyle(acts);
-      const gap = Number.parseFloat(actionStyle.columnGap) || 0;
-      const padding = (Number.parseFloat(actionStyle.paddingLeft) || 0) + (Number.parseFloat(actionStyle.paddingRight) || 0);
-      const actionWidth = [...acts.children].reduce((sum, button) => sum + button.getBoundingClientRect().width, 0)
-        + gap * Math.max(0, acts.children.length - 1) + padding;
-      const boxExtras = Math.max(0, box.getBoundingClientRect().width - acts.getBoundingClientRect().width);
-      const needed = Math.ceil(actionWidth + boxExtras);
-      const current = box.getBoundingClientRect().width;
-      box.style.width = `${Math.min(viewportLimit, Math.max(current, needed))}px`;
-      box.style.maxWidth = `${viewportLimit}px`;
-    };
-    requestAnimationFrame(fitActions);
-    window.addEventListener("resize", fitActions);
     /* 外側（暗いところ）を押したら閉じる（2026-09-13 本人要望）。
        中身の上で押して外で離した場合に閉じないよう、押した場所も見る。
        閉じるだけで、ボタンに付いている処理は動かさない＝「やめる」と同じ扱い。 */
@@ -662,7 +644,8 @@
       const padX = k === "plan" ? PAD.planX * 2 : PAD.secX * 2;
       const padY = k === "plan" ? PAD.headPlan + PAD.planT + PAD.planB : headSec + PAD.secT + PAD.secB;
       const inspectorWidth=$("panel-insp").getBoundingClientRect().width;
-      const figureWidth=Math.max(0,r.width-inspectorWidth-PAD.gap);
+      const leftWidth=k === "plan" && state.mode === "move" ? document.querySelector(".leftcol").getBoundingClientRect().width : 0;
+      const figureWidth=Math.max(0,r.width-inspectorWidth-leftWidth-PAD.gap*(leftWidth ? 2 : 1));
       const s2 = Math.max(6, Math.min((figureWidth - padX) / wNeed, (r.height - padY) / hNeed));
       const box = k === "plan" ? plan : k === "front" ? secF : secL;
       const setPx = (elm, prop, v) => { const now = parseFloat(elm.style[prop]) || 0; if (Math.abs(now - v) > 1) elm.style[prop] = v + "px"; };
@@ -670,7 +653,7 @@
       setPx(box, "height", Math.round(hNeed * s2) + (k === "plan" ? PAD.planT + PAD.planB : PAD.secT + PAD.secB));
       return;
     }
-    const chromeW = PAD.planX * 2 + PAD.secX * 4 + PAD.gap * 2 + 36;
+    const chromeW = PAD.planX * 2 + PAD.secX * 4 + PAD.gap * 2;
     const chromeH = PAD.headPlan + PAD.planT + PAD.planB + PAD.gap + headSec + PAD.secT + PAD.secB;
     const worldW = d.W + d.D * 2;
     const heightScale = (r.height - chromeH) / (d.D + d.H);
@@ -708,7 +691,6 @@
     const share = E.clamp(panelLayout.fixtureShare, minShare, 1 - minShare);
     const fixtureW = Math.round(panelWidth * share), lxqW = Math.max(PANEL_MIN_WIDTH, panelWidth - fixtureW);
     const midW = Math.round(d.W * s) + PAD.planX * 2;
-    panelLayoutMetrics = { maxExtra, effectiveExtra, leftWidth: leftW, panelWidth, share };
     set(plan.parentElement, "width", midW);
     set(plan, "height", Math.round(d.D * s) + PAD.planT + PAD.planB);
     set(secF.parentElement, "width", midW); set(secF, "height", secH);
@@ -721,7 +703,6 @@
     if (fixturesPanel) { set(fixturesPanel, "width", visibleFixtureWidth); fixturesPanel.style.flexBasis = visibleFixtureWidth + "px"; }
     if (lxqPanel) { set(lxqPanel, "width", lxqW); lxqPanel.style.flexBasis = lxqW + "px"; }
     set($("panel-insp"), "width", sideW);
-    syncPanelSplitterA11y();
     if(Math.abs(Math.max(PAD.headSec,document.querySelector(".sec.front .sechead").getBoundingClientRect().height+2)-headSec)>1)refreshPanelLayout();
   }
   const positionPlanProjector=(P,B)=>(w)=>{const q=P(w);if(!distanceMetric){if(w.x < -state.dims.W/2)q.X=B.x-SIDE_DX;else if(w.x>state.dims.W/2)q.X=B.x+B.w+SIDE_DX;if(w.y<0)q.Y=B.y-24;else if(w.y>state.dims.D)q.Y=B.y+B.h+FRONT_DY;}return q;};
@@ -744,15 +725,6 @@
     };
     [plan, secL, secF, secR].forEach(fit);
   }
-  function syncPanelSplitterA11y() {
-    const outer = $("left-panel-resize");
-    if (outer) {
-      outer.setAttribute("aria-valuemax", String(Math.round(panelLayoutMetrics.maxExtra)));
-      outer.setAttribute("aria-valuenow", String(Math.round(panelLayoutMetrics.effectiveExtra)));
-      outer.setAttribute("aria-valuetext", `追加幅 ${Math.round(panelLayoutMetrics.effectiveExtra)}px（希望 ${Math.round(panelLayout.leftExtra)}px）`);
-    }
-
-  }
   let panelResizeRaf = 0;
   function refreshPanelLayout() {
     if (panelResizeRaf) return;
@@ -763,51 +735,6 @@
     });
   }
   new ResizeObserver(refreshPanelLayout).observe(document.querySelector(".sec.front .sechead"));
-  function installPanelSplitter(id) {
-    const divider = $(id); if (!divider) return;
-    const current = () => panelLayoutMetrics.effectiveExtra;
-    const update = (value) => {
-      panelLayout.leftExtra = E.clamp(value, 0, panelLayoutMetrics.maxExtra);
-      refreshPanelLayout();
-    };
-    const finish = (event, cancel = false) => {
-      const drag = divider._panelResizeDrag;
-      if (!drag || (event.pointerId != null && drag.pointerId !== event.pointerId)) return;
-      divider._panelResizeDrag = null;
-      if (cancel) { Object.assign(panelLayout, drag.saved); refreshPanelLayout(); }
-      else if (drag.moved) savePanelLayout();
-      if (divider.hasPointerCapture(drag.pointerId)) divider.releasePointerCapture(drag.pointerId);
-    };
-    divider.addEventListener("pointerdown", (event) => {
-      if (event.button !== 0) return;
-      event.preventDefault(); divider.focus();
-      divider.setPointerCapture(event.pointerId);
-      divider._panelResizeDrag = { pointerId: event.pointerId, x: event.clientX,
-        value: current(), saved: { ...panelLayout }, moved: false };
-    });
-    divider.addEventListener("pointermove", (event) => {
-      const drag = divider._panelResizeDrag;
-      if (!drag || drag.pointerId !== event.pointerId) return;
-      const dx = event.clientX - drag.x; if (!dx && !drag.moved) return;
-      drag.moved = true;
-      update(drag.value + dx);
-    });
-    divider.addEventListener("pointerup", event => finish(event));
-    divider.addEventListener("pointercancel", event => finish(event, true));
-    divider.addEventListener("lostpointercapture", event => finish(event, true));
-    divider.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && divider._panelResizeDrag) { event.preventDefault(); event.stopPropagation(); finish(event, true); return; }
-      if (event.key === "Home") update(0);
-      else if (event.key === "End") update(panelLayoutMetrics.maxExtra);
-      else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-        const direction = event.key === "ArrowRight" ? 1 : -1;
-        update(current() + direction * (event.shiftKey ? 96 : 24));
-      } else return;
-      event.preventDefault(); event.stopPropagation(); savePanelLayout();
-    });
-    divider.addEventListener("dblclick", (event) => { event.preventDefault(); update(0); savePanelLayout(); });
-  }
-  installPanelSplitter("left-panel-resize");
   $("panel-layout-reset").onclick = () => {
     Object.assign(panelLayout, { leftExtra: 0, fixtureShare: 0.5 });
     refreshPanelLayout(); savePanelLayout();
@@ -896,10 +823,13 @@
   const litFactor = (l) => (isLit(l) ? curveAt(levelOf(l) / 100) : 0);
   /* 動きの中で広がり・強さが変わる灯（levelTo / beamDegTo）は、いまの位相での値で描く。
      位相は位置の往復とまったく同じ式（rig-engine paramPhase）＝Aで始めの値、Bで終わりの値。 */
-  const phaseOf = (f, l) => E.paramPhase(l, cue(), f.id, state.play.t);
+  // Editing uses the same static phase as the stage overview. Explicit timeline
+  // samples and both players keep their real phase and strobe extinction.
+  const stoppedEditPreview = () => state.mode === "move" && !state.play.on && !timelinePlaybackFrame && !playbackPreviewDrawing && !lxFade;
+  const phaseOf = (f, l) => stoppedEditPreview() ? 0 : E.paramPhase(l, cue(), f.id, state.play.t);
   /* ストロボは往復（levelAt）とは別に、いまの瞬間だけ削る掛け算として上乗せする（2026-09-13 本人要望）。
      ムービングだけが持てる（配置パネルで種類を切り替えても、固定灯では箱ごと出さない）。 */
-  const litFactorOf = (f, l) => (isLit(l) ? curveAt(E.levelAt(l, phaseOf(f, l)) / 100) * E.strobeMul(l && l.strobe, state.play.t) : 0);
+  const litFactorOf = (f, l) => (isLit(l) ? curveAt(E.levelAt(l, phaseOf(f, l)) / 100) * (stoppedEditPreview() ? 1 : E.strobeMul(l && l.strobe, state.play.t)) : 0);
   /* 第6弾（2026-09-27）: 終わりの色 colorTo を持つ灯は、いまの位相での色で描く（強さ・広がりと同じ位相）。描画は l.color を直読みしない。 */
   const colorOf = (f, l) => E.colorAt(l, phaseOf(f, l), f);
   /* ストロボの発生順（段・1始まり）。型パネルで並べている最中は、まだ当てていない並び（下書き）を
@@ -5392,25 +5322,18 @@
       no: E.clamp(Math.round(E.finite(lx.no, state.scenes.indexOf(sc) + 1)), 1, 99) };
   };
   const lxList = (sc) => (sc && Array.isArray(sc.lxq) ? sc.lxq : []);
+  const sceneNumberOf = sc => {const n=sc?.stageNumber || `${lxOf(sc).section}-${lxOf(sc).no}`;return n.includes("-")?n:`1-${n}`;};
   const lxNo = (sc, seq) => { const x = lxOf(sc); return `${x.section}-${x.no}-${seq}`; };
   const lxNextSeq = (sc) => lxList(sc).reduce((mx, q) => Math.max(mx, E.finite(q.seq, 0)), 0) + 1;
-  /* ---------- 通しQ番号（v2-1・2026-09-27 本人承認） ----------
-     Eos・国産卓・現場のキューシートと同じ「ショー全体で通しの番号」。間に入れるときは小数（12.5）。
-     古いデータ（番号なし）は読み込んだときにシーン順→連番で振り、旧表記（1-1-2）は legacyNo に残す。 */
-  const allCueNos = () => state.scenes.flatMap((sc) => lxList(sc).map((q) => q.no)).filter((no) => E.cueNoValid(no));
-  /* 修正バッチ 2026-10-07 #8（D10）: 呼び名は既定で通し番号（Q3）。ショーの設定が「シーンごと」なら、タイムライン・Qシートと同じ
-     「舞台のセクション.シーン.そのシーンで何本目」（1.2.2）。舞台のシーン番号はホストから受け取る（stageNumber）。 */
-  const qLabel = (q) => (q && state.cueNaming === "scene" && qSceneLabel(q)) || (q && E.cueNoValid(q.no) ? `Q${q.no}` : "Q?");
-  function qSceneLabel(q) {   // ★qLabel は1行の宣言のまま（tests/security-harness.mjs の declaration() が1行で抜き出す）
-    const sc = state.scenes.find((row) => lxList(row).includes(q));
-    return sc && sc.stageNumber ? `${String(sc.stageNumber).replace(/-/g, ".")}.${lxSorted(sc).indexOf(q) + 1}` : "";
+  /* Labels share the host's pure projection; seq is the authored progression order. */
+  const allCueNos = () => state.scenes.flatMap(sc => lxList(sc).map(q => q.no)).filter(no => E.cueNoValid(no));
+  const cueNamingHelper = () => window.SHOSAI_CUE_SHEET || (parent !== window ? parent.SHOSAI_CUE_SHEET : null);
+  const qLabel = (q) => cueNamingHelper()?.lightCueDisplayMap({scenes:state.scenes}, state.cueNaming || "scene").get(q?.id) || qSceneLabel(q);
+  function qSceneLabel(q) {
+    const sc = state.scenes.find(row => lxList(row).includes(q));
+    return sc ? `Q${sceneNumberOf(sc)}-${lxSorted(sc).indexOf(q) + 1}` : "Q?";
   }
-  const qValue = (q) => (q ? E.cueNoValue(q.no) : NaN);
-  const lxSorted = (sc) => [...lxList(sc)].sort((a, b) => {
-    const va = qValue(a), vb = qValue(b);
-    if (Number.isFinite(va) && Number.isFinite(vb) && va !== vb) return va - vb;
-    return E.finite(a.seq, 0) - E.finite(b.seq, 0);
-  });
+  const lxSorted = (sc) => [...lxList(sc)].sort((a,b) => E.finite(a.seq,0) - E.finite(b.seq,0));
   function ensureCueNumbers() {
     const used = new Set();
     let changed = false;
@@ -5426,8 +5349,7 @@
     return changed;
   }
   /* ショー全体の並び（番号順）。略語の「前の状態」と自動送りの「次のキュー」に使う。 */
-  const lxAllSorted = () => state.scenes.flatMap((sc, si) => lxList(sc).map((q) => ({ q, sc, si })))
-    .sort((a, b) => (qValue(a.q) - qValue(b.q)) || (a.si - b.si) || (E.finite(a.q.seq, 0) - E.finite(b.q.seq, 0)));
+  const lxAllSorted = () => state.scenes.flatMap((sc, si) => lxSorted(sc).map(q => ({q, sc, si})));
   const lxNextInShow = (id) => { const all = lxAllSorted(); const i = all.findIndex((x) => x.q.id === id); return i >= 0 ? all.slice(i+1).find(x=>x.q.enabled!==false)||null : null; };
   const lxPrevCueOf = (id) => { const all = lxAllSorted(); const i = all.findIndex((x) => x.q.id === id); return i > 0 ? all[i - 1].q.cue : { lights: {}, groups: [] }; };
   const cueJson = (c) => JSON.stringify({ ...(c || {}), lights: (c && c.lights) || {}, groups: (c && c.groups) || [] });
@@ -5630,7 +5552,7 @@
           <div class="field"><span>消えていた灯は先回りして向く（MIB）</span><input id="lxt-mib" type="checkbox" ${mibDefault ? "checked" : ""}></div>
         </div>
       </div>`;
-    dialog(html, [["キャンセル", null, "quiet"], ["決める", () => {
+    dialog(html, [["キャンセル", null, "quiet"], ["適用する", () => {
       const v = (id) => { const x = $(id); const n = x && x.value !== "" ? Number(x.value) : null; return n !== null && Number.isFinite(n) ? n : null; };
       const modeBtn = document.querySelector(".lxt-seg button[aria-pressed=\"true\"]"); const mode = modeBtn ? modeBtn.dataset.mode : "cut";
       const s2 = state.scenes[si]; const t = entryMode ? s2 : lxList(s2).find((z) => z.id === qid); if (!t) return;
@@ -5659,28 +5581,30 @@
   }
   const lxGoCues=new WeakMap(); // Display state only; never serialized into the draft.
   function lxEnterCue(si, id, opts = {}) {
-    if(state.scenes[si]?.lxq?.find(q=>q.id===id)?.enabled === false) return;
+    if(opts.auto && state.scenes[si]?.lxq?.find(q=>q.id===id)?.enabled === false) return;
     lxFollowCancel();
+    lxFadeStop();
     const prevCue = JSON.parse(cueJson(scene().cue));   // GO の直前に見えていた明かり（別シーンからでも）
     lxGoto(si);
     const s2 = state.scenes[si]; const t = lxList(s2).find((z) => z.id === id); if (!t) return;
     s2.cue = JSON.parse(cueJson(t.cue)); s2.lxEditing = t.id;
-    lxGoCues.set(s2,s2.cue);
+    if(t.enabled!==false) lxGoCues.set(s2,s2.cue);
     state.sel.clear(); stop(); home();
-    commit(`${opts.auto ? "自動送り → " : "GO → "}${qLabel(t)}${t.name ? `「${t.name}」` : ""}（${lxTimingText(t.timing)}）`);
-    lxFadeStart(prevCue, t.timing, si);
-    lxFollowSchedule(t);
+    commit(`${t.enabled===false ? "編集 → " : opts.auto ? "自動送り → " : "GO → "}${qLabel(t)}${t.name ? `「${t.name}」` : ""}（${lxTimingText(t.timing)}）`);
+    if(t.enabled!==false) {lxFadeStart(prevCue, t.timing, si);lxFollowSchedule(t);}
+    if(!opts.auto) window.dispatchEvent(new CustomEvent("gamma-light-cue-select", {detail:{lxId:t.id}}));
   }
   /* ---------- セクション（シーンの上の層） ----------
      セクション番号はシーンが持っている（`sc.lx.section`）ので、実在するセクションは
      シーンから数え上げる。セクションを送る＝そのセクションの最初のシーンへ移る。
      シーン送りは<b>いまのセクションの中だけ</b>を回る（2026-09-13 本人要望「別レイヤー」）。 */
-  const lxSections = () => [...new Set(state.scenes.map((sc) => lxOf(sc).section))].sort((a, b) => a - b);
-  const lxCurSection = () => lxOf(scene()).section;
-  const lxScenesIn = (sec) => state.scenes.map((sc, i) => ({ sc, i })).filter((x) => lxOf(x.sc).section === sec);
+  const lxSectionKey = sc => sc.stageNumber ? sc.stageNumber.split("-").slice(0,-1).join("-") || "1" : String(lxOf(sc).section);
+  const lxSections = () => [...new Set(state.scenes.map(lxSectionKey))];
+  const lxCurSection = () => lxSectionKey(scene());
+  const lxScenesIn = sec => state.scenes.map((sc,i)=>({sc,i})).filter(x=>lxSectionKey(x.sc)===String(sec));
   const lxSectionTitle = (sec) => {
     const current = scene();
-    if (lxOf(current).section === sec && String(current.sectionTitle || "").trim()) {
+    if (lxSectionKey(current) === String(sec) && String(current.sectionTitle || "").trim()) {
       return String(current.sectionTitle).trim();
     }
     const first = lxScenesIn(sec).find(({ sc }) => String(sc.sectionTitle || "").trim());
@@ -5722,8 +5646,7 @@
     if (j >= 0 && j < state.scenes.length) lxGotoScene(j);
   }
 
-  /* 並び替え。つまんだ LXキュー を落とし先の位置へ入れ直し、番号（連番）を1から振り直す
-     （2026-09-13 本人要望。キュー番号は進行順そのものなので、並べ替えたら番号も付け直す）。 */
+  /* Reorder progression (seq). Hierarchical labels follow it; retained creation tokens do not change. */
   function lxReorder(si, dragId, dropId) {
     if (!dragId || dragId === dropId) return;
     const sc = state.scenes[si]; const list = [...lxList(sc)].sort((a, b) => E.finite(a.seq, 0) - E.finite(b.seq, 0));
@@ -5733,10 +5656,7 @@
     list.splice(to, 0, moved);
     list.forEach((q, i) => { q.seq = i + 1; });
     sc.lxq = list;
-    /* 番号も並びに合わせる: 前後の番号の間の小数へ（Eos の挿入と同じ）。入らなければ番号は変えない。 */
-    const before = list[to - 1], after = list[to + 1];
-    const between = E.cueNumberBetween(before ? before.no : undefined, after ? after.no : undefined);
-    if (between && !allCueNos().filter((no) => no !== moved.no).includes(between)) moved.no = between;
+    // Keep legacy creation numbers; the displayed hierarchy follows the new seq order.
     commit(`${qLabel(moved)} の順番を変えました`);
   }
 
@@ -5791,6 +5711,7 @@
     const sIn = numIn(x.section, (v) => setLx({ section: v })); sIn.title = "セクション番号"; sIn.setAttribute("aria-label", "セクション番号");
     const nIn = numIn(x.no, (v) => setLx({ no: v })); nIn.title = "シーン番号"; nIn.setAttribute("aria-label", "シーン番号");
     nums.append(el("span", null, "セクション - シーン"), sIn, el("span", null, "-"), nIn);
+    if(sc.stageNumber) nums.replaceChildren(el("span",null,"セクション - シーン"),el("strong",null,sceneNumberOf(sc)));
     b.append(nums);
     /* 新規キュー。いま画面に出ている明かりをそのまま持ち上げて次の番号のキューにし、
        そのままそのキューの編集に入る（2026-09-13 本人要望「新規キューを作ってデザインを始める」）。
@@ -5805,8 +5726,8 @@
       const s2 = lxScene(); const seq = lxNextSeq(s2); const id = uid("q"); const no = E.cueNumberNext(allCueNos());
       s2.lxq = lxList(s2).concat([{ id, seq, no, name: "", trigger: "", at: new Date().toISOString(), cue: JSON.parse(cueJson(s2.cue)) }]);
       s2.lxEditing = id;
-      commit(`Q${no} を作りました。このまま編集できます`);
-    }, "primary", `いま出ている明かりを次の番号 Q${E.cueNumberNext(allCueNos())} の LXキュー にして、そのまま編集を続けます`);
+      commit(`${qLabel(lxEditingQ(s2))} を作りました。このまま編集できます`);
+    }, "primary", "いま出ている明かりを新しいLXキューにして、そのまま編集を続けます");
     newCue.id="lx-new";
     newCue.dataset.tipDescription = "現在の明かりを新しい番号のLXキューとして追加します。";
     newCue.disabled=!state.rig.fixtures.length;
@@ -5844,7 +5765,7 @@
       const cut = lxTimingText(q.timing) === "カット";
       const tb = btn(cut ? "カット" : `⏱ ${lxTimingShort(q.timing)}`, () => lxTimingDialog(si, q.id), "small quiet lxtime", lxTimingText(q.timing) + "。このキューへ移るときの時間（フェード・遅れ・カーブ）を決める");
       row.append(tb);
-      const enabled=btn(q.enabled===false?"無効":"有効",()=>{q.enabled=q.enabled===false;commit();},"small quiet lx-enabled");
+      const enabled=btn(q.enabled===false?"無効":"有効",()=>{const current=lxList(state.scenes[si]).find(z=>z.id===q.id);if(current){current.enabled=current.enabled===false;commit();}},"small quiet lx-enabled");
       enabled.setAttribute("aria-pressed",String(q.enabled!==false));enabled.title="Qの有効・無効を切り替える";
       row.dataset.lxEnabled=String(q.enabled!==false);row.append(enabled);
       row.append(btn("✕", () => {
@@ -5875,25 +5796,23 @@
         const saveFollow = () => { const s2 = lxScene(); const t = lxList(s2).find((z) => z.id === q.id); if (!t) return; if (fsel.value === "go") delete t.follow; else t.follow = { mode: fsel.value, sec: E.clamp(E.finite(fsec.value, 0), 0, 600) }; commit(); };
         fsel.onchange = saveFollow; fsec.onchange = saveFollow;
         fw.append(fsel, fsec, fsecLabel);
-        /* 間に入れる（v2-1）: このキューの後ろに、いまの明かりで小数番号のキューを足す（Eos の 12.5 と同じ） */
-        const between = E.cueNumberBetween(q.no, nextQ ? nextQ.no : undefined);
-        const ib = btn(between ? `＋ 後ろに Q${between}` : "＋", () => {
-          if (!between) { toast("この間にはもう番号が入りません。次の番号で作ってください"); return; }
+            const ib = btn("＋ 後ろに追加", () => {
           lxGoto(si);
-          const s2 = lxScene(); const id = uid("q"); const seq = E.finite(q.seq, 0) + 0.5;
-          s2.lxq = lxList(s2).concat([{ id, seq, no: between, name: "", trigger: "", at: new Date().toISOString(), cue: JSON.parse(cueJson(s2.cue)) }]);
-          lxList(s2).sort((a2, b2) => E.finite(a2.seq, 0) - E.finite(b2.seq, 0)).forEach((z, i2) => { z.seq = i2 + 1; });
-          s2.lxEditing = id;
-          commit(`Q${between} を ${qLabel(q)} の後ろに入れました`);
-        }, "small quiet lxbetween", between ? `この後ろに Q${between} を入れる（いまの明かりから）` : "この間にはもう番号が入りません");
+          const s2 = lxScene(), id = uid("q"), no = E.cueNumberNext(allCueNos());
+          const seq = E.finite(q.seq,0) + 0.5;
+          s2.lxq = lxList(s2).concat([{id,seq,no,name:"",trigger:"",at:new Date().toISOString(),cue:JSON.parse(cueJson(s2.cue))}]);
+          lxSorted(s2).forEach((z,i) => {z.seq=i+1;});s2.lxEditing=id;
+          commit(`${qLabel(lxEditingQ(s2))} を ${qLabel(q)} の後ろに入れました`);
+        }, "small quiet lxbetween", "このQの後ろに追加する（いまの明かりから）");
         row.append(fw, ib);
       } else if (q.follow && q.follow.mode !== "go") {
         row.append(el("p", "lxfollowtext", `→ 次へ ${E.followText(q.follow)}`));
       }
       /* 札を押す＝そのキューの編集に入る。名前・きっかけの欄とボタンの上は札の操作にしない。 */
+      row.dataset.lxId=q.id;
       row.onclick = (ev) => {
         if (ev.target.closest("input, textarea, select, button")) return;
-        if (isEdit) return;
+        if (isEdit) {window.dispatchEvent(new CustomEvent("gamma-light-cue-select",{detail:{lxId:q.id}}));return;}
         lxEnterCue(si, q.id);
       };
       li.append(row);
@@ -5914,7 +5833,7 @@
       const up = T ? T.fadeInSec : 0, down = T ? (T.fadeOutSec === null ? T.fadeInSec : T.fadeOutSec) : 0;
       const dIn = T ? T.delayInSec : 0, dOut = T ? (T.delayOutSec === null ? T.delayInSec : T.delayOutSec) : 0;
       const prev = i > 0 ? all[i - 1].q.cue : { lights: {}, groups: [] };
-      return { no: `Q${q.no}`, scene: `${si + 1}「${sc.name || ""}」`, trigger: q.trigger || "", notation: E.cueNotation(prev, q.cue, q.timing),
+      return { no: qLabel(q), scene: `${si + 1}「${sc.name || ""}」`, trigger: q.trigger || "", notation: E.cueNotation(prev, q.cue, q.timing),
         fade: T ? `${E.cueNoText(up)}／${E.cueNoText(down)}` : "0（カット）", delay: dIn || dOut ? `${E.cueNoText(dIn)}／${E.cueNoText(dOut)}` : "", follow: E.followText(q.follow),
         name: q.name || "", memo: q.memo || "", legacy: q.legacyNo || "" };
     });
@@ -6521,11 +6440,11 @@
     { const x0 = lxOf(scene()), name = scene().name || "名称なしのシーン";
       const nav = $("scenenav"), sep = $("qsep"), sn = $("scene-name");
       if (nav) nav.hidden = !inMove; if (sep) sep.hidden = !inMove;
-      if (sn) { sn.innerHTML = `<span class="sno-word">シーン</span><b>${x0.section}-${x0.no}</b>`;
-        sn.title = `シーン ${x0.section}-${x0.no}「${name}」／押すとシーンの一覧（↑↓でシーンを送る）`; }
+      if (sn) { sn.innerHTML = `<span class="sno-word">シーン</span><b>${sceneNumberOf(scene())}</b>`;
+        sn.title = `シーン ${sceneNumberOf(scene())}「${name}」／押すとシーンの一覧（↑↓でシーンを送る）`; }
       const step = (id, j, word, key) => { const b = $(id); if (!b) return; const row = state.scenes[j];
         b.disabled = !row; const xr = row ? lxOf(row) : null;
-        b.title = row ? `${word}のシーン ${xr.section}-${xr.no}「${row.name || "名称なし"}」へ（${key}）` : `${word}のシーンはありません`; };
+        b.title = row ? `${word}のシーン ${sceneNumberOf(row)}「${row.name || "名称なし"}」へ（${key}）` : `${word}のシーンはありません`; };
       step("scene-prev", state.sceneIndex - 1, "前", "↑"); step("scene-next", state.sceneIndex + 1, "次", "↓"); }
     /* 図の上の中央は、照明デザインではLXキュー、配置では現在のシーン。
        どちらも同じ場所を使うことで、モードを切り替えても図の位置を動かさない。 */
@@ -6561,7 +6480,7 @@
           : same0 ? `${qLabel(same0)} と同じ中身です（編集中ではありません）。LXキュー パネルで ${qLabel(same0)} を選ぶと、変えたところがそのキューへ入ります`
           : count0 ? `このシーンには ${lxSorted(sc0).map(qLabel).join("・")} がありますが、いまの明かりはどれとも違います。LXキュー パネルで選ぶか、「＋ 新規 LXキュー」で1本にできます`
           : "どの LXキュー にも入っていません。LXキュー パネルの「＋ 新規 LXキュー」で1本にできます";
-        qn.title = `セクション${x0.section}・シーン${x0.no}／${qn.title}`; } }
+        qn.title = `シーン ${sceneNumberOf(sc0)}／${qn.title}`; } }
     /* 中央の表示の左右＝前後の LXキュー へ。行き先が無ければ押せなくする。 */
     { const nb = lxNeighbors(), sc0 = scene();
       const set2 = (id, q, word) => { const b = $(id); if (!b) return;
@@ -6672,7 +6591,7 @@
           ? qs.map((q) => `<button type="button" class="allq${q.id === editing ? " editing" : ""}" data-scene="${i}" data-q="${escapeHtml(q.id)}" title="${esc(q.name || "")}">${qLabel(q)}</button>`).join("")
           : `<span class="allnone">LXキュー なし</span>`;
         return `<div class="allscene${i === state.sceneIndex ? " cur" : ""}">
-            <span class="allsname" data-scene="${i}" role="button" tabindex="0">${esc(sc.name)}<small>シーン${i + 1}・LXキュー ${qs.length}本</small></span>
+            <span class="allsname" data-scene="${i}" role="button" tabindex="0">${esc(sc.name)}<small>シーン${sceneNumberOf(sc)}・LXキュー ${qs.length}本</small></span>
             <span class="allqs">${chips}</span>
           </div>`;
       }).join("");
@@ -6680,7 +6599,7 @@
       return `<div class="allsec"><p class="kicker">セクション ${sec}${sectionTitle ? `　${esc(sectionTitle)}` : ""}</p>${scenes}</div>`;
     }).join("");
     dialog(`<p class="ptitle">すべてのシーンと LXキュー</p>
-      <p class="hint">シーン名を押すとそのシーンへ、番号を押すとその LXキュー の編集に入ります。セクション番号は LXキュー パネルの「番号」で変えられます。</p>
+      <p class="hint">シーン名を押すとそのシーンへ、Q番号を押すとそのLXキューの編集に入ります。</p>
       <div class="alllist">${body}</div>`, [["閉じる", null]]);
     const d = $("dialog");
     d.querySelectorAll("[data-scene]").forEach((elm) => {
@@ -6729,6 +6648,12 @@
       ? `${next === "plan" ? "平面図" : next === "front" ? "正面図" : "側面図"}だけを大きく出しています。Escか同じキーで戻ります（再生=Space／シーン送り=←→）`
       : "図の並びを元に戻しました");
   }
+  $("swap-figures").onclick = () => {
+    state.figuresSwapped = !state.figuresSwapped;
+    document.querySelector(".figgrid").toggleAttribute("data-swapped", state.figuresSwapped);
+    $("swap-figures").setAttribute("aria-pressed", String(state.figuresSwapped));
+    refreshPanelLayout();
+  };
   document.querySelectorAll("[data-solo-figure]").forEach((b) => {
     b.setAttribute("aria-pressed", "false");
     b.setAttribute("aria-keyshortcuts", {front:"F",plan:"P",side:"O"}[b.dataset.soloFigure]);
@@ -6742,9 +6667,8 @@
     if (mb) mb.onclick = () => {
       const ids = [...state.sel].filter(fixtureById);
       if (ids.length < 2) { toast("灯体を2つ以上選ぶとグループにできます"); return; }
-      const name = window.prompt(`${ids.length}灯をまとめます。グループの名前を入れてください（空ならおまかせ）`, "");
-      if (name === null) return;   // 取り消し
-      makeFixtureGroup(ids, name);
+      dialog('<p class="ptitle">選んだ灯をグループにする</p><label class="field"><span>グループ名</span><input id="fixture-group-name" type="text" autocomplete="off" data-lpignore="true" data-1p-ignore="true"></label>',
+        [["キャンセル", null, "quiet"], ["作成する", () => makeFixtureGroup(ids, $("fixture-group-name").value), "primary"]]);
     }; }
   $("presets").onclick = openPresets;
   $("prefs").onclick = openPrefs;        // 環境設定（歯車）
@@ -7356,7 +7280,7 @@
   // 試作の検証用。製品では出さない（状態を外から読めるようにしておく）
   window.__RIG = { state, E, planBox, secBox, secOf, SECS,
     /* 「照明のあるある」（light-presets-ui.js）との接続点。app.js の内部関数をここだけから貸す（2026-09-14）。 */
-    hooks: { setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
+    hooks: { setSoloFigure, setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
 
   /* ブラウザの大きさに追従する。モーダルだからと固定にしない（2026-09-11 本人要望）。
      rAFで1回にまとめる（ドラッグ中の連続リサイズで描き直しが溜まらないように）。 */

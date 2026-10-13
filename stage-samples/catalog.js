@@ -27,7 +27,7 @@ const index = [
     "url": "./stage-samples/romeo-juliet-second.json?v=20261010-v0338"
   },
   {
-    "id": "gamma-feature-test-v46-pose-review",
+    "id": "gamma-feature-test-v47-retired-pose",
     "title": "テスト: 全機能の試験場",
     "version": "v2",
     "scenes": 48,
@@ -35,7 +35,7 @@ const index = [
     "branchReason": "",
     "description": "",
     "type": "fixture",
-    "rawBytes": 975739,
+    "rawBytes": 975761,
     "url": "./stage-samples/feature-test-show.json?v=20261013-v0359"
   }
 ];

@@ -34,7 +34,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.59</span>
+                <span class="stage-app-version">0.3.60</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2701,11 +2701,11 @@
       <div class="stage-pref-row stage-pref-lang-row stage-cue-naming-row">
         <span class="stage-pref-lang-body">
           <span class="stage-pref-name">LXキューの呼び名</span>
-          <p class="stage-pref-hint">照明デザイン・タイムライン・Qシート・進行表で同じ呼び名になります。シーンごと（セクション.シーン.何本目）のときも、Qシートと進行表には照明卓に打てる通し番号を添えます。現在のショーに保存されます。</p>
+          <p class="stage-pref-hint">照明デザイン・タイムライン・Qシート・進行表で同じ番号を表示します。標準はセクション–シーン–キュー順。章内の整数連番は作成順にQ0から始めます。現在のショーに保存されます。</p>
         </span>
         <select class="stage-lang" id="stage-cue-naming" aria-label="LXキューの呼び名">
-          <option value="serial">通し番号（Q1・Q1.5）</option>
-          <option value="scene">シーンごと（1.2.2）</option>
+          <option value="scene">標準（Q1-2-1）</option>
+          <option value="serial">章内の整数連番（Q0・Q1・Q2）</option>
         </select>
       </div>
     </section>
@@ -2841,18 +2841,19 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261013-v0359">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261013-v0360">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0359-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0359-title">v0.3.59</h3><time datetime="2026-10-13">2026-10-13</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0360-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0360-title">v0.3.60</h3><time datetime="2026-10-13">2026-10-13</time></header>
       <ul>
-        <li>舞台の空欄をドラッグして複数選択し、クリックで選択を外せます。Shiftを押しながらのドラッグ、または手のひらの道具で表示位置を動かします。</li>
-        <li>照明デザインのSpaceと再生ボタンはタイムラインを再生します。Shift+Spaceは照明プログラムの動きを再生します。</li>
-        <li>演者がいる照明表示で重複していた描画を減らし、正面図の表示設定を一段に、タイムラインのTCを周囲と同じ文字サイズに揃えました。</li>
-        <li>LXキューは照明デザインで作成し、タイムラインの＋で既存Qを選ぶか、Q番号をドラッグして配置します。置き直してもQや番号は増えません。</li>
-        <li>照明一覧とタイムラインのQを対応させ、未配置のQは時刻未指定として表示します。有効・無効を切り替えてもQと配置位置を保持し、配置を外してもQは残します。</li>
-        <li>シーンと転換の追加は舞台側で行い、タイムラインの追加ボタンは表示しません。読み込み比較のボタンを揃え、閉じる×の説明は表示しません。</li>
+        <li>LXキューの標準番号をセクション-シーン-Qの形へ統一しました。章ごとにQ0から並べる連番方式も選べます。途中へ追加しても小数番号を生成しません。</li>
+        <li>LXパネルでQを選ぶとタイムラインが対応位置へ移ります。時刻未指定のQは前後の配置済みQを参照し、未配置のままにします。無効Qは選択中も灰色で表示します。</li>
+        <li>照明デザインではタイムライン操作後もF/Pで正面図/平面図を拡大します。キー表示と図の交換ボタンを追加し、Pの拡大時は左側にLXキューと灯体一覧を縦に並べます。</li>
+        <li>照明の余分な縦バーを撤去し、図の見出しを統一。設定窓を広げ、操作ボタンを右下へ揃え、適用するなどの表記へ統一しました。</li>
+        <li>停止中の照明編集はストロボの消灯瞬間に隠れず、選んだ色を確認できます。再生中は実際の点滅を保ちます。</li>
+        <li>タイムラインを開いてもメイン画面の下部へスクロールできます。舞台平面図の通常ホイールは中央列をスクロールし、図の位置は動かしません。全ツールの説明と進行表の列表示の開閉を揃えました。</li>
+        <li>DANCE3を姿勢の定義と見本から削除し、全機能の試験場をv47として作り直しました。既存ショーのQ ID・明かり・配置時刻を保持します。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3814,11 +3815,11 @@
 <script src="/study-assets/stage-light-render.js?v=20261005-beam99"></script>
 <script src="/study-assets/gamma-light-cue-overlay.js?v=20261006-v0318"></script>
 <script src="/study-assets/stage-performer-motion.js?v=20261011-v0347"></script>
-<script src="/study-assets/stage-idle-motion.js?v=20261011-v0353"></script>
+<script src="/study-assets/stage-idle-motion.js?v=20261013-v0360"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
 <script src="/study-assets/gamma-ui.js?v=20261013-v0359"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261013-v0359"></script>
-<script src="/study-assets/stage-pose-data.js?v=20261009-v0333"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261013-v0360"></script>
+<script src="/study-assets/stage-pose-data.js?v=20261013-v0360"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="/study-assets/stage-sketch.js?v=20261013-v0359"></script>
+<script src="/study-assets/stage-sketch.js?v=20261013-v0360"></script>
 </body></html>

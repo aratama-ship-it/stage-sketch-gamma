@@ -52,18 +52,57 @@
     return `${cuePrefix(cueType, helpers)} ${sceneNumber}-${ordinal}`;
   }
 
-  /* 修正バッチ 2026-10-07 #8（本人決定 D10）: LXキューの呼び名は切り替え式。既定は通し番号（Q3・Q3.5）で、
-     タイムライン・Qシート・進行表・照明デザインのすべてで同じ呼び名にする。ショーごとの設定 project.cueNaming が
-     "scene" のときだけ「セクション.シーン.そのシーンで何本目」（1.2.2・舞台のシーン番号を点で区切る）。
-     そのときも Qシート・進行表の行には照明卓に打てる通し番号を添える（cueLine）。音・セリフのキューの呼び名は変えない。
-     照明デザインの LXキューに結び付いていないライトキューは、通し番号では「Q—（未登録）」。 */
-  const cueNamingOf = (project) => (project && project.cueNaming === "scene" ? "scene" : "serial");
-  function lightCueName(project, sceneNumber, ordinal, lx, helpers) {
-    if (cueNamingOf(project) === "scene") {
-      const n = lx && lx.sceneOrdinal ? lx.sceneOrdinal : ordinal;
-      return `${String(sceneNumber || "1").replace(/-/g, ".")}.${n}`;
+  /* Number labels are a projection. Legacy q.no and every cue reference remain untouched. */
+  const cueNamingOf = (project) => (project && project.cueNaming === "serial" ? "serial" : "scene");
+  function lightCueDisplayMap(design, mode = "scene", project = null) {
+    const numbers = project ? sceneNumberMap(project.scenes) : null;
+    const entries = list(design && design.scenes).flatMap((scene, si) => {
+      const rawNumber = numbers?.get(scene.id) || scene.stageNumber || `${scene.lx?.section || 1}-${scene.lx?.no || si + 1}`;
+      const stageNumber = rawNumber.includes("-") ? rawNumber : `1-${rawNumber}`;
+      const sectionKey = scene.sectionId || stageNumber.split("-").slice(0, -1).join("-") || "1";
+      return lxSortedOf(scene).map((q, qi) => ({q, scene, si, qi, stageNumber, sectionKey}));
+    });
+    const labels = new Map();
+    if (mode !== "serial") {
+      for (const e of entries) labels.set(e.q.id, `Q${e.stageNumber}-${e.qi + 1}`);
+    } else {
+      const sections = new Map();
+      for (const e of entries) { if (!sections.has(e.sectionKey)) sections.set(e.sectionKey, []); sections.get(e.sectionKey).push(e); }
+      for (const rows of sections.values()) {
+        // no is the retained creation-order token. Reordering the list changes seq, not this token.
+        rows.sort((a,b) => (lxNoValue(a.q) - lxNoValue(b.q)) || a.si - b.si || a.qi - b.qi);
+        rows.forEach((e,i) => labels.set(e.q.id, `Q${i}`));
+      }
     }
-    return lx && lx.label ? lx.label : translate(helpers, "Q—（未登録）");
+    return labels;
+  }
+  function lightCueName(project, sceneNumber, ordinal, lx, helpers) {
+    if (lx?.id) return lightCueDisplayMap(project.lightingDesign, cueNamingOf(project), project).get(lx.id) || translate(helpers, "Q—（未登録）");
+    return cueNamingOf(project) === "scene" ? `Q${String(sceneNumber||"1").includes("-") ? sceneNumber : `1-${sceneNumber||"1"}`}-${ordinal}` : translate(helpers, "Q—（未登録）");
+  }
+
+  /* Navigation only: never write an inferred time into an unplaced cue. */
+  function lightCueSeekTarget(project, lxId, design = project?.lightingDesign) {
+    const D = root.STAGE_TIME_DOMAIN;
+    if (!D || !design) return null;
+    const domain = D.resolve(project);
+    const entries = list(design.scenes).flatMap(scene => lxSortedOf(scene).map(q => ({q, scene})));
+    const index = entries.findIndex(e => e.q.id === lxId);
+    if (index < 0) return null;
+    const position = e => {
+      const mark = list(project.cues).find(c => c.cueType === "light" && c.lxId === e.q.id);
+      const point = mark && !mark.positionUnspecified ? D.cuePosition(domain, mark) : null;
+      return point && Number.isFinite(point.seconds) ? {seconds:point.seconds, cueId:mark.id, sceneId:point.sceneId || e.scene.id, sectionId:domain.byId.get(point.sceneId || e.scene.id)?.sectionId} : null;
+    };
+    const own = position(entries[index]);
+    if (own) return {...own, inferred:false};
+    let prev = null, next = null;
+    for (let i=index-1;i>=0 && !prev;i--) prev=position(entries[i]);
+    for (let i=index+1;i<entries.length && !next;i++) next=position(entries[i]);
+    if (!prev && !next) return null;
+    const seconds = prev && next ? (prev.seconds + next.seconds) / 2 : (prev || next).seconds;
+    const segment = domain.scenes?.find(s => seconds >= s.start && seconds < s.end);
+    return {seconds, cueId:null, sceneId:segment?.sceneId || (prev || next).sceneId, sectionId:domain.byId.get(segment?.sceneId || (prev || next).sceneId)?.sectionId, inferred:true};
   }
 
   function sectionScenes(rows, sectionId) {
@@ -104,12 +143,9 @@
   const LX_NO_RE = /^\d{1,4}(\.\d{1,3})?$/;
   const lxNoValue = (q) => (q && typeof q.no === "string" && LX_NO_RE.test(q.no) ? Number(q.no) : NaN);
   function lxSortedOf(scene) {
-    return list(scene && scene.lxq).filter((q) => q && typeof q === "object").slice().sort((a, b) => {
-      const va = lxNoValue(a), vb = lxNoValue(b);
-      if (Number.isFinite(va) && Number.isFinite(vb) && va !== vb) return va - vb;
-      return finite(a.seq, 0) - finite(b.seq, 0);
-    });
+    return list(scene && scene.lxq).filter(q => q && typeof q === "object").slice().sort((a,b) => finite(a.seq,0) - finite(b.seq,0));
   }
+
   function lightCueLink(project, cue, ordinal) {
     const design = project && project.lightingDesign;
     const sceneId = cue && (cue.sceneId || cueSceneId(project, cue));
@@ -121,20 +157,14 @@
     const n = Math.floor(finite(ordinal, 0));
     if (!q && !cue?.lxId && n >= 1) q = sorted[n - 1] || null;
     if (!q) return null;
-    const sceneOrder = new Map(design.scenes.map((row, index) => [row && row.id, index]));
-    const all = design.scenes.flatMap((row) => lxSortedOf(row).map((x) => ({ q: x, sceneId: row.id })))
-      .sort((a, b) => {
-        const va = lxNoValue(a.q), vb = lxNoValue(b.q);
-        if (Number.isFinite(va) && Number.isFinite(vb) && va !== vb) return va - vb;
-        return (sceneOrder.get(a.sceneId) || 0) - (sceneOrder.get(b.sceneId) || 0) || finite(a.q.seq, 0) - finite(b.q.seq, 0);
-      });
+    const all = design.scenes.flatMap(row => lxSortedOf(row).map(q => ({q, sceneId:row.id})));
     const at = all.findIndex((x) => x.q.id === q.id);
     const prevCue = at > 0 ? all[at - 1].q.cue : { lights: {}, groups: [] };
     const E = root.RIG_ENGINE || null;
     const T = E && typeof E.normalizeTiming === "function" ? E.normalizeTiming(q.timing) : null;
     const fadeIn = T ? T.fadeInSec : 0, fadeOut = T ? (T.fadeOutSec === null ? T.fadeInSec : T.fadeOutSec) : 0;
     return {
-      ...(q.enabled === undefined ? {} : {enabled:q.enabled}), id: q.id, no: typeof q.no === "string" ? q.no : "", label: typeof q.no === "string" && LX_NO_RE.test(q.no) ? `Q${q.no}` : "",
+      ...(q.enabled === undefined ? {} : {enabled:q.enabled}), id: q.id, no: typeof q.no === "string" ? q.no : "", label: lightCueDisplayMap(design, cueNamingOf(project), project).get(q.id) || "",
       sceneOrdinal: sorted.indexOf(q) + 1,
       name: typeof q.name === "string" ? q.name : "", trigger: typeof q.trigger === "string" ? q.trigger : "",
       notation: E && typeof E.cueNotation === "function" ? E.cueNotation(prevCue, q.cue, q.timing) : "",
@@ -198,21 +228,13 @@
     const prevId = prevLink && priorById.get(prevLink.id).lx.id;
     const index = nextId ? local.findIndex(row => row.id === nextId)
       : prevId ? local.findIndex(row => row.id === prevId) + 1 : 0;
-    const ownerIndex = design.scenes.indexOf(owner);
-    const next = local[index] || design.scenes.slice(ownerIndex + 1).flatMap(lxSortedOf)[0];
     const all = design.scenes.flatMap(lxSortedOf);
     const valid = all.filter(row => Number.isFinite(lxNoValue(row)));
-    const threshold = next ? lxNoValue(next) : Infinity;
-    if (next && !Number.isFinite(threshold)) return null;
-    const number = next ? Math.max(1, Math.ceil(threshold))
-      : Math.floor(Math.max(0,...valid.map(lxNoValue))) + 1;
-    const affected = valid.filter(row => lxNoValue(row) >= threshold);
-    const numberText = value => String(Number(value.toFixed(3)));
-    if (!LX_NO_RE.test(String(number)) || affected.some(row => !LX_NO_RE.test(numberText(lxNoValue(row) + 1)))) return null;
+    const number = Math.floor(Math.max(0,...valid.map(lxNoValue))) + 1;
+    if (!LX_NO_RE.test(String(number))) return null;
     const previous = prevId && local.find(row => row.id === prevId);
     const q = {id:lxId, seq:index + 1, no:String(number), name:cue.memo || "", trigger:"",
       cue:clone(previous?.cue || owner.cue || {lights:{},groups:[]})};
-    affected.forEach(row => {row.no = numberText(lxNoValue(row) + 1);});
     local.splice(Math.max(0,index),0,q);
     local.forEach((row,i) => {row.seq=i + 1;});
     owner.lxq = local;
@@ -615,7 +637,7 @@
       const rows = cueRows("light", (scene, index, first, cue) => {
         const lx = cue && cue.lx;
         const linked = lx ? {
-          cue: lx.label ? `${lx.label} · ${cue.displayName}` : cue.displayName,
+          cue: cue.displayName,
           time: [lx.notation, lx.notation && lx.fadeText === "カット" ? "" : lx.fadeText].filter(Boolean).join(" "),
           trigger: lx.trigger || "",
         } : { time: "", trigger: "" };
@@ -872,6 +894,8 @@ if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitOnePage
   }
 
   root.SHOSAI_CUE_SHEET = Object.freeze({
+    lightCueDisplayMap,
+    lightCueSeekTarget,
     lightCueLink,
     registerTimelineLightCue,
     synchronizeLightCues,

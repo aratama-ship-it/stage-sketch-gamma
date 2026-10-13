@@ -750,6 +750,7 @@ html[data-stage-skin] .stage-timeline-unplaced-lx[hidden] {display:none;}
 html[data-stage-skin] .stage-timeline-unplaced-cue {flex:0 0 auto;min-height:var(--ctrl-sm,28px);font-size:var(--fs-3);line-height:1.5;padding:4px 8px;border:1px solid var(--stage-timeline-line);background:var(--stage-timeline-panel);color:inherit;}
 
 html[data-stage-skin] .stage-lx-placement-choice{display:block;width:100%;min-height:var(--ctrl-md);text-align:left;margin-block:4px;padding:4px 8px;font-size:var(--fs-3);}
-html[data-stage-skin] .stage-timeline-cue[data-cue-enabled="false"]{border-style:dashed;color:var(--stage-timeline-muted);}
+html[data-stage-skin] :is(.stage-timeline-cue,.stage-timeline-unplaced-cue)[data-cue-enabled="false"]{border-style:dashed;border-color:var(--stage-timeline-muted);background:var(--stage-timeline-panel);color:var(--stage-timeline-muted);}
+html[data-stage-skin] .stage-timeline-cue[data-cue-enabled="false"][aria-pressed="true"]{z-index:3;box-shadow:0 0 0 1px var(--stage-timeline-muted);}
 
 html[data-stage-skin] #stage-timeline-light-cues.is-lx-drop-target{outline:2px solid var(--stage-timeline-accent);outline-offset:-2px;}

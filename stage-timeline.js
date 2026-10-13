@@ -1826,6 +1826,10 @@
   /* v2-3: 画面に出す名前。結び付いたLXキューがあれば Q番号（＋名前・略語）、無ければ従来の表示名。 */
   const cueShownName = (cue) => (cue && cue.shownName ? cue.shownName : (cue ? cue.displayName : ""));
   function timelineCuePresentations(project, tl = timeline) {
+    if (document.body.dataset.stageWorkspaceMode === "light-design") {
+      const draft = window.GAMMA_WORKSPACE?.lightCuePlacementChoices?.();
+      if (draft) project = {...project, lightingDesign:draft};
+    }
     const sceneNumbers = timelineSceneNumberMap(project.scenes);
     const ordinals = new Map();
     return timelineCues(project, tl).map((cue) => {
@@ -1862,7 +1866,7 @@
     timelineLightEvents=bridge.setTimelineLightSchedule({
       segments:timeline.segments.map(s=>({...s,blackout:!!project.scenes.find(row=>row.id===s.sceneId)?.blackout})),
       transitions:timeline.transitions,
-      cues:timelineCuePresentations(project).filter(c=>c.cueType==='light' && !c.positionUnspecified).map(c=>({id:c.id,sceneId:c.sceneId,seconds:c.seconds,cueType:c.cueType}))
+      cues:timelineCuePresentations(project).filter(c=>c.cueType==='light' && !c.positionUnspecified && c.lx?.enabled!==false).map(c=>({id:c.id,sceneId:c.sceneId,seconds:c.seconds,cueType:c.cueType}))
     })||[];
     appliedLightCueIdentity=null;
   }
@@ -2752,7 +2756,7 @@
       const caption = document.createElement("span");caption.textContent=tx("時刻未指定");unplaced.append(caption);
       for (const cue of missing) {
         const button=document.createElement("button");button.type="button";button.className="stage-timeline-unplaced-cue";
-        button.dataset.cueId=cue.id;button.textContent=cueShownName(cue)+(cue.lx?.enabled===false?" · "+tx("無効"):"");
+        button.dataset.cueId=cue.id;button.dataset.cueEnabled=String(cue.lx?.enabled!==false);button.textContent=cueShownName(cue)+(cue.lx?.enabled===false?" · "+tx("無効"):"");
         button.onclick=()=>openCueDetails(cue,button);unplaced.append(button);
       }
     }
@@ -3282,7 +3286,7 @@
    * つまみ・キュー・帯の伸縮・範囲選択のドラッグ中は追従しない。ラベル列は sticky で左に居座るので、
    * 見えている帯の幅は viewport の幅からラベル幅を引いたもの。 */
   function keepPlayheadInView() {
-    if (!timeline || ui.collapsed || cueDrag || cueGroupDrag || blockResize || cueMarquee) return;
+    if (!timeline || ui.collapsed || cueDrag || cueGroupDrag || blockResize || cueMarquee || seekingPanelCue) return;
     if (!els.viewport || !(els.viewport.clientWidth > 0)) return;
     const labelWidth = finite(getComputedStyle(root).getPropertyValue("--stage-timeline-label-width"), 156);
     const view = els.viewport.clientWidth - labelWidth;
@@ -3560,6 +3564,32 @@
    * そのキューを選んで、その瞬間へ再生位置を移す。
    * 別のセクションのキューは、先にそのシーンを開いてタイムラインを切り替え、
    * 切り替わった一覧から同じキューを探して頭出しする（秒は切り替え後の組み方で取り直す）。 */
+  let seekingPanelCue = false;
+  window.addEventListener("stage-lx-panel-change", event => {
+    if (event.detail?.showId === projectDocument()?.project?.id) renderTimeline();
+  });
+  window.addEventListener("stage-lx-panel-seek", event => {
+    const detail = event.detail || {}, project = projectDocument()?.project;
+    if (!project || detail.showId !== project.id || !timeline || !detail.lxId) return;
+    const target = window.SHOSAI_CUE_SHEET.lightCueSeekTarget(project, detail.lxId, detail.design);
+    if (!target) return;
+    // A section timeline may need to switch first. Its clock is then taken from the new layout.
+    if (timeline.source !== "show" && target.sectionId !== timeline.sectionId) openTimelineSceneById(target.sceneId);
+    const seconds = target.seconds - (timeline.timeOffset || 0);
+    selectedCueId = target.cueId;
+    selectedCueIds = new Set(target.cueId ? [target.cueId] : []);
+    syncCueSelection();
+    seekingPanelCue = true;
+    try {seekToSeconds(seconds);} finally {seekingPanelCue=false;}
+    if (!ui.collapsed && els.viewport) {
+      const labelWidth = finite(getComputedStyle(root).getPropertyValue("--stage-timeline-label-width"),156);
+      const view = els.viewport.clientWidth - labelWidth;
+      const left = clamp(pxFor(seekSeconds) - view * 0.4, 0, Math.max(0,timelineWidth-view));
+      els.viewport.scrollTo({left,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth"});
+    }
+    event.preventDefault();
+  });
+
   window.addEventListener("stage-vox-panel-seek", (event) => {
     const detail = event && event.detail || {};
     if (!timeline || typeof detail.cueId !== "string") return;
@@ -3814,14 +3844,15 @@
     const renderChoices=()=>{
       choices.replaceChildren();
       const entries=(design?.scenes||[]).flatMap(scene=>(scene.lxq||[]).map(q=>({scene,q})));
-      entries.sort((a,b)=>Number(a.q.no)-Number(b.q.no));
+      const labels=window.SHOSAI_CUE_SHEET.lightCueDisplayMap(design,window.SHOSAI_CUE_SHEET.cueNamingOf(project),project);
+      entries.sort((a,b)=>(design.scenes.indexOf(a.scene)-design.scenes.indexOf(b.scene)) || finite(a.q.seq,0)-finite(b.q.seq,0));
       for(const {scene,q} of entries) {
         if(filter.value!=="all" && domain.byId.get(scene.id)?.sectionId!==filter.value)continue;
         const mark=(project.cues||[]).find(c=>c.lxId===q.id),pos=mark && TD.cuePosition(domain,mark);
         const status=Number.isFinite(pos?.seconds) ? TD.timecodeText(TD.effectiveTimecode(domain,pos.seconds)) : tx("時刻未指定");
         const button=document.createElement("button");button.type="button";button.className="stage-lx-placement-choice";
         button.dataset.lxId=q.id;button.disabled=Boolean(mark?.locked);
-        button.textContent=(q.no?"Q"+q.no:"")+" · "+(q.name||scene.name)+" · "+status+(q.enabled===false?" · "+tx("無効"):"");
+        button.textContent=(labels.get(q.id)||"Q?")+" · "+(q.name||scene.name)+" · "+status+(q.enabled===false?" · "+tx("無効"):"");
         button.onclick=async()=>{button.disabled=true;if(await placeExistingLightCue(q.id,target))finish();else button.disabled=false;};choices.append(button);
       }
       if(!choices.children.length){const hint=document.createElement("p");hint.textContent=tx("照明デザインでLXキューを作ってください");choices.append(hint);}

@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.59";
+  const GAMMA_APP_VERSION = "v0.3.60";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -3393,7 +3393,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       if (HELD_INSTRUMENT_POSE_IDS.has(pose.id)) return false;
       if ([
         "backflip", "walkover-mid", "frontroll-mid", "roundoff-mid",
-        "backhandspring-mid", "dance3", "handstand-mid", "bridge_hold",
+        "backhandspring-mid", "handstand-mid", "bridge_hold",
       ].includes(pose.id)) return false;
       if (isChairSitPose(pose.id)) return allOnChairs;
       if (isStairSitPose(pose.id)) return allOnStairs;
@@ -3560,7 +3560,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     { ja: "殺陣・武術", ids: ["hit_recoil", "punch", "kick", "sword_ready", "sword_slash", "sword_raised", "staff_ready", "throw",
       "catch_ready", "hero_transform", "hero_finisher", "karate_zenkutsu", "karate_roundhouse_kick_mid", "boxing_guard", "kyudo_draw",
       "bat_swing", "whip_crack", "pistol_aim", "rifle_aim"] },
-    { ja: "踊る", ids: ["dance1", "dance2", "dance3", "dance4", "dance5", "windmill", "ballet_first_position",
+    { ja: "踊る", ids: ["dance1", "dance2", "dance4", "dance5", "windmill", "ballet_first_position",
       "ballet_fifth_position_en_haut", "ballet_arabesque", "ballet_attitude", "ballet_grand_jete", "ballet_pirouette_passe",
       "contemporary_floor_roll", "contemporary_contraction", "contemporary_low_lunge_floor", "offbalance_fall_back",
       "breaking_baby_freeze", "breaking_chair_freeze", "breaking_toprock", "ballroom_hold_lead", "ballroom_hold_follow",
@@ -4127,6 +4127,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     planRoutesLight: "照明の動線を出したり隠したりします。",
     planRoutesSet: "舞台装置の動線を出したり隠したりします。",
     planFlown: "宙に吊ってあるものも平面図に出します。",
+    transitionAnimation: "シーンを送るときの転換の動きを表示・非表示にします。",
+    panelLayout: "舞台画面の操作パネルと図の並べ方を選びます。",
   };
 
   const els = {
@@ -5265,7 +5267,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       hint: "アリーナ・ドームなど大きい劇場の3Dカメラで、遠くの客席を簡単に描いて動きを軽くする。近くの見え方は変わりません" },
     { key: "actionStatus", label: "右下に操作結果を表示", def: false,
       hint: "操作後の説明を右下に6秒間表示します。この端末の設定です。保存失敗などの重要な通知はOFFでも表示します" },
-    { key: "toolTips", label: "アイコンの説明",
+    { key: "toolTips", label: "アイコンの説明", def: true,
       hint: "道具のアイコンにカーソルを合わせると、名前・ショートカット・使い方を出す。覚えたらOFFにできる" },
     { key: "floatingInspector", label: "選んだものを図に添える", def: true,
       hint: "ONでは選んだ対象の横に補助表示を出します。既定では左側のパネル列に表示します" },
@@ -21874,8 +21876,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const tracks = getComputedStyle(dock).gridTemplateColumns.split(" ").length;
     const used = PANEL_BOTTOM_COLUMNS.filter(col => colEls[col]?.children.length).length || 1;
     const rows = Math.ceil(used / tracks);
-    const reserve = document.body.classList.contains("stage-timeline-expanded")
-      ? (document.getElementById("stage-timeline-panel")?.offsetHeight || 0) : 12;
+    // Opening a drawer must not change the work area or its scroll layout.
+    const reserve = 12;
     const available = view.clientHeight - dockTop - 12 - reserve - 8 * (rows - 1);
     const next = available / rows >= BOTTOM_COLUMN_MIN_HEIGHT ? "columns" : "page";
     if (root.dataset.stageBottomScroll !== next) {
@@ -38267,7 +38269,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
 
   function syncTransitionAnimationControls() {
     if (els.animScenes) els.animScenes.checked = state.animateScenes;
-    { const naming = document.getElementById("stage-cue-naming"); if (naming) { naming.value = state.project && state.project.cueNaming === "scene" ? "scene" : "serial"; window.GAMMA_UI?.refreshSelect?.(naming); } }
+    { const naming = document.getElementById("stage-cue-naming"); if (naming) { naming.value = state.project && state.project.cueNaming === "serial" ? "serial" : "scene"; window.GAMMA_UI?.refreshSelect?.(naming); } }
     if (els.timelineAnimScenes) els.timelineAnimScenes.setAttribute("aria-pressed", String(state.animateScenes));
     if (els.toolbarAnimScenes) els.toolbarAnimScenes.setAttribute("aria-pressed", String(state.animateScenes));
   }
@@ -39602,23 +39604,20 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
 
   function onPlanWheel(event) {
     if (event.currentTarget !== planCanvas || guestSessionActive() || presenting) return;
+    // Ordinary wheel/trackpad input scrolls the panel lane, like the front view.
+    // View panning stays on Shift drag / the hand tool; Cmd/Ctrl retains zoom.
+    if (!event.ctrlKey && !event.metaKey) return;
     event.preventDefault();
     const zs = zoomOf("plan");
     const rect = planCanvas.getBoundingClientRect();
-    if (event.ctrlKey || event.metaKey) {
-      const cx = (event.clientX - rect.left) * (W / rect.width);
-      const cy = (event.clientY - rect.top) * (H / rect.height);
-      const worldX = zs.ox + cx / zs.z;
-      const worldY = zs.oy + cy / zs.z;
-      const factor = Math.exp(-(Number(event.deltaY) || 0) * 0.002);
-      zs.z = clamp(zs.z * factor, ZOOM_MIN, ZOOM_MAX);
-      zs.ox = worldX - cx / zs.z;
-      zs.oy = worldY - cy / zs.z;
-    } else {
-      const k = (W / rect.width) / zs.z;
-      zs.ox += (Number(event.deltaX) || 0) * k;
-      zs.oy += (Number(event.deltaY) || 0) * k;
-    }
+    const cx = (event.clientX - rect.left) * (W / rect.width);
+    const cy = (event.clientY - rect.top) * (H / rect.height);
+    const worldX = zs.ox + cx / zs.z;
+    const worldY = zs.oy + cy / zs.z;
+    const factor = Math.exp(-(Number(event.deltaY) || 0) * 0.002);
+    zs.z = clamp(zs.z * factor, ZOOM_MIN, ZOOM_MAX);
+    zs.ox = worldX - cx / zs.z;
+    zs.oy = worldY - cy / zs.z;
     clampZoom(zs);
     render();
     syncZoomButtons();
@@ -39743,6 +39742,9 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const box = operation.getBoundingClientRect();
     if (style.display === "none" || style.visibility === "hidden" || box.width < 1 || box.height < 1) return false;
     if (!operation.getAttribute("aria-label") && !operation.getAttribute("title") && !operation.dataset.tipTitle) return false;
+    // Explicit icon controls may contain a clipped 1px accessible text label.
+    // That text is not a visible caption and must not suppress the tooltip.
+    if (operation.matches(".is-icon, [data-stage-tool], [data-tool-tip]")) return true;
     const text = visibleIconTipText(operation);
     return !text || [...text].length <= 2;
   }
@@ -39766,7 +39768,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const name = button.getAttribute("aria-label") || button.dataset.tipTitle || visibleIconTipText(button);
     const key = button.dataset.toolKey || button.dataset.tipKey || "";
     // 道具の列は data-stage-tool、絵の上の「動線を描く」「メモ」は data-tool-tip
-    const toolName = button.dataset.stageTool || button.dataset.toolTip;
+    const toolName = button.dataset.stageTool || button.dataset.toolTip
+      || (button.id === "stage-panel-layout-toggle" ? "panelLayout" : "");
     const tip = toolTipNode();
     tip.innerHTML = "";
     const head = document.createElement("p");
@@ -39837,7 +39840,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   });
   // Read-only description access for the all-tab information bar; same wording as icon tips.
   function describeOperation(operation) {
-    const tool = operation.dataset.stageTool || operation.dataset.toolTip;
+    const tool = operation.dataset.stageTool || operation.dataset.toolTip
+      || (operation.id === "stage-panel-layout-toggle" ? "panelLayout" : "");
     const name = operation.getAttribute("aria-label") || operation.dataset.tipTitle || operation.title
       || operation.labels?.[0]?.textContent.trim() || visibleIconTipText(operation);
     const nativeTitle = operation.dataset.tipTitle || operation.title || "";
@@ -41335,22 +41339,21 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       announce(state.animateScenes ? "転換アニメーションを入れました。" : "転換アニメーションを切りました。");
     });
   }
-  /* 修正バッチ 2026-10-07 #8（本人決定 D10）: LXキューの呼び名（ショーごとの設定）。既定＝通し番号は欄を持たない
-     （"scene" のときだけ project.cueNaming を持つ＝前の版では知らない欄。読み込みでは素通しされ、無視されて通し番号に戻るだけ）。 */
+  /* 2026-10-13: default hierarchy, optional per-section integer labels. The setting is presentation only. */
   {
     const naming = document.getElementById("stage-cue-naming");
     if (naming) {
       if (GAMMA_EDITION === "lite") naming.closest(".stage-pref-row").hidden = true;
-      naming.value = state.project && state.project.cueNaming === "scene" ? "scene" : "serial";
+      naming.value = state.project && state.project.cueNaming === "serial" ? "serial" : "scene";
       naming.addEventListener("change", () => {
         const next = naming.value === "scene" ? "scene" : "serial";
-        if ((state.project.cueNaming === "scene" ? "scene" : "serial") === next) return;
-        if (next === "scene") state.project.cueNaming = "scene"; else delete state.project.cueNaming;
+        if ((state.project.cueNaming === "serial" ? "serial" : "scene") === next) return;
+        state.project.cueNaming = next;
         persistSoon();
         window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
         try { document.getElementById("gamma-light-frame")?.contentWindow?.GAMMA_LIGHT_EDITOR?.setCueNaming?.(next); } catch (_) { /* 照明デザインを開いていない */ }
         render();
-        announce(next === "scene" ? "LXキューの呼び名をシーンごと（1.2.2）にしました。" : "LXキューの呼び名を通し番号にしました。");
+        announce(next === "scene" ? "LXキューの呼び名をセクション・シーン・キュー順にしました。" : "LXキューの呼び名を章内の整数連番にしました。");
       });
     }
   }
@@ -45026,7 +45029,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     }));
     return { showId: state.project.id, title: state.project.title, stage, scenes, venueMask, frontSeats,
       cueSyncPending: lightingCueListsDiffer(state.project),
-      cueNaming: state.project.cueNaming === "scene" ? "scene" : "serial",
+      cueNaming: state.project.cueNaming === "serial" ? "serial" : "scene",
       venueType: currentVenue.lightingPresetBasis?.venueId || venueV2?.lightingPresetBasis?.venueId || currentVenue.id,
       existingLighting: hasVenueDependentLighting(state.project),
       activeSceneId: state.project.activeSceneId, design: state.project.lightingDesign ? projectIoClone(state.project.lightingDesign) : null,
@@ -45129,6 +45132,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       window.SHOSAI_STAGE_SESSION_HOOKS?.onLocalChange?.();
       return { persisted: true, shelfPersisted: true, designExpanded: synced.added.lighting.length > 0, context: gammaLightingContext() };
     },
+    selectCue(lxId, design) {
+      window.dispatchEvent(new CustomEvent("stage-lx-panel-seek",{detail:{showId:state.project.id,lxId,design}}));
+    },
+    draftChanged(design) {window.dispatchEvent(new CustomEvent("stage-lx-panel-change",{detail:{showId:state.project.id,design}}));},
     placementChoices() { return gammaLightingContext().design; },
     placeCue(placement) {const c=gammaLightingContext();return this.apply(c.design,c.basis,{placement});},
     openScene(id) { const row=state.project.scenes.find(row=>row.kind==="scene" && row.id===id); if (!row) return false; openScene(id); return true; },

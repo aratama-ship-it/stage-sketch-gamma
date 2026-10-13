@@ -1197,7 +1197,7 @@
   }
  ],
  "project": {
-  "id": "gamma-feature-test-v46-pose-review",
+  "id": "gamma-feature-test-v47-retired-pose",
   "title": "テスト: 全機能の試験場",
   "versionLabel": "v2",
   "parentVersionId": null,
@@ -3610,10 +3610,10 @@
       "u": 0.584,
       "v": 0.375,
       "facing": 0,
-      "pose": "dance3",
+      "pose": "dance4",
       "size": 100,
       "color": "#77865f",
-      "name": "dance3"
+      "name": "dance4"
      },
      {
       "id": "ft-a1-np-q",
@@ -3623,10 +3623,10 @@
       "u": 0.752,
       "v": 0.375,
       "facing": 0,
-      "pose": "dance4",
+      "pose": "dance5",
       "size": 100,
       "color": "#9c823f",
-      "name": "dance4"
+      "name": "dance5"
      },
      {
       "id": "ft-a1-np-r",
@@ -3636,10 +3636,10 @@
       "u": 0.92,
       "v": 0.375,
       "facing": 0,
-      "pose": "dance5",
+      "pose": "windmill",
       "size": 100,
       "color": "#6d6657",
-      "name": "dance5"
+      "name": "windmill"
      },
      {
       "id": "ft-a1-np-s",
@@ -3649,10 +3649,10 @@
       "u": 0.08,
       "v": 0.433,
       "facing": 0,
-      "pose": "windmill",
+      "pose": "cartwheel-oneside-mid",
       "size": 100,
       "color": "#315b8a",
-      "name": "windmill"
+      "name": "cartwheel-oneside-mid"
      },
      {
       "id": "ft-a1-np-t",
@@ -3662,10 +3662,10 @@
       "u": 0.248,
       "v": 0.433,
       "facing": 0,
-      "pose": "cartwheel-oneside-mid",
+      "pose": "sideflip-mid",
       "size": 100,
       "color": "#b0533f",
-      "name": "cartwheel-oneside-mid"
+      "name": "sideflip-mid"
      },
      {
       "id": "ft-a1-np-u",
@@ -3675,10 +3675,10 @@
       "u": 0.416,
       "v": 0.433,
       "facing": 0,
-      "pose": "sideflip-mid",
+      "pose": "walkover-mid",
       "size": 100,
       "color": "#4f7d6f",
-      "name": "sideflip-mid"
+      "name": "walkover-mid"
      },
      {
       "id": "ft-a1-np-v",
@@ -3688,10 +3688,10 @@
       "u": 0.584,
       "v": 0.433,
       "facing": 0,
-      "pose": "walkover-mid",
+      "pose": "handstand-mid",
       "size": 100,
       "color": "#8a6a9c",
-      "name": "walkover-mid"
+      "name": "handstand-mid"
      },
      {
       "id": "ft-a1-np-w",
@@ -3701,10 +3701,10 @@
       "u": 0.752,
       "v": 0.433,
       "facing": 0,
-      "pose": "handstand-mid",
+      "pose": "frontroll-mid",
       "size": 100,
       "color": "#c07a3a",
-      "name": "handstand-mid"
+      "name": "frontroll-mid"
      },
      {
       "id": "ft-a1-np-x",
@@ -3714,10 +3714,10 @@
       "u": 0.92,
       "v": 0.433,
       "facing": 0,
-      "pose": "frontroll-mid",
+      "pose": "roundoff-mid",
       "size": 100,
       "color": "#5c6f8a",
-      "name": "frontroll-mid"
+      "name": "roundoff-mid"
      },
      {
       "id": "ft-a1-np-y",
@@ -3727,10 +3727,10 @@
       "u": 0.08,
       "v": 0.492,
       "facing": 0,
-      "pose": "roundoff-mid",
+      "pose": "backhandspring-mid",
       "size": 100,
       "color": "#7f8c4a",
-      "name": "roundoff-mid"
+      "name": "backhandspring-mid"
      },
      {
       "id": "ft-a1-np-z",
@@ -3740,10 +3740,10 @@
       "u": 0.248,
       "v": 0.492,
       "facing": 0,
-      "pose": "backhandspring-mid",
+      "pose": "tuck",
       "size": 100,
       "color": "#a06060",
-      "name": "backhandspring-mid"
+      "name": "tuck"
      },
      {
       "id": "ft-a1-np-10",
@@ -3753,10 +3753,10 @@
       "u": 0.416,
       "v": 0.492,
       "facing": 0,
-      "pose": "tuck",
+      "pose": "lie",
       "size": 100,
       "color": "#4a8a8a",
-      "name": "tuck"
+      "name": "lie"
      },
      {
       "id": "ft-a1-np-11",
@@ -3766,10 +3766,10 @@
       "u": 0.584,
       "v": 0.492,
       "facing": 0,
-      "pose": "lie",
+      "pose": "supine",
       "size": 100,
       "color": "#9a7a3a",
-      "name": "lie"
+      "name": "supine"
      },
      {
       "id": "ft-a1-np-12",
@@ -3779,10 +3779,10 @@
       "u": 0.752,
       "v": 0.492,
       "facing": 0,
-      "pose": "supine",
+      "pose": "sidelie",
       "size": 100,
       "color": "#6a5a8a",
-      "name": "supine"
+      "name": "sidelie"
      },
      {
       "id": "ft-a1-np-13",
@@ -3792,10 +3792,10 @@
       "u": 0.92,
       "v": 0.492,
       "facing": 0,
-      "pose": "sidelie",
+      "pose": "bow_deep",
       "size": 100,
       "color": "#8a4a4a",
-      "name": "sidelie"
+      "name": "bow_deep"
      },
      {
       "id": "ft-a1-np-14",
@@ -3805,10 +3805,10 @@
       "u": 0.08,
       "v": 0.55,
       "facing": 0,
-      "pose": "bow_deep",
+      "pose": "wave",
       "size": 100,
       "color": "#3f7a5a",
-      "name": "bow_deep"
+      "name": "wave"
      },
      {
       "id": "ft-a1-np-15",
@@ -3818,10 +3818,10 @@
       "u": 0.248,
       "v": 0.55,
       "facing": 0,
-      "pose": "wave",
+      "pose": "point",
       "size": 100,
       "color": "#a08a5a",
-      "name": "wave"
+      "name": "point"
      },
      {
       "id": "ft-a1-np-16",
@@ -3831,10 +3831,10 @@
       "u": 0.416,
       "v": 0.55,
       "facing": 0,
-      "pose": "point",
+      "pose": "stand_arms_crossed",
       "size": 100,
       "color": "#5a5a9a",
-      "name": "point"
+      "name": "stand_arms_crossed"
      },
      {
       "id": "ft-a1-np-17",
@@ -3844,10 +3844,10 @@
       "u": 0.584,
       "v": 0.55,
       "facing": 0,
-      "pose": "stand_arms_crossed",
+      "pose": "look_up",
       "size": 100,
       "color": "#9a5a7a",
-      "name": "stand_arms_crossed"
+      "name": "look_up"
      },
      {
       "id": "ft-a1-np-18",
@@ -3857,10 +3857,10 @@
       "u": 0.752,
       "v": 0.55,
       "facing": 0,
-      "pose": "look_up",
+      "pose": "turn_back",
       "size": 100,
       "color": "#a84b26",
-      "name": "look_up"
+      "name": "turn_back"
      },
      {
       "id": "ft-a1-np-19",
@@ -3870,10 +3870,10 @@
       "u": 0.92,
       "v": 0.55,
       "facing": 0,
-      "pose": "turn_back",
+      "pose": "bow_light",
       "size": 100,
       "color": "#77865f",
-      "name": "turn_back"
+      "name": "bow_light"
      },
      {
       "id": "ft-a1-np-1a",
@@ -3883,10 +3883,10 @@
       "u": 0.08,
       "v": 0.608,
       "facing": 0,
-      "pose": "bow_light",
+      "pose": "blow_kiss",
       "size": 100,
       "color": "#9c823f",
-      "name": "bow_light"
+      "name": "blow_kiss"
      },
      {
       "id": "ft-a1-np-1b",
@@ -3896,10 +3896,10 @@
       "u": 0.248,
       "v": 0.608,
       "facing": 0,
-      "pose": "blow_kiss",
+      "pose": "beckon",
       "size": 100,
       "color": "#6d6657",
-      "name": "blow_kiss"
+      "name": "beckon"
      },
      {
       "id": "ft-a1-np-1c",
@@ -3909,10 +3909,10 @@
       "u": 0.416,
       "v": 0.608,
       "facing": 0,
-      "pose": "beckon",
+      "pose": "raise_hand",
       "size": 100,
       "color": "#315b8a",
-      "name": "beckon"
+      "name": "raise_hand"
      },
      {
       "id": "ft-a1-np-1d",
@@ -3922,10 +3922,10 @@
       "u": 0.584,
       "v": 0.608,
       "facing": 0,
-      "pose": "raise_hand",
+      "pose": "salute",
       "size": 100,
       "color": "#b0533f",
-      "name": "raise_hand"
+      "name": "salute"
      },
      {
       "id": "ft-a1-np-1e",
@@ -3935,10 +3935,10 @@
       "u": 0.752,
       "v": 0.608,
       "facing": 0,
-      "pose": "salute",
+      "pose": "fist_pump",
       "size": 100,
       "color": "#4f7d6f",
-      "name": "salute"
+      "name": "fist_pump"
      },
      {
       "id": "ft-a1-np-1f",
@@ -3948,10 +3948,10 @@
       "u": 0.92,
       "v": 0.608,
       "facing": 0,
-      "pose": "fist_pump",
+      "pose": "clap",
       "size": 100,
       "color": "#8a6a9c",
-      "name": "fist_pump"
+      "name": "clap"
      },
      {
       "id": "ft-a1-np-1g",
@@ -3961,10 +3961,10 @@
       "u": 0.08,
       "v": 0.667,
       "facing": 0,
-      "pose": "clap",
+      "pose": "look_down",
       "size": 100,
       "color": "#c07a3a",
-      "name": "clap"
+      "name": "look_down"
      },
      {
       "id": "ft-a1-np-1h",
@@ -3974,10 +3974,10 @@
       "u": 0.248,
       "v": 0.667,
       "facing": 0,
-      "pose": "look_down",
+      "pose": "shade_eyes",
       "size": 100,
       "color": "#5c6f8a",
-      "name": "look_down"
+      "name": "shade_eyes"
      },
      {
       "id": "ft-a1-np-1i",
@@ -3987,10 +3987,10 @@
       "u": 0.416,
       "v": 0.667,
       "facing": 0,
-      "pose": "shade_eyes",
+      "pose": "listen_ear",
       "size": 100,
       "color": "#7f8c4a",
-      "name": "shade_eyes"
+      "name": "listen_ear"
      },
      {
       "id": "ft-a1-np-1j",
@@ -4000,10 +4000,10 @@
       "u": 0.584,
       "v": 0.667,
       "facing": 0,
-      "pose": "listen_ear",
+      "pose": "hide_crouch",
       "size": 100,
       "color": "#a06060",
-      "name": "listen_ear"
+      "name": "hide_crouch"
      },
      {
       "id": "ft-a1-np-1k",
@@ -4013,10 +4013,10 @@
       "u": 0.752,
       "v": 0.667,
       "facing": 0,
-      "pose": "hide_crouch",
+      "pose": "stairs_climb",
       "size": 100,
       "color": "#4a8a8a",
-      "name": "hide_crouch"
+      "name": "stairs_climb"
      },
      {
       "id": "ft-a1-np-1l",
@@ -4026,10 +4026,10 @@
       "u": 0.92,
       "v": 0.667,
       "facing": 0,
-      "pose": "stairs_climb",
+      "pose": "sneak",
       "size": 100,
       "color": "#9a7a3a",
-      "name": "stairs_climb"
+      "name": "sneak"
      },
      {
       "id": "ft-a1-np-1m",
@@ -4039,10 +4039,10 @@
       "u": 0.08,
       "v": 0.725,
       "facing": 0,
-      "pose": "sneak",
+      "pose": "stagger",
       "size": 100,
       "color": "#6a5a8a",
-      "name": "sneak"
+      "name": "stagger"
      },
      {
       "id": "ft-a1-np-1n",
@@ -4052,10 +4052,10 @@
       "u": 0.248,
       "v": 0.725,
       "facing": 0,
-      "pose": "stagger",
+      "pose": "march",
       "size": 100,
       "color": "#8a4a4a",
-      "name": "stagger"
+      "name": "march"
      },
      {
       "id": "ft-a1-np-1o",
@@ -4065,10 +4065,10 @@
       "u": 0.416,
       "v": 0.725,
       "facing": 0,
-      "pose": "march",
+      "pose": "elder_walk",
       "size": 100,
       "color": "#3f7a5a",
-      "name": "march"
+      "name": "elder_walk"
      },
      {
       "id": "ft-a1-np-1p",
@@ -4078,10 +4078,10 @@
       "u": 0.584,
       "v": 0.725,
       "facing": 0,
-      "pose": "elder_walk",
+      "pose": "arrogant_walk",
       "size": 100,
       "color": "#a08a5a",
-      "name": "elder_walk"
+      "name": "arrogant_walk"
      },
      {
       "id": "ft-a1-np-1q",
@@ -4091,10 +4091,10 @@
       "u": 0.752,
       "v": 0.725,
       "facing": 0,
-      "pose": "arrogant_walk",
+      "pose": "back_away",
       "size": 100,
       "color": "#5a5a9a",
-      "name": "arrogant_walk"
+      "name": "back_away"
      },
      {
       "id": "ft-a1-np-1r",
@@ -4104,10 +4104,10 @@
       "u": 0.92,
       "v": 0.725,
       "facing": 0,
-      "pose": "back_away",
+      "pose": "stand_hands_on_hips",
       "size": 100,
       "color": "#9a5a7a",
-      "name": "back_away"
+      "name": "stand_hands_on_hips"
      },
      {
       "id": "ft-a1-np-1s",
@@ -4117,10 +4117,10 @@
       "u": 0.08,
       "v": 0.783,
       "facing": 0,
-      "pose": "stand_hands_on_hips",
+      "pose": "stand_contrapposto",
       "size": 100,
       "color": "#a84b26",
-      "name": "stand_hands_on_hips"
+      "name": "stand_contrapposto"
      },
      {
       "id": "ft-a1-np-1t",
@@ -4130,10 +4130,10 @@
       "u": 0.248,
       "v": 0.783,
       "facing": 0,
-      "pose": "stand_contrapposto",
+      "pose": "lean_wall",
       "size": 100,
       "color": "#77865f",
-      "name": "stand_contrapposto"
+      "name": "lean_wall"
      },
      {
       "id": "ft-a1-np-1u",
@@ -4143,10 +4143,10 @@
       "u": 0.416,
       "v": 0.783,
       "facing": 0,
-      "pose": "lean_wall",
+      "pose": "sit_cross_legs",
       "size": 100,
       "color": "#9c823f",
-      "name": "lean_wall"
+      "name": "sit_cross_legs"
      },
      {
       "id": "ft-a1-np-1v",
@@ -4156,10 +4156,10 @@
       "u": 0.584,
       "v": 0.783,
       "facing": 0,
-      "pose": "sit_cross_legs",
+      "pose": "sit_chin_rest",
       "size": 100,
       "color": "#6d6657",
-      "name": "sit_cross_legs"
+      "name": "sit_chin_rest"
      },
      {
       "id": "ft-a1-np-1w",
@@ -4169,10 +4169,10 @@
       "u": 0.752,
       "v": 0.783,
       "facing": 0,
-      "pose": "sit_chin_rest",
+      "pose": "sit_lean_back",
       "size": 100,
       "color": "#315b8a",
-      "name": "sit_chin_rest"
+      "name": "sit_lean_back"
      },
      {
       "id": "ft-a1-np-1x",
@@ -4182,10 +4182,10 @@
       "u": 0.92,
       "v": 0.783,
       "facing": 0,
-      "pose": "sit_lean_back",
+      "pose": "sit_reverse_chair",
       "size": 100,
       "color": "#b0533f",
-      "name": "sit_lean_back"
+      "name": "sit_reverse_chair"
      },
      {
       "id": "ft-a1-np-1y",
@@ -4195,10 +4195,10 @@
       "u": 0.08,
       "v": 0.842,
       "facing": 0,
-      "pose": "sit_reverse_chair",
+      "pose": "sit_forward",
       "size": 100,
       "color": "#4f7d6f",
-      "name": "sit_reverse_chair"
+      "name": "sit_forward"
      },
      {
       "id": "ft-a1-np-1z",
@@ -4208,10 +4208,10 @@
       "u": 0.248,
       "v": 0.842,
       "facing": 0,
-      "pose": "sit_forward",
+      "pose": "write_desk",
       "size": 100,
       "color": "#8a6a9c",
-      "name": "sit_forward"
+      "name": "write_desk"
      },
      {
       "id": "ft-a1-np-20",
@@ -4221,10 +4221,10 @@
       "u": 0.416,
       "v": 0.842,
       "facing": 0,
-      "pose": "write_desk",
+      "pose": "collapse_knees",
       "size": 100,
       "color": "#c07a3a",
-      "name": "write_desk"
+      "name": "collapse_knees"
      },
      {
       "id": "ft-a1-np-21",
@@ -4234,10 +4234,10 @@
       "u": 0.584,
       "v": 0.842,
       "facing": 0,
-      "pose": "collapse_knees",
+      "pose": "collapse_hands_floor",
       "size": 100,
       "color": "#5c6f8a",
-      "name": "collapse_knees"
+      "name": "collapse_hands_floor"
      },
      {
       "id": "ft-a1-np-22",
@@ -4247,10 +4247,10 @@
       "u": 0.752,
       "v": 0.842,
       "facing": 0,
-      "pose": "collapse_hands_floor",
+      "pose": "lie_spread",
       "size": 100,
       "color": "#7f8c4a",
-      "name": "collapse_hands_floor"
+      "name": "lie_spread"
      },
      {
       "id": "ft-a1-np-23",
@@ -4260,10 +4260,10 @@
       "u": 0.92,
       "v": 0.842,
       "facing": 0,
-      "pose": "lie_spread",
+      "pose": "cry_cover",
       "size": 100,
       "color": "#a06060",
-      "name": "lie_spread"
+      "name": "cry_cover"
      },
      {
       "id": "ft-a1-np-24",
@@ -4273,10 +4273,10 @@
       "u": 0.08,
       "v": 0.9,
       "facing": 0,
-      "pose": "cry_cover",
+      "pose": "shout",
       "size": 100,
       "color": "#4a8a8a",
-      "name": "cry_cover"
+      "name": "shout"
      },
      {
       "id": "ft-a1-np-25",
@@ -4286,10 +4286,10 @@
       "u": 0.248,
       "v": 0.9,
       "facing": 0,
-      "pose": "shout",
+      "pose": "think_chin",
       "size": 100,
       "color": "#9a7a3a",
-      "name": "shout"
+      "name": "think_chin"
      },
      {
       "id": "ft-a1-np-26",
@@ -4299,10 +4299,10 @@
       "u": 0.416,
       "v": 0.9,
       "facing": 0,
-      "pose": "think_chin",
+      "pose": "head_down",
       "size": 100,
       "color": "#6a5a8a",
-      "name": "think_chin"
+      "name": "head_down"
      },
      {
       "id": "ft-a1-np-27",
@@ -4312,10 +4312,10 @@
       "u": 0.584,
       "v": 0.9,
       "facing": 0,
-      "pose": "head_down",
+      "pose": "hold_head",
       "size": 100,
       "color": "#8a4a4a",
-      "name": "head_down"
+      "name": "hold_head"
      },
      {
       "id": "ft-a1-np-28",
@@ -4325,10 +4325,10 @@
       "u": 0.752,
       "v": 0.9,
       "facing": 0,
-      "pose": "hold_head",
+      "pose": "hand_on_chest",
       "size": 100,
       "color": "#3f7a5a",
-      "name": "hold_head"
+      "name": "hand_on_chest"
      },
      {
       "id": "ft-a1-np-29",
@@ -4338,10 +4338,10 @@
       "u": 0.92,
       "v": 0.9,
       "facing": 0,
-      "pose": "hand_on_chest",
+      "pose": "surprised",
       "size": 100,
       "color": "#a08a5a",
-      "name": "hand_on_chest"
+      "name": "surprised"
      },
      {
       "id": "ft-piece-help-owner",
@@ -4351,7 +4351,7 @@
       "u": 0.35,
       "v": 0.12,
       "facing": 0,
-      "pose": "two_high_flyer",
+      "pose": "shoulder_ride_top",
       "size": 100,
       "color": "#a84b26",
       "name": "固定テスト・共通"
@@ -4364,7 +4364,7 @@
       "u": 0.65,
       "v": 0.12,
       "facing": 0,
-      "pose": "hug_held",
+      "pose": "wire_walk",
       "size": 100,
       "color": "#a84b26",
       "name": "固定テスト・この駒",
@@ -4403,10 +4403,10 @@
       "u": 0.08,
       "v": 0.2,
       "facing": 0,
-      "pose": "surprised",
+      "pose": "pray",
       "size": 100,
       "color": "#a84b26",
-      "name": "surprised"
+      "name": "pray"
      },
      {
       "id": "ft-a2-np-2b",
@@ -4416,10 +4416,10 @@
       "u": 0.248,
       "v": 0.2,
       "facing": 0,
-      "pose": "pray",
+      "pose": "clown_slip_fall",
       "size": 100,
       "color": "#77865f",
-      "name": "pray"
+      "name": "clown_slip_fall"
      },
      {
       "id": "ft-a2-np-2c",
@@ -4429,10 +4429,10 @@
       "u": 0.416,
       "v": 0.2,
       "facing": 0,
-      "pose": "clown_slip_fall",
+      "pose": "clown_trip",
       "size": 100,
       "color": "#9c823f",
-      "name": "clown_slip_fall"
+      "name": "clown_trip"
      },
      {
       "id": "ft-a2-np-2d",
@@ -4442,10 +4442,10 @@
       "u": 0.584,
       "v": 0.2,
       "facing": 0,
-      "pose": "clown_trip",
+      "pose": "pratfall_sit",
       "size": 100,
       "color": "#6d6657",
-      "name": "clown_trip"
+      "name": "pratfall_sit"
      },
      {
       "id": "ft-a2-np-2e",
@@ -4455,10 +4455,10 @@
       "u": 0.752,
       "v": 0.2,
       "facing": 0,
-      "pose": "pratfall_sit",
+      "pose": "shrug",
       "size": 100,
       "color": "#315b8a",
-      "name": "pratfall_sit"
+      "name": "shrug"
      },
      {
       "id": "ft-a2-np-2f",
@@ -4468,10 +4468,10 @@
       "u": 0.92,
       "v": 0.2,
       "facing": 0,
-      "pose": "shrug",
+      "pose": "mime_wall",
       "size": 100,
       "color": "#b0533f",
-      "name": "shrug"
+      "name": "mime_wall"
      },
      {
       "id": "ft-a2-np-2g",
@@ -4481,10 +4481,10 @@
       "u": 0.08,
       "v": 0.254,
       "facing": 0,
-      "pose": "mime_wall",
+      "pose": "sign_language_speak",
       "size": 100,
       "color": "#4f7d6f",
-      "name": "mime_wall"
+      "name": "sign_language_speak"
      },
      {
       "id": "ft-a2-np-2h",
@@ -4494,10 +4494,10 @@
       "u": 0.248,
       "v": 0.254,
       "facing": 0,
-      "pose": "sign_language_speak",
+      "pose": "hit_recoil",
       "size": 100,
       "color": "#8a6a9c",
-      "name": "sign_language_speak"
+      "name": "hit_recoil"
      },
      {
       "id": "ft-a2-np-2i",
@@ -4507,10 +4507,10 @@
       "u": 0.416,
       "v": 0.254,
       "facing": 0,
-      "pose": "hit_recoil",
+      "pose": "punch",
       "size": 100,
       "color": "#c07a3a",
-      "name": "hit_recoil"
+      "name": "punch"
      },
      {
       "id": "ft-a2-np-2j",
@@ -4520,10 +4520,10 @@
       "u": 0.584,
       "v": 0.254,
       "facing": 0,
-      "pose": "punch",
+      "pose": "kick",
       "size": 100,
       "color": "#5c6f8a",
-      "name": "punch"
+      "name": "kick"
      },
      {
       "id": "ft-a2-np-2k",
@@ -4533,10 +4533,10 @@
       "u": 0.752,
       "v": 0.254,
       "facing": 0,
-      "pose": "kick",
+      "pose": "throw",
       "size": 100,
       "color": "#7f8c4a",
-      "name": "kick"
+      "name": "throw"
      },
      {
       "id": "ft-a2-np-2l",
@@ -4546,10 +4546,10 @@
       "u": 0.92,
       "v": 0.254,
       "facing": 0,
-      "pose": "throw",
+      "pose": "catch_ready",
       "size": 100,
       "color": "#a06060",
-      "name": "throw"
+      "name": "catch_ready"
      },
      {
       "id": "ft-a2-np-2m",
@@ -4559,10 +4559,10 @@
       "u": 0.08,
       "v": 0.308,
       "facing": 0,
-      "pose": "catch_ready",
+      "pose": "hero_transform",
       "size": 100,
       "color": "#4a8a8a",
-      "name": "catch_ready"
+      "name": "hero_transform"
      },
      {
       "id": "ft-a2-np-2n",
@@ -4572,10 +4572,10 @@
       "u": 0.248,
       "v": 0.308,
       "facing": 0,
-      "pose": "hero_transform",
+      "pose": "hero_finisher",
       "size": 100,
       "color": "#9a7a3a",
-      "name": "hero_transform"
+      "name": "hero_finisher"
      },
      {
       "id": "ft-a2-np-2o",
@@ -4585,10 +4585,10 @@
       "u": 0.416,
       "v": 0.308,
       "facing": 0,
-      "pose": "hero_finisher",
+      "pose": "karate_zenkutsu",
       "size": 100,
       "color": "#6a5a8a",
-      "name": "hero_finisher"
+      "name": "karate_zenkutsu"
      },
      {
       "id": "ft-a2-np-2p",
@@ -4598,10 +4598,10 @@
       "u": 0.584,
       "v": 0.308,
       "facing": 0,
-      "pose": "karate_zenkutsu",
+      "pose": "karate_roundhouse_kick_mid",
       "size": 100,
       "color": "#8a4a4a",
-      "name": "karate_zenkutsu"
+      "name": "karate_roundhouse_kick_mid"
      },
      {
       "id": "ft-a2-np-2q",
@@ -4611,10 +4611,10 @@
       "u": 0.752,
       "v": 0.308,
       "facing": 0,
-      "pose": "karate_roundhouse_kick_mid",
+      "pose": "boxing_guard",
       "size": 100,
       "color": "#3f7a5a",
-      "name": "karate_roundhouse_kick_mid"
+      "name": "boxing_guard"
      },
      {
       "id": "ft-a2-np-2r",
@@ -4624,10 +4624,10 @@
       "u": 0.92,
       "v": 0.308,
       "facing": 0,
-      "pose": "boxing_guard",
+      "pose": "push",
       "size": 100,
       "color": "#a08a5a",
-      "name": "boxing_guard"
+      "name": "push"
      },
      {
       "id": "ft-a2-np-2s",
@@ -4637,10 +4637,10 @@
       "u": 0.08,
       "v": 0.362,
       "facing": 0,
-      "pose": "push",
+      "pose": "pull",
       "size": 100,
       "color": "#5a5a9a",
-      "name": "push"
+      "name": "pull"
      },
      {
       "id": "ft-a2-np-2t",
@@ -4650,10 +4650,10 @@
       "u": 0.248,
       "v": 0.362,
       "facing": 0,
-      "pose": "pull",
+      "pose": "ballet_first_position",
       "size": 100,
       "color": "#9a5a7a",
-      "name": "pull"
+      "name": "ballet_first_position"
      },
      {
       "id": "ft-a2-np-2u",
@@ -4663,10 +4663,10 @@
       "u": 0.416,
       "v": 0.362,
       "facing": 0,
-      "pose": "ballet_first_position",
+      "pose": "ballet_fifth_position_en_haut",
       "size": 100,
       "color": "#a84b26",
-      "name": "ballet_first_position"
+      "name": "ballet_fifth_position_en_haut"
      },
      {
       "id": "ft-a2-np-2v",
@@ -4676,10 +4676,10 @@
       "u": 0.584,
       "v": 0.362,
       "facing": 0,
-      "pose": "ballet_fifth_position_en_haut",
+      "pose": "ballet_arabesque",
       "size": 100,
       "color": "#77865f",
-      "name": "ballet_fifth_position_en_haut"
+      "name": "ballet_arabesque"
      },
      {
       "id": "ft-a2-np-2w",
@@ -4689,10 +4689,10 @@
       "u": 0.752,
       "v": 0.362,
       "facing": 0,
-      "pose": "ballet_arabesque",
+      "pose": "ballet_attitude",
       "size": 100,
       "color": "#9c823f",
-      "name": "ballet_arabesque"
+      "name": "ballet_attitude"
      },
      {
       "id": "ft-a2-np-2x",
@@ -4702,10 +4702,10 @@
       "u": 0.92,
       "v": 0.362,
       "facing": 0,
-      "pose": "ballet_attitude",
+      "pose": "ballet_grand_jete",
       "size": 100,
       "color": "#6d6657",
-      "name": "ballet_attitude"
+      "name": "ballet_grand_jete"
      },
      {
       "id": "ft-a2-np-2y",
@@ -4715,10 +4715,10 @@
       "u": 0.08,
       "v": 0.415,
       "facing": 0,
-      "pose": "ballet_grand_jete",
+      "pose": "ballet_pirouette_passe",
       "size": 100,
       "color": "#315b8a",
-      "name": "ballet_grand_jete"
+      "name": "ballet_pirouette_passe"
      },
      {
       "id": "ft-a2-np-2z",
@@ -4728,10 +4728,10 @@
       "u": 0.248,
       "v": 0.415,
       "facing": 0,
-      "pose": "ballet_pirouette_passe",
+      "pose": "contemporary_floor_roll",
       "size": 100,
       "color": "#b0533f",
-      "name": "ballet_pirouette_passe"
+      "name": "contemporary_floor_roll"
      },
      {
       "id": "ft-a2-np-30",
@@ -4741,10 +4741,10 @@
       "u": 0.416,
       "v": 0.415,
       "facing": 0,
-      "pose": "contemporary_floor_roll",
+      "pose": "contemporary_contraction",
       "size": 100,
       "color": "#4f7d6f",
-      "name": "contemporary_floor_roll"
+      "name": "contemporary_contraction"
      },
      {
       "id": "ft-a2-np-31",
@@ -4754,10 +4754,10 @@
       "u": 0.584,
       "v": 0.415,
       "facing": 0,
-      "pose": "contemporary_contraction",
+      "pose": "contemporary_low_lunge_floor",
       "size": 100,
       "color": "#8a6a9c",
-      "name": "contemporary_contraction"
+      "name": "contemporary_low_lunge_floor"
      },
      {
       "id": "ft-a2-np-32",
@@ -4767,10 +4767,10 @@
       "u": 0.752,
       "v": 0.415,
       "facing": 0,
-      "pose": "contemporary_low_lunge_floor",
+      "pose": "offbalance_fall_back",
       "size": 100,
       "color": "#c07a3a",
-      "name": "contemporary_low_lunge_floor"
+      "name": "offbalance_fall_back"
      },
      {
       "id": "ft-a2-np-33",
@@ -4780,10 +4780,10 @@
       "u": 0.92,
       "v": 0.415,
       "facing": 0,
-      "pose": "offbalance_fall_back",
+      "pose": "breaking_baby_freeze",
       "size": 100,
       "color": "#5c6f8a",
-      "name": "offbalance_fall_back"
+      "name": "breaking_baby_freeze"
      },
      {
       "id": "ft-a2-np-34",
@@ -4793,10 +4793,10 @@
       "u": 0.08,
       "v": 0.469,
       "facing": 0,
-      "pose": "breaking_baby_freeze",
+      "pose": "breaking_chair_freeze",
       "size": 100,
       "color": "#7f8c4a",
-      "name": "breaking_baby_freeze"
+      "name": "breaking_chair_freeze"
      },
      {
       "id": "ft-a2-np-35",
@@ -4806,10 +4806,10 @@
       "u": 0.248,
       "v": 0.469,
       "facing": 0,
-      "pose": "breaking_chair_freeze",
+      "pose": "breaking_toprock",
       "size": 100,
       "color": "#a06060",
-      "name": "breaking_chair_freeze"
+      "name": "breaking_toprock"
      },
      {
       "id": "ft-a2-np-36",
@@ -4819,10 +4819,10 @@
       "u": 0.416,
       "v": 0.469,
       "facing": 0,
-      "pose": "breaking_toprock",
+      "pose": "ballroom_hold_lead",
       "size": 100,
       "color": "#4a8a8a",
-      "name": "breaking_toprock"
+      "name": "ballroom_hold_lead"
      },
      {
       "id": "ft-a2-np-37",
@@ -4832,10 +4832,10 @@
       "u": 0.584,
       "v": 0.469,
       "facing": 0,
-      "pose": "ballroom_hold_lead",
+      "pose": "ballroom_hold_follow",
       "size": 100,
       "color": "#9a7a3a",
-      "name": "ballroom_hold_lead"
+      "name": "ballroom_hold_follow"
      },
      {
       "id": "ft-a2-np-38",
@@ -4845,10 +4845,10 @@
       "u": 0.752,
       "v": 0.469,
       "facing": 0,
-      "pose": "ballroom_hold_follow",
+      "pose": "dip_lead",
       "size": 100,
       "color": "#6a5a8a",
-      "name": "ballroom_hold_follow"
+      "name": "dip_lead"
      },
      {
       "id": "ft-a2-np-39",
@@ -4858,10 +4858,10 @@
       "u": 0.92,
       "v": 0.469,
       "facing": 0,
-      "pose": "dip_lead",
+      "pose": "dip_follow",
       "size": 100,
       "color": "#8a4a4a",
-      "name": "dip_lead"
+      "name": "dip_follow"
      },
      {
       "id": "ft-a2-np-3a",
@@ -4871,10 +4871,10 @@
       "u": 0.08,
       "v": 0.523,
       "facing": 0,
-      "pose": "dip_follow",
+      "pose": "tap_stance",
       "size": 100,
       "color": "#3f7a5a",
-      "name": "dip_follow"
+      "name": "tap_stance"
      },
      {
       "id": "ft-a2-np-3b",
@@ -4884,10 +4884,10 @@
       "u": 0.248,
       "v": 0.523,
       "facing": 0,
-      "pose": "tap_stance",
+      "pose": "jazz_hands",
       "size": 100,
       "color": "#a08a5a",
-      "name": "tap_stance"
+      "name": "jazz_hands"
      },
      {
       "id": "ft-a2-np-3c",
@@ -4897,10 +4897,10 @@
       "u": 0.416,
       "v": 0.523,
       "facing": 0,
-      "pose": "jazz_hands",
+      "pose": "sing_micstand",
       "size": 100,
       "color": "#5a5a9a",
-      "name": "jazz_hands"
+      "name": "sing_micstand"
      },
      {
       "id": "ft-a2-np-3d",
@@ -4910,10 +4910,10 @@
       "u": 0.584,
       "v": 0.523,
       "facing": 0,
-      "pose": "sing_micstand",
+      "pose": "taiko_strike",
       "size": 100,
       "color": "#9a5a7a",
-      "name": "sing_micstand"
+      "name": "taiko_strike"
      },
      {
       "id": "ft-a2-np-3e",
@@ -4923,10 +4923,10 @@
       "u": 0.752,
       "v": 0.523,
       "facing": 0,
-      "pose": "taiko_strike",
+      "pose": "drums_play",
       "size": 100,
       "color": "#a84b26",
-      "name": "taiko_strike"
+      "name": "drums_play"
      },
      {
       "id": "ft-a2-np-3f",
@@ -4936,10 +4936,10 @@
       "u": 0.92,
       "v": 0.523,
       "facing": 0,
-      "pose": "drums_play",
+      "pose": "piano_play",
       "size": 100,
       "color": "#77865f",
-      "name": "drums_play"
+      "name": "piano_play"
      },
      {
       "id": "ft-a2-np-3g",
@@ -4949,10 +4949,10 @@
       "u": 0.08,
       "v": 0.577,
       "facing": 0,
-      "pose": "piano_play",
+      "pose": "bridge_hold",
       "size": 100,
       "color": "#9c823f",
-      "name": "piano_play"
+      "name": "bridge_hold"
      },
      {
       "id": "ft-a2-np-3h",
@@ -4962,10 +4962,10 @@
       "u": 0.248,
       "v": 0.577,
       "facing": 0,
-      "pose": "bridge_hold",
+      "pose": "one_arm_handstand",
       "size": 100,
       "color": "#6d6657",
-      "name": "bridge_hold"
+      "name": "one_arm_handstand"
      },
      {
       "id": "ft-a2-np-3i",
@@ -4975,10 +4975,10 @@
       "u": 0.416,
       "v": 0.577,
       "facing": 0,
-      "pose": "one_arm_handstand",
+      "pose": "straddle_handstand",
       "size": 100,
       "color": "#315b8a",
-      "name": "one_arm_handstand"
+      "name": "straddle_handstand"
      },
      {
       "id": "ft-a2-np-3j",
@@ -4988,10 +4988,10 @@
       "u": 0.584,
       "v": 0.577,
       "facing": 0,
-      "pose": "straddle_handstand",
+      "pose": "headstand",
       "size": 100,
       "color": "#b0533f",
-      "name": "straddle_handstand"
+      "name": "headstand"
      },
      {
       "id": "ft-a2-np-3k",
@@ -5001,10 +5001,10 @@
       "u": 0.752,
       "v": 0.577,
       "facing": 0,
-      "pose": "headstand",
+      "pose": "forearm_stand",
       "size": 100,
       "color": "#4f7d6f",
-      "name": "headstand"
+      "name": "forearm_stand"
      },
      {
       "id": "ft-a2-np-3l",
@@ -5014,10 +5014,10 @@
       "u": 0.92,
       "v": 0.577,
       "facing": 0,
-      "pose": "forearm_stand",
+      "pose": "y_balance",
       "size": 100,
       "color": "#8a6a9c",
-      "name": "forearm_stand"
+      "name": "y_balance"
      },
      {
       "id": "ft-a2-np-3m",
@@ -5027,10 +5027,10 @@
       "u": 0.08,
       "v": 0.631,
       "facing": 0,
-      "pose": "y_balance",
+      "pose": "front_split",
       "size": 100,
       "color": "#c07a3a",
-      "name": "y_balance"
+      "name": "front_split"
      },
      {
       "id": "ft-a2-np-3n",
@@ -5040,10 +5040,10 @@
       "u": 0.248,
       "v": 0.631,
       "facing": 0,
-      "pose": "front_split",
+      "pose": "layout_flip_mid",
       "size": 100,
       "color": "#5c6f8a",
-      "name": "front_split"
+      "name": "layout_flip_mid"
      },
      {
       "id": "ft-a2-np-3o",
@@ -5053,10 +5053,10 @@
       "u": 0.416,
       "v": 0.631,
       "facing": 0,
-      "pose": "layout_flip_mid",
+      "pose": "chest_stand",
       "size": 100,
       "color": "#7f8c4a",
-      "name": "layout_flip_mid"
+      "name": "chest_stand"
      },
      {
       "id": "ft-a2-np-3p",
@@ -5066,10 +5066,10 @@
       "u": 0.584,
       "v": 0.631,
       "facing": 0,
-      "pose": "chest_stand",
+      "pose": "backbend_standing",
       "size": 100,
       "color": "#a06060",
-      "name": "chest_stand"
+      "name": "backbend_standing"
      },
      {
       "id": "ft-a2-np-3q",
@@ -5079,10 +5079,10 @@
       "u": 0.752,
       "v": 0.631,
       "facing": 0,
-      "pose": "backbend_standing",
+      "pose": "crashmat_fall",
       "size": 100,
       "color": "#4a8a8a",
-      "name": "backbend_standing"
+      "name": "crashmat_fall"
      },
      {
       "id": "ft-a2-np-3r",
@@ -5092,10 +5092,10 @@
       "u": 0.92,
       "v": 0.631,
       "facing": 0,
-      "pose": "crashmat_fall",
+      "pose": "rolabola_stand",
       "size": 100,
       "color": "#9a7a3a",
-      "name": "crashmat_fall"
+      "name": "rolabola_stand"
      },
      {
       "id": "ft-a2-np-3s",
@@ -5105,10 +5105,10 @@
       "u": 0.08,
       "v": 0.685,
       "facing": 0,
-      "pose": "rolabola_stand",
+      "pose": "germanwheel_ride",
       "size": 100,
       "color": "#6a5a8a",
-      "name": "rolabola_stand"
+      "name": "germanwheel_ride"
      },
      {
       "id": "ft-a2-np-3t",
@@ -5118,10 +5118,10 @@
       "u": 0.248,
       "v": 0.685,
       "facing": 0,
-      "pose": "germanwheel_ride",
+      "pose": "ride_astride",
       "size": 100,
       "color": "#8a4a4a",
-      "name": "germanwheel_ride"
+      "name": "ride_astride"
      },
      {
       "id": "ft-a2-np-3u",
@@ -5131,10 +5131,10 @@
       "u": 0.416,
       "v": 0.685,
       "facing": 0,
-      "pose": "ride_astride",
+      "pose": "dj_play",
       "size": 100,
       "color": "#3f7a5a",
-      "name": "ride_astride"
+      "name": "dj_play"
      },
      {
       "id": "ft-a2-np-3v",
@@ -5144,10 +5144,10 @@
       "u": 0.584,
       "v": 0.685,
       "facing": 0,
-      "pose": "dj_play",
+      "pose": "h2h_base_stand",
       "size": 100,
       "color": "#a08a5a",
-      "name": "dj_play"
+      "name": "h2h_base_stand"
      },
      {
       "id": "ft-a2-np-3w",
@@ -5157,10 +5157,10 @@
       "u": 0.752,
       "v": 0.685,
       "facing": 0,
-      "pose": "h2h_base_stand",
+      "pose": "base_supine_legs_up",
       "size": 100,
       "color": "#5a5a9a",
-      "name": "h2h_base_stand"
+      "name": "base_supine_legs_up"
      },
      {
       "id": "ft-a2-np-3x",
@@ -5170,10 +5170,10 @@
       "u": 0.92,
       "v": 0.685,
       "facing": 0,
-      "pose": "base_supine_legs_up",
+      "pose": "two_high_base",
       "size": 100,
       "color": "#9a5a7a",
-      "name": "base_supine_legs_up"
+      "name": "two_high_base"
      },
      {
       "id": "ft-a2-np-3y",
@@ -5183,10 +5183,10 @@
       "u": 0.08,
       "v": 0.738,
       "facing": 0,
-      "pose": "two_high_base",
+      "pose": "shoulder_ride_base",
       "size": 100,
       "color": "#a84b26",
-      "name": "two_high_base"
+      "name": "shoulder_ride_base"
      },
      {
       "id": "ft-a2-np-3z",
@@ -5196,10 +5196,10 @@
       "u": 0.248,
       "v": 0.738,
       "facing": 0,
-      "pose": "shoulder_ride_base",
+      "pose": "banquine_base",
       "size": 100,
       "color": "#77865f",
-      "name": "shoulder_ride_base"
+      "name": "banquine_base"
      },
      {
       "id": "ft-a2-np-40",
@@ -5209,10 +5209,10 @@
       "u": 0.416,
       "v": 0.738,
       "facing": 0,
-      "pose": "banquine_base",
+      "pose": "banquine_flyer",
       "size": 100,
       "color": "#9c823f",
-      "name": "banquine_base"
+      "name": "banquine_flyer"
      },
      {
       "id": "ft-a2-np-41",
@@ -5222,10 +5222,10 @@
       "u": 0.584,
       "v": 0.738,
       "facing": 0,
-      "pose": "banquine_flyer",
+      "pose": "bridal_carry_base",
       "size": 100,
       "color": "#6d6657",
-      "name": "banquine_flyer"
+      "name": "bridal_carry_base"
      },
      {
       "id": "ft-a2-np-42",
@@ -5235,10 +5235,10 @@
       "u": 0.752,
       "v": 0.738,
       "facing": 0,
-      "pose": "bridal_carry_base",
+      "pose": "piggyback_base",
       "size": 100,
       "color": "#315b8a",
-      "name": "bridal_carry_base"
+      "name": "piggyback_base"
      },
      {
       "id": "ft-a2-np-43",
@@ -5248,10 +5248,10 @@
       "u": 0.92,
       "v": 0.738,
       "facing": 0,
-      "pose": "piggyback_base",
+      "pose": "piggyback_rider",
       "size": 100,
       "color": "#b0533f",
-      "name": "piggyback_base"
+      "name": "piggyback_rider"
      },
      {
       "id": "ft-a2-np-44",
@@ -5261,10 +5261,10 @@
       "u": 0.08,
       "v": 0.792,
       "facing": 0,
-      "pose": "piggyback_rider",
+      "pose": "hug_holder",
       "size": 100,
       "color": "#4f7d6f",
-      "name": "piggyback_rider"
+      "name": "hug_holder"
      },
      {
       "id": "ft-a2-np-45",
@@ -5274,10 +5274,10 @@
       "u": 0.248,
       "v": 0.792,
       "facing": 0,
-      "pose": "hug_holder",
+      "pose": "hand_in_hand",
       "size": 100,
       "color": "#8a6a9c",
-      "name": "hug_holder"
+      "name": "hand_in_hand"
      },
      {
       "id": "ft-a2-np-46",
@@ -5287,10 +5287,10 @@
       "u": 0.416,
       "v": 0.792,
       "facing": 0,
-      "pose": "hand_in_hand",
+      "pose": "shoulder_arm",
       "size": 100,
       "color": "#c07a3a",
-      "name": "hand_in_hand"
+      "name": "shoulder_arm"
      },
      {
       "id": "ft-a2-np-47",
@@ -5300,10 +5300,10 @@
       "u": 0.584,
       "v": 0.792,
       "facing": 0,
-      "pose": "shoulder_arm",
+      "pose": "whisper",
       "size": 100,
       "color": "#5c6f8a",
-      "name": "shoulder_arm"
+      "name": "whisper"
      },
      {
       "id": "ft-a2-np-48",
@@ -5313,10 +5313,10 @@
       "u": 0.752,
       "v": 0.792,
       "facing": 0,
-      "pose": "whisper",
+      "pose": "handshake",
       "size": 100,
       "color": "#7f8c4a",
-      "name": "whisper"
+      "name": "handshake"
      },
      {
       "id": "ft-a2-np-49",
@@ -5326,10 +5326,10 @@
       "u": 0.92,
       "v": 0.792,
       "facing": 0,
-      "pose": "handshake",
+      "pose": "propose_kneel",
       "size": 100,
       "color": "#a06060",
-      "name": "handshake"
+      "name": "propose_kneel"
      },
      {
       "id": "ft-a2-np-4a",
@@ -5339,10 +5339,10 @@
       "u": 0.08,
       "v": 0.846,
       "facing": 0,
-      "pose": "propose_kneel",
+      "pose": "reach_up_help",
       "size": 100,
       "color": "#4a8a8a",
-      "name": "propose_kneel"
+      "name": "reach_up_help"
      },
      {
       "id": "ft-a2-np-4b",
@@ -5352,10 +5352,10 @@
       "u": 0.248,
       "v": 0.846,
       "facing": 0,
-      "pose": "reach_up_help",
+      "pose": "harp_play",
       "size": 100,
       "color": "#9a7a3a",
-      "name": "reach_up_help"
+      "name": "harp_play"
      },
      {
       "id": "ft-a2-np-4c",
@@ -5365,10 +5365,10 @@
       "u": 0.416,
       "v": 0.846,
       "facing": 0,
-      "pose": "harp_play",
+      "pose": "koto_play",
       "size": 100,
       "color": "#6a5a8a",
-      "name": "harp_play"
+      "name": "koto_play"
      },
      {
       "id": "ft-a2-np-4d",
@@ -5378,10 +5378,10 @@
       "u": 0.584,
       "v": 0.846,
       "facing": 0,
-      "pose": "koto_play",
+      "pose": "cajon_play",
       "size": 100,
       "color": "#8a4a4a",
-      "name": "koto_play"
+      "name": "cajon_play"
      },
      {
       "id": "ft-a2-np-4e",
@@ -5391,10 +5391,10 @@
       "u": 0.752,
       "v": 0.846,
       "facing": 0,
-      "pose": "cajon_play",
+      "pose": "h2h_flyer_handstand",
       "size": 100,
       "color": "#3f7a5a",
-      "name": "cajon_play"
+      "name": "h2h_flyer_handstand"
      },
      {
       "id": "ft-a2-np-4f",
@@ -5404,10 +5404,10 @@
       "u": 0.92,
       "v": 0.846,
       "facing": 0,
-      "pose": "h2h_flyer_handstand",
+      "pose": "flyer_foot_stand",
       "size": 100,
       "color": "#a08a5a",
-      "name": "h2h_flyer_handstand"
+      "name": "flyer_foot_stand"
      },
      {
       "id": "ft-a2-np-4g",
@@ -5417,10 +5417,10 @@
       "u": 0.08,
       "v": 0.9,
       "facing": 0,
-      "pose": "flyer_foot_stand",
+      "pose": "two_high_flyer",
       "size": 100,
       "color": "#5a5a9a",
-      "name": "flyer_foot_stand"
+      "name": "two_high_flyer"
      },
      {
       "id": "ft-piece-help-owner-next",
@@ -5430,7 +5430,7 @@
       "u": 0.35,
       "v": 0.12,
       "facing": 0,
-      "pose": "shoulder_ride_top",
+      "pose": "hug_held",
       "size": 100,
       "color": "#a84b26",
       "name": "固定テスト・共通"
@@ -28290,7 +28290,7 @@
       "u": 0.65,
       "v": 0.6,
       "facing": 0,
-      "pose": "dance3",
+      "pose": "dance2",
       "size": 100,
       "color": "#315b8a",
       "name": ""
@@ -31210,10 +31210,10 @@
       "u": 0.06,
       "v": 0.5,
       "facing": 0,
-      "pose": "wire_walk",
+      "pose": "wire_kneel",
       "size": 100,
       "color": "#a84b26",
-      "name": "wire_walk"
+      "name": "wire_kneel"
      },
      {
       "id": "ft-j1-np-me",
@@ -31223,10 +31223,10 @@
       "u": 0.158,
       "v": 0.5,
       "facing": 0,
-      "pose": "wire_kneel",
+      "pose": "ladder_climb",
       "size": 100,
       "color": "#77865f",
-      "name": "wire_kneel"
+      "name": "ladder_climb"
      },
      {
       "id": "ft-j1-np-mf",
@@ -31236,10 +31236,10 @@
       "u": 0.256,
       "v": 0.5,
       "facing": 0,
-      "pose": "ladder_climb",
+      "pose": "stilts_walk",
       "size": 100,
       "color": "#9c823f",
-      "name": "ladder_climb"
+      "name": "stilts_walk"
      },
      {
       "id": "ft-j1-np-mg",
@@ -31249,10 +31249,10 @@
       "u": 0.353,
       "v": 0.5,
       "facing": 0,
-      "pose": "stilts_walk",
+      "pose": "pogo_bounce",
       "size": 100,
       "color": "#6d6657",
-      "name": "stilts_walk"
+      "name": "pogo_bounce"
      },
      {
       "id": "ft-j1-np-mh",
@@ -31262,10 +31262,10 @@
       "u": 0.451,
       "v": 0.5,
       "facing": 0,
-      "pose": "pogo_bounce",
+      "pose": "barrel_walk",
       "size": 100,
       "color": "#315b8a",
-      "name": "pogo_bounce"
+      "name": "barrel_walk"
      },
      {
       "id": "ft-j1-np-mi",
@@ -31275,10 +31275,10 @@
       "u": 0.549,
       "v": 0.5,
       "facing": 0,
-      "pose": "barrel_walk",
+      "pose": "globe_walk",
       "size": 100,
       "color": "#b0533f",
-      "name": "barrel_walk"
+      "name": "globe_walk"
      },
      {
       "id": "ft-j1-np-mj",
@@ -31288,10 +31288,10 @@
       "u": 0.647,
       "v": 0.5,
       "facing": 0,
-      "pose": "globe_walk",
+      "pose": "teeter_ready",
       "size": 100,
       "color": "#4f7d6f",
-      "name": "globe_walk"
+      "name": "teeter_ready"
      },
      {
       "id": "ft-j1-np-mk",
@@ -31301,10 +31301,10 @@
       "u": 0.744,
       "v": 0.5,
       "facing": 0,
-      "pose": "teeter_ready",
+      "pose": "russianbar_stand",
       "size": 100,
       "color": "#8a6a9c",
-      "name": "teeter_ready"
+      "name": "russianbar_stand"
      },
      {
       "id": "ft-j1-np-ml",
@@ -31314,10 +31314,10 @@
       "u": 0.842,
       "v": 0.5,
       "facing": 0,
-      "pose": "russianbar_stand",
+      "pose": "cradle_catcher",
       "size": 100,
       "color": "#c07a3a",
-      "name": "russianbar_stand"
+      "name": "cradle_catcher"
      },
      {
       "id": "ft-j1-np-mm",
@@ -31327,10 +31327,10 @@
       "u": 0.94,
       "v": 0.5,
       "facing": 0,
-      "pose": "cradle_catcher",
+      "pose": "cradle_flyer",
       "size": 100,
       "color": "#5c6f8a",
-      "name": "cradle_catcher"
+      "name": "cradle_flyer"
      },
      {
       "id": "ft-j1-np-mn",
@@ -31340,10 +31340,10 @@
       "u": 0.06,
       "v": 0.575,
       "facing": 0,
-      "pose": "cradle_flyer",
+      "pose": "cloud_sit",
       "size": 100,
       "color": "#7f8c4a",
-      "name": "cradle_flyer"
+      "name": "cloud_sit"
      },
      {
       "id": "ft-j1-np-mo",
@@ -31353,10 +31353,10 @@
       "u": 0.158,
       "v": 0.575,
       "facing": 0,
-      "pose": "cloud_sit",
+      "pose": "moon_sit",
       "size": 100,
       "color": "#a06060",
-      "name": "cloud_sit"
+      "name": "moon_sit"
      },
      {
       "id": "ft-j1-np-mp",
@@ -31366,10 +31366,10 @@
       "u": 0.256,
       "v": 0.575,
       "facing": 0,
-      "pose": "moon_sit",
+      "pose": "blackboard_write",
       "size": 100,
       "color": "#4a8a8a",
-      "name": "moon_sit"
+      "name": "blackboard_write"
      },
      {
       "id": "ft-j1-np-mq",
@@ -31379,10 +31379,10 @@
       "u": 0.353,
       "v": 0.575,
       "facing": 0,
-      "pose": "blackboard_write",
+      "pose": "kitchen_cook",
       "size": 100,
       "color": "#9a7a3a",
-      "name": "blackboard_write"
+      "name": "kitchen_cook"
      },
      {
       "id": "ft-j1-np-mr",
@@ -31392,10 +31392,10 @@
       "u": 0.451,
       "v": 0.575,
       "facing": 0,
-      "pose": "kitchen_cook",
+      "pose": "table_hide",
       "size": 100,
       "color": "#6a5a8a",
-      "name": "kitchen_cook"
+      "name": "table_hide"
      },
      {
       "id": "ft-j1-np-ms",
@@ -31405,10 +31405,10 @@
       "u": 0.549,
       "v": 0.575,
       "facing": 0,
-      "pose": "table_hide",
+      "pose": "salute",
       "size": 100,
       "color": "#8a4a4a",
-      "name": "table_hide"
+      "name": "無登録16"
      },
      {
       "id": "ft-j1-np-mt",
@@ -31418,7 +31418,7 @@
       "u": 0.647,
       "v": 0.575,
       "facing": 0,
-      "pose": "clap",
+      "pose": "look_down",
       "size": 100,
       "color": "#3f7a5a",
       "name": "無登録17"
@@ -31431,7 +31431,7 @@
       "u": 0.744,
       "v": 0.575,
       "facing": 0,
-      "pose": "listen_ear",
+      "pose": "hide_crouch",
       "size": 100,
       "color": "#a08a5a",
       "name": "無登録18"
@@ -31444,7 +31444,7 @@
       "u": 0.842,
       "v": 0.575,
       "facing": 0,
-      "pose": "sneak",
+      "pose": "stagger",
       "size": 100,
       "color": "#5a5a9a",
       "name": "無登録19"
@@ -31457,7 +31457,7 @@
       "u": 0.94,
       "v": 0.575,
       "facing": 0,
-      "pose": "elder_walk",
+      "pose": "arrogant_walk",
       "size": 100,
       "color": "#9a5a7a",
       "name": "無登録20"
@@ -31470,7 +31470,7 @@
       "u": 0.06,
       "v": 0.65,
       "facing": 0,
-      "pose": "stand_hands_on_hips",
+      "pose": "stand_contrapposto",
       "size": 100,
       "color": "#a84b26",
       "name": "無登録21"
@@ -31483,7 +31483,7 @@
       "u": 0.158,
       "v": 0.65,
       "facing": 0,
-      "pose": "sit_cross_legs",
+      "pose": "sit_chin_rest",
       "size": 100,
       "color": "#77865f",
       "name": "無登録22"
@@ -31496,7 +31496,7 @@
       "u": 0.256,
       "v": 0.65,
       "facing": 0,
-      "pose": "sit_reverse_chair",
+      "pose": "sit_forward",
       "size": 100,
       "color": "#9c823f",
       "name": "無登録23"
@@ -31509,7 +31509,7 @@
       "u": 0.353,
       "v": 0.65,
       "facing": 0,
-      "pose": "collapse_knees",
+      "pose": "collapse_hands_floor",
       "size": 100,
       "color": "#6d6657",
       "name": "無登録24"
@@ -31522,7 +31522,7 @@
       "u": 0.451,
       "v": 0.65,
       "facing": 0,
-      "pose": "cry_cover",
+      "pose": "shout",
       "size": 100,
       "color": "#315b8a",
       "name": "無登録25"
@@ -31535,7 +31535,7 @@
       "u": 0.549,
       "v": 0.65,
       "facing": 0,
-      "pose": "head_down",
+      "pose": "hold_head",
       "size": 100,
       "color": "#b0533f",
       "name": "無登録26"
@@ -31548,7 +31548,7 @@
       "u": 0.647,
       "v": 0.65,
       "facing": 0,
-      "pose": "surprised",
+      "pose": "pray",
       "size": 100,
       "color": "#4f7d6f",
       "name": "無登録27"
@@ -31561,7 +31561,7 @@
       "u": 0.744,
       "v": 0.65,
       "facing": 0,
-      "pose": "clown_trip",
+      "pose": "pratfall_sit",
       "size": 100,
       "color": "#8a6a9c",
       "name": "無登録28"
@@ -31574,7 +31574,7 @@
       "u": 0.842,
       "v": 0.65,
       "facing": 0,
-      "pose": "mime_wall",
+      "pose": "sign_language_speak",
       "size": 100,
       "color": "#c07a3a",
       "name": "無登録29"
@@ -31587,7 +31587,7 @@
       "u": 0.94,
       "v": 0.65,
       "facing": 0,
-      "pose": "punch",
+      "pose": "kick",
       "size": 100,
       "color": "#5c6f8a",
       "name": "無登録30"
