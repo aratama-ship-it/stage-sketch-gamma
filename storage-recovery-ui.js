@@ -1,6 +1,8 @@
 (function () {
   "use strict";
   const $ = id => document.getElementById(id);
+  const lang = window.localStorage.getItem("gamma:shosai-stage-lang") || "ja";
+  const tx = text => window.SHOSAI_I18N_PACKS?.[lang]?.text?.[text] || text;
   const versionLabel = $("recovery-app-version");
   if (versionLabel) versionLabel.textContent = (document.querySelector('meta[name="stage-sketch-gamma-version"]')?.content || "").replace(/^v/, "");
   const size = bytes => `${(bytes / 1048576).toFixed(2)} MB`;
@@ -93,17 +95,19 @@
       const block = document.createElement("div"); block.className = "copy";
       const name = document.createElement("p"), key = document.createElement("code"), restore = document.createElement("button");
       const isShow = record.key === "gamma:inactive-show-entry-v1";
-      name.textContent = `${window.STAGE_STORAGE_RECOVERY.backupKind(record.key)}${isShow ? `「${record.title}」` : ""} · ${size(record.storedBytes ?? record.chars * 2)}`
+      const isOriginal = window.STAGE_STORAGE_RECOVERY.musicOriginal(record.key);
+      name.textContent = `${tx(window.STAGE_STORAGE_RECOVERY.backupKind(record.key))}${isShow ? `「${record.title}」` : ""} · ${size(record.storedBytes ?? record.chars * 2)}`
         + (record.compressed ? `（圧縮前 ${size(record.rawBytes)}）` : "");
+      if (isOriginal) name.textContent += ` · ${record.archivedAt ? new Date(record.archivedAt).toLocaleString(lang) : tx("保管日時不明（旧保存領域）")}`;
       key.textContent = isShow ? record.projectId : record.key;
       restore.type = "button"; restore.textContent = isShow ? "ショー一覧へ戻す" : "元の場所へ戻す";
       restore.disabled = busy || !record.key.startsWith("gamma:");
       if (!record.key.startsWith("gamma:")) restore.textContent = "βの控えは書き出しのみ";
       const migrated=window.localStorage.getItem(window.STAGE_LARGE_PROJECT_STORE.MARKER)!==null;
-      if(migrated && record.key.startsWith("gamma:")) restore.textContent="控えを書き出す";
+      if((migrated || isOriginal) && record.key.startsWith("gamma:")) restore.textContent="控えを書き出す";
       restore.addEventListener("click", () => run(async () => {
-        if(migrated){
-          const full=(await model.list()).find(r=>r.id===record.id);if(!full)throw new Error("ARCHIVE_NOT_VERIFIED");
+        if(migrated || isOriginal){
+          const full=(await model.list()).find(r=>r.id===record.id && !!r.local===!!record.local);if(!full)throw new Error("ARCHIVE_NOT_VERIFIED");
           const parsed=JSON.parse(full.value);download(isShow?parsed.state:parsed,"gamma-archived-copy.json");
           setResult("控えを書き出しました。ショーのJSONは舞台画面で読み込んでください。現在の大容量保存は変更していません。");return;
         }
@@ -111,8 +115,55 @@
         setResult(isShow ? `「${record.title}」をショー一覧へ戻しました。保管先の控えも残しています。`
           : "控えを元の場所へ戻しました。別の保存領域の控えも残しています。");
       }));
-      block.append(name, key, document.createElement("br"), restore); list.append(block);
+      block.append(name, key, document.createElement("br"), restore);
+      if (isOriginal) {
+        block.dataset.musicOriginal = record.local ? "local" : "archive";
+        const remove = document.createElement("button"); remove.type = "button";
+        remove.className = "danger"; remove.textContent = tx("この原本の控えを削除"); remove.disabled = busy;
+        remove.addEventListener("click", () => run(async () => {
+          const original = await model.originalRecord(record);
+          if (!original || original.archivedAt !== record.archivedAt) throw new Error("CONCURRENT_EDIT");
+          if (!await confirmOriginalDeletion(record, remove)) return;
+          await model.removeMusicOriginal(original);
+          setResult(tx("原本の控えを削除しました。この控えだけが参照する音源は次の整理から保護されません。"));
+        }));
+        block.append(remove);
+      }
+      list.append(block);
     }
+  }
+  // Same two-step flow as the stage reset window: review the affected copy,
+  // then a separate final confirmation. Cancel/Escape never deletes anything.
+  function confirmOriginalDeletion(record, returnFocus) {
+    return new Promise(resolve => {
+      const dialog = $("original-delete-dialog"), title = $("original-delete-title"), lead = $("original-delete-lead");
+      const detail = $("original-delete-detail"), warning = $("original-delete-warning");
+      const cancel = $("original-delete-cancel"), confirm = $("original-delete-confirm");
+      let step = 1;
+      cancel.disabled = confirm.disabled = false;
+      const render = () => {
+        title.textContent = tx(step === 1 ? "原本の控えの削除" : "削除前の最終確認");
+        lead.textContent = tx("Mキュー移行前の原本の控えを削除します。");
+        detail.textContent = `${record.key} · ${size(record.storedBytes ?? record.chars * 2)}`;
+        warning.textContent = tx(step === 1 ? "確認を2段階で行います。この画面ではまだ何も削除しません。"
+          : "この操作は取り消せません。現在のショーは残ります。控えが必要ならキャンセルして書き出してください。");
+        const cancelText = tx("キャンセル"), parts = warning.textContent.split(cancelText);
+        if (parts.length > 1) {
+          warning.replaceChildren();
+          parts.forEach((part, index) => {
+            if (index) { const word = document.createElement("span"); word.style.whiteSpace = "nowrap"; word.textContent = cancelText; warning.append(word); }
+            warning.append(document.createTextNode(part));
+          });
+        }
+        confirm.textContent = tx(step === 1 ? "削除内容を確認" : "この控えを完全削除");
+        cancel.textContent = tx("キャンセル"); dialog.dataset.step = String(step);
+      };
+      const finish = result => { dialog.close(); confirm.onclick = cancel.onclick = dialog.oncancel = null; returnFocus.focus(); resolve(result); };
+      cancel.onclick = () => finish(false);
+      dialog.oncancel = event => { event.preventDefault(); finish(false); };
+      confirm.onclick = () => { if (step === 1) { step = 2; render(); cancel.focus(); } else finish(true); };
+      render(); dialog.showModal(); cancel.focus();
+    });
   }
   function renderInactiveShows() {
     const shows = model.inactiveShows();

@@ -8,6 +8,9 @@
   const CURRENT_SHOWS_KEY = "gamma:scene-alternatives-v1:shosai-stage-shows-v1";
   const CURRENT_SHOW_KEY = "gamma:scene-alternatives-v1:shosai-stage-sketch-v1";
   const INACTIVE_SHOW_ARCHIVE_KEY = "gamma:inactive-show-entry-v1";
+  const MUSIC_ORIGINAL_PREFIX = "gamma:music-cue-original-v1:";
+  const musicOriginal = key => typeof key === "string" && key.startsWith(MUSIC_ORIGINAL_PREFIX) && key.length > MUSIC_ORIGINAL_PREFIX.length;
+  const musicOriginalId = key => JSON.stringify([key, "original-v1"]);
   const object = value => value && typeof value === "object" && !Array.isArray(value);
   const shelfObject = text => {
     if (typeof text !== "string") return null;
@@ -15,6 +18,7 @@
     catch (_) { return null; }
   };
   function backupKind(key) {
+    if (musicOriginal(key)) return "Mキュー移行前の原本の控え";
     if (key === INACTIVE_SHOW_ARCHIVE_KEY) return "保管したショー";
     if (key === LEGACY_SHOWS_KEY) return "旧形式のショー一覧の控え";
     if (/^(?:gamma:)?shosai-stage-sketch-v1-pre-section-hierarchy-v1:.+$/.test(key)
@@ -25,6 +29,11 @@
     return null;
   }
   const bytes = (key, value) => (key.length + value.length) * 2;
+  const sameEncodedBytes = (left, right) => {
+    if (!left || !right) return left === right;
+    const a = new Uint8Array(left), b = new Uint8Array(right);
+    return a.length === b.length && a.every((value, index) => value === b[index]);
+  };
   const archivedShowValid = record => {
     if (record?.key !== INACTIVE_SHOW_ARCHIVE_KEY || typeof record.projectId !== "string") return false;
     try { return JSON.parse(record.value)?.state?.project?.id === record.projectId; }
@@ -84,6 +93,22 @@
         return valid(restored) && restored.key === record.key && restored.value === record.value;
       },
       get(id) { return transaction("readonly", (store, done) => { store.get(id).onsuccess = event => done(event.target.result || null); }).then(unpack); },
+      // Only a user-confirmed original may be removed. Compare the displayed
+      // record in the same transaction so a stale recovery tab cannot erase a replacement.
+      removeOriginal(record) {
+        if (!record || record.version !== 1 || typeof record.id !== "string" || !musicOriginal(record.key)) return Promise.resolve(false);
+        return transaction("readwrite", (store, done) => {
+          store.get(record.id).onsuccess = event => {
+            const current = event.target.result;
+            if (!current || current.key !== record.key || current.archivedAt !== record.archivedAt
+                || current.value !== record.value || current.valueChars !== record.valueChars
+                || current.textBytes !== record.textBytes || current.storageEncoding !== record.storageEncoding
+                || !sameEncodedBytes(current.valueGzip, record.valueGzip)) { done(false); return; }
+            store.delete(record.id); done(true);
+          };
+        });
+      },
+      raw(id) { return transaction("readonly", (store, done) => { store.get(id).onsuccess = event => done(event.target.result ?? null); }); },
       async list() {
         const records = await transaction("readonly", (store, done) => { store.getAll().onsuccess = event => done(event.target.result); });
         // Export must fail visibly if any archived copy cannot be decoded.
@@ -100,7 +125,7 @@
             const record = cursor.value;
             if (record?.version === 1 && backupKind(record.key)) result.push({...(codec ? codec.summary(record)
               : {id:record.id, key:record.key, chars:record.value?.length, storedBytes:(record.value?.length || 0) * 2}),
-              audioRefs:audioRefs(record)});
+              archivedAt:record.archivedAt, audioRefs:audioRefs(record)});
             cursor.continue();
           };
         });
@@ -224,7 +249,7 @@
         const value = storage.getItem(row.key);
         if (value === null) { result.skipped.push(row.key); continue; }
         try {
-          const id = JSON.stringify([row.key, await hash(value)]);
+          const id = musicOriginal(row.key) ? musicOriginalId(row.key) : JSON.stringify([row.key, await hash(value)]);
           const record = { version: 1, id, key: row.key, value, archivedAt: now() };
           if (!await vault.putIfAbsent(record)) throw new Error("ARCHIVE_CONFLICT");
           // A completed write transaction and independent read must both pass.
@@ -240,12 +265,55 @@
       }
       return result;
     }
+    async function preserveMusicOriginal(projectId, value) {
+      const key = MUSIC_ORIGINAL_PREFIX + projectId, id = musicOriginalId(key);
+      // Existing localStorage originals take priority over the currently open
+      // document. Never replace the earlier original with a migrated snapshot.
+      const legacy = storage.getItem(key);
+      const previous = await vault.get(id);
+      if (previous !== null) {
+        if (!valid(previous) || previous.key !== key || previous.id !== id
+            || JSON.parse(previous.value)?.project?.id !== projectId) throw new Error("ARCHIVE_NOT_VERIFIED");
+        if (legacy !== null && legacy !== previous.value) throw new Error("ARCHIVE_CONFLICT");
+      } else {
+        const original = legacy ?? value;
+        if (JSON.parse(original)?.project?.id !== projectId) throw new Error("ARCHIVE_NOT_VERIFIED");
+        const record = {version:1, id, key, value:original, archivedAt:now()};
+        if (!await vault.putIfAbsent(record)) throw new Error("ARCHIVE_CONFLICT");
+        const saved = await vault.get(id);
+        if (!valid(saved) || saved.id !== id || saved.key !== key || saved.value !== original) throw new Error("ARCHIVE_NOT_VERIFIED");
+      }
+      if (legacy !== null && storage.getItem(key) === legacy) storage.removeItem(key);
+      if (storage.getItem(key) !== null) throw new Error("CONCURRENT_EDIT");
+      return true;
+    }
+    async function removeMusicOriginal(record) {
+      if (!musicOriginal(record?.key)) throw new Error("ARCHIVE_NOT_VERIFIED");
+      if (record.local) {
+        // A failed relocation can leave both copies. Delete neither implicitly.
+        if (await vault.get(musicOriginalId(record.key))) throw new Error("CONCURRENT_EDIT");
+        if (storage.getItem(record.key) !== record.value) throw new Error("CONCURRENT_EDIT");
+        storage.removeItem(record.key);
+        if (storage.getItem(record.key) !== null) throw new Error("CONCURRENT_EDIT");
+      } else {
+        if (!await vault.removeOriginal(record)) throw new Error("CONCURRENT_EDIT");
+      }
+      return true;
+    }
+    function localOriginals() {
+      return scan().filter(row => musicOriginal(row.key)).map(row => {
+        const value = storage.getItem(row.key);
+        return {version:1, id:musicOriginalId(row.key), key:row.key, value, local:true,
+          chars:value.length, storedBytes:value.length * 2,
+          archivedAt:null, audioRefs:window.STAGE_STORAGE_HYGIENE?.audioReferences([value]) ?? null};
+      });
+    }
     async function restore(id) {
       const record = await vault.get(id);
       if (!valid(record)) throw new Error("ARCHIVE_NOT_VERIFIED");
       const expectedId = record.key === INACTIVE_SHOW_ARCHIVE_KEY
         ? JSON.stringify([record.key, record.projectId, await hash(record.value)])
-        : JSON.stringify([record.key, await hash(record.value)]);
+        : musicOriginal(record.key) ? musicOriginalId(record.key) : JSON.stringify([record.key, await hash(record.value)]);
       if (record.id !== id || record.id !== expectedId) throw new Error("ARCHIVE_NOT_VERIFIED");
       if (record.key === INACTIVE_SHOW_ARCHIVE_KEY) {
         const beforeShelf = storage.getItem(CURRENT_SHOWS_KEY);
@@ -273,11 +341,13 @@
       // Keep the archived copy even after successful restoration.
       return true;
     }
-    return Object.freeze({ scan, archive, restore, list: () => vault.list(),
-      summaries: () => vault.summaries ? vault.summaries() : vault.list().then(rows => rows.map(row => ({...row, chars:row.value.length}))),
+    return Object.freeze({ scan, archive, restore, preserveMusicOriginal, removeMusicOriginal,
+      originalRecord: row => row.local ? Promise.resolve(row) : vault.raw(row.id),
+      list: async () => [...await vault.list(), ...localOriginals()],
+      summaries: async () => [...await (vault.summaries ? vault.summaries() : vault.list().then(rows => rows.map(row => ({...row, chars:row.value.length})))), ...localOriginals()],
       compact: limit => vault.compact ? vault.compact(limit) : Promise.resolve({count:0,savedBytes:0}), inactiveShows, archiveInactiveShow,
       verifiedArchivedShelfChange });
   }
 
-  window.STAGE_STORAGE_RECOVERY = Object.freeze({ create, createVault, backupKind });
+  window.STAGE_STORAGE_RECOVERY = Object.freeze({ create, createVault, backupKind, musicOriginal });
 })();

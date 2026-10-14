@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.65";
+  const GAMMA_APP_VERSION = "v0.3.66";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -7474,17 +7474,21 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       if (JSON.stringify(next.project) === JSON.stringify(origin)) return true;
       // An independent, write-once pre-migration original. Failure to keep it
       // aborts before either the active document or the shelf can be replaced.
-      const backupKey = `gamma:music-cue-original-v1:${origin.id}`;
-      if (localStorage.getItem(backupKey) === null) {
-        localStorage.setItem(backupKey, before);
-        if (localStorage.getItem(backupKey) !== before) throw Error("Mキューへ移す前の原本を保存できませんでした。");
-      }
+      if (origin.musicCueAudio?.version !== 1
+          && (!storageRecovery || !await storageRecovery.preserveMusicOriginal(origin.id, before)))
+        throw Error("Mキューへ移す前の原本を保存できませんでした。");
       if (snapshot() !== before || state.project !== origin) return false;
       const result = await ProjectStore.commit({ projectId:next.project.id,
         serializedState:JSON.stringify(alternativesState(next)), expectedRevision:null, intent });
       if (!result.ok) { reportProjectStoreFailure(result); return false; }
       if (snapshot() !== before || state.project !== origin) { persistSoon(); return false; }
-      clearTimeout(saveTimer); checkpoint(); state = next;
+      clearTimeout(saveTimer);
+      if (intent === "music-cue-migration") {
+        // Automatic migration establishes the editing baseline, not an Undo step.
+        history = []; future = []; controlBefore = null;
+      } else checkpoint();
+      state = next;
+      updateHistoryButtons();
       audioPanelSignature = "";
       renderScenes(); render();
       window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));

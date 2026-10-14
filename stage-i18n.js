@@ -31,6 +31,24 @@
   "use strict";
 
   const TEXT = {
+    "音源の移行前の控えを大きい保存領域へ移し、保存の修復画面から確認・削除できるようにしました。": "Backups made before audio migration now use the larger storage area and can be viewed or deleted from storage recovery.",
+    "自動の音源移行は取り消しの履歴へ積まず、利用者が行った編集の取り消しは保ちます。": "Automatic audio migration no longer adds an Undo step. Edits made by the user remain undoable.",
+    "冊子の平面図の写真を修正しました。": "Corrected the plan-view pictures in the manual.",
+    "共有ログインのパスワードをハッシュで保存できるようにしました。利用者の画面やログイン操作は変わりません。": "Shared-login passwords can now be stored as hashes. The user interface and login steps remain unchanged.",
+
+    "削除前の最終確認": "Final deletion confirmation",
+    "削除内容を確認": "Review deletion",
+    "この控えを完全削除": "Permanently delete this backup",
+    "確認を2段階で行います。この画面ではまだ何も削除しません。": "There are two confirmation steps. Nothing is deleted on this screen.",
+
+    "Mキュー移行前の原本の控え": "Original before M cue migration",
+    "保管日時不明（旧保存領域）": "Archive date unknown (old storage)",
+    "この原本の控えを削除": "Delete this original backup",
+    "原本の控えの削除": "Delete original backup",
+    "Mキュー移行前の原本の控えを削除します。": "Delete the original backup made before M cue migration.",
+    "この操作は取り消せません。現在のショーは残ります。控えが必要ならキャンセルして書き出してください。": "This cannot be undone. The current show remains. Cancel and export the backup if you need it.",
+    "原本の控えを削除しました。この控えだけが参照する音源は次の整理から保護されません。": "Original backup deleted. Audio referenced only by this backup will no longer be protected during the next cleanup.",
+
     "Qシートの表示内容一覧とA4の3形式、Mキューの音源選択を整え、照明の図と操作を左右に配置しました。": "Updated the Q-sheet content list, three A4 layouts and M-cue audio selection, with lighting views and controls arranged side by side.",
     "シーン一覧・選択・キー操作など27件を改善し、ブラウザ保存の忠告帯と匿名の利用件数計測を追加しました。計測は環境設定で止められます。": "Improved 27 scene-list, selection and keyboard interactions, and added a browser-storage reminder and anonymous feature-use counts. You can turn counting off in Preferences.",
 

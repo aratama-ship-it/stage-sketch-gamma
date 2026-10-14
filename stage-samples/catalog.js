@@ -35,8 +35,8 @@ const index = [
     "branchReason": "",
     "description": "",
     "type": "fixture",
-    "rawBytes": 977355,
-    "url": "./stage-samples/feature-test-show.json?v=20261013-v0360"
+    "rawBytes": 977425,
+    "url": "./stage-samples/feature-test-show.json?v=20261014-v0365"
   },
   {
     "id": "gamma-feature-test-2-v1",
@@ -48,7 +48,7 @@ const index = [
     "description": "",
     "type": "fixture",
     "rawBytes": 564939,
-    "url": "./stage-samples/feature-test-show-2.json?v=20261014-fixture2-v1"
+    "url": "./stage-samples/feature-test-show-2.json?v=20261014-v0365"
   }
 ];
 // catalog.js に組み込むランタイム。index は生成器から渡される。

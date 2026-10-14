@@ -14,7 +14,7 @@
 <p>Safari deletes saved data after 7 days without interaction with this site. These are days of Safari use, not simply seven calendar days. Web apps added to the Home Screen are exempt from this seven-day limit.</p>
 ${steps(["On iPad or iPhone, use Safari’s Share button to Add to Home Screen, then open the added icon. On Mac, use Safari’s File → Add to Dock, then open the app.", "Press Export now in the reminder at the top and save the JSON backup in a device folder.", "Update backups regularly and keep a copy on another device or external drive. To restore one, use the show file import."])}
 <p>The reminder uses bold text and ! if you have never exported a backup or it is more than seven days old. It turns gray only when the app is installed and persistent storage has been granted. Still keep backups: protection cannot prevent deletion by the user. Reopening a show after at least seven days displays a dismissible export reminder.</p>
-${fig("storage-band-20261014", "Browser storage reminder at the top (test show B-1).", "Browser storage reminder")}
+${fig("release066-storage-band", "Browser storage reminder at the top (test show B-1).", "Browser storage reminder")}
 <p><a href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/" target="_blank" rel="noopener">Get the Mac version</a></p>`
       },
       {
