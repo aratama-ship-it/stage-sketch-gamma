@@ -798,3 +798,9 @@ html.stage-phone-viewer.gm-phone .stage-canvas-bar { pointer-events: none; }
   html.stage-phone-viewer.gm-phone .stage-phone-source,
   html.stage-phone-viewer.gm-phone .stage-phone-settings { right: calc(64px + max(8px, env(safe-area-inset-right))); }
 }
+
+/* Keep a separate 28px reminder directly below the mobile shell's top bar. */
+html.stage-pwa-tablet.gm-tablet .stage-sketch { grid-template-rows:var(--gm-top-h) var(--storage-band-height) minmax(0,1fr); }
+html.stage-pwa-tablet.gm-tablet:has(#stage-storage-band[hidden]) .stage-sketch { grid-template-rows:var(--gm-top-h) minmax(0,1fr); }
+html.stage-pwa-tablet.gm-tablet:has(#stage-storage-band.is-folded:not([hidden])) .stage-sketch { grid-template-rows:var(--gm-top-h) var(--storage-band-folded) minmax(0,1fr); }
+html:is(.gm-tablet,.gm-phone) #stage-storage-band { position:relative; top:auto; }

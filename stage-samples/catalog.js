@@ -35,8 +35,20 @@ const index = [
     "branchReason": "",
     "description": "",
     "type": "fixture",
-    "rawBytes": 975761,
-    "url": "./stage-samples/feature-test-show.json?v=20261013-v0359"
+    "rawBytes": 977355,
+    "url": "./stage-samples/feature-test-show.json?v=20261013-v0360"
+  },
+  {
+    "id": "gamma-feature-test-2-v1",
+    "title": "テスト: 全機能の試験場 2",
+    "version": "v1",
+    "scenes": 50,
+    "parentVersionId": null,
+    "branchReason": "",
+    "description": "",
+    "type": "fixture",
+    "rawBytes": 564939,
+    "url": "./stage-samples/feature-test-show-2.json?v=20261014-fixture2-v1"
   }
 ];
 // catalog.js に組み込むランタイム。index は生成器から渡される。

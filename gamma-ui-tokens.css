@@ -794,3 +794,68 @@ html[data-stage-skin] #gamma-light-workspace[data-gamma-light-dialog-stacked] {
 html[data-stage-skin]:has(#gamma-light-workspace[data-gamma-light-dialog-stacked]) .stage-sketch-head {
   z-index: 48;
 }
+
+/* Batch7 G3: the diagram zoom pair and reset use the adjacent icon's dimensions. */
+html[data-stage-skin] :is(.stage-zoom-fab button, .stage-scene-step-btn.is-icon) {
+  box-sizing:border-box; width:var(--gamma-canvas-bar-icon-size); min-width:var(--gamma-canvas-bar-icon-size); max-width:var(--gamma-canvas-bar-icon-size);
+  height:var(--gamma-canvas-bar-icon-size); min-height:var(--gamma-canvas-bar-icon-size); max-height:var(--gamma-canvas-bar-icon-size);
+  flex:0 0 var(--gamma-canvas-bar-icon-size); padding:0;
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(.stage-zoom-fab button, .stage-scene-step-btn.is-icon, .stage-zoom-reset.is-icon) > svg {
+  width:calc(var(--gamma-canvas-bar-glyph-size) * var(--gamma-icon-scale)); height:calc(var(--gamma-canvas-bar-glyph-size) * var(--gamma-icon-scale));
+}
+/* Read-only scene/Q metadata shares the existing type and spacing tokens. */
+.stage-scene-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(var(--scene-grid-size,220px),100%),1fr)); gap:10px; }
+.stage-scene-grid-card.stage-scene-overview-card {
+  display:grid; min-width:0; padding:5px; overflow:hidden; border:1px solid var(--line-dark); border-radius:3px;
+  background:rgba(var(--stage-ui-grid-rgb,64,54,45),.34); color:var(--milk); text-align:left;
+}
+.stage-scene-grid-card.stage-scene-overview-card.is-current { border-color:var(--rust); background:rgba(168,75,38,.1); }
+.stage-scene-overview-card .stage-scene-grid-thumb {
+  display:block; box-sizing:border-box; width:100%; min-width:0; height:auto; min-height:0; padding:0; aspect-ratio:16/9;
+  overflow:hidden; border:1px solid rgba(240,231,214,.08); border-radius:2px; background:rgb(var(--stage-ui-recess-rgb,13,12,11));
+}
+.stage-scene-overview-card .stage-scene-grid-thumb img { display:block; width:100%; height:100%; object-fit:cover; }
+.stage-scene-overview-card .stage-scene-grid-thumb img[hidden] { display:none; }
+.stage-scene-overview-card .stage-scene-grid-caption { display:grid; align-items:baseline; padding:7px 3px 3px; }
+.stage-scene-overview-card .stage-scene-grid-caption strong {
+  display:block; overflow:hidden; min-width:0; color:var(--milk); font-family:var(--sans); font-size:11.5px; font-weight:500;
+  text-overflow:ellipsis; white-space:nowrap;
+}
+.stage-scene-grid-card.stage-scene-overview-card .stage-scene-grid-caption { grid-template-columns:minmax(0,1fr); gap:4px; }
+.stage-scene-overview-cues { display:flex; flex-wrap:wrap; gap:4px; min-width:0; }
+.stage-scene-overview-cues > .stage-scene-overview-cue { padding:2px 4px; border:1px solid var(--line-dark); color:var(--milk); font-size:var(--fs-3); line-height:1.4; }
+.stage-scene-overview-cue[data-enabled="false"] { text-decoration:line-through; }
+.stage-scene-overview-cues > button.stage-scene-overview-cue {
+  box-sizing:content-box; min-width:0; min-height:0; margin:0; border-radius:0; background:transparent;
+  font-family:var(--sans); font-weight:400; letter-spacing:normal;
+}
+.stage-scene-overview-cues > button.stage-scene-overview-cue:hover,
+.stage-scene-overview-cues > button.stage-scene-overview-cue:focus-visible { border-color:var(--brass); }
+/* Keep the lighting dialog's existing scroll owner; each section uses the
+   shared stage grid. It cannot collapse cards to fit a fixed scroll height. */
+.alllist:has(.stage-scene-overview-card) { display:block; }
+.alllist .allsec + .allsec { margin-top:8px; }
+
+.stage-scene-row > .stage-scene-overview-cues { padding-left:var(--scene-gutter); }
+
+.stage-scene-grid-card.stage-scene-overview-card { grid-template-rows:max-content minmax(0,1fr); }
+.stage-scene-grid-card.stage-scene-overview-card .stage-scene-grid-caption { align-content:start; }
+
+/* Batch 7 G2: the same key cap in the host and lighting iframe. */
+html[data-stage-skin] :is(.stage-timeline-shortcut, .view-key) {
+  box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center;
+  width:var(--ctrl-xs,24px); height:var(--ctrl-xs,24px); min-width:var(--ctrl-xs,24px);
+  padding:0; margin:0; font:500 var(--fs-3,11px)/1 var(--sans); letter-spacing:0;
+  color:var(--milk-dim); border:1px solid var(--line-dark); background:var(--recess);
+}
+html[data-stage-skin] #stage-timeline-grip { width:68px; height:24px; min-height:24px; }
+#stage-timeline-muted-status { color:var(--paper); background:var(--desk); border:1px solid var(--brass); padding:2px 6px; font-size:11px; font-weight:600; white-space:nowrap; }
+#stage-timeline-muted-status[hidden] { display:none; }
+
+#stage-music-cue-audio { display:grid; gap:8px; }
+#stage-music-cue-audio[hidden] { display:none; }
+#stage-music-cue-audio label { display:flex; align-items:center; gap:8px; }
+#stage-music-cue-audio select { flex:1; min-width:0; }
+#stage-music-cue-audio input[type="number"] { width:96px; }
+.stage-music-cue-actions { display:flex; flex-wrap:wrap; gap:8px; }

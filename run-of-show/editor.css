@@ -519,3 +519,44 @@ body.showing-cue-sheet .doc-frame,body.showing-cue-sheet #ros-index{display:none
 
 /* The pre-existing guest Q view remains readable; the run-of-show authoring UI does not gain permission. */
 body.readonly-cue-shell #paper-band>:not(#band-cues),body.readonly-cue-shell .doc-frame,body.readonly-cue-shell #authoring,body.readonly-cue-shell #ros-index,body.readonly-cue-shell #cue-return,body.readonly-cue-shell #band-status{display:none!important}
+
+/* Batch 7 G1: one fixed left rail, full centre, permanent paper controls. */
+@media screen and (min-width:900px){
+  body:not(.lite-paper) main{max-width:none;padding-inline:var(--panel-gutter)}
+  body:not(.lite-paper) #preview{display:grid;grid-template-areas:"panel note" "panel paper";grid-template-rows:auto 1fr;grid-template-columns:var(--panel-max) minmax(0,1fr);justify-content:stretch;gap:var(--panel-gap);align-items:start}
+  body:not(.lite-paper) .paper-panel{display:flex;grid-area:panel;position:sticky;top:0;max-height:100vh;overflow:auto}
+  body:not(.lite-paper) .paper-band{display:flex;flex-direction:column;align-items:stretch;position:static}
+}
+#paper-band #band-settings{position:static;display:flex;flex-wrap:wrap;gap:var(--s2);width:auto;max-width:none;max-height:none;box-shadow:none;background:none;color:inherit;padding:var(--s2);border:1px solid var(--line-dark)}
+#band-settings .band-field{width:100%;display:flex;flex-direction:column;align-items:stretch;gap:var(--s1)}
+#band-settings .band-size-value{display:flex;align-items:center;gap:var(--s1)}
+#band-settings select,#paper-size-range{width:100%;min-width:0}
+.cue-choice-list{display:flex;flex-direction:column;gap:var(--s1);width:100%}
+#band-cues>button,.cue-choice-list button{width:100%;min-width:0;text-align:left;justify-content:flex-start;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#q-column-list{width:100%;display:flex;flex-direction:column;gap:var(--s1)}
+#q-column-list label{display:flex;align-items:center;gap:var(--s2);font-size:var(--fs-table)}
+#q-column-list input{min-height:0}
+#paper-band>.band-group{border:1px solid var(--line-dark);border-radius:var(--radius);padding:var(--s2);flex-shrink:0;margin:0}
+#paper-band .ros-left-head{display:flex;align-items:center;gap:var(--s1);width:100%;border-bottom:1px solid var(--line-dark);margin-bottom:var(--s1)}
+#paper-panel .ros-left-head .band-heading{display:block;flex:1 1 auto;border:0;padding:0;margin:0;font-size:var(--fs-table);letter-spacing:normal}
+#paper-band .ros-panel-grip{width:28px;height:28px;min-height:28px;min-width:28px;padding:0;background:transparent;border:0;cursor:grab}
+#paper-band #column-popover>.ros-left-head{display:flex;padding:0;min-height:28px;cursor:pointer}
+#column-summary>span:first-of-type{flex:1}
+#paper-band #column-popover .ros-panel-grip{float:right}
+#paper-band .band-split{display:none}
+body.showing-cue-sheet #column-visible-count{display:none}
+body.showing-cue-sheet #band-settings{display:flex}
+@media print{.ros-left-head,#band-settings,#band-cues,#q-column-list{display:none!important}}
+
+@media screen and (min-width:900px){body:not(.lite-paper):not(.showing-cue-sheet) #preview[data-index=docked]{grid-template-areas:"panel note index" "panel paper index";grid-template-columns:var(--panel-max) minmax(0,1fr) var(--index-track)}}
+
+/* Lite keeps its existing compact top controls while sharing the permanent paper settings. */
+body.lite-paper #paper-band #band-settings{display:contents}
+body.lite-paper #band-settings .band-field{width:auto;flex-direction:row;align-items:center;gap:var(--s1)}
+body.lite-paper #band-settings .band-field select{width:auto}
+body.lite-paper #paper-band .ros-left-head{display:none}
+body.lite-paper #paper-band #band-output{display:block;border:0;padding:0}
+body.lite-paper #paper-band #band-output>.ros-left-head{display:flex;width:auto;margin:0;border:0}
+body.lite-paper #paper-band .ros-panel-grip{display:none}
+body.lite-paper #paper-panel #paper-size-range{width:100px;max-width:100px;flex:0 0 100px}
+body.lite-paper #stage-view-rows{max-width:340px}

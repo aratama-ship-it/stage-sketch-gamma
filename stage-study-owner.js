@@ -246,6 +246,7 @@
       const result = await sendShow(update ? `links/${link.token}` : `shows/${encodeURIComponent(showId)}`, update ? 'PUT' : 'POST', doc);
       if (epoch !== generation) return;
       link = result.link; renderLink();
+      if (!update) window.STAGE_METRICS?.count('share.issue');
       status.textContent = update ? t('同じリンクの公開内容を更新しました。メモは保持されています。', 'Published content updated at the same link. Earlier scenes and notes are kept.') : reissue ? t('新しいリンクを発行しました。以前のメモは削除されています。', 'A new link was created. Previous notes have been deleted.') : t('発行済み。リンクをコピーして渡せます。', 'Link created. Copy it to share.');
       await readNotes(epoch);
       await readSavedLinks(epoch);

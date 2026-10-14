@@ -281,6 +281,10 @@
       q('tc-origin-scene').value = project.timecode?.originSceneId || project.activeSceneId;
       if (!q('tc-origin-scene').value) { q('tc-origin-scene').prepend(option('', tx('本編開始のシーンを選び直してください。'))); q('tc-origin-scene').value = ''; }
       q('tc-origin-clock').value = D.clock(project.timecode?.originSeconds ?? 3600);
+      q('tc-media-details').hidden = !!window.STAGE_MUSIC_CUES?.supported(project);
+      let musicHint=q('tc-music-cue-hint');
+      if(!musicHint){musicHint=document.createElement('p');musicHint.id='tc-music-cue-hint';q('tc-media-details').after(musicHint);}
+      musicHint.textContent=tx('音源の開始位置はMキューの詳細で設定します。');musicHint.hidden=!window.STAGE_MUSIC_CUES?.supported(project);
       q('tc-media-scene').value = project.activeSceneId;
       q('tc-media-track').replaceChildren(...(project.audioTracks || []).map(t => option(t.id, t.title)));
       const active = rows.find(s => s.id === project.activeSceneId);
@@ -328,7 +332,7 @@
       if (seconds === null) { q('tc-error').textContent = tx('時:分:秒.小数1桁で、0時以上24時未満を入力してください。'); return; }
       const result = bridge.setShowTimecode({
         timecode: { ...project.timecode, version: 1, mode: 'continuous', originSceneId: q('tc-origin-scene').value, originOffsetSeconds: 0, originSeconds: seconds, precision: 'tenths' },
-        timelineMedia: draft.length || project.timelineMedia ? { ...project.timelineMedia, version: 1, placements: draft } : undefined,
+        timelineMedia: project.musicCueAudio ? undefined : draft.length || project.timelineMedia ? { ...project.timelineMedia, version: 1, placements: draft } : undefined,
         sectionId, adoptFormation: q('tc-adopt-formation').checked,
       });
       if (!result.ok) { q('tc-error').textContent = result.errors.map(e => D.errorText(e, tx)).join(' '); return; }

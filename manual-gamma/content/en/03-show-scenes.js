@@ -6,6 +6,7 @@
     title: "Shows and scenes — the container, the list, transitions, alternatives",
     lead: "A show is the container for a work, a scene is one moment, and a section groups scenes into acts or chapters.",
     sections: [
+
       {
         id: "show-panel", title: "The Show panel (new, list, export, import, versions)", status: "verified",
         keywords: ["show", "project", "work", "new", "list", "switch", "export", "import", "open file", "version", "template", "return to previous", "replace"],
@@ -39,6 +40,7 @@ ${steps([
         id: "scene-list", title: "The scene list (sections, nesting, reordering, numbers)", status: "verified",
         keywords: ["scene", "scenes", "list", "section", "chapter", "act", "nest", "reorder", "drag", "number", "rename", "move out", "move in", "group", "music sync", "colour"],
         html: `
+<p>Choosing a scene directly switches its positions and poses immediately. The up/down arrows above the diagram and ↑/↓ keys step through the transition, according to the animation preference. Scene and Q numbers appear above the diagrams; the note display button remains available.</p><p>An SVG reset icon appears after a diagram is enlarged or moved. It resets the scale and position of all visible stage diagrams without changing performer or object positions.</p>
 <p>The ${ui("Scenes")} panel on the right is the list. The three icons at the top are the scene grid (⊞, every scene at a glance), ${ui("New section")} (folder with ＋) and ${ui("New scene")} (page with ＋).</p>
 ${fig("10-section-A", "The scene list. Scene rows hang under section rows (▾, number, coloured square), with “Transition” frames between rows.", "Scene list and sections")}
 <ul>

@@ -31,6 +31,92 @@
   "use strict";
 
   const TEXT = {
+    "Qシートの表示内容一覧とA4の3形式、Mキューの音源選択を整え、照明の図と操作を左右に配置しました。": "Updated the Q-sheet content list, three A4 layouts and M-cue audio selection, with lighting views and controls arranged side by side.",
+    "シーン一覧・選択・キー操作など27件を改善し、ブラウザ保存の忠告帯と匿名の利用件数計測を追加しました。計測は環境設定で止められます。": "Improved 27 scene-list, selection and keyboard interactions, and added a browser-storage reminder and anonymous feature-use counts. You can turn counting off in Preferences.",
+
+    "利用回数の匿名集計を送る": "Send anonymous usage counts",
+    "タブや機能の利用回数だけを送ります。作品・入力した文字・画面の画像・個人情報は送りません。この端末に保存します。": "Send only tab and feature usage counts. Your work, typed text, screen images and personal information are never sent. Saved on this device.",
+    "設定を保存できませんでした。次回は元の値に戻ります。": "Could not save this setting. It will return to its previous value next time.",
+    "図の表示位置を戻す": "Reset diagram views",
+    "ビーム／ファン": "Beam / fan",
+    "シート": "Sheet",
+    "トンネル": "Tunnel",
+    "レッド": "Red",
+    "グリーン": "Green",
+    "ブルー": "Blue",
+    "シアン": "Cyan",
+    "マゼンタ": "Magenta",
+    "イエロー": "Yellow",
+    "ホワイト": "White",
+    "レッド＋ブルー": "Red + blue",
+    "グリーン＋ブルー": "Green + blue",
+    "レッド＋グリーン": "Red + green",
+    "レインボー": "Rainbow",
+    "{colour}を選ぶ": "Select {colour}",
+    "押すと広がりを往復させます": "Press to oscillate beam spread",
+    "押すと全灯の狙いに始点と終点を置きます": "Press to set start and end targets for every fixture",
+
+    // Batch 2: lighting attributes and complete dynamic UI templates.
+    "モード": "Mode",
+    "元に戻す（⌘Z）": "Undo (⌘Z)",
+    "やり直す（⇧⌘Z）": "Redo (⇧⌘Z)",
+    "この照明デザインに名前を付けて保存（ファイルにも書き出せます）": "Save this light design with a name (also export to a file)",
+    "変更した配置と照明デザインを現在のショーのLXキューへ適用": "Apply the edited rig and light design to the current show’s LX cues",
+    "このブラウザでの直近の4図描画時間です。CPU・メモリの使用量そのものではありません。": "Latest time to render the four views in this browser. This is not CPU or memory usage.",
+    "この明かりをシーンへ保存します。適用すると詳細表示へ移り、細かく編集できます": "Save this lighting to the scene. Applying opens the detailed editor.",
+    "劇場サイズに合う仮想仕込みを入れ、右の「見本」タブから照明のあるあるを当てていきます": "Set up a virtual rig fitted to the theatre, then choose lighting examples from the Samples tab.",
+    "灯体の点灯を切り替える": "Toggle fixture power",
+    "編集中の照明を名前付きで残す・ファイルへ書き出す": "Save the edited lighting with a name or export to a file",
+    "1灯だけなので位置は変えません": "One fixture selected; its position stays unchanged",
+    "例: 中央ムービング": "e.g. Centre moving light",
+    "混色＝CMY/RGB で途中の色を作れる（フェードで混ざる）。カラーホイール＝色板を回す機種。途中の色が無いので、スナップの遅れの後に一瞬で替わる": "Colour mixing: CMY/RGB blends intermediate colours during fades. Colour wheel: rotates colour filters and snaps after the switch delay.",
+    "灯体の設置位置名": "Fixture mounting-position name",
+    "灯体を配置する設置区間": "Mounting segment for the fixture",
+    "距離を0.1m減らす": "Decrease distance by 0.1 m",
+    "距離を0.1m増やす": "Increase distance by 0.1 m",
+    "区間の起点からの距離（m）": "Distance from segment start (m)",
+    "起点からの距離（m）": "Distance from start (m)",
+    "GALの回廊と設置レール、客席側面フロントの平面図": "Plan of the GAL gallery, mounting rails and audience-side front positions",
+    "色を作る（作った色はショー全体で使えます）": "Create a colour (available throughout the show)",
+    "押すと光を四角に切ります（幅と奥行きを決められます）": "Press to shutter the beam into a rectangle (adjust width and depth)",
+    "光を四角に切っています。押すと丸に戻します（形は覚えておきます）": "Rectangular shutter active. Press to restore the round beam (shape is retained)",
+    "光の輪に内接する正方形を100とした%": "Percentage of a square inscribed in the beam (100%)",
+    "押すと動きの終点に別の色を置き、位置と同じ位相で色が移ります": "Press to set an end colour that changes in phase with position",
+    "押すと始点と終点を置いて位置を動かします": "Press to animate position between start and end points",
+    "押すと光量に始点と終点を置いて動かします": "Press to animate level between start and end values",
+    "押すと広がりに始点と終点を置いて動かします": "Press to animate beam spread between start and end values",
+    "固定": "Fixed",
+    "ムービング": "Moving",
+    "レーザー": "Laser",
+    "スポット": "Spot",
+    "ウォッシュ": "Wash",
+    "混色（CMY/RGB）": "Colour mixing (CMY/RGB)",
+    "カラーホイール": "Colour wheel",
+    "名前を登録・編集": "Register or edit names",
+    "この区間へ配置": "Place on this segment",
+    "オートメーション": "Automation",
+    "回す": "Rotate",
+    "{fixture}の設定をコピー（⌘C）": "Copy settings for {fixture} (⌘C)",
+    "{fixture}は消えています。押すと点きます": "{fixture} is off. Press to switch on",
+    "{fixture}は点いています。押すと消えます": "{fixture} is on. Press to switch off",
+    "{fixture}を点ける": "Switch on {fixture}",
+    "{fixture}を消す": "Switch off {fixture}",
+    "作った色 {colour}": "Custom colour {colour}",
+    "{speed}回転/分": "{speed} rpm",
+    "照明バトン{number}（{kind}）": "Lighting batten {number} ({kind})",
+    "シーン {number}／{cue} と同じ中身です（編集中ではありません）。LXキュー パネルで {cue} を選ぶと、変えたところがそのキューへ入ります": "Same content as scene {number} / {cue} (not editing). Select {cue} in the LX cue panel to edit that cue.",
+    "ブレイクアップ（粗）｜光を大きく割る。質感の基本": "Breakup (coarse) | Large broken shapes; basic texture",
+    "ブレイクアップ（中）｜中くらいの崩し。いちばん使いやすい": "Breakup (medium) | Medium texture; versatile",
+    "ブレイクアップ（細）｜ざらついた質感。床に敷く": "Breakup (fine) | Fine texture for the floor",
+    "木漏れ日｜フォリッジ。屋外・森。場所を決める": "Foliage | Dappled light; outdoors and forests",
+    "放射｜回すと強い。ライブ向き": "Radial | Strong rotating effect for live shows",
+    "渦巻き｜回すと吸い込まれて見える": "Spiral | Rotation draws the eye inward",
+    "ドット｜抽象。不規則な散らし": "Dots | Abstract irregular scatter",
+    "格子窓｜室内。差し込む方向が出る": "Window grid | Interior light with clear direction",
+    "縦スリット｜牢格子。切り取る": "Vertical slits | Bars and cut-out light",
+    "横スリット｜ブラインド越しの光": "Horizontal slits | Light through blinds",
+    "雲｜空・幻想。ぼかして使う": "Clouds | Sky and fantasy; soften the pattern",
+
     "未配置": "Unplaced",
     "フェード {seconds}秒": "Fade {seconds}s",
     "Liteの進行表をオフラインで開く際に、スタイルを読み込めない場合がある問題を直しました。": "Fixed a case where the Lite run-of-show stylesheet could not load when reopening offline.",
@@ -4604,4 +4690,59 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "このシーンへ関連付けました。元のショーと記録は変更していません。": "Linked to this scene. The show and record remain unchanged.",
   "音源が見つかりません。記録は続けられます。": "Audio is unavailable. You can continue taking notes.",
   "音を再生できません。GOを押して再開してください。": "Audio could not play. Press GO to resume."
+});
+
+// Browser storage reminder (approved 2026-10-14).
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "ブラウザ版のショーはこの端末のブラウザの中だけに保存されます。ブラウザの設定や長い未使用で消えることがあります。普段は Mac 版をお使いください。": "Shows in the browser version are saved only in this device’s browser. Browser settings or a long period of inactivity may erase them. Use the Mac version for everyday work.",
+  "Safari は 7 日間このサイトを操作しないと保存データをすべて削除します。ホーム画面に追加するか、控えを書き出してください。普段は Mac 版をお使いください。": "Safari deletes all saved data after 7 days without interaction with this site. Add it to your Home Screen or export a backup. Use the Mac version for everyday work.",
+  "この端末の保存は保護されています（インストール済み）。それでも控えは取ってください。": "Storage on this device is protected (installed). Please still keep backups.",
+  "控え: まだ一度も書き出していません": "Backup: never exported",
+  "PDF出力": "Export PDF",
+  "表示内容": "View content",
+  "紙面": "Page",
+  "上下に並べ替え": "Move panel up or down",
+  "現在の表をA4紙面で印刷・PDF保存します。": "Print the current table on A4 or save it as PDF.",
+  "印刷画面を開けませんでした。": "Could not open the print window.",
+  "印刷用のスタイルを読み込めませんでした。": "Could not load the print styles.",
+  "控え: 最終 ○日前": "Backup: last exported ○ days ago",
+  "控えを書き出してください": "Please export a backup",
+  "このショーは ○日間開かれていません。ブラウザ内の保存は消えることがあります。いま控えを書き出しておくと安全です。": "This show has not been opened for ○ days. Data saved in the browser may disappear. Exporting a backup now helps keep it safe.",
+  "いま書き出す": "Export now",
+  "ホーム画面に追加の手順": "How to add to Home Screen",
+  "Mac 版を入手": "Get the Mac version",
+  "この起動中だけ忠告帯を畳む": "Collapse the reminder for this launch"
+});
+
+// Batch 7 G2: music cues and personal shortcuts.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "ミュート・解除": "Mute / unmute",
+  "表示中の図をリセット": "Reset visible views",
+  "ミュート中": "Muted",
+  "音源なし（指示キュー）": "No audio (instruction cue)",
+  "未接続": "Not connected",
+  "音源をアップロード": "Upload audio",
+  "元ファイルを選び直す": "Reconnect original file",
+  "音量補正（dB）": "Gain (dB)",
+  "音源の開始位置（秒）": "Audio start offset (seconds)",
+  "音源を保存できませんでした。原本は保持しています。": "Audio could not be saved. The original is retained.",
+  "既存のMキュー候補が複数あるため、音源専用のMキューとして保持しています。": "Several existing M cues match. This audio is kept in a separate M cue.",
+  "旧ショーの曲は、シーンに割り当てた曲をセクション先頭から再生します。": "Legacy shows keep the scene-assigned track starting at the section head.",
+  "音源が未接続です。Mキューの詳細から再接続するか「無音で確認」を選んでください。": "Audio is not connected. Reconnect it in M cue details or choose “Check without audio”.",
+  "Mキューの音源が未接続です。詳細から再接続してください。": "M cue audio is not connected. Reconnect it in details.",
+  "音源の開始位置はMキューの詳細で設定します。": "Set audio start offsets in M cue details."
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "このMキュー音源の版は未対応です。原本を保持してください。": "This M cue audio version is unsupported. Keep the original.",
+  "この音源配置の版は未対応です。原本を保持してください。": "This audio placement version is unsupported. Keep the original.",
+  "音源の開始シーン・参照を読み取れません。原本を保持してください。": "The audio start scene or reference cannot be read. Keep the original.",
+  "フォーメーションと音源の開始位置を確認してください。原本を保持してください。": "Check formation and audio start positions. Keep the original.",
+  "Mキューへ移す前の原本を保存できませんでした。": "The original could not be backed up before M cue migration.",
+  "Mキューの音源を保存できませんでした。原本は保持しています。": "M cue audio could not be saved. The original is retained."
+});
+
+// Batch7 G5: identifiers and show-authored names are inserted after translation.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "シーン {number} {name}": "Scene {number} {name}"
 });

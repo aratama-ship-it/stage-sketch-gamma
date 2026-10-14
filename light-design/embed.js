@@ -279,7 +279,19 @@
         if(draft.basis!==next.basis) throw Error('別の更新より前の編集控えが残っています。照明の控えを復旧してから開いてください');
         /* restoreDraft: 控えには無い素通りフィールド（劇場プリセットの照明プラン集）を、
            basisが一致している＝内容が同じと保証されたホストの現在値から補う。 */
-        design=model.restoreDraft(draft.design,next);dirty=true;
+        design=model.restoreDraft(draft.design,next);
+        // Older editors saved browsing as sc.cue + lxEditing. Only remove that
+        // redundant projection; retain every Q, including genuinely edited Qs,
+        // and any unregistered look which differs from its selected Q.
+        for(const row of design.scenes || []) {
+          const hostRow=hostDesign.scenes.find(sc=>sc.id===row.id);
+          const selected=(row.lxq || []).find(q=>q.id===row.lxEditing);
+          if(hostRow && selected && row.lxEditing!==hostRow.lxEditing &&
+              JSON.stringify(row.cue)===JSON.stringify(selected.cue)) {
+            row.cue=model.clone(hostRow.cue);row.lxEditing=hostRow.lxEditing || null;
+          }
+        }
+        dirty=true;
       }
       // Strict ID matching: host pieces never come from a demo or imported design.
       state.scenes=next.scenes.map(row=>({id:row.id,name:row.name,sectionId:row.sectionId||null,sectionTitle:row.sectionTitle||'',pieces:model.clone(row.pieces),cue:{lights:{},groups:[]}}));
@@ -428,6 +440,7 @@
     parent.postMessage({type:'gamma:timeline-toggle'},location.origin);
   },true);
   window.addEventListener('gamma-light-draft-edit',clearTimelineFrame);
+  window.addEventListener('gamma-light-cue-view',clearTimelineFrame);
   window.addEventListener('gamma-light-cue-select',event=>{if(active && !loading && context) parent.GAMMA_LIGHT_HOST.selectCue(event.detail.lxId,build());});
   window.addEventListener('gamma-light-edit',()=>{
     parent.GAMMA_WORKSPACE.syncHistory();
@@ -457,6 +470,14 @@
     },placementChoices:()=>build(),
     beginPlaybackPreview,endPlaybackPreview,paintPlaybackPreview,toggleProgram,
     exposeView(kind) {if(!active || loading || playbackPreview || !document.getElementById("dialog").hidden || !["front","plan","side"].includes(kind)) return false;hooks.setSoloFigure(kind);return true;},
+    resetVisibleViews() {
+      if(!active || loading || playbackPreview || !document.getElementById('dialog').hidden) return false;
+      // These views always fit their canvas; the existing SVG enlargement
+      // toggle is the only view transform. Reuse its return-to-fit path.
+      if(state.soloFigure) hooks.setSoloFigure(state.soloFigure);
+      else hooks.draw();
+      return true;
+    },
     undo:()=>{if(!playbackPreview)hooks.undo();},redo:()=>{if(!playbackPreview)hooks.redo();},
     validateImport(design){model.validate(design,context.scenes.map(row=>row.id));if(JSON.stringify(design.stage)!==JSON.stringify(context.stage))throw Error('劇場寸法が異なる照明デザインです。舞台で寸法を確認してください');},
     /* #8: 環境設定で呼び名を変えたとき、開いたままの照明デザインへすぐ反映する */

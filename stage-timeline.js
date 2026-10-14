@@ -45,6 +45,7 @@
   let timeDomain = null, timeScope = "section", timingErrors = [], managedPlayback = null;
   let managedGeneration = 0, managedClipId = null, managedMuted = false, timecodeUI = null;
   let renderedTimelineIdentity = null;
+  let musicMigrationAttempt = null;
   const timecodeError = document.getElementById("stage-timecode-error");
   const UI_KEY = "gamma:shosai-stage-timeline-ui-v1";
   const DEFAULT_HEIGHT = 360;
@@ -316,6 +317,7 @@
   ui.height = finite(ui.height, DEFAULT_HEIGHT);
   ui.collapsed = Boolean(ui.collapsed);
   ui.volume = clamp(finite(ui.volume, 100), 0, 100);
+  ui.muted = ui.muted === true;
   ui.grid = [0.25, 0.5, 1].includes(finite(ui.grid, 0.25)) ? finite(ui.grid, 0.25) : 0.25;
   ui.loopA = Math.max(0, finite(ui.loopA, 0));
   ui.loopB = Math.max(0, finite(ui.loopB, 0));
@@ -388,6 +390,7 @@
   let suppressAnchorClick = false;
   let cueDrag = null;
   let suppressCueClickId = null;
+  let lastMusicCueClick = null;
 
   function saveUi() {
     try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (_) { /* 表示設定なしでも編集は続ける */ }
@@ -447,13 +450,14 @@
 
   function activeAudioGainDb() {
     if (audioDetailTrackId && audioDetailPreviewGainDb !== null) return audioDetailPreviewGainDb;
+    if (timeline?.managed) return normalizedAudioGainDb(managedMediaAt(seekSeconds)?.clip.track.gainDb);
     const track = activeAudioTrack();
     return normalizedAudioGainDb(track && track.gainDb);
   }
 
   function applyAudioLevels(gainDb = activeAudioGainDb()) {
     if (!els.audio) return;
-    const master = clamp(ui.volume / 100, 0, 1);
+    const master = ui.muted ? 0 : clamp(ui.volume / 100, 0, 1);
     const factor = 10 ** (normalizedAudioGainDb(gainDb) / 20);
     if (audioGraph) {
       els.audio.volume = master;
@@ -506,7 +510,7 @@
       const key = row.dataset.stageTimelineRow;
       const height = clamp(finite(ui.rowHeights[key], DEFAULT_ROW_HEIGHTS[key]), rowMinimumHeight(key), ROW_MAX_HEIGHT);
       ui.rowHeights[key] = height;
-      row.hidden = !ui.rowVisibility[key] || (key === "anchors" && ui.unit !== "count");
+      row.hidden = (key === "audio" && !timeline?.legacyAudioFallback) || !ui.rowVisibility[key] || (key === "anchors" && ui.unit !== "count");
       row.style.setProperty("--stage-timeline-row-height", `${height}px`);
       const separator = row.querySelector(".stage-timeline-row-resize");
       if (separator) {
@@ -517,6 +521,7 @@
     });
     els.rowVisibilityInputs.forEach((input) => {
       input.checked = ui.rowVisibility[input.value] !== false;
+      if (input.value === "audio") input.closest("label").hidden = !timeline?.legacyAudioFallback;
     });
     if (save) saveUi();
   }
@@ -1177,6 +1182,18 @@
     }
     timeline.mediaClips = media.clips.filter(c => timeline.source === "show" || c.sectionId === timeline.sectionId)
       .map(c => ({ ...c, start: c.start - timeline.timeOffset, end: c.end - timeline.timeOffset }));
+    if (window.STAGE_MUSIC_CUES.supported(project)) {
+      const music = window.STAGE_MUSIC_CUES.schedule(project, TD, timeline.source === "show" ? {} : {
+        sectionId:timeline.sectionId, songId:timeline.songId, legacyTrackId:timeline.trackId,
+      });
+      timeline.managed = true;
+      timingErrors = [...timeDomain.errors, ...music.errors];
+      timeline.mediaClips = music.clips.filter(c => timeline.source === "show" || c.sectionId === timeline.sectionId)
+        .filter(c => !c.timelineId || timeline.source === "show" || c.timelineId === timeline.songId)
+        .map(c => ({...c, start:c.start-timeline.timeOffset, end:c.end-timeline.timeOffset}));
+    }
+    if (project.musicCueAudio && !window.STAGE_MUSIC_CUES.supported(project)) timingErrors.push({code:"music-version",message:"このMキュー音源の版は未対応です。原本を保持してください。"});
+    timeline.legacyAudioFallback = !window.STAGE_MUSIC_CUES.supported(project) && (project.audioTracks?.length || project.timelineMedia);
     timeline.mediaClips.sort((a, b) => a.start - b.start);
     if (timeline.managed) for (let i = 1; i < timeline.mediaClips.length; i++) {
       if (timeline.mediaClips[i].start < timeline.mediaClips[i - 1].end - .001
@@ -1185,7 +1202,7 @@
       });
     }
     if (timeline.managed && timeline.source !== "show") timeline.duration = Math.max(.1, (timeDomain.sections.get(timeline.sectionId)?.end || timeline.duration) - timeline.timeOffset);
-    if (managedPlayback && (managedPlayback.projectId !== project.id || !timeline.managed || timingErrors.length)) pauseManagedPlayback();
+    if (managedPlayback && (managedPlayback.projectId !== project.id || !timeline.managed || timingErrors.some(e => !(ui.muted && e.code === "music-reference")))) pauseManagedPlayback();
     panel.classList.toggle("has-timecode", !!project.timecode);
     delete panel.dataset.timecodeDisplay; panel.dataset.timecodeUnit = ui.unit;
     const scope = document.getElementById("stage-timecode-scope");
@@ -1270,15 +1287,16 @@
     if (managedPlayback === clock) clock.frame = requestAnimationFrame(managedFrame);
   }
   async function startManagedPlayback({ muted = false } = {}) {
-    if (!timeline?.managed || timingErrors.length) return;
+    if (!timeline?.managed || timingErrors.some(e => !muted || e.code !== "music-reference")) return;
     pauseManagedPlayback(); pauseSilentPlayback({ update: false }); stopAudioPlayheadAnimation();
     const generation = ++managedGeneration, requested = timeline;
+    const graphReady = muted ? Promise.resolve() : ensureAudioGainGraph();
     if (!muted) {
       const ids = [...new Set(timeline.mediaClips.map(c => c.trackId))];
       const available = await Promise.all(ids.map(id => bridge.hasTimelineAudioFile(id)));
       if (generation !== managedGeneration || requested !== timeline) return;
-      if (available.some(v => !v)) { timingMessage(tx("音源が未接続です。音源の帯から再接続するか「無音で確認」を選んでください。")); return; }
-      await ensureAudioGainGraph();
+      if (available.some(v => !v)) { timingMessage(tx("音源が未接続です。Mキューの詳細から再接続するか「無音で確認」を選んでください。")); return; }
+      await graphReady;
       if (generation !== managedGeneration || requested !== timeline) return;
     }
     managedMuted = muted;
@@ -1633,12 +1651,15 @@
         audioWaveformCache.set(trackId, []);
         return;
       }
-      const graph = await ensureAudioGainGraph();
-      if (!graph || !graph.context || typeof graph.context.decodeAudioData !== "function") {
+      // Waveform decoding happens after async storage reads, outside activation.
+      // Never create/resume the audible context from this background path.
+      const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      const context = audioGraph?.context || (OfflineContext ? new OfflineContext(1, 1, 44100) : null);
+      if (!context || typeof context.decodeAudioData !== "function") {
         audioWaveformCache.set(trackId, []);
         return;
       }
-      const decoded = await graph.context.decodeAudioData(await blob.arrayBuffer());
+      const decoded = await context.decodeAudioData(await blob.arrayBuffer());
       audioWaveformCache.set(trackId, sampleAudioWaveform(decoded));
     } catch (_) {
       // ブラウザの対応形式や端末容量により解析できなくても、通常の音源再生は継続する。
@@ -1814,7 +1835,8 @@
    * 意図して無音にした場合も、付け忘れの場合も同じ表示（どちらかは本人が見て判断する）。
    * 鳴らない＝このセクションのタイムラインに音源が無い（端末に取り込んだ音源の一覧に無い）、
    * または音源の長さが分かっていて、キューの時刻がその長さ以降（曲が終わったあと）。 */
-  function musicCueIsSilent(project, tl, seconds) {
+  function musicCueIsSilent(project, tl, seconds, cue) {
+    if (project.musicCueAudio) return !window.STAGE_MUSIC_CUES.binding(project, cue?.id)?.trackId;
     if (tl?.managed) return !TD.mediaAt(tl.mediaClips || [], seconds);
     const trackId = tl && tl.trackId;
     const track = trackId ? (Array.isArray(project.audioTracks) ? project.audioTracks : []).find((item) => item && item.id === trackId) : null;
@@ -1851,9 +1873,9 @@
         /* 修正バッチ 2026-10-07 #8: ライトキューの呼び名は Qシート・進行表と同じ関数（既定は通し番号・設定で 1.2.2） */
         displayName: cue.cueType === "light" ? window.SHOSAI_CUE_SHEET.lightCueName(project, sceneNumber, ordinal, lx)
           : `${window.SHOSAI_CUE_SHEET.formatCueDisplayName(cue.cueType, sceneNumber, ordinal, { tx })}${
-          cue.cueType === "music" && musicCueIsSilent(project, tl, cue.seconds) ? tx("（無音）") : ""}`,
+          cue.cueType === "music" && musicCueIsSilent(project, tl, cue.seconds, cue) ? tx("（無音）") : ""}`,
         shownName: lx && lx.label ? `${window.SHOSAI_CUE_SHEET.lightCueName(project, sceneNumber, ordinal, lx, { tx })}${lx.name ? `「${lx.name}」` : ""}${lx.notation ? ` ${lx.notation}` : ""}` : "",
-        silent: cue.cueType === "music" && musicCueIsSilent(project, tl, cue.seconds),
+        silent: cue.cueType === "music" && musicCueIsSilent(project, tl, cue.seconds, cue),
       };
     });
   }
@@ -2046,12 +2068,55 @@
     els.cueDetailNote.value = String(cue.memo || "");
     cueDetailOriginalMemo = els.cueDetailNote.value;
     renderCueDetailVox(cue);
+    renderMusicCueDetail(cue);
     els.cueDetailBackdrop.hidden = false;
     els.cueDetailModal.hidden = false;
     if (focusTarget && focusTarget.isConnected && !focusTarget.disabled) focusTarget.focus({ preventScroll: true });
     else els.cueDetailNote.focus({ preventScroll: true });
   }
 
+  function renderMusicCueDetail(cue) {
+    let box = document.getElementById("stage-music-cue-audio");
+    if (!box) {
+      box = document.createElement("section"); box.id = "stage-music-cue-audio";
+      els.cueDetailNote.closest("label").before(box);
+    }
+    box.hidden = cue.cueType !== "music";
+    if (box.hidden) return;
+    const project = projectDocument().project;
+    const audio = window.STAGE_MUSIC_CUES.binding(project, cue.id);
+    box.replaceChildren();
+    const label = document.createElement("label"); label.textContent = tx("音源");
+    const select = document.createElement("select"); select.id = "stage-music-cue-track"; select.className = "stage-text-input";
+    select.setAttribute("aria-label", tx("音源"));
+    select.add(new Option(tx("音源なし（指示キュー）"), ""));
+    for (const track of project.audioTracks || []) select.add(new Option(track.title, track.id));
+    if (audio?.trackId && !project.audioTracks.some(t => t.id === audio.trackId)) select.add(new Option(`${tx("未接続")} · ${audio.trackId}`,audio.trackId));
+    select.value = audio?.trackId || ""; label.append(select); box.append(label);
+    const controls = document.createElement("div"); controls.className = "stage-music-cue-actions";
+    const button = (text, id, run) => {const b=document.createElement("button");b.type="button";b.className="stage-minor-action";b.id=id;b.textContent=tx(text);b.onclick=run;controls.append(b);return b;};
+    const file=document.createElement("input");file.type="file";file.accept="audio/*,.mp3,.m4a,.aac,.wav";file.hidden=true;file.id="stage-music-cue-file";
+    button("音源をアップロード", "stage-music-cue-upload", () => file.click());
+    const relink=button("元ファイルを選び直す", "stage-music-cue-relink", () => bridge.openTimelineAudioRelinkPicker(select.value));
+    relink.hidden=!audio?.trackId;
+    const status=document.createElement("p");status.id="stage-music-cue-status";status.setAttribute("role","status");status.hidden=true;
+    const refreshAvailability=async()=>{const id=select.value;if(!id){status.hidden=true;relink.hidden=true;return;}
+      const available=await bridge.hasTimelineAudioFile(id);if(select.value!==id || cueDetailId!==cue.id)return;
+      status.textContent=tx("この端末に音源がありません。元ファイルを選び直してください。");status.hidden=available;relink.hidden=available || !project.audioTracks.some(t=>t.id===id);};
+    const numeric=(text,id,value,min,max,step)=>{const l=document.createElement("label");l.textContent=tx(text);const input=document.createElement("input");
+      input.id=id;input.type="number";input.className="stage-text-input";input.min=min;input.max=max;input.step=step;input.value=value;input.setAttribute("aria-label",tx(text));l.append(input);box.append(l);return input;};
+    const gain=numeric("音量補正（dB）","stage-music-cue-gain",audio?.gainDb ?? 0,-24,12,.5);
+    const mediaIn=numeric("音源の開始位置（秒）","stage-music-cue-in",audio?.mediaInSeconds ?? 0,0,86400,.1);
+    select.onchange=()=>{gain.value=project.audioTracks.find(t=>t.id===select.value)?.gainDb ?? 0;mediaIn.value=0;refreshAvailability();};
+    file.onchange=async()=>{const selected=file.files[0];if(!selected)return;controls.inert=true;
+      const saved=await bridge.importMusicCueAudio(cue.id,selected);controls.inert=false;
+      if(cueDetailId!==cue.id)return;
+      if(saved){renderTimeline();renderMusicCueDetail(cue);}else{status.hidden=false;status.textContent=tx("音源を保存できませんでした。原本は保持しています。");}};
+    box.append(controls,file,status);void refreshAvailability();
+    if(audio?.legacySource?.startsWith("scene:")){const note=document.createElement("p");note.textContent=tx("旧ショーの曲は、シーンに割り当てた曲をセクション先頭から再生します。");box.append(note);}
+    const migrated=project.musicCueAudio?.migrations?.find(m=>m.cueId===cue.id && m.candidates.length>1);
+    if(migrated){const note=document.createElement("p");note.textContent=tx("既存のMキュー候補が複数あるため、音源専用のMキューとして保持しています。");box.append(note);}
+  }
   /* セリフキューの詳細（2026-09-24 本人指示）: 台本から引いたセリフと、前後のセリフキューへの移動。
    * 並びは セリフキューパネルと同じ「ショー全体・セクション順」。文字の当て方もパネルと同じ関数を使う。 */
   function voxDetailEntries() {
@@ -2208,7 +2273,7 @@
     bridge.hasTimelineAudioFile(track.id).then((available) => {
       if (audioDetailTrackId !== track.id || els.audioDetailModal.hidden) return;
       els.audioDetailMissing.hidden = available;
-      if (available) void ensureAudioGainGraph();
+      // Reading a detail is not an audio activation gesture.
     });
     els.audioGainRange.focus({ preventScroll: true });
   }
@@ -2603,6 +2668,18 @@
     document.body.append(cuePeek);
     return cuePeek;
   }
+  function showBandPeek(button, text) {
+    const peek = cuePeekEl();
+    peek.textContent = text;
+    positionCuePeek(button);
+  }
+  function bindBandPeek(button, text) {
+    button.addEventListener("pointerenter", event => { if (!event.buttons && !cueDrag) showBandPeek(button, text); });
+    button.addEventListener("pointerleave", hideCuePeek);
+    button.addEventListener("focus", () => showBandPeek(button, text));
+    button.addEventListener("blur", hideCuePeek);
+    button.addEventListener("keydown", event => { if (event.key === "Escape") hideCuePeek(); });
+  }
   function showCuePeek(cue, button) {
     const entries = voxDetailEntries();
     const entry = entries.find((item) => item.id === cue.id) || null;
@@ -2745,7 +2822,10 @@
   function renderCueBlocks(project) {
     hideCuePeek();
     Object.values(els.cueLanes).forEach(clearLane);
-    const cues = timelineCuePresentations(project);
+    const cues = timelineCuePresentations(project).filter(cue => {
+      const audio=window.STAGE_MUSIC_CUES.binding(project,cue.id);
+      return !audio?.legacySource?.startsWith("scene:") || timeline.mediaClips.some(clip=>clip.id===cue.id);
+    });
     if (selectedCueId && !cues.some((cue) => cue.id === selectedCueId)) selectedCueId = null;
     // 消えたキューが選択に残らないようにする（取り消し・削除のあと）
     if (selectedCueIds.size) {
@@ -2807,6 +2887,9 @@
           button.removeAttribute("title");
         }
       }
+      if (cue.cueType === "music" || (cue.cueType === "light" && !timelineLightEvents.some(e => e.id === cue.id))) {
+        bindBandPeek(button, `${labelPosition(cue.seconds)}  ${cueShownName(cue)}\n${project.audioTracks?.find(t => t.id === window.STAGE_MUSIC_CUES.binding(project,cue.id)?.trackId)?.title || ""}\n${cue.memo || ""}`);
+      }
       // U-06: セリフキューは、カーソルを当てると上にセリフを出す（その小窓に同じ説明を入れるので、ブラウザの説明は出さない）
       if (cue.cueType === "dialogue") {
         button.dataset.peekHint = button.title;
@@ -2823,6 +2906,15 @@
       button.addEventListener("pointercancel", endCueDrag);
       button.addEventListener("click", (event) => {
         if (suppressCueClickId === cue.id) { event.preventDefault(); return; }
+        if (cue.cueType === "music") {
+          const previous = lastMusicCueClick;
+          lastMusicCueClick = {id:cue.id,at:performance.now()};
+          // Seeking may rebuild the lane after the first click. Preserve the
+          // double-click across that replacement instead of losing the detail.
+          if (previous?.id === cue.id && performance.now()-previous.at < 500) {
+            lastMusicCueClick = null; openCueDetails(cue,button); return;
+          }
+        }
         // まとめて選んだうちの1つを押したときは、その選択を保つ
         if (!selectedCueIds.has(cue.id)) selectedCueIds = new Set();
         selectedCueId = cue.id;
@@ -2989,6 +3081,7 @@
       if (advice.length) block.title += `\n${advice.map(feasibilityText).join("\n")}`;
       block.setAttribute("role", "img");
       block.setAttribute("aria-label", block.title);
+      bindBandPeek(block, block.title);
       block.dataset.transitionId = transition.id;
       placeBlock(block, transition.start, transition.end);
       els.transitionsLane.append(block);
@@ -3043,6 +3136,7 @@
       block.setAttribute("role", "img");
       if (boundaryAdvice.length) block.title += `\n${boundaryAdvice.map(feasibilityText).join("\n")}`;
       block.setAttribute("aria-label", block.title);
+      bindBandPeek(block, block.title);
       block.style.left = "0px";
       block.style.width = `${timelineLeftInset - 4}px`;
       els.transitionsLane.append(block);
@@ -3060,6 +3154,7 @@
       block.setAttribute("role", "img");
       if (boundaryAdvice.length) block.title += `\n${boundaryAdvice.map(feasibilityText).join("\n")}`;
       block.setAttribute("aria-label", block.title);
+      bindBandPeek(block, block.title);
       placeBlock(block, start, timeline.duration);
       els.transitionsLane.append(block);
       const marker = document.createElement("div");
@@ -3302,6 +3397,7 @@
     const playing = Boolean(managedPlayback || silentPlayback
       || (playingThisTimeline && els.audio && !els.audio.paused && !els.audio.ended));
     els.play.setAttribute("aria-pressed", String(playing));
+    syncMutedStatus();
     const playLabel = tx(playing ? "タイムラインを一時停止" : "タイムラインを再生");
     els.play.setAttribute("aria-label", playLabel);
     els.play.title = playLabel;
@@ -3373,6 +3469,10 @@
     closeTimelineLockMenu();
     const { project, choices } = timelineChoices();
     if (!project || !choices.length) return;
+    if (!project.musicCueAudio && musicMigrationAttempt !== project.id) {
+      musicMigrationAttempt = project.id;
+      void bridge.ensureMusicCueMigration?.().then(() => renderTimeline());
+    }
     timeline = choices.find((choice) => choice.segments.some((segment) => segment.sceneId === project.activeSceneId))
       || choices[0];
     publishTimelineLightSchedule(project);
@@ -3404,6 +3504,7 @@
     els.addTransition.disabled = timeScope === "show" || typeof bridge.addTimelineTransition !== "function"
       || activeSegmentIndex < 0 || activeSegmentIndex >= timeline.segments.length - 1;
     syncSplitButton();
+    els.addAudio.hidden = !timeline.legacyAudioFallback;
     els.addAudio.disabled = timeScope === "show" || !timelineAudioTargetSceneId()
       || (typeof bridge.openTimelineAudioImportPicker !== "function"
         && typeof bridge.setTimelineSceneAudioTrack !== "function");
@@ -3952,8 +4053,28 @@
     return true;
   }
 
-  function saveCueDetails() {
+  async function saveCueDetails() {
     if (!cueDetailId || typeof bridge.updateTimelineCue !== "function") return false;
+    const musicSelect = document.getElementById("stage-music-cue-track");
+    if (!document.getElementById("stage-music-cue-audio")?.hidden && musicSelect) {
+      const project = projectDocument().project, previous = window.STAGE_MUSIC_CUES.binding(project, cueDetailId);
+      const trackId = musicSelect.value;
+      const mediaInSeconds = Number(document.getElementById("stage-music-cue-in").value);
+      const gainDb = Number(document.getElementById("stage-music-cue-gain").value);
+      const track = project.audioTracks.find(t => t.id === trackId);
+      if (trackId && (!Number.isFinite(mediaInSeconds) || mediaInSeconds < 0 || track?.durationSeconds && mediaInSeconds >= track.durationSeconds)) return false;
+      const audio = trackId ? {trackId,mediaInSeconds,gainDb,mediaOutSeconds:previous?.trackId === trackId ? previous.mediaOutSeconds : null} : null;
+      const position=document.getElementById("stage-timecode-cue-position");
+      const patch={memo:els.cueDetailNote.value};
+      if(position && !position.hidden){const value=TD.parseClock(position.value,{signed:!timeDomain.config});patch.showSeconds=value===null?null:TD.fromEffectiveTimecode(timeDomain,value);}
+      const saved = await bridge.saveMusicCueAudio(cueDetailId, audio, patch);
+      if (!saved) {
+        const status = document.getElementById("stage-music-cue-status");
+        if (status) { status.hidden = false; status.textContent = tx("音源を保存できませんでした。原本は保持しています。"); }
+        return false;
+      }
+      closeCueDetails({focus:false}); renderTimeline(); return true;
+    }
     const input = document.getElementById("stage-timecode-cue-position");
     let updated;
     if (input && !input.hidden) {
@@ -4000,6 +4121,7 @@
 
   function beginTimelineResize(event) {
     if (event.button !== 0) return;
+    fitRowsOnResize = false;
     timelineResize = {
       pointerId: event.pointerId,
       startY: event.clientY,
@@ -4461,14 +4583,32 @@
   const volumeLevelOf = (value) => (value <= 0 ? "mute" : value <= 50 ? "low" : "high");
   function syncVolumeUi() {
     const value = Math.round(finite(ui.volume, 100));
+    syncMutedStatus();
     if (els.volumeValue) els.volumeValue.textContent = `${value}%`;
     els.volume.setAttribute("aria-valuetext", `${value}%`);
     if (els.volumeButton) {
-      els.volumeButton.dataset.level = volumeLevelOf(value);
+      els.volumeButton.dataset.level = ui.muted ? "mute" : volumeLevelOf(value);
       // 名前は「音量 80%」。ホバーの札（アイコンの札）は aria-label を読む。
-      els.volumeButton.setAttribute("aria-label", `${tx("音量")} ${value}%`);
+      els.volumeButton.setAttribute("aria-label", `${tx("音量")} ${value}%${ui.muted ? ` · ${tx("ミュート中")}` : ""}`);
     }
   }
+  const mutedStatus = document.createElement("span");
+  mutedStatus.id = "stage-timeline-muted-status";
+  mutedStatus.setAttribute("role", "status");
+  mutedStatus.hidden = true;
+  (els.volumeButton?.parentElement || els.play).after(mutedStatus);
+  function syncMutedStatus() {
+    // This is a required state, independent of optional hint preferences.
+    const muted = ui.muted || ui.volume === 0 || Boolean(managedPlayback && managedMuted);
+    const status = document.getElementById("stage-timeline-muted-status");
+    if (!status) return;
+    status.textContent = tx("ミュート中");
+    status.hidden = !(timelineIsPlaying() && muted);
+  }
+  window.addEventListener("stage-audio-mute-request", () => {
+    ui.muted = !ui.muted;
+    applyAudioLevels(); syncVolumeUi(); saveUi();
+  });
   function volumePopOpen() { return Boolean(els.volumePop) && !els.volumePop.hidden; }
   function setVolumePopOpen(open, { focusBar = false, returnFocus = false } = {}) {
     if (!els.volumePop || !els.volumeButton || volumePopOpen() === open) return;
@@ -4706,6 +4846,22 @@
     applyTimelineHeight(next, { save: true });
     renderTimeline();
   });
+  let fitRowsOnResize = false;
+  function fitTimelineRows() {
+    if (ui.collapsed) return;
+    // Status, feasibility and unplaced-Q rows are siblings of the toolbar.
+    // Measure all visible chrome after render, including late audio availability.
+    const chrome = [...panel.children].filter(el => el !== els.viewport && el.getClientRects().length)
+      .reduce((sum, el) => sum + el.getBoundingClientRect().height, 0);
+    const rows = els.rows.filter(el => !el.hidden).reduce((sum, el) => sum + el.getBoundingClientRect().height, 0);
+    const horizontalScrollbar = Math.max(0, els.viewport.offsetHeight - els.viewport.clientHeight);
+    const borders = Math.max(0, panel.offsetHeight - panel.clientHeight);
+    applyTimelineHeight(Math.max(MIN_HEIGHT, Math.ceil(chrome + rows + horizontalScrollbar + borders)), { save: true });
+    els.viewport.scrollTop = 0;
+  }
+  const fitObserver = new ResizeObserver(() => { if (fitRowsOnResize && !ui.collapsed) requestAnimationFrame(fitTimelineRows); });
+  fitObserver.observe(panel);
+  [...panel.children].filter(el => el !== els.viewport).forEach(el => fitObserver.observe(el));
   function toggleTimelineFromShortcut() {
     if (timelineInteractionIsBlocked()
         || document.querySelector(".stage-modal:not([hidden])")) return false;
@@ -4718,26 +4874,17 @@
       const show = !document.body.classList.contains("gamma-script-timeline-open") || ui.collapsed;
       document.body.classList.toggle("gamma-script-timeline-open", show);
       if (show && ui.collapsed) setTimelineCollapsed(false, { save: true });
-      if (show) renderTimeline();
+      if (show) { renderTimeline(); fitRowsOnResize = true; requestAnimationFrame(fitTimelineRows); }
       window.dispatchEvent(new Event("stage-timeline-layout-change"));
       return true;
     }
     const opening = ui.collapsed;
+    fitRowsOnResize = opening;
     setTimelineCollapsed(!ui.collapsed, { save: true });
     if (!ui.collapsed) {
       renderTimeline();
       if (opening) requestAnimationFrame(() => {
-        const toolbar = panel.querySelector(".stage-timeline-toolbar");
-        /* 横スクロールバーは viewport.scrollHeight に含まれないが、表示領域を15px前後使う。
-           以前はそのぶんだけ最下段のセリフキューがバーの下へ隠れていた。実寸を足して、
-           OSごとにスクロールバーの太さが違っても全レーンが入る高さにする。 */
-        const horizontalScrollbar = Math.max(0, els.viewport.offsetHeight - els.viewport.clientHeight);
-        const panelChrome = Math.max(0, panel.offsetHeight - panel.clientHeight);
-        const needed = (toolbar?.scrollHeight || 0) + (els.viewport?.scrollHeight || 0)
-          + timelineResizeHandleHeight() + horizontalScrollbar + panelChrome;
-        // Eでだけ、入る範囲まで全レーンを見せ、残りは既存の内部スクロールへ任せる。
-        applyTimelineHeight(Math.min(maxTimelineHeight(), Math.max(DEFAULT_HEIGHT, needed)), { save: true });
-        renderTimeline();
+        fitTimelineRows();
       });
     }
     return true;
@@ -4745,7 +4892,7 @@
   // Eは舞台画面と照明デザイン画面で同じタイムラインを開閉する。
   // 背景消去のShift+Eより先に処理する。
   document.addEventListener("keydown", (event) => {
-    if (isTextEntry(event.target)) return;
+    if (isTextEntry(event.target) || event.isComposing || event.keyCode === 229 || event.defaultPrevented) return;
     if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.code !== "KeyE") return;
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -4958,6 +5105,7 @@
     resizeTimer = window.setTimeout(() => {
       applyTimelineHeight();
       renderTimeline();
+      if (fitRowsOnResize) fitTimelineRows();
     }, 100);
   });
 

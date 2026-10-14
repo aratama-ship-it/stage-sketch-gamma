@@ -342,6 +342,8 @@
     if (gear) topRight.append(gear);
     top.append(topLeft, nav, topRight);
     head.prepend(top);
+    const storageBand = $("#stage-storage-band");
+    if (storageBand) head.after(storageBand);
 
     /* --- 左レール --- */
     const rail = el("nav", "gm-rail", { "aria-label": tx("舞台スケッチの道具"), "data-no-i18n": "" });
@@ -605,6 +607,8 @@
     const field = $("#stage-field-mode");
     if (field) { field.classList.add("gm-icon-btn"); bar.append(field); }
     title.replaceChildren(bar);
+    const storageBand = $("#stage-storage-band");
+    if (storageBand) title.after(storageBand);
 
     /* めくる列: [‹][帯][›] */
     const nav = el("div", "gm-phone-nav", { "data-no-i18n": "" });

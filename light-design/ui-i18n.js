@@ -191,6 +191,15 @@
     const format = (template, values) => text(template).replace(/\{(\w+)\}/g, (all, name) => values[name] ?? all);
     const direct = text(key); if (direct !== key) return direct;
     const templates = [
+      [/^シーン ([\d-]+) ([\s\S]*)$/, m => format('シーン {number} {name}', {number:m[1],name:m[2]})],
+      [/^(レッド|グリーン|ブルー|シアン|マゼンタ|イエロー|ホワイト|RGB|レッド＋ブルー|グリーン＋ブルー|レッド＋グリーン|レインボー)を選ぶ$/, m => format('{colour}を選ぶ', {colour:text(m[1])})],
+      [/^([LM◆◎]\d+)の設定をコピー（⌘C）$/, m => format('{fixture}の設定をコピー（⌘C）', {fixture:m[1]})],
+      [/^([LM◆◎]\d+)は(消えています。押すと点きます|点いています。押すと消えます)$/, m => format('{fixture}は'+m[2], {fixture:m[1]})],
+      [/^([LM◆◎]\d+)を(点ける|消す)$/, m => format('{fixture}を'+m[2], {fixture:m[1]})],
+      [/^作った色 (#[a-fA-F0-9]+)$/, m => format('作った色 {colour}', {colour:m[1]})],
+      [/^([\d.]+)回転\/分$/, m => format('{speed}回転/分', {speed:m[1]})],
+      [/^照明バトン(\d+)（(固定|ムービング)）$/, m => format('照明バトン{number}（{kind}）', {number:m[1],kind:text(m[2])})],
+      [/^シーン ([\d-]+)／(Q[\d.-]+) と同じ中身です（編集中ではありません）。LXキュー パネルで \2 を選ぶと、変えたところがそのキューへ入ります$/, m => format('シーン {number}／{cue} と同じ中身です（編集中ではありません）。LXキュー パネルで {cue} を選ぶと、変えたところがそのキューへ入ります', {number:m[1],cue:m[2]})],
       [/^([LM◆◎]\d+)を削除$/, m => format('{fixture}を削除', {fixture:m[1]})],
       [/^灯体を(\d+)つ以上選ぶと使えます$/, m => format('灯体を{count}つ以上選ぶと使えます', {count:m[1]})],
       [/^押すと奥の壁ぎわに(\d+)本置きます$/, m => format('押すと奥の壁ぎわに{count}本置きます', {count:m[1]})],
@@ -203,7 +212,7 @@
       [/^SS・(下手|上手)の袖（高さ約([\d.]+mm)）・(奥寄り|手前寄り|中ほど)$/, m => format('SS・{side}の袖（高さ約{height}）・{depth}', {side:text(m[1]),height:m[2],depth:text(m[3])})],
       [/^ホリゾントライト（(床|上)）・舞台幅(\d+)%$/, m => format('ホリゾントライト（{rung}）・舞台幅{width}%', {rung:text(m[1] === "上" ? "ホリゾントの上段" : "ホリゾントの床段"),width:m[2]})],
       [/^([\s\S]+)（名称のみ） \/ ([\s\S]+)$/, m => format('{name}（名称のみ） / {mount}', {name:m[1],mount:lightingText(m[2],language)})],
-      [/^吊り・奥から(\d+)列目(・[\s\S]+)?$/, m => format('吊り・奥から{row}列目{label}', {row:m[1],label:m[2]||''})],
+      [/^吊り・奥から(\d+)列目(・[\s\S]+)?$/, m => format('吊り・奥から{row}列目{label}', {row:m[1],label:m[2]?' · '+lightingText(m[2].slice(1),language):''})],
       [/^バトン（奥から(\d+)列目・奥行き([\d.]+)m）$/, m => format('バトン（奥から{row}列目・奥行き{depth}m）', {row:m[1],depth:m[2]})],
       [/^バトン・奥から(\d+)列目$/, m => format('バトン・奥から{row}列目', {row:m[1]})],
       [/^奥から([\d.]+)m$/, m => format('奥から{distance}m', {distance:m[1]})],
@@ -228,6 +237,8 @@
     }
     const language=parentRoot.lang || 'ja';
     if(document.documentElement.lang!==language) document.documentElement.lang=language;
+    const runtime=document.getElementById('runtime-status');
+    if(runtime?.title)runtime.title=lightingText('このブラウザでの直近の4図描画時間です。CPU・メモリの使用量そのものではありません。',language);
     const sceneControl=document.getElementById('place-scene');
     if(sceneControl?.dataset.uiSceneTitle)sceneControl.title=lightingText(sceneControl.dataset.uiSceneTitle,language);
     window.GAMMA_UI.translateDOM(document.body, { language:document.documentElement.lang,

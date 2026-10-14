@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ Company | Stage Sketch Gamma Company</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.3.64">
+<meta name="stage-sketch-gamma-version" content="v0.3.65">
 <meta name="gamma-edition" content="company">
   <script src="gamma-editions.js?v=20261014-v0362"></script>
 <meta name="mobile-web-app-capable" content="yes">
@@ -23,8 +23,8 @@
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="gamma-ui-tokens.css?v=20261014-v0362">
-<link rel="stylesheet" href="gamma.css?v=20261014-v0362">
+<link rel="stylesheet" href="gamma-ui-tokens.css?v=20261014-v0365">
+<link rel="stylesheet" href="gamma.css?v=20261014-v0365">
 <link rel="stylesheet" href="gamma-mobile.css?v=20261012-v0356">
 <script src="gamma-light-model.js?v=20261013-v0359"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=2026091987">
@@ -40,6 +40,16 @@
 <link rel="stylesheet" href="stage-show-overview.css?v=20261009-v0337">
 </head>
 <body class="is-standalone">
+
+<div class="stage-modal-backdrop" id="stage-storage-return-backdrop" hidden></div>
+<div class="stage-modal stage-storage-return-modal" id="stage-storage-return-modal" role="dialog" aria-modal="true" aria-labelledby="stage-storage-return-title" aria-describedby="stage-storage-return-lead" data-no-i18n hidden>
+  <header class="stage-modal-head"><h2 id="stage-storage-return-title">控えを書き出してください</h2>
+    <button type="button" class="stage-modal-close" id="stage-storage-return-close" aria-label="この知らせを閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+  </header>
+  <div class="stage-modal-body"><p id="stage-storage-return-lead"></p><div class="stage-storage-return-actions">
+    <button type="button" id="stage-storage-return-export">いま書き出す</button><button type="button" id="stage-storage-return-later" class="btn-quiet">あとで</button>
+  </div></div>
+</div>
 
 <div class="stage-modal-backdrop stage-launch-backup-backdrop" id="stage-launch-backup-backdrop" hidden></div>
 <div class="stage-modal stage-launch-backup-warning" id="stage-launch-backup-warning" role="dialog"
@@ -63,6 +73,13 @@
 <main id="view-stage" class="view">
     <div class="stage-session-host-away" id="stage-session-host-away" role="status" aria-live="polite" hidden>ホストの接続が切れています。復帰を待っています…</div>
     <section class="stage-sketch" aria-labelledby="stage-sketch-title">
+      <div id="stage-storage-band" role="status" data-no-i18n hidden>
+        <button type="button" id="stage-storage-band-fold" aria-label="この起動中だけ忠告帯を畳む">!</button>
+        <span id="stage-storage-band-message" tabindex="0"><span id="stage-storage-band-lead"></span> <span id="stage-storage-band-backup"></span></span>
+        <button type="button" id="stage-storage-band-export">いま書き出す</button>
+        <a id="stage-storage-band-install" href="./manual-gamma/#browser-storage" target="_blank" rel="noopener" hidden>ホーム画面に追加の手順</a>
+        <a id="stage-storage-band-download" href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/" target="_blank" rel="noopener">Mac 版を入手</a>
+      </div>
       <header class="stage-sketch-head">
         <div class="stage-header-topleft">
           <!-- 2026-09-17 本人指示: 文字組みのブランド表示（STAGE SKETCH GAMMA ／ 舞台スケッチ γ）を
@@ -72,21 +89,16 @@
                assets/brand/ に揃えてあるが使っていない。理由は style.css の同じ日のコメントに書いた。
                版番号はロゴへ焼き込まず、これまでどおり別表示で右に残す。
                読み上げ用の見出しは #stage-sketch-title（visually-hidden の h1）が担う。 -->
-          <!-- 2026-10-07 本人指示（#11）: 「○○ でログイン中」（#stage-session-whoami）とゲストの札を、
-               キッカー行の Studio の右へ並べる（「| arata でログイン中」）。
-               ★キッカー行は以前 aria-hidden／data-no-i18n の塊の中だったので、読み上げ対象の status を
-               そのまま入れると消える。そこで aria-hidden／data-no-i18n は「飾りの部分」（キッカー・版・版名の札を
-               包む .stage-header-app-kicker-deco と、ロゴの .stage-header-app-copy）だけに付け直し、
-               札（role=status）は飾りの外＝同じ行の兄弟（.stage-header-app-kicker-badges の中）に置く。id・role・hidden の扱いは従来のまま。
-               ★札の包み（.stage-header-app-kicker-badges）は、デスクトップでは Studio の右へ「幅を取らずに」重ねる（gamma.css）。
-               行の中へ流し込むと、ログイン中だけロゴ側の幅が約115px 増え、英語の 1440px でタブが次の行へ落ちた（2026-10-07 実測）。 -->
+          <!-- ログイン札（role=status）は aria-hidden／data-no-i18n の飾りの外へ置く。
+               .stage-header-app-kicker-badges は Studio の右へ幅を取らず重ねる（gamma.css）。
+               通常フローへ戻すと英語・1440pxでタブが折り返す。id・role・hidden を保つ。 -->
           <div class="stage-header-app-identity">
             <!-- 赤いキッカー（STAGE SKETCH GAMMA）は本人要望で残す。置き換えたのは題の側だけ。
                  2026-09-17 本人要望: 版番号は英語表記の横へ置く。大きさ・色は変えない。 -->
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.64</span>
+                <span class="stage-app-version">0.3.65</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -417,14 +429,9 @@
 
           <section class="stage-panel" data-panel="stage-set" data-title="舞台機構">
             <div class="stage-panel-body">
-              <div class="stage-machinery-kind-list" data-machinery-additions hidden>
-                <button type="button" class="btn-quiet" data-machinery-quick="front-scrim">紗幕を置く</button>
-                <button type="button" class="btn-quiet" data-machinery-kind="seri">せりを置く</button>
-              </div>
               <p class="stage-cast-hint">紗幕とせりはここから置けます。盆・デッキ・水面は見本の複製で。</p>
-              <p class="stage-cast-empty" id="stage-machinery-empty" hidden><span>まだ舞台機構がありません。</span>
-                <span data-machinery-additions hidden><button type="button" class="btn-quiet" data-machinery-quick="front-scrim">＋ 紗幕を追加</button> <button type="button" class="btn-quiet" data-machinery-kind="seri">＋ せりを追加</button></span>
-              </p>
+              <p class="stage-cast-empty" id="stage-machinery-empty" hidden>まだ舞台機構がありません。</p>
+              <div class="stage-machinery-kind-list" data-machinery-additions hidden><button type="button" class="btn-quiet" data-machinery-quick="front-scrim">＋ 紗幕を追加</button> <button type="button" class="btn-quiet" data-machinery-kind="seri">＋ せりを追加</button></div>
               <!-- T-21（2026-09-18 本人要望）: 盆・可動デッキ・幕・せり・水面は、
                    演者／大道具／小道具と同じように別の項目として最下部に出す。
                    見出しは既存の呼び名「舞台機構」に合わせる（本人決定＝「舞台装置」は使わない）。 -->
@@ -675,23 +682,17 @@
           <div class="stage-scene-bar" id="stage-scene-bar">
             <div class="stage-scene-step" role="group" aria-label="シーンを送る">
               <div class="stage-scene-step-left">
-                <button type="button" id="stage-scene-prev" class="btn-quiet stage-scene-step-btn is-prev"><span class="stage-scene-step-arrow" aria-hidden="true">◀</span>前のシーン</button>
+                <button type="button" id="stage-scene-prev" class="btn-quiet stage-scene-step-btn is-prev is-icon" aria-label="前のシーン" title="前のシーン"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5 10.5 8 4 14.5 10.5"/></svg></button>
                 <button type="button" id="stage-scene-bar-grid" class="btn-quiet stage-scene-bar-grid" aria-label="シーン一覧を開く"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z"/></svg></button>
               <!-- 2026-10-05 本人指示: シーンのメモ（説明）を「常に表示」と「帯にカーソルを合わせたときだけ」で切り替える。
                    押した状態＝常に表示（帯の中に1行で置き、図に重ねない）。端末ごとの表示設定（prefs.sceneDescPinned）。 -->
               <button type="button" id="stage-scene-desc-pin" class="btn-quiet stage-scene-bar-grid stage-scene-desc-pin" aria-pressed="false" aria-label="シーンのメモを常に表示する" title="シーンのメモを常に表示する"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 4.5h6.5l2.5 2.5v6.5h-9z"/><path d="M10 4.5v2.5h2.5"/><path d="M5.5 9.5h5M5.5 11.5h3.5"/><circle class="stage-scene-desc-pin-head" cx="6" cy="3.2" r="1.4"/></svg></button>
               </div>
-              <!-- T-23（2026-09-18 本人要望）: 名前を押しても「シーンの詳細」を開けるようにする。
-                   押せるものはボタンにする（.stage-cast-name と同じ考え方）。
-                   読み上げの aria-live は内側の span に残し、外側をボタンにする
-                   （「押せるもの」と「読み上げ領域」を1つの要素で兼ねない）。 -->
               <button type="button" class="stage-scene-now-open" id="stage-scene-now-open">
                 <span class="stage-scene-now" id="stage-scene-now" aria-live="polite"></span>
                 <span class="stage-scene-edit-label">編集</span>
               </button>
-              <!-- 2026-09-24 本人指示（2回目）: 「次のシーン」は帯の一番右へ寄せ、シーン名は帯の中央に置く。
-                   並びは 前のシーン・一覧⊞（左）／シーン名（中央）／次のシーン（右）。読み上げ・Tabの順も見た目どおり。 -->
-              <button type="button" id="stage-scene-next" class="btn-quiet stage-scene-step-btn is-next">次のシーン<span class="stage-scene-step-arrow" aria-hidden="true">▶</span></button>
+              <button type="button" id="stage-scene-next" class="btn-quiet stage-scene-step-btn is-next is-icon" aria-label="次のシーン" title="次のシーン"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5 5.5 8 12 14.5 5.5"/></svg></button>
             </div>
             <div class="stage-scene-desc" id="stage-scene-desc">
               <label class="stage-scene-desc-label" id="stage-scene-desc-label"
@@ -909,7 +910,7 @@
                     </label>
                     <button type="button" class="stage-arrow-clear" id="stage-arrow-clear">このシーンの矢印を消す</button>
                   </div>
-                  <button type="button" class="stage-canvas-tool stage-zoom-reset" id="stage-front-zoom" hidden>1.0× ⟲</button>
+                  <button type="button" class="stage-canvas-tool stage-zoom-reset is-icon" id="stage-front-zoom" aria-label="図の表示位置を戻す" hidden><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6a5.5 5.5 0 1 1-.2 4M3 2v4h4"/></svg></button>
                   <button type="button" class="stage-canvas-tool is-icon" id="stage-idle-motion-toggle"
                           title="再生中の待機モーション" aria-label="再生中の待機モーション" aria-pressed="false"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="4" r="2"/><path d="M3 11l3-4 4 1 2 4M8 8l-1 6-3 4M7 14l4 4M14 3l4 3-4 3z"/></svg></button>
                   <span id="stage-bg-section">
@@ -992,7 +993,7 @@
                        本人が不要と明言している。
                        ★機能キー featureOn("lineup") はフォーメーションの表示条件でもあるので残す。 -->
                   <button type="button" class="stage-canvas-tool" id="stage-plan-measure" aria-pressed="false" title="2点を選んで距離を測る。Escで終了" hidden>測る</button>
-                  <button type="button" class="stage-canvas-tool stage-zoom-reset" id="stage-plan-zoom" hidden>1.0× ⟲</button>
+                  <button type="button" class="stage-canvas-tool stage-zoom-reset is-icon" id="stage-plan-zoom" aria-label="図の表示位置を戻す" hidden><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6a5.5 5.5 0 1 1-.2 4M3 2v4h4"/></svg></button>
                   <button type="button" class="stage-canvas-tool is-icon" id="stage-plan-note"
                           data-tool-tip="note" data-tool-key="N"
                           title="メモを貼る（N）" aria-label="メモを貼る" aria-pressed="false"><svg class="stage-canvas-tool-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.1 2.3h7.1l2.7 2.7v8.7H3.1z"/><path d="M10.2 2.3V5h2.7M5.3 8h5.4M5.3 10.5h4.1"/></svg><span class="visually-hidden">メモ</span></button>
@@ -2922,13 +2923,14 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261014-v0364">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261014-v0365">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0364-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0364-title">v0.3.64</h3><time datetime="2026-10-14">2026-10-14</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0365-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0365-title">v0.3.65</h3><time datetime="2026-10-14">2026-10-14</time></header>
       <ul>
-        <li>現場モードに、正面図・平面図へのペン記入と文字ノート、右側の進行表を追加しました。元ショーを変更せずラン別に保存し、記録ファイルの書き出しと制作時の参照ができます。</li>
+        <li>Qシートの表示内容一覧とA4の3形式、Mキューの音源選択を整え、照明の図と操作を左右に配置しました。</li>
+        <li>シーン一覧・選択・キー操作など27件を改善し、ブラウザ保存の忠告帯と匿名の利用件数計測を追加しました。計測は環境設定で止められます。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3884,7 +3886,7 @@
 <script src="stage-venue-report.js?v=2026092047"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=20261013-v0360"></script>
-<script src="stage-samples/catalog.js?v=20261013-v0360"></script>
+<script src="stage-samples/catalog.js?v=20261014-v0365"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=20261009-v0337"></script>
 <script src="stage-machinery.js?v=20261012-v0358"></script>
@@ -3898,9 +3900,9 @@
 <script src="stage-project-backup-store.js?v=2026092523"></script>
 <script src="stage-storage-codec.js?v=2026092523"></script>
 <script src="stage-storage-recovery.js?v=20261001-release69"></script>
-<script src="stage-storage-hygiene.js?v=20261001-release69"></script>
+<script src="stage-storage-hygiene.js?v=20261014-v0365"></script>
 <script src="stage-storage-pressure.js?v=20260926-large39"></script>
-<script src="manual-gamma/manual-meta.js?v=20261014-v0364" data-manual-content="manual-gamma/manual-content.js?v=20261014-v0364"></script>
+<script src="manual-gamma/manual-meta.js?v=20261014-v0365" data-manual-content="manual-gamma/manual-content.js?v=20261014-v0365"></script>
 <script src="stage-pwa.js?v=20261009-v0337"></script>
 <script src="stage-lighting-plans.js?v=20261005-beam99"></script>
 <script src="stage-lighting-plan-overlay.js?v=20261005-batch98"></script>
@@ -3916,12 +3918,13 @@
 <script src="gamma-formation-model.js?v=formation1"></script>
 <script src="stage-data-safety.js?v=20261001-release69"></script>
 <script src="stage-time-domain.js?v=20261013-v0359"></script>
-<script src="stage-timecode.js?v=20261014-v0361"></script>
+<script src="stage-timecode.js?v=20261014-v0365"></script>
 <script src="stage-cue-sheet.js?v=20261014-v0361"></script>
 <script src="docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113"></script>
 <script src="stage-light-panel-import.js?v=2026092209"></script>
 <script src="stage-scene-alternatives.js?v=20261009-v0333"></script>
-<script src="stage-shortcuts.js?v=20261010-v0338"></script>
+<script src="stage-music-cues.js?v=20261014-v0365"></script>
+<script src="stage-shortcuts.js?v=20261014-v0365"></script>
 <!-- U-12（2026-09-24）: 並べ替えの動き（一覧・タイムラインの段・セリフ画面の行で共有） -->
 <script src="stage-reorder-motion.js?v=2026092420"></script>
 <script src="stage-jog-reference.js?v=2026093003"></script>
@@ -3938,18 +3941,19 @@
 <script src="stage-run-of-show-model.js?v=20261006-v0312"></script>
 <script src="stage-pose-data.js?v=20261013-v0360"></script>
 <script src="stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="stage-language-loader.js?v=20261014-v0364"></script>
+<script src="stage-language-loader.js?v=20261014-v0365"></script>
 <script src="stage-reorder-warning.js?v=20261009-v0335"></script>
 <script src="stage-venue-curtains.js?v=20261011-v0347"></script>
-<script src="stage-sketch.js?v=20261014-v0364"></script>
+<script src="stage-metrics.js?v=20261014-v0365"></script>
+<script src="stage-sketch.js?v=20261014-v0365"></script>
 <script src="stage-scene-alternatives-ui.js?v=20261009-v0337"></script>
 <script src="gamma-formation.js?v=20261008-v0330"></script>
 <script src="stage-vox-panel.js?v=20261005-v030"></script>
 <script src="stage-script-editor.js?v=20261010-v0342"></script>
     <script src="stage-light-schedule.js?v=20261013-v0359"></script>
-    <script src="stage-timeline.js?v=20261014-v0362"></script>
+    <script src="stage-timeline.js?v=20261014-v0365"></script>
 <script src="stage-session.js?v=20261014-v0364"></script>
-<script src="stage-study-owner.js?v=20261012-v0358"></script>
+<script src="stage-study-owner.js?v=20261014-v0365"></script>
 <script src="stage-usage.js?v=20261009-v0337"></script>
 <script src="stage-venue-underlay.js?v=20261006-v0312"></script>
 <script src="stage-venue-editor.js?v=20261012-v0358"></script>
@@ -3959,13 +3963,15 @@
 <script src="stage-field-run-package.js?v=20261014-v0364"></script>
 <script src="stage-field-run-transport.js?v=20261014-v0364"></script>
 <script src="stage-field-run-console.js?v=20261014-v0364"></script>
-<script src="stage-run-of-show-pane.js?v=20261014-v0362"></script>
-<script src="gamma-workspace.js?v=20261014-v0364"></script>
+<script src="stage-run-of-show-pane.js?v=20261014-v0365"></script>
+<script src="gamma-workspace.js?v=20261014-v0365"></script>
 <script src="gamma-feature-search.js?v=20261014-v0362"></script>
 <script src="gamma-mobile.js?v=20261014-v0363"></script>
 <script src="stage-venue-preview.js?v=20261012-v0358"></script>
 <script src="stage-venue-viewpoints.js?v=20261012-v0357"></script>
 <script src="run-of-show/timing.js?v=20261010-v0338"></script>
 <script src="stage-show-overview.js?v=20261009-v0337"></script>
+<!-- Cloudflare Web Analytics: Pages only; runtime gate excludes Mac and shared Worker. -->
+<script src="stage-web-analytics.js?v=20261014-v0365"></script>
 </body>
 </html>

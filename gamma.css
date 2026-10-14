@@ -1592,3 +1592,46 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-canvas-close[data-to
 .stage-timeline-cue[data-cue-type="light"] .stage-timeline-cue-label { flex:0 0 auto;line-height:12px; }
 .stage-timeline-cue-timing { flex:0 0 auto;font-size:10px;line-height:11px;white-space:nowrap; }
 .stage-timeline-light-band.is-lx { height:2px;padding:0; }
+
+/* Browser storage reminder: its paper is independent of the desk theme. */
+:root { --storage-band-height:28px; --storage-band-folded:6px; --storage-band-red:#aa2828; }
+#stage-storage-band:not([hidden]) {
+  display:flex; align-items:center; gap:8px; box-sizing:border-box;
+  height:var(--storage-band-height); min-height:var(--storage-band-height); flex:none;
+  padding:0 8px; border-left:4px solid var(--storage-band-red);
+  background:var(--paper); color:var(--storage-band-red); font-size:13px; line-height:1.5;
+  position:sticky; top:0; z-index:31; width:100%; min-width:0;
+}
+#stage-storage-band.is-protected { color:var(--ink-soft); }
+#stage-storage-band-message { flex:1 1 auto; min-width:0; overflow-x:auto; white-space:nowrap; scrollbar-width:none; }
+#stage-storage-band-message::-webkit-scrollbar { display:none; }
+#stage-storage-band.is-stale #stage-storage-band-backup { font-weight:700; }
+#stage-storage-band :is(button,a) {
+  display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto;
+  box-sizing:border-box; min-width:44px; min-height:28px; height:28px; margin:0;
+  padding:0 8px; border:1px solid currentColor; border-radius:2px; background:transparent;
+  color:inherit; font:inherit; line-height:1.5; white-space:nowrap; text-decoration:underline;
+}
+#stage-storage-band #stage-storage-band-fold { min-width:28px; width:28px; padding:0; font-weight:700; text-decoration:none; }
+#stage-storage-band :focus-visible { outline:2px solid currentColor; outline-offset:-2px; }
+#stage-storage-band.is-folded:not([hidden]) { height:var(--storage-band-folded); min-height:var(--storage-band-folded); background:var(--storage-band-red); border:0; padding:0; }
+#stage-storage-band.is-folded > * { display:none; }
+html:has(#stage-storage-band:not([hidden])):not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head { top:var(--storage-band-height); }
+html:has(#stage-storage-band.is-folded:not([hidden])):not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head { top:var(--storage-band-folded); }
+.stage-storage-return-modal { width:min(560px,calc(100vw - 24px)); }
+.stage-storage-return-actions { display:flex; justify-content:flex-end; gap:8px; }
+.stage-storage-return-actions button { min-height:44px; }
+@media(max-width:700px) {
+  #stage-storage-band { gap:4px; padding-inline:4px; }
+  #stage-storage-band a { max-width:72px; overflow:hidden; justify-content:flex-start; text-overflow:ellipsis; }
+}
+@media print { #stage-storage-band, #stage-storage-return-modal, #stage-storage-return-backdrop { display:none !important; } }
+
+/* Batch7 G3: measured outer margin asymmetry; keep other workspaces unchanged. */
+@media (min-width:1000px) {
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"] #view-stage { padding-inline:12px; }
+}
+/* Only the bottom pair layout limits roster density to two columns. */
+html[data-stage-layout="bottom"]:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="normal"] .stage-roster-accordion-body > .stage-cast-list {
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,max(200px,calc((100% - 8px) / 2))),1fr));
+}

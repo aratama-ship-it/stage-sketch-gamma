@@ -10,7 +10,7 @@
         id: "machinery-kinds", title: "The five kinds and their values", status: "verified",
         keywords: ["stage machinery", "machinery", "lift", "trap", "revolve", "turntable", "rotate", "deck", "tilt", "rake", "curtain", "scrim", "traveller", "drop", "cyclorama", "water", "pool", "water level", "raise", "lower"],
         html: `
-<p>On the Stage tab, choose ${ui("Place scrim")} or ${ui("Place stage lift")} in ${ui("Stage machinery")}. For revolves, decks and water, duplicate a sample show containing them. Placed machinery appears in the list and drawing, with values you can change per scene.</p>
+<p>On the Stage tab, choose ${ui("Add scrim")} or ${ui("Add stage lift")} in ${ui("Stage machinery")}. For revolves, decks and water, duplicate a sample show containing them. Placed machinery appears in the list and drawing, with values you can change per scene.</p>
 ${fig("10-section-D", "A stage lift (raised and lowered) and a revolve. In the plan the lift is a rectangle and the revolve a turned square.", "Lift and revolve in plan")}
 ${table(["Machinery", "Values per scene", "Notes"], [
   [ui("Stage lift"), ui("Rise height (from stage floor)") + ", for example +1.5 m or −1.2 m (below stage)", "Performers standing on it rise and fall with it. A small trap (suppon) is marked in the plan"],
@@ -43,7 +43,7 @@ ${vid("machinery-revolve", "Test scenes C-7 → D-1 → D-2 → D-3 in the full-
         id: "machinery-panel", title: "The Stage machinery panel (check and adjust)", status: "sourced",
         keywords: ["machinery panel", "panel", "list", "place scrim", "place stage lift", "check", "values"],
         html: `
-<p>The ${ui("Stage machinery")} panel on the Stage tab lists the machinery built into the theatre. Use ${ui("Place scrim")} or ${ui("Place stage lift")} to add them, and switch them on or off per scene in the list. Here you check and adjust the current scene's values (height, angle, opening, level). Selecting machinery on the drawing shows the same fields in ${ui("Selection")}.</p>
+<p>The ${ui("Stage machinery")} panel on the Stage tab lists the machinery built into the theatre. Use ${ui("Add scrim")} or ${ui("Add stage lift")} to add them, and switch them on or off per scene in the list. Here you check and adjust the current scene's values (height, angle, opening, level). Selecting machinery on the drawing shows the same fields in ${ui("Selection")}.</p>
 ${note("Not on iPad or iPhone", "Editing machinery is a computer-screen feature. If you cannot find the machinery panel on an iPad, nothing is broken (" + ref("device-table", "Part 13") + ").")}`
       }
     ]

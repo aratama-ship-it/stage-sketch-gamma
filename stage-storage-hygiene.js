@@ -48,6 +48,8 @@
           const item = stack.pop();
           if (!item || typeof item !== 'object') continue;
           if (typeof item.audioTrackId === 'string' && item.audioTrackId) ids.add(item.audioTrackId);
+          // M cue bindings and preserved migration sources can outlive metadata.
+          if (typeof item.trackId === 'string' && item.trackId) ids.add(item.trackId);
           if (Array.isArray(item.audioTracks)) for (const track of item.audioTracks) {
             if (typeof track?.id === 'string' && track.id) ids.add(track.id);
           }

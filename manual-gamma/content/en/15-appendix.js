@@ -113,7 +113,7 @@
         "転換",
         "field mode"
       ],
-      "html": "<p>In Studio or Company, open Show mode with the running-person icon in the header, name your rehearsal and start New run. Add pen annotations to front and plan views and type continuous notes. The original show remains unchanged.</p><p>Use the run of show on the right and previous/next scene controls to review scenes. Typing or drawing keeps the record attached to that scene. GO and cue stepping operate the record’s own progress clock.</p><p>Exit show mode pauses the run so it can be resumed. Finish run makes the record read-only and starts a .stagerun.zip export. Closed records can be exported again. Audio files are not included.</p><p>While editing, open Rehearsal records from scene details. Review the recorded diagrams and notes, or link them manually to a copied show. Records never apply changes automatically. Shared sessions retain the previous progress screen; Lite is excluded.</p><p>If device storage fails, export the unsaved draft. Keep a record file before clearing storage or changing computers.</p><p class=\"m-source\">Checked in H-1–H-4 and M-5, v0.3.64. Physical pen input and Safari PWA offline restart remain unverified.</p>" + window.H.fig("release064-field", "Rehearsal run records (H-1, v0.3.64).", "Rehearsal records")
+      "html": "<p>In Studio or Company, open Show mode with the running-person icon in the header, name your rehearsal and start New run. Add pen annotations to front and plan views and type continuous notes. The original show remains unchanged.</p><p>Use the run of show on the right and previous/next scene controls to review scenes. Typing or drawing keeps the record attached to that scene. GO and cue stepping operate the record’s own progress clock.</p><p>Exit show mode pauses the run so it can be resumed. Finish run makes the record read-only and starts a .stagerun.zip export. Closed records can be exported again. Audio files are not included.</p><p>While editing, open Rehearsal records from scene details. Review the recorded diagrams and notes, or link them manually to a copied show. Records never apply changes automatically. Shared sessions retain the previous progress screen; Lite is excluded.</p><p>If device storage fails, export the unsaved draft. Keep a record file before clearing storage or changing computers.</p><p class=\"m-source\">Checked in H-1–H-4 and M-5, v0.3.65. Physical pen input and Safari PWA offline restart remain unverified.</p>" + window.H.fig("release065-field", "Rehearsal run records (H-1, v0.3.65).", "Rehearsal records")
     },
     {
       "id": "new-03-runshow",
@@ -151,7 +151,7 @@
         "scrim",
         "room"
       ],
-      "html": "<p>Place a front scrim at the front of the stage and switch registered stage machinery on or off for each scene. Adjust the selected scrim’s transparency.</p>\n<p>Scrims appear in front, plan and 3D views. Only bright parts of a projected image glow. You can also create a room outline to apply to a scrim or backdrop.</p>\n<p>Where: Stage → Stage machinery → Place scrim, or Create room outlines. Theatre settings also offers Place front scrim.</p>\n<p>Try it in: D-3 (curtains), G-5 → G-6 (scrim transparency and projection).</p>\n<p class=\"m-source\">Release history: v0.3.32, v0.3.34, v0.3.35</p>"
+      "html": "<p>Place a front scrim at the front of the stage and switch registered stage machinery on or off for each scene. Adjust the selected scrim’s transparency.</p>\n<p>Scrims appear in front, plan and 3D views. Only bright parts of a projected image glow. You can also create a room outline to apply to a scrim or backdrop.</p>\n<p>Where: Stage → Stage machinery → Add scrim, or Create room outlines. Theatre settings also offers Place front scrim.</p>\n<p>Try it in: D-3 (curtains), G-5 → G-6 (scrim transparency and projection).</p>\n<p class=\"m-source\">Release history: v0.3.32, v0.3.34, v0.3.35</p>"
     },
     {
       "id": "new-03-lighting",
@@ -260,7 +260,7 @@
         "タイムライン",
         "audio"
       ],
-      "html": "<p>Time is shown as timecode (hours:minutes:seconds.tenths), labelled TC in the header. A show without a timecode setting starts its display at 00:00:00.0.</p>\n<p>Audio import, the library, scene assignment and removal are grouped in the timeline’s audio row.</p>\n<p>Where: Stage → open the timeline and use its audio row. Read the time in the header’s TC display.</p>\n<p>Try it in: H-2 (disconnected audio), H-3 (count synchronisation).</p>\n<p class=\"m-source\">Release history: v0.3.0</p>"
+      "html": "<p>Time is shown as timecode (hours:minutes:seconds.tenths), labelled TC in the header. A show without a timecode setting starts its display at 00:00:00.0.</p>\n<p>Audio upload, the registered-track list and reconnection are in M cue details.</p>\n<p>Where: Stage → open the timeline and double-click an M cue. Read the time in the header’s TC display.</p>\n<p>Try it in: H-2 (disconnected audio), H-3 (count synchronisation).</p>\n<p class=\"m-source\">Release history: v0.3.0</p>"
     },
     {
       "id": "new-03-paper",
@@ -359,6 +359,7 @@ ${table(["Key", "What it does", "Changeable"], [
   [kbd("F"), "Full screen", "Yes"], [kbd("T"), "Switch which views are shown (front / plan / both 1 / both 2)", "Yes"], [kbd("C"), "Show or hide lighting effects", "Yes"], [kbd("G"), "Work lights on / off", "Yes"], [kbd("X"), "Swap the full-screen views (front ⇄ plan)", "Yes"],
   [kbd("⌘S"), "Export show (works while typing)", "Yes"], [kbd("⌘Z"), "Undo", "Yes"], [kbd("⇧⌘Z"), "Redo", "Yes"],
   [kbd("↑") + kbd("↓"), "Step through scenes", "—"], [kbd("←") + kbd("→"), "Step through cues (in 3D: change scene)", "—"], [kbd("Delete"), "Delete what is selected", "—"], [kbd("Esc"), "Close a window, leave full screen, close 3D", "—"],
+  [kbd("M"), "Mute / unmute while playback continues", "Yes"], [kbd("0"), "Reset visible views in the current tab", "Yes"],
   [kbd("E"), "Open or close the timeline", "—"], [kbd("/"), "(This booklet) jump to the search box", "—"]
 ])}
 <h4>In 3D</h4>

@@ -85,7 +85,7 @@ ${table(["Panel", "At first", "What it holds", "Section"], [
   [ui("Selection"), "Shown", "Pose, facing and layering of the piece you selected", ref("inspector", "2-5")],
   [ui("AI instructions"), "Shown", "Write instructions for an AI", "—"]
 ])}
-<p>There are also the ${ui("Lights")} panel (light pieces) and the ${ui("Info")} panel (lighting summary and last-saved time).</p>
+<p>The ${ui("Info")} panel shows the last-saved time. The ${ui("Lights")} panel in the Stage tab is hidden. Use Equipment placement and Light design to work with lights.</p>
 ${note("Not on iPad or iPhone", "The panel switches are a computer-screen feature. The iPad and iPhone layouts are built differently (" + ref("device-table", "Part 13") + ").")}`
       },
       {
@@ -151,7 +151,7 @@ ${table(["Key", "What it does"], [
     "Shift",
     "Space"
   ],
-  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release059-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release064-stage", "Stage toolbar (v0.3.64).", "stage")
+  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release059-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release065-stage", "Stage toolbar (v0.3.65).", "stage")
 }
     ]
   });

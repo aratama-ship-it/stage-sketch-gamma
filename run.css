@@ -58,25 +58,26 @@ body{background:var(--program-bg);color:var(--program-ink)}button,input,select{b
 }
 .lite-paper.lite-stacked #ros-selected{position:static;max-height:none;overflow:visible;margin-top:var(--s6)}
 @media(max-width:1199px){.lite-paper #paper-panel{position:static}.lite-paper #ros-selected{position:static;max-height:none;overflow:visible}}
-/* Permanent columns stay beside the Lite paper and do not stretch its toolbar. */
-.lite-paper:has(.lite-column-menu) #paper-panel .row-mode-buttons{display:inline-flex;gap:var(--s1);width:auto}
-.lite-paper:has(.lite-column-menu) #paper-panel .row-mode-buttons button{width:auto;white-space:nowrap}
-.lite-paper:has(.lite-column-menu) #column-popover.lite-column-menu>.band-heading{display:flex;justify-content:space-between;font-size:12px;line-height:1.4;color:var(--chrome-muted);margin:0 0 4px}
-.lite-paper:has(.lite-column-menu) #column-popover.lite-column-menu{display:block;padding:8px 0}
-.lite-paper:has(.lite-column-menu) #column-popover.lite-column-menu .column-name{display:block}
-.lite-paper:has(.lite-column-menu) #column-popover.lite-column-menu #column-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 8px}
-@media screen and (min-width:800px){
-  .lite-paper:has(.lite-column-menu) #preview,.lite-paper:has(.lite-column-menu) #preview:has(.doc-frame[data-paper-format=free]){display:grid;grid-template-columns:180px minmax(0,1fr);grid-template-rows:auto auto auto auto;grid-template-areas:none;gap:0 16px;align-items:start}
-  .lite-paper:has(.lite-column-menu) #paper-panel{grid-column:1/-1;grid-row:1}
-  .lite-paper:has(.lite-column-menu) #document-error{grid-column:1/-1;grid-row:2}
-  .lite-paper:has(.lite-column-menu) #column-popover.lite-column-menu{grid-column:1;grid-row:3/5;position:sticky;top:var(--lite-band-height);max-height:calc(100vh - var(--lite-band-height));overflow:auto}
-  .lite-paper:has(.lite-column-menu) #column-popover.lite-column-menu #column-list{display:block}
-  .lite-paper:has(.lite-column-menu) .doc-frame{grid-column:2;grid-row:3}
-  .lite-paper:has(.lite-column-menu) #ros-selected{grid-column:2;grid-row:4}
-}
-@media screen and (min-width:1200px){
-  .lite-paper:has(.lite-column-menu):not(.lite-stacked) #preview,.lite-paper:has(.lite-column-menu):not(.lite-stacked) #preview:has(.doc-frame[data-paper-format=free]){grid-template-columns:180px minmax(max(var(--ros-left-min),var(--lite-paper-min)),2fr) minmax(var(--ros-right-min),1fr);column-gap:16px}
-  .lite-paper:has(.lite-column-menu):not(.lite-stacked) #ros-selected{grid-column:3;grid-row:3}
-}
-.lite-paper:has(.lite-column-menu) #paper-panel .row-mode-buttons{flex:0 0 auto}
-.lite-paper:has(.lite-column-menu) #paper-panel .row-mode-buttons button{flex:0 0 auto;padding-inline:8px}
+/* Lite keeps the page and selected-item notes in two tracks. The column
+   accordion and permanent page settings use the top controls, not a third track. */
+.lite-paper #paper-panel .row-mode-buttons{display:inline-flex;flex:0 0 auto;gap:var(--s1);width:auto}
+.lite-paper #paper-panel .row-mode-buttons button{flex:0 0 auto;width:auto;padding-inline:var(--s2);white-space:nowrap}
+body.lite-paper #paper-panel #paper-band #band-settings{display:flex;flex:1 0 100%;order:1;align-items:flex-end;gap:var(--s2);padding:var(--s1);margin-block:var(--s1);border:var(--rule) solid var(--line-dark)}
+.lite-paper #paper-panel #band-settings .band-field{flex:0 0 auto;min-width:0;flex-direction:column;align-items:flex-start;white-space:nowrap}
+.lite-paper #paper-panel #band-settings select{width:auto;max-width:100%;flex:0 1 auto;min-width:0}
+.lite-paper #paper-panel #band-settings #heading-language{width:160px}
+.lite-paper #paper-panel #band-settings #paper-format{width:120px}
+.lite-paper #paper-panel #band-settings .band-field>span:first-child{font-size:var(--fs-small)}
+.lite-paper #paper-panel #column-popover.lite-column-menu{display:block;flex:0 0 auto;width:160px;border:0;padding:0;margin:0;min-width:0}
+.lite-paper #paper-panel #column-summary,.lite-paper #paper-panel #band-output>summary{display:flex;align-items:center;gap:var(--s2);min-height:var(--control);padding:var(--s1) var(--s2);margin:0;border:var(--rule) solid var(--line-dark);font-size:var(--fs-small);letter-spacing:normal;cursor:pointer}
+.lite-paper #paper-panel #column-popover[open]{flex-basis:100%;width:100%;order:2}
+.lite-paper #paper-panel #column-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--s1) var(--s2)}
+.lite-paper #paper-panel #column-list>.column-group,.lite-paper #paper-panel #column-list .column-list{display:contents}
+.lite-paper #paper-panel details:not([open])>:not(summary){display:none}
+.lite-paper #paper-panel #band-output{position:relative}
+.lite-paper #paper-panel #band-output[open]{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1)}
+.lite-paper #paper-panel #band-output button{width:auto}
+.lite-paper #paper-panel #stage-view-rows{display:flex;align-items:center;gap:var(--s1);margin:0;max-width:none}
+.lite-paper #paper-panel #stage-view-rows p{max-width:460px;margin:0;font-size:var(--fs-table);line-height:var(--leading-title)}
+.lite-paper #paper-panel #widths-reset{margin:0}
+.lite-paper #paper-panel .band-view .toolbar{display:contents}

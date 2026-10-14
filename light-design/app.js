@@ -412,7 +412,11 @@
   /* キューの時間（2026-09-27 テスト用ビルド）。フェード中は「前と次を混ぜた描画用キュー」を
      draw() の間だけここへ入れる。編集の関数は draw() の外で cue() を呼ぶので、正本は汚れない。 */
   let drawCueOverride = null;
-  const cue = () => drawCueOverride || scene().cue;
+  // Q browsing is view state. Keep the scene's saved look separate from the selected Q.
+  const viewedCueIds = new Map();
+  const viewedCue = sc => (sc?.lxq || []).find(q => q.id === viewedCueIds.get(sc.id));
+  const visibleCue = sc => viewedCue(sc)?.cue || sc.cue;
+  const cue = () => drawCueOverride || visibleCue(scene());
   const lightOf = (fid) => cue().lights[fid] || null;
   const fixtureById = (id) => state.rig.fixtures.find((f) => f.id === id) || null;
   const groupOf = (fid) => cue().groups.find((g) => g.members.includes(fid)) || null;
@@ -425,7 +429,7 @@
   // and may change without an LX edit; undoing the last edit must also clear the prompt.
   const applyFingerprint = () => JSON.stringify({ dims: state.dims, motion: state.motion, rig: state.rig,
     scenes: state.scenes.map(sc => ({ id: sc.id, lx: sc.lx, lxq: sc.lxq,
-      lxEditing: sc.lxEditing, entry: sc.entry, cue: sc.cue })), palette: state.palette,
+      entry: sc.entry, cue: sc.cue })), palette: state.palette,
     levelCurve: state.levelCurve, curtains: state.curtains,
     fixtureGroups: state.fixtureGroups, designVersion: state.designVersion,
     positionLayoutRollbackKey: state.positionLayoutRollbackKey, migrationKey: state.migrationKey, designName: state.designName });
@@ -471,9 +475,10 @@
     const before = JSON.parse(baseline);
     const previous = before.scenes.find(sc => sc.id === scene().id);
     const current = cue();
+    const previousCue = (previous?.lxq || []).find(q => q.id === viewedCueIds.get(scene().id))?.cue || previous?.cue;
     for (const fixture of state.rig.fixtures) {
       if (fixture.kind !== 'fixed') continue;
-      const light = current.lights[fixture.id], old = previous?.cue?.lights?.[fixture.id];
+      const light = current.lights[fixture.id], old = previousCue?.lights?.[fixture.id];
       if (!light || !old) continue;
       const fields = ['surface', 'color', 'path'];
       if (!fields.some(key => JSON.stringify(light[key]) !== JSON.stringify(old[key]))) continue;
@@ -594,6 +599,9 @@
   /* 左右の余白は平面図・正面図・側面図で同じ値。そろえないと枠の幅が食い違う（2026-09-11 本人指摘）。
      2026-09-11 本人要望でさらに詰めた（38→32）。平面図の舞台の外に出るSSの印は SIDE_DX まで。 */
   const PAD = { planX: 32, planT: 20, planB: 46, secX: 32, secT: 14, secB: 15, headPlan: 26, headSec: 26, gap: 8 };
+  const SIDE_VISIBLE_METRES = 2;
+  let sectionScale = 1;
+  const sideCropped = () => state.mode === "move" && !state.soloFigure;
   const SIDE_DX = 24;   // 内部px。選択輪も平面図の左右余白に収める
   /* 前明かりは客席の上（舞台より手前）にある。実尺で描くと平面図に客席ぶんの帯が要り、
      そのぶん舞台が小さくなるので、SSと同じく「舞台の外に一定距離で並べる」描き方にする。
@@ -624,7 +632,17 @@
   const secBox = (cv, kind) => {
     const d = state.dims, padX = PAD.secX * 2;
     const avail = { x: padX, y: PAD.secT * 2, w: logicalWidth(cv) - padX * 2, h: logicalHeight(cv) - (PAD.secT + PAD.secB) * 2 };
+    if(kind!=="front" && sideCropped()) {
+      // Crop above the performers without shrinking metres or moving the floor.
+      avail.h=Math.round(d.H*sectionScale)*2;
+      avail.y=logicalHeight(cv)-PAD.secB*2-avail.h;
+    }
     const b=fitBox(avail, (kind === "front" ? d.W : d.D+(distanceMetric?12:0)) / d.H);
+    if(kind==="front" && state.front3d) {
+      const seat=state.frontSeats?.[state.seat] || E.FRONT_SEATS[state.seat] || E.FRONT_SEATS.center;
+      // The seat changes perspective, not the blank margin below the front edge.
+      b.y+=logicalHeight(cv)-PAD.secB*2-E.frontPerspSetup(d,b,seat).bottomY;
+    }
     if(distanceMetric&&kind!=="front"){const extra=b.w*12/(d.D+12);b.w-=extra;if(kind==="shimote")b.x+=extra;}return b;
   };
   /* 凸の形で、4図すべてを**同じ縮尺**（1mがどの図でも同じ長さ）にする（2026-09-11 本人要望）。
@@ -637,6 +655,7 @@
     const g = document.querySelector(".figgrid"); if (!g) return;
     const r = g.getBoundingClientRect(); if (!r.width || !r.height) return;
     const d = state.dims;
+    g.classList.toggle("side-cropped",sideCropped());
     const headSec=Math.max(PAD.headSec,document.querySelector(".sec.front .sechead").getBoundingClientRect().height+2);
     /* R-14（2026-09-17 本人要望）: 1枚だけ広げているときは、4図をそろえる尺ではなく
        その1枚が枠いっぱいになる尺で決める。4図の縮尺をそろえる意味が無い状態なので、
@@ -688,7 +707,11 @@
     // 上帯・シーン行を図と同じ幅の帯へ寄せる。窓を変えても縦に揃う
     const band = Math.round((d.W + d.D * 2) * s) + chromeW + effectiveExtra;
     const modal = $("modal"); if (modal) modal.style.setProperty("--band", band + "px");
+    sectionScale=s;
     const secH = Math.round(d.H * s) + PAD.secT + PAD.secB;
+    const sideH = sideCropped() ? Math.round(Math.min(d.H,SIDE_VISIBLE_METRES)*s)+PAD.secT+PAD.secB : secH;
+    const sideHead=document.querySelector(".sec.side.l .sechead").getBoundingClientRect().height+2;
+    g.style.setProperty("--side-reserved",(sideH+sideHead+PAD.gap)+"px");
     sideW = Math.round(d.D * s) + PAD.secX * 2;
     const leftW = sideW + effectiveExtra, panelWidth = leftW;
     const minShare = panelWidth > 0 ? Math.min(0.5, PANEL_MIN_WIDTH / panelWidth) : 0.5;
@@ -698,7 +721,7 @@
     set(plan.parentElement, "width", midW);
     set(plan, "height", Math.round(d.D * s) + PAD.planT + PAD.planB);
     set(secF.parentElement, "width", midW); set(secF, "height", secH);
-    set(secL.parentElement, "width", leftW); set(secL, "height", secH);
+    set(secL.parentElement, "width", leftW); set(secL, "height", sideH);
     set(secR.parentElement, "width", sideW); set(secR, "height", secH);
     // 灯体一覧・LXキュー・下手側面図は、設定した可変幅を共有する。
     { const lc = document.querySelector(".leftcol"); if (lc) set(lc, "width", leftW); }
@@ -723,7 +746,7 @@
     syncFigureSizes();   // 先に各図の表示高さを決めてから内部解像度を合わせる
     const fit = (c) => {
       const r = c.getBoundingClientRect(); if (!r.width) return;
-      const width = Math.max(300, Math.round(r.width * 2)), height = Math.max(160, Math.round(r.height * 2));
+      const width = Math.max(300, Math.round(r.width * 2)), height = Math.max(2, Math.round(r.height * 2));
       displayCanvasSizes.set(c, { width, height });
       resizeDisplayBacking(c);
     };
@@ -2848,7 +2871,10 @@
     for(const [ctx,items]of fixtureLabelFrame){
       ctx.save();ctx.font="600 20px sans-serif";
       const width=logicalWidth(ctx.canvas),height=logicalHeight(ctx.canvas);
-      const rows=[...items.values()].map(row=>{
+      // Offscreen overhead fixtures stay outside the compact side view. Otherwise
+      // the label collision solver would pile their numbers onto its top edge.
+      const rows=[...items.values()].filter(row=>ctx.canvas!==secL || !sideCropped() ||
+        (row.anchorY>=0 && row.anchorY<=height)).map(row=>{
         const f=fixtureById(row.id),lines=[row.number];
         if(row.focused||row.hovered){
           const info=row.selected&&state.mode==="place"&&state.sel.size===1?window.GAMMA_LIGHT_MODEL?.positionNames?.info(state.rig,f):null;
@@ -4246,7 +4272,7 @@
   function nameInspectorFields(host) {
     for (const f of host.querySelectorAll(".field, .barn2 .cell")) {
       const caption = f.querySelector(":scope > span:not(.val)");
-      const heading = f.closest(".pbox")?.querySelector(":scope > .kicker");
+      const heading = f.closest(".pbox")?.querySelector(":scope > .kicker, :scope > .pboxhead > .kicker");
       const labels = [...new Set([heading, caption].filter(node => node?.textContent.trim()))];
       if (!labels.length) continue;
       for (const label of labels) if (!label.id) label.id = "light-field-label-" + ++fieldNameSerial;
@@ -4254,6 +4280,13 @@
         if (input.hasAttribute("aria-label") || input.hasAttribute("aria-labelledby") || input.labels?.length) continue;
         input.setAttribute("aria-labelledby", labels.map(label => label.id).join(" "));
       }
+    }
+    for (const input of host.querySelectorAll("input, select, textarea")) {
+      if (input.hasAttribute("aria-label") || input.hasAttribute("aria-labelledby") || input.labels?.length) continue;
+      const heading = input.closest(".pbox")?.querySelector(":scope > .kicker, :scope > .pboxhead > .kicker");
+      if (!heading) continue;
+      if (!heading.id) heading.id = "light-field-label-" + ++fieldNameSerial;
+      input.setAttribute("aria-labelledby", heading.id);
     }
   }
   const btn = (t, fn, cls, title) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn " + (cls || ""); b.textContent = t; if (title) b.title = title; b.onclick = fn; return b; };
@@ -5375,13 +5408,17 @@
   const lxNextInShow = (id) => { const all = lxAllSorted(); const i = all.findIndex((x) => x.q.id === id); return i >= 0 ? all.slice(i+1).find(x=>x.q.enabled!==false)||null : null; };
   const lxPrevCueOf = (id) => { const all = lxAllSorted(); const i = all.findIndex((x) => x.q.id === id); return i > 0 ? all[i - 1].q.cue : { lights: {}, groups: [] }; };
   const cueJson = (c) => JSON.stringify({ ...(c || {}), lights: (c && c.lights) || {}, groups: (c && c.groups) || [] });
-  /* いま画面に出ている明かりが「どのキューの中身か」。`sc.lxEditing` にそのキューのidが入る。
-     null＝どのキューにも入っていない下書き（2026-09-13 本人要望でキュー編集モードにした）。 */
-  const lxEditingOf = (sc) => { const id = sc && sc.lxEditing; return id && lxList(sc).some((q) => q.id === id) ? id : null; };
+  /* 閲覧中のQは表示専用。旧データの lxEditing は保存値として保持する。
+     null＝どのキューにも入っていない下書き。 */
+  const lxEditingOf = (sc) => { const id = sc && (viewedCue(sc)?.id || sc.lxEditing); return id && lxList(sc).some((q) => q.id === id) ? id : null; };
   const lxEditingQ = (sc) => { const id = lxEditingOf(sc); return id ? lxList(sc).find((q) => q.id === id) : null; };
-  /* 編集中のキューへ、いまの明かりを書き戻す。commit のたびに呼ぶので「保存」の操作は要らない。 */
+  /* 閲覧中のQは直接編集。旧データのシーンcueは実際に変えた場合だけQへ書き戻す。 */
   function lxSyncEditing() {
-    state.scenes.forEach((sc) => { const q = lxEditingQ(sc); if (q) q.cue = JSON.parse(cueJson(sc.cue)); });
+    const previous = JSON.parse(baseline).scenes;
+    state.scenes.forEach(sc => {
+      const q = lxEditingQ(sc), before = previous.find(row => row.id === sc.id);
+      if(q && !viewedCue(sc) && cueJson(before?.cue) !== cueJson(sc.cue)) q.cue = JSON.parse(cueJson(sc.cue));
+    });
   }
 
   /* LXキューパネルが見ているシーン。連動していれば「いま編集しているシーン」、
@@ -5420,7 +5457,7 @@
     const elapsed=lxFadeElapsedMs(),blackout=lxFade.blackoutSeconds;
     const entering=blackout!=null&&elapsed>=blackout*1000;
     const prev=entering?{lights:{},groups:[]}:lxFade.prev;
-    const target=blackout!=null&&!entering?{lights:{},groups:[]}:scene().cue;
+    const target=blackout!=null&&!entering?{lights:{},groups:[]}:visibleCue(scene());
     const timing=blackout==null?lxFade.timing:entering?{fadeInSec:3,fadeOutSec:3,curve:"linear",mib:true}:{fadeInSec:0,fadeOutSec:blackout*.2,curve:"linear",mib:true};
     const res = E.blendCues(prev, target, { timing, tGoMs: entering?elapsed-blackout*1000:elapsed, tFxMs: state.play.t, dims: state.dims, fixtures: state.rig.fixtures, rig: state.rig, motion: state.motion });
     if (blackout!=null&&!entering)return res.cue;
@@ -5445,7 +5482,7 @@
   function lxFollowTick() { lxFollowRaf = 0; if (!lxFollow) { lxFadeStatus(); return; } lxFadeStatus(); lxFollowRaf = requestAnimationFrame(lxFollowTick); }
   function lxFadeStart(prevCue, timing, sceneIndex, blackoutSeconds) {
     lxFadeStop();
-    const total = blackoutSeconds!=null ? blackoutSeconds*1000+3000 : E.transitionMsFor(prevCue,scene().cue,timing,{dims:state.dims,rig:state.rig,fixtures:state.rig.fixtures,motion:state.motion});
+    const total = blackoutSeconds!=null ? blackoutSeconds*1000+3000 : E.transitionMsFor(prevCue,visibleCue(scene()),timing,{dims:state.dims,rig:state.rig,fixtures:state.rig.fixtures,motion:state.motion});
     if (total <= 0) { draw(); return; }
     lxFade = { prev: prevCue, timing, sceneIndex, startedAt: nowMs(), total, blackoutSeconds };
     draw();lxFadeStatus();
@@ -5604,15 +5641,17 @@
   const lxGoCues=new WeakMap(); // Display state only; never serialized into the draft.
   function lxEnterCue(si, id, opts = {}) {
     if(opts.auto && state.scenes[si]?.lxq?.find(q=>q.id===id)?.enabled === false) return;
+    window.dispatchEvent(new Event("gamma-light-cue-view"));
     lxFollowCancel();
     lxFadeStop();
-    const prevCue = JSON.parse(cueJson(scene().cue));   // GO の直前に見えていた明かり（別シーンからでも）
+    const prevCue = JSON.parse(cueJson(visibleCue(scene())));   // GO の直前に見えていた明かり（別シーンからでも）
     lxGoto(si);
     const s2 = state.scenes[si]; const t = lxList(s2).find((z) => z.id === id); if (!t) return;
-    s2.cue = JSON.parse(cueJson(t.cue)); s2.lxEditing = t.id;
-    if(t.enabled!==false) lxGoCues.set(s2,s2.cue);
+    viewedCueIds.set(s2.id, t.id);
+    if(t.enabled!==false) lxGoCues.set(s2,t.cue);
     state.sel.clear(); stop(); home();
-    commit(`${t.enabled===false ? "編集 → " : opts.auto ? "自動送り → " : "GO → "}${qLabel(t)}${t.name ? `「${t.name}」` : ""}（${lxTimingText(t.timing)}）`);
+    renderAll();
+    toast(`${t.enabled===false ? "編集 → " : opts.auto ? "自動送り → " : "GO → "}${qLabel(t)}${t.name ? `「${t.name}」` : ""}（${lxTimingText(t.timing)}）`);
     if(t.enabled!==false) {lxFadeStart(prevCue, t.timing, si);lxFollowSchedule(t);}
     if(!opts.auto) window.dispatchEvent(new CustomEvent("gamma-light-cue-select", {detail:{lxId:t.id}}));
   }
@@ -5646,8 +5685,8 @@
   }
   function lxSceneStepPrevious(i) {
     const current=scene(),visible=lxFadeCue();
-    if(visible||lxGoCues.get(current)===current.cue||i!==state.sceneIndex+1||!readSceneStepPrevious)
-      return visible||current.cue;
+    if(visible||lxGoCues.get(current)===visibleCue(current)||i!==state.sceneIndex+1||!readSceneStepPrevious)
+      return visible||visibleCue(current);
     const design={stage:state.dims,rig:state.rig,motion:state.motion,scenes:state.scenes};
     return readSceneStepPrevious(design,current.id,state.scenes[i]?.id)||current.cue;
   }
@@ -5717,7 +5756,7 @@
       link.querySelector("b").innerHTML = `<span class="swlab">シーンと連動</span>${state.lxLink ? "オン" : "オフ"}`;
       link.title = state.lxLink ? "いま編集しているシーンのLXキューを出しています。押すと、いま見ているシーンに固定します" : "見るシーンを固定しています。押すと、いま編集しているシーンに合わせて切り替わります";
     }
-    const si = lxSceneIndex(), sc = state.scenes[si], x = lxOf(sc), list = lxList(sc), nowJson = cueJson(sc.cue);
+    const si = lxSceneIndex(), sc = state.scenes[si], x = lxOf(sc), list = lxList(sc), nowJson = cueJson(visibleCue(sc));
     /* 上は動かない部分（どのシーンか・番号・登録）、下だけ巻く。
        いちばん押す「登録」が一覧に押し出されないようにする（2026-09-13 実測で隠れた）。 */
     const b = el("div", "lxtop");
@@ -5757,8 +5796,8 @@
       if (!state.rig.fixtures.length) return;
       lxGoto(si);
       const s2 = lxScene(); const seq = lxNextSeq(s2); const id = uid("q"); const no = E.cueNumberNext(allCueNos());
-      s2.lxq = lxList(s2).concat([{ id, seq, no, name: "", trigger: "", at: new Date().toISOString(), cue: JSON.parse(cueJson(s2.cue)) }]);
-      s2.lxEditing = id;
+      s2.lxq = lxList(s2).concat([{ id, seq, no, name: "", trigger: "", at: new Date().toISOString(), cue: JSON.parse(cueJson(visibleCue(s2))) }]);
+      viewedCueIds.set(s2.id,id);
       commit(`${qLabel(lxEditingQ(s2))} を作りました。このまま編集できます`);
     }, "primary", "いま出ている明かりを新しいLXキューにして、そのまま編集を続けます");
     newCue.id="lx-new";
@@ -5804,7 +5843,7 @@
       row.dataset.lxEnabled=String(q.enabled!==false);row.append(enabled);
       row.append(btn("✕", () => {
         dialog(`<p class="ptitle">${qLabel(q)} を消しますか？</p><p class="hint">この LXキュー を一覧から消します。画面に出ている明かりはそのまま残ります。</p>`,
-          [["キャンセル", null], ["消す", () => { const s2 = lxScene(); s2.lxq = lxList(s2).filter((z) => z.id !== q.id); if (s2.lxEditing === q.id) s2.lxEditing = null; commit(`${qLabel(q)} を消しました`); }, "primary"]]);
+          [["キャンセル", null], ["消す", () => { const s2 = lxScene(); if(viewedCue(s2)?.id===q.id){s2.cue=JSON.parse(cueJson(visibleCue(s2)));s2.lxEditing=null;} s2.lxq = lxList(s2).filter((z) => z.id !== q.id); if (s2.lxEditing === q.id) s2.lxEditing = null; commit(`${qLabel(q)} を消しました`); }, "primary"]]);
       }, "small quiet lxdel", `${qLabel(q)} を消す`));
       row.append(el("span", "lx-placement", "未配置"));
       /* 名前（24字まで）。札の幅では1行に収まらないので2行まで見せる。改行は入れない（Enter で確定）。 */
@@ -5835,8 +5874,8 @@
           lxGoto(si);
           const s2 = lxScene(), id = uid("q"), no = E.cueNumberNext(allCueNos());
           const seq = E.finite(q.seq,0) + 0.5;
-          s2.lxq = lxList(s2).concat([{id,seq,no,name:"",trigger:"",at:new Date().toISOString(),cue:JSON.parse(cueJson(s2.cue))}]);
-          lxSorted(s2).forEach((z,i) => {z.seq=i+1;});s2.lxEditing=id;
+          s2.lxq = lxList(s2).concat([{id,seq,no,name:"",trigger:"",at:new Date().toISOString(),cue:JSON.parse(cueJson(visibleCue(s2)))}]);
+          lxSorted(s2).forEach((z,i) => {z.seq=i+1;});viewedCueIds.set(s2.id,id);
           commit(`${qLabel(lxEditingQ(s2))} を ${qLabel(q)} の後ろに入れました`);
         }, "small quiet lxbetween", "このQの後ろに追加する（いまの明かりから）");
         row.append(fw, ib);
@@ -6619,20 +6658,29 @@
   function openAllScenes() {
     const esc = (t) => String(t).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
     const secs = lxSections();
+    // G3 owns the scene projection and front thumbnails. Read it without
+    // applying the lighting draft or changing its fingerprint/history.
+    const bridge = parent !== window ? parent.SHOSAI_STAGE_SESSION_BRIDGE : null;
     const body = secs.map((sec) => {
       const scenes = lxScenesIn(sec).map(({ sc, i }) => {
+        const overview = bridge?.sceneOverviewById(sc.id);
+        const title = `シーン ${overview?.number || sceneNumberOf(sc)} ${overview?.name ?? sc.name}`;
         const qs = [...lxList(sc)].sort((a, b) => E.finite(a.seq, 0) - E.finite(b.seq, 0));
         const editing = lxEditingOf(sc);
         const chips = qs.length
-          ? qs.map((q) => `<button type="button" class="allq${q.id === editing ? " editing" : ""}" data-scene="${i}" data-q="${escapeHtml(q.id)}" title="${esc(q.name || "")}">${qLabel(q)}</button>`).join("")
-          : `<span class="allnone">LXキュー なし</span>`;
-        return `<div class="allscene${i === state.sceneIndex ? " cur" : ""}">
-            <span class="allsname" data-scene="${i}" role="button" tabindex="0">${esc(sc.name)}<small>シーン${sceneNumberOf(sc)}・LXキュー ${qs.length}本</small></span>
-            <span class="allqs">${chips}</span>
+          ? qs.map((q) => {
+            const shared = overview?.cues.find(c => c.id === q.id);
+            const label = shared?.label || qLabel(q);
+            return `<button type="button" class="allq stage-scene-overview-cue${q.id === editing ? " editing" : ""}" data-scene="${i}" data-q="${escapeHtml(q.id)}" data-cue-id="${escapeHtml(q.id)}" data-enabled="${q.enabled !== false}" title="${esc([label,q.name].filter(Boolean).join(" "))}">${esc(label)}</button>`;
+          }).join("") : "";
+        return `<div class="allscene stage-scene-grid-card stage-scene-overview-card${i === state.sceneIndex ? " cur is-current" : ""}" data-scene-id="${esc(sc.id)}">
+            <button type="button" class="stage-scene-grid-thumb" data-scene="${i}" aria-label="${esc(title)}"><img alt="" hidden></button>
+            <span class="stage-scene-grid-caption"><strong class="allsname" data-scene="${i}" role="button" tabindex="0" title="${esc(title)}">${esc(title)}</strong>
+            <span class="allqs stage-scene-overview-cues">${chips}</span></span>
           </div>`;
       }).join("");
       const sectionTitle = lxSectionTitle(sec);
-      return `<div class="allsec"><p class="kicker">セクション ${sec}${sectionTitle ? `　${esc(sectionTitle)}` : ""}</p>${scenes}</div>`;
+      return `<div class="allsec"><p class="kicker">セクション ${sec}${sectionTitle ? `　${esc(sectionTitle)}` : ""}</p><div class="stage-scene-grid">${scenes}</div></div>`;
     }).join("");
     dialog(`<p class="ptitle">すべてのシーンと LXキュー</p>
       <p class="hint">シーン名を押すとそのシーンへ、Q番号を押すとそのLXキューの編集に入ります。</p>
@@ -6647,6 +6695,16 @@
       elm.onclick = go;
       elm.onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); go(); } };
     });
+    const jobs = [...d.querySelectorAll('[data-scene-id]')];
+    const drawChunk = () => {
+      if (d.hidden || !jobs[0]?.isConnected) return;
+      for (const card of jobs.splice(0,3)) {
+        const src = bridge?.sceneThumbnailById(card.dataset.sceneId);
+        if (src) { const image = card.querySelector('img'); image.src = src; image.hidden = false; }
+      }
+      if (jobs.length) requestAnimationFrame(drawChunk);
+    };
+    requestAnimationFrame(drawChunk);
   }
   $("q-prev").onclick = () => { const q = lxNeighbors().prev; if (q) lxEnterCue(state.sceneIndex, q.id); };
   $("q-next").onclick = () => { const q = lxNeighbors().next; if (q) lxEnterCue(state.sceneIndex, q.id); };
@@ -7116,7 +7174,7 @@
       },
       ...(state.motion !== undefined ? {motion:{...state.motion}} : {}),
       rig: JSON.parse(JSON.stringify(state.rig)),
-      scenes: state.scenes.map((sc) => ({ ...(sc.entry !== undefined ? {entry:JSON.parse(JSON.stringify(sc.entry))} : {}), id: sc.id, name: sc.name, lx: lxOf(sc), lxq: JSON.parse(JSON.stringify(lxList(sc))), lxEditing: lxEditingOf(sc), cue: JSON.parse(JSON.stringify(sc.cue)) })),
+      scenes: state.scenes.map((sc) => ({ ...(sc.entry !== undefined ? {entry:JSON.parse(JSON.stringify(sc.entry))} : {}), id: sc.id, name: sc.name, lx: lxOf(sc), lxq: JSON.parse(JSON.stringify(lxList(sc))), lxEditing: sc.lxEditing || null, cue: JSON.parse(JSON.stringify(sc.cue)) })),
       palette: [...state.palette],
       levelCurve: [...state.levelCurve],
       curtains: { ...state.curtains },
@@ -7184,6 +7242,7 @@
     state.sel.clear(); state.selTruss = state.rig.trusses[0] ? state.rig.trusses[0].id : null;
     state.designName = o.name || "";
     state.history = options.preserveHistory ? previousHistory : options.host ? [] : [...previousHistory, previousSnapshot].slice(-100); state.future = []; baseline = snapshot();
+    viewedCueIds.clear();
     renderAll();
     if (options.host && !options.preserveAppliedBaseline) markApplied();
     } catch(error) {
@@ -7304,7 +7363,11 @@
     displayCanvasSizes.set(simpleFrontCanvas,{width:1000,height:560});
     simpleFrontCanvas.getContext('2d').setTransform(factor,0,0,factor,0,0);
     const paint = () => drawFront3D({ cv: simpleFrontCanvas, ctx: simpleFrontCanvas.getContext("2d"), kind: "front" }, { simple: true });
-    if (options.live) withTimelinePlaybackDraw(paint); else paint();
+    const previousCue=drawCueOverride;
+    try {
+      if(options.cue) drawCueOverride=options.cue;
+      if (options.live) withTimelinePlaybackDraw(paint); else paint();
+    } finally {drawCueOverride=previousCue;}
     return simpleFrontCanvas;
   }
   const unsubscribeResolution = window.GAMMA_RENDER_RESOLUTION?.subscribe(() => {

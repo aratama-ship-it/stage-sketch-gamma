@@ -7513,7 +7513,7 @@
     "kind": "scene",
     "depth": 1,
     "title": "A-4 立ち姿・歩き始め",
-    "note": "全員が立ち姿。A-5 へ6秒で移動（01 曲線の小走り・03 直線の小走り・02 歩行・07 停止）。\n確認手順: 一覧の A-4",
+    "note": "全員が立ち姿。A-5へ6秒で移動（01・03小走り、02歩行、07停止）。直接選択は即時、上下送りは転換。図のリセットも試す。\n確認手順: 一覧の A-4",
     "background": "#40362d",
     "pieces": [
      {
@@ -28128,7 +28128,7 @@
       }
      ]
     },
-    "note": "照明デザイン: 静止のキュー（色・強さ・模様・カッター）と光の比較・調光・受光。LXキューの操作もここ。\n確認手順: 一覧の F-1",
+    "note": "照明デザイン: 静止のキュー（色・強さ・模様・カッター）と光の比較・調光・受光。LXキューの操作・かんたん照明の左右配置もここ。\n確認手順: 一覧の F-1",
     "background": "#40362d",
     "pieces": [
      {
@@ -28228,7 +28228,7 @@
     "kind": "scene",
     "depth": 1,
     "title": "F-2 往復と円（ムービング）・点の列・端で止まる",
-    "note": "ムービングの往復・円・点の列。速さ・入り（F.C 4秒）・再生中の光の動き。\n確認手順: 一覧の F-2",
+    "note": "ムービングの往復・円・点の列。速さ・入り（F.C 4秒）・再生中の光の動き。Qの閲覧と実編集の区別・側面図の高さ・床下余白。\n確認手順: 一覧の F-2",
     "background": "#40362d",
     "pieces": [
      {
@@ -30507,7 +30507,7 @@
     "kind": "scene",
     "depth": 1,
     "title": "H-2 音源A割当（未接続）",
-    "note": "音源A（未接続）の割り当て。再接続の案内と、音源の外し方。\n確認手順: 一覧の H-2",
+    "note": "音源A（未接続）のMキュー移行。詳細で音源を選択・再接続。旧参照・開始秒・音量を保つ。\n確認手順: 一覧の H-2",
     "background": "#40362d",
     "pieces": [
      {
@@ -40262,6 +40262,73 @@
       "ft-fx-07",
       "ft-fx-08"
      ]
+    }
+   ]
+  },
+  "musicCueTestCases": {
+   "version": 1,
+   "sectionId": "ft-sec-h",
+   "placements": [
+    {
+     "id": "ft-music-a",
+     "sectionId": "ft-sec-h",
+     "timelineId": "fallback",
+     "trackId": "ft-track-a",
+     "start": {
+      "sceneId": "ft-scene-h2",
+      "offsetSeconds": 0
+     },
+     "mediaInSeconds": 2,
+     "mediaOutSeconds": 12
+    },
+    {
+     "id": "ft-music-b",
+     "sectionId": "ft-sec-h",
+     "timelineId": "fallback",
+     "trackId": "ft-track-b",
+     "start": {
+      "sceneId": "ft-scene-h3",
+      "offsetSeconds": 0
+     },
+     "mediaInSeconds": 0,
+     "mediaOutSeconds": null
+    }
+   ],
+   "ambiguousCues": [
+    {
+     "id": "ft-music-choice-1",
+     "kind": "timeline",
+     "cueType": "music",
+     "sectionId": "ft-sec-h",
+     "atSeconds": 35,
+     "memo": "音源候補を自動選択しない",
+     "locked": false
+    },
+    {
+     "id": "ft-music-choice-2",
+     "kind": "timeline",
+     "cueType": "music",
+     "sectionId": "ft-sec-h",
+     "atSeconds": 35,
+     "memo": "音源候補を自動選択しない",
+     "locked": false
+    }
+   ],
+   "playbackCues": [
+    {
+     "id": "ft-music-play-a",
+     "atSeconds": 0,
+     "trackId": "ft-track-a"
+    },
+    {
+     "id": "ft-music-play-b",
+     "atSeconds": 2,
+     "trackId": "ft-track-b"
+    },
+    {
+     "id": "ft-music-repeat-b",
+     "atSeconds": 4,
+     "trackId": "ft-track-b"
     }
    ]
   },
