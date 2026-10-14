@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.66";
+  const GAMMA_APP_VERSION = "v0.3.67";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2428,7 +2428,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-14`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-15`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -24414,6 +24414,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   async function applyLoadedState(next, message) {
+    const beforeAudio = snapshot(), previousProject = state.project;
+    await prepareBundledAudio(next.project);
+    // Optional network I/O must not overwrite a show edited/switched while
+    // waiting, or leave a committed next show behind an old editor screen.
+    if (state.project !== previousProject || snapshot() !== beforeAudio || resetInProgress) return false;
     if (!await prepareLoadedState(next)) return false;
     // シーンIDが別ショーで偶然重なっても、前のショーの下書きを出さない。
     resetStageAskDraft({ clearInput: true, invalidate: true });
@@ -24447,6 +24452,14 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     persistSoon();
     announce(message);
     return true;
+  }
+
+  async function prepareBundledAudio(project) {
+    if (!editionAllows("audio") || STUDY_READ_ONLY || guestSessionActive()) return;
+    try {
+      await window.STAGE_BUNDLED_SHOWS?.ensureAudio(project.id,
+        (project.audioTracks || []).map(track => track.id));
+    } catch (_) { /* Optional files must never prevent opening a show. */ }
   }
 
   function previousShowForNewShow() {
@@ -24589,6 +24602,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const entry = shows[id];
     if (!entry) return;
     if (id === state.project.id) {
+      const project = state.project;
+      await prepareBundledAudio(project);
+      if (request !== bundledOpenRequest || state.project !== project || resetInProgress) return false;
+      if (audioPlayback.missing) await prepareAudioForCurrentScene({force:true});
       closeShows();
       // 一覧から「開いています」のショーを選んでも、劇場設定に隠れた舞台へ戻れるようにする。
       // 未設定の劇場や未反映の編集は、既存のワークスペース切替ガードに委ねる。
@@ -44892,6 +44909,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       initStageAskPanel();
       buildPanelHeads();
       bridgeSessionPanelOpen();
+      await prepareBundledAudio(state.project);
       initStageAudio();
       pruneOrphanAudioSoon();
       syncViewSwitch();

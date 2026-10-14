@@ -8,3 +8,7 @@ window.VIDEO_VERSIONS = {"ja": {"dialogue-assign": "b9934907fd49", "formation-st
 // Storage reminder captures, bilingual 1440 x 1000.
 Object.assign(window.IMG_SIZES, {"release066-storage-band": [1440, 1000]});
 Object.assign(window.IMG_SIZES_EN, {"release066-storage-band": [1440, 1000]});
+
+// v0.3.67 release captures; retain previous image dimensions.
+Object.assign(window.IMG_SIZES, {"release067-stage": [1440, 1000], "release067-profile": [1440, 1000], "release067-lighting": [1440, 1000], "release067-plan": [1440, 1000], "release067-timing": [1440, 1000], "release067-run-of-show": [1440, 1000], "release067-3d": [1440, 1000], "release067-q-sheets": [1440, 1000], "release067-field": [1440, 1000], "release067-storage-band": [1440, 1000], "release067-q-contents": [1440, 1000], "release067-q-a4-landscape": [1440, 1000], "release067-q-a4-portrait": [1440, 1000], "release067-q-free": [1440, 1000], "release067-music-audio": [1440, 1000]});
+Object.assign(window.IMG_SIZES_EN, {"release067-stage": [1440, 1000], "release067-profile": [1440, 1000], "release067-lighting": [1440, 1000], "release067-plan": [1440, 1000], "release067-timing": [1440, 1000], "release067-run-of-show": [1440, 1000], "release067-3d": [1440, 1000], "release067-q-sheets": [1440, 1000], "release067-field": [1440, 1000], "release067-storage-band": [1440, 1000], "release067-q-contents": [1440, 1000], "release067-q-a4-landscape": [1440, 1000], "release067-q-a4-portrait": [1440, 1000], "release067-q-free": [1440, 1000], "release067-music-audio": [1440, 1000]});

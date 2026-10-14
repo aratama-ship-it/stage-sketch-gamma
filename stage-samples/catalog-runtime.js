@@ -1,5 +1,5 @@
 // catalog.js に組み込むランタイム。index は生成器から渡される。
-const documents = new Map(), jobs = new Map();
+const documents = new Map(), jobs = new Map(), audioJobs = new Map();
 const entries = Object.freeze(index.map(item => Object.freeze(item)));
 function validateDocument(doc, item) {
   if (!doc || doc.kind !== 'shosai-stage-sketch' || doc.version !== 4
@@ -91,4 +91,35 @@ async function deliver(id, {storage, hasCopy, guarded, apply}) {
     return true;
   } catch (_) { return false; }
 }
-window.STAGE_BUNDLED_SHOWS = Object.freeze({index:entries, load, resolve, deliver, isDevelopment, visible, cached, get:id=>documents.get(id)});
+// Audio is optional and fetched on opening, never on catalog/shelf creation.
+// Keep project JSON and the audio store keys unchanged; failures stay missing.
+async function ensureAudio(id, trackIds) {
+  const files = entries.find(item => item.id === id)?.audioFiles;
+  const store = window.SHOSAI_STAGE_AUDIO_STORE;
+  if (!files || !store?.get || !store?.putIfAbsent) return;
+  await Promise.all([...new Set(trackIds || [])].map(async trackId => {
+    const url = Object.hasOwn(files, trackId) ? files[trackId] : null;
+    if (!url || !store.validTrackId(trackId)) return;
+    const key = id + ':' + trackId;
+    if (audioJobs.has(key)) return audioJobs.get(key);
+    const job = (async () => {
+      let timer;
+      try {
+        if (await store.get(trackId)) return;
+        const controller = new AbortController();
+        timer = setTimeout(() => controller.abort(), 10000);
+        const response = await window.fetch(url, {credentials:'same-origin', signal:controller.signal});
+        if (!response.ok || response.redirected) return;
+        const blob = await response.blob();
+        if (!blob.size) return;
+        // Check the legacy store again too, then atomically retain any file
+        // reconnected while the network request was in progress.
+        if (!await store.get(trackId)) await store.putIfAbsent(trackId, blob);
+      } catch (_) { /* Opening a show must work without its bundled audio. */ }
+      finally { if (timer) clearTimeout(timer); }
+    })();
+    audioJobs.set(key, job);
+    try { await job; } finally { if (audioJobs.get(key) === job) audioJobs.delete(key); }
+  }));
+}
+window.STAGE_BUNDLED_SHOWS = Object.freeze({index:entries, load, resolve, deliver, ensureAudio, isDevelopment, visible, cached, get:id=>documents.get(id)});

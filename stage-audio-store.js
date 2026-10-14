@@ -98,10 +98,36 @@
           .then(async (legacyBlob) => {
             if (!legacyBlob) return null;
             // A failed copy must not make an existing legacy track unplayable.
-            try { await put(trackId, legacyBlob); } catch (_) { /* The original remains. */ }
+            try {
+              if (!await putIfAbsent(trackId, legacyBlob)) {
+                return await withStore("readonly", (store) => requestValue(store.get(trackId), legacyBlob));
+              }
+            } catch (_) { /* The original remains. */ }
             return legacyBlob;
           });
       });
+  }
+
+  // Bundled files may only fill a missing slot. The check and insert share one
+  // transaction so a user's reconnect (including in another tab) always wins.
+  function putIfAbsent(trackId, blob) {
+    if (!validTrackId(trackId)) return Promise.reject(new TypeError("Invalid trackId"));
+    if (!(blob instanceof Blob)) return Promise.reject(new TypeError("Audio must be a Blob"));
+    return withStore("readwrite", (store) => new Promise((resolve, reject) => {
+      const request = store.get(trackId);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        try {
+          if (request.result !== undefined) { resolve(false); return; }
+          store.add(blob, trackId);
+          store.delete(GC_PREFIX + trackId);
+          resolve(true);
+        } catch (error) {
+          reject(error);
+          try { store.transaction.abort(); } catch (_) { /* Already aborted. */ }
+        }
+      };
+    }));
   }
 
   function remove(trackId) {
@@ -169,6 +195,6 @@
   }
 
   window.SHOSAI_STAGE_AUDIO_STORE = Object.freeze({
-    put, get, remove, listKeys, pruneExcept, validTrackId,
+    put, putIfAbsent, get, remove, listKeys, pruneExcept, validTrackId,
   });
 })();

@@ -1,8 +1,8 @@
 {
-  "version": "0.3.66",
+  "version": "0.3.67",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.66/stage-sketch-gamma-mac-0.3.66.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.67/stage-sketch-gamma-mac-0.3.67.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "音源の移行前の控えを大きい保存領域へ移し、保存の修復画面から確認・削除できるようにしました。",
-  "updated": "2026-10-14"
+  "notes": "試験場ショーに短いテスト音源（95秒・120BPMのカウント）を同梱しました。ショーを開くだけでH-3の音源Bが接続され、▶で再生できます。",
+  "updated": "2026-10-15"
 }

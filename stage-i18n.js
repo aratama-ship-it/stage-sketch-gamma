@@ -31,6 +31,9 @@
   "use strict";
 
   const TEXT = {
+    "試験場ショーに短いテスト音源（95秒・120BPMのカウント）を同梱しました。ショーを開くだけでH-3の音源Bが接続され、▶で再生できます。": "The test show now includes a short test audio track (95 seconds of counts at 120 BPM). Opening the show connects track B in H-3; press ▶ to play it.",
+    "同梱ショーが音源ファイルを持てるようにしました。音源Aは再接続の試験用に、意図的に未接続のままです。": "Bundled shows can now include audio files. Track A is intentionally left disconnected for testing audio reconnection.",
+    "Mac版で、進行表などのPDF出力からMacの印刷画面を開けるようにしました（v0.3.66 build 76で先行配布済み）。": "PDF output from the run of show and other views now opens the Mac print dialog (already distributed in v0.3.66 build 76).",
     "音源の移行前の控えを大きい保存領域へ移し、保存の修復画面から確認・削除できるようにしました。": "Backups made before audio migration now use the larger storage area and can be viewed or deleted from storage recovery.",
     "自動の音源移行は取り消しの履歴へ積まず、利用者が行った編集の取り消しは保ちます。": "Automatic audio migration no longer adds an Undo step. Edits made by the user remain undoable.",
     "冊子の平面図の写真を修正しました。": "Corrected the plan-view pictures in the manual.",
