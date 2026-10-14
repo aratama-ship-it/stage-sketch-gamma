@@ -334,6 +334,8 @@
     topRight.append(segment);
     const share = $("#stage-share-open");
     if (share) { share.classList.add("gm-icon-btn"); topRight.append(share); }
+    const field = $("#stage-field-mode");
+    if (field) { field.classList.add("gm-icon-btn"); topRight.append(field); }
     const present = $("#stage-present-btn");
     if (present) topRight.append(present);
     const gear = $("#stage-prefs-btn");
@@ -600,6 +602,8 @@
     const share = $("#stage-share-open");
     if (share) { share.classList.add("gm-icon-btn"); bar.append(share); }
     if (settings) { settings.classList.add("gm-icon-btn"); bar.append(settings); }
+    const field = $("#stage-field-mode");
+    if (field) { field.classList.add("gm-icon-btn"); bar.append(field); }
     title.replaceChildren(bar);
 
     /* めくる列: [‹][帯][›] */
@@ -676,14 +680,15 @@
         if (prev) nav.prepend(prev);
         if (next) nav.append(next);
         if (info) bar.insertBefore(info, settings || null);
-        if (share) bar.insertBefore(share, settings || null);   // 現場モードは共有の窓の中（2026-10-12）
+        if (share) bar.insertBefore(share, settings || null);
+        if (field) bar.insertBefore(field, settings || null);
         if (settings) bar.append(settings);
         if (load) toolbar.append(load);
         if (viewToggle) toolbar.append(viewToggle);
         rail.replaceChildren();
       } else {
         rail.replaceChildren();
-        [viewToggle, info, load, share, settings, prev, next].filter(Boolean).forEach((b) => rail.append(b));
+        [viewToggle, info, load, share, field, settings, prev, next].filter(Boolean).forEach((b) => rail.append(b));
       }
       html.classList.toggle("gm-phone-landscape", !portrait);
     }

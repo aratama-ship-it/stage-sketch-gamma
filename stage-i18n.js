@@ -4558,3 +4558,8 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "待機中の立ち姿に軽い傾きとひねりを加え、足元・位置・名前は固定したままにしました。": "Added gentle leaning and turning to standing idle motion while keeping feet, positions and names fixed.",
   "照明の下端と狙いの一覧を揃え、低い画面でも選択した物の詳細へ届くようにしました。": "Aligned the lower lighting panels and target choices, and made selected-item details reachable in short windows."
 });
+
+/* v0.3.63: header entry for Show mode. */
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "現場モードをヘッダーの走る人のアイコンへ戻し、終了後も同じアイコンへ操作位置を戻すようにしました。": "Restored Show mode to the running-person icon in the header, with focus returning to that icon when the mode ends."
+});

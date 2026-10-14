@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.62";
+  const GAMMA_APP_VERSION = "v0.3.63";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -32506,7 +32506,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (fieldMode || presenting || !fieldConsole || !fieldEntry || STUDY_READ_ONLY || window.GAMMA_EDITION === "lite" || fullscreenModalOpen()) return;
     // Commit a focused editor's usual blur before locking; never cancel pending saves.
     document.activeElement?.blur?.();
-    fieldHome = { focus: document.getElementById("stage-share-open") || fieldEntry, panelHidden: document.getElementById("stage-timeline-panel")?.hidden };
+    fieldHome = { focus: fieldEntry, panelHidden: document.getElementById("stage-timeline-panel")?.hidden };
     fieldMode = true;
     document.body.classList.add("stage-field-mode"); fieldConsole.hidden = false;
     fieldEntry.setAttribute("aria-pressed", "true");

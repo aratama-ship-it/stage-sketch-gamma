@@ -24,6 +24,7 @@ ${table(["Where", "Name", "What it does"], [
   ["Controls", ui("Full screen"), kbd("F") + ". Fill the screen with the drawing (" + ref("fullscreen", "Part 11, 11-7") + ")"],
   ["Controls", ui("Q sheets"), "Opens Run of show with the selected Q sheet in its centre ( " + ref("cuesheet", "Part 9, 9-6") + ")"],
   ["Controls", ui("Export, save & print"), "Export images, open the print sheet, or export the show, Q sheets and venues (" + ref("export", "Part 11, 11-1") + ")"],
+  ["Controls", ui("Show mode"), "Running-person icon. Shows GO, scene navigation and notes while preventing edits. Available in Studio and Company, including Pages"],
   ["Controls", ui("Sharing"), "Live sharing and performer links on Gamma's dedicated host (" + ref("share", "Part 11, 11-4") + ")"],
   ["Controls", "Bell — " + ui("Notifications and update history"), "What changed in each version. A dot appears when there is something new"]
 ])}`
@@ -150,7 +151,7 @@ ${table(["Key", "What it does"], [
     "Shift",
     "Space"
   ],
-  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release059-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release062-stage", "Stage toolbar (v0.3.62).", "stage")
+  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release059-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release063-stage", "Stage toolbar (v0.3.63).", "stage")
 }
     ]
   });
