@@ -812,7 +812,7 @@
     renderParticipants(lastParticipants);
   }
 
-  window.SHOSAI_STAGE_SESSION_HOOKS = { onLocalChange, openShareModal, closeShareModal, relabel };
+  window.SHOSAI_STAGE_SESSION_HOOKS = { onLocalChange, openShareModal, closeShareModal, relabel, role: () => role };
 
   function pointerHost() {
     return els.planCanvas && els.planCanvas.parentElement;

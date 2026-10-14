@@ -34,7 +34,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.63</span>
+                <span class="stage-app-version">0.3.64</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2225,6 +2225,7 @@
       <input id="stage-rename-subtitle" class="stage-text-input" type="text" maxlength="160"
              autocomplete="off" data-1p-ignore>
       <p class="stage-rename-subtitle-hint">表示は設定の「シーンのサブタイトル」から切り替えられます。</p>
+      <button type="button" id="stage-scene-run-records">リハーサル記録</button>
       <label class="stage-control-label" for="stage-rename-scene-note">シーンの説明</label>
       <textarea id="stage-rename-scene-note" class="stage-text-input" maxlength="2000"
                 autocomplete="off" data-1p-ignore></textarea>
@@ -2835,13 +2836,13 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261014-v0363">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261014-v0364">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0363-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0363-title">v0.3.63</h3><time datetime="2026-10-14">2026-10-14</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0364-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0364-title">v0.3.64</h3><time datetime="2026-10-14">2026-10-14</time></header>
       <ul>
-        <li>現場モードをヘッダーの走る人のアイコンへ戻し、終了後も同じアイコンへ操作位置を戻すようにしました。</li>
+        <li>現場モードに、正面図・平面図へのペン記入と文字ノート、右側の進行表を追加しました。元ショーを変更せずラン別に保存し、記録ファイルの書き出しと制作時の参照ができます。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3805,9 +3806,9 @@
 <script src="/study-assets/stage-performer-motion.js?v=20261011-v0347"></script>
 <script src="/study-assets/stage-idle-motion.js?v=20261014-v0362"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
-<script src="/study-assets/gamma-ui.js?v=20261014-v0362"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261014-v0363"></script>
+<script src="/study-assets/gamma-ui.js?v=20261014-v0364"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261014-v0364"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261013-v0360"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="/study-assets/stage-sketch.js?v=20261014-v0363"></script>
+<script src="/study-assets/stage-sketch.js?v=20261014-v0364"></script>
 </body></html>

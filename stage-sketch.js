@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.63";
+  const GAMMA_APP_VERSION = "v0.3.64";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2317,6 +2317,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let presenting = false;
   // Only this device's display; never part of state/prefs or a session document.
   let fieldMode = false;
+  let fieldRunQuiet = false;
   // 描画依頼の更新番号。3Dの静止中は駒を作り直さず、この数だけ見回る。保存しない。
   let stageVisualRevision = 0;
   let lastFullRenderAt = -Infinity;   // 直前の render() の時刻（回転の毎コマの二重描画をやめる・v0.2.93）
@@ -19296,6 +19297,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      「照明を組む」画面が正面図を借りるときに使う（モーダルの中で拡大は要らない）。
      既定（未指定）はこれまでどおり zoomOf(view) を掛ける。 */
   function drawStage(target, showSelection, view, opts) {
+    if (fieldRunQuiet && !STUDY_READ_ONLY) return;
     const prior = idleVisualDepth, priorStatic = staticStageDepth;
     // Only the live stage canvases may see playback offsets. Thumbnails/exports are static.
     idleVisualDepth = showSelection && (target === ctx || target === planCtx) ? 1 : 0;
@@ -19895,6 +19897,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   function render(forceCanvases = false) {
     lastFullRenderAt = performance.now();
     fullRenderSerial += 1;
+    if (fieldRunQuiet && !STUDY_READ_ONLY) return;
     stageVisualRevision += 1;
     syncBrowserTitle();
     syncFrontEmptyHint();
@@ -28062,6 +28065,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (!scene || !els.rename) return;
     renameReturnFocus = returnTo;
     renameTarget = scene;
+    const runRecordsButton = document.getElementById("stage-scene-run-records");
+    if (runRecordsButton) { runRecordsButton.hidden = window.GAMMA_EDITION === "lite" || scene.kind !== "scene"; runRecordsButton.onclick = () => window.GAMMA_FIELD_RUNS?.review(scene.id); }
     els.renameTitle.textContent = tx(scene.kind === "section" ? "セクションの詳細" : "シーンの詳細");
     els.renameInput.value = scene.title;
     if (els.renameSectionFields) els.renameSectionFields.hidden = scene.kind !== "section";
@@ -31690,6 +31695,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   function syncNativeDownload() {
+    if (STUDY_READ_ONLY) return;
     const box = document.getElementById("stage-pref-native");
     if (!box) return;
     const inNativeShell = location.hostname === "127.0.0.1" && (location.port === "8957" || location.port === "8958");
@@ -32503,6 +32509,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     }
   }
   async function enterFieldMode() {
+    if (!window.SHOSAI_STAGE_SESSION_HOOKS?.role?.() && window.GAMMA_FIELD_RUNS && !STUDY_READ_ONLY && window.GAMMA_EDITION !== "lite" && !presenting && !fullscreenModalOpen()) { window.SHOSAI_STAGE_SESSION_HOOKS?.closeShareModal(); await window.GAMMA_FIELD_RUNS.open(); return; }
     if (fieldMode || presenting || !fieldConsole || !fieldEntry || STUDY_READ_ONLY || window.GAMMA_EDITION === "lite" || fullscreenModalOpen()) return;
     // Commit a focused editor's usual blur before locking; never cancel pending saves.
     document.activeElement?.blur?.();
@@ -44755,7 +44762,8 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       },
       load(doc, language) {
         stopSceneAnim(); stopSpinRun();
-        lang = language === "en" ? "en" : "ja";
+        lang = ["ja", "en", "zh-Hans", "zh-Hant", "ko"].includes(language) ? language : "ja";
+        document.documentElement.lang = lang;
         const imported = prepareProjectImportDocument(doc);
         state = normalizeState({ ...baseState(false), project: imported.project, projectFileEnvelope: imported.fileEnvelope });
         state.project.audioTracks = [];
@@ -44769,6 +44777,19 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
         if (!next) return;
         stopSceneAnim(); stopSpinRun();
         state.project.activeSceneId = next.id;
+        render();
+      },
+      clock(clock) {
+        const next = state.project.scenes.find(s => s.kind === "scene" && s.id === clock.sceneId);
+        if (!next) return;
+        if (state.project.activeSceneId !== next.id) { stopSceneAnim(); state.project.activeSceneId = next.id; }
+        const phase = clock.phase;
+        if (phase) {
+          if (sceneAnim?.timelineControlled && sceneAnim.fromSceneId === phase.fromSceneId && sceneAnim.toSceneId === phase.toSceneId) sceneAnim.setProgress(phase.progress);
+          else beginSceneAnim(state.project.scenes.find(s => s.id === phase.fromSceneId), null, phase.durationMs, phase.progress);
+        } else stopSceneAnim();
+        if (clock.material && timelineLightMaterial !== clock.material) setTimelineLightSchedule(clock.material);
+        applyTimelineLightClock({ seconds: clock.seconds, effectSeconds: clock.seconds, playing: false });
         render();
       },
       replay() { replaySceneTransition(); },
@@ -45432,6 +45453,16 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       openScene(id, {skipTransition:true});
       document.getElementById("stage-workspace-normal")?.click();
     },
+  });
+  window.GAMMA_FIELD_RUN_SOURCE = Object.freeze({
+    quiet: value => { fieldRunQuiet = Boolean(value); if (!fieldRunQuiet) render(); },
+    prepare: async () => { fieldRunQuiet = true; stopAlternativesPlayback(); await flushAutosave(); await ProjectStore.whenIdle(); if (autosaveFailed) throw new Error("source-save-failed"); },
+    snapshot: () => window.SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString(),
+    audio: id => window.SHOSAI_STAGE_SESSION_BRIDGE.getTimelineAudioBlob(id),
+    identity: () => ({ projectId: state.project.id, sceneId: state.project.activeSceneId }),
+    sessionRole: () => window.SHOSAI_STAGE_SESSION_HOOKS?.role?.() || "",
+    download: (blob, name) => downloadBlob(blob, name),
+    zip: () => window.SHOSAI_STAGE_EXPORT_MODEL,
   });
   window.SHOSAI_STAGE_SESSION_BRIDGE = Object.freeze({
     arrowKeysVoxOnly: () => featureOn("arrowKeysVoxOnly"),

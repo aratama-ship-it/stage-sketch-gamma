@@ -537,6 +537,7 @@
     documents.set(doc,()=>{for(const [type,callback]of listeners)doc.removeEventListener(type,callback,true);documents.delete(doc);});
   }
   function bindFrame(frame) {
+    if (document.documentElement.hasAttribute("data-study-renderer")) return;
     let previous=null;
     const bind=()=>{
       if(previous){documents.get(previous)?.();if(hovered?.ownerDocument===previous||focused?.ownerDocument===previous)clearContext();}

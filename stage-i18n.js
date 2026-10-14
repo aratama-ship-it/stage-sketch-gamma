@@ -4563,3 +4563,45 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "現場モードをヘッダーの走る人のアイコンへ戻し、終了後も同じアイコンへ操作位置を戻すようにしました。": "Restored Show mode to the running-person icon in the header, with focus returning to that icon when the mode ends."
 });
+
+/* Independent rehearsal records. */
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "現場モードに、正面図・平面図へのペン記入と文字ノート、右側の進行表を追加しました。元ショーを変更せずラン別に保存し、記録ファイルの書き出しと制作時の参照ができます。": "Show mode now supports pen annotations and typed notes alongside front and plan views, with a run of show on the right. Save each rehearsal run separately, export its record and review it while editing, without changing the original show.",
+    "未保存の記録を含めて書き出しを開始しました。端末保存は完了していません。": "Export started including unsaved notes. Device storage has not completed.",
+  "リハーサル記録": "Rehearsal records",
+  "ランの名前": "Run name",
+  "新しいラン": "New run",
+  "このランを再開": "Resume this run",
+  "記録を見る": "View record",
+  "すべてのラン記録": "All run records",
+  "記録ファイルを読み込む": "Import a record file",
+  "ランノート": "Run notes",
+  "新しい図で記録": "Record a new drawing",
+  "記録図": "Recorded drawing",
+  "ここから進行": "Continue from here",
+  "進行位置へ戻る": "Follow progress",
+  "ランを終了": "Finish run",
+  "ラン一覧": "Run list",
+  "このシーンに関連付ける": "Link to this scene",
+  "通し": "Full run",
+  "ペン": "Pen",
+  "手": "Pan",
+  "消す": "Erase",
+  "入力を終えてから操作してください。": "Finish entering or drawing first.",
+  "共有中はリハーサル記録を開始できません。": "Leave the shared session before starting a rehearsal run.",
+  "別のタブがこのランを変更しました。書き込みを止め、控えを書き出してください。": "Another tab changed this run. Writing has stopped; export a backup.",
+  "終了したランは変更できません。": "Finished runs cannot be edited.",
+  "記録の上限に達しました。既存の記録は保持しています。": "The record limit has been reached. Existing records are retained.",
+  "ファイルの上限を超えています。記録は保持しています。": "The file exceeds the size limit. The record is retained.",
+  "記録ファイルを読み取れません。既存の記録は変更していません。": "The record file cannot be read. Existing records are unchanged.",
+  "記録データを読み取れません。既存の記録は変更していません。": "The record data cannot be read. Existing records are unchanged.",
+  "元ショーの控えを読み取れません。": "The show snapshot cannot be read.",
+  "記録図を読み取れません。既存の記録は保持しています。": "The recorded drawing cannot be read. Existing records are retained.",
+  "保存または読み込みに失敗しました。未保存の記録は保持しています。": "Saving or loading failed. Unsaved notes are retained.",
+  "端末へ保存できません。未保存の記録は保持しています。": "Cannot save on this device. Unsaved notes are retained.",
+  "書き出しを開始しました。端末内の記録は保持しています。": "Export started. The record remains on this device.",
+  "書き出しをキャンセルしました。端末内の記録は保持しています。": "Export cancelled. The record remains on this device.",
+  "このシーンへ関連付けました。元のショーと記録は変更していません。": "Linked to this scene. The show and record remain unchanged.",
+  "音源が見つかりません。記録は続けられます。": "Audio is unavailable. You can continue taking notes.",
+  "音を再生できません。GOを押して再開してください。": "Audio could not play. Press GO to resume."
+});
