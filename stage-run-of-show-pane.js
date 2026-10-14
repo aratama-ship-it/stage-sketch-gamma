@@ -20,12 +20,13 @@
   }
   const editor=()=>frame?.contentWindow?.GAMMA_RUN_OF_SHOW_EDITOR;
   const workspace=frame?.parentElement,loadingText=workspace?.querySelector('.gamma-ros-loading');
-  let loadingObserver=null;
+  let loadingObserver=null,pendingCueSheet=null;
+  function openPendingCueSheet(){if(pendingCueSheet && editor()?.showCueSheet){const request=pendingCueSheet;pendingCueSheet=null;editor().showCueSheet(request.kind,request.key);}}
   function syncLoading(){
     const doc=frame.contentDocument,paperState=doc?.getElementById('pagination-status')?.dataset.state;
     // Continuous entry never paginates, so it reports state "free" instead of the pages-ready class.
     const ready=Boolean(editor()&&(doc?.body?.classList.contains('pages-ready')||paperState==='free'||paperState==='error'));
-    if(ready){workspace.dataset.loading='false';loadingObserver?.disconnect();loadingObserver=null;}
+    if(ready){workspace.dataset.loading='false';loadingObserver?.disconnect();loadingObserver=null;openPendingCueSheet();}
     if(loadingText)loadingText.textContent=text('進行表を用意しています…');
   }
   frame?.addEventListener('load',()=>{
@@ -37,8 +38,10 @@
     }
   });
   window.GAMMA_RUN_OF_SHOW_PANE={
-    open(){if(!loaded){workspace.dataset.loading='true';syncLoading();frame.src='run-of-show/index.html?v=20261014-v0361';loaded=true;}else editor()?.refresh();},
+    open(){if(!loaded){workspace.dataset.loading='true';syncLoading();frame.src='run-of-show/index.html?v=20261014-v0362';loaded=true;}else if(!editor()?.hasDraft())editor()?.refreshIfChanged?.();},
     finish(){return !editor()||editor().finish();},
+    showCueSheet(kind,key){pendingCueSheet={kind,key};openPendingCueSheet();},
+    showRunOfShow(){pendingCueSheet=null;return editor()?.showRunOfShow?.();},
     summary(value){if(lite){summary=value;paintBands();}},
     openScene(row){
       if(lite){returnRow=row;openingFromPaper=true;}

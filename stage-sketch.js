@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.61";
+  const GAMMA_APP_VERSION = "v0.3.62";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -37797,6 +37797,23 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     return top > 0 ? Math.min(window.innerHeight, top) : window.innerHeight;
   }
 
+  // A roster selection can leave its owning figure above/below the viewport.
+  // Reveal that figure only for a new selection or an explicit detail expansion;
+  // ordinary scrolling must not snap the user's working view back.
+  function revealGammaFloatingInspectorSource() {
+    if (document.body.classList.contains("gamma-3d-active") || document.body.classList.contains("stage-fullscreen")) return;
+    const source = floatingInspectorAnchor.view === "plan" ? planCanvas : canvas;
+    if (!source?.getClientRects().length) return;
+    const rect = source.getBoundingClientRect();
+    const bounds = gammaFloatingPanelBounds();
+    const headerBottom = document.querySelector(".stage-sketch-head")?.getBoundingClientRect().bottom || 0;
+    const needed = Math.min(180, Math.max(0, rect.height - 32));
+    if (!bounds || bounds.bottom - bounds.top < needed
+        || rect.top < Math.max(0, headerBottom) || rect.bottom > gammaFloatingPanelBottom()) {
+      source.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
+    }
+  }
+
   // パネルはクリック元の図から出さない。正面図では姿勢帯の手前、平面図では図の下端まで。
   function gammaFloatingPanelBounds() {
     const canvasEl = floatingInspectorAnchor.view === "plan" ? planCanvas : canvas;
@@ -37811,7 +37828,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       ? poseStrip.top : rect.bottom;
     const left = Math.max(rect.left, hostRect?.left || 0, 0) + edge;
     const right = Math.min(rect.right, hostRect?.right || innerWidth, innerWidth) - edge;
-    const top = Math.max(rect.top, centerRect?.top || 0, hostRect?.top || 0, 0) + edge;
+    const headerBottom = document.querySelector(".stage-sketch-head")?.getBoundingClientRect().bottom || 0;
+    const top = Math.max(rect.top, centerRect?.top || 0, hostRect?.top || 0, headerBottom, 0) + edge;
     const bottom = Math.min(visualBottom, centerRect?.bottom || innerHeight, hostRect?.bottom || innerHeight, gammaFloatingPanelBottom()) - edge;
     return { left, right: Math.max(left, right), top, bottom: Math.max(top, bottom) };
   }
@@ -38010,7 +38028,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       inspector.classList.toggle('stage-surface-compact', shouldFloat && innerHeight < 760 && inspector.dataset.surfaceExpanded !== 'true');
       let expand=inspector.querySelector('.stage-surface-expand');
       if(!expand){expand=document.createElement('button');expand.type='button';expand.className='stage-surface-expand';
-        expand.onclick=()=>{inspector.dataset.surfaceExpanded='true';delete inspector.dataset.gammaPositionLocked;updateInspector();};
+        expand.onclick=()=>{inspector.dataset.surfaceExpanded='true';delete inspector.dataset.gammaPositionLocked;revealGammaFloatingInspectorSource();updateInspector();};
         inspector.querySelector('.stage-panel-head')?.after(expand);}
       expand.textContent=piece ? [pieceLabel(piece),piece.pose ? poseName(poseById(piece.pose)) : '',Number.isFinite(piece.facing) ? String(piece.facing)+'°' : '',tx('詳細を開く')].filter(Boolean).join(' · ') : '';
       if (expand.textContent) expand.removeAttribute('aria-label'); else expand.setAttribute('aria-label',tx('詳細を開く'));
@@ -38034,6 +38052,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         delete inspector.dataset.gammaSelectionKey;
         delete inspector.dataset.gammaObjectDragging;
       }
+      if (shouldFloat && newSelection) revealGammaFloatingInspectorSource();
       if (shouldFloat && inspector.dataset.gammaPositionLocked !== "true") {
         const canvasEl = floatingInspectorAnchor.view === "plan" ? planCanvas : canvas;
         const rect = canvasEl?.getBoundingClientRect();
@@ -43733,7 +43752,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     });
     const reset = document.createElement("button"); reset.type = "button"; reset.textContent = tx("列の設定を戻す"); reset.disabled = !editable;
     reset.onclick = () => { saveCueSheetLayout({order:[],hidden:[],widths:{}}); refresh(); }; control.append(reset); host.prepend(control);
-    function refresh() { const top = host.scrollTop, left = host.scrollLeft, open = control.open, focused = document.activeElement?.dataset?.resizeColumn; openCueSheetView("performer", key, true); host.querySelector("details").open = open; host.scrollTop = top; host.scrollLeft = left; if (focused) host.querySelector(`[data-resize-column="${focused}"]`)?.focus({preventScroll:true}); }
+    function refresh() { const top = host.scrollTop, left = host.scrollLeft, open = control.open, focused = host.ownerDocument.activeElement?.dataset?.resizeColumn; openCueSheetView("performer", key, true); host.querySelector("details").open = open; host.scrollTop = top; host.scrollLeft = left; if (focused) host.querySelector(`[data-resize-column="${focused}"]`)?.focus({preventScroll:true}); }
     const table = host.querySelector("table"), cols = [...table.querySelectorAll("col")], heads = [...table.querySelectorAll("thead th")];
     let total = 0;
     heads.forEach((head, i) => {
@@ -43765,7 +43784,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (!sheet || !els.cueSheetContent) return;
     if (kind === "handover") cueSheetA4 = true;
     syncCueSheetA4Buttons(kind);
-    const diagramChoice = document.getElementById("stage-cue-sheet-handover-view");
+    const diagramChoice = els.cueSheetModal?.querySelector("#stage-cue-sheet-handover-view");
     if (diagramChoice) { diagramChoice.hidden = kind !== "handover"; diagramChoice.value = cueSheetHandoverView; }
     if (els.cueSheetViewA4) els.cueSheetViewA4.hidden = kind === "handover";
     if (els.cueSheetViewCsv) els.cueSheetViewCsv.hidden = kind === "handover";
@@ -43782,7 +43801,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     viewingCueSheet = { kind, key };
     if (kind === "performer" && !cueSheetA4) bindCueSheetColumns(sheet, key);
     if (els.cueSheetViewTitle) els.cueSheetViewTitle.textContent = sheet.title;
-    if (!keepFocus && els.cueSheetBack) els.cueSheetBack.focus({preventScroll:true});
+    if (!keepFocus && !cueSheetIntegrated && els.cueSheetBack) els.cueSheetBack.focus({preventScroll:true});
   }
 
   function cueSheetPrintDocument(sheet, options = {}) {
@@ -43910,10 +43929,8 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     }
   }
 
-  /* ★2026-09-24 本人指示: Qシートは右上の窓ではなく「Qシート」タブ（セリフ・3Dの次）で管理する。
-   * 窓の中身は gamma-workspace.js が #gamma-cuesheet-workspace へ移す。右上のアイコンと「✕」は
-   * タブの切り替えだけを行い、実際の出し入れ（一覧の描画・表示）は下の HOST を通して gamma-workspace.js が呼ぶ。
-   * タブ画面が無い環境（旧 stage.html）では従来どおり窓として開く。 */
+  /* Qシートは進行表の中央へ同じDOMを移す。保存・印刷・CSVは既存の経路を保つ。 */
+  let cueSheetIntegrated = false;
   const cueSheetHosted = () => Boolean(document.getElementById("gamma-cuesheet-workspace") && window.GAMMA_WORKSPACE);
   function showCueSheetHost() {
     if (!els.cueSheetModal || !window.SHOSAI_CUE_SHEET) return;
@@ -43924,9 +43941,37 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   }
   function hideCueSheetHost() {
     if (els.cueSheetModal) els.cueSheetModal.hidden = true;
-    showCueSheetList();
+    if (!cueSheetIntegrated) showCueSheetList();
   }
-  window.SHOSAI_STAGE_CUE_SHEET_HOST = Object.freeze({ open: showCueSheetHost, close: hideCueSheetHost });
+  window.SHOSAI_STAGE_CUE_SHEET_HOST = Object.freeze({
+    open: showCueSheetHost, close: hideCueSheetHost,
+    available: () => editionAllows("cueSheet") && Boolean(els.cueSheetModal && window.SHOSAI_CUE_SHEET),
+    choices: () => window.SHOSAI_CUE_SHEET?.listSheets(state.project, { tx }) || [],
+    readOnly: () => STUDY_READ_ONLY || guestSessionActive(),
+    selection: () => viewingCueSheet ? { ...viewingCueSheet } : null,
+    mount(target) {
+      const ownedFrame=document.getElementById("gamma-run-of-show-frame")?.contentDocument?.getElementById("cue-sheet-frame");
+      if (!target || target.id !== "gamma-cuesheet-workspace" || target.ownerDocument.defaultView !== ownedFrame?.contentWindow || !els.cueSheetModal) return false;
+      target.append(els.cueSheetModal);
+      cueSheetIntegrated = true;
+      return true;
+    },
+    show(kind, key) {
+      const entry = this.choices().find(sheet => sheet.kind === (kind === "handover" ? "performer" : kind) && sheet.key === key);
+      if (!entry || !this.available()) return false;
+      els.cueSheetModal.hidden = false;
+      if (els.cueSheetBackdrop) els.cueSheetBackdrop.hidden = true;
+      openCueSheetView(kind, key, true);
+      return true;
+    },
+    refresh(force = false) {
+      // Native edits already update the stored piece. Autosave notifications must
+      // not replace a focused note or resize handle after every keystroke.
+      const doc=els.cueSheetModal?.ownerDocument;
+      if (!force && doc?.hasFocus() && els.cueSheetContent?.contains(doc.activeElement)) return;
+      refreshOpenCueSheetView();
+    },
+  });
 
   function openCueSheet() {
     if (!els.cueSheetModal || !window.SHOSAI_CUE_SHEET) return;
@@ -43940,7 +43985,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   }
 
   function closeCueSheet() {
-    if (cueSheetHosted()) { if (window.GAMMA_WORKSPACE.mode() === "cuesheet") window.GAMMA_WORKSPACE.normal(); return; }
+    if (cueSheetHosted()) { if (cueSheetIntegrated) window.GAMMA_RUN_OF_SHOW_PANE?.showRunOfShow?.(); else if (window.GAMMA_WORKSPACE.mode() === "cuesheet") window.GAMMA_WORKSPACE.normal(); return; }
     if (els.cueSheetModal) els.cueSheetModal.hidden = true;
     if (els.cueSheetBackdrop) els.cueSheetBackdrop.hidden = true;
     showCueSheetList();

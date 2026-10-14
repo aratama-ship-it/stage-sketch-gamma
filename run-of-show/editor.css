@@ -493,3 +493,29 @@ html[data-paper-ink=white] .ink-swatch[data-ink=white],html[data-paper-ink=black
 
 @media print{#column-popover{display:none!important}}
 @media screen and (min-width:1600px){body:not(.lite-paper) #paper-panel .row-mode-buttons{justify-content:center}body:not(.lite-paper) #paper-panel .row-mode-buttons button{flex:0 0 auto;white-space:nowrap}}
+
+/* Only the centre switches to Q sheets; the run-of-show DOM and preferences remain. */
+.band-cues{flex-basis:100%;border-top:var(--rule) solid var(--line-dark);padding-top:var(--s2)}
+.band-cues .band-heading{display:block;margin:0;font-size:var(--fs-table)}
+.band-cues .band-field{display:flex;flex-direction:column;align-items:stretch;gap:var(--s1);width:100%;margin:0}
+.band-cues select{width:100%;min-width:0}
+.cue-sheet-frame{display:block;width:100%;height:max(600px,calc(100vh - var(--s4)));min-width:0;border:var(--rule) solid var(--line-dark);background:var(--bg);grid-area:paper}
+body.showing-cue-sheet .doc-frame,body.showing-cue-sheet #ros-index{display:none!important}
+@media screen and (min-width:900px){
+  body.showing-cue-sheet #preview{display:grid;grid-template-columns:clamp(var(--panel-min),20%,var(--panel-max)) minmax(0,1fr);grid-template-rows:auto 1fr;grid-template-areas:"panel note" "panel paper";gap:var(--panel-gap)}
+  body.showing-cue-sheet .paper-panel{display:flex;flex-direction:column;gap:var(--s2);grid-area:panel;position:sticky;top:0;max-height:100vh;overflow-y:auto;min-width:0}
+  body.showing-cue-sheet .paper-band{display:flex;flex-direction:column;align-items:stretch;gap:var(--s3);position:static}
+  body.showing-cue-sheet .paper-band .band-group{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s2)}
+  body.showing-cue-sheet .paper-band .band-subgroup{display:flex;gap:var(--s1)}
+  body.showing-cue-sheet #paper-panel .row-mode-buttons{display:grid;grid-template-columns:minmax(0,1fr);width:100%}
+  body.showing-cue-sheet #paper-panel .row-mode-buttons button{width:100%;overflow-wrap:anywhere;word-break:normal}
+  body.showing-cue-sheet #paper-panel #band-status{margin:0;font-size:var(--fs-small);overflow-wrap:anywhere}
+  body.showing-cue-sheet #paper-panel h2.band-heading{display:block;flex-basis:100%;font-size:var(--fs-table);margin:0;color:var(--chrome-muted);line-height:1.4}
+  body.showing-cue-sheet .band-split{display:none}
+  body.showing-cue-sheet .paper-panel .paper-sticky{position:static}
+  body.showing-cue-sheet .paper-panel select{width:100%;max-width:none}
+}
+@media print{.band-cues,.cue-sheet-frame{display:none!important}}
+
+/* The pre-existing guest Q view remains readable; the run-of-show authoring UI does not gain permission. */
+body.readonly-cue-shell #paper-band>:not(#band-cues),body.readonly-cue-shell .doc-frame,body.readonly-cue-shell #authoring,body.readonly-cue-shell #ros-index,body.readonly-cue-shell #cue-return,body.readonly-cue-shell #band-status{display:none!important}

@@ -1,7 +1,7 @@
 /* Edition scope shared by the builder and browser. */
 (function (root) {
   "use strict";
-  const ALL_TABS = Object.freeze(["normal","venue-setup","light-placement","light-design","script","3d","cuesheet","run-of-show"]);
+  const ALL_TABS = Object.freeze(["normal","venue-setup","light-placement","light-design","script","3d","run-of-show"]);
   const ALL_ON = Object.freeze({idleAreas:true,arrowTool:true,memoTool:true,penTool:true,lightRender:true,fpv:true,timeline:true,audio:true,cues:true,share:true,cueSheet:true,venueLighting:true,scriptEditor:true,formations:true,sceneAlternatives:true,routeTool:true,machinery:true});
   const common = {tabs:ALL_TABS,dropScripts:[],dropStyles:[],features:ALL_ON,hiddenPanels:[]};
   const edition = (key,file,label,scope={}) => Object.freeze({...common,file,label,title:`舞台スケッチ γ ${label} | Stage Sketch Gamma ${label}`,h1:`舞台スケッチ γ ${label}`,...scope});

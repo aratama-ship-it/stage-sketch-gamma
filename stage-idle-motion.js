@@ -1,7 +1,7 @@
 /* Deterministic playback-only micro-motion. Coordinates and joints never enter the document. */
 (function(root) {
   'use strict';
-  const MAX_AREAS = 8, MAX_HAND_OFFSET = .02;
+  const MAX_AREAS = 8, MAX_HAND_OFFSET = .05;
   const clamp = n => Math.max(0, Math.min(1, n));
   function areas(raw) {
     return (Array.isArray(raw) ? raw : []).filter(a => a && typeof a.id === 'string'
@@ -208,6 +208,39 @@
     f.pose.props=props;
     return f.pose;
   }
+  // Waiting keeps the authored pose and planted feet. Only an ordinary,
+  // upright, arms-down stance gets a quiet upper-body turn/weight shift.
+  // Seated, kneeling, inverted, walking and deliberately raised-arm poses
+  // retain their existing small hand/head motion instead of changing pose.
+  function canShiftStanding(j) {
+    if (!['head','neck','shL','shR','elL','elR','wrL','wrR','hipL','hipR','knL','knR','anL','anR','toL','toR']
+      .every(k => Array.isArray(j[k]) && j[k].length === 3 && j[k].every(Number.isFinite))) return false;
+    const hipY = (j.hipL[1] + j.hipR[1]) / 2;
+    return hipY > .42 && j.neck[1] > hipY + .25
+      && Math.abs(j.anL[1] - j.anR[1]) < .02
+      && ['L','R'].every(side => j['an'+side][1] < .10 && j['kn'+side][1] > .16
+        && j['wr'+side][1] < hipY + .13 && Math.abs(j['wr'+side][0]) < .25);
+  }
+  function shiftStanding(out, base, seconds, rhythm) {
+    if (!canShiftStanding(base.joints)) return;
+    const time = seconds + rhythm.bodyPhase, cycle = Math.floor(time / rhythm.bodyPeriod);
+    const within = mod(time, rhythm.bodyPeriod) / rhythm.bodyPeriod;
+    // A few seconds still, then a smooth shift and return. Alternate sides;
+    // every performer has their own rest interval, amplitude and phase.
+    const pulse = Math.sin(Math.PI * clamp((within - .22) / .60)) ** 2;
+    const sign = mod(cycle, 2) ? 1 : -1;
+    const yaw = sign * rhythm.turn * pulse, lean = -sign * rhythm.sway * pulse;
+    const cy = Math.cos(yaw), sy = Math.sin(yaw), cz = Math.cos(lean), sz = Math.sin(lean);
+    const rotate = p => { const x=p[0]*cy+p[2]*sy,z=-p[0]*sy+p[2]*cy;
+      return [x*cz-p[1]*sz,x*sz+p[1]*cz,z]; };
+    const pivot = base.joints.hipL.map((v,i) => (v + base.joints.hipR[i]) / 2);
+    for (const key of ['neck','head','shL','shR','elL','elR','wrL','wrR'])
+      out.joints[key] = vadd(pivot, rotate(vsub(out.joints[key], pivot)));
+    // Rotate normals with the upper-body geometry; neither document facing
+    // nor any hip, knee, ankle or toe joint is changed.
+    if (Array.isArray(base.wide)) out.wide = rotate(base.wide);
+    if (Array.isArray(base.face)) out.face = rotate(base.face);
+  }
   function createSampler(motion,poseForId) {
     const cache=new Map();
     return function sample(piece,scene,size,seconds,pose,heightM,reducedMotion=false,equipment) {
@@ -215,7 +248,8 @@
       const key=[piece.id,scene.id].join(':'); let rhythm=cache.get(key);
       if(!rhythm) {
         const rand=random(key);
-        rhythm={period:2+rand()*3,phase:rand()*Math.PI*2,hand:.008+rand()*.004,nod:.008+rand()*.006,bob:.002+rand()*.003};
+        rhythm={period:2+rand()*3,phase:rand()*Math.PI*2,hand:.008+rand()*.004,nod:.008+rand()*.006,bob:.002+rand()*.003,
+          bodyPeriod:8+rand()*5,bodyPhase:rand()*17,turn:(4+rand()*2)*Math.PI/180,sway:(2.8+rand())*Math.PI/180};
         cache.set(key,rhythm); if(cache.size>256) cache.delete(cache.keys().next().value);
       }
       const act=actFor(piece,scene,pose.id);
@@ -247,6 +281,7 @@
       // A small nod/attention shift: displacement remains below a 6 degree head turn.
       const nod=Math.sin(phase*.73+.4)*rhythm.nod;
       j.neck[1]+=bob*.5; j.head[1]+=bob+nod; j.head[2]+=nod*.55;
+      shiftStanding(out, pose, Number.isFinite(seconds) ? seconds : 0, rhythm);
       return {u:piece.u,v:piece.v,facing:piece.facing||0,pose:out,walking:false};
     };
   }

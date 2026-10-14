@@ -510,6 +510,11 @@
      .col（回る面など、文言が長く縦積みのままにしたいもの）は対象外にする。 */
   .field .seg:not(.col){flex-wrap:nowrap;width:100%}
   .field .seg:not(.col) button{flex:1 1 0;min-width:0;text-align:center;white-space:normal;line-height:1.25}
+  /* Surface names are complete choices, not Japanese character columns.
+     Use the available inspector width, retaining its typography and controls. */
+  .field .seg.aim-surfaces{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,94px),1fr));gap:4px}
+  .field .seg.aim-surfaces button{white-space:nowrap;margin:0}
+  .field .seg.aim-surfaces button+button{margin:0}
   .seg button[aria-pressed="true"]{color:var(--milk);border-color:var(--brass);background:rgba(156,130,63,.24)}
   /* 触れているだけの隣のボタンが、選んでいるボタんより手前に出ないよう段を分ける
      （2026-09-13 実害: 隣をホバーすると選択枠の縁がまた欠けた。z-indexが同値でDOM順の後勝ちだったため）。 */
@@ -626,6 +631,18 @@
   .lxrow[data-lx-enabled="false"] .qno{background:var(--recess);color:var(--milk-dim);border:1px dashed var(--line-dark)}
   .lxrow .btn.small.lxdel{width:24px;min-width:24px;min-height:24px;padding:0;font-size:11px;color:var(--milk-dim)}
   /* 名前は1行。入り切らない名前だけ2行まで（app.js が中身に合わせて高さを決める） */
+  /* When the LX column is narrow, the time button must not share zero-width
+     space with enable/delete. Keep each control usable on its own grid row. */
+  #panel-lxq{container-type:inline-size;container-name:lx-cards}
+  @container lx-cards (max-width:240px){
+    .lxrow{grid-template-columns:minmax(0,1fr) auto auto}
+    .lxrow .qno{grid-column:1;grid-row:1;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+    #panel-lxq .lxrow .btn.small.lxtime{grid-column:1/-1;grid-row:2;min-width:0}
+    .lxrow .lx-enabled{grid-column:2;grid-row:1}
+    .lxrow .lxdel{grid-column:3;grid-row:1}
+  }
+  .lxrow .lx-placement{grid-column:1/-1;font:600 11px/1.3 var(--sans);color:var(--milk);white-space:nowrap}
+  .lxrow .lx-placement[hidden]{display:none}
   .lxrow .lxname{grid-column:1/-1;display:block;width:100%;min-width:0;min-height:0;height:calc(12.5px * 1.35);margin:0;padding:0;resize:none;overflow:hidden;
     border:0;border-bottom:1px solid transparent;border-radius:0;background:none;color:var(--milk);font:12.5px/1.35 var(--sans)}
   .lxrow .lxtrg{grid-column:1/-1;display:flex;align-items:baseline;gap:4px;min-width:0;font-size:12px;color:var(--milk-dim)}
@@ -801,8 +818,8 @@
   .dialog .in,.dialog .in:has(.pgrid){display:flex;flex-direction:column;max-height:calc(100dvh - 24px);overflow:hidden}
 </style>
 <style>.option-b-controls button{min-height:44px}.option-b-controls :focus-visible{outline:2px solid #d3ac59;outline-offset:2px}</style>
-<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261014-v0361">
-<link rel="stylesheet" href="embed.css?v=20261013-v0360">
+<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261014-v0362">
+<link rel="stylesheet" href="embed.css?v=20261014-v0362">
 <link rel="stylesheet" href="simple-lighting.css?v=20261012-v0358">
 </head>
 <body>
@@ -1065,7 +1082,7 @@
      結果や注意は「灯体情報」パネル最下部の #insp-log へ常設で出す。
      要素は残さない（.toast のCSSも使われなくなる）。 -->
 
-<script src="../gamma-ui.js?v=20261014-v0361"></script>
+<script src="../gamma-ui.js?v=20261014-v0362"></script>
 <link rel="stylesheet" href="position-names.css?v=20261013-v0360">
 <script src="../gamma-render-resolution.js?v=20261006-v0318"></script>
 <script src="rig-engine.js?v=20261011-v0347"></script>
@@ -1082,7 +1099,7 @@
 <script src="../stage-light-receiver.js?v=20261004-receiver89"></script>
 <script src="../gamma-light-cue-overlay.js?v=20261006-v0318"></script>
 <script src="../stage-machinery.js?v=20261012-v0358"></script>
-<script src="app.js?v=20261014-v0361"></script>
+<script src="app.js?v=20261014-v0362"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20261010-v0338"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->
@@ -1090,7 +1107,7 @@
 <script src="selected-light-presets-ui.js?v=20260928-feedback55"></script>
 <script src="../gamma-light-model.js?v=20261013-v0359"></script>
 <script src="simple-lighting-model.js?v=20261001-release71"></script>
-<script src="embed.js?v=20261013-v0360"></script>
+<script src="embed.js?v=20261014-v0362"></script>
 <script src="simple-lighting-ui.js?v=20261012-v0358"></script>
 <script src="position-placement-ui.js?v=20261005-batch98"></script>
 <script src="position-names-ui.js?v=20261001-release71"></script>

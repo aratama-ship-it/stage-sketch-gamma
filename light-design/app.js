@@ -532,7 +532,11 @@
     const content=document.createElement("div");content.className="dialog-content";content.innerHTML=html;
     const dismiss=()=>{d.hidden=true;};
     const close=document.createElement("button");close.type="button";close.className="btn dialog-close gamma-close-glyph";close.textContent="×";close.setAttribute("aria-label","閉じる");close.onclick=dismiss;
-    box.append(close,content);
+    box.append(close);
+    // Keep timing context visible while its fields scroll in a low window.
+    const title=content.querySelector(":scope > .ptitle");
+    if(content.querySelector(".lxt-grid") && title) {title.classList.add("dialog-title");box.append(title);}
+    box.append(content);
     const acts = document.createElement("div"); acts.className = "acts";
     buttons.forEach(([label, fn, cls]) => { const b = document.createElement("button"); b.className = "btn " + (cls || ""); b.textContent = label; b.onclick = () => { dismiss(); fn && fn(); }; acts.append(b); });
     box.append(acts); d.append(box);
@@ -4800,7 +4804,7 @@
             const l2 = lightOf(fid); if (l2.path && (l2.path.kind === "circle" || l2.path.kind === "eight")) l2.path.plane = (v === "back" || v === "house") ? "frontVertical" : v === "floor" ? "horizontal" : (l2.path.plane || "horizontal");
           });
           commit(`${ids.length}灯の狙いを変えました`);
-        }), true));
+        }, "aim-surfaces"), true));
     }
 
     /* ③ 光の強さ。0は消灯と同じ（2026-09-13 本人決定）。目盛りはリニアのままで、
@@ -5163,7 +5167,7 @@
     const surface = same((l) => l.surface, "air");
     aimBox.append(field(surface == null ? "バラバラ" : null, seg([["floor", "床"], ["back", "ホリゾント"], ["house", "客席"], ["air", "空中"]], surface, (v) => {
       active.forEach((fid) => { Object.assign(getLight(fid), { surface: v }); restyleToSurface(fid); }); commit(`${active.length}台のレーザーの狙いを変えました`);
-    }), true)); host.append(aimBox);
+    }, "aim-surfaces"), true)); host.append(aimBox);
     const settings = el("div", "pbox");
     const autoCount = lights.filter((l) => (l.laser || {}).spanDegTo != null).length;
     const autoOn = autoCount === lights.length;
@@ -5688,6 +5692,17 @@
     return { list, prev: i > 0 ? list[i - 1] : null, next: i < list.length - 1 ? list[i + 1] : null };
   }
 
+  // Placement is host-derived display state, independent of the Q's enabled flag.
+  // A standalone lighting document has no timeline, so a missing reader is unknown.
+  let readCuePlacements = null;
+  function setCuePlacementReader(reader) {readCuePlacements=typeof reader==="function"?reader:null;}
+  function refreshCuePlacements() {
+    const placed = readCuePlacements?.();
+    document.querySelectorAll("#lxqbox .lxcard[data-lx-id]").forEach(row=>{
+      const caption=row.querySelector(".lx-placement");
+      if(caption)caption.hidden=!placed || placed.has(row.dataset.lxId);
+    });
+  }
   function renderLxq() {
     const host = $("lxqbox"); if (!host) return;
     ensureCueNumbers();
@@ -5766,6 +5781,7 @@
     sorted.forEach((q, index) => {
       const isEdit = q.id === editing;
       const row = el("div", "lxrow lxcard" + (isEdit ? " editing" : cueJson(q.cue) === nowJson ? " cur" : ""));
+      row.dataset.lxId=q.id;
       row.title = isEdit ? "この LXキュー を編集しています（変えたところはそのまま入ります）" : `${qLabel(q)} へ GO（画面の明かりをこの中身に入れ替えます）`;
       const no = el("span", "qno"); no.textContent = qLabel(q); no.title = q.legacyNo ? `旧番号 ${q.legacyNo}。つまんで上下に動かすと順番を変えられます` : "つまんで上下に動かすと順番を変えられます";
       /* 番号をつまんで上下に落とすと並びが変わる。札ごと掴めるようにすると
@@ -5790,6 +5806,7 @@
         dialog(`<p class="ptitle">${qLabel(q)} を消しますか？</p><p class="hint">この LXキュー を一覧から消します。画面に出ている明かりはそのまま残ります。</p>`,
           [["キャンセル", null], ["消す", () => { const s2 = lxScene(); s2.lxq = lxList(s2).filter((z) => z.id !== q.id); if (s2.lxEditing === q.id) s2.lxEditing = null; commit(`${qLabel(q)} を消しました`); }, "primary"]]);
       }, "small quiet lxdel", `${qLabel(q)} を消す`));
+      row.append(el("span", "lx-placement", "未配置"));
       /* 名前（24字まで）。札の幅では1行に収まらないので2行まで見せる。改行は入れない（Enter で確定）。 */
       const nm = document.createElement("textarea"); nm.rows = 2; nm.className = "lxname"; nm.maxLength = 24; nm.value = q.name || ""; nm.placeholder = "名前（任意）";
       nm.setAttribute("aria-label", `${qLabel(q)} の名前`);
@@ -5838,6 +5855,7 @@
     /* 名前は1行。札の幅に入り切らない名前だけ2行まで広げる（Safari は field-sizing が無いので測って決める） */
     li.querySelectorAll(".lxname").forEach((nm) => { const line = parseFloat(getComputedStyle(nm).lineHeight) || 17;
       nm.style.height = `${nm.scrollHeight > line + 2 ? line * 2 : line}px`; });
+    refreshCuePlacements();
   }
 
   /* ---------- Qシート（LX）v2-2（2026-09-27 本人承認） ----------
@@ -6105,7 +6123,7 @@
           setLight(fid, { surface: v }); restyleToSurface(fid);
           const l2 = editableLight(fid); if (l2.path && l2.path.kind === "circle") l2.path.plane = (v === "back" || v === "house") ? "frontVertical" : v === "floor" ? "horizontal" : (l2.path.plane || "horizontal");
           commit();
-        }), true));
+        }, "aim-surfaces"), true));
         if (aimNow === "mirrorball") {
           if (ballsInRig.length > 1) b.append(field("どの球", seg(ballsInRig.map((bf) => [bf.id, label(bf.id)]), aimBall.id, (v) => { aimAtMirrorBall(fid, v); commit(`${label(fid)}を${label(v)}へ向けました`); })));
           const deg = E.beamDegOf(f, l);
@@ -7298,7 +7316,7 @@
   // 試作の検証用。製品では出さない（状態を外から読めるようにしておく）
   window.__RIG = { state, E, planBox, secBox, secOf, SECS,
     /* 「照明のあるある」（light-presets-ui.js）との接続点。app.js の内部関数をここだけから貸す（2026-09-14）。 */
-    hooks: { setSoloFigure, setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
+    hooks: { setCuePlacementReader, refreshCuePlacements, setSoloFigure, setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
 
   /* ブラウザの大きさに追従する。モーダルだからと固定にしない（2026-09-11 本人要望）。
      rAFで1回にまとめる（ドラッグ中の連続リサイズで描き直しが溜まらないように）。 */

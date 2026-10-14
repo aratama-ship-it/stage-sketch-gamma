@@ -31,6 +31,8 @@
   "use strict";
 
   const TEXT = {
+    "未配置": "Unplaced",
+    "フェード {seconds}秒": "Fade {seconds}s",
     "Liteの進行表をオフラインで開く際に、スタイルを読み込めない場合がある問題を直しました。": "Fixed a case where the Lite run-of-show stylesheet could not load when reopening offline.",
     "プロフィールと数値欄の編集を取り消せるようにし、身長の入力範囲と数字の入力を揃えました。": "Profile and numeric edits can now be undone; height limits and digit entry are consistent.",
     "進行表のセル書式、列のキー操作、配布用の窓と確認ボタンを整えました。": "Improved cell formatting, column keyboard controls, distribution dialogs and confirmation buttons in the run of show.",
@@ -4544,4 +4546,15 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "名簿未登録": "Not in cast list",
   "図を押すと、その行だけ正面図⇔平面図を切り替えます（ショーに保存・印刷にも反映）。": "Click a diagram to switch only that row between front and plan views. This is saved with the show and included in print.",
   "行ごとに切り替えた行：{count}件": "Rows with individual view settings: {count}"
+});
+
+// v0.3.62 published browser UI changes.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "Qシートを進行表にまとめ、左の演者選択から中央へ表示できるようにしました。全体・部署別の表、CSV・印刷も使えます。": "Combined Q sheets with Run of Show. Choose a performer on the left to display their sheet in the centre. Overall and department sheets, CSV and printing remain available.",
+  "LXキューの有効・無効と未配置を区別し、タイムラインの札の高さを揃え、カット・フェード秒数を読みやすくしました。": "Separated enabled/disabled LX cues from unplaced cues, aligned timeline cards and clarified cut and fade times.",
+  "数値欄のフォーカス枠と閉じるボタンを統一し、照明の時間設定を狭い画面でも操作できるようにしました。": "Unified numeric focus borders and close buttons, and kept lighting timing controls accessible in smaller windows.",
+  "3Dの図と表示操作を画面の端へまとめ、視点ボタンの重なりを解消しました。": "Grouped 3D diagrams and display controls at the screen edges and removed overlapping viewpoint buttons.",
+  "本体とヘッダーの余白を詰め、AI Showwrightを設定へ移し、新規シーンのアイコンを整えました。": "Reduced body and header margins, moved AI Showwright into Settings and refined the new-scene icon.",
+  "待機中の立ち姿に軽い傾きとひねりを加え、足元・位置・名前は固定したままにしました。": "Added gentle leaning and turning to standing idle motion while keeping feet, positions and names fixed.",
+  "照明の下端と狙いの一覧を揃え、低い画面でも選択した物の詳細へ届くようにしました。": "Aligned the lower lighting panels and target choices, and made selected-item details reachable in short windows."
 });

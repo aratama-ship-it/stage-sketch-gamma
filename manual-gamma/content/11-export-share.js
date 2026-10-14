@@ -31,9 +31,9 @@ ${table(["選択", "内容"], [
 ${table(["表", "環境設定", "内容"], [
   ["バミリ図（印刷）", "γでは非表示（2026-10-06）", "演者の立ち位置の実寸表。γの印刷用ページには出しません"],
   ["小道具の香盤表（印刷）", "常に入（2026-10-06 から一覧に出ない）", "シーンごとの持ち手と受け渡しの表。シーンが多いときは12シーンごとに分けて印刷する（v0.2.16）"],
-  ["明かりのQシート（印刷）", "γでは非表示", "シーンごとの明かりの点き消え表。γではQシートタブの「照明」に置き換わっています（" + ref("cuesheet", "第9部 9-6") + "）"]
+  ["明かりのQシート（印刷）", "γでは非表示", "シーンごとの明かりの点き消え表。γでは進行表の「部署」から開く「照明」に置き換わっています（" + ref("cuesheet", "第9部 9-6") + "）"]
 ])}
-<p>Qシート（全体表・演者ごと・部署ごと）と台本（セリフタブの${ui("台本を書き出す")}）は、それぞれのタブから印刷します。</p>`
+<p>Qシート（全体表・演者ごと・部署ごと）と台本（セリフタブの${ui("台本を書き出す")}）は、進行表の左側とセリフタブからそれぞれ印刷します。</p>`
       },
       {
         id: "export-json", title: "ショーを書き出す／読み込む（ファイルの受け渡し）", status: "sourced",
@@ -101,7 +101,7 @@ ${fig("release044-ipad-pages", "iPadの書き込みページ。用途ごとに�
         id: "ai-showwright", title: "AI showwright — AIにショーのJSONを書かせる", status: "sourced",
         keywords: ["AI", "showwright", "ChatGPT", "Claude", "Gemini", "JSON", "生成", "自動", "書かせる", "点検", "読み込む", "契約", "対象外"],
         html: `
-<p>ヘッダーの ✦ で、AI showwright for StageSketch のページが別タブで開きます（<a href="https://aratama-ship-it.github.io/stage-sketch-gamma/public/ai-json/" target="_blank" rel="noopener">public/ai-json/</a>）。AI（ChatGPT・Claude・Gemini など）に渡す手引き（AI_MANUAL）と、AIが書いたJSONを読み込む前に点検する道具があります。</p>
+<p>環境設定の左列、Mac版アプリの案内の下にある「AI Showwright」で、AI showwright for StageSketch のページが別タブで開きます（<a href="https://aratama-ship-it.github.io/stage-sketch-gamma/public/ai-json/" target="_blank" rel="noopener">public/ai-json/</a>）。AI（ChatGPT・Claude・Gemini など）に渡す手引き（AI_MANUAL）と、AIが書いたJSONを読み込む前に点検する道具があります。</p>
 ${steps([
   "ページの冊子をAIに渡し、作りたいショーの内容を伝えてJSONを書かせる。",
   "ページの点検にJSONを貼り、契約違反（未許可の項目・0秒の転換・欠けた時間など）が無いことを確かめる。",

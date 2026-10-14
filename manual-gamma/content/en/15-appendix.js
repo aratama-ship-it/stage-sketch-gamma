@@ -138,7 +138,7 @@
         "香盤表",
         "handover pack"
       ],
-      "html": "<p>Q sheets are grouped by category, and each performer has a handover pack.</p>\n<p>Print roster notes and diagrams for their scenes. Cues are inferred from assignments and standby entries in the run of show. The overall plot can be fitted onto one A4 sheet.</p>\n<p>Where: Q sheet tab → Handover pack beside a performer, or Print beside the overall plot.</p>\n<p>Try it in: H-3 and H-4 (assignments and cues).</p>\n<p class=\"m-source\">Release history: v0.3.30, v0.3.31, v0.3.35</p>"
+      "html": "<p>Q sheets are grouped by category, and each performer has a handover pack.</p>\n<p>Print roster notes and diagrams for their scenes. Cues are inferred from assignments and standby entries in the run of show. The overall plot can be fitted onto one A4 sheet.</p>\n<p>Where: Run of show left menu → Handover pack beside a performer, or Print beside the overall plot.</p>\n<p>Try it in: H-3 and H-4 (assignments and cues).</p>\n<p class=\"m-source\">Release history: v0.3.30, v0.3.31, v0.3.35</p>"
     },
     {
       "id": "new-03-scrim",

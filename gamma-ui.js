@@ -258,6 +258,12 @@
     if (!isCloseControl(element)) return;
     // Keep accessible names; this marker also excludes the stage icon tooltip.
     element.setAttribute('data-no-tip', '');
+    // The same semantic classification owns tooltip suppression and square size.
+    // Text-labelled footer actions are deliberately not icon squares.
+    if (/^[×✕✖✗]$/.test(element.textContent.trim()) || (!element.textContent.trim() && element.querySelector('svg'))) {
+      element.setAttribute('data-gamma-close-square', '');
+    }
+
     if (element.title && !element.hasAttribute('aria-label') && !element.hasAttribute('aria-labelledby')) {
       element.setAttribute('aria-label', element.title);
     }

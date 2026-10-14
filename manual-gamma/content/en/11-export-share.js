@@ -10,7 +10,7 @@
         id: "export", title: "Export, save & print (images & print / save show / Q sheets / venue)", status: "verified",
         keywords: ["image", "export", "png", "save picture", "export, save & print", "save show", "backup", "venue library", "Q sheets", "csv", "working drawing", "pitch", "front", "plan", "both", "all scenes", "section", "style", "poster", "sketch", "generative ai", "size", "1920", "4k", "caption text"],
         html: `
-<p>${ui("Export, save & print")} (the paper icon) in the header opens this window. The tabs at the top switch between ${ui("Images & print")}, ${ui("Save show")}, ${ui("Q sheets")} and ${ui("Venue")} (2026-10-06). ${ui("Save show")} runs ${ui("Export show")} (${ref("export-json", "11-3")}), ${ui("Q sheets")} opens the Q sheets (print or CSV per sheet), and ${ui("Venue")} exports the venue library file. The original entry points (information panel, show list, Q sheets tab, venue settings) still work. Below is the ${ui("Images & print")} tab.</p>
+<p>${ui("Export, save & print")} (the paper icon) in the header opens this window. The tabs at the top switch between ${ui("Images & print")}, ${ui("Save show")}, ${ui("Q sheets")} and ${ui("Venue")} (2026-10-06). ${ui("Save show")} runs ${ui("Export show")} (${ref("export-json", "11-3")}), ${ui("Q sheets")} opens the Q sheets (print or CSV per sheet), and ${ui("Venue")} exports the venue library file. The original entry points (information panel, show list, Run of show Q sheets, venue settings) still work. Below is the ${ui("Images & print")} tab.</p>
 ${fig("41-export", "Export, save & print (Images & print tab): pick the kind with the tabs at the top, then choose the purpose, which view and which scenes, and export.", "Export, save & print window")}
 ${table(["Choice", "Contents"], [
   [ui("Purpose") + ": " + ui("As a working drawing"), "The drawing as it is (name tags, arrows and notes included)"],
@@ -31,9 +31,9 @@ ${table(["Choice", "Contents"], [
 ${table(["Table", "Setting", "Contents"], [
   ["Spike sheet", "Hidden in Gamma (2026-10-06)", "Performers' positions measured in metres. Gamma no longer adds it to the print page"],
   ["Props plot", "Always on (not listed since 2026-10-06)", "Holders and hand-offs, scene by scene. Long shows are split every 12 scenes (v0.2.16)"],
-  ["Lighting Q sheet", "Hidden in Gamma", "Which lights are on or off in each scene. In Gamma this is replaced by the “Lights” sheet in the Q sheets tab (" + ref("cuesheet", "Part 9, 9-6") + ")"]
+  ["Lighting Q sheet", "Hidden in Gamma", "Which lights are on or off in each scene. In Gamma this is replaced by the “Lights” sheet selected under Department in Run of show (" + ref("cuesheet", "Part 9, 9-6") + ")"]
 ])}
-<p>Q sheets (master, per performer, per department) and the script (${ui("Export script")} in the Lines tab) are printed from their own tabs.</p>`
+<p>Q sheets (master, per performer, per department) and the script (${ui("Export script")} in the Lines tab) are printed from the Run of show left menu and the Lines tab respectively.</p>`
       },
       {
         id: "export-json", title: "Exporting and importing a show (passing files around)", status: "sourced",
@@ -101,7 +101,7 @@ ${fig("release044-ipad-pages", "iPad annotation pages: duplicate, name and switc
         id: "ai-showwright", title: "AI showwright — having an AI write a show as JSON", status: "sourced",
         keywords: ["ai", "showwright", "chatgpt", "claude", "gemini", "json", "generate", "automatic", "write", "check", "import", "contract", "not covered"],
         html: `
-<p>The ✦ in the header opens the AI showwright for StageSketch page in a new tab (<a href="https://aratama-ship-it.github.io/stage-sketch-gamma/public/ai-json/" target="_blank" rel="noopener">public/ai-json/</a>). It has a guide to give an AI (ChatGPT, Claude, Gemini …) and a checker for the JSON it writes, before you import it.</p>
+<p>AI Showwright in the left column of Settings, below the Mac app links, opens the AI showwright for StageSketch page in a new tab (<a href="https://aratama-ship-it.github.io/stage-sketch-gamma/public/ai-json/" target="_blank" rel="noopener">public/ai-json/</a>). It has a guide to give an AI (ChatGPT, Claude, Gemini …) and a checker for the JSON it writes, before you import it.</p>
 ${steps([
   "Give the AI the guide from the page, describe the show you want, and have it write the JSON.",
   "Paste the JSON into the page's checker and make sure it breaks no rules (fields not allowed, zero-second transitions, missing times and so on).",

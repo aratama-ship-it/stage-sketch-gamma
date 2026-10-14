@@ -38,6 +38,7 @@ ${table(["Setting", "Where it is saved"], [
         html: `
 <p>Open ${ui("How to use and about the app")} to see these buttons:</p>
 ${table(["Button", "Contents"], [
+  ["AI Showwright (below the Mac app links)", "A guide for having AI write a show as JSON (" + ref("ai-showwright", "Part 11, 11-6") + ")"],
   [ui("Quick Guide"), "A one-page overview (still the beta's version)"],
   [ui("First-time tour"), "The nine-step hands-on tour (" + ref("tour", "Part 1, 1-3") + ")"],
   [ui("Search the Guide"), "Search this booklet by word. Up to twelve matching sections appear briefly, most relevant first; “Read in the booklet” opens that section and “See every result in the booklet” opens the booklet's own search. " + ui("When an item will not move") + " (unlocking) is also here (" + ref("lock", "Part 4, 4-11") + ")"],
@@ -73,6 +74,7 @@ ${table(["Item", "Default", "What it does", "Section"], [
   [ui("Under-rigging caution"), "Off", "Mark anyone standing under a pole or trapeze", ref("aerial", "4-8")],
   [ui("Show the true house depth"), "Off", "Stop the plan's house at its real depth with a “house ○ m” tag", ref("view-toggles", "8-6")],
   [ui("Simplify the wide view"), "Off", "Draw distant seats simply in 3D for large venues", ref("fpv-view", "10-3")],
+  [ui("Idle motion during playback"), "Off", "Standing performers shift their weight in place while feet, saved position, facing and name tags stay fixed", ref("tools", "2-6")],
   [ui("Icon tips"), "On", "Hovering over icons shows name, shortcut and use", ref("tools", "2-6")],
   [ui("Show the selection beside the drawing"), "On", "Show a helper beside the selected piece", ref("inspector", "2-5")],
   [ui("Tint costumes with the light colour"), "Off", "Draw performers in a pool tinted by that light", ref("costume", "4-4")],

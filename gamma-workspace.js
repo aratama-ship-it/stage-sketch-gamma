@@ -15,9 +15,8 @@
   const normal=document.querySelector('.stage-sketch-grid'), status=document.getElementById('gamma-light-status');
   // セリフ編集画面（2026-09-24 本人指示・stage-script-editor.js）。劇場設定と同じく本体の中の1画面。
   const scriptWorkspace=document.getElementById('gamma-script-workspace');
-  /* Qシート（2026-09-24 本人指示）: 右上の窓ではなく、セリフ・3Dの次の「Qシート」タブで管理する。
-     劇場設定と同じく、既存の窓（#stage-cue-sheet-modal）をタブの画面へ移して使う。開閉は本体の
-     window.SHOSAI_STAGE_CUE_SHEET_HOST（stage-sketch.js）に任せ、ここは画面の出し入れだけを持つ。 */
+  /* Qシートの互換入口。進行表が準備されるまでは同じDOMをここへ退避し、
+     左メニューの中央プレビューが開いたら iframe に移す。独立タブは作らない。 */
   const cuesheetWorkspace=document.getElementById('gamma-cuesheet-workspace'), cuesheetModal=document.getElementById('stage-cue-sheet-modal'), cuesheetBackdrop=document.getElementById('stage-cue-sheet-backdrop');
   if(cuesheetWorkspace && cuesheetModal) { cuesheetWorkspace.append(cuesheetModal); if(cuesheetBackdrop) cuesheetBackdrop.hidden=true; }
   const hostUndo=document.getElementById('stage-undo'), hostRedo=document.getElementById('stage-redo');
@@ -735,6 +734,11 @@
 
   let featureSelectionAttempt = 0;
   async function select(next) {
+    const cueSheetRequest = next === "cuesheet";
+    if (cueSheetRequest) {
+      if (!window.SHOSAI_STAGE_CUE_SHEET_HOST?.available?.()) return;
+      next = "run-of-show";
+    }
     const featureAttempt = ++featureSelectionAttempt;
     if(!['normal','light-placement','light-design','venue-setup','script','cuesheet','run-of-show'].includes(next)) return;
     const featureGroup = isLightMode(next) ? 'light' : next === 'run-of-show' ? 'runOfShow' : null;
@@ -806,6 +810,7 @@
       if(mode==='venue-setup' && next!=='venue-setup') hideVenue();
       if(mode==='script' && next!=='script') window.SHOSAI_SCRIPT_EDITOR?.close?.();
       if(mode==='cuesheet' && next!=='cuesheet') window.SHOSAI_STAGE_CUE_SHEET_HOST?.close?.();
+      if(mode==='run-of-show' && next!=='run-of-show') window.GAMMA_RUN_OF_SHOW_PANE?.showRunOfShow?.();
       if(isLightMode(next)) {
         const context=host.context(); latestContext=context;
         const timelinePlay=document.getElementById('stage-timeline-play');
@@ -822,7 +827,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261014-v0361'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261014-v0362'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;
@@ -839,12 +844,11 @@
         editor()?.suspend();
         window.SHOSAI_SCRIPT_EDITOR?.open?.();
       } else if(next==='run-of-show') {
-        if(host.context().readOnly) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
+        const readOnlyQ = host.context().readOnly;
+        if(readOnlyQ && !window.SHOSAI_STAGE_CUE_SHEET_HOST?.available?.()) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
         editor()?.suspend();
         window.GAMMA_RUN_OF_SHOW_PANE?.open?.();
-      } else if(next==='cuesheet') {
-        editor()?.suspend();
-        window.SHOSAI_STAGE_CUE_SHEET_HOST?.open?.();
+        if (cueSheetRequest || readOnlyQ) window.GAMMA_RUN_OF_SHOW_PANE?.showCueSheet?.();
       } else editor()?.suspend();
       mode=next; document.body.dataset.gammaWorkspace=mode;
       document.body.dataset.stageWorkspaceMode=mode;
@@ -852,7 +856,7 @@
       if(scriptWorkspace) scriptWorkspace.hidden=mode!=='script';
       const rosWorkspace=document.getElementById('gamma-run-of-show-workspace');
       if(rosWorkspace)rosWorkspace.hidden=mode!=='run-of-show';
-      if(cuesheetWorkspace) cuesheetWorkspace.hidden=mode!=='cuesheet';
+      if(cuesheetWorkspace) cuesheetWorkspace.hidden=true;
       if(switchingMode) document.getElementById('view-stage')?.scrollTo(0,0);
       document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode]').forEach(button=>{
         const active=button.dataset.stageWorkspaceMode===mode;

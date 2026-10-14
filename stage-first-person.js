@@ -142,6 +142,14 @@
       const width = clamp(l.width,Math.min(160,max),max), height = PANEL_TITLE_HEIGHT+panelContentHeight(width,aspect.width,aspect.height);
       result[key] = {edge:l.edge,along:l.along,width,height,visible:l.visible,x:0,y:0};
     }
+    // Fit a stacked edge preview to its actual free span without shrinking the saved preference.
+    const rightKeys = PANEL_KEYS.filter(k => result[k].visible && result[k].edge === "right");
+    if (rightKeys.length) {
+      const available = Math.max(1, ranges.right[1] - ranges.right[0] - 8 * (rightKeys.length - 1));
+      const content = rightKeys.reduce((n,k) => n + result[k].height - PANEL_TITLE_HEIGHT, 0);
+      const scale = Math.min(1, Math.max(1, available - PANEL_TITLE_HEIGHT * rightKeys.length) / Math.max(1,content));
+      for (const k of rightKeys) { result[k].width *= scale; result[k].height = PANEL_TITLE_HEIGHT + (result[k].height - PANEL_TITLE_HEIGHT) * scale; }
+    }
     const place = (r,pos) => {
       const vertical = ["right","left"].includes(r.edge);
       r.x = vertical ? (r.edge === "right" ? W-r.width : 0) : pos;
@@ -1196,7 +1204,7 @@
 #stage-fpv-panel-toggles{display:flex;flex-direction:column;align-items:stretch;gap:5px}.stage-fpv-panel-toggle{justify-content:center;padding:4px 9px;font-size:11px}
 #stage-fpv-light-controls{display:flex;gap:5px}.stage-fpv-light-toggle{flex:1;justify-content:center;min-height:34px;padding:5px 7px;font-size:11px;white-space:nowrap}.stage-fpv-light-toggle svg{display:block;width:15px;height:15px;flex:none}.stage-fpv-light-toggle[aria-pressed="true"]{background:#e8e2d4;color:#14100c;border-color:#e8e2d4}.stage-fpv-light-toggle .stage-work-light-slash,.stage-fpv-light-toggle[aria-pressed="false"] .stage-work-light-rays{display:none}.stage-fpv-light-toggle[aria-pressed="false"] .stage-work-light-slash{display:block}
 #stage-fpv-optics{top:174px;right:max(70px,calc(var(--stage-fpv-dock-right,0px) + 12px));display:flex;flex-direction:column;align-items:stretch;gap:14px;z-index:71}#stage-fpv-lens,#stage-fpv-house,#stage-fpv-crowd{display:flex;flex-direction:column;align-items:stretch;gap:5px}.stage-fpv-lens-chip,.stage-fpv-house-chip,.stage-fpv-crowd-chip{justify-content:center;padding:4px 9px;font-size:11px}
-.stage-fpv-panel{position:absolute;z-index:71;box-sizing:border-box;overflow:hidden;border:1px solid rgba(232,226,212,.16);border-radius:3px;background:var(--chip,rgba(var(--stage-ui-float-rgb,22,16,11),.94));box-shadow:0 8px 24px rgba(0,0,0,.28);color:#e8e2d4;touch-action:none;user-select:none;-webkit-user-select:none}.stage-fpv-panel[hidden]{display:none!important}.stage-fpv-panel-bar{height:26px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;padding:0 5px 0 9px;font-size:11px;letter-spacing:.04em;cursor:grab}.stage-fpv-panel-bar:active{cursor:grabbing}.stage-fpv-panel-hide{width:24px;height:22px;min-width:24px;min-height:22px;padding:0;border:0;background:transparent;color:#e8e2d4;font:16px/20px inherit;cursor:pointer}.stage-fpv-panel canvas{display:block;width:100%;background:#16100b;pointer-events:auto}.stage-fpv-panel-resize{position:absolute;right:0;bottom:0;width:14px;height:14px;cursor:nwse-resize;background:linear-gradient(135deg,transparent 0 45%,rgba(232,226,212,.55) 46% 55%,transparent 56% 65%,rgba(232,226,212,.55) 66% 75%,transparent 76%);touch-action:none}
+.stage-fpv-panel{position:absolute;z-index:71;box-sizing:border-box;overflow:hidden;border:1px solid rgba(232,226,212,.16);border-radius:3px;background:var(--chip,rgba(var(--stage-ui-float-rgb,22,16,11),.94));box-shadow:0 8px 24px rgba(0,0,0,.28);color:#e8e2d4;touch-action:none;user-select:none;-webkit-user-select:none}.stage-fpv-panel[hidden]{display:none!important}.stage-fpv-panel-bar{height:26px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;padding:0 5px 0 9px;font-size:11px;letter-spacing:.04em;cursor:grab}.stage-fpv-panel-bar:active{cursor:grabbing}.stage-fpv-panel-hide{width:24px;height:24px;min-width:24px;min-height:24px;padding:0;border:0;background:transparent;color:#e8e2d4;font:16px/20px inherit;cursor:pointer}.stage-fpv-panel canvas{display:block;width:100%;background:#16100b;pointer-events:auto}.stage-fpv-panel-resize{position:absolute;right:0;bottom:0;width:14px;height:14px;cursor:nwse-resize;background:linear-gradient(135deg,transparent 0 45%,rgba(232,226,212,.55) 46% 55%,transparent 56% 65%,rgba(232,226,212,.55) 66% 75%,transparent 76%);touch-action:none}
 #stage-fpv-nav{right:16px;bottom:18px;display:flex;align-items:center;gap:8px}#stage-fpv-nav button{background:rgba(var(--stage-ui-float-rgb,22,16,11),.86);color:#e8e2d4;border:1px solid rgba(232,226,212,.2);border-radius:3px;font-size:13px;padding:7px 12px;cursor:pointer;font-family:inherit}#stage-fpv-nav button:hover{border-color:rgba(232,226,212,.5)}#stage-fpv-count{font-size:11.5px;opacity:.6;min-width:52px;text-align:center}
 #stage-fpv-hint{left:50%;bottom:88px;transform:translateX(-50%);font-size:12.5px;background:rgba(var(--stage-ui-float-rgb,22,16,11),.86);padding:7px 14px;border-radius:3px;opacity:.9;transition:opacity .8s;pointer-events:none;border:1px solid rgba(232,226,212,.14)}#stage-fpv-hint.gone{opacity:0}
 #stage-fpv-help{left:20px;bottom:146px;min-width:44px;min-height:44px;padding:0;border:1px solid rgba(232,226,212,.5);background:rgba(var(--stage-ui-float-rgb,22,16,11),.9);font-family:inherit;font-size:17px;font-weight:600;line-height:1;cursor:pointer}#stage-fpv-help:focus-visible{outline:2px solid #e8e2d4;outline-offset:3px}#stage-fpv-keys[hidden]{display:none}#stage-fpv-keys{left:20px;bottom:198px;padding:10px;background:rgba(var(--stage-ui-float-rgb,22,16,11),.92);pointer-events:none;display:flex;flex-direction:column;gap:4px}#stage-fpv-keys button{pointer-events:auto}#stage-fpv-keys .row{display:flex;align-items:center;gap:8px}#stage-fpv-keys .keys{display:flex;gap:3px}#stage-fpv-keys .key{min-width:10px;padding:2px 5px;border:1px solid rgba(232,226,212,.3);border-bottom-width:2px;border-radius:3px;background:rgba(var(--stage-ui-float-rgb,22,16,11),.78);text-align:center;font-size:10.5px;line-height:1.25;letter-spacing:.02em}#stage-fpv-keys .what{font-size:11px;opacity:.62}
@@ -1228,6 +1236,16 @@
 .stage-fpv-panel-resize[data-corner=tl]{left:0;right:auto;top:0;bottom:auto;transform:scale(-1);cursor:nwse-resize}
 .stage-fpv-panel-resize[data-corner=tr]{right:0;left:auto;top:0;bottom:auto;transform:scaleY(-1);cursor:nesw-resize}
 .stage-fpv-dock-guide{position:absolute;background:#d3ac59;opacity:.7;pointer-events:none;z-index:71}
+/* Persistent controls stay at the edges; row heights follow the shared button size. */
+#stage-fpv-view-controls{position:absolute;left:20px;bottom:18px;right:var(--stage-fpv-controls-right,320px);display:flex;flex-direction:column;align-items:flex-start;gap:8px;max-height:48%;overflow:auto;z-index:71}
+#stage-fpv-view-controls :is(#stage-fpv-help,#stage-fpv-whose,#stage-fpv-cast,#stage-fpv-presets){position:static;inset:auto;flex:none}
+#stage-fpv-view-controls :is(#stage-fpv-cast,#stage-fpv-presets){width:100%;box-sizing:border-box}
+#stage-fpv-whose{white-space:normal}
+#stage-fpv-minimap{left:20px;right:auto;top:110px}
+#stage-fpv-optics{right:0;box-sizing:border-box;padding:8px;gap:8px;overflow-y:auto;overflow-x:hidden;background:var(--desk-2,rgba(22,16,11,.94));scrollbar-gutter:stable}
+#stage-fpv-optics :is(#stage-fpv-panel-toggles,#stage-fpv-lens,#stage-fpv-house,#stage-fpv-crowd){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+#stage-fpv-optics .stage-fpv-chip{min-width:0;white-space:normal}
+#stage-fpv-keys{bottom:var(--stage-fpv-help-bottom,198px)}
 @media(prefers-reduced-motion:reduce){.stage-fpv-panel{transition:none}}
 `;
     (document.head || document.documentElement || document.body).appendChild(style);
@@ -1386,12 +1404,14 @@
     closeButton.setAttribute("aria-label", text("3D を終了"));
     closeButton.setAttribute("aria-keyshortcuts", "Escape");
     optics.append(lightControls, panelToggles, lens, house, crowd);
+    const viewControls = createElement("div", "stage-fpv-view-controls");
+    viewControls.append(helpButton, whose, cast, presets);
     root.append(canvas, fade, title, minimap, optics,
       panels.front.panel, panels.plan.panel,
-      whose, cast, presets, nav, keyGuide, helpButton, hint, edit, toast, preview3d, closeButton);
+      viewControls, nav, keyGuide, hint, edit, toast, preview3d, closeButton);
     document.body.appendChild(backdrop);
     document.body.appendChild(root);
-    elements = { root, backdrop, canvas, fade, show, act, scene, approx, minimap, whose, cast, presets,
+    elements = { root, backdrop, canvas, fade, show, act, scene, approx, minimap, whose, cast, presets, viewControls, optics,
       previous, count, next, keyGuide, helpButton, hint, edit, editDot, editName, editFacing, editHint, editPoses,
       toast, closeButton, preview3d, lightControls, lightRenderToggle, workLightToggle,
       panelToggles, lens, lensChips, house, houseChips,
@@ -1691,21 +1711,28 @@
   function measurePanelSpans() {
     const f=panelViewport(),root=elements.root.getBoundingClientRect();
     const rect=id=>document.getElementById(id)?.getBoundingClientRect();
-    const close=rect("stage-fpv-close"), nav=rect("stage-fpv-nav"), mini=rect("stage-fpv-minimap"), optics=rect("stage-fpv-optics");
-    return {right:[close?close.bottom-root.top+8:66,nav?nav.top-root.top-8:f.height-70],
-      top:[0,Math.max(0,Math.min(mini?.left??root.right,optics?.left??root.right)-root.left-8)],
-      bottom:[0,Math.max(0,(nav?.left??root.right)-root.left-8)],left:[0,f.height]};
+    const close=rect("stage-fpv-close"), nav=rect("stage-fpv-nav"), mini=rect("stage-fpv-minimap"), optics=rect("stage-fpv-optics"), views=rect("stage-fpv-view-controls");
+    const start=close?close.bottom-root.top+8:66;
+    return {right:[start,Math.max(start,(optics?.top??root.bottom-70)-root.top-8)],
+      top:[Math.max(0,(mini?.right??root.left)-root.left+8),Math.max(0,(optics?.left??root.right)-root.left-8)],
+      bottom:[0,Math.max(0,(nav?.left??root.right)-root.left-8)],
+      left:[Math.max(0,(mini?.bottom??root.top)-root.top+8),Math.max(0,(views?.top??root.bottom)-root.top-8)]};
   }
   function applyPanelLayout() { applyPanelLayouts(); }
   function applyPanelLayouts() {
     if (!elements || !panelLayouts) return;
-    const frame=panelViewport();
-    const first=resolvePanelRects(panelLayouts,frame,{},panelAspect);
-    const dock=Math.max(0,...PANEL_KEYS.filter(k=>panelLayouts[k].visible&&panelLayouts[k].edge==="right").map(k=>first[k].width));
-    elements.root.style.setProperty("--stage-fpv-dock-right", `${dock}px`);
-    const rootRect=elements.root.getBoundingClientRect(),opticsRect=document.getElementById("stage-fpv-optics")?.getBoundingClientRect();
-    elements.root.style.setProperty("--stage-fpv-cast-right", `${opticsRect?Math.max(0,rootRect.right-opticsRect.left+8):0}px`);
+    const frame=panelViewport(),rootRect=elements.root.getBoundingClientRect();
+    const navRect=document.getElementById("stage-fpv-nav").getBoundingClientRect();
+    const controlsEnd=Math.max(66,navRect.top-rootRect.top-8),controlsHeight=Math.min(364,Math.max(144,frame.height*.4));
+    elements.optics.style.top=`${Math.max(66,controlsEnd-controlsHeight)}px`;
+    elements.optics.style.bottom=`${Math.max(0,frame.height-controlsEnd)}px`;
+    elements.optics.style.width=`${Math.min(280,frame.width*.5)}px`;
+    elements.root.style.setProperty("--stage-fpv-controls-right",`${Math.max(292,rootRect.right-navRect.left+8)}px`);
+    const viewRect=elements.viewControls.getBoundingClientRect();
+    elements.root.style.setProperty("--stage-fpv-help-bottom",`${Math.max(0,rootRect.bottom-viewRect.top+8)}px`);
     panelRects=resolvePanelRects(panelLayouts,frame,measurePanelSpans(),panelAspect);
+    const dock=Math.max(280,...PANEL_KEYS.filter(k=>panelLayouts[k].visible&&panelRects[k].edge==="right").map(k=>panelRects[k].width));
+    elements.root.style.setProperty("--stage-fpv-dock-right", `${dock}px`);
     for(const key of PANEL_KEYS) {
       const p=elements.panels[key], l=panelLayouts[key], r=panelDrag?.key===key&&panelDrag.mode==="move"?panelDrag.rect:panelRects[key];
       p.panel.style.left=`${r.x}px`;p.panel.style.top=`${r.y}px`;p.panel.style.width=`${r.width}px`;

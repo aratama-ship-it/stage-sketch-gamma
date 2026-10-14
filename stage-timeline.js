@@ -2683,17 +2683,25 @@
       count:event.movingCount||0,travel:lightSeconds(event.travelMs),fade:lightSeconds(event.fadeMs),total:lightSeconds(event.totalMs)});
     return {heading,timingText,travelText};
   }
-  function showLightBandPeek(event, button) {
+  function showLightBandPeek(event, button, hint = "ダブルクリック／Enterで照明デザインを開く") {
     const peek=cuePeekEl(),detail=lightBandDetail(event);
     peek.textContent="";
     for(const [className,text] of [
       ["stage-timeline-cue-peek-head",`${detail.heading} · ${labelPosition(event.at)}`],
       ["stage-timeline-cue-peek-speaker",detail.timingText],
       ["stage-timeline-cue-peek-speaker",detail.travelText],
-      ["stage-timeline-cue-peek-hint",tx("ダブルクリック／Enterで照明デザインを開く")]]){
+      ["stage-timeline-cue-peek-hint",tx(hint)]]){
       const p=document.createElement("p");p.className=className;p.textContent=text;peek.append(p);
     }
     positionCuePeek(button);
+  }
+
+  // A readable caption belongs to the fixed-width Q card, not the duration band:
+  // a 0.1s fade can be narrower than one letter without changing the time scale.
+  function lightCueTimingCaption(cue) {
+    const T = window.RIG_ENGINE?.normalizeTiming(cue.lx?.timing);
+    const seconds = T ? Math.max(T.fadeInSec, T.fadeOutSec ?? T.fadeInSec) : 0;
+    return seconds > 0 ? lightBandText("フェード {seconds}秒", {seconds: Math.round(seconds * 100) / 100}) : tx("カット");
   }
 
   function renderLightBands() {
@@ -2715,13 +2723,14 @@
       const band=document.createElement("button");band.type="button";band.className="stage-timeline-light-band";
       band.dataset.eventId=event.id;band.dataset.sceneId=event.sceneId;
       if(g.cut)band.classList.add("is-cut");
+      if(event.kind === "lx") band.classList.add("is-lx");
       placeBlock(band,event.at,g.end);
       const label=event.kind==='blackout'?tx("暗転"):event.shortText||event.notation||"C.C";
       const detail=lightBandDetail(event);
       band.title=`${labelPosition(event.at)}–${labelPosition(g.end)} ${detail.heading} · ${detail.timingText} · ${detail.travelText}`;
       band.setAttribute("aria-label",band.title);
       if(g.overflowWidth>0){const over=document.createElement("span");over.className="stage-timeline-light-overflow";over.style.left=`${g.overflowLeft}px`;over.style.width=`${g.overflowWidth}px`;band.append(over);}
-      const text=document.createElement("span");text.className="stage-timeline-light-label";text.textContent=label;band.append(text);
+      if(event.kind !== "lx") {const text=document.createElement("span");text.className="stage-timeline-light-label";text.textContent=label;band.append(text);}
       const open=()=>{bridge.openSceneById?.(event.sceneId);document.getElementById("gamma-design")?.click();};
       band.addEventListener("pointerdown",e=>e.stopPropagation());band.addEventListener("click",e=>{e.stopPropagation();showLightBandPeek(event,band);});
       band.addEventListener("pointerenter",()=>showLightBandPeek(event,band));
@@ -2776,9 +2785,28 @@
       if (cue.locked) button.append(lockIndicator(null, true));
       const label = document.createElement("span");
       label.className = "stage-timeline-cue-label";
-      label.textContent = cueShownName(cue)+(cue.lx?.enabled===false?" · "+tx("無効"):"");
+      label.textContent = (cue.cueType === "light" && cue.lx
+        ? cue.displayName + (cue.lx.name ? `「${cue.lx.name}」` : "") : cueShownName(cue))
+        +(cue.lx?.enabled===false?" · "+tx("無効"):"");
       button.append(label);
+      if (cue.cueType === "light") {
+        const caption = document.createElement("span");caption.className="stage-timeline-cue-timing";
+        caption.textContent=lightCueTimingCaption(cue);button.append(caption);
+      }
       button.title = `${labelPosition(cue.seconds)}  ${cueShownName(cue)}（${cue.locked ? tx("キューポイントを固定") : tx("選択してDeleteで削除")}）`;
+      if(cue.cueType === "light") {
+        const event=timelineLightEvents.find(event=>event.kind==="lx" && event.id===cue.id);
+        if(event) {
+          const detail=lightBandDetail(event);
+          button.title += ` · ${lightCueTimingCaption(cue)} · ${detail.timingText} · ${detail.travelText}`;
+          button.addEventListener("pointerenter", e=>{if(!e.buttons && !cueDrag)showLightBandPeek(event,button,"ダブルクリックで詳細を開く");});
+          button.addEventListener("pointerleave",hideCuePeek);
+          button.addEventListener("focus",()=>showLightBandPeek(event,button,"ダブルクリックで詳細を開く"));
+          button.addEventListener("blur",hideCuePeek);
+          button.addEventListener("keydown",e=>{if(e.key === "Escape") hideCuePeek();});
+          button.removeAttribute("title");
+        }
+      }
       // U-06: セリフキューは、カーソルを当てると上にセリフを出す（その小窓に同じ説明を入れるので、ブラウザの説明は出さない）
       if (cue.cueType === "dialogue") {
         button.dataset.peekHint = button.title;

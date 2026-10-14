@@ -5,6 +5,20 @@
   let context=null, loading=false, active=false, changedElsewhere=false, appliedExtras={};
   let draftTimer=0, lastScene='', playbackPreview=false;
   let timelineFollowing=false, timelineFrameRaf=0, cuePanelStamp='';
+  hooks.setCuePlacementReader(()=>{
+    if(!context || !parent.SHOSAI_STAGE_SESSION_BRIDGE || !parent.STAGE_TIME_DOMAIN)return null;
+    const project=JSON.parse(parent.SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project;
+    if(project.id!==context.showId)return null;
+    const domain=parent.STAGE_TIME_DOMAIN.resolve(project);
+    return new Set((project.cues||[]).filter(cue=>cue.cueType==="light" && cue.lxId
+      && Number.isFinite(parent.STAGE_TIME_DOMAIN.cuePosition(domain,cue)?.seconds)).map(cue=>cue.lxId));
+  });
+  // Refresh badges in place so an external placement/Undo cannot replace inputs
+  // or move the keyboard focus in the lighting panel.
+  for(const name of ['stage-timeline-cues-change','stage-scene-change'])parent.addEventListener(name,()=>{
+    if(active && !loading)hooks.refreshCuePlacements();
+  });
+
   function clearTimelineFrame() {
     timelineFollowing=false;
     if(timelineFrameRaf) cancelAnimationFrame(timelineFrameRaf);
@@ -110,11 +124,52 @@
   function bindEmbeddedDialogs() {
     const dialog=document.getElementById('dialog');
     let release=null, box=null, trigger=null;
+    // Constrain floating dialogs to the visible strip above the timeline.
+    // If that strip cannot fit a title, footer and usable body, temporarily
+    // stack this workspace above the timeline instead. Never resize the frame
+    // or alter timeline height/open/scroll state to make room for a dialog.
+    const workspace=parent.document.getElementById('gamma-light-workspace');
+    const clearDialogViewport=()=>{
+      workspace?.removeAttribute('data-gamma-light-dialog-stacked');
+      document.documentElement.style.removeProperty('--gamma-light-dialog-top');
+      document.documentElement.style.removeProperty('--gamma-light-dialog-height');
+    };
+    const syncDialogViewport=()=>{
+      const root=document.documentElement;
+      if(dialog.hidden) { clearDialogViewport(); return; }
+      const frame=parent.document.getElementById('gamma-light-frame');
+      if(!frame) return;
+      const rect=frame.getBoundingClientRect();
+      const head=parent.document.querySelector('.stage-sketch-head');
+      const timeline=parent.document.getElementById('stage-timeline-panel');
+      const top=Math.max(0,rect.top,head?.getBoundingClientRect().bottom||0);
+      const frameBottom=Math.min(parent.innerHeight,rect.bottom);
+      const stripBottom=Math.min(frameBottom,
+        timeline?.getClientRects().length ? timeline.getBoundingClientRect().top : parent.innerHeight);
+      // 200px leaves space for the shared 34px controls and some scrollable
+      // content. The ordinary 360px timeline keeps its current layout.
+      const stacked=stripBottom-top<200 && frameBottom>stripBottom;
+      workspace?.toggleAttribute('data-gamma-light-dialog-stacked',stacked);
+      const bottom=stacked?frameBottom:stripBottom;
+      root.style.setProperty('--gamma-light-dialog-top',`${Math.max(0,top-rect.top)}px`);
+      root.style.setProperty('--gamma-light-dialog-height',`${Math.max(0,bottom-top)}px`);
+    };
+    clearDialogViewport();
+    window.addEventListener('pagehide',clearDialogViewport);
+    parent.addEventListener('resize',syncDialogViewport);
+    parent.document.getElementById('view-stage')?.addEventListener('scroll',syncDialogViewport,{passive:true});
+    const timeline=parent.document.getElementById('stage-timeline-panel');
+    if(timeline) {
+      new MutationObserver(syncDialogViewport).observe(timeline,{attributes:true,attributeFilter:['class','style','hidden']});
+      new ResizeObserver(syncDialogViewport).observe(timeline);
+    }
+    new ResizeObserver(syncDialogViewport).observe(parent.document.getElementById('gamma-light-frame'));
     document.addEventListener('pointerdown',event=>{
       if(dialog.hidden) trigger=event.target.closest('button');
     },true);
     document.addEventListener('keydown',()=>{if(dialog.hidden) trigger=document.activeElement;},true);
     new MutationObserver(()=>{
+      syncDialogViewport();
       const next=dialog.hidden?null:dialog.querySelector('.in');
       if(next===box) return;
       release?.();release=null;box=next;
@@ -196,11 +251,11 @@
         changedElsewhere=true;renderSaveStatus();
         message('ショーが更新されています。照明の編集中データは保持しています。「控え・書き出し」からファイルへ控えてください');
       } else {synchronizePieces(next);synchronizeVenueMask(next);state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));}
-      active=true;setMode(mode);window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);return;
+      active=true;setMode(mode);window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);hooks.refreshCuePlacements();return;
     }
     if(context?.showId===next.showId && context.basis===next.basis) {
       synchronizePieces(next);synchronizeVenueMask(next);synchronizeFrontSeats(next); state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
-      active=true;setMode(mode);window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);return;
+      active=true;setMode(mode);window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);hooks.refreshCuePlacements();return;
     }
     saveDraft();loading=true;
     try {
@@ -238,7 +293,7 @@
       hooks.refreshApplyState();draftState=state.dirty?'saved':'none';applyError='';appliedNotice='';renderSaveStatus();state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
       lastScene=state.scenes[state.sceneIndex].id;
       state.seq=Date.now(); // avoids collisions with fixture / cue IDs imported from earlier sessions
-      active=true;setMode(mode);window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);
+      active=true;setMode(mode);window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);hooks.refreshCuePlacements();
       // Mode setup may normalize the first scene too; only a fresh host load
       // becomes the applied baseline. A restored draft must keep its differences.
       if(!dirty) hooks.markApplied();

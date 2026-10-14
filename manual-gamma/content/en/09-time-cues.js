@@ -110,8 +110,9 @@ ${grid([fig("58-vox-panel", "The dialogue cue panel. The box at the top is the c
         html: `
 ${fig("release058-run-of-show", "Run of show with the Paper settings layer open from the left band: language, paper size, paper colour, text size and view scale are changed together here.", "Run of show with the Paper settings layer")}
 <p>The run of show's left menu contains the column list and an independent row view selector (scenes, scenes with transitions, or cues). Paper settings control language, paper size, paper colour and the overall font size. Display zoom changes only the on-screen scale, not the printed paper size.</p><p>Select cells or columns to set a font, 8–32pt size, bold, italic, underline, text and fill colours, horizontal and vertical alignment, and borders. Cell settings override column settings. Clear formatting returns to the standard style. Use undo and redo in the header. Styles are kept in saved shows, JSON export and import, distributed HTML and printouts. The stage panel stacks the front and plan views vertically.</p>
-<p>The ${ui("Q sheets")} tab (the ${ui("Q sheets")} icon in the header opens the same) lists the Q sheets, each with ${ui("View")}, ${ui("Print")} and ${ui("CSV")}.</p>
-${fig("34-tab-cuesheet", "The Q sheets tab: Summary (master sheet), By performer, Departments (lights, music cue, dialogue cues, stage management and changes, props, positions) and Not in the roster.", "Q sheet list")}
+<p>Q sheets are part of ${ui("Run of show")}. In its left menu, select a ${ui("Performer")} or ${ui("Departments")} to show its Q sheet in the centre. ${ui("Master sheet (cast scene chart)")} opens the whole-show plot; ${ui("Handover pack")} opens the selected performer’s material. Use ${ui("Run of show")} to return to the paper you were editing. The header and export-window Q-sheet entries open the same workspace.</p>
+${fig("34-tab-cuesheet", "Earlier Q sheets tab capture: Summary (master sheet), By performer, Departments (lights, music cue, dialogue cues, stage management and changes, props, positions) and Not in the roster.", "Q sheet list")}
+${fig("release062-q-sheets", "Master sheet opened from the Run of show left menu (v0.3.62).", "Q sheets inside Run of show")}
 ${table(["Group", "Sheet", "Contents"], [
   ["Summary", "Master sheet", "Scenes down, performers and departments across — everyone on one sheet. Laid out by cue (scene | cue | note), with music and lines in their own tables"],
   ["By performer", "One per performer", "Their entrances and exits, positions, poses, facing, held items and notes. Doubles as a handover sheet for an understudy"],
@@ -119,7 +120,7 @@ ${table(["Group", "Sheet", "Contents"], [
   ["Not in the roster", "Unregistered pieces", "Pieces not registered as performers"]
 ])}
 ${fig("64-cuesheet-overall", "The master sheet opened with View: scenes down, performers across, with a dot where someone is on. A4 preview, Print and CSV at the top right.", "Master sheet")}
-<p>${ui("View")} opens the sheet full screen; ${ui("A4 preview")} (portrait or ${ui("Landscape")}) checks the print layout; ${ui("Print")} goes to the browser's print dialog; ${ui("CSV")} saves a file for spreadsheets. Performers appear in the order of the performer list. Cue names follow the numbering in ${ref("cues", "9-3")}, and nothing in the saved show changes.</p>
+<p>Selecting a target opens its sheet in the centre of Run of show; ${ui("A4 preview")} (portrait or ${ui("Landscape")}) checks the print layout; ${ui("Print")} goes to the browser's print dialog; ${ui("CSV")} saves a file for spreadsheets. Performers appear in the order of the performer list. Cue names follow the numbering in ${ref("cues", "9-3")}, and nothing in the saved show changes.</p>
 ${vid("qsheet-print", "In H-3, open the master sheet, preview it in landscape A4 and open the printable page.")}`
       },
       {
@@ -143,7 +144,7 @@ ${vid("qsheet-print", "In H-3, open the master sheet, preview it in landscape A4
     "Shift",
     "Space"
   ],
-  "html": "<p>Click Column visibility in Run of show to expand or collapse its controls. Collapsing does not change selected columns. LX-panel Q selection reveals the corresponding timeline position. Disabled cues are grey; selecting an unplaced cue never adds a timeline mark.</p>" + "<p>Create scenes and transitions in Stage; their timeline add buttons are hidden. LX + selects an existing Q and places it at the playhead, or drag its Q number onto the LX lane. Unplacing keeps the Q registered with no assigned time. Repositioning does not add a mark or change the Q number. Disabled Qs appear dashed and are skipped by GO playback and cue stepping. TC text matches neighbouring controls.</p>" + fig("release061-run-of-show", "v0.3.60 run-of-show", "run-of-show")
+  "html": "<p>Click Column visibility in Run of show to expand or collapse its controls. Collapsing does not change selected columns. LX-panel Q selection reveals the corresponding timeline position. Disabled cues are grey; selecting an unplaced cue never adds a timeline mark.</p>" + "<p>Create scenes and transitions in Stage; their timeline add buttons are hidden. LX + selects an existing Q and places it at the playhead, or drag its Q number onto the LX lane. Unplacing keeps the Q registered with no assigned time. Repositioning does not add a mark or change the Q number. Disabled Qs appear dashed and are skipped by GO playback and cue stepping. TC text matches neighbouring controls.</p>" + fig("release062-run-of-show", "Run of show left menu and column visibility (v0.3.62).", "run-of-show")
 }
     ]
   });

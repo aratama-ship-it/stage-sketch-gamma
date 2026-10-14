@@ -94,7 +94,7 @@
     ["#stage-shows-open", ["見本", "サンプル", "sample", "example"]],
     ["#stage-pref-keys button", ["ショートカット", "キーボード", "shortcut", "keyboard"]],
     ["#stage-piece-pose", ["姿勢", "ポーズ", "pose", "posture"]],
-    ["#gamma-cuesheet", ["出ハケ", "出はけ", "入退場", "entrances", "exits", "cue sheet"]],
+    ["#stage-export-open-cuesheet, #stage-cue-sheet-open", ["Qシート", "出ハケ", "出はけ", "入退場", "entrances", "exits", "cue sheet"]],
     ["#stage-reach-open", ["Lite", "ライト版", "簡易版", "edition"]],
     ["#stage-freecam-open", ["視界", "視点", "viewpoint", "first person"]],
     ['[data-machinery-quick="front-scrim"]', ["スクリム", "紗幕", "scrim", "gauze"]],
@@ -579,7 +579,19 @@
       if (target.matches("label.stage-import-label") && !target.hasAttribute("tabindex")) target.tabIndex = -1;
       try { target.focus({ preventScroll: true }); } catch (_) { /* フォーカスできない要素もある */ }
       /* ヘッダーのタブだけは押して開く（タブは画面の切り替えで、ショーのデータを変えない。「Qシート」で Qシートの画面に着くため） */
-      if (target.closest("#stage-workspace-tabs") && !target.disabled) target.click();
+      const cueRoute=["stage-cue-sheet-open","stage-export-open-cuesheet","stage-export-tab-cuesheet"].includes(target.id);
+      if ((target.closest("#stage-workspace-tabs") || cueRoute) && !target.disabled) {
+        if(target.id==="stage-export-tab-cuesheet")doc.getElementById("stage-export-open-cuesheet")?.click();else target.click();
+      }
+      if(cueRoute){
+        // The export window closes when Q sheets open. Keep focus on a visible
+        // entry instead of the now-hidden button inside that window.
+        if(!await waitFor(()=>doc.getElementById("gamma-run-of-show-frame")?.contentDocument?.body?.classList.contains("showing-cue-sheet"),10000)){
+          announce(fill(tx("「{name}」はいま開けません。"),{name}));return;
+        }
+        target=doc.getElementById("gamma-run-of-show");
+        target?.focus({preventScroll:true});
+      }
       highlight(target.matches("summary") ? target.parentElement : target);
       announce(fill(tx("「{name}」へ移動しました。"), { name }));
     } finally { going = false; }

@@ -15,7 +15,8 @@ ${grid([
   fig("35-tab-3d", "3D opened (C-1).", "3D tab"),
   fig("36-tab-3d-turned", "After dragging to look to the right.", "Looking around in 3D")
 ])}
-<p>A key guide sits at the bottom left.</p>
+<p>The controls along the bottom group viewpoints, the current camera position and the ? key guide. Lighting, lens and house controls sit at the edge to leave more room for the drawing.</p>
+${fig("release062-3d", "3D controls and exit button (J-2, v0.3.62).", "Current 3D controls")}
 ${table(["Control", "What it does"], [
   ["Click", "Select a performer"],
   [kbd("W") + kbd("A") + kbd("S") + kbd("D"), "Move forward, left, back, right"],
@@ -34,7 +35,7 @@ ${table(["Button", "Meaning"], [
   [ui("Front row") + " / " + ui("Stalls centre") + " / " + ui("Stalls rear") + " / " + ui("Stalls side") + " / " + ui("Balcony"), "The house viewpoints, in the same order and with the same names as the seat buttons above the front view. Viewpoints you renamed or added in Theatre settings appear here too."],
   [ui("Stage left wing") + " / " + ui("Stage right wing") + " / " + ui("Overhead") + " / " + ui("Upstage"), "Jump the camera to a fixed position"]
 ])}
-<p>On the right: ${ui("Lighting effects")} and ${ui("Work lights")}, small ${ui("Front view")} and ${ui("Plan view")} windows (show or hide), the lenses ${ui("Ultra-wide")}, ${ui("Wide")} and ${ui("Standard")}, and ${ui("Full house")} / ${ui("Empty house")} (the audience on the night, or the empty room before they come in). The ✕ at the top right closes 3D. Turn round from upstage to see how the house surrounds you; in a venue in the round it goes all the way.</p>
+<p>On the right: ${ui("Lighting effects")} and ${ui("Work lights")}, small ${ui("Front view")} and ${ui("Plan view")} windows (show or hide), the lenses ${ui("Ultra-wide")}, ${ui("Wide")} and ${ui("Standard")}, and ${ui("Full house")} / ${ui("Empty house")} (the audience on the night, or the empty room before they come in). Use Exit 3D or Esc to close 3D. Turn round from upstage to see how the house surrounds you; in a venue in the round it goes all the way.</p>
 ${fig("69-3d-rj", "3D in the sample “Romeo and Juliet” (scene 1-3). Viewpoint buttons along the bottom (free camera, each performer, house); lenses and full/empty house on the right.", "3D controls")}
 ${vid("fpv-look", "“Romeo and Juliet” (scene 1-3) in 3D: looking around, walking forward with W, seeing through Romeo's eyes, then moving to Stalls centre.")}`
       },

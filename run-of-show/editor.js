@@ -6,6 +6,7 @@
   const canReadCues=typeof bridge?.cues==="function"&&Boolean(parent.SHOSAI_CUE_SHEET&&parent.STAGE_TIME_DOMAIN);
   const runOnly=Boolean(parent.RUN_SHELL_CORE)&&new URLSearchParams(location.search).get("host")==="run";
   const lite=bridge?.edition?.()==="lite";
+  const readOnlyPaper=()=>Boolean(parent.SHOSAI_STAGE_CUE_SHEET_HOST?.readOnly?.());
   if(runOnly||lite){document.body.classList.add(lite?"lite-paper":"run-paper");const css=document.createElement("link");css.rel="stylesheet";css.href="../run.css?v=20261012-v0358";if(lite)css.media="screen";document.head.append(css);}
   if(!bridge){document.body.textContent="舞台スケッチγの進行表タブから開いてください。";return;}
   let packet;try{packet=bridge.read();}catch(error){document.body.textContent=error.message;return;}
@@ -126,7 +127,7 @@
   const layout=window.ROSLayout,columnSets=layout.COLUMN_SETS;
   let selection={kind:"none"},cellAlign={},cellStyles={},cueNotes={},stageByItem={},rowMode="scene-transition",pendingImageTarget=null;
   // 2026-10-07 G1: device settings (localStorage). None of them is written into the show.
-  const store=(key,value)=>{try{if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,String(value));}catch(error){showError(error);}};
+  const store=(key,value)=>{if(readOnlyPaper())return;try{if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,String(value));}catch(error){showError(error);}};
   const readNumber=key=>{try{const value=localStorage.getItem(key);return value===null?null:Number(value);}catch(_){return null;}};
   const COLUMN_OPEN_KEY="gamma:ros:columns-open",columnAccordion=$("column-popover");
   try{columnAccordion.open=localStorage.getItem(COLUMN_OPEN_KEY)==="1";}catch(_){}
@@ -557,7 +558,7 @@
       stagePanelOpen=saved===null
         ? localStorage.getItem('gamma:ros:stage-figures')!=='0' && localStorage.getItem('gamma:ros:stage-panel-collapsed')!=='1'
         : saved==='1';
-      if(saved===null)localStorage.setItem(stagePanelKey,stagePanelOpen?'1':'0');
+      if(saved===null&&!readOnlyPaper())localStorage.setItem(stagePanelKey,stagePanelOpen?'1':'0');
     }
     indexPanelCollapsed=localStorage.getItem('gamma:ros:index-panel-collapsed')==='1';
   } catch(_) {}
@@ -1035,7 +1036,92 @@
   let sizeFrame=0;addEventListener("resize",()=>{cancelAnimationFrame(sizeFrame);sizeFrame=requestAnimationFrame(()=>{applyPaperSize();queueTrack();});});
   // "Auto" follows Stage Sketch's language: its <html lang> changes when the person switches the language there.
   try{new MutationObserver(()=>{if(languageMode==="auto"){renderDocumentInfo();renderFlow();renderPaper();}else syncLanguage();if(lite)renderFields();}).observe(parent.document.documentElement,{attributes:true,attributeFilter:["lang"]});}catch(_){}
-  window.GAMMA_RUN_OF_SHOW_EDITOR={refresh,refreshIfChanged(){if(!paperEditor.active&&bridge.read().token!==token)refresh();},finish:()=>paperEditor.finish(),hasDraft:()=>paperEditor?.hasDraft,
+  const cueHost=parent.SHOSAI_STAGE_CUE_SHEET_HOST,cueFrame=$("cue-sheet-frame");
+  let cueView=false,cueMounted=false,cueMounting=false,cuePending=null;
+  function syncCueReadOnly(){
+    const readOnly=readOnlyPaper();
+    document.body.classList.toggle("readonly-cue-shell",readOnly);
+    for(const node of document.querySelectorAll('#paper-band > :not(#band-cues),.doc-frame,#authoring,#ros-index'))node.inert=readOnly;
+    return readOnly;
+  }
+  function syncCueChoices(){
+    const readOnly=syncCueReadOnly();
+    const available=!lite&&!runOnly&&Boolean(cueHost?.available?.());
+    $("band-cues").hidden=!available;
+    if(!available)return;
+    const selection=cueHost.selection(),choices=cueHost.choices();
+    for(const [id,kind] of [["cue-performer","performer"],["cue-department","department"]]){
+      const picker=$(id),previous=picker.value;
+      picker.replaceChildren(new Option("—",""),...choices.filter(choice=>choice.kind===kind).map(choice=>new Option(kind==="department"?uiText(choice.label):choice.label,choice.key)));
+      picker.value=(selection&&(selection.kind===kind||kind==="performer"&&selection.kind==="handover"))?selection.key:previous;
+      if(!picker.value)picker.value="";
+    }
+    $("cue-handover").disabled=!$("cue-performer").value;
+    $("cue-master").setAttribute("aria-pressed",String(cueView&&selection?.kind==="master"));
+    $("cue-handover").setAttribute("aria-pressed",String(cueView&&selection?.kind==="handover"));
+    $("cue-return").hidden=!cueView||readOnly;
+  }
+  function syncCueSkin(){
+    const doc=cueFrame.contentDocument;if(!doc?.documentElement)return;
+    doc.documentElement.lang=parent.document.documentElement.lang||"ja";
+    doc.documentElement.dataset.stageSkin=parent.document.documentElement.dataset.stageSkin||"warm-black";
+    parent.GAMMA_UI?.translateDOM?.(doc.body,{language:uiLanguage(),lookup:uiText});
+  }
+  function finishCueOpen(){
+    if(!cueMounted||!cuePending)return;
+    const requested=cuePending;cuePending=null;
+    if(!cueHost.show(requested.kind,requested.key)){showRunOfShow();return;}
+    cueView=true;document.body.classList.add("showing-cue-sheet");cueFrame.hidden=false;
+    syncCueSkin();syncCueChoices();
+  }
+  function mountCueFrame(){
+    cueFrame.addEventListener("load",()=>{
+      const doc=cueFrame.contentDocument;if(cueMounted||!doc?.getElementById("gamma-cuesheet-workspace"))return;
+      for(const sheet of parent.document.querySelectorAll('link[rel="stylesheet"]')){
+        if(!/\/(?:style|gamma|gamma-ui|gamma-ui-tokens)\.css(?:\?|$)/.test(sheet.href))continue;
+        const link=doc.createElement("link");link.rel="stylesheet";link.href=sheet.href;doc.head.append(link);
+      }
+      const style=doc.createElement("style");style.textContent="html,body{height:100%;margin:0;padding:0;overflow:hidden}#gamma-cuesheet-workspace{height:100%;padding:0}#stage-cue-sheet-back{display:none}#gamma-cuesheet-workspace .stage-modal-body{padding:12px}#gamma-cuesheet-workspace .stage-cue-sheet-view-bar{flex-wrap:wrap}";doc.head.append(style);
+      cueMounted=cueHost.mount(doc.getElementById("gamma-cuesheet-workspace"));
+      doc.addEventListener("keydown",event=>{
+        if(event.isComposing)return;
+        if(event.key==="Escape"&&!event.target.matches("input,textarea,select,[contenteditable=true]")){event.preventDefault();if(cueHost.readOnly())parent.GAMMA_WORKSPACE.normal();else{showRunOfShow();$("cue-performer").focus({preventScroll:true});}}
+        if(!(event.metaKey||event.ctrlKey))return;
+        if(cueHost.readOnly()&&["s","z"].includes(event.key.toLowerCase())){event.preventDefault();return;}
+        if(event.key.toLowerCase()==="s"){event.preventDefault();bridge.save().catch(showError);}
+        if(event.key.toLowerCase()==="z"&&!event.target.matches("input,textarea,[contenteditable=true]")){event.preventDefault();if(event.shiftKey)bridge.redo();else bridge.undo();cueHost.refresh();}
+      });
+      syncCueSkin();finishCueOpen();
+    });
+    cueFrame.srcdoc='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><section id="gamma-cuesheet-workspace" aria-label="Qシート"></section></body></html>';
+  }
+  function showCueSheet(kind,key){
+    if(!cueHost?.available?.()||lite||runOnly)return false;
+    if(!syncCueReadOnly()&&!paperEditor?.finish()) {syncCueChoices();return false;}
+    closeBandLayers();
+    const choices=cueHost.choices(),saved=cueHost.selection();
+    const pick=kind?{kind,key}:saved&&choices.some(choice=>choice.kind===(saved.kind==="handover"?"performer":saved.kind)&&choice.key===saved.key)?saved:choices.find(choice=>choice.kind==="performer")||choices[0];
+    if(!pick)return false;
+    cuePending={kind:pick.kind,key:pick.key};
+    if(!cueMounted){if(!cueMounting){cueMounting=true;mountCueFrame();}}else finishCueOpen();
+    return true;
+  }
+  function showRunOfShow(){
+    cuePending=null;cueView=false;cueFrame.hidden=true;document.body.classList.remove("showing-cue-sheet");cueHost?.close?.();syncCueChoices();return true;
+  }
+  $("cue-performer").addEventListener("change",event=>{if(event.target.value)showCueSheet("performer",event.target.value);else syncCueChoices();});
+  $("cue-department").addEventListener("change",event=>{if(event.target.value)showCueSheet("department",event.target.value);else syncCueChoices();});
+  $("cue-master").addEventListener("click",()=>showCueSheet("master","master"));
+  $("cue-handover").addEventListener("click",()=>showCueSheet("handover",$("cue-performer").value));
+  $("cue-return").addEventListener("click",showRunOfShow);
+  // Existing paper controls stay live; using one returns to the retained paper first.
+  $("paper-band").addEventListener("click",event=>{if(cueView&&!event.target.closest("#band-cues"))showRunOfShow();},true);
+  $("paper-band").addEventListener("change",event=>{if(cueView&&!event.target.closest("#band-cues"))showRunOfShow();},true);
+  new MutationObserver(()=>{syncCueSkin();syncCueChoices();if(cueView)cueHost.refresh();}).observe(parent.document.documentElement,{attributes:true,attributeFilter:["lang","data-stage-skin"]});
+  new MutationObserver(()=>{if(document.body.classList.contains("readonly-cue-shell")===readOnlyPaper())return;syncCueChoices();if(cueView)cueHost?.refresh?.(true);}).observe(parent.document.body,{attributes:true,attributeFilter:["class"]});
+  syncCueChoices();
+  window.GAMMA_RUN_OF_SHOW_EDITOR={refresh,refreshIfChanged(){if(!paperEditor.active&&bridge.read().token!==token){refresh();syncCueChoices();if(cueView)cueHost.refresh();}},finish:()=>paperEditor.finish(),hasDraft:()=>paperEditor?.hasDraft,
+    showCueSheet,showRunOfShow,
     selectScene(id){const found=items.find(i=>i.sceneId===id);if(found){selected=found.id;render();}},
     getDocument:()=>files.clone(packDocument())};
   storageReady=true;setBusy(false);

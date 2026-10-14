@@ -10,26 +10,26 @@
         id: "header", title: "The header", status: "verified",
         keywords: ["header", "top bar", "icons", "undo", "redo", "mistake", "settings", "gear", "feedback", "ai", "full screen", "bell", "notifications", "share", "print", "volume", "elapsed time", "TC", "timecode"],
         html: `
-<p>The header has the logo and version on the left, the eight tabs at the top right, and below them the TC, volume and the tool icons. From v0.2.15 the header stays put while the side panels and the central drawings each scroll on their own.</p>
+<p>The header has the logo and version on the left, seven workspace tabs, the TC, volume and tool icons. On narrower windows, control groups move onto the next row. From v0.2.15 the header stays put while the side panels and the central drawings each scroll on their own.</p>
 ${fig("01-first-open", "The header. Logo and version on the left, tabs at the top right, and on the second row TC, volume, undo/redo, feedback, AI, the gear and the other icons.", "Header layout")}
 ${table(["Where", "Name", "What it does"], [
   ["Left", "Logo and version", "The version number (for example 0.2.19). Please include it when reporting a problem"],
-  ["Top right", "Tabs (Stage / Theatre settings / Equipment placement / Light design / Lines / 3D / Q sheets)", "Switch where you are working (" + ref("tabs", "2-2") + ")"],
-  ["Second row", ui("TC"), "Current playhead timecode (hours:minutes:seconds.tenths)"],
-  ["Second row", ui("Volume"), "Playback volume for audio"],
-  ["Second row", ui("Undo") + " / " + ui("Redo"), kbd("⌘Z") + " / " + kbd("⇧⌘Z") + " (Ctrl on Windows). The first thing to try after a mistake"],
-  ["Second row", ui("Send feedback"), "The feedback window (" + ref("feedback", "Part 14, 14-3") + ")"],
-  ["Second row", "✦ (AI)", "Opens the AI showwright page in a new tab — a guide for having an AI write a show as JSON (" + ref("ai-showwright", "Part 11, 11-6") + ")"],
-  ["Second row", "⚙ " + ui("Settings"), "Preferences: language, skin, features and panels, help, reset (" + ref("prefs-overview", "Part 12") + ")"],
-  ["Second row", ui("Full screen"), kbd("F") + ". Fill the screen with the drawing (" + ref("fullscreen", "Part 11, 11-7") + ")"],
-  ["Second row", ui("Q sheets"), "Opens the list of Q sheets (the same as the Q sheets tab; " + ref("cuesheet", "Part 9, 9-6") + ")"],
-  ["Second row", ui("Export, save & print"), "Export images, open the print sheet, or export the show, Q sheets and venues (" + ref("export", "Part 11, 11-1") + ")"],
-  ["Second row", ui("Sharing"), "Live sharing and performer links on Gamma's dedicated host (" + ref("share", "Part 11, 11-4") + ")"],
-  ["Second row", "Bell — " + ui("Notifications and update history"), "What changed in each version. A dot appears when there is something new"]
+  ["Top right", "Tabs (Stage / Theatre settings / Equipment placement / Light design / Lines / 3D / Run of show)", "Switch where you are working (" + ref("tabs", "2-2") + ")"],
+  ["Controls", ui("TC"), "Current playhead timecode (hours:minutes:seconds.tenths)"],
+  ["Controls", ui("Volume"), "Playback volume for audio"],
+  ["Controls", ui("Undo") + " / " + ui("Redo"), kbd("⌘Z") + " / " + kbd("⇧⌘Z") + " (Ctrl on Windows). The first thing to try after a mistake"],
+  ["Controls", ui("Send feedback"), "The feedback window (" + ref("feedback", "Part 14, 14-3") + ")"],
+  ["Settings, left column", "✦ (AI Showwright)", "Below the Mac app links, opens the AI showwright page in a new tab — a guide for having an AI write a show as JSON (" + ref("ai-showwright", "Part 11, 11-6") + ")"],
+  ["Controls", "⚙ " + ui("Settings"), "Preferences: language, skin, features and panels, help, reset (" + ref("prefs-overview", "Part 12") + ")"],
+  ["Controls", ui("Full screen"), kbd("F") + ". Fill the screen with the drawing (" + ref("fullscreen", "Part 11, 11-7") + ")"],
+  ["Controls", ui("Q sheets"), "Opens Run of show with the selected Q sheet in its centre ( " + ref("cuesheet", "Part 9, 9-6") + ")"],
+  ["Controls", ui("Export, save & print"), "Export images, open the print sheet, or export the show, Q sheets and venues (" + ref("export", "Part 11, 11-1") + ")"],
+  ["Controls", ui("Sharing"), "Live sharing and performer links on Gamma's dedicated host (" + ref("share", "Part 11, 11-4") + ")"],
+  ["Controls", "Bell — " + ui("Notifications and update history"), "What changed in each version. A dot appears when there is something new"]
 ])}`
       },
       {
-        id: "tabs", title: "The eight tabs (number keys 1–5)", status: "verified",
+        id: "tabs", title: "The seven tabs (number keys 1–5)", status: "verified",
         keywords: ["tabs", "switch", "stage", "theatre settings", "equipment placement", "light design", "lines", "3d", "Q sheets", "number keys", "mode"],
         html: `
 ${table(["Tab", "Key", "What it is for", "Part"], [
@@ -39,8 +39,7 @@ ${table(["Tab", "Key", "What it is for", "Part"], [
   [ui("Light design"), kbd("4"), "Build LX cues for each scene (colour, level, direction, spread, movement) and apply them to the show", ref("light-design", "Part 7, 7-5")],
   [ui("Lines"), "—", "Write the script on one screen and link lines to cues", ref("script", "Part 9, 9-4")],
   [ui("3D"), kbd("5"), "Walk through the stage in 3D, or see through a performer's eyes", ref("fpv-basics", "Part 10")],
-  [ui("Q sheets"), "—", "View, print or save as CSV the master sheet and the per-performer and per-department sheets", ref("cuesheet", "Part 9, 9-6")],
-  [ui("Run of show"), "—", "Edit scenes and cues, paper size, font size and print output", ref("print", "Part 11")]
+  [ui("Run of show"), "—", "Edit scenes and cues; use the left menu to open, print or export the master, performer and department Q sheets", ref("print", "Part 11")]
 ])}
 <p>Number keys do nothing while you are typing or while a confirmation window is open. When you leave ${ui("Light design")} with unapplied LX cues, the app asks whether to apply them (${ref("lx-apply", "Part 7, 7-6")}).</p>
 ${note("In a new show some tabs are closed", "Until the theatre has been applied, " + ui("Equipment placement") + ", " + ui("Light design") + " and " + ui("3D") + " cannot be opened. They open once you press " + ui("Apply this theatre") + " in " + ui("Theatre settings") + " (" + ref("venue-gate", "Part 3, 3-2") + ").")}`
@@ -111,7 +110,7 @@ ${table(["Icon", "Name", "Key", "What it does"], [
   ["▾", "Which views", kbd("T"), ui("Front") + " / " + ui("Plan") + " / " + ui("Both 1") + " (front on top) / " + ui("Both 2") + " (plan on top). The lower right of the drawing also has front/plan switches"]
 ])}
 <p>Each view has its own row at its top right. The plan has ${ui("Draw route")}, ${ui("Draw from next")} and ${ui("Clear route")}; both views have ${ui("Add a note")}, name tags and — while the arrow tool is in hand — ${ui("Clear arrows")} (clears that view's arrows only). ＋ and − at the lower right zoom the view, and ${ui("Front")} / ${ui("Plan")} show one view large.</p>
-<p>Performer names stay steady in the front view, plan and 3D while idle motion moves their bodies. During a scene transition, the names follow the performers as they change position.</p>
+<p>Idle motion during playback is off by default in Settings. With it on, standing performers gently shift their weight while both feet stay in place. Saved positions and facing do not change. Performer names stay steady in the front view, plan and 3D while idle motion moves their bodies. During a scene transition, the names follow the performers as they change position.</p>
 ${fig("release057-idle-names", "H-1 with idle motion enabled. Name tags stay steady as the bodies move.", "Idle motion and performer names")}
 ${fig("11-G-arrows", "With the arrow tool in hand, a button to clear that view's arrows appears at the top right of the view.", "Drawing with the arrow tool")}
 <p>With ${ui("Icon tips")} on in Settings (on by default), hovering over an icon shows its name, key and how to use it. Switch it off once you know them.</p>`
@@ -151,7 +150,7 @@ ${table(["Key", "What it does"], [
     "Shift",
     "Space"
   ],
-  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release059-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release061-stage", "v0.3.60 stage", "stage")
+  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release059-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release062-stage", "Stage toolbar (v0.3.62).", "stage")
 }
     ]
   });
