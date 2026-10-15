@@ -31,6 +31,16 @@
   "use strict";
 
   const TEXT = {
+    // v0.3.72 release notes
+    "Mac版で、ベータ版の書き出しJSONや以前の.stagesketchファイルを直接開けます。開く前に、新しいプロジェクト（.stageproj）として開き、元のファイルは変更しないことを知らせます。名前のない新しいプロジェクトとして開きます。": "On Mac, you can open beta JSON exports and older .stagesketch files directly. Before opening, a notice explains that a new project (.stageproj) will be created and the original file will remain unchanged. The file opens as a new untitled project.",
+    "リハーサルで、シーンごとの予定（見せる時間＋転換）・実際の時間・差と、ここまでの合計の差を確認できます。振り返りの表は差の大きい順に並べ替えられ、時間はランの記録にも残ります。": "In rehearsal, compare each scene's planned time (hold plus transition), actual time and difference, along with the cumulative difference. Sort the review table by the largest difference; timings are also saved with the run.",
+    "リハーサルの「振り返り・書き出し」欄を常に表示します。": "The rehearsal Review and export section is always visible.",
+    "リハーサルでGOすると、ヘッダーのTCも進行に合わせて進みます。": "Pressing GO in rehearsal also advances the header timecode with playback.",
+    "リハーサルの「前の図・次の図」を舞台タブと同じアイコンにしました。": "Previous and next drawing in rehearsal now use the same icons as the Stage tab.",
+    "進行表の書式を、左パネルの「書式」欄へ移しました。": "Run-of-show formatting tools are now in the Format section of the left panel.",
+    "見本を開いた直後などに、タブが押せないままになる不具合を修正しました。": "Fixed tabs remaining disabled after opening a sample or completing venue setup.",
+
+    "書式": "Format",
     "リハーサルタブで、図の参照先と実際の進行位置を分け、同じ箇所の試行回数を記録できるようになりました。": "In the Rehearsal tab, browse diagrams separately from the running position and record repeated attempts at the same passage.",
     "リハーサルの休憩・振り返り・確定を整理しました。確定後も補足を追記でき、記録はランごとに保存されます。": "Rehearsal breaks, review and finalisation are clearer. Add supplementary notes after finalisation; records are saved separately for each run.",
     "リハーサルを画面いっぱいの固定配置にしました。右の机の幅、ペンの太さ、正面図・平面図・両方の表示を変えられ、ペン・手・消しゴムを1列にまとめました。": "Rehearsal now fills the window with a fixed layout. Resize the right-hand desk, adjust pen thickness and switch between front, plan or both views. Pen, pan and eraser share one toolbar.",
@@ -4923,4 +4933,23 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "記録図の道具": "Drawing tools",
   "正面図の拡大表示を切り替える": "Toggle enlarged front view",
   "平面図の拡大表示を切り替える": "Toggle enlarged plan view"
+});
+
+// Rehearsal planned / actual durations (optional v1 run data).
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "予定（見せる＋転換）": "Planned (hold + transition)",
+  "実際": "Actual",
+  "実測中": "Measuring",
+  "計測停止": "Timer stopped",
+  "今回の試行": "This attempt",
+  "予定より {time} 遅れ": "{time} behind plan",
+  "予定より {time} 早い": "{time} ahead of plan",
+  "予定どおり": "On plan",
+  "シーンの所要時間": "Scene durations",
+  "予定＝タイムラインの見せる時間＋転換（記録開始時のショー）": "Planned = timeline hold + transition (show snapshot at run start)",
+  "差の大きい順": "Largest difference first",
+  "試行・シーン": "Attempt / scene",
+  "予定": "Planned",
+  "差": "Difference",
+  "計測途中": "Partial"
 });

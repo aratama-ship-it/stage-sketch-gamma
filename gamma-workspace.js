@@ -631,7 +631,7 @@
     document.body.classList.toggle('gamma-venue-setup-required',pending);
     /* 共有の閲覧（読み取り専用）かどうかは、セッションが決まるまで分からない。
        あとから分かったときに、閉じ込めたままにしない。 */
-    if(!pending && gatedToVenue) { gatedToVenue=false; if(mode==='venue-setup') { select('normal'); return; } }
+    if(!pending && gatedToVenue) { gatedToVenue=false; if(mode==='venue-setup') select('normal'); } // keep going: the tab buttons below must be re-enabled too (2026-10-15 Mac legacy open)
     /* ★2026-09-23 本人決定（案A）: 舞台タブは開けるようにする。舞台タブの中は
        「ショー一覧／新規ショー／読み込む／書き出す」だけ生かし、他は inert＋薄く表示
        （syncStageGate）。機材配置・照明デザイン・3Dは今までどおり閉じる。 */

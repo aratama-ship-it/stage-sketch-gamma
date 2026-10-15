@@ -20,12 +20,12 @@
         "zh-Hant": "用於檢查功能與儲存的48個場景，含音源B。",
         "ko": "기능과 저장을 확인하는 48개 장면. 음원 B 포함."
       },
-      "bytes": 967608,
+      "bytes": 967698,
       "version": "v2",
       "libraryVersion": "2026-10-14",
       "hasAudio": true,
       "file": "feature-test.stageproj.zip",
-      "sha256": "bc26f7bfa66eee63ade8f786d3bb5e92a4ac03cbcbca97f4f17f08305fea6b2d"
+      "sha256": "5b48f5ee3ff3d4810a5d15c070de506e51adec623562d7c9918039709eb7d322"
     },
     {
       "id": "feature-test-2",
@@ -49,7 +49,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "feature-test-2.stageproj.zip",
-      "sha256": "3c10d942e6eab663fd51f6b9e726c82acc273b7a9a25e60ee28a14daa3a24645"
+      "sha256": "5a930b21b24e8b3245c8d08b61942e4782275765879882f6ce321a1fb627b23d"
     },
     {
       "id": "eight-circus",
@@ -73,7 +73,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "eight-circus.stageproj.zip",
-      "sha256": "22fd76c8246292b890c87c18339fc4be8e157793a07c3b73a128ce2d2c61446e"
+      "sha256": "e207fdf6a0f00b767f5c2083e6a7955a2c0cbc5e41345c8abf0dc567414521b5"
     },
     {
       "id": "seam-garden",
@@ -97,7 +97,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "seam-garden.stageproj.zip",
-      "sha256": "ec3087535c135e8eb7c0c1407de25bbed7cd424e98184dfb0f8967d6572cbe63"
+      "sha256": "c223b23dabb9dc83bf1b69b2c7e341df5efe176d3bc680eca63aa96b70dac59f"
     },
     {
       "id": "romeo-juliet-cued",
@@ -121,7 +121,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "romeo-juliet-cued.stageproj.zip",
-      "sha256": "74e226f824ed29a06245371ca451a6697d8f223393517ccf44ab1ec5a24d73a5"
+      "sha256": "57a2853cd761487602a6daefca15848dfcbe89c6f13a1d73d9e9e88b9ec4452f"
     },
     {
       "id": "romeo-juliet-second",
@@ -145,7 +145,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "romeo-juliet-second.stageproj.zip",
-      "sha256": "c9ba93255a504b4e8af311a9fb7b1febd23f7538b78808a86010e0004ecf75db"
+      "sha256": "d8f6853b6a9a1fc88a74cbe8ac628e686f7e9f1544e07d5ff7143e69bc2ab239"
     }
   ]
 }

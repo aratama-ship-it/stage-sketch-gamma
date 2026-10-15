@@ -1,8 +1,8 @@
 {
-  "version": "0.3.71",
+  "version": "0.3.72",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.71/stage-sketch-gamma-mac-0.3.71.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.72/stage-sketch-gamma-mac-0.3.72.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "リハーサルの図・進行・記録と固定配置、照明デザインの図の見出し、進行表のセル書式を改善しました。曲はMキューで再生し、タイムラインは時間式で表示します。",
-  "updated": "2026-10-15"
+  "notes": "Macで以前の書き出しを新しいプロジェクトとして開けます。リハーサルの予定・実際・差と振り返りを改善し、進行表の書式を左パネルへ移しました。",
+  "updated": "2026-10-16"
 }

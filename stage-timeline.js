@@ -3507,6 +3507,16 @@
       els.position.textContent=labelPosition(seekSeconds);
       els.play.setAttribute("aria-pressed",String(record.info.playing));els.play.disabled=!record.canPlay;
       els.play.title=els.play.getAttribute('aria-label')||'GO';
+      // The line and the header TC share the isolated rehearsal clock. No editor seek/save.
+      const info=record.info,scene=timeDomain.byId.get(info.sceneId),section=timeDomain.sections.get(scene?.sectionId);
+      const timecodeSeconds=tcSecondsAt(seekSeconds);
+      if(timecodeUI&&document.activeElement!==timecodeUI.seekInput)timecodeUI.seekInput.value=TD.timecodeText(timecodeSeconds);
+      window.dispatchEvent(new CustomEvent("stage-timeline-position-change",{detail:{
+        rehearsal:true,playing:info.playing,sceneId:info.sceneId,sceneSeconds:seekSeconds-(scene?.start||0),
+        seconds:seekSeconds-(section?.start||0),sectionId:scene?.sectionId,showSeconds:seekSeconds,
+        relativeSeconds:timeDomain.valid?seekSeconds-timeDomain.origin:null,timecodeSeconds,timecodeText:TD.timecodeText(timecodeSeconds),
+        transition:info.phase?{fromSceneId:info.phase.fromSceneId,toSceneId:info.phase.toSceneId,progress:info.phase.progress}:null
+      }}));
       keepPlayheadInView();return;
     }
     const playingThisTimeline = els.audio && audioMatchesTimeline();

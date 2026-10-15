@@ -92,6 +92,7 @@ window.ROSLeftPanels={install(band,{store}){
   let order=['band-cues','band-settings','column-popover','panel-0','panel-3','panel-1','panel-4','band-output'];
   // Keep a previously chosen arrangement; this batch does not offer reordering.
   try{const saved=JSON.parse(localStorage.getItem('gamma:ros:left-panels'));if(Array.isArray(saved))order=saved;}catch(_){}
+  if(!order.includes('band-format'))order.unshift('band-format');
   for(const [i,panel] of panels.entries())panel.dataset.rosPanel=panel.id||'panel-'+i;
   for(const id of order){const panel=panels.find(p=>p.dataset.rosPanel===id);if(panel)band.append(panel);}
   for(const panel of panels){
@@ -159,6 +160,7 @@ window.ROSLeftPanels={install(band,{store}){
   const selectionBar=$('band-selection');let pendingColumnFocus=null;
   function syncSelectionBar(){
     selectionBar.hidden=readOnlyPaper()||cueView;
+    $('band-format').hidden=selectionBar.hidden;
     selectionBar.inert=readOnlyPaper();
     $('paper-scene').hidden=selection.kind==='column';
     for(const node of selectionBar.querySelectorAll('button,input,select'))node.disabled=selection.kind==='none'||readOnlyPaper()||(node.id==='paper-scene'&&$('make-scene').disabled);
@@ -1311,9 +1313,9 @@ window.ROSLeftPanels={install(band,{store}){
   if(!lite){
     window.ROSLeftPanels.install($('paper-band'),{store});
     const toggle=el('button','','is-icon ros-left-toggle');toggle.id='ros-left-toggle';toggle.type='button';toggle.dataset.noI18n='';
-    toggle.innerHTML='<svg viewBox="0 0 15 15" aria-hidden="true"><path d="M1 1h13v13H1zM5 1v13"/></svg>';
+    toggle.innerHTML='<span data-ros-text="書式">書式</span><svg viewBox="0 0 15 15" aria-hidden="true"><path d="M1 1h13v13H1zM5 1v13"/></svg>';
     toggle.setAttribute('aria-controls','paper-panel');$('preview').prepend(toggle);
-    const syncToggle=()=>{const label=uiText('操作パネル');toggle.setAttribute('aria-label',label);toggle.title=label;toggle.setAttribute('aria-expanded',String(leftOpen));};
+    const syncToggle=()=>{const label=uiText('操作パネル')+' · '+uiText('書式');toggle.querySelector('span').textContent=uiText('書式');toggle.setAttribute('aria-label',label);toggle.title=label;toggle.setAttribute('aria-expanded',String(leftOpen));};
     toggle.addEventListener('click',()=>{leftOpen=!leftOpen;store(LEFT_OPEN_KEY,leftOpen?'1':'0');syncToggle();applyPaperSize();});syncToggle();
     new MutationObserver(syncToggle).observe(parent.document.documentElement,{attributes:true,attributeFilter:['lang']});
     const handle=el('div','','ros-index-resize ros-left-resize');handle.id='ros-left-resize';handle.tabIndex=0;handle.dataset.noI18n='';

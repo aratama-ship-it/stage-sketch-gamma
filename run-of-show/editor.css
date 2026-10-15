@@ -620,6 +620,7 @@ html[data-stage-skin] :is(.paper-panel,.item-editor,:where(#band-selection)) .is
   }
   body:not(.lite-paper) #preview .doc-frame { height:100%; min-height:0; }
   body:not(.lite-paper) #preview .paper-panel {
+    flex-direction:column;
     position:relative; height:100%; max-height:none; max-width:none; min-height:0;
     padding-top:calc(var(--ctrl-md) + var(--gamma-gap)); padding-right:var(--gamma-gap);
   }
@@ -663,8 +664,20 @@ html[data-stage-skin] #paper-panel :is(input,select,textarea,.gamma-short-select
   body:not(.lite-paper) #preview .paper-panel { overflow:clip; }
 }
 
-/* RD-1: formatting has a stable home above the paper in every editing edition. */
-#band-selection{position:sticky;top:0;z-index:5;flex:0 0 auto;width:100%;max-width:none;max-height:none;overflow:visible;align-items:end;background:var(--desk-2);border:var(--rule) solid var(--line-dark);box-shadow:none;color:var(--milk);padding:var(--gamma-gap)}
+/* FP-1: the existing toolbar lives once inside the left panel disclosure. */
+#paper-band #band-selection{position:static;z-index:auto;display:flex;flex-wrap:wrap;flex:1 1 auto;width:100%;min-width:0;max-width:none;max-height:none;overflow:visible;align-items:end;background:none;border:0;box-shadow:none;color:var(--milk);padding:0;gap:var(--gamma-gap)}
+#paper-band #band-selection .cell-format-fields{flex:1 1 100%;width:100%;min-width:0;flex-wrap:wrap}
+#band-selection .cell-format-fields label{flex:1 1 0;max-width:100%}
+#band-selection :is(#cell-font,#cell-size,#cell-border){width:100%;min-width:0}
+#band-selection .cell-format-size input{flex:1 1 0}
+#paper-band #band-format[hidden]{display:none}
+.ros-left-toggle > span{display:none}
+.ros-left-toggle[aria-expanded=false]{width:auto;padding-inline:var(--gamma-gap);display:flex;align-items:center;gap:var(--gamma-gap)}
+.ros-left-toggle[aria-expanded=false] > span{display:inline}
+/* Lite retains its compact rail and the same single formatting section. */
+body.lite-paper #paper-band #band-format{display:flex;flex-direction:column;align-items:stretch;flex-basis:100%}
+body.lite-paper #band-format > .band-heading{display:block;margin:0;font-size:var(--fs-3);color:var(--brass)}
+body.lite-paper #paper-band #band-selection .cell-format-fields{flex:0 1 auto;width:auto}
 #band-selection[hidden]{display:none}
 #cell-format-target{color:var(--milk);line-height:1.5}
 #band-selection :disabled{cursor:default}

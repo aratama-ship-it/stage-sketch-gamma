@@ -6,7 +6,8 @@
    if(g!==generation||!audio)return;audio.volume=Math.min(1,10**((state.clip.track.gainDb||0)/20));if(Number.isFinite(audio.duration)&&Math.abs(audio.currentTime-state.seconds)>.15)audio.currentTime=Math.min(audio.duration,state.seconds);if(playing){audio.play().catch(()=>{if(playing)onWarning('音を再生できません。GOを押して再開してください。');});}else audio.pause();
   }
   function emit(){onChange(info());void syncAudio();}
-  function tick(now){if(!playing)return;seconds=Math.min(domain.duration,start+(now-at)/1000);if(seconds>=domain.duration)playing=false;emit();if(playing)raf=requestAnimationFrame(tick);}
+  // A frame can begin before the GO/seek handler; never step behind that start.
+  function tick(now){if(!playing)return;seconds=Math.min(domain.duration,start+Math.max(0,now-at)/1000);if(seconds>=domain.duration)playing=false;emit();if(playing)raf=requestAnimationFrame(tick);}
   function pause(){if(playing)seconds=Math.min(domain.duration,start+(performance.now()-at)/1000);playing=false;cancelAnimationFrame(raf);emit();}
   function seek(n){seconds=Math.max(0,Math.min(domain.duration,n));start=seconds;at=performance.now();emit();}
   function go(){if(playing){pause();return;}if(seconds>=domain.duration)seconds=0;playing=true;start=seconds;at=performance.now();emit();raf=requestAnimationFrame(tick);}

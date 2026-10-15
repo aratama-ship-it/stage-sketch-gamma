@@ -4,10 +4,10 @@
 (() => {
   'use strict';
   const ASSETS = Object.freeze({
-    en: 'stage-i18n.js?v=20261015-v0371',
-    'zh-Hans': 'stage-i18n.zh-Hans.js?v=20261015-v0371',
-    'zh-Hant': 'stage-i18n.zh-Hant.js?v=20261015-v0371',
-    ko: 'stage-i18n.ko.js?v=20261015-v0371',
+    en: 'stage-i18n.js?v=20261016-v0372',
+    'zh-Hans': 'stage-i18n.zh-Hans.js?v=20261016-v0372',
+    'zh-Hant': 'stage-i18n.zh-Hant.js?v=20261016-v0372',
+    ko: 'stage-i18n.ko.js?v=20261016-v0372',
     prompt: 'stage-prompt-i18n.js?v=20261013-v0360',
     ui: 'gamma-ui-i18n.js?v=20261010-v0338',
     uiKo: 'gamma-ui-i18n.ko.js?v=20261010-v0338',

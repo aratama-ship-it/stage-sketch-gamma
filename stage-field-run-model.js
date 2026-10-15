@@ -18,6 +18,11 @@
   if(r.viewSceneId!==undefined&&!id(r.viewSceneId))fail('invalid-record');
   if(r.viewFrameId!==undefined&&typeof r.viewFrameId!=='string')fail('invalid-record');
   if(r.phase!==undefined&&!['run','review'].includes(r.phase))fail('invalid-record');
+  if(r.durations!==undefined){
+   const d=r.durations;
+   if(!obj(d)||d.basis!=='timeline-hold-transition'||!Array.isArray(d.visits)||!d.visits.length||d.visits.length>10000)fail('invalid-record');
+   for(const v of d.visits)if(!obj(v)||!id(v.sceneId)||!Number.isSafeInteger(v.attemptNumber)||v.attemptNumber<1||v.attemptNumber>(r.attempts?.length||1)||![v.plannedSeconds,v.actualSeconds].every(n=>typeof n==='number'&&Number.isFinite(n)&&n>=0)||typeof v.finished!=='boolean')fail('invalid-record');
+  }
   if(r.addenda!==undefined){if(!Array.isArray(r.addenda)||r.addenda.length>1000)fail('invalid-record');const ids=new Set();for(const a of r.addenda){validateAddendum(a);if(ids.has(a.id))fail('invalid-record');ids.add(a.id);}}
 
   for(const e of r.entries){if(!obj(e)||!id(e.sceneId)||seen.has(e.sceneId)||typeof e.text!=='string'||e.text.length>LIMIT.text||typeof e.sceneNumberAtStart!=='string'||typeof e.sceneTitleAtStart!=='string'||!date(e.updatedAt))fail('invalid-record');seen.add(e.sceneId);}
@@ -25,6 +30,7 @@
    const gestures=new Map();for(const s of f.strokes){if(!obj(s)||!id(s.id)||strokes.has(s.id)||!id(s.gestureId)||!['front','plan'].includes(s.view)||!Number.isSafeInteger(s.segment)||s.segment<0||!Number.isFinite(s.widthRatio)||s.widthRatio<=0||s.widthRatio>.05||!['ink','accent'].includes(s.colorToken)||!Array.isArray(s.points)||!s.points.length||s.points.length>512||s.points.some(p=>!Array.isArray(p)||p.length!==2||p.some(n=>!Number.isFinite(n)||n<0||n>1)))fail('invalid-record');const g=gestures.get(s.gestureId)||{next:0,view:s.view,width:s.widthRatio};if(s.segment!==g.next||s.view!==g.view||s.widthRatio!==g.width)fail('invalid-record');g.next++;gestures.set(s.gestureId,g);strokes.add(s.id);}
   }
   if(bytes(JSON.stringify(r))>LIMIT.data)fail('record-too-large');
+  if(raw!==undefined&&r.durations){const scenes=new Set(source(raw).project.scenes.filter(s=>s.kind==='scene').map(s=>s.id));if(r.durations.visits.some(v=>!scenes.has(v.sceneId)))fail('invalid-reference');}
   if(raw!==undefined){const d=source(raw),scenes=new Set(d.project.scenes.filter(s=>s.kind==='scene').map(s=>s.id));if((r.viewSceneId&&!scenes.has(r.viewSceneId))||(r.viewFrameId&&!r.frames.some(f=>f.frameId===r.viewFrameId&&f.sceneId===r.viewSceneId))||r.attempts?.some(a=>!scenes.has(a.startSceneId))||r.addenda?.some(a=>!scenes.has(a.sceneId)))fail('invalid-reference');if(d.project.id!==r.source.projectId||!scenes.has(r.progressSceneId)||r.entries.some(e=>!scenes.has(e.sceneId))||r.frames.some(f=>!scenes.has(f.sceneId)))fail('invalid-reference');}
   return true;
  }
@@ -33,5 +39,30 @@
  function close(r){if(r.status==='closed')return;touch(r);r.status='closed';r.closedAt=r.updatedAt;}
  function validateAddendum(a){if(!obj(a)||!id(a.id)||!id(a.sceneId)||typeof a.text!=='string'||!a.text.trim()||a.text.length>LIMIT.text||!date(a.createdAt))fail('invalid-record');safe(a);}
  function attempt(r,scene,label){if((r.attempts?.length||0)>=1000)fail('record-too-large');touch(r);r.attempts||=[];r.attempts.push({number:r.attempts.length+1,startSceneId:scene.id,startLabel:String(label).slice(0,200),startedAt:r.updatedAt});return r.attempts.at(-1);}
- const api={attempt,validateAddendum,LIMIT,clone,source,hash,create,validate,text,touch,close,fail};root.GAMMA_FIELD_RUN_MODEL=api;if(typeof module!=='undefined')module.exports=api;
+ // Persist elapsed values only. A fresh controller never counts the time spent away.
+ // The injected monotonic clock also makes the real controller testable without sleeps.
+ function durationClock(r,domain,now=()=>performance.now()){
+  let stamp=null;
+  const last=()=>r.durations?.visits.at(-1);
+  function checkpoint(){if(stamp===null||r.status==='closed')return;if(r.status!=='active'||r.phase==='review'){stamp=null;return;}const at=now(),v=last();if(v&&at>stamp){touch(r);v.actualSeconds+=(at-stamp)/1000;}stamp=at;}
+  function pause(){checkpoint();stamp=null;}
+  function enter(sceneId,start=false){
+   if(r.status==='closed')fail('closed-run');
+   const scene=domain.byId.get(sceneId);if(!scene)return;
+   if(stamp===null&&!start)return;
+   const number=r.attempts?.length||1,v=last();
+   if(stamp!==null&&v&&v.sceneId===sceneId&&v.attemptNumber===number&&!v.finished)return;
+   checkpoint();
+   if(!v||v.sceneId!==sceneId||v.attemptNumber!==number||v.finished){
+    if((r.durations?.visits.length||0)>=10000)fail('record-too-large');
+    touch(r);if(v)v.finished=true;
+    r.durations||={basis:'timeline-hold-transition',visits:[]};
+    r.durations.visits.push({sceneId,attemptNumber:number,plannedSeconds:scene.end-scene.start,actualSeconds:0,finished:false});
+   }
+   stamp=now();
+  }
+  function rows(){const rows=clone(r.durations?.visits||[]);if(stamp!==null&&rows.length&&r.status!=='closed')rows.at(-1).actualSeconds+=Math.max(0,(now()-stamp)/1000);return rows;}
+  return {enter,pause,checkpoint,rows,running:()=>stamp!==null};
+ }
+ const api={durationClock,attempt,validateAddendum,LIMIT,clone,source,hash,create,validate,text,touch,close,fail};root.GAMMA_FIELD_RUN_MODEL=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

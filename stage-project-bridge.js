@@ -13,6 +13,42 @@
       setItem: (key, value) => values.set(key, String(value)), removeItem: key => values.delete(key),
       key: index => [...values.keys()][index] ?? null, get length() { return values.size; } };
   }
+  // Pure preflight for OL-1/5. Reuse the browser's beta lighting converter, without
+  // importing venues, touching the live show, or opening a browser database.
+  function prepareLegacy(text, host) {
+    const fail = code => { throw Error(code); };
+    if (typeof text !== "string" || new TextEncoder().encode(text).length > 32 * 1024 * 1024) fail("legacy-too-large");
+    const doc = host.STAGE_DATA_SAFETY.parseJson(text);
+    const record = value => value && typeof value === "object" && !Array.isArray(value);
+    if (!record(doc) || (doc.kind !== undefined && doc.kind !== "shosai-stage-sketch")) fail("legacy-invalid-show");
+    if (doc.version !== undefined && ![3, 4].includes(doc.version)) fail("legacy-unsupported-version");
+    const project = doc.project || doc;
+    if (!record(project) || typeof project.id !== "string" || !project.id
+        || typeof project.title !== "string") fail("legacy-invalid-show");
+    function rows(value) {
+      if (!Array.isArray(value)) fail("legacy-invalid-show");
+      const ids = new Set();
+      for (const item of value) {
+        if (!record(item) || typeof item.id !== "string" || !item.id || ids.has(item.id)) fail("legacy-invalid-show");
+        ids.add(item.id);
+      }
+      return value;
+    }
+    rows(project.cast); rows(project.sets);
+    if (!rows(project.scenes).some(s => s.kind !== "section")) fail("legacy-invalid-show");
+    for (const scene of project.scenes) {
+      if (scene.kind !== undefined && !["scene", "section"].includes(scene.kind)) fail("legacy-invalid-show");
+      if (scene.kind !== "section" || scene.pieces !== undefined) rows(scene.pieces);
+    }
+    if (project.audioTracks !== undefined) rows(project.audioTracks);
+    if (doc.venues !== undefined && !Array.isArray(doc.venues)) fail("legacy-invalid-show");
+    const venue = host.SHOSAI_VENUES?.list.find(v => v.id === project.venue);
+    const size = venue?.sizes.find(s => s.id === project.venueSize);
+    const venues = size ? {[venue.id]: {[size.id]: {width:size.width, depth:size.depth, height:size.height}}} : undefined;
+    const converted = host.STAGE_LIGHT_PANEL_IMPORT.prepare(doc, {sourceText:text, venues}).document;
+    const envelope = converted.project ? converted : {kind:"shosai-stage-sketch", version:4, project:converted};
+    return {show:JSON.stringify(envelope), title:envelope.project.title};
+  }
   function create(host) {
     const handler = host.webkit?.messageHandlers?.gammaProject;
     if (typeof handler?.postMessage !== "function") return null;
@@ -91,6 +127,12 @@
     }
     const facade = {
       open: receiveOpen,
+      prepareLegacy(text) {
+        if (!active) throw Error("Project ready expired; reload before opening");
+        // Pin the native session while the user considers the NSAlert, even at launch.
+        requestLibrary();
+        return prepareLegacy(text, host);
+      },
       flush: requestId => { const done = flush(requestId); done.catch(error => runtime?.error(error)); return done; },
       // close must leave the document usable: AppKit may cancel its following save panel.
       close() {
@@ -163,6 +205,18 @@
     };
     // The real functions exist before ready. Initial open is buffered until the
     // editor has installed its normal import/export and rendering paths.
+    host.addEventListener?.("drop", event => {
+      const files = [...(event.dataTransfer?.files || [])];
+      if (!active || files.length !== 1 || !/\.(stagesketch|json)$/i.test(files[0].name)) return;
+      if (event.target?.closest?.('input[type="file"]') || readOnly) return;
+      if ([...host.document.querySelectorAll('[role="dialog"], [role="alertdialog"]')]
+          .some(dialog => dialog.getClientRects().length && dialog.id !== "stage-venue-editor-modal")) return;
+      event.preventDefault(); event.stopImmediatePropagation();
+      const file = files[0];
+      if (file.size > 32 * 1024 * 1024) { post("openLegacyFile", {error:"legacy-too-large"}); return; }
+      file.text().then(text => post("openLegacyFile", {text, filename:file.name}),
+        () => post("openLegacyFile", {error:"legacy-read-failed"}));
+    }, true);
     post("ready", { formatVersion:1 });
     return {
       initialOpen, store, changed,
@@ -172,5 +226,5 @@
       storage: memoryStorage(),
     };
   }
-  return Object.freeze({ create, memoryStorage, validId, audioLimit });
+  return Object.freeze({ create, memoryStorage, validId, audioLimit, prepareLegacy });
 });

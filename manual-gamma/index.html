@@ -328,7 +328,7 @@ const FILES = ["00-front", "01-start", "02-screen", "03-show-scenes", "04-cast",
   const next = () => {
     if (i >= list.length) { window.dispatchEvent(new Event("manual-ready")); return; }
     const file = list[i++];
-    const sc = document.createElement("script"); sc.src = file + (/\/(01-start|09-time-cues|15-appendix)\.js$/.test(file) ? "?v=20261015-v0371" : (/\/(07-lighting|13-devices|15-appendix)\.js$/.test(file) ? "?v=20261015-v0371" : "?v=20261015-v0371")); sc.onload = next;
+    const sc = document.createElement("script"); sc.src = file + "?v=20261016-v0372"; sc.onload = next;
     sc.onerror = () => { console.error("読み込めません: " + sc.src); next(); };
     document.body.appendChild(sc);
   };
