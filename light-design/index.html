@@ -247,7 +247,7 @@
   .sec.side.l{grid-column:1} .sec.front{grid-column:2} .sec.side.r{grid-column:3;display:none}
   .figgrid:not([data-solo]) .sec{align-self:end}
   .figgrid.side-cropped:not([data-solo]) .leftcol{grid-row:1/3;margin-bottom:var(--side-reserved)}
-  .sec.side.l .sechead [data-solo-figure="side"]{order:10;margin-left:auto}
+  .sec.side.l .sechead [data-solo-figure="side"]{order:0;margin-left:0}
 
   /* 配置は下手・正面・上手を同時に読む展開図。照明デザインへ戻れば従来どおり左下の切替1面だけに戻す。 */
   .figgrid.placement-unfolded .sec.side.r{display:flex}
@@ -813,9 +813,19 @@
 .fixture-body-choices button { min-height:44px; display:flex; align-items:center; justify-content:center; gap:6px; }
 .fixture-body-sample { width:20px; height:16px; border:2px solid; flex-shrink:0; }
   .dialog .in,.dialog .in:has(.pgrid){display:flex;flex-direction:column;max-height:calc(100dvh - 24px);overflow:hidden}
+/* RL / LD: a common left anchor and the same figure heading components. */
+  .figgrid :is(.viewhead,.sechead){gap:var(--gamma-gap,8px);padding:0;min-height:var(--gamma-icon-box,34px)}
+  .figgrid :is(.viewhead,.sechead) .viewtitle{font:600 var(--fs-3,11px)/1.5 var(--sans);letter-spacing:.08em;color:var(--brass)}
+  .sec.front .sechead .viewtitle{left:calc(var(--gamma-icon-box,34px) + var(--gamma-gap,8px))}
+  .figgrid.placement-unfolded .wing-title{display:none}
+  html.front-display-controls-active .front-controls-row{gap:0}
+  html.front-display-controls-active .front-primary-controls{gap:var(--sp-1,4px)}
+  html.front-display-controls-active #front-display-controls{gap:0}
+  html.front-display-controls-active #front-display-controls .lightgroup{margin:0;padding:0;border:0;gap:0}
+  html.front-display-controls-active #front-display-controls .showtoggles{justify-content:flex-start}
 </style>
 <style>.option-b-controls button{min-height:44px}.option-b-controls :focus-visible{outline:2px solid #d3ac59;outline-offset:2px}</style>
-<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261015-v0368">
+<link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261015-v0371">
 <link rel="stylesheet" href="embed.css?v=20261015-v0368">
 <link rel="stylesheet" href="simple-lighting.css?v=20261015-v0368">
 </head>
@@ -944,7 +954,7 @@
             <div class="viewhead">
               <!-- T-18: 全画面マークは左端。 -->
               <button type="button" class="solo-btn" data-solo-figure="plan" title="平面図だけを大きく見る（p）。Escかもう一度押すと戻ります" aria-label="平面図の拡大表示を切り替える"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10"/></svg></button>
-              <span class="viewtitle">平面図（真上から）<kbd class="view-key" aria-label="拡大キー P">P</kbd></span>
+              <span class="viewtitle">平面図<kbd class="view-key" aria-label="拡大キー P">P</kbd></span>
               <span class="showtoggles" id="plan-grid-toggle"><button type="button" data-show="grid" aria-pressed="true" title="1.0mごとの目盛りを図に出す">グリッド</button></span>
               <label class="snap" title="1.0mのグリッドに合わせて置く・動かす"><input type="checkbox" id="snap"><span>1.0mでそろえる</span></label>
             </div>
@@ -999,10 +1009,10 @@
             <div class="sechead">
               <!-- T-18（2026-09-18 本人要望）: 全画面マークは3つの図とも左端にそろえる。 -->
               <button type="button" class="solo-btn" data-solo-figure="side" title="側面図だけを大きく見る（O）。Escかもう一度押すと戻ります" aria-label="側面図の拡大表示を切り替える"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10"/></svg></button>
-              <span class="placement-side-title">下手側</span>
+              <span class="viewtitle wing-title">袖</span><span class="placement-side-title">下手側</span>
               <span class="showtoggles sidemode" id="sidemode" role="group" aria-label="どちら側を見るか">
-                <button type="button" data-side="shimote" aria-pressed="true">下手を見る</button>
-                <button type="button" data-side="kamite" aria-pressed="false">上手を見る</button>
+                <button type="button" data-side="kamite" aria-pressed="false">上手</button>
+                <button type="button" data-side="shimote" aria-pressed="true">下手</button>
               </span>
               <button type="button" class="btn small quiet" id="side-height" aria-pressed="false">フル表示</button>
               <span class="side-sep" aria-hidden="true"></span>
@@ -1087,7 +1097,7 @@
 <script src="../stage-light-receiver.js?v=20261004-receiver89"></script>
 <script src="../gamma-light-cue-overlay.js?v=20261006-v0318"></script>
 <script src="../stage-machinery.js?v=20261012-v0358"></script>
-<script src="app.js?v=20261015-v0368"></script>
+<script src="app.js?v=20261015-v0371"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20261010-v0338"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->

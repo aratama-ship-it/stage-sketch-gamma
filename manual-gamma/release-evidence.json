@@ -1,11 +1,11 @@
 {
-  "appVersion": "v0.3.70",
+  "appVersion": "v0.3.71",
   "contentUpdated": "2026-10-15",
   "requiredScreens": [
     {
       "id": "stage",
       "language": "ja",
-      "file": "manual-gamma/img/release070-stage.jpg",
+      "file": "manual-gamma/img/release071-stage.jpg",
       "viewport": [
         1440,
         1000
@@ -15,7 +15,7 @@
     {
       "id": "profile",
       "language": "ja",
-      "file": "manual-gamma/img/release070-profile.jpg",
+      "file": "manual-gamma/img/release071-profile.jpg",
       "viewport": [
         1440,
         1000
@@ -25,7 +25,7 @@
     {
       "id": "lighting",
       "language": "ja",
-      "file": "manual-gamma/img/release070-lighting.jpg",
+      "file": "manual-gamma/img/release071-lighting.jpg",
       "viewport": [
         1440,
         1000
@@ -35,7 +35,7 @@
     {
       "id": "plan",
       "language": "ja",
-      "file": "manual-gamma/img/release070-plan.jpg",
+      "file": "manual-gamma/img/release071-plan.jpg",
       "viewport": [
         1440,
         1000
@@ -45,7 +45,7 @@
     {
       "id": "timing",
       "language": "ja",
-      "file": "manual-gamma/img/release070-timing.jpg",
+      "file": "manual-gamma/img/release071-timing.jpg",
       "viewport": [
         1440,
         1000
@@ -55,7 +55,7 @@
     {
       "id": "run-of-show",
       "language": "ja",
-      "file": "manual-gamma/img/release070-run-of-show.jpg",
+      "file": "manual-gamma/img/release071-run-of-show.jpg",
       "viewport": [
         1440,
         1000
@@ -65,7 +65,7 @@
     {
       "id": "3d",
       "language": "ja",
-      "file": "manual-gamma/img/release070-3d.jpg",
+      "file": "manual-gamma/img/release071-3d.jpg",
       "viewport": [
         1440,
         1000
@@ -75,7 +75,7 @@
     {
       "id": "q-sheets",
       "language": "ja",
-      "file": "manual-gamma/img/release070-q-sheets.jpg",
+      "file": "manual-gamma/img/release071-q-sheets.jpg",
       "viewport": [
         1440,
         1000
@@ -85,7 +85,7 @@
     {
       "id": "stage",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-stage.jpg",
+      "file": "manual-gamma/img/en/release071-stage.jpg",
       "viewport": [
         1440,
         1000
@@ -95,7 +95,7 @@
     {
       "id": "profile",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-profile.jpg",
+      "file": "manual-gamma/img/en/release071-profile.jpg",
       "viewport": [
         1440,
         1000
@@ -105,7 +105,7 @@
     {
       "id": "lighting",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-lighting.jpg",
+      "file": "manual-gamma/img/en/release071-lighting.jpg",
       "viewport": [
         1440,
         1000
@@ -115,7 +115,7 @@
     {
       "id": "plan",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-plan.jpg",
+      "file": "manual-gamma/img/en/release071-plan.jpg",
       "viewport": [
         1440,
         1000
@@ -125,7 +125,7 @@
     {
       "id": "timing",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-timing.jpg",
+      "file": "manual-gamma/img/en/release071-timing.jpg",
       "viewport": [
         1440,
         1000
@@ -135,7 +135,7 @@
     {
       "id": "run-of-show",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-run-of-show.jpg",
+      "file": "manual-gamma/img/en/release071-run-of-show.jpg",
       "viewport": [
         1440,
         1000
@@ -145,7 +145,7 @@
     {
       "id": "3d",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-3d.jpg",
+      "file": "manual-gamma/img/en/release071-3d.jpg",
       "viewport": [
         1440,
         1000
@@ -155,7 +155,7 @@
     {
       "id": "q-sheets",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-q-sheets.jpg",
+      "file": "manual-gamma/img/en/release071-q-sheets.jpg",
       "viewport": [
         1440,
         1000
@@ -165,7 +165,7 @@
     {
       "id": "field",
       "language": "ja",
-      "file": "manual-gamma/img/release070-field.jpg",
+      "file": "manual-gamma/img/release071-field.jpg",
       "scene": "H-1",
       "viewport": [
         1440,
@@ -175,7 +175,7 @@
     {
       "id": "field",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-field.jpg",
+      "file": "manual-gamma/img/en/release071-field.jpg",
       "scene": "H-1",
       "viewport": [
         1440,
@@ -185,7 +185,7 @@
     {
       "id": "storage-band",
       "language": "ja",
-      "file": "manual-gamma/img/release070-storage-band.jpg",
+      "file": "manual-gamma/img/release071-storage-band.jpg",
       "viewport": [
         1440,
         1000
@@ -195,7 +195,7 @@
     {
       "id": "storage-band",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-storage-band.jpg",
+      "file": "manual-gamma/img/en/release071-storage-band.jpg",
       "viewport": [
         1440,
         1000
@@ -205,7 +205,7 @@
     {
       "id": "q-contents",
       "language": "ja",
-      "file": "manual-gamma/img/release070-q-contents.jpg",
+      "file": "manual-gamma/img/release071-q-contents.jpg",
       "viewport": [
         1440,
         1000
@@ -215,7 +215,7 @@
     {
       "id": "q-a4-landscape",
       "language": "ja",
-      "file": "manual-gamma/img/release070-q-a4-landscape.jpg",
+      "file": "manual-gamma/img/release071-q-a4-landscape.jpg",
       "viewport": [
         1440,
         1000
@@ -225,7 +225,7 @@
     {
       "id": "q-a4-portrait",
       "language": "ja",
-      "file": "manual-gamma/img/release070-q-a4-portrait.jpg",
+      "file": "manual-gamma/img/release071-q-a4-portrait.jpg",
       "viewport": [
         1440,
         1000
@@ -235,7 +235,7 @@
     {
       "id": "q-free",
       "language": "ja",
-      "file": "manual-gamma/img/release070-q-free.jpg",
+      "file": "manual-gamma/img/release071-q-free.jpg",
       "viewport": [
         1440,
         1000
@@ -245,7 +245,7 @@
     {
       "id": "music-audio",
       "language": "ja",
-      "file": "manual-gamma/img/release070-music-audio.jpg",
+      "file": "manual-gamma/img/release071-music-audio.jpg",
       "viewport": [
         1440,
         1000
@@ -255,7 +255,7 @@
     {
       "id": "q-contents",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-q-contents.jpg",
+      "file": "manual-gamma/img/en/release071-q-contents.jpg",
       "viewport": [
         1440,
         1000
@@ -265,7 +265,7 @@
     {
       "id": "q-a4-landscape",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-q-a4-landscape.jpg",
+      "file": "manual-gamma/img/en/release071-q-a4-landscape.jpg",
       "viewport": [
         1440,
         1000
@@ -275,7 +275,7 @@
     {
       "id": "q-a4-portrait",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-q-a4-portrait.jpg",
+      "file": "manual-gamma/img/en/release071-q-a4-portrait.jpg",
       "viewport": [
         1440,
         1000
@@ -285,7 +285,7 @@
     {
       "id": "q-free",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-q-free.jpg",
+      "file": "manual-gamma/img/en/release071-q-free.jpg",
       "viewport": [
         1440,
         1000
@@ -295,7 +295,7 @@
     {
       "id": "music-audio",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-music-audio.jpg",
+      "file": "manual-gamma/img/en/release071-music-audio.jpg",
       "viewport": [
         1440,
         1000
@@ -305,7 +305,7 @@
     {
       "id": "header",
       "language": "ja",
-      "file": "manual-gamma/img/release070-header.jpg",
+      "file": "manual-gamma/img/release071-header.jpg",
       "viewport": [
         1440,
         1000
@@ -315,7 +315,7 @@
     {
       "id": "ipad",
       "language": "ja",
-      "file": "manual-gamma/img/release070-ipad.jpg",
+      "file": "manual-gamma/img/release071-ipad.jpg",
       "viewport": [
         1024,
         768
@@ -325,7 +325,7 @@
     {
       "id": "ipad-portrait",
       "language": "ja",
-      "file": "manual-gamma/img/release070-ipad-portrait.jpg",
+      "file": "manual-gamma/img/release071-ipad-portrait.jpg",
       "viewport": [
         768,
         1024
@@ -335,7 +335,7 @@
     {
       "id": "header",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-header.jpg",
+      "file": "manual-gamma/img/en/release071-header.jpg",
       "viewport": [
         1440,
         1000
@@ -345,7 +345,7 @@
     {
       "id": "ipad",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-ipad.jpg",
+      "file": "manual-gamma/img/en/release071-ipad.jpg",
       "viewport": [
         1024,
         768
@@ -355,7 +355,7 @@
     {
       "id": "ipad-portrait",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-ipad-portrait.jpg",
+      "file": "manual-gamma/img/en/release071-ipad-portrait.jpg",
       "viewport": [
         768,
         1024
@@ -365,7 +365,7 @@
     {
       "id": "project-open",
       "language": "ja",
-      "file": "manual-gamma/img/release070-project-open.jpg",
+      "file": "manual-gamma/img/release071-project-open.jpg",
       "viewport": [
         1440,
         1000
@@ -375,7 +375,7 @@
     {
       "id": "project-save",
       "language": "ja",
-      "file": "manual-gamma/img/release070-project-save.jpg",
+      "file": "manual-gamma/img/release071-project-save.jpg",
       "viewport": [
         1440,
         1000
@@ -385,7 +385,7 @@
     {
       "id": "sample-library",
       "language": "ja",
-      "file": "manual-gamma/img/release070-sample-library.jpg",
+      "file": "manual-gamma/img/release071-sample-library.jpg",
       "viewport": [
         1440,
         1000
@@ -395,7 +395,7 @@
     {
       "id": "previous-shows",
       "language": "ja",
-      "file": "manual-gamma/img/release070-previous-shows.jpg",
+      "file": "manual-gamma/img/release071-previous-shows.jpg",
       "viewport": [
         1440,
         1000
@@ -405,7 +405,7 @@
     {
       "id": "project-open",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-project-open.jpg",
+      "file": "manual-gamma/img/en/release071-project-open.jpg",
       "viewport": [
         1440,
         1000
@@ -415,7 +415,7 @@
     {
       "id": "project-save",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-project-save.jpg",
+      "file": "manual-gamma/img/en/release071-project-save.jpg",
       "viewport": [
         1440,
         1000
@@ -425,7 +425,7 @@
     {
       "id": "sample-library",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-sample-library.jpg",
+      "file": "manual-gamma/img/en/release071-sample-library.jpg",
       "viewport": [
         1440,
         1000
@@ -435,7 +435,7 @@
     {
       "id": "previous-shows",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-previous-shows.jpg",
+      "file": "manual-gamma/img/en/release071-previous-shows.jpg",
       "viewport": [
         1440,
         1000
@@ -447,1105 +447,929 @@
     {
       "id": "stage",
       "language": "ja",
-      "file": "manual-gamma/img/release070-stage.jpg",
+      "file": "manual-gamma/img/release071-stage.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "B-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:40:47.650Z",
-      "sha256": "fd674f2be522d8bfc59c5217ee25fad37043d6a14d26dd2dcf405b16788fe808",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:22:02.151Z",
+      "sha256": "6060d6fd428cec934700db41d43b679c4e111873436507b370d560182d2dbb77",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "profile",
       "language": "ja",
-      "file": "manual-gamma/img/release070-profile.jpg",
+      "file": "manual-gamma/img/release071-profile.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "A-4",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:40:51.653Z",
-      "sha256": "a1f6e4f8042321967dd93cb7363b18479981621b945f99181d633cd313ed640d",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:22:05.987Z",
+      "sha256": "cfbac97e26eff3de280de1178d81bc7191fff5a85645cbc9cf378c80d908c2c3",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "lighting",
       "language": "ja",
-      "file": "manual-gamma/img/release070-lighting.jpg",
+      "file": "manual-gamma/img/release071-lighting.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "F-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:40:55.226Z",
-      "sha256": "7011d2dca4fe94a7cb4eb1fbb6974b65cb7316261bbc48b2a743ea6eebc7a401",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:22:09.589Z",
+      "sha256": "a1639d20472cdc8c46b04a989933f9f1cdd6ab623e071e925f99a18716a586ec",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "plan",
       "language": "ja",
-      "file": "manual-gamma/img/release070-plan.jpg",
+      "file": "manual-gamma/img/release071-plan.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "F-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:40:59.083Z",
-      "sha256": "b352a08c7a835b9770b23263418b1403bbaadf6d124230de3cb000a945944e58",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:22:13.445Z",
+      "sha256": "d5c7e5f811afcc6494e89a09bf5337244b81dccc159d042153d01c68219ea1de",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "timing",
       "language": "ja",
-      "file": "manual-gamma/img/release070-timing.jpg",
+      "file": "manual-gamma/img/release071-timing.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "F-3",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:41:02.654Z",
-      "sha256": "1c1fb012e831f76a78f8cd0045d2a529412f472989efbcfab65091e9dc426a37",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:22:17.070Z",
+      "sha256": "161989fbb2cd0d61137dee4f274062703f6dbf441d3f984c2685ef98bda50ec3",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "run-of-show",
       "language": "ja",
-      "file": "manual-gamma/img/release070-run-of-show.jpg",
+      "file": "manual-gamma/img/release071-run-of-show.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:41:08.590Z",
-      "sha256": "638eba9c91e1ba5398cd36b0ae2437bcd068bed36df8634442298243521adbd5",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:22:23.124Z",
+      "sha256": "cb2e40f0862527a6394e916dbe9baed1e9b6fca516c262f40563f597df5fe0a6",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "3d",
       "language": "ja",
-      "file": "manual-gamma/img/release070-3d.jpg",
+      "file": "manual-gamma/img/release071-3d.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "J-2",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:41:12.696Z",
-      "sha256": "ce0a310ca2db16e4ce829975102e43914975d48533b9862c0f045d325f023383",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:22:27.351Z",
+      "sha256": "fd96abff1d9fff07ff5e4d407923ae2d6a0134898019f8aaba47046e53d97db9",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "q-sheets",
       "language": "ja",
-      "file": "manual-gamma/img/release070-q-sheets.jpg",
+      "file": "manual-gamma/img/release071-q-sheets.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:41:18.831Z",
-      "sha256": "e27612c31b80e13c3b2fbfccaa00a8ae21e2d34a6284a01479fbc49cc707425e",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:22:33.624Z",
+      "sha256": "85471efeab74b5fd97d5db681aacf039970dda574bba3c52ee27d3e9f69a708c",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "stage",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-stage.jpg",
+      "file": "manual-gamma/img/en/release071-stage.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "B-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:41:21.475Z",
-      "sha256": "219d9fa700f5b5a43f9c87e6303a1a14a0e5483c459783c7a3d8884f7d0476af",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:22:36.132Z",
+      "sha256": "7e150f0dbf0de307e8c7a946190e6bfd9e87478761c0f3bf5ffc1ec9c5134af0",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "profile",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-profile.jpg",
+      "file": "manual-gamma/img/en/release071-profile.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "A-4",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:41:25.342Z",
-      "sha256": "658a75de9d370ee530acfce3b4b771e265c73d3dc06987a0683c70069c7b7fe8",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:22:39.818Z",
+      "sha256": "b6225142fbfd556f91fa98909f112a0706539477953de16139038a86637d5b5b",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "lighting",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-lighting.jpg",
+      "file": "manual-gamma/img/en/release071-lighting.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "F-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:41:28.965Z",
-      "sha256": "a2f359f4aa6c7347c3d1ad607c0450c75bdf19cb49039b9f6fc0b20ef4106c88",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:22:43.376Z",
+      "sha256": "40e998ad6d8d945e908e49231195d6f4c39ac2fd16101726c2984b91d2f35a26",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "plan",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-plan.jpg",
+      "file": "manual-gamma/img/en/release071-plan.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "F-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:41:32.973Z",
-      "sha256": "d92a12be21cef889372b294198c5eaea9da5c92549d05fe504601ef920ab8001",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:22:47.301Z",
+      "sha256": "aaa7441fc09451e2d37973d31fcb7654f6517ae074f38fcee61e9fca782d08de",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "timing",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-timing.jpg",
+      "file": "manual-gamma/img/en/release071-timing.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "F-3",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:41:36.665Z",
-      "sha256": "97e50ae501698de8babd4975def0d6c4026406d7e84059de2d7fa6d5ec5b5e7c",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:22:50.842Z",
+      "sha256": "cced616f66ef83b3392fc258ffa97653c3609e4918dbdc8fe7eb3d0c3669ea36",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "run-of-show",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-run-of-show.jpg",
+      "file": "manual-gamma/img/en/release071-run-of-show.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:41:42.895Z",
-      "sha256": "ab43fd7cb5f62be4ceffabbd43cb6be5149ebb441f3d1194a7df17c4625b30af",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:22:56.899Z",
+      "sha256": "534ba5794d6ce07c87e316f0140e25d9c29e0f686e4960949bd913cdc560458c",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "3d",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-3d.jpg",
+      "file": "manual-gamma/img/en/release071-3d.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "J-2",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:41:46.824Z",
-      "sha256": "0fd5a968d96b2611665870c675869bbeb4ef0108bb5aab13f7c5b9f4d1a8a825",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:23:00.722Z",
+      "sha256": "509b303fbbd7c0820c043b7ee11d4eee59ed16a537ef799700f944ac20aeb5a7",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "q-sheets",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-q-sheets.jpg",
+      "file": "manual-gamma/img/en/release071-q-sheets.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:41:53.260Z",
-      "sha256": "9585422eb75a20594d3d76a5a6c8020eea932a117f826aafdc00d0cc86444b69",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:23:06.808Z",
+      "sha256": "f993d7425085cfbdb9887b5261601206ad99f4fb303695f85ddda36a95b15155",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "field",
       "language": "ja",
-      "file": "manual-gamma/img/release070-field.jpg",
+      "file": "manual-gamma/img/release071-field.jpg",
       "scene": "H-1",
       "viewport": [
         1440,
         1000
       ],
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:41:58.393Z",
-      "sha256": "8bef54ba3326e14d60e6df49c5a837da717039c219500d9f0dc7535f68dd8b0a",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:23:12.185Z",
+      "sha256": "3a3bf1cd5684ed62fc7d79a63a41eac50e003c3ee5c4ec2add572b90cbf7c574",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "field",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-field.jpg",
+      "file": "manual-gamma/img/en/release071-field.jpg",
       "scene": "H-1",
       "viewport": [
         1440,
         1000
       ],
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:42:03.337Z",
-      "sha256": "21a79ce0d3bdde836410d62e5f0a6fe8f7720bfd51167686f5d9c15cd02e3bc2",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:23:17.247Z",
+      "sha256": "a1e94f99e4c473a843b16529e8879784c14afb3e83ea2ef3204eff896fd6a389",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "storage-band",
       "language": "ja",
-      "file": "manual-gamma/img/release070-storage-band.jpg",
+      "file": "manual-gamma/img/release071-storage-band.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "B-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:42:06.183Z",
-      "sha256": "fd674f2be522d8bfc59c5217ee25fad37043d6a14d26dd2dcf405b16788fe808",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:23:19.623Z",
+      "sha256": "6060d6fd428cec934700db41d43b679c4e111873436507b370d560182d2dbb77",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "storage-band",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-storage-band.jpg",
+      "file": "manual-gamma/img/en/release071-storage-band.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "B-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:42:09.040Z",
-      "sha256": "219d9fa700f5b5a43f9c87e6303a1a14a0e5483c459783c7a3d8884f7d0476af",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:23:22.008Z",
+      "sha256": "7e150f0dbf0de307e8c7a946190e6bfd9e87478761c0f3bf5ffc1ec9c5134af0",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "q-contents",
       "language": "ja",
-      "file": "manual-gamma/img/release070-q-contents.jpg",
+      "file": "manual-gamma/img/release071-q-contents.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:42:15.794Z",
-      "sha256": "304eb838980760e8f117d391ef52bddcef5d0e9423d840cad27a396d4c6622c2",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:23:27.845Z",
+      "sha256": "c564151287e3c809ab4ca2ef1f302fc734515f74de1a37b86a469a41299c45fb",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "q-a4-landscape",
       "language": "ja",
-      "file": "manual-gamma/img/release070-q-a4-landscape.jpg",
+      "file": "manual-gamma/img/release071-q-a4-landscape.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:42:22.720Z",
-      "sha256": "78323160008160a53875486b05f912fbf7724e03b24e5a6e1eee98293ac924e9",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:23:33.900Z",
+      "sha256": "c8c5084ad27f1b0f0d9b5daf0f6e2825a3d7fd39fa180fada78a7fa0e588cc77",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "q-a4-portrait",
       "language": "ja",
-      "file": "manual-gamma/img/release070-q-a4-portrait.jpg",
+      "file": "manual-gamma/img/release071-q-a4-portrait.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:42:29.530Z",
-      "sha256": "0085c620fad10cb6c99d3aac3bc3565e8a5770e5101bf04d846ea65253985be4",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:23:39.939Z",
+      "sha256": "20e8ce2770867b085231569fb7736c3f5641a4baf0d1107b5218a1cb9303f039",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "q-free",
       "language": "ja",
-      "file": "manual-gamma/img/release070-q-free.jpg",
+      "file": "manual-gamma/img/release071-q-free.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:42:36.322Z",
-      "sha256": "f4dde3179e30f6f2ab8599d8734e959d3adf0dc95a3d02346f282359db5c41dd",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:23:45.947Z",
+      "sha256": "d175c7280722f49c60e4404465fab9f9d19935b9a0c54dad391e7a97ab900b91",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "music-audio",
       "language": "ja",
-      "file": "manual-gamma/img/release070-music-audio.jpg",
+      "file": "manual-gamma/img/release071-music-audio.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-2",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:42:41.385Z",
-      "sha256": "0ca47e429b38e370454c855ffd7c2de10bcca449377e83785e8501b69991303c",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:23:50.510Z",
+      "sha256": "491c5c01652aab82c4f3eba4d344c887b34992705727b1147d9db8c755513869",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "q-contents",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-q-contents.jpg",
+      "file": "manual-gamma/img/en/release071-q-contents.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:42:48.937Z",
-      "sha256": "9712c5b7130b46360c48822b2af04e9d702693928c94808cdf4f8cdbf80b5f3b",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:23:56.364Z",
+      "sha256": "a8488e4808864e7444e26098f815c2a1cdd991a9035953596efbd6426119b426",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "q-a4-landscape",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-q-a4-landscape.jpg",
+      "file": "manual-gamma/img/en/release071-q-a4-landscape.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:42:56.148Z",
-      "sha256": "d603333c9758336e7f7e792bd377d57f30c8c67cb7d95384366895b0f2318103",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:02.538Z",
+      "sha256": "e6414161f4d46a5cb88452603eaed3dee6a3ee5453d6dbb2d37a6be269b400ac",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "q-a4-portrait",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-q-a4-portrait.jpg",
+      "file": "manual-gamma/img/en/release071-q-a4-portrait.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:43:03.074Z",
-      "sha256": "f9900ce81d3dc1e4a0f4581e6d0e8df5fdae030f37daf2e8ed175b97a0f46896",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:08.795Z",
+      "sha256": "1fca77d0956e112f3660949245ce57143a6eadeee352ffb8826d75e49a0ae3d8",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "q-free",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-q-free.jpg",
+      "file": "manual-gamma/img/en/release071-q-free.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:43:09.855Z",
-      "sha256": "fbd79b50059cdcb772e9bd213dbc82dcee52568e0e00997d48211799275cf983",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:15.069Z",
+      "sha256": "1d8764c845cc2bceab8ec4a6a71df054cffe80a0bd469aa1162273346607f826",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "music-audio",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-music-audio.jpg",
+      "file": "manual-gamma/img/en/release071-music-audio.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-2",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:43:13.823Z",
-      "sha256": "288bc75a064a930b4e9d4433b71525e672007fb4b2e40d0cd44576d824f95f00",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:19.451Z",
+      "sha256": "a3d9fcb4c6dbd9f97b1b6d7021a4739422c964bb7790a7de6f0321f0c5513e3a",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "header",
       "language": "ja",
-      "file": "manual-gamma/img/release070-header.jpg",
+      "file": "manual-gamma/img/release071-header.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "B-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:43:16.611Z",
-      "sha256": "fd674f2be522d8bfc59c5217ee25fad37043d6a14d26dd2dcf405b16788fe808",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:21.901Z",
+      "sha256": "6060d6fd428cec934700db41d43b679c4e111873436507b370d560182d2dbb77",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "ipad",
       "language": "ja",
-      "file": "manual-gamma/img/release070-ipad.jpg",
+      "file": "manual-gamma/img/release071-ipad.jpg",
       "viewport": [
         1024,
         768
       ],
       "scene": "B-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:43:17.860Z",
-      "sha256": "5f5b02ea28be5c95e005bedeeb4704df380fcc3da0b85b2e29c154ca39465847",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:23.128Z",
+      "sha256": "3a57fd78389c290b17a3677a3ee2eb287541623b5fd6c374b1cdf8d7694112b5",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        2048,
-        1536
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "ipad-portrait",
       "language": "ja",
-      "file": "manual-gamma/img/release070-ipad-portrait.jpg",
+      "file": "manual-gamma/img/release071-ipad-portrait.jpg",
       "viewport": [
         768,
         1024
       ],
       "scene": "B-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:43:19.204Z",
-      "sha256": "19504b134d3d0765c81f0b1d67ec572db6693e51391ec2a6bd9ccc821e180abc",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:24.430Z",
+      "sha256": "3d40f593c4273967b595db8fd746ce0bfdb85d3e5c0f3fe36c0b48444cd42122",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1536,
-        2048
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "header",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-header.jpg",
+      "file": "manual-gamma/img/en/release071-header.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "B-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:43:22.007Z",
-      "sha256": "219d9fa700f5b5a43f9c87e6303a1a14a0e5483c459783c7a3d8884f7d0476af",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:26.912Z",
+      "sha256": "7e150f0dbf0de307e8c7a946190e6bfd9e87478761c0f3bf5ffc1ec9c5134af0",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "ipad",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-ipad.jpg",
+      "file": "manual-gamma/img/en/release071-ipad.jpg",
       "viewport": [
         1024,
         768
       ],
       "scene": "B-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:43:23.252Z",
-      "sha256": "7171b3bf8c44d43a338deb78413fc14de7ffcef3f12c7058835b951ad9b14b35",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:28.142Z",
+      "sha256": "499263f909c09504bf8d38befad1ea54c6272ff872bd4fc1f54add6646b0eed9",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        2048,
-        1536
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "ipad-portrait",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-ipad-portrait.jpg",
+      "file": "manual-gamma/img/en/release071-ipad-portrait.jpg",
       "viewport": [
         768,
         1024
       ],
       "scene": "B-1",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:43:24.524Z",
-      "sha256": "81bcc8b16ab6c48d6c4d455db0ea49b17ed6f378891709b8d1e53cc2577bc84d",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:29.427Z",
+      "sha256": "ea2717740ef0e9bbc0bee6d5f2397b77a8b2c3a0d3ba169a44a19f2d7ef206c4",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1536,
-        2048
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "project-open",
       "language": "ja",
-      "file": "manual-gamma/img/release070-project-open.jpg",
+      "file": "manual-gamma/img/release071-project-open.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-3",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:44:14.231Z",
-      "sha256": "df56cf03dba24c2da7f945de968b0ef8b05c7537b84c34441c89ee41651b41a0",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:32.399Z",
+      "sha256": "3a1160d28cf05bf7948c60bf21b6bc4ce0378a93718d7526b55f6ee100b865ed",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "project-save",
       "language": "ja",
-      "file": "manual-gamma/img/release070-project-save.jpg",
+      "file": "manual-gamma/img/release071-project-save.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-3",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:44:17.972Z",
-      "sha256": "7453364d170529bceb4d4fd432dc3c374b1a6ad1005cb14dfb70a0e49a4cb2b6",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:36.002Z",
+      "sha256": "b327f1e6c3d104e1b41aa439cd8ee1de6c7927b352a009b7a8b986f6a0f3bc69",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "sample-library",
       "language": "ja",
-      "file": "manual-gamma/img/release070-sample-library.jpg",
+      "file": "manual-gamma/img/release071-sample-library.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-3",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:44:21.530Z",
-      "sha256": "4d7025e9f8a2a21663787ef55e971e259e4238c122a64448d1029e3296a1cd95",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:39.308Z",
+      "sha256": "a686e2fbb5bc7185e62840764fbe735fd8da891e1152ab3860fcd26c3f284b65",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "previous-shows",
       "language": "ja",
-      "file": "manual-gamma/img/release070-previous-shows.jpg",
+      "file": "manual-gamma/img/release071-previous-shows.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-3",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:44:26.895Z",
-      "sha256": "05cc161ccafce18c0d3af1a0b82952661ff5eeafcd005da9d6676e7dbc17dab5",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:44.204Z",
+      "sha256": "6166f6d685574cf41e827cb51f6641d774d5923b58e7c809567aec0523f3af06",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "ja",
       "shellSimulation": true,
       "captureBoundary": "Real product dialog with a mocked native bridge and bundled fixture; not AppKit.",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "project-open",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-project-open.jpg",
+      "file": "manual-gamma/img/en/release071-project-open.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-3",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:44:30.032Z",
-      "sha256": "2ef65b7ee8cb318799f2effbd5647f8c168c54e68e80ad89e4b8f9e667f093eb",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:47.192Z",
+      "sha256": "05a77aba9e30d5ab6a179f75b898314be73ff7bb8bb18c99579ff6d40b2582a0",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "project-save",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-project-save.jpg",
+      "file": "manual-gamma/img/en/release071-project-save.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-3",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:44:33.406Z",
-      "sha256": "b83d31f67fe1ba9c1ef39cc2d86fe8081dd7e68df6459ba29d4449875034ebd7",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:50.497Z",
+      "sha256": "ed45f6f75a487393895a35f287132ba5a360759e05dcdb79dc0a739aae29f295",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "sample-library",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-sample-library.jpg",
+      "file": "manual-gamma/img/en/release071-sample-library.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-3",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:44:36.695Z",
-      "sha256": "1fb35d5f02824f9adf530654b415dfedd593dd5e93bd9217c450f3cbc2bea7d5",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:53.703Z",
+      "sha256": "3a60b459d3ca0a5478df8954ffceb6e25f3cb41ad4577fdd5db14c5ef49d8388",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     },
     {
       "id": "previous-shows",
       "language": "en",
-      "file": "manual-gamma/img/en/release070-previous-shows.jpg",
+      "file": "manual-gamma/img/en/release071-previous-shows.jpg",
       "viewport": [
         1440,
         1000
       ],
       "scene": "H-3",
       "fixtureId": "gamma-feature-test-v47-retired-pose",
-      "capturedVersion": "v0.3.70",
-      "capturedCommit": "c0e8bc9c3ec14b14ea3b787b2c79e42c41f5c83c",
+      "capturedVersion": "v0.3.71",
+      "capturedCommit": "2cec9e4c5fb3160dc387ab7dd0bff10b23e94183",
       "capturedWorkingTree": true,
-      "capturedAt": "2026-10-15T04:44:41.722Z",
-      "sha256": "c428a9c3fa5eaabcafbb0c5d0d0492829ec83b48de766bb93b9cb38815303cb2",
-      "sourceSha256": "932cea0c0998ff500bd467537c8f4b0115db76c12f6264777d043a124e9dbc7b",
+      "capturedAt": "2026-10-15T10:24:58.282Z",
+      "sha256": "6b656b0d0109a07edb8609e15307d601988dd22d638fc5d1b75f8f238bd9fa01",
+      "sourceSha256": "971ec1b0614dd9efe0966456ba8892cdcd4aa4d796ba1dcd72b0f465dc2b5e2b",
       "engine": "chromium",
       "actualUiLanguage": "en",
       "shellSimulation": true,
       "captureBoundary": "Real product dialog with a mocked native bridge and bundled fixture; not AppKit.",
-      "pixelSize": [
-        1440,
-        1000
-      ],
-      "capturedBaseCommit": "d128c74fdde3c756112ce07278f3c8d2a8b6ec82",
+      "capturedBaseCommit": "84719a2d40afbf22b0972585d1b0c3c05b8a4d59",
       "commitBoundAfterCapture": true
     }
   ],
@@ -2389,7 +2213,7 @@
       "uiI18nSha256": "8b803331aa4eaa8ef2cc07ab28f596d6a6215154829159f632d542b8a1b0fafe"
     }
   ],
-  "captureNote": "Photographed the v0.3.70 working tree. After committing, verified the committed stage-sketch.js SHA-256 against every capture record and bound capturedCommit to that commit; capturedBaseCommit preserves the original base. Physical devices unverified.",
+  "captureNote": "Photographed the v0.3.71 working tree. After committing, verified the committed stage-sketch.js SHA-256 against every capture record and bound capturedCommit to that commit; capturedBaseCommit preserves the original base. Physical devices unverified.",
   "previousScreenshots": [
     {
       "id": "stage",

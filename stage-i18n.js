@@ -31,12 +31,29 @@
   "use strict";
 
   const TEXT = {
+    "リハーサルタブで、図の参照先と実際の進行位置を分け、同じ箇所の試行回数を記録できるようになりました。": "In the Rehearsal tab, browse diagrams separately from the running position and record repeated attempts at the same passage.",
+    "リハーサルの休憩・振り返り・確定を整理しました。確定後も補足を追記でき、記録はランごとに保存されます。": "Rehearsal breaks, review and finalisation are clearer. Add supplementary notes after finalisation; records are saved separately for each run.",
+    "リハーサルを画面いっぱいの固定配置にしました。右の机の幅、ペンの太さ、正面図・平面図・両方の表示を変えられ、ペン・手・消しゴムを1列にまとめました。": "Rehearsal now fills the window with a fixed layout. Resize the right-hand desk, adjust pen thickness and switch between front, plan or both views. Pen, pan and eraser share one toolbar.",
+    "照明デザインの図の見出しを統一し、袖の見出しと上手・下手の切替を整理しました。作業灯をつけると袖まで明るく見えます。": "Lighting design uses consistent diagram headings, with a clearer Wing heading and stage-left/stage-right switch. Worklights illuminate the wings as well.",
+    "進行表に、Excelと同じように横位置・縦位置・書体・サイズを変えられる書式の道具列をまとめました。": "The run sheet has a formatting toolbar for horizontal and vertical alignment, font and size, as in Excel.",
+    "曲はタイムラインのMキューだけで鳴ります。以前のシーンへの曲割当は各シーンの頭のMキューへ自動で移し、元の割当は保持します。": "Music now plays only through timeline M cues. Previous scene music assignments are automatically copied to M cues at each scene start, while the original assignments are retained.",
+    "タイムコードや版の窓などで、窓の閉じ方と確定ボタンの位置をそろえました。": "Timecode, version and other dialogues now use consistent close controls and confirmation button positions.",
+    "シーンを見るだけでは変更扱いにならないようにしました。": "Viewing a scene alone no longer marks the project as changed.",
+    "タイムラインは時間式だけで表示します。カウント式で作った区間も時間式で表示し、カウントの情報は保存したまま残ります。": "The timeline now displays time only. Sections created in counts also display as time, while their saved count information is retained.",
+
+    "セルを選ぶと書式を変えられます": "Select a cell to change its formatting",
+    "セルの書式": "Cell formatting",
     "ショーを「プロジェクトファイル（.stageproj）」として保存・読み込みできるようになりました。ブラウザ版は音源入りzipの書き出しとzip・フォルダの読み込みに対応します。": "Shows can now be saved and opened as project files (.stageproj). The browser version exports ZIP files with audio and imports ZIP files or folders.",
     "Mac版はLogicのように1プロジェクト＝1ファイルです。⌘Sと自動保存で保存し、控えを直近10件残します。": "On Mac, one project is one file, as in Logic. Save with ⌘S or autosave, with the latest 10 backups retained.",
     "サンプルライブラリから見本ショーを入手して開けます。試験場には短いテスト音源を同梱しています。": "Get and open example shows from the sample library. The test show includes a short test audio file.",
     "Mac版の旧棚は「以前のショー」から1本ずつプロジェクトとして保存できます。元のショーと音源は端末に残ります。": "On Mac, save old shelf shows one at a time as projects from Previous shows. The original shows and audio stay on this device.",
     "Mac版は起動時に「最後のプロジェクトを開く」か「最初の窓を表示」を選べます。": "On Mac, choose Open the last project or Show the first window at startup.",
 
+    "上寄せ": "Align top",
+    "上下中央": "Align middle",
+    "下寄せ": "Align bottom",
+    "音源を読み込みました。Mキューの詳細で選べます。": "Audio loaded. Select it in M cue details.",
+    "自動では再生できませんでした。タイムラインの再生操作で再開してください。": "Playback needs another tap. Use timeline playback to resume.",
     "現場モードは、進行表の右にある「リハーサル」タブになりました。ヘッダーの走る人のアイコンは廃止しました。": "Show mode is now the Rehearsal tab to the right of Run of show. The running-person icon has been removed from the header.",
     "図を中央、GOなどの進行操作を右の列にまとめました。照明と作業灯の入切、Eでタイムラインを開閉できます。": "Diagrams are in the centre, with GO and other progress controls in the right column. Toggle lighting and work lights, and press E to open or close the timeline.",
     "シーンを切り替えても画面が揺れないようにしました。": "Scene changes now keep the screen steady.",
@@ -4865,4 +4882,45 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "見本を入手して開けませんでした。もう一度お試しください。": "Could not get and open the sample. Please try again.",
   "プロジェクトを保存できませんでした。元のショーと音源は保持しています。": "Could not save the project. The original show and audio are retained.",
   "以前のショーを読み取れませんでした。保存領域は変更していません。": "Could not read previous shows. Storage is unchanged."
+});
+
+/* R-01 rehearsal workflow. */
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "前の図": "Previous drawing",
+  "次の図": "Next drawing",
+  "表示・記録": "Viewing / recording",
+  "進行位置": "Progress position",
+  "停止中": "Stopped",
+  "回目": "attempt",
+  "から": "from",
+  "表示中の図を開始位置にする": "Set start to this drawing",
+  "ここから次の試行": "Next attempt from here",
+  "進行位置の図へ戻る": "Return to progress drawing",
+  "休憩・中断": "Take a break",
+  "記録を再開": "Resume recording",
+  "休憩中": "On a break",
+  "振り返る": "Review run",
+  "振り返り": "Review",
+  "稽古へ戻る": "Return to rehearsal",
+  "振り返り・書き出し": "Review and export",
+  "記録を確定": "Finalise record",
+  "確定済み": "Finalised",
+  "確定後の補足": "Addendum after finalisation",
+  "補足を追記": "Append addendum",
+  "保存中": "Saving",
+  "図とノートの高さを変える": "Resize drawings and notes",
+  "記録を確定しますか？本文と図は変更できなくなります。補足は別の追記として残せます。": "Finalise this record? Its text and drawings will become read-only. You can add separate addenda."
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "補足を追記してから閉じてください。": "Append or clear your addendum before closing.",
+  "元ショーのメモ": "Original show notes"
+});
+
+// rehearsal-layout: diagram tools share the stage UI conventions.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "ペンの太さ": "Pen thickness",
+  "記録図の道具": "Drawing tools",
+  "正面図の拡大表示を切り替える": "Toggle enlarged front view",
+  "平面図の拡大表示を切り替える": "Toggle enlarged plan view"
 });

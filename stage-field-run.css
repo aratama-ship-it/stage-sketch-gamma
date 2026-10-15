@@ -70,3 +70,94 @@ html.stage-pwa-tablet.gm-tablet .stage-sketch-head>.gm-rehearsal-tabs{display:fl
 html.stage-pwa-tablet.gm-tablet body[data-gamma-workspace=rehearsal] .stage-sketch{display:block;height:auto;min-height:0;overflow:visible}
 
 html.stage-pwa-tablet body[data-gamma-workspace=rehearsal] #stage-timeline-panel:not(.is-suspended){display:flex!important}
+
+/* R-01: the drawing reference, note and progress stay visible during a run. */
+.field-run-dialog[data-workspace=true]{--fr-note-height:calc(var(--fr-hit) * 3);--fr-drawing-min:calc(var(--fr-hit) * 3);--fr-go-size:var(--fs-8);--field-go-height:var(--ctrl-lg)}
+.field-run-dialog[data-workspace=true] .field-run-content{overflow:hidden}
+.field-run-dialog[data-workspace=true] .field-run-main{overflow:hidden;min-height:0;gap:var(--sp-2,8px)}
+.field-run-dialog[data-workspace=true] .field-run-band{display:flex;flex-wrap:wrap;gap:var(--sp-2,8px);flex-shrink:0}
+.field-run-dialog[data-workspace=true] .field-run-band[hidden]{display:none}
+.field-run-dialog[data-workspace=true] .field-run-band .field-current{flex:1;min-width:0;font-size:var(--fs-8);line-height:1.4;text-align:left;color:var(--paper);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.field-run-dialog[data-workspace=true] .field-run-band button{font-size:var(--fs-6)}
+.field-run-dialog[data-workspace=true] #field-run-follow{font-size:var(--fs-4);min-height:var(--ctrl-md);flex-basis:100%}
+.field-run-dialog[data-workspace=true] .field-run-note{height:var(--fr-note-height);min-height:calc(var(--fr-hit) * 2.5);overflow:auto;gap:var(--sp-1,4px)}
+.field-run-dialog[data-workspace=true] .field-run-note[hidden]{display:none}
+.field-run-dialog[data-workspace=true] .field-run-note textarea{min-height:calc(var(--fr-hit) * 1.5);flex:1;resize:vertical;font-size:var(--fs-7);line-height:1.5;padding:var(--sp-2,8px)}
+.field-run-dialog[data-workspace=true] .field-run-note-head{flex-shrink:0;gap:var(--sp-1,4px)}
+.field-run-dialog[data-workspace=true] .field-run-note-head button,.field-run-dialog[data-workspace=true] .field-run-note-head select{min-height:var(--ctrl-md);font-size:var(--fs-6)}
+.field-run-dialog[data-workspace=true] .field-run-note .field-run-original{display:none}
+.field-note-resize{height:var(--sp-2,8px);min-height:var(--sp-2,8px);flex-shrink:0;cursor:row-resize;touch-action:none;border-top:1px solid var(--edge);border-bottom:1px solid var(--edge)}
+.field-note-resize:focus-visible{outline:2px solid var(--brass)}
+.field-progress{margin:0;font-size:var(--fs-8);line-height:1.4;font-weight:700;color:var(--paper)}
+.field-run-attempt{margin:0;font-size:var(--fs-6);color:var(--milk)}
+.field-run-save-state{font-size:var(--fs-6);color:var(--milk)}
+.field-run-dialog[data-workspace=true] .field-run-side-body{gap:var(--sp-2,8px)}
+.field-run-dialog[data-workspace=true] .field-run-side-body>button{font-size:var(--fs-6);line-height:1.4;flex-shrink:0}
+.field-run-details>summary{cursor:pointer;min-height:var(--ctrl-lg);display:list-item;align-content:center;font-size:var(--fs-6);color:var(--milk)}
+.field-run-addenda p{white-space:pre-wrap;margin:var(--sp-2,8px) 0;font-size:var(--fs-7)}
+.field-run-dialog[data-workspace=true][data-kind=review] .field-run-work{display:grid}
+.field-run-dialog[data-workspace=true][data-kind=review] .field-run-note{height:calc(var(--fr-hit) * 5)}
+.field-run-dialog[data-workspace=true][data-kind=review] .field-run-drawings{min-height:calc(var(--fr-hit) * 2)}
+.field-run-dialog[data-workspace=true][data-kind=review] .field-run-drawings iframe{min-height:0}
+.field-run-phases{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-1,4px)}
+.field-run-dialog .field-run-phases button{padding:var(--sp-1,4px);font-size:var(--fs-6);line-height:1.4}
+
+.field-run-note>*{flex-shrink:0}
+.field-run-dialog[data-workspace=true] .field-run-note textarea{flex:1 0 auto}
+
+/* RL-1..7: fixed drawing workspace, with the notes on the resizable desk. */
+html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace=rehearsal] #view-stage{padding-inline:var(--sp-1,4px);padding-bottom:0;overflow:hidden;scrollbar-gutter:auto}
+body[data-gamma-workspace=rehearsal]{overflow:hidden}
+.field-run-dialog[data-workspace=true]{--fr-side:360px;--fr-side-min:320px;--fr-drawing-min:0px;box-sizing:border-box}
+.field-run-dialog[data-workspace=true] .field-run-content{padding:var(--sp-2,8px);scrollbar-gutter:auto;min-height:0}
+.field-run-dialog[data-workspace=true] .field-run-work{--fr-side-min:320px;grid-template-columns:minmax(0,1fr) var(--fr-side);min-height:0;height:100%}
+.field-run-dialog[data-workspace=true] .field-run-main{scrollbar-gutter:auto;min-height:0}
+.field-run-dialog[data-workspace=true] .field-run-drawings{width:100%;flex:1 1 0;min-height:0;box-sizing:border-box}
+.field-run-dialog[data-workspace=true] .field-run-drawings iframe{min-height:0}
+.field-run-dialog[data-workspace=true] .field-run-band{flex-wrap:nowrap}
+.field-run-dialog[data-workspace=true] #field-run-follow{flex-basis:auto;max-width:30%;min-width:0;white-space:normal;line-height:1.4}
+.field-run-dialog[data-workspace=true] .field-run-band button{padding-inline:var(--sp-2,8px);font-size:var(--fs-4)}
+.field-run-dialog[data-workspace=true] .field-run-side{display:flex;flex-direction:column;min-height:0;scrollbar-gutter:auto}
+.field-run-dialog[data-workspace=true] .field-run-side-body{padding:var(--sp-2,8px);gap:var(--sp-1,4px);min-height:0;flex:1;overflow:auto}
+.field-run-meta{display:flex;align-items:baseline;justify-content:space-between;gap:var(--gamma-gap);flex-wrap:wrap}
+.field-run-meta strong{min-width:0;overflow-wrap:anywhere}
+.field-run-action-pair{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-1,4px)}
+.field-run-action-pair button{padding:var(--sp-1,4px);font-size:var(--fs-6);line-height:1.4}
+.field-run-dialog[data-workspace=true] .field-run-side-body>*,.field-run-action-pair{flex-shrink:0}
+.field-run-dialog[data-workspace=true] .field-run-note{height:auto;min-height:calc(var(--ctrl-lg) * 4);flex:1 0 auto;overflow:visible;margin-top:var(--sp-2,8px)}
+.field-run-dialog[data-workspace=true] .field-run-note textarea{min-height:calc(var(--ctrl-lg) * 2);height:calc(var(--ctrl-lg) * 2);resize:vertical}
+.field-run-dialog[data-workspace=true] .field-run-note-head{gap:var(--sp-1,4px)}
+.field-run-dialog[data-workspace=true] .field-run-note-head strong{flex:1 0 30%}
+.field-run-dialog[data-workspace=true] .field-run-note-head button{min-height:var(--ctrl-sm);padding:var(--sp-1,4px);font-size:var(--fs-4)}
+.field-run-dialog[data-workspace=true] .field-run-frame-choice{min-width:0;flex:1;max-width:65%}
+.field-run-dialog[data-workspace=true] .field-side-collapsed{grid-template-columns:minmax(0,1fr) var(--fr-hit)}
+.field-run-resize{width:var(--ctrl-lg);right:calc(var(--fr-side) + var(--fr-gap)/2 - var(--ctrl-lg)/2);border:0;pointer-events:none}
+.field-run-resize::after{content:'';position:absolute;top:0;bottom:0;left:calc(50% - var(--fr-resize-width)/2);width:var(--fr-resize-width);border-inline:1px solid var(--edge);pointer-events:auto}
+.field-run-resize::before{content:'';position:absolute;top:calc(50% - var(--ctrl-lg)/2);height:var(--ctrl-lg);width:100%;border-block:1px solid var(--brass);background:var(--desk-2);pointer-events:auto}
+.field-frame-shell{height:100dvh;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--desk)}
+.field-frame-tools{display:flex;align-items:center;gap:var(--sp-1,4px);padding:var(--sp-1,4px);flex-shrink:0;color:var(--milk)}
+.field-frame-tools button,.field-frame-pane header button{width:var(--gamma-icon-box);height:var(--gamma-icon-box);min-width:var(--gamma-icon-box);min-height:var(--gamma-icon-box);padding:0;display:inline-flex;align-items:center;justify-content:center;background:var(--desk-2);color:var(--milk);border:1px solid var(--edge);cursor:pointer}
+.field-frame-tools svg,.field-frame-pane header svg{width:var(--gamma-icon-glyph);height:var(--gamma-icon-glyph)}
+.field-frame-tools svg path,.field-frame-pane header svg path{vector-effect:non-scaling-stroke;stroke-width:var(--gamma-icon-stroke)}
+.field-frame-tools button[aria-pressed=true],.field-frame-pane header button[aria-pressed=true]{color:var(--brass);border-color:var(--brass);background:var(--gamma-selected-bg)}
+.field-frame-tools button:focus-visible,.field-frame-pane header button:focus-visible,.field-frame-tools select:focus-visible{outline:2px solid var(--brass);outline-offset:-2px}
+.field-frame-tools button:disabled{opacity:.5;cursor:default}
+.field-pen-width{display:flex;gap:var(--sp-1,4px);align-items:center;font-size:var(--fs-3)}
+.field-frame-tools select{min-height:var(--ctrl-sm);font:var(--fs-3)/1.5 var(--sans);background:var(--desk-2);color:var(--milk);border:1px solid var(--edge)}
+.field-frame-tools .stage-view-select{margin-left:auto;min-width:0}
+.study-frame .field-frame-shell .field-frame-drawings{flex:1;min-height:0;height:auto;padding:var(--sp-1,4px);gap:var(--sp-2,8px)}
+.field-frame-pane header{min-height:var(--gamma-icon-box);gap:var(--gamma-gap);padding:0;margin:0}
+.field-frame-pane header strong{font:600 var(--fs-3)/1.5 var(--sans);letter-spacing:.08em;color:var(--brass)}
+.field-frame-drawings[data-order=both-plan] [data-view=plan]{order:-1}
+.field-frame-inner>.field-frame-ink{aspect-ratio:auto}
+.field-frame-tools button[aria-pressed=true],.field-frame-pane header button[aria-pressed=true]{color:var(--milk)}
+
+.field-run-dialog[data-workspace=true] .field-run-side-body{padding-inline:var(--sp-4,16px)}
+
+/* Same thin groove and brass grip as .stage-panel-width-handle. */
+.field-run-resize::after{left:calc(50% - var(--sp-1,4px)/4);width:calc(var(--sp-1,4px)/2);border:0;background:var(--line-dark)}
+.field-run-resize::before{border:0;background:transparent}
+.field-run-resize>span{position:absolute;top:calc(50% - var(--ctrl-lg)/2);left:calc(50% - var(--sp-1,4px)/2);width:var(--sp-1,4px);height:var(--ctrl-lg);background:var(--brass);pointer-events:none}
+.field-run-resize:is(:hover,:focus-visible)::after{background:var(--brass)}
+.field-frame-tools svg,.field-frame-pane header svg{width:calc(var(--gamma-icon-glyph) * var(--field-glyph-scale,1));height:calc(var(--gamma-icon-glyph) * var(--field-glyph-scale,1))}
+html:has(body[data-gamma-workspace=rehearsal]){scrollbar-gutter:auto;overflow:hidden}

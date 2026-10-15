@@ -7,6 +7,7 @@
   const rehearsal = () => document.body.dataset.gammaWorkspace === "rehearsal" ? window.GAMMA_FIELD_RUNS?.timelineContext() : null;
   const root = document.documentElement;
   const bridge = window.SHOSAI_STAGE_SESSION_BRIDGE;
+  const countTimelineEnabled = window.GAMMA_EDITIONS?.RELEASE_FEATURES.countTimeline === true;
   const panel = document.getElementById("stage-timeline-panel");
   // The app restores large projects asynchronously; its bridge can arrive after
   // this parser-loaded script. Wait without hiding a valid timeline permanently.
@@ -555,6 +556,7 @@
     els.rowVisibilityInputs.forEach((input) => {
       input.checked = ui.rowVisibility[input.value] !== false;
       if (input.value === "audio") input.closest("label").hidden = !timeline?.legacyAudioFallback;
+      if (input.value === "anchors") input.closest("label").hidden = !countTimelineEnabled;
     });
     if (save) saveUi();
   }
@@ -829,7 +831,7 @@
   }
 
   function sectionTimelineUnit(section) {
-    return section && section.timelineUnit === "count" ? "count" : "time";
+    return countTimelineEnabled && section && section.timelineUnit === "count" ? "count" : "time";
   }
 
   function closeUnitWarning({ focus = true } = {}) {
@@ -843,6 +845,7 @@
   }
 
   function openUnitWarning() {
+    if (!countTimelineEnabled) return;
     const documentValue = projectDocument();
     const section = documentValue && currentSection(documentValue.project);
     if (!section || !els.unitWarningModal || typeof bridge.setSectionTimelineUnit !== "function") return;
@@ -980,6 +983,7 @@
   }
 
   function canEditCountSync() {
+    if (!countTimelineEnabled) return false;
     if(rehearsal())return false;
     return Boolean(timeline && typeof bridge.setTimelineCountSync === "function"
       && (timeline.source === "formation" || timeline.trackId));
@@ -1034,12 +1038,14 @@
   function fallbackTimeline(project, section) {
     const scenes = childScenes(project, section);
     const active = scenes.find((scene) => scene.id === project.activeSceneId) || scenes[0] || null;
-    // シーン同期で一覧を描き直しても、再生中のタイムラインの曲を保つ。
-    // 通常のシーン選択では本体が所有権を外すので、そのシーンの割当曲に戻る。
+    // Count alignment follows the M cue at the selected scene, never its archived assignment.
+    const clips = window.STAGE_MUSIC_CUES.schedule(project, TD, {sectionId:section?.id}).clips;
+    const sceneStart = TD.resolve(project).byId.get(active?.id)?.start;
+    const cueTrackId = TD.mediaAt(clips, sceneStart)?.clip.trackId || clips[0]?.trackId || null;
     const ownedTrackId = timeline && timeline.sectionId === (section && section.id || null)
       && typeof bridge.getTimelineAudioTrackId === "function" ? bridge.getTimelineAudioTrackId() : null;
     const trackId = (ownedTrackId && (project.audioTracks || []).some(track => track.id === ownedTrackId) ? ownedTrackId : null)
-      || active && active.audioTrackId || (scenes.find((scene) => scene.audioTrackId) || {}).audioTrackId || null;
+      || cueTrackId;
     const audioTrack = (project.audioTracks || []).find((track) => track.id === trackId) || null;
     const baseDuration = Math.max(0.1, scenes.reduce((sum, scene) => sum + sceneTimelineSeconds(scene), 0));
     const desiredDuration = section ? sectionDurationSeconds(project, section) : baseDuration;
@@ -1229,7 +1235,9 @@
         .map(c => ({...c, start:c.start-timeline.timeOffset, end:c.end-timeline.timeOffset}));
     }
     if (project.musicCueAudio && !window.STAGE_MUSIC_CUES.supported(project)) timingErrors.push({code:"music-version",message:"このMキュー音源の版は未対応です。原本を保持してください。"});
-    timeline.legacyAudioFallback = !window.STAGE_MUSIC_CUES.supported(project) && (project.audioTracks?.length || project.timelineMedia);
+    // Until migration commits, legacy assignments never become a playback fallback.
+    if (!window.STAGE_MUSIC_CUES.supported(project)) { timeline.managed = true; timeline.mediaClips = []; }
+    timeline.legacyAudioFallback = false;
     timeline.mediaClips.sort((a, b) => a.start - b.start);
     if (timeline.managed) for (let i = 1; i < timeline.mediaClips.length; i++) {
       if (timeline.mediaClips[i].start < timeline.mediaClips[i - 1].end - .001
@@ -1842,12 +1850,12 @@
     const segments = new Map(tl.segments.map((segment) => [segment.sceneId, segment]));
     if (tl.source === "show") {
       const domain = TD.resolve(project);
-      return (project.cues || []).filter(c => ["timeline","light-unplaced","light-disabled"].includes(c.kind) && CUE_TYPES.includes(c.cueType)).map(cue => {
+      return window.STAGE_MUSIC_CUES.activeCues(project).filter(c => ["timeline","light-unplaced","light-disabled"].includes(c.kind) && CUE_TYPES.includes(c.cueType)).map(cue => {
         if (cue.positionUnspecified) return segments.has(cue.sceneId) ? {...cue,seconds:null} : null;
         const position = TD.cuePosition(domain, cue); return position ? { ...cue, seconds: position.seconds } : null;
       }).filter(Boolean).sort((a,b) => a.seconds - b.seconds);
     }
-    return (Array.isArray(project.cues) ? project.cues : [])
+    return window.STAGE_MUSIC_CUES.activeCues(project)
       .filter((cue) => cue && ["timeline","light-unplaced","light-disabled"].includes(cue.kind) && CUE_TYPES.includes(cue.cueType))
       .map((cue) => {
         if (cue.positionUnspecified) return segments.has(cue.sceneId) ? {...cue,seconds:null} : null;
@@ -3284,7 +3292,7 @@
     const documentValue = projectDocument();
     const project = documentValue && documentValue.project;
     const active = project && (project.scenes || []).find((scene) => scene.id === project.activeSceneId);
-    return Boolean(active && active.audioTrackId === timeline.trackId);
+    return Boolean(bridge.getTimelineAudioTrackId?.() === timeline.trackId);
   }
 
   function timelineSceneOptions(options = {}) {
@@ -3588,7 +3596,7 @@
     closeTimelineLockMenu();
     const { project, choices } = timelineChoices();
     if (!project || !choices.length) return;
-    if (!document.body.dataset.gammaRehearsalPending && document.body.dataset.gammaWorkspace !== "rehearsal" && !project.musicCueAudio && musicMigrationAttempt !== project.id) {
+    if (!document.body.dataset.gammaRehearsalPending && document.body.dataset.gammaWorkspace !== "rehearsal" && window.STAGE_MUSIC_CUES.needsMigration(project) && musicMigrationAttempt !== project.id) {
       musicMigrationAttempt = project.id;
       void bridge.ensureMusicCueMigration?.().then(() => renderTimeline());
     }
@@ -3656,9 +3664,11 @@
     renderLoopRange();
     els.rulerLabel.textContent = tx(ui.unit === "count" ? "カウント" : "タイムコード");
     els.unitToggle.textContent = tx(ui.unit === "count" ? "カウント式" : "時間式");
+    els.unitToggle.closest(".stage-timeline-unit").hidden = !countTimelineEnabled;
     els.unitToggle.dataset.unit = ui.unit;
     els.unitToggle.setAttribute("aria-checked", String(ui.unit === "count"));
     els.unitToggle.disabled = timeScope === "show" || !section || typeof bridge.setSectionTimelineUnit !== "function";
+    els.grid.hidden = !countTimelineEnabled;
     const showCountTempo = ui.unit === "count";
     [els.metronome, els.anchorHere, els.clearAnchors, els.bpmLabel, els.bpm, els.autoBpm,
       els.meter, els.markOne, els.realTempoReadout].forEach((control) => {

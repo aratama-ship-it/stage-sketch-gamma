@@ -1,6 +1,10 @@
 /* Edition scope shared by the builder and browser. */
 (function (root) {
   "use strict";
+  // 2026-10-15: count-based timeline UI is held for release. Restore this one
+  // flag to true to expose the retained switch, count ruler and editing tools.
+  // This is presentation policy; never use it to normalize saved show values.
+  const RELEASE_FEATURES = Object.freeze({countTimeline:false});
   const ALL_TABS = Object.freeze(["normal","venue-setup","light-placement","light-design","script","3d","run-of-show","rehearsal"]);
   const ALL_ON = Object.freeze({idleAreas:true,arrowTool:true,memoTool:true,penTool:true,lightRender:true,fpv:true,timeline:true,audio:true,cues:true,share:true,cueSheet:true,venueLighting:true,scriptEditor:true,formations:true,sceneAlternatives:true,routeTool:true,machinery:true});
   const common = {tabs:ALL_TABS,dropScripts:[],dropStyles:[],features:ALL_ON,hiddenPanels:[]};
@@ -11,7 +15,7 @@
     dropStyles:["stage-script-editor.css","stage-vox-panel.css","gamma-formation.css"],
     features:Object.freeze(Object.fromEntries(Object.keys(ALL_ON).map(k=>[k,false]))),hiddenPanels:["music","light","vox","alternatives","machinery","rigs"]})});
   const TAB_BUTTON_IDS = Object.freeze({normal:"stage-workspace-normal","venue-setup":"gamma-venue","light-placement":"gamma-placement","light-design":"gamma-design",script:"gamma-script","3d":"stage-freecam-open",cuesheet:"gamma-cuesheet","run-of-show":"gamma-run-of-show",rehearsal:"gamma-rehearsal"});
-  const api = Object.freeze({EDITIONS,TAB_BUTTON_IDS,ALL_TABS,detect(doc){const key=doc?.querySelector('meta[name="gamma-edition"]')?.content;return EDITIONS[key]?key:"studio";}});
+  const api = Object.freeze({EDITIONS,TAB_BUTTON_IDS,ALL_TABS,RELEASE_FEATURES,detect(doc){const key=doc?.querySelector('meta[name="gamma-edition"]')?.content;return EDITIONS[key]?key:"studio";}});
   if(typeof module!=="undefined" && module.exports) module.exports=api;
   root.GAMMA_EDITIONS=api;
   if(root.document){const key=api.detect(root.document);

@@ -1703,3 +1703,8 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .gamma-header-fitted.gamma-
 .stage-project-library-modal .stage-show-row button { white-space:normal; }
 .stage-project-library-modal .stage-show-list { display:flex; flex-direction:column; }
 .stage-project-library-modal .stage-show-list > * { flex:0 0 auto; }
+
+/* UI-03: settings and shortcuts switch in the same full-width column. */
+@media (max-width:1359px) {
+  .stage-prefs-modal .stage-modal-body { grid-template-columns:minmax(0,1fr); column-gap:0; }
+}

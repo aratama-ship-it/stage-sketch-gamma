@@ -1,8 +1,8 @@
 {
-  "version": "0.3.70",
+  "version": "0.3.71",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.70/stage-sketch-gamma-mac-0.3.70.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.71/stage-sketch-gamma-mac-0.3.71.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "ショーを「プロジェクトファイル（.stageproj）」として保存・読み込みできるようになりました。ブラウザ版は音源入りzipの書き出しとzip・フォルダの読み込みに対応します。",
+  "notes": "リハーサルの図・進行・記録と固定配置、照明デザインの図の見出し、進行表のセル書式を改善しました。曲はMキューで再生し、タイムラインは時間式で表示します。",
   "updated": "2026-10-15"
 }

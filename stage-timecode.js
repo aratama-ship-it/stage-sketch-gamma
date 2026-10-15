@@ -251,8 +251,9 @@
     const node = document.createElement('dialog');
     node.id = 'stage-timecode-dialog'; node.className = 'stage-timecode-dialog';
     node.setAttribute('aria-labelledby', 'stage-timecode-title');
-    node.innerHTML = `<form method="dialog" id="stage-timecode-form">
-      <header><h2 id="stage-timecode-title">タイムコード</h2><button value="cancel" aria-label="閉じる">×</button></header>
+    node.innerHTML = `<form method="dialog" id="stage-timecode-form" novalidate>
+      <header class="stage-modal-head"><h2 id="stage-timecode-title">タイムコード</h2><button type="button" class="stage-modal-close" id="tc-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></header>
+      <div class="stage-modal-body">
       <p class="tc-help">本編開始を基準に、前後のシーンと音源を組みます。ショーに保存されます。</p>
       <label>本編開始のシーン<select id="tc-origin-scene" required></select></label>
       <label>開始タイムコード<input id="tc-origin-clock" type="text" value="01:00:00.0" placeholder="01:00:00.0" autocomplete="off" required></label>
@@ -268,10 +269,14 @@
       </details>
       <details id="tc-formation" hidden><summary>フォーメーションと秒数の対応</summary><div id="tc-formation-changes"></div><label class="tc-check"><input type="checkbox" id="tc-adopt-formation">保存時にフォーメーションの秒数をシーンへ反映する</label></details>
       <p id="tc-error" role="status"></p>
-      <footer><button value="cancel">キャンセル</button><button type="button" id="tc-save">保存</button></footer>
+      </div>
+      <footer><button type="button" value="cancel" id="tc-cancel">キャンセル</button><button type="button" id="tc-save">保存</button></footer>
     </form>`;
     document.body.append(node);
     const q = id => node.querySelector('#' + id);
+    // Cancel never submits or validates the draft; only Save reaches the bridge.
+    q('tc-close').onclick = q('tc-cancel').onclick = () => node.close();
+    q('stage-timecode-form').onsubmit = event => { event.preventDefault(); q('tc-save').click(); };
     let draft = [], original = null, returnFocus = null;
     const option = (value, label) => { const o = document.createElement('option'); o.value = value; o.textContent = label; return o; };
     function fill() {

@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.70";
+  const GAMMA_APP_VERSION = "v0.3.71";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2336,6 +2336,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   // Only this device's display; never part of state/prefs or a session document.
   let fieldMode = false;
   let fieldRunQuiet = false;
+  let displayBasesDepth = 0;
+  const displayPieces = new WeakMap();
   // 描画依頼の更新番号。3Dの静止中は駒を作り直さず、この数だけ見回る。保存しない。
   let stageVisualRevision = 0;
   let lastFullRenderAt = -Infinity;   // 直前の render() の時刻（回転の毎コマの二重描画をやめる・v0.2.93）
@@ -6455,6 +6457,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function effectivelyPlacedPiece(piece, scene = sc()) {
+    // Read-side geometry (selection, handles and external views) must use the
+    // same support/hand placement as painting, without changing saved pieces.
+    if (!displayBasesDepth && scene === sc() && scene.pieces.includes(piece)) {
+      return withDisplayBases(venueSize(), () =>
+        effectivelyPlacedPiece(sc().pieces.find(row => row.id === piece.id), sc()));
+    }
     if (piece && piece._effectivePlacement) return piece;
     const idle = idleVisualFrame(piece);
     if (idle) return { ...piece, u: idle.u, v: idle.v, animU: idle.u, animV: idle.v, _effectivePlacement: true };
@@ -7497,7 +7505,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       if (JSON.stringify(next.project) === JSON.stringify(origin)) return true;
       // An independent, write-once pre-migration original. Failure to keep it
       // aborts before either the active document or the shelf can be replaced.
-      if (!(typeof nativeProject !== "undefined" && nativeProject) && origin.musicCueAudio?.version !== 1
+      if (!(typeof nativeProject !== "undefined" && nativeProject) && window.STAGE_MUSIC_CUES.needsMigration(origin)
           && (!storageRecovery || !await storageRecovery.preserveMusicOriginal(origin.id, before)))
         throw Error("Mキューへ移す前の原本を保存できませんでした。");
       if (snapshot() !== before || state.project !== origin) return false;
@@ -7548,7 +7556,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   function requestedAudioTrackIdForCurrentScene() {
     if (!editionAllows("audio")) return null;
-    return activeTimelineAudioTrackId() || (managedTimecodeAudio ? null : normalizeAudioTrackId("scene", sc().audioTrackId));
+    return activeTimelineAudioTrackId();
   }
 
   function timelineAudioIsActive(trackId) {
@@ -7653,7 +7661,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     /* 楽曲を1曲も読み込んでいないうちは、シーン欄の再生バーごと隠す。
        押せないボタンと「音なし 0:00 / 0:00」だけが並んでいても意味がなく、
        シーンの情報を1段ぶん押し下げるだけだった（2026-08-28 本人指摘）。 */
-    if (els.sceneMusic) els.sceneMusic.hidden = !editionAllows("audio") || audioTracks().length === 0;
+    if (els.sceneMusic) els.sceneMusic.hidden = true;
     const assignedId = requestedAudioTrackIdForCurrentScene();
     const track = audioTrackById(assignedId);
     const title = track ? track.title : (assignedId
@@ -7699,8 +7707,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       // not an autoplay denial, and must not overwrite the new cue's status.
       if (request !== audioPlayRequest || trackId !== audioPlayback.trackId || error?.name === "AbortError") return false;
       audioPlayback.playAfterLoad = false;
-      setAudioStatus("自動では再生できませんでした。▶を押して再生してください。",
-        "Playback needs another tap. Press ▶ to play.", "error");
+      setAudioStatus(tx("自動では再生できませんでした。タイムラインの再生操作で再開してください。"),
+        "Playback needs another tap. Use timeline playback to resume.", "error");
       syncAudioControls();
       return false;
     }
@@ -7709,7 +7717,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   async function prepareAudioForCurrentScene(options = {}) {
     if (!editionAllows("audio")) { syncAudioControls(); return false; }
     const nextId = normalizeAudioTrackId("scene", options.trackId === undefined
-      ? sc().audioTrackId : options.trackId);
+      ? activeTimelineAudioTrackId() : options.trackId);
     const transition = audioSceneTransition(audioPlayback.trackId, nextId, options.continuePlayback);
 
     if (!options.force && nextId && audioPlayback.trackId === nextId) {
@@ -7981,7 +7989,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         if (!project.cues.some(c => c.id === targetCue.id)) return false;
         project.audioTracks.push(track);
         project.musicCueAudio ||= {version:1,bindings:{},migrations:[]};
-        project.musicCueAudio.bindings[targetCue.id] = {trackId:track.id,mediaInSeconds:0,mediaOutSeconds:null,gainDb:0};
+        window.STAGE_MUSIC_CUES.bindingTable(project,targetCue.id)[targetCue.id] = {trackId:track.id,mediaInSeconds:0,mediaOutSeconds:null,gainDb:0};
         return true;
       }, "music-cue-upload");
       if (saved) setAudioStatus(`「${track.title}」を読み込みました。`, `Loaded “${track.title}”.`, "done");
@@ -7990,15 +7998,14 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     checkpoint();
     audioTracks().push(track);
     selectedAudioTrackId = track.id;
-    targetScene.audioTrackId = track.id;
+    // Legacy assignments are archival. Import adds a source to the M cue library only.
     audioPanelSignature = "";
     continueAudioOnNextSceneSync = false;
     renderScenes();
     render();
     persistSoon();
     try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (_) { /* 任意 */ }
-    setAudioStatus(`「${track.title}」を読み込み、読み込み開始時のシーンへ割り当てました。`,
-      `Loaded “${track.title}” and assigned it to the scene where loading started.`, "done");
+    setAudioStatus(tx("音源を読み込みました。Mキューの詳細で選べます。"), null, "done");
     return true;
     } finally {
       audioFileOperationPending = false;
@@ -8127,19 +8134,16 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   async function removeAudioTrack(trackId) {
     const track = audioTrackById(trackId);
     if (!track) return;
-    const used = state.project.scenes.filter((scene) => scene.audioTrackId === trackId).length;
-    const warning = sx(`「${track.title}」をこのショーから外します${used ? `。割り当て済みの${used}シーンからも外れます` : ""}。ページを閉じるまでは「一つ戻す」で戻せます。`, `Remove “${track.title}” from this show${used ? ` and ${used} assigned ${used === 1 ? "scene" : "scenes"}` : ""}? You can undo this until the page is closed.`);
+    const warning = sx(`「${track.title}」をこのショーから外します。ページを閉じるまでは「一つ戻す」で戻せます。`, `Remove “${track.title}” from this show? You can undo this until the page is closed.`);
     if (!await surfaceProjectConfirm(warning)) return;
-    const affectsCurrent = sc().audioTrackId === trackId;
+    const affectsCurrent = activeTimelineAudioTrackId() === trackId;
     if (typeof nativeProject !== "undefined" && nativeProject) {
       const origin = state.project;
       if (!await audioStore.remove(trackId) || state.project !== origin) return;
     }
     checkpoint();
     state.project.audioTracks = audioTracks().filter((candidate) => candidate.id !== trackId);
-    (sceneAlternatives ? sceneAlternatives.allContents(state.project) : state.project.scenes).forEach((scene) => {
-      if (scene.audioTrackId === trackId) scene.audioTrackId = null;
-    });
+    // Retain archival scene assignments, including alternatives, for rollback.
     selectedAudioTrackId = state.project.audioTracks[0]?.id || null;
     if (affectsCurrent) continueAudioOnNextSceneSync = false;
     audioPanelSignature = "";
@@ -8150,35 +8154,14 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function renderAudioPanel(force = false) {
-    if (!els.musicLibrary || !els.sceneAudioTrack) return;
+    if (!els.musicLibrary) return;
     const tracks = audioTracks();
-    const currentId = normalizeAudioTrackId("scene", sc().audioTrackId);
-    if (!selectedAudioTrackId || (!audioTrackById(selectedAudioTrackId) && selectedAudioTrackId !== currentId)) {
-      selectedAudioTrackId = audioTrackById(currentId)?.id || tracks[0]?.id || null;
-    }
+    if (!audioTrackById(selectedAudioTrackId)) selectedAudioTrackId = tracks[0]?.id || null;
     const signature = audioPanelKey();
     if (!force && signature === audioPanelSignature) return;
     audioPanelSignature = signature;
-
-    els.sceneAudioTrack.replaceChildren();
-    const none = document.createElement("option");
-    none.value = "";
-    none.textContent = tx("音なし");
-    els.sceneAudioTrack.append(none);
-    tracks.forEach((track) => {
-      const option = document.createElement("option");
-      option.value = track.id;
-      option.textContent = track.title;
-      els.sceneAudioTrack.append(option);
-    });
-    if (currentId && !audioTrackById(currentId)) {
-      const unknown = document.createElement("option");
-      unknown.value = currentId;
-      unknown.textContent = tx("不明な楽曲（音源の再接続が必要）");
-      els.sceneAudioTrack.append(unknown);
-    }
-    els.sceneAudioTrack.value = currentId || "";
-
+    if (els.musicAssignment) els.musicAssignment.hidden = true;
+    if (els.musicSceneList) els.musicSceneList.replaceChildren();
     els.musicLibrary.replaceChildren();
     tracks.forEach((track) => {
       const row = document.createElement("div");
@@ -8190,9 +8173,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       const title = document.createElement("strong");
       title.textContent = track.title;
       const meta = document.createElement("span");
-      const assigned = state.project.scenes.filter((scene) => scene.audioTrackId === track.id).length;
+      const assigned = window.STAGE_MUSIC_CUES.activeCues(state.project).filter(cue => window.STAGE_MUSIC_CUES.binding(state.project,cue.id)?.trackId === track.id).length;
       const duration = track.durationSeconds ? formatAudioDuration(track.durationSeconds) : (tx("尺を確認中"));
-      meta.textContent = sx(`${duration}・${assigned}シーン`, `${duration} · ${assigned} ${assigned === 1 ? "scene" : "scenes"}`);
+      meta.textContent = `${duration} · ${assigned} ${tx("Mキュー")}`;
       choose.append(title, meta);
       choose.addEventListener("click", () => {
         selectedAudioTrackId = track.id;
@@ -8209,39 +8192,6 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       els.musicLibrary.append(row);
     });
 
-    const selected = audioTrackById(selectedAudioTrackId);
-    els.musicAssignment.hidden = !selected;
-    if (selected) {
-      els.musicAssignmentTitle.textContent = selected.title;
-      els.musicSceneList.replaceChildren();
-      let sceneNumber = 0;
-      state.project.scenes.forEach((scene) => {
-        if (scene.kind !== "scene") return;
-        sceneNumber += 1;
-        const label = document.createElement("label");
-        label.className = "stage-music-scene-choice";
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.checked = scene.audioTrackId === selected.id;
-        const copy = document.createElement("span");
-        const other = scene.audioTrackId && scene.audioTrackId !== selected.id
-          ? audioTrackById(scene.audioTrackId) : null;
-        copy.textContent = `${sceneNumber}. ${sceneNavigationTitle(scene)}`;
-        if (other) {
-          const note = document.createElement("em");
-          note.textContent = sx(`・現在は「${other.title}」`, ` · currently ${other.title}`);
-          copy.append(note);
-        }
-        checkbox.addEventListener("change", () => {
-          if (checkbox.checked) setSceneAudioTrack(scene, selected.id);
-          else if (scene.audioTrackId === selected.id) setSceneAudioTrack(scene, null);
-        });
-        label.append(checkbox, copy);
-        els.musicSceneList.append(label);
-      });
-    } else if (els.musicSceneList) {
-      els.musicSceneList.replaceChildren();
-    }
   }
 
   function openAudioRelinkPicker(trackId, input = els.musicRelinkFile) {
@@ -12086,6 +12036,26 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return clamp(finite(dims && dims.lift, shapeLift), 0, 10);
   }
 
+  // Rendering resolves support and hand positions on a disposable projection.
+  // Keep the scene object/IDs and animation values, and restore its
+  // original pieces synchronously, even if a renderer throws. Explicit edits
+  // still call refreshBases on the real pieces before saving.
+  function displayedPiece(piece) {
+    return (piece && displayPieces.get(piece)) || piece;
+  }
+
+  function withDisplayBases(size, draw) {
+    const scene = sc(), pieces = scene.pieces;
+    scene.pieces = pieces.map(piece => ({ ...piece }));
+    displayBasesDepth += 1;
+    try {
+      refreshBases(size, scene.pieces);
+      pieces.forEach((piece, index) => displayPieces.set(piece, scene.pieces[index]));
+      return draw();
+    }
+    finally { scene.pieces = pieces; displayBasesDepth -= 1; }
+  }
+
   function refreshBases(size, pieces = sc().pieces) {
     normalizeHolds(pieces, state.project);
     // Earlier candidates have finished their support/pose update before they
@@ -12343,6 +12313,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const pieceV = (piece) => idleVisualFrame(piece)?.v ?? (piece && piece.animV !== undefined ? piece.animV : piece.v);
 
   function placePiece(piece, L) {
+    piece = effectivelyPlacedPiece(piece);
     const pos = place(pieceU(piece), pieceV(piece), L);
     // 転換アニメの途中は、床からの高さも途中の値で描く（降りる・登るの表現）
     const base = piece.animBase !== undefined ? piece.animBase : (piece.base || 0);
@@ -19373,12 +19344,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     // Only the live stage canvases may see playback offsets. Thumbnails/exports are static.
     idleVisualDepth = showSelection && (target === ctx || target === planCtx) ? 1 : 0;
     staticStageDepth = idleVisualDepth ? 0 : 1;
-    try { if (idleVisualDepth) prepareIdleFrames(); return drawStageContent(target, showSelection, view, opts); }
+    try { if (idleVisualDepth) prepareIdleFrames(); return withDisplayBases(venueSize(), () => drawStageContent(target, showSelection, view, opts)); }
     finally { idleVisualDepth = prior; staticStageDepth = priorStatic; }
   }
   function drawStageContent(target, showSelection, view, opts) {
     const L = layout(view);
-    refreshBases(L.size);
     stagePointSources = window.SHOSAI_STAGE_POINT_SOURCE?.collect(sc().pieces.map(p=>({...effectivelyPlacedPiece(p),propShape:propShapeOf(p),dims:pieceDims(p)})),L.size) || [];
     buildPaintLayer(L);
     const S = target.canvas ? target.canvas.width / W : 1;
@@ -19933,8 +19903,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     },
     currentSeat: () => state.seat,
     // いまのシーンの駒（照明を組む画面が下敷きに使う。読むだけ）
-    scenePieces: () => sc().pieces.filter((p) => p.type !== "light")
-      .map((p) => ({ id: p.id, type: p.type, name: pieceLabel(p), u: pieceU(p), v: pieceV(p) })),
+    scenePieces: () => withDisplayBases(venueSize(), () => sc().pieces.filter((p) => p.type !== "light")
+      .map((p) => ({ id: p.id, type: p.type, name: pieceLabel(p), u: pieceU(p), v: pieceV(p) }))),
     venueSize: () => ({ ...venueSize() }),
   });
 
@@ -20034,7 +20004,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       const pannable = L.panRange > 0 || L.panRangeY > 0;
       /* 席の札が同じ行に並ぶので、見出しは絵の名前だけでよい。
          「何もない所を掴むと視線を振れる」ことは、掴んだときの手の形（カーソル）で伝える。 */
-      els.frontCaption.textContent = tx("正面");
+      els.frontCaption.textContent = tx("正面図");
       canvas.dataset.pannable = pannable ? "true" : "false";
     }
     syncFrontLightCueCaption();
@@ -27683,16 +27653,6 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           row.append(lightSummary);
         }
 
-        if (editionAllows("audio") && scene.kind === "scene" && scene.audioTrackId) {
-          const musicSummary = document.createElement("div");
-          musicSummary.className = "stage-scene-audio-summary";
-          const track = audioTrackById(scene.audioTrackId);
-          musicSummary.textContent = track
-            ? track.title
-            : (tx("音源の再接続が必要"));
-          musicSummary.title = musicSummary.textContent;
-          row.append(musicSummary);
-        }
 
         /* 開いているシーンだけ、名前とメモをその場で開く。
          * 閉じている行は名前だけ。並びを見渡すときに邪魔にならない。 */
@@ -30897,12 +30857,17 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (wasAt < 0 || nowAt <= wasAt) return false;
     const timingScene = rows[Math.min(wasAt, nowAt)];
     const blackoutScene = rows[Math.max(wasAt, nowAt)];
+    const originalFromScene = fromScene;
+    fromScene = { ...fromScene, pieces: (fromScene.pieces || []).map(displayedPiece) };
+    const targetPieces = sc().pieces.map(displayedPiece);
     const pieces = [];
     const performerTransitionMotion = featureOn("performerTransitionMotion");
-    sc().pieces.forEach((piece) => {
+    sc().pieces.forEach((originalPiece) => {
+      const piece = displayedPiece(originalPiece);
       if (piece.type === "performer" && !performerTransitionMotion) return;
       const twin = twinOf(piece, fromScene.pieces || []);
       if (!twin) return;
+      const originalTwin = twinOf(originalPiece, originalFromScene.pieces || []);
       const sameSpot = Math.abs(twin.u - piece.u) < 0.004 && Math.abs(twin.v - piece.v) < 0.004;
       const sameBeam = !(piece.type === "light" && piece.beam && twin.beam)
         || (Math.abs(twin.beam.u - piece.beam.u) < 0.004 && Math.abs(twin.beam.v - piece.beam.v) < 0.004);
@@ -30915,14 +30880,14 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
       const mechTo = {};
       const sameMech = mechKeys.every((key) => {
         // 盆の spin だけは、控えた「見えている角度」を始点にする（無ければ保存値）
-        const fromValue = key === "spin" && liveSpins.has(twin) ? liveSpins.get(twin) : twin[key];
+        const fromValue = key === "spin" && liveSpins.has(originalTwin) ? liveSpins.get(originalTwin) : twin[key];
         // 吊り点の高さが未設定のシーンは、描いている高さ（登録の地上高）から・へ動かす
         const fallbackOf = (item) => (key === "rigH" ? flownLift({ ...item, animMech: undefined }) : mechDefaults[key]);
         mechFrom[key] = finite(fromValue, fallbackOf(twin));
         mechTo[key] = finite(piece[key], fallbackOf(piece));
         return Math.abs(mechFrom[key] - mechTo[key]) <= 0.001;
       });
-      const samePose = piece.type !== "performer" || resolvePoseId(twin, fromScene.pieces) === resolvePoseId(piece, sc().pieces);
+      const samePose = piece.type !== "performer" || resolvePoseId(twin, fromScene.pieces) === resolvePoseId(piece, targetPieces);
       const sameFacing = piece.type !== "performer" || Math.abs(((finite(piece.facing, 0) - finite(twin.facing, 0) + 540) % 360) - 180) < .01;
       const sameBase = piece.type !== "performer" || Math.abs(finite(twin.base, 0) - finite(piece.base, 0)) < .001;
       if (sameSpot && sameBeam && sameGlow && sameMech && samePose && sameFacing && sameBase) return;
@@ -30930,10 +30895,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
        * 曲がり方だけ借りて向かう（曲線の形は残しつつ、着地は次のシーンの場所）。 */
       const route = twin.route;
       pieces.push({
-        piece,
+        piece: originalPiece,
         stationary: piece.type === "performer" && sameSpot,
         startPoseShape: piece.type === "performer" ? samplePerformancePose(twin, fromScene.pieces, true) : null,
-        endPoseShape: piece.type === "performer" ? samplePerformancePose(piece, sc().pieces, true) : null,
+        endPoseShape: piece.type === "performer" ? samplePerformancePose(piece, targetPieces, true) : null,
         fromFacing: finite(twin.facing, 0),
         from: { u: twin.u, v: twin.v },
         ctrl: route ? { u: route.bu, v: route.bv } : null,
@@ -31055,9 +31020,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         /* 高さのある始点・終点（ポール・トラピーズ・椅子・台の上）は、
            降りる→床を歩く→着いてから登る、の三区間で動かす（本人の指定）。
            宙に浮いたまま水平に滑ると、実技としてありえない絵になるため。
-           終点の高さは refreshBases が最終位置から出し続ける piece.base を読む。 */
+           終点の高さは直前の描画投影から読み、保存済みのbaseへ書き戻さない。 */
         const sb = piece.type === "performer" ? (entry.startBase || 0) : 0;
-        const eb = piece.type === "performer" && !entry.exit ? (piece.base || 0) : 0;
+        const eb = piece.type === "performer" && !entry.exit ? (displayedPiece(piece).base || 0) : 0;
         if (entry.stationary) {
           piece.animU = entry.from.u + (entry.to.u - entry.from.u) * e;
           piece.animV = entry.from.v + (entry.to.v - entry.from.v) * e;
@@ -33939,7 +33904,14 @@ ${propsPlotHtml}
       title.id = "stage-branch-reason-title";
       title.textContent = tx("別バージョンとして複製");
       box.setAttribute("aria-labelledby", title.id);
-      head.append(title);
+      const dismiss = document.createElement("button");
+      dismiss.type = "button";
+      dismiss.id = "stage-branch-reason-close";
+      dismiss.className = "stage-modal-close";
+      dismiss.setAttribute("aria-label", tx("閉じる"));
+      dismiss.innerHTML = '<svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+      dismiss.addEventListener("click", () => done(null));
+      head.append(title, dismiss);
       const body = document.createElement("div");
       body.className = "stage-modal-body";
       /* T-20（2026-09-18 本人指摘）: この窓は「名前を登録する」ように見えていた。
@@ -34049,7 +34021,14 @@ ${propsPlotHtml}
     title.id = "stage-version-picker-title";
     title.textContent = tx("バージョンを切り替える");
     box.setAttribute("aria-labelledby", title.id);
-    head.append(title);
+    const dismiss = document.createElement("button");
+    dismiss.type = "button";
+    dismiss.id = "stage-version-picker-dismiss";
+    dismiss.className = "stage-modal-close";
+    dismiss.setAttribute("aria-label", tx("閉じる"));
+    dismiss.innerHTML = '<svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+    dismiss.addEventListener("click", () => close());
+    head.append(title, dismiss);
     const body = document.createElement("div");
     body.className = "stage-modal-body";
     const close = () => { document.removeEventListener("keydown", onKey, true); backdrop.remove(); box.remove(); };
@@ -35153,6 +35132,9 @@ ${propsPlotHtml}
     renderShows();
     persistSoon();
     announce(`${state.project.title}（${state.project.versionLabel}）を読み込み、ショー一覧へ保存しました。`);
+    // Package/library replacement bypasses applyLoadedState's gate refresh.
+    // Re-evaluate UI restrictions from the imported show, without changing it.
+    window.GAMMA_WORKSPACE?.syncGate?.();
     showPackageOutcome(packageData, packageResult);
   }
 
@@ -37196,6 +37178,15 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   }
 
   function hitTest(point, L) {
+    const originals = sc().pieces;
+    return withDisplayBases(L.size, () => {
+      const hit = hitTestDisplay(point, L);
+      // Editing must keep the real object, rather than the disposable projection.
+      return hit ? originals.find(piece => piece.id === hit.id) || null : null;
+    });
+  }
+
+  function hitTestDisplay(point, L) {
     const wantLight = tool === "light";
     if (wantLight && !editionAllows("lightRender")) return null;
     /* 動線は明かりにも引ける。灯体はその場に残したまま、
@@ -41621,7 +41612,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         const at = rows.indexOf(current);
         const scenes = rows.filter((row) => row.kind === "scene");
         const size = venueSize();
-        refreshBases(size);
+        return withDisplayBases(size, () => {
         let actTitle = "";
         for (let index = at - 1; index >= 0; index -= 1) {
           if (rows[index].kind === "section" && rows[index].depth < current.depth) {
@@ -41726,6 +41717,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
           mirrorBallDense: featureOn("mirrorBallDense"),   // ミラーボールの粒の数（2026-10-03）
           lang,
         };
+        });
         } finally { idleVisualDepth = priorIdleDepth; }
       },
       heightMOf: (candidate) => pieceHeightM(candidate) * (candidate.size / 100),
@@ -46027,19 +46019,20 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     async saveMusicCueAudio(cueId, audio, patch = {}) {
       return commitMusicCueProject(project => {
         if (!project.cues?.some(c => c.id === cueId && c.kind === "timeline" && c.cueType === "music")) return false;
-        const previous = project.musicCueAudio?.bindings?.[cueId];
+        const previous = window.STAGE_MUSIC_CUES.binding(project,cueId);
         const track = project.audioTracks.find(t => t.id === audio?.trackId);
         if (audio?.trackId && !track && previous?.trackId !== audio.trackId) return false;
         if (audio?.trackId && (!Number.isFinite(audio.mediaInSeconds) || audio.mediaInSeconds<0
           || track && audio.mediaInSeconds>=track.durationSeconds || audio.mediaOutSeconds != null && audio.mediaInSeconds>=audio.mediaOutSeconds || !Number.isFinite(audio.gainDb))) return false;
         if (!window.STAGE_MUSIC_CUES.editCue(project,cueId,patch,window.STAGE_TIME_DOMAIN)) return false;
         project.musicCueAudio ||= {version:1,bindings:{},migrations:[]};
-        project.musicCueAudio.bindings[cueId] = audio?.trackId ? {
-          ...project.musicCueAudio.bindings[cueId], trackId:audio.trackId,
+        const table = window.STAGE_MUSIC_CUES.bindingTable(project,cueId);
+        table[cueId] = audio?.trackId ? {
+          ...previous, trackId:audio.trackId,
           mediaInSeconds:Math.max(0,finite(audio.mediaInSeconds,0)),
           mediaOutSeconds:audio.mediaOutSeconds ?? null, gainDb:normalizeAudioGainDb(audio.gainDb),
         } : null;
-        if (previous?.trackId !== audio?.trackId && project.musicCueAudio.bindings[cueId]) delete project.musicCueAudio.bindings[cueId].legacySource;
+        if (table[cueId]) delete table[cueId].legacySource;
         return true;
       });
     },

@@ -341,6 +341,15 @@
   const SPEED_SEC = { slow: 4, normal: 2, fast: 1 };
   E.SPEED_PERIOD_MS && Object.assign(E.SPEED_PERIOD_MS, {}); // 参照のみ
   const periodMs = (light) => (SPEED_SEC[light && light.speed] || 2) * 1000;
+  // LD-6: work lights use the stage renderer's floor/wing palette
+  // (stage-sketch.js stageFloorFill / STAGE_COOL_SURFACES). Blackout stays byte-identical.
+  const WORK_SURFACES = Object.freeze({floor:'#241d18',front:'#211b17',wing:'#40362d'});
+  const WORK_COOL_SURFACES = Object.freeze({'#241d18':'#202327','#211b17':'#1c1f23','#40362d':'#2b2e33'});
+  function workSurface(part, unlit) {
+    if(state.mode!=='move'||showOn('blackout'))return unlit;
+    const warm=WORK_SURFACES[part];
+    return document.documentElement.dataset.stageSkin==='blue-black'?WORK_COOL_SURFACES[warm]:warm;
+  }
   const COLORS = ["#f2ead6", "#ffd27a", "#ff7a5c", "#7ab8ff", "#8be08b", "#d98cf0"];
   /* T-15（2026-09-18 本人要望）: 既定の6色と同じ色が「作った色」にも並んでいた。
    * 足すときの重複判定は前からあるが、判定が入る前に作られた保存データには残っていた。
@@ -1654,10 +1663,10 @@
     const w = logicalWidth(plan), h = logicalHeight(plan), P = planProj(), B = planBox(), d = state.dims;
     pctx.clearRect(0, 0, w, h); pctx.fillStyle = surface("#0d0c0b"); pctx.fillRect(0, 0, w, h);
     // 袖・客席の帯
-    pctx.fillStyle = "rgba(255,255,255,0.02)"; pctx.fillRect(0, B.y, B.x, B.h); pctx.fillRect(B.x + B.w, B.y, w - B.x - B.w, B.h);
+    pctx.fillStyle = workSurface("wing", "rgba(255,255,255,0.02)"); pctx.fillRect(0, B.y, B.x, B.h); pctx.fillRect(B.x + B.w, B.y, w - B.x - B.w, B.h);
     pctx.fillStyle = "rgba(156,130,63,0.05)"; pctx.fillRect(B.x, B.y + B.h, B.w, h - B.y - B.h);
     // 舞台
-    pctx.fillStyle = "rgba(255,255,255,0.035)"; pctx.fillRect(B.x, B.y, B.w, B.h);
+    pctx.fillStyle = workSurface("floor", "rgba(255,255,255,0.035)"); pctx.fillRect(B.x, B.y, B.w, B.h);
     pctx.strokeStyle = "rgba(239,231,214,0.06)"; pctx.lineWidth = 1;
     if (showOn("grid")) {
       for (let m = 1; m < d.W; m++) { const X = B.x + m / d.W * B.w; pctx.beginPath(); pctx.moveTo(X, B.y); pctx.lineTo(X, B.y + B.h); pctx.stroke(); }
@@ -1856,7 +1865,7 @@
     const panels = curtainPanelsWorld(pc, d);
     ctx.save();
     const masking = pc.solid || pc.curtainKind === "border" || pc.curtainKind === "leg";
-    ctx.strokeStyle = masking ? surface("#12100e") : hexA(pc.color || "#000000", 0.9); ctx.lineWidth = 7; ctx.lineCap = "butt";
+    ctx.strokeStyle = masking ? workSurface("wing", surface("#12100e")) : hexA(pc.color || "#000000", 0.9); ctx.lineWidth = 7; ctx.lineCap = "butt";
     panels.forEach((part) => {
       const a = P({ x: part.leftX, y: part.leftY, z: 0 }), b = P({ x: part.rightX, y: part.rightY, z: 0 });
       ctx.beginPath(); ctx.moveTo(a.X, a.Y); ctx.lineTo(b.X, b.Y); ctx.stroke();
@@ -1942,7 +1951,7 @@
          「黒い光」として見えていた（本人指摘）。布が光を遮るのだから、透かさず塗るのが正しい。
          色は背景よりわずかに明るくして、布そのものの形は塗りと陰影で読めるようにする。 */
       const masking = pc.solid || pc.curtainKind === "border" || pc.curtainKind === "leg";
-      ctx.fillStyle = masking ? surface("#12100e") : hexA(pc.color || "#000000", 0.3);
+      ctx.fillStyle = masking ? workSurface("wing", surface("#12100e")) : hexA(pc.color || "#000000", 0.3);
       ctx.beginPath(); ctx.moveTo(fl.X, fl.Y); ctx.lineTo(fr.X, fr.Y); ctx.lineTo(tr.X, tr.Y); ctx.lineTo(tl.X, tl.Y); ctx.closePath();
       ctx.fill();
       if(!window.SHOSAI_STAGE_MACHINERY.isMaskingCurtain(pc)){ctx.strokeStyle="rgba(240,231,214,0.22)";ctx.lineWidth=1;ctx.stroke();}
@@ -3157,9 +3166,10 @@
     const w = logicalWidth(front), h = logicalHeight(front), B = secBox(front, sec.kind), P = secProj(sec), d = state.dims;
     const frontView = E.frontFarSetup(d, B);
     fctx.clearRect(0, 0, w, h); fctx.fillStyle = surface("#0d0c0b"); fctx.fillRect(0, 0, w, h);
-    fctx.fillStyle = "rgba(255,255,255,0.03)"; fctx.fillRect(B.x, B.y, B.w, B.h);           // 奥壁
+    if(state.mode==="move"&&!showOn("blackout")){fctx.fillStyle=workSurface("wing",surface("#0d0c0b"));fctx.fillRect(0,B.y,w,B.h);}
+    fctx.fillStyle = workSurface("front", "rgba(255,255,255,0.03)"); fctx.fillRect(B.x, B.y, B.w, B.h);           // 奥壁
     fctx.strokeStyle = "rgba(239,231,214,0.25)"; fctx.strokeRect(B.x, B.y, B.w, B.h);
-    fctx.fillStyle = "rgba(255,255,255,0.05)"; fctx.fillRect(0, B.y + B.h, w, h - B.y - B.h); // 床
+    fctx.fillStyle = workSurface("front", "rgba(255,255,255,0.05)"); fctx.fillRect(0, B.y + B.h, w, h - B.y - B.h); // 床
     fctx.fillStyle = "rgba(240,231,214,0.45)"; fctx.font = "16px sans-serif"; fctx.textBaseline = "middle";
     if(!simple) [2, 4, 6, 8].filter((m) => m <= d.H).forEach((m) => { const Y = B.y + B.h - m / d.H * B.h; fctx.fillText(metresText(m), B.x - 64, Y); fctx.strokeStyle = "rgba(239,231,214,0.07)"; fctx.beginPath(); fctx.moveTo(B.x, Y); fctx.lineTo(B.x + B.w, Y); fctx.stroke(); });
     if(!simple) fctx.fillText("床", B.x - 40, B.y + B.h); fctx.fillText("下手", 30, B.y + 14); fctx.fillText("上手", B.x + B.w + 30, B.y + 14);
@@ -3220,8 +3230,8 @@
     fctx.clearRect(0, 0, w, h); fctx.fillStyle = surface("#0d0c0b"); fctx.fillRect(0, 0, w, h);
     const backX = P({ x: 0, y: 0, z: 0 }).X, frontX = P({ x: 0, y: d.D, z: 0 }).X;
     const left = Math.min(backX, frontX), right = Math.max(backX, frontX);
-    fctx.fillStyle = "rgba(255,255,255,0.03)"; fctx.fillRect(left, B.y, right - left, B.h);
-    fctx.fillStyle = "rgba(255,255,255,0.05)"; fctx.fillRect(0, B.y + B.h, w, h - B.y - B.h);          // 床
+    fctx.fillStyle = workSurface("front", "rgba(255,255,255,0.03)"); fctx.fillRect(left, B.y, right - left, B.h);
+    fctx.fillStyle = workSurface("front", "rgba(255,255,255,0.05)"); fctx.fillRect(0, B.y + B.h, w, h - B.y - B.h);          // 床
     fctx.fillStyle = "rgba(156,130,63,0.35)"; fctx.fillRect(backX - (side === "shimote" ? 0 : 6), B.y, 6, B.h); // 奥壁
     fctx.strokeStyle = "rgba(239,231,214,0.07)"; fctx.lineWidth = 1;
     if (showOn("grid")) for (let m = 1; m < d.D; m++) { const X = P({ x: 0, y: m, z: 0 }).X; fctx.beginPath(); fctx.moveTo(X, B.y); fctx.lineTo(X, B.y + B.h); fctx.stroke(); }
@@ -3307,17 +3317,18 @@
         frontW:L.frontW*k,backW:L.backW*k,centerX:L.centerX*k+tx};
     }
     fctx.clearRect(0, 0, w, h); fctx.fillStyle = surface("#0d0c0b"); fctx.fillRect(0, 0, w, h);
+    if(state.mode==="move"&&!showOn("blackout")){fctx.fillStyle=workSurface("wing",surface("#0d0c0b"));fctx.fillRect(0,B.y,w,B.h);}
     const at = (u, v, hM) => P({ x: (u - 0.5) * d.W, y: v * d.D, z: hM || 0 });
     // 床（奥から手前へ広がる台形）
     const bl = at(0, 0, 0), br = at(1, 0, 0), fl = at(0, 1, 0), fr = at(1, 1, 0);
-    fctx.fillStyle = "rgba(255,255,255,0.05)"; fctx.beginPath();
+    fctx.fillStyle = workSurface("front", "rgba(255,255,255,0.05)"); fctx.beginPath();
     fctx.moveTo(bl.X, bl.Y); fctx.lineTo(br.X, br.Y); fctx.lineTo(fr.X, fr.Y); fctx.lineTo(fl.X, fl.Y); fctx.closePath(); fctx.fill();
     // 客席側の暗がり
     fctx.fillStyle = "rgba(156,130,63,0.05)"; fctx.fillRect(0, Math.min(fl.Y, fr.Y), w, h - Math.min(fl.Y, fr.Y));
     // 3D表示では寸法・グリッドを重ねず、舞台と照明の見え方だけを残す。
     // 奥の壁
     const tl = at(0, 0, d.H), tr = at(1, 0, d.H);
-    fctx.fillStyle = "rgba(255,255,255,0.03)"; fctx.beginPath();
+    fctx.fillStyle = workSurface("front", "rgba(255,255,255,0.03)"); fctx.beginPath();
     fctx.moveTo(bl.X, bl.Y); fctx.lineTo(br.X, br.Y); fctx.lineTo(tr.X, tr.Y); fctx.lineTo(tl.X, tl.Y); fctx.closePath(); fctx.fill();
     fctx.strokeStyle = "rgba(239,231,214,0.25)"; fctx.stroke();
     const litSpots3D = [];   // 作業灯を消す（ブラックアウト）用

@@ -7,17 +7,17 @@
     lead: "Give scenes a length and a show becomes a flow rather than a list. Cues are the marks for light, music and lines.",
     sections: [
       {
-        id: "timeline", title: "The timeline (E) — time or counts, section duration, playback", status: "verified",
-        keywords: ["timeline", "e", "time", "seconds", "play", "stop", "count", "bpm", "time-based", "count-based", "section duration", "time on scene", "travel", "lock edge", "snap", "loop", "a", "b", "split scene", "TC", "timecode"],
+        id: "timeline", title: "The timeline (E) — time, section duration, playback", status: "verified",
+        keywords: ["timeline", "e", "time", "seconds", "play", "stop", "bpm", "time-based", "section duration", "time on scene", "travel", "lock edge", "loop", "a", "b", "split scene", "TC", "timecode"],
         html: `
+<p>In Timecode settings, the close button, Cancel and Esc discard the draft even if the clock is empty or invalid. The show stays unchanged; validation happens on Save. The dialog follows light and dark skins. M cue details also scroll only the body, keeping the heading and decision buttons visible.</p>
 <p>The small handle at the bottom left (${kbd("E")}) opens the timeline. The top strip holds the controls; below are the lanes (time, soundtrack, scenes, transition, lighting cue, music cue, dialogue cue).</p>
-${fig("21-timeline", "The timeline: section duration, time-based, play, A/B, loop range, snap and split scene on top; soundtrack, scenes, transitions and three kinds of cue below.", "Timeline")}
+${fig("21-timeline", "The timeline: section duration, time-based, play, A/B, loop range and split scene on top; soundtrack, scenes, transitions and three kinds of cue below.", "Timeline")}
 ${table(["Control", "Meaning"], [
   [ui("Section duration") + " (seconds)", "The length of the open section. Keep it equal to the sum of its scenes' time on scene and moving time"],
-  [ui("Time-based") + " / count-based", "Scale in timecode or in the soundtrack's counts (beats). Confirmed with " + ui("Switch display units?")],
+  ["Timecode", "The ruler always shows time. Saved count settings stay in legacy shows while the timeline displays time."],
   ["|◀ ◀| ▶ |▶", "Start / previous / play or stop / next"],
   ["A · B · " + ui("Loop range"), "Mark A and B and loop the span between them"],
-  [ui("Snap 1/4"), "Snap cues and boundaries to quarter beats (or the current unit)"],
   ["− / ＋", "Zoom the scale"],
   [ui("Split scene"), "Split the scene in two at the playhead"],
   ["00:00:00.0", "Playhead timecode"]
@@ -34,8 +34,8 @@ ${fig("68-timeline-rj", "The timeline of the sample “Romeo and Juliet” aroun
 ${vid("timeline-play", "Opening the timeline in scene 1-2 of “Romeo and Juliet” and playing it. The playhead line moves past the cues.")}`
       },
       {
-        id: "music", title: "Audio (load, assign, count alignment)", status: "sourced",
-        keywords: ["music", "audio", "song", "track", "soundtrack", "bgm", "load", "assign", "play", "no sound", "audio file not found", "reconnect", "gain", "db", "bpm", "estimate", "first beat", "count", "anchor", "phrase", "music sync", "sync"],
+        id: "music", title: "Audio (load, assign)", status: "sourced",
+        keywords: ["music", "audio", "song", "track", "soundtrack", "bgm", "load", "assign", "play", "no sound", "audio file not found", "reconnect", "gain", "db", "bpm", "estimate", "first beat", "music sync", "sync"],
         html: `
 <p>Press ${kbd("E")} to open all timeline lanes, including dialogue. Add an M cue with ${ui("＋")} in the music lane, then double-click it. Use ${ui("Upload audio")} for a local file or choose a registered track in ${ui("Audio")}.</p>
 ${table(["Control", "Meaning"], [
@@ -46,14 +46,12 @@ ${table(["Control", "Meaning"], [
   [ui("Reconnect original file"), "Select the original file when this device does not have it"],
   [ui("No audio (instruction cue)"), "Keep an instruction without starting or stopping audio"]
 ])}
-<p>Legacy references, start positions and gain are retained. If several existing M cues match, none is chosen automatically: a separate source cue is kept. Legacy scene-assigned music still starts at the section head, using the selected scene's track. Failed saves retain the original and its audio controls.</p>
+<p>Legacy references, start positions and gain are retained. If several existing M cues match, none is chosen automatically: a separate source cue is kept. Legacy scene assignments become M cues at the start of their scenes. Consecutive scenes using the same track share one cue at the first scene; a track change starts a new cue. Scene assignment controls and the scene play button are hidden. Original assignments remain in the file for rollback, and manually created or replaced M cues are retained. A failed save stops conversion and retains the original.</p>
 <p>${kbd("M")} mutes or unmutes without changing the volume setting or stopping the clock. ${ui("Muted")} is always shown during muted playback. The normal Play button also starts when audio is disconnected. Connected tracks play; only missing tracks run in silence. A warning stays at the top of the screen during playback and disappears when the files are reconnected in M cue details. Typing, IME composition and key repeat do not toggle mute.</p>
 <p>Click a scene in the timeline to seek to its start, or a transition to seek to the transition start. The scene panel brings the corresponding row into view and outlines it in red; a row already visible stays in place. Double-click a transition to open the Stage tab's scene panel and expand that transition's details. The panel scrolls first; if the panel itself is off screen, only its own column moves by the required amount. The page and other columns stay in place.</p>
 <p>In LX cue details, ${ui("Open in light design")} opens the matching scene and selects that cue, even without a time position. Double-clicking a lighting band uses the same route. The button is hidden in the Light design tab. Use the main tabs to return.</p>
-<h4>Count alignment</h4>
-<p>In a section's timeline, press ${ui("Time-based")} to switch to ${ui("Count-based")} and the tempo and count controls appear (editable when audio is assigned). ${ui("Estimate BPM")} guesses the tempo and ${ui("Mark first beat")} marks count one. Where the music drifts, press ${ui("Set start here")} near the start of an 8-count phrase to add a ${ui("Count alignment")} point (anchor); ${ui("Clear markers")} removes them. The count scale follows this tempo and these points.</p>
 <p>Audio no longer used is tidied away after at least 24 hours (audio referenced by saved shows, alternatives or recovery backups is kept).</p>
-<p>Try it in: H-2 (track A, file missing) and H-3 (track B, count sync at 120 BPM).</p>`
+<p>Try it in: H-2 (track A, file missing) and H-3 (track B, 120 BPM audio).</p>`
       },
       {
         id: "cues", title: "Cues (lighting, music, dialogue) — setting, numbering, stepping, details", status: "sourced",
@@ -111,11 +109,13 @@ ${grid([fig("58-vox-panel", "The dialogue cue panel. The box at the top is the c
         id: "cuesheet", title: "Q sheets — master, per performer, per department (view, print, CSV)", status: "verified",
         keywords: ["Q sheets", "Q sheet", "running order", "table", "master sheet", "per performer", "department", "lights", "sound", "stage management", "transition", "props", "positions", "print", "csv", "a4", "spreadsheet", "excel"],
         html: `
+<p>The formatting toolbar stays at the top of the run of show. Before a cell is selected, its controls are disabled and a short hint explains the next step. Click a cell once in A4 landscape, A4 portrait or free view to select it and change its formatting. The selection has a visible outline. Clearing the selection keeps the toolbar in place. Read-only views and distributed HTML omit the editing toolbar.</p>
+<p>The formatting toolbar shows horizontal alignment (left, centre, right) and vertical alignment (top, middle, bottom) with pressed icons. Shift-click the last cell to select a rectangle from the first cell, then apply font family and size to the whole range. Different values appear as mixed or blank. A single cell can be left-aligned even in a centred column. Formatting and Clear formatting use the shared header Undo/Redo and follow the show through save/reload, print/PDF and distributed HTML.</p>
 ${fig("release058-run-of-show", "Earlier Run of Show screen. Language, format, colour, font size and zoom now stay visible in the Paper panel.", "Run of show with the Paper settings layer")}
 <p>Display content lists Run of Show, performer sheets, department sheets and the overall sheet together. Up to 10 performers appear as a list; 11 or more use a performer selector. Use the same Run of Show entry to return. Paper settings stay visible and offer A4 landscape, A4 portrait and Edit. PDF export commits the last cell and opens the current table for printing; from Edit it uses the last A4 orientation, or landscape initially. Q column visibility is shared across Q sheets and separate from Run of Show. Open or fold each left panel from its heading. Drag the right edge of the left column to change its width, or use left/right arrows on the edge; double-click to reset it. The button at the top shows or hides the column. Width and folding are kept on this device, separately from the show. The panels stay in their fixed order. The scrollbar sits beside the central paper; scrolling on the surrounding mat also moves the paper. The left handover-pack and Save buttons are removed.</p><p>The run of show's left menu contains the column list and an independent row view selector (scenes, scenes with transitions, or cues). Paper settings control language, paper size, paper colour and the overall font size. Display zoom changes only the on-screen scale, not the printed paper size.</p><p>Select cells or columns to set a font, 8–32pt size, bold, italic, underline, text and fill colours, horizontal and vertical alignment, and borders. Cell settings override column settings. Clear formatting returns to the standard style. Use undo and redo in the header. Styles are kept in saved shows, JSON export and import, distributed HTML and printouts. The stage panel stacks the front and plan views vertically.</p>
 <p>Q sheets are part of ${ui("Run of show")}. In its left menu, select a ${ui("Performer")} or ${ui("Departments")} to show its Q sheet in the centre. ${ui("Master sheet (cast scene chart)")} opens the whole-show plot. The left menu no longer shows Handover pack. Use ${ui("Run of show")} to return to the paper you were editing. The header and export-window Q-sheet entries open the same workspace.</p>
 ${fig("34-tab-cuesheet", "Earlier Q sheets tab capture: Summary (master sheet), By performer, Departments (lights, music cue, dialogue cues, stage management and changes, props, positions) and Not in the roster.", "Q sheet list")}
-${fig("release070-q-sheets", "Master sheet opened from the Run of show left menu (v0.3.70).", "Q sheets inside Run of show")}
+${fig("release071-q-sheets", "Master sheet opened from the Run of show left menu (v0.3.70).", "Q sheets inside Run of show")}
 ${table(["Group", "Sheet", "Contents"], [
   ["Summary", "Master sheet", "Scenes down, performers and departments across — everyone on one sheet. Laid out by cue (scene | cue | note), with music and lines in their own tables"],
   ["By performer", "One per performer", "Their entrances and exits, positions, poses, facing, held items and notes. Doubles as a handover sheet for an understudy"],
@@ -147,7 +147,7 @@ ${vid("qsheet-print", "In H-3, open the master sheet, preview it in landscape A4
     "Shift",
     "Space"
   ],
-  "html": "<p>Click Column visibility in Run of show to expand or collapse its controls. Collapsing does not change selected columns. LX-panel Q selection reveals the corresponding timeline position. Disabled cues are grey; selecting an unplaced cue never adds a timeline mark.</p>" + "<p>Create scenes and transitions in Stage; their timeline add buttons are hidden. LX + selects an existing Q and places it at the playhead, or drag its Q number onto the LX lane. Unplacing keeps the Q registered with no assigned time. Repositioning does not add a mark or change the Q number. Disabled Qs appear dashed and are skipped by GO playback and cue stepping. TC text matches neighbouring controls.</p>" + fig("release070-run-of-show", "Run of show left menu and column visibility (v0.3.70).", "run-of-show")
+  "html": "<p>Click Column visibility in Run of show to expand or collapse its controls. Collapsing does not change selected columns. LX-panel Q selection reveals the corresponding timeline position. Disabled cues are grey; selecting an unplaced cue never adds a timeline mark.</p>" + "<p>Create scenes and transitions in Stage; their timeline add buttons are hidden. LX + selects an existing Q and places it at the playhead, or drag its Q number onto the LX lane. Unplacing keeps the Q registered with no assigned time. Repositioning does not add a mark or change the Q number. Disabled Qs appear dashed and are skipped by GO playback and cue stepping. TC text matches neighbouring controls.</p>" + fig("release071-run-of-show", "Run of show left menu and column visibility (v0.3.70).", "run-of-show")
 }
     ]
   });

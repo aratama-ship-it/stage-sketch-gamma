@@ -917,3 +917,28 @@ html[data-shortcut-marks="false"] :is(.stage-timeline-shortcut,.view-key,.stage-
 #stage-music-cue-audio select { flex:1; min-width:0; }
 #stage-music-cue-audio input[type="number"] { width:96px; }
 .stage-music-cue-actions { display:flex; flex-wrap:wrap; gap:8px; }
+
+/* UI-02: keep the title and decisions outside the only scrolling body. */
+.stage-modal:is(.stage-scene-create-modal,.stage-timeline-cue-detail-modal):not([hidden]) {
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.stage-modal:is(.stage-scene-create-modal,.stage-timeline-cue-detail-modal) > .stage-modal-head,
+.stage-modal:is(.stage-scene-create-modal,.stage-timeline-cue-detail-modal) footer { flex:0 0 auto; }
+#stage-scene-create-form { display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+.stage-scene-create-body,.stage-timeline-cue-detail-body {
+  display:flex; flex-direction:column; min-height:0; overflow-y:auto;
+}
+.stage-scene-create-body > *,.stage-timeline-cue-detail-body > * { flex:0 0 auto; }
+.stage-scene-create-list { max-height:none; overflow:visible; }
+.stage-scene-create-actions,#stage-timeline-cue-detail-modal > .stage-timeline-cue-detail-actions {
+  padding:var(--gamma-gap) calc(2 * var(--gamma-gap)); border-top:1px solid var(--line-dark);
+}
+/* UI-04: static and dynamically added share actions use one role specification. */
+html[data-stage-skin] #stage-session-panel .stage-modal-body :is(button,.stage-share-study-viewer) {
+  box-sizing:border-box; min-height:var(--ctrl-lg); margin:0; padding:var(--gamma-gap) calc(2 * var(--gamma-gap));
+  font-family:var(--sans); font-size:var(--fs-6); font-weight:400; line-height:1.5;
+  letter-spacing:var(--gamma-control-tracking); text-align:center;
+}
+html[data-stage-skin] #stage-session-start {
+  background:var(--gamma-primary-bg); color:var(--gamma-on-primary,var(--paper)); border-color:var(--rust);
+}

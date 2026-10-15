@@ -10,6 +10,7 @@
         id: "export", title: "Export, save & print (images & print / save show / Q sheets / venue)", status: "verified",
         keywords: ["image", "export", "png", "save picture", "export, save & print", "save show", "backup", "venue library", "Q sheets", "csv", "working drawing", "pitch", "front", "plan", "both", "all scenes", "section", "style", "poster", "sketch", "generative ai", "size", "1920", "4k", "caption text"],
         html: `
+<p>Start, status and performer-link actions in the Share dialog use the same height, type and centered labels. Session start is distinguished by its primary color.</p>
 <p>${ui("Export, save & print")} (the paper icon) in the header opens this window. The tabs at the top switch between ${ui("Images & print")}, ${ui("Save show")}, ${ui("Q sheets")} and ${ui("Venue")} (2026-10-06). ${ui("Save show")} runs ${ui("Export show")} (${ref("export-json", "11-3")}), ${ui("Q sheets")} opens the Q sheets (print or CSV per sheet), and ${ui("Venue")} exports the venue library file. The original entry points (information panel, show list, Run of show Q sheets, venue settings) still work. Below is the ${ui("Images & print")} tab.</p>
 ${fig("41-export", "Export, save & print (Images & print tab): pick the kind with the tabs at the top, then choose the purpose, which view and which scenes, and export.", "Export, save & print window")}
 ${table(["Choice", "Contents"], [
@@ -49,9 +50,9 @@ ${table(["Table", "Setting", "Contents"], [
 <li>Beta shows can be read, and their old lighting is converted (${ref("light-legacy", "Part 7, 7-8")}).</li>
 <li>JSON written with AI showwright is imported here too (${ref("ai-showwright", "11-6")}).</li>
 </ul>
-${fig("release070-project-open", "Import a project ZIP or folder.", "Open a project")}
-${fig("release070-project-save", "Export a project with its audio.", "Save a project")}
-${fig("release070-previous-shows", "Previous shows on Mac, captured with the bundled test show and a simulated native bridge.", "Previous shows")}
+${fig("release071-project-open", "Import a project ZIP or folder.", "Open a project")}
+${fig("release071-project-save", "Export a project with its audio.", "Save a project")}
+${fig("release071-previous-shows", "Previous shows on Mac, captured with the bundled test show and a simulated native bridge.", "Previous shows")}
 `
       },
       {

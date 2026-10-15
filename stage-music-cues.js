@@ -7,9 +7,10 @@
   const list = value => Array.isArray(value) ? value : [];
   function supported(project) {
     const data=project?.musicCueAudio;
+    if(data?.sceneStarts!==undefined && (data.sceneStarts?.version!==1 || !data.sceneStarts.bindings || Array.isArray(data.sceneStarts.bindings) || !Array.isArray(data.sceneStarts.retiredCueIds))) return false;
     return data?.version===1 && data.bindings && typeof data.bindings==='object' && !Array.isArray(data.bindings);
   }
-  function migrate(project, TD) {
+  function migrateLegacy(project, TD) {
     const result = clone(project);
     if (result.musicCueAudio !== undefined) {
       if (!supported(result))
@@ -43,17 +44,7 @@
         }
         continue;
       }
-      const children=domain.scenes.filter(s=>s.sectionId===section.id), seen=new Set();
-      for (const scene of children) {
-        const trackId=scene.row.audioTrackId;
-        if (!trackId || seen.has(trackId)) continue;
-        // Legacy section timelines selected the active scene’s assigned track,
-        // always starting at section zero. Keep that scope, including alternatives.
-        const atSeconds=0;
-        seen.add(trackId);
-        sources.push({key:`scene:${section.id}:${trackId}`,sectionId:section.id,atSeconds,trackId,
-          mediaInSeconds:0,mediaOutSeconds:null,sceneIds:children.filter(s=>s.row.audioTrackId===trackId).map(s=>s.id)});
-      }
+      sources.push(...sceneSources(project, domain, section.id));
     }
     if (!sources.length) return result;
     result.cues ||= [];
@@ -76,42 +67,98 @@
         throw Error('フォーメーションと音源の開始位置を確認してください。原本を保持してください。');
       const sourceCount=sources.filter(s=>s.sectionId===source.sectionId && (!s.timelineId || !source.timelineId || s.timelineId===source.timelineId)
         && Math.abs((s.showStart ?? section.start+s.atSeconds)-sourceStart)<.001).length;
-      let cue=candidates.length===1 && sourceCount===1 ? candidates[0] : null;
+      let cue=!source.sceneIds && candidates.length===1 && sourceCount===1 ? candidates[0] : null;
       if (!cue) {
         const base='music-source:'+source.key;let id=base,n=1;
         while(result.cues.some(c=>c.id===id))id=base+':'+(++n);
         cue={id,kind:'timeline',cueType:'music',sectionId:source.sectionId,atSeconds:sourceStart-clock.offset,
-          memo:'',locked:track?.timelineLockEdge==='start',...(source.timelineId && source.timelineId!=='fallback'?{timelineId:source.timelineId}:{})};
+          memo:'',locked:track?.timelineLockEdge==='start',...(source.sceneIds?{sceneId:source.sceneIds[0],offsetSeconds:0}:{}),...(source.timelineId && source.timelineId!=='fallback'?{timelineId:source.timelineId}:{})};
+        if(source.sceneIds){delete cue.sectionId;delete cue.atSeconds;}
         result.cues.push(cue);
       }
       bindings[cue.id]={trackId:source.trackId,mediaInSeconds:source.mediaInSeconds,mediaOutSeconds:source.mediaOutSeconds,
         gainDb:track?.gainDb ?? 0,legacySource:source.key};
       migrations.push({...source,sourceCount,cueId:cue.id,candidates:candidates.map(c=>c.id),created:!list(project.cues).some(c=>c.id===cue.id)});
     }
-    result.musicCueAudio={version:1,bindings,migrations};
+    result.musicCueAudio={version:1,bindings,migrations,sceneStarts:{version:1,bindings:{},retiredCueIds:[],migrations:[]}};
     return result;
   }
-  function binding(project,id) {return project.musicCueAudio?.version===1 ? project.musicCueAudio.bindings?.[id] || null : null;}
+  // One cue at each run of consecutive scene assignments. A gap starts a new run.
+  function sceneSources(project, domain, sectionId) {
+    let previous=null;
+    return domain.scenes.filter(s=>s.sectionId===sectionId).flatMap(scene=>{
+      const trackId=scene.row.audioTrackId || null, same=trackId===previous;
+      previous=trackId;
+      return !trackId || same ? [] : [{key:`scene-start:${sectionId}:${scene.id}`,sectionId,
+        atSeconds:scene.start-domain.sections.get(sectionId).start,trackId,
+        mediaInSeconds:0,mediaOutSeconds:null,sceneIds:[scene.id]}];
+    });
+  }
+  function needsMigration(project) {
+    return project.musicCueAudio===undefined || supported(project) && project.musicCueAudio.sceneStarts===undefined;
+  }
+  function migrate(project, TD) {
+    if (project.musicCueAudio===undefined) return migrateLegacy(project,TD);
+    const result=clone(project), data=result.musicCueAudio;
+    if (!supported(result)) throw Error('このMキュー音源の版は未対応です。原本を保持してください。');
+    if (data.sceneStarts!==undefined) {
+      if(data.sceneStarts?.version!==1 || !data.sceneStarts.bindings || !Array.isArray(data.sceneStarts.retiredCueIds))
+        throw Error('このMキュー音源の版は未対応です。原本を保持してください。');
+      return result;
+    }
+    const domain=TD.resolve(result), records=list(data.migrations).filter(m=>m.key?.startsWith('scene:'));
+    const extension={version:1,bindings:{},retiredCueIds:[],migrations:[]};
+    for(const sectionId of new Set(records.map(m=>m.sectionId))) {
+      const sectionRecords=records.filter(m=>m.sectionId===sectionId);
+      const untouched=m=>{
+        const cue=list(result.cues).find(c=>c.id===m.cueId), audio=data.bindings[m.cueId];
+        const at=cue && TD.cuePosition(domain,cue), section=domain.sections.get(sectionId);
+        return m.created!==false && cue && audio?.legacySource===m.key && audio.trackId===m.trackId && at && section
+          && Math.abs(at.seconds-section.start)<.001 && !cue.memo
+          && (audio.mediaInSeconds ?? 0)===(m.mediaInSeconds ?? 0)
+          && (audio.mediaOutSeconds ?? null)===(m.mediaOutSeconds ?? null);
+      };
+      const eligible=sectionRecords.filter(untouched);
+      // Preserve user edits and any existing instruction cue claimed by the old migration.
+      // Only sources that the old migrator created and the user has not replaced are retired.
+      const replaced=sectionRecords.some(m=>!untouched(m));
+      extension.retiredCueIds.push(...eligible.map(m=>m.cueId));
+      if(replaced) extension.migrations.push({sectionId,skipped:'user-edited',cueIds:sectionRecords.filter(m=>!untouched(m)).map(m=>m.cueId)});
+      const allowed=new Map(eligible.map(m=>[m.trackId,m]));
+      for(const source of sceneSources(result,domain,sectionId)) {
+        const old=allowed.get(source.trackId);if(!old)continue;
+        const base='music-source:'+source.key;let id=base,n=1;
+        while(result.cues.some(c=>c.id===id))id=base+':'+(++n);
+        const cue={id,kind:'timeline',cueType:'music',sceneId:source.sceneIds[0],offsetSeconds:0,memo:'',locked:!!result.cues.find(c=>c.id===old.cueId)?.locked};
+        result.cues.push(cue);
+        extension.bindings[id]={...clone(data.bindings[old.cueId]),legacySource:source.key};
+        extension.migrations.push({...source,cueId:id,previousCueId:old.cueId});
+      }
+    }
+    data.sceneStarts=extension;
+    return result;
+  }
+  function bindingTable(project,id) {
+    const data=project.musicCueAudio;
+    return data?.sceneStarts?.bindings && Object.hasOwn(data.sceneStarts.bindings,id) ? data.sceneStarts.bindings : data?.bindings;
+  }
+  function binding(project,id) {return project.musicCueAudio?.version===1 ? bindingTable(project,id)?.[id] || null : null;}
+  function activeCues(project) {
+    const retired=new Set(list(project.musicCueAudio?.sceneStarts?.retiredCueIds));
+    return list(project.cues).filter(c=>!retired.has(c.id));
+  }
   function schedule(project, TD, options = {}) {
-    const domain=TD.resolve(project), clips=[], errors=[];
-    if (project.musicCueAudio?.version!==1) return {clips,errors};
-    for(const cue of list(project.cues)) {
+    const domain=TD.resolve(project), clips=[], errors=[], boundaries=[];
+    if (!project.musicCueAudio) return {clips,errors};
+    if (!supported(project)) return {clips,errors:[{code:'music-version',message:'このMキュー音源の版は未対応です。原本を保持してください。'}]};
+    for(const cue of activeCues(project)) {
       if(cue.kind!=='timeline'||cue.cueType!=='music')continue;
       const audio=binding(project,cue.id);if(!audio?.trackId)continue;
       if(options.sectionId && cue.sectionId!==options.sectionId && domain.byId.get(cue.sceneId)?.sectionId!==options.sectionId)continue;
       if(options.songId && cue.timelineId && cue.timelineId!==options.songId)continue;
-      // Preserve legacy selection; a show-wide timeline used the first assigned
-      // track, while a section timeline used the active scene’s assignment.
-      const source=project.musicCueAudio.migrations?.find(s=>s.key===audio.legacySource);
-      if(source?.key.startsWith('scene:')) {
-        const explicitlyReplaced=project.musicCueAudio.migrations.some(s=>s.sectionId===source.sectionId && s.key.startsWith('scene:')
-          && binding(project,s.cueId)?.trackId && !binding(project,s.cueId).legacySource);
-        if(explicitlyReplaced)continue;
-        const first=project.musicCueAudio.migrations.find(s=>s.sectionId===source.sectionId && s.key.startsWith('scene:'));
-        if(audio.trackId!==(options.legacyTrackId || first.trackId))continue;
-      }
       const at=TD.cuePosition(domain,cue),track=list(project.audioTracks).find(t=>t.id===audio.trackId);
       const section=domain.sections.get(cue.sectionId || domain.byId.get(cue.sceneId)?.sectionId);
+      if(at)boundaries.push(at.seconds);
       const mediaIn=audio.mediaInSeconds ?? 0,mediaOut=audio.mediaOutSeconds ?? track?.durationSeconds;
       if(!at||!section||!track||!Number.isFinite(mediaIn)||mediaIn<0||!Number.isFinite(mediaOut)||mediaOut<=mediaIn || mediaOut>track.durationSeconds+.001 || !Number.isFinite(audio.gainDb ?? 0)){
         errors.push({code:'music-reference',id:cue.id,trackId:audio.trackId,message:'Mキューの音源が未接続です。詳細から再接続してください。'});continue;
@@ -119,6 +166,7 @@
       clips.push({id:cue.id,sectionId:section.id,timelineId:cue.timelineId,trackId:track.id,
         track:{...track,gainDb:audio.gainDb ?? track.gainDb},start:at.seconds,end:Math.min(section.end,at.seconds+mediaOut-mediaIn),mediaIn});
     }
+    for(const clip of clips) for(const at of boundaries) if(at>clip.start+.001)clip.end=Math.min(clip.end,at);
     clips.sort((a,b)=>a.start-b.start);
     for(let i=0;i<clips.length-1;i++)clips[i].end=Math.min(clips[i].end,clips[i+1].start);
     return {clips,errors};
@@ -146,7 +194,7 @@
     if(typeof patch.memo==='string')cue.memo=patch.memo.slice(0,2000);
     return true;
   }
-  const api=Object.freeze({migrate,binding,schedule,editCue,supported});
+  const api=Object.freeze({migrate,needsMigration,binding,bindingTable,activeCues,schedule,editCue,supported});
   root.STAGE_MUSIC_CUES=api;
   if(typeof module==='object'&&module.exports)module.exports=api;
 })(typeof window==='object'?window:globalThis);

@@ -156,26 +156,12 @@ window.ROSLeftPanels={install(band,{store}){
   // Column visibility is a permanent part of the left menu, not a popup.
   // Settings live in the left rail; the PDF entry acts directly on the current table.
   function closeBandLayers(){}
-  window.addEventListener('resize',()=>syncSelectionBar());
-  const selectionBar=$('band-selection');let selectionBarFrame=0,pendingColumnFocus=null;
+  const selectionBar=$('band-selection');let pendingColumnFocus=null;
   function syncSelectionBar(){
-    cancelAnimationFrame(selectionBarFrame);selectionBarFrame=requestAnimationFrame(()=>{
-      const on=selection.kind!=='none';selectionBar.hidden=!on;if(!on)return;
-      $('paper-scene').hidden=selection.kind!=='cells';
-      let nodes=[...document.querySelectorAll('.doc-frame .is-cell-selected,.doc-frame .is-col-selected')].filter(node=>node.getClientRects().length);
-      if(!nodes.length){selectionBar.hidden=true;return;}
-      // Keep the editing field visible even when a tall row or range extends beyond the viewport.
-      const editing=document.querySelector('.paper-editing-field');
-      if(editing&&nodes.some(node=>node.contains(editing)))nodes=[editing];
-      let top=Infinity,bottom=-Infinity,left=Infinity,right=-Infinity;
-      for(const node of nodes){const r=node.getBoundingClientRect();top=Math.min(top,r.top);bottom=Math.max(bottom,r.bottom);left=Math.min(left,r.left);right=Math.max(right,r.right);}
-      const w=selectionBar.offsetWidth,h=selectionBar.offsetHeight,sticky=panelLayout()?8:$('paper-band').getBoundingClientRect().bottom+4;
-      const floor=Math.min(sticky,Math.max(8,innerHeight-h-8)),x=Math.max(8,Math.min(left,innerWidth-w-8)),y=Math.max(floor,Math.min(top,innerHeight-h-8));
-      const positions=[{x,y:top-h-6},{x,y:bottom+6},{x:left-w-6,y},{x:right+6,y}];
-      const position=positions.find(p=>p.x>=8&&p.x+w<=innerWidth-8&&p.y>=floor&&p.y+h<=innerHeight-8)
-        ||{x,y:Math.max(floor,Math.min(bottom+6,innerHeight-h-8))};
-      selectionBar.style.left=`${position.x}px`;selectionBar.style.top=`${position.y}px`;
-    });
+    selectionBar.hidden=readOnlyPaper()||cueView;
+    selectionBar.inert=readOnlyPaper();
+    $('paper-scene').hidden=selection.kind==='column';
+    for(const node of selectionBar.querySelectorAll('button,input,select'))node.disabled=selection.kind==='none'||readOnlyPaper()||(node.id==='paper-scene'&&$('make-scene').disabled);
   }
   function restorePendingColumnFocus(){
     const id=pendingColumnFocus;if(!id)return;pendingColumnFocus=null;
@@ -185,7 +171,6 @@ window.ROSLeftPanels={install(band,{store}){
     [...document.querySelectorAll(`.doc-frame [data-column-id="${id}"][aria-selected=true]`)]
       .find(node=>node.getClientRects().length)?.focus({preventScroll:true});
   }
-  document.addEventListener('scroll',()=>{if(!selectionBar.hidden)syncSelectionBar();},true);
   $('band-selection-clear').addEventListener('click',()=>{selection={kind:'none'};applySelectionClasses();});
   $('widths-reset').addEventListener('click',()=>changeLayout(p=>{p.widths=null;},'幅を既定へ戻しました'));
   const figureSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="380" height="170" viewBox="0 0 380 170"><rect width="380" height="170" fill="#ffffff"/><rect x="22" y="18" width="336" height="116" rx="0" fill="#edf3ee" stroke="#25352f" stroke-width="2"/><path d="M22 76h336M190 18v116" stroke="#79877e" stroke-dasharray="4 4"/><circle cx="102" cy="90" r="15" fill="#ffffff" stroke="#245540" stroke-width="3"/><circle cx="278" cy="90" r="15" fill="#ffffff" stroke="#245540" stroke-width="3"/><text x="102" y="96" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#25352f">A</text><text x="278" y="96" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#25352f">B</text><path d="M124 90h116m-10-7 10 7-10 7" fill="none" stroke="#842e3b" stroke-width="3"/><text x="190" y="156" text-anchor="middle" font-family="sans-serif" font-size="15" fill="#25352f">AUDIENCE</text></svg>`;
@@ -208,7 +193,12 @@ window.ROSLeftPanels={install(band,{store}){
     for(const node of aside.querySelectorAll('label,#details-add-image,#notes-add-image'))node.dataset.rosText=node.textContent;
     // Reuse the paper's validation, Undo and department parser; the stored field remains dept[].
     input.addEventListener('input',()=>{const error=commitDirect({itemId:selected,key:'dept'},input.value,false);if(error)showError(new Error(error));});
-    const measureBand=()=>document.body.style.setProperty('--lite-band-height',`${$('paper-panel').getBoundingClientRect().height}px`);
+    let bandHeightFrame=0;
+    const measureBand=()=>{if(bandHeightFrame)return;bandHeightFrame=requestAnimationFrame(()=>{
+      bandHeightFrame=0;
+      const height=`${$('paper-panel').getBoundingClientRect().height}px`;
+      if(document.body.style.getPropertyValue('--lite-band-height')!==height)document.body.style.setProperty('--lite-band-height',height);
+    });};
     new ResizeObserver(measureBand).observe($('paper-panel'));window.addEventListener('resize',measureBand);
     document.addEventListener('keydown',event=>{
       if(event.defaultPrevented||event.isComposing||event.repeat||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey||! /^[1-2]$/.test(event.key))return;
@@ -386,7 +376,24 @@ window.ROSLeftPanels={install(band,{store}){
   function cellKey(node){return layout.alignKey(node.closest('[data-row-id]')?.dataset.rowId||node.dataset.rowId,node.dataset.columnId);}
   function selectionValues(){const values=cellAlign[alignmentMode()]||{};return selection.kind==='column'?selection.ids.map(id=>values.columns?.[id]||'left'):selection.kind==='cells'?[...selection.keys].map(key=>values.cells?.[key]??values.columns?.[key.split('|')[1]]??'left'):[];}
   function applySelectionClasses(){const nodes=cellNodes(),existing=new Set(nodes.map(cellKey));if(selection.kind==='cells'){selection.keys=new Set([...selection.keys].filter(k=>existing.has(k)));if(!selection.keys.size)selection={kind:'none'};}for(const node of [...nodes,...document.querySelectorAll('.doc-frame th[data-column-id],.doc-frame .pg-label[data-column-id]')]){const col=selection.kind==='column'&&selection.ids.includes(node.dataset.columnId),cell=selection.kind==='cells'&&selection.keys.has(cellKey(node));node.classList.toggle('is-col-selected',col);node.classList.toggle('is-cell-selected',cell);if(node.matches('th[data-column-id],.pg-label[data-column-id]')){node.tabIndex=0;node.setAttribute('aria-selected',String(col));}}const values=selectionValues();for(const a of ['left','center','right']){$('align-'+a).disabled=!values.length;$('align-'+a).setAttribute('aria-pressed',String(values.length>0&&values.every(x=>x===a)));}syncFormatControls();syncSelectionBar();}
-  function changeAlign(value){if(selection.kind==='none')return;if(paperEditor?.active&&!paperEditor.finish())return;const mode=alignmentMode(),p=cellAlign[mode]||{columns:{},cells:{}};p.columns??={};p.cells??={};if(selection.kind==='column')for(const id of selection.ids){if(value==='left')delete p.columns[id];else p.columns[id]=value;for(const key of Object.keys(p.cells))if(key.endsWith('|'+id))delete p.cells[key];}else for(const key of selection.keys){if(value==='left')delete p.cells[key];else p.cells[key]=value;}if(!Object.keys(p.columns).length)delete p.columns;if(!Object.keys(p.cells).length)delete p.cells;if(Object.keys(p).length)cellAlign[mode]=p;else delete cellAlign[mode];markDirty();renderPaper();}
+  function changeAlign(value){
+    if(selection.kind==='none')return;
+    if(paperEditor?.active&&!paperEditor.finish())return;
+    try{bridge.canEdit(token);}catch(error){showError(error);return;}
+    const before=JSON.stringify(cellAlign),mode=alignmentMode(),p=cellAlign[mode]||{columns:{},cells:{}};p.columns??={};p.cells??={};
+    if(selection.kind==='column')for(const id of selection.ids){
+      if(value==='left')delete p.columns[id];else p.columns[id]=value;
+      for(const key of Object.keys(p.cells))if(key.endsWith('|'+id))delete p.cells[key];
+    }else for(const key of selection.keys){
+      // Left is an explicit override when the column is centred or right-aligned.
+      if(value==='left'&&(!p.columns[key.split('|')[1]]||p.columns[key.split('|')[1]]==='left'))delete p.cells[key];
+      else p.cells[key]=value;
+    }
+    if(!Object.keys(p.columns).length)delete p.columns;if(!Object.keys(p.cells).length)delete p.cells;
+    if(Object.keys(p).length)cellAlign[mode]=p;else delete cellAlign[mode];
+    if(JSON.stringify(cellAlign)===before)return;
+    checkpoint();markDirty();renderPaper();
+  }
   for(const a of ['left','center','right']){$('align-'+a).addEventListener('pointerdown',e=>e.preventDefault());$('align-'+a).addEventListener('click',()=>changeAlign(a));}
   function selectedStyles(){
     if(selection.kind==='column')return selection.ids.map(id=>files.cellStyle(cellStyles,alignmentMode(),'',id));
@@ -394,20 +401,22 @@ window.ROSLeftPanels={install(band,{store}){
     return [];
   }
   function syncFormatControls(){
-    const styles=selectedStyles(),same=key=>styles.length&&styles.every(v=>v[key]===styles[0][key]);
-    $('cell-format-target').textContent=uiFormat(selection.kind==='column'?'選択した列: {count}列':'選択したセル: {count}個',{count:styles.length});
-    for(const key of ['bold','italic','underline'])$('cell-'+key).setAttribute('aria-pressed',same(key)&&styles[0][key]===true?'true':same(key)?'false':'mixed');
+    const defaults={fontFamily:'',fontSize:paperFontSize,vertical:'top',border:'',bold:false,italic:false,underline:false};
+    const styles=selectedStyles().map(v=>Object.fromEntries([...new Set([...Object.keys(defaults),...Object.keys(v)])].map(k=>[k,v[k]??defaults[k]]))),same=key=>styles.length&&styles.every(v=>v[key]===styles[0][key]);
+    $('cell-format-target').textContent=styles.length?uiFormat(selection.kind==='column'?'選択した列: {count}列':'選択したセル: {count}個',{count:styles.length}):uiText('セルを選ぶと書式を変えられます');
+    for(const key of ['bold','italic','underline'])$('cell-'+key).setAttribute('aria-pressed',same(key)&&styles[0][key]===true?'true':!styles.length||same(key)?'false':'mixed');
     for(const[id,key,fallback]of [['cell-font','fontFamily',''],['cell-vertical','vertical','top'],['cell-border','border','']]){
-      const node=$(id),mixed=node.querySelector('[data-mixed]');if(!same(key)){if(!mixed){const o=el('option',uiText('混在'));o.value='mixed';o.dataset.mixed='';node.prepend(o);}node.value='mixed';}else{mixed?.remove();node.value=styles[0]?.[key]??fallback;}
+      const node=$(id),mixed=node.querySelector('[data-mixed]');if(styles.length&&!same(key)){if(!mixed){const o=el('option',uiText('混在'));o.value='mixed';o.dataset.mixed='';node.prepend(o);}node.value='mixed';}else{mixed?.remove();node.value=styles[0]?.[key]??fallback;}
     }
-    $('cell-size').value=same('fontSize')?String(styles[0]?.fontSize??paperFontSize):'';$('cell-size').placeholder=same('fontSize')?'':'—';
+    $('cell-size').value=same('fontSize')?String(styles[0]?.fontSize??paperFontSize):'';$('cell-size').placeholder=same('fontSize')?'':'—';$('cell-size').dataset.edited='false';
+    for(const value of ['top','middle','bottom'])$('vertical-'+value).setAttribute('aria-pressed',String(same('vertical')&&styles[0]?.vertical===value));
     for(const[id,key,fallback]of [['cell-color','color',paperInk==='black'?'#efe7d6':'#25352f'],['cell-fill','fill',paperInk==='black'?'#171411':'#ffffff']]){$(id).value=styles[0]?.[key]??fallback;$(id).dataset.mixed=String(!same(key));}
   }
   function changeCellStyle(patch,{clear=false}={}){
     if(selection.kind==='none'||!files.validCellStyle(patch))return;
     if(paperEditor?.active&&!paperEditor.finish())return;
     try{bridge.canEdit(token);}catch(error){showError(error);return;}
-    const mode=alignmentMode(),p=cellStyles[mode]||{columns:{},cells:{}};p.columns??={};p.cells??={};
+    const before=JSON.stringify([cellStyles,cellAlign]),mode=alignmentMode(),p=cellStyles[mode]||{columns:{},cells:{}};p.columns??={};p.cells??={};
     if(selection.kind==='column')for(const id of selection.ids){
       if(clear)delete p.columns[id];else p.columns[id]={...p.columns[id],...patch};
       for(const[key,style]of Object.entries(p.cells))if(key.endsWith('|'+id)){
@@ -423,16 +432,39 @@ window.ROSLeftPanels={install(band,{store}){
     }
     if(!Object.keys(p.columns).length)delete p.columns;if(!Object.keys(p.cells).length)delete p.cells;
     if(Object.keys(p).length)cellStyles[mode]=p;else delete cellStyles[mode];
+    if(JSON.stringify([cellStyles,cellAlign])===before){syncFormatControls();return;}
     checkpoint();markDirty();renderPaper();
   }
   for(const[key,id]of [['fontFamily','cell-font'],['vertical','cell-vertical'],['border','cell-border'],['color','cell-color'],['fill','cell-fill']])$(id).addEventListener('change',e=>{if(e.target.value!=='mixed')changeCellStyle({[key]:e.target.value||null});});
-  $('cell-size').addEventListener('change',e=>{if(e.target.value===''||!e.target.reportValidity()){syncFormatControls();return;}changeCellStyle({fontSize:Number(e.target.value)});});
+  for(const value of ['top','middle','bottom']){$('vertical-'+value).addEventListener('pointerdown',e=>e.preventDefault());$('vertical-'+value).addEventListener('click',()=>changeCellStyle({vertical:value}));}
+  $('cell-size').addEventListener('input',e=>{e.target.dataset.edited='true';});
+  $('cell-size').addEventListener('change',e=>{if(e.target.dataset.edited!=='true')return;if(e.target.value===''||!e.target.reportValidity()){syncFormatControls();return;}changeCellStyle({fontSize:Number(e.target.value)});});
   for(const key of ['bold','italic','underline']){$('cell-'+key).addEventListener('pointerdown',e=>e.preventDefault());$('cell-'+key).addEventListener('click',()=>changeCellStyle({[key]:$('cell-'+key).getAttribute('aria-pressed')!=='true'}));}
   $('cell-format-reset').addEventListener('pointerdown',e=>e.preventDefault());$('cell-format-reset').addEventListener('click',()=>changeCellStyle({},{clear:true}));
   function selectColumn(id,shift){const ids=selection.kind==='column'&&shift?[...selection.ids]:[];if(ids.includes(id))ids.splice(ids.indexOf(id),1);else ids.push(id);selection=ids.length?{kind:'column',ids}:{kind:'none'};applySelectionClasses();}
   function selectCell(cell,shift){const key=cellKey(cell);if(key.startsWith('undefined|'))return;let keys=new Set([key]),anchor=key;if(shift&&selection.kind==='cells'){anchor=selection.anchor;const rows=[...new Set(cellNodes().map(n=>cellKey(n).split('|')[0]))],cols=orderedColumns().filter(c=>!layoutFor().hidden.includes(c.id)).map(c=>c.id),[ar,ac]=anchor.split('|'),[br,bc]=key.split('|');const y1=rows.indexOf(ar),y2=rows.indexOf(br),x1=cols.indexOf(ac),x2=cols.indexOf(bc);if([y1,y2,x1,x2].every(x=>x>=0)){keys=new Set();for(const row of rows.slice(Math.min(y1,y2),Math.max(y1,y2)+1))for(const col of cols.slice(Math.min(x1,x2),Math.max(x1,x2)+1))keys.add(layout.alignKey(row,col));}}selection={kind:'cells',keys,anchor};const item=items.find(i=>key.split('|')[0]===i.id||key.split('|')[0].startsWith(i.id+':'));if(item){selectItem(item.id,false);}else{const rowId=key.split('|')[0],node=cell.closest('[data-row-id]'),itemId=node?.dataset.itemId||document.querySelector(`#ros-body tr[data-row-id="${CSS.escape(rowId)}"]`)?.dataset.itemId;if(itemId)selectItem(itemId,false);}applySelectionClasses();}
   const frame=document.querySelector('.doc-frame');
   if(!lite)frame.append($('authoring')); // Supplemental inputs stay in the same scrolling centre column.
+  // Resolve range selection before the text editor's document pointer handler
+  // can open the endpoint and replace the original selection anchor.
+  let rangePointerHandled=false;
+  document.addEventListener('pointerdown',event=>{
+    rangePointerHandled=false;
+    if(!event.shiftKey||event.button!==0||!frame.contains(event.target)||event.target.closest('button,input,textarea,[data-stage-toggle]'))return;
+    const cell=event.target.closest('td[data-column-id],.pg-cell,.portrait-field');if(!cell)return;
+    event.preventDefault();event.stopImmediatePropagation();rangePointerHandled=true;
+    if(paperEditor?.active&&!paperEditor.finish())return;
+    selectCell(cell,true);
+  },true);
+  // Also support a synthetic/keyboard click without a preceding pointer event.
+  frame.addEventListener('click',event=>{
+    if(!event.shiftKey||event.target.closest('button,input,textarea,[data-stage-toggle]'))return;
+    const cell=event.target.closest('td[data-column-id],.pg-cell,.portrait-field');if(!cell)return;
+    event.preventDefault();event.stopImmediatePropagation();
+    if(rangePointerHandled){rangePointerHandled=false;return;}
+    if(paperEditor?.active&&!paperEditor.finish())return;
+    selectCell(cell,true);
+  },true);
   frame.addEventListener('click',event=>{const cell=event.target.closest('td[data-column-id],.pg-cell,.portrait-field');if(cell&&!event.target.closest('button,input,textarea,[data-stage-toggle]'))selectCell(cell,event.shiftKey);});
   frame.addEventListener('keydown',event=>{const head=event.target.closest('th[data-column-id],.pg-label[data-column-id]');if(!head)return;const id=head.dataset.columnId;if([' ','Enter'].includes(event.key)){event.preventDefault();selectColumn(id,event.shiftKey);}else if(event.key==='Escape'){selection={kind:'none'};applySelectionClasses();}else if(!event.shiftKey&&['ArrowLeft','ArrowRight'].includes(event.key)&&selection.kind==='column'&&selection.ids.length===1){event.preventDefault();pendingColumnFocus=paperFormat==='free'?null:id;moveColumn(id,event.key==='ArrowLeft'?-1:1,{focus:false});[...frame.querySelectorAll(`[data-column-id="${id}"][aria-selected=true]`)].find(n=>n.getClientRects().length)?.focus({preventScroll:true});}});
   // 進行表は γ の枠（iframe）の中に出るので、表示枠の幅は iframe の幅で決まる＝window の resize で合わせ直せば足りる。
@@ -552,7 +584,7 @@ window.ROSLeftPanels={install(band,{store}){
     const sceneAction=uiText(sceneActionKey);
     $('paper-scene').setAttribute('aria-label',sceneAction);$('paper-scene').title=sceneAction;$('paper-scene').innerHTML='<svg viewBox="0 0 15 15" aria-hidden="true"><path d="M1 13h13M2 12V2h11v10M2 2l3 3-3 4M13 2l-3 3 3 4"/></svg><span></span>';$('paper-scene').lastChild.textContent=sceneAction;
     if(lite){$('make-scene').textContent=uiText(row.sceneId?'この行を舞台で開く':'舞台シーンを作る');$('scene-help').hidden=!!row.sceneId;}
-
+    syncSelectionBar();
   }
   function sceneRows(){return timeline().flatMap(({item,index,start,after})=>{const n=String(index+1).padStart(2,"0"),next=items[index+1];return[
     {kind:"scene",sceneId:item.sceneId,id:item.id,itemId:item.id,no:n,start:pclock(start),duration:pfmt(item.hold),title:item.title||P("untitled"),who:item.owner,standby:item.standby,go:item.go,dept:item.dept,details:item.details,notes:item.notes,detailImage:item.detailImage,noteImage:item.noteImage,detailAssets:item.detailAssets,noteAssets:item.noteAssets},
@@ -739,7 +771,17 @@ window.ROSLeftPanels={install(band,{store}){
     applyPaperSize();
     $("paper-size-note").textContent=free?"連続入力：用紙に固定せず、列幅・内容に合わせます。進行表を印刷するときはA4横またはA4縦を選びます。":`${portrait?"A4縦 210 × 297 mm：項目ごとのブロック表示。":`A4横 297 × 210 mm：${orderedColumns().filter(c=>!layoutFor().hidden.includes(c.id)).length}列の一覧。`} 印刷画面ではA4・倍率100%・ブラウザのヘッダーとフッターをオフにしてください。`;
   }
-  let pageRevision=0,pageFrame=0;
+  let pageRevision=0,pageFrame=0,paginationDeferred=false;
+  // Chromium does not lay out a hidden parent iframe. Paginate only after
+  // the paper tab has a measurable viewport; no content has overflowed yet.
+  let paginationResumeFrame=0;
+  new ResizeObserver(() => {
+    if (!paginationDeferred || paginationResumeFrame) return;
+    paginationResumeFrame=requestAnimationFrame(()=>{
+      paginationResumeFrame=0;
+      if(paginationDeferred && document.documentElement.getBoundingClientRect().width > 0) queuePagination();
+    });
+  }).observe(document.documentElement);
   function queuePagination(){
     const revision=++pageRevision,status=$("pagination-status"),source=$("paper-source"),host=$("page-output");
     document.body.classList.remove("pages-ready");$("print-sample").disabled=true;
@@ -753,6 +795,8 @@ window.ROSLeftPanels={install(band,{store}){
     const sourceSnapshot=source.cloneNode(true),lang=language;
     const text={notSet:P("notSet"),runOfShow:P("runOfShow"),abbreviations:P("abbreviations"),continued:(no,part,first)=>layout.paperText(lang,"continued",no,part,first)};
     pageFrame=requestAnimationFrame(async()=>{
+      paginationDeferred = document.documentElement.getBoundingClientRect().width <= 0;
+      if (paginationDeferred) return;
       const mount=el("div","","paginated-pages page-building");document.querySelector(".doc-frame").append(mount);
       try{
         const result=await window.ROSPages.render({source:sourceSnapshot,table,mount,portrait:format==="a4-portrait",scope,context,text,isCurrent:()=>revision===pageRevision});
@@ -1001,7 +1045,14 @@ window.ROSLeftPanels={install(band,{store}){
     layoutIndex();
   }
   // Scale with transform, not zoom: WebKit clamps text under zoom (9px minimum), which regrew the page text and pushed rows into the footer below ~80%.
-  new ResizeObserver(()=>{const host=$("page-output");host.style.setProperty("--page-out-h",`${host.offsetHeight}px`);}).observe($("page-output"));
+  let outputHeightFrame=0;
+  new ResizeObserver(()=>{
+    cancelAnimationFrame(outputHeightFrame);
+    outputHeightFrame=requestAnimationFrame(()=>{
+      const host=$("page-output"),height=`${host.offsetHeight}px`;
+      if(host.style.getPropertyValue("--page-out-h")!==height)host.style.setProperty("--page-out-h",height);
+    });
+  }).observe($("page-output"));
   function setFreeWidth(value){freeWidthPref=value===null?null:layout.freeWidth(value,maxFreeWidth());store(FREE_WIDTH_KEY,freeWidthPref);applyPaperSize();cuePaper?.refresh();fitEntryNumberColumn();queueTrack();}
   function setPageScale(value){pageScaleManual=value!==null;pageScalePref=layout.pageScale(value??autoPageScale());store(PAGE_SCALE_KEY,pageScaleManual?pageScalePref:null);applyPaperSize();cuePaper?.refresh();queueTrack();}
   $("paper-size-input").addEventListener("change",event=>{const raw=event.target.value.trim();if(paperFormat==="free")setFreeWidth(raw===""?null:raw);else setPageScale(raw===""?null:raw);event.target.value=paperFormat==="free"?(freeWidthPref===null?"":String(layout.freeWidth(freeWidthPref,maxFreeWidth()))):(pageScaleManual?String(pageScalePref):"");});
@@ -1166,7 +1217,8 @@ window.ROSLeftPanels={install(band,{store}){
   function syncCueReadOnly(){
     const readOnly=readOnlyPaper();
     document.body.classList.toggle("readonly-cue-shell",readOnly);
-    for(const node of document.querySelectorAll('#paper-band > :not(#band-cues),.doc-frame,#authoring,#ros-index'))node.inert=readOnly;
+    for(const node of document.querySelectorAll('#paper-band > :not(#band-cues),#band-selection,.doc-frame,#authoring,#ros-index'))node.inert=readOnly;
+    syncSelectionBar();
     return readOnly;
   }
   function syncCueChoices(){
@@ -1371,6 +1423,8 @@ window.ROSLeftPanels={install(band,{store}){
     // Only toolbar chrome: item titles and the editable paper remain source data.
     parent.GAMMA_UI?.translateDOM($('paper-band'), {language:uiLanguage(),lookup:uiText,
       exclude:'#paper-item-picker,#paper-size-control,#paper-size-range,#paper-scene,#heading-language option[value="auto"],[data-no-i18n]'});
+    parent.GAMMA_UI?.translateDOM(selectionBar,{language:uiLanguage(),lookup:uiText,exclude:'#cell-format-target,#paper-scene'});
+    syncFormatControls();syncSelectionBar();
     for(const selector of ['#ros-index-toggle','#ros-index-collapse','#ros-index-resize','#companion-toggle','.companion-heading','#details-add-image','#notes-add-image']){
       const control=document.querySelector(selector);if(control)parent.GAMMA_UI?.translateDOM(control,{language:uiLanguage(),lookup:uiText});
     }

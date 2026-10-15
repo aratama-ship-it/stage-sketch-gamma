@@ -187,7 +187,8 @@
     const rows = list(project && project.scenes);
     const numbers = sceneNumberMap(rows);
     const order = new Map(rows.map((row, index) => [row && row.id, index]));
-    const resolved = list(project && project.cues)
+    const retired = new Set(list(project?.musicCueAudio?.sceneStarts?.retiredCueIds));
+    const resolved = list(project && project.cues).filter(cue => !retired.has(cue?.id))
       .filter((cue) => cue && ["timeline", "light-unplaced", "light-disabled"].includes(cue.kind) && ["light", "music", "dialogue"].includes(cue.cueType))
       .map((cue, sourceIndex) => ({ ...cue, sourceIndex, ...(project?.timecode && root.STAGE_TIME_DOMAIN ? { showSeconds: root.STAGE_TIME_DOMAIN.cuePosition(root.STAGE_TIME_DOMAIN.resolve(project), cue)?.seconds } : {}), sceneId: cueSceneId(project, cue) }))
       .filter((cue) => cue.sceneId)

@@ -60,16 +60,26 @@
         if (ok !== true) throw Error("Project show could not be opened");
         opened = true;
         if (payload.show === "") changed();
+        else lastSent = contentSignature(runtime.snapshot().show);
       });
       // AppKit evaluateJavaScript does not await returned promises. The UI reports
       // a failed import; no replacement changed/flushed is sent on failure.
       opening.catch(error => runtime.error(error));
     }
+    // The selected scene is view state. Keep it in saved packages/flushes,
+    // but moving between scenes must not mark the AppKit document Edited.
+    function contentSignature(show) {
+      try {
+        const document = JSON.parse(show);
+        if (document.project) delete document.project.activeSceneId;
+        return JSON.stringify(document);
+      } catch (_) { return show; }
+    }
     function changed(force = false) {
       if (!active || !opened || readOnly) return false;
       const value = readOnlyValue || runtime.snapshot();
-      if (!force && value.show === lastSent) return true;
-      post("changed", value); lastSent = value.show; return true;
+      if (!force && contentSignature(value.show) === lastSent) return true;
+      post("changed", value); lastSent = contentSignature(value.show); return true;
     }
     async function flush(requestId) {
       await opening;
@@ -77,7 +87,7 @@
       await runtime.settle();
       await Promise.all([...pendingAudio]);
       const value = readOnlyValue || runtime.snapshot();
-      post("flushed", { ...value, requestId }); lastSent = value.show;
+      post("flushed", { ...value, requestId }); lastSent = contentSignature(value.show);
     }
     const facade = {
       open: receiveOpen,

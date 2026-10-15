@@ -11,6 +11,8 @@
         id: "show-panel", title: "The Show panel (new, list, export, import, versions)", status: "verified",
         keywords: ["show", "project", "work", "new", "list", "switch", "export", "import", "open file", "version", "template", "return to previous", "replace"],
         html: `
+<p>Viewing a scene preserves stored prop positions and Undo history. Switching the viewed scene alone does not mark a Mac project as edited. Actual edits still save as usual.</p>
+<p>The version-copy and version-list dialogs close with the top-right close button, Cancel, Esc or the backdrop. Focus returns to the opener, and canceling leaves the show unchanged.</p>
 <p>The ${ui("Show")} panel at the top left is the container for your work.</p>
 ${table(["Item", "What it does"], [
   [ui("Show name"), "The title of the work. It appears in All shows, the export file and the print sheet"],
@@ -57,6 +59,7 @@ ${fig("46-scene-grid", "The ⊞ scene grid. Thumbnails of every scene; click one
         id: "scene-create", title: "Create next scene (blank or inherited)", status: "sourced",
         keywords: ["next scene", "create", "add", "new scene", "inherit", "blank", "duplicate", "copy", "route destination"],
         html: `
+<p>Only the body scrolls when it is long; the heading, top-right close button and bottom actions stay visible.</p>
 <p>${ui("Create next scene")} opens a window asking how to make it.</p>
 ${fig("45-scene-create", "The Create next scene window. Choose blank or inherit from the current scene, then tick what to carry over.", "Create next scene window")}
 ${table(["Choice", "Result"], [
