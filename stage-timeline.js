@@ -4,6 +4,7 @@
 (function initializeStageTimeline() {
   "use strict";
 
+  const rehearsal = () => document.body.dataset.gammaWorkspace === "rehearsal" ? window.GAMMA_FIELD_RUNS?.timelineContext() : null;
   const root = document.documentElement;
   const bridge = window.SHOSAI_STAGE_SESSION_BRIDGE;
   const panel = document.getElementById("stage-timeline-panel");
@@ -18,9 +19,14 @@
     return;
   }
   const fieldMobile = root.classList.contains("stage-phone-viewer") || root.classList.contains("stage-pwa-tablet");
-  if (fieldMobile && !document.body.classList.contains("stage-field-mode")) {
+  if (fieldMobile && document.body.dataset.gammaWorkspace !== "rehearsal" && !document.body.classList.contains("stage-field-mode")) {
     panel.hidden = true;
-    window.addEventListener("stage-field-mode-enter", initializeStageTimeline, { once: true });
+    const wake = () => {
+      if (document.body.dataset.gammaWorkspace !== "rehearsal") return;
+      window.removeEventListener("gamma-workspace-change", wake);
+      initializeStageTimeline();
+    };
+    window.addEventListener("gamma-workspace-change", wake);
     return;
   }
 
@@ -670,6 +676,7 @@
   }
 
   function projectDocument() {
+    const record = rehearsal(); if (record) return record.document;
     try {
       const documentValue = JSON.parse(bridge.exportDocumentString());
       return documentValue && documentValue.project ? documentValue : null;
@@ -746,7 +753,7 @@
   }
 
   function initializeTimelineDrawer() {
-    document.body.dataset.stageWorkspaceMode = "normal";
+    document.body.dataset.stageWorkspaceMode ||= "normal";
     panel.hidden = false;
     document.body.classList.add("stage-timeline-ready");
     applyTimelineHeight();
@@ -765,7 +772,7 @@
 
   function timelineInteractionIsBlocked() {
     const workspace = document.body.dataset.gammaWorkspace;
-    return workspace === "light-placement" || workspace === "venue-setup"
+    return (fieldMobile && workspace !== "rehearsal") || workspace === "light-placement" || workspace === "venue-setup"
       || document.body.classList.contains("stage-fullscreen") || timelineOverlayIsOpen();
   }
 
@@ -973,6 +980,7 @@
   }
 
   function canEditCountSync() {
+    if(rehearsal())return false;
     return Boolean(timeline && typeof bridge.setTimelineCountSync === "function"
       && (timeline.source === "formation" || timeline.trackId));
   }
@@ -1082,6 +1090,7 @@
     const documentValue = projectDocument();
     if (!documentValue) return { project: null, section: null, choices: [] };
     const project = documentValue.project;
+    if (rehearsal()) return { project, section:currentSection(project), choices:[TD.showTimeline(TD.resolve(project))] };
     if (!project.timecode) timeScope = "section";
     const section = currentSection(project);
     const choices = formationTimelines(project, section);
@@ -1697,6 +1706,7 @@
   // 舞台スケッチ自身の秒ベース時間軸だけをここで編集する。Music Sync から
   // 読んだ拍ベースの区間は、元アプリ側のデータを黙って書き換えないため表示専用にする。
   function timelineContentCanResize() {
+    if(rehearsal())return false;
     return Boolean(timeline && timeline.source === "fallback"
       && typeof bridge.setTimelineScenePartDuration === "function");
   }
@@ -1908,6 +1918,7 @@
    * 保存形式は増やさず、キューが置かれているシーンを既存の区間計算から導く。 */
   let timelineLightEvents = [];
   function publishTimelineLightSchedule(project) {
+    if(rehearsal())return;
     if(!timeline || typeof bridge.setTimelineLightSchedule!=="function")return;
     timelineLightEvents=bridge.setTimelineLightSchedule({
       segments:timeline.segments.map(s=>({...s,blackout:!!project.scenes.find(row=>row.id===s.sceneId)?.blackout})),
@@ -1920,6 +1931,7 @@
     return Boolean(managedPlayback || silentPlayback) || Boolean(!timeline?.managed && els.audio && audioMatchesTimeline() && !els.audio.paused && !els.audio.ended);
   }
   function syncTimelineLightCue(seconds, {force=false}={}) {
+    if(rehearsal())return false;
     if(typeof bridge.applyTimelineLightClock!=="function")return false;
     const schedule=window.STAGE_LIGHT_SCHEDULE;
     if(!schedule)return false;
@@ -3328,6 +3340,7 @@
   }
 
   function activeStageSceneId() {
+    if(rehearsal())return rehearsal().info.sceneId;
     if (typeof bridge.getActiveSceneId === "function") return bridge.getActiveSceneId();
     const documentValue = projectDocument();
     return documentValue && documentValue.project ? documentValue.project.activeSceneId : null;
@@ -3479,6 +3492,15 @@
 
   function updatePlayhead() {
     if (!timeline) return;
+    const record=rehearsal();
+    if(record){
+      seekSeconds=record.info.seconds;
+      els.surface.style.setProperty("--stage-timeline-playhead-x",`${pxFor(seekSeconds)}px`);
+      els.position.textContent=labelPosition(seekSeconds);
+      els.play.setAttribute("aria-pressed",String(record.info.playing));els.play.disabled=!record.canPlay;
+      els.play.title=els.play.getAttribute('aria-label')||'GO';
+      keepPlayheadInView();return;
+    }
     const playingThisTimeline = els.audio && audioMatchesTimeline();
     if (!timeline.managed && !externalTransition && !silentPlayback && playingThisTimeline && Number.isFinite(els.audio.currentTime)) seekSeconds = els.audio.currentTime;
     seekSeconds = clamp(seekSeconds, 0, timeline.duration);
@@ -3566,7 +3588,7 @@
     closeTimelineLockMenu();
     const { project, choices } = timelineChoices();
     if (!project || !choices.length) return;
-    if (!project.musicCueAudio && musicMigrationAttempt !== project.id) {
+    if (!document.body.dataset.gammaRehearsalPending && document.body.dataset.gammaWorkspace !== "rehearsal" && !project.musicCueAudio && musicMigrationAttempt !== project.id) {
       musicMigrationAttempt = project.id;
       void bridge.ensureMusicCueMigration?.().then(() => renderTimeline());
     }
@@ -3661,6 +3683,7 @@
     applyPendingTcSeek();
     publishVoxCues(project);
     updatePlayhead();
+    if (typeof protectRehearsalTimeline === "function") protectRehearsalTimeline();
     saveUi();
   }
 
@@ -3841,6 +3864,7 @@
   /* T-26（2026-09-18）: 「その秒へ飛ぶ」を1か所にまとめる。
    * 目盛りへの吸着は掛けない（呼ぶ側が既に正確な秒を持っている場合に使う）。 */
   function seekToSeconds(seconds) {
+    if(rehearsal()){rehearsal().seek(seconds);updatePlayhead();return;}
     if (!timeline) return;
     seekSeconds = clamp(seconds, 0, timeline.duration);
     if (timeline.managed) {
@@ -3951,6 +3975,7 @@
   });
 
   async function toggleTimelinePlayback() {
+    if(rehearsal()){rehearsal().go();return;}
     if (!timeline || els.play.disabled) return;
     if (timeline.managed) { if (managedPlayback) { pauseManagedPlayback(); updatePlayhead(); } else await startManagedPlayback(); return; }
     if (silentPlayback) {
@@ -5207,6 +5232,31 @@
     }, 100);
   });
 
+  const rehearsalViewControls = '#stage-timeline-play,#stage-timeline-grip,#stage-timeline-resize,.stage-timeline-resize-handle,#stage-timeline-zoom-in,#stage-timeline-zoom-out';
+  function protectRehearsalTimeline(){
+    const active=document.body.dataset.gammaWorkspace==='rehearsal';panel.classList.toggle('rehearsal-readonly',active);
+    panel.querySelectorAll('button,input,select,[contenteditable]').forEach(el=>{
+      el.toggleAttribute('data-rehearsal-hide',active&&!el.matches(rehearsalViewControls));
+    });
+  }
+  for(const type of ['pointerdown','pointerup','mousedown','mouseup','click','dblclick','contextmenu','dragstart','drop','beforeinput','change','input','keydown']){
+    panel.addEventListener(type,event=>{
+      const record=rehearsal();if(document.body.dataset.gammaWorkspace!=='rehearsal')return;
+      if(event.target.closest(rehearsalViewControls))return;
+      if(type==='keydown'&&event.key==='Tab')return;
+      if(type==='click'&&event.target.closest('#stage-timeline-surface')&&record?.canPlay){
+        const box=els.surface.getBoundingClientRect();record.seek(clamp((event.clientX-box.left-timelineLeftInset)/Math.max(1,timelineWidth-timelineLeftInset),0,1)*timeline.duration);
+      }
+      event.preventDefault();event.stopImmediatePropagation();
+    },true);
+  }
+  let rehearsalShown=false;
+  window.addEventListener('gamma-workspace-change',()=>{
+    const active=document.body.dataset.gammaWorkspace==='rehearsal';
+    if(active||rehearsalShown){pauseManagedPlayback();pauseSilentPlayback();renderTimeline();protectRehearsalTimeline();}
+    rehearsalShown=active;
+  });
+  window.addEventListener('gamma-rehearsal-clock',()=>{if(!rehearsal())return;if(!rehearsalShown){rehearsalShown=true;renderTimeline();}updatePlayhead();protectRehearsalTimeline();});
   timecodeUI = window.STAGE_TIMECODE_UI.create({ bridge, tx,
     context: () => { const project = projectDocument().project; return { project, sectionId: currentSection(project)?.id }; },
     seek: seekDisplayedTime,

@@ -1,8 +1,8 @@
 {
-  "version": "0.3.68",
+  "version": "0.3.69",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.68/stage-sketch-gamma-mac-0.3.68.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.69/stage-sketch-gamma-mac-0.3.69.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "見た目の規格をそろえました。Safariと同じ細い暗いスクロールバー、統一したアイコン枠、文字の上下位置、角丸なしの操作部品、キーキャップ風のショートカット印を採用し、環境設定で印の表示を切り替えられます。",
+  "notes": "現場モードは、進行表の右にある「リハーサル」タブになりました。ヘッダーの走る人のアイコンは廃止しました。",
   "updated": "2026-10-15"
 }

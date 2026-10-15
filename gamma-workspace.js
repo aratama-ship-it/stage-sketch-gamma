@@ -756,7 +756,8 @@
       next = "run-of-show";
     }
     const featureAttempt = ++featureSelectionAttempt;
-    if(!['normal','light-placement','light-design','venue-setup','script','cuesheet','run-of-show'].includes(next)) return;
+    if(!['normal','light-placement','light-design','venue-setup','script','cuesheet','run-of-show','rehearsal'].includes(next)) return;
+    if(next==='rehearsal' && (lite || host.context().readOnly || !window.GAMMA_FIELD_RUNS)) return;
     const featureGroup = isLightMode(next) ? 'light' : next === 'run-of-show' ? 'runOfShow' : null;
     if (featureGroup && window.SHOSAI_STAGE_OFFLINE && !await window.SHOSAI_STAGE_OFFLINE.ensureGroup(featureGroup)) return;
     if (featureAttempt !== featureSelectionAttempt) return;
@@ -818,6 +819,7 @@
       }
     }
     try {
+      if(mode==='rehearsal' && next!==mode && !await window.GAMMA_FIELD_RUNS.leave()) return;
       close3dWorkspace();
       if(mode==='normal' && next!=='normal') captureHostHistory();
       // セリフ編集画面では本体の履歴が動くので、出るときの状態を控え直す（舞台へ戻ったとき古い状態を出さない）
@@ -859,6 +861,13 @@
         if(context.readOnly) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
         editor()?.suspend();
         window.SHOSAI_SCRIPT_EDITOR?.open?.();
+      } else if(next==='rehearsal') {
+        editor()?.suspend();
+        // Protect the source while the isolated renderer is loading, too.
+        document.body.dataset.gammaRehearsalPending='true';
+        normal.inert=true;
+        try { await window.GAMMA_FIELD_RUNS.open(); }
+        finally { delete document.body.dataset.gammaRehearsalPending; }
       } else if(next==='run-of-show') {
         const readOnlyQ = host.context().readOnly;
         if(readOnlyQ && !window.SHOSAI_STAGE_CUE_SHEET_HOST?.available?.()) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
@@ -1031,6 +1040,7 @@
   syncTabAccessibility();
   document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode]').forEach(button=>button.addEventListener('click',()=>select(button.dataset.stageWorkspaceMode)));
   document.getElementById('stage-freecam-open')?.addEventListener('click',event=>{
+    if(mode==='rehearsal'){event.preventDefault();event.stopImmediatePropagation();const button=event.currentTarget;void select('normal').then(()=>{if(mode==='normal')button.click();});return;}
     if(venueSetupPending()) { event.preventDefault(); event.stopImmediatePropagation(); select('venue-setup'); return; }
     endPlaybackPreview({focus:false});editor()?.suspend();
   },true);

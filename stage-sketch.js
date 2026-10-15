@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.68";
+  const GAMMA_APP_VERSION = "v0.3.69";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -5522,7 +5522,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       autoTablet,
       manualTablet: prefs.tabletMode === true || window.SHOSAI_TABLET_PWA === true,
     });
-    if (transition.reload && !STUDY_READ_ONLY && !layoutLaneReloadPending) {
+    if (transition.reload && !STUDY_READ_ONLY && !layoutLaneReloadPending && currentWorkspaceMode() !== "rehearsal") {
       // Preserve open and search-suspended drafts; a later resize retries normally.
       if (hasPendingRenameDrafts()) return currentLayoutLaneState();
       layoutLaneReloadPending = true;
@@ -45067,6 +45067,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
         applyFeatureFlags();
         render();
       },
+      display(settings) {
+        prefs.lightPool = !!settings.lightPool; prefs.lightBeam = !!settings.lightBeam;
+        prefs.workLightOff = !!settings.workLightOff; applyFeatureFlags(); render();
+      },
       speaker(castId) {
         studySpeakerCast = castId ? String(castId) : "";
         render();
@@ -45785,7 +45789,9 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   });
   window.GAMMA_FIELD_RUN_SOURCE = Object.freeze({
     quiet: value => { fieldRunQuiet = Boolean(value); if (!fieldRunQuiet) render(); },
-    prepare: async () => { fieldRunQuiet = true; stopAlternativesPlayback(); await flushAutosave(); await ProjectStore.whenIdle(); if (autosaveFailed) throw new Error("source-save-failed"); },
+    prepare: async () => { fieldRunQuiet = true; stopAlternativesPlayback(); await flushAutosave(); if (musicCueWritePending) await musicCuePendingDone; await ProjectStore.whenIdle(); if (autosaveFailed) throw new Error("source-save-failed"); },
+    display: () => ({lightPool:featureOn("lightPool"), lightBeam:featureOn("lightBeam"), workLightOff:featureOn("workLightOff")}),
+    toggleDisplay: key => { if(key==="light") toggleLightRendering(); else if(key==="work") toggleWorkLightOff(); },
     snapshot: () => window.SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString(),
     audio: id => window.SHOSAI_STAGE_SESSION_BRIDGE.getTimelineAudioBlob(id),
     identity: () => ({ projectId: state.project.id, sceneId: state.project.activeSceneId }),

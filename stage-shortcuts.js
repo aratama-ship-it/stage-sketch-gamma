@@ -169,6 +169,8 @@
   // here precedes the child's own keys, preserving the user activation stack.
   const wired = new WeakSet();
   function wireFrame(frame) {
+    // Opaque rehearsal renderers forward their own keys with postMessage.
+    if (frame.hasAttribute("sandbox") && !frame.sandbox.contains("allow-same-origin")) return;
     let doc; try { doc = frame.contentDocument; } catch (_) { return; }
     if (!doc || wired.has(doc)) return;
     wired.add(doc);

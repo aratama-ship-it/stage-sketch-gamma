@@ -31,6 +31,11 @@
   "use strict";
 
   const TEXT = {
+    "現場モードは、進行表の右にある「リハーサル」タブになりました。ヘッダーの走る人のアイコンは廃止しました。": "Show mode is now the Rehearsal tab to the right of Run of show. The running-person icon has been removed from the header.",
+    "図を中央、GOなどの進行操作を右の列にまとめました。照明と作業灯の入切、Eでタイムラインを開閉できます。": "Diagrams are in the centre, with GO and other progress controls in the right column. Toggle lighting and work lights, and press E to open or close the timeline.",
+    "シーンを切り替えても画面が揺れないようにしました。": "Scene changes now keep the screen steady.",
+    "ランの記録・ノート・ペンはそのまま使えます。元ショーを変更せず、ランごとに保存します。": "Run records, notes and pen annotations remain available. Each run is saved separately without changing the original show.",
+
     "見た目の規格をそろえました。Safariと同じ細い暗いスクロールバー、統一したアイコン枠、文字の上下位置、角丸なしの操作部品、キーキャップ風のショートカット印を採用し、環境設定で印の表示を切り替えられます。": "Visual standards are now consistent: thin dark scrollbars like Safari, uniform icon boxes, corrected vertical text alignment, square controls and keycap-style shortcut marks. Preferences can show or hide the marks.",
     "進行表の左パネルを畳む・幅を変える・列ごとに隠す操作を追加し、スクロールバーを本文の横へ移しました。狭いヘッダーではタイムコードを先に隠します。": "The run of show left panel can now collapse, resize and hide individual columns. Its scrollbar sits beside the document. Narrow headers hide the timecode first.",
     "音源が未接続でも通常の再生ボタンで再生できます。未接続の区間は無音で進み、注意文を表示します。「無音で確認」ボタンは廃止しました。": "The normal play button now works even when audio is disconnected. Disconnected sections play silently with a warning. The Check silently button has been removed.",
@@ -4793,4 +4798,17 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "音源が未接続のため、一部または全部を音なしで再生しています。Mキューの詳細から再接続できます。": "Audio is not connected, so some or all of the show is playing without sound. Reconnect it in M cue details.",
   "照明デザインで開く": "Open in light design"
+});
+
+// F-25/F-26 rehearsal workspace.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "記録図を読み込めません。右の操作とランノートは使えます。": "The recording view could not load. The controls on the right and run notes are still available.",
+  "現在のキュー": "Current cue",
+  "リハーサル": "Rehearsal",
+  "ラン": "Run",
+  "列の幅を変える": "Resize column",
+  "現場モード": "Rehearsal",
+  "現場モードを終了": "Close rehearsal",
+  "現場モードを開く": "Open rehearsal",
+  "現場モードはリハーサルタブになりました": "Show mode is now the Rehearsal tab."
 });

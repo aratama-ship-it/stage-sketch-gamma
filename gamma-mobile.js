@@ -334,13 +334,24 @@
     topRight.append(segment);
     const share = $("#stage-share-open");
     if (share) { share.classList.add("gm-icon-btn"); topRight.append(share); }
-    const field = $("#stage-field-mode");
-    if (field) { field.classList.add("gm-icon-btn"); topRight.append(field); }
     const present = $("#stage-present-btn");
     if (present) topRight.append(present);
     const gear = $("#stage-prefs-btn");
     if (gear) topRight.append(gear);
     top.append(topLeft, nav, topRight);
+    // The tablet shell mirrors the same guarded workspace tabs.
+    if ($("#gamma-rehearsal")) {
+      html.classList.add("gm-rehearsal-enabled");
+      const tabs=el("div","gm-rehearsal-tabs",{role:"tablist","data-no-i18n":""});
+      for(const [id,label,mode] of [["stage-workspace-normal","舞台","normal"],["gamma-rehearsal","リハーサル","rehearsal"]]) {
+        const tab=button("gm-rehearsal-tab",tx(label),{role:"tab","data-gm-workspace":mode});
+        const sync=()=>{tab.textContent=tx(label);tab.setAttribute("aria-label",tx(label));tab.setAttribute("aria-selected",String((document.body.dataset.gammaWorkspace||"normal")===mode));};
+        tab.onclick=()=>$("#"+id)?.click();tabs.append(tab);relabelers.push(sync);window.addEventListener("gamma-workspace-change",sync);sync();
+      }
+      head.append(tabs);
+      window.addEventListener("gamma-workspace-change",()=>{top.inert=document.body.dataset.gammaWorkspace==="rehearsal";});
+    }
+
     head.prepend(top);
     const storageBand = $("#stage-storage-band");
     if (storageBand) head.after(storageBand);
@@ -604,8 +615,6 @@
     const share = $("#stage-share-open");
     if (share) { share.classList.add("gm-icon-btn"); bar.append(share); }
     if (settings) { settings.classList.add("gm-icon-btn"); bar.append(settings); }
-    const field = $("#stage-field-mode");
-    if (field) { field.classList.add("gm-icon-btn"); bar.append(field); }
     title.replaceChildren(bar);
     const storageBand = $("#stage-storage-band");
     if (storageBand) title.after(storageBand);
@@ -685,14 +694,13 @@
         if (next) nav.append(next);
         if (info) bar.insertBefore(info, settings || null);
         if (share) bar.insertBefore(share, settings || null);
-        if (field) bar.insertBefore(field, settings || null);
         if (settings) bar.append(settings);
         if (load) toolbar.append(load);
         if (viewToggle) toolbar.append(viewToggle);
         rail.replaceChildren();
       } else {
         rail.replaceChildren();
-        [viewToggle, info, load, share, field, settings, prev, next].filter(Boolean).forEach((b) => rail.append(b));
+        [viewToggle, info, load, share, settings, prev, next].filter(Boolean).forEach((b) => rail.append(b));
       }
       html.classList.toggle("gm-phone-landscape", !portrait);
     }
