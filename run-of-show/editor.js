@@ -86,23 +86,35 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
   doc.getElementById('stage-cue-sheet-view-print').addEventListener('click',e=>{if(parent.SHOSAI_STAGE_CUE_SHEET_HOST.selection()?.kind==='handover')return;e.stopImmediatePropagation();print().catch(onColumns);},true);
   return {refresh,print,get ready(){return ready;}};
 }};
-/* Left panels can move only within this rail. Never send their DOM to another column. */
-window.ROSPanelOrder={install(band,{text,store}){
-  const key='gamma:ros:left-panels',panels=[...band.children].filter(n=>n.classList.contains('band-group'));
-  let order=['band-cues','band-settings','column-popover','panel-0','panel-3','panel-1','panel-4','band-output'];try{order=JSON.parse(localStorage.getItem(key))||order;}catch(_){}
+/* F-07: the same disclosure as the right panels; no panel reordering. */
+window.ROSLeftPanels={install(band,{store}){
+  const panels=[...band.children].filter(n=>n.classList.contains('band-group'));
+  let order=['band-cues','band-settings','column-popover','panel-0','panel-3','panel-1','panel-4','band-output'];
+  // Keep a previously chosen arrangement; this batch does not offer reordering.
+  try{const saved=JSON.parse(localStorage.getItem('gamma:ros:left-panels'));if(Array.isArray(saved))order=saved;}catch(_){}
   for(const [i,panel] of panels.entries())panel.dataset.rosPanel=panel.id||'panel-'+i;
-  const save=()=>store(key,JSON.stringify([...band.children].filter(n=>n.dataset.rosPanel).map(n=>n.dataset.rosPanel)));
   for(const id of order){const panel=panels.find(p=>p.dataset.rosPanel===id);if(panel)band.append(panel);}
-  for(const panel of panels.filter(p=>!order.includes(p.dataset.rosPanel)))band.append(panel);
-  function move(panel,delta){const visible=[...band.children].filter(p=>p.dataset.rosPanel&&!p.hidden),at=visible.indexOf(panel),target=visible[at+delta];if(!target)return;if(delta<0)target.before(panel);else target.after(panel);save();}
-  for(const panel of panels){const heading=panel.querySelector('.band-heading');if(!heading)continue;
-    const bar=heading.tagName==='SUMMARY'?heading:document.createElement('div');bar.classList.add('ros-left-head');if(bar!==heading){heading.before(bar);bar.append(heading);}
-    const grip=document.createElement('button');grip.type='button';grip.className='ros-panel-grip';grip.textContent='⠿';grip.setAttribute('aria-label',text('上下に並べ替え'));grip.draggable=true;bar.prepend(grip);
-    grip.addEventListener('click',e=>e.preventDefault());
-    grip.addEventListener('keydown',e=>{if(!['ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();move(panel,e.key==='ArrowUp'?-1:1);grip.focus();});
-    grip.addEventListener('dragstart',e=>{e.dataTransfer.setData('application/x-ros-panel',panel.dataset.rosPanel);e.dataTransfer.effectAllowed='move';});
-    panel.addEventListener('dragover',e=>{if([...e.dataTransfer.types].includes('application/x-ros-panel')){e.preventDefault();e.dataTransfer.dropEffect='move';}});
-    panel.addEventListener('drop',e=>{const id=e.dataTransfer.getData('application/x-ros-panel'),from=panels.find(p=>p.dataset.rosPanel===id);if(!from||from===panel)return;e.preventDefault();const r=panel.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right)return;if(e.clientY<r.top+r.height/2)panel.before(from);else panel.after(from);save();});
+  for(const panel of panels){
+    const heading=panel.querySelector('.band-heading');if(!heading)continue;
+    const key='gamma:ros:left-collapsed:'+panel.dataset.rosPanel;
+    const grip=document.createElement('span');grip.textContent='⠿';grip.setAttribute('aria-hidden','true');
+    const disclosure=document.createElement('span');disclosure.className='ros-side-disclosure';disclosure.textContent='▾';disclosure.setAttribute('aria-hidden','true');
+    if(heading.tagName==='SUMMARY'){
+      heading.classList.add('ros-side-head');heading.prepend(grip);heading.append(disclosure);
+      if(panel.id!=='column-popover')try{panel.open=localStorage.getItem(key)==='0';}catch(_){}
+      heading.setAttribute('aria-expanded',String(panel.open));
+      panel.addEventListener('toggle',()=>{heading.setAttribute('aria-expanded',String(panel.open));if(panel.id!=='column-popover')store(key,panel.open?'0':'1');});
+      continue; // Existing details keep their own persisted open state.
+    }
+    const button=document.createElement('button');button.type='button';button.className='ros-side-head';
+    const title=document.createElement('span');title.dataset.rosText=heading.textContent;title.textContent=heading.textContent;
+    const content=document.createElement('div');content.className='ros-left-content';content.id='ros-left-content-'+panel.dataset.rosPanel;
+    for(const child of [...panel.childNodes])if(child!==heading)content.append(child);
+    button.append(grip,title,disclosure);heading.replaceWith(button);panel.append(content);
+    let closed=false;try{closed=localStorage.getItem(key)==='1';}catch(_){}
+    const paint=()=>{content.hidden=closed;button.setAttribute('aria-expanded',String(!closed));};
+    button.setAttribute('aria-controls',content.id);paint();
+    button.addEventListener('click',()=>{closed=!closed;paint();store(key,closed?'1':'0');});
   }
 }};
 (() => {
@@ -113,7 +125,7 @@ window.ROSPanelOrder={install(band,{text,store}){
   const runOnly=Boolean(parent.RUN_SHELL_CORE)&&new URLSearchParams(location.search).get("host")==="run";
   const lite=bridge?.edition?.()==="lite";
   const readOnlyPaper=()=>Boolean(parent.SHOSAI_STAGE_CUE_SHEET_HOST?.readOnly?.());
-  if(runOnly||lite){document.body.classList.add(lite?"lite-paper":"run-paper");const css=document.createElement("link");css.rel="stylesheet";css.href="../run.css?v=20261012-v0358";if(lite)css.media="screen";document.head.append(css);}
+  if(runOnly||lite){document.body.classList.add(lite?"lite-paper":"run-paper");const css=document.createElement("link");css.rel="stylesheet";css.href="../run.css?v=20261015-fixa2";if(lite)css.media="screen";document.head.append(css);}
   if(!bridge){document.body.textContent="舞台スケッチγの進行表タブから開いてください。";return;}
   let packet;try{packet=bridge.read();}catch(error){document.body.textContent=error.message;return;}
   let token=packet.token,syncing=true;
@@ -129,8 +141,12 @@ window.ROSPanelOrder={install(band,{text,store}){
   let cueView=false,cueMounted=false,cueMounting=false,cuePending=null,cuePaper=null;
   let busy=false,dirty=false,storageReady=false,savedRevision=null,previousDocument=null,documentBase={},paperEditor=null;
 
-  function copySkin(){document.documentElement.dataset.stageSkin=parent.document.documentElement.dataset.stageSkin||"warm-black";}
-  copySkin();new MutationObserver(copySkin).observe(parent.document.documentElement,{attributes:true,attributeFilter:['data-stage-skin']});
+  function copySkin(){
+    document.documentElement.dataset.stageSkin=parent.document.documentElement.dataset.stageSkin||"warm-black";
+    const style=parent.getComputedStyle(parent.document.documentElement);
+    for(const key of ['--sans','--milk','--milk-dim','--brass'])document.documentElement.style.setProperty(key,style.getPropertyValue(key));
+  }
+  copySkin();new MutationObserver(copySkin).observe(parent.document.documentElement,{attributes:true,attributeFilter:['data-stage-skin','lang']});
   let paperInk='white';try{paperInk=localStorage.getItem('gamma:ros:paper-ink')==='black'?'black':'white';}catch(_){}
   function paintPaper(){document.documentElement.dataset.paperInk=paperInk;$("paper-ink").setAttribute('aria-pressed',String(paperInk==='black'));}
   paintPaper();$("paper-ink").addEventListener('click',()=>{paperInk=paperInk==='white'?'black':'white';paintPaper();cuePaper?.refresh();try{localStorage.setItem('gamma:ros:paper-ink',paperInk);}catch(error){showError(error);}});
@@ -165,7 +181,7 @@ window.ROSPanelOrder={install(band,{text,store}){
     const id=pendingColumnFocus;if(!id)return;pendingColumnFocus=null;
     if(selection.kind!=='column'||!selection.ids.includes(id))return;
     const active=document.activeElement;
-    if(active!==document.body&&!active.matches('th,.pg-label'))return;
+    if(active!==document.body&&!active.matches('th[data-column-id],.pg-label[data-column-id]'))return;
     [...document.querySelectorAll(`.doc-frame [data-column-id="${id}"][aria-selected=true]`)]
       .find(node=>node.getClientRects().length)?.focus({preventScroll:true});
   }
@@ -369,7 +385,7 @@ window.ROSPanelOrder={install(band,{text,store}){
   function cellNodes(){return [...document.querySelectorAll('.doc-frame td[data-column-id],.doc-frame .pg-cell,.doc-frame .portrait-field')];}
   function cellKey(node){return layout.alignKey(node.closest('[data-row-id]')?.dataset.rowId||node.dataset.rowId,node.dataset.columnId);}
   function selectionValues(){const values=cellAlign[alignmentMode()]||{};return selection.kind==='column'?selection.ids.map(id=>values.columns?.[id]||'left'):selection.kind==='cells'?[...selection.keys].map(key=>values.cells?.[key]??values.columns?.[key.split('|')[1]]??'left'):[];}
-  function applySelectionClasses(){const nodes=cellNodes(),existing=new Set(nodes.map(cellKey));if(selection.kind==='cells'){selection.keys=new Set([...selection.keys].filter(k=>existing.has(k)));if(!selection.keys.size)selection={kind:'none'};}for(const node of [...nodes,...document.querySelectorAll('.doc-frame th,.doc-frame .pg-label')]){const col=selection.kind==='column'&&selection.ids.includes(node.dataset.columnId),cell=selection.kind==='cells'&&selection.keys.has(cellKey(node));node.classList.toggle('is-col-selected',col);node.classList.toggle('is-cell-selected',cell);if(node.matches('th,.pg-label')){node.tabIndex=0;node.setAttribute('aria-selected',String(col));}}const values=selectionValues();for(const a of ['left','center','right']){$('align-'+a).disabled=!values.length;$('align-'+a).setAttribute('aria-pressed',String(values.length>0&&values.every(x=>x===a)));}syncFormatControls();syncSelectionBar();}
+  function applySelectionClasses(){const nodes=cellNodes(),existing=new Set(nodes.map(cellKey));if(selection.kind==='cells'){selection.keys=new Set([...selection.keys].filter(k=>existing.has(k)));if(!selection.keys.size)selection={kind:'none'};}for(const node of [...nodes,...document.querySelectorAll('.doc-frame th[data-column-id],.doc-frame .pg-label[data-column-id]')]){const col=selection.kind==='column'&&selection.ids.includes(node.dataset.columnId),cell=selection.kind==='cells'&&selection.keys.has(cellKey(node));node.classList.toggle('is-col-selected',col);node.classList.toggle('is-cell-selected',cell);if(node.matches('th[data-column-id],.pg-label[data-column-id]')){node.tabIndex=0;node.setAttribute('aria-selected',String(col));}}const values=selectionValues();for(const a of ['left','center','right']){$('align-'+a).disabled=!values.length;$('align-'+a).setAttribute('aria-pressed',String(values.length>0&&values.every(x=>x===a)));}syncFormatControls();syncSelectionBar();}
   function changeAlign(value){if(selection.kind==='none')return;if(paperEditor?.active&&!paperEditor.finish())return;const mode=alignmentMode(),p=cellAlign[mode]||{columns:{},cells:{}};p.columns??={};p.cells??={};if(selection.kind==='column')for(const id of selection.ids){if(value==='left')delete p.columns[id];else p.columns[id]=value;for(const key of Object.keys(p.cells))if(key.endsWith('|'+id))delete p.cells[key];}else for(const key of selection.keys){if(value==='left')delete p.cells[key];else p.cells[key]=value;}if(!Object.keys(p.columns).length)delete p.columns;if(!Object.keys(p.cells).length)delete p.cells;if(Object.keys(p).length)cellAlign[mode]=p;else delete cellAlign[mode];markDirty();renderPaper();}
   for(const a of ['left','center','right']){$('align-'+a).addEventListener('pointerdown',e=>e.preventDefault());$('align-'+a).addEventListener('click',()=>changeAlign(a));}
   function selectedStyles(){
@@ -416,17 +432,18 @@ window.ROSPanelOrder={install(band,{text,store}){
   function selectColumn(id,shift){const ids=selection.kind==='column'&&shift?[...selection.ids]:[];if(ids.includes(id))ids.splice(ids.indexOf(id),1);else ids.push(id);selection=ids.length?{kind:'column',ids}:{kind:'none'};applySelectionClasses();}
   function selectCell(cell,shift){const key=cellKey(cell);if(key.startsWith('undefined|'))return;let keys=new Set([key]),anchor=key;if(shift&&selection.kind==='cells'){anchor=selection.anchor;const rows=[...new Set(cellNodes().map(n=>cellKey(n).split('|')[0]))],cols=orderedColumns().filter(c=>!layoutFor().hidden.includes(c.id)).map(c=>c.id),[ar,ac]=anchor.split('|'),[br,bc]=key.split('|');const y1=rows.indexOf(ar),y2=rows.indexOf(br),x1=cols.indexOf(ac),x2=cols.indexOf(bc);if([y1,y2,x1,x2].every(x=>x>=0)){keys=new Set();for(const row of rows.slice(Math.min(y1,y2),Math.max(y1,y2)+1))for(const col of cols.slice(Math.min(x1,x2),Math.max(x1,x2)+1))keys.add(layout.alignKey(row,col));}}selection={kind:'cells',keys,anchor};const item=items.find(i=>key.split('|')[0]===i.id||key.split('|')[0].startsWith(i.id+':'));if(item){selectItem(item.id,false);}else{const rowId=key.split('|')[0],node=cell.closest('[data-row-id]'),itemId=node?.dataset.itemId||document.querySelector(`#ros-body tr[data-row-id="${CSS.escape(rowId)}"]`)?.dataset.itemId;if(itemId)selectItem(itemId,false);}applySelectionClasses();}
   const frame=document.querySelector('.doc-frame');
+  if(!lite)frame.append($('authoring')); // Supplemental inputs stay in the same scrolling centre column.
   frame.addEventListener('click',event=>{const cell=event.target.closest('td[data-column-id],.pg-cell,.portrait-field');if(cell&&!event.target.closest('button,input,textarea,[data-stage-toggle]'))selectCell(cell,event.shiftKey);});
-  frame.addEventListener('keydown',event=>{const head=event.target.closest('th,.pg-label');if(!head)return;const id=head.dataset.columnId;if([' ','Enter'].includes(event.key)){event.preventDefault();selectColumn(id,event.shiftKey);}else if(event.key==='Escape'){selection={kind:'none'};applySelectionClasses();}else if(!event.shiftKey&&['ArrowLeft','ArrowRight'].includes(event.key)&&selection.kind==='column'&&selection.ids.length===1){event.preventDefault();pendingColumnFocus=paperFormat==='free'?null:id;moveColumn(id,event.key==='ArrowLeft'?-1:1,{focus:false});[...frame.querySelectorAll(`[data-column-id="${id}"][aria-selected=true]`)].find(n=>n.getClientRects().length)?.focus({preventScroll:true});}});
+  frame.addEventListener('keydown',event=>{const head=event.target.closest('th[data-column-id],.pg-label[data-column-id]');if(!head)return;const id=head.dataset.columnId;if([' ','Enter'].includes(event.key)){event.preventDefault();selectColumn(id,event.shiftKey);}else if(event.key==='Escape'){selection={kind:'none'};applySelectionClasses();}else if(!event.shiftKey&&['ArrowLeft','ArrowRight'].includes(event.key)&&selection.kind==='column'&&selection.ids.length===1){event.preventDefault();pendingColumnFocus=paperFormat==='free'?null:id;moveColumn(id,event.key==='ArrowLeft'?-1:1,{focus:false});[...frame.querySelectorAll(`[data-column-id="${id}"][aria-selected=true]`)].find(n=>n.getClientRects().length)?.focus({preventScroll:true});}});
   // 進行表は γ の枠（iframe）の中に出るので、表示枠の幅は iframe の幅で決まる＝window の resize で合わせ直せば足りる。
   // v0.3.10 は .doc-frame に ResizeObserver を付け、WebKit が読み込み直後に「ResizeObserver loop」を報告した（v0.3.11 で外す）。
   let entryFitFrame=0;window.addEventListener('resize',()=>{cancelAnimationFrame(entryFitFrame);entryFitFrame=requestAnimationFrame(()=>fitEntryNumberColumn());});document.fonts?.ready.then(()=>fitEntryNumberColumn());
   let headerDrag=null;
-  frame.addEventListener('pointerdown',event=>{const head=event.target.closest('th,.pg-label');if(!head||event.button!==0||paperFormat==='a4-portrait')return;event.preventDefault();const box=head.getBoundingClientRect(),id=head.dataset.columnId,nearLeft=event.clientX-box.left<8,nearRight=box.right-event.clientX<8,heads=[...head.parentNode.children],previous=heads[heads.indexOf(head)-1];headerDrag={head,id:nearLeft&&previous?previous.dataset.columnId:id,x:event.clientX,resize:nearLeft||nearRight,profile:files.clone(layoutFor()),width:head.parentNode.getBoundingClientRect().width,dragging:false,to:null};head.setPointerCapture(event.pointerId);});
+  frame.addEventListener('pointerdown',event=>{const head=event.target.closest('th[data-column-id],.pg-label[data-column-id]');if(!head||event.button!==0||paperFormat==='a4-portrait')return;event.preventDefault();const box=head.getBoundingClientRect(),id=head.dataset.columnId,nearLeft=event.clientX-box.left<8,nearRight=box.right-event.clientX<8,heads=[...head.parentNode.children],previous=heads[heads.indexOf(head)-1];headerDrag={head,id:nearLeft&&previous?previous.dataset.columnId:id,x:event.clientX,resize:nearLeft||nearRight,profile:files.clone(layoutFor()),width:head.parentNode.getBoundingClientRect().width,dragging:false,to:null};head.setPointerCapture(event.pointerId);});
   frame.addEventListener('pointermove',event=>{const d=headerDrag;if(!d)return;const dx=event.clientX-d.x;if(Math.abs(dx)<6&&!d.dragging)return;d.dragging=true;if(d.resize){const p=layout.resizeColumn(d.profile,kindOfLayout(),d.id,dx/d.width*100);layouts[layoutKey()]=p;const widths=visibleColumnWidths();for(const col of $('ros-table').querySelectorAll('col'))col.style.width=`${widths.find(w=>w.id===col.dataset.columnId)?.pct||0}%`;fitEntryNumberColumn();for(const node of frame.querySelectorAll('.pg-labels,.pg-grid'))node.style.gridTemplateColumns=widths.map(w=>w.pct+'fr').join(' ');return;}d.head.classList.add('is-dragging');if(!d.ghost){d.ghost=el('div',d.head.textContent,'column-ghost');document.body.append(d.ghost);d.mark=el('div','','column-drop-mark');document.body.append(d.mark);}d.ghost.style.left=event.clientX+'px';d.ghost.style.top=event.clientY+'px';const heads=[...d.head.parentNode.children].filter(n=>!n.hidden),bounds=heads.map(n=>({id:n.dataset.columnId,x:n.getBoundingClientRect().left}));bounds.push({id:null,x:heads.at(-1).getBoundingClientRect().right});const target=bounds.sort((a,b)=>Math.abs(a.x-event.clientX)-Math.abs(b.x-event.clientX))[0];d.to=target.id;d.mark.style.left=target.x+'px';d.mark.style.top=d.head.getBoundingClientRect().top+'px';d.mark.style.height=frame.getBoundingClientRect().height+'px';});
   function endHeader(cancel=false,event){const d=headerDrag;if(!d)return;headerDrag=null;d.ghost?.remove();d.mark?.remove();d.head.classList.remove('is-dragging');if(cancel){layouts[layoutKey()]=d.profile;renderPaper();return;}if(!d.dragging){selectColumn(d.id,event?.shiftKey);return;}if(d.resize){const widths=layouts[layoutKey()].widths;layouts[layoutKey()]=d.profile;changeLayout(p=>{p.widths=widths;},'列幅を変更しました');}else if(d.to!==d.id){changeLayout(p=>{const order=p.order.filter(id=>id!==d.id),at=d.to?order.indexOf(d.to):order.length;order.splice(at,0,d.id);p.order=order;},'列を移しました');}}
   frame.addEventListener('pointerup',e=>endHeader(false,e));frame.addEventListener('pointercancel',()=>endHeader(true));document.addEventListener('keydown',e=>{if(e.key==='Escape'&&headerDrag){e.preventDefault();endHeader(true);}});
-  frame.addEventListener('dblclick',event=>{const head=event.target.closest('th,.pg-label');if(!head||paperFormat==='a4-portrait')return;const b=head.getBoundingClientRect();if(event.clientX-b.left<8||b.right-event.clientX<8){event.preventDefault();changeLayout(p=>Object.assign(p,layout.resetWidth(p,kindOfLayout(),head.dataset.columnId)),'列幅を既定へ戻しました');}});
+  frame.addEventListener('dblclick',event=>{const head=event.target.closest('th[data-column-id],.pg-label[data-column-id]');if(!head||paperFormat==='a4-portrait')return;const b=head.getBoundingClientRect();if(event.clientX-b.left<8||b.right-event.clientX<8){event.preventDefault();changeLayout(p=>Object.assign(p,layout.resetWidth(p,kindOfLayout(),head.dataset.columnId)),'列幅を既定へ戻しました');}});
   function decoratePages(){// Restore screen tools after projection without changing printed geometry.
     // G1 #2: the right edge of every A4 page shrinks the page on screen (aspect kept, never above real size, print unchanged).
     for(const page of document.querySelectorAll('#page-output .output-page')){if(page.querySelector(':scope>.page-resize'))continue;const handle=el('div','','page-resize');handle.dataset.screenOnly='';handle.setAttribute('aria-hidden','true');handle.title=uiText('ドラッグでA4の画面表示を縮小・ダブルクリックで実寸（印刷は実寸）');page.append(handle);}
@@ -996,7 +1013,7 @@ window.ROSPanelOrder={install(band,{text,store}){
   function setPaperFont(value){if(!paperEditor.finish())return;const next=layout.paperFontSize(value);if(next===paperFontSize)return;checkpoint();paperFontSize=next;markDirty();render();}
   $('paper-font-size').addEventListener('change',e=>setPaperFont(e.target.value));
   $('paper-size-range').addEventListener('input',e=>{if(paperFormat==='free')setFreeWidth(e.target.value);else setPageScale(e.target.value);});
-  $('display-reset').addEventListener('click',()=>{setPaperFont(layout.PAPER_FONT.initial);setFreeWidth(null);setPageScale(pageScaleDefault);indexWidthPref=null;indexPinned=true;store(INDEX_WIDTH_KEY,null);store(INDEX_OPEN_KEY,null);layoutIndex();});
+  $('display-reset').addEventListener('click',()=>{setPaperFont(layout.PAPER_FONT.initial);setFreeWidth(null);setPageScale(pageScaleDefault);indexWidthPref=null;indexPinned=true;leftWidthPref=null;store(LEFT_WIDTH_KEY,null);store(INDEX_WIDTH_KEY,null);store(INDEX_OPEN_KEY,null);layoutIndex();});
   $('paper-size-label').title=uiText('左右にドラッグして変更（Escで取消）');
   for(const scrubTarget of [$('paper-size-label'),$('paper-size-input')])scrubTarget.addEventListener('pointerdown',event=>{
     if(event.button!==0)return;if(event.currentTarget.tagName==='INPUT'&&event.clientX>event.currentTarget.getBoundingClientRect().right-20)return;const target=event.currentTarget,start=paperFormat==='free'?$('paper-source').getBoundingClientRect().width:pageScalePref;
@@ -1038,7 +1055,12 @@ window.ROSPanelOrder={install(band,{text,store}){
     const mm=paperFormat==="a4-portrait"?210:297,scale=pageScaleManual?pageScalePref:autoPageScale();return mm*96/25.4*scale/100+11;
   }
   // The control panel keeps the width of 2026-10-06b #14 for every paper: clamp(160px, grid − 8px gap − A4 landscape, 240px).
-  const panelWidth=()=>Math.min(240,Math.max(160,document.documentElement.clientWidth-8-8-(297*96/25.4+11)));
+  const LEFT_WIDTH_KEY='gamma:ros:left-width',LEFT_OPEN_KEY='gamma:ros:left-open';
+  let leftWidthPref=readNumber(LEFT_WIDTH_KEY),leftOpen=true;
+  try{leftOpen=localStorage.getItem(LEFT_OPEN_KEY)!=='0';}catch(_){}
+  const clampLeft=w=>Math.min(480,Math.max(160,Math.round(w)));
+  const panelWidth=()=>lite?0:leftOpen?Math.min(clampLeft(leftWidthPref??240),Math.max(160,innerWidth/2)):34;
+
   // Room available to a docked companion while an A4 page remains usable at
   // its minimum automatic scale.  Its final scale is measured from the
   // resulting centre track in autoPageScale(), not guessed from this reserve.
@@ -1063,6 +1085,9 @@ window.ROSPanelOrder={install(band,{text,store}){
     // Docked, the 360px companion column gives way first (360 → 160px; a chosen width is capped the same way) so the paper keeps its width.
     const mode=docked?"docked":indexOverlay?"overlay":"closed",width=layout.indexWidth(indexWidthPref??layout.INDEX_WIDTH.initial,docked?space:document.documentElement.clientWidth-32);
     indexMode=mode;preview.dataset.index=mode;aside.dataset.mode=mode;aside.hidden=mode==="closed";preview.style.setProperty("--panel-w",`${panelWidth()}px`);
+    preview.dataset.leftOpen=String(leftOpen);
+    preview.style.setProperty('--left-w',`${panelWidth()}px`);
+    $('ros-left-toggle')?.setAttribute('aria-expanded',String(leftOpen));
     preview.style.setProperty("--index-w",`${width}px`);
     // Do not use spare paper width to enlarge the companion column: the paper is
     // the primary surface, while the index follows the Stage tab's 360px default.
@@ -1231,7 +1256,34 @@ window.ROSPanelOrder={install(band,{text,store}){
   new MutationObserver(()=>{if(document.body.classList.contains("readonly-cue-shell")===readOnlyPaper())return;syncCueChoices();if(cueView)cueHost?.refresh?.(true);}).observe(parent.document.body,{attributes:true,attributeFilter:["class"]});
   syncCueChoices();
   document.querySelector('.band-view').append($('stage-view-control'),$('stage-view-rows'),$('widths-reset').closest('.toolbar'));
-  if(!lite)window.ROSPanelOrder.install($('paper-band'),{text:uiText,store});
+  if(!lite){
+    window.ROSLeftPanels.install($('paper-band'),{store});
+    const toggle=el('button','','is-icon ros-left-toggle');toggle.id='ros-left-toggle';toggle.type='button';toggle.dataset.noI18n='';
+    toggle.innerHTML='<svg viewBox="0 0 15 15" aria-hidden="true"><path d="M1 1h13v13H1zM5 1v13"/></svg>';
+    toggle.setAttribute('aria-controls','paper-panel');$('preview').prepend(toggle);
+    const syncToggle=()=>{const label=uiText('操作パネル');toggle.setAttribute('aria-label',label);toggle.title=label;toggle.setAttribute('aria-expanded',String(leftOpen));};
+    toggle.addEventListener('click',()=>{leftOpen=!leftOpen;store(LEFT_OPEN_KEY,leftOpen?'1':'0');syncToggle();applyPaperSize();});syncToggle();
+    new MutationObserver(syncToggle).observe(parent.document.documentElement,{attributes:true,attributeFilter:['lang']});
+    const handle=el('div','','ros-index-resize ros-left-resize');handle.id='ros-left-resize';handle.tabIndex=0;handle.dataset.noI18n='';
+    handle.setAttribute('role','separator');handle.setAttribute('aria-orientation','vertical');handle.setAttribute('aria-controls','paper-panel');
+    const syncHandle=()=>{handle.setAttribute('aria-label',uiText('操作パネルの幅（ダブルクリックで既定に戻す）'));handle.setAttribute('aria-valuemin','160');handle.setAttribute('aria-valuemax','480');handle.setAttribute('aria-valuenow',String(panelWidth()));};
+    $('paper-panel').append(handle);syncHandle();
+    new MutationObserver(syncHandle).observe(parent.document.documentElement,{attributes:true,attributeFilter:['lang']});
+    handle.addEventListener('pointerdown',event=>{
+      if(event.button!==0)return;const start=$('paper-panel').getBoundingClientRect().width;
+      startDrag(event,handle,dx=>{$('preview').style.setProperty('--left-w',`${clampLeft(start+dx)}px`);},(dx,cancel)=>{if(!cancel){leftWidthPref=clampLeft(start+dx);store(LEFT_WIDTH_KEY,leftWidthPref);}applyPaperSize();syncHandle();});
+    });
+    handle.addEventListener('dblclick',event=>{event.preventDefault();leftWidthPref=null;store(LEFT_WIDTH_KEY,null);applyPaperSize();syncHandle();});
+    handle.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight'].includes(event.key))return;event.preventDefault();leftWidthPref=clampLeft(panelWidth()+(event.key==='ArrowRight'?1:-1)*(event.shiftKey?64:16));store(LEFT_WIDTH_KEY,leftWidthPref);applyPaperSize();syncHandle();});
+  }
+  // F-02: preserve scrolling from the surrounding mat without stealing wheel
+  // events from controls, the index, the paper itself, or browser zoom.
+  $('preview').addEventListener('wheel',event=>{
+    if(event.ctrlKey||event.metaKey||event.target.closest('.paper-panel,.ros-index,.item-editor,.doc-frame,.cue-sheet-frame'))return;
+    const scroller=cueView?null:frame;if(!scroller||scroller.scrollHeight<=scroller.clientHeight)return;
+    const unit=event.deltaMode===1?16:event.deltaMode===2?scroller.clientHeight:1;
+    scroller.scrollTop+=event.deltaY*unit;scroller.scrollLeft+=event.deltaX*unit;event.preventDefault();
+  },{passive:false});
   $('band-output-button').addEventListener('click',()=>printCurrent().catch(showError));
   window.GAMMA_RUN_OF_SHOW_EDITOR={refresh,refreshIfChanged(){if(!paperEditor.active&&bridge.read().token!==token){refresh();syncCueChoices();if(cueView)cueHost.refresh();}},finish:()=>paperEditor.finish(),hasDraft:()=>paperEditor?.hasDraft,
     showCueSheet,showRunOfShow,printCurrent,

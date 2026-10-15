@@ -46,7 +46,7 @@ html[data-gamma-playback="ready"] #simple-playback-open{display:inline-flex;alig
    2026-10-06: 見た目の土台は同じ帯の「表示」の切替（.showtoggles）と同じ。そのうえで、押せないことは
    文字を一段薄く・枠を破線・カーソルを禁止にして、ふつうの「選んでいない」ボタンと見分ける */
 #simple-mode-on.is-unavailable{color:rgba(240,231,214,.4);border-style:dashed;border-color:#5a5043;background:transparent;cursor:not-allowed}
-#simple-mode-on[data-hint]:hover::after,#simple-mode-on[data-hint]:focus-visible::after{content:attr(data-hint);position:absolute;top:calc(100% + 6px);left:0;z-index:40;padding:6px 10px;border:1px solid var(--simple-border);border-radius:3px;background:var(--desk);color:var(--simple-text);font:400 13px/1.5 var(--sans);letter-spacing:.02em;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.45);pointer-events:none}
+#simple-mode-on[data-hint]:hover::after,#simple-mode-on[data-hint]:focus-visible::after{content:attr(data-hint);position:absolute;top:calc(100% + 6px);left:0;z-index:40;padding:6px 10px;border:1px solid var(--simple-border);border-radius:var(--radius-sm);background:var(--desk);color:var(--simple-text);font:400 13px/1.5 var(--sans);letter-spacing:.02em;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.45);pointer-events:none}
 
 /* Preset images use the full-width gallery below the preview. */
 .simple-catalog{margin-bottom:16px}
@@ -66,7 +66,7 @@ html[data-gamma-playback="ready"] #simple-playback-open{display:inline-flex;alig
 .simple-light-active .body{display:flex;flex-direction:column;overflow:hidden}
 .simple-light-active .simple-light-toolbar{flex:0 0 auto}
 .simple-light-active .simple-mode-panel:not([hidden]){display:flex;flex:1;flex-direction:column;min-height:0;overflow:hidden}
-.simple-workbench{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);flex:1;min-height:0;margin-bottom:0}
+.simple-workbench{display:grid;grid-template-columns:minmax(0,var(--simple-preview-width,7fr)) var(--gamma-gap,8px) minmax(280px,4fr);flex:1;min-height:0;margin-bottom:0}
 .simple-preview{display:flex;flex-direction:column;min-width:0;min-height:0}
 #simple-front{flex:1;min-height:0;max-height:100%;object-fit:contain}
 .simple-browser{flex:0 0 auto}
@@ -81,3 +81,7 @@ html[data-gamma-playback="ready"] #simple-playback-open{display:inline-flex;alig
   #simple-front{flex:none}
   .simple-operations{overflow:visible}
 }
+
+.simple-workbench{column-gap:var(--gamma-gap,8px)}
+.simple-column-resize{position:relative;cursor:col-resize;touch-action:none;align-self:stretch;outline-offset:-2px}
+@media(max-width:600px){.simple-column-resize{display:none}}

@@ -31,7 +31,8 @@ ${table(["Setting", "Where it is saved"], [
         id: "skin", title: "Interface skin (warm black / blue black)", status: "verified",
         keywords: ["skin", "colour", "theme", "dark", "warm", "blue", "black", "appearance"],
         html: `
-<p>${ui("Interface skin")} switches the background and panel colours between ${ui("Warm black")} (default) and ${ui("Blue black")}. It also applies to Light design, Equipment placement and the 3D background. Colours on stage (performers, objects, light) are unchanged.</p>`
+<p>${ui("Interface skin")} switches the background and panel colours between ${ui("Warm black")} (default) and ${ui("Blue black")}. It also applies to Light design, Equipment placement and the 3D background. Colours on stage (performers, objects, light) are unchanged.</p>
+<p>Turn off ${ui("Show shortcut keys on screen")} to hide the small persistent key marks in diagram headings and the timeline. It is on by default. Keys in tooltips and the shortcut list remain available. This preference is saved on this device and browser; it does not change the show.</p>`
       },
       {
         id: "help-entry", title: "How to use and about the app (tour, search, booklet, devices, feedback)", status: "sourced",

@@ -10,6 +10,7 @@
         id: "venue-overview", title: "How the Theatre settings tab is laid out", status: "verified",
         keywords: ["theatre settings", "venue", "theatre", "tab", "layout", "preview", "plan", "apply", "library"],
         html: `
+<p>The import, reset and size controls in the left menu use the same type and height as the theatre preset picker. Use Change the overall size to scale the current shape, and Size to choose a fixed size. Side-by-side plan and theatre preview frames share their top and bottom edges, with legends and notes on the same row below.</p>
 <p>The nine steps run from the room outline to viewpoints. Open explanations with ?. Drag an edge to move its endpoints together, or a corner to move that vertex; wings and audience areas use the same controls. Delete appears near the selection. Use the audience floor elevation for relative height; viewpoint height is measured from the stage floor at 0 m.</p>
 <p>The ${ui("Theatre settings")} tab has the venue type preset, size and the steps on the left; plan editing and a theatre preview (front / 3D / whole) in the middle; and ${ui("Export theatre")} and ${ui("Apply this theatre")} along the bottom. ${ui("Import theatre")} sits next to ${ui("Reset")} in the venue type preset box.</p>
 <p>Dragging a shape body pans the plan. To change a shape, click it first, then drag its corners or edges. The selected stage handles take priority where wings or the house overlap. Text in the floating selection row does not block the drawing; its Delete button remains clickable.</p>

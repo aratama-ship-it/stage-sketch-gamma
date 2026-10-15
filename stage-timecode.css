@@ -1,5 +1,5 @@
 /* Numerical tokens: docs/timecode-implementation-2026-10-02/design/TOKEN_SHEET.md */
-:root { --tc-origin:#d9b77a; --tc-ink:#f3ecdf; --tc-muted:#b6a995; --tc-panel:#201b16; --tc-intro:#343e48; --tc-error:#ffb3a2; --tc-control:44px; --tc-gap:8px; --tc-space:16px; --tc-section:24px; --tc-dialog:480px; --tc-body:14px; --tc-clock:18px; --tc-radius:4px; --tc-seek-width:calc(11ch + 2 * var(--tc-gap) + 4px); }
+:root { --tc-origin:#d9b77a; --tc-ink:#f3ecdf; --tc-muted:#b6a995; --tc-panel:#201b16; --tc-intro:#343e48; --tc-error:#ffb3a2; --tc-control:44px; --tc-gap:8px; --tc-space:16px; --tc-section:24px; --tc-dialog:480px; --tc-body:14px; --tc-clock:18px; --tc-radius:var(--radius-sm); --tc-seek-width:calc(11ch + 2 * var(--tc-gap) + 4px); }
 .stage-timecode-dialog { margin:auto; color:var(--tc-ink); background:var(--tc-panel); border:1px solid var(--tc-muted); border-radius:var(--tc-radius); width:min(var(--tc-dialog),calc(100vw - 2 * var(--tc-space))); max-height:calc(100dvh - 2 * var(--tc-space)); padding:var(--tc-section); box-sizing:border-box; overflow:auto; font-size:var(--tc-body); line-height:1.6; }
 .stage-timecode-dialog::backdrop { background:rgb(0 0 0 / .6); }
 .stage-timecode-dialog header,.stage-timecode-dialog footer,.tc-pair,.tc-media-row { display:flex; align-items:center; gap:var(--tc-gap); }

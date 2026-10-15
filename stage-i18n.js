@@ -31,9 +31,29 @@
   "use strict";
 
   const TEXT = {
+    "見た目の規格をそろえました。Safariと同じ細い暗いスクロールバー、統一したアイコン枠、文字の上下位置、角丸なしの操作部品、キーキャップ風のショートカット印を採用し、環境設定で印の表示を切り替えられます。": "Visual standards are now consistent: thin dark scrollbars like Safari, uniform icon boxes, corrected vertical text alignment, square controls and keycap-style shortcut marks. Preferences can show or hide the marks.",
+    "進行表の左パネルを畳む・幅を変える・列ごとに隠す操作を追加し、スクロールバーを本文の横へ移しました。狭いヘッダーではタイムコードを先に隠します。": "The run of show left panel can now collapse, resize and hide individual columns. Its scrollbar sits beside the document. Narrow headers hide the timecode first.",
+    "音源が未接続でも通常の再生ボタンで再生できます。未接続の区間は無音で進み、注意文を表示します。「無音で確認」ボタンは廃止しました。": "The normal play button now works even when audio is disconnected. Disconnected sections play silently with a warning. The Check silently button has been removed.",
+    "LXキューの詳細から照明デザインへ移動できます。転換の帯をクリック・ダブルクリックで操作でき、シーンパネルは該当行まで自動スクロールします。": "LX cue details now open Light design. Transition bands support clicks and double-clicks, and the scene panel scrolls to the corresponding row.",
+    "照明デザインの側面図にフル表示切替を追加しました。かんたんモードは左右7:4の区切りをドラッグでき、詳細モードは3列の幅を変えられます。グリッド設定を平面図へ移しました。": "Light design adds a full-height side-view option. Simple mode starts with a draggable 7:4 split, and detailed mode has three resizable columns. Grid settings have moved to the plan view.",
+    "照明デザインの正面図の見出しを「舞台上」「幕」に整理し、作業灯は入切だけにしました。光の色のオートメーションも表示します。": "Light design front-view headings are now On stage and Curtains. Work lights use only on/off controls. Light colour automation is also displayed.",
+    "劇場設定・舞台機構・シーン名の表示を整理しました。": "Theatre settings, stage machinery and scene-name displays have been tidied.",
     "試験場ショーに短いテスト音源（95秒・120BPMのカウント）を同梱しました。ショーを開くだけでH-3の音源Bが接続され、▶で再生できます。": "The test show now includes a short test audio track (95 seconds of counts at 120 BPM). Opening the show connects track B in H-3; press ▶ to play it.",
     "同梱ショーが音源ファイルを持てるようにしました。音源Aは再接続の試験用に、意図的に未接続のままです。": "Bundled shows can now include audio files. Track A is intentionally left disconnected for testing audio reconnection.",
     "Mac版で、進行表などのPDF出力からMacの印刷画面を開けるようにしました（v0.3.66 build 76で先行配布済み）。": "PDF output from the run of show and other views now opens the Mac print dialog (already distributed in v0.3.66 build 76).",
+    "終点の色": "End colour",
+    "始点の色": "Start colour",
+    "フル表示": "Full height",
+    "抑えた表示（2m）": "Low view (2 m)",
+    "左列の幅": "Left column width",
+    "右列の幅": "Right column width",
+    "プレビューの幅": "Preview width",
+    "演者と大道具・小道具をまとめて表示・非表示にします": "Show or hide performers, set pieces and props together",
+    "ショートカットキーを画面に表示する": "Show shortcut keys on screen",
+    "画面に常に出るキーの印を表示します。ツールチップとショートカット一覧は残ります。設定はこの端末に保存されます": "Show the persistent key marks. Tooltips and the shortcut list remain available. This setting is saved on this device.",
+    "操作パネル": "Controls",
+    "操作パネルの幅（ダブルクリックで既定に戻す）": "Control panel width (double-click to reset)",
+
     "音源の移行前の控えを大きい保存領域へ移し、保存の修復画面から確認・削除できるようにしました。": "Backups made before audio migration now use the larger storage area and can be viewed or deleted from storage recovery.",
     "自動の音源移行は取り消しの履歴へ積まず、利用者が行った編集の取り消しは保ちます。": "Automatic audio migration no longer adds an Undo step. Edits made by the user remain undoable.",
     "冊子の平面図の写真を修正しました。": "Corrected the plan-view pictures in the manual.",
@@ -2774,6 +2794,7 @@
     "劇場の形をまとめて拡大・縮小": "Scale the whole theatre shape",
     "劇場全体の大きさを変える（まとめて拡大・縮小）": "Change the overall size (scale the whole theatre)",
     "劇場全体の大きさを変える": "Change the overall size",
+    "いまの形のまま倍率で拡大・縮小（図面も一緒に）。決まった大きさにするなら上の「規模」で選びます。": "Scales the current shape by a percentage, the drawing too. To pick a fixed size, use “Size” above.",
     "いまの形のまま倍率で拡大・縮小（図面も一緒に）。決まった大きさにするなら上の「規模」": "Scales the current shape by a percentage, the drawing too. To pick a fixed size, use “Size” above.",
     "劇場全体の大きさは、左上の「劇場形式プリセット」の「劇場全体の大きさを変える」で変えられます。": "To change the overall size, use “Change the overall size” under “Theatre type presets” at the top left.",
     "倍率": "Scale factor",
@@ -4766,4 +4787,10 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 // Batch7 G5: identifiers and show-authored names are inserted after translation.
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "シーン {number} {name}": "Scene {number} {name}"
+});
+
+// Fix B: cue navigation and missing audio playback state.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "音源が未接続のため、一部または全部を音なしで再生しています。Mキューの詳細から再接続できます。": "Audio is not connected, so some or all of the show is playing without sound. Reconnect it in M cue details.",
+  "照明デザインで開く": "Open in light design"
 });

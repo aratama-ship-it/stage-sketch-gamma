@@ -35,6 +35,26 @@
   for(const id of ['simple-target-description','simple-position-names']) operations.append(panel.querySelector('#'+id));
   operations.append(panel.querySelector('.simple-actions'),panel.querySelector('#simple-status'),panel.querySelector('#simple-warning'));
   panel.querySelector('.simple-workbench').append(operations);
+  const workbench=panel.querySelector('.simple-workbench');
+  const divider=el('div','simple-column-resize');divider.id='simple-column-resize';divider.tabIndex=0;
+  divider.setAttribute('role','separator');divider.setAttribute('aria-orientation','vertical');divider.setAttribute('aria-label','プレビューの幅');
+  workbench.insertBefore(divider,operations);
+  const layoutKey='gamma:simple-lighting-panel-layout-v1';
+  let previewShare=7/11;
+  try{const saved=JSON.parse(localStorage.getItem(layoutKey)||'null');if(Number.isFinite(saved?.previewShare))previewShare=Math.max(.1,Math.min(.9,saved.previewShare));}catch(_){}
+  const applyWidth=()=>{
+    if(innerWidth<=600)return;
+    const total=workbench.clientWidth-(parseFloat(getComputedStyle(workbench).columnGap)||0)*2-divider.getBoundingClientRect().width;
+    if(total<=0)return;
+    const width=Math.max(160,Math.min(total-280,total*previewShare));
+    workbench.style.setProperty('--simple-preview-width',width+'px');divider.setAttribute('aria-valuenow',String(Math.round(width)));
+    divider.setAttribute('aria-valuemin','160');divider.setAttribute('aria-valuemax',String(Math.round(Math.max(160,total-280))));
+  };
+  const saveWidth=()=>{try{localStorage.setItem(layoutKey,JSON.stringify({previewShare}));}catch(_){}applyWidth();};
+  window.GAMMA_LIGHT_PANEL_RESIZE(divider,{read:()=>previewPane.getBoundingClientRect().width,
+    change:width=>{const total=previewPane.getBoundingClientRect().width+operations.getBoundingClientRect().width;previewShare=Math.max(160,Math.min(total-280,width))/total;saveWidth();},
+    reset:()=>{previewShare=7/11;saveWidth();}});
+  new ResizeObserver(applyWidth).observe(workbench);
   const toolbar=document.querySelector('.figbar'), display=toolbar.querySelector('.fb');
   toolbar.classList.add('simple-light-toolbar');
   display.querySelector('b').textContent='詳細画面の表示';

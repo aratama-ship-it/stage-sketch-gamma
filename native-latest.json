@@ -1,8 +1,8 @@
 {
-  "version": "0.3.67",
+  "version": "0.3.68",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.67/stage-sketch-gamma-mac-0.3.67.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.68/stage-sketch-gamma-mac-0.3.68.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "試験場ショーに短いテスト音源（95秒・120BPMのカウント）を同梱しました。ショーを開くだけでH-3の音源Bが接続され、▶で再生できます。",
+  "notes": "見た目の規格をそろえました。Safariと同じ細い暗いスクロールバー、統一したアイコン枠、文字の上下位置、角丸なしの操作部品、キーキャップ風のショートカット印を採用し、環境設定で印の表示を切り替えられます。",
   "updated": "2026-10-15"
 }

@@ -236,3 +236,21 @@ html[data-gamma-embedded] .gamma-light-actions #swap-figures{width:var(--ctrl-sm
  * uses its unobstructed viewport so the footer cannot sit under parent lanes. */
 html[data-gamma-embedded] .dialog { top:var(--gamma-light-dialog-top,0px); bottom:auto; height:var(--gamma-light-dialog-height,100dvh); }
 html[data-gamma-embedded] .dialog .in.gamma-light-dialog { max-height:calc(var(--gamma-light-dialog-height,100dvh) - 24px); }
+
+/* fix-c: centre figures follow their content; spare height stays below them. */
+.figgrid.detail-columns:not([data-solo]){position:relative;grid-template-rows:var(--detail-top-height,auto) auto minmax(0,1fr);gap:var(--gamma-gap,8px);align-content:start}
+.figgrid.detail-columns:not([data-solo])>.planwrap{grid-row:1;align-self:start}
+.figgrid.detail-columns:not([data-solo])>.sec.front{grid-row:2;align-self:start}
+.figgrid.detail-columns[data-swapped]:not([data-solo])>.planwrap{grid-row:2}
+.figgrid.detail-columns[data-swapped]:not([data-solo])>.sec.front{grid-row:1}
+.figgrid.detail-columns:not([data-solo])>.leftcol{grid-row:1/4;margin-bottom:var(--side-reserved);align-self:stretch;min-height:0}
+.figgrid.detail-columns:not([data-solo])>.sec.side.l{grid-row:1/4;align-self:end}
+.figgrid.detail-columns:not([data-solo])>.panel.insp{grid-row:1/4}
+.light-column-resize{display:none;position:absolute;top:0;bottom:0;width:var(--gamma-gap,8px);cursor:col-resize;touch-action:none;z-index:5;outline-offset:-2px}
+.figgrid.detail-columns:not([data-solo])>.light-column-resize{display:block}
+.light-column-resize::before,.simple-column-resize::before{content:"";position:absolute;inset:0 calc(50% - 1px);background:var(--line-dark)}
+.light-column-resize:hover::before,.light-column-resize:focus-visible::before,.simple-column-resize:hover::before,.simple-column-resize:focus-visible::before{background:var(--brass)}
+#light-left-resize{left:var(--detail-left-width)}
+#light-right-resize{left:calc(var(--detail-left-width) + var(--gamma-gap,8px) + var(--detail-mid-width))}
+#side-height{flex:0 0 auto;color:var(--milk);font-size:var(--fs-3);min-height:var(--ctrl-sm);padding-inline:var(--space-1,4px)}
+.colour-automation{justify-content:flex-start;margin-bottom:var(--gamma-gap,8px)}

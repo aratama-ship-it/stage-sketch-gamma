@@ -42,7 +42,7 @@
   style.textContent = `
     .stage-usage-notice { --usage-paper:#f5f1e8; --usage-ink:#302a24; --usage-muted:#67594c;
       font:14px/1.65 system-ui,-apple-system,sans-serif; color:var(--usage-ink); background:var(--usage-paper);
-      margin:16px 0 0; padding:8px 12px; border:1px solid #897a6a; border-radius:4px; }
+      margin:16px 0 0; padding:8px 12px; border:1px solid #897a6a; border-radius:var(--radius-sm); }
     .stage-usage-notice[hidden] { display:none; }
     .stage-usage-notice summary { min-height:44px; align-content:center; cursor:pointer; }
     .stage-usage-notice p { margin:8px 0; color:var(--usage-muted); max-width:65ch; }

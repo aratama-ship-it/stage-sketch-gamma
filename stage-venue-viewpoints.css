@@ -7,7 +7,7 @@
 .venue-viewpoint-dot { width: 24px; height: 24px; box-sizing: border-box; border: 2px solid #f2ead6; border-radius: 50%; background: #201b16; display: grid; place-items: center; }
 .venue-viewpoint.is-selected { z-index: 1; }
 .venue-viewpoint.is-selected .venue-viewpoint-dot { width: 28px; height: 28px; color: #d3ac59; border-color: #d3ac59; }
-.venue-viewpoint-label { position: absolute; left: 40px; top: 11px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: #201b16; padding: 1px 5px; border-radius: 2px; pointer-events: none; }
+.venue-viewpoint-label { position: absolute; left: 40px; top: 11px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: #201b16; padding: 1px 5px; border-radius: var(--radius-sm); pointer-events: none; }
 .venue-viewpoint:focus-visible { outline: 2px solid #d3ac59; outline-offset: -2px; }
 /* ★見る先（2026-10-07）: 選んだ見る位置の線の先。既定（舞台の真ん中）は破線の輪、動かしたものは実線の輪＋中心の点。押せる範囲は見る位置の点と同じ 44px。 */
 .venue-viewpoint-target { position: absolute; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; transform: translate(-50%, -50%); display: grid; place-items: center; border: 0; background: transparent; pointer-events: auto; cursor: grab; touch-action: none; }

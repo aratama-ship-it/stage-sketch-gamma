@@ -43,7 +43,34 @@
 
   const TD = window.STAGE_TIME_DOMAIN;
   let timeDomain = null, timeScope = "section", timingErrors = [], managedPlayback = null;
-  let managedGeneration = 0, managedClipId = null, managedMuted = false, timecodeUI = null;
+  let managedGeneration = 0, managedClipId = null, timecodeUI = null;
+  let managedAvailabilityGeneration = 0;
+  const managedAudioAvailability = new Map();
+  const missingAudioWarning = document.createElement("p");
+  missingAudioWarning.id = "stage-timeline-missing-audio-warning";
+  missingAudioWarning.setAttribute("role", "status"); missingAudioWarning.hidden = true;
+  document.body.append(missingAudioWarning);
+  function syncMissingAudioWarning() {
+    const missing = timeline?.managed && (timingErrors.some(e => e.code === "music-reference")
+      || timeline.mediaClips.some(clip => managedAudioAvailability.get(clip.trackId) === false));
+    missingAudioWarning.textContent = tx("音源が未接続のため、一部または全部を音なしで再生しています。Mキューの詳細から再接続できます。");
+    missingAudioWarning.hidden = !(managedPlayback && missing);
+    if (!missingAudioWarning.hidden) missingAudioWarning.style.top = `${document.querySelector(".stage-sketch-head")?.getBoundingClientRect().bottom || 0}px`;
+  }
+  async function refreshManagedAvailability() {
+    if (!timeline?.managed) {syncMissingAudioWarning(); return;}
+    const generation = ++managedAvailabilityGeneration;
+    const ids = [...new Set(timeline.mediaClips.map(clip => clip.trackId))];
+    const available = await Promise.all(ids.map(id => bridge.hasTimelineAudioFile(id)));
+    if (generation !== managedAvailabilityGeneration) return;
+    managedAudioAvailability.clear();
+    ids.forEach((id, i) => managedAudioAvailability.set(id, available[i]));
+    syncMissingAudioWarning();
+  }
+  function playableManagedMediaAt(seconds) {
+    const media = managedMediaAt(seconds);
+    return media && managedAudioAvailability.get(media.clip.trackId) !== false ? media : null;
+  }
   let renderedTimelineIdentity = null;
   let musicMigrationAttempt = null;
   const timecodeError = document.getElementById("stage-timecode-error");
@@ -201,7 +228,7 @@
     if (durationHost) timingTools.append(durationHost);
     if (unitHost) timingTools.append(unitHost);
     timingTools.append(document.getElementById("stage-timecode-settings"));
-    transportStrip.append(...["stage-timecode-scope", "stage-timecode-seek", "stage-timeline-position", "stage-timecode-silent"].map(id => document.getElementById(id)));
+    transportStrip.append(...["stage-timecode-scope", "stage-timecode-seek", "stage-timeline-position"].map(id => document.getElementById(id)));
     if (settingsHost) transportStrip.prepend(settingsHost, timingTools);
     else transportStrip.prepend(timingTools);
   }
@@ -390,7 +417,7 @@
   let suppressAnchorClick = false;
   let cueDrag = null;
   let suppressCueClickId = null;
-  let lastMusicCueClick = null;
+  let lastTimelineCueClick = null;
 
   function saveUi() {
     try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (_) { /* 表示設定なしでも編集は続ける */ }
@@ -1202,7 +1229,7 @@
       });
     }
     if (timeline.managed && timeline.source !== "show") timeline.duration = Math.max(.1, (timeDomain.sections.get(timeline.sectionId)?.end || timeline.duration) - timeline.timeOffset);
-    if (managedPlayback && (managedPlayback.projectId !== project.id || !timeline.managed || timingErrors.some(e => !(ui.muted && e.code === "music-reference")))) pauseManagedPlayback();
+    if (managedPlayback && (managedPlayback.projectId !== project.id || !timeline.managed || timingErrors.some(e => e.code !== "music-reference"))) pauseManagedPlayback();
     panel.classList.toggle("has-timecode", !!project.timecode);
     delete panel.dataset.timecodeDisplay; panel.dataset.timecodeUnit = ui.unit;
     const scope = document.getElementById("stage-timecode-scope");
@@ -1211,8 +1238,8 @@
     input.hidden = ui.unit === "count";
     input.disabled = !tcEditable();
     input.placeholder = "00:00:00.0";
-    document.getElementById("stage-timecode-silent").hidden = !timeline.managed;
     timingMessage(timingErrors.map(e => TD.errorText(e, tx)).join(" "));
+    void refreshManagedAvailability();
   }
   function seekDisplayedTime(value) {
     if (!tcEditable()) return false;
@@ -1246,10 +1273,11 @@
     if (managedPlayback?.frame) cancelAnimationFrame(managedPlayback.frame);
     managedPlayback = null; managedClipId = null;
     bridge.pauseTimelineAudio?.();
+    syncMissingAudioWarning();
   }
   function managedMediaAt(seconds) { return TD.mediaAt(timeline?.mediaClips || [], seconds); }
   function syncManagedAudio(seconds, playing, force = false) {
-    const media = !managedMuted && managedMediaAt(seconds);
+    const media = playableManagedMediaAt(seconds);
     if (!media) {
       if (managedClipId !== null || !els.audio.paused) bridge.pauseTimelineAudio?.();
       managedClipId = null; return;
@@ -1265,7 +1293,7 @@
     const clock = managedPlayback;
     if (!clock || !timeline?.managed) return;
     let next = clock.seconds + (now - clock.at) / 1000;
-    const media = !managedMuted && managedMediaAt(clock.seconds);
+    const media = playableManagedMediaAt(clock.seconds);
     if (media && managedClipId === media.clip.id) {
       if (bridge.isTimelineAudioActive(media.clip.trackId) && els.audio.readyState >= 2) {
         if (els.audio.currentTime >= media.clip.mediaIn + media.clip.end - media.clip.start - .015) next = media.clip.end;
@@ -1273,8 +1301,8 @@
         else if (!els.audio.paused) next = media.clip.start + els.audio.currentTime - media.clip.mediaIn;
         else next = clock.seconds; // Loading, interruption or an explicit audio pause cannot run ahead.
       } else next = clock.seconds;
-    } else if (!managedMuted) {
-      const upcoming = timeline.mediaClips.find(c => c.start > clock.seconds && c.start <= next);
+    } else {
+      const upcoming = timeline.mediaClips.find(c => managedAudioAvailability.get(c.trackId) !== false && c.start > clock.seconds && c.start <= next);
       if (upcoming) next = upcoming.start;
     }
     if (ui.loop && ui.loopB > ui.loopA && next >= ui.loopB) { next = ui.loopA; managedClipId = null; }
@@ -1286,25 +1314,21 @@
     updatePlayhead();
     if (managedPlayback === clock) clock.frame = requestAnimationFrame(managedFrame);
   }
-  async function startManagedPlayback({ muted = false } = {}) {
-    if (!timeline?.managed || timingErrors.some(e => !muted || e.code !== "music-reference")) return;
+  async function startManagedPlayback() {
+    if (!timeline?.managed || timingErrors.some(e => e.code !== "music-reference")) return;
     pauseManagedPlayback(); pauseSilentPlayback({ update: false }); stopAudioPlayheadAnimation();
-    const generation = ++managedGeneration, requested = timeline;
-    const graphReady = muted ? Promise.resolve() : ensureAudioGainGraph();
-    if (!muted) {
-      const ids = [...new Set(timeline.mediaClips.map(c => c.trackId))];
-      const available = await Promise.all(ids.map(id => bridge.hasTimelineAudioFile(id)));
-      if (generation !== managedGeneration || requested !== timeline) return;
-      if (available.some(v => !v)) { timingMessage(tx("音源が未接続です。Mキューの詳細から再接続するか「無音で確認」を選んでください。")); return; }
-      await graphReady;
-      if (generation !== managedGeneration || requested !== timeline) return;
-    }
-    managedMuted = muted;
+    const generation = ++managedGeneration, requested = renderedTimelineIdentity;
+    // Resume in the user action; only missing files are silent. Connected clips keep their normal clock/gain.
+    const graphReady = ensureAudioGainGraph();
+    await refreshManagedAvailability(); await graphReady;
+    if (generation !== managedGeneration || requested !== renderedTimelineIdentity
+        || !timeline?.managed || timingErrors.some(e => e.code !== "music-reference")) return;
     if (seekSeconds >= timeline.duration - .001) seekSeconds = 0;
     managedPlayback = { at: performance.now(), seconds: seekSeconds, projectId: timeDomain.project.id, frame: 0 };
     syncManagedAudio(seekSeconds, true, true);
     syncTimelinePlaybackScene(seekSeconds);
-    timingMessage(muted ? tx("無音で確認中") : "");
+    timingMessage(timingErrors.map(e => TD.errorText(e, tx)).join(" "));
+    syncMissingAudioWarning();
     managedPlayback.frame = requestAnimationFrame(managedFrame); updatePlayhead();
   }
   function renderManagedAudio() {
@@ -2024,12 +2048,66 @@
 
   function openTimelineScene(segment) {
     if (!segment || !segment.sceneId) return;
-    if (timeline?.managed) { seekToSeconds(segment.start); renderTimeline(); return; }
+    if (timeline?.managed) { seekToSeconds(segment.start); renderTimeline(); bridge.focusTimelineScene?.(segment.sceneId); return; }
     openTimelineSceneById(segment.sceneId);
     seekSeconds = segment.start;
     syncTimelineAudioAt(seekSeconds);
     updatePlayhead();
     renderTimeline();
+    bridge.focusTimelineScene?.(segment.sceneId);
+  }
+
+  async function openTimelineTransition(transition, source, target, expand = false) {
+    if (!source?.sceneId || !target?.sceneId) return;
+    if (expand) {
+      await window.GAMMA_WORKSPACE?.select("normal");
+      if (window.GAMMA_WORKSPACE?.mode() !== "normal") return;
+    }
+    seekToSeconds(transition.start);
+    bridge.focusTimelineScene?.(source.sceneId, {transitionToSceneId:target.sceneId, expand});
+  }
+
+  function bindTimelineTransitionBlock(block, open) {
+    block.setAttribute("role", "button"); block.tabIndex = 0;
+    block.addEventListener("pointerdown", event => event.stopPropagation());
+    const resizing = event => event.target.closest(".stage-timeline-block-resize-handle, .stage-timeline-point-transition-resize-handle");
+    block.addEventListener("click", event => {
+      if (resizing(event) || event.detail > 1) return;
+      event.stopPropagation(); cancelPendingSceneOpen();
+      pendingSceneOpenTimer = window.setTimeout(() => {pendingSceneOpenTimer = 0; open(false);}, 220);
+    });
+    block.addEventListener("dblclick", event => {
+      if (resizing(event)) return;
+      event.preventDefault(); event.stopPropagation(); cancelPendingSceneOpen(); open(true);
+    });
+    block.addEventListener("keydown", event => {
+      if (resizing(event)) return;
+      if (event.key === "Enter" || event.key === " ") {event.preventDefault(); cancelPendingSceneOpen(); open(event.key === "Enter");}
+    });
+  }
+
+  async function openTimelineBoundary(boundary, expand) {
+    if (expand) {
+      await window.GAMMA_WORKSPACE?.select("normal");
+      if (window.GAMMA_WORKSPACE?.mode() !== "normal") return;
+    }
+    const project = projectDocument().project;
+    const scenes = project.scenes.filter(row => row.kind === "scene");
+    const index = scenes.findIndex(row => row.id === boundary.scene.id);
+    const target = scenes[index + 1];
+    const domain = TD.resolve(project), source = domain.byId.get(boundary.scene.id);
+    if (!source || !target) return;
+    const showStart = source.end - boundary.seconds;
+    if (!timeline.segments.some(segment => segment.sceneId === source.id)) openTimelineSceneById(source.id, {skipTransition:true});
+    seekToSeconds(showStart - (timeline.timeOffset || 0));
+    bridge.focusTimelineScene?.(source.id, {transitionToSceneId:target.id, expand});
+  }
+
+  function openLightCueDesign(cue) {
+    const cueId = cue?.lx?.id || cue?.lxId;
+    if (!cue?.sceneId || !cueId) return;
+    closeCueDetails({focus:false}); hideCuePeek();
+    void window.GAMMA_WORKSPACE?.openLightCue(cue.sceneId, cueId);
   }
 
   function scheduleTimelineSceneOpen(segment) {
@@ -2069,6 +2147,16 @@
     cueDetailOriginalMemo = els.cueDetailNote.value;
     renderCueDetailVox(cue);
     renderMusicCueDetail(cue);
+    let designButton = document.getElementById("stage-cue-open-light-design");
+    if (!designButton) {
+      designButton = document.createElement("button"); designButton.type = "button";
+      designButton.id = "stage-cue-open-light-design"; designButton.className = "stage-minor-action";
+      els.cueDetailNote.closest("label").after(designButton);
+    }
+    designButton.textContent = tx("照明デザインで開く");
+    designButton.hidden = cue.cueType !== "light" || document.body.dataset.gammaWorkspace === "light-design";
+    designButton.disabled = !(cue.lx?.id || cue.lxId);
+    designButton.onclick = () => openLightCueDesign(cue);
     els.cueDetailBackdrop.hidden = false;
     els.cueDetailModal.hidden = false;
     if (focusTarget && focusTarget.isConnected && !focusTarget.disabled) focusTarget.focus({ preventScroll: true });
@@ -2808,7 +2896,12 @@
       band.setAttribute("aria-label",band.title);
       if(g.overflowWidth>0){const over=document.createElement("span");over.className="stage-timeline-light-overflow";over.style.left=`${g.overflowLeft}px`;over.style.width=`${g.overflowWidth}px`;band.append(over);}
       if(event.kind !== "lx") {const text=document.createElement("span");text.className="stage-timeline-light-label";text.textContent=label;band.append(text);}
-      const open=()=>{bridge.openSceneById?.(event.sceneId);document.getElementById("gamma-design")?.click();};
+      const open=()=>{
+        if(event.kind==='lx') {
+          const cue = timelineCuePresentations(projectDocument().project).find(cue => cue.id === event.id);
+          openLightCueDesign(cue || {sceneId:event.sceneId,lxId:event.lxId});
+        } else {bridge.openSceneById?.(event.sceneId);document.getElementById("gamma-design")?.click();}
+      };
       band.addEventListener("pointerdown",e=>e.stopPropagation());band.addEventListener("click",e=>{e.stopPropagation();showLightBandPeek(event,band);});
       band.addEventListener("pointerenter",()=>showLightBandPeek(event,band));
       band.addEventListener("pointerleave",hideCuePeek);band.addEventListener("focus",()=>showLightBandPeek(event,band));
@@ -2906,13 +2999,13 @@
       button.addEventListener("pointercancel", endCueDrag);
       button.addEventListener("click", (event) => {
         if (suppressCueClickId === cue.id) { event.preventDefault(); return; }
-        if (cue.cueType === "music") {
-          const previous = lastMusicCueClick;
-          lastMusicCueClick = {id:cue.id,at:performance.now()};
+        if (cue.cueType === "music" || cue.cueType === "light") {
+          const previous = lastTimelineCueClick;
+          lastTimelineCueClick = {id:cue.id,at:performance.now()};
           // Seeking may rebuild the lane after the first click. Preserve the
           // double-click across that replacement instead of losing the detail.
           if (previous?.id === cue.id && performance.now()-previous.at < 500) {
-            lastMusicCueClick = null; openCueDetails(cue,button); return;
+            lastTimelineCueClick = null; openCueDetails(cue,button); return;
           }
         }
         // まとめて選んだうちの1つを押したときは、その選択を保つ
@@ -3088,6 +3181,7 @@
 
       const source = timeline.segments.find((segment) => segment.transitionId === transition.id);
       if (!source) return;
+      bindTimelineTransitionBlock(block, expand => openTimelineTransition(transition, source, nextScene, expand));
       block.addEventListener("contextmenu", (event) => openTimelineLockMenu(event, {
         target: "transition", sectionId: timeline.sectionId, sceneId: source.sceneId,
       }, transition.timelineLockEdge));
@@ -3139,6 +3233,7 @@
       bindBandPeek(block, block.title);
       block.style.left = "0px";
       block.style.width = `${timelineLeftInset - 4}px`;
+      bindTimelineTransitionBlock(block, expand => openTimelineBoundary(boundaries.incoming, expand));
       els.transitionsLane.append(block);
     }
     if (boundaries.outgoing) {
@@ -3156,6 +3251,7 @@
       block.setAttribute("aria-label", block.title);
       bindBandPeek(block, block.title);
       placeBlock(block, start, timeline.duration);
+      bindTimelineTransitionBlock(block, expand => openTimelineBoundary(boundaries.outgoing, expand));
       els.transitionsLane.append(block);
       const marker = document.createElement("div");
       marker.className = "stage-timeline-scene-transition-marker is-section-boundary is-outgoing";
@@ -3184,7 +3280,7 @@
       ...options,
       fromTimeline: true,
       managedTimecode: Boolean(timeline?.managed),
-      timelineTrackId: timeline?.managed ? (!managedMuted && managedMediaAt(seekSeconds)?.clip.trackId || null) : timeline && timeline.trackId || null,
+      timelineTrackId: timeline?.managed ? (playableManagedMediaAt(seekSeconds)?.clip.trackId || null) : timeline && timeline.trackId || null,
     };
   }
 
@@ -3398,6 +3494,7 @@
       || (playingThisTimeline && els.audio && !els.audio.paused && !els.audio.ended));
     els.play.setAttribute("aria-pressed", String(playing));
     syncMutedStatus();
+    syncMissingAudioWarning();
     const playLabel = tx(playing ? "タイムラインを一時停止" : "タイムラインを再生");
     els.play.setAttribute("aria-label", playLabel);
     els.play.title = playLabel;
@@ -3496,7 +3593,7 @@
     // セクション名の下に再生方式を重ねない。再生・時間設定の機能はそのまま残す。
     els.status.textContent = cueAddedFeedback?.text || "";
     els.status.hidden = !cueAddedFeedback;
-    els.play.disabled = !timeline.segments.some((segment) => segment.sceneId) || timeline.managed && !!timingErrors.length;
+    els.play.disabled = !timeline.segments.some((segment) => segment.sceneId) || timeline.managed && timingErrors.some(e => e.code !== "music-reference");
     const activeSegment = segmentAt(seekSeconds);
     const activeSegmentIndex = activeSegment
       ? timeline.segments.findIndex((segment) => segment.sceneId === activeSegment.sceneId) : -1;
@@ -4599,7 +4696,7 @@
   (els.volumeButton?.parentElement || els.play).after(mutedStatus);
   function syncMutedStatus() {
     // This is a required state, independent of optional hint preferences.
-    const muted = ui.muted || ui.volume === 0 || Boolean(managedPlayback && managedMuted);
+    const muted = ui.muted || ui.volume === 0;
     const status = document.getElementById("stage-timeline-muted-status");
     if (!status) return;
     status.textContent = tx("ミュート中");
@@ -5013,6 +5110,7 @@
     if (trackId && event.detail && event.detail.reconnected) audioWaveformCache.delete(trackId);
     renderTimeline();
     applyAudioLevels();
+    void refreshManagedAvailability().then(() => {if (managedPlayback) {managedClipId = null; syncManagedAudio(seekSeconds, true);}});
   });
   /* 2026-09-17: シーンの秒数は1文字打つたびにこの合図が飛ぶ。
      そのたびに描き直すと、シーンが多いショーで重くなる（400件で1回64.6ms 実測）ので、
@@ -5133,7 +5231,6 @@
     if (clip) seekToSeconds(action === "restart" ? Math.max(0, clip.start)
       : clamp(clip.start + seconds - clip.mediaIn, Math.max(0, clip.start), clip.end));
   });
-  document.getElementById("stage-timecode-silent").onclick = () => startManagedPlayback({ muted: true });
   window.addEventListener("stage-timecode-change", () => { pauseManagedPlayback(); renderTimeline(); });
   window.addEventListener("stage-timeline-structure-change", () => { if (managedPlayback) pauseManagedPlayback(); });
   document.addEventListener("visibilitychange", () => { if (document.hidden && managedPlayback) { pauseManagedPlayback(); updatePlayhead(); } });

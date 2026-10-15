@@ -13,7 +13,7 @@ export const STUDY_PUBLIC_ASSETS = new Set([
   '/study-assets/stage-data-safety.js', '/study-assets/stage-pose-data.js', '/study-assets/stage-prop-shapes.js', '/study-assets/stage-sketch.js', '/study-assets/stage-venues.js', '/study-assets/stage-venue-lines.js',
   '/study-assets/stage-language-loader.js', '/study-assets/stage-i18n.zh-Hans.js', '/study-assets/stage-i18n.zh-Hant.js', '/study-assets/stage-prompt-i18n.js',
   '/study-assets/stage-i18n.js', '/study-assets/stage-i18n.ko.js', '/study-assets/stage-set-model.js', '/study-assets/stage-machinery.js', '/study-assets/stage-virtual-room.js', '/study-assets/stage-reorder-warning.js', '/study-assets/stage-scrim.js',
-  '/study-assets/gamma-ui.js', '/study-assets/gamma-ui-i18n.js', '/study-assets/gamma-ui-i18n.ko.js', '/study-assets/style.css',
+  '/study-assets/gamma-ui.js', '/study-assets/gamma-appearance.js', '/study-assets/gamma-ui-i18n.js', '/study-assets/gamma-ui-i18n.ko.js', '/study-assets/style.css',
   '/study-assets/gamma-light-model.js', '/study-assets/stage-fixture-body.js', '/study-assets/stage-lighting-plan-overlay.js',
   '/study-assets/light-design/rig-engine.js', '/study-assets/light-design/laser-effects.js', '/study-assets/stage-light-render.js',
   '/study-assets/gamma-light-cue-overlay.js',

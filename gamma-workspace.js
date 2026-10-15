@@ -21,6 +21,21 @@
   if(cuesheetWorkspace && cuesheetModal) { cuesheetWorkspace.append(cuesheetModal); if(cuesheetBackdrop) cuesheetBackdrop.hidden=true; }
   const hostUndo=document.getElementById('stage-undo'), hostRedo=document.getElementById('stage-redo');
   let mode='normal', loaded=false;
+  let pendingLightCue = null;
+  function selectPendingLightCue() {
+    if (!pendingLightCue || mode !== 'light-design' || !editor()?.status().active) return;
+    const target = pendingLightCue; pendingLightCue = null;
+    if (target.showId !== host.context().showId) return;
+    editor().selectCue(target.sceneId, target.cueId);
+  }
+  async function openLightCue(sceneId, cueId) {
+    await select('light-design');
+    if (mode !== 'light-design') return false;
+    pendingLightCue = {sceneId, cueId, showId:host.context().showId};
+    host.openScene(sceneId);
+    selectPendingLightCue();
+    return true;
+  }
   const lite = window.GAMMA_EDITION === 'lite';
   let hostHistory={undo:hostUndo?.disabled??true,redo:hostRedo?.disabled??true};
   let frameResizeRequest=0;
@@ -734,6 +749,7 @@
 
   let featureSelectionAttempt = 0;
   async function select(next) {
+    if (next !== 'light-design') pendingLightCue = null;
     const cueSheetRequest = next === "cuesheet";
     if (cueSheetRequest) {
       if (!window.SHOSAI_STAGE_CUE_SHEET_HOST?.available?.()) return;
@@ -827,7 +843,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261014-v0365'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261015-v0368'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;
@@ -895,6 +911,7 @@
   frame.addEventListener('load',()=>{
     try { bindFrameScrollLane(); syncFrameTheme(); editor().open(host.context(),mode); frame.hidden=false;
       status.textContent=''; status.classList.remove('gamma-workspace-error');
+      selectPendingLightCue();
       syncHistory();syncPlaybackBar(); scheduleFrameHeight(); }
     catch(error) { failed(error); }
   });
@@ -1110,6 +1127,7 @@
   /* U-13（2026-09-24）: ショーを開き直したら本体（applyLoadedState）がこれを呼び、ゲートの帯・薄い表示を見直す。
      劇場が決まったショーへ移ったのに、前の新規ショーの「まず劇場を決めると…」が残っていた。 */
   window.GAMMA_WORKSPACE=Object.freeze({normal:()=>select('normal'),select,mode:()=>mode,captureHostHistory,syncHistory,
+    openLightCue,
     lightCuePlacementChoices:()=>mode==='light-design' && editor()?.status().active ? editor().placementChoices() : host.placementChoices(),
     placeLightCue:placement=>mode==='light-design' && editor()?.status().active ? editor().placeCue(placement) : host.placeCue(placement),
     playbackPreviewStatus:()=>({active:Boolean(playbackPreview),running:Boolean(playbackRaf)}),syncGate:()=>syncVenueGate(),

@@ -10,6 +10,7 @@
         id: "machinery-kinds", title: "The five kinds and their values", status: "verified",
         keywords: ["stage machinery", "machinery", "lift", "trap", "revolve", "turntable", "rotate", "deck", "tilt", "rake", "curtain", "scrim", "traveller", "drop", "cyclorama", "water", "pool", "water level", "raise", "lower"],
         html: `
+<p>Add scrim and Add lift sit side by side at the same height as the other add rows. They wrap to separate rows only when the labels no longer fit.</p>
 <p>On the Stage tab, choose ${ui("Add scrim")} or ${ui("Add stage lift")} in ${ui("Stage machinery")}. For revolves, decks and water, duplicate a sample show containing them. Placed machinery appears in the list and drawing, with values you can change per scene.</p>
 ${fig("10-section-D", "A stage lift (raised and lowered) and a revolve. In the plan the lift is a rectangle and the revolve a turned square.", "Lift and revolve in plan")}
 ${table(["Machinery", "Values per scene", "Notes"], [

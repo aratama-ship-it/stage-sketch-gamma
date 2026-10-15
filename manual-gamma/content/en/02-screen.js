@@ -10,6 +10,7 @@
         id: "header", title: "The header", status: "verified",
         keywords: ["header", "top bar", "icons", "undo", "redo", "mistake", "settings", "gear", "feedback", "ai", "full screen", "bell", "notifications", "share", "print", "volume", "elapsed time", "TC", "timecode"],
         html: `
+<p>The current scene title uses the space between the buttons; its tooltip contains the full title. If the header runs out of room, TC hides first, then the controls move to a second row if needed. The version remains visible; TC returns when the window widens.</p>
 <p>The header has the logo and version on the left, seven workspace tabs, the TC, volume and tool icons. On narrower windows, control groups move onto the next row. From v0.2.15 the header stays put while the side panels and the central drawings each scroll on their own.</p>
 ${fig("01-first-open", "The header. Logo and version on the left, tabs at the top right, and on the second row TC, volume, undo/redo, feedback, AI, the gear and the other icons.", "Header layout")}
 ${table(["Where", "Name", "What it does"], [
@@ -151,7 +152,7 @@ ${table(["Key", "What it does"], [
     "Shift",
     "Space"
   ],
-  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release059-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release067-stage", "Stage toolbar (v0.3.67).", "stage")
+  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release059-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release068-stage", "Stage toolbar (v0.3.68).", "stage")
 }
     ]
   });

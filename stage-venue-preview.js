@@ -30,11 +30,17 @@
   const previewColumn = document.createElement('div');
   previewColumn.className = 'venue-live-preview-column';
   previewColumn.append(panel);
-  const note = document.createElement('p');
+  const note = document.createElement('div');
   note.className = 'venue-live-note';
   note.textContent = '袖幕は平面図と同じ位置で、天井まで届きます。';
   previewColumn.append(note);
   layout.append(previewColumn);
+  // F-16: figures share one grid row, legends/help share the next row.
+  const legend = document.querySelector('.stage-venue-editor-canvas-legend');
+  if (legend) layout.append(legend);
+  const foot = panel.querySelector('.venue-live-foot');
+  note.append(foot);
+
   const toggle = document.createElement('button');
   toggle.type = 'button'; toggle.id = 'venue-live-toggle'; toggle.textContent = window.GAMMA_UI_TEXT?.('プレビューを閉じる') || 'プレビューを閉じる';
   toggle.setAttribute('aria-expanded', 'true');
@@ -45,7 +51,7 @@
   toolbar.append(dims, toggle);
   const canvas = panel.querySelector('canvas');
   const context = canvas.getContext('2d', { alpha: false });
-  const help = panel.querySelector('#venue-live-help');
+  const help = document.getElementById('venue-live-help');
   const state = { yaw: -.48, pitch: .40, zoom: 1, move: false, visible: true, viewpoint: null };
   // Fixed templates stay separate from user-authored viewpoint names.
   let helpKey = help.textContent, helpName = '';

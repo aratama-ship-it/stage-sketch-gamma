@@ -7,7 +7,7 @@
 .venue-live-panel { flex:1 1 auto; min-width:0; min-height:0; display:flex; flex-direction:column; background:var(--desk-2,#201b16); border:1px solid var(--line-dark,#382f25); color:var(--milk,#f2ead6); }
 .venue-live-head { display:flex; flex:0 0 auto; align-items:center; flex-wrap:wrap; gap:6px; padding:8px; }
 .venue-live-head strong { font-size:13px; margin-right:auto; }
-.venue-live-panel button { height:34px; min-height:34px; padding:0 8px; font-size:12px; border-radius:2px; border:1px solid var(--milk-dim,#bdb3a4); background:transparent; color:inherit; }
+.venue-live-panel button { height:34px; min-height:34px; padding:0 8px; font-size:12px; border-radius:var(--radius-sm); border:1px solid var(--milk-dim,#bdb3a4); background:transparent; color:inherit; }
 .venue-live-panel button[aria-pressed=true] { background:var(--milk,#f2ead6); color:var(--desk-2,#201b16); }
 .venue-live-panel button:focus-visible { outline:2px solid var(--gold,#c8913f); outline-offset:2px; }
 .venue-live-canvas-wrap { min-height:160px; min-width:0; flex:1; position:relative; overflow:hidden; }
@@ -86,3 +86,72 @@
 #gamma-venue-workspace .stage-lighting-source-choices button { border-left-color: var(--line-dark, #382f25); }
 #gamma-venue-workspace .stage-lighting-source-choices button[aria-pressed=true] { border-left-color: var(--brass, #d3ac59); }
 #gamma-venue-workspace .stage-venue-editor-menu .stage-tool-grid button + button[aria-pressed=true] { border-left-color: var(--rust, #a84b26); }
+
+/* fix-a F-15: the preset picker defines the controls inside the left menu. */
+html[data-stage-skin] #gamma-venue-workspace .stage-venue-editor-menu :is(button:not(.stage-panel-help):not(.stage-hint-help):not(.stage-venue-step-head),.stage-import-label,select,input:not([type=checkbox]):not([type=range]):not([type=color]),.gamma-short-select-trigger) {
+  font-family:var(--sans); font-size:var(--fs-4); font-weight:400; line-height:normal; letter-spacing:normal;
+  min-height:var(--gamma-venue-control-height); height:auto;
+}
+html[data-stage-skin] #gamma-venue-workspace .stage-venue-editor-menu :is(button:not(.stage-panel-help):not(.stage-hint-help):not(.stage-venue-step-head),.stage-import-label,.gamma-short-select-trigger) {
+  padding:calc(var(--gamma-gap) / 2) var(--gamma-gap);
+  overflow-wrap:normal; word-break:normal;
+}
+#gamma-venue-workspace .stage-venue-editor-menu :is(.stage-venue-editor-extension-shapes,.stage-venue-editor-area-shapes) {
+  display:flex; flex-wrap:wrap; gap:calc(var(--gamma-gap) / 2);
+}
+#gamma-venue-workspace .stage-venue-editor-menu :is(.stage-venue-editor-extension-shapes,.stage-venue-editor-area-shapes) button { flex:1 1 auto; width:auto; white-space:nowrap; min-width:max-content; }
+/* F-16: frames and their separate caption row use the same tracks. */
+.venue-live-layout { grid-template-rows:minmax(0,1fr) auto; align-items:stretch; }
+.venue-live-preview-column { display:contents; }
+.venue-live-layout > .stage-venue-editor-canvas-wrap { grid-column:1; grid-row:1; }
+.venue-live-preview-column > .venue-live-panel { grid-column:2; grid-row:1; }
+.venue-live-layout > .stage-venue-editor-canvas-legend { grid-column:1; grid-row:2; margin:0; align-self:start; }
+.venue-live-preview-column > .venue-live-note { grid-column:2; grid-row:2; margin:0; align-self:start; }
+/* The usage hint belongs to the caption, outside the preview frame. */
+.venue-live-note .venue-live-foot { padding:0; margin-top:calc(var(--gamma-gap) / 2); }
+#gamma-venue-workspace .venue-live-layout .venue-live-controls button {
+  width:var(--gamma-icon-box); height:var(--gamma-icon-box); min-height:var(--gamma-icon-box); padding:0;
+}
+#gamma-venue-workspace .venue-live-layout .venue-live-controls { grid-template-columns:var(--gamma-icon-box); }
+.venue-live-only-plan .venue-live-layout > .stage-venue-editor-canvas-legend { grid-column:1; grid-row:2; }
+.venue-live-only-plan .venue-live-preview-column > * { display:none; }
+@media(max-width:1050px) {
+  .venue-live-layout { grid-template-rows:minmax(260px,1fr) auto minmax(260px,1fr) auto; }
+  .venue-live-preview-column > .venue-live-panel { grid-column:1; grid-row:3; }
+  .venue-live-preview-column > .venue-live-note { grid-column:1; grid-row:4; }
+}
+#gamma-venue-workspace .venue-live-layout :is(.stage-venue-editor-zoom,.venue-live-controls) {
+  bottom:0; right:0; padding:calc(var(--gamma-gap) / 2); gap:calc(var(--gamma-gap) / 2);
+}
+#gamma-venue-workspace .venue-live-layout .stage-venue-editor-zoom button {
+  width:var(--gamma-icon-box); height:var(--gamma-icon-box); min-height:var(--gamma-icon-box); padding:0;
+}
+/* F-15: translated choices wrap as whole buttons, including the ceiling and
+   curtain choices in narrow settings columns. */
+#gamma-venue-workspace .stage-venue-editor-menu :is(.stage-tool-grid,.stage-venue-editor-floor-colors,.stage-venue-back-screen-colors) {
+  display:flex; flex-wrap:wrap; gap:calc(var(--gamma-gap) / 2);
+}
+#gamma-venue-workspace .stage-venue-editor-menu :is(.stage-tool-grid,.stage-venue-editor-floor-colors,.stage-venue-back-screen-colors) > button {
+  flex:1 1 auto; width:auto; min-width:max-content; white-space:nowrap;
+}
+#gamma-venue-workspace .stage-venue-editor-menu .stage-venue-editor-leg-count-controls {
+  display:flex; flex-wrap:wrap; gap:calc(var(--gamma-gap) / 2);
+}
+#gamma-venue-workspace .stage-venue-editor-menu .stage-venue-editor-leg-count-controls input {
+  flex:1 1 var(--ctrl-md); min-width:var(--ctrl-md); width:auto;
+}
+#gamma-venue-workspace .stage-venue-editor-menu #stage-venue-editor-leg-count-auto {
+  flex:1 1 auto; min-width:max-content; white-space:nowrap;
+}
+
+@container (max-width:360px) {
+  #gamma-venue-workspace .stage-venue-editor-menu .stage-venue-editor-setting { grid-template-columns:minmax(0,1fr); }
+  #gamma-venue-workspace .stage-venue-editor-menu .stage-venue-editor-setting > p { grid-column:1; }
+}
+#gamma-venue-workspace .stage-venue-editor-menu .stage-venue-editor-leg-count-controls .stage-step-button { width:var(--gamma-venue-control-height); min-width:var(--gamma-venue-control-height); }
+/* The custom select copies a native select's font into an inline shorthand. */
+html[data-stage-skin] #gamma-venue-workspace .stage-venue-editor-menu .gamma-short-select-trigger { line-height:normal!important; }
+@container stage-venue-editor-left (max-width:360px) {
+  html[data-stage-skin] #gamma-venue-workspace .stage-venue-editor-menu .stage-venue-editor-setting { grid-template-columns:minmax(0,1fr); }
+}
+#gamma-venue-workspace .venue-live-layout .stage-venue-editor-zoom { grid-template-columns:var(--gamma-icon-box); }

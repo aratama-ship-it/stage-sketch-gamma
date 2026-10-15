@@ -10,7 +10,7 @@
 .position-manager h3{font-size:14px;margin:0 0 8px;color:var(--milk);overflow-wrap:anywhere}
 .position-manager p{margin:8px 0;color:var(--milk)}
 .pn-actions{display:flex;flex-wrap:wrap;gap:8px}
-.position-manager button,.position-manager input,.position-manager select{min-height:44px;border:1px solid var(--brass);border-radius:4px;background:var(--recess);color:var(--milk);padding:8px;font:inherit;line-height:1.6}
+.position-manager button,.position-manager input,.position-manager select{min-height:44px;border:1px solid var(--brass);border-radius:var(--radius-sm);background:var(--recess);color:var(--milk);padding:8px;font:inherit;line-height:1.6}
 .position-manager button{cursor:pointer;white-space:normal;text-align:left}
 .position-manager button:focus-visible,.position-manager input:focus-visible,.position-manager select:focus-visible{outline:2px solid var(--milk);outline-offset:2px}
 .position-manager button[aria-pressed=true]{border:2px solid var(--milk);padding:7px;font-weight:700}

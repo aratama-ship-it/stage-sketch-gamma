@@ -461,6 +461,7 @@
   window.addEventListener('pagehide',saveDraft);
   window.addEventListener('beforeunload',event=>{const saved=saveDraft();if(state.dirty&&!saved){event.preventDefault();event.returnValue='';}});
   window.GAMMA_LIGHT_EDITOR=Object.freeze({open,suspend,apply,applyCandidate,build,
+    selectCue(sceneId, cueId) { return active && !loading && !playbackPreview && hooks.viewLightCue(sceneId, cueId); },
     async placeCue(placement) {
       if(!build().scenes.flatMap(s=>s.lxq||[]).some(q=>q.id===placement.lxId))return {persisted:false,error:"このQは一覧にありません"};
       if(state.dirty || context?.cueSyncPending) {

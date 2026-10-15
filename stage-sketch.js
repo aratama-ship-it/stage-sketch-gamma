@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.67";
+  const GAMMA_APP_VERSION = "v0.3.68";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -5222,6 +5222,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      端末ごとの設定。ショーのデータには入れない（共有・書き出しに混ざらない）。
      新しい機能は原則ここに並べ、切れるようにしておく（本人の方針）。 */
   const FEATURES = [
+    { key: "shortcutMarks", label: "ショートカットキーを画面に表示する", def: true,
+      hint: "画面に常に出るキーの印を表示します。ツールチップとショートカット一覧は残ります。設定はこの端末に保存されます" },
     { key: "idleMotion", label: "再生中の待機モーション", def: false,
       hint: "止まっている演者がその場で小さく動きます。保存した立ち位置は変わりません" },
     { key: "idleAreas", label: "平面図の演目の範囲", def: true,
@@ -27131,6 +27133,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   let wrapPickStartId = null;
   // 常設の転換ポイントから開いた詳細。ショーの内容ではないため保存しない。
   let expandedSceneTransitionToId = null;
+  let timelinePanelTransition = null;
 
   function clearWrapPick() {
     wrapPickStartId = null;
@@ -27414,6 +27417,8 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         const point = document.createElement("button");
         point.type = "button";
         point.className = "stage-scene-transition-point";
+        point.classList.toggle("is-current", timelinePanelTransition?.from === fromScene.id && timelinePanelTransition?.to === toScene.id);
+        if (point.classList.contains("is-current")) point.setAttribute("aria-current", "true");
         const expandedBySetting = featureOn("sceneTransitions")
           && (fromScene.id === p.activeSceneId || toScene.id === p.activeSceneId);
         const expanded = expandedSceneTransitionToId === toScene.id || expandedBySetting;
@@ -27484,6 +27489,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         row.className = `stage-scene-row${isOpen ? " is-open" : ""}${scene.id === wrapPickStartId ? " is-wrap-start" : ""}`;
 
         row.classList.toggle("is-cursor", isCursor);
+        row.classList.toggle("is-timeline-transition", Boolean(timelinePanelTransition) && isOpen);
         row.dataset.sceneId = scene.id;
         row.dataset.depth = String(scene.depth);
         // 左端に空ける溝。バーはこの中へ、行の高さいっぱいに敷く
@@ -32539,6 +32545,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
   // 機能のオン/オフをボタンの表示へ反映する
   function applyFeatureFlags() {
+    document.documentElement.dataset.shortcutMarks = String(featureOn("shortcutMarks"));
     if (els.live) els.live.dataset.actionStatusVisible = String(featureOn("actionStatus"));
     document.querySelectorAll("[data-machinery-additions]").forEach((group) => { group.hidden = !editionAllows("machinery"); });
     applyPanelVisibility();
@@ -33364,7 +33371,7 @@ ${propsPlotHtml}
   }
 
   // 矢印キーでシーンを送ったとき、ページ全体やフォーカスは動かさずシーン欄だけ追従させる。
-  function followSceneInPanel(sceneId) {
+  function followSceneInPanel(sceneId, transitionToSceneId = null, expand = false) {
     const list = els.sceneList;
     if (!list || !list.getClientRects().length) return;
     let row = list.querySelector(`:scope > [data-scene-id="${CSS.escape(sceneId)}"]`);
@@ -33389,15 +33396,29 @@ ${propsPlotHtml}
       renderSceneGrid();
       row = list.querySelector(`:scope > [data-scene-id="${CSS.escape(sceneId)}"]`);
     }
-    const chip = row && row.querySelector(".stage-scene-chip");
+    const boundary = transitionToSceneId && list.querySelector(`.stage-scene-transition-boundary[data-transition-from="${CSS.escape(sceneId)}"][data-transition-to="${CSS.escape(transitionToSceneId)}"]`);
+    const chip = transitionToSceneId ? expand ? boundary : boundary?.querySelector(".stage-scene-transition-point") : row && row.querySelector(".stage-scene-chip");
     if (!chip) return;
     const scrollToChip = () => {
-      if (state.project.activeSceneId !== sceneId || !list.getClientRects().length) return;
-      const viewport = list.getBoundingClientRect();
-      const target = chip.getBoundingClientRect();
-      const margin = 8;
-      if (target.top < viewport.top + margin) list.scrollTop += target.top - viewport.top - margin;
-      else if (target.bottom > viewport.bottom - margin) list.scrollTop += target.bottom - viewport.bottom + margin;
+      if (!list.getClientRects().length || !chip.isConnected) return;
+      if (transitionToSceneId ? timelinePanelTransition?.to !== transitionToSceneId : state.project.activeSceneId !== sceneId) return;
+      // Scroll the list first, then only its owning column if the panel itself is off screen.
+      // The floating timeline clips the visible work area; never scroll another column or the page.
+      const limit = list.closest(".stage-col") || list.closest(".stage-panel") || list;
+      const timelinePanel = document.getElementById("stage-timeline-panel");
+      const overlayTop = timelinePanel && !timelinePanel.hidden && !timelinePanel.classList.contains("is-collapsed")
+        ? timelinePanel.getBoundingClientRect().top : window.innerHeight;
+      for (let container = list; container && container.id !== "view-stage"; container = container.parentElement) {
+        if (/(auto|scroll)/.test(getComputedStyle(container).overflowY) && container.scrollHeight > container.clientHeight) {
+          const viewport = container.getBoundingClientRect(), target = chip.getBoundingClientRect();
+          const top = Math.max(viewport.top, 0), bottom = Math.min(viewport.bottom, overlayTop);
+          if (bottom > top) {
+            if (target.top < top || target.height > bottom - top) container.scrollTop += target.top - top;
+            else if (target.bottom > bottom) container.scrollTop += target.bottom - bottom;
+          } else if (container === list) container.scrollTop += target.top - viewport.top;
+        }
+        if (container === limit) break;
+      }
     };
     scrollToChip();
     // メモ欄の高さは描画後に確定するため、その後も見出しの位置だけ再確認する。
@@ -33427,6 +33448,7 @@ ${propsPlotHtml}
   }
 
   function openScene(id, options = {}) {
+    timelinePanelTransition = null;
     /* 共有セッションのゲストはシーンを切り替えられない（ホストのシーンに追従する）。
        ホストからの同期は applyDocumentString が activeSceneId を直接差し替えるため、
        このガードの影響を受けない。 */
@@ -45823,6 +45845,26 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       if (!next) return false;
       openScene(next.id, options);
       return state.project.activeSceneId === next.id;
+    },
+    focusTimelineScene(id, {transitionToSceneId = null, expand = false} = {}) {
+      if (!state.project.scenes.some(row => row.kind === "scene" && row.id === id)) return false;
+      if (!featureOn("panelScenes")) {setFeaturePreference("panelScenes", true); applyPanelVisibility();}
+      if (state.layout.collapsed.scenes) {state.layout.collapsed.scenes = false; applyLayout();}
+      // Reveal ancestors on both ends before the transition row is rebuilt.
+      for (const targetId of [id, transitionToSceneId].filter(Boolean)) {
+        const index = state.project.scenes.findIndex(row => row.id === targetId);
+        let depth = state.project.scenes[index]?.depth || 0;
+        for (let i = index - 1; i >= 0 && depth > 0; i--) {
+          const ancestor = state.project.scenes[i];
+          if (ancestor.depth >= depth) continue;
+          if (ancestor.kind === "section") delete state.closedSections[ancestor.id];
+          depth = ancestor.depth;
+        }
+      }
+      timelinePanelTransition = transitionToSceneId ? {from:id, to:transitionToSceneId} : null;
+      if (expand && transitionToSceneId) expandedSceneTransitionToId = transitionToSceneId;
+      renderScenes(); followSceneInPanel(id, transitionToSceneId, expand);
+      return true;
     },
     setTimelineLightSchedule,
     applyTimelineLightClock,

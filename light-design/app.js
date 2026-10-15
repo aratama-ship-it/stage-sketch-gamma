@@ -26,8 +26,10 @@
       return {
         leftExtra: E.clamp(E.finite(value.leftExtra, 0), 0, 1800),
         fixtureShare: E.clamp(E.finite(value.fixtureShare, 0.5), 0, 1),
+        leftWidth: E.finite(value.leftWidth, 0), rightWidth: E.finite(value.rightWidth, 0),
+        sideFull: value.sideFull === true,
       };
-    } catch (_) { return { leftExtra: 0, fixtureShare: 0.5 }; }
+    } catch (_) { return { leftExtra: 0, fixtureShare: 0.5, leftWidth: 0, rightWidth: 0, sideFull: false }; }
   })();
   const PANEL_MIN_WIDTH = 160;
   function savePanelLayout() {
@@ -414,6 +416,20 @@
   let drawCueOverride = null;
   // Q browsing is view state. Keep the scene's saved look separate from the selected Q.
   const viewedCueIds = new Map();
+  // External navigation is view state: show the selected Q immediately, without GO/follow or a saved edit.
+  function viewLightCue(sceneId, cueId) {
+    const index = state.scenes.findIndex(sc => sc.id === sceneId);
+    const target = state.scenes[index];
+    if (!target || !(target.lxq || []).some(q => q.id === cueId)) return false;
+    stop(); lxFollowCancel(); lxFadeStop();
+    state.sceneIndex = index; state.sel.clear();
+    viewedCueIds.set(sceneId, cueId);
+    home(); renderAll();
+    const card = document.querySelector(`.lxcard[data-lx-id="${CSS.escape(cueId)}"]`);
+    if (card) card.scrollIntoView({block:"nearest", inline:"nearest"});
+    window.dispatchEvent(new Event("gamma-light-cue-view"));
+    return true;
+  }
   const viewedCue = sc => (sc?.lxq || []).find(q => q.id === viewedCueIds.get(sc.id));
   const visibleCue = sc => viewedCue(sc)?.cue || sc.cue;
   const cue = () => drawCueOverride || visibleCue(scene());
@@ -601,7 +617,7 @@
   const PAD = { planX: 32, planT: 20, planB: 46, secX: 32, secT: 14, secB: 15, headPlan: 26, headSec: 26, gap: 8 };
   const SIDE_VISIBLE_METRES = 2;
   let sectionScale = 1;
-  const sideCropped = () => state.mode === "move" && !state.soloFigure;
+  const sideCropped = () => state.mode === "move" && !panelLayout.sideFull;
   const SIDE_DX = 24;   // 内部px。選択輪も平面図の左右余白に収める
   /* 前明かりは客席の上（舞台より手前）にある。実尺で描くと平面図に客席ぶんの帯が要り、
      そのぶん舞台が小さくなるので、SSと同じく「舞台の外に一定距離で並べる」描き方にする。
@@ -653,9 +669,11 @@
      s（1mあたりのpx）はその2つの小さいほう。 */
   function syncFigureSizes() {
     const g = document.querySelector(".figgrid"); if (!g) return;
+    g.style.minHeight=""; // Measure the available viewport, not the previous manual overflow.
     const r = g.getBoundingClientRect(); if (!r.width || !r.height) return;
     const d = state.dims;
     g.classList.toggle("side-cropped",sideCropped());
+    g.classList.toggle("detail-columns",state.mode === "move");
     const headSec=Math.max(PAD.headSec,document.querySelector(".sec.front .sechead").getBoundingClientRect().height+2);
     /* R-14（2026-09-17 本人要望）: 1枚だけ広げているときは、4図をそろえる尺ではなく
        その1枚が枠いっぱいになる尺で決める。4図の縮尺をそろえる意味が無い状態なので、
@@ -663,13 +681,14 @@
     if (state.soloFigure) {
       const k = state.soloFigure;
       const wNeed = k === "plan" ? d.W : k === "front" ? d.W : d.D;
-      const hNeed = k === "plan" ? d.D : d.H;
+      const hNeed = k === "plan" ? d.D : k === "side" && sideCropped() ? Math.min(d.H,SIDE_VISIBLE_METRES) : d.H;
       const padX = k === "plan" ? PAD.planX * 2 : PAD.secX * 2;
       const padY = k === "plan" ? PAD.headPlan + PAD.planT + PAD.planB : headSec + PAD.secT + PAD.secB;
       const inspectorWidth=$("panel-insp").getBoundingClientRect().width;
       const leftWidth=k === "plan" && state.mode === "move" ? document.querySelector(".leftcol").getBoundingClientRect().width : 0;
       const figureWidth=Math.max(0,r.width-inspectorWidth-leftWidth-PAD.gap*(leftWidth ? 2 : 1));
       const s2 = Math.max(6, Math.min((figureWidth - padX) / wNeed, (r.height - padY) / hNeed));
+      if(k === "side") sectionScale=s2;
       const box = k === "plan" ? plan : k === "front" ? secF : secL;
       const setPx = (elm, prop, v) => { const now = parseFloat(elm.style[prop]) || 0; if (Math.abs(now - v) > 1) elm.style[prop] = v + "px"; };
       setPx(box.parentElement, "width", Math.round(wNeed * s2) + padX);
@@ -703,6 +722,17 @@
       const room = Math.max(0, AUTO_LEFT_MAX - (sideNow + effectiveExtra));
       if (leftover > 0 && room > 0) effectiveExtra += Math.min(leftover, room);
     }
+    let inspectorW = Math.round(d.D*s)+PAD.secX*2;
+    if(state.mode === "move") {
+      const available = r.width-PAD.gap*2;
+      const manual = panelLayout.leftWidth > 0 || panelLayout.rightWidth > 0;
+      inspectorW=E.clamp(panelLayout.rightWidth || inspectorW,280,Math.max(280,available-320-240));
+      const requestedLeft=E.clamp(panelLayout.leftWidth || (Math.round(d.D*s)+PAD.secX*2+effectiveExtra),320,Math.max(320,available-inspectorW-240));
+      const widthScale=Math.min((available-inspectorW-requestedLeft-PAD.planX*2)/d.W,
+        (available-inspectorW-PAD.planX*2-PAD.secX*2)/(d.W+d.D));
+      s=Math.max(6,manual ? widthScale : Math.min(s,widthScale));
+      effectiveExtra=Math.max(0,available-inspectorW-(Math.round(d.W*s)+PAD.planX*2)-(Math.round(d.D*s)+PAD.secX*2));
+    }
     const set = (elm, prop, v) => { const now = parseFloat(elm.style[prop]) || 0; if (Math.abs(now - v) > 1) elm.style[prop] = v + "px"; };
     // 上帯・シーン行を図と同じ幅の帯へ寄せる。窓を変えても縦に揃う
     const band = Math.round((d.W + d.D * 2) * s) + chromeW + effectiveExtra;
@@ -729,7 +759,17 @@
     const visibleFixtureWidth = state.mode === "move" ? fixtureW : leftW;
     if (fixturesPanel) { set(fixturesPanel, "width", visibleFixtureWidth); fixturesPanel.style.flexBasis = visibleFixtureWidth + "px"; }
     if (lxqPanel) { set(lxqPanel, "width", lxqW); lxqPanel.style.flexBasis = lxqW + "px"; }
-    set($("panel-insp"), "width", sideW);
+    set($("panel-insp"), "width", inspectorW);
+    if(state.mode === "move") {
+      const topFigure=state.figuresSwapped ? secF.parentElement : plan.parentElement;
+      g.style.setProperty("--detail-top-height",topFigure.getBoundingClientRect().height+"px");
+      g.style.setProperty("--detail-left-width",leftW+"px");
+      g.style.setProperty("--detail-mid-width",midW+"px");
+      g.style.minHeight=(Math.round(d.D*s)+PAD.planT+PAD.planB+PAD.headPlan+secH+headSec+PAD.gap)+"px";
+    } else g.style.minHeight="";
+    for(const [id,width] of [["light-left-resize",leftW],["light-right-resize",inspectorW]]) {
+      const handle=$(id);if(handle){handle.setAttribute("aria-valuenow",String(Math.round(width)));handle.setAttribute("aria-valuemax",String(Math.round(r.width-(id.includes("left")?inspectorW:leftW)-240-PAD.gap*2)));}
+    }
     if(Math.abs(Math.max(PAD.headSec,document.querySelector(".sec.front .sechead").getBoundingClientRect().height+2)-headSec)>1)refreshPanelLayout();
   }
   const positionPlanProjector=(P,B)=>(w)=>{const q=P(w);if(!distanceMetric){if(w.x < -state.dims.W/2)q.X=B.x-SIDE_DX;else if(w.x>state.dims.W/2)q.X=B.x+B.w+SIDE_DX;if(w.y<0)q.Y=B.y-24;else if(w.y>state.dims.D)q.Y=B.y+B.h+FRONT_DY;}return q;};
@@ -763,9 +803,31 @@
   }
   new ResizeObserver(refreshPanelLayout).observe(document.querySelector(".sec.front .sechead"));
   $("panel-layout-reset").onclick = () => {
-    Object.assign(panelLayout, { leftExtra: 0, fixtureShare: 0.5 });
+    Object.assign(panelLayout, { leftExtra: 0, fixtureShare: 0.5, leftWidth: 0, rightWidth: 0 });
     refreshPanelLayout(); savePanelLayout();
   };
+  // Shared panel-divider interaction: use displayed width at pointer-down, never a clamped saved value.
+  window.GAMMA_LIGHT_PANEL_RESIZE = (handle,{read,change,reset,direction=1}) => {
+    let drag=null;
+    handle.addEventListener("pointerdown",e=>{if(e.button!==0)return;e.preventDefault();drag={x:e.clientX,width:read(),id:e.pointerId};handle.setPointerCapture(e.pointerId);});
+    handle.addEventListener("pointermove",e=>{if(drag&&e.pointerId===drag.id)change(drag.width+(e.clientX-drag.x)*direction);});
+    const end=()=>{drag=null;};handle.addEventListener("pointerup",end);handle.addEventListener("pointercancel",end);handle.addEventListener("lostpointercapture",end);
+    handle.addEventListener("dblclick",reset);
+    handle.addEventListener("keydown",e=>{if(e.key==="Home"){e.preventDefault();e.stopPropagation();reset();}else if(["ArrowLeft","ArrowRight"].includes(e.key)){e.preventDefault();e.stopPropagation();change(read()+(e.key==="ArrowRight"?16:-16)*direction);}});
+  };
+  for(const [side,label] of [["left","左列の幅"],["right","右列の幅"]]) {
+    const handle=document.createElement("div");handle.id=`light-${side}-resize`;handle.className="light-column-resize";
+    handle.tabIndex=0;handle.setAttribute("role","separator");handle.setAttribute("aria-orientation","vertical");handle.setAttribute("aria-label",label);handle.setAttribute("aria-valuemin",side==="left"?"320":"280");
+    document.querySelector(".figgrid").append(handle);
+    const read=()=>document.querySelector(side==="left"?".leftcol":"#panel-insp").getBoundingClientRect().width;
+    window.GAMMA_LIGHT_PANEL_RESIZE(handle,{read,direction:side==="left"?1:-1,
+      change:width=>{const g=document.querySelector(".figgrid").getBoundingClientRect(),other=document.querySelector(side==="left"?"#panel-insp":".leftcol").getBoundingClientRect().width;
+        panelLayout.leftWidth=document.querySelector(".leftcol").getBoundingClientRect().width;
+        panelLayout.rightWidth=$("panel-insp").getBoundingClientRect().width;
+        panelLayout[side+"Width"]=E.clamp(width,side==="left"?320:280,Math.max(side==="left"?320:280,g.width-other-240-PAD.gap*2));refreshPanelLayout();savePanelLayout();},
+      reset:()=>{panelLayout.leftWidth=0;panelLayout.rightWidth=0;panelLayout.leftExtra=0;refreshPanelLayout();savePanelLayout();}});
+  }
+  $("side-height").onclick=()=>{panelLayout.sideFull=!panelLayout.sideFull;savePanelLayout();renderAll();};
   const secProj = (sec) => (sec.kind === "front"
     ? (state.front3d
         ? E.makeFrontPerspProjector(state.dims, secBox(sec.cv, "front"), state.frontSeats?.[state.seat] || state.seat)
@@ -3932,26 +3994,17 @@
     }
   }
   /* ---------- 表示・探す・舞台の大きさ（4図化で空いた場所へ入れた操作） ---------- */
-  document.querySelectorAll("#showtoggles button, #lighttoggles button, #frontmode button[data-show]").forEach((b) => {
-    /* 作業灯を消すの入り切りでは、消し具合のつまみの出し入れもいるので renderAll で作り直す。
+  document.querySelectorAll("button[data-show]").forEach((b) => {
+    /* 作業灯の切替は全表示を更新する。
        ほかは図だけ描き直せば足りる。 */
     b.onclick = () => {
-      const key=b.dataset.show,next=!showOn(key);state.show[key]=next;
+      const key=b.dataset.show,next=key==="onstage" ? !(showOn("performers")&&showOn("setpieces")) : !showOn(key);
+      if(key==="onstage") {state.show.performers=next;state.show.setpieces=next;} else state.show[key]=next;
+      if(key==="blackout")state.dim=next?100:0;
       if(key==='border')state.show.legs=next;
       if(key==='blackout')renderAll();else {b.setAttribute('aria-pressed',String(next));draw();}
     };
   });
-  /* 作業灯をどれだけ消すか。つまみと数値入力は同じ値を指す（2026-09-13 本人要望）。 */
-  {
-    const setDim = (v, from) => {
-      state.dim = E.clamp(E.finite(v, 100), 0, 100);
-      if (from !== "range" && $("dim")) $("dim").value = state.dim;
-      if (from !== "num" && $("dimnum")) $("dimnum").value = state.dim;
-      draw();
-    };
-    if ($("dim")) $("dim").addEventListener("input", () => setDim(Number($("dim").value), "range"));
-    if ($("dimnum")) $("dimnum").addEventListener("input", () => setDim(Number($("dimnum").value), "num"));
-  }
   if ($("search")) $("search").addEventListener("input", () => { state.search = $("search").value.trim(); renderList(); });
   // 舞台の大きさ: 内部値はmのまま、画面は小数1桁のmで見せる。図の縮尺と1.0m吸着の基準が変わるので、動かすたびに描き直す
   [["dimW", "W"], ["dimD", "D"], ["dimH", "H"]].forEach(([id, key]) => {
@@ -4760,9 +4813,12 @@
     const movingMovers = movers.filter((fid) => { const l = litLight(fid); return l && ((l.path || {}).kind !== "still" || l.levelTo != null || l.beamDegTo != null); });
     const someMoving = movingMovers.length > 0;
 
+    let colourBox;
+    const colourMoving=movers.some(fid=>litLight(fid)?.colorTo != null);
     // ① 光の色。単灯と同じ並び（既定6色＋作った色＋色を作る）を、そのまま全灯へ入れる
     {
-      const b = sub("光の色");
+      const b = colourBox = sub(colourMoving ? "始点の色" : "光の色");
+      b.dataset.colourPanel="bulk";
       const cols = new Set(lit.map((fid) => (lightOf(fid).color || "").toLowerCase()));
       const cur = cols.size === 1 ? [...cols][0] : "";
       const put = (c, quiet) => { bulkEach(ids, (f, l, i, fid) => setLight(fid, { color: c })); quiet ? draw() : commit(`${ids.length}灯の色を変えました`); };
@@ -4798,14 +4854,15 @@
     if (movers.length) {
       const colMovers = movers.filter((fid) => { const l = litLight(fid); return l && l.colorTo != null; });
       const allCol = colMovers.length === movers.length;
-      const b = sub(null);
-      const head = el("div", "pboxhead"); head.append(el("p", "kicker", "終点の色"));
+      const b = colourBox;
+      const head = el("div", "pboxhead colour-automation");
       head.append(switchBtn(allCol, allCol ? "色が動きの中で移っています。押すと全灯止めます" : colMovers.length ? "一部だけ移っています。押すと全灯そろえます" : "押すと全灯の動きの終点に色を置きます（位置と同じ位相で色が移ります）", () => {
         if (allCol) { bulkEach(movers, (f, l) => { delete l.colorTo; }); commit(`${movers.length}灯の色の動きを止めました`); }
         else { bulkEach(movers, (f, l) => { if (l.colorTo == null) l.colorTo = /^#[0-9a-f]{6}$/i.test(l.color || "") ? l.color : "#f2ead6"; }); commit(`${movers.length}灯の終点に色を置きました（終点の色を選んでください）`); }
       }));
-      b.append(head);
+      b.prepend(head);
       if (colMovers.length) {
+        b.append(el("p","kicker","終点の色"));
         const tos = new Set(colMovers.map((fid) => (lightOf(fid).colorTo || "").toLowerCase()));
         const curTo = tos.size === 1 ? [...tos][0] : "";
         const putTo = (c, quiet) => { colMovers.forEach((fid) => { const l = lightOf(fid); if (l) l.colorTo = c; }); quiet ? draw() : commit(`${colMovers.length}灯の終点の色を変えました`); };
@@ -6078,7 +6135,9 @@
       /* ① 光の色。よく使う6色＋自分で作った色（ショー共通）。作った色はそのまま並ぶので、
          別の灯からもワンタッチで選べる（2026-09-11 本人要望）。 */
       {
-        const b = box("光の色");
+        const autoColor=mover && f.mount.type !== "cyc" && l.colorTo != null;
+        const b = box(autoColor ? "始点の色" : "光の色");
+        b.dataset.colourPanel="single";
         const isCyc = f.mount.type === "cyc";
         const setSolidColor = (c, quiet) => {
           setLight(fid, isCyc ? { color: c, cycGradient: null } : { color: c });
@@ -6110,15 +6169,15 @@
         b.append(sw);
         /* 第6弾（2026-09-27）: 終点の色。ムービングだけ。強さ・広がりと同じ位相で、始めの色から終わりの色へ移る。 */
         if (mover && !isCyc) {
-          const autoColor = l.colorTo != null;
-          const head = el("div", "pboxhead"); head.append(el("p", "kicker", "終点の色"));
+          const head = el("div", "pboxhead colour-automation");
           head.append(switchBtn(autoColor, autoColor ? "色が動きの中で移っています。押すと止めます（始めの色に戻ります）" : "押すと動きの終点に別の色を置き、位置と同じ位相で色が移ります", () => {
             const l2 = editableLight(fid);
             if (l2.colorTo != null) { delete l2.colorTo; commit("色の動きを止めました"); }
             else { l2.colorTo = /^#[0-9a-f]{6}$/i.test(l2.color || "") ? l2.color : "#f2ead6"; commit("動きの終点に色を置きました（終点の色を選んでください）"); }
           }));
-          b.append(head);
+          b.prepend(head);
           if (autoColor) {
+            b.append(el("p","kicker","終点の色"));
             const sw2 = el("div", "swatches");
             const swatch2 = (c, custom) => {
               const sb = document.createElement("button"); sb.type = "button"; sb.className = custom ? "custom" : "";
@@ -6505,11 +6564,12 @@
       search.setAttribute("aria-label", inMove ? "灯体を探す" : "機材を探す");
     }
     /* 「光」と「作業灯を消す」は照明デザインタブだけのもの（2026-09-13 本人要望）。
-       配置タブでは枠ごと隠す。消し具合のつまみは作業灯を消しているときだけ出す。 */
+       配置タブでは枠ごと隠す。作業灯は入100%／切0%の2択。 */
     $("lighttoggles").hidden = !inMove;
     { const sn = document.querySelector(".viewhead .snap"); if (sn) sn.hidden = inMove; }
-    $("dimwrap").hidden = !(inMove && showOn("blackout"));
-    { const d = E.clamp(E.finite(state.dim, 100), 0, 100); $("dim").value = d; $("dimnum").value = d; }
+    $("side-height").hidden=!inMove;
+    $("side-height").textContent=panelLayout.sideFull ? "抑えた表示（2m）" : "フル表示";
+    $("side-height").setAttribute("aria-pressed",String(panelLayout.sideFull));
     /* 図の上の中央のシーン送り（修正バッチ 2026-10-07 #6・D8＝A）。番号は LXキューの見出しと同じ「セクション-シーン」、
        名前はホバーで出す。シーンはセクションをまたいで順に送り、端では止まる（舞台タブの前後のシーンと同じ）。 */
     { const x0 = lxOf(scene()), name = scene().name || "名称なしのシーン";
@@ -6585,7 +6645,7 @@
     SECS.forEach((sec) => sec.cv.parentElement.classList.toggle("focus", state.mode === "move" && sec.kind === focusKind));
     renderToolStrip();   // 帯の出し入れで図に使える高さが変わるので、寸法合わせより先に
     syncCanvasSize();
-    document.querySelectorAll("#showtoggles button, #lighttoggles button, #frontmode button[data-show]").forEach((b) => b.setAttribute("aria-pressed", String(showOn(b.dataset.show))));
+    document.querySelectorAll("button[data-show]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.show === "onstage" ? showOn("performers") && showOn("setpieces") : showOn(b.dataset.show))));
     document.querySelectorAll("#frontmode button[data-front]").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.front === "3d") === Boolean(state.front3d))));
     $("seat").hidden = false;
     $("seat").disabled = false;
@@ -6603,6 +6663,8 @@
   /* 修正バッチ 2026-10-07 #13（本人指示）: 照明デザインの上部の帯は1段のまま。左のアイコン群は折り返さず縮めず、
      シーン送りが入り切らないときは中身を段階的に減らす（段階の見た目は embed.css の data-fit）。
      中身（キュー名・シーン番号・言語）か幅が変わったときだけ測り直す。訳（ui-i18n.js）は次のフレームで入るので、その後に測る。 */
+  // The front drawing owns its display controls now; keep them all reachable by horizontal scroll.
+  // Only the separate scene strip collapses: playback, cue name, then navigation arrows.
   const FIGBAR_FITS = ["center", "right", "norun", "noname", "nums", "wrap"];
   let figbarFitKey = "", figbarFitRaf = 0;
   function scheduleFigbarFit() {
@@ -6616,7 +6678,7 @@
       if (bar.dataset.fit) delete bar.dataset.fit; figbarFitKey = ""; return;
     }
     if (!innerWidth || !bar.getBoundingClientRect().width) { figbarFitKey = ""; return; }   // 枠が隠れている間（再生の確認画面など）は測らない
-    const key = [innerWidth, document.documentElement.lang, ($("qnow") || {}).textContent, ($("scene-name") || {}).textContent, left.textContent.length].join("|");
+    const key = [innerWidth, bar.clientWidth, document.documentElement.lang, ($("qnow") || {}).textContent, ($("scene-name") || {}).textContent, left.textContent.length].join("|");
     if (key === figbarFitKey && bar.dataset.fit) return;
     figbarFitKey = key;
     const em = box.querySelector(".qnow em");
@@ -7379,7 +7441,7 @@
   // 試作の検証用。製品では出さない（状態を外から読めるようにしておく）
   window.__RIG = { state, E, planBox, secBox, secOf, SECS,
     /* 「照明のあるある」（light-presets-ui.js）との接続点。app.js の内部関数をここだけから貸す（2026-09-14）。 */
-    hooks: { setCuePlacementReader, refreshCuePlacements, setSoloFigure, setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
+    hooks: { viewLightCue, setCuePlacementReader, refreshCuePlacements, setSoloFigure, setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
 
   /* ブラウザの大きさに追従する。モーダルだからと固定にしない（2026-09-11 本人要望）。
      rAFで1回にまとめる（ドラッグ中の連続リサイズで描き直しが溜まらないように）。 */
