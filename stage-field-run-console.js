@@ -116,7 +116,7 @@
  // Fetch through the parent's PWA controller, then keep the renderer opaque and self-contained.
  async function frameDocument(){
   const responseFor=async url=>{let response;try{response=await fetch(url);if(response.ok)return response;}catch(_){}try{response=await window.caches?.match(url);if(response?.ok)return response;}catch(_){}throw Error('frame-unavailable');};
-  const url=new URL('field-frame.html?v=20261015-fixd',location.href),response=await responseFor(url);
+  const url=new URL('field-frame.html?v=20261015-v0370',location.href),response=await responseFor(url);
   const doc=new DOMParser().parseFromString(await response.text(),'text/html');if(!doc.documentElement.hasAttribute('data-study-renderer')||!doc.querySelector('.field-frame-drawings'))throw Error('frame-unavailable');const base=doc.createElement('base');base.href=new URL('.',url).href;doc.head.prepend(base);
   const read=async path=>{const r=await responseFor(new URL(path,url));return r.text();};
   await Promise.all([...doc.querySelectorAll('script[src]')].map(async tag=>{

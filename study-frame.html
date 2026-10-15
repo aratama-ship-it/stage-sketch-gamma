@@ -36,7 +36,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.69</span>
+                <span class="stage-app-version">0.3.70</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -286,8 +286,9 @@
                 <div class="stage-project-transfer-actions">
                   <button type="button" id="stage-export-json" class="stage-minor-action"
                           aria-keyshortcuts="Meta+S Control+S">ショーを書き出す</button>
-                  <label class="stage-minor-action stage-import-label">ショーを読み込む<input type="file" id="stage-import-json" accept=".stagesketch,.json,application/json" hidden></label>
+                  <label class="stage-minor-action stage-import-label">ショーを読み込む<input type="file" id="stage-import-json" accept=".stagesketch,.json,.stageproj.zip,.zip,application/json,application/zip" hidden></label>
                 </div>
+                <button type="button" id="stage-import-project-folder-open" class="stage-minor-action">プロジェクトのフォルダを読み込む</button><input type="file" id="stage-import-project-folder" webkitdirectory multiple hidden>
                 <p class="stage-version-note stage-project-import-note">β版で書き出したJSONも読み込めます。</p>
               </div>
               <!-- 本人指定で入口を一時非表示。テンプレートと作成機能は復帰できるよう残す。 -->
@@ -2019,6 +2020,7 @@
     <div class="stage-export-pane" id="stage-export-pane-show" role="tabpanel" aria-labelledby="stage-export-tab-show" hidden>
       <p class="stage-profile-hint">ショー全体（シーン・演者・照明・劇場など）を一つのファイルへ書き出して、控えを残します。別の端末へ持っていくときも、このファイルを読み込みます。</p>
       <button type="button" class="stage-minor-action" id="stage-export-show-file">ショーを書き出す</button>
+      <button type="button" class="stage-minor-action" id="stage-export-project-file">プロジェクトを書き出す（音源入り .stageproj.zip）</button>
       <p class="stage-profile-hint" id="stage-export-show-stamp" aria-live="polite"></p>
       <button type="button" class="stage-minor-action" id="stage-export-rehearsal" hidden>Vision Pro稽古用JSON</button>
     </div>
@@ -2260,7 +2262,7 @@
     <button type="button" class="stage-modal-close" id="stage-shows-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
   <div class="stage-modal-body">
-    <p class="stage-profile-hint">この端末に保存したショーと同梱見本です。編集した内容は自動保存されます。別の端末へ持っていくときは「書き出す」を使ってください。</p>
+    <p class="stage-profile-hint">この端末に保存したショーです。見本はサンプルライブラリから入手できます。</p>
     <section class="stage-show-save-error" id="stage-show-save-error" role="alert" hidden>
       <p id="stage-show-save-error-text"></p>
       <p id="stage-show-save-error-help" hidden></p>
@@ -2269,6 +2271,7 @@
         <a id="stage-show-save-recovery" target="_blank" rel="noopener" hidden>保存容量を修復（別タブ）</a>
       </div>
     </section>
+    <button type="button" id="stage-shows-samples-open" class="stage-minor-action">サンプルライブラリ</button>
     <div class="stage-show-list" id="stage-show-list"></div>
   </div>
 </div>
@@ -2826,16 +2829,17 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261015-v0369">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261015-v0370">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0369-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0369-title">v0.3.69</h3><time datetime="2026-10-15">2026-10-15</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0370-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0370-title">v0.3.70</h3><time datetime="2026-10-15">2026-10-15</time></header>
       <ul>
-        <li>現場モードは、進行表の右にある「リハーサル」タブになりました。ヘッダーの走る人のアイコンは廃止しました。</li>
-        <li>図を中央、GOなどの進行操作を右の列にまとめました。照明と作業灯の入切、Eでタイムラインを開閉できます。</li>
-        <li>シーンを切り替えても画面が揺れないようにしました。</li>
-        <li>ランの記録・ノート・ペンはそのまま使えます。元ショーを変更せず、ランごとに保存します。</li>
+        <li>ショーを「プロジェクトファイル（.stageproj）」として保存・読み込みできるようになりました。ブラウザ版は音源入りzipの書き出しとzip・フォルダの読み込みに対応します。</li>
+        <li>Mac版はLogicのように1プロジェクト＝1ファイルです。⌘Sと自動保存で保存し、控えを直近10件残します。</li>
+        <li>サンプルライブラリから見本ショーを入手して開けます。試験場には短いテスト音源を同梱しています。</li>
+        <li>Mac版の旧棚は「以前のショー」から1本ずつプロジェクトとして保存できます。元のショーと音源は端末に残ります。</li>
+        <li>Mac版は起動時に「最後のプロジェクトを開く」か「最初の窓を表示」を選べます。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3800,9 +3804,9 @@
 <script src="/study-assets/stage-idle-motion.js?v=20261014-v0362"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
 <script src="/study-assets/gamma-ui.js?v=20261014-v0364"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261015-v0369"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261015-v0370"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261013-v0360"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="/study-assets/stage-sketch.js?v=20261015-v0369"></script>
+<script src="/study-assets/stage-sketch.js?v=20261015-v0370"></script>
 <script src="/study-assets/gamma-appearance.js?v=20261015-v0368"></script>
 </body></html>

@@ -1690,3 +1690,16 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .gamma-header-fitted.gamma-
   font-family: var(--sans); font-size: var(--fs-4); line-height: 1.5;
   pointer-events: none;
 }
+/* P3 reuses the show list's frame, rows, title and buttons. Native dialog traps focus. */
+.stage-modal.stage-project-library-modal {
+  --project-library-width: 620px;
+  transform:none; inset:0; margin:auto; height:fit-content;
+  width:min(var(--project-library-width),calc(100vw - 40px));
+}
+.stage-project-library-modal::backdrop { background:rgba(0,0,0,.6); }
+.stage-project-library-modal .stage-show-meta { color:var(--milk-dim); }
+.stage-project-library-modal .stage-show-open { cursor:default; }
+.stage-project-library-modal .stage-show-row { align-items:center; }
+.stage-project-library-modal .stage-show-row button { white-space:normal; }
+.stage-project-library-modal .stage-show-list { display:flex; flex-direction:column; }
+.stage-project-library-modal .stage-show-list > * { flex:0 0 auto; }

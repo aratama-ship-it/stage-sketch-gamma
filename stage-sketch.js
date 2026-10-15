@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.69";
+  const GAMMA_APP_VERSION = "v0.3.70";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -120,7 +120,14 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
    * それらのキーには一切触れない。判定は「このファイルが実際に使っているキー名」
    * そのもの（grep で洗い出した一覧）。キーを増やしたら、ここにも追記すること。
    * ★通常の利用者がこのURLを踏むことはまず無いが、念のため確認ダイアログを必ず挟む。 */
+  // Resolve the native handshake before shelf recovery, migration or reset.
+  const nativeBridgeCandidate = !document.documentElement?.hasAttribute?.("data-study-renderer")
+    ? window.STAGE_PROJECT_BRIDGE?.create(window) : null;
+  const nativeInitialOpen = nativeBridgeCandidate ? await nativeBridgeCandidate.initialOpen : null;
+  const nativeProject = nativeInitialOpen !== null ? nativeBridgeCandidate : null;
+
   const devResetTriggered = (function devResetTrigger() {
+    if (typeof nativeProject !== "undefined" && nativeProject) return false;
     if (!["127.0.0.1", "localhost"].includes(window.location.hostname)) return false;
     let params;
     try { params = new URLSearchParams(window.location.search); } catch (_) { return false; }
@@ -199,7 +206,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   const largeReadOnly = document.documentElement?.hasAttribute?.("data-study-renderer") === true;
   let largeProjectStorage = null;
-  if (!largeReadOnly) {
+  if (!largeReadOnly && !nativeProject) {
     try {
       if (typeof window.indexedDB?.open === "function") {
       if (!window.STAGE_LARGE_PROJECT_STORE) throw new Error("大容量保存の更新ファイルが未読込です");
@@ -532,7 +539,18 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     currentShow: mappedAlternativesKey(alternativesKeys[0]),
     showShelf: mappedAlternativesKey(alternativesKeys[1]),
   });
-  const rawStorage = STUDY_READ_ONLY ? null : (window.localStorage || globalThis.localStorage || {});
+  const browserStorage = STUDY_READ_ONLY ? null : (window.localStorage || globalThis.localStorage || {});
+  // Only presentation preferences use the existing WebKit store. Project keys
+  // are volatile and never read, rewritten or removed in the browser store.
+  const nativeStorageKey = key => /shosai-stage-(?:sketch|shows)|scene-alternatives|large-project|music-cue-original|project-file-offline|stage-project-backup/.test(key);
+  const rawStorage = (typeof nativeProject !== "undefined" && nativeProject) ? new Proxy(browserStorage, {
+    get(target, key) {
+      if (["getItem", "setItem", "removeItem"].includes(key)) return (name, ...args) =>
+        (nativeStorageKey(name) ? nativeProject.storage : target)[key](name, ...args);
+      const value = Reflect.get(target, key, target);
+      return typeof value === "function" ? value.bind(target) : value;
+    }
+  }) : browserStorage;
   const projectStorage = largeProjectStorage?.storage || rawStorage;
   const storageBaseline = new Map();
   if (rawStorage) for (const name of alternativesKeys) {
@@ -2195,7 +2213,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const VENUES = window.SHOSAI_VENUES;
   if (!VENUES) return;
   const stageSketchRoot = canvas.closest(".stage-sketch");
-  const canFetchWhoami = !STUDY_READ_ONLY && !/(^|\.)github\.io$/i.test(window.location?.hostname || "") && typeof window.fetch === "function";
+  const canFetchWhoami = !nativeProject && !STUDY_READ_ONLY && !/(^|\.)github\.io$/i.test(window.location?.hostname || "") && typeof window.fetch === "function";
   if (canFetchWhoami && stageSketchRoot) {
     stageSketchRoot.classList.add("stage-whoami-pending");
     stageSketchRoot.setAttribute("aria-busy", "true");
@@ -2346,7 +2364,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      ★選び直しは上の EN／日本語でいつでもできる。URLの指定は開くたびに効くので、
        配るリンクは常にその言語で開く（人に渡す道具なので、開き方が揺れない方を採る）。 */
   const openLang = openArgs.has("lang") ? normalizeStageLanguage(openArgs.get("lang")) : "";
-  if (openArgs.has("fresh")) {
+  if (!nativeProject && openArgs.has("fresh")) {
     /* ?fresh は端末の全ショーを消す。公開URLでは誤クリック・共有リンク・先読みで
        発動しうるので、ローカルでしか効かないようにする。
        file:// で開いた単独版（stage.html）は hostname が空になるのでローカル扱い。 */
@@ -2376,8 +2394,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
            ★ここを忘れると ?fresh&sample が素の舞台で開く（実際に踏んだ）。 */
         const carry = [];
         if (openLang) carry.push(`lang=${openLang}`);
-        if (openArgs.has("sample")) carry.push("sample");
-        if (openArgs.has("seam-sample")) carry.push("seam-sample");
+        if (!nativeProject && openArgs.has("sample")) carry.push("sample");
+        if (!nativeProject && openArgs.has("seam-sample")) carry.push("seam-sample");
         window.location.replace(window.location.pathname + (carry.length ? `?${carry.join("&")}` : ""));
         return;
       }
@@ -2391,9 +2409,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const SHOWS_KEY = "shosai-stage-shows-v1";
   const NEW_SHOW_RETURN_KEY = "gamma:new-show-return-v1";
   const ProjectStore = createProjectStore({ storage: localStorage, currentKey: BETA_STORAGE_KEY, shelfKey: SHOWS_KEY,
-    backup: window.SHOSAI_STAGE_PROJECT_BACKUP_STORE || null, onCorrupt: raw => markShelfCorrupt(raw),
+    backup: nativeProject ? null : (window.SHOSAI_STAGE_PROJECT_BACKUP_STORE || null), onCorrupt: raw => markShelfCorrupt(raw),
     maintain: () => storageMaintenance?.maintain({force:true}) });
-  const storageRecovery = !STUDY_READ_ONLY && window.STAGE_STORAGE_RECOVERY
+  const storageRecovery = !nativeProject && !STUDY_READ_ONLY && window.STAGE_STORAGE_RECOVERY
     ? window.STAGE_STORAGE_RECOVERY.create({storage:rawStorage, vault:window.STAGE_STORAGE_RECOVERY.createVault(window.indexedDB)}) : null;
   const storageMaintenance = storageRecovery && window.STAGE_STORAGE_HYGIENE
     ? window.STAGE_STORAGE_HYGIENE.create({storage:rawStorage, recovery:storageRecovery, onReport:renderStorageHealth,
@@ -7137,6 +7155,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function loadState() {
+    if (typeof nativeProject !== "undefined" && nativeProject) return { value: markVenueSetupPending(baseState(false)), restored: false };
     if (STUDY_READ_ONLY) return { value: baseState(false), restored: false };
     try {
       const modernRaw = rawStorage.getItem(mappedAlternativesKey(BETA_STORAGE_KEY));
@@ -7210,6 +7229,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function readShows() {
+    if (typeof nativeProject !== "undefined" && nativeProject) return {};
     let rawText = null;
     try {
       rawText = localStorage.getItem(SHOWS_KEY);
@@ -7272,6 +7292,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      という嘘の状態が起きていた。成否を返し、表示（persistSoon）で正直に伝える。 */
   let shelfFailed = false;
   function writeShows(shows) {
+    if (typeof nativeProject !== "undefined" && nativeProject) return false;
     /* 棚が壊れているときは絶対に書かない。ここで書くと、読めなかったショーが
        いま開いている1本で置き換わって消える。 */
     if (shelfCorrupt) return false;
@@ -7439,7 +7460,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   /* ---------- シーンの音楽 ----------
    * audio要素は一つだけ。シーンを送っても同じtrackIdならsrc/currentTimeへ触れず、
    * 曲が変わる時だけIndexedDBからBlobを取り直す。再生位置は保存・Undoしない。 */
-  const audioStore = window.SHOSAI_STAGE_AUDIO_STORE || null;
+  const audioStore = nativeProject?.store || window.SHOSAI_STAGE_AUDIO_STORE || null;
   let selectedAudioTrackId = (state.project.audioTracks[0] && state.project.audioTracks[0].id) || null;
   let audioPanelSignature = "";
   let audioLoadGeneration = 0;
@@ -7476,7 +7497,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       if (JSON.stringify(next.project) === JSON.stringify(origin)) return true;
       // An independent, write-once pre-migration original. Failure to keep it
       // aborts before either the active document or the shelf can be replaced.
-      if (origin.musicCueAudio?.version !== 1
+      if (!(typeof nativeProject !== "undefined" && nativeProject) && origin.musicCueAudio?.version !== 1
           && (!storageRecovery || !await storageRecovery.preserveMusicOriginal(origin.id, before)))
         throw Error("Mキューへ移す前の原本を保存できませんでした。");
       if (snapshot() !== before || state.project !== origin) return false;
@@ -7490,6 +7511,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         history = []; future = []; controlBefore = null;
       } else checkpoint();
       state = next;
+      if (typeof nativeProject !== "undefined" && nativeProject) nativeProject.changed();
       updateHistoryButtons();
       audioPanelSignature = "";
       renderScenes(); render();
@@ -7731,9 +7753,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     setAudioStatus(`「${track.title}」を準備しています…`, `Preparing “${track.title}”…`, "progress");
     syncAudioControls();
     try {
-      const blob = await audioStore.get(nextId);
+      const url = nativeProject ? audioStore.url(nextId) : null;
+      const blob = nativeProject ? null : (packageOfflineTracks.get(state.project.id)?.has(nextId) ? null : await audioStore.get(nextId));
       if (generation !== audioLoadGeneration || audioPlayback.trackId !== nextId) return false;
-      if (!blob) {
+      if (!url && !blob) {
         audioPlayback.loading = false;
         audioPlayback.missing = true;
         setAudioStatus("この端末に音源がありません。元ファイルを選び直してください。",
@@ -7741,8 +7764,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         syncAudioControls();
         return false;
       }
-      audioPlayback.objectUrl = window.URL.createObjectURL(blob);
-      els.musicAudio.src = audioPlayback.objectUrl;
+      if (!url) audioPlayback.objectUrl = window.URL.createObjectURL(blob);
+      els.musicAudio.src = url || audioPlayback.objectUrl;
       els.musicAudio.load();
       // loadedmetadataでreadyにし、必要ならそこで再生を試す。
       return true;
@@ -7867,6 +7890,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   async function audioStorageHasRoom(file) {
+    if (typeof nativeProject !== "undefined" && nativeProject) return file.size <= window.STAGE_PROJECT_BRIDGE.audioLimit;
     if (!navigator.storage || typeof navigator.storage.estimate !== "function") return true;
     try {
       const estimate = await navigator.storage.estimate();
@@ -7879,7 +7903,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   // A file may finish probing after the user has changed scene, show or assignment.
   // Capture the original target and allow only one audio file operation at a time.
+  let nativeAudioRestore = Promise.resolve();
   let audioFileOperationPending = false;
+  let audioFileOperationDone = Promise.resolve();
+  let finishAudioFileOperation = null;
 
   async function importAudioFile(file, options = {}) {
     if (audioFileOperationPending) {
@@ -7887,7 +7914,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         "An audio file is loading. Wait for it to finish before choosing another.", "info");
       return false;
     }
+    if (typeof nativeProject !== "undefined" && nativeProject?.readOnly) return false;
     audioFileOperationPending = true;
+    audioFileOperationDone = new Promise(resolve => { finishAudioFileOperation = resolve; });
     try {
     const originProject = state.project;
     const originSceneId = typeof options.sceneId === "string" ? options.sceneId : sc()?.id;
@@ -7934,13 +7963,15 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     }
     if (!targetAvailable()) return stopChangedTarget();
     const track = { id: rid("track"), title: audioFileTitle(file), durationSeconds: duration, gainDb: 0 };
-    setAudioStatus(`「${track.title}」を端末へ保存しています…`, `Saving “${track.title}” on this device…`, "progress");
+    if (typeof nativeProject !== "undefined" && nativeProject) setAudioStatus(tx("音源をプロジェクトへ保存しています…"), null, "progress");
+    else setAudioStatus(`「${track.title}」を端末へ保存しています…`, `Saving “${track.title}” on this device…`, "progress");
     try {
-      await audioStore.put(track.id, file);
+      await audioStore.put(track.id, file, {durationSeconds:duration});
       storagePressure?.saved("audio");
     } catch (error) {
       if (window.STAGE_STORAGE_PRESSURE?.isQuotaError(error)) storagePressure?.failed("audio");
-      setAudioStatus("音源を端末へ保存できませんでした。既存のショーは変更していません。",
+      if (typeof nativeProject !== "undefined" && nativeProject) setAudioStatus(tx("音源をプロジェクトへ保存できませんでした。ショーは変更していません。"), null, "error");
+      else setAudioStatus("音源を端末へ保存できませんでした。既存のショーは変更していません。",
         "The audio could not be stored. The show was not changed.", "error");
       return false;
     }
@@ -7971,10 +8002,20 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return true;
     } finally {
       audioFileOperationPending = false;
+      finishAudioFileOperation?.(); finishAudioFileOperation = null;
     }
   }
 
   async function relinkAudioFile(trackId, file) {
+    if (!nativeProject) return relinkAudioFileNow(trackId, file);
+    if (audioFileOperationPending || nativeProject?.readOnly) return false;
+    audioFileOperationPending = true;
+    audioFileOperationDone = new Promise(resolve => { finishAudioFileOperation = resolve; });
+    try { return await relinkAudioFileNow(trackId, file); }
+    finally { audioFileOperationPending = false; finishAudioFileOperation?.(); finishAudioFileOperation = null; }
+  }
+  async function relinkAudioFileNow(trackId, file) {
+    const originProject = state.project;
     const invalid = validAudioFile(file);
     if (invalid) { setAudioStatus(invalid, invalid, "error"); return false; }
     if (!STAGE_AUDIO_ID_RE.test(String(trackId || "")) || !audioStore) return false;
@@ -8008,8 +8049,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         return false;
       }
     }
+    if (nativeProject && state.project !== originProject) return false;
     try {
-      await audioStore.put(trackId, file);
+      await audioStore.put(trackId, file, {durationSeconds:duration});
+      if (nativeProject && state.project !== originProject) return false;
+      packageOfflineTracks.reconnect(state.project.id, trackId);
       storagePressure?.saved("audio");
       let track = existingTrack;
       if (!track) {
@@ -8025,7 +8069,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       window.dispatchEvent(new CustomEvent("stage-timeline-audio-change", {
         detail: { trackId, reconnected: true },
       }));
-      setAudioStatus(`「${track.title}」の音源をこの端末へ接続しました。`,
+      if (nativeProject) setAudioStatus(tx("音源をプロジェクトへ再接続しました。"), null, "done");
+      else setAudioStatus(`「${track.title}」の音源をこの端末へ接続しました。`,
         `Reconnected the audio for “${track.title}” on this device.`, "done");
       return true;
     } catch (error) {
@@ -8086,6 +8131,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const warning = sx(`「${track.title}」をこのショーから外します${used ? `。割り当て済みの${used}シーンからも外れます` : ""}。ページを閉じるまでは「一つ戻す」で戻せます。`, `Remove “${track.title}” from this show${used ? ` and ${used} assigned ${used === 1 ? "scene" : "scenes"}` : ""}? You can undo this until the page is closed.`);
     if (!await surfaceProjectConfirm(warning)) return;
     const affectsCurrent = sc().audioTrackId === trackId;
+    if (typeof nativeProject !== "undefined" && nativeProject) {
+      const origin = state.project;
+      if (!await audioStore.remove(trackId) || state.project !== origin) return;
+    }
     checkpoint();
     state.project.audioTracks = audioTracks().filter((candidate) => candidate.id !== trackId);
     (sceneAlternatives ? sceneAlternatives.allContents(state.project) : state.project.scenes).forEach((scene) => {
@@ -8520,7 +8569,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     for (const [songId, trackId] of Object.entries(section.formation.audioTrackBySong || {})) {
       const track = audioTrackById(trackId); if (!track) continue;
       try {
-        const blob = await audioStore.get(trackId);
+        const blob = packageOfflineTracks.get(state.project.id)?.has(trackId) ? null : await audioStore.get(trackId);
         if (blob) items.push({ songId, name: track.title, durationSeconds: track.durationSeconds, blob });
       } catch (_) { /* 再接続は既存の音源UIへ任せる */ }
     }
@@ -10384,37 +10433,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
    * 対象は「保存が無い初回」だけ（既定の見本に劇場が設定済みでも開く）。前回のショーを開けた（restored）とき、
    * 保存を読めなかった（alternativesStorageBlocked＝上書きしないため）ときは何もしない。
    * 棚にこの端末の複製があればそれを開く（利用者の編集を捨てない）。無ければ同梱版を組み立てる。 */
-  async function openRomeoJulietOnFirstRun() {
-    if (loaded.restored || alternativesStorageBlocked || STUDY_READ_ONLY) return false;
-    if (!state.project) return false;
-    if (openArgs.has("feature-test") && window.STAGE_BUNDLED_SHOWS?.isDevelopment()) return false;
-    const id = "romeo-juliet-rj-second-v1";
-    let next = null;
-    try {
-      const source = await resolveShowState(id);
-      if (!source) return false;
-      next = normalizeState(source);
-    } catch (error) {
-      // 初期見本の失敗を空ショーとして自動保存しない。
-      alternativesStorageBlocked = true;
-      bundledShowFailure(error);
-      return false;
-    }
-    if (!next || !next.project) return false;
-    backfillVenueSetupAppliedAt(next.project);
-    const first = (next.project.scenes || []).find((row) => row && row.kind === "scene");
-    if (first) { next.project.activeSceneId = first.id; next.cursorRowId = first.id; }
-    next.layout = state.layout;
-    state = next;
-    loaded.value = next;
-    selectedAudioTrackId = (state.project.audioTracks[0] && state.project.audioTracks[0].id) || null;
-    selectedId = null;
-    persistSoon();
-    // 劇場設定へ寄せていたゲートを外して舞台タブへ（gamma-workspace.js は先に読み込まれている）
-    window.GAMMA_WORKSPACE?.syncGate?.();
-    if (window.GAMMA_WORKSPACE?.mode?.() === "venue-setup") window.GAMMA_WORKSPACE.normal();
-    return true;
-  }
+  // P3: starting the app never acquires a library sample. Saved copies remain.
+  async function openRomeoJulietOnFirstRun() { return false; }
 
   function openRomeoJulietSampleShow() {
     return openShow("romeo-juliet-rj-second-v1");
@@ -10440,41 +10460,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return normalizeState({ project: prepared.project, projectFileEnvelope: prepared.fileEnvelope });
   }
 
-  /* 同梱ショーは配信ファイルを原本として一覧に見せる。起動のたびに大きな
-     プロジェクトを localStorage へ複製すると、利用者のショーを保存する余地を
-     奪う。端末に保存された同じ ID のショーは常にそちらを優先する。 */
-  let bundledShowsCache = null;
-  function availableShows() {
-    const shows = readShows();
-    if (shelfCorrupt) return shows;
-    const addBundled = (built) => {
-      const id = built?.project?.id;
-      if (!id || Object.prototype.hasOwnProperty.call(shows, id)) return;
-      Object.defineProperty(shows, id, {
-        value: { savedAt: "", state: built, bundled: true }, enumerable: true,
-        configurable: true, writable: true,
-      });
-    };
-    // 一覧では本文の生成・正規化・取得をしない。小さい初期見本は従来どおり。
-    if (!bundledShowsCache || bundledShowsCache.lang !== lang) {
-      const sample = buildSampleShow(), seam = buildSeamGardenSampleShow();
-      bundledShowsCache = {lang, shows:[
-        sample && drawSampleRoutes(sample), seam && drawSampleRoutes(seam),
-      ].filter(Boolean)};
-    }
-    bundledShowsCache.shows.forEach(addBundled);
-    const catalog = window.STAGE_BUNDLED_SHOWS?.index || [];
-    catalog.forEach(summary => {
-      if (!window.STAGE_BUNDLED_SHOWS.visible(summary)) return;
-      if (!Object.prototype.hasOwnProperty.call(shows, summary.id)) {
-        shows[summary.id] = { summary, bundled: true };
-      }
-    });
-    // 個人用ローダーの既存の入口も残す。同梱本文はここで再構築しない。
-    (window.SHOSAI_STAGE_LOCAL_SHOWS || []).filter(doc => !catalog.some(e => e.id === doc?.project?.id))
-      .map(buildLocalShow).forEach(addBundled);
-    return shows;
-  }
+  // P3: only acquired/saved shows belong to the shelf. Library content is opt-in.
+  function availableShows() { return readShows(); }
 
   /* ★2026-09-23 本人指摘: 試験場ショーを v2→v3 へ作り直したら、まだ一度も開いていない
    * 端末には古い v2 が棚に残ったまま（ローダーは v3 しか積まないので、v2 は二度と
@@ -11317,6 +11304,15 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let autosaveRequested = false;
   let lastPersistedSnapshot = null;
   async function flushAutosave() {
+    if (typeof nativeProject !== "undefined" && nativeProject) {
+      autosaveRequested = false;
+      try {
+        await nativeAudioRestore;
+        nativeProject.changed();
+        setSaveStatus(tx("プロジェクトへ変更を送りました。"), "saved");
+      } catch (_) { setSaveStatus(tx("プロジェクトへ変更を送れませんでした。もう一度保存してください。"), "warn"); }
+      return;
+    }
     if (autosaveInFlight) return autosaveInFlight;
     autosaveInFlight = (async () => {
       while (autosaveRequested) {
@@ -11373,12 +11369,21 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     syncRunOfShow();
     runOfShowRevision++;
     window.dispatchEvent(new Event("stage-run-of-show-change"));
-    if (STUDY_READ_ONLY) return;
+    if (STUDY_READ_ONLY || nativeProject?.readOnly) return;
     if (resetInProgress) return;
     if (alternativesStorageBlocked) {
       setSaveStatus("保存データを読み取れないため自動保存を停止しています。元のデータは保持しています。", "warn"); return;
     }
     if (!options.deferTimecodeAnchors) window.STAGE_TIME_DOMAIN?.refreshCueAnchors(state.project);
+    if (typeof nativeProject !== "undefined" && nativeProject) {
+      nativeAudioRestore = nativeProject.store.restore(audioTracks().map(track => track.id)).then(count => {
+        if (count) {
+          prepareAudioForCurrentScene({force:true});
+          window.dispatchEvent(new Event("stage-timeline-audio-change"));
+        }
+      });
+      nativeAudioRestore.catch(() => setSaveStatus(tx("プロジェクトへ変更を送れませんでした。もう一度保存してください。"), "warn"));
+    }
     clearTimeout(saveTimer);
     autosaveRequested = true;
     setSaveStatus(tx("変更を保存しています…") || "Saving…", "saving");
@@ -21073,7 +21078,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
     const fileInput = document.createElement("input");
     fileInput.type = "file";
-    fileInput.accept = ".stagesketch,.json,application/json";
+    fileInput.accept = ".stagesketch,.json,.stageproj.zip,.zip,application/json,application/zip";
     fileInput.className = "stage-phone-file-input";
     fileInput.hidden = true;
     fileInput.setAttribute("aria-hidden", "true");
@@ -24109,6 +24114,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     checkpoint();
     state = next;
     shelfFailed = false;
+    if (nativeProject) nativeProject.changed();
     renderScenes();
     updateInspector();
     render();
@@ -24382,6 +24388,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      一度の二鍵トランザクションで入れ替える。次のショーは棚と現行キーへ
      二重保存しないので、大きなショーでもSafariの容量を無駄にしない。 */
   async function prepareLoadedState(next) {
+    // In-document replacements (including first venue setup) are sent by
+    // persistSoon after installation. Only the shell may switch documents;
+    // neither path may commit to the browser ProjectStore in native mode.
+    if (typeof nativeProject !== "undefined" && nativeProject) return next.project.id === state.project.id;
     if (resetInProgress) return false;
     showSaveTransitionsPending++;
     try {
@@ -24433,8 +24443,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     selectedId = null;
     history.length = 0;
     future.length = 0;
-    // prepareLoadedState で即時に現行キーへ保存済み。
-    // 180ms後の自動保存を待つ間に画面を閉じても、一覧から開き直せる。
+    // Browser: prepareLoadedState already saved the current key. Native:
+    // persistSoon below sends this replacement through the project bridge.
     renderVenueControls();
     renderScenes();
     renderCast();
@@ -24457,7 +24467,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   async function prepareBundledAudio(project) {
-    if (!editionAllows("audio") || STUDY_READ_ONLY || guestSessionActive()) return;
+    if (nativeProject || !editionAllows("audio") || STUDY_READ_ONLY || guestSessionActive() || packageOfflineTracks.has(project.id)) return;
     try {
       await window.STAGE_BUNDLED_SHOWS?.ensureAudio(project.id,
         (project.audioTracks || []).map(track => track.id));
@@ -24472,6 +24482,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   function syncNewShowReturn() {
     if (!els.newShowReturnBar) return;
+    if (typeof nativeProject !== "undefined" && nativeProject) { els.newShowReturnBar.hidden = true; return; }
     const pending = Boolean(state.project?.venueSetupPending);
     const previousId = pending ? previousShowForNewShow() : null;
     els.newShowReturnBar.hidden = !pending;
@@ -24551,6 +24562,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     input.addEventListener('change', () => { name.textContent = input.files?.[0]?.name || ''; name.title = name.textContent; }, true);
   });
   async function newShow() {
+    if (typeof nativeProject !== "undefined" && nativeProject) { nativeProject.request("requestNew"); return; }
     const basis=state.project.id;
     if (!await surfaceConfirm("新しいショーを作ります。いま開いているショーは一覧に残ります。", (dialog, ok) => { ok.textContent = tx("作る"); }) || state.project.id !== basis) return;
     const previousId = state.project.id;
@@ -24601,7 +24613,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     bundledDownload = null;
     const request = ++bundledOpenRequest;
     const shows = availableShows();
-    const entry = shows[id];
+    // Explicit direct links can still acquire the local test fixture.
+    const summary = window.STAGE_BUNDLED_SHOWS?.index.find(item => item.id === id);
+    const entry = shows[id] || (summary ? {summary, bundled:true} : null);
     if (!entry) return;
     if (id === state.project.id) {
       const project = state.project;
@@ -24720,13 +24734,14 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function renderShows() {
+    if (typeof nativeProject !== "undefined" && nativeProject) return;
     if (!els.showList) return;
     const shows = availableShows();
     // Rendering the shelf must not write either durable copy.
     if (!shelfCorrupt) shows[state.project.id] = { savedAt: state.lastSavedAt || "", state };
     const rows = Object.keys(shows)
       .map((id) => showSummary(shows[id]))
-      .filter(info => info && info.id !== "romeo-juliet-gamma-cued-2026-09-21")
+      .filter(info => info)
       .sort((a, b) => (b.savedAt || "").localeCompare(a.savedAt || ""));
     els.showList.innerHTML = "";
     if (shelfCorrupt) {
@@ -25034,6 +25049,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function openShows() {
+    if (typeof nativeProject !== "undefined" && nativeProject) { nativeProject.request("requestOpen"); return; }
     if (!els.showsModal) return;
     renderShows();
     const saveError = document.getElementById("stage-show-save-error");
@@ -25041,6 +25057,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     els.showsModal.hidden = false;
     els.showsBackdrop.hidden = false;
   }
+
+  window.STAGE_PROJECT_LIBRARY?.configure({
+    importPackage: read => importProjectPackage(read, {librarySample:true}), closeShows,
+    isNative: () => Boolean(nativeProject), version:GAMMA_APP_VERSION.replace(/^v/, ""),
+  });
+  document.getElementById("stage-shows-samples-open")?.addEventListener("click", () => window.STAGE_PROJECT_LIBRARY?.open("samples"));
 
   document.getElementById("stage-show-save-export")?.addEventListener("click", () => exportProject());
 
@@ -32225,6 +32247,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   }
 
   async function resetToFirstRun() {
+    if (typeof nativeProject !== "undefined" && nativeProject) return;
     if (resetInProgress || resetDialogStep !== 2) return;
     resetInProgress = true;
     els.resetConfirm.disabled = true;
@@ -34235,6 +34258,7 @@ ${propsPlotHtml}
     options = {},
   ) {
     try {
+      if (options.projectPackage) return await exportProjectPackage(includeVenue, filename);
       /* かつてこのローカル変数を document と名付けていて、グローバルの document を
          覆い隠していた。document.createElement が落ち、書き出しが無反応になっていた。 */
       const exportDoc = makeProjectExportDocument(state.project, includeVenue, state.projectFileEnvelope);
@@ -34537,13 +34561,22 @@ ${propsPlotHtml}
       .some(dialog => dialog.getClientRects().length > 0
         && !(currentWorkspaceMode() === "venue-setup" && dialog.id === "stage-venue-editor-modal"));
     if (STUDY_READ_ONLY || guestSessionActive() || presenting || blockingDialog) return;
+    const entries = [...(event.dataTransfer.items || [])].filter(i => i.kind === "file").map(i => i.webkitGetAsEntry?.()).filter(Boolean);
+    if (entries.some(e => e.isDirectory)) {
+      if (nativeProject) { nativeProject.request("requestOpen"); return; }
+      if (entries.length !== 1 || !entries[0].isDirectory || !/\.stageproj$/i.test(entries[0].name)) {
+        importFailureNotice(tx(".stageproj フォルダを1つ置いてください。")); return;
+      }
+      await importProjectPackage(async () => window.STAGE_PROJECT_FILE.readFiles(new Map(await window.STAGE_PROJECT_FILE.walkEntry(entries[0]))));
+      return;
+    }
     const files = [...event.dataTransfer.files];
     if (files.length !== 1) { announce(tx("ファイルは1つずつ置いてください。")); return; }
     if (!["normal", "venue-setup"].includes(currentWorkspaceMode())) {
       announce(tx("ファイルを読み込むには舞台か劇場設定を開いてください。")); return;
     }
     const file = files[0];
-    if (/\.(json|stagesketch)$/i.test(file.name)) { importProject(file); return; }
+    if (/\.(json|stagesketch|zip)$/i.test(file.name)) { importProject(file); return; }
     if (!file.type.startsWith("image/")) { announce(tx("ショーのJSONか画像ファイルを置いてください。")); return; }
     const project = state.project, sceneId = sc().id;
     let destination = currentWorkspaceMode() === "venue-setup" ? "plan" : "background";
@@ -34570,8 +34603,97 @@ ${propsPlotHtml}
     }
   });
 
+  function projectPackageError(error) {
+    const messages = {
+      "future-version": "新しい版の舞台スケッチで作られています。アプリを更新してください。",
+      "invalid-manifest": "舞台スケッチのプロジェクトではありません。project.json を確認してください。",
+      "invalid-show": "show.json をJSONとして読めません。現在のショーは変更していません。",
+      "invalid-path": "プロジェクト内のファイルの場所が不正です。読み込みを止めました。",
+      "deflate-unavailable": "このブラウザでは圧縮されたzipを読めません。フォルダか無圧縮のzipを選んでください。",
+      "hash-unavailable": "ファイルの一致を確認できません。HTTPSかlocalhostで開き直してください。",
+      "package-too-large": "プロジェクトのファイルが大きすぎます。読み込みを止めました。",
+    };
+    return tx(messages[error?.code] || "プロジェクトのzipを読めません。ファイルを確認してください。");
+  }
+
+  function packageWarningLines(data, result = data) {
+    const lines = [];
+    if (data.warnings.includes("show-hash-mismatch")) lines.push(tx("show.json の一致を確認できませんでした。JSONとして読める内容を読み込みます。"));
+    if (result.offline?.length) lines.push(tx("次の音源はオフライン（未接続）です。再接続で元ファイルを選び直してください。") + "\n" + result.offline.map(a => a.originalName || a.trackId).join(" ／ "));
+    if (result.conflicts?.length) lines.push(tx("次の音源は、この端末に違う中身があるため上書きしませんでした。置き換えるには音源の再接続で選び直してください。") + "\n" + result.conflicts.map(a => a.originalName || a.trackId).join(" ／ "));
+    return lines;
+  }
+  function appendPackageWarnings(data) {
+    const section = document.createElement("section"); section.id = "stage-project-package-warnings";
+    section.setAttribute("role", "status");
+    for (const text of packageWarningLines(data)) { const p = document.createElement("p"); p.textContent = text; section.append(p); }
+    els.importSummary?.append(section);
+  }
+  async function importProjectPackage(read, {librarySample=false} = {}) {
+    if (importingProjectPackage || committingProjectImport || STUDY_READ_ONLY || guestSessionActive()) return;
+    importingProjectPackage = true;
+    try {
+      const data = await read();
+      window.STAGE_DATA_SAFETY.assertSafeJson(data.show);
+      // Preview is read-only. No audio is added until the user chooses to open.
+      data.conflicts = [];
+      for (const a of data.audio) {
+        const b = await audioStore?.get(a.trackId);
+        if (b && await window.STAGE_PROJECT_FILE.hash(b) !== a.sha256.toLowerCase()) data.conflicts.push(a);
+      }
+      await importProjectText(data.text, {name:"show.json"}, data, false, librarySample);
+      if (librarySample && pendingProjectPackage === data) await confirmImport(false);
+    } catch (error) { importFailureNotice(projectPackageError(error)); clearTimeout(importFailureNotice._t); }
+    finally { importingProjectPackage = false; }
+  }
+  async function installProjectPackage(next, data) {
+    if (!data) return null;
+    const result = await window.STAGE_PROJECT_FILE.installAudio(data, audioStore);
+    result.offlineStatusSaved = packageOfflineTracks.set(next.project.id, result.offline.map(a => a.trackId));
+    return result;
+  }
+  function showPackageOutcome(data, result) {
+    if (!data) return;
+    const lines = packageWarningLines(data, result);
+    if (result?.offlineStatusSaved === false) lines.push(tx("音源の未接続状態を保存できませんでした。再読み込み前に保存領域を確認してください。"));
+    if (lines.length) { importFailureNotice(lines.join("\n\n")); clearTimeout(importFailureNotice._t); }
+  }
+  async function exportProjectPackage(includeVenue, filename) {
+    try {
+      const exported = makeProjectExportDocument(state.project, includeVenue, state.projectFileEnvelope);
+      const exportProjectId = state.project.id;
+      const audio = [];
+      for (const track of exported.project.audioTracks || []) {
+        const blob = await audioStore?.get(track.id);
+        if (blob && !packageOfflineTracks.get(exportProjectId)?.has(track.id)) audio.push({trackId:track.id,blob,originalName:blob.name || track.originalName || "",durationSeconds:track.durationSeconds});
+      }
+      const blob = await window.STAGE_PROJECT_FILE.pack(JSON.stringify(exported,null,2), audio,
+        {folder:filename.slice(0,-4),version:GAMMA_APP_VERSION.replace(/^v/, "")});
+      const saved = await downloadBlob(blob,filename);
+      if (!saved) return false;
+      if (state.project.id === exportProjectId) {
+        applyProjectExportOutcome(state, true, nowIso());
+        latestProjectExportComparable = exportedProjectComparisonJson(exported.project);
+        syncSaveStamps(); persistSoon(); updateBackupNote();
+      }
+      announce(tx("音源入りのプロジェクトを書き出しました。"));
+      return true;
+    } catch (error) { exportFailureNotice(projectPackageError(error)); }
+  }
+  document.getElementById("stage-export-project-file")?.addEventListener("click", () => {
+    closeExport();
+    openVenueExportConfirmOrWrite(projectExportFilename(state.project, "ショー", "stageproj.zip"), {projectPackage:true});
+  });
+  document.getElementById("stage-import-project-folder-open")?.addEventListener("click", () => nativeProject ? nativeProject.request("requestOpen") : document.getElementById("stage-import-project-folder")?.click());
+  document.getElementById("stage-import-project-folder")?.addEventListener("change", event => {
+    const files = [...event.target.files]; event.target.value = "";
+    if (files.length) importProjectPackage(() => window.STAGE_PROJECT_FILE.readFiles(files));
+  });
+
   function importProject(file) {
+    if (typeof nativeProject !== "undefined" && nativeProject) { nativeProject.request("requestOpen"); return; }
     if (!file) return;
+    if (/\.zip$/i.test(file.name)) return importProjectPackage(() => window.STAGE_PROJECT_FILE.unpack(file));
     try { window.STAGE_DATA_SAFETY.assertJsonFileSize(file); }
     catch (error) { importFailureNotice(error.message); return; }
     const reader = new FileReader();
@@ -34579,8 +34701,11 @@ ${propsPlotHtml}
       console.error("stage import: ファイルを読めませんでした", reader.error);
       importFailureNotice("ファイルを読めませんでした。iCloudの場合は一度ダウンロードしてから選んでください。");
     };
-    reader.onload = async () => {
-      const text = String(reader.result);
+    reader.onload = () => importProjectText(String(reader.result), file);
+    reader.readAsText(file);
+  }
+
+  async function importProjectText(text, file, packageData = null, nativeOpen = false, librarySample = false) {
       let parsed = null;
       try {
         parsed = window.STAGE_DATA_SAFETY.parseJson(text);
@@ -34682,6 +34807,7 @@ ${propsPlotHtml}
         projectFileEnvelope: prepared.fileEnvelope,
         mcpRevision: appliedRevision,
       });
+      if (nativeOpen) { installNativeProjectState(next); return true; }
       // スマホは読み込んだデータを閲覧するだけなので、編集用の比較モーダルを挟まない。
       if (phoneViewerActive) {
         if (lightingMigration) {
@@ -34693,23 +34819,30 @@ ${propsPlotHtml}
         const message = lightingMigration
           ? `「${next.project.title}」の旧照明を変換したコピーを開き、ショー一覧へ保存しました。`
           : `「${next.project.title}」を読み込み、ショー一覧へ保存しました。`;
+        const packageResult = await installProjectPackage(next, packageData);
         if (!await applyLoadedState(next, message)) {
           if (phoneUi) phoneUi.singleView = previousSingleView;
           return;
         }
+        showPackageOutcome(packageData, packageResult);
         return;
       }
       pendingImport = next;
+      pendingProjectPackage = packageData;
       pendingImportLightingMigration = lightingMigration;
       pendingImportMatchesLatestExport = matchesLatestProjectExport;
+      if (librarySample) return; // Explicit Get and open uses P1 commit/protection without a second decision.
       renderImportSummary(next, editSummary, lightingMigration);
+      if (packageData) appendPackageWarnings(packageData);
       if (els.importModal) els.importModal.hidden = false;
       if (els.importBackdrop) els.importBackdrop.hidden = false;
-    };
-    reader.readAsText(file);
   }
 
   /* 読み込み候補。窓を閉じたら捨てる */
+  let pendingProjectPackage = null;
+  let importingProjectPackage = false;
+  let committingProjectImport = false;
+  const packageOfflineTracks = window.STAGE_PROJECT_FILE?.offlineRegistry(localStorage) || {get:() => null,has:() => false,reconnect:() => true};
   let pendingImport = null;
   let pendingImportLightingMigration = null;
   let pendingImportMatchesLatestExport = false;
@@ -34949,9 +35082,11 @@ ${propsPlotHtml}
     }};
   })();
 
-  function closeImportPreview() {
+  function closeImportPreview(force = false) {
+    if (committingProjectImport && force !== true) return;
     liteLegacyShelf.cancel();
     pendingImport = null;
+    pendingProjectPackage = null;
     pendingImportLightingMigration = null;
     pendingImportMatchesLatestExport = false;
     if (els.importReplace) {
@@ -34966,9 +35101,16 @@ ${propsPlotHtml}
   }
 
   async function confirmImport(asNew) {
+    if (committingProjectImport) return;
+    committingProjectImport = true;
+    try { return await commitImport(asNew); }
+    finally { committingProjectImport = false; }
+  }
+  async function commitImport(asNew) {
     const next = pendingImport;
     if (!next) return;
     const sourceId = next.project.id;
+    const packageData = pendingProjectPackage;
     if (pendingImportLightingMigration && !asNew) {
       announce("旧ベータ照明の変換結果は、新しいショーとしてだけ開けます。");
       return;
@@ -34978,9 +35120,11 @@ ${propsPlotHtml}
       const candidate = JSON.parse(JSON.stringify(next));
       candidate.project.id = rid("show");
       candidate.mcpRevision = null;
+      const packageResult = await installProjectPackage(candidate, packageData);
       if (!await applyLoadedState(candidate, `「${candidate.project.title}」を別のショーとして開き、ショー一覧へ保存しました。`)) return;
       liteLegacyShelf.complete(sourceId);
-      closeImportPreview();
+      closeImportPreview(true);
+      showPackageOutcome(packageData, packageResult);
       return;
     }
     // 「置き換える」場合も、直前に開いていたショーを先に棚へ残す。
@@ -34990,9 +35134,10 @@ ${propsPlotHtml}
         && !(pendingImportMatchesLatestExport && next.project.id === state.project.id)) {
       reserveImportedShowId(next);
     }
+    const packageResult = await installProjectPackage(next, packageData);
     if (!await prepareLoadedState(next)) return;
     liteLegacyShelf.complete(sourceId);
-    closeImportPreview();
+    closeImportPreview(true);
     checkpoint();
     resetStageAskDraft({ clearInput: true, invalidate: true });
     clearAudioEngine();
@@ -35008,6 +35153,7 @@ ${propsPlotHtml}
     renderShows();
     persistSoon();
     announce(`${state.project.title}（${state.project.versionLabel}）を読み込み、ショー一覧へ保存しました。`);
+    showPackageOutcome(packageData, packageResult);
   }
 
   /* ---------- Macアプリ「AI指示」 ----------
@@ -42712,6 +42858,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     // from their Japanese templates whenever the display language changes.
     syncShortcutDom();
     window.GAMMA_WORKSPACE?.refreshLabels?.();
+    if (typeof nativeProject !== "undefined" && nativeProject) syncNativeProjectEntries();
     if (els.lang) {
       els.lang.value = lang;
     }
@@ -43092,6 +43239,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   /* 保存に近い操作として⌘S／Ctrl+Sで名前確認を開く。
    * ショー名を入力中でも使えるが、すでに別の窓を開いている間は重ねない。 */
   document.addEventListener("keydown", (event) => {
+    if (typeof nativeProject !== "undefined" && nativeProject) return; // AppKit owns Command-S.
     if (event.defaultPrevented || !isProjectExportShortcut(event)) return;
     const view = document.getElementById("view-stage");
     if (STUDY_READ_ONLY || !view || view.hidden) return;
@@ -44873,7 +45021,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if (STUDY_READ_ONLY) return;
     // 容量不足で逆順の入れ替え中に中断した場合、最初の保存・見本の更新より
     // 前に元の現行ショーを戻す。復旧不能なら以後の自動書き込みを止める。
-    const pendingSwitch = await ProjectStore.recoverPendingSwitch();
+    const pendingSwitch = nativeProject ? {ok:true} : await ProjectStore.recoverPendingSwitch();
     const pendingBlocked = !pendingSwitch.ok;
     if (pendingBlocked) alternativesStorageBlocked = true;
     if (pendingSwitch.restoredCurrent) {
@@ -44885,10 +45033,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     }
     // 同梱ショーは availableShows が配信ファイルから表示する。起動時に棚へ
     // 複製しないので、容量不足でも見本の一覧表示を妨げない。
-    if (!pendingBlocked) {
+    if (!nativeProject && !pendingBlocked) {
       await openRomeoJulietOnFirstRun();
     }
-    if (!pendingBlocked && !alternativesStorageBlocked) {
+    if (!nativeProject && !pendingBlocked && !alternativesStorageBlocked) {
       backfillOpenRomeoJulietVoxOffsets();
       backfillOpenBundledVersionNote();
       backfillBundledVersionNoteShelf();
@@ -44896,7 +45044,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       backfillOpenBundledSampleTimings();
     }
     try {
-      if (projectRecoveryNeeded) {
+      if (!nativeProject && projectRecoveryNeeded) {
         const recovery = await ProjectStore.latestRecovery();
         let resetAt = "";
         try { resetAt = localStorage.getItem(PROJECT_BACKUP_RESET_KEY) || ""; } catch (_) {}
@@ -44999,16 +45147,16 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
           setSaveStatus("旧シーン構造の控えを保存できなかったため、変換後の自動保存を止めました。ファイルへ書き出してから、もう一度開いてください。", "warn");
         }
       }
-      const shelfMigration = (pendingBlocked || alternativesStorageBlocked) ? { migrated: 0, safe: true } : migrateStoredShowShelf();
+      const shelfMigration = (nativeProject || pendingBlocked || alternativesStorageBlocked) ? { migrated: 0, safe: true } : migrateStoredShowShelf();
       if (!shelfMigration.safe) {
         setSaveStatus("ショー一覧の旧シーン構造を退避できなかったため、一覧全体の変換保存を止めました。ファイルへ書き出すか容量を空けてから、もう一度開いてください。", "warn");
       } else if (shelfMigration.migrated) {
         announce(`${shelfMigration.migrated}件のショーを、セクションの中にシーンを置く形式へ更新しました。`);
       }
-      // 同梱の見本は availableShows から表示する。棚の保存に失敗しても隠れない。
+      // P3: the shelf displays acquired/saved shows only; samples have a separate library.
       syncNewShowReturn();
       // A direct local verification link always opens the bundled test show.
-      if (openArgs.has("feature-test") && window.STAGE_BUNDLED_SHOWS?.isDevelopment()) {
+      if (!nativeProject && openArgs.has("feature-test") && window.STAGE_BUNDLED_SHOWS?.isDevelopment()) {
         const testShow = window.STAGE_BUNDLED_SHOWS?.index.find(item => item.type === "fixture")
           || (window.SHOSAI_STAGE_LOCAL_SHOWS || []).find(doc => /^gamma-feature-test-v/.test(doc.project?.id || ""))?.project;
         if (testShow) openShow(testShow.id).then((opened) => {
@@ -45019,19 +45167,28 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
           }
         });
       }
-      consumeCastHandoff();
+      if (!nativeProject) consumeCastHandoff();
       // ?sample を付けて開くと、見本から始まる（人へ渡すリンク用）
-      if (openArgs.has("sample")) openSampleShow();
+      if (!nativeProject && openArgs.has("sample")) openSampleShow();
       // ?seam-sample は8セクション／32シーンの「継ぎ目の庭」を直接開く。
-      if (openArgs.has("seam-sample")) openSeamGardenSampleShow();
+      if (!nativeProject && openArgs.has("seam-sample")) openSeamGardenSampleShow();
       // ?romeo-juliet-sample は同梱済みの台本・キュー見本を直接開く。
-      if (openArgs.has("romeo-juliet-sample")) openRomeoJulietSampleShow();
+      if (!nativeProject && openArgs.has("romeo-juliet-sample")) openRomeoJulietSampleShow();
 
       try { await largeProjectStorage?.flush(); } catch (error) { alternativesStorageBlocked = true; reportProjectStoreFailure({error:{code:error.code || "WRITE_FAILED"}}); }
       // 初回描画と保存の初期化を終えてから。失敗は黙って次の起動へ回す。
-      setTimeout(() => { deliverBundledSampleBackfills(pendingBlocked).catch(() => {}); }, 1500);
-      storageBand = createStorageBand();
-      const launchWarningShown = openLaunchBackupWarning();
+      if (!nativeProject) setTimeout(() => { deliverBundledSampleBackfills(pendingBlocked).catch(() => {}); }, 1500);
+      if (!nativeProject) storageBand = createStorageBand();
+      if (typeof nativeProject !== "undefined" && nativeProject) {
+        await nativeProject.bind({
+          open: openNativeProject,
+          snapshot: nativeProjectSnapshot,
+          settle: settleNativeProject,
+          error: () => importFailureNotice(tx("プロジェクトを開くか保存する処理を完了できませんでした。元ファイルは保持しています。")),
+        }, nativeInitialOpen);
+        syncNativeProjectEntries();
+      }
+      const launchWarningShown = nativeProject ? false : openLaunchBackupWarning();
       if (!launchWarningShown) {
         if (document.readyState === "loading") {
           document.addEventListener("DOMContentLoaded", syncStageTourContext);
@@ -45044,6 +45201,70 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
         stageSketchRoot.classList.remove("stage-whoami-pending");
         stageSketchRoot.removeAttribute("aria-busy");
       }
+    }
+  }
+
+  function nativeProjectSnapshot() {
+    syncRunOfShow();
+    window.STAGE_TIME_DOMAIN?.refreshCueAnchors(state.project);
+    const doc = makeProjectExportDocument(state.project, true, state.projectFileEnvelope);
+    refreshSectionDurationCache(doc.project);
+    return {show:JSON.stringify(doc), title:state.project.title};
+  }
+  async function settleNativeProject() {
+    // Include the completed assignment if save/close arrives during probing or PUT.
+    await audioFileOperationDone;
+    await musicCuePendingDone;
+    await nativeAudioRestore;
+    if (controlBefore !== null) finishControlEdit();
+    clearTimeout(saveTimer); autosaveRequested = false;
+  }
+  function installNativeProjectState(next) {
+    clearTimeout(saveTimer); autosaveRequested = false;
+    stopSceneAnim(); stopSpinRun(); clearAudioEngine();
+    resetStageAskDraft({clearInput:true, invalidate:true});
+    state = next; history = []; future = []; controlBefore = null;
+    selectedId = null; selectedIds.clear(); selectedNoteId = null; selectedTextId = null;
+    selectedAudioTrackId = state.project.audioTracks[0]?.id || null;
+    audioPanelSignature = ""; lastPersistedSnapshot = null;
+    renderVenueControls(); renderScenes(); renderCast(); renderSets(); renderLights(); renderRigs();
+    syncInputs(); applyLayout(); updateInspector(); updateHistoryButtons(); render();
+    window.GAMMA_WORKSPACE?.syncGate?.();
+    window.dispatchEvent(new Event("stage-run-of-show-change"));
+    window.dispatchEvent(new Event("stage-timeline-audio-change"));
+    window.dispatchEvent(new Event("stage-timeline-cues-change"));
+  }
+  async function openNativeProject(payload) {
+    let ok;
+    if (payload.show === "") {
+      const fresh = markVenueSetupPending(baseState(false));
+      fresh.project.title = untitledShow(); fresh.layout = state.layout;
+      installNativeProjectState(normalizeState(fresh)); ok = true;
+    } else {
+      ok = await importProjectText(payload.show, {name:"show.json", size:payload.show.length}, null, true);
+    }
+    if (!ok) return false;
+    if (stageSketchRoot) stageSketchRoot.inert = payload.readOnly;
+    setSaveStatus(tx(payload.readOnly ? "読み取り専用のプロジェクトです。" : "プロジェクトを開きました。変更はプロジェクトへ自動保存します。"));
+    syncNativeProjectEntries();
+    if (state.project.venueSetupPending) window.GAMMA_WORKSPACE?.select("venue-setup");
+    else window.GAMMA_WORKSPACE?.normal();
+    return true;
+  }
+  function syncNativeProjectEntries() {
+    if (!nativeProject) return;
+    if (els.showsOpen) { els.showsOpen.textContent = tx("プロジェクトを開く…"); els.showsOpen.removeAttribute("aria-controls"); }
+    if (els.showsModal) els.showsModal.hidden = true;
+    if (els.showsBackdrop) els.showsBackdrop.hidden = true;
+    for (const id of ["stage-version-copy", "stage-import-project-folder-open", "stage-new-show-return-bar", "stage-reset-all", "stage-storage-health", "stage-save-recovery-link", "stage-show-save-recovery", "stage-storage-pressure-repair"]) {
+      const element = document.getElementById(id); if (element) element.hidden = true;
+    }
+    els.exportJson?.removeAttribute("aria-keyshortcuts");
+    const note = document.querySelector(".stage-project-import-note"); if (note) note.hidden = true;
+    const picker = els.importJson;
+    if (picker && !picker.dataset.nativeProject) {
+      picker.dataset.nativeProject = "true";
+      picker.closest("label")?.addEventListener("click", event => { event.preventDefault(); nativeProject.request("requestOpen"); });
     }
   }
 
@@ -45308,6 +45529,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     reportProjectStoreFailure({error:{code:event.detail?.name === "QuotaExceededError" || event.detail?.name === "NS_ERROR_DOM_QUOTA_REACHED" ? "QUOTA_EXCEEDED" : (event.detail?.code || "WRITE_FAILED")}});
   });
   window.addEventListener("storage", event => {
+    if (typeof nativeProject !== "undefined" && nativeProject) return;
     if ([BETA_STORAGE_KEY, SHOWS_KEY].some(key => event.key === "gamma:scene-alternatives-v1:" + key)) gammaStorageChanged = true;
     const shelfKey = "gamma:scene-alternatives-v1:" + SHOWS_KEY;
     if (event.key !== shelfKey || !event.oldValue || !event.newValue || !window.STAGE_STORAGE_RECOVERY) return;
@@ -45588,6 +45810,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
         serializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "gamma-lighting" });
       if (!result.ok) throw new Error(reportProjectStoreFailure(result));
       clearTimeout(saveTimer); checkpoint(); state = next;
+      if (nativeProject) nativeProject.changed();
       render(true);
       setSaveStatus("照明デザインをショーへ保存しました。");
       window.SHOSAI_STAGE_SESSION_HOOKS?.onLocalChange?.();
@@ -45888,7 +46111,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     },
     hasTimelineAudioFile(trackId) {
       const normalizedTrackId = normalizeAudioTrackId("scene", trackId);
-      if (!normalizedTrackId || !audioStore || typeof audioStore.get !== "function") {
+      if (!normalizedTrackId || packageOfflineTracks.get(state.project.id)?.has(normalizedTrackId) || !audioStore || typeof audioStore.get !== "function") {
         return Promise.resolve(false);
       }
       return audioStore.get(normalizedTrackId)
@@ -45909,7 +46132,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     },
     getTimelineAudioBlob(trackId) {
       const normalizedTrackId = normalizeAudioTrackId("scene", trackId);
-      if (!normalizedTrackId || !audioStore || typeof audioStore.get !== "function") {
+      if (!normalizedTrackId || packageOfflineTracks.get(state.project.id)?.has(normalizedTrackId) || !audioStore || typeof audioStore.get !== "function") {
         return Promise.resolve(null);
       }
       return audioStore.get(normalizedTrackId)

@@ -1,0 +1,151 @@
+{
+  "format": "stagesketch-sample-library",
+  "version": 1,
+  "libraryVersion": "2026-10-14",
+  "samples": [
+    {
+      "id": "feature-test",
+      "projectId": "gamma-feature-test-v47-retired-pose",
+      "name": {
+        "ja": "テスト: 全機能の試験場",
+        "en": "Test: all-feature playground",
+        "zh-Hans": "测试：全功能试验场",
+        "zh-Hant": "測試：全功能試驗場",
+        "ko": "테스트: 모든 기능 시험장"
+      },
+      "description": {
+        "ja": "全機能の操作・保存を確かめる48シーン。音源B付き。",
+        "en": "48 scenes for checking features and saving, with audio B.",
+        "zh-Hans": "用于检查功能与保存的48个场景，含音源B。",
+        "zh-Hant": "用於檢查功能與儲存的48個場景，含音源B。",
+        "ko": "기능과 저장을 확인하는 48개 장면. 음원 B 포함."
+      },
+      "bytes": 966302,
+      "version": "v2",
+      "libraryVersion": "2026-10-14",
+      "hasAudio": true,
+      "file": "feature-test.stageproj.zip",
+      "sha256": "5c2765221de25a261ff2948a33af226357b7879f0aa4dfa8f76de6fa610a03c1"
+    },
+    {
+      "id": "feature-test-2",
+      "projectId": "gamma-feature-test-2-v1",
+      "name": {
+        "ja": "テスト: 全機能の試験場 2",
+        "en": "Test: all-feature playground 2",
+        "zh-Hans": "测试：全功能试验场 2",
+        "zh-Hant": "測試：全功能試驗場 2",
+        "ko": "테스트: 모든 기능 시험장 2"
+      },
+      "description": {
+        "ja": "追加の機能を確かめる50シーン。",
+        "en": "50 scenes for checking additional features.",
+        "zh-Hans": "用于检查新增功能的50个场景。",
+        "zh-Hant": "用於檢查新增功能的50個場景。",
+        "ko": "추가 기능을 확인하는 50개 장면."
+      },
+      "bytes": 342396,
+      "version": "v1",
+      "libraryVersion": "2026-10-14",
+      "hasAudio": false,
+      "file": "feature-test-2.stageproj.zip",
+      "sha256": "18ff09f8a36ba8b2e9e24e5a5268415bd0e5859923592628f89bf99484858a0b"
+    },
+    {
+      "id": "eight-circus",
+      "projectId": "sample-eight-circus-v1",
+      "name": {
+        "ja": "見本: 八人のサーカス",
+        "en": "Sample: eight-person circus",
+        "zh-Hans": "示例：八人马戏",
+        "zh-Hant": "範例：八人馬戲",
+        "ko": "예제: 여덟 명의 서커스"
+      },
+      "description": {
+        "ja": "8人の出入り・道具・照明を並べた8シーン。",
+        "en": "Eight scenes of entrances, props and lighting for eight performers.",
+        "zh-Hans": "8位演员的出入、道具与灯光，共8个场景。",
+        "zh-Hant": "8位演員的出入、道具與燈光，共8個場景。",
+        "ko": "8명의 출입, 소품, 조명을 담은 8개 장면."
+      },
+      "bytes": 20498,
+      "version": "sample",
+      "libraryVersion": "2026-10-14",
+      "hasAudio": false,
+      "file": "eight-circus.stageproj.zip",
+      "sha256": "814cdacc1ce19495e7203a77554309a9e347d3810bcb42e668076d72b09b079c"
+    },
+    {
+      "id": "seam-garden",
+      "projectId": "sample-seam-garden-v1",
+      "name": {
+        "ja": "見本: 継ぎ目の庭",
+        "en": "Sample: the seam garden",
+        "zh-Hans": "示例：接缝之庭",
+        "zh-Hant": "範例：接縫之庭",
+        "ko": "예제: 이음새의 정원"
+      },
+      "description": {
+        "ja": "8セクション・32シーンのサーカス演劇。",
+        "en": "A circus theatre show in eight sections and 32 scenes.",
+        "zh-Hans": "8个章节、32个场景的马戏剧。",
+        "zh-Hant": "8個章節、32個場景的馬戲劇。",
+        "ko": "8개 섹션, 32개 장면의 서커스 연극."
+      },
+      "bytes": 97867,
+      "version": "sample-60m-v1",
+      "libraryVersion": "2026-10-14",
+      "hasAudio": false,
+      "file": "seam-garden.stageproj.zip",
+      "sha256": "2521f4bd2434e07cd2957fc2fa8e7a84e3c17c6f8096a4c88cc63605d0721268"
+    },
+    {
+      "id": "romeo-juliet-cued",
+      "projectId": "romeo-juliet-gamma-cued-2026-09-21",
+      "name": {
+        "ja": "ロミオとジュリエット｜台本とキュー",
+        "en": "Romeo and Juliet | script and cues",
+        "zh-Hans": "罗密欧与朱丽叶｜剧本与提示",
+        "zh-Hant": "羅密歐與茱麗葉｜劇本與提示",
+        "ko": "로미오와 줄리엣 | 대본과 큐"
+      },
+      "description": {
+        "ja": "台本・照明・音のキューを持つ33シーン。",
+        "en": "33 scenes with script, lighting and sound cues.",
+        "zh-Hans": "含剧本、灯光与声音提示的33个场景。",
+        "zh-Hant": "含劇本、燈光與聲音提示的33個場景。",
+        "ko": "대본, 조명, 음향 큐가 있는 33개 장면."
+      },
+      "bytes": 1005924,
+      "version": "v1",
+      "libraryVersion": "2026-10-14",
+      "hasAudio": false,
+      "file": "romeo-juliet-cued.stageproj.zip",
+      "sha256": "3625202040163d7d4d45b14cf6b47173699e7b3b42474a5d4953dafb5a4b98c6"
+    },
+    {
+      "id": "romeo-juliet-second",
+      "projectId": "romeo-juliet-rj-second-v1",
+      "name": {
+        "ja": "ロミオとジュリエット｜RJセカンド",
+        "en": "Romeo and Juliet | RJ second",
+        "zh-Hans": "罗密欧与朱丽叶｜RJ第二版",
+        "zh-Hant": "羅密歐與茱麗葉｜RJ第二版",
+        "ko": "로미오와 줄리엣 | RJ 두 번째 버전"
+      },
+      "description": {
+        "ja": "受け渡す手を軸にした34シーンの第2版。",
+        "en": "The second version: 34 scenes built around passing hands.",
+        "zh-Hans": "以传递的手为核心的第2版，共34个场景。",
+        "zh-Hant": "以傳遞的手為核心的第2版，共34個場景。",
+        "ko": "손의 전달을 중심으로 한 두 번째 버전, 34개 장면."
+      },
+      "bytes": 1538685,
+      "version": "v2",
+      "libraryVersion": "2026-10-14",
+      "hasAudio": false,
+      "file": "romeo-juliet-second.stageproj.zip",
+      "sha256": "4cfe9ca771582052c1d92a38f8798ee5a2f655f75c4556c4ddf8f994e3952e45"
+    }
+  ]
+}

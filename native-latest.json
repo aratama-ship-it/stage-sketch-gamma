@@ -1,8 +1,8 @@
 {
-  "version": "0.3.69",
+  "version": "0.3.70",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.69/stage-sketch-gamma-mac-0.3.69.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.70/stage-sketch-gamma-mac-0.3.70.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "現場モードは、進行表の右にある「リハーサル」タブになりました。ヘッダーの走る人のアイコンは廃止しました。",
+  "notes": "ショーを「プロジェクトファイル（.stageproj）」として保存・読み込みできるようになりました。ブラウザ版は音源入りzipの書き出しとzip・フォルダの読み込みに対応します。",
   "updated": "2026-10-15"
 }

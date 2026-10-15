@@ -39,6 +39,8 @@ ${table(["Table", "Setting", "Contents"], [
         id: "export-json", title: "Exporting and importing a show (passing files around)", status: "sourced",
         keywords: ["export", "import", "file", "json", "send", "pass on", "another device", "email", "airdrop", "theatre data", "include", "compare", "replace", "separate show", "open file"],
         html: `
+<p>To include audio, choose ${ui("Export, save and print")} → ${ui("Save show")} → ${ui("Export project (with audio, .stageproj.zip)")}. The zip contains the show and connected audio files, without Backups. Import the zip with ${ui("Import show")} or drop it onto the window. For an extracted .stageproj folder, use ${ui("Import project folder")} or drag it onto the window; use the zip if the file picker cannot select the folder. Different existing audio is preserved. Missing or mismatched audio stays offline. Check the list and use Reconnect when needed. The existing .stagesketch import and export remain available.</p>
+<p>In the Mac project edition, use File → Previous shows → Save as project to turn old browser-saved shows into project files with their available audio. The original shows and audio stay on this device. A cancelled or failed save does not count as completed.</p>
 <p>${ui("Export show")} in the ${ui("Show")} panel saves the show as one file (.json). Give it a ${ui("File name")} and choose ${ui("Include theatre data")} or ${ui("Export without the theatre")} (leave out a theatre whose source may not be shared).</p>
 <p>The receiver uses ${ui("Import show")} and picks the file. The ${ui("Compare before importing")} window shows what it contains (scenes, performers, version); choose ${ui("Open as a separate show")} or ${ui("Replace the current show")}.</p>
 <ul>
@@ -46,7 +48,11 @@ ${table(["Table", "Setting", "Contents"], [
 <li>Shows with Gamma lighting (equipment placement and LX cues) cannot be read by the beta. Open them in Gamma.</li>
 <li>Beta shows can be read, and their old lighting is converted (${ref("light-legacy", "Part 7, 7-8")}).</li>
 <li>JSON written with AI showwright is imported here too (${ref("ai-showwright", "11-6")}).</li>
-</ul>`
+</ul>
+${fig("release070-project-open", "Import a project ZIP or folder.", "Open a project")}
+${fig("release070-project-save", "Export a project with its audio.", "Save a project")}
+${fig("release070-previous-shows", "Previous shows on Mac, captured with the bundled test show and a simulated native bridge.", "Previous shows")}
+`
       },
       {
         id: "share", title: "Sharing (live sessions and performer links)", status: "sourced",

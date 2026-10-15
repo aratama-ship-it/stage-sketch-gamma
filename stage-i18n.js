@@ -31,6 +31,12 @@
   "use strict";
 
   const TEXT = {
+    "ショーを「プロジェクトファイル（.stageproj）」として保存・読み込みできるようになりました。ブラウザ版は音源入りzipの書き出しとzip・フォルダの読み込みに対応します。": "Shows can now be saved and opened as project files (.stageproj). The browser version exports ZIP files with audio and imports ZIP files or folders.",
+    "Mac版はLogicのように1プロジェクト＝1ファイルです。⌘Sと自動保存で保存し、控えを直近10件残します。": "On Mac, one project is one file, as in Logic. Save with ⌘S or autosave, with the latest 10 backups retained.",
+    "サンプルライブラリから見本ショーを入手して開けます。試験場には短いテスト音源を同梱しています。": "Get and open example shows from the sample library. The test show includes a short test audio file.",
+    "Mac版の旧棚は「以前のショー」から1本ずつプロジェクトとして保存できます。元のショーと音源は端末に残ります。": "On Mac, save old shelf shows one at a time as projects from Previous shows. The original shows and audio stay on this device.",
+    "Mac版は起動時に「最後のプロジェクトを開く」か「最初の窓を表示」を選べます。": "On Mac, choose Open the last project or Show the first window at startup.",
+
     "現場モードは、進行表の右にある「リハーサル」タブになりました。ヘッダーの走る人のアイコンは廃止しました。": "Show mode is now the Rehearsal tab to the right of Run of show. The running-person icon has been removed from the header.",
     "図を中央、GOなどの進行操作を右の列にまとめました。照明と作業灯の入切、Eでタイムラインを開閉できます。": "Diagrams are in the centre, with GO and other progress controls in the right column. Toggle lighting and work lights, and press E to open or close the timeline.",
     "シーンを切り替えても画面が揺れないようにしました。": "Scene changes now keep the screen steady.",
@@ -59,6 +65,31 @@
     "操作パネル": "Controls",
     "操作パネルの幅（ダブルクリックで既定に戻す）": "Control panel width (double-click to reset)",
 
+    "音源をプロジェクトへ保存しています…": "Saving audio to the project…",
+    "音源をプロジェクトへ保存できませんでした。ショーは変更していません。": "Could not save audio to the project. The show is unchanged.",
+    "音源をプロジェクトへ再接続しました。": "Audio reconnected to the project.",
+    "プロジェクトを開く…": "Open project…",
+    "プロジェクトへ変更を送りました。": "Changes sent to the project.",
+    "プロジェクトへ変更を送れませんでした。もう一度保存してください。": "Could not send changes to the project. Please save again.",
+    "読み取り専用のプロジェクトです。": "This project is read-only.",
+    "プロジェクトを開きました。変更はプロジェクトへ自動保存します。": "Project opened. Changes are saved automatically to the project.",
+    "プロジェクトを開くか保存する処理を完了できませんでした。元ファイルは保持しています。": "Could not finish opening or saving the project. The original file is retained.",
+    "音源の未接続状態を保存できませんでした。再読み込み前に保存領域を確認してください。": "Cannot save the offline audio status. Check storage before reloading.",
+    "プロジェクトを書き出す（音源入り .stageproj.zip）": "Export project (with audio, .stageproj.zip)",
+    "プロジェクトのフォルダを読み込む": "Import project folder",
+    "新しい版の舞台スケッチで作られています。アプリを更新してください。": "This project was made with a newer version of Stage Sketch. Please update the app.",
+    "舞台スケッチのプロジェクトではありません。project.json を確認してください。": "This is not a Stage Sketch project. Check project.json.",
+    "show.json をJSONとして読めません。現在のショーは変更していません。": "Cannot read show.json as JSON. The current show is unchanged.",
+    "プロジェクト内のファイルの場所が不正です。読み込みを止めました。": "The project contains an invalid file path. Import stopped.",
+    "このブラウザでは圧縮されたzipを読めません。フォルダか無圧縮のzipを選んでください。": "This browser cannot read compressed zip files. Choose the folder or an uncompressed zip.",
+    "ファイルの一致を確認できません。HTTPSかlocalhostで開き直してください。": "Cannot verify file integrity. Reopen using HTTPS or localhost.",
+    "プロジェクトのファイルが大きすぎます。読み込みを止めました。": "The project files are too large. Import stopped.",
+    "プロジェクトのzipを読めません。ファイルを確認してください。": "Cannot read the project zip. Please check the file.",
+    "show.json の一致を確認できませんでした。JSONとして読める内容を読み込みます。": "The show.json checksum differs. Its readable JSON contents will be imported.",
+    "次の音源はオフライン（未接続）です。再接続で元ファイルを選び直してください。": "These audio files are offline (not connected). Use Reconnect to select the original files.",
+    "次の音源は、この端末に違う中身があるため上書きしませんでした。置き換えるには音源の再接続で選び直してください。": "These audio files were kept because this device has different contents for the same tracks. Use Reconnect to replace them.",
+    "音源入りのプロジェクトを書き出しました。": "Exported the project with audio.",
+    ".stageproj フォルダを1つ置いてください。": "Drop one .stageproj folder.",
     "音源の移行前の控えを大きい保存領域へ移し、保存の修復画面から確認・削除できるようにしました。": "Backups made before audio migration now use the larger storage area and can be viewed or deleted from storage recovery.",
     "自動の音源移行は取り消しの履歴へ積まず、利用者が行った編集の取り消しは保ちます。": "Automatic audio migration no longer adds an Undo step. Edits made by the user remain undoable.",
     "冊子の平面図の写真を修正しました。": "Corrected the plan-view pictures in the manual.",
@@ -4811,4 +4842,27 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "現場モードを終了": "Close rehearsal",
   "現場モードを開く": "Open rehearsal",
   "現場モードはリハーサルタブになりました": "Show mode is now the Rehearsal tab."
+});
+// P3 sample acquisition and non-destructive legacy migration.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "サンプルライブラリ": "Sample library",
+  "以前のショー": "Previous shows",
+  "入手して開く": "Get and open",
+  "プロジェクトとして保存": "Save as project",
+  "残り {count} 件": "{count} remaining",
+  "見本を選び、入手して開きます。": "Choose a sample to get and open.",
+  "元のショーと音源は端末に残ります。": "The original shows and audio stay on this device.",
+  "この端末に保存したショーです。見本はサンプルライブラリから入手できます。": "Shows saved on this device. Get samples from the sample library.",
+  "見本がありません。": "No samples available.",
+  "以前のショーはありません。": "No previous shows.",
+  "音源あり": "With audio",
+  "音源なし": "Without audio",
+  "保存済み": "Saved",
+  "読み込んでいます…": "Loading…",
+  "入手しています…": "Getting sample…",
+  "プロジェクトを作っています…": "Creating project…",
+  "未接続の音源は含められません。ショーの音源参照は保持します。": "Disconnected audio cannot be included. Its show references are retained.",
+  "見本を入手して開けませんでした。もう一度お試しください。": "Could not get and open the sample. Please try again.",
+  "プロジェクトを保存できませんでした。元のショーと音源は保持しています。": "Could not save the project. The original show and audio are retained.",
+  "以前のショーを読み取れませんでした。保存領域は変更していません。": "Could not read previous shows. Storage is unchanged."
 });
