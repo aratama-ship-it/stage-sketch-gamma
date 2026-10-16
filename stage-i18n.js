@@ -31,6 +31,34 @@
   "use strict";
 
   const TEXT = {
+
+    // v0.3.73 review round 2 (R3 / R6)
+
+    "音源の保存を確認し、ショーに追加しました。": "The audio save was confirmed and the audio has been added to the show.",
+
+    "次の音源は本文（show.json）から参照されていないため、この読み込みには取り込みません。元のパッケージはそのまま残ります。": "The following audio is not referenced by the show (show.json), so it is not imported this time. The original package is left as it is.",
+
+    // v0.3.73 review R6 (audio confirmation)
+
+    "音源の保存結果を確認できませんでした（時間切れ）。プロジェクトを開き直して確認してください。": "The result of saving the audio could not be confirmed (timed out). Reopen the project to check.",
+
+    "音源はプロジェクトに保存されました。表示を更新するにはプロジェクトを開き直してください。": "The audio has been saved to the project. Reopen the project to refresh the display.",
+
+    // v0.3.73 release notes
+
+    "Mac版の起動画面を新しくしました。最近のプロジェクトを左の索引から選び、保存時の正面図を見てから開けます。↑↓で選び、⏎で開きます。": "The Mac app has a new start screen. Pick a recent project from the index on the left, see the front view saved with it, then open it. Use ↑↓ to select and ⏎ to open.",
+
+    "Mac版は保存のたびに正面図の小さな画像をプロジェクトに残します。以前の版はこの画像を無視し、読み込みは変わりません。": "The Mac app keeps a small image of the front view in the project on every save. Older versions ignore this image, and import is unchanged.",
+
+    "Mac版で、保存中・保存済み・失敗を画面に表示します。音源の差し替えは本文と一緒に確定し、警告つきで開いた原本は再保存しません。": "The Mac app now shows saving, saved and failed states on screen. Replaced audio is committed together with the show, and an original opened with a warning is not re-saved.",
+
+    "リハーサルで、正面図と平面図を上下だけでなく左右にも並べられます（Lキー）。左右のときは机が下に移ります。": "In rehearsal, the front and plan views can be placed side by side as well as stacked (L key). With the side-by-side layout the desk moves below.",
+
+    "リハーサルの記録は、一件が壊れていても一覧が止まらず、保存に失敗した記録も再試行できます。": "Rehearsal records no longer stop the whole list when one record is broken, and records that failed to save can be retried.",
+
+    "Mac版で、終了できない・二重起動・ポート使用中のときに案内と出口を表示します。画面のエラーはヘルプから診断情報として書き出せます。": "The Mac app shows guidance and a way out when it cannot quit, is launched twice or its port is in use. Page errors can be exported as diagnostics from Help.",
+
+    "Mac版の更新の知らせを起動画面の下に表示します。配布が取り下げられた版も区別して案内します。": "The Mac app shows update notices at the bottom of the start screen, and tells withdrawn releases apart.",
     // v0.3.72 release notes
     "Mac版で、ベータ版の書き出しJSONや以前の.stagesketchファイルを直接開けます。開く前に、新しいプロジェクト（.stageproj）として開き、元のファイルは変更しないことを知らせます。名前のない新しいプロジェクトとして開きます。": "On Mac, you can open beta JSON exports and older .stagesketch files directly. Before opening, a notice explains that a new project (.stageproj) will be created and the original file will remain unchanged. The file opens as a new untitled project.",
     "リハーサルで、シーンごとの予定（見せる時間＋転換）・実際の時間・差と、ここまでの合計の差を確認できます。振り返りの表は差の大きい順に並べ替えられ、時間はランの記録にも残ります。": "In rehearsal, compare each scene's planned time (hold plus transition), actual time and difference, along with the cumulative difference. Sort the review table by the largest difference; timings are also saved with the run.",
@@ -41,6 +69,8 @@
     "見本を開いた直後などに、タブが押せないままになる不具合を修正しました。": "Fixed tabs remaining disabled after opening a sample or completing venue setup.",
 
     "書式": "Format",
+
+    "画面でエラーが発生しました。ヘルプから診断情報を書き出せます。": "A screen error occurred. Export diagnostics from the Help menu.",
     "リハーサルタブで、図の参照先と実際の進行位置を分け、同じ箇所の試行回数を記録できるようになりました。": "In the Rehearsal tab, browse diagrams separately from the running position and record repeated attempts at the same passage.",
     "リハーサルの休憩・振り返り・確定を整理しました。確定後も補足を追記でき、記録はランごとに保存されます。": "Rehearsal breaks, review and finalisation are clearer. Add supplementary notes after finalisation; records are saved separately for each run.",
     "リハーサルを画面いっぱいの固定配置にしました。右の机の幅、ペンの太さ、正面図・平面図・両方の表示を変えられ、ペン・手・消しゴムを1列にまとめました。": "Rehearsal now fills the window with a fixed layout. Resize the right-hand desk, adjust pen thickness and switch between front, plan or both views. Pen, pan and eraser share one toolbar.",
@@ -4935,6 +4965,26 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "平面図の拡大表示を切り替える": "Toggle enlarged plan view"
 });
 
+// M2: native document persistence states.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "原本の照合値が一致しません。保存先を選ぶまで書き込みません": "The original checksum does not match. Nothing will be written until you choose a save location.",
+  "プロジェクトを保存できませんでした。もう一度保存してください。": "The project could not be saved. Please save again.",
+  "プロジェクトを保存しました。": "Project saved.",
+  "保存中…": "Saving…",
+  "変更を受け取りました。保存を待っています。": "Changes received. Waiting to save."
+});
+
+// Rehearsal drawing arrangement and isolated unreadable records.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "図の並び": "Drawing arrangement",
+  "上下に並べる": "Stack vertically",
+  "左右に並べる": "Place side by side",
+  "机を下に": "Desk below",
+  "読めない記録": "Unreadable record"
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"表示する図。Tで切替。二図の名前は左から右の順": "Views to show. Press T to switch. View names are ordered from left to right."});
+
 // Rehearsal planned / actual durations (optional v1 run data).
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "予定（見せる＋転換）": "Planned (hold + transition)",
@@ -4952,4 +5002,40 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "予定": "Planned",
   "差": "Difference",
   "計測途中": "Partial"
+});
+
+// R2-A: Mac welcome surface and update notice.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "プロジェクト操作": "Project actions",
+  "新規": "New",
+  "開く…": "Open…",
+  "サンプル": "Samples",
+  "以前のショー": "Previous shows",
+  "最近のプロジェクト": "Recent projects",
+  "最近のプロジェクトはありません": "No recent projects",
+  "プレビューなし": "No preview",
+  "保存時の正面図": "Saved front view",
+  "前回": "Last opened",
+  "選択中": "Selected",
+  "{count} シーン": "{count} scenes",
+  "最後に見たシーン {number}": "Last viewed scene {number}",
+  "続きを開く": "Resume",
+  "この作品を開く": "Open project",
+  "場所を指定": "Locate file",
+  "見つかりません": "File not found",
+  "iCloud から取得中": "Downloading from iCloud",
+  "アクセス許可が必要です": "Access permission required",
+  "新規プロジェクト": "New project",
+  "ファイルから開く": "Open a file",
+  "同梱サンプル": "Bundled sample",
+  "コピーして開く": "Open a copy",
+  "↑↓ 選択　⏎ 開く": "↑↓ Select　⏎ Open",
+  "最新版 {version} があります": "Version {version} is available",
+  "更新の案内を開く": "View update details"
+});
+
+// R2-B: build updates and withdrawn releases keep their own distribution wording.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "配布中の版: {version}": "Distributed version: {version}",
+  "配布の案内を開く": "Open distribution details"
 });

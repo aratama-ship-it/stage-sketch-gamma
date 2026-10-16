@@ -1,6 +1,8 @@
 /* Rehearsal controller: independent run records and a read-only creation reference. */
 (()=>{'use strict';if(window.GAMMA_EDITION==='lite'||document.documentElement.hasAttribute('data-study-renderer'))return;
- const M=window.GAMMA_FIELD_RUN_MODEL,S=window.GAMMA_FIELD_RUN_STORE,P=window.GAMMA_FIELD_RUN_PACKAGE;let dialog,content,status,title,clock,run,raw,images=new Map(),storageId='',durable=0,transport=null,iframe=null,nonce='',requestSeq=0,pending=new Map(),loadReady=null,viewId='',follow=true,mode='run',target=null,composing=false,drawing=false,frameId='',history=[],future=[],timer=null,heartbeat=null,started=0,elapsedBase=0,saveQueue=Promise.resolve(),saveError='',requestedView=0,mounting=false,reviewSceneId='',hostProjectId='';const urls=new Map(),addendumDrafts=new Map();let durationClock=null,durationRefresh=null,durationTableSignature='',durationSort=false;let appending=false,noteSceneId='',switching=false,returnFrameId='',pendingScene='',workspace=false,side=null,sideBody=null,runSection=null,preview=false,fitSide=null;
+ const M=window.GAMMA_FIELD_RUN_MODEL,S=window.GAMMA_FIELD_RUN_STORE,P=window.GAMMA_FIELD_RUN_PACKAGE;let dialog,content,status,title,clock,run,raw,images=new Map(),storageId='',durable=0,transport=null,iframe=null,nonce='',requestSeq=0,pending=new Map(),loadReady=null,viewId='',follow=true,mode='run',target=null,composing=false,drawing=false,frameId='',history=[],future=[],timer=null,heartbeat=null,started=0,elapsedBase=0,saveQueue=Promise.resolve(),saveError='',requestedView=0,mounting=false,reviewSceneId='',hostProjectId='';const urls=new Map(),addendumDrafts=new Map();let durationClock=null,durationRefresh=null,durationTableSignature='',durationSort=false;let appending=false,noteSceneId='',switching=false,returnFrameId='',pendingScene='',workspace=false,side=null,sideBody=null,runSection=null,preview=false,fitSide=null,sideObserver=null;
+ let arrangement='stack';try{if(localStorage.getItem('gamma:rehearsal-arrangement')==='row')arrangement='row';}catch(_){}
+ const effectiveArrangement=()=>arrangement==='row'&&window.innerWidth>760?'row':'stack';
  let timelineRaw='',timelineDocument;let parsedRaw='',parsedSource;const documentCopy=()=>{if(parsedRaw!==raw){parsedSource=M.source(raw);parsedRaw=raw;}return parsedSource;};
  const source=()=>window.GAMMA_FIELD_RUN_SOURCE;
  const T=s=>window.SHOSAI_STAGE_I18N_MODEL?.text(document.documentElement.lang||'ja',s)||s;
@@ -22,10 +24,13 @@
    if(!dialog.open||dialog.hidden||document.querySelector('dialog:modal'))return;
    if(!workspace&&!dialog.contains(e.target))return;
    if(e.key==='Tab'||e.target.closest('#stage-workspace-tabs'))return;
-   if(e.target.closest('.field-run-resize')&&['ArrowLeft','ArrowRight','Home'].includes(e.key))return;
+   const resizeGrip=e.target.closest('.field-run-resize');
+   if(resizeGrip&&(resizeGrip.getAttribute('aria-orientation')==='horizontal'?['ArrowUp','ArrowDown','Home']:['ArrowLeft','ArrowRight','Home']).includes(e.key))return;
    const text=e.target.closest('input,textarea,select,[contenteditable]');
-   if(e.isComposing||e.keyCode===229||composing||text){e.stopImmediatePropagation();return;}
+   if(e.isComposing||e.keyCode===229||composing||text)return;
    const key=e.key.toLowerCase();
+   if(e.metaKey||e.ctrlKey||e.altKey){if(!e.altKey&&(e.metaKey||e.ctrlKey)&&key==='z'&&editable()){e.preventDefault();e.stopImmediatePropagation();undo(e.shiftKey);}return;}
+   if(resizeGrip&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.stopImmediatePropagation();return;}
    if(workspace&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&/^[1-5]$/.test(key))return;
    if(e.target.closest('button,summary')&&['Enter',' '].includes(e.key))return;
    e.stopImmediatePropagation();
@@ -33,6 +38,7 @@
    if(workspace&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
     if(key==='e'){e.preventDefault();window.dispatchEvent(new Event('stage-timeline-toggle-request'));return;}
     if(key==='t'){e.preventDefault();post('views');return;}
+    if(key==='l'){e.preventDefault();if(!drawing)post('arrangement');return;}
     if(key==='c'||key==='g'){e.preventDefault();toggleDisplay(key==='c'?'light':'work');return;}
    }
    if(mode==='session'){if(e.key===' '){e.preventDefault();window.STAGE_FIELD_TIMELINE?.go();}else if(e.key==='ArrowRight'){e.preventDefault();window.STAGE_FIELD_TIMELINE?.next();}return;}
@@ -42,13 +48,14 @@
   },true);
   window.addEventListener('beforeunload',e=>{if([...addendumDrafts.values()].some(s=>s.trim())||(mode==='run'&&run&&(saveError||run.revision!==durable))){e.preventDefault();e.returnValue='';}});
  }
- async function message(e){if(e.source!==iframe?.contentWindow||e.data?.channel!=='gamma-field-frame')return;const m=e.data;if(m.action==='ready'){post('load',{document:documentCopy(),lang:document.documentElement.lang,editable:editable(),material:transport?.material,display:source().display(),words:Object.fromEntries(['正面図','平面図','ペン','手','消しゴム','太さ','ペンの太さ','正面','平面','正面＋平面','平面＋正面','細','中','太','記録図の道具','表示する図。Tで切替。二図の名前は上から下の順','正面図の拡大表示を切り替える','平面図の拡大表示を切り替える'].map(k=>[k,T(k)]))});return;}if(m.nonce!==nonce||m.runId!==run?.runId)return;
+ async function message(e){if(e.source!==iframe?.contentWindow||e.data?.channel!=='gamma-field-frame')return;const m=e.data;if(m.action==='ready'){post('load',{document:documentCopy(),lang:document.documentElement.lang,editable:editable(),material:transport?.material,display:source().display(),arrangement:effectiveArrangement(),words:Object.fromEntries(['図の並び','上下に並べる','左右に並べる','机を下に','正面図','平面図','ペン','手','消しゴム','太さ','ペンの太さ','正面','平面','正面＋平面','平面＋正面','細','中','太','記録図の道具','表示する図。Tで切替。二図の名前は上から下の順','表示する図。Tで切替。二図の名前は左から右の順','正面図の拡大表示を切り替える','平面図の拡大表示を切り替える'].map(k=>[k,T(k)]))});return;}if(m.nonce!==nonce||m.runId!==run?.runId)return;
+  if(m.action==='arrangement'&&['stack','row'].includes(m.value)){arrangement=m.value;try{localStorage.setItem('gamma:rehearsal-arrangement',arrangement);}catch(_){}fitSide?.();syncDisplay();return;}
   if(m.action==='loaded'){loadReady?.();loadReady=null;return;}const p=pending.get(m.requestId);if(p&&['scene-ready','captured','record-ready','error'].includes(m.action)){clearTimeout(p.timeout);pending.delete(m.requestId);m.action==='error'?p.no(Error('frame-error')):p.ok(m);return;}
   if(m.sceneId!==viewId||mounting)return;try{if(m.action==='tool'){if(!editable())return;follow=false;if(currentFrame()&&(currentFrame().attemptNumber||1)!==(run.attempts?.length||1))await newFrame();else if(!currentFrame())await capture();post('tool',{view:m.view,tool:m.tool});}
    else if(m.action==='stroke'&&editable()&&m.frameId===frameId){const f=currentFrame(),old=M.clone(f.strokes),next=[...f.strokes,...m.segments];if(next.length>10000)M.fail('record-too-large');const candidate=M.clone(run);candidate.frames.find(x=>x.frameId===frameId).strokes=next;M.validate(candidate,raw);history.push({frameId,strokes:old});history=history.slice(-50);future=[];M.touch(run);f.strokes=next;post('strokes',{strokes:f.strokes});scheduleSave();}
    else if(m.action==='erase'&&editable()&&m.frameId===frameId){const f=currentFrame();history.push({frameId,strokes:M.clone(f.strokes)});future=[];M.touch(run);f.strokes=f.strokes.filter(s=>s.gestureId!==m.gestureId);post('strokes',{strokes:f.strokes});scheduleSave();}
    else if(m.action==='drawing'){drawing=!!m.drawing;}
-   else if(m.action==='shortcut'&&!composing&&!drawing&&!switching){if(m.key==='e')window.dispatchEvent(new Event('stage-timeline-toggle-request'));else if(m.key==='t')post('views');else if(canProgress()){if(m.key===' ')goRun();else await move(m.key==='ArrowRight'?1:-1);}}
+   else if(m.action==='shortcut'&&!composing&&!drawing&&!switching){if(m.key==='e')window.dispatchEvent(new Event('stage-timeline-toggle-request'));else if(m.key==='t')post('views');else if(m.key==='l')post('arrangement');else if(canProgress()){if(m.key===' ')goRun();else await move(m.key==='ArrowRight'?1:-1);}}
    else if(m.action==='limit')M.fail('record-too-large');else if(m.action==='error')report(Error('frame-error'));
   }catch(error){report(error);}
  }
@@ -62,7 +69,7 @@
   document.getElementById('view-stage').append(dialog);
   if(dialog.open&&run){source().quiet(editable());syncDisplay();notifyTimeline();return;}
   mode='run';dialog.dataset.kind='run';target=source().identity();if(!dialog.open)dialog.show();
-  const rows=await S.list();const previous=rows.find(r=>r.run.status!=='closed'&&r.run.source.projectId===target.projectId);
+  const rows=await S.list();const previous=rows.find(r=>r.run&&r.run.status!=='closed'&&r.run.source.projectId===target.projectId);
   if(previous&&!source().sessionRole())await resume(previous.storageId);else await showPreview();
  }
  async function showPreview(){
@@ -75,7 +82,7 @@
  }
  function notifyTimeline(){window.dispatchEvent(new Event('gamma-rehearsal-clock'));}
  function syncDisplay(){
-  const settings=source().display();post('display',{display:settings});
+  const settings=source().display();post('display',{display:settings,arrangement:effectiveArrangement()});
   for(const [key,on]of [['light',settings.lightPool],['work',!settings.lightPool||!settings.workLightOff]])
    document.getElementById('field-run-'+key)?.setAttribute('aria-pressed',String(on));
  }
@@ -85,32 +92,38 @@
   h.replaceChildren(node('span','⠿','stage-panel-grip'),node('span',label,'stage-panel-title'),node('span','','stage-panel-mark'));
   h.firstChild.setAttribute('aria-hidden','true');h.lastChild.setAttribute('aria-hidden','true');h.setAttribute('aria-expanded',String(initial));body.hidden=!initial;return h;
  }
- // Desired device width is independent of the width that fits this window.
+ // Store the desired width/height independently of the size that fits this window.
  function attachSide(work){
   const head=panelHead('リハーサル',sideBody);head.id='field-run-side-head';
   const toggle=head.onclick;head.onclick=()=>{toggle();work.classList.toggle('field-side-collapsed',sideBody.hidden);try{localStorage.setItem('gamma:rehearsal-side-collapsed',String(sideBody.hidden));}catch(_){} };
   side.prepend(head);
   const grip=node('div',undefined,'field-run-resize');grip.tabIndex=0;grip.setAttribute('role','separator');grip.setAttribute('aria-label',T('列の幅を変える'));grip.setAttribute('aria-orientation','vertical');
-  let wanted=360,drag;try{const saved=Number(localStorage.getItem('gamma:rehearsal-side-width'));if(saved>0)wanted=saved;}catch(_){}
-  const limits=()=>({min:320,max:Math.max(320,Math.min(work.clientWidth*.65,work.clientWidth-360))});
-  fitSide=()=>{if(!work.isConnected)return;const {min,max}=limits(),width=Math.max(min,Math.min(max,wanted));work.style.setProperty('--fr-side',width+'px');for(const [key,value]of Object.entries({min,max,now:width}))grip.setAttribute('aria-value'+key,String(Math.round(value)));};
-  const update=w=>{const {min,max}=limits();wanted=Math.max(min,Math.min(max,w));fitSide();try{localStorage.setItem('gamma:rehearsal-side-width',String(wanted));}catch(_){} };
-  grip.onpointerdown=e=>{if(e.button!==0||sideBody.hidden)return;drag={x:e.clientX,w:side.getBoundingClientRect().width};grip.setPointerCapture(e.pointerId);e.preventDefault();};
-  grip.onpointermove=e=>{if(drag)update(drag.w+drag.x-e.clientX);};grip.onpointerup=grip.onpointercancel=()=>{drag=null;};
-  grip.ondblclick=()=>update(360);
-  grip.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','Home'].includes(e.key))return;e.preventDefault();e.stopImmediatePropagation();update(e.key==='Home'?360:side.getBoundingClientRect().width+(e.key==='ArrowLeft'?12:-12));};
-  const mark=node('span');mark.setAttribute('aria-hidden','true');grip.append(mark);work.append(grip);fitSide(); // Old collapsed preferences must not hide the desk on entry; keep their stored value untouched.
+  let wanted=360,wantedHeight=240,drag,compact=false,restoreRun=false,applied='';
+  try{const w=Number(localStorage.getItem('gamma:rehearsal-side-width')),h=Number(localStorage.getItem('gamma:rehearsal-desk-height'));if(w>0)wanted=w;if(h>0)wantedHeight=h;}catch(_){}
+  const isRow=()=>effectiveArrangement()==='row';
+  const limits=()=>isRow()?{min:160,max:Math.max(160,Math.floor(work.clientHeight*.5))}:{min:320,max:Math.max(320,Math.min(work.clientWidth*.65,work.clientWidth-360))};
+  fitSide=()=>{if(!work.isConnected)return;const row=isRow(),next=row?'row':'stack';work.dataset.arrangement=next;const {min,max}=limits(),size=Math.max(min,Math.min(max,row?wantedHeight:wanted));work.style.setProperty(row?'--fr-desk-h':'--fr-side',size+'px');grip.setAttribute('aria-label',T(row?'図とノートの高さを変える':'列の幅を変える'));grip.setAttribute('aria-orientation',row?'horizontal':'vertical');head.title=row?T('机を下に'):'';for(const [key,value]of Object.entries({min,max,now:size}))grip.setAttribute('aria-value'+key,String(Math.round(value)));
+   const small=row&&size<200;if(small!==compact){const h=document.getElementById('field-run-run-head');if(h&&runSection){if(small){restoreRun=!runSection.hidden;runSection.hidden=true;}else if(restoreRun)runSection.hidden=false;h.setAttribute('aria-expanded',String(!runSection.hidden));}compact=small;}
+   if(next!==applied){applied=next;post('display',{display:source().display(),arrangement:next});}
+  };
+  const update=value=>{const row=isRow(),{min,max}=limits(),size=Math.max(min,Math.min(max,value));if(row)wantedHeight=size;else wanted=size;fitSide();try{localStorage.setItem(row?'gamma:rehearsal-desk-height':'gamma:rehearsal-side-width',String(size));}catch(_){} };
+  grip.onpointerdown=e=>{if(e.button!==0||sideBody.hidden)return;const row=isRow();drag={row,at:row?e.clientY:e.clientX,size:side.getBoundingClientRect()[row?'height':'width']};grip.setPointerCapture(e.pointerId);e.preventDefault();};
+  grip.onpointermove=e=>{if(drag){if(drag.row!==isRow()){drag=null;return;}update(drag.size+drag.at-(drag.row?e.clientY:e.clientX));}};grip.onpointerup=grip.onpointercancel=grip.onlostpointercapture=()=>{drag=null;};
+  grip.ondblclick=()=>update(isRow()?240:360);
+  grip.onkeydown=e=>{const row=isRow(),less=row?'ArrowDown':'ArrowRight',more=row?'ArrowUp':'ArrowLeft';if(![less,more,'Home'].includes(e.key)||e.isComposing||e.metaKey||e.ctrlKey||e.altKey)return;e.preventDefault();e.stopImmediatePropagation();update(e.key==='Home'?(row?240:360):side.getBoundingClientRect()[row?'height':'width']+(e.key===more?12:-12));};
+  const mark=node('span');mark.setAttribute('aria-hidden','true');grip.append(mark);work.append(grip);sideObserver?.disconnect();sideObserver=new ResizeObserver(()=>fitSide?.());sideObserver.observe(work);fitSide();try{if(localStorage.getItem('gamma:rehearsal-side-collapsed')==='true')head.click();}catch(_){}
  }
+ function unreadableRow(row){const item=node('p','読めない記録','field-run-unreadable');item.append(document.createTextNode(' · '+row.storageId));item.setAttribute('role','status');return item;}
  async function runTools(container){
   const label=node('label','ランの名前'),input=node('input');input.id='field-run-name';input.autocomplete='off';input.setAttribute('data-1p-ignore','');input.maxLength=200;input.value=run?.name||new Date().toLocaleDateString(document.documentElement.lang)+' '+T('通し');label.htmlFor=input.id;
   const start=button('新しいラン',async()=>{if(editable()){transport.pause();await flush();run.status='paused';M.touch(run);await save();}preview=false;await begin(input.value);});start.id='field-run-new';start.disabled=!!source().sessionRole();if(start.disabled)start.title=T('共有中はリハーサル記録を開始できません。');
   container.append(label,input,start,button('記録ファイルを読み込む',importFile));
-  for(const row of await S.list()){const b=button(row.run.name,async()=>{if(editable()){transport.pause();await flush();run.status='paused';M.touch(run);await save();}preview=false;if(row.run.status==='closed')await showRecord(row.storageId);else await resume(row.storageId);});b.disabled=!!source().sessionRole();container.append(b);}
+  for(const row of await S.list()){if(row.unreadable){container.append(unreadableRow(row));continue;}const b=button(row.run.name,async()=>{if(editable()){transport.pause();await flush();run.status='paused';M.touch(run);await save();}preview=false;if(row.run.status==='closed')await showRecord(row.storageId);else await resume(row.storageId);});b.disabled=!!source().sessionRole();container.append(b);}
  }
 
  async function review(sceneId){ensure();if(dialog.open&&!dialog.hidden)return;if(dialog.open)await exit();workspace=false;preview=false;delete dialog.dataset.workspace;dialog.hidden=false;document.body.append(dialog);mode='review';dialog.dataset.kind='review';target={...source().identity(),sceneId};dialog.show();await hub(true);}
  async function hub(filter=false){if(blockDraft())return;stop();run=null;raw='';images=new Map();iframe=null;dialog.querySelector('.field-run-bottom')?.remove();content.replaceChildren();clock.textContent='';title.textContent=T('リハーサル記録');warning('');const box=node('div',undefined,'field-run-hub');content.append(box);if(mode==='run'){const label=node('label','ランの名前'),input=node('input');input.id='field-run-name';input.autocomplete='off';input.setAttribute('data-1p-ignore','');input.maxLength=200;input.value=new Date().toLocaleDateString(document.documentElement.lang)+' '+T('通し');label.htmlFor=input.id;const acts=node('div',undefined,'field-run-hub-actions');const start=button('新しいラン',()=>begin(input.value),'field-primary');start.id='field-run-new';start.disabled=!!source().sessionRole();if(start.disabled)start.title=T('共有中はリハーサル記録を開始できません。');acts.append(start,button('記録ファイルを読み込む',importFile));box.append(label,input,acts);}else{const acts=node('div',undefined,'field-run-hub-actions');acts.append(button('すべてのラン記録',()=>hub(false)),button('記録ファイルを読み込む',importFile));box.append(acts);}
-  const list=node('div',undefined,'field-run-list');box.append(list);const maps=await S.links();for(const row of await S.list()){const r=row.run;if(filter&&r.source.projectId!==target.projectId&&!maps.some(l=>l.runId===row.storageId&&l.targetProjectId===target.projectId&&l.targetSceneId===target.sceneId))continue;const entries=filter&&r.source.projectId===target.projectId?r.entries.filter(e=>e.sceneId===target.sceneId):r.entries;if(filter&&!entries.length&&!r.durations?.visits.some(v=>v.sceneId===target.sceneId)&&!r.frames.some(f=>r.source.projectId===target.projectId&&f.sceneId===target.sceneId)&&!maps.some(l=>l.runId===row.storageId&&l.targetSceneId===target.sceneId))continue;const item=node('article',undefined,'field-run-list-item'),label=node('strong');label.textContent=r.name+' · '+new Date(r.startedAt).toLocaleString(document.documentElement.lang);item.append(label);if(mode==='run'&&r.status!=='closed')item.append(button('このランを再開',()=>resume(row.storageId),'field-primary'));item.append(button('記録を見る',()=>showRecord(row.storageId)),button('書き出す',async()=>{const data=await S.read(row.storageId);await exportRecord(data);}));list.append(item);}
+  const list=node('div',undefined,'field-run-list');box.append(list);const maps=await S.links();for(const row of await S.list()){if(row.unreadable){list.append(unreadableRow(row));continue;}const r=row.run;if(filter&&r.source.projectId!==target.projectId&&!maps.some(l=>l.runId===row.storageId&&l.targetProjectId===target.projectId&&l.targetSceneId===target.sceneId))continue;const entries=filter&&r.source.projectId===target.projectId?r.entries.filter(e=>e.sceneId===target.sceneId):r.entries;if(filter&&!entries.length&&!r.durations?.visits.some(v=>v.sceneId===target.sceneId)&&!r.frames.some(f=>r.source.projectId===target.projectId&&f.sceneId===target.sceneId)&&!maps.some(l=>l.runId===row.storageId&&l.targetSceneId===target.sceneId))continue;const item=node('article',undefined,'field-run-list-item'),label=node('strong');label.textContent=r.name+' · '+new Date(r.startedAt).toLocaleString(document.documentElement.lang);item.append(label);if(mode==='run'&&r.status!=='closed')item.append(button('このランを再開',()=>resume(row.storageId),'field-primary'));item.append(button('記録を見る',()=>showRecord(row.storageId)),button('書き出す',async()=>{const data=await S.read(row.storageId);await exportRecord(data);}));list.append(item);}
  }
  function stop(){durationClock?.pause();durationClock=null;clearInterval(durationRefresh);durationRefresh=null;clearTimeout(timer);clearInterval(heartbeat);heartbeat=null;transport?.destroy();transport=null;for(const p of pending.values()){clearTimeout(p.timeout);p.no(Error('frame-closed'));}pending.clear();for(const url of urls.values())URL.revokeObjectURL(url);urls.clear();}
  function blockDraft(){if(![...addendumDrafts.values()].some(s=>s.trim()))return false;warning('補足を追記してから閉じてください。');return true;}
@@ -121,7 +134,7 @@
  // Fetch through the parent's PWA controller, then keep the renderer opaque and self-contained.
  async function frameDocument(){
   const responseFor=async url=>{let response;try{response=await fetch(url);if(response.ok)return response;}catch(_){}try{response=await window.caches?.match(url);if(response?.ok)return response;}catch(_){}throw Error('frame-unavailable');};
-  const url=new URL('field-frame.html?v=20261015-rehearsal-durations',location.href),response=await responseFor(url);
+  const url=new URL('field-frame.html?v=20261016-v0373',location.href),response=await responseFor(url);
   const doc=new DOMParser().parseFromString(await response.text(),'text/html');if(!doc.documentElement.hasAttribute('data-study-renderer')||!doc.querySelector('.field-frame-drawings'))throw Error('frame-unavailable');const base=doc.createElement('base');base.href=new URL('.',url).href;doc.head.prepend(base);
   const read=async path=>{const r=await responseFor(new URL(path,url));return r.text();};
   await Promise.all([...doc.querySelectorAll('script[src]')].map(async tag=>{
@@ -173,6 +186,7 @@
    runSection=node('div',undefined,'field-run-section');const tools=node('div',undefined,'field-run-tools');
    const runHead=panelHead('ラン',runSection,preview);runHead.id='field-run-run-head';runSection.append(tools);sideBody.append(runHead,runSection);
    if(preview){band.hidden=true;note.hidden=true;details.hidden=mode!=='session';}
+   const controls=node('div',undefined,'field-run-desk-controls'),runs=node('div',undefined,'field-run-desk-runs');for(const el of [...sideBody.children]){if(el===note)continue;(el===runHead||el===runSection?runs:controls).append(el);}sideBody.prepend(controls);sideBody.append(runs);
    work.append(side);attachSide(work);await runTools(tools);
    if(!preview){const back=button('進行位置の図へ戻る',async()=>{follow=true;frameId='';await selectScene(transport?.info().sceneId||run.progressSceneId);});back.id='field-run-follow';band.append(back);}
    prevText.hidden=true;nextText.hidden=true;
@@ -231,7 +245,7 @@
  function rosVisible(el){return !!el.getClientRects().length;}
  function refreshFrames(){const choice=document.getElementById('field-run-frames');if(!choice)return;choice.replaceChildren();const none=node('option','記録図');none.value='';choice.append(none);const fs=run.frames.filter(f=>f.sceneId===viewId);for(const [i,f]of fs.entries()){const o=node('option');o.value=f.frameId;o.textContent=(f.attemptNumber||1)+' '+T('回目')+' · '+(i+1)+' · '+window.STAGE_TIME_DOMAIN.durationText(f.showSeconds);choice.append(o);}choice.hidden=fs.length===0;choice.value=frameId;}
  async function selectFrame(id){if(!id){frameId='';return selectScene(viewId);}const f=run.frames.find(f=>f.frameId===id&&f.sceneId===viewId);if(!f)return;follow=false;frameId=f.frameId;const pictures={};for(const view of ['front','plan'])pictures[view]=await dataURL(images.get(f.images[view].path));await ask('record',{frame:f,images:pictures});if(editable()){run.viewFrameId=id;M.touch(run);scheduleSave();}refreshFrames();}
- async function capture(){if(!editable()||drawing||composing)return;const ack=await ask('capture');if(ack.sceneId!==viewId)throw Error('frame-stale');const id='frame-'+crypto.randomUUID(),f={frameId:id,attemptNumber:run.attempts?.length||1,sceneId:viewId,showSeconds:transport.info().sceneId===viewId?transport.info().seconds:transport.domain.byId.get(viewId).start,capturedAt:new Date().toISOString(),render:{appVersion:window.STAGE_SKETCH_GAMMA_VERSION,seatId:'',lightMode:'show',extensions:{inkColor:'#ffdc73'}},images:{},strokes:[]};if(run.frames.length>=M.LIMIT.frames)M.fail('record-too-large');for(const view of ['front','plan']){const shot=ack.screens[view],b=source().zip().dataUrlToBytes(shot.url),path=`frames/${id}/${view}.png`;P.image(b);f.images[view]={path,width:shot.width,height:shot.height};images.set(path,new Blob([b],{type:'image/png'}));}M.touch(run);run.frames.push(f);frameId=id;await selectFrame(id);await save();}
+ async function capture(){if(!editable()||drawing||composing)return;const ack=await ask('capture');if(ack.sceneId!==viewId)throw Error('frame-stale');const id='frame-'+crypto.randomUUID(),f={frameId:id,attemptNumber:run.attempts?.length||1,sceneId:viewId,showSeconds:transport.info().sceneId===viewId?transport.info().seconds:transport.domain.byId.get(viewId).start,capturedAt:new Date().toISOString(),render:{appVersion:window.STAGE_SKETCH_GAMMA_VERSION,seatId:'',lightMode:'show',extensions:{inkColor:'#ffdc73'}},images:{},strokes:[]};if(run.frames.length>=M.LIMIT.frames)M.fail('record-too-large');const nextImages=new Map(images);for(const view of ['front','plan']){const shot=ack.screens[view],b=source().zip().dataUrlToBytes(shot.url),path=`frames/${id}/${view}.png`;P.image(b);f.images[view]={path,width:shot.width,height:shot.height};nextImages.set(path,new Blob([b],{type:'image/png'}));}const candidate=M.clone(run);M.touch(candidate);candidate.frames.push(f);M.validate(candidate,raw);M.assertPackageSize(candidate,raw,nextImages);M.touch(run);run.frames.push(f);images=nextImages;frameId=id;await selectFrame(id);await save();}
  async function newFrame(){if(!iframe){warning('記録図を読み込めません。右の操作とランノートは使えます。');return;}if(!editable()||drawing||composing)return;follow=false;frameId='';await selectScene(viewId);frameId='';await ask('scene',{sceneId:viewId,clock:transport.info().sceneId===viewId?transport.info():{sceneId:viewId,seconds:transport.domain.byId.get(viewId).start,phase:null}});await capture();}
  async function undo(redo=false){if(!editable()||!currentFrame())return;const from=redo?future:history,to=redo?history:future,state=from.pop();if(!state)return;const f=run.frames.find(f=>f.frameId===state.frameId);to.push({frameId:f.frameId,strokes:M.clone(f.strokes)});M.touch(run);f.strokes=state.strokes;if(viewId!==f.sceneId)await selectScene(f.sceneId);await selectFrame(f.frameId);scheduleSave();}
  function updateClock(info){if(!run||mounting)return;if(canProgress()&&durationClock?.running())durationClock.enter(info.phase?.fromSceneId||info.sceneId);if(info.seconds>=transport?.domain.duration)durationClock?.pause();syncRunState();run.showSeconds=info.seconds;run.progressSceneId=info.sceneId;clock.setAttribute('aria-label',T('経過時間'));clock.textContent=window.STAGE_TIME_DOMAIN.durationText(elapsed())+(!follow&&viewId!==info.sceneId?' · '+T('進行中')+' '+(numbers().get(info.sceneId)||''):'');const cueText=document.getElementById('field-run-cues');if(cueText)cueText.textContent=T('現在のキュー')+' '+(info.cue?.displayName||'—')+' · '+T('次のキュー')+' '+(info.nextCue?.displayName||'—');const b=document.getElementById('field-run-go');// Preserve the button's text node between pointerdown and pointerup in WebKit.
@@ -258,7 +272,15 @@
  }
  window.addEventListener('stage-scene-change',syncSession);
  window.addEventListener('stage-timeline-position-change',syncSession);
- window.GAMMA_FIELD_RUNS={open,review,leave,timelineContext};
+ async function beforeQuit(){
+  // Notes use a different IndexedDB queue from the show. A failed record save blocks quit.
+  if(composing||drawing||appending||switching)throw Error('record-input-pending');
+  if(blockDraft())throw Error('addendum-draft-pending'); // review R2: unappended supplement drafts block quit like the normal close path
+  if(editable()){transport?.pause();await flush();}
+  let current;do{current=saveQueue;await current;}while(current!==saveQueue);
+  if(saveError)throw Error(saveError);
+ }
+ window.GAMMA_FIELD_RUNS={open,review,leave,timelineContext,beforeQuit};
  window.addEventListener('gamma-workspace-change',()=>{
   const active=document.body.dataset.gammaWorkspace==='rehearsal';
   document.querySelector('.stage-header-actions-row')?.toggleAttribute('inert',active);

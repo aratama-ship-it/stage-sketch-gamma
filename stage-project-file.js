@@ -112,7 +112,8 @@
     if(await hash(show.bytes)!==String(manifest.show.sha256 || "").toLowerCase())warnings.push("show-hash-mismatch");
     const ids=new Set((show.value?.project?.audioTracks||[]).map(t=>t.id));
     for(const entry of manifest.audio) {
-      if(!ids.has(entry.trackId))fail("invalid-manifest");
+      // review R3: an audio entry committed before the show referenced it is not fatal; keep the package readable and report it.
+      if(!ids.has(entry.trackId)){warnings.push("unreferenced-audio:"+entry.trackId);continue;}
       const value=files.get(entry.file);
       if(!value || !Number.isSafeInteger(entry.bytes) || entry.bytes < 0 || entry.bytes > LIMIT.file || !hashOK(entry.sha256)){offline.push(entry);continue;}
       if(value instanceof Blob&&value.size!==entry.bytes){offline.push(entry);continue;}

@@ -1,8 +1,9 @@
 {
-  "version": "0.3.72",
+  "version": "0.3.73",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.72/stage-sketch-gamma-mac-0.3.72.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.73/stage-sketch-gamma-mac-0.3.73.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "Macで以前の書き出しを新しいプロジェクトとして開けます。リハーサルの予定・実際・差と振り返りを改善し、進行表の書式を左パネルへ移しました。",
-  "updated": "2026-10-16"
+  "notes": "Mac版の起動画面を新しくし、最近のプロジェクトを索引から開けます。保存状態の表示、保存時のサムネイル、終了・二重起動・ポート使用中の案内を追加。リハーサルで正面図と平面図を左右にも並べられます。",
+  "updated": "2026-10-16",
+  "build": 85
 }

@@ -162,6 +162,35 @@ body[data-gamma-workspace=rehearsal]{overflow:hidden}
 .field-frame-tools svg,.field-frame-pane header svg{width:calc(var(--gamma-icon-glyph) * var(--field-glyph-scale,1));height:calc(var(--gamma-icon-glyph) * var(--field-glyph-scale,1))}
 html:has(body[data-gamma-workspace=rehearsal]){scrollbar-gutter:auto;overflow:hidden}
 
+/* R-01/R-02: the parent chooses the effective arrangement, including narrow windows. */
+.field-run-desk-controls,.field-run-desk-runs{display:contents}
+.field-run-desk-controls>.field-run-details{order:2}
+.field-run-desk-runs>*{order:3}
+.field-run-side-body>.field-run-note{order:1}
+.study-frame .field-frame-drawings.study-drawings[data-arrangement=row]{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+.study-frame .field-frame-drawings.study-drawings[data-arrangement=row][data-order=both-plan] [data-view=plan]{grid-column:1;grid-row:1}
+.study-frame .field-frame-drawings.study-drawings[data-arrangement=row][data-order=both-plan] [data-view=front]{grid-column:2;grid-row:1}
+.study-frame .field-frame-drawings.study-drawings[data-single=front],.study-frame .field-frame-drawings.study-drawings[data-single=plan]{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+.study-frame .field-frame-drawings.study-drawings[data-single=front] .field-frame-pane,.study-frame .field-frame-drawings.study-drawings[data-single=plan] .field-frame-pane{grid-column:auto;grid-row:auto}
+@media(min-width:761px){
+ .field-run-dialog[data-workspace=true] .field-run-work[data-arrangement=row]{--fr-desk-h:240px;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(var(--fr-drawing-min),1fr) var(--fr-desk-h);}
+ .field-run-work[data-arrangement=row]>.field-run-main{grid-column:1;grid-row:1}
+ .field-run-work[data-arrangement=row]>.field-run-side{grid-column:1;grid-row:2;overflow:hidden}
+ .field-run-dialog[data-workspace=true] .field-run-work[data-arrangement=row] .field-run-side-body{display:grid;grid-template-columns:minmax(0,2fr) minmax(220px,1fr) minmax(220px,1fr);grid-template-rows:minmax(0,1fr);column-gap:var(--sp-2,8px);overflow:hidden}
+ .field-run-dialog[data-workspace=true] .field-run-work[data-arrangement=row] .field-run-side-body[hidden]{display:none}
+ .field-run-work[data-arrangement=row] .field-run-desk-controls,.field-run-work[data-arrangement=row] .field-run-desk-runs{display:flex;flex-direction:column;gap:var(--sp-1,4px);min-width:0;min-height:0;overflow:auto;grid-row:1}
+ .field-run-work[data-arrangement=row] .field-run-desk-controls{grid-column:2}
+ .field-run-work[data-arrangement=row] .field-run-desk-runs{grid-column:3}
+ .field-run-work[data-arrangement=row] .field-run-desk-controls>*,.field-run-work[data-arrangement=row] .field-run-desk-runs>*{flex-shrink:0}
+ .field-run-dialog[data-workspace=true] .field-run-work[data-arrangement=row] .field-run-note{grid-column:1;grid-row:1;min-height:0;height:100%;margin:0;overflow:auto;box-sizing:border-box}
+ .field-run-dialog[data-workspace=true] .field-run-work[data-arrangement=row] .field-run-note textarea{box-sizing:border-box;min-height:calc(var(--fs-7) * 3 + var(--sp-2,8px) * 2);height:auto;flex:1 0 auto}
+ .field-run-work[data-arrangement=row] .field-run-resize{top:auto;bottom:calc(var(--fr-desk-h) + var(--fr-gap)/2 - var(--fr-resize-width)/2);left:0;right:0;width:100%;height:var(--fr-resize-width);cursor:row-resize}
+ .field-run-work[data-arrangement=row] .field-run-resize::after{top:calc(50% - var(--sp-1,4px)/4);bottom:auto;left:0;right:0;width:100%;height:calc(var(--sp-1,4px)/2)}
+ .field-run-work[data-arrangement=row] .field-run-resize::before{top:calc(50% - var(--ctrl-lg)/2);left:calc(50% - var(--ctrl-lg)/2);width:var(--ctrl-lg);height:var(--ctrl-lg)}
+ .field-run-work[data-arrangement=row] .field-run-resize>span{top:calc(50% - var(--sp-1,4px)/2);left:calc(50% - var(--ctrl-lg)/2);height:var(--sp-1,4px);width:var(--ctrl-lg)}
+ .field-run-dialog[data-workspace=true] .field-run-work[data-arrangement=row].field-side-collapsed{grid-template-rows:minmax(var(--fr-drawing-min),1fr) var(--fr-hit)}
+}
+
 /* Durations stay beside progress; the visit table is always expanded in the review section. */
 .field-run-progress-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
 .field-run-duration{font-size:var(--fs-6);line-height:1.5;font-variant-numeric:tabular-nums;border-inline-start:2px solid var(--edge);padding-inline-start:var(--sp-2,8px)}

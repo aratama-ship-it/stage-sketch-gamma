@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.72";
+  const GAMMA_APP_VERSION = "v0.3.73";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -125,6 +125,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     ? window.STAGE_PROJECT_BRIDGE?.create(window) : null;
   const nativeInitialOpen = nativeBridgeCandidate ? await nativeBridgeCandidate.initialOpen : null;
   const nativeProject = nativeInitialOpen !== null ? nativeBridgeCandidate : null;
+  const pendingLateAudio = new Map(); // review R6: new audio whose confirmation timed out; completed when the shell confirms late
 
   const devResetTriggered = (function devResetTrigger() {
     if (typeof nativeProject !== "undefined" && nativeProject) return false;
@@ -589,37 +590,48 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     ? Object.freeze({ getItem: () => null, setItem() {}, removeItem() {}, key: () => null, length: 0 })
     : alternativesStorage;
 
-  const nativeDownloadDecisionWaiters = [];
+  const nativeDownloadDecisionWaiters = new Map();
   let nativeDownloadDecisionBridge = null;
 
   function prepareNativeDownloadDecision() {
     const bridge = window.stageSketchBridge;
     if (!bridge || typeof bridge.onDownloadDestinationDecision !== "function") return null;
     if (nativeDownloadDecisionBridge !== bridge) {
-      bridge.onDownloadDestinationDecision((didChooseDestination) => {
-        const waiter = nativeDownloadDecisionWaiters.shift();
-        if (waiter) waiter.resolve(didChooseDestination === true);
+      for (const waiter of nativeDownloadDecisionWaiters.values()) waiter.cancel();
+      bridge.onDownloadDestinationDecision(result => {
+        if (typeof result?.id !== "string" || typeof result.ok !== "boolean") return;
+        nativeDownloadDecisionWaiters.get(result.id)?.finish(result.ok);
       });
       nativeDownloadDecisionBridge = bridge;
     }
-    const waiter = {};
-    waiter.promise = new Promise((resolve) => { waiter.resolve = resolve; });
-    nativeDownloadDecisionWaiters.push(waiter);
-    waiter.cancel = () => {
-      const index = nativeDownloadDecisionWaiters.indexOf(waiter);
-      if (index >= 0) nativeDownloadDecisionWaiters.splice(index, 1);
-    };
+    const id = crypto.randomUUID();
+    const waiter = {id};
+    waiter.promise = new Promise(resolve => {
+      waiter.finish = ok => {
+        if (nativeDownloadDecisionWaiters.get(id) !== waiter) return;
+        clearTimeout(waiter.timer); nativeDownloadDecisionWaiters.delete(id); resolve(ok === true);
+      };
+    });
+    waiter.cancel = () => waiter.finish(false);
+    waiter.register = url => bridge.registerDownload?.(id, url);
+    nativeDownloadDecisionWaiters.set(id, waiter);
+    waiter.timer = setTimeout(waiter.cancel, 30000);
     return waiter;
   }
+  window.addEventListener("pagehide", () => {
+    for (const waiter of nativeDownloadDecisionWaiters.values()) waiter.cancel();
+  });
 
   async function downloadBlob(blob, filename) {
     if (STUDY_READ_ONLY) return false;
     const nativeDecision = prepareNativeDownloadDecision();
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = url;
+    // A fragment carries the ID through WebKit navigation even if postMessage is delivered later.
+    link.href = nativeDecision ? url + "#gamma-download=" + nativeDecision.id : url;
     link.download = filename;
     try {
+      nativeDecision?.register(link.href);
       link.click();
     } catch (error) {
       if (nativeDecision) nativeDecision.cancel();
@@ -5542,7 +5554,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       autoTablet,
       manualTablet: prefs.tabletMode === true || window.SHOSAI_TABLET_PWA === true,
     });
-    if (transition.reload && !STUDY_READ_ONLY && !layoutLaneReloadPending && currentWorkspaceMode() !== "rehearsal") {
+    const nativeWelcome = nativeProject && (!nativeProject.opened || window.STAGE_WELCOME?.visible);
+    if (transition.reload && !nativeWelcome && !STUDY_READ_ONLY && !layoutLaneReloadPending && currentWorkspaceMode() !== "rehearsal") {
       // Preserve open and search-suspended drafts; a later resize retries normally.
       if (hasPendingRenameDrafts()) return currentLayoutLaneState();
       layoutLaneReloadPending = true;
@@ -7463,6 +7476,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let history = [];
   let future = [];
   let saveTimer = null;
+  let saveMaxTimer = null;
   let controlBefore = null;
 
   /* ---------- シーンの音楽 ----------
@@ -7973,40 +7987,44 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const track = { id: rid("track"), title: audioFileTitle(file), durationSeconds: duration, gainDb: 0 };
     if (typeof nativeProject !== "undefined" && nativeProject) setAudioStatus(tx("音源をプロジェクトへ保存しています…"), null, "progress");
     else setAudioStatus(`「${track.title}」を端末へ保存しています…`, `Saving “${track.title}” on this device…`, "progress");
+    const finish = async () => {
+      if (!targetAvailable()) return stopChangedTarget();
+      if (targetCue) {
+        const saved = await commitMusicCueProject(project => {
+          if (!project.cues.some(c => c.id === targetCue.id)) return false;
+          project.audioTracks.push(track);
+          project.musicCueAudio ||= {version:1,bindings:{},migrations:[]};
+          window.STAGE_MUSIC_CUES.bindingTable(project,targetCue.id)[targetCue.id] = {trackId:track.id,mediaInSeconds:0,mediaOutSeconds:null,gainDb:0};
+          return true;
+        }, "music-cue-upload");
+        if (saved) setAudioStatus(`「${track.title}」を読み込みました。`, `Loaded “${track.title}”.`, "done");
+        return saved;
+      }
+      checkpoint();
+      audioTracks().push(track);
+      selectedAudioTrackId = track.id;
+      // Legacy assignments are archival. Import adds a source to the M cue library only.
+      audioPanelSignature = "";
+      continueAudioOnNextSceneSync = false;
+      renderScenes();
+      render();
+      persistSoon();
+      try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (_) { /* 任意 */ }
+      setAudioStatus(tx("音源を読み込みました。Mキューの詳細で選べます。"), null, "done");
+      return true;
+    };
     try {
       await audioStore.put(track.id, file, {durationSeconds:duration});
       storagePressure?.saved("audio");
     } catch (error) {
       if (window.STAGE_STORAGE_PRESSURE?.isQuotaError(error)) storagePressure?.failed("audio");
-      if (typeof nativeProject !== "undefined" && nativeProject) setAudioStatus(tx("音源をプロジェクトへ保存できませんでした。ショーは変更していません。"), null, "error");
+      if (typeof nativeProject !== "undefined" && nativeProject) setAudioStatus(tx(/timed out/.test(String(error?.message)) ? "音源の保存結果を確認できませんでした（時間切れ）。プロジェクトを開き直して確認してください。" : "音源をプロジェクトへ保存できませんでした。ショーは変更していません。"), null, "error");
       else setAudioStatus("音源を端末へ保存できませんでした。既存のショーは変更していません。",
         "The audio could not be stored. The show was not changed.", "error");
+      if (typeof nativeProject !== "undefined" && nativeProject && /timed out/.test(String(error?.message))) pendingLateAudio.set(track.id, {finish, title: track.title});
       return false;
     }
-    if (!targetAvailable()) return stopChangedTarget();
-    if (targetCue) {
-      const saved = await commitMusicCueProject(project => {
-        if (!project.cues.some(c => c.id === targetCue.id)) return false;
-        project.audioTracks.push(track);
-        project.musicCueAudio ||= {version:1,bindings:{},migrations:[]};
-        window.STAGE_MUSIC_CUES.bindingTable(project,targetCue.id)[targetCue.id] = {trackId:track.id,mediaInSeconds:0,mediaOutSeconds:null,gainDb:0};
-        return true;
-      }, "music-cue-upload");
-      if (saved) setAudioStatus(`「${track.title}」を読み込みました。`, `Loaded “${track.title}”.`, "done");
-      return saved;
-    }
-    checkpoint();
-    audioTracks().push(track);
-    selectedAudioTrackId = track.id;
-    // Legacy assignments are archival. Import adds a source to the M cue library only.
-    audioPanelSignature = "";
-    continueAudioOnNextSceneSync = false;
-    renderScenes();
-    render();
-    persistSoon();
-    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (_) { /* 任意 */ }
-    setAudioStatus(tx("音源を読み込みました。Mキューの詳細で選べます。"), null, "done");
-    return true;
+    return await finish(); // review R6-b: keep the operation flag until the M cue save has completed
     } finally {
       audioFileOperationPending = false;
       finishAudioFileOperation?.(); finishAudioFileOperation = null;
@@ -8082,7 +8100,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       return true;
     } catch (error) {
       if (window.STAGE_STORAGE_PRESSURE?.isQuotaError(error)) storagePressure?.failed("audio");
-      setAudioStatus("音源を接続できませんでした。", "The audio file could not be reconnected.", "error");
+      if (nativeProject && /timed out/.test(String(error?.message))) setAudioStatus(tx("音源の保存結果を確認できませんでした（時間切れ）。プロジェクトを開き直して確認してください。"), null, "error");
+      else setAudioStatus("音源を接続できませんでした。", "The audio file could not be reconnected.", "error");
       return false;
     }
   }
@@ -11212,6 +11231,40 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     syncPhoneSaveNotice(text, level, code);
   }
 
+  let nativeSavingTimer = null;
+  let nativeSaveWarning = null;
+  function nativeProjectSaveState(payload) {
+    if (payload.state !== "received") { clearTimeout(nativeSavingTimer); nativeSavingTimer = null; }
+    if (payload.state === "failed" || payload.state === "hold") {
+      nativeSaveWarning = payload.detail || tx(payload.state === "hold"
+        ? "原本の照合値が一致しません。保存先を選ぶまで書き込みません"
+        : "プロジェクトを保存できませんでした。もう一度保存してください。");
+      const band = document.getElementById("stage-storage-band");
+      if (band) {
+        band.classList.remove("is-folded", "is-protected");
+        for (const child of band.children) child.hidden = child.id !== "stage-storage-band-message";
+        const lead = document.getElementById("stage-storage-band-lead");
+        const backup = document.getElementById("stage-storage-band-backup");
+        if (lead) lead.textContent = nativeSaveWarning;
+        if (backup) backup.textContent = "";
+        band.hidden = false;
+      }
+      setSaveStatus(nativeSaveWarning, "warn");
+    } else if (payload.state === "saved") {
+      nativeSaveWarning = null;
+      const band = document.getElementById("stage-storage-band"); if (band) band.hidden = true;
+      state.lastSavedAt = payload.at; syncSaveStamps();
+      setSaveStatus(tx("プロジェクトを保存しました。"), "saved");
+    } else if (payload.state === "saving") {
+      nativeSavingTimer = setTimeout(() => {
+        nativeSavingTimer = null;
+        if (!nativeSaveWarning) setSaveStatus(tx("保存中…"), "saving");
+      }, 1000);
+    } else if (!nativeSaveWarning) {
+      setSaveStatus(tx("変更を受け取りました。保存を待っています。"), "info");
+    }
+  }
+
   function showShowSaveError(message, code) {
     if (!els.showsModal || els.showsModal.hidden) return;
     const box = document.getElementById("stage-show-save-error");
@@ -11255,12 +11308,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let lastPersistedSnapshot = null;
   async function flushAutosave() {
     if (typeof nativeProject !== "undefined" && nativeProject) {
+      clearTimeout(saveTimer); clearTimeout(saveMaxTimer); saveMaxTimer = null;
       autosaveRequested = false;
       try {
         await nativeAudioRestore;
         nativeProject.changed();
-        setSaveStatus(tx("プロジェクトへ変更を送りました。"), "saved");
-      } catch (_) { setSaveStatus(tx("プロジェクトへ変更を送れませんでした。もう一度保存してください。"), "warn"); }
+      } catch (_) { nativeProjectSaveState({state:"failed", at:nowIso(), detail:tx("プロジェクトへ変更を送れませんでした。もう一度保存してください。")}); }
       return;
     }
     if (autosaveInFlight) return autosaveInFlight;
@@ -11336,12 +11389,20 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     }
     clearTimeout(saveTimer);
     autosaveRequested = true;
-    setSaveStatus(tx("変更を保存しています…") || "Saving…", "saving");
+    if (!nativeProject) setSaveStatus(tx("変更を保存しています…") || "Saving…", "saving");
     saveTimer = setTimeout(flushAutosave, 250);
+    if (nativeProject && saveMaxTimer === null) saveMaxTimer = setTimeout(() => {
+      saveMaxTimer = null;
+      if (autosaveRequested) flushAutosave();
+    }, 2000);
   }
 
   let actionStatusTimer = null;
   let actionStatusSerial = 0;
+  window.addEventListener("gamma-shell-error", () => {
+    // D-18 owns both the one-line notice and its OFF/accessibility behaviour.
+    announce(tx("画面でエラーが発生しました。ヘルプから診断情報を書き出せます。"), {warning:false});
+  });
 
   function announce(message, options = {}) {
     /* 英語モードでは、文の「枠」を型変換表（stage-i18n.js の say）で訳す。
@@ -31953,7 +32014,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const box = document.getElementById("stage-pref-native");
     if (!box) return;
     const inNativeShell = location.hostname === "127.0.0.1" && (location.port === "8957" || location.port === "8958");
-    if (inNativeShell) { box.hidden = true; return; }
+    if (nativeProject || inNativeShell) { box.hidden = true; return; }
     const link = document.getElementById("stage-native-download");
     const badge = document.getElementById("stage-native-version");
     const note = document.getElementById("stage-native-note");
@@ -34598,6 +34659,8 @@ ${propsPlotHtml}
   function packageWarningLines(data, result = data) {
     const lines = [];
     if (data.warnings.includes("show-hash-mismatch")) lines.push(tx("show.json の一致を確認できませんでした。JSONとして読める内容を読み込みます。"));
+    const unreferenced = data.warnings.filter(w => typeof w === "string" && w.startsWith("unreferenced-audio:")).map(w => w.slice("unreferenced-audio:".length));
+    if (unreferenced.length) lines.push(tx("次の音源は本文（show.json）から参照されていないため、この読み込みには取り込みません。元のパッケージはそのまま残ります。") + "\n" + unreferenced.join(" ／ "));
     if (result.offline?.length) lines.push(tx("次の音源はオフライン（未接続）です。再接続で元ファイルを選び直してください。") + "\n" + result.offline.map(a => a.originalName || a.trackId).join(" ／ "));
     if (result.conflicts?.length) lines.push(tx("次の音源は、この端末に違う中身があるため上書きしませんでした。置き換えるには音源の再接続で選び直してください。") + "\n" + result.conflicts.map(a => a.originalName || a.trackId).join(" ／ "));
     return lines;
@@ -41926,6 +41989,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   });
 
   document.addEventListener("keydown", (event) => {
+    if (STUDY_READ_ONLY || event.isComposing || event.keyCode === 229) return;
     // セリフ編集画面（2026-09-24）では矢印キーを台本の行の移動に使う。舞台のキュー・シーン送りはしない
     if (document.body.dataset.gammaWorkspace === "script") return;
     const CUE_STEPS = { ArrowLeft: -1, ArrowRight: 1 };
@@ -45172,10 +45236,24 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       if (!nativeProject) setTimeout(() => { deliverBundledSampleBackfills(pendingBlocked).catch(() => {}); }, 1500);
       if (!nativeProject) storageBand = createStorageBand();
       if (typeof nativeProject !== "undefined" && nativeProject) {
+        window.addEventListener("stageSketchProject:audioConfirmedLate", event => {
+          // review R6: the shell answered after the page gave up waiting. A new track is completed now; otherwise the user is told.
+          const {trackId, ok} = event.detail || {};
+          const pending = pendingLateAudio.get(trackId); pendingLateAudio.delete(trackId);
+          if (pending && ok === true) {
+            Promise.resolve().then(() => pending.finish()).then(done => { if (done) setAudioStatus(tx("音源の保存を確認し、ショーに追加しました。"), null, "done"); }).catch(() => {});
+            return;
+          }
+          if (ok === true) setAudioStatus(tx("音源はプロジェクトに保存されました。表示を更新するにはプロジェクトを開き直してください。"), null, "done");
+          else setAudioStatus(tx("音源をプロジェクトへ保存できませんでした。ショーは変更していません。"), null, "error");
+        });
         await nativeProject.bind({
           open: openNativeProject,
           snapshot: nativeProjectSnapshot,
+          thumbnail: nativeProjectThumbnail,
           settle: settleNativeProject,
+          beforeQuit: () => window.GAMMA_FIELD_RUNS?.beforeQuit(),
+          saveState: nativeProjectSaveState,
           error: () => importFailureNotice(tx("プロジェクトを開くか保存する処理を完了できませんでした。元ファイルは保持しています。")),
         }, nativeInitialOpen);
         syncNativeProjectEntries();
@@ -45196,6 +45274,31 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     }
   }
 
+  // Derived PNG only. Reuse drawStage and restore every presentation value;
+  // no persist/render/snapshot calls while these temporary settings are active.
+  function nativeProjectThumbnail() {
+    const keep = {project:state.project, showNames:state.showNames, showSetNames:state.showSetNames,
+      showLightNames:state.showLightNames, frontPan:state.frontPan, frontPanY:state.frontPanY,
+      height:H, workLightOff:prefs.workLightOff, lightPool:prefs.lightPool,
+      anim:sceneAnim, quiet:fieldRunQuiet};
+    try {
+      state.project = projectIoClone(keep.project);
+      state.showNames = state.showSetNames = state.showLightNames = false;
+      state.frontPan = state.frontPanY = 0; H = BASE_H;
+      prefs.workLightOff = true; prefs.lightPool = true; sceneAnim = null; fieldRunQuiet = false;
+      const source = document.createElement("canvas"); source.width = W; source.height = BASE_H;
+      drawStage(source.getContext("2d"), false, "front", {noZoom:true});
+      const thumb = document.createElement("canvas"); thumb.width = 320; thumb.height = 180;
+      thumb.getContext("2d").drawImage(source, 0, 0, 320, 180);
+      return thumb.toDataURL("image/png");
+    } finally {
+      state.project = keep.project; state.showNames = keep.showNames; state.showSetNames = keep.showSetNames;
+      state.showLightNames = keep.showLightNames; state.frontPan = keep.frontPan; state.frontPanY = keep.frontPanY;
+      H = keep.height; prefs.workLightOff = keep.workLightOff; prefs.lightPool = keep.lightPool;
+      sceneAnim = keep.anim; fieldRunQuiet = keep.quiet;
+    }
+  }
+
   function nativeProjectSnapshot() {
     syncRunOfShow();
     window.STAGE_TIME_DOMAIN?.refreshCueAnchors(state.project);
@@ -45209,10 +45312,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     await musicCuePendingDone;
     await nativeAudioRestore;
     if (controlBefore !== null) finishControlEdit();
-    clearTimeout(saveTimer); autosaveRequested = false;
+    clearTimeout(saveTimer); clearTimeout(saveMaxTimer); saveMaxTimer = null; autosaveRequested = false;
   }
   function installNativeProjectState(next) {
-    clearTimeout(saveTimer); autosaveRequested = false;
+    clearTimeout(saveTimer); clearTimeout(saveMaxTimer); saveMaxTimer = null; autosaveRequested = false;
     stopSceneAnim(); stopSpinRun(); clearAudioEngine();
     resetStageAskDraft({clearInput:true, invalidate:true});
     state = next; history = []; future = []; controlBefore = null;

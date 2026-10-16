@@ -1,6 +1,7 @@
 /* Independent rehearsal records. No stage editor or storage capabilities. */
 (function(root){'use strict';
  const LIMIT={package:256*1024**2,source:60*1024**2,data:20*1024**2,image:16*1024**2,frames:500,segments:10000,text:100000};
+ const PACKAGE_README='Stage Sketch Gamma rehearsal record / .stagerun.zip\nOpen with Rehearsal records. Audio files are not included. The original show is not overwritten.\n';
  const id=s=>typeof s==='string'&&/^[A-Za-z0-9_-]{1,160}$/.test(s);
  const date=s=>typeof s==='string'&&Number.isFinite(Date.parse(s));
  const obj=o=>o&&typeof o==='object'&&!Array.isArray(o);
@@ -34,6 +35,11 @@
   if(raw!==undefined){const d=source(raw),scenes=new Set(d.project.scenes.filter(s=>s.kind==='scene').map(s=>s.id));if((r.viewSceneId&&!scenes.has(r.viewSceneId))||(r.viewFrameId&&!r.frames.some(f=>f.frameId===r.viewFrameId&&f.sceneId===r.viewSceneId))||r.attempts?.some(a=>!scenes.has(a.startSceneId))||r.addenda?.some(a=>!scenes.has(a.sceneId)))fail('invalid-reference');if(d.project.id!==r.source.projectId||!scenes.has(r.progressSceneId)||r.entries.some(e=>!scenes.has(e.sceneId))||r.frames.some(f=>!scenes.has(f.sceneId)))fail('invalid-reference');}
   return true;
  }
+ // Exact STORE ZIP budget: payload + manifest + UTF-8 names and both ZIP headers.
+ function packageSize(run,raw,images){const entries=[{path:'run.json',bytes:bytes(JSON.stringify(run))},{path:'source/show.json',bytes:bytes(raw)},{path:'README.txt',bytes:bytes(PACKAGE_README)}];for(const f of run.frames)for(const view of ['front','plan']){const path=f.images[view].path,blob=images.get(path),size=typeof blob==='number'?blob:blob?.size;if(!Number.isSafeInteger(size)||size<0||size>LIMIT.image)fail('missing-image');entries.push({path,bytes:size});}const manifest={kind:'stage-sketch-rehearsal-run',version:1,runId:run.runId,files:entries.map(e=>({...e,sha256:'0'.repeat(64)}))};entries.unshift({path:'manifest.json',bytes:bytes(JSON.stringify(manifest))});return 22+entries.reduce((n,e)=>n+e.bytes+76+2*bytes(e.path),0);}
+ function assertPackageSize(run,raw,images,previous=null){const size=packageSize(run,raw,images);if(size<=LIMIT.package)return size;
+ // Records stored before this limit (or already over it) stay writable while they do not grow; new records and growth are refused (review R1).
+ if(previous===null||!(size<=previous))fail('package-too-large');return size;}
  function touch(r){if(r.status==='closed')fail('closed-run');r.revision++;r.updatedAt=new Date().toISOString();}
  function text(r,scene,number,value){if(value.length>LIMIT.text)fail('record-too-large');touch(r);let e=r.entries.find(e=>e.sceneId===scene.id);if(!e){e={sceneId:scene.id,sceneNumberAtStart:String(number),sceneTitleAtStart:scene.title||'',text:'',updatedAt:r.updatedAt};r.entries.push(e);}e.text=value;e.updatedAt=r.updatedAt;}
  function close(r){if(r.status==='closed')return;touch(r);r.status='closed';r.closedAt=r.updatedAt;}
@@ -64,5 +70,5 @@
   function rows(){const rows=clone(r.durations?.visits||[]);if(stamp!==null&&rows.length&&r.status!=='closed')rows.at(-1).actualSeconds+=Math.max(0,(now()-stamp)/1000);return rows;}
   return {enter,pause,checkpoint,rows,running:()=>stamp!==null};
  }
- const api={durationClock,attempt,validateAddendum,LIMIT,clone,source,hash,create,validate,text,touch,close,fail};root.GAMMA_FIELD_RUN_MODEL=api;if(typeof module!=='undefined')module.exports=api;
+ const api={PACKAGE_README,packageSize,assertPackageSize,durationClock,attempt,validateAddendum,LIMIT,clone,source,hash,create,validate,text,touch,close,fail};root.GAMMA_FIELD_RUN_MODEL=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

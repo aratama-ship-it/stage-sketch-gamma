@@ -32,7 +32,7 @@ ${table(["Sample", "What it contains", "Use it to"], [
   ["ロミオとジュリエット｜RJセカンド（受け渡す手） (RJ Second)", "34 scenes, 5 sections, 10 people; 84 dialogue, 34 sound and 51 light cues", "See show paperwork with many cues"],
   ["テスト: 全機能の試験場 (Test: every-feature testing ground)", "48 scenes. Sections A–J each isolate one group of features", "Try things out. Most pictures in this booklet were taken here, and “Try it in: B-3” notes refer to it (" + ref("test-show", "1-6") + ")"]
 ])}
-${fig("release072-sample-library", "Get the examples you need from the sample library.", "Sample library")}
+${fig("release073-sample-library", "Get the examples you need from the sample library.", "Sample library")}
 ${note("Samples are acquired on request", "Starting or reloading the app does not add samples to All shows. Copies already there stay. Get another copy from Sample library when needed.")}`
       },
       {

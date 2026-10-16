@@ -52,9 +52,12 @@
   function create(host) {
     const handler = host.webkit?.messageHandlers?.gammaProject;
     if (typeof handler?.postMessage !== "function") return null;
-    let active = true, opened = false, readOnly = false, runtime = null, generation = 0;
+    let active = true, opened = false, readOnly = false, runtime = null, generation = 0, messageGeneration = 0;
     let audio = new Map(), removedAudio = new Map(), lastSent = null, opening = Promise.resolve(), readOnlyValue = null;
     const pendingAudio = new Set();
+    const uploadingAudio = new Set();
+    const audioConfirmations = new Map(), timedOutConfirmations = new Map();
+    let bufferedSaveState = null;
     let resolveInitial, bufferedOpen = null;
     const initialOpen = new Promise(resolve => { resolveInitial = resolve; });
     const post = (type, data = {}) => handler.postMessage({ type, ...data });
@@ -86,21 +89,39 @@
     host.addEventListener?.("stageSketchProject:requestLegacy", requestLibrary);
     function receiveOpen(payload) {
       if (!active) throw Error("Project ready expired; reload before opening");
-      const entries = validate(payload);
+      let entries;
+      try { entries = validate(payload); }
+      catch (error) {
+        if (typeof payload?.requestId === "string") post("opened", {requestId:payload.requestId, ok:false, error:String(error.message || error)});
+        throw error;
+      }
       host.clearTimeout(timeout);
-      if (!runtime) { audio = entries; bufferedOpen = payload; resolveInitial(payload); return; }
+      if (!runtime) { bufferedOpen = payload; resolveInitial(payload); return opening; }
       opening = opening.catch(() => {}).then(async () => {
-        opened = false; generation++; audio = entries; removedAudio = new Map(); readOnly = payload.readOnly; lastSent = null;
+        const previous = {opened, audio, removedAudio, readOnly, lastSent, readOnlyValue};
+        opened = false; generation++;
+        for (const pending of audioConfirmations.values()) pending.finish(false);
+        // Import renders/probes audio before it resolves, so expose the incoming URLs now.
+        audio = entries; removedAudio = new Map(); readOnly = payload.readOnly; lastSent = null;
         readOnlyValue = readOnly ? {show:payload.show, title:payload.title} : null;
-        const ok = await runtime.open(payload);
-        if (ok !== true) throw Error("Project show could not be opened");
-        opened = true;
+        try {
+          const ok = await runtime.open(payload);
+          if (ok !== true) throw Error("Project show could not be opened");
+          opened = true;
+          host.STAGE_WELCOME?.hide({restoreEditor:false});
+          if (payload.show !== "") lastSent = contentSignature(runtime.snapshot().show);
+          if (typeof payload.requestId === "string") post("opened", {requestId:payload.requestId, ok:true});
+        } catch (error) {
+          ({opened, audio, removedAudio, readOnly, lastSent, readOnlyValue} = previous);
+          if (typeof payload.requestId === "string") post("opened", {requestId:payload.requestId, ok:false, error:String(error.message || error)});
+          throw error;
+        }
         if (payload.show === "") changed();
-        else lastSent = contentSignature(runtime.snapshot().show);
       });
       // AppKit evaluateJavaScript does not await returned promises. The UI reports
       // a failed import; no replacement changed/flushed is sent on failure.
       opening.catch(error => runtime.error(error));
+      return opening;
     }
     // The selected scene is view state. Keep it in saved packages/flushes,
     // but moving between scenes must not mark the AppKit document Edited.
@@ -115,7 +136,7 @@
       if (!active || !opened || readOnly) return false;
       const value = readOnlyValue || runtime.snapshot();
       if (!force && contentSignature(value.show) === lastSent) return true;
-      post("changed", value); lastSent = contentSignature(value.show); return true;
+      post("changed", { ...value, generation:++messageGeneration }); lastSent = contentSignature(value.show); return true;
     }
     async function flush(requestId) {
       await opening;
@@ -123,21 +144,68 @@
       await runtime.settle();
       await Promise.all([...pendingAudio]);
       const value = readOnlyValue || runtime.snapshot();
-      post("flushed", { ...value, requestId }); lastSent = contentSignature(value.show);
+      sendThumbnail();
+      post("flushed", { ...value, requestId, generation:++messageGeneration }); lastSent = contentSignature(value.show);
     }
+    function sendThumbnail() {
+      if (!active || !opened || readOnly || typeof runtime?.thumbnail !== "function") return;
+      // A derived cache must never prevent a document save/close.
+      try {
+        const dataUrl = runtime.thumbnail();
+        if (typeof dataUrl === "string" && dataUrl.startsWith("data:image/png;base64,")) post("thumbnail", {dataUrl});
+      } catch (_) { /* Keep the previous cache; saving the project remains authoritative. */ }
+    }
+    const welcomeActions = new Set(["openRecent", "new", "open", "samples", "legacy", "setStartupAction", "openUpdate", "dismissUpdate"]);
     const facade = {
       open: receiveOpen,
+      requestWelcome(payload) {
+        if (!active) throw Error("Project ready expired; reload before showing welcome");
+        if (!payload || !Array.isArray(payload.recent)) throw Error("Invalid welcome payload");
+        requestLibrary();
+        return host.STAGE_WELCOME?.show(payload);
+      },
+      welcomeAction(action, recentId, value) {
+        if (!active || !welcomeActions.has(action)) return false;
+        if (action === "openRecent" && (typeof recentId !== "string" || !recentId)) return false;
+        if (action === "setStartupAction" && !["lastProject", "welcome"].includes(value)) return false;
+        post("welcomeAction", {action, ...(action === "openRecent" ? {recentId} : {}), ...(action === "setStartupAction" ? {value} : {})});
+        return true;
+      },
+      nativeUpdate: payload => host.STAGE_WELCOME?.nativeUpdate(payload),
+      saveState(payload) {
+        if (!payload || !["received", "saving", "saved", "failed", "hold"].includes(payload.state) || !Number.isFinite(Date.parse(payload.at))) return;
+        if (runtime) runtime.saveState?.(payload); else bufferedSaveState = payload;
+      },
+      audioConfirmed(payload) {
+        if (!validId(payload?.trackId) || typeof payload.ok !== "boolean") return;
+        const pending = audioConfirmations.get(payload.trackId);
+        if (pending) pending.finish(payload.ok);
+        else {
+          const late = timedOutConfirmations.get(payload.trackId);
+          if (!late) return;
+          timedOutConfirmations.delete(payload.trackId);
+          // review R6-a: a late success registers the stored audio so playback and export work in this session.
+          const ok = payload.ok === true && late.token === generation;
+          if (ok) { audio.set(payload.trackId, late.entry); removedAudio.delete(payload.trackId); }
+          if (typeof host.dispatchEvent === "function") host.dispatchEvent(new CustomEvent("stageSketchProject:audioConfirmedLate", {detail:{trackId:payload.trackId, ok}}));
+        }
+      },
       prepareLegacy(text) {
         if (!active) throw Error("Project ready expired; reload before opening");
         // Pin the native session while the user considers the NSAlert, even at launch.
         requestLibrary();
         return prepareLegacy(text, host);
       },
+      async beforeQuit() {
+        await opening;
+        if (!active || !opened) throw Error("Project is not open");
+        await runtime.beforeQuit?.();
+      },
       flush: requestId => { const done = flush(requestId); done.catch(error => runtime?.error(error)); return done; },
       // close must leave the document usable: AppKit may cancel its following save panel.
       close() {
-        if (!pendingAudio.size) return changed();
-        const done = runtime.settle().then(() => changed());
+        if (!pendingAudio.size) { sendThumbnail(); return changed(); }
+        const done = runtime.settle().then(() => { sendThumbnail(); return changed(); });
         done.catch(error => runtime.error(error));
         return done;
       },
@@ -159,20 +227,35 @@
         if (!active || !opened || readOnly || !validId(id) || !file?.size || file.size > audioLimit
             || !Number.isFinite(durationSeconds) || durationSeconds < 0) return Promise.reject(Error("Invalid project audio upload"));
         const token = generation;
+        if (uploadingAudio.has(id)) return Promise.reject(Error("Project audio confirmation pending"));
+        uploadingAudio.add(id);
         const job = (async () => {
           const mime = file.type || (/\.m4a$/i.test(file.name || "") ? "audio/mp4" : /\.mp3$/i.test(file.name || "") ? "audio/mpeg" : /\.wav$/i.test(file.name || "") ? "audio/wav" : "application/octet-stream");
           const response = await host.fetch("/project-audio/" + id, {
             method: "PUT", credentials: "same-origin", headers: { "Content-Type": mime }, body: file,
           });
-          if (!response.ok || token !== generation) throw Error("Project audio upload failed");
+          if (response.status !== 201 || token !== generation) throw Error("Project audio upload failed");
           const entry = { trackId:id, url:new URL("/project-audio/" + id, host.location.href).href,
             originalName:file.name || id, mime, bytes:file.size, durationSeconds };
-          post("audioStored", { trackId:id, originalName:entry.originalName, mime, bytes:file.size, durationSeconds });
+          await new Promise((resolve, reject) => {
+            const pending = {finish(ok) {
+              if (audioConfirmations.get(id) !== pending) return;
+              host.clearTimeout(pending.timer); audioConfirmations.delete(id);
+              if (ok && token === generation) resolve(); else reject(Error(timedOutConfirmations.has(id) ? "Project audio confirmation timed out" : "Project audio confirmation failed"));
+            }};
+            // review R6: a slow confirmation is reported as timed out (not failed); a late success is surfaced separately.
+            pending.timer = host.setTimeout(() => { timedOutConfirmations.set(id, {entry, token}); pending.finish(false); }, 60000);
+            audioConfirmations.set(id, pending);
+            try { post("audioStored", { trackId:id, originalName:entry.originalName, mime, bytes:file.size, durationSeconds }); }
+            catch (_) { pending.finish(false); }
+          });
+          if (token !== generation) throw Error("Project audio changed during confirmation");
           audio.set(id, entry);
           removedAudio.delete(id);
         })();
         pendingAudio.add(job);
-        job.then(() => pendingAudio.delete(job), () => pendingAudio.delete(job));
+        const cleanup = () => { pendingAudio.delete(job); uploadingAudio.delete(id); };
+        job.then(cleanup, cleanup);
         return job;
       },
       async remove(id) {
@@ -221,7 +304,7 @@
     return {
       initialOpen, store, changed,
       get active() { return active; }, get opened() { return opened; }, get readOnly() { return readOnly; },
-      async bind(callbacks, payload) { runtime = callbacks; payload = bufferedOpen || payload; if (!payload.libraryOnly) { receiveOpen(payload); await opening; } },
+      async bind(callbacks, payload) { runtime = callbacks; payload = bufferedOpen || payload; bufferedOpen = null; if (!payload.libraryOnly) { await receiveOpen(payload); } if (bufferedSaveState) { runtime.saveState?.(bufferedSaveState); bufferedSaveState = null; } },
       request(type) { if (active && ["requestOpen", "requestNew", "requestSamples"].includes(type)) post(type); },
       storage: memoryStorage(),
     };
