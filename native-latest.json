@@ -1,9 +1,9 @@
 {
-  "version": "0.3.73",
+  "version": "0.3.74",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.73/stage-sketch-gamma-mac-0.3.73.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.74/stage-sketch-gamma-mac-0.3.74.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "Mac版の起動画面を新しくし、最近のプロジェクトを索引から開けます。保存状態の表示、保存時のサムネイル、終了・二重起動・ポート使用中の案内を追加。リハーサルで正面図と平面図を左右にも並べられます。",
+  "notes": "舞台タブの正面＋平面を画面に収め、進行表・Qシートの見出しが切れないようにしました。劇場設定の袖札、環境設定のコントラスト、照明・進行表の書体と選択欄、英語・中国語・韓国語の残りの文言を更新。",
   "updated": "2026-10-16",
-  "build": 85
+  "build": 86
 }
