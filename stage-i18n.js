@@ -32,6 +32,17 @@
 
   const TEXT = {
 
+    // v0.3.75 release notes
+
+    "照明の図で、灯体の番号札が他の灯体の記号や引き出し線と重ならないようにしました。かんたん表示も同じです。": "In the lighting views, fixture number tags no longer overlap other fixtures' symbols or leader lines. The simple view works the same way.",
+
+    "灯体一覧のグループを解くボタンを、× ではなく「組を解く」という文字のボタンにしました。": "In the fixture list, the button that dissolves a group is now a text button, \"Ungroup\", instead of ×.",
+
+    "セリフタブの操作と環境設定の目次の大きさをそろえ、セリフの目次や灯体名が数文字だけ切れないようにしました。": "Controls in the Lines tab and the Preferences contents now have consistent sizes, and the Lines contents and fixture names no longer lose a few characters.",
+
+    "公開版で共有の窓を開いたときに、使わない通信を行わないようにしました。": "Opening the Sharing window on the public site no longer sends an unused request.",
+    "組を解く": "Ungroup",
+
     // v0.3.74 release notes
 
     "舞台タブの「正面＋平面」で、平面図が画面の下に隠れないようにしました。2 つの図が画面の高さに合わせて並び、正面図は少し小さくなります。短い画面の横並びはそのままです。": "On the Stage tab, \"Front + plan\" no longer hides the plan view below the screen. The two views share the screen height and the front view becomes a little smaller. Side-by-side on short screens is unchanged.",

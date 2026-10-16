@@ -259,9 +259,9 @@ ${body}
    * 見た目と操作は舞台タブのパネル列の取っ手（stage-sketch.js の initPanelWidths・.stage-panel-width-handle）と同じ:
    * ドラッグで幅を変える／左右キーで10px（Shift で30px）／Home・End で最小・最大／ダブルクリックまたは Enter で元に戻す。
    * 変えるのは両端の列（シーン・選んだセリフ）。真ん中の台本は残りを使う（最小360px）。
-   * 端末の設定（gamma:script-editor-widths-v1）。数値: 既定 シーン260px・選んだセリフ320px／シーン 180〜480px・選んだセリフ 240〜560px。 */
+   * 端末の設定（gamma:script-editor-widths-v1）。数値: 既定 シーン292px・選んだセリフ320px／シーン 180〜480px・選んだセリフ 240〜560px。 */
   const WIDTH_KEY = "gamma:script-editor-widths-v1";
-  const WIDTH_DEFAULT = { scenes: 260, inspector: 320 };
+  const WIDTH_DEFAULT = { scenes: 292, inspector: 320 };
   const WIDTH_LIMIT = { scenes: [180, 480], inspector: [240, 560] };
   const SCRIPT_MIN = 360;
   let columnWidths = { ...WIDTH_DEFAULT };

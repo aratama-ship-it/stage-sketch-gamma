@@ -142,7 +142,7 @@
   .list.cols2 .row{grid-template-columns:30px 1fr auto;gap:4px;padding:0 4px;min-height:26px}
   .list.cols2 .row.with-delete{grid-template-columns:30px minmax(0,1fr) auto 20px}
   .list.cols2 .row .no{font-size:11px;padding:2px 1px}
-  .list.cols2 .row .nm{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .list.cols2 .row .nm{font-size:10px;white-space:normal;overflow-wrap:anywhere}
   .list.cols2 .row .nm small{display:none}
   .list.cols2 button.st{min-width:34px;padding:1px 4px}
   /* 図の上の中央。照明デザインではLXキュー、配置では現在のシーンを出す。 */
@@ -224,11 +224,11 @@
      28px角の固定をやめる。帯が狭いので左右の余白は詰め、文字も小さめにする。 */
   .transport .btn.solo{min-width:0;width:auto;padding:0 7px;font-weight:700;font-size:11px;white-space:nowrap}
   .transport .btn.resetcue{min-width:0;width:auto;padding:0 7px;font-size:11px;white-space:nowrap}
-  /* R-11: カスタムのグループ。取り付け場所の見出しと同じ形にし、◆ と解除の✕で見分ける。 */
+  /* R-11: カスタムのグループ。◆ と文字の解除操作で削除と区別する。 */
   #make-fixture-group{width:100%;margin-bottom:4px;font-size:11px;min-height:26px}
   .grp.fixture-group{display:flex;align-items:center;gap:6px}
   .grp.fixture-group>span{color:var(--brass)}
-  .grp.fixture-group .fixture-group-off{margin-left:auto;flex:0 0 auto}
+  .grp.fixture-group .fixture-group-off{--radius-sm:2px;margin-left:auto;flex:0 0 auto;height:34px;min-height:34px;padding:0 8px;border-radius:var(--radius-sm);font-size:12px;color:var(--milk);background:var(--desk-2)}
   .transport .btn.solo[aria-pressed="true"]{color:#1a1409;background:var(--brass);border-color:var(--brass)}
   .canvases{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;gap:5px}
   canvas{display:block;width:100%;background:#0d0e10;border:1px solid var(--line-dark);cursor:crosshair;touch-action:none}
@@ -1097,7 +1097,7 @@
 <script src="../stage-light-receiver.js?v=20261004-receiver89"></script>
 <script src="../gamma-light-cue-overlay.js?v=20261006-v0318"></script>
 <script src="../stage-machinery.js?v=20261012-v0358"></script>
-<script src="app.js?v=20261016-v0374"></script>
+<script src="app.js?v=20261016-v0375"></script>
 <script src="light-presets.js?v=1789357787"></script>
 <script src="light-presets-ui.js?v=20261010-v0338"></script>
 <!-- 選択灯「型」P1: 本体ではなく、この試作だけへ隔離接続する。 -->

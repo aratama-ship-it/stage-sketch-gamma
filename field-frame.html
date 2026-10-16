@@ -28,7 +28,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.74</span>
+                <span class="stage-app-version">0.3.75</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2821,18 +2821,16 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261016-v0374">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261016-v0375">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0374-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0374-title">v0.3.74</h3><time datetime="2026-10-16">2026-10-16</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0375-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0375-title">v0.3.75</h3><time datetime="2026-10-16">2026-10-16</time></header>
       <ul>
-        <li>舞台タブの「正面＋平面」で、平面図が画面の下に隠れないようにしました。2 つの図が画面の高さに合わせて並び、正面図は少し小さくなります。短い画面の横並びはそのままです。</li>
-        <li>進行表と Q シートの見出しが 1 文字だけ落ちる（「シー／ン」など）ことをなくしました。印刷と PDF でも語の途中で切れません。</li>
-        <li>劇場設定の平面図で、袖（下手／上手）の文字が線と重ならないようにしました。袖が狭くて入らないときは表示しません。</li>
-        <li>環境設定の補足文と「この劇場を適用」の文字を読みやすくしました（コントラスト 4.5:1 以上）。</li>
-        <li>照明の画面と進行表の操作部品を本体と同じ書体にし、席と進行項目の選択欄を本体と同じ見た目にしました。</li>
-        <li>英語・中国語・韓国語で残っていた画面の文言（タイムラインの説明、保存の通知、新しいショーの案内など）を訳しました。</li>
+        <li>照明の図で、灯体の番号札が他の灯体の記号や引き出し線と重ならないようにしました。かんたん表示も同じです。</li>
+        <li>灯体一覧のグループを解くボタンを、× ではなく「組を解く」という文字のボタンにしました。</li>
+        <li>セリフタブの操作と環境設定の目次の大きさをそろえ、セリフの目次や灯体名が数文字だけ切れないようにしました。</li>
+        <li>公開版で共有の窓を開いたときに、使わない通信を行わないようにしました。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3799,8 +3797,8 @@
 <script src="stage-idle-motion.js?v=20261014-v0362"></script>
 <script src="stage-data-safety.js?v=20261001-release69"></script>
 <script src="gamma-ui.js?v=20261016-v0374"></script>
-<script src="stage-language-loader.js?v=20261016-v0374"></script>
+<script src="stage-language-loader.js?v=20261016-v0375"></script>
 <script src="stage-pose-data.js?v=20261013-v0360"></script>
 <script src="stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="stage-sketch.js?v=20261016-v0374"></script>
+<script src="stage-sketch.js?v=20261016-v0375"></script>
 <script src="gamma-appearance.js?v=20261016-v0374"></script></body></html>

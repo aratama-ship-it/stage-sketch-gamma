@@ -2,7 +2,7 @@
  * 見た目は機材配置・照明デザイン（light-design/index.html）の語彙に合わせる:
  *   箱＝1px var(--line-dark)・地 rgba(25,21,18,.45)・内側10px／見出し＝真鍮 14.5px 600 字間.1em／
  *   ボタン＝高さ34px・1px枠・主操作は真鍮の枠＋rgba(156,130,63,.18)／選んだ行＝真鍮の枠＋rgba(156,130,63,.16)。
- * 数値: 3列 260px | 1fr | 320px・間隔8px／行の最小高さ44px／セリフ本文は明朝15px・行間1.6。
+ * 数値: 3列 292px | 1fr | 320px・間隔8px／行の最小高さ44px／セリフ本文は明朝15px・行間1.6。
  * 値の一覧: design/TOKEN_SHEET_script-editor_2026-09-24.md */
 #gamma-script-workspace { width: 100%; min-height: 0; display: flex; flex-direction: column; }
 #gamma-script-workspace[hidden] { display: none; }
@@ -27,6 +27,7 @@ body[data-gamma-workspace="script"] .stage-boundary-note { display: none; }
   --sed-green: #a8bf8a;
   --sed-direction: #b8ad98;
   --sed-warn: #df6433;
+  --sed-control-radius: 2px;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 8px;
@@ -54,11 +55,12 @@ body[data-gamma-workspace="script"] .stage-boundary-note { display: none; }
   min-height: 34px;
   padding: 6px 12px;
   border: 1px solid var(--sed-line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--sed-control-radius);
   background: none;
   color: var(--sed-text);
   font: inherit;
   font-size: 13.5px;
+  line-height: 1.4;
   letter-spacing: 0.04em;
   white-space: nowrap;
   cursor: pointer;
@@ -73,14 +75,14 @@ body[data-gamma-workspace="script"] .stage-boundary-note { display: none; }
 
 .script-ed-body {
   display: grid;
-  /* V-03: 両端の列の幅は取っ手で変えられる（stage-script-editor.js が変数を入れる。既定 260／320px） */
-  grid-template-columns: var(--script-ed-scenes-width, 260px) minmax(0, 1fr) var(--script-ed-inspector-width, 320px);
+  /* V-03: 両端の列の幅は取っ手で変えられる（stage-script-editor.js が変数を入れる。既定 292／320px） */
+  grid-template-columns: var(--script-ed-scenes-width, 292px) minmax(0, 1fr) var(--script-ed-inspector-width, 320px);
   gap: 8px;
   min-height: 0;
 }
 /* V-03: 列の取っ手。見た目は舞台タブの .stage-panel-width-handle そのもの。位置だけ、列の間（8px）の真ん中に線が来るように寄せる */
 .script-ed-body { position: relative; }
-.script-ed-body .stage-panel-width-handle[data-panel-width="left"] { right: auto; left: calc(var(--script-ed-scenes-width, 260px) + 4px - var(--panel-width-hit) / 2); }
+.script-ed-body .stage-panel-width-handle[data-panel-width="left"] { right: auto; left: calc(var(--script-ed-scenes-width, 292px) + 4px - var(--panel-width-hit) / 2); }
 .script-ed-body .stage-panel-width-handle[data-panel-width="right"] { left: auto; right: calc(var(--script-ed-inspector-width, 320px) + 4px - var(--panel-width-hit) / 2); }
 .script-ed-body .stage-panel-width-handle > span { top: 30vh; }
 .script-ed-box {
@@ -109,7 +111,7 @@ body[data-gamma-workspace="script"] .stage-boundary-note { display: none; }
   min-height: 34px;
   padding: 6px 9px;
   border: 1px solid var(--sed-line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--sed-control-radius);
   background: rgba(13, 12, 11, 0.45);
   color: var(--sed-text);
   font: inherit;
@@ -127,11 +129,11 @@ body[data-gamma-workspace="script"] .stage-boundary-note { display: none; }
 .script-ed-toc-button {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 8px;
+  gap: 4px;
   align-items: baseline;
   width: 100%;
-  min-height: 32px;
-  padding: 5px 6px;
+  min-height: 34px;
+  padding: 5px 4px;
   border: 0;
   background: none;
   color: var(--sed-text);

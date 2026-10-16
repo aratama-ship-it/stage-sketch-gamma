@@ -2860,9 +2860,11 @@
     };
   }
   /* Labels are a view-only layer: layout never writes to fixtures or cues. */
-  function layoutFixtureLabels(rows, width, height) {
+  function layoutFixtureLabels(rows, width, height, symbols = rows.map(r=>r.symbol).filter(Boolean)) {
     const gap = 6, margin = 6, placed = [];
     const intersects = (a,b) => a.x < b.x+b.w+gap && a.x+a.w+gap > b.x && a.y < b.y+b.h+gap && a.y+a.h+gap > b.y;
+    const free = (box, labels) => !labels.some(p=>intersects(box,p)) && !symbols.some(p=>
+      box.x < p.x+p.w+2 && box.x+box.w+2 > p.x && box.y < p.y+p.h+2 && box.y+box.h+2 > p.y);
     const ordered = rows.map((r,index)=>({...r,index})).sort((a,b)=>Number(!!b.focused)-Number(!!a.focused)||Number(!!b.selected)-Number(!!a.selected)||Number(!!b.hovered)-Number(!!a.hovered)||a.index-b.index);
     for (const row of ordered) {
       const w = Math.min(row.w, width-margin*2), h = Math.min(row.h,height-margin*2);
@@ -2873,49 +2875,108 @@
         for (const dy of [ring*38,-ring*38]) candidates.push({x:x0,y:y0+dy,w,h});
         for (let dy=-ring;dy<=ring;dy++) for (const dx of [-ring*32,ring*32]) candidates.push({x:x0+dx,y:y0+dy*38,w,h});
         for (let dx=-ring+1;dx<ring;dx++) for (const dy of [-ring*38,ring*38]) candidates.push({x:x0+dx*32,y:y0+dy,w,h});
-        if (candidates.some(c=>c.x>=margin&&c.y>=margin&&c.x+c.w<=width-margin&&c.y+c.h<=height-margin&&!placed.some(p=>intersects(c,p)))) break;
+        if (candidates.some(c=>c.x>=margin&&c.y>=margin&&c.x+c.w<=width-margin&&c.y+c.h<=height-margin&&free(c,placed))) break;
       }
-      let box=candidates.find(c=>c.x>=margin&&c.y>=margin&&c.x+c.w<=width-margin&&c.y+c.h<=height-margin&&!placed.some(p=>intersects(c,p)));
+      let box=candidates.find(c=>c.x>=margin&&c.y>=margin&&c.x+c.w<=width-margin&&c.y+c.h<=height-margin&&free(c,placed));
       if (!box) {
         // Offset grids leave holes near narrow canvas edges; fill those before fallback.
         let nearest=Infinity;
         for(let y=margin;y+h<=height-margin;y+=8)for(let x=margin;x+w<=width-margin;x+=8){
           const candidate={x,y,w,h},distance=(x-x0)**2+(y-y0)**2;
-          if(distance<nearest&&!placed.some(p=>intersects(candidate,p))){box=candidate;nearest=distance;}
+          if(distance<nearest&&free(candidate,placed)){box=candidate;nearest=distance;}
         }
       }
       // Pathological density: retain every number, choosing the least occupied slot.
       if (!box) box=candidates.filter(c=>c.x>=margin&&c.y>=margin&&c.x+c.w<=width-margin&&c.y+c.h<=height-margin).sort((a,b)=>placed.filter(p=>intersects(a,p)).length-placed.filter(p=>intersects(b,p)).length)[0]||{x:x0,y:y0,w,h};
       placed.push({...row,...box});
     }
-    if (placed.some((r,i)=>placed.some((q,j)=>i!==j&&intersects(r,q)))) {
-      // If independent near-anchor searches fragment a narrow view, repack on
-      // common rows. Numbers still identify the original, unmoved fixture anchors.
-      const grid=[],stepX=Math.max(...rows.map(r=>r.numberWidth || (r.h===32?r.w:0)),40)+gap;
-      for(const row of ordered){
-        const w=Math.min(row.w,width-margin*2),h=Math.min(row.h,height-margin*2),candidates=[];
-        for(let y=margin;y+h<=height-margin;y+=38)for(let x=margin;x+w<=width-margin;x+=stepX){
-          const box={x,y,w,h};if(!grid.some(p=>intersects(box,p)))candidates.push(box);
+    if (placed.some((r,i)=>!free(r,placed.filter((_,j)=>i!==j)))) {
+      // Repack fragmented free rectangles, keeping large name plates first.
+      // If a tiny diagram cannot fit symbols and every number, numbers win;
+      // the last pass reduces only the gap, never the text or fixture count.
+      for(const obstacles of symbols.length?[symbols,[]]:[[]])for(const packingGap of [gap,2]){
+        const packed=[];let spaces=[{x:margin,y:margin,w:width-margin*2,h:height-margin*2}];
+        const cut=(box)=>{
+          const next=[];
+          for(const r of spaces){
+            if(!(r.x<box.x+box.w&&r.x+r.w>box.x&&r.y<box.y+box.h&&r.y+r.h>box.y)){next.push(r);continue;}
+            if(box.x>r.x)next.push({...r,w:box.x-r.x});
+            if(box.x+box.w<r.x+r.w)next.push({...r,x:box.x+box.w,w:r.x+r.w-box.x-box.w});
+            if(box.y>r.y)next.push({...r,h:box.y-r.y});
+            if(box.y+box.h<r.y+r.h)next.push({...r,y:box.y+box.h,h:r.y+r.h-box.y-box.h});
+          }
+          spaces=next.filter((r,i)=>r.w>0&&r.h>0&&!next.some((q,j)=>j!==i&&q.x<=r.x&&q.y<=r.y&&q.x+q.w>=r.x+r.w&&q.y+q.h>=r.y+r.h&&(j<i||q.x<r.x||q.y<r.y||q.w>r.w||q.h>r.h)));
+        };
+        for(const p of obstacles)cut({x:p.x-2,y:p.y-2,w:p.w+4,h:p.h+4});
+        for(const row of [...ordered].sort((a,b)=>b.h-a.h||b.w-a.w)){
+          const w=Math.min(row.w,width-margin*2),h=Math.min(row.h,height-margin*2);
+          const candidates=spaces.filter(r=>r.w>=w&&r.h>=h).map(r=>({x:r.x,y:r.y,w,h,short:Math.min(r.w-w,r.h-h),area:r.w*r.h}));
+          candidates.sort((a,b)=>a.short-b.short||a.area-b.area||a.y-b.y||a.x-b.x);
+          if(!candidates.length)break;
+          const {x,y}=candidates[0];packed.push({...row,x,y,w,h,compact:packingGap<gap});
+          cut({x:x-packingGap,y:y-packingGap,w:w+packingGap*2,h:h+packingGap*2});
         }
-        candidates.sort((a,b)=>(a.x+a.w/2-row.anchorX)**2+(a.y-row.anchorY-24)**2-((b.x+b.w/2-row.anchorX)**2+(b.y-row.anchorY-24)**2));
-        if(!candidates.length)return placed;
-        grid.push({...row,...candidates[0]});
+        if(packed.length===rows.length)return packed;
       }
-      return grid;
     }
     return placed;
+  }
+  // Route leaders around the plates, rather than hiding straight lines under
+  // another number. Visibility edges and routes are cached with label geometry.
+  function routeFixtureLabelLeaders(layout, width, height) {
+    const pad=layout.some(r=>r.compact)?.75:2;
+    const boxes=layout.map(r=>({x:r.x-pad,y:r.y-pad,w:r.w+pad*2,h:r.h+pad*2}));
+    const crosses=(a,b,r)=>{
+      let lo=0,hi=1;
+      for(const [v,d,min,max]of [[a.x,b.x-a.x,r.x,r.x+r.w],[a.y,b.y-a.y,r.y,r.y+r.h]]){
+        if(Math.abs(d)<1e-9){if(v<=min+1e-7||v>=max-1e-7)return false;}
+        else{let t=(min-v)/d,u=(max-v)/d;if(t>u)[t,u]=[u,t];lo=Math.max(lo,t);hi=Math.min(hi,u);if(lo>=hi-1e-7)return false;}
+      }
+      return hi>1e-7&&lo<1-1e-7;
+    };
+    const visible=(a,b)=>!boxes.some(r=>crosses(a,b,r));
+    const corners=boxes.flatMap(r=>[{x:r.x,y:r.y},{x:r.x+r.w,y:r.y},{x:r.x,y:r.y+r.h},{x:r.x+r.w,y:r.y+r.h}]);
+    let graph=null;
+    for(let ri=0;ri<layout.length;ri++){
+      const row=layout[ri],box=boxes[ri];
+      const start={x:Math.max(0,Math.min(width,row.anchorX)),y:Math.max(0,Math.min(height,row.anchorY))};
+      const end={x:Math.max(box.x,Math.min(box.x+box.w,start.x)),y:Math.max(box.y,Math.min(box.y+box.h,start.y))};
+      const tip={x:Math.max(row.x,Math.min(row.x+row.w,start.x)),y:Math.max(row.y,Math.min(row.y+row.h,start.y))};
+      if(visible(start,end)){row.leader=[start,end,tip];continue;}
+      if(!graph){
+        graph=corners.map(()=>[]);
+        for(let i=0;i<corners.length;i++)for(let j=0;j<i;j++)if(visible(corners[i],corners[j])){
+          const d=Math.hypot(corners[i].x-corners[j].x,corners[i].y-corners[j].y);
+          graph[i].push([j,d]);graph[j].push([i,d]);
+        }
+      }
+      const n=corners.length,points=[...corners,start,end],edges=graph.map(e=>[...e]);edges.push([],[]);
+      for(const i of [n,n+1])for(let j=0;j<n;j++)if(visible(points[i],points[j])){
+        const d=Math.hypot(points[i].x-points[j].x,points[i].y-points[j].y);edges[i].push([j,d]);edges[j].push([i,d]);
+      }
+      const distance=points.map(()=>Infinity),previous=points.map(()=>-1),done=new Set();distance[n]=0;
+      for(let k=0;k<points.length;k++){
+        let at=-1;for(let i=0;i<points.length;i++)if(!done.has(i)&&(at<0||distance[i]<distance[at]))at=i;
+        if(at<0||!Number.isFinite(distance[at])||at===n+1)break;
+        done.add(at);for(const [next,d]of edges[at])if(distance[at]+d<distance[next]){distance[next]=distance[at]+d;previous[next]=at;}
+      }
+      const route=[];
+      if(Number.isFinite(distance[n+1])){for(let i=n+1;i!==-1;i=previous[i])route.unshift(points[i]);route.push(tip);}
+      // No path only occurs if a pathological, overfull canvas covers an anchor.
+      // Never draw a leader through another plate in that case.
+      row.leader=route;
+    }
+    return layout;
   }
   let fixtureLabelFrame = null;
   const fixtureLabelViews = new Map();
   const fixtureLabelLayoutCache = new WeakMap();
   let fixtureLabelHover = null;
-  function queueFixtureLabel(ctx,f,number,X,Y) {
+  function queueFixtureLabel(ctx,f,number,X,Y,symbol) {
     if (!f || !number) return;
-    if (!fixtureLabelFrame) { // Standalone simple/playback canvases retain their own drawing route.
-      ctx.save();if(isSel(f.id)){ctx.fillStyle="#d3ac59";ctx.fillRect(X-22,Y+19,44,22);}ctx.font="600 16px sans-serif";ctx.fillStyle=isSel(f.id)?"#1a1409":"rgba(240,231,214,0.95)";ctx.textAlign="center";ctx.textBaseline="top";ctx.fillText(number,X,Y+21);ctx.restore();return;
-    }
+    if (!fixtureLabelFrame) return; // All labelled drawing entries own a frame.
     let rows=fixtureLabelFrame.get(ctx);if(!rows){rows=new Map();fixtureLabelFrame.set(ctx,rows);}
-    rows.set(f.id,{id:f.id,number,anchorX:X,anchorY:Y,selected:isSel(f.id),focused:[...state.sel].at(-1)===f.id,hovered:fixtureLabelHover?.id===f.id});
+    rows.set(f.id,{id:f.id,number,symbol,anchorX:X,anchorY:Y,selected:isSel(f.id),focused:[...state.sel].at(-1)===f.id,hovered:fixtureLabelHover?.id===f.id});
   }
   function fixtureLabelAt(canvas,pt) {
     return (fixtureLabelViews.get(canvas)||[]).find(r=>pt.X>=r.x&&pt.X<=r.x+r.w&&pt.Y>=r.y&&pt.Y<=r.y+r.h)||null;
@@ -2937,11 +2998,14 @@
     // A displaced number selects, never drags the actual fixture to the plate.
     renderAll();return true;
   }
-  function paintFixtureLabels() {
-    fixtureLabelViews.clear();
+  function paintFixtureLabels(clear = true) {
+    if(clear) fixtureLabelViews.clear();
     for(const [ctx,items]of fixtureLabelFrame){
       ctx.save();ctx.font="600 20px sans-serif";
       const width=logicalWidth(ctx.canvas),height=logicalHeight(ctx.canvas);
+      // A cropped fixture can still have part of its symbol inside the view.
+      // Reserve it even when its number is intentionally outside the crop.
+      const symbols=[...items.values()].filter(r=>r.symbol).map(r=>({id:r.id,...r.symbol}));
       // Offscreen overhead fixtures stay outside the compact side view. Otherwise
       // the label collision solver would pile their numbers onto its top edge.
       const rows=[...items.values()].filter(row=>ctx.canvas!==secL || !sideCropped() ||
@@ -2957,12 +3021,12 @@
       });
       // Playback changes light output far more often than label geometry. Reuse
       // unchanged placements so collision searches do not run on every frame.
-      const key=JSON.stringify([width,height,rows]),cached=fixtureLabelLayoutCache.get(ctx.canvas);
-      const layout=cached?.key===key?cached.layout:layoutFixtureLabels(rows,width,height);
-      if(cached?.key!==key)fixtureLabelLayoutCache.set(ctx.canvas,{key,layout});
+      const key=JSON.stringify([width,height,rows,symbols]),cached=fixtureLabelLayoutCache.get(ctx.canvas);
+      const layout=cached?.key===key?cached.layout:routeFixtureLabelLeaders(layoutFixtureLabels(rows,width,height,symbols),width,height);
+      if(cached?.key!==key)fixtureLabelLayoutCache.set(ctx.canvas,{key,layout,symbols,passes:(cached?.passes||0)+1});
       fixtureLabelViews.set(ctx.canvas,layout);
       // Draw leader lines first so they cannot cross the text of another plate.
-      for(const r of layout){ctx.strokeStyle=r.selected?"#d3ac59":"rgba(239,231,214,.65)";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(r.anchorX,r.anchorY);ctx.lineTo(Math.max(r.x,Math.min(r.x+r.w,r.anchorX)),Math.max(r.y,Math.min(r.y+r.h,r.anchorY)));ctx.stroke();}
+      for(const r of layout){ctx.strokeStyle=r.selected?"#d3ac59":"rgba(239,231,214,.65)";ctx.lineWidth=1.5;ctx.beginPath();r.leader.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();}
       for(const r of [...layout].reverse()){
         ctx.fillStyle=r.selected?"#d3ac59":"#0d0c0b";ctx.fillRect(r.x,r.y,r.w,r.h);
         ctx.strokeStyle=r.selected||r.hovered?"#d3ac59":"rgba(239,231,214,.35)";ctx.lineWidth=r.selected||r.hovered?2:1;ctx.strokeRect(r.x,r.y,r.w,r.h);
@@ -2972,7 +3036,7 @@
       ctx.restore();
     }
   }
-  function fixtureLabelSnapshot(){return [...fixtureLabelViews].map(([canvas,rows])=>({canvas:canvas.id,width:logicalWidth(canvas),height:logicalHeight(canvas),rows:rows.map(r=>({...r,lines:[...r.lines]}))}));}
+  function fixtureLabelSnapshot(){return [...fixtureLabelViews].map(([canvas,rows])=>({canvas:canvas.id,width:logicalWidth(canvas),height:logicalHeight(canvas),symbols:fixtureLabelLayoutCache.get(canvas)?.symbols.map(r=>({...r}))||[],layoutPasses:fixtureLabelLayoutCache.get(canvas)?.passes||0,rows:rows.map(r=>({...r,symbol:r.symbol?{...r.symbol}:null,leader:r.leader?.map(p=>({...p})),lines:[...r.lines]}))}));}
 
   function drawFixtureMark(ctx, X, Y, shape, o) {
     const s = 15; ctx.save();
@@ -3015,7 +3079,9 @@
     if (o.moving && !o.ghost && (o.outline !== false || o.sel)) { ctx.strokeStyle = o.sel ? "#d3ac59" : stateFill ? "rgba(240,231,214,0.55)" : ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X, Y, s * 1.55, 0, Math.PI * 2); ctx.stroke(); }
     if (shape === "ball" && !o.ghost) { ctx.strokeStyle = o.sel ? "#d3ac59" : stateFill ? "rgba(13,12,11,0.8)" : ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(markX - markSize * 0.75, markY); ctx.lineTo(markX + markSize * 0.75, markY); ctx.moveTo(markX, markY - markSize * 0.75); ctx.lineTo(markX, markY + markSize * 0.75); ctx.stroke(); }
     if (o.st === "off") { ctx.strokeStyle = "rgba(240,231,214,0.5)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(markX - markSize, markY + markSize); ctx.lineTo(markX + markSize, markY - markSize); ctx.stroke(); }
-    if (o.no && !o.ghost) queueFixtureLabel(ctx,o.fixture,o.no,markX,markY+markSize-15);
+    if (o.no && !o.ghost) queueFixtureLabel(ctx,o.fixture,o.no,markX,markY+markSize-15,
+      {x:bar?Math.min(bar.a.X,bar.b.X)-7:markX-24,y:bar?Math.min(bar.a.Y,bar.b.Y)-7:markY-24,
+        w:bar?Math.abs(bar.b.X-bar.a.X)+14:48,h:bar?Math.abs(bar.b.Y-bar.a.Y)+14:48});
     /* ストロボの発生順（段）。番号は印の下なので、こちらは右上に丸で出す。
        同じ数字が付いた灯は一緒に光る（2026-09-17 本人要望）。 */
     if (o.step != null) {
@@ -3087,8 +3153,16 @@
     if (!points.length) return null;
     const bounds = { left: Math.min(...points.map(q => q.X)), right: Math.max(...points.map(q => q.X)),
       top: Math.min(...points.map(q => q.Y)), bottom: Math.max(...points.map(q => q.Y)) };
+    // Reserve the body's rotation envelope for labels. A changing head angle
+    // must not invalidate label layout on each playback frame.
+    const headRadius=Math.hypot(geom.size.headL*(geom.kind==="par"?.65:.5),geom.size.headR);
+    const radius=Math.max(headRadius,geom.size.baseR||.04*geom.scale,(geom.size.armSpread||0)+(geom.size.armDepth||0));
+    const zMin=Math.min(S.z,geom.pivot.z-headRadius),zMax=Math.max(S.z,geom.pivot.z+headRadius);
+    const envelope=[];
+    for(const x of [S.x-radius,S.x+radius])for(const y of [S.y-radius,S.y+radius])for(const z of [zMin,zMax])envelope.push(P({x,y,z}));
+    const labelBounds={left:Math.min(...envelope.map(p=>p.X)),right:Math.max(...envelope.map(p=>p.X)),top:Math.min(...envelope.map(p=>p.Y)),bottom:Math.max(...envelope.map(p=>p.Y))};
     const pivot = P(geom.pivot), unit = P({ ...geom.pivot, x: geom.pivot.x + 1 });
-    return { geom, bounds, px: Math.max(4, Math.hypot(unit.X - pivot.X, unit.Y - pivot.Y)) };
+    return { geom, bounds, labelBounds, px: Math.max(4, Math.hypot(unit.X - pivot.X, unit.Y - pivot.Y)) };
   }
   function redrawFixtureInfo3D(ctx, P) {
     if (!showOn("fixtures")) return;
@@ -3111,7 +3185,8 @@
         ctx.strokeStyle = "#0d0c0b"; ctx.lineWidth = 6; ctx.strokeRect(b.left-6,b.top-6,b.right-b.left+12,b.bottom-b.top+12);
         ctx.strokeStyle = "#d3ac59"; ctx.lineWidth = 3; ctx.strokeRect(b.left-6,b.top-6,b.right-b.left+12,b.bottom-b.top+12);
       }
-      if (showOn("no")) queueFixtureLabel(ctx,f,label(f.id),(b.left+b.right)/2,b.bottom);
+      const lb=model.labelBounds;
+      if (showOn("no")) queueFixtureLabel(ctx,f,label(f.id),(lb.left+lb.right)/2,lb.bottom,{x:lb.left,y:lb.top,w:lb.right-lb.left,h:lb.bottom-lb.top});
       ctx.restore();
     });
   }
@@ -4301,8 +4376,8 @@
       h.querySelector("small").title = "このグループの灯をまとめて選びます";
       h.onclick = (ev) => selectFixtureGroup(g.id, ev.shiftKey);
       const off = document.createElement("button");
-      off.type = "button"; off.className = "x fixture-group-off";
-      off.innerHTML = '<svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>'; off.title = `「${g.name}」を解除する（灯体はそのまま残ります）`;
+      off.type = "button"; off.className = "btn fixture-group-off";
+      off.textContent = "組を解く"; off.title = `「${g.name}」を解除する（灯体はそのまま残ります）`;
       off.setAttribute("aria-label", off.title);
       off.onclick = (ev) => { ev.stopPropagation(); dissolveFixtureGroup(g.id); };
       h.append(off);
@@ -7436,12 +7511,18 @@
     simpleFrontCanvas.width=Math.round(1000*factor);simpleFrontCanvas.height=Math.round(560*factor);
     displayCanvasSizes.set(simpleFrontCanvas,{width:1000,height:560});
     simpleFrontCanvas.getContext('2d').setTransform(factor,0,0,factor,0,0);
-    const paint = () => drawFront3D({ cv: simpleFrontCanvas, ctx: simpleFrontCanvas.getContext("2d"), kind: "front" }, { simple: true });
-    const previousCue=drawCueOverride;
+    const paint = () => {
+      drawFront3D({ cv: simpleFrontCanvas, ctx: simpleFrontCanvas.getContext("2d"), kind: "front" }, { simple: true });
+      paintFixtureLabels(false);
+    };
+    const previousCue=drawCueOverride,previousLabels=fixtureLabelFrame;
+    simpleFrontCanvas.id="fixture-simple-front";
+    fixtureLabelViews.delete(simpleFrontCanvas);
+    fixtureLabelFrame=new Map();
     try {
       if(options.cue) drawCueOverride=options.cue;
       if (options.live) withTimelinePlaybackDraw(paint); else paint();
-    } finally {drawCueOverride=previousCue;}
+    } finally {drawCueOverride=previousCue;fixtureLabelFrame=previousLabels;}
     return simpleFrontCanvas;
   }
   const unsubscribeResolution = window.GAMMA_RENDER_RESOLUTION?.subscribe(() => {

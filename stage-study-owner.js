@@ -24,6 +24,24 @@
   }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   let link = null, showId = '', generation = 0, busy = false, savedLinks = [];
   let status, controls, notes, stamp, urlField, confirmBox, refreshButton, library;
+  // Static editions have no owner API. Check the existing Worker endpoint once;
+  // a hostname allow-list would break custom domains and local Worker previews.
+  let ownerService = null;
+  async function hasOwnerService() {
+    if (ownerService !== null) return ownerService;
+    if (/(^|\.)github\.io$/i.test(location.hostname)) return false;
+    try {
+      const response = await fetch('/whoami', {credentials:'same-origin', cache:'no-store', signal:AbortSignal.timeout(15000)});
+      // Only a definite "no Worker here" answer is remembered (review R5-01): 404/405/410 or a non-JSON success.
+      // Transient failures (5xx, 429, 408 ...) and "not signed in" are retried the next time the window opens.
+      if ([404, 405, 410].includes(response.status)) return (ownerService = false);
+      if (!response.ok) return false;
+      if (!response.headers.get('Content-Type')?.includes('application/json')) return (ownerService = false);
+      const value = await response.json();
+      if (typeof value?.user === 'string') return (ownerService = true);
+      return false;
+    } catch { return false; } // A temporary network failure can be retried.
+  }
   const node = (tag, text, cls) => { const el = document.createElement(tag); if (text) el.textContent = text; if (cls) el.className = cls; return el; };
   const button = (label, callback, primary = false) => {
     const el = node('button', label, primary ? 'stage-minor-action stage-share-study-primary' : 'btn-quiet stage-share-study-action'); el.type = 'button'; el.addEventListener('click', callback); return el;
@@ -311,9 +329,11 @@
     } catch (error) { if (epoch === generation) { status.textContent = errorText(error); status.classList.add('stage-share-study-danger'); } }
     finally { if (epoch === generation) pending(false); }
   }
-  function openInlineOwnerControls() {
+  async function openInlineOwnerControls() {
     if (document.body.classList.contains('stage-session-guest')) return;
     generation++; busy = false; link = null; savedLinks = []; entryTarget.replaceChildren();
+    const epoch = generation;
+    if (!await hasOwnerService() || epoch !== generation) return;
     relabel();
     const doc = bridge.snapshot(); showId = doc.project.id;
     status = node('p', '', 'stage-share-study-status'); status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
