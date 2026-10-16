@@ -50,8 +50,42 @@
     const view=document.getElementById('view-stage');
     return element.getBoundingClientRect().top+(view?view.scrollTop:0);
   }
+  // UI-1: fit only the unsaved desktop pair. Keep the canvas element itself
+  // at 16:9, so the existing pointer conversion and DPR backing store still agree.
+  const pairStack=document.getElementById('stage-canvas-stack');
+  const pairColumn=document.getElementById('stage-col-center');
+  let pairFrame=0;
+  function syncDefaultPair() {
+    pairFrame=0;
+    if(!pairStack || !pairColumn) return;
+    const canvases=[document.getElementById('stage-canvas'),document.getElementById('stage-plan-canvas')].filter(Boolean);
+    const active=mode==='normal' && pairStack.classList.contains('stage-short-default-pair')
+      && !pairStack.classList.contains('is-single-view')
+      && !document.documentElement.matches('.stage-pwa-tablet,.stage-phone-viewer')
+      && window.matchMedia('(min-width:960px) and (min-height:760px)').matches
+      && !window.matchMedia('(max-width:1366px) and (max-height:768px)').matches;
+    if(!active) { canvases.forEach(c=>c.closest('.stage-board-frame').style.removeProperty('--stage-default-pair-width')); return; }
+    const columnRect=pairColumn.getBoundingClientRect(), stackRect=pairStack.getBoundingClientRect();
+    // Ignore the current scroll position: scrolling must not resize a diagram.
+    const top=stackRect.top-columnRect.top+pairColumn.scrollTop;
+    const style=getComputedStyle(pairColumn), gap=parseFloat(getComputedStyle(pairStack).rowGap)||0;
+    const available=pairColumn.clientHeight-top-(parseFloat(style.paddingBottom)||0)-gap;
+    const bars=canvases.map(c=>c.closest('.stage-board-frame').querySelector('.stage-canvas-bar').getBoundingClientRect().height);
+    const borders=canvases.map(c=>{const s=getComputedStyle(c.closest('.stage-board-frame'));return parseFloat(s.borderTopWidth)+parseFloat(s.borderBottomWidth);});
+    const height=Math.max(1,(available-bars.reduce((a,b)=>a+b,0)-borders.reduce((a,b)=>a+b,0))/2);
+    canvases.forEach(c=>c.closest('.stage-board-frame').style.setProperty('--stage-default-pair-width',`${Math.floor(height*16/9)}px`));
+  }
+  function scheduleDefaultPair() { if(!pairFrame) pairFrame=requestAnimationFrame(syncDefaultPair); }
+  if(pairStack && pairColumn) {
+    const observer=new ResizeObserver(scheduleDefaultPair);
+    [pairColumn,pairStack,...pairStack.querySelectorAll('.stage-canvas-bar')].forEach(el=>observer.observe(el));
+    new MutationObserver(scheduleDefaultPair).observe(pairStack,{attributes:true,attributeFilter:['class']});
+    new MutationObserver(scheduleDefaultPair).observe(document.documentElement,{attributes:true,attributeFilter:['class']});
+    window.addEventListener('resize',scheduleDefaultPair);
+  }
   function syncFrameHeight() {
     frameResizeRequest=0;
+    scheduleDefaultPair();
     const narrow=window.matchMedia('(max-width: 700px)').matches;
     const inset=bottomInset();
     if(isLightMode(mode)) {
@@ -656,12 +690,18 @@
     band.id='gamma-stage-gate-band'; band.className='gamma-stage-gate-band'; band.hidden=true;
     band.setAttribute('role','status');
     const text=document.createElement('span');
-    text.textContent='まず劇場を決めると、このショーを編集できます。';
+    text.textContent=translated('まず劇場を決めると、このショーを編集できます。');
     const go=document.createElement('button');
-    go.type='button'; go.className='btn-quiet'; go.textContent='劇場設定を開く';
+    go.type='button'; go.className='btn-quiet'; go.textContent=translated('劇場設定を開く');
     go.addEventListener('click',()=>select('venue-setup'));
     const note=document.createElement('span'); note.className='gamma-stage-gate-note';
-    note.textContent='別のショーを開くなら、「ショー」の欄の「ショー一覧」「新規ショーを作る」「ショーを読み込む」が使えます。';
+    note.textContent=translated('別のショーを開くなら、「ショー」の欄の「ショー一覧」「新規ショーを作る」「ショーを読み込む」が使えます。');
+    const updateLanguage=()=>{
+      text.textContent=translated('まず劇場を決めると、このショーを編集できます。');
+      go.textContent=translated('劇場設定を開く');
+      note.textContent=translated('別のショーを開くなら、「ショー」の欄の「ショー一覧」「新規ショーを作る」「ショーを読み込む」が使えます。');
+    };
+    new MutationObserver(updateLanguage).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
     band.append(text,go,note);
     normal.parentNode.insertBefore(band,normal);
     stageGateBand=band;
@@ -845,7 +885,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261015-v0371'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261016-v0374'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;

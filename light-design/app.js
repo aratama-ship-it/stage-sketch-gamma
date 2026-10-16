@@ -4029,7 +4029,8 @@
 
   /* ---------- キーボード ---------- */
   document.addEventListener("keydown", (ev) => {
-    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName) || document.activeElement?.isContentEditable;
+    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName) || document.activeElement?.isContentEditable
+      || !!document.activeElement?.closest?.(".gamma-short-select"); // review R1: the custom select counts as typing
     if (ev.key === "Escape" && !$("dialog").hidden) { $("dialog").hidden = true; return; }
     if (ev.key === "Escape" && state.soloFigure) { ev.preventDefault(); setSoloFigure(state.soloFigure); return; }   // R-14: 広げた図を戻す
     if (ev.key === "Escape") { if (state.drag) { const dg = state.drag; state.drag = null; restore(dg.before); refreshApplyState(); } else if (state.tool) { state.tool = null; renderAll(); } else if (state.sel.size || state.selEquipment) { state.sel.clear(); state.selEquipment = null; renderAll(); } return; }

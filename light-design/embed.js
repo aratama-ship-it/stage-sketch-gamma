@@ -421,7 +421,7 @@
   },true);
   document.addEventListener('keydown',event=>{
     const target=event.target,tag=target?.tagName;
-    if(['INPUT','TEXTAREA','SELECT'].includes(tag)||target?.isContentEditable) return;
+    if(['INPUT','TEXTAREA','SELECT'].includes(tag)||target?.isContentEditable||target?.closest?.('.gamma-short-select')) return; // review R1: the custom select counts as typing
     if(event.defaultPrevented || !document.getElementById('dialog')?.hidden) return;
     if(event.metaKey||event.ctrlKey||event.altKey||event.shiftKey||event.repeat) return;
     if(/^[1-5]$/.test(event.key)) {

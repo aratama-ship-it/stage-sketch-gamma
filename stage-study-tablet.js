@@ -254,7 +254,7 @@
   new ResizeObserver(()=>requestAnimationFrame(layout)).observe(viewport);
   new ResizeObserver(()=>requestAnimationFrame(layout)).observe(stage);
   window.addEventListener('blur',()=>{if(!editing)cancel();});
-  const pack=make('script');pack.src='/study-assets/stage-i18n.js?v=20261016-v0373';pack.onload=()=>{
+  const pack=make('script');pack.src='/study-assets/stage-i18n.js?v=20261016-v0374';pack.onload=()=>{
     document.querySelectorAll('[data-tablet-label]').forEach(el=>{const title=t(el.dataset.tabletLabel);el.title=title;el.setAttribute('aria-label',title);if(!['tablet-minus','tablet-plus'].includes(el.id))el.querySelector('span').textContent=title;});
     pageSelect.setAttribute('aria-label',t('書き込みページ'));pageLabel.textContent=t('ページ名');renderPages();entry.textContent=t('通常の表示');label.textContent=t('重ねる文字');scope.textContent=t('全面の書き込みはこの端末だけに保存され、オーナーへの共有には含まれません。');notify();
   };document.head.append(pack);

@@ -191,6 +191,9 @@
     const format = (template, values) => text(template).replace(/\{(\w+)\}/g, (all, name) => values[name] ?? all);
     const direct = text(key); if (direct !== key) return direct;
     const templates = [
+      [/^シーン ([\d-]+)／([\s\S]*)$/, m => format('シーン {number}／{detail}', {number:m[1],detail:lightingText(m[2],language)})],
+      [/^(.+) と同じ中身です（編集中ではありません）。LXキュー パネルで (.+) を選ぶと、変えたところがそのキューへ入ります$/, m => format('{cue} と同じ中身です（編集中ではありません）。LXキュー パネルで {cue} を選ぶと、変えたところがそのキューへ入ります', {cue:m[1]})],
+      [/^このシーンには (.+) がありますが、いまの明かりはどれとも違います。LXキュー パネルで選ぶか、「＋ 新規 LXキュー」で1本にできます$/, m => format('このシーンには {cues} がありますが、いまの明かりはどれとも違います。LXキュー パネルで選ぶか、「＋ 新規 LXキュー」で1本にできます', {cues:m[1]})],
       [/^シーン ([\d-]+) ([\s\S]*)$/, m => format('シーン {number} {name}', {number:m[1],name:m[2]})],
       [/^(レッド|グリーン|ブルー|シアン|マゼンタ|イエロー|ホワイト|RGB|レッド＋ブルー|グリーン＋ブルー|レッド＋グリーン|レインボー)を選ぶ$/, m => format('{colour}を選ぶ', {colour:text(m[1])})],
       [/^([LM◆◎]\d+)の設定をコピー（⌘C）$/, m => format('{fixture}の設定をコピー（⌘C）', {fixture:m[1]})],

@@ -3246,7 +3246,7 @@
       if (boundaryWarning) block.classList.add("has-speed-advice");
       block.textContent = "→";
       if (boundaryWarning) block.textContent = `⚠ ${block.textContent}`;
-      block.title = `${boundaries.incoming.section.title || tx("前のセクション")} → ${timeline.sectionTitle}（0.00の前）`;
+      block.title = `${boundaries.incoming.section.title || tx("前のセクション")} → ${timeline.source === "show" ? tx("ショー全体") : timeline.sectionTitle}（0.00の前）`;
       block.setAttribute("role", "img");
       if (boundaryAdvice.length) block.title += `\n${boundaryAdvice.map(feasibilityText).join("\n")}`;
       block.setAttribute("aria-label", block.title);
@@ -3265,7 +3265,7 @@
       if (boundaryWarning) block.classList.add("has-speed-advice");
       block.textContent = tx("次のセクションへの転換");
       if (boundaryWarning) block.textContent = `⚠ ${block.textContent}`;
-      block.title = `${timeline.sectionTitle} → ${boundaries.outgoing.section.title || tx("次のセクション")}`;
+      block.title = `${timeline.source === "show" ? tx("ショー全体") : timeline.sectionTitle} → ${boundaries.outgoing.section.title || tx("次のセクション")}`;
       block.setAttribute("role", "img");
       if (boundaryAdvice.length) block.title += `\n${boundaryAdvice.map(feasibilityText).join("\n")}`;
       block.setAttribute("aria-label", block.title);
@@ -3629,7 +3629,7 @@
 
     syncSectionDurationControls(project);
     if (timeScope === "show") els.sectionDurationNumber.disabled = true;
-    els.section.textContent = timeline.sectionTitle;
+    els.section.textContent = timeline.source === "show" ? tx("ショー全体") : timeline.sectionTitle;
     // セクション名の下に再生方式を重ねない。再生・時間設定の機能はそのまま残す。
     els.status.textContent = cueAddedFeedback?.text || "";
     els.status.hidden = !cueAddedFeedback;

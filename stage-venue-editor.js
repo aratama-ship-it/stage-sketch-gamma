@@ -1799,18 +1799,6 @@
       ctx.setLineDash([]);
       ctx.stroke();
       ctx.restore();
-
-      const center = toCanvas([
-        area.polygon.reduce((sum, point) => sum + point[0], 0) / area.polygon.length,
-        area.polygon.reduce((sum, point) => sum + point[1], 0) / area.polygon.length,
-      ]);
-      ctx.save();
-      ctx.fillStyle = cssColor("--milk", "#f0e7d6");
-      ctx.font = "bold 11px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(tx(area.label), center[0], center[1]);
-      ctx.restore();
     });
     if (mergedAreas.length) {
       ctx.save();
@@ -1820,20 +1808,30 @@
       ctx.fill();
       ctx.restore();
       strokeExposedStageEdges(mergedAreas.map((area) => area.polygon), cssColor("--milk-dim", "#bdb3a4"), 2);
-      mergedAreas.forEach((area) => {
-        const center = toCanvas([
-          area.polygon.reduce((sum, point) => sum + point[0], 0) / area.polygon.length,
-          area.polygon.reduce((sum, point) => sum + point[1], 0) / area.polygon.length,
-        ]);
-        ctx.save();
-        ctx.fillStyle = cssColor("--milk", "#f0e7d6");
-        ctx.font = "bold 11px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(tx(area.label), center[0], center[1]);
-        ctx.restore();
-      });
     }
+  }
+
+  // UI-6: labels sit above the plan lines, entirely inside their wing.
+  // Narrow wings keep their outline/hatching; do not force text outside them.
+  function drawStageWingLabels() {
+    stageWingAreas().filter(area=>area.id!==areaBeingMoved("wing")).forEach(area=>{
+      const points=area.polygon.map(toCanvas);
+      const center=points.reduce((p,q)=>[p[0]+q[0]/points.length,p[1]+q[1]/points.length],[0,0]);
+      ctx.save();
+      ctx.font="bold 11px sans-serif";
+      const metrics=ctx.measureText(tx(area.label));
+      const halfWidth=metrics.width/2+4, halfHeight=11/2+3;
+      const corners=[[-halfWidth,-halfHeight],[halfWidth,-halfHeight],[halfWidth,halfHeight],[-halfWidth,halfHeight]]
+        .map(p=>[p[0]+center[0],p[1]+center[1]]);
+      if(corners.every(p=>pointInPolygon(p,points))) {
+        ctx.fillStyle=cssColor("--desk","#191512");
+        ctx.fillRect(center[0]-halfWidth,center[1]-halfHeight,halfWidth*2,halfHeight*2);
+        ctx.fillStyle=cssColor("--milk","#f0e7d6");
+        ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(tx(area.label),center[0],center[1]);
+      }
+      ctx.restore();
+    });
   }
 
   function fillWorldRects(rects, color) {
@@ -3225,6 +3223,7 @@
       drawAccess();
       drawBackScreen();
       drawPlacementPreview();
+      drawStageWingLabels();
       drawUnderlayOverlay(); drawLineDraft(); // ★図面・直線の壁
       renderControls(linesResult);
       renderUnderlayPanel();
@@ -3252,6 +3251,7 @@
     drawPreviewCurtains();
     drawBackScreen();
     drawCeilingAndFrontBorder();
+    drawStageWingLabels();
     drawUnderlayOverlay(); drawLineDraft(); // ★図面・直線の壁
     renderControls(linesResult);
     renderUnderlayPanel();

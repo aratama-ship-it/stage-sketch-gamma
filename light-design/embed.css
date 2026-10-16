@@ -254,3 +254,6 @@ html[data-gamma-embedded] .dialog .in.gamma-light-dialog { max-height:calc(var(-
 #light-right-resize{left:calc(var(--detail-left-width) + var(--gamma-gap,8px) + var(--detail-mid-width))}
 #side-height{flex:0 0 auto;color:var(--milk);font-size:var(--fs-3);min-height:var(--ctrl-sm);padding-inline:var(--space-1,4px)}
 .colour-automation{justify-content:flex-start;margin-bottom:var(--gamma-gap,8px)}
+
+/* UI-3: controls use the same shared --sans as the host; headings keep their own rules. */
+html[data-gamma-embedded] :is(button,input,select,textarea,label) { font-family:var(--sans); }

@@ -23,6 +23,9 @@
   function syncMarks(){
     try { if(parent!==window) {
       const host=parent.document.documentElement;
+      // The host --sans token owns iframe control typography, including language changes.
+      const sans=parent.getComputedStyle(host).getPropertyValue('--sans');
+      if(sans&&root.style.getPropertyValue('--sans')!==sans)root.style.setProperty('--sans',sans);
       root.dataset.shortcutMarks=host.dataset.shortcutMarks||'true';
       if(!root.hasAttribute('data-gamma-preserve-skin')&&['warm-black','blue-black','paper-light'].includes(host.dataset.stageSkin))root.dataset.stageSkin=host.dataset.stageSkin;
     } } catch(_) {}
@@ -103,6 +106,6 @@
   document.addEventListener('keydown',event=>{if(!event.target.closest('input,textarea,[contenteditable]'))schedule();},true);
   window.addEventListener('resize',schedule);
   document.fonts?.ready.then(schedule);
-  try {if(parent!==window)new MutationObserver(schedule).observe(parent.document.documentElement,{attributes:true,attributeFilter:['data-shortcut-marks','data-stage-skin']});}catch(_){}
+  try {if(parent!==window)new MutationObserver(schedule).observe(parent.document.documentElement,{attributes:true,attributeFilter:['data-shortcut-marks','data-stage-skin','lang']});}catch(_){}
   schedule();
 })();

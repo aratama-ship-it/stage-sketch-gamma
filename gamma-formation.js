@@ -25,7 +25,7 @@
     }
     if (dialog.open) return;
     returnFocus = button;
-    const frame = document.createElement('iframe');frame.title = 'フォーメーションの選択と人物の入れ替え';frame.src = 'formation/presets/editor.html?v=20261015-v0371';
+    const frame = document.createElement('iframe');frame.title = 'フォーメーションの選択と人物の入れ替え';frame.src = 'formation/presets/editor.html?v=20261016-v0374';
     dialog.append(frame);dialog.showModal();
   }
   /* T-02（2026-09-18 本人要望）: 入口は「選んだもの」パネルの最下部だけにする。

@@ -942,3 +942,7 @@ html[data-stage-skin] #stage-session-panel .stage-modal-body :is(button,.stage-s
 html[data-stage-skin] #stage-session-start {
   background:var(--gamma-primary-bg); color:var(--gamma-on-primary,var(--paper)); border-color:var(--rust);
 }
+
+/* Shared iframe menus use the top layer so diagram and sidebar overflow cannot clip them. */
+.gamma-short-select-list[popover] button { max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+.gamma-short-select-list[popover]::backdrop { background:transparent; pointer-events:none; }

@@ -86,15 +86,20 @@ window.ROSPages = (() => {
     }
     let page = newPage();
     if (!portrait) {
-      // Fit clock tokens at the selected print font without rewriting saved column ratios.
+      // Fit headings and clock tokens at the selected print font without rewriting saved column ratios.
       // One shared set of widths keeps every row and the heading aligned on every page.
       const probe = make("div", "pg-cell"), token = make("span");
       probe.style.cssText = "position:absolute;visibility:hidden;width:max-content;white-space:nowrap";
       probe.append(token); page.content.append(probe);
       const minima = columns.map(col => {
-        if (!["no", "tc", "start", "duration"].includes(col.id)) return 0;
+        const heading=page.content.querySelector(`.pg-label[data-column-id="${col.id}"]`);
+        const label=heading.cloneNode(true);
+        label.style.cssText="position:absolute;visibility:hidden;width:max-content;white-space:nowrap";
+        page.content.append(label);
+        let width=label.offsetWidth+2;
+        label.remove();
+        if (!["no", "tc", "start", "duration"].includes(col.id)) return width;
         probe.dataset.columnId = col.id;
-        let width = 0;
         for (const row of rows) {
           const cell = [...row.cells].find(c => c.dataset.columnId === col.id);
           if (!cell) continue;

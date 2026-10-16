@@ -32,6 +32,20 @@
 
   const TEXT = {
 
+    // v0.3.74 release notes
+
+    "舞台タブの「正面＋平面」で、平面図が画面の下に隠れないようにしました。2 つの図が画面の高さに合わせて並び、正面図は少し小さくなります。短い画面の横並びはそのままです。": "On the Stage tab, \"Front + plan\" no longer hides the plan view below the screen. The two views share the screen height and the front view becomes a little smaller. Side-by-side on short screens is unchanged.",
+
+    "進行表と Q シートの見出しが 1 文字だけ落ちる（「シー／ン」など）ことをなくしました。印刷と PDF でも語の途中で切れません。": "Headings in the run of show and Q sheets no longer drop a single character (such as \"Sce/ne\"). Words are not split in print or PDF either.",
+
+    "劇場設定の平面図で、袖（下手／上手）の文字が線と重ならないようにしました。袖が狭くて入らないときは表示しません。": "In theatre settings, the wing labels (stage left / stage right) on the plan view no longer overlap the lines. They are hidden when the wing is too narrow.",
+
+    "環境設定の補足文と「この劇場を適用」の文字を読みやすくしました（コントラスト 4.5:1 以上）。": "The hint text in preferences and the text of \"Apply this theatre\" are easier to read (contrast 4.5:1 or better).",
+
+    "照明の画面と進行表の操作部品を本体と同じ書体にし、席と進行項目の選択欄を本体と同じ見た目にしました。": "Controls in the lighting view and the run of show use the same typeface as the main app, and the seat and run-item selectors look like the app's own selectors.",
+
+    "英語・中国語・韓国語で残っていた画面の文言（タイムラインの説明、保存の通知、新しいショーの案内など）を訳しました。": "Remaining screen text in English, Chinese and Korean (timeline hints, the save notice, the new-show guidance and more) is now translated.",
+
     // v0.3.73 review round 2 (R3 / R6)
 
     "音源の保存を確認し、ショーに追加しました。": "The audio save was confirmed and the audio has been added to the show.",
@@ -5038,4 +5052,34 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "配布中の版: {version}": "Distributed version: {version}",
   "配布の案内を開く": "Open distribution details"
+});
+
+// B2: UI templates; production names remain unchanged.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "左右端をドラッグで長さを調整": "Drag either edge to adjust the duration",
+  "図を全画面表示します。矢印キーでシーンを送り、Escで戻ります": "Show the diagram full screen. Use the arrow keys to move between scenes and Esc to return",
+  "未定": "TBD",
+  "「{title}」を保存しました。": "Saved “{title}”.",
+  "まず劇場を決めると、このショーを編集できます。": "Choose a theatre first to edit this show.",
+  "劇場設定を開く": "Open theatre settings",
+  "別のショーを開くなら、「ショー」の欄の「ショー一覧」「新規ショーを作る」「ショーを読み込む」が使えます。": "To open another show, use “Show list”, “Create a new show” or “Import a show” in the “Show” panel.",
+  "規模": "Scale",
+  "光の意図を表示・非表示にする": "Show or hide lighting intent",
+  "シーン {number}／{detail}": "Scene {number} / {detail}",
+  "どの LXキュー にも入っていません。LXキュー パネルの「＋ 新規 LXキュー」で1本にできます": "Not in any LX cue. Use “＋ New LX cue” in the LX cue panel to create one",
+  "{cue} と同じ中身です（編集中ではありません）。LXキュー パネルで {cue} を選ぶと、変えたところがそのキューへ入ります": "Matches {cue} (not being edited). Select {cue} in the LX cue panel to edit that cue",
+  "このシーンには {cues} がありますが、いまの明かりはどれとも違います。LXキュー パネルで選ぶか、「＋ 新規 LXキュー」で1本にできます": "This scene has {cues}, but the current lighting matches none of them. Select one in the LX cue panel or use “＋ New LX cue” to create one"
+});
+
+// B2 scan: disabled explanations, image controls and diagram labels.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "項目を選択してください": "Select an item",
+  "セルか列を選択してください": "Select a cell or column",
+  "先頭の項目です": "This is the first item",
+  "最後の項目です": "This is the last item",
+  "戻せる操作がありません": "Nothing to undo",
+  "やり直せる操作がありません": "Nothing to redo",
+  "この画像を外す": "Remove this image",
+  "正面図と平面図": "Front and plan views",
+  "高さ{height}": "Height {height}"
 });

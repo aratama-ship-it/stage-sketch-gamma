@@ -7,12 +7,13 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
   loadColumns();
   const style=doc.createElement('style');doc.head.append(style);
   const output=doc.createElement('div');output.id='ros-cue-pages';source.after(output);
-  const paperCSS=orientation=>`@page{size:A4 ${orientation};margin:0}*{box-sizing:border-box}.q-page{width:${orientation==='portrait'?210:297}mm;height:${orientation==='portrait'?297:210}mm;padding:10mm;background:var(--q-bg,#fff);color:var(--q-ink,#25352f);overflow:hidden;break-after:page;font:var(--q-font,10pt)/1.5 system-ui,sans-serif}.q-page:last-child{break-after:auto}.q-page h1{font-size:1.3em;margin:0 0 4mm}.q-page p{margin:0 0 2mm}.q-page table{width:100%!important;table-layout:fixed;border-collapse:collapse;font:inherit}.q-page caption{display:none}.q-page h1,.q-page p,.q-page span,.q-page footer{color:inherit!important}.q-page th,.q-page td{padding:1.5mm;border:1px solid #79877e;text-align:left;vertical-align:top;overflow-wrap:anywhere;white-space:pre-wrap;font:inherit;color:inherit!important;background:transparent!important}.q-page thead th{font-weight:700}.q-page footer{margin-top:3mm;font-size:.9em}.q-page [hidden]{display:none!important}.q-page .cue-sheet-stamp{font-size:.9em}.q-page .cue-sheet-paper-head{display:flex;justify-content:space-between;gap:4mm}.q-page input,.q-page select{font:inherit}`;
+  const paperCSS=orientation=>`@page{size:A4 ${orientation};margin:0}*{box-sizing:border-box}.q-page{width:${orientation==='portrait'?210:297}mm;height:${orientation==='portrait'?297:210}mm;padding:10mm;background:var(--q-bg,#fff);color:var(--q-ink,#25352f);overflow:hidden;break-after:page;font:var(--q-font,10pt)/1.5 system-ui,sans-serif}.q-page:last-child{break-after:auto}.q-page h1{font-size:1.3em;margin:0 0 4mm}.q-page p{margin:0 0 2mm}.q-page table{width:100%!important;table-layout:fixed;border-collapse:collapse;font:inherit}.q-page caption{display:none}.q-page h1,.q-page p,.q-page span,.q-page footer{color:inherit!important}.q-page th,.q-page td{padding:1.5mm;border:1px solid #79877e;text-align:left;vertical-align:top;overflow-wrap:anywhere;white-space:pre-wrap;font:inherit;color:inherit!important;background:transparent!important}.q-page thead th{font-weight:700;word-break:keep-all;overflow-wrap:normal}.q-page footer{margin-top:3mm;font-size:.9em}.q-page [hidden]{display:none!important}.q-page .cue-sheet-stamp{font-size:.9em}.q-page .cue-sheet-paper-head{display:flex;justify-content:space-between;gap:4mm}.q-page input,.q-page select{font:inherit}`;
   function prefs(){const p=settings();return {...p,orientation:(p.format==='free'?p.lastA4:p.format)==='a4-portrait'?'portrait':'landscape'};}
   function cleanClone(article){
     const clone=article.cloneNode(true),p=prefs();
     const translate=value=>parent.SHOSAI_STAGE_I18N_MODEL?.text(p.language==='bilingual'?'en':p.language,value)||value;
-    for(const node of clone.querySelectorAll('thead th')){const resize=node.querySelector('[data-resize-column]');resize?.remove();const original=node.textContent;node.textContent=p.language==='bilingual'?original+' / '+translate(original):translate(original);}
+    for(const node of clone.querySelectorAll('thead th')){const resize=node.querySelector('[data-resize-column]');resize?.remove();if(node.matches('[data-no-i18n],[data-cue-column^="performer:"]'))continue; // review R2: performer names stay as entered
+      const original=node.textContent;node.textContent=p.language==='bilingual'?original+' / '+translate(original):translate(original);}
     for(const node of clone.querySelectorAll('input,textarea,select')){const span=doc.createElement('span');span.textContent=node.tagName==='SELECT'?node.selectedOptions[0]?.textContent||'':node.value;node.replaceWith(span);}
     for(const node of clone.querySelectorAll('[data-resize-column]'))node.remove();
     for(const node of clone.querySelectorAll('[id]'))node.removeAttribute('id');
@@ -35,6 +36,7 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
     const signature=JSON.stringify(all.map(c=>[c.key,c.label.textContent.trim(),c.checkbox?.checked]));
     if(columns.dataset.signature!==signature){columns.replaceChildren();columns.dataset.signature=signature;
       for(const c of all){const label=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.dataset.qColumn=c.key;
+        if(String(c.key||'').startsWith('performer:')||c.label.hasAttribute?.('data-no-i18n'))label.setAttribute('data-no-i18n',''); // review R2b: performer names stay show content
         label.append(input,document.createTextNode(c.label.textContent.trim()));columns.append(label);
         input.addEventListener('change',()=>{if(!input.checked){hidden.add(c.key);enabled.delete(c.key);}else{hidden.delete(c.key);enabled.add(c.key);}try{localStorage.setItem(key,JSON.stringify({hidden:[...hidden],enabled:[...enabled]}));}catch(e){onColumns(e);}
           const nativeControl=[...source.querySelectorAll('.cue-column-options input')][all.indexOf(c)];
@@ -59,14 +61,39 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
     const p=prefs();style.textContent=paperCSS(p.orientation)+`#stage-cue-sheet-view-a4,#stage-cue-sheet-view-orient,#stage-cue-sheet-view-one-page,#stage-cue-sheet-view-print,.cue-column-options{display:none!important}#ros-cue-pages{width:100%;overflow:auto;padding:4px;--q-font:${p.font}pt;--q-bg:${p.ink==='black'?'#232421':'#fff'};--q-ink:${p.ink==='black'?'#eee9df':'#25352f'}}#ros-cue-pages .q-slot{position:relative;margin-bottom:8px}#ros-cue-pages .q-page{transform-origin:top left}#stage-cue-sheet-content.q-paper-source{position:absolute;left:-100000px;visibility:hidden;width:1000px}#stage-cue-sheet-view{overflow:auto}#stage-cue-sheet-view-bar{flex:none}#stage-cue-sheet-content .cue-sheet-paper{width:${p.format==='free'&&p.freeWidth?p.freeWidth+'px':'auto'};max-width:none;background:${p.ink==='black'?'#232421':'#fff'};color:${p.ink==='black'?'#eee9df':'#25352f'};font-size:${p.font}pt;padding:8px}#stage-cue-sheet-content .cue-sheet-paper :is(h1,p,th,td,input,select,span,footer){color:inherit!important;background:transparent!important}#stage-cue-sheet-content .cue-sheet-paper :is(table,th,td,input,select){font-size:inherit!important}`;
     output.hidden=false;output.dataset.ready='false';output.replaceChildren();const snapshot=cleanClone(article),original=snapshot.querySelector('table');if(!original)return;
     const header=snapshot.querySelector('header'),children=[...snapshot.children],at=children.indexOf(original),before=children.slice(0,at).filter(n=>n!==header),after=children.slice(at+1);
-    const allHeads=[...original.querySelectorAll('thead th')],master=article.dataset.cueSheetKind==='master',cap=p.orientation==='portrait'?8:12;
+    const allHeads=[...original.querySelectorAll('thead th')],master=article.dataset.cueSheetKind==='master';let cap=p.orientation==='portrait'?8:12;
     const cast=allHeads.map((h,i)=>({key:h.dataset.cueColumn,i})).filter(c=>c.key?.startsWith('performer:'));
+    if(master&&cast.length){
+      // Keep the existing cap unless whole heading words need fewer cast columns.
+      const probePage=doc.createElement('section');probePage.className='q-page';probePage.style.cssText='position:absolute;visibility:hidden';
+      const probeTable=original.cloneNode(false);probeTable.append(original.tHead.cloneNode(true));probePage.append(probeTable);output.append(probePage);
+      const minima=[...probeTable.tHead.rows[0].cells].map(head=>{const probe=head.cloneNode(true);probe.style.cssText='position:absolute;visibility:hidden;display:block;width:min-content;min-width:0;white-space:normal;word-break:keep-all;overflow-wrap:normal';head.parentElement.append(probe);const width=probe.offsetWidth+2;probe.remove();return width;});
+      const available=probeTable.clientWidth;probePage.remove();
+      const fixed=minima.reduce((n,w,i)=>n+(cast.some(c=>c.i===i)?0:w),0);
+      while(cap>1&&Array.from({length:Math.ceil(cast.length/cap)},(_,i)=>cast.slice(i*cap,(i+1)*cap).reduce((n,c)=>n+minima[c.i],fixed)).some(w=>w>available))cap--;
+    }
     const groups=master&&cast.length>cap?Array.from({length:Math.ceil(cast.length/cap)},(_,i)=>allHeads.map((h,j)=>j).filter(j=>!cast.some(c=>c.i===j)||cast.slice(i*cap,(i+1)*cap).some(c=>c.i===j))):[allHeads.map((h,i)=>i)];
     for(const group of groups){
       const tableSource=original.cloneNode(true);for(const row of tableSource.rows){if(row.classList.contains('cue-sheet-section-row')){row.cells[0].colSpan=group.length;continue;}[...row.cells].forEach((c,i)=>{if(!group.includes(i))c.remove();});}[...tableSource.querySelectorAll('col')].forEach((c,i)=>{if(!group.includes(i))c.remove();});
       let page,tbody;
-      function addPage(){const slot=doc.createElement('div');slot.className='q-slot';page=doc.createElement('section');page.className='q-page';page.dataset.orientation=p.orientation;slot.append(page);output.append(slot);if(header)page.append(header.cloneNode(true));const table=tableSource.cloneNode(false);const cols=tableSource.querySelector('colgroup');if(cols)table.append(cols.cloneNode(true));table.append(tableSource.tHead.cloneNode(true));tbody=doc.createElement('tbody');table.append(tbody);page.append(table);return page;}
-      addPage();for(const node of before)page.insertBefore(node.cloneNode(true),page.querySelector('table'));for(const row of tableSource.tBodies[0].rows){const clone=row.cloneNode(true);tbody.append(clone);
+      function addPage(){const slot=doc.createElement('div');slot.className='q-slot';page=doc.createElement('section');page.className='q-page';page.dataset.orientation=p.orientation;slot.append(page);output.append(slot);if(header)page.append(header.cloneNode(true));const table=tableSource.cloneNode(false);const cols=tableSource.querySelector('colgroup');if(cols)table.append(cols.cloneNode(true));table.append(tableSource.tHead.cloneNode(true));tbody=doc.createElement('tbody');tbody.setAttribute('data-no-i18n','');table.append(tbody);page.append(table);return page;}
+      addPage();
+      // UI-5: reserve the longest heading word plus padding on every page.
+      // Derive one column group before pagination; body content cannot change it.
+      const firstTable=page.querySelector('table'),heads=[...firstTable.tHead.rows[0].cells];
+      const minima=heads.map(head=>{const probe=head.cloneNode(true);probe.style.cssText='position:absolute;visibility:hidden;display:block;width:min-content;min-width:0;white-space:normal;word-break:keep-all;overflow-wrap:normal';head.parentElement.append(probe);const width=probe.offsetWidth+2;probe.remove();return width;});
+      const available=firstTable.clientWidth,fixed=new Map();
+      for(let pass=0;pass<heads.length;pass++){
+        const share=(available-[...fixed.values()].reduce((a,b)=>a+b,0))/(heads.length-fixed.size);
+        const unmet=minima.map((min,i)=>({min,i})).filter(x=>!fixed.has(x.i)&&x.min>share);
+        if(!unmet.length)break;for(const {min,i} of unmet)fixed.set(i,min);
+      }
+      const share=(available-[...fixed.values()].reduce((a,b)=>a+b,0))/(heads.length-fixed.size);
+      for(const table of [tableSource,firstTable]){
+        let cols=table.querySelector('colgroup');if(!cols){cols=doc.createElement('colgroup');table.prepend(cols);}
+        cols.replaceChildren(...heads.map((head,i)=>{const col=doc.createElement('col');col.style.width=((fixed.get(i)??share)/available*100)+'%';return col;}));
+      }
+      for(const node of before)page.insertBefore(node.cloneNode(true),page.querySelector('table'));for(const row of tableSource.tBodies[0].rows){const clone=row.cloneNode(true);tbody.append(clone);
         if(page.scrollHeight>page.clientHeight&&tbody.rows.length>1){clone.remove();addPage();tbody.append(clone);}
         // A tall text row can span pages at print time; do not clip its content.
         if(page.scrollHeight>page.clientHeight)page.style.height='auto';
@@ -204,7 +231,7 @@ window.ROSLeftPanels={install(band,{store}){
     new ResizeObserver(measureBand).observe($('paper-panel'));window.addEventListener('resize',measureBand);
     document.addEventListener('keydown',event=>{
       if(event.defaultPrevented||event.isComposing||event.repeat||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey||! /^[1-2]$/.test(event.key))return;
-      if(event.target.closest('input,textarea,select,[contenteditable=true]')||document.querySelector('dialog[open],.popover:not([hidden])'))return;
+      if(event.target.closest('input,textarea,select,[contenteditable=true],.gamma-short-select')||document.querySelector('dialog[open],.popover:not([hidden])'))return;
       event.preventDefault();parent.postMessage({type:'gamma:workspace-shortcut',key:event.key},location.origin);
     });
   }
@@ -356,21 +383,28 @@ window.ROSLeftPanels={install(band,{store}){
     $("paper-scope-note").hidden=hidden.length===0;
     $("paper-scope-note").textContent=hidden.length?P("scope",hidden.map(columnLabel).join(P("listSeparator"))):"";
   }
-  // 連続入力では番号列の見出し（シーン／キュー）を1行で収める（2026-10-06 本人選択「番号列の幅を固定」）。
-  // 保存する列幅（割合）は変えず、表示のときだけ番号列を見出しの幅まで広げ、他の列を同じ比で詰める。A4 は対象外。
-  // #10（2026-10-06b）で見出しを「シーンNo.／キューNo.」から「シーン／キュー」に短くした。桁の多い番号に備えて残す。
+  // UI-5: screen-only minimum heading widths; saved column ratios stay intact.
+  // The paginated projection applies the same rule at the print font size.
   function fitEntryNumberColumn(){
     if(paperFormat!=="free")return;
-    const table=$("ros-table"),col=table.querySelector('col[data-column-id="no"]'),th=table.querySelector('thead th[data-column-id="no"]');
-    if(!col||col.hidden||!th||!th.getClientRects().length)return;
-    for(let pass=0;pass<4;pass++){
-      const style=getComputedStyle(th),range=document.createRange();range.selectNodeContents(th);
-      const need=Math.ceil(range.getBoundingClientRect().width+parseFloat(style.paddingLeft)+parseFloat(style.paddingRight)+parseFloat(style.borderLeftWidth)+parseFloat(style.borderRightWidth))+2;
-      const have=th.getBoundingClientRect().width,tableWidth=table.getBoundingClientRect().width;
-      if(have>=need||!tableWidth)return;
-      const cols=[...table.querySelectorAll("col")].filter(c=>!c.hidden),pct=parseFloat(col.style.width)||0,target=Math.min(40,pct+(need-have)/tableWidth*100+0.2),scale=(100-target)/Math.max(1e-6,100-pct);
-      for(const c of cols)c.style.width=c===col?`${target}%`:`${(parseFloat(c.style.width)||0)*scale}%`;
+    const table=$("ros-table"),cols=[...table.querySelectorAll('col')].filter(c=>!c.hidden);
+    if(!table.getClientRects().length)return;
+    const width=table.getBoundingClientRect().width;
+    if(!width)return;
+    const minima=cols.map(col=>{
+      const th=table.querySelector(`thead th[data-column-id="${col.dataset.columnId}"]`),probe=th.cloneNode(true);
+      probe.style.cssText="position:absolute;visibility:hidden;width:max-content;white-space:nowrap";
+      th.parentElement.append(probe);const need=probe.getBoundingClientRect().width+2;probe.remove();return need;
+    });
+    const original=cols.map(c=>parseFloat(c.style.width)||0),fixed=new Map();
+    for(let pass=0;pass<cols.length;pass++){
+      const remaining=width-[...fixed.values()].reduce((a,b)=>a+b,0),weight=original.reduce((a,b,i)=>a+(fixed.has(i)?0:b),0);
+      const unmet=original.map((v,i)=>({i,size:remaining*v/weight})).filter(x=>!fixed.has(x.i)&&x.size<minima[x.i]);
+      if(!unmet.length)break;for(const {i} of unmet)fixed.set(i,minima[i]);
     }
+    if(!fixed.size)return;
+    const remaining=width-[...fixed.values()].reduce((a,b)=>a+b,0),weight=original.reduce((a,b,i)=>a+(fixed.has(i)?0:b),0);
+    cols.forEach((c,i)=>c.style.width=`${(fixed.get(i)??remaining*original[i]/weight)/width*100}%`);
   }
   function renderHead(table){const row=table.querySelector('thead tr');row.replaceChildren();for(const def of orderedColumns()){const th=el('th');th.dataset.columnId=def.id;th.dataset.ja=def.ja;th.dataset.en=def.en;row.append(th);}}
   function applyAlign(){for(const row of $('ros-table').querySelectorAll('tbody tr'))for(const cell of row.cells){const values=cellAlign[rowMode]||{},a=values.cells?.[layout.alignKey(row.dataset.rowId,cell.dataset.columnId)]??values.columns?.[cell.dataset.columnId];if(a)cell.dataset.align=a;else delete cell.dataset.align;files.paintCellStyle(cell,files.cellStyle(cellStyles,rowMode,row.dataset.rowId,cell.dataset.columnId));}}
@@ -934,7 +968,7 @@ window.ROSLeftPanels={install(band,{store}){
     const figure=el("figure","","attached-figure"),img=el("img");img.src=asset.dataUrl;img.alt=ref.caption||asset.name;
     img.dataset.assetId=asset.id;figure.append(img);if(field){figure.append(directMark(el("figcaption",ref.caption),itemId,`caption:${field}:${index}`,"画像の説明"));}else if(ref.caption)figure.append(el("figcaption",ref.caption));if(field)installRemove(figure,itemId,field,index);target.append(figure);
   }
-  function installRemove(figure,itemId,field,index){if(!['details','notes'].includes(field))return;const remove=button('×',()=>{const item=items.find(i=>i.id===itemId),key=field==='details'?'detailAssets':'noteAssets';if(!item?.[key][index])return;checkpoint();item[key].splice(index,1);render();notice('画像を欄から外しました。元に戻せます');},'この画像を外す');remove.className='figure-remove';remove.dataset.screenOnly='';figure.append(remove);}
+  function installRemove(figure,itemId,field,index){if(!['details','notes'].includes(field))return;const remove=button('×',()=>{const item=items.find(i=>i.id===itemId),key=field==='details'?'detailAssets':'noteAssets';if(!item?.[key][index])return;checkpoint();item[key].splice(index,1);render();notice('画像を欄から外しました。元に戻せます');},uiText('この画像を外す'));remove.className='figure-remove';remove.dataset.screenOnly='';figure.append(remove);}
   function installImageCell(cell,itemId,field){const key=field==='details'?'detailAssets':'noteAssets';if(!items.some(i=>i.id===itemId))return;const add=button('＋',()=>{selected=itemId;pendingImageTarget={itemId,key};$(field+'-files').click();},uiText(field==='details'?'詳細に画像を追加':'備考に画像を追加'));add.className='cell-add-image';add.dataset.screenOnly='';cell.append(add);cell.addEventListener('dragover',e=>{e.preventDefault();cell.classList.add('is-drop-target');});cell.addEventListener('dragleave',()=>cell.classList.remove('is-drop-target'));cell.addEventListener('drop',e=>{e.preventDefault();cell.classList.remove('is-drop-target');addImages(field,key,[...e.dataTransfer.files].filter(f=>['image/png','image/jpeg','image/webp'].includes(f.type)),itemId);});}
   function renderAttachments(){
     const row=current();
@@ -1230,14 +1264,14 @@ window.ROSLeftPanels={install(band,{store}){
     if(!available)return;
     const selection=cueHost.selection(),choices=cueHost.choices();
     const performers=choices.filter(c=>c.kind==='performer');
-    const picker=$('cue-performer');picker.replaceChildren(new Option('—',''),...performers.map(c=>new Option(c.label,c.key)));
+    const picker=$('cue-performer');picker.setAttribute('data-no-i18n','');picker.setAttribute('aria-label',uiText('演者'));picker.replaceChildren(new Option('—',''),...performers.map(c=>new Option(c.label,c.key)));
     picker.value=cueView&&selection?.kind==='performer'?selection.key:'';
     $('cue-performer-field').hidden=performers.length<=10;
     for(const [id,kind] of [['cue-performer-list','performer'],['cue-department-list','department']]){
       const list=$(id);list.hidden=kind==='performer'&&performers.length>10;list.replaceChildren();
       if(list.hidden)continue;
       for(const choice of choices.filter(c=>c.kind===kind)){
-        const button=el('button',kind==='department'?uiText(choice.label):choice.label);button.type='button';button.title=button.textContent;
+        const button=el('button',kind==='department'?uiText(choice.label):choice.label);button.type='button';button.title=button.textContent;if(kind==='performer')button.setAttribute('data-no-i18n',''); // review R2b: performer names are show content
         button.dataset.cueKind=kind;button.dataset.cueKey=choice.key;
         button.setAttribute('aria-pressed',String(cueView&&selection?.kind===kind&&selection?.key===choice.key));
         button.addEventListener('click',()=>showCueSheet(kind,choice.key));list.append(button);
@@ -1424,7 +1458,7 @@ window.ROSLeftPanels={install(band,{store}){
   function translateAddedControls(){
     // Only toolbar chrome: item titles and the editable paper remain source data.
     parent.GAMMA_UI?.translateDOM($('paper-band'), {language:uiLanguage(),lookup:uiText,
-      exclude:'#paper-item-picker,#paper-size-control,#paper-size-range,#paper-scene,#heading-language option[value="auto"],[data-no-i18n]'});
+      exclude:'#paper-item-picker,#cue-performer,#cue-performer-list,#paper-size-control,#paper-size-range,#paper-scene,#heading-language option[value="auto"],[data-no-i18n]'});
     parent.GAMMA_UI?.translateDOM(selectionBar,{language:uiLanguage(),lookup:uiText,exclude:'#cell-format-target,#paper-scene'});
     syncFormatControls();syncSelectionBar();
     for(const selector of ['#ros-index-toggle','#ros-index-collapse','#ros-index-resize','#companion-toggle','.companion-heading','#details-add-image','#notes-add-image']){

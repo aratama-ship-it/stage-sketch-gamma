@@ -272,7 +272,7 @@
 
   function enhanceControls(root) {
     root.querySelectorAll('button,a,[role="button"]').forEach(suppressCloseTip);
-    const shortSelects = '#stage-view-select,#stage-lang,#stage-cue-naming,#stage-size-select,.stage-pref-layout-select';
+    const shortSelects = '#stage-view-select,#stage-lang,#stage-cue-naming,#stage-size-select,.stage-pref-layout-select,#seat,#paper-item-picker';
     root.querySelectorAll('.stage-toggle input[type="checkbox"]').forEach(input => {
       if (input.closest('.stage-pref-switch-hit,.stage-name-toggle,.is-icon')) return;
       const hit = document.createElement('span'); hit.className = 'stage-pref-switch-hit';
@@ -280,20 +280,34 @@
       input.before(hit); hit.append(input,mark); input.setAttribute('role','switch');
     });
     root.querySelectorAll(shortSelects).forEach(select => {
-      if (select.dataset.gammaShortSelect || select.multiple || select.options.length < 2 || select.options.length > 6) return;
+      const framePicker = select.matches('#seat,#paper-item-picker');
+      if (select.dataset.gammaShortSelect || select.multiple || select.options.length < (framePicker ? 1 : 2) || (!framePicker && select.options.length > 6)) return;
       select.dataset.gammaShortSelect = 'true';
       const wrap = document.createElement('span'); wrap.className = 'gamma-short-select';
       const trigger = document.createElement('button'); trigger.type = 'button'; trigger.className = 'gamma-short-select-trigger';
       trigger.setAttribute('role','combobox'); trigger.setAttribute('aria-haspopup','listbox'); trigger.setAttribute('aria-expanded','false');
       const text = document.createElement('span'); trigger.append(text);
       const list = document.createElement('span'); list.className = 'gamma-short-select-list'; list.hidden = true;
+      // The iframe's scroll/diagram panes clip ordinary absolute-positioned menus.
+      // Keep the same component and DOM ancestry, but render these menus in the top layer.
+      const topLayer = framePicker && typeof list.showPopover === 'function';
+      if (topLayer) list.popover = 'manual';
       list.setAttribute('role','listbox'); list.id = 'gamma-options-' + (select.id || String(++shortControlSerial));
       trigger.setAttribute('aria-controls',list.id);
       const label = select.getAttribute('aria-label') || [...select.labels].map(label=>label.textContent.trim()).join(' ') || '';
       trigger.setAttribute('aria-label',label);
+      // Item names are show content; the caller translates only the native accessible name.
+      if (select.id === 'paper-item-picker') wrap.setAttribute('data-no-i18n','');
       select.before(wrap); wrap.append(select,trigger,list); select.classList.add('gamma-short-select-native'); select.tabIndex=-1; select.setAttribute('aria-hidden','true');
       let opened = false;
-      const close = focus => { opened=false; list.hidden=true; trigger.setAttribute('aria-expanded','false'); if(focus)trigger.focus({preventScroll:true}); };
+      const close = focus => { opened=false; if(topLayer && list.matches(':popover-open'))list.hidePopover(); list.hidden=true; trigger.setAttribute('aria-expanded','false'); if(focus)trigger.focus({preventScroll:true}); };
+      const focusOption = button => {
+        if (!button || button.disabled) return;
+        button.focus({preventScroll:true});
+        const top=button.offsetTop,bottom=top+button.offsetHeight;
+        if(top<list.scrollTop)list.scrollTop=top;
+        else if(bottom>list.scrollTop+list.clientHeight)list.scrollTop=bottom-list.clientHeight;
+      };
       const sync = () => {
         text.textContent=select.selectedOptions[0]?.textContent || '';
         trigger.disabled=select.disabled;
@@ -304,6 +318,7 @@
           const button=document.createElement('button');button.type='button';button.setAttribute('role','option');
           button.setAttribute('aria-selected',String(option.selected));button.disabled=option.disabled;
           button.textContent=option.textContent;button.dataset.index=String(index);
+          if (framePicker) button.title=option.textContent;
           button.addEventListener('click',event=>{
             event.preventDefault();
             if(option.disabled||select.disabled)return;
@@ -330,7 +345,19 @@
         list.style.fontWeight=typography.fontWeight;
         opened=true;list.hidden=false;trigger.setAttribute('aria-expanded','true');
         const rect=trigger.getBoundingClientRect();wrap.classList.toggle('opens-up',innerHeight-rect.bottom<Math.min(240,select.options.length*36+8)&&rect.top>240);
-        const button=list.children[select.selectedIndex];if(button&&!button.disabled)button.focus({preventScroll:true});
+        if(topLayer){
+          // Match the host menu's content width before constraining it to the viewport.
+          Object.assign(list.style,{width:'max-content',minWidth:'0',maxWidth:(innerWidth-16)+'px'});
+          list.showPopover();
+          const below=innerHeight-rect.bottom-8,above=rect.top-8;
+          const height=Math.min(240,list.scrollHeight,Math.max(below,above));
+          const width=Math.min(Math.max(rect.width,list.getBoundingClientRect().width),innerWidth-16);
+          Object.assign(list.style,{position:'fixed',inset:'auto',margin:'0',bottom:'auto',
+            left:Math.max(8,Math.min(rect.left,innerWidth-width-8))+'px',
+            top:(below>=height?rect.bottom+4:rect.top-height-4)+'px',
+            width:width+'px',minWidth:'0',maxWidth:width+'px',maxHeight:height+'px'});
+        }
+        focusOption(list.children[select.selectedIndex]);
       };
       trigger.addEventListener('click',()=>opened?close(true):open());
       trigger.addEventListener('keydown',event=>{if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){event.preventDefault();event.stopPropagation();open();}});
@@ -338,7 +365,7 @@
         const buttons=[...list.children].filter(button=>!button.disabled),index=buttons.indexOf(document.activeElement);
         if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){
           event.preventDefault();event.stopPropagation();const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:(index+(event.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length;
-          buttons[next]?.focus({preventScroll:true});
+          focusOption(buttons[next]);
         }else if(event.key==='Tab')close(false);
       });
       // Close the popup before modal traversal: Tab moves from its trigger, not through every option.

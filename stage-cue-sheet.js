@@ -540,8 +540,11 @@
   function buildHandoverPack(project, castKey, helpers = {}, options = {}) {
     // Always include every personal column, even when the screen layout hides some.
     const sheet = withTimecode(buildPerformerSheetBase(project, castKey, helpers), project, helpers);
+    // UI-5: reserve the existing Japanese phrase blocks at the portrait print font.
+    // These are derived paper weights; the performer's saved layout is untouched.
     sheet.columns = sheet.columns.map((column) => ({ ...column,
-      ...(column.key === "present" ? { width: "7%" } : column.key === "title" ? { width: "11%" } : {}) }));
+      ...(column.key === "present" ? { width: "10%" } : column.key === "cues" ? { width: "14%" }
+        : column.key === "entranceExit" ? { width: "10%" } : column.key === "title" ? { width: "11%" } : {}) }));
     const view = options.view === "front" ? "front" : "plan";
     return { ...sheet, kind: "handover", title: `${sheet.title} — ${translate(helpers, "引き継ぎパック")}`,
       diagrams: sheet.rows.filter((row) => row.present === "●").map((row) => ({
@@ -789,12 +792,12 @@
       "ポーズ・向き": ["ポーズ・", "向き"], "コツ・注意": ["コツ・", "注意"] };
     const heading = (column) => options.print && headingWords[column.label]
       ? headingWords[column.label].map((word) => `<span class="cue-sheet-heading-word">${escapeHtml(word)}</span>`).join("<wbr>") : escapeHtml(column.label);
-    const head = columns.map((column) => `<th scope="col" data-cue-column="${escapeHtml(column.key)}" class="${escapeHtml(column.className || "")}"${options.customizable ? ' draggable="true"' : ""}>${heading(column)}${options.customizable ? `<span class="cue-column-resize" role="separator" tabindex="0" aria-orientation="vertical" aria-label="${escapeHtml(column.label)}の列幅" data-resize-column="${escapeHtml(column.key)}"></span>` : ""}</th>`).join("");
+    const head = columns.map((column) => `<th scope="col" data-cue-column="${escapeHtml(column.key)}" class="${escapeHtml(column.className || "")}"${column.role === "performer" ? ' data-no-i18n=""' : ""}${options.customizable ? ' draggable="true"' : ""}>${heading(column)}${options.customizable ? `<span class="cue-column-resize" role="separator" tabindex="0" aria-orientation="vertical" aria-label="${escapeHtml(column.label)}の列幅" data-resize-column="${escapeHtml(column.key)}"></span>` : ""}</th>`).join("");
     // 列幅のバランス（2026-09-24 本人指示）。width を持つ列だけ colgroup で幅を渡す（全体表は列数が変わるので成り行き）。
     const colgroup = columns.some((column) => column.width)
       ? `<colgroup>${columns.map((column) => `<col${column.width ? ` style="width:${escapeHtml(column.width)}"` : ""}>`).join("")}</colgroup>` : "";
     const body = list(sheet && sheet.rows).map((row) => {
-      if (row && row.isSection) return `<tr class="cue-sheet-section-row"><th scope="row" colspan="${columns.length}">${escapeHtml(row.scene)}</th></tr>`;
+      if (row && row.isSection) return `<tr class="cue-sheet-section-row"><th scope="row" colspan="${columns.length}" data-no-i18n="">${escapeHtml(row.scene)}</th></tr>`;
       return `<tr data-cue-sheet-scene-id="${escapeHtml(row && row.sceneId)}" data-cue-sheet-piece-id="${escapeHtml(row && row.pieceId)}">${columns.map((column, index) => {
       const value = text(row && row[column.key]);
       const tag = index === 0 ? "th" : "td";
@@ -815,9 +818,9 @@
     }).join("");
     const footnotes = list(sheet && sheet.footnotes).map((note) => `<p class="cue-sheet-footnote">${escapeHtml(note)}</p>`).join("");
     return `<article class="cue-sheet-paper" data-cue-sheet-kind="${escapeHtml(sheet && sheet.kind)}">
-  <header class="cue-sheet-paper-head"><div><h1>${escapeHtml(sheet && sheet.title)}</h1><p>${escapeHtml(sheet && sheet.showTitle)}</p>${sheet && sheet.pageLabel ? `<p class="cue-sheet-page-label">${escapeHtml(sheet.pageLabel)}</p>` : ""}</div><p class="cue-sheet-stamp">${escapeHtml(sheet && sheet.versionLabel || "v1")} · ${escapeHtml((root.STAGE_TIME_DOMAIN || (typeof require === "function" ? require("./stage-time-domain.js") : null))?.dateText(new Date(), lang) || "—")}</p></header>
-  ${sheet && sheet.castNote ? `<p class="cue-sheet-cast-note"><strong>${escapeHtml(sheet.castNoteLabel)}:</strong> ${escapeHtml(sheet.castNote)}</p>` : ""}
-  <table class="cue-sheet-table">${colgroup}<caption>${escapeHtml(sheet && sheet.title)}</caption><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
+  <header class="cue-sheet-paper-head"><div><h1>${escapeHtml(sheet && sheet.title)}</h1><p data-no-i18n="">${escapeHtml(sheet && sheet.showTitle)}</p>${sheet && sheet.pageLabel ? `<p class="cue-sheet-page-label">${escapeHtml(sheet.pageLabel)}</p>` : ""}</div><p class="cue-sheet-stamp">${escapeHtml(sheet && sheet.versionLabel || "v1")} · ${escapeHtml((root.STAGE_TIME_DOMAIN || (typeof require === "function" ? require("./stage-time-domain.js") : null))?.dateText(new Date(), lang) || "—")}</p></header>
+  ${sheet && sheet.castNote ? `<p class="cue-sheet-cast-note"><strong>${escapeHtml(sheet.castNoteLabel)}:</strong> <span data-no-i18n="">${escapeHtml(sheet.castNote)}</span></p>` : ""}
+  <table class="cue-sheet-table">${colgroup}<caption>${escapeHtml(sheet && sheet.title)}</caption><thead><tr>${head}</tr></thead><tbody data-no-i18n="">${body}</tbody></table>
   ${footnotes}<footer class="cue-sheet-legend">${escapeHtml(sheet && sheet.legend || "")}</footer>
 </article>`;
   }

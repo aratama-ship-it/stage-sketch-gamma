@@ -1409,7 +1409,8 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head:has(#sta
 /* N-29: keep the newly added timeline cue visible without motion. */
 .stage-timeline-cue.is-just-added{outline:3px solid var(--brass,#c7ad67);outline-offset:2px;z-index:3}
 /* N43: show both canvases together on short desktop displays, only for the default layout. */
-@media screen and (min-width:960px) and (max-height:759px){
+@media screen and (min-width:960px) and (max-height:759px),
+  screen and (min-width:960px) and (max-width:1366px) and (min-height:760px) and (max-height:768px){
   html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-short-default-pair{
     grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:start;
   }
@@ -1417,6 +1418,12 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-sketch-head:has(#sta
   html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-short-default-pair .stage-canvas-bar{gap:4px;padding:4px;min-width:0}
   html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-short-default-pair .stage-canvas-tools{flex-wrap:wrap;min-width:0}
   html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-short-default-pair .stage-seat-list{max-width:100%;overflow-x:auto}
+}
+/* UI-1: canvas dimensions, rather than a stretched/letterboxed canvas box. */
+@media screen and (min-width:960px) and (min-height:760px){
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-short-default-pair:not(.is-single-view) .stage-canvas-inner{
+    width:min(100%,var(--stage-default-pair-width,100%));height:auto;margin-inline:auto;
+  }
 }
 /* N30: limits stay adjacent to the field without widening its column. */
 .stage-name-limit, .stage-duplicate-name-notice { display: block; color: var(--muted); font-size: 12px; line-height: 1.4; }
@@ -1708,3 +1715,11 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .gamma-header-fitted.gamma-
 @media (max-width:1359px) {
   .stage-prefs-modal .stage-modal-body { grid-template-columns:minmax(0,1fr); column-gap:0; }
 }
+
+/* UI-4: use the existing theme-aware hint token; primary text is opaque. */
+.stage-pref-hint,.stage-profile-hint{color:var(--milk-dim)}
+.stage-profile-hint{font-size:10px}
+#stage-venue-editor-apply{color:var(--paper)}
+
+/* UI-5: the unpaginated Q-sheet uses the same whole-word heading rule. */
+.cue-sheet-table thead th{word-break:keep-all;overflow-wrap:normal}

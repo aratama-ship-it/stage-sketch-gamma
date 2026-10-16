@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.73";
+  const GAMMA_APP_VERSION = "v0.3.74";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -11220,6 +11220,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      ★ここを経由せず els.saveStatus.textContent へ直接書かないこと。 */
   function setSaveStatus(text, level = "info", code = "") {
     if (els.saveStatus) {
+      delete els.saveStatus.dataset.savedShowTitle;
       els.saveStatus.textContent = text;
       els.saveStatus.dataset.level = level;
     }
@@ -11229,6 +11230,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       recovery.textContent = sx("保存容量を確認・修復（別タブ）", "Check storage space in a new tab");
     }
     syncPhoneSaveNotice(text, level, code);
+  }
+
+  function setShowSavedStatus(title) {
+    setSaveStatus(tx("「{title}」を保存しました。").replace("{title}", () => title), "saved");
+    if (els.saveStatus) els.saveStatus.dataset.savedShowTitle = title;
   }
 
   let nativeSavingTimer = null;
@@ -11344,7 +11350,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
           // A newer edit or show switch still needs its own durable save.
           if (autosaveRequested || showSaveTransitionsPending) continue;
           autosaveFailed = false;
-          setSaveStatus(sx(`「${state.project.title}」を保存しました。`, `Saved “${state.project.title}”.`), "saved");
+          setShowSavedStatus(state.project.title);
           const saveError = document.getElementById("stage-show-save-error");
           if (saveError) saveError.hidden = true;
           updateBackupNote(); syncSaveStamps(); scheduleStorageMaintenance();
@@ -22916,7 +22922,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (item.kind === "pool") return `${d.w.toFixed(2)}×${d.d.toFixed(2)}m`;
     if (item.kind === "curtain") return `${d.w.toFixed(2)}×${d.h.toFixed(2)}m`;
     if (item.kind === "deck") return `${d.w.toFixed(2)}×${d.d.toFixed(2)}×${d.h.toFixed(2)}m`;
-    if (item.kind === "chair") return `高さ${cmText(d.h)}`;
+    if (item.kind === "chair") return tx("高さ{height}").replace("{height}", cmText(d.h));
     // せりは高さの寸法を持たない（上がり具合はシーンごとの駒側にある）
     if (item.kind === "seri") return `${Math.round(d.w * 100)}×${Math.round(d.d * 100)}cm`;
     return `${Math.round(d.w * 100)}×${Math.round(d.d * 100)}×${Math.round(d.h * 100)}cm`;
@@ -35742,6 +35748,7 @@ ${propsPlotHtml}
     }
 
     if (els.sizeSelect) {
+      els.sizeSelect.setAttribute("aria-label", tx("規模"));
       els.sizeSelect.innerHTML = "";
       current.sizes.forEach((s2) => {
         const opt = document.createElement("option");
@@ -36491,6 +36498,7 @@ ${propsPlotHtml}
     const selectedSize = VENUES.sizeById(selectedVenue, requestedSizeId);
     if (els.venueSelect) els.venueSelect.value = selectedVenue.id;
     if (els.sizeSelect) {
+      els.sizeSelect.setAttribute("aria-label", tx("規模"));
       els.sizeSelect.innerHTML = "";
       selectedVenue.sizes.forEach((size) => {
         const option = document.createElement("option");
@@ -42907,6 +42915,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     ].filter(Boolean);
     // 読み上げや行分けのために、文書そのものの言語も合わせる
     document.documentElement.lang = lang;
+    if (els.saveStatus?.dataset.savedShowTitle !== undefined) setShowSavedStatus(els.saveStatus.dataset.savedShowTitle);
     roots.forEach((root) => {
       window.GAMMA_UI.translateDOM(root, { language: lang, lookup: key => packValue("text", text => text[key]) });
     });
@@ -43273,6 +43282,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         : tx("最大{max}文字").replace("{max}", String(limit));
     };
     input.setAttribute("aria-describedby", [input.getAttribute("aria-describedby"), hint.id].filter(Boolean).join(" "));
+    hint.setAttribute("data-no-i18n", "");
+    new MutationObserver(update).observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
     input.after(hint);
     ["input", "focus", "blur"].forEach(type => input.addEventListener(type, update));
     update();

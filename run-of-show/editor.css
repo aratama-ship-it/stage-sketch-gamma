@@ -694,3 +694,11 @@ body.showing-cue-sheet #band-selection,body.readonly-cue-shell #band-selection{d
 #band-selection :disabled{color:var(--milk-dim);border-style:dashed}
 /* Native disabled selects dim their text again in Chromium; keep the measured ink. */
 #band-selection :disabled{opacity:1}
+
+/* UI-3: chrome only; paper headings and per-cell font choices stay unchanged. */
+html[data-stage-skin] :is(button,input,select,textarea,label):not(.paper-input) { font-family:var(--sans); }
+#paper-item-picker + .gamma-short-select-trigger { max-width:100%; }
+.band-items > .gamma-short-select { flex:1 1 160px; min-width:0; }
+/* UI-5: headings keep Japanese words and English words intact on screen and paper. */
+.paper-table thead th,.pg-label,.pg-field-label,.portrait-label{word-break:keep-all;overflow-wrap:normal}
+.paper-table thead th,.pg-label{white-space:nowrap}
