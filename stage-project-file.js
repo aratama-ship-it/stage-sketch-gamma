@@ -7,6 +7,74 @@
   "use strict";
   const enc = new TextEncoder(), dec = new TextDecoder("utf-8", {fatal:true});
   const LIMIT = {package:1024*1024*1024, file:300*1024*1024, json:32*1024*1024, entries:4096};
+  const CARRY_LIMIT = Object.freeze({bytes:32*1024*1024, files:200});
+  const MANIFEST_KEYS = ['format','formatVersion','createdBy','createdAt','updatedAt','title','show','audio','sample'];
+  const AUDIO_KEYS = ['trackId','file','originalName','mime','bytes','sha256','durationSeconds'];
+  const unknownKeys = (value, known) => Object.fromEntries(Object.entries(value || {}).filter(([key]) => !known.includes(key)));
+  function manifestExtras(m) {
+    return {top:unknownKeys(m, MANIFEST_KEYS), show:unknownKeys(m.show,['file','sha256']),
+      createdBy:unknownKeys(m.createdBy,['app','version','edition']),
+      audio:m.audio.map(a=>({trackId:a.trackId, fields:unknownKeys(a,AUDIO_KEYS)}))};
+  }
+  function hasCarry(carry) {
+    const m=carry?.manifest;
+    return Boolean(carry && (carry.files?.length || carry.droppedFiles ||
+      [m?.top,m?.show,m?.createdBy,...(m?.audio || []).map(a=>a.fields)].some(value=>Object.keys(value || {}).length)));
+  }
+  // Synchronous SHA-256 keeps the load/normalization boundary synchronous.
+  // Only states carrying opaque attachments pay this cost. The persisted
+  // project (including its extensions) is hashed, not a second stored copy.
+  const CARRY_SHA_K = new Uint32Array([
+    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+  const carryRotate = (x,n) => (x>>>n)|(x<<(32-n));
+  function carryProjectDigest(project) {
+    const input=enc.encode(JSON.stringify(project)), length=Math.ceil((input.length+9)/64)*64;
+    const data=new Uint8Array(length);data.set(input);data[input.length]=0x80;
+    const view=new DataView(data.buffer),bits=input.length*8;
+    view.setUint32(length-8,Math.floor(bits/0x100000000));view.setUint32(length-4,bits>>>0);
+    const h=new Uint32Array([0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]);
+    const w=new Uint32Array(64);
+    for(let offset=0;offset<length;offset+=64){
+      for(let i=0;i<16;i++)w[i]=view.getUint32(offset+i*4);
+      for(let i=16;i<64;i++){
+        const x=w[i-15],y=w[i-2];
+        w[i]=(w[i-16]+(carryRotate(x,7)^carryRotate(x,18)^(x>>>3))+w[i-7]+(carryRotate(y,17)^carryRotate(y,19)^(y>>>10)))>>>0;
+      }
+      let [a,b,c,d,e,f,g,j]=h;
+      for(let i=0;i<64;i++){
+        const t1=(j+(carryRotate(e,6)^carryRotate(e,11)^carryRotate(e,25))+((e&f)^(~e&g))+CARRY_SHA_K[i]+w[i])>>>0;
+        const t2=((carryRotate(a,2)^carryRotate(a,13)^carryRotate(a,22))+((a&b)^(a&c)^(b&c)))>>>0;
+        j=g;g=f;f=e;e=(d+t1)>>>0;d=c;c=b;b=a;a=(t1+t2)>>>0;
+      }
+      [a,b,c,d,e,f,g,j].forEach((v,i)=>{h[i]=(h[i]+v)>>>0;});
+    }
+    return Array.from(h,v=>v.toString(16).padStart(8,"0")).join("");
+  }
+  // project.updatedAt is optional and older editors do not update it. Their
+  // autosaves change lastSavedAt; their import commits can retain BOTH stamps.
+  // The digest detects that same-ID replacement before the next autosave too.
+  function bindCarry(reference, project, lastSavedAt) {
+    if (!reference) return null;
+    return {...reference, showId:project.id, projectUpdatedAt:project.updatedAt ?? null,
+      stateSavedAt:lastSavedAt || "", projectDigest:carryProjectDigest(project)};
+  }
+  function carryMatches(reference, project, lastSavedAt, verifyContent = true) {
+    return Boolean(reference && project && typeof reference.id === "string" && reference.id
+      && reference.showId === project.id && typeof reference.showId === "string"
+      && reference.projectUpdatedAt === (project.updatedAt ?? null)
+      && reference.stateSavedAt === (lastSavedAt || "")
+      && typeof reference.projectDigest === "string" && /^[a-f0-9]{64}$/.test(reference.projectDigest)
+      && (!verifyContent || reference.projectDigest === carryProjectDigest(project)));
+  }
+  const managedPath = (name, audioPaths) => ['project.json','show.json','Thumbnail.png'].includes(name)
+    || name.startsWith('Backups/') || audioPaths.has(name);
   function fail(code) { const e = new Error(code); e.code = code; throw e; }
   function pathOK(path, directory = false) {
     if (typeof path !== "string" || !path || /[\\:\x00-\x1f\x7f]/.test(path) || path.startsWith("/")) return false;
@@ -106,6 +174,13 @@
   }
   async function readFiles(input) {
     const files=rootedFiles(input instanceof Map?input:[...input].map(f=>[f.webkitRelativePath||f.path||f.name,f]));
+    if(files.size>LIMIT.entries)fail('package-too-large');
+    let total=0;
+    // Folder input has the same limits as ZIP input, including unreferenced files.
+    for(const [name,value] of files) {
+      const size=value instanceof Blob?value.size:(await bytes(value)).length;
+      total+=size;if(size>LIMIT.file||total>LIMIT.package)fail('package-too-large');
+    }
     async function json(name,code){const value=files.get(name);if(!value)fail(code);const b=await bytes(value);if(b.length>LIMIT.json)fail("package-too-large");try{return {bytes:b,text:dec.decode(b),value:JSON.parse(dec.decode(b))};}catch(_){fail(code);}}
     const manifest=validateManifest((await json("project.json","invalid-manifest")).value);
     const show=await json("show.json","invalid-show"), warnings=[],audio=[],offline=[];
@@ -123,10 +198,17 @@
     }
     const listed = new Set(manifest.audio.map(a => a.trackId));
     for (const track of show.value?.project?.audioTracks || []) if (!listed.has(track.id)) offline.push({trackId:track.id,originalName:track.title || track.id});
-    return {manifest,show:show.value,text:show.text,audio,offline,warnings};
+    const audioPaths=new Set(manifest.audio.map(a=>a.file));
+    const unknown=[...files].filter(([name])=>!managedPath(name,audioPaths));
+    let unknownBytes=0;
+    for(const [,value] of unknown)unknownBytes+=value instanceof Blob?value.size:(await bytes(value)).length;
+    // All-or-none: a partial opaque extension may be unusable without its peers.
+    const droppedFiles=unknown.length>CARRY_LIMIT.files||unknownBytes>CARRY_LIMIT.bytes?unknown.length:0;
+    const carry={manifest:manifestExtras(manifest), files:droppedFiles?[]:await Promise.all(unknown.map(async([name,value])=>({name,blob:new Blob([await bytes(value)])}))), droppedFiles};
+    return {manifest,show:show.value,text:show.text,audio,offline,warnings,carry};
   }
   async function unpack(blob) {return readFiles(await readZip(blob));}
-  async function pack(showText, audio, {folder="show.stageproj",version="",now=new Date().toISOString(),sample=null,edition="browser"}={}) {
+  async function pack(showText, audio, {folder="show.stageproj",version="",now=new Date().toISOString(),sample=null,edition="browser",carry=null,onWarning=()=>{}}={}) {
     if(!pathOK(folder)||folder.includes("/")||!folder.endsWith(".stageproj"))fail("invalid-path");
     let show;try{show=JSON.parse(showText);}catch(_){fail("invalid-show");}
     if (enc.encode(showText).length > LIMIT.json) fail("package-too-large");
@@ -139,6 +221,23 @@
     }
     const ids=new Set((show.project?.audioTracks||[]).map(t=>t.id));
     for(const a of audio){if(!a.blob)continue;if(a.blob.size>LIMIT.file)fail("package-too-large");if(!ids.has(a.trackId)||!trackOK(a.trackId))fail("invalid-manifest");const b=await bytes(a.blob),ext=/\.([a-zA-Z0-9]{1,12})$/.exec(a.originalName||"")?.[1]||({"audio/mp4":"m4a","audio/mpeg":"mp3","audio/wav":"wav","audio/ogg":"ogg"}[a.blob.type])||"bin",file=`Audio/${a.trackId}.${ext}`;manifest.audio.push({trackId:a.trackId,file,originalName:a.originalName||a.blob.name||`${a.trackId}.${ext}`,mime:a.blob.type||a.mime||"application/octet-stream",bytes:b.length,sha256:await hash(b),durationSeconds:a.durationSeconds||0});entries.push({name:file,bytes:b});}
+    if(carry) {
+      const extra=carry.manifest || {};
+      // Filter again at the write boundary. Preserved data cannot override app-owned values.
+      for(const [key,value] of Object.entries(unknownKeys(extra.top,MANIFEST_KEYS)))
+        Object.defineProperty(manifest,key,{value,enumerable:true,writable:true,configurable:true});
+      manifest.show={...unknownKeys(extra.show,['file','sha256']),...manifest.show};
+      manifest.createdBy={...unknownKeys(extra.createdBy,['app','version','edition']),...manifest.createdBy};
+      manifest.audio=manifest.audio.map(a=>({...unknownKeys(extra.audio?.find(e=>e.trackId===a.trackId)?.fields,AUDIO_KEYS),...a}));
+      const files=carry.files || [], names=new Set(entries.map(e=>e.name));
+      let size=0;for(const file of files){if(!(file.blob instanceof Blob))fail('invalid-package');size+=file.blob.size;}
+      if(files.length>CARRY_LIMIT.files||size>CARRY_LIMIT.bytes)fail('package-too-large');
+      for(const file of files) {
+        if(!pathOK(file.name)||managedPath(file.name,new Set(manifest.audio.map(a=>a.file)))||names.has(file.name))fail('invalid-path');
+        names.add(file.name);entries.push({name:file.name,bytes:await bytes(file.blob)});
+      }
+      if(carry.droppedFiles)onWarning({code:'unknown-files-omitted',count:carry.droppedFiles});
+    }
     validateManifest(manifest);entries.unshift({name:"project.json",bytes:enc.encode(JSON.stringify(manifest,null,2))});
     return makeZip(entries.map(e=>({...e,name:folder+"/"+e.name})));
   }
@@ -172,5 +271,46 @@
     for(const a of candidate.audio){try{const existing=await store.get(a.trackId);if(!existing&&await store.putIfAbsent(a.trackId,a.blob))continue;const current=existing||await store.get(a.trackId);if(!current||await hash(current)!==a.sha256.toLowerCase())conflicts.push(a);}catch(_){offline.push(a);}}
     return {conflicts,offline};
   }
-  return Object.freeze({LIMIT,pathOK,hash,crc32,makeZip,readZip,validateManifest,readFiles,unpack,pack,walkEntry,installAudio,offlineRegistry});
+  // Immutable records, referenced only by local editor state (never show.json).
+  // Copies/versions share a record; importing another package allocates a new one.
+  // Write the record before committing the show. A failed show save can only leave
+  // an unreferenced record, never change an existing show's attachments.
+  function carryStore() {
+    function transaction(mode, operation) {
+      return new Promise((resolve,reject)=>{
+        let blocked=false;
+        const request=root.indexedDB.open('gamma:project-file-carry-v1',1);
+        request.onupgradeneeded=()=>request.result.createObjectStore('packages');
+        request.onerror=()=>reject(request.error);
+        request.onblocked=()=>{blocked=true;reject(new Error('carry-store-blocked'));};
+        request.onsuccess=()=>{
+          const db=request.result;let tx,value;
+          if(blocked){db.close();return;}
+          db.onversionchange=()=>db.close();
+          try {tx=db.transaction('packages',mode);}
+          catch(error){db.close();reject(error);return;}
+          tx.oncomplete=()=>{db.close();resolve(value);};
+          tx.onerror=tx.onabort=()=>{db.close();reject(tx.error || new Error('carry-store-failed'));};
+          try {const req=operation(tx.objectStore('packages'));req.onsuccess=()=>{value=req.result;};}
+          catch(error){tx.abort();db.close();reject(error);}
+        };
+      });
+    }
+    return Object.freeze({
+      async put(carry) {
+        const id=root.crypto.randomUUID();
+        await transaction('readwrite',store=>store.add(carry,id));
+        return {id,fileCount:carry.files.length,droppedFiles:carry.droppedFiles};
+      },
+      async get(reference) {
+        if(!reference)return null;
+        let carry;
+        try {carry=await transaction('readonly',store=>store.get(reference.id));}
+        catch(_){fail('carry-unavailable');}
+        if(!carry)fail('carry-unavailable');
+        return carry;
+      },
+    });
+  }
+  return Object.freeze({LIMIT,CARRY_LIMIT,pathOK,hash,crc32,makeZip,readZip,validateManifest,readFiles,unpack,pack,walkEntry,installAudio,offlineRegistry,carryStore,hasCarry,bindCarry,carryMatches});
 });

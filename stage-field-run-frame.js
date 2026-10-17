@@ -2,7 +2,10 @@
 (()=>{'use strict';if(parent===window)return;let nonce='',runId='',sceneId='',requestId=0,material=null,lastClock=null,frozen=false,editable=false,frames=[],active=null,words={},draft=null,penWidth=3.5,viewMode="both-front",arrangement="stack",stackCapture=null;const panes={},engine=()=>window.SHOSAI_STAGE_STUDY_RENDERER;
  const say=(action,extra={})=>parent.postMessage({channel:'gamma-field-frame',nonce,runId,sceneId,action,...extra},'*');
  const label=k=>words[k]||k;
- function place(view){const p=panes[view],box=p.inner.getBoundingClientRect(),w=active?.images?.[view]?.width||p.source.width,h=active?.images?.[view]?.height||p.source.height;const scale=Math.min(p.inner.clientWidth/w,p.inner.clientHeight/h);for(const el of [p.source,p.image,p.ink])Object.assign(el.style,{width:(w*scale)+'px',height:(h*scale)+'px',left:((p.inner.clientWidth-w*scale)/2)+'px',top:((p.inner.clientHeight-h*scale)/2)+'px'});}
+ // Keep the existing CSS geometry and update its backing store once next frame,
+ // without observing the canvas that this fit sizes from its intrinsic dimensions.
+ let resolutionFrame=0;function scheduleResolution(){if(resolutionFrame)return;resolutionFrame=requestAnimationFrame(()=>{resolutionFrame=0;engine().resize();});}
+ function place(view){const p=panes[view],box=p.inner.getBoundingClientRect(),w=active?.images?.[view]?.width||p.source.width,h=active?.images?.[view]?.height||p.source.height;const scale=Math.min(p.inner.clientWidth/w,p.inner.clientHeight/h);const fitWidth=w*scale,fitHeight=h*scale,fitChanged=p.fitWidth!==fitWidth||p.fitHeight!==fitHeight;p.fitWidth=fitWidth;p.fitHeight=fitHeight;for(const el of [p.source,p.image,p.ink])Object.assign(el.style,{width:(w*scale)+'px',height:(h*scale)+'px',left:((p.inner.clientWidth-w*scale)/2)+'px',top:((p.inner.clientHeight-h*scale)/2)+'px'});if(fitChanged)scheduleResolution();}
  function ink(view){const p=panes[view],c=p.ink,ctx=c.getContext('2d');c.width=active?.images?.[view]?.width||p.source.width;c.height=active?.images?.[view]?.height||p.source.height;place(view);ctx.clearRect(0,0,c.width,c.height);for(const s of [...(active?.strokes||[]),...(draft?.view===view?segments(draft):[])].filter(s=>s.view===view)){const points=s.points;ctx.lineCap=ctx.lineJoin='round';ctx.lineWidth=s.widthRatio*c.width;ctx.strokeStyle=active?.render?.extensions?.inkColor||'#ffdc73';ctx.beginPath();points.forEach(([x,y],i)=>ctx[i?'lineTo':'moveTo'](x*c.width,y*c.height));if(points.length===1){ctx.fillStyle=ctx.strokeStyle;ctx.arc(points[0][0]*c.width,points[0][1]*c.height,ctx.lineWidth/2,0,2*Math.PI);ctx.fill();}else ctx.stroke();}}
  function segments(d){const out=[];for(let at=0,i=0;at<d.points.length;i++,at+=511){const points=d.points.slice(at,at+512);if(i&&points.length===1)break;out.push({id:d.id+'-'+i,gestureId:d.id,segment:i,view:d.view,widthRatio:d.widthRatio,colorToken:'ink',points});}return out;}
  function setTool(view,tool){for(const p of Object.values(panes))p.tool=tool;for(const b of document.querySelectorAll('.field-frame-tools [data-tool]'))b.setAttribute('aria-pressed',String(b.dataset.tool===tool));}
@@ -28,6 +31,8 @@
   for(const b of document.querySelectorAll('[data-expand]'))b.onclick=()=>showViews(viewMode===b.dataset.expand?'both-front':b.dataset.expand);
 
   for(const svg of document.querySelectorAll('.field-frame-tools svg,.field-frame-pane header svg')){const b=svg.getBBox(),span=Math.max(b.width,b.height);if(span)svg.style.setProperty('--field-glyph-scale',16/span);}
+  // Max-size clamping can also change with the viewport, without a new place().
+  const resolutionObserver=new ResizeObserver(scheduleResolution);for(const p of Object.values(panes))resolutionObserver.observe(p.root.querySelector('.field-frame-viewport'));
   let resizeFrame=0;
   const resize=new ResizeObserver(()=>{if(resizeFrame)return;resizeFrame=requestAnimationFrame(()=>{
    resizeFrame=0;engine().resize();for(const view of ['front','plan'])ink(view);

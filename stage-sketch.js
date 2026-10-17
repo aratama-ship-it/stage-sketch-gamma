@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.76";
+  const GAMMA_APP_VERSION = "v0.3.77";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -163,7 +163,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const PREFIXES = [
       "gamma:scene-alternatives-v1:", "gamma:lighting-draft-v1:",
     ];
-    const DB_NAMES = ["gamma:large-projects-v1", "gamma:stage-project-backups-v1", "gamma:scene-alternatives-audio-v1", "gamma:shosai-stage-audio", "gamma:storage-recovery-archive-v1"];
+    const DB_NAMES = ["gamma:large-projects-v1", "gamma:stage-project-backups-v1", "gamma:scene-alternatives-audio-v1", "gamma:shosai-stage-audio", "gamma:storage-recovery-archive-v1", "gamma:project-file-carry-v1"];
     const CACHE_PREFIX = "stage-sketch-gamma-";
     try {
       Object.keys(window.localStorage).forEach((k) => {
@@ -1624,11 +1624,16 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (value?.project && copy?.project) sceneAlternatives?.transferViews(value.project, copy.project);
     return copy;
   };
+  // Every local state serialization (autosave, shelf, history and recovery)
+  // writes the project and its refreshed binding in the same document.
   function alternativesState(value) {
-    if (!sceneAlternatives || !value?.project) return value;
-    const project = sceneAlternatives.projectCopy(value.project);
-    refreshSectionDurationCache(project);
-    return { ...value, project };
+    if (!value?.project) return value;
+    const project = sceneAlternatives ? sceneAlternatives.projectCopy(value.project) : value.project;
+    if (sceneAlternatives) refreshSectionDurationCache(project);
+    if (value.projectPackageCarry) {
+      value.projectPackageCarry = window.STAGE_PROJECT_FILE.bindCarry(value.projectPackageCarry, project, value.lastSavedAt);
+    }
+    return sceneAlternatives ? { ...value, project } : value;
   }
   const stripRemovedSceneFields = (project) => {
     const removedMotionKey = "light" + "Motion";
@@ -6602,6 +6607,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       const cueType = TIMELINE_CUE_TYPES.has(cue.cueType) ? cue.cueType : null;
       if (!cueType) return null;
       const base = {
+        // Preserve extensions, but let every existing known-field rule win,
+        // including optional keys which the normalizer intentionally omits.
+        ...Object.fromEntries(Object.entries(jsonClone(cue, {})).filter(([key]) => ![
+          "id", "kind", "cueType", "timelineId", "memo", "locked", "positionUnspecified", "lxId",
+          "sectionId", "atSeconds", "sceneId", "offsetSeconds",
+        ].includes(key))),
         id: typeof cue.id === "string" ? cue.id : rid("cue"),
         kind: "timeline",
         cueType,
@@ -6959,10 +6970,29 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     });
   }
 
+  const discardedPackageCarryStates = new WeakSet();
+  function validatePackageCarry(value, verifyContent = true) {
+    if (!value?.projectPackageCarry) return false;
+    if (window.STAGE_PROJECT_FILE.carryMatches(value.projectPackageCarry, value.project, value.lastSavedAt, verifyContent)) return false;
+    value.projectPackageCarry = null;
+    discardedPackageCarryStates.add(value);
+    return true;
+  }
+  function notifyDiscardedPackageCarry(value) {
+    if (!window.GAMMA_STAGE_UI_READY || !discardedPackageCarryStates.has(value)) return false;
+    discardedPackageCarryStates.delete(value);
+    importFailureNotice(tx("このショーの持ち越し情報は、古い版での編集や別のショーの読込と一致しないため使いませんでした。知らない項目・ファイルを残したいときは元のパッケージを読み込み直してください。"));
+    clearTimeout(importFailureNotice._t);
+    return true;
+  }
+
   function normalizeState(raw) {
     window.STAGE_DATA_SAFETY.assertSafeJson(raw);
-    if (raw?.project && sceneAlternatives) { raw = projectIoClone(raw); sceneAlternatives.restore(raw.project); }
+    if (raw?.project && sceneAlternatives) raw = projectIoClone(raw);
     if (!raw || typeof raw !== "object") return markVenueSetupPending(baseState(true));
+    // Check the exact persisted project before normalizers restore views or migrate it.
+    const discardedCarry = validatePackageCarry(raw);
+    if (raw.project && sceneAlternatives) sceneAlternatives.restore(raw.project);
     const fallback = baseState(false);
 
     // v2以前は「1枚のスケッチ」だった。1シーンのプロジェクトとして引き上げる
@@ -7172,6 +7202,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       normalizeHolds(scene.pieces, normalized.project);
     });
     sceneAlternatives?.restore(normalized.project, { reconcile: false });
+    if (discardedCarry) discardedPackageCarryStates.add(normalized);
+    else if (normalized.projectPackageCarry) {
+      // Legitimate normalization/migration belongs to this verified show.
+      normalized.projectPackageCarry = window.STAGE_PROJECT_FILE.bindCarry(normalized.projectPackageCarry, normalized.project, normalized.lastSavedAt);
+    }
     return normalized;
   }
 
@@ -11340,7 +11375,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
             shelfFailed = !result.ok;
             if (!result.ok) {
               autosaveFailed = true;
-              if (savingState.lastSavedAt === savedAt) savingState.lastSavedAt = previousSavedAt;
+              if (savingState.lastSavedAt === savedAt) {
+                savingState.lastSavedAt = previousSavedAt;
+                savingState.projectPackageCarry = window.STAGE_PROJECT_FILE.bindCarry(savingState.projectPackageCarry, savingState.project, previousSavedAt);
+              }
               syncSaveStamps(); reportProjectStoreFailure(result); break;
             }
             storagePressure?.saved("show");
@@ -11358,7 +11396,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         } catch (_) {
           autosaveFailed = true;
           shelfFailed = true;
-          if (savedAt && savingState.lastSavedAt === savedAt) savingState.lastSavedAt = previousSavedAt;
+          if (savedAt && savingState.lastSavedAt === savedAt) {
+            savingState.lastSavedAt = previousSavedAt;
+            savingState.projectPackageCarry = window.STAGE_PROJECT_FILE.bindCarry(savingState.projectPackageCarry, savingState.project, previousSavedAt);
+          }
           syncSaveStamps();
           setSaveStatus(tx("この端末へ保存できませんでした。ファイルへ書き出して残してください。"), "warn");
           break;
@@ -11375,6 +11416,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     catch (_) { /* An unsupported extension must stay intact, including during autosave. */ }
   }
   function persistSoon(options = {}) {
+    notifyDiscardedPackageCarry(state);
     syncRunOfShow();
     runOfShowRevision++;
     window.dispatchEvent(new Event("stage-run-of-show-change"));
@@ -32326,6 +32368,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         window.indexedDB.deleteDatabase("gamma:shosai-stage-audio");
         window.indexedDB.deleteDatabase("gamma:scene-alternatives-audio-v1");
         window.indexedDB.deleteDatabase("gamma:storage-recovery-archive-v1");
+        window.indexedDB.deleteDatabase("gamma:project-file-carry-v1");
       }
       /* 保存の自動書き戻しが走る前に、この場で読み直す */
       window.location.reload();
@@ -32956,9 +32999,13 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   window.addEventListener("pagehide", event => { if (!event.persisted) unsubscribeResolution?.(); });
   let canvasResizeFrame = 0;
   const canvasResObserver = new ResizeObserver(() => { if (!canvasResizeFrame) canvasResizeFrame = requestAnimationFrame(() => { canvasResizeFrame = 0; syncCanvasResolution(); }); });
-  canvasResObserver.observe(canvas);
-  if (planCanvas) canvasResObserver.observe(planCanvas);
-  if (canvas2) canvasResObserver.observe(canvas2);
+  // The record frame owns CSS fitting and queues resolution from that fit.
+  // Its viewports are observed there; do not add a second path on the fitted canvas.
+  if (!(STUDY_READ_ONLY && document.querySelector(".field-frame-drawings"))) {
+    canvasResObserver.observe(canvas);
+    if (planCanvas) canvasResObserver.observe(planCanvas);
+    if (canvas2) canvasResObserver.observe(canvas2);
+  }
   window.addEventListener("resize", syncCanvasResolution);
   let bottomLayoutFrame = 0;
   const syncControlLayout = () => {
@@ -34185,6 +34232,7 @@ ${propsPlotHtml}
     sceneAlternatives?.restore(copy, { reconcile: false });
     copy.activeSceneId = copy.scenes[0].id;
     clearAudioEngine();
+    state.projectPackageCarry = window.STAGE_PROJECT_FILE.bindCarry(state.projectPackageCarry, copy, state.lastSavedAt);
     state.project = copy;
     selectedAudioTrackId = copy.audioTracks[0]?.id || null;
     audioPanelSignature = "";
@@ -34664,6 +34712,7 @@ ${propsPlotHtml}
 
   function packageWarningLines(data, result = data) {
     const lines = [];
+    if (data.carry?.droppedFiles) lines.push(tx("持ち越せなかった知らないファイル {count} 件。元のパッケージを保管してください。").replace("{count}",data.carry.droppedFiles));
     if (data.warnings.includes("show-hash-mismatch")) lines.push(tx("show.json の一致を確認できませんでした。JSONとして読める内容を読み込みます。"));
     const unreferenced = data.warnings.filter(w => typeof w === "string" && w.startsWith("unreferenced-audio:")).map(w => w.slice("unreferenced-audio:".length));
     if (unreferenced.length) lines.push(tx("次の音源は本文（show.json）から参照されていないため、この読み込みには取り込みません。元のパッケージはそのまま残ります。") + "\n" + unreferenced.join(" ／ "));
@@ -34696,6 +34745,14 @@ ${propsPlotHtml}
   }
   async function installProjectPackage(next, data) {
     if (!data) return null;
+    try {
+      next.projectPackageCarry = window.STAGE_PROJECT_FILE.hasCarry(data.carry)
+        ? window.STAGE_PROJECT_FILE.bindCarry(await window.STAGE_PROJECT_FILE.carryStore().put(data.carry), next.project, next.lastSavedAt) : null;
+    } catch (_) {
+      importFailureNotice(tx("追加データを保存できませんでした。読み込みを止めました。元のパッケージと現在のショーは変更していません。"));
+      clearTimeout(importFailureNotice._t);
+      return null;
+    }
     const result = await window.STAGE_PROJECT_FILE.installAudio(data, audioStore);
     result.offlineStatusSaved = packageOfflineTracks.set(next.project.id, result.offline.map(a => a.trackId));
     return result;
@@ -34708,15 +34765,26 @@ ${propsPlotHtml}
   }
   async function exportProjectPackage(includeVenue, filename) {
     try {
+      // Runtime edits are trusted after the load check; their digest is refreshed
+      // with the persisted project at serialization. Recheck ownership/stamps now.
+      if (validatePackageCarry(state, false)) persistSoon();
+      notifyDiscardedPackageCarry(state);
       const exported = makeProjectExportDocument(state.project, includeVenue, state.projectFileEnvelope);
       const exportProjectId = state.project.id;
+      // Capture the reference before asynchronous audio reads (the user may switch shows).
+      const carry = await window.STAGE_PROJECT_FILE.carryStore().get(state.projectPackageCarry);
       const audio = [];
       for (const track of exported.project.audioTracks || []) {
         const blob = await audioStore?.get(track.id);
         if (blob && !packageOfflineTracks.get(exportProjectId)?.has(track.id)) audio.push({trackId:track.id,blob,originalName:blob.name || track.originalName || "",durationSeconds:track.durationSeconds});
       }
+      const warnings = [];
       const blob = await window.STAGE_PROJECT_FILE.pack(JSON.stringify(exported,null,2), audio,
-        {folder:filename.slice(0,-4),version:GAMMA_APP_VERSION.replace(/^v/, "")});
+        {folder:filename.slice(0,-4),version:GAMMA_APP_VERSION.replace(/^v/, ""),carry,onWarning:warning=>warnings.push(warning)});
+      if (warnings.length) {
+        exportFailureNotice(warnings.map(w=>tx("持ち越せなかった知らないファイル {count} 件。元のパッケージを保管してください。").replace("{count}",w.count)).join("\n"));
+        clearTimeout(exportFailureNotice._t);
+      }
       const saved = await downloadBlob(blob,filename);
       if (!saved) return false;
       if (state.project.id === exportProjectId) {
@@ -34726,7 +34794,11 @@ ${propsPlotHtml}
       }
       announce(tx("音源入りのプロジェクトを書き出しました。"));
       return true;
-    } catch (error) { exportFailureNotice(projectPackageError(error)); }
+    } catch (error) {
+      exportFailureNotice(error?.code === "carry-unavailable"
+        ? tx("追加データを読み出せないため書き出しを止めました。元のパッケージを読み込み直してください。") : projectPackageError(error));
+      if (error?.code === "carry-unavailable") clearTimeout(exportFailureNotice._t);
+    }
   }
   document.getElementById("stage-export-project-file")?.addEventListener("click", () => {
     closeExport();
@@ -34853,6 +34925,8 @@ ${propsPlotHtml}
         ...state,
         project: incoming.project,
         projectFileEnvelope: prepared.fileEnvelope,
+        // Plain JSON carries no package attachments, even if it has the same ID.
+        projectPackageCarry: null,
         mcpRevision: appliedRevision,
       });
       if (nativeOpen) { installNativeProjectState(next); return true; }
@@ -34868,6 +34942,7 @@ ${propsPlotHtml}
           ? `「${next.project.title}」の旧照明を変換したコピーを開き、ショー一覧へ保存しました。`
           : `「${next.project.title}」を読み込み、ショー一覧へ保存しました。`;
         const packageResult = await installProjectPackage(next, packageData);
+        if (packageData && !packageResult) return;
         if (!await applyLoadedState(next, message)) {
           if (phoneUi) phoneUi.singleView = previousSingleView;
           return;
@@ -35169,6 +35244,7 @@ ${propsPlotHtml}
       candidate.project.id = rid("show");
       candidate.mcpRevision = null;
       const packageResult = await installProjectPackage(candidate, packageData);
+      if (packageData && !packageResult) return;
       if (!await applyLoadedState(candidate, `「${candidate.project.title}」を別のショーとして開き、ショー一覧へ保存しました。`)) return;
       liteLegacyShelf.complete(sourceId);
       closeImportPreview(true);
@@ -35183,6 +35259,7 @@ ${propsPlotHtml}
       reserveImportedShowId(next);
     }
     const packageResult = await installProjectPackage(next, packageData);
+    if (packageData && !packageResult) return;
     if (!await prepareLoadedState(next)) return;
     liteLegacyShelf.complete(sourceId);
     closeImportPreview(true);
@@ -36009,7 +36086,8 @@ ${propsPlotHtml}
     copy.venueSize = VENUES.sizeById(nextVenue, p.venueSize).id;
     copy.venueDims = null;
     clearVenueDependentLighting(copy);
-    const next = normalizeState({ ...state, project: copy });
+    const next = normalizeState({ ...state, project: copy,
+      projectPackageCarry: window.STAGE_PROJECT_FILE.bindCarry(state.projectPackageCarry, copy, state.lastSavedAt) });
     if (!await applyLoadedState(next, sx(`${nextVersion}を作り、劇場を${venueName(nextVenue)}へ変えました。照明はこの劇場用に組み直してください。元の版はショー一覧に残っています。`, `Created ${nextVersion} for ${venueName(nextVenue)}. Rebuild the lighting for this venue; the original version remains in All shows.`))) return false;
     lightingVenueWarningProjectId = null;
     if (venue().audience === "round" && tool !== "select") setTool("select");
@@ -37175,7 +37253,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
         }
         project.lightingDesign = model.validate(imported, scenes.map((scene) => scene.id));
       }
-      const next = normalizeState({ ...state, project });
+      const next = normalizeState({ ...state, project,
+        projectPackageCarry: window.STAGE_PROJECT_FILE.bindCarry(state.projectPackageCarry, project, state.lastSavedAt) });
       const resultMessage = (versioned
         ? `${project.versionLabel}を作り、劇場を「${saved.label}」へ変更しました。元の${current.versionLabel || "v1"}はショー一覧に残っています。`
         : `劇場を「${saved.label}」に決めました。`) + lightingNote;
@@ -45204,6 +45283,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       // 非同期の初期化で端末用DOMと初回表示が揃った後だけ外殻へ通知する。
       // runtime-ready は API の公開通知なので、UI の準備完了とは分ける。
       window.GAMMA_STAGE_UI_READY = true;
+      if (notifyDiscardedPackageCarry(state)) persistSoon();
       window.dispatchEvent(new Event("stage-gamma-ui-ready"));
       if (loaded.sectionMigrationSource) {
         const backupKey = `gamma:shosai-stage-sketch-v1-pre-section-hierarchy-v1:${state.project.id}`;
@@ -46581,7 +46661,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     },
     /* セリフ編集画面（stage-script-editor.js・2026-09-24 本人指示）。台本は project.script に持つ。
      * { version: 1, lines: [{ id, sceneId, castId, speaker, text, cueId }] }。行とセリフキューの結び付きは
-     * 行の側（cueId）に持つ（キューの未知の項目は読み込みで落ちるため）。1キュー＝1行（本人決定）。
+     * 行の側（cueId）に持つ。1キュー＝1行（本人決定）。未知キーは保存往復で保持する。
      * 取り消し1回で戻せるよう、キューの追加・削除と台本の変更を1つの checkpoint にまとめる。 */
     getProjectScript() {
       return state.project.script && typeof state.project.script === "object" ? jsonClone(state.project.script) : null;
@@ -46876,6 +46956,9 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       const continuePlayback = Boolean(
         audioPlayback.ready && els.musicAudio && !els.musicAudio.paused
       );
+      // Session receive can replace a different show without the import dialog.
+      if (project.id !== state.project.id) state.projectPackageCarry = null;
+      else state.projectPackageCarry = window.STAGE_PROJECT_FILE.bindCarry(state.projectPackageCarry, project, state.lastSavedAt);
       state.project = project;
       state.projectFileEnvelope = fileEnvelope;
       state.mcpRevision = null;

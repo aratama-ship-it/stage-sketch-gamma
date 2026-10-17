@@ -31,6 +31,19 @@
   "use strict";
 
   const TEXT = {
+    // Package extension preservation (便15).
+    "追加データを保存できませんでした。読み込みを止めました。元のパッケージと現在のショーは変更していません。": "Additional data could not be saved. Import stopped. The original package and current show are unchanged.",
+    "追加データを読み出せないため書き出しを止めました。元のパッケージを読み込み直してください。": "Export stopped because additional data could not be read. Import the original package again.",
+    "持ち越せなかった知らないファイル {count} 件。元のパッケージを保管してください。": "{count} unrecognised files could not be carried forward. Keep the original package.",
+    "このショーの持ち越し情報は、古い版での編集や別のショーの読込と一致しないため使いませんでした。知らない項目・ファイルを残したいときは元のパッケージを読み込み直してください。": "The carry-over information was not used because it no longer matches this show after editing in an older version or loading another show. To keep unrecognised fields and files, import the original package again.",
+
+
+    "リハーサルで記録図の読み込みが止まっても、ランノート・GO・ラン一覧をそのまま使えるようにしました。": "In Rehearsal, Run notes, GO and the Run list keep working even when the recorded drawing stops loading.",
+
+    "画面をスクロールしたときに、情報バーが上の見出しに少し重なっていたのを直しました。": "The Information bar no longer slightly overlaps the heading above it when you scroll.",
+
+    "英語・韓国語・中国語の訳語をそろえ、不自然な言い回しを直しました。": "English, Korean and Chinese terms are now consistent, and awkward phrasing has been fixed.",
+    "プロジェクトファイルに、このアプリが知らない項目やファイルが入っていても、読み込んで書き出したときに残すようにしました。合計 32 MiB・200 件を超えるときは、持ち越せないことを知らせます。": "Project files now keep fields and files this app does not recognize when you import them and export them again. Beyond 32 MiB or 200 files in total, you are told what could not be carried over.",
 
     // v0.3.76 release notes
 
@@ -55,7 +68,7 @@
 
     "舞台タブの「正面＋平面」で、平面図が画面の下に隠れないようにしました。2 つの図が画面の高さに合わせて並び、正面図は少し小さくなります。短い画面の横並びはそのままです。": "On the Stage tab, \"Front + plan\" no longer hides the plan view below the screen. The two views share the screen height and the front view becomes a little smaller. Side-by-side on short screens is unchanged.",
 
-    "進行表と Q シートの見出しが 1 文字だけ落ちる（「シー／ン」など）ことをなくしました。印刷と PDF でも語の途中で切れません。": "Headings in the run of show and Q sheets no longer drop a single character (such as \"Sce/ne\"). Words are not split in print or PDF either.",
+    "進行表と Q シートの見出しが 1 文字だけ落ちる（「シー／ン」など）ことをなくしました。印刷と PDF でも語の途中で切れません。": "Headings in the run of show and Q sheets no longer wrap with a single character on a line by itself. Words are no longer split across lines in print or PDF either.",
 
     "劇場設定の平面図で、袖（下手／上手）の文字が線と重ならないようにしました。袖が狭くて入らないときは表示しません。": "In theatre settings, the wing labels (stage left / stage right) on the plan view no longer overlap the lines. They are hidden when the wing is too narrow.",
 
@@ -67,7 +80,7 @@
 
     // v0.3.73 review round 2 (R3 / R6)
 
-    "音源の保存を確認し、ショーに追加しました。": "The audio save was confirmed and the audio has been added to the show.",
+    "音源の保存を確認し、ショーに追加しました。": "The audio has been saved and added to the show.",
 
     "次の音源は本文（show.json）から参照されていないため、この読み込みには取り込みません。元のパッケージはそのまま残ります。": "The following audio is not referenced by the show (show.json), so it is not imported this time. The original package is left as it is.",
 
@@ -5081,12 +5094,12 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "「{title}」を保存しました。": "Saved “{title}”.",
   "まず劇場を決めると、このショーを編集できます。": "Choose a theatre first to edit this show.",
   "劇場設定を開く": "Open theatre settings",
-  "別のショーを開くなら、「ショー」の欄の「ショー一覧」「新規ショーを作る」「ショーを読み込む」が使えます。": "To open another show, use “Show list”, “Create a new show” or “Import a show” in the “Show” panel.",
-  "規模": "Scale",
-  "光の意図を表示・非表示にする": "Show or hide lighting intent",
+  "別のショーを開くなら、「ショー」の欄の「ショー一覧」「新規ショーを作る」「ショーを読み込む」が使えます。": "To open another show, use “All shows”, “Create a new show” or “Import show” in the “Show” panel.",
+  "規模": "Size",
+  "光の意図を表示・非表示にする": "Show or hide lighting intention",
   "シーン {number}／{detail}": "Scene {number} / {detail}",
   "どの LXキュー にも入っていません。LXキュー パネルの「＋ 新規 LXキュー」で1本にできます": "Not in any LX cue. Use “＋ New LX cue” in the LX cue panel to create one",
-  "{cue} と同じ中身です（編集中ではありません）。LXキュー パネルで {cue} を選ぶと、変えたところがそのキューへ入ります": "Matches {cue} (not being edited). Select {cue} in the LX cue panel to edit that cue",
+  "{cue} と同じ中身です（編集中ではありません）。LXキュー パネルで {cue} を選ぶと、変えたところがそのキューへ入ります": "Matches {cue} (not currently being edited). Select {cue} in the LX cue panel so that your changes are applied to that cue.",
   "このシーンには {cues} がありますが、いまの明かりはどれとも違います。LXキュー パネルで選ぶか、「＋ 新規 LXキュー」で1本にできます": "This scene has {cues}, but the current lighting matches none of them. Select one in the LX cue panel or use “＋ New LX cue” to create one"
 });
 

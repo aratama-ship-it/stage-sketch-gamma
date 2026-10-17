@@ -591,12 +591,14 @@
   new MutationObserver(()=>{syncToggle();scheduleSync();}).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
   window.addEventListener('gamma-workspace-change',clearContext);
   window.addEventListener('stage-fpv-visibility',clearContext);
-  window.addEventListener('blur',clearContext);
+  // Focusing a same-origin workspace iframe also blurs this window, while
+  // the document still has focus. Keep its hovered control's description.
+  window.addEventListener('blur',()=>{if(!document.hasFocus())clearContext();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)clearContext();});
   // Workspaces calculate their available height from their actual top edge.
   // Dispatch only on real bar-height changes, never on every cursor movement.
   const header=document.querySelector('.stage-sketch-head');
-  if(header)new ResizeObserver(()=>bar.style.setProperty('--gamma-info-header-height',header.getBoundingClientRect().height+'px')).observe(header);
+  if(header)new ResizeObserver(()=>bar.style.setProperty('--gamma-info-header-height',header.getBoundingClientRect().bottom+'px')).observe(header);
   let previousHeight=0;
   new ResizeObserver(()=>{const height=bar.getBoundingClientRect().height;if(height!==previousHeight){previousHeight=height;requestAnimationFrame(()=>window.dispatchEvent(new Event('resize')));}}).observe(bar);
   syncToggle();renderContext();
