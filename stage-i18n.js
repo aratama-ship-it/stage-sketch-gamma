@@ -32,6 +32,14 @@
 
   const TEXT = {
 
+    // v0.3.76 release notes
+
+    "進行表の左の帯で、右端の操作が切れて見えていたのを直しました。": "In the Run of show, controls at the right edge of the left band are no longer cut off.",
+
+    "リハーサルで図の並びを選んでいないときは、窓に合わせて正面図と平面図が大きく見える並びを自動で選ぶようにしました。横長の窓では左右に並びます。手で選んだ並びはそのまま使います。": "In Rehearsal, if you have not chosen a drawing arrangement, the arrangement that shows the front and plan views larger is chosen for the window. Wide windows place them side by side. An arrangement you chose yourself is kept.",
+
+    "セリフタブで、横長の窓では台本の列が広がりすぎないようにし、余った幅を「選んだセリフ」の列に回すようにしました。": "In the Lines tab, the script column no longer grows too wide on wide windows; the extra width goes to the \"Selected line\" column.",
+
     // v0.3.75 release notes
 
     "照明の図で、灯体の番号札が他の灯体の記号や引き出し線と重ならないようにしました。かんたん表示も同じです。": "In the lighting views, fixture number tags no longer overlap other fixtures' symbols or leader lines. The simple view works the same way.",

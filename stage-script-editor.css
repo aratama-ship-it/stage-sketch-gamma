@@ -28,6 +28,7 @@ body[data-gamma-workspace="script"] .stage-boundary-note { display: none; }
   --sed-direction: #b8ad98;
   --sed-warn: #df6433;
   --sed-control-radius: 2px;
+  --script-ed-text-max: 1100px;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 8px;
@@ -75,15 +76,16 @@ body[data-gamma-workspace="script"] .stage-boundary-note { display: none; }
 
 .script-ed-body {
   display: grid;
-  /* V-03: 両端の列の幅は取っ手で変えられる（stage-script-editor.js が変数を入れる。既定 292／320px） */
-  grid-template-columns: var(--script-ed-scenes-width, 292px) minmax(0, 1fr) var(--script-ed-inspector-width, 320px);
+  /* J3: 本文は1100pxまで。余りは右へ配り、利用者の右列幅は下限として維持する。 */
+  grid-template-columns: var(--script-ed-scenes-width, 292px)
+    minmax(0, min(var(--script-ed-text-max), calc(100% - var(--script-ed-scenes-width, 292px) - var(--script-ed-inspector-width, 320px) - 16px)))
+    minmax(0, 1fr);
   gap: 8px;
   min-height: 0;
 }
 /* V-03: 列の取っ手。見た目は舞台タブの .stage-panel-width-handle そのもの。位置だけ、列の間（8px）の真ん中に線が来るように寄せる */
 .script-ed-body { position: relative; }
-.script-ed-body .stage-panel-width-handle[data-panel-width="left"] { right: auto; left: calc(var(--script-ed-scenes-width, 292px) + 4px - var(--panel-width-hit) / 2); }
-.script-ed-body .stage-panel-width-handle[data-panel-width="right"] { left: auto; right: calc(var(--script-ed-inspector-width, 320px) + 4px - var(--panel-width-hit) / 2); }
+.script-ed-body .stage-panel-width-handle { right: auto; left: calc(var(--script-ed-boundary) - var(--panel-width-hit) / 2); }
 .script-ed-body .stage-panel-width-handle > span { top: 30vh; }
 .script-ed-box {
   display: flex;
@@ -153,6 +155,8 @@ body[data-gamma-workspace="script"] .stage-boundary-note { display: none; }
 .script-ed-lines { position: relative; overflow-y: auto; min-height: 0; display: grid; align-content: start; gap: 14px; padding-right: 4px; }
 .script-ed-lines:focus-visible { outline: 1px solid var(--sed-brass); outline-offset: 2px; }
 .script-ed-group { display: grid; gap: 4px; }
+/* 列幅が狭いときも、内側の暗黙のauto列で横スクロールを作らない。 */
+.script-ed-lines, .script-ed-group { grid-template-columns: minmax(0, 1fr); }
 .script-ed-group-head {
   position: sticky;
   top: 0;

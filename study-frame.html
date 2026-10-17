@@ -36,7 +36,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.75</span>
+                <span class="stage-app-version">0.3.76</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2829,16 +2829,15 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261016-v0375">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261017-v0376">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0375-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0375-title">v0.3.75</h3><time datetime="2026-10-16">2026-10-16</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0376-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0376-title">v0.3.76</h3><time datetime="2026-10-17">2026-10-17</time></header>
       <ul>
-        <li>照明の図で、灯体の番号札が他の灯体の記号や引き出し線と重ならないようにしました。かんたん表示も同じです。</li>
-        <li>灯体一覧のグループを解くボタンを、× ではなく「組を解く」という文字のボタンにしました。</li>
-        <li>セリフタブの操作と環境設定の目次の大きさをそろえ、セリフの目次や灯体名が数文字だけ切れないようにしました。</li>
-        <li>公開版で共有の窓を開いたときに、使わない通信を行わないようにしました。</li>
+        <li>進行表の左の帯で、右端の操作が切れて見えていたのを直しました。</li>
+        <li>リハーサルで図の並びを選んでいないときは、窓に合わせて正面図と平面図が大きく見える並びを自動で選ぶようにしました。横長の窓では左右に並びます。手で選んだ並びはそのまま使います。</li>
+        <li>セリフタブで、横長の窓では台本の列が広がりすぎないようにし、余った幅を「選んだセリフ」の列に回すようにしました。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3803,9 +3802,9 @@
 <script src="/study-assets/stage-idle-motion.js?v=20261014-v0362"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
 <script src="/study-assets/gamma-ui.js?v=20261016-v0374"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261016-v0375"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261017-v0376"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261013-v0360"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="/study-assets/stage-sketch.js?v=20261016-v0375"></script>
+<script src="/study-assets/stage-sketch.js?v=20261017-v0376"></script>
 <script src="/study-assets/gamma-appearance.js?v=20261016-v0374"></script>
 </body></html>

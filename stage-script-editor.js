@@ -258,17 +258,30 @@ ${body}
   /* ---------- V-03（2026-09-24 本人指示）: 3つの列（シーン／台本／選んだセリフ）の横幅をドラッグで変える ----------
    * 見た目と操作は舞台タブのパネル列の取っ手（stage-sketch.js の initPanelWidths・.stage-panel-width-handle）と同じ:
    * ドラッグで幅を変える／左右キーで10px（Shift で30px）／Home・End で最小・最大／ダブルクリックまたは Enter で元に戻す。
-   * 変えるのは両端の列（シーン・選んだセリフ）。真ん中の台本は残りを使う（最小360px）。
-   * 端末の設定（gamma:script-editor-widths-v1）。数値: 既定 シーン292px・選んだセリフ320px／シーン 180〜480px・選んだセリフ 240〜560px。 */
+   * 変えるのは両端の列（シーン・選んだセリフ）。台本は残りを使う（最小360px・CSSの上限1100px）。
+   * 右列は本文の上限を超える余りも受け取る。保存する希望幅と実際の列幅は分ける。
+   * 端末の設定（gamma:script-editor-widths-v1）。数値: 既定 シーン292px・選んだセリフ320px／シーン 180〜480px・選んだセリフ 240〜560px。
+   * J3: 余りだけで560pxを超える画面では、右列を本文の最小360pxを残せる幅まで広げられる。 */
   const WIDTH_KEY = "gamma:script-editor-widths-v1";
   const WIDTH_DEFAULT = { scenes: 292, inspector: 320 };
   const WIDTH_LIMIT = { scenes: [180, 480], inspector: [240, 560] };
   const SCRIPT_MIN = 360;
   let columnWidths = { ...WIDTH_DEFAULT };
   try { const saved = JSON.parse(localStorage.getItem(WIDTH_KEY) || "null"); if (saved && typeof saved === "object") columnWidths = { ...WIDTH_DEFAULT, ...saved }; } catch (_) { /* 既定のまま */ }
+  function maxColumnWidth(key, body) {
+    const max = WIDTH_LIMIT[key][1];
+    if (key !== "inspector" || !body) return max;
+    const scenes = Math.max(WIDTH_LIMIT.scenes[0], Math.min(WIDTH_LIMIT.scenes[1], Number(columnWidths.scenes) || WIDTH_DEFAULT.scenes));
+    const textMax = parseFloat(getComputedStyle(body).getPropertyValue("--script-ed-text-max"));
+    const available = body.clientWidth - scenes - 16;
+    // 実幅が既存の上限を超えたときも、掴んだ場所から広げられるようにする。
+    return available - textMax > max || Number(columnWidths.inspector) > max ? Math.max(max, available - SCRIPT_MIN) : max;
+  }
   function clampWidth(key, value, body) {
-    const [min, maxBase] = WIDTH_LIMIT[key];
-    const other = key === "scenes" ? columnWidths.inspector : columnWidths.scenes;
+    const [min] = WIDTH_LIMIT[key];
+    const maxBase = maxColumnWidth(key, body);
+    // 広い画面で保存した大きな右列幅で、狭い画面の左列まで縮めない。
+    const other = key === "scenes" ? Math.min(WIDTH_LIMIT.inspector[1], Number(columnWidths.inspector) || WIDTH_DEFAULT.inspector) : columnWidths.scenes;
     const room = body ? body.clientWidth - other - SCRIPT_MIN - 16 : maxBase;
     return Math.round(Math.max(min, Math.min(maxBase, room, value)));
   }
@@ -278,11 +291,18 @@ ${body}
     const inspector = clampWidth("inspector", Number(columnWidths.inspector) || WIDTH_DEFAULT.inspector, body);
     body.style.setProperty("--script-ed-scenes-width", `${scenes}px`);
     body.style.setProperty("--script-ed-inspector-width", `${inspector}px`);
+    const bodyRect = body.getBoundingClientRect();
+    if (!bodyRect.width) return;
+    const boxes = [...body.querySelectorAll(":scope > .script-ed-box")].map((box) => box.getBoundingClientRect());
     body.querySelectorAll(".stage-panel-width-handle").forEach((handle) => {
       const key = handle.dataset.scriptWidth;
+      const index = key === "scenes" ? 0 : 2;
+      // 列間の真ん中を実測する。余り・スクロールバー・端数があっても境界から離れない。
+      const boundary = key === "scenes" ? (boxes[0].right + boxes[1].left) / 2 : (boxes[1].right + boxes[2].left) / 2;
+      handle.style.setProperty("--script-ed-boundary", `${boundary - bodyRect.left}px`);
       handle.setAttribute("aria-valuemin", String(WIDTH_LIMIT[key][0]));
-      handle.setAttribute("aria-valuemax", String(WIDTH_LIMIT[key][1]));
-      handle.setAttribute("aria-valuenow", String(key === "scenes" ? scenes : inspector));
+      handle.setAttribute("aria-valuemax", String(Math.max(maxColumnWidth(key, body), boxes[index].width)));
+      handle.setAttribute("aria-valuenow", String(boxes[index].width));
     });
   }
   function saveColumnWidths() {
@@ -304,11 +324,13 @@ ${body}
       // 取っ手は列ではなく3列の外枠に付ける（「選んだセリフ」は中身がスクロールするので、列に付けると切り取られる）
       body.append(handle);
       const direction = key === "inspector" ? -1 : 1;
+      const hasSurplus = () => key === "inspector" && box.getBoundingClientRect().width > parseFloat(body.style.getPropertyValue("--script-ed-inspector-width")) + 0.5;
       let drag = null;
       handle.addEventListener("pointerdown", (event) => {
         if (event.button !== 0 || event.isPrimary === false) return;
         event.preventDefault(); event.stopPropagation();
-        drag = { pointerId: event.pointerId, startX: event.clientX, start: box.getBoundingClientRect().width };
+        drag = { pointerId: event.pointerId, startX: event.clientX, start: box.getBoundingClientRect().width,
+          preferred: columnWidths[key], surplus: hasSurplus() };
         handle.setPointerCapture(event.pointerId);
         handle.focus({ preventScroll: true });
         document.body.classList.add("is-panel-resizing");
@@ -316,7 +338,9 @@ ${body}
       handle.addEventListener("pointermove", (event) => {
         if (!drag || event.pointerId !== drag.pointerId) return;
         event.preventDefault();
-        columnWidths[key] = clampWidth(key, drag.start + direction * (event.clientX - drag.startX), body);
+        const next = drag.start + direction * (event.clientX - drag.startX);
+        // 余りのため動かせない範囲では、元の希望幅も増やさない。広げてから戻した場合も同じ。
+        columnWidths[key] = drag.surplus && next <= drag.start ? drag.preferred : clampWidth(key, next, body);
         applyColumnWidths(body);
       });
       const end = (commit) => {
@@ -334,8 +358,10 @@ ${body}
         if (!["ArrowLeft", "ArrowRight", "Home", "End", "Enter"].includes(event.key)) return;
         event.preventDefault(); event.stopPropagation();
         if (event.key === "Enter") { reset(); return; }
-        const [min, max] = WIDTH_LIMIT[key];
+        const [min] = WIDTH_LIMIT[key];
+        const max = maxColumnWidth(key, body);
         const step = (event.key === "ArrowRight" ? 1 : -1) * direction * (event.shiftKey ? 30 : 10);
+        if (event.key.startsWith("Arrow") && step < 0 && hasSurplus()) return;
         const next = event.key === "Home" ? min : event.key === "End" ? max : box.getBoundingClientRect().width + step;
         columnWidths[key] = clampWidth(key, next, body);
         applyColumnWidths(body); saveColumnWidths();

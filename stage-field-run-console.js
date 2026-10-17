@@ -1,8 +1,8 @@
 /* Rehearsal controller: independent run records and a read-only creation reference. */
 (()=>{'use strict';if(window.GAMMA_EDITION==='lite'||document.documentElement.hasAttribute('data-study-renderer'))return;
  const M=window.GAMMA_FIELD_RUN_MODEL,S=window.GAMMA_FIELD_RUN_STORE,P=window.GAMMA_FIELD_RUN_PACKAGE;let dialog,content,status,title,clock,run,raw,images=new Map(),storageId='',durable=0,transport=null,iframe=null,nonce='',requestSeq=0,pending=new Map(),loadReady=null,viewId='',follow=true,mode='run',target=null,composing=false,drawing=false,frameId='',history=[],future=[],timer=null,heartbeat=null,started=0,elapsedBase=0,saveQueue=Promise.resolve(),saveError='',requestedView=0,mounting=false,reviewSceneId='',hostProjectId='';const urls=new Map(),addendumDrafts=new Map();let durationClock=null,durationRefresh=null,durationTableSignature='',durationSort=false;let appending=false,noteSceneId='',switching=false,returnFrameId='',pendingScene='',workspace=false,side=null,sideBody=null,runSection=null,preview=false,fitSide=null,sideObserver=null;
- let arrangement='stack';try{if(localStorage.getItem('gamma:rehearsal-arrangement')==='row')arrangement='row';}catch(_){}
- const effectiveArrangement=()=>arrangement==='row'&&window.innerWidth>760?'row':'stack';
+ let arrangement='auto',autoArrangement=null,frameLayout=null,fitRequest=0;try{const saved=localStorage.getItem('gamma:rehearsal-arrangement');if(saved==='row'||saved==='stack')arrangement=saved;}catch(_){}
+ const effectiveArrangement=()=>(arrangement==='auto'?autoArrangement:arrangement)==='row'&&window.innerWidth>760?'row':'stack';
  let timelineRaw='',timelineDocument;let parsedRaw='',parsedSource;const documentCopy=()=>{if(parsedRaw!==raw){parsedSource=M.source(raw);parsedRaw=raw;}return parsedSource;};
  const source=()=>window.GAMMA_FIELD_RUN_SOURCE;
  const T=s=>window.SHOSAI_STAGE_I18N_MODEL?.text(document.documentElement.lang||'ja',s)||s;
@@ -48,7 +48,7 @@
   },true);
   window.addEventListener('beforeunload',e=>{if([...addendumDrafts.values()].some(s=>s.trim())||(mode==='run'&&run&&(saveError||run.revision!==durable))){e.preventDefault();e.returnValue='';}});
  }
- async function message(e){if(e.source!==iframe?.contentWindow||e.data?.channel!=='gamma-field-frame')return;const m=e.data;if(m.action==='ready'){post('load',{document:documentCopy(),lang:document.documentElement.lang,editable:editable(),material:transport?.material,display:source().display(),arrangement:effectiveArrangement(),words:Object.fromEntries(['図の並び','上下に並べる','左右に並べる','机を下に','正面図','平面図','ペン','手','消しゴム','太さ','ペンの太さ','正面','平面','正面＋平面','平面＋正面','細','中','太','記録図の道具','表示する図。Tで切替。二図の名前は上から下の順','表示する図。Tで切替。二図の名前は左から右の順','正面図の拡大表示を切り替える','平面図の拡大表示を切り替える'].map(k=>[k,T(k)]))});return;}if(m.nonce!==nonce||m.runId!==run?.runId)return;
+ async function message(e){if(e.source!==iframe?.contentWindow||e.data?.channel!=='gamma-field-frame')return;const m=e.data;if(m.action==='ready'){if(m.layout&&['tools','paddingX','paddingY','gap','header'].every(k=>Number.isFinite(m.layout[k])&&m.layout[k]>=0))frameLayout=m.layout;fitSide?.();post('load',{document:documentCopy(),lang:document.documentElement.lang,editable:editable(),material:transport?.material,display:source().display(),arrangement:effectiveArrangement(),words:Object.fromEntries(['図の並び','上下に並べる','左右に並べる','机を下に','正面図','平面図','ペン','手','消しゴム','太さ','ペンの太さ','正面','平面','正面＋平面','平面＋正面','細','中','太','記録図の道具','表示する図。Tで切替。二図の名前は上から下の順','表示する図。Tで切替。二図の名前は左から右の順','正面図の拡大表示を切り替える','平面図の拡大表示を切り替える'].map(k=>[k,T(k)]))});return;}if(m.nonce!==nonce||m.runId!==run?.runId)return;
   if(m.action==='arrangement'&&['stack','row'].includes(m.value)){arrangement=m.value;try{localStorage.setItem('gamma:rehearsal-arrangement',arrangement);}catch(_){}fitSide?.();syncDisplay();return;}
   if(m.action==='loaded'){loadReady?.();loadReady=null;return;}const p=pending.get(m.requestId);if(p&&['scene-ready','captured','record-ready','error'].includes(m.action)){clearTimeout(p.timeout);pending.delete(m.requestId);m.action==='error'?p.no(Error('frame-error')):p.ok(m);return;}
   if(m.sceneId!==viewId||mounting)return;try{if(m.action==='tool'){if(!editable())return;follow=false;if(currentFrame()&&(currentFrame().attemptNumber||1)!==(run.attempts?.length||1))await newFrame();else if(!currentFrame())await capture();post('tool',{view:m.view,tool:m.tool});}
@@ -101,8 +101,27 @@
   let wanted=360,wantedHeight=240,drag,compact=false,restoreRun=false,applied='';
   try{const w=Number(localStorage.getItem('gamma:rehearsal-side-width')),h=Number(localStorage.getItem('gamma:rehearsal-desk-height'));if(w>0)wanted=w;if(h>0)wantedHeight=h;}catch(_){}
   const isRow=()=>effectiveArrangement()==='row';
-  const limits=()=>isRow()?{min:160,max:Math.max(160,Math.floor(work.clientHeight*.5))}:{min:320,max:Math.max(320,Math.min(work.clientWidth*.65,work.clientWidth-360))};
-  fitSide=()=>{if(!work.isConnected)return;const row=isRow(),next=row?'row':'stack';work.dataset.arrangement=next;const {min,max}=limits(),size=Math.max(min,Math.min(max,row?wantedHeight:wanted));work.style.setProperty(row?'--fr-desk-h':'--fr-side',size+'px');grip.setAttribute('aria-label',T(row?'図とノートの高さを変える':'列の幅を変える'));grip.setAttribute('aria-orientation',row?'horizontal':'vertical');head.title=row?T('机を下に'):'';for(const [key,value]of Object.entries({min,max,now:size}))grip.setAttribute('aria-value'+key,String(Math.round(value)));
+  const limits=(row=isRow())=>row?{min:160,max:Math.max(160,Math.floor(work.clientHeight*.5))}:{min:320,max:Math.max(320,Math.min(work.clientWidth*.65,work.clientWidth-360))};
+  // Compare both parent layouts synchronously: the desk moves below the figures
+  // in row mode. Only the final candidate can paint; no storage or messages are
+  // changed during these measurements. The opaque frame supplies its chrome sizes.
+  const chooseArrangement=()=>{
+   if(arrangement!=='auto'||!frameLayout||window.innerWidth<=760)return;
+   const widths={};
+   for(const next of ['stack','row']){
+    const row=next==='row',{min,max}=limits(row),size=Math.max(min,Math.min(max,row?wantedHeight:wanted));
+    work.dataset.arrangement=next;work.style.setProperty(row?'--fr-desk-h':'--fr-side',size+'px');
+    const w=iframe?.clientWidth||0,h=iframe?.clientHeight||0,l=frameLayout;
+    const paneWidth=(w-l.paddingX-(row?l.gap:0))/(row?2:1);
+    const paneHeight=(h-l.tools-l.paddingY-(row?0:l.gap))/(row?1:2)-l.header;
+    widths[next]=Math.max(0,Math.min(Math.floor(paneWidth),Math.floor(paneHeight)*16/9));
+   }
+   const best=widths.row>widths.stack?'row':'stack';
+   // An 8px figure-width advantage is required to reverse an existing choice.
+   // This prevents one-pixel window jitter at the crossover from swapping layouts.
+   if(!autoArrangement||widths[best]>widths[autoArrangement]+8)autoArrangement=best;
+  };
+  fitSide=()=>{if(!work.isConnected)return;chooseArrangement();const row=isRow(),next=row?'row':'stack';work.dataset.arrangement=next;const {min,max}=limits(),size=Math.max(min,Math.min(max,row?wantedHeight:wanted));work.style.setProperty(row?'--fr-desk-h':'--fr-side',size+'px');grip.setAttribute('aria-label',T(row?'図とノートの高さを変える':'列の幅を変える'));grip.setAttribute('aria-orientation',row?'horizontal':'vertical');head.title=row?T('机を下に'):'';for(const [key,value]of Object.entries({min,max,now:size}))grip.setAttribute('aria-value'+key,String(Math.round(value)));
    const small=row&&size<200;if(small!==compact){const h=document.getElementById('field-run-run-head');if(h&&runSection){if(small){restoreRun=!runSection.hidden;runSection.hidden=true;}else if(restoreRun)runSection.hidden=false;h.setAttribute('aria-expanded',String(!runSection.hidden));}compact=small;}
    if(next!==applied){applied=next;post('display',{display:source().display(),arrangement:next});}
   };
@@ -111,7 +130,7 @@
   grip.onpointermove=e=>{if(drag){if(drag.row!==isRow()){drag=null;return;}update(drag.size+drag.at-(drag.row?e.clientY:e.clientX));}};grip.onpointerup=grip.onpointercancel=grip.onlostpointercapture=()=>{drag=null;};
   grip.ondblclick=()=>update(isRow()?240:360);
   grip.onkeydown=e=>{const row=isRow(),less=row?'ArrowDown':'ArrowRight',more=row?'ArrowUp':'ArrowLeft';if(![less,more,'Home'].includes(e.key)||e.isComposing||e.metaKey||e.ctrlKey||e.altKey)return;e.preventDefault();e.stopImmediatePropagation();update(e.key==='Home'?(row?240:360):side.getBoundingClientRect()[row?'height':'width']+(e.key===more?12:-12));};
-  const mark=node('span');mark.setAttribute('aria-hidden','true');grip.append(mark);work.append(grip);sideObserver?.disconnect();sideObserver=new ResizeObserver(()=>fitSide?.());sideObserver.observe(work);fitSide();try{if(localStorage.getItem('gamma:rehearsal-side-collapsed')==='true')head.click();}catch(_){}
+  const mark=node('span');mark.setAttribute('aria-hidden','true');grip.append(mark);work.append(grip);sideObserver?.disconnect();sideObserver=new ResizeObserver(()=>{if(fitRequest)return;/* 同じフレームで並びを測り直すと ResizeObserver loop の警告になる（gamma-mobile.js と同じ扱い） */fitRequest=requestAnimationFrame(()=>{fitRequest=0;fitSide?.();});});sideObserver.observe(work);fitSide();try{if(localStorage.getItem('gamma:rehearsal-side-collapsed')==='true')head.click();}catch(_){}
  }
  function unreadableRow(row){const item=node('p','読めない記録','field-run-unreadable');item.append(document.createTextNode(' · '+row.storageId));item.setAttribute('role','status');return item;}
  async function runTools(container){
@@ -134,7 +153,7 @@
  // Fetch through the parent's PWA controller, then keep the renderer opaque and self-contained.
  async function frameDocument(){
   const responseFor=async url=>{let response;try{response=await fetch(url);if(response.ok)return response;}catch(_){}try{response=await window.caches?.match(url);if(response?.ok)return response;}catch(_){}throw Error('frame-unavailable');};
-  const url=new URL('field-frame.html?v=20261016-v0375',location.href),response=await responseFor(url);
+  const url=new URL('field-frame.html?v=20261017-v0376',location.href),response=await responseFor(url);
   const doc=new DOMParser().parseFromString(await response.text(),'text/html');if(!doc.documentElement.hasAttribute('data-study-renderer')||!doc.querySelector('.field-frame-drawings'))throw Error('frame-unavailable');const base=doc.createElement('base');base.href=new URL('.',url).href;doc.head.prepend(base);
   const read=async path=>{const r=await responseFor(new URL(path,url));return r.text();};
   await Promise.all([...doc.querySelectorAll('script[src]')].map(async tag=>{
@@ -146,9 +165,11 @@
   await Promise.all([...doc.querySelectorAll('link[rel=stylesheet]')].map(async tag=>{const style=doc.createElement('style');style.textContent=await read(tag.getAttribute('href'));tag.replaceWith(style);}));
   return '<!doctype html>'+doc.documentElement.outerHTML;
  }
- async function mount(live){mounting=true;stop();dialog.querySelector('.field-run-bottom')?.remove();content.replaceChildren();title.textContent=run.name;dialog.dataset.kind=mode;viewId='';follow=live&&!run.viewSceneId;frameId='';noteSceneId='';history=[];future=[];const project=documentCopy().project;
+ // A failed mount must not leave the rehearsal workspace hidden and inert.
+ async function mount(live){try{return await mountWorkspace(live);}catch(error){const work=content?.querySelector('.field-run-work');if(work){work.style.visibility='';work.inert=false;}throw error;}}
+ async function mountWorkspace(live){mounting=true;autoArrangement=null;frameLayout=null;stop();dialog.querySelector('.field-run-bottom')?.remove();content.replaceChildren();title.textContent=run.name;dialog.dataset.kind=mode;viewId='';follow=live&&!run.viewSceneId;frameId='';noteSceneId='';history=[];future=[];const project=documentCopy().project;
   if(live){transport?.destroy();transport=window.GAMMA_FIELD_RUN_TRANSPORT.create(project,{readAudio:id=>source().audio(id),onChange:updateClock,onWarning:warning,tx:T});durationClock=M.durationClock(run,transport.domain);}
-  const work=node('div',undefined,'field-run-work'),main=node('div',undefined,'field-run-main'),band=node('div',undefined,'field-run-band'),prevText=node('p','', 'field-side'),current=node('p','', 'field-current'),nextText=node('p','', 'field-side');prevText.id='field-run-prev-label';current.id='field-run-scene-label';nextText.id='field-run-next-label';band.classList.add('stage-scene-bar');
+  const work=node('div',undefined,'field-run-work');work.style.visibility='hidden';work.inert=true;const main=node('div',undefined,'field-run-main'),band=node('div',undefined,'field-run-band'),prevText=node('p','', 'field-side'),current=node('p','', 'field-current'),nextText=node('p','', 'field-side');prevText.id='field-run-prev-label';current.id='field-run-scene-label';nextText.id='field-run-next-label';band.classList.add('stage-scene-bar');
   const referenceStep=(label,dir,id)=>{const original=document.getElementById(id),b=button('',()=>move(dir),original.className);b.id=dir<0?'field-run-prev':'field-run-next';b.innerHTML=original.innerHTML;b.setAttribute('aria-label',T(label));b.title=T(label);return b;};
   band.append(prevText,referenceStep('前の図',-1,'stage-scene-prev'),current,referenceStep('次の図',1,'stage-scene-next'),nextText);
   const drawings=node('div',undefined,'field-run-drawings');iframe=node('iframe');iframe.title=T('正面図と平面図');iframe.sandbox='allow-scripts';nonce=crypto.randomUUID();let frameReady=Promise.resolve();const unavailable=()=>{iframe?.remove();iframe=null;drawings.replaceChildren(node('p','記録図を読み込めません。右の操作とランノートは使えます。','field-run-frame-unavailable'));};try{const html=await frameDocument();frameReady=new Promise((ok,no)=>{const timer=setTimeout(()=>no(Error('frame-timeout')),15000);loadReady=()=>{clearTimeout(timer);ok();};}).catch(unavailable);iframe.srcdoc=html;drawings.append(iframe);}catch(_){unavailable();}
@@ -198,7 +219,7 @@
    const extra=node('textarea');extra.id='field-run-addendum';extra.disabled=true;extra.maxLength=M.LIMIT.text;extra.setAttribute('aria-label',T('確定後の補足'));extra.autocomplete='off';extra.setAttribute('data-1p-ignore','');extra.oninput=()=>addendumDrafts.set(noteSceneId,extra.value);extra.addEventListener('compositionstart',()=>{composing=true;});extra.addEventListener('compositionend',()=>{composing=false;});
    const append=button('補足を追記',async()=>{if(!extra.value.trim()||switching)return;const value={id:'addendum-'+crypto.randomUUID(),sceneId:noteSceneId,text:extra.value,createdAt:new Date().toISOString()};append.disabled=true;extra.disabled=true;appending=true;try{await S.appendAddendum(storageId,value);run=(await S.read(storageId)).run;addendumDrafts.delete(value.sceneId);extra.value='';renderAddenda();}finally{append.disabled=false;extra.disabled=false;appending=false;}});append.id='field-run-append';append.disabled=true;note.append(node('label','確定後の補足'),extra,append);
   }
-  await frameReady;syncDisplay();const init=live?run.showSeconds:0;if(live)transport.seek(init);const requested=live&&run.viewSceneId?run.viewSceneId:!live&&project.scenes.some(e=>e.id===reviewSceneId)?reviewSceneId:!live&&(run.entries[0]?.sceneId||run.frames[0]?.sceneId)||transport?.info().sceneId||project.activeSceneId||project.scenes.find(s=>s.kind==='scene').id;const restoredFrame=run.viewFrameId;await selectScene(requested);if(restoredFrame)await selectFrame(restoredFrame);mounting=false;syncRunState();renderDurations();if(live)durationRefresh=setInterval(renderDurations,250);if(workspace){resizeWorkspace();document.getElementById('view-stage').scrollTop=0;}if(transport)updateClock(transport.info());notifyTimeline();if(live){heartbeat=setInterval(()=>{if(!canProgress())return;if(source().sessionRole()||source().identity().projectId!==hostProjectId){document.getElementById('stage-workspace-normal')?.click();return;}run.elapsedSeconds=elapsed();M.touch(run);void save().catch(()=>{});},2000);}
+  await frameReady;syncDisplay();const init=live?run.showSeconds:0;if(live)transport.seek(init);const requested=live&&run.viewSceneId?run.viewSceneId:!live&&project.scenes.some(e=>e.id===reviewSceneId)?reviewSceneId:!live&&(run.entries[0]?.sceneId||run.frames[0]?.sceneId)||transport?.info().sceneId||project.activeSceneId||project.scenes.find(s=>s.kind==='scene').id;const restoredFrame=run.viewFrameId;await selectScene(requested);if(restoredFrame)await selectFrame(restoredFrame);mounting=false;work.style.visibility='';work.inert=false;syncRunState();renderDurations();if(live)durationRefresh=setInterval(renderDurations,250);if(workspace){resizeWorkspace();document.getElementById('view-stage').scrollTop=0;}if(transport)updateClock(transport.info());notifyTimeline();if(live){heartbeat=setInterval(()=>{if(!canProgress())return;if(source().sessionRole()||source().identity().projectId!==hostProjectId){document.getElementById('stage-workspace-normal')?.click();return;}run.elapsedSeconds=elapsed();M.touch(run);void save().catch(()=>{});},2000);}
  }
  // Real performance time is independent of the show's playback/seek clock.
  function durationSceneId(){const info=transport?.info();return info?.phase?.fromSceneId||info?.sceneId||run?.progressSceneId;}

@@ -46,6 +46,8 @@
     else if(m.action==='lock'){editable=false;for(const p of Object.values(panes)){setTool(p.view,'pan');for(const b of document.querySelectorAll('.field-frame-tools [data-tool]'))b.disabled=b.dataset.tool!=='pan';}}
     else if(m.action==='strokes'){active.strokes=m.strokes;ink('front');ink('plan');}
    }catch(error){say('error',{requestId:m.requestId});}
-  });say('ready');
+  });
+  const box=document.querySelector('.field-frame-drawings'),css=getComputedStyle(box),px=k=>parseFloat(css[k])||0;
+  say('ready',{layout:{tools:document.querySelector('.field-frame-tools').getBoundingClientRect().height,paddingX:px('paddingLeft')+px('paddingRight'),paddingY:px('paddingTop')+px('paddingBottom'),gap:px('gap'),header:panes.front.root.querySelector('header').getBoundingClientRect().height}});
  });
 })();

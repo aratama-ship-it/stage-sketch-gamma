@@ -496,7 +496,7 @@ html[data-paper-ink=white] .ink-swatch[data-ink=white],html[data-paper-ink=black
 @media screen and (max-width:1199px){#column-popover{flex-basis:100%}#column-popover #column-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}#column-popover .column-group .column-list{display:contents}}
 
 @media print{#column-popover{display:none!important}}
-@media screen and (min-width:1600px){body:not(.lite-paper) #paper-panel .row-mode-buttons{justify-content:center}body:not(.lite-paper) #paper-panel .row-mode-buttons button{flex:0 0 auto;white-space:nowrap}}
+@media screen and (min-width:1600px){body:not(.lite-paper) #paper-panel .row-mode-buttons{justify-content:center}body:not(.lite-paper) #paper-panel .row-mode-buttons button{flex:1;white-space:normal}}
 
 /* Only the centre switches to Q sheets; the run-of-show DOM and preferences remain. */
 .band-cues{flex-basis:100%;border-top:var(--rule) solid var(--line-dark);padding-top:var(--s2)}
@@ -590,7 +590,9 @@ html[data-stage-skin] :is(#paper-panel,#ros-index) .ros-side-head > span:nth-chi
 #ros-index-count { grid-column:2; grid-row:1; justify-self:end; }
 #ros-index-collapse .ros-side-disclosure { grid-column:3; grid-row:1; }
 #ros-index-collapse > span:nth-child(2) { padding-right:3em; }
-#paper-band > .band-group { padding:0 calc(var(--gamma-gap) / 2) var(--gamma-gap); }
+#paper-band > .band-group { min-width:0; max-width:100%; padding:0 calc(var(--gamma-gap) / 2) var(--gamma-gap); }
+#paper-band #stage-view-rows { min-width:0; max-width:100%; }
+#paper-band :is(#cue-master,#stage-view-reset) { min-width:0; max-width:100%; white-space:normal; }
 #paper-band .ros-left-content { display:flex; flex-wrap:wrap; align-items:center; gap:calc(var(--gamma-gap) / 2); width:100%; }
 #paper-band .ros-left-content > :is(select,.band-field,.band-size,.toolbar) { width:100%; }
 #paper-band .ros-left-content[hidden] { display:none; }

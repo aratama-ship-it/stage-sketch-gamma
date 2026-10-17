@@ -1,9 +1,9 @@
 {
-  "version": "0.3.75",
+  "version": "0.3.76",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.75/stage-sketch-gamma-mac-0.3.75.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.76/stage-sketch-gamma-mac-0.3.76.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "照明の図の番号札が他の灯体の記号や引き出し線と重ならないようにし、灯体一覧に「組を解く」ボタンを付けました。セリフタブと環境設定の寸法をそろえ、公開版の共有で使わない通信をやめました。",
-  "updated": "2026-10-16",
-  "build": 87
+  "notes": "リハーサルでは窓に合わせて図が大きく見える並びを自動で選び、セリフタブでは台本の列が広がりすぎないようにしました。進行表の左の帯で操作が切れていたのを直しました。",
+  "updated": "2026-10-17",
+  "build": 88
 }
