@@ -12,3 +12,40 @@ window.SHOSAI_TERMS["en"] = {
   "contact": "Contact",
   "japanese": "Japanese version"
 };
+
+/* Download gate result; separate from the app interface pack. */
+window.SHOSAI_DOWNLOAD_GATE_COPY = window.SHOSAI_DOWNLOAD_GATE_COPY || {};
+window.SHOSAI_DOWNLOAD_GATE_COPY["en"] = { unlocked: "Passphrase confirmed. The download is available." };
+
+// B68 A4-13: download-page display copy; gate behaviour is unchanged.
+window.SHOSAI_DOWNLOAD = window.SHOSAI_DOWNLOAD || {};
+window.SHOSAI_DOWNLOAD["en"] = {
+  "title": "Download Stage Sketch γ for Mac",
+  "versionFallback": "Check GitHub Releases for the latest version.",
+  "version": "Latest Mac version: {version}",
+  "heading": "Replace your Mac app with the latest version",
+  "lead": "Download the new app and replace your current 舞台スケッチγ.app.",
+  "gate": "Passphrase",
+  "open": "Open",
+  "required": "Please enter the passphrase.",
+  "wrong": "The passphrase is incorrect.",
+  "unavailable": "Verification was unavailable in this environment. Please try another browser.",
+  "download": "Download (GitHub Releases)",
+  "install": "Installation",
+  "step1": "Download the latest zip from GitHub Releases.",
+  "step2": "Unzip the file.",
+  "step3": "Replace your current 舞台スケッチγ.app with the new app in Applications or on the desktop.",
+  "step4": "On first launch, right-click the app and choose Open.",
+  "storage": "About saved data",
+  "storageNote": "Shows are saved in project files (.stageproj), separately from the app. Replacing the app leaves your saved files in place. For shows in the previous WebView storage, open Previous shows and save them as project files to migrate them.",
+  "browser": "Open the browser edition",
+  "unsigned": "Unsigned, unnotarised builds require right-clicking the app and choosing Open on first launch."
+};
+
+// B70 A5-07: download guidance copy; the passphrase controls display only.
+window.SHOSAI_DOWNLOAD_COPY = window.SHOSAI_DOWNLOAD_COPY || {};
+window.SHOSAI_DOWNLOAD_COPY["en"] = {
+  "scope": "Enter the passphrase to show the download location and installation instructions. This is a simple display gate; it does not restrict access to the distributed files.",
+  "remember": "After entry, the same browser keeps the instructions visible for 30 days.",
+  "authenticity": "Check the distributor separately from the passphrase. Before downloading, confirm that the link goes to the official PYGMIX GitHub repository (aratama-ship-it/stage-sketch-gamma)."
+};

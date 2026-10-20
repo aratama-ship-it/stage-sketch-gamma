@@ -43,6 +43,74 @@
     && backupKind(record.key) && typeof record.value === "string"
     && (record.key !== INACTIVE_SHOW_ARCHIVE_KEY || archivedShowValid(record));
 
+  const stringIds = value => Array.isArray(value) && value.every(id => typeof id === "string" && id.length > 0);
+  // A fixed share copy contains opaque serialized source generations. Parse those
+  // strings as well as the enclosing entry; never infer reachability from its index alone.
+  function fixedCopy(record) {
+    if (!valid(record) || record.key !== INACTIVE_SHOW_ARCHIVE_KEY) return null;
+    const entry = JSON.parse(record.value);
+    if (!("preShareBackup" in entry) && !("preShareGenerations" in entry)) return null;
+    if (!entry.preShareBackup || !Array.isArray(entry.preShareGenerations)) throw new Error("RELEASE_UNREADABLE");
+    const backup = entry.preShareBackup;
+    if (backup.projectId !== record.projectId || typeof backup.serializedState !== "string"
+        || JSON.parse(backup.serializedState)?.project?.id !== record.projectId) throw new Error("RELEASE_UNREADABLE");
+    const texts = [record.value, backup.serializedState];
+    for (const row of entry.preShareGenerations) {
+      if (!object(row?.values)) throw new Error("RELEASE_UNREADABLE");
+      texts.push(...Object.values(row.values));
+    }
+    if (texts.some(text => text !== null && typeof text !== "string")) throw new Error("RELEASE_UNREADABLE");
+    const refs = window.STAGE_STORAGE_HYGIENE?.audioReferences(texts);
+    if (!refs || !stringIds(record.audioRefs) || refs.some(id => !record.audioRefs.includes(id)))
+      throw new Error("RELEASE_UNREADABLE");
+    return {...record, refs:record.audioRefs};
+  }
+  // Pure selection: only audio exclusively owned by fixed copies is eligible.
+  // Connected copies are one choice, so a shared immutable source never strands
+  // an otherwise releasable Blob behind a second fixed copy.
+  function fixedAudioReleaseCandidates({archives, protectedAudioIds, audioSizes = {}}) {
+    try {
+      if (!Array.isArray(archives) || !stringIds(protectedAudioIds)) throw new Error("RELEASE_UNREADABLE");
+      const protectedIds = new Set(protectedAudioIds), fixed = [];
+      for (const row of archives) {
+        if (!valid(row) || !stringIds(row.audioRefs)) throw new Error("RELEASE_UNREADABLE");
+        const indexed = window.STAGE_STORAGE_HYGIENE?.audioReferences([row.value]);
+        if (!indexed || indexed.some(id => !row.audioRefs.includes(id))) throw new Error("RELEASE_UNREADABLE");
+        const copy = fixedCopy(row);
+        if (copy) fixed.push(copy);
+        else row.audioRefs.forEach(id => protectedIds.add(id));
+      }
+      const owners = new Map();
+      for (const row of fixed) for (const id of row.refs) {
+        if (protectedIds.has(id)) continue;
+        if (!owners.has(id)) owners.set(id, []);
+        owners.get(id).push(row);
+      }
+      const seen = new Set(), candidates = [];
+      for (const start of fixed) {
+        if (seen.has(start.id)) continue;
+        const stack = [start], rows = [], refs = new Set();
+        while (stack.length) {
+          const row = stack.pop();
+          if (seen.has(row.id)) continue;
+          seen.add(row.id); rows.push(row);
+          for (const id of row.refs) if (owners.has(id)) {
+            refs.add(id); stack.push(...owners.get(id));
+          }
+        }
+        if (!refs.size) continue;
+        rows.sort((a, b) => a.id.localeCompare(b.id));
+        const audioRefs = [...refs].sort(), archiveIds = rows.map(row => row.id);
+        const audioBytes = audioRefs.reduce((sum, id) => sum + (Number.isFinite(audioSizes[id]) ? audioSizes[id] : 0), 0);
+        const archiveBytes = rows.reduce((sum, row) => sum + (row.storedBytes ?? row.value.length * 2), 0);
+        candidates.push({id:JSON.stringify(archiveIds), archiveIds, titles:rows.map(row => row.title || row.projectId),
+          projectIds:rows.map(row => row.projectId), audioRefs, audioBytes, archiveBytes,
+          bytes:audioBytes + archiveBytes, originalPresent:true});
+      }
+      return {blocked:false, candidates};
+    } catch (_) { return {blocked:true, candidates:[]}; }
+  }
+
   function createVault(indexedDB) {
     const name = "gamma:storage-recovery-archive-v1";
     const codec = window.STAGE_STORAGE_CODEC;
@@ -108,12 +176,35 @@
           };
         });
       },
+      // A single compare/delete transaction releases the user's whole selection.
+      // Compressed records are compared in their stored representation.
+      removeFixedCopies(records, guard = () => false) {
+        if (!Array.isArray(records) || !records.length || records.some(row => row?.key !== INACTIVE_SHOW_ARCHIVE_KEY))
+          return Promise.resolve(false);
+        return transaction("readwrite", (store, done) => {
+          let remaining = records.length, matches = true;
+          for (const expected of records) store.get(expected.id).onsuccess = event => {
+            const current = event.target.result;
+            const same = current && current.key === expected.key && current.archivedAt === expected.archivedAt
+              && current.value === expected.value && current.valueChars === expected.valueChars
+              && current.textBytes === expected.textBytes && current.storageEncoding === expected.storageEncoding
+              && JSON.stringify(current.audioRefs) === JSON.stringify(expected.audioRefs)
+              && sameEncodedBytes(current.valueGzip, expected.valueGzip);
+            matches = matches && same;
+            if (--remaining) return;
+            if (!matches || !guard()) { done(false); return; }
+            for (const row of records) store.delete(row.id);
+            done(true);
+          };
+        });
+      },
       raw(id) { return transaction("readonly", (store, done) => { store.get(id).onsuccess = event => done(event.target.result ?? null); }); },
-      async list() {
+      async list({strict = false} = {}) {
         const records = await transaction("readonly", (store, done) => { store.getAll().onsuccess = event => done(event.target.result); });
         // Export must fail visibly if any archived copy cannot be decoded.
         const restored = [];
         for (const record of records) restored.push(await unpack(record));
+        if (strict && restored.some(row => !valid(row))) throw new Error("RELEASE_UNREADABLE");
         return restored.filter(valid);
       },
       summaries() {
@@ -164,7 +255,9 @@
     return Array.from(new Uint8Array(hash), n => n.toString(16).padStart(2, "0")).join("");
   }
 
-  function create({ storage, vault, hash = digest, now = () => new Date().toISOString() }) {
+  function create({ storage, vault, hash = digest, now = () => new Date().toISOString(),
+    audioStore = window.SHOSAI_STAGE_AUDIO_STORE, backupStore = window.SHOSAI_STAGE_PROJECT_BACKUP_STORE,
+    largeStore = window.STAGE_LARGE_PROJECT_STORE }) {
     // Audio blobs live in a separate database. The app's cleanup scans the
     // active shelf, so hiding a show with audio references could delete its
     // file even while the show JSON is safely archived.
@@ -323,6 +416,71 @@
       }
       return true;
     }
+    function releaseLocalSnapshot() {
+      const rows = [];
+      for (let i = 0; i < storage.length; i++) {
+        const key = storage.key(i);
+        if (typeof key === "string" && (key.startsWith("gamma:music-cue-original-v1:")
+            || /^gamma:(?:scene-alternatives-v1:)?shosai-stage-(?:sketch|shows)(?:-broken)?-v1(?:$|-pre-section-hierarchy-v1)/.test(key)))
+          rows.push([key, storage.getItem(key)]);
+      }
+      return rows.sort((a,b) => a[0].localeCompare(b[0]));
+    }
+    async function releaseSnapshot() {
+      if (!backupStore?.protectedAudioIds || !largeStore?.repository || !audioStore?.get
+          || !audioStore?.removeSelected || !vault.removeFixedCopies) throw new Error("RELEASE_UNREADABLE");
+      const local = releaseLocalSnapshot();
+      const [archives, backupRefs, pairs] = await Promise.all([vault.list({strict:true}),
+        backupStore.protectedAudioIds(), largeStore.repository(window.indexedDB).records()]);
+      if (!stringIds(backupRefs) || !Array.isArray(pairs) || pairs.some(row => !largeStore.pairValid(row)))
+        throw new Error("RELEASE_UNREADABLE");
+      const refs = window.STAGE_STORAGE_HYGIENE?.audioReferences([...local.map(row => row[1]),
+        ...pairs.flatMap(row => largeStore.KEYS.map(key => row.values[key]))]);
+      if (!refs) throw new Error("RELEASE_UNREADABLE");
+      const summaries = await vault.summaries();
+      for (const row of archives) row.storedBytes = summaries.find(item => item.id === row.id)?.storedBytes ?? row.value.length * 2;
+      const audioSizes = Object.create(null);
+      for (const id of new Set(archives.flatMap(row => row.audioRefs || []))) {
+        // Read only the current database. Legacy fallback get() copies on read.
+        const blob = await (audioStore.peek ? audioStore.peek(id) : audioStore.get(id));
+        if (blob !== null && (!blob || !Number.isFinite(blob.size))) throw new Error("RELEASE_UNREADABLE");
+        audioSizes[id] = blob?.size || 0;
+      }
+      if (JSON.stringify(releaseLocalSnapshot()) !== JSON.stringify(local)) throw new Error("CONCURRENT_EDIT");
+      const protectedAudioIds = [...new Set([...refs, ...backupRefs])].sort();
+      return {archives, protectedAudioIds, audioSizes, local,
+        fingerprint:JSON.stringify({local, backupRefs:[...backupRefs].sort(), pairs,
+          archives:archives.map(row => [row.id,row.value,row.archivedAt,row.audioRefs]), audioSizes})};
+    }
+    async function fixedReleaseCandidates() {
+      try { return fixedAudioReleaseCandidates(await releaseSnapshot()); }
+      catch (_) { return {blocked:true, candidates:[]}; }
+    }
+    async function releaseFixedCopy(candidate, confirmation = {}) {
+      if (confirmation.confirmed !== true || confirmation.preservation !== "unreferenced"
+          || confirmation.editingTabsClosed !== true) throw new Error("RELEASE_NOT_CONFIRMED");
+      const before = await releaseSnapshot();
+      const current = fixedAudioReleaseCandidates(before).candidates.find(row => row.id === candidate?.id);
+      if (!current || JSON.stringify(current) !== JSON.stringify(candidate)) throw new Error("CONCURRENT_EDIT");
+      const raw = await Promise.all(current.archiveIds.map(id => vault.raw(id)));
+      // Re-read all independent protection sources after gathering raw CAS records.
+      const check = await releaseSnapshot();
+      if (check.fingerprint !== before.fingerprint) throw new Error("CONCURRENT_EDIT");
+      const guard = () => JSON.stringify(releaseLocalSnapshot()) === JSON.stringify(before.local);
+      if (!await vault.removeFixedCopies(raw, guard)) throw new Error("CONCURRENT_EDIT");
+      // Cross-database cleanup is deliberately conservative: any new reference,
+      // unreadable source or concurrent write leaves the files in place.
+      let releasedAudio = 0, audioBytes = 0;
+      try {
+        const after = await releaseSnapshot();
+        const remaining = new Set([...after.protectedAudioIds, ...after.archives.flatMap(row => row.audioRefs)]);
+        const releasable = current.audioRefs.filter(id => !remaining.has(id));
+        const result = await audioStore.removeSelected(releasable, {guard});
+        releasedAudio = result.count; audioBytes = result.bytes;
+      } catch (_) { /* The selected source was released, but unknown audio stays. */ }
+      return {releasedArchives:raw.length, releasedAudio, audioBytes,
+        bytes:current.archiveBytes + audioBytes};
+    }
     function localOriginals() {
       return scan().filter(row => musicOriginal(row.key)).map(row => {
         const value = storage.getItem(row.key);
@@ -365,6 +523,7 @@
       return true;
     }
     return Object.freeze({ scan, archive, restore, preserveShareGenerations, preserveMusicOriginal, removeMusicOriginal,
+      fixedReleaseCandidates, releaseFixedCopy,
       originalRecord: row => row.local ? Promise.resolve(row) : vault.raw(row.id),
       list: async () => [...await vault.list(), ...localOriginals()],
       summaries: async () => [...await (vault.summaries ? vault.summaries() : vault.list().then(rows => rows.map(row => ({...row, chars:row.value.length})))), ...localOriginals()],
@@ -372,5 +531,5 @@
       verifiedArchivedShelfChange });
   }
 
-  window.STAGE_STORAGE_RECOVERY = Object.freeze({ create, createVault, backupKind, musicOriginal });
+  window.STAGE_STORAGE_RECOVERY = Object.freeze({ create, createVault, backupKind, musicOriginal, fixedAudioReleaseCandidates });
 })();

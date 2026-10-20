@@ -31,6 +31,54 @@
   "use strict";
 
   const TEXT = {
+    "固定控えを解除しました。参照を再確認できなかった音源は残しています。使用量を確認し直してください。": "The fixed copies have been released. Audio whose references could not be checked again has been kept. Check usage again.",
+    // B74: explicit release of fixed pre-share copies.
+    "共有前の固定控えを解除する": "Release fixed copies from before sharing",
+    "他のショーや保存世代が使っていない音源を含む固定控えだけを選べます。解除すると、選んだ原本と専用音源をこの端末から消します。元に戻せません。": "You can select only fixed copies with audio unused by other shows or saved generations. Releasing removes the selected originals and their exclusive audio from this device. This cannot be undone.",
+    "固定控えと専用音源の解除": "Release fixed copies and exclusive audio",
+    "現在のショー・棚・保存世代・他の控えの音源参照を再確認してから解除します。編集中の内容を保存し、舞台を開いた他のタブとウインドウを閉じてください。": "Audio references in the current show, shelf, saved generations and other copies are checked again before release. Save your edits and close all other tabs and windows showing the stage.",
+    "舞台を開いた他のタブとウインドウを閉じました": "I have closed all other stage tabs and windows",
+    "表示された原本と専用音源を手放し、元に戻せなくなることを確認しました": "I understand that the listed originals and exclusive audio will be removed and cannot be restored",
+    "参照を確認して解除": "Check references and release",
+    "関係するショー：{titles}\n解放見込：{total}（音源 {audio}・固定控え {archive}）\n端末内の原本：あり（選択した固定控え）": "Related shows: {titles}\nEstimated release: {total} (audio {audio}; fixed copies {archive})\nOriginals on this device: present (selected fixed copies)",
+    "参照を確認できない保存があります。固定控えと音源は変更していません。": "Some saved references could not be checked. Fixed copies and audio have not been changed.",
+    "解除する固定控えを選んでください。確認画面でキャンセルできます。": "Select the fixed copies to release. You can cancel on the review screen.",
+    "固定控えだけが参照する音源はありません。": "No audio is referenced only by fixed copies.",
+    "解除内容を確認": "Review release",
+    "選んだ固定控えと専用音源を解除しました。他のショーと参照中の音源は保持しています。": "The selected fixed copies and exclusive audio have been released. Other shows and referenced audio have been kept.",
+    "固定控えの解除を完了できませんでした。使用量を確認し直してください。参照中の音源は削除しません。": "Fixed copy release could not be completed. Check usage again. Referenced audio is not removed.",
+
+
+    "リハーサルの記録図に選択中の配色を反映し、開いたまま配色を変えたときも追従するようにしました。同じランでタブを往復しても、図の「一つ戻す」・やり直しの履歴を保ちます（ページの再読み込み後は対象外です）。": "Rehearsal drawings now follow the selected theme, including changes made while they are open. Drawing Undo and redo history is kept when switching tabs within the same run (it does not survive a page reload).",
+
+    "小さいウインドウでも環境設定の見出しと閉じる操作が画面内に残るようにしました。狭い幅では LX の呼び名の説明と選択欄を縦に並べます。": "Preferences now keeps its heading and close control on screen in small windows. At narrow widths, the LX naming explanation and selector are arranged vertically.",
+
+    "狭い幅でショー名とシーン送りが画面外へ出る件、左の道具の説明が操作列を圧迫する件、保存の警告帯がリハーサルの説明と重なる件を直しました。": "Fixed the show name and scene navigation moving off screen at narrow widths, tool descriptions crowding the left toolbar, and the save-warning band overlapping the Rehearsal explanation.",
+
+    "進行表の左パネルを見出しの Alt＋↑／↓でも並べ替えられるようにし、移動後の位置を読み上げへ伝えます。ドラッグ中に端へ近づけると、左欄が自動でスクロールします。": "Run-of-show left panels can now be reordered with Alt＋↑／↓ on their headings, with the new position announced to assistive technology. Dragging near an edge also scrolls the left column automatically.",
+
+    "進行表の紙面編集で、開始・キャンセル・失敗の案内を読み上げへ伝えるようにしました。同じ通知の重複を抑え、既存の編集案内を5言語にしました。": "Run-of-show paper editing now announces the start, cancellation and failure of an edit to assistive technology. Duplicate announcements are suppressed, and the existing editing messages are available in five languages.",
+
+    "共有窓と演者用リンク欄、進行表、音量・衣装・高さの説明、LX送り、髪型、ミラーボール設定などで不足していた翻訳を補いました。共有窓は初めて開くときも現在の表示言語に合わせます。": "Added missing translations in the sharing dialog, performer-link section, Run of show, volume, costume and height explanations, LX navigation, hairstyles and mirror-ball settings. The sharing dialog follows the current interface language even when first opened.",
+
+    "Mac 版のダウンロードページを日本語・英語・韓国語・簡体字・繁体字に対応させました。設定や入手案内から表示言語を引き継ぎ、日英の冊子にも合言葉の確認先と入力先を追記しました。": "The Mac download page now supports Japanese, English, Korean, Simplified Chinese and Traditional Chinese. Links from Preferences and the download guidance retain the interface language. The Japanese and English manuals also explain where to obtain and enter the passphrase.",
+
+    "Mac 配布ページの合言葉は、ダウンロード先と導入手順の案内を表示する簡易な仕組みで、配布ファイルへのアクセス制限ではないことを明記しました。同じブラウザで30日間表示を記憶する説明と、公式配布元を確認する案内を分けました。空白だけの入力には案内を出し、入力が成功したときはダウンロードリンクへ移動して成功を通知します。": "The Mac download page now explains that the passphrase is a simple way to display download and installation guidance, rather than a restriction on access to the files. It separately explains the 30-day display memory in the same browser and checking the official distributor. Whitespace-only input gets a message; successful input moves focus to the download link and announces success.",
+
+    "アイコンの説明を、表示中だけ操作元と関連付けて読み上げへ渡すようにしました。日英の利用規約にも言語の指定を付けました。": "Icon tooltips are now associated with their controls for assistive technology only while visible. Language attributes were also added to the Japanese and English terms of use.",
+
+    "使い方の冊子で、検索結果を開くと該当する節の見出しへ移動するようにしました。「/」で検索欄へ戻れます。検索候補を閉じた後の選択状態を整え、拡大画像の読み上げ名にキャプションを使います。": "Opening a manual search result now moves focus to the relevant section heading. Press “/” to return to the search field. Closing suggestions clears their selection state, and enlarged images use their captions as accessible names.",
+
+    "日英の冊子で配色の3色を実際の操作名にそろえ、配色が背景に効き、演者・道具・光の色は変えないことを説明しました。日本語の冊子では操作名を「一つ戻す」にそろえました。": "The Japanese and English manuals now use the actual names of the three themes and explain that themes affect backgrounds without changing performers, props or light colours. The Japanese manual also uses the control name “Undo” consistently.",
+
+    "ショーを読み込むとき、音源、リハーサル、シーンと別案、劇場の寸法、大道具の寸法などに含まれる追加情報が失われる件を直しました。旧版で再保存すると、旧版側でこの追加情報が失われる制限は残ります。": "Fixed additional information being lost when importing shows in areas such as audio tracks, rehearsal, scenes and alternatives, theatre dimensions and set-piece dimensions. Older versions can still discard this additional information when saving again.",
+
+    "共有サーバーでパスワードの保存ハッシュ用の予約形式に不正な設定がある場合、名簿全体の認証を停止するようにしました。英語ログイン画面の言語指定と、既存のキャッシュ条件を認証用の条件で上書きしていた件も直しました。": "The share server now stops authentication for the whole roster if a password entry uses an invalid reserved hash format. Also fixed language attributes on the English login screen and existing cache conditions being overwritten by authentication-related conditions.",
+
+    "検査と文書の整備：容量上限・狭い操作欄・起動計測・更新履歴などの回帰検査を整えました。Mac 版に同梱する冊子の依存ファイル確認を補い、配布物に内部文書・サーバー専用コード・秘密情報用の名前を持つファイルが混ざらないための確認と除外規則を整えました。": "Checks and documentation: improved regression checks for capacity limits, narrow controls, startup measurements and release history. Added dependency checks for the manual bundled with the Mac app, and refined checks and exclusion rules to keep internal documents, server-only code and files with secret-related names out of distribution packages.",
+    "{name}：{total}個中{position}番目。": "{name}: position {position} of {total}.",
+
+    "合言葉を入力してください。": "Enter the passphrase.",
 
     "配布ページに合言葉を付けました。合言葉を入れると Mac 版の入手先が表示され、同じブラウザでは 30 日間おぼえます。": "The download page now asks for a passphrase. Once entered, the Mac app download appears, and the same browser remembers it for 30 days.",
 
@@ -5200,4 +5248,37 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "各部の指示は100行以内で入力してください。": "Keep department instructions within 100 lines.",
   "舞台と連携した項目の時間を入力してください。": "Enter a duration for the item linked to the stage.",
   "編集先の項目がありません。": "The item to edit could not be found."
+});
+
+// B67 A4-07: static sharing guidance uses the same UI-language dictionary.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "このページは静的配信です。リアルタイム共有と演者用リンクはγ専用ホストで使えます。": "This page is static. Live sharing and performer links are available on Gamma's dedicated host.",
+  "γの共有用画面を開く ↗": "Open Gamma sharing ↗",
+  "このページの保存済みショーは自動では移りません。ここでJSONを書き出し、共有用画面で読み込んでください。元のショーはここに残ります。": "Saved shows do not move automatically. Export JSON here and import it in the sharing editor. The original stays here."
+});
+
+// B67 A4-10: enabled LX navigation tooltips retain cue and name substitutions.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "前の {cue}{name} へ GO": "GO to previous {cue}{name}",
+  "次の {cue}{name} へ GO": "GO to next {cue}{name}"
+});
+
+// B68 A4-18: keyboard panel ordering.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "Alt + ↑ / ↓ でパネルを並べ替え": "Reorder panel with Alt + ↑ / ↓",
+  "{panel}を{position}/{total}番目に移動しました。": "Moved {panel} to position {position} of {total}."
+});
+
+// B68 A4-17: editing announcements exposed to assistive technology.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "この欄を編集中 · 欄外またはCtrl/⌘+Enterで反映 · Escで取消": "Editing this field · Click outside or press Ctrl/⌘+Enter to apply · Esc to cancel",
+  "この欄の入力を取り消しました。": "Cancelled the input in this field.",
+  "入力を確認してください。Escで取り消せます。": "Please check your input. Press Esc to cancel.",
+  "秒数を入力 · 空欄は未定 · Enterで反映 · Escで取消": "Enter seconds · Leave blank if undecided · Enter to apply · Esc to cancel",
+  "続きの文章を編集中 · 表示中の区間だけを変更します。": "Editing continued text · Only the displayed portion will change.",
+  "紙面の欄をクリックして編集できます。": "Click a field on the page to edit it.",
+  "変更を反映し、ページを整えています…": "Applying changes and arranging the pages…",
+  "紙面を更新しました。": "The page has been updated.",
+  "紙面をクリックして編集。名称・尺・並びはショーファイルにも反映します。": "Click the page to edit. Names, durations and order are also applied to the show file.",
+  "紙面をクリックして編集。名前・時間・順序は舞台タブにも反映します。": "Click the page to edit. Names, times and order are also applied to the Stage tab."
 });

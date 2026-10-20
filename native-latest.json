@@ -1,9 +1,9 @@
 {
-  "version": "0.3.80",
+  "version": "0.3.81",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.80/stage-sketch-gamma-mac-0.3.80.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.81/stage-sketch-gamma-mac-0.3.81.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "進行表の左パネルの並べ替えと「表示」の常設帯、配布ページの合言葉、利用規約の表示、照明の「かんたん」画面で時間だけ変えても詳細を上書きしない修正、照明の設定貼付・検索・Q 移動・時間値・取り消しの文脈・機材の複製と削除の整合、共有の受信で自分の保存世代が消える件の修正、明るい白の配色の読みやすさ、共有サーバーの安全性など、v0.3.80 の変更をまとめて取り込みました。",
+  "notes": "リハーサルの記録図の配色とタブ往復時の取り消し履歴、小さいウインドウでの環境設定と舞台の操作欄、進行表のキーボード並べ替えと編集通知、共有窓などの翻訳を改善しました。冊子の検索と画像の説明を整え、Mac 版のダウンロードページを5言語にしました。合言葉は入手先と導入手順の案内を表示する簡易な仕組みで、ファイルへのアクセス制限ではないことと、公式配布元の確認方法を明記しました。読み込み時の追加情報の保持も直しましたが、旧版で再保存すると旧版側で失われる制限は残ります。v0.3.81 の更新文草稿です。",
   "updated": "2026-10-20",
-  "build": 91
+  "build": 92
 }

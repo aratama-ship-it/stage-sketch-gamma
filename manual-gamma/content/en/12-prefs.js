@@ -12,7 +12,7 @@
         html: `
 <p>Settings and keyboard shortcuts share a switched section. Below 1360px, the active section fills one column without leaving an unused column on the right.</p>
 <p>Send anonymous usage counts is on by default and can be turned off in Settings on this device; only tab and feature IDs with counts are sent, never your work, typed text, screen images or personal information.</p>
-<p>The warm-black and blue-black skins are joined by a light skin. Display preferences are stored on the device and do not recolor costumes or fixtures in the show. Open show mode from the running-person icon in the header. Show mode groups current/next scenes and cues with elapsed time and explains where to add a cue when none is available.</p>
+<p>Interface skin offers three colours: Warm black (default), Blue black and Light ivory. It changes background and panel colours, and also applies to the stage diagrams, Light design, Equipment placement and the 3D background. Display preferences are stored on the device; colours on stage (performers, objects, light) are unchanged. Open show mode from the running-person icon in the header. Show mode groups current/next scenes and cues with elapsed time and explains where to add a cue when none is available.</p>
 ${fig("40-prefs", "The Settings window on screens 1360px or wider: the saving notice at the top, help and about in the left column, language, skin, show-specific settings and features (ON / OFF tags) in the middle, keyboard shortcuts on the right. On narrower screens help and about fold above the middle column.", "Settings window")}
 <p>At the top, framed in red: “Everything you draw is saved only in this browser, on this device. It can be lost, so use Export now and then to keep a copy as a file.” (${ref("saving", "Part 1, 1-5")}).</p>
 ${table(["Setting", "Where it is saved"], [
@@ -29,10 +29,10 @@ ${table(["Setting", "Where it is saved"], [
 <p>This booklet has Japanese and English editions. The app passes its language when you open the booklet from it; you can switch with the button in the contents.</p>`
       },
       {
-        id: "skin", title: "Interface skin (warm black / blue black)", status: "verified",
-        keywords: ["skin", "colour", "theme", "dark", "warm", "blue", "black", "appearance"],
+        id: "skin", title: "Interface skin (Warm black / Blue black / Light ivory)", status: "verified",
+        keywords: ["skin", "colour", "theme", "dark", "warm", "blue", "black", "light", "ivory", "white", "appearance"],
         html: `
-<p>${ui("Interface skin")} switches the background and panel colours between ${ui("Warm black")} (default) and ${ui("Blue black")}. It also applies to Light design, Equipment placement and the 3D background. Colours on stage (performers, objects, light) are unchanged.</p>
+<p>${ui("Interface skin")} offers three colours: ${ui("Warm black")} (default), ${ui("Blue black")} and ${ui("Light ivory")}. It changes background and panel colours, and also applies to the stage diagrams, Light design, Equipment placement and the 3D background. Colours on stage (performers, objects, light) are unchanged.</p>
 <p>Turn off ${ui("Show shortcut keys on screen")} to hide the small persistent key marks in diagram headings and the timeline. It is on by default. Keys in tooltips and the shortcut list remain available. This preference is saved on this device and browser; it does not change the show.</p>`
       },
       {

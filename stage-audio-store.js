@@ -139,6 +139,34 @@
     });
   }
 
+  // Explicit recovery selection only; this never changes automatic GC policy.
+  // A synchronous source guard runs inside the same delete transaction.
+  function removeSelected(trackIds, {guard = () => false} = {}) {
+    if (!Array.isArray(trackIds) || trackIds.some(id => !validTrackId(id)))
+      return Promise.reject(new TypeError("Invalid trackId"));
+    return withStore("readwrite", store => new Promise((resolve, reject) => {
+      let count = 0, bytes = 0, pending = trackIds.length;
+      if (!pending) { resolve({count, bytes}); return; }
+      for (const id of trackIds) {
+        const request = store.get(id);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          if (!guard()) { store.transaction.abort(); return; }
+          if (request.result !== undefined) {
+            count++; bytes += request.result.size || 0;
+            store.delete(id); store.delete(GC_PREFIX + id);
+          }
+          if (!--pending) resolve({count, bytes});
+        };
+      }
+    }));
+  }
+  // Recovery must not materialize a legacy Blob while estimating freed space.
+  function peek(trackId) {
+    if (!validTrackId(trackId)) return Promise.resolve(null);
+    return withStore("readonly", store => requestValue(store.get(trackId), null));
+  }
+
   function listKeys() {
     return withStore("readonly", (store) => {
       if (typeof store.getAllKeys === "function") return requestValue(store.getAllKeys(), []);
@@ -195,6 +223,6 @@
   }
 
   window.SHOSAI_STAGE_AUDIO_STORE = Object.freeze({
-    put, putIfAbsent, get, remove, listKeys, pruneExcept, validTrackId,
+    put, putIfAbsent, get, peek, remove, removeSelected, listKeys, pruneExcept, validTrackId,
   });
 })();

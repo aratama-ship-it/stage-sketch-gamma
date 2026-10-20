@@ -1761,3 +1761,14 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .gamma-header-fitted.gamma-
 .stage-modal .stage-modal-body > .stage-minor-action,
 .stage-modal [class*="-actions"] > .stage-minor-action,
 .stage-modal .stage-action-row > .stage-minor-action { text-align: center; }
+
+/* B62 A1-08: constrain the shell; only settings content scrolls. */
+.stage-modal.stage-prefs-modal:not([hidden]) { display: flex; flex-direction: column; overflow: hidden; }
+.stage-prefs-modal > .stage-modal-head { flex: 0 0 auto; }
+.stage-prefs-modal > .stage-modal-body { min-height: 0; overflow-y: auto; }
+@media (max-width: 760px) {
+  /* A1-09: the naming explanation needs the whole settings column. */
+  .stage-pref-row.stage-cue-naming-row { flex-direction: column; align-items: stretch; }
+  .stage-cue-naming-row > .stage-pref-lang-body { width: 100%; }
+  .stage-cue-naming-row > .stage-lang { min-width: 0; max-width: 100%; }
+}

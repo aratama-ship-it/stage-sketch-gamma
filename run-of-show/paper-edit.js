@@ -13,7 +13,7 @@ window.ROSPaperEditor={create({frame,read,commit,onDraft,onState,onBegin=()=>{},
     for(let i=at+direction;i>=0&&i<nodes.length;i+=direction){const next=descriptor(nodes[i]);if(!sameColumn||(!next.info&&next.key===d.key))return next;}
     return null;
   }
-  function state(key){onState(text(key),!!active);}
+  function state(key){onState(text(key),!!active,key);}
   function finish(cancel=false,next=null){
     if(!active)return true;
     const edit=active;

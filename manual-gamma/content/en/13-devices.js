@@ -20,14 +20,16 @@
 },
       {
         id: "browser-storage", title: "Storage lives only in the browser", status: "verified",
-        keywords: ["Safari", "backup", "保存", "控え", "7日", "ホーム画面", "Mac"],
+        keywords: ["Safari", "backup", "保存", "控え", "7日", "ホーム画面", "Mac", "passphrase", "download", "installation"],
         html: `
 <p>Shows in the browser version are saved only in this device’s browser. Browser settings or a long period of inactivity may erase them. We recommend the Mac version for everyday work. When using the browser version on another computer, export a backup file.</p>
 <p>Safari deletes saved data after 7 days without interaction with this site. These are days of Safari use, not simply seven calendar days. Web apps added to the Home Screen are exempt from this seven-day limit.</p>
 ${steps(["On iPad or iPhone, use Safari’s Share button to Add to Home Screen, then open the added icon. On Mac, use Safari’s File → Add to Dock, then open the app.", "Press Export now in the reminder at the top and save the JSON backup in a device folder.", "Update backups regularly and keep a copy on another device or external drive. To restore one, use the show file import."])}
 <p>The reminder uses bold text and ! if you have never exported a backup or it is more than seven days old. It turns gray only when the app is installed and persistent storage has been granted. Still keep backups: protection cannot prevent deletion by the user. Reopening a show after at least seven days displays a dismissible export reminder.</p>
-${fig("release080-storage-band", "Browser storage reminder at the top (test show B-1).", "Browser storage reminder")}
-<p><a href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/" target="_blank" rel="noopener">Get the Mac version</a></p>`
+${fig("release081-storage-band", "Browser storage reminder at the top (test show B-1).", "Browser storage reminder")}
+<h4>Getting the Mac version: passphrase</h4>
+<p>A passphrase is required to download the Mac version. Please ask the distributor who provided the app information, then enter it on the installation page below. The passphrase itself is not published in this booklet.</p>
+<p><a href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/?lang=en" target="_blank" rel="noopener">Get the Mac version</a></p>`
       },
       {
         id: "device-table", title: "What works where (the app's own table)", status: "sourced",
@@ -73,8 +75,8 @@ ${steps([
   "From then on open it from the home screen icon. Once opened, it starts even without a signal (the first addition needs a connection)."
 ])}
 ${grid([
-  fig("release080-ipad", "iPad landscape (about 1024×768) — reproduced in a desktop browser. Tools, the scene bar and the front view stack vertically.", "iPad landscape"),
-  fig("release080-ipad-portrait", "iPad portrait (about 768×1024).", "iPad portrait")
+  fig("release081-ipad", "iPad landscape (about 1024×768) — reproduced in a desktop browser. Tools, the scene bar and the front view stack vertically.", "iPad landscape"),
+  fig("release081-ipad-portrait", "iPad portrait (about 768×1024).", "iPad portrait")
 ])}
 ${note("Not checked on a real iPad", "These pictures reproduce the iPad's screen size in a desktop browser. How v0.2.16 behaves on a real iPad or as a home-screen app (touch, offline start, Gamma's new tabs) has not yet been checked for this booklet. The same goes for " + ui("iPad display mode") + " in Settings.", true)}`
       },

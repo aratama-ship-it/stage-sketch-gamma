@@ -94,28 +94,42 @@
   const sentArrowOps = new Set();
   const remotePointers = new Map();
 
-  function sessionEnglish() {
-    try { return bridge.isEnglish() === true; } catch (_) { return false; }
+  function sessionLanguage() {
+    const language = document.documentElement?.lang;
+    if (language) return language;
+    try { return bridge.isEnglish() === true ? "en" : "ja"; } catch (_) { return "ja"; }
   }
 
-  /* 文言はすべて日本語で組み立て、出口で訳す。
-     完全一致（text）→型変換（say。名前や数を捕捉して埋め直す）の順で引き、
-     どちらにも無ければそのまま出す（日本語が見えたら「表に無い」の印）。 */
+  function sessionEnglish() {
+    return sessionLanguage() === "en";
+  }
+
+  /* 文言は日本語で組み立て、表示時に現在のUI言語の共通辞書へ渡す。
+     状態通知の名前・数は、固定文（text）で見つからないときだけ say で埋め直す。 */
   function sessionText(japanese) {
-    if (!sessionEnglish()) return japanese;
-    const i18n = window.SHOSAI_I18N;
-    if (!i18n) return japanese;
-    if (i18n.text && i18n.text[japanese]) return i18n.text[japanese];
-    if (i18n.say) {
-      for (const [pattern, english] of i18n.say) {
-        if (pattern.test(japanese)) return japanese.replace(pattern, english);
-      }
+    const language = sessionLanguage();
+    if (language === "ja") return japanese;
+    const model = window.SHOSAI_STAGE_I18N_MODEL;
+    if (model) {
+      const text = model.text(language, japanese);
+      return text !== japanese ? text : model.say(language, japanese);
+    }
+    // 起動中に共通モデルがまだ無い場合も、別言語を英語へ決め打ちしない。
+    const i18n = window.SHOSAI_I18N_PACKS?.[language]
+      || (language === "en" ? window.SHOSAI_I18N : null);
+    if (i18n?.text?.[japanese]) return i18n.text[japanese];
+    for (const [pattern, translated] of i18n?.say || []) {
+      pattern.lastIndex = 0;
+      if (!pattern.test(japanese)) continue;
+      pattern.lastIndex = 0;
+      return japanese.replace(pattern, translated);
     }
     return japanese;
   }
 
   function shareText(japanese, english) {
-    return sessionEnglish() ? english : japanese;
+    const model = window.SHOSAI_STAGE_I18N_MODEL;
+    return model ? model.textWithEnglish(sessionLanguage(), english, japanese) : sessionText(japanese);
   }
 
   function applyShareLabels() {
@@ -148,6 +162,7 @@
   }
 
   function applySessionLabels() {
+    els.panel.dataset.sessionLanguage = sessionLanguage();
     applyShareLabels();
     if (els.summary) els.summary.textContent = sessionText("リアルタイム共有（会議用）");
     if (els.hostNameLabel) els.hostNameLabel.textContent = sessionText("表示名");
@@ -332,8 +347,9 @@
     if (!els.panel) return false;
     shareModalTrigger = trigger || shareModalTrigger;
     // The dedicated performer-link entry reuses this modal. Every ordinary
-    // Share open must first restore this modal's own labels and semantics.
-    applyShareLabels();
+    // Share open must refresh the body and stored status as well as the title:
+    // language packs may have finished loading after the session initializer.
+    relabel();
     els.panel.hidden = false;
     if (els.shareBackdrop) els.shareBackdrop.hidden = false;
     // Keep the legacy marker for host-recovery consumers; visibility is controlled by hidden.
@@ -1298,7 +1314,6 @@
   void refreshStoredHostSession();
   renderParticipants([]);
   setStatus("未接続です。");
-  try { els.panel.dataset.sessionLanguage = bridge.isEnglish() ? "en" : "ja"; } catch (_) { /* v2用 */ }
   const invitedRoom = invitedRoomId();
   if (invitedRoom) {
     revealStageView();

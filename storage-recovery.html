@@ -5,21 +5,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<meta name="stage-sketch-gamma-version" content="v0.3.80">
+<meta name="stage-sketch-gamma-version" content="v0.3.81">
 <title>保存容量の修復 | 舞台スケッチγ</title>
 <style>
 :root{color-scheme:dark;--bg:#211d18;--fg:#eee7db;--muted:#c0b4a2;--accent:#ddc398;--line:#867968;--space:16px;--radius:4px;font:16px/1.65 system-ui,sans-serif;background:var(--bg);color:var(--fg)}
 *{box-sizing:border-box}body{max-width:760px;margin:0 auto;padding:24px}h1{font-size:28px;line-height:1.4}h2{font-size:20px}p{margin:var(--space) 0}header,section{margin-bottom:32px}a{color:var(--accent);text-underline-offset:4px}button{font:inherit;min-height:44px;padding:8px 16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg);color:var(--fg);cursor:pointer}button:disabled{cursor:default;color:var(--muted)}button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}.primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}.actions{display:flex;gap:8px;flex-wrap:wrap}.note,small{color:var(--muted);font-size:14px}#result{border:1px solid var(--accent);border-radius:var(--radius);padding:var(--space);white-space:pre-line}#result:empty{display:none}ul{padding-left:24px}li{margin:16px 0}code{overflow-wrap:anywhere;font-size:14px}summary{cursor:pointer;min-height:44px;padding:8px 0}.copy{border-top:1px solid var(--line);padding:16px 0}.copy p{margin:0 0 8px}.copy button{margin:8px 8px 0 0}dl{margin:0}dt{color:var(--muted)}dd{margin:0 0 16px;font-size:20px}noscript{display:block;padding:16px;border:1px solid var(--accent)}
 </style>
 <style>
-.danger{color:#ffb1a8;border-color:#ffb1a8}dialog{width:min(560px,calc(100% - 32px));max-height:calc(100% - 32px);overflow:auto;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:var(--radius);padding:24px}dialog::backdrop{background:rgba(0,0,0,.65)}dialog h2{margin-top:0}#original-delete-detail{overflow-wrap:anywhere}
+.danger{color:#ffb1a8;border-color:#ffb1a8}dialog{width:min(560px,calc(100% - 32px));max-height:calc(100% - 32px);overflow:auto;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:var(--radius);padding:24px}dialog::backdrop{background:rgba(0,0,0,.65)}dialog h2{margin-top:0}#original-delete-detail,#fixed-release-detail{overflow-wrap:anywhere;white-space:pre-line}.release-check{display:flex;align-items:center;gap:8px;min-height:44px;margin:16px 0}.release-check input{flex:none;width:20px;height:20px}
 </style>
-<script src="stage-language-loader.js?v=20261020-v0380"></script>
+<script src="stage-language-loader.js?v=20261020-v0381"></script>
 <script src="stage-storage-codec.js?v=2026092523" defer></script>
-<script src="stage-storage-recovery.js?v=20261020-v0380" defer></script>
+<script src="stage-storage-recovery.js?v=20261020-v0381" defer></script>
 <script src="stage-storage-hygiene.js?v=20261014-v0365" defer></script>
 <script src="stage-large-project-store.js?v=20260928-storage49" defer></script>
-<script src="storage-recovery-ui.js?v=20261014-v0366" defer></script>
+<script src="stage-project-backup-store.js?v=20261020-v0380" defer></script>
+<script src="stage-audio-store.js?v=20261020-v0381" defer></script>
+<script src="storage-recovery-ui.js?v=20261020-v0381" defer></script>
 </head>
 <body>
 <header><p class="note">舞台スケッチγ <span id="recovery-app-version"></span></p>
@@ -38,10 +40,23 @@
 <section aria-labelledby="inactive-title"><h2 id="inactive-title">開いていないショーを保管する</h2>
 <p class="note">現在開いているショーと音源参照のあるショーは移せません。保管するとそのショーは舞台スケッチの一覧から一時的に外れます。この画面の「保管済みの控え」から戻すと、再び一覧に出ます。保管前に元のタブの編集を止めてください。</p>
 <p id="inactive-status" class="note">確認中…</p><div id="inactive-shows"></div></section>
+<section id="fixed-release" aria-labelledby="fixed-release-title">
+<h2 id="fixed-release-title" data-release-text>共有前の固定控えを解除する</h2>
+<p class="note" data-release-text>他のショーや保存世代が使っていない音源を含む固定控えだけを選べます。解除すると、選んだ原本と専用音源をこの端末から消します。元に戻せません。</p>
+<p id="fixed-release-status" role="status"></p><div id="fixed-release-list"></div>
+</section>
 <section aria-labelledby="archive-title"><h2 id="archive-title">保管済みの控え</h2><p id="archive-status" class="note">確認中…</p><button type="button" id="export" disabled>保管した控えをまとめて書き出す</button><div id="archives"></div></section>
 <dialog id="original-delete-dialog" aria-labelledby="original-delete-title" aria-describedby="original-delete-lead original-delete-detail original-delete-warning">
 <h2 id="original-delete-title"></h2><p id="original-delete-lead"></p><p id="original-delete-detail"></p><p id="original-delete-warning"></p>
 <div class="actions"><button type="button" id="original-delete-cancel"></button><button type="button" id="original-delete-confirm" class="danger"></button></div>
+</dialog>
+<dialog id="fixed-release-dialog" aria-labelledby="fixed-release-dialog-title" aria-describedby="fixed-release-detail fixed-release-warning">
+<h2 id="fixed-release-dialog-title" data-release-text>固定控えと専用音源の解除</h2>
+<p id="fixed-release-detail"></p>
+<p id="fixed-release-warning" data-release-text>現在のショー・棚・保存世代・他の控えの音源参照を再確認してから解除します。編集中の内容を保存し、舞台を開いた他のタブとウインドウを閉じてください。</p>
+<label class="release-check"><input type="checkbox" id="fixed-release-tabs-closed"><span data-release-text>舞台を開いた他のタブとウインドウを閉じました</span></label>
+<label class="release-check"><input type="checkbox" id="fixed-release-original-confirmed"><span data-release-text>表示された原本と専用音源を手放し、元に戻せなくなることを確認しました</span></label>
+<div class="actions"><button type="button" id="fixed-release-cancel" data-release-text>キャンセル</button><button type="button" id="fixed-release-confirm" class="danger" disabled data-release-text>参照を確認して解除</button></div>
 </dialog>
 <footer><p>空きを作ったら、元の舞台スケッチのタブで「保存しました」を確認してください。表示されない場合は先にショーを書き出し、このタブのデータを失わない状態にしてください。</p></footer>
 </body>

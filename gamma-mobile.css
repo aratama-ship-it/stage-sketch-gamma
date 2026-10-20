@@ -352,7 +352,8 @@ html.stage-pwa-tablet.gm-tablet .gm-rail-tools button::before { content: none; }
 html.stage-pwa-tablet.gm-tablet .gm-rail-tools button[aria-pressed="true"] { border-color: var(--rust); background: var(--gm-current-bg); color: var(--milk); }
 html.stage-pwa-tablet.gm-tablet .gm-rail-tools .stage-tool-icon { display: block; }
 html.stage-pwa-tablet.gm-tablet .gm-rail-tools .stage-tool-icon svg { display: block; width: 22px; height: 22px; }
-html.stage-pwa-tablet.gm-tablet .gm-rail-tools .stage-tool-label { display: block; max-width: 64px; font-size: var(--fs-2, 10px); letter-spacing: 0; line-height: 1.15; white-space: normal; text-align: center; }
+/* The rail is an icon column. Keep names on the existing accessible buttons/tooltips. */
+html.stage-pwa-tablet.gm-tablet .gm-rail-tools .stage-tool-label { display: none; }
 
 /* 引き出し: 既定は図の上に重ねる（図の寸法を変えない）。固定すると列になって図を押す */
 html.stage-pwa-tablet.gm-tablet .gm-drawer {
@@ -568,6 +569,28 @@ html.stage-pwa-tablet.gm-tablet .stage-board-frame { width: min(100%, calc((100d
   html.stage-pwa-tablet.gm-tablet .gm-top-right > *,
   html.stage-pwa-tablet.gm-tablet .gm-top .stage-undo-redo button { flex: 0 0 auto; }
   html.stage-pwa-tablet.gm-tablet .gm-top #stage-share-open { width: var(--gm-hit); min-width: var(--gm-hit); height: var(--gm-hit); }
+}
+
+/* B62 A1-10: below the minimum one-row width, keep show/scene navigation
+   together. Only the secondary actions scroll, so focusing preferences never
+   scrolls the show name and scene arrows out of the header. */
+@media (max-width: 680px) {
+  html.stage-pwa-tablet.gm-tablet .stage-sketch-head { height: auto; overflow: visible; }
+  html.stage-pwa-tablet.gm-tablet .gm-top {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: var(--gm-top-h) var(--gm-top-h);
+    height: auto;
+    min-width: 0;
+    column-gap: var(--gm-gap);
+    row-gap: 0;
+  }
+  html.stage-pwa-tablet.gm-tablet .gm-top-right {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: flex-start;
+    overflow: auto hidden;
+    overscroll-behavior-x: contain;
+  }
 }
 
 /* 共有入口は既存の外殻トークンを再利用: 操作域44px・記号20px。 */

@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.80";
+  const GAMMA_APP_VERSION = "v0.3.81";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -988,6 +988,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const normalizeBeat = (raw) => {
     const beat = raw && typeof raw === "object" ? raw : {};
     const normalized = {
+      ...projectIoClone(beat && !Array.isArray(beat) ? beat : {}),
       role: typeof beat.role === "string" ? beat.role.slice(0, 160) : "",
     };
     /* 旧版で保存された値は前版へ戻せるよう往復時だけ保持する。
@@ -2206,6 +2207,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const rawTitle = typeof raw.title === "string" ? raw.title.trim() : "";
     const duration = Number(raw.durationSeconds);
     const base = {
+      ...projectIoClone(raw),
       id,
       title: (rawTitle || `楽曲 ${index + 1}`).slice(0, 80),
       durationSeconds: Number.isFinite(duration) && duration > 0 && duration <= 86400
@@ -5697,6 +5699,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return Number.isFinite(number) && number >= 0.1 ? number : null;
   };
   const normalizeProjectRehearsal = (raw) => ({
+    ...projectIoClone(raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {}),
     version: 1,
     primaryMode: raw && raw.primaryMode === "ordered" ? "ordered" : "ordered",
     soundtrack: raw && raw.soundtrack === "bundled-demo" ? "bundled-demo" : null,
@@ -5816,6 +5819,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   const normalizeSceneRehearsal = (raw) => ({
+    ...projectIoClone(raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {}),
     holdDurationSeconds: rehearsalSeconds(raw && raw.holdDurationSeconds) ?? DEFAULT_SCENE_HOLD_SECONDS,
     transitionToNextSeconds: rehearsalSeconds(raw && raw.transitionToNextSeconds) ?? DEFAULT_SCENE_TRAVEL_SECONDS,
     timelineLockEdge: raw && (raw.timelineLockEdge === "start" || raw.timelineLockEdge === "end")
@@ -6246,8 +6250,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   function normalizeVenueDims(raw, size) {
     if (!raw || typeof raw !== "object") return null;
-    const out = {};
+    const out = projectIoClone(!Array.isArray(raw) ? raw : {});
     Object.keys(VENUE_LIMITS).forEach((key) => {
+      delete out[key];
       if (raw[key] === undefined || raw[key] === null) return;
       const lim = VENUE_LIMITS[key];
       const value = clamp(finite(raw[key], size[key] || lim[0]), lim[0], lim[1]);
@@ -6412,7 +6417,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const fixed = type === "wall" ? { d: WALL_THICKNESS } : null;
     const old = piece && piece.dims ? piece.dims : null;
     const k = clamp(finite(piece && piece.size, 100), 55, 180) / 100;
-    const out = {};
+    const out = projectIoClone(old && typeof old === "object" && !Array.isArray(old) ? old : {});
+    // 既知の軸は種類ごとの従来契約に従う。liftは登録側の範囲検査へ渡す。
+    Object.keys(DIM_META).forEach((key) => {
+      if (!Object.prototype.hasOwnProperty.call(base, key)) delete out[key];
+    });
     Object.keys(base).forEach((key) => {
       const meta = dimMeta(type, key);
       const fallback = key === "lift" ? base[key] : base[key] * k;
@@ -6425,6 +6434,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   /* ディアボロは一般的な家具より小さい。共通下限を下げると既存道具の
    * つまみの範囲まで変わるため、この種類だけ実寸を保持できる下限にする。 */
   function dimMeta(kind, key) {
+    if (!Object.prototype.hasOwnProperty.call(DIM_META, key)) return null;
     const meta = DIM_META[key];
     if (kind === "prop") {
       const presetMin = Math.min(meta.min, ...PROP_SHAPE_ORDER.map((id) => PROP_SHAPES[id].dims[key]).filter(Number.isFinite));
@@ -10679,8 +10689,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const venueSize = () => {
     const base = VENUES.sizeById(venue(), state.project.venueSize);
     const over = state.project.venueDims;
-    if (!over) return base;
-    const merged = Object.assign({}, base, over);
+    if (!over || !Object.keys(VENUE_LIMITS).some((key) => over[key] !== undefined)) return base;
+    const merged = Object.assign({}, base);
+    Object.keys(VENUE_LIMITS).forEach((key) => {
+      if (over[key] !== undefined) merged[key] = over[key];
+    });
     if (base.ring !== undefined) merged.ring = merged.width;
     return merged;
   };
@@ -25186,7 +25199,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       download.textContent = download.title = tx("Mac 版を入手");
       // The authenticated Worker does not serve /download/. Keep its existing boundary.
       download.href = ["localhost", "127.0.0.1"].includes(location.hostname) || location.hostname.endsWith("github.io")
-        ? "./download/" : "https://aratama-ship-it.github.io/stage-sketch-gamma/download/";
+        ? "./download/?lang=" + encodeURIComponent(lang) : "https://aratama-ship-it.github.io/stage-sketch-gamma/download/?lang=" + encodeURIComponent(lang);
       const manualLang = lang === "ja" ? "ja" : "en";
       install.href = "./manual-gamma/?lang=" + manualLang + "#browser-storage";
       if (!modal.hidden && modalDays !== null) {
@@ -32250,10 +32263,17 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     return `${gamma ? content.booklet : "manual/manual.html"}${query}${sectionId ? `#${sectionId}` : ""}`;
   }
 
+  function syncNativeGuideUrl() {
+    const guide = document.getElementById("stage-native-install-guide");
+    if (guide) guide.href = (["localhost", "127.0.0.1"].includes(location.hostname) || location.hostname.endsWith("github.io")
+      ? "./download/" : "https://aratama-ship-it.github.io/stage-sketch-gamma/download/") + "?lang=" + encodeURIComponent(lang);
+  }
+
   function syncNativeDownload() {
     if (STUDY_READ_ONLY) return;
     const box = document.getElementById("stage-pref-native");
     if (!box) return;
+    syncNativeGuideUrl();
     const inNativeShell = window.STAGE_RUNTIME.isMac();
     // Preserve the existing local preview suppression, independently of platform identity.
     const localMacPreview = location.hostname === "127.0.0.1" && (location.port === "8957" || location.port === "8958");
@@ -40555,13 +40575,15 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
      ショートカットの字を組めないため。 */
   let toolTipEl = null;
   let toolTipFor = null;
+  let toolTipDescribedTarget = null;
   let toolTipObserver = null;
 
   function toolTipNode() {
     if (toolTipEl) return toolTipEl;
     toolTipEl = document.createElement("div");
     toolTipEl.className = "stage-tip";
-    toolTipEl.setAttribute("role", "presentation");
+    toolTipEl.id = "stage-icon-tooltip";
+    toolTipEl.setAttribute("role", "tooltip");
     toolTipEl.hidden = true;
     document.body.append(toolTipEl);
     return toolTipEl;
@@ -40570,6 +40592,13 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   function hideToolTip() {
     toolTipObserver?.disconnect();
     toolTipObserver = null;
+    if (toolTipDescribedTarget) {
+      const ids = (toolTipDescribedTarget.getAttribute("aria-describedby") || "").split(/\s+/)
+        .filter(id => id && id !== toolTipEl?.id);
+      if (ids.length) toolTipDescribedTarget.setAttribute("aria-describedby", ids.join(" "));
+      else toolTipDescribedTarget.removeAttribute("aria-describedby");
+      toolTipDescribedTarget = null;
+    }
     toolTipFor = null;
     if (!toolTipEl) return;
     toolTipEl.classList.remove("is-on");
@@ -40621,6 +40650,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   }
 
   function showToolTip(button) {
+    hideToolTip();
     if (!featureOn("toolTips") || tabletPwaActive || phoneViewerActive) return;
     prepareIconTipTarget(button);
     const name = button.getAttribute("aria-label") || button.dataset.tipTitle || visibleIconTipText(button);
@@ -40648,10 +40678,16 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (hintText) {
       const hint = document.createElement("p");
       hint.className = "stage-tip-hint";
-      hint.textContent = tm("tool", toolName, hintText);
+      hint.textContent = tm("tool", toolName, tx(hintText));
       tip.append(hint);
     }
     tip.hidden = false;
+    // Labels may forward focus to an input. Describe that actual focus owner.
+    const focused = document.activeElement;
+    toolTipDescribedTarget = focused instanceof Element && button.contains(focused) ? focused : button;
+    const descriptions = new Set((toolTipDescribedTarget.getAttribute("aria-describedby") || "").split(/\s+/).filter(Boolean));
+    descriptions.add(tip.id);
+    toolTipDescribedTarget.setAttribute("aria-describedby", [...descriptions].join(" "));
     // 位置は出してから測る。窓の右端・下端からははみ出させない
     const box = button.getBoundingClientRect();
     const size = tip.getBoundingClientRect();
@@ -43219,6 +43255,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     syncSaveStamps();
     translateReleaseModal();
     syncManualEdition();
+    syncNativeGuideUrl();
     syncBrowserTitle();
     document.documentElement.lang = lang;
   }

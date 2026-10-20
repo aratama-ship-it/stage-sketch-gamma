@@ -191,6 +191,7 @@
     const format = (template, values) => text(template).replace(/\{(\w+)\}/g, (all, name) => values[name] ?? all);
     const direct = text(key); if (direct !== key) return direct;
     const templates = [
+      [/^(前|次)の (\S+)(「.*」)? へ GO$/, m => format(m[1] === '前' ? '前の {cue}{name} へ GO' : '次の {cue}{name} へ GO', {cue:m[2],name:m[3] || ''})],
       [/^シーン ([\d-]+)／([\s\S]*)$/, m => format('シーン {number}／{detail}', {number:m[1],detail:lightingText(m[2],language)})],
       [/^(.+) と同じ中身です（編集中ではありません）。LXキュー パネルで (.+) を選ぶと、変えたところがそのキューへ入ります$/, m => format('{cue} と同じ中身です（編集中ではありません）。LXキュー パネルで {cue} を選ぶと、変えたところがそのキューへ入ります', {cue:m[1]})],
       [/^このシーンには (.+) がありますが、いまの明かりはどれとも違います。LXキュー パネルで選ぶか、「＋ 新規 LXキュー」で1本にできます$/, m => format('このシーンには {cues} がありますが、いまの明かりはどれとも違います。LXキュー パネルで選ぶか、「＋ 新規 LXキュー」で1本にできます', {cues:m[1]})],

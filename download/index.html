@@ -2,10 +2,11 @@
 <html lang="ja" data-stage-skin="brown">
 <head>
 <script src="../stage-runtime.js?v=20261020-v0380"></script>
+<script src="../stage-i18n.ja.js?v=20261020-v0381"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>舞台スケッチγ Mac版をダウンロード</title>
+  <title data-download-text="title">舞台スケッチγ Mac版をダウンロード</title>
   <link rel="stylesheet" href="../gamma-ui-tokens.css">
   <style>
     :root {
@@ -75,50 +76,69 @@
         <img class="download-logo" src="../assets/brand/logo-jp-gamma-inline-white.svg" alt="舞台スケッチγ">
         <p class="download-kicker">MAC APP DOWNLOAD</p>
       </div>
-      <p class="download-version" id="native-version" aria-live="polite">最新版は GitHub Releases でご確認ください。</p>
+      <p class="download-version" id="native-version" aria-live="polite" data-download-text="versionFallback">最新版は GitHub Releases でご確認ください。</p>
     </header>
 
-    <h1>Mac版を新しい舞台へ入れ替える</h1>
-    <p class="download-lead">新しいアプリをダウンロードし、いま使っている「舞台スケッチγ.app」と置き換えます。</p>
-    <!-- download-gate: the links and steps below are rendered only after the shared passphrase matches.
+    <h1 data-download-text="heading">Mac版を新しい舞台へ入れ替える</h1>
+    <p class="download-lead" data-download-text="lead">新しいアプリをダウンロードし、いま使っている「舞台スケッチγ.app」と置き換えます。</p>
+    <!-- download-gate: display guidance only; file URLs are public, including in this template.
+         The links and steps below are rendered after the shared passphrase matches.
          data-gate-hash is PBKDF2-SHA256(passphrase, data-gate-salt, data-gate-iterations) written by tools/build-download-gate.mjs. -->
     <form class="download-gate" id="download-gate" data-gate-hash="7d144e5ced2d51a100de845fafad042f68b07602fa8b6d54636781943aaee028" data-gate-salt="stage-sketch-gamma-download-v1" data-gate-iterations="100000" autocomplete="off">
-      <h2 id="gate-heading">合言葉</h2>
-      <p>配布は合言葉をご存じの方に限っています。合言葉を入れると、ダウンロードと導入手順が表示されます。</p>
+      <h2 id="gate-heading" data-download-text="gate">合言葉</h2>
+      <p data-download-copy="scope">合言葉を入れると、ダウンロード先と導入手順の案内を表示します。この案内表示のための簡易な仕組みで、配布ファイルへのアクセスを制限するものではありません。</p>
+      <p data-download-copy="remember">入力後は、同じブラウザで30日間、案内をそのまま表示します。</p>
       <div class="download-gate-row">
-        <input type="password" id="download-gate-input" name="passphrase" aria-labelledby="gate-heading" required>
-        <button type="submit" id="download-gate-open">開く</button>
+        <input type="password" id="download-gate-input" name="passphrase" aria-labelledby="gate-heading" aria-describedby="download-gate-error" required>
+        <button type="submit" id="download-gate-open" data-download-text="open">開く</button>
       </div>
       <p class="download-gate-error" id="download-gate-error" role="alert" aria-live="polite"></p>
     </form>
+    <p class="download-note" id="download-gate-status" role="status" aria-live="polite" aria-atomic="true"></p>
     <div id="download-gate-content"></div>
     <template id="download-gate-template">
-    <a class="download-action" href="https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest">ダウンロード（GitHub Releases）</a>
+    <a class="download-action" href="https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest" data-download-text="download">ダウンロード（GitHub Releases）</a>
 
     <div class="download-grid">
       <section class="download-section" aria-labelledby="install-heading">
-        <h2 id="install-heading">導入手順</h2>
+        <h2 id="install-heading" data-download-text="install">導入手順</h2>
         <ol>
-          <li>GitHub Releasesから最新のzipをダウンロードします。</li>
-          <li>zipを解凍します。</li>
-          <li>いまの「舞台スケッチγ.app」を、新しいアプリで置き換えます。置き場所は「アプリケーション」またはデスクトップです。</li>
-          <li>初回だけ、アプリを右クリックして「開く」を選びます。</li>
+          <li data-download-text="step1">GitHub Releasesから最新のzipをダウンロードします。</li>
+          <li data-download-text="step2">zipを解凍します。</li>
+          <li data-download-text="step3">いまの「舞台スケッチγ.app」を、新しいアプリで置き換えます。置き場所は「アプリケーション」またはデスクトップです。</li>
+          <li data-download-text="step4">初回だけ、アプリを右クリックして「開く」を選びます。</li>
         </ol>
       </section>
 
       <section class="download-section" aria-labelledby="storage-heading">
-        <h2 id="storage-heading">保存データについて</h2>
-        <p class="download-note">ショーは、アプリ本体とは別のプロジェクトファイル（.stageproj）に保存します。アプリ本体を置き換えても、保存したファイルは残ります。以前のWebView保存領域にあるショーは「以前のショー」から開き、プロジェクトファイルに保存して移行できます。</p>
+        <h2 id="storage-heading" data-download-text="storage">保存データについて</h2>
+        <p class="download-note" data-download-text="storageNote">ショーは、アプリ本体とは別のプロジェクトファイル（.stageproj）に保存します。アプリ本体を置き換えても、保存したファイルは残ります。以前のWebView保存領域にあるショーは「以前のショー」から開き、プロジェクトファイルに保存して移行できます。</p>
       </section>
     </div>
     </template>
 
     <footer class="download-foot">
-      <a href="../stage.html">ブラウザ版はこちら</a>
-      <p>署名・公証なしの配布版は、初回に右クリック「開く」が必要です。</p>
+      <a href="../stage.html" data-download-text="browser">ブラウザ版はこちら</a>
+      <p data-download-text="unsigned">署名・公証なしの配布版は、初回に右クリック「開く」が必要です。</p>
     </footer>
+    <p class="download-note" data-download-copy="authenticity">配布元の確認は合言葉とは別です。ダウンロード前に、リンク先が PYGMIX の公式 GitHub（aratama-ship-it/stage-sketch-gamma）であることを確認してください。</p>
   </main>
+
+  <script src="../stage-i18n.ja.js?v=20261020-v0381"></script>
+  <script src="../stage-i18n.en.js?v=20261020-v0381"></script>
+  <script src="../stage-i18n.ko.js?v=20261020-v0381"></script>
+  <script src="../stage-i18n.zh-Hans.js?v=20261020-v0381"></script>
+  <script src="../stage-i18n.zh-Hant.js?v=20261020-v0381"></script>
   <script>
+    const downloadLang = Object.hasOwn(window.SHOSAI_DOWNLOAD, new URLSearchParams(location.search).get("lang")) ? new URLSearchParams(location.search).get("lang") : "ja";
+    const downloadText = window.SHOSAI_DOWNLOAD[downloadLang];
+    document.documentElement.lang = downloadLang;
+    const translateDownload = (root) => root.querySelectorAll("[data-download-text]").forEach((element) => { element.textContent = downloadText[element.dataset.downloadText]; });
+    translateDownload(document);
+    translateDownload(document.getElementById("download-gate-template").content);
+    document.querySelector(".download-foot a").href = "../stage.html?lang=" + encodeURIComponent(downloadLang);
+    const downloadCopy = (window.SHOSAI_DOWNLOAD_COPY && (window.SHOSAI_DOWNLOAD_COPY[downloadLang] || window.SHOSAI_DOWNLOAD_COPY.ja)) || {};
+    document.querySelectorAll('[data-download-copy]').forEach((el) => { if (downloadCopy[el.dataset.downloadCopy]) el.textContent = downloadCopy[el.dataset.downloadCopy]; });
     (() => {
       const KEY = 'gamma:download-gate-v1', DAYS = 30;
       const form = document.getElementById('download-gate'), content = document.getElementById('download-gate-content');
@@ -127,7 +147,13 @@
       const override = local ? new URLSearchParams(location.search).get('gate-hash') : null;
       const expected = (override && /^[0-9a-f]{64}$/.test(override)) ? override : form.dataset.gateHash;
       const salt = form.dataset.gateSalt, iterations = Number(form.dataset.gateIterations) || 100000;
-      const unlock = () => { content.replaceChildren(tpl.content.cloneNode(true)); form.hidden = true; content.hidden = false; };
+      const unlock = (submitted = false) => {
+        content.replaceChildren(tpl.content.cloneNode(true)); form.hidden = true; content.hidden = false;
+        if (submitted) {
+          content.querySelector('a.download-action').focus();
+          document.getElementById('download-gate-status').textContent = (window.SHOSAI_DOWNLOAD_GATE_COPY[downloadLang] || window.SHOSAI_DOWNLOAD_GATE_COPY.ja).unlocked;
+        }
+      };
       const remembered = () => { try { const v = JSON.parse(localStorage.getItem(KEY) || 'null'); return v && v.hash === expected && typeof v.until === 'number' && v.until > Date.now(); } catch (_) { return false; } };
       const remember = () => { try { localStorage.setItem(KEY, JSON.stringify({ hash: expected, until: Date.now() + DAYS * 86400000 })); } catch (_) {} };
       async function derive(pass) {
@@ -137,15 +163,26 @@
         return [...new Uint8Array(bits)].map((b) => b.toString(16).padStart(2, '0')).join('');
       }
       if (remembered()) unlock();
+      input.addEventListener('input', () => {
+        input.removeAttribute('aria-invalid');
+        error.textContent = '';
+      });
       form.addEventListener('submit', async (event) => {
         event.preventDefault(); error.textContent = '';
-        const pass = input.value.trim(); if (!pass) return;
+        input.removeAttribute('aria-invalid');
+        const pass = input.value.trim();
+        if (!pass) {
+          error.textContent = downloadText.required;
+          input.setAttribute('aria-invalid', 'true');
+          input.focus();
+          return;
+        }
         const button = document.getElementById('download-gate-open'); button.disabled = true;
         try {
           const got = await derive(pass);
-          if (got.length === expected.length && got.split('').every((c, i) => c === expected[i])) { remember(); unlock(); }
-          else { error.textContent = '合言葉が違います。'; input.select(); }
-        } catch (_) { error.textContent = 'この環境では確認できませんでした。別のブラウザでお試しください。'; }
+          if (got.length === expected.length && got.split('').every((c, i) => c === expected[i])) { remember(); unlock(true); }
+          else { error.textContent = downloadText.wrong; input.select(); }
+        } catch (_) { error.textContent = downloadText.unavailable; }
         button.disabled = false;
       });
     })();
@@ -156,7 +193,7 @@
       })
       .then((latest) => {
         if (typeof latest.version !== 'string' || !/^\d+(?:\.\d+)*$/.test(latest.version)) return;
-        document.getElementById('native-version').textContent = `Mac版 最新 ${latest.version}`;
+        document.getElementById('native-version').textContent = downloadText.version.replace("{version}", latest.version);
       })
       .catch(() => {});
   </script>

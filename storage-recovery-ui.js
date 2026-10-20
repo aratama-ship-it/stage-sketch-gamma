@@ -1,8 +1,11 @@
 (function () {
   "use strict";
   const $ = id => document.getElementById(id);
-  const lang = window.localStorage.getItem("gamma:shosai-stage-lang") || "ja";
+  const lang = window.SHOSAI_LANGUAGE_LOADER?.initialLanguage?.() || window.localStorage.getItem("gamma:shosai-stage-lang") || "ja";
+  document.documentElement.lang = lang;
   const tx = text => window.SHOSAI_I18N_PACKS?.[lang]?.text?.[text] || text;
+  const releaseText = (text, values = {}) => tx(text).replace(/\{(\w+)\}/g, (match, key) => values[key] ?? match);
+  document.querySelectorAll("[data-release-text]").forEach(node => { node.textContent = tx(node.textContent); });
   const versionLabel = $("recovery-app-version");
   if (versionLabel) versionLabel.textContent = (document.querySelector('meta[name="stage-sketch-gamma-version"]')?.content || "").replace(/^v/, "");
   const size = bytes => `${(bytes / 1048576).toFixed(2)} MB`;
@@ -186,18 +189,72 @@
       block.append(name, button); list.append(block);
     }
   }
+  function fixedReleaseDetail(candidate) {
+    return releaseText("関係するショー：{titles}\n解放見込：{total}（音源 {audio}・固定控え {archive}）\n端末内の原本：あり（選択した固定控え）", {
+      titles: candidate.titles.join(" / "), total: size(candidate.bytes),
+      audio: size(candidate.audioBytes), archive: size(candidate.archiveBytes),
+    });
+  }
+  async function renderFixedReleases() {
+    const list = $("fixed-release-list"), status = $("fixed-release-status");
+    list.replaceChildren();
+    try {
+      const result = await model.fixedReleaseCandidates();
+      status.textContent = tx(result.blocked
+        ? "参照を確認できない保存があります。固定控えと音源は変更していません。"
+        : result.candidates.length ? "解除する固定控えを選んでください。確認画面でキャンセルできます。"
+        : "固定控えだけが参照する音源はありません。");
+      for (const candidate of result.candidates) {
+        const block = document.createElement("div"), detail = document.createElement("p"), button = document.createElement("button");
+        block.className = "copy"; block.dataset.fixedRelease = candidate.id;
+        detail.textContent = fixedReleaseDetail(candidate); detail.style.whiteSpace = "pre-line";
+        button.type = "button"; button.dataset.releaseReview = "";
+        button.textContent = tx("解除内容を確認"); button.disabled = busy;
+        button.onclick = () => run(async () => {
+          if (!await confirmFixedRelease(candidate, button)) return;
+          const released = await model.releaseFixedCopy(candidate, {confirmed:true, preservation:"unreferenced", editingTabsClosed:true});
+          setResult(tx(released.audioBytes < candidate.audioBytes
+            ? "固定控えを解除しました。参照を再確認できなかった音源は残しています。使用量を確認し直してください。"
+            : "選んだ固定控えと専用音源を解除しました。他のショーと参照中の音源は保持しています。"));
+        }, true);
+        block.append(detail, button); list.append(block);
+      }
+    } catch (_) {
+      status.textContent = tx("参照を確認できない保存があります。固定控えと音源は変更していません。");
+    }
+  }
+  function confirmFixedRelease(candidate, returnFocus) {
+    return new Promise(resolve => {
+      const dialog = $("fixed-release-dialog"), cancel = $("fixed-release-cancel"), confirm = $("fixed-release-confirm");
+      const tabs = $("fixed-release-tabs-closed"), original = $("fixed-release-original-confirmed");
+      $("fixed-release-detail").textContent = fixedReleaseDetail(candidate);
+      tabs.checked = original.checked = false; tabs.disabled = original.disabled = cancel.disabled = false;
+      confirm.disabled = true;
+      const update = () => { confirm.disabled = !tabs.checked || !original.checked; };
+      const finish = result => {
+        dialog.close(); tabs.onchange = original.onchange = cancel.onclick = confirm.onclick = dialog.oncancel = null;
+        returnFocus.focus(); resolve(result);
+      };
+      tabs.onchange = original.onchange = update;
+      cancel.onclick = () => finish(false);
+      dialog.oncancel = event => { event.preventDefault(); finish(false); };
+      confirm.onclick = () => { if (tabs.checked && original.checked) finish(true); };
+      dialog.showModal(); cancel.focus();
+    });
+  }
   async function refresh() {
     renderUsage();
     renderInactiveShows();
+    await renderFixedReleases();
     try { await renderArchives(); }
     catch (_) { $("archive-status").textContent = "保管先を開けませんでした。現在の保存データは変更していません。"; $("export").disabled = true; }
   }
-  async function run(action) {
+  async function run(action, fixedRelease = false) {
     if (busy) return;
     busy = true;
     document.querySelectorAll("button").forEach(button => { button.disabled = true; });
     try { await action(); }
-    catch (error) { setResult(explanation(error)); }
+    catch (error) { setResult(tx(fixedRelease || error.message?.startsWith("RELEASE_") ? "固定控えの解除を完了できませんでした。使用量を確認し直してください。参照中の音源は削除しません。" : explanation(error))); }
     finally { busy = false; $("refresh").disabled = false; await refresh(); }
   }
   try {

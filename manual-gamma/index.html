@@ -306,7 +306,7 @@ dialog.lightbox button { appearance: none; background: none; border: 1px solid v
   </div>
 </div>
 <button type="button" class="toc-toggle" id="toc-toggle" aria-controls="side" aria-expanded="false" data-t="toc">目次</button>
-<dialog class="lightbox" id="lightbox"><figure><img id="lightbox-img" alt=""><figcaption><span id="lightbox-cap"></span><button type="button" id="lightbox-close" data-t="lbClose">閉じる（Esc）</button></figcaption></figure></dialog>
+<dialog class="lightbox" id="lightbox" aria-labelledby="lightbox-cap"><figure><img id="lightbox-img" alt=""><figcaption><span id="lightbox-cap"></span><button type="button" id="lightbox-close" data-t="lbClose">閉じる（Esc）</button></figcaption></figure></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -475,6 +475,12 @@ window.addEventListener("manual-ready", function () {
     if (!(opts && opts.noPush)) history.replaceState(null, "", "#" + id);
     const q = findEl.value.trim(); if (q) highlightIn(it.el, terms(q));
     setActive(id);
+    if (opts && opts.focus) {
+      const heading = it.el.querySelector("h3");
+      heading.setAttribute("tabindex", "-1");
+      heading.addEventListener("blur", () => heading.removeAttribute("tabindex"), { once: true });
+      heading.focus({ preventScroll: true });
+    }
   }
   window.addEventListener("hashchange", () => { const id = decodeURIComponent(location.hash.slice(1)); if (id) go(id, { noPush: true }); });
 
@@ -508,13 +514,25 @@ window.addEventListener("manual-ready", function () {
     ts.forEach((t) => { if (!t) return; frag = frag.replace(new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), (m) => "<mark>" + m + "</mark>"); });
     return (s > 0 ? "…" : "") + frag + (e < text.length ? "…" : "");
   }
+  function closeResults() {
+    clearTimeout(timer);
+    cursor = -1;
+    resultsEl.classList.remove("show");
+    findEl.setAttribute("aria-expanded", "false");
+    findEl.removeAttribute("aria-activedescendant");
+    resultsEl.querySelectorAll("li[role=option]").forEach((li) => {
+      li.classList.remove("is-cursor");
+      li.setAttribute("aria-selected", "false");
+    });
+  }
   function renderResults(q) {
+    closeResults();
     const ts = terms(q); hits = search(q); cursor = -1;
     clearEl.classList.toggle("show", q.length > 0);
-    if (!ts.length) { resultsEl.classList.remove("show"); resultsEl.innerHTML = ""; findEl.setAttribute("aria-expanded", "false"); countEl.textContent = ""; applyFilter(); return; }
+    if (!ts.length) { resultsEl.innerHTML = ""; countEl.textContent = ""; applyFilter(); return; }
     const shown = hits.slice(0, 40);
     resultsEl.innerHTML = shown.length
-      ? "<ol>" + shown.map((it, i) => '<li role="option" id="res-' + i + '"><a href="#' + it.id + '" data-sec="' + it.id + '"><span class="path">' + esc(it.chNo) + " " + esc(it.chTitle) + '</span><span class="ttl">' + esc(it.sno) + "　" + esc(it.title) + '</span><span class="snip">' + snippet(it, ts) + "</span></a></li>").join("") + "</ol>" + (hits.length > 40 ? '<p class="more">' + T.more(hits.length - 40) + "</p>" : "")
+      ? "<ol>" + shown.map((it, i) => '<li role="option" aria-selected="false" id="res-' + i + '"><a href="#' + it.id + '" data-sec="' + it.id + '"><span class="path">' + esc(it.chNo) + " " + esc(it.chTitle) + '</span><span class="ttl">' + esc(it.sno) + "　" + esc(it.title) + '</span><span class="snip">' + snippet(it, ts) + "</span></a></li>").join("") + "</ol>" + (hits.length > 40 ? '<p class="more">' + T.more(hits.length - 40) + "</p>" : "")
       : '<p class="more">' + T.none + '</p>';
     resultsEl.classList.add("show"); findEl.setAttribute("aria-expanded", "true");
     countEl.textContent = T.count(hits.length);
@@ -531,12 +549,13 @@ window.addEventListener("manual-ready", function () {
   findEl.addEventListener("focus", () => { if (findEl.value.trim()) renderResults(findEl.value); });
   findEl.addEventListener("keydown", (e) => {
     const items = resultsEl.querySelectorAll("li[role=option]");
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") { if (!items.length) return; e.preventDefault(); cursor = e.key === "ArrowDown" ? Math.min(items.length - 1, cursor + 1) : Math.max(0, cursor - 1); items.forEach((li, i) => li.classList.toggle("is-cursor", i === cursor)); items[cursor].scrollIntoView({ block: "nearest" }); findEl.setAttribute("aria-activedescendant", "res-" + cursor); }
-    else if (e.key === "Enter") { if (!hits.length) return; e.preventDefault(); const it = hits[Math.max(0, cursor)]; resultsEl.classList.remove("show"); go(it.id); }
-    else if (e.key === "Escape") { if (resultsEl.classList.contains("show")) { resultsEl.classList.remove("show"); findEl.setAttribute("aria-expanded", "false"); } else { findEl.value = ""; renderResults(""); clearHighlights(); } }
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { if (!items.length) return; if (!resultsEl.classList.contains("show")) { resultsEl.classList.add("show"); findEl.setAttribute("aria-expanded", "true"); } e.preventDefault(); cursor = e.key === "ArrowDown" ? Math.min(items.length - 1, cursor + 1) : Math.max(0, cursor - 1); items.forEach((li, i) => { li.classList.toggle("is-cursor", i === cursor); li.setAttribute("aria-selected", String(i === cursor)); }); items[cursor].scrollIntoView({ block: "nearest" }); findEl.setAttribute("aria-activedescendant", "res-" + cursor); }
+    else if (e.key === "Enter") { if (!hits.length) return; e.preventDefault(); const it = hits[Math.max(0, cursor)]; openSearchResult(it.id); }
+    else if (e.key === "Escape") { if (resultsEl.classList.contains("show")) { closeResults(); } else { findEl.value = ""; renderResults(""); clearHighlights(); } }
   });
-  resultsEl.addEventListener("click", (e) => { const a = e.target.closest("a[data-sec]"); if (!a) return; e.preventDefault(); resultsEl.classList.remove("show"); go(a.dataset.sec); });
-  document.addEventListener("click", (e) => { if (!e.target.closest(".finder")) { resultsEl.classList.remove("show"); findEl.setAttribute("aria-expanded", "false"); } });
+  function openSearchResult(id) { closeResults(); go(id, { focus: true }); }
+  resultsEl.addEventListener("click", (e) => { const a = e.target.closest("a[data-sec]"); if (!a) return; e.preventDefault(); openSearchResult(a.dataset.sec); });
+  document.addEventListener("click", (e) => { if (!e.target.closest(".finder")) { closeResults(); } });
   clearEl.addEventListener("click", () => { findEl.value = ""; renderResults(""); clearHighlights(); findEl.focus(); });
   filterEl.addEventListener("change", applyFilter);
   document.addEventListener("keydown", (e) => {

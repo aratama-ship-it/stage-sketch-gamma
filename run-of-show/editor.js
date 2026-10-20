@@ -114,7 +114,7 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
   return {refresh,print,get ready(){return ready;}};
 }};
 /* R-1〜3: retain disclosures/popovers, with a fixed display band and grip reordering. */
-window.ROSLeftPanels={install(band,{store}){
+window.ROSLeftPanels={install(band,{store,text,format}){
   const panels=[...band.children].filter(n=>n.classList.contains('band-group'));
   const compact=matchMedia('(max-width:899px)'), disclosures=[];
   const place=(content,head)=>{
@@ -124,6 +124,22 @@ window.ROSLeftPanels={install(band,{store}){
   };
   const setup=(panel,head,content,isDetails,paint)=>{
     disclosures.push({panel,head,content,isDetails,paint,desktopOpen:panel.open});
+    head.setAttribute('aria-keyshortcuts','Alt+ArrowUp Alt+ArrowDown');
+    const position=document.createElement('span');position.id='ros-panel-position-'+panel.dataset.rosPanel;position.className='ros-a11y-status';band.after(position);
+    head.setAttribute('aria-describedby','panel-reorder-help '+position.id);
+    const describe=()=>{position.textContent=positionText(panel);position.lang=document.getElementById('panel-reorder-help').lang;};
+    disclosures[disclosures.length-1].describe=describe;head.addEventListener('focus',describe);
+    head.title=text('Alt + ↑ / ↓ でパネルを並べ替え');
+    head.addEventListener('keydown',event=>{
+      if(event.target!==head||event.isComposing||!event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||!['ArrowUp','ArrowDown'].includes(event.key)||compact.matches||drag)return;
+      event.preventDefault();event.stopPropagation();
+      const nodes=visiblePanels(),at=nodes.indexOf(panel),next=at+(event.key==='ArrowUp'?-1:1),target=nodes[next];
+      if(!target)return;
+      flipMove(()=>band.insertBefore(panel,next<at?target:target.nextElementSibling));
+      persistOrder();refreshPositions();
+      head.focus({preventScroll:true});head.scrollIntoView({block:'nearest',inline:'nearest'});
+      announceMove(panel);
+    });
     content.addEventListener('toggle',event=>{
       if(!compact.matches)return;
       head.setAttribute('aria-expanded',String(event.newState==='open'));
@@ -153,13 +169,24 @@ window.ROSLeftPanels={install(band,{store}){
     for(const n of nodes)for(const animation of n.getAnimations())animation.cancel();
     mutate();for(const n of nodes)animate(n,before.get(n));
   };
+  const status=document.getElementById('panel-reorder-status');
+  const persistOrder=()=>store('gamma:ros:left-panels',JSON.stringify(movingPanels().map(n=>n.dataset.rosPanel)));
+  const visiblePanels=()=>movingPanels().filter(n=>n.getClientRects().length);
+  const panelTitle=panel=>panel.querySelector('[data-ros-text]')?.textContent||panel.querySelector('.ros-side-head')?.textContent.replace(/[⠿▾]/g,'').trim();
+  const positionText=panel=>format('{name}：{total}個中{position}番目。',{name:panelTitle(panel),total:visiblePanels().length,position:visiblePanels().indexOf(panel)+1});
+  const refreshPositions=()=>{for(const {describe} of disclosures)describe();};
+  const announceMove=panel=>{
+    status.lang=document.getElementById('panel-reorder-help').lang;
+    status.textContent=format('{panel}を{position}/{total}番目に移動しました。',{panel:panelTitle(panel),position:visiblePanels().indexOf(panel)+1,total:visiblePanels().length});
+  };
   const startGrip=(event,panel)=>{
     if(event.button!==undefined&&event.button!==0||drag)return;
-    const sx=event.clientX,sy=event.clientY,pointer=event.pointerId;
+    const sx=event.clientX,sy=event.clientY,pointer=event.pointerId,capture=event.currentTarget;
     const next=panel.nextElementSibling;
-    let active=false;
+    let active=false,frame=0,lastTime=0,point=null;
     const finish=cancel=>{
-      window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',cancelled);window.removeEventListener('keydown',key);
+      window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',cancelled);window.removeEventListener('keydown',key);window.removeEventListener('blur',cancelled);document.removeEventListener('visibilitychange',visibility);
+      cancelAnimationFrame(frame);if(capture.hasPointerCapture?.(pointer))capture.releasePointerCapture(pointer);
       if(!active)return;
       const {hole}=drag,from=panel.getBoundingClientRect();
       if(cancel)band.insertBefore(panel,next);else band.insertBefore(panel,hole);
@@ -167,27 +194,42 @@ window.ROSLeftPanels={install(band,{store}){
       for(const k of ['position','left','top','width','zIndex','pointerEvents'])panel.style[k]='';
       document.body.classList.remove('is-ros-panel-dragging');drag=null;animate(panel,from);
       justDragged=true;setTimeout(()=>{justDragged=false;},60);
-      if(!cancel)store('gamma:ros:left-panels',JSON.stringify(movingPanels().map(n=>n.dataset.rosPanel)));
+      refreshPositions();
+      if(!cancel){persistOrder();announceMove(panel);}
+    };
+    const placeHole=()=>{
+      const box=band.getBoundingClientRect();if(!point||point.x<box.left-240||point.x>box.right+240)return;
+      const ref=movingPanels().find(n=>{if(n===panel||!n.getClientRects().length)return false;const r=(n.querySelector('.ros-side-head')||n).getBoundingClientRect();return point.y<r.top+r.height/2;})||null;
+      if(drag.hole.nextElementSibling!==ref)flipMove(()=>band.insertBefore(drag.hole,ref));
+    };
+    const scrollHost=band.closest('.paper-sticky');
+    const scrollEdge=time=>{
+      if(!active||!drag)return;
+      const dt=lastTime?Math.min(32,time-lastTime):0;lastTime=time;
+      const r=scrollHost?.getBoundingClientRect(),box=band.getBoundingClientRect();
+      if(r&&point&&point.x>=box.left&&point.x<=box.right&&point.y>=r.top&&point.y<=r.bottom){
+        const edge=Math.min(48,r.height/3),speed=point.y<r.top+edge?-(r.top+edge-point.y)/edge:point.y>r.bottom-edge?(point.y-r.bottom+edge)/edge:0;
+        if(speed){scrollHost.scrollTop+=speed*720*dt/1000;placeHole();}
+      }
+      frame=requestAnimationFrame(scrollEdge);
     };
     const move=ev=>{
       if(ev.pointerId!==pointer)return;
       if(!active){
         if(Math.hypot(ev.clientX-sx,ev.clientY-sy)<5)return;
-        active=true;
+        active=true;capture.setPointerCapture?.(pointer);
         const rect=panel.getBoundingClientRect(),hole=document.createElement('div');hole.className='ros-panel-hole';hole.style.height=rect.height+'px';hole.style.width=rect.width+'px';band.insertBefore(hole,panel);
         drag={panel,hole,dx:sx-rect.left,dy:sy-rect.top};
         for(const animation of panel.getAnimations())animation.cancel();
         panel.classList.add('is-dragging');Object.assign(panel.style,{position:'fixed',left:rect.left+'px',top:rect.top+'px',width:rect.width+'px',zIndex:'600',pointerEvents:'none'});
-        document.body.classList.add('is-ros-panel-dragging');
+        document.body.classList.add('is-ros-panel-dragging');frame=requestAnimationFrame(scrollEdge);
       }
       ev.preventDefault();panel.style.left=ev.clientX-drag.dx+'px';panel.style.top=ev.clientY-drag.dy+'px';
-      const box=band.getBoundingClientRect();if(ev.clientX<box.left-240||ev.clientX>box.right+240)return;
-      const ref=movingPanels().find(n=>n!==panel&&n.getClientRects().length&&ev.clientY<n.getBoundingClientRect().top+n.getBoundingClientRect().height/2)||null;
-      // The fixed display band is never an insertion target, including old saved orders.
-      if(drag.hole.nextElementSibling!==ref)flipMove(()=>band.insertBefore(drag.hole,ref));
+      point={x:ev.clientX,y:ev.clientY};placeHole();
     };
+    const visibility=()=>{if(document.hidden)finish(true);};
     const up=ev=>{if(ev.pointerId===pointer)finish(false);},cancelled=()=>finish(true),key=ev=>{if(ev.key==='Escape'){ev.preventDefault();finish(true);}};
-    window.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',up);window.addEventListener('pointercancel',cancelled);window.addEventListener('keydown',key);
+    window.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',up);window.addEventListener('pointercancel',cancelled);window.addEventListener('keydown',key);window.addEventListener('blur',cancelled);document.addEventListener('visibilitychange',visibility);
   };
   for(const panel of panels){
     const heading=panel.querySelector('.band-heading');if(!heading)continue;
@@ -246,10 +288,12 @@ window.ROSLeftPanels={install(band,{store}){
       }
     }
   };
-  compact.addEventListener('change',configure);configure();
+  compact.addEventListener('change',()=>{configure();refreshPositions();});configure();refreshPositions();
+  return {refreshPositions};
 }};
 (() => {
   const $ = id => document.getElementById(id);
+  let leftPanels;
   const bridge=parent.SHOSAI_STAGE_RUN_OF_SHOW_HOST;
   const canRenderStage=typeof bridge?.renderSceneImages==="function";
   const canReadCues=typeof bridge?.cues==="function"&&Boolean(parent.SHOSAI_CUE_SHEET&&parent.STAGE_TIME_DOMAIN);
@@ -281,7 +325,7 @@ window.ROSLeftPanels={install(band,{store}){
   let paperInk='white';try{paperInk=localStorage.getItem('gamma:ros:paper-ink')==='black'?'black':'white';}catch(_){}
   function paintPaper(){document.documentElement.dataset.paperInk=paperInk;$("paper-ink").setAttribute('aria-pressed',String(paperInk==='black'));}
   paintPaper();$("paper-ink").addEventListener('click',()=>{paperInk=paperInk==='white'?'black':'white';paintPaper();cuePaper?.refresh();try{localStorage.setItem('gamma:ros:paper-ink',paperInk);}catch(error){showError(error);}});
-  for(const id of ['storage-status' ,'paper-size-note','pagination-status','paper-edit-status'])new MutationObserver(()=>{$('band-status').textContent=$(id).textContent;}).observe($(id),{childList:true,subtree:true});
+  for(const id of ['storage-status' ,'paper-size-note','pagination-status'])new MutationObserver(()=>{const value=$(id).textContent;if(id==='storage-status'&&document.body.classList.contains('paper-is-editing')&&value==='紙面の欄を編集中です。反映後に保存できます。')return;if($('band-status').textContent!==value)$('band-status').textContent=value;}).observe($(id),{childList:true,subtree:true});
   $('band-help-toggle').addEventListener('click',()=>{const open=!$('editing-help').open;$('editing-help').open=open;$('band-help-toggle').setAttribute('aria-expanded',String(open));});
   $('band-help-search').addEventListener('click',()=>window.parent.document.getElementById('stage-help-open')?.click());
   // Column visibility is a permanent part of the left menu, not a popup.
@@ -1457,7 +1501,7 @@ window.ROSLeftPanels={install(band,{store}){
   syncCueChoices();
   document.querySelector('.band-view').append($('stage-view-control'),$('stage-view-rows'),$('widths-reset').closest('.toolbar'));
   if(!lite){
-    window.ROSLeftPanels.install($('paper-band'),{store});
+    leftPanels=window.ROSLeftPanels.install($('paper-band'),{store,text:uiText,format:uiFormat});
     const toggle=el('button','','is-icon ros-left-toggle');toggle.id='ros-left-toggle';toggle.type='button';toggle.dataset.noI18n='';
     toggle.innerHTML='<span data-ros-text="書式">書式</span><svg viewBox="0 0 15 15" aria-hidden="true"><path d="M1 1h13v13H1zM5 1v13"/></svg>';
     toggle.setAttribute('aria-controls','paper-panel');$('preview').prepend(toggle);
@@ -1530,8 +1574,9 @@ window.ROSLeftPanels={install(band,{store}){
       render();notice("紙面の変更を進行と保存内容へ反映しました");return null;
     }catch(error){return error.message;}
   }
-  paperEditor=window.ROSPaperEditor.create({frame:document.querySelector(".doc-frame"),continuous:()=>paperFormat==='free',read:readDirect,commit:commitDirect,text:uiText,onBegin:node=>{const cell=node.closest('td[data-column-id],.pg-cell,.portrait-field');if(cell&&(selection.kind!=='cells'||!selection.keys.has(cellKey(cell))))selectCell(cell,false);},onDraft:()=>{$("storage-status").textContent="紙面の欄を編集中です。反映後に保存できます。";},onState:(text,editing)=>{
-    $("paper-edit-status").textContent=text;document.body.classList.toggle("paper-is-editing",editing);document.body.classList.toggle("pages-ready",!editing&&!busy&&$("pagination-status").dataset.state==="ready");$("print-sample").disabled=editing||busy||$("pagination-status").dataset.state!=="ready";
+  paperEditor=window.ROSPaperEditor.create({frame:document.querySelector(".doc-frame"),continuous:()=>paperFormat==='free',read:readDirect,commit:commitDirect,text:uiText,onBegin:node=>{const cell=node.closest('td[data-column-id],.pg-cell,.portrait-field');if(cell&&(selection.kind!=='cells'||!selection.keys.has(cellKey(cell))))selectCell(cell,false);},onDraft:()=>{$("storage-status").textContent="紙面の欄を編集中です。反映後に保存できます。";},onState:(text,editing,key)=>{
+    $("paper-edit-status").dataset.rosStatusKey=key;$("paper-edit-status").lang=uiLanguage();
+    if($("paper-edit-status").textContent!==text)$("paper-edit-status").textContent=text;document.body.classList.toggle("paper-is-editing",editing);document.body.classList.toggle("pages-ready",!editing&&!busy&&$("pagination-status").dataset.state==="ready");$("print-sample").disabled=editing||busy||$("pagination-status").dataset.state!=="ready";
     if(!editing&&!dirty&&storageReady&&!busy)$("storage-status").textContent=savedRevision?"ショーの保存を使っています。":"ショーと一緒に自動保存します。";
   }});
   for(const [target,source] of [["paper-up","move-up"],["paper-down","move-down"],["paper-undo","undo-edit"],["paper-redo","redo-edit"],["paper-scene","make-scene"],["paper-export","export-document"]])$(target).addEventListener("click",()=>$(source).click());
@@ -1569,8 +1614,12 @@ window.ROSLeftPanels={install(band,{store}){
   }
   function translateAddedControls(){
     // Only toolbar chrome: item titles and the editable paper remain source data.
+    for(const id of ['paper-edit-status','panel-reorder-help'])$(id).lang=uiLanguage();
+    const editingStatus=$('paper-edit-status'),statusKey=editingStatus.dataset.rosStatusKey;if(statusKey&&editingStatus.textContent!==uiText(statusKey))editingStatus.textContent=uiText(statusKey);
+    if(!$('panel-reorder-status').textContent)$('panel-reorder-status').lang=uiLanguage();
     parent.GAMMA_UI?.translateDOM($('paper-band'), {language:uiLanguage(),lookup:uiText,
       exclude:'#paper-item-picker,#cue-performer,#cue-performer-list,#paper-size-control,#paper-size-range,#paper-scene,#heading-language option[value="auto"],[data-no-i18n]'});
+    leftPanels?.refreshPositions();
     parent.GAMMA_UI?.translateDOM(selectionBar,{language:uiLanguage(),lookup:uiText,exclude:'#cell-format-target,#paper-scene'});
     syncFormatControls();syncSelectionBar();
     for(const selector of ['#ros-index-toggle','#ros-index-collapse','#ros-index-resize','#companion-toggle','.companion-heading','#details-add-image','#notes-add-image']){
@@ -1584,10 +1633,12 @@ window.ROSLeftPanels={install(band,{store}){
     const scene=$('paper-scene');if(scene.dataset.rosSceneAction){scene.title=uiText(scene.dataset.rosSceneAction);scene.setAttribute('aria-label',scene.title);if(scene.lastChild?.nodeName==='SPAN')scene.lastChild.textContent=scene.title;}
     $('paper-size-label').title=uiText('左右にドラッグして変更（Escで取消）');
     for(const node of document.querySelectorAll('[data-ros-text]'))node.textContent=uiText(node.dataset.rosText);
+    for(const head of document.querySelectorAll('#paper-band .ros-side-head'))head.title=uiText('Alt + ↑ / ↓ でパネルを並べ替え');
   }
   translateAddedControls();
   new MutationObserver(()=>{translateAddedControls();syncLanguage();applyPaperSize();}).observe(parent.document.documentElement,{attributes:true,attributeFilter:['lang']});
   render();
   accept(packet.document);syncing=false;render();
-  $("paper-edit-status").textContent=runOnly?"紙面をクリックして編集。名称・尺・並びはショーファイルにも反映します。":"紙面をクリックして編集。名前・時間・順序は舞台タブにも反映します。";
+  $("paper-edit-status").dataset.rosStatusKey=runOnly?"紙面をクリックして編集。名称・尺・並びはショーファイルにも反映します。":"紙面をクリックして編集。名前・時間・順序は舞台タブにも反映します。";
+  $("paper-edit-status").textContent=uiText($("paper-edit-status").dataset.rosStatusKey);
 })();

@@ -9,7 +9,16 @@
   if (!bridge) return;
   const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'stage-study.css?v=20261012-v0358'; document.head.append(css);
   const en = () => bridge.isEnglish();
-  const t = (ja, english) => en() ? english : ja;
+  const t = (ja, english) => {
+    const language = document.documentElement.lang || (en() ? 'en' : 'ja');
+    if (language === 'ja') return ja;
+    const model = window.SHOSAI_STAGE_I18N_MODEL;
+    if (!model) return english;
+    const text = model.textWithEnglish(language, english, ja);
+    if (text !== ja) return text;
+    const message = model.say(language, ja, english);
+    return message !== ja ? message : english;
+  };
   const entryTarget = document.getElementById('stage-share-study-action'); if (!entryTarget) return;
   const title = document.getElementById('stage-share-study-title');
   const hint = document.getElementById('stage-share-study-hint');
@@ -330,11 +339,11 @@
     finally { if (epoch === generation) pending(false); }
   }
   async function openInlineOwnerControls() {
+    relabel();
     if (document.body.classList.contains('stage-session-guest')) return;
     generation++; busy = false; link = null; savedLinks = []; entryTarget.replaceChildren();
     const epoch = generation;
     if (!await hasOwnerService() || epoch !== generation) return;
-    relabel();
     const doc = bridge.snapshot(); showId = doc.project.id;
     status = node('p', '', 'stage-share-study-status'); status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
     stamp = node('p', '', 'stage-share-study-meta'); controls = node('div', '', 'stage-share-study-block'); notes = node('div', '', 'stage-share-study-note-list');

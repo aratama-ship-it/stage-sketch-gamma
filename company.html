@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ Company | Stage Sketch Gamma Company</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.3.80">
+<meta name="stage-sketch-gamma-version" content="v0.3.81">
 <meta name="gamma-edition" content="company">
   <script src="gamma-editions.js?v=20261015-v0371"></script>
 <meta name="mobile-web-app-capable" content="yes">
@@ -25,9 +25,9 @@
   .spine { display: none; }
 </style>
 <link rel="stylesheet" href="gamma-ui-tokens.css?v=20261020-v0380">
-<link rel="stylesheet" href="gamma.css?v=20261020-v0380">
+<link rel="stylesheet" href="gamma.css?v=20261020-v0381">
 <link rel="stylesheet" href="stage-welcome.css?v=20261016-v0373">
-<link rel="stylesheet" href="gamma-mobile.css?v=20261020-v0380">
+<link rel="stylesheet" href="gamma-mobile.css?v=20261020-v0381">
 <script src="gamma-light-model.js?v=20261020-v0380"></script>
 <link rel="stylesheet" href="gamma-formation.css?v=20261015-v0368">
 <link rel="stylesheet" href="stage-scene-alternatives.css?v=20261015-v0368">
@@ -102,7 +102,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.80</span>
+                <span class="stage-app-version">0.3.81</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2705,7 +2705,7 @@
        <p class="stage-pref-hint" id="stage-native-note" hidden>最新版の情報を取得できませんでした。ダウンロードページから確認できます。</p>
        <div class="stage-prefs-links" aria-label="Mac版アプリ">
          <a class="stage-about-link stage-native-primary" id="stage-native-download" href="https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest" target="_blank" rel="noopener">最新のMac版をダウンロード<span class="stage-manual-edition" id="stage-native-version" data-no-i18n hidden></span></a>
-         <a class="stage-about-link" href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/" target="_blank" rel="noopener">導入手順を見る</a>
+         <a class="stage-about-link" id="stage-native-install-guide" href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/" target="_blank" rel="noopener">導入手順を見る</a>
        </div>
      </div>
      <div class="stage-prefs-links stage-pref-ai">
@@ -2929,24 +2929,26 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261020-v0380">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261020-v0381">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0380-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0380-title">v0.3.80</h3><time datetime="2026-10-20">2026-10-20</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0381-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0381-title">v0.3.81</h3><time datetime="2026-10-20">2026-10-20</time></header>
       <ul>
-        <li>配布ページに合言葉を付けました。合言葉を入れると Mac 版の入手先が表示され、同じブラウザでは 30 日間おぼえます。</li>
-        <li>進行表の左のパネルを、つまみ（⠿）のドラッグで並べ替えられるようにしました。順番は次に開いたときも保ちます。「表示」のパネルは上部に常に開いた帯にし、各パネルの中の選択欄やボタンを幅いっぱいに伸ばしました。</li>
-        <li>Mac 版のショー欄は「プロジェクトを開く…」だけにしました（「ショーを読み込む」と同じ動きだったため）。ブラウザ版は今までどおりです。</li>
-        <li>照明の「かんたん」画面で時間だけを変えても、詳細で調整した明るさ・色・照射点などを書き換えないようにしました。「新しいキューを作る」の選択が既存のキューに戻ってしまい、上書きすることがあったのも直しました。</li>
-        <li>照明デザインで、設定を貼り付けたときに貼り付け先のバーンドアが残る、グループ内の灯体が検索や絞り込みに掛からない、無効にした Q から「次へ」で先頭に戻る、時間の範囲外の値を受け付ける、下げだけの遅れが「0:00」と出る、を直しました。</li>
-        <li>照明の取り消し／やり直しでシーンの番号と所属が失われる件、LX Q シートのシーン欄が通し番号になる件、シーン一覧の時間の変更が取り消しの履歴に入らない件を直しました。</li>
-        <li>全場面共通の固定灯の色・照射点の変更が別案に反映されない件、機材を複製すると色方式・回転数・設置位置名などが失われる件、登録キューが使う灯体を削除すると照明を適用できなくなる件を直しました。</li>
-        <li>利用規約・著作権・プライバシーの表記を、使い方の冊子の冒頭・ログイン画面・Mac 版の「このアプリについて」に入れました。</li>
-        <li>環境設定の「?」が円の中心より上に見えていたのを直しました。リハーサル画面で一部の枠線が出ていなかったのを直しました。</li>
-        <li>共有（即時共有）を受け取ったとき、同じ作品 ID の自分のショーの保存世代が消えることがあったのを直しました。受け取ったショーは別の項目として棚に入り、参加前の内容は残ります。別のタブで保存が止まっているときに、保存が成功したように表示されていたのも直しました。</li>
-        <li>明るい白の配色で、Mac 版の入手先のボタン・書き出し窓の選択中の文字・かんたん照明の見出し・リハーサルの進行位置と GO が読みにくかったのを直しました。描画解像度の選択の文字が欠けていたのと、外国語で起動したときの言語の札が日本語のままだったのも直しました。進行表の入力エラーの文言を 4 言語にしました。</li>
-        <li>共有サーバー（ログイン）の安全性を上げました。ログイン本文の大きさの制限をすべての形式に適用し、制限中は重い認証処理を行わず、別サイトからのログイン送信を受け付けず、秘密らしい名前のファイルは配信しません。</li>
+        <li>リハーサルの記録図に選択中の配色を反映し、開いたまま配色を変えたときも追従するようにしました。同じランでタブを往復しても、図の「一つ戻す」・やり直しの履歴を保ちます（ページの再読み込み後は対象外です）。</li>
+        <li>小さいウインドウでも環境設定の見出しと閉じる操作が画面内に残るようにしました。狭い幅では LX の呼び名の説明と選択欄を縦に並べます。</li>
+        <li>狭い幅でショー名とシーン送りが画面外へ出る件、左の道具の説明が操作列を圧迫する件、保存の警告帯がリハーサルの説明と重なる件を直しました。</li>
+        <li>進行表の左パネルを見出しの Alt＋↑／↓でも並べ替えられるようにし、移動後の位置を読み上げへ伝えます。ドラッグ中に端へ近づけると、左欄が自動でスクロールします。</li>
+        <li>進行表の紙面編集で、開始・キャンセル・失敗の案内を読み上げへ伝えるようにしました。同じ通知の重複を抑え、既存の編集案内を5言語にしました。</li>
+        <li>共有窓と演者用リンク欄、進行表、音量・衣装・高さの説明、LX送り、髪型、ミラーボール設定などで不足していた翻訳を補いました。共有窓は初めて開くときも現在の表示言語に合わせます。</li>
+        <li>Mac 版のダウンロードページを日本語・英語・韓国語・簡体字・繁体字に対応させました。設定や入手案内から表示言語を引き継ぎ、日英の冊子にも合言葉の確認先と入力先を追記しました。</li>
+        <li>Mac 配布ページの合言葉は、ダウンロード先と導入手順の案内を表示する簡易な仕組みで、配布ファイルへのアクセス制限ではないことを明記しました。同じブラウザで30日間表示を記憶する説明と、公式配布元を確認する案内を分けました。空白だけの入力には案内を出し、入力が成功したときはダウンロードリンクへ移動して成功を通知します。</li>
+        <li>アイコンの説明を、表示中だけ操作元と関連付けて読み上げへ渡すようにしました。日英の利用規約にも言語の指定を付けました。</li>
+        <li>使い方の冊子で、検索結果を開くと該当する節の見出しへ移動するようにしました。「/」で検索欄へ戻れます。検索候補を閉じた後の選択状態を整え、拡大画像の読み上げ名にキャプションを使います。</li>
+        <li>日英の冊子で配色の3色を実際の操作名にそろえ、配色が背景に効き、演者・道具・光の色は変えないことを説明しました。日本語の冊子では操作名を「一つ戻す」にそろえました。</li>
+        <li>ショーを読み込むとき、音源、リハーサル、シーンと別案、劇場の寸法、大道具の寸法などに含まれる追加情報が失われる件を直しました。旧版で再保存すると、旧版側でこの追加情報が失われる制限は残ります。</li>
+        <li>共有サーバーでパスワードの保存ハッシュ用の予約形式に不正な設定がある場合、名簿全体の認証を停止するようにしました。英語ログイン画面の言語指定と、既存のキャッシュ条件を認証用の条件で上書きしていた件も直しました。</li>
+        <li>検査と文書の整備：容量上限・狭い操作欄・起動計測・更新履歴などの回帰検査を整えました。Mac 版に同梱する冊子の依存ファイル確認を補い、配布物に内部文書・サーバー専用コード・秘密情報用の名前を持つファイルが混ざらないための確認と除外規則を整えました。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3902,7 +3904,7 @@
 <script src="stage-venue-report.js?v=2026092047"></script>
 <script src="stage-rehearsal-export.js?v=2026091501"></script>
 <script src="stage-samples/index.js?v=20261013-v0360"></script>
-<script src="stage-samples/catalog.js?v=20261020-v0380"></script>
+<script src="stage-samples/catalog.js?v=20261020-v0381"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=20261009-v0337"></script>
 <script src="stage-machinery.js?v=20261012-v0358"></script>
@@ -3911,14 +3913,14 @@
 <script src="gamma-render-resolution.js?v=20261006-v0318"></script>
 <script src="stage-first-person-loader.js?v=20261015-v0368"></script>
 <script src="stage-fixture-body.js?v=20261020-v0380"></script>
-<script src="stage-audio-store.js?v=20261015-v0367"></script>
+<script src="stage-audio-store.js?v=20261020-v0381"></script>
 <script src="stage-large-project-store.js?v=20260928-storage49"></script>
 <script src="stage-project-backup-store.js?v=20261020-v0380"></script>
 <script src="stage-storage-codec.js?v=2026092523"></script>
-<script src="stage-storage-recovery.js?v=20261020-v0380"></script>
+<script src="stage-storage-recovery.js?v=20261020-v0381"></script>
 <script src="stage-storage-hygiene.js?v=20261014-v0365"></script>
 <script src="stage-storage-pressure.js?v=20260926-large39"></script>
-<script src="manual-gamma/manual-meta.js?v=20261020-v0380" data-manual-content="manual-gamma/manual-content.js?v=20261020-v0380"></script>
+<script src="manual-gamma/manual-meta.js?v=20261020-v0381" data-manual-content="manual-gamma/manual-content.js?v=20261020-v0381"></script>
 <script src="stage-pwa.js?v=20261020-v0380"></script>
 <script src="stage-lighting-plans.js?v=20261005-beam99"></script>
 <script src="stage-lighting-plan-overlay.js?v=20261005-batch98"></script>
@@ -3957,7 +3959,7 @@
 <script src="stage-run-of-show-model.js?v=20261006-v0312"></script>
 <script src="stage-pose-data.js?v=20261013-v0360"></script>
 <script src="stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="stage-language-loader.js?v=20261020-v0380"></script>
+<script src="stage-language-loader.js?v=20261020-v0381"></script>
 <script src="stage-reorder-warning.js?v=20261009-v0335"></script>
 <script src="stage-venue-curtains.js?v=20261011-v0347"></script>
 <script src="stage-metrics.js?v=20261020-v0380"></script>
@@ -3965,27 +3967,27 @@
 <script src="stage-welcome.js?v=20261016-v0373"></script>
 <script src="stage-project-bridge.js?v=20261020-v0380"></script>
 <script src="stage-project-library.js?v=20261020-v0380"></script>
-<script src="stage-sketch.js?v=20261020-v0380"></script>
+<script src="stage-sketch.js?v=20261020-v0381"></script>
 <script src="stage-scene-alternatives-ui.js?v=20261009-v0337"></script>
 <script src="gamma-formation.js?v=20261020-v0380"></script>
 <script src="stage-vox-panel.js?v=20261005-v030"></script>
 <script src="stage-script-editor.js?v=20261017-v0376"></script>
     <script src="stage-light-schedule.js?v=20261013-v0359"></script>
     <script src="stage-timeline.js?v=20261020-v0380"></script>
-<script src="stage-session.js?v=20261020-v0380"></script>
-<script src="stage-study-owner.js?v=20261016-v0375"></script>
+<script src="stage-session.js?v=20261020-v0381"></script>
+<script src="stage-study-owner.js?v=20261020-v0381"></script>
 <script src="stage-usage.js?v=20261015-v0368"></script>
 <script src="stage-venue-underlay.js?v=20261006-v0312"></script>
 <script src="stage-venue-editor.js?v=20261016-v0374"></script>
-<link rel="stylesheet" href="stage-field-run.css?v=20261020-v0380">
+<link rel="stylesheet" href="stage-field-run.css?v=20261020-v0381">
 <script src="stage-field-run-model.js?v=20261016-v0373"></script>
 <script src="stage-field-run-store.js?v=20261020-v0380"></script>
 <script src="stage-field-run-package.js?v=20261020-v0380"></script>
 <script src="stage-field-run-transport.js?v=20261016-v0372"></script>
 <script src="stage-field-run-checkpoint.js?v=20261020-v0380"></script>
-<script src="stage-field-run-console.js?v=20261020-v0380"></script>
-<script src="stage-run-of-show-pane.js?v=20261020-v0380"></script>
-<script src="gamma-workspace.js?v=20261020-v0380"></script>
+<script src="stage-field-run-console.js?v=20261020-v0381"></script>
+<script src="stage-run-of-show-pane.js?v=20261020-v0381"></script>
+<script src="gamma-workspace.js?v=20261020-v0381"></script>
 <script src="gamma-feature-search.js?v=20261020-v0380"></script>
 <script src="gamma-mobile.js?v=20261020-v0380"></script>
 <script src="stage-venue-preview.js?v=20261015-v0368"></script>
