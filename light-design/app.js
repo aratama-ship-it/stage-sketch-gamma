@@ -7,7 +7,10 @@
   "use strict";
   /* V-04（2026-09-24 本人指示）: 図の地・暗い部品の色は、本体の「画面の色」に従う（embed.js が <html data-stage-skin> を写す）。
      赤みの黒の値を渡すと、青みの黒のときは本体の舞台図（stage-sketch.js の STAGE_COOL_SURFACES）と同じ対応の色を返す。 */
-  const COOL_SURFACES = Object.freeze({ "#0d0c0b": "#0d0e10", "#14110e": "#131518", "#12100e": "#111316", "#2a2520": "#2a2d31", "#201b16": "#1b1e22" });
+  const COOL_SURFACES = Object.freeze({ "#0d0c0b": "#0d0e10", "#14110e": "#131518", "#12100e": "#111316", "#2a2520": "#2a2d31", "#201b16": "#1b1e22",
+    // Front masking: exact STAGE_COOL_SURFACES values from stage-sketch.js.
+    "#11100f":"#101113", "#181411":"#16181b", "#0a0908":"#090a0c",
+    "#0b0a09":"#0a0b0d", "#100e0c":"#0f1113", "#1f1a16":"#1b1e22" });
   const surface = (warm) => (document.documentElement.dataset.stageSkin === "blue-black" ? (COOL_SURFACES[warm] || warm) : warm);
   const E = window.RIG_ENGINE, V = window.VOLUME_LIGHT, LE = window.LASER_EFFECTS, LUI = window.LASER_EFFECTS_UI;
   let distanceMetric = false, spatialQuick = false;
@@ -1880,7 +1883,86 @@
      灯体の上に載せないと意味がない。ただし完全に塗り潰すと設計できないので、
      布は濃いめの半透明にして、下の灯体がうっすら透ける（2026-09-13 本人要望）。 */
   function drawBordersPlan(ctx, P, d) { borderPieces().forEach((pc) => drawCurtainPlan(ctx, P, pc, d)); }
-  function drawBordersUp(ctx, P, d) { borderPieces().forEach((pc) => drawCurtainUp(ctx, P, pc, d)); }
+  function drawBordersUp(ctx, P, d) {
+    // The front view paints host masking separately, in its own depth order.
+    if (ctx.canvas === secF && state.frontCurtains) return;
+    borderPieces().forEach((pc) => drawCurtainUp(ctx, P, pc, d));
+  }
+
+  // Visual-only port from stage-sketch.js e72555dc: drawFrontVenue's ceiling,
+  // clipToWingSpace / paintLeg (16923, 17063–17156), not plan-view drawWings.
+  // Host dimensions/depths/shades come from gammaLightingContext; metres go
+  // through this section's projector. Never changes curtainParts or save data.
+  function drawFrontMasking(ctx, P, foreground = false) {
+    const d = state.dims, host = state.frontCurtains;
+    if (ctx.canvas !== secF || !host) return;
+    if (foreground) {
+      // Same saved-design/presence/display conditions and venue-first opening
+      // as drawFrontBorderCurtain (19420). Do not substitute the editor's default.
+      if (!host.frontBorderVisible || !showOn("border")) return;
+      const opening = E.clamp(E.finite(host.prosH, 6.2), 1, d.H);
+      if (opening >= d.H - 0.01) return;
+      paintFrontCloth(ctx, P, { u: .5, v: 1, w: 1, liftM: opening, hM: d.H-opening }, true);
+      return;
+    }
+    const w = logicalWidth(ctx.canvas), h = logicalHeight(ctx.canvas);
+    const at = (u,v,z=0) => P({x:(u-.5)*d.W,y:v*d.D,z});
+    const bl=at(0,0), br=at(1,0), fl=at(0,1), fr=at(1,1);
+    // backAreaRect uses the back ceiling without the seat's vertical stretch.
+    const backY = at(0,0,d.H).Y, legTop=backY-2;
+    ctx.save();ctx.setLineDash([]);
+    ctx.fillStyle=surface("#11100f");
+    if(backY>0)ctx.fillRect(0,0,w,backY);
+    if(host.frame){
+      ctx.fillRect(0,0,Math.max(0,fl.X),fl.Y);
+      if(fr.X<w)ctx.fillRect(fr.X,0,w-fr.X,fr.Y);
+    }
+    if (showOn("legs")) {
+      // Exact front-view clipping: curtains never cover the acting floor or
+      // backdrop, including the shaped floor of a custom venue.
+      ctx.save();ctx.beginPath();ctx.rect(0,0,w,h);
+      const floors=host.floorPolygons || [[[0,0],[1,0],[1,1],[0,1]]];
+      floors.forEach(poly=>{poly.map(([u,v])=>at(u,v)).forEach((q,i)=>i?ctx.lineTo(q.X,q.Y):ctx.moveTo(q.X,q.Y));ctx.closePath();});
+      ctx.rect(bl.X,backY,br.X-bl.X,bl.Y-backY);ctx.clip("evenodd");
+      if(host.frame)[-1,1].forEach(side=>{
+        const center=at(.5,0).X, edge=side<0?0:w;
+        const space=ctx.createLinearGradient(center,0,edge,0);
+        space.addColorStop(0,hexA(surface("#181411"),.95));
+        space.addColorStop(.55,hexA(surface("#100e0c"),.95));
+        space.addColorStop(1,hexA(surface("#0a0908"),.95));
+        ctx.fillStyle=space;ctx.fillRect(Math.min(center,edge),legTop,Math.abs(edge-center),fl.Y-legTop);
+      });
+      [...(host.legs || [])].sort((a,b)=>a.v-b.v).forEach(leg=>{
+        const floorAt=at(leg.u,leg.v).Y,inner=at(leg.u,leg.v).X;
+        const outer=at(leg.u+leg.side*3/d.W,leg.v).X,shade=leg.shade;
+        const cloth=ctx.createLinearGradient(outer,0,inner,0);
+        cloth.addColorStop(0,hexA(surface("#0b0a09"),.97*shade));
+        cloth.addColorStop(.7,hexA(surface("#100e0c"),.95*shade));
+        cloth.addColorStop(1,hexA(surface("#1f1a16"),.93*shade));
+        ctx.fillStyle=cloth;ctx.fillRect(Math.min(outer,inner),legTop,Math.abs(inner-outer),floorAt-legTop);
+        ctx.strokeStyle=`rgba(0,0,0,${.3*shade})`;ctx.lineWidth=1;
+        for(let f=1;f<4;f++){
+          const x=outer+(inner-outer)*f/4;ctx.beginPath();ctx.moveTo(x,legTop);ctx.lineTo(x,floorAt);ctx.stroke();
+        }
+      });
+      ctx.restore();
+    }
+    ctx.restore();
+    // No extra per-batten rectangles: drawFrontVenue has only the ceiling band.
+  }
+  function paintFrontCloth(ctx, P, pc, sky = false) {
+    const d=state.dims, left=(pc.u-.5-pc.w/2)*d.W, right=(pc.u-.5+pc.w/2)*d.W;
+    const at=(x,z)=>P({x,y:pc.v*d.D,z}), bottom=pc.liftM, top=Math.min(d.H,bottom+pc.hM);
+    const bl=at(left,bottom),br=at(right,bottom),tl=at(left,top),tr=at(right,top);
+    const skyY=sky?Math.min(tl.Y,tr.Y,0)-logicalHeight(ctx.canvas)*4:Math.min(tl.Y,tr.Y);
+    const cloth=ctx.createLinearGradient(0,skyY,0,Math.max(bl.Y,br.Y));
+    cloth.addColorStop(0,surface("#0b0a09"));cloth.addColorStop(.72,surface("#100e0c"));cloth.addColorStop(1,surface("#1f1a16"));
+    ctx.save();ctx.beginPath();ctx.moveTo(bl.X,bl.Y);ctx.lineTo(br.X,br.Y);ctx.lineTo(tr.X,tr.Y);
+    if(sky){ctx.lineTo(tr.X,skyY);ctx.lineTo(tl.X,skyY);}ctx.lineTo(tl.X,tl.Y);ctx.closePath();ctx.fillStyle=cloth;ctx.fill();ctx.clip();
+    ctx.strokeStyle="rgba(0,0,0,0.3)";ctx.lineWidth=1;ctx.setLineDash([]);
+    for(let x=left+.75;x<right-.375;x+=.75){const a=at(x,top),b=at(x,bottom);ctx.beginPath();if(sky){ctx.moveTo(a.X,skyY);ctx.lineTo(a.X,a.Y);}else ctx.moveTo(a.X,a.Y);ctx.lineTo(b.X,b.Y);ctx.stroke();}
+    ctx.restore();
+  }
 
   function drawPiecesPlan(ctx, P, B) {
     const d = state.dims, pxM = B.w / d.W;
@@ -3128,6 +3210,7 @@
   /* 「機材」の切替（正面図だけ・E1-#12）は呼ぶ側で見る。側面図からは常に呼ぶ。 */
   function redrawFixtureInfoSection(ctx, P, B, side) {
     state.rig.fixtures.forEach((f) => {
+      if (side === "front" && isFront(f)) return;
       const S = fixtureWorld(f); if (!S) return; const q = P(S);
       if (f.mount.type === "side" && f.mount.side === side) {
         drawFixtureMark(ctx, q.X, q.Y, "diamond", { fixture: f, sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "" });
@@ -3164,10 +3247,11 @@
     const pivot = P(geom.pivot), unit = P({ ...geom.pivot, x: geom.pivot.x + 1 });
     return { geom, bounds, labelBounds, px: Math.max(4, Math.hypot(unit.X - pivot.X, unit.Y - pivot.Y)) };
   }
-  function redrawFixtureInfo3D(ctx, P) {
+  function redrawFixtureInfo3D(ctx, P, { hideFront = false } = {}) {
     if (!showOn("fixtures")) return;
     // Back to front, independent of the order in which fixtures were registered.
     [...state.rig.fixtures].sort((a,b) => (fixtureWorld(a)?.y || 0) - (fixtureWorld(b)?.y || 0)).forEach((f) => {
+      if (hideFront && isFront(f)) return;
       const S = fixtureWorld(f); if (!S) return;
       const model = fixtureBody3D(f, P), l = lightOf(f.id);
       if (!model) {
@@ -3248,6 +3332,7 @@
     fctx.fillStyle = "rgba(240,231,214,0.45)"; fctx.font = "16px sans-serif"; fctx.textBaseline = "middle";
     if(!simple) [2, 4, 6, 8].filter((m) => m <= d.H).forEach((m) => { const Y = B.y + B.h - m / d.H * B.h; fctx.fillText(metresText(m), B.x - 64, Y); fctx.strokeStyle = "rgba(239,231,214,0.07)"; fctx.beginPath(); fctx.moveTo(B.x, Y); fctx.lineTo(B.x + B.w, Y); fctx.stroke(); });
     if(!simple) fctx.fillText("床", B.x - 40, B.y + B.h); fctx.fillText("下手", 30, B.y + 14); fctx.fillText("上手", B.x + B.w + 30, B.y + 14);
+    drawFrontMasking(fctx, P);
     const litSpotsF = [];   // 作業灯を消す（ブラックアウト）用
     drawCycWashes(fctx, P, d, litSpotsF);   // 壁の色。演者・セットより先に塗る
     drawLasers(fctx, P, "front"); drawMirrorBalls(fctx, P, "front");
@@ -3285,7 +3370,7 @@
       }
     });
     // 灯体
-    state.rig.fixtures.forEach((f) => { if (!showOn("fixtures")) return; const S = fixtureWorld(f); if (!S) return; const p = f.mount.type === "position" ? positionSectionProjector(P,sec.cv)(S) : P(S); const Y = isFront(f) ? Math.max(38, p.Y) : p.Y;
+    state.rig.fixtures.forEach((f) => { if (!showOn("fixtures") || isFront(f)) return; const S = fixtureWorld(f); if (!S) return; const p = f.mount.type === "position" ? positionSectionProjector(P,sec.cv)(S) : P(S); const Y = p.Y;
       const o = { fixture: f, sel: isSel(f.id), st: lightState(f.id), color: (lightOf(f.id) || {}).color, no: showOn("no") ? label(f.id) : "", moving: E.isMoving(f) };
       if (f.mount.type === "cyc") o.bar = cycFixtureBar(P, f);
       drawFixtureMark(fctx, p.X, Y, markShapeOf(f), o);
@@ -3296,7 +3381,7 @@
     if (state.mode === "move" && showOn("blackout")) drawLasers(fctx, P, "front", 0.35); drawMirrorBalls(fctx, P, "front", 0.35);
     compositeSpatial(fctx, P, B.w / d.W, "front");
     if (state.mode === "move" && showOn("fixtures")) redrawFixtureInfoSection(fctx, P, B, "front");
-    if (state.mode === "move" && showOn("blackout")) drawBordersUp(fctx, P, d);
+    drawFrontMasking(fctx, P, true);
   }
   /* ---------- 描画: 側面図（舞台中央から下手／上手を見る） ---------- */
   function drawSide(sec) {
@@ -3406,6 +3491,7 @@
     fctx.fillStyle = workSurface("front", "rgba(255,255,255,0.03)"); fctx.beginPath();
     fctx.moveTo(bl.X, bl.Y); fctx.lineTo(br.X, br.Y); fctx.lineTo(tr.X, tr.Y); fctx.lineTo(tl.X, tl.Y); fctx.closePath(); fctx.fill();
     fctx.strokeStyle = "rgba(239,231,214,0.25)"; fctx.stroke();
+    drawFrontMasking(fctx, P);
     const litSpots3D = [];   // 作業灯を消す（ブラックアウト）用
     drawCycWashes(fctx, P, d, litSpots3D);   // 壁の色。演者・セットより先に塗る
     drawLasers(fctx, P, "front3d"); drawMirrorBalls(fctx, P, "front3d");
@@ -3467,7 +3553,8 @@
     compositeSpatial(fctx, P, L.pxPerM, "front3d", { zDropPerM: (L.bottomY - L.floorY) / d.D, stretchAt: (v) => 1 + L.seat.rise * v });
     if(simple&&!showOn("blackout")) simpleFloorEdge();
     if(simple) drawBordersUp(fctx,P,d);
-    if (showOn("fixtures")) redrawFixtureInfo3D(fctx, P);
+    if (showOn("fixtures")) redrawFixtureInfo3D(fctx, P, { hideFront: fctx.canvas === secF });
+    drawFrontMasking(fctx, P, true);
     if(simple) return;
     fctx.fillStyle = "rgba(240,231,214,0.4)"; fctx.font = "15px sans-serif"; fctx.textBaseline = "top";
     fctx.fillText(`${L.seat.label}から見た形（舞台スケッチの正面図と同じ描き方）`, 8, h - 24);
@@ -3484,6 +3571,9 @@
       withTimelinePlaybackDraw(() => {
         drawPlan(); activeSections().forEach((sec) => (sec.kind === "front" ? (state.front3d ? drawFront3D(sec) : drawFront(sec)) : drawSide(sec)));
         paintFixtureLabels();
+        // Number plates are queued; the front cloth must cover those as well.
+        const frontSection = secOf("front");
+        drawFrontMasking(frontSection.ctx, secProj(frontSection), true);
       });
       activeSections().forEach(drawSectionMarquee);
     } finally { drawCueOverride = null; fixtureLabelFrame = null; pieceRigFrame = previousRigFrame; foregroundClipFrame = previousClipFrame; }
@@ -3627,6 +3717,7 @@
     const fixtures = sec.kind === "front" && state.front3d
       ? [...state.rig.fixtures].sort((a,b) => (fixtureWorld(a)?.y || 0) - (fixtureWorld(b)?.y || 0)) : state.rig.fixtures;
     fixtures.forEach((f) => {
+      if (sec.kind === "front" && isFront(f)) return;
       if (sec.kind !== "front" && !(f.mount.type === "side" && f.mount.side === sec.kind) && f.mount.type !== "position") return;
       const S = fixtureWorld(f); if (!S) return;
       if (sec.kind === "front" && state.front3d) {

@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.77";
+  const GAMMA_APP_VERSION = "v0.3.79";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -258,7 +258,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       try { return storage.getItem(currentKey) === beforeCurrent && storage.getItem(shelfKey) === beforeShelf; }
       catch (_) { return false; }
     };
-    const writePair = async ({ beforeCurrent, beforeShelf, serializedCurrent, serializedShelf, currentFirst = false }) => {
+    const writePair = async ({ beforeCurrent, beforeShelf, serializedCurrent, serializedShelf, currentFirst = false, guard = () => true }) => {
+      if (!guard()) return fail("CANCELLED");
       let failure;
       try {
         // The usual path releases the target from the shelf first. If the
@@ -274,9 +275,15 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         } catch (_) { failure = "PARTIAL_WRITE"; }
       }
       if (!failure) { try { await storage.flush?.(); } catch (error) { failure = classify(error); } }
+      if (!failure && !guard()) failure = "CANCELLED";
       if (!failure) return { ok: true };
+      return restorePair({beforeCurrent, beforeShelf, failure});
+    };
+    const restorePair = async ({beforeCurrent, beforeShelf, failure, shelfFirst = false}) => {
       // Restore each key independently; a failed first restore must not skip the second.
-      for (const [key, previous] of [[currentKey, beforeCurrent], [shelfKey, beforeShelf]]) {
+      const pairs = [[currentKey, beforeCurrent], [shelfKey, beforeShelf]];
+      if (shelfFirst) pairs.reverse();
+      for (const [key, previous] of pairs) {
         try {
           if (storage.getItem(key) !== previous) {
             if (previous === null) storage.removeItem(key);
@@ -286,6 +293,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       }
       let restored = false;
       try { restored = storage.getItem(currentKey) === beforeCurrent && storage.getItem(shelfKey) === beforeShelf; } catch (_) {}
+      // A cancelled guarded switch may already have flushed its candidate.
+      // Make the restored pair durable before releasing the storage queue.
+      if (restored && failure === "CANCELLED") {
+        try { await storage.flush?.(); restored = unchanged({beforeCurrent, beforeShelf}); } catch (_) { restored = false; }
+      }
       halted = failure === "PARTIAL_WRITE" || !restored;
       return fail(restored ? failure : "PARTIAL_WRITE", { cause: failure, restored, halted });
     };
@@ -331,12 +343,13 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       Object.defineProperty(shelf, projectId,
         { value: { savedAt, state: candidate }, enumerable: true, configurable: true, writable: true });
     };
-    const legacyCommit = async (previous, projectId, candidate, serializedState, savedAt) => {
+    const legacyCommit = async (previous, projectId, candidate, serializedState, savedAt, guard) => {
       putShelf(previous.shelf, projectId, candidate, savedAt);
-      return writePair({ ...previous, serializedCurrent: serializedState, serializedShelf: JSON.stringify(previous.shelf) });
+      return writePair({ ...previous, serializedCurrent: serializedState, serializedShelf: JSON.stringify(previous.shelf), guard });
     };
     const methods = {
-      async commit({ projectId, serializedState, expectedRevision = null, intent } = {}) {
+      async commit({ projectId, serializedState, expectedRevision = null, intent, guard = () => true } = {}) {
+        if (!guard()) return fail("CANCELLED");
         if (halted) return fail("PARTIAL_WRITE", { halted: true });
         if (expectedRevision !== null) return fail("REVISION_UNSUPPORTED");
         const candidate = snapshot(projectId, serializedState);
@@ -345,16 +358,17 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         if (previous.error) return fail(previous.error);
         const savedAt = now();
         const backupResult = await preserveBackup(previous, projectId, serializedState);
+        if (!guard()) return fail("CANCELLED");
         if (backupResult.conflict) return fail("CONCURRENT_EDIT");
         if (!backupResult.available) {
-          const result = await legacyCommit(previous, projectId, candidate, serializedState, savedAt);
+          const result = await legacyCommit(previous, projectId, candidate, serializedState, savedAt, guard);
           if (!result.ok) return result;
           return { ok: true, value: { projectId, savedAt, intent, revision: null, verified: true, recovery: "localStorage" } };
         }
         // The IndexedDB copy is verified before this shelf duplicate is removed.
         delete previous.shelf[projectId];
         const result = await writePair({ ...previous, serializedCurrent: serializedState,
-          serializedShelf: JSON.stringify(previous.shelf) });
+          serializedShelf: JSON.stringify(previous.shelf), guard });
         if (!result.ok) return result;
         return { ok: true, value: { projectId, savedAt, intent, revision: null, verified: true } };
       },
@@ -389,7 +403,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         return result.ok ? {ok:true, value:{currentChanged, shelfChanged}} : result;
       },
       async switch({ currentProjectId, currentSerializedState, nextProjectId, nextSerializedState,
-        expectedRevision = null, intent } = {}) {
+        expectedRevision = null, intent, guard = () => true } = {}) {
+        if (!guard()) return fail("CANCELLED");
         if (halted) return fail("PARTIAL_WRITE", { halted: true });
         if (expectedRevision !== null) return fail("REVISION_UNSUPPORTED");
         const current = snapshot(currentProjectId, currentSerializedState);
@@ -399,12 +414,13 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         if (previous.error) return fail(previous.error);
         const savedAt = now();
         const backupResult = await preserveBackup(previous, nextProjectId, nextSerializedState);
+        if (!guard()) return fail("CANCELLED");
         if (backupResult.conflict) return fail("CONCURRENT_EDIT");
         if (!backupResult.available) {
           putShelf(previous.shelf, currentProjectId, current, savedAt);
           putShelf(previous.shelf, nextProjectId, next, savedAt);
           const result = await writePair({ ...previous, serializedCurrent: nextSerializedState,
-            serializedShelf: JSON.stringify(previous.shelf) });
+            serializedShelf: JSON.stringify(previous.shelf), guard });
           if (!result.ok) return result;
           return { ok: true, value: { projectId: nextProjectId, savedAt, intent, revision: null, verified: true, recovery: "localStorage" } };
         }
@@ -414,7 +430,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         // backup was written before this entry can be removed.
         delete previous.shelf[nextProjectId];
         const serializedShelf = JSON.stringify(previous.shelf);
-        let result = await writePair({ ...previous, serializedCurrent: nextSerializedState, serializedShelf });
+        let result = await writePair({ ...previous, serializedCurrent: nextSerializedState, serializedShelf, guard });
         if (!result.ok && result.error.code === "QUOTA_EXCEEDED" && result.error.restored
             && previous.beforeCurrent && nextSerializedState.length < previous.beforeCurrent.length
             && typeof backup?.beginPendingSwitch === "function"
@@ -422,6 +438,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
           // The normal order can temporarily require the size of BOTH shows.
           // Protect the outgoing show before freeing space in the current key.
           const currentBackup = await preserveBackup(previous, currentProjectId, currentSerializedState);
+          if (!guard()) return fail("CANCELLED");
           if (currentBackup.conflict) return fail("CONCURRENT_EDIT");
           if (currentBackup.available) {
             const journal = { token: `${now()}-${Math.random().toString(36).slice(2)}`,
@@ -431,14 +448,42 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
             let started = false;
             try { started = await backup.beginPendingSwitch(journal); } catch (_) {}
             if (!started) return fail("CONCURRENT_EDIT");
-            if (!unchanged(previous)) {
+            if (!guard() || !unchanged(previous)) {
               try { await backup.clearPendingSwitch(journal.token); } catch (_) {}
               return fail("CONCURRENT_EDIT");
             }
             result = await writePair({ ...previous, serializedCurrent: nextSerializedState,
-              serializedShelf, currentFirst: true });
+              serializedShelf, currentFirst: true, guard });
             if (result.ok || result.error.restored) {
               try { await backup.clearPendingSwitch(journal.token); } catch (_) { /* Next launch reconciles it. */ }
+            }
+            if (result.ok) {
+              // The final journal await can outlive the edit/open/reset guard.
+              // Never roll back a pair now owned by a competing tab.
+              const candidatePair = {beforeCurrent: nextSerializedState, beforeShelf: serializedShelf};
+              const conflict = () => { halted = true; return fail("CONCURRENT_EDIT", {halted, restored: false}); };
+              if (!unchanged(candidatePair)) return conflict();
+              if (!guard()) {
+                // clear may have succeeded, failed, or returned false. Re-establish
+                // our journal before restoring so an interruption is recoverable.
+                let protectedRollback = false;
+                try {
+                  const pending = await backup.getPendingSwitch?.();
+                  protectedRollback = pending ? pending.token === journal.token
+                    : await backup.beginPendingSwitch(journal);
+                } catch (_) { /* Keep both verified backup copies and stop. */ }
+                if (!unchanged(candidatePair)) return conflict();
+                if (!protectedRollback) {
+                  halted = true;
+                  return fail("PARTIAL_WRITE", {cause: "CANCELLED", restored: false, halted});
+                }
+                // Shelf first keeps the interrupted state recognizable to recovery
+                // (next current + old shelf), and frees room for the larger original.
+                result = await restorePair({...previous, failure: "CANCELLED", shelfFirst: true});
+                if (result.error.restored) {
+                  try { await backup.clearPendingSwitch(journal.token); } catch (_) { /* Old pair is durable; retry cleanup at startup. */ }
+                }
+              }
             }
           }
         }
@@ -2091,20 +2136,21 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const STAGE_AUDIO_FILE_MAX_BYTES = 150 * 1024 * 1024;
   const STAGE_BETA_AUDIO_FILE_MAX_BYTES = 50 * 1024 * 1024;
   const STAGE_AUDIO_ID_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,95}$/;
-  const isNativeStageSketchRuntime = (bridge = window.stageSketchBridge) => Boolean(
+  // Compatibility policy only: do not switch audio acceptance using STAGE_SHELL.
+  const hasLegacyAudioPolicyBridge = (bridge = window.stageSketchBridge) => Boolean(
     bridge
     && typeof bridge === "object"
     && typeof bridge.version === "string"
     && typeof bridge.platform === "string"
     && bridge.platform.trim(),
   );
-  const NATIVE_APP_RUNTIME = isNativeStageSketchRuntime();
+  const LEGACY_AUDIO_POLICY_BRIDGE = hasLegacyAudioPolicyBridge();
   const BETA_BROWSER_AUDIO_RESTRICTIONS = RELEASE_SCOPE_ID === "beta-20260912"
-    && !NATIVE_APP_RUNTIME;
+    && !LEGACY_AUDIO_POLICY_BRIDGE;
   const audioFilePolicy = (
     file,
     releaseScope = RELEASE_SCOPE_ID,
-    nativeApp = NATIVE_APP_RUNTIME,
+    nativeApp = LEGACY_AUDIO_POLICY_BRIDGE,
   ) => {
     if (!file || !Number.isFinite(file.size) || file.size <= 0) return "empty";
     const beta = releaseScope === "beta-20260912" && nativeApp !== true;
@@ -2210,8 +2256,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     trackLimit: STAGE_AUDIO_TRACK_LIMIT,
     fileMaxBytes: STAGE_AUDIO_FILE_MAX_BYTES,
     betaFileMaxBytes: STAGE_BETA_AUDIO_FILE_MAX_BYTES,
-    nativeAppRuntime: NATIVE_APP_RUNTIME,
-    isNativeAppRuntime: isNativeStageSketchRuntime,
+    nativeAppRuntime: LEGACY_AUDIO_POLICY_BRIDGE,
+    isNativeAppRuntime: hasLegacyAudioPolicyBridge,
     betaBrowserRestricted: BETA_BROWSER_AUDIO_RESTRICTIONS,
     filePolicy: audioFilePolicy,
     normalizeTrack: normalizeAudioTrack,
@@ -2465,7 +2511,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-17`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-19`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -6440,7 +6486,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       const model = stageModel(registered.modelId);
       return model ? window.SHOSAI_STAGE_MODELS.modelExtent(model) : { w: 1, d: 1, h: 1 };
     }
-    if (registered) return registered.dims;
+    // A session document may register a tool without dimensions. Prefer its
+    // placed piece's geometry; otherwise derive a temporary render value only.
+    if (registered) return registered.dims || piece.dims
+      || normalizeDims(piece.type, { ...piece, propShape: propShapeOf(piece) });
     return (piece && piece.dims) || PIECE_DIMS[piece && piece.type] || null;
   }
 
@@ -8609,7 +8658,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     formationModalSectionId = section.id;
     els.formationBackdrop.hidden = false; els.formationModal.hidden = false;
     setFormationStatus("セクションの演者・舞台・セットを読み込んでいます。", "Loading the section cast, stage and sets.");
-    els.formationFrame.src = "formation/prototype/record-from-video.html?v=62&embed=1&cast=locked";
+    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261019-v0379&embed=1&cast=locked";
     document.body.classList.add("stage-modal-open");
   }
 
@@ -11134,6 +11183,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function checkpoint() {
+    loadedStateGeneration++;
     recordBefore(snapshot());
     // ファイル書き出しからの変更数。閾値を超えたら保存欄で書き出しを勧める
     state.editsSinceExport = (state.editsSinceExport || 0) + 1;
@@ -11142,12 +11192,18 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   // 一覧の再構築・パネル再配置でブラウザがスクロールを0へ戻すため、
   // 同じ操作内で見ていた位置へ戻す。次フレームには触らず、利用者のスクロールを妨げない。
+  let preservingStagePanelScroll = false;
   function preserveStagePanelScroll(renderContent) {
+    // Restore invokes several panel renderers. Capture once around the batch;
+    // reading scroll offsets between DOM writes otherwise forces repeated layout.
+    if (preservingStagePanelScroll) return renderContent();
+    preservingStagePanelScroll = true;
     const entries = [...document.querySelectorAll("#view-stage, .stage-col, .stage-panel, .stage-panel-body, .stage-cast-list, .stage-scene-list")]
       .map(el => [el, el.scrollTop, el.scrollLeft]);
     const pageX = window.scrollX, pageY = window.scrollY;
     try { return renderContent(); }
     finally {
+      preservingStagePanelScroll = false;
       entries.forEach(([el, top, left]) => {
         if (!el.isConnected) return;
         if (el.scrollTop !== top) el.scrollTop = top;
@@ -11157,12 +11213,19 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     }
   }
 
+  function historyPerformance(stage) {
+    if (!window.__GAMMA_TRACE_PERFORMANCE) return;
+    const name = "gamma-history:" + stage;
+    performance.clearMarks(name); performance.mark(name);
+    try { window.webkit?.messageHandlers?.gammaProject?.postMessage({type:"performanceStage", stage, at:Date.now()}); } catch (_) {}
+  }
   function restore(value) { return preserveStagePanelScroll(() => restoreContent(value)); }
   function restoreContent(value) {
     clearAudioEngine();
     stopSceneAnim();
     const previousProject = state.project;
     state = normalizeState(JSON.parse(value));
+    historyPerformance("normalize");
     // Only history restoration inherits search drafts; imports keep their own object boundary.
     transferRenameSearchDrafts(previousProject, state.project);
     // 転換の途中に取った控えには途中の位置が入っている。戻したときに復活させない（2026-10-07 P1）。
@@ -11170,49 +11233,88 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (!sc().pieces.some((piece) => piece.id === selectedId)) selectedId = null;
     detachOrphanNotes();
     syncInputs();
+    syncSceneDesc();
     applyLayout();
     renderScenes();
     renderCast();
     renderSets();
     renderLights();
     renderRigs();
-    renderRosterKindLayer();
+    // Hidden picker previews are rebuilt by openKindModal. They do not display
+    // history state and must not draw hundreds of canvases on every undo.
+    if (els.kindModal && !els.kindModal.hidden) renderRosterKindLayer();
     if (els.setInfoPropShapeRow && !els.setInfoPropShapeRow.hidden) {
       const item = currentSetItem();
       renderPropShapeSelect(els.setInfoPropShape, item && item.propShape);
     }
-    renderVenueControls();
+    renderVenueControls(false);
     updateInspector();
+    historyPerformance("panels");
     render();
+    historyPerformance("render");
     refreshOpenCueSheetView();
     persistSoon();
+    historyPerformance("persist-request");
   }
 
   function undo() {
+    if (historyEditBlocked()) return;
     if (!history.length) return;
+    historyPerformance("input");
     future.push(snapshot());
+    historyPerformance("snapshot");
     restore(history.pop());
     window.STAGE_STORAGE_HYGIENE?.trimHistory(history, future);
     updateHistoryButtons();
     // 台本（project.script）やキューを戻したとき、タイムライン・セリフキューパネル・セリフ編集画面も描き直す
     window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
     announce("一つ前の状態へ戻しました。");
+    historyPerformance("complete");
+    if (window.__GAMMA_TRACE_PERFORMANCE) requestAnimationFrame(() => requestAnimationFrame(() => historyPerformance("presented")));
   }
 
   function redo() {
+    if (historyEditBlocked()) return;
     if (!future.length) return;
+    historyPerformance("input");
     history.push(snapshot());
+    historyPerformance("snapshot");
     restore(future.pop());
     window.STAGE_STORAGE_HYGIENE?.trimHistory(history, future);
     updateHistoryButtons();
     window.dispatchEvent(new CustomEvent("stage-timeline-cues-change"));
     announce("やり直しました。");
+    historyPerformance("complete");
+    if (window.__GAMMA_TRACE_PERFORMANCE) requestAnimationFrame(() => requestAnimationFrame(() => historyPerformance("presented")));
+  }
+
+  function historyEditBlocked() {
+    return STUDY_READ_ONLY || nativeProject?.readOnly || guestSessionActive()
+      || !!document.querySelector('dialog:modal') || fullscreenModalOpen();
   }
 
   function updateHistoryButtons() {
-    els.undo.disabled = history.length === 0;
-    els.redo.disabled = future.length === 0;
+    const drawing = window.GAMMA_FIELD_RUNS?.historyState();
+    const blocked = historyEditBlocked();
+    els.undo.disabled = blocked || !(drawing ? drawing.canUndo : history.length);
+    els.redo.disabled = blocked || !(drawing ? drawing.canRedo : future.length);
   }
+  // historyEditBlocked() depends on whether a modal is visible. Buttons updated while a dialog was open
+  // stayed disabled after it closed (found with the timecode dialog on v0.3.79), so refresh them whenever
+  // a dialog's hidden/open state changes. The undo/redo functions keep their own guard.
+  if (typeof MutationObserver === "function" && document.body) {
+    let historyButtonsFrame = 0;
+    new MutationObserver((records) => {
+      if (historyButtonsFrame || !records.some((r) => r.target.matches?.('dialog, [role="dialog"], [role="alertdialog"]'))) return;
+      historyButtonsFrame = requestAnimationFrame(() => { historyButtonsFrame = 0; updateHistoryButtons(); });
+    }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["hidden", "open"] });
+  }
+  function dispatchHistory(redoing = false) {
+    if (historyEditBlocked()) return;
+    if (window.GAMMA_FIELD_RUNS?.historyCommand(redoing)) return;
+    if (redoing) redo(); else undo();
+  }
+  window.addEventListener("gamma-field-history-change", updateHistoryButtons);
 
   /* ファイル書き出しの記録を保存欄に出す。ブラウザ内の保存は設定・容量次第で
      消え得るので、「最後にファイルへ残したのはいつか」を常に見せ、
@@ -11409,6 +11511,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return autosaveInFlight;
   }
 
+  // Runtime-only invalidation: saves/stamps never advance this generation.
+  let loadedStateGeneration = 0;
   let runOfShowRevision = 0;
   function syncRunOfShow() {
     if (!state.project.runOfShow || !window.STAGE_RUN_OF_SHOW_MODEL) return;
@@ -11416,6 +11520,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     catch (_) { /* An unsupported extension must stay intact, including during autosave. */ }
   }
   function persistSoon(options = {}) {
+    loadedStateGeneration++;
     notifyDiscardedPackageCarry(state);
     syncRunOfShow();
     runOfShowRevision++;
@@ -22167,9 +22272,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     // 中央は絵の順序だけ
     const stack = els.canvasStack;
     if (stack) {
-      L.centerOrder.forEach((which) => {
+      L.centerOrder.forEach((which, index) => {
         const cell = which === "front" ? els.frontCell : els.planCell;
-        if (cell) stack.append(cell);
+        // Re-appending an already ordered cell detaches its focused canvas.
+        // Returning the inspector to its column must leave diagram focus intact.
+        if (cell && stack.children[index] !== cell) stack.insertBefore(cell, stack.children[index] || null);
       });
     }
     syncTabletWorkspace();
@@ -22956,6 +23063,14 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       return extent ? `${Math.round(extent.w * 100)}×${Math.round(extent.d * 100)}×${Math.round(extent.h * 100)}cm`
         : (tx("モデルがありません"));
     }
+    // Session/legacy documents can omit dimensions. This is a read-only label:
+    // do not fill in defaults on the saved roster just to render its summary.
+    const keys = ["sphere", "light"].includes(item.kind) ? ["dia"]
+      : item.kind === "revolve" ? ["dia", "h"]
+      : ["pool", "seri"].includes(item.kind) ? ["w", "d"]
+      : item.kind === "curtain" ? ["w", "h"]
+      : item.kind === "chair" ? ["h"] : ["w", "d", "h"];
+    if (!d || keys.some(key => !Number.isFinite(d[key]))) return "";
     if (item.kind === "sphere") {
       return d.lift > 0.05 ? `⌀${cmText(d.dia)} ／ 床上${cmText(d.lift)}` : `⌀${cmText(d.dia)}`;
     }
@@ -23168,9 +23283,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
     /* 寸法は行に出さず、行の title と「…」の窓へ回す。
      * 狭い列で名前と寸法を並べると、どちらも数文字で切れて読めなくなる。 */
-    const summary = light
-      ? `${lightKindName(lightKindOf(item))}（${lightKindNote(lightKindOf(item))}）／${setDimLabel(item)}`
-      : `${setKindName(item.kind)}／${setDimLabel(item)}`;
+    const kindLabel = light ? `${lightKindName(lightKindOf(item))}（${lightKindNote(lightKindOf(item))}）` : setKindName(item.kind);
+    const summary = [kindLabel, setDimLabel(item)].filter(Boolean).join("／");
 
     const onStage = setOnStage(item.id);
     const status = document.createElement("button");
@@ -24466,22 +24580,24 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   /* 状態を書き換える前に、いまのショーを棚へ移し、次のショーを現行キーへ
      一度の二鍵トランザクションで入れ替える。次のショーは棚と現行キーへ
      二重保存しないので、大きなショーでもSafariの容量を無駄にしない。 */
-  async function prepareLoadedState(next) {
+  async function prepareLoadedState(next, guard = () => true) {
     // In-document replacements (including first venue setup) are sent by
     // persistSoon after installation. Only the shell may switch documents;
     // neither path may commit to the browser ProjectStore in native mode.
     if (typeof nativeProject !== "undefined" && nativeProject) return next.project.id === state.project.id;
-    if (resetInProgress) return false;
+    if (resetInProgress || !guard()) return false;
     showSaveTransitionsPending++;
     try {
       clearTimeout(saveTimer);
       autosaveRequested = false;
       if (autosaveInFlight) await autosaveInFlight;
+      if (resetInProgress || !guard()) return false;
       clearTimeout(saveTimer);
       autosaveRequested = false;
       if (next.project.id === state.project.id) {
         const result = await ProjectStore.commit({ projectId: next.project.id,
-          serializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "replace-open-show" });
+          serializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "replace-open-show", guard });
+        if (result.error?.code === "CANCELLED") return false;
         shelfFailed = !result.ok;
         autosaveFailed = !result.ok;
         if (!result.ok) reportProjectStoreFailure(result);
@@ -24489,7 +24605,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       }
       const result = await ProjectStore.switch({ currentProjectId: state.project.id,
         currentSerializedState: JSON.stringify(alternativesState(state)), nextProjectId: next.project.id,
-        nextSerializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "switch-show" });
+        nextSerializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "switch-show", guard });
+      if (result.error?.code === "CANCELLED") return false;
       shelfFailed = !result.ok;
       autosaveFailed = !result.ok;
       if (!result.ok) {
@@ -24505,12 +24622,31 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   async function applyLoadedState(next, message) {
-    const beforeAudio = snapshot(), previousProject = state.project;
+    const previousProject = state.project, previousId = previousProject.id;
+    const generation = loadedStateGeneration, openRequest = bundledOpenRequest;
+    const unchanged = () => state.project === previousProject && state.project.id === previousId
+      && loadedStateGeneration === generation && bundledOpenRequest === openRequest && !resetInProgress;
+    const stopped = () => {
+      importFailureNotice(tx(autosaveFailed
+        ? "保存できなかったため、切り替えを止めました。いまのショーを書き出してください。"
+        : "編集中の変更を守るため、切り替えを止めました。もう一度開いてください。"));
+      return false;
+    };
+    // Complete the preceding save before capturing the I/O boundary. A failed
+    // save must not be hidden by a later switch transaction succeeding.
+    await flushAutosave();
+    if (!unchanged()) return stopped();
+    if (autosaveFailed) return stopped();
+    const savedGeneration = loadedStateGeneration;
+    const guard = () => unchanged() && loadedStateGeneration === savedGeneration && !autosaveFailed;
     await prepareBundledAudio(next.project);
-    // Optional network I/O must not overwrite a show edited/switched while
-    // waiting, or leave a committed next show behind an old editor screen.
-    if (state.project !== previousProject || snapshot() !== beforeAudio || resetInProgress) return false;
-    if (!await prepareLoadedState(next)) return false;
+    // Stamps/carry bindings may change during save; actual edits, replacement,
+    // reset and a newer open request must still invalidate this operation.
+    if (!guard()) return stopped();
+    if (!await prepareLoadedState(next, guard)) {
+      if (!guard()) return stopped();
+      return false;
+    }
     // シーンIDが別ショーで偶然重なっても、前のショーの下書きを出さない。
     resetStageAskDraft({ clearInput: true, invalidate: true });
     clearAudioEngine();
@@ -24937,7 +25073,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   /* A UI reminder only. Show documents and autosave retain their existing contract. */
   function createStorageBand() {
     const band = document.getElementById("stage-storage-band");
-    const native = Boolean(window.stageSketchBridge) || /GammaWebDemo|舞台スケッチ/.test(navigator.userAgent);
+    const native = window.STAGE_RUNTIME.isMac();
     if (!band || native || STUDY_READ_ONLY) return null;
     const DAY = 86400000;
     const safari = /WebKit/.test(navigator.userAgent) && !/Chrome|Chromium|Edg|CriOS|FxiOS|OPR/.test(navigator.userAgent);
@@ -32061,8 +32197,10 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (STUDY_READ_ONLY) return;
     const box = document.getElementById("stage-pref-native");
     if (!box) return;
-    const inNativeShell = location.hostname === "127.0.0.1" && (location.port === "8957" || location.port === "8958");
-    if (nativeProject || inNativeShell) { box.hidden = true; return; }
+    const inNativeShell = window.STAGE_RUNTIME.isMac();
+    // Preserve the existing local preview suppression, independently of platform identity.
+    const localMacPreview = location.hostname === "127.0.0.1" && (location.port === "8957" || location.port === "8958");
+    if (nativeProject || inNativeShell || localMacPreview) { box.hidden = true; return; }
     const link = document.getElementById("stage-native-download");
     const badge = document.getElementById("stage-native-version");
     const note = document.getElementById("stage-native-note");
@@ -32324,6 +32462,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (typeof nativeProject !== "undefined" && nativeProject) return;
     if (resetInProgress || resetDialogStep !== 2) return;
     resetInProgress = true;
+    loadedStateGeneration++;
     els.resetConfirm.disabled = true;
     els.resetCancel.disabled = true;
     els.resetClose.disabled = true;
@@ -35272,6 +35411,7 @@ ${propsPlotHtml}
     selectedId = null;
     syncInputs();
     renderScenes();
+    renderCast(); renderSets(); renderLights(); renderRigs();
     renderVenueControls();
     updateInspector();
     render();
@@ -35751,7 +35891,7 @@ ${propsPlotHtml}
     });
   }
 
-  function renderVenueControls() {
+  function renderVenueControls(rebuildGallery = true) {
     updateLightingPlanOpenSummary();
     // 形式によっては貼る壁が無い。写真の欄の出入りもここで合わせる
     syncPhotoControls();
@@ -35816,7 +35956,7 @@ ${propsPlotHtml}
       els.venueSelect.append(custom);
     }
     if (els.venueSelect) els.venueSelect.value = current.id;
-    renderVenueGallery(choicesForGallery(), current.id);
+    if (rebuildGallery || (els.venuePickModal && !els.venuePickModal.hidden)) renderVenueGallery(choicesForGallery(), current.id);
 
     if (els.venueMissing) {
       els.venueMissing.hidden = !current.missing;
@@ -36527,6 +36667,7 @@ ${propsPlotHtml}
   }
   function openVenuePicker() {
     if (!els.venuePickModal) return;
+    renderVenueGallery(choicesForGallery(), venue().id);
     venuePickerPendingId = blankVenueSelected ? "__blank__" : (els.venueSelect?.value || null);
     els.venuePickModal.hidden = false;
     if (els.venuePickBackdrop) els.venuePickBackdrop.hidden = false;
@@ -38408,7 +38549,12 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const right = Math.min(rect.right, hostRect?.right || innerWidth, innerWidth) - edge;
     const headerBottom = document.querySelector(".stage-sketch-head")?.getBoundingClientRect().bottom || 0;
     const top = Math.max(rect.top, centerRect?.top || 0, hostRect?.top || 0, headerBottom, 0) + edge;
-    const bottom = Math.min(visualBottom, centerRect?.bottom || innerHeight, hostRect?.bottom || innerHeight, gammaFloatingPanelBottom()) - edge;
+    const zoomControls = canvasEl.closest(".stage-canvas-wrap")?.querySelector(".stage-zoom-fab");
+    const zoomRect = zoomControls?.getBoundingClientRect();
+    // Reserve the visible zoom row as well as the drawing, including after a drag or resize.
+    const controlGap = parseFloat(getComputedStyle(canvasEl).getPropertyValue("--gamma-gap")) || 8;
+    const controlsTop = zoomRect?.width && zoomRect?.height ? zoomRect.top - controlGap : Infinity;
+    const bottom = Math.min(visualBottom - edge, controlsTop, (centerRect?.bottom || innerHeight) - edge, (hostRect?.bottom || innerHeight) - edge, gammaFloatingPanelBottom() - edge);
     return { left, right: Math.max(left, right), top, bottom: Math.max(top, bottom) };
   }
 
@@ -43346,8 +43492,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (event.key === "Escape") { event.preventDefault(); endTour(); }
   });
 
-  els.undo.addEventListener("click", undo);
-  els.redo.addEventListener("click", redo);
+  els.undo.addEventListener("click", () => dispatchHistory());
+  els.redo.addEventListener("click", () => dispatchHistory(true));
 
   // Keep the existing stored limits visible before typing; never truncate saved data here.
   function attachNameLimit(input, limit) {
@@ -43396,13 +43542,14 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   });
 
   document.addEventListener("keydown", (event) => {
+    if (event.defaultPrevented) return;
     const shortcuts = window.SHOSAI_STAGE_SHORTCUTS;
     if (!shortcuts || (!shortcuts.matches(event, "history.undo") && !shortcuts.matches(event, "history.redo"))) return;
     const view = document.getElementById("view-stage");
     if (!view || view.hidden) return;
-    if (isTyping(event.target)) return;
+    if (isTyping(event.target) || isTyping(document.activeElement) || historyEditBlocked()) return;
     event.preventDefault();
-    if (shortcuts.matches(event, "history.redo")) redo(); else undo();
+    dispatchHistory(shortcuts.matches(event, "history.redo"));
   });
 
   /* ---------- 画像の書き出し ----------
@@ -44410,6 +44557,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const sheet = selectedCueSheet(kind, key);
     if (!sheet || !els.cueSheetContent) return;
     if (kind === "handover") cueSheetA4 = true;
+    els.cueSheetView?.classList.toggle("is-handover", kind === "handover");
     syncCueSheetA4Buttons(kind);
     const diagramChoice = els.cueSheetModal?.querySelector("#stage-cue-sheet-handover-view");
     if (diagramChoice) { diagramChoice.hidden = kind !== "handover"; diagramChoice.value = cueSheetHandoverView; }
@@ -44572,6 +44720,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   }
   window.SHOSAI_STAGE_CUE_SHEET_HOST = Object.freeze({
     open: showCueSheetHost, close: hideCueSheetHost,
+    printOpened: () => announce(tx("Qシートを印刷用の窓で開きました。")),
     available: () => editionAllows("cueSheet") && Boolean(els.cueSheetModal && window.SHOSAI_CUE_SHEET),
     choices: () => window.SHOSAI_CUE_SHEET?.listSheets(state.project, { tx }) || [],
     readOnly: () => STUDY_READ_ONLY || guestSessionActive(),
@@ -45012,6 +45161,9 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     closePanelVisibilityMenu();
     closePanelLayoutMenu();
     syncPanelLayoutControl();
+    // Hidden stage canvases intentionally skip painting. Repaint on return so
+    // theatre edits are visible even when the canvas size has not changed.
+    if (document.body.dataset.stageWorkspaceMode === "normal") render();
     if (document.body.dataset.stageWorkspaceMode !== "venue-setup") return;
     if (lightingSource === "preset") openLightingPlanModal();
   });
@@ -45855,6 +46007,24 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       || [];
     /* 客席を通るムービングの狙いは、いま選んでいる劇場・規模に登録された
        客席領域だけへ限定する。照明デザイン本体へは保存せず、ホストの会場情報として渡す。 */
+    const curtainPolys = [venueOutlineOf(currentVenue, size)].concat((venueStageExtensionsOf(currentVenue, size) || []).map(item => item.polygon)).filter(Boolean);
+    const curtainShape = window.SHOSAI_FRONT_SHAPE?.build(curtainPolys);
+    const frontCurtains = {
+      showFrontBorder: state.showFrontBorder, prosH: window.GAMMA_VENUE_CURTAINS.frontBorderOpeningHeight(currentVenueCeiling(), state.project.lightingDesign?.curtains?.prosH),
+      frontBorderVisible: Boolean(state.showFrontBorder && currentVenueFrontBorderPresent()
+        && state.project.lightingDesign?.format === "shosai.light-design"
+        && state.project.lightingDesign.curtains && state.project.lightingDesign.curtains.pros !== false),
+      frame: Boolean(currentVenue.frame),
+      floorPolygons: !currentVenue.realVenue && curtainShape
+        ? curtainShape.polygons.map(poly => poly.map(([x,y]) => [curtainShape.uOf(x), curtainShape.vOf(y)])) : null,
+      curtains: projectIoClone(state.project.lightingDesign?.curtains || {}),
+      legs: currentVenue.frame ? [-1, 1].flatMap(side => window.GAMMA_VENUE_CURTAINS.frontDepths().map((v,i,depths) => ({ side, u: side < 0 ? 0 : 1, v, shade: .72+.28*i/Math.max(1,depths.length-1) })))
+        : !currentVenue.realVenue && curtainShape ? (currentVenue.stageWings || []).flatMap(area => window.SHOSAI_FRONT_SHAPE.touchingEdges(area.polygon, curtainPolys)
+          .filter(([a,b]) => Math.abs(b[1]-a[1]) >= Math.abs(b[0]-a[0])).flatMap(([a,b]) => window.GAMMA_VENUE_CURTAINS.frontDepths(area.legCount)
+            .map((t,i,depths) => ({ side: area.polygon.reduce((sum,p) => sum+p[0],0)/area.polygon.length < (a[0]+b[0])/2 ? -1 : 1,
+              shade: .72+.28*i/Math.max(1,depths.length-1),
+              u: curtainShape.uOf((a[0]+b[0])/2), v: curtainShape.vOf(Math.min(a[1],b[1]) + Math.abs(b[1]-a[1])*t), legCount: area.legCount })))) : [],
+    };
     const venueMask = {
       venueId: state.project.venue,
       sizeId: state.project.venueSize,
@@ -45896,7 +46066,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       id: seat.id, label: seatName(seat), floorY: seat.floorY, bottomY: seat.bottomY,
       backW: seat.backW, frontW: seat.frontW, rise: seat.rise,
     }));
-    return { showId: state.project.id, title: state.project.title, stage, scenes, venueMask, frontSeats,
+    return { showId: state.project.id, title: state.project.title, stage, scenes, venueMask, frontSeats, frontCurtains,
       cueSyncPending: lightingCueListsDiffer(state.project),
       cueNaming: state.project.cueNaming === "serial" ? "serial" : "scene",
       venueType: currentVenue.lightingPresetBasis?.venueId || venueV2?.lightingPresetBasis?.venueId || currentVenue.id,

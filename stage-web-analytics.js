@@ -1,8 +1,7 @@
 /* The public token is intentionally embedded. Shared Worker and Mac do not load it. */
 (function () {
   'use strict';
-  if (location.hostname !== 'aratama-ship-it.github.io' || window.stageSketchBridge
-      || /GammaWebDemo/.test(navigator.userAgent)) return;
+  if (location.hostname !== 'aratama-ship-it.github.io' || window.STAGE_RUNTIME.isMac()) return;
   // Only published static entry pages, never bearer links or arbitrary paths.
   const base = '/stage-sketch-gamma/';
   const paths = ['stage.html', 'run.html', 'company.html', 'manual-gamma/', 'manual-gamma/index.html', 'download/', 'download/index.html'];

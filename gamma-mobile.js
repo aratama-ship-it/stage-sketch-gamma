@@ -336,6 +336,9 @@
     if (share) { share.classList.add("gm-icon-btn"); topRight.append(share); }
     const present = $("#stage-present-btn");
     if (present) topRight.append(present);
+    // Keep the existing Q entry in the active shell, alongside its other actions.
+    const cueSheet = $("#stage-cue-sheet-open");
+    if (cueSheet) { cueSheet.classList.add("gm-icon-btn"); topRight.append(cueSheet); }
     const gear = $("#stage-prefs-btn");
     if (gear) topRight.append(gear);
     top.append(topLeft, nav, topRight);

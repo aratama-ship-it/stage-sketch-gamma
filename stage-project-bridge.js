@@ -49,6 +49,85 @@
     const envelope = converted.project ? converted : {kind:"shosai-stage-sketch", version:4, project:converted};
     return {show:JSON.stringify(envelope), title:envelope.project.title};
   }
+  // Checkpoint authority is a page token from the shell, never platform metadata alone.
+  function createRunCheckpointAdapter(host) {
+    if (!host.STAGE_RUNTIME?.isMac() || (host.top && host.top !== host)
+        || typeof host.stageSketchProject?.runCheckpointToken !== "string" || !/^[a-f0-9]{64}$/.test(host.stageSketchProject.runCheckpointToken) || host.stageSketchProject.runCheckpointToken.length !== 64
+        || typeof host.fetch !== "function") return null;
+    const idOK = id => typeof id === "string" && /^[A-Za-z0-9_-]{1,96}$/.exec(id)?.[0] === id;
+    const limit = 256 * 1024 ** 2;
+    const nameOK = name => {
+      if (typeof name !== "string") return false;
+      const match = /^[0-9]{8}-[0-9]{6}-[0-9]{3}Z-r(0|[1-9][0-9]{0,15})-[a-f0-9]{12}\.stagerun\.zip$/.exec(name);
+      return match?.[0] === name && Number.isSafeInteger(Number(match[1]));
+    };
+    const record = value => value && typeof value === "object" && !Array.isArray(value);
+    const shaOK = value => typeof value === "string" && value.length === 64 && /^[a-f0-9]{64}$/.test(value);
+    const dateOK = value => typeof value === "string" && Number.isFinite(Date.parse(value));
+    const fail = code => { throw Object.assign(Error(code), {code}); };
+    function headers() {
+      const token = host.stageSketchProject?.runCheckpointToken;
+      if (typeof token !== "string" || token.length !== 64 || !/^[a-f0-9]{64}$/.test(token)) fail("forbidden");
+      return {"X-Gamma-Run-Token":token};
+    }
+    async function read(url) {
+      const response = await host.fetch(url, {method:"GET", credentials:"same-origin", cache:"no-store", redirect:"error", headers:headers()});
+      if (response.status !== 200) fail(response.status === 403 ? "forbidden" : response.status === 404 ? "not-found" : "read-failed");
+      return response;
+    }
+    return {
+      async index(projectId) {
+        if (!idOK(projectId)) fail("invalid-id");
+        const response = await read(`/run-checkpoint-index/${projectId}`);
+        let value;
+        try { value = await response.json(); } catch (_) { fail("invalid-index"); }
+        if (!record(value) || !Array.isArray(value.runs)) fail("invalid-index");
+        const ids = new Set();
+        for (const row of value.runs) {
+          if (!record(row) || !idOK(row.storageId) || ids.has(row.storageId) || !Array.isArray(row.files) || !row.files.length || row.files.length > 50) fail("invalid-index");
+          ids.add(row.storageId);
+          let previous = null;
+          for (const file of row.files) {
+            if (!record(file) || !nameOK(file.name) || !Number.isSafeInteger(file.bytes) || file.bytes < 1 || file.bytes > limit || !dateOK(file.modifiedAt)
+                || (previous !== null && previous <= file.name)) fail("invalid-index");
+            previous = file.name;
+          }
+        }
+        return value;
+      },
+      async get({projectId, storageId, name, bytes}) {
+        if (!idOK(projectId) || !idOK(storageId)) fail("invalid-id");
+        if (!nameOK(name)) fail("invalid-name");
+        if (!Number.isSafeInteger(bytes) || bytes < 1 || bytes > limit) fail("invalid-index");
+        const response = await read(`/run-checkpoint/${projectId}/${storageId}/${name}`);
+        if (response.headers?.get("Content-Type")?.split(";")[0].trim() !== "application/zip") fail("invalid-package");
+        const length = response.headers.get("Content-Length");
+        if (length !== null && length !== String(bytes)) fail("invalid-package");
+        const blob = await response.blob();
+        if (blob.size !== bytes || blob.size > limit) fail("invalid-package");
+        return blob;
+      },
+      async put({projectId, storageId, revision, material, sha256, blob}) {
+        if (!idOK(projectId) || !idOK(storageId)) fail("invalid-id");
+        if (!Number.isSafeInteger(revision) || revision < 1 || !shaOK(material)
+            || !shaOK(sha256)) fail("invalid-receipt");
+        if (!blob?.size || blob.size > 256 * 1024 ** 2) fail("package-too-large");
+        const auth = headers();
+        const response = await host.fetch(`/run-checkpoint/${projectId}/${storageId}?rev=${revision}&material=${material}`, {
+          method:"PUT", credentials:"same-origin", cache:"no-store", redirect:"error",
+          headers:{"Content-Type":"application/zip", ...auth, "X-Gamma-Body-Sha256":sha256}, body:blob,
+        });
+        // Fetch supplies same-origin Origin and the Blob's exact Content-Length; forbidden headers are not fabricated.
+        if (response.status !== 200) fail(response.status === 507 ? "disk-full" : response.status === 403 ? "forbidden" : "write-failed");
+        let result;
+        try { result = await response.json(); } catch (_) { fail("invalid-receipt"); }
+        const prefix = projectId + "/" + storageId + "/", name = typeof result?.file === "string" && result.file.startsWith(prefix) ? result.file.slice(prefix.length) : "";
+        if (!record(result) || result.ok !== true || result.bytes !== blob.size || result.sha256 !== sha256 || !dateOK(result.writtenAt)
+            || !nameOK(name) || !new RegExp("^[0-9]{8}-[0-9]{6}-[0-9]{3}Z-r" + revision + "-" + material.slice(0,12) + "\\.stagerun\\.zip$").test(name)) fail("invalid-receipt");
+        return result;
+      },
+    };
+  }
   function create(host) {
     const handler = host.webkit?.messageHandlers?.gammaProject;
     if (typeof handler?.postMessage !== "function") return null;
@@ -136,6 +215,7 @@
       if (!active || !opened || readOnly) return false;
       const value = readOnlyValue || runtime.snapshot();
       if (!force && contentSignature(value.show) === lastSent) return true;
+      if (host.__GAMMA_TRACE_PERFORMANCE) post("performanceStage", {stage:"changed-post", at:Date.now()});
       post("changed", { ...value, generation:++messageGeneration }); lastSent = contentSignature(value.show); return true;
     }
     async function flush(requestId) {
@@ -309,5 +389,5 @@
       storage: memoryStorage(),
     };
   }
-  return Object.freeze({ create, memoryStorage, validId, audioLimit, prepareLegacy });
+  return Object.freeze({ create, memoryStorage, validId, audioLimit, prepareLegacy, createRunCheckpointAdapter });
 });

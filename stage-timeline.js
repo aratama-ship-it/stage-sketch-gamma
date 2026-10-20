@@ -285,6 +285,8 @@
   const feasibilityList = document.createElement("details");
   feasibilityList.id = "stage-transition-feasibility"; feasibilityList.className = "stage-transition-feasibility";
   const feasibilitySummary = document.createElement("summary"), feasibilityBody = document.createElement("div");
+  // Transition titles and performer names are show content, not feature labels.
+  feasibilityBody.dataset.featureSearchSkip = "";
   feasibilityList.append(feasibilitySummary, feasibilityBody);
   els.viewport.before(feasibilityList);
   let feasibilityByTransition = new Map();
@@ -425,6 +427,25 @@
   let cueDrag = null;
   let suppressCueClickId = null;
   let lastTimelineCueClick = null;
+  let cuePointerOwner = null;
+  let cueRedrawPending = false;
+
+  function finishCuePointerInteraction() {
+    if (cuePointerOwner) window.clearTimeout(cuePointerOwner.releaseTimer);
+    cuePointerOwner = null;
+    if (cueRedrawPending) scheduleLiveTimelineRedraw();
+  }
+
+  function releaseCuePointer(event) {
+    const owner = cuePointerOwner;
+    if (!owner || owner.pointerId !== event.pointerId) return;
+    // pointerup/lostcapture can precede click. Keep its target through that
+    // dispatch, then release even when an outside pointerup produces no click.
+    window.clearTimeout(owner.releaseTimer);
+    owner.releaseTimer = window.setTimeout(() => {
+      if (cuePointerOwner === owner) finishCuePointerInteraction();
+    }, 0);
+  }
 
   function saveUi() {
     try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (_) { /* 表示設定なしでも編集は続ける */ }
@@ -2697,6 +2718,7 @@
     if (!cueGroupDrag || event.pointerId !== cueGroupDrag.pointerId) return;
     const drag = cueGroupDrag;
     cueGroupDrag = null;
+    if (drag.moved || event.type === "pointercancel") finishCuePointerInteraction();
     drag.items.forEach((item) => item.button.classList.remove("is-dragging"));
     if (event.type !== "pointercancel" && drag.moved && Math.abs(drag.delta) > 1e-9
       && typeof bridge.updateTimelineCues === "function") {
@@ -2712,6 +2734,12 @@
   }
 
   function beginCueDrag(event, cue, button) {
+    // Keep the target alive through pointerup AND the resulting click, even for
+    // locked/read-only cues whose pointerdown does not start a drag.
+    if (event.button === 0) {
+      finishCuePointerInteraction();
+      cuePointerOwner = { pointerId: event.pointerId, releaseTimer: null };
+    }
     if (timeline?.source === "show") return;
     if (event.button !== 0 || cue.locked || !timeline || typeof bridge.updateTimelineCue !== "function") return;
     // まとめて選ばれているうちの1つを掴んだら、選択ぜんぶを同じだけ動かす
@@ -2748,6 +2776,7 @@
     if (!cueDrag || event.pointerId !== cueDrag.pointerId) return;
     const drag = cueDrag;
     cueDrag = null;
+    if (drag.moved || event.type === "pointercancel") finishCuePointerInteraction();
     drag.button.classList.remove("is-dragging");
     try { if (drag.button.hasPointerCapture(event.pointerId)) drag.button.releasePointerCapture(event.pointerId); } catch (_) { /* pointercancel */ }
     if (event.type !== "pointercancel" && drag.moved) {
@@ -2765,7 +2794,7 @@
   /* ---------- U-06（2026-09-24 本人指示）: セリフキューの印にカーソルを当てるとセリフを出す ----------
    * 小窓は印の真上（入らなければ真下）。文字の当て方はセリフキューパネル・キュー詳細と同じ（台本データ→シーンメモ→キューのメモ）。
    * 数値: 幅上限320px・余白8/10px・文字13px（セリフは明朝14px・6行まで）・印との間8px・画面の端から8px。 */
-  let cuePeek = null;
+  let cuePeek = null, cuePeekAnchor = null;
   function cuePeekEl() {
     if (cuePeek) return cuePeek;
     cuePeek = document.createElement("div");
@@ -2836,6 +2865,7 @@
   }
   function positionCuePeek(button) {
     const peek = cuePeekEl();
+    cuePeekAnchor = button;
     peek.hidden = false;
     button.setAttribute("aria-describedby", peek.id);
     const box = button.getBoundingClientRect();
@@ -2850,7 +2880,13 @@
   function hideCuePeek() {
     if (cuePeek) cuePeek.hidden = true;
   }
-  window.addEventListener("scroll", hideCuePeek, true);
+  window.addEventListener("scroll", () => {
+    // A pending scroll event can arrive just after pointerenter (Chromium).
+    // Keep the preview at its real anchor while the pointer is still over it.
+    if (cuePeek && !cuePeek.hidden && cuePeekAnchor?.isConnected && cuePeekAnchor.matches(":hover")) {
+      positionCuePeek(cuePeekAnchor);
+    } else hideCuePeek();
+  }, true);
   window.addEventListener("pointerdown", hideCuePeek, true);
 
   // Read-only band detail. All wording is translated before inserting values.
@@ -3017,6 +3053,7 @@
       button.addEventListener("pointermove", continueCueDrag);
       button.addEventListener("pointerup", endCueDrag);
       button.addEventListener("pointercancel", endCueDrag);
+      button.addEventListener("pointercancel", finishCuePointerInteraction);
       button.addEventListener("click", (event) => {
         if (suppressCueClickId === cue.id) { event.preventDefault(); return; }
         if (cue.cueType === "music" || cue.cueType === "light") {
@@ -3041,6 +3078,7 @@
          * ★二度押しはキューの詳細。1回目で飛んでから窓が開くのは自然なのでそのままにする。 */
         if (Number.isFinite(cue.seconds)) seekToSeconds(cue.seconds);
       });
+      button.addEventListener("click", finishCuePointerInteraction);
       button.addEventListener("dblclick", () => openCueDetails(cue, button));
       button.addEventListener("contextmenu", (event) => openTimelineLockMenu(
         event, { target: "cue", cueId: cue.id }, cue.locked,
@@ -3603,6 +3641,11 @@
   }
 
   function renderTimeline() {
+    // A seek can queue this redraw between the next pointerdown and pointerup.
+    // WebKit then loses capture/click when clearLane removes the pressed cue.
+    // Coalesce that redraw until the click, drag completion or cancellation.
+    if (cuePointerOwner) { cueRedrawPending = true; return; }
+    cueRedrawPending = false;
     closeTimelineLockMenu();
     const { project, choices } = timelineChoices();
     if (!project || !choices.length) return;
@@ -4903,10 +4946,23 @@
   }
   document.addEventListener("lostpointercapture", (event) => {
     if (event.target.closest?.("#stage-timeline-panel")) cancelTimelinePointer(event.pointerId);
+    releaseCuePointer(event);
   }, true);
-  window.addEventListener("blur", () => {
-    [anchorDrag, cueMarquee, cueDrag, timelineResize, durationScrub, blockResize, rowResize, rowReorder]
+  // Capture at window also sees non-dragging locked/show-scope cues released
+  // outside their button, including handlers which stop propagation below it.
+  window.addEventListener("pointerup", releaseCuePointer, true);
+  window.addEventListener("pointercancel", (event) => {
+    cancelTimelinePointer(event.pointerId);
+    if (cuePointerOwner?.pointerId === event.pointerId) finishCuePointerInteraction();
+  }, true);
+  function cancelTimelinePointers() {
+    [anchorDrag, cueMarquee, cueDrag, cueGroupDrag, timelineResize, durationScrub, blockResize, rowResize, rowReorder]
       .filter(Boolean).forEach((drag) => cancelTimelinePointer(drag.pointerId));
+    finishCuePointerInteraction();
+  }
+  window.addEventListener("blur", cancelTimelinePointers);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) cancelTimelinePointers();
   });
   /* T-08（2026-09-18 本人要望）: 画面左下の取っ手。上の帯と同じ処理へつなぐ。
    * ★掴む対象が違うだけなので、ポインタの取り込み先だけ差し替える。

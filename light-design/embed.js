@@ -239,6 +239,7 @@
      形が無い会場では null のまま＝客席ワンダーを有効にしない。 */
   function synchronizeVenueMask(next) {
     state.venueMask=next&&next.venueMask?model.clone(next.venueMask):null;
+    state.frontCurtains=next?.frontCurtains?model.clone(next.frontCurtains):null;
   }
   function synchronizeFrontSeats(next) {
     window.GAMMA_LIGHT_SET_FRONT_SEATS?.(next && next.frontSeats);

@@ -31,6 +31,24 @@
   "use strict";
 
   const TEXT = {
+
+    "Mac 版でサンプルライブラリから入手すると途中で止まり、その後の動きが不安定になることがあったのを直しました。プロジェクトを閉じた直後にサンプルライブラリや終了が効かなくなることがあったのも直しました。": "Fixed getting a show from the sample library in the Mac app, which could stop partway and leave the app unstable. Also fixed the sample library and Quit sometimes not responding right after closing a project.",
+
+    "Mac 版で、リハーサル記録を Mac が管理するフォルダへ自動で控えるようにしました。この端末に無い記録が控えにあるときは、リハーサル画面から読み込めます。控えはファイル メニューの「リハーサル記録の控えを Finder で表示」で確かめられます。": "The Mac app now keeps automatic copies of rehearsal records in a folder it manages. If the copies hold records this device does not have, you can load them from the Rehearsal screen. The File menu has an item that shows the copies in Finder.",
+
+    "元に戻す（⌘Z・一つ戻す）の反応を速くしました。リハーサル記録の図を操作しているときは、上部の「一つ戻す／やり直す」で線を戻せます。Mac 版の編集メニューに「やり直す」を足しました。": "Undo (⌘Z and the Undo button) responds faster. While you work on a rehearsal record drawing, the Undo/Redo buttons at the top undo and redo its lines. The Mac app's Edit menu now has Redo.",
+
+    "照明デザインの正面図に幕を描き、客席側の灯体は描かないようにしました。灯体の筒が透けて見えないようにしました。": "The front view in Lighting design now shows the curtains and no longer draws the fixtures on the audience side. Fixture barrels are no longer see-through.",
+
+    "進行表で演者を選んだときの出力に「引継ぎ Q シート」を戻しました。幅の狭い画面でも上の操作欄が伸びないようにし、パネルの見出しの色をそろえました。": "Brought back “Handover Q sheet” in the output options when you select a performer in the Run of show. The top controls no longer grow tall on narrow screens, and panel headings use the same colour.",
+
+    "アイコンの大きさと線の太さをそろえ、紙の明るい配色で全体表の題が見えにくかったのを直しました。広い画面では環境設定の項目を並べて表示します。": "Icon sizes and line weights are now consistent, and the Master sheet title is readable again in the light paper theme. On wide screens, Preferences lays out its items side by side.",
+
+    "「機能をさがす」にショーの内容が入っていたのを直し、言語名でも探せるようにしました。ほかに、見本の演者一覧・袖幕の枚数の反映・Lite 版のオフライン表示などを直しました。": "“Find a feature” no longer includes the contents of your show, and you can search by language names. Also fixed the performer list of a sample show, the number of wing curtains in the front view, the Lite edition offline, and more.",
+
+    "ショーを「別のショーとして開く」で読み込んだ直後、保存中に元のショーへ切り替えようとすると何も起きないことがあったのを直しました。切り替えられないときは理由を知らせます。": "Fixed switching back to the original show right after “Open as a separate show”, which sometimes did nothing while saving. If a switch cannot happen, you are now told why.",
+
+    "Mac 版の中の判定をまとめ直し、進行表・隊形・記録図の画面でも Mac 版として扱うようにしました。使い方と保存は変わりません。": "The Mac app now identifies itself the same way everywhere, including the Run of show, Formation and Recorded drawing screens. How you use and save shows does not change.",
     // Package extension preservation (便15).
     "追加データを保存できませんでした。読み込みを止めました。元のパッケージと現在のショーは変更していません。": "Additional data could not be saved. Import stopped. The original package and current show are unchanged.",
     "追加データを読み出せないため書き出しを止めました。元のパッケージを読み込み直してください。": "Export stopped because additional data could not be read. Import the original package again.",
@@ -176,6 +194,8 @@
     "プロジェクトへ変更を送れませんでした。もう一度保存してください。": "Could not send changes to the project. Please save again.",
     "読み取り専用のプロジェクトです。": "This project is read-only.",
     "プロジェクトを開きました。変更はプロジェクトへ自動保存します。": "Project opened. Changes are saved automatically to the project.",
+    "編集中の変更を守るため、切り替えを止めました。もう一度開いてください。": "Switch stopped to protect your changes. Please open the show again.",
+    "保存できなかったため、切り替えを止めました。いまのショーを書き出してください。": "Switch stopped because saving failed. Export the current show to a file.",
     "プロジェクトを開くか保存する処理を完了できませんでした。元ファイルは保持しています。": "Could not finish opening or saving the project. The original file is retained.",
     "音源の未接続状態を保存できませんでした。再読み込み前に保存領域を確認してください。": "Cannot save the offline audio status. Check storage before reloading.",
     "プロジェクトを書き出す（音源入り .stageproj.zip）": "Export project (with audio, .stageproj.zip)",
@@ -594,6 +614,7 @@
     "Lite: Lite の舞台図には照明を表示しません。": "Lite stage views do not show lighting.",
     "Lite: この項目にはシーンがありません": "This item has no scene",
     // Qシート: 保存を増やさず導出する引き継ぎパック。
+    "引継ぎ Q シート": "Handover Q sheet",
     "引き継ぎパック": "Handover pack",
     "引き継ぎの図": "Handover diagram",
     "演者Qシート": "Performer Q sheet",
@@ -4206,6 +4227,27 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "別のタブで書き込みが変わりました。控えを保存してから開き直してください。": "Notes changed in another tab. Save a copy before reopening.",
   "書き込みの保存上限です。控えを保存してください。": "The note storage limit was reached. Save a copy.",
   "端末に保存できません。閉じる前に控えを保存してください。": "Could not save on this device. Save a copy before closing.",
+  "Mac の控え: {time} に作成": "Mac copy: created at {time}",
+    "Mac の控えに、この端末に無い記録が {count} 件あります": "Mac copies contain {count} records missing from this device",
+    "Mac の控えを読み込み中": "Loading Mac copies",
+    "Mac の控えから {count} 件の記録を読み込みました": "Loaded {count} records from Mac copies",
+    "Mac の控え: {loaded} 件を読み込み、{failed} 件を読み込めませんでした（{reason}）": "Mac copies: loaded {loaded}; could not load {failed} ({reason})",
+    "Mac の控えを確認できません（{reason}）": "Could not check Mac copies ({reason})",
+    "控えを読み取れません": "Could not read the copy",
+    "控えが見つかりません": "Copy not found",
+    "控えの内容が一致しません": "Copy contents do not match",
+    "記録が別の操作で変わりました。もう一度読み込んでください。": "Another operation changed the record. Load it again.",
+    "保存または読み込みに失敗しました。既存の記録は変更していません。": "Save or load failed. Existing records are unchanged.",
+  "Mac の控えを作成中": "Creating a Mac copy",
+  "Mac の控えを作れません（{reason}）。この端末には保存済みです": "Could not create a Mac copy ({reason}). Saved on this device.",
+  "記録が大きすぎて Mac の控えを作れません。この端末には保存済みです": "The record is too large for a Mac copy. Saved on this device.",
+  "空き容量がありません": "No space available",
+  "書き込みに失敗しました": "Write failed",
+  "Mac との接続を確認してください": "Check the connection to the Mac",
+  "時間内に完了しませんでした": "Did not finish in time",
+  "Mac の返答を確認できません": "Could not verify the Mac response",
+  "記録の識別子を使用できません": "The record identifier cannot be used",
+  "控えの処理に失敗しました": "Could not complete the copy",
   "この端末に保存済み": "Saved on this device",
   "書き込みはシーン・表示ごとにこの端末へ保存": "Notes are saved on this device for each scene and view",
   "二本指で全体を拡大・移動": "Pinch with two fingers to zoom and pan the whole sheet",
@@ -5115,3 +5157,14 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "正面図と平面図": "Front and plan views",
   "高さ{height}": "Height {height}"
 });
+
+// B39: acquisition failure reasons.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "入手の待ち時間を超えました。保存先を確認してから、もう一度お試しください。": "The sample acquisition timed out. Check the save location before trying again.",
+  "見本をダウンロードできませんでした。接続を確認してから、もう一度お試しください。": "Could not download the sample. Check the connection and try again.",
+  "見本のデータを確認できませんでした。アプリを更新してから、もう一度お試しください。": "Could not verify the sample data. Update the app and try again."
+});
+
+Object.assign(window.SHOSAI_I18N_PACKS['en'].text, {"入手を中止しています…": 'Cancelling sample acquisition…'});
+
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"別の処理が続いています。完了してから、もう一度お試しください。": "Another operation is still running. Wait for it to finish and try again."});

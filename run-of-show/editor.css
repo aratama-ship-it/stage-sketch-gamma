@@ -353,7 +353,7 @@ html[data-stage-skin] .distribution-dialog button.primary{background:var(--gamma
   .ros-side-panel{border-bottom:1px solid var(--line-dark);padding-bottom:var(--s2)}
   .ros-index-head{display:flex;align-items:center;padding-block:var(--s2);border-bottom:1px solid var(--line-dark)}
   .ros-side-head{display:flex;align-items:center;gap:var(--s2);width:100%;min-height:28px;padding:0;background:transparent;border:0;color:var(--chrome-ink);font-size:13px;font-weight:600;letter-spacing:.04em;text-align:left}
-  .ros-side-head>span:nth-child(2){flex:1;min-width:0}.ros-side-disclosure{font-size:13px}.ros-side-head[aria-expanded=false] .ros-side-disclosure{transform:rotate(-90deg)}
+  .ros-side-head>span:nth-child(2){flex:1;min-width:0;color:var(--brass)}/* 2026-10-19 owner: panel titles in brass like the stage tab (.stage-panel-title) */.ros-side-disclosure{font-size:13px}.ros-side-head[aria-expanded=false] .ros-side-disclosure{transform:rotate(-90deg)}
   .ros-index-head .small{font-size:var(--fs-table);font-variant-numeric:tabular-nums}
   .ros-index-head .small{margin-left:auto}
   .ros-index .stage-figures{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s2);height:auto;min-height:0;padding:var(--s2) 0 0}
@@ -605,7 +605,7 @@ html[data-stage-skin] :is(.paper-panel,.item-editor,:where(#band-selection)) .is
 html[data-stage-skin] :is(.paper-panel,.item-editor,:where(#band-selection)) .is-icon svg { width:var(--gamma-icon-glyph); height:var(--gamma-icon-glyph); }
 /* F-02: the centre track owns the vertical scrollbar and its reserved gutter. */
 @media screen {
-  #preview .doc-frame { overflow:auto; scrollbar-gutter:stable; overscroll-behavior:contain; }
+  #preview .doc-frame { overflow:auto; scrollbar-gutter:stable both-edges; overscroll-behavior:contain; }
 }
 @media screen and (min-width:900px) {
   body:not(.lite-paper) { height:100dvh; overflow:hidden; }
@@ -677,8 +677,10 @@ html[data-stage-skin] #paper-panel :is(input,select,textarea,.gamma-short-select
 .ros-left-toggle[aria-expanded=false]{width:auto;padding-inline:var(--gamma-gap);display:flex;align-items:center;gap:var(--gamma-gap)}
 .ros-left-toggle[aria-expanded=false] > span{display:inline}
 /* Lite retains its compact rail and the same single formatting section. */
-body.lite-paper #paper-band #band-format{display:flex;flex-direction:column;align-items:stretch;flex-basis:100%}
-body.lite-paper #band-format > .band-heading{display:block;margin:0;font-size:var(--fs-3);color:var(--brass)}
+body.lite-paper #paper-band #band-format{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;flex-basis:100%;padding:0 var(--s1)}
+body.lite-paper #paper-band #band-selection{width:auto;flex:1 1 auto}
+body.lite-paper #paper-band #cell-format-target{flex:0 1 auto;margin:0}
+body.lite-paper #band-format > .band-heading{display:block;flex:0 0 auto;margin:0;font-size:var(--fs-3);color:var(--brass)}
 body.lite-paper #paper-band #band-selection .cell-format-fields{flex:0 1 auto;width:auto}
 #band-selection[hidden]{display:none}
 #cell-format-target{color:var(--milk);line-height:1.5}
@@ -704,3 +706,25 @@ html[data-stage-skin] :is(button,input,select,textarea,label):not(.paper-input) 
 /* UI-5: headings keep Japanese words and English words intact on screen and paper. */
 .paper-table thead th,.pg-label,.pg-field-label,.portrait-label{word-break:keep-all;overflow-wrap:normal}
 .paper-table thead th,.pg-label{white-space:nowrap}
+
+/* B32: narrow screens keep the disclosure heads in the toolbar. Their bodies
+   open in the top layer, so controls remain reachable without stretching it. */
+@media screen and (max-width:899px) {
+  body:not(.lite-paper):not(.readonly-cue-shell) .paper-band { flex-direction:row; align-items:center; gap:var(--s1); }
+  body:not(.lite-paper) #paper-band > .band-group { display:block; flex:0 1 auto; width:auto; padding:0; }
+  body:not(.lite-paper) #paper-band :is(.ros-side-head,#column-summary,#band-output > summary) { width:auto; margin:0; padding:0 var(--s2); }
+  body:not(.lite-paper) #paper-band > .band-group > .ros-left-content[popover] {
+    position:fixed; inset:auto; margin:0; width:min(var(--popover-width),calc(100vw - var(--gamma-gap) * 2));
+    max-width:calc(100vw - var(--gamma-gap) * 2); max-height:calc(100dvh - var(--gamma-gap) * 2);
+    overflow:auto; padding:var(--gamma-gap); border:1px solid var(--line-dark);
+    background:var(--desk-2); color:var(--milk); box-shadow:0 4px 16px #0006;
+  }
+  #paper-band .ros-left-content[popover]:not(:popover-open) { display:none; }
+  #paper-band .ros-left-content[popover] > :is(select,.gamma-short-select,.band-field,.band-size,.toolbar) { width:100%; }
+  #paper-band .ros-left-content[popover] .row-mode-buttons { display:flex; width:100%; }
+  #paper-band .ros-left-content[popover] .row-mode-buttons button { flex:1; }
+}
+
+/* B33 Q1: the handover entry shares the output group, with a reachable hit area. */
+#cue-handover { min-height:44px; }
+#cue-handover[hidden] { display:none; }

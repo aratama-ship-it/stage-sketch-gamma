@@ -67,7 +67,7 @@
   let installed;
   function install(w) {
     if (installed) return;
-    const native = Boolean(w.stageSketchBridge) || /GammaWebDemo/.test(w.navigator.userAgent);
+    const native = w.STAGE_RUNTIME.isMac();
     const allowedHost = w.location.hostname === 'aratama-ship-it.github.io'
       || w.location.origin === WORKER_ORIGIN
       || w.location.hostname === 'stage-sketch-gamma-share.juggler-arata.workers.dev';

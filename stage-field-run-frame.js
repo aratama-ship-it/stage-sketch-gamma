@@ -38,6 +38,13 @@
    resizeFrame=0;engine().resize();for(const view of ['front','plan'])ink(view);
   });});resize.observe(document.querySelector('.field-frame-drawings'));
   for(const t of ['pointerdown','pointermove','pointerup','pointercancel','lostpointercapture','wheel'])window.addEventListener(t,event,{capture:true,passive:false});
+  for(const type of ['pointerdown','focusin'])window.addEventListener(type,()=>say('focus'),true);
+  window.addEventListener('keydown',e=>{
+   if(e.isComposing||e.keyCode===229||e.altKey||e.target.closest('input,textarea,select,[contenteditable]'))return;
+   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'){
+    e.preventDefault();e.stopImmediatePropagation();say('history',{redo:e.shiftKey});
+   }
+  },true);
   window.addEventListener('keydown',e=>{if(e.isComposing||e.keyCode===229||e.metaKey||e.ctrlKey||e.altKey||e.target.closest('input,textarea,select,[contenteditable]'))return;if(e.target.closest('button'))return;const key=e.key.toLowerCase();if(![' ','arrowleft','arrowright','e','t','l'].includes(key))return;e.preventDefault();e.stopImmediatePropagation();if(!e.repeat)say('shortcut',{key:e.key.length===1?key:e.key});},{capture:true});
   window.addEventListener('message',async e=>{const m=e.data;if(e.source!==parent||m?.channel!=='gamma-field-frame')return;if(m.action==='load'){nonce=m.nonce;runId=m.runId;words=m.words||{};material=m.material;editable=!!m.editable;await window.SHOSAI_LANGUAGE_LOADER?.ensure(m.lang);document.documentElement.lang=m.lang;engine().load(m.document,m.lang);engine().display(m.display||{});for(const p of Object.values(panes))p.root.querySelector('strong').textContent=label(p.view==='front'?'正面図':'平面図');for(const el of document.querySelectorAll('.field-frame-tools,.field-frame-tools button,.field-frame-tools select,[data-expand]')){for(const attr of ['aria-label','title'])if(el.hasAttribute(attr))el.setAttribute(attr,label(el.getAttribute(attr)));if(el.matches('[data-tool]'))el.disabled=el.dataset.tool!=='pan'&&!editable;}for(const el of document.querySelectorAll('.field-frame-tools option,.field-pen-width>span'))el.textContent=label(el.textContent);arrange(m.arrangement);say('loaded');return;}
    if(m.nonce!==nonce||m.runId!==runId)return;try{if(m.action==='scene'){sceneId=m.sceneId;requestId=m.requestId;hideRecord();lastClock=m.clock||{sceneId,seconds:0,phase:null};engine().clock({...lastClock,phase:null,material});engine().resize();for(const p of Object.values(panes)){p.z=1;p.x=p.y=0;p.inner.style.transform='';setTool(p.view,'pan');place(p.view);}say('scene-ready',{requestId});}

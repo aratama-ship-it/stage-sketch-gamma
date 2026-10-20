@@ -58,7 +58,7 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
     for(const slot of output.children){const page=slot.firstElementChild;if(!page)continue;slot.style.height=(page.offsetHeight*scale)+'px';slot.style.width=(width*scale)+'px';page.style.transform=`scale(${scale})`;}
   }
   function paginate(article){
-    const p=prefs();style.textContent=paperCSS(p.orientation)+`#stage-cue-sheet-view-a4,#stage-cue-sheet-view-orient,#stage-cue-sheet-view-one-page,#stage-cue-sheet-view-print,.cue-column-options{display:none!important}#ros-cue-pages{width:100%;overflow:auto;padding:4px;--q-font:${p.font}pt;--q-bg:${p.ink==='black'?'#232421':'#fff'};--q-ink:${p.ink==='black'?'#eee9df':'#25352f'}}#ros-cue-pages .q-slot{position:relative;margin-bottom:8px}#ros-cue-pages .q-page{transform-origin:top left}#stage-cue-sheet-content.q-paper-source{position:absolute;left:-100000px;visibility:hidden;width:1000px}#stage-cue-sheet-view{overflow:auto}#stage-cue-sheet-view-bar{flex:none}#stage-cue-sheet-content .cue-sheet-paper{width:${p.format==='free'&&p.freeWidth?p.freeWidth+'px':'auto'};max-width:none;background:${p.ink==='black'?'#232421':'#fff'};color:${p.ink==='black'?'#eee9df':'#25352f'};font-size:${p.font}pt;padding:8px}#stage-cue-sheet-content .cue-sheet-paper :is(h1,p,th,td,input,select,span,footer){color:inherit!important;background:transparent!important}#stage-cue-sheet-content .cue-sheet-paper :is(table,th,td,input,select){font-size:inherit!important}`;
+    const p=prefs();style.textContent=paperCSS(p.orientation)+`#stage-cue-sheet-view-a4,#stage-cue-sheet-view:not(.is-handover) #stage-cue-sheet-view-orient,#stage-cue-sheet-view-one-page,#stage-cue-sheet-view:not(.is-handover) #stage-cue-sheet-view-print,.cue-column-options{display:none!important}#ros-cue-pages{width:100%;overflow:auto;padding:4px;--q-font:${p.font}pt;--q-bg:${p.ink==='black'?'#232421':'#fff'};--q-ink:${p.ink==='black'?'#eee9df':'#25352f'}}#ros-cue-pages .q-slot{position:relative;margin-bottom:8px}#ros-cue-pages .q-page{transform-origin:top left}#stage-cue-sheet-content.q-paper-source{position:absolute;left:-100000px;visibility:hidden;width:1000px}#stage-cue-sheet-view{overflow:auto}#stage-cue-sheet-view-bar{flex:none}#stage-cue-sheet-content .cue-sheet-paper{width:${p.format==='free'&&p.freeWidth?p.freeWidth+'px':'auto'};max-width:none;background:${p.ink==='black'?'#232421':'#fff'};color:${p.ink==='black'?'#eee9df':'#25352f'};font-size:${p.font}pt;padding:8px}#stage-cue-sheet-content .cue-sheet-paper :is(h1,p,th,td,input,select,span,footer){color:inherit!important;background:transparent!important}#stage-cue-sheet-content .cue-sheet-paper :is(table,th,td,input,select){font-size:inherit!important}`;
     output.hidden=false;output.dataset.ready='false';output.replaceChildren();const snapshot=cleanClone(article),original=snapshot.querySelector('table');if(!original)return;
     const header=snapshot.querySelector('header'),children=[...snapshot.children],at=children.indexOf(original),before=children.slice(0,at).filter(n=>n!==header),after=children.slice(at+1);
     const allHeads=[...original.querySelectorAll('thead th')],master=article.dataset.cueSheetKind==='master';let cap=p.orientation==='portrait'?8:12;
@@ -109,13 +109,27 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
   let observedWidth=-1,fitFrame=0;
   new ResizeObserver(()=>{const width=output.clientWidth;if(width===observedWidth)return;observedWidth=width;cancelAnimationFrame(fitFrame);fitFrame=requestAnimationFrame(fit);}).observe(output);
   function print(){doc.activeElement?.blur();const win=window.open('','_blank');if(!win)return Promise.reject(Error(text('印刷画面を開けませんでした。')));return refresh().then(()=>{const p=prefs();
-    win.document.open();win.document.write('<!doctype html><html><head><meta charset="utf-8"><title></title><style>'+paperCSS(p.orientation)+'body{margin:0}.q-page{--q-font:'+p.font+'pt;transform:none!important}</style></head><body>'+[...output.querySelectorAll('.q-page')].map(page=>{const c=page.cloneNode(true);c.style.removeProperty('transform');return c.outerHTML;}).join('')+'</body></html>');win.document.close();win.document.title=source.querySelector('h1')?.textContent||'Q';win.focus();win.print();return true;});}
+    win.document.open();win.document.write('<!doctype html><html><head><meta charset="utf-8"><title></title><style>'+paperCSS(p.orientation)+'body{margin:0}.q-page{--q-font:'+p.font+'pt;transform:none!important}</style></head><body>'+[...output.querySelectorAll('.q-page')].map(page=>{const c=page.cloneNode(true);c.style.removeProperty('transform');return c.outerHTML;}).join('')+'</body></html>');win.document.close();win.document.title=source.querySelector('h1')?.textContent||'Q';win.focus();win.print();parent.SHOSAI_STAGE_CUE_SHEET_HOST.printOpened();return true;});}
   doc.getElementById('stage-cue-sheet-view-print').addEventListener('click',e=>{if(parent.SHOSAI_STAGE_CUE_SHEET_HOST.selection()?.kind==='handover')return;e.stopImmediatePropagation();print().catch(onColumns);},true);
   return {refresh,print,get ready(){return ready;}};
 }};
 /* F-07: the same disclosure as the right panels; no panel reordering. */
 window.ROSLeftPanels={install(band,{store}){
   const panels=[...band.children].filter(n=>n.classList.contains('band-group'));
+  const compact=matchMedia('(max-width:899px)'), disclosures=[];
+  const place=(content,head)=>{
+    const edge=parseFloat(getComputedStyle(band).getPropertyValue('--gamma-gap')),r=head.getBoundingClientRect(),box=content.getBoundingClientRect();
+    content.style.left=Math.max(edge,Math.min(innerWidth-box.width-edge,r.left))+'px';
+    content.style.top=Math.max(edge,Math.min(innerHeight-box.height-edge,r.bottom+edge))+'px';
+  };
+  const setup=(panel,head,content,isDetails,paint)=>{
+    disclosures.push({panel,head,content,isDetails,paint,desktopOpen:panel.open});
+    content.addEventListener('toggle',event=>{
+      if(!compact.matches)return;
+      head.setAttribute('aria-expanded',String(event.newState==='open'));
+      if(isDetails&&event.newState==='closed')panel.open=false;
+    });
+  };
   let order=['band-cues','band-settings','column-popover','panel-0','panel-3','panel-1','panel-4','band-output'];
   // Keep a previously chosen arrangement; this batch does not offer reordering.
   try{const saved=JSON.parse(localStorage.getItem('gamma:ros:left-panels'));if(Array.isArray(saved))order=saved;}catch(_){}
@@ -131,10 +145,19 @@ window.ROSLeftPanels={install(band,{store}){
       heading.classList.add('ros-side-head');heading.prepend(grip);heading.append(disclosure);
       if(panel.id!=='column-popover')try{panel.open=localStorage.getItem(key)==='0';}catch(_){}
       heading.setAttribute('aria-expanded',String(panel.open));
-      panel.addEventListener('toggle',()=>{heading.setAttribute('aria-expanded',String(panel.open));if(panel.id!=='column-popover')store(key,panel.open?'0':'1');});
+      const content=document.createElement('div');content.className='ros-left-content';
+      for(const child of [...panel.childNodes])if(child!==heading)content.append(child);
+      panel.append(content);
+      setup(panel,heading,content,true,()=>{});
+      panel.addEventListener('toggle',()=>{
+        heading.setAttribute('aria-expanded',String(panel.open));
+        if(compact.matches){
+          if(panel.open){content.showPopover();place(content,heading);}else content.hidePopover();
+        }else if(panel.id!=='column-popover')store(key,panel.open?'0':'1');
+      });
       continue; // Existing details keep their own persisted open state.
     }
-    const button=document.createElement('button');button.type='button';button.className='ros-side-head';
+    const button=document.createElement('button');button.type='button';button.className='ros-side-head';if(heading.id)button.id=heading.id;
     const title=document.createElement('span');title.dataset.rosText=heading.textContent;title.textContent=heading.textContent;
     const content=document.createElement('div');content.className='ros-left-content';content.id='ros-left-content-'+panel.dataset.rosPanel;
     for(const child of [...panel.childNodes])if(child!==heading)content.append(child);
@@ -142,8 +165,31 @@ window.ROSLeftPanels={install(band,{store}){
     let closed=false;try{closed=localStorage.getItem(key)==='1';}catch(_){}
     const paint=()=>{content.hidden=closed;button.setAttribute('aria-expanded',String(!closed));};
     button.setAttribute('aria-controls',content.id);paint();
-    button.addEventListener('click',()=>{closed=!closed;paint();store(key,closed?'1':'0');});
+    setup(panel,button,content,false,paint);
+    button.addEventListener('click',()=>{
+      if(compact.matches){content.togglePopover();if(content.matches(':popover-open'))place(content,button);}
+      else{closed=!closed;paint();store(key,closed?'1':'0');}
+    });
   }
+  const configure=()=>{
+    for(const item of disclosures){
+      const {panel,head,content,isDetails,paint}=item;
+      if(compact.matches){
+        if(!content.hasAttribute('popover'))item.desktopOpen=panel.open;
+        content.setAttribute('popover','auto');content.hidden=false;
+        if(isDetails)panel.open=false;
+        head.setAttribute('aria-expanded','false');
+      }else{
+        if(content.hasAttribute('popover')){
+          content.hidePopover();content.removeAttribute('popover');
+          content.style.removeProperty('left');content.style.removeProperty('top');
+          if(isDetails){panel.open=item.desktopOpen;head.setAttribute('aria-expanded',String(panel.open));}
+        }
+        if(!isDetails)paint();
+      }
+    }
+  };
+  compact.addEventListener('change',configure);configure();
 }};
 (() => {
   const $ = id => document.getElementById(id);
@@ -1261,11 +1307,14 @@ window.ROSLeftPanels={install(band,{store}){
     const readOnly=syncCueReadOnly();
     const available=!lite&&!runOnly&&Boolean(cueHost?.available?.());
     $("band-cues").hidden=!available;
+    const selected=cueHost?.selection?.();
+    $("cue-handover").hidden=!available||!cueView||!["performer","handover"].includes(selected?.kind);
+    $("cue-handover").textContent=uiText("引継ぎ Q シート");
     if(!available)return;
     const selection=cueHost.selection(),choices=cueHost.choices();
     const performers=choices.filter(c=>c.kind==='performer');
     const picker=$('cue-performer');picker.setAttribute('data-no-i18n','');picker.setAttribute('aria-label',uiText('演者'));picker.replaceChildren(new Option('—',''),...performers.map(c=>new Option(c.label,c.key)));
-    picker.value=cueView&&selection?.kind==='performer'?selection.key:'';
+    picker.value=cueView&&['performer','handover'].includes(selection?.kind)?selection.key:'';
     $('cue-performer-field').hidden=performers.length<=10;
     for(const [id,kind] of [['cue-performer-list','performer'],['cue-department-list','department']]){
       const list=$(id);list.hidden=kind==='performer'&&performers.length>10;list.replaceChildren();
@@ -1293,7 +1342,7 @@ window.ROSLeftPanels={install(band,{store}){
     const requested=cuePending;cuePending=null;
     if(!cueHost.show(requested.kind,requested.key)){showRunOfShow();return;}
     cueView=true;selectionBar.hidden=true;document.body.classList.add("showing-cue-sheet");cueFrame.hidden=false;
-    const a4=cueFrame.contentDocument.getElementById('stage-cue-sheet-view-a4');if(a4?.getAttribute('aria-pressed')==='true')a4.click();
+    const a4=cueFrame.contentDocument.getElementById('stage-cue-sheet-view-a4');if(requested.kind!=='handover'&&a4?.getAttribute('aria-pressed')==='true')a4.click();
     syncCueSkin();syncCueChoices();cuePaper?.refresh();
   }
   function mountCueFrame(){
@@ -1334,6 +1383,12 @@ window.ROSLeftPanels={install(band,{store}){
   }
   $("cue-performer").addEventListener("change",event=>{if(event.target.value)showCueSheet("performer",event.target.value);else syncCueChoices();});
 
+  $("cue-handover").addEventListener("click",()=>{
+    const selection=cueHost.selection();
+    if(cueView&&["performer","handover"].includes(selection?.kind))showCueSheet("handover",selection.key);
+    const menu=$("cue-handover").closest(".ros-left-content");
+    if(menu?.matches(":popover-open"))menu.hidePopover();
+  });
   $("cue-master").addEventListener("click",()=>showCueSheet("master","master"));
 
   $("cue-return").addEventListener("click",showRunOfShow);

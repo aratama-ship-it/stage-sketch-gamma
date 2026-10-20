@@ -1537,8 +1537,11 @@ html[data-study-renderer] .stage-scene-edit-label { display: none; }
   padding: 2px 0 6px;
   background: var(--desk-2);
 }
-.stage-pref-keys-title { margin: 0; }
-.stage-pref-shortcuts-return { flex: 0 0 auto; margin: 0; }
+/* 2026-10-19: the return button inherits .stage-minor-action's width: 100%, so with flex-basis auto it
+   filled the row and squeezed the title to one character per line (WebKit showed it vertically).
+   Keep the title on one line and let the button size to its label on the right. */
+.stage-pref-keys-title { margin: 0; flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stage-pref-shortcuts-return { flex: 0 0 auto; width: auto; margin: 0; white-space: nowrap; }
 /* The navigation links remain above the switched section at narrow widths. */
 .stage-pref-guide { position: relative; z-index: 1; }
 .stage-prefs-modal .stage-pref-guide .stage-prefs-links .stage-about-link { border-radius: 2px; }
@@ -1726,3 +1729,35 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .gamma-header-fitted.gamma-
 
 /* UI-5: the unpaginated Q-sheet uses the same whole-word heading rule. */
 .cue-sheet-table thead th{word-break:keep-all;overflow-wrap:normal}
+
+/* 2026-10-19 owner request: the preferences window needed vertical scrolling while the screen had spare width.
+   From 1800px the window takes the width it needs and the settings (and the shortcut list) flow into two columns
+   (three from 2200px), so a wide window no longer scrolls. Narrower screens keep the single column: at 1440px two
+   columns made the English row names collide with the ? and shifted a baseline (prefs-polish, prefs-row-alignment).
+   The selector repeats the skin rule's specificity (gamma-ui-tokens.css sizes the dialog to --gamma-dialog-lg). */
+@media (min-width: 1800px) {
+  html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-modal.stage-prefs-modal { width: min(2400px, calc(100vw - 80px)); }
+  .stage-prefs-modal #stage-prefs-main { columns: 2; column-gap: 40px; column-fill: balance; }
+  .stage-prefs-modal #stage-prefs-main .stage-pref-row,
+  .stage-prefs-modal #stage-prefs-main section,
+  .stage-prefs-modal #stage-prefs-main fieldset { break-inside: avoid; }
+  .stage-prefs-modal #stage-prefs-main > p:first-child { column-span: all; }
+  .stage-prefs-modal #stage-pref-keys-body { columns: 2; column-gap: 40px; column-fill: balance; }
+  .stage-prefs-modal #stage-pref-keys-body > * { break-inside: avoid; }
+}
+@media (min-width: 2200px) {
+  .stage-prefs-modal #stage-prefs-main { columns: 3; }
+  .stage-prefs-modal #stage-pref-keys-body { columns: 3; }
+}
+@media (min-width: 2200px) {
+  /* The guide column was the tallest thing in the window; two columns of links keep it under the settings. */
+  .stage-prefs-modal .stage-modal-body { grid-template-columns: 464px minmax(0, 1fr); }
+  .stage-prefs-modal .stage-pref-guide .stage-prefs-links { columns: 2; column-gap: 24px; }
+  .stage-prefs-modal .stage-pref-guide .stage-prefs-links > * { break-inside: avoid; }
+}
+/* 2026-10-19 owner: a lone full-width action at the foot of a dialog (e.g. "保存する" in the scene details) read as
+   left-aligned text in a wide bar. Centre the label where the button stands alone or in an action row; the
+   list-like uses of .stage-minor-action (export rows, cue-sheet bar, settings rows) keep the left alignment. */
+.stage-modal .stage-modal-body > .stage-minor-action,
+.stage-modal [class*="-actions"] > .stage-minor-action,
+.stage-modal .stage-action-row > .stage-minor-action { text-align: center; }

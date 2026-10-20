@@ -31,46 +31,58 @@
     } } catch(_) {}
   }
   function visible(e){const b=e.getBoundingClientRect();if(b.width<=0||b.height<=0||b.top>=innerHeight||b.bottom<=0||b.left>=innerWidth||b.right<=0)return false;const s=getComputedStyle(e);return s.display!=='none'&&s.visibility!=='hidden'&&s.clipPath==='none'&&s.opacity!=='0';}
-  function alignText(button){
-    // Cards, form labels and multi-part controls have intentional independent
-    // text positions. Centre only a control's single visible label.
-    if(button.querySelector('input,select,textarea,button,img,canvas')||button.matches(excluded)) return;
-    if(getComputedStyle(button).display.includes('grid')&&button.querySelector('svg')) return;
-    const walker=document.createTreeWalker(button,NodeFilter.SHOW_TEXT),nodes=[];let n;
-    while((n=walker.nextNode())) if(n.textContent.trim()&&!n.parentElement.closest('svg,kbd')&&visible(n.parentElement)) nodes.push(n);
-    if(nodes.length!==1) return;
-    n=nodes[0];if(n.parentElement.closest('[aria-hidden="true"]')) return;
-    if(!button.dataset.gammaJustify){const layout=getComputedStyle(button);button.dataset.gammaJustify=layout.display.includes('flex')?'preserve':['left','start'].includes(layout.textAlign)?'flex-start':['right','end'].includes(layout.textAlign)?'flex-end':'center';}
-    let label=n.parentElement;
-    if(label===button){label=document.createElement('gamma-control-text');label.className='gamma-control-text';n.before(label);label.append(n);}
-    else if(label.children.length||label.closest('svg')) return;
-    label.classList.add('gamma-control-text');
-    button.style.setProperty('--gamma-control-justify',button.dataset.gammaJustify);
-    // Font/label geometry varies across scripts and ascenders/descenders. Use
-    // actual ink bounds, not a Japanese-specific pixel adjustment.
-    const s=getComputedStyle(label);
-    const systemFont=s.fontFamily.includes('system-ui');
-    const signature=[n.textContent,s.fontFamily,s.fontSize,s.fontWeight,s.fontStyle,...(systemFont?[button.offsetHeight,button.offsetWidth]:[])].join('|');
-    if(inkSignatures.get(label)===signature) return;
-    inkSignatures.set(label,signature);
-    context.font=`${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
-    const ink=context.measureText(n.textContent.trim());
-    if(textBoxSupported&&!systemFont){
-      const shift=(ink.actualBoundingBoxAscent-ink.actualBoundingBoxDescent-capReference(context.font,n.textContent))/2;
-      if(Math.abs(shift)<=6)label.style.setProperty('--gamma-text-shift',`${shift.toFixed(3)}px`);
-      return;
+  function alignTexts(buttons){
+    // Read all candidates before changing any label. A per-button probe used to
+    // write -> force layout -> write for every control rebuilt by Undo.
+    const jobs=[];
+    for(const button of buttons){
+      if(button.querySelector('input,select,textarea,button,img,canvas')||button.matches(excluded))continue;
+      const layout=getComputedStyle(button);
+      if(layout.display.includes('grid')&&button.querySelector('svg'))continue;
+      const walker=document.createTreeWalker(button,NodeFilter.SHOW_TEXT),nodes=[];let n;
+      while((n=walker.nextNode()))if(n.textContent.trim()&&!n.parentElement.closest('svg,kbd')&&visible(n.parentElement))nodes.push(n);
+      if(nodes.length!==1)continue;
+      n=nodes[0];if(n.parentElement.closest('[aria-hidden="true"]'))continue;
+      const label=n.parentElement;
+      if(label!==button&&(label.children.length||label.closest('svg')))continue;
+      jobs.push({button,n,label,justify:button.dataset.gammaJustify||(layout.display.includes('flex')?'preserve':['left','start'].includes(layout.textAlign)?'flex-start':['right','end'].includes(layout.textAlign)?'flex-end':'center')});
     }
-    const marker=document.createElement('i');marker.style.cssText='display:inline-block;width:0;height:0;margin:0;padding:0;border:0;vertical-align:baseline';
-    label.style.setProperty('--gamma-text-shift','0px');label.append(marker);
-    const baseline=marker.getBoundingClientRect().top,b=button.getBoundingClientRect();
-    const shift=b.top+b.height/2-baseline-(ink.actualBoundingBoxDescent-ink.actualBoundingBoxAscent)/2;
-    marker.remove();
-    // Do not conceal a structural/multiline layout problem with a large shift.
-    const range=document.createRange();range.selectNodeContents(n);
-    if(range.getClientRects().length===1&&Math.abs(shift)<=6) label.style.setProperty('--gamma-text-shift',`${shift.toFixed(3)}px`);
+    for(const job of jobs){
+      const {button,n,justify}=job;
+      if(!button.dataset.gammaJustify)button.dataset.gammaJustify=justify;
+      if(job.label===button){job.label=document.createElement('gamma-control-text');n.before(job.label);job.label.append(n);}
+      job.label.classList.add('gamma-control-text');
+      if(button.style.getPropertyValue('--gamma-control-justify')!==justify)button.style.setProperty('--gamma-control-justify',justify);
+    }
+    const changed=[];
+    for(const job of jobs){
+      const {button,n,label}=job,s=getComputedStyle(label),systemFont=s.fontFamily.includes('system-ui');
+      const signature=[n.textContent,s.fontFamily,s.fontSize,s.fontWeight,s.fontStyle,...(systemFont?[button.offsetHeight,button.offsetWidth]:[])].join('|');
+      if(inkSignatures.get(label)===signature)continue;
+      inkSignatures.set(label,signature);
+      context.font=`${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+      job.font=context.font;job.ink=context.measureText(n.textContent.trim());job.cap=textBoxSupported&&!systemFont;
+      changed.push(job);
+    }
+    // Install every fallback marker together, then read every baseline together.
+    for(const job of changed)if(!job.cap){
+      job.marker=document.createElement('i');job.marker.style.cssText='display:inline-block;width:0;height:0;margin:0;padding:0;border:0;vertical-align:baseline';
+      job.label.style.setProperty('--gamma-text-shift','0px');job.label.append(job.marker);
+    }
+    for(const job of changed)if(!job.cap){
+      const {button,n,ink,marker}=job,baseline=marker.getBoundingClientRect().top,b=button.getBoundingClientRect();
+      job.shift=b.top+b.height/2-baseline-(ink.actualBoundingBoxDescent-ink.actualBoundingBoxAscent)/2;
+      const range=document.createRange();range.selectNodeContents(n);job.singleLine=range.getClientRects().length===1;
+    }
+    for(const job of changed){
+      if(job.cap)job.shift=(job.ink.actualBoundingBoxAscent-job.ink.actualBoundingBoxDescent-capReference(job.font,job.n.textContent))/2;
+      else job.marker.remove();
+      if((job.cap||job.singleLine)&&Math.abs(job.shift)<=6)job.label.style.setProperty('--gamma-text-shift',`${job.shift.toFixed(3)}px`);
+    }
   }
   function refresh(){
     pending=false;syncMarks();
+    const textButtons=[];
     for(const button of document.querySelectorAll('button,label')){
       if(!visible(button)) continue;
       const svg=button.querySelector('svg');
@@ -86,8 +98,9 @@
           } catch(_) {}
         }
       }
-      if(!button.classList.contains('gamma-icon-button')&&!button.matches(excluded)) alignText(button);
+      if(!button.classList.contains('gamma-icon-button')&&!button.matches(excluded)) textButtons.push(button);
     }
+    alignTexts(textButtons);
   }
   function schedule(){if(!pending){pending=true;requestAnimationFrame(refresh);}}
   const observer=new MutationObserver(records=>{

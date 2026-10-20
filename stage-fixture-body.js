@@ -106,7 +106,7 @@
   /* 描く。P(world)→{X,Y}。opts: color（点灯色）, lit（0〜1）, selected, ink（線色）, fill（面色）, beamDeg, px,
      topDown（真上から見る図＝レンズの光と芯は胴体の下に隠れるので出さない。胴体の上面を塗って光の根元を隠す） */
   function draw(ctx, P, geom, opts = {}) {
-    /* 既定（白線黒体）は v0.2.97 までの「白ライン」と1画素も変えない（線の透け・土台上面・消えたレンズの色）。 */
+    // Keep the established colours; the cylinder hides its far end and internal rails.
     const style = resolve(opts.bodyStyle);
     const classic = style === "white-black";
     const appearanceColors = classic ? { ink: "rgba(239,231,214,0.75)", fill: "#2b2621" } : colors(style);
@@ -132,21 +132,25 @@
     poly(geom.base.top, classic ? "#3a3128" : fill, ink);
     (geom.yoke.arms || []).forEach((arm) => poly(arm, fill, ink));
     poly(geom.yoke.bar, null, ink, false);
-    // ヘッド: 円柱の影絵を面で塗る（上から見ると胴体が光の根元を隠す）→ 後ろの輪 → レール → レンズ
+    // Opaque silhouette followed by exactly one visible cap.
     polyScreen(hull(geom.head.back.concat(geom.head.front).map(P)), fill, ink);
-    poly(geom.head.back, fill, ink);
-    geom.head.rails.forEach((rail) => poly(rail, null, ink, false));
-    if (topDown) {
-      /* 上から: レンズは胴体の下。縁だけ、点いていれば色が少し漏れて見える。 */
-      poly(geom.head.front, classic ? "#1a1613" : fill, lit > 0 && opts.color ? hexA(opts.color, 0.35 + 0.45 * lit) : (sel ? "#df6433" : ink));
-      ctx.restore();
-      return;
-    }
-    /* レンズ面＝点光源。点いていれば色で塗り、中心に白い芯。消えていれば暗いガラス。 */
-    const lens = lit > 0 && opts.color ? hexA(opts.color, 0.35 + 0.65 * lit) : classic ? "#1a1613" : fill;
-    poly(geom.head.front, lens, sel ? "#df6433" : ink);
+    // The cross product of the projection's screen derivatives points toward
+    // the viewer (screen X right, screen Y down). Unlike screen Y ordering,
+    // this works for side/overhead views and for a head aimed above the viewer.
+    const c = geom.pivot, q = P(c), step = 0.0001;
+    const derivatives = ["x", "y", "z"].map(axis => {
+      const p = P({ ...c, [axis]: c[axis] + step });
+      return { X: (p.X - q.X) / step, Y: (p.Y - q.Y) / step };
+    });
+    const view = cross({ x: derivatives[0].X, y: derivatives[1].X, z: derivatives[2].X },
+      { x: derivatives[0].Y, y: derivatives[1].Y, z: derivatives[2].Y });
+    const frontVisible = geom.dir.x * view.x + geom.dir.y * view.y + geom.dir.z * view.z > 0;
+    if (frontVisible) {
+      const lens = !topDown && lit > 0 && opts.color ? hexA(opts.color, 0.35 + 0.65 * lit) : classic ? "#1a1613" : fill;
+      poly(geom.head.front, lens, sel ? "#df6433" : ink);
+    } else poly(geom.head.back, fill, ink);
     ctx.restore();
-    if (opts.glow !== false) lensGlow(ctx, P, geom, opts);
+    if (frontVisible && !topDown && opts.glow !== false) lensGlow(ctx, P, geom, opts);
   }
   const hexA = (hex, a) => { const n = parseInt(String(hex || "#ffffff").slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${Math.max(0, Math.min(1, a))})`; };
   const deg = (rad) => Math.round(rad * 180 / Math.PI);

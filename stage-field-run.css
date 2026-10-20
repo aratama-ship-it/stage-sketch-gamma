@@ -125,6 +125,8 @@ body[data-gamma-workspace=rehearsal]{overflow:hidden}
 .field-run-action-pair button{padding:var(--sp-1,4px);font-size:var(--fs-6);line-height:1.4}
 .field-run-dialog[data-workspace=true] .field-run-side-body>*,.field-run-action-pair{flex-shrink:0}
 .field-run-dialog[data-workspace=true] .field-run-note{height:auto;min-height:calc(var(--ctrl-lg) * 4);flex:1 0 auto;overflow:visible;margin-top:var(--sp-2,8px)}
+/* 2026-10-19 owner request: make the run notes easier to tell apart — a slightly thicker frame and a surface one step off the desk. Kept subtle on purpose. */
+.field-run-dialog[data-workspace=true] .field-run-note{box-sizing:border-box;padding:var(--sp-2,8px);border:2px solid var(--edge,var(--line-dark));background:var(--desk-3)}
 .field-run-dialog[data-workspace=true] .field-run-note textarea{min-height:calc(var(--ctrl-lg) * 2);height:calc(var(--ctrl-lg) * 2);resize:vertical}
 .field-run-dialog[data-workspace=true] .field-run-note-head{gap:var(--sp-1,4px)}
 .field-run-dialog[data-workspace=true] .field-run-note-head strong{flex:1 0 30%}
@@ -215,3 +217,7 @@ html:has(body[data-gamma-workspace=rehearsal]){scrollbar-gutter:auto;overflow:hi
 /* RO-4: share the stage scene-step component, with a centred reference title. */
 .field-run-dialog[data-workspace=true] .field-run-band.stage-scene-bar{margin:0;padding:0;border:0;background:transparent}
 .field-run-dialog[data-workspace=true] .field-run-band .field-current{text-align:center}
+
+/* S2-C: only present when Mac copies can restore missing records. Existing theme/hit tokens. */
+.field-run-restore{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2,8px);padding:var(--sp-2,8px);border:1px solid var(--brass);background:var(--desk-2);color:var(--milk);font-size:var(--fs-6);flex:0 0 auto;overflow-wrap:anywhere}
+.field-run-restore[hidden]{display:none}.field-run-restore>span{flex:1 1 100%;min-width:0}

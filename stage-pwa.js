@@ -49,7 +49,7 @@
   }
   async function ensureFeatureGroup(group, {notify = true} = {}) {
     // ネイティブ版・file:// は同梱資産を使う。SW のない環境は従来の読み込み経路。
-    if (window.stageSketchBridge || window.location.protocol === 'file:' || !('serviceWorker' in navigator)) return true;
+    if (window.STAGE_RUNTIME.isMac() || window.location.protocol === 'file:' || !('serviceWorker' in navigator)) return true;
     try {
       const worker = navigator.serviceWorker.controller || (await navigator.serviceWorker.getRegistration())?.active;
       if (!worker) return true;
@@ -66,7 +66,7 @@
 
   // file:// では Service Worker を登録できない。公開URLやローカルHTTPでは
   // 同じ stage.html をそのままPWAとして使える。
-  if (window.stageSketchBridge
+  if (window.STAGE_RUNTIME.isMac()
     || !("serviceWorker" in navigator)
     || window.location.protocol === "file:") return;
 

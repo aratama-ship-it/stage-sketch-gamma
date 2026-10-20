@@ -36,7 +36,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.77</span>
+                <span class="stage-app-version">0.3.79</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2829,16 +2829,19 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261017-v0377">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261019-v0379">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0377-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0377-title">v0.3.77</h3><time datetime="2026-10-17">2026-10-17</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0379-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0379-title">v0.3.79</h3><time datetime="2026-10-19">2026-10-19</time></header>
       <ul>
-        <li>リハーサルで記録図の読み込みが止まっても、ランノート・GO・ラン一覧をそのまま使えるようにしました。</li>
-        <li>画面をスクロールしたときに、情報バーが上の見出しに少し重なっていたのを直しました。</li>
-        <li>英語・韓国語・中国語の訳語をそろえ、不自然な言い回しを直しました。</li>
-        <li>プロジェクトファイルに、このアプリが知らない項目やファイルが入っていても、読み込んで書き出したときに残すようにしました。合計 32 MiB・200 件を超えるときは、持ち越せないことを知らせます。</li>
+        <li>Mac 版でサンプルライブラリから入手すると途中で止まり、その後の動きが不安定になることがあったのを直しました。プロジェクトを閉じた直後にサンプルライブラリや終了が効かなくなることがあったのも直しました。</li>
+        <li>Mac 版で、リハーサル記録を Mac が管理するフォルダへ自動で控えるようにしました。この端末に無い記録が控えにあるときは、リハーサル画面から読み込めます。控えはファイル メニューの「リハーサル記録の控えを Finder で表示」で確かめられます。</li>
+        <li>元に戻す（⌘Z・一つ戻す）の反応を速くしました。リハーサル記録の図を操作しているときは、上部の「一つ戻す／やり直す」で線を戻せます。Mac 版の編集メニューに「やり直す」を足しました。</li>
+        <li>照明デザインの正面図に幕を描き、客席側の灯体は描かないようにしました。灯体の筒が透けて見えないようにしました。</li>
+        <li>進行表で演者を選んだときの出力に「引継ぎ Q シート」を戻しました。幅の狭い画面でも上の操作欄が伸びないようにし、パネルの見出しの色をそろえました。</li>
+        <li>アイコンの大きさと線の太さをそろえ、紙の明るい配色で全体表の題が見えにくかったのを直しました。広い画面では環境設定の項目を並べて表示します。</li>
+        <li>「機能をさがす」にショーの内容が入っていたのを直し、言語名でも探せるようにしました。ほかに、見本の演者一覧・袖幕の枚数の反映・Lite 版のオフライン表示などを直しました。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3785,6 +3788,7 @@
     <span>全画面を終了</span><kbd data-no-i18n>Esc</kbd>
   </button>
 </div></div>
+<script src="/study-assets/stage-runtime.js?v=20261019-v0379"></script>
 <script src="/study-assets/gamma-light-model.js?v=20261013-v0359"></script>
 <script src="/study-assets/stage-venues.js?v=20261007-v0326"></script>
 <script src="/study-assets/stage-venue-lines.js?v=2026091992"></script>
@@ -3793,7 +3797,7 @@
 <script src="/study-assets/stage-virtual-room.js?v=20261009-v0337"></script>
 <script src="/study-assets/stage-reorder-warning.js?v=20261009-v0335"></script>
 <script src="/study-assets/stage-scrim.js?v=20261009-v0335"></script>
-<script src="/study-assets/stage-fixture-body.js?v=20261009-v0335"></script>
+<script src="/study-assets/stage-fixture-body.js?v=20261019-v0379"></script>
 <script src="/study-assets/stage-lighting-plan-overlay.js?v=20261005-batch98"></script>
 <script src="/study-assets/light-design/rig-engine.js?v=20261011-v0347"></script>
 <script src="/study-assets/light-design/laser-effects.js?v=20261005-batch98"></script>
@@ -3803,9 +3807,9 @@
 <script src="/study-assets/stage-idle-motion.js?v=20261014-v0362"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
 <script src="/study-assets/gamma-ui.js?v=20261017-v0377"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261017-v0377"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261019-v0379"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261013-v0360"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="/study-assets/stage-sketch.js?v=20261017-v0377"></script>
-<script src="/study-assets/gamma-appearance.js?v=20261016-v0374"></script>
+<script src="/study-assets/stage-sketch.js?v=20261019-v0379"></script>
+<script src="/study-assets/gamma-appearance.js?v=20261019-v0379"></script>
 </body></html>

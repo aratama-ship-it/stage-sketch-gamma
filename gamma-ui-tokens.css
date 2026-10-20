@@ -432,6 +432,7 @@ html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-can
 html[data-stage-skin="paper-light"] .stage-header-logo { filter: brightness(.18); }
 html[data-stage-skin="paper-light"] .stage-gamma-label { color: var(--milk-dim); }
 html[data-stage-skin="paper-light"] #gamma-cuesheet-workspace .stage-cue-sheet-scroll { color-scheme: light; }
+html[data-stage-skin="paper-light"] #stage-cue-sheet-view-title { color: var(--milk); }
 html[data-stage-skin="paper-light"] [data-stage-ui-skin="paper-light"] .stage-pref-skin-swatch,
 [data-stage-ui-skin="paper-light"] .stage-pref-skin-swatch {
   --skin-sample-base: #f2eee5; --skin-sample-panel: #fffcf5;
@@ -639,6 +640,17 @@ html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-mod
 .gamma-short-select-list button { display:block;width:100%;min-height:var(--ctrl-sm);padding:6px 10px;text-align:left;white-space:nowrap;color:var(--milk);font:inherit;letter-spacing:inherit; }
 .gamma-short-select-list button[aria-selected="true"] { background:var(--gamma-selected-bg);box-shadow:inset 0 -2px 0 var(--brass); }
 .stage-view-select .gamma-short-select { width:100%; }
+/* B32: the replacement select inherits the original view-selector width. */
+.stage-center-bar { --stage-view-select-width:72px; }
+.stage-center-bar .stage-view-select { width:var(--stage-view-select-width); }
+html[data-stage-layout="bottom"] .stage-center-bar { --stage-view-select-width:var(--stage-bottom-view-select-width); }
+html[data-stage-layout="bottom"] .stage-scene-step-left { flex-shrink:0; }
+
+/* Keep the fixed status box; centre its painted text without changing the font. */
+.stage-cast-status {
+  --stage-status-ink-offset:.5px;
+  padding:calc(2px - var(--stage-status-ink-offset)) 8px calc(2px + var(--stage-status-ink-offset));
+}
 
 .stage-view-select:has(.gamma-short-select)::after { display:none; }
 
@@ -890,6 +902,8 @@ html[data-stage-skin] .gamma-icon-button svg {
 html[data-stage-skin] .gamma-icon-button svg :is(path,line,polyline,polygon,circle,rect,ellipse) {
   vector-effect:non-scaling-stroke;
 }
+/* Display reset is needed only while a diagram is zoomed or panned. */
+html[data-stage-skin] :is(#stage-front-zoom,#stage-plan-zoom)[hidden] { display:none!important; }
 html[data-stage-skin] :is(button,label):has(> .gamma-control-text) {
   display:inline-flex;align-items:center;
 }
@@ -946,3 +960,32 @@ html[data-stage-skin] #stage-session-start {
 /* Shared iframe menus use the top layer so diagram and sidebar overflow cannot clip them. */
 .gamma-short-select-list[popover] button { max-width:100%; overflow:hidden; text-overflow:ellipsis; }
 .gamma-short-select-list[popover]::backdrop { background:transparent; pointer-events:none; }
+
+:root { --gamma-icon-glyph-28:13px; }
+/* B33 Q2 candidate: drawn extents follow the existing token tiers. No hit box changes. */
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .gamma-icon-button:not(#stage-prefs-btn):not(#stage-timeline-settings-trigger) svg :is(path,line,polyline,polygon,circle,rect,ellipse) {
+  stroke-width:var(--gamma-icon-stroke-32);
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-cast-lock > svg {
+  width:calc(var(--gamma-icon-glyph-28) * 1.40625); height:calc(var(--gamma-icon-glyph-28) * 1.40625);
+}
+/* E1-#20 stays at 0.8. The unscaled drawing is 13px in both 28px controls. */
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(.stage-cast-remove,.stage-scene-row-delete) > svg {
+  width:calc(var(--gamma-icon-glyph-28) * 2); height:calc(var(--gamma-icon-glyph-28) * 2);
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-scene-row-delete > svg :is(path,line) {
+  stroke-width:var(--gamma-icon-stroke-28);
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) [data-venue-editor-extension-shape] > svg {
+  width:calc(var(--gamma-icon-glyph) * 1.411764706)!important; height:calc(var(--gamma-icon-glyph) * 1.411764706)!important; flex:0 0 calc(var(--gamma-icon-glyph) * 1.411764706);
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) [data-venue-editor-extension-shape="polygon"] > svg {
+  width:calc(var(--gamma-icon-glyph) * 1.5)!important; height:calc(var(--gamma-icon-glyph) * 1.5)!important; flex:0 0 calc(var(--gamma-icon-glyph) * 1.5);
+}
+html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) [data-venue-editor-extension-shape] > svg :is(path,rect,circle) {
+  vector-effect:non-scaling-stroke; stroke-width:var(--gamma-icon-stroke-32);
+}
+/* renderTransport replaces this SVG; CSS must not depend on a later appearance scan. */
+html[data-gamma-embedded] #t-play > svg {
+  width:calc(var(--gamma-icon-glyph) * 1.666666667)!important; height:calc(var(--gamma-icon-glyph) * 1.666666667)!important;
+}

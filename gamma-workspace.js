@@ -59,21 +59,24 @@
     pairFrame=0;
     if(!pairStack || !pairColumn) return;
     const canvases=[document.getElementById('stage-canvas'),document.getElementById('stage-plan-canvas')].filter(Boolean);
-    const active=mode==='normal' && pairStack.classList.contains('stage-short-default-pair')
+    // Fullscreen temporarily moves a canvas out of its board. Fit only the
+    // complete pair in this stack, and clear widths on the original boards.
+    const boards=canvases.map(c=>c.closest('.stage-board-frame')).filter(b=>b && pairStack.contains(b));
+    const active=boards.length===2 && mode==='normal' && pairStack.classList.contains('stage-short-default-pair')
       && !pairStack.classList.contains('is-single-view')
       && !document.documentElement.matches('.stage-pwa-tablet,.stage-phone-viewer')
       && window.matchMedia('(min-width:960px) and (min-height:760px)').matches
       && !window.matchMedia('(max-width:1366px) and (max-height:768px)').matches;
-    if(!active) { canvases.forEach(c=>c.closest('.stage-board-frame').style.removeProperty('--stage-default-pair-width')); return; }
+    if(!active) { pairStack.querySelectorAll('.stage-board-frame').forEach(b=>b.style.removeProperty('--stage-default-pair-width')); return; }
     const columnRect=pairColumn.getBoundingClientRect(), stackRect=pairStack.getBoundingClientRect();
     // Ignore the current scroll position: scrolling must not resize a diagram.
     const top=stackRect.top-columnRect.top+pairColumn.scrollTop;
     const style=getComputedStyle(pairColumn), gap=parseFloat(getComputedStyle(pairStack).rowGap)||0;
     const available=pairColumn.clientHeight-top-(parseFloat(style.paddingBottom)||0)-gap;
-    const bars=canvases.map(c=>c.closest('.stage-board-frame').querySelector('.stage-canvas-bar').getBoundingClientRect().height);
-    const borders=canvases.map(c=>{const s=getComputedStyle(c.closest('.stage-board-frame'));return parseFloat(s.borderTopWidth)+parseFloat(s.borderBottomWidth);});
+    const bars=boards.map(b=>b.querySelector('.stage-canvas-bar').getBoundingClientRect().height);
+    const borders=boards.map(b=>{const s=getComputedStyle(b);return parseFloat(s.borderTopWidth)+parseFloat(s.borderBottomWidth);});
     const height=Math.max(1,(available-bars.reduce((a,b)=>a+b,0)-borders.reduce((a,b)=>a+b,0))/2);
-    canvases.forEach(c=>c.closest('.stage-board-frame').style.setProperty('--stage-default-pair-width',`${Math.floor(height*16/9)}px`));
+    boards.forEach(b=>b.style.setProperty('--stage-default-pair-width',`${Math.floor(height*16/9)}px`));
   }
   function scheduleDefaultPair() { if(!pairFrame) pairFrame=requestAnimationFrame(syncDefaultPair); }
   if(pairStack && pairColumn) {
@@ -265,7 +268,7 @@
     if(!hostUndo || !hostRedo) return;
     if(playbackPreview) {hostUndo.disabled=true;hostRedo.disabled=true;return;}
     // セリフ編集画面は本体の取り消し履歴をそのまま使う（台本の変更は本体の checkpoint に積まれる）
-    if(mode==='script' || mode==='cuesheet' || mode==='run-of-show') return;
+    if(mode==='script' || mode==='cuesheet' || mode==='run-of-show' || mode==='rehearsal') return;
     if(mode==='normal') {
       captureHostHistory();
       hostUndo.disabled=hostHistory.undo;hostRedo.disabled=hostHistory.redo;
@@ -280,7 +283,7 @@
     hostUndo.disabled=!lightStatus?.canUndo;hostRedo.disabled=!lightStatus?.canRedo;
   }
   function runLightHistory(event,direction) {
-    if(mode==='normal' || mode==='script' || mode==='cuesheet' || mode==='run-of-show') return;
+    if(mode==='normal' || mode==='script' || mode==='cuesheet' || mode==='run-of-show' || mode==='rehearsal') return;
     event.preventDefault();event.stopImmediatePropagation();
     if(playbackPreview) return;
     if(mode==='venue-setup') window.SHOSAI_VENUE_EDITOR?.[direction]?.();
@@ -294,7 +297,7 @@
   hostUndo?.addEventListener('click',event=>runLightHistory(event,'undo'),true);
   hostRedo?.addEventListener('click',event=>runLightHistory(event,'redo'),true);
   document.addEventListener('keydown',event=>{
-    if(mode==='normal' || !['z','Z'].includes(event.key) || !(event.metaKey||event.ctrlKey) || event.altKey) return;
+    if(mode==='normal' || mode==='rehearsal' || !['z','Z'].includes(event.key) || !(event.metaKey||event.ctrlKey) || event.altKey) return;
     const target=event.target, tag=target?.tagName;
     /* 2026-09-18: 選択欄（<select>）は文字を打つ所ではないので ⌘Z を譲らない。
        焦点が選択欄にあるあいだ取り消しが効かない、という報告があった（実測で再現）。 */
@@ -885,7 +888,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261017-v0377'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261019-v0379'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;

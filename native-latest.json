@@ -1,9 +1,9 @@
 {
-  "version": "0.3.76",
+  "version": "0.3.79",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.76/stage-sketch-gamma-mac-0.3.76.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.79/stage-sketch-gamma-mac-0.3.79.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "リハーサルでは窓に合わせて図が大きく見える並びを自動で選び、セリフタブでは台本の列が広がりすぎないようにしました。進行表の左の帯で操作が切れていたのを直しました。",
-  "updated": "2026-10-17",
-  "build": 88
+  "notes": "サンプルライブラリからの入手が途中で止まることがあったのを直し、リハーサル記録を Mac が管理するフォルダへ自動で控えるようにしました。元に戻すを速くし、照明デザインの正面図に幕を描くなど、見た目と操作の不具合をまとめて直しました。",
+  "updated": "2026-10-19",
+  "build": 90
 }

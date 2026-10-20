@@ -16,8 +16,14 @@
  *   （画面の切り替えなので押して開く）。
  * ★保存形式・読込・自動保存・音楽・共有・更新処理には触れない。
  */
-(() => {
+(function initGammaFeatureSearch() {
   "use strict";
+  // Routes depend on the restored show's UI, including Lite's initial workspace.
+  // Publish the search API only after those controls can be indexed.
+  if (!window.GAMMA_STAGE_UI_READY) {
+    window.addEventListener("stage-gamma-ui-ready", initGammaFeatureSearch, { once: true });
+    return;
+  }
   const doc = document;
   const modal = doc.getElementById("stage-feature-search-modal");
   const backdrop = doc.getElementById("stage-feature-search-backdrop");
@@ -190,7 +196,12 @@
   };
   let lastBlocked = "";
   const describe = (n) => `${n.tagName.toLowerCase()}${n.id ? "#" + n.id : ""}${n.className && typeof n.className === "string" ? "." + n.className.trim().split(/\s+/).join(".") : ""}`;
+  // Keep the native select's stable identity/aliases in the index, but route
+  // and focus through the visible control supplied by the shared select UI.
+  const controlOf = (el) => el.matches("#stage-lang.gamma-short-select-native")
+    ? el.closest(".gamma-short-select")?.querySelector(".gamma-short-select-trigger") || el : el;
   function routeTo(el, depth = 0, chain = new Set()) {
+    el = controlOf(el);
     if (depth > 6 || chain.has(el)) { lastBlocked = "depth:" + describe(el); return null; }
     const own = new Set(chain); own.add(el);
     const ancestors = [];
@@ -544,7 +555,7 @@
     if (!row || going) return;
     if (row.kind === "guide") { openGuide(row.query); return; }
     going = true;
-    let target = row.el;
+    let target = controlOf(row.el);
     const name = row.label.shown;
     /* 窓を開くと中身を作り直すもの（環境設定）がある。索引の要素が外れていたら、同じ名前の要素を引き直す */
     const relocate = () => {

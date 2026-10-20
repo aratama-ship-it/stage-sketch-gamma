@@ -189,6 +189,8 @@ html[data-gamma-embedded] #conflicts .btn { white-space:normal; height:auto; tex
 
 /* Preserve the deliberately compact controls inside the drawing itself. */
 html[data-gamma-embedded] :is(.planwrap .btn.small,.sec .btn.small,.fmode button) { min-height:24px; font-size:10.5px; padding:2px 8px; }
+/* Display toggles moved into the front header; keep their shared toolbar scale. */
+html[data-gamma-embedded] #showtoggles button { min-height:var(--ctrl-sm); font-size:var(--fs-3); padding:3px 8px; }
 /* Translated captions may be wider: retain every action and wrap the compact filter row. */
 html[data-gamma-embedded]:lang(en) .filters { flex-wrap:wrap; gap:2px; }
 html[data-gamma-embedded]:lang(en) .filters button { flex:1 1 42px; margin:0; }
@@ -257,3 +259,9 @@ html[data-gamma-embedded] .dialog .in.gamma-light-dialog { max-height:calc(var(-
 
 /* UI-3: controls use the same shared --sans as the host; headings keep their own rules. */
 html[data-gamma-embedded] :is(button,input,select,textarea,label) { font-family:var(--sans); }
+
+/* 2026-10-19 owner: the "どの席から見るか" short select in the front-view header cut the top and bottom of its Japanese
+   label. The shared trigger trims the label box to cap height for optical centring (keep that: select-alignment
+   checks it) and hides overflow for the ellipsis; this one select has short fixed labels, so let its glyphs
+   paint outside the trimmed box instead. Scoped to the front-view header of the lighting tab only. */
+html[data-gamma-embedded] .fmode .gamma-short-select-trigger > .gamma-control-text { overflow: visible; text-overflow: clip; }
