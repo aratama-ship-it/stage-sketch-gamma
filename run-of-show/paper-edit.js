@@ -1,6 +1,6 @@
 "use strict";
 // Edits the visible fragment in place. Canonical data belongs to the native host; editor.js coordinates pagination.
-window.ROSPaperEditor={create({frame,read,commit,onDraft,onState,onBegin=()=>{},continuous=()=>false}){
+window.ROSPaperEditor={create({frame,read,commit,onDraft,onState,onBegin=()=>{},continuous=()=>false,text=key=>key}){
   let active=null,pending=null;
   const selector="[data-direct-field],[data-direct-info]";
   const descriptor=node=>({itemId:node.dataset.directItem||null,key:node.dataset.directField||node.dataset.directInfo,info:!!node.dataset.directInfo,type:node.dataset.directType||"text",label:node.getAttribute("aria-label"),start:node.dataset.sourceStart===undefined?null:Number(node.dataset.sourceStart),end:node.dataset.sourceEnd===undefined?null:Number(node.dataset.sourceEnd)});
@@ -13,13 +13,14 @@ window.ROSPaperEditor={create({frame,read,commit,onDraft,onState,onBegin=()=>{},
     for(let i=at+direction;i>=0&&i<nodes.length;i+=direction){const next=descriptor(nodes[i]);if(!sameColumn||(!next.info&&next.key===d.key))return next;}
     return null;
   }
-  function state(text){onState(text,!!active);}
+  function state(key){onState(text(key),!!active);}
   function finish(cancel=false,next=null){
     if(!active)return true;
     const edit=active;
+    if(!cancel)edit.input.setCustomValidity("");
     if(!cancel&&!edit.input.checkValidity()){edit.input.reportValidity();state("入力を確認してください。Escで取り消せます。");return false;}
     const value=edit.input.value,full=edit.prefix+value+edit.suffix;
-    if(!cancel){const error=commit(edit.desc,full,true);if(error){edit.input.setCustomValidity(error);edit.input.reportValidity();state(error);return false;}}
+    if(!cancel){const error=commit(edit.desc,full,true);if(error){edit.input.setCustomValidity(text(error));edit.input.reportValidity();state(error);return false;}}
     active=null;edit.node.classList.remove("paper-editing-field");edit.node.replaceChildren(...edit.children);edit.node.setAttribute("role","button");edit.node.tabIndex=0;
     if(cancel||full===edit.original){state(cancel?"この欄の入力を取り消しました。":"紙面の欄をクリックして編集できます。");if(next)begin(locate(next));else edit.node.focus({preventScroll:true});return true;}
     pending={desc:next||edit.desc,edit:!!next};commit(edit.desc,full,false);state("変更を反映し、ページを整えています…");return true;

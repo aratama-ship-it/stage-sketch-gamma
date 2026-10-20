@@ -20,10 +20,10 @@
 .field-run-side{min-width:0;overflow:auto;scrollbar-gutter:stable;contain:layout;background:var(--desk-2);border:1px solid var(--edge)}
 .field-run-side-body{display:flex;flex-direction:column;gap:var(--fr-gap);padding:var(--fr-gap);min-width:0;overflow-wrap:anywhere}
 .field-run-side-body[hidden],.field-run-section[hidden]{display:none}
-.field-run-side .field-current{font-size:var(--fr-scene-size);font-weight:700;line-height:1.25;margin:0;color:var(--paper);min-width:0}
+.field-run-side .field-current{font-size:var(--fr-scene-size);font-weight:700;line-height:1.25;margin:0;color:var(--fr-current-text,var(--paper));min-width:0}
 .field-run-side .field-side-label,.field-run-side .field-side,.field-run-cues{font-size:var(--fr-side-label);color:var(--milk-dim);margin:0;white-space:normal}
 .field-run-side .field-clock{font-size:var(--fr-clock-size);font-weight:700;font-variant-numeric:tabular-nums;white-space:normal;line-height:1.25}
-.field-run-side #field-run-go{height:var(--field-go-height);min-height:var(--field-go-height);font-size:var(--fr-go-size);background:var(--paper);color:var(--desk);width:100%}
+.field-run-side #field-run-go{height:var(--field-go-height);min-height:var(--field-go-height);font-size:var(--fr-go-size);background:var(--paper);color:var(--fr-go-text,var(--desk));width:100%}
 .field-run-dialog .field-run-side .stage-panel-head{display:flex;align-items:center;width:100%;min-height:max(var(--ctrl-md),var(--fr-hit));padding:var(--gamma-panel-head-padding);font-size:var(--fs-4);border:0;border-bottom:1px solid var(--edge);text-align:left;color:var(--milk);background:var(--desk-2)}
 .field-run-side .stage-panel-title{flex:1;min-width:0;letter-spacing:var(--gamma-panel-title-tracking)}
 
@@ -77,7 +77,7 @@ html.stage-pwa-tablet body[data-gamma-workspace=rehearsal] #stage-timeline-panel
 .field-run-dialog[data-workspace=true] .field-run-main{overflow:hidden;min-height:0;gap:var(--sp-2,8px)}
 .field-run-dialog[data-workspace=true] .field-run-band{display:flex;flex-wrap:wrap;gap:var(--sp-2,8px);flex-shrink:0}
 .field-run-dialog[data-workspace=true] .field-run-band[hidden]{display:none}
-.field-run-dialog[data-workspace=true] .field-run-band .field-current{flex:1;min-width:0;font-size:var(--fs-8);line-height:1.4;text-align:left;color:var(--paper);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.field-run-dialog[data-workspace=true] .field-run-band .field-current{flex:1;min-width:0;font-size:var(--fs-8);line-height:1.4;text-align:left;color:var(--fr-current-text,var(--paper));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .field-run-dialog[data-workspace=true] .field-run-band button:not(.stage-scene-step-btn){font-size:var(--fs-6)}
 .field-run-dialog[data-workspace=true] #field-run-follow{font-size:var(--fs-4);min-height:var(--ctrl-md);flex-basis:100%}
 .field-run-dialog[data-workspace=true] .field-run-note{height:var(--fr-note-height);min-height:calc(var(--fr-hit) * 2.5);overflow:auto;gap:var(--sp-1,4px)}
@@ -88,7 +88,7 @@ html.stage-pwa-tablet body[data-gamma-workspace=rehearsal] #stage-timeline-panel
 .field-run-dialog[data-workspace=true] .field-run-note .field-run-original{display:none}
 .field-note-resize{height:var(--sp-2,8px);min-height:var(--sp-2,8px);flex-shrink:0;cursor:row-resize;touch-action:none;border-top:1px solid var(--edge);border-bottom:1px solid var(--edge)}
 .field-note-resize:focus-visible{outline:2px solid var(--brass)}
-.field-progress{margin:0;font-size:var(--fs-8);line-height:1.4;font-weight:700;color:var(--paper)}
+.field-progress{margin:0;font-size:var(--fs-8);line-height:1.4;font-weight:700;color:var(--fr-current-text,var(--paper))}
 .field-run-attempt{margin:0;font-size:var(--fs-6);color:var(--milk)}
 .field-run-save-state{font-size:var(--fs-6);color:var(--milk)}
 .field-run-dialog[data-workspace=true] .field-run-side-body{gap:var(--sp-2,8px)}
@@ -221,3 +221,15 @@ html:has(body[data-gamma-workspace=rehearsal]){scrollbar-gutter:auto;overflow:hi
 /* S2-C: only present when Mac copies can restore missing records. Existing theme/hit tokens. */
 .field-run-restore{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2,8px);padding:var(--sp-2,8px);border:1px solid var(--brass);background:var(--desk-2);color:var(--milk);font-size:var(--fs-6);flex:0 0 auto;overflow-wrap:anywhere}
 .field-run-restore[hidden]{display:none}.field-run-restore>span{flex:1 1 100%;min-width:0}
+
+/* B56 A1-05: keep narrow diagrams and the desk in one scrollable column.
+   This follows the desktop arrangement rules so they cannot restore two columns. */
+@media(max-width:760px){
+ .field-run-dialog[data-workspace=true]{height:calc(100dvh - var(--gamma-rehearsal-top,110px));min-height:0;max-height:100dvh;overflow:hidden}
+ .field-run-dialog[data-workspace=true] .field-run-content{overflow-y:auto;overflow-x:hidden}
+ .field-run-dialog[data-workspace=true] .field-run-work,
+ .field-run-dialog[data-workspace=true] .field-side-collapsed{display:flex;flex-direction:column;height:auto;min-height:100%;min-width:280px}
+ .field-run-dialog[data-workspace=true] .field-run-main{flex:0 0 60dvh;height:60dvh;min-width:280px}
+ .field-run-dialog[data-workspace=true] .field-run-side{flex:0 0 auto;min-width:280px;overflow:visible}
+ .field-run-dialog[data-workspace=true] .field-run-side-body{overflow:visible}
+}

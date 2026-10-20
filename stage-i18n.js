@@ -32,6 +32,30 @@
 
   const TEXT = {
 
+    "配布ページに合言葉を付けました。合言葉を入れると Mac 版の入手先が表示され、同じブラウザでは 30 日間おぼえます。": "The download page now asks for a passphrase. Once entered, the Mac app download appears, and the same browser remembers it for 30 days.",
+
+    "進行表の左のパネルを、つまみ（⠿）のドラッグで並べ替えられるようにしました。順番は次に開いたときも保ちます。「表示」のパネルは上部に常に開いた帯にし、各パネルの中の選択欄やボタンを幅いっぱいに伸ばしました。": "The left panels of the Run of show can be reordered by dragging the grip (⠿), and the order is kept the next time you open it. The “View” panel is now a band that always stays open at the top, and the selects and buttons inside each panel stretch to the full panel width.",
+
+    "Mac 版のショー欄は「プロジェクトを開く…」だけにしました（「ショーを読み込む」と同じ動きだったため）。ブラウザ版は今までどおりです。": "In the Mac app, the show column now has only “Open project…” (“Load show” did the same thing). The browser edition is unchanged.",
+
+    "照明の「かんたん」画面で時間だけを変えても、詳細で調整した明るさ・色・照射点などを書き換えないようにしました。「新しいキューを作る」の選択が既存のキューに戻ってしまい、上書きすることがあったのも直しました。": "In the Simple lighting screen, changing only the time no longer rewrites the intensity, colour, aim and other values adjusted in the detailed screen. Also fixed “Create new cue” reverting to an existing cue and overwriting it.",
+
+    "照明デザインで、設定を貼り付けたときに貼り付け先のバーンドアが残る、グループ内の灯体が検索や絞り込みに掛からない、無効にした Q から「次へ」で先頭に戻る、時間の範囲外の値を受け付ける、下げだけの遅れが「0:00」と出る、を直しました。": "Lighting design fixes: pasting settings no longer leaves the target’s barn doors behind, fixtures inside groups are now found by search and filters, “Next” from a disabled cue no longer jumps to the first cue, out-of-range times are rejected before they are applied, and a delay set only on the fade-out no longer shows as “0:00”.",
+
+    "照明の取り消し／やり直しでシーンの番号と所属が失われる件、LX Q シートのシーン欄が通し番号になる件、シーン一覧の時間の変更が取り消しの履歴に入らない件を直しました。": "Fixed lighting undo/redo losing the scene number and section, the LX Q sheet showing running numbers instead of hierarchy numbers, and scene-list time edits not entering the undo history.",
+
+    "全場面共通の固定灯の色・照射点の変更が別案に反映されない件、機材を複製すると色方式・回転数・設置位置名などが失われる件、登録キューが使う灯体を削除すると照明を適用できなくなる件を直しました。": "Fixed changes to the shared fixed-fixture colour and aim not reaching alternatives, duplicated fixtures losing colour mode, rotation speed, mount name and other settings, and lighting failing to apply after deleting a fixture used by registered cues.",
+
+    "利用規約・著作権・プライバシーの表記を、使い方の冊子の冒頭・ログイン画面・Mac 版の「このアプリについて」に入れました。": "Terms of use, copyright and privacy notes are now shown at the start of the manual, on the login screen and in the Mac app’s About panel.",
+
+    "環境設定の「?」が円の中心より上に見えていたのを直しました。リハーサル画面で一部の枠線が出ていなかったのを直しました。": "Fixed the “?” in Preferences sitting above the centre of its circle, and some missing frame lines in the Rehearsal screen.",
+
+    "共有（即時共有）を受け取ったとき、同じ作品 ID の自分のショーの保存世代が消えることがあったのを直しました。受け取ったショーは別の項目として棚に入り、参加前の内容は残ります。別のタブで保存が止まっているときに、保存が成功したように表示されていたのも直しました。": "Fixed receiving a live share (same project ID) sometimes removing your own show’s saved generations. A received show is now kept as a separate shelf item and your pre-join content stays. Also fixed a tab whose saving had been stopped showing a successful save.",
+
+    "明るい白の配色で、Mac 版の入手先のボタン・書き出し窓の選択中の文字・かんたん照明の見出し・リハーサルの進行位置と GO が読みにくかったのを直しました。描画解像度の選択の文字が欠けていたのと、外国語で起動したときの言語の札が日本語のままだったのも直しました。進行表の入力エラーの文言を 4 言語にしました。": "In the light paper theme, fixed hard-to-read text on the Mac download button, the selected items in the export dialog, Simple lighting headings and the Rehearsal position and GO. Also fixed clipped text in the rendering-resolution select and the language badge staying Japanese when launched in another language. Run-of-show input errors are now shown in all four languages.",
+
+    "共有サーバー（ログイン）の安全性を上げました。ログイン本文の大きさの制限をすべての形式に適用し、制限中は重い認証処理を行わず、別サイトからのログイン送信を受け付けず、秘密らしい名前のファイルは配信しません。": "Hardened the share server (login): the body size limit applies to every form format, heavy authentication work is skipped while rate-limited, login posts from other sites are rejected, and files with secret-looking names are never served.",
+
     "Mac 版でサンプルライブラリから入手すると途中で止まり、その後の動きが不安定になることがあったのを直しました。プロジェクトを閉じた直後にサンプルライブラリや終了が効かなくなることがあったのも直しました。": "Fixed getting a show from the sample library in the Mac app, which could stop partway and leave the app unstable. Also fixed the sample library and Quit sometimes not responding right after closing a project.",
 
     "Mac 版で、リハーサル記録を Mac が管理するフォルダへ自動で控えるようにしました。この端末に無い記録が控えにあるときは、リハーサル画面から読み込めます。控えはファイル メニューの「リハーサル記録の控えを Finder で表示」で確かめられます。": "The Mac app now keeps automatic copies of rehearsal records in a folder it manages. If the copies hold records this device does not have, you can load them from the Rehearsal screen. The File menu has an item that shows the copies in Finder.",
@@ -5168,3 +5192,12 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 Object.assign(window.SHOSAI_I18N_PACKS['en'].text, {"入手を中止しています…": 'Cancelling sample acquisition…'});
 
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"別の処理が続いています。完了してから、もう一度お試しください。": "Another operation is still running. Wait for it to finish and try again."});
+
+// B57 A4-05: paper validation keys, resolved by run-of-show uiText at display time.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "秒数は0以上、または未定の空欄にしてください。": "Enter a non-negative number of seconds, or leave blank if undecided.",
+  "この欄は10万文字以内で入力してください。": "Keep this field within 100,000 characters.",
+  "各部の指示は100行以内で入力してください。": "Keep department instructions within 100 lines.",
+  "舞台と連携した項目の時間を入力してください。": "Enter a duration for the item linked to the stage.",
+  "編集先の項目がありません。": "The item to edit could not be found."
+});

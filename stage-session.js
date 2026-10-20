@@ -685,7 +685,15 @@
     }, GUEST_SETTLE_RESYNC_MS);
   }
 
+  let remoteDocumentQueue = Promise.resolve();
   function applyRemoteDocument(text) {
+    const receivedSocket = socket, receivedRoom = roomId;
+    const guard = () => socket === receivedSocket && roomId === receivedRoom && role === "guest";
+    remoteDocumentQueue = remoteDocumentQueue.then(() => guard() ? applyRemoteDocumentNow(text, guard) : false)
+      .catch(() => { setStatus("共有内容を舞台へ反映できませんでした。", true); return false; });
+    return remoteDocumentQueue;
+  }
+  async function applyRemoteDocumentNow(text, guard) {
     const parsed = parsedProjectDocument(text);
     if (!parsed) {
       setStatus("共有内容を読み込めませんでした。", true);
@@ -705,7 +713,8 @@
     const generation = applyGeneration;
     clearTimeout(applyReleaseTimer);
     let applied = false;
-    try { applied = bridge.applyDocumentString(text); }
+    try { applied = await (bridge.receiveDocumentString
+      ? bridge.receiveDocumentString(text, roomId, guard) : bridge.applyDocumentString(text)); }
     catch (_) { applied = false; }
     if (!applied) {
       applyingRemoteDocument = false;
@@ -932,9 +941,14 @@
       scheduleSettleResync();
     } else if (message.t === "op" && role === "guest") {
       if (!isShareableGuestOp(message.op)) return;
-      // 他のゲストの操作。サーバが送信者以外へ回してくる
-      applyIncomingOp(message.op);
-      applyOpToBaseline(message.op);
+      // Keep operations behind the document's asynchronous durable switch.
+      // In particular, never put a shared arrow into the pre-join original.
+      const receivedSocket = socket;
+      remoteDocumentQueue = remoteDocumentQueue.then(() => {
+        if (socket !== receivedSocket || role !== "guest" || awaitingInitialGuestDocument) return;
+        applyIncomingOp(message.op);
+        applyOpToBaseline(message.op);
+      });
     } else if (message.t === "activity") {
       showActivity(message.from);
     } else if (message.t === "pointer") {

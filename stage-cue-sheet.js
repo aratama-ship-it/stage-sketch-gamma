@@ -146,7 +146,7 @@
     return list(scene && scene.lxq).filter(q => q && typeof q === "object").slice().sort((a,b) => finite(a.seq,0) - finite(b.seq,0));
   }
 
-  function lightCueLink(project, cue, ordinal) {
+  function lightCueLink(project, cue, ordinal, helpers) {
     const design = project && project.lightingDesign;
     const sceneId = cue && (cue.sceneId || cueSceneId(project, cue));
     if (!design || !Array.isArray(design.scenes) || !sceneId) return null;
@@ -163,13 +163,19 @@
     const E = root.RIG_ENGINE || null;
     const T = E && typeof E.normalizeTiming === "function" ? E.normalizeTiming(q.timing) : null;
     const fadeIn = T ? T.fadeInSec : 0, fadeOut = T ? (T.fadeOutSec === null ? T.fadeInSec : T.fadeOutSec) : 0;
+    const delayIn = T ? T.delayInSec : 0, delayOut = T ? (T.delayOutSec === null ? delayIn : T.delayOutSec) : 0;
+    const fadeText = delayIn > 0 || delayOut > 0
+      ? translate(helpers, "上げ {up} / 下げ {down}・遅れ {inDelay} / {outDelay}")
+        .replace("{up}", durationText(fadeIn)).replace("{down}", durationText(fadeOut))
+        .replace("{inDelay}", durationText(delayIn)).replace("{outDelay}", durationText(delayOut))
+      : T ? `${durationText(fadeIn)}/${durationText(fadeOut)}` : "カット";
     return {
       ...(q.enabled === undefined ? {} : {enabled:q.enabled}), id: q.id, no: typeof q.no === "string" ? q.no : "", label: lightCueDisplayMap(design, cueNamingOf(project), project).get(q.id) || "",
       sceneOrdinal: sorted.indexOf(q) + 1,
       name: typeof q.name === "string" ? q.name : "", trigger: typeof q.trigger === "string" ? q.trigger : "",
       notation: E && typeof E.cueNotation === "function" ? E.cueNotation(prevCue, q.cue, q.timing) : "",
-      fadeIn, fadeOut, delayIn: T ? T.delayInSec : 0, mib: Boolean(T && T.mib),
-      fadeText: T ? `${durationText(fadeIn)}/${durationText(fadeOut)}` : "カット",
+      fadeIn, fadeOut, delayIn, delayOut, mib: Boolean(T && T.mib),
+      fadeText,
       follow: E && typeof E.followText === "function" ? E.followText(q.follow) : "",
       timing: q.timing || null, cue: q.cue || { lights: {}, groups: [] }, prevCue,
     };
@@ -201,7 +207,7 @@
       const ordinal = (ordinals.get(ordinalKey) || 0) + 1;
       ordinals.set(ordinalKey, ordinal);
       const sceneNumber = numbers.get(cue.sceneId) || "1";
-      const lx = cue.cueType === "light" ? lightCueLink(project, cue, ordinal) : null;
+      const lx = cue.cueType === "light" ? lightCueLink(project, cue, ordinal, helpers) : null;
       return { ...cue, sceneNumber, ordinal, lx,
         displayName: cue.cueType === "light" ? lightCueName(project, sceneNumber, ordinal, lx, helpers) : formatCueDisplayName(cue.cueType, sceneNumber, ordinal, helpers) };
     });

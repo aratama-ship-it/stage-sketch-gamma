@@ -41,7 +41,7 @@ ${table(["Table", "Setting", "Contents"], [
         keywords: ["export", "import", "file", "json", "send", "pass on", "another device", "email", "airdrop", "theatre data", "include", "compare", "replace", "separate show", "open file"],
         html: `
 <p>To include audio, choose ${ui("Export, save and print")} → ${ui("Save show")} → ${ui("Export project (with audio, .stageproj.zip)")}. The zip contains the show and connected audio files, without Backups. Import the zip with ${ui("Import show")} or drop it onto the window. For an extracted .stageproj folder, use ${ui("Import project folder")} or drag it onto the window; use the zip if the file picker cannot select the folder. Different existing audio is preserved. Missing or mismatched audio stays offline. Check the list and use Reconnect when needed. The existing .stagesketch import and export remain available.</p>
-<p>On Mac, use Open, Finder, drag and drop, or Import show to open an older .stagesketch or beta .json export. Choose Open in the confirmation dialog to create an untitled project. The first Command-S asks for a destination and suggests the show title for the new .stageproj. The original file is never changed or used as an autosave destination. Old JSON exports do not contain audio files; reconnect them when needed. A damaged file or unsupported version does not replace the current show.</p>
+<p>On Mac, use Open project in the Show panel, Finder, or drag and drop to open an older .stagesketch or beta .json export. The duplicate Import show entry is hidden on Mac; the web edition keeps both Shows and Import show. Choose Open in the confirmation dialog to create an untitled project. The first Command-S asks for a destination and suggests the show title for the new .stageproj. The original file is never changed or used as an autosave destination. Old JSON exports do not contain audio files; reconnect them when needed. A damaged file or unsupported version does not replace the current show.</p>
 <p>In the Mac project edition, use File → Previous shows → Save as project to turn old browser-saved shows into project files with their available audio. The original shows and audio stay on this device. A cancelled or failed save does not count as completed.</p>
 <p>${ui("Export show")} in the ${ui("Show")} panel saves the show as one file (.json). Give it a ${ui("File name")} and choose ${ui("Include theatre data")} or ${ui("Export without the theatre")} (leave out a theatre whose source may not be shared).</p>
 <p>The receiver uses ${ui("Import show")} and picks the file. The ${ui("Compare before importing")} window shows what it contains (scenes, performers, version); choose ${ui("Open as a separate show")} or ${ui("Replace the current show")}.</p>
@@ -51,9 +51,9 @@ ${table(["Table", "Setting", "Contents"], [
 <li>Beta shows can be read, and their old lighting is converted (${ref("light-legacy", "Part 7, 7-8")}).</li>
 <li>JSON written with AI showwright is imported here too (${ref("ai-showwright", "11-6")}).</li>
 </ul>
-${fig("release079-project-open", "Import a project ZIP or folder.", "Open a project")}
-${fig("release079-project-save", "Export a project with its audio.", "Save a project")}
-${fig("release079-previous-shows", "Previous shows on Mac, captured with the bundled test show and a simulated native bridge.", "Previous shows")}
+${fig("release080-project-open", "Import a project ZIP or folder.", "Open a project")}
+${fig("release080-project-save", "Export a project with its audio.", "Save a project")}
+${fig("release080-previous-shows", "Previous shows on Mac, captured with the bundled test show and a simulated native bridge.", "Previous shows")}
 `
       },
       {

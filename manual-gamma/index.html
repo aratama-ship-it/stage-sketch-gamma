@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<script src="../stage-runtime.js?v=20261019-v0379"></script>
+<script src="../stage-runtime.js?v=20261020-v0380"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="stage-sketch-gamma-manual" content="2026-09-25">
@@ -329,7 +329,7 @@ const FILES = ["00-front", "01-start", "02-screen", "03-show-scenes", "04-cast",
   const next = () => {
     if (i >= list.length) { window.dispatchEvent(new Event("manual-ready")); return; }
     const file = list[i++];
-    const sc = document.createElement("script"); sc.src = file + "?v=20261016-v0372"; sc.onload = next;
+    const sc = document.createElement("script"); sc.src = file + "?v=20261020-b47"; sc.onload = next;
     sc.onerror = () => { console.error("読み込めません: " + sc.src); next(); };
     document.body.appendChild(sc);
   };
@@ -606,6 +606,6 @@ window.addEventListener("manual-ready", function () {
 });
 </script>
 <!-- Cloudflare Web Analytics: Pages only. -->
-<script src="../stage-web-analytics.js?v=20261019-v0379"></script>
+<script src="../stage-web-analytics.js?v=20261020-v0380"></script>
 </body>
 </html>

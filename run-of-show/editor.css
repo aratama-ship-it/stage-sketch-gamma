@@ -728,3 +728,38 @@ html[data-stage-skin] :is(button,input,select,textarea,label):not(.paper-input) 
 /* B33 Q1: the handover entry shares the output group, with a reachable hit area. */
 #cue-handover { min-height:44px; }
 #cue-handover[hidden] { display:none; }
+
+/* B47 R-2: the rail's controls use its content width, including WebKit details.
+   Lite keeps its existing compact rail (ROSLeftPanels is not installed there). */
+body:not(.lite-paper) #paper-band .ros-left-content,
+body:not(.lite-paper) #paper-band .ros-left-content > :is(div,label,select,button,input,.gamma-short-select),
+body:not(.lite-paper) #paper-band :is(.band-field,.toolbar,.band-subgroup,.cue-choice-list,#column-list,.column-group,.column-list) {
+  width:100%; min-width:0; max-width:100%; box-sizing:border-box;
+}
+body:not(.lite-paper) #paper-band .ros-left-content :is(select,input:not([type=checkbox]),.gamma-short-select,.gamma-short-select-trigger) { width:100%; min-width:0; max-width:100%; }
+body:not(.lite-paper) #paper-band .ros-left-content :is(.toolbar,.band-subgroup,.row-mode-buttons) { display:grid; grid-template-columns:repeat(auto-fit,minmax(0,1fr)); }
+body:not(.lite-paper) #paper-band .ros-left-content :is(.toolbar,.band-subgroup,.row-mode-buttons) > :is(button,.action-tip-target) { width:100%; min-width:0; }
+body:not(.lite-paper) #paper-band #band-selection .cell-format-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+body:not(.lite-paper) #paper-band #band-selection :is(.cell-format-fields label,.cell-format-size input) { width:100%; min-width:0; }
+body:not(.lite-paper) #paper-band #band-settings .band-size-value { width:100%; display:flex; }
+body:not(.lite-paper) #paper-band #band-settings .band-size-value input { flex:1 1 0; min-width:0; width:100%; }
+body:not(.lite-paper) #paper-band :is(#q-column-list label,.column-option) { width:100%; min-width:0; }
+/* R-3: a label and wrapping control groups; never a disclosure or a popover. */
+body:not(.lite-paper) #paper-band > .ros-display-band {
+  display:flex; flex:0 0 auto; flex-wrap:wrap; align-items:center; gap:calc(var(--gamma-gap) / 2);
+  background:var(--desk-2);
+  width:100%; min-width:0; padding:calc(var(--gamma-gap) / 2);
+}
+body:not(.lite-paper) #paper-band .ros-display-band > .band-heading {
+  display:block; flex:0 0 auto; margin:0; padding:0; font-size:var(--fs-3); line-height:1.5; color:var(--brass);
+}
+body:not(.lite-paper) #paper-band .ros-display-band > :is(label,div) { flex:1 1 160px; width:auto; min-width:0; margin:0; }
+body:not(.lite-paper) #paper-band .ros-display-band .toolbar { flex:1 1 120px; width:auto; display:flex; flex-wrap:wrap; gap:calc(var(--gamma-gap) / 2); }
+body:not(.lite-paper) #paper-band .ros-display-band .toolbar button { flex:1 1 auto; min-width:0; }
+#paper-band .ros-side-head .ros-panel-grip { display:flex; align-items:center; justify-content:center; align-self:stretch; height:auto; touch-action:none; user-select:none; }
+#paper-band .ros-panel-hole { flex:0 0 auto; border:1px dashed var(--line-dark); box-sizing:border-box; }
+#paper-band > .band-group.is-dragging { margin:0; cursor:grabbing; background:var(--desk-2); box-shadow:0 4px 16px #0006; }
+body.is-ros-panel-dragging { user-select:none; cursor:grabbing; }
+/* Native details' anonymous content box must stretch as a block, not shrink
+   to its max-content width inside the legacy flex panel. */
+body:not(.lite-paper) #paper-band > details.band-group { display:block; }

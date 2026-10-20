@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.79";
+  const GAMMA_APP_VERSION = "v0.3.80";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2511,7 +2511,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-19`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-20`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -8658,7 +8658,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     formationModalSectionId = section.id;
     els.formationBackdrop.hidden = false; els.formationModal.hidden = false;
     setFormationStatus("セクションの演者・舞台・セットを読み込んでいます。", "Loading the section cast, stage and sets.");
-    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261019-v0379&embed=1&cast=locked";
+    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261020-v0380&embed=1&cast=locked";
     document.body.classList.add("stage-modal-open");
   }
 
@@ -11182,9 +11182,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     updateHistoryButtons();
   }
 
-  function checkpoint() {
+  function checkpoint() { checkpointFrom(snapshot()); }
+  function checkpointFrom(before) {
     loadedStateGeneration++;
-    recordBefore(snapshot());
+    recordBefore(before);
     // ファイル書き出しからの変更数。閾値を超えたら保存欄で書き出しを勧める
     state.editsSinceExport = (state.editsSinceExport || 0) + 1;
     updateBackupNote();
@@ -11449,6 +11450,32 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let autosaveInFlight = null;
   let autosaveRequested = false;
   let lastPersistedSnapshot = null;
+  function saveProtectionCode() {
+    return largeProjectStorage?.status().blocked
+      || (alternativesStorageBlocked ? "WRITE_FAILED" : shelfCorrupt ? "CORRUPT_COLLECTION" : null);
+  }
+  async function saveCurrentShow() {
+    const failed = code => {
+      const result = {ok:false, error:{code}};
+      autosaveFailed = true;
+      reportProjectStoreFailure(result);
+      return result;
+    };
+    if (saveProtectionCode()) return failed(saveProtectionCode());
+    persistSoon();
+    await flushAutosave();
+    await ProjectStore.whenIdle();
+    if (saveProtectionCode()) return failed(saveProtectionCode());
+    if (autosaveFailed) return {ok:false, error:{code:"WRITE_FAILED"}};
+    if (!nativeProject) {
+      try {
+        await largeProjectStorage?.flush();
+        if (autosaveRequested || showSaveTransitionsPending || snapshot() !== lastPersistedSnapshot
+            || localStorage.getItem(BETA_STORAGE_KEY) !== lastPersistedSnapshot) return failed("CONCURRENT_EDIT");
+      } catch (error) { return failed(error.code || "WRITE_FAILED"); }
+    }
+    return {ok:true};
+  }
   async function flushAutosave() {
     if (typeof nativeProject !== "undefined" && nativeProject) {
       clearTimeout(saveTimer); clearTimeout(saveMaxTimer); saveMaxTimer = null;
@@ -27528,13 +27555,25 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         input.setAttribute("aria-label", tx(`${labelJa}（秒）`));
         /* T-1: ラベルを消したぶん、ポインタを乗せれば何の秒数かわかるようにしておく。 */
         input.title = tx(labelJa);
-        input.addEventListener("input", () => {
-          if (!ownerScene.rehearsal) ownerScene.rehearsal = normalizeSceneRehearsal(null);
-          ownerScene.rehearsal[key] = rehearsalSeconds(input.value);
+        // Keep the starting state until blur: number steppers emit change for each
+        // press, while typing (including native Undo) must keep the same input node.
+        const project = state.project;
+        let edit = null;
+        const currentOwner = () => state.project === project
+          ? state.project.scenes.find(row => row.id === ownerScene.id) : null;
+        const writeValue = (seconds) => {
+          const owner = currentOwner();
+          if (!owner || owner.rehearsal?.[key] === seconds) return;
+          if (!edit) edit = { before: snapshot(), start: owner.rehearsal?.[key] };
+          if (!owner.rehearsal) owner.rehearsal = normalizeSceneRehearsal(null);
+          owner.rehearsal[key] = seconds;
           persistSoon();
+        };
+        input.addEventListener("input", () => {
+          writeValue(rehearsalSeconds(input.value));
           /* 2026-09-17: 打っている間もタイムラインを動かす。確定まで動かないと
              「効いていない」ように見えるため。受け手はフレームに1回へまとめている。
-             シーン一覧の作り直しは重いので、確定（change）のときだけにする。 */
+             シーン一覧の作り直しは重いので、確定（blur）のときだけにする。 */
           window.dispatchEvent(new CustomEvent("stage-timeline-structure-change"));
           if (els.rehearsalExportModal && !els.rehearsalExportModal.hidden) {
             refreshRehearsalExport();
@@ -27542,18 +27581,32 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
         });
         input.addEventListener("change", () => {
           /* T-2: 空のまま確定したら既定値へ戻す（入力中の一時的な空欄は邪魔しない）。 */
-          if (ownerScene.rehearsal && ownerScene.rehearsal[key] === null) {
-            ownerScene.rehearsal[key] = key === "holdDurationSeconds"
+          const owner = currentOwner();
+          if (owner?.rehearsal?.[key] === null) {
+            writeValue(key === "holdDurationSeconds"
               ? DEFAULT_SCENE_HOLD_SECONDS
-              : DEFAULT_SCENE_TRAVEL_SECONDS;
-            input.value = String(ownerScene.rehearsal[key]);
-            persistSoon();
+              : DEFAULT_SCENE_TRAVEL_SECONDS);
+            input.value = String(owner.rehearsal[key]);
           }
+        });
+        input.addEventListener("blur", () => {
+          const owner = currentOwner();
+          if (!owner) { edit = null; return; }
+          // Blur also finalizes an empty draft if no native change was emitted.
+          if (owner.rehearsal?.[key] === null) {
+            writeValue(key === "holdDurationSeconds" ? DEFAULT_SCENE_HOLD_SECONDS : DEFAULT_SCENE_TRAVEL_SECONDS);
+          }
+          if (!edit) return;
+          if (edit && owner.rehearsal?.[key] !== edit.start) checkpointFrom(edit.before);
+          edit = null;
           renderScenes();
           renderSceneGrid();
           /* T-3（2026-09-17）: シーンパネルで秒数を変えたら、タイムラインの長さもその場で合わせる。
            * 同じ scene.rehearsal を見ているのに、再描画だけが呼ばれていなかった。 */
           window.dispatchEvent(new CustomEvent("stage-timeline-structure-change"));
+        });
+        input.addEventListener("keydown", event => {
+          if (event.key === "Enter" && !event.isComposing && event.keyCode !== 229) input.blur();
         });
         value.append(input, document.createTextNode(` ${tx("秒")}`));
         label.append(title, value);
@@ -31753,7 +31806,11 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const help = document.createElement("button");
     help.type = "button";
     help.className = "stage-pref-help";
-    help.textContent = "?";
+    const glyph = document.createElement("span");
+    glyph.className = "stage-pref-help-glyph";
+    glyph.textContent = "?";
+    glyph.setAttribute("aria-hidden", "true");
+    help.append(glyph);
     help.setAttribute("aria-label", tx("この欄の説明を出す"));
     help.setAttribute("aria-controls", hintId);
     help.setAttribute("aria-expanded", "false");
@@ -43151,6 +43208,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (typeof nativeProject !== "undefined" && nativeProject) syncNativeProjectEntries();
     if (els.lang) {
       els.lang.value = lang;
+      window.GAMMA_UI?.refreshSelect?.(els.lang);
     }
     updateWhoamiBadge();
     if (lastStorageReport) renderStorageHealth(lastStorageReport);
@@ -45600,6 +45658,9 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     els.exportJson?.removeAttribute("aria-keyshortcuts");
     const note = document.querySelector(".stage-project-import-note"); if (note) note.hidden = true;
     const picker = els.importJson;
+    // R-5: native requestOpen accepts legacy JSON/.stagesketch as well.
+    const importLabel = picker?.closest("label.stage-import-label");
+    if (importLabel) importLabel.hidden = true;
     if (picker && !picker.dataset.nativeProject) {
       picker.dataset.nativeProject = "true";
       picker.closest("label")?.addEventListener("click", event => { event.preventDefault(); nativeProject.request("requestOpen"); });
@@ -46067,6 +46128,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       backW: seat.backW, frontW: seat.frontW, rise: seat.rise,
     }));
     return { showId: state.project.id, title: state.project.title, stage, scenes, venueMask, frontSeats, frontCurtains,
+      // Detached edit copies; these are not part of the lighting file or storage schema.
+      fixtureAlternatives: state.project.scenes.flatMap(scene => (scene.sceneAlternatives?.items || [])
+        .filter(item => item.id !== sceneAlternatives.current(scene)?.id && item.lighting.native)
+        .map(item => ({sceneId:scene.id, itemId:item.id, native:projectIoClone(item.lighting.native)}))),
       cueSyncPending: lightingCueListsDiffer(state.project),
       cueNaming: state.project.cueNaming === "serial" ? "serial" : "scene",
       venueType: currentVenue.lightingPresetBasis?.venueId || venueV2?.lightingPresetBasis?.venueId || currentVenue.id,
@@ -46139,8 +46204,17 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       if (basis !== current.basis) throw new Error("ショーが更新されています。編集中の照明をファイルへ控えてから開き直してください");
       const nextDesign = window.GAMMA_LIGHT_MODEL.validate(design, current.scenes.map(row => row.id));
       // A shared rig change must not strand lights referenced only by another alternative.
-      sceneAlternatives?.capture(state.project);
-      for (const scene of state.project.scenes) for (const item of scene.sceneAlternatives?.items || []) {
+      const next = projectIoClone(state);
+      sceneAlternatives?.capture(next.project);
+      const alternativeEdits = options.fixtureAlternatives || window.GAMMA_LIGHT_MODEL.fixtureAlternativeEdits(
+        current.fixtureAlternatives, current.design, nextDesign);
+      for (const edit of alternativeEdits) {
+        const scene = next.project.scenes.find(row => row.id === edit.sceneId);
+        const item = scene?.sceneAlternatives?.items.find(row => row.id === edit.itemId);
+        if (!item || item.id === sceneAlternatives.current(scene)?.id) throw Error("ショーが更新されています。編集中の照明をファイルへ控えてから開き直してください");
+        item.lighting.native = projectIoClone(edit.native);
+      }
+      for (const scene of next.project.scenes) for (const item of scene.sceneAlternatives?.items || []) {
         if (item.id === sceneAlternatives.current(scene)?.id || !item.lighting.native) continue;
         const candidate = projectIoClone(nextDesign);
         candidate.scenes = candidate.scenes.map(row => row.id === scene.id ? { ...projectIoClone(item.lighting.native), id: row.id } : row);
@@ -46148,7 +46222,6 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
         catch (_) { throw Error(`${scene.title}の${item.label}で使用中の灯体があります。別案の照明も調整してから仕込みを変更してください。`); }
       }
       if (JSON.stringify(nextDesign.stage) !== JSON.stringify(current.stage)) throw new Error("舞台寸法が一致しません。劇場の寸法は通常モードで設定してください");
-      const next = projectIoClone(state);
       const oldIds = new Set((current.design?.scenes || []).flatMap(s => (s.lxq || []).map(q => q.id)));
       const nextIds = new Set(nextDesign.scenes.flatMap(s => (s.lxq || []).map(q => q.id)));
       const synced = synchronizedLightingProject(state.project, nextDesign, [...oldIds].filter(id => !nextIds.has(id)));
@@ -46359,7 +46432,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     },
     historyStatus: () => ({canUndo:history.length>0,canRedo:future.length>0}),
     undo, redo,
-    async save() { persistSoon(); await flushAutosave(); return {ok:!autosaveFailed}; },
+    async save() { return saveCurrentShow(); },
     export() { return exportProject(); },
     openScene(id) {
       openScene(id, {skipTransition:true});
@@ -47118,6 +47191,36 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       window.dispatchEvent(new CustomEvent("stage-timeline-structure-change"));
       return true;
     },
+    async receiveDocumentString(text, roomId, guard = () => true) {
+      // Native documents are owned by the shell, never by the browser shelf.
+      // Keep its existing receive route; do not switch a native file through IDB.
+      if (nativeProject) return guard() && this.applyDocumentString(text);
+      // The host's ID identifies its work, not a document on this device. Reuse
+      // one receive ID across updates/reloads, independently of the source ID.
+      let doc;
+      try { doc = window.STAGE_DATA_SAFETY.parseJson(text); } catch (_) { return false; }
+      if (!doc || doc.kind !== "shosai-stage-sketch" || !doc.project) return false;
+      const sourceId = doc.project.id;
+      const receive = state.sharedReceive;
+      const id = receive?.roomId === roomId && receive.sourceId === sourceId
+        && receive.id === state.project.id ? receive.id : rid("received-show");
+      doc.project.id = id;
+      const {project, fileEnvelope} = prepareProjectImportDocument(doc);
+      if (!(await saveCurrentShow()).ok || !guard()) return false;
+      const origin = state.project, generation = loadedStateGeneration;
+      const unchanged = () => guard() && state.project === origin && loadedStateGeneration === generation
+        && !saveProtectionCode() && !resetInProgress;
+      const next = {...state, project, projectFileEnvelope:fileEnvelope, projectPackageCarry:null,
+        sharedReceive:{roomId, sourceId, id}, mcpRevision:null};
+      // Use the existing guarded pair transaction, which shelves the outgoing
+      // document before replacing current. A failed receive leaves it open.
+      if (!await prepareLoadedState(next, unchanged) || !unchanged()) return false;
+      state.sharedReceive = next.sharedReceive;
+      state.projectPackageCarry = null;
+      const applied = this.applyDocumentString(JSON.stringify(doc));
+      if (origin.id !== id) { history.length = 0; future.length = 0; controlBefore = null; updateHistoryButtons(); }
+      return applied;
+    },
     applyDocumentString(text) {
       /* 受信docを現在のプロジェクトとして開く。壊れたJSONはfalseを返して何もしない */
       let doc; try { doc = window.STAGE_DATA_SAFETY.parseJson(text); } catch (_) { return false; }
@@ -47175,7 +47278,14 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       if (state.showFront) setTool("arrow");
       else { updateInspector(); render(); }
     },
-    shelveNow() { return shelveCurrent(); },
+    async shelveNow() {
+      // Capture the generations before even the pre-join save can rotate them.
+      const generations = !nativeProject && largeProjectStorage
+        ? await largeProjectStorage.repository.records() : [];
+      if (!(await saveCurrentShow()).ok || !await shelveCurrent()) return false;
+      if (nativeProject) return true; // The native shell owns its recovery copies.
+      return window.SHOSAI_STAGE_PROJECT_BACKUP_STORE.retainForShare(state.project.id, snapshot(), generations);
+    },
     applyGuestOp(op) {
       if (!editionAllows("share")) return false;
       sceneAlternatives?.adopted(state.project);

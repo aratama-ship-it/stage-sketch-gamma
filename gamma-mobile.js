@@ -342,17 +342,33 @@
     const gear = $("#stage-prefs-btn");
     if (gear) topRight.append(gear);
     top.append(topLeft, nav, topRight);
-    // The tablet shell mirrors the same guarded workspace tabs.
-    if ($("#gamma-rehearsal")) {
-      html.classList.add("gm-rehearsal-enabled");
-      const tabs=el("div","gm-rehearsal-tabs",{role:"tablist","data-no-i18n":""});
-      for(const [id,label,mode] of [["stage-workspace-normal","舞台","normal"],["gamma-rehearsal","リハーサル","rehearsal"]]) {
+    // Lite retains the same edition-defined modes in the active narrow shell.
+    const liteTabs = window.GAMMA_EDITION === "lite"
+      ? window.GAMMA_EDITIONS.EDITIONS.lite.tabs.map(mode => [window.GAMMA_EDITIONS.TAB_BUTTON_IDS[mode],
+        {normal:"舞台","venue-setup":"劇場設定","run-of-show":"進行表"}[mode],mode]) : null;
+    if (liteTabs || $("#gamma-rehearsal")) {
+      html.classList.add(liteTabs ? "gm-lite-enabled" : "gm-rehearsal-enabled");
+      const tabs=el("div","gm-rehearsal-tabs"+(liteTabs?" gm-lite-tabs":""),{role:"tablist","data-no-i18n":""});
+      for(const [id,label,mode] of liteTabs || [["stage-workspace-normal","舞台","normal"],["gamma-rehearsal","リハーサル","rehearsal"]]) {
         const tab=button("gm-rehearsal-tab",tx(label),{role:"tab","data-gm-workspace":mode});
-        const sync=()=>{tab.textContent=tx(label);tab.setAttribute("aria-label",tx(label));tab.setAttribute("aria-selected",String((document.body.dataset.gammaWorkspace||"normal")===mode));};
+        const sync=()=>{
+          const selected=(document.body.dataset.gammaWorkspace||"normal")===mode;
+          tab.textContent=tx(label);tab.setAttribute("aria-label",tx(label));tab.setAttribute("aria-selected",String(selected));
+          if(liteTabs){tab.disabled=!!$("#"+id)?.disabled;tab.tabIndex=selected?0:-1;tab.setAttribute("aria-controls",$("#"+id).getAttribute("aria-controls"));}
+        };
         tab.onclick=()=>$("#"+id)?.click();tabs.append(tab);relabelers.push(sync);window.addEventListener("gamma-workspace-change",sync);sync();
       }
+      if(liteTabs)tabs.addEventListener("keydown",event=>{
+        if(event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||event.isComposing)return;
+        if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;
+        const buttons=[...tabs.querySelectorAll("button:not(:disabled)")],at=buttons.indexOf(document.activeElement);
+        if(at<0)return;event.preventDefault();event.stopPropagation();
+        const next=event.key==="Home"?0:event.key==="End"?buttons.length-1:(at+(event.key==="ArrowRight"?1:-1)+buttons.length)%buttons.length;
+        // Match the ordinary workspace tabs: arrows focus, Enter/Space activates.
+        buttons[next].focus();
+      });
       head.append(tabs);
-      window.addEventListener("gamma-workspace-change",()=>{top.inert=document.body.dataset.gammaWorkspace==="rehearsal";});
+      if(!liteTabs)window.addEventListener("gamma-workspace-change",()=>{top.inert=document.body.dataset.gammaWorkspace==="rehearsal";});
     }
 
     head.prepend(top);

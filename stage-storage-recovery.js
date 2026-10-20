@@ -265,6 +265,29 @@
       }
       return result;
     }
+    // Use the existing immutable inactive-show archive, including its audioRefs
+    // index understood by v0.3.79. Raw generation strings/revisions and the
+    // latest backup record remain exact; ordinary show saves cannot replace it.
+    async function preserveShareGenerations(backup, generations) {
+      const projectId = backup?.projectId;
+      const state = JSON.parse(backup?.serializedState);
+      if (!projectId || state?.project?.id !== projectId || !Array.isArray(generations))
+        throw new Error("ARCHIVE_NOT_VERIFIED");
+      const texts = [backup.serializedState, ...generations.flatMap(row => Object.values(row.values))];
+      if (texts.some(text => text !== null && typeof text !== "string")) throw new Error("ARCHIVE_NOT_VERIFIED");
+      const audioRefs = window.STAGE_STORAGE_HYGIENE?.audioReferences(texts);
+      if (!audioRefs) throw new Error("ARCHIVE_NOT_VERIFIED");
+      const value = JSON.stringify({savedAt:backup.savedAt, state,
+        preShareBackup:backup, preShareGenerations:generations});
+      const id = JSON.stringify([INACTIVE_SHOW_ARCHIVE_KEY, projectId, await hash(value)]);
+      const record = {version:1, id, key:INACTIVE_SHOW_ARCHIVE_KEY, projectId,
+        title:String(state.project.title || ""), value, audioRefs, archivedAt:now()};
+      if (!await vault.putIfAbsent(record)) throw new Error("ARCHIVE_CONFLICT");
+      const saved = await vault.get(id);
+      if (!valid(saved) || saved.id !== id || saved.value !== value
+          || JSON.stringify(saved.audioRefs) !== JSON.stringify(audioRefs)) throw new Error("ARCHIVE_NOT_VERIFIED");
+      return true;
+    }
     async function preserveMusicOriginal(projectId, value) {
       const key = MUSIC_ORIGINAL_PREFIX + projectId, id = musicOriginalId(key);
       // Existing localStorage originals take priority over the currently open
@@ -341,7 +364,7 @@
       // Keep the archived copy even after successful restoration.
       return true;
     }
-    return Object.freeze({ scan, archive, restore, preserveMusicOriginal, removeMusicOriginal,
+    return Object.freeze({ scan, archive, restore, preserveShareGenerations, preserveMusicOriginal, removeMusicOriginal,
       originalRecord: row => row.local ? Promise.resolve(row) : vault.raw(row.id),
       list: async () => [...await vault.list(), ...localOriginals()],
       summaries: async () => [...await (vault.summaries ? vault.summaries() : vault.list().then(rows => rows.map(row => ({...row, chars:row.value.length})))), ...localOriginals()],

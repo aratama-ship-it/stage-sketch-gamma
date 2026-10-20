@@ -6,6 +6,7 @@
     title: "How to look things up, and the conventions used",
     lead: "This is a tool to look things up in, not a book to read through. Please skim this part first.",
     sections: [
+
       {
         id: "how-to-use", title: "Looking things up (search, contents, links)", status: "verified",
         keywords: ["manual", "help", "search", "find", "contents", "look up", "can't find", "link"],
@@ -73,7 +74,22 @@ ${table(["Written as", "Meaning"], [
 <li>Stage Sketch is a 2D study book for composition, colour and distance. <strong>It is not a drawing that decides stage machinery, rigging, safety distances or construction dimensions</strong> (the app says the same).</li>
 <li>The screenshots were taken at 1440×900 in Chromium with the app set to English. Most are from v0.2.16; the pose pictures are from v0.2.29, and the set-piece and prop pictures from v0.2.26. Safari may differ in small details. iPad and iPhone screens are in Part 13.</li>
 </ul>`
-      }
+      },
+// BEGIN S4 TERMS
+{
+  "id": "terms",
+  "title": "Terms, copyright and privacy",
+  "status": "sourced",
+  "keywords": [
+    "terms",
+    "copyright",
+    "privacy",
+    "contact",
+    "law"
+  ],
+  "html": "<p>© 2026 PYGMIX. All rights reserved.</p>\n<p>Shows in the browser edition are stored only in the browser on your device and may be deleted by browser settings or prolonged inactivity. Export backup copies; the Mac app saves shows as files.</p>\n<p>We collect only anonymous counts of tab and feature use, which you can turn off in Settings. We do not collect show content, text you enter, screenshots or personally identifiable information.</p>\n<p>You are responsible for decisions about running a performance and its safety.</p>\n<p>This English text is a summary; the Japanese version takes precedence.</p>\n<p>Contact: <a href=\"https://pygmix.com/contact\">pygmix.com/contact</a></p>\n<details lang=\"ja\"><summary>Japanese version</summary>\n<p>© 2026 PYGMIX. All rights reserved.</p>\n<p>舞台スケッチは PYGMIX が提供します。改変版・なりすましの配布を禁じます。共有リンクは正規の舞台スケッチから発行されたものだけが有効です。</p>\n<p>ブラウザ版のショーはお使いの端末のブラウザの中だけに保存されます。ブラウザの設定や長い未使用で消えることがあります（Safari は 7 日間の未操作で削除します）。控えの書き出しと Mac 版の利用をおすすめします。Mac 版はショーをファイルとして保存します。</p>\n<p>作品の内容・入力した文字・画面の画像（スクリーンショット）・個人を特定できる情報は収集しません。改善のため、どのタブや機能を何回使ったかの件数だけを匿名で集計します（環境設定でオフにできます）。</p>\n<p>共有機能（ログイン版）: 名簿にはユーザー名とパスワード（ハッシュ化）と契約の段だけを保存します。メールアドレス等は保存しません。</p>\n<p>公演の進行・安全に関する判断は利用者が行ってください。</p>\n<p>日本法に準拠し、紛争は PYGMIX の所在地を管轄する裁判所とする。</p>\n<p>問い合わせ先: <a href=\"https://pygmix.com/contact\">pygmix.com/contact</a></p>\n</details>"
+},
+// END S4 TERMS
     ]
   });
 })();

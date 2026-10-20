@@ -474,5 +474,74 @@
     PASSTHROUGH_KEYS.forEach(key => { if (passthrough[key] !== undefined) design[key] = clone(passthrough[key]); });
     return design;
   }
-  root.GAMMA_LIGHT_MODEL=Object.freeze({clone,validate,empty,reconcile,stripPassthrough,restoreDraft,normalizeFixedSetup,upgradeRjSecond,rjSecondLightingFingerprint,RJ_SECOND_MACHINE_LIGHTING,adoptRjSecondStandardRig,positionNames,positionLayout});
+  // Editing helpers only: never called from import/reconcile/normalization.
+  const sceneCues = row => [row?.cue, ...(row?.lxq || []).map(q => q.cue)].filter(Boolean);
+  function fixedSetupDelta(before, after) {
+    const edits = [];
+    const visit = (old, value, path) => {
+      if (canonical(old) === canonical(value)) return;
+      if (object(old) && object(value)) {
+        for (const key of new Set([...Object.keys(old), ...Object.keys(value)])) visit(old[key], value[key], [...path, key]);
+      } else edits.push({path, ...(value === undefined ? {remove:true} : {value:clone(value)})});
+    };
+    for (const key of ['color', 'surface', 'path']) visit(before?.[key], after?.[key], [key]);
+    return edits;
+  }
+  function patchFixedSetup(row, fixtureId, edits) {
+    for (const cue of sceneCues(row)) {
+      const light = cue.lights?.[fixtureId];
+      if (!light) continue;
+      for (const edit of edits) {
+        let target = light;
+        for (const key of edit.path.slice(0, -1)) {
+          if (!object(target[key])) Object.defineProperty(target,key,{value:{},enumerable:true,writable:true,configurable:true});
+          target = target[key];
+        }
+        const key = edit.path.at(-1);
+        if (edit.remove) delete target[key];
+        else Object.defineProperty(target,key,{value:clone(edit.value),enumerable:true,writable:true,configurable:true});
+      }
+    }
+  }
+  function removeFixtureReferences(row, fixtureIds) {
+    const removed = new Set(fixtureIds);
+    for (const cue of sceneCues(row)) {
+      for (const id of removed) if (cue.lights) delete cue.lights[id];
+      for (const light of Object.values(cue.lights || {}))
+        if (removed.has(light?.target?.fixtureId)) delete light.target;
+      if (cue.groups) cue.groups = cue.groups.map(group => {
+        if (!group.members.some(id => removed.has(id))) return group;
+        const members = group.members.filter(id => !removed.has(id));
+        return members.length >= 2 ? {...group, members} : null;
+      }).filter(Boolean);
+    }
+  }
+  function fixtureAlternativeEdits(rows, before, after) {
+    const next = clone(rows || []), alive = new Set(after.rig.fixtures.map(f => f.id));
+    const removed = (before?.rig.fixtures || []).filter(f => !alive.has(f.id)).map(f => f.id);
+    for (const row of next) removeFixtureReferences(row.native, removed);
+    for (const fixture of after.rig.fixtures) {
+      if (fixture.kind !== 'fixed') continue;
+      const old = before?.rig.fixtures.find(f => f.id === fixture.id);
+      if (!old) continue;
+      const previous = {...old.fixedSetup}, current = {...old.fixedSetup};
+      for (const key of ['color', 'surface', 'path']) {
+        if (canonical(old.fixedSetup?.[key]) === canonical(fixture.fixedSetup?.[key])) continue;
+        // An old rig may have no fixedSetup. Find the explicitly edited working cue,
+        // rather than treating its whole old path as missing during draft recovery.
+        if (previous[key] === undefined) for (const sc of after.scenes) {
+          const oldScene = before.scenes.find(row => row.id === sc.id);
+          const candidates = sceneCues(sc), originals = sceneCues(oldScene);
+          const index = candidates.findIndex((cue, i) => canonical(cue.lights?.[fixture.id]?.[key]) === canonical(fixture.fixedSetup?.[key])
+            && canonical(originals[i]?.lights?.[fixture.id]?.[key]) !== canonical(cue.lights?.[fixture.id]?.[key]));
+          if (index >= 0) {previous[key] = originals[index]?.lights?.[fixture.id]?.[key]; break;}
+        }
+        current[key] = fixture.fixedSetup?.[key];
+      }
+      const edits = fixedSetupDelta(previous,current);
+      for (const row of next) patchFixedSetup(row.native, fixture.id, edits);
+    }
+    return next;
+  }
+  root.GAMMA_LIGHT_MODEL=Object.freeze({fixedSetupDelta,patchFixedSetup,removeFixtureReferences,fixtureAlternativeEdits,clone,validate,empty,reconcile,stripPassthrough,restoreDraft,normalizeFixedSetup,upgradeRjSecond,rjSecondLightingFingerprint,RJ_SECOND_MACHINE_LIGHTING,adoptRjSecondStandardRig,positionNames,positionLayout});
 })(typeof window==='undefined'?globalThis:window);

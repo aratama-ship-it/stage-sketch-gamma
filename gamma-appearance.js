@@ -61,7 +61,7 @@
       if(inkSignatures.get(label)===signature)continue;
       inkSignatures.set(label,signature);
       context.font=`${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
-      job.font=context.font;job.ink=context.measureText(n.textContent.trim());job.cap=textBoxSupported&&!systemFont;
+      job.font=context.font;job.ink=context.measureText(n.textContent.trim());job.cap=textBoxSupported&&s.textBoxTrim==='trim-both'&&!systemFont;
       changed.push(job);
     }
     // Install every fallback marker together, then read every baseline together.

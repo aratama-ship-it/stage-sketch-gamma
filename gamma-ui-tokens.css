@@ -2,6 +2,7 @@
 /* Gamma shared tokens. See gamma-dev/DESIGN_TOKENS.md. */
 :root {
   --gamma-gap: 8px;
+  --edge: var(--line-dark);
   --gamma-venue-control-height: 38px;
   --gamma-panel-head-padding: 10px 2px 8px;
   --gamma-control-tracking: .04em;
@@ -35,7 +36,7 @@
   --icon-lg: 44px;
 }
 :root[data-stage-skin] {
-  --desk:#191512; --desk-2:#201b16; --desk-3:#282119; --line-dark:#382f25;
+  --desk:#191512; --desk-2:#201b16; --desk-3:#282119; --line-dark:#382f25; --edge:var(--line-dark);
   --stage-ui-recess-rgb:13,12,11;
   --gamma-ui-3d:#0d0a08;
   --recess:rgba(var(--stage-ui-recess-rgb),.3);
@@ -45,6 +46,7 @@
   --desk-2: #1b1e22;
   --desk-3: #23272c;
   --line-dark: #373d44;
+  --edge: var(--line-dark);
   --stage-ui-recess-rgb: 13, 14, 16;
   --stage-ui-seat-rgb: 21, 23, 26;
   --stage-ui-desk-rgb: 20, 22, 25;
@@ -391,6 +393,7 @@ html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-can
   --desk-2: #fffcf5;
   --desk-3: #e7e0d3;
   --line-dark: #8d8475;
+  --edge: var(--line-dark);
   --milk: #29251f;
   --milk-dim: #61594d;
   --ink-soft-sm: #61594d;
@@ -404,6 +407,10 @@ html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-can
   --slate: #465c68;
   --recess: rgba(97, 89, 77, .06);
   --gamma-selected-bg: #e2d2a4;
+  --gamma-download-ink: var(--milk);
+  --gamma-download-version-ink: var(--milk);
+  --gamma-export-selected-ink: var(--milk);
+  --gamma-export-selected-bg: var(--gamma-selected-bg);
   --gamma-primary-bg: #943d1c;
   --gamma-on-primary: #fffcf5;
   --chrome-ink: #29251f;
@@ -426,8 +433,21 @@ html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) .stage-can
   --stage-ui-model-side: var(--desk);
   --storage-warning-bg: var(--desk-2);
   --storage-warning-text: var(--milk);
+  /* B56: reuse daylight ink in simple lighting and rehearsal chrome. */
+  --simple-text: var(--milk);
+  --simple-muted: var(--milk-dim);
+  --simple-accent: var(--brass);
+  --simple-border: var(--line-dark);
+  --fr-current-text: var(--milk);
+  --fr-go-text: var(--milk);
   --storage-warning-caution: #735916;
   --storage-warning-danger: var(--danger);
+}
+/* B57 A4-01/02: use daylight ink only on the affected paper controls. */
+html[data-stage-skin="paper-light"] #stage-native-download { color:var(--gamma-download-ink); }
+html[data-stage-skin="paper-light"] #stage-native-version { color:var(--gamma-download-version-ink); }
+html[data-stage-skin="paper-light"] #stage-export-modal :is(.stage-export-tabs [role="tab"][aria-selected="true"],.stage-export-scope button[aria-pressed="true"],.stage-tool-grid button[aria-pressed="true"]) {
+  color:var(--gamma-export-selected-ink); background:var(--gamma-export-selected-bg);
 }
 html[data-stage-skin="paper-light"] .stage-header-logo { filter: brightness(.18); }
 html[data-stage-skin="paper-light"] .stage-gamma-label { color: var(--milk-dim); }
@@ -595,6 +615,8 @@ html[data-stage-skin] .stage-panel.is-collapsed .stage-panel-help { display:inli
 /* E1-#8: keep the 28px pointer target, but draw a 20px question mark disc. */
 /* Panel help is absolutely anchored to the panel head in gamma.css.  Only the
    inline help controls need a containing block for their painted 20px disc. */
+/* Move only the ink; preserve the button baseline, hit box and circle. */
+html[data-stage-skin] .stage-pref-help-glyph { display:inline-block; transform:translateY(1px); }
 html[data-stage-skin] :is(.stage-hint-help,.stage-pref-help) { position:relative; }
 html[data-stage-skin] :is(.stage-panel-help,.stage-hint-help,.stage-pref-help) { border-color:transparent;background:transparent;line-height:28px; }
 html[data-stage-skin] :is(.stage-panel-help,.stage-hint-help,.stage-pref-help)::before { content:"";position:absolute;inset:4px;border:1px solid currentColor;border-radius:50%;pointer-events:none; }
@@ -859,6 +881,10 @@ html[data-stage-skin]:not(.stage-pwa-tablet):not(.stage-phone-viewer) :is(.stage
 
 .stage-scene-grid-card.stage-scene-overview-card { grid-template-rows:max-content minmax(0,1fr); }
 .stage-scene-grid-card.stage-scene-overview-card .stage-scene-grid-caption { align-content:start; }
+
+/* B57 A4-04: the resolution ellipsis needs an untrimmed line box.
+   Keep the existing alignment policy on other short controls. */
+.stage-pref-resolution .gamma-short-select-trigger > .gamma-control-text { text-box:normal; line-height:1.5; }
 
 /* Batch 7 G2: the same key cap in the host and lighting iframe. */
 html[data-stage-skin] :is(.stage-timeline-shortcut, .view-key) {

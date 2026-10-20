@@ -804,3 +804,12 @@ html.stage-pwa-tablet.gm-tablet .stage-sketch { grid-template-rows:var(--gm-top-
 html.stage-pwa-tablet.gm-tablet:has(#stage-storage-band[hidden]) .stage-sketch { grid-template-rows:var(--gm-top-h) minmax(0,1fr); }
 html.stage-pwa-tablet.gm-tablet:has(#stage-storage-band.is-folded:not([hidden])) .stage-sketch { grid-template-rows:var(--gm-top-h) var(--storage-band-folded) minmax(0,1fr); }
 html:is(.gm-tablet,.gm-phone) #stage-storage-band { position:relative; top:auto; }
+
+/* B56 A1-07: Lite's three existing modes remain reachable in its tablet shell. */
+html.stage-pwa-tablet.gm-tablet.gm-lite-enabled .stage-sketch-head{height:auto}
+html.stage-pwa-tablet.gm-tablet.gm-lite-enabled .stage-sketch{grid-template-rows:auto var(--storage-band-height) minmax(0,1fr)}
+html.stage-pwa-tablet.gm-tablet.gm-lite-enabled:has(#stage-storage-band[hidden]) .stage-sketch{grid-template-rows:auto minmax(0,1fr)}
+html.stage-pwa-tablet.gm-tablet.gm-lite-enabled:has(#stage-storage-band.is-folded:not([hidden])) .stage-sketch{grid-template-rows:auto var(--storage-band-folded) minmax(0,1fr)}
+html.stage-pwa-tablet.gm-tablet .stage-sketch-head>.gm-lite-tabs{display:flex!important;gap:var(--gm-gap);padding:var(--sp-1,4px) var(--gm-gap);background:var(--desk)}
+.gm-lite-tabs .gm-rehearsal-tab{flex:1;min-width:0;min-height:var(--gm-hit);padding:var(--sp-1,4px);font:inherit;color:var(--milk);background:var(--desk-2);border:1px solid var(--edge)}
+.gm-lite-tabs .gm-rehearsal-tab[aria-selected=true]{border-color:var(--brass);background:var(--gamma-selected-bg)}

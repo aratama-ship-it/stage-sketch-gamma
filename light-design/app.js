@@ -293,6 +293,7 @@
     hover: null, drag: null,
     figuresSwapped: false,
     soloFigure: null,                     // R-14: 1枚だけ広げているときの図（"plan" / "front" / "side"）
+    fixtureAlternatives: [],              // Detached hidden alternatives, included only in edit history.
     fixtureGroups: [],                    // R-11: 灯体をまとめるカスタムのグループ（ショーに1組・保存される）
     collapsed: new Set(), filter: "all",   // 一覧: 取り付け場所ごとの折り畳みと絞り込み（20灯以上向け）
     snap: false,                           // 1mのグリッドに合わせて置く・動かす（本人要望 2026-09-11）
@@ -452,14 +453,14 @@
 
   /* ---------- 履歴（モーダル内Undo） ---------- */
   /* R-11（2026-09-17）: 灯体グループも履歴に含める。含めないと「戻る」でグループだけ取り残される。 */
-  const snapshot = () => JSON.stringify({ dims: state.dims, motion: state.motion, rig: state.rig, scenes: state.scenes, palette: state.palette, levelCurve: state.levelCurve, curtains: state.curtains, fixtureGroups: state.fixtureGroups, designVersion: state.designVersion, migrationKey: state.migrationKey, positionLayoutRollbackKey: state.positionLayoutRollbackKey });
+  const snapshot = () => JSON.stringify({ dims: state.dims, motion: state.motion, rig: state.rig, scenes: state.scenes, palette: state.palette, levelCurve: state.levelCurve, curtains: state.curtains, fixtureAlternatives: state.fixtureAlternatives, fixtureGroups: state.fixtureGroups, designVersion: state.designVersion, migrationKey: state.migrationKey, positionLayoutRollbackKey: state.positionLayoutRollbackKey });
   // Compare only lighting content. Scene names and stage pieces are supplied by the host
   // and may change without an LX edit; undoing the last edit must also clear the prompt.
   const applyFingerprint = () => JSON.stringify({ dims: state.dims, motion: state.motion, rig: state.rig,
     scenes: state.scenes.map(sc => ({ id: sc.id, lx: sc.lx, lxq: sc.lxq,
       entry: sc.entry, cue: sc.cue })), palette: state.palette,
     levelCurve: state.levelCurve, curtains: state.curtains,
-    fixtureGroups: state.fixtureGroups, designVersion: state.designVersion,
+    fixtureAlternatives: state.fixtureAlternatives, fixtureGroups: state.fixtureGroups, designVersion: state.designVersion,
     positionLayoutRollbackKey: state.positionLayoutRollbackKey, migrationKey: state.migrationKey, designName: state.designName });
   let appliedFingerprint = applyFingerprint();
   function markApplied() { appliedFingerprint = applyFingerprint(); state.dirty = false; }
@@ -508,19 +509,24 @@
       if (fixture.kind !== 'fixed') continue;
       const light = current.lights[fixture.id], old = previousCue?.lights?.[fixture.id];
       if (!light || !old) continue;
-      const fields = ['surface', 'color', 'path'];
-      if (!fields.some(key => JSON.stringify(light[key]) !== JSON.stringify(old[key]))) continue;
-      const point = light.path?.a || light.path?.c;
-      const setup = { surface: light.surface, color: light.color,
-        ...(point ? { path: { kind: 'still', a: JSON.parse(JSON.stringify(point)) } } : {}) };
-      fixture.fixedSetup = JSON.parse(JSON.stringify(setup));
-      for (const sc of state.scenes) for (const c of [sc.cue, ...(sc.lxq || []).map(q => q.cue)]) {
-        if (c?.lights?.[fixture.id]) Object.assign(c.lights[fixture.id], JSON.parse(JSON.stringify(setup)), { beamDeg: null, beamDegTo: null });
-      }
+      // Propagate only authored fields. A color edit must not repair old aim differences.
+      const patch = {};
+      for (const key of ['surface', 'color', 'path'])
+        if (light[key] !== undefined && JSON.stringify(light[key]) !== JSON.stringify(old[key]))
+          patch[key] = JSON.parse(JSON.stringify(light[key]));
+      if (!Object.keys(patch).length) continue;
+      fixture.fixedSetup = { ...fixture.fixedSetup, ...JSON.parse(JSON.stringify(patch)) };
+      const edits = window.GAMMA_LIGHT_MODEL.fixedSetupDelta(old, light);
+      for (const row of [...state.scenes, ...(state.fixtureAlternatives || []).map(item => item.native)])
+        window.GAMMA_LIGHT_MODEL.patchFixedSetup(row, fixture.id, edits);
     }
   }
+  // The host owns scene numbering, membership and stage pieces. History owns LX edits.
+  let restoreSceneContext = null;
+  function setSceneContextRestorer(restoreContext) { restoreSceneContext = restoreContext; }
   function restore(json) {
     const o = JSON.parse(json);
+    state.fixtureAlternatives = o.fixtureAlternatives || [];
     state.motion = o.motion;
     if (o.dims) state.dims = o.dims; state.rig = o.rig; state.scenes = o.scenes; if (o.palette) state.palette = cleanPalette(o.palette);
     // 強さの効き方。目盛りの数が合うものだけ受け取る（古い記録には無い＝そのときはリニアのまま）
@@ -534,12 +540,13 @@
     state.selEquipment = null;
     if (state.selTruss && !E.trussById(state.rig, state.selTruss)) state.selTruss = null;
     state.aimMirror = null;
+    restoreSceneContext?.();
     state.dirty = true;
     renderAll();
   }
   /* 戻す・やり直すでも控えを更新する。控えがずれると、次の commit で積む「変更前」が狂う。 */
-  function undo() { if (!state.history.length) return; window.dispatchEvent(new Event("gamma-light-draft-edit")); state.future.push(baseline); const json = state.history.pop(); baseline = json; restore(json); }
-  function redo() { if (!state.future.length) return; window.dispatchEvent(new Event("gamma-light-draft-edit")); state.history.push(baseline); const json = state.future.pop(); baseline = json; restore(json); }
+  function undo() { if (!state.history.length) return; window.dispatchEvent(new Event("gamma-light-draft-edit")); state.future.push(baseline); const json = state.history.pop(); restore(json); baseline = snapshot(); }
+  function redo() { if (!state.future.length) return; window.dispatchEvent(new Event("gamma-light-draft-edit")); state.history.push(baseline); const json = state.future.pop(); restore(json); baseline = snapshot(); }
 
   /* ---------- 常設の表示欄 / dialog ---------- */
   /* R-01（2026-09-17 本人要望）: 画面下に浮くポップアップをやめ、
@@ -559,7 +566,7 @@
     el.title = body;                       // 2行を超えたぶんは重ねて読めるようにする
   }
   function clearLog() { const el = $("insp-log"); if (el) { el.textContent = LOG_EMPTY; el.dataset.empty = "true"; el.title = ""; } }
-  function dialog(html, buttons) {
+  function dialog(html, buttons, validate) {
     const d = $("dialog"); d.innerHTML = ""; d.hidden = false;
     const box = document.createElement("div"); box.className = "in gamma-light-dialog";
     const content=document.createElement("div");content.className="dialog-content";content.innerHTML=html;
@@ -571,7 +578,7 @@
     if(content.querySelector(".lxt-grid") && title) {title.classList.add("dialog-title");box.append(title);}
     box.append(content);
     const acts = document.createElement("div"); acts.className = "acts";
-    buttons.forEach(([label, fn, cls]) => { const b = document.createElement("button"); b.className = "btn " + (cls || ""); b.textContent = label; b.onclick = () => { dismiss(); fn && fn(); }; acts.append(b); });
+    buttons.forEach(([label, fn, cls]) => { const b = document.createElement("button"); b.className = "btn " + (cls || ""); b.textContent = label; b.onclick = () => { if (fn && validate && !validate()) return; dismiss(); fn && fn(); }; acts.append(b); });
     box.append(acts); d.append(box);
     /* 外側（暗いところ）を押したら閉じる（2026-09-13 本人要望）。
        中身の上で押して外で離した場合に閉じないよう、押した場所も見る。
@@ -999,14 +1006,19 @@
   /* ホリゾントライトは「床」「上」の各1本だけ。あり／なしで足したり外したりする
      （2026-09-13 本人指定。横位置は中央固定なので置き場所を選ぶ必要がない）。 */
   const cycFixtures = (rung) => state.rig.fixtures.filter((f) => f.mount.type === "cyc" && (f.mount.rung === "top" ? "top" : "floor") === rung);
+  function removeFixtures(ids) {
+    state.rig.fixtures = state.rig.fixtures.filter((f) => !ids.includes(f.id));
+    for (const row of [...state.scenes, ...(state.fixtureAlternatives || []).map(item => item.native)])
+      window.GAMMA_LIGHT_MODEL.removeFixtureReferences(row, ids);
+    state.fixtureGroups = state.fixtureGroups.map(group => ({...group, members: group.members.filter(id => !ids.includes(id))}))
+      .filter(group => group.members.length);
+    ids.forEach(id => state.sel.delete(id));
+  }
   function toggleCyc(rung) {
     const has = cycFixtures(rung);
     if (has.length) {
       const ids = has.map((f) => f.id);
-      state.rig.fixtures = state.rig.fixtures.filter((f) => !ids.includes(f.id));
-    ids.forEach(clearMirrorBallTargets);
-      state.scenes.forEach((sc) => { ids.forEach((id) => delete sc.cue.lights[id]); });
-      ids.forEach((id) => state.sel.delete(id));
+      removeFixtures(ids);
       commit(`ホリゾントライト（${rung === "top" ? "上" : "床"}）を外しました`);
       return;
     }
@@ -1018,9 +1030,7 @@
   }
   function removeSelected() {
     const ids = [...state.sel]; if (!ids.length) return;
-    state.rig.fixtures = state.rig.fixtures.filter((f) => !ids.includes(f.id));
-    ids.forEach(clearMirrorBallTargets);
-    state.scenes.forEach((s) => { ids.forEach((id) => delete s.cue.lights[id]); s.cue.groups = s.cue.groups.map((g) => ({ ...g, members: g.members.filter((m) => !ids.includes(m)) })).filter((g) => g.members.length >= 2); });
+    removeFixtures(ids);
     state.sel.clear();
     commit(`${ids.length === 1 ? label(ids[0]) : ids.length + "灯"}を削除しました`);
   }
@@ -1030,13 +1040,12 @@
     ids.forEach((id) => {
       const f = fixtureById(id); if (!f) return;
       const m = JSON.parse(JSON.stringify(f.mount));
-      if (m.type === "truss" || m.type === "floor") { m.u = m.u + 0.08 <= 1 ? m.u + 0.08 : Math.max(0, m.u - 0.08); }
-      else if (m.type === "side") { m.v = Math.min(1, m.v + 0.1); }
+      if (["truss", "floor", "front", "legacy-panel"].includes(m.type)) { m.u = m.u + 0.08 <= 1 ? m.u + 0.08 : Math.max(0, m.u - 0.08); }
+      else if (m.type === "side") { m.v = m.v + 0.1 <= 1 ? m.v + 0.1 : Math.max(0, m.v - 0.1); }
+      else if (m.type === "position") { m.t = m.t + 0.08 <= 1 ? m.t + 0.08 : Math.max(0, m.t - 0.08); }
       // 種類（固定／ムービング）と広がりを引き継ぐ。渡し忘れると固定灯を複製したのにムービングになる
       // （2026-09-13 発見: ホリゾントライトの複製で確認）。
-      const nf = E.newFixture(uid("f"), state.nextNo++, m, "", f.kind, f.beamDeg);
-      if (f.opticalType) nf.opticalType = f.opticalType;
-      if (f.barn) nf.barn = { ...f.barn };   // バーンドアも仕込みの一部なので引き継ぐ（2026-09-14）
+      const nf = { ...JSON.parse(JSON.stringify(f)), id: uid("f"), no: state.nextNo++, mount: m };
       state.rig.fixtures.push(nf); made.push(nf.id);
     });
     state.sel = new Set(made);
@@ -1543,6 +1552,7 @@
       if (clip.kind === "fixed") {
         if (clip.fixture.beamDeg != null) f.beamDeg = clip.fixture.beamDeg;
         if (clip.fixture.barn) f.barn = clone(clip.fixture.barn);
+        else delete f.barn; // Missing barn means fully open, not a partial overlay.
       }
     });
     state.slLive = "";   // 手で貼った値をサーチライトのつまみに上書きさせない
@@ -4266,6 +4276,12 @@
     commit(`${list.length}灯を「${g.name}」にまとめました`);
   }
   function dissolveFixtureGroup(gid) {
+    const g = fixtureGroups().find((x) => x.id === gid); if (!g) return;
+    const visible = groupMembers(g).filter(passList);
+    if (!visible.length) return;
+    // A filtered release affects only the displayed members; hidden memberships survive.
+    g.members = g.members.filter((id) => !visible.includes(id));
+    if (g.members.length) { commit("グループを解除しました"); return; }
     const before = fixtureGroups().length;
     state.fixtureGroups = fixtureGroups().filter((g) => g.id !== gid);
     if (state.fixtureGroups.length !== before) commit("グループを解除しました");
@@ -4277,7 +4293,7 @@
   }
   function selectFixtureGroup(gid, additive) {
     const g = fixtureGroups().find((x) => x.id === gid); if (!g) return;
-    const members = groupMembers(g);
+    const members = groupMembers(g).filter(passList);
     if (!additive) state.sel.clear();
     members.forEach((id) => state.sel.add(id));
     renderAll();
@@ -4320,6 +4336,7 @@
     return secs.map((x) => ({ ...x, items: x.items.filter(passSearch) })).filter((x) => x.items.length);
   }
   const passFilter = (fid) => state.filter === "all" || lightState(fid) === state.filter;
+  const passList = (fid) => { const f = fixtureById(fid); return Boolean(f) && passFilter(fid) && passSearch(f); };
   // 20灯以上でも目当ての1灯へ届くように、番号・名前・取り付け場所の文字で絞る
   function passSearch(f) {
     const q = state.search; if (!q) return true;
@@ -4460,7 +4477,7 @@
      * 取り付け場所の見出し（バトン1・バトン2…）と同じ見え方で並べ、見出しを押すとまとめて選べる。
      * 「組」（動きの組）とは別物なので、見出しの言葉も分ける。 */
     if (state.mode === "move") fixtureGroups().forEach((g) => {
-      const members = groupMembers(g);
+      const members = groupMembers(g).filter(passList);
       if (!members.length) return;
       const h = document.createElement("div"); h.className = "grp fixture-group";
       h.innerHTML = `<span>◆ ${escapeHtml(g.name)}</span><small>${members.length}灯　まとめて選ぶ</small>`;
@@ -4475,10 +4492,18 @@
       host.append(h);
       members.forEach((m) => { const f = fixtureById(m); if (f) host.append(row(f)); });
     });
-    if (state.mode === "move") c.groups.forEach((g, gi) => { const h = document.createElement("div"); h.className = "grp"; h.innerHTML = `<span>組${gi + 1}　${escapeHtml(groupName(g))}</span><small>${g.members.length}灯</small>`; h.onclick = () => { state.sel = new Set(g.members); renderAll(); }; host.append(h); g.members.forEach((m, i) => { const f = fixtureById(m); if (f) host.append(row(f, g.relation === "sequential" ? i : undefined)); }); });
+    if (state.mode === "move") c.groups.forEach((g, gi) => {
+      const members = g.members.filter(passList);
+      if (!members.length) return;
+      const h = document.createElement("div"); h.className = "grp";
+      h.innerHTML = `<span>組${gi + 1}　${escapeHtml(groupName(g))}</span><small>${members.length}灯</small>`;
+      h.onclick = () => { state.sel = new Set(members); renderAll(); }; host.append(h);
+      // Keep the authored sequential index even when preceding rows are filtered out.
+      g.members.forEach((m, i) => { if (members.includes(m)) host.append(row(fixtureById(m), g.relation === "sequential" ? i : undefined)); });
+    });
     /* 組に入っていない灯は、取り付け場所ごとに見出しを付けて並べる（2026-09-11 本人要望）。
        ここでも畳めるので、20灯以上でも「どこに何灯あるか」を先に見渡せる。 */
-    const rest = state.rig.fixtures.filter((f) => !grouped.has(f.id)).filter((f) => passFilter(f.id));
+    const rest = state.rig.fixtures.filter((f) => !grouped.has(f.id)).filter((f) => passList(f.id));
     mountSections(rest).forEach((sec) => {
       const h = document.createElement("div"); h.className = "grp";
       const open = !state.collapsed.has(sec.key);
@@ -4488,7 +4513,7 @@
       host.append(h);
       if (open) sec.items.forEach((f) => host.append(row(f)));
     });
-    if (!rest.length && state.rig.fixtures.length) host.append(el("p", "hint", "この絞り込みに当てはまる灯体はありません。"));
+    if (!host.children.length && state.rig.fixtures.length) host.append(el("p", "hint", "この絞り込みに当てはまる灯体はありません。"));
     /* T-17（2026-09-18 本人要望）: 左の一覧の「N灯を選択中」は消した（右パネル最下部へ集約）。 */
     $("del").disabled = true; $("spread").disabled = true; $("mirror").disabled = true;
   }
@@ -5790,7 +5815,7 @@
     const parts = [];
     const outSame = T.fadeOutSec === null || T.fadeOutSec === T.fadeInSec;
     parts.push(outSame ? `${s(T.fadeInSec)}` : `${s(T.fadeInSec)}/${s(T.fadeOutSec)}`);
-    if (T.delayInSec > 0 || (T.delayOutSec !== null && T.delayOutSec > 0)) parts.push(`遅れ${s(T.delayInSec)}`);
+    if (T.delayInSec > 0 || (T.delayOutSec !== null && T.delayOutSec > 0)) parts.push(`遅れ${s(T.delayInSec)}${T.delayOutSec !== null && T.delayOutSec !== T.delayInSec ? `/${s(T.delayOutSec)}` : ""}`);
     if (T.by.position && T.by.position.fadeSec !== null) parts.push(`位置${s(T.by.position.fadeSec)}`);
     if (T.by.color && T.by.color.fadeSec !== null) parts.push(`色${s(T.by.color.fadeSec)}`);
     if (T.mib) parts.push("MIB");
@@ -5866,7 +5891,17 @@
       if(entryMode) { t.entry={mode:"custom",timing}; commit("入りを決めました"); return; }
       t.timing = timing;
       commit(`${qLabel(t)} の時間を決めました（${lxTimingText(timing)}）`);
-    }, "primary"]]);
+    }, "primary"]], () => {
+      const mode = document.querySelector('.lxt-seg button[aria-pressed="true"]')?.dataset.mode;
+      if (mode !== "fade") return true;
+      const ids = ["lxt-in", "lxt-out", "lxt-din", "lxt-dout"];
+      if ($("lxt-curve").value === "custom") ids.push("lxt-acc", "lxt-dec");
+      ids.push("lxt-pos", "lxt-col", "lxt-snap");
+      const invalid = ids.map($).find((input) => !input.checkValidity());
+      if (!invalid) return true;
+      invalid.focus(); invalid.reportValidity();
+      return false; // No dismissal, draft mutation, history or host write on invalid input.
+    });
     const body = $("lxt-body"), curveSel = $("lxt-curve"), custom = $("lxt-custom");
     const segBtns = Array.from(document.querySelectorAll(".lxt-seg button"));
     const setMode = (mode) => { segBtns.forEach((b2) => b2.setAttribute("aria-pressed", String(b2.dataset.mode === mode))); if (body) body.hidden = mode !== "fade"; };
@@ -5959,11 +5994,12 @@
   /* いまのシーンの LXキュー を番号順に並べ、前後の行き先を返す。
      どの LXキュー にも入っていない下書きのときは、前は無し・次は1本目にする。 */
   function lxNeighbors() {
-    const sc = scene(), list = [...lxList(sc)].filter(q=>q.enabled!==false).sort((a, b) => E.finite(a.seq, 0) - E.finite(b.seq, 0));
-    if (!list.length) return { list, prev: null, next: null };
-    const i = list.findIndex((q) => q.id === lxEditingOf(sc));
-    if (i < 0) return { list, prev: null, next: list[0] };
-    return { list, prev: i > 0 ? list[i - 1] : null, next: i < list.length - 1 ? list[i + 1] : null };
+    const sc = scene(), all = [...lxList(sc)].sort((a, b) => E.finite(a.seq, 0) - E.finite(b.seq, 0));
+    const list = all.filter(q=>q.enabled!==false);
+    const i = all.findIndex((q) => q.id === lxEditingOf(sc));
+    if (i < 0) return { list, prev: null, next: list[0] || null };
+    return { list, prev: all.slice(0, i).reverse().find(q=>q.enabled!==false) || null,
+      next: all.slice(i + 1).find(q=>q.enabled!==false) || null };
   }
 
   // Placement is host-derived display state, independent of the Q's enabled flag.
@@ -6072,6 +6108,12 @@
       /* 時間（カット／フェード）。札を押す操作にしない（押すと編集に入ってしまう）。 */
       const cut = lxTimingText(q.timing) === "カット";
       const tb = btn(cut ? "カット" : `⏱ ${lxTimingShort(q.timing)}`, () => lxTimingDialog(si, q.id), "small quiet lxtime", lxTimingText(q.timing) + "。このキューへ移るときの時間（フェード・遅れ・カーブ）を決める");
+      const timing = E.normalizeTiming(q.timing);
+      if (timing && (timing.delayInSec > 0 || timing.delayOutSec > 0)) {
+        row.classList.add("has-delay");
+        // Keep each time and the complete delay pair readable as the card narrows.
+        tb.replaceChildren(...lxTimingShort(q.timing).split("・").map((part, i) => el("span", "lxtime-part", (i ? "・" : "⏱ ") + part)));
+      }
       row.append(tb);
       const enabled=btn(q.enabled===false?"無効":"有効",()=>{const current=lxList(state.scenes[si]).find(z=>z.id===q.id);if(current){current.enabled=current.enabled===false;commit();}},"small quiet lx-enabled");
       enabled.setAttribute("aria-pressed",String(q.enabled!==false));enabled.title="Qの有効・無効を切り替える";
@@ -6143,7 +6185,7 @@
       const up = T ? T.fadeInSec : 0, down = T ? (T.fadeOutSec === null ? T.fadeInSec : T.fadeOutSec) : 0;
       const dIn = T ? T.delayInSec : 0, dOut = T ? (T.delayOutSec === null ? T.delayInSec : T.delayOutSec) : 0;
       const prev = i > 0 ? all[i - 1].q.cue : { lights: {}, groups: [] };
-      return { no: qLabel(q), scene: `${si + 1}「${sc.name || ""}」`, trigger: q.trigger || "", notation: E.cueNotation(prev, q.cue, q.timing),
+      return { no: qLabel(q), scene: `${sceneNumberOf(sc)}「${sc.name || ""}」`, trigger: q.trigger || "", notation: E.cueNotation(prev, q.cue, q.timing),
         fade: T ? `${E.cueNoText(up)}／${E.cueNoText(down)}` : "0（カット）", delay: dIn || dOut ? `${E.cueNoText(dIn)}／${E.cueNoText(dOut)}` : "", follow: E.followText(q.follow),
         name: q.name || "", memo: q.memo || "", legacy: q.legacyNo || "" };
     });
@@ -6202,7 +6244,7 @@
         host.append(field("奥行き", range(0, 1, 0.01, t.v, depthText, (v) => { t.v = v; draw(); }, () => commit(), numDepth())));
         host.append(field("高さ", range(2, state.dims.H, 0.1, t.h, (v) => `約${metresText(v)}${t.tentative ? "（仮の高さ）" : ""}`, (v) => { t.h = v; t.tentative = false; draw(); }, () => commit(), numMetres(2, state.dims.H, 0.1, "バトンの高さ(m)"))));
         host.append(btn("このバトンに灯体を吊る", () => { state.tool = "fixture"; renderAll(); }, "primary"));
-        host.append(btn("バトンを削除", () => { const n = state.rig.fixtures.filter((f) => f.mount.trussId === t.id).length; const go = () => { state.rig.fixtures = state.rig.fixtures.filter((f) => f.mount.trussId !== t.id); state.rig.trusses = state.rig.trusses.filter((x) => x.id !== t.id); state.selTruss = null; state.sel.clear(); commit("バトンを削除しました"); }; n ? dialog(`<p>このバトンには${n}灯が吊ってあります。灯体ごと削除しますか？</p>`, [["キャンセル", null, "quiet"], ["灯体ごと削除", go, "primary"]]) : go(); }, "quiet"));
+        host.append(btn("バトンを削除", () => { const n = state.rig.fixtures.filter((f) => f.mount.trussId === t.id).length; const go = () => { removeFixtures(state.rig.fixtures.filter(f => f.mount.trussId === t.id).map(f => f.id)); state.rig.trusses = state.rig.trusses.filter((x) => x.id !== t.id); state.selTruss = null; state.sel.clear(); commit("バトンを削除しました"); }; n ? dialog(`<p>このバトンには${n}灯が吊ってあります。灯体ごと削除しますか？</p>`, [["キャンセル", null, "quiet"], ["灯体ごと削除", go, "primary"]]) : go(); }, "quiet"));
       }
       if (ids.length === 1) {
         const f = fixtureById(ids[0]); const m = f.mount;
@@ -7457,6 +7499,7 @@
         lxEditing: ds.lxEditing || null,
         cue: ds.cue || { lights: {}, groups: [] } };
     });
+    if (options.fixtureAlternatives) state.fixtureAlternatives = JSON.parse(JSON.stringify(options.fixtureAlternatives));
     state.rig = o.rig;
     state.motion = o.motion;
     if (Array.isArray(o.palette)) state.palette = cleanPalette(o.palette);
@@ -7625,7 +7668,7 @@
   // 試作の検証用。製品では出さない（状態を外から読めるようにしておく）
   window.__RIG = { state, E, planBox, secBox, secOf, SECS,
     /* 「照明のあるある」（light-presets-ui.js）との接続点。app.js の内部関数をここだけから貸す（2026-09-14）。 */
-    hooks: { viewLightCue, setCuePlacementReader, refreshCuePlacements, setSoloFigure, setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
+    hooks: { setSceneContextRestorer, viewLightCue, setCuePlacementReader, refreshCuePlacements, setSoloFigure, setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
 
   /* ブラウザの大きさに追従する。モーダルだからと固定にしない（2026-09-11 本人要望）。
      rAFで1回にまとめる（ドラッグ中の連続リサイズで描き直しが溜まらないように）。 */

@@ -114,6 +114,30 @@
     return withStore("readwrite", (store) => { store.delete(projectId); return true; });
   }
 
+  // Pin outside the mutable projectId backup before accepting a shared receive.
+  // Both this version and v0.3.79 replace that backup during ordinary saves.
+  async function retainForShare(projectId, expectedText, generations = []) {
+    const before = await get(projectId);
+    if (!before || before.serializedState !== expectedText) return false;
+    const pinnedGenerations = before.preShareGenerations || generations;
+    const recovery = window.STAGE_STORAGE_RECOVERY;
+    if (!recovery?.createVault || !recovery?.create) return false;
+    await recovery.create({vault:recovery.createVault(window.indexedDB)})
+      .preserveShareGenerations(before, pinnedGenerations);
+    return withStore("readwrite", (store, done) => {
+      const request = store.get(projectId);
+      request.onsuccess = () => {
+        const record = request.result;
+        if (!sameRecord(record, before)) { done(false); return; }
+        try {
+          store.put({...record, retainedForShare:true,
+            preShareGenerations:pinnedGenerations}, projectId);
+          done(true);
+        } catch (_) { store.transaction.abort(); }
+      };
+    });
+  }
+
   function removeIfCurrent(projectId, expectedRecord) {
     if (typeof projectId !== "string" || !projectId || !expectedRecord) return Promise.resolve(false);
     return withStore("readwrite", (store, setResult) => {
@@ -219,7 +243,8 @@
         const record = cursor.value;
         const texts = cursor.key === PENDING_SWITCH_KEY
           ? [record.beforeCurrent, record.beforeShelf, record.nextCurrent, record.nextShelf]
-          : [record.serializedState];
+          : [record.serializedState, ...(Array.isArray(record.preShareGenerations)
+            ? record.preShareGenerations.flatMap(row => Object.values(row.values || {})) : [])];
         if (texts.some(text => text !== null && typeof text !== "string")) readable = false;
         const found = collect(texts);
         if (!found) readable = false;
@@ -230,5 +255,5 @@
   }
 
   window.SHOSAI_STAGE_PROJECT_BACKUP_STORE = Object.freeze({ get, put, putIfCurrent, remove, removeIfCurrent,
-    restoreIfCurrent, latest, protectedAudioIds, pruneShelfDuplicates, beginPendingSwitch, getPendingSwitch, clearPendingSwitch });
+    restoreIfCurrent, retainForShare, latest, protectedAudioIds, pruneShelfDuplicates, beginPendingSwitch, getPendingSwitch, clearPendingSwitch });
 })();

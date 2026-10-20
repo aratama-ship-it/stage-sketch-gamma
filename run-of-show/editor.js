@@ -113,7 +113,7 @@ window.ROSCuePaper={create({doc,settings,columns,onColumns,text}){
   doc.getElementById('stage-cue-sheet-view-print').addEventListener('click',e=>{if(parent.SHOSAI_STAGE_CUE_SHEET_HOST.selection()?.kind==='handover')return;e.stopImmediatePropagation();print().catch(onColumns);},true);
   return {refresh,print,get ready(){return ready;}};
 }};
-/* F-07: the same disclosure as the right panels; no panel reordering. */
+/* R-1〜3: retain disclosures/popovers, with a fixed display band and grip reordering. */
 window.ROSLeftPanels={install(band,{store}){
   const panels=[...band.children].filter(n=>n.classList.contains('band-group'));
   const compact=matchMedia('(max-width:899px)'), disclosures=[];
@@ -130,18 +130,74 @@ window.ROSLeftPanels={install(band,{store}){
       if(isDetails&&event.newState==='closed')panel.open=false;
     });
   };
-  let order=['band-cues','band-settings','column-popover','panel-0','panel-3','panel-1','panel-4','band-output'];
-  // Keep a previously chosen arrangement; this batch does not offer reordering.
-  try{const saved=JSON.parse(localStorage.getItem('gamma:ros:left-panels'));if(Array.isArray(saved))order=saved;}catch(_){}
-  if(!order.includes('band-format'))order.unshift('band-format');
+  // Assign legacy positional IDs before moving anything; collapsed keys remain valid.
   for(const [i,panel] of panels.entries())panel.dataset.rosPanel=panel.id||'panel-'+i;
-  for(const id of order){const panel=panels.find(p=>p.dataset.rosPanel===id);if(panel)band.append(panel);}
+  const fixed=panels.find(p=>p.classList.contains('band-view'));
+  const defaults=['band-format','band-cues','band-settings','column-popover','panel-0','panel-3','panel-4','band-output'];
+  let saved=[];try{const value=JSON.parse(localStorage.getItem('gamma:ros:left-panels'));if(Array.isArray(value))saved=value;}catch(_){}
+  const known=new Map(panels.filter(p=>p!==fixed).map(p=>[p.dataset.rosPanel,p]));
+  for(const id of new Set([...saved,...defaults,...known.keys()]))if(known.has(id))band.append(known.get(id));
+  if(fixed){band.prepend(fixed);fixed.classList.add('ros-display-band');}
+  // R-1: stage-sketch.js buildPanelHeads/startGrip/flipMove, scoped to this rail.
+  // Same 5px activation, pointer following, hole and 170ms FLIP; no HTML drag.
+  let drag=null,justDragged=false;
+  const movingPanels=()=>[...band.children].filter(n=>panels.includes(n)&&n!==fixed);
+  const animate=(node,from)=>{
+    const to=node.getBoundingClientRect(),dx=from.left-to.left,dy=from.top-to.top;
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches||parent.document.getElementById('stage-anim-scenes')?.checked===false)return;
+    if(Math.abs(dx)<.5&&Math.abs(dy)<.5)return;
+    node.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'none'}],{duration:170,easing:'cubic-bezier(.2,.7,.3,1)'});
+  };
+  const flipMove=mutate=>{
+    const nodes=movingPanels().filter(n=>n!==drag?.panel),before=new Map(nodes.map(n=>[n,n.getBoundingClientRect()]));
+    for(const n of nodes)for(const animation of n.getAnimations())animation.cancel();
+    mutate();for(const n of nodes)animate(n,before.get(n));
+  };
+  const startGrip=(event,panel)=>{
+    if(event.button!==undefined&&event.button!==0||drag)return;
+    const sx=event.clientX,sy=event.clientY,pointer=event.pointerId;
+    const next=panel.nextElementSibling;
+    let active=false;
+    const finish=cancel=>{
+      window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',cancelled);window.removeEventListener('keydown',key);
+      if(!active)return;
+      const {hole}=drag,from=panel.getBoundingClientRect();
+      if(cancel)band.insertBefore(panel,next);else band.insertBefore(panel,hole);
+      hole.remove();panel.classList.remove('is-dragging');
+      for(const k of ['position','left','top','width','zIndex','pointerEvents'])panel.style[k]='';
+      document.body.classList.remove('is-ros-panel-dragging');drag=null;animate(panel,from);
+      justDragged=true;setTimeout(()=>{justDragged=false;},60);
+      if(!cancel)store('gamma:ros:left-panels',JSON.stringify(movingPanels().map(n=>n.dataset.rosPanel)));
+    };
+    const move=ev=>{
+      if(ev.pointerId!==pointer)return;
+      if(!active){
+        if(Math.hypot(ev.clientX-sx,ev.clientY-sy)<5)return;
+        active=true;
+        const rect=panel.getBoundingClientRect(),hole=document.createElement('div');hole.className='ros-panel-hole';hole.style.height=rect.height+'px';hole.style.width=rect.width+'px';band.insertBefore(hole,panel);
+        drag={panel,hole,dx:sx-rect.left,dy:sy-rect.top};
+        for(const animation of panel.getAnimations())animation.cancel();
+        panel.classList.add('is-dragging');Object.assign(panel.style,{position:'fixed',left:rect.left+'px',top:rect.top+'px',width:rect.width+'px',zIndex:'600',pointerEvents:'none'});
+        document.body.classList.add('is-ros-panel-dragging');
+      }
+      ev.preventDefault();panel.style.left=ev.clientX-drag.dx+'px';panel.style.top=ev.clientY-drag.dy+'px';
+      const box=band.getBoundingClientRect();if(ev.clientX<box.left-240||ev.clientX>box.right+240)return;
+      const ref=movingPanels().find(n=>n!==panel&&n.getClientRects().length&&ev.clientY<n.getBoundingClientRect().top+n.getBoundingClientRect().height/2)||null;
+      // The fixed display band is never an insertion target, including old saved orders.
+      if(drag.hole.nextElementSibling!==ref)flipMove(()=>band.insertBefore(drag.hole,ref));
+    };
+    const up=ev=>{if(ev.pointerId===pointer)finish(false);},cancelled=()=>finish(true),key=ev=>{if(ev.key==='Escape'){ev.preventDefault();finish(true);}};
+    window.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',up);window.addEventListener('pointercancel',cancelled);window.addEventListener('keydown',key);
+  };
   for(const panel of panels){
     const heading=panel.querySelector('.band-heading');if(!heading)continue;
+    if(panel===fixed){heading.dataset.rosText ||= heading.textContent;continue;}
     const key='gamma:ros:left-collapsed:'+panel.dataset.rosPanel;
-    const grip=document.createElement('span');grip.textContent='⠿';grip.setAttribute('aria-hidden','true');
+    const grip=document.createElement('span');grip.className='ros-panel-grip';grip.textContent='⠿';grip.setAttribute('aria-hidden','true');
+    panel.draggable=false;grip.draggable=false;grip.addEventListener('pointerdown',event=>startGrip(event,panel));
     const disclosure=document.createElement('span');disclosure.className='ros-side-disclosure';disclosure.textContent='▾';disclosure.setAttribute('aria-hidden','true');
     if(heading.tagName==='SUMMARY'){
+      heading.addEventListener('click',event=>{if(justDragged){event.preventDefault();event.stopImmediatePropagation();}},true);
       heading.classList.add('ros-side-head');heading.prepend(grip);heading.append(disclosure);
       if(panel.id!=='column-popover')try{panel.open=localStorage.getItem(key)==='0';}catch(_){}
       heading.setAttribute('aria-expanded',String(panel.open));
@@ -166,7 +222,8 @@ window.ROSLeftPanels={install(band,{store}){
     const paint=()=>{content.hidden=closed;button.setAttribute('aria-expanded',String(!closed));};
     button.setAttribute('aria-controls',content.id);paint();
     setup(panel,button,content,false,paint);
-    button.addEventListener('click',()=>{
+    button.addEventListener('click',event=>{
+      if(justDragged){event.preventDefault();return;}
       if(compact.matches){content.togglePopover();if(content.matches(':popover-open'))place(content,button);}
       else{closed=!closed;paint();store(key,closed?'1':'0');}
     });
@@ -1360,7 +1417,7 @@ window.ROSLeftPanels={install(band,{store}){
         if(event.key==="Escape"&&!event.target.matches("input,textarea,select,[contenteditable=true]")){event.preventDefault();if(cueHost.readOnly())parent.GAMMA_WORKSPACE.normal();else{showRunOfShow();$("cue-performer").focus({preventScroll:true});}}
         if(!(event.metaKey||event.ctrlKey))return;
         if(cueHost.readOnly()&&["s","z"].includes(event.key.toLowerCase())){event.preventDefault();return;}
-        if(event.key.toLowerCase()==="s"){event.preventDefault();bridge.save().catch(showError);}
+        if(event.key.toLowerCase()==="s"){event.preventDefault();saveDraft();}
         if(event.key.toLowerCase()==="z"&&!event.target.matches("input,textarea,[contenteditable=true]")){event.preventDefault();if(event.shiftKey)bridge.redo();else bridge.undo();cueHost.refresh();}
       });
       syncCueSkin();finishCueOpen();
@@ -1473,7 +1530,7 @@ window.ROSLeftPanels={install(band,{store}){
       render();notice("紙面の変更を進行と保存内容へ反映しました");return null;
     }catch(error){return error.message;}
   }
-  paperEditor=window.ROSPaperEditor.create({frame:document.querySelector(".doc-frame"),continuous:()=>paperFormat==='free',read:readDirect,commit:commitDirect,onBegin:node=>{const cell=node.closest('td[data-column-id],.pg-cell,.portrait-field');if(cell&&(selection.kind!=='cells'||!selection.keys.has(cellKey(cell))))selectCell(cell,false);},onDraft:()=>{$("storage-status").textContent="紙面の欄を編集中です。反映後に保存できます。";},onState:(text,editing)=>{
+  paperEditor=window.ROSPaperEditor.create({frame:document.querySelector(".doc-frame"),continuous:()=>paperFormat==='free',read:readDirect,commit:commitDirect,text:uiText,onBegin:node=>{const cell=node.closest('td[data-column-id],.pg-cell,.portrait-field');if(cell&&(selection.kind!=='cells'||!selection.keys.has(cellKey(cell))))selectCell(cell,false);},onDraft:()=>{$("storage-status").textContent="紙面の欄を編集中です。反映後に保存できます。";},onState:(text,editing)=>{
     $("paper-edit-status").textContent=text;document.body.classList.toggle("paper-is-editing",editing);document.body.classList.toggle("pages-ready",!editing&&!busy&&$("pagination-status").dataset.state==="ready");$("print-sample").disabled=editing||busy||$("pagination-status").dataset.state!=="ready";
     if(!editing&&!dirty&&storageReady&&!busy)$("storage-status").textContent=savedRevision?"ショーの保存を使っています。":"ショーと一緒に自動保存します。";
   }});

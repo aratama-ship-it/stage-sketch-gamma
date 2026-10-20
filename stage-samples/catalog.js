@@ -35,8 +35,8 @@ const index = [
     "branchReason": "",
     "description": "",
     "type": "fixture",
-    "rawBytes": 979892,
-    "url": "./stage-samples/feature-test-show.json?v=20261019-v0379",
+    "rawBytes": 982231,
+    "url": "./stage-samples/feature-test-show.json?v=20261020-v0380",
     "audioFiles": {
       "ft-track-b": "./stage-samples/audio/test-count-120bpm.m4a"
     }

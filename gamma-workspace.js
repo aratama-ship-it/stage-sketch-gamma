@@ -888,7 +888,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261019-v0379'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261020-v0380'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;

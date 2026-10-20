@@ -235,6 +235,10 @@
     /* 修正バッチ 2026-10-07 #8: LXキューの呼び名（ショーごとの設定）と舞台のシーン番号は表示だけに使う（照明デザインの保存物には入れない） */
     state.cueNaming=next.cueNaming==='serial'?'serial':'scene';
   }
+  hooks.setSceneContextRestorer(() => {
+    const next = parent.GAMMA_LIGHT_HOST.context();
+    if (context && next?.showId === context.showId) synchronizePieces(next);
+  });
   /* 会場の客席多角形はホスト側の正本を参照するだけで、照明デザインの保存物へ複製しない。
      形が無い会場では null のまま＝客席ワンダーを有効にしない。 */
   function synchronizeVenueMask(next) {
@@ -296,11 +300,12 @@
       }
       // Strict ID matching: host pieces never come from a demo or imported design.
       state.scenes=next.scenes.map(row=>({id:row.id,name:row.name,sectionId:row.sectionId||null,sectionTitle:row.sectionTitle||'',pieces:model.clone(row.pieces),cue:{lights:{},groups:[]}}));
-      hooks.applyDesign(hostDesign,{host:true});
+      hooks.applyDesign(hostDesign,{host:true,fixtureAlternatives:next.fixtureAlternatives || []});
       synchronizePieces(next);synchronizeVenueMask(next);synchronizeFrontSeats(next);
       hooks.renderAll();
       hooks.markApplied();
-      if(dirty) hooks.applyDesign(design,{host:true,preserveAppliedBaseline:true});
+      if(dirty) hooks.applyDesign(design,{host:true,preserveAppliedBaseline:true,
+        fixtureAlternatives:model.fixtureAlternativeEdits(next.fixtureAlternatives,hostDesign,design)});
       synchronizePieces(next);
       appliedExtras=model.clone(design);context=next;synchronizeVenueMask(next);synchronizeFrontSeats(next);changedElsewhere=false;
       hooks.refreshApplyState();draftState=state.dirty?'saved':'none';applyError='';appliedNotice='';renderSaveStatus();state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
@@ -346,7 +351,7 @@
     try {
       if(changedElsewhere) throw Error('別のタブでショーが変更されました。照明をファイルへ控えてから読み直してください');
       hooks.stop();
-      const result=await parent.GAMMA_LIGHT_HOST.apply(build(),context.basis,options.placement ? {placement:options.placement} : {});
+      const result=await parent.GAMMA_LIGHT_HOST.apply(build(),context.basis,{fixtureAlternatives:model.clone(state.fixtureAlternatives || []), ...(options.placement ? {placement:options.placement} : {})});
       if(!result.persisted) throw Error('保存を確認できませんでした');
       parent.GAMMA_WORKSPACE.captureHostHistory();
       context=result.context;synchronizeVenueMask(context);
