@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.81";
+  const GAMMA_APP_VERSION = "v0.3.82";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -1722,9 +1722,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const project = stripTransientPieceFields(backfillMissingSceneRehearsal(stripRemovedSceneFields(projectIoClone(document.project))));
     sceneAlternatives?.restore(project);
     refreshRjSecondSetPalette(project);
-    if (project.lightingDesign && window.GAMMA_LIGHT_MODEL?.normalizeFixedSetup) {
-      project.lightingDesign = window.GAMMA_LIGHT_MODEL.normalizeFixedSetup(project.lightingDesign);
-    }
+    // Import is observational: fixed-fixture setup and unknown fields belong
+    // to the saved document. Only an explicit edit may reconcile them.
     let venueImport = { venues: [], idMap: {}, imported: 0, skipped: 0 };
     if (document.version === 4 && Array.isArray(document.venues) && venueLibrary) {
       venueImport = venueLibrary.importVenues(document.venues);
@@ -2513,7 +2512,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-20`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-21`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -10347,7 +10346,14 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return true;
   }
   function lightingDraftExists(id) {
-    try { return localStorage.getItem("gamma:lighting-draft-v1:"+id)!==null; } catch (_) { return true; }
+    try {
+      for(let i=0;i<localStorage.length;i++) {
+        const key=localStorage.key(i);
+        if(!/^gamma:lighting-(?:draft-v1|session-draft-v1|owner-draft-v2):/.test(key))continue;
+        try {if(JSON.parse(localStorage.getItem(key))?.showId===id)return true;} catch(_) {return true;}
+      }
+      return false;
+    } catch (_) { return true; }
   }
   const BUNDLED_SAMPLE_BACKFILLS = [
     {id:"romeo-juliet-rj-second-v1",build:()=>buildRjSecondSampleShow(),apply:(saved,bundled)=>{const rig=window.GAMMA_LIGHT_MODEL?.adoptRjSecondStandardRig(saved,bundled,{draftExists:lightingDraftExists("romeo-juliet-rj-second-v1")})||false;const costumes=adoptRjSecondCostumes(saved,bundled);return rig||costumes;}},
@@ -11308,6 +11314,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function updateHistoryButtons() {
+    window.GammaUndoOwner?.invalidate();
     const drawing = window.GAMMA_FIELD_RUNS?.historyState();
     const blocked = historyEditBlocked();
     els.undo.disabled = blocked || !(drawing ? drawing.canUndo : history.length);
@@ -11324,6 +11331,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["hidden", "open"] });
   }
   function dispatchHistory(redoing = false) {
+    if (window.GammaUndoOwner) { window.GammaUndoOwner.execute(redoing ? "redo" : "undo"); return; }
     if (historyEditBlocked()) return;
     if (window.GAMMA_FIELD_RUNS?.historyCommand(redoing)) return;
     if (redoing) redo(); else undo();
@@ -11388,6 +11396,25 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (els.saveStatus) els.saveStatus.dataset.savedShowTitle = title;
   }
 
+  function syncSaveLocationNotice() {
+    const notice = document.getElementById("stage-save-location-notice");
+    if (!notice) return;
+    const status = nativeProject ? nativeProject.saveNoticeState : "browser";
+    const messages = {
+      browser: "描いたものはこの端末のブラウザにだけ保存されます。設定や容量で消えることがあるので、区切りごとに「書き出す」からファイルへ控えを取ってください。",
+      unconfirmed: "Mac のプロジェクトへの保存状態を確認できません。「保存」で保存先と結果を確認してください。",
+      unsaved: "このショーはまだファイルへの保存を確認できていません。「保存」でプロジェクトの保存先を選んでください。",
+      received: "変更は Mac アプリが受け取りました。プロジェクトへの保存完了を待っています。",
+      saving: "プロジェクトへ保存中です。保存完了を待ってください。",
+      saved: "プロジェクトへ保存しました。変更はこのファイルへ自動保存します。区切りごとにファイルの控えを取ってください。",
+      failed: "プロジェクトへの保存に失敗しました。現在のショーを開いたまま、保存先を確認してもう一度保存してください。",
+      hold: "原本を保全するため、書き込みを保留しています。「保存」で別の保存先を選んでください。",
+    };
+    notice.dataset.saveState = status;
+    notice.textContent = tx(messages[status] || messages.unconfirmed)
+      + (nativeProject ? " " + tx("表示設定はこの Mac に保存され、ショーのファイルとは別に管理されます。") : "");
+  }
+
   let nativeSavingTimer = null;
   let nativeSaveWarning = null;
   function nativeProjectSaveState(payload) {
@@ -11413,8 +11440,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       state.lastSavedAt = payload.at; syncSaveStamps();
       setSaveStatus(tx("プロジェクトを保存しました。"), "saved");
     } else if (payload.state === "saving") {
+      const receiptOwner = nativeProject?.identity();
       nativeSavingTimer = setTimeout(() => {
         nativeSavingTimer = null;
+        if (nativeProject && !nativeProject.matches(receiptOwner)) return;
         if (!nativeSaveWarning) setSaveStatus(tx("保存中…"), "saving");
       }, 1000);
     } else if (!nativeSaveWarning) {
@@ -24624,7 +24653,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     // In-document replacements (including first venue setup) are sent by
     // persistSoon after installation. Only the shell may switch documents;
     // neither path may commit to the browser ProjectStore in native mode.
-    if (typeof nativeProject !== "undefined" && nativeProject) return next.project.id === state.project.id;
+    if (typeof nativeProject !== "undefined" && nativeProject) return guard() && !nativeDocumentDelivery && next.project.id === state.project.id;
     if (resetInProgress || !guard()) return false;
     showSaveTransitionsPending++;
     try {
@@ -32232,6 +32261,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     syncPrefsGuideColumn();
     renderPrefs();
     showPrefsSection("settings");
+    syncSaveLocationNotice();
     if (els.prefsModal) els.prefsModal.hidden = false;
     if (els.prefsBackdrop) els.prefsBackdrop.hidden = false;
     if (els.prefsModal && !releasePrefsFocus) releasePrefsFocus = window.GAMMA_UI?.containDialog(els.prefsModal, {
@@ -35041,7 +35071,7 @@ ${propsPlotHtml}
     reader.readAsText(file);
   }
 
-  async function importProjectText(text, file, packageData = null, nativeOpen = false, librarySample = false) {
+  async function importProjectText(text, file, packageData = null, nativeOpen = false, librarySample = false, nativeGuard = () => true) {
       let parsed = null;
       try {
         parsed = window.STAGE_DATA_SAFETY.parseJson(text);
@@ -35145,7 +35175,7 @@ ${propsPlotHtml}
         projectPackageCarry: null,
         mcpRevision: appliedRevision,
       });
-      if (nativeOpen) { installNativeProjectState(next); return true; }
+      if (nativeOpen) { if (!nativeGuard()) return false; installNativeProjectState(next); return true; }
       // スマホは読み込んだデータを閲覧するだけなので、編集用の比較モーダルを挟まない。
       if (phoneViewerActive) {
         if (lightingMigration) {
@@ -35476,7 +35506,16 @@ ${propsPlotHtml}
     }
     const packageResult = await installProjectPackage(next, packageData);
     if (packageData && !packageResult) return;
-    if (!await prepareLoadedState(next)) return;
+    let draftScope=null,prepared=false;
+    try {
+      if(!nativeProject && next.mcpRevision===null)draftScope=prepareBrowserDraftScope(next.project.id);
+      prepared=await prepareLoadedState(next);
+      if(!prepared)return;
+      draftScope?.commit();
+    } catch(error) {importFailureNotice(error.message);return;}
+    finally {
+      if(!prepared)try {draftScope?.rollback();}catch(error){importFailureNotice(error.message);}
+    }
     liteLegacyShelf.complete(sourceId);
     closeImportPreview(true);
     checkpoint();
@@ -36782,6 +36821,7 @@ ${propsPlotHtml}
       detail: {
         venueId: state.project.venue,
         sizeId: state.project.venueSize,
+        venueDims: projectIoClone(state.project.venueDims || null),
         markBaseline: true,
       },
     }));
@@ -36846,6 +36886,7 @@ ${propsPlotHtml}
   }
 
   function venueApplyNeedsVersion(saved) {
+    if (state.project.venueSetupPending === true) return false;
     return Boolean(saved && saved.id !== state.project.venue
       && (venueSetupWasApplied(state.project) || hasVenueDependentLighting(state.project)));
   }
@@ -37052,9 +37093,20 @@ ${propsPlotHtml}
       || (venueApplyChoice === "file" && !venueApplyCompatibleFile(pendingVenueApply?.venue));
   }
 
-  function closeVenueApplyModal() {
+  window.addEventListener("stageSketchProject:venueReceipt", event => {
+    const receipt=event.detail;
+    if (receipt?.saved && receipt.path && receipt.operationId === pendingVenueApply?.nativeOperationId
+        && nativeProject?.matches(receipt) && els.venueApplyStatus) {
+      els.venueApplyStatus.textContent = `${tx("候補ファイルは残しています:")} ${receipt.path}`;
+    }
+  });
+
+  function closeVenueApplyModal(success = false) {
+    if (success !== true) nativeProject?.cancelVenueVersion?.();
     venueApplyRequest += 1;
+    const settled=pendingVenueApply?.transitionResolved;
     pendingVenueApply = null;
+    settled?.(success === true);
     if (els.venueApplyModal) els.venueApplyModal.hidden = true;
     if (els.venueApplyBackdrop) els.venueApplyBackdrop.hidden = true;
   }
@@ -37245,25 +37297,28 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
 
   async function openVenueApplyModal(detail) {
     const saved = detail?.venue;
-    if (!saved || typeof saved.id !== "string" || !els.venueApplyModal) return;
+    if (!saved || typeof saved.id !== "string" || !els.venueApplyModal) {detail?.transitionResolved?.(false);return;}
     if (!editionAllows("venueLighting")) {
       if (hasVenueDependentLighting(state.project)) {
         announce(sx("照明データを保持するため、このショーの劇場変更はStudioで行ってください。", "Change this show's venue in Studio to preserve its lighting data."));
-        return;
+        detail.transitionResolved?.(false);return;
       }
       ++venueApplyRequest;
       pendingVenueApply = detail;
       venueApplyChoice = "manual";
       els.venueApplyModal.hidden = false;
       if (els.venueApplyBackdrop) els.venueApplyBackdrop.hidden = false;
-      if (els.venueApplySummary) els.venueApplySummary.textContent = sx(`「${saved.label || "この劇場"}」をショーへ反映します。`, `Apply “${saved.label || "this venue"}” to the show.`);
+      if (els.venueApplySummary) els.venueApplySummary.textContent = tx("「{venue}」をショーへ反映します。").replace("{venue}", () => saved.label || tx("この劇場"));
       if (els.venueApplyReport) els.venueApplyReport.hidden = true;
       const versioned = venueApplyNeedsVersion(saved);
       if (els.venueApplyVersion) els.venueApplyVersion.hidden = false;
-      if (els.venueApplyVersionTitle) els.venueApplyVersionTitle.textContent = versioned ? sx("新しいショーの版を作ります", "Create a new show version") : sx("劇場を確定します", "Set the venue");
+      if (els.venueApplyVersionTitle) els.venueApplyVersionTitle.textContent = versioned ? tx("新しいショーの版を作ります") : tx("劇場を確定します");
       if (els.venueApplyVersionDetail) els.venueApplyVersionDetail.textContent = versioned
-        ? sx(`${nextVersionLabel(state.project.versionLabel)}を作り、元の${state.project.versionLabel || "v1"}はショー一覧に残します。`, `Create ${nextVersionLabel(state.project.versionLabel)} and keep the original in the show list.`)
-        : sx("このショーのバージョンは変えません。", "Keep this show's current version.");
+        ? tx("{nextVersion}を作り、元の{version}はショー一覧に残します。").replace("{nextVersion}", () => nextVersionLabel(state.project.versionLabel)).replace("{version}", () => state.project.versionLabel || "v1")
+        : tx("このショーのバージョンは変えません。");
+      if (nativeProject && els.venueApplyVersionDetail) els.venueApplyVersionDetail.textContent = tx(versioned
+        ? "別のプロジェクトへ保存し、読戻しを確認してから切り替えます。元のファイルは残します。"
+        : "この文書を別の保存先へ保存し、読戻しを確認します。版は増やしません。");
       if (els.venueApplyStatus) els.venueApplyStatus.textContent = "";
       if (els.venueApplyConfirm) els.venueApplyConfirm.disabled = false;
       return;
@@ -37274,11 +37329,11 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     if (els.venueApplyBackdrop) els.venueApplyBackdrop.hidden = false;
     if (els.venueApplySummary) {
       els.venueApplySummary.textContent = VENUE_LIGHTING_SETUP_HIDDEN   // ★#16: 照明の選択肢は隠している＝劇場だけを反映
-        ? `「${saved.label || "この劇場"}」をショーへ反映します。`
-        : `「${saved.label || "この劇場"}」をショーへ反映します。照明機材の始め方を選んでください。`;
+        ? tx("「{venue}」をショーへ反映します。").replace("{venue}", () => saved.label || tx("この劇場"))
+        : tx("「{venue}」をショーへ反映します。照明機材の始め方を選んでください。").replace("{venue}", () => saved.label || tx("この劇場"));
     }
     const commonRigPlan = renderVenueApplyLightingNote(saved);   // ★#16 D15＝B: 共通24灯セットなら「組み直します」を1行
-    if(hasVenueDependentLighting(state.project) && els.venueApplySummary && !commonRigPlan?.rebuild) els.venueApplySummary.textContent += " 劇場の形や寸法が変わると、現在の照明が動かなくなる可能性があります。変更後に各シーンの照明を点検してください。";
+    if(hasVenueDependentLighting(state.project) && els.venueApplySummary && !commonRigPlan?.rebuild) els.venueApplySummary.textContent += " " + tx("劇場の形や寸法が変わると、現在の照明が動かなくなる可能性があります。変更後に各シーンの照明を点検してください。");
     if(els.venueApplySimple) {
       try {window.GAMMA_SIMPLE_LIGHT_MODEL.validateStage((()=>{const z=VENUES.sizeById(VENUES.byId(saved.id),venueApplySizeId(saved));return {W:z.width,D:z.depth,H:z.height||8};})(),saved.lightingPresetBasis?.venueId||saved.id);els.venueApplySimple.disabled=false;}
       catch {els.venueApplySimple.disabled=true;}
@@ -37287,20 +37342,23 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     const versioned = venueApplyNeedsVersion(saved);
     if (els.venueApplyVersion) els.venueApplyVersion.hidden = false;
     if (els.venueApplyVersionTitle) {
-      els.venueApplyVersionTitle.textContent = versioned ? "新しいショーの版を作ります" : "最初の劇場を確定します";
+      els.venueApplyVersionTitle.textContent = versioned ? tx("新しいショーの版を作ります") : tx("最初の劇場を確定します");
     }
     if (els.venueApplyVersionDetail) {
       const nextVersion = nextVersionLabel(state.project.versionLabel);
       const sameVenue = saved.id === state.project.venue;
       els.venueApplyVersionDetail.textContent = versioned
         ? VENUE_LIGHTING_SETUP_HIDDEN
-          ? `${nextVersion}を新しく作り、元の${state.project.versionLabel || "v1"}はショー一覧に残します。照明は今の版から引き継ぎます。`
-          : `${nextVersion}を新しく作り、元の${state.project.versionLabel || "v1"}はショー一覧に残します。新しい版の照明機材とLXキューは、下の選択内容から始めます。`
+          ? tx("{nextVersion}を新しく作り、元の{version}はショー一覧に残します。照明は今の版から引き継ぎます。").replace("{nextVersion}", () => nextVersion).replace("{version}", () => state.project.versionLabel || "v1")
+          : tx("{nextVersion}を新しく作り、元の{version}はショー一覧に残します。新しい版の照明機材とLXキューは、下の選択内容から始めます。").replace("{nextVersion}", () => nextVersion).replace("{version}", () => state.project.versionLabel || "v1")
         : sameVenue
-          ? "いまと同じ劇場なので、ショーのバージョンは増やしません。"
-          : "このショーのバージョンは変えません。次に劇場を変更するときは、新しい版を作って元の版を残します。";
+          ? tx("いまと同じ劇場なので、ショーのバージョンは増やしません。")
+          : tx("このショーのバージョンは変えません。次に劇場を変更するときは、新しい版を作って元の版を残します。");
     }
     if (els.venueApplyStatus) els.venueApplyStatus.textContent = "";
+    if (nativeProject && els.venueApplyVersionDetail) els.venueApplyVersionDetail.textContent = tx(versioned
+      ? "別のプロジェクトへ保存し、読戻しを確認してから切り替えます。元のファイルは残します。"
+      : "この文書を別の保存先へ保存し、読戻しを確認します。版は増やしません。");
     if (VENUE_LIGHTING_SETUP_HIDDEN) {
       /* ★#16: 照明の選択肢（と候補の読み込み）は使わない。「keep」＝劇場だけを反映し、照明は残す（共通24灯セットだけ組み直す）。 */
       venueApplyChoice = "keep";
@@ -37396,89 +37454,123 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
 
   async function applyVenueSetupChoice() {
     const detail = pendingVenueApply;
+    const sourceOwner = nativeProject?.identity();
     const saved = detail?.venue;
     const choice = editionAllows("venueLighting") ? venueApplyChoice : "manual";
-    if (!saved || !els.venueApplyConfirm) return;
+    if (!saved || !els.venueApplyConfirm || (detail.transitionIsCurrent && !detail.transitionIsCurrent())) return;
     if (!editionAllows("venueLighting") && hasVenueDependentLighting(state.project)) return;
     els.venueApplyConfirm.disabled = true;
     if (els.venueApplyStatus) els.venueApplyStatus.textContent = editionAllows("venueLighting") && choice !== "keep" ? "劇場と照明機材の選択を保存しています…" : sx("劇場を保存しています…", "Saving the venue…");
     let lightingNote = "";
     try {
-      const current = state.project;
-      const versioned = venueApplyNeedsVersion(saved);
-      const project = projectIoClone(current);
-      if (versioned) {
-        project.id = rid("proj");
-        project.parentVersionId = current.id;
-        project.versionLabel = nextVersionLabel(current.versionLabel);
-        project.createdAt = nowIso();
-      }
-      project.venue = saved.id;
-      project.venueSize = VENUES.sizeById(VENUES.byId(saved.id), venueApplySizeId(saved)).id;
-      project.venueDims = null;
-      project.venueSetupAppliedAt = nowIso();
-      delete project.venueSetupPending;   // 劇場が決まったので、もう誘導しない
-      project.branchReason = versioned
-        ? editionAllows("venueLighting") && choice !== "keep" ? `劇場を「${saved.label}」へ変更し、照明機材を選び直すため` : `劇場を「${saved.label}」へ変更するため`
-        : project.branchReason;
-      /* ★#16: 「keep」（劇場設定の照明を隠している間）は照明を消さない。共通24灯セットだけ新しい寸法で組み直す（D15＝B）。 */
-      if (editionAllows("venueLighting") && choice !== "keep") clearVenueDependentLighting(project);
-      if (choice === "keep") {
-        const plan = venueApplyCommonRigPlan(current, saved);
-        if (plan?.rebuild) {
-          try {
-            project.lightingDesign = venueApplyRebuiltCommonDesign(project.lightingDesign, plan);
-            lightingNote = "照明（共通24灯セット）を新しい劇場の寸法に合わせて組み直しました。";
-          } catch (error) {
-            console.warn("共通24灯セットを組み直せませんでした", error);   // 劇場の反映は止めない。照明は元のまま残す
-            lightingNote = "照明（共通24灯セット）は組み直せなかったため、そのまま残しました。";
+      const buildCandidate = async () => {
+        const current = state.project;
+        const versioned = venueApplyNeedsVersion(saved);
+        const project = projectIoClone(current);
+        if (versioned) {
+          project.id = rid("proj");
+          project.parentVersionId = current.id;
+          project.versionLabel = nextVersionLabel(current.versionLabel);
+          project.createdAt = nowIso();
+        }
+        project.venue = saved.id;
+        project.venueSize = VENUES.sizeById(VENUES.byId(saved.id), venueApplySizeId(saved)).id;
+        // An untouched template keeps the legacy dimensions too. Edited venues
+        // bake the effective footprint/height into their independent venue JSON.
+        project.venueDims = detail.preserveVenueDims && saved.id === current.venue && project.venueSize === current.venueSize
+          ? projectIoClone(current.venueDims || null) : null;
+        project.venueSetupAppliedAt = nowIso();
+        delete project.venueSetupPending;   // 劇場が決まったので、もう誘導しない
+        project.branchReason = versioned
+          ? editionAllows("venueLighting") && choice !== "keep" ? `劇場を「${saved.label}」へ変更し、照明機材を選び直すため` : `劇場を「${saved.label}」へ変更するため`
+          : project.branchReason;
+        /* ★#16: 「keep」（劇場設定の照明を隠している間）は照明を消さない。共通24灯セットだけ新しい寸法で組み直す（D15＝B）。 */
+        if (editionAllows("venueLighting") && choice !== "keep") clearVenueDependentLighting(project);
+        if (choice === "keep") {
+          const plan = venueApplyCommonRigPlan(current, saved);
+          if (plan?.rebuild) {
+            try {
+              project.lightingDesign = venueApplyRebuiltCommonDesign(project.lightingDesign, plan);
+              lightingNote = "照明（共通24灯セット）を新しい劇場の寸法に合わせて組み直しました。";
+            } catch (error) {
+              console.warn("共通24灯セットを組み直せませんでした", error);   // 劇場の反映は止めない。照明は元のまま残す
+              lightingNote = "照明（共通24灯セット）は組み直せなかったため、そのまま残しました。";
+            }
           }
+        } else if (choice === "simple") {
+          project.lightingDesign = simpleDesignForProject(project);
+          for(const row of project.scenes) for(const item of row.sceneAlternatives?.items||[]) {
+            const oldLightIds=new Set((current.sets||[]).filter(x=>x.kind==="light").map(x=>x.id));
+            item.content.pieces=item.content.pieces.filter(piece=>piece.type!=="light"&&!oldLightIds.has(piece.setId));
+            item.content.lightingIntent=null;
+            for(const id of oldLightIds) if(item.content.stashed) delete item.content.stashed[id];
+            item.cues=item.cues.filter(q=>!(["timeline","light-unplaced","light-disabled"].includes(q.kind)&&q.cueType==="light"));
+            item.lighting={native:projectIoClone(project.lightingDesign.scenes.find(s=>s.id===row.id)||null)};
+          }
+          sceneAlternatives?.restore(project,{reconcile:false});
+        } else if (choice === "preset") {
+          const catalog = await loadLightingCatalog();
+          if (detail !== pendingVenueApply) return;
+          const preset = catalog.presets.find((item) => item.id === els.venueApplyPresetSelect?.value
+            && venueApplyCompatiblePreset(saved, item));
+          if (!preset) throw new Error("選んだ照明機材プリセットが見つかりません。");
+          const rawDesign = await loadLightingDesignForPreset(preset);
+          if (detail !== pendingVenueApply) return;
+          project.lightingDesign = editableLightingDesignFromPreset(rawDesign, project, preset);
+        } else if (choice === "file") {
+          if (!venueApplyCompatibleFile(saved)) throw new Error("照明デザインのファイルと劇場寸法が一致しません。ファイルを選び直してください。");
+          const model = window.GAMMA_LIGHT_MODEL;
+          if (!model) throw new Error("照明デザインの検証器を使えません。");
+          const size = VENUES.sizeById(VENUES.byId(project.venue), project.venueSize);
+          const stage = { W: size.width, D: size.depth, H: size.height || 8 };
+          const scenes = project.scenes.filter((scene) => scene.kind === "scene")
+            .map((scene) => ({ id: scene.id, name: scene.title }));
+          const context = { title: project.title, stage, scenes, design: null };
+          let imported = model.reconcile(pendingLightingFile.design, context);
+          // 同じ劇場の比較プランは照明エディタのファイルに含まれない。現在のショーから引き継ぐ。
+          if (saved.id === current.venue && current.venueSize === project.venueSize
+              && current.lightingDesign && sameLightingStage(stage, current.lightingDesign.stage)) {
+            imported = model.restoreDraft(imported, { ...context, design: current.lightingDesign });
+          }
+          project.lightingDesign = model.validate(imported, scenes.map((scene) => scene.id));
         }
-      } else if (choice === "simple") {
-        project.lightingDesign = simpleDesignForProject(project);
-        for(const row of project.scenes) for(const item of row.sceneAlternatives?.items||[]) {
-          const oldLightIds=new Set((current.sets||[]).filter(x=>x.kind==="light").map(x=>x.id));
-          item.content.pieces=item.content.pieces.filter(piece=>piece.type!=="light"&&!oldLightIds.has(piece.setId));
-          item.content.lightingIntent=null;
-          for(const id of oldLightIds) if(item.content.stashed) delete item.content.stashed[id];
-          item.cues=item.cues.filter(q=>!(["timeline","light-unplaced","light-disabled"].includes(q.kind)&&q.cueType==="light"));
-          item.lighting={native:projectIoClone(project.lightingDesign.scenes.find(s=>s.id===row.id)||null)};
+        const next = normalizeState({ ...state, project,
+          projectPackageCarry: window.STAGE_PROJECT_FILE.bindCarry(state.projectPackageCarry, project, state.lastSavedAt) });
+        return {next,current,versioned,project};
+      };
+      if (nativeProject) {
+        const intentVenue = projectIoClone(saved); delete intentVenue.id;
+        detail.nativeOperationId = nativeProject.venueOperationFor(JSON.stringify({venue:intentVenue,choice,
+          venueDims:detail.preserveVenueDims ? state.project.venueDims : null,
+          size:venueApplySizeId(saved),preset:els.venueApplyPresetSelect?.value,file:pendingLightingFile?.fileName}));
+        const receipt = await nativeProject.createVenueVersion(async () => {
+          const {next,versioned} = await buildCandidate();
+          const doc = makeProjectExportDocument(next.project,true,next.projectFileEnvelope);
+          refreshSectionDurationCache(doc.project);
+          return {show:JSON.stringify(doc),title:next.project.title,versioned};
+        },detail.nativeOperationId,detail.documentTransition);
+        if (receipt.stale) return;
+        if (receipt.ok !== true) {
+          const message = tx(receipt.stage === 'cancelled' ? "保存を取り消しました。劇場の編集は残っています。"
+            : receipt.stage === 'capability' ? "このMac版は劇場候補の保存に対応していません。アプリを更新してください。"
+            : "候補の保存・読戻し・切替を完了できませんでした。劇場の編集は残っています。");
+          const location = receipt.saved && receipt.path ? ` ${tx("候補ファイルは残しています:")} ${receipt.path}` : '';
+          const phase = receipt.stage === 'cancelled' ? '' : tx(({readback:"読戻しの確認で止まりました。",'deliver-failed':"画面への切替で止まりました。",
+            'write-failed':"ファイルへの保存で止まりました。",receipt:"保存記録の確認で止まりました。",
+            'destination-exists':"同名のファイルがあります。別の保存先を選んでください。",
+            timeout:"待ち時間を超えました。",expired:"待ち時間を超えました。"})[receipt.stage] || "保存の準備で止まりました。");
+          throw Error(`${message}${phase ? ' ' + phase : ''}${location}`);
         }
-        sceneAlternatives?.restore(project,{reconcile:false});
-      } else if (choice === "preset") {
-        const catalog = await loadLightingCatalog();
-        if (detail !== pendingVenueApply) return;
-        const preset = catalog.presets.find((item) => item.id === els.venueApplyPresetSelect?.value
-          && venueApplyCompatiblePreset(saved, item));
-        if (!preset) throw new Error("選んだ照明機材プリセットが見つかりません。");
-        const rawDesign = await loadLightingDesignForPreset(preset);
-        if (detail !== pendingVenueApply) return;
-        project.lightingDesign = editableLightingDesignFromPreset(rawDesign, project, preset);
-      } else if (choice === "file") {
-        if (!venueApplyCompatibleFile(saved)) throw new Error("照明デザインのファイルと劇場寸法が一致しません。ファイルを選び直してください。");
-        const model = window.GAMMA_LIGHT_MODEL;
-        if (!model) throw new Error("照明デザインの検証器を使えません。");
-        const size = VENUES.sizeById(VENUES.byId(project.venue), project.venueSize);
-        const stage = { W: size.width, D: size.depth, H: size.height || 8 };
-        const scenes = project.scenes.filter((scene) => scene.kind === "scene")
-          .map((scene) => ({ id: scene.id, name: scene.title }));
-        const context = { title: project.title, stage, scenes, design: null };
-        let imported = model.reconcile(pendingLightingFile.design, context);
-        // 同じ劇場の比較プランは照明エディタのファイルに含まれない。現在のショーから引き継ぐ。
-        if (saved.id === current.venue && current.venueSize === project.venueSize
-            && current.lightingDesign && sameLightingStage(stage, current.lightingDesign.stage)) {
-          imported = model.restoreDraft(imported, { ...context, design: current.lightingDesign });
-        }
-        project.lightingDesign = model.validate(imported, scenes.map((scene) => scene.id));
+        announce(tx("劇場をプロジェクトへ保存し、読戻しを確認しました。"));
+      } else {
+        const {next,current,versioned,project} = await buildCandidate();
+        const resultMessage = (versioned
+          ? `${project.versionLabel}を作り、劇場を「${saved.label}」へ変更しました。元の${current.versionLabel || "v1"}はショー一覧に残っています。`
+          : `劇場を「${saved.label}」に決めました。`) + lightingNote;
+        if (!await applyLoadedState(next, resultMessage)) throw new Error("劇場を安全に保存できなかったため、反映を止めました。");
       }
-      const next = normalizeState({ ...state, project,
-        projectPackageCarry: window.STAGE_PROJECT_FILE.bindCarry(state.projectPackageCarry, project, state.lastSavedAt) });
-      const resultMessage = (versioned
-        ? `${project.versionLabel}を作り、劇場を「${saved.label}」へ変更しました。元の${current.versionLabel || "v1"}はショー一覧に残っています。`
-        : `劇場を「${saved.label}」に決めました。`) + lightingNote;
-      if (!await applyLoadedState(next, resultMessage)) throw new Error("劇場を安全に保存できなかったため、反映を止めました。");
       const complete = detail.complete;
-      closeVenueApplyModal();
+      closeVenueApplyModal(true);
       if (typeof complete === "function") complete();
       /* 2026-09-17 本人指示で「自分で配置する」と「導入しない」を1つにまとめた。
          行き先は舞台にそろえる——照明を置きたい人は機材配置を自分で開けばよく、
@@ -37487,7 +37579,10 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
       if (choice === "preset") window.GAMMA_WORKSPACE?.select("light-placement");
       else window.GAMMA_WORKSPACE?.normal();
     } catch (error) {
-      if (els.venueApplyStatus) els.venueApplyStatus.textContent = error.message;
+      if (detail !== pendingVenueApply || (nativeProject && !nativeProject.matches(sourceOwner))) return;
+      if (els.venueApplyStatus) els.venueApplyStatus.textContent = error.stage === "capability"
+        ? tx("このMac版は劇場候補の保存に対応していません。アプリを更新してください。")
+        : error.stage ? tx("候補の保存・読戻し・切替を完了できませんでした。劇場の編集は残っています。") : error.message;
       if (choice === "keep") els.venueApplyConfirm.disabled = false;   // ★#16: 「keep」を他の選択肢へ読み替えない（照明を消す側へ落とさない）
       else setVenueApplyChoice(venueApplyChoice);
     }
@@ -39364,6 +39459,16 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
   }
 
   function finishPointer(event) {
+    try { return finishPointerAction(event); }
+    finally {
+      // Capture-phase owner notifications can run before the canvas handler.
+      // Publish again after pointerAction is cleared, including early returns:
+      // AppKit validates its cached capability before a DOM key can refresh it.
+      updateHistoryButtons();
+    }
+  }
+
+  function finishPointerAction(event) {
     if (touches.has(event.pointerId)) {
       touches.delete(event.pointerId);
       if (pinch && touches.size < 2) pinch = null;
@@ -43239,6 +43344,7 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
     });
     // These titles are assembled after the DOM translation pass. Rebuild them
     // from their Japanese templates whenever the display language changes.
+    syncSaveLocationNotice();
     syncShortcutDom();
     window.GAMMA_WORKSPACE?.refreshLabels?.();
     if (typeof nativeProject !== "undefined" && nativeProject) syncNativeProjectEntries();
@@ -45590,8 +45696,14 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
           snapshot: nativeProjectSnapshot,
           thumbnail: nativeProjectThumbnail,
           settle: settleNativeProject,
+          prepareDocumentTransition: prepareNativeDocumentTransition,
+          captureRuntime: captureNativeDocumentRuntime,
+          restoreRuntime: restoreNativeDocumentRuntime,
+          setTransitioning: setNativeDocumentTransitioning,
+          commitTransition: commitNativeDocumentTransition,
           beforeQuit: () => window.GAMMA_FIELD_RUNS?.beforeQuit(),
           saveState: nativeProjectSaveState,
+          saveNoticeChanged: syncSaveLocationNotice,
           error: () => importFailureNotice(tx("プロジェクトを開くか保存する処理を完了できませんでした。元ファイルは保持しています。")),
         }, nativeInitialOpen);
         syncNativeProjectEntries();
@@ -45652,36 +45764,92 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if (controlBefore !== null) finishControlEdit();
     clearTimeout(saveTimer); clearTimeout(saveMaxTimer); saveMaxTimer = null; autosaveRequested = false;
   }
+  let nativeDocumentDelivery = false;
+  function setNativeDocumentTransitioning(value) {
+    if (stageSketchRoot) stageSketchRoot.inert = Boolean(value) || Boolean(nativeProject?.readOnly);
+    window.GAMMA_FIELD_RUNS?.setDocumentTransitioning(value);
+  }
+  async function prepareNativeDocumentTransition(request) {
+    await settleNativeProject();
+    if (!request.isCurrent()) return false;
+    return await window.GAMMA_WORKSPACE?.prepareDocumentTransition?.(request) === true;
+  }
+  function captureNativeDocumentRuntime() {
+    // Runtime capture, never a saved-show reimport: preserve Undo and unapplied editors.
+    sceneAlternatives?.capture(state.project);
+    return {state:structuredClone(state),history:structuredClone(history),future:structuredClone(future),
+      sourceProject:state.project,renameTargetId:renameTarget?.id,
+      alternativeViews:state.project.scenes.map(row=>[row.id,sceneAlternatives?.current(row)?.id]),
+      noteDrafts:structuredClone(noteDrafts),stageAskPlan:structuredClone(stageAskPlan),
+      stageAskSelections:structuredClone(stageAskClarificationSelections),stageAskInput:els.askInput?.value,
+      nativeSaveWarning,saveStatus:els.saveStatus?{text:els.saveStatus.textContent,level:els.saveStatus.dataset.level}:null,
+      selectedId,selectedIds:[...selectedIds],selectedNoteId,selectedTextId,selectedAudioTrackId,
+      controlBefore:structuredClone(controlBefore),lastPersistedSnapshot,loadedStateGeneration,
+      workspace:window.GAMMA_WORKSPACE?.captureRuntime?.()};
+  }
+  function restoreNativeDocumentRuntime(saved) {
+    if (!saved) return;
+    nativeDocumentDelivery = false;
+    if (pendingVenueApply?.transitionResolved) closeVenueApplyModal();
+    state=saved.state;history=saved.history;future=saved.future;controlBefore=saved.controlBefore;
+    loadedStateGeneration=saved.loadedStateGeneration;lastPersistedSnapshot=saved.lastPersistedSnapshot;
+    selectedId=saved.selectedId;selectedIds.clear();saved.selectedIds.forEach(id=>selectedIds.add(id));
+    selectedNoteId=saved.selectedNoteId;selectedTextId=saved.selectedTextId;selectedAudioTrackId=saved.selectedAudioTrackId;
+    sceneAlternatives?.restore(state.project,{reconcile:false});
+    for (const [sceneId,alternativeId] of saved.alternativeViews) {
+      const row=state.project.scenes.find(row=>row.id===sceneId);
+      if (row && alternativeId && sceneAlternatives?.current(row)?.id!==alternativeId) sceneAlternatives.view(state.project,row,alternativeId);
+    }
+    transferRenameSearchDrafts(saved.sourceProject,state.project);
+    renameTarget=state.project.scenes.find(row=>row.id===saved.renameTargetId) || null;
+    noteDrafts.clear();for (const [key,value] of saved.noteDrafts) noteDrafts.set(key,value);
+    stageAskPlan=saved.stageAskPlan;stageAskClarificationSelections=saved.stageAskSelections;
+    if (stageAskPlan) renderStageAskPlan(stageAskPlan,{keepSelections:true}); else setStageAskMode('idle');
+    if (els.askInput) els.askInput.value=saved.stageAskInput || '';
+    nativeSaveWarning=saved.nativeSaveWarning;
+    renderVenueControls();renderScenes();renderCast();renderSets();renderLights();renderRigs();
+    syncInputs();applyLayout();updateInspector();updateHistoryButtons();render();
+    window.GAMMA_WORKSPACE?.restoreRuntime?.(saved.workspace);
+    if (saved.saveStatus) setSaveStatus(saved.saveStatus.text,saved.saveStatus.level);
+  }
+  function commitNativeDocumentTransition() {
+    nativeDocumentDelivery = false;
+    nativeSaveWarning=null;
+    const band=document.getElementById("stage-storage-band");if(band)band.hidden=true;
+    window.GAMMA_WORKSPACE?.commitDocumentTransition?.();
+    setNativeDocumentTransitioning(false);
+  }
   function installNativeProjectState(next) {
     clearTimeout(saveTimer); clearTimeout(saveMaxTimer); saveMaxTimer = null; autosaveRequested = false;
     stopSceneAnim(); stopSpinRun(); clearAudioEngine();
     resetStageAskDraft({clearInput:true, invalidate:true});
+    noteDrafts.clear();
     state = next; history = []; future = []; controlBefore = null;
     selectedId = null; selectedIds.clear(); selectedNoteId = null; selectedTextId = null;
     selectedAudioTrackId = state.project.audioTracks[0]?.id || null;
     audioPanelSignature = ""; lastPersistedSnapshot = null;
     renderVenueControls(); renderScenes(); renderCast(); renderSets(); renderLights(); renderRigs();
     syncInputs(); applyLayout(); updateInspector(); updateHistoryButtons(); render();
-    window.GAMMA_WORKSPACE?.syncGate?.();
+    if (!nativeDocumentDelivery) window.GAMMA_WORKSPACE?.syncGate?.();
     window.dispatchEvent(new Event("stage-run-of-show-change"));
     window.dispatchEvent(new Event("stage-timeline-audio-change"));
     window.dispatchEvent(new Event("stage-timeline-cues-change"));
   }
   async function openNativeProject(payload) {
+    if (payload.isCurrent && !payload.isCurrent()) return false;
+    nativeDocumentDelivery = true;
+    clearTimeout(nativeSavingTimer);nativeSavingTimer=null;
     let ok;
     if (payload.show === "") {
       const fresh = markVenueSetupPending(baseState(false));
       fresh.project.title = untitledShow(); fresh.layout = state.layout;
       installNativeProjectState(normalizeState(fresh)); ok = true;
     } else {
-      ok = await importProjectText(payload.show, {name:"show.json", size:payload.show.length}, null, true);
+      ok = await importProjectText(payload.show, {name:"show.json", size:payload.show.length}, null, true, false, payload.isCurrent);
     }
-    if (!ok) return false;
-    if (stageSketchRoot) stageSketchRoot.inert = payload.readOnly;
+    if (!ok || (payload.isCurrent && !payload.isCurrent())) return false;
     setSaveStatus(tx(payload.readOnly ? "読み取り専用のプロジェクトです。" : "プロジェクトを開きました。変更はプロジェクトへ自動保存します。"));
     syncNativeProjectEntries();
-    if (state.project.venueSetupPending) window.GAMMA_WORKSPACE?.select("venue-setup");
-    else window.GAMMA_WORKSPACE?.normal();
     return true;
   }
   function syncNativeProjectEntries() {
@@ -45899,11 +46067,15 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     },
     async adopt(id) {
       requireAlternativesEdit(); stopAlternativesPlayback();
+      const source=state.project, owner=gammaLightingContext();
+      const valid=()=>state.project===source && gammaLightingContext().contextRevision===owner.contextRevision
+        && gammaLightingContext().baseBasis===owner.baseBasis;
       const before = snapshot(), next = JSON.parse(before);
       const row = next.project.scenes.find(row => row.id === sc().id);
       sceneAlternatives.adopt(next.project, row, id);
       const candidate = alternativesState(next);
-      const result = await ProjectStore.commit({ projectId: next.project.id, serializedState: JSON.stringify(candidate), expectedRevision: null, intent: "adopt-scene-alternative" });
+      const result = await ProjectStore.commit({ projectId: next.project.id, serializedState: JSON.stringify(candidate), expectedRevision: null, intent: "adopt-scene-alternative",guard:valid });
+      if(!valid())return false;
       if (!result.ok) { reportProjectStoreFailure(result); throw Error("採用案を保存できなかったため、切り替えていません。"); }
       clearTimeout(saveTimer); recordBefore(before); state = normalizeState(candidate);
       refreshAlternativesView(); announce("採用案を切り替えました。元に戻す操作で戻せます。");
@@ -45958,6 +46130,25 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     // Models held only in the local library are disclosed alongside local audio.
     hasLocalModels() { return (state.project.sets || []).some(s => s.modelId); },
   });
+  // Runtime document identity is separate from the saved work ID. Shelf revisits
+  // reuse a session; explicit same-ID imports acquire a fresh session below.
+  const browserLightingSessions = new Map(),browserDraftScopes=new Map();
+  const browserDraftScopeKey=id=>'gamma:lighting-import-owner-v1:'+id;
+  function browserDraftScope(id) {
+    if(!browserDraftScopes.has(id))browserDraftScopes.set(id,rawStorage.getItem(browserDraftScopeKey(id)) || '');
+    return browserDraftScopes.get(id);
+  }
+  function prepareBrowserDraftScope(id) {
+    const key=browserDraftScopeKey(id),previous=rawStorage.getItem(key),scope=crypto.randomUUID();
+    rawStorage.setItem(key,scope);
+    if(rawStorage.getItem(key)!==scope)throw Error('照明の編集控えを確認できません。控えは上書きしていません');
+    return {scope,commit(){browserDraftScopes.set(id,scope);browserLightingSessions.set(id,crypto.randomUUID());},
+      rollback(){if(previous===null)rawStorage.removeItem(key);else rawStorage.setItem(key,previous);}};
+  }
+  function browserLightingIdentity() {
+    if (!browserLightingSessions.has(state.project.id)) browserLightingSessions.set(state.project.id, crypto.randomUUID());
+    return {documentSessionId:browserLightingSessions.get(state.project.id)};
+  }
   let gammaStorageChanged = false;
   window.addEventListener("gamma-project-storage-failed", event => {
     gammaStorageChanged = true;
@@ -46091,6 +46282,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     }
     return false;
   }
+  let lightingContextGeneration=0, lightingContextOwner='';
   function gammaLightingContext() {
     const size = venueSize();
     const stage = { W: size.width, D: size.depth, H: size.height || 8 };
@@ -46164,11 +46356,26 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       id: seat.id, label: seatName(seat), floorY: seat.floorY, bottomY: seat.bottomY,
       backW: seat.backW, frontW: seat.frontW, rise: seat.rise,
     }));
-    return { showId: state.project.id, title: state.project.title, stage, scenes, venueMask, frontSeats, frontCurtains,
+    const alternativeVector = state.project.scenes.filter(row=>row.kind==="scene")
+      .map(row=>[row.id,sceneAlternatives?.current(row)?.id || null]).sort((a,b)=>a[0].localeCompare(b[0]));
+    const adoptedAlternativeVector = state.project.scenes.filter(row=>row.kind==="scene")
+      .map(row=>[row.id,row.sceneAlternatives?.adoptedId || null]).sort((a,b)=>a[0].localeCompare(b[0]));
+    const identity=nativeProject?.identity() || browserLightingIdentity();
+    const ownerStamp=JSON.stringify([identity.documentSessionId,alternativeVector]);
+    if(ownerStamp!==lightingContextOwner){lightingContextOwner=ownerStamp;lightingContextGeneration++;}
+    const fixtureAlternatives = state.project.scenes.flatMap(scene => (scene.sceneAlternatives?.items || [])
+      .filter(item=>item.id!==sceneAlternatives.current(scene)?.id && item.lighting.native)
+      .map(item=>({sceneId:scene.id,itemId:item.id,native:projectIoClone(item.lighting.native)})));
+    const baseBasis = gammaBasisFingerprint(JSON.stringify({stage,venueMask,design:state.project.lightingDesign || null,
+      alternatives:state.project.scenes.filter(row=>row.kind==="scene").map(row=>[row.id,
+        (row.sceneAlternatives?.items || []).map(item=>item.id).sort()]).sort((a,b)=>a[0].localeCompare(b[0])),
+      fixtureAlternatives:fixtureAlternatives.slice().sort((a,b)=>(a.sceneId+"/"+a.itemId).localeCompare(b.sceneId+"/"+b.itemId))}));
+    return { ...identity, contextRevision:lightingContextGeneration, adoptedAlternativeVector, nativeDocument:Boolean(nativeProject),
+      draftOwnerId:nativeProject?.draftOwnerId,draftRecords:nativeProject?.draftRecords,
+      browserDraftScope:nativeProject ? null : browserDraftScope(state.project.id),alternativeVector, baseBasis,
+      showId: state.project.id, title: state.project.title, stage, scenes, venueMask, frontSeats, frontCurtains,
       // Detached edit copies; these are not part of the lighting file or storage schema.
-      fixtureAlternatives: state.project.scenes.flatMap(scene => (scene.sceneAlternatives?.items || [])
-        .filter(item => item.id !== sceneAlternatives.current(scene)?.id && item.lighting.native)
-        .map(item => ({sceneId:scene.id, itemId:item.id, native:projectIoClone(item.lighting.native)}))),
+      fixtureAlternatives,
       cueSyncPending: lightingCueListsDiffer(state.project),
       cueNaming: state.project.cueNaming === "serial" ? "serial" : "scene",
       venueType: currentVenue.lightingPresetBasis?.venueId || venueV2?.lightingPresetBasis?.venueId || currentVenue.id,
@@ -46208,11 +46415,15 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       {dims:design.stage,rig:design.rig,fixtures:design.rig?.fixtures||[],motion:design.motion,representative:true},
       fromId,toId,prefs.sceneBoundaryLight==='cut'?'cut':'auto');
   }
+  const nativeLightingApplyRequests = new Set();
   window.GAMMA_LIGHT_HOST = Object.freeze({
     context: gammaLightingContext,
+    recoveryDrafts:()=>nativeProject?.draftRecoveryEntries || [],
+    retainDraft:(raw,vector,owner)=>nativeProject?.retainDraft(raw,vector,owner) ?? Promise.resolve(false),
     readSceneStepPrevious,
     readPlaybackPreview: readLightingPlaybackPreview,
-    async beginSimpleCopy(design, basis) {
+    async beginSimpleCopy(design, basis, options = {}) {
+      if (nativeProject) throw Error("複製を保存できませんでした。元のショーを維持しています");
       const current=gammaLightingContext();
       if(current.readOnly || gammaStorageChanged || current.basis!==basis) throw Error("ショーが更新されています。元のショーを確認してから複製してください");
       const model=window.GAMMA_LIGHT_MODEL, simple=window.GAMMA_SIMPLE_LIGHT_MODEL;
@@ -46235,10 +46446,22 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       return gammaLightingContext();
     },
     async apply(design, basis, options = {}) {
+      const sourceProject = state.project;
+      const sourceContext = gammaLightingContext(), sourceEditGeneration=loadedStateGeneration;
+      const validOwner = () => state.project === sourceProject && loadedStateGeneration===sourceEditGeneration && (!nativeProject || nativeProject.matches(options.owner))
+        && gammaLightingContext().contextRevision===sourceContext.contextRevision
+        && gammaLightingContext().baseBasis===sourceContext.baseBasis
+        && JSON.stringify(gammaLightingContext().alternativeVector)===JSON.stringify(sourceContext.alternativeVector)
+        && (!options.owner?.alternativeVector || JSON.stringify(options.owner.alternativeVector)===JSON.stringify(sourceContext.alternativeVector));
+      if (nativeProject) {
+        const request=options.owner?.requestId;
+        if (!request || !validOwner() || nativeLightingApplyRequests.has(request)) throw Error("Stale lighting document request");
+        nativeLightingApplyRequests.add(request);
+      }
       const current = gammaLightingContext();
       if (gammaStorageChanged) throw new Error("別のタブでショーが更新されました。編集中の照明を控えてから読み直してください");
       if (current.readOnly) throw new Error("閲覧中は照明を変更できません");
-      if (basis !== current.basis) throw new Error("ショーが更新されています。編集中の照明をファイルへ控えてから開き直してください");
+      if (basis !== current.basis || (options.baseBasis && options.baseBasis!==current.baseBasis)) throw new Error("ショーが更新されています。編集中の照明をファイルへ控えてから開き直してください");
       const nextDesign = window.GAMMA_LIGHT_MODEL.validate(design, current.scenes.map(row => row.id));
       // A shared rig change must not strand lights referenced only by another alternative.
       const next = projectIoClone(state);
@@ -46272,8 +46495,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       }
       // Persist and verify both copies BEFORE accepting the candidate in memory/history.
       // A quota/disabled-storage exception leaves host state and the editor draft untouched.
+      if (!validOwner()) throw Error("Stale lighting document request");
       const result = await ProjectStore.commit({ projectId: next.project.id,
-        serializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "gamma-lighting" });
+        serializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "gamma-lighting", guard:validOwner });
+      if (!validOwner()) throw Error("Stale lighting document request");
       if (!result.ok) throw new Error(reportProjectStoreFailure(result));
       clearTimeout(saveTimer); checkpoint(); state = next;
       if (nativeProject) nativeProject.changed();
@@ -46287,7 +46512,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     },
     draftChanged(design) {window.dispatchEvent(new CustomEvent("stage-lx-panel-change",{detail:{showId:state.project.id,design}}));},
     placementChoices() { return gammaLightingContext().design; },
-    placeCue(placement) {const c=gammaLightingContext();return this.apply(c.design,c.basis,{placement});},
+    placeCue(placement) {const c=gammaLightingContext();return this.apply(c.design,c.basis,{placement,owner:{...nativeProject?.identity(),requestId:crypto.randomUUID()}});},
     openScene(id) { const row=state.project.scenes.find(row=>row.kind==="scene" && row.id===id); if (!row) return false; openScene(id); return true; },
   });
   /* V-1（2026-09-17）: 劇場設定モードの間口プレビュー（平面図）へ、いま置いてある舞台機構を重ねる。
@@ -46514,7 +46739,14 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       return importAudioFile(file, {cueId});
     },
     arrowKeysVoxOnly: () => featureOn("arrowKeysVoxOnly"),
-    historyStatus: () => ({ canUndo: history.length > 0, canRedo: future.length > 0 }),
+    historyStatus: () => ({ canUndo: history.length > 0, canRedo: future.length > 0,
+      readOnly: Boolean(STUDY_READ_ONLY || nativeProject?.readOnly || guestSessionActive()),
+      busy: Boolean(resetInProgress || sceneAnim || spinRun || pointerAction) }),
+    historyCommand(action) {
+      if (!window.GammaUndoOwner?.allows("stage")) return false;
+      if (action === "undo") undo(); else if (action === "redo") redo(); else return false;
+      return true;
+    },
     transitionGeometry() {
       const size = venueSize(), v = venue();
       const outline = venueOutlineOf(v, size);

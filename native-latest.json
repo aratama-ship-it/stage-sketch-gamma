@@ -1,9 +1,9 @@
 {
-  "version": "0.3.81",
+  "version": "0.3.82",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.81/stage-sketch-gamma-mac-0.3.81.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.82/stage-sketch-gamma-mac-0.3.82.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "リハーサルの記録図の配色とタブ往復時の取り消し履歴、小さいウインドウでの環境設定と舞台の操作欄、進行表のキーボード並べ替えと編集通知、共有窓などの翻訳を改善しました。冊子の検索と画像の説明を整え、Mac 版のダウンロードページを5言語にしました。合言葉は入手先と導入手順の案内を表示する簡易な仕組みで、ファイルへのアクセス制限ではないことと、公式配布元の確認方法を明記しました。読み込み時の追加情報の保持も直しましたが、旧版で再保存すると旧版側で失われる制限は残ります。v0.3.81 の更新文草稿です。",
-  "updated": "2026-10-20",
-  "build": 92
+  "notes": "同じ作品の別ファイルを開いたときに照明草稿や取り消し履歴が混ざらないようにし、文書の切替を取り消したときは元の文書と編集状態を保つようにしました。劇場の変更は別の保存先へ保存し、内容を読み直してから切り替えます。確定済みの劇場は新版を作り、初回の設定は版を増やしません。編集メニューの「取り消す」・やり直しを照明や劇場の編集中の内容にも合わせ、環境設定では保存状態に応じて保存先の確認を案内します。v0.3.82 の更新文草稿です。実 Mac での最終確認は未完了です。",
+  "updated": "2026-10-21",
+  "build": 93
 }

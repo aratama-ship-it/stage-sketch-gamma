@@ -73,16 +73,108 @@
      上書きしないためここで退避する。 */
   const placementUnderlayKeys=['performers','setpieces','showcurtains','names'];
   let placementUnderlaySnapshot=null;
-  const key=id=>'gamma:lighting-draft-v1:'+id;
+  const vector=value=>JSON.stringify(value?.alternativeVector || []);
+  const basis=value=>value?.baseBasis || value?.basis;
+  const runtimeKey=value=>JSON.stringify([value?.documentSessionId || value?.showId,vector(value)]);
+  const drafts=new Map();
+  let contextGeneration=0;
+  const ownerOf=value=>value?.documentSessionId ? {
+    alternativeVector:value.alternativeVector,
+    documentSessionId:value.documentSessionId,pageGeneration:value.pageGeneration,
+    deliveryGeneration:value.deliveryGeneration
+  } : null;
+  function sameOwner(a,b) {
+    if(!a || !b || a.showId!==b.showId)return false;
+    const left=ownerOf(a),right=ownerOf(b);
+    return (left || right ? Boolean(left && right && ['documentSessionId','pageGeneration','deliveryGeneration'].every(name=>left[name]===right[name])) : true)
+      && vector(a)===vector(b);
+  }
+  function hostOwns(value) {
+    try {return sameOwner(value,parent.GAMMA_LIGHT_HOST.context());} catch {return false;}
+  }
+  // Browser v1 reload recovery stays reachable. Native records use the shell's
+  // durable owner, never the runtime UUID or project.id for automatic recovery.
+  const key=value=>value?.nativeDocument && value?.draftOwnerId
+    ? 'gamma:lighting-owner-draft-v2:'+value.draftOwnerId+':'+encodeURIComponent(vector(value))
+    : value?.nativeDocument || (value?.documentSessionId && !value?.alternativeVector)
+      ? 'gamma:lighting-session-draft-v1:'+value.documentSessionId
+      : 'gamma:lighting-draft-v1:'+value.showId+(value.browserDraftScope ? ':owner:'+value.browserDraftScope : '')+(value?.alternativeVector ? ':vector:'+encodeURIComponent(vector(value)) : '');
+  function stash() {
+    if(!context || loading)return;
+    drafts.set(runtimeKey(context),{baseBasis:basis(context),contextGeneration,context:structuredClone(context),
+      raw:state.dirty ? draftRecordRaw() : null,editor:hooks.captureDocumentState(),appliedExtras:structuredClone(appliedExtras),changedElsewhere,
+      draftState,applyError,appliedNotice,simple:window.GAMMA_SIMPLE_LIGHT_UI?.captureRuntime?.()});
+  }
+  let applyRequest=null,applyTask=null,draftTask=Promise.resolve(true),draftWriteSequence=0;
+  function retainNative(raw, owner=context) {
+    if(!owner?.nativeDocument || !owner.draftOwnerId)return Promise.resolve(!owner?.nativeDocument);
+    const ticket=++draftWriteSequence,generation=contextGeneration;
+    const job=parent.GAMMA_LIGHT_HOST.retainDraft(raw,vector(owner),owner);
+    draftTask=Promise.resolve(job).then(ok=>{
+      if(!ok && ticket===draftWriteSequence && generation===contextGeneration && sameOwner(context,owner)){draftState='failed';renderSaveStatus();}
+      return ok;
+    },()=>false);
+    return draftTask;
+  }
+  async function saveDraftDurably() {return saveDraft() && await draftTask;}
+  const staleResult=()=>({persisted:false,stale:true,error:'照明を準備中です'});
+  function ownsRequest(request) {
+    return applyRequest===request && contextGeneration===request.generation && sameOwner(context,request.context) && hostOwns(request.context);
+  }
+  function startApply(action) {
+    if(applying)return Promise.resolve({persisted:false,error:'照明を準備中です'});
+    const task=action();applyTask=task;
+    const release=()=>{if(applyTask===task)applyTask=null;};task.then(release,release);
+    return task;
+  }
+  parent.addEventListener('gamma-draft-owner-change',()=>{
+    const next=parent.GAMMA_LIGHT_HOST.context();
+    if(!sameOwner(context,next))return;
+    context={...context,draftOwnerId:next.draftOwnerId,draftRecords:next.draftRecords};
+    for(const record of drafts.values())if(record.context.documentSessionId===context.documentSessionId)
+      record.context={...record.context,draftOwnerId:next.draftOwnerId,draftRecords:next.draftRecords};
+    if(state.dirty)saveDraft();
+  });
   const message=text=>hooks.toast(text);
   let saveStatus=null, saveRow=null, saveControls=null, draftState='none', applying=false, applyError='', appliedNotice='';
+  function recoveryCopy() {
+    const language=parent.document.documentElement.lang || 'ja';
+    return parent.SHOSAI_DRAFT_RECOVERY_COPY?.[language] || parent.SHOSAI_DRAFT_RECOVERY_COPY?.ja;
+  }
+  function recoveryRecords({all=false}={}) {
+    const rows=[];
+    if(!context)return rows;
+    for(let i=0;i<localStorage.length;i++) {
+      const name=localStorage.key(i);
+      if(/^gamma:lighting-(?:draft-v1|session-draft-v1|owner-draft-v2):/.test(name) && name!==key(context)) {
+        const raw=localStorage.getItem(name);
+        if(context.nativeDocument || all)rows.push({key:name,raw});
+        else {try{const record=JSON.parse(raw);if(record.showId===context.showId && ((record.browserDraftScope || '')!==(context.browserDraftScope || '') || (name==='gamma:lighting-draft-v1:'+context.showId && localStorage.getItem(legacyConsumedKey(context))===rawFingerprint(raw))))rows.push({key:name,raw});}catch(_) {}}
+      }
+    }
+    for(const entry of parent.GAMMA_LIGHT_HOST.recoveryDrafts?.() || [])
+      for(const [v,raw] of Object.entries(entry.records || {}))
+        if(entry.owner!==context.draftOwnerId || v!==vector(context))rows.push({key:entry.locator+' / '+entry.owner+' / '+v,label:entry.locator?.endsWith('.stageproj') ? entry.locator : null,raw});
+    return rows;
+  }
+  function restoreRecovery(raw) {
+    if(!context || !hostOwns(context) || applying)return false;
+    const draft=JSON.parse(raw),design=model.restoreDraft(draft.design,context);
+    window.GAMMA_LIGHT_EDITOR.validateImport(design);
+    hooks.applyDesign(design,{fixtureAlternatives:draft.fixtureAlternatives || context.fixtureAlternatives});
+    appliedExtras=model.clone(design);applyError='';appliedNotice='';saveDraft();return true;
+  }
   function renderSaveStatus() {
+    window.dispatchEvent(new Event("gamma-light-history-change"));
     if(!saveStatus) return;
     const draftText=draftState==='saved'?'このブラウザに控え保存済み':draftState==='failed'?'控えを保存できません。控え・書き出しからファイルへ残してください':'控えを保存中…';
     /* 2026-10-06 本人指示: 普段の案内文「ショーの照明を表示中。編集後は…」と「控え・書き出し」ボタンは出さない（上下幅を詰める）。
        ふだん（言うことが無いとき）は行ごと隠す。★ただし警告（保存できない・別のタブで更新・適用できない）の文は
        「控え・書き出しから残してください」と案内するので、警告のときだけボタンも出す＝データを失う場面の逃げ道を残す。 */
     let text='', level='info';
+    if(context && recoveryRecords().length && !state.dirty && !applyError && !changedElsewhere) {
+      text=recoveryCopy()?.note || '';level='warn';
+    }
     if(applying) text='ショーへ適用中…';
     else if(changedElsewhere) {text='ショーが別のタブで更新されています。照明を控え・書き出しから残し、読み直してください。';level='warn';}
     else if(applyError) {text='適用できませんでした: '+applyError+' · '+draftText;level='warn';}
@@ -185,6 +277,57 @@
     if(next.version===1)delete next.migration;
     return next;
   }
+  const legacyConsumedKey=value=>'gamma:lighting-legacy-consumed-v1:'+value.showId;
+  const rawFingerprint=text=>{let h=0x811c9dc5;for(let i=0;i<text.length;i++)h=Math.imul(h^text.charCodeAt(i),0x01000193);return text.length+':'+(h>>>0).toString(16);};
+  function markLegacyConsumed() {
+    if(context.nativeDocument || context.browserDraftScope)return;
+    const legacy=localStorage.getItem('gamma:lighting-draft-v1:'+context.showId);
+    if(legacy && localStorage.getItem(legacyConsumedKey(context))!==rawFingerprint(legacy))
+      localStorage.setItem(legacyConsumedKey(context),rawFingerprint(legacy));
+  }
+  function archiveLegacyDraft(raw,owner) {
+    if(owner.nativeDocument || owner.browserDraftScope || !hostOwns(owner))return false;
+    if(localStorage.getItem('gamma:lighting-draft-v1:'+owner.showId)!==raw)return false;
+    const fingerprint=rawFingerprint(raw);localStorage.setItem(legacyConsumedKey(owner),fingerprint);
+    return localStorage.getItem(legacyConsumedKey(owner))===fingerprint;
+  }
+  function draftRecordRaw() {
+    const candidate={version:1,showId:context.showId,...ownerOf(context),draftOwnerId:context.draftOwnerId,
+      alternativeVector:context.alternativeVector,browserDraftScope:context.browserDraftScope,baseBasis:basis(context),contextGeneration,basis:context.basis,
+      fixtureAlternatives:state.fixtureAlternatives,design:model.stripPassthrough(build())};
+    const existing=localStorage.getItem(key(context));
+    if(existing)try {
+      const old=JSON.parse(existing),stable=value=>JSON.stringify(value,(name,v)=>name==='savedAt'?undefined:v);
+      if(old.baseBasis===candidate.baseBasis && old.draftOwnerId===candidate.draftOwnerId
+        && (old.browserDraftScope || '')===(candidate.browserDraftScope || '')
+        && stable(old.design)===stable(candidate.design)
+        && stable(old.fixtureAlternatives)===stable(candidate.fixtureAlternatives))return existing;
+    } catch(_) {}
+    return JSON.stringify(candidate);
+  }
+  async function saveAllDraftsDurably() {
+    if(!context)return true;
+    stash();
+    const owner=context,generation=contextGeneration;
+    try {
+      for(const record of drafts.values()) {
+        if(record.context.documentSessionId!==owner.documentSessionId || !record.raw)continue;
+        const rawRecord=JSON.parse(record.raw);rawRecord.draftOwnerId=owner.draftOwnerId;
+        const raw=JSON.stringify(rawRecord),target={...record.context,pageGeneration:owner.pageGeneration,deliveryGeneration:owner.deliveryGeneration,draftOwnerId:owner.draftOwnerId};
+        localStorage.setItem(key(target),raw);
+        if(localStorage.getItem(key(target))!==raw)throw Error('Draft write was not retained');
+        const retained=await retainNative(raw,target);
+        if(generation!==contextGeneration || !sameOwner(owner,context))return false;
+        if(!retained)throw Error('Draft write was not retained');
+      }
+      return true;
+    } catch(_) {
+      if(generation===contextGeneration && sameOwner(owner,context)) {
+        draftState='failed';applyError='編集内容の控えを保存できません。照明をファイルへ書き出してください';renderSaveStatus();
+      }
+      return false;
+    }
+  }
   function saveDraft() {
     if(!state.dirty) return true;
     if(!context || loading || applying || changedElsewhere) return false;
@@ -193,11 +336,12 @@
     let saved=false;
     try {
       const latest=parent.GAMMA_LIGHT_HOST.context();
-      if(latest.showId!==context.showId || latest.basis!==context.basis) {changedElsewhere=true;renderSaveStatus();return false;}
-      const raw=JSON.stringify({version:1,showId:context.showId,basis:context.basis,design:model.stripPassthrough(build())});
-      localStorage.setItem(key(context.showId),raw);
-      if(localStorage.getItem(key(context.showId))!==raw) throw Error('Draft write was not retained');
-      draftState='saved';saved=true;
+      if(latest.documentSessionId!==context.documentSessionId)return false;
+      if(sameOwner(latest,context) && basis(latest)!==basis(context)) {changedElsewhere=true;renderSaveStatus();return false;}
+      const raw=draftRecordRaw();
+      localStorage.setItem(key(context),raw);
+      if(localStorage.getItem(key(context))!==raw) throw Error('Draft write was not retained');
+      retainNative(raw);draftState='saved';saved=true;
     }
     catch(error) { draftState='failed';message('編集内容の控えを保存できません。照明をファイルへ書き出してください'); }
     renderSaveStatus();
@@ -237,7 +381,7 @@
   }
   hooks.setSceneContextRestorer(() => {
     const next = parent.GAMMA_LIGHT_HOST.context();
-    if (context && next?.showId === context.showId) synchronizePieces(next);
+    if (sameOwner(context,next)) synchronizePieces(next);
   });
   /* 会場の客席多角形はホスト側の正本を参照するだけで、照明デザインの保存物へ複製しない。
      形が無い会場では null のまま＝客席ワンダーを有効にしない。 */
@@ -249,39 +393,57 @@
     window.GAMMA_LIGHT_SET_FRONT_SEATS?.(next && next.frontSeats);
   }
   function open(next, mode) {
-    if(playbackPreview) return false;
+    if(playbackPreview && sameOwner(context,next)) return false;
+    const retained=drafts.get(runtimeKey(next));
+    if(context && !sameOwner(context,next)) {
+      saveDraft();stash();contextGeneration++;applyRequest=null;applyTask=null;applying=false;
+      clearTimelineFrame();endPlaybackPreview();
+    }
+    if(retained && !sameOwner(context,next)) {
+      loading=true;
+      try {
+        hooks.restoreDocumentState(retained.editor);appliedExtras=structuredClone(retained.appliedExtras);
+        context={...next,basis:retained.context.basis,baseBasis:retained.baseBasis};
+        changedElsewhere=retained.changedElsewhere || retained.baseBasis!==basis(next);
+        draftState=retained.draftState;applyError='';appliedNotice='';active=true;
+        synchronizePieces(next);synchronizeVenueMask(next);synchronizeFrontSeats(next);setMode(mode);
+        window.GAMMA_SIMPLE_LIGHT_UI?.restoreRuntime?.(retained.simple);
+        window.GAMMA_SIMPLE_LIGHT_UI?.onContext(context);hooks.refreshApplyState();renderSaveStatus();
+      } finally {loading=false;}
+      return true;
+    }
     clearTimelineFrame();hooks.stop();hooks.setCueSyncPending(next.cueSyncPending);
-    if(context?.showId===next.showId && state.dirty) {
-      if(context.basis!==next.basis || changedElsewhere) {
+    if(sameOwner(context,next) && state.dirty) {
+      if(basis(context)!==basis(next) || changedElsewhere) {
         changedElsewhere=true;renderSaveStatus();
         message('ショーが更新されています。照明の編集中データは保持しています。「控え・書き出し」からファイルへ控えてください');
       } else {synchronizePieces(next);synchronizeVenueMask(next);state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));}
       active=true;setMode(mode);window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);hooks.refreshCuePlacements();return;
     }
-    if(context?.showId===next.showId && context.basis===next.basis) {
+    if(sameOwner(context,next) && basis(context)===basis(next)) {
       synchronizePieces(next);synchronizeVenueMask(next);synchronizeFrontSeats(next); state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
       active=true;setMode(mode);window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);hooks.refreshCuePlacements();return;
     }
-    saveDraft();loading=true;
+    saveDraft();stash();clearTimeout(draftTimer);draftTimer=0;contextGeneration++;applyRequest=null;applying=false;loading=true;
     try {
       const hostDesign=model.reconcile(next.design,next);
       let design=hostDesign,dirty=false;
-      let raw=localStorage.getItem(key(next.showId));
-      /* 2026-09-24: ロミオとジュリエット見本は照明を6灯→41灯へ組み直した（本体 stage-sketch.js の backfillRomeoJulietLightingRig）。
-         古い6灯のままの編集控えが残っていると、開くたびに古い仕込みへ戻る・または控えの食い違いで開けない。
-         控えが旧6灯で、ショー側がもう新しい仕込みなら、その控えだけ片付ける（ほかのショーの控えは触らない）。 */
-      if(raw) {
-        try {
-          const old=['rj-lx-back','rj-lx-center','rj-lx-front-l','rj-lx-front-r','rj-lx-side-l','rj-lx-side-r'].join(',');
-          const draftIds=(JSON.parse(raw)?.design?.rig?.fixtures||[]).map(f=>f&&f.id).sort().join(',');
-          const hostHasNew=(next.design?.rig?.fixtures||[]).some(f=>f&&f.id==='rj-lx2-mv-center');
-          if(draftIds===old && hostHasNew) { localStorage.removeItem(key(next.showId)); raw=null; message('古い照明の仕込みの編集控えを片付けました（見本の照明は新しい仕込みになっています）'); }
-        } catch(_) { /* 読めない控えは今までどおり下で扱う */ }
+      let raw=localStorage.getItem(key(next)) ?? (next.nativeDocument ? next.draftRecords?.[vector(next)] : null);
+      // Only browser shelf documents may fall back to the original v1 key.
+      if(!raw && !next.nativeDocument && !next.browserDraftScope && next.alternativeVector && vector(next)===JSON.stringify(next.adoptedAlternativeVector)) {
+        const legacyRaw=localStorage.getItem('gamma:lighting-draft-v1:'+next.showId);
+        if(legacyRaw && localStorage.getItem(legacyConsumedKey(next))!==rawFingerprint(legacyRaw)) {
+          const legacy=JSON.parse(legacyRaw);
+          if(!legacy.alternativeVector || JSON.stringify(legacy.alternativeVector)===vector(next))raw=legacyRaw;
+        }
       }
+      // Legacy raw records are never automatically cleaned up on load. A stale
+      // basis goes through the explicit recovery/export entrance below.
       if(raw) {
         const draft=JSON.parse(raw);
-        if(draft.version!==1 || draft.showId!==next.showId) throw Error('照明の編集控えを確認できません。控えは上書きしていません');
-        if(draft.basis!==next.basis) throw Error('別の更新より前の編集控えが残っています。照明の控えを復旧してから開いてください');
+        if(draft.version!==1 || draft.showId!==next.showId || (next.nativeDocument && (next.draftOwnerId ? draft.draftOwnerId!==next.draftOwnerId : draft.documentSessionId!==next.documentSessionId))) throw Error('照明の編集控えを確認できません。控えは上書きしていません');
+        if((draft.baseBasis ? draft.baseBasis!==basis(next) : draft.basis!==next.basis)
+          || (draft.alternativeVector && JSON.stringify(draft.alternativeVector)!==vector(next))) throw Error('別の更新より前の編集控えが残っています。照明の控えを復旧してから開いてください');
         /* restoreDraft: 控えには無い素通りフィールド（劇場プリセットの照明プラン集）を、
            basisが一致している＝内容が同じと保証されたホストの現在値から補う。 */
         design=model.restoreDraft(draft.design,next);
@@ -305,7 +467,7 @@
       hooks.renderAll();
       hooks.markApplied();
       if(dirty) hooks.applyDesign(design,{host:true,preserveAppliedBaseline:true,
-        fixtureAlternatives:model.fixtureAlternativeEdits(next.fixtureAlternatives,hostDesign,design)});
+        fixtureAlternatives:raw && JSON.parse(raw).fixtureAlternatives || model.fixtureAlternativeEdits(next.fixtureAlternatives,hostDesign,design)});
       synchronizePieces(next);
       appliedExtras=model.clone(design);context=next;synchronizeVenueMask(next);synchronizeFrontSeats(next);changedElsewhere=false;
       hooks.refreshApplyState();draftState=state.dirty?'saved':'none';applyError='';appliedNotice='';renderSaveStatus();state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
@@ -317,7 +479,7 @@
       if(!dirty) hooks.markApplied();
       hooks.refreshApplyState();draftState=state.dirty?'saved':'none';renderSaveStatus();
       if(dirty) message('適用前の照明を復元しました');
-    } finally {loading=false;}
+    } finally {loading=false;window.dispatchEvent(new Event("gamma-light-history-change"));}
   }
   function beginPlaybackPreview() {
     if(!context || !active || loading || applying || changedElsewhere)
@@ -342,17 +504,32 @@
       if(!playbackPreview) return;
       event.preventDefault();event.stopImmediatePropagation();
     },{capture:true,passive:false});
+  window.GAMMA_LIGHT_HISTORY_ALLOWED = event => {
+    if (!active || !context || loading || applying || playbackPreview) return false;
+    if (event?.defaultPrevented || event?.isComposing || event?.keyCode === 229) return false;
+    if (!document.getElementById('dialog')?.hidden) return false;
+    try {
+      if (parent.location.origin !== location.origin) return false;
+      return parent.GammaUndoOwner?.allows ? parent.GammaUndoOwner.allows('lightDraft', event) : true;
+    } catch (_) { return false; }
+  };
   function suspend(){clearTimelineFrame();endPlaybackPreview();saveDraft();document.getElementById('dialog').hidden=true;active=false;hooks.stop();}
-  async function apply(options = {}) {
+  function apply(options = {}) {return startApply(()=>applyOwned(options));}
+  async function applyOwned(options = {}) {
     if(playbackPreview) return {persisted:false,error:'表示専用プレビュー中は適用できません。下書きに戻ってください'};
     if(!context || applying) return;
     if(!hooks.refreshApplyState() && !options.placement) return {persisted:false,unchanged:true};
+    if(!hostOwns(context))return staleResult();
+    const request={context:{...context},generation:contextGeneration,requestId:crypto.randomUUID()};applyRequest=request;
+    const owner={...ownerOf(context),requestId:request.requestId};
     applying=true;renderSaveStatus();
     try {
       if(changedElsewhere) throw Error('別のタブでショーが変更されました。照明をファイルへ控えてから読み直してください');
       hooks.stop();
-      const result=await parent.GAMMA_LIGHT_HOST.apply(build(),context.basis,{fixtureAlternatives:model.clone(state.fixtureAlternatives || []), ...(options.placement ? {placement:options.placement} : {})});
+      const result=await parent.GAMMA_LIGHT_HOST.apply(build(),context.basis,{owner,baseBasis:basis(context),fixtureAlternatives:model.clone(state.fixtureAlternatives || []), ...(options.placement ? {placement:options.placement} : {})});
+      if(!ownsRequest(request))return staleResult();
       if(!result.persisted) throw Error('保存を確認できませんでした');
+      if(!sameOwner(request.context,result.context))return staleResult();
       parent.GAMMA_WORKSPACE.captureHostHistory();
       context=result.context;synchronizeVenueMask(context);
       if(result.designExpanded || options.placement) hooks.applyDesign(context.design,{host:true,preserveHistory:true});
@@ -362,30 +539,38 @@
       // Remove only our own draft AFTER durable host acceptance.
       applyError='';draftState='none';
       appliedNotice=result.shelfPersisted?'適用済み · 照明をこのブラウザのショーへ保存しました。':'適用済み · ショー一覧の控えを更新できません。ショーをファイルへ書き出してください。';
-      try {localStorage.removeItem(key(context.showId));} catch {appliedNotice+=' 編集控えの整理は次回行います。';message('照明は保存しました。編集控えの整理は次回行います');}
+      if(!ownsRequest(request))return staleResult();
+      try {markLegacyConsumed();localStorage.removeItem(key(context));retainNative(null);} catch {appliedNotice+=' 編集控えの整理は次回行います。';message('照明は保存しました。編集控えの整理は次回行います');}
       hooks.renderAll();
       message(result.shelfPersisted?'照明デザインをショーへ保存しました':'照明は保存しました。ショー一覧の控えを更新できないため、ショーを書き出してください');
       return result;
-    } catch(error) {applyError=error.message;hooks.refreshApplyState();saveDraft();message('適用できませんでした: '+error.message);return {persisted:false,error:error.message||String(error)};}
-    finally {applying=false;renderSaveStatus();}
+    } catch(error) {if(!ownsRequest(request))return staleResult();applying=false;applyError=error.message;hooks.refreshApplyState();saveDraft();message('適用できませんでした: '+error.message);return {persisted:false,error:error.message||String(error)};}
+    finally {if(ownsRequest(request)){applyRequest=null;applying=false;renderSaveStatus();}}
   }
-  async function applyCandidate(design) {
+  function applyCandidate(design) {return startApply(()=>applyCandidateOwned(design));}
+  async function applyCandidateOwned(design) {
     if(playbackPreview) return {persisted:false,error:'表示専用プレビュー中は採用できません。下書きに戻ってください'};
     if(!context || applying) return {persisted:false,error:'照明を準備中です'};
+    if(!hostOwns(context))return staleResult();
+    const request={context:{...context},generation:contextGeneration,requestId:crypto.randomUUID()};applyRequest=request;
+    const owner={...ownerOf(context),requestId:request.requestId};
     applying=true;renderSaveStatus();
     try {
       if(changedElsewhere) throw Error('別のタブでショーが変更されました。読み直してから採用してください');
       model.validate(design,context.scenes.map(row=>row.id));
-      const result=await parent.GAMMA_LIGHT_HOST.apply(design,context.basis);
+      const result=await parent.GAMMA_LIGHT_HOST.apply(design,context.basis,{owner,baseBasis:basis(context)});
+      if(!ownsRequest(request))return staleResult();
       if(!result.persisted) throw Error('保存できませんでした');
+      if(!sameOwner(request.context,result.context))return staleResult();
       context=result.context;appliedExtras=model.clone(design);
       hooks.applyDesign(design);synchronizePieces(context);synchronizeVenueMask(context);hooks.markApplied();
       applyError='';draftState='none';appliedNotice='適用済み · このブラウザのショーへ保存しました';
-      try {localStorage.removeItem(key(context.showId));} catch {}
+      if(!ownsRequest(request))return staleResult();
+      try {markLegacyConsumed();localStorage.removeItem(key(context));retainNative(null);} catch {}
       parent.GAMMA_WORKSPACE.captureHostHistory();hooks.renderAll();
       return result;
-    } catch(error) {applyError=error.message;return {persisted:false,error:error.message};}
-    finally {applying=false;renderSaveStatus();}
+    } catch(error) {if(!ownsRequest(request))return staleResult();applyError=error.message;return {persisted:false,error:error.message};}
+    finally {if(ownsRequest(request)){applyRequest=null;applying=false;renderSaveStatus();}}
   }
   document.documentElement.dataset.gammaEmbedded='true';
   /* V-04（2026-09-24 本人指示）: 本体の「画面の色」（赤みの黒／青みの黒）をこのページにも写す。
@@ -447,16 +632,19 @@
   },true);
   window.addEventListener('gamma-light-draft-edit',clearTimelineFrame);
   window.addEventListener('gamma-light-cue-view',clearTimelineFrame);
-  window.addEventListener('gamma-light-cue-select',event=>{if(active && !loading && context) parent.GAMMA_LIGHT_HOST.selectCue(event.detail.lxId,build());});
+  window.addEventListener('gamma-light-cue-select',event=>{if(active && !loading && context && hostOwns(context)) parent.GAMMA_LIGHT_HOST.selectCue(event.detail.lxId,build());});
   window.addEventListener('gamma-light-edit',()=>{
     parent.GAMMA_WORKSPACE.syncHistory();
-    if(loading || !context) return;
+    if(loading || !context || !hostOwns(context)) return;
     const stamp=JSON.stringify(state.scenes.map(s=>[s.id,(s.lxq||[]).map(q=>[q.id,q.seq,q.no,q.enabled,q.name,q.trigger,q.timing,q.follow])]));
     if(active && stamp!==cuePanelStamp) {cuePanelStamp=stamp;parent.GAMMA_LIGHT_HOST.draftChanged(build());}
     if(state.dirty && !applying) {draftState='pending';renderSaveStatus();}
     else if(!state.dirty && !applying) {
       clearTimeout(draftTimer);
-      try {localStorage.removeItem(key(context.showId));draftState='none';} catch(_) { /* The draft remains recoverable. */ }
+      try {
+        const retained=localStorage.getItem(key(context))!==null || context.draftRecords?.[vector(context)];
+        markLegacyConsumed();localStorage.removeItem(key(context));if(retained)retainNative(null);draftState='none';
+      } catch(_) { /* The draft remains recoverable. */ }
       renderSaveStatus();
     }
     clearTimeout(draftTimer); draftTimer=state.dirty?setTimeout(saveDraft,250):0;
@@ -466,13 +654,67 @@
   document.addEventListener('visibilitychange',()=>{if(document.hidden){if(playbackPreview)saveDraft();else suspend();}});
   window.addEventListener('pagehide',saveDraft);
   window.addEventListener('beforeunload',event=>{const saved=saveDraft();if(state.dirty&&!saved){event.preventDefault();event.returnValue='';}});
-  window.GAMMA_LIGHT_EDITOR=Object.freeze({open,suspend,apply,applyCandidate,build,
+  function captureRuntime() {
+    const dialog=document.getElementById('dialog');
+    let draftRecord=null;
+    try {if(context)draftRecord={key:key(context),raw:localStorage.getItem(key(context))};} catch(_) {}
+    return {drafts:new Map(drafts),editor:hooks.captureDocumentState(),context:context&&structuredClone(context),active,changedElsewhere,draftRecord,
+      appliedExtras:structuredClone(appliedExtras),draftState,applyError,appliedNotice,lastScene,cuePanelStamp,
+      placementUnderlaySnapshot:structuredClone(placementUnderlaySnapshot),
+      simple:window.GAMMA_SIMPLE_LIGHT_UI?.captureRuntime?.(),
+      dialogHidden:dialog.hidden,dialogChildren:[...dialog.childNodes],
+      scroll:[...document.querySelectorAll('[id]')].filter(el=>el.scrollTop||el.scrollLeft).map(el=>[el,el.scrollTop,el.scrollLeft]),
+      focus:document.activeElement};
+  }
+  function restoreRuntime(saved) {
+    if(!saved)return;
+    clearTimeout(draftTimer);draftTimer=0;clearTimelineFrame();endPlaybackPreview();
+    contextGeneration++;applyRequest=null;applyTask=null;applying=false;loading=true;
+    try {
+      drafts.clear();for(const [k,v] of saved.drafts || [])drafts.set(k,v);
+      context=saved.context&&structuredClone(saved.context);active=saved.active;changedElsewhere=saved.changedElsewhere;
+      appliedExtras=structuredClone(saved.appliedExtras);draftState=saved.draftState;
+      applyError=saved.applyError;appliedNotice=saved.appliedNotice;lastScene=saved.lastScene;cuePanelStamp=saved.cuePanelStamp;
+      placementUnderlaySnapshot=structuredClone(saved.placementUnderlaySnapshot);
+      hooks.restoreDocumentState(saved.editor);
+      if(saved.draftRecord?.raw!==null && saved.draftRecord?.key) {
+        try {localStorage.setItem(saved.draftRecord.key,saved.draftRecord.raw);retainNative(saved.draftRecord.raw);} catch(_) {draftState='failed';}
+      }
+      document.documentElement.dataset.gammaLightMode=state.mode;
+      document.documentElement.classList.toggle('placement-underlay-hidden',Boolean(placementUnderlaySnapshot));
+      synchronizeFrontSeats(context);
+      window.GAMMA_SIMPLE_LIGHT_UI?.restoreRuntime?.(saved.simple);
+      const dialog=document.getElementById('dialog');dialog.replaceChildren(...saved.dialogChildren);dialog.hidden=saved.dialogHidden;
+      renderSaveStatus();saved.scroll.forEach(([el,top,left])=>{el.scrollTop=top;el.scrollLeft=left;});
+      if(saved.focus?.isConnected)saved.focus.focus({preventScroll:true});
+    } finally {loading=false;}
+  }
+  function commitDocumentTransition() {
+    // Called only after the candidate import succeeds. The retained session
+    // draft belongs to A; hidden A state must not become B's pending editor.
+    clearTimeout(draftTimer);draftTimer=0;clearTimelineFrame();endPlaybackPreview();hooks.stop();
+    stash();contextGeneration++;
+    applyRequest=null;applyTask=null;applying=false;active=false;context=null;
+    changedElsewhere=false;applyError='';appliedNotice='';draftState='none';
+    state.history=[];state.future=[];hooks.markApplied();
+    window.GAMMA_SIMPLE_LIGHT_UI?.clearDocumentContext?.();renderSaveStatus();
+  }
+  async function waitForApply() {
+    if(applyTask)await applyTask;
+    await window.GAMMA_SIMPLE_LIGHT_UI?.waitForApply?.();
+    await draftTask;
+    return !applying;
+  }
+  window.GAMMA_LIGHT_EDITOR=Object.freeze({draftKey:key,archiveLegacyDraft,recoveryCopy,recoveryRecords,restoreRecovery,saveDraftDurably,saveAllDraftsDurably,open,suspend,apply,applyCandidate,build,saveDraft,captureRuntime,restoreRuntime,waitForApply,commitDocumentTransition,
+
     selectCue(sceneId, cueId) { return active && !loading && !playbackPreview && hooks.viewLightCue(sceneId, cueId); },
     async placeCue(placement) {
+      const owner=context&&{...context};
       if(!build().scenes.flatMap(s=>s.lxq||[]).some(q=>q.id===placement.lxId))return {persisted:false,error:"このQは一覧にありません"};
       if(state.dirty || context?.cueSyncPending) {
         const saved=await apply();if(!saved?.persisted)return saved;
       }
+      if(!sameOwner(owner,context) || !hostOwns(owner))return staleResult();
       return apply({placement});
     },placementChoices:()=>build(),
     beginPlaybackPreview,endPlaybackPreview,paintPlaybackPreview,toggleProgram,
@@ -485,12 +727,12 @@
       else hooks.draw();
       return true;
     },
-    undo:()=>{if(!playbackPreview)hooks.undo();},redo:()=>{if(!playbackPreview)hooks.redo();},
+    undo:event=>hooks.undo(event),redo:event=>hooks.redo(event),
     validateImport(design){model.validate(design,context.scenes.map(row=>row.id));if(JSON.stringify(design.stage)!==JSON.stringify(context.stage))throw Error('劇場寸法が異なる照明デザインです。舞台で寸法を確認してください');},
     /* #8: 環境設定で呼び名を変えたとき、開いたままの照明デザインへすぐ反映する */
     setCueNaming(mode){state.cueNaming=mode==='serial'?'serial':'scene';hooks.renderAll();},
     externalChange(){changedElsewhere=true;hooks.stop();renderSaveStatus();if(state.dirty)message('別のタブでショーが更新されました。編集中の照明は保持しています');},
-    status:()=>({venueType:context?.venueType,showId:context?.showId,dirty:state.dirty,active,changedElsewhere,
-      playbackPreview,previewReady:hooks.playbackPreviewStatus().ready,
+    status:()=>({baseBasis:basis(context),contextGeneration,alternativeVector:context?.alternativeVector,venueType:context?.venueType,showId:context?.showId,...ownerOf(context),dirty:state.dirty,active,changedElsewhere,applying,applyError,draftState,
+      loading,busy:loading||applying,historyBlocked:hooks.historyBlocked(),readOnly:!!context?.readOnly,playbackPreview,previewReady:hooks.playbackPreviewStatus().ready,
       canUndo:!playbackPreview&&Boolean(state.history.length),canRedo:!playbackPreview&&Boolean(state.future.length)})});
 })();

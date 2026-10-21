@@ -10,6 +10,17 @@
   // null follows the detailed selection on entry; '' is an explicit new cue.
   // These are draft UI state, never fields in the saved design.
   let targetCueId=null,replaceLook=false,timeEdited=false;
+  let operation=null,operationTask=null;
+  const ownerKey=value=>JSON.stringify([value?.showId,value?.documentSessionId,value?.pageGeneration,value?.deliveryGeneration,value?.alternativeVector]);
+  const sameOwner=(a,b)=>ownerKey(a)===ownerKey(b);
+  const owns=token=>operation===token && sameOwner(context,token.context)
+    && sameOwner(context,parent.GAMMA_LIGHT_HOST.context());
+  function track(action) {
+    if(busy)return Promise.resolve();
+    const task=action();operationTask=task;
+    const release=()=>{if(operationTask===task)operationTask=null;};task.then(release,release);
+    return task;
+  }
   const bar=el('div','simple-mode-choice');
   /* 「再生中の照明を見る」は「照明の操作」の左に置く（2026-10-05 本人指示: 上下幅を詰める）。出す条件は外側（gamma-workspace.js）が
      html[data-gamma-playback] で決め、押したら外側の確認画面を開く。
@@ -186,13 +197,16 @@
   function commonDesign() {
     return M.withCommonRig(window.GAMMA_LIGHT_EDITOR.build(),state.dims,context.venueType);
   }
-  async function adopt(opts={}) {
+  function adopt(opts={}) {return track(()=>adoptOwned(opts));}
+  async function adoptOwned(opts={}) {
     if(busy)return;
+    const token={context:{...context}};operation=token;
     busy=true;error='';render();
     try {
       if(!common()&&context.existingLighting) {
         if(state.dirty)throw Error('詳細の未適用編集を先に適用してください');
-        const next=await parent.GAMMA_LIGHT_HOST.beginSimpleCopy(commonDesign(),context.basis);
+        const next=await parent.GAMMA_LIGHT_HOST.beginSimpleCopy(commonDesign(),context.basis,{owner:{documentSessionId:context.documentSessionId,pageGeneration:context.pageGeneration,deliveryGeneration:context.deliveryGeneration,requestId:crypto.randomUUID()}});
+        if(!owns(token))return;
         window.GAMMA_LIGHT_EDITOR.open(next,'light-design');wanted=true;preview=true;thumbKey='';error='';return;
       }
       // Common Undo/Redo changes the editor draft, not the host's applied design.
@@ -200,6 +214,7 @@
       // An explicit new-Q selection keeps preview=true and uses the path below.
       if(!preview&&state.dirty) {
         const result=await window.GAMMA_LIGHT_EDITOR.apply();
+        if(!owns(token))return;
         if(!result?.persisted)throw Error(result?.error||'保存できませんでした');
         context=result.context;targetCueId=targetQ()?.id||'';thumbKey='';
         if(opts.toDetail)mode(false);
@@ -219,12 +234,13 @@
         q.cue=clone(made.cue);q.timing={fadeInSec:options().fadeSec,fadeOutSec:options().fadeSec,curve:'linear'};
       }
       const result=await window.GAMMA_LIGHT_EDITOR.applyCandidate(design);
+      if(!owns(token))return;
       if(!result.persisted)throw Error(result.error||'保存できませんでした');
       context=result.context;targetCueId=q.id;replaceLook=false;timeEdited=false;preview=false;thumbKey='';
       hooks.viewLightCue(row.id,q.id);
       /* 2026-10-06 本人指示: 「適用する」で保存できたら詳細表示へ移り、細かい編集に進めるようにする（暗転は移らない）。 */
       if(opts.toDetail){mode(false);hooks.toast('適用しました。詳細表示で細かく編集できます');}
-    } catch(e){error=e.message;} finally {busy=false;render();if(!active())$('simple-status').textContent=error;}   // 詳細へ移った後に「適用しています…」が古いまま残らないように
+    } catch(e){if(owns(token))error=e.message;} finally {if(owns(token)){operation=null;busy=false;render();if(!active())$('simple-status').textContent=error;}}   // 詳細へ移った後に「適用しています…」が古いまま残らないように
   }
   let previewResizeFrame=0;
   new ResizeObserver(()=>{if(active()&&!previewResizeFrame)previewResizeFrame=requestAnimationFrame(()=>{previewResizeFrame=0;render();});}).observe($('simple-front'));
@@ -235,7 +251,15 @@
   $('simple-return').onclick=resetFromSaved;
   $('simple-adopt').onclick=()=>adopt({toDetail:true});
   $('simple-blackout').onclick=()=>{setSelected('blackout');adopt();};
-  $('simple-undo').onclick=async()=>{if(busy)return;busy=true;render();hooks.undo();const result=await window.GAMMA_LIGHT_EDITOR.apply();busy=false;if(result?.persisted){context=result.context;resetFromSaved();}else {error=result?.error||'取り消した編集は未適用です。詳細表示から適用してください';render();}};
+  $('simple-undo').onclick=()=>track(async()=>{
+    const token={context:{...context}};operation=token;busy=true;render();
+    try {
+      hooks.undo();const result=await window.GAMMA_LIGHT_EDITOR.apply();
+      if(!owns(token))return;
+      if(result?.persisted){context=result.context;resetFromSaved();}
+      else error=result?.error||'取り消した編集は未適用です。詳細表示から適用してください';
+    } finally {if(owns(token)){operation=null;busy=false;render();}}
+  });
   [['simple-color','color'],['simple-level','level'],['simple-size','sizeM'],['simple-fade','fadeSec']].forEach(([id,key])=>{
     $(id).addEventListener(id.includes('level')||id.includes('size')?'input':'change',e=>{options()[key]=key==='color'?e.target.value:Number(e.target.value);if(key==='fadeSec')timeEdited=true;else replaceLook=true;preview=true;error='';render();});
   });
@@ -243,8 +267,15 @@
   $('simple-cue').onchange=e=>{targetCueId=e.target.value;if(targetCueId)hooks.lxEnterCue(state.sceneIndex,targetCueId);resetFromSaved();};
   window.addEventListener('gamma-light-edit',()=>{if(context&&!busy)queueMicrotask(render);});
   window.GAMMA_SIMPLE_LIGHT_UI=Object.freeze({
+    status:()=>({busy,error,preview,context:context && {...context}}),
     refreshPlayback(){if(active())paint($('simple-front'),state.rig,hooks.cue());},
-    onContext(next){const different=context?.showId!==next.showId;context=next;if(different){choices=new Map();targetCueId=null;replaceLook=false;timeEdited=false;wanted=!next.existingLighting||M.isCommon(state.rig,state.dims,next.venueType);lastScene='';thumbKey='';}render();},
+    onContext(next){const different=!sameOwner(context,next);context=next;if(different){operation=null;operationTask=null;busy=false;error='';preview=false;thumbToken++;choices=new Map();targetCueId=null;replaceLook=false;timeEdited=false;wanted=!next.existingLighting||M.isCommon(state.rig,state.dims,next.venueType);lastScene='';thumbKey='';}render();},
+    clearDocumentContext(){context=null;operation=null;operationTask=null;busy=false;error='';preview=false;thumbToken++;},
+    captureRuntime(){return structuredClone({context,wanted,preview,busy:false,error,selected,category,lastScene,choices,thumbKey,targetCueId,replaceLook,timeEdited});},
+    restoreRuntime(saved){if(!saved)return;operation=null;operationTask=null;
+      ({context,wanted,preview,busy,error,selected,category,lastScene,choices,thumbKey,targetCueId,replaceLook,timeEdited}=structuredClone(saved));
+      thumbToken++;render();},
+    waitForApply:()=>operationTask || Promise.resolve(),
     render,active,available,sync(){const before=wanted;syncAvailability();if(before!==wanted)render();}
   });
 })();

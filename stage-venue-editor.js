@@ -3649,12 +3649,35 @@
 
   function venueTemplateKey(detail) {
     if (!detail || typeof detail.venueId !== "string" || !detail.venueId) return null;
-    return `${detail.venueId}:${typeof detail.sizeId === "string" ? detail.sizeId : ""}`;
+    const dims = detail.venueDims;
+    const dimensions = dims ? `:${JSON.stringify([dims.width, dims.depth, dims.height])}` : "";
+    return `${detail.venueId}:${typeof detail.sizeId === "string" ? detail.sizeId : ""}${dimensions}`;
   }
 
   function templateVariant(venue, sizeId) {
     if (!venue || !Array.isArray(venue.sizes) || !venue.sizes.length) return venue;
     return venue.sizes.find((size) => size.id === sizeId) || venue.sizes[0];
+  }
+
+  // Legacy shows can override the preset's footprint and ceiling. Start the
+  // draft with that confirmed geometry, before recording its unchanged baseline.
+  // Other authored venue fields retain their metre values; do not recreate them
+  // from defaults just because the next edit only changes a floor color.
+  function confirmedTemplateVariant(venue, detail) {
+    const variant = templateVariant(venue, detail.sizeId);
+    const dims = detail.venueDims;
+    if (!dims || !variant?.floor?.outline) return variant;
+    const result = clone(variant);
+    const points = result.floor.outline.concat((result.floor.extensions || []).flatMap(item => item.polygon));
+    const box = polygonBounds(points);
+    const width = box.maxX - box.minX, depth = box.maxY - box.minY;
+    const kx = Number.isFinite(dims.width) && dims.width > 0 && width > 0 ? dims.width / width : 1;
+    const ky = Number.isFinite(dims.depth) && dims.depth > 0 && depth > 0 ? dims.depth / depth : 1;
+    const point = p => [box.minX + (p[0] - box.minX) * kx, box.minY + (p[1] - box.minY) * ky];
+    result.floor.outline = result.floor.outline.map(point);
+    for (const extension of result.floor.extensions || []) extension.polygon = extension.polygon.map(point);
+    if (Number.isFinite(dims.height) && dims.height > 0) result.ceiling = {...clone(result.ceiling || venue.ceiling), heightM: dims.height};
+    return result;
   }
 
   function inferTemplateShape(points) {
@@ -3734,7 +3757,7 @@
     if (!key || (!force && key === state.templateKey)) return false;
     const venue = library.venueV2ById(detail.venueId);
     if (!venue) return false;
-    const variant = templateVariant(venue, detail.sizeId);
+    const variant = confirmedTemplateVariant(venue, detail);
     const floor = variant && variant.floor;
     if (!floor || !validOutline(floor.outline)) return false;
 
@@ -3921,8 +3944,20 @@
     };
   }
 
-  function undoHistory() {
-    if (!undoStack.length) return false;
+  // Guard the actual history API as well as keyboard and toolbar entry points.
+  // The editor itself is a dialog; only the router's topmost blocking modal
+  // excludes this draft, rather than every element with role=dialog.
+  function historyAllowed(event) {
+    if (event?.defaultPrevented || event?.isComposing || event?.keyCode === 229) return false;
+    if (els.modal.hidden || pendingConflict || activePointer) return false;
+    for (const modal of [els.presetModal, els.discardModal, els.conflictModal]) {
+      if (modal && !modal.hidden) return false;
+    }
+    return window.GammaUndoOwner?.allows ? window.GammaUndoOwner.allows("venueDraft", event) : true;
+  }
+
+  function undoHistory(event) {
+    if (!historyAllowed(event) || !undoStack.length) return false;
     const current = documentSnapshot();
     const previous = undoStack.pop();
     redoStack.push(current);
@@ -3933,8 +3968,8 @@
     return true;
   }
 
-  function redoHistory() {
-    if (!redoStack.length) return false;
+  function redoHistory(event) {
+    if (!historyAllowed(event) || !redoStack.length) return false;
     const current = documentSnapshot();
     const next = redoStack.pop();
     undoStack.push(current);
@@ -5868,7 +5903,7 @@
     return `カスタム劇場${nextVenueNumber(library.list())}`;
   }
 
-  function applyDraft() {
+  function applyDraft(transition = null) {
     if (!state.stagePresent || !validOutline(state.points) || !extensionsConnectedToMain()) {
       els.saveStatus.textContent = state.stagePresent ? "線が交差しているため適用できません。" : "先にステージを描いてください。";
       return null;
@@ -5885,6 +5920,11 @@
       detail: {
         venue: clone(saved),
         templateKey,
+        // Only the current document's baseline carries legacy overrides.
+        // Explicitly reselecting a preset uses its own dimensions instead.
+        preserveVenueDims: String(templateKey || "").split(":").length === 3,
+        ...(transition ? {transitionResolved:transition.resolve,transitionIsCurrent:transition.isCurrent,
+          documentTransition:transition.request} : {}),
         complete() {
           openingDraft = captureDraft();
           finishCloseEditor();
@@ -6879,9 +6919,10 @@
     const historyShortcut = (event.metaKey || event.ctrlKey) &&
       String(event.key || "").toLowerCase() === "z";
     if (historyShortcut && !els.modal.hidden && !editable) {
+      if (!historyAllowed(event)) return;
+      if (event.shiftKey) redoHistory(event);
+      else undoHistory(event);
       event.preventDefault();
-      if (event.shiftKey) redoHistory();
-      else undoHistory();
       return;
     }
     if (event.key === "Escape" && els.conflictModal && !els.conflictModal.hidden) {
@@ -7213,7 +7254,24 @@
     render();
   }
 
+  // Exact runtime snapshot for a failed native delivery. History entries retain
+  // object identity because underlayHistory is a WeakMap keyed by those entries.
+  function captureRuntime() {
+    return {state:clone(state),draft:captureDraft(),openingDraft:clone(openingDraft),
+      undo:[...undoStack],redo:[...redoStack],underlay:{...underlay,t:clone(underlay.t),refs:clone(underlay.refs)},
+      lineDraft:clone(lineDraft),status:els.saveStatus.textContent};
+  }
+  function restoreRuntime(saved) {
+    if (!saved) return;
+    Object.assign(state,clone(saved.state));openingDraft=clone(saved.openingDraft);
+    for (const [key,value] of Object.entries(saved.draft.metadata)) if (els[key]) els[key].value=value;
+    undoStack.splice(0,undoStack.length,...saved.undo);redoStack.splice(0,redoStack.length,...saved.redo);
+    Object.assign(underlay,saved.underlay);lineDraft=clone(saved.lineDraft);
+    els.saveStatus.textContent=saved.status;syncHistoryButtons();render();
+  }
   window.SHOSAI_VENUE_EDITOR = Object.freeze({
+    captureRuntime,restoreRuntime,
+    commitDocumentTransition() { openingDraft=null;undoStack.length=0;redoStack.length=0;syncHistoryButtons(); },
     previewSnapshot, beginPreviewMove, movePreviewArea, finishPreviewMove,
     openPlanRegionAt: (clientX, clientY) => openPlanRegion(fromEvent({ clientX, clientY })),
     viewpointPlot, setViewpointMode, addViewpointAt, renameViewpoint, setViewpointEyeHeight,
@@ -7233,9 +7291,12 @@
      * 以前は平面図の ↺ ↻ ボタンを click() していたが、そのボタンを消したため。 */
     undo: undoHistory,
     redo: redoHistory,
-    history: () => ({ canUndo: undoStack.length > 0, canRedo: redoStack.length > 0 }),
+    history: () => ({ canUndo: undoStack.length > 0, canRedo: redoStack.length > 0, busy: Boolean(activePointer || pendingConflict) }),
     save: saveDraft,
-    apply: applyDraft,
+    apply: () => applyDraft(),
+    applyForDocumentTransition: request => new Promise(resolve => {
+      if (!request.isCurrent() || !applyDraft({resolve,isCurrent:request.isCurrent,request})) resolve(false);
+    }),
     /* 読むだけ（VENUE_EDITOR_FIT_WHOLE_2026_09_19）。世界↔画面の対応をテストや検証スクリプトが
        直書きしないで済むように出す。書き換えはできない。 */
     viewLayout: () => Object.assign({}, view()),

@@ -25,7 +25,7 @@
         || /^(?:gamma:)?shosai-stage-shows-v1-pre-section-hierarchy-v1$/.test(key)) return "作り替え前のショーの控え";
     if (key === "gamma:shosai-stage-shows-broken-v1") return "読めなかったショーの退避";
     if (key === "gamma:shosai.lightDesigns.beforeOptionB.v1") return "作り替え前の照明デザイン集";
-    if (/^gamma:lighting-draft-v1:.+:conflict:\d+$/.test(key)) return "脇へ寄せた照明の控え";
+    if (/^gamma:lighting-(?:draft-v1|session-draft-v1|owner-draft-v2):.+:conflict:\d+$/.test(key)) return "脇へ寄せた照明の控え";
     return null;
   }
   const bytes = (key, value) => (key.length + value.length) * 2;

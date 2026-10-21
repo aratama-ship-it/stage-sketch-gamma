@@ -131,15 +131,61 @@
   function create(host) {
     const handler = host.webkit?.messageHandlers?.gammaProject;
     if (typeof handler?.postMessage !== "function") return null;
+    // Main-frame relay only. The shell separately checks main WebView, frame
+    // and exact origin; an editor iframe never receives a native handler.
+    host.addEventListener?.("gamma-undo-owner-change", event => {
+      if (host.top !== host || !event.detail) return;
+      host.webkit?.messageHandlers?.gammaUndoOwner?.postMessage(event.detail);
+    });
     let active = true, opened = false, readOnly = false, runtime = null, generation = 0, messageGeneration = 0;
     let audio = new Map(), removedAudio = new Map(), lastSent = null, opening = Promise.resolve(), readOnlyValue = null;
     const pendingAudio = new Set();
     const uploadingAudio = new Set();
     const audioConfirmations = new Map(), timedOutConfirmations = new Map();
     let bufferedSaveState = null;
+    let noticeReceipt = null;
     let resolveInitial, bufferedOpen = null;
     const initialOpen = new Promise(resolve => { resolveInitial = resolve; });
-    const post = (type, data = {}) => handler.postMessage({ type, ...data });
+    const capability = "documentSessionV1";
+    const fields = ["documentSessionId", "pageGeneration", "deliveryGeneration"];
+    const tokenOK = value => typeof value === "string" && value.length > 0 && value.length <= 128;
+    let shellSession = null, owner = null, tentative = null, transition = null, prepared = null;
+    const completedRequests = new Set();
+    let draftOwnerId=null,draftRecords={},draftRecoveryEntries=[];
+    const draftRequests=new Map(),latestDraftWrites=new Map();
+    let venueRequest = null, venuePreparation = null;
+    const venueCandidates = new Map(), venueRequests = new Map(), venueReceipts = new Map(), venueIntents = new Map();
+    const requestId = () => host.crypto?.randomUUID?.() || `web-${Date.now()}-${++messageGeneration}`;
+    const identity = () => owner ? {...owner} : {};
+    const sessionful = payload => fields.every(key => typeof payload?.[key] === "string"
+      && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(payload[key]));
+    const matches = value => owner ? fields.every(key => value?.[key] === owner[key]) : !fields.some(key => value?.[key] != null);
+    const post = (type, data = {}) => handler.postMessage({type, ...identity(), requestId:requestId(), ...data});
+    const ownedPost = (type, source, data = {}) => handler.postMessage({type, ...source, ...data});
+    const once = id => { if (!tokenOK(id) || completedRequests.has(id)) return false; completedRequests.add(id); return true; };
+    function operation(payload) {
+      if (typeof payload === "string" && !owner) return {requestId:payload};
+      if (!payload || !matches(payload) || !tokenOK(payload.requestId)) throw Error("Stale document request");
+      return {...identity(), requestId:payload.requestId};
+    }
+    // Publish the same runtime capability used by every document operation.
+    // A prepared/tentative delivery stays blocked until explicit commit or rollback.
+    function setTransitioning(value) {
+      runtime.setTransitioning?.(value);
+      host.GammaUndoOwner?.context({...identity(), transitioning:!!value});
+    }
+    function restoreTentative() {
+      const saved = tentative;
+      if (!saved) return false;
+      tentative = null; generation++;opening=Promise.resolve();
+      ({opened, audio, removedAudio, readOnly, lastSent, readOnlyValue, owner,noticeReceipt,draftOwnerId,draftRecords,draftRecoveryEntries} = saved.bridge);
+      runtime.restoreRuntime?.(saved.runtime);
+      runtime.saveNoticeChanged?.();
+      const parent=saved.venueRequestId ? venuePreparation?.parent : null;
+      if (parent && transition===parent) parent.token=generation;
+      prepared=null;setTransitioning(Boolean(parent && transition===parent));
+      return true;
+    }
     function validate(payload) {
       if (!payload || typeof payload.show !== "string" || typeof payload.title !== "string"
           || !Array.isArray(payload.audio) || typeof payload.readOnly !== "boolean") throw Error("Invalid project open");
@@ -174,32 +220,50 @@
         if (typeof payload?.requestId === "string") post("opened", {requestId:payload.requestId, ok:false, error:String(error.message || error)});
         throw error;
       }
+      if (fields.some(key => payload?.[key] != null) && !sessionful(payload)) throw Error("Invalid document identity");
+      if (sessionful(payload)) {
+        if (!shellSession?.capabilities?.includes(capability) || payload.pageGeneration !== shellSession.pageGeneration)
+          throw Error("Document session capability is unavailable");
+      } else if (owner || opened) throw Error("Document session capability is required to switch documents");
       host.clearTimeout(timeout);
       if (!runtime) { bufferedOpen = payload; resolveInitial(payload); return opening; }
+      const sourceOwner=identity();
       opening = opening.catch(() => {}).then(async () => {
-        const previous = {opened, audio, removedAudio, readOnly, lastSent, readOnlyValue};
+        if (tentative) return false;
+        if (sessionful(payload) && (!once("open:" + payload.requestId) || !once("delivery:" + payload.deliveryGeneration))) return false;
+        const previous = {opened, audio, removedAudio, readOnly, lastSent, readOnlyValue, owner,noticeReceipt,draftOwnerId,draftRecords:structuredClone(draftRecords),draftRecoveryEntries};
+        const incoming = sessionful(payload) ? Object.fromEntries(fields.map(key => [key,payload[key]])) : null;
+        if (payload.venueRequestId && (!venueRequest || venueRequest.expired || payload.venueRequestId !== venueRequest.source.requestId))
+          throw Error("Expired venue candidate delivery");
+        const delivery = {bridge:previous, runtime:prepared?.runtime || runtime.captureRuntime?.(), requestId:payload.requestId,
+          venueRequestId:payload.venueRequestId, incoming, expired:false};
+        tentative = delivery;
+        setTransitioning(true);
         opened = false; generation++;
         for (const pending of audioConfirmations.values()) pending.finish(false);
-        // Import renders/probes audio before it resolves, so expose the incoming URLs now.
-        audio = entries; removedAudio = new Map(); readOnly = payload.readOnly; lastSent = null;
+        audio = entries; removedAudio = new Map(); readOnly = payload.readOnly; lastSent = null; owner = incoming; noticeReceipt = null;
+        draftOwnerId=payload.draftOwnerId || null;draftRecords=structuredClone(payload.draftRecords || {});draftRecoveryEntries=payload.draftRecoveryEntries || draftRecoveryEntries;
+        setTransitioning(true);
         readOnlyValue = readOnly ? {show:payload.show, title:payload.title} : null;
         try {
-          const ok = await runtime.open(payload);
+          const ok = await runtime.open({...payload, isCurrent:() => tentative === delivery && !delivery.expired});
+          if (tentative !== delivery || delivery.expired) return;
           if (ok !== true) throw Error("Project show could not be opened");
           opened = true;
-          host.STAGE_WELCOME?.hide({restoreEditor:false});
           if (payload.show !== "") lastSent = contentSignature(runtime.snapshot().show);
-          if (typeof payload.requestId === "string") post("opened", {requestId:payload.requestId, ok:true});
+          ownedPost("opened", {...incoming,requestId:payload.requestId}, {ok:true});
+          // Old shells retain ordinary saving/export. They cannot initiate a second open.
+          if (!incoming) { tentative = null;runtime.commitTransition?.(); setTransitioning(false); host.STAGE_WELCOME?.hide({restoreEditor:false}); if (payload.show === "") changed(); }
         } catch (error) {
-          ({opened, audio, removedAudio, readOnly, lastSent, readOnlyValue} = previous);
-          if (typeof payload.requestId === "string") post("opened", {requestId:payload.requestId, ok:false, error:String(error.message || error)});
+          if (tentative !== delivery) return;
+          restoreTentative();
+          ownedPost("opened", {...incoming,requestId:payload.requestId}, {ok:false,error:String(error.message || error)});
           throw error;
         }
-        if (payload.show === "") changed();
       });
       // AppKit evaluateJavaScript does not await returned promises. The UI reports
       // a failed import; no replacement changed/flushed is sent on failure.
-      opening.catch(error => runtime.error(error));
+      opening.catch(error => {if(matches(sourceOwner) && !tentative)runtime.error(error);});
       return opening;
     }
     // The selected scene is view state. Keep it in saved packages/flushes,
@@ -212,23 +276,60 @@
       } catch (_) { return show; }
     }
     function changed(force = false) {
-      if (!active || !opened || readOnly) return false;
+      if (!active || !opened || readOnly || tentative) return false;
       const value = readOnlyValue || runtime.snapshot();
       if (!force && contentSignature(value.show) === lastSent) return true;
       if (host.__GAMMA_TRACE_PERFORMANCE) post("performanceStage", {stage:"changed-post", at:Date.now()});
       post("changed", { ...value, generation:++messageGeneration }); lastSent = contentSignature(value.show); return true;
     }
-    async function flush(requestId) {
-      await opening;
-      if (!active || !opened || typeof requestId !== "string") throw Error("Project is not open");
-      await runtime.settle();
-      await Promise.all([...pendingAudio]);
-      const value = readOnlyValue || runtime.snapshot();
-      sendThumbnail();
-      post("flushed", { ...value, requestId, generation:++messageGeneration }); lastSent = contentSignature(value.show);
+    async function flush(payload) {
+      const source = operation(payload), token = generation;
+      if (!once("flush:" + source.requestId)) return false;
+      try {
+        await opening;
+        if (!active || !opened || tentative || token !== generation || !matches(source)) throw Error("Project is not open");
+        await runtime.settle();
+        await Promise.all([...pendingAudio]);
+        if (token !== generation || !matches(source) || tentative) throw Error("Stale document flush");
+        const value = readOnlyValue || runtime.snapshot();
+        sendThumbnail();
+        ownedPost("flushed", source, {...value,generation:++messageGeneration}); lastSent = contentSignature(value.show);
+        return true;
+      } catch (error) {
+        ownedPost("flushFailed", source, {error:String(error.message || error)});
+        throw error;
+      }
+    }
+    async function prepareDocumentTransition(payload) {
+      let source;
+      try { source = operation(payload); } catch (_) { return {ok:false}; }
+      if (!owner || !shellSession?.capabilities?.includes(capability) || tentative || transition || !once("prepare:" + source.requestId)) {
+        const result={...source,ok:false,error:"Document session capability or transition unavailable"};
+        ownedPost("transitionPrepared",source,result); return result;
+      }
+      const ticket={source, token:generation, runtime:runtime.captureRuntime?.(),controller:typeof host.AbortController==='function'?new host.AbortController():null}; transition=ticket;
+      setTransitioning(true);
+      try {
+        const ok = await runtime.prepareDocumentTransition?.({...source, purpose:payload.purpose,
+          signal:ticket.controller?.signal,
+          checkpoint:() => { if(transition===ticket) ticket.runtime=runtime.captureRuntime?.(); },
+          isCurrent:() => transition === ticket && matches(source) && generation === ticket.token});
+        if (transition !== ticket || !matches(ticket.source) || generation !== ticket.token) return {ok:false};
+        const result={...ticket.source,ok:ok === true};
+        prepared=result.ok ? ticket : null;
+        if (!result.ok) {
+          generation++;runtime.restoreRuntime?.(ticket.runtime);setTransitioning(false);changed(true);
+        }
+        ownedPost("transitionPrepared",ticket.source,result); return result;
+      } catch (error) {
+        if (transition !== ticket || !matches(source)) return {ok:false};
+        const result={...source,ok:false,error:String(error.message || error)};
+        generation++;runtime.restoreRuntime?.(ticket.runtime);setTransitioning(false);changed(true);
+        ownedPost("transitionPrepared",source,result); return result;
+      } finally { if (transition === ticket) transition=null; }
     }
     function sendThumbnail() {
-      if (!active || !opened || readOnly || typeof runtime?.thumbnail !== "function") return;
+      if (!active || !opened || tentative || readOnly || typeof runtime?.thumbnail !== "function") return;
       // A derived cache must never prevent a document save/close.
       try {
         const dataUrl = runtime.thumbnail();
@@ -238,6 +339,95 @@
     const welcomeActions = new Set(["openRecent", "new", "open", "samples", "legacy", "setStartupAction", "openUpdate", "dismissUpdate"]);
     const facade = {
       open: receiveOpen,
+      venueVersionReady(payload) {
+        const preparation=venuePreparation;
+        if(!preparation || preparation.expired || payload.requestId!==preparation.holdRequestId || !matches(payload))return false;
+        if(payload.expired===true){cancelVenueVersion("timeout");return true;}
+        const resolve=preparation.resolveHold; preparation.resolveHold=null;resolve?.(payload.ok===true);return true;
+      },
+      venueSourceRestored(payload) {
+        if (!matches(payload) || tentative) return false;
+        return changed(true);
+      },
+      venueVersionResult(payload) {
+        const ticket = venueRequests.get(payload?.requestId);
+        if (!ticket || ticket.receiptReceived || !fields.every(key => payload[key] === ticket.source[key]) || payload.operationId && payload.operationId !== ticket.operationId) return false;
+        if (payload.ok === true && (!ticket.committed || payload.saved !== true || payload.verified !== true || !payload.path)) return false;
+        ticket.receiptReceived = true;
+        venueReceipts.set(ticket.operationId, structuredClone(payload));
+        host.dispatchEvent?.(new CustomEvent("stageSketchProject:venueReceipt", {detail:payload}));
+        if (venueRequest !== ticket || ticket.expired) {
+          // A late native completion may have ignored the changed posted during
+          // tentative rollback. Re-send only the CURRENT source snapshot.
+          if (matches(ticket.source) && !tentative) changed(true);
+          return false;
+        }
+        venueRequest = null; host.clearTimeout(ticket.timer);
+        if (!matches(ticket.committed ? ticket.deliveredIdentity : ticket.source)) {
+          ticket.resolve({ok:false,stage:"stale",stale:true}); return false;
+        }
+        if (!payload.ok && !facade.cancelDocumentTransition(ticket.source) && !tentative) changed(true);
+        ticket.resolve(payload); return true;
+      },
+      draftStored(payload) {
+        const pending=draftRequests.get(payload?.requestId);
+        if(!pending || !matches(payload) || payload.draftOwnerId!==pending.owner)return false;
+        draftRequests.delete(payload.requestId);host.clearTimeout(pending.timer);
+        const latest=latestDraftWrites.get(pending.key)===payload.requestId;
+        if(payload.ok===true) {
+          if(latest && draftOwnerId===pending.owner) {
+            if(pending.raw===null)delete draftRecords[pending.vector];else draftRecords[pending.vector]=pending.raw;
+          }
+          const entry=draftRecoveryEntries.find(entry=>entry.owner===pending.owner);
+          if(entry) {
+            if(latest) {if(pending.raw===null)delete entry.records[pending.vector];else entry.records[pending.vector]=pending.raw;}
+            Object.assign(entry.records,payload.retainedRecords || {});
+          }
+        }
+        pending.resolve(payload.ok===true && latest);return true;
+      },
+      draftOwnerChanged(payload) {
+        if(!matches(payload) || !tokenOK(payload.draftOwnerId))return false;
+        draftOwnerId=payload.draftOwnerUnavailable ? null : payload.draftOwnerId;draftRecords=structuredClone(payload.draftRecords || {});draftRecoveryEntries=payload.draftRecoveryEntries || draftRecoveryEntries;
+        if(!payload.draftOwnerUnavailable && !draftRecoveryEntries.some(entry=>entry.owner===draftOwnerId))
+          draftRecoveryEntries.push({owner:draftOwnerId,locator:payload.draftLocator || '',records:structuredClone(draftRecords)});
+        host.dispatchEvent?.(new CustomEvent('gamma-draft-owner-change'));return true;
+      },
+      configureSession(payload) {
+        if (owner || opened || !payload?.capabilities?.includes(capability) || !tokenOK(payload.pageGeneration)) return false;
+        shellSession = {capabilities:[...payload.capabilities],pageGeneration:payload.pageGeneration}; return true;
+      },
+      prepareDocumentTransition,
+      cancelDocumentTransition(payload) {
+        if (!matches(payload) || ![transition?.source.requestId,prepared?.source.requestId].includes(payload?.requestId)) return false;
+        const saved=transition || prepared;
+        if (venuePreparation?.parent === saved) cancelVenueVersion();
+        transition=null;prepared=null;generation++;saved.controller?.abort();
+        runtime.restoreRuntime?.(saved.runtime);setTransitioning(false);
+        changed(true);return true;
+      },
+      commitDocumentTransition(payload) {
+        if (!tentative || !matches(payload) || tentative.requestId !== payload?.requestId || !opened) return false;
+        if (tentative.venueRequestId) {
+          if (!venueRequest || venueRequest.expired || venueRequest.source.requestId !== tentative.venueRequestId) return false;
+          venueRequest.committed = true; venueRequest.deliveredIdentity = identity(); host.clearTimeout(venueRequest.timer);
+        }
+        const empty = readOnlyValue?.show === "" || !lastSent;
+        const parent=tentative.venueRequestId ? venuePreparation?.parent : null;
+        tentative=null; prepared=null;runtime.commitTransition?.();runtime.saveNoticeChanged?.();
+        // The verified child is now the source of the still-running outer guard.
+        // Keep its request ID, but move its session/delivery and rollback checkpoint
+        // together. An unrelated or expired guard can never acquire this document.
+        if (parent && transition === parent) {
+          Object.assign(parent.source,identity());parent.token=generation;parent.runtime=runtime.captureRuntime?.();
+        }
+        setTransitioning(Boolean(parent && transition === parent));
+        host.STAGE_WELCOME?.hide({restoreEditor:false}); if (empty) changed(); return true;
+      },
+      rollbackDocumentTransition(payload) {
+        if (!tentative || !matches(payload) || tentative.requestId !== payload?.requestId) return false;
+        tentative.expired=true; return restoreTentative();
+      },
       requestWelcome(payload) {
         if (!active) throw Error("Project ready expired; reload before showing welcome");
         if (!payload || !Array.isArray(payload.recent)) throw Error("Invalid welcome payload");
@@ -245,7 +435,7 @@
         return host.STAGE_WELCOME?.show(payload);
       },
       welcomeAction(action, recentId, value) {
-        if (!active || !welcomeActions.has(action)) return false;
+        if (!active || !welcomeActions.has(action) || (opened && !owner && ["openRecent","new","open","samples","legacy"].includes(action))) return false;
         if (action === "openRecent" && (typeof recentId !== "string" || !recentId)) return false;
         if (action === "setStartupAction" && !["lastProject", "welcome"].includes(value)) return false;
         post("welcomeAction", {action, ...(action === "openRecent" ? {recentId} : {}), ...(action === "setStartupAction" ? {value} : {})});
@@ -253,16 +443,22 @@
       },
       nativeUpdate: payload => host.STAGE_WELCOME?.nativeUpdate(payload),
       saveState(payload) {
-        if (!payload || !["received", "saving", "saved", "failed", "hold"].includes(payload.state) || !Number.isFinite(Date.parse(payload.at))) return;
-        if (runtime) runtime.saveState?.(payload); else bufferedSaveState = payload;
+        if (!matches(payload) || !payload || !["received", "saving", "saved", "failed", "hold"].includes(payload.state) || !Number.isFinite(Date.parse(payload.at))) return;
+        if (owner && !tokenOK(payload.requestId)) return;
+        // A warning belongs to this delivery and survives received/saving until a
+        // successful receipt. A different delivery starts without the old receipt.
+        if (!["failed", "hold"].includes(noticeReceipt?.state) || ["saved", "failed", "hold"].includes(payload.state))
+          noticeReceipt = {...payload};
+        if (runtime) { runtime.saveState?.(payload); runtime.saveNoticeChanged?.(); }
+        else bufferedSaveState = {...payload};
       },
       audioConfirmed(payload) {
-        if (!validId(payload?.trackId) || typeof payload.ok !== "boolean") return;
+        if (!matches(payload) || !validId(payload?.trackId) || typeof payload.ok !== "boolean") return;
         const pending = audioConfirmations.get(payload.trackId);
-        if (pending) pending.finish(payload.ok);
+        if (pending && (!owner || pending.requestId === payload.requestId)) pending.finish(payload.ok);
         else {
           const late = timedOutConfirmations.get(payload.trackId);
-          if (!late) return;
+          if (!late || (owner && late.requestId !== payload.requestId)) return;
           timedOutConfirmations.delete(payload.trackId);
           // review R6-a: a late success registers the stored audio so playback and export work in this session.
           const ok = payload.ok === true && late.token === generation;
@@ -281,16 +477,94 @@
         if (!active || !opened) throw Error("Project is not open");
         await runtime.beforeQuit?.();
       },
-      flush: requestId => { const done = flush(requestId); done.catch(error => runtime?.error(error)); return done; },
+      flush: payload => {
+        const source=identity(),token=generation,owned=owner ? matches(payload) : (typeof payload==="string" || matches(payload)),done=flush(payload);
+        done.catch(error => {if(owned && token===generation && matches(source))runtime?.error(error);});
+        return done;
+      },
       // close must leave the document usable: AppKit may cancel its following save panel.
       close() {
+        if (opened && !owner) throw Error("Document session capability is required to switch documents");
         if (!pendingAudio.size) { sendThumbnail(); return changed(); }
-        const done = runtime.settle().then(() => { sendThumbnail(); return changed(); });
-        done.catch(error => runtime.error(error));
+        const source=identity(),token=generation;
+        const done = runtime.settle().then(() => {
+          if(token!==generation || !matches(source)) return false;
+          sendThumbnail();return changed();
+        });
+        done.catch(error => {if(token===generation && matches(source))runtime.error(error);});
         return done;
       },
     };
     host.stageSketchProject = Object.assign(host.stageSketchProject || {}, facade);
+    async function createVenueVersion(build, operationId, documentTransition) {
+      const parent=documentTransition && transition;
+      const ownsParent=parent && matches(documentTransition) && documentTransition.requestId===parent.source.requestId
+        && parent.token===generation && documentTransition.isCurrent?.()===true;
+      if (!opened || !owner || readOnly || venueRequest || venuePreparation || tentative || (transition && !ownsParent) || prepared
+          || (documentTransition && !ownsParent)
+          || !shellSession?.capabilities.includes("venueVersionV1")) throw Object.assign(Error("capability"), {stage:"capability"});
+      const source = {...identity(), requestId:requestId()}, token = generation;
+      const preparation = {source,parent:ownsParent?parent:null,expired:false}; venuePreparation = preparation;
+      const parentData=ownsParent ? {parentTransitionRequestId:parent.source.requestId} : {};
+      preparation.timer=host.setTimeout(()=>cancelVenueVersion("timeout"),125000);
+      try {
+        await runtime.settle(); await Promise.all([...pendingAudio]);
+        if (preparation.expired) return {ok:false,stage:"cancelled"};
+        if (token !== generation || !matches(source)) throw Object.assign(Error("source-changed"), {stage:"source-changed"});
+        changed(); // the pre-guard source is the NSDocument rollback baseline
+        const held=await new Promise(resolve=>{
+          preparation.resolveHold=resolve; preparation.holdRequestId=requestId();
+          ownedPost("prepareVenueVersion",{...source,requestId:preparation.holdRequestId},{venueRequestId:source.requestId,...parentData});
+        });
+        if (!held || preparation.expired) return {ok:false,stage:preparation.expired?"cancelled":"busy"};
+        // The outer guard has already settled lighting. Re-entering that guard
+        // would deadlock on itself; only its exact live owner may use this path.
+        const result = ownsParent ? {ok:documentTransition.isCurrent()} : await prepareDocumentTransition({...source,purpose:"venueVersion"});
+        if (!result.ok || preparation.expired) return {ok:false,stage:"cancelled"};
+        const sourceShow = runtime.snapshot().show;
+        const signature = contentSignature(sourceShow);
+        let candidate = venueCandidates.get(operationId);
+        if (candidate && candidate.signature !== signature) throw Object.assign(Error("source-changed"), {stage:"source-changed"});
+        if (!candidate) {
+          candidate = {signature, ...(await build())};
+          venueCandidates.set(operationId, candidate);
+        }
+        if (preparation.expired) return {ok:false,stage:"cancelled"};
+        if (token !== generation || !matches(source) || !(ownsParent ? transition===parent && documentTransition.isCurrent() : prepared) || runtime.snapshot().show !== sourceShow)
+          throw Object.assign(Error("source-changed"), {stage:"source-changed"});
+        changed(true); // ordered source snapshot, never the candidate, before cloning
+        return await new Promise(resolve => {
+          const ticket = {source,operationId,resolve,expired:false};
+          venueRequest = ticket; venueRequests.set(source.requestId,ticket);
+          ticket.timer = preparation.timer;
+          preparation.sentCandidate=true;
+          ownedPost("createVenueVersion",source,{operationId,sourceShow,show:candidate.show,title:candidate.title,versioned:candidate.versioned,...parentData});
+        });
+      } catch (error) {
+        if (venueRequest?.source === source) { venueRequest=null;ownedPost("cancelVenueVersion",source); }
+        facade.cancelDocumentTransition(source); throw error;
+      } finally {
+        host.clearTimeout(preparation.timer);
+        if (venuePreparation === preparation) venuePreparation = null;
+        if (!preparation.sentCandidate) ownedPost("cancelVenueVersion",source);
+      }
+    }
+    function cancelVenueVersion(stage = "cancelled") {
+      const ticket = venueRequest;
+      if (ticket?.committed) return false;
+      if (!ticket) {
+        if (!venuePreparation) return false;
+        venuePreparation.expired = true; venuePreparation.resolveHold?.(false);
+        ownedPost("cancelVenueVersion",venuePreparation.source);
+        if (!facade.cancelDocumentTransition(venuePreparation.source) && !tentative) changed(true);
+        return true;
+      }
+      ticket.expired = true; venueRequest = null; host.clearTimeout(ticket.timer);
+      ownedPost("cancelVenueVersion",ticket.source);
+      if (tentative) { tentative.expired = true; restoreTentative(); }
+      else facade.cancelDocumentTransition(ticket.source);
+      ticket.resolve({...venueReceipts.get(ticket.operationId),ok:false,stage}); return true;
+    }
     const store = {
       validTrackId: validId,
       url: id => audio.get(id)?.url || null,
@@ -304,9 +578,9 @@
         return generation === token && audio.get(id) === entry ? blob : null;
       },
       put(id, file, { durationSeconds = 0 } = {}) {
-        if (!active || !opened || readOnly || !validId(id) || !file?.size || file.size > audioLimit
+        if (!active || !opened || tentative || readOnly || !validId(id) || !file?.size || file.size > audioLimit
             || !Number.isFinite(durationSeconds) || durationSeconds < 0) return Promise.reject(Error("Invalid project audio upload"));
-        const token = generation;
+        const token = generation, source = {...identity(),requestId:requestId()};
         if (uploadingAudio.has(id)) return Promise.reject(Error("Project audio confirmation pending"));
         uploadingAudio.add(id);
         const job = (async () => {
@@ -318,15 +592,15 @@
           const entry = { trackId:id, url:new URL("/project-audio/" + id, host.location.href).href,
             originalName:file.name || id, mime, bytes:file.size, durationSeconds };
           await new Promise((resolve, reject) => {
-            const pending = {finish(ok) {
+            const pending = {requestId:source.requestId,finish(ok) {
               if (audioConfirmations.get(id) !== pending) return;
               host.clearTimeout(pending.timer); audioConfirmations.delete(id);
               if (ok && token === generation) resolve(); else reject(Error(timedOutConfirmations.has(id) ? "Project audio confirmation timed out" : "Project audio confirmation failed"));
             }};
             // review R6: a slow confirmation is reported as timed out (not failed); a late success is surfaced separately.
-            pending.timer = host.setTimeout(() => { timedOutConfirmations.set(id, {entry, token}); pending.finish(false); }, 60000);
+            pending.timer = host.setTimeout(() => { timedOutConfirmations.set(id, {entry, token,requestId:source.requestId}); pending.finish(false); }, 60000);
             audioConfirmations.set(id, pending);
-            try { post("audioStored", { trackId:id, originalName:entry.originalName, mime, bytes:file.size, durationSeconds }); }
+            try { ownedPost("audioStored", source, { trackId:id, originalName:entry.originalName, mime, bytes:file.size, durationSeconds }); }
             catch (_) { pending.finish(false); }
           });
           if (token !== generation) throw Error("Project audio changed during confirmation");
@@ -380,12 +654,41 @@
       file.text().then(text => post("openLegacyFile", {text, filename:file.name}),
         () => post("openLegacyFile", {error:"legacy-read-failed"}));
     }, true);
-    post("ready", { formatVersion:1 });
+    post("ready", { formatVersion:1, capabilities:[capability,"draftOwnerV2","venueVersionV1"] });
     return {
-      initialOpen, store, changed,
+      initialOpen, store, changed, identity, matches, createVenueVersion, cancelVenueVersion,
+      venueOperationFor(intent) {
+        const key=JSON.stringify([identity().documentSessionId,contentSignature(runtime.snapshot().show),intent]);
+        if(!venueIntents.has(key))venueIntents.set(key,host.crypto.randomUUID());
+        return venueIntents.get(key);
+      },
+      venueReceipt:operationId => venueReceipts.get(operationId),
+      get draftRecoveryEntries(){return draftRecoveryEntries;},get draftOwnerId(){return draftOwnerId;},get draftRecords(){return draftRecords;},
+      retainDraft(raw,vector,source) {
+        if(!matches(source) || !draftOwnerId || source?.draftOwnerId!==draftOwnerId || !shellSession?.capabilities.includes("draftOwnerV2"))return Promise.resolve(false);
+        const id=requestId(),draftOwner=draftOwnerId;
+        return new Promise(resolve=>{
+          const timer=host.setTimeout(()=>{draftRequests.delete(id);resolve(false);},10000);
+          const key=JSON.stringify([draftOwner,vector]);latestDraftWrites.set(key,id);
+          draftRequests.set(id,{resolve,timer,owner:draftOwner,raw,vector,key});
+          ownedPost('retainDraft',{...identity(),requestId:id},{draftOwnerId:draftOwner,vector,raw});
+        });
+      },
+      get saveNoticeState() {
+        if (!shellSession?.capabilities?.includes(capability) || !owner || !opened) return "unconfirmed";
+        if (!noticeReceipt) return "unsaved";
+        // AppKit can save an untitled recovery copy without a user-selected file.
+        if (noticeReceipt.state === "saved" && noticeReceipt.hasFile !== true) return "unsaved";
+        return noticeReceipt.state;
+      },
+      get transitioning() { return Boolean(tentative || transition || prepared); },
       get active() { return active; }, get opened() { return opened; }, get readOnly() { return readOnly; },
-      async bind(callbacks, payload) { runtime = callbacks; payload = bufferedOpen || payload; bufferedOpen = null; if (!payload.libraryOnly) { await receiveOpen(payload); } if (bufferedSaveState) { runtime.saveState?.(bufferedSaveState); bufferedSaveState = null; } },
-      request(type) { if (active && ["requestOpen", "requestNew", "requestSamples"].includes(type)) post(type); },
+      async bind(callbacks, payload) { runtime = callbacks; payload = bufferedOpen || payload; bufferedOpen = null; if (!payload.libraryOnly) { await receiveOpen(payload); } if (bufferedSaveState) { facade.saveState(bufferedSaveState); bufferedSaveState = null; } runtime.saveNoticeChanged?.(); },
+      request(type) {
+        if (opened && !owner) return false;
+        if (active && ["requestOpen", "requestNew", "requestSamples"].includes(type)) {post(type);return true;}
+        return false;
+      },
       storage: memoryStorage(),
     };
   }

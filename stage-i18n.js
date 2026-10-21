@@ -31,6 +31,77 @@
   "use strict";
 
   const TEXT = {
+    // B92: dynamic leave/apply dialogs use the shared text pack.
+    "照明をショーへ適用しますか？": "Apply lighting to the show?",
+    "まだ適用していない照明の編集があります。適用すると、いまの照明がこのショーへ保存されます。": "There are unapplied lighting edits. Applying saves the current lighting to this show.",
+    "適用しないで移っても編集内容は端末に控えられ、次に照明を開いたときに戻ります。ただしショー本体にはまだ入りません。": "If you leave without applying, edits are backed up on this device and restored when you next open lighting. They are not yet part of the show.",
+    "適用しないで移る": "Leave without applying",
+    "適用して移る": "Apply and leave",
+    "「{venue}」をショーへ反映します。": "Apply “{venue}” to the show.",
+    "「{venue}」をショーへ反映します。照明機材の始め方を選んでください。": "Apply “{venue}” to the show. Choose how to start the lighting equipment.",
+    "この劇場": "this theatre",
+    "劇場の形や寸法が変わると、現在の照明が動かなくなる可能性があります。変更後に各シーンの照明を点検してください。": "Changing the theatre shape or dimensions may stop the current lighting from working. Check the lighting in every scene after the change.",
+    "最初の劇場を確定します": "Set the initial theatre",
+    "劇場を確定します": "Set the theatre",
+    "{nextVersion}を新しく作り、元の{version}はショー一覧に残します。照明は今の版から引き継ぎます。": "Create {nextVersion} and keep the original {version} in the show list. Lighting is carried over from the current version.",
+    "{nextVersion}を新しく作り、元の{version}はショー一覧に残します。新しい版の照明機材とLXキューは、下の選択内容から始めます。": "Create {nextVersion} and keep the original {version} in the show list. Lighting equipment and LX cues in the new version start from the selection below.",
+    "いまと同じ劇場なので、ショーのバージョンは増やしません。": "The theatre is unchanged, so no new show version is created.",
+    "このショーのバージョンは変えません。次に劇場を変更するときは、新しい版を作って元の版を残します。": "Keep this show's current version. The next theatre change creates a new version and keeps the original.",
+    "{nextVersion}を作り、元の{version}はショー一覧に残します。": "Create {nextVersion} and keep the original {version} in the show list.",
+    "このショーのバージョンは変えません。": "Keep this show's current version.",
+
+    "γの文字データ（概算）": "Gamma text storage (estimate)",
+    "容量の内訳": "Storage breakdown",
+    "文字数からの概算です。音源など別の保存領域は含みません。βや他のアプリの保存分は読み取りません。": "Estimated from character counts. Separate storage such as audio files is not included. Data belonging to Beta or other apps is not read.",
+    "控えを書き出す": "Export backup",
+    "元の場所へ戻す": "Restore to original location",
+    "音源と編集中の照明草稿は変更しません。": "Audio files and active lighting drafts are kept unchanged.",
+    // B79: safe relocation of set-aside lighting drafts.
+    "脇へ寄せた照明の控え": "Set-aside lighting backups",
+    "脇へ寄せた照明の控えも保管できます。編集中の草稿と文書の復旧台帳は変更しません。": "Set-aside lighting backups can also be archived. Active drafts and the document recovery registry are kept unchanged.",
+    "γの保存状況": "Gamma storage usage",
+    "保管先を移せる控え": "Backups available for relocation",
+    "控えを保管して容量を空ける": "Archive backups to free space",
+    "使用量を確認し直す": "Refresh storage usage",
+    "保管先への保存と内容の一致を確認できた控えだけを移します。空きを作れない場合は、そのまま残ります。": "Only backups verified at the destination with matching content are relocated. If space cannot be freed, they stay where they are.",
+    "{count}件 · {size}": "{count} items · {size}",
+    "使用中のデータ・設定": "Active data and preferences",
+    "保管済みの控え": "Archived backups",
+    "{count}件をこのブラウザ内に保管しています。復元すると使用量が増えます。": "{count} backups are archived in this browser. Restoring them increases storage usage.",
+    "保管済みの控えはありません。": "No archived backups.",
+    "保管した控えをまとめて書き出す": "Export all archived backups",
+    "控えを保管し、内容を確認しています…": "Archiving backups and verifying their content…",
+    "{count}件の控えを保管し、約{size}の空きを作りました。": "Archived {count} backups and freed approximately {size}.",
+    "別のタブで変わった{count}件は移していません。": "Left {count} backups unchanged because they were modified in another tab.",
+    "保管を確認できなかった{count}件は元の場所に残しています。": "Left {count} backups at their original location because archiving could not be verified.",
+    "元のタブで保存をやり直し、「保存しました」の表示を確認してください。": "Save again in the original tab and check that it says Saved.",
+    "控えの書き出しを開始しました。保存先の画面が出た場合は保存してください。": "Backup export has started. Save the file if a destination dialog appears.",
+
+    "同じ作品の別ファイルを Mac 版で開いたとき、元のファイルの照明草稿・取り消し履歴・エラー表示が混ざらないようにしました。切り替える前に始めた処理の遅い結果も、次の文書へ反映しません。": "Opening another file for the same work in the Mac app now keeps lighting drafts, Undo history and error messages separate from the original file. Delayed results from operations started before the switch are not applied to the next document.",
+
+    "照明の別案を切り替えて戻ったとき、未適用の草稿と取り消し・やり直しの履歴を保つようにしました。草稿の元になった内容が変わっている場合は、そのまま上書きせず草稿を残します。": "Lighting drafts and Undo and redo history are now kept when switching to another alternative and back. If the content on which a draft was based has changed, the draft is retained without overwriting the changed content.",
+
+    "Mac 版で文書の切替を取り消したときや、次の文書を開けなかったときに、元の文書と未適用の草稿・取り消し履歴を保つようにしました。切替途中で照明を適用した後に取り消した場合も、切替前の編集状態へ戻します。": "Cancelling a document switch in the Mac app, or failing to open the next document, now preserves the original document, unapplied drafts and Undo history. Cancelling after applying lighting partway through a switch also restores the editing state from before the switch.",
+
+    "Mac 版の劇場変更は、別の保存先へ保存し、保存した内容を読み直してから切り替えるようにしました。確定済みの劇場を変更すると新版を作り、元のファイルを残します。初回の劇場設定も別の保存先へ保存しますが、版は増やしません。保存の取消や失敗では元の文書と草稿を保ちます。": "The Mac app now saves theatre changes to another destination and reads back the saved content before switching. Changing a confirmed theatre creates a new version and keeps the original file. Initial theatre setup also saves to another destination, without adding a version. Cancelling or failing to save preserves the original document and draft.",
+
+    "Mac 版の編集メニューの「取り消す」・やり直しを、文字入力・舞台・照明・劇場の編集中の内容・リハーサルの記録図に合わせるようにしました。キーボードや画面の操作と同じ一操作を戻し、履歴がないときや確認中は背面の別の編集を戻さないようにしました。": "The Mac Edit menu’s Undo and redo now follow the content being edited: text, stage, lighting, theatre drafts or rehearsal drawings. They undo the same single action as keyboard and on-screen controls, without falling back to another editor behind a confirmation dialog or when there is no history.",
+
+    "環境設定の保存案内を、ブラウザと Mac 版で出し分けるようにしました。Mac 版では、ファイルへの保存が未確認・保存中・保存済み・失敗・原本保全のため保留中を区別し、必要な保存先の確認を案内します。表示設定はこの Mac に保存され、ショーのファイルとは別に管理されることも示します。": "Save guidance in Preferences now distinguishes the browser from the Mac app. On Mac, it distinguishes an unconfirmed file save, saving, saved, failed and writing on hold to protect the original, and explains when to check the destination. It also explains that display preferences are stored on this Mac separately from the show file.",
+
+    "Mac 版で、以前の照明草稿がどのファイルのものか確認できないときは、開いた文書へ自動で戻さず、「控え・書き出し」から選んで読み込むようにしました。元の草稿を残し、そのままの内容や控え全件を書き出せます。": "When the Mac app cannot identify which file an older lighting draft belongs to, it now lets you select and import it from Backup and export instead of restoring it automatically into the open document. The original draft is retained, and you can export its unaltered content or all draft backups.",
+
+    "検査と文書の整備：文書切替・照明草稿・劇場の新版保存・取り消し操作・保存案内の回帰検査と、Mac 版の確認手順を整えました。同梱の試験場の手順、検査の一覧、生成データの整合確認も更新しました。": "Checks and documentation: improved regression checks for document switching, lighting drafts, new theatre version saves, Undo and save guidance, along with Mac verification procedures. Updated the bundled test show’s instructions, the check inventory and generated-data consistency checks.",
+    // U-A5: native document save notices.
+    "Mac のプロジェクトへの保存状態を確認できません。「保存」で保存先と結果を確認してください。": "The Mac project save status is unavailable. Use Save to check the destination and result.",
+    "このショーはまだファイルへの保存を確認できていません。「保存」でプロジェクトの保存先を選んでください。": "This show has no confirmed file save yet. Use Save to choose a project destination.",
+    "変更は Mac アプリが受け取りました。プロジェクトへの保存完了を待っています。": "The Mac app has received the changes. The project save has not finished yet.",
+    "プロジェクトへ保存中です。保存完了を待ってください。": "Saving the project. Please wait for the save to finish.",
+    "プロジェクトへ保存しました。変更はこのファイルへ自動保存します。区切りごとにファイルの控えを取ってください。": "The project has been saved. Changes are saved automatically to this file. Keep a file backup at each milestone.",
+    "プロジェクトへの保存に失敗しました。現在のショーを開いたまま、保存先を確認してもう一度保存してください。": "The project could not be saved. Keep the current show open, check the destination and save again.",
+    "原本を保全するため、書き込みを保留しています。「保存」で別の保存先を選んでください。": "Writing is on hold to protect the original. Use Save to choose another destination.",
+    "表示設定はこの Mac に保存され、ショーのファイルとは別に管理されます。": "Display preferences are stored on this Mac separately from the show file.",
+
     "固定控えを解除しました。参照を再確認できなかった音源は残しています。使用量を確認し直してください。": "The fixed copies have been released. Audio whose references could not be checked again has been kept. Check usage again.",
     // B74: explicit release of fixed pre-share copies.
     "共有前の固定控えを解除する": "Release fixed copies from before sharing",
@@ -47,6 +118,21 @@
     "解除内容を確認": "Review release",
     "選んだ固定控えと専用音源を解除しました。他のショーと参照中の音源は保持しています。": "The selected fixed copies and exclusive audio have been released. Other shows and referenced audio have been kept.",
     "固定控えの解除を完了できませんでした。使用量を確認し直してください。参照中の音源は削除しません。": "Fixed copy release could not be completed. Check usage again. Referenced audio is not removed.",
+    "読戻しの確認で止まりました。": "Stopped while verifying the saved file.",
+    "画面への切替で止まりました。": "Stopped while opening the saved candidate.",
+    "ファイルへの保存で止まりました。": "Stopped while writing the file.",
+    "保存記録の確認で止まりました。": "Stopped while verifying the save receipt.",
+    "同名のファイルがあります。別の保存先を選んでください。": "A file with this name already exists. Choose another destination.",
+    "待ち時間を超えました。": "The operation timed out.",
+    "保存の準備で止まりました。": "Stopped while preparing to save.",
+
+    "保存を取り消しました。劇場の編集は残っています。": "Save cancelled. Your theatre edits are kept.",
+    "このMac版は劇場候補の保存に対応していません。アプリを更新してください。": "This Mac app cannot save theatre candidates. Please update the app.",
+    "候補の保存・読戻し・切替を完了できませんでした。劇場の編集は残っています。": "The candidate could not be saved, read back or opened. Your theatre edits are kept.",
+    "候補ファイルは残しています:": "Candidate file kept:",
+    "劇場をプロジェクトへ保存し、読戻しを確認しました。": "The theatre was saved to the project and verified by reading it back.",
+    "別のプロジェクトへ保存し、読戻しを確認してから切り替えます。元のファイルは残します。": "Save to a separate project, verify it by reading it back, then switch. The original file is kept.",
+    "この文書を別の保存先へ保存し、読戻しを確認します。版は増やしません。": "Save this document to another destination and verify it by reading it back. No new version is created.",
 
 
     "リハーサルの記録図に選択中の配色を反映し、開いたまま配色を変えたときも追従するようにしました。同じランでタブを往復しても、図の「一つ戻す」・やり直しの履歴を保ちます（ページの再読み込み後は対象外です）。": "Rehearsal drawings now follow the selected theme, including changes made while they are open. Drawing Undo and redo history is kept when switching tabs within the same run (it does not survive a page reload).",
@@ -5281,4 +5367,29 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "紙面を更新しました。": "The page has been updated.",
   "紙面をクリックして編集。名称・尺・並びはショーファイルにも反映します。": "Click the page to edit. Names, durations and order are also applied to the show file.",
   "紙面をクリックして編集。名前・時間・順序は舞台タブにも反映します。": "Click the page to edit. Names, times and order are also applied to the Stage tab."
+});
+
+// U-A2 explicit recovery; original records are retained.
+window.SHOSAI_DRAFT_RECOVERY_COPY = window.SHOSAI_DRAFT_RECOVERY_COPY || {};
+window.SHOSAI_DRAFT_RECOVERY_COPY["ja"] = {
+  "title": "照明の編集控えを復旧",
+  "note": "以前の編集控えがあります。控え・書き出しから確認できます。文書への読み込みは自分で選んでください。",
+  "load": "この文書の草稿として読み込む",
+  "export": "原文を書き出す",
+  "all": "照明の控えをすべて書き出す"
+};
+
+// U-A2 explicit recovery; original records are retained.
+window.SHOSAI_DRAFT_RECOVERY_COPY = window.SHOSAI_DRAFT_RECOVERY_COPY || {};
+window.SHOSAI_DRAFT_RECOVERY_COPY["en"] = {
+  "title": "Recover lighting drafts",
+  "note": "Earlier drafts are available in Save / Export. Choose a draft explicitly to load it into this document.",
+  "load": "Load as a draft for this document",
+  "export": "Export original record",
+  "all": "Export all lighting drafts"
+};
+
+// v0.3.82 release history: known limitation (owner decision 2026-10-21).
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "旧い Mac 版（0.3.81 以前）で v0.3.82 のショーを再保存すると、固定灯の設定（色・照射先・追加項目）が旧版側で書き換わる制限があります。Mac 版は 0.3.82 へ更新してください。": "If a show saved in v0.3.82 is re-saved in an older Mac app (0.3.81 or earlier), the older app rewrites fixed-light settings (colour, target, extra fields). Please update the Mac app to 0.3.82."
 });

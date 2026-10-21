@@ -79,19 +79,19 @@
   function renderUsage() {
     const rows = model.scan(), eligible = rows.filter(row => row.kind);
     $("total").textContent = size(rows.reduce((sum, row) => sum + row.bytes, 0));
-    $("eligible").textContent = `${eligible.length}件 · ${size(eligible.reduce((sum, row) => sum + row.bytes, 0))}`;
+    $("eligible").textContent = releaseText("{count}件 · {size}", {count:eligible.length, size:size(eligible.reduce((sum, row) => sum + row.bytes, 0))});
     $("repair").disabled = busy || eligible.length === 0;
     const list = $("breakdown"); list.replaceChildren();
     for (const row of rows) {
       if (!row.key.startsWith("gamma:")) continue;
       const li = document.createElement("li"), label = document.createElement("span"), key = document.createElement("code");
-      label.textContent = `${row.kind || "使用中のデータ・設定"} · ${size(row.bytes)} `;
+      label.textContent = `${tx(row.kind || "使用中のデータ・設定")} · ${size(row.bytes)} `;
       key.textContent = row.key; li.append(label, key); list.append(li);
     }
   }
   async function renderArchives() {
     const records = await model.summaries();
-    $("archive-status").textContent = records.length ? `${records.length}件をこのブラウザ内に保管しています。復元すると使用量が増えます。` : "保管済みの控えはありません。";
+    $("archive-status").textContent = records.length ? releaseText("{count}件をこのブラウザ内に保管しています。復元すると使用量が増えます。", {count:records.length}) : tx("保管済みの控えはありません。");
     $("export").disabled = busy || !records.length;
     const list = $("archives"); list.replaceChildren();
     for (const record of records) {
@@ -103,11 +103,11 @@
         + (record.compressed ? `（圧縮前 ${size(record.rawBytes)}）` : "");
       if (isOriginal) name.textContent += ` · ${record.archivedAt ? new Date(record.archivedAt).toLocaleString(lang) : tx("保管日時不明（旧保存領域）")}`;
       key.textContent = isShow ? record.projectId : record.key;
-      restore.type = "button"; restore.textContent = isShow ? "ショー一覧へ戻す" : "元の場所へ戻す";
+      restore.type = "button"; restore.textContent = isShow ? "ショー一覧へ戻す" : tx("元の場所へ戻す");
       restore.disabled = busy || !record.key.startsWith("gamma:");
       if (!record.key.startsWith("gamma:")) restore.textContent = "βの控えは書き出しのみ";
       const migrated=window.localStorage.getItem(window.STAGE_LARGE_PROJECT_STORE.MARKER)!==null;
-      if((migrated || isOriginal) && record.key.startsWith("gamma:")) restore.textContent="控えを書き出す";
+      if((migrated || isOriginal) && record.key.startsWith("gamma:")) restore.textContent=tx("控えを書き出す");
       restore.addEventListener("click", () => run(async () => {
         if(migrated || isOriginal){
           const full=(await model.list()).find(r=>r.id===record.id && !!r.local===!!record.local);if(!full)throw new Error("ARCHIVE_NOT_VERIFIED");
@@ -261,19 +261,19 @@
     const api = window.STAGE_STORAGE_RECOVERY;
     model = api.create({ storage: window.localStorage, vault: api.createVault(window.indexedDB) });
     $("repair").addEventListener("click", () => run(async () => {
-      setResult("控えを保管し、内容を確認しています…");
+      setResult(tx("控えを保管し、内容を確認しています…"));
       const result = await model.archive();
       const amount = result.moved.reduce((sum, row) => sum + row.bytes, 0);
-      setResult(`${result.moved.length}件の控えを保管し、約${size(amount)}の空きを作りました。`
-        + (result.skipped.length ? `\n別のタブで変わった${result.skipped.length}件は移していません。` : "")
-        + (result.failed.length ? `\n保管を確認できなかった${result.failed.length}件は元の場所に残しています。` : "")
-        + "\n元のタブで保存をやり直し、「保存しました」の表示を確認してください。");
+      setResult(releaseText("{count}件の控えを保管し、約{size}の空きを作りました。", {count:result.moved.length, size:size(amount)})
+        + (result.skipped.length ? "\n" + releaseText("別のタブで変わった{count}件は移していません。", {count:result.skipped.length}) : "")
+        + (result.failed.length ? "\n" + releaseText("保管を確認できなかった{count}件は元の場所に残しています。", {count:result.failed.length}) : "")
+        + "\n" + tx("元のタブで保存をやり直し、「保存しました」の表示を確認してください。"));
     }));
     $("refresh").addEventListener("click", () => run(async () => { setResult(""); }));
     $("export").addEventListener("click", () => run(async () => {
       const items = await model.list();
       download({ kind: "gamma-storage-recovery", version: 1, exportedAt: new Date().toISOString(), items }, "gamma-storage-recovery-archive.json");
-      setResult("控えの書き出しを開始しました。保存先の画面が出た場合は保存してください。");
+      setResult(tx("控えの書き出しを開始しました。保存先の画面が出た場合は保存してください。"));
     }));
     refresh().catch(error => setResult(explanation(error)));
   } catch (error) { setResult("保存領域を読み取れませんでした。データは変更していません。"); }

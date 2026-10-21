@@ -545,8 +545,19 @@
     renderAll();
   }
   /* 戻す・やり直すでも控えを更新する。控えがずれると、次の commit で積む「変更前」が狂う。 */
-  function undo() { if (!state.history.length) return; window.dispatchEvent(new Event("gamma-light-draft-edit")); state.future.push(baseline); const json = state.history.pop(); restore(json); baseline = snapshot(); }
-  function redo() { if (!state.future.length) return; window.dispatchEvent(new Event("gamma-light-draft-edit")); state.history.push(baseline); const json = state.future.pop(); restore(json); baseline = snapshot(); }
+  let historyComposing = false;
+  document.addEventListener("compositionstart", () => { historyComposing = true; }, true);
+  document.addEventListener("compositionend", () => { historyComposing = false; }, true);
+  window.addEventListener("blur", () => { historyComposing = false; });
+  function historyAllowed(event) {
+    if (historyComposing || event?.defaultPrevented || event?.isComposing || event?.keyCode === 229) return false;
+    if (!$('dialog')?.hidden || state.drag || playbackPreviewActive) return false;
+    // embed.js supplies the host's single owner guard. Standalone lighting keeps
+    // its local history without exposing an iframe directly to native code.
+    return window.GAMMA_LIGHT_HISTORY_ALLOWED ? window.GAMMA_LIGHT_HISTORY_ALLOWED(event) : true;
+  }
+  function undo(event) { if (!historyAllowed(event) || !state.history.length) return false; window.dispatchEvent(new Event("gamma-light-draft-edit")); state.future.push(baseline); const json = state.history.pop(); restore(json); baseline = snapshot(); return true; }
+  function redo(event) { if (!historyAllowed(event) || !state.future.length) return false; window.dispatchEvent(new Event("gamma-light-draft-edit")); state.history.push(baseline); const json = state.future.pop(); restore(json); baseline = snapshot(); return true; }
 
   /* ---------- 常設の表示欄 / dialog ---------- */
   /* R-01（2026-09-17 本人要望）: 画面下に浮くポップアップをやめ、
@@ -4247,7 +4258,9 @@
       if (k === "p" || k === "v") { ev.preventDefault(); pasteSettings(); return; }
     }
     if ((ev.key === "Delete" || ev.key === "Backspace") && state.mode === "place" && state.sel.size) { ev.preventDefault(); removeSelected(); }
-    if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === "z") { ev.preventDefault(); ev.shiftKey ? redo() : undo(); }
+    if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === "z" && historyAllowed(ev)) {
+      ev.shiftKey ? redo(ev) : undo(ev); ev.preventDefault();
+    }
   });
 
   /* ---------- 左: 一覧 ---------- */
@@ -7565,6 +7578,30 @@
       <p class="prefname">保存したデザイン</p>
       <div class="dslist">${rows}</div>`, [["閉じる", null, "primary"]]);
 
+    const recovery=window.GAMMA_LIGHT_EDITOR,records=recovery?.recoveryRecords?.() || [];
+    if(records.length) {
+      const copy=recovery.recoveryCopy(),section=document.createElement('section');
+      section.id='lighting-draft-recovery';
+      const heading=document.createElement('h3');heading.textContent=copy.title;section.append(heading);
+      const exportRaw=(raw,filename)=>download(new Blob([raw],{type:'application/json'}),filename);
+      const all=document.createElement('button');all.className='btn small';all.textContent=copy.all;
+      all.onclick=()=>exportRaw(JSON.stringify({kind:'gamma-lighting-draft-recovery',version:2,records:recovery.recoveryRecords({all:true})},null,2),'gamma-lighting-drafts.json');section.append(all);
+      for(const record of records) {
+        const row=document.createElement('details');row.className='dsrow';
+        row.dataset.recoveryKey=record.key;
+        let saved=null;try{saved=JSON.parse(record.raw);}catch(_){}
+        const label=document.createElement('summary');label.className='dsname';
+        label.textContent=[record.label || saved?.design?.name || copy.title,saved?.design?.savedAt?.slice(0,19).replace('T',' ')].filter(Boolean).join(' · ');
+        label.title=record.key;
+        const actions=document.createElement('span');actions.className='dsacts';
+        const file=document.createElement('button');file.className='btn small';file.textContent=copy.export;
+        file.onclick=()=>exportRaw(record.raw,'gamma-lighting-recovery.json');
+        const load=document.createElement('button');load.className='btn small';load.textContent=copy.load;
+        load.onclick=()=>{try{if(recovery.restoreRecovery(record.raw))$("dialog").hidden=true;}catch(e){toast(e.message);}};
+        actions.append(file,load);row.append(label,actions);section.append(row);
+      }
+      document.querySelector('#dialog .dslist').after(section);
+    }
     const nameNow = () => ($("dsname") ? $("dsname").value.trim() : "");
     if ($("dssave")) $("dssave").onclick = () => {
       const nm = nameNow(); if (!nm) { toast("デザイン名を入れてください"); return; }
@@ -7590,7 +7627,7 @@
       try { window.STAGE_DATA_SAFETY.assertJsonFileSize(f); applyDesign(window.STAGE_DATA_SAFETY.parseJson(await f.text())); $("dialog").hidden = true; toast(`「${state.designName || f.name}」を読み込みました`); }
       catch (e) { toast(`読み込めませんでした: ${e.message}`); }
     };
-    document.querySelectorAll("#dialog .dsrow button").forEach((b) => {
+    document.querySelectorAll("#dialog .dsrow button[data-act]").forEach((b) => {
       b.onclick = () => {
         const all = readStore(); if(!all)return; const i = Number(b.dataset.i); const d = all[i]; if (!d) return;
         if (b.dataset.act === "load") { try { applyDesign(d); $("dialog").hidden = true; toast(`「${d.name}」を呼び出しました`); } catch (e) { toast(`読み込めませんでした: ${e.message}`); } }
@@ -7665,10 +7702,31 @@
   });
   window.addEventListener("pagehide", event => { if (!event.persisted) unsubscribeResolution?.(); });
 
+  // Candidate delivery rollback retains the private Undo baseline and viewed
+  // Qs. Reimporting a built design would normalize data and lose this history.
+  function captureDocumentState() {
+    return {state:structuredClone(state),baseline,appliedFingerprint,cueSyncPending,
+      viewedCueIds:[...viewedCueIds],migrationRecords:structuredClone([...migrationRecords]),migrationRecordSequence,
+      sceneTimingContext:structuredClone([...sceneTimingContext]),readSceneStepPrevious};
+  }
+  function restoreDocumentState(saved) {
+    stop();lxFadeStop();lxFollowCancel();
+    for(const name of Object.keys(state)) if(!Object.hasOwn(saved.state,name)) delete state[name];
+    Object.assign(state,structuredClone(saved.state));
+    // Animation handles belong to the old runtime, never to its copy.
+    const resume=state.play.on;state.play.on=false;state.play.raf=0;
+    baseline=saved.baseline;appliedFingerprint=saved.appliedFingerprint;cueSyncPending=saved.cueSyncPending;
+    viewedCueIds.clear();saved.viewedCueIds.forEach(([id,q])=>viewedCueIds.set(id,q));
+    migrationRecords.clear();structuredClone(saved.migrationRecords).forEach(([id,value])=>migrationRecords.set(id,value));
+    migrationRecordSequence=saved.migrationRecordSequence;
+    sceneTimingContext.clear();structuredClone(saved.sceneTimingContext).forEach(([id,value])=>sceneTimingContext.set(id,value));
+    readSceneStepPrevious=saved.readSceneStepPrevious;
+    renderAll();refreshApplyState();if(resume)play();
+  }
   // 試作の検証用。製品では出さない（状態を外から読めるようにしておく）
   window.__RIG = { state, E, planBox, secBox, secOf, SECS,
     /* 「照明のあるある」（light-presets-ui.js）との接続点。app.js の内部関数をここだけから貸す（2026-09-14）。 */
-    hooks: { setSceneContextRestorer, viewLightCue, setCuePlacementReader, refreshCuePlacements, setSoloFigure, setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
+    hooks: { captureDocumentState, restoreDocumentState, setSceneContextRestorer, viewLightCue, setCuePlacementReader, refreshCuePlacements, setSoloFigure, setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, historyBlocked:()=>historyComposing || Boolean(state.drag) || !$("dialog")?.hidden, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
 
   /* ブラウザの大きさに追従する。モーダルだからと固定にしない（2026-09-11 本人要望）。
      rAFで1回にまとめる（ドラッグ中の連続リサイズで描き直しが溜まらないように）。 */

@@ -65,7 +65,8 @@ ${table(["Step", "What you decide", "Main items"], [
 <p>The apply window may also warn about an outdated theatre version and offer ${ui("Prioritize stage")} / ${ui("Prioritize audience")}.</p>
 ${note("Changing the venue can break some scenes", "Piece positions are stored as proportions of the stage's width and depth, so after a change some pieces may end up inside the wings or hanging off a hanamichi. The apply window lists these “broken scenes”; review them afterwards. Applying still goes ahead.", true)}
 <p>${ui("Leave theatre settings?")} lets you go back to the previous theatre: ${ui("Discard changes and go back")} throws away your edits, ${ui("Continue editing")} stays.</p>
-<p>Applying may raise the show's version (watch the version number).</p>`
+<p>The initial theatre setup does not increase the show's version. Changing a confirmed theatre creates a new show version and keeps the original version.</p>
+<p><strong>Mac version:</strong> After confirming Apply, choose a different save location for the project. The app reads the saved contents back and checks them before switching; the original file remains. The initial theatre setup also saves to a different location but does not increase the version. If you cancel saving, or saving or verification fails, the original document and theatre draft are kept. Check the message, then continue editing or retry with another save location.</p>`
       },
       {
         id: "venue-library", title: "The theatre library (save, export, import, sharing check)", status: "sourced",

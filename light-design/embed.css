@@ -265,3 +265,8 @@ html[data-gamma-embedded] :is(button,input,select,textarea,label) { font-family:
    checks it) and hides overflow for the ellipsis; this one select has short fixed labels, so let its glyphs
    paint outside the trimmed box instead. Scoped to the front-view header of the lighting tab only. */
 html[data-gamma-embedded] .fmode .gamma-short-select-trigger > .gamma-control-text { overflow: visible; text-overflow: clip; }
+
+/* U-A2 recovery reuses the saved-design tokens and buttons. */
+#lighting-draft-recovery .dsrow {display:block;}
+#lighting-draft-recovery .dsname {overflow-wrap:anywhere;cursor:pointer;}
+#lighting-draft-recovery .dsacts {flex-wrap:wrap;margin-top:6px;}

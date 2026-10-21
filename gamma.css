@@ -254,6 +254,8 @@ body[data-gamma-workspace="cuesheet"].stage-timeline-expanded:not(.stage-fullscr
  * 460px の窓の内側（426px）に収まらず、flex-end のせいで
  * 左端の「やめる」が窓の外へはみ出して切れていた（実測）。窓を広げる。 */
 .stage-modal.gamma-light-leave-modal { width: min(560px, calc(100vw - 32px)); z-index: 79; }
+dialog.gamma-light-leave-modal { margin: 0; padding: 0; color: inherit; }
+dialog.gamma-light-leave-modal::backdrop { background: rgba(var(--stage-ui-scrim-rgb, 8, 7, 6), 0.72); }
 .gamma-light-leave-modal .stage-modal-body { padding: 14px 16px; }
 .gamma-light-leave-modal .stage-modal-body p { margin: 0; font-size: var(--fs-3); line-height: 1.7; color: var(--milk); }
 .gamma-light-leave-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 0 16px 14px;

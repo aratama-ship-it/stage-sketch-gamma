@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<meta name="stage-sketch-gamma-version" content="v0.3.81">
+<meta name="stage-sketch-gamma-version" content="v0.3.82">
 <title>保存容量の修復 | 舞台スケッチγ</title>
 <style>
 :root{color-scheme:dark;--bg:#211d18;--fg:#eee7db;--muted:#c0b4a2;--accent:#ddc398;--line:#867968;--space:16px;--radius:4px;font:16px/1.65 system-ui,sans-serif;background:var(--bg);color:var(--fg)}
@@ -14,29 +14,30 @@
 <style>
 .danger{color:#ffb1a8;border-color:#ffb1a8}dialog{width:min(560px,calc(100% - 32px));max-height:calc(100% - 32px);overflow:auto;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:var(--radius);padding:24px}dialog::backdrop{background:rgba(0,0,0,.65)}dialog h2{margin-top:0}#original-delete-detail,#fixed-release-detail{overflow-wrap:anywhere;white-space:pre-line}.release-check{display:flex;align-items:center;gap:8px;min-height:44px;margin:16px 0}.release-check input{flex:none;width:20px;height:20px}
 </style>
-<script src="stage-language-loader.js?v=20261020-v0381"></script>
+<script src="stage-language-loader.js?v=20261020-v0382"></script>
 <script src="stage-storage-codec.js?v=2026092523" defer></script>
-<script src="stage-storage-recovery.js?v=20261020-v0381" defer></script>
+<script src="stage-storage-recovery.js?v=20261020-v0382" defer></script>
 <script src="stage-storage-hygiene.js?v=20261014-v0365" defer></script>
 <script src="stage-large-project-store.js?v=20260928-storage49" defer></script>
 <script src="stage-project-backup-store.js?v=20261020-v0380" defer></script>
 <script src="stage-audio-store.js?v=20261020-v0381" defer></script>
-<script src="storage-recovery-ui.js?v=20261020-v0381" defer></script>
+<script src="storage-recovery-ui.js?v=20261020-v0382" defer></script>
 </head>
 <body>
 <header><p class="note">舞台スケッチγ <span id="recovery-app-version"></span></p>
 <p><a href="stage.html">舞台画面へ戻る</a></p><h1>保存容量の修復</h1>
 <p>通常はアプリがγの古い控えを自動整理します。控えは同じ内容を重ねて保存せず、対応するブラウザでは圧縮して保持します。制作中のショー、別案、参照されている音源は保持します。</p>
 <p>γの古い自動保存の控えを、別の保存領域へ保管して空きを作ります。βの保存は対象にしません。大容量保存へ移行済みのショーは、上の書き出しから保全できます。</p>
-<p class="note">編集中のショーは開いたままにしてください。最初の「控えを保管」操作は現行のショー一覧を変更しません。下の「開いていないショー」は旧方式の保存が対象です。大容量保存へ移行後の控えは書き出し、舞台画面で読み込んでください。音源と照明の控えは変更しません。</p></header>
+<p class="note">編集中のショーは開いたままにしてください。最初の「控えを保管」操作は現行のショー一覧を変更しません。下の「開いていないショー」は旧方式の保存が対象です。大容量保存へ移行後の控えは書き出し、舞台画面で読み込んでください。<span data-release-text>音源と編集中の照明草稿は変更しません。</span></p></header>
 <noscript>修復にはJavaScriptが必要です。保存済みのデータは変更していません。</noscript>
 <section aria-labelledby="large-title"><h2 id="large-title">大容量保存のショー</h2><p>ショー本体・一覧は専用の保存領域にあります。現在の保存、直前の保存、移行前の原本を書き出せます。</p><p id="large-status" role="status"></p><div id="large-shows"></div></section>
-<section aria-labelledby="usage-title"><h2 id="usage-title">γの保存状況</h2>
-<dl><dt>γの文字データ（概算）</dt><dd id="total">確認中…</dd><dt>保管先を移せる控え</dt><dd id="eligible">確認中…</dd></dl>
-<div class="actions"><button type="button" id="repair" class="primary" disabled>控えを保管して容量を空ける</button><button type="button" id="refresh">使用量を確認し直す</button></div>
-<p class="note">保管先への保存と内容の一致を確認できた控えだけを移します。空きを作れない場合は、そのまま残ります。</p>
+<section aria-labelledby="usage-title"><h2 id="usage-title" data-release-text>γの保存状況</h2>
+<dl><dt data-release-text>γの文字データ（概算）</dt><dd id="total">確認中…</dd><dt data-release-text>保管先を移せる控え</dt><dd id="eligible">確認中…</dd></dl>
+<div class="actions"><button type="button" id="repair" data-release-text class="primary" disabled>控えを保管して容量を空ける</button><button type="button" id="refresh" data-release-text>使用量を確認し直す</button></div>
+<p class="note" data-release-text>保管先への保存と内容の一致を確認できた控えだけを移します。空きを作れない場合は、そのまま残ります。</p>
+<p class="note" data-release-text>脇へ寄せた照明の控えも保管できます。編集中の草稿と文書の復旧台帳は変更しません。</p>
 <p id="result" role="status" aria-live="polite"></p>
-<details><summary>容量の内訳</summary><ul id="breakdown"></ul><p class="note">文字数からの概算です。音源など別の保存領域は含みません。βや他のアプリの保存分は読み取りません。</p></details></section>
+<details><summary data-release-text>容量の内訳</summary><ul id="breakdown"></ul><p class="note" data-release-text>文字数からの概算です。音源など別の保存領域は含みません。βや他のアプリの保存分は読み取りません。</p></details></section>
 <section aria-labelledby="inactive-title"><h2 id="inactive-title">開いていないショーを保管する</h2>
 <p class="note">現在開いているショーと音源参照のあるショーは移せません。保管するとそのショーは舞台スケッチの一覧から一時的に外れます。この画面の「保管済みの控え」から戻すと、再び一覧に出ます。保管前に元のタブの編集を止めてください。</p>
 <p id="inactive-status" class="note">確認中…</p><div id="inactive-shows"></div></section>
@@ -45,7 +46,7 @@
 <p class="note" data-release-text>他のショーや保存世代が使っていない音源を含む固定控えだけを選べます。解除すると、選んだ原本と専用音源をこの端末から消します。元に戻せません。</p>
 <p id="fixed-release-status" role="status"></p><div id="fixed-release-list"></div>
 </section>
-<section aria-labelledby="archive-title"><h2 id="archive-title">保管済みの控え</h2><p id="archive-status" class="note">確認中…</p><button type="button" id="export" disabled>保管した控えをまとめて書き出す</button><div id="archives"></div></section>
+<section aria-labelledby="archive-title"><h2 id="archive-title" data-release-text>保管済みの控え</h2><p id="archive-status" class="note">確認中…</p><button type="button" id="export" data-release-text disabled>保管した控えをまとめて書き出す</button><div id="archives"></div></section>
 <dialog id="original-delete-dialog" aria-labelledby="original-delete-title" aria-describedby="original-delete-lead original-delete-detail original-delete-warning">
 <h2 id="original-delete-title"></h2><p id="original-delete-lead"></p><p id="original-delete-detail"></p><p id="original-delete-warning"></p>
 <div class="actions"><button type="button" id="original-delete-cancel"></button><button type="button" id="original-delete-confirm" class="danger"></button></div>

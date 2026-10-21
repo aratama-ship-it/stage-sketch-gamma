@@ -1,7 +1,7 @@
 /* Rehearsal controller: independent run records and a read-only creation reference. */
 (()=>{'use strict';if(window.GAMMA_EDITION==='lite'||document.documentElement.hasAttribute('data-study-renderer'))return;
  const M=window.GAMMA_FIELD_RUN_MODEL,S=window.GAMMA_FIELD_RUN_STORE,P=window.GAMMA_FIELD_RUN_PACKAGE;let dialog,content,status,title,clock,run,raw,images=new Map(),storageId='',durable=0,transport=null,iframe=null,nonce='',requestSeq=0,pending=new Map(),loadReady=null,viewId='',follow=true,mode='run',target=null,composing=false,drawing=false,frameId='',history=[],future=[],timer=null,heartbeat=null,started=0,elapsedBase=0,saveQueue=Promise.resolve(),saveError='',requestedView=0,mounting=false,reviewSceneId='',hostProjectId='';const urls=new Map(),addendumDrafts=new Map();let durationClock=null,durationRefresh=null,durationTableSignature='',durationSort=false;let appending=false,noteSceneId='',switching=false,returnFrameId='',pendingScene='',workspace=false,side=null,sideBody=null,runSection=null,preview=false,fitSide=null,sideObserver=null;
- let drawingTarget=false,historyBusy=false,suspendedHistory=null;
+ let drawingTarget=false,historyBusy=false,suspendedHistory=null,documentTransitioning=false;
  let arrangement='auto',autoArrangement=null,frameLayout=null,fitRequest=0;try{const saved=localStorage.getItem('gamma:rehearsal-arrangement');if(saved==='row'||saved==='stack')arrangement=saved;}catch(_){}
  const effectiveArrangement=()=>(arrangement==='auto'?autoArrangement:arrangement)==='row'&&window.innerWidth>760?'row':'stack';
  let timelineRaw='',timelineDocument;let parsedRaw='',parsedSource;const documentCopy=()=>{if(parsedRaw!==raw){parsedSource=M.source(raw);parsedRaw=raw;}return parsedSource;};
@@ -77,6 +77,7 @@
  function setDrawingTarget(value){drawingTarget=!!value;notifyHistory();}
  function historyCommand(redo=false){
   const state=historyState();if(!state)return false;
+  if(window.GammaUndoOwner&&!window.GammaUndoOwner.allows("rehearsalDrawing"))return true;
   if(state[redo?'canRedo':'canUndo'])void undo(redo).catch(report);
   return true; // Never fall through to show history, even when the drawing is empty.
  }
@@ -160,6 +161,21 @@
   if(composing||drawing){warning('入力を終えてから操作してください。');return false;}
   if(!await exit())return false;dialog.hidden=true;return true;
  }
+ // Keep the original run, iframe, transport and drawing history until the
+ // candidate is committed. Native ZIP save panels can still cancel after prepare.
+ // The shell also makes this retained workspace inert until commit or rollback.
+ function setDocumentTransitioning(value){documentTransitioning=!!value;if(dialog)dialog.inert=documentTransitioning;}
+ async function prepareDocumentTransition(){
+  if(mounting||historyBusy)return false;
+  durationClock?.pause();
+  await beforeQuit();
+  return true;
+ }
+ function commitDocumentTransition(){
+  if(!dialog?.open)return;
+  checkpointSwitch();stop();suspendedHistory=null;source().quiet(false);
+  dialog.close();dialog.hidden=true;iframe=null;
+ }
  function notifyTimeline(){window.dispatchEvent(new Event('gamma-rehearsal-clock'));}
  function syncDisplay(){
   const settings=source().display();post('display',{display:settings,arrangement:effectiveArrangement()});
@@ -233,7 +249,7 @@
  // Fetch through the parent's PWA controller, then keep the renderer opaque and self-contained.
  async function frameDocument(){
   const responseFor=async url=>{let response;try{response=await fetch(url);if(response.ok)return response;}catch(_){}try{response=await window.caches?.match(url);if(response?.ok)return response;}catch(_){}throw Error('frame-unavailable');};
-  const url=new URL('field-frame.html?v=20261020-v0381',location.href),response=await responseFor(url);
+  const url=new URL('field-frame.html?v=20261020-v0382',location.href),response=await responseFor(url);
   // Bind metadata to this freshly constructed srcdoc, never to a later message or frame.
   if(url.origin!==location.origin||(response.url&&new URL(response.url).origin!==location.origin))throw Error('frame-origin');
   const doc=new DOMParser().parseFromString(await response.text(),'text/html');if(!doc.documentElement.hasAttribute('data-study-renderer')||!doc.querySelector('.field-frame-drawings'))throw Error('frame-unavailable');doc.documentElement.dataset.stageSkin=currentSkin();const base=doc.createElement('base');base.href=new URL('.',url).href;doc.head.prepend(base);
@@ -310,7 +326,7 @@
   // An unanswered first scene is a renderer failure, not a failed run. Complete
   // the normal scene/note setup through ask()'s existing no-frame path.
   try{await selectScene(requested);if(restoredFrame)await selectFrame(restoredFrame);}catch(error){if(error.message!=='frame-timeout')throw error;unavailable();await selectScene(requested);if(restoredFrame)await selectFrame(restoredFrame);}
-  mounting=false;work.style.visibility='';work.inert=false;syncRunState();renderDurations();if(live)durationRefresh=setInterval(renderDurations,250);if(workspace){resizeWorkspace();document.getElementById('view-stage').scrollTop=0;}if(transport)updateClock(transport.info());notifyTimeline();if(live){heartbeat=setInterval(()=>{if(!canProgress())return;if(source().sessionRole()||source().identity().projectId!==hostProjectId){document.getElementById('stage-workspace-normal')?.click();return;}run.elapsedSeconds=elapsed();M.touch(run);void save().catch(()=>{});},2000);}
+  mounting=false;work.style.visibility='';work.inert=false;syncRunState();renderDurations();if(live)durationRefresh=setInterval(renderDurations,250);if(workspace){resizeWorkspace();document.getElementById('view-stage').scrollTop=0;}if(transport)updateClock(transport.info());notifyTimeline();if(live){heartbeat=setInterval(()=>{if(documentTransitioning||!canProgress())return;if(source().sessionRole()||source().identity().projectId!==hostProjectId){document.getElementById('stage-workspace-normal')?.click();return;}run.elapsedSeconds=elapsed();M.touch(run);void save().catch(()=>{});},2000);}
  }
  // Real performance time is independent of the show's playback/seek clock.
  function durationSceneId(){const info=transport?.info();return info?.phase?.fromSceneId||info?.sceneId||run?.progressSceneId;}
@@ -359,7 +375,7 @@
  async function selectFrame(id){if(!id){frameId='';return selectScene(viewId);}const f=run.frames.find(f=>f.frameId===id&&f.sceneId===viewId);if(!f)return;follow=false;frameId=f.frameId;if(iframe){const pictures={};for(const view of ['front','plan'])pictures[view]=await dataURL(images.get(f.images[view].path));await ask('record',{frame:f,images:pictures});}if(editable()){run.viewFrameId=id;M.touch(run);scheduleSave();}refreshFrames();}
  async function capture(){if(!editable()||drawing||composing)return;const ack=await ask('capture');if(ack.sceneId!==viewId)throw Error('frame-stale');const id='frame-'+crypto.randomUUID(),f={frameId:id,attemptNumber:run.attempts?.length||1,sceneId:viewId,showSeconds:transport.info().sceneId===viewId?transport.info().seconds:transport.domain.byId.get(viewId).start,capturedAt:new Date().toISOString(),render:{appVersion:window.STAGE_SKETCH_GAMMA_VERSION,seatId:'',lightMode:'show',extensions:{inkColor:'#ffdc73'}},images:{},strokes:[]};if(run.frames.length>=M.LIMIT.frames)M.fail('record-too-large');const nextImages=new Map(images);for(const view of ['front','plan']){const shot=ack.screens[view],b=source().zip().dataUrlToBytes(shot.url),path=`frames/${id}/${view}.png`;P.image(b);f.images[view]={path,width:shot.width,height:shot.height};nextImages.set(path,new Blob([b],{type:'image/png'}));}const candidate=M.clone(run);M.touch(candidate);candidate.frames.push(f);M.validate(candidate,raw);M.assertPackageSize(candidate,raw,nextImages);M.touch(run);run.frames.push(f);images=nextImages;frameId=id;await selectFrame(id);await save();}
  async function newFrame(){if(!iframe){warning('記録図を読み込めません。右の操作とランノートは使えます。');return;}if(!editable()||drawing||composing)return;follow=false;frameId='';await selectScene(viewId);frameId='';await ask('scene',{sceneId:viewId,clock:transport.info().sceneId===viewId?transport.info():{sceneId:viewId,seconds:transport.domain.byId.get(viewId).start,phase:null}});await capture();}
- async function undo(redo=false){if(!editable()||!currentFrame()||composing||drawing||switching||mounting||appending||historyBusy||source().sessionRole()||document.querySelector('dialog:modal'))return;const from=redo?future:history,to=redo?history:future,state=from.pop();if(!state)return;historyBusy=true;notifyHistory();try{const f=run.frames.find(f=>f.frameId===state.frameId);to.push({frameId:f.frameId,strokes:M.clone(f.strokes)});M.touch(run);f.strokes=state.strokes;if(viewId!==f.sceneId)await selectScene(f.sceneId);await selectFrame(f.frameId);scheduleSave();}finally{historyBusy=false;notifyHistory();}}
+ async function undo(redo=false){if(window.GammaUndoOwner&&!window.GammaUndoOwner.allows("rehearsalDrawing"))return;if(!editable()||!currentFrame()||composing||drawing||switching||mounting||appending||historyBusy||source().sessionRole()||document.querySelector('dialog:modal'))return;const from=redo?future:history,to=redo?history:future,state=from.pop();if(!state)return;historyBusy=true;notifyHistory();try{const f=run.frames.find(f=>f.frameId===state.frameId);to.push({frameId:f.frameId,strokes:M.clone(f.strokes)});M.touch(run);f.strokes=state.strokes;if(viewId!==f.sceneId)await selectScene(f.sceneId);await selectFrame(f.frameId);scheduleSave();}finally{historyBusy=false;notifyHistory();}}
  function updateClock(info){if(!run||mounting)return;if(canProgress()&&durationClock?.running())durationClock.enter(info.phase?.fromSceneId||info.sceneId);if(info.seconds>=transport?.domain.duration)durationClock?.pause();syncRunState();run.showSeconds=info.seconds;run.progressSceneId=info.sceneId;clock.setAttribute('aria-label',T('経過時間'));clock.textContent=window.STAGE_TIME_DOMAIN.durationText(elapsed())+(!follow&&viewId!==info.sceneId?' · '+T('進行中')+' '+(numbers().get(info.sceneId)||''):'');const cueText=document.getElementById('field-run-cues');if(cueText)cueText.textContent=T('現在のキュー')+' '+(info.cue?.displayName||'—')+' · '+T('次のキュー')+' '+(info.nextCue?.displayName||'—');const b=document.getElementById('field-run-go');// Preserve the button's text node between pointerdown and pointerup in WebKit.
  if(b){const label=info.playing?T('一時停止'):'GO';if(b.textContent!==label)b.textContent=label;}if(follow&&!composing&&!drawing){if(viewId!==info.sceneId){if(pendingScene!==info.sceneId){pendingScene=info.sceneId;void selectScene(info.sceneId).catch(report).finally(()=>{pendingScene='';});}}else if(!frameId)post('clock',{clock:info});}notifyTimeline();}
  async function finish(){if(!editable()||drawing||composing||switching){warning('入力を終えてから操作してください。');return;}durationClock?.pause();transport.pause();await flush();if(!await window.GAMMA_SURFACE_DIALOG.confirm('記録を確定しますか？本文と図は変更できなくなります。補足は別の追記として残せます。',(_dialog,ok)=>{ok.textContent=T('記録を確定');}))return;const previousStatus=run.status;M.close(run);try{await save();}catch(error){run.status=previousStatus;run.closedAt=null;M.touch(run);syncRunState();throw error;}checkpointNotify();document.getElementById('field-run-note').readOnly=true;post('lock');elapsedBase=run.elapsedSeconds;stop();source().quiet(false);mode='review';dialog.dataset.kind='review';await mount(false);}
@@ -407,7 +423,7 @@
   const lock=el=>{if(el===historyControls)return;if(historyControls&&el.contains(historyControls)){for(const child of el.children)lock(child);}else{if(!headerInert.has(el))headerInert.set(el,el.inert);el.inert=true;}};
   lock(row);
  }
- window.GAMMA_FIELD_RUNS={historyState,historyCommand,open,review,leave,timelineContext,beforeQuit};
+ window.GAMMA_FIELD_RUNS={historyState,historyCommand,open,review,leave,timelineContext,beforeQuit,prepareDocumentTransition,commitDocumentTransition,setDocumentTransitioning};
  window.addEventListener('gamma-workspace-change',()=>{
   const active=document.body.dataset.gammaWorkspace==='rehearsal';
   protectHeader(active);notifyHistory();

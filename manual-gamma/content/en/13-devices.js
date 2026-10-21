@@ -26,7 +26,7 @@
 <p>Safari deletes saved data after 7 days without interaction with this site. These are days of Safari use, not simply seven calendar days. Web apps added to the Home Screen are exempt from this seven-day limit.</p>
 ${steps(["On iPad or iPhone, use Safari’s Share button to Add to Home Screen, then open the added icon. On Mac, use Safari’s File → Add to Dock, then open the app.", "Press Export now in the reminder at the top and save the JSON backup in a device folder.", "Update backups regularly and keep a copy on another device or external drive. To restore one, use the show file import."])}
 <p>The reminder uses bold text and ! if you have never exported a backup or it is more than seven days old. It turns gray only when the app is installed and persistent storage has been granted. Still keep backups: protection cannot prevent deletion by the user. Reopening a show after at least seven days displays a dismissible export reminder.</p>
-${fig("release081-storage-band", "Browser storage reminder at the top (test show B-1).", "Browser storage reminder")}
+${fig("release082-storage-band", "Browser storage reminder at the top (test show B-1).", "Browser storage reminder")}
 <h4>Getting the Mac version: passphrase</h4>
 <p>A passphrase is required to download the Mac version. Please ask the distributor who provided the app information, then enter it on the installation page below. The passphrase itself is not published in this booklet.</p>
 <p><a href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/?lang=en" target="_blank" rel="noopener">Get the Mac version</a></p>`
@@ -75,8 +75,8 @@ ${steps([
   "From then on open it from the home screen icon. Once opened, it starts even without a signal (the first addition needs a connection)."
 ])}
 ${grid([
-  fig("release081-ipad", "iPad landscape (about 1024×768) — reproduced in a desktop browser. Tools, the scene bar and the front view stack vertically.", "iPad landscape"),
-  fig("release081-ipad-portrait", "iPad portrait (about 768×1024).", "iPad portrait")
+  fig("release082-ipad", "iPad landscape (about 1024×768) — reproduced in a desktop browser. Tools, the scene bar and the front view stack vertically.", "iPad landscape"),
+  fig("release082-ipad-portrait", "iPad portrait (about 768×1024).", "iPad portrait")
 ])}
 ${note("Not checked on a real iPad", "These pictures reproduce the iPad's screen size in a desktop browser. How v0.2.16 behaves on a real iPad or as a home-screen app (touch, offline start, Gamma's new tabs) has not yet been checked for this booklet. The same goes for " + ui("iPad display mode") + " in Settings.", true)}`
       },

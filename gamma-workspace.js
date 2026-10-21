@@ -265,6 +265,7 @@
       : {undo:hostUndo?.disabled??true,redo:hostRedo?.disabled??true};
   }
   function syncHistory() {
+    if (window.GammaUndoOwner) { window.GammaUndoOwner.invalidate(); return; }
     if(!hostUndo || !hostRedo) return;
     if(playbackPreview) {hostUndo.disabled=true;hostRedo.disabled=true;return;}
     // セリフ編集画面は本体の取り消し履歴をそのまま使う（台本の変更は本体の checkpoint に積まれる）
@@ -283,6 +284,11 @@
     hostUndo.disabled=!lightStatus?.canUndo;hostRedo.disabled=!lightStatus?.canRedo;
   }
   function runLightHistory(event,direction) {
+    if (window.GammaUndoOwner) {
+      if (window.GammaUndoOwner.state().owner === "text") return;
+      if (event.defaultPrevented || event.isComposing || event.keyCode === 229) return;
+      event.preventDefault(); event.stopImmediatePropagation(); window.GammaUndoOwner.execute(direction); return;
+    }
     if(mode==='normal' || mode==='script' || mode==='cuesheet' || mode==='run-of-show' || mode==='rehearsal') return;
     event.preventDefault();event.stopImmediatePropagation();
     if(playbackPreview) return;
@@ -330,7 +336,7 @@
     {name:'作り替え前のショーの控え',test:k=>/^gamma:shosai-stage-(?:sketch-v1-pre-section-hierarchy-v1:.+|shows-v1-pre-section-hierarchy-v1)$/.test(k)},
     {name:'読めなかったデータの退避',test:k=>k==='gamma:shosai-stage-shows-broken-v1'},
     {name:'照明デザイン集の作り替え前の控え',test:k=>k==='gamma:shosai.lightDesigns.beforeOptionB.v1'},
-    {name:'脇へ寄せた照明の控え',test:k=>/^gamma:lighting-draft-v1:.+:conflict:\d+$/.test(k)},
+    {name:'脇へ寄せた照明の控え',test:k=>/^gamma:lighting-(?:draft-v1|session-draft-v1|owner-draft-v2):.+:conflict:\d+$/.test(k)},
   ];
   function dumpButton(targetRows, label, filename, title) {
     const button=document.createElement('button');button.type='button';
@@ -362,13 +368,38 @@
     toggle.setAttribute('aria-controls',details.id);toggleLabel();
     toggle.onclick=()=>{details.hidden=!details.hidden;toggleLabel();};
     header.append(heading,toggle);status.append(header,details);
-    const ctx=latestContext || host.context(), draftKey='gamma:lighting-draft-v1:'+ctx.showId;
-    const raw=localStorage.getItem(draftKey);
+    const ctx=latestContext || host.context(),legacyDraftKey='gamma:lighting-draft-v1:'+ctx.showId;
+    let draftKey=editor()?.draftKey?.(ctx) || legacyDraftKey;
+    if(!ctx.nativeDocument && !ctx.browserDraftScope && !localStorage.getItem(draftKey) && localStorage.getItem(legacyDraftKey))draftKey=legacyDraftKey;
+    const recoveryVector=JSON.stringify(ctx.alternativeVector || []);
+    const recoveryCurrent=()=>{
+      const latest=host.context();return latest.showId===ctx.showId
+        && ['documentSessionId','pageGeneration','deliveryGeneration','draftOwnerId','browserDraftScope'].every(name=>latest[name]===ctx[name])
+        && JSON.stringify(latest.alternativeVector || [])===recoveryVector;
+    };
+    const raw=ctx.nativeDocument ? (ctx.draftRecords?.[recoveryVector] ?? localStorage.getItem(draftKey)) : localStorage.getItem(draftKey);
     if(raw) {
       const exportButton=document.createElement('button');exportButton.type='button';exportButton.textContent='編集控えを書き出す';
       exportButton.onclick=()=>{const url=URL.createObjectURL(new Blob([raw],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='gamma-lighting-recovery.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
       const savedButton=document.createElement('button');savedButton.type='button';savedButton.textContent='控えを保管して保存済みの照明を開く';
-      savedButton.onclick=()=>{try{trimConflicts(draftKey,1);localStorage.setItem(draftKey+':conflict:'+Date.now(),raw);localStorage.removeItem(draftKey);editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(error){failed(error);}};
+      savedButton.onclick=async()=>{
+        if(!recoveryCurrent())return;
+        const latest=host.context(),latestRaw=ctx.nativeDocument ? (latest.draftRecords?.[recoveryVector] ?? localStorage.getItem(draftKey)) : localStorage.getItem(draftKey);
+        if(latestRaw!==raw){failed(new Error('確認中に控えが更新されました。削除していません。'));return;}
+        try {
+          if(!ctx.nativeDocument && draftKey!==legacyDraftKey)trimConflicts(draftKey,1);
+          const archiveKey=draftKey+':conflict:'+Date.now();localStorage.setItem(archiveKey,raw);
+          if(localStorage.getItem(archiveKey)!==raw)throw Error('照明の編集控えを確認できません。控えは上書きしていません');
+          if(ctx.nativeDocument && !await host.retainDraft(null,recoveryVector,ctx))throw Error('照明の編集控えを確認できません。控えは上書きしていません');
+          if(!recoveryCurrent())return;
+          const latestLocal=localStorage.getItem(draftKey);
+          if(latestLocal!==null && latestLocal!==raw)throw Error('確認中に控えが更新されました。削除していません。');
+          if(!ctx.nativeDocument && draftKey===legacyDraftKey) {
+            if(!editor().archiveLegacyDraft(raw,ctx))throw Error('確認中に控えが更新されました。削除していません。');
+          } else localStorage.removeItem(draftKey);
+          editor().open(host.context(),mode);frame.hidden=false;status.textContent='';
+        } catch(error) {if(recoveryCurrent())failed(error);}
+      };
       details.append(exportButton,savedButton);
       /* 控えの中身（design）は、照明エディタの「保存 → 読み込む」でそのまま戻せる形。
          まるごとの控え（上のボタン）は復旧用の原本、こちらは戻して使うためのファイル。
@@ -390,11 +421,11 @@
         dropButton.title='控えを消してから、保存済みの照明を開きます。容量も空きます';
         dropButton.onclick=async()=>{
           if(!await window.GAMMA_SURFACE_DIALOG.confirm('編集控えを消して、保存済みの照明を開きます。\n消すと、この控えの中身はこの端末から無くなります。\n先に「読み込める形で書き出す」でファイルへ控えましたか？')) return;
-          if(host.context().showId!==ctx.showId || localStorage.getItem(draftKey)!==raw){failed(new Error('確認中に控えが更新されました。削除していません。'));return;}
+          if(!recoveryCurrent() || localStorage.getItem(draftKey)!==raw){failed(new Error('確認中に控えが更新されました。削除していません。'));return;}
           localStorage.removeItem(draftKey);
           try{editor().open(host.context(),mode);frame.hidden=false;status.textContent='';}catch(again){failed(again);}
         };
-        details.append(useButton,dropButton);
+        details.append(useButton);if(!ctx.nativeDocument)details.append(dropButton);
       }
     }
     if(!isQuotaError(error)) return;
@@ -409,7 +440,7 @@
     details.append(note,list);
     /* 控えは、いま開いているショーのぶんとは限らない（別のショーの控えが残っていることがある）。
        消す前に全部まとめて書き出せるようにする。 */
-    const lightRows=rows.filter(row=>row.key.startsWith('gamma:lighting-draft-v1:'));
+    const lightRows=rows.filter(row=>/^gamma:lighting-(?:draft-v1|session-draft-v1|owner-draft-v2):/.test(row.key));
     if(lightRows.length) details.append(dumpButton(lightRows,'照明の控えをすべて書き出す','gamma-lighting-storage-recovery.json',
       'いま開いているショーのぶんに限らず、この端末に残っている照明の控えを1つのファイルへまとめます'));
     /* 空けられるのは「アプリが自動で作った控え」だけ。ショー本体と編集中の控えには触れない。
@@ -744,7 +775,7 @@
    *   失敗したらモードを切り替えない。切り替えると「適用したつもりで移動したのに入っていない」が起きる。 */
   /* T-14（2026-09-18 本人要望）: 劇場設定でも同じ形の窓を出すので、題と本文と
    * ボタンの文言を受け取れるようにした（R-30 の照明版をそのまま一般化）。 */
-  function askApplyBeforeLeaving(copy, returnFocus) {
+  function askApplyBeforeLeaving(copy, returnFocus, signal) {
     const text = copy || {
       title: '照明をショーへ適用しますか？',
       body: 'まだ適用していない照明の編集があります。適用すると、いまの照明がこのショーへ保存されます。'
@@ -753,14 +784,20 @@
       skip: '適用しないで移る',
       apply: '適用して移る',
     };
+    const translate=source=>window.SHOSAI_STAGE_I18N_MODEL?.text(document.documentElement.lang||'ja',source)||source;
+    const title=translate(text.title);
+    const body=text.body.split('<br>').map(translate).join('<br>');
     return new Promise((resolve) => {
       const backdrop=document.createElement('div');
       backdrop.className='stage-modal-backdrop';
-      const box=document.createElement('div');
+      // A library acquisition can ask this question while its modal dialog owns
+      // the top layer. A normal div would be both hidden and inert behind it.
+      const overDialog=Boolean(document.querySelector('dialog:modal'));
+      const box=document.createElement(overDialog?'dialog':'div');
       box.className='stage-modal gamma-light-leave-modal';
-      box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true'); box.setAttribute('aria-label',text.title);
-      box.innerHTML='<header class="stage-modal-head"><h2>'+text.title+'</h2></header>'
-        +'<div class="stage-modal-body"><p>'+text.body+'</p></div>';
+      box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true'); box.setAttribute('aria-label',title);
+      box.innerHTML='<header class="stage-modal-head"><h2>'+title+'</h2></header>'
+        +'<div class="stage-modal-body"><p>'+body+'</p></div>';
       const acts=document.createElement('footer');
       acts.className='gamma-light-leave-actions';
       const mk=(label,value,cls)=>{const b=document.createElement('button');b.type='button';b.className=cls;b.textContent=label;
@@ -769,27 +806,88 @@
        * Apple HIG: 主操作は行の右端、キャンセルはそのすぐ左、3つ目の閉じるボタンはさらに左。
        * macOSの「保存しない／キャンセル／保存」と同じ形。
        * ★T-14 で一度「主操作を左」にしたが、Macに合わせる方針で戻した（蒸し返さない）。 */
-      acts.append(mk(text.skip,'skip','btn-quiet'),
-                  mk('キャンセル','cancel','btn-quiet'),
-                  mk(text.apply,'apply','stage-minor-action'));
+      acts.append(mk(translate(text.skip),'skip','btn-quiet'),
+                  mk(translate('キャンセル'),'cancel','btn-quiet'),
+                  mk(translate(text.apply),'apply','stage-minor-action'));
       box.append(acts);
       let releaseFocus=null;
-      function cleanup(){backdrop.remove();box.remove();releaseFocus?.();}
+      function cleanup(){signal?.removeEventListener('abort',cancel);if(overDialog&&box.open)box.close();backdrop.remove();box.remove();releaseFocus?.();}
       const cancel=()=>{cleanup();resolve('cancel');};
       backdrop.onclick=cancel;
+      box.addEventListener('cancel',event=>{event.preventDefault();cancel();});
+      signal?.addEventListener('abort',cancel,{once:true});
       document.body.append(backdrop,box);
+      if(overDialog)box.showModal();
       releaseFocus=window.GAMMA_UI.containDialog(box,{initialFocus:acts.lastElementChild,returnFocus,onCancel:cancel});
     });
   }
 
   let leaveConfirmationPending = false;
-  async function askLeaveOnce(options, focus) {
+  async function askLeaveOnce(options, focus, signal) {
+    if (signal?.aborted) return "cancel";
     if (leaveConfirmationPending) return "cancel";
     leaveConfirmationPending = true;
-    try { return await askApplyBeforeLeaving(options, focus); }
+    try { return await askApplyBeforeLeaving(options, focus, signal); }
     finally { leaveConfirmationPending = false; }
   }
 
+  // Native document switches use this guard before any candidate is delivered.
+  async function prepareDocumentTransition(request) {
+    const current = () => request.isCurrent();
+    const light=editor();
+    await light?.waitForApply?.();
+    if (!current()) return false;
+    request.checkpoint?.();
+    if (light?.status?.().dirty) {
+      const answer=await askLeaveOnce(null,document.activeElement,request.signal);
+      if (!current() || answer==='cancel') return false;
+      if (answer==='apply') {
+        const result=await light.apply();
+        if (!current() || !result?.persisted || light.status().dirty) return false;
+      } else if (!await (light.saveDraftDurably?.() ?? light.saveDraft?.())) return false;
+    }
+    if (!current() || !await (light?.saveAllDraftsDurably?.() ?? true)) return false;
+    const venue=window.SHOSAI_VENUE_EDITOR;
+    if (request.purpose !== 'venueVersion' && venue?.hasUnappliedChanges?.()) {
+      const answer=await askLeaveOnce({title:'この劇場をショーへ反映しますか？',
+        body:'まだ反映していない劇場設定の変更があります。反映すると、いまの劇場がこのショーへ入ります。'
+          +'<br>反映しないで移っても編集内容は残り、次に劇場設定を開いたときに戻ります。'
+          +'ただしショー本体にはまだ入りません。',
+        skip:'反映しないで移る',apply:'この劇場を反映する'},document.activeElement,request.signal);
+      if (!current() || answer==='cancel') return false;
+      if (answer==='apply') {
+        if (!await venue.applyForDocumentTransition?.(request) || !current()) return false;
+      } else if (!venue.save?.()) return false;
+    }
+    if (!current()) return false;
+    if (mode==='rehearsal' && !await window.GAMMA_FIELD_RUNS?.prepareDocumentTransition()) return false;
+    if (mode==='run-of-show' && !window.GAMMA_RUN_OF_SHOW_PANE?.finish?.()) return false;
+    return current();
+  }
+  const runtimeElements=()=>[panel,frame,venueWorkspace,venueModal,venueBackdrop,normal,scriptWorkspace,
+    cuesheetWorkspace,document.getElementById('gamma-run-of-show-workspace'),
+    ...document.querySelectorAll('#stage-workspace-tabs [data-stage-workspace-mode]')].filter(Boolean);
+  function captureRuntime() {
+    return {mode,hostHistory:{...hostHistory},latestContext,pendingLightCue,gatedToVenue,
+      light:editor()?.captureRuntime?.(),venue:window.SHOSAI_VENUE_EDITOR?.captureRuntime?.(),
+      elements:runtimeElements().map(el=>({el,hidden:el.hidden,inert:el.inert,className:el.className,pressed:el.getAttribute('aria-pressed')}))};
+  }
+  function restoreRuntime(saved) {
+    if (!saved) return;
+    mode=saved.mode;hostHistory=saved.hostHistory;latestContext=saved.latestContext;pendingLightCue=saved.pendingLightCue;gatedToVenue=saved.gatedToVenue;
+    document.body.dataset.gammaWorkspace=mode;document.body.dataset.stageWorkspaceMode=mode;
+    for (const row of saved.elements) {row.el.hidden=row.hidden;row.el.inert=row.inert;row.el.className=row.className;
+      if(row.pressed!==null)row.el.setAttribute('aria-pressed',row.pressed);}
+    window.SHOSAI_VENUE_EDITOR?.restoreRuntime?.(saved.venue);
+    editor()?.restoreRuntime?.(saved.light);syncHistory();scheduleFrameHeight();
+  }
+  function commitDocumentTransition() {
+    // The guard already settled A. Do not ask about A's draft after B is loaded.
+    if (mode==='rehearsal') window.GAMMA_FIELD_RUNS?.commitDocumentTransition();
+    editor()?.suspend();editor()?.commitDocumentTransition?.();hideVenue();mode='normal';latestContext=null;pendingLightCue=null;
+    window.SHOSAI_VENUE_EDITOR?.commitDocumentTransition?.();
+    void select(venueSetupPending()?'venue-setup':'normal');
+  }
   let featureSelectionAttempt = 0;
   async function select(next) {
     if (next !== 'light-design') pendingLightCue = null;
@@ -888,7 +986,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261020-v0381'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261020-v0382'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;
@@ -1180,6 +1278,7 @@
   /* U-13（2026-09-24）: ショーを開き直したら本体（applyLoadedState）がこれを呼び、ゲートの帯・薄い表示を見直す。
      劇場が決まったショーへ移ったのに、前の新規ショーの「まず劇場を決めると…」が残っていた。 */
   window.GAMMA_WORKSPACE=Object.freeze({normal:()=>select('normal'),select,mode:()=>mode,captureHostHistory,syncHistory,
+    prepareDocumentTransition,captureRuntime,restoreRuntime,commitDocumentTransition,
     openLightCue,
     lightCuePlacementChoices:()=>mode==='light-design' && editor()?.status().active ? editor().placementChoices() : host.placementChoices(),
     placeLightCue:placement=>mode==='light-design' && editor()?.status().active ? editor().placeCue(placement) : host.placeCue(placement),

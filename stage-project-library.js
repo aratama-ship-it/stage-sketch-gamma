@@ -211,6 +211,9 @@
   }
   function result(payload){
     const task=pending.get(payload?.requestId);if(!task)return;pending.delete(payload.requestId);
+    // A native close/quit first drains the acquisition. Close its library only
+    // at that terminal, so it cannot cover the next close decision or welcome.
+    if(payload.closeLibrary===true)closeRequested=true;
     if(payload.status==='saved')task.resolve(payload);
     else if(payload.status==='cancelled')task.resolve(payload);
     else task.reject(Object.assign(Error('shell-failed'),{code:payload.reason||'shell-failed'}));
