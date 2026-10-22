@@ -65,7 +65,7 @@ html.stage-pwa-tablet.gm-tablet.gm-rehearsal-enabled .stage-sketch{grid-template
 html.stage-pwa-tablet.gm-tablet.gm-rehearsal-enabled:has(#stage-storage-band[hidden]) .stage-sketch{grid-template-rows:auto minmax(0,1fr)}
 html.stage-pwa-tablet.gm-tablet.gm-rehearsal-enabled:has(#stage-storage-band.is-folded:not([hidden])) .stage-sketch{grid-template-rows:auto var(--storage-band-folded) minmax(0,1fr)}
 html.stage-pwa-tablet.gm-tablet .stage-sketch-head>.gm-rehearsal-tabs{display:flex!important;gap:var(--sp-2,8px);padding:var(--sp-1,4px) var(--fr-gap);background:var(--desk)}
-.gm-rehearsal-tab{min-height:var(--fr-hit);padding:var(--sp-2,8px) var(--fr-gap);font:inherit;color:var(--paper);background:var(--desk-2);border:1px solid var(--edge)}
+.gm-rehearsal-tab{min-height:var(--fr-hit);padding:var(--sp-2,8px) var(--fr-gap);font:inherit;color:var(--milk);background:var(--desk-2);border:1px solid var(--edge)}
 .gm-rehearsal-tab[aria-selected=true]{border-color:var(--brass)}
 .stage-session-guest .gm-rehearsal-tabs{display:none!important}
 .field-run-frame-unavailable{padding:var(--field-space);color:var(--paper)}

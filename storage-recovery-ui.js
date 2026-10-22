@@ -9,7 +9,13 @@
   const versionLabel = $("recovery-app-version");
   if (versionLabel) versionLabel.textContent = (document.querySelector('meta[name="stage-sketch-gamma-version"]')?.content || "").replace(/^v/, "");
   const size = bytes => `${(bytes / 1048576).toFixed(2)} MB`;
-  let model, busy = false;
+  let model, busy = false, availability;
+  // Rendering may replace controls while a task is still busy. Keep their
+  // actual eligibility separately until the final refresh has completed.
+  function setDisabled(button, disabled = false) {
+    if (busy) availability.set(button, disabled);
+    button.disabled = busy || disabled;
+  }
   const setResult = text => { $("result").textContent = text; };
   const explanation = error => error.name === "QuotaExceededError" ? "戻すための空き容量が足りません。保管した控えはそのまま残っています。"
     : error.message === "RESTORE_CONFLICT" ? "元の場所に別の内容があるため上書きしていません。保管した控えを書き出して確認できます。"
@@ -19,7 +25,7 @@
     const box=$("large-shows"),status=$("large-status");if(!box)return;
     try {
       const repo=window.STAGE_LARGE_PROJECT_STORE.repository(window.indexedDB),rows=await repo.records();
-      const all=document.createElement("button");all.textContent="大容量保存の原文をまとめて書き出す";all.onclick=()=>download({format:"gamma-large-storage-all-v1",rows},"gamma-large-storage-all.json");box.replaceChildren(all);
+      const all=document.createElement("button");all.textContent="大容量保存の原文をまとめて書き出す";all.onclick=()=>download({format:"gamma-large-storage-all-v1",rows},"gamma-large-storage-all.json");setDisabled(all);box.replaceChildren(all);
       if(rows.some(p=>!window.STAGE_LARGE_PROJECT_STORE.pairValid(p)))throw new Error("unreadable");
       await legacyConflict(repo,rows,box,status);
       status.textContent=rows.length ? "保存を確認しました。書き出しは保存データを変更しません。" : "大容量保存のショーはありません。";
@@ -27,9 +33,9 @@
       for(const pair of rows){
         const label=({current:"現在の保存",previous:"直前の保存",migration:"移行前の原本"})[pair.copy] || (pair.copy?.startsWith("legacy-conflict:") ? "旧タブの保存（競合の控え）" : "保存の控え");
         const raw=document.createElement("button");raw.textContent=label+"を原文のまま書き出す";
-        raw.onclick=()=>download({format:"gamma-large-storage-recovery-v1",...pair},"gamma-storage-"+pair.copy+"-revision-"+pair.revision+".json");box.append(raw);
+        raw.onclick=()=>download({format:"gamma-large-storage-recovery-v1",...pair},"gamma-storage-"+pair.copy+"-revision-"+pair.revision+".json");setDisabled(raw);box.append(raw);
         if(!rows.some(r=>r.copy==='current')){
-          const restore=document.createElement("button");restore.textContent=label+"から編集用の保存を復元";box.append(restore);
+          const restore=document.createElement("button");restore.textContent=label+"から編集用の保存を復元";setDisabled(restore);box.append(restore);
           restore.onclick=async()=>{restore.disabled=true;try{
             if(!window.confirm("現在の保存が見つからないため、この控えを編集用の保存として復元します。他の控えは残します。続けますか？")){restore.disabled=false;return;}
             const revision=Math.max(Number(window.localStorage.getItem(window.STAGE_LARGE_PROJECT_STORE.MARKER))||0,...rows.map(r=>r.revision))+1;
@@ -42,20 +48,20 @@
         const docs=[];
         try{if(current)docs.push(JSON.parse(current));}catch(_){unreadable++;}
         try{if(shelf)for(const e of Object.values(JSON.parse(shelf)))if(e?.state)docs.push(e.state);}catch(_){unreadable++;}
-        for(const state of docs){if(!state?.project?.id)continue;const b=document.createElement("button");b.textContent=state.project.title+"（"+label+"）を書き出す";b.onclick=()=>download(state,"gamma-show-"+state.project.id.replace(/[^a-zA-Z0-9_-]/g,"_")+"-"+pair.copy+".json");box.append(b);}
+        for(const state of docs){if(!state?.project?.id)continue;const b=document.createElement("button");b.textContent=state.project.title+"（"+label+"）を書き出す";b.onclick=()=>download(state,"gamma-show-"+state.project.id.replace(/[^a-zA-Z0-9_-]/g,"_")+"-"+pair.copy+".json");setDisabled(b);box.append(b);}
       }
       if(unreadable)status.textContent="一部のショーを読み取れません。原文のまま書き出して保全できます。保存データは変更していません。";
     }catch(_){
       status.textContent="大容量保存を読み取れませんでした。原本を変更していません。";
-      try{const values=Object.fromEntries([...window.STAGE_LARGE_PROJECT_STORE.KEYS,"gamma:shosai-stage-sketch-v1","gamma:shosai-stage-shows-v1"].map(k=>[k,window.localStorage.getItem(k)]));if(Object.values(values).some(v=>v!==null)){const b=document.createElement("button");b.textContent="旧保存領域の原文を書き出す";b.onclick=()=>download({format:"gamma-local-source-recovery-v1",values},"gamma-local-source-recovery.json");box.append(b);}}catch(_){}
+      try{const values=Object.fromEntries([...window.STAGE_LARGE_PROJECT_STORE.KEYS,"gamma:shosai-stage-sketch-v1","gamma:shosai-stage-shows-v1"].map(k=>[k,window.localStorage.getItem(k)]));if(Object.values(values).some(v=>v!==null)){const b=document.createElement("button");b.textContent="旧保存領域の原文を書き出す";b.onclick=()=>download({format:"gamma-local-source-recovery-v1",values},"gamma-local-source-recovery.json");setDisabled(b);box.append(b);}}catch(_){}
     }
   }
   async function legacyConflict(repo,rows,box,status){
     const api=window.STAGE_LARGE_PROJECT_STORE,head=rows.find(r=>r.copy==='current');if(!head)return;
     const before=Object.fromEntries(api.KEYS.map(k=>[k,window.localStorage.getItem(k)]));
     if(!Object.values(before).some(v=>v!==null))return;
-    const raw=document.createElement("button");raw.textContent="旧タブの保存を原文のまま書き出す";raw.onclick=()=>download({format:"gamma-local-source-recovery-v1",values:before},"gamma-legacy-conflict.json");box.append(raw);
-    const resolve=document.createElement("button");resolve.textContent="旧タブの内容を控えに保管して競合を解消";box.append(resolve);
+    const raw=document.createElement("button");raw.textContent="旧タブの保存を原文のまま書き出す";raw.onclick=()=>download({format:"gamma-local-source-recovery-v1",values:before},"gamma-legacy-conflict.json");setDisabled(raw);box.append(raw);
+    const resolve=document.createElement("button");resolve.textContent="旧タブの内容を控えに保管して競合を解消";setDisabled(resolve);box.append(resolve);
     resolve.onclick=async()=>{
       resolve.disabled=true;
       try{
@@ -80,7 +86,7 @@
     const rows = model.scan(), eligible = rows.filter(row => row.kind);
     $("total").textContent = size(rows.reduce((sum, row) => sum + row.bytes, 0));
     $("eligible").textContent = releaseText("{count}件 · {size}", {count:eligible.length, size:size(eligible.reduce((sum, row) => sum + row.bytes, 0))});
-    $("repair").disabled = busy || eligible.length === 0;
+    setDisabled($("repair"), eligible.length === 0);
     const list = $("breakdown"); list.replaceChildren();
     for (const row of rows) {
       if (!row.key.startsWith("gamma:")) continue;
@@ -92,7 +98,7 @@
   async function renderArchives() {
     const records = await model.summaries();
     $("archive-status").textContent = records.length ? releaseText("{count}件をこのブラウザ内に保管しています。復元すると使用量が増えます。", {count:records.length}) : tx("保管済みの控えはありません。");
-    $("export").disabled = busy || !records.length;
+    setDisabled($("export"), !records.length);
     const list = $("archives"); list.replaceChildren();
     for (const record of records) {
       const block = document.createElement("div"); block.className = "copy";
@@ -104,7 +110,7 @@
       if (isOriginal) name.textContent += ` · ${record.archivedAt ? new Date(record.archivedAt).toLocaleString(lang) : tx("保管日時不明（旧保存領域）")}`;
       key.textContent = isShow ? record.projectId : record.key;
       restore.type = "button"; restore.textContent = isShow ? "ショー一覧へ戻す" : tx("元の場所へ戻す");
-      restore.disabled = busy || !record.key.startsWith("gamma:");
+      setDisabled(restore, !record.key.startsWith("gamma:"));
       if (!record.key.startsWith("gamma:")) restore.textContent = "βの控えは書き出しのみ";
       const migrated=window.localStorage.getItem(window.STAGE_LARGE_PROJECT_STORE.MARKER)!==null;
       if((migrated || isOriginal) && record.key.startsWith("gamma:")) restore.textContent=tx("控えを書き出す");
@@ -122,7 +128,7 @@
       if (isOriginal) {
         block.dataset.musicOriginal = record.local ? "local" : "archive";
         const remove = document.createElement("button"); remove.type = "button";
-        remove.className = "danger"; remove.textContent = tx("この原本の控えを削除"); remove.disabled = busy;
+        remove.className = "danger"; remove.textContent = tx("この原本の控えを削除"); setDisabled(remove);
         remove.addEventListener("click", () => run(async () => {
           const original = await model.originalRecord(record);
           if (!original || original.archivedAt !== record.archivedAt) throw new Error("CONCURRENT_EDIT");
@@ -180,7 +186,7 @@
       const name = document.createElement("p"), button = document.createElement("button");
       name.textContent = `${show.title}${show.version ? ` · ${show.version}` : ""} · ${size(show.bytes)}`
         + (show.canArchive ? "" : " · 音源参照があるため保管できません");
-      button.type = "button"; button.textContent = "このショーを保管して空きを作る"; button.disabled = busy || !show.canArchive;
+      button.type = "button"; button.textContent = "このショーを保管して空きを作る"; setDisabled(button, !show.canArchive);
       button.addEventListener("click", () => run(async () => {
         setResult(`「${show.title}」を保管し、内容を確認しています…`);
         const result = await model.archiveInactiveShow(show.id);
@@ -209,21 +215,21 @@
         block.className = "copy"; block.dataset.fixedRelease = candidate.id;
         detail.textContent = fixedReleaseDetail(candidate); detail.style.whiteSpace = "pre-line";
         button.type = "button"; button.dataset.releaseReview = "";
-        button.textContent = tx("解除内容を確認"); button.disabled = busy;
+        button.textContent = tx("解除内容を確認"); setDisabled(button);
         button.onclick = () => run(async () => {
-          if (!await confirmFixedRelease(candidate, button)) return;
+          if (!await confirmFixedRelease(candidate)) return;
           const released = await model.releaseFixedCopy(candidate, {confirmed:true, preservation:"unreferenced", editingTabsClosed:true});
           setResult(tx(released.audioBytes < candidate.audioBytes
             ? "固定控えを解除しました。参照を再確認できなかった音源は残しています。使用量を確認し直してください。"
             : "選んだ固定控えと専用音源を解除しました。他のショーと参照中の音源は保持しています。"));
-        }, true);
+        }, true, {id:candidate.id, index:[...list.querySelectorAll('[data-release-review]')].indexOf(button)});
         block.append(detail, button); list.append(block);
       }
     } catch (_) {
       status.textContent = tx("参照を確認できない保存があります。固定控えと音源は変更していません。");
     }
   }
-  function confirmFixedRelease(candidate, returnFocus) {
+  function confirmFixedRelease(candidate) {
     return new Promise(resolve => {
       const dialog = $("fixed-release-dialog"), cancel = $("fixed-release-cancel"), confirm = $("fixed-release-confirm");
       const tabs = $("fixed-release-tabs-closed"), original = $("fixed-release-original-confirmed");
@@ -233,7 +239,7 @@
       const update = () => { confirm.disabled = !tabs.checked || !original.checked; };
       const finish = result => {
         dialog.close(); tabs.onchange = original.onchange = cancel.onclick = confirm.onclick = dialog.oncancel = null;
-        returnFocus.focus(); resolve(result);
+        resolve(result);
       };
       tabs.onchange = original.onchange = update;
       cancel.onclick = () => finish(false);
@@ -247,15 +253,34 @@
     renderInactiveShows();
     await renderFixedReleases();
     try { await renderArchives(); }
-    catch (_) { $("archive-status").textContent = "保管先を開けませんでした。現在の保存データは変更していません。"; $("export").disabled = true; }
+    catch (_) { $("archive-status").textContent = "保管先を開けませんでした。現在の保存データは変更していません。"; setDisabled($("export"), true); }
+    await largeCopies();
   }
-  async function run(action, fixedRelease = false) {
+  function restoreFixedReleaseFocus(target) {
+    const buttons = [...$("fixed-release-list").querySelectorAll('[data-release-review]')].filter(button => !button.disabled);
+    const same = buttons.find(button => button.closest('[data-fixed-release]').dataset.fixedRelease === target.id);
+    // Refresh replaces the old button. Match the stable candidate ID first;
+    // only a vanished candidate falls back to the nearest remaining operation.
+    const nearest = buttons[Math.min(target.index, buttons.length - 1)];
+    (same || nearest || $("refresh")).focus();
+  }
+  async function run(action, fixedRelease = false, returnFocus = null) {
     if (busy) return;
     busy = true;
-    document.querySelectorAll("button").forEach(button => { button.disabled = true; });
+    availability = new Map(Array.from(document.querySelectorAll("button"), button => [button, button.disabled]));
+    availability.forEach((_, button) => { button.disabled = true; });
     try { await action(); }
     catch (error) { setResult(tx(fixedRelease || error.message?.startsWith("RELEASE_") ? "固定控えの解除を完了できませんでした。使用量を確認し直してください。参照中の音源は削除しません。" : explanation(error))); }
-    finally { busy = false; $("refresh").disabled = false; await refresh(); }
+    finally {
+      try { await refresh(); }
+      catch (error) { setResult(tx(explanation(error))); }
+      finally {
+        busy = false;
+        availability.forEach((disabled, button) => { if (button.isConnected) button.disabled = disabled; });
+        availability = null;
+        if (returnFocus) restoreFixedReleaseFocus(returnFocus);
+      }
+    }
   }
   try {
     const api = window.STAGE_STORAGE_RECOVERY;

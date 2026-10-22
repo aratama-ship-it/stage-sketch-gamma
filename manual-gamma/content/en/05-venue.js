@@ -23,7 +23,7 @@ ${fig("30-tab-venue", "The Theatre settings tab: presets and steps on the left, 
         id: "venue-presets", title: "Choosing a theatre (35 presets, size, double-click)", status: "verified",
         keywords: ["preset", "venue type", "size", "proscenium", "thrust", "black box", "big top", "tent", "arena", "dome", "in the round", "kabuki", "noh", "theatre tram", "tohu", "cirque d'hiver", "real venue", "choose", "apply"],
         html: `
-<p>Choose a type in ${ui("Venue type presets")} at the top left and a size in ${ui("Size")}. Dimensions such as “proscenium width 12.4 m · depth 9.6 m · height 7.2 m · about 800 seats” appear below, and the plan and preview update.</p>
+<p>Choose a type in ${ui("Theatre type presets")} at the top left and a size in ${ui("Size")}. Dimensions such as “proscenium width 12.4 m · depth 9.6 m · height 7.2 m · about 800 seats” appear below, and the plan and preview update.</p>
 <ul>
 <li>There are 35 presets (according to the developer's records): proscenium, thrust, black box, big top (touring tent), outdoor stage, arena, dome and in-the-round, Japanese forms such as a kabuki stage and a noh stage, and real venues such as Theatre Tram, TOHU and Cirque d'Hiver. Sources and accuracy vary, and <strong>some dimensions are provisional</strong> (17 of the 35, by the same records). Always check against the venue's own documents.</li>
 <li>Press ${ui("Apply the preset")} at the end of the list, or double-click an entry, to load that preset's shape into the plan (v0.2.14).</li>

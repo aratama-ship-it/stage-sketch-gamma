@@ -35,11 +35,15 @@ window.SHOSAI_DOWNLOAD["en"] = {
   "step1": "Download the latest zip from GitHub Releases.",
   "step2": "Unzip the file.",
   "step3": "Replace your current 舞台スケッチγ.app with the new app in Applications or on the desktop.",
-  "step4": "On first launch, right-click the app and choose Open.",
+  "step4": "Do not choose “Move to Trash”. When you first open the app and an alert says Apple cannot verify it, choose “Done”.",
+  "step5": "Open System Settings → “Privacy & Security”, scroll down to the message that the app was blocked to protect your Mac, and choose “Open Anyway”.",
+  "step6": "Authenticate with your Mac password or Touch ID.",
+  "step7": "Open the app again and choose “Open Anyway” in the confirmation.",
+  "step8": "From the second launch, open the app normally. If the same alert appears after an update, follow these steps again.",
   "storage": "About saved data",
   "storageNote": "Shows are saved in project files (.stageproj), separately from the app. Replacing the app leaves your saved files in place. For shows in the previous WebView storage, open Previous shows and save them as project files to migrate them.",
   "browser": "Open the browser edition",
-  "unsigned": "Unsigned, unnotarised builds require right-clicking the app and choosing Open on first launch."
+  "unsigned": "Do not choose “Move to Trash”. If an unsigned, unnotarised build shows an alert on first launch, choose “Done”, then use “Open Anyway” in System Settings → “Privacy & Security”."
 };
 
 // B70 A5-07: download guidance copy; the passphrase controls display only.

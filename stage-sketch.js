@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.82";
+  const GAMMA_APP_VERSION = "v0.3.83";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -260,7 +260,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     };
     const writePair = async ({ beforeCurrent, beforeShelf, serializedCurrent, serializedShelf, currentFirst = false, guard = () => true }) => {
       if (!guard()) return fail("CANCELLED");
-      let failure;
+      let failure, flushed = false;
       try {
         // The usual path releases the target from the shelf first. If the
         // target is smaller, a verified recovery journal permits the reverse
@@ -274,12 +274,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
           if (storage.getItem(currentKey) !== serializedCurrent || storage.getItem(shelfKey) !== serializedShelf) failure = "PARTIAL_WRITE";
         } catch (_) { failure = "PARTIAL_WRITE"; }
       }
-      if (!failure) { try { await storage.flush?.(); } catch (error) { failure = classify(error); } }
+      if (!failure) { try { await storage.flush?.(); flushed = true; } catch (error) { failure = classify(error); } }
       if (!failure && !guard()) failure = "CANCELLED";
       if (!failure) return { ok: true };
-      return restorePair({beforeCurrent, beforeShelf, failure});
+      return restorePair({beforeCurrent, beforeShelf, failure, flushRestored: flushed});
     };
-    const restorePair = async ({beforeCurrent, beforeShelf, failure, shelfFirst = false}) => {
+    const restorePair = async ({beforeCurrent, beforeShelf, failure, shelfFirst = false, flushRestored = true}) => {
       // Restore each key independently; a failed first restore must not skip the second.
       const pairs = [[currentKey, beforeCurrent], [shelfKey, beforeShelf]];
       if (shelfFirst) pairs.reverse();
@@ -295,7 +295,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       try { restored = storage.getItem(currentKey) === beforeCurrent && storage.getItem(shelfKey) === beforeShelf; } catch (_) {}
       // A cancelled guarded switch may already have flushed its candidate.
       // Make the restored pair durable before releasing the storage queue.
-      if (restored && failure === "CANCELLED") {
+      if (restored && failure === "CANCELLED" && flushRestored) {
         try { await storage.flush?.(); restored = unchanged({beforeCurrent, beforeShelf}); } catch (_) { restored = false; }
       }
       halted = failure === "PARTIAL_WRITE" || !restored;
@@ -431,7 +431,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         delete previous.shelf[nextProjectId];
         const serializedShelf = JSON.stringify(previous.shelf);
         let result = await writePair({ ...previous, serializedCurrent: nextSerializedState, serializedShelf, guard });
-        if (!result.ok && result.error.code === "QUOTA_EXCEEDED" && result.error.restored
+        if (!result.ok && result.error.code === "QUOTA_EXCEEDED" && result.error.restored && !storage.atomicProjectPair
             && previous.beforeCurrent && nextSerializedState.length < previous.beforeCurrent.length
             && typeof backup?.beginPendingSwitch === "function"
             && typeof backup?.clearPendingSwitch === "function") {
@@ -2512,7 +2512,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-21`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-22`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -6236,6 +6236,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const baseV = clamp(finite(piece && piece.v, 0.6), 0, 1);
     const src = raw && typeof raw === "object" ? raw : {};
     return {
+      ...projectIoClone(!Array.isArray(src) ? src : {}),
       // 灯体の平面位置。既定は落とす場所の真上（＝直下型）
       u: clamp(finite(src.u, baseU), -0.3, 1.3),
       v: clamp(finite(src.v, baseV), -0.3, 1.3),
@@ -6403,6 +6404,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const u = clamp(finite(raw.u, 0.5), -0.5, 1.5);   // 行き先は袖でもよい
     const v = clamp(finite(raw.v, 0.5), -0.5, 1);
     return {
+      ...projectIoClone(!Array.isArray(raw) ? raw : {}),
       u, v,
       bu: clamp(finite(raw.bu, 0.5), -0.2, 1.2),
       bv: clamp(finite(raw.bv, 0.5), -0.2, 1.2),
@@ -6860,6 +6862,20 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     "poleSide", "poleH", "tissueH", "trapMode", "diaboloMode", "seriH", "rigH", "spin", "spinRate", "tilt", "deckH",
     "curtainKind", "open", "sheer", "imageId", "water", "poolH", "glow", "beam", "route", "locked", "name"];
 
+  // 既知の非保存属性は従来どおり登録・復元側に任せる。未知属性は登録から
+  // 再構成できないので、舞台裏への移動と読込の両方で独立した複製を控える。
+  const STASH_REBUILT_KEYS = new Set(["id", "castId", "setId", "originId", "color", "dims", "propShape",
+    "base", "supportId", "heldBy", "holdSide", "holdMode", "build", "transitionGait", "lightBehavior", "cueSheet",
+    "x", "y", "_effectivePlacement", "_formationPlayback"]);
+
+  function stashFields(piece) {
+    const kept = projectIoClone(piece);
+    Object.keys(kept).forEach((key) => {
+      if (!STASH_KEYS.includes(key) && (STASH_REBUILT_KEYS.has(key) || TRANSIENT_PIECE_KEY.test(key))) delete kept[key];
+    });
+    return kept;
+  }
+
   function normalizeStash(raw) {
     const out = {};
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
@@ -6869,8 +6885,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       /* 一度きちんとした駒として通してから、控える分だけを抜き直す。
          前の版が丸ごと控えていた保存も、ここで同じ形に揃う。 */
       const full = normalizePiece(piece, 0);
-      const kept = {};
-      STASH_KEYS.forEach((key) => { if (full[key] !== undefined) kept[key] = full[key]; });
+      const kept = stashFields(full);
       out[setId] = kept;
     });
     return out;
@@ -6884,7 +6899,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (!raw || typeof raw !== "object") return null;
     const id = typeof raw.id === "string" && raw.id ? raw.id : "";
     if (!id) return null;
-    return { id, bright: clamp(finite(raw.bright, 100), 20, 180) };
+    return { ...projectIoClone(!Array.isArray(raw) ? raw : {}), id, bright: clamp(finite(raw.bright, 100), 20, 180) };
   }
 
   const PHOTO_MAX_BYTES = 1.6 * 1024 * 1024;   // 1枚あたりの上限
@@ -7175,7 +7190,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
                 groupLabel: typeof t.groupLabel === "string" ? t.groupLabel.slice(0, 24) : "",
                 presetDia: t.presetDia === undefined ? undefined : clamp(finite(t.presetDia, 4), 0.3, 20),
                 preset: (t.preset && typeof t.preset === "object")
-                  ? { u: clamp(finite(t.preset.u, 0.5), -0.5, 1.5),
+                  ? { ...projectIoClone(!Array.isArray(t.preset) ? t.preset : {}),
+                    u: clamp(finite(t.preset.u, 0.5), -0.5, 1.5),
                     v: clamp(finite(t.preset.v, 0.5), -0.5, 1),
                     beam: normalizeBeam(t.preset.beam, t.preset) }
                   : undefined,
@@ -11396,10 +11412,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (els.saveStatus) els.saveStatus.dataset.savedShowTitle = title;
   }
 
-  function syncSaveLocationNotice() {
-    const notice = document.getElementById("stage-save-location-notice");
-    if (!notice) return;
-    const status = nativeProject ? nativeProject.saveNoticeState : "browser";
+  function saveLocationMessage(status) {
     const messages = {
       browser: "描いたものはこの端末のブラウザにだけ保存されます。設定や容量で消えることがあるので、区切りごとに「書き出す」からファイルへ控えを取ってください。",
       unconfirmed: "Mac のプロジェクトへの保存状態を確認できません。「保存」で保存先と結果を確認してください。",
@@ -11410,8 +11423,15 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       failed: "プロジェクトへの保存に失敗しました。現在のショーを開いたまま、保存先を確認してもう一度保存してください。",
       hold: "原本を保全するため、書き込みを保留しています。「保存」で別の保存先を選んでください。",
     };
+    return tx(messages[status] || messages.unconfirmed);
+  }
+
+  function syncSaveLocationNotice() {
+    const notice = document.getElementById("stage-save-location-notice");
+    if (!notice) return;
+    const status = nativeProject ? nativeProject.saveNoticeState : "browser";
     notice.dataset.saveState = status;
-    notice.textContent = tx(messages[status] || messages.unconfirmed)
+    notice.textContent = saveLocationMessage(status)
       + (nativeProject ? " " + tx("表示設定はこの Mac に保存され、ショーのファイルとは別に管理されます。") : "");
   }
 
@@ -11437,8 +11457,13 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     } else if (payload.state === "saved") {
       nativeSaveWarning = null;
       const band = document.getElementById("stage-storage-band"); if (band) band.hidden = true;
-      state.lastSavedAt = payload.at; syncSaveStamps();
-      setSaveStatus(tx("プロジェクトを保存しました。"), "saved");
+      // AppKit's untitled recovery copy is not a user-selected project file.
+      // Use the bridge's ownership/hasFile verdict, as the settings notice does.
+      const status = nativeProject ? nativeProject.saveNoticeState : "unconfirmed";
+      if (status === "saved") {
+        state.lastSavedAt = payload.at; syncSaveStamps();
+        setSaveStatus(tx("プロジェクトを保存しました。"), "saved");
+      } else setSaveStatus(saveLocationMessage(status), "info");
     } else if (payload.state === "saving") {
       const receiptOwner = nativeProject?.identity();
       nativeSavingTimer = setTimeout(() => {
@@ -11503,6 +11528,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       reportProjectStoreFailure(result);
       return result;
     };
+    if (largeProjectStorage?.status().retryable) {
+      await ProjectStore.whenIdle();
+      try { await largeProjectStorage.retry(); }
+      catch (error) { return failed(error.code || "WRITE_FAILED"); }
+    }
     if (saveProtectionCode()) return failed(saveProtectionCode());
     persistSoon();
     await flushAutosave();
@@ -21331,7 +21361,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
     const fileInput = document.createElement("input");
     fileInput.type = "file";
-    fileInput.accept = ".stagesketch,.json,.stageproj.zip,.zip,application/json,application/zip";
+    fileInput.accept = ".stagesketch,.json,.stageproj,.stageproj.zip,.zip,application/json,application/zip";
     fileInput.className = "stage-phone-file-input";
     fileInput.hidden = true;
     fileInput.setAttribute("aria-hidden", "true");
@@ -24558,8 +24588,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   function stashPiece(scene, key, piece) {
     if (!scene || !key || !piece) return;
     if (!scene.stashed || typeof scene.stashed !== "object") scene.stashed = {};
-    const kept = {};
-    STASH_KEYS.forEach((key) => { if (piece[key] !== undefined) kept[key] = piece[key]; });
+    const kept = stashFields(piece);
     scene.stashed[key] = kept;
   }
 
@@ -34689,8 +34718,32 @@ ${propsPlotHtml}
     return window.SHOSAI_STAGE_REHEARSAL_EXPORT || null;
   }
 
+  // The converter is unused during startup. Keep the existing export entry and
+  // converter intact; concurrent opens share one fetch and failures can retry.
+  let rehearsalExporterLoad = null;
+  function loadRehearsalExporter() {
+    if (rehearsalExporter()) return Promise.resolve(rehearsalExporter());
+    if (rehearsalExporterLoad) return rehearsalExporterLoad;
+    rehearsalExporterLoad = new Promise((resolve) => {
+      const script = document.createElement("script");
+      const finish = (ok) => {
+        clearTimeout(timer);
+        script.onload = script.onerror = null;
+        if (!ok) script.remove();
+        resolve(ok ? rehearsalExporter() : null);
+      };
+      const timer = setTimeout(() => finish(false), 30000);
+      script.onload = () => finish(Boolean(rehearsalExporter()));
+      script.onerror = () => finish(false);
+      script.src = "stage-rehearsal-export.js?v=2026091501";
+      document.head.append(script);
+    }).finally(() => { rehearsalExporterLoad = null; });
+    return rehearsalExporterLoad;
+  }
+
   function refreshRehearsalExport() {
     const api = rehearsalExporter();
+    if (!api && rehearsalExporterLoad) return null;
     if (!api || !els.rehearsalCheck) {
       if (els.rehearsalCheck) {
         els.rehearsalCheck.textContent = tx("稽古用JSONの変換器を読み込めませんでした。");
@@ -34764,7 +34817,7 @@ ${propsPlotHtml}
     return inspection;
   }
 
-  function openRehearsalExport() {
+  async function openRehearsalExport() {
     if (!els.rehearsalExportModal) return;
     if (els.rehearsalSoundtrack) {
       els.rehearsalSoundtrack.value =
@@ -34773,6 +34826,15 @@ ${propsPlotHtml}
     if (els.rehearsalAllowUnsupported) els.rehearsalAllowUnsupported.checked = false;
     els.rehearsalExportModal.hidden = false;
     if (els.rehearsalExportBackdrop) els.rehearsalExportBackdrop.hidden = false;
+    if (!rehearsalExporter()) {
+      if (els.rehearsalExportRun) els.rehearsalExportRun.disabled = true;
+      if (els.rehearsalCheck) {
+        els.rehearsalCheck.replaceChildren();
+        els.rehearsalCheck.setAttribute("aria-busy", "true");
+      }
+      await loadRehearsalExporter();
+      els.rehearsalCheck?.removeAttribute("aria-busy");
+    }
     refreshRehearsalExport();
   }
 
@@ -34916,7 +34978,7 @@ ${propsPlotHtml}
       announce(tx("ファイルを読み込むには舞台か劇場設定を開いてください。")); return;
     }
     const file = files[0];
-    if (/\.(json|stagesketch|zip)$/i.test(file.name)) { importProject(file); return; }
+    if (/\.(json|stagesketch|stageproj|zip)$/i.test(file.name)) { importProject(file); return; }
     if (!file.type.startsWith("image/")) { announce(tx("ショーのJSONか画像ファイルを置いてください。")); return; }
     const project = state.project, sceneId = sc().id;
     let destination = currentWorkspaceMode() === "venue-setup" ? "plan" : "background";
@@ -35060,6 +35122,10 @@ ${propsPlotHtml}
     if (typeof nativeProject !== "undefined" && nativeProject) { nativeProject.request("requestOpen"); return; }
     if (!file) return;
     if (/\.zip$/i.test(file.name)) return importProjectPackage(() => window.STAGE_PROJECT_FILE.unpack(file));
+    if (/\.stageproj$/i.test(file.name)) return importProjectPackage(async () => {
+      if (!await window.STAGE_PROJECT_FILE.isZipImport(file)) throw new Error("invalid-zip");
+      return window.STAGE_PROJECT_FILE.unpack(file);
+    });
     try { window.STAGE_DATA_SAFETY.assertJsonFileSize(file); }
     catch (error) { importFailureNotice(error.message); return; }
     const reader = new FileReader();
@@ -37205,15 +37271,9 @@ ${propsPlotHtml}
     return (target && target.label) || "この劇場";
   }
 
-  /* シーン番号（表示用）。ショー地図・キューシートと同じ「セクションを除いた通し番号」で数える。 */
+  /* 警告・印刷・CSVも、通常の一覧と同じセクション付き番号をシーンIDで引く。 */
   function sceneDisplayNumber(sceneId) {
-    let n = 0;
-    for (const row of state.project.scenes || []) {
-      if (row.kind === "section") continue;
-      n += 1;
-      if (row.id === sceneId) return String(n);
-    }
-    return "";
+    return sceneNumberMap(state.project.scenes).get(sceneId) || "";
   }
 
   function venueSwitchIssueSummary(issues) {
@@ -37249,10 +37309,20 @@ ${propsPlotHtml}
     return `<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>${escapeHtml(payload.venueLabel)} — 壊れるシーン</title>
 <style>body{font:14px/1.6 "Hiragino Kaku Gothic ProN",sans-serif;margin:24px;color:#222}
 h1{font-size:18px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:6px 8px;text-align:left;vertical-align:top;font-size:13px}
-th{background:#eee}@media print{body{margin:8mm}}</style></head>
-<body><h1>${escapeHtml(payload.venueLabel)} へ替えると壊れるシーン</h1>
+th{background:#eee}#venue-report-print{min-width:44px;min-height:44px;padding:6px 16px;font:inherit;color:#222;background:#fff;border:1px solid #999;cursor:pointer}
+@media print{body{margin:8mm}#venue-report-print{display:none}}</style></head>
+<body><button type="button" id="venue-report-print">${escapeHtml(tx("印刷"))}</button><h1>${escapeHtml(payload.venueLabel)} へ替えると壊れるシーン</h1>
 <table><thead><tr><th>シーン</th><th>題</th><th>影響</th></tr></thead><tbody>${rows}</tbody></table>
 <p>反映は止まりません。目安としてご覧ください。自動では直しません。</p>
+<script>
+document.getElementById("venue-report-print").addEventListener("click", function () { window.print(); });
+document.addEventListener("keydown", function (event) {
+  if ((event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && !event.repeat && !event.isComposing && event.key.toLowerCase() === "p") {
+    event.preventDefault();
+    window.print();
+  }
+});
+<\/script>
 </body></html>`;
   }
 
@@ -37559,7 +37629,8 @@ th{background:#eee}@media print{body{margin:8mm}}</style></head>
             'write-failed':"ファイルへの保存で止まりました。",receipt:"保存記録の確認で止まりました。",
             'destination-exists':"同名のファイルがあります。別の保存先を選んでください。",
             timeout:"待ち時間を超えました。",expired:"待ち時間を超えました。"})[receipt.stage] || "保存の準備で止まりました。");
-          throw Error(`${message}${phase ? ' ' + phase : ''}${location}`);
+          const detail = typeof receipt.detail === 'string' ? receipt.detail.trim() : '';
+          throw Error(`${message}${phase ? ' ' + phase : ''}${detail ? ' ' + detail : ''}${location}`);
         }
         announce(tx("劇場をプロジェクトへ保存し、読戻しを確認しました。"));
       } else {
@@ -45702,6 +45773,9 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
           setTransitioning: setNativeDocumentTransitioning,
           commitTransition: commitNativeDocumentTransition,
           beforeQuit: () => window.GAMMA_FIELD_RUNS?.beforeQuit(),
+          draftRecoveryNotice: payload => importFailureNotice(payload.unavailable
+            ? tx("復旧台帳を確認できません。原文は上書きしていません。")
+            : tx("旧版の照明の控えを文書{count}件分保全しました。「控え・書き出し」から取り出せます。").replace("{count}", payload.archivedOwners)),
           saveState: nativeProjectSaveState,
           saveNoticeChanged: syncSaveLocationNotice,
           error: () => importFailureNotice(tx("プロジェクトを開くか保存する処理を完了できませんでした。元ファイルは保持しています。")),
@@ -46151,8 +46225,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   }
   let gammaStorageChanged = false;
   window.addEventListener("gamma-project-storage-failed", event => {
-    gammaStorageChanged = true;
-    alternativesStorageBlocked = true;
+    if (!largeProjectStorage?.status().retryable) {
+      gammaStorageChanged = true;
+      alternativesStorageBlocked = true;
+    }
     reportProjectStoreFailure({error:{code:event.detail?.name === "QuotaExceededError" || event.detail?.name === "NS_ERROR_DOM_QUOTA_REACHED" ? "QUOTA_EXCEEDED" : (event.detail?.code || "WRITE_FAILED")}});
   });
   window.addEventListener("storage", event => {
@@ -46372,6 +46448,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       fixtureAlternatives:fixtureAlternatives.slice().sort((a,b)=>(a.sceneId+"/"+a.itemId).localeCompare(b.sceneId+"/"+b.itemId))}));
     return { ...identity, contextRevision:lightingContextGeneration, adoptedAlternativeVector, nativeDocument:Boolean(nativeProject),
       draftOwnerId:nativeProject?.draftOwnerId,draftRecords:nativeProject?.draftRecords,
+      draftRecoveryUnavailable:nativeProject?.draftRecoveryUnavailable,
       browserDraftScope:nativeProject ? null : browserDraftScope(state.project.id),alternativeVector, baseBasis,
       showId: state.project.id, title: state.project.title, stage, scenes, venueMask, frontSeats, frontCurtains,
       // Detached edit copies; these are not part of the lighting file or storage schema.
@@ -46419,6 +46496,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
   window.GAMMA_LIGHT_HOST = Object.freeze({
     context: gammaLightingContext,
     recoveryDrafts:()=>nativeProject?.draftRecoveryEntries || [],
+    readRecoveryDraft:(owner,vector)=>nativeProject?.readRecoveryDraft(owner,vector) ?? Promise.resolve(null),
     retainDraft:(raw,vector,owner)=>nativeProject?.retainDraft(raw,vector,owner) ?? Promise.resolve(false),
     readSceneStepPrevious,
     readPlaybackPreview: readLightingPlaybackPreview,

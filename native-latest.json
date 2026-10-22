@@ -1,9 +1,9 @@
 {
-  "version": "0.3.82",
+  "version": "0.3.83",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.82/stage-sketch-gamma-mac-0.3.82.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.83/stage-sketch-gamma-mac-0.3.83.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "同じ作品の別ファイルを開いたときに照明草稿や取り消し履歴が混ざらないようにし、文書の切替を取り消したときは元の文書と編集状態を保つようにしました。劇場の変更は別の保存先へ保存し、内容を読み直してから切り替えます。確定済みの劇場は新版を作り、初回の設定は版を増やしません。編集メニューの「取り消す」・やり直しを照明や劇場の編集中の内容にも合わせ、環境設定では保存状態に応じて保存先の確認を案内します。v0.3.82 の更新文草稿です。実 Mac での最終確認は未完了です。",
-  "updated": "2026-10-21",
-  "build": 93
+  "notes": "同じ作品の別ファイルを開いたときの照明草稿と履歴の分離、文書切替を取り消したときの編集状態の保持、劇場の新版を別の保存先へ保存する手順、編集メニューの「取り消す」・やり直し、保存先を確かめる案内を引き続き整えています。今回は、同じ起動中に元のファイルへ戻り、照明草稿と編集の基準が変わっていない場合に、取り消し・やり直しの履歴も戻るようにしました。情報パネルでは保存先が未確定の状態を保存済みと表示しません。v0.3.83 の更新文草稿です。実 Mac での最終確認は未完了です。\n\n既知の注意: 以前の Mac 版へ戻す場合は、照明草稿の控えの引き継ぎに確認が必要です。",
+  "updated": "2026-10-22",
+  "build": 94
 }

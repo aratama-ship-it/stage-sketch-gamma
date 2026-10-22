@@ -77,7 +77,7 @@
   const basis=value=>value?.baseBasis || value?.basis;
   const runtimeKey=value=>JSON.stringify([value?.documentSessionId || value?.showId,vector(value)]);
   const drafts=new Map();
-  let contextGeneration=0;
+  let contextGeneration=0, recoveredWithoutHistory=false, recoveryReturn=null, recoveryNotice=null;
   const ownerOf=value=>value?.documentSessionId ? {
     alternativeVector:value.alternativeVector,
     documentSessionId:value.documentSessionId,pageGeneration:value.pageGeneration,
@@ -103,10 +103,11 @@
     if(!context || loading)return;
     drafts.set(runtimeKey(context),{baseBasis:basis(context),contextGeneration,context:structuredClone(context),
       raw:state.dirty ? draftRecordRaw() : null,editor:hooks.captureDocumentState(),appliedExtras:structuredClone(appliedExtras),changedElsewhere,
-      draftState,applyError,appliedNotice,simple:window.GAMMA_SIMPLE_LIGHT_UI?.captureRuntime?.()});
+      draftState,applyError,appliedNotice,recoveredWithoutHistory,simple:window.GAMMA_SIMPLE_LIGHT_UI?.captureRuntime?.()});
   }
   let applyRequest=null,applyTask=null,draftTask=Promise.resolve(true),draftWriteSequence=0;
   function retainNative(raw, owner=context) {
+    if(owner?.nativeDocument && owner.draftRecoveryUnavailable)return Promise.resolve(false);
     if(!owner?.nativeDocument || !owner.draftOwnerId)return Promise.resolve(!owner?.nativeDocument);
     const ticket=++draftWriteSequence,generation=contextGeneration;
     const job=parent.GAMMA_LIGHT_HOST.retainDraft(raw,vector(owner),owner);
@@ -153,9 +154,21 @@
       }
     }
     for(const entry of parent.GAMMA_LIGHT_HOST.recoveryDrafts?.() || [])
-      for(const [v,raw] of Object.entries(entry.records || {}))
-        if(entry.owner!==context.draftOwnerId || v!==vector(context))rows.push({key:entry.locator+' / '+entry.owner+' / '+v,label:entry.locator?.endsWith('.stageproj') ? entry.locator : null,raw});
+      for(const v of entry.vectors || Object.keys(entry.records || {}))
+        if(entry.owner!==context.draftOwnerId || v!==vector(context))rows.push({key:entry.locator+' / '+entry.owner+' / '+v,label:entry.locator?.endsWith('.stageproj') ? entry.locator : null,
+          raw:entry.records?.[v],recoveryOwnerId:entry.owner,recoveryVector:v});
     return rows;
+  }
+  async function readRecoveryRecord(record, consume) {
+    const source=context,generation=contextGeneration,owner=source?.draftOwnerId;
+    if(!source || !hostOwns(source))throw Error(recoveryCopy().readFailed);
+    const raw=typeof record.raw==='string' ? record.raw
+      : await parent.GAMMA_LIGHT_HOST.readRecoveryDraft?.(record.recoveryOwnerId,record.recoveryVector);
+    if(typeof raw!=='string' || generation!==contextGeneration || !sameOwner(source,context)
+        || owner!==context?.draftOwnerId || !hostOwns(source))throw Error(recoveryCopy().readFailed);
+    // Restoration mutates the editor in this same continuation, after its last
+    // ownership check. No caller-await microtask may redirect it to a new owner.
+    return consume ? consume(raw) : raw;
   }
   function restoreRecovery(raw) {
     if(!context || !hostOwns(context) || applying)return false;
@@ -163,6 +176,65 @@
     window.GAMMA_LIGHT_EDITOR.validateImport(design);
     hooks.applyDesign(design,{fixtureAlternatives:draft.fixtureAlternatives || context.fixtureAlternatives});
     appliedExtras=model.clone(design);applyError='';appliedNotice='';saveDraft();return true;
+  }
+  // A durable draft contains design data, never a previous page's Undo bank.
+  // Keep this explanation beside the recovery action until applied or discarded.
+  function confirmReturnToSaved() {
+    const copy=recoveryCopy(),owner=context,generation=contextGeneration;
+    hooks.dialog('<p data-no-i18n>'+copy.returnConfirm+'</p>',[[copy.keepEditing,null,'quiet'],
+      [copy.returnSaved,()=>returnToSaved(owner,generation),'primary']]);
+  }
+  async function returnToSaved(owner,generation) {
+    const current=()=>generation===contextGeneration && sameOwner(owner,context) && hostOwns(owner)
+      && context.draftOwnerId===owner.draftOwnerId && parent.GAMMA_LIGHT_HOST.context().draftOwnerId===owner.draftOwnerId;
+    if(!current() || !recoveredWithoutHistory || applying || changedElsewhere || context.readOnly)return false;
+    clearTimeout(draftTimer);draftTimer=0;
+    applying=true;renderSaveStatus();
+    let nativeArchiveAttempted=false,completed=false,rollbackRaw=null;
+    try {
+      const next=parent.GAMMA_LIGHT_HOST.context();
+      if(basis(next)!==basis(owner))throw Error('host basis changed');
+      const design=model.reconcile(next.design,next),raw=draftRecordRaw(),draftKey=key(owner);
+      const previousRaw=localStorage.getItem(draftKey);
+      rollbackRaw=raw;
+      const unchanged=()=>{
+        if(stableDraftValue(JSON.parse(draftRecordRaw()))!==stableDraftValue(JSON.parse(raw))
+          || localStorage.getItem(draftKey)!==previousRaw || basis(parent.GAMMA_LIGHT_HOST.context())!==basis(owner))throw Error('draft changed');
+      };
+      window.GAMMA_LIGHT_EDITOR.validateImport(design);
+      // Archive/read back before removing the active record. Native nil archives
+      // the original in its private ledger; neither path edits the saved show.
+      const archiveKey=draftKey+':conflict:'+Date.now();
+      localStorage.setItem(archiveKey,raw);
+      if(localStorage.getItem(archiveKey)!==raw)throw Error('archive readback');
+      if(!await retainNative(raw,owner))throw Error('native draft checkpoint');
+      if(!current())return false;
+      // A rebuilt ledger-only draft has a fresh savedAt, not a fresh edit.
+      // Reject real changes before clearing the active native recovery record.
+      unchanged();nativeArchiveAttempted=true;
+      if(!await retainNative(null,owner))throw Error('native archive');
+      if(!current())return false;
+      unchanged();
+      markLegacyConsumed();localStorage.removeItem(draftKey);
+      loading=true;
+      hooks.applyDesign(design,{host:true,fixtureAlternatives:next.fixtureAlternatives || []});
+      hooks.markApplied();appliedExtras=model.clone(design);context=next;
+      drafts.delete(runtimeKey(next));recoveredWithoutHistory=false;
+      changedElsewhere=false;applyError='';appliedNotice='';draftState='none';
+      synchronizePieces(next);synchronizeVenueMask(next);synchronizeFrontSeats(next);
+      window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);hooks.renderAll();completed=true;return true;
+    } catch(_) {
+      if(current())message(recoveryCopy().returnFailed);
+      return false;
+    } finally {
+      // An edit can arrive while nil is in flight. Restore active recovery on
+      // failure, addressed to the original owner (the bridge still checks it).
+      if(nativeArchiveAttempted && !completed)try {
+        if(current())rollbackRaw=draftRecordRaw();
+        if(!await retainNative(rollbackRaw,owner) && current())draftState='failed';
+      } catch(_) {if(current())draftState='failed';}
+      if(generation===contextGeneration && sameOwner(owner,context)){loading=false;applying=false;renderSaveStatus();}
+    }
   }
   function renderSaveStatus() {
     window.dispatchEvent(new Event("gamma-light-history-change"));
@@ -180,11 +252,23 @@
     else if(applyError) {text='適用できませんでした: '+applyError+' · '+draftText;level='warn';}
     else if(state.dirty) {text='未適用 · '+draftText+'。「照明デザイン」の「LXキューを適用」でショーへ適用します。';level=draftState==='failed'?'warn':'info';}
     else if(appliedNotice) {text=appliedNotice;level=appliedNotice.includes('できません')||appliedNotice.includes('整理')?'warn':'info';}
-    if(saveStatus.textContent!==text) saveStatus.textContent=text;
+    const recoveryWarning=context?.nativeDocument && context.draftRecoveryUnavailable
+      ? '復旧台帳を確認できません。原文は上書きしていません。' : '';
+    if(recoveryWarning)level='warn';
+    if(recoveryNotice){recoveryNotice.hidden=!(recoveredWithoutHistory && state.dirty);recoveryNotice.textContent=recoveryCopy().restored;}
+    if(recoveryReturn){recoveryReturn.hidden=!(recoveredWithoutHistory && state.dirty);recoveryReturn.textContent=recoveryCopy().returnSaved;recoveryReturn.disabled=applying || changedElsewhere || !!context?.readOnly;}
+    const statusText=[text,recoveryWarning].filter(Boolean).join(' · ');
+    if(saveStatus.textContent!==statusText) {
+      // Keep existing phrases in separate text nodes so the existing DOM
+      // translator can translate both, including on a later language change.
+      saveStatus.replaceChildren(...[text,...(recoveryWarning ? [text ? ' · ' : '',recoveryWarning] : [])]
+        .filter(Boolean).map(value=>document.createTextNode(value)));
+    }
     saveStatus.dataset.level=level;
-    if(saveRow) saveRow.hidden=!text;
+    if(saveRow) saveRow.hidden=!statusText;
     if(saveControls) saveControls.hidden=level!=='warn';
   }
+  new MutationObserver(()=>renderSaveStatus()).observe(parent.document.documentElement,{attributes:true,attributeFilter:['lang']});
   function arrangeEmbeddedToolbar() {
     const bar=document.querySelector('.figbar'), save=document.getElementById('save');
     if(!bar) return;
@@ -206,7 +290,12 @@
     saveRow=row;saveControls=controls;
     /* 修正バッチ 2026-10-07 #14: 状態（未適用・控え・警告）は図の上ではなく、灯体情報パネルの最下部の
        「操作の結果」（#insp-log）のすぐ上にまとめて出す。出たり消えたりしても図が上下に動かない。 */
-    row.append(saveStatus,controls);
+    recoveryReturn=document.createElement('button');recoveryReturn.type='button';recoveryReturn.className='btn small';
+    recoveryReturn.id='gamma-light-return-saved';recoveryReturn.hidden=true;recoveryReturn.setAttribute('data-no-i18n','');
+    recoveryNotice=document.createElement('p');recoveryNotice.id='gamma-light-recovery-notice';recoveryNotice.hidden=true;
+    recoveryNotice.setAttribute('data-no-i18n','');recoveryNotice.setAttribute('role','status');
+    recoveryReturn.onclick=confirmReturnToSaved;
+    row.append(saveStatus,controls,recoveryNotice,recoveryReturn);
     const log=document.getElementById('insp-log');
     if(log) log.before(row); else bar.after(row);
     renderSaveStatus();
@@ -291,22 +380,25 @@
     const fingerprint=rawFingerprint(raw);localStorage.setItem(legacyConsumedKey(owner),fingerprint);
     return localStorage.getItem(legacyConsumedKey(owner))===fingerprint;
   }
+  const stableDraftValue=value=>JSON.stringify(value,(name,v)=>name==='savedAt'?undefined:v);
   function draftRecordRaw() {
     const candidate={version:1,showId:context.showId,...ownerOf(context),draftOwnerId:context.draftOwnerId,
       alternativeVector:context.alternativeVector,browserDraftScope:context.browserDraftScope,baseBasis:basis(context),contextGeneration,basis:context.basis,
       fixtureAlternatives:state.fixtureAlternatives,design:model.stripPassthrough(build())};
     const existing=localStorage.getItem(key(context));
     if(existing)try {
-      const old=JSON.parse(existing),stable=value=>JSON.stringify(value,(name,v)=>name==='savedAt'?undefined:v);
+      const old=JSON.parse(existing);
       if(old.baseBasis===candidate.baseBasis && old.draftOwnerId===candidate.draftOwnerId
         && (old.browserDraftScope || '')===(candidate.browserDraftScope || '')
-        && stable(old.design)===stable(candidate.design)
-        && stable(old.fixtureAlternatives)===stable(candidate.fixtureAlternatives))return existing;
+        && stableDraftValue(old.design)===stableDraftValue(candidate.design)
+        && stableDraftValue(old.fixtureAlternatives)===stableDraftValue(candidate.fixtureAlternatives))return existing;
     } catch(_) {}
     return JSON.stringify(candidate);
   }
   async function saveAllDraftsDurably() {
     if(!context)return true;
+    if(context.nativeDocument && context.draftRecoveryUnavailable)
+      return !state.dirty && ![...drafts.values()].some(record=>record.context.documentSessionId===context.documentSessionId && record.raw);
     stash();
     const owner=context,generation=contextGeneration;
     try {
@@ -331,6 +423,9 @@
   function saveDraft() {
     if(!state.dirty) return true;
     if(!context || loading || applying || changedElsewhere) return false;
+    if(context.nativeDocument && context.draftRecoveryUnavailable) {
+      draftState='failed';renderSaveStatus();return false;
+    }
     /* stripPassthrough: 劇場プリセットの照明プラン集は編集対象ではないので控えに複製しない
        （2026-09-17。理由は gamma-light-model.js のコメントを参照）。 */
     let saved=false;
@@ -392,9 +487,24 @@
   function synchronizeFrontSeats(next) {
     window.GAMMA_LIGHT_SET_FRONT_SEATS?.(next && next.frontSeats);
   }
+  function retainedDraft(next) {
+    if(next.nativeDocument && next.draftRecoveryUnavailable)return null;
+    const current=drafts.get(runtimeKey(next));
+    if(current)return current;
+    // Opening the same Mac file creates a new NSDocument/session. Only reuse
+    // this page's Undo bank when the shell proves the durable owner and the
+    // entire unchanged draft. Never serialize history or weaken message ownership.
+    if(!next.nativeDocument || !next.draftOwnerId)return null;
+    const raw=localStorage.getItem(key(next)) ?? next.draftRecords?.[vector(next)];
+    if(!raw)return null;
+    return [...drafts.values()].filter(record=>record.context.nativeDocument
+      && record.context.draftOwnerId===next.draftOwnerId && record.context.showId===next.showId
+      && vector(record.context)===vector(next) && record.baseBasis===basis(next)
+      && record.raw===raw).sort((a,b)=>b.contextGeneration-a.contextGeneration)[0] || null;
+  }
   function open(next, mode) {
     if(playbackPreview && sameOwner(context,next)) return false;
-    const retained=drafts.get(runtimeKey(next));
+    const retained=retainedDraft(next);
     if(context && !sameOwner(context,next)) {
       saveDraft();stash();contextGeneration++;applyRequest=null;applyTask=null;applying=false;
       clearTimelineFrame();endPlaybackPreview();
@@ -405,7 +515,7 @@
         hooks.restoreDocumentState(retained.editor);appliedExtras=structuredClone(retained.appliedExtras);
         context={...next,basis:retained.context.basis,baseBasis:retained.baseBasis};
         changedElsewhere=retained.changedElsewhere || retained.baseBasis!==basis(next);
-        draftState=retained.draftState;applyError='';appliedNotice='';active=true;
+        draftState=retained.draftState;recoveredWithoutHistory=!!retained.recoveredWithoutHistory;applyError='';appliedNotice='';active=true;
         synchronizePieces(next);synchronizeVenueMask(next);synchronizeFrontSeats(next);setMode(mode);
         window.GAMMA_SIMPLE_LIGHT_UI?.restoreRuntime?.(retained.simple);
         window.GAMMA_SIMPLE_LIGHT_UI?.onContext(context);hooks.refreshApplyState();renderSaveStatus();
@@ -428,7 +538,8 @@
     try {
       const hostDesign=model.reconcile(next.design,next);
       let design=hostDesign,dirty=false;
-      let raw=localStorage.getItem(key(next)) ?? (next.nativeDocument ? next.draftRecords?.[vector(next)] : null);
+      let raw=next.nativeDocument && next.draftRecoveryUnavailable ? null
+        : localStorage.getItem(key(next)) ?? (next.nativeDocument ? next.draftRecords?.[vector(next)] : null);
       // Only browser shelf documents may fall back to the original v1 key.
       if(!raw && !next.nativeDocument && !next.browserDraftScope && next.alternativeVector && vector(next)===JSON.stringify(next.adoptedAlternativeVector)) {
         const legacyRaw=localStorage.getItem('gamma:lighting-draft-v1:'+next.showId);
@@ -470,6 +581,7 @@
         fixtureAlternatives:raw && JSON.parse(raw).fixtureAlternatives || model.fixtureAlternativeEdits(next.fixtureAlternatives,hostDesign,design)});
       synchronizePieces(next);
       appliedExtras=model.clone(design);context=next;synchronizeVenueMask(next);synchronizeFrontSeats(next);changedElsewhere=false;
+      recoveredWithoutHistory=dirty;
       hooks.refreshApplyState();draftState=state.dirty?'saved':'none';applyError='';appliedNotice='';renderSaveStatus();state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
       lastScene=state.scenes[state.sceneIndex].id;
       state.seq=Date.now(); // avoids collisions with fixture / cue IDs imported from earlier sessions
@@ -478,7 +590,7 @@
       // becomes the applied baseline. A restored draft must keep its differences.
       if(!dirty) hooks.markApplied();
       hooks.refreshApplyState();draftState=state.dirty?'saved':'none';renderSaveStatus();
-      if(dirty) message('適用前の照明を復元しました');
+      if(dirty) message(recoveryCopy().restored);
     } finally {loading=false;window.dispatchEvent(new Event("gamma-light-history-change"));}
   }
   function beginPlaybackPreview() {
@@ -537,10 +649,10 @@
       appliedExtras=model.clone(context.design);hooks.setCueSyncPending(false);hooks.markApplied();
       parent.dispatchEvent(new parent.Event("stage-timeline-cues-change"));
       // Remove only our own draft AFTER durable host acceptance.
-      applyError='';draftState='none';
+      recoveredWithoutHistory=false;applyError='';draftState='none';
       appliedNotice=result.shelfPersisted?'適用済み · 照明をこのブラウザのショーへ保存しました。':'適用済み · ショー一覧の控えを更新できません。ショーをファイルへ書き出してください。';
       if(!ownsRequest(request))return staleResult();
-      try {markLegacyConsumed();localStorage.removeItem(key(context));retainNative(null);} catch {appliedNotice+=' 編集控えの整理は次回行います。';message('照明は保存しました。編集控えの整理は次回行います');}
+      try {if(!(context.nativeDocument && context.draftRecoveryUnavailable)){markLegacyConsumed();localStorage.removeItem(key(context));retainNative(null);}} catch {appliedNotice+=' 編集控えの整理は次回行います。';message('照明は保存しました。編集控えの整理は次回行います');}
       hooks.renderAll();
       message(result.shelfPersisted?'照明デザインをショーへ保存しました':'照明は保存しました。ショー一覧の控えを更新できないため、ショーを書き出してください');
       return result;
@@ -564,9 +676,9 @@
       if(!sameOwner(request.context,result.context))return staleResult();
       context=result.context;appliedExtras=model.clone(design);
       hooks.applyDesign(design);synchronizePieces(context);synchronizeVenueMask(context);hooks.markApplied();
-      applyError='';draftState='none';appliedNotice='適用済み · このブラウザのショーへ保存しました';
+      recoveredWithoutHistory=false;applyError='';draftState='none';appliedNotice='適用済み · このブラウザのショーへ保存しました';
       if(!ownsRequest(request))return staleResult();
-      try {markLegacyConsumed();localStorage.removeItem(key(context));retainNative(null);} catch {}
+      try {if(!(context.nativeDocument && context.draftRecoveryUnavailable)){markLegacyConsumed();localStorage.removeItem(key(context));retainNative(null);}} catch {}
       parent.GAMMA_WORKSPACE.captureHostHistory();hooks.renderAll();
       return result;
     } catch(error) {if(!ownsRequest(request))return staleResult();applyError=error.message;return {persisted:false,error:error.message};}
@@ -639,7 +751,7 @@
     const stamp=JSON.stringify(state.scenes.map(s=>[s.id,(s.lxq||[]).map(q=>[q.id,q.seq,q.no,q.enabled,q.name,q.trigger,q.timing,q.follow])]));
     if(active && stamp!==cuePanelStamp) {cuePanelStamp=stamp;parent.GAMMA_LIGHT_HOST.draftChanged(build());}
     if(state.dirty && !applying) {draftState='pending';renderSaveStatus();}
-    else if(!state.dirty && !applying) {
+    else if(!state.dirty && !applying && !(context.nativeDocument && context.draftRecoveryUnavailable)) {
       clearTimeout(draftTimer);
       try {
         const retained=localStorage.getItem(key(context))!==null || context.draftRecords?.[vector(context)];
@@ -659,7 +771,7 @@
     let draftRecord=null;
     try {if(context)draftRecord={key:key(context),raw:localStorage.getItem(key(context))};} catch(_) {}
     return {drafts:new Map(drafts),editor:hooks.captureDocumentState(),context:context&&structuredClone(context),active,changedElsewhere,draftRecord,
-      appliedExtras:structuredClone(appliedExtras),draftState,applyError,appliedNotice,lastScene,cuePanelStamp,
+      appliedExtras:structuredClone(appliedExtras),draftState,applyError,appliedNotice,recoveredWithoutHistory,lastScene,cuePanelStamp,
       placementUnderlaySnapshot:structuredClone(placementUnderlaySnapshot),
       simple:window.GAMMA_SIMPLE_LIGHT_UI?.captureRuntime?.(),
       dialogHidden:dialog.hidden,dialogChildren:[...dialog.childNodes],
@@ -674,10 +786,10 @@
       drafts.clear();for(const [k,v] of saved.drafts || [])drafts.set(k,v);
       context=saved.context&&structuredClone(saved.context);active=saved.active;changedElsewhere=saved.changedElsewhere;
       appliedExtras=structuredClone(saved.appliedExtras);draftState=saved.draftState;
-      applyError=saved.applyError;appliedNotice=saved.appliedNotice;lastScene=saved.lastScene;cuePanelStamp=saved.cuePanelStamp;
+      applyError=saved.applyError;appliedNotice=saved.appliedNotice;recoveredWithoutHistory=!!saved.recoveredWithoutHistory;lastScene=saved.lastScene;cuePanelStamp=saved.cuePanelStamp;
       placementUnderlaySnapshot=structuredClone(saved.placementUnderlaySnapshot);
       hooks.restoreDocumentState(saved.editor);
-      if(saved.draftRecord?.raw!==null && saved.draftRecord?.key) {
+      if(saved.draftRecord?.raw!==null && saved.draftRecord?.key && !(context?.nativeDocument && context.draftRecoveryUnavailable)) {
         try {localStorage.setItem(saved.draftRecord.key,saved.draftRecord.raw);retainNative(saved.draftRecord.raw);} catch(_) {draftState='failed';}
       }
       document.documentElement.dataset.gammaLightMode=state.mode;
@@ -695,7 +807,7 @@
     clearTimeout(draftTimer);draftTimer=0;clearTimelineFrame();endPlaybackPreview();hooks.stop();
     stash();contextGeneration++;
     applyRequest=null;applyTask=null;applying=false;active=false;context=null;
-    changedElsewhere=false;applyError='';appliedNotice='';draftState='none';
+    changedElsewhere=false;applyError='';appliedNotice='';draftState='none';recoveredWithoutHistory=false;
     state.history=[];state.future=[];hooks.markApplied();
     window.GAMMA_SIMPLE_LIGHT_UI?.clearDocumentContext?.();renderSaveStatus();
   }
@@ -705,7 +817,7 @@
     await draftTask;
     return !applying;
   }
-  window.GAMMA_LIGHT_EDITOR=Object.freeze({draftKey:key,archiveLegacyDraft,recoveryCopy,recoveryRecords,restoreRecovery,saveDraftDurably,saveAllDraftsDurably,open,suspend,apply,applyCandidate,build,saveDraft,captureRuntime,restoreRuntime,waitForApply,commitDocumentTransition,
+  window.GAMMA_LIGHT_EDITOR=Object.freeze({draftKey:key,archiveLegacyDraft,recoveryCopy,recoveryRecords,readRecoveryRecord,restoreRecovery,saveDraftDurably,saveAllDraftsDurably,open,suspend,apply,applyCandidate,build,saveDraft,captureRuntime,restoreRuntime,waitForApply,commitDocumentTransition,
 
     selectCue(sceneId, cueId) { return active && !loading && !playbackPreview && hooks.viewLightCue(sceneId, cueId); },
     async placeCue(placement) {
@@ -733,6 +845,8 @@
     setCueNaming(mode){state.cueNaming=mode==='serial'?'serial':'scene';hooks.renderAll();},
     externalChange(){changedElsewhere=true;hooks.stop();renderSaveStatus();if(state.dirty)message('別のタブでショーが更新されました。編集中の照明は保持しています');},
     status:()=>({baseBasis:basis(context),contextGeneration,alternativeVector:context?.alternativeVector,venueType:context?.venueType,showId:context?.showId,...ownerOf(context),dirty:state.dirty,active,changedElsewhere,applying,applyError,draftState,
+      draftRecoveryUnavailable:!!(context?.nativeDocument && context.draftRecoveryUnavailable),
+      hasUnappliedDrafts:state.dirty || [...drafts.entries()].some(([key,record])=>key!==runtimeKey(context) && record.context.documentSessionId===context?.documentSessionId && record.raw),
       loading,busy:loading||applying,historyBlocked:hooks.historyBlocked(),readOnly:!!context?.readOnly,playbackPreview,previewReady:hooks.playbackPreviewStatus().ready,
       canUndo:!playbackPreview&&Boolean(state.history.length),canRedo:!playbackPreview&&Boolean(state.future.length)})});
 })();

@@ -122,6 +122,9 @@
     if(targetCueId===null)targetCueId=hooks.lxEditingQ(sc())?.id||'';
     const saved=savedCue().simplePreset;
     if(saved&&M.presets.some(p=>p.id===saved.presetId)){selected=saved.presetId;choices.set(choiceKey(),{...M.defaults(selected),...clone(saved.options||{})});}
+    // Restoring a saved look must also reveal its selected card in the catalog.
+    if(!list().some(p=>p.id===selected))category=M.get(selected).category;
+    $('simple-category').value=category;
     const fade=targetQ()?.timing?.fadeInSec;
     if(Number.isFinite(fade))options().fadeSec=fade;
     replaceLook=false;timeEdited=false;preview=!targetQ();error='';thumbKey='';render();

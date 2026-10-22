@@ -230,8 +230,11 @@
       const fromParent = parentModel?.text("ko", key);
       if (fromParent && fromParent !== key) return fromParent;
     } catch (_) { /* A sandboxed viewer frame cannot inspect its parent. */ }
-    const scene = key.match(/^シーン(\d+)「(.*)」 にそろえる$/);
-    if (scene) return "씬 " + scene[1] + " ‘" + scene[2] + "’에 맞추기";
+    // Share the section-aware action formatter, retaining every project title.
+    if (/^シーン\d+(?:-\d+)*「[\s\S]*」 にそろえる$/.test(key)) {
+      const scene = previous ? previous(key, language) : key;
+      if (scene !== key) return scene;
+    }
     const count = key.match(/^(固定灯)?(\d+)(灯|件)(\sまとめて選ぶ|\s列を選ぶ)?$/);
     if (count) return (count[1] ? "고정 조명" : count[3] === "灯" ? "조명" : "항목") + " " + count[2] + "개" + (count[4] ? " · 묶음 선택" : "");
     const suffix = "。「照明デザイン」の「LXキューを適用」でショーへ適用します。";

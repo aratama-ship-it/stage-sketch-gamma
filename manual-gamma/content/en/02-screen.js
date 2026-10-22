@@ -12,7 +12,7 @@
         html: `
 <p>The current scene title uses the space between the buttons; its tooltip contains the full title. If the header runs out of room, TC hides first, then the controls move to a second row if needed. The version remains visible; TC returns when the window widens.</p>
 <p>The header has the logo and version on the left, seven workspace tabs, the TC, volume and tool icons. On narrower windows, control groups move onto the next row. From v0.2.15 the header stays put while the side panels and the central drawings each scroll on their own.</p>
-${fig("release082-header", "The header. Logo and version on the left, tabs at the top right, and on the second row TC, volume, undo/redo, feedback, AI, the gear and the other icons.", "Header layout")}
+${fig("release083-header", "The header. Logo and version on the left, tabs at the top right, and on the second row TC, volume, undo/redo, feedback, AI, the gear and the other icons.", "Header layout")}
 ${table(["Where", "Name", "What it does"], [
   ["Left", "Logo and version", "The version number (for example 0.2.19). Please include it when reporting a problem"],
   ["Top right", "Tabs (Stage / Theatre settings / Equipment placement / Light design / Lines / 3D / Run of show)", "Switch where you are working (" + ref("tabs", "2-2") + ")"],
@@ -28,7 +28,8 @@ ${table(["Where", "Name", "What it does"], [
   ["Tabs", ui("Rehearsal"), "To the right of Run of show. Front and plan views, GO, lighting, work lights and independent run records. Studio and Company only"],
   ["Controls", ui("Sharing"), "Live sharing and performer links on Gamma's dedicated host (" + ref("share", "Part 11, 11-4") + ")"],
   ["Controls", "Bell — " + ui("Notifications and update history"), "What changed in each version. A dot appears when there is something new"]
-])}`
+])}
+<p>In the Mac app, ${ui("Edit")} → ${ui("Undo")} and redo follow the current editor: text while typing, stage edits on Stage, lighting drafts in Equipment placement or Light design, the theatre draft in Theatre settings, or marks on a rehearsal drawing. Each reverses the same single action as the keyboard and on-screen controls. If that editor has no history, the command does not switch to another editor's history. While a confirmation is open, it does not undo edits behind the window (a confirmation's text field keeps its own text editing history).</p>`
       },
       {
         id: "tabs", title: "The seven tabs (number keys 1–5)", status: "verified",
@@ -52,7 +53,7 @@ ${note("In a new show some tabs are closed", "Until the theatre has been applied
         html: `
 <h4>Current display controls</h4><p>Use the show duration to review section totals; missing durations remain unknown. The scene thumbnail setting adds small preview pictures. Apply forward shows existing matching performers in later scenes before applying their position and pose; cancel leaves the show unchanged. A light skin is available in Preferences. Short displays compact the selected-item tools; expand them to reach the full controls.</p>
 <p>The ${ui("Stage")} tab has three columns: panels on the left (show, performers, set pieces, props, stage machinery, lights, backdrop …), the drawings in the middle, and panels on the right (scenes, info, selection, alternatives, dialogue cues …).</p>
-${fig("release082-stage", "The three columns. Lists on the left, the drawings in the middle, the scene list and info on the right.", "Stage tab columns")}
+${fig("release083-stage", "The three columns. Lists on the left, the drawings in the middle, the scene list and info on the right.", "Stage tab columns")}
 <ul>
 <li><strong>Reorder panels</strong> — drag the ⠿ at the left of a panel heading up or down. The other panels slide aside to make room.</li>
 <li><strong>Collapse</strong> — the ▾ at the right of a heading folds the panel. What is folded is saved with the show and goes into exports.</li>
@@ -152,7 +153,7 @@ ${table(["Key", "What it does"], [
     "Shift",
     "Space"
   ],
-  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release082-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release082-stage", "Stage toolbar (v0.3.72).", "stage")
+  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release083-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release083-stage", "Stage toolbar.", "stage")
 }
     ]
   });

@@ -704,18 +704,29 @@
   phrases["見る先を変えました。「一つ戻す」で取り消せます。"]=["Changed where this viewpoint looks. Use Undo to revert.","已更改观看方向。可用“撤销”还原。","已更改觀看方向。可用「復原」還原。"];
   phrases["見る先を舞台の真ん中に戻しました。「一つ戻す」で取り消せます。"]=["This viewpoint looks at the stage centre again. Use Undo to revert.","观看方向已回到舞台中央。可用“撤销”还原。","觀看方向已回到舞台中央。可用「復原」還原。"];
   const codes = ['en','zh-Hans','zh-Hant'];
+  // Scene data stays structured so a user's title can contain any UI separator.
+  const sceneMatchText = (scenes, language = document.documentElement.lang) => {
+    const parentWindow = window.parent !== window ? window.parent : window;
+    const parentModel = parentWindow.SHOSAI_STAGE_I18N_MODEL;
+    const template = source => parentModel?.text(language, source) || parentWindow.SHOSAI_I18N_PACKS?.[language]?.text?.[source] || source;
+    const names = scenes.map(scene => (language === 'ja' ? 'シーン{number}「{name}」' : template('シーン{number}「{name}」'))
+      .replace('{number}', scene.number).replace('{name}', () => scene.name)).join(language === 'ja' ? '・' : ' · ');
+    return (language === 'ja' ? '{scenes} にそろえる' : template('{scenes} にそろえる')).replace('{scenes}', () => names);
+  };
+  window.GAMMA_UI_SCENE_MATCH_TEXT = sceneMatchText;
   const text = (key, language = document.documentElement.lang) => {
+    const parentWindow = window.parent !== window ? window.parent : window;
+    const parentModel = parentWindow.SHOSAI_STAGE_I18N_MODEL;
+    // Legacy single-scene callers retain the entire title, including separators.
+    const match = key.match(/^シーン(\d+(?:-\d+)*)「([\s\S]*)」 にそろえる$/);
+    if (match) return sceneMatchText([{number:match[1],name:match[2]}], language);
     const index = codes.indexOf(language);
     if (index < 0) return key;
     if (phrases[key]) return phrases[key][index];
-    const parentModel = window.parent !== window ? window.parent.SHOSAI_STAGE_I18N_MODEL : window.SHOSAI_STAGE_I18N_MODEL;
     const fallback = parentModel?.text(language,key);
     if (fallback && fallback !== key) return fallback;
-    // UI-only templates. Captured project titles are preserved verbatim.
-    const match = key.match(/^シーン(\d+)「(.*)」 にそろえる$/);
-    if (match) return [ `Match scene ${match[1]} “${match[2]}”`, `与场景 ${match[1]}「${match[2]}」一致`, `與場景 ${match[1]}「${match[2]}」一致` ][index];
     const count = key.match(/^(固定灯)?(\d+)(灯|件)(\sまとめて選ぶ|\s列を選ぶ)?$/);
-    if (count) return [ `${count[2]} ${count[1]?'fixed fixtures':count[3]==='灯'?'fixtures':'items'}${count[4]?' · Select group':''}`, `${count[2]}${count[3]==='灯'?'灯':'项'}${count[4]?' · 选择组':''}`, `${count[2]}${count[3]==='灯'?'燈':'項'}${count[4]?' · 選取群組':''}` ][index];
+    if (count) return [ `${count[2]} ${(count[1]?'fixed fixture':count[3]==='灯'?'fixture':'item')+(Number(count[2])===1?'':'s')}${count[4]?' · Select group':''}`, `${count[2]}${count[3]==='灯'?'灯':'项'}${count[4]?' · 选择组':''}`, `${count[2]}${count[3]==='灯'?'燈':'項'}${count[4]?' · 選取群組':''}` ][index];
     const suffix='。「照明デザイン」の「LXキューを適用」でショーへ適用します。';
     if(key.startsWith('未適用 · ') && key.endsWith(suffix)) return text('未適用',language)+' · '+text(key.slice(6,-suffix.length),language)+text(suffix,language);
     const cleanup=' 編集控えの整理は次回行います。';

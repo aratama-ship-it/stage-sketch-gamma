@@ -26,6 +26,8 @@
   --ink-soft-sm: #93856c;
   --rust-deep: #8f3e1e;
   --brass: #9c823f;
+  /* Small transition labels keep the brass hue with AA contrast on their tinted row. */
+  --brass-ink: #a08845;
   --moss: #77865f;
   --slate: #8b98a1;
   /* docs/storage-pressure-warning.md */
@@ -2753,7 +2755,7 @@ html[data-stage-layout="one"][data-stage-layout-side="right"] .stage-toolbox { d
 }
 
 .stage-scene-transition-point-kicker {
-  color: var(--brass);
+  color: var(--brass-ink);
   font-size: 9px;
   letter-spacing: 0.12em;
   white-space: nowrap;
@@ -2771,6 +2773,8 @@ html[data-stage-layout="one"][data-stage-layout-side="right"] .stage-toolbox { d
 
 .stage-scene-transition-point-summary { color: var(--brass); }
 .stage-scene-transition-point-summary:empty { display: none; }
+
+html[data-stage-skin="paper-light"] .stage-scene-transition-point-kicker { color: var(--brass); }
 
 .stage-scene-transition-boundary > .stage-scene-transition {
   margin: 0;
@@ -11534,8 +11538,12 @@ body.is-roster-list-resizing { cursor: ns-resize; user-select: none; -webkit-use
 @media (max-width: 520px) { .stage-lighting-plan-actions { flex-direction: column-reverse; } .stage-lighting-plan-actions button { width: 100%; } }
 
 .stage-modal-backdrop.stage-venue-apply-backdrop { z-index: 74; }
-.stage-modal.stage-venue-apply-modal { width: min(680px, calc(100vw - 32px)); z-index: 75; }
-.stage-venue-apply-modal .stage-modal-body { display: grid; gap: 14px; }
+.stage-modal.stage-venue-apply-modal { width: min(680px, calc(100vw - 32px)); z-index: 75; display: flex; flex-direction: column; overflow: hidden; }
+.stage-venue-apply-modal > .stage-modal-head,
+.stage-venue-apply-modal > .stage-venue-apply-actions { flex-shrink: 0; }
+.stage-venue-apply-modal .stage-modal-body { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow-y: auto; }
+.stage-venue-apply-modal .stage-modal-body > * { flex-shrink: 0; }
+.stage-venue-apply-modal > .stage-venue-apply-actions { padding: 0 16px 18px; }
 .stage-venue-apply-summary,
 .stage-venue-apply-version p,
 .stage-venue-apply-status { margin: 0; color: var(--milk-dim); font-size: 12px; line-height: 1.55; }
@@ -14007,7 +14015,7 @@ body.stage-modal-open .stage-tour { display: none !important; }
   font-size: 11px;
   color: rgba(239, 231, 214, 0.66);
 }
-.stage-pref-caption-size-title { color: rgba(239, 231, 214, 0.48); }
+.stage-pref-caption-size-title { color: var(--ink-soft-sm); }
 .stage-pref-caption-size-option { display: inline-flex; align-items: center; gap: 3px; }
 .stage-pref-caption-size-option input { margin: 0; }
 /* 2026-10-06 本人指示「上下をコンパクトに」: 全画面の説明の文字サイズは、項目名の下でなく右へ並べる（狭いときは折り返す）。 */

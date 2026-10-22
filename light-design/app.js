@@ -4829,12 +4829,12 @@
     state.rig.fixtures.forEach((f) => {
       if (E.isMoving(f) || (E.isLaser && E.isLaser(f))) return;
       const seen = [];
-      state.scenes.forEach((sc, i) => {
+      state.scenes.forEach((sc) => {
         const l = sc.cue.lights[f.id];
         if (!l || l.on !== true) return;
         const k = fixedKey(f, l);
         const hit = seen.find((x) => x.key === k);
-        if (hit) hit.scenes.push(i); else seen.push({ key: k, scenes: [i], light: l });
+        if (hit) hit.scenes.push(sc.id); else seen.push({ key: k, scenes: [sc.id], light: l });
       });
       if (seen.length > 1) out.push({ f, variants: seen });
     });
@@ -4858,12 +4858,21 @@
     box.append(el("p", "warn", `⚠ <b>固定灯${list.length}灯</b>が、シーンによって違う向き・色・広がりになっています。固定灯は仕込みで決まるので、実物では<b>シーンごとに変えられません</b>。どれかにそろえてください。`));
     list.forEach(({ f, variants }) => {
       const row = el("div", "cflight");
-      row.append(el("p", "cfname", `${escapeHtml(label(f.id))}（固定）　${escapeHtml(E.describeMount(f, state.rig))}`));
+      // Names belong to the show; translate only generated kind and placement text.
+      const mount = f.mount?.type === "position" ? window.GAMMA_LIGHT_MODEL?.positionNames?.record(state.rig, f.mount.positionId) : null;
+      const placement = mount
+        ? `<span data-no-i18n>${escapeHtml(window.GAMMA_LIGHT_MODEL.positionNames.caption(mount))}</span>・<span>区間内${Math.round(f.mount.t * 100)}%</span>`
+        : `<span>${escapeHtml(E.describeMount(f, state.rig))}</span>`;
+      row.append(el("p", "cfname", `<span data-no-i18n>${escapeHtml(label(f.id))}</span>（<span>固定</span>）　${placement}`));
       const acts = el("div", "cfacts");
       variants.forEach((v) => {
-        const names = v.scenes.map((i) => `シーン${i + 1}「${state.scenes[i].name}」`).join("・");
+        const scenes = v.scenes.map((id) => state.scenes.find((sc) => sc.id === id)).filter(Boolean)
+          .map((sc) => ({id:sc.id,number:sceneNumberOf(sc),name:sc.name}));
+        const names = scenes.map((sc) => `シーン${sc.number}「${sc.name}」`).join("・");
         const l = v.light;
         const b = btn(`${names} にそろえる`, () => unifyFixed(f, l), "small");
+        b.dataset.fixedConflictScenes = JSON.stringify(scenes);
+        b.dataset.noI18n = ""; // The language renderer formats structured scenes without parsing titles.
         b.title = `狙い＝${l.surface === "air" ? "空中" : l.surface === "back" ? "ホリゾント" : l.surface === "house" ? "客席" : "床"}／広がり${Math.round(E.beamDegOf(f, l))}°`;
         acts.append(b);
       });
@@ -7585,7 +7594,10 @@
       const heading=document.createElement('h3');heading.textContent=copy.title;section.append(heading);
       const exportRaw=(raw,filename)=>download(new Blob([raw],{type:'application/json'}),filename);
       const all=document.createElement('button');all.className='btn small';all.textContent=copy.all;
-      all.onclick=()=>exportRaw(JSON.stringify({kind:'gamma-lighting-draft-recovery',version:2,records:recovery.recoveryRecords({all:true})},null,2),'gamma-lighting-drafts.json');section.append(all);
+      all.onclick=async()=>{all.disabled=true;try{
+        const originals=await Promise.all(recovery.recoveryRecords({all:true}).map(async record=>({...record,raw:await recovery.readRecoveryRecord(record)})));
+        exportRaw(JSON.stringify({kind:'gamma-lighting-draft-recovery',version:2,records:originals},null,2),'gamma-lighting-drafts.json');
+      }catch(e){toast(e.message);}finally{all.disabled=false;}};section.append(all);
       for(const record of records) {
         const row=document.createElement('details');row.className='dsrow';
         row.dataset.recoveryKey=record.key;
@@ -7595,9 +7607,9 @@
         label.title=record.key;
         const actions=document.createElement('span');actions.className='dsacts';
         const file=document.createElement('button');file.className='btn small';file.textContent=copy.export;
-        file.onclick=()=>exportRaw(record.raw,'gamma-lighting-recovery.json');
+        file.onclick=async()=>{file.disabled=true;try{exportRaw(await recovery.readRecoveryRecord(record),'gamma-lighting-recovery.json');}catch(e){toast(e.message);}finally{file.disabled=false;}};
         const load=document.createElement('button');load.className='btn small';load.textContent=copy.load;
-        load.onclick=()=>{try{if(recovery.restoreRecovery(record.raw))$("dialog").hidden=true;}catch(e){toast(e.message);}};
+        load.onclick=async()=>{load.disabled=true;try{await recovery.readRecoveryRecord(record,raw=>{if(recovery.restoreRecovery(raw))$("dialog").hidden=true;});}catch(e){toast(e.message);}finally{load.disabled=false;}};
         actions.append(file,load);row.append(label,actions);section.append(row);
       }
       document.querySelector('#dialog .dslist').after(section);

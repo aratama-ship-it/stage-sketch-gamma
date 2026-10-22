@@ -31,6 +31,26 @@
   "use strict";
 
   const TEXT = {
+
+    "保存に失敗したときは元の内容と未保存の編集を保ち、一時的な障害が解消した後は同じ画面から保存をやり直せるようにしました。容量を確かめる画面では、控えの書き出しや取消の後も操作を続けられます。Mac 版の情報パネルも、保存先が未確定の状態を保存済みと表示しないようにしました。": "If saving fails, the original content and unsaved edits are kept, and you can retry from the same screen once a temporary problem is resolved. The storage screen remains usable after exporting a backup or cancelling. The Mac information panel no longer reports a file as saved when its destination has not been confirmed.",
+
+    "共有で受け取る内容を保存前に確かめ、読み込めない内容で直前の正常なショーが置き換わらないようにしました。受信を断った後も、同じ画面から送り直せます。": "Shared content is now checked before it is saved, so unreadable content does not replace the last valid show. After content is rejected, you can send it again from the same screen.",
+
+    "照明の照射設定・動線・写真・登録したプリセット・舞台裏へ下げた駒に含まれる追加の設定が、読み込みや保存・書き出しで失われないようにしました。過去の保存ですでに失われた設定を復元する変更ではありません。": "Additional settings in lighting beams, movement paths, photos, saved presets and offstage pieces are now retained when importing, saving and exporting. This does not restore settings already lost in an earlier save.",
+
+    "Mac 版で劇場変更の影響一覧から印刷できるようにし、「最近使った項目」で同じファイルが重複する場合を修正しました。同じ起動中に元のファイルへ戻ったとき、照明草稿と編集の基準が変わっていなければ、取り消し・やり直しの履歴も戻るようにしました。アプリを再起動する前の履歴は戻しません。": "The Mac app now lets you print the list of scenes affected by a theatre change and fixes cases where the same file appeared twice in Recent Items. Returning to the original file during the same app session also restores lighting draft Undo and redo history if the draft and its editing basis are unchanged. History from before an app restart is not restored.",
+
+    "Mac 版の劇場の新版保存を見直し、照明草稿の控えを保存・読み込みする処理の負担を減らしました。以前の Mac 版へ戻す場合は、草稿の控えの引き継ぎに確認が必要です。": "Reworked theatre version saving in the Mac app and reduced the processing needed to save and load lighting draft backups. If you return to an older Mac app, you will need to check how to carry your draft backups over.",
+
+    "狭い画面のタブや暗い配色の小さな文字を読みやすくし、劇場変更の確認窓では本文をスクロールしても操作ボタンが見えるようにしました。控えの固定解除を取り消した後も、元の操作へキーボードの焦点が戻ります。": "Improved the readability of tabs on narrow screens and small text in dark colour schemes. Action buttons remain visible while scrolling through the theatre change confirmation. Cancelling the removal of a backup’s pinned status also returns keyboard focus to the original control.",
+
+    "照明の適用済みプリセットへ戻ったときに選択が見えるよう、絞り込みを合わせるようにしました。照明と劇場変更の警告・印刷・CSVのシーン番号を本体の表示にそろえ、警告や進行表の翻訳も整えました。": "Returning to an applied lighting preset now adjusts the filter so that the selection is visible. Scene numbers in lighting and theatre change warnings, printouts and CSV files now match the main display. Warning and run-of-show translations have also been improved.",
+
+    "ZIP ファイルの名前を .stageproj に変えた場合も、ブラウザ版と Mac 版の既存の読み込み手順で開けるようにしました。Mac 版では読み込み後に新しい保存先を尋ね、元の ZIP を保存先には使いません。": "ZIP files renamed to .stageproj can now be opened through the existing import process in both the browser and Mac apps. After importing on Mac, you are asked for a new save destination; the original ZIP is not used as the destination.",
+
+    "Mac 版の導入手順を今の macOS に合わせて書き直しました。": "Rewrote the Mac installation instructions for current macOS.",
+
+    "検査と文書の整備：保存・復旧・共有・読み込み・Mac 操作・表示の回帰検査と確認手順を整えました。冊子には照明草稿の復旧、編集メニューの取り消し、進行表のキーボード操作と移動位置の読み上げを追記し、用語と更新案内もそろえました。": "Checks and documentation: improved regression checks and verification instructions for saving, recovery, sharing, importing, Mac controls and display. Added booklet guidance on recovering lighting drafts, Undo in the Edit menu, and keyboard controls and spoken position announcements in the run of show. Aligned terminology and update guidance.",
     // B92: dynamic leave/apply dialogs use the shared text pack.
     "照明をショーへ適用しますか？": "Apply lighting to the show?",
     "まだ適用していない照明の編集があります。適用すると、いまの照明がこのショーへ保存されます。": "There are unapplied lighting edits. Applying saves the current lighting to this show.",
@@ -5376,7 +5396,8 @@ window.SHOSAI_DRAFT_RECOVERY_COPY["ja"] = {
   "note": "以前の編集控えがあります。控え・書き出しから確認できます。文書への読み込みは自分で選んでください。",
   "load": "この文書の草稿として読み込む",
   "export": "原文を書き出す",
-  "all": "照明の控えをすべて書き出す"
+  "all": "照明の控えをすべて書き出す",
+  "readFailed": "控えを読み取れませんでした。原文を保持しています。もう一度お試しください。"
 };
 
 // U-A2 explicit recovery; original records are retained.
@@ -5386,10 +5407,41 @@ window.SHOSAI_DRAFT_RECOVERY_COPY["en"] = {
   "note": "Earlier drafts are available in Save / Export. Choose a draft explicitly to load it into this document.",
   "load": "Load as a draft for this document",
   "export": "Export original record",
-  "all": "Export all lighting drafts"
+  "all": "Export all lighting drafts",
+  "readFailed": "Could not read the draft. The original is retained. Please try again."
 };
 
 // v0.3.82 release history: known limitation (owner decision 2026-10-21).
 Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "旧い Mac 版（0.3.81 以前）で v0.3.82 のショーを再保存すると、固定灯の設定（色・照射先・追加項目）が旧版側で書き換わる制限があります。Mac 版は 0.3.82 へ更新してください。": "If a show saved in v0.3.82 is re-saved in an older Mac app (0.3.81 or earlier), the older app rewrites fixed-light settings (colour, target, extra fields). Please update the Mac app to 0.3.82."
+});
+
+// B98 A4-08: fixed-fixture warning actions use canonical scene numbers.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "シーン{number}「{name}」": "scene {number} “{name}”",
+  "{scenes} にそろえる": "Match {scenes}"
+});
+
+// B106: durable recovery does not carry the previous runtime Undo bank.
+Object.assign(window.SHOSAI_DRAFT_RECOVERY_COPY["ja"], {
+  "restored": "適用前の照明を復元しました。取り消し履歴は再起動で引き継がれません。保存済みの状態へ戻すには「草稿を破棄して保存済みに戻す」を選んでください。",
+  "returnSaved": "草稿を破棄して保存済みに戻す",
+  "returnConfirm": "未適用の照明草稿を破棄し、保存済みの照明へ戻します。草稿の原文は復旧用の控えに残します。",
+  "keepEditing": "編集を続ける",
+  "returnFailed": "保存済みに戻せませんでした。草稿を保持しています。もう一度お試しください。"
+});
+
+// B106: durable recovery does not carry the previous runtime Undo bank.
+Object.assign(window.SHOSAI_DRAFT_RECOVERY_COPY["en"], {
+  "restored": "Unapplied lighting restored. Undo history is not carried over after a restart. To return to the saved state, choose “Discard draft and return to saved”.",
+  "returnSaved": "Discard draft and return to saved",
+  "returnConfirm": "Discard the unapplied lighting draft and return to the saved lighting. The original draft will remain in the recovery copies.",
+  "keepEditing": "Keep editing",
+  "returnFailed": "Could not return to the saved lighting. Your draft is retained. Please try again."
+});
+
+// B108: non-blocking private-ledger recovery notices.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "復旧台帳を確認できません。原文は上書きしていません。": "Could not verify the recovery registry. The originals have not been overwritten.",
+  "旧版の照明の控えを文書{count}件分保全しました。「控え・書き出し」から取り出せます。": "Preserved lighting recovery copies for {count} documents from the older app. Retrieve them from Save / Export."
 });

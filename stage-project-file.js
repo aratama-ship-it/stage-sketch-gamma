@@ -207,6 +207,14 @@
     const carry={manifest:manifestExtras(manifest), files:droppedFiles?[]:await Promise.all(unknown.map(async([name,value])=>({name,blob:new Blob([await bytes(value)])}))), droppedFiles};
     return {manifest,show:show.value,text:show.text,audio,offline,warnings,carry};
   }
+  // Names route existing ZIPs as before; a .stageproj file needs a local ZIP header.
+  // Inspect only four bytes. Full validation remains in unpack/readZip/readFiles.
+  async function isZipImport(file) {
+    if (/\.zip$/i.test(file.name)) return true;
+    if (!/\.stageproj$/i.test(file.name)) return false;
+    const header = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+    return header.length === 4 && header[0] === 0x50 && header[1] === 0x4b && header[2] === 3 && header[3] === 4;
+  }
   async function unpack(blob) {return readFiles(await readZip(blob));}
   async function pack(showText, audio, {folder="show.stageproj",version="",now=new Date().toISOString(),sample=null,edition="browser",carry=null,onWarning=()=>{}}={}) {
     if(!pathOK(folder)||folder.includes("/")||!folder.endsWith(".stageproj"))fail("invalid-path");
@@ -312,5 +320,5 @@
       },
     });
   }
-  return Object.freeze({LIMIT,CARRY_LIMIT,pathOK,hash,crc32,makeZip,readZip,validateManifest,readFiles,unpack,pack,walkEntry,installAudio,offlineRegistry,carryStore,hasCarry,bindCarry,carryMatches});
+  return Object.freeze({LIMIT,CARRY_LIMIT,pathOK,hash,crc32,makeZip,readZip,validateManifest,readFiles,isZipImport,unpack,pack,walkEntry,installAudio,offlineRegistry,carryStore,hasCarry,bindCarry,carryMatches});
 });

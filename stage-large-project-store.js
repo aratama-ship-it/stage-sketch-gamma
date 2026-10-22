@@ -6,6 +6,15 @@
   const KEYS=['gamma:scene-alternatives-v1:shosai-stage-sketch-v1','gamma:scene-alternatives-v1:shosai-stage-shows-v1'];
   const DB='gamma:large-projects-v1', MARKER='gamma:large-projects-v1:revision';
   const error=code=>Object.assign(new Error(code),{name:code==='CONCURRENT_EDIT'?'StorageConflictError':code,code});
+  // DOMException.code is a legacy number (quota is 22), not our save-result
+  // code. Keep the native name/cause while giving protection and retry a stable code.
+  function normalizeError(e){
+    const quota=e?.name==='QuotaExceededError'||e?.name==='NS_ERROR_DOM_QUOTA_REACHED'||e?.code===22||e?.code===1014;
+    if(typeof e?.code==='string'&&e.code&&(!quota||e.code==='QUOTA_EXCEEDED'))return e;
+    const normalized=error(quota?'QUOTA_EXCEEDED':e?.name&&e.name!=='Error'?e.name:'WRITE_FAILED');
+    normalized.name=quota?'QuotaExceededError':e?.name||normalized.name;
+    normalized.message=e?.message||normalized.message;normalized.cause=e;return normalized;
+  }
   const pairValid=p=>p&&p.values&&p.version===1&&Number.isSafeInteger(p.revision)&&p.revision>=0&&KEYS.every(k=>p.values[k]===null||typeof p.values[k]==='string');
   const record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
   const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
@@ -79,34 +88,48 @@
   function repository(indexedDB){
     function transact(mode,fn){return new Promise((resolve,reject)=>{
       if(!indexedDB){reject(error('STORAGE_UNAVAILABLE'));return;}
-      const req=indexedDB.open(DB,1);let settled=false;
-      req.onupgradeneeded=()=>req.result.createObjectStore('pairs');
-      req.onerror=()=>{settled=true;reject(req.error);};req.onblocked=()=>{settled=true;reject(error('STORAGE_BLOCKED'));};
-      req.onsuccess=()=>{const db=req.result;if(settled){db.close();return;}const tx=db.transaction('pairs',mode);let value;
-        tx.oncomplete=()=>{db.close();resolve(value);};tx.onabort=tx.onerror=()=>{db.close();reject(tx.error||error('WRITE_FAILED'));};
-        try{fn(tx.objectStore('pairs'),v=>{value=v;},tx);}catch(e){try{tx.abort();}catch(_){}db.close();reject(e);}
+      let req,db,tx,settled=false,closed=false;
+      const close=()=>{if(db&&!closed){closed=true;try{db.close();}catch(_){}}};
+      const fail=e=>{
+        if(settled)return;settled=true;
+        // A caught request callback no longer triggers IndexedDB's automatic
+        // abort. Explicitly roll back any earlier writes in this transaction.
+        try{tx?.abort();}catch(_){}close();reject(normalizeError(e));
+      };
+      const guard=callback=>(...args)=>{if(settled)return;try{return callback(...args);}catch(e){fail(e);}};
+      try{req=indexedDB.open(DB,1);}catch(e){fail(e);return;}
+      req.onupgradeneeded=guard(()=>{db=req.result;tx=req.transaction;db.createObjectStore('pairs');});
+      req.onerror=()=>fail(req.error);req.onblocked=()=>fail(error('STORAGE_BLOCKED'));
+      req.onsuccess=()=>{
+        db=req.result;if(settled){close();return;}
+        guard(()=>{
+          tx=db.transaction('pairs',mode);let value;
+          tx.oncomplete=()=>{if(settled)return;settled=true;close();resolve(value);};
+          tx.onabort=tx.onerror=e=>fail(tx.error||e.target?.error||error('WRITE_FAILED'));
+          fn(tx.objectStore('pairs'),v=>{value=v;},tx,guard);
+        })();
       };
     });}
     return Object.freeze({
-      read(){return transact('readonly',(s,done)=>{s.get('current').onsuccess=e=>done(e.target.result||null);});},
-      records(){return transact('readonly',(s,done)=>{const keys=s.getAllKeys();s.getAll().onsuccess=e=>done(e.target.result.map((p,i)=>({...p,copy:keys.result[i]})));});},
-      initialize(values){return transact('readwrite',(s,done)=>{s.get('current').onsuccess=e=>{if(e.target.result){done(e.target.result);return;}const p={version:1,revision:0,values:{...values}};s.add(p,'migration');s.add(p,'current');done(p);};});},
-      commit(expected,values){return transact('readwrite',(s,done,tx)=>{s.get('current').onsuccess=e=>{
+      read(){return transact('readonly',(s,done,tx,guard)=>{s.get('current').onsuccess=guard(e=>done(e.target.result||null));});},
+      records(){return transact('readonly',(s,done,tx,guard)=>{const keys=s.getAllKeys();s.getAll().onsuccess=guard(e=>done(e.target.result.map((p,i)=>({...p,copy:keys.result[i]}))));});},
+      initialize(values){return transact('readwrite',(s,done,tx,guard)=>{s.get('current').onsuccess=guard(e=>{if(e.target.result){done(e.target.result);return;}const p={version:1,revision:0,values:{...values}};s.add(p,'migration');s.add(p,'current');done(p);});});},
+      commit(expected,values){return transact('readwrite',(s,done,tx,guard)=>{s.get('current').onsuccess=guard(e=>{
         const before=e.target.result;
         if(!pairValid(before)||before.revision!==expected){done(null);return;}
         const next={version:1,revision:expected+1,values:{...values}};
         s.put(before,'previous');s.put(next,'current');done(next);
-      };});},
-      restoreMissing(revision,values){return transact('readwrite',(s,done)=>{s.get('current').onsuccess=e=>{
+      });});},
+      restoreMissing(revision,values){return transact('readwrite',(s,done,tx,guard)=>{s.get('current').onsuccess=guard(e=>{
         const next={version:1,revision,values:{...values}};
         if(e.target.result!==undefined||!pairValid(next)){done(false);return;}
         s.add(next,'current');done(true);
-      };});},
-      preserveLegacy(expected,values){return transact('readwrite',(s,done)=>{s.get('current').onsuccess=e=>{
+      });});},
+      preserveLegacy(expected,values){return transact('readwrite',(s,done,tx,guard)=>{s.get('current').onsuccess=guard(e=>{
         const before=e.target.result;if(!pairValid(before)||before.revision!==expected){done(null);return;}
         const id='legacy-conflict:'+Date.now()+':'+Math.random().toString(36).slice(2);
         s.add({version:1,revision:expected,values:{...values}},id);done(id);
-      };});},
+      });});},
       clear(){return transact('readwrite',(s,done)=>{s.clear();done(true);});},
     });
   }
@@ -143,9 +166,28 @@
       }
       storage.setItem(MARKER,String(durable.revision));
     }
-    let values={...durable.values},baseValues={...durable.values},revision=durable.revision,pending=null,dirty=false,blocked=null;
+    let values={...durable.values},baseValues={...durable.values},revision=durable.revision,pending=null,dirty=false,blocked=null,retryable=false;
     const copy=()=>({...values});
-    function fail(e){blocked=e;onFailure(e);}
+    const permanent=e=>['CONCURRENT_EDIT','LEGACY_WRITE_CONFLICT','PRIMARY_CORRUPT','PRIMARY_MISSING'].includes(e?.code)||e?.name==='StorageConflictError';
+    function fail(e){blocked=e;retryable=!permanent(e);onFailure(e);}
+    // A failed atomic write leaves the editor delta in memory. Only an explicit
+    // save resumes it, after rereading and reconciling the durable original.
+    async function retry(){
+      if(pending){try{await pending;}catch(_) {}}
+      await checking;
+      if(!blocked)return;
+      if(!retryable)throw blocked;
+      try{
+        if(KEYS.some(k=>storage.getItem(k)!==null))throw error('LEGACY_WRITE_CONFLICT');
+        const head=await repo.read();
+        if(!pairValid(head)||head.revision<revision)throw error('PRIMARY_CORRUPT');
+        if(head.revision===revision&&KEYS.some(k=>head.values[k]!==durable.values[k]))throw error('CONCURRENT_EDIT');
+        mergeValues(baseValues,values,head.values);
+        // A storage event may have imposed a permanent stop during the read.
+        if(blocked&&!retryable)throw blocked;
+        blocked=null;retryable=false;
+      }catch(e){fail(e);throw e;}
+    }
     async function flush(){
       if(blocked)throw blocked;
       if(pending){await pending;if(dirty)return flush();return;}
@@ -167,11 +209,12 @@
         if(!pairValid(check)||check.revision<next.revision||check.revision===next.revision&&KEYS.some(k=>check.values[k]!==next.values[k]))throw error('CONCURRENT_EDIT');
         durable=next;revision=next.revision;baseValues=batch;
         try{storage.setItem(MARKER,String(revision));}catch(_){/* IndexedDB is durable; marker already identifies the format. */}
-      })().catch(e=>{dirty=true;fail(e);throw e;}).finally(()=>{pending=null;});
+      })().catch(e=>{const failure=normalizeError(e);dirty=true;fail(failure);throw failure;}).finally(()=>{pending=null;});
       await pending;if(dirty)return flush();
     }
-    function stage(k,v){if(blocked)throw blocked;values[k]=v;dirty=true;queueMicrotask(()=>flush().catch(()=>{}));}
+    function stage(k,v){if(blocked&&!retryable)throw blocked;values[k]=v;dirty=true;if(!blocked)queueMicrotask(()=>flush().catch(()=>{}));}
     const facade=new Proxy(storage,{get(target,key){
+      if(key==='atomicProjectPair')return true;
       if(key==='getItem')return k=>KEYS.includes(k)?values[k]:target.getItem(k);
       if(key==='setItem')return(k,v)=>KEYS.includes(k)?stage(k,String(v)):target.setItem(k,v);
       if(key==='removeItem')return k=>KEYS.includes(k)?stage(k,null):target.removeItem(k);
@@ -180,7 +223,7 @@
     let checking=Promise.resolve();
     const changed=e=>{
       if(KEYS.includes(e.key)||e.key===MARKER&&e.newValue===null){
-        if(!blocked){blocked=error('CONCURRENT_EDIT');onConflict(blocked);}return;
+        if(!blocked||retryable){blocked=error('CONCURRENT_EDIT');retryable=false;onConflict(blocked);}return;
       }
       if(e.key!==MARKER||e.newValue===String(revision)||blocked)return;
       checking=checking.then(async()=>{
@@ -194,8 +237,8 @@
       }).catch(e=>{if(!blocked){blocked=e;onConflict(e);}});
     };
     root.addEventListener?.('storage',changed);
-    return Object.freeze({storage:facade,flush,repository:repo,
-      values:copy,status:()=>({revision,dirty,pending:!!pending,blocked:blocked?.code||null}),
+    return Object.freeze({storage:facade,flush,retry,repository:repo,
+      values:copy,status:()=>({revision,dirty,pending:!!pending,blocked:blocked?(blocked.code||blocked.name||'WRITE_FAILED'):null,retryable}),
       async reset(){await flush();await repo.clear();for(const k of KEYS)values[k]=null;storage.removeItem(MARKER);},
       async protectedAudioIds(){const rows=await repo.records();if(rows.some(p=>!pairValid(p)))return null;return root.STAGE_STORAGE_HYGIENE?.audioReferences(rows.flatMap(p=>KEYS.map(k=>p.values[k])))??null;},
       stop(){root.removeEventListener?.('storage',changed);},

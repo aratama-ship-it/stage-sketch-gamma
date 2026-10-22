@@ -151,8 +151,8 @@
     const tokenOK = value => typeof value === "string" && value.length > 0 && value.length <= 128;
     let shellSession = null, owner = null, tentative = null, transition = null, prepared = null;
     const completedRequests = new Set();
-    let draftOwnerId=null,draftRecords={},draftRecoveryEntries=[];
-    const draftRequests=new Map(),latestDraftWrites=new Map();
+    let draftOwnerId=null,draftRecords={},draftRecoveryEntries=[],draftRecoveryUnavailable=false;
+    const draftRequests=new Map(),latestDraftWrites=new Map(),recoveryRequests=new Map();
     let venueRequest = null, venuePreparation = null;
     const venueCandidates = new Map(), venueRequests = new Map(), venueReceipts = new Map(), venueIntents = new Map();
     const requestId = () => host.crypto?.randomUUID?.() || `web-${Date.now()}-${++messageGeneration}`;
@@ -178,7 +178,7 @@
       const saved = tentative;
       if (!saved) return false;
       tentative = null; generation++;opening=Promise.resolve();
-      ({opened, audio, removedAudio, readOnly, lastSent, readOnlyValue, owner,noticeReceipt,draftOwnerId,draftRecords,draftRecoveryEntries} = saved.bridge);
+      ({opened, audio, removedAudio, readOnly, lastSent, readOnlyValue, owner,noticeReceipt,draftOwnerId,draftRecords,draftRecoveryEntries,draftRecoveryUnavailable} = saved.bridge);
       runtime.restoreRuntime?.(saved.runtime);
       runtime.saveNoticeChanged?.();
       const parent=saved.venueRequestId ? venuePreparation?.parent : null;
@@ -231,7 +231,7 @@
       opening = opening.catch(() => {}).then(async () => {
         if (tentative) return false;
         if (sessionful(payload) && (!once("open:" + payload.requestId) || !once("delivery:" + payload.deliveryGeneration))) return false;
-        const previous = {opened, audio, removedAudio, readOnly, lastSent, readOnlyValue, owner,noticeReceipt,draftOwnerId,draftRecords:structuredClone(draftRecords),draftRecoveryEntries};
+        const previous = {opened, audio, removedAudio, readOnly, lastSent, readOnlyValue, owner,noticeReceipt,draftOwnerId,draftRecords:structuredClone(draftRecords),draftRecoveryEntries,draftRecoveryUnavailable};
         const incoming = sessionful(payload) ? Object.fromEntries(fields.map(key => [key,payload[key]])) : null;
         if (payload.venueRequestId && (!venueRequest || venueRequest.expired || payload.venueRequestId !== venueRequest.source.requestId))
           throw Error("Expired venue candidate delivery");
@@ -242,7 +242,7 @@
         opened = false; generation++;
         for (const pending of audioConfirmations.values()) pending.finish(false);
         audio = entries; removedAudio = new Map(); readOnly = payload.readOnly; lastSent = null; owner = incoming; noticeReceipt = null;
-        draftOwnerId=payload.draftOwnerId || null;draftRecords=structuredClone(payload.draftRecords || {});draftRecoveryEntries=payload.draftRecoveryEntries || draftRecoveryEntries;
+        draftRecoveryUnavailable=payload.draftRecoveryUnavailable===true;draftOwnerId=draftRecoveryUnavailable ? null : payload.draftOwnerId || null;draftRecords=structuredClone(payload.draftRecords || {});draftRecoveryEntries=payload.draftRecoveryEntries || draftRecoveryEntries;
         setTransitioning(true);
         readOnlyValue = readOnly ? {show:payload.show, title:payload.title} : null;
         try {
@@ -369,6 +369,14 @@
         if (!payload.ok && !facade.cancelDocumentTransition(ticket.source) && !tentative) changed(true);
         ticket.resolve(payload); return true;
       },
+      draftRecoveryRead(payload) {
+        const pending=recoveryRequests.get(payload?.requestId);
+        if(!pending || !matches(payload) || payload.recoveryOwnerId!==pending.owner || payload.vector!==pending.vector)return false;
+        recoveryRequests.delete(payload.requestId);host.clearTimeout(pending.timer);
+        const current=pending.generation===generation && pending.draftOwnerId===draftOwnerId && !tentative && !transition && !prepared;
+        pending.resolve(current && payload.ok===true && typeof payload.raw==='string' ? payload.raw : null);
+        return true;
+      },
       draftStored(payload) {
         const pending=draftRequests.get(payload?.requestId);
         if(!pending || !matches(payload) || payload.draftOwnerId!==pending.owner)return false;
@@ -380,8 +388,16 @@
           }
           const entry=draftRecoveryEntries.find(entry=>entry.owner===pending.owner);
           if(entry) {
-            if(latest) {if(pending.raw===null)delete entry.records[pending.vector];else entry.records[pending.vector]=pending.raw;}
-            Object.assign(entry.records,payload.retainedRecords || {});
+            if(entry.records) {
+              if(latest) {if(pending.raw===null)delete entry.records[pending.vector];else entry.records[pending.vector]=pending.raw;}
+              Object.assign(entry.records,payload.retainedRecords || {});
+            }
+            if(entry.vectors) {
+              const vectors=new Set(entry.vectors);
+              if(latest){if(pending.raw===null)vectors.delete(pending.vector);else vectors.add(pending.vector);}
+              for(const vector of Object.keys(payload.retainedRecords || {}))vectors.add(vector);
+              entry.vectors=[...vectors].sort();
+            }
           }
         }
         pending.resolve(payload.ok===true && latest);return true;
@@ -390,7 +406,7 @@
         if(!matches(payload) || !tokenOK(payload.draftOwnerId))return false;
         draftOwnerId=payload.draftOwnerUnavailable ? null : payload.draftOwnerId;draftRecords=structuredClone(payload.draftRecords || {});draftRecoveryEntries=payload.draftRecoveryEntries || draftRecoveryEntries;
         if(!payload.draftOwnerUnavailable && !draftRecoveryEntries.some(entry=>entry.owner===draftOwnerId))
-          draftRecoveryEntries.push({owner:draftOwnerId,locator:payload.draftLocator || '',records:structuredClone(draftRecords)});
+          draftRecoveryEntries.push({owner:draftOwnerId,locator:payload.draftLocator || '',...(draftRecoveryEntries.some(e=>e.vectors) ? {vectors:Object.keys(draftRecords).sort()} : {records:structuredClone(draftRecords)})});
         host.dispatchEvent?.(new CustomEvent('gamma-draft-owner-change'));return true;
       },
       configureSession(payload) {
@@ -440,6 +456,11 @@
         if (action === "setStartupAction" && !["lastProject", "welcome"].includes(value)) return false;
         post("welcomeAction", {action, ...(action === "openRecent" ? {recentId} : {}), ...(action === "setStartupAction" ? {value} : {})});
         return true;
+      },
+      draftRecoveryNotice(payload) {
+        if (!opened || tentative || !matches(payload)) return false;
+        if (payload.unavailable !== true && !(Number.isInteger(payload.archivedOwners) && payload.archivedOwners > 0)) return false;
+        runtime?.draftRecoveryNotice?.(payload); return true;
       },
       nativeUpdate: payload => host.STAGE_WELCOME?.nativeUpdate(payload),
       saveState(payload) {
@@ -663,7 +684,20 @@
         return venueIntents.get(key);
       },
       venueReceipt:operationId => venueReceipts.get(operationId),
-      get draftRecoveryEntries(){return draftRecoveryEntries;},get draftOwnerId(){return draftOwnerId;},get draftRecords(){return draftRecords;},
+      get draftRecoveryUnavailable(){return draftRecoveryUnavailable;},get draftRecoveryEntries(){return draftRecoveryEntries;},get draftOwnerId(){return draftOwnerId;},get draftRecords(){return draftRecords;},
+      readRecoveryDraft(recoveryOwnerId,vector) {
+        const entry=draftRecoveryEntries.find(e=>e.owner===recoveryOwnerId);
+        if(!owner || !opened || tentative || transition || prepared || !shellSession?.capabilities.includes("draftOwnerV2")
+            || !entry || !(entry.vectors || Object.keys(entry.records || {})).includes(vector))return Promise.resolve(null);
+        // Older shells deliver originals inline; new shells send only an index.
+        if(typeof entry.records?.[vector]==='string')return Promise.resolve(entry.records[vector]);
+        const id=requestId();
+        return new Promise(resolve=>{
+          const timer=host.setTimeout(()=>{recoveryRequests.delete(id);resolve(null);},10000);
+          recoveryRequests.set(id,{resolve,timer,owner:recoveryOwnerId,vector,generation,draftOwnerId});
+          ownedPost('readDraftRecovery',{...identity(),requestId:id},{recoveryOwnerId,vector});
+        });
+      },
       retainDraft(raw,vector,source) {
         if(!matches(source) || !draftOwnerId || source?.draftOwnerId!==draftOwnerId || !shellSession?.capabilities.includes("draftOwnerV2"))return Promise.resolve(false);
         const id=requestId(),draftOwner=draftOwnerId;

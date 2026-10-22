@@ -994,7 +994,8 @@
       pendingHostDocuments.delete(documentId);
       setStatus("共有内容を保存して配信しました。");
     } else if (message.t === "denied") {
-      if (message.reason === "doc-too-large" || message.reason === "doc-storage-failed") {
+      if (["doc-too-large", "doc-storage-failed", "invalid-doc", "invalid-doc-json",
+        "invalid-doc-structure", "unsafe-doc"].includes(message.reason)) {
         pendingHostDocuments.clear();
       }
       const reason = message.reason === "no-host" ? "ホストが接続していません。"

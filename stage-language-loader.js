@@ -4,13 +4,13 @@
 (() => {
   'use strict';
   const ASSETS = Object.freeze({
-    en: 'stage-i18n.js?v=20261020-v0382',
-    'zh-Hans': 'stage-i18n.zh-Hans.js?v=20261020-v0382',
-    'zh-Hant': 'stage-i18n.zh-Hant.js?v=20261020-v0382',
-    ko: 'stage-i18n.ko.js?v=20261020-v0382',
+    en: 'stage-i18n.js?v=20261022-v0383',
+    'zh-Hans': 'stage-i18n.zh-Hans.js?v=20261022-v0383',
+    'zh-Hant': 'stage-i18n.zh-Hant.js?v=20261022-v0383',
+    ko: 'stage-i18n.ko.js?v=20261022-v0383',
     prompt: 'stage-prompt-i18n.js?v=20261013-v0360',
-    ui: 'gamma-ui-i18n.js?v=20261010-v0338',
-    uiKo: 'gamma-ui-i18n.ko.js?v=20261010-v0338',
+    ui: 'gamma-ui-i18n.js?v=20261022-v0383',
+    uiKo: 'gamma-ui-i18n.ko.js?v=20261022-v0383',
   });
   const normalize = code => {
     const value = typeof code === 'string' ? code.trim().replace(/_/g, '-').toLowerCase() : '';

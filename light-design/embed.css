@@ -169,7 +169,7 @@ html[data-gamma-embedded] .gamma-light-state-row {
   display:flex; flex-wrap:wrap; align-items:center; gap:var(--gamma-gap);
   flex:0 0 auto; padding:4px 0;
 }
-html[data-gamma-embedded] .gamma-light-state-row[hidden], html[data-gamma-embedded] #gamma-light-save-controls[hidden] { display:none; }
+html[data-gamma-embedded] .gamma-light-state-row[hidden], html[data-gamma-embedded] #gamma-light-save-controls[hidden], html[data-gamma-embedded] #gamma-light-return-saved[hidden], html[data-gamma-embedded] #gamma-light-recovery-notice[hidden] { display:none; }
 html[data-gamma-embedded] #gamma-light-save-status {
   flex:1 1 240px; min-width:min(100%,240px); margin:0;
   font-size:var(--fs-4); line-height:1.6; color:var(--milk-dim); overflow-wrap:anywhere;
@@ -270,3 +270,9 @@ html[data-gamma-embedded] .fmode .gamma-short-select-trigger > .gamma-control-te
 #lighting-draft-recovery .dsrow {display:block;}
 #lighting-draft-recovery .dsname {overflow-wrap:anywhere;cursor:pointer;}
 #lighting-draft-recovery .dsacts {flex-wrap:wrap;margin-top:6px;}
+
+/* B106: reuse the existing status typography and wrapping recovery row. */
+html[data-gamma-embedded] #gamma-light-recovery-notice {
+  flex:1 1 100%; min-width:0; margin:0; font-size:var(--fs-4); line-height:1.6; color:var(--milk); overflow-wrap:anywhere;
+}
+html[data-gamma-embedded] #gamma-light-return-saved { max-width:100%; white-space:normal; min-height:var(--ctrl-lg); }

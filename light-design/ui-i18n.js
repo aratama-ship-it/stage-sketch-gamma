@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const parentRoot = window.parent !== window ? window.parent.document.documentElement : document.documentElement;
-  const excluded = '[data-no-i18n],#scene-name b,#place-scene,.dsname,.allsname,.cfname,.allq,#qnow em,#runtime-status';
+  const excluded = '[data-no-i18n],#scene-name b,#place-scene,.dsname,.allsname,.allq,#qnow em,#runtime-status';
   let scheduled = false;
   const observer = new MutationObserver(records => {
     if(records.some(record => !(record.target.nodeType===1 ? record.target : record.target.parentElement)?.closest(excluded))) schedule();
@@ -240,6 +240,9 @@
       if (!input.hasAttribute('data-lpignore')) input.setAttribute('data-lpignore','true');
     }
     const language=parentRoot.lang || 'ja';
+    for (const button of document.querySelectorAll('[data-fixed-conflict-scenes]')) {
+      button.textContent = window.GAMMA_UI_SCENE_MATCH_TEXT(JSON.parse(button.dataset.fixedConflictScenes), language);
+    }
     if(document.documentElement.lang!==language) document.documentElement.lang=language;
     const runtime=document.getElementById('runtime-status');
     if(runtime?.title)runtime.title=lightingText('このブラウザでの直近の4図描画時間です。CPU・メモリの使用量そのものではありません。',language);

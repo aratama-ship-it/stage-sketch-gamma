@@ -838,15 +838,22 @@
     await light?.waitForApply?.();
     if (!current()) return false;
     request.checkpoint?.();
-    if (light?.status?.().dirty) {
-      const answer=await askLeaveOnce(null,document.activeElement,request.signal);
+    const lightStatus=light?.status?.();
+    const recoveryUnavailable=lightStatus?.draftRecoveryUnavailable===true;
+    if (lightStatus?.dirty || (recoveryUnavailable && lightStatus.hasUnappliedDrafts)) {
+      // Do not promise a durable draft when startup has disabled recovery. Reuse
+      // the existing confirmation and its choices; cancellation keeps runtime state.
+      const copy=recoveryUnavailable ? {title:'照明をショーへ適用しますか？',
+        body:'まだ適用していない照明の編集があります。適用すると、いまの照明がこのショーへ保存されます。',
+        skip:'適用しないで移る',apply:'適用して移る'} : null;
+      const answer=await askLeaveOnce(copy,document.activeElement,request.signal);
       if (!current() || answer==='cancel') return false;
       if (answer==='apply') {
         const result=await light.apply();
         if (!current() || !result?.persisted || light.status().dirty) return false;
-      } else if (!await (light.saveDraftDurably?.() ?? light.saveDraft?.())) return false;
+      } else if (!recoveryUnavailable && !await (light.saveDraftDurably?.() ?? light.saveDraft?.())) return false;
     }
-    if (!current() || !await (light?.saveAllDraftsDurably?.() ?? true)) return false;
+    if (!current() || (!recoveryUnavailable && !await (light?.saveAllDraftsDurably?.() ?? true))) return false;
     const venue=window.SHOSAI_VENUE_EDITOR;
     if (request.purpose !== 'venueVersion' && venue?.hasUnappliedChanges?.()) {
       const answer=await askLeaveOnce({title:'この劇場をショーへ反映しますか？',
@@ -986,7 +993,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261020-v0382'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261022-v0383'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;
