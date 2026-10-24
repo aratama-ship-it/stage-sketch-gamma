@@ -32,6 +32,14 @@
 
   const TEXT = {
 
+    "照明のキューの呼び名・表示言語・表示・劇場の大きさを選ぶ欄、劇場のカードの名前、スマートフォンでのショー名とシーンの表示で、日本語や全角の括弧の上下が欠けて見えることがあったのを直しました。": "Fixed the tops and bottoms of Japanese characters and full-width brackets being cut off in the lighting cue naming, display language, view and theatre size selectors, on theatre cards, and in the show name and scene display on smartphones.",
+
+    "英語・韓国語・簡体字・繁体字で、リハーサルの振り返りの「合計」と進行中の表示、進行表の編集表示の操作の案内、紙面の1ページに収まらないときの注意が日本語のまま出ていたのを訳しました。": "In English, Korean, Simplified Chinese and Traditional Chinese, the rehearsal review “Total” and in-progress labels, the hint shown while editing the run of show, and the notice when a row does not fit on one printed page are now translated instead of appearing in Japanese.",
+
+    "冊子を更新しました。写真に開発用の文言が写らないように撮り直し、写真と説明の食い違いを直しました。環境設定の章の表示言語の一覧に韓国語を加えました。": "Updated the booklet: photos were retaken so that no development text appears in them, mismatches between photos and captions were fixed, and Korean was added to the display language list in the Preferences chapter.",
+
+    "検査の整備：Mac で毎晩回す検査が、合格した回の一時ファイルを片付け、記録の置き場が見つからないときは止まるようにしました。Mac 版の公開前の確認が、その Mac の「最近使った項目」に記録を増やしていないかを確かめるようにし、自動検査の記録の保存量を減らしました。": "Check maintenance: the nightly Mac checks now clean up the temporary files of a passing run and stop when their record folder cannot be found. The pre-release Mac check now confirms that it does not add entries to that Mac’s Recent Items, and automated check records take less storage.",
+
     "Mac 版で、照明の草稿の控えが際限なく増えないようにしました。文書ごとに「いまの草稿と直近10件の控え（30日まで）」を残し、それより古い控えは、その文書で照明の草稿を保存したときに整理します。照明の編集を長く続けても、控えの置き場所の容量が増え続けません。控えのフォルダに Finder の隠しファイルなどが置かれても、読み込みを止めません。": "On Mac, lighting draft backups no longer pile up without limit. Each document keeps its current draft and the 10 most recent backups (up to 30 days), and older backups are tidied up when a lighting draft for that document is saved. Long lighting sessions no longer keep growing the space used for backups, and hidden Finder files or similar items in the backup folder no longer stop the import.",
 
     "Mac 版で、ショーを開いただけでは控えの世代が増えないようにしました。確認のために何度開いても、編集前の控えが押し出されません。名前を .stageproj に変えた ZIP ファイルを「開く」の窓から選べるようにし、Finder で複数のファイルをまとめて開いたときは、最初の1件を開いたことをお知らせします。": "On Mac, simply opening a show no longer adds a backup generation, so opening a file again and again to check it does not push out the backups from before your edits. ZIP files renamed to .stageproj can now be chosen in the Open window, and when you open several files at once from the Finder, you are told that the first one was opened.",
@@ -5638,4 +5646,17 @@ window.SHOSAI_DRAFT_LEDGER_REPAIR_COPY["en"] = {
 };
   Object.assign(pack.text, added);
   pack.needsReview = [...new Set([...(pack.needsReview || []), ...Object.keys(added).map(key => "text." + key)])];
+})();
+
+// B125: rehearsal labels and run-of-show pagination guidance.
+(() => {
+  const pack = window.SHOSAI_I18N_PACKS["en"];
+  const added = {
+  "合計": "Total",
+  "進行中": "In progress",
+  "Enterで同じ欄を次の行へ · Tabで横へ · 印刷はA4を選択": "Enter: next row in the same field · Tab: next field · Select A4 to print"
+};
+  Object.assign(pack.text, added);
+  pack.say.unshift([/^(.+)の「(.+)」が1ページに収まりません。画像の説明文などを短くするか、詳細・備考へ分けてください。内容は省略していません。$/, "“$2” in $1 does not fit on one page. Shorten image captions or split the content between Details and Notes. No content has been omitted."]);
+  pack.needsReview = [...new Set([...(pack.needsReview || []), ...Object.keys(added).map(key => "text." + key), "say.b125-pagination"])];
 })();

@@ -970,7 +970,7 @@ window.ROSLeftPanels={install(band,{store,text,format}){
     document.body.classList.remove("pages-ready");$("print-sample").disabled=true;
     host.hidden=true;source.hidden=paperFormat!=="free";
     cancelAnimationFrame(pageFrame);
-    if(paperFormat==="free"){status.textContent="Enterで同じ欄を次の行へ · Tabで横へ · 印刷はA4を選択";status.dataset.state="free";return;}
+    if(paperFormat==="free"){status.textContent=uiText("Enterで同じ欄を次の行へ · Tabで横へ · 印刷はA4を選択");status.dataset.state="free";return;}
     status.textContent="ページを整えています…";status.dataset.state="building";
     const format=paperFormat,table=$("ros-table").cloneNode(true);
     const context=table.querySelector("caption").textContent;
@@ -990,7 +990,7 @@ window.ROSLeftPanels={install(band,{store,text,format}){
           .replace("{format}",uiText(paperNames[format])).replace("{pages}",result.pages).replace("{continuations}",result.continuations);
         status.dataset.state="ready";document.body.classList.toggle("pages-ready",!busy&&!paperEditor?.active);$("print-sample").disabled=busy||paperEditor?.active;paperEditor?.refresh();decoratePages();applySelectionClasses();restorePendingColumnFocus();revealRow();layoutIndex();queueTrack();
       }catch(error){
-        if(revision===pageRevision){status.textContent=error.message;status.dataset.state="error";host.replaceChildren();}
+        if(revision===pageRevision){status.textContent=parent.SHOSAI_STAGE_I18N_MODEL?.say(uiLanguage(),error.message)||error.message;status.dataset.state="error";host.replaceChildren();}
       }finally{if(mount.classList.contains("page-building"))mount.remove();}
     });
   }

@@ -25,10 +25,10 @@ ${table(["Setting", "Where it is saved"], [
 <p>The ${kbd("?")} beside an item opens its explanation (press again or ${kbd("Esc")} to close). Opening it never changes the setting.</p>`
       },
       {
-        id: "language", title: "Language (Japanese, English, Chinese)", status: "verified",
-        keywords: ["language", "english", "japanese", "chinese", "simplified", "traditional", "translation", "switch"],
+        id: "language", title: "Language (Japanese, English, Chinese, Korean)", status: "verified",
+        keywords: ["language", "english", "japanese", "Korean", "chinese", "simplified", "traditional", "translation", "switch"],
         html: `
-<p>${ui("Language / 言語")} offers ${ui("Japanese")} / English / 中文（简体） / 中文（繁體）. Buttons, headings and explanations change; things you typed (show names, scene names, script, notes) are not translated.</p>
+<p>${ui("Language / 言語")} offers five languages: 日本語 / English / 中文（简体） / 中文（繁體） / 한국어. Buttons, headings and explanations change; things you typed (show names, scene names, script, notes) are not translated.</p>
 <p>This booklet has Japanese and English editions. The app passes its language when you open the booklet from it; you can switch with the button in the contents.</p>`
       },
       {

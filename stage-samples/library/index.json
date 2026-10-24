@@ -26,7 +26,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": true,
       "file": "feature-test.stageproj.zip",
-      "sha256": "63f66d99c6deea337fe554fba216a2b7492eec79049112297ab95f773b91b9ac"
+      "sha256": "148fe84f9fabe2357e93e855dcf0d34d914b5b3b9b9b522d449298d7b0b43c05"
     },
     {
       "id": "feature-test-2",
@@ -51,7 +51,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "feature-test-2.stageproj.zip",
-      "sha256": "f4697d02bbbd54b8c4f580c34a2902a393008b3942cfaddd8e3e74423ba8b860"
+      "sha256": "7338a1fc1c1d8cb6d51e68b7359f5ce66030f892e6a2c40cbcd27debb2180d43"
     },
     {
       "id": "eight-circus",
@@ -75,7 +75,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "eight-circus.stageproj.zip",
-      "sha256": "a1eab367f96a9562732f08d2e58ee04269343fbc1fd91676a89b8e863eea531b"
+      "sha256": "3254a062f05642b3c20ead49bed3589398a4cf42a9385b3714b288022ece665b"
     },
     {
       "id": "seam-garden",
@@ -99,7 +99,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "seam-garden.stageproj.zip",
-      "sha256": "d4ce36d8b5153f9bb2561643f027124e9ffeb02e6fffc371b03935e282f4cec7"
+      "sha256": "75c670d69e80508047382b323e79666a503fe234f02675072701aa37b14f3137"
     },
     {
       "id": "romeo-juliet-cued",
@@ -123,7 +123,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "romeo-juliet-cued.stageproj.zip",
-      "sha256": "7b6e6623278a57aa9f182d6f0f8854fcb01183d05458f19054fd2a49577abb44"
+      "sha256": "c0653a5c513c4b184b2a6d0c241e7844c41105a454067938ef1529173ec84d56"
     },
     {
       "id": "romeo-juliet-second",
@@ -147,7 +147,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "romeo-juliet-second.stageproj.zip",
-      "sha256": "55503d792810e94e3d8f0e196e32bb8f12e23b6786de567b5aeed704bdba5d88"
+      "sha256": "160944b28c3ac6e3f63500134645badd479f334cda4a09e4a6a0d08f89aaa639"
     }
   ]
 }

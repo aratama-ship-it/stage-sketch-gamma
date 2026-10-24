@@ -45,19 +45,23 @@
       n=nodes[0];if(n.parentElement.closest('[aria-hidden="true"]'))continue;
       const label=n.parentElement;
       if(label!==button&&(label.children.length||label.closest('svg')))continue;
-      jobs.push({button,n,label,justify:button.dataset.gammaJustify||(layout.display.includes('flex')?'preserve':['left','start'].includes(layout.textAlign)?'flex-start':['right','end'].includes(layout.textAlign)?'flex-end':'center')});
+      // A label that clips its own overflow (for the ellipsis) would also cut whatever lies outside the
+      // trimmed cap/alphabetic box: Japanese glyphs and full-width brackets lose their top and bottom.
+      const own=label===button?null:getComputedStyle(label),clips=!!own&&(own.overflowX!=='visible'||own.overflowY!=='visible');
+      jobs.push({button,n,label,clips,justify:button.dataset.gammaJustify||(layout.display.includes('flex')?'preserve':['left','start'].includes(layout.textAlign)?'flex-start':['right','end'].includes(layout.textAlign)?'flex-end':'center')});
     }
     for(const job of jobs){
       const {button,n,justify}=job;
       if(!button.dataset.gammaJustify)button.dataset.gammaJustify=justify;
       if(job.label===button){job.label=document.createElement('gamma-control-text');n.before(job.label);job.label.append(n);}
       job.label.classList.add('gamma-control-text');
+      if(job.label.classList.contains('gamma-control-text-untrimmed')!==job.clips)job.label.classList.toggle('gamma-control-text-untrimmed',job.clips);
       if(button.style.getPropertyValue('--gamma-control-justify')!==justify)button.style.setProperty('--gamma-control-justify',justify);
     }
     const changed=[];
     for(const job of jobs){
       const {button,n,label}=job,s=getComputedStyle(label),systemFont=s.fontFamily.includes('system-ui');
-      const signature=[n.textContent,s.fontFamily,s.fontSize,s.fontWeight,s.fontStyle,...(systemFont?[button.offsetHeight,button.offsetWidth]:[])].join('|');
+      const signature=[n.textContent,s.fontFamily,s.fontSize,s.fontWeight,s.fontStyle,s.textBoxTrim,...(systemFont?[button.offsetHeight,button.offsetWidth]:[])].join('|');
       if(inkSignatures.get(label)===signature)continue;
       inkSignatures.set(label,signature);
       context.font=`${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
@@ -72,7 +76,9 @@
     for(const job of changed)if(!job.cap){
       const {button,n,ink,marker}=job,baseline=marker.getBoundingClientRect().top,b=button.getBoundingClientRect();
       job.shift=b.top+b.height/2-baseline-(ink.actualBoundingBoxDescent-ink.actualBoundingBoxAscent)/2;
-      const range=document.createRange();range.selectNodeContents(n);job.singleLine=range.getClientRects().length===1;
+      // One line box can still give several rects (one per font run, e.g. Hangul and a full-width plus): compare edges.
+      const range=document.createRange();range.selectNodeContents(n);const rects=[...range.getClientRects()];
+      job.singleLine=rects.length>0&&rects.every(r=>Math.abs(r.top-rects[0].top)<.5&&Math.abs(r.bottom-rects[0].bottom)<.5);
     }
     for(const job of changed){
       if(job.cap)job.shift=(job.ink.actualBoundingBoxAscent-job.ink.actualBoundingBoxDescent-capReference(job.font,job.n.textContent))/2;

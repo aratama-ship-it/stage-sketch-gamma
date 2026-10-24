@@ -51,9 +51,9 @@ ${table(["表", "環境設定", "内容"], [
 <li>β版のショーは読めます。旧照明は変換されます（${ref("light-legacy", "第7部 7-8")}）。</li>
 <li>AI showwright で作ったJSONも、ここから読み込みます（${ref("ai-showwright", "11-6")}）。</li>
 </ul>
-${fig("release084-project-open", "プロジェクトのzip・フォルダを読み込む入口。", "プロジェクトを開く")}
-${fig("release084-project-save", "音源入りのプロジェクトを書き出します。", "プロジェクトの保存")}
-${fig("release084-previous-shows", "Mac版の「以前のショー」。同梱試験場と殻の模擬で撮影。", "以前のショー")}
+${fig("release085-project-open", "「ショー一覧」。この端末にあるショーを選んで開きます。", "プロジェクトを開く")}
+${fig("release085-project-save", "音源入りのプロジェクトを書き出します。", "プロジェクトの保存")}
+${fig("release085-previous-shows", "Mac版の「以前のショー」。以前使っていたショーを選び、プロジェクトとして保存できます。", "以前のショー")}
 `
       },
       {

@@ -937,6 +937,9 @@ html[data-stage-skin] [data-gamma-justify]:not([data-gamma-justify="preserve"]) 
 .gamma-control-text { display:inline-block; transform:translateY(var(--gamma-text-shift,0px)); }
 @supports (text-box:trim-both cap alphabetic) {
   .gamma-control-text { text-box:trim-both cap alphabetic; }
+  /* gamma-appearance.js marks labels that clip (overflow for the ellipsis). Keep their full text box,
+     or glyphs outside cap height / alphabetic baseline are cut; the ink shift still centres them. */
+  .gamma-control-text.gamma-control-text-untrimmed { text-box:normal; }
 }
 html[data-stage-skin] :is(.stage-timeline-shortcut,.view-key,.stage-present-mini-shortcut kbd,.gamma-mode-exit kbd) {
   box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
