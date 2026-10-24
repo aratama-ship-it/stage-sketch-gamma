@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.83";
+  const GAMMA_APP_VERSION = "v0.3.84";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2512,7 +2512,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-22`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-23`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -24314,7 +24314,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   function setLightingPlanMode(mode) {
     lightingPlanMode = mode === "replace" ? "replace" : "add";
     const replacing = lightingPlanMode === "replace";
-    const replacePhrase = languageValue(() => "REPLACE", () => "置換");
+    const replacePhrase = tx("置換"); // 画面のラベル・placeholder と同じ辞書の語で照合する（zh は languageValue だと REPLACE になり、表示の「替换」と食い違った）
     if (els.lightingPlanAddChoice) {
       els.lightingPlanAddChoice.classList.toggle("is-selected", !replacing);
       els.lightingPlanAddChoice.setAttribute("aria-pressed", String(!replacing));
@@ -24497,7 +24497,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (!api || !pendingLightingPlan) return;
     const pending = pendingLightingPlan;
     const mode = lightingPlanMode;
-    const replacePhrase = languageValue(() => "REPLACE", () => "置換");
+    const replacePhrase = tx("置換"); // 画面のラベル・placeholder と同じ辞書の語で照合する（zh は languageValue だと REPLACE になり、表示の「替换」と食い違った）
     if (lightingPlanMode === "replace" && (!els.lightingPlanReplacePhrase || els.lightingPlanReplacePhrase.value.trim() !== replacePhrase)) return;
     if (els.lightingPlanApply) els.lightingPlanApply.disabled = true;
     const hash = await lightingSnapshotHash(pending.design);
@@ -45775,7 +45775,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
           beforeQuit: () => window.GAMMA_FIELD_RUNS?.beforeQuit(),
           draftRecoveryNotice: payload => importFailureNotice(payload.unavailable
             ? tx("復旧台帳を確認できません。原文は上書きしていません。")
-            : tx("旧版の照明の控えを文書{count}件分保全しました。「控え・書き出し」から取り出せます。").replace("{count}", payload.archivedOwners)),
+            : tx("以前の版で開いた後の照明の控えを保全しました（この Mac の文書{count}件分）。「控え・書き出し」から取り出せます。").replace("{count}", payload.archivedOwners)),
           saveState: nativeProjectSaveState,
           saveNoticeChanged: syncSaveLocationNotice,
           error: () => importFailureNotice(tx("プロジェクトを開くか保存する処理を完了できませんでした。元ファイルは保持しています。")),

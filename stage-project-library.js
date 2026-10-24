@@ -22,6 +22,10 @@
     }
     return index.samples;
   }
+  function visibleSamples(samples, host=root){
+    const development=host.STAGE_SHELL?.platform==='macos' ? host.STAGE_SHELL.qa===true : host.STAGE_BUNDLED_SHOWS?.isDevelopment?.()===true;
+    return samples.filter(item=>item.type!=='fixture'||development);
+  }
   // Opening an absent DB must abort its upgrade, never create a migration store.
   async function readRecord(indexedDB,name,store,key){
     if(!indexedDB)fail('legacy-unavailable');
@@ -146,7 +150,7 @@
       }
     });
   }
-  const model={prepareSample,createAcquirer,validateIndex,readRecord,readLegacy,legacyEntries,legacyAudio,legacyDocument,packLegacy};
+  const model={visibleSamples,prepareSample,createAcquirer,validateIndex,readRecord,readLegacy,legacyEntries,legacyAudio,legacyDocument,packLegacy};
   if(!root.document)return Object.freeze(model);
   const document=root.document;
   let host=null,mode='samples',entries=[],dialog=null,list=null,status=null,errorBox=null,count=null,previous=null,loadGeneration=0,busy=false,requestedFeature=false,closeRequested=false;
@@ -249,7 +253,7 @@
   }
   async function loadIndex(){
     const controller=new root.AbortController(),timer=root.setTimeout(()=>controller.abort(),30000);
-    try{return validateIndex(await(await fetchLocal('./stage-samples/library/index.json',controller.signal)).json());}
+    try{return visibleSamples(validateIndex(await(await fetchLocal('./stage-samples/library/index.json',controller.signal)).json()));}
     finally{root.clearTimeout(timer);}
   }
   async function open(nextMode='samples'){
@@ -273,7 +277,7 @@
   // Old shells without gammaProject keep stage-sketch's usual local URL path.
   root.addEventListener('DOMContentLoaded',()=>{
     const url=new URL(root.location.href);
-    if(native()&&url.searchParams.has('feature-test')&&['localhost','127.0.0.1','::1','[::1]'].includes(url.hostname))
+    if(native()&&url.searchParams.has('feature-test')&&root.STAGE_BUNDLED_SHOWS?.isDevelopment?.()===true)
       root.dispatchEvent(new CustomEvent('stageSketchProject:requestSamples',{detail:{featureTest:true}}));
   },{once:true});
   return Object.freeze({...model,open,configure:callbacks=>{host=callbacks;},sendZip});

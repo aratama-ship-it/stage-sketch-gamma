@@ -249,7 +249,7 @@
  // Fetch through the parent's PWA controller, then keep the renderer opaque and self-contained.
  async function frameDocument(){
   const responseFor=async url=>{let response;try{response=await fetch(url);if(response.ok)return response;}catch(_){}try{response=await window.caches?.match(url);if(response?.ok)return response;}catch(_){}throw Error('frame-unavailable');};
-  const url=new URL('field-frame.html?v=20261022-v0383',location.href),response=await responseFor(url);
+  const url=new URL('field-frame.html?v=20261023-v0384',location.href),response=await responseFor(url);
   // Bind metadata to this freshly constructed srcdoc, never to a later message or frame.
   if(url.origin!==location.origin||(response.url&&new URL(response.url).origin!==location.origin))throw Error('frame-origin');
   const doc=new DOMParser().parseFromString(await response.text(),'text/html');if(!doc.documentElement.hasAttribute('data-study-renderer')||!doc.querySelector('.field-frame-drawings'))throw Error('frame-unavailable');doc.documentElement.dataset.stageSkin=currentSkin();const base=doc.createElement('base');base.href=new URL('.',url).href;doc.head.prepend(base);

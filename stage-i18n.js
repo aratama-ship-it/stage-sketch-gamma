@@ -32,6 +32,22 @@
 
   const TEXT = {
 
+    "Mac 版で、照明の草稿の控えが際限なく増えないようにしました。文書ごとに「いまの草稿と直近10件の控え（30日まで）」を残し、それより古い控えは、その文書で照明の草稿を保存したときに整理します。照明の編集を長く続けても、控えの置き場所の容量が増え続けません。控えのフォルダに Finder の隠しファイルなどが置かれても、読み込みを止めません。": "On Mac, lighting draft backups no longer pile up without limit. Each document keeps its current draft and the 10 most recent backups (up to 30 days), and older backups are tidied up when a lighting draft for that document is saved. Long lighting sessions no longer keep growing the space used for backups, and hidden Finder files or similar items in the backup folder no longer stop the import.",
+
+    "Mac 版で、ショーを開いただけでは控えの世代が増えないようにしました。確認のために何度開いても、編集前の控えが押し出されません。名前を .stageproj に変えた ZIP ファイルを「開く」の窓から選べるようにし、Finder で複数のファイルをまとめて開いたときは、最初の1件を開いたことをお知らせします。": "On Mac, simply opening a show no longer adds a backup generation, so opening a file again and again to check it does not push out the backups from before your edits. ZIP files renamed to .stageproj can now be chosen in the Open window, and when you open several files at once from the Finder, you are told that the first one was opened.",
+
+    "Mac 版で照明の草稿を保存できなくなったとき（容量不足など）、閉じる・終了で「照明の草稿をファイルへ書き出して閉じる／草稿を捨てて閉じる／キャンセル」から選べるようにしました。起動したときから草稿の控えを読めない場合は、状態欄から控えを作り直したり、フォルダを Finder で表示したりできます。終了を取り消したときは余計な案内を出さず、保存が終わっていないときや失敗したときだけお知らせします。": "On Mac, if lighting drafts can no longer be saved (for example, because the disk is full), closing or quitting now lets you choose to export the lighting draft to a file and close, discard the draft and close, or cancel. If draft backups cannot be read from launch, you can rebuild them or show their folder in the Finder from the status area. If you cancel quitting, no extra message appears; you are told only when saving has not finished or has failed.",
+
+    "Mac 版のメニュー・警告・保存と終了の案内を、環境設定で選んだ表示言語（日本語・英語・韓国語・簡体字・繁体字）で表示するようにしました。開発用の言葉を使っていた案内を言い換え、製品版の表示メニューから試験用の項目を外し、「サービス」「ウインドウ」などの標準のメニューを加えました。以前の版で開いた後に控えを保全したときの通知には、対象の件数を示します。": "On Mac, menus, warnings and save and quit messages now appear in the display language chosen in Preferences (Japanese, English, Korean, Simplified Chinese or Traditional Chinese). Messages that used development terms have been reworded, test-only items have been removed from the View menu of the release version, and standard menus such as Services and Window have been added. When backups are preserved after a document was opened in an earlier version, the notice now shows how many are affected.",
+
+    "照明の状態欄で、Mac 版では「この Mac に控え保存済み」と表示するようにしました（ブラウザ版は従来どおり）。「保存済みに戻す」の後に古い復元のお知らせが残らないようにし、控えから明示的に読み込んだ直後もシーン番号が正しく表示されます。保存済みに戻すたびに増えていた控えは、直近2件にまとめます。": "In the lighting status area, the Mac version now shows “Backup saved on this Mac” (the browser version is unchanged). After returning to the saved version, an old restore notice no longer remains, and scene numbers are shown correctly right after explicitly importing from a backup. Backups that built up each time you returned to the saved version are now limited to the two most recent.",
+
+    "韓国語・簡体字・繁体字で訳が抜けていた画面の文を補いました。": "Missing translations of on-screen text in Korean, Simplified Chinese and Traditional Chinese have been filled in.",
+
+    "サンプルの一覧に、開発用の試験場を表示しないようにしました。オフラインで使うために保存する見本のデータからも重複を除きました。": "The development test show no longer appears in the sample list. Duplicate data has also been removed from the samples saved for offline use.",
+
+    "検査と文書の整備：Mac の保存・控え・劇場の新版の検査を Mac で毎晩回す仕組み、公開前に書きかけの更新文を止める検査、検査の環境の Node の版の固定を整えました。冊子の照明の章には、ブラウザ版と Mac 版の控えの保存先の違いを追記しました。": "Testing and documentation: added a way to run checks of Mac saving, backups and new theatre versions every night on a Mac, a check that stops a half-written update note from being published, and a fixed Node version for the test environment. The lighting chapter of the guide now explains where backups are kept in the browser and Mac versions.",
+
     "保存に失敗したときは元の内容と未保存の編集を保ち、一時的な障害が解消した後は同じ画面から保存をやり直せるようにしました。容量を確かめる画面では、控えの書き出しや取消の後も操作を続けられます。Mac 版の情報パネルも、保存先が未確定の状態を保存済みと表示しないようにしました。": "If saving fails, the original content and unsaved edits are kept, and you can retry from the same screen once a temporary problem is resolved. The storage screen remains usable after exporting a backup or cancelling. The Mac information panel no longer reports a file as saved when its destination has not been confirmed.",
 
     "共有で受け取る内容を保存前に確かめ、読み込めない内容で直前の正常なショーが置き換わらないようにしました。受信を断った後も、同じ画面から送り直せます。": "Shared content is now checked before it is saved, so unreadable content does not replace the last valid show. After content is rejected, you can send it again from the same screen.",
@@ -5445,3 +5461,181 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "復旧台帳を確認できません。原文は上書きしていません。": "Could not verify the recovery registry. The originals have not been overwritten.",
   "旧版の照明の控えを文書{count}件分保全しました。「控え・書き出し」から取り出せます。": "Preserved lighting recovery copies for {count} documents from the older app. Retrieve them from Save / Export."
 });
+
+// B115 U-01: native draft location (browser wording remains unchanged).
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {"この Mac に控え保存済み": "Backup saved on this Mac"});
+
+// B112: actions shown only while native recovery is unavailable.
+window.SHOSAI_DRAFT_LEDGER_REPAIR_COPY = window.SHOSAI_DRAFT_LEDGER_REPAIR_COPY || {};
+window.SHOSAI_DRAFT_LEDGER_REPAIR_COPY["ja"] = {
+  "rebuild": "台帳を作り直す…",
+  "reveal": "台帳のフォルダを Finder で表示"
+};
+
+// B112: actions shown only while native recovery is unavailable.
+window.SHOSAI_DRAFT_LEDGER_REPAIR_COPY = window.SHOSAI_DRAFT_LEDGER_REPAIR_COPY || {};
+window.SHOSAI_DRAFT_LEDGER_REPAIR_COPY["en"] = {
+  "rebuild": "Rebuild recovery ledger…",
+  "reveal": "Show ledger folder in Finder"
+};
+
+// B114: Mac shell presentation. Japanese keys are shared with the Web UI.
+(function () {
+  const pack = window.SHOSAI_I18N_PACKS["en"];
+  const added = {
+  "OK": "OK",
+  "以前のショーの .stagesketch または .json を選んでください。": "Choose a previous show in .stagesketch or .json format.",
+  "ファイルが空か、32 MiB を超えています。元のファイルは変更していません。": "The file is empty or exceeds 32 MiB. The original file is unchanged.",
+  "ファイルを読み取れません。": "Could not read the file.",
+  "ショーの JSON を読み取れません。元のファイルは変更していません。": "Could not read the show JSON. The original file is unchanged.",
+  "アプリの中のファイルの記録が壊れています。アプリを入れ直してください。": "The app's file record is damaged. Reinstall the app.",
+  "アプリの中のファイルが壊れています。アプリを入れ直してください。": "Files inside the app are damaged. Reinstall the app.",
+  "アプリの画面が止まりました。アプリを終了して開き直してください。": "The app screen has stopped. Quit and reopen the app.",
+  "最後のプロジェクトを開く": "Open the last project",
+  "最初の窓を表示": "Show the welcome window",
+  "この zip は読めません。": "Cannot read this zip.",
+  "ファイルの中身が保存したときの記録と食い違っています（ほかのアプリで変わった可能性があります）。元のファイルを残すため、保存先を選ぶまで書き込みません。": "The file contents differ from the saved record (another app may have changed them). To preserve the original file, nothing will be written until you choose a save destination.",
+  "名称未設定": "Untitled",
+  "以前のファイルには保存できません。別の .stageproj として保存してください。": "Cannot save to the previous file. Save as a different .stageproj file.",
+  "同名のファイルが既にあります。別の名前で保存してください。": "A file with this name already exists. Save with a different name.",
+  "保存する内容を受け取れませんでした。もう一度保存してください。": "Could not receive the content to save. Try saving again.",
+  "同名のファイルが既にあるか、保存中です。別の名前で保存してください。": "A file with this name already exists, or saving is in progress. Save with a different name.",
+  "保存先を選ぶ窓を開けません。ショーは開いたまま残しています。": "Could not open the save destination window. The show remains open.",
+  "元のファイルを残して別の名前で保存するか、この場所に上書きするかを選んでください。「閉じる」を選ぶと保存せずに閉じます。": "Choose to keep the original and save with another name, or overwrite this location. Choosing Close closes without saving.",
+  "別名で保存…": "Save As…",
+  "この場所に上書きして続ける": "Overwrite this location and continue",
+  "元のファイルを残すため、別の名前か別の場所を選んでください。上書きしたいときは「保存」から『この場所に上書きして続ける』を選んでください。": "Choose a different name or location to keep the original file. To overwrite, choose 'Overwrite this location and continue' from Save.",
+  "まだ保存できる内容を受け取っていません。少し待ってからもう一度お試しください。": "No content ready to save has been received yet. Wait a moment and try again.",
+  "控えのフォルダの場所が正しくないため、控えを書き出せません。": "Cannot export the backup because its folder location is invalid.",
+  "控えを書き出せません。": "Could not export the backup.",
+  "プロジェクトを開く準備ができていません。": "Not ready to open a project.",
+  "このファイルが前と同じ文書だと確かめられません。照明の控えはそのまま残しています。": "Could not confirm that this file is the same document as before. The lighting backups are kept unchanged.",
+  "照明の控えの記録を読めません。記録の中身は書き換えていません。": "Could not read the lighting backup records. Their contents have not been changed.",
+  "照明の控えの記録を書いた後の確認に失敗しました。": "Could not verify the lighting backup records after writing them.",
+  "照明の草稿を書いた後の確認で内容が違っていました。ショーは開いたまま残しています。": "The lighting draft differed when checked after writing. The show remains open.",
+  "別のフォルダに残した記録の一覧が合いません。元の記録は残しています。アプリを開き直す前に次の場所を確かめてください: ": "The record list in the other folder does not match. The original records are kept. Check this location before reopening the app: ",
+  "この照明の草稿がどの文書のものか確かめられません。": "Could not determine which document this lighting draft belongs to.",
+  "この照明の草稿は別の文書のものです。": "This lighting draft belongs to a different document.",
+  "控えの中身を確かめられません。元の控えはそのまま残しています。": "Could not verify the backup contents. The original backup is kept unchanged.",
+  "元の文書の照明の控えが見つかりません。": "Could not find the lighting backup for the original document.",
+  "プロジェクトの受け取り情報が正しくないか、zip が 300 MiB を超えています。": "The project transfer information is invalid, or the zip exceeds 300 MiB.",
+  "舞台スケッチのプロジェクトではありません": "This is not a Stage Sketch project",
+  "新しい版の舞台スケッチで作られています。アプリを更新してください": "Created with a newer Stage Sketch version. Update the app",
+  "読める控えはありません。": "No readable backups are available.",
+  "Finder でこのファイルを右クリックして「パッケージの内容を表示」を選び、Backups フォルダの次の控えを別の場所へコピーして確かめてください（新しい順）：\n": "In Finder, right-click this file and choose Show Package Contents. Copy the following backups from the Backups folder to another location to check them (newest first):\n",
+  "show.json を読み込めません。原本は変更していません。\n": "Could not read show.json. The original file is unchanged.\n",
+  "ショーの中身が保存したときの記録と食い違っています（ほかのアプリで変わった可能性があります）。読み込める内容だったので開きました。元のファイルと控えを確かめてください。": "The show contents differ from the saved record (another app may have changed them). The readable content was opened. Check the original file and backups.",
+  "追加の途中だった音源の一時ファイルが残っていました。読み込まずに、そのまま残しています。": "Temporary audio files from an unfinished addition remain. They were left in place without being loaded.",
+  "保存する内容に含まれるファイルを確かめられません。": "Could not verify the files included in the content to save.",
+  "保存する内容が壊れているため、保存を止めました。ショーは開いたまま残しています。": "Saving stopped because the content is damaged. The show remains open.",
+  "音源 ID または音源の大きさが正しくありません（上限 300 MB）。": "The audio ID or size is invalid (limit: 300 MB).",
+  "この音源 ID はファイル名として使えません。": "This audio ID cannot be used as a filename.",
+  "音源の受け取り情報が一致しません。もう一度音源を選んでください。": "The audio transfer information does not match. Select the audio again.",
+  "追加中の音源が見つかりません。前の音源はそのまま残しています。": "Could not find the audio being added. The previous audio is kept unchanged.",
+  "保存する内容をまだ受け取っていないため、保存を止めました。": "Saving stopped because the content to save has not arrived yet.",
+  "保存先が舞台スケッチのファイルではありません。": "The save destination is not a Stage Sketch file.",
+  "ファイルの中の {name} が正しい形ではありません。元のファイルを守るため保存を止めました。": "The {name} item inside the file is invalid. Saving stopped to protect the original file.",
+  "iCloud Drive から取得中です。Finder でこのプロジェクトを『今すぐダウンロード』し、取得が完了してからもう一度開いてください。": "Downloading from iCloud Drive. In Finder, choose Download Now for this project, then reopen it after the download completes.",
+  "このファイルを開く許可を得られません。Finder から開き直してください。": "Could not obtain permission to open this file. Reopen it from Finder.",
+  "照明の控えの記録を作り直しますか？": "Rebuild the lighting backup records?",
+  "今ある控えは失われません。壊れた記録はファイルの一覧と大きさを記録して別のフォルダに残します。次にアプリを開いたときに新しい記録を作ります。": "Existing backups will be kept. The damaged records will be kept in another folder after recording their file list and sizes. New records will be created the next time you open the app.",
+  "作り直す": "Rebuild",
+  "照明の控えの記録を別のフォルダに残しました": "Lighting backup records were kept in another folder",
+  "ショーを保存してアプリを終了し、開き直してください。次に開いたときに新しい記録を作ります。残した場所: ": "Save the show, quit and reopen the app. New records will be created when you reopen it. Records kept at: ",
+  "残した場所を Finder で表示": "Show retained location in Finder",
+  "照明の控えの記録を作り直せません。元の記録はそのまま残しています。": "Could not rebuild the lighting backup records. The original records are kept unchanged.",
+  "照明の控えの記録があるフォルダを確かめられません。": "Could not verify the folder containing the lighting backup records.",
+  "照明の草稿をファイルへ書き出しました": "Exported the lighting draft to a file",
+  "書き出した場所を Finder で表示": "Show export location in Finder",
+  "このファイルの形式にアプリの画面が対応していません。アプリを最新にしてください。": "The app screen does not support this file format. Update the app.",
+  "終了前にショーかリハーサルの記録を保存できませんでした。ショーは開いたまま残しています。": "Could not save the show or rehearsal records before quitting. The show remains open.",
+  "以前のショーを読み取れません。32 MiB 以下の .stagesketch または .json を選んでください。": "Could not read the previous show. Choose a .stagesketch or .json file of 32 MiB or less.",
+  "別のプロジェクトを開く準備中です。読み込み後にもう一度開いてください。": "Preparing to open another project. Try opening it again after loading finishes.",
+  "この画面はプロジェクトファイルにまだ対応していません。従来のショー一覧で起動しました。": "This screen does not yet support project files. Started with the previous show list.",
+  "ショーを画面に表示できませんでした。ファイルはそのまま残しています。": "Could not display the show. The file is kept unchanged.",
+  "画面の準備がまだ終わっていません。少し待ってからもう一度保存してください。": "The screen is not ready yet. Wait a moment and save again.",
+  "保存の確認が返ってきません。ショーは開いたまま残しています。もう一度保存してください。": "No save confirmation was received. The show remains open. Try saving again.",
+  "保存を始められませんでした。ショーは開いたまま残しています。": "Could not start saving. The show remains open.",
+  "この画面は文書の安全な切替に対応していません。通常の保存・書き出しは使えます。アプリと画面を更新してください。": "This screen does not support safe document switching. Normal saving and export are available. Update the app and screen.",
+  "照明の草稿をこの Mac の控えに残せません": "Could not retain the lighting draft in this Mac's backups",
+  "ショー本体は保存済みです。「草稿を捨てて閉じる」を選ぶと、この Mac の控えには草稿を残せません。画面にある控えは消しません。": "The show itself is saved. Choosing 'Discard draft and close' cannot retain the draft in this Mac's backups. Backups in the screen are not deleted.",
+  "照明の草稿をファイルへ書き出して閉じる": "Export lighting draft to a file and close",
+  "草稿を捨てて閉じる": "Discard draft and close",
+  "編集中の照明の草稿を確かめられません。ショーは開いたまま残しています。": "Could not verify the lighting draft being edited. The show remains open.",
+  "照明の草稿を書き出せません。ショーは開いたまま残しています。": "Could not export the lighting draft. The show remains open.",
+  "保存または読み込み中です。完了後にもう一度開いてください。": "Saving or loading is in progress. Open again when it finishes.",
+  "画面の準備ができていません。もう一度開いてください。": "The screen is not ready. Try opening again.",
+  "途中で画面が切り替わったため、読み込みを止めました。元のファイルは変えていません。": "Loading stopped because the screen changed partway through. The original file is unchanged.",
+  "以前の形式のショーを変換できませんでした。": "Could not convert the show from the previous format.",
+  "以前の形式のファイルです。": "This file uses a previous format.",
+  "新しいプロジェクト（.stageproj）として開きます。保存すると新しいプロジェクトファイルが作られ、元のファイルは変更されません。": "Opens as a new project (.stageproj). Saving creates a new project file and leaves the original unchanged.",
+  "このショーの版には対応していません。": "This show version is not supported.",
+  "ファイルが 32 MiB を超えています。": "The file exceeds 32 MiB.",
+  "ショーの内容が壊れているか、対応していない形式です。": "The show content is damaged or uses an unsupported format.",
+  "元のファイルと現在のショーは変更していません。\n": "The original file and current show are unchanged.\n",
+  "入手の待ち時間を超えました。元のファイルは保持しています。保存先を確認してから、もう一度入手してください。": "The acquisition timed out. The original file is kept. Check the save destination and acquire it again.",
+  "以前のショーをプロジェクトとして保存": "Save a previous show as a project",
+  "同じ名前のサンプルがあります": "A sample with this name already exists",
+  "別名で新しく入手（連番）": "Acquire a new copy with a numbered name",
+  "この画面では従来のショー一覧を使います。プロジェクトファイルの操作は対応した画面で利用できます。": "This screen uses the previous show list. Project file operations require a supported screen.",
+  "プロジェクト": "Project",
+  "控えにできるプロジェクトがありません。": "No project is available to back up.",
+  "ファイル": "File",
+  "最近使った項目": "Open Recent",
+  "リハーサル記録の控えを Finder で表示": "Show rehearsal record backups in Finder",
+  "まだ控えはありません": "No backups yet",
+  "リハーサル記録の控えを表示できません。": "Could not show the rehearsal record backups.",
+  "最近使った項目はありません": "No recent items",
+  "劇場を変えたショーの内容を確かめられません。": "Could not verify the show with the changed theatre.",
+  "劇場を変える前と後の版の対応が合いません。もう一度やり直してください。": "The versions before and after the theatre change do not match. Try again.",
+  "はじめての劇場設定か、決まった劇場の変更かを判断できません。": "Could not determine whether this is initial theatre setup or a change to a confirmed theatre.",
+  "保存した新しい版を読み直して確かめられません。": "Could not verify the saved new version by reading it back.",
+  "保存した新しい版を読み直すと内容が違っていました。ファイルは残して、切り替えを止めました。": "The saved new version differed when read back. The file was kept and switching stopped.",
+  "（{count} 件）": " ({count} items)",
+  "すでに開いている舞台スケッチγにファイルを渡せませんでした。": "Could not pass the file to Stage Sketch γ, which is already open.",
+  "アプリの画面を起動できません。舞台スケッチγがほかにも開いていれば終了してから開き直してください（ポート {port} が使用中）。": "Could not start the app screen. If another Stage Sketch γ is open, quit it and reopen this app (port {port} is in use).",
+  "アプリの画面を起動できません。アプリを入れ直してください。": "Could not start the app screen. Reinstall the app.",
+  "最初の1件だけ開きました。舞台スケッチγは1つの窓で1つのショーを開きます。": "Only the first file was opened. Stage Sketch γ opens one show in one window.",
+  "終了前の保存を待っています。開いている保存画面を確認してください。": "Waiting for the save before quitting. Check the open save window.",
+  "保存が完了していないため、終了を中止しました": "Quitting stopped because saving has not finished",
+  "プロジェクトは開いたまま保持しています。保存画面が開いていれば完了するかキャンセルし、「ファイル → 保存」で保存し直してから終了してください。繰り返す場合は「ヘルプ → 診断情報を書き出す」で状況を確認できます。": "The project remains open. Finish or cancel any open save window, then save again using File → Save before quitting. If this repeats, use Help → Export diagnostics to check the situation.",
+  "書き出しが完了しません。プロジェクトを閉じずに残しました。": "Export has not finished. The project remains open.",
+  "終了前の保存が完了しません。プロジェクトを保持しています。もう一度終了すると、控えを書き出す方法を選べます。": "Saving before quitting has not finished. The project is kept open. Quit again to choose how to export a backup.",
+  "終了前の保存が完了しません": "Saving before quitting has not finished",
+  "最後に受け取ったショーの控えを書き出せます。未送信の編集・リハーサル記録・書き出し中のファイルは、この控えに含まれません。": "You can export a backup of the last show content received. It does not include edits not yet received, rehearsal records or files still being exported.",
+  "もう一度": "Try again",
+  "保存せずに終了": "Quit without saving",
+  "控えへ書き出して終了": "Export backup and quit",
+  "控えを書き出せません。終了を中止しました。": "Could not export a backup. Quitting stopped.",
+  "画面を復旧できません": "Could not recover the screen",
+  "アプリが最後に受け取った内容は残しています。直前の編集の一部は戻せないことがあります。": "The last content received by the app is kept. Some of your most recent edits may not be recoverable.",
+  "診断情報を書き出す": "Export diagnostics",
+  "舞台スケッチγ Macについて": "About Stage Sketch γ for Mac",
+  "起動時の動作": "On startup",
+  "終了": "Quit",
+  "取り消す": "Undo",
+  "カット": "Cut",
+  "ペースト": "Paste",
+  "すべて選択": "Select All",
+  "ヘルプ": "Help",
+  "診断情報を書き出す…": "Export diagnostics…",
+  "画面を読み込めません。": "Could not load the screen.",
+  "書き出しが完了しませんでした。": "Export did not finish.",
+  "診断情報を書き出せません。": "Could not export diagnostics.",
+  "舞台スケッチγ Mac · {version}": "Stage Sketch γ for Mac · {version}",
+  "© 2026 PYGMIX. All rights reserved.\n\n舞台スケッチは PYGMIX が提供します。改変版・なりすましの配布を禁じます。共有リンクは正規の舞台スケッチから発行されたものだけが有効です。\n\nブラウザ版のショーはお使いの端末のブラウザの中だけに保存されます。ブラウザの設定や長い未使用で消えることがあります（Safari は 7 日間の未操作で削除します）。控えの書き出しと Mac 版の利用をおすすめします。Mac 版はショーをファイルとして保存します。\n\n作品の内容・入力した文字・画面の画像（スクリーンショット）・個人を特定できる情報は収集しません。改善のため、どのタブや機能を何回使ったかの件数だけを匿名で集計します（環境設定でオフにできます）。\n\n共有機能（ログイン版）: 名簿にはユーザー名とパスワード（ハッシュ化）と契約の段だけを保存します。メールアドレス等は保存しません。\n\n公演の進行・安全に関する判断は利用者が行ってください。\n\n日本法に準拠し、紛争は PYGMIX の所在地を管轄する裁判所とする。\n\n問い合わせ先: https://pygmix.com/contact": "© 2026 PYGMIX. All rights reserved.\n\nShows in the browser edition are stored only in the browser on your device and may be deleted by browser settings or prolonged inactivity. Export backup copies; the Mac app saves shows as files.\n\nWe collect only anonymous counts of tab and feature use, which you can turn off in Settings. We do not collect show content, text you enter, screenshots or personally identifiable information.\n\nYou are responsible for decisions about running a performance and its safety.\n\nThis English text is a summary; the Japanese version takes precedence.\n\nContact: https://pygmix.com/contact",
+  "設定…": "Settings…",
+  "サービス": "Services",
+  "舞台スケッチγを隠す": "Hide Stage Sketch γ",
+  "ほかを隠す": "Hide Others",
+  "すべてを表示": "Show All",
+  "ウインドウ": "Window",
+  "しまう": "Minimise",
+  "拡大／縮小": "Zoom",
+  "すべてを手前に": "Bring All to Front",
+  "舞台スケッチγ の使い方": "Stage Sketch γ User Guide",
+  "以前の版で開いた後の照明の控えを保全しました（この Mac の文書{count}件分）。「控え・書き出し」から取り出せます。": "Preserved lighting backups after opening an earlier version ({count} documents on this Mac). Retrieve them from Save / Export."
+};
+  Object.assign(pack.text, added);
+  pack.needsReview = [...new Set([...(pack.needsReview || []), ...Object.keys(added).map(key => "text." + key)])];
+})();

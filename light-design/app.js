@@ -568,15 +568,22 @@
        → 呼び出し側の第2・第3引数（ボタンの文字と処理）は受け取るが使わない。
          古い呼び出しをそのまま動かすために引数は残してある。 */
   const LOG_EMPTY = "ここに操作の結果や注意が出ます";
+  let logMessage = "";
   function toast(text, _actionLabel, _action) {
     const el = $("insp-log");
     if (!el) return;                       // 埋め込み以外の画面では欄が無いこともある
     const body = String(text == null ? "" : text);
+    logMessage = body;
     el.textContent = body || LOG_EMPTY;
     el.dataset.empty = body ? "false" : "true";
     el.title = body;                       // 2行を超えたぶんは重ねて読めるようにする
   }
-  function clearLog() { const el = $("insp-log"); if (el) { el.textContent = LOG_EMPTY; el.dataset.empty = "true"; el.title = ""; } }
+  function clearLog(expected) {
+    // Compare the original message, not DOM text changed by the translator.
+    if (expected !== undefined && logMessage !== expected) return;
+    logMessage = "";
+    const el = $("insp-log"); if (el) { el.textContent = LOG_EMPTY; el.dataset.empty = "true"; el.title = ""; }
+  }
   function dialog(html, buttons, validate) {
     const d = $("dialog"); d.innerHTML = ""; d.hidden = false;
     const box = document.createElement("div"); box.className = "in gamma-light-dialog";
@@ -7548,6 +7555,9 @@
     state.designName = o.name || "";
     state.history = options.preserveHistory ? previousHistory : options.host ? [] : [...previousHistory, previousSnapshot].slice(-100); state.future = []; baseline = snapshot();
     viewedCueIds.clear();
+    // Imported lighting omits host display numbers. Use the same context
+    // restoration as Undo before the first render (including explicit recovery).
+    restoreSceneContext?.();
     renderAll();
     if (options.host && !options.preserveAppliedBaseline) markApplied();
     } catch(error) {
@@ -7738,7 +7748,7 @@
   // 試作の検証用。製品では出さない（状態を外から読めるようにしておく）
   window.__RIG = { state, E, planBox, secBox, secOf, SECS,
     /* 「照明のあるある」（light-presets-ui.js）との接続点。app.js の内部関数をここだけから貸す（2026-09-14）。 */
-    hooks: { captureDocumentState, restoreDocumentState, setSceneContextRestorer, viewLightCue, setCuePlacementReader, refreshCuePlacements, setSoloFigure, setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, dialog, undo, redo, historyBlocked:()=>historyComposing || Boolean(state.drag) || !$("dialog")?.hidden, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
+    hooks: { captureDocumentState, restoreDocumentState, setSceneContextRestorer, viewLightCue, setCuePlacementReader, refreshCuePlacements, setSoloFigure, setCueSyncPending, setTimelineTransportBridge, renderTransport, togglePlay, setTimelinePlaybackFrame, fixtureLabelSnapshot, setSceneTimingContext, lxSceneEntryTiming, lxGotoScene, cue, scene, setLight, ensureOn, commit, uid, lightOf, fixtureById, toast, clearLog, dialog, undo, redo, historyBlocked:()=>historyComposing || Boolean(state.drag) || !$("dialog")?.hidden, label, renderAll, draw, stop, home, lxEditingQ, lxNo, defaultAim, COLORS, buildDesign, applyDesign, markApplied, refreshApplyState, lxEnterCue, spatialScene, compositeSpatial, playbackPreviewStatus, setPlaybackPreviewActive, paintPlaybackPreview, drawSimpleFront, getDistanceMetric:()=>distanceMetric } };
 
   /* ブラウザの大きさに追従する。モーダルだからと固定にしない（2026-09-11 本人要望）。
      rAFで1回にまとめる（ドラッグ中の連続リサイズで描き直しが溜まらないように）。 */

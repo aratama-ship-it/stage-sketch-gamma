@@ -326,7 +326,10 @@
   /* 「控えを保管」は押すたびに控えのまるごと複製を1件増やす。これが積もって領域を食うので、
      書く前に古い保管ぶんを1件だけ残して片付ける（＝保管後は 前回ぶん＋今回ぶん の2件まで）。 */
   function trimConflicts(draftKey, keep) {
-    const olds=storageRows().map(r=>r.key).filter(k=>k.startsWith(draftKey+':conflict:')).sort();
+    const prefix=draftKey+':conflict:';
+    const olds=storageRows().map(r=>r.key)
+      .filter(k=>k.startsWith(prefix) && /^\d+$/.test(k.slice(prefix.length)))
+      .sort((a,b)=>Number(a.slice(prefix.length))-Number(b.slice(prefix.length)));
     olds.slice(0,Math.max(0,olds.length-keep)).forEach(k=>localStorage.removeItem(k));
   }
   /* 領域が足りないときに消してよいのは、アプリが自動で作った控えだけ。
@@ -840,20 +843,25 @@
     request.checkpoint?.();
     const lightStatus=light?.status?.();
     const recoveryUnavailable=lightStatus?.draftRecoveryUnavailable===true;
-    if (lightStatus?.dirty || (recoveryUnavailable && lightStatus.hasUnappliedDrafts)) {
+    const stopped=()=>{const state=window.stageSketchProject?.draftRecoveryState?.();return state?.exitSupported && state.stopped && !state.unavailable;};
+    // The native shell still requires flush + successful show persistence, then
+    // owns the single export/discard/cancel choice for a stopped ledger.
+    const ledgerExit=stopped();
+    if (!ledgerExit && (lightStatus?.dirty || (recoveryUnavailable && lightStatus.hasUnappliedDrafts))) {
       // Do not promise a durable draft when startup has disabled recovery. Reuse
       // the existing confirmation and its choices; cancellation keeps runtime state.
       const copy=recoveryUnavailable ? {title:'照明をショーへ適用しますか？',
         body:'まだ適用していない照明の編集があります。適用すると、いまの照明がこのショーへ保存されます。',
         skip:'適用しないで移る',apply:'適用して移る'} : null;
       const answer=await askLeaveOnce(copy,document.activeElement,request.signal);
-      if (!current() || answer==='cancel') return false;
+      if (!current()) return false;
+      if(answer==='cancel'){request.cancel?.();return false;}
       if (answer==='apply') {
         const result=await light.apply();
         if (!current() || !result?.persisted || light.status().dirty) return false;
-      } else if (!recoveryUnavailable && !await (light.saveDraftDurably?.() ?? light.saveDraft?.())) return false;
+      } else if (!recoveryUnavailable && !await (light.saveDraftDurably?.() ?? light.saveDraft?.()) && !stopped()) return false;
     }
-    if (!current() || (!recoveryUnavailable && !await (light?.saveAllDraftsDurably?.() ?? true))) return false;
+    if (!current() || (!recoveryUnavailable && !ledgerExit && !await (light?.saveAllDraftsDurably?.() ?? true) && !stopped())) return false;
     const venue=window.SHOSAI_VENUE_EDITOR;
     if (request.purpose !== 'venueVersion' && venue?.hasUnappliedChanges?.()) {
       const answer=await askLeaveOnce({title:'この劇場をショーへ反映しますか？',
@@ -861,7 +869,8 @@
           +'<br>反映しないで移っても編集内容は残り、次に劇場設定を開いたときに戻ります。'
           +'ただしショー本体にはまだ入りません。',
         skip:'反映しないで移る',apply:'この劇場を反映する'},document.activeElement,request.signal);
-      if (!current() || answer==='cancel') return false;
+      if (!current()) return false;
+      if(answer==='cancel'){request.cancel?.();return false;}
       if (answer==='apply') {
         if (!await venue.applyForDocumentTransition?.(request) || !current()) return false;
       } else if (!venue.save?.()) return false;
@@ -993,7 +1002,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261022-v0383'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261023-v0384'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;
@@ -1286,7 +1295,8 @@
      劇場が決まったショーへ移ったのに、前の新規ショーの「まず劇場を決めると…」が残っていた。 */
   window.GAMMA_WORKSPACE=Object.freeze({normal:()=>select('normal'),select,mode:()=>mode,captureHostHistory,syncHistory,
     prepareDocumentTransition,captureRuntime,restoreRuntime,commitDocumentTransition,
-    openLightCue,
+    lightingDraftRecoverySnapshot:()=>editor()?.closeRecoveryRecords?.() || [],
+    openLightCue,trimConflicts,
     lightCuePlacementChoices:()=>mode==='light-design' && editor()?.status().active ? editor().placementChoices() : host.placementChoices(),
     placeLightCue:placement=>mode==='light-design' && editor()?.status().active ? editor().placeCue(placement) : host.placeCue(placement),
     playbackPreviewStatus:()=>({active:Boolean(playbackPreview),running:Boolean(playbackRaf)}),syncGate:()=>syncVenueGate(),

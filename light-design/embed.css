@@ -139,6 +139,12 @@ html[data-gamma-embedded] #panel-insp .gamma-light-state-row {
 }
 html[data-gamma-embedded] #panel-insp #gamma-light-save-status { flex: 1 1 100%; min-width: 0; }
 
+/* v0.3.84（実機受入 便115）: 固定灯の食い違い警告（#conflicts）が長いと、パネル（overflow:hidden）の中で縮められない警告が高さを取り、
+   調整本体（#insp）が0の高さに潰れ、状態行と操作の結果が枠の外へ押し出されて届かなくなる。警告があるときだけ、警告枠を縮めて内側で
+   スクロールさせ、調整本体に最低の高さを残す。警告が無いとき（#conflicts が hidden、または警告の箱 .conflict が無い）はこの規則は効かない。 */
+html[data-gamma-embedded] #panel-insp:has(#conflicts:not([hidden]) > .conflict) #conflicts { flex: 0 1 auto; min-height: 0; max-height: 32vh; overflow-y: auto; overscroll-behavior: contain; }
+html[data-gamma-embedded] #panel-insp:has(#conflicts:not([hidden]) > .conflict) .inspbody { min-height: 96px; }
+
 /* ---------- V-04（2026-09-24 本人指示）: 環境設定の「画面の色」（赤みの黒／青みの黒）を、照明デザイン・機材配置にも効かせる ----------
  * 本体の <html data-stage-skin> を embed.js がこのページの <html> へ写す（切り替えたらすぐ追従）。
  * 青みの黒の値は本体 style.css の :root[data-stage-skin="blue-black"] と同じ。赤みの黒は index.html の既定のまま。

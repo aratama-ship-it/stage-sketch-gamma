@@ -6,6 +6,7 @@
     {
       "id": "feature-test",
       "projectId": "gamma-feature-test-v47-retired-pose",
+      "type": "fixture",
       "name": {
         "ja": "テスト: 全機能の試験場",
         "en": "Test: all-feature playground",
@@ -25,11 +26,12 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": true,
       "file": "feature-test.stageproj.zip",
-      "sha256": "d27fc76382c0f7f0875627e1d6e6d6e98a306b5d25a64a04490790583243b05f"
+      "sha256": "63f66d99c6deea337fe554fba216a2b7492eec79049112297ab95f773b91b9ac"
     },
     {
       "id": "feature-test-2",
       "projectId": "gamma-feature-test-2-v1",
+      "type": "fixture",
       "name": {
         "ja": "テスト: 全機能の試験場 2",
         "en": "Test: all-feature playground 2",
@@ -49,7 +51,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "feature-test-2.stageproj.zip",
-      "sha256": "5240e7aaef40f0ebabbbd5e986068784d00262b382980ed7abe2eecd4a0561e5"
+      "sha256": "f4697d02bbbd54b8c4f580c34a2902a393008b3942cfaddd8e3e74423ba8b860"
     },
     {
       "id": "eight-circus",
@@ -73,7 +75,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "eight-circus.stageproj.zip",
-      "sha256": "9e16b02f18821e19b92cdd6ea333bad6d7b10369b03edad0b1898cf492217486"
+      "sha256": "a1eab367f96a9562732f08d2e58ee04269343fbc1fd91676a89b8e863eea531b"
     },
     {
       "id": "seam-garden",
@@ -97,7 +99,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "seam-garden.stageproj.zip",
-      "sha256": "af7b97dde58adf2b9b0867254d01223857d6dc30be2bf6972d4798e51fa32e1d"
+      "sha256": "d4ce36d8b5153f9bb2561643f027124e9ffeb02e6fffc371b03935e282f4cec7"
     },
     {
       "id": "romeo-juliet-cued",
@@ -121,7 +123,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "romeo-juliet-cued.stageproj.zip",
-      "sha256": "cf559786ac949b7c81b1533b808b7d75f2be73ba45f03f0ea71ae21b68586d5e"
+      "sha256": "7b6e6623278a57aa9f182d6f0f8854fcb01183d05458f19054fd2a49577abb44"
     },
     {
       "id": "romeo-juliet-second",
@@ -145,7 +147,7 @@
       "libraryVersion": "2026-10-14",
       "hasAudio": false,
       "file": "romeo-juliet-second.stageproj.zip",
-      "sha256": "718b3223e03e2193906bf7b23bb63a841d9c484f55edf56ad333efdb2c8a66a3"
+      "sha256": "55503d792810e94e3d8f0e196e32bb8f12e23b6786de567b5aeed704bdba5d88"
     }
   ]
 }

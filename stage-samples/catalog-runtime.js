@@ -1,4 +1,3 @@
-// catalog.js に組み込むランタイム。index は生成器から渡される。
 const documents = new Map(), jobs = new Map(), audioJobs = new Map();
 const entries = Object.freeze(index.map(item => Object.freeze(item)));
 function validateDocument(doc, item) {
@@ -22,6 +21,7 @@ function register(doc, item) {
   return doc;
 }
 function isDevelopment(hostname = window.location?.hostname) {
+  if (window.STAGE_SHELL?.platform === 'macos') return window.STAGE_SHELL.qa === true;
   return ['localhost', '127.0.0.1', '::1', '[::1]'].includes(hostname);
 }
 function visible(item) { return item.type !== 'fixture' || isDevelopment(); }

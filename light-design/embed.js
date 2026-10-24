@@ -137,6 +137,16 @@
     if(state.dirty)saveDraft();
   });
   const message=text=>hooks.toast(text);
+  let recoveryMessage = "";
+  function clearRecoveryMessage() {
+    if(recoveryMessage) hooks.clearLog?.(recoveryMessage);
+    recoveryMessage = "";
+  }
+  function showRecoveryMessage() {
+    recoveryMessage = recoveryCopy().restored;
+    message(recoveryMessage);
+  }
+  let recoveryRepair=null,recoveryReveal=null;
   let saveStatus=null, saveRow=null, saveControls=null, draftState='none', applying=false, applyError='', appliedNotice='';
   function recoveryCopy() {
     const language=parent.document.documentElement.lang || 'ja';
@@ -222,7 +232,11 @@
       drafts.delete(runtimeKey(next));recoveredWithoutHistory=false;
       changedElsewhere=false;applyError='';appliedNotice='';draftState='none';
       synchronizePieces(next);synchronizeVenueMask(next);synchronizeFrontSeats(next);
-      window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);hooks.renderAll();completed=true;return true;
+      window.GAMMA_SIMPLE_LIGHT_UI?.onContext(next);clearRecoveryMessage();hooks.renderAll();completed=true;
+      // Only prune this owner/vector after its new archive was read back and
+      // return succeeded. Saved shows, active drafts and the native ledger stay out.
+      try {parent.GAMMA_WORKSPACE.trimConflicts(draftKey,2);} catch(_) {}
+      return true;
     } catch(_) {
       if(current())message(recoveryCopy().returnFailed);
       return false;
@@ -239,7 +253,7 @@
   function renderSaveStatus() {
     window.dispatchEvent(new Event("gamma-light-history-change"));
     if(!saveStatus) return;
-    const draftText=draftState==='saved'?'このブラウザに控え保存済み':draftState==='failed'?'控えを保存できません。控え・書き出しからファイルへ残してください':'控えを保存中…';
+    const draftText=draftState==='saved'?(context?.nativeDocument?'この Mac に控え保存済み':'このブラウザに控え保存済み'):draftState==='failed'?'控えを保存できません。控え・書き出しからファイルへ残してください':'控えを保存中…';
     /* 2026-10-06 本人指示: 普段の案内文「ショーの照明を表示中。編集後は…」と「控え・書き出し」ボタンは出さない（上下幅を詰める）。
        ふだん（言うことが無いとき）は行ごと隠す。★ただし警告（保存できない・別のタブで更新・適用できない）の文は
        「控え・書き出しから残してください」と案内するので、警告のときだけボタンも出す＝データを失う場面の逃げ道を残す。 */
@@ -253,7 +267,11 @@
     else if(state.dirty) {text='未適用 · '+draftText+'。「照明デザイン」の「LXキューを適用」でショーへ適用します。';level=draftState==='failed'?'warn':'info';}
     else if(appliedNotice) {text=appliedNotice;level=appliedNotice.includes('できません')||appliedNotice.includes('整理')?'warn':'info';}
     const recoveryWarning=context?.nativeDocument && context.draftRecoveryUnavailable
-      ? '復旧台帳を確認できません。原文は上書きしていません。' : '';
+      ? '照明の控えの記録を読めません。記録の中身は書き換えていません。' : '';
+    const repairVisible=!!recoveryWarning && parent.stageSketchProject?.draftRecoveryState?.().exitSupported;
+    const repairCopy=parent.SHOSAI_DRAFT_LEDGER_REPAIR_COPY?.[parent.document.documentElement.lang || 'ja'] || parent.SHOSAI_DRAFT_LEDGER_REPAIR_COPY?.ja;
+    if(recoveryRepair){recoveryRepair.hidden=!repairVisible;recoveryRepair.textContent=repairCopy?.rebuild || '';}
+    if(recoveryReveal){recoveryReveal.hidden=!repairVisible;recoveryReveal.textContent=repairCopy?.reveal || '';}
     if(recoveryWarning)level='warn';
     if(recoveryNotice){recoveryNotice.hidden=!(recoveredWithoutHistory && state.dirty);recoveryNotice.textContent=recoveryCopy().restored;}
     if(recoveryReturn){recoveryReturn.hidden=!(recoveredWithoutHistory && state.dirty);recoveryReturn.textContent=recoveryCopy().returnSaved;recoveryReturn.disabled=applying || changedElsewhere || !!context?.readOnly;}
@@ -295,7 +313,13 @@
     recoveryNotice=document.createElement('p');recoveryNotice.id='gamma-light-recovery-notice';recoveryNotice.hidden=true;
     recoveryNotice.setAttribute('data-no-i18n','');recoveryNotice.setAttribute('role','status');
     recoveryReturn.onclick=confirmReturnToSaved;
-    row.append(saveStatus,controls,recoveryNotice,recoveryReturn);
+    recoveryRepair=document.createElement('button');recoveryRepair.type='button';recoveryRepair.className='btn small';
+    recoveryRepair.id='gamma-light-rebuild-ledger';recoveryRepair.setAttribute('data-no-i18n','');
+    recoveryRepair.onclick=()=>parent.stageSketchProject?.repairDraftRecovery?.('rebuild');
+    recoveryReveal=document.createElement('button');recoveryReveal.type='button';recoveryReveal.className='btn small';
+    recoveryReveal.id='gamma-light-reveal-ledger';recoveryReveal.setAttribute('data-no-i18n','');
+    recoveryReveal.onclick=()=>parent.stageSketchProject?.repairDraftRecovery?.('reveal');
+    row.append(saveStatus,controls,recoveryRepair,recoveryReveal,recoveryNotice,recoveryReturn);
     const log=document.getElementById('insp-log');
     if(log) log.before(row); else bar.after(row);
     renderSaveStatus();
@@ -394,6 +418,17 @@
         && stableDraftValue(old.fixtureAlternatives)===stableDraftValue(candidate.fixtureAlternatives))return existing;
     } catch(_) {}
     return JSON.stringify(candidate);
+  }
+  function closeRecoveryRecords() {
+    if(!context)return [];
+    if(!hostOwns(context))throw Error('Draft recovery owner changed');
+    const rows=[];
+    if(state.dirty)rows.push({key:vector(context),raw:draftRecordRaw(),source:'editor'});
+    for(const record of drafts.values())
+      if(record.context.documentSessionId===context.documentSessionId && record.raw)
+        rows.push({key:vector(record.context),raw:record.raw,source:'runtime'});
+    // Local originals are collected by the parent bridge with owner/session keys.
+    return rows;
   }
   async function saveAllDraftsDurably() {
     if(!context)return true;
@@ -518,7 +553,7 @@
         draftState=retained.draftState;recoveredWithoutHistory=!!retained.recoveredWithoutHistory;applyError='';appliedNotice='';active=true;
         synchronizePieces(next);synchronizeVenueMask(next);synchronizeFrontSeats(next);setMode(mode);
         window.GAMMA_SIMPLE_LIGHT_UI?.restoreRuntime?.(retained.simple);
-        window.GAMMA_SIMPLE_LIGHT_UI?.onContext(context);hooks.refreshApplyState();renderSaveStatus();
+        window.GAMMA_SIMPLE_LIGHT_UI?.onContext(context);hooks.refreshApplyState();clearRecoveryMessage();renderSaveStatus();
       } finally {loading=false;}
       return true;
     }
@@ -590,7 +625,8 @@
       // becomes the applied baseline. A restored draft must keep its differences.
       if(!dirty) hooks.markApplied();
       hooks.refreshApplyState();draftState=state.dirty?'saved':'none';renderSaveStatus();
-      if(dirty) message(recoveryCopy().restored);
+      clearRecoveryMessage();
+      if(dirty) showRecoveryMessage();
     } finally {loading=false;window.dispatchEvent(new Event("gamma-light-history-change"));}
   }
   function beginPlaybackPreview() {
@@ -649,7 +685,7 @@
       appliedExtras=model.clone(context.design);hooks.setCueSyncPending(false);hooks.markApplied();
       parent.dispatchEvent(new parent.Event("stage-timeline-cues-change"));
       // Remove only our own draft AFTER durable host acceptance.
-      recoveredWithoutHistory=false;applyError='';draftState='none';
+      clearRecoveryMessage();recoveredWithoutHistory=false;applyError='';draftState='none';
       appliedNotice=result.shelfPersisted?'適用済み · 照明をこのブラウザのショーへ保存しました。':'適用済み · ショー一覧の控えを更新できません。ショーをファイルへ書き出してください。';
       if(!ownsRequest(request))return staleResult();
       try {if(!(context.nativeDocument && context.draftRecoveryUnavailable)){markLegacyConsumed();localStorage.removeItem(key(context));retainNative(null);}} catch {appliedNotice+=' 編集控えの整理は次回行います。';message('照明は保存しました。編集控えの整理は次回行います');}
@@ -676,7 +712,7 @@
       if(!sameOwner(request.context,result.context))return staleResult();
       context=result.context;appliedExtras=model.clone(design);
       hooks.applyDesign(design);synchronizePieces(context);synchronizeVenueMask(context);hooks.markApplied();
-      recoveredWithoutHistory=false;applyError='';draftState='none';appliedNotice='適用済み · このブラウザのショーへ保存しました';
+      clearRecoveryMessage();recoveredWithoutHistory=false;applyError='';draftState='none';appliedNotice='適用済み · このブラウザのショーへ保存しました';
       if(!ownsRequest(request))return staleResult();
       try {if(!(context.nativeDocument && context.draftRecoveryUnavailable)){markLegacyConsumed();localStorage.removeItem(key(context));retainNative(null);}} catch {}
       parent.GAMMA_WORKSPACE.captureHostHistory();hooks.renderAll();
@@ -807,7 +843,7 @@
     clearTimeout(draftTimer);draftTimer=0;clearTimelineFrame();endPlaybackPreview();hooks.stop();
     stash();contextGeneration++;
     applyRequest=null;applyTask=null;applying=false;active=false;context=null;
-    changedElsewhere=false;applyError='';appliedNotice='';draftState='none';recoveredWithoutHistory=false;
+    clearRecoveryMessage();changedElsewhere=false;applyError='';appliedNotice='';draftState='none';recoveredWithoutHistory=false;
     state.history=[];state.future=[];hooks.markApplied();
     window.GAMMA_SIMPLE_LIGHT_UI?.clearDocumentContext?.();renderSaveStatus();
   }
@@ -817,7 +853,7 @@
     await draftTask;
     return !applying;
   }
-  window.GAMMA_LIGHT_EDITOR=Object.freeze({draftKey:key,archiveLegacyDraft,recoveryCopy,recoveryRecords,readRecoveryRecord,restoreRecovery,saveDraftDurably,saveAllDraftsDurably,open,suspend,apply,applyCandidate,build,saveDraft,captureRuntime,restoreRuntime,waitForApply,commitDocumentTransition,
+  window.GAMMA_LIGHT_EDITOR=Object.freeze({closeRecoveryRecords,draftKey:key,archiveLegacyDraft,recoveryCopy,recoveryRecords,readRecoveryRecord,restoreRecovery,saveDraftDurably,saveAllDraftsDurably,open,suspend,apply,applyCandidate,build,saveDraft,captureRuntime,restoreRuntime,waitForApply,commitDocumentTransition,
 
     selectCue(sceneId, cueId) { return active && !loading && !playbackPreview && hooks.viewLightCue(sceneId, cueId); },
     async placeCue(placement) {

@@ -151,14 +151,29 @@
       ids.add(item.id);
     }
     const token = ++revision, wasHidden = root.hidden, hadFocus = root.contains(document.activeElement);
-    locale = window.SHOSAI_LANGUAGE_LOADER?.normalize(input.locale || document.documentElement.lang) || 'ja';
+    // At start-up the shell asks for the welcome before the page has applied its stored language (<html lang> is
+    // still the markup default), and the language pack below loads asynchronously. Remember the page language this
+    // request was made against: when the page changed it meanwhile, the page's language wins. Writing the older one
+    // back made the Mac shell, which mirrors <html lang>, replace the saved display language with Japanese on every
+    // start-up (v0.3.84 L-01).
+    const requestedAgainst = document.documentElement.lang, normalize = value => window.SHOSAI_LANGUAGE_LOADER?.normalize(value);
+    locale = normalize(input.locale || requestedAgainst) || 'ja';
     if (window.SHOSAI_LANGUAGE_LOADER) await window.SHOSAI_LANGUAGE_LOADER.ensure(locale);
     if (token !== revision) return false;
+    const pageChanged = document.documentElement.lang !== requestedAgainst;
+    if (pageChanged) {
+      const current = normalize(document.documentElement.lang);
+      if (current && current !== locale) {
+        locale = current;
+        if (window.SHOSAI_LANGUAGE_LOADER) await window.SHOSAI_LANGUAGE_LOADER.ensure(locale);
+        if (token !== revision) return false;
+      }
+    }
     const oldId = wasHidden ? null : payload?.recent[selected]?.id;
     payload = {...input, recent:input.recent.map(item => ({...item}))};
     selected = Math.max(0,payload.recent.findIndex(item => item.id === oldId));
     update = input.update && typeof input.update.version === 'string' ? {...input.update} : null;
-    document.documentElement.lang = locale;
+    if (document.documentElement.lang === requestedAgainst) document.documentElement.lang = locale;
     const skin = skins[input.skin] || input.skin;
     if (['warm-black','blue-black','paper-light'].includes(skin)) document.documentElement.dataset.stageSkin = skin;
     if (wasHidden) { previousFocus = document.activeElement; editorInert = editor()?.inert || false; }

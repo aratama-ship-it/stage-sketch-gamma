@@ -151,7 +151,7 @@
     const tokenOK = value => typeof value === "string" && value.length > 0 && value.length <= 128;
     let shellSession = null, owner = null, tentative = null, transition = null, prepared = null;
     const completedRequests = new Set();
-    let draftOwnerId=null,draftRecords={},draftRecoveryEntries=[],draftRecoveryUnavailable=false;
+    let draftOwnerId=null,draftRecords={},draftRecoveryEntries=[],draftRecoveryUnavailable=false,draftRecoveryStopped=false,draftRecoveryExitSupported=false;
     const draftRequests=new Map(),latestDraftWrites=new Map(),recoveryRequests=new Map();
     let venueRequest = null, venuePreparation = null;
     const venueCandidates = new Map(), venueRequests = new Map(), venueReceipts = new Map(), venueIntents = new Map();
@@ -178,7 +178,7 @@
       const saved = tentative;
       if (!saved) return false;
       tentative = null; generation++;opening=Promise.resolve();
-      ({opened, audio, removedAudio, readOnly, lastSent, readOnlyValue, owner,noticeReceipt,draftOwnerId,draftRecords,draftRecoveryEntries,draftRecoveryUnavailable} = saved.bridge);
+      ({opened, audio, removedAudio, readOnly, lastSent, readOnlyValue, owner,noticeReceipt,draftOwnerId,draftRecords,draftRecoveryEntries,draftRecoveryUnavailable,draftRecoveryStopped,draftRecoveryExitSupported} = saved.bridge);
       runtime.restoreRuntime?.(saved.runtime);
       runtime.saveNoticeChanged?.();
       const parent=saved.venueRequestId ? venuePreparation?.parent : null;
@@ -212,6 +212,32 @@
     };
     host.addEventListener?.("stageSketchProject:requestSamples", requestLibrary);
     host.addEventListener?.("stageSketchProject:requestLegacy", requestLibrary);
+    function receiveDraftRecords(payload) {
+      const inline=structuredClone(payload.draftRecords || {});
+      draftRecords=Object.fromEntries(Object.entries(inline).filter(([key])=>!key.startsWith('retained:')));
+      draftRecoveryEntries=structuredClone(payload.draftRecoveryEntries || draftRecoveryEntries);
+      const retained=Object.fromEntries(Object.entries(inline).filter(([key])=>key.startsWith('retained:')));
+      if(draftOwnerId && Object.keys(retained).length) {
+        let entry=draftRecoveryEntries.find(e=>e.owner===draftOwnerId);
+        if(!entry){entry={owner:draftOwnerId,locator:payload.draftLocator || '',records:{}};draftRecoveryEntries.push(entry);}
+        entry.records={...entry.records,...retained};
+        if(entry.vectors)entry.vectors=[...new Set([...entry.vectors,...Object.keys(retained)])].sort();
+      }
+    }
+    function collectCloseDrafts() {
+      // Mounted editor owns unsent runtime drafts. Without an editor, only the
+      // current durable owner/session may contribute local originals.
+      const rows=host.GAMMA_WORKSPACE?.lightingDraftRecoverySnapshot?.() || [];
+      for(let i=0;i<(host.localStorage?.length || 0);i++) {
+        const key=host.localStorage.key(i);
+        if(!/^gamma:lighting-(?:owner-draft-v2|session-draft-v1):/.test(key))continue;
+        if(!(draftOwnerId && key.startsWith('gamma:lighting-owner-draft-v2:'+draftOwnerId+':'))
+          && !key.startsWith('gamma:lighting-session-draft-v1:'+identity().documentSessionId))continue;
+        const raw=host.localStorage.getItem(key);
+        if(typeof raw==='string')rows.push({key,raw,source:'localStorage'});
+      }
+      return rows;
+    }
     function receiveOpen(payload) {
       if (!active) throw Error("Project ready expired; reload before opening");
       let entries;
@@ -231,7 +257,7 @@
       opening = opening.catch(() => {}).then(async () => {
         if (tentative) return false;
         if (sessionful(payload) && (!once("open:" + payload.requestId) || !once("delivery:" + payload.deliveryGeneration))) return false;
-        const previous = {opened, audio, removedAudio, readOnly, lastSent, readOnlyValue, owner,noticeReceipt,draftOwnerId,draftRecords:structuredClone(draftRecords),draftRecoveryEntries,draftRecoveryUnavailable};
+        const previous = {opened, audio, removedAudio, readOnly, lastSent, readOnlyValue, owner,noticeReceipt,draftOwnerId,draftRecords:structuredClone(draftRecords),draftRecoveryEntries,draftRecoveryUnavailable,draftRecoveryStopped,draftRecoveryExitSupported};
         const incoming = sessionful(payload) ? Object.fromEntries(fields.map(key => [key,payload[key]])) : null;
         if (payload.venueRequestId && (!venueRequest || venueRequest.expired || payload.venueRequestId !== venueRequest.source.requestId))
           throw Error("Expired venue candidate delivery");
@@ -242,7 +268,9 @@
         opened = false; generation++;
         for (const pending of audioConfirmations.values()) pending.finish(false);
         audio = entries; removedAudio = new Map(); readOnly = payload.readOnly; lastSent = null; owner = incoming; noticeReceipt = null;
-        draftRecoveryUnavailable=payload.draftRecoveryUnavailable===true;draftOwnerId=draftRecoveryUnavailable ? null : payload.draftOwnerId || null;draftRecords=structuredClone(payload.draftRecords || {});draftRecoveryEntries=payload.draftRecoveryEntries || draftRecoveryEntries;
+        draftRecoveryUnavailable=payload.draftRecoveryUnavailable===true;draftOwnerId=draftRecoveryUnavailable ? null : payload.draftOwnerId || null;
+        draftRecoveryStopped=payload.draftRecoveryStopped===true;draftRecoveryExitSupported=payload.draftRecoveryExitSupported===true;
+        receiveDraftRecords(payload);
         setTransitioning(true);
         readOnlyValue = readOnly ? {show:payload.show, title:payload.title} : null;
         try {
@@ -293,7 +321,8 @@
         if (token !== generation || !matches(source) || tentative) throw Error("Stale document flush");
         const value = readOnlyValue || runtime.snapshot();
         sendThumbnail();
-        ownedPost("flushed", source, {...value,generation:++messageGeneration}); lastSent = contentSignature(value.show);
+        const draftRecoveryRecords=payload?.draftRecoverySnapshot===true ? collectCloseDrafts() : undefined;
+        ownedPost("flushed", source, {...value,...(draftRecoveryRecords ? {draftRecoveryRecords} : {}),generation:++messageGeneration}); lastSent = contentSignature(value.show);
         return true;
       } catch (error) {
         ownedPost("flushFailed", source, {error:String(error.message || error)});
@@ -312,10 +341,11 @@
       try {
         const ok = await runtime.prepareDocumentTransition?.({...source, purpose:payload.purpose,
           signal:ticket.controller?.signal,
+          cancel:()=>{ticket.cancelled=true;},
           checkpoint:() => { if(transition===ticket) ticket.runtime=runtime.captureRuntime?.(); },
           isCurrent:() => transition === ticket && matches(source) && generation === ticket.token});
         if (transition !== ticket || !matches(ticket.source) || generation !== ticket.token) return {ok:false};
-        const result={...ticket.source,ok:ok === true};
+        const result={...ticket.source,ok:ok === true,cancelled:ticket.cancelled===true};
         prepared=result.ok ? ticket : null;
         if (!result.ok) {
           generation++;runtime.restoreRuntime?.(ticket.runtime);setTransitioning(false);changed(true);
@@ -338,6 +368,12 @@
     }
     const welcomeActions = new Set(["openRecent", "new", "open", "samples", "legacy", "setStartupAction", "openUpdate", "dismissUpdate"]);
     const facade = {
+      draftRecoveryState:()=>({unavailable:draftRecoveryUnavailable,stopped:draftRecoveryStopped,exitSupported:draftRecoveryExitSupported}),
+      repairDraftRecovery(action) {
+        if(!draftRecoveryUnavailable || !draftRecoveryExitSupported || !opened || !owner || tentative || transition || prepared
+            || !['rebuild','reveal'].includes(action))return false;
+        ownedPost('repairDraftRecovery',{...identity(),requestId:requestId()},{action});return true;
+      },
       open: receiveOpen,
       venueVersionReady(payload) {
         const preparation=venuePreparation;
@@ -382,6 +418,7 @@
         if(!pending || !matches(payload) || payload.draftOwnerId!==pending.owner)return false;
         draftRequests.delete(payload.requestId);host.clearTimeout(pending.timer);
         const latest=latestDraftWrites.get(pending.key)===payload.requestId;
+        if(payload.draftRecoveryStopped===true && draftOwnerId===pending.owner)draftRecoveryStopped=true;
         if(payload.ok===true) {
           if(latest && draftOwnerId===pending.owner) {
             if(pending.raw===null)delete draftRecords[pending.vector];else draftRecords[pending.vector]=pending.raw;
@@ -404,7 +441,8 @@
       },
       draftOwnerChanged(payload) {
         if(!matches(payload) || !tokenOK(payload.draftOwnerId))return false;
-        draftOwnerId=payload.draftOwnerUnavailable ? null : payload.draftOwnerId;draftRecords=structuredClone(payload.draftRecords || {});draftRecoveryEntries=payload.draftRecoveryEntries || draftRecoveryEntries;
+        draftOwnerId=payload.draftOwnerUnavailable ? null : payload.draftOwnerId;
+        draftRecoveryStopped=payload.draftRecoveryStopped===true;receiveDraftRecords(payload);
         if(!payload.draftOwnerUnavailable && !draftRecoveryEntries.some(entry=>entry.owner===draftOwnerId))
           draftRecoveryEntries.push({owner:draftOwnerId,locator:payload.draftLocator || '',...(draftRecoveryEntries.some(e=>e.vectors) ? {vectors:Object.keys(draftRecords).sort()} : {records:structuredClone(draftRecords)})});
         host.dispatchEvent?.(new CustomEvent('gamma-draft-owner-change'));return true;
