@@ -1,0 +1,6 @@
+{
+  "audioFileMaxBytes": 157286400,
+  "betaAudioFileMaxBytes": 52428800,
+  "legacyPackageEntryMaxBytes": 314572800,
+  "audioSizeMessage": "音源は150MB以下にしてください。"
+}

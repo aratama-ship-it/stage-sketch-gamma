@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ Studio | Stage Sketch Gamma Studio</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.3.86">
+<meta name="stage-sketch-gamma-version" content="v0.3.87">
 <meta name="gamma-edition" content="studio">
   <script src="gamma-editions.js?v=20261015-v0371"></script>
 <meta name="mobile-web-app-capable" content="yes">
@@ -23,7 +23,7 @@
   body { padding-top: 0; }
   .spine { display: none; }
 </style>
-<link rel="stylesheet" href="gamma-ui-tokens.css?v=20261024-v0385">
+<link rel="stylesheet" href="gamma-ui-tokens.css?v=20261025-v0387">
 <link rel="stylesheet" href="gamma.css?v=20261020-v0382">
 <link rel="stylesheet" href="stage-welcome.css?v=20261016-v0373">
 <link rel="stylesheet" href="gamma-mobile.css?v=20261020-v0381">
@@ -101,7 +101,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.86</span>
+                <span class="stage-app-version">0.3.87</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2928,22 +2928,23 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261025-v0386">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261025-v0387">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0386-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0386-title">v0.3.86</h3><time datetime="2026-10-25">2026-10-25</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0387-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0387-title">v0.3.87</h3><time datetime="2026-10-25">2026-10-25</time></header>
       <ul>
-        <li>Mac 版：照明の控えの一覧で、保持の上限（直近10件・30日）を過ぎて整理された控えが一覧に残り、開くと「読み取れません」と出ていたのを直しました。整理された控えは一覧から消し、整理されたことをお知らせします。古い版で作られた控えも、新しい順に残すようにしました。</li>
-        <li>Mac 版：ショーを ZIP に書き出すとき、このアプリが知らない添付ファイルや項目が落ちていたのを直しました。照明の控えの記録が読めないときでも、画面の内容だけで書き出して閉じられるようにしました。</li>
-        <li>付箋・ペン描画・矢印・投影文字に、新しい版で足された項目が、読み込みと保存の繰り返しで消えないようにしました。</li>
-        <li>「一つ戻す」が効かない、または別のものを戻すことがあったのを直しました（進行表の Q 表で備考を変えた後、案内を出したまま、進行表で右揃えや文字の大きさを変えた直後）。</li>
-        <li>幅の狭い窓で開いたとき、最初に一度ページが読み直されていたのをなくしました。</li>
-        <li>ページを戻る・進むで表示し直したときに Mac 版との接続が切れたままになることがあったのを直しました。ようこそ画面の表示言語、離れるときの確認の3つのボタンの読み上げ、台本の画面の言語の切り替えも直しました。</li>
-        <li>訳を直しました：韓国語の「コピー」、繁体字の前幕の表記、Mac 版のメニューの一部（韓国語・中国語）、照明の控えの記録が読めないときの文。冊子の写真に写る開発用の文を外し、英語の見出しが単語の途中で折り返さないようにしました。</li>
-        <li>予期しない問題が起きたとき、黙って止まらずにお知らせを出すようにしました。保存に失敗したときの説明を、技術用語ではなく分かる言葉にしました。</li>
-        <li>Mac 版：ショートカットの設定で、Control キーと ⌘ キーを別のものとして記録するようにしました。</li>
-        <li>検査の整備：Mac 版の公開前の確認が、その Mac の「最近使った項目」や保存の場所に跡を残さないようにしました。夜間の検査と自動検査の失敗の扱い・速さを見直しました。</li>
+        <li>Mac 版：ショーを閉じるとき（⌘W）の保存の窓で「キャンセル」を押すと、保存の失敗として知らせていたのを直しました。</li>
+        <li>離れるときの確認（3つのボタン）を開いたとき、焦点を確認の中へ移し、後ろの照明の画面を操作できないようにしました。閉じると元の場所へ戻ります。</li>
+        <li>窓の幅を変えたときの表示の読み直しで「留まる」を選ぶと、確認が繰り返し出たり表示が戻らなかったりしたのを直しました。シーン一覧の番号の欄に内部の名前が出ることがあったのも直しました。</li>
+        <li>触っていない文字の欄へ移っただけで「一つ戻す」が押せるようになり、別の変更を戻すことがあったのを直しました。</li>
+        <li>Mac 版：照明の時間の窓や印刷の窓など、別の窓から開いたファイルの選択・確認の窓・保存先の選択が、その窓に付くようにしました。確認の窓は Return で決め、Esc で閉じられます。</li>
+        <li>Mac 版：窓を狭くしたとき、自動で iPad 向けの表示に切り替わってタブが隠れることがあったのを直しました。大きな音源のやり取りで時間切れになりにくくし、最初の読み込みに時間がかかるときもショー一覧へ戻らずに待つようにしました。</li>
+        <li>Mac 版：「最近使った項目」をファイル名で出すようにしました（同じショー名の別のファイルを見分けられます）。照明を適用した後の文で「ブラウザ」と言わないようにし、言語を変えた直後の更新の案内も新しい言語で出すようにしました。</li>
+        <li>進行表の紙面は日本語か英語で出ることを、画面と冊子で案内するようにしました。</li>
+        <li>言葉・訳・表示を直しました：劇場を適用するときの確認と案内（開発用の言葉をなくしました）、劇場設定の寸法の行（韓国語・中国語）、「表示する図」の欄の文字の省略、環境設定の「シーン境界の明かり」と「かんたん」（韓国語）、進行表の列の設定の見出し（韓国語・中国語）、設備配置のホリゾントの表記（中国語）、韓国語の「LX キュー」、中国語の「演者」。読み込みの知らせは言語を変えると新しい言語で出し直します。</li>
+        <li>冊子を直しました：図の説明から撮影時の版番号を外し、見本の一覧を公開している4つの見本だけにし、開発用の手順と、今は出ない照明の欄の説明を外しました。</li>
+        <li>検査の整備：公開前の確認で Mac 版の候補と配布物の照合を増やし、時間で揺れていた検査と試験場のデータを直しました。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3898,7 +3899,7 @@
 <script src="stage-front-shape.js?v=2026092046"></script>
 <script src="stage-venue-report.js?v=2026092047"></script>
 <script src="stage-samples/index.js?v=20261013-v0360"></script>
-<script src="stage-samples/catalog.js?v=20261025-v0386"></script>
+<script src="stage-samples/catalog.js?v=20261025-v0387"></script>
 <script src="stage-set-model.js?v=2026092354"></script>
 <script src="stage-set-builder.js?v=20261009-v0337"></script>
 <script src="stage-machinery.js?v=20261012-v0358"></script>
@@ -3914,7 +3915,7 @@
 <script src="stage-storage-recovery.js?v=20261020-v0382"></script>
 <script src="stage-storage-hygiene.js?v=20261014-v0365"></script>
 <script src="stage-storage-pressure.js?v=20260926-large39"></script>
-<script src="manual-gamma/manual-meta.js?v=20261025-v0386" data-manual-content="manual-gamma/manual-content.js?v=20261025-v0386"></script>
+<script src="manual-gamma/manual-meta.js?v=20261025-v0387" data-manual-content="manual-gamma/manual-content.js?v=20261025-v0387"></script>
 <script src="stage-pwa.js?v=20261020-v0380"></script>
 <script src="stage-lighting-plans.js?v=20261005-beam99"></script>
 <script src="stage-lighting-plan-overlay.js?v=20261005-batch98"></script>
@@ -3943,7 +3944,7 @@
 <script src="stage-performer-motion.js?v=20261011-v0347"></script>
 <script src="stage-idle-motion.js?v=20261014-v0362"></script>
 <script src="stage-performer-contour.js?v=20261006-v0318"></script>
-<script src="stage-performer-body.js?v=20261009-v0333"></script>
+<script src="stage-performer-body.js?v=20261025-v0387"></script>
 <script src="gamma-ui.js?v=20261017-v0377"></script>
 <script src="stage-point-source.js?v=20260927-point43"></script>
 <script src="stage-save-lifecycle.js?v=20260927-guard45"></script>
@@ -3953,18 +3954,18 @@
 <script src="stage-run-of-show-model.js?v=20261006-v0312"></script>
 <script src="stage-pose-data.js?v=20261013-v0360"></script>
 <script src="stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="stage-language-loader.js?v=20261025-v0386"></script>
+<script src="stage-language-loader.js?v=20261025-v0387"></script>
 <script src="stage-reorder-warning.js?v=20261009-v0335"></script>
 <script src="stage-venue-curtains.js?v=20261011-v0347"></script>
 <script src="stage-metrics.js?v=20261020-v0380"></script>
 <script src="stage-project-file.js?v=20261025-v0386"></script>
-<script src="stage-welcome.js?v=20261025-v0386"></script>
-<script src="gamma-undo-owner.js?v=20261025-v0386"></script>
-<script src="stage-project-bridge.js?v=20261025-v0386"></script>
+<script src="stage-welcome.js?v=20261025-v0387"></script>
+<script src="gamma-undo-owner.js?v=20261025-v0387"></script>
+<script src="stage-project-bridge.js?v=20261025-v0387"></script>
 <script src="stage-project-library.js?v=20261023-v0384"></script>
-<script src="stage-sketch.js?v=20261025-v0386"></script>
+<script src="stage-sketch.js?v=20261025-v0387"></script>
 <script src="stage-scene-alternatives-ui.js?v=20261009-v0337"></script>
-<script src="gamma-formation.js?v=20261025-v0386"></script>
+<script src="gamma-formation.js?v=20261025-v0387"></script>
 <script src="stage-vox-panel.js?v=20261005-v030"></script>
 <script src="stage-script-editor.js?v=20261025-v0386"></script>
     <script src="stage-light-schedule.js?v=20261013-v0359"></script>
@@ -3980,9 +3981,9 @@
 <script src="stage-field-run-package.js?v=20261020-v0380"></script>
 <script src="stage-field-run-transport.js?v=20261016-v0372"></script>
 <script src="stage-field-run-checkpoint.js?v=20261020-v0380"></script>
-<script src="stage-field-run-console.js?v=20261025-v0386"></script>
-<script src="stage-run-of-show-pane.js?v=20261025-v0386"></script>
-<script src="gamma-workspace.js?v=20261025-v0386"></script>
+<script src="stage-field-run-console.js?v=20261025-v0387"></script>
+<script src="stage-run-of-show-pane.js?v=20261025-v0387"></script>
+<script src="gamma-workspace.js?v=20261025-v0387"></script>
 <script src="gamma-feature-search.js?v=20261020-v0380"></script>
 <script src="gamma-mobile.js?v=20261020-v0380"></script>
 <script src="stage-venue-preview.js?v=20261015-v0368"></script>

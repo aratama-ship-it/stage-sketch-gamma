@@ -485,7 +485,7 @@ window.ROSLeftPanels={install(band,{store,text,format}){
   }
   function renderColumnSettings(){
     const host=$("column-list"),profile=layoutFor(),history=layoutHistory[layoutKey()];host.replaceChildren();
-    $("column-context").textContent=`${paperNames[paperFormat]} / 行の単位：${rowModeNames[rowMode]}`;
+    $("column-context").textContent=uiFormat("{paper} / 行の単位：{unit}",{paper:uiText(paperNames[paperFormat]),unit:uiText(rowModeNames[rowMode])});
     $("column-visible-count").textContent=$("column-count").textContent=`${orderedColumns().filter(c=>!profile.hidden.includes(c.id)).length}/${orderedColumns().length}`;
     const always=`${orderedColumns().filter(c=>c.required).map(c=>c.ja).join("・")}は常時表示です。列の設定は行の単位ごとに別々に保存します。`;
     $("column-help").textContent=paperFormat==="a4-portrait"?`上段・下段それぞれの中で順序を変えられます。${always}`:`列を表示順に並べます。${always}`;

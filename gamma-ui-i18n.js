@@ -134,8 +134,8 @@
   ],
   "演者": [
     "Performers",
-    "表演者",
-    "表演者"
+    "演员",
+    "演員"
   ],
   "一文字幕": [
     "Border curtain",
@@ -743,11 +743,18 @@
     return key;
   };
   window.GAMMA_UI_TEXT = text;
+  // These short words have different meanings in the main editor and lighting.
+  // Keep the main pack's navigation / entrance / facing / clipboard wording;
+  // GAMMA_UI_TEXT continues to use the lighting-specific phrases above.
+  const mainContextWords = new Set(['前', '出す', '向き', 'カット']);
   // Main app keeps its existing language packs and rendering path.
   window.GAMMA_UI_I18N_MERGE = () => {
     for (const code of codes) {
       const pack=window.SHOSAI_I18N_PACKS?.[code] || (code==='en' ? window.SHOSAI_I18N : null);
-      if(pack?.text) for(const [key,values] of Object.entries(phrases)) pack.text[key]=values[codes.indexOf(code)];
+      if(pack?.text) for(const [key,values] of Object.entries(phrases)) {
+        if (mainContextWords.has(key) && Object.hasOwn(pack.text, key)) continue;
+        pack.text[key]=values[codes.indexOf(code)];
+      }
     }
   };
   window.GAMMA_UI_I18N_MERGE();

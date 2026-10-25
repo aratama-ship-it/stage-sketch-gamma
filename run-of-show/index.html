@@ -1,5 +1,5 @@
 <!doctype html><html lang="ja"><head>
-<script src="../stage-runtime.js?v=20261025-v0386"></script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>進行表 | 舞台スケッチγ</title><link rel="stylesheet" href="editor.css?v=20261020-v0381"><link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261024-v0385"><style id="paper-page-rule">@page{size:A4 landscape;margin:10mm}</style></head><body>
+<script src="../stage-runtime.js?v=20261025-v0386"></script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>進行表 | 舞台スケッチγ</title><link rel="stylesheet" href="editor.css?v=20261020-v0381"><link rel="stylesheet" href="../gamma-ui-tokens.css?v=20261025-v0387"><style id="paper-page-rule">@page{size:A4 landscape;margin:10mm}</style></head><body>
 
 <main><section id="preview">
   <div class="paper-panel" id="paper-panel">
@@ -20,7 +20,8 @@
       <button type="button" id="cue-master" data-ros-text="全体表（香盤表）">全体表（香盤表）</button>
     </div>
     <div id="band-settings" class="band-group band-paper" role="group" aria-labelledby="band-heading-paper"><h2 id="band-heading-paper" class="band-heading" data-ros-text="紙面">紙面</h2>
-      <label class="band-field"><span>進行表の言語</span><select id="heading-language" aria-label="進行表の言語" title="進行表の言語（この端末の設定）。自動は舞台スケッチの言語に合わせます：日本語→日本語、それ以外→English"><option value="auto" selected>自動</option><option value="bilingual">日本語＋英語</option><option value="ja">日本語</option><option value="en">English</option></select></label>
+      <label class="band-field"><span>進行表の言語</span><select id="heading-language" aria-label="進行表の言語" aria-describedby="paper-language-note" title="進行表の言語（この端末の設定）。自動は舞台スケッチの言語に合わせます：日本語→日本語、それ以外→English"><option value="auto" selected>自動</option><option value="bilingual">日本語＋英語</option><option value="ja">日本語</option><option value="en">English</option></select></label>
+      <p id="paper-language-note" class="small" data-ros-text="紙面は日本語か英語で出ます（韓国語・中国語の画面では、自動の紙面は英語になります）。">紙面は日本語か英語で出ます（韓国語・中国語の画面では、自動の紙面は英語になります）。</p>
       <label class="band-field"><span>入力表示・用紙サイズ</span><select id="paper-format" aria-label="入力表示・用紙サイズ"><option value="a4-landscape" selected>A4横</option><option value="a4-portrait">A4縦</option><option value="free">編集</option></select></label>
       <div class="band-field"><span id="paper-ink-label">紙の色</span><button id="paper-ink" class="ink-toggle" aria-label="紙の色: 白/黒" aria-pressed="false" data-tip-description="画面上の紙を白地・黒地で切り替えます。"><span class="ink-swatch" data-ink="white" aria-hidden="true"></span><span class="ink-swatch" data-ink="black" aria-hidden="true"></span></button></div>
       <label class="band-field band-size"><span>文字サイズ</span><span class="band-size-value"><input id="paper-font-size" type="number" min="8" max="18" step="0.5" value="10" aria-label="紙面と印刷の文字サイズ">pt</span></label>
@@ -148,5 +149,5 @@
 <div class="table-wrap"><table><thead><tr><th>届け先</th><th>返答</th><th>記入者</th><th>連絡・質問</th></tr></thead><tbody id="distribution-replies"></tbody></table></div></div>
 </div>
 <footer class="distribution-actions distribution-footer"><button id="distribution-create" class="primary">新しい配布版を保存</button></footer>
-</dialog><p id="print-unavailable">ページを準備してから印刷してください。連続入力はA4へ切り替えて印刷できます。</p><script src="../stage-run-of-show-distribution.js?v=20261012-v0358"></script><script src="../stage-run-of-show-files.js?v=20261012-v0358"></script><script src="timing.js?v=20261010-v0338"></script><script src="layout.js?v=20261011-v0347"></script><script src="pagination.js?v=20261016-v0374"></script><script src="images.js"></script><script src="paper-edit.js?v=20261020-v0381"></script><script src="distribution.js?v=20261014-v0361"></script><script src="../stage-reorder-warning.js?v=20261009-v0335"></script><script src="editor.js?v=20261025-v0386"></script><script src="../gamma-ui.js?v=20261017-v0377"></script><script src="../gamma-appearance.js?v=20261024-v0385"></script>
+</dialog><p id="print-unavailable">ページを準備してから印刷してください。連続入力はA4へ切り替えて印刷できます。</p><script src="../stage-run-of-show-distribution.js?v=20261012-v0358"></script><script src="../stage-run-of-show-files.js?v=20261012-v0358"></script><script src="timing.js?v=20261010-v0338"></script><script src="layout.js?v=20261011-v0347"></script><script src="pagination.js?v=20261016-v0374"></script><script src="images.js"></script><script src="paper-edit.js?v=20261020-v0381"></script><script src="distribution.js?v=20261014-v0361"></script><script src="../stage-reorder-warning.js?v=20261009-v0335"></script><script src="editor.js?v=20261025-v0387"></script><script src="../gamma-ui.js?v=20261017-v0377"></script><script src="../gamma-appearance.js?v=20261024-v0385"></script>
 </body></html>

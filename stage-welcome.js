@@ -205,6 +205,14 @@
     if (row && ['ArrowUp','ArrowDown'].includes(event.key)) { event.preventDefault(); select(selected + (event.key === 'ArrowDown' ? 1 : -1), true); }
     if (row && event.key === 'Enter') { event.preventDefault(); action('openRecent',payload.recent[selected].id); }
   },true);
+  // The settings notice lives outside the welcome root and opts out of DOM i18n.
+  // Language commits and deferred pack completion must refresh its own renderer.
+  function refreshUpdateLanguage() {
+    locale = document.documentElement.lang || 'ja';
+    renderUpdate();
+  }
+  new MutationObserver(refreshUpdateLanguage).observe(document.documentElement, {attributes:true, attributeFilter:['lang']});
+  window.addEventListener('stage-language-assets-ready', refreshUpdateLanguage);
   window.addEventListener('stageSketchProject:nativeUpdate', event => nativeUpdate(event.detail));
   window.STAGE_WELCOME = Object.freeze({show,hide,nativeUpdate,get visible(){return !root.hidden;}});
 

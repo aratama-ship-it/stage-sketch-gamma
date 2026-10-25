@@ -6,7 +6,9 @@
 })(typeof window === "undefined" ? globalThis : window, function () {
   "use strict";
   const validId = id => typeof id === "string" && /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,95}$/.test(id);
-  const audioLimit = 300 * 1024 * 1024;
+  // Generated from stage-limits.json; node tools/generate-stage-limits.mjs --check.
+  const audioLimit = 157286400;
+  const audioSizeMessage = "音源は150MB以下にしてください。";
   function memoryStorage() {
     const values = new Map();
     return { getItem: key => values.get(key) ?? null,
@@ -509,6 +511,14 @@
         if (owner || opened || !payload?.capabilities?.includes(capability) || !tokenOK(payload.pageGeneration)) return false;
         shellSession = {capabilities:[...payload.capabilities],pageGeneration:payload.pageGeneration}; return true;
       },
+      // Explicit shell acknowledgement before slow document/provider IO. Enter the
+      // native empty runtime now; never fall back to the browser shelf mid-read.
+      waitForInitialOpen(payload) {
+        if (!active || owner || opened || !shellSession || payload?.pageGeneration !== shellSession.pageGeneration) return false;
+        requestLibrary();
+        post("initialOpenWaiting", {pageGeneration:shellSession.pageGeneration});
+        return true;
+      },
       prepareDocumentTransition,
       cancelDocumentTransition(payload) {
         if (!matches(payload) || ![transition?.source.requestId,prepared?.source.requestId].includes(payload?.requestId)) return false;
@@ -695,7 +705,8 @@
         return generation === token && audio.get(id) === entry ? blob : null;
       },
       put(id, file, { durationSeconds = 0 } = {}) {
-        if (!active || !opened || tentative || readOnly || !validId(id) || !file?.size || file.size > audioLimit
+        if (file?.size > audioLimit) return Promise.reject(Error(audioSizeMessage));
+        if (!active || !opened || tentative || readOnly || !validId(id) || !file?.size
             || !Number.isFinite(durationSeconds) || durationSeconds < 0) return Promise.reject(Error("Invalid project audio upload"));
         const token = generation, source = {...identity(),requestId:requestId()};
         if (uploadingAudio.has(id)) return Promise.reject(Error("Project audio confirmation pending"));
@@ -705,6 +716,7 @@
           const response = await host.fetch("/project-audio/" + id, {
             method: "PUT", credentials: "same-origin", headers: { "Content-Type": mime }, body: file,
           });
+          if (response.status === 413) throw Error(audioSizeMessage);
           if (response.status !== 201 || token !== generation) throw Error("Project audio upload failed");
           const entry = { trackId:id, url:new URL("/project-audio/" + id, host.location.href).href,
             originalName:file.name || id, mime, bytes:file.size, durationSeconds };

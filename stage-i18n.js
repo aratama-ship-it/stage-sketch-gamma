@@ -32,6 +32,37 @@
 
   const TEXT = {
 
+    "Mac 版：ショーを閉じるとき（⌘W）の保存の窓で「キャンセル」を押すと、保存の失敗として知らせていたのを直しました。": "Mac app: Fixed choosing Cancel in the save panel shown when closing a show (⌘W) being reported as a failed save.",
+
+    "離れるときの確認（3つのボタン）を開いたとき、焦点を確認の中へ移し、後ろの照明の画面を操作できないようにしました。閉じると元の場所へ戻ります。": "When the leave confirmation (three buttons) opens, focus now moves into it and the lighting screen behind it can no longer be operated. Focus returns to where it was when it closes.",
+
+    "窓の幅を変えたときの表示の読み直しで「留まる」を選ぶと、確認が繰り返し出たり表示が戻らなかったりしたのを直しました。シーン一覧の番号の欄に内部の名前が出ることがあったのも直しました。": "Fixed choosing Stay when the layout reloads after the window width changes, which could repeat the confirmation or leave the layout unrestored. Also fixed an internal name sometimes appearing in the number column of the scene list.",
+
+    "触っていない文字の欄へ移っただけで「一つ戻す」が押せるようになり、別の変更を戻すことがあったのを直しました。": "Fixed Undo becoming available, and undoing a different change, just from moving into a text field you had not edited.",
+
+    "Mac 版：照明の時間の窓や印刷の窓など、別の窓から開いたファイルの選択・確認の窓・保存先の選択が、その窓に付くようにしました。確認の窓は Return で決め、Esc で閉じられます。": "Mac app: File choosers, confirmation dialogs and save destinations opened from another window, such as the lighting timing window or the print window, now attach to that window. Confirmation dialogs accept Return and close with Esc.",
+
+    "Mac 版：窓を狭くしたとき、自動で iPad 向けの表示に切り替わってタブが隠れることがあったのを直しました。大きな音源のやり取りで時間切れになりにくくし、最初の読み込みに時間がかかるときもショー一覧へ戻らずに待つようにしました。": "Mac app: Fixed narrowing the window sometimes switching to the iPad layout automatically and hiding the tabs. Large audio transfers are less likely to time out, and when the first load takes a while the app now waits instead of returning to the show list.",
+
+    "Mac 版：「最近使った項目」をファイル名で出すようにしました（同じショー名の別のファイルを見分けられます）。照明を適用した後の文で「ブラウザ」と言わないようにし、言語を変えた直後の更新の案内も新しい言語で出すようにしました。": "Mac app: Open Recent now shows file names, so different files with the same show name can be told apart. The message after applying lighting no longer mentions a browser, and the update notice switches to the new language right after you change the language.",
+
+    "進行表の紙面は日本語か英語で出ることを、画面と冊子で案内するようにしました。": "The screen and the booklet now explain that the run-of-show sheet prints in Japanese or English.",
+
+    "言葉・訳・表示を直しました：劇場を適用するときの確認と案内（開発用の言葉をなくしました）、劇場設定の寸法の行（韓国語・中国語）、「表示する図」の欄の文字の省略、環境設定の「シーン境界の明かり」と「かんたん」（韓国語）、進行表の列の設定の見出し（韓国語・中国語）、設備配置のホリゾントの表記（中国語）、韓国語の「LX キュー」、中国語の「演者」。読み込みの知らせは言語を変えると新しい言語で出し直します。": "Corrected wording, translations and display: the confirmation and messages when applying a theatre (developer terms removed), the dimensions row in theatre settings (Korean, Chinese), text truncation in the “Show drawing” field, “Scene boundary lighting” and “Simple” in Preferences (Korean), the column settings heading of the run of show (Korean, Chinese), the cyclorama entries in the equipment layout (Chinese), the Korean for “LX cue” and the Chinese for “performer”. Import notices are shown again in the new language when you change the language.",
+
+    "冊子を直しました：図の説明から撮影時の版番号を外し、見本の一覧を公開している4つの見本だけにし、開発用の手順と、今は出ない照明の欄の説明を外しました。": "Booklet corrections: removed the capture version from figure captions, listed only the four published samples in the sample library, and removed developer steps and the description of a lighting column that is no longer shown.",
+
+    "検査の整備：公開前の確認で Mac 版の候補と配布物の照合を増やし、時間で揺れていた検査と試験場のデータを直しました。": "Test maintenance: the pre-release checks compare more of the Mac candidate with the distributed files, and checks that varied with timing and the test show data were fixed.",
+    // B178: venue dimensions retain placeholders in every display language.
+    "間口 {width}m ・ 奥行 {depth}m": "Width {width}m · Depth {depth}m",
+    "直径 {width}m": "Diameter {width}m",
+    "高さ {height}m": "Height {height}m",
+    "客席 約{seats}席": "about {seats} seats",
+    "観客 〜{crowd}人": "up to {crowd} people",
+    "舞台 {width}×{depth}m": "Stage {width}×{depth}m",
+    "劇場 {width}×{depth}m": "Room {width}×{depth}m",
+
+
     "Mac 版：照明の控えの一覧で、保持の上限（直近10件・30日）を過ぎて整理された控えが一覧に残り、開くと「読み取れません」と出ていたのを直しました。整理された控えは一覧から消し、整理されたことをお知らせします。古い版で作られた控えも、新しい順に残すようにしました。": "Mac app: Fixed backups that had been pruned after passing the retention limit (latest 10 backups, 30 days) remaining in the lighting backup list and showing “cannot be read” when opened. Pruned backups are now removed from the list, and you are notified that they were pruned. Backups created by older versions are likewise kept in order from the newest.",
 
     "Mac 版：ショーを ZIP に書き出すとき、このアプリが知らない添付ファイルや項目が落ちていたのを直しました。照明の控えの記録が読めないときでも、画面の内容だけで書き出して閉じられるようにしました。": "Mac app: Fixed attachments and fields that the app does not recognise being dropped when a show is exported to a ZIP. Even if the lighting backup records cannot be read, you can now export and close using only what is on screen.",
@@ -5695,4 +5726,42 @@ window.SHOSAI_DRAFT_LEDGER_REPAIR_COPY["en"] = {
   Object.assign(pack.text, added);
   pack.say.unshift([/^(.+)の「(.+)」が1ページに収まりません。画像の説明文などを短くするか、詳細・備考へ分けてください。内容は省略していません。$/, "“$2” in $1 does not fit on one page. Shorten image captions or split the content between Details and Notes. No content has been omitted."]);
   pack.needsReview = [...new Set([...(pack.needsReview || []), ...Object.keys(added).map(key => "text." + key), "say.b125-pagination"])];
+})();
+
+// B179: explain the existing Japanese/English paper languages (Q13 / G-182).
+(() => {
+  const pack = window.SHOSAI_I18N_PACKS["en"];
+  const added = {
+  "紙面は日本語か英語で出ます（韓国語・中国語の画面では、自動の紙面は英語になります）。": "The printed page uses Japanese or English (Auto uses English when the interface is Korean or Chinese)."
+};
+  Object.assign(pack.text, added);
+  pack.needsReview = [...new Set([...(pack.needsReview || []), ...Object.keys(added).map(key => "text." + key)])];
+})();
+
+// B181: applied lighting status is shared by the browser and Mac editions.
+(() => {
+  const pack = window.SHOSAI_I18N_PACKS["en"];
+  const added = {"適用済み · 照明をショーへ保存しました。": "Applied · Lighting saved to the show."};
+  Object.assign(pack.text, added);
+  pack.needsReview = [...new Set([...(pack.needsReview || []), ...Object.keys(added).map(key => "text." + key)])];
+})();
+
+// B182: theatre apply wording and missed interface translations (G-190 / G-194).
+(() => {
+  const pack = window.SHOSAI_I18N_PACKS["en"];
+  const added = {
+  "この劇場をショーへ適用します。適用の前に、今の内容を別に保存して確かめます。版の番号は増えません。": "Apply this theatre to the show. Before applying it, save the current content separately and check it. The version number will not increase.",
+  "別のプロジェクトへ保存し、保存した内容を確かめてから切り替えます。元のファイルは残します。": "Save to a separate project, check the saved content, then switch. The original file is kept.",
+  "このMac版は劇場を適用するための保存に対応していません。アプリを更新してください。": "This Mac app cannot save the theatre changes needed to apply them. Please update the app.",
+  "劇場を適用できませんでした。劇場の編集は残っています。": "Could not apply the theatre. Your theatre edits are kept.",
+  "保存したファイルは残しています:": "The saved file is kept:",
+  "保存した内容の確認で止まりました。": "Stopped while checking the saved content.",
+  "劇場をプロジェクトへ保存し、保存した内容を確かめました。": "The theatre was saved to the project and the saved content was checked.",
+  "シーン境界の明かり": "Scene boundary lighting",
+  "帯いっぱいでクロスフェード": "Crossfade across the transition",
+  "帯の始めでカット": "Cut at transition start",
+  "{paper} / 行の単位：{unit}": "{paper} / Row grouping: {unit}"
+};
+  Object.assign(pack.text, added);
+  pack.needsReview = [...new Set([...(pack.needsReview || []), ...Object.keys(added).map(key => "text." + key)])];
 })();

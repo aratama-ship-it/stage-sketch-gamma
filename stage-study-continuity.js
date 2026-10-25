@@ -80,7 +80,7 @@
     }
     function relabel() { host.querySelectorAll('[data-history-text]').forEach(el => { el.textContent = t(el.dataset.historyText); }); }
     function frame(where) {
-      const el = document.createElement('iframe'); el.setAttribute('sandbox', 'allow-scripts'); el.referrerPolicy = 'no-referrer'; el.title = t(where === 'source' ? 'from' : 'to'); el.src = '/study-frame.html?v=20261025-v0386-' + (state().lang === 'en' ? 'en' : 'ja');
+      const el = document.createElement('iframe'); el.setAttribute('sandbox', 'allow-scripts'); el.referrerPolicy = 'no-referrer'; el.title = t(where === 'source' ? 'from' : 'to'); el.src = '/study-frame.html?v=20261025-v0387-' + (state().lang === 'en' ? 'en' : 'ja');
       $('study-history-' + where + '-frame').replaceChildren(el); return el;
     }
     function loadSource() {

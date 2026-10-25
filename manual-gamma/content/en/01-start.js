@@ -22,18 +22,18 @@ ${note("Do not use a private window", "Your work is saved inside the browser, so
       },
       {
         id: "first-screen", title: "First screen and sample library", status: "verified",
-        keywords: ["first", "first time", "sample", "example", "romeo and juliet", "eight circus", "garden of seams", "test show", "bundled", "all shows", "what is open"],
+        keywords: ["first", "first time", "sample", "example", "romeo and juliet", "eight circus", "garden of seams", "bundled", "all shows", "what is open"],
         html: `
 <p>In a fresh browser, start a show from the theatre setup. Existing saved shows stay available. Choose ${ui("Sample library")} → ${ui("Get and open")} to open a sample. In the Mac project edition, choose New, Open or Sample library from the first window.</p>
-${fig("01-first-open", "The first screen (computer, 1440 px). Logo and version (0.2.16 when captured) at the top left, seven tabs at the top right, and below them the elapsed-time display (now TC), volume and tool icons.", "Stage Sketch Gamma first screen")}
-<p>The library contains the eight-person circus, the seam garden, two Romeo and Juliet shows and two test shows. Samples are acquired individually. The browser keeps acquired shows in All shows; the Mac edition opens a project file.</p>
+${fig("01-first-open", "The first screen (computer, 1440 px). Logo and version at the top left, seven tabs at the top right, and below them the elapsed-time display (now TC), volume and tool icons.", "Stage Sketch Gamma first screen")}
+<p>The library contains the eight-person circus, the seam garden and two Romeo and Juliet shows: four samples in total. Samples are acquired individually. The browser keeps acquired shows in All shows; the Mac edition opens a project file.</p>
 ${table(["Sample", "What it contains", "Use it to"], [
   ["見本: 八人のサーカス (Sample: Eight Circus Performers)", "8 scenes, 5 lights", "Follow a small show from start to end"],
   ["見本: 継ぎ目の庭 (Sample: The Garden of Seams)", "32 scenes, 4 lights", "See a longer structure divided into sections"],
-  ["ロミオとジュリエット｜RJセカンド（受け渡す手） (RJ Second)", "34 scenes, 5 sections, 10 people; 84 dialogue, 34 sound and 51 light cues", "See show paperwork with many cues"],
-  ["テスト: 全機能の試験場 (Test: every-feature testing ground)", "48 scenes. Sections A–J each isolate one group of features", "Try things out. Most pictures in this booklet were taken here, and “Try it in: B-3” notes refer to it (" + ref("test-show", "1-6") + ")"]
+  ["ロミオとジュリエット｜台本とキュー (Romeo and Juliet | script and cues)", "33 scenes with script, lighting and sound cues", "See the script alongside its cues"],
+  ["ロミオとジュリエット｜RJセカンド（受け渡す手） (RJ Second)", "34 scenes, 5 sections, 10 people; 84 dialogue, 34 sound and 51 light cues", "See show paperwork with many cues"]
 ])}
-${fig("release086-sample-library", "Get the examples you need from the sample library.", "Sample library")}
+${fig("release087-sample-library", "Get the examples you need from the sample library.", "Sample library")}
 ${note("Samples are acquired on request", "Starting or reloading the app does not add samples to All shows. Copies already there stay. Get another copy from Sample library when needed.")}`
       },
       {

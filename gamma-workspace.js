@@ -791,6 +791,27 @@
     const title=translate(text.title);
     const body=text.body.split('<br>').map(translate).join('<br>');
     return new Promise((resolve) => {
+      // The question lives in the host document, not the lighting iframe.
+      // Remember the actual focus (including same-origin frame contents) before
+      // blurring it; WKWebView may otherwise keep exposing the iframe's AX tree.
+      // That native AX behaviour is a hypothesis pending real-Mac verification.
+      const focusPath=[];
+      let focused=document.activeElement;
+      while(focused && focused!==focused.ownerDocument.body) {
+        focusPath.push(focused);
+        if(focused.tagName!=='IFRAME') break;
+        try { focused=focused.contentDocument?.activeElement; } catch(_) { break; }
+      }
+      const restoreTarget=()=>{
+        let target=null;
+        for(const node of focusPath) {
+          if(!node.isConnected || node.closest('[hidden],[inert]')) break;
+          // Do not restore into a frame that navigated while the question was open.
+          if(target?.tagName==='IFRAME' && target.contentDocument!==node.ownerDocument) break;
+          target=node;
+        }
+        return target || returnFocus;
+      };
       const backdrop=document.createElement('div');
       backdrop.className='stage-modal-backdrop';
       // A library acquisition can ask this question while its modal dialog owns
@@ -818,15 +839,55 @@
                   mk(translate('キャンセル'),'cancel','btn-quiet'),
                   mk(translate(text.apply),'apply','stage-minor-action'));
       box.append(acts);
-      let releaseFocus=null;
-      function cleanup(){signal?.removeEventListener('abort',cancel);if(overDialog&&box.open)box.close();backdrop.remove();box.remove();releaseFocus?.();}
+      let releaseFocus=null,closed=false;
+      const background=[];
+      const backgroundFrames=new Map();
+      const makeInert=node=>{
+        if(!node.inert){node.inert=true;background.push(node);}
+        // Parent-document inert does not stop programmatic focus inside an
+        // iframe in our Chromium/WebKit checks. Block its document as well.
+        const frames=[...(node.tagName==='IFRAME'?[node]:[]),...node.querySelectorAll('iframe')];
+        for(const frame of frames) {
+          if(backgroundFrames.has(frame)) continue;
+          const blockDocument=()=>{
+            if(closed) return;
+            let body;
+            try { body=frame.contentDocument?.body; } catch(_) { return; }
+            if(body) makeInert(body);
+          };
+          backgroundFrames.set(frame,blockDocument);
+          frame.addEventListener('load',blockDocument);
+          blockDocument();
+        }
+      };
+      function cleanup(){
+        if(closed) return;
+        closed=true;
+        signal?.removeEventListener('abort',cancel);
+        if(overDialog&&box.open)box.close();
+        backdrop.remove();box.remove();
+        // Release only our own inert flags, before containDialog restores focus.
+        backgroundFrames.forEach((listener,frame)=>frame.removeEventListener('load',listener));
+        background.forEach(node=>{node.inert=false;});
+        releaseFocus?.();
+      }
       const cancel=()=>{cleanup();resolve('cancel');};
       backdrop.onclick=cancel;
       box.addEventListener('cancel',event=>{event.preventDefault();cancel();});
-      signal?.addEventListener('abort',cancel,{once:true});
+      // Explicitly blur the focused control in its own document first, then its
+      // iframe element in the host. No bridge or new native-shell API is needed.
+      [...focusPath].reverse().forEach(node=>node.blur());
       document.body.append(backdrop,box);
       if(overDialog)box.showModal();
-      releaseFocus=window.GAMMA_UI.containDialog(box,{initialFocus:acts.firstElementChild,returnFocus,onCancel:cancel});
+      for(const node of document.body.children) {
+        if(node===backdrop || node===box || node.matches('script,style,link,template')) continue;
+        makeInert(node);
+      }
+      releaseFocus=window.GAMMA_UI.containDialog(box,{initialFocus:acts.firstElementChild,returnFocus:restoreTarget,onCancel:cancel});
+      // Blur/focus handlers can abort synchronously during setup. Settle that
+      // only after the focus release and background restoration are ready.
+      if(signal?.aborted) cancel();
+      else signal?.addEventListener('abort',cancel,{once:true});
     });
   }
 
@@ -1014,7 +1075,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261025-v0386'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261025-v0387'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;

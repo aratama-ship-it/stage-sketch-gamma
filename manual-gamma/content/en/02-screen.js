@@ -12,7 +12,7 @@
         html: `
 <p>The current scene title uses the space between the buttons; its tooltip contains the full title. If the header runs out of room, TC hides first, then the controls move to a second row if needed. The version remains visible; TC returns when the window widens.</p>
 <p>The header has the logo and version on the left, seven workspace tabs, the TC, volume and tool icons. On narrower windows, control groups move onto the next row. From v0.2.15 the header stays put while the side panels and the central drawings each scroll on their own.</p>
-${fig("release086-header", "The header. Logo and version on the left, tabs at the top right, and on the second row TC, volume, undo/redo, feedback, AI, the gear and the other icons.", "Header layout")}
+${fig("release087-header", "The header. Logo and version on the left, tabs at the top right, and on the second row TC, volume, undo/redo, feedback, AI, the gear and the other icons.", "Header layout")}
 ${table(["Where", "Name", "What it does"], [
   ["Left", "Logo and version", "The version number (for example 0.2.19). Please include it when reporting a problem"],
   ["Top right", "Tabs (Stage / Theatre settings / Equipment placement / Light design / Lines / 3D / Run of show)", "Switch where you are working (" + ref("tabs", "2-2") + ")"],
@@ -53,7 +53,7 @@ ${note("In a new show some tabs are closed", "Until the theatre has been applied
         html: `
 <h4>Current display controls</h4><p>Use the show duration to review section totals; missing durations remain unknown. The scene thumbnail setting adds small preview pictures. Apply forward shows existing matching performers in later scenes before applying their position and pose; cancel leaves the show unchanged. A light skin is available in Preferences. Short displays compact the selected-item tools; expand them to reach the full controls.</p>
 <p>The ${ui("Stage")} tab defaults to ${ui("Two columns")}: show, scene, performer and other panels on the left, drawings on the right. Use ${ui("Panel display style")} to switch to ${ui("3 columns")} or another layout.</p>
-${fig("release086-stage", "The default two-column layout: show and scene lists on the left, front and plan views on the right.", "Stage tab columns")}
+${fig("release087-stage", "The default two-column layout: show and scene lists on the left, front and plan views on the right.", "Stage tab columns")}
 <ul>
 <li><strong>Reorder panels</strong> — drag the ⠿ at the left of a panel heading up or down. The other panels slide aside to make room.</li>
 <li><strong>Collapse</strong> — the ▾ at the right of a heading folds the panel. What is folded is saved with the show and goes into exports.</li>
@@ -94,7 +94,7 @@ ${note("Not on iPad or iPhone", "The panel switches are a computer-screen featur
         id: "inspector", title: "The Selection panel, and details beside the drawing", status: "sourced",
         keywords: ["selection", "inspector", "details", "size", "facing", "colour", "layering", "pose", "select", "beside"],
         html: `
-<p>Select a piece on the drawing and ${ui("Selection")} on the right shows the fields that suit it: pose, facing, costume and held items for a performer; dimensions or angle for a set piece; diameter or level for a light; height or angle for machinery. The name, colour and dimensions themselves are set in the detail window of the list on the left.</p>
+<p>Select a piece on the drawing and ${ui("Selection")} on the right shows the fields that suit it: pose, facing, costume and held items for a performer; dimensions or angle for a set piece; height or angle for machinery. The name, colour and dimensions themselves are set in the detail window of the list on the left.</p>
 <p>With ${ui("Show the selection beside the drawing")} switched on in Settings (on by default), a helper appears next to the selected piece. Switched off, the details appear only in the side panel.</p>
 <p><strong>A single click</strong> on a name in a list opens its detail window (not a double click). To select the piece on stage instead, press the mark at the left of the row.</p>`
       },
@@ -153,7 +153,7 @@ ${table(["Key", "What it does"], [
     "Shift",
     "Space"
   ],
-  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release086-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release086-stage", "Stage toolbar.", "stage")
+  "html": "<p>Main content stays scrollable while the timeline is open. Ordinary wheel scrolling over the Stage plan scrolls its centre lane. Shift-drag or the hand tool pans the view. Every toolbar icon has a short tooltip.</p>" + "<p>In front and plan views, drag empty space to select pieces in a box, or click empty space to clear selection. Shift-drag empty space to pan. You can also use the hand tool to pan. Close-glyph buttons do not show redundant tooltips.</p>" + fig("release087-stage", "Stage selection and hand tool.", "Stage tools") + fig("release059-import", "Aligned import comparison actions.", "Import comparison") + fig("release087-stage", "Stage toolbar.", "stage")
 }
     ]
   });

@@ -4,9 +4,41 @@
   const pageId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
   let revision = 0, last = '', nativeToken = '', documentContext = {documentSessionId:'',pageGeneration:'',deliveryGeneration:''}, transitioning = false, queued = false;
   const composing = new WeakSet(), installed = new WeakSet();
+  let textHistory = new WeakMap();
   const visible = el => !!el?.getClientRects().length && !el.hidden;
   const textInput = el => !!el && (el.isContentEditable || el.tagName === 'TEXTAREA'
     || (el.tagName === 'INPUT' && !['button','checkbox','radio','range','color','file','submit','reset','hidden'].includes(el.type)));
+  const textValue = el => el.isContentEditable ? el.innerHTML : el.value;
+  function rememberText(el) {
+    if (!textInput(el)) return;
+    const value = textValue(el);
+    let history = textHistory.get(el);
+    // A renderer may replace a value without a native editing operation. Such a
+    // value is not evidence of native Undo availability in this particular field.
+    if (!history || history.value !== value) {
+      history = {value, undo:[], redo:[]}; textHistory.set(el, history);
+    }
+    return history;
+  }
+  function textEdited(event) {
+    const el = event.target;
+    if (!textInput(el)) return;
+    const value = textValue(el), history = textHistory.get(el);
+    if (!history) { rememberText(el); return; }
+    if (history.value === value) return;
+    const undo = event.inputType === 'historyUndo', redo = event.inputType === 'historyRedo';
+    if (undo || redo) {
+      const from = undo ? history.undo : history.redo, to = undo ? history.redo : history.undo;
+      const index = from.lastIndexOf(value);
+      to.push(history.value);
+      from.splice(index < 0 ? 0 : index);
+    } else {
+      history.undo.push(history.value); history.redo = [];
+    }
+    // These are element-local capability witnesses, never an alternate text Undo
+    // implementation. Browser/AppKit still owns grouping and performs the edit.
+    history.value = value;
+  }
   function canInspect(frame) {
     if (!frame || frame.tagName !== 'IFRAME') return false;
     // WebKit reports sandbox access even when the exception is caught. Do not
@@ -43,7 +75,8 @@
     // document behind them is read-only or busy.
     if (text && inModal && inChildModal) {
       owner = 'text';
-      available = {canUndo:!el.disabled && !el.readOnly && (doc.queryCommandEnabled?.('undo') ?? false), canRedo:!el.disabled && !el.readOnly && (doc.queryCommandEnabled?.('redo') ?? false)};
+      const history = rememberText(el);
+      available = {canUndo:!el.disabled && !el.readOnly && !!history.undo.length && (doc.queryCommandEnabled?.('undo') ?? false), canRedo:!el.disabled && !el.readOnly && !!history.redo.length && (doc.queryCommandEnabled?.('redo') ?? false)};
     } else if (!modal && !childModal) {
       blocked ||= !!stage.readOnly || !!stage.busy;
       const drawing = window.GAMMA_FIELD_RUNS?.historyState?.();
@@ -102,7 +135,8 @@
   function key(event) {
     if (!(event.metaKey || event.ctrlKey) || event.altKey || !['z','y'].includes(event.key?.toLowerCase())) return;
     if (event.defaultPrevented || event.isComposing || event.keyCode === 229 || composing.has(event.target?.ownerDocument || document)) return;
-    if (state().owner === 'text') return; // Browser/AppKit text path, exactly once.
+    const current = state();
+    if (current.owner === 'text' && current[event.shiftKey || event.key.toLowerCase() === 'y' ? 'canRedo' : 'canUndo']) return; // Browser/AppKit text path, exactly once.
     event.preventDefault(); event.stopImmediatePropagation();
     execute(event.shiftKey || event.key.toLowerCase() === 'y' ? 'redo' : 'undo');
   }
@@ -112,20 +146,32 @@
     doc.defaultView.addEventListener('gamma-light-draft-edit', invalidate);
     doc.defaultView.addEventListener('gamma-light-history-change', invalidate);
     doc.defaultView.addEventListener('blur', () => { composing.delete(doc); invalidate(); });
-    for (const name of ['focusin','focusout','pointerdown','pointerup','pointercancel','keyup','input','change']) doc.addEventListener(name, invalidate, true);
+    for (const name of ['focusout','pointerdown','pointerup','pointercancel','keyup','change']) doc.addEventListener(name, invalidate, true);
+    doc.addEventListener('focusin', event => { rememberText(event.target); invalidate(); }, true);
+    doc.addEventListener('beforeinput', event => { rememberText(event.target); }, true);
+    // A native event can drain microtasks between listeners. Observe the edit
+    // before queuing publish(), or resolve()->rememberText() resets its witness
+    // as a programmatic replacement before the input observer gets to see it.
+    doc.addEventListener('input', event => { textEdited(event); invalidate(); }, true);
     doc.addEventListener('compositionstart', () => { composing.add(doc); invalidate(); }, true);
     doc.addEventListener('compositionend', () => { composing.delete(doc); invalidate(); }, true);
+    const installFrame = frame => {
+      try { if (canInspect(frame) && frame.contentDocument) install(frame.contentDocument); } catch (_) {}
+    };
+    doc.addEventListener('load', event => { if (event.target.tagName === 'IFRAME') { installFrame(event.target); invalidate(); } }, true);
+    for (const frame of doc.querySelectorAll('iframe')) installFrame(frame);
     new MutationObserver(records => {
       if (records.some(r => r.target.matches?.('body,dialog,[role="dialog"],[role="alertdialog"],.stage-modal,#dialog.dialog,[aria-busy]'))) invalidate();
     }).observe(doc.documentElement, {subtree:true,attributes:true,attributeFilter:['hidden','open','aria-modal','aria-busy','data-gamma-workspace']});
   }
   window.GammaUndoOwner = Object.freeze({state, execute, executeNative, allows, refresh, invalidate,
     context(value = {}) {
-      documentContext = Object.fromEntries(['documentSessionId','pageGeneration','deliveryGeneration'].map(key => [key, typeof value[key] === 'string' ? value[key] : '']));
+      const next = Object.fromEntries(['documentSessionId','pageGeneration','deliveryGeneration'].map(key => [key, typeof value[key] === 'string' ? value[key] : '']));
+      if (Object.keys(next).some(key => next[key] !== documentContext[key])) textHistory = new WeakMap();
+      documentContext = next;
       transitioning = !!value.transitioning; invalidate();
     }});
   install(document);
-  document.addEventListener('load', event => { if (event.target.tagName === 'IFRAME') { try { if (canInspect(event.target) && event.target.contentDocument) install(event.target.contentDocument); } catch (_) {} invalidate(); } }, true);
   // Preserve the text target while a pointer operates the common history bar.
   // A toolbar click uses WebKit/browser text editing, not a stage snapshot.
   document.addEventListener('pointerdown', event => {

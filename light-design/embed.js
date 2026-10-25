@@ -686,7 +686,7 @@
       parent.dispatchEvent(new parent.Event("stage-timeline-cues-change"));
       // Remove only our own draft AFTER durable host acceptance.
       clearRecoveryMessage();recoveredWithoutHistory=false;applyError='';draftState='none';
-      appliedNotice=result.shelfPersisted?'適用済み · 照明をこのブラウザのショーへ保存しました。':'適用済み · ショー一覧の控えを更新できません。ショーをファイルへ書き出してください。';
+      appliedNotice=result.shelfPersisted?'適用済み · 照明をショーへ保存しました。':'適用済み · ショー一覧の控えを更新できません。ショーをファイルへ書き出してください。';
       if(!ownsRequest(request))return staleResult();
       try {if(!(context.nativeDocument && context.draftRecoveryUnavailable)){markLegacyConsumed();localStorage.removeItem(key(context));retainNative(null);}} catch {appliedNotice+=' 編集控えの整理は次回行います。';message('照明は保存しました。編集控えの整理は次回行います');}
       hooks.renderAll();
@@ -712,7 +712,7 @@
       if(!sameOwner(request.context,result.context))return staleResult();
       context=result.context;appliedExtras=model.clone(design);
       hooks.applyDesign(design);synchronizePieces(context);synchronizeVenueMask(context);hooks.markApplied();
-      clearRecoveryMessage();recoveredWithoutHistory=false;applyError='';draftState='none';appliedNotice='適用済み · このブラウザのショーへ保存しました';
+      clearRecoveryMessage();recoveredWithoutHistory=false;applyError='';draftState='none';appliedNotice='適用済み · 照明をショーへ保存しました。';
       if(!ownsRequest(request))return staleResult();
       try {if(!(context.nativeDocument && context.draftRecoveryUnavailable)){markLegacyConsumed();localStorage.removeItem(key(context));retainNative(null);}} catch {}
       parent.GAMMA_WORKSPACE.captureHostHistory();hooks.renderAll();

@@ -47,13 +47,15 @@ const STAGE_LAYOUT_LANES_MODEL = (() => {
     return 2;
   }
 
-  function effectiveLayout({ width, thresholds, selectedMode, selectedSide, tabletMode = false, tripleAllowed = true, bottomAllowed = true }) {
+  function effectiveLayout({ width, thresholds, selectedMode, selectedSide, tabletMode = false, tripleAllowed = true, bottomAllowed = true, desktopShell = false }) {
     // 下部の列は図の幅を奪わないため、左右列の切替幅とは別に判定する。
     if (selectedMode === "bottom" && bottomAllowed && !tabletMode && Number(width) >= BOTTOM_MIN_WIDTH) {
       const lanes = Number(width) >= 1280 ? 4 : Number(width) >= 1024 ? 3 : 2;
       return { lanes, layout: "bottom", mode: "bottom", side: "left" };
     }
-    const limit = laneLimit(width, thresholds);
+    // The Mac shell permits a 900px content window. Keep its desktop navigation
+    // and use the existing one-column CSS instead of the limited iPad shell.
+    const limit = Math.max(desktopShell && !tabletMode ? 1 : 0, laneLimit(width, thresholds));
     let lanes = Math.min(selectedLanes(selectedMode, tabletMode), limit);
     if (lanes === 3 && !tripleAllowed) lanes = 2;
     const side = selectedSide === "right" ? "right" : "left";
@@ -63,11 +65,12 @@ const STAGE_LAYOUT_LANES_MODEL = (() => {
     return { lanes: 3, layout: "three", mode: "triple", side };
   }
 
-  function autoTabletTransition({ width, thresholds, selectedMode, autoTablet = false, manualTablet = false }) {
+  function autoTabletTransition({ width, thresholds, selectedMode, autoTablet = false, manualTablet = false, desktopShell = false }) {
     const values = parseThresholds(thresholds) || [...DEFAULT_THRESHOLDS];
     const minimum = selectedMode === "bottom" ? BOTTOM_MIN_WIDTH : values[0];
     const padding = selectedMode === "bottom" ? 0 : EXIT_PADDING;
     if (manualTablet) return { autoTablet: Boolean(autoTablet), reload: false };
+    if (desktopShell) return { autoTablet: false, reload: false };
     if (!autoTablet && Number(width) < minimum) return { autoTablet: true, reload: true };
     if (autoTablet && Number(width) >= minimum + padding) return { autoTablet: false, reload: true };
     return { autoTablet: Boolean(autoTablet), reload: false };
@@ -81,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.86";
+  const GAMMA_APP_VERSION = "v0.3.87";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2133,8 +2136,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   /* 楽曲はJSONへ入る小さなメタデータと、IndexedDBへ入る音源Blobを分ける。
    * DOMより前へ純粋関数を置き、旧データ・壊れた読込・再生遷移をNodeでも検査する。 */
   const STAGE_AUDIO_TRACK_LIMIT = 24;
-  const STAGE_AUDIO_FILE_MAX_BYTES = 150 * 1024 * 1024;
-  const STAGE_BETA_AUDIO_FILE_MAX_BYTES = 50 * 1024 * 1024;
+  // Generated from stage-limits.json; node tools/generate-stage-limits.mjs --check.
+  const STAGE_AUDIO_FILE_MAX_BYTES = 157286400;
+  const STAGE_BETA_AUDIO_FILE_MAX_BYTES = 52428800;
   const STAGE_AUDIO_ID_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,95}$/;
   // Compatibility policy only: do not switch audio acceptance using STAGE_SHELL.
   const hasLegacyAudioPolicyBridge = (bridge = window.stageSketchBridge) => Boolean(
@@ -2147,6 +2151,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const LEGACY_AUDIO_POLICY_BRIDGE = hasLegacyAudioPolicyBridge();
   const BETA_BROWSER_AUDIO_RESTRICTIONS = RELEASE_SCOPE_ID === "beta-20260912"
     && !LEGACY_AUDIO_POLICY_BRIDGE;
+  const audioFileSizePolicy = (size, releaseScope = RELEASE_SCOPE_ID, nativeApp = LEGACY_AUDIO_POLICY_BRIDGE) => {
+    const beta = releaseScope === "beta-20260912" && nativeApp !== true;
+    return size > (beta ? STAGE_BETA_AUDIO_FILE_MAX_BYTES : STAGE_AUDIO_FILE_MAX_BYTES)
+      ? beta ? "beta-size" : "size" : "";
+  };
   const audioFilePolicy = (
     file,
     releaseScope = RELEASE_SCOPE_ID,
@@ -2158,8 +2167,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const mime = String(file.type || "").toLowerCase();
     const wav = /\.wav$/i.test(name) || ["audio/wav", "audio/wave", "audio/x-wav"].includes(mime);
     if (beta && wav) return "beta-wav";
-    const maxBytes = beta ? STAGE_BETA_AUDIO_FILE_MAX_BYTES : STAGE_AUDIO_FILE_MAX_BYTES;
-    if (file.size > maxBytes) return beta ? "beta-size" : "size";
+    const sizeProblem = audioFileSizePolicy(file.size, releaseScope, nativeApp);
+    if (sizeProblem) return sizeProblem;
     const compressedExtension = /\.(mp3|m4a|aac)$/i.test(name);
     const compressedMime = ["audio/mpeg", "audio/mp4", "audio/x-m4a", "audio/aac"].includes(mime);
     if (compressedExtension || compressedMime || (!beta && wav)) return "";
@@ -2321,6 +2330,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       ) || [...STAGE_LAYOUT_LANES_MODEL.DEFAULT_THRESHOLDS];
     } catch (_) { return [...STAGE_LAYOUT_LANES_MODEL.DEFAULT_THRESHOLDS]; }
   })();
+  const desktopShell = window.STAGE_RUNTIME.isMac();
   const bootPhonePreview = ["localhost", "127.0.0.1"].includes(window.location.hostname)
     && layoutLaneParams.has("phone-viewer-preview");
   const bootPhoneLike = navigator.maxTouchPoints > 0
@@ -2329,15 +2339,17 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const key = STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet;
     let stored = false;
     try { stored = localStorage.getItem(key) === "1"; } catch (_) { return false; }
-    if (nativeProject || STUDY_READ_ONLY || bootPhonePreview || bootPhoneLike) return stored;
+    if (!desktopShell && (nativeProject || STUDY_READ_ONLY || bootPhonePreview || bootPhoneLike)) return stored;
     const transition = STAGE_LAYOUT_LANES_MODEL.autoTabletTransition({
       width: window.innerWidth,
       thresholds: bootLayoutThresholds,
       selectedMode: panelLayoutModeForPrefs(bootPrefs, "normal"),
-      autoTablet: stored,
+      // A past automatic flag must not select the iPad shell in a Mac window.
+      autoTablet: desktopShell ? false : stored,
       manualTablet: bootPrefs.tabletMode === true || window.SHOSAI_TABLET_PWA === true,
+      desktopShell,
     });
-    if (!transition.reload) return stored;
+    if (!transition.reload) return transition.autoTablet;
     try {
       if (transition.autoTablet) localStorage.setItem(key, "1");
       else localStorage.removeItem(key);
@@ -5588,6 +5600,39 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let layoutLanesReady = false;
   let layoutLaneResizeFrame = 0;
   let layoutLaneReloadPending = false;
+  let layoutLaneReloadAttempt = null;
+  // A reload can be cancelled by any of the existing draft/save guards. Do
+  // not infer cancellation from reload() returning or from a timeout alone.
+  // A subsequent trusted interaction in this document is the recovery point.
+  function recoverLayoutLaneReload() {
+    const attempt = layoutLaneReloadAttempt;
+    if (!attempt || !attempt.requested || attempt.departed) return false;
+    try {
+      const key = STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet;
+      // Another tab may have changed the preference while the dialog was open.
+      if (localStorage.getItem(key) === attempt.nextMark) {
+        if (attempt.previousMark === null) localStorage.removeItem(key);
+        else localStorage.setItem(key, attempt.previousMark);
+      }
+    } catch (_) { /* Keep the live shell; a later width change may retry. */ }
+    layoutLaneReloadAttempt = null;
+    layoutLaneReloadPending = false;
+    return true;
+  }
+  window.addEventListener("pagehide", () => {
+    if (layoutLaneReloadAttempt) layoutLaneReloadAttempt.departed = true;
+  });
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted && layoutLaneReloadAttempt) {
+      layoutLaneReloadAttempt.departed = false;
+      recoverLayoutLaneReload();
+    }
+  });
+  for (const type of ["pointerdown", "keydown"]) {
+    window.addEventListener(type, (event) => {
+      if (event.isTrusted) recoverLayoutLaneReload();
+    }, true);
+  }
   // Detail-editor declarations are initialized later than the first layout pass.
   let hasPendingRenameDrafts = () => false;
 
@@ -5600,6 +5645,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       selectedMode: panelLayoutMode(workspace),
       selectedSide: panelSingleSide(workspace),
       tabletMode: tabletActive,
+      desktopShell,
       tripleAllowed: !tabletActive && !phoneViewerActive
         && !document.body.classList.contains("stage-session-guest"),
       bottomAllowed: workspace === "normal" && !phoneViewerActive
@@ -5614,27 +5660,35 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   function applyStageLayoutLanes({ redraw = true } = {}) {
     if (phoneViewerActive) return currentLayoutLaneState();
-    const autoTablet = (() => {
-      try { return localStorage.getItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet) === "1"; }
-      catch (_) { return false; }
-    })();
+    // The loaded shell is authoritative, even if a failed write or another
+    // tab left its stored mark different. Manual tablet remains excluded below.
+    const autoTablet = document.documentElement.classList.contains("stage-pwa-tablet");
     const transition = STAGE_LAYOUT_LANES_MODEL.autoTabletTransition({
       width: window.innerWidth,
       thresholds: layoutLaneThresholds,
       selectedMode: panelLayoutMode("normal"),
       autoTablet,
       manualTablet: prefs.tabletMode === true || window.SHOSAI_TABLET_PWA === true,
+      desktopShell,
     });
     const nativeWelcome = nativeProject && (!nativeProject.opened || window.STAGE_WELCOME?.visible);
     if (transition.reload && !nativeWelcome && !STUDY_READ_ONLY && !layoutLaneReloadPending && currentWorkspaceMode() !== "rehearsal") {
       // Preserve open and search-suspended drafts; a later resize retries normally.
       if (hasPendingRenameDrafts()) return currentLayoutLaneState();
-      layoutLaneReloadPending = true;
+      const attempt = { previousMark: null, nextMark: transition.autoTablet ? "1" : null, requested: false, departed: false };
       try {
+        attempt.previousMark = localStorage.getItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet);
         if (transition.autoTablet) localStorage.setItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet, "1");
         else localStorage.removeItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet);
       } catch (_) { /* 印を保存できない場合は再読み込みを繰り返さない */ return currentLayoutLaneState(); }
-      window.setTimeout(() => window.location.reload(), 0);
+      layoutLaneReloadPending = true;
+      layoutLaneReloadAttempt = attempt;
+      window.setTimeout(() => {
+        if (layoutLaneReloadAttempt !== attempt) return;
+        attempt.requested = true;
+        try { window.location.reload(); }
+        catch (_) { recoverLayoutLaneReload(); }
+      }, 0);
       return currentLayoutLaneState();
     }
     const before = document.documentElement.dataset.stageLayout || "";
@@ -5653,6 +5707,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   applyStageLayoutLanes({ redraw: false });
   window.addEventListener("resize", () => {
+    // Recovery itself never retries: respect Stay without a dialog loop.
+    if (recoverLayoutLaneReload()) return;
     if (layoutLaneResizeFrame) return;
     layoutLaneResizeFrame = requestAnimationFrame(() => {
       layoutLaneResizeFrame = 0;
@@ -7993,17 +8049,22 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return true;
   }
 
+  function audioFileSizeMessage(problem) {
+    if (problem === "beta-size") {
+      return tx("ベータ版では音源を50MB以下にしてください。MP3またはM4A/AACへ変換すると容量を抑えられます。");
+    }
+    if (problem === "size") return tx("音源は150MB以下にしてください。");
+    return "";
+  }
+
   function validAudioFile(file) {
     const problem = audioFilePolicy(file);
     if (problem === "empty") return tx("中身のある音源ファイルを選んでください。");
     if (problem === "beta-wav") {
       return tx("ベータ版ではWAV音源を読み込めません。MP3またはM4A/AACへ変換してください。");
     }
-    if (problem === "beta-size") {
-      return tx("ベータ版では音源を50MB以下にしてください。MP3またはM4A/AACへ変換すると容量を抑えられます。");
-    }
     if (problem === "beta-format") return tx("ベータ版で読み込める音源はMP3またはM4A/AACです。");
-    if (problem === "size") return tx("音源は150MB以下にしてください。");
+    if (problem === "size" || problem === "beta-size") return audioFileSizeMessage(problem);
     if (problem === "format") return tx("MP3、M4A/AAC、WAVの音源を選んでください。");
     return "";
   }
@@ -8734,6 +8795,13 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   async function importFormationAudios(section, songs, audios) {
+    // Preflight the entire new selection before any write. Package restore/migration
+    // paths retain their existing limits and never pass through this import policy.
+    for (const entry of (Array.isArray(audios) ? audios : [])) {
+      if (!entry || !(entry.blob instanceof Blob) || typeof entry.songId !== "string") continue;
+      const problem = audioFileSizePolicy(entry.blob.size);
+      if (problem) throw new Error(audioFileSizeMessage(problem));
+    }
     const map = { ...((section.formation && section.formation.audioTrackBySong) || {}) };
     for (const entry of (Array.isArray(audios) ? audios : [])) {
       if (!entry || !(entry.blob instanceof Blob) || typeof entry.songId !== "string") continue;
@@ -11470,7 +11538,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let nativeSavingTimer = null;
   let nativeSaveWarning = null;
   function nativeProjectSaveState(payload) {
-    if (payload.state !== "received") { clearTimeout(nativeSavingTimer); nativeSavingTimer = null; }
+    if (payload.state !== "received" || payload.cancelled === true) { clearTimeout(nativeSavingTimer); nativeSavingTimer = null; }
     if (payload.state === "failed" || payload.state === "hold") {
       nativeSaveWarning = tx(payload.state === "hold"
         ? "原本を保全するため、書き込みを保留しています。「保存」で別の保存先を選んでください。"
@@ -18863,7 +18931,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   function appendTimelineLightingPreference() {
       if(document.getElementById("scene-boundary-light-pref"))return;
       const code=document.documentElement.lang?.split("-")[0]||"ja";
-      const labels=({en:["Scene boundary lighting","Crossfade across the transition","Cut at transition start"],ko:["장면 경계 조명","전환 구간 전체에서 크로스페이드","전환 시작 시 컷"],zh:["场景边界灯光","整个转场期间交叉渐变","转场开始时切换"]})[code]||["シーン境界の明かり","帯いっぱいでクロスフェード","帯の始めでカット"];
+      const labels=["シーン境界の明かり","帯いっぱいでクロスフェード","帯の始めでカット"].map(tx);
       const row=prefSelectRow(labels[0],prefs.sceneBoundaryLight||"auto",
         [["auto",labels[1]],["cut",labels[2]]],"",next=>{
           prefs.sceneBoundaryLight=next;savePrefs();timelineLightScheduleCache=null;lightCueOverlayCache={};render();
@@ -27914,7 +27982,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
           num.textContent = `${shut ? "▸" : "▾"} ${numberText}`;
           button.setAttribute("aria-expanded", String(!shut));
         } else {
-          num.textContent = scene.studyBeatId || numberText;
+          num.textContent = numberText;
         }
 
         const name = document.createElement("span");
@@ -34925,7 +34993,8 @@ ${propsPlotHtml}
   /* 読み込み失敗の理由は aria-live（視覚的には隠れている）だけに流れていて、
      目で見ると「選んでも何も起きない」ように見えていた。失敗のときだけ、
      画面にも同じ文を短時間出す。成功時は比較モーダル自体が見えるので出さない。 */
-  function importFailureNotice(message) {
+  function importFailureNotice(message, packageEntries = null) {
+    importFailureNotice._packageEntries = packageEntries;
     announce(message, { warning: false });
     let box = document.getElementById("stage-import-notice");
     if (!box) {
@@ -34942,12 +35011,20 @@ ${propsPlotHtml}
     const body = document.createElement('span'); body.textContent = message;
     const close = document.createElement('button'); close.type = 'button'; close.className = 'gamma-close-glyph'; close.textContent = '×';
     close.setAttribute('aria-label', tx('閉じる')); close.style.cssText = 'min-width:44px;min-height:44px;margin-left:12px;color:inherit;background:transparent;border:1px solid currentColor';
-    close.onclick = () => { box.hidden = true; clearTimeout(importFailureNotice._t); };
+    close.onclick = () => { box.hidden = true; importFailureNotice._packageEntries = null; clearTimeout(importFailureNotice._t); };
     box.append(body, close);
     box.style.bottom = fieldMode ? 'auto' : '28px'; box.style.top = fieldMode ? '16px' : 'auto';
     box.hidden = false;
     clearTimeout(importFailureNotice._t);
-    importFailureNotice._t = setTimeout(() => { box.hidden = true; }, 8000);
+    importFailureNotice._t = setTimeout(() => { box.hidden = true; importFailureNotice._packageEntries = null; }, 8000);
+  }
+
+  function renderPackageOutcomeNotice() {
+    const entries = importFailureNotice._packageEntries;
+    const box = document.getElementById("stage-import-notice");
+    if (!entries || !box || box.hidden) return;
+    box.querySelector("span").textContent = entries.map(formatPackageWarning).join("\n\n");
+    box.querySelector("button").setAttribute("aria-label", tx("閉じる"));
   }
 
   /* エクスポート系の失敗も同じ赤いトーストで見せる。中身は同じ関数（画面上の区別は要らない）。 */
@@ -34958,6 +35035,7 @@ ${propsPlotHtml}
   window.addEventListener('stage-field-mode-enter', () => {
     const notice = document.getElementById('stage-import-notice'); if (notice) notice.hidden = true;
     clearTimeout(importFailureNotice._t);
+    importFailureNotice._packageEntries = null;
   });
 
   function projectDocumentMismatchMessage(parsed) {
@@ -35044,15 +35122,22 @@ ${propsPlotHtml}
     return tx(messages[error?.code] || "プロジェクトのzipを読めません。ファイルを確認してください。");
   }
 
-  function packageWarningLines(data, result = data) {
+  function formatPackageWarning({ key, args = {}, names = [] }) {
+    const text = tx(key).replace(/\{(\w+)\}/g, (match, name) => Object.hasOwn(args, name) ? args[name] : match);
+    return text + (names.length ? "\n" + names.join(" ／ ") : "");
+  }
+  function packageWarningEntries(data, result = data) {
     const lines = [];
-    if (data.carry?.droppedFiles) lines.push(tx("持ち越せなかった知らないファイル {count} 件。元のパッケージを保管してください。").replace("{count}",data.carry.droppedFiles));
-    if (data.warnings.includes("show-hash-mismatch")) lines.push(tx("show.json の一致を確認できませんでした。JSONとして読める内容を読み込みます。"));
+    if (data.carry?.droppedFiles) lines.push({ key: "持ち越せなかった知らないファイル {count} 件。元のパッケージを保管してください。", args: { count: data.carry.droppedFiles } });
+    if (data.warnings.includes("show-hash-mismatch")) lines.push({ key: "show.json の一致を確認できませんでした。JSONとして読める内容を読み込みます。" });
     const unreferenced = data.warnings.filter(w => typeof w === "string" && w.startsWith("unreferenced-audio:")).map(w => w.slice("unreferenced-audio:".length));
-    if (unreferenced.length) lines.push(tx("次の音源は本文（show.json）から参照されていないため、この読み込みには取り込みません。元のパッケージはそのまま残ります。") + "\n" + unreferenced.join(" ／ "));
-    if (result.offline?.length) lines.push(tx("次の音源はオフライン（未接続）です。再接続で元ファイルを選び直してください。") + "\n" + result.offline.map(a => a.originalName || a.trackId).join(" ／ "));
-    if (result.conflicts?.length) lines.push(tx("次の音源は、この端末に違う中身があるため上書きしませんでした。置き換えるには音源の再接続で選び直してください。") + "\n" + result.conflicts.map(a => a.originalName || a.trackId).join(" ／ "));
+    if (unreferenced.length) lines.push({ key: "次の音源は本文（show.json）から参照されていないため、この読み込みには取り込みません。元のパッケージはそのまま残ります。", names: unreferenced });
+    if (result.offline?.length) lines.push({ key: "次の音源はオフライン（未接続）です。再接続で元ファイルを選び直してください。", names: result.offline.map(a => a.originalName || a.trackId) });
+    if (result.conflicts?.length) lines.push({ key: "次の音源は、この端末に違う中身があるため上書きしませんでした。置き換えるには音源の再接続で選び直してください。", names: result.conflicts.map(a => a.originalName || a.trackId) });
     return lines;
+  }
+  function packageWarningLines(data, result = data) {
+    return packageWarningEntries(data, result).map(formatPackageWarning);
   }
   function appendPackageWarnings(data) {
     const section = document.createElement("section"); section.id = "stage-project-package-warnings";
@@ -35093,9 +35178,10 @@ ${propsPlotHtml}
   }
   function showPackageOutcome(data, result) {
     if (!data) return;
-    const lines = packageWarningLines(data, result);
-    if (result?.offlineStatusSaved === false) lines.push(tx("音源の未接続状態を保存できませんでした。再読み込み前に保存領域を確認してください。"));
-    if (lines.length) { importFailureNotice(lines.join("\n\n")); clearTimeout(importFailureNotice._t); }
+    const entries = packageWarningEntries(data, result);
+    if (result?.offlineStatusSaved === false) entries.push({ key: "音源の未接続状態を保存できませんでした。再読み込み前に保存領域を確認してください。" });
+    // Keep only display keys, numbers and names; never retain package blobs.
+    if (entries.length) { importFailureNotice(entries.map(formatPackageWarning).join("\n\n"), entries); clearTimeout(importFailureNotice._t); }
   }
   // Native opaque files remain owned by the shell, never by the browser carry database.
   async function nativeProjectExportCarry(source) {
@@ -36123,6 +36209,18 @@ ${propsPlotHtml}
     });
   }
 
+  function venueScaleText(current, size) {
+    const format = (key, args) => tx(key).replace(/\{(\w+)\}/g, (match, name) => Object.hasOwn(args, name) ? args[name] : match);
+    const room = roomSizeLabel(current.id, size.id, true);
+    const bits = room
+      ? [room, format("舞台 {width}×{depth}m", size)]
+      : [format(current.audience === "round" ? "直径 {width}m" : "間口 {width}m ・ 奥行 {depth}m", size)];
+    if (size.height) bits.push(format("高さ {height}m", size));
+    if (size.seats) bits.push(format("客席 約{seats}席", size));
+    if (size.crowd) bits.push(format("観客 〜{crowd}人", { crowd: size.crowd.toLocaleString() }));
+    return bits.join(lang === "ja" ? " ・ " : " · ");
+  }
+
   function renderVenueControls(rebuildGallery = true) {
     updateLightingPlanOpenSummary();
     // 形式によっては貼る壁が無い。写真の欄の出入りもここで合わせる
@@ -36211,27 +36309,7 @@ ${propsPlotHtml}
       els.sizeSelect.value = size.id;
     }
 
-    if (els.venueScale) {
-      const japaneseBits = roomSizeLabel(current.id, size.id)
-        ? [roomSizeLabel(current.id, size.id), `舞台 ${size.width}×${size.depth}m`]
-        : current.audience === "round"
-        ? [`直径 ${size.width}m`]
-        : [`間口 ${size.width}m`, `奥行 ${size.depth}m`];
-      if (size.height) japaneseBits.push(`高さ ${size.height}m`);
-      if (size.seats) japaneseBits.push(`客席 約${size.seats}席`);
-      if (size.crowd) japaneseBits.push(`観客 〜${size.crowd.toLocaleString()}人`);
-      const japaneseScale = japaneseBits.join(" ・ ");
-      const bits = current.audience === "round"
-        ? [`Diameter ${size.width}m`]
-        : [`Width ${size.width}m`, `Depth ${size.depth}m`];
-      if (size.height) bits.push(`Height ${size.height}m`);
-      if (size.seats) bits.push(`about ${size.seats} seats`);
-      if (size.crowd) bits.push(`up to ${size.crowd.toLocaleString()} people`);
-      els.venueScale.textContent = languageValue(
-        () => bits.join(" · "),
-        () => japaneseScale,
-      );
-    }
+    if (els.venueScale) els.venueScale.textContent = venueScaleText(current, size);
 
     // 背景の壁が無い形式では、塗りの道具立てを畳む
     const hasWall = current.audience !== "round";
@@ -36569,11 +36647,12 @@ ${propsPlotHtml}
     return `${widths}×${span(sizes.map((size) => size.depth))}m`;
   }
 
-  function roomSizeLabel(venueId, sizeId) {
+  function roomSizeLabel(venueId, sizeId, translated = false) {
     const data = VENUES.library.venueV2ById(venueId);
     const room = data?.sizes?.find(s => s.id === sizeId)?.room || data?.room;
     if (!Array.isArray(room?.outline)) return "";
     const dims = [0, 1].map(i => Math.round((Math.max(...room.outline.map(p => p[i])) - Math.min(...room.outline.map(p => p[i]))) * 100) / 100);
+    if (translated) return tx("劇場 {width}×{depth}m").replace("{width}", dims[0]).replace("{depth}", dims[1]);
     return sx(`劇場 ${dims[0]}×${dims[1]}m`, `Room ${dims[0]}×${dims[1]}m`);
   }
 
@@ -36963,17 +37042,7 @@ ${propsPlotHtml}
       });
       els.sizeSelect.value = selectedSize.id;
     }
-    if (els.venueScale) {
-      const dimensions = roomSizeLabel(selectedVenue.id, selectedSize.id)
-        ? [roomSizeLabel(selectedVenue.id, selectedSize.id), `舞台 ${selectedSize.width}×${selectedSize.depth}m`]
-        : selectedVenue.audience === "round"
-        ? [`直径 ${selectedSize.width}m`]
-        : [`間口 ${selectedSize.width}m`, `奥行 ${selectedSize.depth}m`];
-      if (selectedSize.height) dimensions.push(`高さ ${selectedSize.height}m`);
-      if (selectedSize.seats) dimensions.push(`客席 約${selectedSize.seats}席`);
-      if (selectedSize.crowd) dimensions.push(`観客 〜${selectedSize.crowd.toLocaleString()}人`);
-      els.venueScale.textContent = dimensions.join(" ・ ");
-    }
+    if (els.venueScale) els.venueScale.textContent = venueScaleText(selectedVenue, selectedSize);
     window.dispatchEvent(new CustomEvent("stage-venue-editor-template", {
       detail: { venueId: selectedVenue.id, sizeId: selectedSize.id },
     }));
@@ -37213,7 +37282,7 @@ ${propsPlotHtml}
     const receipt=event.detail;
     if (receipt?.saved && receipt.path && receipt.operationId === pendingVenueApply?.nativeOperationId
         && nativeProject?.matches(receipt) && els.venueApplyStatus) {
-      els.venueApplyStatus.textContent = `${tx("候補ファイルは残しています:")} ${receipt.path}`;
+      els.venueApplyStatus.textContent = `${tx("保存したファイルは残しています:")} ${receipt.path}`;
     }
   });
 
@@ -37437,8 +37506,8 @@ document.addEventListener("keydown", function (event) {
         ? tx("{nextVersion}を作り、元の{version}はショー一覧に残します。").replace("{nextVersion}", () => nextVersionLabel(state.project.versionLabel)).replace("{version}", () => state.project.versionLabel || "v1")
         : tx("このショーのバージョンは変えません。");
       if (nativeProject && els.venueApplyVersionDetail) els.venueApplyVersionDetail.textContent = tx(versioned
-        ? "別のプロジェクトへ保存し、読戻しを確認してから切り替えます。元のファイルは残します。"
-        : "この文書を別の保存先へ保存し、読戻しを確認します。版は増やしません。");
+        ? "別のプロジェクトへ保存し、保存した内容を確かめてから切り替えます。元のファイルは残します。"
+        : "この劇場をショーへ適用します。適用の前に、今の内容を別に保存して確かめます。版の番号は増えません。");
       if (els.venueApplyStatus) els.venueApplyStatus.textContent = "";
       if (els.venueApplyConfirm) els.venueApplyConfirm.disabled = false;
       return;
@@ -37477,8 +37546,8 @@ document.addEventListener("keydown", function (event) {
     }
     if (els.venueApplyStatus) els.venueApplyStatus.textContent = "";
     if (nativeProject && els.venueApplyVersionDetail) els.venueApplyVersionDetail.textContent = tx(versioned
-      ? "別のプロジェクトへ保存し、読戻しを確認してから切り替えます。元のファイルは残します。"
-      : "この文書を別の保存先へ保存し、読戻しを確認します。版は増やしません。");
+      ? "別のプロジェクトへ保存し、保存した内容を確かめてから切り替えます。元のファイルは残します。"
+      : "この劇場をショーへ適用します。適用の前に、今の内容を別に保存して確かめます。版の番号は増えません。");
     if (VENUE_LIGHTING_SETUP_HIDDEN) {
       /* ★#16: 照明の選択肢（と候補の読み込み）は使わない。「keep」＝劇場だけを反映し、照明は残す（共通24灯セットだけ組み直す）。 */
       venueApplyChoice = "keep";
@@ -37672,17 +37741,17 @@ document.addEventListener("keydown", function (event) {
         if (receipt.stale) return;
         if (receipt.ok !== true) {
           const message = tx(receipt.stage === 'cancelled' ? "保存を取り消しました。劇場の編集は残っています。"
-            : receipt.stage === 'capability' ? "このMac版は劇場候補の保存に対応していません。アプリを更新してください。"
-            : "候補の保存・読戻し・切替を完了できませんでした。劇場の編集は残っています。");
-          const location = receipt.saved && receipt.path ? ` ${tx("候補ファイルは残しています:")} ${receipt.path}` : '';
-          const phase = receipt.stage === 'cancelled' ? '' : tx(({readback:"読戻しの確認で止まりました。",'deliver-failed':"画面への切替で止まりました。",
+            : receipt.stage === 'capability' ? "このMac版は劇場を適用するための保存に対応していません。アプリを更新してください。"
+            : "劇場を適用できませんでした。劇場の編集は残っています。");
+          const location = receipt.saved && receipt.path ? ` ${tx("保存したファイルは残しています:")} ${receipt.path}` : '';
+          const phase = receipt.stage === 'cancelled' ? '' : tx(({readback:"保存した内容の確認で止まりました。",'deliver-failed':"画面への切替で止まりました。",
             'write-failed':"ファイルへの保存で止まりました。",receipt:"保存記録の確認で止まりました。",
             'destination-exists':"同名のファイルがあります。別の保存先を選んでください。",
             timeout:"待ち時間を超えました。",expired:"待ち時間を超えました。"})[receipt.stage] || "保存の準備で止まりました。");
           const detail = typeof receipt.detail === 'string' ? receipt.detail.trim() : '';
           throw Error(`${message}${phase ? ' ' + phase : ''}${detail ? ' ' + detail : ''}${location}`);
         }
-        announce(tx("劇場をプロジェクトへ保存し、読戻しを確認しました。"));
+        announce(tx("劇場をプロジェクトへ保存し、保存した内容を確かめました。"));
       } else {
         const {next,current,versioned,project} = await buildCandidate();
         const resultMessage = (versioned
@@ -37702,8 +37771,8 @@ document.addEventListener("keydown", function (event) {
     } catch (error) {
       if (detail !== pendingVenueApply || (nativeProject && !nativeProject.matches(sourceOwner))) return;
       if (els.venueApplyStatus) els.venueApplyStatus.textContent = error.stage === "capability"
-        ? tx("このMac版は劇場候補の保存に対応していません。アプリを更新してください。")
-        : tx("候補の保存・読戻し・切替を完了できませんでした。劇場の編集は残っています。");
+        ? tx("このMac版は劇場を適用するための保存に対応していません。アプリを更新してください。")
+        : tx("劇場を適用できませんでした。劇場の編集は残っています。");
       if (choice === "keep") els.venueApplyConfirm.disabled = false;   // ★#16: 「keep」を他の選択肢へ読み替えない（照明を消す側へ落とさない）
       else setVenueApplyChoice(venueApplyChoice);
     }
@@ -43466,6 +43535,7 @@ document.addEventListener("keydown", function (event) {
     // These titles are assembled after the DOM translation pass. Rebuild them
     // from their Japanese templates whenever the display language changes.
     syncSaveLocationNotice();
+    renderPackageOutcomeNotice();
     syncShortcutDom();
     window.GAMMA_WORKSPACE?.refreshLabels?.();
     if (typeof nativeProject !== "undefined" && nativeProject) syncNativeProjectEntries();
