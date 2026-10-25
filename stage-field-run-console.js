@@ -166,10 +166,12 @@
  // The shell also makes this retained workspace inert until commit or rollback.
  function setDocumentTransitioning(value){documentTransitioning=!!value;if(dialog)dialog.inert=documentTransitioning;}
  async function prepareDocumentTransition(){
-  if(mounting||historyBusy)return false;
+  if(mounting||historyBusy)return {ok:false,cancelled:false};
   durationClock?.pause();
-  await beforeQuit();
-  return true;
+  // Only an explicit refusal is cancellation. Input/storage errors still throw
+  // through to the document bridge and retain its save-failure response.
+  const ready=await beforeQuit();
+  return {ok:ready!==false,cancelled:ready===false};
  }
  function commitDocumentTransition(){
   if(!dialog?.open)return;
@@ -249,7 +251,7 @@
  // Fetch through the parent's PWA controller, then keep the renderer opaque and self-contained.
  async function frameDocument(){
   const responseFor=async url=>{let response;try{response=await fetch(url);if(response.ok)return response;}catch(_){}try{response=await window.caches?.match(url);if(response?.ok)return response;}catch(_){}throw Error('frame-unavailable');};
-  const url=new URL('field-frame.html?v=20261024-v0385',location.href),response=await responseFor(url);
+  const url=new URL('field-frame.html?v=20261025-v0386',location.href),response=await responseFor(url);
   // Bind metadata to this freshly constructed srcdoc, never to a later message or frame.
   if(url.origin!==location.origin||(response.url&&new URL(response.url).origin!==location.origin))throw Error('frame-origin');
   const doc=new DOMParser().parseFromString(await response.text(),'text/html');if(!doc.documentElement.hasAttribute('data-study-renderer')||!doc.querySelector('.field-frame-drawings'))throw Error('frame-unavailable');doc.documentElement.dataset.stageSkin=currentSkin();const base=doc.createElement('base');base.href=new URL('.',url).href;doc.head.prepend(base);

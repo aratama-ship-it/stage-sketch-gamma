@@ -799,11 +799,16 @@
       const box=document.createElement(overDialog?'dialog':'div');
       box.className='stage-modal gamma-light-leave-modal';
       box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true'); box.setAttribute('aria-label',title);
-      box.innerHTML='<header class="stage-modal-head"><h2>'+title+'</h2></header>'
+      // Match the LX timing window: one named dialog and a plain action group.
+      // Keep the existing tags/classes for styling, but suppress landmark roles
+      // inside the modal, keeping its controls in a single dialog action group.
+      box.innerHTML='<header class="stage-modal-head" role="presentation"><h2>'+title+'</h2></header>'
         +'<div class="stage-modal-body"><p>'+body+'</p></div>';
       const acts=document.createElement('footer');
       acts.className='gamma-light-leave-actions';
+      acts.setAttribute('role','group');
       const mk=(label,value,cls)=>{const b=document.createElement('button');b.type='button';b.className=cls;b.textContent=label;
+        b.setAttribute('aria-label',label);
         b.onclick=()=>{cleanup();resolve(value);};return b;};
       /* L-03（2026-09-18 本人決定「全部Macにそろえる」）: Macの作法の並びにする。
        * Apple HIG: 主操作は行の右端、キャンセルはそのすぐ左、3つ目の閉じるボタンはさらに左。
@@ -821,7 +826,7 @@
       signal?.addEventListener('abort',cancel,{once:true});
       document.body.append(backdrop,box);
       if(overDialog)box.showModal();
-      releaseFocus=window.GAMMA_UI.containDialog(box,{initialFocus:acts.lastElementChild,returnFocus,onCancel:cancel});
+      releaseFocus=window.GAMMA_UI.containDialog(box,{initialFocus:acts.firstElementChild,returnFocus,onCancel:cancel});
     });
   }
 
@@ -876,7 +881,14 @@
       } else if (!venue.save?.()) return false;
     }
     if (!current()) return false;
-    if (mode==='rehearsal' && !await window.GAMMA_FIELD_RUNS?.prepareDocumentTransition()) return false;
+    if (mode==='rehearsal') {
+      const result=await window.GAMMA_FIELD_RUNS?.prepareDocumentTransition();
+      if (!current()) return false;
+      if (!result?.ok) {
+        if (result?.cancelled===true) request.cancel?.();
+        return false;
+      }
+    }
     if (mode==='run-of-show' && !window.GAMMA_RUN_OF_SHOW_PANE?.finish?.()) return false;
     return current();
   }
@@ -954,7 +966,7 @@
       if(answer==='cancel') return;
       if(answer==='apply') {
         try { window.SHOSAI_VENUE_EDITOR?.apply?.(); }
-        catch(error) { await window.GAMMA_SURFACE_DIALOG.notice('反映できませんでした: '+(error&&error.message||error)+'\nモードは切り替えていません。'); return; }
+        catch(error) { await window.GAMMA_SURFACE_DIALOG.notice('編集内容をショーへ保存できませんでした。編集は残っています。もう一度適用してください。モードは切り替えていません。'); return; }
         // 反映は確認モーダルを経て確定する。ここではモードを切り替えず、本人の操作へ委ねる。
         return;
       }
@@ -969,9 +981,9 @@
             const result=await editor()?.apply?.();
             if(!result?.persisted) throw Error(result?.error||'保存を確認できませんでした');
           }
-          catch(error) { await window.GAMMA_SURFACE_DIALOG.notice('適用できませんでした: '+(error&&error.message||error)+'\nモードは切り替えていません。'); return; }
+          catch(error) { await window.GAMMA_SURFACE_DIALOG.notice('編集内容をショーへ保存できませんでした。編集は残っています。もう一度適用してください。モードは切り替えていません。'); return; }
           // 適用が通らなかった（dirtyのまま）なら移らない。中身が入っていないのに移るのを防ぐ。
-          if(editor()?.status?.()?.dirty) { await window.GAMMA_SURFACE_DIALOG.notice('照明を適用できませんでした。モードは切り替えていません。'); return; }
+          if(editor()?.status?.()?.dirty) { await window.GAMMA_SURFACE_DIALOG.notice('編集内容をショーへ保存できませんでした。編集は残っています。もう一度適用してください。モードは切り替えていません。'); return; }
         }
       }
     }
@@ -1002,7 +1014,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261024-v0385'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261025-v0386'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;

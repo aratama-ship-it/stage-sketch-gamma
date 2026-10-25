@@ -5,6 +5,9 @@
   let pen = null, sticky = null, navigation = null, canAnnotate = false, sceneId = '', revision = 0;
   for (const name of ['click', 'dblclick', 'contextmenu', 'pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'lostpointercapture', 'mousedown', 'mouseup', 'touchstart', 'touchmove', 'touchend', 'keydown', 'keyup', 'beforeinput', 'input', 'compositionstart', 'compositionupdate', 'compositionend', 'focusout', 'change', 'drop', 'dragstart', 'paste', 'cut', 'copy', 'submit']) {
     window.addEventListener(name, event => {
+      // The independent runtime notice has only a dismiss control. Let it work
+      // without opening any editor interaction in this read-only renderer.
+      if (window.GAMMA_RUNTIME_ERRORS && event.target.closest?.('#gamma-runtime-error-notice button')) return;
       const navigated = navigation?.handleEvent(event);
       if (navigated) { if (navigated !== 'native') event.preventDefault(); event.stopImmediatePropagation(); return; }
       const nativeNoteInput = sticky?.handleEvent(event);

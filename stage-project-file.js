@@ -320,5 +320,5 @@
       },
     });
   }
-  return Object.freeze({LIMIT,CARRY_LIMIT,pathOK,hash,crc32,makeZip,readZip,validateManifest,readFiles,isZipImport,unpack,pack,walkEntry,installAudio,offlineRegistry,carryStore,hasCarry,bindCarry,carryMatches});
+  return Object.freeze({LIMIT,CARRY_LIMIT,manifestExtras,pathOK,hash,crc32,makeZip,readZip,validateManifest,readFiles,isZipImport,unpack,pack,walkEntry,installAudio,offlineRegistry,carryStore,hasCarry,bindCarry,carryMatches});
 });

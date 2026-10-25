@@ -197,6 +197,26 @@
             || url.search || url.hash) throw Error("Invalid project audio URL");
         entries.set(entry.trackId, { ...entry, url: url.href });
       }
+      // Optional export metadata is untrusted input. Drop each invalid item without
+      // weakening the existing show/audio validation or rejecting an older shell.
+      const record = v => v && typeof v === "object" && !Array.isArray(v);
+      const pathOK = v => typeof v === "string" && v && !/[\\:\x00-\x1f\x7f]/.test(v)
+        && v.split("/").every(p => p && p !== "." && p !== "..");
+      const m = payload.manifest;
+      if (!record(m) || m.format !== "stagesketch-project" || m.formatVersion !== 1
+          || !record(m.show) || m.show.file !== "show.json" || !Array.isArray(m.audio)
+          || !m.audio.every(a => record(a) && validId(a.trackId) && pathOK(a.file))) delete payload.manifest;
+      const e = payload.extras;
+      const seen = new Set(), names = new Set(); let total = 0;
+      if (!record(e) || typeof e.token !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(e.token)
+          || !Array.isArray(e.files) || e.files.length > 200 || !Number.isSafeInteger(e.droppedFiles) || e.droppedFiles < 0
+          || (e.droppedFiles > 0 && e.files.length !== 0)
+          || !e.files.every(f => record(f) && Number.isSafeInteger(f.index) && f.index >= 0
+            && !seen.has(f.index) && (seen.add(f.index), true) && pathOK(f.name) && !names.has(f.name)
+            && !['project.json','show.json','Thumbnail.png'].includes(f.name) && !f.name.startsWith('Backups/')
+            && !(payload.manifest?.audio || []).some(a=>a.file===f.name)
+            && (names.add(f.name), true) && Number.isSafeInteger(f.bytes) && f.bytes >= 0
+            && (total += f.bytes) <= 32 * 1024 * 1024)) delete payload.extras;
       return entries;
     }
     const timeout = host.setTimeout(() => {
@@ -224,6 +244,21 @@
         if(entry.vectors)entry.vectors=[...new Set([...entry.vectors,...Object.keys(retained)])].sort();
       }
     }
+    // The tentative rollback cache is another view of the same ledger. Pruning
+    // only the incoming view resurrects stale rows when a switch is cancelled.
+    function pruneRecoveryEntries(recoveryOwnerId, keys) {
+      for(const entries of [draftRecoveryEntries,tentative?.bridge.draftRecoveryEntries]) {
+        for(const entry of entries || [])if(entry.owner===recoveryOwnerId) {
+          if(entry.records)for(const key of keys)delete entry.records[key];
+          if(entry.vectors)entry.vectors=entry.vectors.filter(key=>!keys.has(key));
+        }
+      }
+    }
+    const sameIdentity=(a,b)=>fields.every(key=>a?.[key]===b?.[key]);
+    function acceptsRecoveryReceipt(payload,pending) {
+      return sameIdentity(payload,pending.source) && (matches(payload)
+        || (tentative && sameIdentity(payload,tentative.bridge.owner)));
+    }
     function collectCloseDrafts() {
       // Mounted editor owns unsent runtime drafts. Without an editor, only the
       // current durable owner/session may contribute local originals.
@@ -239,6 +274,7 @@
       return rows;
     }
     function receiveOpen(payload) {
+      if (payload && (Object.hasOwn(payload,"manifest") || Object.hasOwn(payload,"extras"))) payload = {...payload};
       if (!active) throw Error("Project ready expired; reload before opening");
       let entries;
       try { entries = validate(payload); }
@@ -407,15 +443,32 @@
       },
       draftRecoveryRead(payload) {
         const pending=recoveryRequests.get(payload?.requestId);
-        if(!pending || !matches(payload) || payload.recoveryOwnerId!==pending.owner || payload.vector!==pending.vector)return false;
+        if(!pending || !acceptsRecoveryReceipt(payload,pending) || payload.recoveryOwnerId!==pending.owner || payload.vector!==pending.vector)return false;
         recoveryRequests.delete(payload.requestId);host.clearTimeout(pending.timer);
         const current=pending.generation===generation && pending.draftOwnerId===draftOwnerId && !tentative && !transition && !prepared;
+        if(payload.ok===false && payload.missing===true && !payload.error) {
+          pruneRecoveryEntries(pending.owner,new Set([pending.vector]));
+          if(current) {
+            pending.reject(Object.assign(Error('draft-recovery-missing'),{code:'draft-recovery-missing'}));
+            return true;
+          }
+        }
         pending.resolve(current && payload.ok===true && typeof payload.raw==='string' ? payload.raw : null);
         return true;
       },
       draftStored(payload) {
         const pending=draftRequests.get(payload?.requestId);
-        if(!pending || !matches(payload) || payload.draftOwnerId!==pending.owner)return false;
+        if(!pending || !acceptsRecoveryReceipt(payload,pending) || payload.draftOwnerId!==pending.owner)return false;
+        if(payload.ok===true && Array.isArray(payload.removedRecordKeys)) {
+          const removed=new Set(payload.removedRecordKeys.filter(key=>typeof key==='string' && key.startsWith('retained:') && !key.startsWith('retained:stale:')));
+          pruneRecoveryEntries(pending.owner,removed);
+        }
+        // A source receipt during tentative delivery may update its rollback
+        // index, but must never update the candidate's current draft cache.
+        if(!matches(payload)) {
+          draftRequests.delete(payload.requestId);host.clearTimeout(pending.timer);
+          pending.resolve(false);return true;
+        }
         draftRequests.delete(payload.requestId);host.clearTimeout(pending.timer);
         const latest=latestDraftWrites.get(pending.key)===payload.requestId;
         if(payload.draftRecoveryStopped===true && draftOwnerId===pending.owner)draftRecoveryStopped=true;
@@ -434,6 +487,11 @@
               if(latest){if(pending.raw===null)vectors.delete(pending.vector);else vectors.add(pending.vector);}
               for(const vector of Object.keys(payload.retainedRecords || {}))vectors.add(vector);
               entry.vectors=[...vectors].sort();
+            }
+            // Pruning happened in the ledger even if this is an older receipt.
+            if(Array.isArray(payload.removedRecordKeys)) {
+              const removed=new Set(payload.removedRecordKeys.filter(key=>typeof key==='string' && key.startsWith('retained:') && !key.startsWith('retained:stale:')));
+              pruneRecoveryEntries(pending.owner,removed);
             }
           }
         }
@@ -713,7 +771,11 @@
       file.text().then(text => post("openLegacyFile", {text, filename:file.name}),
         () => post("openLegacyFile", {error:"legacy-read-failed"}));
     }, true);
-    post("ready", { formatVersion:1, capabilities:[capability,"draftOwnerV2","venueVersionV1"] });
+    const sendReady = () => post("ready", { formatVersion:1, capabilities:[capability,"draftOwnerV2","venueVersionV1"] });
+    // bfcache restores the installed ports without evaluating this script again.
+    // Do not revive a bridge whose initial native handshake already expired.
+    host.addEventListener?.("pageshow", event => { if (event.persisted && active) sendReady(); });
+    sendReady();
     return {
       initialOpen, store, changed, identity, matches, createVenueVersion, cancelVenueVersion,
       venueOperationFor(intent) {
@@ -730,9 +792,9 @@
         // Older shells deliver originals inline; new shells send only an index.
         if(typeof entry.records?.[vector]==='string')return Promise.resolve(entry.records[vector]);
         const id=requestId();
-        return new Promise(resolve=>{
+        return new Promise((resolve,reject)=>{
           const timer=host.setTimeout(()=>{recoveryRequests.delete(id);resolve(null);},10000);
-          recoveryRequests.set(id,{resolve,timer,owner:recoveryOwnerId,vector,generation,draftOwnerId});
+          recoveryRequests.set(id,{resolve,reject,timer,owner:recoveryOwnerId,vector,generation,draftOwnerId,source:identity()});
           ownedPost('readDraftRecovery',{...identity(),requestId:id},{recoveryOwnerId,vector});
         });
       },
@@ -742,7 +804,7 @@
         return new Promise(resolve=>{
           const timer=host.setTimeout(()=>{draftRequests.delete(id);resolve(false);},10000);
           const key=JSON.stringify([draftOwner,vector]);latestDraftWrites.set(key,id);
-          draftRequests.set(id,{resolve,timer,owner:draftOwner,raw,vector,key});
+          draftRequests.set(id,{resolve,timer,owner:draftOwner,raw,vector,key,source:identity()});
           ownedPost('retainDraft',{...identity(),requestId:id},{draftOwnerId:draftOwner,vector,raw});
         });
       },

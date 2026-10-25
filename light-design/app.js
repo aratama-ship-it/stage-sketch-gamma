@@ -7603,10 +7603,40 @@
       section.id='lighting-draft-recovery';
       const heading=document.createElement('h3');heading.textContent=copy.title;section.append(heading);
       const exportRaw=(raw,filename)=>download(new Blob([raw],{type:'application/json'}),filename);
+      // One notice per open list. The cross-document/launch policy remains a
+      // separate product decision; no persistent dismissal is stored.
+      let removedNoticeShown=false;
+      const handleRecoveryError=error=>{
+        if(error?.code!=='draft-recovery-missing')return false;
+        const live=new Set(recovery.recoveryRecords().map(record=>record.key));
+        for(const row of section.querySelectorAll('details[data-recovery-key]'))
+          if(!live.has(row.dataset.recoveryKey))row.remove();
+        return true;
+      };
+      const removedNotice=()=>{
+        if(removedNoticeShown)return '';
+        removedNoticeShown=true;return copy.removed;
+      };
+      const reportRecoveryError=error=>{
+        const text=handleRecoveryError(error)?removedNotice():error.message;
+        if(text)toast(text);
+      };
       const all=document.createElement('button');all.className='btn small';all.textContent=copy.all;
       all.onclick=async()=>{all.disabled=true;try{
-        const originals=await Promise.all(recovery.recoveryRecords({all:true}).map(async record=>({...record,raw:await recovery.readRecoveryRecord(record)})));
-        exportRaw(JSON.stringify({kind:'gamma-lighting-draft-recovery',version:2,records:originals},null,2),'gamma-lighting-drafts.json');
+        const results=await Promise.allSettled(recovery.recoveryRecords({all:true}).map(async record=>({...record,raw:await recovery.readRecoveryRecord(record)})));
+        const originals=results.filter(result=>result.status==='fulfilled').map(result=>result.value);
+        const errors=results.filter(result=>result.status==='rejected');
+        const removed=errors.filter(result=>handleRecoveryError(result.reason)).length;
+        const failed=errors.length-removed;
+        const notices=[];
+        if(removed){const text=removedNotice();if(text)notices.push(text);}
+        if(!originals.length){
+          if(failed)notices.push(copy.exportAllFailed.replace('{count}',String(failed)));
+        }else{
+          exportRaw(JSON.stringify({kind:'gamma-lighting-draft-recovery',version:2,records:originals},null,2),'gamma-lighting-drafts.json');
+          if(failed)notices.push(copy.exportPartial.replace('{count}',String(failed)));
+        }
+        if(notices.length)toast(notices.join(' '));
       }catch(e){toast(e.message);}finally{all.disabled=false;}};section.append(all);
       for(const record of records) {
         const row=document.createElement('details');row.className='dsrow';
@@ -7617,9 +7647,9 @@
         label.title=record.key;
         const actions=document.createElement('span');actions.className='dsacts';
         const file=document.createElement('button');file.className='btn small';file.textContent=copy.export;
-        file.onclick=async()=>{file.disabled=true;try{exportRaw(await recovery.readRecoveryRecord(record),'gamma-lighting-recovery.json');}catch(e){toast(e.message);}finally{file.disabled=false;}};
+        file.onclick=async()=>{file.disabled=true;try{exportRaw(await recovery.readRecoveryRecord(record),'gamma-lighting-recovery.json');}catch(e){reportRecoveryError(e);}finally{file.disabled=false;}};
         const load=document.createElement('button');load.className='btn small';load.textContent=copy.load;
-        load.onclick=async()=>{load.disabled=true;try{await recovery.readRecoveryRecord(record,raw=>{if(recovery.restoreRecovery(raw))$("dialog").hidden=true;});}catch(e){toast(e.message);}finally{load.disabled=false;}};
+        load.onclick=async()=>{load.disabled=true;try{await recovery.readRecoveryRecord(record,raw=>{if(recovery.restoreRecovery(raw))$("dialog").hidden=true;});}catch(e){reportRecoveryError(e);}finally{load.disabled=false;}};
         actions.append(file,load);row.append(label,actions);section.append(row);
       }
       document.querySelector('#dialog .dslist').after(section);

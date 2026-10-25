@@ -3,7 +3,11 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "gamma:stage-shortcuts-v1";
+  const LEGACY_STORAGE_KEY = "gamma:stage-shortcuts-v1";
+  // Mac の Control は共通の Mod と別物。旧画面は Ctrl を Mod に読み替えるため、
+  // Mac の新しい設定は別のキーへ保存する。旧設定は読取時も保存時も書き換えない。
+  const isMac = typeof navigator !== "undefined" && /Mac/.test(navigator.platform || "");
+  const STORAGE_KEY = isMac ? "gamma:stage-shortcuts-mac-v2" : LEGACY_STORAGE_KEY;
   const DEFAULTS = Object.freeze({
     "workspace.normal": "1",
     "workspace.venue": "2",
@@ -53,17 +57,32 @@
   // ブラウザやOSの操作を奪う組み合わせは、押しても確実に置き換えられない。
   // ここで拒否し、設定済みなのに効かない状態を作らない。
   const RESERVED = new Set(["Mod+W", "Mod+Q", "Mod+L", "Mod+T", "Mod+N", "Mod+R", "Mod+P", "Mod+F"]);
+  function isReserved(binding) {
+    if (RESERVED.has(binding)) return true;
+    if (!isMac) return false;
+    const parts = binding.split("+");
+    const key = parts.pop();
+    if (!parts.includes("Ctrl")) return false;
+    // 固定処理は Mac でも metaKey || ctrlKey。個人割当を先に奪う組だけ拒否する。
+    // 保存・履歴・進行表の行揃えは Alt 付きも受ける。Mod 同時押しも同じ。
+    if (["S", "Z", "Y"].includes(key)) return true;
+    if (parts.includes("Shift") && ["L", "E", "R"].includes(key)) return true;
+    // 舞台/照明のコピー・貼付け・印刷、全画面共通の検索。
+    return !parts.includes("Alt") && !parts.includes("Shift") && ["C", "V", "P", "K"].includes(key);
+  }
   const listeners = new Set();
   let custom = read();
 
   function read() {
     try {
-      const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      const saved = localStorage.getItem(STORAGE_KEY);
+      const legacy = isMac && saved === null;
+      const value = JSON.parse((legacy ? localStorage.getItem(LEGACY_STORAGE_KEY) : saved) || "{}");
       if (!value || typeof value !== "object" || Array.isArray(value)) return {};
       const requested = Object.fromEntries(Object.entries(value)
         .filter(([id, binding]) => Object.prototype.hasOwnProperty.call(DEFAULTS, id) && typeof binding === "string")
-        .map(([id, binding]) => [id, normalize(binding)])
-        .filter(([, binding]) => validBinding(binding) && !RESERVED.has(binding)));
+        .map(([id, binding]) => [id, normalize(binding, legacy)])
+        .filter(([, binding]) => validBinding(binding) && !isReserved(binding)));
       const accepted = {};
       const used = new Set();
       Object.keys(DEFAULTS).forEach(id => {
@@ -81,13 +100,14 @@
     catch (_) { /* 容量不足時も、現在の操作は変えない */ }
   }
 
-  function normalize(value) {
+  function normalize(value, legacy = false) {
     const pieces = String(value || "").trim().split("+").map(item => item.trim()).filter(Boolean);
     if (!pieces.length) return "";
     const rawKey = pieces.pop();
     const keyAliases = { " ": "Space", Spacebar: "Space", Esc: "Escape", Del: "Delete" };
     const key = keyAliases[rawKey] || (rawKey.length === 1 ? rawKey.toUpperCase() : rawKey);
-    const modifiers = new Set(pieces.map(item => ({ Cmd: "Mod", Command: "Mod", Ctrl: "Mod", Control: "Mod", Option: "Alt" }[item] || item)));
+    const control = isMac && !legacy ? "Ctrl" : "Mod";
+    const modifiers = new Set(pieces.map(item => ({ Cmd: "Mod", Command: "Mod", Ctrl: control, Control: control, Option: "Alt" }[item] || item)));
     const ordered = ["Mod", "Ctrl", "Alt", "Shift"].filter(item => modifiers.has(item));
     return [...ordered, key].join("+");
   }
@@ -108,22 +128,47 @@
       || (raw.length === 1 ? raw.toUpperCase() : raw);
   }
 
+  function capture(event) {
+    if (["Meta", "Control", "Alt", "Shift"].includes(event.key)) return "";
+    const key = event.key === " " ? "Space" : event.key;
+    if (!key || key === "Dead") return "";
+    const modifiers = [];
+    if (isMac ? event.metaKey : event.metaKey || event.ctrlKey) modifiers.push("Mod");
+    if (isMac && event.ctrlKey) modifiers.push("Ctrl");
+    if (event.altKey) modifiers.push("Alt");
+    if (event.shiftKey) modifiers.push("Shift");
+    return [...modifiers, key].join("+");
+  }
+
+  function textTarget(target) {
+    return target?.isContentEditable || target?.closest?.('input,textarea,select,[contenteditable="true"],[role="combobox"],[role="listbox"],[role="option"]');
+  }
+
   function get(id) {
     // A newly introduced default must not steal a personal M/0 binding.
     if (["audio.mute", "view.reset"].includes(id) && !custom[id]
         && Object.entries(custom).some(([other, value]) => other !== id && value === DEFAULTS[id])) return "";
     return custom[id] || DEFAULTS[id] || "";
   }
-  function display(value) { return String(value || "").replace(/^Mod\+/, "⌘").replace(/\+Mod\+/g, "+⌘+"); }
+  function display(value) {
+    const shown = String(value || "").replace(/^Mod\+/, "⌘").replace(/\+Mod\+/g, "+⌘+");
+    return isMac ? shown.replace(/Ctrl\+/g, "⌃") : shown;
+  }
   function matches(event, id) {
     const binding = get(id);
     if (!binding || event.isComposing || event.keyCode === 229) return false;
     const parts = binding.split("+");
     const key = parts.pop();
     const wantsMod = parts.includes("Mod");
+    const wantsCtrl = parts.includes("Ctrl");
     const wantsAlt = parts.includes("Alt");
     const wantsShift = parts.includes("Shift");
-    if (Boolean(event.metaKey || event.ctrlKey) !== wantsMod) return false;
+    if (isMac) {
+      if (Boolean(event.metaKey) !== wantsMod || Boolean(event.ctrlKey) !== wantsCtrl) return false;
+      // ⌘S は入力中も使えるが、Control+A 等の文字操作はユーザー割当より優先する。
+      if (event.ctrlKey && (textTarget(event.target)
+          || (typeof document !== "undefined" && textTarget(document.activeElement)))) return false;
+    } else if (Boolean(event.metaKey || event.ctrlKey) !== wantsMod) return false;
     if (Boolean(event.altKey) !== wantsAlt || Boolean(event.shiftKey) !== wantsShift) return false;
     return eventKey(event.key) === key;
   }
@@ -137,7 +182,7 @@
     if (!Object.prototype.hasOwnProperty.call(DEFAULTS, id)) return { ok: false, reason: "unknown" };
     const normalized = normalize(value);
     if (!validBinding(normalized)) return { ok: false, reason: "invalid" };
-    if (RESERVED.has(normalized)) return { ok: false, reason: "reserved" };
+    if (isReserved(normalized)) return { ok: false, reason: "reserved" };
     const conflict = conflictingId(normalized, id);
     if (conflict) return { ok: false, reason: "conflict", conflict };
     if (!normalized || normalized === DEFAULTS[id]) delete custom[id]; else custom[id] = normalized;
@@ -147,8 +192,7 @@
   function reset() { custom = {}; persist(); notify(); }
 
   function typingOrDialog(doc, event) {
-    const target = event.target;
-    return target?.isContentEditable || target?.closest?.('input,textarea,select,[contenteditable="true"],[role="combobox"],[role="listbox"],[role="option"]')
+    return textTarget(event.target)
       || [...doc.querySelectorAll('[aria-modal="true"], #dialog, dialog[open]')].some(el => !el.hidden && el.getClientRects().length
         && !(el.id === "stage-venue-editor-modal" && doc.body.dataset.stageWorkspaceMode === "venue-setup")
         && !(el.id === "stage-fpv-overlay" && el.classList.contains("stage-fpv-workspace")));
@@ -202,7 +246,7 @@
   }).observe(document.documentElement, { childList:true, subtree:true });
   }
   window.SHOSAI_STAGE_SHORTCUTS = Object.freeze({
-    STORAGE_KEY, defaults: DEFAULTS, labels: LABELS, get, display, matches, set, reset,
+    STORAGE_KEY, defaults: DEFAULTS, labels: LABELS, get, display, capture, matches, set, reset,
     onChange(listener) { listeners.add(listener); return () => listeners.delete(listener); },
   });
 })();

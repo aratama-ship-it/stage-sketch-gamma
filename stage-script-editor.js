@@ -373,9 +373,33 @@ ${body}
 
   /* ---------- 描画 ---------- */
 
+  // 骨組みは初回だけ作る。言語を変えたときも同じボタン・入力欄を使って文字を更新する。
+  function syncChromeLanguage() {
+    if (!ui.body) return;
+    ui.exportScript.textContent = tx("台本を書き出す");
+    ui.exportScript.title = tx("A4の印刷用の窓で開きます（印刷・PDF保存）");
+    ui.reimport.textContent = tx("シーンメモから取り込み直す");
+    ui.addLine.textContent = tx("＋ 行を足す");
+    ui.search.placeholder = tx("セリフ・話者で探す");
+    ui.search.setAttribute("aria-label", tx("セリフ・話者で探す"));
+    for (const [selector, label] of [[".script-ed-scenes", "シーン"], [".script-ed-script", "台本"]]) {
+      const box = ui.body.querySelector(selector);
+      box.setAttribute("aria-label", tx(label));
+      box.querySelector(".script-ed-title").textContent = tx(label);
+    }
+    ui.body.querySelector(".script-ed-script-head .script-ed-hint").textContent = tx("行を押して選ぶ。ダブルクリックでその場で直す。⠿ を持って並べ替え（Alt＋↑↓でも動かせます）。");
+    ui.lines.setAttribute("aria-label", tx("台本の行"));
+    ui.inspector.setAttribute("aria-label", tx("選んだセリフ"));
+    ui.body.querySelectorAll("[data-script-width]").forEach((handle) => {
+      handle.setAttribute("aria-label", tx(handle.dataset.scriptWidth === "scenes" ? "シーンの列の幅" : "選んだセリフの列の幅"));
+      handle.title = tx("ドラッグで幅を変更。左右キーで調整、ダブルクリックまたはEnterで元に戻す");
+    });
+  }
+
   function render() {
     if (!isOpen) return;
     if (!ui.body) build();
+    syncChromeLanguage();
     const hasScript = Boolean(script);
     ui.body.hidden = !hasScript;
     ui.empty.hidden = hasScript;
@@ -1012,6 +1036,17 @@ ${body}
   }
 
   /* ---------- 本体・タイムラインとのつなぎ ---------- */
+
+  // 劇場設定・セリフキューパネルと同じく、言語パック適用後の <html lang> を購読する。
+  new MutationObserver(() => {
+    syncChromeLanguage();
+    if (!isOpen) return; // 再訪時の render() で中身も新しい言語にそろえる
+    if (inlineEdit) {
+      // 入力中の本文を作り直さず、残りの表示だけを更新する。
+      inlineEdit.input.setAttribute("aria-label", tx("セリフ"));
+      renderSummary(); renderToc(); renderInspector();
+    } else render();
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
 
   // タイムラインが出すセリフキューの一覧（全セクション）。キューの番号・シーン・秒はここから読む
   window.addEventListener("stage-timeline-vox-cues", (event) => {

@@ -32,6 +32,35 @@
 
   const TEXT = {
 
+    "Mac 版：照明の控えの一覧で、保持の上限（直近10件・30日）を過ぎて整理された控えが一覧に残り、開くと「読み取れません」と出ていたのを直しました。整理された控えは一覧から消し、整理されたことをお知らせします。古い版で作られた控えも、新しい順に残すようにしました。": "Mac app: Fixed backups that had been pruned after passing the retention limit (latest 10 backups, 30 days) remaining in the lighting backup list and showing “cannot be read” when opened. Pruned backups are now removed from the list, and you are notified that they were pruned. Backups created by older versions are likewise kept in order from the newest.",
+
+    "Mac 版：ショーを ZIP に書き出すとき、このアプリが知らない添付ファイルや項目が落ちていたのを直しました。照明の控えの記録が読めないときでも、画面の内容だけで書き出して閉じられるようにしました。": "Mac app: Fixed attachments and fields that the app does not recognise being dropped when a show is exported to a ZIP. Even if the lighting backup records cannot be read, you can now export and close using only what is on screen.",
+
+    "付箋・ペン描画・矢印・投影文字に、新しい版で足された項目が、読み込みと保存の繰り返しで消えないようにしました。": "Fields added in newer versions to sticky notes, pen strokes, arrows and screen text are no longer lost when a show is loaded and saved repeatedly.",
+
+    "「一つ戻す」が効かない、または別のものを戻すことがあったのを直しました（進行表の Q 表で備考を変えた後、案内を出したまま、進行表で右揃えや文字の大きさを変えた直後）。": "Fixed Undo sometimes doing nothing or undoing a different change (after changing Notes in the Q sheet of the run of show; while a guide was left showing; and right after changing right alignment or text size in the run of show).",
+
+    "幅の狭い窓で開いたとき、最初に一度ページが読み直されていたのをなくしました。": "The page no longer reloads once at the start when opened in a narrow window.",
+
+    "ページを戻る・進むで表示し直したときに Mac 版との接続が切れたままになることがあったのを直しました。ようこそ画面の表示言語、離れるときの確認の3つのボタンの読み上げ、台本の画面の言語の切り替えも直しました。": "Fixed the connection to the Mac app sometimes staying disconnected after the page was shown again with Back or Forward. Also fixed the display language of the welcome screen, the screen-reader announcement of the three buttons in the confirmation shown when leaving, and language switching on the script screen.",
+
+    "訳を直しました：韓国語の「コピー」、繁体字の前幕の表記、Mac 版のメニューの一部（韓国語・中国語）、照明の控えの記録が読めないときの文。冊子の写真に写る開発用の文を外し、英語の見出しが単語の途中で折り返さないようにしました。": "Corrected translations: the Korean for “Copy”, the Traditional Chinese term for the front border curtain, some Mac app menu items (Korean and Chinese), and the message shown when the lighting backup records cannot be read. Removed development text that appeared in the booklet’s photos, and English headings no longer break in the middle of a word.",
+
+    "予期しない問題が起きたとき、黙って止まらずにお知らせを出すようにしました。保存に失敗したときの説明を、技術用語ではなく分かる言葉にしました。": "When an unexpected problem occurs, a notice is now shown instead of the app silently stopping. The explanation shown when saving fails now uses plain language instead of technical terms.",
+
+    "Mac 版：ショートカットの設定で、Control キーと ⌘ キーを別のものとして記録するようにしました。": "Mac app: In the shortcut settings, the Control key and the ⌘ key are now recorded as separate keys.",
+
+    "検査の整備：Mac 版の公開前の確認が、その Mac の「最近使った項目」や保存の場所に跡を残さないようにしました。夜間の検査と自動検査の失敗の扱い・速さを見直しました。": "Check maintenance: the pre-release Mac check no longer leaves traces in that Mac’s Recent Items or in the places where files are saved. Reviewed how failures are handled, and how fast the nightly checks and automated checks run.",
+    "別のタブでショーが更新されました。このタブの変更は上書きせず、ファイルへ書き出せます。": "The show was updated in another tab. This tab will not overwrite those changes. You can export the edits in this tab to a file.",
+    "この端末の保存容量が不足しています。ショーは切り替えずに残しました。先にファイルへ書き出してください。": "This device is out of storage. The current show stays open. Export it to a file first.",
+    "ショー一覧が壊れているため、保存を止めました。ファイルへ書き出してから、ショー一覧で作り直してください。": "Saving stopped because the show list is damaged. Export the current show to a file, then recreate it in the show list.",
+    "保存の整合性を確認できません。自動保存を停止しました。ファイルへ書き出して残してください。": "The saved content could not be verified. Autosave has stopped. Export the show to a file to keep a copy.",
+    "編集内容をショーへ保存できませんでした。編集は残っています。もう一度適用してください。モードは切り替えていません。": "The edits could not be saved to the show. They are still available. Try applying them again. The mode has not changed.",
+    "問題が起きました。このお知らせは保存済みの内容を変更しません。操作を続けられないときは、再読み込みの前に「書き出す」から控えを取ってください。": "A problem occurred. This notice does not change saved content. If you cannot continue, use Export to keep a copy before reloading.",
+    "プロジェクトを保存できませんでした。空き容量と保存先の書き込み権限を確認し、もう一度保存してください。開いているショーはそのまま残してください。": "The project could not be saved. Check the available space and write permission for the destination, then try saving again. Keep the current show open.",
+    "空き容量が足りないため保存できませんでした。容量を空けるか、別の保存先を選んでください。開いているショーはそのまま残してください。": "There is not enough space to save. Free some space or choose another destination. Keep the current show open.",
+    "この保存先へ書き込めません。書き込み権限を確認するか、別の保存先を選んでください。開いているショーはそのまま残してください。": "This destination cannot be written to. Check write permission or choose another destination. Keep the current show open.",
+
     "照明のキューの呼び名・表示言語・表示・劇場の大きさを選ぶ欄、劇場のカードの名前、スマートフォンでのショー名とシーンの表示で、日本語や全角の括弧の上下が欠けて見えることがあったのを直しました。": "Fixed the tops and bottoms of Japanese characters and full-width brackets being cut off in the lighting cue naming, display language, view and theatre size selectors, on theatre cards, and in the show name and scene display on smartphones.",
 
     "英語・韓国語・簡体字・繁体字で、リハーサルの振り返りの「合計」と進行中の表示、進行表の編集表示の操作の案内、紙面の1ページに収まらないときの注意が日本語のまま出ていたのを訳しました。": "In English, Korean, Simplified Chinese and Traditional Chinese, the rehearsal review “Total” and in-progress labels, the hint shown while editing the run of show, and the notice when a row does not fit on one printed page are now translated instead of appearing in Japanese.",
@@ -103,6 +132,7 @@
     // B79: safe relocation of set-aside lighting drafts.
     "脇へ寄せた照明の控え": "Set-aside lighting backups",
     "脇へ寄せた照明の控えも保管できます。編集中の草稿と文書の復旧台帳は変更しません。": "Set-aside lighting backups can also be archived. Active drafts and the document recovery registry are kept unchanged.",
+    "脇へ寄せた照明の控えも保管できます。編集中の草稿と文書の復旧用の記録は変更しません。": "Set-aside lighting backups can also be archived. Active drafts and the document recovery records are kept unchanged.",
     "γの保存状況": "Gamma storage usage",
     "保管先を移せる控え": "Backups available for relocation",
     "控えを保管して容量を空ける": "Archive backups to free space",
@@ -5421,7 +5451,10 @@ window.SHOSAI_DRAFT_RECOVERY_COPY["ja"] = {
   "load": "この文書の草稿として読み込む",
   "export": "原文を書き出す",
   "all": "照明の控えをすべて書き出す",
-  "readFailed": "控えを読み取れませんでした。原文を保持しています。もう一度お試しください。"
+  "readFailed": "控えを読み取れませんでした。原文を保持しています。もう一度お試しください。",
+  "removed": "保持期間（直近10件・30日）を過ぎたため、控えが整理されました。",
+  "exportPartial": "読み取れなかった控え {count} 件は書き出していません。残りを書き出しました。",
+  "exportAllFailed": "控え {count} 件をすべて読み取れなかったため、ファイルを書き出せませんでした。"
 };
 
 // U-A2 explicit recovery; original records are retained.
@@ -5432,7 +5465,10 @@ window.SHOSAI_DRAFT_RECOVERY_COPY["en"] = {
   "load": "Load as a draft for this document",
   "export": "Export original record",
   "all": "Export all lighting drafts",
-  "readFailed": "Could not read the draft. The original is retained. Please try again."
+  "readFailed": "Could not read the draft. The original is retained. Please try again.",
+  "removed": "The draft was removed under the retention limit (10 most recent drafts, up to 30 days).",
+  "exportPartial": "Could not read {count} draft(s). Exported the remaining drafts only.",
+  "exportAllFailed": "Could not read any of the {count} draft(s). No file was exported."
 };
 
 // v0.3.82 release history: known limitation (owner decision 2026-10-21).
@@ -5512,7 +5548,7 @@ window.SHOSAI_DRAFT_LEDGER_REPAIR_COPY["en"] = {
   "元のファイルを残して別の名前で保存するか、この場所に上書きするかを選んでください。「閉じる」を選ぶと保存せずに閉じます。": "Choose to keep the original and save with another name, or overwrite this location. Choosing Close closes without saving.",
   "別名で保存…": "Save As…",
   "この場所に上書きして続ける": "Overwrite this location and continue",
-  "元のファイルを残すため、別の名前か別の場所を選んでください。上書きしたいときは「保存」から『この場所に上書きして続ける』を選んでください。": "Choose a different name or location to keep the original file. To overwrite, choose 'Overwrite this location and continue' from Save.",
+  "元のファイルを残すため、別の名前か別の場所を選んでください。上書きしたいときは「保存」から『この場所に上書きして続ける』を選んでください。": "Choose a different name or location to keep the original file. To overwrite, choose “Overwrite this location and continue” from Save.",
   "まだ保存できる内容を受け取っていません。少し待ってからもう一度お試しください。": "No content ready to save has been received yet. Wait a moment and try again.",
   "控えのフォルダの場所が正しくないため、控えを書き出せません。": "Cannot export the backup because its folder location is invalid.",
   "控えを書き出せません。": "Could not export the backup.",
@@ -5566,7 +5602,7 @@ window.SHOSAI_DRAFT_LEDGER_REPAIR_COPY["en"] = {
   "保存を始められませんでした。ショーは開いたまま残しています。": "Could not start saving. The show remains open.",
   "この画面は文書の安全な切替に対応していません。通常の保存・書き出しは使えます。アプリと画面を更新してください。": "This screen does not support safe document switching. Normal saving and export are available. Update the app and screen.",
   "照明の草稿をこの Mac の控えに残せません": "Could not retain the lighting draft in this Mac's backups",
-  "ショー本体は保存済みです。「草稿を捨てて閉じる」を選ぶと、この Mac の控えには草稿を残せません。画面にある控えは消しません。": "The show itself is saved. Choosing 'Discard draft and close' cannot retain the draft in this Mac's backups. Backups in the screen are not deleted.",
+  "ショー本体は保存済みです。「草稿を捨てて閉じる」を選ぶと、この Mac の控えには草稿を残せません。画面にある控えは消しません。": "The show itself is saved. Choosing “Discard draft and close” cannot retain the draft in this Mac's backups. Backups in the screen are not deleted.",
   "照明の草稿をファイルへ書き出して閉じる": "Export lighting draft to a file and close",
   "草稿を捨てて閉じる": "Discard draft and close",
   "編集中の照明の草稿を確かめられません。ショーは開いたまま残しています。": "Could not verify the lighting draft being edited. The show remains open.",

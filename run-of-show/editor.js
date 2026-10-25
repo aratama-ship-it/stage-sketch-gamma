@@ -559,7 +559,15 @@ window.ROSLeftPanels={install(band,{store,text,format}){
   function cellKey(node){return layout.alignKey(node.closest('[data-row-id]')?.dataset.rowId||node.dataset.rowId,node.dataset.columnId);}
   function selectionValues(){const values=cellAlign[alignmentMode()]||{};return selection.kind==='column'?selection.ids.map(id=>values.columns?.[id]||'left'):selection.kind==='cells'?[...selection.keys].map(key=>values.cells?.[key]??values.columns?.[key.split('|')[1]]??'left'):[];}
   function applySelectionClasses(){const nodes=cellNodes(),existing=new Set(nodes.map(cellKey));if(selection.kind==='cells'){selection.keys=new Set([...selection.keys].filter(k=>existing.has(k)));if(!selection.keys.size)selection={kind:'none'};}for(const node of [...nodes,...document.querySelectorAll('.doc-frame th[data-column-id],.doc-frame .pg-label[data-column-id]')]){const col=selection.kind==='column'&&selection.ids.includes(node.dataset.columnId),cell=selection.kind==='cells'&&selection.keys.has(cellKey(node));node.classList.toggle('is-col-selected',col);node.classList.toggle('is-cell-selected',cell);if(node.matches('th[data-column-id],.pg-label[data-column-id]')){node.tabIndex=0;node.setAttribute('aria-selected',String(col));}}const values=selectionValues();for(const a of ['left','center','right']){$('align-'+a).disabled=!values.length;$('align-'+a).setAttribute('aria-pressed',String(values.length>0&&values.every(x=>x===a)));}syncFormatControls();syncSelectionBar();}
-  function changeAlign(value){
+  function focusCommittedFormatControl(target){
+    // A committed format belongs to show history, not the input's text history.
+    // Enter continues at alignment; a clicked button keeps its own place. Blur
+    // alone loses WebKit's Tab starting point. Native Tab/Shift+Tab focusout and
+    // select changes keep their destination unless a button was invoked.
+    if(target||document.activeElement?.matches('#band-selection input'))
+      (target||$('align-left')).focus({preventScroll:true});
+  }
+  function changeAlign(value,focusTarget){
     if(selection.kind==='none')return;
     if(paperEditor?.active&&!paperEditor.finish())return;
     try{bridge.canEdit(token);}catch(error){showError(error);return;}
@@ -575,9 +583,10 @@ window.ROSLeftPanels={install(band,{store,text,format}){
     if(!Object.keys(p.columns).length)delete p.columns;if(!Object.keys(p.cells).length)delete p.cells;
     if(Object.keys(p).length)cellAlign[mode]=p;else delete cellAlign[mode];
     if(JSON.stringify(cellAlign)===before)return;
-    checkpoint();markDirty();renderPaper();
+    checkpoint();const committed=markDirty();renderPaper();
+    if(committed)focusCommittedFormatControl(focusTarget);
   }
-  for(const a of ['left','center','right']){$('align-'+a).addEventListener('pointerdown',e=>e.preventDefault());$('align-'+a).addEventListener('click',()=>changeAlign(a));}
+  for(const a of ['left','center','right']){$('align-'+a).addEventListener('pointerdown',e=>e.preventDefault());$('align-'+a).addEventListener('click',e=>changeAlign(a,e.currentTarget));}
   function selectedStyles(){
     if(selection.kind==='column')return selection.ids.map(id=>files.cellStyle(cellStyles,alignmentMode(),'',id));
     if(selection.kind==='cells')return [...selection.keys].map(key=>{const[row,col]=key.split('|');return files.cellStyle(cellStyles,alignmentMode(),row,col);});
@@ -595,7 +604,7 @@ window.ROSLeftPanels={install(band,{store,text,format}){
     for(const value of ['top','middle','bottom'])$('vertical-'+value).setAttribute('aria-pressed',String(same('vertical')&&styles[0]?.vertical===value));
     for(const[id,key,fallback]of [['cell-color','color',paperInk==='black'?'#efe7d6':'#25352f'],['cell-fill','fill',paperInk==='black'?'#171411':'#ffffff']]){$(id).value=styles[0]?.[key]??fallback;$(id).dataset.mixed=String(!same(key));}
   }
-  function changeCellStyle(patch,{clear=false}={}){
+  function changeCellStyle(patch,{clear=false,focusTarget}={}){
     if(selection.kind==='none'||!files.validCellStyle(patch))return;
     if(paperEditor?.active&&!paperEditor.finish())return;
     try{bridge.canEdit(token);}catch(error){showError(error);return;}
@@ -616,14 +625,15 @@ window.ROSLeftPanels={install(band,{store,text,format}){
     if(!Object.keys(p.columns).length)delete p.columns;if(!Object.keys(p.cells).length)delete p.cells;
     if(Object.keys(p).length)cellStyles[mode]=p;else delete cellStyles[mode];
     if(JSON.stringify([cellStyles,cellAlign])===before){syncFormatControls();return;}
-    checkpoint();markDirty();renderPaper();
+    checkpoint();const committed=markDirty();renderPaper();
+    if(committed)focusCommittedFormatControl(focusTarget);
   }
   for(const[key,id]of [['fontFamily','cell-font'],['vertical','cell-vertical'],['border','cell-border'],['color','cell-color'],['fill','cell-fill']])$(id).addEventListener('change',e=>{if(e.target.value!=='mixed')changeCellStyle({[key]:e.target.value||null});});
-  for(const value of ['top','middle','bottom']){$('vertical-'+value).addEventListener('pointerdown',e=>e.preventDefault());$('vertical-'+value).addEventListener('click',()=>changeCellStyle({vertical:value}));}
+  for(const value of ['top','middle','bottom']){$('vertical-'+value).addEventListener('pointerdown',e=>e.preventDefault());$('vertical-'+value).addEventListener('click',e=>changeCellStyle({vertical:value},{focusTarget:e.currentTarget}));}
   $('cell-size').addEventListener('input',e=>{e.target.dataset.edited='true';});
   $('cell-size').addEventListener('change',e=>{if(e.target.dataset.edited!=='true')return;if(e.target.value===''||!e.target.reportValidity()){syncFormatControls();return;}changeCellStyle({fontSize:Number(e.target.value)});});
-  for(const key of ['bold','italic','underline']){$('cell-'+key).addEventListener('pointerdown',e=>e.preventDefault());$('cell-'+key).addEventListener('click',()=>changeCellStyle({[key]:$('cell-'+key).getAttribute('aria-pressed')!=='true'}));}
-  $('cell-format-reset').addEventListener('pointerdown',e=>e.preventDefault());$('cell-format-reset').addEventListener('click',()=>changeCellStyle({},{clear:true}));
+  for(const key of ['bold','italic','underline']){$('cell-'+key).addEventListener('pointerdown',e=>e.preventDefault());$('cell-'+key).addEventListener('click',e=>changeCellStyle({[key]:$('cell-'+key).getAttribute('aria-pressed')!=='true'},{focusTarget:e.currentTarget}));}
+  $('cell-format-reset').addEventListener('pointerdown',e=>e.preventDefault());$('cell-format-reset').addEventListener('click',e=>changeCellStyle({},{clear:true,focusTarget:e.currentTarget}));
   function selectColumn(id,shift){const ids=selection.kind==='column'&&shift?[...selection.ids]:[];if(ids.includes(id))ids.splice(ids.indexOf(id),1);else ids.push(id);selection=ids.length?{kind:'column',ids}:{kind:'none'};applySelectionClasses();}
   function selectCell(cell,shift){const key=cellKey(cell);if(key.startsWith('undefined|'))return;let keys=new Set([key]),anchor=key;if(shift&&selection.kind==='cells'){anchor=selection.anchor;const rows=[...new Set(cellNodes().map(n=>cellKey(n).split('|')[0]))],cols=orderedColumns().filter(c=>!layoutFor().hidden.includes(c.id)).map(c=>c.id),[ar,ac]=anchor.split('|'),[br,bc]=key.split('|');const y1=rows.indexOf(ar),y2=rows.indexOf(br),x1=cols.indexOf(ac),x2=cols.indexOf(bc);if([y1,y2,x1,x2].every(x=>x>=0)){keys=new Set();for(const row of rows.slice(Math.min(y1,y2),Math.max(y1,y2)+1))for(const col of cols.slice(Math.min(x1,x2),Math.max(x1,x2)+1))keys.add(layout.alignKey(row,col));}}selection={kind:'cells',keys,anchor};const item=items.find(i=>key.split('|')[0]===i.id||key.split('|')[0].startsWith(i.id+':'));if(item){selectItem(item.id,false);}else{const rowId=key.split('|')[0],node=cell.closest('[data-row-id]'),itemId=node?.dataset.itemId||document.querySelector(`#ros-body tr[data-row-id="${CSS.escape(rowId)}"]`)?.dataset.itemId;if(itemId)selectItem(itemId,false);}applySelectionClasses();}
   const frame=document.querySelector('.doc-frame');

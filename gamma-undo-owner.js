@@ -23,6 +23,8 @@
   function topModal(doc = document) {
     const dialogs = [...doc.querySelectorAll('dialog[open], [role="dialog"], [role="alertdialog"], .stage-modal, #dialog.dialog')]
       .filter(visible).filter(el => {
+        // Embedded regions and tour cards do not block the editor behind them.
+        if (el.getAttribute('aria-modal') === 'false') return false;
         if (el.id === 'stage-venue-editor-modal' && window.GAMMA_WORKSPACE?.mode() === 'venue-setup') return false;
         if (el.id === 'stage-field-run-dialog' && !el.matches(':modal')) return false;
         return el.tagName !== 'DIALOG' || el.matches(':modal') || el.getAttribute('aria-modal') === 'true';

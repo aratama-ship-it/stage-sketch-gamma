@@ -81,7 +81,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.85";
+  const GAMMA_APP_VERSION = "v0.3.86";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2283,7 +2283,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     stageSketchRoot.setAttribute("aria-busy", "true");
   }
   // stage-pwa.js は単独版でこのスクリプトより先に読み込む。
-  // 通常ブラウザ版は false のままなので、既存の三列レイアウトへ一切介入しない。
+  // 通常ブラウザ版も、現在の幅で自動 iPad 表示の印を確定してから起動する。
   // 設定から選ぶ iPad 表示モードは、起動時にだけ読む。パネルをドロワーへ移す
   // 既存の iPad ワークスペースをそのまま使い、途中でDOMを戻して壊さないため。
   const bootPrefs = (() => {
@@ -2292,6 +2292,19 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       return value && typeof value === "object" ? value : {};
     } catch (_) { return {}; }
   })();
+  // 起動時は bootPrefs、以後は prefs を読む。後方で初期化する prefs へ
+  // 起動時から触れず、旧設定の引継ぎとタブの既定値は同じ規則で決める。
+  function panelLayoutModeForPrefs(preferences, workspace) {
+    const saved = preferences.panelLayoutByWorkspace && typeof preferences.panelLayoutByWorkspace === "object"
+      ? preferences.panelLayoutByWorkspace[workspace] : null;
+    if (saved === "single" || saved === "split" || saved === "triple" || (workspace === "normal" && saved === "bottom")) return saved;
+    // 旧版の通常モード設定だけはそのまま引き継ぐ。
+    if (workspace === "normal" && (preferences.panelLayoutMode === "single" || preferences.panelLayoutMode === "split")) {
+      return preferences.panelLayoutMode;
+    }
+    const definition = workspaceModeDefinitions().find((candidate) => candidate.key === workspace);
+    return definition ? definition.defaultPanelLayout : "split";
+  }
   const layoutLaneParams = (() => {
     try { return new URLSearchParams(window.location.search); } catch (_) { return new URLSearchParams(); }
   })();
@@ -2308,14 +2321,30 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       ) || [...STAGE_LAYOUT_LANES_MODEL.DEFAULT_THRESHOLDS];
     } catch (_) { return [...STAGE_LAYOUT_LANES_MODEL.DEFAULT_THRESHOLDS]; }
   })();
-  const bootAutoTablet = (() => {
-    try { return localStorage.getItem(STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet) === "1"; }
-    catch (_) { return false; }
-  })();
   const bootPhonePreview = ["localhost", "127.0.0.1"].includes(window.location.hostname)
     && layoutLaneParams.has("phone-viewer-preview");
   const bootPhoneLike = navigator.maxTouchPoints > 0
     && Math.min(window.screen.width, window.screen.height) <= 600;
+  const bootAutoTablet = (() => {
+    const key = STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet;
+    let stored = false;
+    try { stored = localStorage.getItem(key) === "1"; } catch (_) { return false; }
+    if (nativeProject || STUDY_READ_ONLY || bootPhonePreview || bootPhoneLike) return stored;
+    const transition = STAGE_LAYOUT_LANES_MODEL.autoTabletTransition({
+      width: window.innerWidth,
+      thresholds: bootLayoutThresholds,
+      selectedMode: panelLayoutModeForPrefs(bootPrefs, "normal"),
+      autoTablet: stored,
+      manualTablet: bootPrefs.tabletMode === true || window.SHOSAI_TABLET_PWA === true,
+    });
+    if (!transition.reload) return stored;
+    try {
+      if (transition.autoTablet) localStorage.setItem(key, "1");
+      else localStorage.removeItem(key);
+    } catch (_) { return stored; }
+    // 殻を作る前なので読み直さない。起動後の幅変更だけは既存のreloadを使う。
+    return transition.autoTablet;
+  })();
   const tabletPwaActive = window.SHOSAI_TABLET_PWA === true
     || document.documentElement.classList.contains("stage-pwa-tablet")
     || bootPrefs.tabletMode === true
@@ -2512,7 +2541,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-24`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-25`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -5536,28 +5565,18 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   // 机のパネルは端末ごとの見え方。ショーの layout は二列の並びとして残し、
   // 一列用の順番は prefs に分けるので、表示を切り替えても片方が片方を壊さない。
   // モード定義はヘッダーのタブを正本にする。今後モードが増えても環境設定へ自動で並ぶ。
-  const workspaceModeDefinitions = () => (
-    [...document.querySelectorAll("#stage-workspace-tabs [data-stage-workspace-mode]")].map((button) => ({
+  function workspaceModeDefinitions() {
+    return [...document.querySelectorAll("#stage-workspace-tabs [data-stage-workspace-mode]")].map((button) => ({
       key: button.dataset.stageWorkspaceMode,
       label: button.textContent.trim(),
       defaultPanelLayout: button.dataset.stagePanelLayoutDefault === "single" ? "single" : "split",
-    })).filter((definition) => definition.key)
-  );
+    })).filter((definition) => definition.key);
+  }
   const currentWorkspaceMode = () => {
     const requested = document.body.dataset.stageWorkspaceMode || "normal";
     return workspaceModeDefinitions().some((definition) => definition.key === requested) ? requested : "normal";
   };
-  const panelLayoutMode = (workspace = currentWorkspaceMode()) => {
-    const saved = prefs.panelLayoutByWorkspace && typeof prefs.panelLayoutByWorkspace === "object"
-      ? prefs.panelLayoutByWorkspace[workspace] : null;
-    if (saved === "single" || saved === "split" || saved === "triple" || (workspace === "normal" && saved === "bottom")) return saved;
-    // 旧版の通常モード設定だけはそのまま引き継ぐ。
-    if (workspace === "normal" && (prefs.panelLayoutMode === "single" || prefs.panelLayoutMode === "split")) {
-      return prefs.panelLayoutMode;
-    }
-    const definition = workspaceModeDefinitions().find((candidate) => candidate.key === workspace);
-    return definition ? definition.defaultPanelLayout : "split";
-  };
+  const panelLayoutMode = (workspace = currentWorkspaceMode()) => panelLayoutModeForPrefs(prefs, workspace);
   const panelSingleSide = (workspace = currentWorkspaceMode()) => {
     const saved = prefs.panelSingleSideByWorkspace && typeof prefs.panelSingleSideByWorkspace === "object"
       ? prefs.panelSingleSideByWorkspace[workspace] : null;
@@ -6390,6 +6409,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (!raw || typeof raw !== "object") return null;
     const text = typeof raw.text === "string" ? raw.text.slice(0, 200) : "";
     return {
+      ...projectIoClone(!Array.isArray(raw) ? raw : {}),
       id: typeof raw.id === "string" ? raw.id : rid("note"),
       view: raw.view === "plan" ? "plan" : "front",
       x: clamp(finite(raw.x, 100), -200, 1480),
@@ -6586,7 +6606,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (!raw || typeof raw !== "object") return null;
     const text = typeof raw.text === "string" ? raw.text.slice(0, 60) : "";
     if (!text) return null;
+    const preserved = projectIoClone(!Array.isArray(raw) ? raw : {});
+    // Known optional fields must still be omitted when their value is invalid.
+    delete preserved.surfaceId;
     return {
+      ...preserved,
       id: typeof raw.id === "string" ? raw.id : rid("sctext"),
       text,
       u: clamp(finite(raw.u, 0.5), 0, 1),          // 面の中の割合
@@ -6619,6 +6643,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
           .map((p) => ({ u: clamp(p.u, 0, 1), v: clamp(p.v, 0, 1) }))
       : [];
     return {
+      ...projectIoClone(stroke && typeof stroke === "object" && !Array.isArray(stroke) ? stroke : {}),
       color: validColor(stroke && stroke.color, "#efe7d6"),
       width: clamp(finite(stroke && stroke.width, 42), 12, 120),
       erase: Boolean(stroke && stroke.erase),
@@ -6639,7 +6664,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
             plane === "air" ? 12 : 1),
         }))
       : [];
+    const preserved = projectIoClone(raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {});
+    delete preserved.guest;
     return {
+      ...preserved,
       id: raw && typeof raw.id === "string" ? raw.id : rid("arrow"),
       view,
       plane,
@@ -7650,7 +7678,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       window.SHOSAI_STAGE_SESSION_HOOKS?.onLocalChange?.();
       return true;
     } catch (error) {
-      setAudioStatus(tx(error.message || "Mキューの音源を保存できませんでした。原本は保持しています。"),
+      setAudioStatus(tx("Mキューの音源を保存できませんでした。原本は保持しています。"),
         "Could not save M cue audio. The original is retained.", "error");
       return false;
     } finally { musicCueWritePending = false; finish(); }
@@ -8683,7 +8711,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     formationModalSectionId = section.id;
     els.formationBackdrop.hidden = false; els.formationModal.hidden = false;
     setFormationStatus("セクションの演者・舞台・セットを読み込んでいます。", "Loading the section cast, stage and sets.");
-    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261020-v0380&embed=1&cast=locked";
+    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261025-v0386&embed=1&cast=locked";
     document.body.classList.add("stage-modal-open");
   }
 
@@ -11325,8 +11353,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function historyEditBlocked() {
+    // Match the history router: a nonmodal guide must not reject an authorized
+    // stage Undo/Redo. Keep fullscreenModalOpen's other callers unchanged.
     return STUDY_READ_ONLY || nativeProject?.readOnly || guestSessionActive()
-      || !!document.querySelector('dialog:modal') || fullscreenModalOpen();
+      || !!document.querySelector('dialog:modal')
+      || [...document.querySelectorAll('[role="dialog"], [role="alertdialog"]')]
+        .some(dialog => dialog.getAttribute('aria-modal') !== 'false' && dialog.getClientRects().length > 0);
   }
 
   function updateHistoryButtons() {
@@ -11440,9 +11472,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   function nativeProjectSaveState(payload) {
     if (payload.state !== "received") { clearTimeout(nativeSavingTimer); nativeSavingTimer = null; }
     if (payload.state === "failed" || payload.state === "hold") {
-      nativeSaveWarning = payload.detail || tx(payload.state === "hold"
-        ? "原本の照合値が一致しません。保存先を選ぶまで書き込みません"
-        : "プロジェクトを保存できませんでした。もう一度保存してください。");
+      nativeSaveWarning = tx(payload.state === "hold"
+        ? "原本を保全するため、書き込みを保留しています。「保存」で別の保存先を選んでください。"
+        : "プロジェクトを保存できませんでした。空き容量と保存先の書き込み権限を確認し、もう一度保存してください。開いているショーはそのまま残してください。");
       const band = document.getElementById("stage-storage-band");
       if (band) {
         band.classList.remove("is-folded", "is-protected");
@@ -11506,7 +11538,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       : code === "PARTIAL_WRITE"
         ? "保存の整合性を確認できません。自動保存を停止しました。ファイルへ書き出して残してください。"
         : "この端末へ保存できませんでした。ファイルへ書き出して残してください。";
-    const message = `${tx(detail)} (${code})`;
+    const message = tx(detail);
     setSaveStatus(message, "warn", code);
     showShowSaveError(message, code);
     return message;
@@ -11652,6 +11684,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let actionStatusTimer = null;
   let actionStatusSerial = 0;
   window.addEventListener("gamma-shell-error", () => {
+    if (window.GAMMA_RUNTIME_ERRORS) return; // Common boundary owns important notices, including legacy shells.
     // D-18 owns both the one-line notice and its OFF/accessibility behaviour.
     announce(tx("画面でエラーが発生しました。ヘルプから診断情報を書き出せます。"), {warning:false});
   });
@@ -31613,20 +31646,13 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   window.addEventListener("gamma-workspace-change", syncShortcutDom);
 
   function shortcutCaptureValue(event) {
-    if (["Meta", "Control", "Alt", "Shift"].includes(event.key)) return "";
-    const key = event.key === " " ? "Space" : event.key;
-    if (!key || key === "Dead") return "";
-    const modifiers = [];
-    if (event.metaKey || event.ctrlKey) modifiers.push("Mod");
-    if (event.altKey) modifiers.push("Alt");
-    if (event.shiftKey) modifiers.push("Shift");
-    return [...modifiers, key].join("+");
+    return window.SHOSAI_STAGE_SHORTCUTS.capture?.(event) || "";
   }
 
   /* 2026-10-06 本人指示「ショートカット一覧とショートカット変更の項目が縦に並んでいるので統一して」
      「物を動かすのところを押したらショートカットを変更できるみたいに」:
      読むだけの一覧と「ショートカットを変更」の欄を一つにし、行を押す（Enter・Space でも）とその場で
-     「キーを押す」になる。捕まえ方・衝突と予約キーの判定・保存は stage-shortcuts.js のまま（保存形式は不変）。
+     「キーを押す」になる。捕まえ方・衝突と予約キーの判定・保存は stage-shortcuts.js が担当する。
      変えられないキー（FIXED_KEYS）と、この版に無いタブのキーは、押せない行として同じ一覧に並べる。 */
   const SHORTCUT_GROUPS = Object.freeze([
     ["タブの切り替え", ["workspace.normal", "workspace.venue", "workspace.placement", "workspace.design", "workspace.3d"]],
@@ -35071,6 +35097,25 @@ ${propsPlotHtml}
     if (result?.offlineStatusSaved === false) lines.push(tx("音源の未接続状態を保存できませんでした。再読み込み前に保存領域を確認してください。"));
     if (lines.length) { importFailureNotice(lines.join("\n\n")); clearTimeout(importFailureNotice._t); }
   }
+  // Native opaque files remain owned by the shell, never by the browser carry database.
+  async function nativeProjectExportCarry(source) {
+    if (!source) return null; // Old shell: preserve the previous export behavior.
+    const {manifest, extras} = source;
+    const carry = {manifest:manifest ? window.STAGE_PROJECT_FILE.manifestExtras(manifest) : {}, files:[], droppedFiles:extras?.droppedFiles || 0};
+    if (!extras || carry.droppedFiles) return carry;
+    try {
+      for (const file of extras.files) {
+        const response = await fetch("/project-extra/" + file.index, {headers:{"X-Gamma-Extra-Token":extras.token},cache:"no-store"});
+        if (!response.ok) throw Error("extra-unavailable");
+        const blob = await response.blob();
+        if (blob.size !== file.bytes) throw Error("extra-size-mismatch");
+        carry.files.push({name:file.name,blob});
+      }
+    } catch (_) {
+      carry.files = []; carry.droppedFiles = extras.files.length;
+    }
+    return carry;
+  }
   async function exportProjectPackage(includeVenue, filename) {
     try {
       // Runtime edits are trusted after the load check; their digest is refreshed
@@ -35080,22 +35125,27 @@ ${propsPlotHtml}
       const exported = makeProjectExportDocument(state.project, includeVenue, state.projectFileEnvelope);
       const exportProjectId = state.project.id;
       // Capture the reference before asynchronous audio reads (the user may switch shows).
-      const carry = await window.STAGE_PROJECT_FILE.carryStore().get(state.projectPackageCarry);
+      const nativeSource = nativeProjectPackageExtras;
+      const nativeOwner = nativeProject?.identity();
+      const carry = nativeProject ? await nativeProjectExportCarry(nativeSource)
+        : await window.STAGE_PROJECT_FILE.carryStore().get(state.projectPackageCarry);
       const audio = [];
       for (const track of exported.project.audioTracks || []) {
         const blob = await audioStore?.get(track.id);
         if (blob && !packageOfflineTracks.get(exportProjectId)?.has(track.id)) audio.push({trackId:track.id,blob,originalName:blob.name || track.originalName || "",durationSeconds:track.durationSeconds});
       }
+      if (nativeProject && (nativeProjectPackageExtras !== nativeSource || !nativeProject.matches(nativeOwner))) return false;
       const warnings = [];
       const blob = await window.STAGE_PROJECT_FILE.pack(JSON.stringify(exported,null,2), audio,
-        {folder:filename.slice(0,-4),version:GAMMA_APP_VERSION.replace(/^v/, ""),carry,onWarning:warning=>warnings.push(warning)});
+        {folder:filename.slice(0,-4),version:GAMMA_APP_VERSION.replace(/^v/, ""),edition:nativeProject ? "mac" : "browser",carry,onWarning:warning=>warnings.push(warning)});
+      if (nativeProject && (nativeProjectPackageExtras !== nativeSource || !nativeProject.matches(nativeOwner))) return false;
       if (warnings.length) {
         exportFailureNotice(warnings.map(w=>tx("持ち越せなかった知らないファイル {count} 件。元のパッケージを保管してください。").replace("{count}",w.count)).join("\n"));
         clearTimeout(exportFailureNotice._t);
       }
       const saved = await downloadBlob(blob,filename);
       if (!saved) return false;
-      if (state.project.id === exportProjectId) {
+      if (state.project.id === exportProjectId && (!nativeProject || (nativeProjectPackageExtras === nativeSource && nativeProject.matches(nativeOwner)))) {
         applyProjectExportOutcome(state, true, nowIso());
         latestProjectExportComparable = exportedProjectComparisonJson(exported.project);
         syncSaveStamps(); persistSoon(); updateBackupNote();
@@ -37653,7 +37703,7 @@ document.addEventListener("keydown", function (event) {
       if (detail !== pendingVenueApply || (nativeProject && !nativeProject.matches(sourceOwner))) return;
       if (els.venueApplyStatus) els.venueApplyStatus.textContent = error.stage === "capability"
         ? tx("このMac版は劇場候補の保存に対応していません。アプリを更新してください。")
-        : error.stage ? tx("候補の保存・読戻し・切替を完了できませんでした。劇場の編集は残っています。") : error.message;
+        : tx("候補の保存・読戻し・切替を完了できませんでした。劇場の編集は残っています。");
       if (choice === "keep") els.venueApplyConfirm.disabled = false;   // ★#16: 「keep」を他の選択肢へ読み替えない（照明を消す側へ落とさない）
       else setVenueApplyChoice(venueApplyChoice);
     }
@@ -45774,7 +45824,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
           commitTransition: commitNativeDocumentTransition,
           beforeQuit: () => window.GAMMA_FIELD_RUNS?.beforeQuit(),
           draftRecoveryNotice: payload => importFailureNotice(payload.unavailable
-            ? tx("復旧台帳を確認できません。原文は上書きしていません。")
+            ? tx("照明の控えの記録を読めません。記録の中身は書き換えていません。")
             : tx("以前の版で開いた後の照明の控えを保全しました（この Mac の文書{count}件分）。「控え・書き出し」から取り出せます。").replace("{count}", payload.archivedOwners)),
           saveState: nativeProjectSaveState,
           saveNoticeChanged: syncSaveLocationNotice,
@@ -45839,6 +45889,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     clearTimeout(saveTimer); clearTimeout(saveMaxTimer); saveMaxTimer = null; autosaveRequested = false;
   }
   let nativeDocumentDelivery = false;
+  let nativeProjectPackageExtras = null;
   function setNativeDocumentTransitioning(value) {
     if (stageSketchRoot) stageSketchRoot.inert = Boolean(value) || Boolean(nativeProject?.readOnly);
     window.GAMMA_FIELD_RUNS?.setDocumentTransitioning(value);
@@ -45856,7 +45907,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       alternativeViews:state.project.scenes.map(row=>[row.id,sceneAlternatives?.current(row)?.id]),
       noteDrafts:structuredClone(noteDrafts),stageAskPlan:structuredClone(stageAskPlan),
       stageAskSelections:structuredClone(stageAskClarificationSelections),stageAskInput:els.askInput?.value,
-      nativeSaveWarning,saveStatus:els.saveStatus?{text:els.saveStatus.textContent,level:els.saveStatus.dataset.level}:null,
+      nativeProjectPackageExtras,nativeSaveWarning,saveStatus:els.saveStatus?{text:els.saveStatus.textContent,level:els.saveStatus.dataset.level}:null,
       selectedId,selectedIds:[...selectedIds],selectedNoteId,selectedTextId,selectedAudioTrackId,
       controlBefore:structuredClone(controlBefore),lastPersistedSnapshot,loadedStateGeneration,
       workspace:window.GAMMA_WORKSPACE?.captureRuntime?.()};
@@ -45881,6 +45932,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     if (stageAskPlan) renderStageAskPlan(stageAskPlan,{keepSelections:true}); else setStageAskMode('idle');
     if (els.askInput) els.askInput.value=saved.stageAskInput || '';
     nativeSaveWarning=saved.nativeSaveWarning;
+    nativeProjectPackageExtras=saved.nativeProjectPackageExtras;
     renderVenueControls();renderScenes();renderCast();renderSets();renderLights();renderRigs();
     syncInputs();applyLayout();updateInspector();updateHistoryButtons();render();
     window.GAMMA_WORKSPACE?.restoreRuntime?.(saved.workspace);
@@ -45922,6 +45974,8 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       ok = await importProjectText(payload.show, {name:"show.json", size:payload.show.length}, null, true, false, payload.isCurrent);
     }
     if (!ok || (payload.isCurrent && !payload.isCurrent())) return false;
+    nativeProjectPackageExtras = payload.manifest || payload.extras
+      ? structuredClone({manifest:payload.manifest,extras:payload.extras}) : null;
     setSaveStatus(tx(payload.readOnly ? "読み取り専用のプロジェクトです。" : "プロジェクトを開きました。変更はプロジェクトへ自動保存します。"));
     syncNativeProjectEntries();
     return true;

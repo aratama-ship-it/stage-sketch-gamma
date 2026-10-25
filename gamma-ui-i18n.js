@@ -92,10 +92,10 @@
     "正面图",
     "正面圖"
   ],
-  "前一文字幕の有無": ["Front border curtain", "有无前檐幕", "有無前檐幕"],
-  "この劇場には前一文字幕がありません": ["This theatre has no front border curtain.", "此剧场没有前檐幕。", "此劇場沒有前檐幕。"],
-  "前一文字幕ありにしました。": ["The front border curtain is present.", "已设置前檐幕。", "已設置前檐幕。"],
-  "前一文字幕なしにしました。正面図・3D・プレビューに描きません。": ["The front border curtain is absent. It is hidden in the front view, 3D and preview.", "已取消前檐幕。正面图、3D和预览均不显示。", "已取消前檐幕。正面圖、3D和預覽均不顯示。"],
+  "前一文字幕の有無": ["Front border curtain", "有无前檐幕", "有無前簷幕"],
+  "この劇場には前一文字幕がありません": ["This theatre has no front border curtain.", "此剧场没有前檐幕。", "此劇場沒有前簷幕。"],
+  "前一文字幕ありにしました。": ["The front border curtain is present.", "已设置前檐幕。", "已設置前簷幕。"],
+  "前一文字幕なしにしました。正面図・3D・プレビューに描きません。": ["The front border curtain is absent. It is hidden in the front view, 3D and preview.", "已取消前檐幕。正面图、3D和预览均不显示。", "已取消前簷幕。正面圖、3D和預覽均不顯示。"],
   "壁は幅・奥行とも0.05m以上で、会場の外枠の内側に描いてください。": ["Draw the wall inside the venue outline with width and depth of at least 0.05 m.", "墙的宽度和深度至少为0.05m，请画在场地轮廓内。", "牆的寬度和深度至少為0.05m，請畫在場地輪廓內。"],
   "前一文字": [
     "Front border",

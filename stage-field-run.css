@@ -208,6 +208,9 @@ html:has(body[data-gamma-workspace=rehearsal]){scrollbar-gutter:auto;overflow:hi
 .field-duration-review table{width:100%;border-collapse:collapse;font-size:var(--fs-4);font-variant-numeric:tabular-nums}
 .field-duration-review th,.field-duration-review td{border-bottom:1px solid var(--edge);padding:var(--sp-1,4px);text-align:right}
 .field-duration-review th:first-child{text-align:left;overflow-wrap:anywhere}
+/* B136: keep English header words whole; narrow panels may scroll the table. */
+.field-duration-review:lang(en){overflow-x:auto}
+.field-duration-review:lang(en) thead th{overflow-wrap:normal;word-break:normal;hyphens:none}
 .field-duration-review td{white-space:nowrap}
 .field-duration-review tr[data-over=true] td:last-child{color:var(--brass);font-weight:700}
 
