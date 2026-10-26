@@ -32,6 +32,20 @@
 
   const TEXT = {
 
+    "照明デザインで、雨などの動く効果があるシーンにいると、照明の図を毎回描き直し続けて重くなっていた（Mac 版では応答しなくなることがあった）のを、必要なときだけ描き直すようにして軽くしました。": "In Lighting design, scenes with moving effects such as rain kept redrawing the lighting views every frame and became heavy (the Mac app could stop responding). The views are now redrawn only when needed.",
+
+    "照明デザインで、器具に乗る人のいるシーンなどへ移ると「照明を開けませんでした」が出て、前後のシーンへ進むボタンが効かなくなることがあったのを直しました。": "Fixed lighting design sometimes showing “Could not open lighting” and disabling the previous and next scene buttons when moving to scenes such as those with a performer on equipment.",
+
+    "Mac 版：文書を開いている間にほかのアプリがファイルを変えると、保存が失敗し続けていたのを直し、中身が同じならそのまま保存し、違えば「読み直す／別名で保存／このまま上書き」を選べるようにしました。保存に失敗した後、閉じるときや終了するときに案内が出ないことがあったのも直しました。": "Mac app: Fixed saves continuing to fail after another app changed the file while the document was open; saving now continues if the contents are unchanged, or offers Reload / Save As / Overwrite if they differ. Also fixed the message sometimes failing to appear when closing a document or quitting after a failed save.",
+
+    "スマホで開いたときの配置を共有の閲覧画面と同じにし、図を大きく、情報・メモ・ショー・設定をパネルから開くようにしました。スマホでは、メモとシーンの説明だけを編集できます。": "On phones, the layout now matches the shared viewer, with a larger drawing and panels for Info, Memo, Show and Settings. Only memos and scene descriptions can be edited on phones.",
+
+    "フォーメーションを当てるとき、型ごとに決めた向き（一列は全員が客席向きなど）を当て、「向き」の列でまとめて向きを選べるようにしました。一人ずつの向きは入れ替え画面の回転ボタンで45°ずつ回せます（丸を押すと今までどおり入れ替えます）。": "Applying a formation now also applies the facing set for that pattern, such as everyone facing the audience in a single row, and the Facing row lets you choose a facing for everyone at once. In the swap screen, the rotation button turns each performer by 45° at a time (clicking a circle still swaps performers).",
+
+    "中国語（簡体字・繁体字）の画面で、アプリの名前を「Stage Sketch γ」にそろえました。": "In the Chinese (Simplified and Traditional) interface, the app name is now consistently “Stage Sketch γ”.",
+
+    "検査の整備：夜間の検査に割り当てる時間を見直し、役目を終えた古い検査を外しました。": "Test maintenance: adjusted the time allocated to overnight checks and retired old checks that had served their purpose.",
+
     "Mac 版：ショーを閉じるとき（⌘W）の保存の窓で「キャンセル」を押すと、保存の失敗として知らせていたのを直しました。": "Mac app: Fixed choosing Cancel in the save panel shown when closing a show (⌘W) being reported as a failed save.",
 
     "離れるときの確認（3つのボタン）を開いたとき、焦点を確認の中へ移し、後ろの照明の画面を操作できないようにしました。閉じると元の場所へ戻ります。": "When the leave confirmation (three buttons) opens, focus now moves into it and the lighting screen behind it can no longer be operated. Focus returns to where it was when it closes.",
@@ -5761,6 +5775,74 @@ window.SHOSAI_DRAFT_LEDGER_REPAIR_COPY["en"] = {
   "帯いっぱいでクロスフェード": "Crossfade across the transition",
   "帯の始めでカット": "Cut at transition start",
   "{paper} / 行の単位：{unit}": "{paper} / Row grouping: {unit}"
+};
+  added["保存・音源の案内があります"] = "Storage and audio notices are available";
+  Object.assign(pack.text, added);
+  pack.needsReview = [...new Set([...(pack.needsReview || []), ...Object.keys(added).map(key => "text." + key)])];
+})();
+
+// FACING (#113): formation direction controls and labels.
+(() => {
+  const pack = window.SHOSAI_I18N_PACKS["en"];
+  const added = {
+  "向きの指定を確認してください。": "Check the facing setting.",
+  "個別の向きを確認してください。": "Check the individual facing settings.",
+  "ひとつ前の変更に戻しました。": "Restored the previous change.",
+  "変更をやり直しました。": "Redid the change.",
+  "型の既定": "Preset default",
+  "型の既定: {facing}": "Preset default: {facing}",
+  "全員 客席": "All: house",
+  "全員 奥": "All: upstage",
+  "全員 上手": "All: stage left",
+  "全員 下手": "All: stage right",
+  "中心": "Centre",
+  "外": "Outward",
+  "そのまま": "Keep current",
+  "向かい合う": "Face each other",
+  "型の既定に戻す": "Reset to preset default",
+  "丸または配置リストで2人を順に押すと入れ替えます。ドラッグでも交換できます。向きは配置リストの人物の横の回転ボタンで45°回します。": "Press two people in the circles or placement list to swap them. You can also drag to swap. Use the rotation button beside a person in the placement list to turn 45°.",
+  "{name} · {facing}。2人を順に押して入れ替え": "{name} · {facing}. Press two people in sequence to swap",
+  "{name}の向きを45°回す": "Turn {name} 45°",
+  "丸を押すと向きを45°回します。人物の交換はドラッグ、または配置リストで2人を順に押してください。": "Press a circle to turn 45°. To swap performers, drag them or press two people in the placement list.",
+  "{name} · {facing}。押すと45°回す": "{name} · {facing}. Press to turn 45°",
+  "向きを変更しました。個別指定は解除しました。": "Changed the facing. Individual overrides cleared.",
+  "選んだ人物の向きを45°回しました。": "Turned the selected performer 45°.",
+  "客席・上手寄り": "house / stage left",
+  "奥・上手寄り": "upstage / stage left",
+  "奥（背中）": "upstage (back)",
+  "奥・下手寄り": "upstage / stage right",
+  "客席・下手寄り": "house / stage right",
+  "このシーンへ反映": "Apply to this scene"
+};
+  Object.assign(pack.text, added);
+  pack.needsReview = [...new Set([...(pack.needsReview || []), ...Object.keys(added).map(key => "text." + key)])];
+})();
+
+// B184: external package changes during a native document save.
+(() => {
+  const pack = window.SHOSAI_I18N_PACKS["en"];
+  const added = {
+  "元のファイルを残すため、別の名前か別の場所を選んでください。": "Choose a different name or location to keep the original file.",
+  "別のアプリケーションがこのファイルを変更しました。": "Another application has changed this file.",
+  "「読み直す」は未保存の変更を破棄してファイルを開き直します。「別名で保存」は元のファイルを残します。「このまま上書き」は開いているショーで外部の変更を置き換えます。": "Reload discards unsaved changes and reopens the file. Save As keeps the original file. Overwrite replaces the external changes with the show currently open.",
+  "読み直す": "Reload",
+  "別名で保存": "Save As",
+  "このまま上書き": "Overwrite"
+};
+  Object.assign(pack.text, added);
+  pack.needsReview = [...new Set([...(pack.needsReview || []), ...Object.keys(added).map(key => "text." + key)])];
+})();
+
+// B191: external reload preserves unapplied drafts without applying to the old show.
+(() => {
+  const pack = window.SHOSAI_I18N_PACKS["en"];
+  const added = {
+  "読み直す前に": "Before reloading",
+  "まだ適用していない照明の編集は、下書きとして残します。読み直したショーには入りません。": "Unapplied lighting edits will be kept as a draft. They will not be included in the reloaded show.",
+  "読み直すと、まだ適用していない照明の編集は失われます。": "Reloading will discard unapplied lighting edits.",
+  "下書きを残して読み直す": "Keep draft and reload",
+  "破棄して読み直す": "Discard and reload",
+  "まだ反映していない劇場設定の変更は、下書きとして残します。読み直したショーには入りません。": "Unapplied theatre settings will be kept as a draft. They will not be included in the reloaded show."
 };
   Object.assign(pack.text, added);
   pack.needsReview = [...new Set([...(pack.needsReview || []), ...Object.keys(added).map(key => "text." + key)])];

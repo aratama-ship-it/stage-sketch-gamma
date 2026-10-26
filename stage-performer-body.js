@@ -308,6 +308,16 @@
     return `rgba(${(value >> 16) & 255},${(value >> 8) & 255},${value & 255},${alpha})`;
   }
 
+  // stage-sketch.js publishes the box/mesh prop projectors in its own window only.
+  // The lighting iframe owns its own copy of this module and never paints
+  // rig.props (stage-figure's paintProps is empty), so it skips those props
+  // instead of borrowing the host projector: with scene animation on, borrowing
+  // projected every mesh in every view on every frame and hung the Mac
+  // WKWebView at 4-6 (G-185 follow-up, Astra b183 2026-10-25).
+  function posePropBody() {
+    return root.SHOSAI_STAGE_BODY || null;
+  }
+
   function projectRig(pose, project, ux, uy = ux) {
     const joints = pose.joints;
     const P = {};
@@ -435,9 +445,14 @@
      * 位置は関節と同じ体の座標（x=左右／y=上下／z=正面向き）。 */
     let props = null;
     if (pose.props && pose.props.length) {
+      const body = posePropBody();
       props = pose.props.map((prop) => {
-        if (prop.kind === "box") return root.SHOSAI_STAGE_BODY.projectPoseBox(prop, project);
-        if (prop.kind === "mesh") return root.SHOSAI_STAGE_BODY.projectPoseMesh(prop, project);
+        // Without this window's projector (the lighting iframe), skip the prop and
+        // keep the joints and scene controls usable; the source pose is unchanged.
+        if (prop.kind === "box" || prop.kind === "mesh") {
+          const name = prop.kind === "box" ? "projectPoseBox" : "projectPoseMesh";
+          return typeof body?.[name] === "function" ? body[name](prop, project) : null;
+        }
         const out = { kind: prop.kind, r: prop.r || 0, w: prop.w || 0.02, tone: prop.tone || "gear" };
         if (prop.kind === "line") {
           out.a = project(prop.a[0], prop.a[1], prop.a[2]);
@@ -457,7 +472,7 @@
           }
         }
         return out;
-      });
+      }).filter(Boolean);
     }
 
     /* 道具の輪。体の正面の面（z=0）に立つ円なので、向きを変えると

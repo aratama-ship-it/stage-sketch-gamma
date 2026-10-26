@@ -610,122 +610,259 @@
     }
     const load = $(".stage-phone-load");
     const info = $(".stage-phone-info-toggle");
-    const viewToggle = $(".stage-phone-view-toggle");
     const prev = $(".stage-phone-scene-prev");
     const next = $(".stage-phone-scene-next");
     const current = $(".stage-phone-scene-current");
     const settings = $(".stage-phone-title-settings");
     const projectName = $(".stage-phone-project");
     const version = $(".stage-phone-title-version");
-    const appName = $(".stage-phone-title-name");
-    const badges = [$("#stage-session-guest-badge"), $("#stage-session-whoami")].filter(Boolean);
-
-    /* 上部の題: [版] [ショー名 → ショーを開く] [情報] [設定] */
+    const infoPanel = $(".stage-phone-info");
+    const sourcePanel = $(".stage-phone-source");
+    const settingsPanel = $(".stage-phone-settings");
+    const memo = $(".stage-phone-memo");
+    const viewSelect = $("#stage-view-select");
+    if (!load || !info || !settings || !infoPanel || !sourcePanel || !settingsPanel || !memo || !viewSelect) {
+      throw new Error("phone controls missing");
+    }
     const bar = el("div", "gm-phone-bar", { "data-no-i18n": "" });
     if (version) bar.append(version);
-    if (appName) appName.hidden = true;
     const showName = button("gm-show-name", tx("ショーを開く・書き出す"));
     const showNameText = el("span", "gm-show-name-text");
     showName.append(showNameText);
-    showName.addEventListener("click", () => { if (load) load.click(); });
-    bar.append(showName);
-    badges.forEach((b) => bar.append(b));
-    if (info) { info.classList.add("gm-icon-btn", "gm-phone-info"); info.innerHTML = `${ICON.info}<span class="gm-phone-btn-label"></span>`; bar.append(info); }
-    const share = $("#stage-share-open");
-    if (share) { share.classList.add("gm-icon-btn"); bar.append(share); }
-    if (settings) { settings.classList.add("gm-icon-btn"); bar.append(settings); }
+    showName.addEventListener("click", () => load.click());
+    info.classList.add("gm-icon-btn", "gm-phone-info");
+    info.innerHTML = ICON.info;
+    settings.classList.add("gm-icon-btn");
+    bar.append(showName, info, settings);
+    // Keep account identity and the existing share entry available in settings.
+    [$("#stage-session-guest-badge"), $("#stage-session-whoami"), $("#stage-share-open")]
+      .filter(Boolean).forEach(node => settingsPanel.append(node));
     title.replaceChildren(bar);
-    const storageBand = $("#stage-storage-band");
-    if (storageBand) title.after(storageBand);
 
-    /* めくる列: [‹][帯][›] */
     const nav = el("div", "gm-phone-nav", { "data-no-i18n": "" });
-    if (prev) { prev.className = "gm-icon-btn gm-scene-prev"; prev.innerHTML = ICON.prev; }
-    if (next) { next.className = "gm-icon-btn gm-scene-next"; next.innerHTML = ICON.next; }
-    const strip = makeStrip({ onCurrentTap: () => { if (current) current.click(); } });
-    if (prev) nav.append(prev);
-    nav.append(strip.host);
-    if (next) nav.append(next);
-    /* 旧「現在のシーン名」ボタンは、帯の現在チップから click() で借りるだけ。画面には出さない
-       （visually-hidden だと 1px の当たりとして design-lint に数えられ、被覆にもなる）。 */
-    if (current) { current.hidden = true; current.setAttribute("tabindex", "-1"); nav.append(current); }
+    if (prev) { prev.className = "gm-icon-btn gm-scene-prev"; prev.innerHTML = ICON.prev; nav.append(prev); }
+    // Phone navigation has a single current scene, opening the existing full-screen list.
+    const currentChip = button("gm-phone-current", tx("全画面のシーン一覧を開く"));
+    currentChip.setAttribute("aria-haspopup", "dialog");
+    if (current) {
+      mirrorText(current, currentChip);
+      currentChip.addEventListener("click", () => current.click());
+      current.hidden = true;
+      current.tabIndex = -1;
+      toolbar.append(current);
+    }
+    nav.append(currentChip);
+    if (next) { next.className = "gm-icon-btn gm-scene-next"; next.innerHTML = ICON.next; nav.append(next); }
     board.insertBefore(nav, toolbar);
+    toolbar.hidden = true;
+    toolbar.append(load);
 
-    /* シーンの説明（1行・押すと広がる） */
+    const settingsLink = button("gm-phone-settings-link", tx("設定"));
+    settingsLink.addEventListener("click", () => { settings.click(); lastTrigger = showButton; });
+    sourcePanel.append(settingsLink);
+    const tools = el("div", "gm-phone-tools", { "data-no-i18n": "" });
+    const viewButton = button("gm-phone-tool", tx("表示"), { "data-gm-phone-tool": "view" });
+    const infoButton = button("gm-phone-tool", tx("情報"), { "data-gm-phone-tool": "info" });
+    const memoButton = button("gm-phone-tool", tx("メモ"), { "data-gm-phone-tool": "memo" });
+    const showButton = button("gm-phone-tool", tx("ショー"), { "data-gm-phone-tool": "show" });
+    tools.append(viewButton, infoButton, memoButton, showButton);
+    board.append(tools);
+    const viewPanel = el("section", "gm-phone-views");
+    viewPanel.hidden = true;
+    board.append(viewPanel);
+    memo.hidden = true;
+    board.append(memo);
+    // Reuse the description input and its original input/undo handlers.
     const desc = $(".stage-scene-desc");
     const descHost = el("div", "gm-desc");
     if (desc) descHost.append(desc);
-    board.insertBefore(descHost, toolbar);
-    toolbar.hidden = true;
-    if (load) { load.classList.add("gm-phone-load"); toolbar.append(load); }
+    infoPanel.append(descHost);
+    // The old info textarea duplicates the memo input. Keep its synchronization wired,
+    // while offering the description here and the memo in its own panel.
+    const oldNote = $("textarea", infoPanel);
+    if (oldNote) oldNote.hidden = true;
+    const storageBand = $("#stage-storage-band");
+    if (storageBand) infoPanel.append(storageBand);
+    const audioHost = el("div", "gm-phone-audio");
+    infoPanel.append(audioHost);
 
-    /* 横向きの右レール */
-    const rail = el("div", "gm-phone-rail", { "data-no-i18n": "" });
-    if (viewToggle) { viewToggle.classList.add("gm-rail-btn"); }
-    board.append(rail);
+    const panels = [infoPanel, memo, sourcePanel, settingsPanel, viewPanel];
+    const titles = ["情報", "メモ", "ショー", "設定", "表示"];
+    const nativeTriggers = new Map([[infoPanel, info], [sourcePanel, load], [settingsPanel, settings]]);
+    let lastTrigger = null;
+    function closePanel(panel) {
+      if (panel.hidden) return;
+      const trigger = nativeTriggers.get(panel);
+      if (trigger) trigger.click(); else panel.hidden = true;
+    }
+    function closeOthers(except) { panels.forEach(panel => { if (panel !== except) closePanel(panel); }); }
+    function toggleLocal(panel, trigger) {
+      const opening = panel.hidden;
+      // Refresh the original phone input mirrors after editing the description.
+      if (opening && panel === memo) viewSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      closeOthers(panel);
+      panel.hidden = !opening;
+      lastTrigger = trigger;
+      if (opening) panel.querySelector("button, textarea")?.focus();
+      syncPanels();
+    }
+    const panelLabels = [];
+    panels.forEach((panel, index) => {
+      panel.classList.add("gm-phone-panel");
+      panel.dataset.noI18n = "";
+      panel.id ||= `gm-phone-panel-${index}`;
+      panel.setAttribute("role", "region");
+      const head = el("header", "gm-phone-panel-head");
+      const label = el("strong");
+      const close = button("gm-icon-btn", tx("閉じる"));
+      close.innerHTML = ICON.close;
+      close.addEventListener("click", () => { closePanel(panel); lastTrigger?.focus(); });
+      head.append(label, close);
+      panel.prepend(head);
+      panelLabels.push({ panel, label, close, ja: titles[index] });
+    });
+    [[info, infoPanel], [load, sourcePanel], [settings, settingsPanel]].forEach(([trigger, panel]) => {
+      trigger.setAttribute("aria-controls", panel.id);
+      trigger.addEventListener("click", () => {
+        lastTrigger = trigger === load ? showButton : trigger;
+        closeOthers(panel);
+        syncPanels();
+      });
+    });
+    infoButton.setAttribute("aria-controls", infoPanel.id);
+    infoButton.addEventListener("click", () => { info.click(); lastTrigger = infoButton; });
+    showButton.setAttribute("aria-controls", sourcePanel.id);
+    showButton.addEventListener("click", () => load.click());
+    memoButton.setAttribute("aria-controls", memo.id);
+    memoButton.addEventListener("click", () => toggleLocal(memo, memoButton));
+    viewButton.setAttribute("aria-controls", viewPanel.id);
+    viewButton.addEventListener("click", () => toggleLocal(viewPanel, viewButton));
+    document.addEventListener("keydown", event => {
+      if (event.key !== "Escape") return;
+      const open = panels.find(panel => !panel.hidden);
+      if (open) { closePanel(open); lastTrigger?.focus(); }
+    });
+    const viewChoices = [["front", "正面図"], ["plan", "平面図"], ["both", "両方"]].map(([value, ja]) => {
+      const choice = button("gm-phone-view-choice", tx(ja), { "data-gm-phone-view": value });
+      choice.addEventListener("click", () => {
+        setView(value);
+        closePanel(viewPanel);
+        viewButton.focus();
+      });
+      viewPanel.append(choice);
+      return { value, ja, choice };
+    });
+    function setView(value) {
+      window.GAMMA_PHONE_VIEW = value;
+      html.dataset.gmPhoneView = value;
+      viewSelect.value = value === "both" ? "both-front" : value;
+      viewSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      syncView();
+    }
+    function syncView() {
+      const value = window.GAMMA_PHONE_VIEW;
+      html.dataset.gmPhoneView = value;
+      const ja = viewChoices.find(item => item.value === value)?.ja || "両方";
+      viewButton.textContent = `${tx(ja)} ▾`;
+      viewChoices.forEach(item => item.choice.setAttribute("aria-pressed", String(item.value === value)));
+      fitFrames();
+    }
+    viewSelect.addEventListener("change", syncView);
+    // A fresh phone session starts with the pair; the choice stays in this device's shell.
+    window.GAMMA_PHONE_VIEW = "both";
+    html.dataset.gmPhoneView = "both";
 
-    /* 見る位置チップを正面図の上端へ */
     const seats = $("#stage-seat-list");
     const frontCell = $("#stage-front-cell");
     if (seats && frontCell) {
       const seatHost = el("div", "gm-seats");
       seatHost.append(seats);
-      const inner = $("#stage-front-inner", frontCell) || frontCell.firstElementChild;
-      frontCell.insertBefore(seatHost, inner);
+      frontCell.prepend(seatHost);
     }
-
-    /* 縦向き: 図の幅を「実際に配られた高さ」から逆算する（メモ欄と隙間を引く）。
-       CSSの 100dvh 計算だと、情報・ショー・設定の帯が開いたときに図があふれる。 */
-    const memo = $(".stage-phone-memo");
-    let lastFrameW = "";
     function fitFrames() {
-      if (!portraitMQ.matches) { stack.style.removeProperty("--gm-frame-w"); lastFrameW = ""; return; }
-      const memoH = memo && !memo.hidden ? memo.getBoundingClientRect().height : 0;
-      const available = stack.clientHeight - memoH - 26;
-      const width = `${Math.max(160, Math.floor(available / 2 * 4 / 3))}px`;
-      if (width === lastFrameW) return;
-      lastFrameW = width;
-      stack.style.setProperty("--gm-frame-w", width);
-    }
-    if (typeof ResizeObserver === "function") {
-      /* 同じフレーム内で書き戻すと「ResizeObserver loop」の警告になるので、次のフレームで測り直す */
-      let fitRequest = 0;
-      const ro = new ResizeObserver(() => {
-        if (fitRequest) return;
-        fitRequest = requestAnimationFrame(() => { fitRequest = 0; fitFrames(); });
-      });
-      ro.observe(stack);
-      if (memo) ro.observe(memo);
-    }
-    window.addEventListener("resize", fitFrames);
-    onOrientation(() => setTimeout(fitFrames, 0));
-
-    /* 横向きだけ図の左上へシーン名を重ねる */
-    const tag = el("div", "gm-scene-tag", { "aria-hidden": "true", "data-no-i18n": "" });
-    if (current) mirrorText(current, tag);
-    stack.append(tag);
-
-    /* 向きで置き場所を変える。同じ要素を動かすだけ（配線は変わらない） */
-    function layout() {
+      const both = window.GAMMA_PHONE_VIEW === "both";
       const portrait = portraitMQ.matches;
-      if (portrait) {
-        if (prev) nav.prepend(prev);
-        if (next) nav.append(next);
-        if (info) bar.insertBefore(info, settings || null);
-        if (share) bar.insertBefore(share, settings || null);
-        if (settings) bar.append(settings);
-        if (load) toolbar.append(load);
-        if (viewToggle) toolbar.append(viewToggle);
-        rail.replaceChildren();
-      } else {
-        rail.replaceChildren();
-        [viewToggle, info, load, share, settings, prev, next].filter(Boolean).forEach((b) => rail.append(b));
-      }
-      html.classList.toggle("gm-phone-landscape", !portrait);
+      const rows = portrait && both ? 2 : 1;
+      const columns = !portrait && both ? 2 : 1;
+      const ratio = portrait ? 4 / 3 : 16 / 9;
+      const width = Math.max(0, Math.floor(Math.min((stack.clientWidth - 12) / columns,
+        (stack.clientHeight - 12) / rows * ratio)));
+      const value = `${width}px`;
+      if (stack.style.getPropertyValue("--gm-frame-w") !== value) stack.style.setProperty("--gm-frame-w", value);
     }
-    onOrientation(() => setTimeout(layout, 0));
-    layout();
-    fitFrames();
+    let fitRequest = 0;
+    if (typeof ResizeObserver === "function") new ResizeObserver(() => {
+      if (!fitRequest) fitRequest = requestAnimationFrame(() => { fitRequest = 0; fitFrames(); });
+    }).observe(stack);
+    window.addEventListener("resize", fitFrames);
+    onOrientation(fitFrames);
+
+    // Only an isolated audio-offline warning is relocated. A mixed/general import failure
+    // returns to the original alert surface; no error is suppressed by CSS or text filtering.
+    const offlineKey = "次の音源はオフライン（未接続）です。再接続で元ファイルを選び直してください。";
+    let noticeSignature = "";
+    let seenSignature = "";
+    function syncNotice() {
+      const notice = $("#stage-import-notice");
+      const text = notice?.querySelector("span")?.textContent || "";
+      const audioOnly = text.startsWith(tx(offlineKey)) && !text.includes("\n\n");
+      if (notice && audioOnly && notice.parentElement !== audioHost) {
+        audioHost.append(notice);
+        notice.classList.add("gm-phone-audio-notice");
+      } else if (notice && !audioOnly && notice.parentElement === audioHost) {
+        document.body.append(notice);
+        notice.classList.remove("gm-phone-audio-notice");
+      }
+      noticeSignature = [storageBand && !storageBand.hidden ? storageBand.textContent : "",
+        notice && audioOnly && !notice.hidden ? text : ""].join("|");
+      const unread = noticeSignature !== "|" && noticeSignature !== seenSignature;
+      [info, infoButton].forEach(button => {
+        button.classList.toggle("has-unread", unread);
+        if (unread) button.setAttribute("aria-description", tx("保存・音源の案内があります"));
+        else button.removeAttribute("aria-description");
+      });
+    }
+    // The old fold action now closes Info; reopening Info always reveals the full notice.
+    const bandFold = $("#stage-storage-band-fold");
+    if (bandFold) bandFold.addEventListener("click", event => {
+      event.stopImmediatePropagation();
+      closePanel(infoPanel);
+      infoButton.focus();
+    }, true);
+    function syncPanels() {
+      if (!infoPanel.hidden) {
+        storageBand?.classList.remove("is-folded");
+        seenSignature = noticeSignature;
+      }
+      [[infoButton, infoPanel], [memoButton, memo], [showButton, sourcePanel], [viewButton, viewPanel],
+        [info, infoPanel], [settings, settingsPanel]].forEach(([button, panel]) => {
+        button.setAttribute("aria-expanded", String(!panel.hidden));
+        button.setAttribute("aria-pressed", String(!panel.hidden));
+      });
+      syncNotice();
+    }
+    panels.forEach(panel => new MutationObserver(syncPanels).observe(panel, { attributes: true, attributeFilter: ["hidden"] }));
+    if (storageBand) new MutationObserver(syncNotice).observe(storageBand, { subtree: true, childList: true,
+      characterData: true, attributes: true, attributeFilter: ["hidden", "data-state"] });
+    // Observe new alerts and later replacements, without observing our badge attributes.
+    const noticeObserver = new MutationObserver(() => {
+      const notice = $("#stage-import-notice");
+      if (notice && !notice.dataset.gmObserved) {
+        notice.dataset.gmObserved = "1";
+        new MutationObserver(syncNotice).observe(notice, { subtree: true, childList: true,
+          characterData: true, attributes: true, attributeFilter: ["hidden"] });
+      }
+      syncNotice();
+    });
+    noticeObserver.observe(document.body, { childList: true });
+    const initialNotice = $("#stage-import-notice");
+    if (initialNotice) {
+      initialNotice.dataset.gmObserved = "1";
+      new MutationObserver(syncNotice).observe(initialNotice, { subtree: true, childList: true,
+        characterData: true, attributes: true, attributeFilter: ["hidden"] });
+    }
+    syncPanels();
+    setView("both");
 
     /* ショー名 */
     function syncShowName() {
@@ -766,12 +903,20 @@
 
     relabelers.push(() => {
       showName.setAttribute("aria-label", tx("ショーを開く・書き出す"));
-      const label = info && info.querySelector(".gm-phone-btn-label");
-      if (label) label.textContent = tx("情報");
-      syncShowName();
+      info.innerHTML = ICON.info;
+      if (bandFold) { bandFold.textContent = tx("閉じる"); bandFold.setAttribute("aria-label", tx("閉じる")); }
+      settingsLink.textContent = tx("設定");
+      settingsLink.setAttribute("aria-label", tx("設定"));
+      [[infoButton, "情報"], [memoButton, "メモ"], [showButton, "ショー"]].forEach(([button, ja]) => {
+        button.textContent = tx(ja); button.setAttribute("aria-label", tx(ja));
+      });
+      panelLabels.forEach(({ panel, label, close, ja }) => {
+        label.textContent = tx(ja); panel.setAttribute("aria-label", tx(ja)); close.setAttribute("aria-label", tx("閉じる"));
+      });
+      viewChoices.forEach(({ choice, ja }) => { choice.textContent = tx(ja); choice.setAttribute("aria-label", tx(ja)); });
+      syncView(); syncNotice(); syncShowName();
     });
-    const label = info && info.querySelector(".gm-phone-btn-label");
-    if (label) label.textContent = tx("情報");
+    relabelers[relabelers.length - 1]();
   }
 
   try { if (tablet) initTablet(); else if (phone) initPhone(); }

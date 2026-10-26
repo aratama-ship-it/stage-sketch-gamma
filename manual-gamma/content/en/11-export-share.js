@@ -51,9 +51,9 @@ ${table(["Table", "Setting", "Contents"], [
 <li>Beta shows can be read, and their old lighting is converted (${ref("light-legacy", "Part 7, 7-8")}).</li>
 <li>JSON written with AI showwright is imported here too (${ref("ai-showwright", "11-6")}).</li>
 </ul>
-${fig("release087-project-open", "All shows: choose a show stored on this device to open it.", "Open a project")}
-${fig("release087-project-save", "Export a project with its audio.", "Save a project")}
-${fig("release087-previous-shows", "Previous shows on Mac: select an earlier show and save it as a project.", "Previous shows")}
+${fig("release088-project-open", "All shows: choose a show stored on this device to open it.", "Open a project")}
+${fig("release088-project-save", "Export a project with its audio.", "Save a project")}
+${fig("release088-previous-shows", "Previous shows on Mac: select an earlier show and save it as a project.", "Previous shows")}
 `
       },
       {

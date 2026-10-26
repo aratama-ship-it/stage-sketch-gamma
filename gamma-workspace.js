@@ -835,9 +835,14 @@
        * Apple HIG: 主操作は行の右端、キャンセルはそのすぐ左、3つ目の閉じるボタンはさらに左。
        * macOSの「保存しない／キャンセル／保存」と同じ形。
        * ★T-14 で一度「主操作を左」にしたが、Macに合わせる方針で戻した（蒸し返さない）。 */
-      acts.append(mk(translate(text.skip),'skip','btn-quiet'),
-                  mk(translate('キャンセル'),'cancel','btn-quiet'),
-                  mk(translate(text.apply),'apply','stage-minor-action'));
+      if (text.apply) {
+        acts.append(mk(translate(text.skip),'skip','btn-quiet'),
+                    mk(translate('キャンセル'),'cancel','btn-quiet'),
+                    mk(translate(text.apply),'apply','stage-minor-action'));
+      } else {
+        acts.append(mk(translate('キャンセル'),'cancel','btn-quiet'),
+                    mk(translate(text.skip),'skip','stage-minor-action'));
+      }
       box.append(acts);
       let releaseFocus=null,closed=false;
       const background=[];
@@ -903,6 +908,7 @@
   // Native document switches use this guard before any candidate is delivered.
   async function prepareDocumentTransition(request) {
     const current = () => request.isCurrent();
+    const externalReload = request.purpose === 'externalReload';
     const light=editor();
     await light?.waitForApply?.();
     if (!current()) return false;
@@ -913,30 +919,38 @@
     // The native shell still requires flush + successful show persistence, then
     // owns the single export/discard/cancel choice for a stopped ledger.
     const ledgerExit=stopped();
-    if (!ledgerExit && (lightStatus?.dirty || (recoveryUnavailable && lightStatus.hasUnappliedDrafts))) {
+    if ((externalReload || !ledgerExit) && (lightStatus?.dirty || (recoveryUnavailable && lightStatus.hasUnappliedDrafts))) {
       // Do not promise a durable draft when startup has disabled recovery. Reuse
       // the existing confirmation and its choices; cancellation keeps runtime state.
-      const copy=recoveryUnavailable ? {title:'照明をショーへ適用しますか？',
+      const copy=externalReload ? {title:'読み直す前に',
+        body:recoveryUnavailable ? '読み直すと、まだ適用していない照明の編集は失われます。'
+          : 'まだ適用していない照明の編集は、下書きとして残します。読み直したショーには入りません。',
+        skip:recoveryUnavailable ? '破棄して読み直す' : '下書きを残して読み直す',apply:null}
+        : recoveryUnavailable ? {title:'照明をショーへ適用しますか？',
         body:'まだ適用していない照明の編集があります。適用すると、いまの照明がこのショーへ保存されます。',
         skip:'適用しないで移る',apply:'適用して移る'} : null;
       const answer=await askLeaveOnce(copy,document.activeElement,request.signal);
       if (!current()) return false;
       if(answer==='cancel'){request.cancel?.();return false;}
+      if (externalReload && answer!=='skip') return false;
       if (answer==='apply') {
         const result=await light.apply();
         if (!current() || !result?.persisted || light.status().dirty) return false;
-      } else if (!recoveryUnavailable && !await (light.saveDraftDurably?.() ?? light.saveDraft?.()) && !stopped()) return false;
+      } else if (!recoveryUnavailable && !await (light.saveDraftDurably?.() ?? light.saveDraft?.()) && (externalReload || !stopped())) return false;
     }
-    if (!current() || (!recoveryUnavailable && !ledgerExit && !await (light?.saveAllDraftsDurably?.() ?? true) && !stopped())) return false;
+    if (!current() || (!recoveryUnavailable && (externalReload || !ledgerExit) && !await (light?.saveAllDraftsDurably?.() ?? true) && (externalReload || !stopped()))) return false;
     const venue=window.SHOSAI_VENUE_EDITOR;
     if (request.purpose !== 'venueVersion' && venue?.hasUnappliedChanges?.()) {
-      const answer=await askLeaveOnce({title:'この劇場をショーへ反映しますか？',
+      const answer=await askLeaveOnce(externalReload ? {title:'読み直す前に',
+        body:'まだ反映していない劇場設定の変更は、下書きとして残します。読み直したショーには入りません。',
+        skip:'下書きを残して読み直す',apply:null} : {title:'この劇場をショーへ反映しますか？',
         body:'まだ反映していない劇場設定の変更があります。反映すると、いまの劇場がこのショーへ入ります。'
           +'<br>反映しないで移っても編集内容は残り、次に劇場設定を開いたときに戻ります。'
           +'ただしショー本体にはまだ入りません。',
         skip:'反映しないで移る',apply:'この劇場を反映する'},document.activeElement,request.signal);
       if (!current()) return false;
       if(answer==='cancel'){request.cancel?.();return false;}
+      if (externalReload && answer!=='skip') return false;
       if (answer==='apply') {
         if (!await venue.applyForDocumentTransition?.(request) || !current()) return false;
       } else if (!venue.save?.()) return false;
@@ -1075,7 +1089,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261025-v0387'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261026-v0388'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;

@@ -5,6 +5,17 @@
   let context=null, loading=false, active=false, changedElsewhere=false, appliedExtras={};
   let draftTimer=0, lastScene='', playbackPreview=false;
   let timelineFollowing=false, timelineFrameRaf=0, cuePanelStamp='';
+  // The workspace preview uses a 33ms gate. Keep the exact 30/s ceiling here
+  // too (33ms alone could reach 30.3/s on a high-refresh display).
+  const hostFrameIntervalMs=Math.max(33,1000/30);
+  let timelineFrameLast=-Infinity, timelineFrameInput=null;
+  const placementFields=['id','kind','u','v','hM','base','w','pose','facing','open','exitWalker'];
+  function sameHostPlaybackFrame(a,b) {
+    if(a===b) return true;
+    if(!a || !b || a.showId!==b.showId || a.sceneId!==b.sceneId || a.tMs!==b.tMs
+      || a.running!==b.running || a.cueId!==b.cueId || a.pieces.length!==b.pieces.length) return false;
+    return a.pieces.every((piece,index)=>placementFields.every(key=>piece[key]===b.pieces[index][key]));
+  }
   hooks.setCuePlacementReader(()=>{
     if(!context || !parent.SHOSAI_STAGE_SESSION_BRIDGE || !parent.STAGE_TIME_DOMAIN)return null;
     const project=JSON.parse(parent.SHOSAI_STAGE_SESSION_BRIDGE.exportDocumentString()).project;
@@ -22,16 +33,24 @@
   function clearTimelineFrame() {
     timelineFollowing=false;
     if(timelineFrameRaf) cancelAnimationFrame(timelineFrameRaf);
-    timelineFrameRaf=0;hooks.setTimelinePlaybackFrame(null);
+    timelineFrameRaf=0;timelineFrameLast=-Infinity;timelineFrameInput=null;
+    hooks.setTimelinePlaybackFrame(null);
   }
-  function paintHostPlaybackFrame() {
+  function paintHostPlaybackFrame(at,entering=false) {
     timelineFrameRaf=0;
     if(!active || playbackPreview || document.hidden || state.mode!=='move'
-      || parent.document.body.dataset.stageWorkspaceMode!=='light-design') return;
+      || (!entering && parent.document.body.dataset.stageWorkspaceMode!=='light-design')) return;
+    if(at-timelineFrameLast<hostFrameIntervalMs) {
+      timelineFrameRaf=requestAnimationFrame(paintHostPlaybackFrame);return;
+    }
+    timelineFrameLast=at;
     const input=parent.GAMMA_LIGHT_HOST.readPlaybackPreview();
-    hooks.setTimelinePlaybackFrame(input?.showId===context?.showId ? input : null);
-    window.GAMMA_SIMPLE_LIGHT_UI?.refreshPlayback?.();
-    if(input?.running) timelineFrameRaf=requestAnimationFrame(paintHostPlaybackFrame);
+    const next=input?.showId===context?.showId ? input : null;
+    if(!sameHostPlaybackFrame(next,timelineFrameInput)) {
+      hooks.setTimelinePlaybackFrame(next);timelineFrameInput=next;
+      window.GAMMA_SIMPLE_LIGHT_UI?.refreshPlayback?.();
+    }
+    if(next?.running) timelineFrameRaf=requestAnimationFrame(paintHostPlaybackFrame);
   }
   function syncTimelineFrame(event) {
     if(!active || loading || playbackPreview || state.mode!=='move' || document.hidden
@@ -494,12 +513,13 @@
     document.documentElement.dataset.gammaLightMode=state.mode;
     if(state.mode==='place') {state.aimMirror=null;hooks.stop();}
     else {
-      // Seed before the first paint so a scene change cannot flash its final placement.
-      const input=parent.GAMMA_LIGHT_HOST.readPlaybackPreview();
-      if(input?.showId===context?.showId && (input.running || timelineFollowing)) {
-        timelineFollowing=true;hooks.setTimelinePlaybackFrame(input);
-        if(input.running && !timelineFrameRaf) timelineFrameRaf=requestAnimationFrame(paintHostPlaybackFrame);
-      }
+      // Seed before renderAll, through the same gate as later animation frames.
+      // Cancel the old callback so re-entering cannot leave two ticking chains.
+      if(timelineFrameRaf) cancelAnimationFrame(timelineFrameRaf);
+      // The host updates its workspace flag after open() returns. The initial
+      // seed may run now; the scheduled callbacks still require that flag.
+      paintHostPlaybackFrame(performance.now(),true);
+      if(timelineFrameInput) timelineFollowing=true;
     }
     hooks.renderAll();
   }

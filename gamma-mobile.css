@@ -607,219 +607,138 @@ html.stage-phone-viewer.gm-phone .gm-phone-bar #stage-share-open {
    iPhone（確認機）
    ======================================================================== */
 
-/* 段: 題44 ｜ めくる56 ｜ 説明 ｜ 情報 ｜ ショー ｜ 設定 ｜ 図 */
+/* B185: copied tokens from the performer phone shell; no shared stylesheet import.
+ * Numeric source: docs/b185-phone-tokens.md. Only gm-phone receives these values. */
+html.stage-phone-viewer.gm-phone {
+  --gm-phone-header: 52px;
+  --gm-phone-scenes: 44px;
+  --gm-phone-tools: 56px;
+  --gm-phone-rail: 64px;
+  --gm-phone-panel: 360px;
+  --gm-phone-bg: #191512;
+  --gm-phone-identity: #1c272c;
+  --gm-phone-accent: #81bfd4;
+  --gm-phone-strong: #9dd4e6;
+  --gm-phone-selected: #223138;
+  --gm-phone-dot: #df6433;
+}
 html.stage-phone-viewer.gm-phone .stage-board-column {
-  grid-template-rows: 44px 56px auto auto auto auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: var(--gm-phone-header) var(--gm-phone-scenes) minmax(0, 1fr) var(--gm-phone-tools);
 }
-html.stage-phone-viewer.gm-phone .stage-phone-title { grid-row: 1; padding: 0; align-items: stretch; }
-html.stage-phone-viewer.gm-phone .gm-phone-nav { grid-row: 2; }
-html.stage-phone-viewer.gm-phone .gm-desc { grid-row: 3; }
-html.stage-phone-viewer.gm-phone .stage-phone-info { grid-row: 4; }
-html.stage-phone-viewer.gm-phone .stage-phone-source { grid-row: 5; }
-html.stage-phone-viewer.gm-phone .stage-phone-settings { grid-row: 6; }
-html.stage-phone-viewer.gm-phone .stage-canvas-stack { grid-row: 7; }
+html.stage-phone-viewer.gm-phone .stage-phone-title { display: block; grid-row: 1; grid-column: 1; padding: 0; min-height: 0; }
 html.stage-phone-viewer.gm-phone .stage-phone-toolbar { display: none !important; }
-html.stage-phone-viewer.gm-phone .gm-phone-rail { display: none; }
-html.stage-phone-viewer.gm-phone .gm-scene-tag { display: none; }
-html.stage-phone-viewer.gm-phone .gm-hidden-live {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  overflow: hidden !important;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
-  padding: 0;
-  margin: -1px;
-}
-
 html.stage-phone-viewer.gm-phone .gm-phone-bar {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-  height: 44px;
-  padding: 0 4px 0 10px;
-  background: var(--stage-ui-phone, #15120f);
+  display: flex; align-items: center; gap: 4px; height: 100%; min-width: 0;
+  padding: 0 4px 0 12px; background: var(--gm-phone-identity); color: var(--gm-phone-strong);
 }
-/* 版の文字は --ink-soft だと #15120F 上で 3.02:1（design-lint実測）なので --milk-dim（6.9:1）にする */
-html.stage-phone-viewer.gm-phone .gm-phone-bar .stage-phone-title-version { flex: 0 0 auto; color: var(--milk-dim); font-size: var(--fs-1, 9px); letter-spacing: 0.04em; }
+html.stage-phone-viewer.gm-phone .gm-phone-bar .stage-phone-title-version { flex: 0 0 auto; color: var(--gm-phone-strong); font-size: 9px; }
 html.stage-phone-viewer.gm-phone .gm-show-name {
-  flex: 1 1 auto;
-  display: inline-flex;
-  align-items: center;
-  min-width: 0;
-  min-height: 44px;
-  padding: 0 6px;
-  border: 0;
-  background: transparent;
-  color: var(--milk);
-  font-family: var(--serif);
-  font-size: var(--fs-5, 13px);
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-align: left;
+  flex: 1 1 0; min-width: 0; min-height: var(--gm-hit); display: flex; align-items: center;
+  padding: 0 6px; border: 0; background: transparent; color: var(--gm-phone-strong);
+  font: 500 13px/1.5 var(--serif);
 }
 html.stage-phone-viewer.gm-phone .gm-show-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-html.stage-phone-viewer.gm-phone .gm-phone-bar .stage-session-guest-badge,
-html.stage-phone-viewer.gm-phone .gm-phone-bar .stage-session-whoami { flex: 0 1 auto; min-width: 0; max-width: 30vw; margin: 0; padding: 0 4px; font-size: var(--fs-1, 9px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-html.stage-phone-viewer.gm-phone .gm-phone-bar .stage-phone-title-settings { margin: 0; border: 0; }
-html.stage-phone-viewer.gm-phone .gm-phone-bar .gm-phone-info { width: auto; padding: 0 8px; gap: 2px; grid-auto-flow: column; }
-html.stage-phone-viewer.gm-phone .gm-phone-info svg { width: 16px; height: 16px; }
-html.stage-phone-viewer.gm-phone .gm-phone-btn-label { font-size: var(--fs-3, 11px); letter-spacing: 0.04em; }
-html.stage-phone-viewer.gm-phone .gm-phone-bar .gm-icon-btn svg { width: 18px; height: 18px; }
-html.stage-phone-viewer.gm-phone .gm-phone-bar .stage-phone-title-settings svg { width: 18px; height: 18px; }
-
+/* gamma-appearance adds gamma-icon-button after opening panels. Its !important
+ * dimensions use this token; retain the phone's 44px target even after that pass. */
+html.stage-phone-viewer.gm-phone .gm-icon-btn { --gamma-icon-box: var(--gm-hit); }
+html.stage-phone-viewer.gm-phone .gm-phone-bar .gm-icon-btn { color: var(--gm-phone-strong); }
+html.stage-phone-viewer.gm-phone .gm-phone-bar svg { width: 18px; height: 18px; }
 html.stage-phone-viewer.gm-phone .gm-phone-nav {
-  display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) 48px;
-  align-items: stretch;
-  min-width: 0;
-  height: 56px;
-  border-bottom: 1px solid var(--line-dark);
-  background: var(--stage-ui-phone, #15120f);
+  grid-row: 2; grid-column: 1; display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px;
+  min-width: 0; height: var(--gm-phone-scenes); background: var(--gm-phone-identity);
 }
-html.stage-phone-viewer.gm-phone .gm-phone-nav .gm-icon-btn { width: 48px; height: 56px; min-height: 56px; color: var(--milk); }
-html.stage-phone-viewer.gm-phone .gm-phone-nav .gm-strip { min-height: 56px; }
-html.stage-phone-viewer.gm-phone .gm-chip { height: 44px; min-height: 44px; padding: 0 8px; }
-
-html.stage-phone-viewer.gm-phone .gm-desc { border-bottom: 1px solid var(--line-dark); background: var(--stage-ui-phone, #15120f); }
-html.stage-phone-viewer.gm-phone .gm-desc .stage-scene-desc { padding: 6px 10px; }
-/* 1行に畳んでおき、触ったときだけ広がる（縦の取り分を図へ渡す） */
-html.stage-phone-viewer.gm-phone .gm-desc .stage-scene-desc-text { min-height: 44px; height: 44px !important; max-height: 44px; padding-top: 10px; overflow: hidden; }
-html.stage-phone-viewer.gm-phone .gm-desc .stage-scene-desc-text:focus { height: 96px !important; max-height: 96px; overflow: auto; }
-
-/* 見る位置チップ: 正面図の上端に半透明の帯で重ねる（正面図の固有操作） */
+html.stage-phone-viewer.gm-phone .gm-phone-nav button { color: var(--gm-phone-strong); }
+html.stage-phone-viewer.gm-phone .gm-phone-current {
+  min-width: 0; min-height: var(--gm-hit); height: var(--gm-hit); border: 0; padding: 0 8px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: transparent;
+  font: 12px/1.5 var(--sans);
+}
+html.stage-phone-viewer.gm-phone .gm-phone-tools {
+  grid-row: 4; grid-column: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  background: var(--gm-phone-identity); min-height: 0;
+}
+html.stage-phone-viewer.gm-phone .gm-phone-tool,
+html.stage-phone-viewer.gm-phone .gm-phone-view-choice {
+  min-width: var(--gm-hit); min-height: var(--gm-hit); padding: 4px; border: 1px solid var(--gm-phone-accent);
+  color: var(--gm-phone-strong); background: var(--gm-phone-identity); font: 12px/1.5 var(--sans);
+}
+html.stage-phone-viewer.gm-phone .gm-phone-tool[aria-pressed="true"],
+html.stage-phone-viewer.gm-phone .gm-phone-view-choice[aria-pressed="true"] { background: var(--gm-phone-selected); }
+html.stage-phone-viewer.gm-phone :is(.gm-phone-tool,.gm-phone-info) { position: relative; }
+html.stage-phone-viewer.gm-phone .has-unread::after {
+  content: ""; position: absolute; right: 4px; top: 4px; width: 5px; height: 5px;
+  border-radius: 50%; background: var(--gm-phone-dot); pointer-events: none;
+}
+html.stage-phone-viewer.gm-phone .gm-phone-panel {
+  position: absolute; z-index: 40; top: auto; right: 0; bottom: var(--gm-phone-tools); left: auto;
+  grid-row: auto; grid-column: auto; width: min(var(--gm-phone-panel), 100%); max-height: 55%;
+  min-width: 0; min-height: 0; height: auto; margin: 0; padding: 12px; box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 8px; overflow: auto; overscroll-behavior: contain;
+  color: var(--gm-phone-strong); background: var(--gm-phone-bg); border: 1px solid var(--gm-phone-accent);
+  animation: gm-phone-rise 180ms ease-out;
+}
+html.stage-phone-viewer.gm-phone .gm-phone-panel[hidden],
+html.stage-phone-viewer.gm-phone .gm-phone-panel [hidden] { display: none !important; }
+html.stage-phone-viewer.gm-phone .gm-phone-panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 4px; flex: 0 0 auto;
+  background: var(--gm-phone-identity); color: var(--gm-phone-strong); font: 500 14px/1.5 var(--sans);
+}
+html.stage-phone-viewer.gm-phone .gm-phone-panel-head .gm-icon-btn { color: inherit; }
+html.stage-phone-viewer.gm-phone .gm-phone-panel .gm-phone-panel-head strong { font: inherit; color: inherit; }
+html.stage-phone-viewer.gm-phone .gm-phone-audio-notice > span { white-space: pre-wrap; overflow: visible; color: inherit; text-align: left; }
+html.stage-phone-viewer.gm-phone .gm-phone-panel button,
+html.stage-phone-viewer.gm-phone .gm-phone-panel select,
+html.stage-phone-viewer.gm-phone .gm-phone-panel a { min-height: var(--gm-hit); min-width: var(--gm-hit); flex-shrink: 0; }
+html.stage-phone-viewer.gm-phone .gm-phone-panel textarea { width: 100%; min-height: 112px; font-size: 16px; flex-shrink: 0; box-sizing: border-box; }
+html.stage-phone-viewer.gm-phone .gm-phone-panel .stage-scene-desc { display: flex; flex-direction: column; align-items: stretch; padding: 0; }
+html.stage-phone-viewer.gm-phone .gm-phone-panel .stage-scene-desc-text { height: auto !important; max-height: none; overflow: auto; }
+html.stage-phone-viewer.gm-phone .gm-phone-panel #stage-storage-band {
+  display: flex; flex-wrap: wrap; width: 100%; max-width: 100%; height: auto; min-height: 44px;
+  padding: 8px; gap: 8px; white-space: normal; overflow: visible; box-sizing: border-box; flex-shrink: 0;
+}
+html.stage-phone-viewer.gm-phone .gm-phone-panel #stage-storage-band :is(button,a) { min-width: 44px; min-height: 44px; height: auto; }
+html.stage-phone-viewer.gm-phone .gm-phone-panel #stage-storage-band #stage-storage-band-fold { min-width: 44px; width: auto; }
+html.stage-phone-viewer.gm-phone .gm-phone-panel #stage-storage-band-message { white-space: normal; overflow: visible; flex-basis: 100%; }
+html.stage-phone-viewer.gm-phone .gm-phone-panel #stage-storage-band :is(span,strong) { white-space: normal; overflow: visible; text-overflow: clip; color: inherit; text-align: left; }
+html.stage-phone-viewer.gm-phone .gm-phone-audio-notice {
+  position: static !important; transform: none !important; max-width: 100% !important;
+  box-sizing: border-box; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+html.stage-phone-viewer.gm-phone .stage-canvas-stack {
+  grid-column: 1; grid-row: 3; grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(2, minmax(0, 1fr));
+  align-content: center; place-items: center; gap: 4px; padding: 4px; min-height: 0;
+}
+html.stage-phone-viewer.gm-phone .stage-canvas-stack.is-single-view { grid-template-rows: minmax(0, 1fr); }
+html.stage-phone-viewer.gm-phone .stage-board-frame {
+  grid-row: auto !important; grid-column: auto; width: var(--gm-frame-w, 100%); height: auto;
+  max-width: 100%; max-height: 100%; margin: 0; aspect-ratio: 4 / 3; justify-self: center;
+}
+html.stage-phone-viewer.gm-phone .stage-board-frame.is-closed { display: none; }
+html.stage-phone-viewer.gm-phone .stage-canvas-inner { min-height: 0; width: 100%; flex: 1 1 auto; }
+html.stage-phone-viewer.gm-phone .stage-canvas-wrap,
+html.stage-phone-viewer.gm-phone :is(#stage-canvas,#stage-plan-canvas) { width: 100%; height: 100%; aspect-ratio: auto; }
 html.stage-phone-viewer.gm-phone #stage-front-cell { position: relative; }
-html.stage-phone-viewer.gm-phone .gm-seats {
-  position: absolute;
-  z-index: 4;
-  top: 0;
-  right: 0;
-  left: 0;
-  padding: 4px 6px;
-  background: linear-gradient(rgba(var(--stage-ui-recess-rgb, 13, 12, 11), 0.86), rgba(var(--stage-ui-recess-rgb, 13, 12, 11), 0));
-  pointer-events: none;
-}
+html.stage-phone-viewer.gm-phone .gm-seats { position: absolute; z-index: 4; top: 0; right: 0; left: 0; pointer-events: none; }
 html.stage-phone-viewer.gm-phone .gm-seats .stage-seat-list {
-  display: flex;
-  gap: 4px;
-  margin: 0;
-  padding-left: 44px; /* 左上の「正面」札を避ける */
-  overflow-x: auto;
-  scrollbar-width: none;
-  pointer-events: auto;
+  display: flex; gap: 4px; margin: 0; padding: 0 0 0 44px; overflow-x: auto; scrollbar-width: none; pointer-events: auto;
 }
-html.stage-phone-viewer.gm-phone .gm-seats .stage-seat-list::-webkit-scrollbar { display: none; }
 html.stage-phone-viewer.gm-phone .gm-seats .stage-seat-list[hidden] { display: none; }
-html.stage-phone-viewer.gm-phone .gm-seats .stage-seat {
-  flex: 0 0 auto;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 8px;
-  background: rgba(25, 21, 18, 0.62);
-  font-size: var(--fs-2, 10px);
-  white-space: nowrap;
-}
-html.stage-phone-viewer.gm-phone .stage-canvas-bar { pointer-events: none; }
-
-/* 縦向き: 両方の図が必ず入る幅（Safariの短い縦でも） */
-@media (orientation: portrait) {
-  html.stage-phone-viewer.gm-phone .stage-canvas-stack { gap: 4px; padding: 4px; }
-  html.stage-phone-viewer.gm-phone .stage-board-frame {
-    width: min(100%, var(--gm-frame-w, calc((100dvh - 232px) / 2 * 4 / 3)));
-    margin: 0 auto;
-  }
-  /* メモ欄は図と同じ幅で下へ */
-  html.stage-phone-viewer.gm-phone .stage-phone-memo { grid-row: 3; }
-}
-
-/* 横向き: 図が縦いっぱい、右に64pxのレール。題・めくる列・説明は消す */
+html.stage-phone-viewer.gm-phone .gm-seats .stage-seat { flex: 0 0 auto; min-width: 44px; min-height: 44px; padding: 0 8px; background: var(--gm-phone-identity); color: var(--gm-phone-strong); font-size: 10px; }
+@keyframes gm-phone-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { html.stage-phone-viewer.gm-phone .gm-phone-panel { animation: none; } }
+/* Landscape retains full-height diagrams and moves the four tools to a 64px rail. */
 @media (orientation: landscape) {
-  html.stage-phone-viewer.gm-phone .stage-board-column {
-    grid-template-columns: minmax(0, 1fr) 64px;
-    grid-template-rows: minmax(0, 1fr);
-  }
+  html.stage-phone-viewer.gm-phone .stage-board-column { grid-template-columns: minmax(0, 1fr) var(--gm-phone-rail); grid-template-rows: minmax(0, 1fr); }
   html.stage-phone-viewer.gm-phone .stage-phone-title,
-  html.stage-phone-viewer.gm-phone .gm-phone-nav,
-  html.stage-phone-viewer.gm-phone .gm-desc { display: none !important; }
-  html.stage-phone-viewer.gm-phone .stage-canvas-stack { grid-row: 1; grid-column: 1; place-items: center; justify-items: center; }
-  /* 図の枠: 高さ100%から幅を逆算する（WebKitで width:auto+max-height だと枠が潰れて真っ黒になる＝作り直し前からの症状） */
-  html.stage-phone-viewer.gm-phone .stage-board-frame {
-    width: auto;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    aspect-ratio: 16 / 9;
-    justify-self: center;
-  }
-  html.stage-phone-viewer.gm-phone .stage-board-frame .stage-canvas-inner { flex: 1 1 auto; min-height: 0; }
-  html.stage-phone-viewer.gm-phone .stage-board-frame .stage-canvas-wrap { height: 100%; width: 100%; aspect-ratio: auto; }
-  html.stage-phone-viewer.gm-phone #stage-canvas,
-  html.stage-phone-viewer.gm-phone #stage-plan-canvas { width: 100%; height: 100%; aspect-ratio: auto; }
-  html.stage-phone-viewer.gm-phone .gm-phone-rail {
-    grid-column: 2;
-    grid-row: 1;
-    z-index: 12;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 2px;
-    min-height: 0;
-    padding: 4px 2px max(4px, env(safe-area-inset-bottom));
-    border-left: 1px solid var(--line-dark);
-    background: var(--stage-ui-phone, #15120f);
-    overflow: hidden auto;
-  }
-  html.stage-phone-viewer.gm-phone .gm-phone-rail > * {
-    display: grid !important;
-    place-items: center;
-    align-content: center;
-    gap: 2px;
-    width: 100%;
-    min-height: 52px;
-    margin: 0;
-    padding: 2px;
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm, 2px);
-    background: transparent;
-    color: var(--milk-dim);
-    font-family: var(--sans);
-    font-size: var(--fs-3, 11px);
-    line-height: 1.1;
-    text-align: center;
-  }
-  html.stage-phone-viewer.gm-phone .gm-phone-rail > .gm-scene-prev,
-  html.stage-phone-viewer.gm-phone .gm-phone-rail > .gm-scene-next { margin-top: auto; }
-  html.stage-phone-viewer.gm-phone .gm-phone-rail > .gm-scene-next { margin-top: 0; }
-  html.stage-phone-viewer.gm-phone .gm-phone-rail > [aria-pressed="true"] { border-color: var(--rust); background: var(--gm-current-bg); color: var(--milk); }
-  html.stage-phone-viewer.gm-phone .gm-phone-rail svg { width: 18px; height: 18px; }
-  html.stage-phone-viewer.gm-phone .gm-phone-rail .stage-phone-view-toggle[hidden] { display: none !important; }
-  /* 図の左上にシーン名 */
-  html.stage-phone-viewer.gm-phone .gm-scene-tag {
-    display: block;
-    position: absolute;
-    z-index: 5;
-    top: auto;
-    bottom: 8px;
-    left: 8px;
-    max-width: 50vw;
-    padding: 4px 8px;
-    background: rgba(var(--stage-ui-recess-rgb, 13, 12, 11), 0.78);
-    color: var(--milk);
-    font-family: var(--sans);
-    font-size: var(--fs-4, 12px);
-    letter-spacing: 0.04em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    pointer-events: none;
-  }
-  html.stage-phone-viewer.gm-phone .stage-canvas-stack { position: relative; }
-  html.stage-phone-viewer.gm-phone .gm-seats .stage-seat-list { padding-left: 0; justify-content: flex-end; }
-  html.stage-phone-viewer.gm-phone .stage-phone-info,
-  html.stage-phone-viewer.gm-phone .stage-phone-source,
-  html.stage-phone-viewer.gm-phone .stage-phone-settings { right: calc(64px + max(8px, env(safe-area-inset-right))); }
+  html.stage-phone-viewer.gm-phone .gm-phone-nav { display: none !important; }
+  html.stage-phone-viewer.gm-phone .stage-canvas-stack { grid-row: 1; grid-column: 1; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); }
+  html.stage-phone-viewer.gm-phone .stage-canvas-stack.is-single-view { grid-template-columns: minmax(0, 1fr); }
+  html.stage-phone-viewer.gm-phone .stage-board-frame { aspect-ratio: 16 / 9; }
+  html.stage-phone-viewer.gm-phone .gm-phone-tools { grid-row: 1; grid-column: 2; grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(4, minmax(44px, 1fr)); overflow: auto; }
+  html.stage-phone-viewer.gm-phone .gm-phone-panel { right: var(--gm-phone-rail); bottom: 0; max-height: 100%; width: min(var(--gm-phone-panel), calc(100% - var(--gm-phone-rail))); }
+  /* Header is absent in landscape, so keep the existing settings entry in the show panel. */
+  html.stage-phone-viewer.gm-phone .gm-seats .stage-seat-list { padding-left: 0; }
 }
 
 /* Keep a separate 28px reminder directly below the mobile shell's top bar. */

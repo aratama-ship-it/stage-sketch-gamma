@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.87";
+  const GAMMA_APP_VERSION = "v0.3.88";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -2553,7 +2553,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-25`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-26`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -11540,7 +11540,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   function nativeProjectSaveState(payload) {
     if (payload.state !== "received" || payload.cancelled === true) { clearTimeout(nativeSavingTimer); nativeSavingTimer = null; }
     if (payload.state === "failed" || payload.state === "hold") {
-      nativeSaveWarning = tx(payload.state === "hold"
+      // Curated shell sentences (marked by the shell, exact table keys) explain this
+      // failure; raw OS text never reaches the band.
+      nativeSaveWarning = payload.detailCurated === true && typeof payload.detail === "string" && payload.detail.trim()
+        ? tx(payload.detail) : tx(payload.state === "hold"
         ? "原本を保全するため、書き込みを保留しています。「保存」で別の保存先を選んでください。"
         : "プロジェクトを保存できませんでした。空き容量と保存先の書き込み権限を確認し、もう一度保存してください。開いているショーはそのまま残してください。");
       const band = document.getElementById("stage-storage-band");
@@ -19069,7 +19072,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return {version:1,showId:state.project.id,sceneId:row.id,sceneTitle:row.title || "シーン",
       design,model,cue:lightCueOverlayCache.effectiveCue,cueId:timelineLightCue.cueId || null,
       cueLabel:st?.link?.q?.label || st?.link?.label || "",tMs:lightEffectClockMs(),
-      running:Boolean(spinRun || (sceneAnim && !sceneAnim.timelineControlled) || timelineLightCue.playing),pieces};
+      // Weather/particle effects use spinRun too, but lighting does not paint
+      // them. Only keep its four views ticking when their light can change.
+      running:Boolean((spinRun && (spinningGobos().length || spinningMirrorBalls().length))
+        || (sceneAnim && !sceneAnim.timelineControlled) || timelineLightCue.playing),pieces};
   }
 
   /* 世界座標（x=幅方向・中央0／y=奥行き・奥が0／z=高さm）を、その図の画面座標へ。
@@ -21146,6 +21152,13 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (!phoneViewerActive) return;
     if (phoneUi && (preferred === "front" || preferred === "plan")) {
       phoneUi.singleView = preferred;
+    }
+    // Phone shell's device-local choice. No effect on tablet/desktop or legacy shell.
+    if (["front", "plan", "both"].includes(window.GAMMA_PHONE_VIEW)) {
+      if (["front", "plan", "both"].includes(preferred)) window.GAMMA_PHONE_VIEW = preferred;
+      state.showFront = window.GAMMA_PHONE_VIEW !== "plan";
+      state.showPlan = window.GAMMA_PHONE_VIEW !== "front";
+      return;
     }
     if (phoneIsPortrait()) {
       state.showFront = true;
@@ -37748,8 +37761,11 @@ document.addEventListener("keydown", function (event) {
             'write-failed':"ファイルへの保存で止まりました。",receipt:"保存記録の確認で止まりました。",
             'destination-exists':"同名のファイルがあります。別の保存先を選んでください。",
             timeout:"待ち時間を超えました。",expired:"待ち時間を超えました。"})[receipt.stage] || "保存の準備で止まりました。");
-          const detail = typeof receipt.detail === 'string' ? receipt.detail.trim() : '';
-          throw Error(`${message}${phase ? ' ' + phase : ''}${detail ? ' ' + detail : ''}${location}`);
+          // Only a curated shell sentence (marked by the shell) joins the message; raw OS text never does.
+          const detail = receipt.detailCurated === true && typeof receipt.detail === 'string' ? receipt.detail.trim() : '';
+          // Composed from the native receipt (curated text, shell detail shown as text, saved path).
+          // The catch below keeps it; other exceptions still get the generic sentence.
+          throw Object.assign(Error("venue receipt"), {venueReceiptText:`${message}${phase ? ' ' + phase : ''}${detail ? ' ' + detail : ''}${location}`});
         }
         announce(tx("劇場をプロジェクトへ保存し、保存した内容を確かめました。"));
       } else {
@@ -37772,7 +37788,7 @@ document.addEventListener("keydown", function (event) {
       if (detail !== pendingVenueApply || (nativeProject && !nativeProject.matches(sourceOwner))) return;
       if (els.venueApplyStatus) els.venueApplyStatus.textContent = error.stage === "capability"
         ? tx("このMac版は劇場を適用するための保存に対応していません。アプリを更新してください。")
-        : tx("劇場を適用できませんでした。劇場の編集は残っています。");
+        : typeof error.venueReceiptText === "string" ? error.venueReceiptText : tx("劇場を適用できませんでした。劇場の編集は残っています。");
       if (choice === "keep") els.venueApplyConfirm.disabled = false;   // ★#16: 「keep」を他の選択肢へ読み替えない（照明を消す側へ落とさない）
       else setVenueApplyChoice(venueApplyChoice);
     }
@@ -41269,6 +41285,13 @@ document.addEventListener("keydown", function (event) {
   if (els.viewSelect) {
     els.viewSelect.addEventListener("change", () => {
       const value = els.viewSelect.value;
+      if (phoneViewerActive && ["front", "plan", "both"].includes(window.GAMMA_PHONE_VIEW)) {
+        enforcePhoneViews(value === "front" || value === "plan" ? value : "both");
+        applyLayout();
+        syncViewSwitch();
+        render();
+        return; // Device-local display choice; no project/layout persistence here.
+      }
       if (panelBottomActive() && (value === "front" || value === "plan")) { syncViewSwitch(); return; }
       if (value === "front") {
         state.showFront = true;
@@ -46195,21 +46218,23 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     return {
       showId: state.project.id, sceneId: sc().id, sceneName: sc().title || "シーン", stage,
       members: pieces.map((piece) => ({ id: piece.id, name: pieceLabel(piece), u: piece.u, v: piece.v })),
-      // Exact comparison, not a hash: concurrent edits cannot overwrite a newer draft basis.
+      facings: Object.fromEntries(pieces.map((piece) => [piece.id, piece.facing])),
+      // Exact comparison, not a hash. Facing alone is deliberately outside the draft basis.
       basis: JSON.stringify({ showId: state.project.id, sceneId: sc().id, stage,
-        venue: state.project.venue, pieces, owners: pieces.map((piece) => lockOwner(piece)) }),
+        venue: state.project.venue, pieces: pieces.map(({ facing, ...piece }) => piece), owners: pieces.map((piece) => lockOwner(piece)) }),
     };
   }
 
   function applyGammaFormation(payload) {
     const current = gammaFormationContext();
     if (!payload || payload.basis !== current.basis) throw new Error("選択した人物・シーン・舞台が変わりました。閉じて選び直してください。");
-    const result = window.GAMMA_FORMATION_MODEL.plan(payload.presetId, current.members, payload.assignment, current.stage, payload.scalePct);
+    const result = window.GAMMA_FORMATION_MODEL.plan(payload.presetId, current.members, payload.assignment, current.stage, payload.scalePct, payload.facing || { mode: "keep" });
     const pieces = selectedPerformersOnly();   // T-05: 書き戻す先も演者だけ
     const byId = new Map(pieces.map((piece) => [piece.id, piece]));
     const changed = result.positions.filter((position) => {
       const piece = byId.get(position.id);
-      return piece.u !== position.u || piece.v !== position.v;
+      return piece.u !== position.u || piece.v !== position.v
+        || (Number.isFinite(position.facing) && piece.facing !== position.facing);
     });
     if (!changed.length) return { ok: true, changed: 0 };
     checkpoint();
@@ -46217,6 +46242,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       const piece = byId.get(position.id);
       piece.u = position.u;
       piece.v = position.v;
+      if (Number.isFinite(position.facing)) piece.facing = position.facing;
     });
     updateInspector();
     render();
