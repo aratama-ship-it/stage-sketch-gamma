@@ -1774,3 +1774,15 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .gamma-header-fitted.gamma-
   .stage-cue-naming-row > .stage-pref-lang-body { width: 100%; }
   .stage-cue-naming-row > .stage-lang { min-width: 0; max-width: 100%; }
 }
+
+/* B189: scrollIntoView/focus should use the lane between the fixed header and
+   timeline. These insets do not change layout, scroll range or diagram size. */
+@media (min-width: 701px) {
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="light-design"]:is(.stage-timeline-expanded,.stage-timeline-collapsed):not(.stage-fullscreen) #view-stage {
+    scroll-padding-top: calc(var(--gamma-light-scroll-top, 0px) + 8px);
+    scroll-padding-bottom: calc(var(--stage-timeline-resize-hit) + env(safe-area-inset-bottom, 0px) + 32px);
+  }
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="light-design"].stage-timeline-expanded:not(.stage-fullscreen) #view-stage {
+    scroll-padding-bottom: calc(var(--stage-timeline-height) + env(safe-area-inset-bottom, 0px) + 32px);
+  }
+}

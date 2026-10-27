@@ -211,6 +211,9 @@
   /* 白で塗った形（大きさ size の正方形・中心が光だまりの中心・半径 radius＝単位1）。
      ぼかしは shadowBlur（Safari は ctx.filter を黙って無視する）。 */
   function goboMaskSheet(g, size, radius, angleDeg, soft) {
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("shared.gobo.mask");
+    try {
     if (typeof document === "undefined") return null;
     const path = root.RIG_ENGINE.goboPath(g);
     if (!path) return null;
@@ -241,8 +244,11 @@
     b.shadowColor = "#ffffff";
     b.shadowBlur = blur * 2;            // 仕様上「ぼかし半径の2倍」
     b.shadowOffsetX = size;
-    b.drawImage(sharpCanvas, -size, 0);
+    const blurToken = frameCost?.begin("shared.gobo.blur");
+    try { b.drawImage(sharpCanvas, -size, 0); }
+    finally { frameCost?.end(blurToken); }
     return goboMaskCache?.put(path, params, blurCanvas) || blurCanvas;
+    } finally { frameCost?.end(frameCostToken); }
   }
   /* 中心が (0,0)・半径 half＝単位1 の一時キャンバスに、模様と切る線を掛ける。
      ★楕円は spreadOf(pool)（旧データは BEAM_SOFT）ぶん広げてあるので、切る線の距離と縁の幅もそのぶん縮める（照明モードと同じ）。 */
@@ -278,6 +284,10 @@
      ★楕円は「単位円をここへ写す行列」として扱う（照明モードと同じ）。
        中心と2本の半径ベクトルを投影するだけなので、遠近のある図でも1回の塗りで済む。 */
   function paintPool(ctx, pool, P, opts) {
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("shared.pool");
+    let paintToken;
+    try {
     if (!pool || !pool.c || !pool.ea || !pool.eb) return false;
     const level = clamp(finite(pool.level, 0), 0, 100) / 100;
     if (!(level > 0)) return false;
@@ -306,6 +316,7 @@
     const shaped = hasShape(pool);
     const tMs = opts && Number.isFinite(opts.tMs) ? opts.tMs : 0;
 
+    paintToken = frameCost?.begin("shared.pool.paint");
     ctx.save();
     // 暗い舞台の上で光が加算に見えるようにする（照明モードと同じ）
     ctx.globalCompositeOperation = "screen";
@@ -341,6 +352,8 @@
     sheetCtx.beginPath();
     sheetCtx.arc(0, 0, half, 0, Math.PI * 2);
     sheetCtx.fill();
+    const compositeToken = frameCost?.begin("shared.pool.composite");
+    try {
     if (fall) {
       const shade = sheetCtx.createLinearGradient(-half, 0, half, 0);
       fall.forEach((step) => shade.addColorStop(
@@ -351,11 +364,13 @@
       sheetCtx.globalCompositeOperation = "source-over";
     }
     if (shaped) applyShapeToSheet(sheetCtx, size, half, pool, tMs);
+    } finally { frameCost?.end(compositeToken); }
     sheetCtx.restore();
     // 一時キャンバスの半径 half が単位1にあたる
     ctx.drawImage(sheet, -1, -1, 2, 2);
     ctx.restore();
     return true;
+    } finally { frameCost?.end(paintToken); frameCost?.end(frameCostToken); }
   }
 
   /* まとめて塗る。返り値は実際に描けた数（帯の表示と計測に使う）。
@@ -1287,6 +1302,9 @@
   /* まとめて塗る。balls は ball（上）に加えて dims を持ってもよい。
      opts = { tMs, dims, facets, surfaces, rays, every, topDown }。返り値＝描いた球の数。 */
   function paintMirrorBalls(ctx, balls, P, opts) {
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("shared.mirror");
+    try {
     if (!Array.isArray(balls) || !balls.length || typeof Path2D === "undefined") return 0;
     const o = opts || {};
     let drawn = 0;
@@ -1334,6 +1352,7 @@
       drawn += 1;
     });
     return drawn;
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   const api = Object.freeze({

@@ -36,7 +36,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.88</span>
+                <span class="stage-app-version">0.3.89</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2829,19 +2829,21 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261026-v0388">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261026-v0389">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0388-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0388-title">v0.3.88</h3><time datetime="2026-10-26">2026-10-26</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0389-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0389-title">v0.3.89</h3><time datetime="2026-10-26">2026-10-26</time></header>
       <ul>
-        <li>照明デザインで、雨などの動く効果があるシーンにいると、照明の図を毎回描き直し続けて重くなっていた（Mac 版では応答しなくなることがあった）のを、必要なときだけ描き直すようにして軽くしました。</li>
-        <li>照明デザインで、器具に乗る人のいるシーンなどへ移ると「照明を開けませんでした」が出て、前後のシーンへ進むボタンが効かなくなることがあったのを直しました。</li>
-        <li>Mac 版：文書を開いている間にほかのアプリがファイルを変えると、保存が失敗し続けていたのを直し、中身が同じならそのまま保存し、違えば「読み直す／別名で保存／このまま上書き」を選べるようにしました。保存に失敗した後、閉じるときや終了するときに案内が出ないことがあったのも直しました。</li>
-        <li>スマホで開いたときの配置を共有の閲覧画面と同じにし、図を大きく、情報・メモ・ショー・設定をパネルから開くようにしました。スマホでは、メモとシーンの説明だけを編集できます。</li>
-        <li>フォーメーションを当てるとき、型ごとに決めた向き（一列は全員が客席向きなど）を当て、「向き」の列でまとめて向きを選べるようにしました。一人ずつの向きは入れ替え画面の回転ボタンで45°ずつ回せます（丸を押すと今までどおり入れ替えます）。</li>
-        <li>中国語（簡体字・繁体字）の画面で、アプリの名前を「Stage Sketch γ」にそろえました。</li>
-        <li>検査の整備：夜間の検査に割り当てる時間を見直し、役目を終えた古い検査を外しました。</li>
+        <li>照明デザインの図を描く処理を軽くし、雨や回る照明のあるシーンを滑らかに表示できるようにしました。</li>
+        <li>舞台の図で、雨などの効果があるシーンを描き直す処理を軽くし、Mac 版で動きが重くなっていたのを直しました。</li>
+        <li>窓の幅が狭いとき、照明の正面図の拡大ボタンがタイムラインに隠れて押せなかったのを直しました。</li>
+        <li>照明デザインで色を変えて適用し、別のタブから戻ると、明かりが消えたように見えることがあったのを直しました。v0.3.88 で起きていた不具合です。</li>
+        <li>文書を開き直した後、照明デザインの見出しが前のシーンのままになることがあったのを直しました。</li>
+        <li>保存に失敗したときの帯が、表示の言語を切り替えても前の言語のまま残ることがあったのを直しました。</li>
+        <li>Mac 版：ほかのアプリがファイルを変えたときの窓に「キャンセル」を足しました。Return で「別名で保存」、Esc で「キャンセル」を選べるようにしました。</li>
+        <li>Mac 版：保存していない変更があるまま文書を閉じるときに、ほかのアプリによるファイルの変更とぶつかると、その後の「別名で保存」もできなかったのを直しました。</li>
+        <li>Mac 版：終了するときの確認などの標準の窓が、OS の言語設定に従い、日本語などの対応する言語で表示されるようにしました。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3801,15 +3803,15 @@
 <script src="/study-assets/stage-lighting-plan-overlay.js?v=20261005-batch98"></script>
 <script src="/study-assets/light-design/rig-engine.js?v=20261011-v0347"></script>
 <script src="/study-assets/light-design/laser-effects.js?v=20261005-batch98"></script>
-<script src="/study-assets/stage-light-render.js?v=20261005-beam99"></script>
+<script src="/study-assets/stage-light-render.js?v=20261026-v0389"></script>
 <script src="/study-assets/gamma-light-cue-overlay.js?v=20261006-v0318"></script>
 <script src="/study-assets/stage-performer-motion.js?v=20261011-v0347"></script>
 <script src="/study-assets/stage-idle-motion.js?v=20261014-v0362"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
 <script src="/study-assets/gamma-ui.js?v=20261017-v0377"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261026-v0388"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261026-v0389"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261013-v0360"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="/study-assets/stage-sketch.js?v=20261026-v0388"></script>
+<script src="/study-assets/stage-sketch.js?v=20261026-v0389"></script>
 <script src="/study-assets/gamma-appearance.js?v=20261024-v0385"></script>
 </body></html>

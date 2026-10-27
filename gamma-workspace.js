@@ -93,6 +93,11 @@
     const inset=bottomInset();
     if(isLightMode(mode)) {
       const view=document.getElementById('view-stage');
+      const header=document.querySelector('.stage-sketch-head');
+      // B189: describe the unobscured scrollport without changing the iframe's size.
+      // Header wrapping changes its bottom edge; scrollTop must not enter this inset.
+      if(view && header) view.style.setProperty('--gamma-light-scroll-top',
+        `${Math.max(0,header.getBoundingClientRect().bottom-view.getBoundingClientRect().top)}px`);
       /* V-06（2026-09-24 本人指示）: タイムラインを出しても照明デザインの画面を縮めない（舞台タブと同じ）。
          高さは「タイムラインを閉じているとき」の余白で決め、開いたときは #view-stage の下の余白
          （タイムラインの高さ＋32px・style.css）をスクロールして下まで見る。
@@ -1089,7 +1094,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261026-v0388'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261026-v0389'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;
@@ -1310,8 +1315,10 @@
       }));
     }
   });
-  /* タイムラインの展開・高さ変更に合わせ、照明iframeの下端をタイムラインの上へ収める。 */
+  /* タイムラインの展開・高さ変更でscrollの可視帯を更新。V-06のiframe寸法は保つ。 */
   window.addEventListener('stage-timeline-layout-change',scheduleFrameHeight);
+  const workspaceHeader=document.querySelector('.stage-sketch-head');
+  if(workspaceHeader) new ResizeObserver(scheduleFrameHeight).observe(workspaceHeader);
   /* タイムライン再生・シーンレーンからシーンが変わったとき、照明側も同じシーンへ追従する。 */
   window.addEventListener('stage-timeline-cues-change',()=>{
     if(mode!=='light-design' || !editor() || playbackPreview) return;

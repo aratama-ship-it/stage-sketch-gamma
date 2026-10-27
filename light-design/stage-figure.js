@@ -864,6 +864,10 @@
 
   /* ===== buildRig（本体 7887-7998） ===== */
   function buildRig(poseId, originX, originY, ux, uy, yaw, zDrop, tilt, sampledPose) {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.performer.build");
+    try {
     const bend = tilt || ((y) => y);
     const pose = sampledPose || poseById(poseId);
     const joints = pose.joints;
@@ -975,6 +979,7 @@
       head[1] + f[1] * 0.048 + wide[1] * EYE_SEP * side,
       head[2] + f[2] * 0.048 + wide[2] * EYE_SEP * side));
     return { P, rings, ux, uy, faceAt, eyes, facing: f, wheel, props, project, pose };
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   /* ===== paintBody（本体 8066-8159） ===== */

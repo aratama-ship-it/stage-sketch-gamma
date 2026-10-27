@@ -1,9 +1,9 @@
 {
-  "version": "0.3.88",
+  "version": "0.3.89",
   "url": "https://aratama-ship-it.github.io/stage-sketch-gamma/download/",
-  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.88/stage-sketch-gamma-mac-0.3.88.zip",
+  "zip": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/download/v0.3.89/stage-sketch-gamma-mac-0.3.89.zip",
   "releases": "https://github.com/aratama-ship-it/stage-sketch-gamma/releases/latest",
-  "notes": "Mac 版：文書を開いている間にほかのアプリがファイルを変えると、保存が失敗し続けていたのを直し、中身が同じならそのまま保存し、違えば「読み直す／別名で保存／このまま上書き」を選べるようにしました。保存に失敗した後、閉じるときや終了するときに案内が出ないことがあったのも直しました。\n\n既知の注意: このアプリはまだ Apple の公証を受けていないため、初めて開くときは配布ページの手順に沿って開いてください。\n文書を開き直した後、照明デザインの見出しが前のシーンのままになることがあります。編集は見出しに表示されたシーンに入ります。\n⌘Q で終了するときの警告が英語のまま表示されます。",
+  "notes": "Mac 版：ほかのアプリがファイルを変えたときの窓に「キャンセル」を足しました。Return で「別名で保存」、Esc で「キャンセル」を選べるようにしました。\n\nMac 版：保存していない変更があるまま文書を閉じるときに、ほかのアプリによるファイルの変更とぶつかると、その後の「別名で保存」もできなかったのを直しました。\n\nMac 版：終了するときの確認などの標準の窓が、OS の言語設定に従い、日本語などの対応する言語で表示されるようにしました。\n\n既知の注意: このアプリはまだ Apple の公証を受けていないため、初めて開くときは配布ページの手順に沿って開いてください。\n入力欄の右クリックメニューに、コピーなどの操作がありません。\n韓国語・中国語（簡体字・繁体字）の訳は、母語話者による確認を受けていません。",
   "updated": "2026-10-26",
-  "build": 98
+  "build": 99
 }

@@ -1662,6 +1662,10 @@
      平面図は床の粒だけ、正面図（3D含む）は床＋ホリゾント、側面図は球だけ（粒は線につぶれる）。
      時計は再生の時計（state.play.t ms）。止まっていれば位相0の静止画。レーザーと同じ順番・同じ門（beam）。 */
   function drawMirrorBalls(ctx, P, view, alphaScale = 1) {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.mirror");
+    try {
     const R = window.SHOSAI_LIGHT_RENDER;
     if (!R || typeof R.paintMirrorBalls !== "function" || state.mode !== "move" || !showOn("beam")) return 0;
     const balls = mirrorBallsInRig().map((f) => {
@@ -1686,11 +1690,17 @@
       surfaces, rays: view !== "plan", topDown: view === "plan", viewDir });
     ctx.restore();
     return n;
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   /* ---------- 描画: 平面図 ---------- */
   const isSel = (fid) => state.sel.has(fid);
   function drawPlan() {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.view.plan");
+    let layerToken = frameCost?.begin("lighting.layer.static.plan");
+    try {
     const w = logicalWidth(plan), h = logicalHeight(plan), P = planProj(), B = planBox(), d = state.dims;
     pctx.clearRect(0, 0, w, h); pctx.fillStyle = surface("#0d0c0b"); pctx.fillRect(0, 0, w, h);
     // 袖・客席の帯
@@ -1704,11 +1714,14 @@
       for (let m = 1; m < d.D; m++) { const Y = B.y + m / d.D * B.h; pctx.beginPath(); pctx.moveTo(B.x, Y); pctx.lineTo(B.x + B.w, Y); pctx.stroke(); }
     }
     pctx.strokeStyle = "rgba(239,231,214,0.25)"; pctx.strokeRect(B.x, B.y, B.w, B.h);
+    frameCost?.end(layerToken);
+    layerToken = frameCost?.begin("lighting.layer.labels.plan");
     pctx.fillStyle = "rgba(240,231,214,0.45)"; pctx.font = "20px sans-serif"; pctx.textBaseline = "top";
     pctx.fillText("奥（奥壁）", B.x + 8, B.y - 30); pctx.fillText("舞台の手前 ── この先が客席 ▼", B.x + B.w / 2 - 190, B.y + B.h + 8);
     pctx.fillText("下手", 30, B.y + B.h / 2 - 10); pctx.fillText("上手", B.x + B.w + 30, B.y + B.h / 2 - 10);
     pctx.fillText(`${metresText(d.W)} × ${metresText(d.D)}`, B.x + B.w - 170, B.y - 30);
 
+    frameCost?.end(layerToken); layerToken = null;
     const litSpots = [];   // 作業灯を消す（ブラックアウト）用。光の当たっている場所だけ集める
     drawCycWashes(pctx, P, state.dims, litSpots);   // 壁の色。演者・セットより先に塗る
     drawLasers(pctx, P, "plan"); drawMirrorBalls(pctx, P, "plan");
@@ -1820,6 +1833,7 @@
       pctx.save(); pctx.fillStyle = "rgba(211,172,89,0.12)"; pctx.strokeStyle = "rgba(211,172,89,0.85)"; pctx.lineWidth = 1.5; pctx.setLineDash([7, 5]);
       pctx.fillRect(x, y, mw, mh); pctx.strokeRect(x, y, mw, mh); pctx.restore();
     }
+    } finally { frameCost?.end(layerToken); frameCost?.end(frameCostToken); }
   }
   const inBox = (p, B) => p.X >= B.x && p.X <= B.x + B.w && p.Y >= B.y && p.Y <= B.y + B.h;
   function hexA(hex, a) { const v = parseInt((hex || "#f2ead6").slice(1), 16); return `rgba(${(v >> 16) & 255},${(v >> 8) & 255},${v & 255},${a})`; }
@@ -1832,6 +1846,10 @@
   // camera or host-clock sample is always projected afresh on the next frame.
   let pieceRigFrame = null, foregroundClipFrame = null;
   function projectedPieceRig(F, pc, args) {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.performer.rig");
+    try {
     if (!pieceRigFrame) return F.buildRig(...args);
     let entries = pieceRigFrame.get(pc);
     if (!entries) { entries = []; pieceRigFrame.set(pc, entries); }
@@ -1840,12 +1858,18 @@
     const rig = F.buildRig(...args);
     entries.push({ F, args, rig });
     return rig;
+    } finally { frameCost?.end(frameCostToken); }
   }
   let playbackPreviewPieces = null;
   let timelinePlaybackFrame = null;
   function setTimelinePlaybackFrame(input) {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.handoff");
+    try {
     timelinePlaybackFrame = input && input.sceneId === scene().id && Number.isFinite(input.tMs) ? input : null;
     requestDraw();
+    } finally { frameCost?.end(frameCostToken); }
   }
   // Use the host stage clock, placements and joints only while painting.
   // Never put playback samples into the editable draft or its undo history.
@@ -1910,11 +1934,20 @@
   /* 一文字幕。灯体を<b>描いたあと</b>に重ねる——客席から見て隠れているかを確かめるための幕なので、
      灯体の上に載せないと意味がない。ただし完全に塗り潰すと設計できないので、
      布は濃いめの半透明にして、下の灯体がうっすら透ける（2026-09-13 本人要望）。 */
-  function drawBordersPlan(ctx, P, d) { borderPieces().forEach((pc) => drawCurtainPlan(ctx, P, pc, d)); }
+  function drawBordersPlan(ctx, P, d) {
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.layer.static.curtains", {canvas:ctx.canvas?.id});
+    try { borderPieces().forEach((pc) => drawCurtainPlan(ctx, P, pc, d)); }
+    finally { frameCost?.end(frameCostToken); }
+  }
   function drawBordersUp(ctx, P, d) {
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.layer.static.curtains", {canvas:ctx.canvas?.id});
+    try {
     // The front view paints host masking separately, in its own depth order.
     if (ctx.canvas === secF && state.frontCurtains) return;
     borderPieces().forEach((pc) => drawCurtainUp(ctx, P, pc, d));
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   // Visual-only port from stage-sketch.js e72555dc: drawFrontVenue's ceiling,
@@ -1922,6 +1955,9 @@
   // Host dimensions/depths/shades come from gammaLightingContext; metres go
   // through this section's projector. Never changes curtainParts or save data.
   function drawFrontMasking(ctx, P, foreground = false) {
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.layer.static.masking", {canvas:ctx.canvas?.id});
+    try {
     const d = state.dims, host = state.frontCurtains;
     if (ctx.canvas !== secF || !host) return;
     if (foreground) {
@@ -1977,6 +2013,7 @@
     }
     ctx.restore();
     // No extra per-batten rectangles: drawFrontVenue has only the ceiling band.
+    } finally { frameCost?.end(frameCostToken); }
   }
   function paintFrontCloth(ctx, P, pc, sky = false) {
     const d=state.dims, left=(pc.u-.5-pc.w/2)*d.W, right=(pc.u-.5+pc.w/2)*d.W;
@@ -2076,6 +2113,9 @@
      cycは壁を照らす専用灯なので、人物への直射としては数えない。 */
   const spatialScene = () => state.mode === "move" && state.rig.fixtures.some(f => { const l = lightOf(f.id); return visibleLight(f, l) && ["air", "house"].includes(l.surface); });
   function spatialLight(ctx, P, k, kind, f, spots) {
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.layer.spatial", {canvas:ctx.canvas?.id});
+    try {
     const l = lightOf(f.id);
     /* 客席向きは各図の専用分岐で描く。空中光は体積光へ渡すだけだと、もや0の現在は
        狙い点しか残らないため、ここで通常の光条も必ず描く。 */
@@ -2117,8 +2157,12 @@
     spots.push({ fromX: from.X, fromY: from.Y, ...sp, lv });
     if (view !== "plan") drawDirectionLine(ctx, from, target, colorOf(f, l), lv, dim);
     return true;
+    } finally { frameCost?.end(frameCostToken); }
   }
   function compositeSpatial(ctx, P, k, kind, options = {}) {
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.layer.composite", {canvas:ctx.canvas?.id});
+    try {
     if (!spatialScene() || !showOn("beam")) return;
     const all = performerBeams(), beams = state.rig.fixtures.flatMap(f => {
       const l = lightOf(f.id); if (!visibleLight(f, l) || !["air", "house"].includes(l.surface) || f.mount.type === "cyc") return [];
@@ -2159,6 +2203,7 @@
       }ctx.restore();
     }
     if(kind!=="plan") drawBordersUp(ctx,P,state.dims);
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   function performerBeams() {
@@ -2235,6 +2280,10 @@
     return { beams, receiver, emitters, shadeBox, pieces, entries, byId };
   }
   function drawPiecesUp(ctx, P, pxPerM, opts) {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.performer.paint");
+    try {
     const o = opts || {}, d = state.dims, F = window.STAGE_FIGURE;
     /* 暗幕の後に、不透明な人物を受光色で塗り直す。逆光と前明かりが共存しても黒で上書きしない。 */
     const relight = o.relight;
@@ -2266,7 +2315,9 @@
         const yaw = (((pc.facing || 0) + (o.yawDeg || 0)) * Math.PI) / 180;
         const stretch = o.stretchAt ? o.stretchAt(pc.v) : 1;
         const zDrop = o.zDropPerM ? o.zDropPerM * H : 0;
-        const rig = projectedPieceRig(F, pc, [pc.pose || "stand", foot.X, foot.Y, H * k, H * k * stretch, yaw, zDrop, null, playbackPreviewPieces ? pc.performancePose : null]);
+        // Host scene pieces carry a saved, support-adjusted pose too. Live
+        // preview pieces replace it only while following the host clock.
+        const rig = projectedPieceRig(F, pc, [pc.pose || "stand", foot.X, foot.Y, H * k, H * k * stretch, yaw, zDrop, null, pc.performancePose || null]);
         if (!relight) F.paintShadow(ctx, rig);
         F.paintBody(ctx, rig, pc.color || "#d8cdb6", pc.look || null,
           receiver ? receiver.bodyPaint(ctx, rig, { ...pc, hM: H }, d,
@@ -2278,6 +2329,7 @@
       if (showOn("names")) ctx.fillText(pc.name, foot.X, foot.Y + 4); ctx.textAlign = "left";
       ctx.restore();
     });
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   /* 光の帯と、当たったところ。舞台スケッチ本体の drawLight と同じ組み立て方にする
@@ -2378,6 +2430,9 @@
      ほかの光（空中を通ってくるビーム）と同じ順に描くと、壁の色が演者の手前に出てしまう
      （2026-09-13 本人指摘「演者の前に光が来る」）。図ごとの描画の頭で呼ぶ。 */
   function drawCycWashes(ctx, P, dims, sink) {
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.layer.pools.cyc", {canvas:ctx.canvas?.id});
+    try {
     if (state.mode !== "move" || !showOn("beam")) return;
     state.rig.fixtures.forEach((f) => {
       if (f.mount.type !== "cyc") return;
@@ -2389,6 +2444,7 @@
       drawCycWash(ctx, quads, l.color, a, cycGradientOf(l));
       if (sink) sink.push({ cycQuads: quads, lv });
     });
+    } finally { frameCost?.end(frameCostToken); }
   }
   // 作業灯を消すの穴も同じ短冊で開ける。見た目の帯とまったく同じ形にそろえるため（2026-09-13）
   function punchCycHole(mctx, quads, lv) {
@@ -2469,6 +2525,10 @@
     return true;
   }
   function drawBeam(ctx, from, to, world, color, deg, dim, pxPerM, squash, asLine, noPool, lv, gobo, surf, proj, frame, onlyPool = false) {
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.light", {canvas:ctx.canvas?.id});
+    let paintToken;
+    try {
     const rM = E.spotRadiusM(world.S, world.T, deg), rPx = Math.max(rM * pxPerM, 3);
     const K = spreadOfLight(gobo);                 // 描く輪の広げ率（旧データは BEAM_SOFT）
     const ell = noPool ? null : poolEllipse(world, deg, surf, proj, K);
@@ -2538,6 +2598,7 @@
     // 光の帯の裾も、カッター適用後の光だまりの輪郭から決める。
     const silhouette = !noPool && !asLine && E.beamLandingSilhouette(from, pool, cuts);
     if (silhouette) { corners.p = silhouette.cornerP; corners.m = silhouette.cornerM; }
+    paintToken = frameCost?.begin("lighting.layer.beams", {canvas:ctx.canvas?.id});
     ctx.save();
     ctx.globalCompositeOperation = "screen";
     if (onlyPool) { /* 空気と面は別レイヤー */ } else if (asLine) {
@@ -2605,12 +2666,14 @@
         ctx.drawImage(beamBlendCanvas, 0, 0, blend.pw, blend.ph, blend.x0, blend.y0, blend.w, blend.h);
       }
     }
+    frameCost?.end(paintToken); paintToken = null;
     // 当たったところ。帯の裾と同じ広さまで半影を伸ばす（境目が線で出ないように）
     // 何にも当たらず図の外へ抜ける光は、丸を描かない（丸い当たりを描くと光る玉に見える）
     if (noPool) { ctx.restore(); return ret(); }
     /* 単位円を pool（着地の断面）へ写す行列を掛けてから半径1で描く。
        楕円が出せた図・出せない図のどちらも pool の形で表してあるので、ここは1本の式で足りる。
        そうすると光だまり・グラデーション・模様がまとめて同じ歪み方をする。 */
+    paintToken = frameCost?.begin("lighting.layer.pools", {canvas:ctx.canvas?.id});
     ctx.transform(pool.ax, pool.ay, pool.bx, pool.by, pool.cx, pool.cy);
     const R = 1, maskR = Math.max(Math.hypot(pool.ax, pool.ay), Math.hypot(pool.bx, pool.by), 3);
     const stops = (g, rad) => {
@@ -2676,6 +2739,7 @@
     }
     ctx.restore();
     return ret();
+    } finally { frameCost?.end(paintToken); frameCost?.end(frameCostToken); }
   }
 
   /* 作業灯を消す（ブラックアウト。2026-09-13 本人要望「光のあたってないところは真っ暗で見えない」）。
@@ -2685,6 +2749,9 @@
      （マスクなので厳密に一致していなくてよい）。図ごとにオフスクリーンを1枚持って使い回す。 */
   const blackoutCanvases = new WeakMap();
   function paintBlackout(ctx, canvas, spots) {
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.layer.blackout", {canvas:ctx.canvas?.id});
+    try {
     let mc = blackoutCanvases.get(canvas);
     if (!mc || mc.width !== canvas.width || mc.height !== canvas.height) {
       mc = document.createElement("canvas"); mc.width = canvas.width; mc.height = canvas.height;
@@ -2769,6 +2836,7 @@
       mctx.restore();
     });
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = "source-over"; ctx.drawImage(mc, 0, 0); ctx.restore();
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   /* 選ぶボタンに出す小さな見本。描画に使うのと同じ形（GOBOS の shapes）から作るので、
@@ -2817,6 +2885,10 @@
   const goboProfileCache = new Map();
   const PROFILE_N = 48, PROFILE_R = 40;
   function goboProfile(light) {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.gobo.profile");
+    try {
     if (!light || !light.gobo || light.gobo === "none") return null;
     const ang = Math.round(E.goboAngleAt(light, state.play.t) / 5) * 5;
     const soft = Math.round(E.clamp(E.finite(light.goboSoft, 6), 0, 100));
@@ -2825,7 +2897,10 @@
     const mask = goboMask({ ...light, goboAngle: ang, goboSpin: 0 }, PROFILE_R);
     if (!mask) return null;
     const sz = mask.size, ctx2 = mask.canvas.getContext("2d");
-    const data = ctx2.getImageData(0, 0, sz, sz).data;
+    const readbackToken = frameCost?.begin("lighting.gobo.readback");
+    let data;
+    try { data = ctx2.getImageData(0, 0, sz, sz).data; }
+    finally { frameCost?.end(readbackToken); }
     const cx = sz / 2, cy = sz / 2, band = PROFILE_R * 0.35;   // 中央の帯だけ見る＝手前の筋がはっきり出る
     const prof = new Array(PROFILE_N).fill(0);
     let mx = 0;
@@ -2839,6 +2914,7 @@
     if (goboProfileCache.size > 400) goboProfileCache.clear();   // 回し続けても膨らまないように
     goboProfileCache.set(key, out);
     return out;
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   const goboMaskCanvas = document.createElement("canvas");
@@ -2846,6 +2922,10 @@
   const goboTmpCanvas = document.createElement("canvas");
   const goboTmp = (size) => { if (goboTmpCanvas.width !== size || goboTmpCanvas.height !== size) { goboTmpCanvas.width = size; goboTmpCanvas.height = size; } return goboTmpCanvas; };
   function goboMask(light, radius) {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.gobo.mask");
+    try {
     const g = light && light.gobo && light.gobo !== "none" ? E.goboById(light.gobo) : null;
     if (!g || !g.shapes.length) return null;
     const soft = E.clamp(E.finite(light.goboSoft, 6), 0, 100);    // 既定はUIの SOFT_DEF と同じ（2/10）
@@ -2884,8 +2964,11 @@
     b2.shadowColor = "#ffffff";
     b2.shadowBlur = blur * 2;
     b2.shadowOffsetX = size;
-    b2.drawImage(mc, -size, 0);
+    const blurToken = frameCost?.begin("lighting.gobo.blur");
+    try { b2.drawImage(mc, -size, 0); }
+    finally { frameCost?.end(blurToken); }
     return { canvas: bc, size };
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   // 円・8の字の下書きは、エンジンが返す点の並びを線でつなぐだけ  // 円・8の字の下書きは、エンジンが返す点の並びを線でつなぐだけ（傾きも8の字もこれで描ける）
@@ -3109,6 +3192,9 @@
     renderAll();return true;
   }
   function paintFixtureLabels(clear = true) {
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.layer.labels.plates");
+    try {
     if(clear) fixtureLabelViews.clear();
     for(const [ctx,items]of fixtureLabelFrame){
       ctx.save();ctx.font="600 20px sans-serif";
@@ -3145,10 +3231,14 @@
       }
       ctx.restore();
     }
+    } finally { frameCost?.end(frameCostToken); }
   }
   function fixtureLabelSnapshot(){return [...fixtureLabelViews].map(([canvas,rows])=>({canvas:canvas.id,width:logicalWidth(canvas),height:logicalHeight(canvas),symbols:fixtureLabelLayoutCache.get(canvas)?.symbols.map(r=>({...r}))||[],layoutPasses:fixtureLabelLayoutCache.get(canvas)?.passes||0,rows:rows.map(r=>({...r,symbol:r.symbol?{...r.symbol}:null,leader:r.leader?.map(p=>({...p})),lines:[...r.lines]}))}));}
 
   function drawFixtureMark(ctx, X, Y, shape, o) {
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.layer.labels.fixture", {canvas:ctx.canvas?.id});
+    try {
     const s = 15; ctx.save();
     if (o.sel && !o.ghost) {
       // 小さな灯体アイコンの外へ、どの図でも読み取れる選択輪を置く。
@@ -3222,6 +3312,7 @@
       }
     }
     ctx.restore();
+    } finally { frameCost?.end(frameCostToken); }
   }
   /* 作業灯の暗幕は光のない背景だけを暗くする。暗幕の上に情報レイヤーを描き直し、
      「表示」の機材・番号を、作業灯のON/OFFとは独立して表示する。 */
@@ -3308,12 +3399,16 @@
      1が既定で、小さくすると点光源のように締まり、大きくすると視界が飛ぶ感じになる。 */
   const glareMul = (l) => E.clamp(E.finite(l && l.glare, 1), 0.2, 3);
   function drawGlare(ctx, X, Y, R, color, lv, dim) {
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.layer.beams.glare", {canvas:ctx.canvas?.id});
+    try {
     if (!(lv > 0) || !(R > 0)) return;
     const a = legacyVisualAlpha((dim ? 0.3 : 1) * E.clamp(lv, 0, 1));
     ctx.save(); ctx.globalCompositeOperation = "screen";
     const g = ctx.createRadialGradient(X, Y, 0, X, Y, R);
     g.addColorStop(0, hexA(color, 0.5 * a)); g.addColorStop(0.3, hexA(color, 0.2 * a)); g.addColorStop(0.7, hexA(color, 0.06 * a)); g.addColorStop(1, hexA(color, 0));
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(X, Y, R, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    } finally { frameCost?.end(frameCostToken); }
   }
   const glareHole = (X, Y, R, lv) => ({ fromX: X, fromY: Y, landX: X, landY: Y, toX: X, toY: Y, r: R, halfW: 0.5, ry: 0.5, lying: false, asLine: false, noPool: false, pool: { cx: X, cy: Y, ax: R, ay: 0, bx: 0, by: R }, lv });
   /* 光条の中心線。柔らかい帯だけでは赤い狙い点を正確に通っているか読みにくいため重ねる。 */
@@ -3349,6 +3444,11 @@
 
   /* ---------- 描画: 正面図 ---------- */
   function drawFront(sec, {simple=false} = {}) {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.view.front", {canvas:sec.cv.id});
+    let layerToken = frameCost?.begin("lighting.layer.static.front");
+    try {
     const fctx = sec.ctx, front = sec.cv;
     const w = logicalWidth(front), h = logicalHeight(front), B = secBox(front, sec.kind), P = secProj(sec), d = state.dims;
     const frontView = E.frontFarSetup(d, B);
@@ -3357,9 +3457,12 @@
     fctx.fillStyle = workSurface("front", "rgba(255,255,255,0.03)"); fctx.fillRect(B.x, B.y, B.w, B.h);           // 奥壁
     fctx.strokeStyle = "rgba(239,231,214,0.25)"; fctx.strokeRect(B.x, B.y, B.w, B.h);
     fctx.fillStyle = workSurface("front", "rgba(255,255,255,0.05)"); fctx.fillRect(0, B.y + B.h, w, h - B.y - B.h); // 床
+    frameCost?.end(layerToken);
+    layerToken = frameCost?.begin("lighting.layer.labels.front");
     fctx.fillStyle = "rgba(240,231,214,0.45)"; fctx.font = "16px sans-serif"; fctx.textBaseline = "middle";
     if(!simple) [2, 4, 6, 8].filter((m) => m <= d.H).forEach((m) => { const Y = B.y + B.h - m / d.H * B.h; fctx.fillText(metresText(m), B.x - 64, Y); fctx.strokeStyle = "rgba(239,231,214,0.07)"; fctx.beginPath(); fctx.moveTo(B.x, Y); fctx.lineTo(B.x + B.w, Y); fctx.stroke(); });
     if(!simple) fctx.fillText("床", B.x - 40, B.y + B.h); fctx.fillText("下手", 30, B.y + 14); fctx.fillText("上手", B.x + B.w + 30, B.y + 14);
+    frameCost?.end(layerToken); layerToken = null;
     drawFrontMasking(fctx, P);
     const litSpotsF = [];   // 作業灯を消す（ブラックアウト）用
     drawCycWashes(fctx, P, d, litSpotsF);   // 壁の色。演者・セットより先に塗る
@@ -3410,9 +3513,15 @@
     compositeSpatial(fctx, P, B.w / d.W, "front");
     if (state.mode === "move" && showOn("fixtures")) redrawFixtureInfoSection(fctx, P, B, "front");
     drawFrontMasking(fctx, P, true);
+    } finally { frameCost?.end(layerToken); frameCost?.end(frameCostToken); }
   }
   /* ---------- 描画: 側面図（舞台中央から下手／上手を見る） ---------- */
   function drawSide(sec) {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.view.side", {canvas:sec.cv.id});
+    let layerToken = frameCost?.begin("lighting.layer.static.side");
+    try {
     const fctx = sec.ctx, front = sec.cv, side = sec.kind;
     const w = logicalWidth(front), h = logicalHeight(front), B = secBox(front, sec.kind), d = state.dims, P = secProj(sec);
     fctx.clearRect(0, 0, w, h); fctx.fillStyle = surface("#0d0c0b"); fctx.fillRect(0, 0, w, h);
@@ -3423,6 +3532,8 @@
     fctx.fillStyle = "rgba(156,130,63,0.35)"; fctx.fillRect(backX - (side === "shimote" ? 0 : 6), B.y, 6, B.h); // 奥壁
     fctx.strokeStyle = "rgba(239,231,214,0.07)"; fctx.lineWidth = 1;
     if (showOn("grid")) for (let m = 1; m < d.D; m++) { const X = P({ x: 0, y: m, z: 0 }).X; fctx.beginPath(); fctx.moveTo(X, B.y); fctx.lineTo(X, B.y + B.h); fctx.stroke(); }
+    frameCost?.end(layerToken);
+    layerToken = frameCost?.begin("lighting.layer.labels.side");
     fctx.fillStyle = "rgba(240,231,214,0.45)"; fctx.font = "16px sans-serif"; fctx.textBaseline = "middle";
     // ★2026-09-23 本人指示: 下手／上手を見るパネルでは高さを「6.0m」のような数字で
     //   出さない。目安の横線（案内）だけ残す。
@@ -3430,6 +3541,7 @@
     fctx.fillText("床", B.x - 40, B.y + B.h);
     fctx.fillText("客席 ▶", side === "shimote" ? 30 : B.x + B.w + 20, B.y + 14); fctx.fillText("奥壁", side === "shimote" ? B.x + B.w + 20 : 30, B.y + 14);
     fctx.fillText(`${side === "shimote" ? "下手" : "上手"}側のスタンド・ブーム（舞台中央から見る）`, B.x + 10, B.y - 18);
+    frameCost?.end(layerToken); layerToken = null;
     drawLasers(fctx, P, side); drawMirrorBalls(fctx, P, side);
     drawPiecesUp(fctx, P, B.w / d.D, { yawDeg: side === "shimote" ? -90 : 90 });
     // トラス（断面＝点）
@@ -3479,11 +3591,17 @@
     const hv = state.hover;
     if (state.tool === "side" && hv && hv.canvas === side) { const q = { X: E.clamp(hv.X, B.x, B.x + B.w), Y: E.clamp(hv.Y, B.y, B.y + B.h) }; fctx.strokeStyle = "rgba(240,231,214,0.3)"; fctx.setLineDash([6, 6]); fctx.beginPath(); fctx.moveTo(q.X, B.y + B.h); fctx.lineTo(q.X, q.Y); fctx.stroke(); fctx.setLineDash([]); drawFixtureMark(fctx, q.X, q.Y, "diamond", { ghost: true }); fctx.fillStyle = "rgba(240,231,214,0.85)"; fctx.font = "16px sans-serif"; fctx.fillText(`${side === "shimote" ? "下手" : "上手"}の袖に立てる（クリック）`, q.X + 22, q.Y - 26); }
     if (!state.rig.fixtures.some((f) => f.mount.type === "side" && f.mount.side === side) && state.tool !== "side") { fctx.fillStyle = "rgba(240,231,214,0.45)"; fctx.font = "16px sans-serif"; fctx.fillText(`${side === "shimote" ? "下手" : "上手"}側にスタンド灯はまだありません。右の「SS（袖から横切って）」でこの図をクリックすると立てられます。`, B.x + 10, B.y + B.h / 2); }
+    } finally { frameCost?.end(layerToken); frameCost?.end(frameCostToken); }
   }
   /* ---------- 描画: 正面図（3D・擬似パース） ----------
      舞台スケッチ本体の正面図と同じ式（rig-engine の makeFrontPerspProjector）で描く。
      床は奥から手前へ広がる台形、奥の壁はその上に立つ。高さも奥行きで縮む。 */
   function drawFront3D(sec, {simple=false} = {}) {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.view.front3d", {canvas:sec.cv.id});
+    let layerToken = frameCost?.begin("lighting.layer.static.front3d");
+    try {
     const fctx = sec.ctx, cv = sec.cv, w = logicalWidth(cv), h = logicalHeight(cv);
     const B = secBox(cv, "front"), d = state.dims;
     // Simple comparisons use the same fixed audience view for every preset.
@@ -3519,6 +3637,7 @@
     fctx.fillStyle = workSurface("front", "rgba(255,255,255,0.03)"); fctx.beginPath();
     fctx.moveTo(bl.X, bl.Y); fctx.lineTo(br.X, br.Y); fctx.lineTo(tr.X, tr.Y); fctx.lineTo(tl.X, tl.Y); fctx.closePath(); fctx.fill();
     fctx.strokeStyle = "rgba(239,231,214,0.25)"; fctx.stroke();
+    frameCost?.end(layerToken); layerToken = null;
     drawFrontMasking(fctx, P);
     const litSpots3D = [];   // 作業灯を消す（ブラックアウト）用
     drawCycWashes(fctx, P, d, litSpots3D);   // 壁の色。演者・セットより先に塗る
@@ -3586,9 +3705,14 @@
     if(simple) return;
     fctx.fillStyle = "rgba(240,231,214,0.4)"; fctx.font = "15px sans-serif"; fctx.textBaseline = "top";
     fctx.fillText(`${L.seat.label}から見た形（舞台スケッチの正面図と同じ描き方）`, 8, h - 24);
+    } finally { frameCost?.end(layerToken); frameCost?.end(frameCostToken); }
   }
 
   function draw() {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("lighting.draw");
+    try {
     if (playbackPreviewActive) return;
     const started = performance.now();
     drawCueOverride = lxFadeCue();
@@ -3609,6 +3733,7 @@
     runtime.drawMs = elapsed;
     runtime.averageMs = runtime.averageMs ? runtime.averageMs * 0.8 + elapsed * 0.2 : elapsed;
     renderRuntimeStatus();
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   /* A separate, read-only canvas. Borrow render inputs synchronously, never the draft

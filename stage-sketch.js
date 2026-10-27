@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.88";
+  const GAMMA_APP_VERSION = "v0.3.89";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -11536,29 +11536,34 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   let nativeSavingTimer = null;
-  let nativeSaveWarning = null;
+  let nativeSaveWarningKey = null;
+  function renderNativeSaveWarning() {
+    if (!nativeSaveWarningKey) return;
+    const message = tx(nativeSaveWarningKey);
+    const band = document.getElementById("stage-storage-band");
+    if (band) {
+      band.classList.remove("is-folded", "is-protected");
+      for (const child of band.children) child.hidden = child.id !== "stage-storage-band-message";
+      const lead = document.getElementById("stage-storage-band-lead");
+      const backup = document.getElementById("stage-storage-band-backup");
+      if (lead) lead.textContent = message;
+      if (backup) backup.textContent = "";
+      band.hidden = false;
+    }
+    setSaveStatus(message, "warn");
+  }
   function nativeProjectSaveState(payload) {
     if (payload.state !== "received" || payload.cancelled === true) { clearTimeout(nativeSavingTimer); nativeSavingTimer = null; }
     if (payload.state === "failed" || payload.state === "hold") {
       // Curated shell sentences (marked by the shell, exact table keys) explain this
       // failure; raw OS text never reaches the band.
-      nativeSaveWarning = payload.detailCurated === true && typeof payload.detail === "string" && payload.detail.trim()
-        ? tx(payload.detail) : tx(payload.state === "hold"
+      nativeSaveWarningKey = payload.detailCurated === true && typeof payload.detail === "string" && payload.detail.trim()
+        ? payload.detail : (payload.state === "hold"
         ? "原本を保全するため、書き込みを保留しています。「保存」で別の保存先を選んでください。"
         : "プロジェクトを保存できませんでした。空き容量と保存先の書き込み権限を確認し、もう一度保存してください。開いているショーはそのまま残してください。");
-      const band = document.getElementById("stage-storage-band");
-      if (band) {
-        band.classList.remove("is-folded", "is-protected");
-        for (const child of band.children) child.hidden = child.id !== "stage-storage-band-message";
-        const lead = document.getElementById("stage-storage-band-lead");
-        const backup = document.getElementById("stage-storage-band-backup");
-        if (lead) lead.textContent = nativeSaveWarning;
-        if (backup) backup.textContent = "";
-        band.hidden = false;
-      }
-      setSaveStatus(nativeSaveWarning, "warn");
+      renderNativeSaveWarning();
     } else if (payload.state === "saved") {
-      nativeSaveWarning = null;
+      nativeSaveWarningKey = null;
       const band = document.getElementById("stage-storage-band"); if (band) band.hidden = true;
       // AppKit's untitled recovery copy is not a user-selected project file.
       // Use the bridge's ownership/hasFile verdict, as the settings notice does.
@@ -11572,9 +11577,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       nativeSavingTimer = setTimeout(() => {
         nativeSavingTimer = null;
         if (nativeProject && !nativeProject.matches(receiptOwner)) return;
-        if (!nativeSaveWarning) setSaveStatus(tx("保存中…"), "saving");
+        if (!nativeSaveWarningKey) setSaveStatus(tx("保存中…"), "saving");
       }, 1000);
-    } else if (!nativeSaveWarning) {
+    } else if (!nativeSaveWarningKey) {
       setSaveStatus(tx("変更を受け取りました。保存を待っています。"), "info");
     }
   }
@@ -12466,7 +12471,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     scene.pieces = pieces.map(piece => ({ ...piece }));
     displayBasesDepth += 1;
     try {
-      refreshBases(size, scene.pieces);
+      const meter = globalThis.__GAMMA_LIGHT_FRAME_COST__, token = meter?.begin("stage.prepare.bases");
+      try { refreshBases(size, scene.pieces); }
+      finally { meter?.end(token); }
       pieces.forEach((piece, index) => displayPieces.set(piece, scene.pieces[index]));
       return draw();
     }
@@ -18337,6 +18344,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function drawStagePiece(target, piece, L, leanAt, drawOptions = {}) {
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const token = frameCost?.begin("stage.piece." + (piece.type === "performer" ? "performer" : isFlown(piece) ? "airborne" : "set"));
+    try {
     if(!L.plan&&piece.type==="prop"&&["harp","koto","cajon"].includes(propShapeOf(piece))&&heldDrawnByPose(piece))return;
     /* 引退した舞台機構（盆・デッキ・幕・水面）は描かない。せりは描く。
        ★2026-10-09（本人決定「前紗幕は舞台機構にする」）: 幕のうち「紗幕」だけは描く。前紗幕（劇場設定から置く）が
@@ -18415,6 +18425,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     else if (SOLID_TYPES[piece.type]) drawSolid(target, piece, pos, scale, L, drawOptions);
     else if (piece.type === "sphere") drawSphere(target, piece, pos, scale, L);
     if (lean) target.restore();
+    } finally { frameCost?.end(token); }
   }
 
   /* 2026-09-26: 姿勢の側が道具を描く姿勢（ギター・マイク・ジャグリング・一輪車など props / wheel を持つもの）で、
@@ -19042,28 +19053,81 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   /* Display-only editor preview. Read the adopted shared-model cue and the same
      effect clock; dynamic performer joints remain outside saved scene data. */
   function readLightingPlaybackPreview() {
-    const model = lightCueOverlayModel(), design = state.project?.lightingDesign;
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("host.preview");
+    try {
+    const modelToken = frameCost?.begin("host.model");
+    let model;
+    try { model = lightCueOverlayModel(); } finally { frameCost?.end(modelToken); }
+    const design = state.project?.lightingDesign;
     const row = state.project?.scenes.find(row => row.kind === "scene" && row.id === model?.sceneId);
     if (!model?.hasCue || !design || !row || row.id !== state.project.activeSceneId
       || !lightCueOverlayCache.effectiveCue) return null;
     const stage = design.stage, rows = state.project.scenes;
+    const cloneLook = visual => {
+      const token = frameCost?.begin("host.look.clone");
+      try {
+        const resolveToken = frameCost?.begin("host.look.resolveNormalize");
+        let look;
+        try { look = normalizeLook(resolveLookForScene(visual,row,state.project.cast,rows)); }
+        finally { frameCost?.end(resolveToken); }
+        const cloneToken = frameCost?.begin("host.look.jsonClone");
+        try { return projectIoClone(look); } finally { frameCost?.end(cloneToken); }
+      }
+      finally { frameCost?.end(token); }
+    };
     const entries = row.pieces.filter(piece => piece.type !== "light").map(piece => ({piece,exit:false}))
       .concat((sceneAnim?.exits || []).filter(entry => !(sceneAnim.blackout && sceneAnim.progress >= .2 && entry.piece.type === "performer"))
         .map(entry => ({piece:entry.piece,exit:true})));
+    const samplePose = visual => {
+      const token = frameCost?.begin("host.performer.pose");
+      try { return samplePerformancePose(visual,row.pieces); }
+      finally { frameCost?.end(token); }
+    };
     const priorIdleDepth = idleVisualDepth;
     let pieces;
     idleVisualDepth = 1;
     try {
-      prepareIdleFrames();
+      const idleToken = frameCost?.begin("host.idle.prepare");
+      try { prepareIdleFrames(); } finally { frameCost?.end(idleToken); }
+      // Resolve the current scene's disposable support/hand placement once per
+      // read, rather than refreshing all pieces for every individual piece.
+      // Restore row.pieces BEFORE pose/look/parts sampling: those readers must
+      // keep the same saved-scene inputs as the previous per-piece path.
+      // Nothing survives this call, so same-clock edits require no revision key.
+      const visuals = new Map(), prepareToken = frameCost?.begin("host.placement.prepare");
+      try {
+        const prepare = () => entries.forEach(({piece,exit}) => {
+          if (!exit) visuals.set(piece,effectivelyPlacedPiece(displayedPiece(piece),row));
+        });
+        if (!displayBasesDepth && entries.some(entry => !entry.exit)) withDisplayBases(venueSize(),prepare);
+        else prepare();
+      } finally { frameCost?.end(prepareToken); }
       pieces = entries.map(({piece,exit}) => {
-        const visual = effectivelyPlacedPiece(piece,row), dims = pieceDims(visual) || {};
+        const placementToken = frameCost?.begin("host.placement");
+        let visual;
+        // Exiting walkers are outside the current scene; retain their own
+        // animation values and resolve them after the display scene is restored.
+        try { visual = exit ? effectivelyPlacedPiece(piece,row) : visuals.get(piece); }
+        finally { frameCost?.end(placementToken); }
+        const dimsToken = frameCost?.begin("host.dims");
+        let dims;
+        try { dims = pieceDims(visual) || {}; } finally { frameCost?.end(dimsToken); }
+        const partsToken = frameCost?.begin("host.parts");
+        let parts, round;
+        try { parts = lightingContextParts(visual,dims); round = lightingContextRound(visual,dims); }
+        finally { frameCost?.end(partsToken); }
+        const cloneDimsToken = frameCost?.begin("host.dims.jsonClone");
+        let copiedDims;
+        try { copiedDims = projectIoClone(dims); } finally { frameCost?.end(cloneDimsToken); }
         return {id:piece.id,kind:visual.type === "performer" ? "performer" : visual.type === "curtain" ? "curtain" : "set",
           u:finite(visual.animU,finite(visual.u,.5)),v:finite(visual.animV,finite(visual.v,.5)),
           hM:pieceHeightM(visual),base:Math.max(0,finite(visual.animBase,finite(visual.base,0))),name:pieceLabel(visual),color:visual.color,
           pose:visual.pose,facing:visual.type === "performer" ? performerFacing(piece) : visual.facing,
-          performancePose:visual.type === "performer" ? samplePerformancePose(visual,row.pieces) : null,
-          look:visual.type === "performer" ? projectIoClone(normalizeLook(resolveLookForScene(visual,row,state.project.cast,rows))) : null,
-          dims:projectIoClone(dims),parts:lightingContextParts(visual,dims),round:lightingContextRound(visual,dims),
+          performancePose:visual.type === "performer" ? samplePose(visual) : null,
+          look:visual.type === "performer" ? cloneLook(visual) : null,
+          dims:copiedDims,parts,round,
           w:dims.w ? dims.w/stage.W : .1,curtainKind:visual.curtainKind,open:visual.animOpen ?? visual.open,
           exitWalker:exit};
       });
@@ -19076,6 +19140,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       // them. Only keep its four views ticking when their light can change.
       running:Boolean((spinRun && (spinningGobos().length || spinningMirrorBalls().length))
         || (sceneAnim && !sceneAnim.timelineControlled) || timelineLightCue.playing),pieces};
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   /* 世界座標（x=幅方向・中央0／y=奥行き・奥が0／z=高さm）を、その図の画面座標へ。
@@ -19139,6 +19204,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   /* 作業灯を消す（段階2b）。演者・大道具を描いた後、名前や注記を描く前に呼ぶ。
      ★点いている光がひとつも無ければ、舞台は全部暗くなる。それが「作業灯を消す」の意味。 */
   function drawLightCueWorkLight(target, L) {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("stage.lighting.blackout");
+    try {
     if (!featureOn("lightPool") || !featureOn("workLightOff")) return false;
     const api = window.SHOSAI_LIGHT_RENDER;
     if (!api || !lightCueOverlayForLayout(L)) return false;
@@ -19146,6 +19215,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       beams: featureOn("lightBeam"), topDown: Boolean(L.plan), tMs: lightEffectClockMs(),
       floorClip: (maskCtx) => clipCueLightFloor(maskCtx, L),
     });
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   /* 段階2「光の筋」。空気の中を進む光。
@@ -19176,6 +19246,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return balls.length ? balls : null;
   }
   function drawLightCueMirrorBalls(target, L) {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("stage.lighting.mirror");
+    try {
     if (!featureOn("lightPool")) return 0;
     const api = window.SHOSAI_LIGHT_RENDER;
     if (!api || typeof api.paintMirrorBalls !== "function") return 0;
@@ -19191,14 +19265,20 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       /* 球のきらめきの見る向き（球から見ている側へ）: 平面図は真上から・正面図は客席側のやや上から。 */
       viewDir: L.plan ? { x: 0, y: 0, z: 1 } : { x: 0, y: 1, z: 0.2 },
     });
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   function drawLightCueLasers(target, L) {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("stage.lighting.lasers");
+    try {
     if (!featureOn("lightPool") || !featureOn("lightBeam")) return 0;
     const api = window.SHOSAI_LIGHT_RENDER;
     const lasers = lightCueLaserList(L);
     if (!api || !lasers) return 0;
     return api.paintLasers(target, lasers, worldProjector(L));
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   /* 灯体の形（2026-09-27 本人要望「光の感じと灯体の形をγへ」）。共有部品 stage-fixture-body.js の幾何
@@ -19208,6 +19288,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      ★project.lightingDesign は読むだけ。ホリゾント灯（帯）とレーザーは対象外。 */
   const lightCueBodyCache = new WeakMap();
   function drawLightCueBodies(target, L) {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("stage.lighting.bodies");
+    try {
     if (!featureOn("lightPool")) return 0;
     const body = window.FIXTURE_BODY;
     const model = lightCueOverlayForLayout(L);
@@ -19241,9 +19325,14 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       drawn += 1;
     });
     return drawn;
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   function drawLightCueBeams(target, L) {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("stage.lighting.beams");
+    try {
     if (!featureOn("lightPool") || !featureOn("lightBeam")) return 0;
     const api = window.SHOSAI_LIGHT_RENDER;
     if (!api) return 0;
@@ -19253,6 +19342,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const haze = api.hazeAmount ? api.hazeAmount(model && model.environment ? model.environment.haze : undefined) : 0;   // R-2 シーンのもや
     const drawn = api.paintBeams(target, pools, worldProjector(L), { topDown: Boolean(L.plan), haze });
     return drawn;
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   /* 暗幕の後に、光の中にいる駒だけ描き直す。物は面なので、光が当たっていれば明るく見える。
@@ -19341,14 +19431,24 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function drawLightCuePools(target, L) {
+    // PERF3: opt-in, test-owned meter; no clock reads or records by default.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("stage.lighting.pools");
+    try {
     if (!featureOn("lightPool")) return 0;
     const api = window.SHOSAI_LIGHT_RENDER;
     if (!api) return 0;
-    const pools = lightCuePoolList(L);
+    const prepareToken = frameCost?.begin("stage.lighting.pools.prepare");
+    let pools, project;
+    try { pools = lightCuePoolList(L); project = pools ? worldProjector(L) : null; }
+    finally { frameCost?.end(prepareToken); }
     if (!pools) return 0;
-    const project = worldProjector(L);
-    const drawn = api.paintPools(target, pools, project, { tMs: lightEffectClockMs() });
+    const paintToken = frameCost?.begin("stage.lighting.pools.paint");
+    let drawn;
+    try { drawn = api.paintPools(target, pools, project, { tMs: lightEffectClockMs() }); }
+    finally { frameCost?.end(paintToken); }
     return drawn;
+    } finally { frameCost?.end(frameCostToken); }
   }
 
   /* 舞台の寸法が照明デザインを作ったときと違うなら、重ねると嘘になるので描かない。 */
@@ -19758,33 +19858,130 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   /* opts.noZoom: 二本指の拡大を無視して等倍で描く。
      「照明を組む」画面が正面図を借りるときに使う（モーダルの中で拡大は要らない）。
      既定（未指定）はこれまでどおり zoomOf(view) を掛ける。 */
+  // PERF4: at most the two live diagrams, never thumbnails/exports or saved data.
+  // Retain the opaque prefix up to (but excluding) weather. Everything in front
+  // of weather stays on the original path, preserving masking and label order.
+  const stageStaticLayers = new Map();
+  const STAGE_STATIC_MAX_BYTES = 32 * 1024 * 1024; // per diagram; at most 64 MiB
+  const STAGE_STATIC_CONTEXT_KEYS = ["fillStyle", "strokeStyle", "globalAlpha", "globalCompositeOperation",
+    "lineWidth", "lineCap", "lineJoin", "miterLimit", "lineDashOffset", "shadowBlur", "shadowColor",
+    "shadowOffsetX", "shadowOffsetY", "font", "textAlign", "textBaseline", "direction", "filter",
+    "imageSmoothingEnabled", "imageSmoothingQuality", "fontKerning", "fontStretch", "fontVariantCaps",
+    "letterSpacing", "wordSpacing", "textRendering"];
+  function dropStageStaticLayer(target) {
+    const old = stageStaticLayers.get(target);
+    if (old) { old.surface.width = 0; old.surface.height = 0; stageStaticLayers.delete(target); }
+  }
+  function stageStaticLayerKey(target, showSelection, view, opts) {
+    if (!opts?.spinFrame || opts.bypassCache || !showSelection || (target !== ctx && target !== planCtx)
+      || tabletPwaActive || phoneViewerActive || STUDY_READ_ONLY || sceneAnim || idleClock.playing || idleMotionActive()
+      || timelineLightGo?.playing || pointerAction || pinch || selectedLightMotionRaf || !effectsActive()
+      || target.canvas.width * target.canvas.height * 4 > STAGE_STATIC_MAX_BYTES) return null;
+    // A rotating gobo may tint a body even when the floor-pool toggle is off.
+    const model = lightCueOverlayModel();
+    if (model?.fixtures?.some(fx => Math.abs(finite(fx.pool?.goboSpin, 0)) > .01
+      || (fx.mirrorBall?.rpm > 0 && fx.mirrorBall.sources?.length))) return null;
+    // Read before withDisplayBases swaps disposable pieces into the scene.
+    // Full state catches in-place edits, inherited costume/pose and venue data;
+    // serial also invalidates async image loads and UI-only normal renders.
+    // A stopped GO still selects the underlay cue, but its clock no longer
+    // advances. Retain that image; a seek/new GO/clear must select a new prefix.
+    const go = timelineLightGo;
+    return JSON.stringify([state, prefs, fullRenderSerial,
+      go ? [go.at, go.seconds, go.effectSeconds, go.playing] : null, view, showSelection, opts.noZoom,
+      target.canvas.width, target.canvas.height, window.devicePixelRatio, zoomOf(view),
+      selectedId, [...selectedIds], selectedNoteId, selectedTextId, tool,
+      presenting, fullscreenMainView, pitchStyle, printPaperSurface,
+      document.documentElement.dataset.stageSkin, document.fonts?.status]);
+  }
+  function rememberStageStaticLayer(target, key) {
+    let entry = stageStaticLayers.get(target);
+    if (!entry || entry.surface.width !== target.canvas.width || entry.surface.height !== target.canvas.height) {
+      dropStageStaticLayer(target);
+      const surface = document.createElement("canvas");
+      surface.width = target.canvas.width; surface.height = target.canvas.height;
+      entry = {surface};
+    }
+    // Snapshot already rasterized opaque pixels, at backing resolution. No
+    // resampling, readback, alpha-layer rerasterization or resolution reduction.
+    const copy = entry.surface.getContext("2d");
+    copy.globalCompositeOperation = "copy";
+    copy.drawImage(target.canvas, 0, 0);
+    entry.key = key;
+    entry.attrs = STAGE_STATIC_CONTEXT_KEYS.filter(k => k in target).map(k => [k, target[k]]);
+    entry.transform = target.getTransform(); entry.dash = target.getLineDash();
+    stageStaticLayers.set(target, entry);
+  }
+  function paintStageStaticLayer(target, entry) {
+    target.save();
+    target.setTransform(1, 0, 0, 1, 0, 0);
+    target.globalAlpha = 1; target.globalCompositeOperation = "copy";
+    target.shadowBlur = 0; target.shadowColor = "rgba(0,0,0,0)";
+    if ("filter" in target) target.filter = "none";
+    target.drawImage(entry.surface, 0, 0);
+    target.restore();
+    // Prefix drawing also sets pen/text state. Restore it before the unchanged
+    // suffix, so later layers see precisely the same context as a cold draw.
+    for (const [k, value] of entry.attrs) target[k] = value;
+    target.setTransform(entry.transform); target.setLineDash(entry.dash);
+  }
   function drawStage(target, showSelection, view, opts) {
     if (fieldRunQuiet && !STUDY_READ_ONLY) return;
+    // PERF4: test-owned meter only. Include display-base preparation in stage.view.
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    const frameCostToken = frameCost?.begin("stage.view", {view, canvas:target.canvas?.id});
+    if (frameCost?.stageViews && (target === ctx || target === planCtx))
+      frameCost.stageViews.set(target.canvas.id, testOpts => drawStage(target, showSelection, view, {...opts, bypassCache: false, ...testOpts}));
     const prior = idleVisualDepth, priorStatic = staticStageDepth;
     // Only the live stage canvases may see playback offsets. Thumbnails/exports are static.
     idleVisualDepth = showSelection && (target === ctx || target === planCtx) ? 1 : 0;
     staticStageDepth = idleVisualDepth ? 0 : 1;
-    try { if (idleVisualDepth) prepareIdleFrames(); return withDisplayBases(venueSize(), () => drawStageContent(target, showSelection, view, opts)); }
-    finally { idleVisualDepth = prior; staticStageDepth = priorStatic; }
+    try {
+      const lookup = frameCost?.begin("stage.cache.key");
+      let staticLayerKey;
+      try { staticLayerKey = stageStaticLayerKey(target, showSelection, view, opts); }
+      finally { frameCost?.end(lookup); }
+      if (!staticLayerKey) dropStageStaticLayer(target);
+      const token = frameCost?.begin("stage.prepare");
+      try { if (idleVisualDepth) prepareIdleFrames(); }
+      finally { frameCost?.end(token); }
+      return withDisplayBases(venueSize(), () => drawStageContent(target, showSelection, view, opts, staticLayerKey));
+    } finally {
+      idleVisualDepth = prior; staticStageDepth = priorStatic;
+      frameCost?.end(frameCostToken);
+    }
   }
-  function drawStageContent(target, showSelection, view, opts) {
+  function drawStageContent(target, showSelection, view, opts, staticLayerKey) {
+    const frameCost = globalThis.__GAMMA_LIGHT_FRAME_COST__;
+    let phase = frameCost?.begin("stage.layer.prepare");
+    try {
+    const cached = staticLayerKey && stageStaticLayers.get(target);
+    const reuseStatic = cached && cached.key === staticLayerKey;
     const L = layout(view);
     stagePointSources = window.SHOSAI_STAGE_POINT_SOURCE?.collect(sc().pieces.map(p=>({...effectivelyPlacedPiece(p),propShape:propShapeOf(p),dims:pieceDims(p)})),L.size) || [];
     buildPaintLayer(L);
     const S = target.canvas ? target.canvas.width / W : 1;
     target.save();
+    try {
     target.setTransform(S, 0, 0, S, 0, 0);
+    if (!reuseStatic) {
     target.clearRect(0, 0, W, H);
     target.fillStyle = stageSurfaceColor("#0d0c0b");
     target.fillRect(0, 0, W, H);
+    }
     // 二本指で拡大しているぶんを、ここで一度だけかける
     const zs = (opts && opts.noZoom) ? { z: 1, ox: 0, oy: 0 } : zoomOf(view);
     if (zs.z !== 1 || zs.ox || zs.oy) {
       target.setTransform(zs.z * S, 0, 0, zs.z * S, -zs.ox * zs.z * S, -zs.oy * zs.z * S);
     }
 
+    frameCost?.end(phase); phase = frameCost?.begin("stage.layer.venue");
+    if (!reuseStatic) {
     if (L.plan) drawPlanVenue(target, L);
     else drawFrontVenue(target, L);
+    }
+    frameCost?.end(phase); phase = frameCost?.begin("stage.layer.lighting.underlay");
+    if (!reuseStatic) {
     if (L.plan && showSelection && target === planCtx) drawIdleAreas(target, L);
     if (showSelection && L.plan && target === planCtx) drawLightingPlanOverlay(target, L);
     if ((showSelection || STUDY_READ_ONLY) && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) {
@@ -19794,6 +19991,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (showSelection && L.plan && target === planCtx) drawLightCueOverlayPlan(target, L);
     if (showSelection && !L.plan && target === ctx) drawLightCueOverlayFront(target, L);
 
+    }
+    frameCost?.end(phase); phase = frameCost?.begin("stage.layer.ordering");
     // 煽りの席では、垂直だったはずの線が画面の上へ向かって集まる（三点透視）。
     // 見上げていることが絵として伝わるのは、人を大きく描くからではなく、この傾きによる。
     // 画面の中心から離れた演者ほど、頭が内側へ倒れる。
@@ -19832,17 +20031,26 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       ? solid.slice().sort((a, b) => (planLayer(a) - planLayer(b)) || (topH(a) - topH(b)))
       : solid.filter((piece) => !piece.heldBy)
         .sort((a, b) => frontDepthKey(a) - frontDepthKey(b));
-    if (stagePointSources.length && !featureOn("workLightOff")) {
+    if (!reuseStatic && stagePointSources.length && !featureOn("workLightOff")) {
       target.save(); clipCueLightFloor(target, L);
       window.SHOSAI_STAGE_POINT_SOURCE.paint(target, stagePointSources, worldProjector(L), { core: false });
       target.restore();
     }
+    frameCost?.end(phase); phase = frameCost?.begin("stage.layer.pieces");
+    if (!reuseStatic) {
     orderedPieces.forEach(draw);
     // 正面だけは演者を描き終えてから、保持中の物を手首へ重ねて手前に出す。
     if (!L.plan) solid.filter((piece) => piece.heldBy)
       .forEach((piece) => drawHeldFrontPiece(target, piece, L));
-    if (!L.plan) drawLowFog(target, L);
+    }
+    frameCost?.end(phase); phase = frameCost?.begin("stage.layer.fog");
+    if (!reuseStatic && !L.plan) drawLowFog(target, L);
+    frameCost?.end(phase); phase = frameCost?.begin(reuseStatic ? "stage.cache.reuse" : staticLayerKey ? "stage.cache.capture" : "stage.cache.off");
+    if (reuseStatic) paintStageStaticLayer(target, cached);
+    else if (staticLayerKey) rememberStageStaticLayer(target, staticLayerKey);
+    frameCost?.end(phase); phase = frameCost?.begin("stage.layer.effects");
     if (!L.plan) drawSceneEffects(target, L);
+    frameCost?.end(phase); phase = frameCost?.begin("stage.layer.exits");
     /* ★正面では光を物のあとに描く。物のあとに描かないと、台や人が
      *   光の帯を四角く切り抜いて、光が途中で切れて見える。
      *   光は物で消えない——帯は物の手前を横切り、当たった物が明るくなる。 */
@@ -19857,6 +20065,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       target.restore();
     }
 
+    frameCost?.end(phase); phase = frameCost?.begin("stage.layer.lighting.overlay");
     // 名前。頭上（平面では点の脇）に小さく置く。演者・装置・照明は別々に出し入れする
     if ((showSelection || STUDY_READ_ONLY) && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) {
       if (drawLightCueWorkLight(target, L)) {
@@ -19898,6 +20107,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     // 光源印と光の始点を幕の奥へ隠す。演者名などの作図用ラベルはこの後で描く。
     if (!L.plan) drawFrontBorderCurtain(target, L);
 
+    frameCost?.end(phase); phase = frameCost?.begin("stage.layer.labels");
     let visibleNameTags = [];
     if (!pitchStyle && (state.showNames || state.showSetNames || state.showLightNames)) {
       visibleNameTags = pieceNameTags(target, shown, L);
@@ -19918,6 +20128,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       });
     }
 
+    frameCost?.end(phase); phase = frameCost?.begin("stage.layer.annotations");
     // E2 #1: a transient screen overlay only; never part of print/export output.
     // It follows the names so the warning is never hidden behind a performer tag.
     if ((L.plan && target === planCtx) || (!L.plan && target === ctx)) {
@@ -19972,6 +20183,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
     drawDragHoldTarget(target, L, view);
 
+    frameCost?.end(phase); phase = frameCost?.begin("stage.layer.selection");
     if (showSelection) {
       // 平面で囲んだ対象は正面でも同じだけ囲み、二つの図の選択状態を一致させる。
       const selected = selectedPieces();
@@ -19979,6 +20191,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       if (selectionMarquee?.view === view) drawSelectionMarquee(target, selectionMarquee);
     }
 
+    frameCost?.end(phase); phase = frameCost?.begin("stage.layer.finish");
     /* 暗転で始まるシーンへの転換。前半で落ちて後半で明ける（山なりの黒幕）。
        動きの中身は幕の裏で起きるのが、暗転転換の本来の姿 */
     if (!L.plan && sceneAnim && sceneAnim.blackout) {
@@ -20055,7 +20268,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
        小窓・編集中の画面・書き出す画像には焼き付けない。 */
     if (showSelection && !L.plan && target === ctx) drawTransitionBadge(target, L, S);
     if (presenting && target === (fullscreenMainView === "plan" ? planCtx : ctx)) drawSceneCaption(target);
-    target.restore();
+    } finally { target.restore(); }
+    } finally { frameCost?.end(phase); }
   }
 
   /* 絵の下側に敷く説明の帯。暗い舞台の絵の上でも読めるよう、
@@ -31058,6 +31272,9 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
   /* いま動いている時計（ms）。spinRun が動いていなければ0＝模様は goboAngle の値で止まる
      （盆も模様も回っていないシーンはこれまでと同じ、余計な再描画をしない）。 */
   function lightEffectClockMs() {
+    // Fixed-time pixel comparisons only; absent in a normal product window.
+    const testClock = globalThis.__GAMMA_LIGHT_FRAME_COST__?.stageClockMs;
+    if (Number.isFinite(testClock)) return testClock;
     if(timelineLightGo?.playing)return timelineMotionEnabled()?timelineEffectSeconds()*1000:0;
     return spinRun ? spinRun.elapsedMs : 0;
   }
@@ -31171,15 +31388,26 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     const gap = operating ? SPIN_RUN_OPERATING_SKIP_MS : SPIN_RUN_RENDER_SKIP_MS;
     return !(Number.isFinite(lastRenderMs) && nowMs - lastRenderMs < gap);
   }
-  function renderSpinFrame() {
+  // Rain/snow/bubbles/confetti/flame are front-only. Their clock must not
+  // repaint a stationary plan. Timeline/idle/transition and rotating lights
+  // still use both diagrams; mobile render paths retain their prior behavior.
+  function spinFrameNeedsView(view, spinOnly = false) {
+    if (!spinOnly || tabletPwaActive || phoneViewerActive || !spinRun || sceneAnim || idleClock.playing
+      || timelineLightGo?.playing || idleMotionActive()) return true;
+    if (spinningGobos().length || spinningMirrorBalls().length) return true;
+    return view === "front" && effectsActive();
+  }
+  function renderSpinFrame(spinOnly = false) {
+    const frontMoves = spinFrameNeedsView("front", spinOnly), planMoves = spinFrameNeedsView("plan", spinOnly);
+    if (!frontMoves && !planMoves) return;
     stageVisualRevision += 1;
     if (STUDY_READ_ONLY) {
-      drawStage(ctx, false, "front");
-      if (planCtx) drawStage(planCtx, false, "plan");
+      if (frontMoves) drawStage(ctx, false, "front");
+      if (planMoves && planCtx) drawStage(planCtx, false, "plan");
       return;
     }
-    if (state.showFront || presenting) drawStage(ctx, true, "front");
-    if ((state.showPlan || presenting) && planCtx) drawStage(planCtx, true, "plan");
+    if (frontMoves && (state.showFront || presenting)) drawStage(ctx, true, "front", { spinFrame: spinOnly });
+    if (planMoves && (state.showPlan || presenting) && planCtx) drawStage(planCtx, true, "plan", { spinFrame: spinOnly });
   }
 
   function startSpinRun() {
@@ -31231,7 +31459,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
              （CPU 4分の1でドラッグ40回に200回描画・CI の Linux でも同じ）。時間判定は残して両方で省く。 */
           const operating = Boolean(pointerAction || pinch), renderedSinceLastTick = fullRenderSerial !== run.renderSerialSeen;
           run.renderSerialSeen = fullRenderSerial;
-          if (!(operating && renderedSinceLastTick) && spinRunFrameDrawDue(performance.now(), lastFullRenderAt, operating)) renderSpinFrame();
+          if (!(operating && renderedSinceLastTick) && spinRunFrameDrawDue(performance.now(), lastFullRenderAt, operating)) renderSpinFrame(true);
         }
       }
       run.raf = requestAnimationFrame(step);
@@ -43577,6 +43805,7 @@ document.addEventListener("keydown", function (event) {
     syncManualEdition();
     syncNativeGuideUrl();
     syncBrowserTitle();
+    renderNativeSaveWarning();
     document.documentElement.lang = lang;
   }
 
@@ -46000,7 +46229,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       alternativeViews:state.project.scenes.map(row=>[row.id,sceneAlternatives?.current(row)?.id]),
       noteDrafts:structuredClone(noteDrafts),stageAskPlan:structuredClone(stageAskPlan),
       stageAskSelections:structuredClone(stageAskClarificationSelections),stageAskInput:els.askInput?.value,
-      nativeProjectPackageExtras,nativeSaveWarning,saveStatus:els.saveStatus?{text:els.saveStatus.textContent,level:els.saveStatus.dataset.level}:null,
+      nativeProjectPackageExtras,nativeSaveWarningKey,saveStatus:els.saveStatus?{text:els.saveStatus.textContent,level:els.saveStatus.dataset.level}:null,
       selectedId,selectedIds:[...selectedIds],selectedNoteId,selectedTextId,selectedAudioTrackId,
       controlBefore:structuredClone(controlBefore),lastPersistedSnapshot,loadedStateGeneration,
       workspace:window.GAMMA_WORKSPACE?.captureRuntime?.()};
@@ -46024,16 +46253,17 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     stageAskPlan=saved.stageAskPlan;stageAskClarificationSelections=saved.stageAskSelections;
     if (stageAskPlan) renderStageAskPlan(stageAskPlan,{keepSelections:true}); else setStageAskMode('idle');
     if (els.askInput) els.askInput.value=saved.stageAskInput || '';
-    nativeSaveWarning=saved.nativeSaveWarning;
+    nativeSaveWarningKey=saved.nativeSaveWarningKey;
     nativeProjectPackageExtras=saved.nativeProjectPackageExtras;
     renderVenueControls();renderScenes();renderCast();renderSets();renderLights();renderRigs();
     syncInputs();applyLayout();updateInspector();updateHistoryButtons();render();
     window.GAMMA_WORKSPACE?.restoreRuntime?.(saved.workspace);
     if (saved.saveStatus) setSaveStatus(saved.saveStatus.text,saved.saveStatus.level);
+    renderNativeSaveWarning();
   }
   function commitNativeDocumentTransition() {
     nativeDocumentDelivery = false;
-    nativeSaveWarning=null;
+    nativeSaveWarningKey=null;
     const band=document.getElementById("stage-storage-band");if(band)band.hidden=true;
     window.GAMMA_WORKSPACE?.commitDocumentTransition?.();
     setNativeDocumentTransitioning(false);
@@ -46565,6 +46795,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
           return { id: piece.id, kind: visual.type === "performer" ? "performer" : (visual.type === "curtain" ? "curtain" : "set"),
             u: visual.u, v: visual.v, hM: pieceHeightM(visual), name: pieceLabel(visual), color: visual.color,
             pose: visual.pose, facing: visual.facing,
+            // The stopped lighting editor uses this scene's saved placement, not
+            // the parked host playhead. Include support-adjusted joints/props,
+            // without transient gait or idle animation; pieces remain read-only.
+            performancePose: visual.type === "performer" ? samplePerformancePose(visual, row.pieces, true) : null,
             // 照明デザインの正面図でも、舞台モードと同じ衣装を同じ色で描く。
             look: visual.type === "performer"
               ? projectIoClone(normalizeLook(resolveLookForScene(

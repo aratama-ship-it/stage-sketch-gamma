@@ -32,6 +32,24 @@
 
   const TEXT = {
 
+    "照明デザインの図を描く処理を軽くし、雨や回る照明のあるシーンを滑らかに表示できるようにしました。": "Lighting views now take less work to draw, helping scenes with rain or rotating lights display more smoothly.",
+
+    "舞台の図で、雨などの効果があるシーンを描き直す処理を軽くし、Mac 版で動きが重くなっていたのを直しました。": "Reduced the work needed to redraw stage views in scenes with effects such as rain, fixing sluggish movement in the Mac app.",
+
+    "窓の幅が狭いとき、照明の正面図の拡大ボタンがタイムラインに隠れて押せなかったのを直しました。": "Fixed the zoom button for the lighting front view being hidden behind the timeline and becoming unclickable in narrow windows.",
+
+    "照明デザインで色を変えて適用し、別のタブから戻ると、明かりが消えたように見えることがあったのを直しました。v0.3.88 で起きていた不具合です。": "Fixed lights sometimes appearing to go out after changing and applying a colour in Lighting design, switching to another tab and returning. This issue occurred in v0.3.88.",
+
+    "文書を開き直した後、照明デザインの見出しが前のシーンのままになることがあったのを直しました。": "Fixed the Lighting design heading sometimes remaining on the previous scene after reopening a document.",
+
+    "保存に失敗したときの帯が、表示の言語を切り替えても前の言語のまま残ることがあったのを直しました。": "Fixed the save failure banner sometimes remaining in the previous language after changing the display language.",
+
+    "Mac 版：ほかのアプリがファイルを変えたときの窓に「キャンセル」を足しました。Return で「別名で保存」、Esc で「キャンセル」を選べるようにしました。": "Mac app: Added Cancel to the window shown when another app changes the file. Return now selects Save As, and Esc selects Cancel.",
+
+    "Mac 版：保存していない変更があるまま文書を閉じるときに、ほかのアプリによるファイルの変更とぶつかると、その後の「別名で保存」もできなかったのを直しました。": "Mac app: Fixed Save As also becoming unavailable after an external file change conflicted with closing a document that had unsaved changes.",
+
+    "Mac 版：終了するときの確認などの標準の窓が、OS の言語設定に従い、日本語などの対応する言語で表示されるようにしました。": "Mac app: Standard windows, such as the confirmation when quitting, now appear in a supported language such as Japanese, following the OS language settings.",
+
     "照明デザインで、雨などの動く効果があるシーンにいると、照明の図を毎回描き直し続けて重くなっていた（Mac 版では応答しなくなることがあった）のを、必要なときだけ描き直すようにして軽くしました。": "In Lighting design, scenes with moving effects such as rain kept redrawing the lighting views every frame and became heavy (the Mac app could stop responding). The views are now redrawn only when needed.",
 
     "照明デザインで、器具に乗る人のいるシーンなどへ移ると「照明を開けませんでした」が出て、前後のシーンへ進むボタンが効かなくなることがあったのを直しました。": "Fixed lighting design sometimes showing “Could not open lighting” and disabling the previous and next scene buttons when moving to scenes such as those with a performer on equipment.",

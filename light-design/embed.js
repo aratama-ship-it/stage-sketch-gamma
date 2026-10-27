@@ -46,6 +46,10 @@
     timelineFrameLast=at;
     const input=parent.GAMMA_LIGHT_HOST.readPlaybackPreview();
     const next=input?.showId===context?.showId ? input : null;
+    // A stopped editor shows its selected cue, not the host's parked playhead.
+    // Seed only live playback/transition or an existing timeline follow; keep
+    // this read behind the same 30/s gate as all subsequent host samples.
+    if(!next?.running && !timelineFollowing) return;
     if(!sameHostPlaybackFrame(next,timelineFrameInput)) {
       hooks.setTimelinePlaybackFrame(next);timelineFrameInput=next;
       window.GAMMA_SIMPLE_LIGHT_UI?.refreshPlayback?.();
@@ -571,7 +575,13 @@
         context={...next,basis:retained.context.basis,baseBasis:retained.baseBasis};
         changedElsewhere=retained.changedElsewhere || retained.baseBasis!==basis(next);
         draftState=retained.draftState;recoveredWithoutHistory=!!retained.recoveredWithoutHistory;applyError='';appliedNotice='';active=true;
-        synchronizePieces(next);synchronizeVenueMask(next);synchronizeFrontSeats(next);setMode(mode);
+        synchronizePieces(next);synchronizeVenueMask(next);synchronizeFrontSeats(next);
+        // Retain the draft and Undo bank, but take the browsing scene from the
+        // reopened host, just as the raw-draft load does. lxScene stays pinned
+        // when LX linking is off. Set lastScene before rendering can notify host.
+        state.sceneIndex=Math.max(0,state.scenes.findIndex(row=>row.id===next.activeSceneId));
+        lastScene=state.scenes[state.sceneIndex]?.id || '';
+        setMode(mode);
         window.GAMMA_SIMPLE_LIGHT_UI?.restoreRuntime?.(retained.simple);
         window.GAMMA_SIMPLE_LIGHT_UI?.onContext(context);hooks.refreshApplyState();clearRecoveryMessage();renderSaveStatus();
       } finally {loading=false;}

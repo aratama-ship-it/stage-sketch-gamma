@@ -152,6 +152,9 @@
   // 色を地の暗さへ寄せる。奥の手足を沈ませるのに使う（重ね塗りで濃くならないよう、
   // 半透明ではなく色そのものを混ぜる）
   function mixToward(hex, t) {
+    // A lit shade can return a CanvasGradient as a hand's fillStyle (lighting shown,
+    // work light off, closed hand drawn large: 4-6). Keep a non-string paint as is.
+    if (typeof hex !== "string") return hex;
     const c = hex.replace("#", "");
     const n = parseInt(c.length === 3 ? c.split("").map((x) => x + x).join("") : c, 16);
     const r = Math.round(((n >> 16) & 255) * (1 - t) + 13 * t);
