@@ -19,14 +19,19 @@
   "html": "<p>Studio and Company include Rehearsal to the right of Run of show. Lite and read-only viewers do not. On iPad, use the Stage and Rehearsal tabs at the top. The phone reader has no rehearsal tab. At 760px or less, controls stack below the diagrams. E opens the timeline; T switches diagrams. Device-specific pen input and the packaged Mac app require separate checks.</p>"
 },
       {
-        id: "browser-storage", title: "Storage lives only in the browser", status: "verified",
+        id: "browser-storage", title: "Browser saving and file backups", status: "sourced",
         keywords: ["Safari", "backup", "保存", "控え", "7日", "ホーム画面", "Mac", "passphrase", "download", "installation"],
         html: `
-<p>Shows in the browser version are saved only in this device’s browser. Browser settings or a long period of inactivity may erase them. We recommend the Mac version for everyday work. When using the browser version on another computer, export a backup file.</p>
+<p>Shows in the browser version are first saved automatically in this device’s browser. Browser settings or a long period of inactivity may erase them. We recommend the Mac version for everyday work. When using the browser version on another computer, export a backup file.</p>
+<h4>Autosave JSON files in Chrome or Edge</h4>
+<p>Open “Autosave to a JSON file” in the Information panel and use “Choose destination” to select a dedicated .stagesketch file. An existing JSON file requires explicit overwrite confirmation. Cancelling the picker keeps the previous destination.</p>
+<p>Only successfully saved browser content enters the file queue. Saving starts 2 seconds after an edit, or within 10 seconds during continuous editing. Browser and file save results are shown separately. JSON includes audio references, but not audio files. Use Export to keep separate .stageproj.zip backups with audio. JSON autosave does not update the audio backup timestamp.</p>
+<p>Do not edit the dedicated file in another app at the same time. If permission expires, click “Allow destination again”. An external change or a content mismatch on restart stops file autosave while keeping the current show open. Choose another destination or “Stop file autosave”. The app never silently imports the older file. Stopping does not delete the file. After switching, importing or duplicating a show, select the destination again.</p>
+<p>Safari and environments without the required locking support retain browser saving and manual backups. Use the Mac app for automatic saving to files. Native Mac project saving is separate from browser JSON autosave.</p>
 <p>Safari deletes saved data after 7 days without interaction with this site. These are days of Safari use, not simply seven calendar days. Web apps added to the Home Screen are exempt from this seven-day limit.</p>
 ${steps(["On iPad or iPhone, use Safari’s Share button to Add to Home Screen, then open the added icon. On Mac, use Safari’s File → Add to Dock, then open the app.", "Press Export now in the reminder at the top and save the JSON backup in a device folder.", "Update backups regularly and keep a copy on another device or external drive. To restore one, use the show file import."])}
 <p>The reminder uses bold text and ! if you have never exported a backup or it is more than seven days old. It turns gray only when the app is installed and persistent storage has been granted. Still keep backups: protection cannot prevent deletion by the user. Reopening a show after at least seven days displays a dismissible export reminder.</p>
-${fig("release089-storage-band", "The browser storage reminder at the top, with a button to export a backup.", "Browser storage reminder")}
+${fig("release090-storage-band", "The browser storage reminder at the top, with a button to export a backup.", "Browser storage reminder")}
 <h4>Mac menus and language</h4>
 <p>App menus and alerts follow the display language selected in Settings. Choose Settings… (⌘,) from the Stage Sketch γ menu to open the app's preferences. The same menu provides Hide (⌘H), Hide Others (⌥⌘H), Show All and Services.</p>
 <p>The Window menu provides Minimise (⌘M), Zoom and Bring All to Front. The View menu provides Enter Full Screen (⌃⌘F). Help → Stage Sketch γ User Guide opens the booklet bundled with this app in a separate window. The English booklet opens for display languages other than Japanese.</p>
@@ -81,8 +86,8 @@ ${steps([
   "From then on open it from the home screen icon. Once opened, it starts even without a signal (the first addition needs a connection)."
 ])}
 ${grid([
-  fig("release089-ipad", "iPad landscape (about 1024×768) — reproduced in a desktop browser. Tools, the scene bar and the front view stack vertically.", "iPad landscape"),
-  fig("release089-ipad-portrait", "iPad portrait (about 768×1024).", "iPad portrait")
+  fig("release090-ipad", "iPad landscape (about 1024×768) — reproduced in a desktop browser. Tools, the scene bar and the front view stack vertically.", "iPad landscape"),
+  fig("release090-ipad-portrait", "iPad portrait (about 768×1024).", "iPad portrait")
 ])}
 ${note("Not checked on a real iPad", "These pictures reproduce the iPad's screen size in a desktop browser. How v0.2.16 behaves on a real iPad or as a home-screen app (touch, offline start, Gamma's new tabs) has not yet been checked for this booklet. The same goes for " + ui("iPad display mode") + " in Settings.", true)}`
       },

@@ -51,9 +51,9 @@ ${table(["Table", "Setting", "Contents"], [
 <li>Beta shows can be read, and their old lighting is converted (${ref("light-legacy", "Part 7, 7-8")}).</li>
 <li>JSON written with AI showwright is imported here too (${ref("ai-showwright", "11-6")}).</li>
 </ul>
-${fig("release089-project-open", "All shows: choose a show stored on this device to open it.", "Open a project")}
-${fig("release089-project-save", "Export a project with its audio.", "Save a project")}
-${fig("release089-previous-shows", "Previous shows on Mac: select an earlier show and save it as a project.", "Previous shows")}
+${fig("release090-project-open", "All shows: choose a show stored on this device to open it.", "Open a project")}
+${fig("release090-project-save", "Export a project with its audio.", "Save a project")}
+${fig("release090-previous-shows", "Previous shows on Mac: select an earlier show and save it as a project.", "Previous shows")}
 `
       },
       {
@@ -69,6 +69,7 @@ ${steps([
   "Guests open the invitation URL and sign in to the sharing host. In the session joining dialog, they enter a display name and submit it."
 ])}
 <p>The guests' scene follows the host. Guests can share a laser pointer and arrows, but cannot move pieces or edit the source show. If the host disconnects, the screen shows that it is waiting for the host to return.</p>
+<p>If your sign-in credentials (roster entry or password) change, open live-sharing connections are disconnected and a notice asks you to sign in again. Reload the page and sign in again.</p>
 <h4>Performer links — publish a snapshot for later review</h4>
 ${steps([
   "The editor opens the show and presses " + ui("Create a link for this show") + " under " + ui("Share") + " → " + ui("Performer link") + ". This publishes all scenes as they are at that moment.",
@@ -90,6 +91,8 @@ ${steps([
 <p>iPad overlay annotations are stored in this device's browser. They are not synced to other devices or sent to the issuer. An annotation backup contains every page in the current scene.</p>
 ${fig("release044-ipad-pages", "iPad annotation pages: duplicate, name and switch pages for different purposes.", "Page selection, renaming, duplication and adding a blank page")}
 <h4>What is excluded, and how to manage links</h4>
+<p>Before issuing a link, choose ${ui("No expiry")} (the default) or ${ui("Specify date and time")}. Enter local time and check the time zone and UTC preview before issuing. A blank or past date cannot be used. Servers without expiry support disable the dated option. Existing links remain unlimited; updating published content does not change the expiry. Expiry cannot be edited or extended.</p>
+<p>At expiry, viewing, posting and sync stop, and the viewer says ${ui("This link has expired. Please contact the issuer.")}. The owner can still read and delete received notes and images. To issue a replacement, first revoke the link, then read the confirmation about deleting received notes.</p>
 <p>The performer viewer cannot edit the source show. Local audio and device-only custom models are not shared. Sharing requires an internet connection and the sharing host.</p>
 <p>Each account can keep links for up to 10 shows. Earlier stage views are kept up to 50 revisions / 32 MiB; updates stop at the limit. After revocation, ${ui("Create a new link")} deletes received notes. ${ui("Delete saved data")} permanently deletes the published content and notes, so keep any copies you need before using it.</p>`
       },

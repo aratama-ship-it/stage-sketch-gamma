@@ -638,6 +638,8 @@ html[data-stage-skin] :is(.paper-panel,.item-editor,:where(#band-selection)) .is
   body.lite-paper #preview .doc-frame { max-height:calc(100dvh - var(--lite-band-height,100px) - var(--gamma-gap) * 4); }
 }
 @media print {
+  /* Screen padding must not spill past the last full-height printed page. */
+  #preview { padding:0; }
   body:not(.lite-paper),body:not(.lite-paper) main,body:not(.lite-paper) #preview { height:auto; overflow:visible; }
   #preview .doc-frame { overflow:visible; max-height:none; height:auto; scrollbar-gutter:auto; }
   .ros-left-toggle,.ros-left-resize { display:none!important; }

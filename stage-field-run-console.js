@@ -145,6 +145,28 @@
  async function save(){if(!run||mode!=='run')return;savedState();durationClock?.checkpoint();const snapshot=M.clone(run),basis=raw,assets=new Map(images),key=storageId;saveQueue=saveQueue.catch(()=>{}).then(async()=>{try{if(saveError==='record-conflict')throw Error('record-conflict');if(snapshot.revision===durable&&!saveError)return;const expected=durable;const next=await S.save(snapshot,basis,assets,expected,key);if(storageId===key){durable=next;saveError='';savedState();if(status.textContent===T('端末へ保存できません。未保存の記録は保持しています。'))warning('');}}catch(error){saveError=error.code||error.message||'save-failed';savedState();report(error);throw error;}});return saveQueue;}
  function scheduleSave(){notifyHistory();savedState();clearTimeout(timer);timer=setTimeout(()=>{save().catch(()=>{});},500);}
  async function flush(){writeNote();clearTimeout(timer);if(run&&mode==='run'&&run.status!=='closed'){run.elapsedSeconds=elapsed();run.viewSceneId=viewId||run.progressSceneId;run.viewFrameId=frameId;run.showSeconds=transport?.info().seconds??run.showSeconds;M.touch(run);}await save();}
+ let suspendedRevision=-1;
+ function flushOnSuspend(event){
+  if(event.type==='visibilitychange'&&document.visibilityState!=='hidden'){suspendedRevision=-1;return;}
+  if(!editable()||preview)return;
+  writeNote(); // Keep the existing IME guard; never finish a draft or unlock input.
+  if(run.revision===suspendedRevision)return;
+  const saving=flush();suspendedRevision=run.revision;
+  void saving.catch(()=>{}); // save() retains the existing error/conflict handling.
+ }
+ function startSuspendSave(){
+  suspendedRevision=-1;
+  document.addEventListener('visibilitychange',flushOnSuspend);
+  document.addEventListener('freeze',flushOnSuspend);
+  window.addEventListener('pagehide',flushOnSuspend);
+  window.addEventListener('freeze',flushOnSuspend);
+ }
+ function stopSuspendSave(){
+  document.removeEventListener('visibilitychange',flushOnSuspend);
+  document.removeEventListener('freeze',flushOnSuspend);
+  window.removeEventListener('pagehide',flushOnSuspend);
+  window.removeEventListener('freeze',flushOnSuspend);
+ }
  async function open(){
   ensure();workspace=true;dialog.dataset.workspace='true';dialog.hidden=false;
   document.getElementById('view-stage').append(dialog);
@@ -242,7 +264,7 @@
  async function hub(filter=false){if(blockDraft())return;checkpointSwitch();stop();run=null;raw='';images=new Map();iframe=null;dialog.querySelector('.field-run-bottom')?.remove();content.replaceChildren();clock.textContent='';title.textContent=T('リハーサル記録');warning('');const box=node('div',undefined,'field-run-hub');content.append(box);if(mode==='run'){const label=node('label','ランの名前'),input=node('input');input.id='field-run-name';input.autocomplete='off';input.setAttribute('data-1p-ignore','');input.maxLength=200;input.value=new Date().toLocaleDateString(document.documentElement.lang)+' '+T('通し');label.htmlFor=input.id;const acts=node('div',undefined,'field-run-hub-actions');const start=button('新しいラン',()=>begin(input.value),'field-primary');start.id='field-run-new';start.disabled=!!source().sessionRole();if(start.disabled)start.title=T('共有中はリハーサル記録を開始できません。');acts.append(start,button('記録ファイルを読み込む',importFile));box.append(label,input,acts);}else{const acts=node('div',undefined,'field-run-hub-actions');acts.append(button('すべてのラン記録',()=>hub(false)),button('記録ファイルを読み込む',importFile));box.append(acts);}
   void restoreBand(box,async band=>{await hub(filter);const next=content.querySelector('.field-run-restore');if(next)next.replaceWith(band);});const list=node('div',undefined,'field-run-list');box.append(list);const maps=await S.links();for(const row of await S.list()){if(row.unreadable){list.append(unreadableRow(row));continue;}const r=row.run;if(filter&&r.source.projectId!==target.projectId&&!maps.some(l=>l.runId===row.storageId&&l.targetProjectId===target.projectId&&l.targetSceneId===target.sceneId))continue;const entries=filter&&r.source.projectId===target.projectId?r.entries.filter(e=>e.sceneId===target.sceneId):r.entries;if(filter&&!entries.length&&!r.durations?.visits.some(v=>v.sceneId===target.sceneId)&&!r.frames.some(f=>r.source.projectId===target.projectId&&f.sceneId===target.sceneId)&&!maps.some(l=>l.runId===row.storageId&&l.targetSceneId===target.sceneId))continue;const item=node('article',undefined,'field-run-list-item'),label=node('strong');label.textContent=r.name+' · '+new Date(r.startedAt).toLocaleString(document.documentElement.lang);item.append(label);if(mode==='run'&&r.status!=='closed')item.append(button('このランを再開',()=>resume(row.storageId),'field-primary'));item.append(button('記録を見る',()=>showRecord(row.storageId)),button('書き出す',async()=>{const data=await S.read(row.storageId);await exportRecord(data);}));list.append(item);}
  }
- function stop(){setDrawingTarget(false);checkpoint?.watch('');durationClock?.pause();durationClock=null;clearInterval(durationRefresh);durationRefresh=null;clearTimeout(timer);clearInterval(heartbeat);heartbeat=null;transport?.destroy();transport=null;for(const p of pending.values()){clearTimeout(p.timeout);p.no(Error('frame-closed'));}pending.clear();for(const url of urls.values())URL.revokeObjectURL(url);urls.clear();}
+ function stop(){stopSuspendSave();setDrawingTarget(false);checkpoint?.watch('');durationClock?.pause();durationClock=null;clearInterval(durationRefresh);durationRefresh=null;clearTimeout(timer);clearInterval(heartbeat);heartbeat=null;transport?.destroy();transport=null;for(const p of pending.values()){clearTimeout(p.timeout);p.no(Error('frame-closed'));}pending.clear();for(const url of urls.values())URL.revokeObjectURL(url);urls.clear();}
  function blockDraft(){if(![...addendumDrafts.values()].some(s=>s.trim()))return false;warning('補足を追記してから閉じてください。');return true;}
  async function exit(){if(blockDraft()||appending)return false;if(composing||drawing){warning('入力を終えてから操作してください。');return;}if(editable()){durationClock?.pause();transport?.pause();M.touch(run);run.elapsedSeconds=elapsed();run.viewSceneId=viewId||run.progressSceneId;run.viewFrameId=frameId;run.showSeconds=transport?.info().seconds??run.showSeconds;run.status='paused';await save();}if(mode==='run'&&run&&(saveError||run.revision!==durable))await save();suspendedHistory=editable()?{storageId,revision:durable,history,future}:null;checkpointSwitch();stop();source().quiet(false);dialog.close();iframe=null;return true;}
  async function begin(name){if(blockDraft())return;if(source().sessionRole())throw Error('session-active');checkpointSwitch();preview=false;document.activeElement?.blur();await source().prepare();hostProjectId=source().identity().projectId;raw=source().snapshot();const hash=await M.hash(raw);run=M.create(raw,hash,name,window.STAGE_SKETCH_GAMMA_VERSION||'unknown');run.progressSceneId=documentCopy().project.activeSceneId||run.progressSceneId;run.showSeconds=window.STAGE_TIME_DOMAIN.resolve(documentCopy().project).byId.get(run.progressSceneId)?.start||0;M.attempt(run,documentCopy().project.scenes.find(s=>s.id===run.progressSceneId),shortLabel(run.progressSceneId));storageId=run.runId;durable=0;saveError='';images=new Map();mode='run';started=performance.now();elapsedBase=0;await mount(true);await save();}
@@ -251,7 +273,7 @@
  // Fetch through the parent's PWA controller, then keep the renderer opaque and self-contained.
  async function frameDocument(){
   const responseFor=async url=>{let response;try{response=await fetch(url);if(response.ok)return response;}catch(_){}try{response=await window.caches?.match(url);if(response?.ok)return response;}catch(_){}throw Error('frame-unavailable');};
-  const url=new URL('field-frame.html?v=20261026-v0389',location.href),response=await responseFor(url);
+  const url=new URL('field-frame.html?v=20261027-v0390',location.href),response=await responseFor(url);
   // Bind metadata to this freshly constructed srcdoc, never to a later message or frame.
   if(url.origin!==location.origin||(response.url&&new URL(response.url).origin!==location.origin))throw Error('frame-origin');
   const doc=new DOMParser().parseFromString(await response.text(),'text/html');if(!doc.documentElement.hasAttribute('data-study-renderer')||!doc.querySelector('.field-frame-drawings'))throw Error('frame-unavailable');doc.documentElement.dataset.stageSkin=currentSkin();const base=doc.createElement('base');base.href=new URL('.',url).href;doc.head.prepend(base);
@@ -328,7 +350,7 @@
   // An unanswered first scene is a renderer failure, not a failed run. Complete
   // the normal scene/note setup through ask()'s existing no-frame path.
   try{await selectScene(requested);if(restoredFrame)await selectFrame(restoredFrame);}catch(error){if(error.message!=='frame-timeout')throw error;unavailable();await selectScene(requested);if(restoredFrame)await selectFrame(restoredFrame);}
-  mounting=false;work.style.visibility='';work.inert=false;syncRunState();renderDurations();if(live)durationRefresh=setInterval(renderDurations,250);if(workspace){resizeWorkspace();document.getElementById('view-stage').scrollTop=0;}if(transport)updateClock(transport.info());notifyTimeline();if(live){heartbeat=setInterval(()=>{if(documentTransitioning||!canProgress())return;if(source().sessionRole()||source().identity().projectId!==hostProjectId){document.getElementById('stage-workspace-normal')?.click();return;}run.elapsedSeconds=elapsed();M.touch(run);void save().catch(()=>{});},2000);}
+  mounting=false;work.style.visibility='';work.inert=false;syncRunState();renderDurations();if(live)durationRefresh=setInterval(renderDurations,250);if(workspace){resizeWorkspace();document.getElementById('view-stage').scrollTop=0;}if(transport)updateClock(transport.info());notifyTimeline();if(live){startSuspendSave();heartbeat=setInterval(()=>{if(documentTransitioning||!canProgress())return;if(source().sessionRole()||source().identity().projectId!==hostProjectId){document.getElementById('stage-workspace-normal')?.click();return;}run.elapsedSeconds=elapsed();M.touch(run);void save().catch(()=>{});},2000);}
  }
  // Real performance time is independent of the show's playback/seek clock.
  function durationSceneId(){const info=transport?.info();return info?.phase?.fromSceneId||info?.sceneId||run?.progressSceneId;}

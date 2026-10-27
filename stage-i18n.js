@@ -32,6 +32,63 @@
 
   const TEXT = {
 
+    "Mac 版：演者の引き継ぎ Q シートの「印刷」で、印刷の画面が出なかったのを直しました。進行表や Q シートを PDF に保存するとき、画面で選んだ用紙の向き（横など）のとおりになるようにしました。": "Mac app: Fixed the print screen not appearing when using Print on a performer’s handover Q sheet. PDFs saved from the running order or Q sheet now use the paper orientation selected on screen, such as landscape.",
+
+    "ショーの名前がまだないときに、書き出すファイルの名前が表示言語に合った名前になるようにしました。": "When a show has no name yet, the exported file now gets a name in the display language.",
+
+    "Mac 版のダウンロードページで、合言葉の入力間違いを見やすくし、入力した合言葉の表示・非表示を切り替えられるようにしました。": "On the Mac download page, passphrase input errors are now easier to see, and you can show or hide the passphrase you entered.",
+
+    "契約の期限が切れた後も、ショーの閲覧と書き出しはできるようにしました。編集・共有・演者への共有リンクの発行は、案内を表示して止めるようにしました。": "You can now continue viewing and exporting shows after your plan expires. Editing, sharing and issuing sharing links for performers stop with an explanation.",
+
+    "利用する端末を登録できるようにし、登録済みの端末では月額契約の更新日までオフラインでも編集できるようにしました。登録は既定で3台までで、4台目では案内を表示し、不要な端末の登録を解除すると空きができます。": "You can now register your devices and edit offline on registered devices until your monthly plan’s renewal date. The default limit is three devices, with guidance shown on a fourth device, and removing a device registration frees a place.",
+
+    "対応するブラウザでは、自分で保存先を選んで、音源本体を含まない JSON ファイルへの自動保存を有効にできるようにしました。既定では無効で、ファイルとブラウザ内の内容が一致しないときは自動保存を止めます。": "In supported browsers, you can now choose a save location to enable autosaving to a JSON file without the audio files. This is off by default, and autosaving stops if the file and the content in the browser do not match.",
+    // LICENSE: monthly renewal and registered devices.
+    "ライセンス": "Licence",
+    "ログインと端末の管理": "Sign-in and devices",
+    "端末登録は既定3台です。保存領域を消去すると再ログインが必要です。端末を解除してもショーは消えません。": "The default limit is 3 devices. Clearing storage requires signing in again. Removing a device does not delete shows.",
+    "ログインして契約を確認": "Sign in and check contract",
+    "契約を再確認": "Check contract again",
+    "登録端末を確認": "Show registered devices",
+    "口座名": "Account name",
+    "端末数の上限": "Device limit",
+    "上限を変更": "Change limit",
+    "この端末登録を解除": "Remove this device registration",
+    "端末": "Device",
+    "次回更新: {date}": "Next renewal: {date}",
+    "登録端末: {count} / {limit}": "Registered devices: {count} / {limit}",
+    "端末の登録上限に達しました。不要な端末を解除して、もう一度確認してください。": "The device limit has been reached. Remove an unused device and check again.",
+    "ライセンスの設定が未完了です。管理者に連絡してください。閲覧と書き出しは使えます。": "Licence setup is incomplete. Contact the administrator. Viewing and export remain available.",
+    "この環境にはライセンスが導入されていません。": "Licensing has not been introduced in this environment.",
+    "次回の月額更新日まで、オフラインでも編集できます。": "You can edit offline until the next monthly renewal.",
+    "もう一度ログインして契約を確認してください。": "Sign in again to check your contract.",
+    "この設定は管理者だけが変更できます。": "Only the administrator can change this setting.",
+    "この端末の登録を解除しました。閲覧と書き出しは使えます。": "This device registration has been removed. Viewing and export remain available.",
+    "更新確認が必要です。オンラインで契約を確認してください。閲覧・書き出しと入力済みの内容は保持しています。": "Renewal verification is required. Check your contract online. Viewing, export and existing input are preserved.",
+    // RIGHTSC: contract state is separate from edition scope.
+    "契約期限が切れました。閲覧と書き出しは使えます。編集・共有・演者用リンクの発行は停止中です。期限前の変更と受信済みメモは保持しています。": "Your contract has expired. Viewing and export remain available. Editing, sharing and issuing performer links are stopped. Changes made before expiry and received notes are kept.",
+    "この契約では共有と演者用リンクの発行を使えません。StudioまたはCompanyの契約が必要です。保存済みリンクの一覧・メモ・回収・無効化は使えます。": "This contract does not include sharing or issuing performer links. A Studio or Company contract is required. Saved link lists, notes, recovery and revocation remain available.",
+    "契約: {plan}": "Contract: {plan}",
+    "契約期限切れ": "Contract expired",
+
+    "Mac 版：進行表や Q シートの「PDF として保存」で、保存した PDF が白紙になることがあったのを直しました。": "Mac app: Fixed saved PDFs sometimes being blank when using Save as PDF for the running order or Q sheet.",
+
+    "iPad を回したときに共有の接続が切れ、参加者が受け取ったショーも消えることがあったのを直しました。": "Fixed rotating an iPad sometimes disconnecting sharing and removing the copy of the show received by a participant.",
+
+    "通し稽古の記録を、別の画面に移ったときにすぐ保存するようにしました。": "Rehearsal run records are now saved straight away when you switch to another screen.",
+
+    "iPad の回転で画面を読み直すときは、その前に編集内容を自動保存するようにしました。": "Edits are now autosaved before reloading the screen when an iPad is rotated.",
+
+    "通信が切れた状態で画面を読み直すと、選択欄の見た目が崩れることがあったのを直しました。": "Fixed selection controls sometimes losing their styling when reloading the screen without an internet connection.",
+
+    "演者への共有リンクを発行するときに、有効期限を付けられるようにしました。期限が切れると、リンク先の閲覧やメモの送信を止めるようにしました。": "You can now set an expiry date and time when issuing a sharing link for performers. Viewing the shared content and sending notes now stop when the link expires.",
+
+    "共有する利用者の登録を削除したり、パスワードを変えたりしたときは、その利用者が開いている打ち合わせの接続も切るようにしました。": "Open meeting connections are now disconnected for a user whose sharing account is removed or whose password is changed.",
+
+    "打ち合わせの開始・再開や、演者への共有リンクの発行・内容の更新を、契約プランで使える範囲に合わせるようにしました。契約の期限が切れたときは、開いている打ち合わせの接続も切るようにしました。": "Starting or resuming meetings, issuing sharing links for performers and updating their content now follow the features available in your plan. Open meeting connections are also disconnected when the plan expires.",
+
+    "利用者の登録にあるプラン・チーム・期限の内容に誤りがあっても、ほかの利用者は共有を使い続けられるようにしました。": "Other users can now continue sharing even if a user’s registered plan, team or expiry details contain an error.",
+
     "照明デザインの図を描く処理を軽くし、雨や回る照明のあるシーンを滑らかに表示できるようにしました。": "Lighting views now take less work to draw, helping scenes with rain or rotating lights display more smoothly.",
 
     "舞台の図で、雨などの効果があるシーンを描き直す処理を軽くし、Mac 版で動きが重くなっていたのを直しました。": "Reduced the work needed to redraw stage views in scenes with effects such as rain, fixing sluggish movement in the Mac app.",
@@ -1953,6 +2010,7 @@
     "ネットワークに接続できないため、セッションを開始できませんでした。":
       "The session could not start because the network is unreachable.",
     "このセッションは満員です。": "This session is full.",
+    "共有の利用資格が変わったため、接続を終了しました。ページを再読み込みして、もう一度ログインしてください。": "Your sharing access has changed, so the connection has ended. Please reload the page and sign in again.",
     "この操作は共有できません。": "This action cannot be shared.",
     "共有内容を読み込めませんでした。": "The shared stage could not be loaded.",
     "共有内容を舞台へ反映できませんでした。": "The shared stage could not be applied.",
@@ -5865,3 +5923,27 @@ window.SHOSAI_DRAFT_LEDGER_REPAIR_COPY["en"] = {
   Object.assign(pack.text, added);
   pack.needsReview = [...new Set([...(pack.needsReview || []), ...Object.keys(added).map(key => "text." + key)])];
 })();
+
+// G129B: optional browser file autosave; Japanese is the lookup source.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "JSONファイルへ自動保存": "Autosave to a JSON file",
+  "保存先を選ぶ": "Choose destination",
+  "保存先を変更": "Change destination",
+  "保存先を再許可": "Allow destination again",
+  "ファイル自動保存を停止": "Stop file autosave",
+  "音源本体を含まないJSONです。専用ファイルを使い、他のアプリで同時に編集しないでください。編集後2秒、連続編集では最大10秒で保存を始めます。音源入りの控えは「書き出す」から残してください。": "This JSON does not include audio files. Use a dedicated file and do not edit it in other apps at the same time. Saving starts 2 seconds after an edit, or within 10 seconds during continuous editing. Use Export to keep a backup with audio.",
+  "このブラウザではファイル自動保存を使えません。ブラウザ内保存と手動の控えを使えます。実ファイルへの自動保存にはMac版をご利用ください。": "This browser cannot autosave to a file. Browser storage and manual backups remain available. Use the Mac app for automatic saving to files.",
+  "ファイル保存先は未選択です。ブラウザ内保存は従来どおり続きます。": "No file destination selected. Browser saving continues as usual.",
+  "ファイル自動保存を有効にしました。": "File autosave is enabled.",
+  "ブラウザ内保存済み。ファイルへの保存を待っています。": "Saved in the browser. Waiting to save the file.",
+  "ブラウザ内保存済み。ファイルへ保存中です。": "Saved in the browser. Saving the file.",
+  "JSONファイルへ保存しました。音源入りの控えは別に残してください。": "Saved to the JSON file. Keep a separate backup with audio.",
+  "保存先の許可が必要です。「保存先を再許可」を押してください。": "Destination permission is required. Click “Allow destination again”.",
+  "ファイルとブラウザ内の内容が一致しないため停止しました。現在のショーはそのままです。別の保存先を選ぶか、ファイル自動保存を停止してください。": "The file and browser contents differ, so file autosave has stopped. The current show remains open. Choose another destination or stop file autosave.",
+  "ファイル自動保存を停止しました。保存先を選び直すか、手動で控えを残してください。ブラウザ内の保存結果は上の表示で確認できます。": "File autosave has stopped. Choose the destination again or export a manual backup. Check the browser save result above.",
+  "ブラウザ内の保存に失敗したため、ファイル自動保存も停止しました。手動で控えを残してください。": "Browser saving failed, so file autosave has also stopped. Export a manual backup.",
+  "「{file}」には既存のJSONが入っています。現在のショーで上書きし、自動保存の専用ファイルにしますか？音源本体は入りません。": "“{file}” already contains JSON. Overwrite it with the current show and use it only for autosave? Audio files are not included.",
+  "保存先はこのタブを閉じるまで有効です。次回は選び直してください。": "This destination is available until this tab closes. Select it again next time."
+});
+
+window.SHOSAI_I18N_PACKS["en"].text["保存先を選べませんでした。以前の保存先は変更していません。別の保存先を選んでください。"] = "Could not select the destination. The previous destination has not changed. Choose another destination.";

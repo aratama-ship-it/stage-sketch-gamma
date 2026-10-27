@@ -1,11 +1,12 @@
 // Account-scoped personal notes. Shared notes use a different explicit-send API.
 (() => {
   'use strict';
-  window.SHOSAI_STUDY_SYNC = async ({ accountId, connectionId, changed }) => {
+  window.SHOSAI_STUDY_SYNC = async ({ accountId, connectionId, changed, canSync = () => true }) => {
     const key = `stage-study-account-v1:${accountId}:${connectionId}`, entries = new Map();
     let blocked = false, working = false, closed = false;
     const endpoint = '/study/api/me/notebook/' + connectionId;
     const request = async (suffix = '', options = {}) => {
+      if (!canSync()) throw Object.assign(new Error('link-expired'), { status: 404 });
       const response = await fetch(endpoint + suffix, { credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(10000), ...options, headers: { 'X-Study-Reader': accountId, ...options.headers } });
       const body = await response.json(); if (!response.ok) throw Object.assign(new Error(body.error), { status: response.status, body }); return body;
     };
@@ -46,7 +47,7 @@
             delete value.error; persist(); emit(id, value.pending ? 'syncing' : 'synced');
           } catch (error) {
             if (error.status === 409 && error.body.error === 'note-conflict') { value.conflict = { version: error.body.version, entry: error.body.entry }; persist(); emit(id, 'conflict'); }
-            else { value.error = error.status === 401 ? 'loginRequired' : error.status === 413 || error.body?.error === 'notebook-full' ? 'syncFull' : error.status === 409 ? 'syncChanged' : error.status === 404 ? 'unavailable' : error.status === 429 ? 'syncRate' : 'syncPending'; persist(); emit(id, value.error); }
+            else { value.error = error.status === 401 ? 'loginRequired' : error.status === 413 || error.body?.error === 'notebook-full' ? 'syncFull' : error.status === 409 ? 'syncChanged' : error.status === 404 ? error.message === 'link-expired' ? 'expired' : 'unavailable' : error.status === 429 ? 'syncRate' : 'syncPending'; persist(); emit(id, value.error); }
           }
         }
       } finally { working = false; }
@@ -78,7 +79,7 @@
         try {
           const result = await request('/' + id + '?knownVersion=' + version);
           if (!result.unchanged && !entries.get(id)?.pending && !working) { entries.set(id, result); persist(); emit(id, 'synced', true); }
-        } catch (error) { emit(id, error.status === 401 ? 'loginRequired' : error.status === 404 ? 'unavailable' : 'syncPending'); }
+        } catch (error) { emit(id, error.status === 401 ? 'loginRequired' : error.status === 404 ? error.message === 'link-expired' ? 'expired' : 'unavailable' : 'syncPending'); }
       },
       close() { closed = true; },
     });

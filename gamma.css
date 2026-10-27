@@ -1786,3 +1786,9 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .gamma-header-fitted.gamma-
     scroll-padding-bottom: calc(var(--stage-timeline-height) + env(safe-area-inset-bottom, 0px) + 32px);
   }
 }
+
+/* G129B: reuse the save panel; file and browser receipts remain separate. */
+#stage-file-autosave { color:var(--paper); background:var(--desk-2); border:1px solid var(--line-dark); padding:10px; font-family:var(--sans); font-size:13px; line-height:1.5; overflow-wrap:anywhere; }
+#stage-file-autosave summary { cursor:pointer; }
+#stage-file-autosave p { margin:4px 0; color:inherit; font:inherit; }
+#stage-file-autosave button { min-height:44px; white-space:normal; }

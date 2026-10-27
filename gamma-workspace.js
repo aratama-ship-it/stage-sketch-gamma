@@ -1082,7 +1082,7 @@
         const context=host.context(); latestContext=context;
         const timelinePlay=document.getElementById('stage-timeline-play');
         if(timelinePlay?.getAttribute('aria-pressed')==='true') timelinePlay.click();
-        if(context.readOnly) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
+        if(context.readOnly && !context.contractReadOnly) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
         /* V-7（2026-09-17）: 劇場を一度も反映していないショーでは灯体配置UIを出さず誘導する。
          * 判定は host.context().venueApplied（stage-sketch.jsのvenueSetupWasApplied()をそのまま使用）。 */
         if(!context.venueApplied) {
@@ -1094,7 +1094,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261026-v0389'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261027-v0390'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;
@@ -1103,11 +1103,11 @@
         }
       } else if(next==='venue-setup') {
         const context=host.context(); latestContext=context;
-        if(context.readOnly) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
+        if(context.readOnly && !context.contractReadOnly) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
         showVenue();
       } else if(next==='script') {
         const context=host.context(); latestContext=context;
-        if(context.readOnly) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
+        if(context.readOnly && !context.contractReadOnly) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
         editor()?.suspend();
         window.SHOSAI_SCRIPT_EDITOR?.open?.();
       } else if(next==='rehearsal') {
@@ -1118,7 +1118,7 @@
         try { await window.GAMMA_FIELD_RUNS.open(); }
         finally { delete document.body.dataset.gammaRehearsalPending; }
       } else if(next==='run-of-show') {
-        const readOnlyQ = host.context().readOnly;
+        const readOnlyQ = host.context().readOnly && !host.context().contractReadOnly;
         if(readOnlyQ && !window.SHOSAI_STAGE_CUE_SHEET_HOST?.available?.()) throw Error('共有の閲覧中は、舞台と3Dをお使いください');
         editor()?.suspend();
         window.GAMMA_RUN_OF_SHOW_PANE?.open?.();

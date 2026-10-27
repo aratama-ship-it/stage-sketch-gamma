@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.89";
+  const GAMMA_APP_VERSION = "v0.3.90";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -578,6 +578,210 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   });
 
   const STUDY_READ_ONLY = document.documentElement?.hasAttribute?.("data-study-renderer") === true;
+  const CONTRACT_EXPIRED = "契約期限が切れました。閲覧と書き出しは使えます。編集・共有・演者用リンクの発行は停止中です。期限前の変更と受信済みメモは保持しています。";
+  const CONTRACT_PLAN_REQUIRED = "この契約では共有と演者用リンクの発行を使えません。StudioまたはCompanyの契約が必要です。保存済みリンクの一覧・メモ・回収・無効化は使えます。";
+  let contractUiReady = false, contractTimer = null;
+  const contractDocuments = new Set(), contractControlState = new Map();
+  const contractAccess = window.GAMMA_EDITIONS?.createContractAccess?.({changed: () => {
+    clearTimeout(contractTimer);
+    // Schedule only the known contract boundary. This is not an offline grace period.
+    const remaining = licenseEnforced() ? window.GAMMA_LICENSE.remaining() : contractAccess.remaining();
+    if (remaining !== null) contractTimer = setTimeout(checkContractBoundary, Math.min(2147483647, remaining));
+    if (contractUiReady) refreshContractUi();
+    window.dispatchEvent(new Event("gamma-contract-change"));
+  }});
+  function checkContractBoundary() {
+    contractAccess.read(); window.GAMMA_LICENSE?.read(); refreshContractUi();
+    if (licenseEnforced() && window.GAMMA_LICENSE.needsCheck()) void window.GAMMA_LICENSE.renew();
+    const remaining = licenseEnforced() ? window.GAMMA_LICENSE.remaining() : contractAccess.remaining();
+    if (remaining !== null) contractTimer = setTimeout(checkContractBoundary, Math.min(2147483647, remaining));
+  }
+  function licenseEnforced() { return window.GAMMA_LICENSE && window.GAMMA_LICENSE.read().state !== "legacy"; }
+  function contractReadOnly() { return licenseEnforced() ? !window.GAMMA_LICENSE.decision().allowed : contractAccess?.decision().allowed === false; }
+  function readContract() {
+    if (!licenseEnforced()) return contractAccess?.read() || {state:"unknown", plan:null};
+    const value = window.GAMMA_LICENSE.read();
+    return {...value, licenseState:value.state, state:window.GAMMA_LICENSE.decision().allowed ? "active" : "expired"};
+  }
+  window.addEventListener("gamma-license-change", () => {
+    clearTimeout(contractTimer);
+    const remaining = window.GAMMA_LICENSE?.remaining();
+    if (remaining !== null && remaining !== undefined) contractTimer = setTimeout(checkContractBoundary, Math.min(2147483647, remaining));
+    if (contractUiReady) refreshContractUi();
+    window.dispatchEvent(new Event("gamma-contract-change"));
+  });
+  function requireContractEdit() { if (contractReadOnly()) throw new Error(contractMessage()); }
+  function contractMessage(feature = "edit") {
+    if (licenseEnforced() && contractReadOnly()) return window.GAMMA_LICENSE.message();
+    return tx(contractAccess?.decision(feature).reason === "plan-required" ? CONTRACT_PLAN_REQUIRED : CONTRACT_EXPIRED);
+  }
+  window.GAMMA_CONTRACT = Object.freeze({
+    read: readContract,
+    update: value => contractAccess?.update(value) === true,
+    expire: () => contractAccess?.expire(),
+    restrictSharing: () => contractAccess?.restrictSharing(),
+    decision: feature => {
+      if (contractReadOnly()) return {allowed:false,reason:"plan-expired"};
+      if (licenseEnforced()) return !feature || feature === "edit" ? {allowed:true} : window.GAMMA_EDITIONS.featureDecision({plan:window.GAMMA_LICENSE.read().plan}, feature, 0);
+      return contractAccess?.decision(feature) || {allowed:true};
+    },
+    message: contractMessage,
+  });
+  // Every exported editing capability checks again at invocation, including
+  // iframe callers which were opened before expiry. New methods default to edit.
+  function contractBridge(api, reading = []) {
+    const safe = new Set(reading);
+    return Object.freeze(Object.fromEntries(Object.entries(api).map(([key, value]) => [key,
+      typeof value !== "function" || safe.has(key) ? value : function (...args) { requireContractEdit(); return value.apply(this, args); }])));
+  }
+  function refreshContractUi() {
+    if (!contractUiReady) return;
+    const value = window.GAMMA_CONTRACT.read(), expired = contractReadOnly();
+    if (value.licenseState === "licensed" && value.user && signedInUser !== value.user) {
+      signedInUser = value.user; updateWhoamiBadge();
+    }
+    const label = (window.GAMMA_EDITION || "studio").replace(/^./, c => c.toUpperCase());
+    const text = label + (value.plan ? " · " + tx("契約: {plan}").replace("{plan}", value.plan.replace(/^./, c => c.toUpperCase())) : "")
+      + (expired ? " · " + tx("契約期限切れ") : "");
+    let edition = document.getElementById("stage-contract-edition");
+    const badge = document.getElementById("stage-session-whoami");
+    if (!edition && badge?.parentElement) {
+      edition = document.createElement("span"); edition.id = "stage-contract-edition";
+      edition.className = "stage-session-whoami"; edition.setAttribute("data-no-i18n", ""); badge.before(edition);
+    }
+    if (edition) {
+      edition.textContent = value.plan ? tx("契約: {plan}").replace("{plan}", value.plan.replace(/^./, c => c.toUpperCase())) + (expired ? " · " + tx("契約期限切れ") : "") : expired ? tx("契約期限切れ") : "";
+      edition.title = text; edition.hidden = !edition.textContent;
+    }
+    let notice = document.getElementById("stage-contract-status");
+    if (!notice && stageSketchRoot) {
+      notice = document.createElement("p"); notice.id = "stage-contract-status";
+      notice.className = "stage-session-status is-error"; notice.setAttribute("role", "status"); notice.setAttribute("data-no-i18n", "");
+      const header = stageSketchRoot.querySelector(".stage-sketch-head");
+      if (header) header.after(notice); else stageSketchRoot.prepend(notice);
+    }
+    if (notice) { notice.hidden = !expired; notice.textContent = expired ? contractMessage() : ""; }
+    document.documentElement.dataset.gammaContractState = value.state;
+    if (expired) {
+      // Do not blur, close editors, reload a document, clear Undo or cancel a
+      // pending durable save. Text/drafts made before this boundary remain here.
+      pointerAction = null; selectionMarquee = null; arrowDraft = null;
+    }
+    decorateContractControls(expired);
+    updateHistoryButtons();
+    window.stageSketchBridge?.contractStatus?.({label:text, readOnly:expired});
+  }
+  // Fail closed for editing UI, with explicit viewing/export/recovery paths.
+  // This also covers dynamically created controls and native text Undo events.
+  function contractViewingTarget(target) {
+    if (target?.closest?.('#stage-export-and-share, #stage-reset-all, #stage-storage-pressure-repair')) return false;
+    // A reading control's ancestor must not grant permission to edit a nested
+    // field. Rich editors (including empty/plaintext-only and inherited ones)
+    // always remain read-only; leave their current text and editable flag intact.
+    if (target?.isContentEditable) return false;
+    const field = target?.closest?.('input, textarea, select');
+    if (field) return Boolean(field.closest('#stage-prefs-modal, #stage-export-modal, #stage-project-export-modal, #stage-venue-export-modal, [data-contract-recovery]')
+      || field.matches('#stage-view-select, #stage-show-names, #stage-show-set-names, #stage-show-light-names, #stage-front2-seat, #stage-front-lights, #stage-show-front-border, #stage-front-floor-grid, #stage-timeline-audio-volume, #stage-timeline-volume'));
+    return Boolean(target?.closest?.([
+      'button[data-contract-view], a[data-contract-view]', '[data-contract-recovery]', 'button[data-stage-workspace-mode]', 'a[download]',
+      '.stage-modal-close', '.stage-modal-backdrop', '[data-stage-zoom]',
+      '.stage-scene-title', '.stage-scene-toggle', '.stage-scene-grid-card', '.stage-phone-scene-list-row',
+      '#stage-export-modal', '#stage-project-export-modal', '#stage-venue-export-modal',
+      '#stage-export', '#stage-export-json', '#stage-shows-open',
+      '#stage-prefs-modal', '#stage-prefs-btn', '#stage-launch-backup-warning',
+      '#stage-share-open', '#stage-share-close', '#stage-share-backdrop',
+      '#stage-scene-grid-open', '#stage-scene-grid-close', '#stage-scene-prev', '#stage-scene-next',
+      '#stage-zoom-in', '#stage-zoom-out', '#stage-zoom-reset', '#stage-view-select',
+      '#stage-show-names', '#stage-show-set-names', '#stage-show-light-names', '#stage-seat-list',
+      '#stage-front-zoom', '#stage-plan-zoom', '#stage-plan-zoom-in', '#stage-plan-zoom-out', '#stage-front2-seat',
+      '#stage-front-lights', '#stage-show-front-border', '#stage-front-floor-grid',
+      '#stage-timeline-play', '#stage-timeline-stop', '#stage-timeline-audio-volume', '#stage-timeline-volume', '#stage-header-volume-btn',
+      '#paper-export', '#export-document', '#print-sample', '#scene-prev', '#scene-next', '#t-play',
+      '#stage-play', '#stage-stop', '#gamma-information-toggle', '#stage-manual-open',
+      '#stage-show-save-export', '#stage-export-close', '#stage-export-backdrop'
+    ].join(',')));
+  }
+  function decorateContractControls(expired = contractReadOnly(), roots = contractDocuments) {
+    if (!expired) {
+      for (const [control, before] of contractControlState) {
+        for (const key of ["aria-disabled", "title", "readonly"]) {
+          if (before[key] === null) control.removeAttribute(key); else control.setAttribute(key, before[key]);
+        }
+      }
+      contractControlState.clear(); return;
+    }
+    const selector = 'button, input, select, textarea, [contenteditable]:not([contenteditable="false"])';
+    const message = contractMessage();
+    for (const root of roots) {
+      const controls = [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
+      for (const control of controls) {
+        if (contractViewingTarget(control)) continue;
+        if (!contractControlState.has(control)) contractControlState.set(control,
+          Object.fromEntries(["aria-disabled", "title", "readonly"].map(key => [key, control.getAttribute(key)])));
+        if (control.getAttribute("aria-disabled") !== "true") control.setAttribute("aria-disabled", "true");
+        if (control.getAttribute("title") !== message) control.setAttribute("title", message);
+        if (control.matches('textarea, input') && !control.hasAttribute("readonly")) control.setAttribute("readonly", "");
+      }
+    }
+  }
+  function guardContractInput(event) {
+    if (!contractReadOnly()) return;
+    const originalTarget = event.composedPath?.()[0] || event.target;
+    const target = originalTarget?.nodeType === 3 ? originalTarget.parentElement : originalTarget;
+    const safe = contractViewingTarget(target);
+    // The export filename is local dialog state, never the show title. Keep
+    // native text editing there while the underlying document stays locked.
+    const exportName = safe && target?.matches?.("#stage-project-export-name");
+    if (exportName && ["cut", "paste"].includes(event.type)) return;
+    if (event.type === "keydown" || event.type === "keyup") {
+      const key = event.key.toLowerCase();
+      if (["tab", "escape", "shift", "control", "meta", "alt"].includes(key)) return;
+      if ((event.ctrlKey || event.metaKey) && ["c", "a", "f", "p"].includes(key)) return;
+      // Enter/Space on a known read control still uses its existing click route.
+      if (safe && !event.altKey && (!(event.ctrlKey || event.metaKey)
+        || (exportName && ["v", "x", "z", "y"].includes(key)))) return;
+    } else if (event.type === "wheel" && !target?.closest?.("canvas, input")) return;
+    else if (safe && !["dblclick", "contextmenu", "cut", "paste", "drop", "dragstart"].includes(event.type)) return;
+    // Non-interactive text remains selectable/copyable. Unknown controls and
+    // all drawing surfaces stay closed rather than guessing by their label.
+    else if (["pointerdown", "mousedown", "mouseup", "pointerup", "click"].includes(event.type)
+      && !target?.closest?.('button, input, select, textarea, [contenteditable], canvas, [role="button"], a, label')) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    if (["click", "keydown", "beforeinput", "drop"].includes(event.type)) {
+      const notice = document.getElementById("stage-contract-status");
+      if (notice) { notice.hidden = false; notice.textContent = contractMessage(); }
+    }
+  }
+  const contractGuardEvents = ["pointerdown", "pointermove", "pointerup", "mousedown", "mousemove", "mouseup", "click", "dblclick", "contextmenu", "keydown", "keyup", "beforeinput", "input", "change", "cut", "paste", "drop", "dragstart", "wheel"];
+  function guardContractDocument(doc) {
+    if (!doc || doc.__gammaContractGuard) return;
+    doc.__gammaContractGuard = true;
+    contractDocuments.add(doc);
+    // Capture on the Window, ahead of document and target handlers.
+    for (const type of contractGuardEvents) doc.defaultView.addEventListener(type, guardContractInput, {capture:true, passive:false});
+    if (typeof MutationObserver === "function") new MutationObserver(records => {
+      if (!contractUiReady || !contractReadOnly()) return;
+      // Live paper/status rendering must not rescan every guarded document.
+      // Capture already denies input immediately; annotate only inserted trees.
+      const roots = records.flatMap(record => [...record.addedNodes]).filter(node => node.nodeType === 1);
+      if (roots.length) decorateContractControls(true, roots);
+    }).observe(doc, {childList:true, subtree:true});
+    for (const frame of doc.querySelectorAll("iframe")) {
+      frame.addEventListener("load", () => { try { guardContractDocument(frame.contentDocument); } catch (_) {} });
+      try { guardContractDocument(frame.contentDocument); } catch (_) {}
+    }
+  }
+  if (document.defaultView) guardContractDocument(document);
+  if (typeof MutationObserver === "function") new MutationObserver(records => {
+    for (const record of records) for (const node of record.addedNodes) {
+      const frames = node.querySelectorAll ? [...node.querySelectorAll("iframe")] : [];
+      if (node.tagName === "IFRAME") frames.push(node);
+      for (const frame of frames) {
+        frame.addEventListener("load", () => { try { guardContractDocument(frame.contentDocument); } catch (_) {} });
+        try { guardContractDocument(frame.contentDocument); } catch (_) {}
+      }
+    }
+  }).observe(document.documentElement, {childList:true, subtree:true});
   // Shadow only this module's storage. The renderer additionally runs in an opaque-origin sandbox.
   const sceneAlternatives = window.STAGE_SCENE_ALTERNATIVES;
   let alternativesStorageBlocked = false;
@@ -736,13 +940,13 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   function defaultProjectExportBasename(project) {
     const source = project && typeof project === "object" ? project : {};
-    const title = (source.title || "show")
+    const title = (source.title || tx("ショー"))
       .replace(/[\\/:*?"<>|\s]+/g, "_")
-      .slice(0, 40) || "show";
+      .slice(0, 40) || tx("ショー");
     const version = (source.versionLabel || "v1")
       .replace(/[\\/:*?"<>|\s]+/g, "_")
       .slice(0, 24) || "v1";
-    return projectExportFilename({ title, versionLabel: version }, "ショー", "").replace(/\.stagesketch$/i, "");
+    return projectExportFilename({ title, versionLabel: version }, tx("ショー"), "").replace(/\.stagesketch$/i, "");
   }
 
   function projectExportDate(value = new Date()) {
@@ -755,7 +959,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       .replace(/[\u0000-\u001f\u007f/\\:*?"<>|\s]+/g, "_")
       .replace(/^_+|_+$/g, "")
       .slice(0, limit) || fallback;
-    const title = safePart(project && project.title, "show");
+    const title = safePart(project && project.title, tx("ショー"));
     const rawVersion = safePart(project && project.versionLabel, "v1", 24).replace(/^v+/i, "");
     const type = safePart(kind, "書き出し", 48);
     const suffix = extension ? `.${String(extension).replace(/^\.+/, "")}` : ".stagesketch";
@@ -2553,7 +2757,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-26`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-27`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -2579,6 +2783,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       const result = await response.json();
       const user = result && typeof result.user === "string" ? result.user.trim() : "";
       if (!user) return null;
+      window.GAMMA_LICENSE?.observeIdentity(result);
+      if (result.license?.mode === "required" && !window.GAMMA_LICENSE?.decision().allowed) await window.GAMMA_LICENSE?.renew();
+      window.GAMMA_CONTRACT.update(result);
 
       let previousUser;
       try { previousUser = localStorage.getItem(LAST_USER_KEY); }
@@ -2601,7 +2808,34 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     }
   }
 
-  const whoamiRequest = canFetchWhoami ? fetchWhoamiIdentity() : null;
+  const whoamiRequest = window.GAMMA_LICENSE && !STUDY_READ_ONLY ? window.GAMMA_LICENSE.initialize().then(value => {
+    if (value.state === "licensed") {
+      window.GAMMA_CONTRACT.update({user:value.user,plan:value.plan,until:value.until});
+      return {user:value.user,switched:false};
+    }
+    return canFetchWhoami ? fetchWhoamiIdentity() : null;
+  }) : canFetchWhoami ? fetchWhoamiIdentity() : null;
+  let contractRefreshPending = false;
+  async function refreshContractIdentity() {
+    contractAccess?.read();
+    if (licenseEnforced()) {
+      window.GAMMA_LICENSE.read();
+      if (window.GAMMA_LICENSE.needsCheck()) await window.GAMMA_LICENSE.renew();
+      return;
+    }
+    if (contractRefreshPending) return;
+    contractRefreshPending = true;
+    try {
+      if (nativeProject && typeof window.stageSketchBridge?.sessionUser === "function") {
+        const result = await window.stageSketchBridge.sessionUser();
+        if (result?.ok === true) window.GAMMA_CONTRACT.update(result);
+      } else if (canFetchWhoami) await fetchWhoamiIdentity();
+    } catch (_) { /* Keep the known deadline; no new expiry or offline grace. */ }
+    finally { contractRefreshPending = false; }
+  }
+  window.addEventListener("focus", refreshContractIdentity);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) void refreshContractIdentity(); });
+  if (nativeProject) void refreshContractIdentity();
   /* 舞台に置ける駒の型。★舞台セットの種類（SET_KINDS）を足したら、
    * ここにも足すこと。無い型は「演者」に落とされる（実際に踏んだ）。 */
   const PIECE_TYPES = {
@@ -5601,12 +5835,13 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let layoutLaneResizeFrame = 0;
   let layoutLaneReloadPending = false;
   let layoutLaneReloadAttempt = null;
+  let layoutLaneSaveUnconfirmed = false;
   // A reload can be cancelled by any of the existing draft/save guards. Do
   // not infer cancellation from reload() returning or from a timeout alone.
   // A subsequent trusted interaction in this document is the recovery point.
-  function recoverLayoutLaneReload() {
+  function recoverLayoutLaneReload({ saveFailed = false } = {}) {
     const attempt = layoutLaneReloadAttempt;
-    if (!attempt || !attempt.requested || attempt.departed) return false;
+    if (!attempt || (!attempt.requested && !saveFailed) || attempt.departed) return false;
     try {
       const key = STAGE_LAYOUT_LANES_MODEL.STORAGE_KEYS.autoTablet;
       // Another tab may have changed the preference while the dialog was open.
@@ -5672,7 +5907,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       desktopShell,
     });
     const nativeWelcome = nativeProject && (!nativeProject.opened || window.STAGE_WELCOME?.visible);
-    if (transition.reload && !nativeWelcome && !STUDY_READ_ONLY && !layoutLaneReloadPending && currentWorkspaceMode() !== "rehearsal") {
+    // Keep the live shell while sharing; reloading would disconnect both roles.
+    // After the session ends, a later resize can retry the normal transition.
+    const sessionActive = window.SHOSAI_STAGE_SESSION_HOOKS?.role?.()
+      || document.body.classList.contains("stage-session-guest");
+    if (transition.reload && !sessionActive && !nativeWelcome && !STUDY_READ_ONLY && !layoutLaneReloadPending && currentWorkspaceMode() !== "rehearsal") {
       // Preserve open and search-suspended drafts; a later resize retries normally.
       if (hasPendingRenameDrafts()) return currentLayoutLaneState();
       const attempt = { previousMark: null, nextMark: transition.autoTablet ? "1" : null, requested: false, departed: false };
@@ -5683,8 +5922,31 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       } catch (_) { /* 印を保存できない場合は再読み込みを繰り返さない */ return currentLayoutLaneState(); }
       layoutLaneReloadPending = true;
       layoutLaneReloadAttempt = attempt;
-      window.setTimeout(() => {
+      window.setTimeout(async () => {
         if (layoutLaneReloadAttempt !== attempt) return;
+        let saveWaitTimer;
+        try {
+          if (!STUDY_READ_ONLY && !nativeProject?.readOnly) {
+            // Use the existing verified-save result: flush/whenIdle alone also
+            // resolve on a failed commit. Missing hooks must fail closed too.
+            if (typeof saveCurrentShow !== "function") throw new Error("save-unavailable");
+            const result = await Promise.race([
+              saveCurrentShow(),
+              new Promise(resolve => { saveWaitTimer = window.setTimeout(() => resolve({ ok:false }), 1500); }),
+            ]);
+            if (result?.ok !== true) throw new Error("save-unconfirmed");
+          }
+        } catch (_) {
+          if (layoutLaneReloadAttempt !== attempt) return;
+          recoverLayoutLaneReload({ saveFailed:true });
+          layoutLaneSaveUnconfirmed = true;
+          setSaveStatus(tx("この端末へ保存できませんでした。ファイルへ書き出して残してください。"), "warn");
+          storageBand?.update();
+          return;
+        }
+        finally { if (saveWaitTimer !== undefined) window.clearTimeout(saveWaitTimer); }
+        if (layoutLaneReloadAttempt !== attempt) return;
+        layoutLaneSaveUnconfirmed = false;
         attempt.requested = true;
         try { window.location.reload(); }
         catch (_) { recoverLayoutLaneReload(); }
@@ -7698,7 +7960,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let musicCueWritePending = false;
   let musicCuePendingDone = Promise.resolve();
   async function commitMusicCueProject(makeCandidate, intent = "music-cue") {
-    if (!editionAllows("audio") || STUDY_READ_ONLY || guestSessionActive()) return false;
+    if (contractReadOnly() || !editionAllows("audio") || STUDY_READ_ONLY || guestSessionActive()) return false;
     while (musicCueWritePending) await musicCuePendingDone;
     musicCueWritePending = true;
     let finish;
@@ -7715,17 +7977,20 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       if (!(typeof nativeProject !== "undefined" && nativeProject) && window.STAGE_MUSIC_CUES.needsMigration(origin)
           && (!storageRecovery || !await storageRecovery.preserveMusicOriginal(origin.id, before)))
         throw Error("Mキューへ移す前の原本を保存できませんでした。");
-      if (snapshot() !== before || state.project !== origin) return false;
+      if (contractReadOnly() || snapshot() !== before || state.project !== origin) return false;
+      const serializedState = JSON.stringify(alternativesState(next));
+      const fileReceipt = captureFileAutosave(serializedState);
       const result = await ProjectStore.commit({ projectId:next.project.id,
-        serializedState:JSON.stringify(alternativesState(next)), expectedRevision:null, intent });
+        serializedState, expectedRevision:null, intent, guard:() => !contractReadOnly() && state.project === origin });
       if (!result.ok) { reportProjectStoreFailure(result); return false; }
-      if (snapshot() !== before || state.project !== origin) { persistSoon(); return false; }
+      if (contractReadOnly() || snapshot() !== before || state.project !== origin) { persistSoon(); return false; }
       clearTimeout(saveTimer);
       if (intent === "music-cue-migration") {
         // Automatic migration establishes the editing baseline, not an Undo step.
         history = []; future = []; controlBefore = null;
       } else checkpoint();
       state = next;
+      fileAutosaveUi?.persisted(fileReceipt);
       if (typeof nativeProject !== "undefined" && nativeProject) nativeProject.changed();
       updateHistoryButtons();
       audioPanelSignature = "";
@@ -8772,7 +9037,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     formationModalSectionId = section.id;
     els.formationBackdrop.hidden = false; els.formationModal.hidden = false;
     setFormationStatus("セクションの演者・舞台・セットを読み込んでいます。", "Loading the section cast, stage and sets.");
-    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261025-v0386&embed=1&cast=locked";
+    els.formationFrame.src = "formation/prototype/record-from-video.html?v=20261027-v0390&embed=1&cast=locked";
     document.body.classList.add("stage-modal-open");
   }
 
@@ -10567,7 +10832,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const catalog = window.STAGE_BUNDLED_SHOWS;
     if (!catalog?.deliver) return;
     const guarded = () => !pendingBlocked && !alternativesStorageBlocked && !shelfCorrupt
-      && !resetInProgress && !STUDY_READ_ONLY && !showSaveTransitionsPending;
+      && !resetInProgress && !STUDY_READ_ONLY && !contractReadOnly() && !showSaveTransitionsPending;
     // RJ second も衣装・標準仕込みの補正が本文を参照する。試験場にはこの種の補正は無い。
     for (const id of ["romeo-juliet-gamma-cued-2026-09-21", "romeo-juliet-rj-second-v1"]) {
       await catalog.deliver(id, {storage:localStorage, guarded,
@@ -11315,6 +11580,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
   function checkpoint() { checkpointFrom(snapshot()); }
   function checkpointFrom(before) {
+    requireContractEdit();
     loadedStateGeneration++;
     recordBefore(before);
     // ファイル書き出しからの変更数。閾値を超えたら保存欄で書き出しを勧める
@@ -11423,7 +11689,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   function historyEditBlocked() {
     // Match the history router: a nonmodal guide must not reject an authorized
     // stage Undo/Redo. Keep fullscreenModalOpen's other callers unchanged.
-    return STUDY_READ_ONLY || nativeProject?.readOnly || guestSessionActive()
+    return contractReadOnly() || STUDY_READ_ONLY || nativeProject?.readOnly || guestSessionActive()
       || !!document.querySelector('dialog:modal')
       || [...document.querySelectorAll('[role="dialog"], [role="alertdialog"]')]
         .some(dialog => dialog.getAttribute('aria-modal') !== 'false' && dialog.getClientRects().length > 0);
@@ -11602,6 +11868,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
 
   function reportProjectStoreFailure(result) {
+    fileAutosaveUi?.failed();
     const code = result.error.code;
     if (code === "QUOTA_EXCEEDED") storagePressure?.failed("show");
     const detail = code === "CONCURRENT_EDIT"
@@ -11620,6 +11887,17 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     return message;
   }
 
+  let fileAutosaveUi = null;
+  let fileAutosaveSnapshotRequested = false;
+  function captureFileAutosave(serializedState) {
+    if (!fileAutosaveUi || !(fileAutosaveSnapshotRequested || fileAutosaveUi.wantsSnapshot())) return null;
+    try {
+      // Parse the immutable browser commit, NOT the live state after an await.
+      // The normal full export includes every alternative, venue and envelope key.
+      const saved = JSON.parse(serializedState);
+      return fileAutosaveUi.capture(JSON.stringify(makeProjectExportDocument(saved.project, true, saved.projectFileEnvelope)));
+    } catch (_) { fileAutosaveUi.failed(); return null; }
+  }
   let autosaveFailed = false;
   let showSaveTransitionsPending = 0;
   let autosaveInFlight = null;
@@ -11630,6 +11908,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       || (alternativesStorageBlocked ? "WRITE_FAILED" : shelfCorrupt ? "CORRUPT_COLLECTION" : null);
   }
   async function saveCurrentShow() {
+    if (contractReadOnly()) { await flushAutosave(); return {ok:!autosaveFailed}; }
     const failed = code => {
       const result = {ok:false, error:{code}};
       autosaveFailed = true;
@@ -11658,6 +11937,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
   async function flushAutosave() {
     if (typeof nativeProject !== "undefined" && nativeProject) {
+      if (contractReadOnly() && !autosaveRequested) return;
       clearTimeout(saveTimer); clearTimeout(saveMaxTimer); saveMaxTimer = null;
       autosaveRequested = false;
       try {
@@ -11675,10 +11955,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         let savedAt = null;
         try {
           // UI-only repeat notifications must not rewrite the whole show and backup.
-          if (snapshot() !== lastPersistedSnapshot || localStorage.getItem(BETA_STORAGE_KEY) !== lastPersistedSnapshot) {
+          if (fileAutosaveSnapshotRequested || snapshot() !== lastPersistedSnapshot || localStorage.getItem(BETA_STORAGE_KEY) !== lastPersistedSnapshot) {
             savedAt = nowIso();
             savingState.lastSavedAt = savedAt;
             const serializedState = snapshot();
+            const fileReceipt = captureFileAutosave(serializedState);
+            fileAutosaveSnapshotRequested = false;
             const result = await ProjectStore.commit({ projectId:savingState.project.id,
               serializedState, expectedRevision:null, intent:"autosave" });
             shelfFailed = !result.ok;
@@ -11692,6 +11974,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
             }
             storagePressure?.saved("show");
             lastPersistedSnapshot = serializedState;
+            // Only a verified successful browser commit can enter the file queue.
+            fileAutosaveUi?.persisted(fileReceipt);
           }
           if (state !== savingState) break;
           // A newer edit or show switch still needs its own durable save.
@@ -11704,6 +11988,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
           try { window.SHOSAI_STAGE_SESSION_HOOKS?.onLocalChange?.(); } catch (_) {}
         } catch (_) {
           autosaveFailed = true;
+          fileAutosaveUi?.failed();
           shelfFailed = true;
           if (savedAt && savingState.lastSavedAt === savedAt) {
             savingState.lastSavedAt = previousSavedAt;
@@ -11727,7 +12012,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     catch (_) { /* An unsupported extension must stay intact, including during autosave. */ }
   }
   function persistSoon(options = {}) {
+    if (contractReadOnly()) return;
     loadedStateGeneration++;
+    fileAutosaveUi?.refresh();
     notifyDiscardedPackageCarry(state);
     syncRunOfShow();
     runOfShowRevision++;
@@ -24727,12 +25014,15 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     }
     const next = api.clone(state);
     next.project.lightingDesign = checked.store;
+    const serializedState = JSON.stringify(alternativesState(next));
+    const fileReceipt = captureFileAutosave(serializedState);
     const result = await ProjectStore.commit({ projectId: next.project.id,
-      serializedState: JSON.stringify(alternativesState(next)), expectedRevision: null, intent: "theatre-lighting-plan" });
+      serializedState, expectedRevision: null, intent: "theatre-lighting-plan" });
     if (!result.ok) { reportProjectStoreFailure(result); return false; }
     clearTimeout(saveTimer);
     checkpoint();
     state = next;
+    fileAutosaveUi?.persisted(fileReceipt);
     shelfFailed = false;
     if (nativeProject) nativeProject.changed();
     renderScenes();
@@ -25007,11 +25297,16 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      一度の二鍵トランザクションで入れ替える。次のショーは棚と現行キーへ
      二重保存しないので、大きなショーでもSafariの容量を無駄にしない。 */
   async function prepareLoadedState(next, guard = () => true) {
+    const callerGuard = guard;
+    guard = () => !contractReadOnly() && callerGuard();
+    if (!guard()) return false;
     // In-document replacements (including first venue setup) are sent by
     // persistSoon after installation. Only the shell may switch documents;
     // neither path may commit to the browser ProjectStore in native mode.
     if (typeof nativeProject !== "undefined" && nativeProject) return guard() && !nativeDocumentDelivery && next.project.id === state.project.id;
     if (resetInProgress || !guard()) return false;
+    // Invalidate the outgoing file before a same-ID browser replacement commits.
+    fileAutosaveUi?.refresh(true);
     showSaveTransitionsPending++;
     try {
       clearTimeout(saveTimer);
@@ -25047,6 +25342,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     } finally { showSaveTransitionsPending--; }
   }
 
+  const contractViewedShows = new Map(), contractViewedRuntimes = new Map(), contractViewStates = new WeakSet();
   async function applyLoadedState(next, message) {
     const previousProject = state.project, previousId = previousProject.id;
     const generation = loadedStateGeneration, openRequest = bundledOpenRequest;
@@ -25069,7 +25365,17 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     // Stamps/carry bindings may change during save; actual edits, replacement,
     // reset and a newer open request must still invalidate this operation.
     if (!guard()) return stopped();
-    if (!await prepareLoadedState(next, guard)) {
+    const contractView = contractViewStates.has(next) && contractReadOnly();
+    if (contractView) {
+      contractViewedShows.set(state.project.id, state);
+      // Reuse the existing in-memory transition capture, including Undo,
+      // focused notes, AI drafts and the workspace's unapplied editors. No
+      // native request, reimport or new persisted licence/storage format.
+      contractViewedRuntimes.set(state.project.id, captureNativeDocumentRuntime());
+      const retained = contractViewedRuntimes.get(next.project.id);
+      if (retained) { restoreNativeDocumentRuntime(retained); announce(message); return true; }
+    }
+    if (!contractView && !await prepareLoadedState(next, guard)) {
       if (!guard()) return stopped();
       return false;
     }
@@ -25077,6 +25383,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     resetStageAskDraft({ clearInput: true, invalidate: true });
     clearAudioEngine();
     state = next;
+    fileAutosaveUi?.refresh(true);
     trimPhotoCache();
     lastPersistedSnapshot = null;
     selectedAudioTrackId = (state.project.audioTracks[0] && state.project.audioTracks[0].id) || null;
@@ -25152,7 +25459,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     const request = ++bundledOpenRequest;
     const leavingId = state.project.id;
     let source;
-    try { source = await resolveShowState(previousId); } catch (_) { bundledShowFailure(); return; }
+    try { source = contractViewedShows.get(previousId) || await resolveShowState(previousId); } catch (_) { bundledShowFailure(); return; }
     if (request !== bundledOpenRequest || state.project.id !== leavingId || resetInProgress) return;
     if (!source) { syncNewShowReturn(); openShows(); return; }
     const next = normalizeState(source);
@@ -25277,7 +25584,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       if (typeof renderShows === "function") renderShows();
     }
     let source;
-    try { source = await resolveShowState(id, {signal:controller?.signal}); } catch (error) {
+    try { source = contractViewedShows.get(id) || await resolveShowState(id, {signal:controller?.signal}); } catch (error) {
       if (request === bundledOpenRequest) bundledShowFailure(error);
       return false;
     } finally {
@@ -25295,6 +25602,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (leavingPendingVenue && editor?.hasUnappliedChanges?.()
       && !await surfaceProjectConfirm("劇場設定の未適用の編集は破棄されます。いまのショーは一覧に残します。別のショーを開きますか？", "開く")) return;
     if (request !== bundledOpenRequest || state.project.id !== previousId || resetInProgress) return false;
+    contractViewStates.add(next);
     if (!await applyLoadedState(next, `${next.project.title}を開きました。`)) return;
     if (leavingPendingVenue) editor?.abandonDraft?.();
     if (next.project.venueSetupPending) rememberNewShowReturn(previousId);
@@ -25442,6 +25750,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
           if (download.isConnected && bundledDownload?.id !== info.id) download.textContent = label(cached);
         });
       }
+      open.setAttribute("data-contract-view", "");
       open.addEventListener("click", () => openShow(info.id));
       row.append(open);
       if (bundledDownload?.id === info.id) {
@@ -25588,6 +25897,11 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         ? "./download/?lang=" + encodeURIComponent(lang) : "https://aratama-ship-it.github.io/stage-sketch-gamma/download/?lang=" + encodeURIComponent(lang);
       const manualLang = lang === "ja" ? "ja" : "en";
       install.href = "./manual-gamma/?lang=" + manualLang + "#browser-storage";
+      if (layoutLaneSaveUnconfirmed) {
+        band.classList.remove("is-folded", "is-protected");
+        byId("band-lead").textContent = tx("この端末へ保存できませんでした。ファイルへ書き出して残してください。");
+        byId("band-backup").textContent = "";
+      }
       if (!modal.hidden && modalDays !== null) {
         byId("return-lead").textContent = tx("このショーは ○日間開かれていません。ブラウザ内の保存は消えることがあります。いま控えを書き出しておくと安全です。").replace("○", String(modalDays));
       }
@@ -28198,6 +28512,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
 
         const button = document.createElement("button");
         button.type = "button";
+        button.setAttribute("data-contract-view", "");
         button.className = `stage-scene-chip${scene.kind === "section" ? " is-section" : ""}${isOpen ? " is-open" : ""}`;
         if (scene.kind === "section") button.style.setProperty("--section-color", sectionColor(scene));
         button.setAttribute("aria-pressed", String(isCursor));
@@ -32626,6 +32941,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     renderPrefs();
     showPrefsSection("settings");
     syncSaveLocationNotice();
+    if (typeof syncFileAutosaveEntry === "function") syncFileAutosaveEntry();
     if (els.prefsModal) els.prefsModal.hidden = false;
     if (els.prefsBackdrop) els.prefsBackdrop.hidden = false;
     if (els.prefsModal && !releasePrefsFocus) releasePrefsFocus = window.GAMMA_UI?.containDialog(els.prefsModal, {
@@ -32933,6 +33249,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (typeof nativeProject !== "undefined" && nativeProject) return;
     if (resetInProgress || resetDialogStep !== 2) return;
     resetInProgress = true;
+    fileAutosaveUi?.refresh(true);
     loadedStateGeneration++;
     els.resetConfirm.disabled = true;
     els.resetCancel.disabled = true;
@@ -34844,6 +35161,7 @@ ${propsPlotHtml}
     clearAudioEngine();
     state.projectPackageCarry = window.STAGE_PROJECT_FILE.bindCarry(state.projectPackageCarry, copy, state.lastSavedAt);
     state.project = copy;
+    fileAutosaveUi?.refresh(true);
     selectedAudioTrackId = copy.audioTracks[0]?.id || null;
     audioPanelSignature = "";
     selectedId = null;
@@ -35404,6 +35722,7 @@ ${propsPlotHtml}
     finally { importingProjectPackage = false; }
   }
   async function installProjectPackage(next, data) {
+    if (contractReadOnly()) { announce(contractMessage()); return false; }
     if (!data) return null;
     try {
       next.projectPackageCarry = window.STAGE_PROJECT_FILE.hasCarry(data.carry)
@@ -35487,7 +35806,7 @@ ${propsPlotHtml}
   }
   document.getElementById("stage-export-project-file")?.addEventListener("click", () => {
     closeExport();
-    openVenueExportConfirmOrWrite(projectExportFilename(state.project, "ショー", "stageproj.zip"), {projectPackage:true});
+    openVenueExportConfirmOrWrite(projectExportFilename(state.project, tx("ショー"), "stageproj.zip"), {projectPackage:true});
   });
   document.getElementById("stage-import-project-folder-open")?.addEventListener("click", () => nativeProject ? nativeProject.request("requestOpen") : document.getElementById("stage-import-project-folder")?.click());
   document.getElementById("stage-import-project-folder")?.addEventListener("change", event => {
@@ -35496,6 +35815,7 @@ ${propsPlotHtml}
   });
 
   function importProject(file) {
+    if (contractReadOnly()) { announce(contractMessage()); return false; }
     if (typeof nativeProject !== "undefined" && nativeProject) { nativeProject.request("requestOpen"); return; }
     if (!file) return;
     if (/\.zip$/i.test(file.name)) return importProjectPackage(() => window.STAGE_PROJECT_FILE.unpack(file));
@@ -35515,6 +35835,7 @@ ${propsPlotHtml}
   }
 
   async function importProjectText(text, file, packageData = null, nativeOpen = false, librarySample = false, nativeGuard = () => true) {
+      if (!nativeOpen && contractReadOnly()) return false;
       let parsed = null;
       try {
         parsed = window.STAGE_DATA_SAFETY.parseJson(text);
@@ -35913,12 +36234,14 @@ ${propsPlotHtml}
   }
 
   async function confirmImport(asNew) {
+    if (contractReadOnly()) { announce(contractMessage()); return false; }
     if (committingProjectImport) return;
     committingProjectImport = true;
     try { return await commitImport(asNew); }
     finally { committingProjectImport = false; }
   }
   async function commitImport(asNew) {
+    if (contractReadOnly()) { announce(contractMessage()); return false; }
     const next = pendingImport;
     if (!next) return;
     const sourceId = next.project.id;
@@ -35965,6 +36288,7 @@ ${propsPlotHtml}
     resetStageAskDraft({ clearInput: true, invalidate: true });
     clearAudioEngine();
     state = next;
+    fileAutosaveUi?.refresh(true);
     selectedAudioTrackId = (state.project.audioTracks[0] && state.project.audioTracks[0].id) || null;
     audioPanelSignature = "";
     selectedId = null;
@@ -42986,6 +43310,7 @@ document.addEventListener("keydown", function (event) {
   if (els.lightingPlanOverlayClear) els.lightingPlanOverlayClear.addEventListener("click", () => setLightingPlanOverlay(""));
   if (els.projectTitle) {
     els.projectTitle.addEventListener("input", (e) => {
+      if (contractReadOnly()) return;
       state.project.title = e.target.value.slice(0, 60);
       syncProjectSummary();
       persistSoon();
@@ -43771,6 +44096,7 @@ document.addEventListener("keydown", function (event) {
    * 対訳表は日本語そのものを鍵にしているので、元の日本語を各要素へ覚えさせておき、
    * 日本語へ戻すときはそれを書き戻す（訳し戻しの表を持たずに済む）。 */
   function applyLang() {
+    if (contractUiReady) refreshContractUi();
     const roots = [
       document.getElementById("view-stage"),
       // 使い方の案内はモーダルではない重ね物なので、明示して回す
@@ -43786,6 +44112,7 @@ document.addEventListener("keydown", function (event) {
     // These titles are assembled after the DOM translation pass. Rebuild them
     // from their Japanese templates whenever the display language changes.
     syncSaveLocationNotice();
+    if (typeof syncFileAutosaveEntry === "function") syncFileAutosaveEntry();
     renderPackageOutcomeNotice();
     syncShortcutDom();
     window.GAMMA_WORKSPACE?.refreshLabels?.();
@@ -45281,7 +45608,23 @@ body { padding: ${A4_MARGIN_PX}px; position: relative; min-height: ${paper.h}px;
   }
 })();
 <\/script>` : "";
-    return `<!DOCTYPE html><html lang="${escapeHtml(lang)}"><head><meta charset="utf-8"><title>${escapeHtml(sheet.title)}</title>
+    // Run inside the loaded paper so blob navigation cannot discard an opener's
+    // load listener. Preview iframes never request printing.
+    const printScript = options.autoPrint && !options.preview ? `<script>
+window.addEventListener("load", async function () {
+  await document.fonts?.ready;
+  await Promise.all(Array.from(document.images, function (image) {
+    return image.complete ? Promise.resolve() : new Promise(function (resolve) {
+      image.addEventListener("load", resolve, { once: true });
+      image.addEventListener("error", resolve, { once: true });
+    });
+  }));
+  if (window.closed) return;
+  window.focus();
+  window.print();
+}, { once: true });
+<\/script>` : "";
+    return `<!DOCTYPE html><html lang="${escapeHtml(lang)}" data-gamma-print-orientation="${orientation}"><head><meta charset="utf-8"><title>${escapeHtml(sheet.title)}</title>
 <style>
 @page { size: A4 ${orientation}; margin: 10mm; }
 * { box-sizing: border-box; }
@@ -45314,13 +45657,13 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
 .cue-sheet-table .cue-sheet-notes { min-width: 56mm; }
 .cue-sheet-footnote { margin: 7px 0 0; font-size: 11px; }
 .cue-sheet-legend { margin-top: auto; padding-top: 6px; border-top: 1px solid #bbb; font-size: 11px; }
-</style></head><body>${content}${previewScript}</body></html>`;
+</style></head><body>${content}${previewScript}${printScript}</body></html>`;
   }
 
   function openCueSheetPrint(kind, key) {
     const sheet = selectedCueSheet(kind, key);
     if (!sheet) return;
-    const url = URL.createObjectURL(new Blob([cueSheetPrintDocument(sheet, { orientation: cueSheetOrientation, onePage: cueSheetOnePage })], { type: "text/html" }));
+    const url = URL.createObjectURL(new Blob([cueSheetPrintDocument(sheet, { orientation: cueSheetOrientation, onePage: cueSheetOnePage, autoPrint: true })], { type: "text/html" }));
     const printWindow = window.open(url, "_blank");
     if (!printWindow) {
       announce(tx("Qシートを開けませんでした。ポップアップの許可を確認してください。"));
@@ -45367,7 +45710,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     printOpened: () => announce(tx("Qシートを印刷用の窓で開きました。")),
     available: () => editionAllows("cueSheet") && Boolean(els.cueSheetModal && window.SHOSAI_CUE_SHEET),
     choices: () => window.SHOSAI_CUE_SHEET?.listSheets(state.project, { tx }) || [],
-    readOnly: () => STUDY_READ_ONLY || guestSessionActive(),
+    readOnly: () => contractReadOnly() || STUDY_READ_ONLY || guestSessionActive(),
     selection: () => viewingCueSheet ? { ...viewingCueSheet } : null,
     mount(target) {
       const ownedFrame=document.getElementById("gamma-run-of-show-frame")?.contentDocument?.getElementById("cue-sheet-frame");
@@ -45975,10 +46318,10 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     }
     // 同梱ショーは availableShows が配信ファイルから表示する。起動時に棚へ
     // 複製しないので、容量不足でも見本の一覧表示を妨げない。
-    if (!nativeProject && !pendingBlocked) {
+    if (!nativeProject && !pendingBlocked && !contractReadOnly()) {
       await openRomeoJulietOnFirstRun();
     }
-    if (!nativeProject && !pendingBlocked && !alternativesStorageBlocked) {
+    if (!nativeProject && !pendingBlocked && !alternativesStorageBlocked && !contractReadOnly()) {
       backfillOpenRomeoJulietVoxOffsets();
       backfillOpenBundledVersionNote();
       backfillBundledVersionNoteShelf();
@@ -46079,6 +46422,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       // 非同期の初期化で端末用DOMと初回表示が揃った後だけ外殻へ通知する。
       // runtime-ready は API の公開通知なので、UI の準備完了とは分ける。
       window.GAMMA_STAGE_UI_READY = true;
+      contractUiReady = true; refreshContractUi(); window.GAMMA_LICENSE?.mount();
       if (notifyDiscardedPackageCarry(state)) persistSoon();
       window.dispatchEvent(new Event("stage-gamma-ui-ready"));
       if (loaded.sectionMigrationSource) {
@@ -46154,6 +46498,8 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
         }, nativeInitialOpen);
         syncNativeProjectEntries();
       }
+      // Permission/digest checks must never delay the existing launch backup warning.
+      void restoreFileAutosaveOnStartup().catch(() => fileAutosaveUi?.failed());
       const launchWarningShown = nativeProject ? false : openLaunchBackupWarning();
       if (!launchWarningShown) {
         if (document.readyState === "loading") {
@@ -46503,7 +46849,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       const row = sc();
       const data = sceneAlternatives?.validate(row);
       return { sceneId: row.id, title: row.title, data, canPreview: state.animateScenes && state.project.scenes.filter(scene => scene.kind === "scene").findIndex(scene => scene.id === row.id) > 0, currentId: sceneAlternatives?.current(row)?.id,
-        readOnly: !editionAllows("sceneAlternatives") || STUDY_READ_ONLY || guestSessionActive() || phoneViewerActive || presenting };
+        readOnly: contractReadOnly() || !editionAllows("sceneAlternatives") || STUDY_READ_ONLY || guestSessionActive() || phoneViewerActive || presenting };
     },
     add() {
       requireAlternativesEdit(); stopAlternativesPlayback(); checkpoint();
@@ -46522,7 +46868,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     async adopt(id) {
       requireAlternativesEdit(); stopAlternativesPlayback();
       const source=state.project, owner=gammaLightingContext();
-      const valid=()=>state.project===source && gammaLightingContext().contextRevision===owner.contextRevision
+      const valid=()=>!contractReadOnly() && state.project===source && gammaLightingContext().contextRevision===owner.contextRevision
         && gammaLightingContext().baseBasis===owner.baseBasis;
       const before = snapshot(), next = JSON.parse(before);
       const row = next.project.scenes.find(row => row.id === sc().id);
@@ -46844,7 +47190,8 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       activeSceneId: state.project.activeSceneId, design: state.project.lightingDesign ? projectIoClone(state.project.lightingDesign) : null,
       basis: gammaBasisFingerprint(JSON.stringify({ id: state.project.id, scenes: scenes.map(row => row.id).sort(), stage,
         venueMask, design: state.project.lightingDesign || null })),
-      readOnly: STUDY_READ_ONLY || document.body.classList.contains("stage-session-guest"),
+      contractReadOnly: contractReadOnly(),
+      readOnly: contractReadOnly() || STUDY_READ_ONLY || document.body.classList.contains("stage-session-guest"),
       // V-7（2026-09-17）: 劇場が一度も反映されていないショーで機材配置/照明を開いたら誘導する
       // （docs/ui-audit-2026-09-16/UI_REWORK_SPEC.md V-7）。既存の venueSetupWasApplied() をそのまま使う。
       venueApplied: venueSetupWasApplied(state.project),
@@ -46910,7 +47257,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     async apply(design, basis, options = {}) {
       const sourceProject = state.project;
       const sourceContext = gammaLightingContext(), sourceEditGeneration=loadedStateGeneration;
-      const validOwner = () => state.project === sourceProject && loadedStateGeneration===sourceEditGeneration && (!nativeProject || nativeProject.matches(options.owner))
+      const validOwner = () => !contractReadOnly() && state.project === sourceProject && loadedStateGeneration===sourceEditGeneration && (!nativeProject || nativeProject.matches(options.owner))
         && gammaLightingContext().contextRevision===sourceContext.contextRevision
         && gammaLightingContext().baseBasis===sourceContext.baseBasis
         && JSON.stringify(gammaLightingContext().alternativeVector)===JSON.stringify(sourceContext.alternativeVector)
@@ -47202,7 +47549,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     },
     arrowKeysVoxOnly: () => featureOn("arrowKeysVoxOnly"),
     historyStatus: () => ({ canUndo: history.length > 0, canRedo: future.length > 0,
-      readOnly: Boolean(STUDY_READ_ONLY || nativeProject?.readOnly || guestSessionActive()),
+      readOnly: Boolean(contractReadOnly() || STUDY_READ_ONLY || nativeProject?.readOnly || guestSessionActive()),
       busy: Boolean(resetInProgress || sceneAnim || spinRun || pointerAction) }),
     historyCommand(action) {
       if (!window.GammaUndoOwner?.allows("stage")) return false;
@@ -47965,6 +48312,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
       else state.projectPackageCarry = window.STAGE_PROJECT_FILE.bindCarry(state.projectPackageCarry, project, state.lastSavedAt);
       state.project = project;
       state.projectFileEnvelope = fileEnvelope;
+      fileAutosaveUi?.refresh(true);
       state.mcpRevision = null;
       continueAudioOnNextSceneSync = continuePlayback;
       selectedAudioTrackId = (state.project.audioTracks[0] && state.project.audioTracks[0].id) || null;
@@ -47998,6 +48346,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     replaySceneTransition: () => replaySceneTransition(),
     enterGuestMode() {
       if (!editionAllows("share")) return false;
+      fileAutosaveUi?.refresh(true);
       pointerAction = null;
       arrowDraft = null;
       selectedId = null;
@@ -48044,6 +48393,12 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     },
     isEnglish() { return languageValue(() => true, () => false); },
   });
+  window.SHOSAI_STAGE_CUE_SHEET_HOST = contractBridge(window.SHOSAI_STAGE_CUE_SHEET_HOST, ["open", "close", "printOpened", "available", "choices", "readOnly", "selection", "mount", "show", "refresh"]);
+  window.STAGE_SCENE_ALTERNATIVES_HOST = contractBridge(window.STAGE_SCENE_ALTERNATIVES_HOST, ["context", "compare"]);
+  window.GAMMA_FORMATION_HOST = contractBridge(window.GAMMA_FORMATION_HOST, ["availability", "context"]);
+  window.GAMMA_LIGHT_HOST = contractBridge(window.GAMMA_LIGHT_HOST, ["context", "recoveryDrafts", "readRecoveryDraft", "retainDraft", "readSceneStepPrevious", "readPlaybackPreview", "openScene", "selectCue", "draftChanged", "placementChoices"]);
+  window.SHOSAI_STAGE_RUN_OF_SHOW_HOST = contractBridge(window.SHOSAI_STAGE_RUN_OF_SHOW_HOST, ["overview", "renderSceneImages", "sceneStamps", "timing", "cues", "uiLanguage", "edition", "read", "export", "openScene", "save", "historyStatus"]);
+  window.SHOSAI_STAGE_SESSION_BRIDGE = contractBridge(window.SHOSAI_STAGE_SESSION_BRIDGE, ["ensureMusicCueMigration", "arrowKeysVoxOnly", "historyStatus", "transitionGeometry", "exportDocumentString", "resetVisibleStageViews", "sceneOverviewById", "sceneThumbnailById", "openSceneById", "focusTimelineScene", "setTimelineLightSchedule", "applyTimelineLightClock", "refreshTimelineLightClock", "applyTimelineLightCue", "suspendSceneDetailsForSearch", "openSceneDetailsById", "hasTimelineAudioFile", "activateTimelineAudio", "getActiveSceneId", "getTimelineAudioTrackId", "isTimelineAudioActive", "getTimelineAudioBlob", "getTimelineAudioAssignments", "pauseTimelineAudio", "getProjectScript", "syncTimelineSceneTransition", "finishTimelineSceneTransition", "finishSceneTransition", "replaySceneTransition", "isEnglish"]);
   if (!STUDY_READ_ONLY) {
     window.STAGE_SAVE_LIFECYCLE.install({
       pending() {
@@ -48060,6 +48415,76 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     });
   }
   sceneLocationReady = true;
+  function fileAutosaveContext() {
+    return {projectId:state.project.id, platform:nativeProject ? "native" : "browser",
+      editable:!STUDY_READ_ONLY, native:Boolean(nativeProject),
+      legacyShell:Boolean(desktopShell || window.webkit?.messageHandlers?.gammaProject || window.stageSketchBridge || window.stageSketchNative),
+      guest:guestSessionActive(), readOnly:Boolean(STUDY_READ_ONLY || nativeProject?.readOnly),
+      viewer:Boolean(phoneViewerActive), hold:Boolean(resetInProgress || alternativesStorageBlocked || shelfCorrupt || nativeProject?.saveNoticeState === "hold"),
+      browserSaveFailed:autosaveFailed};
+  }
+  function syncFileAutosaveEntry() {
+    if (fileAutosaveUi) { fileAutosaveUi.refresh(); fileAutosaveUi.render(); return; }
+    const container = document.getElementById("stage-file-autosave");
+    if (!container) return;
+    const c = fileAutosaveContext();
+    container.hidden = Boolean(!c.editable || c.native || c.legacyShell || c.guest || c.readOnly || c.viewer || c.hold);
+    const summary = container.querySelector("summary");
+    if (summary) summary.textContent = tx("JSONファイルへ自動保存");
+  }
+  let fileAutosaveLoad = null;
+  function loadFileAutosaveUi() {
+    if (fileAutosaveUi) return Promise.resolve(fileAutosaveUi);
+    if (fileAutosaveLoad) return fileAutosaveLoad;
+    fileAutosaveLoad = new Promise(resolve => {
+      const loaded = () => {
+        const container = document.getElementById("stage-file-autosave");
+        if (!container || !window.STAGE_FILE_AUTOSAVE || !window.STAGE_FILE_AUTOSAVE_UI) { resolve(null); return; }
+        const restoreSummaryFocus = container.contains(document.activeElement);
+        container.replaceChildren();
+        fileAutosaveUi = window.STAGE_FILE_AUTOSAVE_UI.create({
+          foundation:window.STAGE_FILE_AUTOSAVE, container, tx,
+          notice:message => announce(message, {warning:true}),
+          host:{context:fileAutosaveContext,
+            persist:() => { fileAutosaveSnapshotRequested = true; return saveCurrentShow(); }},
+        });
+        if (restoreSummaryFocus) container.querySelector("summary")?.focus();
+        resolve(fileAutosaveUi);
+      };
+      if (window.STAGE_FILE_AUTOSAVE_UI) { loaded(); return; }
+      const script = document.createElement("script");
+      script.src = "stage-file-autosave.js";
+      script.onload = loaded;
+      script.onerror = () => {
+        script.remove();
+        announce(tx("この機能はまだオフラインで使えません。一度オンラインで開いてから、もう一度お試しください。保存済みのショーは変更していません。"));
+        resolve(null);
+      };
+      document.head.append(script);
+    }).then(ui => { if (!ui) fileAutosaveLoad = null; return ui; });
+    return fileAutosaveLoad;
+  }
+  async function restoreFileAutosaveOnStartup() {
+    syncFileAutosaveEntry();
+    const container = document.getElementById("stage-file-autosave");
+    if (!container || container.hidden || !window.showSaveFilePicker || !navigator.locks?.request) return;
+    let selected;
+    try { selected = JSON.parse(window.localStorage.getItem("gamma:file-autosave:selected-v1") || "null"); } catch (_) { return; }
+    if (selected?.projectId !== state.project.id) return;
+    const owner = state.project, generation = loadedStateGeneration;
+    const ui = await loadFileAutosaveUi();
+    if (state.project !== owner || loadedStateGeneration !== generation) return;
+    try { await ui?.restore(); } catch (_) { ui?.failed(); }
+  }
+  const fileAutosaveContainer = document.getElementById("stage-file-autosave");
+  if (fileAutosaveContainer) {
+    syncFileAutosaveEntry();
+    fileAutosaveContainer.addEventListener("toggle", () => {
+      if (fileAutosaveContainer.open && !fileAutosaveContainer.hidden) void loadFileAutosaveUi();
+    });
+    // Observe mode attributes only; never walk the editor on every mutation.
+    new MutationObserver(syncFileAutosaveEntry).observe(document.body, {attributes:true, attributeFilter:["class"]});
+  }
   if (!restoreSceneLocation(initialSceneLocation) && !initialSceneLocation.sceneId) syncSceneLocation();
   window.dispatchEvent(new Event("stage-gamma-runtime-ready"));
   liteLegacyShelf.check();

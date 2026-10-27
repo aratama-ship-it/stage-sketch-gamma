@@ -1,18 +1,18 @@
 // v81以前のWorkerはpwa名前空間の他世代をすべて消すため、更新先を分離する。
-const CACHE_NAME = "stage-sketch-gamma-shell-v586";
+const CACHE_NAME = "stage-sketch-gamma-shell-v588";
 // BEGIN GENERATED SHELL (node tools/asset-ledger.mjs --write-sw)
 const APP_SHELL_CORE = [
   "./assets/brand/logo-jp-gamma-inline-white.svg",
   "./company.html",
   "./docs/light-panel-migration-2026-09-13/light-panel-migration.js?v=2026092113",
-  "./field-frame.html?v=20261026-v0389",
+  "./field-frame.html?v=20261027-v0390",
   "./gamma-appearance.js?v=20261024-v0385",
-  "./gamma-editions.js?v=20261015-v0371",
+  "./gamma-editions.js?v=20261027-v0390",
   "./gamma-feature-search.js?v=20261020-v0380",
   "./gamma-formation-model.js?v=20261026-v0388",
   "./gamma-formation-presets.js?v=20261026-v0388",
   "./gamma-formation.css?v=20261015-v0368",
-  "./gamma-formation.js?v=20261026-v0388",
+  "./gamma-formation.js?v=20261027-v0390",
   "./gamma-header-fit.js?v=20261015-v0368",
   "./gamma-light-cue-overlay.js?v=20261006-v0318",
   "./gamma-light-model.js?v=20261020-v0380",
@@ -21,46 +21,47 @@ const APP_SHELL_CORE = [
   "./gamma-number-scrub.js?v=2026091780",
   "./gamma-range-fields.js?v=20261014-v0361",
   "./gamma-render-resolution.js?v=20261006-v0318",
-  "./gamma-select.css?v=20261012-v0358",
+  "./gamma-select.css?v=20261012-select-local",
   "./gamma-ui-i18n.js?v=20261025-v0387",
   "./gamma-ui-tokens.css?v=20261025-v0387",
   "./gamma-ui.js?v=20261017-v0377",
   "./gamma-undo-owner.js?v=20261025-v0387",
-  "./gamma-workspace.js?v=20261026-v0389",
-  "./gamma.css?v=20261026-v0389",
+  "./gamma-workspace.js?v=20261027-v0390",
+  "./gamma.css?v=20261027-v0390",
   "./icons/stage-sketch-180.png",
   "./icons/stage-sketch-192.png",
   "./icons/stage-sketch-512.png",
   "./light-design/laser-effects.js?v=20261005-batch98",
   "./light-design/rig-engine.js?v=20261011-v0347",
   "./light-design/simple-lighting-model.js?v=20261001-release71",
-  "./manual-gamma/manual-content.js?v=20261026-v0389",
-  "./manual-gamma/manual-meta.js?v=20261026-v0389",
+  "./manual-gamma/manual-content.js?v=20261027-v0390",
+  "./manual-gamma/manual-meta.js?v=20261027-v0390",
   "./run-of-show/timing.js?v=20261010-v0338",
   "./run.html",
   "./stage-audio-store.js?v=20261020-v0381",
   "./stage-cue-sheet.js?v=20261020-v0380",
   "./stage-data-safety.js?v=20261001-release69",
   "./stage-field-run-checkpoint.js?v=20261020-v0380",
-  "./stage-field-run-console.js?v=20261026-v0389",
+  "./stage-field-run-console.js?v=20261027-v0390",
   "./stage-field-run-frame.js?v=20261020-v0381",
   "./stage-field-run-model.js?v=20261016-v0373",
   "./stage-field-run-package.js?v=20261020-v0380",
   "./stage-field-run-store.js?v=20261020-v0380",
   "./stage-field-run-transport.js?v=20261016-v0372",
   "./stage-field-run.css?v=20261025-v0386",
+  "./stage-file-autosave.js",
   "./stage-first-person-loader.js?v=20261015-v0368",
   "./stage-fixture-body.js?v=20261020-v0380",
   "./stage-front-shape.js?v=2026092046",
-  "./stage-i18n.js?v=20261026-v0389",
+  "./stage-i18n.js?v=20261027-v0390",
   "./stage-idle-motion.js?v=20261014-v0362",
   "./stage-jog-reference.js?v=2026093003",
-  "./stage-language-loader.js?v=20261026-v0389",
+  "./stage-language-loader.js?v=20261027-v0390",
   "./stage-large-project-store.js?v=20261022-v0383",
   "./stage-light-eval.js?v=20261004-receiver89",
   "./stage-light-panel-import.js?v=2026092209",
   "./stage-light-receiver.js?v=20261004-receiver89",
-  "./stage-light-render.js?v=20261026-v0389",
+  "./stage-light-render.js?v=20261027-v0390",
   "./stage-light-schedule.js?v=20261013-v0359",
   "./stage-lighting-plan-overlay.js?v=20261005-batch98",
   "./stage-lighting-plans.js?v=20261005-beam99",
@@ -69,7 +70,7 @@ const APP_SHELL_CORE = [
   "./stage-music-cues.js?v=20261015-v0371",
   "./stage-panel-bottom.css?v=20261013-v0360",
   "./stage-panel-columns.css?v=20261001-release71",
-  "./stage-performer-body.js?v=20261026-v0389",
+  "./stage-performer-body.js?v=20261027-v0390",
   "./stage-performer-contour.js?v=20261006-v0318",
   "./stage-performer-motion.js?v=20261011-v0347",
   "./stage-point-source.js?v=20260927-point43",
@@ -87,10 +88,10 @@ const APP_SHELL_CORE = [
   "./stage-run-of-show-distribution.js?v=20261012-v0358",
   "./stage-run-of-show-files.js?v=20261012-v0358",
   "./stage-run-of-show-model.js?v=20261006-v0312",
-  "./stage-run-of-show-pane.js?v=20261025-v0387",
+  "./stage-run-of-show-pane.js?v=20261027-v0390",
   "./stage-run-of-show.css?v=20261009-v0337",
-  "./stage-runtime.js?v=20261025-v0386",
-  "./stage-samples/catalog.js?v=20261026-v0389",
+  "./stage-runtime.js?v=20261027-v0390",
+  "./stage-samples/catalog.js?v=20261027-v0390",
   "./stage-samples/index.js?v=20261013-v0360",
   "./stage-save-lifecycle.js?v=20260927-guard45",
   "./stage-scene-alternatives-ui.js?v=20261009-v0337",
@@ -99,20 +100,20 @@ const APP_SHELL_CORE = [
   "./stage-scrim.js?v=20261009-v0335",
   "./stage-script-editor.css?v=20261017-v0376",
   "./stage-script-editor.js?v=20261025-v0386",
-  "./stage-session.js?v=20261022-v0383",
+  "./stage-session.js?v=20261027-v0390",
   "./stage-set-builder.js?v=20261009-v0337",
   "./stage-set-model.js?v=2026092354",
   "./stage-shortcuts.js?v=20261025-v0386",
   "./stage-show-overview.css?v=20261009-v0337",
   "./stage-show-overview.js?v=20261009-v0337",
-  "./stage-sketch.js?v=20261026-v0389",
+  "./stage-sketch.js?v=20261027-v0390",
   "./stage-sketch.webmanifest",
   "./stage-storage-codec.js?v=2026092523",
   "./stage-storage-hygiene.js?v=20261014-v0365",
   "./stage-storage-pressure.js?v=20260926-large39",
   "./stage-storage-recovery.js?v=20261020-v0382",
-  "./stage-study-owner.js?v=20261020-v0381",
-  "./stage-study.css?v=20261012-v0358",
+  "./stage-study-owner.js?v=20261027-v0390",
+  "./stage-study.css?v=20261027-v0390",
   "./stage-time-domain.js?v=20261013-v0359",
   "./stage-timecode.css?v=20261015-v0371",
   "./stage-timecode.js?v=20261015-v0371",
@@ -145,10 +146,10 @@ const APP_SHELL_GROUPS = {
     "./docs/proscenium-lighting-presets-2026-09-15/proscenium-lighting-presets-v1.json",
     "./docs/proscenium-lighting-presets-2026-09-15/proscenium-mid.shosai-light-design.json",
     "./docs/proscenium-lighting-presets-2026-09-15/proscenium-small.shosai-light-design.json",
-    "./light-design/app.js?v=20261026-v0389",
+    "./light-design/app.js?v=20261027-v0390",
     "./light-design/embed.css?v=20261023-v0384",
-    "./light-design/embed.js?v=20261026-v0389",
-    "./light-design/index.html?embed=gamma&v=20261026-v0389",
+    "./light-design/embed.js?v=20261027-v0390",
+    "./light-design/index.html?embed=gamma&v=20261027-v0390",
     "./light-design/laser-effects-ui.js?v=20260915-3-supported-shapes",
     "./light-design/light-presets-ui.js?v=20261010-v0338",
     "./light-design/light-presets.js?v=1789357787",
@@ -159,21 +160,21 @@ const APP_SHELL_GROUPS = {
     "./light-design/selected-light-presets-ui.js?v=20260928-feedback55",
     "./light-design/simple-lighting-ui.js?v=20261022-v0383",
     "./light-design/simple-lighting.css?v=20261015-v0368",
-    "./light-design/stage-figure.js?v=20261026-v0389",
+    "./light-design/stage-figure.js?v=20261027-v0390",
     "./light-design/ui-i18n.js?v=20261022-v0383",
     "./light-design/volume-light.js?v=20260928-feedback55",
     "./stage-set-render.js?v=20261012-v0358"
   ],
   "formation": [
     "./formation/presets/editor.css?v=20261026-v0388",
-    "./formation/presets/editor.html?v=20261026-v0388",
+    "./formation/presets/editor.html?v=20261027-v0390",
     "./formation/presets/editor.js?v=20261026-v0388"
   ],
   "language": [
     "./gamma-ui-i18n.ko.js?v=20261022-v0383",
-    "./stage-i18n.ko.js?v=20261026-v0389",
-    "./stage-i18n.zh-Hans.js?v=20261026-v0389",
-    "./stage-i18n.zh-Hant.js?v=20261026-v0389"
+    "./stage-i18n.ko.js?v=20261027-v0390",
+    "./stage-i18n.zh-Hans.js?v=20261027-v0390",
+    "./stage-i18n.zh-Hant.js?v=20261027-v0390"
   ],
   "manual": [
     "./manual-gamma/index.html",
@@ -184,10 +185,10 @@ const APP_SHELL_GROUPS = {
   ],
   "runOfShow": [
     "./run-of-show/distribution.js?v=20261014-v0361",
-    "./run-of-show/editor.css?v=20261020-v0381",
-    "./run-of-show/editor.js?v=20261025-v0387",
+    "./run-of-show/editor.css?v=20261027-v0390",
+    "./run-of-show/editor.js?v=20261027-v0390",
     "./run-of-show/images.js",
-    "./run-of-show/index.html?v=20261025-v0387",
+    "./run-of-show/index.html?v=20261027-v0390",
     "./run-of-show/layout.js?v=20261011-v0347",
     "./run-of-show/pagination.js?v=20261016-v0374",
     "./run-of-show/paper-edit.js?v=20261020-v0381",
@@ -391,12 +392,23 @@ const STAGE_DOCUMENT_KEYS = new Map([["stage.html","./stage.html"],["stage","./s
 const stageDocumentKey = (pathname) => STAGE_DOCUMENT_KEYS.get(pathname.split("/").pop()) || "./stage.html";
 
 async function cachedAppShellResponse(request, { stageDocument = false } = {}) {
+  // Existing shared stylesheet imports use this historical alias. Only that
+  // exact CSS alias may use the current shell's canonical stylesheet offline;
+  // arbitrary query variants and JavaScript versions still require exact URLs.
+  const requested = new URL(request.url);
+  const selectStyle = APP_SHELL_CORE.find(path => new URL(path, self.location.href).pathname.endsWith("/gamma-select.css"));
+  const selectAlias = selectStyle && requested.search === "?v=20261012-select-local"
+    && requested.pathname === new URL(selectStyle, self.location.href).pathname;
   const keys = await caches.keys();
   for (const key of keys) {
     if (!/^stage-sketch-gamma-(?:pwa|shell)-/.test(key)) continue;
     const cache = await caches.open(key);
     const exact = await cache.match(request);
     if (exact) return exact;
+    if (selectAlias) {
+      const style = await cache.match(selectStyle);
+      if (style?.ok) return style;
+    }
     if (stageDocument) {
       const stage = await cache.match(stageDocumentKey(new URL(request.url).pathname)) || await cache.match("./stage.html");
       if (stage) return stage;
@@ -453,6 +465,8 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
+  // Licence grants, device management and authentication are never SW-cached.
+  if (url.pathname.startsWith("/license/") || ["/whoami", "/sign-in", "/sign-out"].includes(url.pathname)) return;
   // Reader login, notebooks and viewer scripts are online-only and never cached.
   if (['/stage-study-viewer.js', '/stage-study-sync.js', '/stage-study-private.js',
        '/stage-study-frame.js', '/stage-study-pen.js', '/stage-study-continuity.js', '/stage-study-sticky.js',

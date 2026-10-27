@@ -66,6 +66,8 @@
     older: ['このメモは以前の公開版で書いたものです。線と図上メモの位置を確認してください。', 'These notes were made on an earlier published revision. Check the positions of your strokes and pinned notes.'],
     media: ['ローカル音源と端末内の独自モデルは含まれません。', 'Local audio and device-only custom models are not included.'],
     loading: ['公開内容を確認しています…', 'Checking published content…'],
+    expired: ['期限が切れました。発行者に連絡してください。', 'This link has expired. Please contact the issuer.'],
+    expiryDraft: ['書きかけのメモ（同期は停止中）', 'Your draft note (sync has stopped)'],
     unavailable: ['このリンクは利用できません。オーナーに確認してください。', 'This link is unavailable. Please contact the owner.'],
     network: ['通信できません。再接続して再試行してください。', 'Cannot connect. Reconnect and try again.'],
     sent: ['オーナーへ共有しました。自分用メモは残っています。', 'Shared with the owner. Your personal notes are kept.'], sending: ['画面を共有中…', 'Sharing this view…'],
@@ -77,9 +79,38 @@
     nameRequired: ['表示名を入力してください。', 'Enter a display name.'],
     ready: ['公開された内容を表示しています。', 'Showing published content.'],
   };
-  let lang = new URLSearchParams(location.search).get('lang') || (navigator.language.startsWith('ja') ? 'ja' : 'en');
+  // G130 pure expiry helpers. No network, DOM or fixed polling interval.
+  function expiryDelay(value, nowMs) {
+    const ms = typeof value === 'string' ? Date.parse(value) : NaN;
+    return Number.isFinite(ms) ? Math.min(2147483647, Math.max(0, ms-nowMs)) : null;
+  }
+  function createExpiryTimer({ now, set, clear, onExpire }) {
+    let value = null, timer = null;
+    const expired = () => expiryDelay(value, now()) === 0;
+    const stop = () => { clear(timer); timer = null; };
+    function schedule() {
+      stop(); const delay = expiryDelay(value, now());
+      if (delay === 0) { onExpire(); return; }
+      if (delay !== null) timer = set(schedule, delay);
+    }
+    return { expired, stop, remember(next) { value = next ?? null; schedule(); }, reset() { stop(); value = null; } };
+  }
+  function availabilityState(error) {
+    return error.status === 401 ? 'loginRequired' : error.status === 404 ? error.message === 'link-expired' ? 'expired' : 'unavailable' : 'network';
+  }
+  function studyText(language, row, packs) {
+    return packs?.[language]?.text?.[row[0]] || row[language === 'en' ? 1 : 0];
+  }
+  function studyLanguage(code) {
+    if (/^ja/i.test(code)) return 'ja';
+    if (/^ko/i.test(code)) return 'ko';
+    if (/^zh/i.test(code)) return /Hant|TW|HK|MO/i.test(code) ? 'zh-Hant' : 'zh-Hans';
+    return 'en';
+  }
+  // G130 end pure expiry helpers.
+  let lang = studyLanguage(new URLSearchParams(location.search).get('lang') || navigator.language);
   let token = location.hash.slice(1), data = null, scenes = [], at = 0, frame = null, frameReady = false, epoch = 0, checking = false, live = false;
-  let pageState = 'loading', noteState = '', pendingNote = false;
+  let pageState = 'loading', noteState = '', pendingNote = false, expiryDraftRecovery = null;
   let penEnabled = false, replaying = false, penLimit = '';
   let stickyEnabled = false, selectedSticky = '', stickyLimit = '';
   const stickyModel = window.SHOSAI_STUDY_STICKY;
@@ -135,7 +166,26 @@
     personal: ['文章・線・図上メモは、このブラウザに自動保存します。他の端末には同期されません。共有ボタンを押すまでオーナーには届きません。', 'Text, strokes and pinned notes are saved in this browser and do not sync to other devices. The owner receives them only when you press Share.'],
     penHint: ['線もシーンごとに、このブラウザへ保存します。共有ボタンを押すまで、自分だけのメモです。', 'Strokes are saved in this browser for each scene. They stay private until you press Share.'],
   };
-  const t = key => (!account && deviceText[key] || dictionary[key])[lang === 'en' ? 1 : 0];
+  const t = key => studyText(lang, !account && deviceText[key] || dictionary[key], window.SHOSAI_I18N_PACKS);
+  // The Viewer previously used only its ja/en pairs. Reuse the permitted locale
+  // packs for other languages; ja/en retain the existing source/fallback copy.
+  const localeLoads = new Map();
+  function loadStudyLanguage(code) {
+    if (code === 'ja' || code === 'en' || window.SHOSAI_I18N_PACKS?.[code]?.text) return Promise.resolve();
+    window.SHOSAI_I18N_PACKS ||= {};
+    if (!localeLoads.has(code)) localeLoads.set(code, new Promise(resolve => {
+      const script = document.createElement('script'); script.src = '/study-assets/stage-i18n.' + code + '.js';
+      script.onload = resolve; script.onerror = () => { localeLoads.delete(code); resolve(); }; document.head.append(script);
+    }));
+    return localeLoads.get(code);
+  }
+  const expiryClock = createExpiryTimer({ now: () => Date.now(), set: (fn, ms) => setTimeout(fn, ms), clear: id => clearTimeout(id),
+    onExpire: () => { if (pageState !== 'expired') { epoch++; conceal('expired'); } } });
+  function expireLocally() {
+    if (pageState === 'expired') return true;
+    if (!expiryClock.expired()) return false;
+    epoch++; conceal('expired'); return true;
+  }
   const post = message => frame?.contentWindow?.postMessage({ channel: 'stage-study', ...message }, '*');
   // A device layout preference, separate from the published show and private notes.
   function initPanelWidth() {
@@ -221,8 +271,18 @@
     document.querySelectorAll('[data-label]').forEach(el => { const label = t(el.dataset.label); el.setAttribute('aria-label', label); el.title = label; });
     $('study-prev').setAttribute('aria-label', lang === 'en' ? 'Previous scene' : '前のシーン');
     $('study-next').setAttribute('aria-label', lang === 'en' ? 'Next scene' : '次のシーン');
-    $('study-status').textContent = t(pageState); $('study-note-status').textContent = noteState ? t(noteState) : '';
+    $('study-status').textContent = t(pageState);
+    if (pageState === 'expired' && expiryDraftRecovery) $('study-status').append(expiryDraftRecovery);
+    $('study-note-status').textContent = noteState ? t(noteState) : '';
     $('study-status').hidden = pageState === 'ready';
+    $('study-status').classList.toggle('study-danger', pageState === 'expired');
+    if ($('study-expiry-draft-label')) $('study-expiry-draft-label').textContent = t('expiryDraft');
+    if ($('study-expiry-draft-status')) {
+      const failed = ['saveFailed', 'unreadable'].includes(saveState);
+      $('study-expiry-draft-status').hidden = !failed;
+      $('study-expiry-draft-status').textContent = failed ? t(saveState) : '';
+      if (failed) expiryDraftRecovery.open = true;
+    }
     $('study-change-summary').hidden = !data?.changes;
     if (data?.changes) { const c = data.changes; $('study-change-summary').textContent = lang === 'en' ? `Since the previous publication: ${c.added} added, ${c.removed} removed, ${c.changed} changed scenes. Earlier notes are kept in Earlier scene notes and copying.` : `前の公開版から：追加 ${c.added}シーン・削除 ${c.removed}シーン・図の変更 ${c.changed}シーン。以前のメモは「以前のシーンのメモ・引き継ぎ」で確認できます。`; }
     if (data) {
@@ -326,11 +386,28 @@
     notifyReaderState();
   }
   function conceal(state) {
+    if (state === 'expired') {
+      $('study-scenes').replaceChildren(); $('study-scene-heading').textContent = ''; $('study-scene-note').textContent = '';
+      // Close sync BEFORE persisting a draft: put() may otherwise queue a PUT.
+      privateStore?.close(); expiryClock.stop();
+      if ($('study-note').value) {
+        let recovery = $('study-expiry-draft');
+        if (!recovery) {
+          recovery = document.createElement('details'); recovery.id = 'study-expiry-draft';
+          const label = document.createElement('summary'); label.id = 'study-expiry-draft-label';
+          const status = document.createElement('p'); status.id = 'study-expiry-draft-status'; status.className = 'study-danger';
+          const text = document.createElement('textarea'); text.id = 'study-expiry-draft-text'; text.readOnly = true;
+          text.setAttribute('aria-labelledby', label.id);
+          recovery.append(label, status, text); expiryDraftRecovery = recovery; $('study-status').append(recovery);
+        }
+        $('study-expiry-draft-text').value = $('study-note').value;
+      }
+    } else if (state !== 'loading' && state !== 'network') expiryClock.stop();
     savePrivate(); historyUI?.close(); captureWait?.reject();
     live = false; replaying = false; pageState = state; $('study-workspace').hidden = true; $('study-note-fields').disabled = true;
     $('study-pen-confirm').hidden = true;
     $('study-sticky-confirm').hidden = true;
-    $('study-retry').hidden = state === 'unavailable'; $('study-title').textContent = ''; $('study-title').hidden = true; $('study-stamp').textContent = '';
+    $('study-retry').hidden = state === 'unavailable' || state === 'expired'; $('study-title').textContent = ''; $('study-title').hidden = true; $('study-stamp').textContent = '';
     // Discard the in-memory show when hidden/offline/revoked. A hidden tab (loading) keeps the drawing frame and only
     // tells it to drop the show, so returning re-reads the show without re-fetching ~25 frame files (2026-10-07 P2, plan D).
     if (frame && state === 'loading' && frameReady) post({ action: 'clear' });
@@ -351,8 +428,10 @@
   // 図の枠（iframe）の中の操作は外へ届かない。枠の上に乗ったとき（pointerover）と、入力が枠へ移ったとき（blur）で数える。
   window.addEventListener('blur', markActivity);
   async function load() {
+    if (expireLocally()) return;
     markActivity(); const current = ++epoch; live = false; conceal('loading'); $('study-retry').hidden = true;
     try {
+      await loadStudyLanguage(lang); if (current !== epoch || expireLocally()) return; relabel();
       const me = await accountRequest('/study/api/me'); if (current !== epoch) return;
       account = me.identity; $('study-account').hidden = !account; $('study-login').hidden = !!account || me.allowAnonymous; $('study-library').hidden = true;
       $('study-google').hidden = !me.methods.google; $('study-login-config').hidden = me.methods.google; $('study-local').hidden = !me.methods.local;
@@ -361,6 +440,7 @@
       if (!token) { if (account) await showLibrary(); else { conceal('invitation'); $('study-retry').hidden = true; } return; }
       if (!/^[a-f0-9]{48}$/.test(token)) { conceal('unavailable'); return; }
       const result = await request(); if (current !== epoch) return;
+      expiryClock.remember(result.expiresAt); if (current !== epoch || expireLocally()) return;
       if (!account) {
         const storeKey = 'device:' + result.notebookId;
         if (!privateStore || connectionId !== storeKey) {
@@ -374,10 +454,10 @@
       const storeKey = account.id + ':' + nextConnection;
       if (!privateStore || connectionId !== storeKey) {
         privateStore?.close(); privateStore = null; connectionId = storeKey;
-        const nextStore = await window.SHOSAI_STUDY_SYNC({ accountId: account.id, connectionId: nextConnection, changed: change => {
+        const nextStore = await window.SHOSAI_STUDY_SYNC({ accountId: account.id, connectionId: nextConnection, canSync: () => !expiryClock.expired() && pageState !== 'expired', changed: change => {
           if (connectionId !== storeKey) return;
           if (change.state === 'loginRequired') { epoch++; conceal('loginRequired'); $('study-retry').hidden = false; return; }
-          if (change.state === 'unavailable') { epoch++; conceal('unavailable'); return; }
+          if (change.state === 'unavailable' || change.state === 'expired') { epoch++; conceal(change.state); return; }
           if (change.sceneId !== scenes[at]?.id) return;
           saveState = change.state;
           if (change.remote && !dirty && !pendingNote) { restorePrivate(); post({ action: 'scene', sceneId: scenes[at].id, strokes: currentInk(), stickies: currentStickies() }); syncPen(); }
@@ -387,7 +467,7 @@
         privateStore = nextStore; legacyStore = window.SHOSAI_STUDY_PRIVATE(token);
       }
       }
-      if (current !== epoch) return;
+      if (current !== epoch || expireLocally()) return;
       data = result; scenes = result.document.project.scenes.filter(s => s.kind === 'scene');
       window.dispatchEvent(new CustomEvent('stage-study-loaded', { detail: { project: result.document.project, scenes } })); at = Math.max(0, scenes.findIndex(s => s.id === lastScene)); restorePrivate();
       $('study-title').textContent = result.document.project.title; $('study-title').hidden = false;
@@ -396,12 +476,12 @@
       $('study-verified-name').textContent = result.displayName || '';
       $('study-name').required = !result.displayName;
       if (!frame) {
-        frame = document.createElement('iframe'); frameReady = false; frame.title = t('both'); frame.setAttribute('sandbox', 'allow-scripts'); frame.referrerPolicy = 'no-referrer'; frame.src = '/study-frame.html?v=20261026-v0389-' + (lang === 'en' ? 'en' : 'ja');
+        frame = document.createElement('iframe'); frameReady = false; frame.title = t('both'); frame.setAttribute('sandbox', 'allow-scripts'); frame.referrerPolicy = 'no-referrer'; frame.src = '/study-frame.html?v=20261027-v0390-' + (lang === 'en' ? 'en' : 'ja');
         $('study-frame-host').replaceChildren(frame);
       } else if (frameReady) { frame.title = t('both'); loadFrame(); }
       $('study-workspace').hidden = false;
       relabel();
-    } catch (error) { if (current === epoch) conceal(error.status === 401 ? 'loginRequired' : error.status === 404 ? 'unavailable' : 'network'); }
+    } catch (error) { if (current === epoch) conceal(availabilityState(error)); }
   }
   window.addEventListener('message', event => {
     if (!frame || event.source !== frame.contentWindow || event.origin !== 'null' || event.data?.channel !== 'stage-study') return;
@@ -430,7 +510,7 @@
         publishStickies(change.kind === 'text' ? { id: change.id, sequence: change.sequence } : undefined); savePrivate();
       } else chooseSticky(event.data.id, event.data.focus === true);
     }
-    if (event.data.action === 'loaded') { live = true; pageState = 'ready'; $('study-note-fields').disabled = false; relabel(); post({ action: 'view', view: $('study-view').value }); }
+    if (event.data.action === 'loaded') { if (expireLocally()) return; live = true; pageState = 'ready'; $('study-note-fields').disabled = false; relabel(); post({ action: 'view', view: $('study-view').value }); }
     if (captureWait && event.data.requestId === captureWait.requestId) {
       if (event.data.action === 'captured' && event.data.sceneId === scenes[at]?.id && event.data.revision === data?.revision) captureWait.resolve(event.data.screens);
       else if (event.data.action === 'capture-error') captureWait.reject();
@@ -440,15 +520,17 @@
   // 公開内容の確認と自分用メモの同期は、開いた直後・内容が変わった直後・画面を操作した直後の2分間は5秒ごと。
   // 何も起きない間は30秒ごとに間引く。無料プランは枠を超えると止まり、演者も持ち主も使えなくなるため（2026-10-06）。
   async function check() {
-    if (!live || checking || pendingNote || document.hidden) return;
+    if (expireLocally() || !live || checking || pendingNote || document.hidden) return;
     const now = Date.now(); if (now - lastActivity > STUDY_ACTIVE_MS && now - lastCheck < STUDY_IDLE_CHECK_MS) return;
     lastCheck = now;
     checking = true; const current = epoch;
     try {
       const result = await request('/status');
-      if (current === epoch && result.revision !== data.revision) { noteState = 'changed'; markActivity(); await load(); }
-      else if (current === epoch && !dirty) await privateStore?.poll(scenes[at].id);
-    } catch (error) { if (current === epoch) { epoch++; conceal(error.status === 401 ? 'loginRequired' : error.status === 404 ? 'unavailable' : 'network'); } }
+      if (current !== epoch) return;
+      expiryClock.remember(result.expiresAt); if (current !== epoch || expireLocally()) return;
+      if (result.revision !== data.revision) { noteState = 'changed'; markActivity(); await load(); }
+      else if (!dirty) await privateStore?.poll(scenes[at].id);
+    } catch (error) { if (current === epoch) { epoch++; conceal(availabilityState(error)); } }
     finally { checking = false; }
   }
   function select(index) { if (!live || pendingNote) return; savePrivate(); at = Math.max(0, Math.min(scenes.length - 1, index)); restorePrivate(); noteState = ''; $('study-note-status').textContent = ''; replaying = false; penLimit = ''; $('study-pen-confirm').hidden = true; post({ action: 'scene', sceneId: scenes[at].id, strokes: currentInk(), stickies: currentStickies() }); syncScene(); }
@@ -472,7 +554,7 @@
       const li = document.createElement('li'), name = document.createElement('p'); name.className = 'study-muted'; name.textContent = c.ownerName;
       const link = document.createElement(c.available ? 'a' : 'p'); link.textContent = c.title;
       if (c.available) { link.className = 'study-action'; link.href = '/study?lang=' + lang + '#' + c.token; }
-      else { const unavailable = document.createElement('p'); unavailable.className = 'study-muted'; unavailable.textContent = t('unavailable'); li.append(unavailable); }
+      else { const unavailable = document.createElement('p'); unavailable.className = 'study-muted'; unavailable.textContent = t(c.expired ? 'expired' : 'unavailable'); li.append(unavailable); }
       li.prepend(link, name); return li;
     }));
     $('study-library-empty').hidden = result.connections.length > 0; $('study-library').hidden = false;
@@ -535,11 +617,11 @@
     $('study-sticky-confirm').hidden = true; publishStickies(); savePrivate(); $('study-sticky-list').focus();
   };
   $('study-retry').onclick = load;
-  $('study-language').onchange = event => { lang = event.target.value; replaying = false; relabel(); if (data) loadFrame(); else if (account && !token) void showLibrary(); };
+  $('study-language').onchange = async event => { lang = event.target.value; const selected = lang; await loadStudyLanguage(selected); if (lang !== selected) return; replaying = false; relabel(); if (data) loadFrame(); else if (account && !token) void showLibrary(); };
   $('study-note').oninput = () => { if (!draft) return; if (!edited()) { $('study-note').value = draft.text; return; } clearTimeout(saveTimer); saveTimer = setTimeout(savePrivate, 300); };
   try { $('study-name').value = localStorage.getItem('stage-study-display-name') || ''; } catch {}
   $('study-note-form').onsubmit = async event => {
-    event.preventDefault(); if (!live || pendingNote) return;
+    event.preventDefault(); if (expireLocally() || !live || pendingNote) return;
     const name = $('study-name').value.trim();
     if (!data.displayName && !name) { noteState = 'nameRequired'; relabel(); $('study-name').focus(); return; }
     savePrivate();
@@ -548,7 +630,7 @@
     setSticky(false); pendingNote = true; noteState = 'sending'; $('study-send').disabled = true; syncScene(); relabel();
     try {
       const screens = await captureScreen();
-      if (current !== epoch || !live) return;
+      if (current !== epoch || expireLocally() || !live) return;
       await request('/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, text, sceneId, revision, screens }) });
       if (current !== epoch) return;
       if (!data.displayName) try { localStorage.setItem('stage-study-display-name', name); } catch {}
@@ -556,7 +638,7 @@
     } catch (error) {
       if (current !== epoch) return;
       noteState = error.message === 'images-full' ? 'imagesFull' : error.status === 429 ? 'rate' : error.status === 409 ? 'full' : error.message === 'invalid-note' ? 'changed' : 'failed';
-      if (error.status === 404) conceal('unavailable');
+      if (error.status === 404) { epoch++; conceal(availabilityState(error)); }
       else if (noteState === 'changed') await load();
     } finally { pendingNote = false; $('study-send').disabled = false; relabel(); }
   };
@@ -567,11 +649,12 @@
     if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') { event.preventDefault(); select(at - 1); }
   });
   window.addEventListener('offline', () => { epoch++; conceal('network'); });
-  window.addEventListener('online', load);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { epoch++; conceal('loading'); } else load(); });
-  window.addEventListener('pagehide', () => { epoch++; conceal('loading'); });
-  window.addEventListener('pageshow', event => { if (event.persisted) load(); });
-  window.addEventListener('hashchange', () => { savePrivate(); conceal('loading'); token = location.hash.slice(1); privateStore?.close(); privateStore = null; connectionId = ''; legacyStore = null; draft = null; lastScene = ''; load(); });
+  const resume = () => { if (!expireLocally()) void load(); };
+  window.addEventListener('online', resume);
+  document.addEventListener('visibilitychange', () => { if (expireLocally()) return; if (document.hidden) { epoch++; conceal('loading'); } else resume(); });
+  window.addEventListener('pagehide', () => { if (!expireLocally()) { epoch++; conceal('loading'); } });
+  window.addEventListener('pageshow', event => { if (event.persisted) resume(); });
+  window.addEventListener('hashchange', () => { savePrivate(); conceal('loading'); token = location.hash.slice(1); expiryClock.reset(); $('study-expiry-draft')?.remove(); expiryDraftRecovery = null; pageState = 'loading'; privateStore?.close(); privateStore = null; connectionId = ''; legacyStore = null; draft = null; lastScene = ''; load(); });
   historyUI = window.SHOSAI_STUDY_HISTORY_UI({
     state: () => ({ lang, token, data, scenes, sceneId: scenes[at]?.id, store: privateStore }), request,
     beforeOpen: () => { savePrivate(); setSticky(false); },

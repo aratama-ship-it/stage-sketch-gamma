@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="ja" data-stage-skin="brown">
 <head>
-<script src="../stage-runtime.js?v=20261025-v0386"></script>
-<script src="../stage-i18n.ja.js?v=20261022-v0383"></script>
+<script src="../stage-runtime.js?v=20261027-v0390"></script>
+<script src="../stage-i18n.ja.js?v=20261027-v0390"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
@@ -15,6 +15,9 @@
       --brass: #c7a96b;
       --rust: #9d4424;
       --download-max: 920px;
+      --download-error: #e0a090;
+      --download-control-gap: 10px;
+      --download-eye-size: 24px;
     }
     * { box-sizing: border-box; }
     html { color-scheme: dark; background: var(--desk); }
@@ -43,10 +46,17 @@
     .download-gate { margin-top: 28px; padding: 20px 22px; border: 1px solid var(--brass); border-radius: var(--radius-sm); max-width: 32em; }
     .download-gate h2 { margin: 0 0 6px; }
     .download-gate p { margin: 0 0 12px; color: var(--milk-dim); font-size: 14px; }
-    .download-gate-row { display: flex; gap: 10px; flex-wrap: wrap; }
-    .download-gate input { flex: 1 1 14em; min-height: 44px; padding: 6px 12px; border: 1px solid var(--line-dark); border-radius: var(--radius-sm); background: var(--desk-2); color: var(--milk); font: inherit; }
+    .download-gate-row { display: flex; gap: var(--download-control-gap); flex-wrap: wrap; }
+    .download-gate-field { display: flex; flex: 1 1 20em; min-width: 0; gap: var(--download-control-gap); }
+    .download-gate input { flex: 1 1 0; min-width: 0; width: 0; min-height: 44px; padding: 6px 12px; border: 1px solid var(--line-dark); border-radius: var(--radius-sm); background: var(--desk-2); color: var(--milk); font: inherit; }
     .download-gate button { min-height: 44px; padding: 6px 18px; border: 1px solid #c25d37; border-radius: var(--radius-sm); background: var(--rust); color: var(--milk); font: inherit; font-weight: 700; cursor: pointer; }
-    .download-gate-error { margin: 10px 0 0; color: #e0a090; font-size: 14px; min-height: 1.5em; }
+    .download-gate .download-gate-toggle { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 var(--icon-lg); width: var(--icon-lg); min-height: var(--ctrl-lg); padding: 0; border-color: var(--brass); background: var(--desk-2); color: var(--brass); }
+    .download-gate-toggle svg { width: var(--download-eye-size); height: var(--download-eye-size); }
+    .download-gate-toggle[aria-pressed="false"] .download-eye-slash { display: none; }
+    .download-gate-toggle:hover { background: var(--desk-3); }
+    .download-gate :is(input, button):focus-visible { outline: 2px solid var(--brass); outline-offset: 4px; }
+    .download-gate input[aria-invalid="true"] { border-color: var(--download-error); }
+    .download-gate .download-gate-error { margin: var(--download-control-gap) 0 0; color: var(--download-error); font-size: var(--fs-8); font-weight: 700; line-height: 1.5; min-height: 1.5em; }
     .download-gate[hidden] { display: none; }
     .download-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 48px; margin-top: 56px; }
     .download-section { border-top: 1px solid var(--line-dark); padding-top: 18px; }
@@ -89,10 +99,19 @@
       <p data-download-copy="scope">合言葉を入れると、ダウンロード先と導入手順の案内を表示します。この案内表示のための簡易な仕組みで、配布ファイルへのアクセスを制限するものではありません。</p>
       <p data-download-copy="remember">入力後は、同じブラウザで30日間、案内をそのまま表示します。</p>
       <div class="download-gate-row">
+        <div class="download-gate-field">
         <input type="password" id="download-gate-input" name="passphrase" aria-labelledby="gate-heading" aria-describedby="download-gate-error" required>
+        <button type="button" class="download-gate-toggle" id="download-gate-toggle" aria-controls="download-gate-input" aria-pressed="false" aria-label="合言葉を表示する">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/>
+            <circle cx="12" cy="12" r="3"/>
+            <path class="download-eye-slash" d="m3 3 18 18"/>
+          </svg>
+        </button>
+        </div>
         <button type="submit" id="download-gate-open" data-download-text="open">開く</button>
       </div>
-      <p class="download-gate-error" id="download-gate-error" role="alert" aria-live="polite"></p>
+      <p class="download-gate-error" id="download-gate-error" role="alert" aria-atomic="true"></p>
     </form>
     <p class="download-note" id="download-gate-status" role="status" aria-live="polite" aria-atomic="true"></p>
     <div id="download-gate-content"></div>
@@ -128,11 +147,11 @@
     <p class="download-note" data-download-copy="authenticity">配布元の確認は合言葉とは別です。ダウンロード前に、リンク先が PYGMIX の公式 GitHub（aratama-ship-it/stage-sketch-gamma）であることを確認してください。</p>
   </main>
 
-  <script src="../stage-i18n.ja.js?v=20261022-v0383"></script>
-  <script src="../stage-i18n.en.js?v=20261022-v0383"></script>
-  <script src="../stage-i18n.ko.js?v=20261026-v0389"></script>
-  <script src="../stage-i18n.zh-Hans.js?v=20261026-v0389"></script>
-  <script src="../stage-i18n.zh-Hant.js?v=20261026-v0389"></script>
+  <script src="../stage-i18n.ja.js?v=20261027-v0390"></script>
+  <script src="../stage-i18n.en.js?v=20261027-v0390"></script>
+  <script src="../stage-i18n.ko.js?v=20261027-v0390"></script>
+  <script src="../stage-i18n.zh-Hans.js?v=20261027-v0390"></script>
+  <script src="../stage-i18n.zh-Hant.js?v=20261027-v0390"></script>
   <script>
     const downloadLang = Object.hasOwn(window.SHOSAI_DOWNLOAD, new URLSearchParams(location.search).get("lang")) ? new URLSearchParams(location.search).get("lang") : "ja";
     const downloadText = window.SHOSAI_DOWNLOAD[downloadLang];
@@ -147,6 +166,14 @@
       const KEY = 'gamma:download-gate-v1', DAYS = 30;
       const form = document.getElementById('download-gate'), content = document.getElementById('download-gate-content');
       const tpl = document.getElementById('download-gate-template'), input = document.getElementById('download-gate-input'), error = document.getElementById('download-gate-error');
+      const toggle = document.getElementById('download-gate-toggle');
+      toggle.setAttribute('aria-label', downloadText.showPassphrase);
+      toggle.addEventListener('click', () => {
+        const visible = input.type === 'password';
+        input.type = visible ? 'text' : 'password';
+        toggle.setAttribute('aria-pressed', String(visible));
+        toggle.setAttribute('aria-label', visible ? downloadText.hidePassphrase : downloadText.showPassphrase);
+      });
       const local = ['127.0.0.1', 'localhost', '[::1]'].includes(location.hostname);
       const override = local ? new URLSearchParams(location.search).get('gate-hash') : null;
       const expected = (override && /^[0-9a-f]{64}$/.test(override)) ? override : form.dataset.gateHash;
@@ -185,7 +212,7 @@
         try {
           const got = await derive(pass);
           if (got.length === expected.length && got.split('').every((c, i) => c === expected[i])) { remember(); unlock(true); }
-          else { error.textContent = downloadText.wrong; input.select(); }
+          else { error.textContent = downloadText.wrong; input.setAttribute('aria-invalid', 'true'); input.select(); }
         } catch (_) { error.textContent = downloadText.unavailable; }
         button.disabled = false;
       });

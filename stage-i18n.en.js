@@ -27,6 +27,8 @@ window.SHOSAI_DOWNLOAD["en"] = {
   "lead": "Download the new app and replace your current 舞台スケッチγ.app.",
   "gate": "Passphrase",
   "open": "Open",
+  "showPassphrase": "Show passphrase",
+  "hidePassphrase": "Hide passphrase",
   "required": "Please enter the passphrase.",
   "wrong": "The passphrase is incorrect.",
   "unavailable": "Verification was unavailable in this environment. Please try another browser.",
@@ -53,3 +55,24 @@ window.SHOSAI_DOWNLOAD_COPY["en"] = {
   "remember": "After entry, the same browser keeps the instructions visible for 30 days.",
   "authenticity": "Check the distributor separately from the passphrase. Before downloading, confirm that the link goes to the official PYGMIX GitHub repository (aratama-ship-it/stage-sketch-gamma)."
 };
+
+// G-130: expiry copy; ko/zh translations await native-speaker review.
+window.SHOSAI_I18N_PACKS = window.SHOSAI_I18N_PACKS || {};
+window.SHOSAI_I18N_PACKS["en"] = window.SHOSAI_I18N_PACKS["en"] || { text: {} };
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "リンクの期限": "Link expiry",
+  "期限なし": "No expiry",
+  "日時を指定": "Specify date and time",
+  "現地の日時": "Local date and time",
+  "UTC では": "In UTC",
+  "期限": "Expires",
+  "期限切れ": "Expired",
+  "このサーバーは期限付きの発行に未対応です。": "This server does not support links with an expiry.",
+  "現在より後の日時を指定してください。": "Choose a date and time in the future.",
+  "期限を受け付けられません。指定した日時を確認してください。": "The expiry was not accepted. Check the date and time.",
+  "発行した期限を確認できません。リンクは配布せず、保存済みリンクを確認してください。": "The issued expiry could not be verified. Do not distribute the link; check saved links.",
+  "期限切れ（閲覧・投稿は停止中。受信済みのメモは残っています）": "Expired (viewing and posting have stopped; received notes are kept).",
+  "新しいリンクを発行するには、先にリンクを無効化してください。": "Revoke this link before creating a new one.",
+  "期限が切れました。発行者に連絡してください。": "This link has expired. Please contact the issuer.",
+  "書きかけのメモ（同期は停止中）": "Your draft note (sync has stopped)"
+});

@@ -59,6 +59,7 @@
   const HOST_SESSION_OWNER_MAX_LENGTH = 128;
   const RECONNECT_LIMIT = 5;
   const RECONNECT_DELAY_MS = 3000;
+  const ACCESS_REVOKED_STATUS = "共有の利用資格が変わったため、接続を終了しました。ページを再読み込みして、もう一度ログインしてください。";
   const PING_INTERVAL_MS = 25 * 1000;
   const PONG_TIMEOUT_MS = 10 * 1000;
   const HOST_SEND_DEBOUNCE_MS = 300;
@@ -76,6 +77,7 @@
   let socket = null;
   let reconnectAttempts = 0;
   let reconnectAllowed = true;
+  let accessRevoked = false;
   let reconnectTimer = null;
   let pingTimer = null;
   let pongTimer = null;
@@ -161,6 +163,28 @@
     );
   }
 
+  function sharingAllowed() { return window.GAMMA_CONTRACT?.decision("session").allowed !== false; }
+  function contractSharingStatus() {
+    if (sharingAllowed()) return true;
+    setStatus(window.GAMMA_CONTRACT.message("session"), true);
+    return false;
+  }
+  function syncContractSharing() {
+    const allowed = sharingAllowed();
+    for (const button of [els.start, els.resume, els.copy, els.reconnect, els.refresh]) {
+      if (!button) continue;
+      if (!allowed) { button.dataset.contractDisabled = "true"; button.disabled = true; button.title = window.GAMMA_CONTRACT.message("session"); }
+      else if (button.dataset.contractDisabled) { delete button.dataset.contractDisabled; button.disabled = false; button.removeAttribute("title"); }
+    }
+    if (!allowed && socket) {
+      accessRevoked = true; reconnectAllowed = false;
+      applyGeneration++; // queued document receives must fail their existing guard
+      const previous = socket; handleSocketClose(previous);
+      try { previous.close(4000, "contract-changed"); } catch (_) {}
+    }
+    if (!allowed) contractSharingStatus();
+  }
+
   function applySessionLabels() {
     els.panel.dataset.sessionLanguage = sessionLanguage();
     applyShareLabels();
@@ -177,6 +201,7 @@
     if (els.clearGuestArrows) els.clearGuestArrows.textContent = sessionText("ゲスト注釈を一括消去");
     if (els.refresh) els.refresh.textContent = sessionText("最新を取り直す");
     if (els.reconnect) els.reconnect.textContent = sessionText("再接続");
+    syncContractSharing();
   }
 
   /* 直近の状態を日本語のまま覚えておき、言語切替の relabel() で引き直す */
@@ -280,6 +305,7 @@
     if (native && typeof native.sessionUser === "function") {
       try {
         const result = await native.sessionUser();
+        if (result?.ok === true) window.GAMMA_CONTRACT?.update(result);
         return result && result.ok === true ? normalizeSessionOwner(result.user) : null;
       } catch (_) {
         return null;
@@ -295,6 +321,7 @@
       });
       if (!response.ok) return null;
       const result = await response.json();
+      window.GAMMA_CONTRACT?.update(result);
       return normalizeSessionOwner(result && result.user);
     } catch (_) {
       return null;
@@ -423,6 +450,7 @@
   }
 
   function sendMessage(message) {
+    if (!contractSharingStatus()) return false;
     if (!socketIsOpen()) return false;
     try {
       socket.send(JSON.stringify(message));
@@ -732,6 +760,12 @@
     try { applied = await (bridge.receiveDocumentString
       ? bridge.receiveDocumentString(text, roomId, guard) : bridge.applyDocumentString(text)); }
     catch (_) { applied = false; }
+    if (accessRevoked) {
+      applyingRemoteDocument = false;
+      clearTimeout(applyReleaseTimer);
+      applyReleaseTimer = null;
+      return false;
+    }
     if (!applied) {
       applyingRemoteDocument = false;
       setStatus("共有内容を舞台へ反映できませんでした。", true);
@@ -750,6 +784,7 @@
   }
 
   function sendHostDocument(force = false) {
+    if (!contractSharingStatus()) return;
     if (role !== "host" || !socketIsOpen()) return;
     let documentText;
     try { documentText = bridge.exportDocumentString(); }
@@ -823,6 +858,7 @@
   }
 
   function onLocalChange() {
+    if (!contractSharingStatus()) return;
     if (applyingRemoteDocument) return;
     if (role) sendActivity();
     if (role === "host") scheduleHostDocument();
@@ -940,6 +976,7 @@
   }
 
   function handleSocketMessage(event) {
+    if (!sharingAllowed()) { syncContractSharing(); return; }
     if (typeof event.data !== "string") return;
     let message;
     try { message = JSON.parse(event.data); } catch (_) { return; }
@@ -971,6 +1008,30 @@
       renderRemotePointer(message);
     } else if (message.t === "presence") {
       renderParticipants(message.participants);
+    } else if (message.t === "access-revoked") {
+      if (message.reason === "plan-expired") {
+        window.GAMMA_CONTRACT?.expire(); syncContractSharing(); return;
+      }
+      if (message.reason === "plan-required") {
+        // A plan restriction does not imply an expired editing contract.
+        window.GAMMA_CONTRACT?.restrictSharing();
+        syncContractSharing(); return;
+      }
+      if (resumingStoredHost) {
+        rejectStoredHostResume();
+        return;
+      }
+      accessRevoked = true;
+      reconnectAllowed = false;
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+      // Detach now so queued sends and the later close cannot run twice.
+      // Keep the role, room and local documents just as on an exhausted reconnect.
+      const ws = socket;
+      handleSocketClose(ws);
+      try { ws.close(4000, "access-revoked"); } catch (_) {}
+      setStatus(ACCESS_REVOKED_STATUS, true);
+      if (els.reconnect) els.reconnect.hidden = true;
     } else if (message.t === "full") {
       if (resumingStoredHost) {
         rejectStoredHostResume();
@@ -1007,7 +1068,7 @@
   }
 
   function scheduleReconnect() {
-    if (!role || !reconnectAllowed) return;
+    if (!role || !reconnectAllowed || accessRevoked) return;
     if (reconnectAttempts >= RECONNECT_LIMIT) {
       setStatus("切断しました。再接続してください。", true);
       if (els.reconnect) els.reconnect.hidden = false;
@@ -1027,6 +1088,12 @@
     hostSendTimer = null;
     pendingHostDocuments.clear();
     clearRemotePointers();
+    if (accessRevoked) {
+      clearTimeout(settleResyncTimer);
+      settleResyncTimer = null;
+      if (els.reconnect) els.reconnect.hidden = true;
+      return;
+    }
     if (!reconnectAllowed) {
       if (els.reconnect) els.reconnect.hidden = false;
       return;
@@ -1035,7 +1102,8 @@
   }
 
   function connectSocket() {
-    if (!role || !roomId) return;
+    if (!contractSharingStatus()) return;
+    if (!role || !roomId || accessRevoked) return;
     stopKeepalive();
     if (role === "guest") awaitingInitialGuestDocument = true;
     clearTimeout(reconnectTimer);
@@ -1127,6 +1195,7 @@
       roomId = invitedRoom;
       displayName = name;
       reconnectAttempts = 0;
+      accessRevoked = false;
       reconnectAllowed = true;
       enterGuestSessionMode();
       closeGuestNameModal();
@@ -1138,6 +1207,7 @@
   }
 
   async function startHostSession() {
+    if (!contractSharingStatus()) return;
     if (role) return;
     const name = normalizeName(els.hostName && els.hostName.value, "ホスト");
     if (els.hostName) els.hostName.value = name;
@@ -1157,6 +1227,9 @@
           hostKey = "";
           els.start.disabled = false;
           const reason = result && typeof result.reason === "string" ? result.reason : "network";
+          if (reason === "plan-expired") window.GAMMA_CONTRACT?.expire();
+          if (reason === "plan-required") window.GAMMA_CONTRACT?.restrictSharing();
+          if (!contractSharingStatus()) return;
           if (reason === "cancelled") {
             setStatus("未接続です。");
           } else if (reason === "unauthorized") {
@@ -1171,9 +1244,16 @@
         }
       } else {
         const response = await fetch("session/new", { method: "POST" });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!response.ok) {
+          let failure; try { failure = await response.json(); } catch (_) {}
+          if (failure?.error === "plan-expired") window.GAMMA_CONTRACT?.expire();
+          if (failure?.error === "plan-required") { window.GAMMA_CONTRACT?.restrictSharing(); }
+          if (!contractSharingStatus()) return;
+          throw new Error(`HTTP ${response.status}`);
+        }
         result = await response.json();
       }
+      if (!contractSharingStatus()) return;
       if (!result || typeof result.roomId !== "string" || typeof result.hostKey !== "string") {
         throw new Error("ルーム情報がありません");
       }
@@ -1184,6 +1264,7 @@
       hostKey = result.hostKey;
       displayName = name;
       reconnectAttempts = 0;
+      accessRevoked = false;
       reconnectAllowed = true;
       const owner = normalizeSessionOwner(result.user);
       const savedOwner = owner === null ? await currentSessionOwner() : owner;
@@ -1202,12 +1283,14 @@
   }
 
   async function resumeHostSession() {
+    if (!contractSharingStatus()) return;
     if (role) return;
     if (els.resume) els.resume.disabled = true;
     const saved = await refreshStoredHostSession();
     if (els.resume) els.resume.disabled = false;
     if (!saved) return;
     const resumeStatus = await storedHostResumeStatus(saved);
+    if (!contractSharingStatus()) return;
     if (resumeStatus && resumeStatus.ok === false && resumeStatus.reason === "session-updated") {
       rejectStoredHostResume("この共有はアプリ更新前に作成されています。新しい共有セッションを開始してください。");
       return;
@@ -1220,6 +1303,7 @@
     hostKey = saved.hostKey;
     displayName = name;
     reconnectAttempts = 0;
+    accessRevoked = false;
     reconnectAllowed = true;
     resumingStoredHost = true;
     if (els.url) els.url.value = inviteUrlFor(roomId, saved.origin, Boolean(nativeSessionBridge()));
@@ -1228,6 +1312,7 @@
   }
 
   async function copyInviteUrl() {
+    if (!contractSharingStatus()) return;
     if (!els.url || !els.url.value) return;
     try {
       if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") throw new Error("clipboard unavailable");
@@ -1242,12 +1327,14 @@
   }
 
   function reconnectNow() {
+    if (accessRevoked) { setStatus(ACCESS_REVOKED_STATUS, true); return; }
     reconnectAllowed = true;
     reconnectAttempts = 0;
     connectSocket();
   }
 
   function refreshGuestDocument() {
+    if (accessRevoked) { setStatus(ACCESS_REVOKED_STATUS, true); return; }
     if (role !== "guest") return;
     stopKeepalive();
     const previousSocket = socket;
@@ -1280,6 +1367,12 @@
     sendPointer(true, x, y);
   }
 
+  els.panel.addEventListener("click", event => {
+    if (event.target.closest("#stage-session-start, #stage-session-resume, #stage-session-copy, #stage-session-reconnect, #stage-session-refresh") && !contractSharingStatus()) {
+      event.preventDefault(); event.stopImmediatePropagation();
+    }
+  }, true);
+  window.addEventListener("gamma-contract-change", syncContractSharing);
   els.start.addEventListener("click", startHostSession);
   if (els.resume) els.resume.addEventListener("click", resumeHostSession);
   if (els.copy) els.copy.addEventListener("click", copyInviteUrl);

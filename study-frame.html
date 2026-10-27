@@ -4,7 +4,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
 <title>Stage Sketch — read-only drawings</title>
-<link rel="stylesheet" href="/study-assets/style.css?v=20261022-v0383"><link rel="stylesheet" href="/stage-study.css?v=20261012-v0358"><link rel="stylesheet" href="/stage-study-navigation.css?v=3">
+<link rel="stylesheet" href="/study-assets/style.css?v=20261022-v0383"><link rel="stylesheet" href="/stage-study.css?v=20261027-v0390"><link rel="stylesheet" href="/stage-study-navigation.css?v=3">
 <script src="/stage-study-sticky.js?v=5"></script><script src="/stage-study-pen.js?v=4"></script><script src="/stage-study-navigation.js?v=2"></script><script src="/stage-study-frame.js?v=11"></script></head>
 <body class="study-frame" data-view="both">
 <div class="study-drawings"><div class="study-drawing study-front"></div><div class="study-drawing study-plan"></div></div>
@@ -36,7 +36,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.89</span>
+                <span class="stage-app-version">0.3.90</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -1408,6 +1408,7 @@
               <span>最終バックアップ <time id="stage-last-backup-time">—</time></span>
             </div>
             <p id="stage-save-status" role="status" aria-live="polite" aria-atomic="true">変更はこの端末のブラウザ内へ自動保存します。</p>
+            <details id="stage-file-autosave" hidden><summary id="stage-file-autosave-summary" data-no-i18n>JSONファイルへ自動保存</summary></details>
             <p class="stage-backup-note"><a id="stage-storage-health" target="_blank" rel="noopener">保存容量・自動整理を確認</a></p>
             <a id="stage-save-recovery-link" class="stage-save-recovery-link" target="_blank" rel="noopener" hidden>保存容量を確認・修復（別タブ）</a>
             <!-- ブラウザ内の保存は設定・容量次第で消え得る。ファイルへ残した記録を正直に見せる -->
@@ -2829,21 +2830,27 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261026-v0389">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261027-v0390">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0389-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0389-title">v0.3.89</h3><time datetime="2026-10-26">2026-10-26</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0390-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0390-title">v0.3.90</h3><time datetime="2026-10-27">2026-10-27</time></header>
       <ul>
-        <li>照明デザインの図を描く処理を軽くし、雨や回る照明のあるシーンを滑らかに表示できるようにしました。</li>
-        <li>舞台の図で、雨などの効果があるシーンを描き直す処理を軽くし、Mac 版で動きが重くなっていたのを直しました。</li>
-        <li>窓の幅が狭いとき、照明の正面図の拡大ボタンがタイムラインに隠れて押せなかったのを直しました。</li>
-        <li>照明デザインで色を変えて適用し、別のタブから戻ると、明かりが消えたように見えることがあったのを直しました。v0.3.88 で起きていた不具合です。</li>
-        <li>文書を開き直した後、照明デザインの見出しが前のシーンのままになることがあったのを直しました。</li>
-        <li>保存に失敗したときの帯が、表示の言語を切り替えても前の言語のまま残ることがあったのを直しました。</li>
-        <li>Mac 版：ほかのアプリがファイルを変えたときの窓に「キャンセル」を足しました。Return で「別名で保存」、Esc で「キャンセル」を選べるようにしました。</li>
-        <li>Mac 版：保存していない変更があるまま文書を閉じるときに、ほかのアプリによるファイルの変更とぶつかると、その後の「別名で保存」もできなかったのを直しました。</li>
-        <li>Mac 版：終了するときの確認などの標準の窓が、OS の言語設定に従い、日本語などの対応する言語で表示されるようにしました。</li>
+        <li>Mac 版：進行表や Q シートの「PDF として保存」で、保存した PDF が白紙になることがあったのを直しました。</li>
+        <li>iPad を回したときに共有の接続が切れ、参加者が受け取ったショーも消えることがあったのを直しました。</li>
+        <li>通し稽古の記録を、別の画面に移ったときにすぐ保存するようにしました。</li>
+        <li>iPad の回転で画面を読み直すときは、その前に編集内容を自動保存するようにしました。</li>
+        <li>通信が切れた状態で画面を読み直すと、選択欄の見た目が崩れることがあったのを直しました。</li>
+        <li>演者への共有リンクを発行するときに、有効期限を付けられるようにしました。期限が切れると、リンク先の閲覧やメモの送信を止めるようにしました。</li>
+        <li>共有する利用者の登録を削除したり、パスワードを変えたりしたときは、その利用者が開いている打ち合わせの接続も切るようにしました。</li>
+        <li>打ち合わせの開始・再開や、演者への共有リンクの発行・内容の更新を、契約プランで使える範囲に合わせるようにしました。契約の期限が切れたときは、開いている打ち合わせの接続も切るようにしました。</li>
+        <li>利用者の登録にあるプラン・チーム・期限の内容に誤りがあっても、ほかの利用者は共有を使い続けられるようにしました。</li>
+        <li>契約の期限が切れた後も、ショーの閲覧と書き出しはできるようにしました。編集・共有・演者への共有リンクの発行は、案内を表示して止めるようにしました。</li>
+        <li>利用する端末を登録できるようにし、登録済みの端末では月額契約の更新日までオフラインでも編集できるようにしました。登録は既定で3台までで、4台目では案内を表示し、不要な端末の登録を解除すると空きができます。</li>
+        <li>対応するブラウザでは、自分で保存先を選んで、音源本体を含まない JSON ファイルへの自動保存を有効にできるようにしました。既定では無効で、ファイルとブラウザ内の内容が一致しないときは自動保存を止めます。</li>
+        <li>Mac 版のダウンロードページで、合言葉の入力間違いを見やすくし、入力した合言葉の表示・非表示を切り替えられるようにしました。</li>
+        <li>Mac 版：演者の引き継ぎ Q シートの「印刷」で、印刷の画面が出なかったのを直しました。進行表や Q シートを PDF に保存するとき、画面で選んだ用紙の向き（横など）のとおりになるようにしました。</li>
+        <li>ショーの名前がまだないときに、書き出すファイルの名前が表示言語に合った名前になるようにしました。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3790,7 +3797,7 @@
     <span>全画面を終了</span><kbd data-no-i18n>Esc</kbd>
   </button>
 </div></div>
-<script src="/study-assets/stage-runtime.js?v=20261025-v0386"></script>
+<script src="/study-assets/stage-runtime.js?v=20261027-v0390"></script>
 <script src="/study-assets/gamma-light-model.js?v=20261020-v0380"></script>
 <script src="/study-assets/stage-venues.js?v=20261007-v0326"></script>
 <script src="/study-assets/stage-venue-lines.js?v=2026091992"></script>
@@ -3803,15 +3810,15 @@
 <script src="/study-assets/stage-lighting-plan-overlay.js?v=20261005-batch98"></script>
 <script src="/study-assets/light-design/rig-engine.js?v=20261011-v0347"></script>
 <script src="/study-assets/light-design/laser-effects.js?v=20261005-batch98"></script>
-<script src="/study-assets/stage-light-render.js?v=20261026-v0389"></script>
+<script src="/study-assets/stage-light-render.js?v=20261027-v0390"></script>
 <script src="/study-assets/gamma-light-cue-overlay.js?v=20261006-v0318"></script>
 <script src="/study-assets/stage-performer-motion.js?v=20261011-v0347"></script>
 <script src="/study-assets/stage-idle-motion.js?v=20261014-v0362"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
 <script src="/study-assets/gamma-ui.js?v=20261017-v0377"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261026-v0389"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261027-v0390"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261013-v0360"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="/study-assets/stage-sketch.js?v=20261026-v0389"></script>
+<script src="/study-assets/stage-sketch.js?v=20261027-v0390"></script>
 <script src="/study-assets/gamma-appearance.js?v=20261024-v0385"></script>
 </body></html>
