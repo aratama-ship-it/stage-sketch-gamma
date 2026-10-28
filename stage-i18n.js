@@ -32,6 +32,8 @@
 
   const TEXT = {
 
+    "照明デザインの「かんたん」で、詳細で編集した明かりを開いたときに「（詳細で編集済み）」と注記を出し、「適用する」で置き換わるのか、移る時間だけ変わるのかを押す前に示すようにしました。かんたんが付けた名前の LX キューは、選び直した型の名前に変わります（手で付けた名前は残ります）。": "In Easy lighting design, opening lighting edited in Detail now shows “(edited in Detail)”. Before you press Apply, the screen explains whether the lighting will be replaced or only the transition time will change. LX cues named automatically by Easy lighting are renamed to the newly selected preset; names you entered yourself are kept.",
+
     "明かりの表示を入れて作業灯を切ったとき、停止中の舞台や演者を描き直す処理を減らし、動作を軽くしました。": "With lighting display enabled and the work light off, we reduced redrawing of the stage and performers while playback is stopped to make the app more responsive.",
 
     "契約の期限が切れた後も、控えのショーの JSON や音源入り ZIP を閲覧専用で開き、書き出せるようにしました。元のショーは上書きしません。": "After your contract expires, you can now open backup show JSON files and ZIP files containing audio in read-only mode and export them again. The original show is not overwritten.",
@@ -835,6 +837,9 @@
     "取り消した編集は未適用です。詳細表示から適用してください": "The undone edit has not been applied. Apply it from the detailed view.",
     "適用しました。詳細表示で調整できます": "Applied. Adjust it in the detailed view.",
     "試し表示中 · 「適用する」を押すとシーンに入ります（まだ適用していません）。": "Preview · Press “Apply” to add this to the scene (not yet applied).",
+    "試し表示中 · 「適用する」を押すと対象キューの明かりを置き換えます（まだ適用していません）。": "Preview · Press “Apply” to replace the target cue's look (not yet applied).",
+    "試し表示中 · 「適用する」を押すと対象キューの移る時間だけを変えます（明かりは残ります）。": "Preview · Press “Apply” to change only the target cue's transition time (the look stays).",
+    "この明かりは詳細で編集されています。かんたんで型・色・強さ・対象を変えて適用すると、詳細の編集は置き換わります（移る時間だけの変更なら残ります）。": "This look was edited in the detailed view. Applying a change of preset, colour, level or target from the simple mode replaces those detailed edits (changing only the transition time keeps them).",
     "この明かりをシーンへ適用します。適用すると詳細表示へ移り、細かく編集できます": "Apply this lighting to the scene, then open detailed controls.",
     "詳細表示の未適用編集を適用してから、共通セットを導入してください。": "Apply the pending detailed edits before adding the common rig.",
     "詳細の未適用編集を先に適用してください": "Apply the pending detailed edits first",

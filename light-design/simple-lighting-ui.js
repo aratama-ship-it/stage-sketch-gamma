@@ -100,6 +100,19 @@
   const targetQ=()=>targetCueId===null?hooks.lxEditingQ(sc()):(sc().lxq||[]).find(q=>q.id===targetCueId);
   const savedCue=()=>targetQ()?.cue||hooks.cue();
   const timeOnly=()=>Boolean(targetQ())&&timeEdited&&!replaceLook;
+  /* 2026-10-28（照明技師さんとの打ち合わせの予行）: 詳細で編集した明かりを、かんたんで型の名前だけで見せると絵と言葉が食い違う。
+     保存された明かりが、控えの型・調整から組み直したものと違えば「詳細で編集済み」と知らせ、
+     かんたんで型・色・強さ・対象を変えて適用すると置き換わる（移る時間だけなら残る）ことを、押す前に状態文で言う。
+     ★表示だけ。保存された照明・LXキューは何も書き換えない。人物が動いた場合は targetStatus の再照準の知らせを優先する。 */
+  const EDITED_NOTE='この明かりは詳細で編集されています。かんたんで型・色・強さ・対象を変えて適用すると、詳細の編集は置き換わります（移る時間だけの変更なら残ります）。';
+  const REPLACE_STATUS='試し表示中 · 「適用する」を押すと対象キューの明かりを置き換えます（まだ適用していません）。';
+  const TIME_ONLY_STATUS='試し表示中 · 「適用する」を押すと対象キューの移る時間だけを変えます（明かりは残ります）。';
+  function detailEdited() {
+    const saved=targetQ()?.cue, kept=saved?.simplePreset;
+    if(!kept||!M.presets.some(p=>p.id===kept.presetId))return false;
+    try {return JSON.stringify(M.makeCue(state.rig,state.dims,sc().pieces,kept.presetId,kept.options).cue.lights)!==JSON.stringify(saved.lights);}
+    catch(_) {return false;}
+  }
   function previewCandidate() {return timeOnly()?{rig:state.rig,cue:savedCue(),warnings:[]}:candidate();}
   function candidate(id=selected,o=options()) {
     const rig=common()?state.rig:M.createRig(state.dims,context.venueType);
@@ -166,7 +179,9 @@
     fillSelect($('simple-scene'),state.scenes.map(s=>[s.id,s.name]),sc().id);
     fillSelect($('simple-cue'),[['','現在の明かり（適用時にキューを作成）'],...(sc().lxq||[]).map(q=>[q.id,(q.no||q.seq||'')+' '+(q.name||'LXキュー')])],targetCueId||'');
     const p=M.get(selected),o=options(),adjusted=JSON.stringify(o)!==JSON.stringify(M.defaults(selected));
-    $('simple-name').textContent=p.name+(adjusted?'（調整あり）':'');
+    const targetWarnings=M.targetStatus(hooks.cue(),sc().pieces), edited=!targetWarnings.length&&detailEdited();
+    // 保存済みを見ているときは「調整あり」より「詳細で編集済み」を優先して、絵の下の名前で分かるようにする（試し表示中は候補の名前のまま）
+    $('simple-name').textContent=p.name+(!preview&&edited?'（詳細で編集済み）':adjusted?'（調整あり）':'');
     const filtered=list();$('simple-count').textContent=(filtered.findIndex(p=>p.id===selected)+1)+' / '+filtered.length;
     $('simple-color').value=o.color;$('simple-level').value=o.level;$('simple-level-value').textContent=o.level+'%';
     $('simple-size').value=o.sizeM;$('simple-size-value').textContent=o.sizeM+'m';
@@ -192,9 +207,9 @@
     $('simple-adopt').textContent=needsCopy?'複製して共通セットで始める':'適用する';
     $('simple-adopt').disabled=busy||context.readOnly||(!made)||(!preview&&!needsCopy&&!state.dirty)||(needsCopy&&state.dirty);
     $('simple-undo').disabled=busy||context.readOnly||!state.history.length;$('simple-blackout').disabled=busy||context.readOnly||needsCopy;
-    const targetWarnings=M.targetStatus(hooks.cue(),sc().pieces);
-    $('simple-status').textContent=error|| (busy?'適用しています…':needsCopy&&state.dirty?'詳細表示の未適用編集を適用してから、共通セットを導入してください。':preview?'試し表示中 · 「適用する」を押すとシーンに入ります（まだ適用していません）。':state.dirty?'未適用':'適用済みの明かりを表示中');
-    $('simple-warning').textContent=[...targetWarnings,...(made?.warnings||[])].join(' ／ ');
+    const previewStatus=timeOnly()?TIME_ONLY_STATUS:targetQ()&&replaceLook?REPLACE_STATUS:'試し表示中 · 「適用する」を押すとシーンに入ります（まだ適用していません）。';
+    $('simple-status').textContent=error|| (busy?'適用しています…':needsCopy&&state.dirty?'詳細表示の未適用編集を適用してから、共通セットを導入してください。':preview?previewStatus:state.dirty?'未適用':'適用済みの明かりを表示中');
+    $('simple-warning').textContent=[...targetWarnings,...(edited?[EDITED_NOTE]:[]),...(made?.warnings||[])].join(' ／ ');
     renderGrid();
   }
   function commonDesign() {
@@ -233,6 +248,7 @@
         if(q&&!replaceLook)return;
         const made=candidate();row.cue=clone(made.cue);
         if(!q){q={id:hooks.uid('lx'),seq:row.lxq.length+1,no:String(row.lxq.length+1),name:M.get(selected).name,trigger:'',follow:{mode:'go'}};row.lxq.push(q);}
+        else if(M.presets.some(p=>p.name===q.name))q.name=M.get(selected).name;   // 2026-10-28: かんたんが付けた名前だけ選んだ型の名前へ。手で付けた名前は残す
         row.lxEditing=q.id;
         q.cue=clone(made.cue);q.timing={fadeInSec:options().fadeSec,fadeOutSec:options().fadeSec,curve:'linear'};
       }

@@ -1094,7 +1094,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261027-v0390'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261029-v0392'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;
