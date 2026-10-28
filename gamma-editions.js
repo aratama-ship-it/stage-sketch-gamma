@@ -42,12 +42,80 @@
     if (reason !== 'plan-expired' && plan && Object.hasOwn(PLAN_RIGHTS[plan], feature) && PLAN_RIGHTS[plan][feature]) return {allowed:true};
     return {allowed:false, reason, feature, plan, until:entitlement?.until ?? null};
   }
-  // Runtime evidence only: no device registration, persisted licence or offline grace.
+  const TRIAL_DURATION_MS = 168 * 3600 * 1000;
+  const TRIAL_STORAGE_KEY = 'gamma:trial-period:v1';
+  function browserTrialApplies({enabled, hostname, pathname, native = false, study = false} = {}) {
+    return enabled === true && !native && !study && hostname === 'aratama-ship-it.github.io'
+      && typeof pathname === 'string' && pathname.startsWith('/stage-sketch-gamma/');
+  }
+  // A local period, not another editing guard or a paid licence. No show data,
+  // credentials, reset API, query parameter or production test-clock hook.
+  function createTrialPeriod({storage, wallNow, elapsedNow}) {
+    let record = null, lost = false, error = '', anchor = 0, elapsed = elapsedNow();
+    // The absolute clock catches suspension; elapsed time prevents a live
+    // rollback from extending the period. Do not count clock correction twice.
+    const now = () => Math.max(wallNow(), anchor + Math.max(0, elapsedNow() - elapsed));
+    function sync() {
+      try {
+        const raw = storage.getItem(TRIAL_STORAGE_KEY);
+        if (raw === null) { if (record) lost = true; return; }
+        const next = JSON.parse(raw);
+        if (!next || next.v !== 1 || ![next.startedAt, next.observed, next.wall].every(Number.isSafeInteger)
+          || next.startedAt <= 0 || next.startedAt > 8640000000000000 - TRIAL_DURATION_MS
+          || next.observed < next.startedAt || next.wall < next.startedAt || typeof next.expired !== 'boolean') throw Error('record');
+        const merged = record ? {v:1, startedAt:Math.min(record.startedAt, next.startedAt),
+          observed:Math.max(record.observed, next.observed), wall:Math.max(record.wall, next.wall), expired:record.expired || next.expired} : next;
+        // Never lose elapsed progress when another tab checkpoints its record.
+        anchor = Math.max(now(), merged.observed); elapsed = elapsedNow();
+        record = merged;
+      } catch (_) { error = 'storage'; }
+    }
+    function persist() {
+      if (!record || lost || error) return false;
+      record.observed = Math.floor(now()); record.wall = Math.max(record.wall, Math.floor(wallNow()));
+      try { storage.setItem(TRIAL_STORAGE_KEY, JSON.stringify(record)); return true; }
+      catch (_) { error = 'storage'; return false; }
+    }
+    function read() {
+      sync();
+      if (record && now() >= record.startedAt + TRIAL_DURATION_MS && !record.expired) { record.expired = true; persist(); }
+      const trialState = lost || error ? 'storage' : !record ? 'ready' : record.expired ? 'expired'
+        : wallNow() < record.wall ? 'clock-rollback' : 'active';
+      const untilMs = record ? record.startedAt + TRIAL_DURATION_MS : null;
+      return {trialState, trialStartedAt:record?.startedAt ?? null, untilMs,
+        remainingMs:trialState === 'active' ? Math.max(0, untilMs - now()) : null};
+    }
+    return Object.freeze({read,
+      start() {
+        const before = read();
+        if (before.trialState !== 'ready') return false;
+        const startedAt = Math.floor(wallNow());
+        if (!Number.isSafeInteger(startedAt) || startedAt <= 0 || startedAt > 8640000000000000 - TRIAL_DURATION_MS) return false;
+        record = {v:1, startedAt, observed:startedAt, wall:startedAt, expired:false};
+        anchor = startedAt; elapsed = elapsedNow();
+        return persist() && read().trialState === 'active';
+      },
+      checkpoint() { read(); return persist(); },
+    });
+  }
+  // Runtime contract evidence plus the explicitly enabled Pages trial. Signed
+  // monthly licences still take priority at the existing GAMMA_CONTRACT facade.
   // Legacy whoami and a failed request never manufacture an expired contract.
-  function createContractAccess({wallNow = () => Date.now(), elapsedNow = () => globalThis.performance?.now?.() ?? Date.now(), changed = () => {}} = {}) {
+  function createContractAccess({wallNow = () => Date.now(), elapsedNow = () => globalThis.performance?.now?.() ?? Date.now(), changed = () => {}, trial = {enabled:false}} = {}) {
     let identity = null, wall = 0, elapsed = 0, server = 0, expired = false, sharingDenied = false;
+    const period = trial.enabled === true ? createTrialPeriod({storage:trial.storage, wallNow, elapsedNow}) : null;
+    let trialSignature = '';
     const now = () => server + Math.max(0, wallNow() - wall, elapsedNow() - elapsed);
     const read = () => {
+      if (!identity && period && !expired) {
+        const value = period.read();
+        const result = Object.freeze({...value, source:'trial', plan:null,
+          until:value.untilMs === null ? null : new Date(value.untilMs).toISOString(),
+          state:!expired && value.trialState === 'active' ? 'active' : 'expired'});
+        const signature = value.trialState + ':' + Math.ceil((value.remainingMs || 0) / 86400000);
+        if (signature !== trialSignature) { trialSignature = signature; changed(result); }
+        return result;
+      }
       const wasExpired = expired;
       if (identity?.untilMs != null && now() >= identity.untilMs) expired = true;
       const value = Object.freeze({plan:identity?.displayPlan ?? null, until:identity?.until ?? null,
@@ -57,6 +125,8 @@
     };
     return Object.freeze({
       read,
+      startTrial() { const started = !identity && period?.start() === true; read(); return started; },
+      checkpoint() { return period?.checkpoint() ?? false; },
       update(value) {
         if (!value || typeof value.user !== 'string' || !value.user.trim()) return false;
         // A legacy response cannot erase a deadline already learned for this user.
@@ -75,6 +145,8 @@
       restrictSharing() { sharingDenied = true; changed(read()); },
       decision(feature = 'edit') {
         const value = read();
+        if (expired) return {allowed:false, reason:'plan-expired'};
+        if (value.source === 'trial' && value.trialState !== 'active') return {allowed:false, reason:'trial-' + value.trialState};
         if (value.state === 'expired') return {allowed:false, reason:'plan-expired'};
         if (feature !== 'edit' && sharingDenied) return {allowed:false, reason:'plan-required'};
         // Unknown means the pre-contract editor (Pages, old Worker or old Mac).
@@ -82,13 +154,14 @@
         if (!identity || feature === 'edit') return {allowed:true};
         return featureDecision(identity, feature, now());
       },
-      remaining() { read(); return expired || identity?.untilMs == null ? null : Math.max(0, identity.untilMs - now()); },
+      remaining() { const value = read(); return value.source === 'trial' ? value.remainingMs : expired || identity?.untilMs == null ? null : Math.max(0, identity.untilMs - now()); },
     });
   }
   // 2026-10-15: count-based timeline UI is held for release. Restore this one
   // flag to true to expose the retained switch, count ruler and editing tools.
   // This is presentation policy; never use it to normalize saved show values.
-  const RELEASE_FEATURES = Object.freeze({countTimeline:false});
+  // POLICY_CURRENT §2: enable only with the first paid release, on Pages only.
+  const RELEASE_FEATURES = Object.freeze({countTimeline:false,browserTrial:false});
   const ALL_TABS = Object.freeze(["normal","venue-setup","light-placement","light-design","script","3d","run-of-show","rehearsal"]);
   const ALL_ON = Object.freeze({idleAreas:true,arrowTool:true,memoTool:true,penTool:true,lightRender:true,fpv:true,timeline:true,audio:true,cues:true,share:true,cueSheet:true,venueLighting:true,scriptEditor:true,formations:true,sceneAlternatives:true,routeTool:true,machinery:true});
   const common = {tabs:ALL_TABS,dropScripts:[],dropStyles:[],features:ALL_ON,hiddenPanels:[]};
@@ -99,7 +172,7 @@
     dropStyles:["stage-script-editor.css","stage-vox-panel.css","gamma-formation.css"],
     features:Object.freeze(Object.fromEntries(Object.keys(ALL_ON).map(k=>[k,false]))),hiddenPanels:["music","light","vox","alternatives","machinery","rigs"]})});
   const TAB_BUTTON_IDS = Object.freeze({normal:"stage-workspace-normal","venue-setup":"gamma-venue","light-placement":"gamma-placement","light-design":"gamma-design",script:"gamma-script","3d":"stage-freecam-open",cuesheet:"gamma-cuesheet","run-of-show":"gamma-run-of-show",rehearsal:"gamma-rehearsal"});
-  const api = Object.freeze({PLANS,PLAN_ALIASES,PLAN_RIGHTS,normalizePlan,parseUntil,entitlementState,featureDecision,createContractAccess,EDITIONS,TAB_BUTTON_IDS,ALL_TABS,RELEASE_FEATURES,detect(doc){const key=doc?.querySelector('meta[name="gamma-edition"]')?.content;return EDITIONS[key]?key:"studio";}});
+  const api = Object.freeze({PLANS,PLAN_ALIASES,PLAN_RIGHTS,normalizePlan,parseUntil,entitlementState,featureDecision,createContractAccess,browserTrialApplies,TRIAL_DURATION_MS,TRIAL_STORAGE_KEY,EDITIONS,TAB_BUTTON_IDS,ALL_TABS,RELEASE_FEATURES,detect(doc){const key=doc?.querySelector('meta[name="gamma-edition"]')?.content;return EDITIONS[key]?key:"studio";}});
   if(typeof module!=="undefined" && module.exports) module.exports=api;
   root.GAMMA_EDITIONS=api;
   if(root.document){const key=api.detect(root.document);

@@ -32,6 +32,11 @@
 
   const TEXT = {
 
+    "明かりの表示を入れて作業灯を切ったとき、停止中の舞台や演者を描き直す処理を減らし、動作を軽くしました。": "With lighting display enabled and the work light off, we reduced redrawing of the stage and performers while playback is stopped to make the app more responsive.",
+
+    "契約の期限が切れた後も、控えのショーの JSON や音源入り ZIP を閲覧専用で開き、書き出せるようにしました。元のショーは上書きしません。": "After your contract expires, you can now open backup show JSON files and ZIP files containing audio in read-only mode and export them again. The original show is not overwritten.",
+    "閲覧と書き出し用に開きました。ショー一覧には保存していません。": "Opened for viewing and exporting. This show has not been saved to the show shelf.",
+
     "Mac 版：演者の引き継ぎ Q シートの「印刷」で、印刷の画面が出なかったのを直しました。進行表や Q シートを PDF に保存するとき、画面で選んだ用紙の向き（横など）のとおりになるようにしました。": "Mac app: Fixed the print screen not appearing when using Print on a performer’s handover Q sheet. PDFs saved from the running order or Q sheet now use the paper orientation selected on screen, such as landscape.",
 
     "ショーの名前がまだないときに、書き出すファイルの名前が表示言語に合った名前になるようにしました。": "When a show has no name yet, the exported file now gets a name in the display language.",
@@ -5947,3 +5952,16 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
 });
 
 window.SHOSAI_I18N_PACKS["en"].text["保存先を選べませんでした。以前の保存先は変更していません。別の保存先を選んでください。"] = "Could not select the destination. The previous destination has not changed. Choose another destination.";
+
+// TRIAL7: direct dictionary entries; Japanese uses the source text.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "「体験を始める」から7日間（168時間）、登録なしで使えます。期限後は閲覧と書き出しだけになり、ショーは削除しません。": "Use the app for 7 days (168 hours) from “Start trial”, without registering. After that, viewing and exporting remain available. Shows are not deleted.",
+  "期限: {date}。期限後は閲覧と書き出しだけになります。ショーは削除しません。ファイルに控えを残してください。": "Ends: {date}. After that, you can view and export. Shows are not deleted. Keep a backup in a file.",
+  "7日間の体験が終了しました。閲覧と書き出しは使えます。編集・共有・演者用リンクの発行は停止中です。ショーと期限前の入力は残しています。": "Your 7-day trial has ended. You can still view and export. Editing, sharing and issuing performer links are paused. Shows and work entered before expiry are retained.",
+  "時計が前回の記録より戻っています。端末の日時を確認してください。閲覧と書き出しは使えます。体験期間は延長しません。": "The clock is earlier than the last recorded time. Check your device’s date and time. You can still view and export. The trial period is not extended.",
+  "体験の開始記録を確認・保存できません。閲覧と書き出しは使えます。ショーは削除しません。ファイルに控えを残してください。": "The trial start record cannot be read or saved. You can still view and export. Shows are not deleted. Keep a backup in a file.",
+  "体験を始める": "Start trial",
+  "体験: 残り{days}日": "Trial: {days} days left",
+  "7日間の体験": "7-day trial",
+  "体験: 閲覧と書き出し": "Trial: view and export"
+});

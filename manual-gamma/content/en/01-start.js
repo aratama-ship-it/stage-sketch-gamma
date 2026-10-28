@@ -33,7 +33,7 @@ ${table(["Sample", "What it contains", "Use it to"], [
   ["ロミオとジュリエット｜台本とキュー (Romeo and Juliet | script and cues)", "33 scenes with script, lighting and sound cues", "See the script alongside its cues"],
   ["ロミオとジュリエット｜RJセカンド（受け渡す手） (RJ Second)", "34 scenes, 5 sections, 10 people; 84 dialogue, 34 sound and 51 light cues", "See show paperwork with many cues"]
 ])}
-${fig("release090-sample-library", "Get the examples you need from the sample library.", "Sample library")}
+${fig("release091-sample-library", "Get the examples you need from the sample library.", "Sample library")}
 ${note("Samples are acquired on request", "Starting or reloading the app does not add samples to All shows. Copies already there stay. Get another copy from Sample library when needed.")}`
       },
       {

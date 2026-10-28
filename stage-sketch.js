@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.90";
+  const GAMMA_APP_VERSION = "v0.3.91";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -582,19 +582,34 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const CONTRACT_PLAN_REQUIRED = "この契約では共有と演者用リンクの発行を使えません。StudioまたはCompanyの契約が必要です。保存済みリンクの一覧・メモ・回収・無効化は使えます。";
   let contractUiReady = false, contractTimer = null;
   const contractDocuments = new Set(), contractControlState = new Map();
-  const contractAccess = window.GAMMA_EDITIONS?.createContractAccess?.({changed: () => {
+  const trialEnabled = window.GAMMA_EDITIONS?.browserTrialApplies?.({
+    enabled:window.GAMMA_EDITIONS.RELEASE_FEATURES.browserTrial, hostname:window.location.hostname,
+    pathname:window.location.pathname, native:Boolean(nativeProject || window.STAGE_RUNTIME?.isMac?.()), study:STUDY_READ_ONLY,
+  }) === true;
+  const contractAccess = window.GAMMA_EDITIONS?.createContractAccess?.({
+    trial:{enabled:trialEnabled, storage:{getItem:key => window.localStorage.getItem(key), setItem:(key,value) => window.localStorage.setItem(key,value)}},
+    changed: () => {
     clearTimeout(contractTimer);
     // Schedule only the known contract boundary. This is not an offline grace period.
-    const remaining = licenseEnforced() ? window.GAMMA_LICENSE.remaining() : contractAccess.remaining();
+    const remaining = contractBoundaryRemaining();
     if (remaining !== null) contractTimer = setTimeout(checkContractBoundary, Math.min(2147483647, remaining));
     if (contractUiReady) refreshContractUi();
     window.dispatchEvent(new Event("gamma-contract-change"));
   }});
   function checkContractBoundary() {
+    clearTimeout(contractTimer);
     contractAccess.read(); window.GAMMA_LICENSE?.read(); refreshContractUi();
     if (licenseEnforced() && window.GAMMA_LICENSE.needsCheck()) void window.GAMMA_LICENSE.renew();
-    const remaining = licenseEnforced() ? window.GAMMA_LICENSE.remaining() : contractAccess.remaining();
+    const remaining = contractBoundaryRemaining();
+    clearTimeout(contractTimer);
     if (remaining !== null) contractTimer = setTimeout(checkContractBoundary, Math.min(2147483647, remaining));
+  }
+  function contractBoundaryRemaining() {
+    if (licenseEnforced()) return window.GAMMA_LICENSE.remaining();
+    const remaining = contractAccess.remaining();
+    // Update the rounded day label at its next boundary as well as at expiry.
+    return remaining !== null && contractAccess.read().source === "trial"
+      ? Math.min(remaining, remaining % 86400000 || 86400000) : remaining;
   }
   function licenseEnforced() { return window.GAMMA_LICENSE && window.GAMMA_LICENSE.read().state !== "legacy"; }
   function contractReadOnly() { return licenseEnforced() ? !window.GAMMA_LICENSE.decision().allowed : contractAccess?.decision().allowed === false; }
@@ -605,7 +620,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   }
   window.addEventListener("gamma-license-change", () => {
     clearTimeout(contractTimer);
-    const remaining = window.GAMMA_LICENSE?.remaining();
+    const remaining = contractBoundaryRemaining();
     if (remaining !== null && remaining !== undefined) contractTimer = setTimeout(checkContractBoundary, Math.min(2147483647, remaining));
     if (contractUiReady) refreshContractUi();
     window.dispatchEvent(new Event("gamma-contract-change"));
@@ -613,7 +628,19 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   function requireContractEdit() { if (contractReadOnly()) throw new Error(contractMessage()); }
   function contractMessage(feature = "edit") {
     if (licenseEnforced() && contractReadOnly()) return window.GAMMA_LICENSE.message();
+    const value = contractAccess?.read();
+    if (value?.source === "trial") return trialMessage(value);
     return tx(contractAccess?.decision(feature).reason === "plan-required" ? CONTRACT_PLAN_REQUIRED : CONTRACT_EXPIRED);
+  }
+  function trialMessage(value) {
+    const messages = {
+      ready:"「体験を始める」から7日間（168時間）、登録なしで使えます。期限後は閲覧と書き出しだけになり、ショーは削除しません。",
+      active:"期限: {date}。期限後は閲覧と書き出しだけになります。ショーは削除しません。ファイルに控えを残してください。",
+      expired:"7日間の体験が終了しました。閲覧と書き出しは使えます。編集・共有・演者用リンクの発行は停止中です。ショーと期限前の入力は残しています。",
+      "clock-rollback":"時計が前回の記録より戻っています。端末の日時を確認してください。閲覧と書き出しは使えます。体験期間は延長しません。",
+      storage:"体験の開始記録を確認・保存できません。閲覧と書き出しは使えます。ショーは削除しません。ファイルに控えを残してください。",
+    };
+    return tx(messages[value.trialState] || messages.storage).replace("{date}", value.untilMs === null ? "" : new Date(value.untilMs).toLocaleString(document.documentElement.lang || "ja"));
   }
   window.GAMMA_CONTRACT = Object.freeze({
     read: readContract,
@@ -640,9 +667,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (value.licenseState === "licensed" && value.user && signedInUser !== value.user) {
       signedInUser = value.user; updateWhoamiBadge();
     }
+    const trial = value.source === "trial";
+    const trialLabel = !trial ? "" : value.trialState === "active" ? tx("体験: 残り{days}日").replace("{days}", Math.ceil(value.remainingMs / 86400000))
+      : tx(value.trialState === "ready" ? "7日間の体験" : "体験: 閲覧と書き出し");
     const label = (window.GAMMA_EDITION || "studio").replace(/^./, c => c.toUpperCase());
     const text = label + (value.plan ? " · " + tx("契約: {plan}").replace("{plan}", value.plan.replace(/^./, c => c.toUpperCase())) : "")
-      + (expired ? " · " + tx("契約期限切れ") : "");
+      + (trial ? " · " + trialLabel : expired ? " · " + tx("契約期限切れ") : "");
     let edition = document.getElementById("stage-contract-edition");
     const badge = document.getElementById("stage-session-whoami");
     if (!edition && badge?.parentElement) {
@@ -650,7 +680,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       edition.className = "stage-session-whoami"; edition.setAttribute("data-no-i18n", ""); badge.before(edition);
     }
     if (edition) {
-      edition.textContent = value.plan ? tx("契約: {plan}").replace("{plan}", value.plan.replace(/^./, c => c.toUpperCase())) + (expired ? " · " + tx("契約期限切れ") : "") : expired ? tx("契約期限切れ") : "";
+      edition.textContent = trial ? trialLabel : value.plan ? tx("契約: {plan}").replace("{plan}", value.plan.replace(/^./, c => c.toUpperCase())) + (expired ? " · " + tx("契約期限切れ") : "") : expired ? tx("契約期限切れ") : "";
       edition.title = text; edition.hidden = !edition.textContent;
     }
     let notice = document.getElementById("stage-contract-status");
@@ -660,7 +690,19 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       const header = stageSketchRoot.querySelector(".stage-sketch-head");
       if (header) header.after(notice); else stageSketchRoot.prepend(notice);
     }
-    if (notice) { notice.hidden = !expired; notice.textContent = expired ? contractMessage() : ""; }
+    if (notice) {
+      let message = notice.querySelector("[data-contract-message]");
+      if (!message) { message = document.createElement("span"); message.setAttribute("data-contract-message", ""); notice.replaceChildren(message); }
+      notice.hidden = !expired && !trial;
+      message.textContent = trial ? trialMessage(value) : expired ? contractMessage() : "";
+      let start = notice.querySelector("#stage-trial-start");
+      if (!start && trial) {
+        start = document.createElement("button"); start.id = "stage-trial-start"; start.type = "button";
+        start.className = "btn-quiet"; start.setAttribute("data-contract-view", "");
+        start.addEventListener("click", () => { contractAccess.startTrial(); checkContractBoundary(); }); notice.append(start);
+      }
+      if (start) { start.hidden = !trial || value.trialState !== "ready"; start.textContent = tx("体験を始める"); }
+    }
     document.documentElement.dataset.gammaContractState = value.state;
     if (expired) {
       // Do not blur, close editors, reload a document, clear Undo or cancel a
@@ -681,13 +723,16 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (target?.isContentEditable) return false;
     const field = target?.closest?.('input, textarea, select');
     if (field) return Boolean(field.closest('#stage-prefs-modal, #stage-export-modal, #stage-project-export-modal, #stage-venue-export-modal, [data-contract-recovery]')
-      || field.matches('#stage-view-select, #stage-show-names, #stage-show-set-names, #stage-show-light-names, #stage-front2-seat, #stage-front-lights, #stage-show-front-border, #stage-front-floor-grid, #stage-timeline-audio-volume, #stage-timeline-volume'));
+      || field.matches('#stage-import-json, #stage-import-project-folder, #stage-view-select, #stage-show-names, #stage-show-set-names, #stage-show-light-names, #stage-front2-seat, #stage-front-lights, #stage-show-front-border, #stage-front-floor-grid, #stage-timeline-audio-volume, #stage-timeline-volume'));
+    // Other .stage-import-label elements select music or editor assets.
+    // Only the show backup label belongs to the viewing side of this guard.
+    if (target?.closest?.("label.stage-import-label")?.querySelector?.("#stage-import-json")) return true;
     return Boolean(target?.closest?.([
       'button[data-contract-view], a[data-contract-view]', '[data-contract-recovery]', 'button[data-stage-workspace-mode]', 'a[download]',
       '.stage-modal-close', '.stage-modal-backdrop', '[data-stage-zoom]',
       '.stage-scene-title', '.stage-scene-toggle', '.stage-scene-grid-card', '.stage-phone-scene-list-row',
       '#stage-export-modal', '#stage-project-export-modal', '#stage-venue-export-modal',
-      '#stage-export', '#stage-export-json', '#stage-shows-open',
+      '#stage-export', '#stage-export-json', '#stage-shows-open', '#stage-import-json', '#stage-import-project-folder-open',
       '#stage-prefs-modal', '#stage-prefs-btn', '#stage-launch-backup-warning',
       '#stage-share-open', '#stage-share-close', '#stage-share-backdrop',
       '#stage-scene-grid-open', '#stage-scene-grid-close', '#stage-scene-prev', '#stage-scene-next',
@@ -749,7 +794,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     event.preventDefault(); event.stopImmediatePropagation();
     if (["click", "keydown", "beforeinput", "drop"].includes(event.type)) {
       const notice = document.getElementById("stage-contract-status");
-      if (notice) { notice.hidden = false; notice.textContent = contractMessage(); }
+      if (notice) { notice.hidden = false; (notice.querySelector("[data-contract-message]") || notice).textContent = contractMessage(); }
     }
   }
   const contractGuardEvents = ["pointerdown", "pointermove", "pointerup", "mousedown", "mousemove", "mouseup", "click", "dblclick", "contextmenu", "keydown", "keyup", "beforeinput", "input", "change", "cut", "paste", "drop", "dragstart", "wheel"];
@@ -2757,7 +2802,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-27`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-28`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -2818,6 +2863,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   let contractRefreshPending = false;
   async function refreshContractIdentity() {
     contractAccess?.read();
+    if (trialEnabled) { contractAccess.checkpoint(); checkContractBoundary(); }
     if (licenseEnforced()) {
       window.GAMMA_LICENSE.read();
       if (window.GAMMA_LICENSE.needsCheck()) await window.GAMMA_LICENSE.renew();
@@ -2834,6 +2880,10 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     finally { contractRefreshPending = false; }
   }
   window.addEventListener("focus", refreshContractIdentity);
+  window.addEventListener("pagehide", () => contractAccess?.checkpoint());
+  window.addEventListener("storage", event => {
+    if (trialEnabled && (event.key === null || event.key === window.GAMMA_EDITIONS.TRIAL_STORAGE_KEY)) checkContractBoundary();
+  });
   document.addEventListener("visibilitychange", () => { if (!document.hidden) void refreshContractIdentity(); });
   if (nativeProject) void refreshContractIdentity();
   /* 舞台に置ける駒の型。★舞台セットの種類（SET_KINDS）を足したら、
@@ -11935,6 +11985,28 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     }
     return {ok:true};
   }
+  async function commitBrowserAutosave(savingState, serializedState) {
+    if (contractViewStates.has(savingState)) {
+      // A view never replaced the durable current key. On the first paid edit,
+      // preserve that actual outgoing show with the existing two-key switch.
+      const currentSerializedState = localStorage.getItem(BETA_STORAGE_KEY);
+      if (currentSerializedState !== null) {
+        const currentProjectId = JSON.parse(currentSerializedState)?.project?.id;
+        if (!currentProjectId) return {ok:false, error:{code:"INVALID_SNAPSHOT"}};
+        if (currentProjectId !== savingState.project.id) {
+          const result = await ProjectStore.switch({currentProjectId, currentSerializedState,
+            nextProjectId:savingState.project.id, nextSerializedState:serializedState,
+            expectedRevision:null, intent:"edit-viewed-show"});
+          if (result.ok) contractViewStates.delete(savingState);
+          return result;
+        }
+      }
+    }
+    const result = await ProjectStore.commit({projectId:savingState.project.id,
+      serializedState, expectedRevision:null, intent:"autosave"});
+    if (result.ok) contractViewStates.delete(savingState);
+    return result;
+  }
   async function flushAutosave() {
     if (typeof nativeProject !== "undefined" && nativeProject) {
       if (contractReadOnly() && !autosaveRequested) return;
@@ -11961,8 +12033,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
             const serializedState = snapshot();
             const fileReceipt = captureFileAutosave(serializedState);
             fileAutosaveSnapshotRequested = false;
-            const result = await ProjectStore.commit({ projectId:savingState.project.id,
-              serializedState, expectedRevision:null, intent:"autosave" });
+            const result = await commitBrowserAutosave(savingState, serializedState);
             shelfFailed = !result.ok;
             if (!result.ok) {
               autosaveFailed = true;
@@ -20146,8 +20217,8 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
      「照明を組む」画面が正面図を借りるときに使う（モーダルの中で拡大は要らない）。
      既定（未指定）はこれまでどおり zoomOf(view) を掛ける。 */
   // PERF4: at most the two live diagrams, never thumbnails/exports or saved data.
-  // Retain the opaque prefix up to (but excluding) weather. Everything in front
-  // of weather stays on the original path, preserving masking and label order.
+  // Normally retain the opaque prefix before weather. With a fully opaque,
+  // zero-light blackout, extend it through bodies and point sources below.
   const stageStaticLayers = new Map();
   const STAGE_STATIC_MAX_BYTES = 32 * 1024 * 1024; // per diagram; at most 64 MiB
   const STAGE_STATIC_CONTEXT_KEYS = ["fillStyle", "strokeStyle", "globalAlpha", "globalCompositeOperation",
@@ -20158,6 +20229,16 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   function dropStageStaticLayer(target) {
     const old = stageStaticLayers.get(target);
     if (old) { old.surface.width = 0; old.surface.height = 0; stageStaticLayers.delete(target); }
+  }
+  function stageBlackoutLayerEligible(target, view) {
+    // V0391-46: with no lit fixtures paintWorkLight's default dim=1 covers
+    // every weather pixel. Retain its opaque result through receiver bodies
+    // and point sources, never move weather in front of those bodies.
+    if (target !== ctx || target.globalAlpha !== 1 || (target.filter && target.filter !== "none")
+      || !featureOn("lightPool") || !featureOn("workLightOff")
+      || typeof window.SHOSAI_LIGHT_RENDER?.paintWorkLight !== "function") return false;
+    const L = layout(view), model = !L.plan && lightCueOverlayForLayout(L);
+    return Boolean(model && Array.isArray(model.fixtures) && !model.fixtures.some(fx => fx.state === "on"));
   }
   function stageStaticLayerKey(target, showSelection, view, opts) {
     if (!opts?.spinFrame || opts.bypassCache || !showSelection || (target !== ctx && target !== planCtx)
@@ -20174,7 +20255,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     // A stopped GO still selects the underlay cue, but its clock no longer
     // advances. Retain that image; a seek/new GO/clear must select a new prefix.
     const go = timelineLightGo;
-    return JSON.stringify([state, prefs, fullRenderSerial,
+    return JSON.stringify([stageBlackoutLayerEligible(target, view), state, prefs, fullRenderSerial,
       go ? [go.at, go.seconds, go.effectSeconds, go.playing] : null, view, showSelection, opts.noZoom,
       target.canvas.width, target.canvas.height, window.devicePixelRatio, zoomOf(view),
       selectedId, [...selectedIds], selectedNoteId, selectedTextId, tool,
@@ -20244,6 +20325,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     try {
     const cached = staticLayerKey && stageStaticLayers.get(target);
     const reuseStatic = cached && cached.key === staticLayerKey;
+    const blackoutStatic = staticLayerKey && stageBlackoutLayerEligible(target, view);
+    const reuseBlackout = reuseStatic && blackoutStatic;
+    let blackoutPainted = false;
     const L = layout(view);
     stagePointSources = window.SHOSAI_STAGE_POINT_SOURCE?.collect(sc().pieces.map(p=>({...effectivelyPlacedPiece(p),propShape:propShapeOf(p),dims:pieceDims(p)})),L.size) || [];
     buildPaintLayer(L);
@@ -20334,9 +20418,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
     if (!reuseStatic && !L.plan) drawLowFog(target, L);
     frameCost?.end(phase); phase = frameCost?.begin(reuseStatic ? "stage.cache.reuse" : staticLayerKey ? "stage.cache.capture" : "stage.cache.off");
     if (reuseStatic) paintStageStaticLayer(target, cached);
-    else if (staticLayerKey) rememberStageStaticLayer(target, staticLayerKey);
+    else if (staticLayerKey && !blackoutStatic) rememberStageStaticLayer(target, staticLayerKey);
     frameCost?.end(phase); phase = frameCost?.begin("stage.layer.effects");
-    if (!L.plan) drawSceneEffects(target, L);
+    if (!reuseBlackout && !L.plan) drawSceneEffects(target, L);
     frameCost?.end(phase); phase = frameCost?.begin("stage.layer.exits");
     /* ★正面では光を物のあとに描く。物のあとに描かないと、台や人が
      *   光の帯を四角く切り抜いて、光が途中で切れて見える。
@@ -20354,8 +20438,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 
     frameCost?.end(phase); phase = frameCost?.begin("stage.layer.lighting.overlay");
     // 名前。頭上（平面では点の脇）に小さく置く。演者・装置・照明は別々に出し入れする
-    if ((showSelection || STUDY_READ_ONLY) && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) {
+    if (!reuseBlackout && (showSelection || STUDY_READ_ONLY) && ((L.plan && target === planCtx) || (!L.plan && target === ctx))) {
       if (drawLightCueWorkLight(target, L)) {
+        blackoutPainted = true;
         redrawLitPieces(target, L, orderedPieces, draw);
         // はけ途中の演者も背景照明より手前へ戻す。現シーンにいないため
         // orderedPiecesだけでは照明の暗幕に覆われたままになっていた。
@@ -20376,7 +20461,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       }
     }
 
-    if (stagePointSources.length) {
+    if (!reuseBlackout && stagePointSources.length) {
       const api = window.SHOSAI_STAGE_POINT_SOURCE;
       if (featureOn("workLightOff")) {
         target.save(); clipCueLightFloor(target, L);
@@ -20390,6 +20475,17 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
         });
       }
       api.paint(target, stagePointSources, worldProjector(L), { floor: false });
+    }
+    if (blackoutStatic) {
+      const token = frameCost?.begin(reuseBlackout ? "stage.cache.blackout.reuse" : "stage.cache.blackout.capture");
+      try {
+        if (!reuseBlackout) {
+          // Allocation failure / unavailable mask must use the original path
+          // next frame too; never retain weather that was not fully covered.
+          if (blackoutPainted) rememberStageStaticLayer(target, staticLayerKey);
+          else dropStageStaticLayer(target);
+        }
+      } finally { frameCost?.end(token); }
     }
     // 光源印と光の始点を幕の奥へ隠す。演者名などの作図用ラベルはこの後で描く。
     if (!L.plan) drawFrontBorderCurtain(target, L);
@@ -35707,6 +35803,7 @@ ${propsPlotHtml}
   async function importProjectPackage(read, {librarySample=false} = {}) {
     if (importingProjectPackage || committingProjectImport || STUDY_READ_ONLY || guestSessionActive()) return;
     importingProjectPackage = true;
+    const viewing = contractReadOnly();
     try {
       const data = await read();
       window.STAGE_DATA_SAFETY.assertSafeJson(data.show);
@@ -35716,13 +35813,76 @@ ${propsPlotHtml}
         const b = await audioStore?.get(a.trackId);
         if (b && await window.STAGE_PROJECT_FILE.hash(b) !== a.sha256.toLowerCase()) data.conflicts.push(a);
       }
+      // A read begun while editing must not switch away from work when it
+      // completes after expiry. Selecting the backup again now opens a view.
+      if (!viewing && contractReadOnly()) { announce(contractMessage()); return false; }
       await importProjectText(data.text, {name:"show.json"}, data, false, librarySample);
       if (librarySample && pendingProjectPackage === data) await confirmImport(false);
     } catch (error) { importFailureNotice(projectPackageError(error)); clearTimeout(importFailureNotice._t); }
     finally { importingProjectPackage = false; }
   }
+  // Detach only app-owned audio references; opaque extension fields stay intact.
+  // Fresh IDs let the existing insert-only package installer retain even audio
+  // whose original ID already belongs to different bytes in another show.
+  function detachContractBackupAudio(project, data) {
+    if (!data) return null;
+    const record = value => value && typeof value === "object" && !Array.isArray(value);
+    const media = project.timelineMedia, music = project.musicCueAudio;
+    // Match resolveMedia / STAGE_MUSIC_CUES.migrate: never reinterpret a newer
+    // schema. Check before changing IDs or installing any package attachments.
+    if (media !== undefined && (!record(media) || media.version !== 1 || !Array.isArray(media.placements)))
+      throw Error(tx("この音源配置の版は未対応です。原本を保持してください。"));
+    if (music !== undefined && !window.STAGE_MUSIC_CUES.supported(project))
+      throw Error(tx("このMキュー音源の版は未対応です。原本を保持してください。"));
+    const ids = new Map((project.audioTracks || []).map(track => [track.id, rid("track")]));
+    const remap = id => ids.get(id) || id;
+    const trackRef = value => {
+      if (record(value) && typeof value.trackId === "string") value.trackId = remap(value.trackId);
+    };
+    const bindings = table => {
+      if (record(table)) Object.values(table).forEach(trackRef);
+    };
+    for (const track of project.audioTracks || []) track.id = remap(track.id);
+    for (const scene of project.scenes || []) {
+      if (scene.audioTrackId) scene.audioTrackId = remap(scene.audioTrackId);
+      const songs = scene.formation?.audioTrackBySong;
+      if (record(songs)) for (const song of Object.keys(songs)) songs[song] = remap(songs[song]);
+      for (const item of scene.sceneAlternatives?.items || []) {
+        if (item.content.audioTrackId) item.content.audioTrackId = remap(item.content.audioTrackId);
+      }
+    }
+    // Only paths read/produced by resolveMedia and stage-music-cues.js.
+    // In particular migration.original is a saved placement, not a subtree to scan.
+    for (const placement of media?.placements || []) trackRef(placement);
+    bindings(music?.bindings);
+    for (const migration of Array.isArray(music?.migrations) ? music.migrations : []) {
+      trackRef(migration);
+      if (typeof migration?.key === "string" && migration.key.startsWith("placement:")) trackRef(migration.original);
+    }
+    bindings(music?.sceneStarts?.bindings);
+    for (const migration of Array.isArray(music?.sceneStarts?.migrations) ? music.sceneStarts.migrations : []) trackRef(migration);
+    sceneAlternatives?.restore(project, {reconcile:false});
+    return {...data, audio:data.audio.map(a => ({...a, trackId:remap(a.trackId)})),
+      offline:data.offline.map(a => ({...a, trackId:remap(a.trackId)})), conflicts:[],
+      carry:data.carry ? {...data.carry, manifest:{...data.carry.manifest,
+        audio:(data.carry.manifest?.audio || []).map(a => ({...a, trackId:remap(a.trackId)}))}} : data.carry};
+  }
+  async function openContractBackup(next, packageData) {
+    if (!contractReadOnly() || nativeProject || STUDY_READ_ONLY || guestSessionActive()) return false;
+    // The detached ID also protects the original when a paid licence later
+    // enables ordinary editing/autosave. Nothing is added to the show shelf now.
+    next.project.id = rid("show"); next.mcpRevision = null;
+    const data = detachContractBackupAudio(next.project, packageData);
+    contractViewStates.add(next);
+    const result = await installProjectPackage(next, data);
+    if (data && !result) return false;
+    if (!await applyLoadedState(next, tx("閲覧と書き出し用に開きました。ショー一覧には保存していません。"))) return false;
+    closeImportPreview(true); closeShows();
+    showPackageOutcome(data, result);
+    return true;
+  }
   async function installProjectPackage(next, data) {
-    if (contractReadOnly()) { announce(contractMessage()); return false; }
+    if (contractReadOnly() && !contractViewStates.has(next)) { announce(contractMessage()); return false; }
     if (!data) return null;
     try {
       next.projectPackageCarry = window.STAGE_PROJECT_FILE.hasCarry(data.carry)
@@ -35815,9 +35975,9 @@ ${propsPlotHtml}
   });
 
   function importProject(file) {
-    if (contractReadOnly()) { announce(contractMessage()); return false; }
     if (typeof nativeProject !== "undefined" && nativeProject) { nativeProject.request("requestOpen"); return; }
     if (!file) return;
+    const viewing = contractReadOnly();
     if (/\.zip$/i.test(file.name)) return importProjectPackage(() => window.STAGE_PROJECT_FILE.unpack(file));
     if (/\.stageproj$/i.test(file.name)) return importProjectPackage(async () => {
       if (!await window.STAGE_PROJECT_FILE.isZipImport(file)) throw new Error("invalid-zip");
@@ -35830,12 +35990,14 @@ ${propsPlotHtml}
       console.error("stage import: ファイルを読めませんでした", reader.error);
       importFailureNotice("ファイルを読めませんでした。iCloudの場合は一度ダウンロードしてから選んでください。");
     };
-    reader.onload = () => importProjectText(String(reader.result), file);
+    reader.onload = () => {
+      if (!viewing && contractReadOnly()) { announce(contractMessage()); return false; }
+      return importProjectText(String(reader.result), file);
+    };
     reader.readAsText(file);
   }
 
   async function importProjectText(text, file, packageData = null, nativeOpen = false, librarySample = false, nativeGuard = () => true) {
-      if (!nativeOpen && contractReadOnly()) return false;
       let parsed = null;
       try {
         parsed = window.STAGE_DATA_SAFETY.parseJson(text);
@@ -35940,6 +36102,9 @@ ${propsPlotHtml}
         mcpRevision: appliedRevision,
       });
       if (nativeOpen) { if (!nativeGuard()) return false; installNativeProjectState(next); return true; }
+      // External backups use the same in-memory viewing transition as shelf shows.
+      // Never offer a replacement or write a shelf/current-show transaction here.
+      if (contractReadOnly()) return openContractBackup(next, packageData);
       // スマホは読み込んだデータを閲覧するだけなので、編集用の比較モーダルを挟まない。
       if (phoneViewerActive) {
         if (lightingMigration) {

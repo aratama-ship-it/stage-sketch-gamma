@@ -36,7 +36,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.90</span>
+                <span class="stage-app-version">0.3.91</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -2830,27 +2830,14 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261027-v0390">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261028-v0391b">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0390-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0390-title">v0.3.90</h3><time datetime="2026-10-27">2026-10-27</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0391-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0391-title">v0.3.91</h3><time datetime="2026-10-28">2026-10-28</time></header>
       <ul>
-        <li>Mac 版：進行表や Q シートの「PDF として保存」で、保存した PDF が白紙になることがあったのを直しました。</li>
-        <li>iPad を回したときに共有の接続が切れ、参加者が受け取ったショーも消えることがあったのを直しました。</li>
-        <li>通し稽古の記録を、別の画面に移ったときにすぐ保存するようにしました。</li>
-        <li>iPad の回転で画面を読み直すときは、その前に編集内容を自動保存するようにしました。</li>
-        <li>通信が切れた状態で画面を読み直すと、選択欄の見た目が崩れることがあったのを直しました。</li>
-        <li>演者への共有リンクを発行するときに、有効期限を付けられるようにしました。期限が切れると、リンク先の閲覧やメモの送信を止めるようにしました。</li>
-        <li>共有する利用者の登録を削除したり、パスワードを変えたりしたときは、その利用者が開いている打ち合わせの接続も切るようにしました。</li>
-        <li>打ち合わせの開始・再開や、演者への共有リンクの発行・内容の更新を、契約プランで使える範囲に合わせるようにしました。契約の期限が切れたときは、開いている打ち合わせの接続も切るようにしました。</li>
-        <li>利用者の登録にあるプラン・チーム・期限の内容に誤りがあっても、ほかの利用者は共有を使い続けられるようにしました。</li>
-        <li>契約の期限が切れた後も、ショーの閲覧と書き出しはできるようにしました。編集・共有・演者への共有リンクの発行は、案内を表示して止めるようにしました。</li>
-        <li>利用する端末を登録できるようにし、登録済みの端末では月額契約の更新日までオフラインでも編集できるようにしました。登録は既定で3台までで、4台目では案内を表示し、不要な端末の登録を解除すると空きができます。</li>
-        <li>対応するブラウザでは、自分で保存先を選んで、音源本体を含まない JSON ファイルへの自動保存を有効にできるようにしました。既定では無効で、ファイルとブラウザ内の内容が一致しないときは自動保存を止めます。</li>
-        <li>Mac 版のダウンロードページで、合言葉の入力間違いを見やすくし、入力した合言葉の表示・非表示を切り替えられるようにしました。</li>
-        <li>Mac 版：演者の引き継ぎ Q シートの「印刷」で、印刷の画面が出なかったのを直しました。進行表や Q シートを PDF に保存するとき、画面で選んだ用紙の向き（横など）のとおりになるようにしました。</li>
-        <li>ショーの名前がまだないときに、書き出すファイルの名前が表示言語に合った名前になるようにしました。</li>
+        <li>明かりの表示を入れて作業灯を切ったとき、停止中の舞台や演者を描き直す処理を減らし、動作を軽くしました。</li>
+        <li>契約の期限が切れた後も、控えのショーの JSON や音源入り ZIP を閲覧専用で開き、書き出せるようにしました。元のショーは上書きしません。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3816,9 +3803,9 @@
 <script src="/study-assets/stage-idle-motion.js?v=20261014-v0362"></script>
 <script src="/study-assets/stage-data-safety.js?v=20261001-release69"></script>
 <script src="/study-assets/gamma-ui.js?v=20261017-v0377"></script>
-<script src="/study-assets/stage-language-loader.js?v=20261027-v0390"></script>
+<script src="/study-assets/stage-language-loader.js?v=20261028-v0391b"></script>
 <script src="/study-assets/stage-pose-data.js?v=20261013-v0360"></script>
 <script src="/study-assets/stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="/study-assets/stage-sketch.js?v=20261027-v0390"></script>
+<script src="/study-assets/stage-sketch.js?v=20261028-v0391b"></script>
 <script src="/study-assets/gamma-appearance.js?v=20261024-v0385"></script>
 </body></html>
