@@ -351,12 +351,20 @@
   // Observe its existing close paths (load, save, backdrop, Escape) without changing their actions.
   function bindEmbeddedDialogs() {
     const dialog=document.getElementById('dialog');
-    let release=null, box=null, trigger=null;
+    let release=null, box=null, trigger=null, entryScroll=null;
     // Constrain floating dialogs to the visible strip above the timeline.
     // If that strip cannot fit a title, footer and usable body, temporarily
     // stack this workspace above the timeline instead. Never resize the frame
     // or alter timeline height/open/scroll state to make room for a dialog.
     const workspace=parent.document.getElementById('gamma-light-workspace');
+    const view=parent.document.getElementById('view-stage');
+    const restoreEntryScroll=saved=>{
+      // WebKit can scroll the outer lane when focus returns across an iframe,
+      // even with preventScroll. Closing a dialog must keep its entry position.
+      // A workspace switch intentionally resets that lane and owns its scroll.
+      if(!saved || !dialog.hidden || box || parent.GAMMA_WORKSPACE?.mode?.()!=='light-design')return;
+      view.scrollLeft=saved.left;view.scrollTop=saved.top;
+    };
     const clearDialogViewport=()=>{
       workspace?.removeAttribute('data-gamma-light-dialog-stacked');
       document.documentElement.style.removeProperty('--gamma-light-dialog-top');
@@ -400,8 +408,14 @@
       syncDialogViewport();
       const next=dialog.hidden?null:dialog.querySelector('.in');
       if(next===box) return;
+      const saved=entryScroll;
       release?.();release=null;box=next;
-      if(!box) return;
+      if(!box) {
+        entryScroll=null;restoreEntryScroll(saved);
+        if(saved)requestAnimationFrame(()=>restoreEntryScroll(saved));
+        return;
+      }
+      entryScroll=view && Number.isFinite(view.scrollTop) ? {left:view.scrollLeft,top:view.scrollTop} : null;
       box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');
       box.setAttribute('aria-label',box.querySelector('.kicker,.ptitle')?.textContent || '照明の設定');
       release=window.GAMMA_UI.containDialog(box,{returnFocus:trigger,onCancel:()=>{dialog.hidden=true;}});

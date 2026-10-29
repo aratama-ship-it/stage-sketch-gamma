@@ -1115,7 +1115,7 @@
           status.append(goVenue);
         } else if(!editor()) {
           showLightLoading(next);
-          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261029-v0392'; loaded=true;}
+          if(!loaded) {frame.src='light-design/index.html?embed=gamma&v=20261029-v0394'; loaded=true;}
         } else if(editor()) {
           editor().open(context, next);
           frame.hidden=false;
@@ -1406,8 +1406,12 @@
   else if(venueSetupPending()) { gatedToVenue=true; select('venue-setup'); }
   else {
     const saved=readWorkspaceMemory();
+    // The development ?feature-test=1 opener resets to the stage view after it loads the
+    // fixture; it reads this mark so an R-8 restore of the same show is kept.
+    if(saved && saved.mode!=='normal') document.body.dataset.gammaWorkspaceRestored=saved.mode;
     void select(saved?.mode || 'normal').then(()=>{
-      if(saved?.threeD && mode===saved.mode && workspaceMemoryAllowed()) document.getElementById('stage-freecam-open')?.click();
+      // The 3D entry leaves Rehearsal for the stage view first; never replay it there.
+      if(saved?.threeD && saved.mode!=='rehearsal' && mode===saved.mode && workspaceMemoryAllowed()) document.getElementById('stage-freecam-open')?.click();
     });
   }
   /* 共有の閲覧かどうかは body のクラスで後から決まる。決まったら鍵を見直す。 */
@@ -1426,4 +1430,12 @@
     playbackPreviewStatus:()=>({active:Boolean(playbackPreview),running:Boolean(playbackRaf)}),syncGate:()=>syncVenueGate(),
     refreshLabels:()=>{syncWorkspaceShortcutLabels();syncVenueGate();},
     beginPlaybackPreview,endPlaybackPreview});
+})();
+
+// Consultation has no board operations. Load its isolated module after workspace startup.
+(() => {
+  if (!document.querySelector('[data-panel="assist"]')) return;
+  const script = document.createElement('script');
+  script.src = 'gamma-assist.js?v=20261029-v0394';
+  document.body.append(script);
 })();

@@ -1785,6 +1785,12 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .gamma-header-fitted.gamma-
   html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="light-design"].stage-timeline-expanded:not(.stage-fullscreen) #view-stage {
     scroll-padding-bottom: calc(var(--stage-timeline-height) + env(safe-area-inset-bottom, 0px) + 32px);
   }
+  /* A stacked dialog temporarily covers the timeline. Its footer is visible
+     there, so focus/scrollIntoView must not push it above that covered area.
+     Removing the stack attribute restores B189's ordinary timeline inset. */
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body[data-gamma-workspace="light-design"].stage-timeline-expanded:not(.stage-fullscreen) #view-stage:has(#gamma-light-workspace[data-gamma-light-dialog-stacked]) {
+    scroll-padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 32px);
+  }
 }
 
 /* G129B: reuse the save panel; file and browser receipts remain separate. */

@@ -167,9 +167,15 @@
   window.removeEventListener('pagehide',flushOnSuspend);
   window.removeEventListener('freeze',flushOnSuspend);
  }
- async function open(){
+ // R-8 can restore Rehearsal on load while the user selects it again; share one opening
+ // so the dialog is not shown, mounted or resumed twice.
+ let opening=null;
+ function open(){if(!opening)opening=openOnce().finally(()=>{opening=null;});return opening;}
+ async function openOnce(){
   ensure();workspace=true;dialog.dataset.workspace='true';dialog.hidden=false;
-  document.getElementById('view-stage').append(dialog);
+  // Re-appending an attached dialog moves it and reloads its drawing iframes (WebKit then
+  // races the renderer); only move it when it is not already in the stage view.
+  const stageView=document.getElementById('view-stage');if(dialog.parentNode!==stageView)stageView.append(dialog);
   if(dialog.open&&run){source().quiet(editable());syncDisplay();notifyTimeline();return;}
   mode='run';dialog.dataset.kind='run';target=source().identity();if(!dialog.open)dialog.show();
   const rows=await S.list();const previous=rows.find(r=>r.run&&r.run.status!=='closed'&&r.run.source.projectId===target.projectId);
@@ -273,7 +279,7 @@
  // Fetch through the parent's PWA controller, then keep the renderer opaque and self-contained.
  async function frameDocument(){
   const responseFor=async url=>{let response;try{response=await fetch(url);if(response.ok)return response;}catch(_){}try{response=await window.caches?.match(url);if(response?.ok)return response;}catch(_){}throw Error('frame-unavailable');};
-  const url=new URL('field-frame.html?v=20261029-v0393',location.href),response=await responseFor(url);
+  const url=new URL('field-frame.html?v=20261029-v0394',location.href),response=await responseFor(url);
   // Bind metadata to this freshly constructed srcdoc, never to a later message or frame.
   if(url.origin!==location.origin||(response.url&&new URL(response.url).origin!==location.origin))throw Error('frame-origin');
   const doc=new DOMParser().parseFromString(await response.text(),'text/html');if(!doc.documentElement.hasAttribute('data-study-renderer')||!doc.querySelector('.field-frame-drawings'))throw Error('frame-unavailable');doc.documentElement.dataset.stageSkin=currentSkin();const base=doc.createElement('base');base.href=new URL('.',url).href;doc.head.prepend(base);

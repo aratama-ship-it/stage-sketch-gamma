@@ -11,6 +11,11 @@ window.SHOSAI_TERMS["ja"] = {
     "公演の進行・安全に関する判断は利用者が行ってください。",
     "日本法に準拠し、紛争は PYGMIX の所在地を管轄する裁判所とする。"
   ],
+  "webParagraphs": [
+    "相談（試験中）に入力した文は、返答を作るためだけに外部の AI（Anthropic の API）へ送られます。Anthropic はこの内容でモデルの学習を行いません（Anthropic 商用利用規約 B 節）。Anthropic 側では通常 30 日以内に削除されます（利用規約違反の疑いがある場合は最長 2 年保存されることがあります）。舞台スケッチはこの文を保存・記録しません。",
+    "相談（試験中）は、アイデアを考えるための試験的な機能です。盤面の操作やファイルの保存は行いません。予告なく内容の変更・提供の停止・終了を行うことがあります。利用できる回数・入力の長さ等に制限があり、混雑や利用枠の上限により利用できない場合があります。返答の正確さ・完全さ・適切さは保証しません。返答をそのまま事実として扱わず、利用者自身で確認し、判断してください。",
+    "入力した文は返答を作るために Anthropic の API へ送信されます。個人情報・機密情報を入力しないでください。会話は舞台スケッチの保存データや端末の localStorage には記録されず、画面を閉じると引き継がれません。"
+  ],
   "contact": "問い合わせ先",
   "japanese": "日本語版"
 };
@@ -75,4 +80,27 @@ Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
   "新しいリンクを発行するには、先にリンクを無効化してください。": "新しいリンクを発行するには、先にリンクを無効化してください。",
   "期限が切れました。発行者に連絡してください。": "期限が切れました。発行者に連絡してください。",
   "書きかけのメモ（同期は停止中）": "書きかけのメモ（同期は停止中）"
+});
+
+// Consultation trial: separate keys, no conversation storage.
+window.SHOSAI_I18N_PACKS = window.SHOSAI_I18N_PACKS || {};
+window.SHOSAI_I18N_PACKS["ja"] = window.SHOSAI_I18N_PACKS["ja"] || {text:{}};
+Object.assign(window.SHOSAI_I18N_PACKS["ja"].text, {
+  "assist.title": "相談（仮）",
+  "assist.badge": "試験中",
+  "assist.name": "ソデ",
+  "assist.you": "あなた",
+  "assist.input": "相談する文",
+  "assist.placeholder": "例: 2幕の転換、間を持たせるアイデアは？",
+  "assist.send": "送る",
+  "assist.context": "いまのシーン名と人数を伝える",
+  "assist.remaining": "今日はあと {n} 回",
+  "assist.notice": "試験中の機能です。予告なく終わることがあります。入力した文は返答のためだけに外部の AI（Anthropic）へ送られ、舞台スケッチには保存されません。個人情報や機密情報は入力しないでください。返答の正確さは保証されません。",
+  "assist.thinking": "考えています {n}秒",
+  "assist.daily": "今日の分は終わりました。明日またどうぞ。",
+  "assist.monthly": "今月の相談枠は定員です。",
+  "assist.ended": "相談の試験は終わりました。ご意見ありがとうございました。",
+  "assist.busy": "ただいま混み合っています。しばらくして開き直してください。",
+  "assist.unavailable": "相談を利用できません。しばらくして開き直してください。",
+  "assist.auth": "ログインと契約の状態を確認して開き直してください。"
 });

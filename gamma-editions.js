@@ -4,9 +4,9 @@
   const PLANS = Object.freeze(['lite', 'studio', 'company']);
   const PLAN_ALIASES = Object.freeze({run:'lite', standard:'studio', team:'company'});
   const PLAN_RIGHTS = Object.freeze({
-    lite:Object.freeze({session:false, studyLinks:false, distributionLinks:false}),
-    studio:Object.freeze({session:true, studyLinks:true, distributionLinks:false}),
-    company:Object.freeze({session:true, studyLinks:true, distributionLinks:true}),
+    lite:Object.freeze({assist:true, session:false, studyLinks:false, distributionLinks:false}),
+    studio:Object.freeze({assist:true, session:true, studyLinks:true, distributionLinks:false}),
+    company:Object.freeze({assist:true, session:true, studyLinks:true, distributionLinks:true}),
   });
   function normalizePlan(value) {
     if (typeof value !== 'string') return null;

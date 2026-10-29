@@ -32,6 +32,14 @@
 
   const TEXT = {
 
+    "Safari 系で、リハーサルの画面のまま読み直したあと、図面や振り返りの操作が出ない、通常の画面へ戻されることがあったのを直しました。": "Fixed cases in Safari-based browsers where reloading while in Rehearsal could leave drawings or review controls missing, or return you to the normal workspace.",
+
+    "埋め込みの窓を閉じたとき、スクロールの位置が元に戻らないことがあったのを直しました。": "Fixed cases where the scroll position was not restored after closing an embedded dialog.",
+
+    "照明デザインの「かんたん」の型を12種から21種に増やしました（色違いと、舞台の奥・手前を照らす型）。": "Easy lighting design now offers 21 presets instead of 12, including colour variants and looks that light the upstage or downstage area.",
+
+    "ブラウザ版の対象プランに「相談（試験中）」パネルを追加しました。入力した文は、返答を作るためだけに外部の AI（Anthropic の API）へ送られます。利用は日本時間で1人1日30回・全体1日2,000回までです。利用規約に相談の条項を追記しました（Mac 版には表示されません）。": "Added a Consultation (trial) panel for eligible plans in the browser edition. Text you enter is sent to an external AI (Anthropic’s API) only to produce a reply. Use is limited to 30 requests per person per day and 2,000 requests in total per day, based on Japan Standard Time. Consultation clauses have been added to the terms of use. The panel is not shown in the Mac app.",
+
     "共有の招待窓の重なりを直し、ゲスト中は保存の注意の帯を隠しました。正面の図にも共有の指差しを表示し、幅1200px以上ではゲスト向けの表示操作を案内します。": "Fixed overlapping sharing invitation dialogs and hid storage reminder banners during guest visits. Shared pointers now appear in the front view too, and viewing controls are explained to guests when the window is at least 1200px wide.",
 
     "同じタブで同じショーを読み直したとき、直前の作業画面に戻るようにしました（ゲスト・招待での参加を除く）。": "Reloading the same show in the same tab now restores the previous workspace, except when joining as a guest or through an invitation.",
@@ -5977,6 +5985,29 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "体験: 残り{days}日": "Trial: {days} days left",
   "7日間の体験": "7-day trial",
   "体験: 閲覧と書き出し": "Trial: view and export"
+});
+
+// Consultation trial: separate keys, no conversation storage.
+window.SHOSAI_I18N_PACKS = window.SHOSAI_I18N_PACKS || {};
+window.SHOSAI_I18N_PACKS["en"] = window.SHOSAI_I18N_PACKS["en"] || {text:{}};
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "assist.title": "Consultation (provisional)",
+  "assist.badge": "Trial",
+  "assist.name": "Sode",
+  "assist.you": "You",
+  "assist.input": "Your message",
+  "assist.placeholder": "Example: Ideas to fill the transition in act two?",
+  "assist.send": "Send",
+  "assist.context": "Share the current scene title and head count",
+  "assist.remaining": "{n} left today",
+  "assist.notice": "This is a trial feature and may end without notice. Your text is sent to external AI (Anthropic) only to produce a reply and is not saved by Stage Sketch. Do not enter personal or confidential information. Replies may be inaccurate.",
+  "assist.thinking": "Thinking: {n}s",
+  "assist.daily": "Today’s allowance is used up. Please come back tomorrow.",
+  "assist.monthly": "This month’s consultation allowance is full.",
+  "assist.ended": "The consultation trial has ended. Thank you for your feedback.",
+  "assist.busy": "The service is busy. Please reopen it later.",
+  "assist.unavailable": "Consultation is unavailable. Please reopen it later.",
+  "assist.auth": "Please check your sign-in and subscription, then reopen."
 });
 
 // R-5: guest-only viewing guide, adopted option A.

@@ -4,14 +4,21 @@
   const clone = x => JSON.parse(JSON.stringify(x));
   const clamp = (x,a,b) => Math.max(a,Math.min(b,x));
   const colors = {white:'#f2ead6',warm:'#ffc46b',blue:'#5e9dff',red:'#ff6262'};
+  // [id, name, category, spots, color, kind, place]  place = 1灯スポットの既定の狙い（省略は中央）。
+  // 2026-10-29: 色違いと奥・手前の狙いを追加（12→21種）。既存の id・既定値は変えない。
   const presets = [
     ['all-white','全体・白','全体',0,'white','all'],['all-warm','全体・暖色','全体',0,'warm','all'],
-    ['all-blue','全体・青','全体',0,'blue','all'],['center-white','中央・白','スポット',1,'white','spot'],
-    ['center-blue','中央・青','スポット',1,'blue','spot'],['left','客席から見て左','スポット',1,'white','spot'],
-    ['right','客席から見て右','スポット',1,'white','spot'],['pair','左右2人','方向・組合せ',2,'white','spot'],
-    ['side','横から照らす','方向・組合せ',0,'warm','side'],['back','後ろから輪郭','方向・組合せ',0,'white','back'],
-    ['mix','青い全体＋白い中央','方向・組合せ',1,'white','mix'],['blackout','暗転','暗転',0,'white','off']
-  ].map(a=>Object.freeze({id:a[0],name:a[1],category:a[2],spots:a[3],color:a[4],kind:a[5]}));
+    ['all-blue','全体・青','全体',0,'blue','all'],['all-red','全体・赤','全体',0,'red','all'],
+    ['center-white','中央・白','スポット',1,'white','spot'],['center-blue','中央・青','スポット',1,'blue','spot'],
+    ['center-warm','中央・暖色','スポット',1,'warm','spot'],['left','客席から見て左','スポット',1,'white','spot','left'],
+    ['right','客席から見て右','スポット',1,'white','spot','right'],['upstage','奥・白','スポット',1,'white','spot','back'],
+    ['downstage','手前・白','スポット',1,'white','spot','front'],['pair','左右2人','方向・組合せ',2,'white','spot'],
+    ['pair-blue','左右2人・青','方向・組合せ',2,'blue','spot'],['pair-warm','左右2人・暖色','方向・組合せ',2,'warm','spot'],
+    ['side','横から照らす','方向・組合せ',0,'warm','side'],['side-blue','横から照らす・青','方向・組合せ',0,'blue','side'],
+    ['back','後ろから輪郭','方向・組合せ',0,'white','back'],['back-blue','後ろから輪郭・青','方向・組合せ',0,'blue','back'],
+    ['mix','青い全体＋白い中央','方向・組合せ',1,'white','mix'],['mix-warm','青い全体＋暖色の中央','方向・組合せ',1,'warm','mix'],
+    ['blackout','暗転','暗転',0,'white','off']
+  ].map(a=>Object.freeze({id:a[0],name:a[1],category:a[2],spots:a[3],color:a[4],kind:a[5],place:a[6]||'center'}));
   const get = id => {const p=presets.find(p=>p.id===id);if(!p)throw Error('プリセットが見つかりません');return p;};
   function validateStage(dims, venueType) {
     if(venueType!=='proscenium')throw Error('初版は標準・拡張プロセニアムに対応しています。詳細表示で仕込みを確認してください');
@@ -57,7 +64,7 @@
   function defaults(id) {
     const p=get(id);
     return {color:p.color,level:100,sizeM:1.6,fadeSec:3,targets:p.spots===2?['place:left','place:right']:
-      p.spots===1?['place:'+(id==='left'?'left':id==='right'?'right':'center')]:[]};
+      p.spots===1?['place:'+p.place]:[]};
   }
   function target(value,pieces) {
     if(value.startsWith('person:')) {

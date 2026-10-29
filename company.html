@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>舞台スケッチ γ Company | Stage Sketch Gamma Company</title>
 <meta name="theme-color" content="#191512">
-<meta name="stage-sketch-gamma-version" content="v0.3.93">
+<meta name="stage-sketch-gamma-version" content="v0.3.94">
 <meta name="gamma-edition" content="company">
-  <script src="gamma-editions.js?v=20261028-v0391b"></script>
+  <script src="gamma-editions.js?v=20261029-v0394"></script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -25,7 +25,7 @@
   .spine { display: none; }
 </style>
 <link rel="stylesheet" href="gamma-ui-tokens.css?v=20261025-v0387">
-<link rel="stylesheet" href="gamma.css?v=20261029-v0393">
+<link rel="stylesheet" href="gamma.css?v=20261029-v0394">
 <link rel="stylesheet" href="stage-welcome.css?v=20261016-v0373">
 <link rel="stylesheet" href="gamma-mobile.css?v=20261026-v0388">
 <script src="gamma-light-model.js?v=20261020-v0380"></script>
@@ -102,7 +102,7 @@
             <span class="stage-header-app-kicker-row">
               <span class="stage-header-app-kicker-deco" aria-hidden="true" data-no-i18n>
                 <span class="stage-header-app-kicker">STAGE SKETCH GAMMA</span>
-                <span class="stage-app-version">0.3.93</span>
+                <span class="stage-app-version">0.3.94</span>
                 <!-- 2026-10-05 本人指示: 版（Lite／Studio／Company）を上部で見分けられるようにする。
                      stage.html＝Studio。company.html は build-editions.mjs がこの文字だけ Company に替えて生成する。
                      置き場はキッカー行（ロゴ上の空白に重ねた行）＝ロゴの右に札を置くと 1900px でも右上の操作群が
@@ -1488,6 +1488,7 @@
                     id="stage-rehearsal-export-open" hidden>Vision Pro稽古用JSON</button>
           </section>
 
+          <section class="stage-panel" data-panel="assist" data-title="相談（仮）" data-no-i18n="true" data-assist-available="false" hidden></section>
           <section class="stage-panel" data-panel="ask" data-title="AI指示" id="stage-ask-panel" aria-label="AI指示">
             <div class="stage-panel-body">
               <textarea id="stage-ask-input" class="stage-text-input" rows="4" maxlength="500"
@@ -2930,16 +2931,16 @@
     <h2 id="stage-release-title">アップデート履歴</h2>
     <button type="button" class="stage-modal-close" id="stage-release-close" aria-label="閉じる"><svg class="stage-square-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </header>
-  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261029-v0393">
+  <div class="stage-modal-body stage-release-body" id="stage-release-body" data-release-history-src="release-history.json?v=20261029-v0394">
     <p class="stage-release-lead">公開済みのアップデートを、新しい順に記録しています。</p>
     <!-- release-history:latest:begin（tools/build-release-history.mjs が作る・直接編集しない） -->
-    <section class="stage-release-entry" aria-labelledby="stage-release-v0393-title">
-      <header class="stage-release-entry-head"><h3 id="stage-release-v0393-title">v0.3.93</h3><time datetime="2026-10-29">2026-10-29</time></header>
+    <section class="stage-release-entry" aria-labelledby="stage-release-v0394-title">
+      <header class="stage-release-entry-head"><h3 id="stage-release-v0394-title">v0.3.94</h3><time datetime="2026-10-30">2026-10-30</time></header>
       <ul>
-        <li>共有の招待窓の重なりを直し、ゲスト中は保存の注意の帯を隠しました。正面の図にも共有の指差しを表示し、幅1200px以上ではゲスト向けの表示操作を案内します。</li>
-        <li>同じタブで同じショーを読み直したとき、直前の作業画面に戻るようにしました（ゲスト・招待での参加を除く）。</li>
-        <li>共有ゲストから送れる操作を矢印の追加と指差しに限り、人物の位置を動かす操作を受け付けないようにしました。</li>
-        <li>Mac版の配布ページ・手引き・READMEで、対応環境とDeveloper ID署名・Apple公証済みの配布物の案内をそろえました。</li>
+        <li>Safari 系で、リハーサルの画面のまま読み直したあと、図面や振り返りの操作が出ない、通常の画面へ戻されることがあったのを直しました。</li>
+        <li>埋め込みの窓を閉じたとき、スクロールの位置が元に戻らないことがあったのを直しました。</li>
+        <li>照明デザインの「かんたん」の型を12種から21種に増やしました（色違いと、舞台の奥・手前を照らす型）。</li>
+        <li>ブラウザ版の対象プランに「相談（試験中）」パネルを追加しました。入力した文は、返答を作るためだけに外部の AI（Anthropic の API）へ送られます。利用は日本時間で1人1日30回・全体1日2,000回までです。利用規約に相談の条項を追記しました（Mac 版には表示されません）。</li>
       </ul>
     </section>
     <!-- release-history:latest:end -->
@@ -3910,7 +3911,7 @@
 <script src="stage-storage-recovery.js?v=20261020-v0382"></script>
 <script src="stage-storage-hygiene.js?v=20261014-v0365"></script>
 <script src="stage-storage-pressure.js?v=20260926-large39"></script>
-<script src="manual-gamma/manual-meta.js?v=20261029-v0393" data-manual-content="manual-gamma/manual-content.js?v=20261029-v0393"></script>
+<script src="manual-gamma/manual-meta.js?v=20261029-v0394" data-manual-content="manual-gamma/manual-content.js?v=20261029-v0394"></script>
 <script src="stage-pwa.js?v=20261020-v0380"></script>
 <script src="stage-lighting-plans.js?v=20261005-beam99"></script>
 <script src="stage-lighting-plan-overlay.js?v=20261005-batch98"></script>
@@ -3943,13 +3944,13 @@
 <script src="gamma-ui.js?v=20261017-v0377"></script>
 <script src="stage-point-source.js?v=20260927-point43"></script>
 <script src="stage-save-lifecycle.js?v=20260927-guard45"></script>
-<script src="light-design/simple-lighting-model.js?v=20261001-release71"></script>
+<script src="light-design/simple-lighting-model.js?v=20261029-v0394"></script>
 <script src="stage-run-of-show-distribution.js?v=20261012-v0358"></script>
 <script src="stage-run-of-show-files.js?v=20261012-v0358"></script>
 <script src="stage-run-of-show-model.js?v=20261006-v0312"></script>
 <script src="stage-pose-data.js?v=20261013-v0360"></script>
 <script src="stage-prop-shapes.js?v=20261009-v0333"></script>
-<script src="stage-language-loader.js?v=20261029-v0393"></script>
+<script src="stage-language-loader.js?v=20261029-v0394"></script>
 <script src="stage-reorder-warning.js?v=20261009-v0335"></script>
 <script src="stage-venue-curtains.js?v=20261011-v0347"></script>
 <script src="stage-metrics.js?v=20261020-v0380"></script>
@@ -3958,7 +3959,7 @@
 <script src="gamma-undo-owner.js?v=20261025-v0387"></script>
 <script src="stage-project-bridge.js?v=20261025-v0387"></script>
 <script src="stage-project-library.js?v=20261023-v0384"></script>
-<script src="stage-sketch.js?v=20261029-v0393"></script>
+<script src="stage-sketch.js?v=20261029-v0394"></script>
 <script src="stage-scene-alternatives-ui.js?v=20261009-v0337"></script>
 <script src="gamma-formation.js?v=20261027-v0390"></script>
 <script src="stage-vox-panel.js?v=20261005-v030"></script>
@@ -3976,9 +3977,9 @@
 <script src="stage-field-run-package.js?v=20261020-v0380"></script>
 <script src="stage-field-run-transport.js?v=20261016-v0372"></script>
 <script src="stage-field-run-checkpoint.js?v=20261020-v0380"></script>
-<script src="stage-field-run-console.js?v=20261029-v0393"></script>
+<script src="stage-field-run-console.js?v=20261029-v0394"></script>
 <script src="stage-run-of-show-pane.js?v=20261027-v0390"></script>
-<script src="gamma-workspace.js?v=20261029-v0393"></script>
+<script src="gamma-workspace.js?v=20261029-v0394"></script>
 <script src="gamma-feature-search.js?v=20261020-v0380"></script>
 <script src="gamma-mobile.js?v=20261026-v0388"></script>
 <script src="stage-venue-preview.js?v=20261015-v0368"></script>

@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.93";
+  const GAMMA_APP_VERSION = "v0.3.94";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -811,20 +811,35 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       const roots = records.flatMap(record => [...record.addedNodes]).filter(node => node.nodeType === 1);
       if (roots.length) decorateContractControls(true, roots);
     }).observe(doc, {childList:true, subtree:true});
-    for (const frame of doc.querySelectorAll("iframe")) {
-      frame.addEventListener("load", () => { try { guardContractDocument(frame.contentDocument); } catch (_) {} });
-      try { guardContractDocument(frame.contentDocument); } catch (_) {}
-    }
+    for (const frame of doc.querySelectorAll("iframe")) guardContractFrame(frame);
+  }
+  // Frames this document cannot reach are skipped before contentDocument is touched:
+  // WebKit logs a sandbox access violation even inside try/catch. A guard could not
+  // be installed in them anyway. srcdoc/about:blank children share their owner's origin.
+  function contractFrameReachable(frame) {
+    // Inside an opaque-origin document (the sandboxed renderer) WebKit treats every child
+    // browsing context as another opaque origin, srcdoc included; that renderer is read-only.
+    if (frame.ownerDocument.defaultView.origin === "null") return false;
+    if (frame.hasAttribute("sandbox") && !frame.sandbox.contains("allow-same-origin")) return false;
+    const src = frame.getAttribute("src");
+    if (frame.hasAttribute("srcdoc") || !src || /^about:(blank|srcdoc)/i.test(src)) return true;
+    try {
+      const url = new URL(src, frame.ownerDocument.baseURI);
+      if (url.protocol === "blob:") return url.origin === frame.ownerDocument.defaultView.origin;
+      if (url.protocol === "javascript:") return true;
+      return frame.ownerDocument.defaultView.origin !== "null" && url.origin === frame.ownerDocument.defaultView.origin;
+    } catch (_) { return false; }
+  }
+  function guardContractFrame(frame) {
+    frame.addEventListener("load", () => { if (!contractFrameReachable(frame)) return; try { guardContractDocument(frame.contentDocument); } catch (_) {} });
+    if (contractFrameReachable(frame)) try { guardContractDocument(frame.contentDocument); } catch (_) {}
   }
   if (document.defaultView) guardContractDocument(document);
   if (typeof MutationObserver === "function") new MutationObserver(records => {
     for (const record of records) for (const node of record.addedNodes) {
       const frames = node.querySelectorAll ? [...node.querySelectorAll("iframe")] : [];
       if (node.tagName === "IFRAME") frames.push(node);
-      for (const frame of frames) {
-        frame.addEventListener("load", () => { try { guardContractDocument(frame.contentDocument); } catch (_) {} });
-        try { guardContractDocument(frame.contentDocument); } catch (_) {}
-      }
+      for (const frame of frames) guardContractFrame(frame);
     }
   }).observe(document.documentElement, {childList:true, subtree:true});
   // Shadow only this module's storage. The renderer additionally runs in an opaque-origin sandbox.
@@ -2802,7 +2817,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
   const PREFS_KEY = "gamma:shosai-stage-prefs-v1";
   const TOUR_KEY = "gamma:shosai-stage-tour-v1";
   const RELEASE_HISTORY_SEEN_KEY = "gamma:shosai-stage-release-history-seen-v1";
-  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-29`;
+  const RELEASE_HISTORY_CURRENT = `${GAMMA_APP_VERSION}-2026-10-30`;
   const LAST_USER_KEY = "gamma:shosai-stage-last-user-v1";
   /* ★利用者が替わったときに消すのは、端末の見た目に関するこの2つだけ。
      ショー・棚・モデル・言語の鍵はここへ足さない。 */
@@ -46628,7 +46643,7 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
           || (window.SHOSAI_STAGE_LOCAL_SHOWS || []).find(doc => /^gamma-feature-test-v/.test(doc.project?.id || ""))?.project;
         if (testShow) openShow(testShow.id).then((opened) => {
           if (opened === false) return;
-          window.GAMMA_WORKSPACE?.normal();
+          if (!document.body.dataset.gammaWorkspaceRestored) window.GAMMA_WORKSPACE?.normal();
           if (openArgs.has("motion")) {
             openScene("ft-scene-a4"); stopSceneAnim(); render();
           }

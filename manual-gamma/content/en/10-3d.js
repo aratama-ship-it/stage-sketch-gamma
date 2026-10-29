@@ -16,7 +16,7 @@ ${grid([
   fig("36-tab-3d-turned", "After dragging to look to the right.", "Looking around in 3D")
 ])}
 <p>The controls along the bottom group viewpoints, the current camera position and the ? key guide. Lighting, lens and house controls sit at the edge to leave more room for the drawing.</p>
-${fig("release093-3d", "3D controls and exit button (J-2).", "Current 3D controls")}
+${fig("release094-3d", "3D controls and exit button (J-2).", "Current 3D controls")}
 ${table(["Control", "What it does"], [
   ["Click", "Select a performer"],
   [kbd("W") + kbd("A") + kbd("S") + kbd("D"), "Move forward, left, back, right"],

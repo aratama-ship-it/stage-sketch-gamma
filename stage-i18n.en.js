@@ -8,6 +8,10 @@ window.SHOSAI_TERMS["en"] = {
     "We collect only anonymous counts of tab and feature use, which you can turn off in Settings. We do not collect show content, text you enter, screenshots or personally identifiable information.",
     "You are responsible for decisions about running a performance and its safety."
   ],
+  "webParagraphs": [
+    "Consultation (trial): text you enter is sent to an external AI (Anthropic's API) only to produce a reply. Anthropic does not train models on it and normally deletes it within 30 days (up to 2 years if a policy violation is suspected). Stage Sketch does not save or record it.",
+    "Consultation is a trial feature for thinking through ideas. It does not operate the board or save files, may change or end without notice, and has usage limits. Replies are not guaranteed to be accurate, complete or appropriate; check them yourself. Do not enter personal or confidential information."
+  ],
   "priority": "This English text is a summary; the Japanese version takes precedence.",
   "contact": "Contact",
   "japanese": "Japanese version"
@@ -73,4 +77,27 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "新しいリンクを発行するには、先にリンクを無効化してください。": "Revoke this link before creating a new one.",
   "期限が切れました。発行者に連絡してください。": "This link has expired. Please contact the issuer.",
   "書きかけのメモ（同期は停止中）": "Your draft note (sync has stopped)"
+});
+
+// Consultation trial: separate keys, no conversation storage.
+window.SHOSAI_I18N_PACKS = window.SHOSAI_I18N_PACKS || {};
+window.SHOSAI_I18N_PACKS["en"] = window.SHOSAI_I18N_PACKS["en"] || {text:{}};
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "assist.title": "Consultation (provisional)",
+  "assist.badge": "Trial",
+  "assist.name": "Sode",
+  "assist.you": "You",
+  "assist.input": "Your message",
+  "assist.placeholder": "Example: Ideas to fill the transition in act two?",
+  "assist.send": "Send",
+  "assist.context": "Share the current scene title and head count",
+  "assist.remaining": "{n} left today",
+  "assist.notice": "This is a trial feature and may end without notice. Your text is sent to external AI (Anthropic) only to produce a reply and is not saved by Stage Sketch. Do not enter personal or confidential information. Replies may be inaccurate.",
+  "assist.thinking": "Thinking: {n}s",
+  "assist.daily": "Today’s allowance is used up. Please come back tomorrow.",
+  "assist.monthly": "This month’s consultation allowance is full.",
+  "assist.ended": "The consultation trial has ended. Thank you for your feedback.",
+  "assist.busy": "The service is busy. Please reopen it later.",
+  "assist.unavailable": "Consultation is unavailable. Please reopen it later.",
+  "assist.auth": "Please check your sign-in and subscription, then reopen."
 });
