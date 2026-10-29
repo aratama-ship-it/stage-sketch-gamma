@@ -2,7 +2,7 @@
 <html lang="ja" data-stage-skin="brown">
 <head>
 <script src="../stage-runtime.js?v=20261027-v0390"></script>
-<script src="../stage-i18n.ja.js?v=20261027-v0390"></script>
+<script src="../stage-i18n.ja.js?v=20261029-v0393"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
@@ -89,8 +89,10 @@
       <p class="download-version" id="native-version" aria-live="polite" data-download-text="versionFallback">最新版は GitHub Releases でご確認ください。</p>
     </header>
 
-    <h1 data-download-text="heading">Mac版を最新版に更新する</h1>
+    <h1 data-download-text="heading">Mac版のダウンロードと更新</h1>
     <p class="download-lead" data-download-text="lead">新しいアプリをダウンロードし、いま使っている「舞台スケッチγ.app」と置き換えます。</p>
+    <p class="download-note" data-download-text="requirements">対応環境：Appleシリコン搭載Mac・macOS 14以降。Intel搭載Macには対応していません。</p>
+    <p class="download-note" data-download-text="signed">この配布物はDeveloper IDで署名し、Appleの公証を受けています。「開発元を確認できない」警告を回避するための操作は通常不要です。</p>
     <!-- download-gate: display guidance only; file URLs are public, including in this template.
          The links and steps below are rendered after the shared passphrase matches.
          data-gate-hash is PBKDF2-SHA256(passphrase, data-gate-salt, data-gate-iterations) written by tools/build-download-gate.mjs. -->
@@ -124,12 +126,8 @@
         <ol>
           <li data-download-text="step1">GitHub Releasesから最新のzipをダウンロードします。</li>
           <li data-download-text="step2">zipを解凍します。</li>
-          <li data-download-text="step3">いまの「舞台スケッチγ.app」を、新しいアプリで置き換えます。置き場所は「アプリケーション」またはデスクトップです。</li>
-          <li data-download-text="step4">「ゴミ箱に入れる」は押さないでください。初回にアプリを開いてAppleの確認ができないという警告が出たら、「完了」を押します。</li>
-          <li data-download-text="step5">システム設定 →「プライバシーとセキュリティ」を開き、下の方にある「“舞台スケッチγ”は Mac を保護するためにブロックされました」の「このまま開く」を押します。</li>
-          <li data-download-text="step6">Macのパスワード、またはTouch IDで認証します。</li>
-          <li data-download-text="step7">もう一度アプリを開き、確認で「このまま開く」を押します。</li>
-          <li data-download-text="step8">2回目からは普通にアプリを開けます。更新後に同じ警告が出た場合も、この手順で開きます。</li>
+          <li data-download-text="step3">「舞台スケッチγ.app」を「アプリケーション」フォルダまたはデスクトップに置きます。更新する場合は、使用中のアプリを終了してから新しいアプリで置き換えます。</li>
+          <li data-download-text="step4">「舞台スケッチγ.app」をダブルクリックして開きます。</li>
         </ol>
       </section>
 
@@ -142,16 +140,16 @@
 
     <footer class="download-foot">
       <a href="../stage.html" data-download-text="browser">ブラウザ版はこちら</a>
-      <p data-download-text="unsigned">「ゴミ箱に入れる」は押さないでください。署名・公証なしの配布版で初回に警告が出たら「完了」を押し、システム設定の「プライバシーとセキュリティ」から「このまま開く」へ進みます。</p>
+      <p data-download-text="warningGuidance">開発元を確認できないという警告が出た場合は、配布元とアプリの版を確認し、サポートへお問い合わせください。</p>
     </footer>
     <p class="download-note" data-download-copy="authenticity">配布元の確認は合言葉とは別です。ダウンロード前に、リンク先が PYGMIX の公式 GitHub（aratama-ship-it/stage-sketch-gamma）であることを確認してください。</p>
   </main>
 
-  <script src="../stage-i18n.ja.js?v=20261027-v0390"></script>
-  <script src="../stage-i18n.en.js?v=20261027-v0390"></script>
-  <script src="../stage-i18n.ko.js?v=20261029-v0392"></script>
-  <script src="../stage-i18n.zh-Hans.js?v=20261029-v0392"></script>
-  <script src="../stage-i18n.zh-Hant.js?v=20261029-v0392"></script>
+  <script src="../stage-i18n.ja.js?v=20261029-v0393"></script>
+  <script src="../stage-i18n.en.js?v=20261029-v0393"></script>
+  <script src="../stage-i18n.ko.js?v=20261029-v0393"></script>
+  <script src="../stage-i18n.zh-Hans.js?v=20261029-v0393"></script>
+  <script src="../stage-i18n.zh-Hant.js?v=20261029-v0393"></script>
   <script>
     const downloadLang = Object.hasOwn(window.SHOSAI_DOWNLOAD, new URLSearchParams(location.search).get("lang")) ? new URLSearchParams(location.search).get("lang") : "ja";
     const downloadText = window.SHOSAI_DOWNLOAD[downloadLang];

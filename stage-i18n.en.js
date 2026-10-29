@@ -23,7 +23,7 @@ window.SHOSAI_DOWNLOAD["en"] = {
   "title": "Download Stage Sketch γ for Mac",
   "versionFallback": "Check GitHub Releases for the latest version.",
   "version": "Latest Mac version: {version}",
-  "heading": "Replace your Mac app with the latest version",
+  "heading": "Download or update the Mac app",
   "lead": "Download the new app and replace your current 舞台スケッチγ.app.",
   "gate": "Passphrase",
   "open": "Open",
@@ -36,16 +36,14 @@ window.SHOSAI_DOWNLOAD["en"] = {
   "install": "Installation",
   "step1": "Download the latest zip from GitHub Releases.",
   "step2": "Unzip the file.",
-  "step3": "Replace your current 舞台スケッチγ.app with the new app in Applications or on the desktop.",
-  "step4": "Do not choose “Move to Trash”. When you first open the app and an alert says Apple cannot verify it, choose “Done”.",
-  "step5": "Open System Settings → “Privacy & Security”, scroll down to the message that the app was blocked to protect your Mac, and choose “Open Anyway”.",
-  "step6": "Authenticate with your Mac password or Touch ID.",
-  "step7": "Open the app again and choose “Open Anyway” in the confirmation.",
-  "step8": "From the second launch, open the app normally. If the same alert appears after an update, follow these steps again.",
+  "step3": "Place 舞台スケッチγ.app in Applications or on the desktop. To update, quit the current app before replacing it with the new one.",
+  "step4": "Double-click 舞台スケッチγ.app to open it.",
   "storage": "About saved data",
   "storageNote": "Shows are saved in project files (.stageproj), separately from the app. Replacing the app leaves your saved files in place. For shows in the previous WebView storage, open Previous shows and save them as project files to migrate them.",
   "browser": "Open the browser edition",
-  "unsigned": "Do not choose “Move to Trash”. If an unsigned, unnotarised build shows an alert on first launch, choose “Done”, then use “Open Anyway” in System Settings → “Privacy & Security”."
+  "requirements": "Requires a Mac with Apple silicon and macOS 14 or later. Intel-based Macs are not supported.",
+  "signed": "This distribution is signed with Developer ID and notarised by Apple. You normally do not need to bypass an “unidentified developer” warning.",
+  "warningGuidance": "If you see an unidentified developer warning, check the download source and app version, then contact support."
 };
 
 // B70 A5-07: download guidance copy; the passphrase controls display only.

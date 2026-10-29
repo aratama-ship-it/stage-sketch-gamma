@@ -41,6 +41,7 @@
     refresh: $("stage-session-refresh"),
     reconnect: $("stage-session-reconnect"),
     planCanvas: $("stage-plan-canvas"),
+    frontCanvas: $("stage-canvas"),
   };
   if (!els.panel || !els.start || !els.status || !els.participants) return;
 
@@ -873,22 +874,31 @@
     renderParticipants(lastParticipants);
   }
 
-  window.SHOSAI_STAGE_SESSION_HOOKS = { onLocalChange, openShareModal, closeShareModal, relabel, role: () => role };
+  window.SHOSAI_STAGE_SESSION_HOOKS = { onLocalChange, openShareModal, closeShareModal, relabel, role: () => role, guestView: () => role === "guest" || Boolean($("stage-session-name-modal")) };
 
-  function pointerHost() {
-    return els.planCanvas && els.planCanvas.parentElement;
+  function pointerCanvas(view) {
+    return view === "top" ? els.planCanvas : view === "front" ? els.frontCanvas : null;
+  }
+
+  function positionRemotePointer(entry) {
+    const canvas = pointerCanvas(entry.view), host = canvas?.parentElement;
+    if (!host) return;
+    const rect = canvas.getBoundingClientRect(), parent = host.getBoundingClientRect();
+    entry.node.hidden = !rect.width || !rect.height;
+    entry.node.style.left = `${rect.left - parent.left - host.clientLeft + host.scrollLeft + entry.x * rect.width}px`;
+    entry.node.style.top = `${rect.top - parent.top - host.clientTop + host.scrollTop + entry.y * rect.height}px`;
   }
 
   function renderRemotePointer(message) {
     const from = message && message.from;
     if (!from || typeof from.clientId !== "string") return;
-    if (message.view !== "top" || message.on !== true) {
+    if (!pointerCanvas(message.view) || message.on !== true) {
       removeRemotePointer(from.clientId);
       return;
     }
     if (!Number.isFinite(message.x) || !Number.isFinite(message.y) ||
         message.x < 0 || message.x > 1 || message.y < 0 || message.y > 1) return;
-    const host = pointerHost();
+    const host = pointerCanvas(message.view)?.parentElement;
     if (!host) return;
     let entry = remotePointers.get(from.clientId);
     if (!entry) {
@@ -897,13 +907,16 @@
       node.className = "stage-session-pointer";
       node.setAttribute("aria-hidden", "true");
       node.append(label);
-      host.append(node);
+
       entry = { node, label, timer: null };
       remotePointers.set(from.clientId, entry);
     }
     const color = typeof from.color === "string" ? from.color : "#d3ac59";
-    entry.node.style.left = `${message.x * 100}%`;
-    entry.node.style.top = `${message.y * 100}%`;
+    // x/y are fractions of the originating view's canvas, not stage world coordinates.
+    // A front view's vertical axis is height; a top view's is depth. Never equate them.
+    entry.view = message.view; entry.x = message.x; entry.y = message.y;
+    host.append(entry.node);
+    positionRemotePointer(entry);
     entry.node.style.backgroundColor = color;
     entry.node.style.setProperty("--stage-session-pointer-color", color);
     entry.label.textContent = normalizeName(from.name, sessionText("ゲスト"));
@@ -1143,10 +1156,12 @@
     const modal = $("stage-session-name-modal");
     if (backdrop) backdrop.remove();
     if (modal) modal.remove();
+    window.dispatchEvent(new Event("stage-session-view-change"));
   }
 
   function showGuestNameModal(invitedRoom) {
     closeGuestNameModal();
+    closeShareModal();
     const backdrop = document.createElement("div");
     backdrop.className = "stage-modal-backdrop";
     backdrop.id = "stage-session-name-backdrop";
@@ -1158,20 +1173,22 @@
     modal.setAttribute("aria-labelledby", "stage-session-name-title");
     modal.innerHTML = `
       <header class="stage-modal-head">
-        <h2 id="stage-session-name-title">共有セッションへ参加</h2>
-        <button type="button" class="stage-modal-close" id="stage-session-name-close" aria-label="閉じる">✕</button>
+        <h2 id="stage-session-name-title">${sessionText("共有セッションへ参加")}</h2>
+        <button type="button" class="stage-modal-close" id="stage-session-name-close" aria-label="${sessionText("閉じる")}">✕</button>
       </header>
       <div class="stage-modal-body">
         <form class="stage-session-name-form" id="stage-session-name-form">
           <label class="stage-session-field" for="stage-session-name-input">
-            <span>表示名</span>
+            <span>${sessionText("表示名")}</span>
             <input type="text" id="stage-session-name-input" maxlength="50"
                    autocomplete="off" data-1p-ignore required>
           </label>
-          <button type="submit" class="stage-minor-action" id="stage-session-join">参加する</button>
+          <button type="submit" class="stage-minor-action" id="stage-session-join">${sessionText("参加する")}</button>
+          <p id="stage-session-name-error" class="stage-session-status is-error" role="alert" hidden></p>
         </form>
       </div>`;
     document.body.append(backdrop, modal);
+    window.dispatchEvent(new Event("stage-session-view-change"));
     const input = $("stage-session-name-input");
     const form = $("stage-session-name-form");
     const cancel = () => {
@@ -1187,7 +1204,9 @@
       try { shelved = await bridge.shelveNow() !== false; }
       catch (_) { shelved = false; }
       if (!shelved) {
-        setStatus("現在の作業を退避できなかったため、参加を止めました。ショーを書き出すか、使っていないショーを整理してから、もう一度お試しください。", true);
+        const error = $("stage-session-name-error");
+        error.textContent = sessionText("現在の作業を退避できなかったため、参加を止めました。ショーを書き出すか、使っていないショーを整理してから、もう一度お試しください。");
+        error.hidden = false;
         return;
       }
       rememberName(name);
@@ -1348,23 +1367,23 @@
   }
 
   let lastPointerSentAt = 0;
-  let lastPointerPosition = { x: 0, y: 0 };
-  function sendPointer(on, x = lastPointerPosition.x, y = lastPointerPosition.y) {
+  let lastPointerPosition = { view: "top", x: 0, y: 0 };
+  function sendPointer(on, view = lastPointerPosition.view, x = lastPointerPosition.x, y = lastPointerPosition.y) {
     if (!role || !socketIsOpen()) return;
-    lastPointerPosition = { x, y };
-    sendMessage({ t: "pointer", view: "top", x, y, on });
+    lastPointerPosition = { view, x, y };
+    sendMessage({ t: "pointer", view, x, y, on });
   }
 
-  function handlePointerMove(event) {
-    if (!els.planCanvas || !role || !socketIsOpen()) return;
+  function handlePointerMove(event, view) {
+    if (!role || !socketIsOpen()) return;
     const now = performance.now();
-    if (now - lastPointerSentAt < POINTER_THROTTLE_MS) return;
-    const rect = els.planCanvas.getBoundingClientRect();
+    if (view === lastPointerPosition.view && now - lastPointerSentAt < POINTER_THROTTLE_MS) return;
+    const rect = pointerCanvas(view).getBoundingClientRect();
     if (!rect.width || !rect.height) return;
     const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
     const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
     lastPointerSentAt = now;
-    sendPointer(true, x, y);
+    sendPointer(true, view, x, y);
   }
 
   els.panel.addEventListener("click", event => {
@@ -1384,12 +1403,16 @@
       try { bridge.clearGuestArrows(); } catch (_) { setStatus("ゲスト注釈を消去できませんでした。", true); }
     });
   }
-  if (els.planCanvas) {
-    const host = pointerHost();
-    if (host && getComputedStyle(host).position === "static") host.style.position = "relative";
-    els.planCanvas.addEventListener("pointermove", handlePointerMove);
-    els.planCanvas.addEventListener("pointerleave", () => sendPointer(false));
-    els.planCanvas.addEventListener("pointercancel", () => sendPointer(false));
+  for (const view of ["top", "front"]) {
+    const canvas = pointerCanvas(view), host = canvas?.parentElement;
+    if (!canvas || !host) continue;
+    if (getComputedStyle(host).position === "static") host.style.position = "relative";
+    canvas.addEventListener("pointermove", event => handlePointerMove(event, view));
+    canvas.addEventListener("pointerleave", () => sendPointer(false, view));
+    canvas.addEventListener("pointercancel", () => sendPointer(false, view));
+    if (typeof ResizeObserver === "function") {
+      new ResizeObserver(() => remotePointers.forEach(positionRemotePointer)).observe(canvas);
+    }
   }
 
   if (els.hostName) els.hostName.value = readStoredName("ホスト");
@@ -1411,7 +1434,6 @@
   const invitedRoom = invitedRoomId();
   if (invitedRoom) {
     revealStageView();
-    openShareModal();
     setStatus("表示名を入力して参加してください。");
     showGuestNameModal(invitedRoom);
   }

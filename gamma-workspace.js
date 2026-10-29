@@ -21,6 +21,27 @@
   if(cuesheetWorkspace && cuesheetModal) { cuesheetWorkspace.append(cuesheetModal); if(cuesheetBackdrop) cuesheetBackdrop.hidden=true; }
   const hostUndo=document.getElementById('stage-undo'), hostRedo=document.getElementById('stage-redo');
   let mode='normal', loaded=false;
+  // Per-tab UI memory only: one record per edition path, never part of a show or share.
+  const workspaceMemoryKey='gamma:workspace-tab-v1:'+location.pathname;
+  const rememberedModes=['normal','light-placement','light-design','venue-setup','script','run-of-show','rehearsal'];
+  function workspaceMemoryAllowed() {
+    return !/^#session=[a-z0-9]{1,64}$/i.test(location.hash)
+      && !document.body.classList.contains('stage-session-guest');
+  }
+  function rememberWorkspace(threeD=false) {
+    if(!workspaceMemoryAllowed()) return;
+    try { sessionStorage.setItem(workspaceMemoryKey,JSON.stringify({showId:host.context().showId,mode,threeD})); }
+    catch(_) { /* A blocked UI store must not prevent switching or editing. */ }
+  }
+  function readWorkspaceMemory() {
+    if(!workspaceMemoryAllowed()) return null;
+    try {
+      const saved=JSON.parse(sessionStorage.getItem(workspaceMemoryKey));
+      return saved && saved.showId===host.context().showId && rememberedModes.includes(saved.mode)
+        ? saved : null;
+    } catch(_) { return null; }
+  }
+
   let pendingLightCue = null;
   function selectPendingLightCue() {
     if (!pendingLightCue || mode !== 'light-design' || !editor()?.status().active) return;
@@ -1124,7 +1145,7 @@
         window.GAMMA_RUN_OF_SHOW_PANE?.open?.();
         if (cueSheetRequest || readOnlyQ) window.GAMMA_RUN_OF_SHOW_PANE?.showCueSheet?.();
       } else editor()?.suspend();
-      mode=next; document.body.dataset.gammaWorkspace=mode;
+      mode=next; rememberWorkspace(); document.body.dataset.gammaWorkspace=mode;
       document.body.dataset.stageWorkspaceMode=mode;
       panel.hidden=!isLightMode(mode); venueWorkspace.hidden=mode!=='venue-setup'; normal.inert=mode!=='normal';
       if(scriptWorkspace) scriptWorkspace.hidden=mode!=='script';
@@ -1293,7 +1314,10 @@
     if(venueSetupPending()) { event.preventDefault(); event.stopImmediatePropagation(); select('venue-setup'); return; }
     endPlaybackPreview({focus:false});editor()?.suspend();
   },true);
-  window.addEventListener('stage-fpv-visibility',event=>{if(!event.detail?.active && isLightMode(mode)) editor()?.open(host.context(),mode);});
+  window.addEventListener('stage-fpv-visibility',event=>{
+    rememberWorkspace(Boolean(event.detail?.active));
+    if(!event.detail?.active && isLightMode(mode)) editor()?.open(host.context(),mode);
+  });
   /* 照明デザイン内でEを押したときも、親画面の同じタイムラインを開閉する。
      機材配置では従来どおり出さない。 */
   window.addEventListener('message',event=>{
@@ -1379,7 +1403,13 @@
   // 初回表示でもモード属性を付け、浮動パネルなど舞台モード専用CSSの基準を揃える。
   // 新しいショー（劇場がまだ決まっていない）は、そのまま劇場設定を開いて始める。
   if(lite || location.hash==='#run-of-show') select('run-of-show');
-  else if(venueSetupPending()) { gatedToVenue=true; select('venue-setup'); } else select('normal');
+  else if(venueSetupPending()) { gatedToVenue=true; select('venue-setup'); }
+  else {
+    const saved=readWorkspaceMemory();
+    void select(saved?.mode || 'normal').then(()=>{
+      if(saved?.threeD && mode===saved.mode && workspaceMemoryAllowed()) document.getElementById('stage-freecam-open')?.click();
+    });
+  }
   /* 共有の閲覧かどうかは body のクラスで後から決まる。決まったら鍵を見直す。 */
   new MutationObserver(syncVenueGate).observe(document.body,{attributes:true,attributeFilter:['class']});
   /* 劇場を反映したら鍵は外れる（反映後に select() が呼ばれ、その中で見直す）。

@@ -84,7 +84,7 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
 (async function () {
   "use strict";
 
-  const GAMMA_APP_VERSION = "v0.3.92";
+  const GAMMA_APP_VERSION = "v0.3.93";
   const GAMMA_EDITION = window.GAMMA_EDITION || "studio";
   const editionAllows = (key) => GAMMA_EDITION === "lite"
     ? window.GAMMA_EDITION_FEATURES?.[key] === true
@@ -25951,6 +25951,12 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       update();
     }
     function update() {
+      // Before session.js boots, the invitation hash already identifies the guest entrance.
+      // Afterwards the session owns pending/cancelled/connected state, even if the hash remains.
+      const session = window.SHOSAI_STAGE_SESSION_HOOKS;
+      const guestView = typeof session?.guestView === "function" ? session.guestView()
+        : guestSessionActive() || /^#session=[a-z0-9]{1,64}$/i.test(location.hash);
+      if (guestView) { band.hidden = true; close(); return; }
       const id = state.project.id;
       if (!modal.hidden && modalProject !== id) close();
       if (!seen.has(id)) {
@@ -26020,6 +26026,9 @@ if (typeof window !== "undefined") window.SHOSAI_STAGE_LAYOUT_LANES_MODEL = STAG
       else if (!event.shiftKey && document.activeElement === actions[2]) { event.preventDefault(); actions[0].focus(); }
     }, true);
     window.matchMedia("(display-mode: standalone)").addEventListener?.("change", update);
+    window.addEventListener("stage-session-view-change", update);
+    window.addEventListener("hashchange", update);
+    new MutationObserver(update).observe(document.body, { attributes:true, attributeFilter:["class"] });
     update();
     void refreshPersistence(!firefox);
     return { update };
@@ -34133,6 +34142,20 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     else els.presentBtn.click();
   });
 
+  // The keyboard and guest guide share the existing view-select change route.
+  function switchStageView() {
+    if (!els.viewSelect) return false;
+    const current = els.viewSelect.value;
+    const next = panelBottomActive() ? (current === "both-plan" ? "both-front" : "both-plan")
+      : current === "front" ? "plan"
+      : current === "plan" ? "front"
+        : current === "both-plan" ? "both-front" : "both-plan";
+    if (next === current) return false;
+    els.viewSelect.value = next;
+    els.viewSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    return true;
+  }
+
   // Tは表示図を切り替える。片面表示なら反対の図へ、両面表示なら上下順だけを替える。
   document.addEventListener("keydown", (event) => {
     if (event.defaultPrevented || !window.SHOSAI_STAGE_SHORTCUTS?.matches(event, "view.switch")) return;
@@ -34140,15 +34163,7 @@ const ROSTER_PROP_SPECIAL_KINDS = Object.freeze([
     if (phoneViewerActive || presenting || fullscreenModalOpen()) return;
     const view = document.getElementById("view-stage");
     if (!view || view.hidden || !els.viewSelect) return;
-    const current = els.viewSelect.value;
-    const next = panelBottomActive() ? (current === "both-plan" ? "both-front" : "both-plan")
-      : current === "front" ? "plan"
-      : current === "plan" ? "front"
-        : current === "both-plan" ? "both-front" : "both-plan";
-    if (next === current) return;
-    event.preventDefault();
-    els.viewSelect.value = next;
-    els.viewSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    if (switchStageView()) event.preventDefault();
   });
 
   // Cは舞台タブだけ。照明デザインや入力欄の文字入力は奪わない。
@@ -48651,6 +48666,111 @@ html[lang="en"] .cue-sheet-paper[data-cue-sheet-kind="handover"] .cue-sheet-tabl
     new MutationObserver(syncFileAutosaveEntry).observe(document.body, {attributes:true, attributeFilter:["class"]});
   }
   if (!restoreSceneLocation(initialSceneLocation) && !initialSceneLocation.sceneId) syncSceneLocation();
+  setupGuestViewHints();
   window.dispatchEvent(new Event("stage-gamma-runtime-ready"));
   liteLegacyShelf.check();
+
+  // R-5 / A: novice guests get named, clickable keys next to the diagrams.
+  // No session data, preferences or storage are owned by this guide.
+  function setupGuestViewHints() {
+    const stack = document.getElementById("stage-canvas-stack");
+    if (!stack) return;
+    const guide = document.createElement("section");
+    guide.id = "stage-guest-view-hints";
+    guide.hidden = true;
+    const primary = document.createElement("div");
+    primary.className = "stage-guest-view-actions";
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    const pointing = document.createElement("p");
+    const secondary = document.createElement("div");
+    secondary.className = primary.className;
+    const scope = document.createElement("p");
+    details.append(summary, pointing, secondary, scope);
+    guide.append(primary, details);
+    stack.before(guide);
+    const commands = [
+      ["view.lightRender", "明かりを表示", () => els.lightRenderToggle?.click(), els.lightRenderToggle, "lightRender"],
+      ["view.workLight", "作業灯", () => els.workLightToggle?.click(), els.workLightToggle, "lightRender"],
+      ["view.switch", "表示する図を切替", switchStageView],
+      ["view.reset", "図を元の表示へ", () => window.dispatchEvent(new Event("stage-view-reset-request"))],
+      ["workspace.normal", "舞台", () => document.getElementById("stage-workspace-normal")?.click()],
+      ["workspace.3d", "3D", () => els.freecamOpen?.click(), null, "3d"],
+      ["tool.arrow", "矢印を描く", () => document.querySelector(SHORTCUT_TOOL_TARGETS["tool.arrow"])?.click(),
+        document.querySelector(SHORTCUT_TOOL_TARGETS["tool.arrow"]), "arrowTool"],
+      ["audio.mute", "音をミュート・解除", () => window.dispatchEvent(new Event("stage-audio-mute-request"))],
+    ].map(([id, label, activate, source, feature], index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.guestShortcut = id;
+      const key = document.createElement("kbd"), name = document.createElement("span");
+      button.append(key, name);
+      (index < 6 ? primary : secondary).append(button);
+      button.addEventListener("click", () => {
+        // Recheck at activation, including a role/mode change queued since rendering.
+        if (!available() || button.hidden || button.disabled) return;
+        activate(); sync();
+      });
+      return {id, label, source, feature, button, key, name};
+    });
+    function joined() {
+      // guestView() includes the name dialog: require the actual role as well.
+      const session = window.SHOSAI_STAGE_SESSION_HOOKS;
+      return session?.role?.() === "guest" && session.guestView?.() === true && guestSessionActive();
+    }
+    function available() {
+      const view = document.getElementById("view-stage");
+      return joined() && currentWorkspaceMode() === "normal" && view && !view.hidden
+        && !phoneViewerActive && !presenting && !window.SHOSAI_STAGE_FPV?.isOpen?.()
+        && !isTyping(document.activeElement) && !composing && !fullscreenModalOpen();
+    }
+    let composing = false;
+    function sync() {
+      const active = available();
+      guide.hidden = !active;
+      // Keep replacement controls stable while typing / a dialog is open.
+      document.body.classList.toggle("stage-guest-hints-active", joined() && !phoneViewerActive);
+      if (!joined()) details.open = false;
+      guide.setAttribute("aria-label", tx("共有を見る操作"));
+      summary.textContent = tx("指差し・矢印・音の操作");
+      pointing.textContent = tx("図にマウスを動かすと指差しが届きます。");
+      scope.textContent = tx("矢印は相手にも共有されます。表示の切替は自分の画面だけです。");
+      for (const {id, label, source, feature, button, key, name} of commands) {
+        button.hidden = Boolean(feature && !editionAllows(feature));
+        if (id === "workspace.3d") button.hidden = !els.freecamOpen || els.freecamOpen.hidden;
+        button.disabled = Boolean(source?.disabled || (id === "workspace.3d" && els.freecamOpen?.disabled));
+        const binding = window.SHOSAI_STAGE_SHORTCUTS?.get(id) || "";
+        const shown = window.SHOSAI_STAGE_SHORTCUTS?.display(binding) || "";
+        if (key.textContent !== shown) key.textContent = shown;
+        key.hidden = !binding;
+        name.textContent = tx(label);
+        if (binding) button.setAttribute("aria-keyshortcuts", binding);
+        else button.removeAttribute("aria-keyshortcuts");
+        button.setAttribute("aria-label", tx(label));
+        if (source?.hasAttribute("aria-pressed")) button.setAttribute("aria-pressed", source.getAttribute("aria-pressed"));
+        else if (id === "workspace.normal") button.setAttribute("aria-pressed", "true");
+      }
+    }
+    // Observe only state attributes, never canvas drawing or the guide's own text.
+    const modes = new MutationObserver(sync);
+    modes.observe(document.body, {attributes:true, attributeFilter:["class", "data-gamma-workspace"]});
+    modes.observe(document.documentElement, {attributes:true, attributeFilter:["lang"]});
+    const controls = new MutationObserver(sync);
+    for (const {source} of commands) if (source) controls.observe(source, {attributes:true, attributeFilter:["aria-pressed", "disabled"]});
+    if (els.freecamOpen) controls.observe(els.freecamOpen, {attributes:true, attributeFilter:["hidden", "disabled"]});
+    const guestBadge = document.getElementById("stage-session-guest-badge");
+    if (guestBadge) controls.observe(guestBadge, {attributes:true, attributeFilter:["hidden"]});
+    // Dialog visibility can change without a focus change (e.g. a remote failure).
+    new MutationObserver(records => {
+      if (records.some(r => r.target !== guide && (r.target.matches?.('.stage-modal, .stage-modal-backdrop, [aria-modal="true"], #view-stage')
+        || [...r.addedNodes].some(n => n.nodeType === 1 && n.matches?.('.stage-modal, [aria-modal="true"]'))))) sync();
+    }).observe(document.body, {subtree:true, childList:true, attributes:true, attributeFilter:["hidden"]});
+    document.addEventListener("focusin", sync);
+    document.addEventListener("focusout", () => queueMicrotask(sync));
+    document.addEventListener("compositionstart", () => { composing = true; sync(); });
+    document.addEventListener("compositionend", () => { composing = false; sync(); });
+    for (const event of ["stage-session-view-change", "gamma-workspace-change", "stage-fpv-visibility"]) window.addEventListener(event, sync);
+    window.SHOSAI_STAGE_SHORTCUTS?.onChange(sync);
+    sync();
+  }
 })();

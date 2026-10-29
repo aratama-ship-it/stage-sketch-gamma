@@ -12,7 +12,7 @@
         html: `
 <p>Open this GitHub Pages address in a browser; this address needs no sign-in. The separate Gamma sharing address requires a host sign-in. Saved shows belong to each address and are not transferred automatically (see Part 14, 14-2).</p>
 <p><a href="https://aratama-ship-it.github.io/stage-sketch-gamma/stage.html" target="_blank" rel="noopener">https://aratama-ship-it.github.io/stage-sketch-gamma/stage.html</a></p>
-<p><strong>Opening the Mac app: do not choose “Move to Trash”.</strong> If an alert appears on first launch, choose “Done”, then go to System Settings → “Privacy & Security” → “Open Anyway”. For authentication and reopening the app, see ${ref("browser-storage", "Part 13, 13-2")}.</p>
+<p>Requires a Mac with Apple silicon and macOS 14 or later. Intel-based Macs are not supported. This distribution is signed with Developer ID and notarised by Apple. You normally do not need to bypass an “unidentified developer” warning. For installation and update instructions, see ${ref("browser-storage", "Part 13, 13-2")}.</p>
 ${table(["Device", "Good for", "Notes"], [
   ["Computer (Mac / Windows)", "Everything. Theatre settings, equipment placement, light design, 3D and stage machinery are computer-only", "A recent Safari, Chrome, Edge or Firefox. A window 1200 px or wider is comfortable"],
   ["iPad", "Showing and adjusting in the rehearsal room. Touch the drawing to move things", "In Safari, use the Share button → " + ui("Add to Home Screen") + ". It then opens like an app and starts even without a signal (" + ref("ipad", "Part 13, 13-3") + ")"],
@@ -33,7 +33,7 @@ ${table(["Sample", "What it contains", "Use it to"], [
   ["ロミオとジュリエット｜台本とキュー (Romeo and Juliet | script and cues)", "33 scenes with script, lighting and sound cues", "See the script alongside its cues"],
   ["ロミオとジュリエット｜RJセカンド（受け渡す手） (RJ Second)", "34 scenes, 5 sections, 10 people; 84 dialogue, 34 sound and 51 light cues", "See show paperwork with many cues"]
 ])}
-${fig("release092-sample-library", "Get the examples you need from the sample library.", "Sample library")}
+${fig("release093-sample-library", "Get the examples you need from the sample library.", "Sample library")}
 ${note("Samples are acquired on request", "Starting or reloading the app does not add samples to All shows. Copies already there stay. Get another copy from Sample library when needed.")}`
       },
       {

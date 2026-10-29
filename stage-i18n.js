@@ -32,6 +32,14 @@
 
   const TEXT = {
 
+    "共有の招待窓の重なりを直し、ゲスト中は保存の注意の帯を隠しました。正面の図にも共有の指差しを表示し、幅1200px以上ではゲスト向けの表示操作を案内します。": "Fixed overlapping sharing invitation dialogs and hid storage reminder banners during guest visits. Shared pointers now appear in the front view too, and viewing controls are explained to guests when the window is at least 1200px wide.",
+
+    "同じタブで同じショーを読み直したとき、直前の作業画面に戻るようにしました（ゲスト・招待での参加を除く）。": "Reloading the same show in the same tab now restores the previous workspace, except when joining as a guest or through an invitation.",
+
+    "共有ゲストから送れる操作を矢印の追加と指差しに限り、人物の位置を動かす操作を受け付けないようにしました。": "Shared guests can send arrow additions and pointers. Operations that move performers are now rejected.",
+
+    "Mac版の配布ページ・手引き・READMEで、対応環境とDeveloper ID署名・Apple公証済みの配布物の案内をそろえました。": "Aligned the Mac download page, manual and README on system requirements and guidance for distributions signed with Developer ID and notarized by Apple.",
+
     "照明デザインの「かんたん」で、詳細で編集した明かりを開いたときに「（詳細で編集済み）」と注記を出し、「適用する」で置き換わるのか、移る時間だけ変わるのかを押す前に示すようにしました。かんたんが付けた名前の LX キューは、選び直した型の名前に変わります（手で付けた名前は残ります）。": "In Easy lighting design, opening lighting edited in Detail now shows “(edited in Detail)”. Before you press Apply, the screen explains whether the lighting will be replaced or only the transition time will change. LX cues named automatically by Easy lighting are renamed to the newly selected preset; names you entered yourself are kept.",
 
     "明かりの表示を入れて作業灯を切ったとき、停止中の舞台や演者を描き直す処理を減らし、動作を軽くしました。": "With lighting display enabled and the work light off, we reduced redrawing of the stage and performers while playback is stopped to make the app more responsive.",
@@ -5969,4 +5977,16 @@ Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
   "体験: 残り{days}日": "Trial: {days} days left",
   "7日間の体験": "7-day trial",
   "体験: 閲覧と書き出し": "Trial: view and export"
+});
+
+// R-5: guest-only viewing guide, adopted option A.
+Object.assign(window.SHOSAI_I18N_PACKS["en"].text, {
+  "共有を見る操作": "Shared viewing controls",
+  "明かりを表示": "Show lighting",
+  "表示する図を切替": "Switch diagrams",
+  "図を元の表示へ": "Reset diagram view",
+  "音をミュート・解除": "Mute or unmute audio",
+  "指差し・矢印・音の操作": "Pointing, arrows and audio",
+  "図にマウスを動かすと指差しが届きます。": "Move the mouse over a diagram to point for others.",
+  "矢印は相手にも共有されます。表示の切替は自分の画面だけです。": "Arrows are shared with others. View changes affect only your own screen."
 });

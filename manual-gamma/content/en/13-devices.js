@@ -31,7 +31,7 @@
 <p>Safari deletes saved data after 7 days without interaction with this site. These are days of Safari use, not simply seven calendar days. Web apps added to the Home Screen are exempt from this seven-day limit.</p>
 ${steps(["On iPad or iPhone, use Safari’s Share button to Add to Home Screen, then open the added icon. On Mac, use Safari’s File → Add to Dock, then open the app.", "Press Export now in the reminder at the top and save the JSON backup in a device folder.", "Update backups regularly and keep a copy on another device or external drive. To restore one, use the show file import."])}
 <p>The reminder uses bold text and ! if you have never exported a backup or it is more than seven days old. It turns gray only when the app is installed and persistent storage has been granted. Still keep backups: protection cannot prevent deletion by the user. Reopening a show after at least seven days displays a dismissible export reminder.</p>
-${fig("release092-storage-band", "The browser storage reminder at the top, with a button to export a backup.", "Browser storage reminder")}
+${fig("release093-storage-band", "The browser storage reminder at the top, with a button to export a backup.", "Browser storage reminder")}
 <h4>Mac menus and language</h4>
 <p>App menus and alerts follow the display language selected in Settings. Choose Settings… (⌘,) from the Stage Sketch γ menu to open the app's preferences. The same menu provides Hide (⌘H), Hide Others (⌥⌘H), Show All and Services.</p>
 <p>The Window menu provides Minimise (⌘M), Zoom and Bring All to Front. The View menu provides Enter Full Screen (⌃⌘F). Help → Stage Sketch γ User Guide opens the booklet bundled with this app in a separate window. The English booklet opens for display languages other than Japanese.</p>
@@ -39,8 +39,9 @@ ${fig("release092-storage-band", "The browser storage reminder at the top, with 
 <p>A passphrase is required to download the Mac version. Please ask the distributor who provided the app information, then enter it on the installation page below. The passphrase itself is not published in this booklet.</p>
 <p><a href="https://aratama-ship-it.github.io/stage-sketch-gamma/download/?lang=en" target="_blank" rel="noopener">Get the Mac version</a></p>
 <h4>Opening the Mac app for the first time or after an update</h4>
-<p>Check the official distributor before continuing. Unzip the download and place the app in Applications or on the desktop. For an update, replace the current app with the new one.</p>
-${steps(["Do not choose “Move to Trash”. When you first open the app and an alert says Apple cannot verify it, choose “Done”.", "Open System Settings → “Privacy & Security”, scroll down to the message that the app was blocked to protect your Mac, and choose “Open Anyway”.", "Authenticate with your Mac password or Touch ID.", "Open the app again and choose “Open Anyway” in the confirmation.", "From the second launch, open the app normally. If the same alert appears after an update, follow these steps again."])}`
+<p>Requires a Mac with Apple silicon and macOS 14 or later. Intel-based Macs are not supported. This distribution is signed with Developer ID and notarised by Apple. You normally do not need to bypass an “unidentified developer” warning.</p>
+${steps(["Download the latest zip from GitHub Releases.", "Unzip the file.", "Place 舞台スケッチγ.app in Applications or on the desktop. To update, quit the current app before replacing it with the new one.", "Double-click 舞台スケッチγ.app to open it."])}
+<p>If you see an unidentified developer warning, check the download source and app version, then contact support.</p>}`
       },
       {
         id: "device-table", title: "What works where (the app's own table)", status: "sourced",
@@ -86,8 +87,8 @@ ${steps([
   "From then on open it from the home screen icon. Once opened, it starts even without a signal (the first addition needs a connection)."
 ])}
 ${grid([
-  fig("release092-ipad", "iPad landscape (about 1024×768) — reproduced in a desktop browser. Tools, the scene bar and the front view stack vertically.", "iPad landscape"),
-  fig("release092-ipad-portrait", "iPad portrait (about 768×1024).", "iPad portrait")
+  fig("release093-ipad", "iPad landscape (about 1024×768) — reproduced in a desktop browser. Tools, the scene bar and the front view stack vertically.", "iPad landscape"),
+  fig("release093-ipad-portrait", "iPad portrait (about 768×1024).", "iPad portrait")
 ])}
 ${note("Not checked on a real iPad", "These pictures reproduce the iPad's screen size in a desktop browser. How v0.2.16 behaves on a real iPad or as a home-screen app (touch, offline start, Gamma's new tabs) has not yet been checked for this booklet. The same goes for " + ui("iPad display mode") + " in Settings.", true)}`
       },

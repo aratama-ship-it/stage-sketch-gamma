@@ -1792,3 +1792,92 @@ html:not(.stage-pwa-tablet):not(.stage-phone-viewer) .gamma-header-fitted.gamma-
 #stage-file-autosave summary { cursor:pointer; }
 #stage-file-autosave p { margin:4px 0; color:inherit; font:inherit; }
 #stage-file-autosave button { min-height:44px; white-space:normal; }
+
+/* R-5 / adopted A. Normal flow keeps the stage and shared pointing unobstructed. */
+#stage-guest-view-hints {
+  --guest-hint-basis: 144px;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  margin-block: var(--gamma-gap);
+  padding: var(--gamma-gap);
+  border: 1px solid var(--brass);
+  background: var(--desk-2);
+  color: var(--chrome-ink, var(--paper));
+  font-size: var(--fs-6);
+  line-height: 1.5;
+}
+#stage-guest-view-hints[hidden],
+#stage-guest-view-hints [hidden] { display: none !important; }
+#stage-guest-view-hints .stage-guest-view-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gamma-gap);
+  min-width: 0;
+}
+#stage-guest-view-hints button {
+  display: flex;
+  flex: 1 1 var(--guest-hint-basis);
+  align-items: center;
+  gap: var(--gamma-gap);
+  min-width: var(--ctrl-lg);
+  min-height: var(--ctrl-lg);
+  padding: var(--gamma-gap);
+  border: 1px solid var(--brass);
+  border-radius: var(--radius-sm);
+  background: var(--desk);
+  color: var(--chrome-ink, var(--paper));
+  font: inherit;
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+#stage-guest-view-hints button span { min-width: 0; }
+#stage-guest-view-hints button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--brass); }
+#stage-guest-view-hints kbd {
+  display: inline-flex;
+  flex: 0 1 auto;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--ctrl-sm);
+  min-height: var(--ctrl-sm);
+  border: 1px solid var(--brass);
+  color: var(--brass);
+  font: inherit;
+  font-weight: 600;
+}
+#stage-guest-view-hints details { margin-top: var(--gamma-gap); }
+#stage-guest-view-hints summary {
+  box-sizing: border-box;
+  min-height: var(--ctrl-lg);
+  padding-block: var(--gamma-gap);
+  cursor: pointer;
+}
+#stage-guest-view-hints p { margin-block: var(--gamma-gap); }
+#stage-guest-view-hints :is(button, summary):focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+/* Retain the original handlers and key targets, with one visible guest entrance.
+   Below 1200px the hints push the stage below the window (half-screen laptops), so they stay
+   hidden there and the original buttons return; the keys work either way. Interim until the
+   viewer-style guest screen (2026-10-29 decision). */
+@media (min-width: 1200px) {
+  body.stage-guest-hints-active .stage-tool-grid :is(#stage-light-render-toggle, #stage-work-light-toggle, [data-stage-tool="arrow"]) {
+    display: none !important;
+  }
+}
+@media (max-width: 1199.98px) {
+  #stage-guest-view-hints { display: none !important; }
+}
+@media (max-width: 720px) {
+  html:not(.stage-pwa-tablet):not(.stage-phone-viewer) body.stage-guest-hints-active .stage-sketch-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "board" "tools";
+  }
+}
+
+.stage-work-area.is-docked > #stage-guest-view-hints { grid-column: 2; }
